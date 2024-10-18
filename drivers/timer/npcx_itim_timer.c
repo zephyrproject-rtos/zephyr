@@ -46,25 +46,23 @@
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(itim, LOG_LEVEL_ERR);
 
-#define NPCX_ITIM32_MAX_CNT 0xffffffff
+#define NPCX_ITIM32_MAX_CNT      0xffffffff
 #define NPCX_ITIM64_MAX_HALF_CNT 0xffffffff
-#define EVT_CYCLES_PER_SEC LFCLK /* 32768 Hz */
-#define SYS_CYCLES_PER_TICK (sys_clock_hw_cycles_per_sec() \
-					/ CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-#define SYS_CYCLES_PER_USEC (sys_clock_hw_cycles_per_sec() / 1000000)
-#define EVT_CYCLES_FROM_TICKS(ticks) \
-	DIV_ROUND_UP(ticks * EVT_CYCLES_PER_SEC, \
-			 CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-#define NPCX_ITIM_CLK_SEL_DELAY 92 /* Delay for clock selection (Unit:us) */
+#define EVT_CYCLES_PER_SEC       LFCLK /* 32768 Hz */
+#define SYS_CYCLES_PER_TICK      (sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define SYS_CYCLES_PER_USEC      (sys_clock_hw_cycles_per_sec() / 1000000)
+#define EVT_CYCLES_FROM_TICKS(ticks)                                                               \
+	DIV_ROUND_UP(ticks *EVT_CYCLES_PER_SEC, CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define NPCX_ITIM_CLK_SEL_DELAY     92 /* Delay for clock selection (Unit:us) */
 /* Timeout for enabling ITIM module: 100us (Unit:cycles) */
 #define NPCX_ITIM_EN_TIMEOUT_CYCLES (100 * SYS_CYCLES_PER_USEC)
 #define SYS_CYC_PER_EVT_CYC         (sys_clock_hw_cycles_per_sec() / EVT_CYCLES_PER_SEC)
 
 /* Instance of system and event timers */
-static struct itim64_reg *const sys_tmr = (struct itim64_reg *)
-					DT_INST_REG_ADDR_BY_NAME(0, sys_itim);
-static struct itim32_reg *const evt_tmr = (struct itim32_reg *)
-					DT_INST_REG_ADDR_BY_NAME(0, evt_itim);
+static struct itim64_reg *const sys_tmr =
+	(struct itim64_reg *)DT_INST_REG_ADDR_BY_NAME(0, sys_itim);
+static struct itim32_reg *const evt_tmr =
+	(struct itim32_reg *)DT_INST_REG_ADDR_BY_NAME(0, evt_itim);
 
 static const struct npcx_clk_cfg itim_clk_cfg[] = NPCX_DT_CLK_CFG_ITEMS_LIST(0);
 
@@ -98,8 +96,7 @@ static inline uint64_t npcx_itim_get_sys_cyc64(void)
 
 	/* Return current value of 64-bit counter value of system timer */
 	if (IS_ENABLED(CONFIG_PM)) {
-		return ((((uint64_t)cnt64h) << 32) | cnt64l) +
-							cyc_sys_compensated;
+		return ((((uint64_t)cnt64h) << 32) | cnt64l) + cyc_sys_compensated;
 	} else {
 		return (((uint64_t)cnt64h) << 32) | cnt64l;
 	}
@@ -118,8 +115,7 @@ static inline int npcx_itim_evt_enable(void)
 	 */
 	cyc_start = npcx_itim_get_sys_cyc64();
 	while (!IS_BIT_SET(evt_tmr->ITCTS32, NPCX_ITCTSXX_ITEN)) {
-		if (npcx_itim_get_sys_cyc64() - cyc_start >
-						NPCX_ITIM_EN_TIMEOUT_CYCLES) {
+		if (npcx_itim_get_sys_cyc64() - cyc_start > NPCX_ITIM_EN_TIMEOUT_CYCLES) {
 			/* ITEN bit is still unset? */
 			if (!IS_BIT_SET(evt_tmr->ITCTS32, NPCX_ITCTSXX_ITEN)) {
 				LOG_ERR("Timeout: enabling EVT timer!");
@@ -166,7 +162,6 @@ static int npcx_itim_start_evt_tmr_by_tick(int32_t ticks)
 			cyc_evt_timeout =
 				CLAMP((dcycles / SYS_CYC_PER_EVT_CYC), 1, NPCX_ITIM32_MAX_CNT);
 		}
-
 	}
 	LOG_DBG("ticks %x, cyc_evt_timeout %x", ticks, cyc_evt_timeout);
 
@@ -234,7 +229,7 @@ static inline uint32_t npcx_itim_get_evt_cyc32(void)
 static uint32_t npcx_itim_evt_elapsed_cyc32(void)
 {
 	uint32_t cnt1 = npcx_itim_get_evt_cyc32();
-	uint8_t  sys_cts = evt_tmr->ITCTS32;
+	uint8_t sys_cts = evt_tmr->ITCTS32;
 	uint16_t cnt2 = npcx_itim_get_evt_cyc32();
 
 	/* Event has been triggered but timer ISR doesn't handle it */
@@ -313,16 +308,15 @@ void npcx_clock_capture_low_freq_timer(void)
 
 void npcx_clock_compensate_system_timer(void)
 {
-	uint32_t cyc_evt_elapsed_in_deep = npcx_itim_evt_elapsed_cyc32() -
-							cyc_evt_enter_deep_idle;
+	uint32_t cyc_evt_elapsed_in_deep = npcx_itim_evt_elapsed_cyc32() - cyc_evt_enter_deep_idle;
 
-	cyc_sys_compensated += ((uint64_t)cyc_evt_elapsed_in_deep *
-			sys_clock_hw_cycles_per_sec()) / EVT_CYCLES_PER_SEC;
+	cyc_sys_compensated += ((uint64_t)cyc_evt_elapsed_in_deep * sys_clock_hw_cycles_per_sec()) /
+			       EVT_CYCLES_PER_SEC;
 }
 
 uint64_t npcx_clock_get_sleep_ticks(void)
 {
-	return  cyc_sys_compensated / SYS_CYCLES_PER_TICK;
+	return cyc_sys_compensated / SYS_CYCLES_PER_TICK;
 }
 #endif /* CONFIG_PM */
 
@@ -339,8 +333,7 @@ static int sys_clock_driver_init(void)
 
 	/* Turn on all itim module clocks used for counting */
 	for (int i = 0; i < ARRAY_SIZE(itim_clk_cfg); i++) {
-		ret = clock_control_on(clk_dev, (clock_control_subsys_t)
-				&itim_clk_cfg[i]);
+		ret = clock_control_on(clk_dev, (clock_control_subsys_t)&itim_clk_cfg[i]);
 		if (ret < 0) {
 			LOG_ERR("Turn on timer %d clock failed.", i);
 			return ret;
@@ -351,8 +344,8 @@ static int sys_clock_driver_init(void)
 	 * In npcx series, we use ITIM64 as system kernel timer. Its source
 	 * clock frequency must equal to CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC.
 	 */
-	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)
-			&itim_clk_cfg[1], &sys_tmr_rate);
+	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)&itim_clk_cfg[1],
+				     &sys_tmr_rate);
 	if (ret < 0) {
 		LOG_ERR("Get ITIM64 clock rate failed %d", ret);
 		return ret;
@@ -360,7 +353,8 @@ static int sys_clock_driver_init(void)
 
 	if (sys_tmr_rate != CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) {
 		LOG_ERR("CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC doesn't match "
-			"ITIM64 clock frequency %d", sys_tmr_rate);
+			"ITIM64 clock frequency %d",
+			sys_tmr_rate);
 		return -EINVAL;
 	}
 
@@ -389,15 +383,14 @@ static int sys_clock_driver_init(void)
 	 * interrupt/wake-up sources, and clear timeout status bit before
 	 * enabling it.
 	 */
-	evt_tmr->ITCTS32 = BIT(NPCX_ITCTSXX_CKSEL) | BIT(NPCX_ITCTSXX_TO_WUE)
-			 | BIT(NPCX_ITCTSXX_TO_IE) | BIT(NPCX_ITCTSXX_TO_STS);
+	evt_tmr->ITCTS32 = BIT(NPCX_ITCTSXX_CKSEL) | BIT(NPCX_ITCTSXX_TO_WUE) |
+			   BIT(NPCX_ITCTSXX_TO_IE) | BIT(NPCX_ITCTSXX_TO_STS);
 
 	/* A delay for ITIM source clock selection */
 	k_busy_wait(NPCX_ITIM_CLK_SEL_DELAY);
 
 	/* Configure event timer's ISR */
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
-					npcx_itim_evt_isr, NULL, 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), npcx_itim_evt_isr, NULL, 0);
 	/* Enable event timer interrupt */
 	irq_enable(DT_INST_IRQN(0));
 
@@ -411,5 +404,4 @@ static int sys_clock_driver_init(void)
 
 	return 0;
 }
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

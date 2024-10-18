@@ -15,65 +15,65 @@
 LOG_MODULE_REGISTER(rm68200, CONFIG_DISPLAY_LOG_LEVEL);
 
 /* DCS Commands */
-#define DCS_CMD_PAGE		0xFE
-#define DCS_CMD_PAGE_UCS	0x0
-#define DCS_CMD_PAGE_SET_PAGE0	0x1
-#define DCS_CMD_PAGE_SET_PAGE1	0x2
-#define DCS_CMD_PAGE_SET_PAGE2	0x3
-#define DCS_CMD_PAGE_SET_PAGE3	0x4
+#define DCS_CMD_PAGE           0xFE
+#define DCS_CMD_PAGE_UCS       0x0
+#define DCS_CMD_PAGE_SET_PAGE0 0x1
+#define DCS_CMD_PAGE_SET_PAGE1 0x2
+#define DCS_CMD_PAGE_SET_PAGE2 0x3
+#define DCS_CMD_PAGE_SET_PAGE3 0x4
 
 /* MCS Commands */
-#define MCS_STBCTR		0x12
-#define MCS_SGOPCTR		0x16
-#define MCS_SDCTR		0x1A
-#define MCS_INVCTR		0x1B
-#define MCS_EXT_PWR_IC_TYPE	0x24
-#define MCS_EXT_PWR_SET_AVDD	0x25
-#define MCS_AVEE_FROM_PFM	0x26
-#define MCS_AVDD_FROM_PFM	0x27
-#define MCS_SETAVEE		0x29
-#define MCS_BT2CTR		0x2B
-#define MCS_BT3CTR		0x2F
-#define MCS_BT4CTR		0x34
-#define MCS_VCMCTR		0x46
-#define MCS_SETVGMN		0x52
-#define MCS_SETVGSN		0x53
-#define MCS_SETVGMP		0x54
-#define MCS_SETVGSP		0x55
-#define MCS_SW_CTRL		0x5F
-#define MCS_GAMMA_VP1		0x60
-#define MCS_GAMMA_VP4		0x61
-#define MCS_GAMMA_VP8		0x62
-#define MCS_GAMMA_VP16		0x63
-#define MCS_GAMMA_VP24		0x64
-#define MCS_GAMMA_VP52		0x65
-#define MCS_GAMMA_VP80		0x66
-#define MCS_GAMMA_VP108		0x67
-#define MCS_GAMMA_VP147		0x68
-#define MCS_GAMMA_VP175		0x69
-#define MCS_GAMMA_VP203		0x6A
-#define MCS_GAMMA_VP231		0x6B
-#define MCS_GAMMA_VP239		0x6C
-#define MCS_GAMMA_VP247		0x6D
-#define MCS_GAMMA_VP251		0x6E
-#define MCS_GAMMA_VP255		0x6F
-#define MCS_GAMMA_VN1		0x70
-#define MCS_GAMMA_VN4		0x71
-#define MCS_GAMMA_VN8		0x72
-#define MCS_GAMMA_VN16		0x73
-#define MCS_GAMMA_VN24		0x74
-#define MCS_GAMMA_VN52		0x75
-#define MCS_GAMMA_VN80		0x76
-#define MCS_GAMMA_VN108		0x77
-#define MCS_GAMMA_VN147		0x78
-#define MCS_GAMMA_VN175		0x79
-#define MCS_GAMMA_VN203		0x7A
-#define MCS_GAMMA_VN231		0x7B
-#define MCS_GAMMA_VN239		0x7C
-#define MCS_GAMMA_VN247		0x7D
-#define MCS_GAMMA_VN251		0x7E
-#define MCS_GAMMA_VN255		0x7F
-#define MCS_GAMMA_UPDATE	0x80
+#define MCS_STBCTR           0x12
+#define MCS_SGOPCTR          0x16
+#define MCS_SDCTR            0x1A
+#define MCS_INVCTR           0x1B
+#define MCS_EXT_PWR_IC_TYPE  0x24
+#define MCS_EXT_PWR_SET_AVDD 0x25
+#define MCS_AVEE_FROM_PFM    0x26
+#define MCS_AVDD_FROM_PFM    0x27
+#define MCS_SETAVEE          0x29
+#define MCS_BT2CTR           0x2B
+#define MCS_BT3CTR           0x2F
+#define MCS_BT4CTR           0x34
+#define MCS_VCMCTR           0x46
+#define MCS_SETVGMN          0x52
+#define MCS_SETVGSN          0x53
+#define MCS_SETVGMP          0x54
+#define MCS_SETVGSP          0x55
+#define MCS_SW_CTRL          0x5F
+#define MCS_GAMMA_VP1        0x60
+#define MCS_GAMMA_VP4        0x61
+#define MCS_GAMMA_VP8        0x62
+#define MCS_GAMMA_VP16       0x63
+#define MCS_GAMMA_VP24       0x64
+#define MCS_GAMMA_VP52       0x65
+#define MCS_GAMMA_VP80       0x66
+#define MCS_GAMMA_VP108      0x67
+#define MCS_GAMMA_VP147      0x68
+#define MCS_GAMMA_VP175      0x69
+#define MCS_GAMMA_VP203      0x6A
+#define MCS_GAMMA_VP231      0x6B
+#define MCS_GAMMA_VP239      0x6C
+#define MCS_GAMMA_VP247      0x6D
+#define MCS_GAMMA_VP251      0x6E
+#define MCS_GAMMA_VP255      0x6F
+#define MCS_GAMMA_VN1        0x70
+#define MCS_GAMMA_VN4        0x71
+#define MCS_GAMMA_VN8        0x72
+#define MCS_GAMMA_VN16       0x73
+#define MCS_GAMMA_VN24       0x74
+#define MCS_GAMMA_VN52       0x75
+#define MCS_GAMMA_VN80       0x76
+#define MCS_GAMMA_VN108      0x77
+#define MCS_GAMMA_VN147      0x78
+#define MCS_GAMMA_VN175      0x79
+#define MCS_GAMMA_VN203      0x7A
+#define MCS_GAMMA_VN231      0x7B
+#define MCS_GAMMA_VN239      0x7C
+#define MCS_GAMMA_VN247      0x7D
+#define MCS_GAMMA_VN251      0x7E
+#define MCS_GAMMA_VN255      0x7F
+#define MCS_GAMMA_UPDATE     0x80
 
 struct rm68200_config {
 	const struct device *mipi_dsi;
@@ -86,18 +86,15 @@ struct rm68200_config {
 	uint8_t channel;
 };
 
-static int rm68200_dcs_write(const struct device *dev, uint8_t cmd, uint8_t *buf,
-				 uint8_t len)
+static int rm68200_dcs_write(const struct device *dev, uint8_t cmd, uint8_t *buf, uint8_t len)
 {
 	const struct rm68200_config *config = dev->config;
 
 	return mipi_dsi_dcs_write(config->mipi_dsi, config->channel, cmd, buf, len);
 }
 
-static int rm68200_write(const struct device *dev, const uint16_t x,
-			 const uint16_t y,
-			 const struct display_buffer_descriptor *desc,
-			 const void *buf)
+static int rm68200_write(const struct device *dev, const uint16_t x, const uint16_t y,
+			 const struct display_buffer_descriptor *desc, const void *buf)
 {
 	return 0;
 }
@@ -1032,24 +1029,18 @@ static int rm68200_init(const struct device *dev)
 	return 0;
 }
 
-#define RM68200_PANEL(id)							\
-	static const struct rm68200_config rm68200_config_##id = {		\
-		.mipi_dsi = DEVICE_DT_GET(DT_INST_BUS(id)),			\
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(id, reset_gpios, {0}),	\
-		.bl_gpio = GPIO_DT_SPEC_INST_GET_OR(id, bl_gpios, {0}),		\
-		.num_of_lanes = DT_INST_PROP_BY_IDX(id, data_lanes, 0),			\
-		.pixel_format = DT_INST_PROP(id, pixel_format),			\
-		.panel_width = DT_INST_PROP(id, width),				\
-		.panel_height = DT_INST_PROP(id, height),			\
-		.channel = DT_INST_REG_ADDR(id),				\
-	};									\
-	DEVICE_DT_INST_DEFINE(id,						\
-			    &rm68200_init,					\
-			    NULL,						\
-			    NULL,						\
-			    &rm68200_config_##id,				\
-			    POST_KERNEL,					\
-			    CONFIG_APPLICATION_INIT_PRIORITY,			\
-			    &rm68200_api);
+#define RM68200_PANEL(id)                                                                          \
+	static const struct rm68200_config rm68200_config_##id = {                                 \
+		.mipi_dsi = DEVICE_DT_GET(DT_INST_BUS(id)),                                        \
+		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(id, reset_gpios, {0}),                      \
+		.bl_gpio = GPIO_DT_SPEC_INST_GET_OR(id, bl_gpios, {0}),                            \
+		.num_of_lanes = DT_INST_PROP_BY_IDX(id, data_lanes, 0),                            \
+		.pixel_format = DT_INST_PROP(id, pixel_format),                                    \
+		.panel_width = DT_INST_PROP(id, width),                                            \
+		.panel_height = DT_INST_PROP(id, height),                                          \
+		.channel = DT_INST_REG_ADDR(id),                                                   \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(id, &rm68200_init, NULL, NULL, &rm68200_config_##id, POST_KERNEL,    \
+			      CONFIG_APPLICATION_INIT_PRIORITY, &rm68200_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RM68200_PANEL)

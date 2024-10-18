@@ -460,10 +460,10 @@ static const struct uart_driver_api serial_vnd_api = {
 		.read_queue = &read_queue_##n,                                                     \
 	};
 #define VND_SERIAL_DATA(n) static struct serial_vnd_data serial_vnd_data_##n = {};
-#define VND_SERIAL_INIT(n)                                                                         \
+#define VND_SERIAL_INIT(n)                                                                           \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, buffer_size), (VND_SERIAL_DATA_BUFFER(n)),            \
-		    (VND_SERIAL_DATA(n)))                                                          \
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, &serial_vnd_data_##n, NULL, POST_KERNEL,              \
+		    (VND_SERIAL_DATA(n))) \
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL, &serial_vnd_data_##n, NULL, POST_KERNEL,                \
 			      CONFIG_SERIAL_INIT_PRIORITY, &serial_vnd_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VND_SERIAL_INIT)

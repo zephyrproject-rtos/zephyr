@@ -19,8 +19,7 @@
 
 #define DT_DRV_COMPAT xen_hvc_consoleio
 
-static int xen_consoleio_poll_in(const struct device *dev,
-			unsigned char *c)
+static int xen_consoleio_poll_in(const struct device *dev, unsigned char *c)
 {
 	int ret = 0;
 	char temp;
@@ -35,10 +34,9 @@ static int xen_consoleio_poll_in(const struct device *dev,
 	return 0;
 }
 
-static void xen_consoleio_poll_out(const struct device *dev,
-			unsigned char c)
+static void xen_consoleio_poll_out(const struct device *dev, unsigned char c)
 {
-	(void) HYPERVISOR_console_io(CONSOLEIO_write, sizeof(c), &c);
+	(void)HYPERVISOR_console_io(CONSOLEIO_write, sizeof(c), &c);
 }
 
 static const struct uart_driver_api xen_consoleio_hvc_api = {
@@ -52,6 +50,5 @@ static int xen_consoleio_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, xen_consoleio_init, NULL, NULL,
-		NULL, PRE_KERNEL_1, CONFIG_XEN_HVC_INIT_PRIORITY,
-		&xen_consoleio_hvc_api);
+DEVICE_DT_INST_DEFINE(0, xen_consoleio_init, NULL, NULL, NULL, PRE_KERNEL_1,
+		      CONFIG_XEN_HVC_INIT_PRIORITY, &xen_consoleio_hvc_api);

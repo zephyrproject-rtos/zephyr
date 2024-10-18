@@ -32,31 +32,25 @@ static void adxl372_thread_cb(const struct device *dev)
 		/* In max peak mode we wait until we settle below the inactivity
 		 * threshold and then call the trigger handler.
 		 */
-		if (cfg->max_peak_detect_mode &&
-			ADXL372_STATUS_2_INACT(status2)) {
+		if (cfg->max_peak_detect_mode && ADXL372_STATUS_2_INACT(status2)) {
 			drv_data->th_handler(dev, drv_data->th_trigger);
-		} else if (!cfg->max_peak_detect_mode &&
-			(ADXL372_STATUS_2_INACT(status2) ||
-			ADXL372_STATUS_2_ACTIVITY(status2))) {
+		} else if (!cfg->max_peak_detect_mode && (ADXL372_STATUS_2_INACT(status2) ||
+							  ADXL372_STATUS_2_ACTIVITY(status2))) {
 			drv_data->th_handler(dev, drv_data->th_trigger);
 		}
 	}
 
-	if ((drv_data->drdy_handler != NULL) &&
-		ADXL372_STATUS_1_DATA_RDY(status1)) {
+	if ((drv_data->drdy_handler != NULL) && ADXL372_STATUS_1_DATA_RDY(status1)) {
 		drv_data->drdy_handler(dev, drv_data->drdy_trigger);
 	}
 
-	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
-					      GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
 	__ASSERT(ret == 0, "Interrupt configuration failed");
 }
 
-static void adxl372_gpio_callback(const struct device *dev,
-				  struct gpio_callback *cb, uint32_t pins)
+static void adxl372_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	struct adxl372_data *drv_data =
-		CONTAINER_OF(cb, struct adxl372_data, gpio_cb);
+	struct adxl372_data *drv_data = CONTAINER_OF(cb, struct adxl372_data, gpio_cb);
 	const struct adxl372_dev_config *cfg = drv_data->dev->config;
 
 	gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_DISABLE);
@@ -85,15 +79,13 @@ static void adxl372_thread(void *p1, void *p2, void *p3)
 #elif defined(CONFIG_ADXL372_TRIGGER_GLOBAL_THREAD)
 static void adxl372_work_cb(struct k_work *work)
 {
-	struct adxl372_data *drv_data =
-		CONTAINER_OF(work, struct adxl372_data, work);
+	struct adxl372_data *drv_data = CONTAINER_OF(work, struct adxl372_data, work);
 
 	adxl372_thread_cb(drv_data->dev);
 }
 #endif
 
-int adxl372_trigger_set(const struct device *dev,
-			const struct sensor_trigger *trig,
+int adxl372_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
 	const struct adxl372_dev_config *cfg = dev->config;
@@ -101,8 +93,7 @@ int adxl372_trigger_set(const struct device *dev,
 	uint8_t int_mask, int_en, status1, status2;
 	int ret;
 
-	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
-					      GPIO_INT_DISABLE);
+	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_DISABLE);
 	if (ret < 0) {
 		return ret;
 	}
@@ -111,8 +102,7 @@ int adxl372_trigger_set(const struct device *dev,
 	case SENSOR_TRIG_THRESHOLD:
 		drv_data->th_handler = handler;
 		drv_data->th_trigger = trig;
-		int_mask = ADXL372_INT1_MAP_ACT_MSK |
-			   ADXL372_INT1_MAP_INACT_MSK;
+		int_mask = ADXL372_INT1_MAP_ACT_MSK | ADXL372_INT1_MAP_INACT_MSK;
 		break;
 	case SENSOR_TRIG_DATA_READY:
 		drv_data->drdy_handler = handler;
@@ -140,8 +130,7 @@ int adxl372_trigger_set(const struct device *dev,
 		return ret;
 	}
 
-	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
-					      GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
 		return ret;
 	}
@@ -165,9 +154,7 @@ int adxl372_init_interrupt(const struct device *dev)
 		return ret;
 	}
 
-	gpio_init_callback(&drv_data->gpio_cb,
-			   adxl372_gpio_callback,
-			   BIT(cfg->interrupt.pin));
+	gpio_init_callback(&drv_data->gpio_cb, adxl372_gpio_callback, BIT(cfg->interrupt.pin));
 
 	ret = gpio_add_callback(cfg->interrupt.port, &drv_data->gpio_cb);
 	if (ret < 0) {
@@ -180,11 +167,9 @@ int adxl372_init_interrupt(const struct device *dev)
 #if defined(CONFIG_ADXL372_TRIGGER_OWN_THREAD)
 	k_sem_init(&drv_data->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
-	k_thread_create(&drv_data->thread, drv_data->thread_stack,
-			CONFIG_ADXL372_THREAD_STACK_SIZE,
-			adxl372_thread, drv_data,
-			NULL, NULL, K_PRIO_COOP(CONFIG_ADXL372_THREAD_PRIORITY),
-			0, K_NO_WAIT);
+	k_thread_create(&drv_data->thread, drv_data->thread_stack, CONFIG_ADXL372_THREAD_STACK_SIZE,
+			adxl372_thread, drv_data, NULL, NULL,
+			K_PRIO_COOP(CONFIG_ADXL372_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_ADXL372_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = adxl372_work_cb;
 #endif

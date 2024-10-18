@@ -68,8 +68,7 @@ static void qdec_sam_start(Tc *const tc)
 	TcChannel *tc_ch0 = &tc->TcChannel[0];
 
 	/* Enable Channel 0 Clock and reset counter*/
-	tc_ch0->TC_CCR =  TC_CCR_CLKEN
-			| TC_CCR_SWTRG;
+	tc_ch0->TC_CCR = TC_CCR_CLKEN | TC_CCR_SWTRG;
 }
 
 static void qdec_sam_configure(const struct device *dev)
@@ -79,15 +78,10 @@ static void qdec_sam_configure(const struct device *dev)
 	TcChannel *tc_ch0 = &tc->TcChannel[0];
 
 	/* Clock, Trigger Edge, Trigger and Mode Selection */
-	tc_ch0->TC_CMR =  TC_CMR_TCCLKS_XC0
-			| TC_CMR_ETRGEDG_NONE
-			| TC_CMR_ABETRG;
+	tc_ch0->TC_CMR = TC_CMR_TCCLKS_XC0 | TC_CMR_ETRGEDG_NONE | TC_CMR_ABETRG;
 
 	/* Enable QDEC in Position Mode*/
-	tc->TC_BMR =  TC_BMR_QDEN
-		    | TC_BMR_POSEN
-		    | TC_BMR_EDGPHA
-		    | TC_BMR_MAXFILT(1);
+	tc->TC_BMR = TC_BMR_QDEN | TC_BMR_POSEN | TC_BMR_EDGPHA | TC_BMR_MAXFILT(1);
 
 	qdec_sam_start(tc);
 }
@@ -122,19 +116,18 @@ static const struct sensor_driver_api qdec_sam_driver_api = {
 	.channel_get = qdec_sam_get,
 };
 
-#define QDEC_SAM_INIT(n)						\
-	PINCTRL_DT_INST_DEFINE(n);					\
-	static const struct qdec_sam_dev_cfg qdec##n##_sam_config = {	\
-		.regs = (Tc *)DT_REG_ADDR(DT_INST_PARENT(n)),		\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
-		.clock_cfg = SAM_DT_CLOCKS_PMC_CFG(DT_INST_PARENT(n)),	\
-	};								\
-									\
-	static struct qdec_sam_dev_data qdec##n##_sam_data;		\
-									\
-	SENSOR_DEVICE_DT_INST_DEFINE(n, qdec_sam_initialize, NULL,	\
-			    &qdec##n##_sam_data, &qdec##n##_sam_config, \
-			    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,	\
-			    &qdec_sam_driver_api);
+#define QDEC_SAM_INIT(n)                                                                           \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	static const struct qdec_sam_dev_cfg qdec##n##_sam_config = {                              \
+		.regs = (Tc *)DT_REG_ADDR(DT_INST_PARENT(n)),                                      \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+		.clock_cfg = SAM_DT_CLOCKS_PMC_CFG(DT_INST_PARENT(n)),                             \
+	};                                                                                         \
+                                                                                                   \
+	static struct qdec_sam_dev_data qdec##n##_sam_data;                                        \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, qdec_sam_initialize, NULL, &qdec##n##_sam_data,            \
+				     &qdec##n##_sam_config, POST_KERNEL,                           \
+				     CONFIG_SENSOR_INIT_PRIORITY, &qdec_sam_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(QDEC_SAM_INIT)

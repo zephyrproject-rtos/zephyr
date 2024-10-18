@@ -20,15 +20,12 @@ struct mcux_entropy_config {
 
 static caam_job_ring_interface_t jrif0 __attribute__((__section__(".nocache")));
 static uint8_t rng_buff_pool[CONFIG_ENTRY_MCUX_CAAM_POOL_SIZE]
-					__attribute__((__section__(".nocache")));
-
+	__attribute__((__section__(".nocache")));
 
 /* This semaphore is needed to prevent race condition to static variables in the HAL driver */
 K_SEM_DEFINE(mcux_caam_sem, 1, 1)
 
-static int entropy_mcux_caam_get_entropy(const struct device *dev,
-					 uint8_t *buffer,
-					 uint16_t length)
+static int entropy_mcux_caam_get_entropy(const struct device *dev, uint8_t *buffer, uint16_t length)
 {
 	const struct mcux_entropy_config *config = dev->config;
 	status_t status;
@@ -53,9 +50,9 @@ static int entropy_mcux_caam_get_entropy(const struct device *dev,
 			return ret;
 		}
 
-		status = CAAM_RNG_GetRandomData(
-				config->base, &handle, kCAAM_RngStateHandle0,
-				&rng_buff_pool[0], read_length, kCAAM_RngDataAny, NULL);
+		status = CAAM_RNG_GetRandomData(config->base, &handle, kCAAM_RngStateHandle0,
+						&rng_buff_pool[0], read_length, kCAAM_RngDataAny,
+						NULL);
 
 		k_sem_give(&mcux_caam_sem);
 
@@ -67,12 +64,10 @@ static int entropy_mcux_caam_get_entropy(const struct device *dev,
 }
 
 static const struct entropy_driver_api entropy_mcux_caam_api_funcs = {
-	.get_entropy = entropy_mcux_caam_get_entropy
-};
+	.get_entropy = entropy_mcux_caam_get_entropy};
 
 static const struct mcux_entropy_config entropy_mcux_config = {
-	.base = (CAAM_Type *)DT_INST_REG_ADDR(0)
-};
+	.base = (CAAM_Type *)DT_INST_REG_ADDR(0)};
 
 static int entropy_mcux_caam_init(const struct device *dev)
 {
@@ -93,8 +88,5 @@ static int entropy_mcux_caam_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0,
-		    entropy_mcux_caam_init, NULL, NULL,
-		    &entropy_mcux_config,
-		    PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
-		    &entropy_mcux_caam_api_funcs);
+DEVICE_DT_INST_DEFINE(0, entropy_mcux_caam_init, NULL, NULL, &entropy_mcux_config, PRE_KERNEL_1,
+		      CONFIG_ENTROPY_INIT_PRIORITY, &entropy_mcux_caam_api_funcs);

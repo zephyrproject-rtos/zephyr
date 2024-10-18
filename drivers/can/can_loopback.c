@@ -41,18 +41,15 @@ struct can_loopback_data {
 	char msgq_buffer[CONFIG_CAN_LOOPBACK_TX_MSGQ_SIZE * sizeof(struct can_loopback_frame)];
 	struct k_thread tx_thread_data;
 
-	K_KERNEL_STACK_MEMBER(tx_thread_stack,
-		      CONFIG_CAN_LOOPBACK_TX_THREAD_STACK_SIZE);
+	K_KERNEL_STACK_MEMBER(tx_thread_stack, CONFIG_CAN_LOOPBACK_TX_THREAD_STACK_SIZE);
 };
 
-static void receive_frame(const struct device *dev,
-			  const struct can_frame *frame,
+static void receive_frame(const struct device *dev, const struct can_frame *frame,
 			  struct can_loopback_filter *filter)
 {
 	struct can_frame frame_tmp = *frame;
 
-	LOG_DBG("Receiving %d bytes. Id: 0x%x, ID type: %s %s",
-		frame->dlc, frame->id,
+	LOG_DBG("Receiving %d bytes. Id: 0x%x, ID type: %s %s", frame->dlc, frame->id,
 		(frame->flags & CAN_FRAME_IDE) != 0 ? "extended" : "standard",
 		(frame->flags & CAN_FRAME_RTR) != 0 ? ", RTR frame" : "");
 
@@ -102,24 +99,21 @@ static void tx_thread(void *arg1, void *arg2, void *arg3)
 	}
 }
 
-static int can_loopback_send(const struct device *dev,
-			     const struct can_frame *frame,
-			     k_timeout_t timeout, can_tx_callback_t callback,
-			     void *user_data)
+static int can_loopback_send(const struct device *dev, const struct can_frame *frame,
+			     k_timeout_t timeout, can_tx_callback_t callback, void *user_data)
 {
 	struct can_loopback_data *data = dev->data;
 	struct can_loopback_frame loopback_frame;
 	uint8_t max_dlc = CAN_MAX_DLC;
 	int ret;
 
-	LOG_DBG("Sending %d bytes on %s. Id: 0x%x, ID type: %s %s",
-		frame->dlc, dev->name, frame->id,
-		(frame->flags & CAN_FRAME_IDE) != 0 ? "extended" : "standard",
+	LOG_DBG("Sending %d bytes on %s. Id: 0x%x, ID type: %s %s", frame->dlc, dev->name,
+		frame->id, (frame->flags & CAN_FRAME_IDE) != 0 ? "extended" : "standard",
 		(frame->flags & CAN_FRAME_RTR) != 0 ? ", RTR frame" : "");
 
 #ifdef CONFIG_CAN_FD_MODE
-	if ((frame->flags & ~(CAN_FRAME_IDE | CAN_FRAME_RTR |
-		CAN_FRAME_FDF | CAN_FRAME_BRS)) != 0) {
+	if ((frame->flags & ~(CAN_FRAME_IDE | CAN_FRAME_RTR | CAN_FRAME_FDF | CAN_FRAME_BRS)) !=
+	    0) {
 		LOG_ERR("unsupported CAN frame flags 0x%02x", frame->flags);
 		return -ENOTSUP;
 	}
@@ -131,7 +125,7 @@ static int can_loopback_send(const struct device *dev,
 
 		max_dlc = CANFD_MAX_DLC;
 	}
-#else /* CONFIG_CAN_FD_MODE */
+#else  /* CONFIG_CAN_FD_MODE */
 	if ((frame->flags & ~(CAN_FRAME_IDE | CAN_FRAME_RTR)) != 0) {
 		LOG_ERR("unsupported CAN frame flags 0x%02x", frame->flags);
 		return -ENOTSUP;
@@ -160,7 +154,6 @@ static int can_loopback_send(const struct device *dev,
 	return 0;
 }
 
-
 static inline int get_free_filter(struct can_loopback_filter *filters)
 {
 	for (int i = 0; i < CONFIG_CAN_MAX_FILTER; i++) {
@@ -172,8 +165,8 @@ static inline int get_free_filter(struct can_loopback_filter *filters)
 	return -ENOSPC;
 }
 
-static int can_loopback_add_rx_filter(const struct device *dev, can_rx_callback_t cb,
-				      void *cb_arg, const struct can_filter *filter)
+static int can_loopback_add_rx_filter(const struct device *dev, can_rx_callback_t cb, void *cb_arg,
+				      const struct can_filter *filter)
 {
 	struct can_loopback_data *data = dev->data;
 	struct can_loopback_filter *loopback_filter;
@@ -288,8 +281,7 @@ static int can_loopback_set_mode(const struct device *dev, can_mode_t mode)
 	return 0;
 }
 
-static int can_loopback_set_timing(const struct device *dev,
-				   const struct can_timing *timing)
+static int can_loopback_set_timing(const struct device *dev, const struct can_timing *timing)
 {
 	struct can_loopback_data *data = dev->data;
 
@@ -303,8 +295,7 @@ static int can_loopback_set_timing(const struct device *dev,
 }
 
 #ifdef CONFIG_CAN_FD_MODE
-static int can_loopback_set_timing_data(const struct device *dev,
-					const struct can_timing *timing)
+static int can_loopback_set_timing_data(const struct device *dev, const struct can_timing *timing)
 {
 	struct can_loopback_data *data = dev->data;
 
@@ -340,8 +331,7 @@ static int can_loopback_get_state(const struct device *dev, enum can_state *stat
 }
 
 static void can_loopback_set_state_change_callback(const struct device *dev,
-						   can_state_change_callback_t cb,
-						   void *user_data)
+						   can_state_change_callback_t cb, void *user_data)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(cb);
@@ -379,37 +369,16 @@ static const struct can_driver_api can_loopback_driver_api = {
 	.get_core_clock = can_loopback_get_core_clock,
 	.get_max_filters = can_loopback_get_max_filters,
 	/* Recommended configuration ranges from CiA 601-2 */
-	.timing_min = {
-		.sjw = 1,
-		.prop_seg = 0,
-		.phase_seg1 = 2,
-		.phase_seg2 = 2,
-		.prescaler = 1
-	},
-	.timing_max = {
-		.sjw = 128,
-		.prop_seg = 0,
-		.phase_seg1 = 256,
-		.phase_seg2 = 128,
-		.prescaler = 32
-	},
+	.timing_min = {.sjw = 1, .prop_seg = 0, .phase_seg1 = 2, .phase_seg2 = 2, .prescaler = 1},
+	.timing_max =
+		{.sjw = 128, .prop_seg = 0, .phase_seg1 = 256, .phase_seg2 = 128, .prescaler = 32},
 #ifdef CONFIG_CAN_FD_MODE
 	.set_timing_data = can_loopback_set_timing_data,
 	/* Recommended configuration ranges from CiA 601-2 */
-	.timing_data_min = {
-		.sjw = 1,
-		.prop_seg = 0,
-		.phase_seg1 = 1,
-		.phase_seg2 = 1,
-		.prescaler = 1
-	},
-	.timing_data_max = {
-		.sjw = 16,
-		.prop_seg = 0,
-		.phase_seg1 = 32,
-		.phase_seg2 = 16,
-		.prescaler = 32
-	},
+	.timing_data_min =
+		{.sjw = 1, .prop_seg = 0, .phase_seg1 = 1, .phase_seg2 = 1, .prescaler = 1},
+	.timing_data_max =
+		{.sjw = 16, .prop_seg = 0, .phase_seg1 = 32, .phase_seg2 = 16, .prescaler = 32},
 #endif /* CONFIG_CAN_FD_MODE */
 };
 
@@ -428,10 +397,9 @@ static int can_loopback_init(const struct device *dev)
 		    CONFIG_CAN_LOOPBACK_TX_MSGQ_SIZE);
 
 	tx_tid = k_thread_create(&data->tx_thread_data, data->tx_thread_stack,
-				 K_KERNEL_STACK_SIZEOF(data->tx_thread_stack),
-				 tx_thread, (void *)dev, NULL, NULL,
-				 CONFIG_CAN_LOOPBACK_TX_THREAD_PRIORITY,
-				 0, K_NO_WAIT);
+				 K_KERNEL_STACK_SIZEOF(data->tx_thread_stack), tx_thread,
+				 (void *)dev, NULL, NULL, CONFIG_CAN_LOOPBACK_TX_THREAD_PRIORITY, 0,
+				 K_NO_WAIT);
 	if (!tx_tid) {
 		LOG_ERR("ERROR spawning tx thread");
 		return -1;
@@ -448,17 +416,15 @@ static int can_loopback_init(const struct device *dev)
 #define CAN_LOOPBACK_MAX_BITRATE 1000000
 #endif /* !CONFIG_CAN_FD_MODE */
 
-#define CAN_LOOPBACK_INIT(inst)									\
-	static const struct can_loopback_config can_loopback_config_##inst = {			\
-		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0, CAN_LOOPBACK_MAX_BITRATE),	\
-	};											\
-												\
-	static struct can_loopback_data can_loopback_data_##inst;				\
-												\
-	CAN_DEVICE_DT_INST_DEFINE(inst, can_loopback_init, NULL,				\
-				  &can_loopback_data_##inst,					\
-				  &can_loopback_config_##inst,					\
-				  POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,			\
-				  &can_loopback_driver_api);
+#define CAN_LOOPBACK_INIT(inst)                                                                    \
+	static const struct can_loopback_config can_loopback_config_##inst = {                     \
+		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0, CAN_LOOPBACK_MAX_BITRATE),        \
+	};                                                                                         \
+                                                                                                   \
+	static struct can_loopback_data can_loopback_data_##inst;                                  \
+                                                                                                   \
+	CAN_DEVICE_DT_INST_DEFINE(inst, can_loopback_init, NULL, &can_loopback_data_##inst,        \
+				  &can_loopback_config_##inst, POST_KERNEL,                        \
+				  CONFIG_CAN_INIT_PRIORITY, &can_loopback_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_LOOPBACK_INIT)

@@ -278,18 +278,18 @@ fail:
 static const struct mipi_dbi_driver_api mipi_dbi_bitbang_driver_api = {
 	.reset = mipi_dbi_bitbang_reset,
 	.command_write = mipi_dbi_bitbang_command_write,
-	.write_display = mipi_dbi_bitbang_write_display
-};
+	.write_display = mipi_dbi_bitbang_write_display};
 
 /* This macro is repeatedly called by LISTIFY() at compile-time to generate the data bus LUT */
-#define LUT_GEN(i, n) (((i & (1 << 0)) ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 0)) : 0) |   \
-		       ((i & (1 << 1)) ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 1)) : 0) |   \
-		       ((i & (1 << 2)) ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 2)) : 0) |   \
-		       ((i & (1 << 3)) ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 3)) : 0) |   \
-		       ((i & (1 << 4)) ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 4)) : 0) |   \
-		       ((i & (1 << 5)) ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 5)) : 0) |   \
-		       ((i & (1 << 6)) ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 6)) : 0) |   \
-		       ((i & (1 << 7)) ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 7)) : 0))
+#define LUT_GEN(i, n)                                                                              \
+	(((i & (1 << 0)) ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 0)) : 0) |                 \
+	 ((i & (1 << 1)) ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 1)) : 0) |                 \
+	 ((i & (1 << 2)) ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 2)) : 0) |                 \
+	 ((i & (1 << 3)) ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 3)) : 0) |                 \
+	 ((i & (1 << 4)) ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 4)) : 0) |                 \
+	 ((i & (1 << 5)) ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 5)) : 0) |                 \
+	 ((i & (1 << 6)) ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 6)) : 0) |                 \
+	 ((i & (1 << 7)) ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 7)) : 0))
 
 /* If at least one instance has an 8-bit bus, add a data look-up table to the read-only config.
  * Whether or not it is valid and actually used for a particular instance is decided at runtime
@@ -297,15 +297,15 @@ static const struct mipi_dbi_driver_api mipi_dbi_bitbang_driver_api = {
  */
 #if MIPI_DBI_8_BIT_MODE
 #define DATA_LUT_OPTIMIZATION(n)                                                                   \
-		.data_lut = { LISTIFY(256, LUT_GEN, (,), n) },                                     \
-		.data_mask = ((1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 0)) |                   \
-			      (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 1)) |                   \
-			      (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 2)) |                   \
-			      (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 3)) |                   \
-			      (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 4)) |                   \
-			      (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 5)) |                   \
-			      (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 6)) |                   \
-			      (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 7)))
+	.data_lut = {LISTIFY(256, LUT_GEN, (,), n) },                                                 \
+		     .data_mask = ((1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 0)) |              \
+				   (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 1)) |              \
+				   (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 2)) |              \
+				   (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 3)) |              \
+				   (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 4)) |              \
+				   (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 5)) |              \
+				   (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 6)) |              \
+				   (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 7)))
 #else
 #define DATA_LUT_OPTIMIZATION(n)
 #endif
@@ -335,8 +335,7 @@ static const struct mipi_dbi_driver_api mipi_dbi_bitbang_driver_api = {
 		.cs = GPIO_DT_SPEC_INST_GET_OR(n, cs_gpios, {}),                                   \
 		.cmd_data = GPIO_DT_SPEC_INST_GET_OR(n, dc_gpios, {}),                             \
 		.reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {}),                             \
-		DATA_LUT_OPTIMIZATION(n)                                                           \
-	};                                                                                         \
+		DATA_LUT_OPTIMIZATION(n)};                                                         \
 	BUILD_ASSERT(DT_INST_PROP_LEN(n, data_gpios) < MIPI_DBI_MAX_DATA_BUS_WIDTH,                \
 		     "Number of data GPIOs in DT exceeds MIPI_DBI_MAX_DATA_BUS_WIDTH");            \
 	static struct mipi_dbi_bitbang_data mipi_dbi_bitbang_data_##n;                             \

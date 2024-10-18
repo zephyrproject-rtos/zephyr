@@ -81,8 +81,7 @@ void sx126x_set_tx_params(int8_t power, RadioRampTimes_t ramp_time)
 		 * Mismatch, see STM32WL Erratasheet
 		 */
 		SX126xWriteRegister(REG_TX_CLAMP_CFG,
-				    SX126xReadRegister(REG_TX_CLAMP_CFG)
-					| (0x0F << 1));
+				    SX126xReadRegister(REG_TX_CLAMP_CFG) | (0x0F << 1));
 
 		const int8_t max_power = DT_INST_PROP(0, rfo_hp_max_power);
 
@@ -125,9 +124,7 @@ static void radio_isr(const struct device *dev)
 
 int sx126x_variant_init(const struct device *dev)
 {
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    radio_isr, DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), radio_isr, DEVICE_DT_INST_GET(0), 0);
 	LL_EXTI_EnableIT_32_63(LL_EXTI_LINE_44);
 	irq_enable(DT_INST_IRQN(0));
 

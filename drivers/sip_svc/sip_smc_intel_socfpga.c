@@ -188,8 +188,7 @@ static void intel_sip_secure_monitor_call(const struct device *dev, unsigned lon
 	arm_smccc_smc(function_id, arg0, arg1, arg2, arg3, arg4, arg5, arg6, res);
 	end = k_cycle_get_64();
 
-	LOG_INF("Time taken for %08lx is %08lld ns", function_id,
-		k_cyc_to_ns_ceil64(end - start));
+	LOG_INF("Time taken for %08lx is %08lld ns", function_id, k_cyc_to_ns_ceil64(end - start));
 
 	LOG_DBG("After %s call", DT_PROP(DT_SIP_SMC, method));
 	LOG_DBG("\tres->a0           %08lx", res->a0);

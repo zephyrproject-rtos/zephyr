@@ -16,13 +16,10 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(ADT7420, CONFIG_SENSOR_LOG_LEVEL);
 
-static void setup_int(const struct device *dev,
-		      bool enable)
+static void setup_int(const struct device *dev, bool enable)
 {
 	const struct adt7420_dev_config *cfg = dev->config;
-	gpio_flags_t flags = enable
-		? GPIO_INT_EDGE_TO_ACTIVE
-		: GPIO_INT_DISABLE;
+	gpio_flags_t flags = enable ? GPIO_INT_EDGE_TO_ACTIVE : GPIO_INT_DISABLE;
 
 	gpio_pin_interrupt_configure_dt(&cfg->int_gpio, flags);
 }
@@ -47,8 +44,7 @@ static void process_int(const struct device *dev)
 	uint8_t status;
 
 	/* Clear the status */
-	if (i2c_reg_read_byte_dt(&cfg->i2c,
-				 ADT7420_REG_STATUS, &status) < 0) {
+	if (i2c_reg_read_byte_dt(&cfg->i2c, ADT7420_REG_STATUS, &status) < 0) {
 		return;
 	}
 
@@ -66,11 +62,9 @@ static void process_int(const struct device *dev)
 	}
 }
 
-static void adt7420_gpio_callback(const struct device *dev,
-				  struct gpio_callback *cb, uint32_t pins)
+static void adt7420_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	struct adt7420_data *drv_data =
-		CONTAINER_OF(cb, struct adt7420_data, gpio_cb);
+	struct adt7420_data *drv_data = CONTAINER_OF(cb, struct adt7420_data, gpio_cb);
 
 	handle_int(drv_data->dev);
 }
@@ -92,15 +86,13 @@ static void adt7420_thread(void *p1, void *p2, void *p3)
 #elif defined(CONFIG_ADT7420_TRIGGER_GLOBAL_THREAD)
 static void adt7420_work_cb(struct k_work *work)
 {
-	struct adt7420_data *drv_data =
-		CONTAINER_OF(work, struct adt7420_data, work);
+	struct adt7420_data *drv_data = CONTAINER_OF(work, struct adt7420_data, work);
 
 	process_int(drv_data->dev);
 }
 #endif
 
-int adt7420_trigger_set(const struct device *dev,
-			const struct sensor_trigger *trig,
+int adt7420_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
 	struct adt7420_data *drv_data = dev->data;
@@ -141,14 +133,11 @@ int adt7420_init_interrupt(const struct device *dev)
 	int rc;
 
 	if (!gpio_is_ready_dt(&cfg->int_gpio)) {
-		LOG_ERR("%s: device %s is not ready", dev->name,
-			cfg->int_gpio.port->name);
+		LOG_ERR("%s: device %s is not ready", dev->name, cfg->int_gpio.port->name);
 		return -ENODEV;
 	}
 
-	gpio_init_callback(&drv_data->gpio_cb,
-			   adt7420_gpio_callback,
-			   BIT(cfg->int_gpio.pin));
+	gpio_init_callback(&drv_data->gpio_cb, adt7420_gpio_callback, BIT(cfg->int_gpio.pin));
 
 	rc = gpio_pin_configure_dt(&cfg->int_gpio, GPIO_INPUT | cfg->int_gpio.dt_flags);
 	if (rc < 0) {
@@ -165,11 +154,9 @@ int adt7420_init_interrupt(const struct device *dev)
 #if defined(CONFIG_ADT7420_TRIGGER_OWN_THREAD)
 	k_sem_init(&drv_data->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
-	k_thread_create(&drv_data->thread, drv_data->thread_stack,
-			CONFIG_ADT7420_THREAD_STACK_SIZE,
-			adt7420_thread, drv_data,
-			NULL, NULL, K_PRIO_COOP(CONFIG_ADT7420_THREAD_PRIORITY),
-			0, K_NO_WAIT);
+	k_thread_create(&drv_data->thread, drv_data->thread_stack, CONFIG_ADT7420_THREAD_STACK_SIZE,
+			adt7420_thread, drv_data, NULL, NULL,
+			K_PRIO_COOP(CONFIG_ADT7420_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_ADT7420_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = adt7420_work_cb;
 #endif

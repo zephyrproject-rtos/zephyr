@@ -19,8 +19,8 @@
 LOG_MODULE_REGISTER(w1, CONFIG_W1_LOG_LEVEL);
 
 #define W1_SEARCH_DISCREPANCY_INIT 0
-#define W1_SEARCH_LAST_SLAVE	   65
-#define W1_SEARCH_NO_SLAVE	   66
+#define W1_SEARCH_LAST_SLAVE       65
+#define W1_SEARCH_NO_SLAVE         66
 
 /* @brief Search bus for next slave.
  *
@@ -59,9 +59,8 @@ LOG_MODULE_REGISTER(w1, CONFIG_W1_LOG_LEVEL);
  * @retval 0      If successful.
  * @retval -errno Negative error code in case of 1-wire read/write error.
  */
-static int search_slave(const struct device *dev, uint8_t command,
-			 uint8_t family, size_t *last_discrepancy,
-			 uint64_t *rom_inv_64)
+static int search_slave(const struct device *dev, uint8_t command, uint8_t family,
+			size_t *last_discrepancy, uint64_t *rom_inv_64)
 {
 	int ret;
 	size_t next_discrepancy;
@@ -69,8 +68,7 @@ static int search_slave(const struct device *dev, uint8_t command,
 	bool last_complement_id_bit;
 
 	ARG_UNUSED(family);
-	__ASSERT_NO_MSG(command == W1_CMD_SEARCH_ROM ||
-			command == W1_CMD_SEARCH_ALARM);
+	__ASSERT_NO_MSG(command == W1_CMD_SEARCH_ROM || command == W1_CMD_SEARCH_ALARM);
 
 	ret = w1_reset_bus(dev);
 	if (ret < 0) {
@@ -154,21 +152,19 @@ static int search_slave(const struct device *dev, uint8_t command,
 	return 0;
 }
 
-int z_impl_w1_search_bus(const struct device *dev, uint8_t command,
-			 uint8_t family, w1_search_callback_t callback,
-			 void *user_data)
+int z_impl_w1_search_bus(const struct device *dev, uint8_t command, uint8_t family,
+			 w1_search_callback_t callback, void *user_data)
 {
 	size_t last_discrepancy = W1_SEARCH_DISCREPANCY_INIT;
 	uint64_t found_rom_inv_64 = 0;
-	struct w1_rom found_rom = { 0 };
+	struct w1_rom found_rom = {0};
 	int found_cnt = 0;
 	int ret;
 
 	(void)w1_lock_bus(dev);
 
 	do {
-		ret = search_slave(dev, command, family, &last_discrepancy,
-				    &found_rom_inv_64);
+		ret = search_slave(dev, command, family, &last_discrepancy, &found_rom_inv_64);
 		if (ret < 0) {
 			found_cnt = ret;
 			break;
@@ -188,8 +184,7 @@ int z_impl_w1_search_bus(const struct device *dev, uint8_t command,
 		} else {
 			*(uint64_t *)&found_rom = found_rom_inv_64;
 		}
-		LOG_DBG("ROM found: nr %u, %016llx", found_cnt,
-			w1_rom_to_uint64(&found_rom));
+		LOG_DBG("ROM found: nr %u, %016llx", found_cnt, w1_rom_to_uint64(&found_rom));
 
 		if (callback != NULL) {
 			callback(found_rom, user_data);
@@ -364,8 +359,8 @@ int w1_reset_select(const struct device *dev, const struct w1_slave_config *conf
 }
 
 static int write_read(const struct device *dev, const struct w1_slave_config *config,
-		      const uint8_t *write_buf, size_t write_len,
-		      uint8_t *read_buf, size_t read_len)
+		      const uint8_t *write_buf, size_t write_len, uint8_t *read_buf,
+		      size_t read_len)
 {
 	int ret;
 
@@ -386,8 +381,7 @@ static int write_read(const struct device *dev, const struct w1_slave_config *co
 };
 
 int w1_write_read(const struct device *dev, const struct w1_slave_config *config,
-		  const uint8_t *write_buf, size_t write_len,
-		  uint8_t *read_buf, size_t read_len)
+		  const uint8_t *write_buf, size_t write_len, uint8_t *read_buf, size_t read_len)
 {
 	int ret;
 

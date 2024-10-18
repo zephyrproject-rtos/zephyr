@@ -41,8 +41,8 @@
 
 LOG_MODULE_REGISTER(wdt_intel_adsp, CONFIG_WDT_LOG_LEVEL);
 
-#define DEV_NODE				DT_INST(0, DT_DRV_COMPAT)
-#define WDT_INTEL_ADSP_INTERRUPT_SUPPORT	DT_NODE_HAS_PROP(DEV_NODE, interrupts)
+#define DEV_NODE                         DT_INST(0, DT_DRV_COMPAT)
+#define WDT_INTEL_ADSP_INTERRUPT_SUPPORT DT_NODE_HAS_PROP(DEV_NODE, interrupts)
 
 /* Device run time data */
 struct intel_adsp_wdt_dev_data {
@@ -147,8 +147,7 @@ static void intel_adsp_wdt_isr(const struct device *dev)
 
 static int intel_adsp_wdt_init(const struct device *dev)
 {
-	const unsigned int reset_pulse_length =
-		ilog2(DT_PROP(DEV_NODE, reset_pulse_length)) - 1;
+	const unsigned int reset_pulse_length = ilog2(DT_PROP(DEV_NODE, reset_pulse_length)) - 1;
 	const struct intel_adsp_wdt_dev_cfg *const dev_config = dev->config;
 	struct intel_adsp_wdt_dev_data *const dev_data = dev->data;
 	unsigned int i;

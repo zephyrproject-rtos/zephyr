@@ -12,7 +12,7 @@
  */
 
 #define LOG_MODULE_NAME slip
-#define LOG_LEVEL CONFIG_SLIP_LOG_LEVEL
+#define LOG_LEVEL       CONFIG_SLIP_LOG_LEVEL
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
@@ -51,7 +51,7 @@ enum slip_state {
 
 static inline void slip_writeb(unsigned char c)
 {
-	uint8_t buf[1] = { c };
+	uint8_t buf[1] = {c};
 
 	uart_pipe_send(&buf[0], 1);
 }
@@ -114,8 +114,7 @@ int slip_send(const struct device *dev, struct net_pkt *pkt)
 			LOG_DBG("sent data %d bytes", buf->len);
 
 			if (buf->len) {
-				LOG_HEXDUMP_DBG(buf->data,
-						buf->len, "<slip ");
+				LOG_HEXDUMP_DBG(buf->data, buf->len, "<slip ");
 			}
 		}
 	}
@@ -134,8 +133,7 @@ static struct net_pkt *slip_poll_handler(struct slip_context *slip)
 	return NULL;
 }
 
-static inline struct net_if *get_iface(struct slip_context *context,
-				       uint16_t vlan_tag)
+static inline struct net_if *get_iface(struct slip_context *context, uint16_t vlan_tag)
 {
 #if defined(CONFIG_NET_VLAN)
 	struct net_if *iface;
@@ -185,8 +183,7 @@ static void process_msg(struct slip_context *slip)
 	slip->last = NULL;
 }
 
-static inline int slip_input_byte(struct slip_context *slip,
-				  unsigned char c)
+static inline int slip_input_byte(struct slip_context *slip, unsigned char c)
 {
 	switch (slip->state) {
 	case STATE_GARBAGE:
@@ -234,18 +231,15 @@ static inline int slip_input_byte(struct slip_context *slip,
 		if (!slip->first) {
 			slip->first = true;
 
-			slip->rx = net_pkt_rx_alloc_on_iface(slip->iface,
-							     K_NO_WAIT);
+			slip->rx = net_pkt_rx_alloc_on_iface(slip->iface, K_NO_WAIT);
 			if (!slip->rx) {
 				LOG_ERR("[%p] cannot allocate pkt", slip);
 				return 0;
 			}
 
-			slip->last = net_pkt_get_frag(slip->rx, SLIP_FRAG_LEN,
-						      K_NO_WAIT);
+			slip->last = net_pkt_get_frag(slip->rx, SLIP_FRAG_LEN, K_NO_WAIT);
 			if (!slip->last) {
-				LOG_ERR("[%p] cannot allocate 1st data buffer",
-					slip);
+				LOG_ERR("[%p] cannot allocate 1st data buffer", slip);
 				net_pkt_unref(slip->rx);
 				slip->rx = NULL;
 				return 0;
@@ -301,8 +295,7 @@ static inline int slip_input_byte(struct slip_context *slip,
 
 static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 {
-	struct slip_context *slip =
-		CONTAINER_OF(buf, struct slip_context, buf[0]);
+	struct slip_context *slip = CONTAINER_OF(buf, struct slip_context, buf[0]);
 	size_t i;
 
 	if (!slip->init_done) {
@@ -321,18 +314,15 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 				while (bytes && rx_buf) {
 					char msg[6 + 10 + 1];
 
-					snprintk(msg, sizeof(msg),
-						 ">slip %2d", count);
+					snprintk(msg, sizeof(msg), ">slip %2d", count);
 
-					LOG_HEXDUMP_DBG(rx_buf->data, rx_buf->len,
-							msg);
+					LOG_HEXDUMP_DBG(rx_buf->data, rx_buf->len, msg);
 
 					rx_buf = rx_buf->frags;
 					count++;
 				}
 
-				LOG_DBG("[%p] received data %d bytes", slip,
-					bytes);
+				LOG_DBG("[%p] received data %d bytes", slip, bytes);
 			}
 
 			process_msg(slip);
@@ -409,10 +399,8 @@ use_random_mac:
 		slip->mac_addr[4] = 0x53;
 		slip->mac_addr[5] = sys_rand8_get();
 	}
-	net_if_set_link_addr(iface, ll_addr->addr, ll_addr->len,
-			     NET_LINK_ETHERNET);
+	net_if_set_link_addr(iface, ll_addr->addr, ll_addr->len, NET_LINK_ETHERNET);
 }
-
 
 #if !defined(CONFIG_SLIP_TAP)
 static struct slip_context slip_context_data;
@@ -423,10 +411,10 @@ static const struct dummy_api slip_if_api = {
 	.send = slip_send,
 };
 
-#define _SLIP_L2_LAYER DUMMY_L2
+#define _SLIP_L2_LAYER    DUMMY_L2
 #define _SLIP_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(DUMMY_L2)
 
-NET_DEVICE_INIT(slip, CONFIG_SLIP_DRV_NAME, slip_init, NULL,
-		&slip_context_data, NULL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		&slip_if_api, _SLIP_L2_LAYER, _SLIP_L2_CTX_TYPE, _SLIP_MTU);
+NET_DEVICE_INIT(slip, CONFIG_SLIP_DRV_NAME, slip_init, NULL, &slip_context_data, NULL,
+		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &slip_if_api, _SLIP_L2_LAYER,
+		_SLIP_L2_CTX_TYPE, _SLIP_MTU);
 #endif

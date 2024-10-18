@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(mipi_dbi_lcdic, CONFIG_MIPI_DBI_LOG_LEVEL);
 enum lcdic_data_fmt {
 	LCDIC_DATA_FMT_BYTE = 0,
 	LCDIC_DATA_FMT_HALFWORD = 1, /* 2 byte */
-	LCDIC_DATA_FMT_WORD = 2, /* 4 byte */
+	LCDIC_DATA_FMT_WORD = 2,     /* 4 byte */
 };
 
 enum lcdic_cmd_dc {
@@ -35,7 +35,7 @@ enum lcdic_cmd_type {
 };
 
 /* Limit imposed by size of data length field in LCDIC command */
-#define LCDIC_MAX_XFER 0x40000
+#define LCDIC_MAX_XFER      0x40000
 /* Max reset width (in terms of Timer0_Period, see RST_CTRL register) */
 #define LCDIC_MAX_RST_WIDTH 0x3F
 
@@ -106,15 +106,11 @@ struct mipi_dbi_lcdic_data {
 #endif
 };
 
-#define LCDIC_ALL_INTERRUPTS \
-	(LCDIC_ICR_RFIFO_THRES_INTR_CLR_MASK | \
-	LCDIC_ICR_RFIFO_UNDERFLOW_INTR_CLR_MASK | \
-	LCDIC_ICR_TFIFO_THRES_INTR_CLR_MASK | \
-	LCDIC_ICR_TFIFO_OVERFLOW_INTR_CLR_MASK | \
-	LCDIC_ICR_TE_TO_INTR_CLR_MASK | \
-	LCDIC_ICR_CMD_TO_INTR_CLR_MASK | \
-	LCDIC_ICR_CMD_DONE_INTR_CLR_MASK | \
-	LCDIC_ICR_RST_DONE_INTR_CLR_MASK)
+#define LCDIC_ALL_INTERRUPTS                                                                       \
+	(LCDIC_ICR_RFIFO_THRES_INTR_CLR_MASK | LCDIC_ICR_RFIFO_UNDERFLOW_INTR_CLR_MASK |           \
+	 LCDIC_ICR_TFIFO_THRES_INTR_CLR_MASK | LCDIC_ICR_TFIFO_OVERFLOW_INTR_CLR_MASK |            \
+	 LCDIC_ICR_TE_TO_INTR_CLR_MASK | LCDIC_ICR_CMD_TO_INTR_CLR_MASK |                          \
+	 LCDIC_ICR_CMD_DONE_INTR_CLR_MASK | LCDIC_ICR_RST_DONE_INTR_CLR_MASK)
 
 /* RX and TX FIFO thresholds */
 #ifdef CONFIG_MIPI_DBI_NXP_LCDIC_DMA
@@ -151,7 +147,6 @@ static inline void mipi_dbi_lcdic_reset_state(const struct device *dev)
 	mipi_dbi_lcdic_reset_delay();
 }
 
-
 #ifdef CONFIG_MIPI_DBI_NXP_LCDIC_DMA
 
 /* Start DMA to send data using LCDIC TX FIFO */
@@ -183,12 +178,9 @@ static int mipi_dbi_lcdic_start_dma(const struct device *dev)
 		/* Second DMA block configuration sends unaligned block */
 		if (unaligned_len) {
 			stream->dma_cfg.block_count = 2;
-			stream->blk_cfg[0].next_block =
-						&stream->blk_cfg[1];
-			stream->blk_cfg[1].source_address =
-				(uint32_t)&data->unaligned_word;
-			stream->blk_cfg[1].dest_address =
-				(uint32_t)&config->base->TFIFO_WDATA;
+			stream->blk_cfg[0].next_block = &stream->blk_cfg[1];
+			stream->blk_cfg[1].source_address = (uint32_t)&data->unaligned_word;
+			stream->blk_cfg[1].dest_address = (uint32_t)&config->base->TFIFO_WDATA;
 			stream->blk_cfg[1].block_size = sizeof(uint32_t);
 		} else {
 			stream->dma_cfg.block_count = 1;
@@ -214,8 +206,8 @@ static int mipi_dbi_lcdic_start_dma(const struct device *dev)
 }
 
 /* DMA completion callback */
-static void mipi_dbi_lcdic_dma_callback(const struct device *dma_dev,
-	     void *user_data, uint32_t channel, int status)
+static void mipi_dbi_lcdic_dma_callback(const struct device *dma_dev, void *user_data,
+					uint32_t channel, int status)
 {
 	if (status < 0) {
 		LOG_ERR("DMA callback with error %d", status);
@@ -226,7 +218,7 @@ static void mipi_dbi_lcdic_dma_callback(const struct device *dma_dev,
 
 /* Configure LCDIC */
 static int mipi_dbi_lcdic_configure(const struct device *dev,
-				    const struct mipi_dbi_config  *dbi_config)
+				    const struct mipi_dbi_config *dbi_config)
 {
 	const struct mipi_dbi_lcdic_config *config = dev->config;
 	struct mipi_dbi_lcdic_data *data = dev->data;
@@ -246,7 +238,7 @@ static int mipi_dbi_lcdic_configure(const struct device *dev,
 
 	/* Set LCDIC clock frequency */
 	ret = clock_control_set_rate(config->clock_dev, config->clock_subsys,
-			(clock_control_subsys_rate_t)spi_cfg->frequency);
+				     (clock_control_subsys_rate_t)spi_cfg->frequency);
 	if (ret) {
 		LOG_ERR("Invalid clock frequency %d", spi_cfg->frequency);
 		return ret;
@@ -272,21 +264,18 @@ static int mipi_dbi_lcdic_configure(const struct device *dev,
 		reg &= ~LCDIC_CTRL_LCDIC_MD_MASK;
 	} else if (dbi_config->mode == MIPI_DBI_MODE_SPI_3WIRE) {
 		/* Select SPI 3 wire mode */
-		reg &= ~(LCDIC_CTRL_LCDIC_MD_MASK |
-			 LCDIC_CTRL_SPI_MD_MASK);
+		reg &= ~(LCDIC_CTRL_LCDIC_MD_MASK | LCDIC_CTRL_SPI_MD_MASK);
 	} else {
 		/* Unsupported mode */
 		return -ENOTSUP;
 	}
 	/* If using SPI mode, validate that half-duplex was requested */
-	if ((!(reg & LCDIC_CTRL_LCDIC_MD_MASK)) &&
-	    (!(spi_cfg->operation & SPI_HALF_DUPLEX))) {
+	if ((!(reg & LCDIC_CTRL_LCDIC_MD_MASK)) && (!(spi_cfg->operation & SPI_HALF_DUPLEX))) {
 		LOG_ERR("LCDIC only supports half duplex operation");
 		return -ENOTSUP;
 	}
 	/* Enable byte swapping if user requested it */
-	reg = (reg & ~LCDIC_CTRL_DAT_ENDIAN_MASK) |
-		LCDIC_CTRL_DAT_ENDIAN(!config->swap_bytes);
+	reg = (reg & ~LCDIC_CTRL_DAT_ENDIAN_MASK) | LCDIC_CTRL_DAT_ENDIAN(!config->swap_bytes);
 	/* Disable DMA */
 	reg &= ~LCDIC_CTRL_DMA_EN_MASK;
 	base->CTRL = reg;
@@ -295,22 +284,20 @@ static int mipi_dbi_lcdic_configure(const struct device *dev,
 	/* Setup SPI CPOL and CPHA selections */
 	reg = base->SPI_CTRL;
 	reg = (reg & ~LCDIC_SPI_CTRL_SDAT_ENDIAN_MASK) |
-		LCDIC_SPI_CTRL_SDAT_ENDIAN((spi_cfg->operation &
-					    SPI_TRANSFER_LSB) ? 1 : 0);
+	      LCDIC_SPI_CTRL_SDAT_ENDIAN((spi_cfg->operation & SPI_TRANSFER_LSB) ? 1 : 0);
 	reg = (reg & ~LCDIC_SPI_CTRL_CPHA_MASK) |
-		LCDIC_SPI_CTRL_CPHA((spi_cfg->operation & SPI_MODE_CPHA) ? 1 : 0);
+	      LCDIC_SPI_CTRL_CPHA((spi_cfg->operation & SPI_MODE_CPHA) ? 1 : 0);
 	reg = (reg & ~LCDIC_SPI_CTRL_CPOL_MASK) |
-		LCDIC_SPI_CTRL_CPOL((spi_cfg->operation & SPI_MODE_CPOL) ? 1 : 0);
+	      LCDIC_SPI_CTRL_CPOL((spi_cfg->operation & SPI_MODE_CPOL) ? 1 : 0);
 	base->SPI_CTRL = reg;
 
 	/*
 	 * Set 8080 control based on module properties. TRIW and TRAW are
 	 * set to their reset values
 	 */
-	base->I8080_CTRL1 = LCDIC_I8080_CTRL1_TRIW(0xf) |
-			LCDIC_I8080_CTRL1_TRAW(0xf) |
-			LCDIC_I8080_CTRL1_TWIW(config->write_inactive_min) |
-			LCDIC_I8080_CTRL1_TWAW(config->write_active_min);
+	base->I8080_CTRL1 = LCDIC_I8080_CTRL1_TRIW(0xf) | LCDIC_I8080_CTRL1_TRAW(0xf) |
+			    LCDIC_I8080_CTRL1_TWIW(config->write_inactive_min) |
+			    LCDIC_I8080_CTRL1_TWAW(config->write_active_min);
 
 	/* Enable the module */
 	base->CTRL |= LCDIC_CTRL_LCDIC_EN_MASK;
@@ -324,8 +311,7 @@ static int mipi_dbi_lcdic_configure(const struct device *dev,
 /* Gets unaligned word data from array. Return value will be a 4 byte
  * value containing the last unaligned section of the array data
  */
-static uint32_t mipi_dbi_lcdic_get_unaligned(const uint8_t *bytes,
-					     uint32_t buf_len)
+static uint32_t mipi_dbi_lcdic_get_unaligned(const uint8_t *bytes, uint32_t buf_len)
 {
 	uint32_t word = 0U;
 	uint8_t unaligned_len = buf_len & 0x3;
@@ -339,8 +325,8 @@ static uint32_t mipi_dbi_lcdic_get_unaligned(const uint8_t *bytes,
 }
 
 /* Fills the TX fifo with data. Returns number of bytes written. */
-static int mipi_dbi_lcdic_fill_tx(LCDIC_Type *base, const uint8_t *buf,
-				  uint32_t buf_len, uint32_t last_word)
+static int mipi_dbi_lcdic_fill_tx(LCDIC_Type *base, const uint8_t *buf, uint32_t buf_len,
+				  uint32_t last_word)
 {
 	uint32_t *word_buf = (uint32_t *)buf;
 	uint32_t bytes_written = 0U;
@@ -374,14 +360,10 @@ static int mipi_dbi_lcdic_fill_tx(LCDIC_Type *base, const uint8_t *buf,
 }
 
 /* Writes command word */
-static void mipi_dbi_lcdic_set_cmd(LCDIC_Type *base,
-				   enum lcdic_cmd_type dir,
-				   enum lcdic_cmd_dc dc,
-				   enum lcdic_data_fmt data_fmt,
-				   uint32_t buf_len)
+static void mipi_dbi_lcdic_set_cmd(LCDIC_Type *base, enum lcdic_cmd_type dir, enum lcdic_cmd_dc dc,
+				   enum lcdic_data_fmt data_fmt, uint32_t buf_len)
 {
 	union lcdic_trx_cmd cmd = {0};
-
 
 	/* TX FIFO will be clear, write command word */
 	cmd.bits.data_len = buf_len - 1;
@@ -429,8 +411,7 @@ static int mipi_dbi_lcdic_write_display(const struct device *dev,
 		 */
 		if (dev_data->cmd_bytes & 0x3) {
 			dev_data->unaligned_word = mipi_dbi_lcdic_get_unaligned(
-							dev_data->xfer_buf,
-							dev_data->cmd_bytes);
+				dev_data->xfer_buf, dev_data->cmd_bytes);
 		}
 
 		/* Save pixel format */
@@ -448,8 +429,7 @@ static int mipi_dbi_lcdic_write_display(const struct device *dev,
 		/* Use pixel format data width, so we can byte swap
 		 * if needed
 		 */
-		mipi_dbi_lcdic_set_cmd(base, LCDIC_TX, LCDIC_DATA,
-				       dev_data->pixel_fmt,
+		mipi_dbi_lcdic_set_cmd(base, LCDIC_TX, LCDIC_DATA, dev_data->pixel_fmt,
 				       dev_data->cmd_bytes);
 #ifdef CONFIG_MIPI_DBI_NXP_LCDIC_DMA
 		/* Enable command complete interrupt */
@@ -478,14 +458,11 @@ static int mipi_dbi_lcdic_write_display(const struct device *dev,
 out:
 	k_sem_give(&dev_data->lock);
 	return ret;
-
 }
 
 static int mipi_dbi_lcdic_write_cmd(const struct device *dev,
-				    const struct mipi_dbi_config *dbi_config,
-				    uint8_t cmd,
-				    const uint8_t *data,
-				    size_t data_len)
+				    const struct mipi_dbi_config *dbi_config, uint8_t cmd,
+				    const uint8_t *data, size_t data_len)
 {
 	const struct mipi_dbi_lcdic_config *config = dev->config;
 	struct mipi_dbi_lcdic_data *dev_data = dev->data;
@@ -507,8 +484,7 @@ static int mipi_dbi_lcdic_write_cmd(const struct device *dev,
 	mipi_dbi_lcdic_reset_state(dev);
 
 	/* Write command */
-	mipi_dbi_lcdic_set_cmd(base, LCDIC_TX, LCDIC_COMMAND,
-			       LCDIC_DATA_FMT_BYTE, 1);
+	mipi_dbi_lcdic_set_cmd(base, LCDIC_TX, LCDIC_COMMAND, LCDIC_DATA_FMT_BYTE, 1);
 	/* Use standard byte writes */
 	dev_data->pixel_fmt = LCDIC_DATA_FMT_BYTE;
 	base->TFIFO_WDATA = cmd;
@@ -529,24 +505,20 @@ static int mipi_dbi_lcdic_write_cmd(const struct device *dev,
 		 */
 		if (dev_data->cmd_bytes & 0x3) {
 			dev_data->unaligned_word = mipi_dbi_lcdic_get_unaligned(
-							dev_data->xfer_buf,
-							dev_data->cmd_bytes);
+				dev_data->xfer_buf, dev_data->cmd_bytes);
 		}
 		if (cmd == MIPI_DCS_WRITE_MEMORY_START) {
 			/* Use pixel format data width, so we can byte swap
 			 * if needed
 			 */
-			mipi_dbi_lcdic_set_cmd(base, LCDIC_TX, LCDIC_DATA,
-					       dev_data->pixel_fmt,
+			mipi_dbi_lcdic_set_cmd(base, LCDIC_TX, LCDIC_DATA, dev_data->pixel_fmt,
 					       dev_data->cmd_bytes);
 		} else {
-			mipi_dbi_lcdic_set_cmd(base, LCDIC_TX, LCDIC_DATA,
-					       LCDIC_DATA_FMT_BYTE,
+			mipi_dbi_lcdic_set_cmd(base, LCDIC_TX, LCDIC_DATA, LCDIC_DATA_FMT_BYTE,
 					       dev_data->cmd_bytes);
 		}
 #ifdef CONFIG_MIPI_DBI_NXP_LCDIC_DMA
-		if (((((uint32_t)dev_data->xfer_buf) & 0x3) == 0) ||
-		    (dev_data->cmd_bytes < 4)) {
+		if (((((uint32_t)dev_data->xfer_buf) & 0x3) == 0) || (dev_data->cmd_bytes < 4)) {
 			/* Data is aligned, we can use DMA */
 			/* Enable command complete interrupt */
 			interrupts |= LCDIC_IMR_CMD_DONE_INTR_MSK_MASK;
@@ -591,8 +563,7 @@ static int mipi_dbi_lcdic_reset(const struct device *dev, k_timeout_t delay)
 	 * Reset pulse width = (RST_WIDTH + 1) * Timer0_Period
 	 * Timer0_Period = 2^(TIMER_RATIO0) / LCDIC_Clock_Freq
 	 */
-	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
-				   &lcdic_freq)) {
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &lcdic_freq)) {
 		return -EIO;
 	}
 	rst_width = (delay_ms * (lcdic_freq)) / ((1 << LCDIC_TIMER0_RATIO) * MSEC_PER_SEC);
@@ -604,8 +575,7 @@ static int mipi_dbi_lcdic_reset(const struct device *dev, k_timeout_t delay)
 
 	/* Start the reset signal */
 	base->RST_CTRL = LCDIC_RST_CTRL_RST_WIDTH(rst_width - 1) |
-			LCDIC_RST_CTRL_RST_SEQ_NUM(pulse_cnt - 1) |
-			LCDIC_RST_CTRL_RST_START_MASK;
+			 LCDIC_RST_CTRL_RST_SEQ_NUM(pulse_cnt - 1) | LCDIC_RST_CTRL_RST_START_MASK;
 	/* Wait for reset to complete */
 	while ((base->IRSR & LCDIC_IRSR_RST_DONE_RAW_INTR_MASK) == 0) {
 		/* Spin */
@@ -613,8 +583,6 @@ static int mipi_dbi_lcdic_reset(const struct device *dev, k_timeout_t delay)
 	base->ICR |= LCDIC_ICR_RST_DONE_INTR_CLR_MASK;
 	return 0;
 }
-
-
 
 /* Initializes LCDIC peripheral */
 static int mipi_dbi_lcdic_init(const struct device *dev)
@@ -631,7 +599,7 @@ static int mipi_dbi_lcdic_init(const struct device *dev)
 
 	/* Set initial clock rate of 10 MHz */
 	ret = clock_control_set_rate(config->clock_dev, config->clock_subsys,
-			(clock_control_subsys_rate_t)MHZ(10));
+				     (clock_control_subsys_rate_t)MHZ(10));
 	if (ret) {
 		return ret;
 	}
@@ -658,23 +626,21 @@ static int mipi_dbi_lcdic_init(const struct device *dev)
 
 	/* Setup RX and TX fifo thresholds */
 	base->FIFO_CTRL = LCDIC_FIFO_CTRL_RFIFO_THRES(LCDIC_RX_FIFO_THRESH) |
-			LCDIC_FIFO_CTRL_TFIFO_THRES(LCDIC_TX_FIFO_THRESH);
+			  LCDIC_FIFO_CTRL_TFIFO_THRES(LCDIC_TX_FIFO_THRESH);
 	/* Disable command timeouts */
-	base->TO_CTRL &= ~(LCDIC_TO_CTRL_CMD_LONG_TO_MASK |
-			LCDIC_TO_CTRL_CMD_SHORT_TO_MASK);
+	base->TO_CTRL &= ~(LCDIC_TO_CTRL_CMD_LONG_TO_MASK | LCDIC_TO_CTRL_CMD_SHORT_TO_MASK);
 
 	/* Ensure LCDIC timer ratios are at reset values */
 	base->TIMER_CTRL = LCDIC_TIMER_CTRL_TIMER_RATIO1(LCDIC_TIMER1_RATIO) |
-			LCDIC_TIMER_CTRL_TIMER_RATIO0(LCDIC_TIMER0_RATIO);
+			   LCDIC_TIMER_CTRL_TIMER_RATIO0(LCDIC_TIMER0_RATIO);
 
 #ifdef CONFIG_MIPI_DBI_NXP_LCDIC_DMA
 	/* Attach the LCDIC DMA request signal to the DMA channel we will
 	 * use with hardware triggering.
 	 */
 	INPUTMUX_AttachSignal(INPUTMUX, data->dma_stream.channel,
-			kINPUTMUX_LcdTxRegToDmaSingleToDma0);
-	INPUTMUX_EnableSignal(INPUTMUX,
-			kINPUTMUX_Dmac0InputTriggerLcdTxRegToDmaSingleEna, true);
+			      kINPUTMUX_LcdTxRegToDmaSingleToDma0);
+	INPUTMUX_EnableSignal(INPUTMUX, kINPUTMUX_Dmac0InputTriggerLcdTxRegToDmaSingleEna, true);
 #endif
 
 	return 0;
@@ -713,20 +679,17 @@ static void mipi_dbi_lcdic_isr(const struct device *dev)
 		} else {
 			/* Command done. Queue next command */
 			data->cmd_bytes = MIN(data->xfer_bytes, LCDIC_MAX_XFER);
-			mipi_dbi_lcdic_set_cmd(base, LCDIC_TX, LCDIC_DATA,
-					       LCDIC_DATA_FMT_BYTE,
+			mipi_dbi_lcdic_set_cmd(base, LCDIC_TX, LCDIC_DATA, LCDIC_DATA_FMT_BYTE,
 					       data->cmd_bytes);
 			if (data->cmd_bytes & 0x3) {
 				/* Save unaligned portion of transfer into
 				 * a temporary buffer
 				 */
 				data->unaligned_word = mipi_dbi_lcdic_get_unaligned(
-								data->xfer_buf,
-								data->cmd_bytes);
+					data->xfer_buf, data->cmd_bytes);
 			}
 #ifdef CONFIG_MIPI_DBI_NXP_LCDIC_DMA
-			if (((((uint32_t)data->xfer_buf) & 0x3) == 0) ||
-			    (data->cmd_bytes < 4)) {
+			if (((((uint32_t)data->xfer_buf) & 0x3) == 0) || (data->cmd_bytes < 4)) {
 				/* Data is aligned. We can use DMA */
 				mipi_dbi_lcdic_start_dma(dev);
 			} else
@@ -750,9 +713,8 @@ static void mipi_dbi_lcdic_isr(const struct device *dev)
 		/* If command is not done, continue filling TX FIFO from
 		 * current transfer buffer
 		 */
-		bytes_written = mipi_dbi_lcdic_fill_tx(base, data->xfer_buf,
-						      data->cmd_bytes,
-						      data->unaligned_word);
+		bytes_written = mipi_dbi_lcdic_fill_tx(base, data->xfer_buf, data->cmd_bytes,
+						       data->unaligned_word);
 		if (bytes_written > 0) {
 			data->xfer_buf += bytes_written;
 			data->cmd_bytes -= bytes_written;
@@ -762,60 +724,48 @@ static void mipi_dbi_lcdic_isr(const struct device *dev)
 }
 
 #ifdef CONFIG_MIPI_DBI_NXP_LCDIC_DMA
-#define LCDIC_DMA_CHANNELS(n)						\
-	.dma_stream = {							\
-		.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR(n)),		\
-		.channel = DT_INST_DMAS_CELL_BY_IDX(n, 0, channel),	\
-		.dma_cfg = {						\
-			.dma_slot = LPC_DMA_HWTRIG_EN |			\
-				LPC_DMA_TRIGPOL_HIGH_RISING |		\
-				LPC_DMA_TRIGBURST,			\
-			.channel_direction = MEMORY_TO_PERIPHERAL,	\
-			.dma_callback = mipi_dbi_lcdic_dma_callback,	\
-			.source_data_size = 4,				\
-			.dest_data_size = 4,				\
-			.user_data = (void *)DEVICE_DT_INST_GET(n),	\
-		},							\
+#define LCDIC_DMA_CHANNELS(n)                                                                      \
+	.dma_stream = {                                                                            \
+		.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR(n)),                                    \
+		.channel = DT_INST_DMAS_CELL_BY_IDX(n, 0, channel),                                \
+		.dma_cfg =                                                                         \
+			{                                                                          \
+				.dma_slot = LPC_DMA_HWTRIG_EN | LPC_DMA_TRIGPOL_HIGH_RISING |      \
+					    LPC_DMA_TRIGBURST,                                     \
+				.channel_direction = MEMORY_TO_PERIPHERAL,                         \
+				.dma_callback = mipi_dbi_lcdic_dma_callback,                       \
+				.source_data_size = 4,                                             \
+				.dest_data_size = 4,                                               \
+				.user_data = (void *)DEVICE_DT_INST_GET(n),                        \
+			},                                                                         \
 	},
 #else
 #define LCDIC_DMA_CHANNELS(n)
 #endif
 
-
-#define MIPI_DBI_LCDIC_INIT(n)						\
-	static void mipi_dbi_lcdic_config_func_##n(			\
-			const struct device *dev)			\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
-			    mipi_dbi_lcdic_isr,				\
-			    DEVICE_DT_INST_GET(n), 0);			\
-									\
-		irq_enable(DT_INST_IRQN(n));				\
-	}								\
-									\
-	PINCTRL_DT_INST_DEFINE(n);					\
-	static const struct mipi_dbi_lcdic_config			\
-	    mipi_dbi_lcdic_config_##n = {				\
-		.base = (LCDIC_Type *)DT_INST_REG_ADDR(n),		\
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
-		.clock_subsys = (clock_control_subsys_t)		\
-		    DT_INST_CLOCKS_CELL(n, name),			\
-		.irq_config_func = mipi_dbi_lcdic_config_func_##n,	\
-		.swap_bytes = DT_INST_PROP(n, nxp_swap_bytes),		\
-		.write_active_min =					\
-		    DT_INST_PROP(n, nxp_write_active_cycles),		\
-		.write_inactive_min =					\
-		    DT_INST_PROP(n, nxp_write_inactive_cycles),		\
-	};								\
-	static struct mipi_dbi_lcdic_data mipi_dbi_lcdic_data_##n = {	\
-		LCDIC_DMA_CHANNELS(n)					\
-	};								\
-	DEVICE_DT_INST_DEFINE(n, mipi_dbi_lcdic_init, NULL,		\
-			&mipi_dbi_lcdic_data_##n,			\
-			&mipi_dbi_lcdic_config_##n,			\
-			POST_KERNEL,					\
-			CONFIG_MIPI_DBI_INIT_PRIORITY,			\
-			&mipi_dbi_lcdic_driver_api);
+#define MIPI_DBI_LCDIC_INIT(n)                                                                     \
+	static void mipi_dbi_lcdic_config_func_##n(const struct device *dev)                       \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mipi_dbi_lcdic_isr,         \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+                                                                                                   \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+	}                                                                                          \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	static const struct mipi_dbi_lcdic_config mipi_dbi_lcdic_config_##n = {                    \
+		.base = (LCDIC_Type *)DT_INST_REG_ADDR(n),                                         \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
+		.irq_config_func = mipi_dbi_lcdic_config_func_##n,                                 \
+		.swap_bytes = DT_INST_PROP(n, nxp_swap_bytes),                                     \
+		.write_active_min = DT_INST_PROP(n, nxp_write_active_cycles),                      \
+		.write_inactive_min = DT_INST_PROP(n, nxp_write_inactive_cycles),                  \
+	};                                                                                         \
+	static struct mipi_dbi_lcdic_data mipi_dbi_lcdic_data_##n = {LCDIC_DMA_CHANNELS(n)};       \
+	DEVICE_DT_INST_DEFINE(n, mipi_dbi_lcdic_init, NULL, &mipi_dbi_lcdic_data_##n,              \
+			      &mipi_dbi_lcdic_config_##n, POST_KERNEL,                             \
+			      CONFIG_MIPI_DBI_INIT_PRIORITY, &mipi_dbi_lcdic_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MIPI_DBI_LCDIC_INIT)

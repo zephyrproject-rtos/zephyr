@@ -18,14 +18,12 @@ static int bme280_bus_check_i2c(const union bme280_bus *bus)
 	return device_is_ready(bus->i2c.bus) ? 0 : -ENODEV;
 }
 
-static int bme280_reg_read_i2c(const union bme280_bus *bus,
-			       uint8_t start, uint8_t *buf, int size)
+static int bme280_reg_read_i2c(const union bme280_bus *bus, uint8_t start, uint8_t *buf, int size)
 {
 	return i2c_burst_read_dt(&bus->i2c, start, buf, size);
 }
 
-static int bme280_reg_write_i2c(const union bme280_bus *bus,
-				uint8_t reg, uint8_t val)
+static int bme280_reg_write_i2c(const union bme280_bus *bus, uint8_t reg, uint8_t val)
 {
 	return i2c_reg_write_byte_dt(&bus->i2c, reg, val);
 }

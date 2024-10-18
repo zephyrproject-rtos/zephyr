@@ -22,62 +22,61 @@ LOG_MODULE_REGISTER(crypto_smartbond_crypto, CONFIG_CRYPTO_LOG_LEVEL);
 
 #define DT_DRV_COMPAT renesas_smartbond_crypto
 
-#define SMARTBOND_IRQN      DT_INST_IRQN(0)
-#define SMARTBOND_IRQ_PRIO  DT_INST_IRQ(0, priority)
+#define SMARTBOND_IRQN     DT_INST_IRQN(0)
+#define SMARTBOND_IRQ_PRIO DT_INST_IRQ(0, priority)
 
 #if defined(CONFIG_CRYPTO_ASYNC)
-#define CRYPTO_HW_CAPS  (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_ASYNC_OPS | CAP_NO_IV_PREFIX)
+#define CRYPTO_HW_CAPS (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_ASYNC_OPS | CAP_NO_IV_PREFIX)
 #else
-#define CRYPTO_HW_CAPS  (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | CAP_NO_IV_PREFIX)
+#define CRYPTO_HW_CAPS (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | CAP_NO_IV_PREFIX)
 #endif
 
-#define SWAP32(_w)   __REV(_w)
+#define SWAP32(_w) __REV(_w)
 
-#define CRYPTO_CTRL_REG_SET(_field, _val) \
-	AES_HASH->CRYPTO_CTRL_REG = \
-	(AES_HASH->CRYPTO_CTRL_REG & ~AES_HASH_CRYPTO_CTRL_REG_ ## _field ## _Msk) | \
-	((_val) << AES_HASH_CRYPTO_CTRL_REG_ ## _field ## _Pos)
+#define CRYPTO_CTRL_REG_SET(_field, _val)                                                          \
+	AES_HASH->CRYPTO_CTRL_REG =                                                                \
+		(AES_HASH->CRYPTO_CTRL_REG & ~AES_HASH_CRYPTO_CTRL_REG_##_field##_Msk) |           \
+		((_val) << AES_HASH_CRYPTO_CTRL_REG_##_field##_Pos)
 
-#define CRYPTO_CTRL_REG_GET(_field) \
-	((AES_HASH->CRYPTO_CTRL_REG & AES_HASH_CRYPTO_CTRL_REG_ ## _field ## _Msk) >> \
-	AES_HASH_CRYPTO_CTRL_REG_ ## _field ## _Pos)
-
+#define CRYPTO_CTRL_REG_GET(_field)                                                                \
+	((AES_HASH->CRYPTO_CTRL_REG & AES_HASH_CRYPTO_CTRL_REG_##_field##_Msk) >>                  \
+	 AES_HASH_CRYPTO_CTRL_REG_##_field##_Pos)
 
 struct crypto_smartbond_data {
-    /*
-     * Semaphore to provide mutual exlusion when a crypto session is requested.
-     */
+	/*
+	 * Semaphore to provide mutual exlusion when a crypto session is requested.
+	 */
 	struct k_sem session_sem;
 
-    /*
-     * Semaphore to provide mutual exlusion when a cryptographic task is requested.
-     * (a session should be requested at this point).
-     */
+	/*
+	 * Semaphore to provide mutual exlusion when a cryptographic task is requested.
+	 * (a session should be requested at this point).
+	 */
 	struct k_sem device_sem;
 #if defined(CONFIG_CRYPTO_ASYNC)
-    /*
-     * User-defined callbacks to be called upon completion of asynchronous
-     * cryptographic operations. Note that the AES and HASH modes can work
-     * complementary to each other.
-     */
+	/*
+	 * User-defined callbacks to be called upon completion of asynchronous
+	 * cryptographic operations. Note that the AES and HASH modes can work
+	 * complementary to each other.
+	 */
 	union {
 		cipher_completion_cb cipher_user_cb;
 		hash_completion_cb hash_user_cb;
 	};
 
-    /*
-     * Packet context should be stored during a session so that can be rertieved
-     * from within the crypto engine ISR context.
-     */
+	/*
+	 * Packet context should be stored during a session so that can be rertieved
+	 * from within the crypto engine ISR context.
+	 */
 	union {
 		struct cipher_pkt *cipher_pkt;
 		struct hash_pkt *hash_pkt;
 	};
 #else
-    /*
-     * Semaphore used to block for as long as a synchronous cryptographic operation
-     * is in progress.
-     */
+	/*
+	 * Semaphore used to block for as long as a synchronous cryptographic operation
+	 * is in progress.
+	 */
 	struct k_sem sync_sem;
 #endif
 };
@@ -96,7 +95,7 @@ static void smartbond_crypto_isr(const void *arg)
 	uint32_t status = AES_HASH->CRYPTO_STATUS_REG;
 
 	if (status & AES_HASH_CRYPTO_STATUS_REG_CRYPTO_IRQ_ST_Msk) {
-	    /* Clear interrupt source. Otherwise the handler will be fire constantly! */
+		/* Clear interrupt source. Otherwise the handler will be fire constantly! */
 		AES_HASH->CRYPTO_CLRIRQ_REG = 0x1;
 
 #if defined(CONFIG_CRYPTO_ASYNC)
@@ -188,11 +187,11 @@ static void crypto_smartbond_unlock_session(const struct device *dev)
  */
 static int crypto_smartbond_check_in_restrictions(uint16_t in_len)
 {
-#define CRYPTO_ALG_MD_ECB_MAGIC_0   0x00
-#define CRYPTO_ALG_MD_ECB_MAGIC_1   0x01
+#define CRYPTO_ALG_MD_ECB_MAGIC_0 0x00
+#define CRYPTO_ALG_MD_ECB_MAGIC_1 0x01
 
-	bool not_last_in_block = !!(AES_HASH->CRYPTO_CTRL_REG &
-						AES_HASH_CRYPTO_CTRL_REG_CRYPTO_MORE_IN_Msk);
+	bool not_last_in_block =
+		!!(AES_HASH->CRYPTO_CTRL_REG & AES_HASH_CRYPTO_CTRL_REG_CRYPTO_MORE_IN_Msk);
 
 	/* Define the slected crypto mode (AES/HASH). */
 	if (AES_HASH->CRYPTO_CTRL_REG & AES_HASH_CRYPTO_CTRL_REG_CRYPTO_HASH_SEL_Msk) {
@@ -209,7 +208,7 @@ static int crypto_smartbond_check_in_restrictions(uint16_t in_len)
 
 			/* Check if AES mode is ECB */
 			if (crypto_mode == CRYPTO_ALG_MD_ECB_MAGIC_0 ||
-							crypto_mode == CRYPTO_ALG_MD_ECB_MAGIC_1) {
+			    crypto_mode == CRYPTO_ALG_MD_ECB_MAGIC_1) {
 				return -EINVAL;
 			}
 		}
@@ -227,7 +226,7 @@ static int crypto_smartbond_hash_set_out_len(void)
 	uint32_t hash_algo = (AES_HASH->CRYPTO_CTRL_REG & AES_HASH_CRYPTO_CTRL_REG_CRYPTO_ALG_Msk);
 
 	if (AES_HASH->CRYPTO_CTRL_REG & AES_HASH_CRYPTO_CTRL_REG_CRYPTO_ALG_MD_Msk) {
-	    /* 64-bit HASH operations */
+		/* 64-bit HASH operations */
 		switch (hash_algo) {
 		case 0x0:
 			/* SHA-384: 0..47 --> 1..48 bytes */
@@ -249,7 +248,7 @@ static int crypto_smartbond_hash_set_out_len(void)
 			break;
 		}
 	} else {
-	    /* 32-bit HASH operations */
+		/* 32-bit HASH operations */
 		switch (hash_algo) {
 		case 0x0:
 			/* MD5: 0..15 --> 1..16 bytes */
@@ -278,7 +277,7 @@ static int crypto_smartbond_hash_set_out_len(void)
 
 static uint32_t crypto_smartbond_swap_word(uint8_t *data)
 {
-    /* Check word boundaries of given address and if possible accellerate swapping */
+	/* Check word boundaries of given address and if possible accellerate swapping */
 	if ((uint32_t)data & 0x3) {
 		return SWAP32(sys_get_le32(data));
 	} else {
@@ -296,10 +295,10 @@ static int crypto_smartbond_cipher_key_load(uint8_t *key, uint16_t key_len)
 
 	if (key_len == 32) {
 		AES_HASH->CRYPTO_CTRL_REG |=
-		(0x2 << AES_HASH_CRYPTO_CTRL_REG_CRYPTO_AES_KEY_SZ_Pos);
+			(0x2 << AES_HASH_CRYPTO_CTRL_REG_CRYPTO_AES_KEY_SZ_Pos);
 	} else if (key_len == 24) {
 		AES_HASH->CRYPTO_CTRL_REG |=
-		(0x1 << AES_HASH_CRYPTO_CTRL_REG_CRYPTO_AES_KEY_SZ_Pos);
+			(0x1 << AES_HASH_CRYPTO_CTRL_REG_CRYPTO_AES_KEY_SZ_Pos);
 	} else if (key_len == 16) {
 		/* Nothing to do */
 	} else {
@@ -319,8 +318,8 @@ static int crypto_smartbond_cipher_key_load(uint8_t *key, uint16_t key_len)
 
 		uint32_t cell_offset = da1469x_otp_address_to_cell_offset((uint32_t)key);
 
-		da1469x_otp_read(cell_offset,
-				(void *)&AES_HASH->CRYPTO_KEYS_START, (uint32_t)key_len);
+		da1469x_otp_read(cell_offset, (void *)&AES_HASH->CRYPTO_KEYS_START,
+				 (uint32_t)key_len);
 	} else {
 		volatile uint32_t *kmem_ptr = &AES_HASH->CRYPTO_KEYS_START;
 
@@ -337,9 +336,9 @@ static int crypto_smartbond_cipher_key_load(uint8_t *key, uint16_t key_len)
 static int crypto_smartbond_cipher_set_mode(enum cipher_mode mode)
 {
 	/* Select AES mode */
-	AES_HASH->CRYPTO_CTRL_REG &= ~(AES_HASH_CRYPTO_CTRL_REG_CRYPTO_ALG_MD_Msk  |
-						AES_HASH_CRYPTO_CTRL_REG_CRYPTO_ALG_Msk        |
-						AES_HASH_CRYPTO_CTRL_REG_CRYPTO_HASH_SEL_Msk);
+	AES_HASH->CRYPTO_CTRL_REG &= ~(AES_HASH_CRYPTO_CTRL_REG_CRYPTO_ALG_MD_Msk |
+				       AES_HASH_CRYPTO_CTRL_REG_CRYPTO_ALG_Msk |
+				       AES_HASH_CRYPTO_CTRL_REG_CRYPTO_HASH_SEL_Msk);
 	switch (mode) {
 	case CRYPTO_CIPHER_MODE_ECB:
 		/* Already done; CRYPTO_ALG_MD = 0x0 or 0x1 defines ECB. */
@@ -361,9 +360,9 @@ static int crypto_smartbond_hash_set_algo(enum hash_algo algo)
 {
 	/* Select HASH mode and reset to 32-bit mode */
 	AES_HASH->CRYPTO_CTRL_REG =
-			(AES_HASH->CRYPTO_CTRL_REG & ~(AES_HASH_CRYPTO_CTRL_REG_CRYPTO_ALG_Msk |
-						AES_HASH_CRYPTO_CTRL_REG_CRYPTO_ALG_MD_Msk)) |
-					AES_HASH_CRYPTO_CTRL_REG_CRYPTO_HASH_SEL_Msk;
+		(AES_HASH->CRYPTO_CTRL_REG & ~(AES_HASH_CRYPTO_CTRL_REG_CRYPTO_ALG_Msk |
+					       AES_HASH_CRYPTO_CTRL_REG_CRYPTO_ALG_MD_Msk)) |
+		AES_HASH_CRYPTO_CTRL_REG_CRYPTO_HASH_SEL_Msk;
 
 	switch (algo) {
 	case CRYPTO_HASH_ALGO_SHA224:
@@ -381,7 +380,7 @@ static int crypto_smartbond_hash_set_algo(enum hash_algo algo)
 	case CRYPTO_HASH_ALGO_SHA512:
 		/* CRYPTO_ALG_MD = 0x1 defines 64-bit operations */
 		AES_HASH->CRYPTO_CTRL_REG |= (AES_HASH_CRYPTO_CTRL_REG_CRYPTO_ALG_MD_Msk |
-						(0x1 << AES_HASH_CRYPTO_CTRL_REG_CRYPTO_ALG_Pos));
+					      (0x1 << AES_HASH_CRYPTO_CTRL_REG_CRYPTO_ALG_Pos));
 		break;
 	default:
 		return -EINVAL;
@@ -428,7 +427,7 @@ static int crypto_smartbond_set_in_out_buf(uint8_t *in_buf, uint8_t *out_buf, in
 		 * cached non-remapped SYSRAM.
 		 */
 		if (IS_SYSRAM_ADDRESS(out_buf) ||
-			(IS_REMAPPED_ADDRESS(out_buf) && remap_adr0 == 3)) {
+		    (IS_REMAPPED_ADDRESS(out_buf) && remap_adr0 == 3)) {
 			AES_HASH->CRYPTO_DEST_ADDR_REG = black_orca_phy_addr((uint32_t)out_buf);
 		} else {
 			return -EIO;
@@ -556,14 +555,14 @@ static int crypto_smartbond_cipher_ecb_handler(struct cipher_ctx *ctx, struct ci
 	return 0;
 }
 
-static int
-crypto_smartbond_cipher_cbc_handler(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv)
+static int crypto_smartbond_cipher_cbc_handler(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
+					       uint8_t *iv)
 {
 	int ret;
 	int offset = 0;
 	struct crypto_smartbond_data *data = ctx->device->data;
 	bool is_op_encryption =
-			!!(AES_HASH->CRYPTO_CTRL_REG & AES_HASH_CRYPTO_CTRL_REG_CRYPTO_ENCDEC_Msk);
+		!!(AES_HASH->CRYPTO_CTRL_REG & AES_HASH_CRYPTO_CTRL_REG_CRYPTO_ENCDEC_Msk);
 
 	if ((AES_HASH->CRYPTO_STATUS_REG & AES_HASH_CRYPTO_STATUS_REG_CRYPTO_INACTIVE_Msk) == 0) {
 		LOG_ERR("Crypto engine is already employed");
@@ -571,7 +570,7 @@ crypto_smartbond_cipher_cbc_handler(struct cipher_ctx *ctx, struct cipher_pkt *p
 	}
 
 	if ((is_op_encryption && pkt->out_buf_max < (pkt->in_len + 16)) ||
-							pkt->out_buf_max < (pkt->in_len - 16)) {
+	    pkt->out_buf_max < (pkt->in_len - 16)) {
 		LOG_ERR("Invalid OUT buffer size");
 		return -EINVAL;
 	}
@@ -606,11 +605,11 @@ crypto_smartbond_cipher_cbc_handler(struct cipher_ctx *ctx, struct cipher_pkt *p
 	}
 
 	if (is_op_encryption) {
-		ret = crypto_smartbond_set_in_out_buf(pkt->in_buf,
-						pkt->out_buf + offset, pkt->in_len);
+		ret = crypto_smartbond_set_in_out_buf(pkt->in_buf, pkt->out_buf + offset,
+						      pkt->in_len);
 	} else {
-		ret = crypto_smartbond_set_in_out_buf(pkt->in_buf + offset,
-								pkt->out_buf, pkt->in_len - offset);
+		ret = crypto_smartbond_set_in_out_buf(pkt->in_buf + offset, pkt->out_buf,
+						      pkt->in_len - offset);
 	}
 
 	if (ret < 0) {
@@ -623,11 +622,11 @@ crypto_smartbond_cipher_cbc_handler(struct cipher_ctx *ctx, struct cipher_pkt *p
 	data->cipher_pkt = pkt;
 #endif
 
-    /* Start crypto processing */
+	/* Start crypto processing */
 	AES_HASH->CRYPTO_START_REG = 1;
 
 #if !defined(CONFIG_CRYPTO_ASYNC)
-    /* Wait for crypto to finish its task */
+	/* Wait for crypto to finish its task */
 	k_sem_take(&data->sync_sem, K_FOREVER);
 #endif
 
@@ -643,8 +642,8 @@ crypto_smartbond_cipher_cbc_handler(struct cipher_ctx *ctx, struct cipher_pkt *p
 	return 0;
 }
 
-static int crypto_smartbond_cipher_ctr_handler(struct cipher_ctx *ctx,
-								struct cipher_pkt *pkt, uint8_t *ic)
+static int crypto_smartbond_cipher_ctr_handler(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
+					       uint8_t *ic)
 {
 	int ret;
 	/* ivlen + ctrlen = keylen, ctrl_len is expressed in bits */
@@ -693,11 +692,11 @@ static int crypto_smartbond_cipher_ctr_handler(struct cipher_ctx *ctx,
 	data->cipher_pkt = pkt;
 #endif
 
-    /* Start crypto processing */
+	/* Start crypto processing */
 	AES_HASH->CRYPTO_START_REG = 1;
 
 #if !defined(CONFIG_CRYPTO_ASYNC)
-    /* Wait for crypto to finish its task */
+	/* Wait for crypto to finish its task */
 	k_sem_take(&data->sync_sem, K_FOREVER);
 #endif
 
@@ -769,7 +768,7 @@ static int crypto_smartbond_hash_handler(struct hash_ctx *ctx, struct hash_pkt *
 	data->hash_pkt = pkt;
 #endif
 
-    /* Start hash processing */
+	/* Start hash processing */
 	AES_HASH->CRYPTO_START_REG = 1;
 
 #if !defined(CONFIG_CRYPTO_ASYNC)
@@ -781,9 +780,9 @@ static int crypto_smartbond_hash_handler(struct hash_ctx *ctx, struct hash_pkt *
 	return 0;
 }
 
-static int
-crypto_smartbond_cipher_begin_session(const struct device *dev, struct cipher_ctx *ctx,
-		enum cipher_algo algo, enum cipher_mode mode, enum cipher_op op_type)
+static int crypto_smartbond_cipher_begin_session(const struct device *dev, struct cipher_ctx *ctx,
+						 enum cipher_algo algo, enum cipher_mode mode,
+						 enum cipher_op op_type)
 {
 	int ret;
 
@@ -854,8 +853,8 @@ static int crypto_smartbond_cipher_free_session(const struct device *dev, struct
 }
 
 #if defined(CONFIG_CRYPTO_ASYNC)
-static int
-crypto_smartbond_cipher_set_async_callback(const struct device *dev, cipher_completion_cb cb)
+static int crypto_smartbond_cipher_set_async_callback(const struct device *dev,
+						      cipher_completion_cb cb)
 {
 	struct crypto_smartbond_data *data = dev->data;
 
@@ -865,9 +864,8 @@ crypto_smartbond_cipher_set_async_callback(const struct device *dev, cipher_comp
 }
 #endif
 
-static int
-crypto_smartbond_hash_begin_session(const struct device *dev,
-					struct hash_ctx *ctx, enum hash_algo algo)
+static int crypto_smartbond_hash_begin_session(const struct device *dev, struct hash_ctx *ctx,
+					       enum hash_algo algo)
 {
 	int ret;
 
@@ -910,8 +908,7 @@ static int crypto_smartbond_hash_free_session(const struct device *dev, struct h
 }
 
 #if defined(CONFIG_CRYPTO_ASYNC)
-static int
-crypto_smartbond_hash_set_async_callback(const struct device *dev, hash_completion_cb cb)
+static int crypto_smartbond_hash_set_async_callback(const struct device *dev, hash_completion_cb cb)
 {
 	struct crypto_smartbond_data *data = dev->data;
 
@@ -932,12 +929,10 @@ static const struct crypto_driver_api crypto_smartbond_driver_api = {
 #if defined(CONFIG_CRYPTO_ASYNC)
 	.hash_async_callback_set = crypto_smartbond_hash_set_async_callback,
 #endif
-	.query_hw_caps = crypto_smartbond_query_hw_caps
-};
+	.query_hw_caps = crypto_smartbond_query_hw_caps};
 
 #if defined(CONFIG_PM_DEVICE)
-static int crypto_smartbond_pm_action(const struct device *dev,
-	enum pm_device_action action)
+static int crypto_smartbond_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	int ret = 0;
 
@@ -973,12 +968,12 @@ static int crypto_smartbond_init(const struct device *dev)
 	k_sem_init(&data->device_sem, 1, 1);
 
 #if !defined(CONFIG_CRYPTO_ASYNC)
-    /* Sempahore used when sync operations are enabled */
+	/* Sempahore used when sync operations are enabled */
 	k_sem_init(&data->sync_sem, 0, 1);
 #endif
 
-	IRQ_CONNECT(SMARTBOND_IRQN, SMARTBOND_IRQ_PRIO, smartbond_crypto_isr,
-			DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(SMARTBOND_IRQN, SMARTBOND_IRQ_PRIO, smartbond_crypto_isr, DEVICE_DT_INST_GET(0),
+		    0);
 
 	/* Controller should be initialized once a crypyographic session is requested */
 	crypto_smartbond_set_status(false);
@@ -990,20 +985,15 @@ static int crypto_smartbond_init(const struct device *dev)
  * There is only one instance integrated on the SoC. Just in case that assumption becomes invalid
  * in the future, we use a BUILD_ASSERT().
  */
-#define SMARTBOND_CRYPTO_INIT(inst)                                     \
-	BUILD_ASSERT((inst) == 0,                                           \
-		"multiple instances are not supported");                        \
-	\
-	PM_DEVICE_DT_INST_DEFINE(inst, crypto_smartbond_pm_action);	\
-	\
-	static struct crypto_smartbond_data crypto_smartbond_data_##inst;   \
-	\
-	DEVICE_DT_INST_DEFINE(0,                            \
-		crypto_smartbond_init,		                    \
-		PM_DEVICE_DT_INST_GET(inst),					\
-		&crypto_smartbond_data_##inst, NULL,            \
-		POST_KERNEL,                                    \
-		CONFIG_CRYPTO_INIT_PRIORITY,                    \
-		&crypto_smartbond_driver_api);
+#define SMARTBOND_CRYPTO_INIT(inst)                                                                \
+	BUILD_ASSERT((inst) == 0, "multiple instances are not supported");                         \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(inst, crypto_smartbond_pm_action);                                \
+                                                                                                   \
+	static struct crypto_smartbond_data crypto_smartbond_data_##inst;                          \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(0, crypto_smartbond_init, PM_DEVICE_DT_INST_GET(inst),               \
+			      &crypto_smartbond_data_##inst, NULL, POST_KERNEL,                    \
+			      CONFIG_CRYPTO_INIT_PRIORITY, &crypto_smartbond_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SMARTBOND_CRYPTO_INIT)

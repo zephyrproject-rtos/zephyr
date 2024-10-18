@@ -21,8 +21,8 @@
 #endif
 LOG_MODULE_REGISTER(udc, CONFIG_UDC_DRIVER_LOG_LEVEL);
 
-static inline uint8_t *udc_pool_data_alloc(struct net_buf *const buf,
-					   size_t *const size, k_timeout_t timeout)
+static inline uint8_t *udc_pool_data_alloc(struct net_buf *const buf, size_t *const size,
+					   k_timeout_t timeout)
 {
 	struct net_buf_pool *const buf_pool = net_buf_pool_get(buf->pool_id);
 	struct k_heap *const pool = buf_pool->alloc->alloc_data;
@@ -53,12 +53,10 @@ const struct net_buf_data_cb net_buf_dma_cb = {
 
 static inline void udc_buf_destroy(struct net_buf *buf);
 
-UDC_BUF_POOL_VAR_DEFINE(udc_ep_pool,
-			CONFIG_UDC_BUF_COUNT, CONFIG_UDC_BUF_POOL_SIZE,
+UDC_BUF_POOL_VAR_DEFINE(udc_ep_pool, CONFIG_UDC_BUF_COUNT, CONFIG_UDC_BUF_POOL_SIZE,
 			sizeof(struct udc_buf_info), udc_buf_destroy);
 
-#define USB_EP_LUT_IDX(ep) (USB_EP_DIR_IS_IN(ep) ? (ep & BIT_MASK(4)) + 16 : \
-						   ep & BIT_MASK(4))
+#define USB_EP_LUT_IDX(ep) (USB_EP_DIR_IS_IN(ep) ? (ep & BIT_MASK(4)) + 16 : ep & BIT_MASK(4))
 
 void udc_set_suspended(const struct device *dev, const bool value)
 {
@@ -166,8 +164,7 @@ struct net_buf *udc_buf_peek(const struct device *dev, const uint8_t ep)
 	return k_fifo_peek_head(&ep_cfg->fifo);
 }
 
-void udc_buf_put(struct udc_ep_config *const ep_cfg,
-		 struct net_buf *const buf)
+void udc_buf_put(struct udc_ep_config *const ep_cfg, struct net_buf *const buf)
 {
 	k_fifo_put(&ep_cfg->fifo, buf);
 }
@@ -195,9 +192,7 @@ void udc_ep_buf_clear_zlp(const struct net_buf *const buf)
 	bi->zlp = false;
 }
 
-int udc_submit_event(const struct device *dev,
-		     const enum udc_event_type type,
-		     const int status)
+int udc_submit_event(const struct device *dev, const enum udc_event_type type, const int status)
 {
 	struct udc_data *data = dev->data;
 	struct udc_event drv_evt = {
@@ -209,9 +204,7 @@ int udc_submit_event(const struct device *dev,
 	return data->event_cb(dev, &drv_evt);
 }
 
-int udc_submit_ep_event(const struct device *dev,
-			struct net_buf *const buf,
-			const int err)
+int udc_submit_ep_event(const struct device *dev, struct net_buf *const buf, const int err)
 {
 	struct udc_buf_info *bi = udc_get_buf_info(buf);
 	struct udc_data *data = dev->data;
@@ -235,24 +228,16 @@ static uint8_t ep_attrib_get_transfer(uint8_t attributes)
 	return attributes & USB_EP_TRANSFER_TYPE_MASK;
 }
 
-static bool ep_check_config(const struct device *dev,
-			    const struct udc_ep_config *const cfg,
-			    const uint8_t ep,
-			    const uint8_t attributes,
-			    const uint16_t mps,
+static bool ep_check_config(const struct device *dev, const struct udc_ep_config *const cfg,
+			    const uint8_t ep, const uint8_t attributes, const uint16_t mps,
 			    const uint8_t interval)
 {
 	bool dir_is_in = USB_EP_DIR_IS_IN(ep);
 	bool dir_is_out = USB_EP_DIR_IS_OUT(ep);
 
-	LOG_DBG("cfg d:%c|%c t:%c|%c|%c|%c, mps %u",
-		cfg->caps.in ? 'I' : '-',
-		cfg->caps.out ? 'O' : '-',
-		cfg->caps.iso ? 'S' : '-',
-		cfg->caps.bulk ? 'B' : '-',
-		cfg->caps.interrupt ? 'I' : '-',
-		cfg->caps.control ? 'C' : '-',
-		cfg->caps.mps);
+	LOG_DBG("cfg d:%c|%c t:%c|%c|%c|%c, mps %u", cfg->caps.in ? 'I' : '-',
+		cfg->caps.out ? 'O' : '-', cfg->caps.iso ? 'S' : '-', cfg->caps.bulk ? 'B' : '-',
+		cfg->caps.interrupt ? 'I' : '-', cfg->caps.control ? 'C' : '-', cfg->caps.mps);
 
 	if (dir_is_out && !cfg->caps.out) {
 		return false;
@@ -274,15 +259,13 @@ static bool ep_check_config(const struct device *dev,
 		break;
 	case USB_EP_TYPE_INTERRUPT:
 		if (!cfg->caps.interrupt ||
-		    (USB_MPS_ADDITIONAL_TRANSACTIONS(mps) &&
-		     !cfg->caps.high_bandwidth)) {
+		    (USB_MPS_ADDITIONAL_TRANSACTIONS(mps) && !cfg->caps.high_bandwidth)) {
 			return false;
 		}
 		break;
 	case USB_EP_TYPE_ISO:
 		if (!cfg->caps.iso ||
-		    (USB_MPS_ADDITIONAL_TRANSACTIONS(mps) &&
-		     !cfg->caps.high_bandwidth)) {
+		    (USB_MPS_ADDITIONAL_TRANSACTIONS(mps) && !cfg->caps.high_bandwidth)) {
 			return false;
 		}
 		break;
@@ -298,10 +281,8 @@ static bool ep_check_config(const struct device *dev,
 	return true;
 }
 
-static void ep_update_mps(const struct device *dev,
-			  const struct udc_ep_config *const cfg,
-			  const uint8_t attributes,
-			  uint16_t *const mps)
+static void ep_update_mps(const struct device *dev, const struct udc_ep_config *const cfg,
+			  const uint8_t attributes, uint16_t *const mps)
 {
 	struct udc_device_caps caps = udc_caps(dev);
 	const uint16_t spec_int_mps = caps.hs ? 1024 : 64;
@@ -328,11 +309,8 @@ static void ep_update_mps(const struct device *dev,
 	}
 }
 
-int udc_ep_try_config(const struct device *dev,
-		      const uint8_t ep,
-		      const uint8_t attributes,
-		      uint16_t *const mps,
-		      const uint8_t interval)
+int udc_ep_try_config(const struct device *dev, const uint8_t ep, const uint8_t attributes,
+		      uint16_t *const mps, const uint8_t interval)
 {
 	const struct udc_api *api = dev->api;
 	struct udc_ep_config *cfg;
@@ -355,11 +333,8 @@ int udc_ep_try_config(const struct device *dev,
 	return (ret == false) ? -ENOTSUP : 0;
 }
 
-int udc_ep_enable_internal(const struct device *dev,
-			   const uint8_t ep,
-			   const uint8_t attributes,
-			   const uint16_t mps,
-			   const uint8_t interval)
+int udc_ep_enable_internal(const struct device *dev, const uint8_t ep, const uint8_t attributes,
+			   const uint16_t mps, const uint8_t interval)
 {
 	const struct udc_api *api = dev->api;
 	struct udc_ep_config *cfg;
@@ -393,11 +368,8 @@ int udc_ep_enable_internal(const struct device *dev,
 	return ret;
 }
 
-int udc_ep_enable(const struct device *dev,
-		  const uint8_t ep,
-		  const uint8_t attributes,
-		  const uint16_t mps,
-		  const uint8_t interval)
+int udc_ep_enable(const struct device *dev, const uint8_t ep, const uint8_t attributes,
+		  const uint16_t mps, const uint8_t interval)
 {
 	const struct udc_api *api = dev->api;
 	int ret;
@@ -544,8 +516,7 @@ ep_clear_halt_error:
 	return ret;
 }
 
-static void udc_debug_ep_enqueue(const struct device *dev,
-				 struct udc_ep_config *const cfg)
+static void udc_debug_ep_enqueue(const struct device *dev, struct udc_ep_config *const cfg)
 {
 	struct udc_buf_info *bi;
 	struct net_buf *buf;
@@ -633,7 +604,7 @@ int udc_ep_dequeue(const struct device *dev, const uint8_t ep)
 
 	if (k_fifo_is_empty(&cfg->fifo)) {
 		ret = 0;
-	} else  {
+	} else {
 		ret = api->ep_dequeue(dev, cfg);
 	}
 
@@ -643,9 +614,7 @@ ep_dequeue_error:
 	return ret;
 }
 
-struct net_buf *udc_ep_buf_alloc(const struct device *dev,
-				 const uint8_t ep,
-				 const size_t size)
+struct net_buf *udc_ep_buf_alloc(const struct device *dev, const uint8_t ep, const size_t size)
 {
 	const struct udc_api *api = dev->api;
 	struct net_buf *buf = NULL;
@@ -670,9 +639,7 @@ ep_alloc_error:
 	return buf;
 }
 
-struct net_buf *udc_ctrl_alloc(const struct device *dev,
-			       const uint8_t ep,
-			       const size_t size)
+struct net_buf *udc_ctrl_alloc(const struct device *dev, const uint8_t ep, const size_t size)
 {
 	/* TODO: for now just pass to udc_buf_alloc() */
 	return udc_ep_buf_alloc(dev, ep, size);
@@ -774,8 +741,7 @@ udc_disable_error:
 	return ret;
 }
 
-int udc_init(const struct device *dev,
-	     udc_event_cb_t event_cb, const void *const event_ctx)
+int udc_init(const struct device *dev, udc_event_cb_t event_cb, const void *const event_ctx)
 {
 	const struct udc_api *api = dev->api;
 	struct udc_data *data = dev->data;
@@ -833,11 +799,9 @@ udc_shutdown_error:
 	return ret;
 }
 
-static ALWAYS_INLINE
-struct net_buf *udc_ctrl_alloc_stage(const struct device *dev,
-				     struct net_buf *const parent,
-				     const uint8_t ep,
-				     const size_t size)
+static ALWAYS_INLINE struct net_buf *udc_ctrl_alloc_stage(const struct device *dev,
+							  struct net_buf *const parent,
+							  const uint8_t ep, const size_t size)
 {
 	struct net_buf *buf;
 
@@ -853,8 +817,7 @@ struct net_buf *udc_ctrl_alloc_stage(const struct device *dev,
 	return buf;
 }
 
-static struct net_buf *udc_ctrl_alloc_data(const struct device *dev,
-					   struct net_buf *const setup,
+static struct net_buf *udc_ctrl_alloc_data(const struct device *dev, struct net_buf *const setup,
 					   const uint8_t ep)
 {
 	size_t size = udc_data_stage_length(setup);
@@ -870,8 +833,7 @@ static struct net_buf *udc_ctrl_alloc_data(const struct device *dev,
 	return buf;
 }
 
-static struct net_buf *udc_ctrl_alloc_status(const struct device *dev,
-					     struct net_buf *const parent,
+static struct net_buf *udc_ctrl_alloc_status(const struct device *dev, struct net_buf *const parent,
 					     const uint8_t ep)
 {
 	size_t size = (ep == USB_CONTROL_EP_OUT) ? 64 : 0;
@@ -887,8 +849,7 @@ static struct net_buf *udc_ctrl_alloc_status(const struct device *dev,
 	return buf;
 }
 
-int udc_ctrl_submit_s_out_status(const struct device *dev,
-			      struct net_buf *const dout)
+int udc_ctrl_submit_s_out_status(const struct device *dev, struct net_buf *const dout)
 {
 	struct udc_buf_info *bi = udc_get_buf_info(dout);
 	struct udc_data *data = dev->data;
@@ -940,8 +901,7 @@ int udc_ctrl_submit_s_status(const struct device *dev)
 	return udc_submit_ep_event(dev, data->setup, ret);
 }
 
-int udc_ctrl_submit_status(const struct device *dev,
-			   struct net_buf *const buf)
+int udc_ctrl_submit_status(const struct device *dev, struct net_buf *const buf)
 {
 	struct udc_buf_info *bi = udc_get_buf_info(buf);
 
@@ -992,19 +952,17 @@ static bool udc_data_stage_to_host(const struct net_buf *const buf)
 	return USB_REQTYPE_GET_DIR(setup->bmRequestType);
 }
 
-void udc_ctrl_update_stage(const struct device *dev,
-			   struct net_buf *const buf)
+void udc_ctrl_update_stage(const struct device *dev, struct net_buf *const buf)
 {
 	struct udc_buf_info *bi = udc_get_buf_info(buf);
 	struct udc_device_caps caps = udc_caps(dev);
 	uint8_t next_stage = CTRL_PIPE_STAGE_ERROR;
 	struct udc_data *data = dev->data;
 
-	__ASSERT(USB_EP_GET_IDX(bi->ep) == 0,
-		 "0x%02x is not a control endpoint", bi->ep);
+	__ASSERT(USB_EP_GET_IDX(bi->ep) == 0, "0x%02x is not a control endpoint", bi->ep);
 
 	if (bi->setup && bi->ep == USB_CONTROL_EP_OUT) {
-		uint16_t length  = udc_data_stage_length(buf);
+		uint16_t length = udc_data_stage_length(buf);
 
 		data->setup = buf;
 
@@ -1102,7 +1060,6 @@ void udc_ctrl_update_stage(const struct device *dev,
 		}
 	}
 
-
 	if (next_stage == data->stage) {
 		LOG_WRN("State not changed!");
 	}
@@ -1118,9 +1075,7 @@ struct k_work_q udc_work_q;
 static int udc_work_q_init(void)
 {
 
-	k_work_queue_start(&udc_work_q,
-			   udc_work_q_stack,
-			   K_KERNEL_STACK_SIZEOF(udc_work_q_stack),
+	k_work_queue_start(&udc_work_q, udc_work_q_stack, K_KERNEL_STACK_SIZEOF(udc_work_q_stack),
 			   CONFIG_UDC_WORKQUEUE_PRIORITY, NULL);
 	k_thread_name_set(&udc_work_q.thread, "udc_work_q");
 

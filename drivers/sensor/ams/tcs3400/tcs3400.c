@@ -16,10 +16,10 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(tcs3400, CONFIG_SENSOR_LOG_LEVEL);
 
-#define TCS3400_ENABLE_REG 0x80
+#define TCS3400_ENABLE_REG  0x80
 #define TCS3400_ENABLE_AIEN BIT(4)
-#define TCS3400_ENABLE_AEN BIT(1)
-#define TCS3400_ENABLE_PON BIT(0)
+#define TCS3400_ENABLE_AEN  BIT(1)
+#define TCS3400_ENABLE_PON  BIT(0)
 
 #define TCS3400_ATIME_REG 0x81
 
@@ -30,10 +30,10 @@ LOG_MODULE_REGISTER(tcs3400, CONFIG_SENSOR_LOG_LEVEL);
 #define TCS3400_CONTROL_REG 0x8f
 
 #define TCS3400_ID_REG 0x92
-#define TCS3400_ID_1 0x90
-#define TCS3400_ID_2 0x93
+#define TCS3400_ID_1   0x90
+#define TCS3400_ID_2   0x93
 
-#define TCS3400_STATUS_REG 0x93
+#define TCS3400_STATUS_REG    0x93
 #define TCS3400_STATUS_AVALID BIT(0)
 
 #define TCS3400_CDATAL_REG 0x94
@@ -48,12 +48,12 @@ LOG_MODULE_REGISTER(tcs3400, CONFIG_SENSOR_LOG_LEVEL);
 #define TCS3400_AICLEAR_REG 0xe7
 
 /* Default values */
-#define TCS3400_DEFAULT_ENABLE 0x00
-#define TCS3400_DEFAULT_ATIME 0xff
-#define TCS3400_DEFAULT_PERS 0x00
-#define TCS3400_DEFAULT_CONFIG 0x00
+#define TCS3400_DEFAULT_ENABLE  0x00
+#define TCS3400_DEFAULT_ATIME   0xff
+#define TCS3400_DEFAULT_PERS    0x00
+#define TCS3400_DEFAULT_CONFIG  0x00
 #define TCS3400_DEFAULT_CONTROL 0x00
-#define TCS3400_AICLEAR_RESET 0x00
+#define TCS3400_AICLEAR_RESET   0x00
 
 struct tcs3400_config {
 	struct i2c_dt_spec i2c;
@@ -76,19 +76,16 @@ static void tcs3400_setup_int(const struct tcs3400_config *config, bool enable)
 	gpio_pin_interrupt_configure_dt(&config->int_gpio, flags);
 }
 
-static void tcs3400_gpio_callback(const struct device *dev,
-				  struct gpio_callback *cb, uint32_t pins)
+static void tcs3400_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	struct tcs3400_data *data = CONTAINER_OF(cb, struct tcs3400_data,
-						 gpio_cb);
+	struct tcs3400_data *data = CONTAINER_OF(cb, struct tcs3400_data, gpio_cb);
 
 	tcs3400_setup_int(data->dev->config, false);
 
 	k_sem_give(&data->data_sem);
 }
 
-static int tcs3400_sample_fetch(const struct device *dev,
-				enum sensor_channel chan)
+static int tcs3400_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	const struct tcs3400_config *cfg = dev->config;
 	struct tcs3400_data *data = dev->data;
@@ -103,8 +100,7 @@ static int tcs3400_sample_fetch(const struct device *dev,
 	tcs3400_setup_int(cfg, true);
 
 	ret = i2c_reg_write_byte_dt(&cfg->i2c, TCS3400_ENABLE_REG,
-				    TCS3400_ENABLE_AIEN | TCS3400_ENABLE_AEN |
-				    TCS3400_ENABLE_PON);
+				    TCS3400_ENABLE_AIEN | TCS3400_ENABLE_AEN | TCS3400_ENABLE_PON);
 	if (ret) {
 		return ret;
 	}
@@ -118,8 +114,7 @@ static int tcs3400_sample_fetch(const struct device *dev,
 
 	if (status & TCS3400_STATUS_AVALID) {
 		ret = i2c_burst_read_dt(&cfg->i2c, TCS3400_CDATAL_REG,
-					(uint8_t *)&data->sample_crgb,
-					sizeof(data->sample_crgb));
+					(uint8_t *)&data->sample_crgb, sizeof(data->sample_crgb));
 		if (ret) {
 			return ret;
 		}
@@ -140,8 +135,7 @@ static int tcs3400_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static int tcs3400_channel_get(const struct device *dev,
-			       enum sensor_channel chan,
+static int tcs3400_channel_get(const struct device *dev, enum sensor_channel chan,
 			       struct sensor_value *val)
 {
 	struct tcs3400_data *data = dev->data;
@@ -170,10 +164,8 @@ static int tcs3400_channel_get(const struct device *dev,
 	return 0;
 }
 
-static int tcs3400_attr_set(const struct device *dev,
-			    enum sensor_channel chan,
-			    enum sensor_attribute attr,
-			    const struct sensor_value *val)
+static int tcs3400_attr_set(const struct device *dev, enum sensor_channel chan,
+			    enum sensor_attribute attr, const struct sensor_value *val)
 {
 	const struct tcs3400_config *cfg = dev->config;
 	int ret;
@@ -185,8 +177,7 @@ static int tcs3400_attr_set(const struct device *dev,
 			return -EINVAL;
 		}
 		reg_val = UINT8_MAX - val->val1 + 1;
-		ret = i2c_reg_write_byte_dt(&cfg->i2c,
-					    TCS3400_ATIME_REG, reg_val);
+		ret = i2c_reg_write_byte_dt(&cfg->i2c, TCS3400_ATIME_REG, reg_val);
 		if (ret) {
 			return ret;
 		}
@@ -229,11 +220,9 @@ static int tcs3400_sensor_setup(const struct device *dev)
 	LOG_INF("chip id: 0x%x", chip_id);
 
 	for (size_t i = 0; i < ARRAY_SIZE(reset_regs); i++) {
-		ret = i2c_reg_write_byte_dt(&cfg->i2c, reset_regs[i].reg_addr,
-					    reset_regs[i].value);
+		ret = i2c_reg_write_byte_dt(&cfg->i2c, reset_regs[i].reg_addr, reset_regs[i].value);
 		if (ret) {
-			LOG_ERR("Failed to set default register: %02x",
-				reset_regs[i].reg_addr);
+			LOG_ERR("Failed to set default register: %02x", reset_regs[i].reg_addr);
 			return ret;
 		}
 	}
@@ -278,8 +267,7 @@ static int tcs3400_init(const struct device *dev)
 		return ret;
 	}
 
-	gpio_init_callback(&data->gpio_cb, tcs3400_gpio_callback,
-			   BIT(cfg->int_gpio.pin));
+	gpio_init_callback(&data->gpio_cb, tcs3400_gpio_callback, BIT(cfg->int_gpio.pin));
 
 	ret = gpio_add_callback(cfg->int_gpio.port, &data->gpio_cb);
 	if (ret < 0) {
@@ -290,15 +278,14 @@ static int tcs3400_init(const struct device *dev)
 	return 0;
 }
 
-#define TCS3400_INIT(n) \
-	static struct tcs3400_data tcs3400_data_##n; \
-	static const struct tcs3400_config tcs3400_config_##n = { \
-		.i2c = I2C_DT_SPEC_INST_GET(n), \
-		.int_gpio = GPIO_DT_SPEC_INST_GET(n, int_gpios), \
-	}; \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, &tcs3400_init, NULL, \
-				     &tcs3400_data_##n, &tcs3400_config_##n, \
-				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, \
-				     &tcs3400_api);
+#define TCS3400_INIT(n)                                                                            \
+	static struct tcs3400_data tcs3400_data_##n;                                               \
+	static const struct tcs3400_config tcs3400_config_##n = {                                  \
+		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
+		.int_gpio = GPIO_DT_SPEC_INST_GET(n, int_gpios),                                   \
+	};                                                                                         \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, &tcs3400_init, NULL, &tcs3400_data_##n,                    \
+				     &tcs3400_config_##n, POST_KERNEL,                             \
+				     CONFIG_SENSOR_INIT_PRIORITY, &tcs3400_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TCS3400_INIT)

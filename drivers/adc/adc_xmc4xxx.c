@@ -55,8 +55,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	XMC_VADC_GROUP_ScanEnableArbitrationSlot(adc_group);
 }
 
-static void adc_context_update_buffer_pointer(struct adc_context *ctx,
-					      bool repeat_sampling)
+static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat_sampling)
 {
 	struct adc_xmc4xxx_data *data = CONTAINER_OF(ctx, struct adc_xmc4xxx_data, ctx);
 
@@ -108,8 +107,7 @@ static int adc_xmc4xxx_validate_buffer_size(const struct adc_sequence *sequence)
 	return 0;
 }
 
-static int start_read(const struct device *dev,
-		      const struct adc_sequence *sequence)
+static int start_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	int ret;
 	struct adc_xmc4xxx_data *data = dev->data;
@@ -151,7 +149,7 @@ static int start_read(const struct device *dev,
 		LOG_ERR("Invalid resolution");
 		return -EINVAL;
 	}
-	XMC_VADC_GROUP_InputClassInit(adc_group,  group_class, XMC_VADC_GROUP_CONV_STD, 0);
+	XMC_VADC_GROUP_InputClassInit(adc_group, group_class, XMC_VADC_GROUP_CONV_STD, 0);
 
 	data->channel_mask = requested_channels;
 	data->buffer = sequence->buffer;
@@ -160,8 +158,7 @@ static int start_read(const struct device *dev,
 	return adc_context_wait_for_completion(&data->ctx);
 }
 
-static int adc_xmc4xxx_read(const struct device *dev,
-			  const struct adc_sequence *sequence)
+static int adc_xmc4xxx_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	int ret;
 	struct adc_xmc4xxx_data *data = dev->data;
@@ -173,9 +170,8 @@ static int adc_xmc4xxx_read(const struct device *dev,
 }
 
 #ifdef CONFIG_ADC_ASYNC
-static int adc_xmc4xxx_read_async(const struct device *dev,
-			       const struct adc_sequence *sequence,
-			       struct k_poll_signal *async)
+static int adc_xmc4xxx_read_async(const struct device *dev, const struct adc_sequence *sequence,
+				  struct k_poll_signal *async)
 {
 	int ret;
 	struct adc_xmc4xxx_data *data = dev->data;
@@ -189,7 +185,7 @@ static int adc_xmc4xxx_read_async(const struct device *dev,
 #endif
 
 static int adc_xmc4xxx_channel_setup(const struct device *dev,
-				   const struct adc_channel_cfg *channel_cfg)
+				     const struct adc_channel_cfg *channel_cfg)
 {
 	const struct adc_xmc4xxx_cfg *config = dev->config;
 	VADC_G_TypeDef *adc_group = config->base;
@@ -240,7 +236,7 @@ static int adc_xmc4xxx_channel_setup(const struct device *dev,
 	return 0;
 }
 
-#define VADC_IRQ_MIN  18
+#define VADC_IRQ_MIN        18
 #define IRQS_PER_VADC_GROUP 4
 
 static int adc_xmc4xxx_init(const struct device *dev)
@@ -309,34 +305,31 @@ static const struct adc_driver_api api_xmc4xxx_driver_api = {
 	.ref_internal = DT_INST_PROP(0, vref_internal_mv),
 };
 
-#define ADC_XMC4XXX_CONFIG(index)						\
-static void adc_xmc4xxx_cfg_func_##index(void)					\
-{										\
-	IRQ_CONNECT(DT_INST_IRQN(index),					\
-		    DT_INST_IRQ(index, priority),				\
-		    adc_xmc4xxx_isr, DEVICE_DT_INST_GET(index), 0);		\
-	irq_enable(DT_INST_IRQN(index));					\
-}										\
-										\
-static const struct adc_xmc4xxx_cfg adc_xmc4xxx_cfg_##index = {			\
-	.base = (VADC_G_TypeDef *)DT_INST_REG_ADDR(index),			\
-	.irq_cfg_func = adc_xmc4xxx_cfg_func_##index,				\
-	.irq_num = DT_INST_IRQN(index),						\
-};
+#define ADC_XMC4XXX_CONFIG(index)                                                                  \
+	static void adc_xmc4xxx_cfg_func_##index(void)                                             \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(index), DT_INST_IRQ(index, priority), adc_xmc4xxx_isr,    \
+			    DEVICE_DT_INST_GET(index), 0);                                         \
+		irq_enable(DT_INST_IRQN(index));                                                   \
+	}                                                                                          \
+                                                                                                   \
+	static const struct adc_xmc4xxx_cfg adc_xmc4xxx_cfg_##index = {                            \
+		.base = (VADC_G_TypeDef *)DT_INST_REG_ADDR(index),                                 \
+		.irq_cfg_func = adc_xmc4xxx_cfg_func_##index,                                      \
+		.irq_num = DT_INST_IRQN(index),                                                    \
+	};
 
-#define ADC_XMC4XXX_INIT(index)							\
-ADC_XMC4XXX_CONFIG(index)							\
-										\
-static struct adc_xmc4xxx_data adc_xmc4xxx_data_##index = {			\
-	ADC_CONTEXT_INIT_TIMER(adc_xmc4xxx_data_##index, ctx),			\
-	ADC_CONTEXT_INIT_LOCK(adc_xmc4xxx_data_##index, ctx),			\
-	ADC_CONTEXT_INIT_SYNC(adc_xmc4xxx_data_##index, ctx),			\
-};										\
-										\
-DEVICE_DT_INST_DEFINE(index,							\
-		    &adc_xmc4xxx_init, NULL,					\
-		    &adc_xmc4xxx_data_##index, &adc_xmc4xxx_cfg_##index,	\
-		    POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,			\
-		    &api_xmc4xxx_driver_api);
+#define ADC_XMC4XXX_INIT(index)                                                                    \
+	ADC_XMC4XXX_CONFIG(index)                                                                  \
+                                                                                                   \
+	static struct adc_xmc4xxx_data adc_xmc4xxx_data_##index = {                                \
+		ADC_CONTEXT_INIT_TIMER(adc_xmc4xxx_data_##index, ctx),                             \
+		ADC_CONTEXT_INIT_LOCK(adc_xmc4xxx_data_##index, ctx),                              \
+		ADC_CONTEXT_INIT_SYNC(adc_xmc4xxx_data_##index, ctx),                              \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(index, &adc_xmc4xxx_init, NULL, &adc_xmc4xxx_data_##index,           \
+			      &adc_xmc4xxx_cfg_##index, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,     \
+			      &api_xmc4xxx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_XMC4XXX_INIT)

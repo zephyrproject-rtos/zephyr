@@ -121,7 +121,7 @@ static int mcux_lpadc_acquisition_time_setup(const struct device *dev, uint16_t 
 }
 
 static int mcux_lpadc_channel_setup(const struct device *dev,
-				const struct adc_channel_cfg *channel_cfg)
+				    const struct adc_channel_cfg *channel_cfg)
 {
 	const struct mcux_lpadc_config *config = dev->config;
 	const struct device *regulator = config->ref_supplies;
@@ -146,8 +146,7 @@ static int mcux_lpadc_channel_setup(const struct device *dev,
 	/* Channel number is selected by lower 4 bits of input_positive */
 	channel_num = ADC_CMDL_ADCH(channel_cfg->input_positive);
 
-	LOG_DBG("Channel num: %u, channel side: %c", channel_num,
-		channel_side == 0 ? 'A' : 'B');
+	LOG_DBG("Channel num: %u, channel side: %c", channel_num, channel_side == 0 ? 'A' : 'B');
 
 	LPADC_GetDefaultConvCommandConfig(cmd);
 
@@ -160,7 +159,7 @@ static int mcux_lpadc_channel_setup(const struct device *dev,
 	if (channel_cfg->differential) {
 		/* Channel pairs must match in differential mode */
 		if ((ADC_CMDL_ADCH(channel_cfg->input_positive)) !=
-		   (ADC_CMDL_ADCH(channel_cfg->input_negative))) {
+		    (ADC_CMDL_ADCH(channel_cfg->input_negative))) {
 			return -ENOTSUP;
 		}
 
@@ -168,12 +167,10 @@ static int mcux_lpadc_channel_setup(const struct device *dev,
 		/* Check to see which channel is the positive input */
 		if (channel_cfg->input_positive & 0x20) {
 			/* Channel B is positive side */
-			cmd->sampleChannelMode =
-				kLPADC_SampleChannelDiffBothSideBA;
+			cmd->sampleChannelMode = kLPADC_SampleChannelDiffBothSideBA;
 		} else {
 			/* Channel A is positive side */
-			cmd->sampleChannelMode =
-				kLPADC_SampleChannelDiffBothSideAB;
+			cmd->sampleChannelMode = kLPADC_SampleChannelDiffBothSideAB;
 		}
 #else
 		cmd->sampleChannelMode = kLPADC_SampleChannelDiffBothSide;
@@ -231,15 +228,13 @@ static int mcux_lpadc_channel_setup(const struct device *dev,
 	return 0;
 }
 
-static int mcux_lpadc_start_read(const struct device *dev,
-		 const struct adc_sequence *sequence)
+static int mcux_lpadc_start_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	const struct mcux_lpadc_config *config = dev->config;
 	struct mcux_lpadc_data *data = dev->data;
 	lpadc_hardware_average_mode_t hardware_average_mode;
 	uint8_t channel, last_enabled;
-#if defined(FSL_FEATURE_LPADC_HAS_CMDL_MODE) \
-	&& FSL_FEATURE_LPADC_HAS_CMDL_MODE
+#if defined(FSL_FEATURE_LPADC_HAS_CMDL_MODE) && FSL_FEATURE_LPADC_HAS_CMDL_MODE
 	lpadc_conversion_resolution_mode_t resolution_mode;
 
 	switch (sequence->resolution) {
@@ -289,8 +284,7 @@ static int mcux_lpadc_start_read(const struct device *dev,
 		hardware_average_mode = kLPADC_HardwareAverageCount128;
 		break;
 	default:
-		LOG_ERR("Unsupported oversampling value %d",
-			sequence->oversampling);
+		LOG_ERR("Unsupported oversampling value %d", sequence->oversampling);
 		return -ENOTSUP;
 	}
 
@@ -308,24 +302,21 @@ static int mcux_lpadc_start_read(const struct device *dev,
 		if (sequence->channels & BIT(channel)) {
 			/* Setup this channel command */
 #if defined(FSL_FEATURE_LPADC_HAS_CMDL_MODE) && FSL_FEATURE_LPADC_HAS_CMDL_MODE
-			data->cmd_config[channel].conversionResolutionMode =
-				resolution_mode;
+			data->cmd_config[channel].conversionResolutionMode = resolution_mode;
 #endif
-			data->cmd_config[channel].hardwareAverageMode =
-				hardware_average_mode;
+			data->cmd_config[channel].hardwareAverageMode = hardware_average_mode;
 			if (last_enabled) {
 				/* Chain channel */
 				data->cmd_config[channel].chainedNextCommandNumber =
 					last_enabled + 1;
-				LOG_DBG("Chaining channel %u to %u",
-					channel, last_enabled);
+				LOG_DBG("Chaining channel %u to %u", channel, last_enabled);
 			} else {
 				/* End of chain */
 				data->cmd_config[channel].chainedNextCommandNumber = 0;
 			}
 			last_enabled = channel;
-			LPADC_SetConvCommandConfig(config->base,
-				channel + 1, &data->cmd_config[channel]);
+			LPADC_SetConvCommandConfig(config->base, channel + 1,
+						   &data->cmd_config[channel]);
 		}
 	};
 
@@ -337,9 +328,8 @@ static int mcux_lpadc_start_read(const struct device *dev,
 	return error;
 }
 
-static int mcux_lpadc_read_async(const struct device *dev,
-			const struct adc_sequence *sequence,
-			struct k_poll_signal *async)
+static int mcux_lpadc_read_async(const struct device *dev, const struct adc_sequence *sequence,
+				 struct k_poll_signal *async)
 {
 	struct mcux_lpadc_data *data = dev->data;
 	int error;
@@ -351,8 +341,7 @@ static int mcux_lpadc_read_async(const struct device *dev,
 	return error;
 }
 
-static int mcux_lpadc_read(const struct device *dev,
-		   const struct adc_sequence *sequence)
+static int mcux_lpadc_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	return mcux_lpadc_read_async(dev, sequence, NULL);
 }
@@ -382,8 +371,7 @@ static void mcux_lpadc_start_channel(const struct device *dev)
 
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
-	struct mcux_lpadc_data *data =
-	CONTAINER_OF(ctx, struct mcux_lpadc_data, ctx);
+	struct mcux_lpadc_data *data = CONTAINER_OF(ctx, struct mcux_lpadc_data, ctx);
 
 	data->channels = ctx->sequence.channels;
 	data->repeat_buffer = data->buffer;
@@ -391,11 +379,9 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	mcux_lpadc_start_channel(data->dev);
 }
 
-static void adc_context_update_buffer_pointer(struct adc_context *ctx,
-			  bool repeat_sampling)
+static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat_sampling)
 {
-	struct mcux_lpadc_data *data =
-		CONTAINER_OF(ctx, struct mcux_lpadc_data, ctx);
+	struct mcux_lpadc_data *data = CONTAINER_OF(ctx, struct mcux_lpadc_data, ctx);
 
 	if (repeat_sampling) {
 		data->buffer = data->repeat_buffer;
@@ -413,16 +399,14 @@ static void mcux_lpadc_isr(const struct device *dev)
 	int16_t result;
 	uint16_t channel;
 
-#if (defined(FSL_FEATURE_LPADC_FIFO_COUNT) \
-	&& (FSL_FEATURE_LPADC_FIFO_COUNT == 2U))
+#if (defined(FSL_FEATURE_LPADC_FIFO_COUNT) && (FSL_FEATURE_LPADC_FIFO_COUNT == 2U))
 	LPADC_GetConvResult(base, &conv_result, 0U);
 #else
 	LPADC_GetConvResult(base, &conv_result);
 #endif /* FSL_FEATURE_LPADC_FIFO_COUNT */
 
 	channel = conv_result.commandIdSource - 1;
-	LOG_DBG("Finished channel %d. Raw result is 0x%04x",
-		channel, conv_result.convValue);
+	LOG_DBG("Finished channel %d. Raw result is 0x%04x", channel, conv_result.convValue);
 	/*
 	 * For 12 or 13 bit resolution the LSBs will be 0, so a bit shift
 	 * is needed. For differential modes, the ADC conversion to
@@ -450,7 +434,6 @@ static void mcux_lpadc_isr(const struct device *dev)
 	} else {
 		*data->buffer++ = conv_result.convValue;
 	}
-
 
 	data->channels &= ~BIT(channel);
 
@@ -491,45 +474,37 @@ static int mcux_lpadc_init(const struct device *dev)
 	adc_config.enableAnalogPreliminary = true;
 	adc_config.referenceVoltageSource = config->voltage_ref;
 
-#if defined(FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS) \
-	&& FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS
+#if defined(FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS) && FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS
 	adc_config.conversionAverageMode = config->calibration_average;
 #endif /* FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS */
 
 #if !(DT_ANY_INST_HAS_PROP_STATUS_OKAY(no_power_level))
-		adc_config.powerLevelMode = config->power_level;
+	adc_config.powerLevelMode = config->power_level;
 #endif
 
 	LPADC_Init(base, &adc_config);
 
 	/* Do ADC calibration. */
-#if defined(FSL_FEATURE_LPADC_HAS_CTRL_CALOFS) \
-	&& FSL_FEATURE_LPADC_HAS_CTRL_CALOFS
-#if defined(FSL_FEATURE_LPADC_HAS_OFSTRIM) \
-	&& FSL_FEATURE_LPADC_HAS_OFSTRIM
+#if defined(FSL_FEATURE_LPADC_HAS_CTRL_CALOFS) && FSL_FEATURE_LPADC_HAS_CTRL_CALOFS
+#if defined(FSL_FEATURE_LPADC_HAS_OFSTRIM) && FSL_FEATURE_LPADC_HAS_OFSTRIM
 	/* Request offset calibration. */
-#if defined(CONFIG_LPADC_DO_OFFSET_CALIBRATION) \
-	&& CONFIG_LPADC_DO_OFFSET_CALIBRATION
+#if defined(CONFIG_LPADC_DO_OFFSET_CALIBRATION) && CONFIG_LPADC_DO_OFFSET_CALIBRATION
 	LPADC_DoOffsetCalibration(base);
 #else
-	LPADC_SetOffsetValue(base,
-			config->offset_a,
-			config->offset_b);
-#endif  /* DEMO_LPADC_DO_OFFSET_CALIBRATION */
-#endif  /* FSL_FEATURE_LPADC_HAS_OFSTRIM */
+	LPADC_SetOffsetValue(base, config->offset_a, config->offset_b);
+#endif /* DEMO_LPADC_DO_OFFSET_CALIBRATION */
+#endif /* FSL_FEATURE_LPADC_HAS_OFSTRIM */
 	/* Request gain calibration. */
 	LPADC_DoAutoCalibration(base);
 #endif /* FSL_FEATURE_LPADC_HAS_CTRL_CALOFS */
 
-#if (defined(FSL_FEATURE_LPADC_HAS_CFG_CALOFS) \
-	&& FSL_FEATURE_LPADC_HAS_CFG_CALOFS)
+#if (defined(FSL_FEATURE_LPADC_HAS_CFG_CALOFS) && FSL_FEATURE_LPADC_HAS_CFG_CALOFS)
 	/* Do auto calibration. */
 	LPADC_DoAutoCalibration(base);
 #endif /* FSL_FEATURE_LPADC_HAS_CFG_CALOFS */
 
 /* Enable the watermark interrupt. */
-#if (defined(FSL_FEATURE_LPADC_FIFO_COUNT) \
-	&& (FSL_FEATURE_LPADC_FIFO_COUNT == 2U))
+#if (defined(FSL_FEATURE_LPADC_FIFO_COUNT) && (FSL_FEATURE_LPADC_FIFO_COUNT == 2U))
 	LPADC_EnableInterrupts(base, kLPADC_FIFO0WatermarkInterruptEnable);
 #else
 	LPADC_EnableInterrupts(base, kLPADC_FIFOWatermarkInterruptEnable);
@@ -551,52 +526,50 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 #endif
 };
 
-#define LPADC_MCUX_INIT(n)						\
-									\
-	static void mcux_lpadc_config_func_##n(const struct device *dev);	\
-									\
-	PINCTRL_DT_INST_DEFINE(n);						\
-	static const struct mcux_lpadc_config mcux_lpadc_config_##n = {	\
-		.base = (ADC_Type *)DT_INST_REG_ADDR(n),	\
-		.voltage_ref =	DT_INST_PROP(n, voltage_ref),	\
-		.calibration_average = DT_INST_ENUM_IDX_OR(n, calibration_average, 0),	\
-		.power_level = DT_INST_PROP_OR(n, power_level, 0),	\
-		.offset_a = DT_INST_PROP(n, offset_value_a),	\
-		.offset_b = DT_INST_PROP(n, offset_value_b),	\
-		.irq_config_func = mcux_lpadc_config_func_##n,				\
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
+#define LPADC_MCUX_INIT(n)                                                                         \
+                                                                                                   \
+	static void mcux_lpadc_config_func_##n(const struct device *dev);                          \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	static const struct mcux_lpadc_config mcux_lpadc_config_##n = {                            \
+		.base = (ADC_Type *)DT_INST_REG_ADDR(n),                                           \
+		.voltage_ref = DT_INST_PROP(n, voltage_ref),                                       \
+		.calibration_average = DT_INST_ENUM_IDX_OR(n, calibration_average, 0),             \
+		.power_level = DT_INST_PROP_OR(n, power_level, 0),                                 \
+		.offset_a = DT_INST_PROP(n, offset_value_a),                                       \
+		.offset_b = DT_INST_PROP(n, offset_value_b),                                       \
+		.irq_config_func = mcux_lpadc_config_func_##n,                                     \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
 		.ref_supplies = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, nxp_references),\
 						(DEVICE_DT_GET(DT_PHANDLE(DT_DRV_INST(n),\
-						nxp_references))), (NULL)),\
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
-		.ref_supply_val = COND_CODE_1(\
+						nxp_references))), (NULL)),        \
+			 .clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                       \
+			 .clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),     \
+			 .ref_supply_val = COND_CODE_1(\
 						DT_INST_NODE_HAS_PROP(n, nxp_references),\
 						(DT_PHA(DT_DRV_INST(n), nxp_references, vref_mv)), \
-						(0)),\
-	};									\
-	static struct mcux_lpadc_data mcux_lpadc_data_##n = {	\
-		ADC_CONTEXT_INIT_TIMER(mcux_lpadc_data_##n, ctx),	\
-		ADC_CONTEXT_INIT_LOCK(mcux_lpadc_data_##n, ctx),	\
-		ADC_CONTEXT_INIT_SYNC(mcux_lpadc_data_##n, ctx),	\
-	};														\
-										\
-	DEVICE_DT_INST_DEFINE(n,						\
-		&mcux_lpadc_init, NULL, &mcux_lpadc_data_##n,			\
-		&mcux_lpadc_config_##n, POST_KERNEL,				\
-		CONFIG_ADC_INIT_PRIORITY,					\
-		&mcux_lpadc_driver_api);							\
-										\
-	static void mcux_lpadc_config_func_##n(const struct device *dev)	\
-	{									\
-		IRQ_CONNECT(DT_INST_IRQN(n),					\
-			DT_INST_IRQ(n, priority), mcux_lpadc_isr,	\
-			DEVICE_DT_INST_GET(n), 0);				\
-										\
-		irq_enable(DT_INST_IRQN(n));					\
-	}	\
-										\
-	BUILD_ASSERT((DT_INST_PROP_OR(n, power_level, 0) >= 0) && \
-		(DT_INST_PROP_OR(n, power_level, 0) <= 3), "power_level: wrong value");
+						(0)),             \
+			 };                                                                        \
+	static struct mcux_lpadc_data mcux_lpadc_data_##n = {                                      \
+		ADC_CONTEXT_INIT_TIMER(mcux_lpadc_data_##n, ctx),                                  \
+		ADC_CONTEXT_INIT_LOCK(mcux_lpadc_data_##n, ctx),                                   \
+		ADC_CONTEXT_INIT_SYNC(mcux_lpadc_data_##n, ctx),                                   \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &mcux_lpadc_init, NULL, &mcux_lpadc_data_##n,                     \
+			      &mcux_lpadc_config_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,       \
+			      &mcux_lpadc_driver_api);                                             \
+                                                                                                   \
+	static void mcux_lpadc_config_func_##n(const struct device *dev)                           \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_lpadc_isr,             \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+                                                                                                   \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+	}                                                                                          \
+                                                                                                   \
+	BUILD_ASSERT((DT_INST_PROP_OR(n, power_level, 0) >= 0) &&                                  \
+			     (DT_INST_PROP_OR(n, power_level, 0) <= 3),                            \
+		     "power_level: wrong value");
 
 DT_INST_FOREACH_STATUS_OKAY(LPADC_MCUX_INIT)

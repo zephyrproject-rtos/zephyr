@@ -4,7 +4,6 @@
  * Copyright (c) 2024 Ambiq Micro
  */
 
-
 #include <zephyr/drivers/rtc.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
@@ -17,12 +16,12 @@ LOG_MODULE_REGISTER(ambiq_rtc, CONFIG_RTC_LOG_LEVEL);
 
 #include <am_mcu_apollo.h>
 
-#define AMBIQ_RTC_ALARM_TIME_MASK                                                              \
+#define AMBIQ_RTC_ALARM_TIME_MASK                                                                  \
 	(RTC_ALARM_TIME_MASK_SECOND | RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR |      \
 	 RTC_ALARM_TIME_MASK_WEEKDAY | RTC_ALARM_TIME_MASK_MONTH | RTC_ALARM_TIME_MASK_MONTHDAY)
 
 /* struct tm start time:   1st, Jan, 1900 */
-#define TM_YEAR_REF 1900
+#define TM_YEAR_REF        1900
 #define AMBIQ_RTC_YEAR_MAX 2199
 
 struct ambiq_rtc_config {
@@ -60,7 +59,7 @@ static void rtc_time_to_ambiq_time_set(const struct rtc_time *tm, am_hal_rtc_tim
 		uint16_t value = atm->ui32Hundredths / 100;
 
 		atm->ui32Second += value;
-		atm->ui32Hundredths -= value*100;
+		atm->ui32Hundredths -= value * 100;
 	}
 }
 
@@ -86,9 +85,7 @@ static void ambiq_time_to_rtc_time_set(const am_hal_rtc_time_t *atm, struct rtc_
 
 static int test_for_rollover(am_hal_rtc_time_t *atm)
 {
-	if ((atm->ui32Year == 99) &&
-		(atm->ui32Month == 12) &&
-		(atm->ui32DayOfMonth == 31)) {
+	if ((atm->ui32Year == 99) && (atm->ui32Month == 12) && (atm->ui32DayOfMonth == 31)) {
 		return -EINVAL;
 	}
 
@@ -110,9 +107,9 @@ static int ambiq_rtc_set_time(const struct device *dev, const struct rtc_time *t
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	LOG_DBG("set time: year = %d, mon = %d, mday = %d, wday = %d, hour = %d, "
-			"min = %d, sec = %d",
-			timeptr->tm_year, timeptr->tm_mon, timeptr->tm_mday, timeptr->tm_wday,
-			timeptr->tm_hour, timeptr->tm_min, timeptr->tm_sec);
+		"min = %d, sec = %d",
+		timeptr->tm_year, timeptr->tm_mon, timeptr->tm_mday, timeptr->tm_wday,
+		timeptr->tm_hour, timeptr->tm_min, timeptr->tm_sec);
 
 	/* Convertn to Ambiq Time */
 	rtc_time_to_ambiq_time_set(timeptr, &ambiq_time);
@@ -149,9 +146,9 @@ static int ambiq_rtc_get_time(const struct device *dev, struct rtc_time *timeptr
 	ambiq_time_to_rtc_time_set(&ambiq_time, timeptr);
 
 	LOG_DBG("get time: year = %d, mon = %d, mday = %d, wday = %d, hour = %d, "
-			"min = %d, sec = %d",
-			timeptr->tm_year, timeptr->tm_mon, timeptr->tm_mday, timeptr->tm_wday,
-			timeptr->tm_hour, timeptr->tm_min, timeptr->tm_sec);
+		"min = %d, sec = %d",
+		timeptr->tm_year, timeptr->tm_mon, timeptr->tm_mday, timeptr->tm_wday,
+		timeptr->tm_hour, timeptr->tm_min, timeptr->tm_sec);
 
 unlock:
 	k_spin_unlock(&data->lock, key);
@@ -161,8 +158,8 @@ unlock:
 
 #ifdef CONFIG_RTC_ALARM
 
-static int ambiq_rtc_alarm_get_supported_fields(const struct device *dev,
-								uint16_t id, uint16_t *mask)
+static int ambiq_rtc_alarm_get_supported_fields(const struct device *dev, uint16_t id,
+						uint16_t *mask)
 {
 	ARG_UNUSED(dev);
 
@@ -178,7 +175,7 @@ static int ambiq_rtc_alarm_get_supported_fields(const struct device *dev,
 
 /* To get from the alarm registers */
 static int ambiq_rtc_alarm_get_time(const struct device *dev, uint16_t id, uint16_t *mask,
-		struct rtc_time *timeptr)
+				    struct rtc_time *timeptr)
 {
 
 	int err = 0;
@@ -203,8 +200,9 @@ static int ambiq_rtc_alarm_get_time(const struct device *dev, uint16_t id, uint1
 	*mask = data->alarm_set_mask;
 
 	LOG_DBG("get alarm: wday = %d, mon = %d, mday = %d, hour = %d, min = %d, sec = %d, "
-		"mask = 0x%04x", timeptr->tm_wday, timeptr->tm_mon, timeptr->tm_mday,
-		timeptr->tm_hour, timeptr->tm_min, timeptr->tm_sec, *mask);
+		"mask = 0x%04x",
+		timeptr->tm_wday, timeptr->tm_mon, timeptr->tm_mday, timeptr->tm_hour,
+		timeptr->tm_min, timeptr->tm_sec, *mask);
 
 	k_spin_unlock(&data->lock, key);
 
@@ -212,7 +210,7 @@ static int ambiq_rtc_alarm_get_time(const struct device *dev, uint16_t id, uint1
 }
 
 static int ambiq_rtc_alarm_set_time(const struct device *dev, uint16_t id, uint16_t mask,
-		const struct rtc_time *timeptr)
+				    const struct rtc_time *timeptr)
 {
 	int err = 0;
 	struct ambiq_rtc_data *data = dev->data;
@@ -250,9 +248,9 @@ static int ambiq_rtc_alarm_set_time(const struct device *dev, uint16_t id, uint1
 	}
 
 	LOG_DBG("set alarm: second = %d, min = %d, hour = %d, mday = %d, month = %d,"
-			"wday = %d,  mask = 0x%04x",
-			timeptr->tm_sec, timeptr->tm_min, timeptr->tm_hour, timeptr->tm_mday,
-			timeptr->tm_mon, timeptr->tm_wday, mask);
+		"wday = %d,  mask = 0x%04x",
+		timeptr->tm_sec, timeptr->tm_min, timeptr->tm_hour, timeptr->tm_mday,
+		timeptr->tm_mon, timeptr->tm_wday, mask);
 
 	/* Convertn to Ambiq Time */
 	rtc_time_to_ambiq_time_set(timeptr, &ambiq_time);
@@ -307,7 +305,7 @@ static void ambiq_rtc_isr(const struct device *dev)
 }
 
 static int ambiq_rtc_alarm_set_callback(const struct device *dev, uint16_t id,
-		rtc_alarm_callback callback, void *user_data)
+					rtc_alarm_callback callback, void *user_data)
 {
 
 	struct ambiq_rtc_data *data = dev->data;
@@ -348,7 +346,7 @@ static int ambiq_rtc_init(const struct device *dev)
 	data->alarm_pending = false;
 
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), ambiq_rtc_isr, DEVICE_DT_INST_GET(0),
-			0);
+		    0);
 	irq_enable(DT_INST_IRQN(0));
 #endif
 	return 0;
@@ -357,7 +355,7 @@ static int ambiq_rtc_init(const struct device *dev)
 static const struct rtc_driver_api ambiq_rtc_driver_api = {
 	.set_time = ambiq_rtc_set_time,
 	.get_time = ambiq_rtc_get_time,
-	/* RTC_UPDATE not supported */
+/* RTC_UPDATE not supported */
 #ifdef CONFIG_RTC_ALARM
 	.alarm_get_supported_fields = ambiq_rtc_alarm_get_supported_fields,
 	.alarm_set_time = ambiq_rtc_alarm_set_time,
@@ -367,14 +365,14 @@ static const struct rtc_driver_api ambiq_rtc_driver_api = {
 #endif
 };
 
-#define AMBIQ_RTC_INIT(inst)									\
-static const struct ambiq_rtc_config ambiq_rtc_config_##inst = {	\
-	.clk_src = DT_INST_ENUM_IDX(inst, clock)};		\
-												\
-static struct ambiq_rtc_data ambiq_rtc_data##inst;	\
-												\
-DEVICE_DT_INST_DEFINE(inst, &ambiq_rtc_init, NULL, &ambiq_rtc_data##inst,    \
-				&ambiq_rtc_config_##inst, POST_KERNEL, \
-				CONFIG_RTC_INIT_PRIORITY, &ambiq_rtc_driver_api);
+#define AMBIQ_RTC_INIT(inst)                                                                       \
+	static const struct ambiq_rtc_config ambiq_rtc_config_##inst = {                           \
+		.clk_src = DT_INST_ENUM_IDX(inst, clock)};                                         \
+                                                                                                   \
+	static struct ambiq_rtc_data ambiq_rtc_data##inst;                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &ambiq_rtc_init, NULL, &ambiq_rtc_data##inst,                  \
+			      &ambiq_rtc_config_##inst, POST_KERNEL, CONFIG_RTC_INIT_PRIORITY,     \
+			      &ambiq_rtc_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AMBIQ_RTC_INIT)

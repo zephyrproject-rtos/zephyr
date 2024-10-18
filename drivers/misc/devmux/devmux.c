@@ -81,8 +81,7 @@ ssize_t z_impl_devmux_select_get(const struct device *dev)
 		return -EINVAL;
 	}
 
-	K_SPINLOCK(&data->lock)
-	{
+	K_SPINLOCK(&data->lock) {
 		index = data->selected;
 	}
 
@@ -110,8 +109,7 @@ int z_impl_devmux_select_set(struct device *dev, size_t index)
 		return -ENODEV;
 	}
 
-	K_SPINLOCK(&data->lock)
-	{
+	K_SPINLOCK(&data->lock) {
 		*dev = *config->devs[index];
 		data->selected = index;
 	}
@@ -150,7 +148,7 @@ static int devmux_init(struct device *const dev)
 	DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, prop, idx))
 
 #define DEVMUX_PHANDLE_DEVICES(_n)                                                                 \
-	DT_INST_FOREACH_PROP_ELEM_SEP(_n, devices, DEVMUX_PHANDLE_TO_DEVICE, (,))
+	DT_INST_FOREACH_PROP_ELEM_SEP(_n, devices, DEVMUX_PHANDLE_TO_DEVICE, (, ))
 
 #define DEVMUX_SELECTED(_n) DT_INST_PROP(_n, selected)
 

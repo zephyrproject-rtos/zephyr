@@ -181,7 +181,7 @@ static int max31865_fault_register(const struct device *dev)
 
 	max31865_spi_read(dev, (REG_FAULT_STATUS), &fault_register, 1);
 	struct max31865_data *data = dev->data;
-	saved_fault_bits  = data->config_control_bits & FAULT_BITS_CLEAR_MASK;
+	saved_fault_bits = data->config_control_bits & FAULT_BITS_CLEAR_MASK;
 	/*Clear fault register */
 	WRITE_BIT(data->config_control_bits, 1, 1);
 	data->config_control_bits &= ~FAULT_BITS_CLEAR_MASK;
@@ -326,8 +326,8 @@ static const struct sensor_driver_api max31865_api_funcs = {
 	};                                                                                         \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, max31865_init, NULL, &max31865_data_##inst,             \
-			      &max31865_config_##inst, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,   \
-			      &max31865_api_funcs);
+				     &max31865_config_##inst, POST_KERNEL,                         \
+				     CONFIG_SENSOR_INIT_PRIORITY, &max31865_api_funcs);
 
 /* Create the struct device for every status "okay" node in the devicetree. */
 DT_INST_FOREACH_STATUS_OKAY(MAX31865_DEFINE)

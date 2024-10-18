@@ -39,23 +39,21 @@ LOG_MODULE_REGISTER(bt_driver);
 #define DT_DRV_COMPAT zephyr_bt_hci_userchan
 
 struct uc_data {
-	int           fd;
+	int fd;
 	bt_hci_recv_t recv;
-
 };
 
-#define BTPROTO_HCI      1
+#define BTPROTO_HCI 1
 struct sockaddr_hci {
-	sa_family_t     hci_family;
-	unsigned short  hci_dev;
-	unsigned short  hci_channel;
+	sa_family_t hci_family;
+	unsigned short hci_dev;
+	unsigned short hci_channel;
 };
 #define HCI_CHANNEL_USER 1
 
-#define SOL_HCI          0
+#define SOL_HCI 0
 
-static K_KERNEL_STACK_DEFINE(rx_thread_stack,
-			     CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);
 static struct k_thread rx_thread_data;
 
 static unsigned short bt_dev_index;
@@ -146,7 +144,7 @@ static int32_t hci_packet_complete(const uint8_t *buf, uint16_t buf_len)
 		const struct bt_hci_iso_hdr *iso = (const struct bt_hci_iso_hdr *)hdr;
 
 		/* ISO_Data_Load_Length parameter */
-		payload_len =  bt_iso_hdr_len(sys_le16_to_cpu(iso->len));
+		payload_len = bt_iso_hdr_len(sys_le16_to_cpu(iso->len));
 		header_len += BT_HCI_ISO_HDR_SIZE;
 		break;
 	}
@@ -166,7 +164,7 @@ static int32_t hci_packet_complete(const uint8_t *buf, uint16_t buf_len)
 
 static bool uc_ready(int fd)
 {
-	struct pollfd pollfd = { .fd = fd, .events = POLLIN };
+	struct pollfd pollfd = {.fd = fd, .events = POLLIN};
 
 	return (poll(&pollfd, 1, 0) == 1);
 }
@@ -254,8 +252,8 @@ static void rx_thread(void *p1, void *p2, void *p3)
 
 			buf_tailroom = net_buf_tailroom(buf);
 			if (buf_tailroom < buf_add_len) {
-				LOG_ERR("Not enough space in buffer %zu/%zu",
-					buf_add_len, buf_tailroom);
+				LOG_ERR("Not enough space in buffer %zu/%zu", buf_add_len,
+					buf_tailroom);
 				net_buf_unref(buf);
 				continue;
 			}
@@ -315,8 +313,7 @@ static int user_chan_open(void)
 	if (hci_socket) {
 		struct sockaddr_hci addr;
 
-		fd = socket(PF_BLUETOOTH, SOCK_RAW | SOCK_CLOEXEC | SOCK_NONBLOCK,
-			    BTPROTO_HCI);
+		fd = socket(PF_BLUETOOTH, SOCK_RAW | SOCK_CLOEXEC | SOCK_NONBLOCK, BTPROTO_HCI);
 		if (fd < 0) {
 			return -errno;
 		}
@@ -379,11 +376,9 @@ static int uc_open(const struct device *dev, bt_hci_recv_t recv)
 
 	LOG_DBG("User Channel opened as fd %d", uc->fd);
 
-	k_thread_create(&rx_thread_data, rx_thread_stack,
-			K_KERNEL_STACK_SIZEOF(rx_thread_stack),
+	k_thread_create(&rx_thread_data, rx_thread_stack, K_KERNEL_STACK_SIZEOF(rx_thread_stack),
 			rx_thread, (void *)dev, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO),
-			0, K_NO_WAIT);
+			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO), 0, K_NO_WAIT);
 
 	LOG_DBG("returning");
 
@@ -407,12 +402,12 @@ static int uc_init(const struct device *dev)
 	return 0;
 }
 
-#define UC_DEVICE_INIT(inst) \
-	static struct uc_data uc_data_##inst = { \
-		.fd = -1, \
-	}; \
-	DEVICE_DT_INST_DEFINE(inst, uc_init, NULL, &uc_data_##inst, NULL, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &uc_drv_api)
+#define UC_DEVICE_INIT(inst)                                                                       \
+	static struct uc_data uc_data_##inst = {                                                   \
+		.fd = -1,                                                                          \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(inst, uc_init, NULL, &uc_data_##inst, NULL, POST_KERNEL,             \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &uc_drv_api)
 
 DT_INST_FOREACH_STATUS_OKAY(UC_DEVICE_INIT)
 
@@ -427,7 +422,7 @@ static void cmd_bt_dev_found(char *argv, int offset)
 			hci_socket = true;
 		} else {
 			posix_print_error_and_exit("Invalid argument value for --bt-dev. "
-						  "hci idx must be within range 0 to 65536.\n");
+						   "hci idx must be within range 0 to 65536.\n");
 		}
 	} else if (sscanf(&argv[offset], "%15[^:]:%d", ip_addr, &port) == 2) {
 		if (port > USHRT_MAX) {
@@ -457,13 +452,10 @@ static void add_btuserchan_arg(void)
 		 * destination, callback,
 		 * description
 		 */
-		{ false, true, false,
-		"bt-dev", "hciX", 's',
-		NULL, cmd_bt_dev_found,
-		"A local HCI device to be used for Bluetooth (e.g. hci0) "
-		"or an HCI TCP Server (e.g. 127.0.0.1:9000)"},
-		ARG_TABLE_ENDMARKER
-	};
+		{false, true, false, "bt-dev", "hciX", 's', NULL, cmd_bt_dev_found,
+		 "A local HCI device to be used for Bluetooth (e.g. hci0) "
+		 "or an HCI TCP Server (e.g. 127.0.0.1:9000)"},
+		ARG_TABLE_ENDMARKER};
 
 	native_add_command_line_opts(btuserchan_args);
 }

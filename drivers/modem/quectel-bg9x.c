@@ -11,10 +11,10 @@ LOG_MODULE_REGISTER(modem_quectel_bg9x, CONFIG_MODEM_LOG_LEVEL);
 
 #include "quectel-bg9x.h"
 
-static struct k_thread	       modem_rx_thread;
-static struct k_work_q	       modem_workq;
-static struct modem_data       mdata;
-static struct modem_context    mctx;
+static struct k_thread modem_rx_thread;
+static struct k_work_q modem_workq;
+static struct modem_data mdata;
+static struct modem_context mctx;
 static const struct socket_op_vtable offload_socket_fd_op_vtable;
 
 static K_KERNEL_STACK_DEFINE(modem_rx_stack, CONFIG_MODEM_QUECTEL_BG9X_RX_STACK_SIZE);
@@ -46,7 +46,7 @@ static inline int digits(int n)
 
 static inline uint32_t hash32(char *str, int len)
 {
-#define HASH_MULTIPLIER		37
+#define HASH_MULTIPLIER 37
 
 	uint32_t h = 0;
 	int i;
@@ -77,16 +77,14 @@ static inline uint8_t *modem_get_mac(const struct device *dev)
 /* Func: modem_atoi
  * Desc: Convert string to long integer, but handle errors
  */
-static int modem_atoi(const char *s, const int err_value,
-		      const char *desc, const char *func)
+static int modem_atoi(const char *s, const int err_value, const char *desc, const char *func)
 {
-	int   ret;
-	char  *endptr;
+	int ret;
+	char *endptr;
 
 	ret = (int)strtol(s, &endptr, 10);
 	if (!endptr || *endptr != '\0') {
-		LOG_ERR("bad %s '%s' in %s", s, desc,
-			func);
+		LOG_ERR("bad %s '%s' in %s", s, desc, func);
 		return err_value;
 	}
 
@@ -96,7 +94,7 @@ static int modem_atoi(const char *s, const int err_value,
 static inline int find_len(char *data)
 {
 	char buf[10] = {0};
-	int  i;
+	int i;
 
 	for (i = 0; i < 10; i++) {
 		if (data[i] == '\r') {
@@ -112,12 +110,10 @@ static inline int find_len(char *data)
 /* Func: on_cmd_sockread_common
  * Desc: Function to successfully read data from the modem on a given socket.
  */
-static int on_cmd_sockread_common(int socket_fd,
-				  struct modem_cmd_handler_data *data,
-				  uint16_t len)
+static int on_cmd_sockread_common(int socket_fd, struct modem_cmd_handler_data *data, uint16_t len)
 {
-	struct modem_socket	 *sock = NULL;
-	struct socket_read_data	 *sock_data;
+	struct modem_socket *sock = NULL;
+	struct socket_read_data *sock_data;
 	int ret, i;
 	int socket_data_length;
 	int bytes_to_skip;
@@ -172,20 +168,20 @@ static int on_cmd_sockread_common(int socket_fd,
 		goto exit;
 	}
 
-	ret = net_buf_linearize(sock_data->recv_buf, sock_data->recv_buf_len,
-				data->rx_buf, 0, (uint16_t)socket_data_length);
+	ret = net_buf_linearize(sock_data->recv_buf, sock_data->recv_buf_len, data->rx_buf, 0,
+				(uint16_t)socket_data_length);
 	data->rx_buf = net_buf_skip(data->rx_buf, ret);
 	sock_data->recv_read_len = ret;
 	if (ret != socket_data_length) {
 		LOG_ERR("Total copied data is different then received data!"
-			" copied:%d vs. received:%d", ret, socket_data_length);
+			" copied:%d vs. received:%d",
+			ret, socket_data_length);
 		ret = -EINVAL;
 	}
 
 exit:
 	/* remove packet from list (ignore errors) */
-	(void)modem_socket_packet_size_update(&mdata.socket_config, sock,
-					      -socket_data_length);
+	(void)modem_socket_packet_size_update(&mdata.socket_config, sock, -socket_data_length);
 
 	/* don't give back semaphore -- OK to follow */
 	return ret;
@@ -197,14 +193,13 @@ exit:
 static void socket_close(struct modem_socket *sock)
 {
 	char buf[sizeof("AT+QICLOSE=##")] = {0};
-	int  ret;
+	int ret;
 
 	snprintk(buf, sizeof(buf), "AT+QICLOSE=%d", sock->id);
 
 	/* Tell the modem to close the socket. */
-	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
-			     NULL, 0U, buf,
-			     &mdata.sem_response, MDM_CMD_TIMEOUT);
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, buf, &mdata.sem_response,
+			     MDM_CMD_TIMEOUT);
 	if (ret < 0) {
 		LOG_ERR("%s ret:%d", buf, ret);
 	}
@@ -269,9 +264,8 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_sockopen)
 /* Handler: <manufacturer> */
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_manufacturer)
 {
-	size_t out_len = net_buf_linearize(mdata.mdm_manufacturer,
-					   sizeof(mdata.mdm_manufacturer) - 1,
-					   data->rx_buf, 0, len);
+	size_t out_len = net_buf_linearize(
+		mdata.mdm_manufacturer, sizeof(mdata.mdm_manufacturer) - 1, data->rx_buf, 0, len);
 	mdata.mdm_manufacturer[out_len] = '\0';
 	LOG_INF("Manufacturer: %s", mdata.mdm_manufacturer);
 	return 0;
@@ -280,8 +274,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_manufacturer)
 /* Handler: <model> */
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_model)
 {
-	size_t out_len = net_buf_linearize(mdata.mdm_model,
-					   sizeof(mdata.mdm_model) - 1,
+	size_t out_len = net_buf_linearize(mdata.mdm_model, sizeof(mdata.mdm_model) - 1,
 					   data->rx_buf, 0, len);
 	mdata.mdm_model[out_len] = '\0';
 
@@ -293,8 +286,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_model)
 /* Handler: <rev> */
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_revision)
 {
-	size_t out_len = net_buf_linearize(mdata.mdm_revision,
-					   sizeof(mdata.mdm_revision) - 1,
+	size_t out_len = net_buf_linearize(mdata.mdm_revision, sizeof(mdata.mdm_revision) - 1,
 					   data->rx_buf, 0, len);
 	mdata.mdm_revision[out_len] = '\0';
 
@@ -306,9 +298,8 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_revision)
 /* Handler: <IMEI> */
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_imei)
 {
-	size_t out_len = net_buf_linearize(mdata.mdm_imei,
-					   sizeof(mdata.mdm_imei) - 1,
-					   data->rx_buf, 0, len);
+	size_t out_len =
+		net_buf_linearize(mdata.mdm_imei, sizeof(mdata.mdm_imei) - 1, data->rx_buf, 0, len);
 	mdata.mdm_imei[out_len] = '\0';
 
 	/* Log the received information. */
@@ -320,9 +311,8 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_imei)
 /* Handler: <IMSI> */
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_imsi)
 {
-	size_t	out_len = net_buf_linearize(mdata.mdm_imsi,
-					    sizeof(mdata.mdm_imsi) - 1,
-					    data->rx_buf, 0, len);
+	size_t out_len =
+		net_buf_linearize(mdata.mdm_imsi, sizeof(mdata.mdm_imsi) - 1, data->rx_buf, 0, len);
 	mdata.mdm_imsi[out_len] = '\0';
 
 	/* Log the received information. */
@@ -334,10 +324,10 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_imsi)
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_iccid)
 {
 	size_t out_len;
-	char   *p;
+	char *p;
 
-	out_len = net_buf_linearize(mdata.mdm_iccid, sizeof(mdata.mdm_iccid) - 1,
-				    data->rx_buf, 0, len);
+	out_len = net_buf_linearize(mdata.mdm_iccid, sizeof(mdata.mdm_iccid) - 1, data->rx_buf, 0,
+				    len);
 	mdata.mdm_iccid[out_len] = '\0';
 
 	/* Skip over the +CCID bit, which modems omit. */
@@ -390,7 +380,7 @@ MODEM_CMD_DEFINE(on_cmd_sock_readdata)
 MODEM_CMD_DEFINE(on_cmd_unsol_recv)
 {
 	struct modem_socket *sock;
-	int		     sock_fd;
+	int sock_fd;
 
 	sock_fd = ATOI(argv[0], 0, "sock_fd");
 
@@ -411,10 +401,10 @@ MODEM_CMD_DEFINE(on_cmd_unsol_recv)
 MODEM_CMD_DEFINE(on_cmd_unsol_close)
 {
 	struct modem_socket *sock;
-	int		     sock_fd;
+	int sock_fd;
 
 	sock_fd = ATOI(argv[0], 0, "sock_fd");
-	sock	= modem_socket_from_fd(&mdata.socket_config, sock_fd);
+	sock = modem_socket_from_fd(&mdata.socket_config, sock_fd);
 	if (!sock) {
 		return 0;
 	}
@@ -437,14 +427,11 @@ MODEM_CMD_DEFINE(on_cmd_unsol_rdy)
 /* Func: send_socket_data
  * Desc: This function will send "binary" data over the socket object.
  */
-static ssize_t send_socket_data(struct modem_socket *sock,
-				const struct sockaddr *dst_addr,
-				struct modem_cmd *handler_cmds,
-				size_t handler_cmds_len,
-				const char *buf, size_t buf_len,
-				k_timeout_t timeout)
+static ssize_t send_socket_data(struct modem_socket *sock, const struct sockaddr *dst_addr,
+				struct modem_cmd *handler_cmds, size_t handler_cmds_len,
+				const char *buf, size_t buf_len, k_timeout_t timeout)
 {
-	int  ret;
+	int ret;
 	char send_buf[sizeof("AT+QISEND=##,####")] = {0};
 	char ctrlz = 0x1A;
 
@@ -454,22 +441,21 @@ static ssize_t send_socket_data(struct modem_socket *sock,
 
 	/* Create a buffer with the correct params. */
 	mdata.sock_written = buf_len;
-	snprintk(send_buf, sizeof(send_buf), "AT+QISEND=%d,%ld", sock->id, (long) buf_len);
+	snprintk(send_buf, sizeof(send_buf), "AT+QISEND=%d,%ld", sock->id, (long)buf_len);
 
 	/* Setup the locks correctly. */
 	(void)k_sem_take(&mdata.cmd_handler_data.sem_tx_lock, K_FOREVER);
 	k_sem_reset(&mdata.sem_tx_ready);
 
 	/* Send the Modem command. */
-	ret = modem_cmd_send_nolock(&mctx.iface, &mctx.cmd_handler,
-				    NULL, 0U, send_buf, NULL, K_NO_WAIT);
+	ret = modem_cmd_send_nolock(&mctx.iface, &mctx.cmd_handler, NULL, 0U, send_buf, NULL,
+				    K_NO_WAIT);
 	if (ret < 0) {
 		goto exit;
 	}
 
 	/* set command handlers */
-	ret = modem_cmd_handler_update_cmds(&mdata.cmd_handler_data,
-					    handler_cmds, handler_cmds_len,
+	ret = modem_cmd_handler_update_cmds(&mdata.cmd_handler_data, handler_cmds, handler_cmds_len,
 					    true);
 	if (ret < 0) {
 		goto exit;
@@ -502,8 +488,7 @@ static ssize_t send_socket_data(struct modem_socket *sock,
 
 exit:
 	/* unset handler commands and ignore any errors */
-	(void)modem_cmd_handler_update_cmds(&mdata.cmd_handler_data,
-					    NULL, 0U, false);
+	(void)modem_cmd_handler_update_cmds(&mdata.cmd_handler_data, NULL, 0U, false);
 	k_sem_give(&mdata.cmd_handler_data.sem_tx_lock);
 
 	if (ret < 0) {
@@ -517,12 +502,11 @@ exit:
 /* Func: offload_sendto
  * Desc: This function will send data on the socket object.
  */
-static ssize_t offload_sendto(void *obj, const void *buf, size_t len,
-			      int flags, const struct sockaddr *to,
-			      socklen_t tolen)
+static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
+			      const struct sockaddr *to, socklen_t tolen)
 {
 	int ret;
-	struct modem_socket *sock = (struct modem_socket *) obj;
+	struct modem_socket *sock = (struct modem_socket *)obj;
 
 	/* Here's how sending data works,
 	 * -> We firstly send the "AT+QISEND" command on the given socket and
@@ -538,7 +522,7 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len,
 	 */
 	struct modem_cmd cmd[] = {
 		MODEM_CMD_DIRECT(">", on_cmd_tx_ready),
-		MODEM_CMD("SEND OK", on_cmd_send_ok,   0, ","),
+		MODEM_CMD("SEND OK", on_cmd_send_ok, 0, ","),
 		MODEM_CMD("SEND FAIL", on_cmd_send_fail, 0, ","),
 	};
 
@@ -559,8 +543,7 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len,
 		return -1;
 	}
 
-	ret = send_socket_data(sock, to, cmd, ARRAY_SIZE(cmd), buf, len,
-			       MDM_CMD_TIMEOUT);
+	ret = send_socket_data(sock, to, cmd, ARRAY_SIZE(cmd), buf, len, MDM_CMD_TIMEOUT);
 	if (ret < 0) {
 		errno = -ret;
 		return -1;
@@ -574,17 +557,16 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len,
 /* Func: offload_recvfrom
  * Desc: This function will receive data on the socket object.
  */
-static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
-				int flags, struct sockaddr *from,
+static ssize_t offload_recvfrom(void *obj, void *buf, size_t len, int flags, struct sockaddr *from,
 				socklen_t *fromlen)
 {
 	struct modem_socket *sock = (struct modem_socket *)obj;
-	char   sendbuf[sizeof("AT+QIRD=##,####")] = {0};
-	int    ret;
+	char sendbuf[sizeof("AT+QIRD=##,####")] = {0};
+	int ret;
 	struct socket_read_data sock_data;
 
 	/* Modem command to read the data. */
-	struct modem_cmd data_cmd[] = { MODEM_CMD("+QIRD: ", on_cmd_sock_readdata, 0U, "") };
+	struct modem_cmd data_cmd[] = {MODEM_CMD("+QIRD: ", on_cmd_sock_readdata, 0U, "")};
 
 	if (!buf || len == 0) {
 		errno = EINVAL;
@@ -599,17 +581,16 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
 	snprintk(sendbuf, sizeof(sendbuf), "AT+QIRD=%d,%zd", sock->id, len);
 
 	/* Socket read settings */
-	(void) memset(&sock_data, 0, sizeof(sock_data));
-	sock_data.recv_buf     = buf;
+	(void)memset(&sock_data, 0, sizeof(sock_data));
+	sock_data.recv_buf = buf;
 	sock_data.recv_buf_len = len;
-	sock_data.recv_addr    = from;
-	sock->data	       = &sock_data;
-	mdata.sock_fd	       = sock->sock_fd;
+	sock_data.recv_addr = from;
+	sock->data = &sock_data;
+	mdata.sock_fd = sock->sock_fd;
 
 	/* Tell the modem to give us data (AT+QIRD=id,data_len). */
-	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
-			     data_cmd, ARRAY_SIZE(data_cmd), sendbuf, &mdata.sem_response,
-			     MDM_CMD_TIMEOUT);
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, data_cmd, ARRAY_SIZE(data_cmd),
+			     sendbuf, &mdata.sem_response, MDM_CMD_TIMEOUT);
 	if (ret < 0) {
 		errno = -ret;
 		ret = -1;
@@ -684,30 +665,28 @@ static int offload_ioctl(void *obj, unsigned int request, va_list args)
 /* Func: offload_connect
  * Desc: This function will connect with a provided TCP.
  */
-static int offload_connect(void *obj, const struct sockaddr *addr,
-						   socklen_t addrlen)
+static int offload_connect(void *obj, const struct sockaddr *addr, socklen_t addrlen)
 {
-	struct modem_socket *sock     = (struct modem_socket *) obj;
-	uint16_t	    dst_port  = 0;
-	char		    *protocol = "TCP";
-	struct modem_cmd    cmd[]     = { MODEM_CMD("+QIOPEN: ", on_cmd_atcmdinfo_sockopen, 2U, ",") };
-	char		    buf[sizeof("AT+QIOPEN=#,#,'###','###',"
-				       "####.####.####.####.####.####.####.####,######,"
-				       "0,0")] = {0};
-	int		    ret;
-	char		    ip_str[NET_IPV6_ADDR_LEN];
+	struct modem_socket *sock = (struct modem_socket *)obj;
+	uint16_t dst_port = 0;
+	char *protocol = "TCP";
+	struct modem_cmd cmd[] = {MODEM_CMD("+QIOPEN: ", on_cmd_atcmdinfo_sockopen, 2U, ",")};
+	char buf[sizeof("AT+QIOPEN=#,#,'###','###',"
+			"####.####.####.####.####.####.####.####,######,"
+			"0,0")] = {0};
+	int ret;
+	char ip_str[NET_IPV6_ADDR_LEN];
 
 	/* Verify socket has been allocated */
 	if (modem_socket_is_allocated(&mdata.socket_config, sock) == false) {
-		LOG_ERR("Invalid socket_id(%d) from fd:%d",
-			sock->id, sock->sock_fd);
+		LOG_ERR("Invalid socket_id(%d) from fd:%d", sock->id, sock->sock_fd);
 		errno = EINVAL;
 		return -1;
 	}
 
 	if (sock->is_connected == true) {
-		LOG_ERR("Socket is already connected!! socket_id(%d), socket_fd:%d",
-			sock->id, sock->sock_fd);
+		LOG_ERR("Socket is already connected!! socket_id(%d), socket_fd:%d", sock->id,
+			sock->sock_fd);
 		errno = EISCONN;
 		return -1;
 	}
@@ -741,9 +720,8 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 		 ip_str, dst_port);
 
 	/* Send out the command. */
-	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
-			     NULL, 0U, buf,
-			     &mdata.sem_response, K_SECONDS(1));
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, buf, &mdata.sem_response,
+			     K_SECONDS(1));
 	if (ret < 0) {
 		LOG_ERR("%s ret:%d", buf, ret);
 		LOG_ERR("Closing the socket!!!");
@@ -753,8 +731,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 	}
 
 	/* set command handlers */
-	ret = modem_cmd_handler_update_cmds(&mdata.cmd_handler_data,
-					    cmd, ARRAY_SIZE(cmd), true);
+	ret = modem_cmd_handler_update_cmds(&mdata.cmd_handler_data, cmd, ARRAY_SIZE(cmd), true);
 	if (ret < 0) {
 		goto exit;
 	}
@@ -781,8 +758,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 	return 0;
 
 exit:
-	(void) modem_cmd_handler_update_cmds(&mdata.cmd_handler_data,
-					     NULL, 0U, false);
+	(void)modem_cmd_handler_update_cmds(&mdata.cmd_handler_data, NULL, 0U, false);
 	errno = -ret;
 	return -1;
 }
@@ -793,7 +769,7 @@ exit:
  */
 static int offload_close(void *obj)
 {
-	struct modem_socket *sock = (struct modem_socket *) obj;
+	struct modem_socket *sock = (struct modem_socket *)obj;
 
 	/* Make sure socket is allocated */
 	if (modem_socket_is_allocated(&mdata.socket_config, sock) == false) {
@@ -820,11 +796,10 @@ static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
 
 	for (int i = 0; i < msg->msg_iovlen; i++) {
 		const char *buf = msg->msg_iov[i].iov_base;
-		size_t len	= msg->msg_iov[i].iov_len;
+		size_t len = msg->msg_iov[i].iov_len;
 
 		while (len > 0) {
-			rc = offload_sendto(obj, buf, len, flags,
-					    msg->msg_name, msg->msg_namelen);
+			rc = offload_sendto(obj, buf, len, flags, msg->msg_name, msg->msg_namelen);
 			if (rc < 0) {
 				if (rc == -EAGAIN) {
 					k_sleep(MDM_SENDMSG_SLEEP);
@@ -840,7 +815,7 @@ static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
 		}
 	}
 
-	return (ssize_t) sent;
+	return (ssize_t)sent;
 }
 
 /* Func: modem_rx
@@ -866,22 +841,20 @@ static void modem_rx(void *p1, void *p2, void *p3)
  */
 static void modem_rssi_query_work(struct k_work *work)
 {
-	struct modem_cmd cmd  = MODEM_CMD("+CSQ: ", on_cmd_atcmdinfo_rssi_csq, 2U, ",");
+	struct modem_cmd cmd = MODEM_CMD("+CSQ: ", on_cmd_atcmdinfo_rssi_csq, 2U, ",");
 	static char *send_cmd = "AT+CSQ";
 	int ret;
 
 	/* query modem RSSI */
-	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
-			     &cmd, 1U, send_cmd, &mdata.sem_response,
-			     MDM_CMD_TIMEOUT);
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, &cmd, 1U, send_cmd,
+			     &mdata.sem_response, MDM_CMD_TIMEOUT);
 	if (ret < 0) {
 		LOG_ERR("AT+CSQ ret:%d", ret);
 	}
 
 	/* Re-start RSSI query work */
 	if (work) {
-		k_work_reschedule_for_queue(&modem_workq,
-					    &mdata.rssi_query_work,
+		k_work_reschedule_for_queue(&modem_workq, &mdata.rssi_query_work,
 					    K_SECONDS(RSSI_TIMEOUT_SECS));
 	}
 }
@@ -942,8 +915,8 @@ static const struct modem_cmd response_cmds[] = {
 };
 
 static const struct modem_cmd unsol_cmds[] = {
-	MODEM_CMD("+QIURC: \"recv\",",	   on_cmd_unsol_recv,  1U, ""),
-	MODEM_CMD("+QIURC: \"closed\",",   on_cmd_unsol_close, 1U, ""),
+	MODEM_CMD("+QIURC: \"recv\",", on_cmd_unsol_recv, 1U, ""),
+	MODEM_CMD("+QIURC: \"closed\",", on_cmd_unsol_close, 1U, ""),
 	MODEM_CMD(MDM_UNSOL_RDY, on_cmd_unsol_rdy, 0U, ""),
 	MODEM_CMD("NORMAL POWER DOWN", on_cmd_unsol_normal_power_down, 0U, ""),
 };
@@ -963,8 +936,8 @@ static const struct setup_cmd setup_cmds[] = {
 	SETUP_CMD("AT+CIMI", "", on_cmd_atcmdinfo_imsi, 0U, ""),
 	SETUP_CMD("AT+QCCID", "", on_cmd_atcmdinfo_iccid, 0U, ""),
 #endif /* #if defined(CONFIG_MODEM_SIM_NUMBERS) */
-	SETUP_CMD_NOHANDLE("AT+QICSGP=1,1,\"" MDM_APN "\",\""
-			   MDM_USERNAME "\",\"" MDM_PASSWORD "\",1"),
+	SETUP_CMD_NOHANDLE("AT+QICSGP=1,1,\"" MDM_APN "\",\"" MDM_USERNAME "\",\"" MDM_PASSWORD
+			   "\",1"),
 };
 
 /* Func: modem_pdp_context_active
@@ -978,24 +951,21 @@ static int modem_pdp_context_activate(void)
 	int ret;
 	int retry_count = 0;
 
-	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
-			     NULL, 0U, "AT+QIACT=1", &mdata.sem_response,
-			     MDM_CMD_TIMEOUT);
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, "AT+QIACT=1",
+			     &mdata.sem_response, MDM_CMD_TIMEOUT);
 
 	/* If there is trouble activating the PDP context, we try to deactivate/reactive it. */
 	while (ret == -EIO && retry_count < MDM_PDP_ACT_RETRY_COUNT) {
-		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
-			     NULL, 0U, "AT+QIDEACT=1", &mdata.sem_response,
-			     MDM_CMD_TIMEOUT);
+		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, "AT+QIDEACT=1",
+				     &mdata.sem_response, MDM_CMD_TIMEOUT);
 
 		/* If there's any error for AT+QIDEACT, restart the module. */
 		if (ret != 0) {
 			return ret;
 		}
 
-		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
-			     NULL, 0U, "AT+QIACT=1", &mdata.sem_response,
-			     MDM_CMD_TIMEOUT);
+		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, "AT+QIACT=1",
+				     &mdata.sem_response, MDM_CMD_TIMEOUT);
 
 		retry_count++;
 	}
@@ -1036,9 +1006,9 @@ restart:
 	}
 
 	/* Run setup commands on the modem. */
-	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
-					   setup_cmds, ARRAY_SIZE(setup_cmds),
-					   &mdata.sem_response, MDM_REGISTRATION_TIMEOUT);
+	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler, setup_cmds,
+					   ARRAY_SIZE(setup_cmds), &mdata.sem_response,
+					   MDM_REGISTRATION_TIMEOUT);
 	if (ret < 0) {
 		goto error;
 	}
@@ -1051,7 +1021,7 @@ restart_rssi:
 
 	/* Keep trying to read RSSI until we get a valid value - Eventually, exit. */
 	while (counter++ < MDM_WAIT_FOR_RSSI_COUNT &&
-	      (mdata.mdm_rssi >= 0 || mdata.mdm_rssi <= -1000)) {
+	       (mdata.mdm_rssi >= 0 || mdata.mdm_rssi <= -1000)) {
 		modem_rssi_query_work(NULL);
 		k_sleep(MDM_WAIT_FOR_RSSI_DELAY);
 	}
@@ -1089,21 +1059,22 @@ error:
 }
 
 static const struct socket_op_vtable offload_socket_fd_op_vtable = {
-	.fd_vtable = {
-		.read	= offload_read,
-		.write	= offload_write,
-		.close	= offload_close,
-		.ioctl	= offload_ioctl,
-	},
-	.bind		= NULL,
-	.connect	= offload_connect,
-	.sendto		= offload_sendto,
-	.recvfrom	= offload_recvfrom,
-	.listen		= NULL,
-	.accept		= NULL,
-	.sendmsg	= offload_sendmsg,
-	.getsockopt	= NULL,
-	.setsockopt	= NULL,
+	.fd_vtable =
+		{
+			.read = offload_read,
+			.write = offload_write,
+			.close = offload_close,
+			.ioctl = offload_ioctl,
+		},
+	.bind = NULL,
+	.connect = offload_connect,
+	.sendto = offload_sendto,
+	.recvfrom = offload_recvfrom,
+	.listen = NULL,
+	.accept = NULL,
+	.sendmsg = offload_sendmsg,
+	.getsockopt = NULL,
+	.setsockopt = NULL,
 };
 
 static int offload_socket(int family, int type, int proto);
@@ -1112,12 +1083,10 @@ static int offload_socket(int family, int type, int proto);
 static void modem_net_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	struct modem_data *data	 = dev->data;
+	struct modem_data *data = dev->data;
 
 	/* Direct socket offload used instead of net offload: */
-	net_if_set_link_addr(iface, modem_get_mac(dev),
-			     sizeof(data->mac_addr),
-			     NET_LINK_ETHERNET);
+	net_if_set_link_addr(iface, modem_get_mac(dev), sizeof(data->mac_addr), NET_LINK_ETHERNET);
 	data->net_iface = iface;
 
 	net_if_socket_offload_set(iface, offload_socket);
@@ -1129,8 +1098,7 @@ static struct offloaded_if_api api_funcs = {
 
 static bool offload_is_supported(int family, int type, int proto)
 {
-	if (family != AF_INET &&
-	    family != AF_INET6) {
+	if (family != AF_INET && family != AF_INET6) {
 		return false;
 	}
 
@@ -1162,17 +1130,17 @@ static int offload_socket(int family, int type, int proto)
 
 static int modem_init(const struct device *dev)
 {
-	int ret; ARG_UNUSED(dev);
+	int ret;
+	ARG_UNUSED(dev);
 
 #if !DT_INST_NODE_HAS_PROP(0, mdm_reset_gpios)
-	k_sem_init(&mdata.sem_pin_busy,	 1, 1);
+	k_sem_init(&mdata.sem_pin_busy, 1, 1);
 #endif /* !DT_INST_NODE_HAS_PROP(0, mdm_reset_gpios) */
-	k_sem_init(&mdata.sem_response,	 0, 1);
-	k_sem_init(&mdata.sem_tx_ready,	 0, 1);
+	k_sem_init(&mdata.sem_response, 0, 1);
+	k_sem_init(&mdata.sem_tx_ready, 0, 1);
 	k_sem_init(&mdata.sem_sock_conn, 0, 1);
 	k_work_queue_start(&modem_workq, modem_workq_stack,
-			   K_KERNEL_STACK_SIZEOF(modem_workq_stack),
-			   K_PRIO_COOP(7), NULL);
+			   K_KERNEL_STACK_SIZEOF(modem_workq_stack), K_PRIO_COOP(7), NULL);
 
 	/* socket config */
 	ret = modem_socket_init(&mdata.socket_config, &mdata.sockets[0], ARRAY_SIZE(mdata.sockets),
@@ -1216,12 +1184,12 @@ static int modem_init(const struct device *dev)
 
 	/* modem data storage */
 	mctx.data_manufacturer = mdata.mdm_manufacturer;
-	mctx.data_model	       = mdata.mdm_model;
-	mctx.data_revision     = mdata.mdm_revision;
-	mctx.data_imei	       = mdata.mdm_imei;
+	mctx.data_model = mdata.mdm_model;
+	mctx.data_revision = mdata.mdm_revision;
+	mctx.data_imei = mdata.mdm_imei;
 #if defined(CONFIG_MODEM_SIM_NUMBERS)
-	mctx.data_imsi	       = mdata.mdm_imsi;
-	mctx.data_iccid	       = mdata.mdm_iccid;
+	mctx.data_imsi = mdata.mdm_imsi;
+	mctx.data_iccid = mdata.mdm_iccid;
 #endif /* #if defined(CONFIG_MODEM_SIM_NUMBERS) */
 	mctx.data_rssi = &mdata.mdm_rssi;
 
@@ -1257,7 +1225,7 @@ static int modem_init(const struct device *dev)
 #endif
 
 	/* modem context setup */
-	mctx.driver_data       = &mdata;
+	mctx.driver_data = &mdata;
 
 	ret = modem_context_register(&mctx);
 	if (ret < 0) {
@@ -1266,10 +1234,8 @@ static int modem_init(const struct device *dev)
 	}
 
 	/* start RX thread */
-	k_thread_create(&modem_rx_thread, modem_rx_stack,
-			K_KERNEL_STACK_SIZEOF(modem_rx_stack),
-			modem_rx,
-			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+	k_thread_create(&modem_rx_thread, modem_rx_stack, K_KERNEL_STACK_SIZEOF(modem_rx_stack),
+			modem_rx, NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	/* Init RSSI query */
 	k_work_init_delayable(&mdata.rssi_query_work, modem_rssi_query_work);
@@ -1280,11 +1246,10 @@ error:
 }
 
 /* Register the device with the Networking stack. */
-NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL,
-				  &mdata, NULL,
-				  CONFIG_MODEM_QUECTEL_BG9X_INIT_PRIORITY,
-				  &api_funcs, MDM_MAX_DATA_LENGTH);
+NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL, &mdata, NULL,
+				  CONFIG_MODEM_QUECTEL_BG9X_INIT_PRIORITY, &api_funcs,
+				  MDM_MAX_DATA_LENGTH);
 
 /* Register NET sockets. */
-NET_SOCKET_OFFLOAD_REGISTER(quectel_bg9x, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY,
-			    AF_UNSPEC, offload_is_supported, offload_socket);
+NET_SOCKET_OFFLOAD_REGISTER(quectel_bg9x, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY, AF_UNSPEC,
+			    offload_is_supported, offload_socket);

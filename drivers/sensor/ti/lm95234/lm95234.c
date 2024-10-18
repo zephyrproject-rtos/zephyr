@@ -17,58 +17,58 @@
 
 LOG_MODULE_REGISTER(LM95234, CONFIG_SENSOR_LOG_LEVEL);
 
-#define LM95234_REG_LOCAL_TEMP_SIGNED_MSB				0x10
-#define LM95234_REG_LOCAL_TEMP_SIGNED_LSB				0x20
-#define LM95234_REG_REMOTE_TEMP_1_SIGNED_MSB				0x11
-#define LM95234_REG_REMOTE_TEMP_1_SIGNED_LSB				0x21
-#define LM95234_REG_REMOTE_TEMP_2_SIGNED_MSB				0x12
-#define LM95234_REG_REMOTE_TEMP_2_SIGNED_LSB				0x22
-#define LM95234_REG_REMOTE_TEMP_3_SIGNED_MSB				0x13
-#define LM95234_REG_REMOTE_TEMP_3_SIGNED_LSB				0x23
-#define LM95234_REG_REMOTE_TEMP_4_SIGNED_MSB				0x14
-#define LM95234_REG_REMOTE_TEMP_4_SIGNED_LSB				0x24
-#define LM95234_REG_REMOTE_TEMP_1_UNSIGNED_MSB				0x19
-#define LM95234_REG_REMOTE_TEMP_1_UNSIGNED_LSB				0x29
-#define LM95234_REG_REMOTE_TEMP_2_UNSIGNED_MSB				0x1a
-#define LM95234_REG_REMOTE_TEMP_2_UNSIGNED_LSB				0x2a
-#define LM95234_REG_REMOTE_TEMP_3_UNSIGNED_MSB				0x1b
-#define LM95234_REG_REMOTE_TEMP_3_UNSIGNED_LSB				0x2b
-#define LM95234_REG_REMOTE_TEMP_4_UNSIGNED_MSB				0x1c
-#define LM95234_REG_REMOTE_TEMP_4_UNSIGNED_LSB				0x2c
-#define LM95234_REG_DIODE_MODEL_SELECT					0x30
-#define LM95234_REG_REMOTE_1_OFFSET					0x31
-#define LM95234_REG_REMOTE_2_OFFSET					0x32
-#define LM95234_REG_REMOTE_3_OFFSET					0x33
-#define LM95234_REG_REMOTE_4_OFFSET					0x34
-#define LM95234_REG_CONFIG						0x03
-#define LM95234_REG_CONV_RATE						0x04
-#define LM95234_REG_CHANNEL_CONV_ENABLE					0x05
-#define LM95234_REG_FILTER_SETTING					0x06
-#define LM95234_REG_ONESHOT						0x0f
-#define LM95234_REG_COMMON_STATUS					0x02
-#define LM95234_REG_STATUS_1						0x07
-#define LM95234_REG_STATUS_2						0x08
-#define LM95234_REG_STATUS_3						0x09
-#define LM95234_REG_STATUS_4						0x0a
-#define LM95234_REG_DIODE_MODEL_STATUS					0x38
-#define LM95234_REG_TCRIT1_MASK						0x0c
-#define LM95234_REG_TCRIT2_MASK						0x0d
-#define LM95234_REG_TCRIT3_MASK						0x0e
-#define LM95234_REG_LOCAL_TCRIT_LIMIT					0x40
-#define LM95234_REG_REMOTE1_TCRIT1_LIMIT				0x41
-#define LM95234_REG_REMOTE2_TCRIT1_LIMIT				0x42
-#define LM95234_REG_REMOTE3_TCRIT_LIMIT					0x43
-#define LM95234_REG_REMOTE4_TCRIT_LIMIT					0x44
-#define LM95234_REG_REMOTE1_TCRIT23_LIMIT				0x49
-#define LM95234_REG_REMOTE2_TCRIT23_LIMIT				0x4a
-#define LM95234_REG_COMMON_TCRIT_HYSTERESIS				0x5a
-#define LM95234_REG_MANUF_ID						0xfe
-#define LM95234_REG_REV_ID						0xff
+#define LM95234_REG_LOCAL_TEMP_SIGNED_MSB      0x10
+#define LM95234_REG_LOCAL_TEMP_SIGNED_LSB      0x20
+#define LM95234_REG_REMOTE_TEMP_1_SIGNED_MSB   0x11
+#define LM95234_REG_REMOTE_TEMP_1_SIGNED_LSB   0x21
+#define LM95234_REG_REMOTE_TEMP_2_SIGNED_MSB   0x12
+#define LM95234_REG_REMOTE_TEMP_2_SIGNED_LSB   0x22
+#define LM95234_REG_REMOTE_TEMP_3_SIGNED_MSB   0x13
+#define LM95234_REG_REMOTE_TEMP_3_SIGNED_LSB   0x23
+#define LM95234_REG_REMOTE_TEMP_4_SIGNED_MSB   0x14
+#define LM95234_REG_REMOTE_TEMP_4_SIGNED_LSB   0x24
+#define LM95234_REG_REMOTE_TEMP_1_UNSIGNED_MSB 0x19
+#define LM95234_REG_REMOTE_TEMP_1_UNSIGNED_LSB 0x29
+#define LM95234_REG_REMOTE_TEMP_2_UNSIGNED_MSB 0x1a
+#define LM95234_REG_REMOTE_TEMP_2_UNSIGNED_LSB 0x2a
+#define LM95234_REG_REMOTE_TEMP_3_UNSIGNED_MSB 0x1b
+#define LM95234_REG_REMOTE_TEMP_3_UNSIGNED_LSB 0x2b
+#define LM95234_REG_REMOTE_TEMP_4_UNSIGNED_MSB 0x1c
+#define LM95234_REG_REMOTE_TEMP_4_UNSIGNED_LSB 0x2c
+#define LM95234_REG_DIODE_MODEL_SELECT         0x30
+#define LM95234_REG_REMOTE_1_OFFSET            0x31
+#define LM95234_REG_REMOTE_2_OFFSET            0x32
+#define LM95234_REG_REMOTE_3_OFFSET            0x33
+#define LM95234_REG_REMOTE_4_OFFSET            0x34
+#define LM95234_REG_CONFIG                     0x03
+#define LM95234_REG_CONV_RATE                  0x04
+#define LM95234_REG_CHANNEL_CONV_ENABLE        0x05
+#define LM95234_REG_FILTER_SETTING             0x06
+#define LM95234_REG_ONESHOT                    0x0f
+#define LM95234_REG_COMMON_STATUS              0x02
+#define LM95234_REG_STATUS_1                   0x07
+#define LM95234_REG_STATUS_2                   0x08
+#define LM95234_REG_STATUS_3                   0x09
+#define LM95234_REG_STATUS_4                   0x0a
+#define LM95234_REG_DIODE_MODEL_STATUS         0x38
+#define LM95234_REG_TCRIT1_MASK                0x0c
+#define LM95234_REG_TCRIT2_MASK                0x0d
+#define LM95234_REG_TCRIT3_MASK                0x0e
+#define LM95234_REG_LOCAL_TCRIT_LIMIT          0x40
+#define LM95234_REG_REMOTE1_TCRIT1_LIMIT       0x41
+#define LM95234_REG_REMOTE2_TCRIT1_LIMIT       0x42
+#define LM95234_REG_REMOTE3_TCRIT_LIMIT        0x43
+#define LM95234_REG_REMOTE4_TCRIT_LIMIT        0x44
+#define LM95234_REG_REMOTE1_TCRIT23_LIMIT      0x49
+#define LM95234_REG_REMOTE2_TCRIT23_LIMIT      0x4a
+#define LM95234_REG_COMMON_TCRIT_HYSTERESIS    0x5a
+#define LM95234_REG_MANUF_ID                   0xfe
+#define LM95234_REG_REV_ID                     0xff
 
-#define LM95234_MAN_ID							0x01
-#define LM95234_CHIP_ID							0x79
+#define LM95234_MAN_ID  0x01
+#define LM95234_CHIP_ID 0x79
 
-#define LM95234_CONFIG_STANDBY						BIT(6)
+#define LM95234_CONFIG_STANDBY BIT(6)
 
 struct lm95234_data {
 	/** Temperatures in raw format read from sensor */
@@ -98,7 +98,7 @@ static inline int lm95234_fetch_temp(const struct lm95234_config *cfg, struct lm
 		}
 		temp = val << 8;
 		ret = i2c_reg_read_byte_dt(&cfg->i2c,
-					  LM95234_REG_REMOTE_TEMP_1_UNSIGNED_LSB + offset, &val);
+					   LM95234_REG_REMOTE_TEMP_1_UNSIGNED_LSB + offset, &val);
 		if (ret) {
 			return ret;
 		}
@@ -108,18 +108,19 @@ static inline int lm95234_fetch_temp(const struct lm95234_config *cfg, struct lm
 
 	/* Read signed temperature if unsigned temperature is 0, or for local sensor */
 	if (chan == SENSOR_CHAN_AMBIENT_TEMP || result == 0) {
-		int offset = chan == SENSOR_CHAN_AMBIENT_TEMP ? 0 :
-			(chan - SENSOR_CHAN_LM95234_REMOTE_TEMP_1 + 1);
+		int offset = chan == SENSOR_CHAN_AMBIENT_TEMP
+				     ? 0
+				     : (chan - SENSOR_CHAN_LM95234_REMOTE_TEMP_1 + 1);
 		int16_t temp;
 
-		ret = i2c_reg_read_byte_dt(&cfg->i2c,
-					  LM95234_REG_LOCAL_TEMP_SIGNED_MSB + offset, &val);
+		ret = i2c_reg_read_byte_dt(&cfg->i2c, LM95234_REG_LOCAL_TEMP_SIGNED_MSB + offset,
+					   &val);
 		if (ret) {
 			return ret;
 		}
 		temp = val << 8;
-		ret = i2c_reg_read_byte_dt(&cfg->i2c,
-					   LM95234_REG_LOCAL_TEMP_SIGNED_LSB + offset, &val);
+		ret = i2c_reg_read_byte_dt(&cfg->i2c, LM95234_REG_LOCAL_TEMP_SIGNED_LSB + offset,
+					   &val);
 		if (ret) {
 			return ret;
 		}
@@ -130,8 +131,7 @@ static inline int lm95234_fetch_temp(const struct lm95234_config *cfg, struct lm
 	return 0;
 }
 
-static int lm95234_sample_fetch(const struct device *dev,
-			     enum sensor_channel chan)
+static int lm95234_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct lm95234_data *data = dev->data;
 	const struct lm95234_config *cfg = dev->config;
@@ -151,8 +151,7 @@ static int lm95234_sample_fetch(const struct device *dev,
 			return ret;
 		}
 		for (int i = 0; i < ARRAY_SIZE(data->remote); i++) {
-			ret = lm95234_fetch_temp(cfg, data,
-						 SENSOR_CHAN_LM95234_REMOTE_TEMP_1 + i,
+			ret = lm95234_fetch_temp(cfg, data, SENSOR_CHAN_LM95234_REMOTE_TEMP_1 + i,
 						 &data->remote[i]);
 			if (ret) {
 				return ret;
@@ -177,9 +176,8 @@ static int lm95234_sample_fetch(const struct device *dev,
 	return ret;
 }
 
-static int lm95234_channel_get(const struct device *dev,
-			    enum sensor_channel chan,
-			    struct sensor_value *val)
+static int lm95234_channel_get(const struct device *dev, enum sensor_channel chan,
+			       struct sensor_value *val)
 {
 	struct lm95234_data *data = dev->data;
 	int32_t raw_temp;
@@ -307,18 +305,14 @@ static int lm95234_pm_action(const struct device *dev, enum pm_device_action act
 
 #endif
 
-#define LM95234_INST(inst)                                     \
-static struct lm95234_data lm95234_data_##inst;                \
-static const struct lm95234_config lm95234_config_##inst = {   \
-	.i2c = I2C_DT_SPEC_INST_GET(inst),                     \
-};                                                             \
-PM_DEVICE_DT_INST_DEFINE(inst, lm95234_pm_action);	       \
-SENSOR_DEVICE_DT_INST_DEFINE(inst, lm95234_init,               \
-			     PM_DEVICE_DT_INST_GET(inst),      \
-			     &lm95234_data_##inst,	       \
-			     &lm95234_config_##inst,           \
-			     POST_KERNEL,                      \
-			     CONFIG_SENSOR_INIT_PRIORITY,      \
-			     &lm95234_driver_api);
+#define LM95234_INST(inst)                                                                         \
+	static struct lm95234_data lm95234_data_##inst;                                            \
+	static const struct lm95234_config lm95234_config_##inst = {                               \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+	};                                                                                         \
+	PM_DEVICE_DT_INST_DEFINE(inst, lm95234_pm_action);                                         \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, lm95234_init, PM_DEVICE_DT_INST_GET(inst),              \
+				     &lm95234_data_##inst, &lm95234_config_##inst, POST_KERNEL,    \
+				     CONFIG_SENSOR_INIT_PRIORITY, &lm95234_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LM95234_INST)

@@ -21,20 +21,20 @@ LOG_MODULE_REGISTER(wdt_nxp_fs26);
 #define SWAP_ENDIANNESS
 #endif
 
-#define FS26_CRC_TABLE_SIZE 256U
-#define FS26_CRC_INIT 0xff
+#define FS26_CRC_TABLE_SIZE      256U
+#define FS26_CRC_INIT            0xff
 #define FS26_FS_WD_TOKEN_DEFAULT 0x5ab2
-#define FS26_INIT_FS_TIMEOUT_MS 1000U
+#define FS26_INIT_FS_TIMEOUT_MS  1000U
 
 /* Helper macros to set register values from Kconfig options */
-#define WD_ERR_LIMIT(x)	_CONCAT(WD_ERR_LIMIT_, x)
-#define WD_RFR_LIMIT(x)	_CONCAT(WD_RFR_LIMIT_, x)
-#define WDW_PERIOD(x)	_CONCAT(_CONCAT(WDW_PERIOD_, x), MS)
+#define WD_ERR_LIMIT(x) _CONCAT(WD_ERR_LIMIT_, x)
+#define WD_RFR_LIMIT(x) _CONCAT(WD_RFR_LIMIT_, x)
+#define WDW_PERIOD(x)   _CONCAT(_CONCAT(WDW_PERIOD_, x), MS)
 
-#define BAD_WD_REFRESH_ERROR_STRING(x)					\
-	((((x) & BAD_WD_DATA) ? "error in the data" :			\
-		(((x) & BAD_WD_TIMING) ? "error in the timing (window)"	\
-		: "unknown error")))
+#define BAD_WD_REFRESH_ERROR_STRING(x)                                                             \
+	((((x) & BAD_WD_DATA)                                                                      \
+		  ? "error in the data"                                                            \
+		  : (((x) & BAD_WD_TIMING) ? "error in the timing (window)" : "unknown error")))
 
 enum fs26_wd_type {
 	FS26_WD_SIMPLE,
@@ -44,14 +44,14 @@ enum fs26_wd_type {
 struct fs26_spi_rx_frame {
 	union {
 		struct {
-			uint8_t m_aval : 1;
-			uint8_t fs_en  : 1;
-			uint8_t fs_g   : 1;
-			uint8_t com_g  : 1;
-			uint8_t wio_g  : 1;
-			uint8_t vsup_g : 1;
-			uint8_t reg_g  : 1;
-			uint8_t tsd_g  : 1;
+			uint8_t m_aval: 1;
+			uint8_t fs_en: 1;
+			uint8_t fs_g: 1;
+			uint8_t com_g: 1;
+			uint8_t wio_g: 1;
+			uint8_t vsup_g: 1;
+			uint8_t reg_g: 1;
+			uint8_t tsd_g: 1;
 		};
 		uint8_t raw;
 	} status;
@@ -72,7 +72,7 @@ struct wdt_nxp_fs26_config {
 
 struct wdt_nxp_fs26_data {
 	wdt_callback_t callback;
-	uint16_t token;	/* local copy of the watchdog token */
+	uint16_t token; /* local copy of the watchdog token */
 	bool timeout_installed;
 	uint8_t window_period;
 	uint8_t window_duty_cycle;
@@ -88,46 +88,33 @@ struct wdt_nxp_fs26_data {
  * Allowed values for watchdog period and duty cycle (CLOSED window).
  * The index is the value to write to the register. Keep values in ascending order.
  */
-static const uint32_t fs26_period_values[] = {
-	0, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 64, 128, 256, 512, 1024
-};
+static const uint32_t fs26_period_values[] = {0,  1,  2,  3,  4,   6,   8,   12,
+					      16, 24, 32, 64, 128, 256, 512, 1024};
 
-static const double fs26_dc_closed_values[] = {
-	0.3125, 0.375, 0.5, 0.625, 0.6875, 0.75, 0.8125
-};
+static const double fs26_dc_closed_values[] = {0.3125, 0.375, 0.5, 0.625, 0.6875, 0.75, 0.8125};
 
 /* CRC lookup table */
 static const uint8_t FS26_CRC_TABLE[FS26_CRC_TABLE_SIZE] = {
-	0x00u, 0x1du, 0x3au, 0x27u, 0x74u, 0x69u, 0x4eu, 0x53u, 0xe8u,
-	0xf5u, 0xd2u, 0xcfu, 0x9cu, 0x81u, 0xa6u, 0xbbu, 0xcdu, 0xd0u,
-	0xf7u, 0xeau, 0xb9u, 0xa4u, 0x83u, 0x9eu, 0x25u, 0x38u, 0x1fu,
-	0x02u, 0x51u, 0x4cu, 0x6bu, 0x76u, 0x87u, 0x9au, 0xbdu, 0xa0u,
-	0xf3u, 0xeeu, 0xc9u, 0xd4u, 0x6fu, 0x72u, 0x55u, 0x48u, 0x1bu,
-	0x06u, 0x21u, 0x3cu, 0x4au, 0x57u, 0x70u, 0x6du, 0x3eu, 0x23u,
-	0x04u, 0x19u, 0xa2u, 0xbfu, 0x98u, 0x85u, 0xd6u, 0xcbu, 0xecu,
-	0xf1u, 0x13u, 0x0eu, 0x29u, 0x34u, 0x67u, 0x7au, 0x5du, 0x40u,
-	0xfbu, 0xe6u, 0xc1u, 0xdcu, 0x8fu, 0x92u, 0xb5u, 0xa8u, 0xdeu,
-	0xc3u, 0xe4u, 0xf9u, 0xaau, 0xb7u, 0x90u, 0x8du, 0x36u, 0x2bu,
-	0x0cu, 0x11u, 0x42u, 0x5fu, 0x78u, 0x65u, 0x94u, 0x89u, 0xaeu,
-	0xb3u, 0xe0u, 0xfdu, 0xdau, 0xc7u, 0x7cu, 0x61u, 0x46u, 0x5bu,
-	0x08u, 0x15u, 0x32u, 0x2fu, 0x59u, 0x44u, 0x63u, 0x7eu, 0x2du,
-	0x30u, 0x17u, 0x0au, 0xb1u, 0xacu, 0x8bu, 0x96u, 0xc5u, 0xd8u,
-	0xffu, 0xe2u, 0x26u, 0x3bu, 0x1cu, 0x01u, 0x52u, 0x4fu, 0x68u,
-	0x75u, 0xceu, 0xd3u, 0xf4u, 0xe9u, 0xbau, 0xa7u, 0x80u, 0x9du,
-	0xebu, 0xf6u, 0xd1u, 0xccu, 0x9fu, 0x82u, 0xa5u, 0xb8u, 0x03u,
-	0x1eu, 0x39u, 0x24u, 0x77u, 0x6au, 0x4du, 0x50u, 0xa1u, 0xbcu,
-	0x9bu, 0x86u, 0xd5u, 0xc8u, 0xefu, 0xf2u, 0x49u, 0x54u, 0x73u,
-	0x6eu, 0x3du, 0x20u, 0x07u, 0x1au, 0x6cu, 0x71u, 0x56u, 0x4bu,
-	0x18u, 0x05u, 0x22u, 0x3fu, 0x84u, 0x99u, 0xbeu, 0xa3u, 0xf0u,
-	0xedu, 0xcau, 0xd7u, 0x35u, 0x28u, 0x0fu, 0x12u, 0x41u, 0x5cu,
-	0x7bu, 0x66u, 0xddu, 0xc0u, 0xe7u, 0xfau, 0xa9u, 0xb4u, 0x93u,
-	0x8eu, 0xf8u, 0xe5u, 0xc2u, 0xdfu, 0x8cu, 0x91u, 0xb6u, 0xabu,
-	0x10u, 0x0du, 0x2au, 0x37u, 0x64u, 0x79u, 0x5eu, 0x43u, 0xb2u,
-	0xafu, 0x88u, 0x95u, 0xc6u, 0xdbu, 0xfcu, 0xe1u, 0x5au, 0x47u,
-	0x60u, 0x7du, 0x2eu, 0x33u, 0x14u, 0x09u, 0x7fu, 0x62u, 0x45u,
-	0x58u, 0x0bu, 0x16u, 0x31u, 0x2cu, 0x97u, 0x8au, 0xadu, 0xb0u,
-	0xe3u, 0xfeu, 0xd9u, 0xc4u
-};
+	0x00u, 0x1du, 0x3au, 0x27u, 0x74u, 0x69u, 0x4eu, 0x53u, 0xe8u, 0xf5u, 0xd2u, 0xcfu, 0x9cu,
+	0x81u, 0xa6u, 0xbbu, 0xcdu, 0xd0u, 0xf7u, 0xeau, 0xb9u, 0xa4u, 0x83u, 0x9eu, 0x25u, 0x38u,
+	0x1fu, 0x02u, 0x51u, 0x4cu, 0x6bu, 0x76u, 0x87u, 0x9au, 0xbdu, 0xa0u, 0xf3u, 0xeeu, 0xc9u,
+	0xd4u, 0x6fu, 0x72u, 0x55u, 0x48u, 0x1bu, 0x06u, 0x21u, 0x3cu, 0x4au, 0x57u, 0x70u, 0x6du,
+	0x3eu, 0x23u, 0x04u, 0x19u, 0xa2u, 0xbfu, 0x98u, 0x85u, 0xd6u, 0xcbu, 0xecu, 0xf1u, 0x13u,
+	0x0eu, 0x29u, 0x34u, 0x67u, 0x7au, 0x5du, 0x40u, 0xfbu, 0xe6u, 0xc1u, 0xdcu, 0x8fu, 0x92u,
+	0xb5u, 0xa8u, 0xdeu, 0xc3u, 0xe4u, 0xf9u, 0xaau, 0xb7u, 0x90u, 0x8du, 0x36u, 0x2bu, 0x0cu,
+	0x11u, 0x42u, 0x5fu, 0x78u, 0x65u, 0x94u, 0x89u, 0xaeu, 0xb3u, 0xe0u, 0xfdu, 0xdau, 0xc7u,
+	0x7cu, 0x61u, 0x46u, 0x5bu, 0x08u, 0x15u, 0x32u, 0x2fu, 0x59u, 0x44u, 0x63u, 0x7eu, 0x2du,
+	0x30u, 0x17u, 0x0au, 0xb1u, 0xacu, 0x8bu, 0x96u, 0xc5u, 0xd8u, 0xffu, 0xe2u, 0x26u, 0x3bu,
+	0x1cu, 0x01u, 0x52u, 0x4fu, 0x68u, 0x75u, 0xceu, 0xd3u, 0xf4u, 0xe9u, 0xbau, 0xa7u, 0x80u,
+	0x9du, 0xebu, 0xf6u, 0xd1u, 0xccu, 0x9fu, 0x82u, 0xa5u, 0xb8u, 0x03u, 0x1eu, 0x39u, 0x24u,
+	0x77u, 0x6au, 0x4du, 0x50u, 0xa1u, 0xbcu, 0x9bu, 0x86u, 0xd5u, 0xc8u, 0xefu, 0xf2u, 0x49u,
+	0x54u, 0x73u, 0x6eu, 0x3du, 0x20u, 0x07u, 0x1au, 0x6cu, 0x71u, 0x56u, 0x4bu, 0x18u, 0x05u,
+	0x22u, 0x3fu, 0x84u, 0x99u, 0xbeu, 0xa3u, 0xf0u, 0xedu, 0xcau, 0xd7u, 0x35u, 0x28u, 0x0fu,
+	0x12u, 0x41u, 0x5cu, 0x7bu, 0x66u, 0xddu, 0xc0u, 0xe7u, 0xfau, 0xa9u, 0xb4u, 0x93u, 0x8eu,
+	0xf8u, 0xe5u, 0xc2u, 0xdfu, 0x8cu, 0x91u, 0xb6u, 0xabu, 0x10u, 0x0du, 0x2au, 0x37u, 0x64u,
+	0x79u, 0x5eu, 0x43u, 0xb2u, 0xafu, 0x88u, 0x95u, 0xc6u, 0xdbu, 0xfcu, 0xe1u, 0x5au, 0x47u,
+	0x60u, 0x7du, 0x2eu, 0x33u, 0x14u, 0x09u, 0x7fu, 0x62u, 0x45u, 0x58u, 0x0bu, 0x16u, 0x31u,
+	0x2cu, 0x97u, 0x8au, 0xadu, 0xb0u, 0xe3u, 0xfeu, 0xd9u, 0xc4u};
 
 static uint8_t fs26_calcrc(const uint8_t *data, size_t size)
 {
@@ -146,8 +133,7 @@ static uint8_t fs26_calcrc(const uint8_t *data, size_t size)
 	return crc;
 }
 
-static int fs26_spi_transceive(const struct spi_dt_spec *spi,
-			       struct fs26_spi_tx_frame *tx_frame,
+static int fs26_spi_transceive(const struct spi_dt_spec *spi, struct fs26_spi_tx_frame *tx_frame,
 			       struct fs26_spi_rx_frame *rx_frame)
 {
 	uint32_t tx_buf;
@@ -155,27 +141,14 @@ static int fs26_spi_transceive(const struct spi_dt_spec *spi,
 	uint8_t crc;
 	int retval;
 
-	struct spi_buf spi_tx_buf = {
-		.buf = &tx_buf,
-		.len = sizeof(tx_buf)
-	};
-	struct spi_buf spi_rx_buf = {
-		.buf = &rx_buf,
-		.len = sizeof(rx_buf)
-	};
-	struct spi_buf_set spi_tx_set = {
-		.buffers = &spi_tx_buf,
-		.count = 1U
-	};
-	struct spi_buf_set spi_rx_set = {
-		.buffers = &spi_rx_buf,
-		.count = 1U
-	};
+	struct spi_buf spi_tx_buf = {.buf = &tx_buf, .len = sizeof(tx_buf)};
+	struct spi_buf spi_rx_buf = {.buf = &rx_buf, .len = sizeof(rx_buf)};
+	struct spi_buf_set spi_tx_set = {.buffers = &spi_tx_buf, .count = 1U};
+	struct spi_buf_set spi_rx_set = {.buffers = &spi_rx_buf, .count = 1U};
 
 	/* Create frame to Tx, always for Fail Safe */
-	tx_buf = (uint32_t)(FS26_SET_REG_ADDR(tx_frame->addr)
-		| FS26_SET_DATA(tx_frame->data)
-		| (tx_frame->write ? FS26_RW : 0));
+	tx_buf = (uint32_t)(FS26_SET_REG_ADDR(tx_frame->addr) | FS26_SET_DATA(tx_frame->data) |
+			    (tx_frame->write ? FS26_RW : 0));
 
 	crc = fs26_calcrc((uint8_t *)&tx_buf, sizeof(tx_buf) - 1);
 	tx_buf |= (uint32_t)FS26_SET_CRC(crc);
@@ -222,11 +195,7 @@ error:
 static int fs26_getreg(const struct spi_dt_spec *spi, uint8_t addr,
 		       struct fs26_spi_rx_frame *rx_frame)
 {
-	struct fs26_spi_tx_frame tx_frame = {
-		.addr = addr,
-		.write = 0,
-		.data = 0
-	};
+	struct fs26_spi_tx_frame tx_frame = {.addr = addr, .write = 0, .data = 0};
 
 	return fs26_spi_transceive(spi, &tx_frame, rx_frame);
 }
@@ -242,11 +211,7 @@ static int fs26_getreg(const struct spi_dt_spec *spi, uint8_t addr,
  */
 static int fs26_setreg(const struct spi_dt_spec *spi, uint8_t addr, uint16_t regval)
 {
-	struct fs26_spi_tx_frame tx_frame = {
-		.addr = addr,
-		.write = true,
-		.data = regval
-	};
+	struct fs26_spi_tx_frame tx_frame = {.addr = addr, .write = true, .data = regval};
 
 	return fs26_spi_transceive(spi, &tx_frame, NULL);
 }
@@ -442,17 +407,16 @@ static int wdt_nxp_fs26_setup(const struct device *dev, uint8_t options)
 		return -EIO;
 	}
 
-	regval = WD_ERR_LIMIT(CONFIG_WDT_NXP_FS26_ERROR_COUNTER_LIMIT)
-		| WD_RFR_LIMIT(CONFIG_WDT_NXP_FS26_REFRESH_COUNTER_LIMIT)
-		| ((data->fs_reaction << WD_FS_REACTION_SHIFT) & WD_FS_REACTION_MASK);
+	regval = WD_ERR_LIMIT(CONFIG_WDT_NXP_FS26_ERROR_COUNTER_LIMIT) |
+		 WD_RFR_LIMIT(CONFIG_WDT_NXP_FS26_REFRESH_COUNTER_LIMIT) |
+		 ((data->fs_reaction << WD_FS_REACTION_SHIFT) & WD_FS_REACTION_MASK);
 
 	fs26_setreg(&config->spi, FS26_FS_I_WD_CFG, regval);
 	fs26_setreg(&config->spi, FS26_FS_I_NOT_WD_CFG, ~regval);
 
 	/* Apply watchdog window configuration, configurable during any FS state */
-	regval = ((data->window_period << WDW_PERIOD_SHIFT) & WDW_PERIOD_MASK)
-		| ((data->window_duty_cycle << WDW_DC_SHIFT) & WDW_DC_MASK)
-		| WDW_RECOVERY_DISABLE;
+	regval = ((data->window_period << WDW_PERIOD_SHIFT) & WDW_PERIOD_MASK) |
+		 ((data->window_duty_cycle << WDW_DC_SHIFT) & WDW_DC_MASK) | WDW_RECOVERY_DISABLE;
 
 	fs26_setreg(&config->spi, FS26_FS_WDW_DURATION, regval);
 	fs26_setreg(&config->spi, FS26_FS_NOT_WDW_DURATION, ~regval);
@@ -470,8 +434,7 @@ static int wdt_nxp_fs26_setup(const struct device *dev, uint8_t options)
 	return 0;
 }
 
-static int wdt_nxp_fs26_install_timeout(const struct device *dev,
-					const struct wdt_timeout_cfg *cfg)
+static int wdt_nxp_fs26_install_timeout(const struct device *dev, const struct wdt_timeout_cfg *cfg)
 {
 	struct wdt_nxp_fs26_data *data = dev->data;
 	uint32_t window_min;
@@ -482,8 +445,8 @@ static int wdt_nxp_fs26_install_timeout(const struct device *dev,
 		return -ENOMEM;
 	}
 
-	if ((cfg->window.max == 0) || (cfg->window.max > 1024)
-			|| (cfg->window.max <= cfg->window.min)) {
+	if ((cfg->window.max == 0) || (cfg->window.max > 1024) ||
+	    (cfg->window.max <= cfg->window.min)) {
 		LOG_ERR("Invalid timeout value");
 		return -EINVAL;
 	}
@@ -495,16 +458,16 @@ static int wdt_nxp_fs26_install_timeout(const struct device *dev,
 		}
 	}
 	data->window_period = i;
-	LOG_DBG("window.max requested %d ms, using %d ms",
-		cfg->window.max, fs26_period_values[data->window_period]);
+	LOG_DBG("window.max requested %d ms, using %d ms", cfg->window.max,
+		fs26_period_values[data->window_period]);
 
 	/*
 	 * Find nearest duty cycle value based on new period, that results in a
 	 * window's minimum near the requested (rounded up)
 	 */
 	for (i = 0; i < ARRAY_SIZE(fs26_dc_closed_values); i++) {
-		window_min = (uint32_t)(fs26_dc_closed_values[i]
-					* fs26_period_values[data->window_period]);
+		window_min = (uint32_t)(fs26_dc_closed_values[i] *
+					fs26_period_values[data->window_period]);
 		if (window_min >= cfg->window.min) {
 			break;
 		}
@@ -515,8 +478,7 @@ static int wdt_nxp_fs26_install_timeout(const struct device *dev,
 	}
 	data->window_duty_cycle = i;
 
-	LOG_DBG("window.min requested %d ms, using %d ms (%.2f%%)",
-		cfg->window.min, window_min,
+	LOG_DBG("window.min requested %d ms, using %d ms (%.2f%%)", cfg->window.min, window_min,
 		fs26_dc_closed_values[data->window_duty_cycle] * 100);
 
 	/* Fail-safe reaction configuration */
@@ -594,11 +556,11 @@ static void wdt_nxp_fs26_int_thread(void *p1, void *p2, void *p3)
 	while (1) {
 		k_sem_take(&data->int_sem, K_FOREVER);
 
-		if ((!fs26_getreg(&config->spi, FS26_FS_GRL_FLAGS, &rx_frame))
-			&& ((rx_frame.data & FS_WD_G_MASK) == FS_WD_G)) {
+		if ((!fs26_getreg(&config->spi, FS26_FS_GRL_FLAGS, &rx_frame)) &&
+		    ((rx_frame.data & FS_WD_G_MASK) == FS_WD_G)) {
 
-			if ((!fs26_getreg(&config->spi, FS26_FS_DIAG_SAFETY1, &rx_frame))
-				&& (rx_frame.data & BAD_WD_TIMING)) {
+			if ((!fs26_getreg(&config->spi, FS26_FS_DIAG_SAFETY1, &rx_frame)) &&
+			    (rx_frame.data & BAD_WD_TIMING)) {
 
 				/* Clear flag */
 				regval = BAD_WD_TIMING;
@@ -613,12 +575,10 @@ static void wdt_nxp_fs26_int_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static void wdt_nxp_fs26_int_callback(const struct device *dev,
-				      struct gpio_callback *cb,
+static void wdt_nxp_fs26_int_callback(const struct device *dev, struct gpio_callback *cb,
 				      uint32_t pins)
 {
-	struct wdt_nxp_fs26_data *data = CONTAINER_OF(cb, struct wdt_nxp_fs26_data,
-						      int_gpio_cb);
+	struct wdt_nxp_fs26_data *data = CONTAINER_OF(cb, struct wdt_nxp_fs26_data, int_gpio_cb);
 
 	ARG_UNUSED(dev);
 	ARG_UNUSED(pins);
@@ -658,16 +618,13 @@ static int wdt_nxp_fs26_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (gpio_pin_interrupt_configure_dt(&config->int_gpio,
-					    GPIO_INT_EDGE_FALLING)) {
+	if (gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_FALLING)) {
 		return -EINVAL;
 	}
 
 	k_thread_create(&data->int_thread, data->int_thread_stack,
-			CONFIG_WDT_NXP_FS26_INT_THREAD_STACK_SIZE,
-			wdt_nxp_fs26_int_thread,
-			(void *)dev, NULL, NULL,
-			K_PRIO_COOP(CONFIG_WDT_NXP_FS26_INT_THREAD_PRIO),
+			CONFIG_WDT_NXP_FS26_INT_THREAD_STACK_SIZE, wdt_nxp_fs26_int_thread,
+			(void *)dev, NULL, NULL, K_PRIO_COOP(CONFIG_WDT_NXP_FS26_INT_THREAD_PRIO),
 			0, K_NO_WAIT);
 
 	/* Verify FS BIST before proceeding */
@@ -675,8 +632,8 @@ static int wdt_nxp_fs26_init(const struct device *dev)
 		return -EIO;
 	}
 
-	if ((rx_frame.data & (ABIST1_PASS_MASK | LBIST_STATUS_MASK))
-		!= (ABIST1_PASS | LBIST_STATUS_OK)) {
+	if ((rx_frame.data & (ABIST1_PASS_MASK | LBIST_STATUS_MASK)) !=
+	    (ABIST1_PASS | LBIST_STATUS_OK)) {
 
 		LOG_ERR("BIST failed 0x%x", rx_frame.data);
 		return -EIO;
@@ -706,8 +663,8 @@ static int wdt_nxp_fs26_init(const struct device *dev)
 	}
 
 	/* Clear pending FS diagnostic flags before initializing */
-	regval = BAD_WD_DATA | BAD_WD_TIMING | ABIST2_PASS | ABIST2_DONE
-		| SPI_FS_CLK | SPI_FS_REQ | SPI_FS_CRC | FS_OSC_DRIFT;
+	regval = BAD_WD_DATA | BAD_WD_TIMING | ABIST2_PASS | ABIST2_DONE | SPI_FS_CLK | SPI_FS_REQ |
+		 SPI_FS_CRC | FS_OSC_DRIFT;
 	fs26_setreg(&config->spi, FS26_FS_DIAG_SAFETY1, regval);
 
 	/*
@@ -717,27 +674,19 @@ static int wdt_nxp_fs26_init(const struct device *dev)
 	 */
 
 	/* OVUV_SAFE_REACTION1 */
-	regval = VMON_PRE_OV_FS_REACTION_NO_EFFECT |
-		VMON_PRE_UV_FS_REACTION_NO_EFFECT |
-		VMON_CORE_OV_FS_REACTION_NO_EFFECT |
-		VMON_CORE_UV_FS_REACTION_NO_EFFECT |
-		VMON_LDO1_OV_FS_REACTION_NO_EFFECT |
-		VMON_LDO1_UV_FS_REACTION_NO_EFFECT |
-		VMON_LDO2_OV_FS_REACTION_NO_EFFECT |
-		VMON_LDO2_UV_FS_REACTION_NO_EFFECT;
+	regval = VMON_PRE_OV_FS_REACTION_NO_EFFECT | VMON_PRE_UV_FS_REACTION_NO_EFFECT |
+		 VMON_CORE_OV_FS_REACTION_NO_EFFECT | VMON_CORE_UV_FS_REACTION_NO_EFFECT |
+		 VMON_LDO1_OV_FS_REACTION_NO_EFFECT | VMON_LDO1_UV_FS_REACTION_NO_EFFECT |
+		 VMON_LDO2_OV_FS_REACTION_NO_EFFECT | VMON_LDO2_UV_FS_REACTION_NO_EFFECT;
 
 	fs26_setreg(&config->spi, FS26_FS_I_OVUV_SAFE_REACTION1, regval);
 	fs26_setreg(&config->spi, FS26_FS_I_NOT_OVUV_SAFE_REACTION1, ~regval);
 
 	/* OVUV_SAFE_REACTION2 */
-	regval = VMON_EXT_OV_FS_REACTION_NO_EFFECT |
-		VMON_EXT_UV_FS_REACTION_NO_EFFECT |
-		VMON_REF_OV_FS_REACTION_NO_EFFECT |
-		VMON_REF_UV_FS_REACTION_NO_EFFECT |
-		VMON_TRK2_OV_FS_REACTION_NO_EFFECT |
-		VMON_TRK2_UV_FS_REACTION_NO_EFFECT |
-		VMON_TRK1_OV_FS_REACTION_NO_EFFECT |
-		VMON_TRK1_UV_FS_REACTION_NO_EFFECT;
+	regval = VMON_EXT_OV_FS_REACTION_NO_EFFECT | VMON_EXT_UV_FS_REACTION_NO_EFFECT |
+		 VMON_REF_OV_FS_REACTION_NO_EFFECT | VMON_REF_UV_FS_REACTION_NO_EFFECT |
+		 VMON_TRK2_OV_FS_REACTION_NO_EFFECT | VMON_TRK2_UV_FS_REACTION_NO_EFFECT |
+		 VMON_TRK1_OV_FS_REACTION_NO_EFFECT | VMON_TRK1_UV_FS_REACTION_NO_EFFECT;
 
 	fs26_setreg(&config->spi, FS26_FS_I_OVUV_SAFE_REACTION2, regval);
 	fs26_setreg(&config->spi, FS26_FS_I_NOT_OVUV_SAFE_REACTION2, ~regval);
@@ -755,9 +704,8 @@ static int wdt_nxp_fs26_init(const struct device *dev)
 	fs26_setreg(&config->spi, FS26_FS_I_NOT_FSSM, ~regval);
 
 	/* FS_I_WD_CFG */
-	regval = WD_ERR_LIMIT(CONFIG_WDT_NXP_FS26_ERROR_COUNTER_LIMIT)
-		| WD_RFR_LIMIT(CONFIG_WDT_NXP_FS26_REFRESH_COUNTER_LIMIT)
-		| WD_FS_REACTION_NO_ACTION;
+	regval = WD_ERR_LIMIT(CONFIG_WDT_NXP_FS26_ERROR_COUNTER_LIMIT) |
+		 WD_RFR_LIMIT(CONFIG_WDT_NXP_FS26_REFRESH_COUNTER_LIMIT) | WD_FS_REACTION_NO_ACTION;
 
 	fs26_setreg(&config->spi, FS26_FS_I_WD_CFG, regval);
 	fs26_setreg(&config->spi, FS26_FS_I_NOT_WD_CFG, ~regval);
@@ -811,32 +759,27 @@ static const struct wdt_driver_api wdt_nxp_fs26_api = {
 	.feed = wdt_nxp_fs26_feed,
 };
 
-#define FS26_WDT_DEVICE_INIT(n)								\
+#define FS26_WDT_DEVICE_INIT(n)                                                                    \
 	COND_CODE_1(DT_INST_ENUM_IDX(n, type),						\
 		(BUILD_ASSERT(CONFIG_WDT_NXP_FS26_SEED != 0x0,				\
 				"Seed value 0x0000 is not allowed");),			\
 		(BUILD_ASSERT((CONFIG_WDT_NXP_FS26_SEED != 0x0)				\
 				&& (CONFIG_WDT_NXP_FS26_SEED != 0xffff),		\
-				"Seed values 0x0000 and 0xffff are not allowed");))	\
-											\
-	static struct wdt_nxp_fs26_data wdt_nxp_fs26_data_##n = {			\
-		.token = CONFIG_WDT_NXP_FS26_SEED,					\
-	};										\
-											\
-	static const struct wdt_nxp_fs26_config wdt_nxp_fs26_config_##n = {		\
-		.spi = SPI_DT_SPEC_INST_GET(n,						\
-			SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(32), 0),	\
-		.wd_type = _CONCAT(FS26_WD_, DT_INST_STRING_UPPER_TOKEN(n, type)),	\
-		.int_gpio = GPIO_DT_SPEC_INST_GET(n, int_gpios),			\
-	};										\
-											\
-	DEVICE_DT_INST_DEFINE(n,							\
-			      wdt_nxp_fs26_init,					\
-			      NULL,							\
-			      &wdt_nxp_fs26_data_##n,					\
-			      &wdt_nxp_fs26_config_##n,					\
-			      POST_KERNEL,						\
-			      CONFIG_WDT_NXP_FS26_INIT_PRIORITY,			\
-			      &wdt_nxp_fs26_api);
+				"Seed values 0x0000 and 0xffff are not allowed");))                                              \
+                                                                                                   \
+	static struct wdt_nxp_fs26_data wdt_nxp_fs26_data_##n = {                                  \
+		.token = CONFIG_WDT_NXP_FS26_SEED,                                                 \
+	};                                                                                         \
+                                                                                                   \
+	static const struct wdt_nxp_fs26_config wdt_nxp_fs26_config_##n = {                        \
+		.spi = SPI_DT_SPEC_INST_GET(                                                       \
+			n, SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(32), 0),              \
+		.wd_type = _CONCAT(FS26_WD_, DT_INST_STRING_UPPER_TOKEN(n, type)),                 \
+		.int_gpio = GPIO_DT_SPEC_INST_GET(n, int_gpios),                                   \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, wdt_nxp_fs26_init, NULL, &wdt_nxp_fs26_data_##n,                  \
+			      &wdt_nxp_fs26_config_##n, POST_KERNEL,                               \
+			      CONFIG_WDT_NXP_FS26_INIT_PRIORITY, &wdt_nxp_fs26_api);
 
 DT_INST_FOREACH_STATUS_OKAY(FS26_WDT_DEVICE_INIT)

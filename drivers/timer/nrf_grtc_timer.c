@@ -116,8 +116,7 @@ static void system_timeout_set_relative(uint64_t value)
  */
 static void system_timeout_set_abs(uint64_t value)
 {
-	nrfx_grtc_syscounter_cc_absolute_set(&system_clock_channel_data, value,
-					     true);
+	nrfx_grtc_syscounter_cc_absolute_set(&system_clock_channel_data, value, true);
 }
 
 static bool compare_int_lock(int32_t chan)
@@ -299,8 +298,7 @@ uint64_t z_nrf_grtc_timer_get_ticks(k_timeout_t t)
 	abs_ticks = Z_TICK_ABS(t.ticks);
 	if (abs_ticks < 0) {
 		/* relative timeout */
-		return (grtc_ticks > (int64_t)COUNTER_SPAN) ?
-			-EINVAL : (curr_time + grtc_ticks);
+		return (grtc_ticks > (int64_t)COUNTER_SPAN) ? -EINVAL : (curr_time + grtc_ticks);
 	}
 
 	/* absolute timeout */
@@ -380,8 +378,8 @@ int z_nrf_grtc_wakeup_prepare(uint64_t wake_time_us)
 	int ret;
 
 	nrfx_grtc_sleep_configuration_get(&sleep_cfg);
-	minimum_latency_us = (sleep_cfg.waketime + sleep_cfg.timeout) *
-		USEC_PER_SEC / LFCLK_FREQUENCY_HZ +
+	minimum_latency_us =
+		(sleep_cfg.waketime + sleep_cfg.timeout) * USEC_PER_SEC / LFCLK_FREQUENCY_HZ +
 		CONFIG_NRF_GRTC_SYSCOUNTER_SLEEP_MINIMUM_LATENCY;
 	sleep_cfg.auto_mode = false;
 	nrfx_grtc_sleep_configure(&sleep_cfg);
@@ -530,7 +528,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	/* Rounded down target_time to the tick boundary
 	 * (but not less than one tick after the last)
 	 */
-	target_time = MAX((target_time - last_count)/CYC_PER_TICK, 1)*CYC_PER_TICK + last_count;
+	target_time = MAX((target_time - last_count) / CYC_PER_TICK, 1) * CYC_PER_TICK + last_count;
 
 	system_timeout_set_abs(target_time);
 }

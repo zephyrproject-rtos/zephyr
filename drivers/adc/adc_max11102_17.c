@@ -131,7 +131,7 @@ static int max11102_17_validate_sequence(const struct device *dev,
 	const struct max11102_17_config *config = dev->config;
 	struct max11102_17_data *data = dev->data;
 	size_t sequence_channel_count = 0;
-	const size_t channel_maximum = 8*sizeof(sequence->channels);
+	const size_t channel_maximum = 8 * sizeof(sequence->channels);
 
 	if (sequence->resolution != config->resolution) {
 		LOG_ERR("invalid resolution");

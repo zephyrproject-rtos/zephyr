@@ -28,14 +28,14 @@ LOG_MODULE_REGISTER(adc_ite_it8xxx2);
 #define IT8XXX2_ADC_VREF_VOL 3000
 #endif
 /* ADC channels disabled */
-#define IT8XXX2_ADC_CHANNEL_DISABLED 0x1F
+#define IT8XXX2_ADC_CHANNEL_DISABLED    0x1F
 /* ADC sample time delay (Unit:us) */
-#define IT8XXX2_ADC_SAMPLE_TIME_US 500
+#define IT8XXX2_ADC_SAMPLE_TIME_US      500
 /* Wait next clock rising (Clock source 32.768K) */
 #define IT8XXX2_WAIT_NEXT_CLOCK_TIME_US 31
 /* ADC channels offset */
-#define ADC_CHANNEL_SHIFT 5
-#define ADC_CHANNEL_OFFSET(ch) ((ch)-CHIP_ADC_CH13-ADC_CHANNEL_SHIFT)
+#define ADC_CHANNEL_SHIFT               5
+#define ADC_CHANNEL_OFFSET(ch)          ((ch) - CHIP_ADC_CH13 - ADC_CHANNEL_SHIFT)
 
 #ifdef CONFIG_ADC_IT8XXX2_VOL_FULL_SCALE
 #define ADC_0_7_FULL_SCALE_MASK   GENMASK(7, 0)
@@ -45,8 +45,8 @@ LOG_MODULE_REGISTER(adc_ite_it8xxx2);
 
 #ifdef CONFIG_SOC_IT8XXX2_EC_BUS_24MHZ
 /* Select analog clock division factor */
-#define ADC_SACLKDIV_MASK   GENMASK(6, 4)
-#define ADC_SACLKDIV(div)   FIELD_PREP(ADC_SACLKDIV_MASK, div)
+#define ADC_SACLKDIV_MASK GENMASK(6, 4)
+#define ADC_SACLKDIV(div) FIELD_PREP(ADC_SACLKDIV_MASK, div)
 #endif
 
 /* List of ADC channels. */
@@ -89,8 +89,7 @@ struct adc_it8xxx2_cfg {
 	const struct pinctrl_dev_config *pcfg;
 };
 
-#define ADC_IT8XXX2_REG_BASE	\
-	((struct adc_it8xxx2_regs *)(DT_INST_REG_ADDR(0)))
+#define ADC_IT8XXX2_REG_BASE ((struct adc_it8xxx2_regs *)(DT_INST_REG_ADDR(0)))
 
 static int adc_it8xxx2_channel_setup(const struct device *dev,
 				     const struct adc_channel_cfg *channel_cfg)
@@ -103,8 +102,7 @@ static int adc_it8xxx2_channel_setup(const struct device *dev,
 	}
 
 	/* Support channels 0~7 and 13~16 */
-	if (!((channel_id >= 0 && channel_id <= 7) ||
-	    (channel_id >= 13 && channel_id <= 16))) {
+	if (!((channel_id >= 0 && channel_id <= 7) || (channel_id >= 13 && channel_id <= 16))) {
 		LOG_ERR("Channel %d is not valid", channel_id);
 		return -EINVAL;
 	}
@@ -137,16 +135,14 @@ static void adc_disable_measurement(uint32_t ch)
 		 * Disable measurement.
 		 * bit(4:0) = 0x1f : channel disable
 		 */
-		adc_regs->VCH0CTL = IT8XXX2_ADC_DATVAL |
-			IT8XXX2_ADC_CHANNEL_DISABLED;
+		adc_regs->VCH0CTL = IT8XXX2_ADC_DATVAL | IT8XXX2_ADC_CHANNEL_DISABLED;
 	} else {
 		/*
 		 * Channels 13~16 controller setting.
 		 * bit7 = 1: End of conversion. New data is available in
 		 *           VCHDATL/VCHDATM.
 		 */
-		adc_regs->adc_vchs_ctrl[ADC_CHANNEL_OFFSET(ch)].VCHCTL =
-			IT8XXX2_ADC_DATVAL;
+		adc_regs->adc_vchs_ctrl[ADC_CHANNEL_OFFSET(ch)].VCHCTL = IT8XXX2_ADC_DATVAL;
 	}
 
 	/* ADC module disable */
@@ -161,9 +157,9 @@ static int adc_data_valid(const struct device *dev)
 	struct adc_it8xxx2_regs *const adc_regs = ADC_IT8XXX2_REG_BASE;
 	struct adc_it8xxx2_data *data = dev->data;
 
-	return (data->ch <= CHIP_ADC_CH7) ?
-		(adc_regs->VCH0CTL & IT8XXX2_ADC_DATVAL) :
-		(adc_regs->ADCDVSTS2 & BIT(ADC_CHANNEL_OFFSET(data->ch)));
+	return (data->ch <= CHIP_ADC_CH7)
+		       ? (adc_regs->VCH0CTL & IT8XXX2_ADC_DATVAL)
+		       : (adc_regs->ADCDVSTS2 & BIT(ADC_CHANNEL_OFFSET(data->ch)));
 }
 
 /* Get result for each ADC selected channel. */
@@ -175,8 +171,7 @@ static void adc_it8xxx2_get_sample(const struct device *dev)
 	if (adc_data_valid(dev)) {
 		if (data->ch <= CHIP_ADC_CH7) {
 			/* Read adc raw data of msb and lsb */
-			*data->buffer++ = adc_regs->VCH0DATM << 8 |
-				adc_regs->VCH0DATL;
+			*data->buffer++ = adc_regs->VCH0DATM << 8 | adc_regs->VCH0DATL;
 		} else {
 			/* Read adc channels 13~16 raw data of msb and lsb */
 			*data->buffer++ =
@@ -184,8 +179,7 @@ static void adc_it8xxx2_get_sample(const struct device *dev)
 				adc_regs->adc_vchs_ctrl[ADC_CHANNEL_OFFSET(data->ch)].VCHDATL;
 		}
 	} else {
-		LOG_WRN("ADC failed to read (regs=%x, ch=%d)",
-			adc_regs->ADCDVSTS, data->ch);
+		LOG_WRN("ADC failed to read (regs=%x, ch=%d)", adc_regs->ADCDVSTS, data->ch);
 	}
 
 	adc_disable_measurement(data->ch);
@@ -200,8 +194,7 @@ static void adc_poll_valid_data(void)
 	 * If the polling waits for a valid data longer than
 	 * the sampling time limit, the program will return.
 	 */
-	for (int i = 0U; i < (IT8XXX2_ADC_SAMPLE_TIME_US /
-	     IT8XXX2_WAIT_NEXT_CLOCK_TIME_US); i++) {
+	for (int i = 0U; i < (IT8XXX2_ADC_SAMPLE_TIME_US / IT8XXX2_WAIT_NEXT_CLOCK_TIME_US); i++) {
 		/* Wait next clock time (1/32.768K~=30.5us) */
 		k_busy_wait(IT8XXX2_WAIT_NEXT_CLOCK_TIME_US);
 
@@ -259,8 +252,7 @@ static void adc_enable_measurement(uint32_t ch)
 	}
 }
 
-static int check_buffer_size(const struct adc_sequence *sequence,
-			     uint8_t active_channels)
+static int check_buffer_size(const struct adc_sequence *sequence, uint8_t active_channels)
 {
 	size_t needed_buffer_size;
 
@@ -270,16 +262,15 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 	}
 
 	if (sequence->buffer_size < needed_buffer_size) {
-		LOG_ERR("Provided buffer is too small (%u/%u)",
-				sequence->buffer_size, needed_buffer_size);
+		LOG_ERR("Provided buffer is too small (%u/%u)", sequence->buffer_size,
+			needed_buffer_size);
 		return -ENOMEM;
 	}
 
 	return 0;
 }
 
-static int adc_it8xxx2_start_read(const struct device *dev,
-				  const struct adc_sequence *sequence)
+static int adc_it8xxx2_start_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	struct adc_it8xxx2_data *data = dev->data;
 	uint32_t channel_mask = sequence->channels;
@@ -309,8 +300,7 @@ static int adc_it8xxx2_start_read(const struct device *dev,
 
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
-	struct adc_it8xxx2_data *data =
-		CONTAINER_OF(ctx, struct adc_it8xxx2_data, ctx);
+	struct adc_it8xxx2_data *data = CONTAINER_OF(ctx, struct adc_it8xxx2_data, ctx);
 	uint32_t channels = ctx->sequence.channels;
 	uint8_t channel_count = 0;
 
@@ -336,8 +326,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	adc_context_on_sampling_done(&data->ctx, DEVICE_DT_INST_GET(0));
 }
 
-static int adc_it8xxx2_read(const struct device *dev,
-			    const struct adc_sequence *sequence)
+static int adc_it8xxx2_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	struct adc_it8xxx2_data *data = dev->data;
 	int err;
@@ -350,8 +339,7 @@ static int adc_it8xxx2_read(const struct device *dev,
 }
 
 #ifdef CONFIG_ADC_ASYNC
-static int adc_it8xxx2_read_async(const struct device *dev,
-				  const struct adc_sequence *sequence,
+static int adc_it8xxx2_read_async(const struct device *dev, const struct adc_sequence *sequence,
 				  struct k_poll_signal *async)
 {
 	struct adc_it8xxx2_data *data = dev->data;
@@ -365,11 +353,9 @@ static int adc_it8xxx2_read_async(const struct device *dev,
 }
 #endif /* CONFIG_ADC_ASYNC */
 
-static void adc_context_update_buffer_pointer(struct adc_context *ctx,
-					      bool repeat_sampling)
+static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat_sampling)
 {
-	struct adc_it8xxx2_data *data =
-		CONTAINER_OF(ctx, struct adc_it8xxx2_data, ctx);
+	struct adc_it8xxx2_data *data = CONTAINER_OF(ctx, struct adc_it8xxx2_data, ctx);
 
 	if (repeat_sampling) {
 		data->buffer = data->repeat_buffer;
@@ -459,8 +445,7 @@ static int adc_it8xxx2_init(const struct device *dev)
 	adc_regs->ADCCTL = 1;
 
 #ifdef CONFIG_SOC_IT8XXX2_EC_BUS_24MHZ
-	adc_regs->ADCCTL1 =
-		(adc_regs->ADCCTL1 & ~ADC_SACLKDIV_MASK) | ADC_SACLKDIV(2);
+	adc_regs->ADCCTL1 = (adc_regs->ADCCTL1 & ~ADC_SACLKDIV_MASK) | ADC_SACLKDIV(2);
 #endif
 	/*
 	 * Enable this bit, and data of VCHxDATL/VCHxDATM will be
@@ -468,8 +453,8 @@ static int adc_it8xxx2_init(const struct device *dev)
 	 */
 	adc_regs->ADCGCR |= IT8XXX2_ADC_DBKEN;
 
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
-		    adc_it8xxx2_isr, DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), adc_it8xxx2_isr,
+		    DEVICE_DT_INST_GET(0), 0);
 
 	k_sem_init(&data->sem, 0, 1);
 	adc_context_unlock_unconditionally(&data->ctx);
@@ -478,9 +463,9 @@ static int adc_it8xxx2_init(const struct device *dev)
 }
 
 static struct adc_it8xxx2_data adc_it8xxx2_data_0 = {
-		ADC_CONTEXT_INIT_TIMER(adc_it8xxx2_data_0, ctx),
-		ADC_CONTEXT_INIT_LOCK(adc_it8xxx2_data_0, ctx),
-		ADC_CONTEXT_INIT_SYNC(adc_it8xxx2_data_0, ctx),
+	ADC_CONTEXT_INIT_TIMER(adc_it8xxx2_data_0, ctx),
+	ADC_CONTEXT_INIT_LOCK(adc_it8xxx2_data_0, ctx),
+	ADC_CONTEXT_INIT_SYNC(adc_it8xxx2_data_0, ctx),
 };
 
 PINCTRL_DT_INST_DEFINE(0);
@@ -489,9 +474,5 @@ static const struct adc_it8xxx2_cfg adc_it8xxx2_cfg_0 = {
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, adc_it8xxx2_init,
-		      NULL,
-		      &adc_it8xxx2_data_0,
-		      &adc_it8xxx2_cfg_0, PRE_KERNEL_1,
-		      CONFIG_ADC_INIT_PRIORITY,
-		      &api_it8xxx2_driver_api);
+DEVICE_DT_INST_DEFINE(0, adc_it8xxx2_init, NULL, &adc_it8xxx2_data_0, &adc_it8xxx2_cfg_0,
+		      PRE_KERNEL_1, CONFIG_ADC_INIT_PRIORITY, &api_it8xxx2_driver_api);

@@ -6,9 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #define LOG_MODULE_NAME dwmac_plat
-#define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
+#define LOG_LEVEL       CONFIG_ETHERNET_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
@@ -29,12 +28,12 @@ int dwmac_bus_init(struct dwmac_priv *p)
 	return 0;
 }
 
-#if (CONFIG_DCACHE_LINE_SIZE+0 == 0)
+#if (CONFIG_DCACHE_LINE_SIZE + 0 == 0)
 #error "CONFIG_DCACHE_LINE_SIZE must be configured to a non-zero value"
 #endif
 
-static struct dwmac_dma_desc __aligned(CONFIG_DCACHE_LINE_SIZE)
-			dwmac_tx_rx_descriptors[NB_TX_DESCS + NB_RX_DESCS];
+static struct dwmac_dma_desc
+	__aligned(CONFIG_DCACHE_LINE_SIZE) dwmac_tx_rx_descriptors[NB_TX_DESCS + NB_RX_DESCS];
 
 static const uint8_t dwmac_mac_addr[6] = DT_INST_PROP(0, local_mac_address);
 
@@ -44,18 +43,16 @@ void dwmac_platform_init(struct dwmac_priv *p)
 	uintptr_t desc_phys_addr;
 
 	/* make sure no valid cache lines map to the descriptor area */
-	sys_cache_data_invd_range(dwmac_tx_rx_descriptors,
-				  sizeof(dwmac_tx_rx_descriptors));
+	sys_cache_data_invd_range(dwmac_tx_rx_descriptors, sizeof(dwmac_tx_rx_descriptors));
 
 	desc_phys_addr = k_mem_phys_addr(dwmac_tx_rx_descriptors);
 
 	/* remap descriptor rings uncached */
-	k_mem_map_phys_bare(&desc_uncached_addr, desc_phys_addr,
-			    sizeof(dwmac_tx_rx_descriptors),
+	k_mem_map_phys_bare(&desc_uncached_addr, desc_phys_addr, sizeof(dwmac_tx_rx_descriptors),
 			    K_MEM_PERM_RW | K_MEM_CACHE_NONE);
 
-	LOG_DBG("desc virt %p uncached %p phys 0x%lx",
-		dwmac_tx_rx_descriptors, desc_uncached_addr, desc_phys_addr);
+	LOG_DBG("desc virt %p uncached %p phys 0x%lx", dwmac_tx_rx_descriptors, desc_uncached_addr,
+		desc_phys_addr);
 
 	p->tx_descs = (void *)desc_uncached_addr;
 	desc_uncached_addr += NB_TX_DESCS * sizeof(struct dwmac_dma_desc);
@@ -66,20 +63,15 @@ void dwmac_platform_init(struct dwmac_priv *p)
 	p->rx_descs_phys = desc_phys_addr;
 
 	/* basic configuration for this platform */
-	REG_WRITE(MAC_CONF,
-		  MAC_CONF_PS |
-		  MAC_CONF_FES |
-		  MAC_CONF_DM);
-	REG_WRITE(DMA_SYSBUS_MODE,
-		  DMA_SYSBUS_MODE_AAL |
+	REG_WRITE(MAC_CONF, MAC_CONF_PS | MAC_CONF_FES | MAC_CONF_DM);
+	REG_WRITE(DMA_SYSBUS_MODE, DMA_SYSBUS_MODE_AAL |
 #ifdef CONFIG_64BIT
-		  DMA_SYSBUS_MODE_EAME |
+					   DMA_SYSBUS_MODE_EAME |
 #endif
-		  DMA_SYSBUS_MODE_FB);
+					   DMA_SYSBUS_MODE_FB);
 
 	/* set up IRQs (still masked for now) */
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), dwmac_isr,
-		    DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), dwmac_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
 
 	/* retrieve MAC address */
@@ -89,11 +81,5 @@ void dwmac_platform_init(struct dwmac_priv *p)
 /* Our private device instance */
 static struct dwmac_priv dwmac_instance;
 
-ETH_NET_DEVICE_DT_INST_DEFINE(0,
-			      dwmac_probe,
-			      NULL,
-			      &dwmac_instance,
-			      NULL,
-			      CONFIG_ETH_INIT_PRIORITY,
-			      &dwmac_api,
-			      NET_ETH_MTU);
+ETH_NET_DEVICE_DT_INST_DEFINE(0, dwmac_probe, NULL, &dwmac_instance, NULL, CONFIG_ETH_INIT_PRIORITY,
+			      &dwmac_api, NET_ETH_MTU);

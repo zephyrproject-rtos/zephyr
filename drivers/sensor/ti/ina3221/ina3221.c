@@ -160,16 +160,14 @@ static int ina3221_sample_fetch(const struct device *dev, enum sensor_channel ch
 			return ret;
 		}
 		measurement_time =
-			K_USEC(avg_mode_samples[cfg->avg_mode] *
-			       conv_time_us[cfg->conv_time_bus]);
+			K_USEC(avg_mode_samples[cfg->avg_mode] * conv_time_us[cfg->conv_time_bus]);
 	} else if (chan == SENSOR_CHAN_CURRENT) {
 		ret = start_measurement(dev, false, true);
 		if (ret) {
 			return ret;
 		}
-		measurement_time =
-			K_USEC(avg_mode_samples[cfg->avg_mode] *
-			       conv_time_us[cfg->conv_time_shunt]);
+		measurement_time = K_USEC(avg_mode_samples[cfg->avg_mode] *
+					  conv_time_us[cfg->conv_time_shunt]);
 	} else if (chan == SENSOR_CHAN_POWER || chan == SENSOR_CHAN_ALL) {
 		ret = start_measurement(dev, true, true);
 		if (ret) {
@@ -285,7 +283,7 @@ static const struct sensor_driver_api ina3221_api = {
 	static struct ina3221_data ina3221_data_##index;                                           \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(index, ina3221_init, NULL, &ina3221_data_##index,             \
-			      &ina3221_config_##index, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,   \
-			      &ina3221_api);
+				     &ina3221_config_##index, POST_KERNEL,                         \
+				     CONFIG_SENSOR_INIT_PRIORITY, &ina3221_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INST_DT_INA3221);

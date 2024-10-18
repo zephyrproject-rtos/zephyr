@@ -83,7 +83,7 @@ static int intel_sha_device_run(const struct device *dev, const void *buf_in, si
 {
 	int err;
 	struct sha_container *const self = dev->data;
-	union sha_state state_u = { .full = state };
+	union sha_state state_u = {.full = state};
 	/* align to OWORD */
 	const size_t aligned_buff_size = ROUND_UP(buf_in_size, 0x10);
 
@@ -228,9 +228,8 @@ static int intel_sha_compute(struct hash_ctx *ctx, struct hash_pkt *pkt, bool fi
 
 	/* compute hash */
 	do {
-		frag_length = pkt->in_len > SHA_API_MAX_FRAG_LEN ?
-					     SHA_API_MAX_FRAG_LEN :
-						   pkt->in_len;
+		frag_length =
+			pkt->in_len > SHA_API_MAX_FRAG_LEN ? SHA_API_MAX_FRAG_LEN : pkt->in_len;
 
 		if ((frag_length == pkt->in_len) && finish) {
 			session->state.part.state = SHA_LAST;
@@ -332,11 +331,10 @@ static struct crypto_driver_api hash_enc_funcs = {
 	.query_hw_caps = intel_sha_device_hw_caps,
 };
 
-#define INTEL_SHA_DEVICE_INIT(inst)                                               \
-static struct sha_container sha_data_##inst  = {                                  \
-	.dfsha = (volatile struct sha_hw_regs *)DT_INST_REG_ADDR_BY_IDX(inst, 0)  \
-};                                                                                \
-DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &sha_data_##inst, NULL,                   \
-	POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY, (void *)&hash_enc_funcs);
+#define INTEL_SHA_DEVICE_INIT(inst)                                                                \
+	static struct sha_container sha_data_##inst = {                                            \
+		.dfsha = (volatile struct sha_hw_regs *)DT_INST_REG_ADDR_BY_IDX(inst, 0)};         \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &sha_data_##inst, NULL, POST_KERNEL,               \
+			      CONFIG_CRYPTO_INIT_PRIORITY, (void *)&hash_enc_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(INTEL_SHA_DEVICE_INIT)

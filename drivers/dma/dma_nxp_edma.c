@@ -34,8 +34,7 @@ static void edma_isr(const void *parameter)
 	}
 
 	/* clear interrupt */
-	EDMA_ChannelRegUpdate(data->hal_cfg, chan->id,
-			      EDMA_TCD_CH_INT, EDMA_TCD_CH_INT_MASK, 0);
+	EDMA_ChannelRegUpdate(data->hal_cfg, chan->id, EDMA_TCD_CH_INT, EDMA_TCD_CH_INT_MASK, 0);
 
 	if (chan->cyclic_buffer) {
 		update_size = chan->bsize;
@@ -61,8 +60,7 @@ static void edma_isr(const void *parameter)
 	}
 }
 
-static struct edma_channel *lookup_channel(const struct device *dev,
-					   uint32_t chan_id)
+static struct edma_channel *lookup_channel(const struct device *dev, uint32_t chan_id)
 {
 	struct edma_data *data;
 	const struct edma_config *cfg;
@@ -70,7 +68,6 @@ static struct edma_channel *lookup_channel(const struct device *dev,
 
 	data = dev->data;
 	cfg = dev->config;
-
 
 	/* optimization: if dma-channels property is present then
 	 * the channel data associated with the passed channel ID
@@ -98,8 +95,7 @@ static struct edma_channel *lookup_channel(const struct device *dev,
 	return NULL;
 }
 
-static int edma_config(const struct device *dev, uint32_t chan_id,
-		       struct dma_config *dma_cfg)
+static int edma_config(const struct device *dev, uint32_t chan_id, struct dma_config *dma_cfg)
 {
 	struct edma_data *data;
 	const struct edma_config *cfg;
@@ -117,22 +113,19 @@ static int edma_config(const struct device *dev, uint32_t chan_id,
 
 	/* validate source data size (SSIZE) */
 	if (!EDMA_TransferWidthIsValid(data->hal_cfg, dma_cfg->source_data_size)) {
-		LOG_ERR("invalid source data size: %d",
-			dma_cfg->source_data_size);
+		LOG_ERR("invalid source data size: %d", dma_cfg->source_data_size);
 		return -EINVAL;
 	}
 
 	/* validate destination data size (DSIZE) */
 	if (!EDMA_TransferWidthIsValid(data->hal_cfg, dma_cfg->dest_data_size)) {
-		LOG_ERR("invalid destination data size: %d",
-			dma_cfg->dest_data_size);
+		LOG_ERR("invalid destination data size: %d", dma_cfg->dest_data_size);
 		return -EINVAL;
 	}
 
 	/* validate configured alignment */
 	if (!EDMA_TransferWidthIsValid(data->hal_cfg, CONFIG_DMA_NXP_EDMA_ALIGN)) {
-		LOG_ERR("configured alignment %d is invalid",
-			CONFIG_DMA_NXP_EDMA_ALIGN);
+		LOG_ERR("configured alignment %d is invalid", CONFIG_DMA_NXP_EDMA_ALIGN);
 		return -EINVAL;
 	}
 
@@ -167,8 +160,7 @@ static int edma_config(const struct device *dev, uint32_t chan_id,
 	 */
 	if (dma_cfg->head_block->source_address % dma_cfg->source_data_size) {
 		LOG_ERR("source address 0x%x alignment doesn't match data size %d",
-			dma_cfg->head_block->source_address,
-			dma_cfg->source_data_size);
+			dma_cfg->head_block->source_address, dma_cfg->source_data_size);
 		return -EINVAL;
 	}
 
@@ -178,8 +170,7 @@ static int edma_config(const struct device *dev, uint32_t chan_id,
 	 */
 	if (dma_cfg->head_block->dest_address % dma_cfg->dest_data_size) {
 		LOG_ERR("destination address 0x%x alignment doesn't match data size %d",
-			dma_cfg->head_block->dest_address,
-			dma_cfg->dest_data_size);
+			dma_cfg->head_block->dest_address, dma_cfg->dest_data_size);
 		return -EINVAL;
 	}
 
@@ -187,11 +178,9 @@ static int edma_config(const struct device *dev, uint32_t chan_id,
 	 * This is because the burst length is the equivalent of NBYTES which
 	 * is used for both the destination and the source.
 	 */
-	if (dma_cfg->source_burst_length !=
-	    dma_cfg->dest_burst_length) {
+	if (dma_cfg->source_burst_length != dma_cfg->dest_burst_length) {
 		LOG_ERR("source burst length %d doesn't match destination burst length %d",
-			dma_cfg->source_burst_length,
-			dma_cfg->dest_burst_length);
+			dma_cfg->source_burst_length, dma_cfg->dest_burst_length);
 		return -EINVAL;
 	}
 
@@ -206,8 +195,7 @@ static int edma_config(const struct device *dev, uint32_t chan_id,
 	 */
 	if (dma_cfg->head_block->block_size % dma_cfg->source_burst_length) {
 		LOG_ERR("block size %d should be a multiple of NBYTES %d",
-			dma_cfg->head_block->block_size,
-			dma_cfg->source_burst_length);
+			dma_cfg->head_block->block_size, dma_cfg->source_burst_length);
 		return -EINVAL;
 	}
 
@@ -224,8 +212,7 @@ static int edma_config(const struct device *dev, uint32_t chan_id,
 	if (dma_cfg->source_burst_length %
 	    MAX(dma_cfg->source_data_size, dma_cfg->dest_data_size)) {
 		LOG_ERR("NBYTES %d should be a multiple of MAX(SSIZE(%d), DSIZE(%d))",
-			dma_cfg->source_burst_length,
-			dma_cfg->source_data_size,
+			dma_cfg->source_burst_length, dma_cfg->source_data_size,
 			dma_cfg->dest_data_size);
 		return -EINVAL;
 	}
@@ -286,14 +273,10 @@ static int edma_config(const struct device *dev, uint32_t chan_id,
 	chan->arg = dma_cfg->user_data;
 
 	/* warning: this sets SOFF and DOFF to SSIZE and DSIZE which are POSITIVE. */
-	ret = EDMA_ConfigureTransfer(data->hal_cfg, chan_id,
-				     dma_cfg->head_block->source_address,
-				     dma_cfg->head_block->dest_address,
-				     dma_cfg->source_data_size,
-				     dma_cfg->dest_data_size,
-				     dma_cfg->source_burst_length,
-				     dma_cfg->head_block->block_size,
-				     transfer_type);
+	ret = EDMA_ConfigureTransfer(data->hal_cfg, chan_id, dma_cfg->head_block->source_address,
+				     dma_cfg->head_block->dest_address, dma_cfg->source_data_size,
+				     dma_cfg->dest_data_size, dma_cfg->source_burst_length,
+				     dma_cfg->head_block->block_size, transfer_type);
 	if (ret < 0) {
 		LOG_ERR("failed to configure transfer");
 		return to_std_error(ret);
@@ -321,8 +304,7 @@ static int edma_config(const struct device *dev, uint32_t chan_id,
 	 * we're going to get 4 transfers of 192 bytes. Each of these transfers
 	 * translates to a DMA request made by the slave peripheral.
 	 */
-	EDMA_ChannelRegUpdate(data->hal_cfg, chan_id,
-			      EDMA_TCD_CSR, EDMA_TCD_CSR_INTMAJOR_MASK, 0);
+	EDMA_ChannelRegUpdate(data->hal_cfg, chan_id, EDMA_TCD_CSR, EDMA_TCD_CSR_INTMAJOR_MASK, 0);
 
 	if (IS_ENABLED(CONFIG_DMA_NXP_EDMA_ENABLE_HALFMAJOR_IRQ)) {
 		/* if enabled through the above configuration, also
@@ -338,8 +320,7 @@ static int edma_config(const struct device *dev, uint32_t chan_id,
 	return 0;
 }
 
-static int edma_get_status(const struct device *dev, uint32_t chan_id,
-			   struct dma_status *stat)
+static int edma_get_status(const struct device *dev, uint32_t chan_id, struct dma_status *stat)
 {
 	struct edma_data *data;
 	struct edma_channel *chan;
@@ -369,7 +350,7 @@ static int edma_get_status(const struct device *dev, uint32_t chan_id,
 		citer = EDMA_ChannelRegRead(data->hal_cfg, chan_id, EDMA_TCD_CITER);
 		biter = EDMA_ChannelRegRead(data->hal_cfg, chan_id, EDMA_TCD_BITER);
 		done = EDMA_ChannelRegRead(data->hal_cfg, chan_id, EDMA_TCD_CH_CSR) &
-			EDMA_TCD_CH_CSR_DONE_MASK;
+		       EDMA_TCD_CH_CSR_DONE_MASK;
 		if (done) {
 			stat->free = chan->bsize;
 			stat->pending_length = 0;
@@ -413,8 +394,7 @@ static int edma_suspend(const struct device *dev, uint32_t chan_id)
 	LOG_DBG("suspending channel %u", chan_id);
 
 	/* disable HW requests */
-	EDMA_ChannelRegUpdate(data->hal_cfg, chan_id,
-			      EDMA_TCD_CH_CSR, 0, EDMA_TCD_CH_CSR_ERQ_MASK);
+	EDMA_ChannelRegUpdate(data->hal_cfg, chan_id, EDMA_TCD_CH_CSR, 0, EDMA_TCD_CH_CSR_ERQ_MASK);
 
 	return 0;
 }
@@ -457,8 +437,7 @@ static int edma_stop(const struct device *dev, uint32_t chan_id)
 	}
 
 	/* disable HW requests */
-	EDMA_ChannelRegUpdate(data->hal_cfg, chan_id, EDMA_TCD_CH_CSR, 0,
-			      EDMA_TCD_CH_CSR_ERQ_MASK);
+	EDMA_ChannelRegUpdate(data->hal_cfg, chan_id, EDMA_TCD_CH_CSR, 0, EDMA_TCD_CH_CSR_ERQ_MASK);
 
 out_release_channel:
 
@@ -514,14 +493,13 @@ static int edma_start(const struct device *dev, uint32_t chan_id)
 	irq_enable(chan->irq);
 
 	/* enable HW requests */
-	EDMA_ChannelRegUpdate(data->hal_cfg, chan_id,
-			      EDMA_TCD_CH_CSR, EDMA_TCD_CH_CSR_ERQ_MASK, 0);
+	EDMA_ChannelRegUpdate(data->hal_cfg, chan_id, EDMA_TCD_CH_CSR, EDMA_TCD_CH_CSR_ERQ_MASK, 0);
 
 	return 0;
 }
 
-static int edma_reload(const struct device *dev, uint32_t chan_id, uint32_t src,
-		       uint32_t dst, size_t size)
+static int edma_reload(const struct device *dev, uint32_t chan_id, uint32_t src, uint32_t dst,
+		       size_t size)
 {
 	struct edma_data *data;
 	struct edma_channel *chan;
@@ -645,45 +623,43 @@ static int edma_init(const struct device *dev)
  *	the eDMA is MUX-capable (signaled via the EDMA_HAS_CHAN_MUX
  *	configuration).
  */
-#define EDMA_INIT(inst)								\
-										\
-BUILD_ASSERT(!DT_NODE_HAS_PROP(DT_INST(inst, DT_DRV_COMPAT), dma_channels) ||	\
-	     !DT_NODE_HAS_PROP(DT_INST(inst, DT_DRV_COMPAT), valid_channels),	\
-	     "dma_channels and valid_channels are mutually exclusive");		\
-										\
-BUILD_ASSERT(DT_INST_PROP_OR(inst, dma_channels, 0) ==				\
-	     DT_NUM_IRQS(DT_INST(inst, DT_DRV_COMPAT)) ||			\
-	     DT_INST_PROP_LEN_OR(inst, valid_channels, 0) ==			\
-	     DT_NUM_IRQS(DT_INST(inst, DT_DRV_COMPAT)),				\
-	     "number of interrupts needs to match number of channels");		\
-										\
-BUILD_ASSERT(DT_PROP_OR(DT_INST(inst, DT_DRV_COMPAT), hal_cfg_index, 0) <	\
-	     ARRAY_SIZE(s_edmaConfigs),						\
-	     "HAL configuration index out of bounds");				\
-										\
-static struct edma_channel channels_##inst[] = EDMA_CHANNEL_ARRAY_GET(inst);	\
-										\
-static void interrupt_config_function_##inst(void)				\
-{										\
-	EDMA_CONNECT_INTERRUPTS(inst);						\
-}										\
-										\
-static struct edma_config edma_config_##inst = {				\
-	.regmap_phys = DT_INST_REG_ADDR(inst),					\
-	.regmap_size = DT_INST_REG_SIZE(inst),					\
-	.irq_config = interrupt_config_function_##inst,				\
-	.contiguous_channels = EDMA_CHANS_ARE_CONTIGUOUS(inst),			\
-};										\
-										\
-static struct edma_data edma_data_##inst = {					\
-	.channels = channels_##inst,						\
-	.ctx.magic = DMA_MAGIC,							\
-	.hal_cfg = &EDMA_HAL_CFG_GET(inst),					\
-};										\
-										\
-DEVICE_DT_INST_DEFINE(inst, &edma_init, NULL,					\
-		      &edma_data_##inst, &edma_config_##inst,			\
-		      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,			\
-		      &edma_api);						\
+#define EDMA_INIT(inst)                                                                            \
+                                                                                                   \
+	BUILD_ASSERT(!DT_NODE_HAS_PROP(DT_INST(inst, DT_DRV_COMPAT), dma_channels) ||              \
+			     !DT_NODE_HAS_PROP(DT_INST(inst, DT_DRV_COMPAT), valid_channels),      \
+		     "dma_channels and valid_channels are mutually exclusive");                    \
+                                                                                                   \
+	BUILD_ASSERT(DT_INST_PROP_OR(inst, dma_channels, 0) ==                                     \
+				     DT_NUM_IRQS(DT_INST(inst, DT_DRV_COMPAT)) ||                  \
+			     DT_INST_PROP_LEN_OR(inst, valid_channels, 0) ==                       \
+				     DT_NUM_IRQS(DT_INST(inst, DT_DRV_COMPAT)),                    \
+		     "number of interrupts needs to match number of channels");                    \
+                                                                                                   \
+	BUILD_ASSERT(DT_PROP_OR(DT_INST(inst, DT_DRV_COMPAT), hal_cfg_index, 0) <                  \
+			     ARRAY_SIZE(s_edmaConfigs),                                            \
+		     "HAL configuration index out of bounds");                                     \
+                                                                                                   \
+	static struct edma_channel channels_##inst[] = EDMA_CHANNEL_ARRAY_GET(inst);               \
+                                                                                                   \
+	static void interrupt_config_function_##inst(void)                                         \
+	{                                                                                          \
+		EDMA_CONNECT_INTERRUPTS(inst);                                                     \
+	}                                                                                          \
+                                                                                                   \
+	static struct edma_config edma_config_##inst = {                                           \
+		.regmap_phys = DT_INST_REG_ADDR(inst),                                             \
+		.regmap_size = DT_INST_REG_SIZE(inst),                                             \
+		.irq_config = interrupt_config_function_##inst,                                    \
+		.contiguous_channels = EDMA_CHANS_ARE_CONTIGUOUS(inst),                            \
+	};                                                                                         \
+                                                                                                   \
+	static struct edma_data edma_data_##inst = {                                               \
+		.channels = channels_##inst,                                                       \
+		.ctx.magic = DMA_MAGIC,                                                            \
+		.hal_cfg = &EDMA_HAL_CFG_GET(inst),                                                \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &edma_init, NULL, &edma_data_##inst, &edma_config_##inst,      \
+			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY, &edma_api);
 
 DT_INST_FOREACH_STATUS_OKAY(EDMA_INIT);

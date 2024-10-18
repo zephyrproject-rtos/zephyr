@@ -305,26 +305,21 @@ static int ens160_pm_action(const struct device *dev, enum pm_device_action acti
 	(SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_TRANSFER_MSB)
 
 #define ENS160_CONFIG_SPI(inst)                                                                    \
-	.bus_init = &ens160_spi_init,                                                              \
-	.spi = SPI_DT_SPEC_INST_GET(inst, ENS160_SPI_OPERATION, 0),
+	.bus_init = &ens160_spi_init, .spi = SPI_DT_SPEC_INST_GET(inst, ENS160_SPI_OPERATION, 0),
 
-#define ENS160_CONFIG_I2C(inst)                                                                    \
-	.bus_init = &ens160_i2c_init,                                                              \
-	.i2c = I2C_DT_SPEC_INST_GET(inst),
+#define ENS160_CONFIG_I2C(inst) .bus_init = &ens160_i2c_init, .i2c = I2C_DT_SPEC_INST_GET(inst),
 
-#define ENS160_DEFINE(inst)                                                                        \
-	static struct ens160_data ens160_data_##inst;                                              \
-	static const struct ens160_config ens160_config_##inst = {                                 \
-		IF_ENABLED(CONFIG_ENS160_TRIGGER,                                                  \
-			  (.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),))                   \
-		COND_CODE_1(DT_INST_ON_BUS(inst, spi),                                             \
+#define ENS160_DEFINE(inst)                                                                                                                            \
+	static struct ens160_data ens160_data_##inst;                                                                                                  \
+	static const struct ens160_config ens160_config_##inst = {IF_ENABLED(CONFIG_ENS160_TRIGGER,                                                  \
+			  (.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),)) \
+			 COND_CODE_1(DT_INST_ON_BUS(inst, spi),                                             \
 			   (ENS160_CONFIG_SPI(inst)),                                              \
-			   (ENS160_CONFIG_I2C(inst)))                                              \
-	};                                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, ens160_pm_action);                                          \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, ens160_init, PM_DEVICE_DT_INST_GET(inst),               \
-				     &ens160_data_##inst, &ens160_config_##inst, POST_KERNEL,      \
+			   (ENS160_CONFIG_I2C(inst))) };                                                     \
+                                                                                                                                                       \
+	PM_DEVICE_DT_INST_DEFINE(inst, ens160_pm_action);                                                                                              \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, ens160_init, PM_DEVICE_DT_INST_GET(inst),                                                                   \
+				     &ens160_data_##inst, &ens160_config_##inst, POST_KERNEL,                                                          \
 				     CONFIG_SENSOR_INIT_PRIORITY, &ens160_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ENS160_DEFINE)

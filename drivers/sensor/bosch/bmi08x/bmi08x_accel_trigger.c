@@ -111,9 +111,9 @@ int bmi08x_acc_trigger_mode_init(const struct device *dev)
 #if defined(CONFIG_BMI08X_ACCEL_TRIGGER_OWN_THREAD)
 	k_sem_init(&data->sem, 0, K_SEM_MAX_LIMIT);
 
-	k_thread_create(&data->thread, data->thread_stack,
-			CONFIG_BMI08X_ACCEL_THREAD_STACK_SIZE, bmi08x_acc_thread_main, (void *)dev,
-			NULL, NULL, K_PRIO_COOP(CONFIG_BMI08X_ACCEL_THREAD_PRIORITY), 0, K_NO_WAIT);
+	k_thread_create(&data->thread, data->thread_stack, CONFIG_BMI08X_ACCEL_THREAD_STACK_SIZE,
+			bmi08x_acc_thread_main, (void *)dev, NULL, NULL,
+			K_PRIO_COOP(CONFIG_BMI08X_ACCEL_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_BMI08X_ACCEL_TRIGGER_GLOBAL_THREAD)
 	data->work.handler = bmi08x_acc_work_handler;
 	data->dev = dev;

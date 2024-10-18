@@ -22,7 +22,7 @@ static int mfd_adp5585_software_reset(const struct device *dev)
 	int ret = 0;
 
 	/** Set CONFIG to gpio by default */
-	uint8_t pin_config_buf[] = { ADP5585_PIN_CONFIG_A, 0x00U, 0x00U };
+	uint8_t pin_config_buf[] = {ADP5585_PIN_CONFIG_A, 0x00U, 0x00U};
 
 	ret = i2c_write_dt(&config->i2c_bus, pin_config_buf, sizeof(pin_config_buf));
 	if (ret) {

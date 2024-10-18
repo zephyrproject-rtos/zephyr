@@ -26,28 +26,27 @@ LOG_MODULE_REGISTER(tlc59108, CONFIG_LED_LOG_LEVEL);
 #define TLC59108_MAX_LED 7
 
 /* TLC59108 select registers determine the source that drives LED outputs */
-#define TLC59108_LED_OFF         0x0     /* LED driver off */
-#define TLC59108_LED_ON          0x1     /* LED driver on */
-#define TLC59108_LED_PWM         0x2     /* Controlled through PWM */
-#define TLC59108_LED_GRP_PWM     0x3     /* Controlled through PWM/GRPPWM */
+#define TLC59108_LED_OFF     0x0 /* LED driver off */
+#define TLC59108_LED_ON      0x1 /* LED driver on */
+#define TLC59108_LED_PWM     0x2 /* Controlled through PWM */
+#define TLC59108_LED_GRP_PWM 0x3 /* Controlled through PWM/GRPPWM */
 
 /* TLC59108 control register */
-#define TLC59108_MODE1           0x00
-#define TLC59108_MODE2           0x01
-#define TLC59108_PWM_BASE        0x02
-#define TLC59108_GRPPWM          0x0A
-#define TLC59108_GRPFREQ         0x0B
-#define TLC59108_LEDOUT0         0x0C
-#define TLC59108_LEDOUT1         0x0D
+#define TLC59108_MODE1    0x00
+#define TLC59108_MODE2    0x01
+#define TLC59108_PWM_BASE 0x02
+#define TLC59108_GRPPWM   0x0A
+#define TLC59108_GRPFREQ  0x0B
+#define TLC59108_LEDOUT0  0x0C
+#define TLC59108_LEDOUT1  0x0D
 
 /* TLC59108 mode register 1 */
-#define TLC59108_MODE1_OSC       0x10
+#define TLC59108_MODE1_OSC 0x10
 
 /* TLC59108 mode register 2 */
-#define TLC59108_MODE2_DMBLNK    0x20    /* Enable blinking */
+#define TLC59108_MODE2_DMBLNK 0x20 /* Enable blinking */
 
-#define TLC59108_MASK            0x03
-
+#define TLC59108_MASK 0x03
 
 struct tlc59108_cfg {
 	struct i2c_dt_spec i2c;
@@ -57,8 +56,7 @@ struct tlc59108_data {
 	struct led_data dev_data;
 };
 
-static int tlc59108_set_ledout(const struct device *dev, uint32_t led,
-		uint8_t val)
+static int tlc59108_set_ledout(const struct device *dev, uint32_t led, uint8_t val)
 {
 	const struct tlc59108_cfg *config = dev->config;
 
@@ -80,8 +78,8 @@ static int tlc59108_set_ledout(const struct device *dev, uint32_t led,
 	return 0;
 }
 
-static int tlc59108_led_blink(const struct device *dev, uint32_t led,
-		uint32_t delay_on, uint32_t delay_off)
+static int tlc59108_led_blink(const struct device *dev, uint32_t led, uint32_t delay_on,
+			      uint32_t delay_off)
 {
 	const struct tlc59108_cfg *config = dev->config;
 	struct tlc59108_data *data = dev->data;
@@ -134,8 +132,7 @@ static int tlc59108_led_blink(const struct device *dev, uint32_t led,
 	return tlc59108_set_ledout(dev, led, TLC59108_LED_GRP_PWM);
 }
 
-static int tlc59108_led_set_brightness(const struct device *dev, uint32_t led,
-		uint8_t value)
+static int tlc59108_led_set_brightness(const struct device *dev, uint32_t led, uint8_t value)
 {
 	const struct tlc59108_cfg *config = dev->config;
 	struct tlc59108_data *data = dev->data;
@@ -146,8 +143,7 @@ static int tlc59108_led_set_brightness(const struct device *dev, uint32_t led,
 		return -EINVAL;
 	}
 
-	if (value < dev_data->min_brightness ||
-	    value > dev_data->max_brightness) {
+	if (value < dev_data->min_brightness || value > dev_data->max_brightness) {
 		return -EINVAL;
 	}
 
@@ -215,16 +211,14 @@ static const struct led_driver_api tlc59108_led_api = {
 	.off = tlc59108_led_off,
 };
 
-#define TLC59108_DEVICE(id) \
-	static const struct tlc59108_cfg tlc59108_##id##_cfg = {	\
-		.i2c = I2C_DT_SPEC_INST_GET(id),			\
-	};								\
-	static struct tlc59108_data tlc59108_##id##_data;		\
-									\
-	DEVICE_DT_INST_DEFINE(id, &tlc59108_led_init, NULL,		\
-			&tlc59108_##id##_data,				\
-			&tlc59108_##id##_cfg, POST_KERNEL,		\
-			CONFIG_LED_INIT_PRIORITY,			\
-			&tlc59108_led_api);
+#define TLC59108_DEVICE(id)                                                                        \
+	static const struct tlc59108_cfg tlc59108_##id##_cfg = {                                   \
+		.i2c = I2C_DT_SPEC_INST_GET(id),                                                   \
+	};                                                                                         \
+	static struct tlc59108_data tlc59108_##id##_data;                                          \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(id, &tlc59108_led_init, NULL, &tlc59108_##id##_data,                 \
+			      &tlc59108_##id##_cfg, POST_KERNEL, CONFIG_LED_INIT_PRIORITY,         \
+			      &tlc59108_led_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TLC59108_DEVICE)

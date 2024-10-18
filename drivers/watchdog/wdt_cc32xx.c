@@ -19,7 +19,7 @@
 #include <driverlib/prcm.h>
 #include <driverlib/wdt.h>
 
-#define MAX_RELOAD_VALUE        0xFFFFFFFF
+#define MAX_RELOAD_VALUE 0xFFFFFFFF
 
 #define LOG_LEVEL CONFIG_WDT_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -88,8 +88,7 @@ static int wdt_cc32xx_disable(const struct device *dev)
 	return -ENOTSUP;
 }
 
-static int wdt_cc32xx_install_timeout(const struct device *dev,
-				      const struct wdt_timeout_cfg *cfg)
+static int wdt_cc32xx_install_timeout(const struct device *dev, const struct wdt_timeout_cfg *cfg)
 {
 	struct wdt_cc32xx_data *data = dev->data;
 
@@ -168,31 +167,28 @@ static const struct wdt_driver_api wdt_cc32xx_api = {
 	.feed = wdt_cc32xx_feed,
 };
 
-#define cc32xx_WDT_INIT(index)							 \
-										 \
-	static void wdt_cc32xx_irq_cfg_##index(void)				 \
-	{									 \
-		IRQ_CONNECT(DT_INST_IRQN(index),				 \
-			    DT_INST_IRQ(index, priority),			 \
-			    wdt_cc32xx_isr, DEVICE_DT_INST_GET(index), 0);	 \
-		irq_enable(DT_INST_IRQN(index));				 \
-	}									 \
-										 \
-	static struct wdt_cc32xx_data wdt_cc32xx_data_##index = {		 \
-		.reload = CONFIG_WDT_CC32XX_INITIAL_TIMEOUT,			 \
-		.cb = NULL,							 \
-		.flags = 0,							 \
-	};									 \
-										 \
-	static struct wdt_cc32xx_cfg wdt_cc32xx_cfg_##index = {			 \
-		.reg = (unsigned long)DT_INST_REG_ADDR(index),			 \
-		.irq_cfg_func = wdt_cc32xx_irq_cfg_##index,			 \
-	};									 \
-										 \
-	DEVICE_DT_INST_DEFINE(index,						 \
-			      &wdt_cc32xx_init, NULL,				 \
-			      &wdt_cc32xx_data_##index, &wdt_cc32xx_cfg_##index, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	 \
-			      &wdt_cc32xx_api);
+#define cc32xx_WDT_INIT(index)                                                                     \
+                                                                                                   \
+	static void wdt_cc32xx_irq_cfg_##index(void)                                               \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(index), DT_INST_IRQ(index, priority), wdt_cc32xx_isr,     \
+			    DEVICE_DT_INST_GET(index), 0);                                         \
+		irq_enable(DT_INST_IRQN(index));                                                   \
+	}                                                                                          \
+                                                                                                   \
+	static struct wdt_cc32xx_data wdt_cc32xx_data_##index = {                                  \
+		.reload = CONFIG_WDT_CC32XX_INITIAL_TIMEOUT,                                       \
+		.cb = NULL,                                                                        \
+		.flags = 0,                                                                        \
+	};                                                                                         \
+                                                                                                   \
+	static struct wdt_cc32xx_cfg wdt_cc32xx_cfg_##index = {                                    \
+		.reg = (unsigned long)DT_INST_REG_ADDR(index),                                     \
+		.irq_cfg_func = wdt_cc32xx_irq_cfg_##index,                                        \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(index, &wdt_cc32xx_init, NULL, &wdt_cc32xx_data_##index,             \
+			      &wdt_cc32xx_cfg_##index, POST_KERNEL,                                \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &wdt_cc32xx_api);
 
 DT_INST_FOREACH_STATUS_OKAY(cc32xx_WDT_INIT)

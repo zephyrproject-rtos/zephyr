@@ -35,7 +35,6 @@ int z_vrfy_hwinfo_get_reset_cause(uint32_t *cause)
 }
 #include <zephyr/syscalls/hwinfo_get_reset_cause_mrsh.c>
 
-
 int z_vrfy_hwinfo_clear_reset_cause(void)
 {
 	return z_impl_hwinfo_clear_reset_cause();

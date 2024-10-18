@@ -138,8 +138,7 @@ static void spi_mcux_master_transfer_callback(ECSPI_Type *base, ecspi_master_han
 	spi_mcux_transfer_next_packet(dev);
 }
 
-static int spi_mcux_configure(const struct device *dev,
-			      const struct spi_config *spi_cfg)
+static int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cfg)
 {
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
@@ -182,14 +181,12 @@ static int spi_mcux_configure(const struct device *dev,
 	ECSPI_MasterGetDefaultConfig(&master_config);
 
 	master_config.channel = (ecspi_channel_source_t)spi_cfg->slave;
-	master_config.channelConfig.polarity =
-		(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)
-		? kECSPI_PolarityActiveLow
-		: kECSPI_PolarityActiveHigh;
-	master_config.channelConfig.phase =
-		(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA)
-		? kECSPI_ClockPhaseSecondEdge
-		: kECSPI_ClockPhaseFirstEdge;
+	master_config.channelConfig.polarity = (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)
+						       ? kECSPI_PolarityActiveLow
+						       : kECSPI_PolarityActiveHigh;
+	master_config.channelConfig.phase = (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA)
+						    ? kECSPI_ClockPhaseSecondEdge
+						    : kECSPI_ClockPhaseFirstEdge;
 	master_config.baudRate_Bps = spi_cfg->frequency;
 	master_config.burstLength = word_size;
 
@@ -207,8 +204,7 @@ static int spi_mcux_configure(const struct device *dev,
 	}
 
 	ECSPI_MasterInit(base, &master_config, clock_freq);
-	ECSPI_MasterTransferCreateHandle(base, &data->handle,
-					 spi_mcux_master_transfer_callback,
+	ECSPI_MasterTransferCreateHandle(base, &data->handle, spi_mcux_master_transfer_callback,
 					 (void *)dev);
 
 	data->word_size = word_size;
@@ -218,13 +214,9 @@ static int spi_mcux_configure(const struct device *dev,
 	return 0;
 }
 
-static int transceive(const struct device *dev,
-		      const struct spi_config *spi_cfg,
-		      const struct spi_buf_set *tx_bufs,
-		      const struct spi_buf_set *rx_bufs,
-		      bool asynchronous,
-		      spi_callback_t cb,
-		      void *userdata)
+static int transceive(const struct device *dev, const struct spi_config *spi_cfg,
+		      const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs,
+		      bool asynchronous, spi_callback_t cb, void *userdata)
 {
 	struct spi_mcux_data *data = dev->data;
 	int ret;
@@ -248,20 +240,16 @@ out:
 	return ret;
 }
 
-static int spi_mcux_transceive(const struct device *dev,
-			       const struct spi_config *spi_cfg,
-			       const struct spi_buf_set *tx_bufs,
-			       const struct spi_buf_set *rx_bufs)
+static int spi_mcux_transceive(const struct device *dev, const struct spi_config *spi_cfg,
+			       const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs)
 {
 	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int spi_mcux_transceive_async(const struct device *dev,
-				     const struct spi_config *spi_cfg,
+static int spi_mcux_transceive_async(const struct device *dev, const struct spi_config *spi_cfg,
 				     const struct spi_buf_set *tx_bufs,
-				     const struct spi_buf_set *rx_bufs,
-				     spi_callback_t cb,
+				     const struct spi_buf_set *rx_bufs, spi_callback_t cb,
 				     void *userdata)
 {
 	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, true, cb, userdata);
@@ -313,35 +301,32 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 	.release = spi_mcux_release,
 };
 
-#define SPI_MCUX_ECSPI_INIT(n)									\
-	PINCTRL_DT_INST_DEFINE(n);								\
-	static void spi_mcux_config_func_##n(const struct device *dev);				\
-												\
-	static const struct spi_mcux_config spi_mcux_config_##n = {				\
-		.base = (ECSPI_Type *) DT_INST_REG_ADDR(n),					\
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),					\
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),				\
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),		\
-		.irq_config_func = spi_mcux_config_func_##n,					\
-	};											\
-												\
-	static struct spi_mcux_data spi_mcux_data_##n = {					\
-		SPI_CONTEXT_INIT_LOCK(spi_mcux_data_##n, ctx),					\
-		SPI_CONTEXT_INIT_SYNC(spi_mcux_data_##n, ctx),					\
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)				\
-	};											\
-												\
-	DEVICE_DT_INST_DEFINE(n, spi_mcux_init, NULL,						\
-			      &spi_mcux_data_##n, &spi_mcux_config_##n,				\
-			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,				\
-			      &spi_mcux_driver_api);						\
-												\
-	static void spi_mcux_config_func_##n(const struct device *dev)				\
-	{											\
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),				\
-			    spi_mcux_isr, DEVICE_DT_INST_GET(n), 0);				\
-												\
-		irq_enable(DT_INST_IRQN(n));							\
+#define SPI_MCUX_ECSPI_INIT(n)                                                                     \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	static void spi_mcux_config_func_##n(const struct device *dev);                            \
+                                                                                                   \
+	static const struct spi_mcux_config spi_mcux_config_##n = {                                \
+		.base = (ECSPI_Type *)DT_INST_REG_ADDR(n),                                         \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
+		.irq_config_func = spi_mcux_config_func_##n,                                       \
+	};                                                                                         \
+                                                                                                   \
+	static struct spi_mcux_data spi_mcux_data_##n = {                                          \
+		SPI_CONTEXT_INIT_LOCK(spi_mcux_data_##n, ctx),                                     \
+		SPI_CONTEXT_INIT_SYNC(spi_mcux_data_##n, ctx),                                     \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                             \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, spi_mcux_init, NULL, &spi_mcux_data_##n, &spi_mcux_config_##n,    \
+			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &spi_mcux_driver_api);        \
+                                                                                                   \
+	static void spi_mcux_config_func_##n(const struct device *dev)                             \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), spi_mcux_isr,               \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+                                                                                                   \
+		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_MCUX_ECSPI_INIT)

@@ -5,7 +5,7 @@
  */
 
 #define LOG_DOMAIN flash_stm32wba
-#define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
+#define LOG_LEVEL  CONFIG_FLASH_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
@@ -20,10 +20,10 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #include "flash_stm32.h"
 
-#define STM32_SERIES_MAX_FLASH	1024
+#define STM32_SERIES_MAX_FLASH 1024
 
-#define ICACHE_DISABLE_TIMEOUT_VALUE           1U   /* 1ms */
-#define ICACHE_INVALIDATE_TIMEOUT_VALUE        1U   /* 1ms */
+#define ICACHE_DISABLE_TIMEOUT_VALUE    1U /* 1ms */
+#define ICACHE_INVALIDATE_TIMEOUT_VALUE 1U /* 1ms */
 
 static int stm32_icache_disable(void)
 {
@@ -43,8 +43,7 @@ static int stm32_icache_disable(void)
 
 	/* Wait for instruction cache to get disabled */
 	while (LL_ICACHE_IsEnabled()) {
-		if ((k_uptime_get_32() - tickstart) >
-						ICACHE_DISABLE_TIMEOUT_VALUE) {
+		if ((k_uptime_get_32() - tickstart) > ICACHE_DISABLE_TIMEOUT_VALUE) {
 			/* New check to avoid false timeout detection in case
 			 * of preemption.
 			 */
@@ -76,8 +75,7 @@ static int icache_wait_for_invalidate_complete(void)
 
 		/* Wait for end of cache invalidation */
 		while (!LL_ICACHE_IsActiveFlag_BSYEND()) {
-			if ((k_uptime_get_32() - tickstart) >
-					ICACHE_INVALIDATE_TIMEOUT_VALUE) {
+			if ((k_uptime_get_32() - tickstart) > ICACHE_INVALIDATE_TIMEOUT_VALUE) {
 				break;
 			}
 		}
@@ -108,8 +106,7 @@ static int icache_wait_for_invalidate_complete(void)
 static int write_qword(const struct device *dev, off_t offset, const uint32_t *buff)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-	volatile uint32_t *flash = (uint32_t *)(offset
-						+ FLASH_STM32_BASE_ADDRESS);
+	volatile uint32_t *flash = (uint32_t *)(offset + FLASH_STM32_BASE_ADDRESS);
 	uint32_t tmp;
 	int rc;
 
@@ -127,7 +124,7 @@ static int write_qword(const struct device *dev, off_t offset, const uint32_t *b
 
 	/* Check if this double word is erased */
 	if ((flash[0] != 0xFFFFFFFFUL) || (flash[1] != 0xFFFFFFFFUL) ||
-		(flash[2] != 0xFFFFFFFFUL) || (flash[3] != 0xFFFFFFFFUL)) {
+	    (flash[2] != 0xFFFFFFFFUL) || (flash[3] != 0xFFFFFFFFUL)) {
 		LOG_ERR("Word at offs %ld not erased", (long)offset);
 		return -EIO;
 	}
@@ -194,9 +191,7 @@ static int erase_page(const struct device *dev, unsigned int offset)
 	return rc;
 }
 
-int flash_stm32_block_erase_loop(const struct device *dev,
-				 unsigned int offset,
-				 unsigned int len)
+int flash_stm32_block_erase_loop(const struct device *dev, unsigned int offset, unsigned int len)
 {
 	unsigned int address = offset;
 	int rc = 0;
@@ -214,7 +209,7 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 		}
 	}
 
-	for (; address <= offset + len - 1 ; address += FLASH_PAGE_SIZE) {
+	for (; address <= offset + len - 1; address += FLASH_PAGE_SIZE) {
 		rc = erase_page(dev, address);
 		if (rc < 0) {
 			break;
@@ -236,8 +231,8 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 	return rc;
 }
 
-int flash_stm32_write_range(const struct device *dev, unsigned int offset,
-			    const void *data, unsigned int len)
+int flash_stm32_write_range(const struct device *dev, unsigned int offset, const void *data,
+			    unsigned int len)
 {
 	int i, rc = 0;
 	bool icache_enabled = LL_ICACHE_IsEnabled();
@@ -255,7 +250,7 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 	}
 
 	for (i = 0; i < len; i += 16) {
-		rc = write_qword(dev, offset + i, ((const uint32_t *) data + (i>>2)));
+		rc = write_qword(dev, offset + i, ((const uint32_t *)data + (i >> 2)));
 		if (rc < 0) {
 			break;
 		}
@@ -282,8 +277,7 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 	return rc;
 }
 
-void flash_stm32_page_layout(const struct device *dev,
-			     const struct flash_pages_layout **layout,
+void flash_stm32_page_layout(const struct device *dev, const struct flash_pages_layout **layout,
 			     size_t *layout_size)
 {
 	static struct flash_pages_layout stm32wba_flash_layout = {

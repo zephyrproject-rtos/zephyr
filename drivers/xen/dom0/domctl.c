@@ -156,8 +156,8 @@ int xen_domctl_set_address_size(int domid, int addr_size)
 	return do_domctl(&domctl);
 }
 
-int xen_domctl_iomem_permission(int domid, uint64_t first_mfn,
-		uint64_t nr_mfns, uint8_t allow_access)
+int xen_domctl_iomem_permission(int domid, uint64_t first_mfn, uint64_t nr_mfns,
+				uint8_t allow_access)
 {
 	xen_domctl_t domctl = {
 		.domain = domid,
@@ -170,8 +170,8 @@ int xen_domctl_iomem_permission(int domid, uint64_t first_mfn,
 	return do_domctl(&domctl);
 }
 
-int xen_domctl_memory_mapping(int domid, uint64_t first_gfn, uint64_t first_mfn,
-		uint64_t nr_mfns, uint32_t add_mapping)
+int xen_domctl_memory_mapping(int domid, uint64_t first_gfn, uint64_t first_mfn, uint64_t nr_mfns,
+			      uint32_t add_mapping)
 {
 	int ret;
 	uint64_t curr, nr_max, done;
@@ -235,12 +235,10 @@ int xen_domctl_assign_dt_device(int domid, char *dtdev_path)
 	set_xen_guest_handle(domctl.u.assign_device.u.dt.path, dtdev_path);
 
 	return do_domctl(&domctl);
-
 }
 
-int xen_domctl_bind_pt_irq(int domid, uint32_t machine_irq, uint8_t irq_type,
-		uint8_t bus, uint8_t device, uint8_t intx, uint8_t isa_irq,
-		uint16_t spi)
+int xen_domctl_bind_pt_irq(int domid, uint32_t machine_irq, uint8_t irq_type, uint8_t bus,
+			   uint8_t device, uint8_t intx, uint8_t isa_irq, uint16_t spi)
 {
 	xen_domctl_t domctl = {
 		.domain = domid,
@@ -294,7 +292,7 @@ int xen_domctl_destroydomain(int domid)
 	return do_domctl(&domctl);
 }
 
-int xen_domctl_cacheflush(int domid,  struct xen_domctl_cacheflush *cacheflush)
+int xen_domctl_cacheflush(int domid, struct xen_domctl_cacheflush *cacheflush)
 {
 	xen_domctl_t domctl = {
 		.cmd = XEN_DOMCTL_cacheflush,

@@ -400,10 +400,13 @@ static const struct ov5640_mode_config modes[] = {
 static const int ov5640_frame_rates[] = {OV5640_15_FPS, OV5640_30_FPS, OV5640_60_FPS};
 
 #define OV5640_VIDEO_FORMAT_CAP(width, height, format)                                             \
-	{                                                                                          \
-		.pixelformat = (format), .width_min = (width), .width_max = (width),               \
-		.height_min = (height), .height_max = (height), .width_step = 0, .height_step = 0  \
-	}
+	{.pixelformat = (format),                                                                  \
+	 .width_min = (width),                                                                     \
+	 .width_max = (width),                                                                     \
+	 .height_min = (height),                                                                   \
+	 .height_max = (height),                                                                   \
+	 .width_step = 0,                                                                          \
+	 .height_step = 0}
 
 static const struct video_format_cap fmts[] = {
 	OV5640_VIDEO_FORMAT_CAP(1280, 720, VIDEO_PIX_FMT_RGB565),

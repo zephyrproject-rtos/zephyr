@@ -23,12 +23,12 @@ LOG_MODULE_REGISTER(udc_rpi, CONFIG_USB_DRIVER_LOG_LEVEL);
 
 #define DT_DRV_COMPAT raspberrypi_pico_usbd
 
-#define USB_BASE_ADDRESS DT_INST_REG_ADDR(0)
-#define USB_IRQ DT_INST_IRQ_BY_NAME(0, usbctrl, irq)
-#define USB_IRQ_PRI DT_INST_IRQ_BY_NAME(0, usbctrl, priority)
+#define USB_BASE_ADDRESS        DT_INST_REG_ADDR(0)
+#define USB_IRQ                 DT_INST_IRQ_BY_NAME(0, usbctrl, irq)
+#define USB_IRQ_PRI             DT_INST_IRQ_BY_NAME(0, usbctrl, priority)
 #define USB_NUM_BIDIR_ENDPOINTS DT_INST_PROP(0, num_bidir_endpoints)
-#define CLK_DRV DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0))
-#define CLK_ID (clock_control_subsys_t)DT_INST_PHA_BY_IDX(0, clocks, 0, clk_id)
+#define CLK_DRV                 DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0))
+#define CLK_ID                  (clock_control_subsys_t) DT_INST_PHA_BY_IDX(0, clocks, 0, clk_id)
 
 #define DATA_BUFFER_SIZE 64U
 
@@ -291,8 +291,7 @@ static void udc_rpi_isr(const void *arg)
 	uint32_t handled = 0;
 	struct cb_msg msg;
 
-	if ((status & (USB_INTS_BUFF_STATUS_BITS | USB_INTS_SETUP_REQ_BITS)) &&
-	    state.rwu_pending) {
+	if ((status & (USB_INTS_BUFF_STATUS_BITS | USB_INTS_SETUP_REQ_BITS)) && state.rwu_pending) {
 		/* The rpi pico USB device does not appear to be sending
 		 * USB_INTR_DEV_RESUME_FROM_HOST interrupts when the resume is
 		 * a result of a remote wakeup request sent by us.
@@ -329,9 +328,8 @@ static void udc_rpi_isr(const void *arg)
 
 		msg.ep = 0U;
 		msg.ep_event = false;
-		msg.type = usb_hw->sie_status & USB_SIE_STATUS_CONNECTED_BITS ?
-			USB_DC_CONNECTED :
-			USB_DC_DISCONNECTED;
+		msg.type = usb_hw->sie_status & USB_SIE_STATUS_CONNECTED_BITS ? USB_DC_CONNECTED
+									      : USB_DC_DISCONNECTED;
 
 		k_msgq_put(&usb_dc_msgq, &msg, K_NO_WAIT);
 	}
@@ -532,8 +530,7 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data *const cfg)
 {
 	uint8_t ep_idx = USB_EP_GET_IDX(cfg->ep_addr);
 
-	LOG_DBG("ep %x, mps %d, type %d",
-		cfg->ep_addr, cfg->ep_mps, cfg->ep_type);
+	LOG_DBG("ep %x, mps %d, type %d", cfg->ep_addr, cfg->ep_mps, cfg->ep_type);
 
 	if ((cfg->ep_type == USB_DC_EP_CONTROL) && ep_idx) {
 		LOG_ERR("invalid endpoint configuration");
@@ -557,8 +554,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const ep_cfg)
 		return -EINVAL;
 	}
 
-	LOG_DBG("ep 0x%02x, previous mps %u, mps %u, type %u",
-		ep_cfg->ep_addr, ep_state->mps,
+	LOG_DBG("ep 0x%02x, previous mps %u, mps %u, type %u", ep_cfg->ep_addr, ep_state->mps,
 		ep_cfg->ep_mps, ep_cfg->ep_type);
 
 	ep_state->mps = ep_cfg->ep_mps;
@@ -577,9 +573,9 @@ int usb_dc_ep_set_stall(const uint8_t ep)
 		return -EINVAL;
 	}
 	if (USB_EP_GET_IDX(ep) == 0) {
-		hw_set_alias(usb_hw)->ep_stall_arm = USB_EP_DIR_IS_OUT(ep) ?
-			USB_EP_STALL_ARM_EP0_OUT_BITS :
-			USB_EP_STALL_ARM_EP0_IN_BITS;
+		hw_set_alias(usb_hw)->ep_stall_arm = USB_EP_DIR_IS_OUT(ep)
+							     ? USB_EP_STALL_ARM_EP0_OUT_BITS
+							     : USB_EP_STALL_ARM_EP0_IN_BITS;
 	}
 
 	*ep_state->buf_ctl = USB_BUF_CTRL_STALL;
@@ -654,11 +650,9 @@ int usb_dc_ep_enable(const uint8_t ep)
 
 	/* EP0 doesn't have an ep_ctl */
 	if (ep_state->ep_ctl) {
-		uint32_t val =
-			EP_CTRL_ENABLE_BITS |
-			EP_CTRL_INTERRUPT_PER_BUFFER |
-			(ep_state->type << EP_CTRL_BUFFER_TYPE_LSB) |
-			usb_dc_ep_rpi_pico_buffer_offset(ep_state->buf);
+		uint32_t val = EP_CTRL_ENABLE_BITS | EP_CTRL_INTERRUPT_PER_BUFFER |
+			       (ep_state->type << EP_CTRL_BUFFER_TYPE_LSB) |
+			       usb_dc_ep_rpi_pico_buffer_offset(ep_state->buf);
 
 		*ep_state->ep_ctl = val;
 	}
@@ -699,8 +693,8 @@ int usb_dc_ep_disable(const uint8_t ep)
 	return 0;
 }
 
-int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
-		    const uint32_t data_len, uint32_t *const ret_bytes)
+int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data, const uint32_t data_len,
+		    uint32_t *const ret_bytes)
 {
 	struct udc_rpi_ep_state *ep_state = udc_rpi_get_ep_state(ep);
 	uint32_t len = data_len;
@@ -768,8 +762,7 @@ uint32_t udc_rpi_get_ep_buffer_len(const uint8_t ep)
 	return buf_ctl & USB_BUF_CTRL_LEN_MASK;
 }
 
-int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data,
-			uint32_t max_data_len, uint32_t *read_bytes)
+int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_t *read_bytes)
 {
 	struct udc_rpi_ep_state *ep_state = udc_rpi_get_ep_state(ep);
 	uint32_t read_count;
@@ -788,7 +781,8 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data,
 		read_count = sizeof(struct usb_setup_packet);
 		if (read_count != max_data_len) {
 			LOG_WRN("Attempting to read setup packet with the wrong length"
-				" (expected: %d, read: %d)", read_count, max_data_len);
+				" (expected: %d, read: %d)",
+				read_count, max_data_len);
 		}
 	} else {
 		read_count = udc_rpi_get_ep_buffer_len(ep) - ep_state->read_offset;
@@ -824,8 +818,8 @@ static int usb_dc_control_ep_read_continue(const struct udc_rpi_ep_state *const 
 	const struct usb_setup_packet *const setup = (const void *)&usb_dpram->setup_packet;
 
 	if (state.setup_available) {
-		LOG_DBG("EP0 setup (wLength=%d, is_to_device=%d)",
-			setup->wLength, usb_reqtype_is_to_device(setup));
+		LOG_DBG("EP0 setup (wLength=%d, is_to_device=%d)", setup->wLength,
+			usb_reqtype_is_to_device(setup));
 		if (setup->wLength != 0U) {
 			/* In the case of a control transfer, we want to prime the OUT endpoint
 			 * exactly once, to either:
@@ -843,8 +837,7 @@ static int usb_dc_control_ep_read_continue(const struct udc_rpi_ep_state *const 
 	} else {
 		const size_t len = udc_rpi_get_ep_buffer_len(USB_CONTROL_EP_OUT);
 
-		LOG_DBG("Control OUT received %u offset: %u",
-			len, ep_state->read_offset);
+		LOG_DBG("Control OUT received %u offset: %u", len, ep_state->read_offset);
 		if (usb_reqtype_is_to_device(setup)) {
 			if (state.control_out_ep_rcvd + ep_state->read_offset < setup->wLength) {
 				/* If no more data in the buffer, but we're still waiting
@@ -878,8 +871,7 @@ int usb_dc_ep_read_continue(const uint8_t ep)
 	} else {
 		const size_t len = udc_rpi_get_ep_buffer_len(ep);
 
-		LOG_DBG("Endpoint 0x%02x received %u offset: %u",
-			ep, len, ep_state->read_offset);
+		LOG_DBG("Endpoint 0x%02x received %u offset: %u", ep, len, ep_state->read_offset);
 		/* If no more data in the buffer, start a new read transaction. */
 		if (len == ep_state->read_offset) {
 			arm_out_endpoint = true;
@@ -896,8 +888,8 @@ int usb_dc_ep_read_continue(const uint8_t ep)
 	return 0;
 }
 
-int usb_dc_ep_read(const uint8_t ep, uint8_t *const data,
-		   const uint32_t max_data_len, uint32_t *const read_bytes)
+int usb_dc_ep_read(const uint8_t ep, uint8_t *const data, const uint32_t max_data_len,
+		   uint32_t *const read_bytes)
 {
 	if (usb_dc_ep_read_wait(ep, data, max_data_len, read_bytes) != 0) {
 		return -EINVAL;
@@ -1005,10 +997,8 @@ static int usb_rpi_init(void)
 {
 	int ret;
 
-	k_thread_create(&thread, thread_stack,
-			USBD_THREAD_STACK_SIZE,
-			udc_rpi_thread_main, NULL, NULL, NULL,
-			K_PRIO_COOP(2), 0, K_NO_WAIT);
+	k_thread_create(&thread, thread_stack, USBD_THREAD_STACK_SIZE, udc_rpi_thread_main, NULL,
+			NULL, NULL, K_PRIO_COOP(2), 0, K_NO_WAIT);
 	k_thread_name_set(&thread, "usb_rpi");
 
 	ret = clock_control_on(CLK_DRV, CLK_ID);

@@ -32,8 +32,8 @@
 #include <zephyr/sys/barrier.h>
 #include "stm32_hsem.h"
 
-#define IRQN		DT_INST_IRQN(0)
-#define IRQ_PRIO	DT_INST_IRQ(0, priority)
+#define IRQN     DT_INST_IRQN(0)
+#define IRQ_PRIO DT_INST_IRQ(0, priority)
 
 #if defined(RNG_CR_CONDRST)
 #define STM32_CONDRST_SUPPORT
@@ -70,12 +70,10 @@ struct rng_pool {
 
 #define RNG_POOL_DEFINE(name, len) uint8_t name[sizeof(struct rng_pool) + (len)]
 
-BUILD_ASSERT((CONFIG_ENTROPY_STM32_ISR_POOL_SIZE &
-	      (CONFIG_ENTROPY_STM32_ISR_POOL_SIZE - 1)) == 0,
+BUILD_ASSERT((CONFIG_ENTROPY_STM32_ISR_POOL_SIZE & (CONFIG_ENTROPY_STM32_ISR_POOL_SIZE - 1)) == 0,
 	     "The CONFIG_ENTROPY_STM32_ISR_POOL_SIZE must be a power of 2!");
 
-BUILD_ASSERT((CONFIG_ENTROPY_STM32_THR_POOL_SIZE &
-	      (CONFIG_ENTROPY_STM32_THR_POOL_SIZE - 1)) == 0,
+BUILD_ASSERT((CONFIG_ENTROPY_STM32_THR_POOL_SIZE & (CONFIG_ENTROPY_STM32_THR_POOL_SIZE - 1)) == 0,
 	     "The CONFIG_ENTROPY_STM32_THR_POOL_SIZE must be a power of 2!");
 
 struct entropy_stm32_rng_dev_cfg {
@@ -96,9 +94,7 @@ struct entropy_stm32_rng_dev_data {
 
 static struct stm32_pclken pclken_rng[] = STM32_DT_INST_CLOCKS(0);
 
-static struct entropy_stm32_rng_dev_cfg entropy_stm32_rng_config = {
-	.pclken	= pclken_rng
-};
+static struct entropy_stm32_rng_dev_cfg entropy_stm32_rng_config = {.pclken = pclken_rng};
 
 static struct entropy_stm32_rng_dev_data entropy_stm32_rng_data = {
 	.rng = (RNG_TypeDef *)DT_INST_REG_ADDR(0),
@@ -125,9 +121,8 @@ static int entropy_stm32_suspend(void)
 		return 0;
 	}
 
-	if (clock_control_get_rate(dev_data->clock,
-			(clock_control_subsys_t) &dev_cfg->pclken[0],
-			&rng_rate) < 0) {
+	if (clock_control_get_rate(dev_data->clock, (clock_control_subsys_t)&dev_cfg->pclken[0],
+				   &rng_rate) < 0) {
 		return -EIO;
 	}
 
@@ -137,8 +132,7 @@ static int entropy_stm32_suspend(void)
 	}
 #endif /* CONFIG_SOC_SERIES_STM32WBAX */
 
-	res = clock_control_off(dev_data->clock,
-			(clock_control_subsys_t)&dev_cfg->pclken[0]);
+	res = clock_control_off(dev_data->clock, (clock_control_subsys_t)&dev_cfg->pclken[0]);
 
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
 	z_stm32_hsem_unlock(CFG_HW_RNG_SEMID);
@@ -155,8 +149,7 @@ static int entropy_stm32_resume(void)
 	RNG_TypeDef *rng = dev_data->rng;
 	int res;
 
-	res = clock_control_on(dev_data->clock,
-			(clock_control_subsys_t)&dev_cfg->pclken[0]);
+	res = clock_control_on(dev_data->clock, (clock_control_subsys_t)&dev_cfg->pclken[0]);
 	LL_RNG_Enable(rng);
 	LL_RNG_EnableIT(rng);
 
@@ -180,14 +173,13 @@ static void configure_rng(void)
 	 * The RNG clock must be 48MHz else the clock DIV is not adpated.
 	 * The RNG_CR_CONDRST is set to 1 at the same time the RNG_CR is written
 	 */
-	cur_nist_cfg = READ_BIT(rng->CR,
-				(RNG_CR_NISTC | RNG_CR_CLKDIV | RNG_CR_RNG_CONFIG1 |
-				RNG_CR_RNG_CONFIG2 | RNG_CR_RNG_CONFIG3
+	cur_nist_cfg = READ_BIT(rng->CR, (RNG_CR_NISTC | RNG_CR_CLKDIV | RNG_CR_RNG_CONFIG1 |
+					  RNG_CR_RNG_CONFIG2 | RNG_CR_RNG_CONFIG3
 #if defined(RNG_CR_ARDIS)
-				| RNG_CR_ARDIS
+					  | RNG_CR_ARDIS
 	/* For STM32U5 series, the ARDIS bit7 is considered in the nist-config */
 #endif /* RNG_CR_ARDIS */
-			));
+					  ));
 #endif /* nist_config */
 
 #if DT_INST_NODE_HAS_PROP(0, health_test_config)
@@ -261,9 +253,8 @@ static int recover_seed_error(RNG_TypeDef *rng)
 	 * This typically takes: 2 AHB clock cycles + 2 RNG clock cycles.
 	 */
 
-	while (LL_RNG_IsEnabledCondReset(rng) ||
-		LL_RNG_IsActiveFlag_SEIS(rng) ||
-		LL_RNG_IsActiveFlag_SECS(rng)) {
+	while (LL_RNG_IsEnabledCondReset(rng) || LL_RNG_IsActiveFlag_SEIS(rng) ||
+	       LL_RNG_IsActiveFlag_SECS(rng)) {
 		count_timeout++;
 		if (count_timeout == 10) {
 			return -ETIMEDOUT;
@@ -273,7 +264,7 @@ static int recover_seed_error(RNG_TypeDef *rng)
 	return 0;
 }
 
-#else /* !STM32_CONDRST_SUPPORT */
+#else  /* !STM32_CONDRST_SUPPORT */
 /* SOCS w/o soft-reset support: flush pipeline */
 static int recover_seed_error(RNG_TypeDef *rng)
 {
@@ -350,7 +341,7 @@ static uint16_t generate_from_isr(uint8_t *buf, uint16_t len)
 
 	/* do not proceed if a Seed error occurred */
 	if (LL_RNG_IsActiveFlag_SECS(entropy_stm32_rng_data.rng) ||
-		LL_RNG_IsActiveFlag_SEIS(entropy_stm32_rng_data.rng)) {
+	    LL_RNG_IsActiveFlag_SEIS(entropy_stm32_rng_data.rng)) {
 
 		(void)random_byte_get(); /* this will recover the error */
 
@@ -367,8 +358,7 @@ static uint16_t generate_from_isr(uint8_t *buf, uint16_t len)
 	do {
 		int byte;
 
-		while (LL_RNG_IsActiveFlag_DRDY(
-				entropy_stm32_rng_data.rng) != 1) {
+		while (LL_RNG_IsActiveFlag_DRDY(entropy_stm32_rng_data.rng) != 1) {
 			/*
 			 * To guarantee waking up from the event, the
 			 * SEV-On-Pend feature must be enabled (enabled
@@ -443,12 +433,11 @@ static void pool_filling_work_handler(struct k_work *work)
 	}
 }
 
-static uint16_t rng_pool_get(struct rng_pool *rngp, uint8_t *buf,
-	uint16_t len)
+static uint16_t rng_pool_get(struct rng_pool *rngp, uint8_t *buf, uint16_t len)
 {
-	uint32_t last  = rngp->last;
-	uint32_t mask  = rngp->mask;
-	uint8_t *dst   = buf;
+	uint32_t last = rngp->last;
+	uint32_t mask = rngp->mask;
+	uint8_t *dst = buf;
 	uint32_t first, available;
 	uint32_t other_read_in_progress;
 	unsigned int key;
@@ -512,8 +501,8 @@ static uint16_t rng_pool_get(struct rng_pool *rngp, uint8_t *buf,
 static int rng_pool_put(struct rng_pool *rngp, uint8_t byte)
 {
 	uint8_t first = rngp->first_read;
-	uint8_t last  = rngp->last;
-	uint8_t mask  = rngp->mask;
+	uint8_t last = rngp->last;
+	uint8_t mask = rngp->mask;
 
 	/* Signal error if the pool is full. */
 	if (((last - first) & mask) == mask) {
@@ -526,14 +515,13 @@ static int rng_pool_put(struct rng_pool *rngp, uint8_t byte)
 	return 0;
 }
 
-static void rng_pool_init(struct rng_pool *rngp, uint16_t size,
-			uint8_t threshold)
+static void rng_pool_init(struct rng_pool *rngp, uint16_t size, uint8_t threshold)
 {
 	rngp->first_alloc = 0U;
-	rngp->first_read  = 0U;
-	rngp->last	  = 0U;
-	rngp->mask	  = size - 1;
-	rngp->threshold	  = threshold;
+	rngp->first_read = 0U;
+	rngp->last = 0U;
+	rngp->mask = size - 1;
+	rngp->threshold = threshold;
 }
 
 static void stm32_rng_isr(const void *arg)
@@ -547,12 +535,9 @@ static void stm32_rng_isr(const void *arg)
 		return;
 	}
 
-	ret = rng_pool_put((struct rng_pool *)(entropy_stm32_rng_data.isr),
-				byte);
+	ret = rng_pool_put((struct rng_pool *)(entropy_stm32_rng_data.isr), byte);
 	if (ret < 0) {
-		ret = rng_pool_put(
-				(struct rng_pool *)(entropy_stm32_rng_data.thr),
-				byte);
+		ret = rng_pool_put((struct rng_pool *)(entropy_stm32_rng_data.thr), byte);
 		if (ret < 0) {
 			irq_disable(IRQN);
 			release_rng();
@@ -567,9 +552,7 @@ static void stm32_rng_isr(const void *arg)
 	}
 }
 
-static int entropy_stm32_rng_get_entropy(const struct device *dev,
-					 uint8_t *buf,
-					 uint16_t len)
+static int entropy_stm32_rng_get_entropy(const struct device *dev, uint8_t *buf, uint16_t len)
 {
 	/* Check if this API is called on correct driver instance. */
 	__ASSERT_NO_MSG(&entropy_stm32_rng_data == dev->data);
@@ -578,9 +561,7 @@ static int entropy_stm32_rng_get_entropy(const struct device *dev,
 		uint16_t bytes;
 
 		k_sem_take(&entropy_stm32_rng_data.sem_lock, K_FOREVER);
-		bytes = rng_pool_get(
-				(struct rng_pool *)(entropy_stm32_rng_data.thr),
-				buf, len);
+		bytes = rng_pool_get((struct rng_pool *)(entropy_stm32_rng_data.thr), buf, len);
 
 		if (bytes == 0U) {
 			/* Pool is empty: Sleep until next interrupt. */
@@ -596,9 +577,7 @@ static int entropy_stm32_rng_get_entropy(const struct device *dev,
 	return 0;
 }
 
-static int entropy_stm32_rng_get_entropy_isr(const struct device *dev,
-					     uint8_t *buf,
-					     uint16_t len,
+static int entropy_stm32_rng_get_entropy_isr(const struct device *dev, uint8_t *buf, uint16_t len,
 					     uint32_t flags)
 {
 	uint16_t cnt = len;
@@ -607,9 +586,7 @@ static int entropy_stm32_rng_get_entropy_isr(const struct device *dev,
 	__ASSERT_NO_MSG(&entropy_stm32_rng_data == dev->data);
 
 	if (likely((flags & ENTROPY_BUSYWAIT) == 0U)) {
-		return rng_pool_get(
-				(struct rng_pool *)(entropy_stm32_rng_data.isr),
-				buf, len);
+		return rng_pool_get((struct rng_pool *)(entropy_stm32_rng_data.isr), buf, len);
 	}
 
 	if (len) {
@@ -625,8 +602,7 @@ static int entropy_stm32_rng_get_entropy_isr(const struct device *dev,
 		/* Do not release if IRQ is enabled. RNG will be released in ISR
 		 * when the pools are full.
 		 */
-		rng_already_acquired = z_stm32_hsem_is_owned(CFG_HW_RNG_SEMID) ||
-				       irq_enabled;
+		rng_already_acquired = z_stm32_hsem_is_owned(CFG_HW_RNG_SEMID) || irq_enabled;
 		acquire_rng();
 
 		cnt = generate_from_isr(buf, len);
@@ -664,15 +640,13 @@ static int entropy_stm32_rng_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	res = clock_control_on(dev_data->clock,
-		(clock_control_subsys_t)&dev_cfg->pclken[0]);
+	res = clock_control_on(dev_data->clock, (clock_control_subsys_t)&dev_cfg->pclken[0]);
 	__ASSERT_NO_MSG(res == 0);
 
 	/* Configure domain clock if any */
 	if (DT_INST_NUM_CLOCKS(0) > 1) {
 		res = clock_control_configure(dev_data->clock,
-					      (clock_control_subsys_t)&dev_cfg->pclken[1],
-					      NULL);
+					      (clock_control_subsys_t)&dev_cfg->pclken[1], NULL);
 		__ASSERT(res == 0, "Could not select RNG domain clock");
 	}
 
@@ -684,11 +658,9 @@ static int entropy_stm32_rng_init(const struct device *dev)
 
 	k_work_init(&dev_data->filling_work, pool_filling_work_handler);
 
-	rng_pool_init((struct rng_pool *)(dev_data->thr),
-		      CONFIG_ENTROPY_STM32_THR_POOL_SIZE,
+	rng_pool_init((struct rng_pool *)(dev_data->thr), CONFIG_ENTROPY_STM32_THR_POOL_SIZE,
 		      CONFIG_ENTROPY_STM32_THR_THRESHOLD);
-	rng_pool_init((struct rng_pool *)(dev_data->isr),
-		      CONFIG_ENTROPY_STM32_ISR_POOL_SIZE,
+	rng_pool_init((struct rng_pool *)(dev_data->isr), CONFIG_ENTROPY_STM32_ISR_POOL_SIZE,
 		      CONFIG_ENTROPY_STM32_ISR_THRESHOLD);
 
 	IRQ_CONNECT(IRQN, IRQ_PRIO, stm32_rng_isr, &entropy_stm32_rng_data, 0);
@@ -706,8 +678,7 @@ static int entropy_stm32_rng_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int entropy_stm32_rng_pm_action(const struct device *dev,
-				       enum pm_device_action action)
+static int entropy_stm32_rng_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	struct entropy_stm32_rng_dev_data *dev_data = dev->data;
 
@@ -721,7 +692,7 @@ static int entropy_stm32_rng_pm_action(const struct device *dev,
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
 		/* Lock to Prevent concurrent access with PM */
 		z_stm32_hsem_lock(CFG_HW_RNG_SEMID, HSEM_LOCK_WAIT_FOREVER);
-	/* Call release_rng instead of entropy_stm32_suspend to avoid double hsem_unlock */
+		/* Call release_rng instead of entropy_stm32_suspend to avoid double hsem_unlock */
 #endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
 		release_rng();
 		break;
@@ -733,7 +704,7 @@ static int entropy_stm32_rng_pm_action(const struct device *dev,
 			LL_RNG_SetHealthConfig(dev_data->rng, DT_INST_PROP(0, health_test_magic));
 #endif /* health_test_magic */
 			if (LL_RNG_GetHealthConfig(dev_data->rng) !=
-				DT_INST_PROP_OR(0, health_test_config, 0U)) {
+			    DT_INST_PROP_OR(0, health_test_config, 0U)) {
 				entropy_stm32_rng_init(dev);
 			} else if (!entropy_stm32_rng_data.filling_pools) {
 				/* Resume RNG only if it was suspended during filling pool */
@@ -765,14 +736,10 @@ static int entropy_stm32_rng_pm_action(const struct device *dev,
 
 static const struct entropy_driver_api entropy_stm32_rng_api = {
 	.get_entropy = entropy_stm32_rng_get_entropy,
-	.get_entropy_isr = entropy_stm32_rng_get_entropy_isr
-};
+	.get_entropy_isr = entropy_stm32_rng_get_entropy_isr};
 
 PM_DEVICE_DT_INST_DEFINE(0, entropy_stm32_rng_pm_action);
 
-DEVICE_DT_INST_DEFINE(0,
-		    entropy_stm32_rng_init,
-		    PM_DEVICE_DT_INST_GET(0),
-		    &entropy_stm32_rng_data, &entropy_stm32_rng_config,
-		    PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
-		    &entropy_stm32_rng_api);
+DEVICE_DT_INST_DEFINE(0, entropy_stm32_rng_init, PM_DEVICE_DT_INST_GET(0), &entropy_stm32_rng_data,
+		      &entropy_stm32_rng_config, PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
+		      &entropy_stm32_rng_api);

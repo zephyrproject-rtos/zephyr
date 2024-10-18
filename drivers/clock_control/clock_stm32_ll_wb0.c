@@ -23,64 +23,62 @@
 
 /* Driver definitions */
 #define RCC_REG(_reg_offset) (DT_REG_ADDR(STM32_CLOCK_CONTROL_NODE) + (_reg_offset))
-#define RADIO_CTRL_IRQn		21	/* Not provided by CMSIS; must be declared manually */
+#define RADIO_CTRL_IRQn      21 /* Not provided by CMSIS; must be declared manually */
 
-#define CLOCK_FREQ_64MHZ	(64000000U)
-#define CLOCK_FREQ_32MHZ	(32000000U)
-#define CLOCK_FREQ_16MHZ	(16000000U)
+#define CLOCK_FREQ_64MHZ (64000000U)
+#define CLOCK_FREQ_32MHZ (32000000U)
+#define CLOCK_FREQ_16MHZ (16000000U)
 
 /* Device tree node definitions */
-#define DT_RCC_SLOWCLK_NODE	DT_PHANDLE(STM32_CLOCK_CONTROL_NODE, slow_clock)
-#define DT_LSI_NODE		DT_NODELABEL(clk_lsi)
+#define DT_RCC_SLOWCLK_NODE DT_PHANDLE(STM32_CLOCK_CONTROL_NODE, slow_clock)
+#define DT_LSI_NODE         DT_NODELABEL(clk_lsi)
 
 /* Device tree properties definitions */
-#define STM32_WB0_CLKSYS_PRESCALER		\
-	DT_PROP(STM32_CLOCK_CONTROL_NODE, clksys_prescaler)
+#define STM32_WB0_CLKSYS_PRESCALER DT_PROP(STM32_CLOCK_CONTROL_NODE, clksys_prescaler)
 
 #if DT_NODE_HAS_PROP(STM32_CLOCK_CONTROL_NODE, slow_clock)
 
-#	if !DT_NODE_HAS_STATUS_OKAY(DT_RCC_SLOWCLK_NODE)
-#		error slow-clock source is not enabled
-#	endif
+#if !DT_NODE_HAS_STATUS_OKAY(DT_RCC_SLOWCLK_NODE)
+#error slow-clock source is not enabled
+#endif
 
-#	if DT_SAME_NODE(DT_RCC_SLOWCLK_NODE, DT_LSI_NODE)
-#		define STM32_WB0_SLOWCLK_SRC	LL_RCC_LSCO_CLKSOURCE_LSI
-#	elif DT_SAME_NODE(DT_RCC_SLOWCLK_NODE, DT_NODELABEL(clk_lse))
-#		define STM32_WB0_SLOWCLK_SRC	LL_RCC_LSCO_CLKSOURCE_LSE
-#	elif DT_SAME_NODE(DT_RCC_SLOWCLK_NODE, DT_NODELABEL(clk_16mhz_div512))
-#		define STM32_WB0_SLOWCLK_SRC	LL_RCC_LSCO_CLKSOURCE_HSI64M_DIV2048
-#	else
-#		error Invalid device selected as slow-clock
-#	endif
+#if DT_SAME_NODE(DT_RCC_SLOWCLK_NODE, DT_LSI_NODE)
+#define STM32_WB0_SLOWCLK_SRC LL_RCC_LSCO_CLKSOURCE_LSI
+#elif DT_SAME_NODE(DT_RCC_SLOWCLK_NODE, DT_NODELABEL(clk_lse))
+#define STM32_WB0_SLOWCLK_SRC LL_RCC_LSCO_CLKSOURCE_LSE
+#elif DT_SAME_NODE(DT_RCC_SLOWCLK_NODE, DT_NODELABEL(clk_16mhz_div512))
+#define STM32_WB0_SLOWCLK_SRC LL_RCC_LSCO_CLKSOURCE_HSI64M_DIV2048
+#else
+#error Invalid device selected as slow-clock
+#endif
 
 #endif /* DT_NODE_HAS_PROP(STM32_CLOCK_CONTROL_NODE, slow_clock) */
 
 #if DT_NODE_HAS_PROP(DT_LSI_NODE, runtime_measurement_interval)
-	#define STM32_WB0_RUNTIME_LSI_CALIBRATION 1
-	#define STM32_WB0_LSI_RUNTIME_CALIB_INTERVAL	\
-		DT_PROP(DT_LSI_NODE, runtime_measurement_interval)
+#define STM32_WB0_RUNTIME_LSI_CALIBRATION    1
+#define STM32_WB0_LSI_RUNTIME_CALIB_INTERVAL DT_PROP(DT_LSI_NODE, runtime_measurement_interval)
 #endif /* DT_NODE_HAS_PROP(clk_lsi, runtime_calibration_settings) */
 
 /* Verify device tree properties are correct */
 BUILD_ASSERT(!IS_ENABLED(STM32_SYSCLK_SRC_HSE) || STM32_WB0_CLKSYS_PRESCALER != 64,
-	"clksys-prescaler cannot be 64 when SYSCLK source is Direct HSE");
+	     "clksys-prescaler cannot be 64 when SYSCLK source is Direct HSE");
 
 #if defined(STM32_LSI_ENABLED)
 /* Check clock configuration allows MR_BLE IP to work.
  * This IP is required to perform LSI measurements.
  */
-#	if defined(STM32_SYSCLK_SRC_HSI)
-		/* When using HSI without PLL, the "16MHz" output is not actually 16MHz, since
-		 * the RC64M generator is imprecise. In this configuration, MR_BLE is broken.
-		 * The CPU and MR_BLE must be running at 32MHz for MR_BLE to work with HSI.
-		 */
-		BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= CLOCK_FREQ_32MHZ,
-			"System clock frequency must be at least 32MHz to use LSI");
-#	else
-		/* In PLL or Direct HSE mode, the clock is stable, so 16MHz can be used. */
-		BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= CLOCK_FREQ_16MHZ,
-			"System clock frequency must be at least 16MHz to use LSI");
-#	endif /* STM32_SYSCLK_SRC_HSI */
+#if defined(STM32_SYSCLK_SRC_HSI)
+/* When using HSI without PLL, the "16MHz" output is not actually 16MHz, since
+ * the RC64M generator is imprecise. In this configuration, MR_BLE is broken.
+ * The CPU and MR_BLE must be running at 32MHz for MR_BLE to work with HSI.
+ */
+BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= CLOCK_FREQ_32MHZ,
+	     "System clock frequency must be at least 32MHz to use LSI");
+#else
+/* In PLL or Direct HSE mode, the clock is stable, so 16MHz can be used. */
+BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= CLOCK_FREQ_16MHZ,
+	     "System clock frequency must be at least 16MHz to use LSI");
+#endif /* STM32_SYSCLK_SRC_HSI */
 
 /**
  * @brief Variable holding the "current frequency of LSI", according
@@ -110,7 +108,7 @@ static void measure_lsi_frequency(struct k_sem *wait_event)
 	 * actual number of periods requested for calibration.
 	 */
 	LL_RADIO_TIMER_SetLSIWindowCalibrationLength(RADIO_CTRL,
-		(CONFIG_STM32WB0_LSI_MEASUREMENT_WINDOW - 1));
+						     (CONFIG_STM32WB0_LSI_MEASUREMENT_WINDOW - 1));
 
 	/* Start LSI calibration */
 	LL_RADIO_TIMER_StartLSICalibration(RADIO_CTRL);
@@ -169,9 +167,8 @@ static void measure_lsi_frequency(struct k_sem *wait_event)
 	 *
 	 * NOTE: The division must be performed first to avoid 32-bit overflow.
 	 */
-	stm32wb0_lsi_frequency =
-		(CLOCK_FREQ_32MHZ / fast_clock_cycles_elapsed)
-			* CONFIG_STM32WB0_LSI_MEASUREMENT_WINDOW;
+	stm32wb0_lsi_frequency = (CLOCK_FREQ_32MHZ / fast_clock_cycles_elapsed) *
+				 CONFIG_STM32WB0_LSI_MEASUREMENT_WINDOW;
 }
 #endif /* STM32_LSI_ENABLED */
 
@@ -248,8 +245,7 @@ static inline int stm32_clock_control_off(const struct device *dev,
 }
 
 static inline int stm32_clock_control_configure(const struct device *dev,
-						clock_control_subsys_t sub_system,
-						void *data)
+						clock_control_subsys_t sub_system, void *data)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)sub_system;
 	const uint32_t shift = STM32_CLOCK_SHIFT_GET(pclken->enr);
@@ -271,8 +267,8 @@ static inline int stm32_clock_control_configure(const struct device *dev,
 	return 0;
 }
 
-static inline int get_apb0_periph_clkrate(uint32_t enr, uint32_t *rate,
-	uint32_t slow_clock, uint32_t sysclk, uint32_t clk_sys)
+static inline int get_apb0_periph_clkrate(uint32_t enr, uint32_t *rate, uint32_t slow_clock,
+					  uint32_t sysclk, uint32_t clk_sys)
 {
 	switch (enr) {
 	/* Slow clock peripherals: RTC & IWDG */
@@ -281,7 +277,7 @@ static inline int get_apb0_periph_clkrate(uint32_t enr, uint32_t *rate,
 		*rate = slow_clock;
 		break;
 
-	/* SYSCLK peripherals: all timers */
+		/* SYSCLK peripherals: all timers */
 #if defined(TIM1)
 	case LL_APB0_GRP1_PERIPH_TIM1:
 #endif
@@ -308,8 +304,7 @@ static inline int get_apb0_periph_clkrate(uint32_t enr, uint32_t *rate,
 	return 0;
 }
 
-static inline int get_apb1_periph_clkrate(uint32_t enr, uint32_t *rate,
-	uint32_t clk_sys)
+static inline int get_apb1_periph_clkrate(uint32_t enr, uint32_t *rate, uint32_t clk_sys)
 {
 	switch (enr) {
 #if defined(SPI1)
@@ -359,7 +354,7 @@ static inline int get_apb1_periph_clkrate(uint32_t enr, uint32_t *rate,
 	case LL_APB1_GRP1_PERIPH_ADCDIG:
 	case LL_APB1_GRP1_PERIPH_ADCANA:
 	case (LL_APB1_GRP1_PERIPH_ADCDIG | LL_APB1_GRP1_PERIPH_ADCANA):
-	/* ADC has two enable bits - accept all combinations. */
+		/* ADC has two enable bits - accept all combinations. */
 		*rate = CLOCK_FREQ_16MHZ;
 		break;
 
@@ -391,8 +386,7 @@ static inline int get_apb1_periph_clkrate(uint32_t enr, uint32_t *rate,
 }
 
 static int stm32_clock_control_get_subsys_rate(const struct device *dev,
-						clock_control_subsys_t sub_system,
-						uint32_t *rate)
+					       clock_control_subsys_t sub_system, uint32_t *rate)
 {
 
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
@@ -402,7 +396,6 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 #else
 	const uint32_t clk_lsi = 0;
 #endif
-
 
 	ARG_UNUSED(dev);
 
@@ -453,15 +446,13 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 
 	switch (pclken->bus) {
 	case STM32_CLOCK_BUS_AHB0:
-	/* All peripherals on AHB0 are clocked by CLK_SYS. */
+		/* All peripherals on AHB0 are clocked by CLK_SYS. */
 		*rate = clk_sys;
 		break;
 	case STM32_CLOCK_BUS_APB0:
-		return get_apb0_periph_clkrate(pclken->enr, rate,
-			slow_clock, sysclk, clk_sys);
+		return get_apb0_periph_clkrate(pclken->enr, rate, slow_clock, sysclk, clk_sys);
 	case STM32_CLOCK_BUS_APB1:
-		return get_apb1_periph_clkrate(pclken->enr, rate,
-			clk_sys);
+		return get_apb1_periph_clkrate(pclken->enr, rate, clk_sys);
 	case STM32_SRC_SYSCLK:
 		*rate = sysclk;
 		break;
@@ -545,7 +536,7 @@ static void set_up_fixed_clock_sources(void)
 			/* Enable HSI */
 			LL_RCC_HSI_Enable();
 			while (LL_RCC_HSI_IsReady() != 1) {
-			/* Wait for HSI ready */
+				/* Wait for HSI ready */
 			}
 		}
 	}
@@ -583,9 +574,9 @@ static void set_up_fixed_clock_sources(void)
  * The following helper macro wraps this difference.
  */
 #if defined(STM32_SYSCLK_SRC_HSE)
-#define LL_PRESCALER(x) LL_RCC_DIRECT_HSE_DIV_ ##x
+#define LL_PRESCALER(x) LL_RCC_DIRECT_HSE_DIV_##x
 #else
-#define LL_PRESCALER(x) LL_RCC_RC64MPLL_DIV_ ##x
+#define LL_PRESCALER(x) LL_RCC_RC64MPLL_DIV_##x
 #endif
 
 /**
@@ -617,7 +608,7 @@ static inline uint32_t kconfig_to_ll_prescaler(uint32_t kcfg_pre)
 	}
 	CODE_UNREACHABLE;
 }
-#undef LL_PRESCALER	/* Undefine helper macro */
+#undef LL_PRESCALER /* Undefine helper macro */
 
 #if CONFIG_STM32WB0_LSI_RUNTIME_MEASUREMENT_INTERVAL != 0
 K_SEM_DEFINE(lsi_measurement_sema, 0, 1);
@@ -684,14 +675,11 @@ static void lsi_rt_measure_loop(void)
 }
 
 #define LSI_RTM_THREAD_STACK_SIZE 512
-#define LSI_RTM_THREAD_PRIORITY K_LOWEST_APPLICATION_THREAD_PRIO
+#define LSI_RTM_THREAD_PRIORITY   K_LOWEST_APPLICATION_THREAD_PRIO
 
-K_KERNEL_THREAD_DEFINE(lsi_rt_measurement_thread,
-		LSI_RTM_THREAD_STACK_SIZE,
-		lsi_rt_measure_loop,
-		NULL, NULL, NULL,
-		LSI_RTM_THREAD_PRIORITY, /* No options */ 0,
-		/* No delay (automatic start by kernel) */ 0);
+K_KERNEL_THREAD_DEFINE(lsi_rt_measurement_thread, LSI_RTM_THREAD_STACK_SIZE, lsi_rt_measure_loop,
+		       NULL, NULL, NULL, LSI_RTM_THREAD_PRIORITY, /* No options */ 0,
+		       /* No delay (automatic start by kernel) */ 0);
 #endif
 
 int stm32_clock_control_init(const struct device *dev)
@@ -702,11 +690,9 @@ int stm32_clock_control_init(const struct device *dev)
 	 *  - 1 wait state when CLK_SYS > 32MHz (i.e., 64MHz configuration)
 	 *  - 0 wait states otherwise (CLK_SYS <= 32MHz)
 	 */
-	LL_FLASH_SetLatency(
-	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= CLOCK_FREQ_32MHZ)
-			? LL_FLASH_LATENCY_1
-			: LL_FLASH_LATENCY_0
-	);
+	LL_FLASH_SetLatency((CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= CLOCK_FREQ_32MHZ)
+				    ? LL_FLASH_LATENCY_1
+				    : LL_FLASH_LATENCY_0);
 
 	/* Unconditionally enable SYSCFG clock for other drivers */
 	LL_APB0_GRP1_EnableClock(LL_APB0_GRP1_PERIPH_SYSCFG);
@@ -730,9 +716,8 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Select RC64MPLL (HSI/PLL) block as SYSCLK source. */
 	LL_RCC_DIRECT_HSE_Disable();
 
-#	if defined(STM32_SYSCLK_SRC_PLL)
-BUILD_ASSERT(IS_ENABLED(STM32_HSE_ENABLED),
-	"STM32WB0 PLL requires HSE to be enabled!");
+#if defined(STM32_SYSCLK_SRC_PLL)
+	BUILD_ASSERT(IS_ENABLED(STM32_HSE_ENABLED), "STM32WB0 PLL requires HSE to be enabled!");
 
 	/* Turn on the PLL part of RC64MPLL block */
 	LL_RCC_RC64MPLL_Enable();
@@ -740,12 +725,11 @@ BUILD_ASSERT(IS_ENABLED(STM32_HSE_ENABLED),
 		/* Wait until PLL is ready */
 	}
 
-#	endif /* STM32_SYSCLK_SRC_PLL */
+#endif /* STM32_SYSCLK_SRC_PLL */
 #endif /* STM32_SYSCLK_SRC_* */
 
 	/* Set CLK_SYS prescaler */
-	LL_RCC_SetRC64MPLLPrescaler(
-		kconfig_to_ll_prescaler(STM32_WB0_CLKSYS_PRESCALER));
+	LL_RCC_SetRC64MPLLPrescaler(kconfig_to_ll_prescaler(STM32_WB0_CLKSYS_PRESCALER));
 
 	SystemCoreClock = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 
@@ -768,8 +752,7 @@ BUILD_ASSERT(IS_ENABLED(STM32_HSE_ENABLED),
 	 */
 
 	/* Enable LSI measurement complete IRQ at NVIC level */
-	IRQ_CONNECT(RADIO_CTRL_IRQn, IRQ_PRIO_LOWEST,
-		radio_ctrl_isr, NULL, 0);
+	IRQ_CONNECT(RADIO_CTRL_IRQn, IRQ_PRIO_LOWEST, radio_ctrl_isr, NULL, 0);
 	irq_enable(RADIO_CTRL_IRQn);
 
 	/* Unmask IRQ at peripheral level */
@@ -784,9 +767,5 @@ BUILD_ASSERT(IS_ENABLED(STM32_HSE_ENABLED),
  * Note that priority is intentionally set to 1,
  * so that RCC init runs just after SoC init.
  */
-DEVICE_DT_DEFINE(STM32_CLOCK_CONTROL_NODE,
-		    &stm32_clock_control_init,
-		    NULL, NULL, NULL,
-		    PRE_KERNEL_1,
-		    CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
-		    &stm32_clock_control_api);
+DEVICE_DT_DEFINE(STM32_CLOCK_CONTROL_NODE, &stm32_clock_control_init, NULL, NULL, NULL,
+		 PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &stm32_clock_control_api);

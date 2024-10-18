@@ -22,13 +22,12 @@
 
 LOG_MODULE_REGISTER(i3g4250d, CONFIG_SENSOR_LOG_LEVEL);
 
-static int i3g4250d_sample_fetch(const struct device *dev,
-			enum sensor_channel chan)
+static int i3g4250d_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct i3g4250d_data *i3g4250d = dev->data;
 	int ret;
 	uint8_t reg;
-	int16_t buf[3] = { 0 };
+	int16_t buf[3] = {0};
 
 	if ((chan != SENSOR_CHAN_ALL) && (chan != SENSOR_CHAN_GYRO_XYZ)) {
 		return -ENOTSUP;
@@ -56,9 +55,8 @@ static inline void i3g4250d_convert(struct sensor_value *val, int16_t raw_value)
 	val->val2 = (int16_t)(raw_value * RAW_TO_MICRODEGREEPERSEC) % 1000000LL;
 }
 
-static void i3g4250d_channel_convert(enum sensor_channel chan,
-					 uint16_t *raw_xyz,
-					 struct sensor_value *val)
+static void i3g4250d_channel_convert(enum sensor_channel chan, uint16_t *raw_xyz,
+				     struct sensor_value *val)
 {
 	uint8_t ofs_start, ofs_stop;
 
@@ -83,8 +81,7 @@ static void i3g4250d_channel_convert(enum sensor_channel chan,
 	}
 }
 
-static int i3g4250d_channel_get(const struct device *dev,
-				enum sensor_channel chan,
+static int i3g4250d_channel_get(const struct device *dev, enum sensor_channel chan,
 				struct sensor_value *val)
 {
 	struct i3g4250d_data *i3g4250d = dev->data;
@@ -124,8 +121,7 @@ static i3g4250d_dr_t gyr_odr_to_reg(const struct sensor_value *val)
 	return reg;
 }
 
-static int i3g4250d_config_gyro(const struct device *dev,
-				enum sensor_attribute attr,
+static int i3g4250d_config_gyro(const struct device *dev, enum sensor_attribute attr,
 				const struct sensor_value *val)
 {
 	struct i3g4250d_data *i3g4250d = dev->data;
@@ -144,8 +140,7 @@ static int i3g4250d_config_gyro(const struct device *dev,
 }
 
 static int i3g4250d_attr_set(const struct device *dev, enum sensor_channel chan,
-				 enum sensor_attribute attr,
-				 const struct sensor_value *val)
+			     enum sensor_attribute attr, const struct sensor_value *val)
 {
 	switch (chan) {
 	case SENSOR_CHAN_GYRO_XYZ:
@@ -208,21 +203,16 @@ static int i3g4250d_init(const struct device *dev)
 	return 0;
 }
 
-#define I3G4250D_DEVICE_INIT(inst)                                           \
-	static struct i3g4250d_data i3g4250d_data_##inst;                        \
-	static const struct i3g4250d_device_config i3g4250d_config_##inst = {    \
-		.spi = SPI_DT_SPEC_INST_GET(inst,                                    \
-					SPI_OP_MODE_MASTER | SPI_MODE_CPOL |                     \
-					SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE,      \
-					0),                                                      \
-	};                                                                       \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,                                                   \
-				i3g4250d_init,                                               \
-				NULL,                                                        \
-				&i3g4250d_data_##inst,                                       \
-				&i3g4250d_config_##inst,                                     \
-				POST_KERNEL,                                                 \
-				CONFIG_SENSOR_INIT_PRIORITY,                                 \
-				&i3g4250d_driver_api);
+#define I3G4250D_DEVICE_INIT(inst)                                                                 \
+	static struct i3g4250d_data i3g4250d_data_##inst;                                          \
+	static const struct i3g4250d_device_config i3g4250d_config_##inst = {                      \
+		.spi = SPI_DT_SPEC_INST_GET(inst,                                                  \
+					    SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA |   \
+						    SPI_WORD_SET(8) | SPI_LINES_SINGLE,            \
+					    0),                                                    \
+	};                                                                                         \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, i3g4250d_init, NULL, &i3g4250d_data_##inst,             \
+				     &i3g4250d_config_##inst, POST_KERNEL,                         \
+				     CONFIG_SENSOR_INIT_PRIORITY, &i3g4250d_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I3G4250D_DEVICE_INIT)

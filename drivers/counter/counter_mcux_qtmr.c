@@ -62,7 +62,7 @@ void mcux_qtmr_timer_handler(const struct device *dev, uint32_t status)
 
 	if ((status & kQTMR_Compare1Flag) && data->alarm_callback) {
 		QTMR_DisableInterrupts(config->base, config->channel,
-			kQTMR_Compare1InterruptEnable);
+				       kQTMR_Compare1InterruptEnable);
 		data->interrupt_mask &= ~kQTMR_Compare1InterruptEnable;
 		counter_alarm_callback_t alarm_cb = data->alarm_callback;
 
@@ -86,7 +86,7 @@ static void mcux_qtmr_isr(const struct device *timers[])
 	 * of all channels and trigger the ISR for the channel(s) that has/have triggered the
 	 * interrupt.
 	 */
-	for (qtmr_channel_selection_t ch = kQTMR_Channel_0; ch <= kQTMR_Channel_3 ; ch++) {
+	for (qtmr_channel_selection_t ch = kQTMR_Channel_0; ch <= kQTMR_Channel_3; ch++) {
 		if (timers[ch] != NULL) {
 			const struct mcux_qtmr_config *config = timers[ch]->config;
 			struct mcux_qtmr_data *data = timers[ch]->data;
@@ -102,18 +102,17 @@ static void mcux_qtmr_isr(const struct device *timers[])
 
 #define INIT_TIMER(node_id) [DT_PROP(node_id, channel)] = DEVICE_DT_GET(node_id),
 
-#define QTMR_DEVICE_INIT_MCUX(n)							\
-	static const struct device *const timers_##n[4] = {				\
-		DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(n), INIT_TIMER)		\
-	};										\
-	static int init_irq_##n(void)							\
-	{										\
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_qtmr_isr,	\
-				timers_##n, 0);						\
-		irq_enable(DT_INST_IRQN(n));						\
-		return 0;								\
-	}										\
-											\
+#define QTMR_DEVICE_INIT_MCUX(n)                                                                   \
+	static const struct device *const timers_##n[4] = {                                        \
+		DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(n), INIT_TIMER)};                         \
+	static int init_irq_##n(void)                                                              \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_qtmr_isr, timers_##n,  \
+			    0);                                                                    \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+		return 0;                                                                          \
+	}                                                                                          \
+                                                                                                   \
 	SYS_INIT(init_irq_##n, POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY);
 
 DT_INST_FOREACH_STATUS_OKAY(QTMR_DEVICE_INIT_MCUX)
@@ -148,7 +147,7 @@ static int mcux_qtmr_get_value(const struct device *dev, uint32_t *ticks)
 }
 
 static int mcux_qtmr_set_alarm(const struct device *dev, uint8_t chan_id,
-			      const struct counter_alarm_cfg *alarm_cfg)
+			       const struct counter_alarm_cfg *alarm_cfg)
 {
 	const struct mcux_qtmr_config *config = dev->config;
 	struct mcux_qtmr_data *data = dev->data;
@@ -207,15 +206,13 @@ static uint32_t mcux_qtmr_get_pending_int(const struct device *dev)
 	return QTMR_GetStatus(config->base, config->channel);
 }
 
-static int mcux_qtmr_set_top_value(const struct device *dev,
-				  const struct counter_top_cfg *cfg)
+static int mcux_qtmr_set_top_value(const struct device *dev, const struct counter_top_cfg *cfg)
 {
 	const struct mcux_qtmr_config *config = dev->config;
 	struct mcux_qtmr_data *data = dev->data;
 
 	if (cfg->ticks != config->info.max_top_value) {
-		LOG_ERR("Wrap can only be set to 0x%x",
-			config->info.max_top_value);
+		LOG_ERR("Wrap can only be set to 0x%x", config->info.max_top_value);
 		return -ENOTSUP;
 	}
 
@@ -275,13 +272,12 @@ static int mcux_qtmr_init(const struct device *dev)
 			return -ENODEV;
 		}
 
-		if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
-					&data->freq)) {
+		if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &data->freq)) {
 			return -EINVAL;
 		}
 
 		data->freq /= qtmr_primary_source_divider[config->qtmr_config.primarySource -
-								kQTMR_ClockDivide_1];
+							  kQTMR_ClockDivide_1];
 	}
 
 	QTMR_Init(config->base, config->channel, &config->qtmr_config);
@@ -301,40 +297,35 @@ static const struct counter_driver_api mcux_qtmr_driver_api = {
 	.get_freq = mcux_qtmr_get_freq,
 };
 
-#define TMR_DEVICE_INIT_MCUX(n)									\
-	static struct mcux_qtmr_data mcux_qtmr_data_ ## n;					\
-												\
-	static const struct mcux_qtmr_config mcux_qtmr_config_ ## n = {				\
-		.base = (void *)DT_REG_ADDR(DT_INST_PARENT(n)),					\
-		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(n))),			\
-		.clock_subsys =									\
-			(clock_control_subsys_t)DT_CLOCKS_CELL(DT_INST_PARENT(n), name),	\
-		.info = {									\
-			.max_top_value = UINT16_MAX,						\
-			.freq = DT_INST_PROP_OR(n, freq, 0),					\
-			.channels = 1,								\
-			.flags = COUNTER_CONFIG_INFO_COUNT_UP,					\
-		},										\
-		.channel = DT_INST_PROP(n, channel),						\
-		.qtmr_config = {								\
-			.debugMode = kQTMR_RunNormalInDebug,					\
-			.enableExternalForce = false,						\
-			.enableMasterMode = false,						\
-			.faultFilterCount = DT_INST_PROP_OR(n, filter_count, 0),		\
-			.faultFilterPeriod = DT_INST_PROP_OR(n, filter_count, 0),		\
-			.primarySource = DT_INST_ENUM_IDX(n, primary_source),			\
-			.secondarySource = DT_INST_ENUM_IDX_OR(n, secondary_source, 0),		\
-		},										\
-		.mode = DT_INST_ENUM_IDX(n, mode),						\
-	};											\
-												\
-	DEVICE_DT_INST_DEFINE(n,								\
-			    mcux_qtmr_init,							\
-			    NULL,								\
-			    &mcux_qtmr_data_ ## n,						\
-			    &mcux_qtmr_config_ ## n,						\
-			    POST_KERNEL,							\
-			    CONFIG_COUNTER_INIT_PRIORITY,					\
-			    &mcux_qtmr_driver_api);						\
+#define TMR_DEVICE_INIT_MCUX(n)                                                                    \
+	static struct mcux_qtmr_data mcux_qtmr_data_##n;                                           \
+                                                                                                   \
+	static const struct mcux_qtmr_config mcux_qtmr_config_##n = {                              \
+		.base = (void *)DT_REG_ADDR(DT_INST_PARENT(n)),                                    \
+		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(n))),                     \
+		.clock_subsys = (clock_control_subsys_t)DT_CLOCKS_CELL(DT_INST_PARENT(n), name),   \
+		.info =                                                                            \
+			{                                                                          \
+				.max_top_value = UINT16_MAX,                                       \
+				.freq = DT_INST_PROP_OR(n, freq, 0),                               \
+				.channels = 1,                                                     \
+				.flags = COUNTER_CONFIG_INFO_COUNT_UP,                             \
+			},                                                                         \
+		.channel = DT_INST_PROP(n, channel),                                               \
+		.qtmr_config =                                                                     \
+			{                                                                          \
+				.debugMode = kQTMR_RunNormalInDebug,                               \
+				.enableExternalForce = false,                                      \
+				.enableMasterMode = false,                                         \
+				.faultFilterCount = DT_INST_PROP_OR(n, filter_count, 0),           \
+				.faultFilterPeriod = DT_INST_PROP_OR(n, filter_count, 0),          \
+				.primarySource = DT_INST_ENUM_IDX(n, primary_source),              \
+				.secondarySource = DT_INST_ENUM_IDX_OR(n, secondary_source, 0),    \
+			},                                                                         \
+		.mode = DT_INST_ENUM_IDX(n, mode),                                                 \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, mcux_qtmr_init, NULL, &mcux_qtmr_data_##n, &mcux_qtmr_config_##n, \
+			      POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY, &mcux_qtmr_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TMR_DEVICE_INIT_MCUX)

@@ -25,7 +25,7 @@
 #include <nsi_tracing.h>
 
 #define ERROR nsi_print_error_and_exit
-#define WARN nsi_print_warning
+#define WARN  nsi_print_warning
 
 /**
  * @brief Poll the device for input.
@@ -56,7 +56,7 @@ int np_uart_stdin_poll_in_bottom(int in_f, unsigned char *p_char)
 	FD_ZERO(&readfds);
 	FD_SET(in_f, &readfds);
 
-	ready = select(in_f+1, &readfds, NULL, NULL, &timeout);
+	ready = select(in_f + 1, &readfds, NULL, NULL, &timeout);
 
 	if (ready == 0) {
 		return -1;
@@ -82,7 +82,7 @@ int np_uart_stdin_poll_in_bottom(int in_f, unsigned char *p_char)
  */
 int np_uart_slave_connected(int fd)
 {
-	struct pollfd pfd = { .fd = fd, .events = POLLHUP };
+	struct pollfd pfd = {.fd = fd, .events = POLLHUP};
 	int ret;
 
 	ret = poll(&pfd, 1, 0);
@@ -95,8 +95,8 @@ int np_uart_slave_connected(int fd)
 		 *  * ENOMEM no RAM left
 		 */
 		if (err != EINTR) {
-			ERROR("%s: unexpected error during poll, errno=%i,%s\n",
-			      __func__, err, strerror(err));
+			ERROR("%s: unexpected error during poll, errno=%i,%s\n", __func__, err,
+			      strerror(err));
 		}
 	}
 	if (!(pfd.revents & POLLHUP)) {
@@ -132,8 +132,8 @@ static void attach_to_tty(const char *slave_tty, const char *auto_attach_cmd)
  * If auto_attach was set, it will also attempt to connect a new terminal
  * emulator to its slave side.
  */
-int np_uart_open_ptty(const char *uart_name, const char *auto_attach_cmd,
-		      bool do_auto_attach, bool wait_pts)
+int np_uart_open_ptty(const char *uart_name, const char *auto_attach_cmd, bool do_auto_attach,
+		      bool wait_pts)
 {
 	int master_pty;
 	char *slave_pty_name;
@@ -150,8 +150,7 @@ int np_uart_open_ptty(const char *uart_name, const char *auto_attach_cmd,
 	if (ret == -1) {
 		err_nbr = errno;
 		close(master_pty);
-		ERROR("Could not grant access to the slave PTY side (%i)\n",
-			err_nbr);
+		ERROR("Could not grant access to the slave PTY side (%i)\n", err_nbr);
 	}
 	ret = unlockpt(master_pty);
 	if (ret == -1) {
@@ -170,19 +169,17 @@ int np_uart_open_ptty(const char *uart_name, const char *auto_attach_cmd,
 	if (flags == -1) {
 		err_nbr = errno;
 		close(master_pty);
-		ERROR("Could not read the master PTY file status flags (%i)\n",
-			err_nbr);
+		ERROR("Could not read the master PTY file status flags (%i)\n", err_nbr);
 	}
 
 	ret = fcntl(master_pty, F_SETFL, flags | O_NONBLOCK);
 	if (ret == -1) {
 		err_nbr = errno;
 		close(master_pty);
-		ERROR("Could not set the master PTY as non-blocking (%i)\n",
-			err_nbr);
+		ERROR("Could not set the master PTY as non-blocking (%i)\n", err_nbr);
 	}
 
-	(void) err_nbr;
+	(void)err_nbr;
 
 	/*
 	 * Set terminal in "raw" mode:
@@ -199,16 +196,14 @@ int np_uart_open_ptty(const char *uart_name, const char *auto_attach_cmd,
 	ter.c_cc[VMIN] = 0;
 	ter.c_cc[VTIME] = 0;
 	ter.c_lflag &= ~(ICANON | ISIG | IEXTEN | ECHO);
-	ter.c_iflag &= ~(BRKINT | ICRNL | IGNBRK | IGNCR | INLCR | INPCK
-			 | ISTRIP | IXON | PARMRK);
+	ter.c_iflag &= ~(BRKINT | ICRNL | IGNBRK | IGNCR | INLCR | INPCK | ISTRIP | IXON | PARMRK);
 	ter.c_oflag &= ~OPOST;
 	ret = tcsetattr(master_pty, TCSANOW, &ter);
 	if (ret == -1) {
 		ERROR("Could not change terminal driver settings\n");
 	}
 
-	nsi_print_trace("%s connected to pseudotty: %s\n",
-			  uart_name, slave_pty_name);
+	nsi_print_trace("%s connected to pseudotty: %s\n", uart_name, slave_pty_name);
 
 	if (wait_pts) {
 		/*
@@ -220,14 +215,14 @@ int np_uart_open_ptty(const char *uart_name, const char *auto_attach_cmd,
 		ret = open(slave_pty_name, O_RDWR | O_NOCTTY);
 		if (ret == -1) {
 			err_nbr = errno;
-			ERROR("%s: Could not open terminal from the slave side (%i,%s)\n",
-				__func__, err_nbr, strerror(err_nbr));
+			ERROR("%s: Could not open terminal from the slave side (%i,%s)\n", __func__,
+			      err_nbr, strerror(err_nbr));
 		}
 		ret = close(ret);
 		if (ret == -1) {
 			err_nbr = errno;
 			ERROR("%s: Could not close terminal from the slave side (%i,%s)\n",
-				__func__, err_nbr, strerror(err_nbr));
+			      __func__, err_nbr, strerror(err_nbr));
 		}
 	}
 	if (do_auto_attach) {

@@ -219,7 +219,7 @@ static void scan_done_handler(void)
 {
 	uint16_t aps = 0;
 	wifi_ap_record_t *ap_list_buffer;
-	struct wifi_scan_result res = { 0 };
+	struct wifi_scan_result res = {0};
 
 	esp_wifi_scan_get_ap_num(&aps);
 	if (!aps) {
@@ -451,8 +451,7 @@ static int esp32_wifi_disconnect(const struct device *dev)
 	return 0;
 }
 
-static int esp32_wifi_connect(const struct device *dev,
-			    struct wifi_connect_req_params *params)
+static int esp32_wifi_connect(const struct device *dev, struct wifi_connect_req_params *params)
 {
 	struct esp32_wifi_runtime *data = dev->data;
 	struct net_if *iface = net_if_lookup_by_dev(dev);
@@ -577,7 +576,7 @@ static int esp32_wifi_scan(const struct device *dev, struct wifi_scan_params *pa
 
 	data->scan_cb = cb;
 
-	wifi_scan_config_t scan_config = { 0 };
+	wifi_scan_config_t scan_config = {0};
 
 	if (params) {
 		/* The enum values are same, so, no conversion needed */
@@ -617,25 +616,25 @@ static int esp32_wifi_scan(const struct device *dev, struct wifi_scan_params *pa
 	return 0;
 };
 
-static int esp32_wifi_ap_enable(const struct device *dev,
-			 struct wifi_connect_req_params *params)
+static int esp32_wifi_ap_enable(const struct device *dev, struct wifi_connect_req_params *params)
 {
 	struct esp32_wifi_runtime *data = dev->data;
 	esp_err_t err = 0;
 
 	/* Build Wi-Fi configuration for AP mode */
 	wifi_config_t wifi_config = {
-		.ap = {
-			.max_connection = 5,
-			.channel = params->channel == WIFI_CHANNEL_ANY ?
-				0 : params->channel,
-		},
+		.ap =
+			{
+				.max_connection = 5,
+				.channel =
+					params->channel == WIFI_CHANNEL_ANY ? 0 : params->channel,
+			},
 	};
 
 	memcpy(data->status.ssid, params->ssid, params->ssid_length);
 	data->status.ssid[params->ssid_length] = '\0';
 
-	strncpy((char *) wifi_config.ap.ssid, params->ssid, params->ssid_length);
+	strncpy((char *)wifi_config.ap.ssid, params->ssid, params->ssid_length);
 	wifi_config.ap.ssid_len = params->ssid_length;
 
 	switch (params->security) {
@@ -646,7 +645,7 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 		wifi_config.ap.pmf_cfg.required = false;
 		break;
 	case WIFI_SECURITY_TYPE_PSK:
-		strncpy((char *) wifi_config.ap.password, params->psk, params->psk_length);
+		strncpy((char *)wifi_config.ap.password, params->psk, params->psk_length);
 		wifi_config.ap.authmode = WIFI_AUTH_WPA2_PSK;
 		data->status.security = WIFI_AUTH_WPA2_PSK;
 		wifi_config.ap.pmf_cfg.required = false;
@@ -887,35 +886,30 @@ static int esp32_wifi_dev_init(const struct device *dev)
 }
 
 static const struct wifi_mgmt_ops esp32_wifi_mgmt = {
-	.scan		   = esp32_wifi_scan,
-	.connect	   = esp32_wifi_connect,
-	.disconnect	   = esp32_wifi_disconnect,
-	.ap_enable	   = esp32_wifi_ap_enable,
-	.ap_disable	   = esp32_wifi_ap_disable,
-	.iface_status	   = esp32_wifi_status,
+	.scan = esp32_wifi_scan,
+	.connect = esp32_wifi_connect,
+	.disconnect = esp32_wifi_disconnect,
+	.ap_enable = esp32_wifi_ap_enable,
+	.ap_disable = esp32_wifi_ap_disable,
+	.iface_status = esp32_wifi_status,
 #if defined(CONFIG_NET_STATISTICS_WIFI)
-	.get_stats	   = esp32_wifi_stats,
+	.get_stats = esp32_wifi_stats,
 #endif
 };
 
 static const struct net_wifi_mgmt_offload esp32_api = {
-	.wifi_iface.iface_api.init	  = esp32_wifi_init,
+	.wifi_iface.iface_api.init = esp32_wifi_init,
 	.wifi_iface.send = esp32_wifi_send,
 	.wifi_mgmt_api = &esp32_wifi_mgmt,
 };
 
-NET_DEVICE_DT_INST_DEFINE(0,
-		esp32_wifi_dev_init, NULL,
-		&esp32_data, NULL, CONFIG_WIFI_INIT_PRIORITY,
-		&esp32_api, ETHERNET_L2,
-		NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
+NET_DEVICE_DT_INST_DEFINE(0, esp32_wifi_dev_init, NULL, &esp32_data, NULL,
+			  CONFIG_WIFI_INIT_PRIORITY, &esp32_api, ETHERNET_L2,
+			  NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
 
 #if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
-NET_DEVICE_DT_INST_DEFINE(1,
-		NULL, NULL,
-		&esp32_ap_sta_data, NULL, CONFIG_WIFI_INIT_PRIORITY,
-		&esp32_api, ETHERNET_L2,
-		NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
+NET_DEVICE_DT_INST_DEFINE(1, NULL, NULL, &esp32_ap_sta_data, NULL, CONFIG_WIFI_INIT_PRIORITY,
+			  &esp32_api, ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
 
 DEFINE_WIFI_NM_INSTANCE(esp32_wifi_nm, &esp32_wifi_mgmt);
 

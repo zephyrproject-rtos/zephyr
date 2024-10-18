@@ -68,9 +68,8 @@ static int mcux_snvs_get_value(const struct device *dev, uint32_t *ticks)
 	return 0;
 }
 
-static int mcux_snvs_set_alarm(const struct device *dev,
-			      uint8_t chan_id,
-			      const struct counter_alarm_cfg *alarm_cfg)
+static int mcux_snvs_set_alarm(const struct device *dev, uint8_t chan_id,
+			       const struct counter_alarm_cfg *alarm_cfg)
 {
 	const struct mcux_snvs_config *config = dev->config;
 	struct mcux_snvs_data *data = dev->data;
@@ -134,8 +133,7 @@ static int mcux_snvs_set_alarm(const struct device *dev,
 	return 0;
 }
 
-static int mcux_snvs_cancel_alarm(const struct device *dev,
-				 uint8_t chan_id)
+static int mcux_snvs_cancel_alarm(const struct device *dev, uint8_t chan_id)
 {
 	const struct mcux_snvs_config *config = dev->config;
 	struct mcux_snvs_data *data = dev->data;
@@ -167,8 +165,7 @@ static int mcux_snvs_cancel_alarm(const struct device *dev,
 	return 0;
 }
 
-static int mcux_snvs_set_top_value(const struct device *dev,
-				  const struct counter_top_cfg *cfg)
+static int mcux_snvs_set_top_value(const struct device *dev, const struct counter_top_cfg *cfg)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(cfg);
@@ -308,8 +305,7 @@ static const struct counter_driver_api mcux_snvs_driver_api = {
  * This driver is single-instance. If the devicetree contains multiple
  * instances, this will fail and the driver needs to be revisited.
  */
-BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
-	     "unsupported snvs instance");
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1, "unsupported snvs instance");
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(0))
 static struct mcux_snvs_data mcux_snvs_data_0;
@@ -317,26 +313,24 @@ static struct mcux_snvs_data mcux_snvs_data_0;
 static void mcux_snvs_irq_config_0(const struct device *dev);
 
 static struct mcux_snvs_config mcux_snvs_config_0 = {
-	.info = {
-		.max_top_value = 0,
-		.freq = 1,
-		.channels = MCUX_SNVS_NUM_CHANNELS,
-		.flags = COUNTER_CONFIG_INFO_COUNT_UP,
-	},
+	.info =
+		{
+			.max_top_value = 0,
+			.freq = 1,
+			.channels = MCUX_SNVS_NUM_CHANNELS,
+			.flags = COUNTER_CONFIG_INFO_COUNT_UP,
+		},
 	.base = (SNVS_Type *)DT_REG_ADDR(DT_INST_PARENT(0)),
 	.irq_config_func = mcux_snvs_irq_config_0,
 };
 
-DEVICE_DT_INST_DEFINE(0, &mcux_snvs_init, NULL,
-		      &mcux_snvs_data_0,
-		      &mcux_snvs_config_0,
-		      POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,
-		      &mcux_snvs_driver_api);
+DEVICE_DT_INST_DEFINE(0, &mcux_snvs_init, NULL, &mcux_snvs_data_0, &mcux_snvs_config_0, POST_KERNEL,
+		      CONFIG_COUNTER_INIT_PRIORITY, &mcux_snvs_driver_api);
 
 static void mcux_snvs_irq_config_0(const struct device *dev)
 {
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
-		    mcux_snvs_isr, DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), mcux_snvs_isr, DEVICE_DT_INST_GET(0),
+		    0);
 	irq_enable(DT_INST_IRQN(0));
 }
-#endif  /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(0)) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(0)) */

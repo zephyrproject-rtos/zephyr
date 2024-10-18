@@ -36,15 +36,13 @@ struct dma_sedi_driver_data {
 };
 
 #define DEV_DATA(dev) ((struct dma_sedi_driver_data *const)(dev)->data)
-#define DEV_CFG(dev) \
-	((const struct dma_sedi_config_info *const)(dev)->config)
+#define DEV_CFG(dev)  ((const struct dma_sedi_config_info *const)(dev)->config)
 
 /*
  * this function will be called when dma transferring is completed
  * or error happened
  */
-static void dma_handler(sedi_dma_t dma_device, int channel, int event_id,
-			void *args)
+static void dma_handler(sedi_dma_t dma_device, int channel, int event_id, void *args)
 {
 	ARG_UNUSED(args);
 	const struct device *dev = (const struct device *)args;
@@ -53,13 +51,10 @@ static void dma_handler(sedi_dma_t dma_device, int channel, int event_id,
 
 	/* run user-defined callback */
 	if (config->dma_callback) {
-		if ((event_id == SEDI_DMA_EVENT_TRANSFER_DONE) &&
-		    (config->complete_callback_en)) {
-			config->dma_callback(dev, config->user_data,
-					channel, 0);
+		if ((event_id == SEDI_DMA_EVENT_TRANSFER_DONE) && (config->complete_callback_en)) {
+			config->dma_callback(dev, config->user_data, channel, 0);
 		} else if (!config->error_callback_dis) {
-			config->dma_callback(dev, config->user_data,
-					channel, event_id);
+			config->dma_callback(dev, config->user_data, channel, event_id);
 		}
 	}
 }
@@ -128,10 +123,8 @@ static int burst_index(uint32_t num_units, uint32_t *index)
 	return 0;
 }
 
-static void dma_config_convert(struct dma_config *config,
-			       dma_memory_type_t *src_mem,
-			       dma_memory_type_t *dst_mem,
-			       uint8_t *sedi_dma_dir)
+static void dma_config_convert(struct dma_config *config, dma_memory_type_t *src_mem,
+			       dma_memory_type_t *dst_mem, uint8_t *sedi_dma_dir)
 {
 
 	*src_mem = DMA_SRAM_MEM;
@@ -164,8 +157,8 @@ static void dma_config_convert(struct dma_config *config,
 }
 
 /* config basic dma */
-static int dma_sedi_apply_common_config(sedi_dma_t dev, uint32_t channel,
-					struct dma_config *config, uint8_t *dir)
+static int dma_sedi_apply_common_config(sedi_dma_t dev, uint32_t channel, struct dma_config *config,
+					uint8_t *dir)
 {
 	uint8_t direction = MEMORY_TO_MEMORY;
 	dma_memory_type_t src_mem = DMA_SRAM_MEM, dst_mem = DMA_SRAM_MEM;
@@ -177,38 +170,26 @@ static int dma_sedi_apply_common_config(sedi_dma_t dev, uint32_t channel,
 	}
 
 	/* configure dma transferring direction*/
-	sedi_dma_control(dev, channel, SEDI_CONFIG_DMA_DIRECTION,
-			 direction);
+	sedi_dma_control(dev, channel, SEDI_CONFIG_DMA_DIRECTION, direction);
 
 	if (direction == MEMORY_TO_MEMORY) {
-		sedi_dma_control(dev, channel, SEDI_CONFIG_DMA_SR_MEM_TYPE,
-				 src_mem);
-		sedi_dma_control(dev, channel, SEDI_CONFIG_DMA_DT_MEM_TYPE,
-				 dst_mem);
+		sedi_dma_control(dev, channel, SEDI_CONFIG_DMA_SR_MEM_TYPE, src_mem);
+		sedi_dma_control(dev, channel, SEDI_CONFIG_DMA_DT_MEM_TYPE, dst_mem);
 	} else if (direction == MEMORY_TO_PERIPHERAL) {
-		sedi_dma_control(dev, channel, SEDI_CONFIG_DMA_HS_DEVICE_ID,
-				 config->dma_slot);
-		sedi_dma_control(dev, channel, SEDI_CONFIG_DMA_HS_POLARITY,
-				 DMA_HS_POLARITY_HIGH);
-		sedi_dma_control(dev, channel,
-				 SEDI_CONFIG_DMA_HS_DEVICE_ID_PER_DIR,
-				 DMA_HS_PER_TX);
+		sedi_dma_control(dev, channel, SEDI_CONFIG_DMA_HS_DEVICE_ID, config->dma_slot);
+		sedi_dma_control(dev, channel, SEDI_CONFIG_DMA_HS_POLARITY, DMA_HS_POLARITY_HIGH);
+		sedi_dma_control(dev, channel, SEDI_CONFIG_DMA_HS_DEVICE_ID_PER_DIR, DMA_HS_PER_TX);
 	} else if (direction == PERIPHERAL_TO_MEMORY) {
-		sedi_dma_control(dev, channel, SEDI_CONFIG_DMA_HS_DEVICE_ID,
-				 config->dma_slot);
-		sedi_dma_control(dev, channel, SEDI_CONFIG_DMA_HS_POLARITY,
-				 DMA_HS_POLARITY_HIGH);
-		sedi_dma_control(dev, channel,
-				 SEDI_CONFIG_DMA_HS_DEVICE_ID_PER_DIR,
-				 DMA_HS_PER_RX);
+		sedi_dma_control(dev, channel, SEDI_CONFIG_DMA_HS_DEVICE_ID, config->dma_slot);
+		sedi_dma_control(dev, channel, SEDI_CONFIG_DMA_HS_POLARITY, DMA_HS_POLARITY_HIGH);
+		sedi_dma_control(dev, channel, SEDI_CONFIG_DMA_HS_DEVICE_ID_PER_DIR, DMA_HS_PER_RX);
 	} else {
 		return -1;
 	}
 	return 0;
 }
 
-static int dma_sedi_apply_single_config(sedi_dma_t dev, uint32_t channel,
-					struct dma_config *config)
+static int dma_sedi_apply_single_config(sedi_dma_t dev, uint32_t channel, struct dma_config *config)
 {
 	int ret = 0;
 	uint32_t temp = 0;
@@ -246,9 +227,8 @@ INVALID_ARGS:
 static int dma_sedi_chan_config(const struct device *dev, uint32_t channel,
 				struct dma_config *config)
 {
-	if ((dev == NULL) || (channel >= DEV_CFG(dev)->chn_num)
-		|| (config == NULL)
-		|| (config->block_count != 1)) {
+	if ((dev == NULL) || (channel >= DEV_CFG(dev)->chn_num) || (config == NULL) ||
+	    (config->block_count != 1)) {
 		goto INVALID_ARGS;
 	}
 
@@ -268,8 +248,8 @@ INVALID_ARGS:
 	return -1;
 }
 
-static int dma_sedi_reload(const struct device *dev, uint32_t channel,
-			      uint64_t src, uint64_t dst, size_t size)
+static int dma_sedi_reload(const struct device *dev, uint32_t channel, uint64_t src, uint64_t dst,
+			   size_t size)
 {
 	if ((dev == NULL) || (channel >= DEV_CFG(dev)->chn_num)) {
 		LOG_ERR("dma reload failed for invalid args");
@@ -314,16 +294,15 @@ static int dma_sedi_start(const struct device *dev, uint32_t channel)
 
 	if (config->block_count == 1) {
 		/* call sedi start function */
-		ret = dma_sedi_apply_single_config(info->peripheral_id,
-						   channel, config);
+		ret = dma_sedi_apply_single_config(info->peripheral_id, channel, config);
 		if (ret) {
 			goto ERR;
 		}
 		src_addr = block_config->source_address;
 		dst_addr = block_config->dest_address;
 
-		ret = sedi_dma_start_transfer(info->peripheral_id, channel,
-						src_addr, dst_addr, block_config->block_size);
+		ret = sedi_dma_start_transfer(info->peripheral_id, channel, src_addr, dst_addr,
+					      block_config->block_size);
 	} else {
 		LOG_ERR("MULTIPLE_BLOCK CONFIG is not set");
 		goto ERR;
@@ -350,12 +329,11 @@ static int dma_sedi_stop(const struct device *dev, uint32_t channel)
 	return 0;
 }
 
-static const struct dma_driver_api dma_funcs = { .config = dma_sedi_chan_config,
-						 .start = dma_sedi_start,
-						 .stop = dma_sedi_stop,
-						 .reload = dma_sedi_reload,
-						 .get_status = NULL
-};
+static const struct dma_driver_api dma_funcs = {.config = dma_sedi_chan_config,
+						.start = dma_sedi_start,
+						.stop = dma_sedi_stop,
+						.reload = dma_sedi_reload,
+						.get_status = NULL};
 
 static int dma_sedi_init(const struct device *dev)
 {
@@ -366,26 +344,23 @@ static int dma_sedi_init(const struct device *dev)
 	return 0;
 }
 
-#define DMA_DEVICE_INIT_SEDI(inst) \
-	static void dma_sedi_##inst##_irq_config(void);			\
-									\
-	static struct dma_sedi_driver_data dma_sedi_dev_data_##inst; \
-	static const struct dma_sedi_config_info dma_sedi_config_data_##inst = { \
-		.peripheral_id = DT_INST_PROP(inst, peripheral_id), \
-		.chn_num = DT_INST_PROP(inst, dma_channels), \
-		.irq_config = dma_sedi_##inst##_irq_config \
-	}; \
-	DEVICE_DT_DEFINE(DT_INST(inst, DT_DRV_COMPAT), &dma_sedi_init, \
-	      NULL, &dma_sedi_dev_data_##inst, &dma_sedi_config_data_##inst, PRE_KERNEL_2, \
-	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, (void *)&dma_funcs); \
-									\
-	static void dma_sedi_##inst##_irq_config(void)			\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(inst),				\
-			    DT_INST_IRQ(inst, priority), dma_isr,	\
-			    (void *)DT_INST_PROP(inst, peripheral_id),			\
-			    DT_INST_IRQ(inst, sense));			\
-		irq_enable(DT_INST_IRQN(inst));				\
+#define DMA_DEVICE_INIT_SEDI(inst)                                                                 \
+	static void dma_sedi_##inst##_irq_config(void);                                            \
+                                                                                                   \
+	static struct dma_sedi_driver_data dma_sedi_dev_data_##inst;                               \
+	static const struct dma_sedi_config_info dma_sedi_config_data_##inst = {                   \
+		.peripheral_id = DT_INST_PROP(inst, peripheral_id),                                \
+		.chn_num = DT_INST_PROP(inst, dma_channels),                                       \
+		.irq_config = dma_sedi_##inst##_irq_config};                                       \
+	DEVICE_DT_DEFINE(DT_INST(inst, DT_DRV_COMPAT), &dma_sedi_init, NULL,                       \
+			 &dma_sedi_dev_data_##inst, &dma_sedi_config_data_##inst, PRE_KERNEL_2,    \
+			 CONFIG_KERNEL_INIT_PRIORITY_DEVICE, (void *)&dma_funcs);                  \
+                                                                                                   \
+	static void dma_sedi_##inst##_irq_config(void)                                             \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), dma_isr,              \
+			    (void *)DT_INST_PROP(inst, peripheral_id), DT_INST_IRQ(inst, sense));  \
+		irq_enable(DT_INST_IRQN(inst));                                                    \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(DMA_DEVICE_INIT_SEDI)

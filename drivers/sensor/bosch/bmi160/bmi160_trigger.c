@@ -55,16 +55,15 @@ static void bmi160_handle_interrupts(const struct device *dev)
 	}
 
 	if ((buf.int_status[0] & BMI160_INT_STATUS0_ANYM) &&
-	    (buf.int_status[2] & (BMI160_INT_STATUS2_ANYM_FIRST_X |
-				  BMI160_INT_STATUS2_ANYM_FIRST_Y |
-				  BMI160_INT_STATUS2_ANYM_FIRST_Z))) {
+	    (buf.int_status[2] &
+	     (BMI160_INT_STATUS2_ANYM_FIRST_X | BMI160_INT_STATUS2_ANYM_FIRST_Y |
+	      BMI160_INT_STATUS2_ANYM_FIRST_Z))) {
 		bmi160_handle_anymotion(dev);
 	}
 
 	if (buf.int_status[1] & BMI160_INT_STATUS1_DRDY) {
 		bmi160_handle_drdy(dev, buf.status);
 	}
-
 }
 
 #ifdef CONFIG_BMI160_TRIGGER_OWN_THREAD
@@ -93,11 +92,9 @@ static void bmi160_work_handler(struct k_work *work)
 
 extern struct bmi160_data bmi160_data;
 
-static void bmi160_gpio_callback(const struct device *port,
-				 struct gpio_callback *cb, uint32_t pin)
+static void bmi160_gpio_callback(const struct device *port, struct gpio_callback *cb, uint32_t pin)
 {
-	struct bmi160_data *data =
-		CONTAINER_OF(cb, struct bmi160_data, gpio_cb);
+	struct bmi160_data *data = CONTAINER_OF(cb, struct bmi160_data, gpio_cb);
 
 	ARG_UNUSED(port);
 	ARG_UNUSED(pin);
@@ -109,8 +106,7 @@ static void bmi160_gpio_callback(const struct device *port,
 #endif
 }
 
-static int bmi160_trigger_drdy_set(const struct device *dev,
-				   enum sensor_channel chan,
+static int bmi160_trigger_drdy_set(const struct device *dev, enum sensor_channel chan,
 				   const struct sensor_trigger *trig,
 				   sensor_trigger_handler_t handler)
 {
@@ -139,8 +135,7 @@ static int bmi160_trigger_drdy_set(const struct device *dev,
 	}
 #endif
 
-	if (bmi160_reg_update(dev, BMI160_REG_INT_EN1,
-			      BMI160_INT_DRDY_EN, drdy_en) < 0) {
+	if (bmi160_reg_update(dev, BMI160_REG_INT_EN1, BMI160_INT_DRDY_EN, drdy_en) < 0) {
 		return -EIO;
 	}
 
@@ -148,8 +143,7 @@ static int bmi160_trigger_drdy_set(const struct device *dev,
 }
 
 #if !defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
-static int bmi160_trigger_anym_set(const struct device *dev,
-				   const struct sensor_trigger *trig,
+static int bmi160_trigger_anym_set(const struct device *dev, const struct sensor_trigger *trig,
 				   sensor_trigger_handler_t handler)
 {
 	struct bmi160_data *data = dev->data;
@@ -159,21 +153,17 @@ static int bmi160_trigger_anym_set(const struct device *dev,
 	data->trig_anymotion = trig;
 
 	if (handler) {
-		anym_en = BMI160_INT_ANYM_X_EN |
-			  BMI160_INT_ANYM_Y_EN |
-			  BMI160_INT_ANYM_Z_EN;
+		anym_en = BMI160_INT_ANYM_X_EN | BMI160_INT_ANYM_Y_EN | BMI160_INT_ANYM_Z_EN;
 	}
 
-	if (bmi160_reg_update(dev, BMI160_REG_INT_EN0,
-			      BMI160_INT_ANYM_MASK, anym_en) < 0) {
+	if (bmi160_reg_update(dev, BMI160_REG_INT_EN0, BMI160_INT_ANYM_MASK, anym_en) < 0) {
 		return -EIO;
 	}
 
 	return 0;
 }
 
-static int bmi160_trigger_set_acc(const struct device *dev,
-				  const struct sensor_trigger *trig,
+static int bmi160_trigger_set_acc(const struct device *dev, const struct sensor_trigger *trig,
 				  sensor_trigger_handler_t handler)
 {
 	if (trig->type == SENSOR_TRIG_DATA_READY) {
@@ -185,8 +175,7 @@ static int bmi160_trigger_set_acc(const struct device *dev,
 	return -ENOTSUP;
 }
 
-int bmi160_acc_slope_config(const struct device *dev,
-			    enum sensor_attribute attr,
+int bmi160_acc_slope_config(const struct device *dev, enum sensor_attribute attr,
 			    const struct sensor_value *val)
 {
 	uint8_t acc_range_g, reg_val;
@@ -208,8 +197,7 @@ int bmi160_acc_slope_config(const struct device *dev,
 
 		reg_val = (slope_th_ums2 - 1) * 512U / (acc_range_g * SENSOR_G);
 
-		if (bmi160_byte_write(dev, BMI160_REG_INT_MOTION1,
-				      reg_val) < 0) {
+		if (bmi160_byte_write(dev, BMI160_REG_INT_MOTION1, reg_val) < 0) {
 			return -EIO;
 		}
 	} else { /* SENSOR_ATTR_SLOPE_DUR */
@@ -218,10 +206,8 @@ int bmi160_acc_slope_config(const struct device *dev,
 			return -ENOTSUP;
 		}
 
-		if (bmi160_reg_field_update(dev, BMI160_REG_INT_MOTION0,
-					    BMI160_ANYM_DUR_POS,
-					    BMI160_ANYM_DUR_MASK,
-					    val->val1) < 0) {
+		if (bmi160_reg_field_update(dev, BMI160_REG_INT_MOTION0, BMI160_ANYM_DUR_POS,
+					    BMI160_ANYM_DUR_MASK, val->val1) < 0) {
 			return -EIO;
 		}
 	}
@@ -231,8 +217,7 @@ int bmi160_acc_slope_config(const struct device *dev,
 #endif
 
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
-static int bmi160_trigger_set_gyr(const struct device *dev,
-				  const struct sensor_trigger *trig,
+static int bmi160_trigger_set_gyr(const struct device *dev, const struct sensor_trigger *trig,
 				  sensor_trigger_handler_t handler)
 {
 	if (trig->type == SENSOR_TRIG_DATA_READY) {
@@ -243,8 +228,7 @@ static int bmi160_trigger_set_gyr(const struct device *dev,
 }
 #endif
 
-int bmi160_trigger_set(const struct device *dev,
-		       const struct sensor_trigger *trig,
+int bmi160_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler)
 {
 #if !defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
@@ -276,12 +260,9 @@ int bmi160_trigger_mode_init(const struct device *dev)
 #if defined(CONFIG_BMI160_TRIGGER_OWN_THREAD)
 	k_sem_init(&data->sem, 0, K_SEM_MAX_LIMIT);
 
-	k_thread_create(&bmi160_thread, bmi160_thread_stack,
-			CONFIG_BMI160_THREAD_STACK_SIZE,
-			bmi160_thread_main,
-			data, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BMI160_THREAD_PRIORITY),
-			0, K_NO_WAIT);
+	k_thread_create(&bmi160_thread, bmi160_thread_stack, CONFIG_BMI160_THREAD_STACK_SIZE,
+			bmi160_thread_main, data, NULL, NULL,
+			K_PRIO_COOP(CONFIG_BMI160_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_BMI160_TRIGGER_GLOBAL_THREAD)
 	data->work.handler = bmi160_work_handler;
 #endif
@@ -297,17 +278,14 @@ int bmi160_trigger_mode_init(const struct device *dev)
 		return ret;
 	}
 
-	gpio_init_callback(&data->gpio_cb,
-			   bmi160_gpio_callback,
-			   BIT(cfg->interrupt.pin));
+	gpio_init_callback(&data->gpio_cb, bmi160_gpio_callback, BIT(cfg->interrupt.pin));
 
 	ret = gpio_add_callback(cfg->interrupt.port, &data->gpio_cb);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
-					      GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
 		return ret;
 	}

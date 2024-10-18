@@ -15,10 +15,9 @@
 
 LOG_MODULE_REGISTER(pwm_imx, CONFIG_PWM_LOG_LEVEL);
 
-#define PWM_PWMSR_FIFOAV_4WORDS	0x4
+#define PWM_PWMSR_FIFOAV_4WORDS 0x4
 
-#define PWM_PWMCR_SWR(x) (((uint32_t)(((uint32_t)(x)) \
-				<<PWM_PWMCR_SWR_SHIFT))&PWM_PWMCR_SWR_MASK)
+#define PWM_PWMCR_SWR(x) (((uint32_t)(((uint32_t)(x)) << PWM_PWMCR_SWR_SHIFT)) & PWM_PWMCR_SWR_MASK)
 
 struct imx_pwm_config {
 	PWM_Type *base;
@@ -30,14 +29,12 @@ struct imx_pwm_data {
 	uint32_t period_cycles;
 };
 
-
 static bool imx_pwm_is_enabled(PWM_Type *base)
 {
 	return PWM_PWMCR_REG(base) & PWM_PWMCR_EN_MASK;
 }
 
-static int imx_pwm_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
-				      uint64_t *cycles)
+static int imx_pwm_get_cycles_per_sec(const struct device *dev, uint32_t pwm, uint64_t *cycles)
 {
 	const struct imx_pwm_config *config = dev->config;
 
@@ -46,9 +43,8 @@ static int imx_pwm_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
 	return 0;
 }
 
-static int imx_pwm_set_cycles(const struct device *dev, uint32_t channel,
-			      uint32_t period_cycles, uint32_t pulse_cycles,
-			      pwm_flags_t flags)
+static int imx_pwm_set_cycles(const struct device *dev, uint32_t channel, uint32_t period_cycles,
+			      uint32_t pulse_cycles, pwm_flags_t flags)
 {
 	const struct imx_pwm_config *config = dev->config;
 	struct imx_pwm_data *data = dev->data;
@@ -56,7 +52,6 @@ static int imx_pwm_set_cycles(const struct device *dev, uint32_t channel,
 	bool enabled = imx_pwm_is_enabled(config->base);
 	int wait_count = 0, fifoav;
 	uint32_t cr, sr;
-
 
 	if (period_cycles == 0U) {
 		LOG_ERR("Channel can not be set to inactive level");
@@ -69,8 +64,8 @@ static int imx_pwm_set_cycles(const struct device *dev, uint32_t channel,
 	}
 
 	LOG_DBG("enabled=%d, pulse_cycles=%d, period_cycles=%d,"
-		    " duty_cycle=%d\n", enabled, pulse_cycles, period_cycles,
-		    (pulse_cycles * 100U / period_cycles));
+		" duty_cycle=%d\n",
+		enabled, pulse_cycles, period_cycles, (pulse_cycles * 100U / period_cycles));
 
 	/*
 	 * i.MX PWMv2 has a 4-word sample FIFO.
@@ -83,8 +78,8 @@ static int imx_pwm_set_cycles(const struct device *dev, uint32_t channel,
 		sr = PWM_PWMSR_REG(config->base);
 		fifoav = PWM_PWMSR_FIFOAV(sr);
 		if (fifoav == PWM_PWMSR_FIFOAV_4WORDS) {
-			period_ms = (get_pwm_clock_freq(config->base) >>
-					config->prescaler) * MSEC_PER_SEC;
+			period_ms = (get_pwm_clock_freq(config->base) >> config->prescaler) *
+				    MSEC_PER_SEC;
 			k_sleep(K_MSEC(period_ms));
 
 			sr = PWM_PWMSR_REG(config->base);
@@ -97,13 +92,11 @@ static int imx_pwm_set_cycles(const struct device *dev, uint32_t channel,
 		do {
 			k_sleep(K_MSEC(1));
 			cr = PWM_PWMCR_REG(config->base);
-		} while ((PWM_PWMCR_SWR(cr)) &&
-			 (++wait_count < CONFIG_PWM_PWMSWR_LOOP));
+		} while ((PWM_PWMCR_SWR(cr)) && (++wait_count < CONFIG_PWM_PWMSWR_LOOP));
 
 		if (PWM_PWMCR_SWR(cr)) {
 			LOG_WRN("software reset timeout\n");
 		}
-
 	}
 
 	/*
@@ -119,17 +112,15 @@ static int imx_pwm_set_cycles(const struct device *dev, uint32_t channel,
 	PWM_PWMSAR_REG(config->base) = pulse_cycles;
 
 	if (data->period_cycles != period_cycles) {
-		LOG_WRN("Changing period cycles from %d to %d in %s",
-			    data->period_cycles, period_cycles,
-			    dev->name);
+		LOG_WRN("Changing period cycles from %d to %d in %s", data->period_cycles,
+			period_cycles, dev->name);
 
 		data->period_cycles = period_cycles;
 		PWM_PWMPR_REG(config->base) = period_cycles;
 	}
 
-	cr = PWM_PWMCR_EN_MASK | PWM_PWMCR_PRESCALER(config->prescaler) |
-		PWM_PWMCR_DOZEN_MASK | PWM_PWMCR_WAITEN_MASK |
-		PWM_PWMCR_DBGEN_MASK | PWM_PWMCR_CLKSRC(2);
+	cr = PWM_PWMCR_EN_MASK | PWM_PWMCR_PRESCALER(config->prescaler) | PWM_PWMCR_DOZEN_MASK |
+	     PWM_PWMCR_WAITEN_MASK | PWM_PWMCR_DBGEN_MASK | PWM_PWMCR_CLKSRC(2);
 
 	PWM_PWMCR_REG(config->base) = cr;
 
@@ -157,21 +148,18 @@ static const struct pwm_driver_api imx_pwm_driver_api = {
 	.get_cycles_per_sec = imx_pwm_get_cycles_per_sec,
 };
 
-#define PWM_IMX_INIT(n)							\
-	PINCTRL_DT_INST_DEFINE(n);					\
-	static const struct imx_pwm_config imx_pwm_config_##n = {	\
-		.base = (PWM_Type *)DT_INST_REG_ADDR(n),		\
-		.prescaler = DT_INST_PROP(n, prescaler),		\
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
-	};								\
-									\
-	static struct imx_pwm_data imx_pwm_data_##n;			\
-									\
-	DEVICE_DT_INST_DEFINE(n, &imx_pwm_init, NULL,			\
-			    &imx_pwm_data_##n,				\
-			    &imx_pwm_config_##n, POST_KERNEL,		\
-			    CONFIG_PWM_INIT_PRIORITY,			\
-			    &imx_pwm_driver_api);
+#define PWM_IMX_INIT(n)                                                                            \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	static const struct imx_pwm_config imx_pwm_config_##n = {                                  \
+		.base = (PWM_Type *)DT_INST_REG_ADDR(n),                                           \
+		.prescaler = DT_INST_PROP(n, prescaler),                                           \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+	};                                                                                         \
+                                                                                                   \
+	static struct imx_pwm_data imx_pwm_data_##n;                                               \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &imx_pwm_init, NULL, &imx_pwm_data_##n, &imx_pwm_config_##n,      \
+			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, &imx_pwm_driver_api);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(fsl_imx27_pwm)
 #define DT_DRV_COMPAT fsl_imx27_pwm

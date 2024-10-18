@@ -18,26 +18,20 @@
 
 LOG_MODULE_REGISTER(INA219, CONFIG_SENSOR_LOG_LEVEL);
 
-static int ina219_reg_read(const struct device *dev,
-		uint8_t reg_addr,
-		uint16_t *reg_data)
+static int ina219_reg_read(const struct device *dev, uint8_t reg_addr, uint16_t *reg_data)
 {
 	const struct ina219_config *cfg = dev->config;
 	uint8_t rx_buf[2];
 	int rc;
 
-	rc = i2c_write_read_dt(&cfg->bus,
-			&reg_addr, sizeof(reg_addr),
-			rx_buf, sizeof(rx_buf));
+	rc = i2c_write_read_dt(&cfg->bus, &reg_addr, sizeof(reg_addr), rx_buf, sizeof(rx_buf));
 
 	*reg_data = sys_get_be16(rx_buf);
 
 	return rc;
 }
 
-static int ina219_reg_write(const struct device *dev,
-		uint8_t addr,
-		uint16_t reg_data)
+static int ina219_reg_write(const struct device *dev, uint8_t addr, uint16_t reg_data)
 {
 	const struct ina219_config *cfg = dev->config;
 	uint8_t tx_buf[3];
@@ -48,10 +42,8 @@ static int ina219_reg_write(const struct device *dev,
 	return i2c_write_dt(&cfg->bus, tx_buf, sizeof(tx_buf));
 }
 
-static int ina219_reg_field_update(const struct device *dev,
-		uint8_t addr,
-		uint16_t mask,
-		uint16_t field)
+static int ina219_reg_field_update(const struct device *dev, uint8_t addr, uint16_t mask,
+				   uint16_t field)
 {
 	uint16_t reg_data;
 	int rc;
@@ -71,8 +63,7 @@ static int ina219_set_msr_delay(const struct device *dev)
 	const struct ina219_config *cfg = dev->config;
 	struct ina219_data *data = dev->data;
 
-	data->msr_delay = ina219_conv_delay(cfg->badc) +
-		ina219_conv_delay(cfg->sadc);
+	data->msr_delay = ina219_conv_delay(cfg->badc) + ina219_conv_delay(cfg->sadc);
 	return 0;
 }
 
@@ -82,10 +73,10 @@ static int ina219_set_config(const struct device *dev)
 	uint16_t reg_data;
 
 	reg_data = (cfg->brng & INA219_BRNG_MASK) << INA219_BRNG_SHIFT |
-		(cfg->pg & INA219_PG_MASK) << INA219_PG_SHIFT |
-		(cfg->badc & INA219_ADC_MASK) << INA219_BADC_SHIFT |
-		(cfg->sadc & INA219_ADC_MASK) << INA219_SADC_SHIFT |
-		(cfg->mode & INA219_MODE_NORMAL);
+		   (cfg->pg & INA219_PG_MASK) << INA219_PG_SHIFT |
+		   (cfg->badc & INA219_ADC_MASK) << INA219_BADC_SHIFT |
+		   (cfg->sadc & INA219_ADC_MASK) << INA219_SADC_SHIFT |
+		   (cfg->mode & INA219_MODE_NORMAL);
 
 	return ina219_reg_write(dev, INA219_REG_CONF, reg_data);
 }
@@ -100,26 +91,20 @@ static int ina219_set_calib(const struct device *dev)
 	return ina219_reg_write(dev, INA219_REG_CALIB, cal);
 }
 
-static int ina219_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
+static int ina219_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct ina219_data *data = dev->data;
 	uint16_t status;
 	uint16_t tmp;
 	int rc;
 
-	if (chan != SENSOR_CHAN_ALL &&
-		chan != SENSOR_CHAN_VOLTAGE &&
-		chan != SENSOR_CHAN_POWER &&
-		chan != SENSOR_CHAN_CURRENT) {
+	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_VOLTAGE && chan != SENSOR_CHAN_POWER &&
+	    chan != SENSOR_CHAN_CURRENT) {
 		return -ENOTSUP;
 	}
 
 	/* Trigger measurement and wait for completion */
-	rc = ina219_reg_field_update(dev,
-				    INA219_REG_CONF,
-				    INA219_MODE_MASK,
-				    INA219_MODE_NORMAL);
+	rc = ina219_reg_field_update(dev, INA219_REG_CONF, INA219_MODE_MASK, INA219_MODE_NORMAL);
 	if (rc) {
 		LOG_ERR("Failed to start measurement.");
 		return rc;
@@ -147,8 +132,7 @@ static int ina219_sample_fetch(const struct device *dev,
 		LOG_WRN("Power and/or Current calculations are out of range.");
 	}
 
-	if (chan == SENSOR_CHAN_ALL ||
-		chan == SENSOR_CHAN_VOLTAGE) {
+	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_VOLTAGE) {
 
 		rc = ina219_reg_read(dev, INA219_REG_V_BUS, &tmp);
 		if (rc) {
@@ -158,8 +142,7 @@ static int ina219_sample_fetch(const struct device *dev,
 		data->v_bus = INA219_VBUS_GET(tmp);
 	}
 
-	if (chan == SENSOR_CHAN_ALL ||
-		chan == SENSOR_CHAN_POWER)	{
+	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_POWER) {
 
 		rc = ina219_reg_read(dev, INA219_REG_POWER, &tmp);
 		if (rc) {
@@ -169,8 +152,7 @@ static int ina219_sample_fetch(const struct device *dev,
 		data->power = tmp;
 	}
 
-	if (chan == SENSOR_CHAN_ALL ||
-		chan == SENSOR_CHAN_CURRENT) {
+	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_CURRENT) {
 
 		rc = ina219_reg_read(dev, INA219_REG_CURRENT, &tmp);
 		if (rc) {
@@ -183,8 +165,7 @@ static int ina219_sample_fetch(const struct device *dev,
 	return rc;
 }
 
-static int ina219_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
+static int ina219_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	const struct ina219_config *cfg = dev->config;
@@ -215,8 +196,7 @@ static int ina219_channel_get(const struct device *dev,
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int ina219_pm_action(const struct device *dev,
-			    enum pm_device_action action)
+static int ina219_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	uint16_t reg_val;
 
@@ -233,10 +213,7 @@ static int ina219_pm_action(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	return ina219_reg_field_update(dev,
-				INA219_REG_CONF,
-				INA219_MODE_MASK,
-				reg_val);
+	return ina219_reg_field_update(dev, INA219_REG_CONF, INA219_MODE_MASK, reg_val);
 }
 #endif /* CONFIG_PM_DEVICE */
 
@@ -285,30 +262,23 @@ static const struct sensor_driver_api ina219_api = {
 	.channel_get = ina219_channel_get,
 };
 
-
-#define INA219_INIT(n)						\
-	static struct ina219_data ina219_data_##n;		\
-								\
-	static const struct ina219_config ina219_config_##n = {	\
-		.bus = I2C_DT_SPEC_INST_GET(n),			\
-		.current_lsb = DT_INST_PROP(n, lsb_microamp),	\
-		.r_shunt = DT_INST_PROP(n, shunt_milliohm),	\
-		.brng = DT_INST_PROP(n, brng),			\
-		.pg = DT_INST_PROP(n, pg),			\
-		.badc = DT_INST_PROP(n, badc),			\
-		.sadc = DT_INST_PROP(n, sadc),			\
-		.mode = INA219_MODE_NORMAL			\
-	};							\
-								\
-	PM_DEVICE_DT_INST_DEFINE(n, ina219_pm_action);		\
-								\
-	SENSOR_DEVICE_DT_INST_DEFINE(n,				\
-			      ina219_init,			\
-			      PM_DEVICE_DT_INST_GET(n),		\
-			      &ina219_data_##n,			\
-			      &ina219_config_##n,		\
-			      POST_KERNEL,			\
-			      CONFIG_SENSOR_INIT_PRIORITY,	\
-			      &ina219_api);
+#define INA219_INIT(n)                                                                             \
+	static struct ina219_data ina219_data_##n;                                                 \
+                                                                                                   \
+	static const struct ina219_config ina219_config_##n = {                                    \
+		.bus = I2C_DT_SPEC_INST_GET(n),                                                    \
+		.current_lsb = DT_INST_PROP(n, lsb_microamp),                                      \
+		.r_shunt = DT_INST_PROP(n, shunt_milliohm),                                        \
+		.brng = DT_INST_PROP(n, brng),                                                     \
+		.pg = DT_INST_PROP(n, pg),                                                         \
+		.badc = DT_INST_PROP(n, badc),                                                     \
+		.sadc = DT_INST_PROP(n, sadc),                                                     \
+		.mode = INA219_MODE_NORMAL};                                                       \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(n, ina219_pm_action);                                             \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, ina219_init, PM_DEVICE_DT_INST_GET(n), &ina219_data_##n,   \
+				     &ina219_config_##n, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, \
+				     &ina219_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INA219_INIT)

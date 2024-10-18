@@ -8,9 +8,7 @@
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/drivers/i2s.h>
 
-
-static inline int z_vrfy_i2s_configure(const struct device *dev,
-				       enum i2s_dir dir,
+static inline int z_vrfy_i2s_configure(const struct device *dev, enum i2s_dir dir,
 				       const struct i2s_config *cfg_ptr)
 {
 	struct i2s_config config;
@@ -20,8 +18,7 @@ static inline int z_vrfy_i2s_configure(const struct device *dev,
 		goto out;
 	}
 
-	K_OOPS(k_usermode_from_copy(&config, (const void *)cfg_ptr,
-				sizeof(struct i2s_config)));
+	K_OOPS(k_usermode_from_copy(&config, (const void *)cfg_ptr, sizeof(struct i2s_config)));
 
 	/* Check that the k_mem_slab provided is a valid pointer and that
 	 * the caller has permission on it
@@ -43,8 +40,7 @@ out:
 }
 #include <zephyr/syscalls/i2s_configure_mrsh.c>
 
-static inline int z_vrfy_i2s_buf_read(const struct device *dev,
-				      void *buf, size_t *size)
+static inline int z_vrfy_i2s_buf_read(const struct device *dev, void *buf, size_t *size)
 {
 	void *mem_block;
 	size_t data_size;
@@ -63,21 +59,18 @@ static inline int z_vrfy_i2s_buf_read(const struct device *dev,
 		 */
 		rx_cfg = i2s_config_get((const struct device *)dev, I2S_DIR_RX);
 
-		copy_success = k_usermode_to_copy((void *)buf, mem_block,
-					      data_size);
+		copy_success = k_usermode_to_copy((void *)buf, mem_block, data_size);
 
 		k_mem_slab_free(rx_cfg->mem_slab, mem_block);
 		K_OOPS(copy_success);
-		K_OOPS(k_usermode_to_copy((void *)size, &data_size,
-				      sizeof(data_size)));
+		K_OOPS(k_usermode_to_copy((void *)size, &data_size, sizeof(data_size)));
 	}
 
 	return ret;
 }
 #include <zephyr/syscalls/i2s_buf_read_mrsh.c>
 
-static inline int z_vrfy_i2s_buf_write(const struct device *dev,
-				       void *buf, size_t size)
+static inline int z_vrfy_i2s_buf_write(const struct device *dev, void *buf, size_t size)
 {
 	int ret;
 	const struct i2s_config *tx_cfg;
@@ -113,8 +106,7 @@ static inline int z_vrfy_i2s_buf_write(const struct device *dev,
 }
 #include <zephyr/syscalls/i2s_buf_write_mrsh.c>
 
-static inline int z_vrfy_i2s_trigger(const struct device *dev,
-				     enum i2s_dir dir,
+static inline int z_vrfy_i2s_trigger(const struct device *dev, enum i2s_dir dir,
 				     enum i2s_trigger_cmd cmd)
 {
 	K_OOPS(K_SYSCALL_DRIVER_I2S(dev, trigger));

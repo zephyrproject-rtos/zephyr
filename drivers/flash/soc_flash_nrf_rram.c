@@ -46,7 +46,7 @@ LOG_MODULE_REGISTER(flash_nrf_rram, CONFIG_FLASH_LOG_LEVEL);
 #else
 #define RRAM_START DT_REG_ADDR(RRAM)
 #endif
-#define RRAM_SIZE  DT_REG_SIZE(RRAM)
+#define RRAM_SIZE DT_REG_SIZE(RRAM)
 
 #define PAGE_SIZE  DT_PROP(RRAM, erase_block_size)
 #define PAGE_COUNT ((RRAM_SIZE) / (PAGE_SIZE))
@@ -309,9 +309,10 @@ static const struct flash_parameters *nrf_rram_get_parameters(const struct devic
 	static const struct flash_parameters parameters = {
 		.write_block_size = WRITE_LINE_SIZE,
 		.erase_value = ERASE_VALUE,
-		.caps = {
-			.no_explicit_erase = true,
-		},
+		.caps =
+			{
+				.no_explicit_erase = true,
+			},
 	};
 
 	return &parameters;

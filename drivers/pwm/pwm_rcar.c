@@ -37,8 +37,8 @@ LOG_MODULE_REGISTER(pwm_rcar);
 #define RCAR_PWM_CR_CC_SHIFT 16
 #define RCAR_PWM_CR_CCMD     BIT(15) /* Frequency Division Mode */
 #define RCAR_PWM_CR_SYNC     BIT(11)
-#define RCAR_PWM_CR_SS	     BIT(4) /* Single Pulse Output */
-#define RCAR_PWM_CR_EN	     BIT(0) /* Channel Enable */
+#define RCAR_PWM_CR_SS       BIT(4) /* Single Pulse Output */
+#define RCAR_PWM_CR_EN       BIT(0) /* Channel Enable */
 
 /* PWM Diviser is on 5 bits (CC combined with CCMD) */
 #define RCAR_PWM_DIVISER_MASK  (RCAR_PWM_CR_CC_MASK | RCAR_PWM_CR_CCMD)
@@ -262,7 +262,6 @@ static const struct pwm_driver_api pwm_rcar_driver_api = {
 	};                                                                                         \
 	static struct pwm_rcar_data pwm_rcar_data_##n;                                             \
 	DEVICE_DT_INST_DEFINE(n, pwm_rcar_init, NULL, &pwm_rcar_data_##n, &pwm_rcar_cfg_##n,       \
-			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,                               \
-			      &pwm_rcar_driver_api);
+			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, &pwm_rcar_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_DEVICE_RCAR_INIT)

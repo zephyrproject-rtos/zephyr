@@ -42,7 +42,7 @@ struct sdadc_smartbond_data {
 	uint8_t result_index;
 };
 
-#define SMARTBOND_SDADC_CHANNEL_COUNT	8
+#define SMARTBOND_SDADC_CHANNEL_COUNT 8
 
 struct sdadc_smartbond_channel_cfg {
 	uint32_t sd_adc_ctrl_reg;
@@ -94,11 +94,11 @@ static int sdadc_smartbond_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	config->sd_adc_ctrl_reg =
-		channel_cfg->input_positive << SDADC_SDADC_CTRL_REG_SDADC_INP_SEL_Pos;
+	config->sd_adc_ctrl_reg = channel_cfg->input_positive
+				  << SDADC_SDADC_CTRL_REG_SDADC_INP_SEL_Pos;
 	if (channel_cfg->differential) {
-		config->sd_adc_ctrl_reg |=
-			channel_cfg->input_negative << SDADC_SDADC_CTRL_REG_SDADC_INN_SEL_Pos;
+		config->sd_adc_ctrl_reg |= channel_cfg->input_negative
+					   << SDADC_SDADC_CTRL_REG_SDADC_INN_SEL_Pos;
 	} else {
 		config->sd_adc_ctrl_reg |= SDADC_SDADC_CTRL_REG_SDADC_SE_Msk;
 	}
@@ -106,13 +106,12 @@ static int sdadc_smartbond_channel_setup(const struct device *dev,
 	return 0;
 }
 
-#define PER_CHANNEL_ADC_CONFIG_MASK (SDADC_SDADC_CTRL_REG_SDADC_INP_SEL_Msk |	\
-				     SDADC_SDADC_CTRL_REG_SDADC_INN_SEL_Msk |	\
-				     SDADC_SDADC_CTRL_REG_SDADC_SE_Msk		\
-)
+#define PER_CHANNEL_ADC_CONFIG_MASK                                                                \
+	(SDADC_SDADC_CTRL_REG_SDADC_INP_SEL_Msk | SDADC_SDADC_CTRL_REG_SDADC_INN_SEL_Msk |         \
+	 SDADC_SDADC_CTRL_REG_SDADC_SE_Msk)
 
 static inline void sdadc_smartbond_pm_policy_state_lock_get(const struct device *dev,
-					      struct sdadc_smartbond_data *data)
+							    struct sdadc_smartbond_data *data)
 {
 #if defined(CONFIG_PM_DEVICE)
 	pm_device_runtime_get(dev);
@@ -124,7 +123,7 @@ static inline void sdadc_smartbond_pm_policy_state_lock_get(const struct device 
 }
 
 static inline void sdadc_smartbond_pm_policy_state_lock_put(const struct device *dev,
-					      struct sdadc_smartbond_data *data)
+							    struct sdadc_smartbond_data *data)
 {
 #if defined(CONFIG_PM_DEVICE)
 	/*
@@ -135,7 +134,6 @@ static inline void sdadc_smartbond_pm_policy_state_lock_put(const struct device 
 #endif
 }
 
-
 static int pop_count(uint32_t n)
 {
 	return __builtin_popcount(n);
@@ -144,8 +142,7 @@ static int pop_count(uint32_t n)
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
 	uint32_t val;
-	struct sdadc_smartbond_data *data =
-		CONTAINER_OF(ctx, struct sdadc_smartbond_data, ctx);
+	struct sdadc_smartbond_data *data = CONTAINER_OF(ctx, struct sdadc_smartbond_data, ctx);
 	/* Extract lower channel from sequence mask */
 	int current_channel = u32_count_trailing_zeros(data->channel_read_mask);
 
@@ -159,27 +156,23 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	} else {
 		val = SDADC->SDADC_CTRL_REG & ~PER_CHANNEL_ADC_CONFIG_MASK;
 		val |= m_sdchannels[current_channel].sd_adc_ctrl_reg;
-		val |= SDADC_SDADC_CTRL_REG_SDADC_START_Msk |
-		       SDADC_SDADC_CTRL_REG_SDADC_MINT_Msk;
+		val |= SDADC_SDADC_CTRL_REG_SDADC_START_Msk | SDADC_SDADC_CTRL_REG_SDADC_MINT_Msk;
 		val |= (ctx->sequence.oversampling - 7) << SDADC_SDADC_CTRL_REG_SDADC_OSR_Pos;
 
 		SDADC->SDADC_CTRL_REG = val;
 	}
 }
 
-static void adc_context_update_buffer_pointer(struct adc_context *ctx,
-					      bool repeat)
+static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat)
 {
-	struct sdadc_smartbond_data *data =
-		CONTAINER_OF(ctx, struct sdadc_smartbond_data, ctx);
+	struct sdadc_smartbond_data *data = CONTAINER_OF(ctx, struct sdadc_smartbond_data, ctx);
 
 	if (!repeat) {
 		data->buffer += data->sequence_channel_count;
 	}
 }
 
-static int check_buffer_size(const struct adc_sequence *sequence,
-			     uint8_t active_channels)
+static int check_buffer_size(const struct adc_sequence *sequence, uint8_t active_channels)
 {
 	size_t needed_buffer_size;
 
@@ -189,16 +182,15 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 	}
 
 	if (sequence->buffer_size < needed_buffer_size) {
-		LOG_ERR("Provided buffer is too small (%u/%u)",
-			sequence->buffer_size, needed_buffer_size);
+		LOG_ERR("Provided buffer is too small (%u/%u)", sequence->buffer_size,
+			needed_buffer_size);
 		return -ENOMEM;
 	}
 
 	return 0;
 }
 
-static int start_read(const struct device *dev,
-		      const struct adc_sequence *sequence)
+static int start_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	int error;
 	struct sdadc_smartbond_data *data = dev->data;
@@ -215,8 +207,7 @@ static int start_read(const struct device *dev,
 	}
 
 	if (sequence->resolution < 8 || sequence->resolution > 15) {
-		LOG_ERR("ADC resolution value %d is not valid",
-			sequence->resolution);
+		LOG_ERR("ADC resolution value %d is not valid", sequence->resolution);
 		return -EINVAL;
 	}
 
@@ -243,8 +234,8 @@ static void sdadc_smartbond_isr(const struct device *dev)
 
 	SDADC->SDADC_CLEAR_INT_REG = 0;
 	/* Store current channel value, result is left justified, move bits right */
-	data->buffer[data->result_index++] = ((uint16_t)SDADC->SDADC_RESULT_REG) >>
-		(16 - data->ctx.sequence.resolution);
+	data->buffer[data->result_index++] =
+		((uint16_t)SDADC->SDADC_RESULT_REG) >> (16 - data->ctx.sequence.resolution);
 	/* Exclude channel from mask for further reading */
 	data->channel_read_mask ^= 1 << current_channel;
 
@@ -259,8 +250,7 @@ static void sdadc_smartbond_isr(const struct device *dev)
 }
 
 /* Implementation of the ADC driver API function: adc_read. */
-static int sdadc_smartbond_read(const struct device *dev,
-				const struct adc_sequence *sequence)
+static int sdadc_smartbond_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	int error;
 	struct sdadc_smartbond_data *data = dev->data;
@@ -275,8 +265,7 @@ static int sdadc_smartbond_read(const struct device *dev,
 
 #if defined(CONFIG_ADC_ASYNC)
 /* Implementation of the ADC driver API function: adc_read_sync. */
-static int sdadc_smartbond_read_async(const struct device *dev,
-				      const struct adc_sequence *sequence,
+static int sdadc_smartbond_read_async(const struct device *dev, const struct adc_sequence *sequence,
 				      struct k_poll_signal *async)
 {
 	struct sdadc_smartbond_data *data = dev->data;
@@ -298,9 +287,8 @@ static int sdadc_smartbond_resume(const struct device *dev)
 
 	da1469x_pd_acquire(MCU_PD_DOMAIN_COM);
 
-	SDADC->SDADC_TEST_REG =
-		(SDADC->SDADC_TEST_REG & ~SDADC_SDADC_TEST_REG_SDADC_CLK_FREQ_Msk) |
-		(config->sdadc_clk_freq) << SDADC_SDADC_TEST_REG_SDADC_CLK_FREQ_Pos;
+	SDADC->SDADC_TEST_REG = (SDADC->SDADC_TEST_REG & ~SDADC_SDADC_TEST_REG_SDADC_CLK_FREQ_Msk) |
+				(config->sdadc_clk_freq) << SDADC_SDADC_TEST_REG_SDADC_CLK_FREQ_Pos;
 
 	SDADC->SDADC_CTRL_REG = SDADC_SDADC_CTRL_REG_SDADC_EN_Msk;
 
@@ -347,8 +335,7 @@ static int sdadc_smartbond_suspend(const struct device *dev)
 	return 0;
 }
 
-static int sdadc_smartbond_pm_action(const struct device *dev,
-				   enum pm_device_action action)
+static int sdadc_smartbond_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	int ret;
 
@@ -382,8 +369,8 @@ static int sdadc_smartbond_init(const struct device *dev)
 
 #endif
 
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
-		    sdadc_smartbond_isr, DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), sdadc_smartbond_isr,
+		    DEVICE_DT_INST_GET(0), 0);
 
 	NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
 	NVIC_EnableIRQ(DT_INST_IRQN(0));
@@ -395,11 +382,11 @@ static int sdadc_smartbond_init(const struct device *dev)
 
 static const struct adc_driver_api sdadc_smartbond_driver_api = {
 	.channel_setup = sdadc_smartbond_channel_setup,
-	.read          = sdadc_smartbond_read,
+	.read = sdadc_smartbond_read,
 #ifdef CONFIG_ADC_ASYNC
-	.read_async    = sdadc_smartbond_read_async,
+	.read_async = sdadc_smartbond_read_async,
 #endif
-	.ref_internal  = 1200,
+	.ref_internal = 1200,
 };
 
 /*
@@ -411,27 +398,21 @@ static const struct adc_driver_api sdadc_smartbond_driver_api = {
  * Just in case that assumption becomes invalid in the future, we use
  * a BUILD_ASSERT().
  */
-#define SDADC_INIT(inst)							\
-	BUILD_ASSERT((inst) == 0,						\
-		     "multiple instances not supported");			\
-	PINCTRL_DT_INST_DEFINE(inst);						\
-	static const struct sdadc_smartbond_cfg sdadc_smartbond_cfg_##inst = {	\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),			\
-		.sdadc_clk_freq = DT_INST_PROP(inst, clock_freq),		\
-	};									\
-	static struct sdadc_smartbond_data sdadc_smartbond_data_##inst = {	\
-		ADC_CONTEXT_INIT_TIMER(sdadc_smartbond_data_##inst, ctx),	\
-		ADC_CONTEXT_INIT_LOCK(sdadc_smartbond_data_##inst, ctx),	\
-		ADC_CONTEXT_INIT_SYNC(sdadc_smartbond_data_##inst, ctx),	\
-	};									\
-	PM_DEVICE_DT_INST_DEFINE(inst, sdadc_smartbond_pm_action);	\
-	DEVICE_DT_INST_DEFINE(inst,						\
-			      sdadc_smartbond_init,  \
-				  PM_DEVICE_DT_INST_GET(inst),			\
-			      &sdadc_smartbond_data_##inst,			\
-			      &sdadc_smartbond_cfg_##inst,			\
-			      POST_KERNEL,					\
-			      CONFIG_ADC_INIT_PRIORITY,				\
-			      &sdadc_smartbond_driver_api);
+#define SDADC_INIT(inst)                                                                           \
+	BUILD_ASSERT((inst) == 0, "multiple instances not supported");                             \
+	PINCTRL_DT_INST_DEFINE(inst);                                                              \
+	static const struct sdadc_smartbond_cfg sdadc_smartbond_cfg_##inst = {                     \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
+		.sdadc_clk_freq = DT_INST_PROP(inst, clock_freq),                                  \
+	};                                                                                         \
+	static struct sdadc_smartbond_data sdadc_smartbond_data_##inst = {                         \
+		ADC_CONTEXT_INIT_TIMER(sdadc_smartbond_data_##inst, ctx),                          \
+		ADC_CONTEXT_INIT_LOCK(sdadc_smartbond_data_##inst, ctx),                           \
+		ADC_CONTEXT_INIT_SYNC(sdadc_smartbond_data_##inst, ctx),                           \
+	};                                                                                         \
+	PM_DEVICE_DT_INST_DEFINE(inst, sdadc_smartbond_pm_action);                                 \
+	DEVICE_DT_INST_DEFINE(inst, sdadc_smartbond_init, PM_DEVICE_DT_INST_GET(inst),             \
+			      &sdadc_smartbond_data_##inst, &sdadc_smartbond_cfg_##inst,           \
+			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, &sdadc_smartbond_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SDADC_INIT)

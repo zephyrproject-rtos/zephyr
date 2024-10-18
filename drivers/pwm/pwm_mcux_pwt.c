@@ -41,9 +41,9 @@ struct mcux_pwt_data {
 	pwm_capture_callback_handler_t callback;
 	void *user_data;
 	pwt_config_t pwt_config;
-	bool continuous : 1;
-	bool inverted : 1;
-	bool overflowed : 1;
+	bool continuous: 1;
+	bool inverted: 1;
+	bool overflowed: 1;
 };
 
 static inline bool mcux_pwt_is_active(const struct device *dev)
@@ -53,9 +53,8 @@ static inline bool mcux_pwt_is_active(const struct device *dev)
 	return !!(config->base->CS & PWT_CS_PWTEN_MASK);
 }
 
-static int mcux_pwt_set_cycles(const struct device *dev, uint32_t channel,
-			       uint32_t period_cycles, uint32_t pulse_cycles,
-			       pwm_flags_t flags)
+static int mcux_pwt_set_cycles(const struct device *dev, uint32_t channel, uint32_t period_cycles,
+			       uint32_t pulse_cycles, pwm_flags_t flags)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(channel);
@@ -68,10 +67,8 @@ static int mcux_pwt_set_cycles(const struct device *dev, uint32_t channel,
 	return -ENOTSUP;
 }
 
-static int mcux_pwt_configure_capture(const struct device *dev,
-				      uint32_t channel, pwm_flags_t flags,
-				      pwm_capture_callback_handler_t cb,
-				      void *user_data)
+static int mcux_pwt_configure_capture(const struct device *dev, uint32_t channel, pwm_flags_t flags,
+				      pwm_capture_callback_handler_t cb, void *user_data)
 {
 	const struct mcux_pwt_config *config = dev->config;
 	struct mcux_pwt_data *data = dev->data;
@@ -93,7 +90,7 @@ static int mcux_pwt_configure_capture(const struct device *dev,
 	}
 
 	if (((flags & PWM_CAPTURE_TYPE_MASK) == PWM_CAPTURE_TYPE_PERIOD) &&
-		((flags & PWM_POLARITY_MASK) == PWM_POLARITY_NORMAL)) {
+	    ((flags & PWM_POLARITY_MASK) == PWM_POLARITY_NORMAL)) {
 		LOG_ERR("Cannot capture period in normal polarity (active-high pulse)");
 		return -ENOTSUP;
 	}
@@ -104,15 +101,12 @@ static int mcux_pwt_configure_capture(const struct device *dev,
 
 	data->pwt_config.inputSelect = channel;
 
-	data->continuous =
-		(flags & PWM_CAPTURE_MODE_MASK) == PWM_CAPTURE_MODE_CONTINUOUS;
-	data->inverted =
-		(flags & PWM_POLARITY_MASK) == PWM_POLARITY_INVERTED;
+	data->continuous = (flags & PWM_CAPTURE_MODE_MASK) == PWM_CAPTURE_MODE_CONTINUOUS;
+	data->inverted = (flags & PWM_POLARITY_MASK) == PWM_POLARITY_INVERTED;
 
 	PWT_Init(config->base, &data->pwt_config);
-	PWT_EnableInterrupts(config->base,
-			     kPWT_PulseWidthReadyInterruptEnable |
-			     kPWT_CounterOverflowInterruptEnable);
+	PWT_EnableInterrupts(config->base, kPWT_PulseWidthReadyInterruptEnable |
+						   kPWT_CounterOverflowInterruptEnable);
 
 	return 0;
 }
@@ -159,10 +153,8 @@ static int mcux_pwt_disable_capture(const struct device *dev, uint32_t channel)
 	return 0;
 }
 
-static int mcux_pwt_calc_period(uint16_t ppw, uint16_t npw,
-				uint32_t high_overflows,
-				uint32_t low_overflows,
-				uint32_t *result)
+static int mcux_pwt_calc_period(uint16_t ppw, uint16_t npw, uint32_t high_overflows,
+				uint32_t low_overflows, uint32_t *result)
 {
 	uint32_t period;
 
@@ -191,8 +183,7 @@ static int mcux_pwt_calc_period(uint16_t ppw, uint16_t npw,
 	return 0;
 }
 
-static int mcux_pwt_calc_pulse(uint16_t pw, uint32_t overflows,
-			       uint32_t *result)
+static int mcux_pwt_calc_pulse(uint16_t pw, uint32_t overflows, uint32_t *result)
 {
 	uint32_t pulse;
 
@@ -226,11 +217,11 @@ static void mcux_pwt_isr(const struct device *dev)
 
 	if (flags & kPWT_CounterOverflowFlag) {
 		if (config->base->CR & PWT_CR_LVL_MASK) {
-			data->overflowed |= u32_add_overflow(1,
-				data->high_overflows, &data->high_overflows);
+			data->overflowed |=
+				u32_add_overflow(1, data->high_overflows, &data->high_overflows);
 		} else {
-			data->overflowed |= u32_add_overflow(1,
-				data->low_overflows, &data->low_overflows);
+			data->overflowed |=
+				u32_add_overflow(1, data->low_overflows, &data->low_overflows);
 		}
 
 		PWT_ClearStatusFlags(config->base, kPWT_CounterOverflowFlag);
@@ -245,30 +236,25 @@ static void mcux_pwt_isr(const struct device *dev)
 		}
 
 		if (data->inverted) {
-			err = mcux_pwt_calc_pulse(npw, data->low_overflows,
-						  &pulse);
+			err = mcux_pwt_calc_pulse(npw, data->low_overflows, &pulse);
 		} else {
-			err = mcux_pwt_calc_pulse(ppw, data->high_overflows,
-						  &pulse);
+			err = mcux_pwt_calc_pulse(ppw, data->high_overflows, &pulse);
 		}
 
 		if (err == 0) {
-			err = mcux_pwt_calc_period(ppw, npw,
-						   data->high_overflows,
-						   data->low_overflows,
-						   &period);
+			err = mcux_pwt_calc_period(ppw, npw, data->high_overflows,
+						   data->low_overflows, &period);
 		}
 
 		if (data->overflowed) {
 			err = -ERANGE;
 		}
 
-		LOG_DBG("period = %d, pulse = %d, err = %d", period, pulse,
-			err);
+		LOG_DBG("period = %d, pulse = %d, err = %d", period, pulse, err);
 
 		if (data->callback) {
-			data->callback(dev, data->pwt_config.inputSelect,
-				       period, pulse, err, data->user_data);
+			data->callback(dev, data->pwt_config.inputSelect, period, pulse, err,
+				       data->user_data);
 		}
 
 		data->overflowed = false;
@@ -278,8 +264,7 @@ static void mcux_pwt_isr(const struct device *dev)
 	}
 }
 
-static int mcux_pwt_get_cycles_per_sec(const struct device *dev,
-				       uint32_t channel, uint64_t *cycles)
+static int mcux_pwt_get_cycles_per_sec(const struct device *dev, uint32_t channel, uint64_t *cycles)
 {
 	const struct mcux_pwt_config *config = dev->config;
 	struct mcux_pwt_data *data = dev->data;
@@ -303,8 +288,7 @@ static int mcux_pwt_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
-				   &data->clock_freq)) {
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &data->clock_freq)) {
 		LOG_ERR("could not get clock frequency");
 		return -EINVAL;
 	}
@@ -335,37 +319,31 @@ static const struct pwm_driver_api mcux_pwt_driver_api = {
 
 #define TO_PWT_PRESCALE_DIVIDE(val) _DO_CONCAT(kPWT_Prescale_Divide_, val)
 
-#define PWT_DEVICE(n) \
-	static void mcux_pwt_config_func_##n(const struct device *dev);	\
-									\
-	PINCTRL_DT_INST_DEFINE(n);					\
-									\
-	static const struct mcux_pwt_config mcux_pwt_config_##n = {	\
-		.base = (PWT_Type *)DT_INST_REG_ADDR(n),		\
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
-		.clock_subsys =						\
-		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
-		.pwt_clock_source = kPWT_BusClock,			\
-		.prescale =						\
-		TO_PWT_PRESCALE_DIVIDE(DT_INST_PROP(n, prescaler)),	\
-		.irq_config_func = mcux_pwt_config_func_##n,		\
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
-	};								\
-									\
-	static struct mcux_pwt_data mcux_pwt_data_##n;			\
-									\
-	DEVICE_DT_INST_DEFINE(n, &mcux_pwt_init,			\
-			NULL, &mcux_pwt_data_##n,			\
-			&mcux_pwt_config_##n,				\
-			POST_KERNEL,					\
-			CONFIG_PWM_INIT_PRIORITY,			\
-			&mcux_pwt_driver_api);				\
-									\
-	static void mcux_pwt_config_func_##n(const struct device *dev)	\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
-			mcux_pwt_isr, DEVICE_DT_INST_GET(n), 0);	\
-		irq_enable(DT_INST_IRQN(n));				\
+#define PWT_DEVICE(n)                                                                              \
+	static void mcux_pwt_config_func_##n(const struct device *dev);                            \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+                                                                                                   \
+	static const struct mcux_pwt_config mcux_pwt_config_##n = {                                \
+		.base = (PWT_Type *)DT_INST_REG_ADDR(n),                                           \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
+		.pwt_clock_source = kPWT_BusClock,                                                 \
+		.prescale = TO_PWT_PRESCALE_DIVIDE(DT_INST_PROP(n, prescaler)),                    \
+		.irq_config_func = mcux_pwt_config_func_##n,                                       \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+	};                                                                                         \
+                                                                                                   \
+	static struct mcux_pwt_data mcux_pwt_data_##n;                                             \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &mcux_pwt_init, NULL, &mcux_pwt_data_##n, &mcux_pwt_config_##n,   \
+			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, &mcux_pwt_driver_api);        \
+                                                                                                   \
+	static void mcux_pwt_config_func_##n(const struct device *dev)                             \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_pwt_isr,               \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(PWT_DEVICE)

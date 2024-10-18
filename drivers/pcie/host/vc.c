@@ -23,39 +23,28 @@ uint32_t pcie_vc_cap_lookup(pcie_bdf_t bdf, struct pcie_vc_regs *regs)
 		}
 	}
 
-	regs->cap_reg_1.raw = pcie_conf_read(bdf, base +
-					     PCIE_VC_CAP_REG_1_OFFSET);
-	regs->cap_reg_2.raw = pcie_conf_read(bdf, base +
-					     PCIE_VC_CAP_REG_2_OFFSET);
-	regs->ctrl_reg.raw = pcie_conf_read(bdf, base +
-					    PCIE_VC_CTRL_STATUS_REG_OFFSET);
+	regs->cap_reg_1.raw = pcie_conf_read(bdf, base + PCIE_VC_CAP_REG_1_OFFSET);
+	regs->cap_reg_2.raw = pcie_conf_read(bdf, base + PCIE_VC_CAP_REG_2_OFFSET);
+	regs->ctrl_reg.raw = pcie_conf_read(bdf, base + PCIE_VC_CTRL_STATUS_REG_OFFSET);
 
 	return base;
 }
 
-void pcie_vc_load_resources_regs(pcie_bdf_t bdf,
-				 uint32_t base,
-				 struct pcie_vc_resource_regs *regs,
+void pcie_vc_load_resources_regs(pcie_bdf_t bdf, uint32_t base, struct pcie_vc_resource_regs *regs,
 				 int nb_regs)
 {
 	int idx;
 
 	for (idx = 0; idx < nb_regs; idx++) {
-		regs->cap_reg.raw =
-			pcie_conf_read(bdf, base +
-				       PCIE_VC_RES_CAP_REG_OFFSET(idx));
-		regs->ctrl_reg.raw =
-			pcie_conf_read(bdf, base +
-				       PCIE_VC_RES_CTRL_REG_OFFSET(idx));
+		regs->cap_reg.raw = pcie_conf_read(bdf, base + PCIE_VC_RES_CAP_REG_OFFSET(idx));
+		regs->ctrl_reg.raw = pcie_conf_read(bdf, base + PCIE_VC_RES_CTRL_REG_OFFSET(idx));
 		regs->status_reg.raw =
-			pcie_conf_read(bdf, base +
-				       PCIE_VC_RES_STATUS_REG_OFFSET(idx));
+			pcie_conf_read(bdf, base + PCIE_VC_RES_STATUS_REG_OFFSET(idx));
 		regs++;
 	}
 }
 
-static int get_vc_registers(pcie_bdf_t bdf,
-			    struct pcie_vc_regs *regs,
+static int get_vc_registers(pcie_bdf_t bdf, struct pcie_vc_regs *regs,
 			    struct pcie_vc_resource_regs *res_regs)
 {
 	uint32_t base;
@@ -70,12 +59,10 @@ static int get_vc_registers(pcie_bdf_t bdf,
 		return -ENOTSUP;
 	}
 
-	pcie_vc_load_resources_regs(bdf, base, res_regs,
-			       regs->cap_reg_1.vc_count + 1);
+	pcie_vc_load_resources_regs(bdf, base, res_regs, regs->cap_reg_1.vc_count + 1);
 
 	return 0;
 }
-
 
 int pcie_vc_enable(pcie_bdf_t bdf)
 {

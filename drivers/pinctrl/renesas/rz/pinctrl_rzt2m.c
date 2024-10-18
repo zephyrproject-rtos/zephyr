@@ -39,10 +39,10 @@ static void pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 
 	/* Set proper bit in the RSELP register to use as non-safety domain. */
 	sys_write8(rselp | BIT(pin->pin), RSELP(pin->port));
-	sys_write8(DRCTL_CONFIG(
-		pin->drive_strength, (pin->pull_up == 1 ? 1U : (pin->pull_down == 1 ? 2U : 0)),
-		pin->schmitt_enable, pin->slew_rate),
-		  DRCTL(pin->port, pin->pin));
+	sys_write8(DRCTL_CONFIG(pin->drive_strength,
+				(pin->pull_up == 1 ? 1U : (pin->pull_down == 1 ? 2U : 0)),
+				pin->schmitt_enable, pin->slew_rate),
+		   DRCTL(pin->port, pin->pin));
 
 	/* Select function for the pin. */
 	sys_write32(pfc | pin->func << (pin->pin * 4), PFC(pin->port));

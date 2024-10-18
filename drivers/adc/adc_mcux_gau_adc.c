@@ -81,7 +81,8 @@ static int mcux_gau_adc_channel_setup(const struct device *dev,
 	/* If user changed the warmup time, warn  */
 	if (base->ADC_REG_INTERVAL != tmp_reg) {
 		LOG_WRN("Acquisition/Warmup time is global to entire ADC peripheral, "
-		"i.e. channel_setup will override this property for all previous channels.");
+			"i.e. channel_setup will override this property for all previous "
+			"channels.");
 	}
 
 	/* Set Input Gain */
@@ -100,7 +101,8 @@ static int mcux_gau_adc_channel_setup(const struct device *dev,
 	/* If user changed the gain, warn */
 	if (base->ADC_REG_ANA != tmp_reg) {
 		LOG_WRN("Input gain is global to entire ADC peripheral, "
-		"i.e. channel_setup will override this property for all previous channels.");
+			"i.e. channel_setup will override this property for all previous "
+			"channels.");
 	}
 
 	/* Set Reference voltage of ADC */
@@ -119,7 +121,8 @@ static int mcux_gau_adc_channel_setup(const struct device *dev,
 	/* if user changed the reference voltage, warn */
 	if (base->ADC_REG_ANA != tmp_reg) {
 		LOG_WRN("Reference voltage is global to entire ADC peripheral, "
-		"i.e. channel_setup will override this property for all previous channels.");
+			"i.e. channel_setup will override this property for all previous "
+			"channels.");
 	}
 
 	data->channel_sources[channel_id] = source_channel;
@@ -130,8 +133,7 @@ static int mcux_gau_adc_channel_setup(const struct device *dev,
 static void mcux_gau_adc_read_samples(struct k_work *work)
 {
 	struct mcux_gau_adc_data *data =
-				CONTAINER_OF(work, struct mcux_gau_adc_data,
-						read_samples_work);
+		CONTAINER_OF(work, struct mcux_gau_adc_data, read_samples_work);
 	const struct device *dev = data->dev;
 	const struct mcux_gau_adc_config *config = dev->config;
 	ADC_Type *base = config->base;
@@ -145,7 +147,6 @@ static void mcux_gau_adc_read_samples(struct k_work *work)
 
 	adc_context_on_sampling_done(&data->ctx, dev);
 }
-
 
 static void mcux_gau_adc_isr(const struct device *dev)
 {
@@ -166,8 +167,7 @@ static void mcux_gau_adc_isr(const struct device *dev)
 
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
-	struct mcux_gau_adc_data *data =
-		CONTAINER_OF(ctx, struct mcux_gau_adc_data, ctx);
+	struct mcux_gau_adc_data *data = CONTAINER_OF(ctx, struct mcux_gau_adc_data, ctx);
 	const struct mcux_gau_adc_config *config = data->dev->config;
 	ADC_Type *base = config->base;
 
@@ -175,19 +175,16 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	ADC_DoSoftwareTrigger(base);
 }
 
-static void adc_context_update_buffer_pointer(struct adc_context *ctx,
-					      bool repeat_sampling)
+static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat_sampling)
 {
-	struct mcux_gau_adc_data *data =
-		CONTAINER_OF(ctx, struct mcux_gau_adc_data, ctx);
+	struct mcux_gau_adc_data *data = CONTAINER_OF(ctx, struct mcux_gau_adc_data, ctx);
 
 	if (repeat_sampling) {
 		data->results = data->repeat;
 	}
 }
 
-static int mcux_gau_adc_do_read(const struct device *dev,
-		   const struct adc_sequence *sequence)
+static int mcux_gau_adc_do_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	const struct mcux_gau_adc_config *config = dev->config;
 	ADC_Type *base = config->base;
@@ -206,8 +203,8 @@ static int mcux_gau_adc_do_read(const struct device *dev,
 	}
 
 	/* Buffer must hold (number of samples per channel) * (number of channels) samples */
-	if ((sequence->options != NULL && sequence->buffer_size <
-	    ((1 + sequence->options->extra_samplings) * num_channels)) ||
+	if ((sequence->options != NULL &&
+	     sequence->buffer_size < ((1 + sequence->options->extra_samplings) * num_channels)) ||
 	    (sequence->options == NULL && sequence->buffer_size < num_channels)) {
 		LOG_ERR("Buffer size too small");
 		return -ENOMEM;
@@ -222,9 +219,8 @@ static int mcux_gau_adc_do_read(const struct device *dev,
 	/* Set up scan channels */
 	for (int channel = 0; channel < NUM_ADC_CHANNELS; channel++) {
 		if (sequence->channels & (0x1 << channel)) {
-			ADC_SetScanChannel(base,
-				data->scan_length - num_channels--,
-				data->channel_sources[channel]);
+			ADC_SetScanChannel(base, data->scan_length - num_channels--,
+					   data->channel_sources[channel]);
 		}
 	}
 
@@ -275,8 +271,7 @@ static int mcux_gau_adc_do_read(const struct device *dev,
 	return adc_context_wait_for_completion(&data->ctx);
 }
 
-static int mcux_gau_adc_read(const struct device *dev,
-			   const struct adc_sequence *sequence)
+static int mcux_gau_adc_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	struct mcux_gau_adc_data *data = dev->data;
 	int error;
@@ -288,8 +283,7 @@ static int mcux_gau_adc_read(const struct device *dev,
 }
 
 #ifdef CONFIG_ADC_ASYNC
-static int mcux_gau_adc_read_async(const struct device *dev,
-				   const struct adc_sequence *sequence,
+static int mcux_gau_adc_read_async(const struct device *dev, const struct adc_sequence *sequence,
 				   struct k_poll_signal *async)
 {
 	struct mcux_gau_adc_data *data = dev->data;
@@ -301,7 +295,6 @@ static int mcux_gau_adc_read_async(const struct device *dev,
 	return error;
 }
 #endif
-
 
 static int mcux_gau_adc_init(const struct device *dev)
 {
@@ -360,33 +353,31 @@ static const struct adc_driver_api mcux_gau_adc_driver_api = {
 	.ref_internal = 1200,
 };
 
-
-#define GAU_ADC_MCUX_INIT(n)							\
-										\
-	static void mcux_gau_adc_config_func_##n(const struct device *dev);     \
-										\
-	static const struct mcux_gau_adc_config mcux_gau_adc_config_##n = {	\
-		.base = (ADC_Type *)DT_INST_REG_ADDR(n),			\
-		.irq_config_func = mcux_gau_adc_config_func_##n,		\
-		/* Minus one because DT starts at 1, HAL enum starts at 0 */	\
-		.clock_div = DT_INST_PROP(n, nxp_clock_divider) - 1,		\
-		.power_mode = DT_INST_ENUM_IDX(n, nxp_power_mode),		\
-		.input_gain_buffer = DT_INST_PROP(n, nxp_input_buffer),		\
-		.cal_volt = DT_INST_ENUM_IDX(n, nxp_calibration_voltage),	\
-	};									\
-										\
-	static struct mcux_gau_adc_data mcux_gau_adc_data_##n = {0};		\
-										\
-	DEVICE_DT_INST_DEFINE(n, &mcux_gau_adc_init, NULL,			\
-			      &mcux_gau_adc_data_##n, &mcux_gau_adc_config_##n,	\
-			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,		\
-			      &mcux_gau_adc_driver_api);			\
-										\
-	static void mcux_gau_adc_config_func_##n(const struct device *dev)	\
-	{									\
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),		\
-				mcux_gau_adc_isr, DEVICE_DT_INST_GET(n), 0);	\
-		irq_enable(DT_INST_IRQN(n));					\
+#define GAU_ADC_MCUX_INIT(n)                                                                       \
+                                                                                                   \
+	static void mcux_gau_adc_config_func_##n(const struct device *dev);                        \
+                                                                                                   \
+	static const struct mcux_gau_adc_config mcux_gau_adc_config_##n = {                        \
+		.base = (ADC_Type *)DT_INST_REG_ADDR(n),                                           \
+		.irq_config_func = mcux_gau_adc_config_func_##n, /* Minus one because DT starts at \
+								    1, HAL enum starts at 0 */     \
+		.clock_div = DT_INST_PROP(n, nxp_clock_divider) - 1,                               \
+		.power_mode = DT_INST_ENUM_IDX(n, nxp_power_mode),                                 \
+		.input_gain_buffer = DT_INST_PROP(n, nxp_input_buffer),                            \
+		.cal_volt = DT_INST_ENUM_IDX(n, nxp_calibration_voltage),                          \
+	};                                                                                         \
+                                                                                                   \
+	static struct mcux_gau_adc_data mcux_gau_adc_data_##n = {0};                               \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &mcux_gau_adc_init, NULL, &mcux_gau_adc_data_##n,                 \
+			      &mcux_gau_adc_config_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,     \
+			      &mcux_gau_adc_driver_api);                                           \
+                                                                                                   \
+	static void mcux_gau_adc_config_func_##n(const struct device *dev)                         \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_gau_adc_isr,           \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(GAU_ADC_MCUX_INIT)

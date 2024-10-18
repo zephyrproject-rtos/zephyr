@@ -11,11 +11,11 @@
 #include <string.h>
 #include <zephyr/sys/byteorder.h>
 
-#if defined(RMU_RSTCAUSE_BODUNREGRST) || defined(RMU_RSTCAUSE_BODREGRST) || \
-    defined(RMU_RSTCAUSE_AVDDBOD) || defined(RMU_RSTCAUSE_DVDDBOD) || \
-    defined(RMU_RSTCAUSE_DECBOD) || defined(RMU_RSTCAUSE_BODAVDD0) || \
-    defined(RMU_RSTCAUSE_BODAVDD1) || \
-    (defined(BU_PRESENT) && defined(_SILICON_LABS_32B_SERIES_0))
+#if defined(RMU_RSTCAUSE_BODUNREGRST) || defined(RMU_RSTCAUSE_BODREGRST) ||                        \
+	defined(RMU_RSTCAUSE_AVDDBOD) || defined(RMU_RSTCAUSE_DVDDBOD) ||                          \
+	defined(RMU_RSTCAUSE_DECBOD) || defined(RMU_RSTCAUSE_BODAVDD0) ||                          \
+	defined(RMU_RSTCAUSE_BODAVDD1) ||                                                          \
+	(defined(BU_PRESENT) && defined(_SILICON_LABS_32B_SERIES_0))
 #define HAS_BROWNOUT 1
 #endif
 
@@ -162,17 +162,13 @@ int z_impl_hwinfo_clear_reset_cause(void)
 
 int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 {
-	*supported = RESET_PIN
-			| RESET_SOFTWARE
-			| RESET_POR
-			| RESET_WATCHDOG
-			| RESET_CPU_LOCKUP
+	*supported = RESET_PIN | RESET_SOFTWARE | RESET_POR | RESET_WATCHDOG | RESET_CPU_LOCKUP
 #if defined(RMU_RSTCAUSE_EM4WURST) || defined(RMU_RSTCAUSE_EM4RST)
-			| RESET_LOW_POWER_WAKE
+		     | RESET_LOW_POWER_WAKE
 #endif /* defined(RMU_RSTCAUSE_EM4WURST) || defined(RMU_RSTCAUSE_EM4RST) */
 #if HAS_BROWNOUT
-			| RESET_BROWNOUT
+		     | RESET_BROWNOUT
 #endif /* HAS_BROWNOUT */
-			;
+		;
 	return 0;
 }

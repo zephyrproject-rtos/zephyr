@@ -13,9 +13,9 @@
 #include "intc_sam0_eic_priv.h"
 
 struct sam0_eic_line_assignment {
-	uint8_t pin : 5;
-	uint8_t port : 2;
-	uint8_t enabled : 1;
+	uint8_t pin: 5;
+	uint8_t port: 2;
+	uint8_t enabled: 1;
 };
 
 struct sam0_eic_port_data {
@@ -84,17 +84,15 @@ static void sam0_eic_isr(const struct device *dev)
 		 * usually on a single one will be set, so just call them
 		 * one by one.
 		 */
-		struct sam0_eic_line_assignment *line_assignment =
-			&dev_data->lines[line_index];
-		struct sam0_eic_port_data *port_data =
-			&dev_data->ports[line_assignment->port];
+		struct sam0_eic_line_assignment *line_assignment = &dev_data->lines[line_index];
+		struct sam0_eic_port_data *port_data = &dev_data->ports[line_assignment->port];
 
 		port_data->cb(BIT(line_assignment->pin), port_data->data);
 	}
 }
 
-int sam0_eic_acquire(int port, int pin, enum sam0_eic_trigger trigger,
-		     bool filter, sam0_eic_callback_t cb, void *data)
+int sam0_eic_acquire(int port, int pin, enum sam0_eic_trigger trigger, bool filter,
+		     sam0_eic_callback_t cb, void *data)
 {
 	const struct device *const dev = DEVICE_DT_INST_GET(0);
 	struct sam0_eic_data *dev_data = dev->data;
@@ -125,8 +123,7 @@ int sam0_eic_acquire(int port, int pin, enum sam0_eic_trigger trigger,
 
 	/* Check that the required line is available */
 	if (line_assignment->enabled) {
-		if (line_assignment->port != port ||
-		    line_assignment->pin != pin) {
+		if (line_assignment->port != port || line_assignment->pin != pin) {
 			goto err_in_use;
 		}
 	}
@@ -188,15 +185,13 @@ static bool sam0_eic_check_ownership(int port, int pin, int line_index)
 {
 	const struct device *const dev = DEVICE_DT_INST_GET(0);
 	struct sam0_eic_data *dev_data = dev->data;
-	struct sam0_eic_line_assignment *line_assignment =
-		&dev_data->lines[line_index];
+	struct sam0_eic_line_assignment *line_assignment = &dev_data->lines[line_index];
 
 	if (!line_assignment->enabled) {
 		return false;
 	}
 
-	if (line_assignment->port != port ||
-	    line_assignment->pin != pin) {
+	if (line_assignment->port != port || line_assignment->pin != pin) {
 		return false;
 	}
 
@@ -323,13 +318,11 @@ uint32_t sam0_eic_interrupt_pending(int port)
 	return mask;
 }
 
-
-#define SAM0_EIC_IRQ_CONNECT(n)						\
-	do {								\
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, n, irq),		\
-			    DT_INST_IRQ_BY_IDX(0, n, priority),		\
-			    sam0_eic_isr, DEVICE_DT_INST_GET(0), 0);	\
-		irq_enable(DT_INST_IRQ_BY_IDX(0, n, irq));		\
+#define SAM0_EIC_IRQ_CONNECT(n)                                                                    \
+	do {                                                                                       \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, n, irq), DT_INST_IRQ_BY_IDX(0, n, priority),     \
+			    sam0_eic_isr, DEVICE_DT_INST_GET(0), 0);                               \
+		irq_enable(DT_INST_IRQ_BY_IDX(0, n, irq));                                         \
 	} while (false)
 
 static int sam0_eic_init(const struct device *dev)
@@ -341,15 +334,13 @@ static int sam0_eic_init(const struct device *dev)
 	MCLK->APBAMASK.reg |= MCLK_APBAMASK_EIC;
 
 	/* Enable the GCLK */
-	GCLK->PCHCTRL[EIC_GCLK_ID].reg = GCLK_PCHCTRL_GEN_GCLK0 |
-					 GCLK_PCHCTRL_CHEN;
+	GCLK->PCHCTRL[EIC_GCLK_ID].reg = GCLK_PCHCTRL_GEN_GCLK0 | GCLK_PCHCTRL_CHEN;
 #else
 	/* Enable the EIC clock in PM */
 	PM->APBAMASK.bit.EIC_ = 1;
 
 	/* Enable the GCLK */
-	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID_EIC | GCLK_CLKCTRL_GEN_GCLK0 |
-			    GCLK_CLKCTRL_CLKEN;
+	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID_EIC | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_CLKEN;
 #endif
 
 #if DT_INST_IRQ_HAS_CELL(0, irq)
@@ -408,7 +399,5 @@ static int sam0_eic_init(const struct device *dev)
 }
 
 static struct sam0_eic_data eic_data;
-DEVICE_DT_INST_DEFINE(0, sam0_eic_init,
-	      NULL, &eic_data, NULL,
-	      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
-	      NULL);
+DEVICE_DT_INST_DEFINE(0, sam0_eic_init, NULL, &eic_data, NULL, PRE_KERNEL_1,
+		      CONFIG_INTC_INIT_PRIORITY, NULL);

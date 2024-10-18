@@ -274,8 +274,7 @@ static int adc_ads7052_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	k_thread_create(&data->thread, data->stack,
-			K_KERNEL_STACK_SIZEOF(data->stack),
+	k_thread_create(&data->thread, data->stack, K_KERNEL_STACK_SIZEOF(data->stack),
 			ads7052_acquisition_thread, data, NULL, NULL,
 			CONFIG_ADC_ADS7052_ACQUISITION_THREAD_PRIO, 0, K_NO_WAIT);
 
@@ -292,7 +291,7 @@ static const struct adc_driver_api ads7052_api = {
 #endif
 };
 
-#define ADC_ADS7052_SPI_CFG \
+#define ADC_ADS7052_SPI_CFG                                                                        \
 	SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_TRANSFER_MSB
 
 #define ADC_ADS7052_INIT(n)                                                                        \

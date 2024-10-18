@@ -252,17 +252,16 @@ static const struct sensor_driver_api ina230_driver_api = {
 	static struct ina230_data drv_data_##inst;                                                 \
 	static const struct ina230_config drv_config_##inst = {                                    \
 		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.config = DT_INST_PROP(inst, config) |                           \
-			(DT_INST_ENUM_IDX(inst, avg_count) << 9) |                   \
-			(DT_INST_ENUM_IDX(inst, vbus_conversion_time_us) << 6) |     \
-			(DT_INST_ENUM_IDX(inst, vshunt_conversion_time_us) << 3) |   \
-			DT_INST_ENUM_IDX(inst, adc_mode),                            \
+		.config = DT_INST_PROP(inst, config) | (DT_INST_ENUM_IDX(inst, avg_count) << 9) |  \
+			  (DT_INST_ENUM_IDX(inst, vbus_conversion_time_us) << 6) |                 \
+			  (DT_INST_ENUM_IDX(inst, vshunt_conversion_time_us) << 3) |               \
+			  DT_INST_ENUM_IDX(inst, adc_mode),                                        \
 		.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),                          \
 		.cal = (uint16_t)((INA230_CAL_SCALING * 10000000ULL) /                             \
 				  ((uint64_t)DT_INST_PROP(inst, current_lsb_microamps) *           \
 				   DT_INST_PROP(inst, rshunt_micro_ohms))),                        \
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, alert_gpios), (INA230_CFG_IRQ(inst)),      \
-			    ())};                                                                  \
+			    ())};   \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, &ina230_init, NULL, &drv_data_##inst,                   \
 				     &drv_config_##inst, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, \
 				     &ina230_driver_api);

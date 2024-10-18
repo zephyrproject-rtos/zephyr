@@ -83,7 +83,7 @@ static int pcie_ecam_init(const struct device *dev)
 	 * TOFIX:
 	 * - handle prefetchable bit
 	 */
-	for (i = 0 ; i < cfg->ranges_count ; ++i) {
+	for (i = 0; i < cfg->ranges_count; ++i) {
 		switch ((cfg->ranges[i].flags >> 24) & 0x03) {
 		case 0x01:
 			data->regions[PCIE_REGION_IO].bus_start = cfg->ranges[i].pcie_bus_addr;
@@ -115,8 +115,7 @@ static int pcie_ecam_init(const struct device *dev)
 		}
 	}
 
-	if (!data->regions[PCIE_REGION_IO].size &&
-	    !data->regions[PCIE_REGION_MEM].size &&
+	if (!data->regions[PCIE_REGION_IO].size && !data->regions[PCIE_REGION_MEM].size &&
 	    !data->regions[PCIE_REGION_MEM64].size) {
 		LOG_ERR("No regions defined");
 		return -EINVAL;
@@ -166,10 +165,10 @@ static int pcie_ecam_init(const struct device *dev)
 	/* Map config space to be used by the pcie_generic_ctrl_conf_read/write callbacks */
 	device_map(&data->cfg_addr, data->cfg_phys_addr, data->cfg_size, K_MEM_CACHE_NONE);
 
-	LOG_DBG("Config space [0x%lx - 0x%lx, size 0x%lx]",
-		data->cfg_phys_addr, (data->cfg_phys_addr + data->cfg_size - 1), data->cfg_size);
-	LOG_DBG("Config mapped [0x%lx - 0x%lx, size 0x%lx]",
-		data->cfg_addr, (data->cfg_addr + data->cfg_size - 1), data->cfg_size);
+	LOG_DBG("Config space [0x%lx - 0x%lx, size 0x%lx]", data->cfg_phys_addr,
+		(data->cfg_phys_addr + data->cfg_size - 1), data->cfg_size);
+	LOG_DBG("Config mapped [0x%lx - 0x%lx, size 0x%lx]", data->cfg_addr,
+		(data->cfg_addr + data->cfg_size - 1), data->cfg_size);
 
 	pcie_generic_ctrl_enumerate(dev, PCIE_BDF(0, 0, 0));
 
@@ -198,7 +197,8 @@ static bool pcie_ecam_region_allocate_type(struct pcie_ecam_data *data, pcie_bdf
 	uintptr_t addr;
 
 	addr = (((data->regions[type].bus_start + data->regions[type].allocation_offset) - 1) |
-		((bar_size) - 1)) + 1;
+		((bar_size)-1)) +
+	       1;
 
 	if (addr - data->regions[type].bus_start + bar_size > data->regions[type].size) {
 		return false;
@@ -210,15 +210,13 @@ static bool pcie_ecam_region_allocate_type(struct pcie_ecam_data *data, pcie_bdf
 	return true;
 }
 
-static bool pcie_ecam_region_allocate(const struct device *dev, pcie_bdf_t bdf,
-				      bool mem, bool mem64, size_t bar_size,
-				      uintptr_t *bar_bus_addr)
+static bool pcie_ecam_region_allocate(const struct device *dev, pcie_bdf_t bdf, bool mem,
+				      bool mem64, size_t bar_size, uintptr_t *bar_bus_addr)
 {
 	struct pcie_ecam_data *data = dev->data;
 	enum pcie_region_type type;
 
-	if (mem && !data->regions[PCIE_REGION_MEM64].size &&
-	    !data->regions[PCIE_REGION_MEM].size) {
+	if (mem && !data->regions[PCIE_REGION_MEM64].size && !data->regions[PCIE_REGION_MEM].size) {
 		LOG_DBG("bdf %x no mem region defined for allocation", bdf);
 		return false;
 	}
@@ -234,9 +232,9 @@ static bool pcie_ecam_region_allocate(const struct device *dev, pcie_bdf_t bdf,
 	 * TOFIX:
 	 * - handle allocation from/to mem/mem64 when a region is full
 	 */
-	if (mem && ((mem64 && data->regions[PCIE_REGION_MEM64].size) ||
-		    (data->regions[PCIE_REGION_MEM64].size &&
-		     !data->regions[PCIE_REGION_MEM].size))) {
+	if (mem &&
+	    ((mem64 && data->regions[PCIE_REGION_MEM64].size) ||
+	     (data->regions[PCIE_REGION_MEM64].size && !data->regions[PCIE_REGION_MEM].size))) {
 		type = PCIE_REGION_MEM64;
 	} else if (mem) {
 		type = PCIE_REGION_MEM;
@@ -247,15 +245,13 @@ static bool pcie_ecam_region_allocate(const struct device *dev, pcie_bdf_t bdf,
 	return pcie_ecam_region_allocate_type(data, bdf, bar_size, bar_bus_addr, type);
 }
 
-static bool pcie_ecam_region_get_allocate_base(const struct device *dev, pcie_bdf_t bdf,
-					       bool mem, bool mem64, size_t align,
-					       uintptr_t *bar_base_addr)
+static bool pcie_ecam_region_get_allocate_base(const struct device *dev, pcie_bdf_t bdf, bool mem,
+					       bool mem64, size_t align, uintptr_t *bar_base_addr)
 {
 	struct pcie_ecam_data *data = (struct pcie_ecam_data *)dev->data;
 	enum pcie_region_type type;
 
-	if (mem && !data->regions[PCIE_REGION_MEM64].size &&
-	    !data->regions[PCIE_REGION_MEM].size) {
+	if (mem && !data->regions[PCIE_REGION_MEM64].size && !data->regions[PCIE_REGION_MEM].size) {
 		LOG_DBG("bdf %x no mem region defined for allocation", bdf);
 		return false;
 	}
@@ -271,9 +267,9 @@ static bool pcie_ecam_region_get_allocate_base(const struct device *dev, pcie_bd
 	 * TOFIX:
 	 * - handle allocation from/to mem/mem64 when a region is full
 	 */
-	if (mem && ((mem64 && data->regions[PCIE_REGION_MEM64].size) ||
-		    (data->regions[PCIE_REGION_MEM64].size &&
-		     !data->regions[PCIE_REGION_MEM].size))) {
+	if (mem &&
+	    ((mem64 && data->regions[PCIE_REGION_MEM64].size) ||
+	     (data->regions[PCIE_REGION_MEM64].size && !data->regions[PCIE_REGION_MEM].size))) {
 		type = PCIE_REGION_MEM64;
 	} else if (mem) {
 		type = PCIE_REGION_MEM;
@@ -281,15 +277,16 @@ static bool pcie_ecam_region_get_allocate_base(const struct device *dev, pcie_bd
 		type = PCIE_REGION_IO;
 	}
 
-	*bar_base_addr = (((data->regions[type].bus_start +
-			    data->regions[type].allocation_offset) - 1) | ((align) - 1)) + 1;
+	*bar_base_addr =
+		(((data->regions[type].bus_start + data->regions[type].allocation_offset) - 1) |
+		 ((align)-1)) +
+		1;
 
 	return true;
 }
 
-static bool pcie_ecam_region_translate(const struct device *dev, pcie_bdf_t bdf,
-				       bool mem, bool mem64, uintptr_t bar_bus_addr,
-				       uintptr_t *bar_addr)
+static bool pcie_ecam_region_translate(const struct device *dev, pcie_bdf_t bdf, bool mem,
+				       bool mem64, uintptr_t bar_bus_addr, uintptr_t *bar_addr)
 {
 	struct pcie_ecam_data *data = dev->data;
 	enum pcie_region_type type;
@@ -299,9 +296,9 @@ static bool pcie_ecam_region_translate(const struct device *dev, pcie_bdf_t bdf,
 		return false;
 	}
 
-	if (mem && ((mem64 && data->regions[PCIE_REGION_MEM64].size) ||
-		    (data->regions[PCIE_REGION_MEM64].size &&
-		     !data->regions[PCIE_REGION_MEM].size))) {
+	if (mem &&
+	    ((mem64 && data->regions[PCIE_REGION_MEM64].size) ||
+	     (data->regions[PCIE_REGION_MEM64].size && !data->regions[PCIE_REGION_MEM].size))) {
 		type = PCIE_REGION_MEM64;
 	} else if (mem) {
 		type = PCIE_REGION_MEM;
@@ -356,8 +353,8 @@ static uint8_t pcie_ecam_msi_device_setup(const struct device *dev, unsigned int
 		vectors[i].arch.eventid = i;
 		vectors[i].arch.priority = priority;
 
-		ret = its_map_intid(cfg->msi_parent, device_id,
-				    vectors[i].arch.eventid, vectors[i].arch.irq);
+		ret = its_map_intid(cfg->msi_parent, device_id, vectors[i].arch.eventid,
+				    vectors[i].arch.irq);
 		if (ret) {
 			break;
 		}
@@ -382,28 +379,21 @@ static const struct pcie_ctrl_driver_api pcie_ecam_api = {
 };
 
 #if CONFIG_PCIE_MSI
-#define DEVICE_DT_GET_MSI_PARENT(n)						\
+#define DEVICE_DT_GET_MSI_PARENT(n)                                                                \
 	.msi_parent = DEVICE_DT_GET(DT_PHANDLE(DT_DRV_INST(n), msi_parent)),
 #else
 #define DEVICE_DT_GET_MSI_PARENT(n)
 #endif
 
-#define PCIE_ECAM_INIT(n)							\
-	static struct pcie_ecam_data pcie_ecam_data##n;				\
-	static const struct pcie_ctrl_config pcie_ecam_config##n = {		\
-		DEVICE_DT_GET_MSI_PARENT(n)					\
-		.cfg_addr = DT_INST_REG_ADDR(n),				\
-		.cfg_size = DT_INST_REG_SIZE(n),				\
-		.ranges_count = DT_NUM_RANGES(DT_DRV_INST(n)),		\
-		.ranges = {							\
-			DT_FOREACH_RANGE(DT_DRV_INST(n), PCIE_RANGE_FORMAT)	\
-		},								\
-	};									\
-	DEVICE_DT_INST_DEFINE(n, &pcie_ecam_init, NULL,				\
-			      &pcie_ecam_data##n,				\
-			      &pcie_ecam_config##n,				\
-			      PRE_KERNEL_1,					\
-			      CONFIG_PCIE_INIT_PRIORITY,			\
-			      &pcie_ecam_api);
+#define PCIE_ECAM_INIT(n)                                                                          \
+	static struct pcie_ecam_data pcie_ecam_data##n;                                            \
+	static const struct pcie_ctrl_config pcie_ecam_config##n = {                               \
+		DEVICE_DT_GET_MSI_PARENT(n).cfg_addr = DT_INST_REG_ADDR(n),                        \
+		.cfg_size = DT_INST_REG_SIZE(n),                                                   \
+		.ranges_count = DT_NUM_RANGES(DT_DRV_INST(n)),                                     \
+		.ranges = {DT_FOREACH_RANGE(DT_DRV_INST(n), PCIE_RANGE_FORMAT)},                   \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(n, &pcie_ecam_init, NULL, &pcie_ecam_data##n, &pcie_ecam_config##n,  \
+			      PRE_KERNEL_1, CONFIG_PCIE_INIT_PRIORITY, &pcie_ecam_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PCIE_ECAM_INIT)

@@ -14,19 +14,17 @@
 /** RCU offset (from id field) */
 #define GD32_RESET_ID_OFFSET(id) (((id) >> 6U) & 0xFFU)
 /** RCU configuration bit (from id field) */
-#define GD32_RESET_ID_BIT(id)	 ((id) & 0x1FU)
+#define GD32_RESET_ID_BIT(id)    ((id) & 0x1FU)
 
 struct reset_gd32_config {
 	uint32_t base;
 };
 
-static int reset_gd32_status(const struct device *dev, uint32_t id,
-			     uint8_t *status)
+static int reset_gd32_status(const struct device *dev, uint32_t id, uint8_t *status)
 {
 	const struct reset_gd32_config *config = dev->config;
 
-	*status = !!sys_test_bit(config->base + GD32_RESET_ID_OFFSET(id),
-				 GD32_RESET_ID_BIT(id));
+	*status = !!sys_test_bit(config->base + GD32_RESET_ID_OFFSET(id), GD32_RESET_ID_BIT(id));
 
 	return 0;
 }
@@ -35,8 +33,7 @@ static int reset_gd32_line_assert(const struct device *dev, uint32_t id)
 {
 	const struct reset_gd32_config *config = dev->config;
 
-	sys_set_bit(config->base + GD32_RESET_ID_OFFSET(id),
-		    GD32_RESET_ID_BIT(id));
+	sys_set_bit(config->base + GD32_RESET_ID_OFFSET(id), GD32_RESET_ID_BIT(id));
 
 	return 0;
 }
@@ -45,8 +42,7 @@ static int reset_gd32_line_deassert(const struct device *dev, uint32_t id)
 {
 	const struct reset_gd32_config *config = dev->config;
 
-	sys_clear_bit(config->base + GD32_RESET_ID_OFFSET(id),
-		      GD32_RESET_ID_BIT(id));
+	sys_clear_bit(config->base + GD32_RESET_ID_OFFSET(id), GD32_RESET_ID_BIT(id));
 
 	return 0;
 }
@@ -70,5 +66,5 @@ static const struct reset_gd32_config config = {
 	.base = DT_REG_ADDR(DT_INST_PARENT(0)),
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &config, PRE_KERNEL_1,
-		      CONFIG_RESET_INIT_PRIORITY, &reset_gd32_driver_api);
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &config, PRE_KERNEL_1, CONFIG_RESET_INIT_PRIORITY,
+		      &reset_gd32_driver_api);

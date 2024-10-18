@@ -29,8 +29,7 @@ int modem_context_sprint_ip_addr(const struct sockaddr *addr, char *buf, size_t 
 			return -ENOMEM;
 		}
 
-		if (net_addr_ntop(AF_INET6, &net_sin6(addr)->sin6_addr,
-					buf, buf_size) == NULL) {
+		if (net_addr_ntop(AF_INET6, &net_sin6(addr)->sin6_addr, buf, buf_size) == NULL) {
 			return -ENOMEM;
 		}
 		return 0;
@@ -40,8 +39,7 @@ int modem_context_sprint_ip_addr(const struct sockaddr *addr, char *buf, size_t 
 		if (buf_size < NET_IPV4_ADDR_LEN) {
 			return -ENOMEM;
 		}
-		if (net_addr_ntop(AF_INET, &net_sin(addr)->sin_addr,
-					buf, buf_size) == NULL) {
+		if (net_addr_ntop(AF_INET, &net_sin(addr)->sin_addr, buf, buf_size) == NULL) {
 			return -ENOMEM;
 		}
 		return 0;

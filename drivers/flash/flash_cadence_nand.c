@@ -243,22 +243,22 @@ static int flash_cdns_nand_init(const struct device *nand_dev)
 	.reset = RESET_DT_SPEC_INST_GET_BY_IDX(inst, 0),                                           \
 	.combo_phy_reset = RESET_DT_SPEC_INST_GET_BY_IDX(inst, 1),
 
-#define CREATE_FLASH_CADENCE_NAND_DEVICE(inst)                                                     \
+#define CREATE_FLASH_CADENCE_NAND_DEVICE(inst)                                                       \
 	IF_ENABLED(CONFIG_CDNS_NAND_INTERRUPT_SUPPORT,                                             \
-		   (static void cdns_nand_irq_config_##inst(void);))                               \
-	struct flash_cadence_nand_data flash_cadence_nand_data_##inst = {                          \
-		.params = {                                                                        \
-			.datarate_mode = DT_INST_PROP(inst, data_rate_mode),                       \
-		}};                                                                                \
-	const struct flash_cadence_nand_config flash_cadence_nand_config_##inst = {                \
-		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(nand_reg, DT_DRV_INST(inst)),                   \
-		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(sdma, DT_DRV_INST(inst)),                       \
-		IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, resets), (CDNS_NAND_RESET_SPEC_INIT(inst))) \
-			IF_ENABLED(CONFIG_CDNS_NAND_INTERRUPT_SUPPORT,                             \
-				   (.irq_config = cdns_nand_irq_config_##inst,))};                 \
-	DEVICE_DT_INST_DEFINE(inst, flash_cdns_nand_init, NULL, &flash_cadence_nand_data_##inst,   \
-			      &flash_cadence_nand_config_##inst, POST_KERNEL,                      \
-			      CONFIG_FLASH_INIT_PRIORITY, &flash_cdns_nand_api);                   \
+		   (static void cdns_nand_irq_config_##inst(void);)) \
+	struct flash_cadence_nand_data flash_cadence_nand_data_##inst = {                            \
+		.params = {                                                                          \
+			.datarate_mode = DT_INST_PROP(inst, data_rate_mode),                         \
+		}};                                                                                  \
+	const struct flash_cadence_nand_config flash_cadence_nand_config_##inst = {                  \
+		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(nand_reg, DT_DRV_INST(inst)),                     \
+		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(sdma, DT_DRV_INST(inst)),                         \
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, resets), (CDNS_NAND_RESET_SPEC_INIT(inst)))                                                                           \
+				   IF_ENABLED(CONFIG_CDNS_NAND_INTERRUPT_SUPPORT,                             \
+				   (.irq_config = cdns_nand_irq_config_##inst,))};          \
+	DEVICE_DT_INST_DEFINE(inst, flash_cdns_nand_init, NULL, &flash_cadence_nand_data_##inst,     \
+			      &flash_cadence_nand_config_##inst, POST_KERNEL,                        \
+			      CONFIG_FLASH_INIT_PRIORITY, &flash_cdns_nand_api);                     \
 	IF_ENABLED(CONFIG_CDNS_NAND_INTERRUPT_SUPPORT,                                             \
 		   (static void cdns_nand_irq_config_##inst(void)                                  \
 		   {										   \

@@ -17,8 +17,7 @@ LOG_MODULE_REGISTER(spi_sifive);
 
 /* Helper Functions */
 
-static ALWAYS_INLINE
-void sys_set_mask(mem_addr_t addr, uint32_t mask, uint32_t value)
+static ALWAYS_INLINE void sys_set_mask(mem_addr_t addr, uint32_t mask, uint32_t value)
 {
 	uint32_t temp = sys_read32(addr);
 
@@ -28,8 +27,7 @@ void sys_set_mask(mem_addr_t addr, uint32_t mask, uint32_t value)
 	sys_write32(temp, addr);
 }
 
-static int spi_config(const struct device *dev, uint32_t frequency,
-	       uint16_t operation)
+static int spi_config(const struct device *dev, uint32_t frequency, uint16_t operation)
 {
 	uint32_t div;
 	uint32_t fmt_len;
@@ -87,9 +85,7 @@ static int spi_config(const struct device *dev, uint32_t frequency,
 		return -ENOTSUP;
 	}
 	/* Set single line operation */
-	sys_set_mask(SPI_REG(dev, REG_FMT),
-		SF_FMT_PROTO_MASK,
-		SF_FMT_PROTO_SINGLE);
+	sys_set_mask(SPI_REG(dev, REG_FMT), SF_FMT_PROTO_MASK, SF_FMT_PROTO_SINGLE);
 
 	/* Set the endianness */
 	if (operation & SPI_TRANSFER_LSB) {
@@ -106,21 +102,19 @@ static ALWAYS_INLINE bool spi_sifive_send_available(const struct device *dev)
 	return !(sys_read32(SPI_REG(dev, REG_TXDATA)) & SF_TXDATA_FULL);
 }
 
-static ALWAYS_INLINE
-void spi_sifive_send(const struct device *dev, uint8_t frame)
+static ALWAYS_INLINE void spi_sifive_send(const struct device *dev, uint8_t frame)
 {
-	sys_write32((uint32_t) frame, SPI_REG(dev, REG_TXDATA));
+	sys_write32((uint32_t)frame, SPI_REG(dev, REG_TXDATA));
 }
 
-static ALWAYS_INLINE
-bool spi_sifive_recv(const struct device *dev, uint8_t *val)
+static ALWAYS_INLINE bool spi_sifive_recv(const struct device *dev, uint8_t *val)
 {
 	uint32_t reg = sys_read32(SPI_REG(dev, REG_RXDATA));
 
 	if (reg & SF_RXDATA_EMPTY) {
 		return false;
 	}
-	*val = (uint8_t) reg;
+	*val = (uint8_t)reg;
 	return true;
 }
 
@@ -140,7 +134,7 @@ static void spi_sifive_xfer(const struct device *dev, const bool hw_cs_control)
 		if (spi_context_tx_buf_on(ctx)) {
 			send = true;
 			txd = *ctx->tx_buf;
-		} else if (queued_frames == 0) {  /* Implies spi_context_rx_on(). */
+		} else if (queued_frames == 0) { /* Implies spi_context_rx_on(). */
 			send = true;
 			txd = 0U;
 		}
@@ -198,10 +192,9 @@ static int spi_sifive_init(const struct device *dev)
 	return 0;
 }
 
-static int spi_sifive_transceive(const struct device *dev,
-			  const struct spi_config *config,
-			  const struct spi_buf_set *tx_bufs,
-			  const struct spi_buf_set *rx_bufs)
+static int spi_sifive_transceive(const struct device *dev, const struct spi_config *config,
+				 const struct spi_buf_set *tx_bufs,
+				 const struct spi_buf_set *rx_bufs)
 {
 	int rc = 0;
 	bool hw_cs_control = false;
@@ -263,8 +256,7 @@ static int spi_sifive_transceive(const struct device *dev,
 	return rc;
 }
 
-static int spi_sifive_release(const struct device *dev,
-		       const struct spi_config *config)
+static int spi_sifive_release(const struct device *dev, const struct spi_config *config)
 {
 	spi_context_unlock_unconditionally(&SPI_DATA(dev)->ctx);
 	return 0;
@@ -280,25 +272,18 @@ static const struct spi_driver_api spi_sifive_api = {
 	.release = spi_sifive_release,
 };
 
-#define SPI_INIT(n)	\
-	PINCTRL_DT_INST_DEFINE(n); \
-	static struct spi_sifive_data spi_sifive_data_##n = { \
-		SPI_CONTEXT_INIT_LOCK(spi_sifive_data_##n, ctx), \
-		SPI_CONTEXT_INIT_SYNC(spi_sifive_data_##n, ctx), \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
-	}; \
-	static struct spi_sifive_cfg spi_sifive_cfg_##n = { \
-		.base = DT_INST_REG_ADDR_BY_NAME(n, control), \
-		.f_sys = SIFIVE_PERIPHERAL_CLOCK_FREQUENCY, \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n), \
-	}; \
-	DEVICE_DT_INST_DEFINE(n, \
-			spi_sifive_init, \
-			NULL, \
-			&spi_sifive_data_##n, \
-			&spi_sifive_cfg_##n, \
-			POST_KERNEL, \
-			CONFIG_SPI_INIT_PRIORITY, \
-			&spi_sifive_api);
+#define SPI_INIT(n)                                                                                \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	static struct spi_sifive_data spi_sifive_data_##n = {                                      \
+		SPI_CONTEXT_INIT_LOCK(spi_sifive_data_##n, ctx),                                   \
+		SPI_CONTEXT_INIT_SYNC(spi_sifive_data_##n, ctx),                                   \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                             \
+	static struct spi_sifive_cfg spi_sifive_cfg_##n = {                                        \
+		.base = DT_INST_REG_ADDR_BY_NAME(n, control),                                      \
+		.f_sys = SIFIVE_PERIPHERAL_CLOCK_FREQUENCY,                                        \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(n, spi_sifive_init, NULL, &spi_sifive_data_##n, &spi_sifive_cfg_##n, \
+			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &spi_sifive_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_INIT)

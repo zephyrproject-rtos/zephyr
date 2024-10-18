@@ -15,7 +15,7 @@
 
 LOG_MODULE_REGISTER(wdt_dw_common, CONFIG_WDT_LOG_LEVEL);
 
-#define WDT_DW_FLAG_CONFIGURED	0x80000000
+#define WDT_DW_FLAG_CONFIGURED 0x80000000
 
 int dw_wdt_check_options(const uint8_t options)
 {

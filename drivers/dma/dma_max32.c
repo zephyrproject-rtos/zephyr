@@ -295,7 +295,7 @@ static int max32_dma_init(const struct device *dev)
 	}
 
 	/* Enable peripheral clock */
-	ret = clock_control_on(cfg->clock, (clock_control_subsys_t) &(cfg->perclk));
+	ret = clock_control_on(cfg->clock, (clock_control_subsys_t) & (cfg->perclk));
 	if (ret) {
 		return ret;
 	}

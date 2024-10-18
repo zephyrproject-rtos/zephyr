@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(BMP180, CONFIG_SENSOR_LOG_LEVEL);
  * macro from include/zephyr/sys/byteorder.h
  */
 #define BSWAP_u16(x) sys_cpu_to_be16(x)
-#define BSWAP_s16(x) ((int16_t) sys_cpu_to_be16(x))
+#define BSWAP_s16(x) ((int16_t)sys_cpu_to_be16(x))
 
 /* Calibration Registers structure */
 struct bmp180_cal_data {
@@ -66,16 +66,14 @@ static inline int bmp180_bus_check(const struct device *dev)
 	return i2c_is_ready_dt(&cfg->i2c) ? 0 : -ENODEV;
 }
 
-static inline int bmp180_reg_read(const struct device *dev, uint8_t start,
-				 uint8_t *buf, int size)
+static inline int bmp180_reg_read(const struct device *dev, uint8_t start, uint8_t *buf, int size)
 {
 	const struct bmp180_config *cfg = dev->config;
 
 	return i2c_burst_read_dt(&cfg->i2c, start, buf, size);
 }
 
-static inline int bmp180_reg_write(const struct device *dev, uint8_t reg,
-				   uint8_t val)
+static inline int bmp180_reg_write(const struct device *dev, uint8_t reg, uint8_t val)
 {
 	const struct bmp180_config *cfg = dev->config;
 
@@ -83,8 +81,8 @@ static inline int bmp180_reg_write(const struct device *dev, uint8_t reg,
 }
 
 #ifdef CONFIG_BMP180_OSR_RUNTIME
-static int bmp180_attr_set_oversampling(const struct device *dev,
-					enum sensor_channel chan, uint16_t val)
+static int bmp180_attr_set_oversampling(const struct device *dev, enum sensor_channel chan,
+					uint16_t val)
 {
 	struct bmp180_data *data = dev->data;
 
@@ -100,8 +98,7 @@ static int bmp180_attr_set_oversampling(const struct device *dev,
 #endif /* CONFIG_BMP180_OSR_RUNTIME */
 
 static int bmp180_attr_set(const struct device *dev, enum sensor_channel chan,
-			   enum sensor_attribute attr,
-			   const struct sensor_value *val)
+			   enum sensor_attribute attr, const struct sensor_value *val)
 {
 	int ret;
 
@@ -244,8 +241,7 @@ static int read_raw_pressure(const struct device *dev)
 	return 0;
 }
 
-static int bmp180_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
+static int bmp180_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	int ret = 0;
 
@@ -287,8 +283,7 @@ static void bmp180_compensate_temp(struct bmp180_data *data)
 	data->comp_temp = (partial_data1 + partial_data2);
 }
 
-static int bmp180_temp_channel_get(const struct device *dev,
-				   struct sensor_value *val)
+static int bmp180_temp_channel_get(const struct device *dev, struct sensor_value *val)
 {
 	struct bmp180_data *data = dev->data;
 
@@ -341,8 +336,7 @@ static uint32_t bmp180_compensate_press(struct bmp180_data *data)
 	return comp_press;
 }
 
-static int bmp180_press_channel_get(const struct device *dev,
-				    struct sensor_value *val)
+static int bmp180_press_channel_get(const struct device *dev, struct sensor_value *val)
 {
 	struct bmp180_data *data = dev->data;
 
@@ -361,8 +355,7 @@ static int bmp180_press_channel_get(const struct device *dev,
 	return 0;
 }
 
-static int bmp180_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
+static int bmp180_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	switch (chan) {
@@ -381,7 +374,6 @@ static int bmp180_channel_get(const struct device *dev,
 
 	return 0;
 }
-
 
 static int bmp180_get_calibration_data(const struct device *dev)
 {
@@ -409,8 +401,7 @@ static int bmp180_get_calibration_data(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int bmp180_pm_action(const struct device *dev,
-			    enum pm_device_action action)
+static int bmp180_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	/* no power saving feature in bmp180 */
 	return 0;
@@ -459,17 +450,16 @@ static int bmp180_init(const struct device *dev)
 	return 0;
 }
 
-#define BMP180_INST(inst) \
-	static struct bmp180_data bmp180_data_##inst = {\
-		.osr_pressure = DT_INST_ENUM_IDX(inst, osr_press),\
-	};\
-	static const struct bmp180_config bmp180_config_##inst = {\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),\
-	};\
-	PM_DEVICE_DT_INST_DEFINE(inst, bmp180_pm_action);\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmp180_init, PM_DEVICE_DT_INST_GET(inst),\
-				    &bmp180_data_##inst, &bmp180_config_##inst,\
-				    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,\
-				    &bmp180_api);
+#define BMP180_INST(inst)                                                                          \
+	static struct bmp180_data bmp180_data_##inst = {                                           \
+		.osr_pressure = DT_INST_ENUM_IDX(inst, osr_press),                                 \
+	};                                                                                         \
+	static const struct bmp180_config bmp180_config_##inst = {                                 \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+	};                                                                                         \
+	PM_DEVICE_DT_INST_DEFINE(inst, bmp180_pm_action);                                          \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmp180_init, PM_DEVICE_DT_INST_GET(inst),               \
+				     &bmp180_data_##inst, &bmp180_config_##inst, POST_KERNEL,      \
+				     CONFIG_SENSOR_INIT_PRIORITY, &bmp180_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BMP180_INST)

@@ -28,12 +28,12 @@ struct mcux_adc16_config {
 #ifndef CONFIG_ADC_MCUX_ADC16_ENABLE_EDMA
 	void (*irq_config_func)(const struct device *dev);
 #endif
-	uint32_t clk_source;	/* ADC clock source selection */
-	uint32_t long_sample;	/* ADC long sample mode selection */
-	uint32_t hw_trigger_src;  /* ADC hardware trigger source */
-				/* defined in SIM module SOPT7 */
+	uint32_t clk_source;     /* ADC clock source selection */
+	uint32_t long_sample;    /* ADC long sample mode selection */
+	uint32_t hw_trigger_src; /* ADC hardware trigger source */
+				 /* defined in SIM module SOPT7 */
 #ifdef CONFIG_ADC_MCUX_ADC16_ENABLE_EDMA
-	uint32_t dma_slot;	/* ADC DMA MUX slot */
+	uint32_t dma_slot; /* ADC DMA MUX slot */
 #endif
 	uint32_t trg_offset;
 	uint32_t trg_bits;
@@ -41,7 +41,7 @@ struct mcux_adc16_config {
 	uint32_t alt_bits;
 	bool periodic_trigger; /* ADC enable periodic trigger */
 	bool channel_mux_b;
-	bool high_speed;	/* ADC enable high speed mode*/
+	bool high_speed;         /* ADC enable high speed mode*/
 	bool continuous_convert; /* ADC enable continuous convert*/
 	const struct pinctrl_dev_config *pincfg;
 };
@@ -70,13 +70,12 @@ struct mcux_adc16_data {
 };
 
 #ifdef CONFIG_ADC_MCUX_ADC16_HW_TRIGGER
-#define SIM_SOPT7_ADCSET(x, shifts, mask)                                      \
-	(((uint32_t)(((uint32_t)(x)) << shifts)) & mask)
+#define SIM_SOPT7_ADCSET(x, shifts, mask) (((uint32_t)(((uint32_t)(x)) << shifts)) & mask)
 #endif
 
 #ifdef CONFIG_ADC_MCUX_ADC16_ENABLE_EDMA
-static void adc_dma_callback(const struct device *dma_dev, void *callback_arg,
-			     uint32_t channel, int status)
+static void adc_dma_callback(const struct device *dma_dev, void *callback_arg, uint32_t channel,
+			     int status)
 {
 	const struct device *dev = (const struct device *)callback_arg;
 	struct mcux_adc16_data *data = dev->data;
@@ -93,9 +92,9 @@ static void adc_hw_trigger_enable(const struct device *dev)
 	const struct mcux_adc16_config *config = dev->config;
 
 	/* enable ADC trigger channel */
-	SIM->SOPT7 |= SIM_SOPT7_ADCSET(config->hw_trigger_src,
-				       config->trg_offset, config->trg_bits) |
-		      SIM_SOPT7_ADCSET(1, config->alt_offset, config->alt_bits);
+	SIM->SOPT7 |=
+		SIM_SOPT7_ADCSET(config->hw_trigger_src, config->trg_offset, config->trg_bits) |
+		SIM_SOPT7_ADCSET(1, config->alt_offset, config->alt_bits);
 }
 #endif
 
@@ -131,8 +130,7 @@ static int mcux_adc16_channel_setup(const struct device *dev,
 	return 0;
 }
 
-static int start_read(const struct device *dev,
-		      const struct adc_sequence *sequence)
+static int start_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	const struct mcux_adc16_config *config = dev->config;
 	struct mcux_adc16_data *data = dev->data;
@@ -155,8 +153,7 @@ static int start_read(const struct device *dev,
 	case 13:
 		resolution = kADC16_Resolution12or13Bit;
 		break;
-#if defined(FSL_FEATURE_ADC16_MAX_RESOLUTION) &&                               \
-	(FSL_FEATURE_ADC16_MAX_RESOLUTION >= 16U)
+#if defined(FSL_FEATURE_ADC16_MAX_RESOLUTION) && (FSL_FEATURE_ADC16_MAX_RESOLUTION >= 16U)
 	case 16:
 		resolution = kADC16_Resolution16Bit;
 		break;
@@ -198,8 +195,7 @@ static int start_read(const struct device *dev,
 	}
 
 	if (sequence->options) {
-		if (sequence->buffer_size <
-			2 * (sequence->options->extra_samplings + 1)) {
+		if (sequence->buffer_size < 2 * (sequence->options->extra_samplings + 1)) {
 			LOG_ERR("sequence buffer size too small < 2 * extra + 2");
 			return -EINVAL;
 		}
@@ -216,8 +212,7 @@ static int start_read(const struct device *dev,
 	return error;
 }
 
-static int mcux_adc16_read(const struct device *dev,
-			   const struct adc_sequence *sequence)
+static int mcux_adc16_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	struct mcux_adc16_data *data = dev->data;
 	int error;
@@ -230,8 +225,7 @@ static int mcux_adc16_read(const struct device *dev,
 }
 
 #ifdef CONFIG_ADC_ASYNC
-static int mcux_adc16_read_async(const struct device *dev,
-				 const struct adc_sequence *sequence,
+static int mcux_adc16_read_async(const struct device *dev, const struct adc_sequence *sequence,
 				 struct k_poll_signal *async)
 {
 	struct mcux_adc16_data *data = dev->data;
@@ -272,8 +266,7 @@ static void mcux_adc16_start_channel(const struct device *dev)
 
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
-	struct mcux_adc16_data *data =
-		CONTAINER_OF(ctx, struct mcux_adc16_data, ctx);
+	struct mcux_adc16_data *data = CONTAINER_OF(ctx, struct mcux_adc16_data, ctx);
 
 	data->channels = ctx->sequence.channels;
 	data->repeat_buffer = data->buffer;
@@ -282,20 +275,16 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	LOG_DBG("config dma");
 	data->adc_dma_config.dma_block.block_size = 2;
 	data->adc_dma_config.dma_block.dest_address = (uint32_t)data->buffer;
-	data->adc_dma_config.dma_cfg.head_block =
-		&(data->adc_dma_config.dma_block);
-	dma_config(data->dev_dma, data->adc_dma_config.dma_channel,
-		   &data->adc_dma_config.dma_cfg);
+	data->adc_dma_config.dma_cfg.head_block = &(data->adc_dma_config.dma_block);
+	dma_config(data->dev_dma, data->adc_dma_config.dma_channel, &data->adc_dma_config.dma_cfg);
 #endif
 
 	mcux_adc16_start_channel(data->dev);
 }
 
-static void adc_context_update_buffer_pointer(struct adc_context *ctx,
-					      bool repeat_sampling)
+static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat_sampling)
 {
-	struct mcux_adc16_data *data =
-		CONTAINER_OF(ctx, struct mcux_adc16_data, ctx);
+	struct mcux_adc16_data *data = CONTAINER_OF(ctx, struct mcux_adc16_data, ctx);
 
 	if (repeat_sampling) {
 		data->buffer = data->repeat_buffer;
@@ -312,8 +301,7 @@ static void mcux_adc16_isr(const struct device *dev)
 	uint16_t result;
 
 	result = ADC16_GetChannelConversionValue(base, channel_group);
-	LOG_DBG("Finished channel %d. Result is 0x%04x", data->channel_id,
-		result);
+	LOG_DBG("Finished channel %d. Result is 0x%04x", data->channel_id, result);
 
 	*data->buffer++ = result;
 	data->channels &= ~BIT(data->channel_id);
@@ -339,8 +327,7 @@ static int mcux_adc16_init(const struct device *dev)
 
 #ifdef CONFIG_ADC_MCUX_ADC16_ENABLE_EDMA
 	adc_config.clockSource = (adc16_clock_source_t)config->clk_source;
-	adc_config.longSampleMode =
-		(adc16_long_sample_mode_t)config->long_sample;
+	adc_config.longSampleMode = (adc16_long_sample_mode_t)config->long_sample;
 	adc_config.enableHighSpeed = config->high_speed;
 	adc_config.enableContinuousConversion = config->continuous_convert;
 #endif
@@ -362,8 +349,7 @@ static int mcux_adc16_init(const struct device *dev)
 #endif
 
 	ADC16_Init(base, &adc_config);
-#if defined(FSL_FEATURE_ADC16_HAS_CALIBRATION) && \
-	    FSL_FEATURE_ADC16_HAS_CALIBRATION
+#if defined(FSL_FEATURE_ADC16_HAS_CALIBRATION) && FSL_FEATURE_ADC16_HAS_CALIBRATION
 	ADC16_SetHardwareAverage(base, kADC16_HardwareAverageCount32);
 	ADC16_DoAutoCalibration(base);
 #endif
@@ -441,65 +427,52 @@ static const struct adc_driver_api mcux_adc16_driver_api = {
 };
 
 #ifdef CONFIG_ADC_MCUX_ADC16_ENABLE_EDMA
-#define ADC16_MCUX_EDMA_INIT(n)					\
-	.hw_trigger_src =					\
-		DT_INST_PROP_OR(n, hw_trigger_src, 0),		\
-	.dma_slot = DT_INST_DMAS_CELL_BY_IDX(n, 0, source),	\
-	.trg_offset = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, offset),	\
-	.trg_bits = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, bits),	\
-	.alt_offset = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, offset),	\
+#define ADC16_MCUX_EDMA_INIT(n)                                                                    \
+	.hw_trigger_src = DT_INST_PROP_OR(n, hw_trigger_src, 0),                                   \
+	.dma_slot = DT_INST_DMAS_CELL_BY_IDX(n, 0, source),                                        \
+	.trg_offset = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, offset),                                    \
+	.trg_bits = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, bits),                                        \
+	.alt_offset = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, offset),                                    \
 	.alt_bits = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, bits),
-#define ADC16_MCUX_EDMA_DATA(n)					\
-	.dev_dma = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, adc##n))
+#define ADC16_MCUX_EDMA_DATA(n) .dev_dma = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, adc##n))
 #define ADC16_MCUX_IRQ_INIT(n)
 #define ADC16_MCUX_IRQ_DECLARE(n)
 #else
 #define ADC16_MCUX_EDMA_INIT(n)
 #define ADC16_MCUX_EDMA_DATA(n)
 #define ADC16_MCUX_IRQ_INIT(n) .irq_config_func = mcux_adc16_config_func_##n,
-#define ADC16_MCUX_IRQ_DECLARE(n)					\
-	static void mcux_adc16_config_func_##n(const struct device *dev) \
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
-			    mcux_adc16_isr,				\
-			    DEVICE_DT_INST_GET(n), 0);			\
-									\
-		irq_enable(DT_INST_IRQN(n));				\
+#define ADC16_MCUX_IRQ_DECLARE(n)                                                                  \
+	static void mcux_adc16_config_func_##n(const struct device *dev)                           \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_adc16_isr,             \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+                                                                                                   \
+		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
 #endif /* CONFIG_ADC_MCUX_ADC16_ENABLE_EDMA */
 
-
-#define ACD16_MCUX_INIT(n)					\
-	ADC16_MCUX_IRQ_DECLARE(n)				\
-	PINCTRL_DT_INST_DEFINE(n);				\
-								\
-	static const struct mcux_adc16_config mcux_adc16_config_##n = {	\
-		.base = (ADC_Type *)DT_INST_REG_ADDR(n),		\
-		ADC16_MCUX_IRQ_INIT(n)					\
-		.channel_mux_b = DT_INST_PROP(n, channel_mux_b),	\
-		.clk_source = DT_INST_PROP_OR(n, clk_source, 0),	\
-		.long_sample = DT_INST_PROP_OR(n, long_sample, 0),	\
-		.high_speed = DT_INST_PROP(n, high_speed),		\
-		.periodic_trigger = DT_INST_PROP(n, periodic_trigger),	\
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
-		.continuous_convert =				\
-			DT_INST_PROP(n, continuous_convert),	\
-		ADC16_MCUX_EDMA_INIT(n)				\
-	};								\
-									\
-	static struct mcux_adc16_data mcux_adc16_data_##n = {		\
-		ADC_CONTEXT_INIT_TIMER(mcux_adc16_data_##n, ctx),	\
-		ADC_CONTEXT_INIT_LOCK(mcux_adc16_data_##n, ctx),	\
-		ADC_CONTEXT_INIT_SYNC(mcux_adc16_data_##n, ctx),	\
-		ADC16_MCUX_EDMA_DATA(n)					\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(n, &mcux_adc16_init,	\
-			      NULL,	\
-			      &mcux_adc16_data_##n,	\
-			      &mcux_adc16_config_##n,	\
-			      POST_KERNEL,		\
-			      CONFIG_ADC_INIT_PRIORITY,	\
-			      &mcux_adc16_driver_api);	\
+#define ACD16_MCUX_INIT(n)                                                                         \
+	ADC16_MCUX_IRQ_DECLARE(n)                                                                  \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+                                                                                                   \
+	static const struct mcux_adc16_config mcux_adc16_config_##n = {                            \
+		.base = (ADC_Type *)DT_INST_REG_ADDR(n),                                           \
+		ADC16_MCUX_IRQ_INIT(n).channel_mux_b = DT_INST_PROP(n, channel_mux_b),             \
+		.clk_source = DT_INST_PROP_OR(n, clk_source, 0),                                   \
+		.long_sample = DT_INST_PROP_OR(n, long_sample, 0),                                 \
+		.high_speed = DT_INST_PROP(n, high_speed),                                         \
+		.periodic_trigger = DT_INST_PROP(n, periodic_trigger),                             \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+		.continuous_convert = DT_INST_PROP(n, continuous_convert),                         \
+		ADC16_MCUX_EDMA_INIT(n)};                                                          \
+                                                                                                   \
+	static struct mcux_adc16_data mcux_adc16_data_##n = {                                      \
+		ADC_CONTEXT_INIT_TIMER(mcux_adc16_data_##n, ctx),                                  \
+		ADC_CONTEXT_INIT_LOCK(mcux_adc16_data_##n, ctx),                                   \
+		ADC_CONTEXT_INIT_SYNC(mcux_adc16_data_##n, ctx), ADC16_MCUX_EDMA_DATA(n)};         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &mcux_adc16_init, NULL, &mcux_adc16_data_##n,                     \
+			      &mcux_adc16_config_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,       \
+			      &mcux_adc16_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ACD16_MCUX_INIT)

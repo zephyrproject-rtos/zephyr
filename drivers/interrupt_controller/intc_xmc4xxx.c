@@ -50,7 +50,7 @@ struct intc_xmc4xxx_config {
 };
 
 static const uint16_t port_line_mapping[DT_INST_PROP_LEN(0, port_line_mapping)] =
-				DT_INST_PROP(0, port_line_mapping);
+	DT_INST_PROP(0, port_line_mapping);
 
 int intc_xmc4xxx_gpio_enable_interrupt(int port_id, int pin, enum gpio_int_mode mode,
 				       enum gpio_int_trig trig,
@@ -70,7 +70,7 @@ int intc_xmc4xxx_gpio_enable_interrupt(int port_id, int pin, enum gpio_int_mode 
 		struct isr_cb *cb;
 
 		port_map = XMC4XXX_INTC_GET_PORT(port_line_mapping[i]);
-		pin_map  = XMC4XXX_INTC_GET_PIN(port_line_mapping[i]);
+		pin_map = XMC4XXX_INTC_GET_PIN(port_line_mapping[i]);
 
 		if (port_map != port_id || pin_map != pin) {
 			continue;
@@ -86,7 +86,7 @@ int intc_xmc4xxx_gpio_enable_interrupt(int port_id, int pin, enum gpio_int_mode 
 		}
 
 		eru_src = XMC4XXX_INTC_GET_ERU_SRC(port_line_mapping[i]);
-		eru_ch  = line & 0x3;
+		eru_ch = line & 0x3;
 
 		if (trig == GPIO_INT_TRIG_HIGH) {
 			trig_xmc = XMC_ERU_ETL_EDGE_DETECTION_RISING;
@@ -193,7 +193,7 @@ static void intc_xmc4xxx_isr(void *arg)
 	}
 }
 
-#define INTC_IRQ_CONNECT_ENABLE(name, line_number)                                                \
+#define INTC_IRQ_CONNECT_ENABLE(name, line_number)                                                 \
 	COND_CODE_1(DT_INST_IRQ_HAS_NAME(0, name),                                                \
 	(IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, name, irq),                                           \
 		DT_INST_IRQ_BY_NAME(0, name, priority), intc_xmc4xxx_isr, (void *)line_number, 0); \
@@ -216,12 +216,12 @@ static int intc_xmc4xxx_init(const struct device *dev)
 struct intc_xmc4xxx_data intc_xmc4xxx_data0;
 
 struct intc_xmc4xxx_config intc_xmc4xxx_config0 = {
-	.eru_regs = {
-		(XMC_ERU_t *)DT_INST_REG_ADDR_BY_NAME(0, eru0),
-		(XMC_ERU_t *)DT_INST_REG_ADDR_BY_NAME(0, eru1),
-	},
+	.eru_regs =
+		{
+			(XMC_ERU_t *)DT_INST_REG_ADDR_BY_NAME(0, eru0),
+			(XMC_ERU_t *)DT_INST_REG_ADDR_BY_NAME(0, eru1),
+		},
 };
 
-DEVICE_DT_INST_DEFINE(0, intc_xmc4xxx_init, NULL,
-		&intc_xmc4xxx_data0, &intc_xmc4xxx_config0, PRE_KERNEL_1,
-		CONFIG_INTC_INIT_PRIORITY, NULL);
+DEVICE_DT_INST_DEFINE(0, intc_xmc4xxx_init, NULL, &intc_xmc4xxx_data0, &intc_xmc4xxx_config0,
+		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);

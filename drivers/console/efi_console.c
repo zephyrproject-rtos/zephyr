@@ -62,13 +62,10 @@ static void efi_console_hook_install(void)
 static int efi_console_init(void)
 {
 
-
 	efi_console_hook_install();
 
 	return 0;
 }
 
 /* EFI console initializes */
-SYS_INIT(efi_console_init,
-	PRE_KERNEL_1,
-	0);
+SYS_INIT(efi_console_init, PRE_KERNEL_1, 0);

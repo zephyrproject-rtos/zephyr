@@ -8,19 +8,16 @@
 #include <string.h>
 #include <zephyr/internal/syscall_handler.h>
 
-static inline int z_vrfy_i3c_do_ccc(const struct device *dev,
-				    struct i3c_ccc_payload *payload)
+static inline int z_vrfy_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *payload)
 {
 	K_OOPS(K_SYSCALL_DRIVER_I3C(dev, do_ccc));
 	K_OOPS(K_SYSCALL_MEMORY_READ(payload, sizeof(*payload)));
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(payload, sizeof(*payload)));
 
 	if (payload->ccc.data != NULL) {
-		K_OOPS(K_SYSCALL_MEMORY_ARRAY_READ(payload->ccc.data,
-						   payload->ccc.data_len,
+		K_OOPS(K_SYSCALL_MEMORY_ARRAY_READ(payload->ccc.data, payload->ccc.data_len,
 						   sizeof(*payload->ccc.data)));
-		K_OOPS(K_SYSCALL_MEMORY_ARRAY_WRITE(payload->ccc.data,
-						    payload->ccc.data_len,
+		K_OOPS(K_SYSCALL_MEMORY_ARRAY_WRITE(payload->ccc.data, payload->ccc.data_len,
 						    sizeof(*payload->ccc.data)));
 	}
 
@@ -38,8 +35,7 @@ static inline int z_vrfy_i3c_do_ccc(const struct device *dev,
 #include <zephyr/syscalls/i3c_do_ccc_mrsh.c>
 
 static uint32_t copy_i3c_msgs_and_transfer(struct i3c_device_desc *target,
-					   const struct i3c_msg *msgs,
-					   uint8_t num_msgs)
+					   const struct i3c_msg *msgs, uint8_t num_msgs)
 {
 	struct i3c_msg copy[num_msgs];
 	uint8_t i;
@@ -51,15 +47,14 @@ static uint32_t copy_i3c_msgs_and_transfer(struct i3c_device_desc *target,
 	 * that the target buffer be writable
 	 */
 	for (i = 0U; i < num_msgs; i++) {
-		K_OOPS(K_SYSCALL_MEMORY(copy[i].buf, copy[i].len,
-					copy[i].flags & I3C_MSG_READ));
+		K_OOPS(K_SYSCALL_MEMORY(copy[i].buf, copy[i].len, copy[i].flags & I3C_MSG_READ));
 	}
 
 	return z_impl_i3c_transfer(target, copy, num_msgs);
 }
 
-static inline int z_vrfy_i3c_transfer(struct i3c_device_desc *target,
-				      struct i3c_msg *msgs, uint8_t num_msgs)
+static inline int z_vrfy_i3c_transfer(struct i3c_device_desc *target, struct i3c_msg *msgs,
+				      uint8_t num_msgs)
 {
 	K_OOPS(K_SYSCALL_MEMORY_READ(target, sizeof(*target)));
 	K_OOPS(K_SYSCALL_OBJ(target->bus, K_OBJ_DRIVER_I3C));
@@ -72,11 +67,9 @@ static inline int z_vrfy_i3c_transfer(struct i3c_device_desc *target,
 	K_OOPS(K_SYSCALL_VERIFY(num_msgs >= 1 && num_msgs < 32));
 
 	/* We need to be able to read the overall array of messages */
-	K_OOPS(K_SYSCALL_MEMORY_ARRAY_READ(msgs, num_msgs,
-					   sizeof(struct i3c_msg)));
+	K_OOPS(K_SYSCALL_MEMORY_ARRAY_READ(msgs, num_msgs, sizeof(struct i3c_msg)));
 
-	return copy_i3c_msgs_and_transfer((struct i3c_device_desc *)target,
-					  (struct i3c_msg *)msgs,
+	return copy_i3c_msgs_and_transfer((struct i3c_device_desc *)target, (struct i3c_msg *)msgs,
 					  (uint8_t)num_msgs);
 }
 #include <zephyr/syscalls/i3c_transfer_mrsh.c>

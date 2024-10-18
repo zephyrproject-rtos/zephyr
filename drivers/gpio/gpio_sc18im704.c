@@ -18,15 +18,15 @@ LOG_MODULE_REGISTER(gpio_sc18im, CONFIG_GPIO_LOG_LEVEL);
 
 #include "i2c/i2c_sc18im704.h"
 
-#define GPIO_SC18IM_MAX_PINS		8
+#define GPIO_SC18IM_MAX_PINS 8
 
 /* After reset the GPIO config registers are 0x55 */
-#define GPIO_SC18IM_DEFAULT_CONF	0x55
+#define GPIO_SC18IM_DEFAULT_CONF 0x55
 
-#define GPIO_SC18IM_CONF_INPUT		0x01
-#define GPIO_SC18IM_CONF_PUSH_PULL	0x02
-#define GPIO_SC18IM_CONF_OPEN_DRAIN	0x03
-#define GPIO_SC18IM_CONF_MASK		0x03
+#define GPIO_SC18IM_CONF_INPUT      0x01
+#define GPIO_SC18IM_CONF_PUSH_PULL  0x02
+#define GPIO_SC18IM_CONF_OPEN_DRAIN 0x03
+#define GPIO_SC18IM_CONF_MASK       0x03
 
 struct gpio_sc18im_config {
 	/* gpio_driver_config needs to be first */
@@ -44,8 +44,8 @@ struct gpio_sc18im_data {
 	uint8_t output_state;
 };
 
-static int gpio_sc18im_port_set_raw(const struct device *port,
-				    uint8_t mask, uint8_t value, uint8_t toggle)
+static int gpio_sc18im_port_set_raw(const struct device *port, uint8_t mask, uint8_t value,
+				    uint8_t toggle)
 {
 	const struct gpio_sc18im_config *cfg = port->config;
 	struct gpio_sc18im_data *data = port->data;
@@ -75,8 +75,7 @@ static int gpio_sc18im_port_set_raw(const struct device *port,
 	return 0;
 }
 
-static int gpio_sc18im_pin_configure(const struct device *port, gpio_pin_t pin,
-				     gpio_flags_t flags)
+static int gpio_sc18im_pin_configure(const struct device *port, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_sc18im_config *cfg = port->config;
 	struct gpio_sc18im_data *data = port->data;
@@ -217,8 +216,7 @@ static int gpio_sc18im_port_get_raw(const struct device *port, gpio_port_value_t
 	return 0;
 }
 
-static int gpio_sc18im_port_set_masked_raw(const struct device *port,
-					   gpio_port_pins_t mask,
+static int gpio_sc18im_port_set_masked_raw(const struct device *port, gpio_port_pins_t mask,
 					   gpio_port_value_t value)
 {
 	return gpio_sc18im_port_set_raw(port, (uint8_t)mask, (uint8_t)value, 0);
@@ -263,27 +261,26 @@ static const struct gpio_driver_api gpio_sc18im_driver_api = {
 	.port_toggle_bits = gpio_sc18im_port_toggle_bits,
 };
 
-#define CHECK_COMPAT(node)									\
+#define CHECK_COMPAT(node)                                                                         \
 	COND_CODE_1(DT_NODE_HAS_COMPAT(node, nxp_sc18im704_i2c), (DEVICE_DT_GET(node)), ())
 
-#define GPIO_SC18IM704_I2C_SIBLING(n)								\
-	DT_FOREACH_CHILD_STATUS_OKAY(DT_INST_PARENT(n), CHECK_COMPAT)
+#define GPIO_SC18IM704_I2C_SIBLING(n) DT_FOREACH_CHILD_STATUS_OKAY(DT_INST_PARENT(n), CHECK_COMPAT)
 
-#define GPIO_SC18IM704_DEFINE(n)								\
-	static const struct gpio_sc18im_config gpio_sc18im_config_##n = {			\
-		.common = {									\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),			\
-		},										\
-		.bridge = GPIO_SC18IM704_I2C_SIBLING(n),					\
-	};											\
-	static struct gpio_sc18im_data gpio_sc18im_data_##n = {					\
-		.conf1 = GPIO_SC18IM_DEFAULT_CONF,						\
-		.conf2 = GPIO_SC18IM_DEFAULT_CONF,						\
-	};											\
-												\
-	DEVICE_DT_INST_DEFINE(n, gpio_sc18im_init, NULL,					\
-			      &gpio_sc18im_data_##n, &gpio_sc18im_config_##n,			\
-			      POST_KERNEL, CONFIG_GPIO_SC18IM704_INIT_PRIORITY,			\
-			      &gpio_sc18im_driver_api);
+#define GPIO_SC18IM704_DEFINE(n)                                                                   \
+	static const struct gpio_sc18im_config gpio_sc18im_config_##n = {                          \
+		.common =                                                                          \
+			{                                                                          \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
+			},                                                                         \
+		.bridge = GPIO_SC18IM704_I2C_SIBLING(n),                                           \
+	};                                                                                         \
+	static struct gpio_sc18im_data gpio_sc18im_data_##n = {                                    \
+		.conf1 = GPIO_SC18IM_DEFAULT_CONF,                                                 \
+		.conf2 = GPIO_SC18IM_DEFAULT_CONF,                                                 \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, gpio_sc18im_init, NULL, &gpio_sc18im_data_##n,                    \
+			      &gpio_sc18im_config_##n, POST_KERNEL,                                \
+			      CONFIG_GPIO_SC18IM704_INIT_PRIORITY, &gpio_sc18im_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_SC18IM704_DEFINE);

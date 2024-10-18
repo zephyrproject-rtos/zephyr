@@ -72,9 +72,7 @@ static int i2c_b91_configure(const struct device *dev, uint32_t dev_config)
 }
 
 /* API implementation: transfer */
-static int i2c_b91_transfer(const struct device *dev,
-			    struct i2c_msg *msgs,
-			    uint8_t num_msgs,
+static int i2c_b91_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
 			    uint16_t addr)
 {
 	int status = 0;
@@ -155,27 +153,22 @@ static const struct i2c_driver_api i2c_b91_api = {
 #endif
 };
 
-BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
-	     "unsupported I2C instance");
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1, "unsupported I2C instance");
 
 /* I2C driver registration */
-#define I2C_B91_INIT(inst)					      \
-								      \
-	PINCTRL_DT_INST_DEFINE(inst);				      \
-								      \
-	static struct i2c_b91_data i2c_b91_data_##inst;		      \
-								      \
-	static struct i2c_b91_cfg i2c_b91_cfg_##inst = {	      \
-		.bitrate = DT_INST_PROP(inst, clock_frequency),	      \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),	      \
-	};							      \
-								      \
-	I2C_DEVICE_DT_INST_DEFINE(inst, i2c_b91_init,		      \
-				  NULL,				      \
-				  &i2c_b91_data_##inst,		      \
-				  &i2c_b91_cfg_##inst,		      \
-				  POST_KERNEL,			      \
-				  CONFIG_I2C_INIT_PRIORITY,	      \
+#define I2C_B91_INIT(inst)                                                                         \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(inst);                                                              \
+                                                                                                   \
+	static struct i2c_b91_data i2c_b91_data_##inst;                                            \
+                                                                                                   \
+	static struct i2c_b91_cfg i2c_b91_cfg_##inst = {                                           \
+		.bitrate = DT_INST_PROP(inst, clock_frequency),                                    \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
+	};                                                                                         \
+                                                                                                   \
+	I2C_DEVICE_DT_INST_DEFINE(inst, i2c_b91_init, NULL, &i2c_b91_data_##inst,                  \
+				  &i2c_b91_cfg_##inst, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,      \
 				  &i2c_b91_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_B91_INIT)

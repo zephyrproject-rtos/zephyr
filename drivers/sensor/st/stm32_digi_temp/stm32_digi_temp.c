@@ -16,10 +16,10 @@
 LOG_MODULE_REGISTER(stm32_digi_temp, CONFIG_SENSOR_LOG_LEVEL);
 
 /* Constants */
-#define ONE_MHZ			1000000 /* Hz */
-#define TS1_T0_VAL0		30	/* °C */
-#define TS1_T0_VAL1		130	/* °C */
-#define SAMPLING_TIME		15	/* best precision */
+#define ONE_MHZ       1000000 /* Hz */
+#define TS1_T0_VAL0   30      /* °C */
+#define TS1_T0_VAL1   130     /* °C */
+#define SAMPLING_TIME 15      /* best precision */
 
 struct stm32_digi_temp_data {
 	struct k_sem sem_isr;
@@ -93,7 +93,7 @@ static int stm32_digi_temp_sample_fetch(const struct device *dev, enum sensor_ch
 }
 
 static int stm32_digi_temp_channel_get(const struct device *dev, enum sensor_channel chan,
-				  struct sensor_value *val)
+				       struct sensor_value *val)
 {
 	struct stm32_digi_temp_data *data = dev->data;
 	float meas_freq, temp;
@@ -119,16 +119,13 @@ static void stm32_digi_temp_configure(const struct device *dev)
 	 * Allowed values are between 0 and 127.
 	 */
 	clk_div = MIN(DIV_ROUND_UP(data->pclk_freq, ONE_MHZ), 127);
-	MODIFY_REG(dts->CFGR1, DTS_CFGR1_HSREF_CLK_DIV_Msk,
-		   clk_div << DTS_CFGR1_HSREF_CLK_DIV_Pos);
+	MODIFY_REG(dts->CFGR1, DTS_CFGR1_HSREF_CLK_DIV_Msk, clk_div << DTS_CFGR1_HSREF_CLK_DIV_Pos);
 
 	/* Select PCLK as reference clock */
-	MODIFY_REG(dts->CFGR1, DTS_CFGR1_REFCLK_SEL_Msk,
-		   0 << DTS_CFGR1_REFCLK_SEL_Pos);
+	MODIFY_REG(dts->CFGR1, DTS_CFGR1_REFCLK_SEL_Msk, 0 << DTS_CFGR1_REFCLK_SEL_Pos);
 
 	/* Select trigger */
-	MODIFY_REG(dts->CFGR1, DTS_CFGR1_TS1_INTRIG_SEL_Msk,
-		   0 << DTS_CFGR1_TS1_INTRIG_SEL_Pos);
+	MODIFY_REG(dts->CFGR1, DTS_CFGR1_TS1_INTRIG_SEL_Msk, 0 << DTS_CFGR1_TS1_INTRIG_SEL_Pos);
 
 	/* Set sampling time */
 	MODIFY_REG(dts->CFGR1, DTS_CFGR1_TS1_SMP_TIME_Msk,
@@ -175,7 +172,7 @@ static int stm32_digi_temp_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken) != 0) {
+	if (clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken) != 0) {
 		LOG_ERR("Could not enable DTS clock");
 		return -EIO;
 	}
@@ -183,8 +180,8 @@ static int stm32_digi_temp_init(const struct device *dev)
 	/* Save the peripheral clock frequency in the data structure to avoid
 	 * querying it for each call to the channel_get method.
 	 */
-	if (clock_control_get_rate(clk, (clock_control_subsys_t) &cfg->pclken,
-				   &data->pclk_freq) < 0) {
+	if (clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken, &data->pclk_freq) <
+	    0) {
 		LOG_ERR("Failed call clock_control_get_rate(pclken)");
 		return -EIO;
 	}
@@ -262,33 +259,28 @@ static const struct sensor_driver_api stm32_digi_temp_driver_api = {
 	.channel_get = stm32_digi_temp_channel_get,
 };
 
-#define STM32_DIGI_TEMP_INIT(index)							\
-static void stm32_digi_temp_irq_config_func_##index(const struct device *dev)		\
-{											\
-	IRQ_CONNECT(DT_INST_IRQN(index),						\
-		    DT_INST_IRQ(index, priority),					\
-		    stm32_digi_temp_isr, DEVICE_DT_INST_GET(index), 0);			\
-	irq_enable(DT_INST_IRQN(index));						\
-}											\
-											\
-static struct stm32_digi_temp_data stm32_digi_temp_dev_data_##index;			\
-											\
-static const struct stm32_digi_temp_config stm32_digi_temp_dev_config_##index = {	\
-	.base = (DTS_TypeDef *)DT_INST_REG_ADDR(index),					\
-	.pclken = {									\
-		.enr = DT_INST_CLOCKS_CELL(index, bits),				\
-		.bus = DT_INST_CLOCKS_CELL(index, bus)					\
-	},										\
-	.irq_config = stm32_digi_temp_irq_config_func_##index,				\
-};											\
-											\
-PM_DEVICE_DT_INST_DEFINE(index, stm32_digi_temp_pm_action);				\
-											\
-SENSOR_DEVICE_DT_INST_DEFINE(index, stm32_digi_temp_init,				\
-			     PM_DEVICE_DT_INST_GET(index),				\
-			     &stm32_digi_temp_dev_data_##index,				\
-			     &stm32_digi_temp_dev_config_##index,			\
-			     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,			\
-			     &stm32_digi_temp_driver_api);				\
+#define STM32_DIGI_TEMP_INIT(index)                                                                \
+	static void stm32_digi_temp_irq_config_func_##index(const struct device *dev)              \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(index), DT_INST_IRQ(index, priority),                     \
+			    stm32_digi_temp_isr, DEVICE_DT_INST_GET(index), 0);                    \
+		irq_enable(DT_INST_IRQN(index));                                                   \
+	}                                                                                          \
+                                                                                                   \
+	static struct stm32_digi_temp_data stm32_digi_temp_dev_data_##index;                       \
+                                                                                                   \
+	static const struct stm32_digi_temp_config stm32_digi_temp_dev_config_##index = {          \
+		.base = (DTS_TypeDef *)DT_INST_REG_ADDR(index),                                    \
+		.pclken = {.enr = DT_INST_CLOCKS_CELL(index, bits),                                \
+			   .bus = DT_INST_CLOCKS_CELL(index, bus)},                                \
+		.irq_config = stm32_digi_temp_irq_config_func_##index,                             \
+	};                                                                                         \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(index, stm32_digi_temp_pm_action);                                \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(index, stm32_digi_temp_init, PM_DEVICE_DT_INST_GET(index),    \
+				     &stm32_digi_temp_dev_data_##index,                            \
+				     &stm32_digi_temp_dev_config_##index, POST_KERNEL,             \
+				     CONFIG_SENSOR_INIT_PRIORITY, &stm32_digi_temp_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_DIGI_TEMP_INIT)

@@ -17,8 +17,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(ADT7310, CONFIG_SENSOR_LOG_LEVEL);
 
-static void adt7310_gpio_callback(const struct device *dev, struct gpio_callback *cb,
-				  uint32_t pins)
+static void adt7310_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
 	struct adt7310_data *drv_data = CONTAINER_OF(cb, struct adt7310_data, gpio_cb);
 
@@ -128,11 +127,9 @@ int adt7310_init_interrupt(const struct device *dev)
 	drv_data->dev = dev;
 #if defined(CONFIG_ADT7310_TRIGGER_OWN_THREAD)
 	k_sem_init(&drv_data->gpio_sem, 0, 1);
-	k_thread_create(&drv_data->thread, drv_data->thread_stack,
-			CONFIG_ADT7310_THREAD_STACK_SIZE,
-			adt7310_thread, drv_data,
-			NULL, NULL, K_PRIO_COOP(CONFIG_ADT7310_THREAD_PRIORITY),
-			0, K_NO_WAIT);
+	k_thread_create(&drv_data->thread, drv_data->thread_stack, CONFIG_ADT7310_THREAD_STACK_SIZE,
+			adt7310_thread, drv_data, NULL, NULL,
+			K_PRIO_COOP(CONFIG_ADT7310_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_ADT7310_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = adt7310_work_cb;
 #endif

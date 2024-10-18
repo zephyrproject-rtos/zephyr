@@ -22,15 +22,13 @@ static int vnd_adc_channel_setup(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static int vnd_adc_read(const struct device *dev,
-			const struct adc_sequence *sequence)
+static int vnd_adc_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	return -ENOTSUP;
 }
 
 #ifdef CONFIG_ADC_ASYNC
-static int vnd_adc_read_async(const struct device *dev,
-			      const struct adc_sequence *sequence,
+static int vnd_adc_read_async(const struct device *dev, const struct adc_sequence *sequence,
 			      struct k_poll_signal *async)
 {
 	return -ENOTSUP;
@@ -45,10 +43,8 @@ static const struct adc_driver_api vnd_adc_api = {
 #endif
 };
 
-#define VND_ADC_INIT(n)						  \
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, NULL,	  \
-			      POST_KERNEL,			  \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
-			      &vnd_adc_api);
+#define VND_ADC_INIT(n)                                                                            \
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, NULL, POST_KERNEL,                              \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &vnd_adc_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VND_ADC_INIT)

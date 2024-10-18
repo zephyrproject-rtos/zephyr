@@ -407,7 +407,8 @@ static const struct auxdisplay_driver_api auxdisplay_serlcd_auxdisplay_api = {
 
 #define AUXDISPLAY_SERLCD_INST(inst)                                                               \
 	static const struct auxdisplay_serlcd_config auxdisplay_serlcd_config_##inst = {           \
-		.capabilities = {                                                                  \
+		.capabilities =                                                                    \
+			{                                                                          \
 				.columns = DT_INST_PROP(inst, columns),                            \
 				.rows = DT_INST_PROP(inst, rows),                                  \
 				.mode = 0,                                                         \

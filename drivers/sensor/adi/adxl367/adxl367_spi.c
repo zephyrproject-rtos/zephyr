@@ -18,8 +18,7 @@
 
 LOG_MODULE_DECLARE(ADXL367, CONFIG_SENSOR_LOG_LEVEL);
 
-static int adxl367_bus_access(const struct device *dev, uint8_t reg,
-			      void *data, size_t length)
+static int adxl367_bus_access(const struct device *dev, uint8_t reg, void *data, size_t length)
 {
 	const struct adxl367_dev_config *config = dev->config;
 	uint8_t rw_reg, addr_reg;
@@ -32,28 +31,16 @@ static int adxl367_bus_access(const struct device *dev, uint8_t reg,
 
 	addr_reg = ADXL367_TO_REG(reg);
 
-	const struct spi_buf buf[3] = {
-		{
-			.buf = &rw_reg,
-			.len = 1
-		}, {
-			.buf = &addr_reg,
-			.len = 1
-		}, {
-			.buf = data,
-			.len = length
-		}
-	};
+	const struct spi_buf buf[3] = {{.buf = &rw_reg, .len = 1},
+				       {.buf = &addr_reg, .len = 1},
+				       {.buf = data, .len = length}};
 
 	struct spi_buf_set tx = {
 		.buffers = buf,
 	};
 
 	if ((reg & ADXL367_READ) != 0) {
-		const struct spi_buf_set rx = {
-			.buffers = buf,
-			.count = 3
-		};
+		const struct spi_buf_set rx = {.buffers = buf, .count = 3};
 
 		tx.count = 2;
 
@@ -65,32 +52,23 @@ static int adxl367_bus_access(const struct device *dev, uint8_t reg,
 	return spi_write_dt(&config->spi, &tx);
 }
 
-static int adxl367_spi_reg_read(const struct device *dev, uint8_t reg_addr,
-			    uint8_t *reg_data)
+static int adxl367_spi_reg_read(const struct device *dev, uint8_t reg_addr, uint8_t *reg_data)
 {
 	return adxl367_bus_access(dev, ADXL367_REG_READ(reg_addr), reg_data, 1);
 }
 
-static int adxl367_spi_reg_read_multiple(const struct device *dev,
-					 uint8_t reg_addr,
-					 uint8_t *reg_data,
-					 uint16_t count)
+static int adxl367_spi_reg_read_multiple(const struct device *dev, uint8_t reg_addr,
+					 uint8_t *reg_data, uint16_t count)
 {
-	return adxl367_bus_access(dev, ADXL367_REG_READ(reg_addr),
-				  reg_data, count);
+	return adxl367_bus_access(dev, ADXL367_REG_READ(reg_addr), reg_data, count);
 }
 
-static int adxl367_spi_reg_write(const struct device *dev,
-				 uint8_t reg_addr,
-				 uint8_t reg_data)
+static int adxl367_spi_reg_write(const struct device *dev, uint8_t reg_addr, uint8_t reg_data)
 {
-	return adxl367_bus_access(dev, ADXL367_REG_WRITE(reg_addr),
-				  &reg_data, 1);
+	return adxl367_bus_access(dev, ADXL367_REG_WRITE(reg_addr), &reg_data, 1);
 }
 
-int adxl367_spi_reg_write_mask(const struct device *dev,
-			       uint8_t reg_addr,
-			       uint32_t mask,
+int adxl367_spi_reg_write_mask(const struct device *dev, uint8_t reg_addr, uint32_t mask,
 			       uint8_t data)
 {
 	int ret;

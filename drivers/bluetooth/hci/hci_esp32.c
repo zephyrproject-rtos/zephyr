@@ -229,10 +229,8 @@ static void hci_esp_controller_rcv_pkt_ready(void)
 	k_sem_give(&hci_send_sem);
 }
 
-static esp_vhci_host_callback_t vhci_host_cb = {
-	hci_esp_controller_rcv_pkt_ready,
-	hci_esp_host_rcv_pkt
-};
+static esp_vhci_host_callback_t vhci_host_cb = {hci_esp_controller_rcv_pkt_ready,
+						hci_esp_host_rcv_pkt};
 
 static int bt_esp32_send(const struct device *dev, struct net_buf *buf)
 {
@@ -359,16 +357,15 @@ static int bt_esp32_close(const struct device *dev)
 }
 
 static const struct bt_hci_driver_api drv = {
-	.open           = bt_esp32_open,
-	.send           = bt_esp32_send,
-	.close          = bt_esp32_close,
+	.open = bt_esp32_open,
+	.send = bt_esp32_send,
+	.close = bt_esp32_close,
 };
 
-#define BT_ESP32_DEVICE_INIT(inst) \
-	static struct bt_esp32_data bt_esp32_data_##inst = { \
-	}; \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &bt_esp32_data_##inst, NULL, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
+#define BT_ESP32_DEVICE_INIT(inst)                                                                 \
+	static struct bt_esp32_data bt_esp32_data_##inst = {};                                     \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &bt_esp32_data_##inst, NULL, POST_KERNEL,          \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
 /* Only one instance supported */
 BT_ESP32_DEVICE_INIT(0)

@@ -54,8 +54,7 @@ static int cmd_cycles(const struct shell *sh, size_t argc, char **argv)
 
 	err = pwm_set_cycles(dev, channel, period, pulse, flags);
 	if (err) {
-		shell_error(sh, "failed to setup PWM (err %d)",
-			    err);
+		shell_error(sh, "failed to setup PWM (err %d)", err);
 		return err;
 	}
 
@@ -127,13 +126,18 @@ static int cmd_nsec(const struct shell *sh, size_t argc, char **argv)
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(pwm_cmds,
-	SHELL_CMD_ARG(cycles, NULL, "<device> <channel> <period in cycles> "
-		      "<pulse width in cycles> [flags]", cmd_cycles, 5, 1),
-	SHELL_CMD_ARG(usec, NULL, "<device> <channel> <period in usec> "
-		      "<pulse width in usec> [flags]", cmd_usec, 5, 1),
-	SHELL_CMD_ARG(nsec, NULL, "<device> <channel> <period in nsec> "
-		      "<pulse width in nsec> [flags]", cmd_nsec, 5, 1),
-	SHELL_SUBCMD_SET_END
-);
+			       SHELL_CMD_ARG(cycles, NULL,
+					     "<device> <channel> <period in cycles> "
+					     "<pulse width in cycles> [flags]",
+					     cmd_cycles, 5, 1),
+			       SHELL_CMD_ARG(usec, NULL,
+					     "<device> <channel> <period in usec> "
+					     "<pulse width in usec> [flags]",
+					     cmd_usec, 5, 1),
+			       SHELL_CMD_ARG(nsec, NULL,
+					     "<device> <channel> <period in nsec> "
+					     "<pulse width in nsec> [flags]",
+					     cmd_nsec, 5, 1),
+			       SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(pwm, &pwm_cmds, "PWM shell commands", NULL);

@@ -20,7 +20,7 @@ struct bbram_npcx_emul_config {
 		  *)(((const struct bbram_npcx_emul_config *)((target)->cfg))->dev->config))
 
 static int npcx_emul_backend_set_data(const struct emul *target, size_t offset, size_t count,
-			       const uint8_t *buffer)
+				      const uint8_t *buffer)
 {
 	const struct bbram_npcx_config *config = GET_CONFIG(target);
 
@@ -33,7 +33,7 @@ static int npcx_emul_backend_set_data(const struct emul *target, size_t offset, 
 }
 
 static int npcx_emul_backend_get_data(const struct emul *target, size_t offset, size_t count,
-			       uint8_t *buffer)
+				      uint8_t *buffer)
 {
 	const struct bbram_npcx_config *config = GET_CONFIG(target);
 

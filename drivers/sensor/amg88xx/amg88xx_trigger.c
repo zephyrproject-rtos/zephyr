@@ -18,24 +18,18 @@ extern struct amg88xx_data amg88xx_driver;
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(AMG88XX, CONFIG_SENSOR_LOG_LEVEL);
 
-static inline void amg88xx_setup_int(const struct amg88xx_config *cfg,
-				     bool enable)
+static inline void amg88xx_setup_int(const struct amg88xx_config *cfg, bool enable)
 {
-	unsigned int flags = enable
-		? GPIO_INT_EDGE_TO_ACTIVE
-		: GPIO_INT_DISABLE;
+	unsigned int flags = enable ? GPIO_INT_EDGE_TO_ACTIVE : GPIO_INT_DISABLE;
 
 	gpio_pin_interrupt_configure_dt(&cfg->int_gpio, flags);
 }
 
-int amg88xx_attr_set(const struct device *dev,
-		     enum sensor_channel chan,
-		     enum sensor_attribute attr,
+int amg88xx_attr_set(const struct device *dev, enum sensor_channel chan, enum sensor_attribute attr,
 		     const struct sensor_value *val)
 {
 	const struct amg88xx_config *config = dev->config;
-	int16_t int_level = (val->val1 * 1000000 + val->val2) /
-			  AMG88XX_TREG_LSB_SCALING;
+	int16_t int_level = (val->val1 * 1000000 + val->val2) / AMG88XX_TREG_LSB_SCALING;
 	uint8_t intl_reg;
 	uint8_t inth_reg;
 
@@ -59,14 +53,12 @@ int amg88xx_attr_set(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (i2c_reg_write_byte_dt(&config->i2c,
-			       intl_reg, (uint8_t)int_level)) {
+	if (i2c_reg_write_byte_dt(&config->i2c, intl_reg, (uint8_t)int_level)) {
 		LOG_DBG("Failed to set INTxL attribute!");
 		return -EIO;
 	}
 
-	if (i2c_reg_write_byte_dt(&config->i2c,
-			       inth_reg, (uint8_t)(int_level >> 8))) {
+	if (i2c_reg_write_byte_dt(&config->i2c, inth_reg, (uint8_t)(int_level >> 8))) {
 		LOG_DBG("Failed to set INTxH attribute!");
 		return -EIO;
 	}
@@ -74,11 +66,9 @@ int amg88xx_attr_set(const struct device *dev,
 	return 0;
 }
 
-static void amg88xx_gpio_callback(const struct device *dev,
-				  struct gpio_callback *cb, uint32_t pins)
+static void amg88xx_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	struct amg88xx_data *drv_data =
-		CONTAINER_OF(cb, struct amg88xx_data, gpio_cb);
+	struct amg88xx_data *drv_data = CONTAINER_OF(cb, struct amg88xx_data, gpio_cb);
 	const struct amg88xx_config *config = drv_data->dev->config;
 
 	amg88xx_setup_int(config, false);
@@ -96,8 +86,7 @@ static void amg88xx_thread_cb(const struct device *dev)
 	const struct amg88xx_config *config = dev->config;
 	uint8_t status;
 
-	if (i2c_reg_read_byte_dt(&config->i2c,
-			      AMG88XX_STAT, &status) < 0) {
+	if (i2c_reg_read_byte_dt(&config->i2c, AMG88XX_STAT, &status) < 0) {
 		return;
 	}
 
@@ -130,14 +119,12 @@ static void amg88xx_thread(void *p1, void *p2, void *p3)
 #ifdef CONFIG_AMG88XX_TRIGGER_GLOBAL_THREAD
 static void amg88xx_work_cb(struct k_work *work)
 {
-	struct amg88xx_data *drv_data =
-		CONTAINER_OF(work, struct amg88xx_data, work);
+	struct amg88xx_data *drv_data = CONTAINER_OF(work, struct amg88xx_data, work);
 	amg88xx_thread_cb(drv_data->dev);
 }
 #endif
 
-int amg88xx_trigger_set(const struct device *dev,
-			const struct sensor_trigger *trig,
+int amg88xx_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
 	struct amg88xx_data *drv_data = dev->data;
@@ -147,8 +134,7 @@ int amg88xx_trigger_set(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (i2c_reg_write_byte_dt(&config->i2c,
-			       AMG88XX_INTC, AMG88XX_INTC_DISABLED)) {
+	if (i2c_reg_write_byte_dt(&config->i2c, AMG88XX_INTC, AMG88XX_INTC_DISABLED)) {
 		return -EIO;
 	}
 
@@ -164,8 +150,7 @@ int amg88xx_trigger_set(const struct device *dev,
 
 	amg88xx_setup_int(config, true);
 
-	if (i2c_reg_write_byte_dt(&config->i2c,
-			       AMG88XX_INTC, AMG88XX_INTC_ABS_MODE)) {
+	if (i2c_reg_write_byte_dt(&config->i2c, AMG88XX_INTC, AMG88XX_INTC_ABS_MODE)) {
 		return -EIO;
 	}
 
@@ -178,16 +163,13 @@ int amg88xx_init_interrupt(const struct device *dev)
 	const struct amg88xx_config *config = dev->config;
 
 	if (!gpio_is_ready_dt(&config->int_gpio)) {
-		LOG_ERR("%s: device %s is not ready", dev->name,
-				config->int_gpio.port->name);
+		LOG_ERR("%s: device %s is not ready", dev->name, config->int_gpio.port->name);
 		return -ENODEV;
 	}
 
 	gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT | config->int_gpio.dt_flags);
 
-	gpio_init_callback(&drv_data->gpio_cb,
-			   amg88xx_gpio_callback,
-			   BIT(config->int_gpio.pin));
+	gpio_init_callback(&drv_data->gpio_cb, amg88xx_gpio_callback, BIT(config->int_gpio.pin));
 
 	if (gpio_add_callback(config->int_gpio.port, &drv_data->gpio_cb) < 0) {
 		LOG_DBG("Failed to set gpio callback!");
@@ -199,11 +181,9 @@ int amg88xx_init_interrupt(const struct device *dev)
 #if defined(CONFIG_AMG88XX_TRIGGER_OWN_THREAD)
 	k_sem_init(&drv_data->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
-	k_thread_create(&drv_data->thread, drv_data->thread_stack,
-			CONFIG_AMG88XX_THREAD_STACK_SIZE,
-			amg88xx_thread, drv_data,
-			NULL, NULL, K_PRIO_COOP(CONFIG_AMG88XX_THREAD_PRIORITY),
-			0, K_NO_WAIT);
+	k_thread_create(&drv_data->thread, drv_data->thread_stack, CONFIG_AMG88XX_THREAD_STACK_SIZE,
+			amg88xx_thread, drv_data, NULL, NULL,
+			K_PRIO_COOP(CONFIG_AMG88XX_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_AMG88XX_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = amg88xx_work_cb;
 #endif

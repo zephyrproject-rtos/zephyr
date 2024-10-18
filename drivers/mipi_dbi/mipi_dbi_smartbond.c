@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT  renesas_smartbond_mipi_dbi
+#define DT_DRV_COMPAT renesas_smartbond_mipi_dbi
 
 #include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -26,34 +26,29 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(smartbond_mipi_dbi, CONFIG_MIPI_DBI_LOG_LEVEL);
 
-#define SMARTBOND_IRQN		DT_INST_IRQN(0)
-#define SMARTBOND_IRQ_PRIO  DT_INST_IRQ(0, priority)
+#define SMARTBOND_IRQN     DT_INST_IRQN(0)
+#define SMARTBOND_IRQ_PRIO DT_INST_IRQ(0, priority)
 
-#define PINCTRL_STATE_READ  PINCTRL_STATE_PRIV_START
+#define PINCTRL_STATE_READ PINCTRL_STATE_PRIV_START
 
-#define MIPI_DBI_SMARTBOND_IS_READ_SUPPORTED \
-				DT_INST_NODE_HAS_PROP(0, spi_dev)
+#define MIPI_DBI_SMARTBOND_IS_READ_SUPPORTED DT_INST_NODE_HAS_PROP(0, spi_dev)
 
-#define LCDC_SMARTBOND_CLK_DIV(_freq)                           \
+#define LCDC_SMARTBOND_CLK_DIV(_freq)                                                              \
 	((32000000U % (_freq)) ? (96000000U / (_freq)) : (32000000U / (_freq)))
 
-#define MIPI_DBI_SMARTBOND_IS_PLL_REQUIRED \
-			!!(32000000U % DT_PROP(DT_CHOSEN(zephyr_display), mipi_max_frequency))
+#define MIPI_DBI_SMARTBOND_IS_PLL_REQUIRED                                                         \
+	!!(32000000U % DT_PROP(DT_CHOSEN(zephyr_display), mipi_max_frequency))
 
-#define MIPI_DBI_SMARTBOND_IS_TE_ENABLED \
-			DT_INST_PROP_OR(0, te_enable, 0)
+#define MIPI_DBI_SMARTBOND_IS_TE_ENABLED DT_INST_PROP_OR(0, te_enable, 0)
 
-#define MIPI_DBI_SMARTBOND_IS_DMA_PREFETCH_ENABLED \
-			DT_INST_ENUM_IDX_OR(0, dma_prefetch, 0)
+#define MIPI_DBI_SMARTBOND_IS_DMA_PREFETCH_ENABLED DT_INST_ENUM_IDX_OR(0, dma_prefetch, 0)
 
-#define MIPI_DBI_SMARTBOND_IS_RESET_AVAILABLE \
-			DT_INST_NODE_HAS_PROP(0, reset_gpios)
+#define MIPI_DBI_SMARTBOND_IS_RESET_AVAILABLE DT_INST_NODE_HAS_PROP(0, reset_gpios)
 
-#define LCDC_LAYER0_OFFSETX_REG_SET_FIELD(_field, _var, _val) \
-	((_var)) = \
-	((_var) & ~(LCDC_LCDC_LAYER0_OFFSETX_REG_ ## _field ## _Msk)) |	\
-	(((_var) << LCDC_LCDC_LAYER0_OFFSETX_REG_ ## _field ## _Pos) & \
-	LCDC_LCDC_LAYER0_OFFSETX_REG_ ## _field ## _Msk)
+#define LCDC_LAYER0_OFFSETX_REG_SET_FIELD(_field, _var, _val)                                      \
+	((_var)) = ((_var) & ~(LCDC_LCDC_LAYER0_OFFSETX_REG_##_field##_Msk)) |                     \
+		   (((_var) << LCDC_LCDC_LAYER0_OFFSETX_REG_##_field##_Pos) &                      \
+		    LCDC_LCDC_LAYER0_OFFSETX_REG_##_field##_Msk)
 
 struct mipi_dbi_smartbond_data {
 	/* Provide mutual exclusion when a display operation is requested. */
@@ -187,8 +182,8 @@ static inline uint8_t lcdc_smartbond_pixel_to_lcm(enum display_pixel_format pixf
 }
 
 static void lcdc_smartbond_mipi_dbi_translation(const struct mipi_dbi_config *dbi_config,
-			lcdc_smartbond_mipi_dbi_cfg *mipi_dbi_cfg,
-			enum display_pixel_format pixfmt)
+						lcdc_smartbond_mipi_dbi_cfg *mipi_dbi_cfg,
+						enum display_pixel_format pixfmt)
 {
 	mipi_dbi_cfg->cpha = dbi_config->config.operation & SPI_MODE_CPHA;
 	mipi_dbi_cfg->cpol = dbi_config->config.operation & SPI_MODE_CPOL;
@@ -199,9 +194,8 @@ static void lcdc_smartbond_mipi_dbi_translation(const struct mipi_dbi_config *db
 
 #if MIPI_DBI_SMARTBOND_IS_READ_SUPPORTED
 static int mipi_dbi_smartbond_command_read(const struct device *dev,
-				const struct mipi_dbi_config *dbi_config,
-				uint8_t *cmd, size_t num_cmds,
-				uint8_t *response, size_t len)
+					   const struct mipi_dbi_config *dbi_config, uint8_t *cmd,
+					   size_t num_cmds, uint8_t *response, size_t len)
 {
 	struct mipi_dbi_smartbond_data *data = dev->data;
 	const struct mipi_dbi_smartbond_config *config = dev->config;
@@ -287,9 +281,8 @@ _mipi_dbi_read_exit:
 #endif
 
 static int mipi_dbi_smartbond_command_write(const struct device *dev,
-				const struct mipi_dbi_config *dbi_config,
-				uint8_t cmd, const uint8_t *data_buf,
-				size_t len)
+					    const struct mipi_dbi_config *dbi_config, uint8_t cmd,
+					    const uint8_t *data_buf, size_t len)
 {
 	struct mipi_dbi_smartbond_data *data = dev->data;
 	int ret = 0;
@@ -326,10 +319,10 @@ finish:
 }
 
 static int mipi_dbi_smartbond_write_display(const struct device *dev,
-					const struct mipi_dbi_config *dbi_config,
-					const uint8_t *framebuf,
-					struct display_buffer_descriptor *desc,
-					enum display_pixel_format pixfmt)
+					    const struct mipi_dbi_config *dbi_config,
+					    const uint8_t *framebuf,
+					    struct display_buffer_descriptor *desc,
+					    enum display_pixel_format pixfmt)
 {
 	struct mipi_dbi_smartbond_data *data = dev->data;
 	const struct mipi_dbi_smartbond_config *config = dev->config;
@@ -338,8 +331,7 @@ static int mipi_dbi_smartbond_write_display(const struct device *dev,
 	lcdc_smartbond_mipi_dbi_cfg mipi_dbi_cfg;
 	uint8_t layer_color = lcdc_smartbond_pixel_to_lcm(pixfmt);
 
-	if (desc->width * desc->height * (DISPLAY_BITS_PER_PIXEL(pixfmt) / 8) !=
-		desc->buf_size) {
+	if (desc->width * desc->height * (DISPLAY_BITS_PER_PIXEL(pixfmt) / 8) != desc->buf_size) {
 		LOG_ERR("Incorrect buffer size for given width and height");
 		return -EINVAL;
 	}
@@ -367,14 +359,13 @@ static int mipi_dbi_smartbond_write_display(const struct device *dev,
 	}
 
 	ret = da1469x_lcdc_timings_configure(desc->width, desc->height,
-			(lcdc_smartbond_timing_cfg *)&config->timing_cfg);
+					     (lcdc_smartbond_timing_cfg *)&config->timing_cfg);
 	if (ret < 0) {
 		goto _mipi_dbi_write_exit;
 	}
 
-	LCDC_SMARTBOND_LAYER_CONFIG(layer, framebuf, 0, 0, desc->width, desc->height,
-					layer_color,
-					da1469x_lcdc_stride_calculation(layer_color, desc->width));
+	LCDC_SMARTBOND_LAYER_CONFIG(layer, framebuf, 0, 0, desc->width, desc->height, layer_color,
+				    da1469x_lcdc_stride_calculation(layer_color, desc->width));
 	ret = da1469x_lcdc_layer_configure(layer);
 	if (ret < 0) {
 		goto _mipi_dbi_write_exit;
@@ -403,7 +394,7 @@ static int mipi_dbi_smartbond_configure(const struct device *dev)
 	 * clock divider is further divided by 2.
 	 */
 	da1469x_lcdc_set_status(true, MIPI_DBI_SMARTBOND_IS_PLL_REQUIRED,
-		(clk_div >= 2 ? clk_div / 2 : clk_div));
+				(clk_div >= 2 ? clk_div / 2 : clk_div));
 
 	if (!da1469x_lcdc_check_id()) {
 		LOG_ERR("Mismatching LCDC ID");
@@ -415,15 +406,15 @@ static int mipi_dbi_smartbond_configure(const struct device *dev)
 
 	da1469x_lcdc_bgcolor_configure((lcdc_smartbond_bgcolor_cfg *)&config->bgcolor_cfg);
 
-	LCDC_LAYER0_OFFSETX_REG_SET_FIELD(LCDC_L0_DMA_PREFETCH,
-			LCDC->LCDC_LAYER0_OFFSETX_REG, MIPI_DBI_SMARTBOND_IS_DMA_PREFETCH_ENABLED);
+	LCDC_LAYER0_OFFSETX_REG_SET_FIELD(LCDC_L0_DMA_PREFETCH, LCDC->LCDC_LAYER0_OFFSETX_REG,
+					  MIPI_DBI_SMARTBOND_IS_DMA_PREFETCH_ENABLED);
 
 	return 0;
 }
 
 static void smartbond_mipi_dbi_isr(const void *arg)
 {
-	struct mipi_dbi_smartbond_data *data =  ((const struct device *)arg)->data;
+	struct mipi_dbi_smartbond_data *data = ((const struct device *)arg)->data;
 
 	/*
 	 * Underflow sticky bit will remain high until cleared by writing
@@ -529,7 +520,7 @@ static int mipi_dbi_smartbond_init(const struct device *dev)
 #endif
 
 	IRQ_CONNECT(SMARTBOND_IRQN, SMARTBOND_IRQ_PRIO, smartbond_mipi_dbi_isr,
-						DEVICE_DT_INST_GET(0), 0);
+		    DEVICE_DT_INST_GET(0), 0);
 
 	ret = mipi_dbi_smartbond_resume(dev);
 
@@ -547,26 +538,23 @@ static const struct mipi_dbi_driver_api mipi_dbi_smartbond_driver_api = {
 #endif
 };
 
-#define SMARTBOND_MIPI_DBI_INIT(inst)	\
-	PINCTRL_DT_INST_DEFINE(inst);	\
-                                    \
-	static const struct mipi_dbi_smartbond_config mipi_dbi_smartbond_config_## inst = {	\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),	\
-		.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {}),	\
-		.timing_cfg = { 0 },	\
-		.bgcolor_cfg = { 0xFF, 0xFF, 0xFF, 0 },	\
-	};	\
-												\
-	static struct mipi_dbi_smartbond_data mipi_dbi_smartbond_data_## inst;	\
-												\
-	PM_DEVICE_DT_INST_DEFINE(inst, mipi_dbi_smartbond_pm_action);	\
-												\
-	DEVICE_DT_INST_DEFINE(inst, mipi_dbi_smartbond_init,	\
-						PM_DEVICE_DT_INST_GET(inst),	\
-						&mipi_dbi_smartbond_data_## inst,	\
-						&mipi_dbi_smartbond_config_## inst,	\
-						POST_KERNEL,	\
-						CONFIG_MIPI_DBI_INIT_PRIORITY,	\
-						&mipi_dbi_smartbond_driver_api);
+#define SMARTBOND_MIPI_DBI_INIT(inst)                                                              \
+	PINCTRL_DT_INST_DEFINE(inst);                                                              \
+                                                                                                   \
+	static const struct mipi_dbi_smartbond_config mipi_dbi_smartbond_config_##inst = {         \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
+		.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {}),                          \
+		.timing_cfg = {0},                                                                 \
+		.bgcolor_cfg = {0xFF, 0xFF, 0xFF, 0},                                              \
+	};                                                                                         \
+                                                                                                   \
+	static struct mipi_dbi_smartbond_data mipi_dbi_smartbond_data_##inst;                      \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(inst, mipi_dbi_smartbond_pm_action);                              \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, mipi_dbi_smartbond_init, PM_DEVICE_DT_INST_GET(inst),          \
+			      &mipi_dbi_smartbond_data_##inst, &mipi_dbi_smartbond_config_##inst,  \
+			      POST_KERNEL, CONFIG_MIPI_DBI_INIT_PRIORITY,                          \
+			      &mipi_dbi_smartbond_driver_api);
 
 SMARTBOND_MIPI_DBI_INIT(0);

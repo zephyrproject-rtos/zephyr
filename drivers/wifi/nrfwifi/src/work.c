@@ -76,31 +76,25 @@ static int workqueue_init(void)
 {
 	k_work_queue_init(&zep_wifi_bh_q);
 
-	k_work_queue_start(&zep_wifi_bh_q,
-			   bh_wq_stack_area,
-			   K_THREAD_STACK_SIZEOF(bh_wq_stack_area),
-			   CONFIG_NRF70_BH_WQ_PRIORITY,
+	k_work_queue_start(&zep_wifi_bh_q, bh_wq_stack_area,
+			   K_THREAD_STACK_SIZEOF(bh_wq_stack_area), CONFIG_NRF70_BH_WQ_PRIORITY,
 			   NULL);
 
 	k_thread_name_set(&zep_wifi_bh_q.thread, "nrf70_bh_wq");
 
 	k_work_queue_init(&zep_wifi_intr_q);
 
-	k_work_queue_start(&zep_wifi_intr_q,
-			   irq_wq_stack_area,
-			   K_THREAD_STACK_SIZEOF(irq_wq_stack_area),
-			   CONFIG_NRF70_IRQ_WQ_PRIORITY,
+	k_work_queue_start(&zep_wifi_intr_q, irq_wq_stack_area,
+			   K_THREAD_STACK_SIZEOF(irq_wq_stack_area), CONFIG_NRF70_IRQ_WQ_PRIORITY,
 			   NULL);
 
 	k_thread_name_set(&zep_wifi_intr_q.thread, "nrf70_intr_wq");
 #ifdef CONFIG_NRF70_TX_DONE_WQ_ENABLED
 	k_work_queue_init(&zep_wifi_tx_done_q);
 
-	k_work_queue_start(&zep_wifi_tx_done_q,
-			   tx_done_wq_stack_area,
+	k_work_queue_start(&zep_wifi_tx_done_q, tx_done_wq_stack_area,
 			   K_THREAD_STACK_SIZEOF(tx_done_wq_stack_area),
-			   CONFIG_NRF70_TX_DONE_WQ_PRIORITY,
-			   NULL);
+			   CONFIG_NRF70_TX_DONE_WQ_PRIORITY, NULL);
 
 	k_thread_name_set(&zep_wifi_tx_done_q.thread, "nrf70_tx_done_wq");
 #endif /* CONFIG_NRF70_TX_DONE_WQ_ENABLED */
@@ -108,10 +102,8 @@ static int workqueue_init(void)
 #ifdef CONFIG_NRF70_RX_WQ_ENABLED
 	k_work_queue_init(&zep_wifi_rx_q);
 
-	k_work_queue_start(&zep_wifi_rx_q,
-			   rx_wq_stack_area,
-			   K_THREAD_STACK_SIZEOF(rx_wq_stack_area),
-			   CONFIG_NRF70_RX_WQ_PRIORITY,
+	k_work_queue_start(&zep_wifi_rx_q, rx_wq_stack_area,
+			   K_THREAD_STACK_SIZEOF(rx_wq_stack_area), CONFIG_NRF70_RX_WQ_PRIORITY,
 			   NULL);
 
 	k_thread_name_set(&zep_wifi_rx_q.thread, "nrf70_rx_wq");
@@ -120,8 +112,7 @@ static int workqueue_init(void)
 	return 0;
 }
 
-void work_init(struct zep_work_item *item, void (*callback)(unsigned long),
-		  unsigned long data)
+void work_init(struct zep_work_item *item, void (*callback)(unsigned long), unsigned long data)
 {
 	item->callback = callback;
 	item->data = data;

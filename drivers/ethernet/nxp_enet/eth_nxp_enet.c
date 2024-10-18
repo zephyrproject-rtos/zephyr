@@ -15,7 +15,7 @@
 
 /* Set up logging module for this driver */
 #define LOG_MODULE_NAME eth_nxp_enet_mac
-#define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
+#define LOG_LEVEL       CONFIG_ETHERNET_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
@@ -57,13 +57,13 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define FREESCALE_OUI_B2 0x9f
 
 #if defined(CONFIG_SOC_SERIES_IMXRT10XX)
-#define ETH_NXP_ENET_UNIQUE_ID	(OCOTP->CFG1 ^ OCOTP->CFG2)
+#define ETH_NXP_ENET_UNIQUE_ID (OCOTP->CFG1 ^ OCOTP->CFG2)
 #elif defined(CONFIG_SOC_SERIES_IMXRT11XX)
-#define ETH_NXP_ENET_UNIQUE_ID	(OCOTP->FUSEN[40].FUSE)
+#define ETH_NXP_ENET_UNIQUE_ID (OCOTP->FUSEN[40].FUSE)
 #elif defined(CONFIG_SOC_SERIES_KINETIS_K6X)
-#define ETH_NXP_ENET_UNIQUE_ID	(SIM->UIDH ^ SIM->UIDMH ^ SIM->UIDML ^ SIM->UIDL)
+#define ETH_NXP_ENET_UNIQUE_ID (SIM->UIDH ^ SIM->UIDMH ^ SIM->UIDML ^ SIM->UIDL)
 #elif defined(CONFIG_SOC_SERIES_RW6XX)
-#define ETH_NXP_ENET_UNIQUE_ID	(OCOTP->OTP_SHADOW[46])
+#define ETH_NXP_ENET_UNIQUE_ID (OCOTP->OTP_SHADOW[46])
 #else
 #define ETH_NXP_ENET_UNIQUE_ID 0xFFFFFF
 #endif
@@ -121,10 +121,8 @@ static int rx_queue_init(void)
 	struct k_work_queue_config cfg = {.name = "ENET_RX"};
 
 	k_work_queue_init(&rx_work_queue);
-	k_work_queue_start(&rx_work_queue, enet_rx_stack,
-			   K_THREAD_STACK_SIZEOF(enet_rx_stack),
-			   K_PRIO_COOP(CONFIG_ETH_NXP_ENET_RX_THREAD_PRIORITY),
-			   &cfg);
+	k_work_queue_start(&rx_work_queue, enet_rx_stack, K_THREAD_STACK_SIZEOF(enet_rx_stack),
+			   K_PRIO_COOP(CONFIG_ETH_NXP_ENET_RX_THREAD_PRIORITY), &cfg);
 
 	return 0;
 }
@@ -156,9 +154,7 @@ static bool eth_get_ptp_data(struct net_if *iface, struct net_pkt *pkt)
 	return pkt_is_ptp;
 }
 
-
-static inline void ts_register_tx_event(const struct device *dev,
-					 enet_frame_info_t *frameinfo)
+static inline void ts_register_tx_event(const struct device *dev, enet_frame_info_t *frameinfo)
 {
 	struct nxp_enet_mac_data *data = dev->data;
 	struct net_pkt *pkt = frameinfo->context;
@@ -222,8 +218,8 @@ static int eth_nxp_enet_tx(const struct device *dev, struct net_pkt *pkt)
 
 	frame_is_timestamped = eth_get_ptp_data(net_pkt_iface(pkt), pkt);
 
-	ret = ENET_SendFrame(data->base, &data->enet_handle, data->tx_frame_buf,
-			     total_len, RING_ID, frame_is_timestamped, pkt);
+	ret = ENET_SendFrame(data->base, &data->enet_handle, data->tx_frame_buf, total_len, RING_ID,
+			     frame_is_timestamped, pkt);
 
 	if (ret != kStatus_Success) {
 		LOG_ERR("ENET_SendFrame error: %d", ret);
@@ -249,9 +245,7 @@ static void eth_nxp_enet_iface_init(struct net_if *iface)
 	struct nxp_enet_mac_data *data = dev->data;
 	const struct nxp_enet_mac_config *config = dev->config;
 
-	net_if_set_link_addr(iface, data->mac_addr,
-			     sizeof(data->mac_addr),
-			     NET_LINK_ETHERNET);
+	net_if_set_link_addr(iface, data->mac_addr, sizeof(data->mac_addr), NET_LINK_ETHERNET);
 
 	if (data->iface == NULL) {
 		data->iface = iface;
@@ -278,22 +272,20 @@ static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *
 #endif
 	enum ethernet_hw_caps caps;
 
-	caps = ETHERNET_LINK_10BASE_T |
-		ETHERNET_HW_FILTERING |
+	caps = ETHERNET_LINK_10BASE_T | ETHERNET_HW_FILTERING |
 #if defined(CONFIG_NET_VLAN)
-		ETHERNET_HW_VLAN |
+	       ETHERNET_HW_VLAN |
 #endif
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
-		ETHERNET_PTP |
+	       ETHERNET_PTP |
 #endif
 #if defined(CONFIG_NET_DSA)
-		ETHERNET_DSA_MASTER_PORT |
+	       ETHERNET_DSA_MASTER_PORT |
 #endif
 #if defined(CONFIG_ETH_NXP_ENET_HW_ACCELERATION)
-		ETHERNET_HW_TX_CHKSUM_OFFLOAD |
-		ETHERNET_HW_RX_CHKSUM_OFFLOAD |
+	       ETHERNET_HW_TX_CHKSUM_OFFLOAD | ETHERNET_HW_RX_CHKSUM_OFFLOAD |
 #endif
-		ETHERNET_LINK_100BASE_T;
+	       ETHERNET_LINK_100BASE_T;
 
 	if (COND_CODE_1(IS_ENABLED(CONFIG_ETH_NXP_ENET_1G),
 	   (config->phy_mode == NXP_ENET_RGMII_MODE), (0))) {
@@ -303,32 +295,25 @@ static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *
 	return caps;
 }
 
-static int eth_nxp_enet_set_config(const struct device *dev,
-			       enum ethernet_config_type type,
-			       const struct ethernet_config *cfg)
+static int eth_nxp_enet_set_config(const struct device *dev, enum ethernet_config_type type,
+				   const struct ethernet_config *cfg)
 {
 	struct nxp_enet_mac_data *data = dev->data;
 
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
-		memcpy(data->mac_addr,
-		       cfg->mac_address.addr,
-		       sizeof(data->mac_addr));
+		memcpy(data->mac_addr, cfg->mac_address.addr, sizeof(data->mac_addr));
 		ENET_SetMacAddr(data->base, data->mac_addr);
-		net_if_set_link_addr(data->iface, data->mac_addr,
-				     sizeof(data->mac_addr),
+		net_if_set_link_addr(data->iface, data->mac_addr, sizeof(data->mac_addr),
 				     NET_LINK_ETHERNET);
-		LOG_DBG("%s MAC set to %02x:%02x:%02x:%02x:%02x:%02x",
-			dev->name,
-			data->mac_addr[0], data->mac_addr[1],
-			data->mac_addr[2], data->mac_addr[3],
-			data->mac_addr[4], data->mac_addr[5]);
+		LOG_DBG("%s MAC set to %02x:%02x:%02x:%02x:%02x:%02x", dev->name, data->mac_addr[0],
+			data->mac_addr[1], data->mac_addr[2], data->mac_addr[3], data->mac_addr[4],
+			data->mac_addr[5]);
 		return 0;
 	case ETHERNET_CONFIG_TYPE_FILTER:
 		/* The ENET driver does not modify the address buffer but the API is not const */
 		if (cfg->filter.set) {
-			ENET_AddMulticastGroup(data->base,
-					       (uint8_t *)cfg->filter.mac_address.addr);
+			ENET_AddMulticastGroup(data->base, (uint8_t *)cfg->filter.mac_address.addr);
 		} else {
 			ENET_LeaveMulticastGroup(data->base,
 						 (uint8_t *)cfg->filter.mac_address.addr);
@@ -353,8 +338,7 @@ static int eth_nxp_enet_rx(const struct device *dev)
 	status_t status;
 	uint32_t ts;
 
-	status = ENET_GetRxFrameSize(&data->enet_handle,
-				     (uint32_t *)&frame_length, RING_ID);
+	status = ENET_GetRxFrameSize(&data->enet_handle, (uint32_t *)&frame_length, RING_ID);
 	if (status == kStatus_ENET_RxFrameEmpty) {
 		return 0;
 	} else if (status == kStatus_ENET_RxFrameError) {
@@ -362,8 +346,7 @@ static int eth_nxp_enet_rx(const struct device *dev)
 
 		LOG_ERR("ENET_GetRxFrameSize return: %d", (int)status);
 
-		ENET_GetRxErrBeforeReadFrame(&data->enet_handle,
-					     &error_stats, RING_ID);
+		ENET_GetRxErrBeforeReadFrame(&data->enet_handle, &error_stats, RING_ID);
 		goto flush;
 	}
 
@@ -373,15 +356,14 @@ static int eth_nxp_enet_rx(const struct device *dev)
 	}
 
 	/* Using root iface. It will be updated in net_recv_data() */
-	pkt = net_pkt_rx_alloc_with_buffer(data->iface, frame_length,
-					   AF_UNSPEC, 0, K_NO_WAIT);
+	pkt = net_pkt_rx_alloc_with_buffer(data->iface, frame_length, AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		goto flush;
 	}
 
 	k_mutex_lock(&data->rx_frame_buf_mutex, K_FOREVER);
-	status = ENET_ReadFrame(data->base, &data->enet_handle,
-				data->rx_frame_buf, frame_length, RING_ID, &ts);
+	status = ENET_ReadFrame(data->base, &data->enet_handle, data->rx_frame_buf, frame_length,
+				RING_ID, &ts);
 	k_mutex_unlock(&data->rx_frame_buf_mutex);
 
 	if (status) {
@@ -434,8 +416,7 @@ flush:
 	 * only report failure if there is no frame to flush,
 	 * which cannot happen in this context.
 	 */
-	status = ENET_ReadFrame(data->base, &data->enet_handle, NULL,
-					0, RING_ID, NULL);
+	status = ENET_ReadFrame(data->base, &data->enet_handle, NULL, 0, RING_ID, NULL);
 	__ASSERT_NO_MSG(status == kStatus_Success);
 error:
 	if (pkt) {
@@ -447,8 +428,7 @@ error:
 
 static void eth_nxp_enet_rx_thread(struct k_work *work)
 {
-	struct nxp_enet_mac_data *data =
-		CONTAINER_OF(work, struct nxp_enet_mac_data, rx_work);
+	struct nxp_enet_mac_data *data = CONTAINER_OF(work, struct nxp_enet_mac_data, rx_work);
 	const struct device *dev = data->dev;
 	int ret;
 
@@ -465,8 +445,8 @@ static void eth_nxp_enet_rx_thread(struct k_work *work)
 
 static int nxp_enet_phy_configure(const struct device *phy, uint8_t phy_mode)
 {
-	enum phy_link_speed speeds = LINK_HALF_10BASE_T | LINK_FULL_10BASE_T |
-				       LINK_HALF_100BASE_T | LINK_FULL_100BASE_T;
+	enum phy_link_speed speeds =
+		LINK_HALF_10BASE_T | LINK_FULL_10BASE_T | LINK_HALF_100BASE_T | LINK_FULL_100BASE_T;
 
 	if (COND_CODE_1(IS_ENABLED(CONFIG_ETH_NXP_ENET_1G),
 	   (phy_mode == NXP_ENET_RGMII_MODE), (0))) {
@@ -477,9 +457,7 @@ static int nxp_enet_phy_configure(const struct device *phy, uint8_t phy_mode)
 	return phy_configure_link(phy, speeds);
 }
 
-static void nxp_enet_phy_cb(const struct device *phy,
-				struct phy_link_state *state,
-				void *eth_dev)
+static void nxp_enet_phy_cb(const struct device *phy, struct phy_link_state *state, void *eth_dev)
 {
 	const struct device *dev = eth_dev;
 	struct nxp_enet_mac_data *data = dev->data;
@@ -523,7 +501,6 @@ static void nxp_enet_phy_cb(const struct device *phy,
 	}
 }
 
-
 static int nxp_enet_phy_init(const struct device *dev)
 {
 	const struct nxp_enet_mac_config *config = dev->config;
@@ -543,7 +520,7 @@ static int nxp_enet_phy_init(const struct device *dev)
 }
 
 void nxp_enet_driver_cb(const struct device *dev, enum nxp_enet_driver dev_type,
-				enum nxp_enet_callback_reason event, void *data)
+			enum nxp_enet_callback_reason event, void *data)
 {
 	if (dev_type == NXP_ENET_MDIO) {
 		nxp_enet_mdio_callback(dev, event, data);
@@ -646,15 +623,12 @@ static inline void nxp_enet_fused_mac(uint8_t *mac_addr)
 #if defined(CONFIG_SOC_SERIES_IMXRT10XX)
 	OCOTP_Init((OCOTP_Type *)OCOTP_BASE, CLOCK_GetIpgFreq());
 	/* OTP bank 4, word 2: MAC0 */
-	OCOTP_ReadFuseShadowRegisterExt((OCOTP_Type *)OCOTP_BASE,
-		0x22, &mac_addr_fuse[0], 1);
+	OCOTP_ReadFuseShadowRegisterExt((OCOTP_Type *)OCOTP_BASE, 0x22, &mac_addr_fuse[0], 1);
 	/* OTP bank 4, word 3: MAC1*/
-	OCOTP_ReadFuseShadowRegisterExt((OCOTP_Type *)OCOTP_BASE,
-		0x23, &mac_addr_fuse[1], 1);
+	OCOTP_ReadFuseShadowRegisterExt((OCOTP_Type *)OCOTP_BASE, 0x23, &mac_addr_fuse[1], 1);
 #elif defined(CONFIG_SOC_SERIES_IMXRT11XX)
 	OCOTP_Init((OCOTP_Type *)OCOTP_BASE, 0);
-	OCOTP_ReadFuseShadowRegisterExt((OCOTP_Type *)OCOTP_BASE,
-		0x28, &mac_addr_fuse[0], 2);
+	OCOTP_ReadFuseShadowRegisterExt((OCOTP_Type *)OCOTP_BASE, 0x28, &mac_addr_fuse[0], 2);
 #endif
 	mac_addr[0] = mac_addr_fuse[0] & 0x000000FF;
 	mac_addr[1] = (mac_addr_fuse[0] & 0x0000FF00) >> 8;
@@ -685,8 +659,8 @@ static int eth_nxp_enet_init(const struct device *dev)
 	k_mutex_init(&data->rx_frame_buf_mutex);
 	k_mutex_init(&data->tx_frame_buf_mutex);
 	k_sem_init(&data->rx_thread_sem, 0, CONFIG_ETH_NXP_ENET_RX_BUFFERS);
-	k_sem_init(&data->tx_buf_sem,
-		   CONFIG_ETH_NXP_ENET_TX_BUFFERS, CONFIG_ETH_NXP_ENET_TX_BUFFERS);
+	k_sem_init(&data->tx_buf_sem, CONFIG_ETH_NXP_ENET_TX_BUFFERS,
+		   CONFIG_ETH_NXP_ENET_TX_BUFFERS);
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
 	k_sem_init(&data->ptp_ts_sem, 0, 1);
 #endif
@@ -696,8 +670,8 @@ static int eth_nxp_enet_init(const struct device *dev)
 	case MAC_ADDR_SOURCE_LOCAL:
 		break;
 	case MAC_ADDR_SOURCE_RANDOM:
-		gen_random_mac(data->mac_addr,
-			FREESCALE_OUI_B0, FREESCALE_OUI_B1, FREESCALE_OUI_B2);
+		gen_random_mac(data->mac_addr, FREESCALE_OUI_B0, FREESCALE_OUI_B1,
+			       FREESCALE_OUI_B2);
 		break;
 	case MAC_ADDR_SOURCE_UNIQUE:
 		nxp_enet_unique_mac(data->mac_addr);
@@ -710,7 +684,7 @@ static int eth_nxp_enet_init(const struct device *dev)
 	}
 
 	err = clock_control_get_rate(config->clock_dev, config->clock_subsys,
-			&enet_module_clock_rate);
+				     &enet_module_clock_rate);
 	if (err) {
 		return err;
 	}
@@ -750,18 +724,14 @@ static int eth_nxp_enet_init(const struct device *dev)
 	enet_config.callback = eth_callback;
 	enet_config.userData = (void *)dev;
 
-	ENET_Up(data->base,
-		  &data->enet_handle,
-		  &enet_config,
-		  config->buffer_config,
-		  data->mac_addr,
-		  enet_module_clock_rate);
+	ENET_Up(data->base, &data->enet_handle, &enet_config, config->buffer_config, data->mac_addr,
+		enet_module_clock_rate);
 
 	nxp_enet_driver_cb(config->mdio, NXP_ENET_MDIO, NXP_ENET_MODULE_RESET, NULL);
 
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
-	nxp_enet_driver_cb(config->ptp_clock, NXP_ENET_PTP_CLOCK,
-				NXP_ENET_MODULE_RESET, &data->ptp_mutex);
+	nxp_enet_driver_cb(config->ptp_clock, NXP_ENET_PTP_CLOCK, NXP_ENET_MODULE_RESET,
+			   &data->ptp_mutex);
 	ENET_SetTxReclaim(&data->enet_handle, true, 0);
 #endif
 
@@ -772,11 +742,9 @@ static int eth_nxp_enet_init(const struct device *dev)
 		return err;
 	}
 
-	LOG_DBG("%s MAC %02x:%02x:%02x:%02x:%02x:%02x",
-		dev->name,
-		data->mac_addr[0], data->mac_addr[1],
-		data->mac_addr[2], data->mac_addr[3],
-		data->mac_addr[4], data->mac_addr[5]);
+	LOG_DBG("%s MAC %02x:%02x:%02x:%02x:%02x:%02x", dev->name, data->mac_addr[0],
+		data->mac_addr[1], data->mac_addr[2], data->mac_addr[3], data->mac_addr[4],
+		data->mac_addr[5]);
 
 	return 0;
 }
@@ -816,9 +784,8 @@ static int eth_nxp_enet_device_pm_action(const struct device *dev, enum pm_devic
 	return 0;
 }
 
-#define ETH_NXP_ENET_PM_DEVICE_INIT(n)	\
-	PM_DEVICE_DT_INST_DEFINE(n, eth_nxp_enet_device_pm_action);
-#define ETH_NXP_ENET_PM_DEVICE_GET(n) PM_DEVICE_DT_INST_GET(n)
+#define ETH_NXP_ENET_PM_DEVICE_INIT(n) PM_DEVICE_DT_INST_DEFINE(n, eth_nxp_enet_device_pm_action);
+#define ETH_NXP_ENET_PM_DEVICE_GET(n)  PM_DEVICE_DT_INST_GET(n)
 
 #else
 #define ETH_NXP_ENET_PM_DEVICE_INIT(n)
@@ -832,45 +799,42 @@ static int eth_nxp_enet_device_pm_action(const struct device *dev, enum pm_devic
 #endif /* CONFIG_NET_DSA */
 
 static const struct ethernet_api api_funcs = {
-	.iface_api.init		= eth_nxp_enet_iface_init,
-	.get_capabilities	= eth_nxp_enet_get_capabilities,
-	.get_phy                = eth_nxp_enet_get_phy,
-	.set_config		= eth_nxp_enet_set_config,
-	.send			= NXP_ENET_SEND_FUNC,
+	.iface_api.init = eth_nxp_enet_iface_init,
+	.get_capabilities = eth_nxp_enet_get_capabilities,
+	.get_phy = eth_nxp_enet_get_phy,
+	.set_config = eth_nxp_enet_set_config,
+	.send = NXP_ENET_SEND_FUNC,
 #if defined(CONFIG_PTP_CLOCK)
-	.get_ptp_clock		= eth_nxp_enet_get_ptp_clock,
+	.get_ptp_clock = eth_nxp_enet_get_ptp_clock,
 #endif
 };
 
-#define NXP_ENET_CONNECT_IRQ(node_id, irq_names, idx)				\
-	do {									\
-		IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq),			\
-				DT_IRQ_BY_IDX(node_id, idx, priority),		\
-				eth_nxp_enet_isr,				\
-				DEVICE_DT_GET(node_id),				\
-				0);						\
-		irq_enable(DT_IRQ_BY_IDX(node_id, idx, irq));			\
+#define NXP_ENET_CONNECT_IRQ(node_id, irq_names, idx)                                              \
+	do {                                                                                       \
+		IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq),                                      \
+			    DT_IRQ_BY_IDX(node_id, idx, priority), eth_nxp_enet_isr,               \
+			    DEVICE_DT_GET(node_id), 0);                                            \
+		irq_enable(DT_IRQ_BY_IDX(node_id, idx, irq));                                      \
 	} while (false);
 
-#define NXP_ENET_DT_PHY_DEV(node_id, phy_phandle, idx)						\
+#define NXP_ENET_DT_PHY_DEV(node_id, phy_phandle, idx)                                             \
 	DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, phy_phandle, idx))
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm)) && \
-	CONFIG_ETH_NXP_ENET_USE_DTCM_FOR_DMA_BUFFER
-#define _nxp_enet_dma_desc_section __dtcm_bss_section
-#define _nxp_enet_dma_buffer_section __dtcm_noinit_section
+#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm)) && CONFIG_ETH_NXP_ENET_USE_DTCM_FOR_DMA_BUFFER
+#define _nxp_enet_dma_desc_section      __dtcm_bss_section
+#define _nxp_enet_dma_buffer_section    __dtcm_noinit_section
 #define _nxp_enet_driver_buffer_section __dtcm_noinit_section
-#define driver_cache_maintain	false
+#define driver_cache_maintain           false
 #elif defined(CONFIG_NOCACHE_MEMORY)
-#define _nxp_enet_dma_desc_section __nocache
+#define _nxp_enet_dma_desc_section   __nocache
 #define _nxp_enet_dma_buffer_section __nocache
 #define _nxp_enet_driver_buffer_section
-#define driver_cache_maintain	false
+#define driver_cache_maintain false
 #else
 #define _nxp_enet_dma_desc_section
 #define _nxp_enet_dma_buffer_section
 #define _nxp_enet_driver_buffer_section
-#define driver_cache_maintain	true
+#define driver_cache_maintain true
 #endif
 
 /* Use ENET_FRAME_MAX_VLANFRAMELEN for VLAN frame size
@@ -880,48 +844,45 @@ static const struct ethernet_api api_funcs = {
 #if !defined(ENET_FRAME_MAX_VLANFRAMELEN)
 #define ENET_FRAME_MAX_VLANFRAMELEN (ENET_FRAME_MAX_FRAMELEN + 4)
 #endif
-#define ETH_NXP_ENET_BUFFER_SIZE \
-		ROUND_UP(ENET_FRAME_MAX_VLANFRAMELEN, ENET_BUFF_ALIGNMENT)
+#define ETH_NXP_ENET_BUFFER_SIZE ROUND_UP(ENET_FRAME_MAX_VLANFRAMELEN, ENET_BUFF_ALIGNMENT)
 #else
-#define ETH_NXP_ENET_BUFFER_SIZE \
-		ROUND_UP(ENET_FRAME_MAX_FRAMELEN, ENET_BUFF_ALIGNMENT)
+#define ETH_NXP_ENET_BUFFER_SIZE ROUND_UP(ENET_FRAME_MAX_FRAMELEN, ENET_BUFF_ALIGNMENT)
 #endif /* CONFIG_NET_VLAN */
 
-#define NXP_ENET_PHY_MODE(node_id)							\
-	DT_ENUM_HAS_VALUE(node_id, phy_connection_type, mii) ? NXP_ENET_MII_MODE :	\
-	(DT_ENUM_HAS_VALUE(node_id, phy_connection_type, rmii) ? NXP_ENET_RMII_MODE :	\
-	(DT_ENUM_HAS_VALUE(node_id, phy_connection_type, rgmii) ? NXP_ENET_RGMII_MODE :	\
-	NXP_ENET_INVALID_MII_MODE))
+#define NXP_ENET_PHY_MODE(node_id)                                                                 \
+	DT_ENUM_HAS_VALUE(node_id, phy_connection_type, mii)                                       \
+		? NXP_ENET_MII_MODE                                                                \
+		: (DT_ENUM_HAS_VALUE(node_id, phy_connection_type, rmii)                           \
+			   ? NXP_ENET_RMII_MODE                                                    \
+			   : (DT_ENUM_HAS_VALUE(node_id, phy_connection_type, rgmii)               \
+				      ? NXP_ENET_RGMII_MODE                                        \
+				      : NXP_ENET_INVALID_MII_MODE))
 
 #ifdef CONFIG_PTP_CLOCK_NXP_ENET
 #define NXP_ENET_PTP_DEV(n) .ptp_clock = DEVICE_DT_GET(DT_INST_PHANDLE(n, nxp_ptp_clock)),
-#define NXP_ENET_FRAMEINFO_ARRAY(n)							\
-	static enet_frame_info_t							\
-		nxp_enet_##n##_tx_frameinfo_array[CONFIG_ETH_NXP_ENET_TX_BUFFERS];
-#define NXP_ENET_FRAMEINFO(n)	\
-	.txFrameInfo = nxp_enet_##n##_tx_frameinfo_array,
+#define NXP_ENET_FRAMEINFO_ARRAY(n)                                                                \
+	static enet_frame_info_t nxp_enet_##n##_tx_frameinfo_array[CONFIG_ETH_NXP_ENET_TX_BUFFERS];
+#define NXP_ENET_FRAMEINFO(n) .txFrameInfo = nxp_enet_##n##_tx_frameinfo_array,
 #else
 #define NXP_ENET_PTP_DEV(n)
 #define NXP_ENET_FRAMEINFO_ARRAY(n)
-#define NXP_ENET_FRAMEINFO(n)	\
-	.txFrameInfo = NULL
+#define NXP_ENET_FRAMEINFO(n) .txFrameInfo = NULL
 #endif
 
-#define NXP_ENET_NODE_HAS_MAC_ADDR_CHECK(n)						\
-	BUILD_ASSERT(NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(n)) ||				\
-			DT_INST_PROP(n, zephyr_random_mac_address) ||			\
-			DT_INST_PROP(n, nxp_unique_mac) ||				\
-			DT_INST_PROP(n, nxp_fused_mac),					\
-			"MAC address not specified on ENET DT node");
+#define NXP_ENET_NODE_HAS_MAC_ADDR_CHECK(n)                                                        \
+	BUILD_ASSERT(NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(n)) ||                                    \
+			     DT_INST_PROP(n, zephyr_random_mac_address) ||                         \
+			     DT_INST_PROP(n, nxp_unique_mac) || DT_INST_PROP(n, nxp_fused_mac),    \
+		     "MAC address not specified on ENET DT node");
 
-#define NXP_ENET_NODE_PHY_MODE_CHECK(n)							\
-BUILD_ASSERT(NXP_ENET_PHY_MODE(DT_DRV_INST(n)) != NXP_ENET_RGMII_MODE ||		\
-			(IS_ENABLED(CONFIG_ETH_NXP_ENET_1G) &&				\
-			DT_NODE_HAS_COMPAT(DT_INST_PARENT(n), nxp_enet1g)),		\
-			"RGMII mode requires nxp,enet1g compatible on ENET DT node"	\
-			" and CONFIG_ETH_NXP_ENET_1G enabled");
+#define NXP_ENET_NODE_PHY_MODE_CHECK(n)                                                            \
+	BUILD_ASSERT(NXP_ENET_PHY_MODE(DT_DRV_INST(n)) != NXP_ENET_RGMII_MODE ||                   \
+			     (IS_ENABLED(CONFIG_ETH_NXP_ENET_1G) &&                                \
+			      DT_NODE_HAS_COMPAT(DT_INST_PARENT(n), nxp_enet1g)),                  \
+		     "RGMII mode requires nxp,enet1g compatible on ENET DT node"                   \
+		     " and CONFIG_ETH_NXP_ENET_1G enabled");
 
-#define NXP_ENET_MAC_ADDR_SOURCE(n)							\
+#define NXP_ENET_MAC_ADDR_SOURCE(n)                                                                \
 	COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), local_mac_address),		\
 			(MAC_ADDR_SOURCE_LOCAL),					\
 	(COND_CODE_1(DT_INST_PROP(n, zephyr_random_mac_address),			\
@@ -930,87 +891,74 @@ BUILD_ASSERT(NXP_ENET_PHY_MODE(DT_DRV_INST(n)) != NXP_ENET_RGMII_MODE ||		\
 	(COND_CODE_1(DT_INST_PROP(n, nxp_fused_mac), (MAC_ADDR_SOURCE_FUSED),		\
 	(MAC_ADDR_SOURCE_INVALID))))))))
 
-#define NXP_ENET_MAC_INIT(n)								\
-		NXP_ENET_NODE_HAS_MAC_ADDR_CHECK(n)					\
-											\
-		NXP_ENET_NODE_PHY_MODE_CHECK(n)						\
-											\
-		PINCTRL_DT_INST_DEFINE(n);						\
-											\
-		NXP_ENET_FRAMEINFO_ARRAY(n)						\
-											\
-		static void nxp_enet_##n##_irq_config_func(void)			\
-		{									\
-			DT_INST_FOREACH_PROP_ELEM(n, interrupt_names,			\
-						NXP_ENET_CONNECT_IRQ);			\
-		}									\
-											\
-		volatile static __aligned(ENET_BUFF_ALIGNMENT)				\
-			_nxp_enet_dma_desc_section					\
-			enet_rx_bd_struct_t						\
-			nxp_enet_##n##_rx_buffer_desc[CONFIG_ETH_NXP_ENET_RX_BUFFERS];	\
-											\
-		volatile static __aligned(ENET_BUFF_ALIGNMENT)				\
-			_nxp_enet_dma_desc_section					\
-			enet_tx_bd_struct_t						\
-			nxp_enet_##n##_tx_buffer_desc[CONFIG_ETH_NXP_ENET_TX_BUFFERS];	\
-											\
-		static uint8_t __aligned(ENET_BUFF_ALIGNMENT)				\
-			_nxp_enet_dma_buffer_section					\
-			nxp_enet_##n##_rx_buffer[CONFIG_ETH_NXP_ENET_RX_BUFFERS]	\
-						[ETH_NXP_ENET_BUFFER_SIZE];		\
-											\
-		static uint8_t __aligned(ENET_BUFF_ALIGNMENT)				\
-			_nxp_enet_dma_buffer_section					\
-			nxp_enet_##n##_tx_buffer[CONFIG_ETH_NXP_ENET_TX_BUFFERS]	\
-						[ETH_NXP_ENET_BUFFER_SIZE];		\
-											\
-		const struct nxp_enet_mac_config nxp_enet_##n##_config = {		\
-			.irq_config_func = nxp_enet_##n##_irq_config_func,		\
-			.module_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),			\
-			.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(n))),	\
-			.clock_subsys = (void *)DT_CLOCKS_CELL_BY_IDX(			\
-						DT_INST_PARENT(n), 0, name),		\
-			.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
-			.buffer_config = {{						\
-				.rxBdNumber = CONFIG_ETH_NXP_ENET_RX_BUFFERS,		\
-				.txBdNumber = CONFIG_ETH_NXP_ENET_TX_BUFFERS,		\
-				.rxBuffSizeAlign = ETH_NXP_ENET_BUFFER_SIZE,		\
-				.txBuffSizeAlign = ETH_NXP_ENET_BUFFER_SIZE,		\
-				.rxBdStartAddrAlign = nxp_enet_##n##_rx_buffer_desc,	\
-				.txBdStartAddrAlign = nxp_enet_##n##_tx_buffer_desc,	\
-				.rxBufferAlign = nxp_enet_##n##_rx_buffer[0],		\
-				.txBufferAlign = nxp_enet_##n##_tx_buffer[0],		\
-				.rxMaintainEnable = driver_cache_maintain,		\
-				.txMaintainEnable = driver_cache_maintain,		\
-				NXP_ENET_FRAMEINFO(n)					\
-			}},								\
-			.phy_mode = NXP_ENET_PHY_MODE(DT_DRV_INST(n)),			\
-			.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),	\
-			.mdio = DEVICE_DT_GET(DT_INST_PHANDLE(n, nxp_mdio)),		\
-			NXP_ENET_PTP_DEV(n)						\
-			.mac_addr_source = NXP_ENET_MAC_ADDR_SOURCE(n),			\
-		};									\
-											\
-		static _nxp_enet_driver_buffer_section uint8_t				\
-			nxp_enet_##n##_tx_frame_buf[NET_ETH_MAX_FRAME_SIZE];		\
-		static _nxp_enet_driver_buffer_section uint8_t				\
-			nxp_enet_##n##_rx_frame_buf[NET_ETH_MAX_FRAME_SIZE];		\
-											\
-		struct nxp_enet_mac_data nxp_enet_##n##_data = {			\
-			.tx_frame_buf = nxp_enet_##n##_tx_frame_buf,			\
-			.rx_frame_buf = nxp_enet_##n##_rx_frame_buf,			\
-			.dev = DEVICE_DT_INST_GET(n),					\
-			.mac_addr = DT_INST_PROP_OR(n, local_mac_address, {0}),		\
-		};									\
-											\
-		ETH_NXP_ENET_PM_DEVICE_INIT(n)						\
-											\
-		ETH_NET_DEVICE_DT_INST_DEFINE(n, eth_nxp_enet_init,			\
-					ETH_NXP_ENET_PM_DEVICE_GET(n),			\
-					&nxp_enet_##n##_data, &nxp_enet_##n##_config,	\
-					CONFIG_ETH_INIT_PRIORITY,			\
-					&api_funcs, NET_ETH_MTU);
+#define NXP_ENET_MAC_INIT(n)                                                                       \
+	NXP_ENET_NODE_HAS_MAC_ADDR_CHECK(n)                                                        \
+                                                                                                   \
+	NXP_ENET_NODE_PHY_MODE_CHECK(n)                                                            \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+                                                                                                   \
+	NXP_ENET_FRAMEINFO_ARRAY(n)                                                                \
+                                                                                                   \
+	static void nxp_enet_##n##_irq_config_func(void)                                           \
+	{                                                                                          \
+		DT_INST_FOREACH_PROP_ELEM(n, interrupt_names, NXP_ENET_CONNECT_IRQ);               \
+	}                                                                                          \
+                                                                                                   \
+	volatile static __aligned(ENET_BUFF_ALIGNMENT) _nxp_enet_dma_desc_section                  \
+		enet_rx_bd_struct_t nxp_enet_##n##_rx_buffer_desc[CONFIG_ETH_NXP_ENET_RX_BUFFERS]; \
+                                                                                                   \
+	volatile static __aligned(ENET_BUFF_ALIGNMENT) _nxp_enet_dma_desc_section                  \
+		enet_tx_bd_struct_t nxp_enet_##n##_tx_buffer_desc[CONFIG_ETH_NXP_ENET_TX_BUFFERS]; \
+                                                                                                   \
+	static uint8_t __aligned(ENET_BUFF_ALIGNMENT)                                              \
+	_nxp_enet_dma_buffer_section nxp_enet_##n##_rx_buffer[CONFIG_ETH_NXP_ENET_RX_BUFFERS]      \
+							     [ETH_NXP_ENET_BUFFER_SIZE];           \
+                                                                                                   \
+	static uint8_t __aligned(ENET_BUFF_ALIGNMENT)                                              \
+	_nxp_enet_dma_buffer_section nxp_enet_##n##_tx_buffer[CONFIG_ETH_NXP_ENET_TX_BUFFERS]      \
+							     [ETH_NXP_ENET_BUFFER_SIZE];           \
+                                                                                                   \
+	const struct nxp_enet_mac_config nxp_enet_##n##_config = {                                 \
+		.irq_config_func = nxp_enet_##n##_irq_config_func,                                 \
+		.module_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                    \
+		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(n))),                     \
+		.clock_subsys = (void *)DT_CLOCKS_CELL_BY_IDX(DT_INST_PARENT(n), 0, name),         \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+		.buffer_config = {{.rxBdNumber = CONFIG_ETH_NXP_ENET_RX_BUFFERS,                   \
+				   .txBdNumber = CONFIG_ETH_NXP_ENET_TX_BUFFERS,                   \
+				   .rxBuffSizeAlign = ETH_NXP_ENET_BUFFER_SIZE,                    \
+				   .txBuffSizeAlign = ETH_NXP_ENET_BUFFER_SIZE,                    \
+				   .rxBdStartAddrAlign = nxp_enet_##n##_rx_buffer_desc,            \
+				   .txBdStartAddrAlign = nxp_enet_##n##_tx_buffer_desc,            \
+				   .rxBufferAlign = nxp_enet_##n##_rx_buffer[0],                   \
+				   .txBufferAlign = nxp_enet_##n##_tx_buffer[0],                   \
+				   .rxMaintainEnable = driver_cache_maintain,                      \
+				   .txMaintainEnable = driver_cache_maintain,                      \
+				   NXP_ENET_FRAMEINFO(n)}},                                        \
+		.phy_mode = NXP_ENET_PHY_MODE(DT_DRV_INST(n)),                                     \
+		.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),                          \
+		.mdio = DEVICE_DT_GET(DT_INST_PHANDLE(n, nxp_mdio)),                               \
+		NXP_ENET_PTP_DEV(n).mac_addr_source = NXP_ENET_MAC_ADDR_SOURCE(n),                 \
+	};                                                                                         \
+                                                                                                   \
+	static _nxp_enet_driver_buffer_section uint8_t                                             \
+		nxp_enet_##n##_tx_frame_buf[NET_ETH_MAX_FRAME_SIZE];                               \
+	static _nxp_enet_driver_buffer_section uint8_t                                             \
+		nxp_enet_##n##_rx_frame_buf[NET_ETH_MAX_FRAME_SIZE];                               \
+                                                                                                   \
+	struct nxp_enet_mac_data nxp_enet_##n##_data = {                                           \
+		.tx_frame_buf = nxp_enet_##n##_tx_frame_buf,                                       \
+		.rx_frame_buf = nxp_enet_##n##_rx_frame_buf,                                       \
+		.dev = DEVICE_DT_INST_GET(n),                                                      \
+		.mac_addr = DT_INST_PROP_OR(n, local_mac_address, {0}),                            \
+	};                                                                                         \
+                                                                                                   \
+	ETH_NXP_ENET_PM_DEVICE_INIT(n)                                                             \
+                                                                                                   \
+	ETH_NET_DEVICE_DT_INST_DEFINE(n, eth_nxp_enet_init, ETH_NXP_ENET_PM_DEVICE_GET(n),         \
+				      &nxp_enet_##n##_data, &nxp_enet_##n##_config,                \
+				      CONFIG_ETH_INIT_PRIORITY, &api_funcs, NET_ETH_MTU);
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_ENET_MAC_INIT)
 
@@ -1042,42 +990,38 @@ static int nxp_enet_mod_init(const struct device *dev)
 	return 0;
 }
 
-#define NXP_ENET_INIT(n, compat)							\
-											\
-static const struct nxp_enet_mod_config nxp_enet_mod_cfg_##n = {			\
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),					\
-		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_DRV_INST(n))),		\
-		.clock_subsys = (void *) DT_CLOCKS_CELL_BY_IDX(				\
-							DT_DRV_INST(n), 0, name),	\
-};											\
-											\
-static struct nxp_enet_mod_data nxp_enet_mod_data_##n;					\
-											\
-/* Init the module before any of the MAC, MDIO, or PTP clock */				\
-DEVICE_DT_INST_DEFINE(n, nxp_enet_mod_init, NULL,					\
-		&nxp_enet_mod_data_##n, &nxp_enet_mod_cfg_##n,				\
-		POST_KERNEL, 0, NULL);
+#define NXP_ENET_INIT(n, compat)                                                                   \
+                                                                                                   \
+	static const struct nxp_enet_mod_config nxp_enet_mod_cfg_##n = {                           \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
+		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_DRV_INST(n))),                        \
+		.clock_subsys = (void *)DT_CLOCKS_CELL_BY_IDX(DT_DRV_INST(n), 0, name),            \
+	};                                                                                         \
+                                                                                                   \
+	static struct nxp_enet_mod_data nxp_enet_mod_data_##n;                                     \
+                                                                                                   \
+	/* Init the module before any of the MAC, MDIO, or PTP clock */                            \
+	DEVICE_DT_INST_DEFINE(n, nxp_enet_mod_init, NULL, &nxp_enet_mod_data_##n,                  \
+			      &nxp_enet_mod_cfg_##n, POST_KERNEL, 0, NULL);
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT nxp_enet
 
 DT_INST_FOREACH_STATUS_OKAY_VARGS(NXP_ENET_INIT, DT_DRV_COMPAT)
 
-#define NXP_ENET1G_INIT(n, compat)							\
-											\
-static const struct nxp_enet_mod_config nxp_enet1g_mod_cfg_##n = {			\
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),					\
-		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_DRV_INST(n))),		\
-		.clock_subsys = (void *) DT_CLOCKS_CELL_BY_IDX(				\
-							DT_DRV_INST(n), 0, name),	\
-};											\
-											\
-static struct nxp_enet_mod_data nxp_enet1g_mod_data_##n;				\
-											\
-/* Init the module before any of the MAC, MDIO, or PTP clock */				\
-DEVICE_DT_INST_DEFINE(n, nxp_enet_mod_init, NULL,					\
-		&nxp_enet1g_mod_data_##n, &nxp_enet1g_mod_cfg_##n,			\
-		POST_KERNEL, 0, NULL);
+#define NXP_ENET1G_INIT(n, compat)                                                                 \
+                                                                                                   \
+	static const struct nxp_enet_mod_config nxp_enet1g_mod_cfg_##n = {                         \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
+		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_DRV_INST(n))),                        \
+		.clock_subsys = (void *)DT_CLOCKS_CELL_BY_IDX(DT_DRV_INST(n), 0, name),            \
+	};                                                                                         \
+                                                                                                   \
+	static struct nxp_enet_mod_data nxp_enet1g_mod_data_##n;                                   \
+                                                                                                   \
+	/* Init the module before any of the MAC, MDIO, or PTP clock */                            \
+	DEVICE_DT_INST_DEFINE(n, nxp_enet_mod_init, NULL, &nxp_enet1g_mod_data_##n,                \
+			      &nxp_enet1g_mod_cfg_##n, POST_KERNEL, 0, NULL);
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT nxp_enet1g

@@ -38,16 +38,14 @@ static inline int bme280_bus_check(const struct device *dev)
 	return cfg->bus_io->check(&cfg->bus);
 }
 
-static inline int bme280_reg_read(const struct device *dev,
-				  uint8_t start, uint8_t *buf, int size)
+static inline int bme280_reg_read(const struct device *dev, uint8_t start, uint8_t *buf, int size)
 {
 	const struct bme280_config *cfg = dev->config;
 
 	return cfg->bus_io->read(&cfg->bus, start, buf, size);
 }
 
-static inline int bme280_reg_write(const struct device *dev, uint8_t reg,
-				   uint8_t val)
+static inline int bme280_reg_write(const struct device *dev, uint8_t reg, uint8_t val)
 {
 	const struct bme280_config *cfg = dev->config;
 
@@ -62,11 +60,12 @@ static int32_t bme280_compensate_temp(struct bme280_data *data, int32_t adc_temp
 {
 	int32_t var1, var2;
 
-	var1 = (((adc_temp >> 3) - ((int32_t)data->dig_t1 << 1)) *
-		((int32_t)data->dig_t2)) >> 11;
+	var1 = (((adc_temp >> 3) - ((int32_t)data->dig_t1 << 1)) * ((int32_t)data->dig_t2)) >> 11;
 	var2 = (((((adc_temp >> 4) - ((int32_t)data->dig_t1)) *
-		  ((adc_temp >> 4) - ((int32_t)data->dig_t1))) >> 12) *
-		((int32_t)data->dig_t3)) >> 14;
+		  ((adc_temp >> 4) - ((int32_t)data->dig_t1))) >>
+		 12) *
+		((int32_t)data->dig_t3)) >>
+	       14;
 
 	data->t_fine = var1 + var2;
 	return (data->t_fine * 5 + 128) >> 8;
@@ -81,7 +80,7 @@ static uint32_t bme280_compensate_press(struct bme280_data *data, int32_t adc_pr
 	var2 = var2 + ((var1 * (int64_t)data->dig_p5) << 17);
 	var2 = var2 + (((int64_t)data->dig_p4) << 35);
 	var1 = ((var1 * var1 * (int64_t)data->dig_p3) >> 8) +
-		((var1 * (int64_t)data->dig_p2) << 12);
+	       ((var1 * (int64_t)data->dig_p2) << 12);
 	var1 = (((((int64_t)1) << 47) + var1)) * ((int64_t)data->dig_p1) >> 33;
 
 	/* Avoid exception caused by division by zero. */
@@ -98,19 +97,23 @@ static uint32_t bme280_compensate_press(struct bme280_data *data, int32_t adc_pr
 	return (uint32_t)p;
 }
 
-static uint32_t bme280_compensate_humidity(struct bme280_data *data,
-				       int32_t adc_humidity)
+static uint32_t bme280_compensate_humidity(struct bme280_data *data, int32_t adc_humidity)
 {
 	int32_t h;
 
 	h = (data->t_fine - ((int32_t)76800));
 	h = ((((adc_humidity << 14) - (((int32_t)data->dig_h4) << 20) -
-		(((int32_t)data->dig_h5) * h)) + ((int32_t)16384)) >> 15) *
-		(((((((h * ((int32_t)data->dig_h6)) >> 10) * (((h *
-		((int32_t)data->dig_h3)) >> 11) + ((int32_t)32768))) >> 10) +
-		((int32_t)2097152)) * ((int32_t)data->dig_h2) + 8192) >> 14);
-	h = (h - (((((h >> 15) * (h >> 15)) >> 7) *
-		((int32_t)data->dig_h1)) >> 4));
+	       (((int32_t)data->dig_h5) * h)) +
+	      ((int32_t)16384)) >>
+	     15) *
+	    (((((((h * ((int32_t)data->dig_h6)) >> 10) *
+		 (((h * ((int32_t)data->dig_h3)) >> 11) + ((int32_t)32768))) >>
+		10) +
+	       ((int32_t)2097152)) *
+		      ((int32_t)data->dig_h2) +
+	      8192) >>
+	     14);
+	h = (h - (((((h >> 15) * (h >> 15)) >> 7) * ((int32_t)data->dig_h1)) >> 4));
 	h = (h > 419430400 ? 419430400 : h);
 
 	return (uint32_t)(h >> 12);
@@ -133,8 +136,8 @@ static int bme280_wait_until_ready(const struct device *dev)
 	return 0;
 }
 
-int bme280_sample_fetch_helper(const struct device *dev,
-			       enum sensor_channel chan, struct bme280_reading *reading)
+int bme280_sample_fetch_helper(const struct device *dev, enum sensor_channel chan,
+			       struct bme280_reading *reading)
 {
 	struct bme280_data *dev_data = dev->data;
 	uint8_t buf[8];
@@ -194,8 +197,7 @@ int bme280_sample_fetch(const struct device *dev, enum sensor_channel chan)
 	return bme280_sample_fetch_helper(dev, chan, &data->reading);
 }
 
-static int bme280_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
+static int bme280_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	struct bme280_data *data = dev->data;
@@ -217,7 +219,7 @@ static int bme280_channel_get(const struct device *dev,
 		 */
 		val->val1 = (data->reading.comp_press >> 8) / 1000U;
 		val->val2 = (data->reading.comp_press >> 8) % 1000 * 1000U +
-			(((data->reading.comp_press & 0xff) * 1000U) >> 8);
+			    (((data->reading.comp_press & 0xff) * 1000U) >> 8);
 		break;
 	case SENSOR_CHAN_HUMIDITY:
 		/* The BMP280 doesn't have a humidity sensor */
@@ -255,8 +257,7 @@ static int bme280_read_compensation(const struct device *dev)
 	uint8_t hbuf[7];
 	int err = 0;
 
-	err = bme280_reg_read(dev, BME280_REG_COMP_START,
-			      (uint8_t *)buf, sizeof(buf));
+	err = bme280_reg_read(dev, BME280_REG_COMP_START, (uint8_t *)buf, sizeof(buf));
 
 	if (err < 0) {
 		LOG_DBG("COMP_START read failed: %d", err);
@@ -278,8 +279,7 @@ static int bme280_read_compensation(const struct device *dev)
 	data->dig_p9 = sys_le16_to_cpu(buf[11]);
 
 	if (data->chip_id == BME280_CHIP_ID) {
-		err = bme280_reg_read(dev, BME280_REG_HUM_COMP_PART1,
-				      &data->dig_h1, 1);
+		err = bme280_reg_read(dev, BME280_REG_HUM_COMP_PART1, &data->dig_h1, 1);
 		if (err < 0) {
 			LOG_DBG("HUM_COMP_PART1 read failed: %d", err);
 			return err;
@@ -320,8 +320,7 @@ static int bme280_chip_init(const struct device *dev)
 
 	if (data->chip_id == BME280_CHIP_ID) {
 		LOG_DBG("ID OK");
-	} else if (data->chip_id == BMP280_CHIP_ID_MP ||
-		   data->chip_id == BMP280_CHIP_ID_SAMPLE_1) {
+	} else if (data->chip_id == BMP280_CHIP_ID_MP || data->chip_id == BMP280_CHIP_ID_SAMPLE_1) {
 		LOG_DBG("ID OK (BMP280)");
 	} else {
 		LOG_DBG("bad chip id 0x%x", data->chip_id);
@@ -344,23 +343,20 @@ static int bme280_chip_init(const struct device *dev)
 	}
 
 	if (data->chip_id == BME280_CHIP_ID) {
-		err = bme280_reg_write(dev, BME280_REG_CTRL_HUM,
-				       BME280_HUMIDITY_OVER);
+		err = bme280_reg_write(dev, BME280_REG_CTRL_HUM, BME280_HUMIDITY_OVER);
 		if (err < 0) {
 			LOG_DBG("CTRL_HUM write failed: %d", err);
 			return err;
 		}
 	}
 
-	err = bme280_reg_write(dev, BME280_REG_CTRL_MEAS,
-			       BME280_CTRL_MEAS_VAL);
+	err = bme280_reg_write(dev, BME280_REG_CTRL_MEAS, BME280_CTRL_MEAS_VAL);
 	if (err < 0) {
 		LOG_DBG("CTRL_MEAS write failed: %d", err);
 		return err;
 	}
 
-	err = bme280_reg_write(dev, BME280_REG_CONFIG,
-			       BME280_CONFIG_VAL);
+	err = bme280_reg_write(dev, BME280_REG_CONFIG, BME280_CONFIG_VAL);
 	if (err < 0) {
 		LOG_DBG("CONFIG write failed: %d", err);
 		return err;
@@ -373,8 +369,7 @@ static int bme280_chip_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int bme280_pm_action(const struct device *dev,
-			    enum pm_device_action action)
+static int bme280_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	int ret = 0;
 
@@ -385,9 +380,7 @@ static int bme280_pm_action(const struct device *dev,
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		/* Put the chip into sleep mode */
-		ret = bme280_reg_write(dev,
-			BME280_REG_CTRL_MEAS,
-			BME280_CTRL_MEAS_OFF_VAL);
+		ret = bme280_reg_write(dev, BME280_REG_CTRL_MEAS, BME280_CTRL_MEAS_OFF_VAL);
 
 		if (ret < 0) {
 			LOG_DBG("CTRL_MEAS write failed: %d", ret);
@@ -402,41 +395,34 @@ static int bme280_pm_action(const struct device *dev,
 #endif /* CONFIG_PM_DEVICE */
 
 /* Initializes a struct bme280_config for an instance on a SPI bus. */
-#define BME280_CONFIG_SPI(inst)				\
-	{						\
-		.bus.spi = SPI_DT_SPEC_INST_GET(	\
-			inst, BME280_SPI_OPERATION, 0),	\
-		.bus_io = &bme280_bus_io_spi,		\
+#define BME280_CONFIG_SPI(inst)                                                                    \
+	{                                                                                          \
+		.bus.spi = SPI_DT_SPEC_INST_GET(inst, BME280_SPI_OPERATION, 0),                    \
+		.bus_io = &bme280_bus_io_spi,                                                      \
 	}
 
 /* Initializes a struct bme280_config for an instance on an I2C bus. */
-#define BME280_CONFIG_I2C(inst)			       \
-	{					       \
-		.bus.i2c = I2C_DT_SPEC_INST_GET(inst), \
-		.bus_io = &bme280_bus_io_i2c,	       \
+#define BME280_CONFIG_I2C(inst)                                                                    \
+	{                                                                                          \
+		.bus.i2c = I2C_DT_SPEC_INST_GET(inst),                                             \
+		.bus_io = &bme280_bus_io_i2c,                                                      \
 	}
 
 /*
  * Main instantiation macro, which selects the correct bus-specific
  * instantiation macros for the instance.
  */
-#define BME280_DEFINE(inst)						\
-	static struct bme280_data bme280_data_##inst;			\
-	static const struct bme280_config bme280_config_##inst =	\
-		COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
+#define BME280_DEFINE(inst)                                                                        \
+	static struct bme280_data bme280_data_##inst;                                              \
+	static const struct bme280_config bme280_config_##inst = COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
 			    (BME280_CONFIG_SPI(inst)),			\
-			    (BME280_CONFIG_I2C(inst)));			\
-									\
-	PM_DEVICE_DT_INST_DEFINE(inst, bme280_pm_action);		\
-									\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
-			 bme280_chip_init,				\
-			 PM_DEVICE_DT_INST_GET(inst),			\
-			 &bme280_data_##inst,				\
-			 &bme280_config_##inst,				\
-			 POST_KERNEL,					\
-			 CONFIG_SENSOR_INIT_PRIORITY,			\
-			 &bme280_api_funcs);
+			    (BME280_CONFIG_I2C(inst)));                    \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(inst, bme280_pm_action);                                          \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, bme280_chip_init, PM_DEVICE_DT_INST_GET(inst),          \
+				     &bme280_data_##inst, &bme280_config_##inst, POST_KERNEL,      \
+				     CONFIG_SENSOR_INIT_PRIORITY, &bme280_api_funcs);
 
 /* Create the struct device for every status "okay" node in the devicetree. */
 DT_INST_FOREACH_STATUS_OKAY(BME280_DEFINE)

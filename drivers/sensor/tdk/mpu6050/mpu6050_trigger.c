@@ -14,8 +14,7 @@
 
 LOG_MODULE_DECLARE(MPU6050, CONFIG_SENSOR_LOG_LEVEL);
 
-int mpu6050_trigger_set(const struct device *dev,
-			const struct sensor_trigger *trig,
+int mpu6050_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
 	struct mpu6050_data *drv_data = dev->data;
@@ -38,17 +37,14 @@ int mpu6050_trigger_set(const struct device *dev,
 
 	drv_data->data_ready_trigger = trig;
 
-	gpio_pin_interrupt_configure_dt(&cfg->int_gpio,
-					GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 
 	return 0;
 }
 
-static void mpu6050_gpio_callback(const struct device *dev,
-				  struct gpio_callback *cb, uint32_t pins)
+static void mpu6050_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	struct mpu6050_data *drv_data =
-		CONTAINER_OF(cb, struct mpu6050_data, gpio_cb);
+	struct mpu6050_data *drv_data = CONTAINER_OF(cb, struct mpu6050_data, gpio_cb);
 	const struct mpu6050_config *cfg = drv_data->dev->config;
 
 	ARG_UNUSED(pins);
@@ -68,12 +64,10 @@ static void mpu6050_thread_cb(const struct device *dev)
 	const struct mpu6050_config *cfg = dev->config;
 
 	if (drv_data->data_ready_handler != NULL) {
-		drv_data->data_ready_handler(dev,
-					     drv_data->data_ready_trigger);
+		drv_data->data_ready_handler(dev, drv_data->data_ready_trigger);
 	}
 
-	gpio_pin_interrupt_configure_dt(&cfg->int_gpio,
-					GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
 #ifdef CONFIG_MPU6050_TRIGGER_OWN_THREAD
@@ -94,8 +88,7 @@ static void mpu6050_thread(void *p1, void *p2, void *p3)
 #ifdef CONFIG_MPU6050_TRIGGER_GLOBAL_THREAD
 static void mpu6050_work_cb(struct k_work *work)
 {
-	struct mpu6050_data *drv_data =
-		CONTAINER_OF(work, struct mpu6050_data, work);
+	struct mpu6050_data *drv_data = CONTAINER_OF(work, struct mpu6050_data, work);
 
 	mpu6050_thread_cb(drv_data->dev);
 }
@@ -115,9 +108,7 @@ int mpu6050_init_interrupt(const struct device *dev)
 
 	gpio_pin_configure_dt(&cfg->int_gpio, GPIO_INPUT);
 
-	gpio_init_callback(&drv_data->gpio_cb,
-			   mpu6050_gpio_callback,
-			   BIT(cfg->int_gpio.pin));
+	gpio_init_callback(&drv_data->gpio_cb, mpu6050_gpio_callback, BIT(cfg->int_gpio.pin));
 
 	if (gpio_add_callback(cfg->int_gpio.port, &drv_data->gpio_cb) < 0) {
 		LOG_ERR("Failed to set gpio callback");
@@ -125,8 +116,7 @@ int mpu6050_init_interrupt(const struct device *dev)
 	}
 
 	/* enable data ready interrupt */
-	if (i2c_reg_write_byte_dt(&cfg->i2c, MPU6050_REG_INT_EN,
-				  MPU6050_DRDY_EN) < 0) {
+	if (i2c_reg_write_byte_dt(&cfg->i2c, MPU6050_REG_INT_EN, MPU6050_DRDY_EN) < 0) {
 		LOG_ERR("Failed to enable data ready interrupt.");
 		return -EIO;
 	}
@@ -134,17 +124,14 @@ int mpu6050_init_interrupt(const struct device *dev)
 #if defined(CONFIG_MPU6050_TRIGGER_OWN_THREAD)
 	k_sem_init(&drv_data->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
-	k_thread_create(&drv_data->thread, drv_data->thread_stack,
-			CONFIG_MPU6050_THREAD_STACK_SIZE,
-			mpu6050_thread, drv_data,
-			NULL, NULL, K_PRIO_COOP(CONFIG_MPU6050_THREAD_PRIORITY),
-			0, K_NO_WAIT);
+	k_thread_create(&drv_data->thread, drv_data->thread_stack, CONFIG_MPU6050_THREAD_STACK_SIZE,
+			mpu6050_thread, drv_data, NULL, NULL,
+			K_PRIO_COOP(CONFIG_MPU6050_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_MPU6050_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = mpu6050_work_cb;
 #endif
 
-	gpio_pin_interrupt_configure_dt(&cfg->int_gpio,
-					GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 
 	return 0;
 }

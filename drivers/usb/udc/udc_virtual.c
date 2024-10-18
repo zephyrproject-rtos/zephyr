@@ -47,12 +47,10 @@ struct udc_vrt_event {
 	struct uvb_packet *pkt;
 };
 
-K_MEM_SLAB_DEFINE(udc_vrt_slab, sizeof(struct udc_vrt_event),
-		  16, sizeof(void *));
+K_MEM_SLAB_DEFINE(udc_vrt_slab, sizeof(struct udc_vrt_event), 16, sizeof(void *));
 
 /* Reuse request packet for reply */
-static int vrt_request_reply(const struct device *dev,
-			     struct uvb_packet *const pkt,
+static int vrt_request_reply(const struct device *dev, struct uvb_packet *const pkt,
 			     const enum uvb_reply reply)
 {
 	const struct udc_vrt_config *config = dev->config;
@@ -73,8 +71,7 @@ static void ctrl_ep_clear_halt(const struct device *dev)
 	cfg->stat.halted = false;
 }
 
-static int vrt_ctrl_feed_dout(const struct device *dev,
-			      const size_t length)
+static int vrt_ctrl_feed_dout(const struct device *dev, const size_t length)
 {
 	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
 	struct net_buf *buf;
@@ -89,8 +86,7 @@ static int vrt_ctrl_feed_dout(const struct device *dev,
 	return 0;
 }
 
-static int vrt_handle_setup(const struct device *dev,
-			    struct uvb_packet *const pkt)
+static int vrt_handle_setup(const struct device *dev, struct uvb_packet *const pkt)
 {
 	struct net_buf *buf;
 	int err, ret;
@@ -136,8 +132,7 @@ static int vrt_handle_setup(const struct device *dev,
 	return ret ? ret : err;
 }
 
-static int vrt_handle_ctrl_out(const struct device *dev,
-			       struct net_buf *const buf)
+static int vrt_handle_ctrl_out(const struct device *dev, struct net_buf *const buf)
 {
 	int err = 0;
 
@@ -156,8 +151,7 @@ static int vrt_handle_ctrl_out(const struct device *dev,
 	return err;
 }
 
-static int vrt_handle_out(const struct device *dev,
-			  struct uvb_packet *const pkt)
+static int vrt_handle_out(const struct device *dev, struct uvb_packet *const pkt)
 {
 	struct udc_ep_config *ep_cfg;
 	const uint8_t ep = pkt->ep;
@@ -198,8 +192,7 @@ static int vrt_handle_out(const struct device *dev,
 	return ret ? ret : err;
 }
 
-static int isr_handle_ctrl_in(const struct device *dev,
-			      struct net_buf *const buf)
+static int isr_handle_ctrl_in(const struct device *dev, struct net_buf *const buf)
 {
 	int err = 0;
 
@@ -223,8 +216,7 @@ static int isr_handle_ctrl_in(const struct device *dev,
 	return err;
 }
 
-static int vrt_handle_in(const struct device *dev,
-			 struct uvb_packet *const pkt)
+static int vrt_handle_in(const struct device *dev, struct uvb_packet *const pkt)
 {
 	struct udc_ep_config *ep_cfg;
 	const uint8_t ep = pkt->ep;
@@ -245,8 +237,7 @@ static int vrt_handle_in(const struct device *dev,
 		return vrt_request_reply(dev, pkt, UVB_REPLY_NACK);
 	}
 
-	LOG_DBG("Handle data IN, %zu | %u | %u",
-		pkt->length, buf->len, udc_mps_ep_size(ep_cfg));
+	LOG_DBG("Handle data IN, %zu | %u | %u", pkt->length, buf->len, udc_mps_ep_size(ep_cfg));
 	min_len = MIN(pkt->length, buf->len);
 	memcpy(pkt->data, buf->data, min_len);
 	net_buf_pull(buf, min_len);
@@ -274,8 +265,7 @@ continue_in:
 	return ret ? ret : err;
 }
 
-static int vrt_handle_request(const struct device *dev,
-			      struct uvb_packet *const pkt)
+static int vrt_handle_request(const struct device *dev, struct uvb_packet *const pkt)
 {
 	LOG_DBG("REQUEST event for %p pkt %p", dev, pkt);
 
@@ -336,8 +326,7 @@ static ALWAYS_INLINE void udc_vrt_thread_handler(void *arg)
 	}
 }
 
-static void vrt_submit_uvb_event(const struct device *dev,
-				 const enum uvb_event_type type,
+static void vrt_submit_uvb_event(const struct device *dev, const enum uvb_event_type type,
 				 struct uvb_packet *const pkt)
 {
 	struct udc_vrt_data *priv = udc_get_private(dev);
@@ -352,8 +341,7 @@ static void vrt_submit_uvb_event(const struct device *dev,
 	k_fifo_put(&priv->fifo, vrt_ev);
 }
 
-static void udc_vrt_uvb_cb(const void *const vrt_priv,
-			   const enum uvb_event_type type,
+static void udc_vrt_uvb_cb(const void *const vrt_priv, const enum uvb_event_type type,
 			   const void *data)
 {
 	const struct device *dev = vrt_priv;
@@ -388,8 +376,7 @@ static void udc_vrt_uvb_cb(const void *const vrt_priv,
 	};
 }
 
-static int udc_vrt_ep_enqueue(const struct device *dev,
-			      struct udc_ep_config *cfg,
+static int udc_vrt_ep_enqueue(const struct device *dev, struct udc_ep_config *cfg,
 			      struct net_buf *buf)
 {
 	LOG_DBG("%p enqueue %p", dev, buf);
@@ -403,8 +390,7 @@ static int udc_vrt_ep_enqueue(const struct device *dev,
 	return 0;
 }
 
-static int udc_vrt_ep_dequeue(const struct device *dev,
-			      struct udc_ep_config *cfg)
+static int udc_vrt_ep_dequeue(const struct device *dev, struct udc_ep_config *cfg)
 {
 	unsigned int lock_key;
 	struct net_buf *buf;
@@ -420,20 +406,17 @@ static int udc_vrt_ep_dequeue(const struct device *dev,
 	return 0;
 }
 
-static int udc_vrt_ep_enable(const struct device *dev,
-			     struct udc_ep_config *cfg)
+static int udc_vrt_ep_enable(const struct device *dev, struct udc_ep_config *cfg)
 {
 	return 0;
 }
 
-static int udc_vrt_ep_disable(const struct device *dev,
-			      struct udc_ep_config *cfg)
+static int udc_vrt_ep_disable(const struct device *dev, struct udc_ep_config *cfg)
 {
 	return 0;
 }
 
-static int udc_vrt_ep_set_halt(const struct device *dev,
-			       struct udc_ep_config *cfg)
+static int udc_vrt_ep_set_halt(const struct device *dev, struct udc_ep_config *cfg)
 {
 	LOG_DBG("Set halt ep 0x%02x", cfg->addr);
 
@@ -442,8 +425,7 @@ static int udc_vrt_ep_set_halt(const struct device *dev,
 	return 0;
 }
 
-static int udc_vrt_ep_clear_halt(const struct device *dev,
-				 struct udc_ep_config *cfg)
+static int udc_vrt_ep_clear_halt(const struct device *dev, struct udc_ep_config *cfg)
 {
 	cfg->stat.halted = false;
 
@@ -498,8 +480,7 @@ static int udc_vrt_enable(const struct device *dev)
 		break;
 	}
 
-	return uvb_to_host(config->dev_node, UVB_EVT_DEVICE_ACT,
-			   INT_TO_POINTER(act));
+	return uvb_to_host(config->dev_node, UVB_EVT_DEVICE_ACT, INT_TO_POINTER(act));
 }
 
 static int udc_vrt_disable(const struct device *dev)
@@ -514,14 +495,12 @@ static int udc_vrt_init(const struct device *dev)
 {
 	const struct udc_vrt_config *config = dev->config;
 
-	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
-				   USB_EP_TYPE_CONTROL, 64, 0)) {
+	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT, USB_EP_TYPE_CONTROL, 64, 0)) {
 		LOG_ERR("Failed to enable control endpoint");
 		return -EIO;
 	}
 
-	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN,
-				   USB_EP_TYPE_CONTROL, 64, 0)) {
+	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN, USB_EP_TYPE_CONTROL, 64, 0)) {
 		LOG_ERR("Failed to enable control endpoint");
 		return -EIO;
 	}
@@ -606,8 +585,8 @@ static int udc_vrt_driver_preinit(const struct device *dev)
 
 	config->dev_node->priv = dev;
 	config->make_thread(dev);
-	LOG_INF("Device %p (max. speed %d) belongs to %s",
-		dev, config->speed_idx, config->uhc_name);
+	LOG_INF("Device %p (max. speed %d) belongs to %s", dev, config->speed_idx,
+		config->uhc_name);
 
 	return 0;
 }
@@ -642,63 +621,54 @@ static const struct udc_api udc_vrt_api = {
 
 #define DT_DRV_COMPAT zephyr_udc_virtual
 
-#define UDC_VRT_DEVICE_DEFINE(n)						\
-	K_THREAD_STACK_DEFINE(udc_vrt_stack_area_##n,				\
-			      CONFIG_UDC_VIRTUAL_STACK_SIZE);			\
-										\
-	static void udc_vrt_thread_##n(void *dev, void *unused1, void *unused2)	\
-	{									\
-		while (1) {							\
-			udc_vrt_thread_handler(dev);				\
-		}								\
-	}									\
-										\
-	static void udc_vrt_make_thread_##n(const struct device *dev)		\
-	{									\
-		struct udc_vrt_data *priv = udc_get_private(dev);		\
-										\
-		k_thread_create(&priv->thread_data,				\
-			    udc_vrt_stack_area_##n,				\
-			    K_THREAD_STACK_SIZEOF(udc_vrt_stack_area_##n),	\
-			    udc_vrt_thread_##n,					\
-			    (void *)dev, NULL, NULL,				\
-			    K_PRIO_COOP(CONFIG_UDC_VIRTUAL_THREAD_PRIORITY),	\
-			    K_ESSENTIAL,					\
-			    K_NO_WAIT);						\
-		k_thread_name_set(&priv->thread_data, dev->name);		\
-	}									\
-										\
-	static struct udc_ep_config						\
-		ep_cfg_out[DT_INST_PROP(n, num_bidir_endpoints)];		\
-	static struct udc_ep_config						\
-		ep_cfg_in[DT_INST_PROP(n, num_bidir_endpoints)];		\
-										\
-	static struct uvb_node udc_vrt_dev_node##n = {				\
-		.name = DT_NODE_FULL_NAME(DT_DRV_INST(n)),			\
-		.notify = udc_vrt_uvb_cb,					\
-	};									\
-										\
-	static const struct udc_vrt_config udc_vrt_config_##n = {		\
-		.num_of_eps = DT_INST_PROP(n, num_bidir_endpoints),		\
-		.ep_cfg_in = ep_cfg_out,					\
-		.ep_cfg_out = ep_cfg_in,					\
-		.make_thread = udc_vrt_make_thread_##n,				\
-		.dev_node = &udc_vrt_dev_node##n,				\
-		.speed_idx = DT_ENUM_IDX(DT_DRV_INST(n), maximum_speed),	\
-		.uhc_name = DT_NODE_FULL_NAME(DT_INST_PARENT(n)),		\
-	};									\
-										\
-	static struct udc_vrt_data udc_priv_##n = {				\
-	};									\
-										\
-	static struct udc_data udc_data_##n = {					\
-		.mutex = Z_MUTEX_INITIALIZER(udc_data_##n.mutex),		\
-		.priv = &udc_priv_##n,						\
-	};									\
-										\
-	DEVICE_DT_INST_DEFINE(n, udc_vrt_driver_preinit, NULL,			\
-			      &udc_data_##n, &udc_vrt_config_##n,		\
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
-			      &udc_vrt_api);
+#define UDC_VRT_DEVICE_DEFINE(n)                                                                   \
+	K_THREAD_STACK_DEFINE(udc_vrt_stack_area_##n, CONFIG_UDC_VIRTUAL_STACK_SIZE);              \
+                                                                                                   \
+	static void udc_vrt_thread_##n(void *dev, void *unused1, void *unused2)                    \
+	{                                                                                          \
+		while (1) {                                                                        \
+			udc_vrt_thread_handler(dev);                                               \
+		}                                                                                  \
+	}                                                                                          \
+                                                                                                   \
+	static void udc_vrt_make_thread_##n(const struct device *dev)                              \
+	{                                                                                          \
+		struct udc_vrt_data *priv = udc_get_private(dev);                                  \
+                                                                                                   \
+		k_thread_create(&priv->thread_data, udc_vrt_stack_area_##n,                        \
+				K_THREAD_STACK_SIZEOF(udc_vrt_stack_area_##n), udc_vrt_thread_##n, \
+				(void *)dev, NULL, NULL,                                           \
+				K_PRIO_COOP(CONFIG_UDC_VIRTUAL_THREAD_PRIORITY), K_ESSENTIAL,      \
+				K_NO_WAIT);                                                        \
+		k_thread_name_set(&priv->thread_data, dev->name);                                  \
+	}                                                                                          \
+                                                                                                   \
+	static struct udc_ep_config ep_cfg_out[DT_INST_PROP(n, num_bidir_endpoints)];              \
+	static struct udc_ep_config ep_cfg_in[DT_INST_PROP(n, num_bidir_endpoints)];               \
+                                                                                                   \
+	static struct uvb_node udc_vrt_dev_node##n = {                                             \
+		.name = DT_NODE_FULL_NAME(DT_DRV_INST(n)),                                         \
+		.notify = udc_vrt_uvb_cb,                                                          \
+	};                                                                                         \
+                                                                                                   \
+	static const struct udc_vrt_config udc_vrt_config_##n = {                                  \
+		.num_of_eps = DT_INST_PROP(n, num_bidir_endpoints),                                \
+		.ep_cfg_in = ep_cfg_out,                                                           \
+		.ep_cfg_out = ep_cfg_in,                                                           \
+		.make_thread = udc_vrt_make_thread_##n,                                            \
+		.dev_node = &udc_vrt_dev_node##n,                                                  \
+		.speed_idx = DT_ENUM_IDX(DT_DRV_INST(n), maximum_speed),                           \
+		.uhc_name = DT_NODE_FULL_NAME(DT_INST_PARENT(n)),                                  \
+	};                                                                                         \
+                                                                                                   \
+	static struct udc_vrt_data udc_priv_##n = {};                                              \
+                                                                                                   \
+	static struct udc_data udc_data_##n = {                                                    \
+		.mutex = Z_MUTEX_INITIALIZER(udc_data_##n.mutex),                                  \
+		.priv = &udc_priv_##n,                                                             \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, udc_vrt_driver_preinit, NULL, &udc_data_##n, &udc_vrt_config_##n, \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &udc_vrt_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UDC_VRT_DEVICE_DEFINE)

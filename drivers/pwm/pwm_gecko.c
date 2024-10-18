@@ -23,26 +23,24 @@ struct pwm_gecko_config {
 	uint8_t pin;
 };
 
-static int pwm_gecko_set_cycles(const struct device *dev, uint32_t channel,
-				uint32_t period_cycles, uint32_t pulse_cycles,
-				pwm_flags_t flags)
+static int pwm_gecko_set_cycles(const struct device *dev, uint32_t channel, uint32_t period_cycles,
+				uint32_t pulse_cycles, pwm_flags_t flags)
 {
 	TIMER_InitCC_TypeDef compare_config = TIMER_INITCC_DEFAULT;
 	const struct pwm_gecko_config *cfg = dev->config;
 
-	if (BUS_RegMaskedRead(&cfg->timer->CC[channel].CTRL,
-		_TIMER_CC_CTRL_MODE_MASK) != timerCCModePWM) {
+	if (BUS_RegMaskedRead(&cfg->timer->CC[channel].CTRL, _TIMER_CC_CTRL_MODE_MASK) !=
+	    timerCCModePWM) {
 
 #ifdef _TIMER_ROUTE_MASK
-		BUS_RegMaskedWrite(&cfg->timer->ROUTE,
-			_TIMER_ROUTE_LOCATION_MASK,
-			cfg->location << _TIMER_ROUTE_LOCATION_SHIFT);
+		BUS_RegMaskedWrite(&cfg->timer->ROUTE, _TIMER_ROUTE_LOCATION_MASK,
+				   cfg->location << _TIMER_ROUTE_LOCATION_SHIFT);
 		BUS_RegMaskedSet(&cfg->timer->ROUTE, 1 << channel);
 #elif defined(_TIMER_ROUTELOC0_MASK)
 		BUS_RegMaskedWrite(&cfg->timer->ROUTELOC0,
-			_TIMER_ROUTELOC0_CC0LOC_MASK <<
-			(channel * _TIMER_ROUTELOC0_CC1LOC_SHIFT),
-			cfg->location << (channel * _TIMER_ROUTELOC0_CC1LOC_SHIFT));
+				   _TIMER_ROUTELOC0_CC0LOC_MASK
+					   << (channel * _TIMER_ROUTELOC0_CC1LOC_SHIFT),
+				   cfg->location << (channel * _TIMER_ROUTELOC0_CC1LOC_SHIFT));
 		BUS_RegMaskedSet(&cfg->timer->ROUTEPEN, 1 << channel);
 #else
 #error Unsupported device
@@ -52,8 +50,7 @@ static int pwm_gecko_set_cycles(const struct device *dev, uint32_t channel,
 		TIMER_InitCC(cfg->timer, channel, &compare_config);
 	}
 
-	cfg->timer->CC[channel].CTRL |= (flags & PWM_POLARITY_INVERTED) ?
-		TIMER_CC_CTRL_OUTINV : 0;
+	cfg->timer->CC[channel].CTRL |= (flags & PWM_POLARITY_INVERTED) ? TIMER_CC_CTRL_OUTINV : 0;
 
 	TIMER_TopSet(cfg->timer, period_cycles);
 
@@ -62,8 +59,8 @@ static int pwm_gecko_set_cycles(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
-static int pwm_gecko_get_cycles_per_sec(const struct device *dev,
-					uint32_t channel, uint64_t *cycles)
+static int pwm_gecko_get_cycles_per_sec(const struct device *dev, uint32_t channel,
+					uint64_t *cycles)
 {
 	const struct pwm_gecko_config *cfg = dev->config;
 
@@ -93,26 +90,22 @@ static int pwm_gecko_init(const struct device *dev)
 	return 0;
 }
 
-#define CLOCK_TIMER(id) _CONCAT(cmuClock_TIMER, id)
-#define PRESCALING_FACTOR(factor) \
-	((_CONCAT(timerPrescale, factor)))
+#define CLOCK_TIMER(id)           _CONCAT(cmuClock_TIMER, id)
+#define PRESCALING_FACTOR(factor) ((_CONCAT(timerPrescale, factor)))
 
-#define PWM_GECKO_INIT(index)							\
-	static const struct pwm_gecko_config pwm_gecko_config_##index = {	\
-		.timer = (TIMER_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(index)),	\
-		.clock = CLOCK_TIMER(index),					\
-		.prescaler = DT_INST_PROP(index, prescaler),			\
-		.prescale_enum = (TIMER_Prescale_TypeDef)			\
-			PRESCALING_FACTOR(DT_INST_PROP(index, prescaler)),	\
-		.location = DT_INST_PROP_BY_IDX(index, pin_location, 0),	\
-		.port = (GPIO_Port_TypeDef)					\
-			DT_INST_PROP_BY_IDX(index, pin_location, 1),		\
-		.pin = DT_INST_PROP_BY_IDX(index, pin_location, 2),		\
-	};									\
-										\
-	DEVICE_DT_INST_DEFINE(index, &pwm_gecko_init, NULL, NULL,		\
-				&pwm_gecko_config_##index, POST_KERNEL,		\
-				CONFIG_PWM_INIT_PRIORITY,			\
-				&pwm_gecko_driver_api);
+#define PWM_GECKO_INIT(index)                                                                      \
+	static const struct pwm_gecko_config pwm_gecko_config_##index = {                          \
+		.timer = (TIMER_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(index)),                      \
+		.clock = CLOCK_TIMER(index),                                                       \
+		.prescaler = DT_INST_PROP(index, prescaler),                                       \
+		.prescale_enum =                                                                   \
+			(TIMER_Prescale_TypeDef)PRESCALING_FACTOR(DT_INST_PROP(index, prescaler)), \
+		.location = DT_INST_PROP_BY_IDX(index, pin_location, 0),                           \
+		.port = (GPIO_Port_TypeDef)DT_INST_PROP_BY_IDX(index, pin_location, 1),            \
+		.pin = DT_INST_PROP_BY_IDX(index, pin_location, 2),                                \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(index, &pwm_gecko_init, NULL, NULL, &pwm_gecko_config_##index,       \
+			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, &pwm_gecko_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_GECKO_INIT)

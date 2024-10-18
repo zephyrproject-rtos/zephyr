@@ -62,8 +62,7 @@ static int adc_vbus_measure(const struct device *dev, int *meas)
  *
  * @retval true if VBUS is at the level voltage, else false
  */
-static bool adc_vbus_check_level(const struct device *dev,
-				 enum tc_vbus_level level)
+static bool adc_vbus_check_level(const struct device *dev, enum tc_vbus_level level)
 {
 	int meas;
 	int ret;
@@ -92,8 +91,7 @@ static bool adc_vbus_check_level(const struct device *dev,
  * @retval -EIO on failure
  * @retval -ENOENT if enable pin isn't defined
  */
-static int adc_vbus_discharge(const struct device *dev,
-			      bool enable)
+static int adc_vbus_discharge(const struct device *dev, bool enable)
 {
 	const struct usbc_vbus_config *const config = dev->config;
 	const struct gpio_dt_spec *gcd = &config->discharge_gpios;
@@ -112,8 +110,7 @@ static int adc_vbus_discharge(const struct device *dev,
  * @retval -EIO on failure
  * @retval -ENOENT if enable pin isn't defined
  */
-static int adc_vbus_enable(const struct device *dev,
-			   bool enable)
+static int adc_vbus_enable(const struct device *dev, bool enable)
 {
 	const struct usbc_vbus_config *const config = dev->config;
 	const struct gpio_dt_spec *gcp = &config->power_gpios;
@@ -152,8 +149,7 @@ static int adc_vbus_init(const struct device *dev)
 		}
 		ret = gpio_pin_configure_dt(gcp, GPIO_OUTPUT_INACTIVE);
 		if (ret != 0) {
-			LOG_ERR("Failed to control feed %s.%u: %d",
-				gcp->port->name, gcp->pin, ret);
+			LOG_ERR("Failed to control feed %s.%u: %d", gcp->port->name, gcp->pin, ret);
 			return ret;
 		}
 	}
@@ -166,11 +162,9 @@ static int adc_vbus_init(const struct device *dev)
 		}
 		ret = gpio_pin_configure_dt(gcd, GPIO_OUTPUT_INACTIVE);
 		if (ret != 0) {
-			LOG_ERR("Failed to control feed %s.%u: %d",
-				gcd->port->name, gcd->pin, ret);
+			LOG_ERR("Failed to control feed %s.%u: %d", gcd->port->name, gcd->pin, ret);
 			return ret;
 		}
-
 	}
 
 	data->sequence.buffer = &data->sample;
@@ -191,32 +185,24 @@ static int adc_vbus_init(const struct device *dev)
 	return 0;
 }
 
-static const struct usbc_vbus_driver_api driver_api = {
-	.measure = adc_vbus_measure,
-	.check_level = adc_vbus_check_level,
-	.discharge = adc_vbus_discharge,
-	.enable = adc_vbus_enable
-};
+static const struct usbc_vbus_driver_api driver_api = {.measure = adc_vbus_measure,
+						       .check_level = adc_vbus_check_level,
+						       .discharge = adc_vbus_discharge,
+						       .enable = adc_vbus_enable};
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 0,
 	     "No compatible USB-C VBUS Measurement instance found");
 
-#define DRIVER_INIT(inst)								\
-	static struct usbc_vbus_data drv_data_##inst;					\
-	static const struct usbc_vbus_config drv_config_##inst = {			\
-		.output_ohm = DT_INST_PROP(inst, output_ohms),				\
-		.full_ohm = DT_INST_PROP_OR(inst, full_ohms, 0),			\
-		.adc_channel = ADC_DT_SPEC_INST_GET(inst),				\
-		.discharge_gpios = GPIO_DT_SPEC_INST_GET_OR(inst, discharge_gpios, {}), \
-		.power_gpios = GPIO_DT_SPEC_INST_GET_OR(inst, power_gpios, {}),		\
-	};										\
-	DEVICE_DT_INST_DEFINE(inst,							\
-			      &adc_vbus_init,						\
-			      NULL,							\
-			      &drv_data_##inst,						\
-			      &drv_config_##inst,					\
-			      POST_KERNEL,						\
-			      CONFIG_USBC_VBUS_INIT_PRIORITY,				\
-			      &driver_api);
+#define DRIVER_INIT(inst)                                                                          \
+	static struct usbc_vbus_data drv_data_##inst;                                              \
+	static const struct usbc_vbus_config drv_config_##inst = {                                 \
+		.output_ohm = DT_INST_PROP(inst, output_ohms),                                     \
+		.full_ohm = DT_INST_PROP_OR(inst, full_ohms, 0),                                   \
+		.adc_channel = ADC_DT_SPEC_INST_GET(inst),                                         \
+		.discharge_gpios = GPIO_DT_SPEC_INST_GET_OR(inst, discharge_gpios, {}),            \
+		.power_gpios = GPIO_DT_SPEC_INST_GET_OR(inst, power_gpios, {}),                    \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(inst, &adc_vbus_init, NULL, &drv_data_##inst, &drv_config_##inst,    \
+			      POST_KERNEL, CONFIG_USBC_VBUS_INIT_PRIORITY, &driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DRIVER_INIT)

@@ -14,7 +14,7 @@
 #include <cyhal_utils.h>
 #include <cyhal_clock_impl.h>
 
-#define GET_CLK_SOURCE_ORD(N)  DT_DEP_ORD(DT_CLOCKS_CTLR_BY_IDX(DT_NODELABEL(N), 0))
+#define GET_CLK_SOURCE_ORD(N) DT_DEP_ORD(DT_CLOCKS_CTLR_BY_IDX(DT_NODELABEL(N), 0))
 
 /* Enumeration of enabled in device tree Clock, uses for indexing clock info table */
 enum {
@@ -132,127 +132,125 @@ enum {
 
 /* Clock info structure */
 struct infineon_cat1_clock_info_t {
-	cyhal_clock_t obj;      /* Hal Clock object */
-	uint32_t dt_ord;        /* Device tree node's dependency ordinal */
+	cyhal_clock_t obj; /* Hal Clock object */
+	uint32_t dt_ord;   /* Device tree node's dependency ordinal */
 };
 
 /* Lookup table which presents  clock objects (cyhal_clock_t) correspondence to ordinal
  * number of device tree clock nodes.
  */
-static struct infineon_cat1_clock_info_t
-	clock_info_table[INFINEON_CAT1_ENABLED_CLOCK_COUNT] = {
-	/* We always have IMO */
+static struct infineon_cat1_clock_info_t clock_info_table[INFINEON_CAT1_ENABLED_CLOCK_COUNT] = {
+/* We always have IMO */
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_imo))
-	[INFINEON_CAT1_CLOCK_IMO] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_imo)) },
+	[INFINEON_CAT1_CLOCK_IMO] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_imo))},
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_iho))
-	[INFINEON_CAT1_CLOCK_IHO] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_iho)) },
+	[INFINEON_CAT1_CLOCK_IHO] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_iho))},
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(path_mux0))
-	[INFINEON_CAT1_CLOCK_PATHMUX0] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(path_mux0)) },
+	[INFINEON_CAT1_CLOCK_PATHMUX0] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(path_mux0))},
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(path_mux1))
-	[INFINEON_CAT1_CLOCK_PATHMUX1] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(path_mux1)) },
+	[INFINEON_CAT1_CLOCK_PATHMUX1] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(path_mux1))},
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(path_mux2))
-	[INFINEON_CAT1_CLOCK_PATHMUX2] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(path_mux2)) },
+	[INFINEON_CAT1_CLOCK_PATHMUX2] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(path_mux2))},
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(path_mux3))
-	[INFINEON_CAT1_CLOCK_PATHMUX3] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(path_mux3)) },
+	[INFINEON_CAT1_CLOCK_PATHMUX3] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(path_mux3))},
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(path_mux4))
-	[INFINEON_CAT1_CLOCK_PATHMUX4] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(path_mux4)) },
+	[INFINEON_CAT1_CLOCK_PATHMUX4] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(path_mux4))},
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_hf0))
-	[INFINEON_CAT1_CLOCK_HF0] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf0)) },
+	[INFINEON_CAT1_CLOCK_HF0] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf0))},
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_hf1))
-	[INFINEON_CAT1_CLOCK_HF1] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf1)) },
+	[INFINEON_CAT1_CLOCK_HF1] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf1))},
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_hf2))
-	[INFINEON_CAT1_CLOCK_HF2] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf2)) },
+	[INFINEON_CAT1_CLOCK_HF2] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf2))},
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_hf3))
-	[INFINEON_CAT1_CLOCK_HF3] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf3)) },
+	[INFINEON_CAT1_CLOCK_HF3] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf3))},
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_hf4))
-	[INFINEON_CAT1_CLOCK_HF4] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf4)) },
+	[INFINEON_CAT1_CLOCK_HF4] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf4))},
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_hf5))
-	[INFINEON_CAT1_CLOCK_HF5] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf5)) },
+	[INFINEON_CAT1_CLOCK_HF5] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf5))},
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_hf6))
-	[INFINEON_CAT1_CLOCK_HF6] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf6)) },
+	[INFINEON_CAT1_CLOCK_HF6] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf6))},
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_hf7))
-	[INFINEON_CAT1_CLOCK_HF7] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf7)) },
+	[INFINEON_CAT1_CLOCK_HF7] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf7))},
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_hf8))
-	[INFINEON_CAT1_CLOCK_HF8] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf8)) },
+	[INFINEON_CAT1_CLOCK_HF8] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf8))},
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_hf9))
-	[INFINEON_CAT1_CLOCK_HF9] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf9)) },
+	[INFINEON_CAT1_CLOCK_HF9] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf9))},
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_hf10))
-	[INFINEON_CAT1_CLOCK_HF10] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf10)) },
+	[INFINEON_CAT1_CLOCK_HF10] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf10))},
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_hf11))
-	[INFINEON_CAT1_CLOCK_HF11] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf11)) },
+	[INFINEON_CAT1_CLOCK_HF11] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf11))},
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_hf12))
-	[INFINEON_CAT1_CLOCK_HF12] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf12)) },
+	[INFINEON_CAT1_CLOCK_HF12] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf12))},
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_hf13))
-	[INFINEON_CAT1_CLOCK_HF13] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf13)) },
+	[INFINEON_CAT1_CLOCK_HF13] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_hf13))},
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_fast))
-	[INFINEON_CAT1_CLOCK_FAST] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_fast)) },
+	[INFINEON_CAT1_CLOCK_FAST] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_fast))},
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_slow))
-	[INFINEON_CAT1_CLOCK_SLOW] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_slow)) },
+	[INFINEON_CAT1_CLOCK_SLOW] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_slow))},
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_peri))
-	[INFINEON_CAT1_CLOCK_PERI] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_peri)) },
+	[INFINEON_CAT1_CLOCK_PERI] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(clk_peri))},
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pll0))
-	[INFINEON_CAT1_CLOCK_PLL0] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(pll0)) },
+	[INFINEON_CAT1_CLOCK_PLL0] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(pll0))},
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pll1))
-	[INFINEON_CAT1_CLOCK_PLL1] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(pll1)) },
+	[INFINEON_CAT1_CLOCK_PLL1] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(pll1))},
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(fll0))
-	[INFINEON_CAT1_CLOCK_FLL0] = { .dt_ord = DT_DEP_ORD(DT_NODELABEL(fll0)) },
+	[INFINEON_CAT1_CLOCK_FLL0] = {.dt_ord = DT_DEP_ORD(DT_NODELABEL(fll0))},
 #endif
 };
 
-static cy_rslt_t _configure_path_mux(cyhal_clock_t *clock_obj,
-				     cyhal_clock_t *clock_source_obj,
+static cy_rslt_t _configure_path_mux(cyhal_clock_t *clock_obj, cyhal_clock_t *clock_source_obj,
 				     const cyhal_clock_t *reserve_obj)
 {
 	cy_rslt_t rslt;
@@ -268,10 +266,8 @@ static cy_rslt_t _configure_path_mux(cyhal_clock_t *clock_obj,
 	return rslt;
 }
 
-static cy_rslt_t _configure_clk_hf(cyhal_clock_t *clock_obj,
-				   cyhal_clock_t *clock_source_obj,
-				   const cyhal_clock_t *reserve_obj,
-				   uint32_t clock_div)
+static cy_rslt_t _configure_clk_hf(cyhal_clock_t *clock_obj, cyhal_clock_t *clock_source_obj,
+				   const cyhal_clock_t *reserve_obj, uint32_t clock_div)
 {
 	cy_rslt_t rslt;
 
@@ -402,9 +398,9 @@ static int clock_control_infineon_cat1_init(const struct device *dev)
 		return -EIO;
 	}
 #endif
-#if !DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_imo)) && \
+#if !DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_imo)) &&                                             \
 	!DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_iho))
-	#error "IMO clock or IHO clock must be enabled"
+#error "IMO clock or IHO clock must be enabled"
 #endif
 
 	/* Configure the PathMux[0] to source defined in tree device 'path_mux0' node */
@@ -462,8 +458,8 @@ static int clock_control_infineon_cat1_init(const struct device *dev)
 	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_FLL0].obj;
 	frequency = DT_PROP(DT_NODELABEL(fll0), clock_frequency);
 
-	rslt = _configure_clk_frequency_and_enable(clock_obj, clock_source_obj,
-						   &CYHAL_CLOCK_FLL, frequency);
+	rslt = _configure_clk_frequency_and_enable(clock_obj, clock_source_obj, &CYHAL_CLOCK_FLL,
+						   frequency);
 	if (rslt) {
 		return -EIO;
 	}
@@ -474,8 +470,8 @@ static int clock_control_infineon_cat1_init(const struct device *dev)
 	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_PLL0].obj;
 	frequency = DT_PROP(DT_NODELABEL(pll0), clock_frequency);
 
-	rslt = _configure_clk_frequency_and_enable(clock_obj, clock_source_obj,
-						   &CYHAL_CLOCK_PLL[0], frequency);
+	rslt = _configure_clk_frequency_and_enable(clock_obj, clock_source_obj, &CYHAL_CLOCK_PLL[0],
+						   frequency);
 
 	if (rslt) {
 		return -EIO;
@@ -487,8 +483,8 @@ static int clock_control_infineon_cat1_init(const struct device *dev)
 	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_PLL1].obj;
 	frequency = DT_PROP(DT_NODELABEL(pll1), clock_frequency);
 
-	rslt = _configure_clk_frequency_and_enable(clock_obj, clock_source_obj,
-						   &CYHAL_CLOCK_PLL[1], frequency);
+	rslt = _configure_clk_frequency_and_enable(clock_obj, clock_source_obj, &CYHAL_CLOCK_PLL[1],
+						   frequency);
 	if (rslt) {
 		return -EIO;
 	}
@@ -695,11 +691,10 @@ static int clock_control_infineon_cat1_init(const struct device *dev)
 	SystemCoreClockUpdate();
 #endif
 
-	return (int) rslt;
+	return (int)rslt;
 }
 
-static int clock_control_infineon_cat_on_off(const struct device *dev,
-					     clock_control_subsys_t sys)
+static int clock_control_infineon_cat_on_off(const struct device *dev, clock_control_subsys_t sys)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(sys);
@@ -709,27 +704,15 @@ static int clock_control_infineon_cat_on_off(const struct device *dev,
 }
 
 static const struct clock_control_driver_api clock_control_infineon_cat1_api = {
-	.on = clock_control_infineon_cat_on_off,
-	.off = clock_control_infineon_cat_on_off
-};
+	.on = clock_control_infineon_cat_on_off, .off = clock_control_infineon_cat_on_off};
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_imo))
-DEVICE_DT_DEFINE(DT_NODELABEL(clk_imo),
-		 clock_control_infineon_cat1_init,
-		 NULL,
-		 NULL,
-		 NULL,
-		 PRE_KERNEL_1,
-		 CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
+DEVICE_DT_DEFINE(DT_NODELABEL(clk_imo), clock_control_infineon_cat1_init, NULL, NULL, NULL,
+		 PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		 &clock_control_infineon_cat1_api);
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_iho))
-DEVICE_DT_DEFINE(DT_NODELABEL(clk_iho),
-		 clock_control_infineon_cat1_init,
-		 NULL,
-		 NULL,
-		 NULL,
-		 PRE_KERNEL_1,
-		 CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
+DEVICE_DT_DEFINE(DT_NODELABEL(clk_iho), clock_control_infineon_cat1_init, NULL, NULL, NULL,
+		 PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		 &clock_control_infineon_cat1_api);
 #endif

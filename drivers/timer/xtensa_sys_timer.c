@@ -9,34 +9,31 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/irq.h>
 
-#define TIMER_IRQ UTIL_CAT(XCHAL_TIMER,		\
-			   UTIL_CAT(CONFIG_XTENSA_TIMER_ID, _INTERRUPT))
+#define TIMER_IRQ UTIL_CAT(XCHAL_TIMER, UTIL_CAT(CONFIG_XTENSA_TIMER_ID, _INTERRUPT))
 
-#define CYC_PER_TICK (sys_clock_hw_cycles_per_sec()	\
-		      / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-#define MAX_CYC 0xffffffffu
-#define MAX_TICKS ((MAX_CYC - CYC_PER_TICK) / CYC_PER_TICK)
-#define MIN_DELAY 1000
+#define CYC_PER_TICK (sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define MAX_CYC      0xffffffffu
+#define MAX_TICKS    ((MAX_CYC - CYC_PER_TICK) / CYC_PER_TICK)
+#define MIN_DELAY    1000
 
 static struct k_spinlock lock;
 static unsigned int last_count;
 
 #if defined(CONFIG_TEST)
-const int32_t z_sys_timer_irq_for_test = UTIL_CAT(XCHAL_TIMER,
-					 UTIL_CAT(CONFIG_XTENSA_TIMER_ID, _INTERRUPT));
+const int32_t z_sys_timer_irq_for_test =
+	UTIL_CAT(XCHAL_TIMER, UTIL_CAT(CONFIG_XTENSA_TIMER_ID, _INTERRUPT));
 #endif
 
 static void set_ccompare(uint32_t val)
 {
-	__asm__ volatile ("wsr.CCOMPARE" STRINGIFY(CONFIG_XTENSA_TIMER_ID) " %0"
-			  :: "r"(val));
+	__asm__ volatile("wsr.CCOMPARE" STRINGIFY(CONFIG_XTENSA_TIMER_ID) " %0" ::"r"(val));
 }
 
 static uint32_t ccount(void)
 {
 	uint32_t val;
 
-	__asm__ volatile ("rsr.CCOUNT %0" : "=r"(val));
+	__asm__ volatile("rsr.CCOUNT %0" : "=r"(val));
 	return val;
 }
 
@@ -129,5 +126,4 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

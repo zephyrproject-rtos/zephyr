@@ -55,7 +55,7 @@ static const struct gd32_exti_range line10_15_range = {10U, 15U};
 #endif /* CONFIG_GPIO_GD32 */
 
 /** @brief Obtain line IRQ number if enabled. */
-#define EXTI_LINE_IRQ_COND(enabled, line) \
+#define EXTI_LINE_IRQ_COND(enabled, line)                                                          \
 	COND_CODE_1(enabled, (DT_INST_IRQ_BY_NAME(0, line, irq)), (EXTI_NOTSUP))
 
 static const uint8_t line2irq[NUM_EXTI_LINES] = {
@@ -160,33 +160,27 @@ int gd32_exti_configure(uint8_t line, gd32_exti_cb_t cb, void *user)
 static int gd32_exti_init(const struct device *dev)
 {
 #ifdef CONFIG_GPIO_GD32
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, line0, irq),
-		    DT_INST_IRQ_BY_NAME(0, line0, priority),
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, line0, irq), DT_INST_IRQ_BY_NAME(0, line0, priority),
 		    gd32_exti_isr, &line0_range, 0);
 
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, line1, irq),
-		    DT_INST_IRQ_BY_NAME(0, line1, priority),
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, line1, irq), DT_INST_IRQ_BY_NAME(0, line1, priority),
 		    gd32_exti_isr, &line1_range, 0);
 
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, line2, irq),
-		    DT_INST_IRQ_BY_NAME(0, line2, priority),
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, line2, irq), DT_INST_IRQ_BY_NAME(0, line2, priority),
 		    gd32_exti_isr, &line2_range, 0);
 
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, line3, irq),
-		    DT_INST_IRQ_BY_NAME(0, line3, priority),
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, line3, irq), DT_INST_IRQ_BY_NAME(0, line3, priority),
 		    gd32_exti_isr, &line3_range, 0);
 
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, line4, irq),
-		    DT_INST_IRQ_BY_NAME(0, line4, priority),
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, line4, irq), DT_INST_IRQ_BY_NAME(0, line4, priority),
 		    gd32_exti_isr, &line4_range, 0);
 
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, line5_9, irq),
-		    DT_INST_IRQ_BY_NAME(0, line5_9, priority),
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, line5_9, irq), DT_INST_IRQ_BY_NAME(0, line5_9, priority),
 		    gd32_exti_isr, &line5_9_range, 0);
 
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, line10_15, irq),
-		    DT_INST_IRQ_BY_NAME(0, line10_15, priority),
-		    gd32_exti_isr, &line10_15_range, 0);
+		    DT_INST_IRQ_BY_NAME(0, line10_15, priority), gd32_exti_isr, &line10_15_range,
+		    0);
 #endif /* CONFIG_GPIO_GD32 */
 
 	return 0;
@@ -194,5 +188,5 @@ static int gd32_exti_init(const struct device *dev)
 
 static struct gd32_exti_data data;
 
-DEVICE_DT_INST_DEFINE(0, gd32_exti_init, NULL, &data, NULL, PRE_KERNEL_1,
-		      CONFIG_INTC_INIT_PRIORITY, NULL);
+DEVICE_DT_INST_DEFINE(0, gd32_exti_init, NULL, &data, NULL, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
+		      NULL);

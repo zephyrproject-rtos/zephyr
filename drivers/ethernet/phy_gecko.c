@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(eth_gecko_phy, CONFIG_ETHERNET_LOG_LEVEL);
  * 10BASE-T, 100BASE-TX is 3.7s, to add an extra margin the timeout
  * is set at 4s.
  */
-#define PHY_AUTONEG_TIMEOUT_MS   4000
+#define PHY_AUTONEG_TIMEOUT_MS 4000
 
 /* Enable MDIO serial bus between MAC and PHY. */
 static void mdio_bus_enable(ETH_TypeDef *eth)
@@ -36,7 +36,7 @@ static void mdio_bus_disable(ETH_TypeDef *eth)
 /* Wait PHY operation complete. */
 static int mdio_bus_wait(ETH_TypeDef *eth)
 {
-	uint32_t retries = 100U;  /* will wait up to 1 s */
+	uint32_t retries = 100U; /* will wait up to 1 s */
 
 	while (!(eth->NETWORKSTATUS & ETH_NETWORKSTATUS_MANDONE)) {
 		if (retries-- == 0U) {
@@ -51,21 +51,18 @@ static int mdio_bus_wait(ETH_TypeDef *eth)
 }
 
 /* Send command to PHY over MDIO serial bus */
-static int mdio_bus_send(ETH_TypeDef *eth, uint8_t phy_addr, uint8_t reg_addr,
-			 uint8_t rw, uint16_t data)
+static int mdio_bus_send(ETH_TypeDef *eth, uint8_t phy_addr, uint8_t reg_addr, uint8_t rw,
+			 uint16_t data)
 {
 	int retval;
 
 	/* Write PHY management register */
-	eth->PHYMNGMNT = ETH_PHYMNGMNT_WRITE0_DEFAULT
-		| ETH_PHYMNGMNT_WRITE1
-		| ((rw ? 0x02 : 0x01) << _ETH_PHYMNGMNT_OPERATION_SHIFT)
-		| ((phy_addr << _ETH_PHYMNGMNT_PHYADDR_SHIFT)
-			& _ETH_PHYMNGMNT_PHYADDR_MASK)
-		| ((reg_addr << _ETH_PHYMNGMNT_REGADDR_SHIFT)
-			& _ETH_PHYMNGMNT_REGADDR_MASK)
-		| (0x2 << _ETH_PHYMNGMNT_WRITE10_SHIFT)
-		| (data & _ETH_PHYMNGMNT_PHYRWDATA_MASK);
+	eth->PHYMNGMNT =
+		ETH_PHYMNGMNT_WRITE0_DEFAULT | ETH_PHYMNGMNT_WRITE1 |
+		((rw ? 0x02 : 0x01) << _ETH_PHYMNGMNT_OPERATION_SHIFT) |
+		((phy_addr << _ETH_PHYMNGMNT_PHYADDR_SHIFT) & _ETH_PHYMNGMNT_PHYADDR_MASK) |
+		((reg_addr << _ETH_PHYMNGMNT_REGADDR_SHIFT) & _ETH_PHYMNGMNT_REGADDR_MASK) |
+		(0x2 << _ETH_PHYMNGMNT_WRITE10_SHIFT) | (data & _ETH_PHYMNGMNT_PHYRWDATA_MASK);
 
 	/* Wait until PHY is ready */
 	retval = mdio_bus_wait(eth);
@@ -77,8 +74,7 @@ static int mdio_bus_send(ETH_TypeDef *eth, uint8_t phy_addr, uint8_t reg_addr,
 }
 
 /* Read PHY register. */
-static int phy_read(const struct phy_gecko_dev *phy, uint8_t reg_addr,
-		    uint32_t *value)
+static int phy_read(const struct phy_gecko_dev *phy, uint8_t reg_addr, uint32_t *value)
 {
 	ETH_TypeDef *const eth = phy->regs;
 	uint8_t phy_addr = phy->address;
@@ -96,8 +92,7 @@ static int phy_read(const struct phy_gecko_dev *phy, uint8_t reg_addr,
 }
 
 /* Write PHY register. */
-static int phy_write(const struct phy_gecko_dev *phy, uint8_t reg_addr,
-		     uint32_t value)
+static int phy_write(const struct phy_gecko_dev *phy, uint8_t reg_addr, uint32_t value)
 {
 	ETH_TypeDef *const eth = phy->regs;
 	uint8_t phy_addr = phy->address;
@@ -187,8 +182,7 @@ uint32_t phy_gecko_id_get(const struct phy_gecko_dev *phy)
 	return phy_id;
 }
 
-int phy_gecko_auto_negotiate(const struct phy_gecko_dev *phy,
-				uint32_t *status)
+int phy_gecko_auto_negotiate(const struct phy_gecko_dev *phy, uint32_t *status)
 {
 	ETH_TypeDef *const eth = phy->regs;
 	uint32_t val;
@@ -214,7 +208,7 @@ int phy_gecko_auto_negotiate(const struct phy_gecko_dev *phy,
 	}
 
 	val |= MII_BMCR_AUTONEG_ENABLE | MII_BMCR_AUTONEG_RESTART;
-	val &= ~MII_BMCR_ISOLATE;  /* Don't isolate the PHY */
+	val &= ~MII_BMCR_ISOLATE; /* Don't isolate the PHY */
 
 	retval = phy_write(phy, MII_BMCR, val);
 	if (retval < 0) {

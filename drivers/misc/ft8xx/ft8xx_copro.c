@@ -16,10 +16,10 @@
 #define FT800_RAM_CMD_SIZE 4096UL
 
 enum {
-	CMD_DLSTART   = 0xffffff00,
-	CMD_SWAP      = 0xffffff01,
-	CMD_TEXT      = 0xffffff0c,
-	CMD_NUMBER    = 0xffffff2e,
+	CMD_DLSTART = 0xffffff00,
+	CMD_SWAP = 0xffffff01,
+	CMD_TEXT = 0xffffff0c,
+	CMD_NUMBER = 0xffffff2e,
 	CMD_CALIBRATE = 0xffffff15,
 } ft8xx_cmd;
 
@@ -73,21 +73,12 @@ void ft8xx_copro_cmd_swap(void)
 	ft8xx_copro_cmd(CMD_SWAP);
 }
 
-void ft8xx_copro_cmd_text(int16_t x,
-			   int16_t y,
-			   int16_t font,
-			   uint16_t options,
-			   const char *s)
+void ft8xx_copro_cmd_text(int16_t x, int16_t y, int16_t font, uint16_t options, const char *s)
 {
 	const uint16_t str_bytes = strlen(s) + 1;
 	const uint16_t padding_bytes = (4 - (str_bytes % 4)) % 4;
-	const uint16_t cmd_size = sizeof(CMD_TEXT) +
-				   sizeof(x) +
-				   sizeof(y) +
-				   sizeof(font) +
-				   sizeof(options) +
-				   str_bytes +
-				   padding_bytes;
+	const uint16_t cmd_size = sizeof(CMD_TEXT) + sizeof(x) + sizeof(y) + sizeof(font) +
+				  sizeof(options) + str_bytes + padding_bytes;
 
 	while (ram_cmd_freespace() < cmd_size) {
 		refresh_reg_cmd_read();
@@ -114,18 +105,10 @@ void ft8xx_copro_cmd_text(int16_t x,
 	flush_reg_cmd_write();
 }
 
-void ft8xx_copro_cmd_number(int16_t x,
-			     int16_t y,
-			     int16_t font,
-			     uint16_t options,
-			     int32_t n)
+void ft8xx_copro_cmd_number(int16_t x, int16_t y, int16_t font, uint16_t options, int32_t n)
 {
-	const uint16_t cmd_size = sizeof(CMD_NUMBER) +
-				   sizeof(x) +
-				   sizeof(y) +
-				   sizeof(font) +
-				   sizeof(options) +
-				   sizeof(n);
+	const uint16_t cmd_size = sizeof(CMD_NUMBER) + sizeof(x) + sizeof(y) + sizeof(font) +
+				  sizeof(options) + sizeof(n);
 
 	while (ram_cmd_freespace() < cmd_size) {
 		refresh_reg_cmd_read();

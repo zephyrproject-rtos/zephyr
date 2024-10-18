@@ -28,18 +28,17 @@
 #error Only one LPTIM instance should be enabled
 #endif
 
-#define LPTIM (LPTIM_TypeDef *) DT_INST_REG_ADDR(0)
+#define LPTIM (LPTIM_TypeDef *)DT_INST_REG_ADDR(0)
 
 #if DT_INST_NUM_CLOCKS(0) == 1
 #warning Kconfig for LPTIM source clock (LSI/LSE) is deprecated, use device tree.
-static const struct stm32_pclken lptim_clk[] = {
-	STM32_CLOCK_INFO(0, DT_DRV_INST(0)),
-	/* Use Kconfig to configure source clocks fields */
-	/* Fortunately, values are consistent across enabled series */
+static const struct stm32_pclken lptim_clk[] = {STM32_CLOCK_INFO(0, DT_DRV_INST(0)),
+/* Use Kconfig to configure source clocks fields */
+/* Fortunately, values are consistent across enabled series */
 #ifdef CONFIG_STM32_LPTIM_CLOCK_LSI
-	{.bus = STM32_SRC_LSI, .enr = LPTIM1_SEL(1)}
+						{.bus = STM32_SRC_LSI, .enr = LPTIM1_SEL(1)}
 #else
-	{.bus = STM32_SRC_LSE, .enr = LPTIM1_SEL(3)}
+						{.bus = STM32_SRC_LSE, .enr = LPTIM1_SEL(3)}
 #endif
 };
 #else
@@ -84,8 +83,7 @@ static struct k_spinlock lock;
 
 #ifdef CONFIG_STM32_LPTIM_STDBY_TIMER
 
-#define CURRENT_CPU \
-	(COND_CODE_1(CONFIG_SMP, (arch_curr_cpu()->id), (_current_cpu->id)))
+#define CURRENT_CPU (COND_CODE_1(CONFIG_SMP, (arch_curr_cpu()->id), (_current_cpu->id)))
 
 #define cycle_t uint32_t
 
@@ -120,8 +118,7 @@ static void lptim_irq_handler(const struct device *unused)
 
 	uint32_t autoreload = LL_LPTIM_GetAutoReload(LPTIM);
 
-	if ((LL_LPTIM_IsActiveFlag_ARROK(LPTIM) != 0)
-		&& LL_LPTIM_IsEnabledIT_ARROK(LPTIM) != 0) {
+	if ((LL_LPTIM_IsActiveFlag_ARROK(LPTIM) != 0) && LL_LPTIM_IsEnabledIT_ARROK(LPTIM) != 0) {
 		LL_LPTIM_ClearFlag_ARROK(LPTIM);
 		if ((autoreload_next > 0) && (autoreload_next != autoreload)) {
 			/* the new autoreload value change, we set it */
@@ -148,12 +145,9 @@ static void lptim_irq_handler(const struct device *unused)
 		k_spin_unlock(&lock, key);
 
 		/* announce the elapsed time in ms (count register is 16bit) */
-		uint32_t dticks = (autoreload
-				* CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-				/ lptim_clock_freq;
+		uint32_t dticks = (autoreload * CONFIG_SYS_CLOCK_TICKS_PER_SEC) / lptim_clock_freq;
 
-		sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL)
-				? dticks : (dticks > 0));
+		sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : (dticks > 0));
 	}
 }
 
@@ -245,7 +239,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		lptim_cnt_pre_stdby = z_clock_lptim_getcounter();
 
 		/* Stop clocks for LPTIM, since RTC is used instead */
-		clock_control_off(clk_ctrl, (clock_control_subsys_t) &lptim_clk[0]);
+		clock_control_off(clk_ctrl, (clock_control_subsys_t)&lptim_clk[0]);
 
 		return;
 	}
@@ -260,7 +254,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	 * is treated as a lptim off ; never waking up ; lptim not clocked anymore
 	 */
 	if (ticks == K_TICKS_FOREVER) {
-		clock_control_off(clk_ctrl, (clock_control_subsys_t) &lptim_clk[0]);
+		clock_control_off(clk_ctrl, (clock_control_subsys_t)&lptim_clk[0]);
 		return;
 	}
 	/*
@@ -269,7 +263,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	 */
 
 	/* if LPTIM clock was previously stopped, it must now be restored */
-	err = clock_control_on(clk_ctrl, (clock_control_subsys_t) &lptim_clk[0]);
+	err = clock_control_on(clk_ctrl, (clock_control_subsys_t)&lptim_clk[0]);
 
 	if (err < 0) {
 		return;
@@ -289,8 +283,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 	uint32_t autoreload = LL_LPTIM_GetAutoReload(LPTIM);
 
-	if (LL_LPTIM_IsActiveFlag_ARRM(LPTIM)
-	    || ((autoreload - lp_time) < LPTIM_GUARD_VALUE)) {
+	if (LL_LPTIM_IsActiveFlag_ARRM(LPTIM) || ((autoreload - lp_time) < LPTIM_GUARD_VALUE)) {
 		/* interrupt happens or happens soon.
 		 * It's impossible to set autoreload value.
 		 */
@@ -302,11 +295,9 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	 * adjust the next ARR match value to align on Ticks
 	 * from the current counter value to first next Tick
 	 */
-	next_arr = (((lp_time * CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-			/ lptim_clock_freq) + 1) * lptim_clock_freq
-			/ (CONFIG_SYS_CLOCK_TICKS_PER_SEC);
-	next_arr = next_arr + ((uint32_t)(ticks) * lptim_clock_freq)
-			/ CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+	next_arr = (((lp_time * CONFIG_SYS_CLOCK_TICKS_PER_SEC) / lptim_clock_freq) + 1) *
+		   lptim_clock_freq / (CONFIG_SYS_CLOCK_TICKS_PER_SEC);
+	next_arr = next_arr + ((uint32_t)(ticks)*lptim_clock_freq) / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 	/* if the lptim_clock_freq <  one ticks/sec, then next_arr must be > 0 */
 
 	/* maximise to TIMEBASE */
@@ -350,7 +341,6 @@ static uint32_t sys_clock_lp_time_get(void)
 
 	return lp_time;
 }
-
 
 uint32_t sys_clock_elapsed(void)
 {
@@ -413,7 +403,7 @@ static int sys_clock_driver_init(void)
 	}
 
 	/* Enable LPTIM bus clock */
-	err = clock_control_on(clk_ctrl, (clock_control_subsys_t) &lptim_clk[0]);
+	err = clock_control_on(clk_ctrl, (clock_control_subsys_t)&lptim_clk[0]);
 	if (err < 0) {
 		return -EIO;
 	}
@@ -423,16 +413,14 @@ static int sys_clock_driver_init(void)
 #endif
 
 	/* Enable LPTIM clock source */
-	err = clock_control_configure(clk_ctrl,
-				      (clock_control_subsys_t) &lptim_clk[1],
-				      NULL);
+	err = clock_control_configure(clk_ctrl, (clock_control_subsys_t)&lptim_clk[1], NULL);
 	if (err < 0) {
 		return -EIO;
 	}
 
 	/* Get LPTIM clock freq */
-	err = clock_control_get_rate(clk_ctrl, (clock_control_subsys_t) &lptim_clk[1],
-			       &lptim_clock_freq);
+	err = clock_control_get_rate(clk_ctrl, (clock_control_subsys_t)&lptim_clk[1],
+				     &lptim_clock_freq);
 
 	if (err < 0) {
 		return -EIO;
@@ -467,11 +455,13 @@ static int sys_clock_driver_init(void)
 	 */
 	if (lptim_clock_presc <= 8) {
 		__ASSERT(CONFIG_STM32_LPTIM_CLOCK / 8 >= CONFIG_SYS_CLOCK_TICKS_PER_SEC,
-		 "It is recommended to set SYS_CLOCK_TICKS_PER_SEC to CONFIG_STM32_LPTIM_CLOCK/8");
+			 "It is recommended to set SYS_CLOCK_TICKS_PER_SEC to "
+			 "CONFIG_STM32_LPTIM_CLOCK/8");
 	} else {
 		__ASSERT(CONFIG_STM32_LPTIM_CLOCK / lptim_clock_presc >=
-			CONFIG_SYS_CLOCK_TICKS_PER_SEC,
-		 "Set SYS_CLOCK_TICKS_PER_SEC to CONFIG_STM32_LPTIM_CLOCK/lptim_clock_presc");
+				 CONFIG_SYS_CLOCK_TICKS_PER_SEC,
+			 "Set SYS_CLOCK_TICKS_PER_SEC to "
+			 "CONFIG_STM32_LPTIM_CLOCK/lptim_clock_presc");
 	}
 #endif /* !CONFIG_STM32_LPTIM_TICK_FREQ_RATIO_OVERRIDE */
 
@@ -479,9 +469,7 @@ static int sys_clock_driver_init(void)
 	lptim_clock_freq = lptim_clock_freq / lptim_clock_presc;
 
 	/* Clear the event flag and possible pending interrupt */
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    lptim_irq_handler, 0, 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), lptim_irq_handler, 0, 0);
 	irq_enable(DT_INST_IRQN(0));
 
 #ifdef CONFIG_SOC_SERIES_STM32WLX
@@ -494,11 +482,9 @@ static int sys_clock_driver_init(void)
 	/* the LPTIM clock freq is affected by the prescaler */
 	LL_LPTIM_SetPrescaler(LPTIM, (__CLZ(__RBIT(lptim_clock_presc)) << LPTIM_CFGR_PRESC_Pos));
 
-#if defined(CONFIG_SOC_SERIES_STM32U5X) || \
-	defined(CONFIG_SOC_SERIES_STM32H5X) || \
+#if defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32H5X) ||                  \
 	defined(CONFIG_SOC_SERIES_STM32WBAX)
-	LL_LPTIM_OC_SetPolarity(LPTIM, LL_LPTIM_CHANNEL_CH1,
-				LL_LPTIM_OUTPUT_POLARITY_REGULAR);
+	LL_LPTIM_OC_SetPolarity(LPTIM, LL_LPTIM_CHANNEL_CH1, LL_LPTIM_OUTPUT_POLARITY_REGULAR);
 #else
 	LL_LPTIM_SetPolarity(LPTIM, LL_LPTIM_OUTPUT_POLARITY_REGULAR);
 #endif
@@ -508,8 +494,7 @@ static int sys_clock_driver_init(void)
 	/* counting start is initiated by software */
 	LL_LPTIM_TrigSw(LPTIM);
 
-#if defined(CONFIG_SOC_SERIES_STM32U5X) || \
-	defined(CONFIG_SOC_SERIES_STM32H5X) || \
+#if defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32H5X) ||                  \
 	defined(CONFIG_SOC_SERIES_STM32WBAX)
 	/* Enable the LPTIM before proceeding with configuration */
 	LL_LPTIM_Enable(LPTIM);
@@ -534,8 +519,7 @@ static int sys_clock_driver_init(void)
 	stm32_lptim_wait_ready();
 	LL_LPTIM_ClearFlag_ARROK(LPTIM);
 
-#if !defined(CONFIG_SOC_SERIES_STM32U5X) && \
-	!defined(CONFIG_SOC_SERIES_STM32H5X) && \
+#if !defined(CONFIG_SOC_SERIES_STM32U5X) && !defined(CONFIG_SOC_SERIES_STM32H5X) &&                \
 	!defined(CONFIG_SOC_SERIES_STM32WBAX)
 	/* Enable the LPTIM counter */
 	LL_LPTIM_Enable(LPTIM);
@@ -570,9 +554,8 @@ static int sys_clock_driver_init(void)
 void stm32_clock_control_standby_exit(void)
 {
 #ifdef CONFIG_STM32_LPTIM_STDBY_TIMER
-	if (clock_control_get_status(clk_ctrl,
-				     (clock_control_subsys_t) &lptim_clk[0])
-				     != CLOCK_CONTROL_STATUS_ON) {
+	if (clock_control_get_status(clk_ctrl, (clock_control_subsys_t)&lptim_clk[0]) !=
+	    CLOCK_CONTROL_STATUS_ON) {
 		sys_clock_driver_init();
 	}
 #endif /* CONFIG_STM32_LPTIM_STDBY_TIMER */
@@ -605,8 +588,7 @@ void sys_clock_idle_exit(void)
 		stdby_timer_us = counter_ticks_to_us(stdby_timer, stdby_timer_diff);
 
 		/* Convert standby time in LPTIM cnt */
-		missed_lptim_cnt = (sys_clock_hw_cycles_per_sec() * stdby_timer_us) /
-				   USEC_PER_SEC;
+		missed_lptim_cnt = (sys_clock_hw_cycles_per_sec() * stdby_timer_us) / USEC_PER_SEC;
 		/* Add the LPTIM cnt pre standby */
 		missed_lptim_cnt += lptim_cnt_pre_stdby;
 
@@ -614,8 +596,7 @@ void sys_clock_idle_exit(void)
 		accumulated_lptim_cnt += missed_lptim_cnt;
 
 		/* Announce the passed ticks to the kernel */
-		dticks = (missed_lptim_cnt * CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-				/ lptim_clock_freq;
+		dticks = (missed_lptim_cnt * CONFIG_SYS_CLOCK_TICKS_PER_SEC) / lptim_clock_freq;
 		sys_clock_announce(dticks);
 
 		/* We've already performed all needed operations */
@@ -624,5 +605,4 @@ void sys_clock_idle_exit(void)
 #endif /* CONFIG_STM32_LPTIM_STDBY_TIMER */
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

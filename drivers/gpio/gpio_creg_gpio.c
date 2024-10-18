@@ -39,8 +39,7 @@ struct creg_gpio_config {
 	uint8_t on_val;
 };
 
-static int port_get(const struct device *dev,
-		    gpio_port_value_t *value)
+static int port_get(const struct device *dev, gpio_port_value_t *value)
 {
 	const struct creg_gpio_config *cfg = dev->config;
 	struct creg_gpio_drv_data *drv_data = dev->data;
@@ -57,9 +56,7 @@ static int port_get(const struct device *dev,
 	return 0;
 }
 
-static int port_write(const struct device *dev,
-		      gpio_port_pins_t mask,
-		      gpio_port_value_t value,
+static int port_write(const struct device *dev, gpio_port_pins_t mask, gpio_port_value_t value,
 		      gpio_port_value_t toggle)
 {
 	const struct creg_gpio_config *cfg = dev->config;
@@ -79,34 +76,27 @@ static int port_write(const struct device *dev,
 	return 0;
 }
 
-static int port_set_masked(const struct device *dev,
-			   gpio_port_pins_t mask,
-			   gpio_port_value_t value)
+static int port_set_masked(const struct device *dev, gpio_port_pins_t mask, gpio_port_value_t value)
 {
 	return port_write(dev, mask, value, 0);
 }
 
-static int port_set_bits(const struct device *dev,
-			 gpio_port_pins_t pins)
+static int port_set_bits(const struct device *dev, gpio_port_pins_t pins)
 {
 	return port_write(dev, pins, pins, 0);
 }
 
-static int port_clear_bits(const struct device *dev,
-			   gpio_port_pins_t pins)
+static int port_clear_bits(const struct device *dev, gpio_port_pins_t pins)
 {
 	return port_write(dev, pins, 0, 0);
 }
 
-static int port_toggle_bits(const struct device *dev,
-			    gpio_port_pins_t pins)
+static int port_toggle_bits(const struct device *dev, gpio_port_pins_t pins)
 {
 	return port_write(dev, 0, 0, pins);
 }
 
-static int pin_config(const struct device *dev,
-		       gpio_pin_t pin,
-		       gpio_flags_t flags)
+static int pin_config(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct creg_gpio_config *cfg = dev->config;
 	uint32_t io_flags;
@@ -121,8 +111,7 @@ static int pin_config(const struct device *dev,
 	 * not supporting both input/output at same time.
 	 */
 	io_flags = flags & (GPIO_INPUT | GPIO_OUTPUT);
-	if ((io_flags == GPIO_DISCONNECTED)
-	    || (io_flags == (GPIO_INPUT | GPIO_OUTPUT))) {
+	if ((io_flags == GPIO_DISCONNECTED) || (io_flags == (GPIO_INPUT | GPIO_OUTPUT))) {
 		return -ENOTSUP;
 	}
 
@@ -158,9 +147,10 @@ static const struct gpio_driver_api api_table = {
 };
 
 static const struct creg_gpio_config creg_gpio_cfg = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
-	},
+	.common =
+		{
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
+		},
 	.ngpios = DT_INST_PROP(0, ngpios),
 	.bit_per_gpio = DT_INST_PROP(0, bit_per_gpio),
 	.off_val = DT_INST_PROP(0, off_val),
@@ -171,6 +161,5 @@ static struct creg_gpio_drv_data creg_gpio_drvdata = {
 	.base_addr = DT_INST_REG_ADDR(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, &creg_gpio_drvdata, &creg_gpio_cfg,
-		      POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,
-		      &api_table);
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, &creg_gpio_drvdata, &creg_gpio_cfg, POST_KERNEL,
+		      CONFIG_GPIO_INIT_PRIORITY, &api_table);

@@ -22,8 +22,7 @@ struct iis2mdc_data iis2mdc_data;
 LOG_MODULE_REGISTER(IIS2MDC, CONFIG_SENSOR_LOG_LEVEL);
 
 #ifdef CONFIG_IIS2MDC_MAG_ODR_RUNTIME
-static int iis2mdc_set_odr(const struct device *dev,
-			   const struct sensor_value *val)
+static int iis2mdc_set_odr(const struct device *dev, const struct sensor_value *val)
 {
 	struct iis2mdc_data *iis2mdc = dev->data;
 	iis2mdc_odr_t odr;
@@ -53,9 +52,8 @@ static int iis2mdc_set_odr(const struct device *dev,
 }
 #endif /* CONFIG_IIS2MDC_MAG_ODR_RUNTIME */
 
-static int iis2mdc_set_hard_iron(const struct device *dev,
-				   enum sensor_channel chan,
-				   const struct sensor_value *val)
+static int iis2mdc_set_hard_iron(const struct device *dev, enum sensor_channel chan,
+				 const struct sensor_value *val)
 {
 	struct iis2mdc_data *iis2mdc = dev->data;
 	uint8_t i;
@@ -69,9 +67,8 @@ static int iis2mdc_set_hard_iron(const struct device *dev,
 	return iis2mdc_mag_user_offset_set(iis2mdc->ctx, offset);
 }
 
-static void iis2mdc_channel_get_mag(const struct device *dev,
-				      enum sensor_channel chan,
-				      struct sensor_value *val)
+static void iis2mdc_channel_get_mag(const struct device *dev, enum sensor_channel chan,
+				    struct sensor_value *val)
 {
 	int32_t cval;
 	int i;
@@ -90,7 +87,8 @@ static void iis2mdc_channel_get_mag(const struct device *dev,
 		ofs_start = ofs_stop = 2U;
 		break;
 	default:
-		ofs_start = 0U; ofs_stop = 2U;
+		ofs_start = 0U;
+		ofs_stop = 2U;
 		break;
 	}
 
@@ -103,8 +101,7 @@ static void iis2mdc_channel_get_mag(const struct device *dev,
 }
 
 /* read internal temperature */
-static void iis2mdc_channel_get_temp(const struct device *dev,
-				       struct sensor_value *val)
+static void iis2mdc_channel_get_temp(const struct device *dev, struct sensor_value *val)
 {
 	struct iis2mdc_data *drv_data = dev->data;
 
@@ -112,9 +109,8 @@ static void iis2mdc_channel_get_temp(const struct device *dev,
 	val->val2 = (drv_data->temp_sample % 100) * 10000;
 }
 
-static int iis2mdc_channel_get(const struct device *dev,
-				 enum sensor_channel chan,
-				 struct sensor_value *val)
+static int iis2mdc_channel_get(const struct device *dev, enum sensor_channel chan,
+			       struct sensor_value *val)
 {
 	switch (chan) {
 	case SENSOR_CHAN_MAGN_X:
@@ -135,8 +131,7 @@ static int iis2mdc_channel_get(const struct device *dev,
 }
 
 static int iis2mdc_config(const struct device *dev, enum sensor_channel chan,
-			    enum sensor_attribute attr,
-			    const struct sensor_value *val)
+			  enum sensor_attribute attr, const struct sensor_value *val)
 {
 	switch (attr) {
 #ifdef CONFIG_IIS2MDC_MAG_ODR_RUNTIME
@@ -153,10 +148,8 @@ static int iis2mdc_config(const struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static int iis2mdc_attr_set(const struct device *dev,
-			      enum sensor_channel chan,
-			      enum sensor_attribute attr,
-			      const struct sensor_value *val)
+static int iis2mdc_attr_set(const struct device *dev, enum sensor_channel chan,
+			    enum sensor_attribute attr, const struct sensor_value *val)
 {
 	switch (chan) {
 	case SENSOR_CHAN_ALL:
@@ -210,8 +203,7 @@ static int iis2mdc_sample_fetch_temp(const struct device *dev)
 	return 0;
 }
 
-static int iis2mdc_sample_fetch(const struct device *dev,
-				enum sensor_channel chan)
+static int iis2mdc_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	switch (chan) {
 	case SENSOR_CHAN_MAGN_X:
@@ -286,8 +278,7 @@ static int iis2mdc_init(const struct device *dev)
 	}
 
 	/* Set / Reset sensor mode */
-	if (iis2mdc_set_rst_mode_set(iis2mdc->ctx,
-				     IIS2MDC_SENS_OFF_CANC_EVERY_ODR)) {
+	if (iis2mdc_set_rst_mode_set(iis2mdc->ctx, IIS2MDC_SENS_OFF_CANC_EVERY_ODR)) {
 		LOG_DBG("reset sensor mode failed\n");
 		return -EIO;
 	}
@@ -323,63 +314,49 @@ static int iis2mdc_init(const struct device *dev)
  * IIS2MDC_DEFINE_I2C().
  */
 
-#define IIS2MDC_DEVICE_INIT(inst)					\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
-			    iis2mdc_init,				\
-			    NULL,					\
-			    &iis2mdc_data_##inst,			\
-			    &iis2mdc_config_##inst,			\
-			    POST_KERNEL,				\
-			    CONFIG_SENSOR_INIT_PRIORITY,		\
-			    &iis2mdc_driver_api);
+#define IIS2MDC_DEVICE_INIT(inst)                                                                  \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, iis2mdc_init, NULL, &iis2mdc_data_##inst,               \
+				     &iis2mdc_config_##inst, POST_KERNEL,                          \
+				     CONFIG_SENSOR_INIT_PRIORITY, &iis2mdc_driver_api);
 
 /*
  * Instantiation macros used when a device is on a SPI bus.
  */
 
 #ifdef CONFIG_IIS2MDC_TRIGGER
-#define IIS2MDC_CFG_IRQ(inst) \
-	.gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, drdy_gpios),
+#define IIS2MDC_CFG_IRQ(inst) .gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, drdy_gpios),
 #else
 #define IIS2MDC_CFG_IRQ(inst)
 #endif /* CONFIG_IIS2MDC_TRIGGER */
 
-#define IIS2MDC_SPI_OP  (SPI_WORD_SET(8) |				\
-			 SPI_OP_MODE_MASTER |				\
-			 SPI_MODE_CPOL |				\
-			 SPI_MODE_CPHA)					\
+#define IIS2MDC_SPI_OP (SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA)
 
-#define IIS2MDC_CONFIG_SPI(inst)					\
-	{								\
-		.spi = SPI_DT_SPEC_INST_GET(inst, IIS2MDC_SPI_OP, 0),	\
-		.bus_init = iis2mdc_spi_init,				\
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
-			(IIS2MDC_CFG_IRQ(inst)), ())			\
-	}
+#define IIS2MDC_CONFIG_SPI(inst)                                                                   \
+	{.spi = SPI_DT_SPEC_INST_GET(inst, IIS2MDC_SPI_OP, 0),                                     \
+	 .bus_init = iis2mdc_spi_init,                                                             \
+	 COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
+			(IIS2MDC_CFG_IRQ(inst)), ()) }
 
 /*
  * Instantiation macros used when a device is on an I2C bus.
  */
 
-#define IIS2MDC_CONFIG_I2C(inst)					\
-	{								\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),			\
-		.bus_init = iis2mdc_i2c_init,				\
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
-			(IIS2MDC_CFG_IRQ(inst)), ())			\
-	}
+#define IIS2MDC_CONFIG_I2C(inst)                                                                   \
+	{.i2c = I2C_DT_SPEC_INST_GET(inst),                                                        \
+	 .bus_init = iis2mdc_i2c_init,                                                             \
+	 COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
+			(IIS2MDC_CFG_IRQ(inst)), ()) }
 
 /*
  * Main instantiation macro. Use of COND_CODE_1() selects the right
  * bus-specific macro at preprocessor time.
  */
 
-#define IIS2MDC_DEFINE(inst)						\
-	static struct iis2mdc_data iis2mdc_data_##inst;			\
-	static const struct iis2mdc_dev_config iis2mdc_config_##inst =	\
-		COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
+#define IIS2MDC_DEFINE(inst)                                                                       \
+	static struct iis2mdc_data iis2mdc_data_##inst;                                            \
+	static const struct iis2mdc_dev_config iis2mdc_config_##inst = COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
 			(IIS2MDC_CONFIG_SPI(inst)),			\
-			(IIS2MDC_CONFIG_I2C(inst)));			\
+			(IIS2MDC_CONFIG_I2C(inst)));                  \
 	IIS2MDC_DEVICE_INIT(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(IIS2MDC_DEFINE)

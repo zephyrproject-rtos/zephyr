@@ -13,7 +13,7 @@
  *   is not supported in current version of GPIO CAT1 driver.
  */
 
-#define DT_DRV_COMPAT  infineon_cat1_gpio
+#define DT_DRV_COMPAT infineon_cat1_gpio
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(gpio_cat1, CONFIG_GPIO_LOG_LEVEL);
 struct gpio_cat1_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
-	GPIO_PRT_Type              *regs;
+	GPIO_PRT_Type *regs;
 	uint8_t ngpios;
 	uint8_t intr_priority;
 };
@@ -96,8 +96,7 @@ static int gpio_cat1_configure(const struct device *dev, gpio_pin_t pin, gpio_fl
 	return 0;
 }
 
-static int gpio_cat1_port_get_raw(const struct device *dev,
-				  uint32_t *value)
+static int gpio_cat1_port_get_raw(const struct device *dev, uint32_t *value)
 {
 	const struct gpio_cat1_config *const cfg = dev->config;
 	GPIO_PRT_Type *const base = cfg->regs;
@@ -107,8 +106,7 @@ static int gpio_cat1_port_get_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_cat1_port_set_masked_raw(const struct device *dev,
-					 uint32_t mask, uint32_t value)
+static int gpio_cat1_port_set_masked_raw(const struct device *dev, uint32_t mask, uint32_t value)
 {
 	const struct gpio_cat1_config *const cfg = dev->config;
 	GPIO_PRT_Type *const base = cfg->regs;
@@ -118,8 +116,7 @@ static int gpio_cat1_port_set_masked_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_cat1_port_set_bits_raw(const struct device *dev,
-				       uint32_t mask)
+static int gpio_cat1_port_set_bits_raw(const struct device *dev, uint32_t mask)
 {
 	const struct gpio_cat1_config *const cfg = dev->config;
 	GPIO_PRT_Type *const base = cfg->regs;
@@ -129,8 +126,7 @@ static int gpio_cat1_port_set_bits_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_cat1_port_clear_bits_raw(const struct device *dev,
-					 uint32_t mask)
+static int gpio_cat1_port_clear_bits_raw(const struct device *dev, uint32_t mask)
 {
 	const struct gpio_cat1_config *const cfg = dev->config;
 	GPIO_PRT_Type *const base = cfg->regs;
@@ -140,8 +136,7 @@ static int gpio_cat1_port_clear_bits_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_cat1_port_toggle_bits(const struct device *dev,
-				      uint32_t mask)
+static int gpio_cat1_port_toggle_bits(const struct device *dev, uint32_t mask)
 {
 	const struct gpio_cat1_config *const cfg = dev->config;
 	GPIO_PRT_Type *const base = cfg->regs;
@@ -173,8 +168,6 @@ static void gpio_isr_handler(const struct device *dev)
 		gpio_fire_callbacks(&((struct gpio_cat1_data *const)(dev)->data)->callbacks, dev,
 				    pins);
 	}
-
-
 }
 
 static int gpio_cat1_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
@@ -213,8 +206,7 @@ static int gpio_cat1_pin_interrupt_configure(const struct device *dev, gpio_pin_
 	return 0;
 }
 
-static int gpio_cat1_manage_callback(const struct device *port,
-				     struct gpio_callback *callback,
+static int gpio_cat1_manage_callback(const struct device *port, struct gpio_callback *callback,
 				     bool set)
 {
 	return gpio_manage_callback(&((struct gpio_cat1_data *const)(port)->data)->callbacks,

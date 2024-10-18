@@ -33,8 +33,8 @@
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
 LOG_MODULE_REGISTER(native_posix_adapt);
 
-#define USBIP_PORT	3240
-#define USBIP_VERSION	273
+#define USBIP_PORT    3240
+#define USBIP_VERSION 273
 
 #define VERBOSE_DEBUG
 
@@ -47,16 +47,13 @@ int devid_global;
 #ifdef VERBOSE_DEBUG
 static void usbip_header_dump(struct usbip_header *hdr)
 {
-	LOG_DBG("cmd %x seq %u dir %u ep %x", ntohl(hdr->common.command),
-		ntohl(hdr->common.seqnum), ntohl(hdr->common.direction),
-		ntohl(hdr->common.ep));
+	LOG_DBG("cmd %x seq %u dir %u ep %x", ntohl(hdr->common.command), ntohl(hdr->common.seqnum),
+		ntohl(hdr->common.direction), ntohl(hdr->common.ep));
 
 	switch (ntohl(hdr->common.command)) {
 	case USBIP_CMD_SUBMIT:
-		LOG_DBG("flags %x np %u int %u buflen %u",
-			ntohl(hdr->u.submit.transfer_flags),
-			ntohl(hdr->u.submit.number_of_packets),
-			ntohl(hdr->u.submit.interval),
+		LOG_DBG("flags %x np %u int %u buflen %u", ntohl(hdr->u.submit.transfer_flags),
+			ntohl(hdr->u.submit.number_of_packets), ntohl(hdr->u.submit.interval),
 			ntohl(hdr->u.submit.transfer_buffer_length));
 		break;
 	case USBIP_CMD_UNLINK:
@@ -88,7 +85,7 @@ static int send_interfaces(const uint8_t *descriptors, int connfd)
 		uint8_t bInterfaceClass;
 		uint8_t bInterfaceSubClass;
 		uint8_t bInterfaceProtocol;
-		uint8_t padding;	/* alignment */
+		uint8_t padding; /* alignment */
 	} __packed iface;
 
 	while (descriptors[0]) {
@@ -100,8 +97,7 @@ static int send_interfaces(const uint8_t *descriptors, int connfd)
 			iface.bInterfaceProtocol = desc->bInterfaceProtocol;
 			iface.padding = 0U;
 
-			if (send(connfd, &iface, sizeof(iface), 0) !=
-			    sizeof(iface)) {
+			if (send(connfd, &iface, sizeof(iface), 0) != sizeof(iface)) {
 				LOG_ERR("send() failed: %s", strerror(errno));
 				return errno;
 			}
@@ -117,8 +113,7 @@ static int send_interfaces(const uint8_t *descriptors, int connfd)
 static void fill_device(struct devlist_device *dev, const uint8_t *desc)
 {
 	struct usb_device_descriptor *dev_dsc = (void *)desc;
-	struct usb_cfg_descriptor *cfg =
-		(void *)(desc + sizeof(struct usb_device_descriptor));
+	struct usb_cfg_descriptor *cfg = (void *)(desc + sizeof(struct usb_device_descriptor));
 
 	memset(dev->path, 0, 256);
 	strcpy(dev->path, "/sys/devices/pci0000:00/0000:00:01.2/usb1/1-1");
@@ -283,8 +278,8 @@ void usbip_start(void)
 		posix_exit(EXIT_FAILURE);
 	}
 
-	if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR,
-		       (const char *)&reuse, sizeof(reuse)) < 0) {
+	if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, (const char *)&reuse, sizeof(reuse)) <
+	    0) {
 		LOG_WRN("setsockopt() failed: %s", strerror(errno));
 	}
 
@@ -307,8 +302,8 @@ void usbip_start(void)
 		struct sockaddr_in client_addr;
 		socklen_t client_addr_len = sizeof(client_addr);
 
-		connfd = accept4(listenfd, (struct sockaddr *)&client_addr,
-				 &client_addr_len, SOCK_NONBLOCK);
+		connfd = accept4(listenfd, (struct sockaddr *)&client_addr, &client_addr_len,
+				 SOCK_NONBLOCK);
 		if (connfd < 0) {
 			if (errno == EAGAIN || errno == EWOULDBLOCK) {
 				/* Non-blocking accept */
@@ -338,8 +333,7 @@ void usbip_start(void)
 
 				read = recv(connfd, &req, sizeof(req), 0);
 				if (read < 0) {
-					if (errno == EAGAIN ||
-					    errno == EWOULDBLOCK) {
+					if (errno == EAGAIN || errno == EWOULDBLOCK) {
 						/* Non-blocking accept */
 						k_sleep(K_MSEC(100));
 
@@ -354,8 +348,7 @@ void usbip_start(void)
 					break;
 				}
 
-				LOG_HEXDUMP_DBG((uint8_t *)&req, sizeof(req),
-						"Got request");
+				LOG_HEXDUMP_DBG((uint8_t *)&req, sizeof(req), "Got request");
 
 				LOG_DBG("Code: 0x%x", ntohs(req.code));
 
@@ -369,8 +362,7 @@ void usbip_start(void)
 					}
 					break;
 				default:
-					LOG_ERR("Unhandled code: 0x%x",
-						ntohs(req.code));
+					LOG_ERR("Unhandled code: 0x%x", ntohs(req.code));
 					break;
 				}
 
@@ -409,8 +401,7 @@ void usbip_start(void)
 				handle_usbip_unlink(connfd, &cmd);
 				break;
 			default:
-				LOG_ERR("Unknown command: 0x%x",
-					ntohl(hdr->command));
+				LOG_ERR("Unknown command: 0x%x", ntohl(hdr->command));
 				close(connfd);
 				return;
 			}

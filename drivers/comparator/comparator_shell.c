@@ -10,11 +10,9 @@
 
 #include <stdlib.h>
 
-#define AWAIT_TRIGGER_DEFAULT_TIMEOUT \
-	CONFIG_COMPARATOR_SHELL_AWAIT_TRIGGER_DEFAULT_TIMEOUT
+#define AWAIT_TRIGGER_DEFAULT_TIMEOUT CONFIG_COMPARATOR_SHELL_AWAIT_TRIGGER_DEFAULT_TIMEOUT
 
-#define AWAIT_TRIGGER_MAX_TIMEOUT \
-	CONFIG_COMPARATOR_SHELL_AWAIT_TRIGGER_MAX_TIMEOUT
+#define AWAIT_TRIGGER_MAX_TIMEOUT CONFIG_COMPARATOR_SHELL_AWAIT_TRIGGER_MAX_TIMEOUT
 
 /* Mapped 1-1 to enum comparator_trigger */
 static const char *const trigger_lookup[] = {
@@ -26,8 +24,7 @@ static const char *const trigger_lookup[] = {
 
 static K_SEM_DEFINE(triggered_sem, 0, 1);
 
-static int get_device_from_str(const struct shell *sh,
-			       const char *dev_str,
+static int get_device_from_str(const struct shell *sh, const char *dev_str,
 			       const struct device **dev)
 {
 	*dev = device_get_binding(dev_str);
@@ -69,8 +66,7 @@ static int cmd_get_output(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-static int get_trigger_from_str(const struct shell *sh,
-				const char *trigger_str,
+static int get_trigger_from_str(const struct shell *sh, const char *trigger_str,
 				enum comparator_trigger *trigger)
 {
 	ARRAY_FOR_EACH(trigger_lookup, i) {
@@ -115,17 +111,14 @@ static int cmd_set_trigger(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-static int get_timeout_from_str(const struct shell *sh,
-				const char *timeout_str,
+static int get_timeout_from_str(const struct shell *sh, const char *timeout_str,
 				k_timeout_t *timeout)
 {
 	long seconds;
 	char *end;
 
 	seconds = strtol(timeout_str, &end, 10);
-	if ((*end != '\0') ||
-	    (seconds < 1) ||
-	    (seconds > AWAIT_TRIGGER_MAX_TIMEOUT)) {
+	if ((*end != '\0') || (seconds < 1) || (seconds > AWAIT_TRIGGER_MAX_TIMEOUT)) {
 		shell_error(sh, "%s not %s", timeout_str, "valid");
 		return -EINVAL;
 	}
@@ -250,30 +243,23 @@ static void dsub_device_lookup_0(size_t idx, struct shell_static_entry *entry)
 
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_0, dsub_device_lookup_0);
 
-#define GET_OUTPUT_HELP \
-	("comp get_output <device>")
+#define GET_OUTPUT_HELP ("comp get_output <device>")
 
-#define SET_TRIGGER_HELP \
+#define SET_TRIGGER_HELP                                                                           \
 	("comp set_trigger <device> <NONE | RISING_EDGE | FALLING_EDGE | BOTH_EDGES>")
 
-#define AWAIT_TRIGGER_HELP								\
-	("comp await_trigger <device> [timeout] (default "				\
-	 STRINGIFY(AWAIT_TRIGGER_DEFAULT_TIMEOUT)					\
-	 "s, max "									\
-	 STRINGIFY(AWAIT_TRIGGER_MAX_TIMEOUT)						\
-	 "s)")
+#define AWAIT_TRIGGER_HELP                                                                         \
+	("comp await_trigger <device> [timeout] (default " STRINGIFY(AWAIT_TRIGGER_DEFAULT_TIMEOUT) "s, max " STRINGIFY(AWAIT_TRIGGER_MAX_TIMEOUT) "s"  \
+											      ")")
 
-#define TRIGGER_PENDING_HELP \
-	("comp trigger_is_pending <device>")
+#define TRIGGER_PENDING_HELP ("comp trigger_is_pending <device>")
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
-	sub_comp,
-	SHELL_CMD_ARG(get_output, &dsub_device_0, GET_OUTPUT_HELP, cmd_get_output, 2, 0),
+	sub_comp, SHELL_CMD_ARG(get_output, &dsub_device_0, GET_OUTPUT_HELP, cmd_get_output, 2, 0),
 	SHELL_CMD_ARG(set_trigger, &dsub_set_trigger_0, SET_TRIGGER_HELP, cmd_set_trigger, 3, 0),
 	SHELL_CMD_ARG(await_trigger, &dsub_device_0, AWAIT_TRIGGER_HELP, cmd_await_trigger, 2, 1),
 	SHELL_CMD_ARG(trigger_is_pending, &dsub_device_0, TRIGGER_PENDING_HELP,
 		      cmd_trigger_is_pending, 2, 1),
-	SHELL_SUBCMD_SET_END
-);
+	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(comp, &sub_comp, "Comparator device commands", NULL);

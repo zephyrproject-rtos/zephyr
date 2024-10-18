@@ -24,11 +24,11 @@ LOG_MODULE_REGISTER(pca953x, CONFIG_GPIO_LOG_LEVEL);
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
 /* PCA953X Register addresses */
-#define PCA953X_INPUT_PORT		0x00
-#define PCA953X_OUTPUT_PORT		0x01
-#define PCA953X_CONFIGURATION		0x03
-#define REG_INPUT_LATCH_PORT0		0x42
-#define REG_INT_MASK_PORT0		0x45
+#define PCA953X_INPUT_PORT    0x00
+#define PCA953X_OUTPUT_PORT   0x01
+#define PCA953X_CONFIGURATION 0x03
+#define REG_INPUT_LATCH_PORT0 0x42
+#define REG_INT_MASK_PORT0    0x45
 
 /* Number of pins supported by the device */
 #define NUM_PINS 8
@@ -136,10 +136,8 @@ static void gpio_pca953x_handle_interrupt(const struct device *dev)
 	transitioned_pins = previous_state ^ current_state;
 
 	/* Mask gpio transactions with rising/falling edge interrupt config */
-	interrupt_status = (irq_state->rising & transitioned_pins &
-			  current_state);
-	interrupt_status |= (irq_state->falling & transitioned_pins &
-			   previous_state);
+	interrupt_status = (irq_state->rising & transitioned_pins & current_state);
+	interrupt_status |= (irq_state->falling & transitioned_pins & previous_state);
 
 out:
 	k_sem_give(&drv_data->lock);
@@ -156,8 +154,7 @@ out:
  */
 static void gpio_pca953x_work_handler(struct k_work *work)
 {
-	struct pca953x_drv_data *drv_data =
-		CONTAINER_OF(work, struct pca953x_drv_data, work);
+	struct pca953x_drv_data *drv_data = CONTAINER_OF(work, struct pca953x_drv_data, work);
 
 	gpio_pca953x_handle_interrupt(drv_data->dev);
 }
@@ -169,19 +166,17 @@ static void gpio_pca953x_work_handler(struct k_work *work)
  * @param gpio_cb Pointer to callback function struct
  * @param pins Bitmask of pins that triggered interrupt
  */
-static void gpio_pca953x_init_cb(const struct device *dev,
-				 struct gpio_callback *gpio_cb, uint32_t pins)
+static void gpio_pca953x_init_cb(const struct device *dev, struct gpio_callback *gpio_cb,
+				 uint32_t pins)
 {
-	struct pca953x_drv_data *drv_data =
-		CONTAINER_OF(gpio_cb, struct pca953x_drv_data, gpio_cb);
+	struct pca953x_drv_data *drv_data = CONTAINER_OF(gpio_cb, struct pca953x_drv_data, gpio_cb);
 
 	ARG_UNUSED(pins);
 
 	k_work_submit(&drv_data->work);
 }
 
-static int gpio_pca953x_config(const struct device *dev, gpio_pin_t pin,
-			       gpio_flags_t flags)
+static int gpio_pca953x_config(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct pca953x_config *cfg = dev->config;
 	struct pca953x_drv_data *drv_data = dev->data;
@@ -248,8 +243,7 @@ out:
 	return rc;
 }
 
-static int gpio_pca953x_port_read(const struct device *dev,
-				 gpio_port_value_t *value)
+static int gpio_pca953x_port_read(const struct device *dev, gpio_port_value_t *value)
 {
 	const struct pca953x_config *cfg = dev->config;
 	struct pca953x_drv_data *drv_data = dev->data;
@@ -277,10 +271,8 @@ static int gpio_pca953x_port_read(const struct device *dev,
 	return rc;
 }
 
-static int gpio_pca953x_port_write(const struct device *dev,
-				   gpio_port_pins_t mask,
-				   gpio_port_value_t value,
-				   gpio_port_value_t toggle)
+static int gpio_pca953x_port_write(const struct device *dev, gpio_port_pins_t mask,
+				   gpio_port_value_t value, gpio_port_value_t toggle)
 {
 	const struct pca953x_config *cfg = dev->config;
 	struct pca953x_drv_data *drv_data = dev->data;
@@ -307,41 +299,34 @@ static int gpio_pca953x_port_write(const struct device *dev,
 
 	k_sem_give(&drv_data->lock);
 
-	LOG_DBG("write %x msk %08x val %08x => %x: %d", orig_out, mask,
-		value, out, rc);
+	LOG_DBG("write %x msk %08x val %08x => %x: %d", orig_out, mask, value, out, rc);
 
 	return rc;
 }
 
-static int gpio_pca953x_port_set_masked(const struct device *dev,
-					gpio_port_pins_t mask,
+static int gpio_pca953x_port_set_masked(const struct device *dev, gpio_port_pins_t mask,
 					gpio_port_value_t value)
 {
 	return gpio_pca953x_port_write(dev, mask, value, 0);
 }
 
-static int gpio_pca953x_port_set_bits(const struct device *dev,
-				      gpio_port_pins_t pins)
+static int gpio_pca953x_port_set_bits(const struct device *dev, gpio_port_pins_t pins)
 {
 	return gpio_pca953x_port_write(dev, pins, pins, 0);
 }
 
-static int gpio_pca953x_port_clear_bits(const struct device *dev,
-					gpio_port_pins_t pins)
+static int gpio_pca953x_port_clear_bits(const struct device *dev, gpio_port_pins_t pins)
 {
 	return gpio_pca953x_port_write(dev, pins, 0, 0);
 }
 
-static int gpio_pca953x_port_toggle_bits(const struct device *dev,
-					 gpio_port_pins_t pins)
+static int gpio_pca953x_port_toggle_bits(const struct device *dev, gpio_port_pins_t pins)
 {
 	return gpio_pca953x_port_write(dev, 0, 0, pins);
 }
 
-static int gpio_pca953x_pin_interrupt_configure(const struct device *dev,
-						gpio_pin_t pin,
-						enum gpio_int_mode mode,
-						enum gpio_int_trig trig)
+static int gpio_pca953x_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
+						enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	const struct pca953x_config *cfg = dev->config;
 	struct pca953x_drv_data *drv_data = dev->data;
@@ -378,8 +363,7 @@ static int gpio_pca953x_pin_interrupt_configure(const struct device *dev,
 	return 0;
 }
 
-static int gpio_pca953x_manage_callback(const struct device *dev,
-					struct gpio_callback *callback,
+static int gpio_pca953x_manage_callback(const struct device *dev, struct gpio_callback *callback,
 					bool set)
 {
 	struct pca953x_drv_data *data = dev->data;
@@ -431,18 +415,15 @@ static int gpio_pca953x_init(const struct device *dev)
 			goto out;
 		}
 
-		rc = gpio_pin_interrupt_configure_dt(&cfg->gpio_int,
-						GPIO_INT_EDGE_TO_ACTIVE);
+		rc = gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
 		if (rc) {
 			goto out;
 		}
 
-		gpio_init_callback(&drv_data->gpio_cb,
-					gpio_pca953x_init_cb,
-					BIT(cfg->gpio_int.pin));
+		gpio_init_callback(&drv_data->gpio_cb, gpio_pca953x_init_cb,
+				   BIT(cfg->gpio_int.pin));
 
-		rc = gpio_add_callback(cfg->gpio_int.port,
-					&drv_data->gpio_cb);
+		rc = gpio_add_callback(cfg->gpio_int.port, &drv_data->gpio_cb);
 
 		if (rc) {
 			goto out;
@@ -478,31 +459,26 @@ static const struct gpio_driver_api api_table = {
 	.manage_callback = gpio_pca953x_manage_callback,
 };
 
-#define GPIO_PCA953X_INIT(n)							\
-	static const struct pca953x_config pca953x_cfg_##n = {			\
-		.i2c = I2C_DT_SPEC_INST_GET(n),					\
-		.common = {							\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),	\
-		},								\
-		.interrupt_enabled = DT_INST_NODE_HAS_PROP(n, nint_gpios),	\
-		.gpio_int = GPIO_DT_SPEC_INST_GET_OR(n, nint_gpios, {0}),	\
-		.interrupt_mask = DT_INST_PROP_OR(n, interrupt_mask, -1),	\
-		.input_latch = DT_INST_PROP_OR(n, input_latch, -1),		\
-	};									\
-										\
-	static struct pca953x_drv_data pca953x_drvdata_##n = {			\
-		.lock = Z_SEM_INITIALIZER(pca953x_drvdata_##n.lock, 1, 1),	\
-		.pin_state.dir = ALL_PINS,					\
-		.pin_state.output = ALL_PINS,					\
-	};									\
-	DEVICE_DT_INST_DEFINE(n,						\
-		gpio_pca953x_init,						\
-		NULL,								\
-		&pca953x_drvdata_##n,						\
-		&pca953x_cfg_##n,						\
-		POST_KERNEL,							\
-		CONFIG_GPIO_PCA953X_INIT_PRIORITY,				\
-		&api_table);
+#define GPIO_PCA953X_INIT(n)                                                                       \
+	static const struct pca953x_config pca953x_cfg_##n = {                                     \
+		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
+		.common =                                                                          \
+			{                                                                          \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
+			},                                                                         \
+		.interrupt_enabled = DT_INST_NODE_HAS_PROP(n, nint_gpios),                         \
+		.gpio_int = GPIO_DT_SPEC_INST_GET_OR(n, nint_gpios, {0}),                          \
+		.interrupt_mask = DT_INST_PROP_OR(n, interrupt_mask, -1),                          \
+		.input_latch = DT_INST_PROP_OR(n, input_latch, -1),                                \
+	};                                                                                         \
+                                                                                                   \
+	static struct pca953x_drv_data pca953x_drvdata_##n = {                                     \
+		.lock = Z_SEM_INITIALIZER(pca953x_drvdata_##n.lock, 1, 1),                         \
+		.pin_state.dir = ALL_PINS,                                                         \
+		.pin_state.output = ALL_PINS,                                                      \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(n, gpio_pca953x_init, NULL, &pca953x_drvdata_##n, &pca953x_cfg_##n,  \
+			      POST_KERNEL, CONFIG_GPIO_PCA953X_INIT_PRIORITY, &api_table);
 
 #define DT_DRV_COMPAT ti_tca9538
 DT_INST_FOREACH_STATUS_OKAY(GPIO_PCA953X_INIT)

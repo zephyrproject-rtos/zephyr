@@ -29,13 +29,12 @@ LOG_MODULE_REGISTER(flash_stm32, CONFIG_FLASH_LOG_LEVEL);
 /* Let's wait for double the max erase time to be sure that the operation is
  * completed.
  */
-#define STM32_FLASH_TIMEOUT	\
-	(2 * DT_PROP(DT_INST(0, st_stm32_nv_flash), max_erase_time))
+#define STM32_FLASH_TIMEOUT (2 * DT_PROP(DT_INST(0, st_stm32_nv_flash), max_erase_time))
 
 static const struct flash_parameters flash_stm32_parameters = {
 	.write_block_size = FLASH_STM32_WRITE_BLOCK_SIZE,
-	/* Some SoCs (L0/L1) use an EEPROM under the hood. Distinguish
-	 * between them based on the presence of the PECR register. */
+/* Some SoCs (L0/L1) use an EEPROM under the hood. Distinguish
+ * between them based on the presence of the PECR register. */
 #if defined(FLASH_PECR_ERASE)
 	.erase_value = 0,
 #else
@@ -45,8 +44,8 @@ static const struct flash_parameters flash_stm32_parameters = {
 
 static int flash_stm32_write_protection(const struct device *dev, bool enable);
 
-bool __weak flash_stm32_valid_range(const struct device *dev, off_t offset,
-				    uint32_t len, bool write)
+bool __weak flash_stm32_valid_range(const struct device *dev, off_t offset, uint32_t len,
+				    bool write)
 {
 	if (write && !flash_stm32_valid_write(offset, len)) {
 		return false;
@@ -91,12 +90,11 @@ static int flash_stm32_check_status(const struct device *dev)
 {
 
 	if (FLASH_STM32_REGS(dev)->FLASH_STM32_SR & FLASH_STM32_SR_ERRORS) {
-		LOG_DBG("Status: 0x%08lx",
-			(unsigned long)FLASH_STM32_REGS(dev)->FLASH_STM32_SR &
-							FLASH_STM32_SR_ERRORS);
+		LOG_DBG("Status: 0x%08lx", (unsigned long)FLASH_STM32_REGS(dev)->FLASH_STM32_SR &
+						   FLASH_STM32_SR_ERRORS);
 		/* Clear errors to unblock usage of the flash */
-		FLASH_STM32_REGS(dev)->FLASH_STM32_SR = FLASH_STM32_REGS(dev)->FLASH_STM32_SR &
-							FLASH_STM32_SR_ERRORS;
+		FLASH_STM32_REGS(dev)->FLASH_STM32_SR =
+			FLASH_STM32_REGS(dev)->FLASH_STM32_SR & FLASH_STM32_SR_ERRORS;
 		return -EIO;
 	}
 
@@ -132,19 +130,16 @@ int flash_stm32_wait_flash_idle(const struct device *dev)
 	return 0;
 }
 
-static void flash_stm32_flush_caches(const struct device *dev,
-				     off_t offset, size_t len)
+static void flash_stm32_flush_caches(const struct device *dev, off_t offset, size_t len)
 {
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32F3X) || \
-	defined(CONFIG_SOC_SERIES_STM32G0X) || defined(CONFIG_SOC_SERIES_STM32L5X) || \
+#if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32F3X) ||                  \
+	defined(CONFIG_SOC_SERIES_STM32G0X) || defined(CONFIG_SOC_SERIES_STM32L5X) ||              \
 	defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32H5X)
 	ARG_UNUSED(dev);
 	ARG_UNUSED(offset);
 	ARG_UNUSED(len);
-#elif defined(CONFIG_SOC_SERIES_STM32F4X) || \
-	defined(CONFIG_SOC_SERIES_STM32L4X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X)
+#elif defined(CONFIG_SOC_SERIES_STM32F4X) || defined(CONFIG_SOC_SERIES_STM32L4X) ||                \
+	defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_SOC_SERIES_STM32G4X)
 	ARG_UNUSED(offset);
 	ARG_UNUSED(len);
 
@@ -157,18 +152,14 @@ static void flash_stm32_flush_caches(const struct device *dev,
 		regs->ACR |= FLASH_ACR_DCEN;
 	}
 #elif defined(CONFIG_SOC_SERIES_STM32F7X)
-	SCB_InvalidateDCache_by_Addr((uint32_t *)(FLASH_STM32_BASE_ADDRESS
-						  + offset), len);
+	SCB_InvalidateDCache_by_Addr((uint32_t *)(FLASH_STM32_BASE_ADDRESS + offset), len);
 #endif
 }
 
-static int flash_stm32_read(const struct device *dev, off_t offset,
-			    void *data,
-			    size_t len)
+static int flash_stm32_read(const struct device *dev, off_t offset, void *data, size_t len)
 {
 	if (!flash_stm32_valid_range(dev, offset, len, false)) {
-		LOG_ERR("Read range invalid. Offset: %ld, len: %zu",
-			(long int) offset, len);
+		LOG_ERR("Read range invalid. Offset: %ld, len: %zu", (long int)offset, len);
 		return -EINVAL;
 	}
 
@@ -176,21 +167,19 @@ static int flash_stm32_read(const struct device *dev, off_t offset,
 		return 0;
 	}
 
-	LOG_DBG("Read offset: %ld, len: %zu", (long int) offset, len);
+	LOG_DBG("Read offset: %ld, len: %zu", (long int)offset, len);
 
-	memcpy(data, (uint8_t *) FLASH_STM32_BASE_ADDRESS + offset, len);
+	memcpy(data, (uint8_t *)FLASH_STM32_BASE_ADDRESS + offset, len);
 
 	return 0;
 }
 
-static int flash_stm32_erase(const struct device *dev, off_t offset,
-			     size_t len)
+static int flash_stm32_erase(const struct device *dev, off_t offset, size_t len)
 {
 	int rc;
 
 	if (!flash_stm32_valid_range(dev, offset, len, true)) {
-		LOG_ERR("Erase range invalid. Offset: %ld, len: %zu",
-			(long int) offset, len);
+		LOG_ERR("Erase range invalid. Offset: %ld, len: %zu", (long int)offset, len);
 		return -EINVAL;
 	}
 
@@ -200,7 +189,7 @@ static int flash_stm32_erase(const struct device *dev, off_t offset,
 
 	flash_stm32_sem_take(dev);
 
-	LOG_DBG("Erase offset: %ld, len: %zu", (long int) offset, len);
+	LOG_DBG("Erase offset: %ld, len: %zu", (long int)offset, len);
 
 	rc = flash_stm32_write_protection(dev, false);
 	if (rc == 0) {
@@ -220,14 +209,12 @@ static int flash_stm32_erase(const struct device *dev, off_t offset,
 	return rc;
 }
 
-static int flash_stm32_write(const struct device *dev, off_t offset,
-			     const void *data, size_t len)
+static int flash_stm32_write(const struct device *dev, off_t offset, const void *data, size_t len)
 {
 	int rc;
 
 	if (!flash_stm32_valid_range(dev, offset, len, true)) {
-		LOG_ERR("Write range invalid. Offset: %ld, len: %zu",
-			(long int) offset, len);
+		LOG_ERR("Write range invalid. Offset: %ld, len: %zu", (long int)offset, len);
 		return -EINVAL;
 	}
 
@@ -237,7 +224,7 @@ static int flash_stm32_write(const struct device *dev, off_t offset,
 
 	flash_stm32_sem_take(dev);
 
-	LOG_DBG("Write offset: %ld, len: %zu", (long int) offset, len);
+	LOG_DBG("Write offset: %ld, len: %zu", (long int)offset, len);
 
 	rc = flash_stm32_write_protection(dev, false);
 	if (rc == 0) {
@@ -336,28 +323,28 @@ int flash_stm32_option_bytes_lock(const struct device *dev, bool enable)
 			return rc;
 		}
 	}
-#if defined(FLASH_CR_OPTWRE)	  /* F0, F1 and F3 */
+#if defined(FLASH_CR_OPTWRE)       /* F0, F1 and F3 */
 	if (enable) {
 		regs->CR &= ~FLASH_CR_OPTWRE;
 	} else if (!(regs->CR & FLASH_CR_OPTWRE)) {
 		regs->OPTKEYR = FLASH_OPTKEY1;
 		regs->OPTKEYR = FLASH_OPTKEY2;
 	}
-#elif defined(FLASH_CR_OPTLOCK)	  /* G0, G4, L4, WB and WL */
+#elif defined(FLASH_CR_OPTLOCK)    /* G0, G4, L4, WB and WL */
 	if (enable) {
 		regs->CR |= FLASH_CR_OPTLOCK;
 	} else if (regs->CR & FLASH_CR_OPTLOCK) {
 		regs->OPTKEYR = FLASH_OPTKEY1;
 		regs->OPTKEYR = FLASH_OPTKEY2;
 	}
-#elif defined(FLASH_PECR_OPTLOCK) /* L0 and L1 */
+#elif defined(FLASH_PECR_OPTLOCK)  /* L0 and L1 */
 	if (enable) {
 		regs->PECR |= FLASH_PECR_OPTLOCK;
 	} else if (regs->PECR & FLASH_PECR_OPTLOCK) {
 		regs->OPTKEYR = FLASH_OPTKEY1;
 		regs->OPTKEYR = FLASH_OPTKEY2;
 	}
-#elif defined(FLASH_NSCR_OPTLOCK) /* L5 and U5 */
+#elif defined(FLASH_NSCR_OPTLOCK)  /* L5 and U5 */
 	if (enable) {
 		regs->NSCR |= FLASH_NSCR_OPTLOCK;
 	} else if (regs->NSCR & FLASH_NSCR_OPTLOCK) {
@@ -395,7 +382,7 @@ static int flash_stm32_control_register_disable(const struct device *dev)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 
-#if defined(FLASH_CR_LOCK) /* F0, F1, F2, F3, F4, F7, L4, G0, G4, H7, WB, WL   \
+#if defined(FLASH_CR_LOCK) /* F0, F1, F2, F3, F4, F7, L4, G0, G4, H7, WB, WL                       \
 			    */
 	/*
 	 * Access to control register can be disabled by writing wrong key to
@@ -451,8 +438,7 @@ static int flash_stm32_option_bytes_disable(const struct device *dev)
 }
 #endif /* CONFIG_FLASH_STM32_BLOCK_REGISTERS */
 
-static const struct flash_parameters *
-flash_stm32_get_parameters(const struct device *dev)
+static const struct flash_parameters *flash_stm32_get_parameters(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -460,8 +446,7 @@ flash_stm32_get_parameters(const struct device *dev)
 }
 
 #ifdef CONFIG_FLASH_EX_OP_ENABLED
-static int flash_stm32_ex_op(const struct device *dev, uint16_t code,
-			     const uintptr_t in, void *out)
+static int flash_stm32_ex_op(const struct device *dev, uint16_t code, const uintptr_t in, void *out)
 {
 	int rv = -ENOTSUP;
 
@@ -494,16 +479,16 @@ static int flash_stm32_ex_op(const struct device *dev, uint16_t code,
 }
 #endif
 
-static struct flash_stm32_priv flash_data = {
-	.regs = (FLASH_TypeDef *) DT_INST_REG_ADDR(0),
-	/* Getting clocks information from device tree description depending
-	 * on the presence of 'clocks' property.
-	 */
+static struct flash_stm32_priv flash_data = {.regs = (FLASH_TypeDef *)DT_INST_REG_ADDR(0),
+/* Getting clocks information from device tree description depending
+ * on the presence of 'clocks' property.
+ */
 #if DT_INST_NODE_HAS_PROP(0, clocks)
-	.pclken = {
-		.enr = DT_INST_CLOCKS_CELL(0, bits),
-		.bus = DT_INST_CLOCKS_CELL(0, bus),
-	}
+					     .pclken =
+						     {
+							     .enr = DT_INST_CLOCKS_CELL(0, bits),
+							     .bus = DT_INST_CLOCKS_CELL(0, bus),
+						     }
 #endif
 };
 
@@ -534,10 +519,8 @@ static int stm32_flash_init(const struct device *dev)
 	 * On STM32 F0, F1, F3 & L1 series, flash interface clock source is
 	 * always HSI, so statically enable HSI here.
 	 */
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
-	defined(CONFIG_SOC_SERIES_STM32F1X) || \
-	defined(CONFIG_SOC_SERIES_STM32F3X) || \
-	defined(CONFIG_SOC_SERIES_STM32L1X)
+#if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32F1X) ||                  \
+	defined(CONFIG_SOC_SERIES_STM32F3X) || defined(CONFIG_SOC_SERIES_STM32L1X)
 	LL_RCC_HSI_Enable();
 
 	while (!LL_RCC_HSI_IsReady()) {
@@ -562,8 +545,7 @@ static int stm32_flash_init(const struct device *dev)
 
 	flash_stm32_sem_init(dev);
 
-	LOG_DBG("Flash @0x%x initialized. BS: %zu",
-		FLASH_STM32_BASE_ADDRESS,
+	LOG_DBG("Flash @0x%x initialized. BS: %zu", FLASH_STM32_BASE_ADDRESS,
 		flash_stm32_parameters.write_block_size);
 
 	/* Check Flash configuration */
@@ -578,14 +560,13 @@ static int stm32_flash_init(const struct device *dev)
 
 	flash_stm32_page_layout(dev, &layout, &layout_size);
 	for (size_t i = 0; i < layout_size; i++) {
-		LOG_DBG("Block %zu: bs: %zu count: %zu", i,
-			layout[i].pages_size, layout[i].pages_count);
+		LOG_DBG("Block %zu: bs: %zu count: %zu", i, layout[i].pages_size,
+			layout[i].pages_count);
 	}
 #endif
 
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, stm32_flash_init, NULL,
-		    &flash_data, NULL, POST_KERNEL,
-		    CONFIG_FLASH_INIT_PRIORITY, &flash_stm32_api);
+DEVICE_DT_INST_DEFINE(0, stm32_flash_init, NULL, &flash_data, NULL, POST_KERNEL,
+		      CONFIG_FLASH_INIT_PRIORITY, &flash_stm32_api);

@@ -45,13 +45,10 @@ static bool ivshmem_configure_msi_x_interrupts(const struct device *dev)
 
 	key = irq_lock();
 
-	n_vectors = pcie_msi_vectors_allocate(data->pcie->bdf,
-					      CONFIG_IVSHMEM_INT_PRIORITY,
-					      data->vectors,
-					      CONFIG_IVSHMEM_MSI_X_VECTORS);
+	n_vectors = pcie_msi_vectors_allocate(data->pcie->bdf, CONFIG_IVSHMEM_INT_PRIORITY,
+					      data->vectors, CONFIG_IVSHMEM_MSI_X_VECTORS);
 	if (n_vectors == 0) {
-		LOG_ERR("Could not allocate %u MSI-X vectors",
-			CONFIG_IVSHMEM_MSI_X_VECTORS);
+		LOG_ERR("Could not allocate %u MSI-X vectors", CONFIG_IVSHMEM_MSI_X_VECTORS);
 		goto out;
 	}
 
@@ -61,9 +58,7 @@ static bool ivshmem_configure_msi_x_interrupts(const struct device *dev)
 		data->params[i].dev = dev;
 		data->params[i].vector = i;
 
-		if (!pcie_msi_vector_connect(data->pcie->bdf,
-					     &data->vectors[i],
-					     ivshmem_doorbell,
+		if (!pcie_msi_vector_connect(data->pcie->bdf, &data->vectors[i], ivshmem_doorbell,
 					     &data->params[i], 0)) {
 			LOG_ERR("Failed to connect MSI-X vector %u", i);
 			goto out;
@@ -113,9 +108,8 @@ static bool ivshmem_configure_int_x_interrupts(const struct device *dev)
 
 	LOG_INF("Enabling INTx IRQ %u (pin %u)", intx->irq, cfg_intx_pin);
 	if (intx->irq == INTX_IRQ_UNUSED ||
-		!pcie_connect_dynamic_irq(
-			data->pcie->bdf, intx->irq, intx->priority,
-			ivshmem_doorbell, &data->params[0], intx->flags)) {
+	    !pcie_connect_dynamic_irq(data->pcie->bdf, intx->irq, intx->priority, ivshmem_doorbell,
+				      &data->params[0], intx->flags)) {
 		LOG_ERR("Failed to connect INTx ISR %u", cfg_intx_pin);
 		return false;
 	}
@@ -128,9 +122,7 @@ static bool ivshmem_configure_int_x_interrupts(const struct device *dev)
 }
 #endif /* CONFIG_IVSHMEM_V2 */
 
-static void register_signal(const struct device *dev,
-			    struct k_poll_signal *signal,
-			    uint16_t vector)
+static void register_signal(const struct device *dev, struct k_poll_signal *signal, uint16_t vector)
 {
 	struct ivshmem *data = dev->data;
 
@@ -162,25 +154,25 @@ static bool ivshmem_configure(const struct device *dev)
 
 	if (!pcie_get_mbar(data->pcie->bdf, IVSHMEM_PCIE_REG_BAR_IDX, &mbar_regs)) {
 		if (IS_ENABLED(CONFIG_IVSHMEM_DOORBELL)
-			IF_ENABLED(CONFIG_IVSHMEM_V2, (|| data->ivshmem_v2))) {
+			    IF_ENABLED(CONFIG_IVSHMEM_V2, (|| data->ivshmem_v2))) {
 			LOG_ERR("ivshmem regs bar not found");
 			return false;
 		}
 		LOG_INF("ivshmem regs bar not found");
-		device_map(DEVICE_MMIO_RAM_PTR(dev), (uintptr_t)&no_reg,
-			   sizeof(struct ivshmem_reg), K_MEM_CACHE_NONE);
+		device_map(DEVICE_MMIO_RAM_PTR(dev), (uintptr_t)&no_reg, sizeof(struct ivshmem_reg),
+			   K_MEM_CACHE_NONE);
 	} else {
-		pcie_set_cmd(data->pcie->bdf, PCIE_CONF_CMDSTAT_MEM |
-			PCIE_CONF_CMDSTAT_MASTER, true);
+		pcie_set_cmd(data->pcie->bdf, PCIE_CONF_CMDSTAT_MEM | PCIE_CONF_CMDSTAT_MASTER,
+			     true);
 
-		device_map(DEVICE_MMIO_RAM_PTR(dev), mbar_regs.phys_addr,
-			   mbar_regs.size, K_MEM_CACHE_NONE);
+		device_map(DEVICE_MMIO_RAM_PTR(dev), mbar_regs.phys_addr, mbar_regs.size,
+			   K_MEM_CACHE_NONE);
 	}
 
-	bool msi_x_bar_present = pcie_get_mbar(
-		data->pcie->bdf, IVSHMEM_PCIE_MSI_X_BAR_IDX, &mbar_msi_x);
-	bool shmem_bar_present = pcie_get_mbar(
-		data->pcie->bdf, IVSHMEM_PCIE_SHMEM_BAR_IDX, &mbar_shmem);
+	bool msi_x_bar_present =
+		pcie_get_mbar(data->pcie->bdf, IVSHMEM_PCIE_MSI_X_BAR_IDX, &mbar_msi_x);
+	bool shmem_bar_present =
+		pcie_get_mbar(data->pcie->bdf, IVSHMEM_PCIE_SHMEM_BAR_IDX, &mbar_shmem);
 
 	LOG_INF("MSI-X bar present: %s", msi_x_bar_present ? "yes" : "no");
 	LOG_INF("SHMEM bar present: %s", shmem_bar_present ? "yes" : "no");
@@ -219,9 +211,8 @@ static bool ivshmem_configure(const struct device *dev)
 			LOG_ERR("Invalid state table size %zu", state_table_size);
 			return false;
 		}
-		k_mem_map_phys_bare((uint8_t **)&data->state_table_shmem,
-				    shmem_phys_addr, state_table_size,
-				    K_MEM_CACHE_WB | K_MEM_PERM_USER);
+		k_mem_map_phys_bare((uint8_t **)&data->state_table_shmem, shmem_phys_addr,
+				    state_table_size, K_MEM_CACHE_WB | K_MEM_PERM_USER);
 
 		/* R/W section (optional) */
 		cap_pos = vendor_cap + IVSHMEM_CFG_RW_SECTION_SZ / 4;
@@ -241,28 +232,26 @@ static bool ivshmem_configure(const struct device *dev)
 		size_t output_section_offset = rw_section_offset + data->rw_section_size;
 		LOG_INF("Output section size 0x%zX", data->output_section_size);
 		for (uint32_t i = 0; i < data->max_peers; i++) {
-			uintptr_t phys_addr = shmem_phys_addr +
-				    output_section_offset +
-				    (data->output_section_size * i);
+			uintptr_t phys_addr = shmem_phys_addr + output_section_offset +
+					      (data->output_section_size * i);
 			uint32_t flags = K_MEM_CACHE_WB | K_MEM_PERM_USER;
 
 			/* Only your own output section is R/W */
 			if (i == regs->id) {
 				flags |= K_MEM_PERM_RW;
 			}
-			k_mem_map_phys_bare((uint8_t **)&data->output_section_shmem[i],
-					    phys_addr, data->output_section_size, flags);
+			k_mem_map_phys_bare((uint8_t **)&data->output_section_shmem[i], phys_addr,
+					    data->output_section_size, flags);
 		}
 
-		data->size = output_section_offset +
-			data->output_section_size * data->max_peers;
+		data->size = output_section_offset + data->output_section_size * data->max_peers;
 
 		/* Ensure one-shot ISR mode is disabled */
 		cap_pos = vendor_cap + IVSHMEM_CFG_PRIV_CNTL / 4;
 		uint32_t cfg_priv_cntl = pcie_conf_read(data->pcie->bdf, cap_pos);
 
-		cfg_priv_cntl &= ~(IVSHMEM_PRIV_CNTL_ONESHOT_INT <<
-			((IVSHMEM_CFG_PRIV_CNTL % 4) * 8));
+		cfg_priv_cntl &=
+			~(IVSHMEM_PRIV_CNTL_ONESHOT_INT << ((IVSHMEM_CFG_PRIV_CNTL % 4) * 8));
 		pcie_conf_write(data->pcie->bdf, cap_pos, cfg_priv_cntl);
 	} else
 #endif /* CONFIG_IVSHMEM_V2 */
@@ -274,8 +263,7 @@ static bool ivshmem_configure(const struct device *dev)
 
 		data->size = mbar_shmem.size;
 
-		k_mem_map_phys_bare((uint8_t **)&data->shmem,
-				    shmem_phys_addr, data->size,
+		k_mem_map_phys_bare((uint8_t **)&data->shmem, shmem_phys_addr, data->size,
 				    K_MEM_CACHE_WB | K_MEM_PERM_RW | K_MEM_PERM_USER);
 	}
 
@@ -295,16 +283,15 @@ static bool ivshmem_configure(const struct device *dev)
 #endif
 
 	LOG_INF("ivshmem configured:");
-	LOG_INF("- Registers at 0x%lX (mapped to 0x%lX)",
-		mbar_regs.phys_addr, DEVICE_MMIO_GET(dev));
-	LOG_INF("- Shared memory of 0x%zX bytes at 0x%lX (mapped to 0x%lX)",
-		data->size, shmem_phys_addr, data->shmem);
+	LOG_INF("- Registers at 0x%lX (mapped to 0x%lX)", mbar_regs.phys_addr,
+		DEVICE_MMIO_GET(dev));
+	LOG_INF("- Shared memory of 0x%zX bytes at 0x%lX (mapped to 0x%lX)", data->size,
+		shmem_phys_addr, data->shmem);
 
 	return true;
 }
 
-static size_t ivshmem_api_get_mem(const struct device *dev,
-				  uintptr_t *memmap)
+static size_t ivshmem_api_get_mem(const struct device *dev, uintptr_t *memmap)
 {
 	struct ivshmem *data = dev->data;
 
@@ -329,14 +316,14 @@ static uint32_t ivshmem_api_get_id(const struct device *dev)
 
 	if (data->ivshmem_v2) {
 		volatile struct ivshmem_v2_reg *regs =
-			(volatile struct ivshmem_v2_reg *) DEVICE_MMIO_GET(dev);
+			(volatile struct ivshmem_v2_reg *)DEVICE_MMIO_GET(dev);
 
 		id = regs->id;
 	} else
 #endif
 	{
 		volatile struct ivshmem_reg *regs =
-			(volatile struct ivshmem_reg *) DEVICE_MMIO_GET(dev);
+			(volatile struct ivshmem_reg *)DEVICE_MMIO_GET(dev);
 
 		id = regs->iv_position;
 	}
@@ -355,8 +342,7 @@ static uint16_t ivshmem_api_get_vectors(const struct device *dev)
 #endif
 }
 
-static int ivshmem_api_int_peer(const struct device *dev,
-				uint32_t peer_id, uint16_t vector)
+static int ivshmem_api_int_peer(const struct device *dev, uint32_t peer_id, uint16_t vector)
 {
 #if CONFIG_IVSHMEM_DOORBELL
 	struct ivshmem *data = dev->data;
@@ -374,14 +360,14 @@ static int ivshmem_api_int_peer(const struct device *dev,
 
 	if (data->ivshmem_v2) {
 		volatile struct ivshmem_v2_reg *regs =
-			(volatile struct ivshmem_v2_reg *) DEVICE_MMIO_GET(dev);
+			(volatile struct ivshmem_v2_reg *)DEVICE_MMIO_GET(dev);
 
 		doorbell_reg = &regs->doorbell;
 	} else
 #endif
 	{
 		volatile struct ivshmem_reg *regs =
-			(volatile struct ivshmem_reg *) DEVICE_MMIO_GET(dev);
+			(volatile struct ivshmem_reg *)DEVICE_MMIO_GET(dev);
 
 		doorbell_reg = &regs->doorbell;
 	}
@@ -393,8 +379,7 @@ static int ivshmem_api_int_peer(const struct device *dev,
 #endif
 }
 
-static int ivshmem_api_register_handler(const struct device *dev,
-					struct k_poll_signal *signal,
+static int ivshmem_api_register_handler(const struct device *dev, struct k_poll_signal *signal,
 					uint16_t vector)
 {
 #if CONFIG_IVSHMEM_DOORBELL
@@ -414,8 +399,7 @@ static int ivshmem_api_register_handler(const struct device *dev,
 
 #ifdef CONFIG_IVSHMEM_V2
 
-static size_t ivshmem_api_get_rw_mem_section(const struct device *dev,
-					     uintptr_t *memmap)
+static size_t ivshmem_api_get_rw_mem_section(const struct device *dev, uintptr_t *memmap)
 {
 	struct ivshmem *data = dev->data;
 
@@ -429,8 +413,7 @@ static size_t ivshmem_api_get_rw_mem_section(const struct device *dev,
 	return data->rw_section_size;
 }
 
-static size_t ivshmem_api_get_output_mem_section(const struct device *dev,
-						 uint32_t peer_id,
+static size_t ivshmem_api_get_output_mem_section(const struct device *dev, uint32_t peer_id,
 						 uintptr_t *memmap)
 {
 	struct ivshmem *data = dev->data;
@@ -445,8 +428,7 @@ static size_t ivshmem_api_get_output_mem_section(const struct device *dev,
 	return data->output_section_size;
 }
 
-static uint32_t ivshmem_api_get_state(const struct device *dev,
-				      uint32_t peer_id)
+static uint32_t ivshmem_api_get_state(const struct device *dev, uint32_t peer_id)
 {
 	struct ivshmem *data = dev->data;
 
@@ -454,14 +436,12 @@ static uint32_t ivshmem_api_get_state(const struct device *dev,
 		return 0;
 	}
 
-	const volatile uint32_t *state_table =
-		(const volatile uint32_t *)data->state_table_shmem;
+	const volatile uint32_t *state_table = (const volatile uint32_t *)data->state_table_shmem;
 
 	return state_table[peer_id];
 }
 
-static int ivshmem_api_set_state(const struct device *dev,
-				 uint32_t state)
+static int ivshmem_api_set_state(const struct device *dev, uint32_t state)
 {
 	struct ivshmem *data = dev->data;
 
@@ -470,7 +450,7 @@ static int ivshmem_api_set_state(const struct device *dev,
 	}
 
 	volatile struct ivshmem_v2_reg *regs =
-		(volatile struct ivshmem_v2_reg *) DEVICE_MMIO_GET(dev);
+		(volatile struct ivshmem_v2_reg *)DEVICE_MMIO_GET(dev);
 
 	regs->state = state;
 
@@ -501,8 +481,7 @@ static uint16_t ivshmem_api_get_protocol(const struct device *dev)
 	return protocol;
 }
 
-static int ivshmem_api_enable_interrupts(const struct device *dev,
-					 bool enable)
+static int ivshmem_api_enable_interrupts(const struct device *dev, bool enable)
 {
 	struct ivshmem *data = dev->data;
 
@@ -511,7 +490,7 @@ static int ivshmem_api_enable_interrupts(const struct device *dev,
 	}
 
 	volatile struct ivshmem_v2_reg *regs =
-		(volatile struct ivshmem_v2_reg *) DEVICE_MMIO_GET(dev);
+		(volatile struct ivshmem_v2_reg *)DEVICE_MMIO_GET(dev);
 
 	regs->int_control = enable ? IVSHMEM_INT_ENABLE : 0;
 
@@ -546,8 +525,8 @@ static int ivshmem_init(const struct device *dev)
 		return -ENOTSUP;
 	}
 
-	LOG_INF("PCIe: ID 0x%08X, BDF 0x%X, class-rev 0x%08X",
-		data->pcie->id, data->pcie->bdf, data->pcie->class_rev);
+	LOG_INF("PCIe: ID 0x%08X, BDF 0x%X, class-rev 0x%08X", data->pcie->id, data->pcie->bdf,
+		data->pcie->class_rev);
 
 	if (!ivshmem_configure(dev)) {
 		return -EIO;
@@ -555,41 +534,38 @@ static int ivshmem_init(const struct device *dev)
 	return 0;
 }
 
-#define IVSHMEM_INTX_INFO(intx_idx, drv_idx) { \
-	COND_CODE_1(DT_IRQ_HAS_IDX(DT_DRV_INST(drv_idx), intx_idx), \
+#define IVSHMEM_INTX_INFO(intx_idx, drv_idx)                                                       \
+	{COND_CODE_1(DT_IRQ_HAS_IDX(DT_DRV_INST(drv_idx), intx_idx), \
 		( \
 			.irq = DT_IRQ_BY_IDX(DT_DRV_INST(drv_idx), intx_idx, irq), \
 			.priority = DT_IRQ_BY_IDX(DT_DRV_INST(drv_idx), intx_idx, priority), \
 			.flags = DT_IRQ_BY_IDX(DT_DRV_INST(drv_idx), intx_idx, flags), \
 		), \
-		(.irq = INTX_IRQ_UNUSED)) \
-	}
+		(.irq = INTX_IRQ_UNUSED)) }
 
-#define IVSHMEM_DEVICE_INIT(n) \
-	BUILD_ASSERT(!IS_ENABLED(CONFIG_IVSHMEM_DOORBELL) || \
-		((IS_ENABLED(CONFIG_PCIE_MSI_X) && \
-			IS_ENABLED(CONFIG_PCIE_MSI_MULTI_VECTOR)) || \
-		(DT_INST_PROP(n, ivshmem_v2) && \
-			DT_INST_NODE_HAS_PROP(n, interrupts))), \
-		"IVSHMEM_DOORBELL requires either MSI-X or INTx support"); \
-	BUILD_ASSERT(IS_ENABLED(CONFIG_IVSHMEM_V2) || !DT_INST_PROP(n, ivshmem_v2), \
-		"CONFIG_IVSHMEM_V2 must be enabled for ivshmem-v2"); \
-	DEVICE_PCIE_INST_DECLARE(n); \
-	static struct ivshmem ivshmem_data_##n = { \
-		DEVICE_PCIE_INST_INIT(n, pcie), \
+#define IVSHMEM_DEVICE_INIT(n)                                                                     \
+	BUILD_ASSERT(                                                                              \
+		!IS_ENABLED(CONFIG_IVSHMEM_DOORBELL) ||                                            \
+			((IS_ENABLED(CONFIG_PCIE_MSI_X) &&                                         \
+			  IS_ENABLED(CONFIG_PCIE_MSI_MULTI_VECTOR)) ||                             \
+			 (DT_INST_PROP(n, ivshmem_v2) && DT_INST_NODE_HAS_PROP(n, interrupts))),   \
+		"IVSHMEM_DOORBELL requires either MSI-X or INTx support");                         \
+	BUILD_ASSERT(IS_ENABLED(CONFIG_IVSHMEM_V2) || !DT_INST_PROP(n, ivshmem_v2),                \
+		     "CONFIG_IVSHMEM_V2 must be enabled for ivshmem-v2");                          \
+	DEVICE_PCIE_INST_DECLARE(n);                                                               \
+	static struct ivshmem ivshmem_data_##n = {                                                 \
+		DEVICE_PCIE_INST_INIT(n, pcie),                                                    \
 		IF_ENABLED(CONFIG_IVSHMEM_V2, \
-			(.ivshmem_v2 = DT_INST_PROP(n, ivshmem_v2),)) \
-	}; \
+			(.ivshmem_v2 = DT_INST_PROP(n, ivshmem_v2),)) };         \
 	IF_ENABLED(CONFIG_IVSHMEM_V2, ( \
 		static struct ivshmem_cfg ivshmem_cfg_##n = { \
 			.intx_info = \
 			{ FOR_EACH_FIXED_ARG(IVSHMEM_INTX_INFO, (,), n, 0, 1, 2, 3) } \
 		}; \
-	)); \
-	DEVICE_DT_INST_DEFINE(n, &ivshmem_init, NULL, \
-			      &ivshmem_data_##n, \
-			      COND_CODE_1(CONFIG_IVSHMEM_V2, (&ivshmem_cfg_##n), (NULL)), \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
-			      &ivshmem_api);
+	));  \
+	DEVICE_DT_INST_DEFINE(                                                                     \
+		n, &ivshmem_init, NULL, &ivshmem_data_##n,                                         \
+		COND_CODE_1(CONFIG_IVSHMEM_V2, (&ivshmem_cfg_##n), (NULL)), POST_KERNEL,             \
+					       CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &ivshmem_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IVSHMEM_DEVICE_INIT)

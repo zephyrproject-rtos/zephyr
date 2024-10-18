@@ -21,18 +21,16 @@ LOG_MODULE_REGISTER(w1_ds2485, CONFIG_W1_LOG_LEVEL);
 
 /* upper limits; guaranteed over operating temperature range */
 #define DS2485_T_OSCWUP_us 1000U
-#define DS2485_T_OP_us	   400U
-#define DS2485_T_SEQ_us	   10U
+#define DS2485_T_OP_us     400U
+#define DS2485_T_SEQ_us    10U
 
 int ds2485_w1_script_cmd(const struct device *dev, int w1_delay_us, uint8_t w1_cmd,
-			 const uint8_t *tx_buf, const uint8_t tx_len,
-			 uint8_t *rx_buf, uint8_t rx_len)
+			 const uint8_t *tx_buf, const uint8_t tx_len, uint8_t *rx_buf,
+			 uint8_t rx_len)
 {
 	const struct w1_ds2477_85_config *cfg = dev->config;
 	uint8_t i2c_len = 3 + tx_len;
-	uint8_t tx_bytes[3 + SCRIPT_WR_LEN] = {
-		CMD_W1_SCRIPT, tx_len + CMD_W1_SCRIPT_LEN, w1_cmd
-	};
+	uint8_t tx_bytes[3 + SCRIPT_WR_LEN] = {CMD_W1_SCRIPT, tx_len + CMD_W1_SCRIPT_LEN, w1_cmd};
 	uint8_t rx_bytes[3];
 	struct i2c_msg rx_msg[2] = {
 		{
@@ -64,8 +62,7 @@ int ds2485_w1_script_cmd(const struct device *dev, int w1_delay_us, uint8_t w1_c
 	}
 
 	if ((rx_bytes[0] != (rx_len + 2)) || (rx_bytes[2] != w1_cmd)) {
-		LOG_ERR("scripts_cmd fail: response: %x,%x:",
-			rx_bytes[0], rx_bytes[2]);
+		LOG_ERR("scripts_cmd fail: response: %x,%x:", rx_bytes[0], rx_bytes[2]);
 		return -EIO;
 	}
 
@@ -100,16 +97,14 @@ static const struct w1_driver_api w1_ds2485_driver_api = {
 	.configure = ds2477_85_configure,
 };
 
-#define W1_DS2485_INIT(inst)                                                   \
-	static const struct w1_ds2477_85_config w1_ds2477_85_cfg_##inst =      \
-		W1_DS2477_85_DT_CONFIG_INST_GET(inst, DS2485_T_OP_us,          \
-						DS2485_T_SEQ_us,               \
-						ds2485_w1_script_cmd);         \
-	                                                                       \
-	static struct w1_ds2477_85_data w1_ds2477_85_data_##inst = {};         \
-	DEVICE_DT_INST_DEFINE(inst, &w1_ds2485_init, NULL,                     \
-			      &w1_ds2477_85_data_##inst,                       \
-			      &w1_ds2477_85_cfg_##inst, POST_KERNEL,           \
-			      CONFIG_W1_INIT_PRIORITY, &w1_ds2485_driver_api);
+#define W1_DS2485_INIT(inst)                                                                       \
+	static const struct w1_ds2477_85_config w1_ds2477_85_cfg_##inst =                          \
+		W1_DS2477_85_DT_CONFIG_INST_GET(inst, DS2485_T_OP_us, DS2485_T_SEQ_us,             \
+						ds2485_w1_script_cmd);                             \
+                                                                                                   \
+	static struct w1_ds2477_85_data w1_ds2477_85_data_##inst = {};                             \
+	DEVICE_DT_INST_DEFINE(inst, &w1_ds2485_init, NULL, &w1_ds2477_85_data_##inst,              \
+			      &w1_ds2477_85_cfg_##inst, POST_KERNEL, CONFIG_W1_INIT_PRIORITY,      \
+			      &w1_ds2485_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(W1_DS2485_INIT)

@@ -23,13 +23,13 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(native_posix);
 
-#define USBIP_IN_EP_NUM		8
-#define USBIP_OUT_EP_NUM	8
+#define USBIP_IN_EP_NUM  8
+#define USBIP_OUT_EP_NUM 8
 
 #ifdef CONFIG_USB_NATIVE_POSIX_HS
-#define USBIP_MAX_PACKET_SIZE	512
+#define USBIP_MAX_PACKET_SIZE 512
 #else /* CONFIG_USB_NATIVE_POSIX_HS */
-#define USBIP_MAX_PACKET_SIZE	64
+#define USBIP_MAX_PACKET_SIZE 64
 #endif /* !CONFIG_USB_NATIVE_POSIX_HS */
 
 K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);
@@ -74,11 +74,9 @@ static uint8_t usbip_ep_is_valid(uint8_t ep)
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	/* Check if ep is valid */
-	if ((USB_EP_DIR_IS_OUT(ep)) &&
-	    ep_idx < USBIP_OUT_EP_NUM) {
+	if ((USB_EP_DIR_IS_OUT(ep)) && ep_idx < USBIP_OUT_EP_NUM) {
 		return 1;
-	} else if ((USB_EP_DIR_IS_IN(ep)) &&
-	    ep_idx < USBIP_IN_EP_NUM) {
+	} else if ((USB_EP_DIR_IS_IN(ep)) && ep_idx < USBIP_IN_EP_NUM) {
 		return 1;
 	}
 
@@ -92,11 +90,9 @@ static uint8_t usbip_ep_is_enabled(uint8_t ep)
 	LOG_DBG("ep %x", ep);
 
 	/* Check if ep enabled */
-	if ((USB_EP_DIR_IS_OUT(ep)) &&
-	    usbip_ctrl.out_ep_ctrl[ep_idx].ep_ena) {
+	if ((USB_EP_DIR_IS_OUT(ep)) && usbip_ctrl.out_ep_ctrl[ep_idx].ep_ena) {
 		return 1;
-	} else if ((USB_EP_DIR_IS_IN(ep)) &&
-	    usbip_ctrl.in_ep_ctrl[ep_idx].ep_ena) {
+	} else if ((USB_EP_DIR_IS_IN(ep)) && usbip_ctrl.in_ep_ctrl[ep_idx].ep_ena) {
 		return 1;
 	}
 
@@ -112,10 +108,8 @@ int usb_dc_attach(void)
 		return 0;
 	}
 
-	k_thread_create(&thread, thread_stack,
-			CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE,
-			thread_main, NULL, NULL, NULL,
-			K_PRIO_COOP(2), 0, K_NO_WAIT);
+	k_thread_create(&thread, thread_stack, CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE,
+			thread_main, NULL, NULL, NULL, K_PRIO_COOP(2), 0, K_NO_WAIT);
 
 	usbip_ctrl.attached = 1U;
 
@@ -152,12 +146,11 @@ int usb_dc_set_address(const uint8_t addr)
 	return 0;
 }
 
-int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
+int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data *const cfg)
 {
 	uint8_t ep_idx = USB_EP_GET_IDX(cfg->ep_addr);
 
-	LOG_DBG("ep %x, mps %d, type %d", cfg->ep_addr, cfg->ep_mps,
-		cfg->ep_type);
+	LOG_DBG("ep %x, mps %d, type %d", cfg->ep_addr, cfg->ep_mps, cfg->ep_type);
 
 	if ((cfg->ep_type == USB_DC_EP_CONTROL) && ep_idx) {
 		LOG_ERR("invalid endpoint configuration");
@@ -169,14 +162,12 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 		return -1;
 	}
 
-	if ((USB_EP_DIR_IS_OUT(cfg->ep_addr)) &&
-	    (ep_idx >= USBIP_OUT_EP_NUM)) {
+	if ((USB_EP_DIR_IS_OUT(cfg->ep_addr)) && (ep_idx >= USBIP_OUT_EP_NUM)) {
 		LOG_WRN("OUT endpoint address out of range");
 		return -1;
 	}
 
-	if ((USB_EP_DIR_IS_IN(cfg->ep_addr)) &&
-	    (ep_idx >= USBIP_IN_EP_NUM)) {
+	if ((USB_EP_DIR_IS_IN(cfg->ep_addr)) && (ep_idx >= USBIP_IN_EP_NUM)) {
 		LOG_WRN("IN endpoint address out of range");
 		return -1;
 	}
@@ -184,7 +175,7 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 	return 0;
 }
 
-int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
+int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 {
 	uint16_t ep_mps = cfg->ep_mps;
 	uint8_t ep = cfg->ep_addr;
@@ -218,7 +209,7 @@ int usb_dc_ep_set_stall(const uint8_t ep)
 	}
 
 	/* Use standard reply for now */
-	usb_dc_ep_write(0x80,  NULL, 0, NULL);
+	usb_dc_ep_write(0x80, NULL, 0, NULL);
 
 	return 0;
 }
@@ -327,8 +318,8 @@ int usb_dc_ep_flush(const uint8_t ep)
 	return 0;
 }
 
-int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
-		    const uint32_t data_len, uint32_t * const ret_bytes)
+int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data, const uint32_t data_len,
+		    uint32_t *const ret_bytes)
 {
 	LOG_DBG("ep %x len %u", ep, data_len);
 
@@ -375,8 +366,7 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 	return 0;
 }
 
-int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
-			uint32_t *read_bytes)
+int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_t *read_bytes)
 {
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	uint32_t to_copy;
@@ -444,8 +434,8 @@ int usb_dc_ep_read_continue(uint8_t ep)
 	return 0;
 }
 
-int usb_dc_ep_read(const uint8_t ep, uint8_t *const data,
-		   const uint32_t max_data_len, uint32_t * const read_bytes)
+int usb_dc_ep_read(const uint8_t ep, uint8_t *const data, const uint32_t max_data_len,
+		   uint32_t *const read_bytes)
 {
 	LOG_DBG("ep %x max_data_len %u", ep, max_data_len);
 
@@ -546,8 +536,7 @@ int handle_usb_control(struct usbip_header *hdr)
 			return -EIO;
 		}
 
-		LOG_DBG("DATA OUT event ep 0x%02x %u",
-			ep_idx, ep_ctrl->data_len);
+		LOG_DBG("DATA OUT event ep 0x%02x %u", ep_idx, ep_ctrl->data_len);
 		ep_ctrl->cb(ep_idx, USB_DC_EP_DATA_OUT);
 	}
 
@@ -602,8 +591,7 @@ int handle_usb_data(struct usbip_header *hdr)
 			return -EIO;
 		}
 
-		if (usbip_send(ep, ep_ctrl->buf, ep_ctrl->buf_len) !=
-		    ep_ctrl->buf_len) {
+		if (usbip_send(ep, ep_ctrl->buf, ep_ctrl->buf_len) != ep_ctrl->buf_len) {
 			return -EIO;
 		}
 

@@ -18,16 +18,16 @@
 
 LOG_MODULE_REGISTER(stm32_temp, CONFIG_SENSOR_LOG_LEVEL);
 
-#define CAL_RES			12
-#define MAX_CALIB_POINTS	2
+#define CAL_RES          12
+#define MAX_CALIB_POINTS 2
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_temp)
 #define DT_DRV_COMPAT st_stm32_temp
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_temp_cal)
-#define DT_DRV_COMPAT st_stm32_temp_cal
+#define DT_DRV_COMPAT        st_stm32_temp_cal
 #define HAS_DUAL_CALIBRATION 1
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32c0_temp_cal)
-#define DT_DRV_COMPAT st_stm32c0_temp_cal
+#define DT_DRV_COMPAT          st_stm32c0_temp_cal
 #define HAS_SINGLE_CALIBRATION 1
 #else
 #error "No compatible devicetree node found"
@@ -49,18 +49,18 @@ struct stm32_temp_data {
 
 struct stm32_temp_config {
 #if !defined(HAS_CALIBRATION)
-	float average_slope;		/** Unit: mV/°C */
-	int v25;			/** Unit: mV */
-#else /* HAS_CALIBRATION */
-	unsigned int calib_vrefanalog;	/** Unit: mV */
+	float average_slope; /** Unit: mV/°C */
+	int v25;             /** Unit: mV */
+#else                        /* HAS_CALIBRATION */
+	unsigned int calib_vrefanalog; /** Unit: mV */
 	unsigned int calib_data_shift;
 	const void *ts_cal1_addr;
-	int ts_cal1_temp;		/** Unit: °C */
+	int ts_cal1_temp; /** Unit: °C */
 #if defined(HAS_SINGLE_CALIBRATION)
-	float average_slope;		/** Unit: mV/°C */
+	float average_slope; /** Unit: mV/°C */
 #else /* HAS_DUAL_CALIBRATION */
 	const void *ts_cal2_addr;
-	int ts_cal2_temp;		/** Unit: °C */
+	int ts_cal2_temp; /** Unit: °C */
 #endif
 #endif /* HAS_CALIBRATION */
 	bool is_ntc;
@@ -71,7 +71,7 @@ static inline void adc_enable_tempsensor_channel(ADC_TypeDef *adc)
 	const uint32_t path = LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc));
 
 	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc),
-					path | LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+				       path | LL_ADC_PATH_INTERNAL_TEMPSENSOR);
 
 	k_usleep(LL_ADC_DELAY_TEMPSENSOR_STAB_US);
 }
@@ -81,7 +81,7 @@ static inline void adc_disable_tempsensor_channel(ADC_TypeDef *adc)
 	const uint32_t path = LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc));
 
 	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc),
-					path & ~LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+				       path & ~LL_ADC_PATH_INTERNAL_TEMPSENSOR);
 }
 
 #if defined(HAS_CALIBRATION)
@@ -98,7 +98,7 @@ static uint32_t fetch_mfg_data(const void *addr)
  *          TS_CAL2 in calib_data[1] if applicable
  */
 static void read_calibration_data(const struct stm32_temp_config *cfg,
-				uint32_t calib_data[MAX_CALIB_POINTS])
+				  uint32_t calib_data[MAX_CALIB_POINTS])
 {
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
 	/* Disable the ICACHE to ensure all memory accesses are non-cacheable.
@@ -112,7 +112,6 @@ static void read_calibration_data(const struct stm32_temp_config *cfg,
 #if defined(HAS_DUAL_CALIBRATION)
 	calib_data[1] = fetch_mfg_data(cfg->ts_cal2_addr);
 #endif
-
 
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
 	/* Re-enable the ICACHE (unconditonally - it should always be turned on) */
@@ -176,8 +175,7 @@ static float convert_adc_sample_to_temperature(const struct device *dev)
 	 *  - RM0360 §12.8  "Temperature sensor" (STM32F030/STM32F070)
 	 *  - RM0490 §14.10 "Temperature sensor and internal reference voltage" (STM32C0)
 	 */
-	const float avg_slope_code =
-		(cfg->average_slope / cfg->calib_vrefanalog) * 4096.f;
+	const float avg_slope_code = (cfg->average_slope / cfg->calib_vrefanalog) * 4096.f;
 	float dividend;
 
 	if (cfg->is_ntc) {
@@ -187,7 +185,7 @@ static float convert_adc_sample_to_temperature(const struct device *dev)
 	}
 
 	temperature = (dividend / avg_slope_code) + cfg->ts_cal1_temp;
-#else /* HAS_DUAL_CALIBRATION */
+#else  /* HAS_DUAL_CALIBRATION */
 	/**
 	 * Series with two calibration points:
 	 *  Tjunction = (Slope * (Sense_Data - TS_CAL1)) + TS_CAL1_TEMP
@@ -196,11 +194,11 @@ static float convert_adc_sample_to_temperature(const struct device *dev)
 	 *  where Slope =  -----------------------------
 	 *                      (TS_CAL2 - TS_CAL1)
 	 */
-	const float slope = ((float)(cfg->ts_cal2_temp - cfg->ts_cal1_temp))
-					/ ((calib[1] - calib[0]) >> cfg->calib_data_shift);
+	const float slope = ((float)(cfg->ts_cal2_temp - cfg->ts_cal1_temp)) /
+			    ((calib[1] - calib[0]) >> cfg->calib_data_shift);
 
-	temperature = (slope * (sense_data - (calib[0] >> cfg->calib_data_shift)))
-			+ cfg->ts_cal1_temp;
+	temperature =
+		(slope * (sense_data - (calib[0] >> cfg->calib_data_shift))) + cfg->ts_cal1_temp;
 #endif /* HAS_SINGLE_CALIBRATION */
 #endif /* HAS_CALIBRATION */
 
@@ -290,8 +288,10 @@ static int stm32_temp_init(const struct device *dev)
 #if !DT_NODE_HAS_STATUS_OKAY(DT_INST_IO_CHANNELS_CTLR(0))
 
 /* Use BUILD_ASSERT to get preprocessing on the message */
-BUILD_ASSERT(0,	"ADC '" DT_NODE_FULL_NAME(DT_INST_IO_CHANNELS_CTLR(0)) "' needed by "
-		"temperature sensor '" DT_NODE_FULL_NAME(DT_DRV_INST(0)) "' is not enabled");
+BUILD_ASSERT(0, "ADC '" DT_NODE_FULL_NAME(
+			DT_INST_IO_CHANNELS_CTLR(0)) "' needed by "
+						     "temperature sensor '" DT_NODE_FULL_NAME(
+							     DT_DRV_INST(0)) "' is not enabled");
 
 /* To reduce noise in the compiler error log, do not attempt
  * to instantiate device if the sensor's ADC is not enabled.
@@ -301,13 +301,11 @@ BUILD_ASSERT(0,	"ADC '" DT_NODE_FULL_NAME(DT_INST_IO_CHANNELS_CTLR(0)) "' needed
 static struct stm32_temp_data stm32_temp_dev_data = {
 	.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(0)),
 	.adc_base = (ADC_TypeDef *)DT_REG_ADDR(DT_INST_IO_CHANNELS_CTLR(0)),
-	.adc_cfg = {
-		.gain = ADC_GAIN_1,
-		.reference = ADC_REF_INTERNAL,
-		.acquisition_time = ADC_ACQ_TIME_MAX,
-		.channel_id = DT_INST_IO_CHANNELS_INPUT(0),
-		.differential = 0
-	},
+	.adc_cfg = {.gain = ADC_GAIN_1,
+		    .reference = ADC_REF_INTERNAL,
+		    .acquisition_time = ADC_ACQ_TIME_MAX,
+		    .channel_id = DT_INST_IO_CHANNELS_INPUT(0),
+		    .differential = 0},
 };
 
 static const struct stm32_temp_config stm32_temp_dev_config = {
@@ -326,12 +324,9 @@ static const struct stm32_temp_config stm32_temp_dev_config = {
 	.average_slope = ((float)DT_INST_STRING_UNQUOTED(0, avgslope)),
 	.v25 = DT_INST_PROP(0, v25),
 #endif
-	.is_ntc = DT_INST_PROP_OR(0, ntc, false)
-};
+	.is_ntc = DT_INST_PROP_OR(0, ntc, false)};
 
-SENSOR_DEVICE_DT_INST_DEFINE(0, stm32_temp_init, NULL,
-			     &stm32_temp_dev_data, &stm32_temp_dev_config,
-			     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-			     &stm32_temp_driver_api);
+SENSOR_DEVICE_DT_INST_DEFINE(0, stm32_temp_init, NULL, &stm32_temp_dev_data, &stm32_temp_dev_config,
+			     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &stm32_temp_driver_api);
 
 #endif /* !DT_NODE_HAS_STATUS_OKAY(DT_INST_IO_CHANNELS_CTLR(0)) */

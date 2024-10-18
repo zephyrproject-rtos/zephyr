@@ -5,7 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <soc.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>
@@ -20,8 +19,8 @@
 #if defined(STM32_PLL_ENABLED)
 
 #if defined(LL_RCC_MSIRANGESEL_RUN)
-#define CALC_RUN_MSI_FREQ(range) __LL_RCC_CALC_MSI_FREQ(LL_RCC_MSIRANGESEL_RUN, \
-							range << RCC_CR_MSIRANGE_Pos);
+#define CALC_RUN_MSI_FREQ(range)                                                                   \
+	__LL_RCC_CALC_MSI_FREQ(LL_RCC_MSIRANGESEL_RUN, range << RCC_CR_MSIRANGE_Pos);
 #else
 #define CALC_RUN_MSI_FREQ(range) __LL_RCC_CALC_MSI_FREQ(range << RCC_CR_MSIRANGE_Pos);
 #endif
@@ -29,8 +28,7 @@
 /**
  * @brief Return PLL source
  */
-__unused
-static uint32_t get_pll_source(void)
+__unused static uint32_t get_pll_source(void)
 {
 	/* Configure PLL source */
 	if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
@@ -48,8 +46,7 @@ static uint32_t get_pll_source(void)
 /**
  * @brief get the pll source frequency
  */
-__unused
-uint32_t get_pllsrc_frequency(void)
+__unused uint32_t get_pllsrc_frequency(void)
 {
 	if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
 		return STM32_HSI_FREQ;
@@ -77,10 +74,8 @@ void config_pll_sysclock(void)
 	}
 #endif /* PWR_CR5_R1MODE */
 
-	LL_RCC_PLL_ConfigDomain_SYS(get_pll_source(),
-				    pllm(STM32_PLL_M_DIVISOR),
-				    STM32_PLL_N_MULTIPLIER,
-				    pllr(STM32_PLL_R_DIVISOR));
+	LL_RCC_PLL_ConfigDomain_SYS(get_pll_source(), pllm(STM32_PLL_M_DIVISOR),
+				    STM32_PLL_N_MULTIPLIER, pllr(STM32_PLL_R_DIVISOR));
 
 	LL_RCC_PLL_EnableDomain_SYS();
 }

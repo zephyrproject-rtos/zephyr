@@ -12,13 +12,12 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/counter.h>
 
-#define COUNTER_MAX 0x00ffffff
+#define COUNTER_MAX   0x00ffffff
 #define TIMER_STOPPED 0xff000000
 
-#define CYC_PER_TICK (sys_clock_hw_cycles_per_sec()	\
-		      / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-#define MAX_TICKS ((k_ticks_t)(COUNTER_MAX / CYC_PER_TICK) - 1)
-#define MAX_CYCLES (MAX_TICKS * CYC_PER_TICK)
+#define CYC_PER_TICK (sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define MAX_TICKS    ((k_ticks_t)(COUNTER_MAX / CYC_PER_TICK) - 1)
+#define MAX_CYCLES   (MAX_TICKS * CYC_PER_TICK)
 
 /* Minimum cycles in the future to try to program.  Note that this is
  * NOT simply "enough cycles to get the counter read and reprogrammed
@@ -29,7 +28,7 @@
  * masked.  Choosing a fraction of a tick is probably a good enough
  * default, with an absolute minimum of 1k cyc.
  */
-#define MIN_DELAY MAX(1024U, ((uint32_t)CYC_PER_TICK/16U))
+#define MIN_DELAY MAX(1024U, ((uint32_t)CYC_PER_TICK / 16U))
 
 static struct k_spinlock lock;
 
@@ -116,9 +115,9 @@ static const struct device *idle_timer = DEVICE_DT_GET(DT_CHOSEN(zephyr_cortex_m
  */
 static uint32_t elapsed(void)
 {
-	uint32_t val1 = SysTick->VAL;	/* A */
-	uint32_t ctrl = SysTick->CTRL;	/* B */
-	uint32_t val2 = SysTick->VAL;	/* C */
+	uint32_t val1 = SysTick->VAL;  /* A */
+	uint32_t ctrl = SysTick->CTRL; /* B */
+	uint32_t val2 = SysTick->VAL;  /* C */
 
 	/* SysTick behavior: The counter wraps after zero automatically.
 	 * The COUNTFLAG field of the CTRL register is set when it
@@ -150,8 +149,7 @@ static uint32_t elapsed(void)
 		val2 = last_load;
 	}
 
-	if ((ctrl & SysTick_CTRL_COUNTFLAG_Msk)
-	    || (val1 < val2)) {
+	if ((ctrl & SysTick_CTRL_COUNTFLAG_Msk) || (val1 < val2)) {
 		overflow_cyc += last_load;
 
 		/* We know there was a wrap, but we might not have
@@ -451,11 +449,9 @@ static int sys_clock_driver_init(void)
 	overflow_cyc = 0U;
 	SysTick->LOAD = last_load - 1;
 	SysTick->VAL = 0; /* resets timer to last_load */
-	SysTick->CTRL |= (SysTick_CTRL_ENABLE_Msk |
-			  SysTick_CTRL_TICKINT_Msk |
-			  SysTick_CTRL_CLKSOURCE_Msk);
+	SysTick->CTRL |=
+		(SysTick_CTRL_ENABLE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_CLKSOURCE_Msk);
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

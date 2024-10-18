@@ -23,19 +23,17 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/drivers/interrupt_controller/gpio_intc_stm32.h>
-#include <zephyr/dt-bindings/pinctrl/stm32-pinctrl-common.h>	/* For PORTA/PORTB defines */
+#include <zephyr/dt-bindings/pinctrl/stm32-pinctrl-common.h> /* For PORTA/PORTB defines */
 
 #define INTC_NODE DT_DRV_INST(0)
 
-#define NUM_GPIO_PORTS		(2)
-#define NUM_PINS_PER_GPIO_PORT	(16)
+#define NUM_GPIO_PORTS         (2)
+#define NUM_PINS_PER_GPIO_PORT (16)
 
-#define GPIO_PORT_TABLE_INDEX(port)	\
-	DT_PROP_BY_IDX(INTC_NODE, line_ranges, UTIL_X2(port))
+#define GPIO_PORT_TABLE_INDEX(port) DT_PROP_BY_IDX(INTC_NODE, line_ranges, UTIL_X2(port))
 
 /* For good measure only */
-#define _NUM_GPIOS_ON_PORT_X(x)	\
-	DT_PROP_BY_IDX(INTC_NODE, line_ranges, UTIL_INC(UTIL_X2(x)))
+#define _NUM_GPIOS_ON_PORT_X(x) DT_PROP_BY_IDX(INTC_NODE, line_ranges, UTIL_INC(UTIL_X2(x)))
 BUILD_ASSERT(DT_PROP_LEN(INTC_NODE, line_ranges) == (2 * NUM_GPIO_PORTS));
 BUILD_ASSERT(_NUM_GPIOS_ON_PORT_X(STM32_PORTA) == NUM_PINS_PER_GPIO_PORT);
 BUILD_ASSERT(_NUM_GPIOS_ON_PORT_X(STM32_PORTB) == NUM_PINS_PER_GPIO_PORT);
@@ -63,8 +61,7 @@ struct wb0_gpio_isr_argblock {
 /* driver data */
 struct stm32wb0_gpio_intc_data {
 	/* per-port user callbacks */
-	struct gpio_irq_cb_wrp irq_cb_table[
-		NUM_GPIO_PORTS * NUM_PINS_PER_GPIO_PORT];
+	struct gpio_irq_cb_wrp irq_cb_table[NUM_GPIO_PORTS * NUM_PINS_PER_GPIO_PORT];
 };
 
 /**
@@ -138,31 +135,26 @@ static void stm32wb0_gpio_isr(const void *userdata)
  */
 static struct stm32wb0_gpio_intc_data gpio_intc_data;
 
- /**
-  * This macro creates the ISR argument block for the @p pidx GPIO port,
-  * connects the ISR to the interrupt line and enable IRQ at NVIC level.
-  *
-  * @param node	GPIO INTC device tree node
-  * @param pidx	GPIO port index
-  * @param plin	LL define of first line on GPIO port
-  */
-#define INIT_INTC_PORT_INNER(node, pidx, plin)	\
-	static const struct wb0_gpio_isr_argblock			\
-		port ##pidx ##_argblock = {				\
-			.port_first_line = plin,			\
-			.cb_table = gpio_intc_data.irq_cb_table +	\
-				GPIO_PORT_TABLE_INDEX(pidx)		\
-		};							\
-									\
-	IRQ_CONNECT(DT_IRQN_BY_IDX(node, pidx),				\
-		DT_IRQ_BY_IDX(node, pidx, priority),			\
-		stm32wb0_gpio_isr, &port ##pidx ##_argblock, 0);	\
-									\
+/**
+ * This macro creates the ISR argument block for the @p pidx GPIO port,
+ * connects the ISR to the interrupt line and enable IRQ at NVIC level.
+ *
+ * @param node	GPIO INTC device tree node
+ * @param pidx	GPIO port index
+ * @param plin	LL define of first line on GPIO port
+ */
+#define INIT_INTC_PORT_INNER(node, pidx, plin)                                                     \
+	static const struct wb0_gpio_isr_argblock port##pidx##_argblock = {                        \
+		.port_first_line = plin,                                                           \
+		.cb_table = gpio_intc_data.irq_cb_table + GPIO_PORT_TABLE_INDEX(pidx)};            \
+                                                                                                   \
+	IRQ_CONNECT(DT_IRQN_BY_IDX(node, pidx), DT_IRQ_BY_IDX(node, pidx, priority),               \
+		    stm32wb0_gpio_isr, &port##pidx##_argblock, 0);                                 \
+                                                                                                   \
 	irq_enable(DT_IRQN_BY_IDX(node, pidx))
 
-#define STM32WB0_INIT_INTC_FOR_PORT(_PORT)				\
-	INIT_INTC_PORT_INNER(INTC_NODE,					\
-		STM32_PORT ##_PORT, LL_EXTI_LINE_P ##_PORT ## 0)
+#define STM32WB0_INIT_INTC_FOR_PORT(_PORT)                                                         \
+	INIT_INTC_PORT_INNER(INTC_NODE, STM32_PORT##_PORT, LL_EXTI_LINE_P##_PORT##0)
 
 /**
  * @brief Initializes the GPIO interrupt controller driver
@@ -178,8 +170,7 @@ static int stm32wb0_gpio_intc_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_DEFINE(INTC_NODE, &stm32wb0_gpio_intc_init,
-		 NULL, &gpio_intc_data, NULL, PRE_KERNEL_1,
+DEVICE_DT_DEFINE(INTC_NODE, &stm32wb0_gpio_intc_init, NULL, &gpio_intc_data, NULL, PRE_KERNEL_1,
 		 CONFIG_INTC_INIT_PRIORITY, NULL);
 
 /**
@@ -267,8 +258,7 @@ void stm32_gpio_intc_select_line_trigger(stm32_gpio_irq_line_t line, uint32_t tr
 	LL_EXTI_ClearFlag(line);
 }
 
-int stm32_gpio_intc_set_irq_callback(stm32_gpio_irq_line_t line,
-					stm32_gpio_irq_cb_t cb, void *user)
+int stm32_gpio_intc_set_irq_callback(stm32_gpio_irq_line_t line, stm32_gpio_irq_cb_t cb, void *user)
 {
 	struct gpio_irq_cb_wrp *cb_wrp = irq_cb_wrp_for_line(line);
 

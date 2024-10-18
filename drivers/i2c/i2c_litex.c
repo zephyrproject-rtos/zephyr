@@ -17,15 +17,15 @@ LOG_MODULE_REGISTER(i2c_litex, CONFIG_I2C_LOG_LEVEL);
 
 #include <soc.h>
 
-#define SCL_BIT_POS                0
-#define SDA_DIR_BIT_POS            1
-#define SDA_BIT_W_POS              2
-#define SDA_BIT_R_POS              0
+#define SCL_BIT_POS     0
+#define SDA_DIR_BIT_POS 1
+#define SDA_BIT_W_POS   2
+#define SDA_BIT_R_POS   0
 
-#define SDA_DIR_OUTPUT             1
-#define SDA_DIR_INPUT              0
+#define SDA_DIR_OUTPUT 1
+#define SDA_DIR_INPUT  0
 
-#define HIGH_STATE_ON_I2C_LINES    0x7
+#define HIGH_STATE_ON_I2C_LINES 0x7
 
 struct i2c_litex_cfg {
 	uint32_t write_addr;
@@ -33,11 +33,9 @@ struct i2c_litex_cfg {
 	uint32_t bitrate;
 };
 
-#define GET_I2C_CFG(dev)						     \
-	((const struct i2c_litex_cfg *) dev->config)
+#define GET_I2C_CFG(dev) ((const struct i2c_litex_cfg *)dev->config)
 
-#define GET_I2C_BITBANG(dev)						     \
-	((struct i2c_bitbang *) dev->data)
+#define GET_I2C_BITBANG(dev) ((struct i2c_bitbang *)dev->data)
 
 static inline void set_bit(uint32_t addr, uint32_t bit, uint32_t val)
 {
@@ -59,16 +57,14 @@ static inline int get_bit(uint32_t addr, uint32_t bit)
 
 static void i2c_litex_bitbang_set_scl(void *context, int state)
 {
-	const struct i2c_litex_cfg *config =
-		(const struct i2c_litex_cfg *) context;
+	const struct i2c_litex_cfg *config = (const struct i2c_litex_cfg *)context;
 
 	set_bit(config->write_addr, SCL_BIT_POS, state);
 }
 
 static void i2c_litex_bitbang_set_sda(void *context, int state)
 {
-	const struct i2c_litex_cfg *config =
-		(const struct i2c_litex_cfg *) context;
+	const struct i2c_litex_cfg *config = (const struct i2c_litex_cfg *)context;
 
 	set_bit(config->write_addr, SDA_DIR_BIT_POS, SDA_DIR_OUTPUT);
 	set_bit(config->write_addr, SDA_BIT_W_POS, state);
@@ -76,8 +72,7 @@ static void i2c_litex_bitbang_set_sda(void *context, int state)
 
 static int i2c_litex_bitbang_get_sda(void *context)
 {
-	const struct i2c_litex_cfg *config =
-		(const struct i2c_litex_cfg *) context;
+	const struct i2c_litex_cfg *config = (const struct i2c_litex_cfg *)context;
 
 	set_bit(config->write_addr, SDA_DIR_BIT_POS, SDA_DIR_INPUT);
 	return get_bit(config->read_addr, SDA_BIT_R_POS);
@@ -121,8 +116,8 @@ static int i2c_litex_get_config(const struct device *dev, uint32_t *config)
 	return i2c_bitbang_get_config(bitbang, config);
 }
 
-static int i2c_litex_transfer(const struct device *dev,  struct i2c_msg *msgs,
-			      uint8_t num_msgs, uint16_t addr)
+static int i2c_litex_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
+			      uint16_t addr)
 {
 	struct i2c_bitbang *bitbang = GET_I2C_BITBANG(dev);
 
@@ -148,23 +143,16 @@ static const struct i2c_driver_api i2c_litex_driver_api = {
 
 /* Device Instantiation */
 
-#define I2C_LITEX_INIT(n)						       \
-	static const struct i2c_litex_cfg i2c_litex_cfg_##n = {		       \
-		.write_addr = DT_INST_REG_ADDR_BY_NAME(n, write),	       \
-		.read_addr = DT_INST_REG_ADDR_BY_NAME(n, read),		       \
-		.bitrate = DT_INST_PROP(n, clock_frequency),                   \
-	};								       \
-									       \
-	static struct i2c_bitbang i2c_bitbang_##n;			       \
-									       \
-	I2C_DEVICE_DT_INST_DEFINE(n,					       \
-			   i2c_litex_init,				       \
-			   NULL,					       \
-			   &i2c_bitbang_##n,	                               \
-			   &i2c_litex_cfg_##n,				       \
-			   POST_KERNEL,					       \
-			   CONFIG_I2C_INIT_PRIORITY,			       \
-			   &i2c_litex_driver_api			       \
-			   );
+#define I2C_LITEX_INIT(n)                                                                          \
+	static const struct i2c_litex_cfg i2c_litex_cfg_##n = {                                    \
+		.write_addr = DT_INST_REG_ADDR_BY_NAME(n, write),                                  \
+		.read_addr = DT_INST_REG_ADDR_BY_NAME(n, read),                                    \
+		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
+	};                                                                                         \
+                                                                                                   \
+	static struct i2c_bitbang i2c_bitbang_##n;                                                 \
+                                                                                                   \
+	I2C_DEVICE_DT_INST_DEFINE(n, i2c_litex_init, NULL, &i2c_bitbang_##n, &i2c_litex_cfg_##n,   \
+				  POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &i2c_litex_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_LITEX_INIT)

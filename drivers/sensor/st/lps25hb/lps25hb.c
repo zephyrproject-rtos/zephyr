@@ -38,8 +38,7 @@ static inline int lps25hb_set_odr_raw(const struct device *dev, uint8_t odr)
 				      odr << LPS25HB_SHIFT_CTRL_REG1_ODR);
 }
 
-static int lps25hb_sample_fetch(const struct device *dev,
-				enum sensor_channel chan)
+static int lps25hb_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct lps25hb_data *data = dev->data;
 	const struct lps25hb_config *config = dev->config;
@@ -49,25 +48,21 @@ static int lps25hb_sample_fetch(const struct device *dev,
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 	for (offset = 0; offset < sizeof(out); ++offset) {
-		if (i2c_reg_read_byte_dt(&config->i2c,
-					 LPS25HB_REG_PRESS_OUT_XL + offset,
+		if (i2c_reg_read_byte_dt(&config->i2c, LPS25HB_REG_PRESS_OUT_XL + offset,
 					 out + offset) < 0) {
 			LOG_DBG("failed to read sample");
 			return -EIO;
 		}
 	}
 
-	data->sample_press = (int32_t)((uint32_t)(out[0]) |
-					((uint32_t)(out[1]) << 8) |
-					((uint32_t)(out[2]) << 16));
-	data->sample_temp = (int16_t)((uint16_t)(out[3]) |
-					((uint16_t)(out[4]) << 8));
+	data->sample_press = (int32_t)((uint32_t)(out[0]) | ((uint32_t)(out[1]) << 8) |
+				       ((uint32_t)(out[2]) << 16));
+	data->sample_temp = (int16_t)((uint16_t)(out[3]) | ((uint16_t)(out[4]) << 8));
 
 	return 0;
 }
 
-static inline void lps25hb_press_convert(struct sensor_value *val,
-					 int32_t raw_val)
+static inline void lps25hb_press_convert(struct sensor_value *val, int32_t raw_val)
 {
 	/* Pressure sensitivity is 4096 LSB/hPa */
 	/* Also convert hPa into kPa */
@@ -79,8 +74,7 @@ static inline void lps25hb_press_convert(struct sensor_value *val,
 	val->val2 = (raw_val % 40960) * 3125 / 128;
 }
 
-static inline void lps25hb_temp_convert(struct sensor_value *val,
-					int16_t raw_val)
+static inline void lps25hb_temp_convert(struct sensor_value *val, int16_t raw_val)
 {
 	int32_t uval;
 
@@ -90,8 +84,7 @@ static inline void lps25hb_temp_convert(struct sensor_value *val,
 	val->val2 = uval % 1000000;
 }
 
-static int lps25hb_channel_get(const struct device *dev,
-			       enum sensor_channel chan,
+static int lps25hb_channel_get(const struct device *dev, enum sensor_channel chan,
 			       struct sensor_value *val)
 {
 	struct lps25hb_data *data = dev->data;
@@ -127,8 +120,7 @@ static int lps25hb_init_chip(const struct device *dev)
 
 	k_busy_wait(USEC_PER_MSEC * 20U);
 
-	if (i2c_reg_read_byte_dt(&config->i2c, LPS25HB_REG_WHO_AM_I,
-				 &chip_id) < 0) {
+	if (i2c_reg_read_byte_dt(&config->i2c, LPS25HB_REG_WHO_AM_I, &chip_id) < 0) {
 		LOG_DBG("failed reading chip id");
 		goto err_poweroff;
 	}
@@ -139,14 +131,12 @@ static int lps25hb_init_chip(const struct device *dev)
 
 	LOG_DBG("chip id 0x%x", chip_id);
 
-	if (lps25hb_set_odr_raw(dev, LPS25HB_DEFAULT_SAMPLING_RATE)
-				< 0) {
+	if (lps25hb_set_odr_raw(dev, LPS25HB_DEFAULT_SAMPLING_RATE) < 0) {
 		LOG_DBG("failed to set sampling rate");
 		goto err_poweroff;
 	}
 
-	if (i2c_reg_update_byte_dt(&config->i2c, LPS25HB_REG_CTRL_REG1,
-				   LPS25HB_MASK_CTRL_REG1_BDU,
+	if (i2c_reg_update_byte_dt(&config->i2c, LPS25HB_REG_CTRL_REG1, LPS25HB_MASK_CTRL_REG1_BDU,
 				   (1 << LPS25HB_SHIFT_CTRL_REG1_BDU)) < 0) {
 		LOG_DBG("failed to set BDU");
 		goto err_poweroff;
@@ -161,7 +151,7 @@ err_poweroff:
 
 static int lps25hb_init(const struct device *dev)
 {
-	const struct lps25hb_config * const config = dev->config;
+	const struct lps25hb_config *const config = dev->config;
 
 	if (!device_is_ready(config->i2c.bus)) {
 		LOG_ERR("I2C bus device not ready");
@@ -176,15 +166,15 @@ static int lps25hb_init(const struct device *dev)
 	return 0;
 }
 
-#define LPS25HB_DEFINE(inst)									\
-	static struct lps25hb_data lps25hb_data_##inst;						\
-												\
-	static const struct lps25hb_config lps25hb_config_##inst = {				\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
-	};											\
-												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, lps25hb_init, NULL,					\
-			      &lps25hb_data_##inst, &lps25hb_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &lps25hb_api_funcs);			\
+#define LPS25HB_DEFINE(inst)                                                                       \
+	static struct lps25hb_data lps25hb_data_##inst;                                            \
+                                                                                                   \
+	static const struct lps25hb_config lps25hb_config_##inst = {                               \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+	};                                                                                         \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, lps25hb_init, NULL, &lps25hb_data_##inst,               \
+				     &lps25hb_config_##inst, POST_KERNEL,                          \
+				     CONFIG_SENSOR_INIT_PRIORITY, &lps25hb_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(LPS25HB_DEFINE)

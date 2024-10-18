@@ -49,8 +49,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			rxpin.pin = GECKO_GET_PIN(pins[i]);
 			rxpin.mode = gpioModeInput;
 			rxpin.out = 1;
-			GPIO_PinModeSet(rxpin.port, rxpin.pin, rxpin.mode,
-					rxpin.out);
+			GPIO_PinModeSet(rxpin.port, rxpin.pin, rxpin.mode, rxpin.out);
 			break;
 
 		case GECKO_FUN_UART_TX:
@@ -58,8 +57,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			txpin.pin = GECKO_GET_PIN(pins[i]);
 			txpin.mode = gpioModePushPull;
 			txpin.out = 1;
-			GPIO_PinModeSet(txpin.port, txpin.pin, txpin.mode,
-					txpin.out);
+			GPIO_PinModeSet(txpin.port, txpin.pin, txpin.mode, txpin.out);
 			break;
 
 #ifdef CONFIG_SOC_FAMILY_SILABS_S1
@@ -137,14 +135,10 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 #ifdef UART_GECKO_HW_FLOW_CONTROL
 			/* Configure HW flow control (RTS, CTS) */
 			if (config->hw_flowcontrol) {
-				GPIO_PinModeSet(config->pin_rts.port,
-						 config->pin_rts.pin,
-						 config->pin_rts.mode,
-						 config->pin_rts.out);
-				GPIO_PinModeSet(config->pin_cts.port,
-						 config->pin_cts.pin,
-						 config->pin_cts.mode,
-						 config->pin_cts.out);
+				GPIO_PinModeSet(config->pin_rts.port, config->pin_rts.pin,
+						config->pin_rts.mode, config->pin_rts.out);
+				GPIO_PinModeSet(config->pin_cts.port, config->pin_cts.pin,
+						config->pin_cts.mode, config->pin_cts.out);
 #ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
 				config->base->ROUTEPEN =
 					USART_ROUTEPEN_RXPEN | USART_ROUTEPEN_TXPEN |
@@ -253,7 +247,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			base->ROUTELOC0 |= (loc << _USART_ROUTELOC0_CSLOC_SHIFT);
 			break;
 
-#else /* CONFIG_SOC_FAMILY_SILABS_S1 */
+#else  /* CONFIG_SOC_FAMILY_SILABS_S1 */
 		case GECKO_FUN_SPI_SCK:
 			pin_config.mode = gpioModePushPull;
 			pin_config.out = 1;
@@ -294,7 +288,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			pin_config.mode = gpioModeWiredAnd;
 			pin_config.out = 1;
 			GPIO_PinModeSet(pin_config.port, pin_config.pin, pin_config.mode,
-				pin_config.out);
+					pin_config.out);
 
 #if defined(GPIO_I2C_ROUTEEN_SDAPEN)
 			GPIO->I2CROUTE[I2C_NUM(i2c_base)].SDAROUTE =
@@ -308,7 +302,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			pin_config.mode = gpioModeWiredAnd;
 			pin_config.out = 1;
 			GPIO_PinModeSet(pin_config.port, pin_config.pin, pin_config.mode,
-				pin_config.out);
+					pin_config.out);
 
 #if defined(GPIO_I2C_ROUTEEN_SCLPEN)
 			GPIO->I2CROUTE[I2C_NUM(i2c_base)].SCLROUTE =

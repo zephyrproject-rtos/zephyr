@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #define DT_DRV_COMPAT nxp_flexio_pwm
 
 #include <errno.h>
@@ -17,48 +16,47 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/misc/nxp_flexio/nxp_flexio.h>
 
-
 LOG_MODULE_REGISTER(pwm_nxp_flexio, CONFIG_PWM_LOG_LEVEL);
 
-#define FLEXIO_PWM_TIMER_CMP_MAX_VALUE		(0xFFFFU)
-#define FLEXIO_PWM_TIMCMP_CMP_UPPER_SHIFT	(0x8U)
-#define FLEXIO_MAX_PWM_CHANNELS			8
+#define FLEXIO_PWM_TIMER_CMP_MAX_VALUE    (0xFFFFU)
+#define FLEXIO_PWM_TIMCMP_CMP_UPPER_SHIFT (0x8U)
+#define FLEXIO_MAX_PWM_CHANNELS           8
 
 enum pwm_nxp_flexio_polarity {
-	FLEXIO_PWM_ACTIVE_HIGH   = 0x0U,
-	FLEXIO_PWM_ACTIVE_LOW    = 0x1U
+	FLEXIO_PWM_ACTIVE_HIGH = 0x0U,
+	FLEXIO_PWM_ACTIVE_LOW = 0x1U
 };
 
 enum pwm_nxp_flexio_timerinit {
 	/** Timer Initial output is logic one */
-	FLEXIO_PWM_TIMER_INIT_HIGH   = 0x00U,
+	FLEXIO_PWM_TIMER_INIT_HIGH = 0x00U,
 	/** Timer Initial output is logic zero */
-	FLEXIO_PWM_TIMER_INIT_LOW    = 0x1U
+	FLEXIO_PWM_TIMER_INIT_LOW = 0x1U
 };
 
 enum pwm_nxp_flexio_prescaler {
 	/* Decrement counter on Flexio clock */
-	FLEXIO_PWM_CLK_DIV_1     = 0U,
+	FLEXIO_PWM_CLK_DIV_1 = 0U,
 	/* Decrement counter on Flexio clock divided by 16 */
-	FLEXIO_PWM_CLK_DIV_16    = 4U,
+	FLEXIO_PWM_CLK_DIV_16 = 4U,
 	/* Decrement counter on Flexio clock divided by 256 */
-	FLEXIO_PWM_CLK_DIV_256   = 5U
+	FLEXIO_PWM_CLK_DIV_256 = 5U
 };
 
 enum pwm_nxp_flexio_timer_mode {
 	/** Timer disabled */
-	FLEXIO_PWM_TIMER_DISABLED  = 0x00U,
+	FLEXIO_PWM_TIMER_DISABLED = 0x00U,
 	/** Timer in 8 bit Pwm High mode */
-	FLEXIO_PWM_TIMER_PWM_HIGH  = 0x02U,
+	FLEXIO_PWM_TIMER_PWM_HIGH = 0x02U,
 	/** Timer in 8 bit Pwm Low mode */
-	FLEXIO_PWM_TIMER_PWM_LOW   = 0x06U
+	FLEXIO_PWM_TIMER_PWM_LOW = 0x06U
 };
 
 enum pwm_nxp_flexio_timer_pin {
 	/** Timer Pin output disabled */
-	FLEXIO_PWM_TIMER_PIN_OUTPUT_DISABLE  = 0x00U,
+	FLEXIO_PWM_TIMER_PIN_OUTPUT_DISABLE = 0x00U,
 	/** Timer Pin Output mode */
-	FLEXIO_PWM_TIMER_PIN_OUTPUT_ENABLE   = 0x03U
+	FLEXIO_PWM_TIMER_PIN_OUTPUT_ENABLE = 0x03U
 };
 
 struct pwm_nxp_flexio_channel_config {
@@ -90,9 +88,9 @@ struct pwm_nxp_flexio_data {
 	uint32_t flexio_clk;
 };
 
-static int pwm_nxp_flexio_set_cycles(const struct device *dev,
-				       uint32_t channel, uint32_t period_cycles,
-				       uint32_t pulse_cycles, pwm_flags_t flags)
+static int pwm_nxp_flexio_set_cycles(const struct device *dev, uint32_t channel,
+				     uint32_t period_cycles, uint32_t pulse_cycles,
+				     pwm_flags_t flags)
 {
 	const struct pwm_nxp_flexio_config *config = dev->config;
 	struct pwm_nxp_flexio_data *data = dev->data;
@@ -148,8 +146,8 @@ static int pwm_nxp_flexio_set_cycles(const struct device *dev,
 	data->period_cycles[channel] = period_cycles;
 
 	timerConfig.timerCompare = ((uint8_t)(pulse_cycles - 1U)) |
-		((uint8_t)(data->period_cycles[channel] - pulse_cycles - 1U)
-		 << FLEXIO_PWM_TIMCMP_CMP_UPPER_SHIFT);
+				   ((uint8_t)(data->period_cycles[channel] - pulse_cycles - 1U)
+				    << FLEXIO_PWM_TIMCMP_CMP_UPPER_SHIFT);
 
 	timerConfig.timerDecrement = pwm_info->prescaler;
 	timerConfig.timerStop = kFLEXIO_TimerStopBitDisabled;
@@ -177,9 +175,8 @@ static int pwm_nxp_flexio_set_cycles(const struct device *dev,
 	return 0;
 }
 
-static int pwm_nxp_flexio_get_cycles_per_sec(const struct device *dev,
-						uint32_t channel,
-						uint64_t *cycles)
+static int pwm_nxp_flexio_get_cycles_per_sec(const struct device *dev, uint32_t channel,
+					     uint64_t *cycles)
 {
 	const struct pwm_nxp_flexio_config *config = dev->config;
 	struct pwm_nxp_flexio_data *data = dev->data;
@@ -193,7 +190,7 @@ static int pwm_nxp_flexio_get_cycles_per_sec(const struct device *dev,
 
 	pwm_info = &config->pulse_info->pwm_info[channel];
 	*cycles = (uint64_t)(((data->flexio_clk) * 2) /
-			((data->period_cycles[channel]) * (pwm_info->prescaler_div)));
+			     ((data->period_cycles[channel]) * (pwm_info->prescaler_div)));
 
 	return 0;
 }
@@ -213,8 +210,7 @@ static int mcux_flexio_pwm_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
-					&data->flexio_clk)) {
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &data->flexio_clk)) {
 		return -EINVAL;
 	}
 
@@ -277,63 +273,52 @@ static const struct pwm_driver_api pwm_nxp_flexio_driver_api = {
 	.get_cycles_per_sec = pwm_nxp_flexio_get_cycles_per_sec,
 };
 
-#define _FLEXIO_PWM_PULSE_GEN_CONFIG(n)								\
-	{											\
-		.pin_id = DT_PROP(n, pin_id),							\
-		.prescaler = _CONCAT(FLEXIO_PWM_CLK_DIV_, DT_PROP(n, prescaler)),		\
-		.prescaler_div = DT_PROP(n, prescaler),						\
+#define _FLEXIO_PWM_PULSE_GEN_CONFIG(n)                                                            \
+	{                                                                                          \
+		.pin_id = DT_PROP(n, pin_id),                                                      \
+		.prescaler = _CONCAT(FLEXIO_PWM_CLK_DIV_, DT_PROP(n, prescaler)),                  \
+		.prescaler_div = DT_PROP(n, prescaler),                                            \
 	},
 
-#define FLEXIO_PWM_PULSE_GEN_CONFIG(n)								\
-	static struct pwm_nxp_flexio_channel_config flexio_pwm_##n##_init[] = {			\
-		DT_INST_FOREACH_CHILD_STATUS_OKAY(n, _FLEXIO_PWM_PULSE_GEN_CONFIG)		\
-	};											\
-	static const struct pwm_nxp_flexio_pulse_info flexio_pwm_##n##_info = {			\
-		.pwm_pulse_channels = ARRAY_SIZE(flexio_pwm_##n##_init),			\
-		.pwm_info = flexio_pwm_##n##_init,						\
+#define FLEXIO_PWM_PULSE_GEN_CONFIG(n)                                                             \
+	static struct pwm_nxp_flexio_channel_config flexio_pwm_##n##_init[] = {                    \
+		DT_INST_FOREACH_CHILD_STATUS_OKAY(n, _FLEXIO_PWM_PULSE_GEN_CONFIG)};               \
+	static const struct pwm_nxp_flexio_pulse_info flexio_pwm_##n##_info = {                    \
+		.pwm_pulse_channels = ARRAY_SIZE(flexio_pwm_##n##_init),                           \
+		.pwm_info = flexio_pwm_##n##_init,                                                 \
 	};
 
-#define FLEXIO_PWM_TIMER_INDEX_INIT(n)								\
+#define FLEXIO_PWM_TIMER_INDEX_INIT(n)                                                             \
 	static uint8_t flexio_pwm_##n##_timer_index[ARRAY_SIZE(flexio_pwm_##n##_init)];
 
-#define FLEXIO_PWM_CHILD_CONFIG(n)								\
-	static const struct nxp_flexio_child mcux_flexio_pwm_child_##n = {			\
-		.isr = NULL,									\
-		.user_data = NULL,								\
-		.res = {									\
-			.shifter_index = NULL,							\
-			.shifter_count = 0,							\
-			.timer_index = (uint8_t *)flexio_pwm_##n##_timer_index,			\
-			.timer_count = ARRAY_SIZE(flexio_pwm_##n##_init)			\
-		}										\
-	};
+#define FLEXIO_PWM_CHILD_CONFIG(n)                                                                 \
+	static const struct nxp_flexio_child mcux_flexio_pwm_child_##n = {                         \
+		.isr = NULL,                                                                       \
+		.user_data = NULL,                                                                 \
+		.res = {.shifter_index = NULL,                                                     \
+			.shifter_count = 0,                                                        \
+			.timer_index = (uint8_t *)flexio_pwm_##n##_timer_index,                    \
+			.timer_count = ARRAY_SIZE(flexio_pwm_##n##_init)}};
 
-#define FLEXIO_PWM_PULSE_GEN_GET_CONFIG(n)							\
-	.pulse_info = &flexio_pwm_##n##_info,
+#define FLEXIO_PWM_PULSE_GEN_GET_CONFIG(n) .pulse_info = &flexio_pwm_##n##_info,
 
-
-#define PWM_NXP_FLEXIO_PWM_INIT(n)								\
-	PINCTRL_DT_INST_DEFINE(n);								\
-	FLEXIO_PWM_PULSE_GEN_CONFIG(n)								\
-	FLEXIO_PWM_TIMER_INDEX_INIT(n)								\
-	FLEXIO_PWM_CHILD_CONFIG(n)								\
-	static const struct pwm_nxp_flexio_config pwm_nxp_flexio_config_##n = {			\
-		.flexio_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),					\
-		.flexio_base = (FLEXIO_Type *)DT_REG_ADDR(DT_INST_PARENT(n)),			\
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),					\
-		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(n))),			\
-		.clock_subsys = (clock_control_subsys_t)DT_CLOCKS_CELL(DT_INST_PARENT(n), name),\
-		.child = &mcux_flexio_pwm_child_##n,						\
-		FLEXIO_PWM_PULSE_GEN_GET_CONFIG(n)						\
-	};											\
-												\
-	static struct pwm_nxp_flexio_data pwm_nxp_flexio_data_##n;				\
-	DEVICE_DT_INST_DEFINE(n,								\
-			      &mcux_flexio_pwm_init,						\
-			      NULL,								\
-			      &pwm_nxp_flexio_data_##n,						\
-			      &pwm_nxp_flexio_config_##n,					\
-			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,				\
+#define PWM_NXP_FLEXIO_PWM_INIT(n)                                                                 \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	FLEXIO_PWM_PULSE_GEN_CONFIG(n)                                                             \
+	FLEXIO_PWM_TIMER_INDEX_INIT(n)                                                             \
+	FLEXIO_PWM_CHILD_CONFIG(n)                                                                 \
+	static const struct pwm_nxp_flexio_config pwm_nxp_flexio_config_##n = {                    \
+		.flexio_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                    \
+		.flexio_base = (FLEXIO_Type *)DT_REG_ADDR(DT_INST_PARENT(n)),                      \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(n))),                     \
+		.clock_subsys = (clock_control_subsys_t)DT_CLOCKS_CELL(DT_INST_PARENT(n), name),   \
+		.child = &mcux_flexio_pwm_child_##n,                                               \
+		FLEXIO_PWM_PULSE_GEN_GET_CONFIG(n)};                                               \
+                                                                                                   \
+	static struct pwm_nxp_flexio_data pwm_nxp_flexio_data_##n;                                 \
+	DEVICE_DT_INST_DEFINE(n, &mcux_flexio_pwm_init, NULL, &pwm_nxp_flexio_data_##n,            \
+			      &pwm_nxp_flexio_config_##n, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,   \
 			      &pwm_nxp_flexio_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_NXP_FLEXIO_PWM_INIT)

@@ -102,8 +102,7 @@ static bool input_kbd_matrix_scan(const struct device *dev)
 	kbd_row_t key_event = 0U;
 
 	for (int col = 0; col < cfg->col_size; col++) {
-		if (cfg->actual_key_mask != NULL &&
-		    cfg->actual_key_mask[col] == 0) {
+		if (cfg->actual_key_mask != NULL && cfg->actual_key_mask[col] == 0) {
 			continue;
 		}
 
@@ -236,10 +235,8 @@ static bool input_kbd_matrix_check_key_events(const struct device *dev)
 	key_pressed = input_kbd_matrix_scan(dev);
 
 	for (int c = 0; c < cfg->col_size; c++) {
-		LOG_DBG("c=%2d u=%" PRIkbdrow " p=%" PRIkbdrow " n=%" PRIkbdrow,
-			c,
-			cfg->matrix_unstable_state[c],
-			cfg->matrix_previous_state[c],
+		LOG_DBG("c=%2d u=%" PRIkbdrow " p=%" PRIkbdrow " n=%" PRIkbdrow, c,
+			cfg->matrix_unstable_state[c], cfg->matrix_previous_state[c],
 			cfg->matrix_new_state[c]);
 	}
 
@@ -291,8 +288,7 @@ static void input_kbd_matrix_poll(const struct device *dev)
 		cycles_diff = current_cycles - start_period_cycles;
 		wait_period_us = cfg->poll_period_us - k_cyc_to_us_floor32(cycles_diff);
 
-		wait_period_us = CLAMP(wait_period_us,
-				       USEC_PER_MSEC, cfg->poll_period_us);
+		wait_period_us = CLAMP(wait_period_us, USEC_PER_MSEC, cfg->poll_period_us);
 
 		LOG_DBG("wait_period_us: %d", wait_period_us);
 
@@ -335,8 +331,7 @@ static void input_kbd_matrix_polling_thread(void *arg1, void *unused2, void *unu
 }
 
 #ifdef CONFIG_PM_DEVICE
-int input_kbd_matrix_pm_action(const struct device *dev,
-			       enum pm_device_action action)
+int input_kbd_matrix_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	struct input_kbd_matrix_common_data *data = dev->data;
 
@@ -365,9 +360,9 @@ int input_kbd_matrix_common_init(const struct device *dev)
 	k_sem_init(&data->poll_lock, 0, 1);
 
 	k_thread_create(&data->thread, data->thread_stack,
-			K_KERNEL_STACK_SIZEOF(data->thread_stack),
-			input_kbd_matrix_polling_thread, (void *)dev, NULL, NULL,
-			CONFIG_INPUT_KBD_MATRIX_THREAD_PRIORITY, 0, K_NO_WAIT);
+			K_KERNEL_STACK_SIZEOF(data->thread_stack), input_kbd_matrix_polling_thread,
+			(void *)dev, NULL, NULL, CONFIG_INPUT_KBD_MATRIX_THREAD_PRIORITY, 0,
+			K_NO_WAIT);
 
 	k_thread_name_set(&data->thread, dev->name);
 
@@ -381,8 +376,8 @@ int input_kbd_matrix_common_init(const struct device *dev)
 }
 
 #if CONFIG_INPUT_KBD_ACTUAL_KEY_MASK_DYNAMIC
-int input_kbd_matrix_actual_key_mask_set(const struct device *dev,
-					  uint8_t row, uint8_t col, bool enabled)
+int input_kbd_matrix_actual_key_mask_set(const struct device *dev, uint8_t row, uint8_t col,
+					 bool enabled)
 {
 	const struct input_kbd_matrix_common_config *cfg = dev->config;
 

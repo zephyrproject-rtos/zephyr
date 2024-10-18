@@ -33,8 +33,8 @@ struct uart_cc32xx_dev_data_t {
 	uint32_t baud_rate;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t cb; /**< Callback function pointer */
-	void *cb_data; /**< Callback function arg */
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+	void *cb_data;                    /**< Callback function arg */
+#endif                                    /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
 #define PRIME_CHAR '\r'
@@ -57,8 +57,7 @@ static int uart_cc32xx_init(const struct device *dev)
 	const struct uart_cc32xx_dev_data_t *data = dev->data;
 	int ret;
 
-	MAP_PRCMPeripheralClkEnable(data->prcm,
-		    PRCM_RUN_MODE_CLK | PRCM_SLP_MODE_CLK);
+	MAP_PRCMPeripheralClkEnable(data->prcm, PRCM_RUN_MODE_CLK | PRCM_SLP_MODE_CLK);
 
 	MAP_PRCMPeripheralReset(data->prcm);
 
@@ -68,11 +67,9 @@ static int uart_cc32xx_init(const struct device *dev)
 	}
 
 	/* This also calls MAP_UARTEnable() to enable the FIFOs: */
-	MAP_UARTConfigSetExpClk(config->base,
-				MAP_PRCMPeripheralClockGet(data->prcm),
+	MAP_UARTConfigSetExpClk(config->base, MAP_PRCMPeripheralClockGet(data->prcm),
 				data->baud_rate,
-				(UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE
-				 | UART_CONFIG_PAR_NONE));
+				(UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));
 	MAP_UARTFlowControlSet(config->base, UART_FLOWCONTROL_NONE);
 	/* Re-disable the FIFOs: */
 	MAP_UARTFIFODisable(config->base);
@@ -120,8 +117,7 @@ static int uart_cc32xx_err_check(const struct device *dev)
 	cc32xx_errs = MAP_UARTRxErrorGet(config->base);
 
 	/* Map cc32xx SDK uart.h defines to zephyr uart.h defines */
-	z_err = ((cc32xx_errs & UART_RXERROR_OVERRUN) ?
-		  UART_ERROR_OVERRUN : 0) |
+	z_err = ((cc32xx_errs & UART_RXERROR_OVERRUN) ? UART_ERROR_OVERRUN : 0) |
 		((cc32xx_errs & UART_RXERROR_BREAK) ? UART_BREAK : 0) |
 		((cc32xx_errs & UART_RXERROR_PARITY) ? UART_ERROR_PARITY : 0) |
 		((cc32xx_errs & UART_RXERROR_FRAMING) ? UART_ERROR_FRAMING : 0);
@@ -133,9 +129,7 @@ static int uart_cc32xx_err_check(const struct device *dev)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-static int uart_cc32xx_fifo_fill(const struct device *dev,
-				 const uint8_t *tx_data,
-				 int size)
+static int uart_cc32xx_fifo_fill(const struct device *dev, const uint8_t *tx_data, int size)
 {
 	const struct uart_cc32xx_dev_config *config = dev->config;
 	unsigned int num_tx = 0U;
@@ -152,18 +146,15 @@ static int uart_cc32xx_fifo_fill(const struct device *dev,
 	return (int)num_tx;
 }
 
-static int uart_cc32xx_fifo_read(const struct device *dev, uint8_t *rx_data,
-				 const int size)
+static int uart_cc32xx_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
 {
 	const struct uart_cc32xx_dev_config *config = dev->config;
 	unsigned int num_rx = 0U;
 
-	while (((size - num_rx) > 0) &&
-		MAP_UARTCharsAvail(config->base)) {
+	while (((size - num_rx) > 0) && MAP_UARTCharsAvail(config->base)) {
 
 		/* Receive a character */
-		rx_data[num_rx++] =
-			MAP_UARTCharGetNonBlocking(config->base);
+		rx_data[num_rx++] = MAP_UARTCharGetNonBlocking(config->base);
 	}
 
 	return num_rx;
@@ -250,11 +241,10 @@ static int uart_cc32xx_irq_update(const struct device *dev)
 	return 1;
 }
 
-static void uart_cc32xx_irq_callback_set(const struct device *dev,
-					 uart_irq_callback_user_data_t cb,
+static void uart_cc32xx_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
 					 void *cb_data)
 {
-	struct uart_cc32xx_dev_data_t * const dev_data = dev->data;
+	struct uart_cc32xx_dev_data_t *const dev_data = dev->data;
 
 	dev_data->cb = cb;
 	dev_data->cb_data = cb_data;
@@ -273,7 +263,7 @@ static void uart_cc32xx_irq_callback_set(const struct device *dev,
 static void uart_cc32xx_isr(const struct device *dev)
 {
 	const struct uart_cc32xx_dev_config *config = dev->config;
-	struct uart_cc32xx_dev_data_t * const dev_data = dev->data;
+	struct uart_cc32xx_dev_data_t *const dev_data = dev->data;
 
 	unsigned long intStatus = MAP_UARTIntStatus(config->base, 1);
 
@@ -285,8 +275,7 @@ static void uart_cc32xx_isr(const struct device *dev)
 	 * clients calling uart_fifo_read() or uart_fifo_write().
 	 * Still, clear any error interrupts here, as they're not yet handled.
 	 */
-	MAP_UARTIntClear(config->base,
-			 intStatus & ~(UART_INT_RX | UART_INT_TX));
+	MAP_UARTIntClear(config->base, intStatus & ~(UART_INT_RX | UART_INT_TX));
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
@@ -295,26 +284,26 @@ static const struct uart_driver_api uart_cc32xx_driver_api = {
 	.poll_out = uart_cc32xx_poll_out,
 	.err_check = uart_cc32xx_err_check,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.fifo_fill	  = uart_cc32xx_fifo_fill,
-	.fifo_read	  = uart_cc32xx_fifo_read,
-	.irq_tx_enable	  = uart_cc32xx_irq_tx_enable,
-	.irq_tx_disable	  = uart_cc32xx_irq_tx_disable,
-	.irq_tx_ready	  = uart_cc32xx_irq_tx_ready,
-	.irq_rx_enable	  = uart_cc32xx_irq_rx_enable,
-	.irq_rx_disable	  = uart_cc32xx_irq_rx_disable,
-	.irq_tx_complete  = uart_cc32xx_irq_tx_complete,
-	.irq_rx_ready	  = uart_cc32xx_irq_rx_ready,
-	.irq_err_enable	  = uart_cc32xx_irq_err_enable,
-	.irq_err_disable  = uart_cc32xx_irq_err_disable,
-	.irq_is_pending	  = uart_cc32xx_irq_is_pending,
-	.irq_update	  = uart_cc32xx_irq_update,
+	.fifo_fill = uart_cc32xx_fifo_fill,
+	.fifo_read = uart_cc32xx_fifo_read,
+	.irq_tx_enable = uart_cc32xx_irq_tx_enable,
+	.irq_tx_disable = uart_cc32xx_irq_tx_disable,
+	.irq_tx_ready = uart_cc32xx_irq_tx_ready,
+	.irq_rx_enable = uart_cc32xx_irq_rx_enable,
+	.irq_rx_disable = uart_cc32xx_irq_rx_disable,
+	.irq_tx_complete = uart_cc32xx_irq_tx_complete,
+	.irq_rx_ready = uart_cc32xx_irq_rx_ready,
+	.irq_err_enable = uart_cc32xx_irq_err_enable,
+	.irq_err_disable = uart_cc32xx_irq_err_disable,
+	.irq_is_pending = uart_cc32xx_irq_is_pending,
+	.irq_update = uart_cc32xx_irq_update,
 	.irq_callback_set = uart_cc32xx_irq_callback_set,
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-#define UART_32XX_DEVICE(idx) \
-PINCTRL_DT_INST_DEFINE(idx); \
-IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, \
+#define UART_32XX_DEVICE(idx)                                                                      \
+	PINCTRL_DT_INST_DEFINE(idx);                                                               \
+	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, \
 	(static void uart_cc32xx_cfg_func_##idx(const struct device *dev) \
 	{ \
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, ( \
@@ -324,23 +313,19 @@ IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, \
 			    0); \
 			irq_enable(DT_INST_IRQN(idx))) \
 		); \
-	})); \
-static const struct uart_cc32xx_dev_config uart_cc32xx_dev_cfg_##idx = { \
-	.base = DT_INST_REG_ADDR(idx), \
-	.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(idx, clocks, clock_frequency),\
-	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx), \
-	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, \
-		    (.irq_config_func = uart_cc32xx_cfg_func_##idx,)) \
-}; \
-static struct uart_cc32xx_dev_data_t uart_cc32xx_dev_data_##idx = { \
-	.prcm = PRCM_UARTA##idx, \
-	.baud_rate = DT_INST_PROP(idx, current_speed), \
-	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (.cb = NULL,)) \
-}; \
-DEVICE_DT_INST_DEFINE(idx, uart_cc32xx_init, \
-	NULL, &uart_cc32xx_dev_data_##idx, \
-	&uart_cc32xx_dev_cfg_##idx, \
-	PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, \
-	(void *)&uart_cc32xx_driver_api); \
+	}));                                                 \
+	static const struct uart_cc32xx_dev_config uart_cc32xx_dev_cfg_##idx = {                   \
+		.base = DT_INST_REG_ADDR(idx),                                                     \
+		.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(idx, clocks, clock_frequency),             \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                       \
+		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, \
+		    (.irq_config_func = uart_cc32xx_cfg_func_##idx,)) };                      \
+	static struct uart_cc32xx_dev_data_t uart_cc32xx_dev_data_##idx = {                        \
+		.prcm = PRCM_UARTA##idx,                                                           \
+		.baud_rate = DT_INST_PROP(idx, current_speed),                                     \
+		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (.cb = NULL,)) };                            \
+	DEVICE_DT_INST_DEFINE(idx, uart_cc32xx_init, NULL, &uart_cc32xx_dev_data_##idx,            \
+			      &uart_cc32xx_dev_cfg_##idx, PRE_KERNEL_1,                            \
+			      CONFIG_SERIAL_INIT_PRIORITY, (void *)&uart_cc32xx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_32XX_DEVICE);

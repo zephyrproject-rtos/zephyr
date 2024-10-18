@@ -40,8 +40,7 @@ int ipm_console_sender_init(const struct device *d)
 	ipm_console_device = device_get_binding(config_info->bind_to);
 
 	if (!ipm_console_device) {
-		printk("unable to bind IPM console sender to '%s'\n",
-		       config_info->bind_to);
+		printk("unable to bind IPM console sender to '%s'\n", config_info->bind_to);
 		return -EINVAL;
 	}
 

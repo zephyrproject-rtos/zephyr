@@ -17,12 +17,12 @@ LOG_MODULE_REGISTER(ssd1327, CONFIG_DISPLAY_LOG_LEVEL);
 
 #include "ssd1327_regs.h"
 
-#define SSD1327_ENABLE_VDD				0x01
-#define SSD1327_ENABLE_SECOND_PRECHARGE			0x62
-#define SSD1327_VCOMH_VOLTAGE				0x0f
-#define SSD1327_PHASES_VALUE				0xf1
-#define SSD1327_DEFAULT_PRECHARGE_V			0x08
-#define SSD1327_UNLOCK_COMMAND				0x12
+#define SSD1327_ENABLE_VDD              0x01
+#define SSD1327_ENABLE_SECOND_PRECHARGE 0x62
+#define SSD1327_VCOMH_VOLTAGE           0x0f
+#define SSD1327_PHASES_VALUE            0xf1
+#define SSD1327_DEFAULT_PRECHARGE_V     0x08
+#define SSD1327_UNLOCK_COMMAND          0x12
 
 struct ssd1327_config {
 	const struct device *mipi_dev;
@@ -56,8 +56,8 @@ static inline int ssd1327_write_bus_cmd(const struct device *dev, const uint8_t 
 		return err;
 	}
 	for (size_t i = 0; i < len; i++) {
-		err = mipi_dbi_command_write(config->mipi_dev, &config->dbi_config,
-					     data[i], NULL, 0);
+		err = mipi_dbi_command_write(config->mipi_dev, &config->dbi_config, data[i], NULL,
+					     0);
 		if (err) {
 			return err;
 		}
@@ -146,14 +146,8 @@ static int ssd1327_suspend(const struct device *dev)
 static int ssd1327_set_display(const struct device *dev)
 {
 	const struct ssd1327_config *config = dev->config;
-	uint8_t x_position[] = {
-		0,
-		config->width - 1
-	};
-	uint8_t y_position[] = {
-		0,
-		config->height - 1
-	};
+	uint8_t x_position[] = {0, config->width - 1};
+	uint8_t y_position[] = {0, config->height - 1};
 
 	if (ssd1327_write_bus_cmd(dev, SSD1327_SET_COLUMN_ADDR, x_position, sizeof(x_position))) {
 		return -EIO;
@@ -175,8 +169,8 @@ static int ssd1327_write(const struct device *dev, const uint16_t x, const uint1
 	struct display_buffer_descriptor mipi_desc;
 	int err;
 	size_t buf_len;
-	uint8_t x_position[] = { x, x + desc->width - 1 };
-	uint8_t y_position[] = { y, y + desc->height - 1 };
+	uint8_t x_position[] = {x, x + desc->width - 1};
+	uint8_t y_position[] = {y, y + desc->height - 1};
 
 	if (desc->pitch < desc->width) {
 		LOG_ERR("Pitch is smaller than width");
@@ -230,8 +224,7 @@ static int ssd1327_set_contrast(const struct device *dev, const uint8_t contrast
 	return ssd1327_write_bus_cmd(dev, SSD1327_SET_CONTRAST_CTRL, &contrast, 1);
 }
 
-static void ssd1327_get_capabilities(const struct device *dev,
-				     struct display_capabilities *caps)
+static void ssd1327_get_capabilities(const struct device *dev, struct display_capabilities *caps)
 {
 	const struct ssd1327_config *config = dev->config;
 
@@ -243,8 +236,7 @@ static void ssd1327_get_capabilities(const struct device *dev,
 	caps->screen_info = SCREEN_INFO_MONO_VTILED;
 }
 
-static int ssd1327_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format pf)
+static int ssd1327_set_pixel_format(const struct device *dev, const enum display_pixel_format pf)
 {
 	if (pf == PIXEL_FORMAT_MONO10) {
 		return 0;
@@ -275,8 +267,7 @@ static int ssd1327_init_device(const struct device *dev)
 		return -EIO;
 	}
 
-	buf = (config->color_inversion ?
-	       SSD1327_SET_REVERSE_DISPLAY : SSD1327_SET_NORMAL_DISPLAY);
+	buf = (config->color_inversion ? SSD1327_SET_REVERSE_DISPLAY : SSD1327_SET_NORMAL_DISPLAY);
 	if (ssd1327_write_bus_cmd(dev, SSD1327_SET_ENTIRE_DISPLAY_OFF, &buf, 1)) {
 		return -EIO;
 	}
@@ -330,11 +321,15 @@ static struct display_driver_api ssd1327_driver_api = {
 	static struct ssd1327_data data##node_id;                                                  \
 	static const struct ssd1327_config config##node_id = {                                     \
 		.mipi_dev = DEVICE_DT_GET(DT_PARENT(node_id)),                                     \
-		.dbi_config = { .mode = MIPI_DBI_MODE_SPI_4WIRE,                                   \
-				.config = MIPI_DBI_SPI_CONFIG_DT(node_id,                          \
-							SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |     \
-							SPI_HOLD_ON_CS | SPI_LOCK_ON, 0),          \
-				},                                                                 \
+		.dbi_config =                                                                      \
+			{                                                                          \
+				.mode = MIPI_DBI_MODE_SPI_4WIRE,                                   \
+				.config = MIPI_DBI_SPI_CONFIG_DT(                                  \
+					node_id,                                                   \
+					SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_HOLD_ON_CS |    \
+						SPI_LOCK_ON,                                       \
+					0),                                                        \
+			},                                                                         \
 		.height = DT_PROP(node_id, height),                                                \
 		.width = DT_PROP(node_id, width),                                                  \
 		.oscillator_freq = DT_PROP(node_id, oscillator_freq),                              \

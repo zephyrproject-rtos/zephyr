@@ -72,8 +72,8 @@ static int adc_sam_channel_setup(const struct device *dev,
 	uint8_t channel_id = channel_cfg->channel_id;
 
 	if (channel_cfg->differential) {
-		if (channel_id != (channel_cfg->input_positive / 2U)
-		    || channel_id != (channel_cfg->input_negative / 2U)) {
+		if (channel_id != (channel_cfg->input_positive / 2U) ||
+		    channel_id != (channel_cfg->input_negative / 2U)) {
 			LOG_ERR("Invalid ADC differential input for channel %u", channel_id);
 			return -EINVAL;
 		}
@@ -178,8 +178,7 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repe
 	}
 }
 
-static int check_buffer_size(const struct adc_sequence *sequence,
-			     uint8_t active_channels)
+static int check_buffer_size(const struct adc_sequence *sequence, uint8_t active_channels)
 {
 	size_t needed_buffer_size = active_channels * sizeof(uint16_t);
 
@@ -188,16 +187,15 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 	}
 
 	if (sequence->buffer_size < needed_buffer_size) {
-		LOG_ERR("Provided buffer is too small (%u/%u)",
-				sequence->buffer_size, needed_buffer_size);
+		LOG_ERR("Provided buffer is too small (%u/%u)", sequence->buffer_size,
+			needed_buffer_size);
 		return -ENOMEM;
 	}
 
 	return 0;
 }
 
-static int start_read(const struct device *dev,
-		      const struct adc_sequence *sequence)
+static int start_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	struct adc_sam_data *data = dev->data;
 	uint32_t channels = sequence->channels;
@@ -206,8 +204,7 @@ static int start_read(const struct device *dev,
 	/* Signal an error if the channel selection is invalid (no channels or
 	 * a non-existing one is selected).
 	 */
-	if (channels == 0U ||
-	    (channels & (~0UL << SAM_ADC_NUM_CHANNELS))) {
+	if (channels == 0U || (channels & (~0UL << SAM_ADC_NUM_CHANNELS))) {
 		LOG_ERR("Invalid selection of channels");
 		return -EINVAL;
 	}
@@ -242,8 +239,7 @@ static int start_read(const struct device *dev,
 	return adc_context_wait_for_completion(&data->ctx);
 }
 
-static int adc_sam_read(const struct device *dev,
-			const struct adc_sequence *sequence)
+static int adc_sam_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	struct adc_sam_data *data = dev->data;
 	int error;
@@ -288,8 +284,7 @@ static int adc_sam_init(const struct device *dev)
 	uint32_t frequency, conv_periods;
 
 	/* Get peripheral clock frequency */
-	ret = clock_control_get_rate(SAM_DT_PMC_CONTROLLER,
-				     (clock_control_subsys_t)&cfg->clock_cfg,
+	ret = clock_control_get_rate(SAM_DT_PMC_CONTROLLER, (clock_control_subsys_t)&cfg->clock_cfg,
 				     &frequency);
 	if (ret < 0) {
 		LOG_ERR("Failed to get ADC peripheral clock rate (%d)", ret);
@@ -321,12 +316,10 @@ static int adc_sam_init(const struct device *dev)
 	adc->ADC_RNCR = 0U;
 
 	/* Set prescaler, timings and allow different analog settings for each channel */
-	adc->ADC_MR = ADC_MR_PRESCAL(cfg->prescaler)
-		    | ADC_MR_STARTUP(cfg->startup_time)
-		    | ADC_MR_SETTLING(cfg->settling_time)
-		    | ADC_MR_TRACKTIM(cfg->tracking_time)
-		    | ADC_MR_TRANSFER(2U) /* Should be 2 to guarantee the optimal hold time. */
-		    | ADC_MR_ANACH_ALLOWED;
+	adc->ADC_MR = ADC_MR_PRESCAL(cfg->prescaler) | ADC_MR_STARTUP(cfg->startup_time) |
+		      ADC_MR_SETTLING(cfg->settling_time) | ADC_MR_TRACKTIM(cfg->tracking_time) |
+		      ADC_MR_TRANSFER(2U) /* Should be 2 to guarantee the optimal hold time. */
+		      | ADC_MR_ANACH_ALLOWED;
 
 	/**
 	 * Set bias current control
@@ -336,8 +329,7 @@ static int adc_sam_init(const struct device *dev)
 	adc->ADC_ACR = ADC_ACR_IBCTL(frequency < 500000U ? 0U : 1U);
 
 	/* Enable ADC clock in PMC */
-	ret = clock_control_on(SAM_DT_PMC_CONTROLLER,
-			       (clock_control_subsys_t)&cfg->clock_cfg);
+	ret = clock_control_on(SAM_DT_PMC_CONTROLLER, (clock_control_subsys_t)&cfg->clock_cfg);
 	if (ret < 0) {
 		LOG_ERR("Failed to enable ADC clock (%d)", ret);
 		return -ENODEV;
@@ -361,8 +353,7 @@ static int adc_sam_init(const struct device *dev)
 }
 
 #ifdef CONFIG_ADC_ASYNC
-static int adc_sam_read_async(const struct device *dev,
-			      const struct adc_sequence *sequence,
+static int adc_sam_read_async(const struct device *dev, const struct adc_sequence *sequence,
 			      struct k_poll_signal *async)
 {
 	struct adc_sam_data *data = dev->data;
@@ -384,36 +375,31 @@ static const struct adc_driver_api adc_sam_api = {
 #endif
 };
 
-#define ADC_SAM_DEVICE(n)						\
-	PINCTRL_DT_INST_DEFINE(n);					\
-	static void adc_sam_irq_config_##n(const struct device *dev)	\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n),				\
-			    DT_INST_IRQ(n, priority),			\
-			    adc_sam_isr,				\
-			    DEVICE_DT_INST_GET(n), 0);			\
-		irq_enable(DT_INST_IRQN(n));				\
-	}								\
-	static const struct adc_sam_config adc_sam_config_##n = {	\
-		.regs = (Adc *)DT_INST_REG_ADDR(n),			\
-		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),		\
-		.prescaler = DT_INST_PROP(n, prescaler),		\
-		.startup_time = DT_INST_ENUM_IDX(n, startup_time),	\
-		.settling_time = DT_INST_ENUM_IDX(n, settling_time),	\
-		.tracking_time = DT_INST_ENUM_IDX(n, tracking_time),	\
-		.config_func = &adc_sam_irq_config_##n,			\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
-	};								\
-	static struct adc_sam_data adc_sam_data_##n = {			\
-		ADC_CONTEXT_INIT_TIMER(adc_sam_data_##n, ctx),		\
-		ADC_CONTEXT_INIT_LOCK(adc_sam_data_##n, ctx),		\
-		ADC_CONTEXT_INIT_SYNC(adc_sam_data_##n, ctx),		\
-		.dev = DEVICE_DT_INST_GET(n),				\
-	};								\
-	DEVICE_DT_INST_DEFINE(n, adc_sam_init, NULL,			\
-			      &adc_sam_data_##n,			\
-			      &adc_sam_config_##n, POST_KERNEL,		\
-			      CONFIG_ADC_INIT_PRIORITY,			\
-			      &adc_sam_api);
+#define ADC_SAM_DEVICE(n)                                                                          \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	static void adc_sam_irq_config_##n(const struct device *dev)                               \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), adc_sam_isr,                \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+	}                                                                                          \
+	static const struct adc_sam_config adc_sam_config_##n = {                                  \
+		.regs = (Adc *)DT_INST_REG_ADDR(n),                                                \
+		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),                                         \
+		.prescaler = DT_INST_PROP(n, prescaler),                                           \
+		.startup_time = DT_INST_ENUM_IDX(n, startup_time),                                 \
+		.settling_time = DT_INST_ENUM_IDX(n, settling_time),                               \
+		.tracking_time = DT_INST_ENUM_IDX(n, tracking_time),                               \
+		.config_func = &adc_sam_irq_config_##n,                                            \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+	};                                                                                         \
+	static struct adc_sam_data adc_sam_data_##n = {                                            \
+		ADC_CONTEXT_INIT_TIMER(adc_sam_data_##n, ctx),                                     \
+		ADC_CONTEXT_INIT_LOCK(adc_sam_data_##n, ctx),                                      \
+		ADC_CONTEXT_INIT_SYNC(adc_sam_data_##n, ctx),                                      \
+		.dev = DEVICE_DT_INST_GET(n),                                                      \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(n, adc_sam_init, NULL, &adc_sam_data_##n, &adc_sam_config_##n,       \
+			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, &adc_sam_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_SAM_DEVICE)

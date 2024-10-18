@@ -149,9 +149,8 @@ static int lsm6dso16is_enable_g_int(const struct device *dev, int enable)
 /**
  * lsm6dso16is_trigger_set - link external trigger to event data ready
  */
-int lsm6dso16is_trigger_set(const struct device *dev,
-			  const struct sensor_trigger *trig,
-			  sensor_trigger_handler_t handler)
+int lsm6dso16is_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
+			    sensor_trigger_handler_t handler)
 {
 	const struct lsm6dso16is_config *cfg = dev->config;
 	struct lsm6dso16is_data *lsm6dso16is = dev->data;
@@ -212,9 +211,9 @@ static void lsm6dso16is_handle_interrupt(const struct device *dev)
 
 		if ((status.xlda == 0) && (status.gda == 0)
 #if defined(CONFIG_LSM6DSO16IS_ENABLE_TEMP)
-					&& (status.tda == 0)
+		    && (status.tda == 0)
 #endif
-					) {
+		) {
 			break;
 		}
 
@@ -233,15 +232,13 @@ static void lsm6dso16is_handle_interrupt(const struct device *dev)
 #endif
 	}
 
-	gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy,
-					GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
-static void lsm6dso16is_gpio_callback(const struct device *dev,
-				    struct gpio_callback *cb, uint32_t pins)
+static void lsm6dso16is_gpio_callback(const struct device *dev, struct gpio_callback *cb,
+				      uint32_t pins)
 {
-	struct lsm6dso16is_data *lsm6dso16is =
-		CONTAINER_OF(cb, struct lsm6dso16is_data, gpio_cb);
+	struct lsm6dso16is_data *lsm6dso16is = CONTAINER_OF(cb, struct lsm6dso16is_data, gpio_cb);
 	const struct lsm6dso16is_config *cfg = lsm6dso16is->dev->config;
 
 	ARG_UNUSED(pins);
@@ -273,8 +270,7 @@ static void lsm6dso16is_thread(void *p1, void *p2, void *p3)
 #ifdef CONFIG_LSM6DSO16IS_TRIGGER_GLOBAL_THREAD
 static void lsm6dso16is_work_cb(struct k_work *work)
 {
-	struct lsm6dso16is_data *lsm6dso16is =
-		CONTAINER_OF(work, struct lsm6dso16is_data, work);
+	struct lsm6dso16is_data *lsm6dso16is = CONTAINER_OF(work, struct lsm6dso16is_data, work);
 
 	lsm6dso16is_handle_interrupt(lsm6dso16is->dev);
 }
@@ -297,10 +293,8 @@ int lsm6dso16is_init_interrupt(const struct device *dev)
 	k_sem_init(&lsm6dso16is->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
 	k_thread_create(&lsm6dso16is->thread, lsm6dso16is->thread_stack,
-			CONFIG_LSM6DSO16IS_THREAD_STACK_SIZE,
-			lsm6dso16is_thread, lsm6dso16is,
-			NULL, NULL, K_PRIO_COOP(CONFIG_LSM6DSO16IS_THREAD_PRIORITY),
-			0, K_NO_WAIT);
+			CONFIG_LSM6DSO16IS_THREAD_STACK_SIZE, lsm6dso16is_thread, lsm6dso16is, NULL,
+			NULL, K_PRIO_COOP(CONFIG_LSM6DSO16IS_THREAD_PRIORITY), 0, K_NO_WAIT);
 	k_thread_name_set(&lsm6dso16is->thread, "lsm6dso16is");
 #elif defined(CONFIG_LSM6DSO16IS_TRIGGER_GLOBAL_THREAD)
 	lsm6dso16is->work.handler = lsm6dso16is_work_cb;
@@ -312,8 +306,7 @@ int lsm6dso16is_init_interrupt(const struct device *dev)
 		return ret;
 	}
 
-	gpio_init_callback(&lsm6dso16is->gpio_cb,
-			   lsm6dso16is_gpio_callback,
+	gpio_init_callback(&lsm6dso16is->gpio_cb, lsm6dso16is_gpio_callback,
 			   BIT(cfg->gpio_drdy.pin));
 
 	if (gpio_add_callback(cfg->gpio_drdy.port, &lsm6dso16is->gpio_cb) < 0) {
@@ -321,11 +314,10 @@ int lsm6dso16is_init_interrupt(const struct device *dev)
 		return -EIO;
 	}
 
-
 	/* set data ready mode on int1/int2 */
 	LOG_DBG("drdy_pulsed is %d", (int)cfg->drdy_pulsed);
-	lsm6dso16is_data_ready_mode_t mode = cfg->drdy_pulsed ? LSM6DSO16IS_DRDY_PULSED :
-							     LSM6DSO16IS_DRDY_LATCHED;
+	lsm6dso16is_data_ready_mode_t mode =
+		cfg->drdy_pulsed ? LSM6DSO16IS_DRDY_PULSED : LSM6DSO16IS_DRDY_LATCHED;
 
 	ret = lsm6dso16is_data_ready_mode_set(ctx, mode);
 	if (ret < 0) {
@@ -333,6 +325,5 @@ int lsm6dso16is_init_interrupt(const struct device *dev)
 		return ret;
 	}
 
-	return gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy,
-					       GPIO_INT_EDGE_TO_ACTIVE);
+	return gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy, GPIO_INT_EDGE_TO_ACTIVE);
 }

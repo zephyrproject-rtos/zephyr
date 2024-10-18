@@ -8,8 +8,7 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/pinctrl.h>
 
-int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
-			   uintptr_t reg)
+int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintptr_t reg)
 {
 	/* configure all pins */
 	for (uint8_t i = 0U; i < pin_cnt; i++) {
@@ -34,8 +33,9 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 #endif
 
 #ifdef CONFIG_SOC_MIMX9352
-		sys_write32(IOMUXC1_SW_MUX_CTL_PAD_MUX_MODE(mux_mode) |
-			IOMUXC1_SW_MUX_CTL_PAD_SION(MCUX_IMX_INPUT_ENABLE(pin_ctrl_flags)),
+		sys_write32(
+			IOMUXC1_SW_MUX_CTL_PAD_MUX_MODE(mux_mode) |
+				IOMUXC1_SW_MUX_CTL_PAD_SION(MCUX_IMX_INPUT_ENABLE(pin_ctrl_flags)),
 			(mem_addr_t)mux_register);
 		if (input_register) {
 			sys_write32(IOMUXC1_SELECT_INPUT_DAISY(input_daisy),
@@ -47,11 +47,10 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 		}
 #elif defined(CONFIG_SOC_MIMX8UD7)
 		if (mux_register == config_register) {
-			sys_write32(IOMUXC_PCR_MUX_MODE(mux_mode) |
-				    pin_ctrl_flags, (mem_addr_t)mux_register);
-		} else {
-			sys_write32(IOMUXC_PCR_MUX_MODE(mux_mode),
+			sys_write32(IOMUXC_PCR_MUX_MODE(mux_mode) | pin_ctrl_flags,
 				    (mem_addr_t)mux_register);
+		} else {
+			sys_write32(IOMUXC_PCR_MUX_MODE(mux_mode), (mem_addr_t)mux_register);
 
 			if (config_register) {
 				sys_write32(pin_ctrl_flags, (mem_addr_t)config_register);

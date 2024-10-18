@@ -18,23 +18,22 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(sx126x, CONFIG_LORA_LOG_LEVEL);
 
-BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(semtech_sx1261) +
-	     DT_NUM_INST_STATUS_OKAY(semtech_sx1262) +
-	     DT_NUM_INST_STATUS_OKAY(st_stm32wl_subghz_radio) <= 1,
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(semtech_sx1261) + DT_NUM_INST_STATUS_OKAY(semtech_sx1262) +
+			     DT_NUM_INST_STATUS_OKAY(st_stm32wl_subghz_radio) <=
+		     1,
 	     "Multiple SX126x instances in DT");
 
 #define DIO2_TX_ENABLE DT_INST_PROP(0, dio2_tx_enable)
 
-#define HAVE_DIO3_TCXO		DT_INST_NODE_HAS_PROP(0, dio3_tcxo_voltage)
+#define HAVE_DIO3_TCXO DT_INST_NODE_HAS_PROP(0, dio3_tcxo_voltage)
 #if HAVE_DIO3_TCXO
-#define TCXO_DIO3_VOLTAGE	DT_INST_PROP(0, dio3_tcxo_voltage)
+#define TCXO_DIO3_VOLTAGE DT_INST_PROP(0, dio3_tcxo_voltage)
 #endif
 
 #if DT_INST_NODE_HAS_PROP(0, tcxo_power_startup_delay_ms)
-#define TCXO_POWER_STARTUP_DELAY_MS			\
-	DT_INST_PROP(0, tcxo_power_startup_delay_ms)
+#define TCXO_POWER_STARTUP_DELAY_MS DT_INST_PROP(0, tcxo_power_startup_delay_ms)
 #else
-#define TCXO_POWER_STARTUP_DELAY_MS	0
+#define TCXO_POWER_STARTUP_DELAY_MS 0
 #endif
 
 #define SX126X_CALIBRATION_ALL 0x7f
@@ -58,14 +57,8 @@ void SX126xWaitOnBusy(void);
 
 #define MODE(m) [MODE_##m] = #m
 static const char *const mode_names[] = {
-	MODE(SLEEP),
-	MODE(STDBY_RC),
-	MODE(STDBY_XOSC),
-	MODE(FS),
-	MODE(TX),
-	MODE(RX),
-	MODE(RX_DC),
-	MODE(CAD),
+	MODE(SLEEP), MODE(STDBY_RC), MODE(STDBY_XOSC), MODE(FS),
+	MODE(TX),    MODE(RX),       MODE(RX_DC),      MODE(CAD),
 };
 #undef MODE
 
@@ -80,43 +73,29 @@ static const char *sx126x_mode_name(RadioOperatingModes_t m)
 	}
 }
 
-static int sx126x_spi_transceive(uint8_t *req_tx, uint8_t *req_rx,
-				 size_t req_len, void *data_tx, void *data_rx,
-				 size_t data_len)
+static int sx126x_spi_transceive(uint8_t *req_tx, uint8_t *req_rx, size_t req_len, void *data_tx,
+				 void *data_rx, size_t data_len)
 {
 	int ret;
 
-	const struct spi_buf tx_buf[] = {
-		{
-			.buf = req_tx,
-			.len = req_len,
-		},
-		{
-			.buf = data_tx,
-			.len = data_len
-		}
-	};
+	const struct spi_buf tx_buf[] = {{
+						 .buf = req_tx,
+						 .len = req_len,
+					 },
+					 {.buf = data_tx, .len = data_len}};
 
-	const struct spi_buf rx_buf[] = {
-		{
-			.buf = req_rx,
-			.len = req_len,
-		},
-		{
-			.buf = data_rx,
-			.len = data_len
-		}
-	};
+	const struct spi_buf rx_buf[] = {{
+						 .buf = req_rx,
+						 .len = req_len,
+					 },
+					 {.buf = data_rx, .len = data_len}};
 
 	const struct spi_buf_set tx = {
 		.buffers = tx_buf,
 		.count = ARRAY_SIZE(tx_buf),
 	};
 
-	const struct spi_buf_set rx = {
-		.buffers = rx_buf,
-		.count = ARRAY_SIZE(rx_buf)
-	};
+	const struct spi_buf_set rx = {.buffers = rx_buf, .count = ARRAY_SIZE(rx_buf)};
 
 	/* Wake the device if necessary */
 	SX126xCheckDeviceReady();
@@ -173,14 +152,12 @@ void SX126xWriteRegisters(uint16_t address, uint8_t *buffer, uint16_t size)
 		address & 0xff,
 	};
 
-	LOG_DBG("Writing %" PRIu16 " registers @ 0x%" PRIx16
-		": 0x%" PRIx8 " , ...",
-		size, address, buffer[0]);
+	LOG_DBG("Writing %" PRIu16 " registers @ 0x%" PRIx16 ": 0x%" PRIx8 " , ...", size, address,
+		buffer[0]);
 	sx126x_spi_transceive(req, NULL, sizeof(req), buffer, NULL, size);
 }
 
-uint8_t SX126xReadCommand(RadioCommands_t opcode,
-			  uint8_t *buffer, uint16_t size)
+uint8_t SX126xReadCommand(RadioCommands_t opcode, uint8_t *buffer, uint16_t size)
 {
 	uint8_t tx_req[] = {
 		opcode,
@@ -189,10 +166,8 @@ uint8_t SX126xReadCommand(RadioCommands_t opcode,
 
 	uint8_t rx_req[sizeof(tx_req)];
 
-	LOG_DBG("Issuing opcode 0x%x (data size: %" PRIx16 ")",
-		opcode, size);
-	sx126x_spi_transceive(tx_req, rx_req, sizeof(rx_req),
-			      NULL, buffer, size);
+	LOG_DBG("Issuing opcode 0x%x (data size: %" PRIx16 ")", opcode, size);
+	sx126x_spi_transceive(tx_req, rx_req, sizeof(rx_req), NULL, buffer, size);
 	LOG_DBG("-> status: 0x%" PRIx8, rx_req[1]);
 	return rx_req[1];
 }
@@ -203,8 +178,7 @@ void SX126xWriteCommand(RadioCommands_t opcode, uint8_t *buffer, uint16_t size)
 		opcode,
 	};
 
-	LOG_DBG("Issuing opcode 0x%x w. %" PRIu16 " bytes of data",
-		opcode, size);
+	LOG_DBG("Issuing opcode 0x%x w. %" PRIu16 " bytes of data", opcode, size);
 	sx126x_spi_transceive(req, NULL, sizeof(req), buffer, NULL, size);
 }
 
@@ -216,8 +190,7 @@ void SX126xReadBuffer(uint8_t offset, uint8_t *buffer, uint8_t size)
 		0x00,
 	};
 
-	LOG_DBG("Reading buffers @ 0x%" PRIx8 " (%" PRIu8 " bytes)",
-		offset, size);
+	LOG_DBG("Reading buffers @ 0x%" PRIx8 " (%" PRIu8 " bytes)", offset, size);
 	sx126x_spi_transceive(req, NULL, sizeof(req), NULL, buffer, size);
 }
 
@@ -228,8 +201,7 @@ void SX126xWriteBuffer(uint8_t offset, uint8_t *buffer, uint8_t size)
 		offset,
 	};
 
-	LOG_DBG("Writing buffers @ 0x%" PRIx8 " (%" PRIu8 " bytes)",
-		offset, size);
+	LOG_DBG("Writing buffers @ 0x%" PRIx8 " (%" PRIu8 " bytes)", offset, size);
 	sx126x_spi_transceive(req, NULL, sizeof(req), buffer, NULL, size);
 }
 
@@ -332,8 +304,7 @@ void SX126xIoTcxoInit(void)
 	LOG_DBG("TCXO on DIO3");
 
 	/* Delay in units of 15.625 us (1/64 ms) */
-	SX126xSetDio3AsTcxoCtrl(TCXO_DIO3_VOLTAGE,
-				TCXO_POWER_STARTUP_DELAY_MS << 6);
+	SX126xSetDio3AsTcxoCtrl(TCXO_DIO3_VOLTAGE, TCXO_POWER_STARTUP_DELAY_MS << 6);
 	SX126xCalibrate(cal);
 #else
 	LOG_DBG("No TCXO configured");
@@ -376,7 +347,7 @@ void SX126xWakeup(void)
 	/* Reenable DIO1 when waking up */
 	sx126x_dio1_irq_enable(&dev_data);
 
-	uint8_t req[] = { RADIO_GET_STATUS, 0 };
+	uint8_t req[] = {RADIO_GET_STATUS, 0};
 	const struct spi_buf tx_buf = {
 		.buf = req,
 		.len = sizeof(req),
@@ -472,6 +443,5 @@ static const struct lora_driver_api sx126x_lora_api = {
 	.test_cw = sx12xx_lora_test_cw,
 };
 
-DEVICE_DT_INST_DEFINE(0, &sx126x_lora_init, NULL, &dev_data,
-		      &dev_config, POST_KERNEL, CONFIG_LORA_INIT_PRIORITY,
-		      &sx126x_lora_api);
+DEVICE_DT_INST_DEFINE(0, &sx126x_lora_init, NULL, &dev_data, &dev_config, POST_KERNEL,
+		      CONFIG_LORA_INIT_PRIORITY, &sx126x_lora_api);

@@ -17,115 +17,115 @@
 LOG_MODULE_REGISTER(rv3028, CONFIG_RTC_LOG_LEVEL);
 
 /* RV3028 RAM register addresses */
-#define RV3028_REG_SECONDS              0x00
-#define RV3028_REG_MINUTES              0x01
-#define RV3028_REG_HOURS                0x02
-#define RV3028_REG_WEEKDAY              0x03
-#define RV3028_REG_DATE                 0x04
-#define RV3028_REG_MONTH                0x05
-#define RV3028_REG_YEAR                 0x06
-#define RV3028_REG_ALARM_MINUTES        0x07
-#define RV3028_REG_ALARM_HOURS          0x08
-#define RV3028_REG_ALARM_WEEKDAY        0x09
-#define RV3028_REG_STATUS               0x0E
-#define RV3028_REG_CONTROL1             0x0F
-#define RV3028_REG_CONTROL2             0x10
-#define RV3028_REG_EVENT_CONTROL        0x13
-#define RV3028_REG_TS_COUNT             0x14
-#define RV3028_REG_TS_SECONDS           0x15
-#define RV3028_REG_TS_MINUTES           0x16
-#define RV3028_REG_TS_HOURS             0x17
-#define RV3028_REG_TS_DATE              0x18
-#define RV3028_REG_TS_MONTH             0x19
-#define RV3028_REG_TS_YEAR              0x1A
-#define RV3028_REG_UNIXTIME0            0x1B
-#define RV3028_REG_UNIXTIME1            0x1C
-#define RV3028_REG_UNIXTIME2            0x1D
-#define RV3028_REG_UNIXTIME3            0x1E
-#define RV3028_REG_USER_RAM1            0x1F
-#define RV3028_REG_USER_RAM2            0x20
-#define RV3028_REG_EEPROM_ADDRESS       0x25
-#define RV3028_REG_EEPROM_DATA          0x26
-#define RV3028_REG_EEPROM_COMMAND       0x27
-#define RV3028_REG_ID                   0x28
-#define RV3028_REG_CLKOUT               0x35
-#define RV3028_REG_OFFSET               0x36
-#define RV3028_REG_BACKUP               0x37
+#define RV3028_REG_SECONDS        0x00
+#define RV3028_REG_MINUTES        0x01
+#define RV3028_REG_HOURS          0x02
+#define RV3028_REG_WEEKDAY        0x03
+#define RV3028_REG_DATE           0x04
+#define RV3028_REG_MONTH          0x05
+#define RV3028_REG_YEAR           0x06
+#define RV3028_REG_ALARM_MINUTES  0x07
+#define RV3028_REG_ALARM_HOURS    0x08
+#define RV3028_REG_ALARM_WEEKDAY  0x09
+#define RV3028_REG_STATUS         0x0E
+#define RV3028_REG_CONTROL1       0x0F
+#define RV3028_REG_CONTROL2       0x10
+#define RV3028_REG_EVENT_CONTROL  0x13
+#define RV3028_REG_TS_COUNT       0x14
+#define RV3028_REG_TS_SECONDS     0x15
+#define RV3028_REG_TS_MINUTES     0x16
+#define RV3028_REG_TS_HOURS       0x17
+#define RV3028_REG_TS_DATE        0x18
+#define RV3028_REG_TS_MONTH       0x19
+#define RV3028_REG_TS_YEAR        0x1A
+#define RV3028_REG_UNIXTIME0      0x1B
+#define RV3028_REG_UNIXTIME1      0x1C
+#define RV3028_REG_UNIXTIME2      0x1D
+#define RV3028_REG_UNIXTIME3      0x1E
+#define RV3028_REG_USER_RAM1      0x1F
+#define RV3028_REG_USER_RAM2      0x20
+#define RV3028_REG_EEPROM_ADDRESS 0x25
+#define RV3028_REG_EEPROM_DATA    0x26
+#define RV3028_REG_EEPROM_COMMAND 0x27
+#define RV3028_REG_ID             0x28
+#define RV3028_REG_CLKOUT         0x35
+#define RV3028_REG_OFFSET         0x36
+#define RV3028_REG_BACKUP         0x37
 
-#define RV3028_CONTROL1_TD              BIT(0)
-#define RV3028_CONTROL1_TE              GENMASK(2, 1)
-#define RV3028_CONTROL1_EERD            BIT(3)
-#define RV3028_CONTROL1_USEL            BIT(4)
-#define RV3028_CONTROL1_WADA            BIT(5)
-#define RV3028_CONTROL1_TRPT            BIT(7)
+#define RV3028_CONTROL1_TD   BIT(0)
+#define RV3028_CONTROL1_TE   GENMASK(2, 1)
+#define RV3028_CONTROL1_EERD BIT(3)
+#define RV3028_CONTROL1_USEL BIT(4)
+#define RV3028_CONTROL1_WADA BIT(5)
+#define RV3028_CONTROL1_TRPT BIT(7)
 
-#define RV3028_CONTROL2_RESET           BIT(0)
-#define RV3028_CONTROL2_12_24           BIT(1)
-#define RV3028_CONTROL2_EIE             BIT(2)
-#define RV3028_CONTROL2_AIE             BIT(3)
-#define RV3028_CONTROL2_TIE             BIT(4)
-#define RV3028_CONTROL2_UIE             BIT(5)
-#define RV3028_CONTROL2_TSE             BIT(7)
+#define RV3028_CONTROL2_RESET BIT(0)
+#define RV3028_CONTROL2_12_24 BIT(1)
+#define RV3028_CONTROL2_EIE   BIT(2)
+#define RV3028_CONTROL2_AIE   BIT(3)
+#define RV3028_CONTROL2_TIE   BIT(4)
+#define RV3028_CONTROL2_UIE   BIT(5)
+#define RV3028_CONTROL2_TSE   BIT(7)
 
-#define RV3028_STATUS_PORF              BIT(0)
-#define RV3028_STATUS_EVF               BIT(1)
-#define RV3028_STATUS_AF                BIT(2)
-#define RV3028_STATUS_TF                BIT(3)
-#define RV3028_STATUS_UF                BIT(4)
-#define RV3028_STATUS_BSF               BIT(5)
-#define RV3028_STATUS_CLKF              BIT(6)
-#define RV3028_STATUS_EEBUSY            BIT(7)
+#define RV3028_STATUS_PORF   BIT(0)
+#define RV3028_STATUS_EVF    BIT(1)
+#define RV3028_STATUS_AF     BIT(2)
+#define RV3028_STATUS_TF     BIT(3)
+#define RV3028_STATUS_UF     BIT(4)
+#define RV3028_STATUS_BSF    BIT(5)
+#define RV3028_STATUS_CLKF   BIT(6)
+#define RV3028_STATUS_EEBUSY BIT(7)
 
-#define RV3028_CLKOUT_FD                GENMASK(2, 0)
-#define RV3028_CLKOUT_PORIE             BIT(3)
-#define RV3028_CLKOUT_CLKSY             BIT(6)
-#define RV3028_CLKOUT_CLKOE             BIT(7)
+#define RV3028_CLKOUT_FD    GENMASK(2, 0)
+#define RV3028_CLKOUT_PORIE BIT(3)
+#define RV3028_CLKOUT_CLKSY BIT(6)
+#define RV3028_CLKOUT_CLKOE BIT(7)
 
-#define RV3028_CLKOUT_FD_LOW            0x7
+#define RV3028_CLKOUT_FD_LOW 0x7
 
-#define RV3028_BACKUP_TCE               BIT(5)
-#define RV3028_BACKUP_TCR               GENMASK(1, 0)
-#define RV3028_BACKUP_BSM               GENMASK(3, 2)
+#define RV3028_BACKUP_TCE BIT(5)
+#define RV3028_BACKUP_TCR GENMASK(1, 0)
+#define RV3028_BACKUP_BSM GENMASK(3, 2)
 
-#define RV3028_BSM_LEVEL                0x3
-#define RV3028_BSM_DIRECT               0x1
-#define RV3028_BSM_DISABLED             0x0
+#define RV3028_BSM_LEVEL    0x3
+#define RV3028_BSM_DIRECT   0x1
+#define RV3028_BSM_DISABLED 0x0
 
 /* RV3028 EE command register values */
-#define RV3028_EEPROM_CMD_INIT          0x00
-#define RV3028_EEPROM_CMD_UPDATE        0x11
-#define RV3028_EEPROM_CMD_REFRESH       0x12
-#define RV3028_EEPROM_CMD_WRITE         0x21
-#define RV3028_EEPROM_CMD_READ          0x22
+#define RV3028_EEPROM_CMD_INIT    0x00
+#define RV3028_EEPROM_CMD_UPDATE  0x11
+#define RV3028_EEPROM_CMD_REFRESH 0x12
+#define RV3028_EEPROM_CMD_WRITE   0x21
+#define RV3028_EEPROM_CMD_READ    0x22
 
-#define RV3028_SECONDS_MASK             GENMASK(6, 0)
-#define RV3028_MINUTES_MASK             GENMASK(6, 0)
-#define RV3028_HOURS_AMPM               BIT(5)
-#define RV3028_HOURS_12H_MASK           GENMASK(4, 0)
-#define RV3028_HOURS_24H_MASK           GENMASK(5, 0)
-#define RV3028_DATE_MASK                GENMASK(5, 0)
-#define RV3028_WEEKDAY_MASK             GENMASK(2, 0)
-#define RV3028_MONTH_MASK               GENMASK(4, 0)
-#define RV3028_YEAR_MASK                GENMASK(7, 0)
+#define RV3028_SECONDS_MASK   GENMASK(6, 0)
+#define RV3028_MINUTES_MASK   GENMASK(6, 0)
+#define RV3028_HOURS_AMPM     BIT(5)
+#define RV3028_HOURS_12H_MASK GENMASK(4, 0)
+#define RV3028_HOURS_24H_MASK GENMASK(5, 0)
+#define RV3028_DATE_MASK      GENMASK(5, 0)
+#define RV3028_WEEKDAY_MASK   GENMASK(2, 0)
+#define RV3028_MONTH_MASK     GENMASK(4, 0)
+#define RV3028_YEAR_MASK      GENMASK(7, 0)
 
-#define RV3028_ALARM_MINUTES_AE_M       BIT(7)
-#define RV3028_ALARM_MINUTES_MASK       GENMASK(6, 0)
-#define RV3028_ALARM_HOURS_AE_H         BIT(7)
-#define RV3028_ALARM_HOURS_AMPM         BIT(5)
-#define RV3028_ALARM_HOURS_12H_MASK     GENMASK(4, 0)
-#define RV3028_ALARM_HOURS_24H_MASK     GENMASK(5, 0)
-#define RV3028_ALARM_DATE_AE_WD         BIT(7)
-#define RV3028_ALARM_DATE_MASK          GENMASK(5, 0)
+#define RV3028_ALARM_MINUTES_AE_M   BIT(7)
+#define RV3028_ALARM_MINUTES_MASK   GENMASK(6, 0)
+#define RV3028_ALARM_HOURS_AE_H     BIT(7)
+#define RV3028_ALARM_HOURS_AMPM     BIT(5)
+#define RV3028_ALARM_HOURS_12H_MASK GENMASK(4, 0)
+#define RV3028_ALARM_HOURS_24H_MASK GENMASK(5, 0)
+#define RV3028_ALARM_DATE_AE_WD     BIT(7)
+#define RV3028_ALARM_DATE_MASK      GENMASK(5, 0)
 
 /* The RV3028 only supports two-digit years. Leap years are correctly handled from 2000 to 2099 */
-#define RV3028_YEAR_OFFSET              (2000 - 1900)
+#define RV3028_YEAR_OFFSET (2000 - 1900)
 
 /* The RV3028 enumerates months 1 to 12 */
 #define RV3028_MONTH_OFFSET 1
 
-#define RV3028_EEBUSY_READ_POLL_MS      1
-#define RV3028_EEBUSY_WRITE_POLL_MS     10
-#define RV3028_EEBUSY_TIMEOUT_MS        100
+#define RV3028_EEBUSY_READ_POLL_MS  1
+#define RV3028_EEBUSY_WRITE_POLL_MS 10
+#define RV3028_EEBUSY_TIMEOUT_MS    100
 
 /* RTC alarm time fields supported by the RV3028 */
 #define RV3028_RTC_ALARM_TIME_MASK                                                                 \
@@ -461,8 +461,7 @@ static int rv3028_set_time(const struct device *dev, const struct rtc_time *time
 	uint8_t date[7];
 	int err;
 
-	if (timeptr == NULL ||
-	    !rtc_utils_validate_rtc_time(timeptr, RV3028_RTC_TIME_MASK) ||
+	if (timeptr == NULL || !rtc_utils_validate_rtc_time(timeptr, RV3028_RTC_TIME_MASK) ||
 	    (timeptr->tm_year < RV3028_YEAR_OFFSET)) {
 		LOG_ERR("invalid time");
 		return -EINVAL;
@@ -595,8 +594,8 @@ static int rv3028_alarm_set_time(const struct device *dev, uint16_t id, uint16_t
 		regs[2] = RV3028_ALARM_DATE_AE_WD;
 	}
 
-	LOG_DBG("set alarm: mday = %d, hour = %d, min = %d, mask = 0x%04x",
-		timeptr->tm_mday, timeptr->tm_hour, timeptr->tm_min, mask);
+	LOG_DBG("set alarm: mday = %d, hour = %d, min = %d, mask = 0x%04x", timeptr->tm_mday,
+		timeptr->tm_hour, timeptr->tm_min, mask);
 
 	/* Write registers RV3028_REG_ALARM_MINUTES through RV3028_REG_ALARM_WEEKDAY */
 	return rv3028_write_regs(dev, RV3028_REG_ALARM_MINUTES, &regs, sizeof(regs));
@@ -637,8 +636,8 @@ static int rv3028_alarm_get_time(const struct device *dev, uint16_t id, uint16_t
 		*mask |= RTC_ALARM_TIME_MASK_MONTHDAY;
 	}
 
-	LOG_DBG("get alarm: mday = %d, hour = %d, min = %d, mask = 0x%04x",
-		timeptr->tm_mday, timeptr->tm_hour, timeptr->tm_min, *mask);
+	LOG_DBG("get alarm: mday = %d, hour = %d, min = %d, mask = 0x%04x", timeptr->tm_mday,
+		timeptr->tm_hour, timeptr->tm_min, *mask);
 
 	return 0;
 }
@@ -838,16 +837,13 @@ static int rv3028_init(const struct device *dev)
 	/* Configure the CLKOUT register */
 	val = FIELD_PREP(RV3028_CLKOUT_FD, config->cof) |
 	      (config->cof != RV3028_CLKOUT_FD_LOW ? RV3028_CLKOUT_CLKOE : 0);
-	err = rv3028_update_cfg(dev,
-				RV3028_REG_CLKOUT,
-				RV3028_CLKOUT_FD | RV3028_CLKOUT_CLKOE,
+	err = rv3028_update_cfg(dev, RV3028_REG_CLKOUT, RV3028_CLKOUT_FD | RV3028_CLKOUT_CLKOE,
 				val);
 	if (err) {
 		return -ENODEV;
 	}
 
-	err = rv3028_update_cfg(dev,
-				RV3028_REG_BACKUP,
+	err = rv3028_update_cfg(dev, RV3028_REG_BACKUP,
 				RV3028_BACKUP_TCE | RV3028_BACKUP_TCR | RV3028_BACKUP_BSM,
 				config->backup);
 	if (err) {
@@ -861,10 +857,8 @@ static int rv3028_init(const struct device *dev)
 	}
 
 	/* Disable the alarms */
-	err = rv3028_update_reg8(dev,
-				 RV3028_REG_CONTROL2,
-				 RV3028_CONTROL2_AIE | RV3028_CONTROL2_UIE,
-				 0);
+	err = rv3028_update_reg8(dev, RV3028_REG_CONTROL2,
+				 RV3028_CONTROL2_AIE | RV3028_CONTROL2_UIE, 0);
 	if (err) {
 		return -ENODEV;
 	}
@@ -915,7 +909,7 @@ static const struct rtc_driver_api rv3028_driver_api = {
 		.cof = DT_INST_ENUM_IDX_OR(inst, clkout_frequency, RV3028_CLKOUT_FD_LOW),          \
 		.backup = RV3028_BACKUP_FROM_DT_INST(inst),                                        \
 		IF_ENABLED(RV3028_INT_GPIOS_IN_USE,                                                \
-			   (.gpio_int = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0})))};         \
+			   (.gpio_int = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0})))};             \
                                                                                                    \
 	static struct rv3028_data rv3028_data_##inst;                                              \
                                                                                                    \

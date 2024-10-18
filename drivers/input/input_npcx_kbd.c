@@ -117,8 +117,7 @@ static kbd_row_t npcx_kbd_read_row(const struct device *dev)
 	return val;
 }
 
-static void npcx_kbd_init_ksi_wui_callback(const struct device *dev,
-					   struct miwu_callback *callback,
+static void npcx_kbd_init_ksi_wui_callback(const struct device *dev, struct miwu_callback *callback,
 					   const struct npcx_wui *wui,
 					   miwu_dev_callback_handler_t handler)
 {
@@ -189,9 +188,8 @@ static int npcx_kbd_init(const struct device *dev)
 
 	/* Configure wake-up input and callback for keyboard input signal */
 	for (int i = 0; i < common->row_size; i++) {
-		npcx_kbd_init_ksi_wui_callback(
-				dev, &data->ksi_callback[i], &config->wui_maps[i],
-				npcx_kbd_ksi_isr);
+		npcx_kbd_init_ksi_wui_callback(dev, &data->ksi_callback[i], &config->wui_maps[i],
+					       npcx_kbd_ksi_isr);
 	}
 
 	/* Configure pin-mux for keyboard scan device */
@@ -228,12 +226,10 @@ static struct npcx_kbd_data npcx_kbd_data_0;
 
 PM_DEVICE_DT_INST_DEFINE(0, input_kbd_matrix_pm_action);
 
-DEVICE_DT_INST_DEFINE(0, npcx_kbd_init, PM_DEVICE_DT_INST_GET(0),
-		      &npcx_kbd_data_0, &npcx_kbd_cfg_0,
+DEVICE_DT_INST_DEFINE(0, npcx_kbd_init, PM_DEVICE_DT_INST_GET(0), &npcx_kbd_data_0, &npcx_kbd_cfg_0,
 		      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
 
-BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED) ||
-	     IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME),
+BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED) || IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME),
 	     "CONFIG_PM_DEVICE_RUNTIME must be enabled when using CONFIG_PM_DEVICE_SYSTEM_MANAGED");
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,

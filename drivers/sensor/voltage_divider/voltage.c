@@ -74,8 +74,8 @@ static int get(const struct device *dev, enum sensor_channel chan, struct sensor
 	/* Note if full_ohms is not specified then unscaled voltage is returned */
 	(void)voltage_divider_scale_dt(&config->voltage, &v_mv);
 
-	LOG_DBG("%d of %d, %dmV, voltage:%dmV", data->raw,
-		(1 << data->sequence.resolution) - 1, raw_val, v_mv);
+	LOG_DBG("%d of %d, %dmV, voltage:%dmV", data->raw, (1 << data->sequence.resolution) - 1,
+		raw_val, v_mv);
 	val->val1 = v_mv / 1000;
 	val->val2 = (v_mv * 1000) % 1000000;
 
@@ -174,7 +174,7 @@ static int voltage_init(const struct device *dev)
 	PM_DEVICE_DT_INST_DEFINE(inst, pm_action);                                                 \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, &voltage_init, PM_DEVICE_DT_INST_GET(inst),             \
-			      &voltage_##inst##_data, &voltage_##inst##_config, POST_KERNEL,       \
-			      CONFIG_SENSOR_INIT_PRIORITY, &voltage_api);
+				     &voltage_##inst##_data, &voltage_##inst##_config,             \
+				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &voltage_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VOLTAGE_INIT)

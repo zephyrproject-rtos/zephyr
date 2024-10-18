@@ -12,10 +12,10 @@
 
 #include "gnss_parse.h"
 
-#define GNSS_PARSE_NANO_KNOTS_IN_MMS               (1943840LL)
-#define GNSS_PARSE_NANO                            (1000000000LL)
-#define GNSS_PARSE_MICRO                           (1000000LL)
-#define GNSS_PARSE_MILLI                           (1000LL)
+#define GNSS_PARSE_NANO_KNOTS_IN_MMS (1943840LL)
+#define GNSS_PARSE_NANO              (1000000000LL)
+#define GNSS_PARSE_MICRO             (1000000LL)
+#define GNSS_PARSE_MILLI             (1000LL)
 
 int gnss_parse_dec_to_nano(const char *str, int64_t *nano)
 {
@@ -114,7 +114,6 @@ int gnss_parse_dec_to_micro(const char *str, uint64_t *micro)
 	*micro = (*micro) / GNSS_PARSE_MILLI;
 	return 0;
 }
-
 
 int gnss_parse_dec_to_milli(const char *str, int64_t *milli)
 {

@@ -9,7 +9,7 @@
 #include <zephyr/logging/log_ctrl.h>
 
 #define WDT_CHANNEL_COUNT DT_PROP(DT_WDT_COUNTER, num_channels)
-#define DT_WDT_COUNTER DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_counter_watchdog)
+#define DT_WDT_COUNTER    DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_counter_watchdog)
 
 #define WDT_SUPPORTED_CFG_FLAGS (WDT_FLAG_RESET_NONE | WDT_FLAG_RESET_SOC)
 
@@ -48,8 +48,7 @@ static int wdt_counter_disable(const struct device *dev)
 	return counter_stop(counter);
 }
 
-static void counter_alarm_callback(const struct device *dev,
-				   uint8_t chan_id, uint32_t ticks,
+static void counter_alarm_callback(const struct device *dev, uint8_t chan_id, uint32_t ticks,
 				   void *user_data)
 {
 	const struct device *wdt_dev = user_data;
@@ -71,12 +70,10 @@ static int timeout_set(const struct device *dev, int chan_id, bool cancel)
 	const struct wdt_counter_config *config = dev->config;
 	struct wdt_counter_data *data = dev->data;
 	const struct device *counter = config->counter;
-	struct counter_alarm_cfg alarm_cfg = {
-		.callback = counter_alarm_callback,
-		.ticks = data->timeout[chan_id],
-		.user_data = (void *)dev,
-		.flags = 0
-	};
+	struct counter_alarm_cfg alarm_cfg = {.callback = counter_alarm_callback,
+					      .ticks = data->timeout[chan_id],
+					      .user_data = (void *)dev,
+					      .flags = 0};
 
 	if (cancel) {
 		int err = counter_cancel_channel_alarm(counter, chan_id);
@@ -89,8 +86,7 @@ static int timeout_set(const struct device *dev, int chan_id, bool cancel)
 	return counter_set_channel_alarm(counter, chan_id, &alarm_cfg);
 }
 
-static int wdt_counter_install_timeout(const struct device *dev,
-				   const struct wdt_timeout_cfg *cfg)
+static int wdt_counter_install_timeout(const struct device *dev, const struct wdt_timeout_cfg *cfg)
 {
 	struct wdt_counter_data *data = dev->data;
 	const struct wdt_counter_config *config = dev->config;
@@ -102,8 +98,7 @@ static int wdt_counter_install_timeout(const struct device *dev,
 	}
 
 	uint32_t max_timeout = counter_get_top_value(counter) -
-				counter_get_guard_period(counter,
-				COUNTER_GUARD_PERIOD_LATE_TO_SET);
+			       counter_get_guard_period(counter, COUNTER_GUARD_PERIOD_LATE_TO_SET);
 	uint32_t timeout_ticks = counter_us_to_ticks(counter, cfg->window.max * 1000);
 
 	if (cfg->flags & ~WDT_SUPPORTED_CFG_FLAGS) {
@@ -160,7 +155,6 @@ static const struct wdt_counter_config wdt_counter_config = {
 	.counter = DEVICE_DT_GET(DT_PHANDLE(DT_WDT_COUNTER, counter)),
 };
 
-
 static int wdt_counter_init(const struct device *dev)
 {
 	const struct wdt_counter_config *config = dev->config;
@@ -172,8 +166,5 @@ static int wdt_counter_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_DEFINE(DT_WDT_COUNTER, wdt_counter_init, NULL,
-		 &wdt_data, &wdt_counter_config,
-		 POST_KERNEL,
-		 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		 &wdt_counter_driver_api);
+DEVICE_DT_DEFINE(DT_WDT_COUNTER, wdt_counter_init, NULL, &wdt_data, &wdt_counter_config,
+		 POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &wdt_counter_driver_api);

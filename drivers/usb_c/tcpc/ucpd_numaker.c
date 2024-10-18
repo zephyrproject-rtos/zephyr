@@ -2392,17 +2392,15 @@ static const struct tcpc_driver_api numaker_tcpc_driver_api = {
 
 /* UTCPD.PINPL */
 #define NUMAKER_UTCPD_PINPL_INIT(inst)                                                             \
-	{                                                                                          \
-		.bit = NUMAKER_UTCPD_PINPOL_CAST(inst, vconn_overcurrent_event_polarity, VCOCPL) | \
-		       NUMAKER_UTCPD_PINPOL_CAST(inst, vconn_discharge_polarity, VCDGENPL) |       \
-		       NUMAKER_UTCPD_PINPOL_CAST(inst, vconn_enable_polarity, VCENPL) |            \
-		       NUMAKER_UTCPD_PINPOL_CAST(inst, vbus_overcurrent_event_polarity, VBOCPL) |  \
-		       NUMAKER_UTCPD_PINPOL_CAST(inst, vbus_forceoff_event_polarity, FOFFVBPL) |   \
-		       NUMAKER_UTCPD_PINPOL_CAST(inst, frs_tx_polarity, TXFRSPL) |                 \
-		       NUMAKER_UTCPD_PINPOL_CAST(inst, vbus_discharge_enable_polarity, VBDGENPL) | \
-		       NUMAKER_UTCPD_PINPOL_CAST(inst, vbus_sink_enable_polarity, VBSKENPL) |      \
-		       NUMAKER_UTCPD_PINPOL_CAST(inst, vbus_source_enable_polarity, VBSRENPL)      \
-	}
+	{.bit = NUMAKER_UTCPD_PINPOL_CAST(inst, vconn_overcurrent_event_polarity, VCOCPL) |        \
+		NUMAKER_UTCPD_PINPOL_CAST(inst, vconn_discharge_polarity, VCDGENPL) |              \
+		NUMAKER_UTCPD_PINPOL_CAST(inst, vconn_enable_polarity, VCENPL) |                   \
+		NUMAKER_UTCPD_PINPOL_CAST(inst, vbus_overcurrent_event_polarity, VBOCPL) |         \
+		NUMAKER_UTCPD_PINPOL_CAST(inst, vbus_forceoff_event_polarity, FOFFVBPL) |          \
+		NUMAKER_UTCPD_PINPOL_CAST(inst, frs_tx_polarity, TXFRSPL) |                        \
+		NUMAKER_UTCPD_PINPOL_CAST(inst, vbus_discharge_enable_polarity, VBDGENPL) |        \
+		NUMAKER_UTCPD_PINPOL_CAST(inst, vbus_sink_enable_polarity, VBSKENPL) |             \
+		NUMAKER_UTCPD_PINPOL_CAST(inst, vbus_source_enable_polarity, VBSRENPL)}
 
 /* UTCPD.VBVOL */
 #define NUMAKER_UTCPD_VBVOL_INIT(inst)                                                             \
@@ -2414,7 +2412,8 @@ static const struct tcpc_driver_api numaker_tcpc_driver_api = {
 	{                                                                                          \
 		.gpios = NUMAKER_UTCPD_GPIOS_INIT(inst),                                           \
 		.dead_battery = DT_INST_PROP(inst, dead_battery),                                  \
-		.pinpl = NUMAKER_UTCPD_PINPL_INIT(inst), .vbvol = NUMAKER_UTCPD_VBVOL_INIT(inst),  \
+		.pinpl = NUMAKER_UTCPD_PINPL_INIT(inst),                                           \
+		.vbvol = NUMAKER_UTCPD_VBVOL_INIT(inst),                                           \
 	}
 
 /* EADC register address is duplicated for easy implementation.

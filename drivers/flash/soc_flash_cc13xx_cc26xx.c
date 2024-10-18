@@ -13,15 +13,15 @@
 #include <driverlib/flash.h>
 #include <driverlib/vims.h>
 
-#define DT_DRV_COMPAT        ti_cc13xx_cc26xx_flash_controller
-#define SOC_NV_FLASH_NODE    DT_INST(0, soc_nv_flash)
+#define DT_DRV_COMPAT     ti_cc13xx_cc26xx_flash_controller
+#define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
 
-#define FLASH_ADDR           DT_REG_ADDR(SOC_NV_FLASH_NODE)
-#define FLASH_SIZE           DT_REG_SIZE(SOC_NV_FLASH_NODE)
-#define FLASH_ERASE_SIZE     DT_PROP(SOC_NV_FLASH_NODE, erase_block_size)
-#define FLASH_WRITE_SIZE     DT_PROP(SOC_NV_FLASH_NODE, write_block_size)
+#define FLASH_ADDR       DT_REG_ADDR(SOC_NV_FLASH_NODE)
+#define FLASH_SIZE       DT_REG_SIZE(SOC_NV_FLASH_NODE)
+#define FLASH_ERASE_SIZE DT_PROP(SOC_NV_FLASH_NODE, erase_block_size)
+#define FLASH_WRITE_SIZE DT_PROP(SOC_NV_FLASH_NODE, write_block_size)
 
-#define WRITE_BUFFER_LEN     (32)
+#define WRITE_BUFFER_LEN (32)
 
 struct flash_priv {
 	struct k_sem mutex;
@@ -31,7 +31,6 @@ static const struct flash_parameters flash_cc13xx_cc26xx_parameters = {
 	.write_block_size = FLASH_WRITE_SIZE,
 	.erase_value = 0xff,
 };
-
 
 static int flash_cc13xx_cc26xx_init(const struct device *dev)
 {
@@ -102,8 +101,7 @@ static bool flash_cc13xx_cc26xx_range_protected(off_t offs, size_t size)
 	return false;
 }
 
-static int flash_cc13xx_cc26xx_erase(const struct device *dev, off_t offs,
-				     size_t size)
+static int flash_cc13xx_cc26xx_erase(const struct device *dev, off_t offs, size_t size)
 {
 	struct flash_priv *priv = dev->data;
 	uint32_t vims_mode;
@@ -116,8 +114,7 @@ static int flash_cc13xx_cc26xx_erase(const struct device *dev, off_t offs,
 	}
 
 	/* Offset and length should be multiple of erase size */
-	if (((offs % FLASH_ERASE_SIZE) != 0) ||
-	    ((size % FLASH_ERASE_SIZE) != 0)) {
+	if (((offs % FLASH_ERASE_SIZE) != 0) || ((size % FLASH_ERASE_SIZE) != 0)) {
 		return -EINVAL;
 	}
 
@@ -182,8 +179,8 @@ static int flash_cc13xx_cc26xx_buffered_write(off_t offs, const void *data, size
 	return rc;
 }
 
-static int flash_cc13xx_cc26xx_write(const struct device *dev, off_t offs,
-				     const void *data, size_t size)
+static int flash_cc13xx_cc26xx_write(const struct device *dev, off_t offs, const void *data,
+				     size_t size)
 {
 	struct flash_priv *priv = dev->data;
 	uint32_t vims_mode;
@@ -224,8 +221,7 @@ static int flash_cc13xx_cc26xx_write(const struct device *dev, off_t offs,
 	 * The pui8DataBuffer pointer can not point to flash.
 	 * Use a buffer in this situation.
 	 */
-	if ((data >= (void *)FLASH_ADDR) &&
-		(data <= (void *)(FLASH_ADDR + FLASH_SIZE))) {
+	if ((data >= (void *)FLASH_ADDR) && (data <= (void *)(FLASH_ADDR + FLASH_SIZE))) {
 		rc = flash_cc13xx_cc26xx_buffered_write(offs, data, size);
 	} else {
 		rc = FlashProgram((uint8_t *)data, offs, size);
@@ -243,8 +239,7 @@ static int flash_cc13xx_cc26xx_write(const struct device *dev, off_t offs,
 	return rc;
 }
 
-static int flash_cc13xx_cc26xx_read(const struct device *dev, off_t offs,
-				    void *data, size_t size)
+static int flash_cc13xx_cc26xx_read(const struct device *dev, off_t offs, void *data, size_t size)
 {
 	ARG_UNUSED(dev);
 
@@ -265,8 +260,7 @@ static int flash_cc13xx_cc26xx_read(const struct device *dev, off_t offs,
 	return 0;
 }
 
-static const struct flash_parameters *
-flash_cc13xx_cc26xx_get_parameters(const struct device *dev)
+static const struct flash_parameters *flash_cc13xx_cc26xx_get_parameters(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -300,6 +294,5 @@ static const struct flash_driver_api flash_cc13xx_cc26xx_api = {
 
 static struct flash_priv flash_data;
 
-DEVICE_DT_INST_DEFINE(0, flash_cc13xx_cc26xx_init, NULL, &flash_data, NULL,
-		      POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,
-		      &flash_cc13xx_cc26xx_api);
+DEVICE_DT_INST_DEFINE(0, flash_cc13xx_cc26xx_init, NULL, &flash_data, NULL, POST_KERNEL,
+		      CONFIG_FLASH_INIT_PRIORITY, &flash_cc13xx_cc26xx_api);

@@ -29,8 +29,8 @@ LOG_MODULE_REGISTER(max3421e, CONFIG_UHC_DRIVER_LOG_LEVEL);
 static K_KERNEL_STACK_DEFINE(drv_stack, CONFIG_MAX3421E_THREAD_STACK_SIZE);
 static struct k_thread drv_stack_data;
 
-#define MAX3421E_STATE_BUS_RESET	0
-#define MAX3421E_STATE_BUS_RESUME	1
+#define MAX3421E_STATE_BUS_RESET  0
+#define MAX3421E_STATE_BUS_RESUME 1
 
 struct max3421e_data {
 	struct gpio_callback gpio_cb;
@@ -53,11 +53,8 @@ struct max3421e_config {
 	struct gpio_dt_spec dt_rst;
 };
 
-static int max3421e_read_hirq(const struct device *dev,
-			      const uint8_t reg,
-			      uint8_t *const data,
-			      const uint32_t count,
-			      bool update_hirq)
+static int max3421e_read_hirq(const struct device *dev, const uint8_t reg, uint8_t *const data,
+			      const uint32_t count, bool update_hirq)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
 	const struct max3421e_config *config = dev->config;
@@ -65,29 +62,12 @@ static int max3421e_read_hirq(const struct device *dev,
 	uint8_t hirq;
 	int ret;
 
-	const struct spi_buf cmd_buf = {
-		.buf = &cmd,
-		.len = sizeof(cmd)
-	};
-	const struct spi_buf rx_buf[] = {
-		{
-			.buf = &hirq,
-			.len = sizeof(hirq)
-		},
-		{
-			.buf = data,
-			.len = count
-		}
-	};
+	const struct spi_buf cmd_buf = {.buf = &cmd, .len = sizeof(cmd)};
+	const struct spi_buf rx_buf[] = {{.buf = &hirq, .len = sizeof(hirq)},
+					 {.buf = data, .len = count}};
 
-	const struct spi_buf_set tx = {
-		.buffers = &cmd_buf,
-		.count = 1
-	};
-	const struct spi_buf_set rx = {
-		.buffers = rx_buf,
-		.count = ARRAY_SIZE(rx_buf)
-	};
+	const struct spi_buf_set tx = {.buffers = &cmd_buf, .count = 1};
+	const struct spi_buf_set rx = {.buffers = rx_buf, .count = ARRAY_SIZE(rx_buf)};
 
 	ret = spi_transceive_dt(&config->dt_spi, &tx, &rx);
 	if (unlikely(update_hirq)) {
@@ -97,37 +77,25 @@ static int max3421e_read_hirq(const struct device *dev,
 	return ret;
 }
 
-static int max3421e_read(const struct device *dev,
-			 const uint8_t reg,
-			 uint8_t *const data,
+static int max3421e_read(const struct device *dev, const uint8_t reg, uint8_t *const data,
 			 const uint32_t count)
 {
 
 	return max3421e_read_hirq(dev, reg, data, count, false);
 }
 
-static int max3421e_write_byte(const struct device *dev,
-			       const uint8_t reg,
-			       const uint8_t val)
+static int max3421e_write_byte(const struct device *dev, const uint8_t reg, const uint8_t val)
 {
 	const struct max3421e_config *config = dev->config;
 	uint8_t buf[2] = {MAX3421E_CMD_SPI_WRITE(reg), val};
 
-	const struct spi_buf cmd_buf = {
-		.buf = &buf,
-		.len = sizeof(buf)
-	};
-	const struct spi_buf_set tx = {
-		.buffers = &cmd_buf,
-		.count = 1
-	};
+	const struct spi_buf cmd_buf = {.buf = &buf, .len = sizeof(buf)};
+	const struct spi_buf_set tx = {.buffers = &cmd_buf, .count = 1};
 
 	return spi_write_dt(&config->dt_spi, &tx);
 }
 
-static int max3421e_write(const struct device *dev,
-			  const uint8_t reg,
-			  uint8_t *const data,
+static int max3421e_write(const struct device *dev, const uint8_t reg, uint8_t *const data,
 			  const size_t count)
 {
 	const struct max3421e_config *config = dev->config;
@@ -166,8 +134,7 @@ static int max3421e_unlock(const struct device *dev)
 }
 
 /* Disable Host Interrupt */
-static ALWAYS_INLINE int max3421e_hien_disable(const struct device *dev,
-					       const uint8_t hint)
+static ALWAYS_INLINE int max3421e_hien_disable(const struct device *dev, const uint8_t hint)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
 
@@ -177,8 +144,7 @@ static ALWAYS_INLINE int max3421e_hien_disable(const struct device *dev,
 }
 
 /* Set peripheral (device) address to be used in next transfer */
-static ALWAYS_INLINE int max3421e_peraddr(const struct device *dev,
-					  const uint8_t addr)
+static ALWAYS_INLINE int max3421e_peraddr(const struct device *dev, const uint8_t addr)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
 	int ret = 0;
@@ -218,13 +184,12 @@ static ALWAYS_INLINE void max3421e_tgl_update(const struct device *dev)
 		}
 	}
 
-	LOG_DBG("tog_in 0x%02x tog_out 0x%02x last-hxfr 0x%02x hrsl 0x%02x",
-		priv->tog_in, priv->tog_out, priv->hxfr, priv->hrsl);
+	LOG_DBG("tog_in 0x%02x tog_out 0x%02x last-hxfr 0x%02x hrsl 0x%02x", priv->tog_in,
+		priv->tog_out, priv->hxfr, priv->hrsl);
 }
 
 /* Get DATA PID to be used for the next transfer */
-static ALWAYS_INLINE uint8_t max3421e_tgl_next(const struct device *dev,
-					       const uint8_t hxfr)
+static ALWAYS_INLINE uint8_t max3421e_tgl_next(const struct device *dev, const uint8_t hxfr)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
 	uint8_t ep_idx = MAX3421E_EP(hxfr);
@@ -237,18 +202,15 @@ static ALWAYS_INLINE uint8_t max3421e_tgl_next(const struct device *dev,
 	}
 
 	if (hxfr & MAX3421E_OUTNIN) {
-		hctl = (priv->tog_out & BIT(ep_idx)) ? MAX3421E_SNDTOG1 :
-						       MAX3421E_SNDTOG0;
+		hctl = (priv->tog_out & BIT(ep_idx)) ? MAX3421E_SNDTOG1 : MAX3421E_SNDTOG0;
 	} else {
-		hctl = (priv->tog_in & BIT(ep_idx)) ? MAX3421E_RCVTOG1 :
-						      MAX3421E_RCVTOG0;
+		hctl = (priv->tog_in & BIT(ep_idx)) ? MAX3421E_RCVTOG1 : MAX3421E_RCVTOG0;
 	}
 
 	return hctl;
 }
 
-static ALWAYS_INLINE int max3421e_hxfr_start(const struct device *dev,
-					     const uint8_t hxfr)
+static ALWAYS_INLINE int max3421e_hxfr_start(const struct device *dev, const uint8_t hxfr)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
 
@@ -261,16 +223,13 @@ static ALWAYS_INLINE int max3421e_hxfr_start(const struct device *dev,
 		priv->hxfr = hxfr;
 		LOG_DBG("hctl 0x%02x hxfr 0x%02x", reg[0], reg[1]);
 
-		return max3421e_write(dev, MAX3421E_REG_HCTL,
-				      reg, sizeof(reg));
+		return max3421e_write(dev, MAX3421E_REG_HCTL, reg, sizeof(reg));
 	}
 
 	return max3421e_write_byte(dev, MAX3421E_REG_HXFR, priv->hxfr);
 }
 
-static int max3421e_xfer_data(const struct device *dev,
-			      struct net_buf *const buf,
-			      const uint8_t ep)
+static int max3421e_xfer_data(const struct device *dev, struct net_buf *const buf, const uint8_t ep)
 {
 	const uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	int ret;
@@ -305,8 +264,7 @@ static int max3421e_xfer_data(const struct device *dev,
 	return ret;
 }
 
-static int max3421e_xfer_control(const struct device *dev,
-				 struct uhc_transfer *const xfer,
+static int max3421e_xfer_control(const struct device *dev, struct uhc_transfer *const xfer,
 				 const uint8_t hrsl)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
@@ -318,11 +276,10 @@ static int max3421e_xfer_control(const struct device *dev,
 		return max3421e_hxfr_start(dev, priv->hxfr);
 	}
 
-
 	if (xfer->stage == UHC_CONTROL_STAGE_SETUP) {
 		LOG_DBG("Handle SETUP stage");
-		ret = max3421e_write(dev, MAX3421E_REG_SUDFIFO,
-				     xfer->setup_pkt, sizeof(xfer->setup_pkt));
+		ret = max3421e_write(dev, MAX3421E_REG_SUDFIFO, xfer->setup_pkt,
+				     sizeof(xfer->setup_pkt));
 		if (ret) {
 			return ret;
 		}
@@ -354,8 +311,7 @@ static int max3421e_xfer_control(const struct device *dev,
 	return -EINVAL;
 }
 
-static int max3421e_xfer_bulk(const struct device *dev,
-			      struct uhc_transfer *const xfer,
+static int max3421e_xfer_bulk(const struct device *dev, struct uhc_transfer *const xfer,
 			      const uint8_t hrsl)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
@@ -476,13 +432,11 @@ static int max3421e_hrslt_success(const struct device *dev)
 		}
 
 		if (bc > net_buf_tailroom(buf)) {
-			LOG_WRN("%u received bytes will be dropped",
-				bc - net_buf_tailroom(buf));
+			LOG_WRN("%u received bytes will be dropped", bc - net_buf_tailroom(buf));
 		}
 
 		len = MIN(net_buf_tailroom(buf), bc);
-		err = max3421e_read(dev, MAX3421E_REG_RCVFIFO,
-				    net_buf_add(buf, len), len);
+		err = max3421e_read(dev, MAX3421E_REG_RCVFIFO, net_buf_add(buf, len), len);
 		if (err) {
 			break;
 		}
@@ -591,14 +545,12 @@ static void max3421e_bus_event(const struct device *dev)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
 
-	if (atomic_test_and_clear_bit(&priv->state,
-				      MAX3421E_STATE_BUS_RESUME)) {
+	if (atomic_test_and_clear_bit(&priv->state, MAX3421E_STATE_BUS_RESUME)) {
 		/* Resume operation done event */
 		uhc_submit_event(dev, UHC_EVT_RESUMED, 0);
 	}
 
-	if (atomic_test_and_clear_bit(&priv->state,
-				      MAX3421E_STATE_BUS_RESET)) {
+	if (atomic_test_and_clear_bit(&priv->state, MAX3421E_STATE_BUS_RESET)) {
 		/* Reset operation done event */
 		uhc_submit_event(dev, UHC_EVT_RESETED, 0);
 	}
@@ -715,12 +667,9 @@ static void uhc_max3421e_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static void max3421e_gpio_cb(const struct device *dev,
-			     struct gpio_callback *cb,
-			     uint32_t pins)
+static void max3421e_gpio_cb(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	struct max3421e_data *priv =
-		CONTAINER_OF(cb, struct max3421e_data, gpio_cb);
+	struct max3421e_data *priv = CONTAINER_OF(cb, struct max3421e_data, gpio_cb);
 
 	k_sem_give(&priv->irq_sem);
 }
@@ -788,14 +737,12 @@ static int max3421e_bus_resume(const struct device *dev)
 	return ret;
 }
 
-static int max3421e_enqueue(const struct device *dev,
-			    struct uhc_transfer *const xfer)
+static int max3421e_enqueue(const struct device *dev, struct uhc_transfer *const xfer)
 {
 	return uhc_xfer_append(dev, xfer);
 }
 
-static int max3421e_dequeue(const struct device *dev,
-			    struct uhc_transfer *const xfer)
+static int max3421e_dequeue(const struct device *dev, struct uhc_transfer *const xfer)
 {
 	/* TODO */
 	return 0;
@@ -822,8 +769,7 @@ static int max3421e_reset(const struct device *dev)
 	for (int i = 0; i < CONFIG_MAX3421E_OSC_WAIT_RETRIES; i++) {
 		uint8_t usbirq;
 
-		ret = max3421e_read(dev, MAX3421E_REG_USBIRQ,
-				    &usbirq, sizeof(usbirq));
+		ret = max3421e_read(dev, MAX3421E_REG_USBIRQ, &usbirq, sizeof(usbirq));
 
 		LOG_DBG("USBIRQ 0x%02x", usbirq);
 		if (usbirq & MAX3421E_OSCOKIRQ) {
@@ -854,8 +800,7 @@ static int max3421e_pinctl_setup(const struct device *dev)
 	}
 
 	if (unlikely(tmp != pinctl)) {
-		LOG_ERR("Failed to verify PINCTL register 0x%02x vs 0x%02x",
-			pinctl, tmp);
+		LOG_ERR("Failed to verify PINCTL register 0x%02x vs 0x%02x", pinctl, tmp);
 		return -EIO;
 	}
 
@@ -872,8 +817,8 @@ static int max3421e_mode_setup(const struct device *dev)
 	 * MODE register defaults:
 	 *   host mode, connect internal D+ and D- pulldown resistors to ground
 	 */
-	const uint8_t mode = MAX3421E_DPPULLDN | MAX3421E_DMPULLDN |
-			     MAX3421E_DELAYISO | MAX3421E_HOST;
+	const uint8_t mode =
+		MAX3421E_DPPULLDN | MAX3421E_DMPULLDN | MAX3421E_DELAYISO | MAX3421E_HOST;
 	struct max3421e_data *priv = uhc_get_private(dev);
 	uint8_t tmp;
 	int ret;
@@ -889,8 +834,7 @@ static int max3421e_mode_setup(const struct device *dev)
 	}
 
 	if (tmp != mode) {
-		LOG_ERR("Failed to verify MODE register 0x%02x vs 0x%02x",
-			mode, tmp);
+		LOG_ERR("Failed to verify MODE register 0x%02x vs 0x%02x", mode, tmp);
 		return -EIO;
 	}
 
@@ -902,8 +846,7 @@ static int max3421e_mode_setup(const struct device *dev)
 static int max3421e_hien_setup(const struct device *dev)
 {
 	/* Host interrupts enabled by default */
-	const uint8_t hien = MAX3421E_HXFRDN | MAX3421E_FRAME |
-			     MAX3421E_CONDET | MAX3421E_RWU |
+	const uint8_t hien = MAX3421E_HXFRDN | MAX3421E_FRAME | MAX3421E_CONDET | MAX3421E_RWU |
 			     MAX3421E_BUSEVENT;
 	struct max3421e_data *priv = uhc_get_private(dev);
 	uint8_t tmp;
@@ -920,8 +863,7 @@ static int max3421e_hien_setup(const struct device *dev)
 	}
 
 	if (tmp != hien) {
-		LOG_ERR("Failed to verify HIEN register 0x%02x vs 0x%02x",
-			hien, tmp);
+		LOG_ERR("Failed to verify HIEN register 0x%02x vs 0x%02x", hien, tmp);
 		return -EIO;
 	}
 
@@ -948,8 +890,7 @@ static int max3421e_enable_int_output(const struct device *dev)
 	}
 
 	if (tmp != cpuctl) {
-		LOG_ERR("Failed to verify CPUCTL register 0x%02x vs 0x%02x",
-			cpuctl, tmp);
+		LOG_ERR("Failed to verify CPUCTL register 0x%02x vs 0x%02x", cpuctl, tmp);
 		return -EIO;
 	}
 
@@ -998,8 +939,7 @@ static int uhc_max3421e_init(const struct device *dev)
 		return ret;
 	}
 
-	LOG_INF("REV 0x%x, MODE 0x%02x, HIEN 0x%02x",
-		rev, priv->mode, priv->hien);
+	LOG_INF("REV 0x%x, MODE 0x%02x, HIEN 0x%02x", rev, priv->mode, priv->hien);
 
 	priv->addr = 0;
 
@@ -1034,16 +974,13 @@ static int max3421e_driver_init(const struct device *dev)
 
 	if (config->dt_rst.port) {
 		if (!gpio_is_ready_dt(&config->dt_rst)) {
-			LOG_ERR("GPIO device %s not ready",
-				config->dt_rst.port->name);
+			LOG_ERR("GPIO device %s not ready", config->dt_rst.port->name);
 			return -EIO;
 		}
 
-		ret = gpio_pin_configure_dt(&config->dt_rst,
-					    GPIO_OUTPUT_INACTIVE);
+		ret = gpio_pin_configure_dt(&config->dt_rst, GPIO_OUTPUT_INACTIVE);
 		if (ret) {
-			LOG_ERR("Failed to configure GPIO pin %u",
-				config->dt_rst.pin);
+			LOG_ERR("Failed to configure GPIO pin %u", config->dt_rst.pin);
 			return ret;
 		}
 	}
@@ -1064,25 +1001,20 @@ static int max3421e_driver_init(const struct device *dev)
 		return ret;
 	}
 
-	gpio_init_callback(&priv->gpio_cb, max3421e_gpio_cb,
-			   BIT(config->dt_int.pin));
+	gpio_init_callback(&priv->gpio_cb, max3421e_gpio_cb, BIT(config->dt_int.pin));
 	ret = gpio_add_callback(config->dt_int.port, &priv->gpio_cb);
 	if (ret) {
 		return ret;
 	}
 
-	ret = gpio_pin_interrupt_configure_dt(&config->dt_int,
-					      GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_interrupt_configure_dt(&config->dt_int, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret) {
 		return ret;
 	}
 
 	k_mutex_init(&data->mutex);
-	k_thread_create(&drv_stack_data, drv_stack,
-			K_KERNEL_STACK_SIZEOF(drv_stack),
-			uhc_max3421e_thread,
-			(void *)dev, NULL, NULL,
-			K_PRIO_COOP(2), 0, K_NO_WAIT);
+	k_thread_create(&drv_stack_data, drv_stack, K_KERNEL_STACK_SIZEOF(drv_stack),
+			uhc_max3421e_thread, (void *)dev, NULL, NULL, K_PRIO_COOP(2), 0, K_NO_WAIT);
 	k_thread_name_set(&drv_stack_data, "uhc_max3421e");
 
 	LOG_DBG("MAX3421E CPU interface initialized");
@@ -1099,7 +1031,7 @@ static const struct uhc_api max3421e_uhc_api = {
 	.shutdown = uhc_max3421e_shutdown,
 
 	.bus_reset = max3421e_bus_reset,
-	.sof_enable  = max3421e_sof_enable,
+	.sof_enable = max3421e_sof_enable,
 	.bus_suspend = max3421e_bus_suspend,
 	.bus_resume = max3421e_bus_resume,
 
@@ -1121,7 +1053,5 @@ static const struct max3421e_config max3421e_cfg = {
 	.dt_rst = GPIO_DT_SPEC_INST_GET_OR(0, reset_gpios, {0}),
 };
 
-DEVICE_DT_INST_DEFINE(0, max3421e_driver_init, NULL,
-		      &max3421e_uhc_data, &max3421e_cfg,
-		      POST_KERNEL, 99,
-		      &max3421e_uhc_api);
+DEVICE_DT_INST_DEFINE(0, max3421e_driver_init, NULL, &max3421e_uhc_data, &max3421e_cfg, POST_KERNEL,
+		      99, &max3421e_uhc_api);

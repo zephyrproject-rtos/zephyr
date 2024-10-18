@@ -26,41 +26,27 @@ LOG_MODULE_REGISTER(wifi_nrf_bus, CONFIG_WIFI_NRF70_BUS_LOG_LEVEL);
 
 #define NRF7002_NODE DT_NODELABEL(nrf70)
 
-static const struct gpio_dt_spec host_irq_spec =
-GPIO_DT_SPEC_GET(NRF7002_NODE, host_irq_gpios);
+static const struct gpio_dt_spec host_irq_spec = GPIO_DT_SPEC_GET(NRF7002_NODE, host_irq_gpios);
 
-static const struct gpio_dt_spec iovdd_ctrl_spec =
-GPIO_DT_SPEC_GET(NRF7002_NODE, iovdd_ctrl_gpios);
+static const struct gpio_dt_spec iovdd_ctrl_spec = GPIO_DT_SPEC_GET(NRF7002_NODE, iovdd_ctrl_gpios);
 
-static const struct gpio_dt_spec bucken_spec =
-GPIO_DT_SPEC_GET(NRF7002_NODE, bucken_gpios);
+static const struct gpio_dt_spec bucken_spec = GPIO_DT_SPEC_GET(NRF7002_NODE, bucken_gpios);
 
-char blk_name[][15] = { "SysBus",   "ExtSysBus",	   "PBus",	   "PKTRAM",
-			       "GRAM",	   "LMAC_ROM",	   "LMAC_RET_RAM", "LMAC_SRC_RAM",
-			       "UMAC_ROM", "UMAC_RET_RAM", "UMAC_SRC_RAM" };
+char blk_name[][15] = {"SysBus",   "ExtSysBus",    "PBus",         "PKTRAM",
+		       "GRAM",     "LMAC_ROM",     "LMAC_RET_RAM", "LMAC_SRC_RAM",
+		       "UMAC_ROM", "UMAC_RET_RAM", "UMAC_SRC_RAM"};
 
 uint32_t rpu_7002_memmap[][3] = {
-	{ 0x000000, 0x008FFF, 1 },
-	{ 0x009000, 0x03FFFF, 2 },
-	{ 0x040000, 0x07FFFF, 1 },
-	{ 0x0C0000, 0x0F0FFF, 0 },
-	{ 0x080000, 0x092000, 1 },
-	{ 0x100000, 0x134000, 1 },
-	{ 0x140000, 0x14C000, 1 },
-	{ 0x180000, 0x190000, 1 },
-	{ 0x200000, 0x261800, 1 },
-	{ 0x280000, 0x2A4000, 1 },
-	{ 0x300000, 0x338000, 1 }
-};
+	{0x000000, 0x008FFF, 1}, {0x009000, 0x03FFFF, 2}, {0x040000, 0x07FFFF, 1},
+	{0x0C0000, 0x0F0FFF, 0}, {0x080000, 0x092000, 1}, {0x100000, 0x134000, 1},
+	{0x140000, 0x14C000, 1}, {0x180000, 0x190000, 1}, {0x200000, 0x261800, 1},
+	{0x280000, 0x2A4000, 1}, {0x300000, 0x338000, 1}};
 
 static const struct qspi_dev *qdev;
 static struct qspi_config *cfg;
 
-static int validate_addr_blk(uint32_t start_addr,
-							 uint32_t end_addr,
-							 uint32_t block_no,
-							 bool *hl_flag,
-							 int *selected_blk)
+static int validate_addr_blk(uint32_t start_addr, uint32_t end_addr, uint32_t block_no,
+			     bool *hl_flag, int *selected_blk)
 {
 	uint32_t *block_map = rpu_7002_memmap[block_no];
 
@@ -123,22 +109,17 @@ int rpu_irq_config(struct gpio_callback *irq_callback_data, void (*irq_handler)(
 		goto out;
 	}
 
-	ret = gpio_pin_interrupt_configure_dt(&host_irq_spec,
-			GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_interrupt_configure_dt(&host_irq_spec, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret) {
-		LOG_ERR("Failed to configure interrupt on host_irq pin %d",
-				host_irq_spec.pin);
+		LOG_ERR("Failed to configure interrupt on host_irq pin %d", host_irq_spec.pin);
 		goto out;
 	}
 
-	gpio_init_callback(irq_callback_data,
-			irq_handler,
-			BIT(host_irq_spec.pin));
+	gpio_init_callback(irq_callback_data, irq_handler, BIT(host_irq_spec.pin));
 
 	ret = gpio_add_callback(host_irq_spec.port, irq_callback_data);
 	if (ret) {
-		LOG_ERR("Failed to add callback on host_irq pin %d",
-				host_irq_spec.pin);
+		LOG_ERR("Failed to add callback on host_irq pin %d", host_irq_spec.pin);
 		goto out;
 	}
 
@@ -160,8 +141,7 @@ int rpu_irq_remove(struct gpio_callback *irq_callback_data)
 
 	ret = gpio_remove_callback(host_irq_spec.port, irq_callback_data);
 	if (ret) {
-		LOG_ERR("Failed to remove callback on host_irq pin %d",
-				host_irq_spec.pin);
+		LOG_ERR("Failed to remove callback on host_irq pin %d", host_irq_spec.pin);
 		goto out;
 	}
 
@@ -251,7 +231,7 @@ static int rpu_pwron(void)
 	}
 
 	LOG_DBG("Bucken = %d, IOVDD = %d", gpio_pin_get_dt(&bucken_spec),
-			gpio_pin_get_dt(&iovdd_ctrl_spec));
+		gpio_pin_get_dt(&iovdd_ctrl_spec));
 
 	return ret;
 }
@@ -394,7 +374,6 @@ int rpu_rdsr1(void)
 	return spim_wait_while_rpu_awake();
 #endif
 }
-
 
 int rpu_clks_on(void)
 {

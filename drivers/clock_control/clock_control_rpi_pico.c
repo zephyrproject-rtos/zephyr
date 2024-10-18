@@ -46,8 +46,7 @@
 		 DT_PROP_HAS_IDX(DT_INST_CLOCKS_CTLR_BY_NAME(0, rosc), stage_drive_strength, n),   \
 		 (DT_PROP_BY_IDX(DT_INST_CLOCKS_CTLR_BY_NAME(0, rosc), stage_drive_strength, n) &  \
 		  ROSC_FREQA_DS0_BITS),                                                            \
-		 (0))                                                                              \
-	 << (n * 3))
+		 (0)) << (n * 3))
 
 #define CLK_SRC_IS(clk, src)                                                                       \
 	DT_SAME_NODE(DT_CLOCKS_CTLR_BY_IDX(DT_INST_CLOCKS_CTLR_BY_NAME(0, clk), 0),                \
@@ -65,8 +64,7 @@
  * Use it for traverse clock tree to find root of clock source.
  */
 #define CLOCK_FREQ(clk)     _CONCAT(CLOCK_FREQ_, clk)
-#define SRC_CLOCK(clk)      DT_STRING_TOKEN_BY_IDX(DT_INST_CLOCKS_CTLR_BY_NAME(0, clk),            \
-						   clock_names, 0)
+#define SRC_CLOCK(clk)      DT_STRING_TOKEN_BY_IDX(DT_INST_CLOCKS_CTLR_BY_NAME(0, clk), clock_names, 0)
 #define SRC_CLOCK_FREQ(clk) _CONCAT(CLOCK_FREQ_, SRC_CLOCK(clk))
 
 #define PLL_FREQ(pll)                                                                              \
@@ -118,17 +116,15 @@
 #define AUXSTEM_clk_peri   CLOCKS_CLK_PERI_CTRL_AUXSRC_VALUE_
 
 #define TUPLE_ENTRY(n, p, i)                                                                       \
-	{                                                                                          \
-		_CONCAT(RPI_PICO_CLKID_, DT_INST_STRING_UPPER_TOKEN_BY_IDX(0, clock_names, i)),    \
-			COND_CODE_1(                                                               \
+	{_CONCAT(RPI_PICO_CLKID_, DT_INST_STRING_UPPER_TOKEN_BY_IDX(0, clock_names, i)),           \
+	 COND_CODE_1(                                                               \
 				DT_PROP_HAS_IDX(DT_CLOCKS_CTLR_BY_IDX(DT_NODELABEL(clocks), i),    \
 						clocks, 0),                                        \
 				(_CONCAT(RPI_PICO_CLKID_,                                          \
 					 DT_STRING_UPPER_TOKEN_BY_IDX(                             \
 						 DT_CLOCKS_CTLR_BY_IDX(DT_NODELABEL(clocks), i),   \
 						 clock_names, 0))),                                \
-				(-1))                                                              \
-	}
+				(-1)) }
 
 enum rpi_pico_clkid {
 	rpi_pico_clkid_none = -1,
@@ -289,17 +285,10 @@ static enum rpi_pico_clkid rpi_pico_get_clock_src(const struct device *dev, enum
 	if (id == rpi_pico_clkid_clk_gpout0 || id == rpi_pico_clkid_clk_gpout1 ||
 	    id == rpi_pico_clkid_clk_gpout2 || id == rpi_pico_clkid_clk_gpout3) {
 		const static enum rpi_pico_clkid table[] = {
-			rpi_pico_clkid_pll_sys,
-			rpi_pico_clkid_gpin0,
-			rpi_pico_clkid_gpin1,
-			rpi_pico_clkid_pll_usb,
-			rpi_pico_clkid_rosc_ph,
-			rpi_pico_clkid_xosc,
-			rpi_pico_clkid_clk_sys,
-			rpi_pico_clkid_clk_usb,
-			rpi_pico_clkid_clk_adc,
-			rpi_pico_clkid_clk_rtc,
-			rpi_pico_clkid_clk_ref,
+			rpi_pico_clkid_pll_sys, rpi_pico_clkid_gpin0,   rpi_pico_clkid_gpin1,
+			rpi_pico_clkid_pll_usb, rpi_pico_clkid_rosc_ph, rpi_pico_clkid_xosc,
+			rpi_pico_clkid_clk_sys, rpi_pico_clkid_clk_usb, rpi_pico_clkid_clk_adc,
+			rpi_pico_clkid_clk_rtc, rpi_pico_clkid_clk_ref,
 		};
 
 		clock_hw_t *clock_hw = &config->clocks_regs->clk[id];
@@ -326,12 +315,8 @@ static enum rpi_pico_clkid rpi_pico_get_clock_src(const struct device *dev, enum
 		}
 	} else if (id == rpi_pico_clkid_clk_sys) {
 		const static enum rpi_pico_clkid table[] = {
-			rpi_pico_clkid_pll_sys,
-			rpi_pico_clkid_pll_usb,
-			rpi_pico_clkid_rosc,
-			rpi_pico_clkid_xosc,
-			rpi_pico_clkid_gpin0,
-			rpi_pico_clkid_gpin1,
+			rpi_pico_clkid_pll_sys, rpi_pico_clkid_pll_usb, rpi_pico_clkid_rosc,
+			rpi_pico_clkid_xosc,    rpi_pico_clkid_gpin0,   rpi_pico_clkid_gpin1,
 		};
 
 		clock_hw_t *clock_hw = &clocks_hw->clk[id];
@@ -345,12 +330,8 @@ static enum rpi_pico_clkid rpi_pico_get_clock_src(const struct device *dev, enum
 		}
 	} else if (id == rpi_pico_clkid_clk_peri) {
 		const static enum rpi_pico_clkid table[] = {
-			rpi_pico_clkid_clk_sys,
-			rpi_pico_clkid_pll_sys,
-			rpi_pico_clkid_pll_usb,
-			rpi_pico_clkid_rosc_ph,
-			rpi_pico_clkid_xosc,
-			rpi_pico_clkid_gpin0,
+			rpi_pico_clkid_clk_sys, rpi_pico_clkid_pll_sys, rpi_pico_clkid_pll_usb,
+			rpi_pico_clkid_rosc_ph, rpi_pico_clkid_xosc,    rpi_pico_clkid_gpin0,
 			rpi_pico_clkid_gpin1,
 		};
 
@@ -361,12 +342,8 @@ static enum rpi_pico_clkid rpi_pico_get_clock_src(const struct device *dev, enum
 	} else if (id == rpi_pico_clkid_clk_usb || id == rpi_pico_clkid_clk_adc ||
 		   id == rpi_pico_clkid_clk_rtc) {
 		const static enum rpi_pico_clkid table[] = {
-			rpi_pico_clkid_pll_usb,
-			rpi_pico_clkid_pll_sys,
-			rpi_pico_clkid_rosc_ph,
-			rpi_pico_clkid_xosc,
-			rpi_pico_clkid_gpin0,
-			rpi_pico_clkid_gpin1,
+			rpi_pico_clkid_pll_usb, rpi_pico_clkid_pll_sys, rpi_pico_clkid_rosc_ph,
+			rpi_pico_clkid_xosc,    rpi_pico_clkid_gpin0,   rpi_pico_clkid_gpin1,
 		};
 
 		clock_hw_t *clock_hw = &clocks_hw->clk[id];
@@ -393,14 +370,10 @@ static bool rpi_pico_is_clock_enabled(const struct device *dev, enum rpi_pico_cl
 
 	if (id == rpi_pico_clkid_clk_sys || id == rpi_pico_clkid_clk_ref) {
 		return true;
-	} else if (id == rpi_pico_clkid_clk_usb ||
-		   id == rpi_pico_clkid_clk_peri ||
-		   id == rpi_pico_clkid_clk_adc ||
-		   id == rpi_pico_clkid_clk_rtc ||
-		   id == rpi_pico_clkid_clk_gpout0 ||
-		   id == rpi_pico_clkid_clk_gpout1 ||
-		   id == rpi_pico_clkid_clk_gpout2 ||
-		   id == rpi_pico_clkid_clk_gpout3) {
+	} else if (id == rpi_pico_clkid_clk_usb || id == rpi_pico_clkid_clk_peri ||
+		   id == rpi_pico_clkid_clk_adc || id == rpi_pico_clkid_clk_rtc ||
+		   id == rpi_pico_clkid_clk_gpout0 || id == rpi_pico_clkid_clk_gpout1 ||
+		   id == rpi_pico_clkid_clk_gpout2 || id == rpi_pico_clkid_clk_gpout3) {
 		clock_hw_t *clock_hw = &config->clocks_regs->clk[id];
 
 		if (clock_hw->ctrl & CTRL_ENABLE_BITS) {
@@ -441,14 +414,10 @@ static float rpi_pico_calc_clock_freq(const struct device *dev, enum rpi_pico_cl
 		return freq;
 	}
 
-	if (id == rpi_pico_clkid_clk_sys ||
-	    id == rpi_pico_clkid_clk_usb ||
-	    id == rpi_pico_clkid_clk_adc ||
-	    id == rpi_pico_clkid_clk_rtc ||
-	    id == rpi_pico_clkid_clk_ref ||
-	    id == rpi_pico_clkid_clk_gpout0 ||
-	    id == rpi_pico_clkid_clk_gpout1 ||
-	    id == rpi_pico_clkid_clk_gpout2 ||
+	if (id == rpi_pico_clkid_clk_sys || id == rpi_pico_clkid_clk_usb ||
+	    id == rpi_pico_clkid_clk_adc || id == rpi_pico_clkid_clk_rtc ||
+	    id == rpi_pico_clkid_clk_ref || id == rpi_pico_clkid_clk_gpout0 ||
+	    id == rpi_pico_clkid_clk_gpout1 || id == rpi_pico_clkid_clk_gpout2 ||
 	    id == rpi_pico_clkid_clk_gpout3) {
 		clock_hw_t *clock_hw = &config->clocks_regs->clk[id];
 
@@ -601,7 +570,7 @@ static int clock_control_rpi_pico_init(const struct device *dev)
 	rosc_hw_t *rosc_regs = config->rosc_regs;
 	pll_hw_t *plls[] = {config->pll_sys_regs, config->pll_usb_regs};
 	struct rpi_pico_clkid_tuple tuples[] = {
-		DT_INST_FOREACH_PROP_ELEM_SEP(0, clock_names, TUPLE_ENTRY, (,))};
+		DT_INST_FOREACH_PROP_ELEM_SEP(0, clock_names, TUPLE_ENTRY, (, ))};
 	uint32_t rosc_div;
 	int ret;
 
@@ -618,7 +587,7 @@ static int clock_control_rpi_pico_init(const struct device *dev)
 			     RESETS_RESET_USBCTRL_BITS | RESETS_RESET_PWM_BITS));
 
 	/* Start tick in watchdog */
-	watchdog_hw->tick = ((CLOCK_FREQ_xosc/1000000) | WATCHDOG_TICK_ENABLE_BITS);
+	watchdog_hw->tick = ((CLOCK_FREQ_xosc / 1000000) | WATCHDOG_TICK_ENABLE_BITS);
 
 	clocks_regs->resus.ctrl = 0;
 
@@ -772,123 +741,141 @@ static const struct clock_control_rpi_pico_config clock_control_rpi_pico_config 
 	.pll_usb_regs = (pll_hw_t *)DT_INST_REG_ADDR_BY_NAME(0, pll_usb),
 	.rosc_regs = (rosc_hw_t *)DT_INST_REG_ADDR_BY_NAME(0, rosc),
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
-	.clocks_data = {
-		[RPI_PICO_CLKID_CLK_GPOUT0] = {
-			.source = 0,
-			.aux_source = CLOCK_AUX_SOURCE(clk_gpout0),
-			.source_rate = SRC_CLOCK_FREQ(clk_gpout0),
-			.rate = CLOCK_FREQ(clk_gpout0),
-		},
-		[RPI_PICO_CLKID_CLK_GPOUT1] = {
-			.source = 0,
-			.aux_source = CLOCK_AUX_SOURCE(clk_gpout1),
-			.source_rate = SRC_CLOCK_FREQ(clk_gpout1),
-			.rate = CLOCK_FREQ(clk_gpout1),
-		},
-		[RPI_PICO_CLKID_CLK_GPOUT2] = {
-			.source = 0,
-			.aux_source = CLOCK_AUX_SOURCE(clk_gpout2),
-			.source_rate = SRC_CLOCK_FREQ(clk_gpout2),
-			.rate = CLOCK_FREQ(clk_gpout2),
-		},
-		[RPI_PICO_CLKID_CLK_GPOUT3] = {
-			.source = 0,
-			.aux_source = CLOCK_AUX_SOURCE(clk_gpout3),
-			.source_rate = SRC_CLOCK_FREQ(clk_gpout3),
-			.rate = CLOCK_FREQ(clk_gpout3),
-		},
-		[RPI_PICO_CLKID_CLK_REF] = {
+	.clocks_data =
+		{
+			[RPI_PICO_CLKID_CLK_GPOUT0] =
+				{
+					.source = 0,
+					.aux_source = CLOCK_AUX_SOURCE(clk_gpout0),
+					.source_rate = SRC_CLOCK_FREQ(clk_gpout0),
+					.rate = CLOCK_FREQ(clk_gpout0),
+				},
+			[RPI_PICO_CLKID_CLK_GPOUT1] =
+				{
+					.source = 0,
+					.aux_source = CLOCK_AUX_SOURCE(clk_gpout1),
+					.source_rate = SRC_CLOCK_FREQ(clk_gpout1),
+					.rate = CLOCK_FREQ(clk_gpout1),
+				},
+			[RPI_PICO_CLKID_CLK_GPOUT2] =
+				{
+					.source = 0,
+					.aux_source = CLOCK_AUX_SOURCE(clk_gpout2),
+					.source_rate = SRC_CLOCK_FREQ(clk_gpout2),
+					.rate = CLOCK_FREQ(clk_gpout2),
+				},
+			[RPI_PICO_CLKID_CLK_GPOUT3] =
+				{
+					.source = 0,
+					.aux_source = CLOCK_AUX_SOURCE(clk_gpout3),
+					.source_rate = SRC_CLOCK_FREQ(clk_gpout3),
+					.rate = CLOCK_FREQ(clk_gpout3),
+				},
+			[RPI_PICO_CLKID_CLK_REF] =
+				{
 #if CLK_SRC_IS(clk_ref, rosc_ph)
-			.source = CLOCKS_CLK_REF_CTRL_SRC_VALUE_ROSC_CLKSRC_PH,
-			.aux_source = 0,
+					.source = CLOCKS_CLK_REF_CTRL_SRC_VALUE_ROSC_CLKSRC_PH,
+					.aux_source = 0,
 #elif CLK_SRC_IS(clk_ref, xosc)
-			.source = CLOCKS_CLK_REF_CTRL_SRC_VALUE_XOSC_CLKSRC,
-			.aux_source = 0,
+					.source = CLOCKS_CLK_REF_CTRL_SRC_VALUE_XOSC_CLKSRC,
+					.aux_source = 0,
 #else
-			.source = CLOCKS_CLK_REF_CTRL_SRC_VALUE_CLKSRC_CLK_REF_AUX,
+					.source = CLOCKS_CLK_REF_CTRL_SRC_VALUE_CLKSRC_CLK_REF_AUX,
 #endif
-			.source_rate = SRC_CLOCK_FREQ(clk_ref),
-			.rate = CLOCK_FREQ(clk_ref),
-		},
-		[RPI_PICO_CLKID_CLK_SYS] = {
+					.source_rate = SRC_CLOCK_FREQ(clk_ref),
+					.rate = CLOCK_FREQ(clk_ref),
+				},
+			[RPI_PICO_CLKID_CLK_SYS] =
+				{
 #if CLK_SRC_IS(clk_sys, clk_ref)
-			.source = CLOCKS_CLK_SYS_CTRL_SRC_VALUE_CLK_REF,
-			.aux_source = 0,
+					.source = CLOCKS_CLK_SYS_CTRL_SRC_VALUE_CLK_REF,
+					.aux_source = 0,
 #else
-			.source = CLOCKS_CLK_SYS_CTRL_SRC_VALUE_CLKSRC_CLK_SYS_AUX,
-			.aux_source = CLOCK_AUX_SOURCE(clk_sys),
+					.source = CLOCKS_CLK_SYS_CTRL_SRC_VALUE_CLKSRC_CLK_SYS_AUX,
+					.aux_source = CLOCK_AUX_SOURCE(clk_sys),
 #endif
-			.source_rate = SRC_CLOCK_FREQ(clk_sys),
-			.rate = CLOCK_FREQ(clk_sys),
+					.source_rate = SRC_CLOCK_FREQ(clk_sys),
+					.rate = CLOCK_FREQ(clk_sys),
+				},
+			[RPI_PICO_CLKID_CLK_PERI] =
+				{
+					.source = 0,
+					.aux_source = CLOCK_AUX_SOURCE(clk_peri),
+					.source_rate = SRC_CLOCK_FREQ(clk_peri),
+					.rate = CLOCK_FREQ(clk_peri),
+				},
+			[RPI_PICO_CLKID_CLK_USB] =
+				{
+					.source = 0,
+					.aux_source = CLOCK_AUX_SOURCE(clk_usb),
+					.source_rate = SRC_CLOCK_FREQ(clk_usb),
+					.rate = CLOCK_FREQ(clk_usb),
+				},
+			[RPI_PICO_CLKID_CLK_ADC] =
+				{
+					.source = 0,
+					.aux_source = CLOCK_AUX_SOURCE(clk_adc),
+					.source_rate = SRC_CLOCK_FREQ(clk_adc),
+					.rate = CLOCK_FREQ(clk_adc),
+				},
+			[RPI_PICO_CLKID_CLK_RTC] =
+				{
+					.source = 0,
+					.aux_source = CLOCK_AUX_SOURCE(clk_rtc),
+					.source_rate = SRC_CLOCK_FREQ(clk_rtc),
+					.rate = CLOCK_FREQ(clk_rtc),
+				},
 		},
-		[RPI_PICO_CLKID_CLK_PERI] = {
-			.source = 0,
-			.aux_source = CLOCK_AUX_SOURCE(clk_peri),
-			.source_rate = SRC_CLOCK_FREQ(clk_peri),
-			.rate = CLOCK_FREQ(clk_peri),
+	.plls_data =
+		{
+			[RPI_PICO_PLL_SYS] =
+				{
+					.ref_div = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, pll_sys),
+							   clock_div),
+					.fb_div = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, pll_sys),
+							  fb_div),
+					.post_div1 = DT_PROP(
+						DT_INST_CLOCKS_CTLR_BY_NAME(0, pll_sys), post_div1),
+					.post_div2 = DT_PROP(
+						DT_INST_CLOCKS_CTLR_BY_NAME(0, pll_sys), post_div2),
+				},
+			[RPI_PICO_PLL_USB] =
+				{
+					.ref_div = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, pll_usb),
+							   clock_div),
+					.fb_div = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, pll_usb),
+							  fb_div),
+					.post_div1 = DT_PROP(
+						DT_INST_CLOCKS_CTLR_BY_NAME(0, pll_usb), post_div1),
+					.post_div2 = DT_PROP(
+						DT_INST_CLOCKS_CTLR_BY_NAME(0, pll_usb), post_div2),
+				},
 		},
-		[RPI_PICO_CLKID_CLK_USB] = {
-			.source = 0,
-			.aux_source = CLOCK_AUX_SOURCE(clk_usb),
-			.source_rate = SRC_CLOCK_FREQ(clk_usb),
-			.rate = CLOCK_FREQ(clk_usb),
-		},
-		[RPI_PICO_CLKID_CLK_ADC] = {
-			.source = 0,
-			.aux_source = CLOCK_AUX_SOURCE(clk_adc),
-			.source_rate = SRC_CLOCK_FREQ(clk_adc),
-			.rate = CLOCK_FREQ(clk_adc),
-		},
-		[RPI_PICO_CLKID_CLK_RTC] = {
-			.source = 0,
-			.aux_source = CLOCK_AUX_SOURCE(clk_rtc),
-			.source_rate = SRC_CLOCK_FREQ(clk_rtc),
-			.rate = CLOCK_FREQ(clk_rtc),
-		},
-	},
-	.plls_data = {
-		[RPI_PICO_PLL_SYS] = {
-			.ref_div = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, pll_sys), clock_div),
-			.fb_div = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, pll_sys), fb_div),
-			.post_div1 = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, pll_sys), post_div1),
-			.post_div2 = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, pll_sys), post_div2),
-		},
-		[RPI_PICO_PLL_USB] = {
-			.ref_div = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, pll_usb), clock_div),
-			.fb_div = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, pll_usb), fb_div),
-			.post_div1 = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, pll_usb), post_div1),
-			.post_div2 = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, pll_usb), post_div2),
-		},
-	},
 	.rosc_data = {
 		.phase = (COND_CODE_1(DT_NODE_HAS_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, rosc),
 						       phase_flip),
 				      (ROSC_PHASE_FLIP_BITS), (0x0)) |
-			  COND_CODE_1(DT_NODE_HAS_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, rosc),
+			 COND_CODE_1(DT_NODE_HAS_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, rosc),
 						       phase),
 				      ((DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, rosc), phase) &
 					ROSC_PHASE_SHIFT_BITS) | ROSC_PHASE_ENABLE_BITS), (0x0))),
-		.div = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, rosc), clock_div),
-		.range = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, rosc), range),
-		.code = (STAGE_DS(0) | STAGE_DS(1) | STAGE_DS(2) | STAGE_DS(3) |
-			 STAGE_DS(4) | STAGE_DS(5) | STAGE_DS(6) | STAGE_DS(7)),
-	},
-	.gpin_data = {
-		[RPI_PICO_GPIN_0] = {
-			COND_CODE_1(DT_NODE_HAS_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, gpin0),
+				 .div = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, rosc), clock_div),
+				 .range = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, rosc), range),
+				 .code = (STAGE_DS(0) | STAGE_DS(1) | STAGE_DS(2) | STAGE_DS(3) |
+					  STAGE_DS(4) | STAGE_DS(5) | STAGE_DS(6) | STAGE_DS(7)),
+			 },
+			 .gpin_data = {
+				 [RPI_PICO_GPIN_0] = {COND_CODE_1(DT_NODE_HAS_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, gpin0),
 						 clock_frequency),
 				    (.frequency = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, gpin0),
 							  clock_frequency),),
-				    (.frequency = 0,))
-		},
-		[RPI_PICO_GPIN_1] = {
-			COND_CODE_1(DT_NODE_HAS_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, gpin1),
+				    (.frequency = 0,)) },
+					 [RPI_PICO_GPIN_1] = {COND_CODE_1(DT_NODE_HAS_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, gpin1),
 						     clock_frequency),
 				    (.frequency = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, gpin1),
 							  clock_frequency),),
-				    (.frequency = 0,))
-		},
-	},
+				    (.frequency = 0,)) },
+					 },
 };
 
 static struct clock_control_rpi_pico_data clock_control_rpi_pico_data = {

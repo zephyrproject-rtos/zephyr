@@ -15,22 +15,22 @@
 
 #include <soc.h>
 
-#define TIMER_LOAD_ADDR			DT_INST_REG_ADDR_BY_NAME(0, load)
-#define TIMER_RELOAD_ADDR		DT_INST_REG_ADDR_BY_NAME(0, reload)
-#define TIMER_EN_ADDR			DT_INST_REG_ADDR_BY_NAME(0, en)
-#define TIMER_UPDATE_VALUE_ADDR		DT_INST_REG_ADDR_BY_NAME(0, update_value)
-#define TIMER_VALUE_ADDR		DT_INST_REG_ADDR_BY_NAME(0, value)
-#define TIMER_EV_STATUS_ADDR		DT_INST_REG_ADDR_BY_NAME(0, ev_status)
-#define TIMER_EV_PENDING_ADDR		DT_INST_REG_ADDR_BY_NAME(0, ev_pending)
-#define TIMER_EV_ENABLE_ADDR		DT_INST_REG_ADDR_BY_NAME(0, ev_enable)
-#define TIMER_UPTIME_LATCH_ADDR		DT_INST_REG_ADDR_BY_NAME(0, uptime_latch)
-#define TIMER_UPTIME_CYCLES_ADDR	DT_INST_REG_ADDR_BY_NAME(0, uptime_cycles)
+#define TIMER_LOAD_ADDR          DT_INST_REG_ADDR_BY_NAME(0, load)
+#define TIMER_RELOAD_ADDR        DT_INST_REG_ADDR_BY_NAME(0, reload)
+#define TIMER_EN_ADDR            DT_INST_REG_ADDR_BY_NAME(0, en)
+#define TIMER_UPDATE_VALUE_ADDR  DT_INST_REG_ADDR_BY_NAME(0, update_value)
+#define TIMER_VALUE_ADDR         DT_INST_REG_ADDR_BY_NAME(0, value)
+#define TIMER_EV_STATUS_ADDR     DT_INST_REG_ADDR_BY_NAME(0, ev_status)
+#define TIMER_EV_PENDING_ADDR    DT_INST_REG_ADDR_BY_NAME(0, ev_pending)
+#define TIMER_EV_ENABLE_ADDR     DT_INST_REG_ADDR_BY_NAME(0, ev_enable)
+#define TIMER_UPTIME_LATCH_ADDR  DT_INST_REG_ADDR_BY_NAME(0, uptime_latch)
+#define TIMER_UPTIME_CYCLES_ADDR DT_INST_REG_ADDR_BY_NAME(0, uptime_cycles)
 
-#define TIMER_EV		0x1
-#define TIMER_IRQ		DT_INST_IRQN(0)
-#define TIMER_DISABLE		0x0
-#define TIMER_ENABLE		0x1
-#define TIMER_UPTIME_LATCH	0x1
+#define TIMER_EV           0x1
+#define TIMER_IRQ          DT_INST_IRQN(0)
+#define TIMER_DISABLE      0x0
+#define TIMER_ENABLE       0x1
+#define TIMER_UPTIME_LATCH 0x1
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = TIMER_IRQ;
 #endif
@@ -81,8 +81,7 @@ uint32_t sys_clock_elapsed(void)
 
 static int sys_clock_driver_init(void)
 {
-	IRQ_CONNECT(TIMER_IRQ, DT_INST_IRQ(0, priority),
-			litex_timer_irq_handler, NULL, 0);
+	IRQ_CONNECT(TIMER_IRQ, DT_INST_IRQ(0, priority), litex_timer_irq_handler, NULL, 0);
 	irq_enable(TIMER_IRQ);
 
 	litex_write8(TIMER_DISABLE, TIMER_EN_ADDR);
@@ -97,5 +96,4 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

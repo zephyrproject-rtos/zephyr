@@ -33,19 +33,18 @@ const int32_t z_sys_timer_irq_for_test = DT_IRQN(DT_ALIAS(system_lptmr));
  * As a simplifying assumption, we only support a clock ticking at the
  * SIRC reset rate of 8MHz.
  */
-#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME) || \
-    (MHZ(8) != CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC)
+#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME) ||                                        \
+	(MHZ(8) != CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC)
 #error "system timer misconfiguration; unsupported clock rate"
 #endif
 
-#define SYSTEM_TIMER_INSTANCE \
-	((LPTMR_Type *)(DT_INST_REG_ADDR(0)))
+#define SYSTEM_TIMER_INSTANCE ((LPTMR_Type *)(DT_INST_REG_ADDR(0)))
 
 #define SIRC_RANGE_8MHZ      SCG_SIRCCFG_RANGE(1)
 #define SIRCDIV3_DIVIDE_BY_1 1
 #define PCS_SOURCE_SIRCDIV3  0
 
-struct device;	       /* forward declaration; type is not used. */
+struct device; /* forward declaration; type is not used. */
 
 static volatile uint32_t cycle_count;
 
@@ -54,8 +53,8 @@ static void lptmr_irq_handler(const struct device *unused)
 	ARG_UNUSED(unused);
 
 	SYSTEM_TIMER_INSTANCE->CSR |= LPTMR_CSR_TCF(1); /* Rearm timer. */
-	cycle_count += CYCLES_PER_TICK;          /* Track cycles. */
-	sys_clock_announce(1);                     /* Poke the scheduler. */
+	cycle_count += CYCLES_PER_TICK;                 /* Track cycles. */
+	sys_clock_announce(1);                          /* Poke the scheduler. */
 }
 
 uint32_t sys_clock_cycle_get_32(void)
@@ -75,8 +74,7 @@ static int sys_clock_driver_init(void)
 {
 	uint32_t csr, psr, sircdiv; /* LPTMR registers */
 
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    0, lptmr_irq_handler, NULL, 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), 0, lptmr_irq_handler, NULL, 0);
 
 	if ((SCG->SIRCCSR & SCG_SIRCCSR_SIRCEN_MASK) == SCG_SIRCCSR_SIRCEN(0)) {
 		/*
@@ -148,5 +146,4 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

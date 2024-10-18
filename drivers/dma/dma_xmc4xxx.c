@@ -17,9 +17,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dma_xmc4xxx, CONFIG_DMA_LOG_LEVEL);
 
-#define MAX_PRIORITY	  7
+#define MAX_PRIORITY      7
 #define DMA_MAX_BLOCK_LEN 4095
-#define DLR_LINE_UNSET	  0xff
+#define DLR_LINE_UNSET    0xff
 
 #define DLR_SRSEL_RS_BITSIZE 4
 #define DLR_SRSEL_RS_MSK     0xf
@@ -47,23 +47,23 @@ struct dma_xmc4xxx_data {
 	struct dma_xmc4xxx_channel *channels;
 };
 
-#define HANDLE_EVENT(event_test, get_channels_event, ret)                                  \
-do {                                                                                       \
-	if (event & (XMC_DMA_CH_##event_test)) {                                           \
-		uint32_t channels_event = get_channels_event(dma);                         \
-		int channel = find_lsb_set(channels_event) - 1;                            \
-		struct dma_xmc4xxx_channel *dma_channel;                                   \
-											   \
-		__ASSERT_NO_MSG(channel >= 0);                                             \
-		dma_channel = &dev_data->channels[channel];                                \
-		/* Event has to be cleared before callback. The callback may call */       \
-		/* dma_start() and re-enable the event */                                  \
-		XMC_DMA_CH_ClearEventStatus(dma, channel, XMC_DMA_CH_##event_test);        \
-		if (dma_channel->cb) {                                                     \
-			dma_channel->cb(dev, dma_channel->user_data, channel, (ret));      \
-		}                                                                          \
-}                                                                                          \
-} while (0)
+#define HANDLE_EVENT(event_test, get_channels_event, ret)                                          \
+	do {                                                                                       \
+		if (event & (XMC_DMA_CH_##event_test)) {                                           \
+			uint32_t channels_event = get_channels_event(dma);                         \
+			int channel = find_lsb_set(channels_event) - 1;                            \
+			struct dma_xmc4xxx_channel *dma_channel;                                   \
+                                                                                                   \
+			__ASSERT_NO_MSG(channel >= 0);                                             \
+			dma_channel = &dev_data->channels[channel];                                \
+			/* Event has to be cleared before callback. The callback may call */       \
+			/* dma_start() and re-enable the event */                                  \
+			XMC_DMA_CH_ClearEventStatus(dma, channel, XMC_DMA_CH_##event_test);        \
+			if (dma_channel->cb) {                                                     \
+				dma_channel->cb(dev, dma_channel->user_data, channel, (ret));      \
+			}                                                                          \
+		}                                                                                  \
+	} while (0)
 
 /* Isr is level triggered, so we don't have to loop over all the channels */
 /* in a single call */
@@ -226,13 +226,15 @@ static int dma_xmc4xxx_config(const struct device *dev, uint32_t channel, struct
 		dlr_line = dlr_line_reg;
 		if (dma == XMC_DMA0 && dlr_line > 7) {
 			LOG_ERR("Unsupported request line %d for DMA0."
-					"Should be in range [0,7]", dlr_line);
+				"Should be in range [0,7]",
+				dlr_line);
 			return -EINVAL;
 		}
 
 		if (dma == XMC_DMA1 && (dlr_line < 8 || dlr_line > 11)) {
 			LOG_ERR("Unsupported request line %d for DMA1."
-					"Should be in range [8,11]", dlr_line);
+				"Should be in range [8,11]",
+				dlr_line);
 			return -EINVAL;
 		}
 
@@ -327,7 +329,7 @@ static int dma_xmc4xxx_stop(const struct device *dev, uint32_t channel)
 
 	/* wait until ongoing transfer finishes */
 	while (XMC_DMA_CH_IsEnabled(dma, channel) &&
-	      (dma->CH[channel].CFGL & GPDMA0_CH_CFGL_FIFO_EMPTY_Msk) == 0) {
+	       (dma->CH[channel].CFGL & GPDMA0_CH_CFGL_FIFO_EMPTY_Msk) == 0) {
 	}
 
 	/* disconnect DLR line to stop overuns */
@@ -393,7 +395,7 @@ static int dma_xmc4xxx_get_status(const struct device *dev, uint32_t channel,
 
 	stat->busy = XMC_DMA_CH_IsEnabled(dma, channel);
 
-	stat->pending_length  = dma_channel->block_ts - XMC_DMA_CH_GetTransferredData(dma, channel);
+	stat->pending_length = dma_channel->block_ts - XMC_DMA_CH_GetTransferredData(dma, channel);
 	stat->pending_length *= dma_channel->source_data_size;
 	/* stat->dir and other remaining fields are not set. They are not */
 	/* useful for xmc4xxx peripheral drivers. */
@@ -468,36 +470,34 @@ static const struct dma_driver_api dma_xmc4xxx_driver_api = {
 	.resume = dma_xmc4xxx_resume,
 };
 
-#define XMC4XXX_DMA_INIT(inst)                                                  \
-	static void dma_xmc4xxx##inst##_irq_configure(void)                     \
-	{                                                                       \
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, 0, irq),                   \
-			    DT_INST_IRQ_BY_IDX(inst, 0, priority),              \
-			    dma_xmc4xxx_isr,                                    \
-			    DEVICE_DT_INST_GET(inst), 0);                       \
-		irq_enable(DT_INST_IRQ_BY_IDX(inst, 0, irq));                   \
-	}                                                                       \
-	static const struct dma_xmc4xxx_config dma_xmc4xxx##inst##_config = {   \
-		.dma = (XMC_DMA_t *)DT_INST_REG_ADDR(inst),                     \
-		.irq_configure = dma_xmc4xxx##inst##_irq_configure,             \
-	};                                                                      \
-										\
-	static struct dma_xmc4xxx_channel                                       \
-		dma_xmc4xxx##inst##_channels[DT_INST_PROP(inst, dma_channels)]; \
-	ATOMIC_DEFINE(dma_xmc4xxx_atomic##inst,                                 \
-		      DT_INST_PROP(inst, dma_channels));                        \
-	static struct dma_xmc4xxx_data dma_xmc4xxx##inst##_data = {             \
-		.ctx =  {                                                       \
-			.magic = DMA_MAGIC,                                     \
-			.atomic = dma_xmc4xxx_atomic##inst,                     \
-			.dma_channels = DT_INST_PROP(inst, dma_channels),       \
-		},                                                              \
-		.channels = dma_xmc4xxx##inst##_channels,                       \
-	};                                                                      \
-										\
-	DEVICE_DT_INST_DEFINE(inst, &dma_xmc4xxx_init, NULL,                    \
-			      &dma_xmc4xxx##inst##_data,                        \
-			      &dma_xmc4xxx##inst##_config, PRE_KERNEL_1,        \
-			      CONFIG_DMA_INIT_PRIORITY, &dma_xmc4xxx_driver_api);
+#define XMC4XXX_DMA_INIT(inst)                                                                     \
+	static void dma_xmc4xxx##inst##_irq_configure(void)                                        \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, 0, irq),                                      \
+			    DT_INST_IRQ_BY_IDX(inst, 0, priority), dma_xmc4xxx_isr,                \
+			    DEVICE_DT_INST_GET(inst), 0);                                          \
+		irq_enable(DT_INST_IRQ_BY_IDX(inst, 0, irq));                                      \
+	}                                                                                          \
+	static const struct dma_xmc4xxx_config dma_xmc4xxx##inst##_config = {                      \
+		.dma = (XMC_DMA_t *)DT_INST_REG_ADDR(inst),                                        \
+		.irq_configure = dma_xmc4xxx##inst##_irq_configure,                                \
+	};                                                                                         \
+                                                                                                   \
+	static struct dma_xmc4xxx_channel                                                          \
+		dma_xmc4xxx##inst##_channels[DT_INST_PROP(inst, dma_channels)];                    \
+	ATOMIC_DEFINE(dma_xmc4xxx_atomic##inst, DT_INST_PROP(inst, dma_channels));                 \
+	static struct dma_xmc4xxx_data dma_xmc4xxx##inst##_data = {                                \
+		.ctx =                                                                             \
+			{                                                                          \
+				.magic = DMA_MAGIC,                                                \
+				.atomic = dma_xmc4xxx_atomic##inst,                                \
+				.dma_channels = DT_INST_PROP(inst, dma_channels),                  \
+			},                                                                         \
+		.channels = dma_xmc4xxx##inst##_channels,                                          \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &dma_xmc4xxx_init, NULL, &dma_xmc4xxx##inst##_data,            \
+			      &dma_xmc4xxx##inst##_config, PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY, \
+			      &dma_xmc4xxx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(XMC4XXX_DMA_INIT)

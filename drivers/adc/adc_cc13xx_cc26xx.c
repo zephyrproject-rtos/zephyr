@@ -30,7 +30,6 @@ LOG_MODULE_REGISTER(adc_cc13xx_cc26xx);
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 
-
 /**
  * Channels are based on ADC_COMPB_IN_* hal_ti definitions, max. index is 16 (included).
  */
@@ -44,19 +43,13 @@ struct adc_cc13xx_cc26xx_sample_time_entry {
 
 /** Maps standard unit sample times (us) to internal (raw hal_ti register) values */
 static const struct adc_cc13xx_cc26xx_sample_time_entry adc_cc13xx_sample_times[] = {
-	{ 2, AUXADC_SAMPLE_TIME_2P7_US },
-	{ 5, AUXADC_SAMPLE_TIME_5P3_US },
-	{ 10, AUXADC_SAMPLE_TIME_10P6_US },
-	{ 21, AUXADC_SAMPLE_TIME_21P3_US },
-	{ 42, AUXADC_SAMPLE_TIME_42P6_US },
-	{ 85, AUXADC_SAMPLE_TIME_85P3_US },
-	{ 170, AUXADC_SAMPLE_TIME_170_US },
-	{ 341, AUXADC_SAMPLE_TIME_341_US },
-	{ 682, AUXADC_SAMPLE_TIME_682_US },
-	{ 1370, AUXADC_SAMPLE_TIME_1P37_MS },
-	{ 2730, AUXADC_SAMPLE_TIME_2P73_MS },
-	{ 5460, AUXADC_SAMPLE_TIME_5P46_MS },
-	{ 10900, AUXADC_SAMPLE_TIME_10P9_MS },
+	{2, AUXADC_SAMPLE_TIME_2P7_US},      {5, AUXADC_SAMPLE_TIME_5P3_US},
+	{10, AUXADC_SAMPLE_TIME_10P6_US},    {21, AUXADC_SAMPLE_TIME_21P3_US},
+	{42, AUXADC_SAMPLE_TIME_42P6_US},    {85, AUXADC_SAMPLE_TIME_85P3_US},
+	{170, AUXADC_SAMPLE_TIME_170_US},    {341, AUXADC_SAMPLE_TIME_341_US},
+	{682, AUXADC_SAMPLE_TIME_682_US},    {1370, AUXADC_SAMPLE_TIME_1P37_MS},
+	{2730, AUXADC_SAMPLE_TIME_2P73_MS},  {5460, AUXADC_SAMPLE_TIME_5P46_MS},
+	{10900, AUXADC_SAMPLE_TIME_10P9_MS},
 };
 
 struct adc_cc13xx_cc26xx_data {
@@ -73,14 +66,11 @@ struct adc_cc13xx_cc26xx_cfg {
 	void (*irq_cfg_func)(void);
 };
 
-
 static void adc_cc13xx_cc26xx_isr(const struct device *dev);
-
 
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
-	struct adc_cc13xx_cc26xx_data *data =
-		CONTAINER_OF(ctx, struct adc_cc13xx_cc26xx_data, ctx);
+	struct adc_cc13xx_cc26xx_data *data = CONTAINER_OF(ctx, struct adc_cc13xx_cc26xx_data, ctx);
 
 	data->repeat_buffer = data->buffer;
 
@@ -88,11 +78,9 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	AUXADCGenManualTrigger();
 }
 
-static void adc_context_update_buffer_pointer(struct adc_context *ctx,
-					      bool repeat)
+static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat)
 {
-	struct adc_cc13xx_cc26xx_data *data =
-		CONTAINER_OF(ctx, struct adc_cc13xx_cc26xx_data, ctx);
+	struct adc_cc13xx_cc26xx_data *data = CONTAINER_OF(ctx, struct adc_cc13xx_cc26xx_data, ctx);
 
 	if (repeat) {
 		data->buffer = data->repeat_buffer;
@@ -120,7 +108,7 @@ static int adc_cc13xx_cc26xx_init(const struct device *dev)
 }
 
 static int adc_cc13xx_cc26xx_channel_setup(const struct device *dev,
-				    const struct adc_channel_cfg *channel_cfg)
+					   const struct adc_channel_cfg *channel_cfg)
 {
 	struct adc_cc13xx_cc26xx_data *data = dev->data;
 	const uint8_t ch = channel_cfg->channel_id;
@@ -140,8 +128,8 @@ static int adc_cc13xx_cc26xx_channel_setup(const struct device *dev,
 		sample_time_us = (uint16_t)ADC_ACQ_TIME_VALUE(channel_cfg->acquisition_time);
 		break;
 	case ADC_ACQ_TIME_NANOSECONDS:
-		sample_time_us = (uint16_t)(
-				ADC_ACQ_TIME_VALUE(channel_cfg->acquisition_time) * 1000);
+		sample_time_us =
+			(uint16_t)(ADC_ACQ_TIME_VALUE(channel_cfg->acquisition_time) * 1000);
 		break;
 	default:
 		data->sample_time = AUXADC_SAMPLE_TIME_170_US;
@@ -188,18 +176,15 @@ static int adc_cc13xx_cc26xx_channel_setup(const struct device *dev,
 	return 0;
 }
 
-static int cc13xx_cc26xx_read(const struct device *dev,
-		       const struct adc_sequence *sequence,
-		       bool asynchronous,
-		       struct k_poll_signal *sig)
+static int cc13xx_cc26xx_read(const struct device *dev, const struct adc_sequence *sequence,
+			      bool asynchronous, struct k_poll_signal *sig)
 {
 	struct adc_cc13xx_cc26xx_data *data = dev->data;
 	int rv;
 	size_t exp_size;
 
 	if (sequence->resolution != 12) {
-		LOG_ERR("Only 12 Resolution is supported, but %d got",
-			sequence->resolution);
+		LOG_ERR("Only 12 Resolution is supported, but %d got", sequence->resolution);
 		return -EINVAL;
 	}
 
@@ -209,8 +194,7 @@ static int cc13xx_cc26xx_read(const struct device *dev,
 	}
 
 	if (sequence->buffer_size < exp_size) {
-		LOG_ERR("Required buffer size is %u, but %u got",
-			exp_size, sequence->buffer_size);
+		LOG_ERR("Required buffer size is %u, but %u got", exp_size, sequence->buffer_size);
 		return -ENOMEM;
 	}
 
@@ -223,16 +207,15 @@ static int cc13xx_cc26xx_read(const struct device *dev,
 	return rv;
 }
 
-static int adc_cc13xx_cc26xx_read(const struct device *dev,
-			   const struct adc_sequence *sequence)
+static int adc_cc13xx_cc26xx_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	return cc13xx_cc26xx_read(dev, sequence, false, NULL);
 }
 
 #ifdef CONFIG_ADC_ASYNC
 static int adc_cc13xx_cc26xx_read_async(const struct device *dev,
-				 const struct adc_sequence *sequence,
-				 struct k_poll_signal *async)
+					const struct adc_sequence *sequence,
+					struct k_poll_signal *async)
 {
 	return cc13xx_cc26xx_read(dev, sequence, true, async);
 }
@@ -247,10 +230,9 @@ static void adc_cc13xx_cc26xx_isr(const struct device *dev)
 {
 	struct adc_cc13xx_cc26xx_data *data = dev->data;
 	/* get the statuses of ADC_DONE and ADC_IRQ events in order to clear them both */
-	uint32_t ev_status = (
-		HWREG(AUX_EVCTL_BASE + AUX_EVCTL_O_EVTOMCUFLAGS) &
-		(AUX_EVCTL_EVTOMCUFLAGS_AUX_ADC_IRQ | AUX_EVCTL_EVTOMCUFLAGS_AUX_ADC_DONE)
-	);
+	uint32_t ev_status =
+		(HWREG(AUX_EVCTL_BASE + AUX_EVCTL_O_EVTOMCUFLAGS) &
+		 (AUX_EVCTL_EVTOMCUFLAGS_AUX_ADC_IRQ | AUX_EVCTL_EVTOMCUFLAGS_AUX_ADC_DONE));
 	uint32_t fifo_status;
 	uint32_t adc_value;
 
@@ -283,29 +265,26 @@ static const struct adc_driver_api cc13xx_cc26xx_driver_api = {
 	.ref_internal = 4300, /* fixed reference: 4.3V */
 };
 
-#define CC13XX_CC26XX_ADC_INIT(index)						 \
-	static void adc_cc13xx_cc26xx_cfg_func_##index(void);			 \
-	static const struct adc_cc13xx_cc26xx_cfg adc_cc13xx_cc26xx_cfg_##index = { \
-		.base = DT_INST_REG_ADDR(index),				 \
-		.irq_cfg_func = adc_cc13xx_cc26xx_cfg_func_##index,		 \
-	};									 \
-	static struct adc_cc13xx_cc26xx_data adc_cc13xx_cc26xx_data_##index = { \
-		ADC_CONTEXT_INIT_TIMER(adc_cc13xx_cc26xx_data_##index, ctx),	 \
-		ADC_CONTEXT_INIT_LOCK(adc_cc13xx_cc26xx_data_##index, ctx),	 \
-		ADC_CONTEXT_INIT_SYNC(adc_cc13xx_cc26xx_data_##index, ctx),	 \
-	};									 \
-	DEVICE_DT_INST_DEFINE(index,						 \
-		&adc_cc13xx_cc26xx_init, NULL,					 \
-		&adc_cc13xx_cc26xx_data_##index,				 \
-		&adc_cc13xx_cc26xx_cfg_##index, POST_KERNEL,			 \
-		CONFIG_ADC_INIT_PRIORITY,					 \
-		&cc13xx_cc26xx_driver_api);					 \
-										 \
-	static void adc_cc13xx_cc26xx_cfg_func_##index(void)			 \
-	{									 \
-		IRQ_CONNECT(DT_INST_IRQN(index), DT_INST_IRQ(index, priority),	 \
-				adc_cc13xx_cc26xx_isr, DEVICE_DT_INST_GET(index), 0); \
-		irq_enable(DT_INST_IRQN(index));				 \
+#define CC13XX_CC26XX_ADC_INIT(index)                                                              \
+	static void adc_cc13xx_cc26xx_cfg_func_##index(void);                                      \
+	static const struct adc_cc13xx_cc26xx_cfg adc_cc13xx_cc26xx_cfg_##index = {                \
+		.base = DT_INST_REG_ADDR(index),                                                   \
+		.irq_cfg_func = adc_cc13xx_cc26xx_cfg_func_##index,                                \
+	};                                                                                         \
+	static struct adc_cc13xx_cc26xx_data adc_cc13xx_cc26xx_data_##index = {                    \
+		ADC_CONTEXT_INIT_TIMER(adc_cc13xx_cc26xx_data_##index, ctx),                       \
+		ADC_CONTEXT_INIT_LOCK(adc_cc13xx_cc26xx_data_##index, ctx),                        \
+		ADC_CONTEXT_INIT_SYNC(adc_cc13xx_cc26xx_data_##index, ctx),                        \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(index, &adc_cc13xx_cc26xx_init, NULL,                                \
+			      &adc_cc13xx_cc26xx_data_##index, &adc_cc13xx_cc26xx_cfg_##index,     \
+			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, &cc13xx_cc26xx_driver_api);   \
+                                                                                                   \
+	static void adc_cc13xx_cc26xx_cfg_func_##index(void)                                       \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(index), DT_INST_IRQ(index, priority),                     \
+			    adc_cc13xx_cc26xx_isr, DEVICE_DT_INST_GET(index), 0);                  \
+		irq_enable(DT_INST_IRQN(index));                                                   \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(CC13XX_CC26XX_ADC_INIT)

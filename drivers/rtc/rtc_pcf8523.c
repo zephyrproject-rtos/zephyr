@@ -16,49 +16,49 @@
 LOG_MODULE_REGISTER(pcf8523, CONFIG_RTC_LOG_LEVEL);
 
 /* PCF8523 register addresses */
-#define PCF8523_CONTROL_1	0x00U
-#define PCF8523_CONTROL_2	0x01U
-#define PCF8523_CONTROL_3	0x02U
-#define PCF8523_SECONDS		0x03U
-#define PCF8523_MINUTES		0x04U
-#define PCF8523_HOURS		0x05U
-#define PCF8523_DAYS		0x06U
-#define PCF8523_WEEKDAYS	0x07U
-#define PCF8523_MONTHS		0x08U
-#define PCF8523_YEARS		0x09U
-#define PCF8523_MINUTE_ALARM	0x0aU
-#define PCF8523_HOUR_ALARM	0x0bU
-#define PCF8523_DAY_ALARM	0x0cU
-#define PCF8523_WEEKDAY_ALARM	0x0dU
-#define PCF8523_OFFSET		0x0eU
+#define PCF8523_CONTROL_1       0x00U
+#define PCF8523_CONTROL_2       0x01U
+#define PCF8523_CONTROL_3       0x02U
+#define PCF8523_SECONDS         0x03U
+#define PCF8523_MINUTES         0x04U
+#define PCF8523_HOURS           0x05U
+#define PCF8523_DAYS            0x06U
+#define PCF8523_WEEKDAYS        0x07U
+#define PCF8523_MONTHS          0x08U
+#define PCF8523_YEARS           0x09U
+#define PCF8523_MINUTE_ALARM    0x0aU
+#define PCF8523_HOUR_ALARM      0x0bU
+#define PCF8523_DAY_ALARM       0x0cU
+#define PCF8523_WEEKDAY_ALARM   0x0dU
+#define PCF8523_OFFSET          0x0eU
 #define PCF8523_TMR_CLKOUT_CTRL 0x0fU
 #define PCF8523_TMR_A_FREQ_CTRL 0x10U
-#define PCF8523_TMR_A_REG	0x11U
+#define PCF8523_TMR_A_REG       0x11U
 #define PCF8523_TMR_B_FREQ_CTRL 0x12U
-#define PCF8523_TMR_B_REG	0x13U
+#define PCF8523_TMR_B_REG       0x13U
 
 /* Control register bits */
 #define PCF8523_CONTROL_1_CAP_SEL BIT(7)
-#define PCF8523_CONTROL_1_T	  BIT(6)
-#define PCF8523_CONTROL_1_STOP	  BIT(5)
-#define PCF8523_CONTROL_1_SR	  BIT(4)
-#define PCF8523_CONTROL_1_12_24	  BIT(3)
-#define PCF8523_CONTROL_1_SIE	  BIT(2)
-#define PCF8523_CONTROL_1_AIE	  BIT(1)
-#define PCF8523_CONTROL_1_CIE	  BIT(0)
-#define PCF8523_CONTROL_2_WTAF	  BIT(7)
-#define PCF8523_CONTROL_2_CTAF	  BIT(6)
-#define PCF8523_CONTROL_2_CTBF	  BIT(5)
-#define PCF8523_CONTROL_2_SF	  BIT(4)
-#define PCF8523_CONTROL_2_AF	  BIT(3)
-#define PCF8523_CONTROL_2_WTAIE	  BIT(2)
-#define PCF8523_CONTROL_2_CTAIE	  BIT(1)
-#define PCF8523_CONTROL_2_CTBIE	  BIT(0)
+#define PCF8523_CONTROL_1_T       BIT(6)
+#define PCF8523_CONTROL_1_STOP    BIT(5)
+#define PCF8523_CONTROL_1_SR      BIT(4)
+#define PCF8523_CONTROL_1_12_24   BIT(3)
+#define PCF8523_CONTROL_1_SIE     BIT(2)
+#define PCF8523_CONTROL_1_AIE     BIT(1)
+#define PCF8523_CONTROL_1_CIE     BIT(0)
+#define PCF8523_CONTROL_2_WTAF    BIT(7)
+#define PCF8523_CONTROL_2_CTAF    BIT(6)
+#define PCF8523_CONTROL_2_CTBF    BIT(5)
+#define PCF8523_CONTROL_2_SF      BIT(4)
+#define PCF8523_CONTROL_2_AF      BIT(3)
+#define PCF8523_CONTROL_2_WTAIE   BIT(2)
+#define PCF8523_CONTROL_2_CTAIE   BIT(1)
+#define PCF8523_CONTROL_2_CTBIE   BIT(0)
 #define PCF8523_CONTROL_3_PM_MASK GENMASK(7, 5)
-#define PCF8523_CONTROL_3_BSF	  BIT(3)
-#define PCF8523_CONTROL_3_BLF	  BIT(2)
-#define PCF8523_CONTROL_3_BSIE	  BIT(1)
-#define PCF8523_CONTROL_3_BLIE	  BIT(0)
+#define PCF8523_CONTROL_3_BSF     BIT(3)
+#define PCF8523_CONTROL_3_BLF     BIT(2)
+#define PCF8523_CONTROL_3_BSIE    BIT(1)
+#define PCF8523_CONTROL_3_BLIE    BIT(0)
 
 /* Time and date register bits */
 #define PCF8523_SECONDS_OS     BIT(7)
@@ -76,25 +76,25 @@ LOG_MODULE_REGISTER(pcf8523, CONFIG_RTC_LOG_LEVEL);
 #define PCF8523_MINUTE_ALARM_AEN_M  BIT(7)
 #define PCF8523_MINUTE_ALARM_MASK   GENMASK(6, 0)
 #define PCF8523_HOUR_ALARM_AEN_H    BIT(7)
-#define PCF8523_HOUR_ALARM_AMPM	    BIT(5)
+#define PCF8523_HOUR_ALARM_AMPM     BIT(5)
 #define PCF8523_HOUR_ALARM_12H_MASK GENMASK(4, 0)
 #define PCF8523_HOUR_ALARM_24H_MASK GENMASK(5, 0)
-#define PCF8523_DAY_ALARM_AEN_D	    BIT(7)
-#define PCF8523_DAY_ALARM_MASK	    GENMASK(5, 0)
+#define PCF8523_DAY_ALARM_AEN_D     BIT(7)
+#define PCF8523_DAY_ALARM_MASK      GENMASK(5, 0)
 #define PCF8523_WEEKDAY_ALARM_AEN_W BIT(7)
 #define PCF8523_WEEKDAY_ALARM_MASK  GENMASK(5, 0)
 
 /* Timer register bits */
-#define PCF8523_TMR_CLKOUT_CTRL_TAM	 BIT(7)
-#define PCF8523_TMR_CLKOUT_CTRL_TBM	 BIT(6)
+#define PCF8523_TMR_CLKOUT_CTRL_TAM      BIT(7)
+#define PCF8523_TMR_CLKOUT_CTRL_TBM      BIT(6)
 #define PCF8523_TMR_CLKOUT_CTRL_COF_MASK GENMASK(5, 3)
 #define PCF8523_TMR_CLKOUT_CTRL_TAC_MASK GENMASK(2, 1)
-#define PCF8523_TMR_CLKOUT_CTRL_TBC	 BIT(0)
+#define PCF8523_TMR_CLKOUT_CTRL_TBC      BIT(0)
 #define PCF8523_TMR_A_FREQ_CTRL_TAQ_MASK GENMASK(2, 0)
-#define PCF8523_TMR_A_REG_T_A_MASK	 GENMASK(7, 0)
+#define PCF8523_TMR_A_REG_T_A_MASK       GENMASK(7, 0)
 #define PCF8523_TMR_B_FREQ_CTRL_TBW_MASK GENMASK(6, 4)
 #define PCF8523_TMR_B_FREQ_CTRL_TBQ_MASK GENMASK(2, 0)
-#define PCF8523_TMR_B_REG_T_B_MASK	 GENMASK(7, 0)
+#define PCF8523_TMR_B_REG_T_B_MASK       GENMASK(7, 0)
 
 /* Offset register bits */
 #define PCF8523_OFFSET_MODE BIT(7)
@@ -801,9 +801,9 @@ static int pcf8523_init(const struct device *dev)
 		}
 
 		tid = k_thread_create(&data->int1_thread, data->int1_stack,
-				      K_THREAD_STACK_SIZEOF(data->int1_stack),
-				      pcf8523_int1_thread, (void *)dev, NULL,
-				      NULL, CONFIG_RTC_PCF8523_THREAD_PRIO, 0, K_NO_WAIT);
+				      K_THREAD_STACK_SIZEOF(data->int1_stack), pcf8523_int1_thread,
+				      (void *)dev, NULL, NULL, CONFIG_RTC_PCF8523_THREAD_PRIO, 0,
+				      K_NO_WAIT);
 		k_thread_name_set(tid, "pcf8523");
 
 		/*
@@ -958,7 +958,7 @@ static const struct rtc_driver_api pcf8523_driver_api = {
 		.cap_sel = PCF8523_CAP_SEL_FROM_DT_INST(inst),                                     \
 		.wakeup_source = DT_INST_PROP(inst, wakeup_source),                                \
 		IF_ENABLED(PCF8523_INT1_GPIOS_IN_USE,                                              \
-			   (.int1 = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, {0})))};            \
+			   (.int1 = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, {0})))};                \
                                                                                                    \
 	static struct pcf8523_data pcf8523_data_##inst;                                            \
                                                                                                    \

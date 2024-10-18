@@ -39,8 +39,7 @@ struct data {
 
 static void grgpio_isr(const struct device *dev);
 
-static int pin_configure(const struct device *dev,
-				gpio_pin_t pin, gpio_flags_t flags)
+static int pin_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct cfg *cfg = dev->config;
 	struct data *data = dev->data;
@@ -93,9 +92,8 @@ static int port_get_raw(const struct device *dev, gpio_port_value_t *value)
 	return 0;
 }
 
-static int port_set_masked_raw(const struct device *dev,
-					  gpio_port_pins_t mask,
-					  gpio_port_value_t value)
+static int port_set_masked_raw(const struct device *dev, gpio_port_pins_t mask,
+			       gpio_port_value_t value)
 {
 	const struct cfg *cfg = dev->config;
 	struct data *data = dev->data;
@@ -147,10 +145,8 @@ static uint32_t get_pending_int(const struct device *dev)
 	return regs->iflag;
 }
 
-static int pin_interrupt_configure(const struct device *dev,
-					      gpio_pin_t pin,
-					      enum gpio_int_mode mode,
-					      enum gpio_int_trig trig)
+static int pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
+				   enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	const struct cfg *cfg = dev->config;
 	struct data *data = dev->data;
@@ -203,20 +199,14 @@ static int pin_interrupt_configure(const struct device *dev,
 		;
 	} else if (irqgen < 32) {
 		/* look up interrupt number in GRGPIO interrupt map */
-		uint32_t val = regs->irqmap[pin/4];
+		uint32_t val = regs->irqmap[pin / 4];
 
 		val >>= (3 - pin % 4) * 8;
 		interrupt += (val & 0x1f);
 	}
 
 	if (interrupt && ((1 << interrupt) & data->connected) == 0) {
-		irq_connect_dynamic(
-			interrupt,
-			0,
-			(void (*)(const void *)) grgpio_isr,
-			dev,
-			0
-		);
+		irq_connect_dynamic(interrupt, 0, (void (*)(const void *))grgpio_isr, dev, 0);
 		irq_enable(interrupt);
 		data->connected |= 1 << interrupt;
 	}
@@ -224,9 +214,7 @@ static int pin_interrupt_configure(const struct device *dev,
 	return ret;
 }
 
-static int manage_callback(const struct device *dev,
-			   struct gpio_callback *callback,
-			   bool set)
+static int manage_callback(const struct device *dev, struct gpio_callback *callback, bool set)
 {
 	struct data *data = dev->data;
 
@@ -270,35 +258,29 @@ static int grgpio_init(const struct device *dev)
 }
 
 static const struct gpio_driver_api driver_api = {
-	.pin_configure                  = pin_configure,
-	.port_get_raw                   = port_get_raw,
-	.port_set_masked_raw            = port_set_masked_raw,
-	.port_set_bits_raw              = port_set_bits_raw,
-	.port_clear_bits_raw            = port_clear_bits_raw,
-	.port_toggle_bits               = port_toggle_bits,
-	.pin_interrupt_configure        = pin_interrupt_configure,
-	.manage_callback                = manage_callback,
-	.get_pending_int                = get_pending_int,
+	.pin_configure = pin_configure,
+	.port_get_raw = port_get_raw,
+	.port_set_masked_raw = port_set_masked_raw,
+	.port_set_bits_raw = port_set_bits_raw,
+	.port_clear_bits_raw = port_clear_bits_raw,
+	.port_toggle_bits = port_toggle_bits,
+	.pin_interrupt_configure = pin_interrupt_configure,
+	.manage_callback = manage_callback,
+	.get_pending_int = get_pending_int,
 };
 
-#define GRGPIO_INIT(n)							\
-	static const struct cfg cfg_##n = {				\
-		.common = {						\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),\
-		},							\
-		.regs = (void *) DT_INST_REG_ADDR(n),			\
-		.interrupt = DT_INST_IRQN(n),				\
-	};								\
-	static struct data data_##n;					\
-									\
-	DEVICE_DT_INST_DEFINE(n,					\
-			    grgpio_init,				\
-			    NULL,					\
-			    &data_##n,					\
-			    &cfg_##n,					\
-			    POST_KERNEL,				\
-			    CONFIG_GPIO_INIT_PRIORITY,			\
-			    &driver_api					\
-			   );
+#define GRGPIO_INIT(n)                                                                             \
+	static const struct cfg cfg_##n = {                                                        \
+		.common =                                                                          \
+			{                                                                          \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
+			},                                                                         \
+		.regs = (void *)DT_INST_REG_ADDR(n),                                               \
+		.interrupt = DT_INST_IRQN(n),                                                      \
+	};                                                                                         \
+	static struct data data_##n;                                                               \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, grgpio_init, NULL, &data_##n, &cfg_##n, POST_KERNEL,              \
+			      CONFIG_GPIO_INIT_PRIORITY, &driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GRGPIO_INIT)

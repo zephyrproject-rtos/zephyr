@@ -15,7 +15,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control_ast10x0);
 
-#define HPLL_FREQ			MHZ(1000)
+#define HPLL_FREQ MHZ(1000)
 
 /*
  * CLK_STOP_CTRL0/1_SET registers:
@@ -26,22 +26,22 @@ LOG_MODULE_REGISTER(clock_control_ast10x0);
  *   - Write '1' to a bit: clear the corresponding bit in CLK_STOP_CTRL0/1.
  *                         (turn ON the corresponding clock)
  */
-#define CLK_STOP_CTRL0_SET		0x80
-#define CLK_STOP_CTRL0_CLEAR		0x84
-#define CLK_STOP_CTRL1_SET		0x90
-#define CLK_STOP_CTRL1_CLEAR		0x94
+#define CLK_STOP_CTRL0_SET   0x80
+#define CLK_STOP_CTRL0_CLEAR 0x84
+#define CLK_STOP_CTRL1_SET   0x90
+#define CLK_STOP_CTRL1_CLEAR 0x94
 
-#define CLK_SELECTION_REG4		0x310
-#define   I3C_CLK_SRC_SEL		BIT(31)
-#define     I3C_CLK_SRC_HPLL		0
-#define     I3C_CLK_SRC_480M		1
-#define   I3C_CLK_DIV_SEL		GENMASK(30, 28)
-#define     I3C_CLK_DIV_REG_TO_VAL(x)	((x == 0) ? 2 : (x + 1))
-#define   PCLK_DIV_SEL			GENMASK(11, 8)
-#define     PCLK_DIV_REG_TO_VAL(x)	((x + 1) << 1)
-#define CLK_SELECTION_REG5		0x314
-#define   HCLK_DIV_SEL			GENMASK(30, 28)
-#define     HCLK_DIV_REG_TO_VAL(x)	((x == 0) ? 2 : x + 1)
+#define CLK_SELECTION_REG4        0x310
+#define I3C_CLK_SRC_SEL           BIT(31)
+#define I3C_CLK_SRC_HPLL          0
+#define I3C_CLK_SRC_480M          1
+#define I3C_CLK_DIV_SEL           GENMASK(30, 28)
+#define I3C_CLK_DIV_REG_TO_VAL(x) ((x == 0) ? 2 : (x + 1))
+#define PCLK_DIV_SEL              GENMASK(11, 8)
+#define PCLK_DIV_REG_TO_VAL(x)    ((x + 1) << 1)
+#define CLK_SELECTION_REG5        0x314
+#define HCLK_DIV_SEL              GENMASK(30, 28)
+#define HCLK_DIV_REG_TO_VAL(x)    ((x == 0) ? 2 : x + 1)
 
 struct clock_aspeed_config {
 	const struct device *syscon;

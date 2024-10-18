@@ -18,80 +18,80 @@ LOG_MODULE_REGISTER(mss_qspi, CONFIG_SPI_LOG_LEVEL);
 #include "spi_context.h"
 
 /*MSS QSPI Register offsets */
-#define MSS_QSPI_REG_CONTROL		(0x00)
-#define MSS_QSPI_REG_FRAMES		(0x04)
-#define MSS_QSPI_REG_IEN		(0x0c)
-#define MSS_QSPI_REG_STATUS		(0x10)
-#define MSS_QSPI_REG_DIRECT_ACCESS	(0x14)
-#define MSS_QSPI_REG_UPPER_ACCESS	(0x18)
-#define MSS_QSPI_REG_RX_DATA		(0x40)
-#define MSS_QSPI_REG_TX_DATA		(0x44)
-#define MSS_QSPI_REG_X4_RX_DATA		(0x48)
-#define MSS_QSPI_REG_X4_TX_DATA		(0x4c)
-#define MSS_QSPI_REG_FRAMESUP		(0x50)
+#define MSS_QSPI_REG_CONTROL       (0x00)
+#define MSS_QSPI_REG_FRAMES        (0x04)
+#define MSS_QSPI_REG_IEN           (0x0c)
+#define MSS_QSPI_REG_STATUS        (0x10)
+#define MSS_QSPI_REG_DIRECT_ACCESS (0x14)
+#define MSS_QSPI_REG_UPPER_ACCESS  (0x18)
+#define MSS_QSPI_REG_RX_DATA       (0x40)
+#define MSS_QSPI_REG_TX_DATA       (0x44)
+#define MSS_QSPI_REG_X4_RX_DATA    (0x48)
+#define MSS_QSPI_REG_X4_TX_DATA    (0x4c)
+#define MSS_QSPI_REG_FRAMESUP      (0x50)
 
 /* QSPICR bit definitions */
-#define MSS_QSPI_CONTROL_ENABLE		BIT(0)
-#define MSS_QSPI_CONTROL_MASTER		BIT(1)
-#define MSS_QSPI_CONTROL_XIP		BIT(2)
-#define MSS_QSPI_CONTROL_XIPADDR	BIT(3)
-#define MSS_QSPI_CONTROL_CLKIDLE	BIT(10)
-#define MSS_QSPI_CONTROL_SAMPLE_MSK     (3 << 11)
-#define MSS_QSPI_CONTROL_MODE0		BIT(13)
-#define MSS_QSPI_CONTROL_MODE_EXQUAD	(0x6 << 13)
-#define MSS_QSPI_CONTROL_MODE_EXDUAL	(0x2 << 13)
-#define MSS_QSPI_CONTROL_MODE12_MSK	(3 << 14)
-#define MSS_QSPI_CONTROL_FLAGSX4	BIT(16)
-#define MSS_QSPI_CONTROL_CLKRATE_MSK	(0xf << 24)
-#define MSS_QSPI_CONTROL_CLKRATE	24
+#define MSS_QSPI_CONTROL_ENABLE      BIT(0)
+#define MSS_QSPI_CONTROL_MASTER      BIT(1)
+#define MSS_QSPI_CONTROL_XIP         BIT(2)
+#define MSS_QSPI_CONTROL_XIPADDR     BIT(3)
+#define MSS_QSPI_CONTROL_CLKIDLE     BIT(10)
+#define MSS_QSPI_CONTROL_SAMPLE_MSK  (3 << 11)
+#define MSS_QSPI_CONTROL_MODE0       BIT(13)
+#define MSS_QSPI_CONTROL_MODE_EXQUAD (0x6 << 13)
+#define MSS_QSPI_CONTROL_MODE_EXDUAL (0x2 << 13)
+#define MSS_QSPI_CONTROL_MODE12_MSK  (3 << 14)
+#define MSS_QSPI_CONTROL_FLAGSX4     BIT(16)
+#define MSS_QSPI_CONTROL_CLKRATE_MSK (0xf << 24)
+#define MSS_QSPI_CONTROL_CLKRATE     24
 
 /* QSPIFRAMES bit definitions */
-#define MSS_QSPI_FRAMES_TOTALBYTES_MSK	(0xffff << 0)
-#define MSS_QSPI_FRAMES_TOTALBYTES_MSK	(0xffff << 0)
-#define MSS_QSPI_FRAMES_CMDBYTES_MSK	(0x1ff << 16)
-#define MSS_QSPI_FRAMES_CMDBYTES	16
-#define MSS_QSPI_FRAMES_QSPI		BIT(25)
-#define MSS_QSPI_FRAMES_IDLE_MSK	(0xf << 26)
-#define MSS_QSPI_FRAMES_FLAGBYTE	BIT(30)
-#define MSS_QSPI_FRAMES_FLAGWORD	BIT(31)
+#define MSS_QSPI_FRAMES_TOTALBYTES_MSK (0xffff << 0)
+#define MSS_QSPI_FRAMES_TOTALBYTES_MSK (0xffff << 0)
+#define MSS_QSPI_FRAMES_CMDBYTES_MSK   (0x1ff << 16)
+#define MSS_QSPI_FRAMES_CMDBYTES       16
+#define MSS_QSPI_FRAMES_QSPI           BIT(25)
+#define MSS_QSPI_FRAMES_IDLE_MSK       (0xf << 26)
+#define MSS_QSPI_FRAMES_FLAGBYTE       BIT(30)
+#define MSS_QSPI_FRAMES_FLAGWORD       BIT(31)
 
 /* QSPIIEN bit definitions */
-#define MSS_QSPI_IEN_TXDONE		BIT(0)
-#define MSS_QSPI_IEN_RXDONE		BIT(1)
-#define MSS_QSPI_IEN_RXAVAILABLE	BIT(2)
-#define MSS_QSPI_IEN_TXAVAILABLE	BIT(3)
-#define MSS_QSPI_IEN_RXFIFOEMPTY	BIT(4)
-#define MSS_QSPI_IEN_TXFIFOFULL		BIT(5)
-#define MSS_QSPI_IEN_FLAGSX4		BIT(8)
+#define MSS_QSPI_IEN_TXDONE      BIT(0)
+#define MSS_QSPI_IEN_RXDONE      BIT(1)
+#define MSS_QSPI_IEN_RXAVAILABLE BIT(2)
+#define MSS_QSPI_IEN_TXAVAILABLE BIT(3)
+#define MSS_QSPI_IEN_RXFIFOEMPTY BIT(4)
+#define MSS_QSPI_IEN_TXFIFOFULL  BIT(5)
+#define MSS_QSPI_IEN_FLAGSX4     BIT(8)
 
 /* QSPIST bit definitions */
-#define MSS_QSPI_STATUS_TXDONE		BIT(0)
-#define MSS_QSPI_STATUS_RXDONE		BIT(1)
-#define MSS_QSPI_STATUS_RXAVAILABLE	BIT(2)
-#define MSS_QSPI_STATUS_TXAVAILABLE	BIT(3)
-#define MSS_QSPI_STATUS_RXFIFOEMPTY	BIT(4)
-#define MSS_QSPI_STATUS_TXFIFOFULL	BIT(5)
-#define MSS_QSPI_STATUS_READY		BIT(7)
-#define MSS_QSPI_STATUS_FLAGSX4		BIT(8)
+#define MSS_QSPI_STATUS_TXDONE      BIT(0)
+#define MSS_QSPI_STATUS_RXDONE      BIT(1)
+#define MSS_QSPI_STATUS_RXAVAILABLE BIT(2)
+#define MSS_QSPI_STATUS_TXAVAILABLE BIT(3)
+#define MSS_QSPI_STATUS_RXFIFOEMPTY BIT(4)
+#define MSS_QSPI_STATUS_TXFIFOFULL  BIT(5)
+#define MSS_QSPI_STATUS_READY       BIT(7)
+#define MSS_QSPI_STATUS_FLAGSX4     BIT(8)
 
 /* QSPIDA bit definitions */
-#define MSS_QSPI_DA_EN_SSEL		BIT(0)
-#define MSS_QSPI_DA_OP_SSEL		BIT(1)
-#define MSS_QSPI_DA_EN_SCLK		BIT(2)
-#define MSS_QSPI_DA_OP_SCLK		BIT(3)
-#define MSS_QSPI_DA_EN_SDO_MSK		(0xf << 4)
-#define MSS_QSPI_DA_OP_SDO_MSK		(0xf << 8)
-#define MSS_QSPI_DA_OP_SDATA_MSK	(0xf << 12)
-#define MSS_QSPI_DA_IP_SDI_MSK		(0xf << 16)
-#define MSS_QSPI_DA_IP_SCLK		BIT(21)
-#define MSS_QSPI_DA_IP_SSEL		BIT(22)
-#define MSS_QSPI_DA_IDLE		BIT(23)
-#define MSS_QSPI_RXDATA_MSK		(0xff << 0)
-#define MSS_QSPI_TXDATA_MSK		(0xff << 0)
+#define MSS_QSPI_DA_EN_SSEL      BIT(0)
+#define MSS_QSPI_DA_OP_SSEL      BIT(1)
+#define MSS_QSPI_DA_EN_SCLK      BIT(2)
+#define MSS_QSPI_DA_OP_SCLK      BIT(3)
+#define MSS_QSPI_DA_EN_SDO_MSK   (0xf << 4)
+#define MSS_QSPI_DA_OP_SDO_MSK   (0xf << 8)
+#define MSS_QSPI_DA_OP_SDATA_MSK (0xf << 12)
+#define MSS_QSPI_DA_IP_SDI_MSK   (0xf << 16)
+#define MSS_QSPI_DA_IP_SCLK      BIT(21)
+#define MSS_QSPI_DA_IP_SSEL      BIT(22)
+#define MSS_QSPI_DA_IDLE         BIT(23)
+#define MSS_QSPI_RXDATA_MSK      (0xff << 0)
+#define MSS_QSPI_TXDATA_MSK      (0xff << 0)
 
 /* QSPIFRAMESUP bit definitions */
-#define MSS_QSPI_FRAMESUP_UP_BYTES_MSK	(0xFFFF << 16)
-#define MSS_QSPI_FRAMESUP_LO_BYTES_MSK	(0xFFFF << 0)
+#define MSS_QSPI_FRAMESUP_UP_BYTES_MSK (0xFFFF << 16)
+#define MSS_QSPI_FRAMESUP_LO_BYTES_MSK (0xFFFF << 0)
 
 /*
  * Private data structure for an SPI slave
@@ -108,23 +108,19 @@ struct mss_qspi_data {
 	struct spi_context ctx;
 };
 
-static inline uint32_t mss_qspi_read(const struct mss_qspi_config *cfg,
-				     mm_reg_t offset)
+static inline uint32_t mss_qspi_read(const struct mss_qspi_config *cfg, mm_reg_t offset)
 {
 	return sys_read32(cfg->base + offset);
 }
 
-static inline void mss_qspi_write(const struct mss_qspi_config *cfg,
-				  uint32_t val, mm_reg_t offset)
+static inline void mss_qspi_write(const struct mss_qspi_config *cfg, uint32_t val, mm_reg_t offset)
 {
 	sys_write32(val, cfg->base + offset);
 }
 
 static void mss_qspi_enable_ints(const struct mss_qspi_config *s)
 {
-	uint32_t mask = MSS_QSPI_IEN_TXDONE |
-		   MSS_QSPI_IEN_RXDONE |
-		   MSS_QSPI_IEN_RXAVAILABLE;
+	uint32_t mask = MSS_QSPI_IEN_TXDONE | MSS_QSPI_IEN_RXDONE | MSS_QSPI_IEN_RXAVAILABLE;
 
 	mss_qspi_write(s, mask, MSS_QSPI_REG_IEN);
 }
@@ -216,25 +212,23 @@ static inline void mss_qspi_receive_x8(const struct device *dev, uint32_t len)
 			;
 		}
 		if (spi_context_rx_buf_on(ctx)) {
-			rdata =  mss_qspi_read(s, MSS_QSPI_REG_RX_DATA);
+			rdata = mss_qspi_read(s, MSS_QSPI_REG_RX_DATA);
 			UNALIGNED_PUT(rdata, (uint8_t *)ctx->rx_buf);
 			spi_context_update_rx(ctx, 1, 1);
 		}
 	}
 }
 
-static inline void mss_qspi_config_frames(const struct device *dev,
-					  uint32_t total_bytes,
+static inline void mss_qspi_config_frames(const struct device *dev, uint32_t total_bytes,
 					  uint32_t cmd_bytes, bool x8)
 {
 	const struct mss_qspi_config *s = dev->config;
 	uint32_t skips;
 
-	mss_qspi_write(s, (total_bytes & MSS_QSPI_FRAMESUP_UP_BYTES_MSK),
-		       MSS_QSPI_REG_FRAMESUP);
+	mss_qspi_write(s, (total_bytes & MSS_QSPI_FRAMESUP_UP_BYTES_MSK), MSS_QSPI_REG_FRAMESUP);
 	skips = (total_bytes & MSS_QSPI_FRAMESUP_LO_BYTES_MSK);
 	if (cmd_bytes) {
-		skips |= ((cmd_bytes <<  MSS_QSPI_FRAMES_CMDBYTES) & MSS_QSPI_FRAMES_CMDBYTES_MSK);
+		skips |= ((cmd_bytes << MSS_QSPI_FRAMES_CMDBYTES) & MSS_QSPI_FRAMES_CMDBYTES_MSK);
 	} else {
 		skips |= ((total_bytes << MSS_QSPI_FRAMES_CMDBYTES) & MSS_QSPI_FRAMES_CMDBYTES_MSK);
 	}
@@ -335,7 +329,7 @@ static inline void mss_qspi_receive(const struct device *dev)
 				;
 			}
 			if (spi_context_rx_buf_on(ctx)) {
-				rdata =  mss_qspi_read(s, MSS_QSPI_REG_RX_DATA);
+				rdata = mss_qspi_read(s, MSS_QSPI_REG_RX_DATA);
 				UNALIGNED_PUT(rdata, (uint8_t *)ctx->rx_buf);
 				spi_context_update_rx(ctx, 1, 1);
 			}
@@ -373,8 +367,7 @@ static inline int mss_qspi_clk_gen_set(const struct mss_qspi_config *s,
 	return 0;
 }
 
-static inline int mss_qspi_hw_mode_set(const struct mss_qspi_config *s,
-				       uint16_t mode)
+static inline int mss_qspi_hw_mode_set(const struct mss_qspi_config *s, uint16_t mode)
 {
 	uint32_t ctrl = mss_qspi_read(s, MSS_QSPI_REG_CONTROL);
 
@@ -406,8 +399,7 @@ static inline int mss_qspi_hw_mode_set(const struct mss_qspi_config *s,
 	return 0;
 }
 
-static int mss_qspi_release(const struct device *dev,
-			    const struct spi_config *config)
+static int mss_qspi_release(const struct device *dev, const struct spi_config *config)
 {
 	struct mss_qspi_data *data = dev->data;
 	const struct mss_qspi_config *cfg = dev->config;
@@ -445,7 +437,7 @@ static void mss_qspi_interrupt(const struct device *dev)
 		mss_qspi_receive(dev);
 	}
 
-	if ((intfield & MSS_QSPI_IEN_RXDONE))  {
+	if ((intfield & MSS_QSPI_IEN_RXDONE)) {
 		mss_qspi_write(cfg, MSS_QSPI_IEN_RXDONE, MSS_QSPI_REG_STATUS);
 		spi_context_complete(ctx, dev, 0);
 	}
@@ -463,8 +455,7 @@ static void mss_qspi_interrupt(const struct device *dev)
 	}
 }
 
-static int mss_qspi_configure(const struct device *dev,
-			      const struct spi_config *spi_cfg)
+static int mss_qspi_configure(const struct device *dev, const struct spi_config *spi_cfg)
 {
 	const struct mss_qspi_config *cfg = dev->config;
 
@@ -480,9 +471,7 @@ static int mss_qspi_configure(const struct device *dev,
 
 	if (spi_cfg->operation & (SPI_TRANSFER_LSB) ||
 	    ((IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
-		 (spi_cfg->operation & (SPI_LINES_DUAL |
-			SPI_LINES_QUAD |
-		       SPI_LINES_OCTAL))))) {
+	      (spi_cfg->operation & (SPI_LINES_DUAL | SPI_LINES_QUAD | SPI_LINES_OCTAL))))) {
 		LOG_ERR("Unsupported configuration\n\r");
 		return -ENOTSUP;
 	}
@@ -495,13 +484,9 @@ static int mss_qspi_configure(const struct device *dev,
 	return 0;
 }
 
-static int mss_qspi_transceive(const struct device *dev,
-			       const struct spi_config *spi_cfg,
-			       const struct spi_buf_set *tx_bufs,
-			       const struct spi_buf_set *rx_bufs,
-			       bool async,
-			       spi_callback_t cb,
-			       void *userdata)
+static int mss_qspi_transceive(const struct device *dev, const struct spi_config *spi_cfg,
+			       const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs,
+			       bool async, spi_callback_t cb, void *userdata)
 {
 	const struct mss_qspi_config *config = dev->config;
 	struct mss_qspi_data *data = dev->data;
@@ -515,8 +500,7 @@ static int mss_qspi_transceive(const struct device *dev,
 	}
 
 	mss_qspi_hw_mode_set(config, spi_cfg->operation);
-	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs,
-				  1);
+	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, 1);
 	mss_qspi_transmit(dev);
 	ret = spi_context_wait_for_completion(ctx);
 out:
@@ -526,25 +510,20 @@ out:
 	return ret;
 }
 
-static int mss_qspi_transceive_blocking(const struct device *dev,
-					const struct spi_config *spi_cfg,
+static int mss_qspi_transceive_blocking(const struct device *dev, const struct spi_config *spi_cfg,
 					const struct spi_buf_set *tx_bufs,
 					const struct spi_buf_set *rx_bufs)
 {
-	return mss_qspi_transceive(dev, spi_cfg, tx_bufs, rx_bufs, false,
-				   NULL, NULL);
+	return mss_qspi_transceive(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int mss_qspi_transceive_async(const struct device *dev,
-				     const struct spi_config *spi_cfg,
+static int mss_qspi_transceive_async(const struct device *dev, const struct spi_config *spi_cfg,
 				     const struct spi_buf_set *tx_bufs,
-				     const struct spi_buf_set *rx_bufs,
-				     spi_callback_t cb,
+				     const struct spi_buf_set *rx_bufs, spi_callback_t cb,
 				     void *userdata)
 {
-	return mss_qspi_transceive(dev, spi_cfg, tx_bufs, rx_bufs, true,
-				   cb, userdata);
+	return mss_qspi_transceive(dev, spi_cfg, tx_bufs, rx_bufs, true, cb, userdata);
 }
 #endif /* CONFIG_SPI_ASYNC */
 
@@ -560,8 +539,8 @@ static int mss_qspi_init(const struct device *dev)
 	control &= ~(MSS_QSPI_CONTROL_SAMPLE_MSK);
 	control &= ~(MSS_QSPI_CONTROL_MODE0);
 	control |= (MSS_QSPI_CONTROL_CLKRATE_MSK);
-	control &=  ~(MSS_QSPI_CONTROL_XIP);
-	control |=  (MSS_QSPI_CONTROL_CLKIDLE | MSS_QSPI_CONTROL_ENABLE);
+	control &= ~(MSS_QSPI_CONTROL_XIP);
+	control |= (MSS_QSPI_CONTROL_CLKIDLE | MSS_QSPI_CONTROL_ENABLE);
 	mss_qspi_write(cfg, control, MSS_QSPI_REG_CONTROL);
 	mss_qspi_disable_ints(cfg);
 	spi_context_unlock_unconditionally(&data->ctx);
@@ -580,33 +559,29 @@ static const struct spi_driver_api mss_qspi_driver_api = {
 	.release = mss_qspi_release,
 };
 
-#define MSS_QSPI_INIT(n)						\
-	static void mss_qspi_config_func_##n(const struct device *dev);	\
-									\
-	static const struct mss_qspi_config mss_qspi_config_##n = { \
-		.base = DT_INST_REG_ADDR(n),				\
-		.irq_config_func = mss_qspi_config_func_##n,	\
-		.clock_freq = DT_INST_PROP(n, clock_frequency),	\
-	};								\
-									\
-	static struct mss_qspi_data mss_qspi_data_##n = {	\
-		SPI_CONTEXT_INIT_LOCK(mss_qspi_data_##n, ctx),	\
-		SPI_CONTEXT_INIT_SYNC(mss_qspi_data_##n, ctx),	\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(n, mss_qspi_init,				\
-			    NULL,					\
-			    &mss_qspi_data_##n,			\
-			    &mss_qspi_config_##n, POST_KERNEL,	\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			    &mss_qspi_driver_api);			\
-									\
-	static void mss_qspi_config_func_##n(const struct device *dev)	\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
-			    mss_qspi_interrupt,				\
-			    DEVICE_DT_INST_GET(n), 0);			\
-		irq_enable(DT_INST_IRQN(n));				\
+#define MSS_QSPI_INIT(n)                                                                           \
+	static void mss_qspi_config_func_##n(const struct device *dev);                            \
+                                                                                                   \
+	static const struct mss_qspi_config mss_qspi_config_##n = {                                \
+		.base = DT_INST_REG_ADDR(n),                                                       \
+		.irq_config_func = mss_qspi_config_func_##n,                                       \
+		.clock_freq = DT_INST_PROP(n, clock_frequency),                                    \
+	};                                                                                         \
+                                                                                                   \
+	static struct mss_qspi_data mss_qspi_data_##n = {                                          \
+		SPI_CONTEXT_INIT_LOCK(mss_qspi_data_##n, ctx),                                     \
+		SPI_CONTEXT_INIT_SYNC(mss_qspi_data_##n, ctx),                                     \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, mss_qspi_init, NULL, &mss_qspi_data_##n, &mss_qspi_config_##n,    \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                     \
+			      &mss_qspi_driver_api);                                               \
+                                                                                                   \
+	static void mss_qspi_config_func_##n(const struct device *dev)                             \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mss_qspi_interrupt,         \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(MSS_QSPI_INIT)

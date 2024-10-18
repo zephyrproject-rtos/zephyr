@@ -23,26 +23,26 @@ LOG_MODULE_REGISTER(uart_neorv32, CONFIG_UART_LOG_LEVEL);
 #define NEORV32_UART_DATA_OFFSET 0x04
 
 /* UART_CTRL register bits */
-#define NEORV32_UART_CTRL_EN              BIT(0)
-#define NEORV32_UART_CTRL_SIM_MODE        BIT(1)
-#define NEORV32_UART_CTRL_HWFC_EN         BIT(2)
-#define NEORV32_UART_CTRL_PRSC_POS        3U
-#define NEORV32_UART_CTRL_PRSC_MASK       BIT_MASK(3)
-#define NEORV32_UART_CTRL_BAUD_POS        6U
-#define NEORV32_UART_CTRL_BAUD_MASK       BIT_MASK(10)
-#define NEORV32_UART_CTRL_RX_NEMPTY       BIT(16)
-#define NEORV32_UART_CTRL_RX_HALF         BIT(17)
-#define NEORV32_UART_CTRL_RX_FULL         BIT(18)
-#define NEORV32_UART_CTRL_TX_NEMPTY       BIT(19)
-#define NEORV32_UART_CTRL_TX_HALF         BIT(20)
-#define NEORV32_UART_CTRL_TX_FULL         BIT(21)
-#define NEORV32_UART_CTRL_IRQ_RX_NEMPTY   BIT(22)
-#define NEORV32_UART_CTRL_IRQ_RX_HALF     BIT(23)
-#define NEORV32_UART_CTRL_IRQ_RX_FULL     BIT(24)
-#define NEORV32_UART_CTRL_IRQ_TX_EMPTY    BIT(25)
-#define NEORV32_UART_CTRL_IRQ_TX_NHALF    BIT(26)
-#define NEORV32_UART_CTRL_RX_OVER         BIT(30)
-#define NEORV32_UART_CTRL_TX_BUSY         BIT(31)
+#define NEORV32_UART_CTRL_EN            BIT(0)
+#define NEORV32_UART_CTRL_SIM_MODE      BIT(1)
+#define NEORV32_UART_CTRL_HWFC_EN       BIT(2)
+#define NEORV32_UART_CTRL_PRSC_POS      3U
+#define NEORV32_UART_CTRL_PRSC_MASK     BIT_MASK(3)
+#define NEORV32_UART_CTRL_BAUD_POS      6U
+#define NEORV32_UART_CTRL_BAUD_MASK     BIT_MASK(10)
+#define NEORV32_UART_CTRL_RX_NEMPTY     BIT(16)
+#define NEORV32_UART_CTRL_RX_HALF       BIT(17)
+#define NEORV32_UART_CTRL_RX_FULL       BIT(18)
+#define NEORV32_UART_CTRL_TX_NEMPTY     BIT(19)
+#define NEORV32_UART_CTRL_TX_HALF       BIT(20)
+#define NEORV32_UART_CTRL_TX_FULL       BIT(21)
+#define NEORV32_UART_CTRL_IRQ_RX_NEMPTY BIT(22)
+#define NEORV32_UART_CTRL_IRQ_RX_HALF   BIT(23)
+#define NEORV32_UART_CTRL_IRQ_RX_FULL   BIT(24)
+#define NEORV32_UART_CTRL_IRQ_TX_EMPTY  BIT(25)
+#define NEORV32_UART_CTRL_IRQ_TX_NHALF  BIT(26)
+#define NEORV32_UART_CTRL_RX_OVER       BIT(30)
+#define NEORV32_UART_CTRL_TX_BUSY       BIT(31)
 
 struct neorv32_uart_config {
 	const struct device *syscon;
@@ -347,8 +347,7 @@ static int neorv32_uart_irq_rx_ready(const struct device *dev)
 
 static int neorv32_uart_irq_is_pending(const struct device *dev)
 {
-	return (neorv32_uart_irq_tx_ready(dev) ||
-		neorv32_uart_irq_rx_ready(dev));
+	return (neorv32_uart_irq_tx_ready(dev) || neorv32_uart_irq_rx_ready(dev));
 }
 
 static int neorv32_uart_irq_update(const struct device *dev)
@@ -417,8 +416,7 @@ static int neorv32_uart_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int neorv32_uart_pm_action(const struct device *dev,
-				  enum pm_device_action action)
+static int neorv32_uart_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	uint32_t ctrl = neorv32_uart_read_ctrl(dev);
 
@@ -463,60 +461,52 @@ static const struct uart_driver_api neorv32_uart_driver_api = {
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define NEORV32_UART_CONFIG_FUNC(node_id, n)	\
-	static void neorv32_uart_config_func_##n(const struct device *dev) \
-	{								\
-		IRQ_CONNECT(DT_IRQ_BY_NAME(node_id, tx, irq),		\
-			    DT_IRQ_BY_NAME(node_id, tx, priority),	\
-			    neorv32_uart_isr,				\
-			    DEVICE_DT_GET(node_id), 0);			\
-									\
-		IRQ_CONNECT(DT_IRQ_BY_NAME(node_id, rx, irq),		\
-			    DT_IRQ_BY_NAME(node_id, rx, priority),	\
-			    neorv32_uart_isr,				\
-			    DEVICE_DT_GET(node_id), 0);			\
+#define NEORV32_UART_CONFIG_FUNC(node_id, n)                                                       \
+	static void neorv32_uart_config_func_##n(const struct device *dev)                         \
+	{                                                                                          \
+		IRQ_CONNECT(DT_IRQ_BY_NAME(node_id, tx, irq),                                      \
+			    DT_IRQ_BY_NAME(node_id, tx, priority), neorv32_uart_isr,               \
+			    DEVICE_DT_GET(node_id), 0);                                            \
+                                                                                                   \
+		IRQ_CONNECT(DT_IRQ_BY_NAME(node_id, rx, irq),                                      \
+			    DT_IRQ_BY_NAME(node_id, rx, priority), neorv32_uart_isr,               \
+			    DEVICE_DT_GET(node_id), 0);                                            \
 	}
-#define NEORV32_UART_CONFIG_INIT(node_id, n)				\
-	.irq_config_func = neorv32_uart_config_func_##n,		\
-	.tx_irq = DT_IRQ_BY_NAME(node_id, tx, irq),			\
-	.rx_irq = DT_IRQ_BY_NAME(node_id, rx, irq),
+#define NEORV32_UART_CONFIG_INIT(node_id, n)                                                       \
+	.irq_config_func = neorv32_uart_config_func_##n,                                           \
+	.tx_irq = DT_IRQ_BY_NAME(node_id, tx, irq), .rx_irq = DT_IRQ_BY_NAME(node_id, rx, irq),
 #else
 #define NEORV32_UART_CONFIG_FUNC(node_id, n)
 #define NEORV32_UART_CONFIG_INIT(node_id, n)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-#define NEORV32_UART_INIT(node_id, n)					\
-	NEORV32_UART_CONFIG_FUNC(node_id, n)				\
-									\
-	static struct neorv32_uart_data neorv32_uart_##n##_data = {	\
-		.uart_cfg = {						\
-			.baudrate = DT_PROP(node_id, current_speed),	\
-			.parity = DT_ENUM_IDX_OR(node_id, parity,	\
-						 UART_CFG_PARITY_NONE),	\
-			.stop_bits = UART_CFG_STOP_BITS_1,		\
-			.data_bits = UART_CFG_DATA_BITS_8,		\
-			.flow_ctrl = DT_PROP(node_id, hw_flow_control) ? \
-				UART_CFG_FLOW_CTRL_RTS_CTS :		\
-				UART_CFG_FLOW_CTRL_NONE,		\
-		},							\
-	};								\
-									\
-	static const struct neorv32_uart_config neorv32_uart_##n##_config = { \
-		.syscon = DEVICE_DT_GET(DT_PHANDLE(node_id, syscon)),	\
-		.feature_mask = NEORV32_SYSINFO_FEATURES_IO_UART##n,	\
-		.base = DT_REG_ADDR(node_id),				\
-		NEORV32_UART_CONFIG_INIT(node_id, n)			\
-	};								\
-									\
-	PM_DEVICE_DT_DEFINE(node_id, neorv32_uart_pm_action);		\
-									\
-	DEVICE_DT_DEFINE(node_id, &neorv32_uart_init,			\
-			 PM_DEVICE_DT_GET(node_id),			\
-			 &neorv32_uart_##n##_data,			\
-			 &neorv32_uart_##n##_config,			\
-			 PRE_KERNEL_1,					\
-			 CONFIG_SERIAL_INIT_PRIORITY,			\
-			 &neorv32_uart_driver_api)
+#define NEORV32_UART_INIT(node_id, n)                                                              \
+	NEORV32_UART_CONFIG_FUNC(node_id, n)                                                       \
+                                                                                                   \
+	static struct neorv32_uart_data neorv32_uart_##n##_data = {                                \
+		.uart_cfg =                                                                        \
+			{                                                                          \
+				.baudrate = DT_PROP(node_id, current_speed),                       \
+				.parity = DT_ENUM_IDX_OR(node_id, parity, UART_CFG_PARITY_NONE),   \
+				.stop_bits = UART_CFG_STOP_BITS_1,                                 \
+				.data_bits = UART_CFG_DATA_BITS_8,                                 \
+				.flow_ctrl = DT_PROP(node_id, hw_flow_control)                     \
+						     ? UART_CFG_FLOW_CTRL_RTS_CTS                  \
+						     : UART_CFG_FLOW_CTRL_NONE,                    \
+			},                                                                         \
+	};                                                                                         \
+                                                                                                   \
+	static const struct neorv32_uart_config neorv32_uart_##n##_config = {                      \
+		.syscon = DEVICE_DT_GET(DT_PHANDLE(node_id, syscon)),                              \
+		.feature_mask = NEORV32_SYSINFO_FEATURES_IO_UART##n,                               \
+		.base = DT_REG_ADDR(node_id),                                                      \
+		NEORV32_UART_CONFIG_INIT(node_id, n)};                                             \
+                                                                                                   \
+	PM_DEVICE_DT_DEFINE(node_id, neorv32_uart_pm_action);                                      \
+                                                                                                   \
+	DEVICE_DT_DEFINE(node_id, &neorv32_uart_init, PM_DEVICE_DT_GET(node_id),                   \
+			 &neorv32_uart_##n##_data, &neorv32_uart_##n##_config, PRE_KERNEL_1,       \
+			 CONFIG_SERIAL_INIT_PRIORITY, &neorv32_uart_driver_api)
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(uart0), DT_DRV_COMPAT, okay)
 NEORV32_UART_INIT(DT_NODELABEL(uart0), 0);

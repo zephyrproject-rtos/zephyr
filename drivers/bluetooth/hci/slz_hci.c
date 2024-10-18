@@ -21,14 +21,14 @@ struct hci_data {
 	bt_hci_recv_t recv;
 };
 
-#define SL_BT_CONFIG_ACCEPT_LIST_SIZE				1
-#define SL_BT_CONFIG_MAX_CONNECTIONS				1
-#define SL_BT_CONFIG_USER_ADVERTISERS				1
-#define SL_BT_CONTROLLER_BUFFER_MEMORY				CONFIG_BT_SILABS_HCI_BUFFER_MEMORY
-#define SL_BT_CONTROLLER_LE_BUFFER_SIZE_MAX			CONFIG_BT_BUF_ACL_TX_COUNT
-#define SL_BT_CONTROLLER_COMPLETED_PACKETS_THRESHOLD		1
-#define SL_BT_CONTROLLER_COMPLETED_PACKETS_EVENTS_TIMEOUT	3
-#define SL_BT_SILABS_LL_STACK_SIZE				1024
+#define SL_BT_CONFIG_ACCEPT_LIST_SIZE                     1
+#define SL_BT_CONFIG_MAX_CONNECTIONS                      1
+#define SL_BT_CONFIG_USER_ADVERTISERS                     1
+#define SL_BT_CONTROLLER_BUFFER_MEMORY                    CONFIG_BT_SILABS_HCI_BUFFER_MEMORY
+#define SL_BT_CONTROLLER_LE_BUFFER_SIZE_MAX               CONFIG_BT_BUF_ACL_TX_COUNT
+#define SL_BT_CONTROLLER_COMPLETED_PACKETS_THRESHOLD      1
+#define SL_BT_CONTROLLER_COMPLETED_PACKETS_EVENTS_TIMEOUT 3
+#define SL_BT_SILABS_LL_STACK_SIZE                        1024
 
 static K_KERNEL_STACK_DEFINE(slz_ll_stack, SL_BT_SILABS_LL_STACK_SIZE);
 static struct k_thread slz_ll_thread;
@@ -157,11 +157,9 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 	int ret;
 
 	/* Start RX thread */
-	k_thread_create(&slz_ll_thread, slz_ll_stack,
-			K_KERNEL_STACK_SIZEOF(slz_ll_stack),
+	k_thread_create(&slz_ll_thread, slz_ll_stack, K_KERNEL_STACK_SIZEOF(slz_ll_stack),
 			slz_thread_func, NULL, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO), 0,
-			K_NO_WAIT);
+			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO), 0, K_NO_WAIT);
 
 	rail_isr_installer();
 	sl_rail_util_pa_init();
@@ -192,9 +190,8 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 	sl_btctrl_init_adv_ext();
 	sl_btctrl_init_scan_ext();
 
-	ret = sl_btctrl_init_basic(SL_BT_CONFIG_MAX_CONNECTIONS,
-			SL_BT_CONFIG_USER_ADVERTISERS,
-			SL_BT_CONFIG_ACCEPT_LIST_SIZE);
+	ret = sl_btctrl_init_basic(SL_BT_CONFIG_MAX_CONNECTIONS, SL_BT_CONFIG_USER_ADVERTISERS,
+				   SL_BT_CONFIG_ACCEPT_LIST_SIZE);
 	if (ret) {
 		LOG_ERR("Failed to initialize the controller %d", ret);
 		goto deinit;
@@ -215,8 +212,7 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 		RAIL_Status_t status = RAIL_InitPowerManager();
 
 		if (status != RAIL_STATUS_NO_ERROR) {
-			LOG_ERR("RAIL: failed to initialize power management, status=%d",
-					status);
+			LOG_ERR("RAIL: failed to initialize power management, status=%d", status);
 			ret = -EIO;
 			goto deinit;
 		}
@@ -251,15 +247,14 @@ void sl_bt_controller_init(void)
 }
 
 static const struct bt_hci_driver_api drv = {
-	.open           = slz_bt_open,
-	.send           = slz_bt_send,
+	.open = slz_bt_open,
+	.send = slz_bt_send,
 };
 
-#define HCI_DEVICE_INIT(inst) \
-	static struct hci_data hci_data_##inst = { \
-	}; \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &hci_data_##inst, NULL, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
+#define HCI_DEVICE_INIT(inst)                                                                      \
+	static struct hci_data hci_data_##inst = {};                                               \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &hci_data_##inst, NULL, POST_KERNEL,               \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
 /* Only one instance supported right now */
 HCI_DEVICE_INIT(0)

@@ -29,20 +29,18 @@
 #define QSPI_IF_BUS_NODE DT_NODELABEL(qspi)
 
 /* QSPI bus properties from the devicetree */
-#define QSPI_IF_BUS_IRQN      DT_IRQN(QSPI_IF_BUS_NODE)
-#define QSPI_IF_BUS_IRQ_PRIO  DT_IRQ(QSPI_IF_BUS_NODE, priority)
-#define QSPI_IF_BUS_SCK_PIN   DT_PROP(QSPI_IF_BUS_NODE, sck_pin)
-#define QSPI_IF_BUS_CSN_PIN   DT_PROP(QSPI_IF_BUS_NODE, csn_pins)
-#define QSPI_IF_BUS_IO0_PIN   DT_PROP_BY_IDX(QSPI_IF_BUS_NODE, io_pins, 0)
-#define QSPI_IF_BUS_IO1_PIN   DT_PROP_BY_IDX(QSPI_IF_BUS_NODE, io_pins, 1)
-#define QSPI_IF_BUS_IO2_PIN   DT_PROP_BY_IDX(QSPI_IF_BUS_NODE, io_pins, 2)
-#define QSPI_IF_BUS_IO3_PIN   DT_PROP_BY_IDX(QSPI_IF_BUS_NODE, io_pins, 3)
+#define QSPI_IF_BUS_IRQN     DT_IRQN(QSPI_IF_BUS_NODE)
+#define QSPI_IF_BUS_IRQ_PRIO DT_IRQ(QSPI_IF_BUS_NODE, priority)
+#define QSPI_IF_BUS_SCK_PIN  DT_PROP(QSPI_IF_BUS_NODE, sck_pin)
+#define QSPI_IF_BUS_CSN_PIN  DT_PROP(QSPI_IF_BUS_NODE, csn_pins)
+#define QSPI_IF_BUS_IO0_PIN  DT_PROP_BY_IDX(QSPI_IF_BUS_NODE, io_pins, 0)
+#define QSPI_IF_BUS_IO1_PIN  DT_PROP_BY_IDX(QSPI_IF_BUS_NODE, io_pins, 1)
+#define QSPI_IF_BUS_IO2_PIN  DT_PROP_BY_IDX(QSPI_IF_BUS_NODE, io_pins, 2)
+#define QSPI_IF_BUS_IO3_PIN  DT_PROP_BY_IDX(QSPI_IF_BUS_NODE, io_pins, 3)
 
-#define QSPI_IF_BUS_HAS_4_IO_PINS \
-	(DT_PROP_LEN(QSPI_IF_BUS_NODE, io_pins) == 4)
+#define QSPI_IF_BUS_HAS_4_IO_PINS (DT_PROP_LEN(QSPI_IF_BUS_NODE, io_pins) == 4)
 
-#define QSPI_IF_BUS_PINCTRL_DT_DEV_CONFIG_GET \
-	PINCTRL_DT_DEV_CONFIG_GET(QSPI_IF_BUS_NODE)
+#define QSPI_IF_BUS_PINCTRL_DT_DEV_CONFIG_GET PINCTRL_DT_DEV_CONFIG_GET(QSPI_IF_BUS_NODE)
 
 /* The NRF70 device node which is on the QSPI bus */
 #define QSPI_IF_DEVICE_NODE DT_NODELABEL(nrf70)
@@ -92,8 +90,7 @@ BUILD_ASSERT(QSPI_IF_DEVICE_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 16),
 /* If anomaly 159 is to be prevented, only /1 divider can be used. */
 #elif NRF53_ERRATA_159_ENABLE_WORKAROUND
 #define BASE_CLOCK_DIV NRF_CLOCK_HFCLK_DIV_1
-#define INST_0_SCK_CFG (DIV_ROUND_UP(NRF_QSPI_BASE_CLOCK_FREQ, \
-				     INST_0_SCK_FREQUENCY) - 1)
+#define INST_0_SCK_CFG (DIV_ROUND_UP(NRF_QSPI_BASE_CLOCK_FREQ, INST_0_SCK_FREQUENCY) - 1)
 #elif (INST_0_SCK_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 2))
 /* For 96 MHz > SCK >= 48 MHz, use HFCLK192M / 2 / (2*1) = 48 MHz */
 #define BASE_CLOCK_DIV NRF_CLOCK_HFCLK_DIV_2
@@ -105,8 +102,7 @@ BUILD_ASSERT(QSPI_IF_DEVICE_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 16),
 #else
 /* For requested SCK < 32 MHz, use divider /2 for HFCLK192M. */
 #define BASE_CLOCK_DIV NRF_CLOCK_HFCLK_DIV_2
-#define INST_0_SCK_CFG (DIV_ROUND_UP(NRF_QSPI_BASE_CLOCK_FREQ / 2, \
-				     QSPI_IF_DEVICE_FREQUENCY) - 1)
+#define INST_0_SCK_CFG (DIV_ROUND_UP(NRF_QSPI_BASE_CLOCK_FREQ / 2, QSPI_IF_DEVICE_FREQUENCY) - 1)
 #endif
 
 #if BASE_CLOCK_DIV == NRF_CLOCK_HFCLK_DIV_1
@@ -135,8 +131,7 @@ BUILD_ASSERT(QSPI_IF_DEVICE_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 16),
 #if (QSPI_IF_DEVICE_FREQUENCY >= NRF_QSPI_BASE_CLOCK_FREQ)
 #define INST_0_SCK_CFG NRF_QSPI_FREQ_DIV1
 #else
-#define INST_0_SCK_CFG (DIV_ROUND_UP(NRF_QSPI_BASE_CLOCK_FREQ, \
-					 QSPI_IF_DEVICE_FREQUENCY) - 1)
+#define INST_0_SCK_CFG (DIV_ROUND_UP(NRF_QSPI_BASE_CLOCK_FREQ, QSPI_IF_DEVICE_FREQUENCY) - 1)
 #endif
 
 /* For 8 MHz, use PCLK32M / 4 */
@@ -192,7 +187,7 @@ struct qspi_nor_data {
 	struct k_sem sync;
 	/* The semaphore to control driver init/uninit. */
 	struct k_sem count;
-#else /* CONFIG_MULTITHREADING */
+#else  /* CONFIG_MULTITHREADING */
 	/* A flag that signals completed transfer when threads are
 	 * not enabled.
 	 */
@@ -318,7 +313,6 @@ nrfx_err_t _nrfx_qspi_init(nrfx_qspi_config_t const *p_config, nrfx_qspi_handler
 	return NRFX_SUCCESS;
 }
 
-
 /**
  * @brief Main configuration structure
  */
@@ -372,7 +366,7 @@ static inline void qspi_lock(const struct device *dev)
 	struct qspi_nor_data *dev_data = get_dev_data(dev);
 
 	k_sem_take(&dev_data->sem, K_FOREVER);
-#else /* CONFIG_MULTITHREADING */
+#else  /* CONFIG_MULTITHREADING */
 	ARG_UNUSED(dev);
 #endif /* CONFIG_MULTITHREADING */
 
@@ -400,7 +394,7 @@ static inline void qspi_unlock(const struct device *dev)
 	struct qspi_nor_data *dev_data = get_dev_data(dev);
 
 	k_sem_give(&dev_data->sem);
-#else /* CONFIG_MULTITHREADING */
+#else  /* CONFIG_MULTITHREADING */
 	ARG_UNUSED(dev);
 #endif /* CONFIG_MULTITHREADING */
 }
@@ -411,7 +405,7 @@ static inline void qspi_trans_lock(const struct device *dev)
 	struct qspi_nor_data *dev_data = get_dev_data(dev);
 
 	k_sem_take(&dev_data->trans, K_FOREVER);
-#else /* CONFIG_MULTITHREADING */
+#else  /* CONFIG_MULTITHREADING */
 	ARG_UNUSED(dev);
 #endif /* CONFIG_MULTITHREADING */
 }
@@ -422,7 +416,7 @@ static inline void qspi_trans_unlock(const struct device *dev)
 	struct qspi_nor_data *dev_data = get_dev_data(dev);
 
 	k_sem_give(&dev_data->trans);
-#else /* CONFIG_MULTITHREADING */
+#else  /* CONFIG_MULTITHREADING */
 	ARG_UNUSED(dev);
 #endif /* CONFIG_MULTITHREADING */
 }
@@ -434,7 +428,7 @@ static inline void qspi_wait_for_completion(const struct device *dev, nrfx_err_t
 	if (res == NRFX_SUCCESS) {
 #ifdef CONFIG_MULTITHREADING
 		k_sem_take(&dev_data->sync, K_FOREVER);
-#else /* CONFIG_MULTITHREADING */
+#else  /* CONFIG_MULTITHREADING */
 		unsigned int key = irq_lock();
 
 		while (!dev_data->ready) {
@@ -452,7 +446,7 @@ static inline void qspi_complete(struct qspi_nor_data *dev_data)
 {
 #ifdef CONFIG_MULTITHREADING
 	k_sem_give(&dev_data->sync);
-#else /* CONFIG_MULTITHREADING */
+#else  /* CONFIG_MULTITHREADING */
 	dev_data->ready = true;
 #endif /* CONFIG_MULTITHREADING */
 }
@@ -668,8 +662,7 @@ static inline void qspi_fill_init_struct(nrfx_qspi_config_t *initstruct)
 	initstruct->xip_offset = 0;
 
 #ifdef CONFIG_PINCTRL
-	initstruct->skip_gpio_cfg = true,
-	initstruct->skip_psel_cfg = true,
+	initstruct->skip_gpio_cfg = true, initstruct->skip_psel_cfg = true,
 #else
 	/* Configure pins */
 	initstruct->pins.sck_pin = QSPI_IF_BUS_SCK_PIN;
@@ -685,7 +678,7 @@ static inline void qspi_fill_init_struct(nrfx_qspi_config_t *initstruct)
 #endif
 #endif /* CONFIG_PINCTRL */
 	/* Configure Protocol interface */
-	initstruct->prot_if.addrmode = NRF_QSPI_ADDRMODE_24BIT;
+		initstruct->prot_if.addrmode = NRF_QSPI_ADDRMODE_24BIT;
 
 	initstruct->prot_if.dpmconfig = false;
 
@@ -997,19 +990,14 @@ static int qspi_nor_configure(const struct device *dev)
 static int qspi_nor_init(const struct device *dev)
 {
 #ifdef CONFIG_PINCTRL
-	int ret = pinctrl_apply_state(QSPI_IF_BUS_PINCTRL_DT_DEV_CONFIG_GET,
-				      PINCTRL_STATE_DEFAULT);
+	int ret = pinctrl_apply_state(QSPI_IF_BUS_PINCTRL_DT_DEV_CONFIG_GET, PINCTRL_STATE_DEFAULT);
 
 	if (ret < 0) {
 		return ret;
 	}
 #endif
 
-	IRQ_CONNECT(QSPI_IF_BUS_IRQN,
-		    QSPI_IF_BUS_IRQ_PRIO,
-		    nrfx_isr,
-		    nrfx_qspi_irq_handler,
-		    0);
+	IRQ_CONNECT(QSPI_IF_BUS_IRQN, QSPI_IF_BUS_IRQ_PRIO, nrfx_isr, nrfx_qspi_irq_handler, 0);
 
 	return qspi_nor_configure(dev);
 }
@@ -1017,8 +1005,8 @@ static int qspi_nor_init(const struct device *dev)
 #if defined(CONFIG_SOC_SERIES_NRF53X)
 static int qspi_cmd_encryption(const struct device *dev, nrf_qspi_encryption_t *p_cfg)
 {
-	const struct qspi_buf tx_buf = { .buf = (uint8_t *)&p_cfg->nonce[1],
-					 .len = sizeof(p_cfg->nonce[1]) };
+	const struct qspi_buf tx_buf = {.buf = (uint8_t *)&p_cfg->nonce[1],
+					.len = sizeof(p_cfg->nonce[1])};
 	const struct qspi_cmd cmd = {
 		.op_code = 0x4f,
 		.tx_buf = &tx_buf,
@@ -1084,7 +1072,6 @@ int qspi_validate_rpu_wake_writecmd(const struct device *dev)
 
 	return -1;
 }
-
 
 int qspi_RDSR1(const struct device *dev, uint8_t *rdsr1)
 {
@@ -1232,9 +1219,8 @@ void qspi_update_nonce(unsigned int addr, int len, int hlread)
 void qspi_addr_check(unsigned int addr, const void *data, unsigned int len)
 {
 	if ((addr % 4 != 0) || (((unsigned int)data) % 4 != 0) || (len % 4 != 0)) {
-		LOG_ERR("%s : Unaligned address %x %x %d %x %x", __func__, addr,
-		       (unsigned int)data, (addr % 4 != 0), (((unsigned int)data) % 4 != 0),
-		       (len % 4 != 0));
+		LOG_ERR("%s : Unaligned address %x %x %d %x %x", __func__, addr, (unsigned int)data,
+			(addr % 4 != 0), (((unsigned int)data) % 4 != 0), (len % 4 != 0));
 	}
 }
 

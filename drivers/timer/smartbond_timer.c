@@ -14,15 +14,15 @@
 #include <zephyr/irq.h>
 #include <da1469x_pdc.h>
 
-#define COUNTER_SPAN BIT(24)
-#define CYC_PER_TICK k_ticks_to_cyc_ceil32(1)
-#define TICK_TO_CYC(tick) k_ticks_to_cyc_ceil32(tick)
-#define CYC_TO_TICK(cyc) k_cyc_to_ticks_ceil32(cyc)
-#define MAX_TICKS (((COUNTER_SPAN / 2) - CYC_PER_TICK) / (CYC_PER_TICK))
-#define SMARTBOND_CLOCK_CONTROLLER DEVICE_DT_GET(DT_NODELABEL(osc))
+#define COUNTER_SPAN                              BIT(24)
+#define CYC_PER_TICK                              k_ticks_to_cyc_ceil32(1)
+#define TICK_TO_CYC(tick)                         k_ticks_to_cyc_ceil32(tick)
+#define CYC_TO_TICK(cyc)                          k_cyc_to_ticks_ceil32(cyc)
+#define MAX_TICKS                                 (((COUNTER_SPAN / 2) - CYC_PER_TICK) / (CYC_PER_TICK))
+#define SMARTBOND_CLOCK_CONTROLLER                DEVICE_DT_GET(DT_NODELABEL(osc))
 /* Margin values are based on DA1469x characterization data */
 #define RC32K_FREQ_POSITIVE_MARGIN_DUE_TO_VOLTAGE (675)
-#define RC32K_FREQ_MARGIN_DUE_TO_TEMPERATURE (450)
+#define RC32K_FREQ_MARGIN_DUE_TO_TEMPERATURE      (450)
 
 static uint32_t last_timer_val_reg;
 static uint32_t timer_val_31_24;
@@ -37,10 +37,10 @@ static uint32_t get_rc32k_max_frequency(void)
 	uint32_t r32k_frequency = 37000;
 
 	clock_control_get_rate(SMARTBOND_CLOCK_CONTROLLER,
-				(clock_control_subsys_t)SMARTBOND_CLK_RC32K, &r32k_frequency);
+			       (clock_control_subsys_t)SMARTBOND_CLK_RC32K, &r32k_frequency);
 
-	r32k_frequency += RC32K_FREQ_POSITIVE_MARGIN_DUE_TO_VOLTAGE +
-			  RC32K_FREQ_MARGIN_DUE_TO_TEMPERATURE;
+	r32k_frequency +=
+		RC32K_FREQ_POSITIVE_MARGIN_DUE_TO_VOLTAGE + RC32K_FREQ_MARGIN_DUE_TO_TEMPERATURE;
 	return r32k_frequency;
 }
 
@@ -54,8 +54,8 @@ static uint32_t timer_val_32(void)
 	uint32_t timer_val_reg;
 	uint32_t val;
 
-	timer_val_reg = TIMER2->TIMER2_TIMER_VAL_REG &
-		TIMER2_TIMER2_TIMER_VAL_REG_TIM_TIMER_VALUE_Msk;
+	timer_val_reg =
+		TIMER2->TIMER2_TIMER_VAL_REG & TIMER2_TIMER2_TIMER_VAL_REG_TIM_TIMER_VALUE_Msk;
 	if (timer_val_reg < last_timer_val_reg) {
 		timer_val_31_24 += COUNTER_SPAN;
 	}
@@ -71,8 +71,8 @@ static uint32_t timer_val_32_noupdate(void)
 	uint32_t timer_val_reg;
 	uint32_t val;
 
-	timer_val_reg = TIMER2->TIMER2_TIMER_VAL_REG &
-		TIMER2_TIMER2_TIMER_VAL_REG_TIM_TIMER_VALUE_Msk;
+	timer_val_reg =
+		TIMER2->TIMER2_TIMER_VAL_REG & TIMER2_TIMER2_TIMER_VAL_REG_TIM_TIMER_VALUE_Msk;
 	val = timer_val_31_24 + timer_val_reg;
 	if (timer_val_reg < last_timer_val_reg) {
 		val += COUNTER_SPAN;
@@ -120,7 +120,8 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 			 * RC32K maximum frequency.
 			 */
 			watchdog_expire_ticks = SYS_WDOG->WATCHDOG_REG *
-				CONFIG_SYS_CLOCK_TICKS_PER_SEC / (get_rc32k_max_frequency() / 320);
+						CONFIG_SYS_CLOCK_TICKS_PER_SEC /
+						(get_rc32k_max_frequency() / 320);
 		}
 		if (watchdog_expire_ticks - 2 < ticks) {
 			ticks = watchdog_expire_ticks - 2;

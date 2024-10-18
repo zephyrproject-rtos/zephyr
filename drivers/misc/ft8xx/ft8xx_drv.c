@@ -15,33 +15,32 @@
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define DT_DRV_COMPAT ftdi_ft800
-#define NODE_ID DT_INST(0, DT_DRV_COMPAT)
+#define NODE_ID       DT_INST(0, DT_DRV_COMPAT)
 
 /* SPI device */
-static const struct spi_dt_spec spi = SPI_DT_SPEC_INST_GET(0,
-					 SPI_WORD_SET(8) | SPI_OP_MODE_MASTER,
-					 0);
+static const struct spi_dt_spec spi =
+	SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8) | SPI_OP_MODE_MASTER, 0);
 
 /* GPIO int line */
 static const struct gpio_dt_spec irq_gpio = GPIO_DT_SPEC_INST_GET(0, irq_gpios);
 
 static struct gpio_callback irq_cb_data;
 
-__weak void ft8xx_drv_irq_triggered(const struct device *dev,
-				     struct gpio_callback *cb, uint32_t pins)
+__weak void ft8xx_drv_irq_triggered(const struct device *dev, struct gpio_callback *cb,
+				    uint32_t pins)
 {
 	/* Intentionally empty */
 }
 
 /* Protocol details */
-#define ADDR_SIZE 3
+#define ADDR_SIZE       3
 #define DUMMY_READ_SIZE 1
-#define COMMAND_SIZE 3
-#define MAX_READ_LEN (UINT16_MAX - ADDR_SIZE - DUMMY_READ_SIZE)
-#define MAX_WRITE_LEN (UINT16_MAX - ADDR_SIZE)
+#define COMMAND_SIZE    3
+#define MAX_READ_LEN    (UINT16_MAX - ADDR_SIZE - DUMMY_READ_SIZE)
+#define MAX_WRITE_LEN   (UINT16_MAX - ADDR_SIZE)
 
-#define READ_OP 0x00
-#define WRITE_OP 0x80
+#define READ_OP    0x00
+#define WRITE_OP   0x80
 #define COMMAND_OP 0x40
 
 static void insert_addr(uint32_t addr, uint8_t *buff)

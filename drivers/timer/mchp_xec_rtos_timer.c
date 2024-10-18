@@ -23,8 +23,7 @@ BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 32768,
 
 #if DEBUG_RTOS_TIMER != 0
 /* Enable feature to halt timer on JTAG/SWD CPU halt */
-#define TIMER_START_VAL (MCHP_RTMR_CTRL_BLK_EN | MCHP_RTMR_CTRL_START \
-			 | MCHP_RTMR_CTRL_HW_HALT_EN)
+#define TIMER_START_VAL (MCHP_RTMR_CTRL_BLK_EN | MCHP_RTMR_CTRL_START | MCHP_RTMR_CTRL_HW_HALT_EN)
 #else
 #define TIMER_START_VAL (MCHP_RTMR_CTRL_BLK_EN | MCHP_RTMR_CTRL_START)
 #endif
@@ -50,46 +49,41 @@ BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 32768,
  * CONFIG_SYS_CLOCK_TICKS_PER_SEC=32768
  */
 
-#define CYCLES_PER_TICK \
-	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define CYCLES_PER_TICK (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
-#define TIMER_REGS	\
-	((struct rtmr_regs *)DT_INST_REG_ADDR(0))
+#define TIMER_REGS ((struct rtmr_regs *)DT_INST_REG_ADDR(0))
 
-#define ECIA_XEC_REGS	\
-	((struct ecia_regs *)DT_REG_ADDR(DT_NODELABEL(ecia)))
+#define ECIA_XEC_REGS ((struct ecia_regs *)DT_REG_ADDR(DT_NODELABEL(ecia)))
 
 #ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
-#define PCR_XEC_REGS	\
-	((struct pcr_regs *)DT_REG_ADDR(DT_NODELABEL(pcr)))
+#define PCR_XEC_REGS ((struct pcr_regs *)DT_REG_ADDR(DT_NODELABEL(pcr)))
 
 /*
  * pcrs property at index 0 is register index into array of 32-bit PCR SLP_EN,
  * CLK_REQ, or RST_EN registers. Property at index 1 is the bit position.
  */                              /*DT_PROP_BY_IDX(DT_NODELABEL(kbc0), girqs, 0)*/
-#define BTMR32_0_PCR_REG_IDX	(DT_PROP_BY_IDX(DT_NODELABEL(timer4), pcrs, 0))
-#define BTMR32_0_PCR_BITPOS	(DT_PROP_BY_IDX(DT_NODELABEL(timer4), pcrs, 1))
+#define BTMR32_0_PCR_REG_IDX (DT_PROP_BY_IDX(DT_NODELABEL(timer4), pcrs, 0))
+#define BTMR32_0_PCR_BITPOS  (DT_PROP_BY_IDX(DT_NODELABEL(timer4), pcrs, 1))
 
-#define BTMR32_0_REGS	\
-	((struct btmr_regs *)(DT_REG_ADDR(DT_NODELABEL(timer4))))
+#define BTMR32_0_REGS ((struct btmr_regs *)(DT_REG_ADDR(DT_NODELABEL(timer4))))
 #endif
 
 /* Mask off bits[31:28] of 32-bit count */
-#define TIMER_MAX		0x0fffffffu
-#define TIMER_COUNT_MASK	0x0fffffffu
-#define TIMER_STOPPED		0xf0000000u
+#define TIMER_MAX        0x0fffffffu
+#define TIMER_COUNT_MASK 0x0fffffffu
+#define TIMER_STOPPED    0xf0000000u
 
 /* Adjust cycle count programmed into timer for HW restart latency */
-#define TIMER_ADJUST_LIMIT	2
-#define TIMER_ADJUST_CYCLES	1
+#define TIMER_ADJUST_LIMIT  2
+#define TIMER_ADJUST_CYCLES 1
 
 /* max number of ticks we can load into the timer in one shot */
 #define MAX_TICKS (TIMER_MAX / CYCLES_PER_TICK)
 
-#define TIMER_GIRQ		DT_INST_PROP_BY_IDX(0, girqs, 0)
-#define TIMER_GIRQ_POS		DT_INST_PROP_BY_IDX(0, girqs, 1)
-#define TIMER_NVIC_NO		DT_INST_IRQN(0)
-#define TIMER_NVIC_PRIO		DT_INST_IRQ(0, priority)
+#define TIMER_GIRQ      DT_INST_PROP_BY_IDX(0, girqs, 0)
+#define TIMER_GIRQ_POS  DT_INST_PROP_BY_IDX(0, girqs, 1)
+#define TIMER_NVIC_NO   DT_INST_IRQN(0)
+#define TIMER_NVIC_PRIO DT_INST_IRQ(0, priority)
 
 /*
  * The spinlock protects all access to the RTMR registers, as well as
@@ -169,7 +163,7 @@ static inline uint32_t timer_count(void)
 
 #ifdef CONFIG_TICKLESS_KERNEL
 
-static uint32_t last_announcement;	/* last time we called sys_clock_announce() */
+static uint32_t last_announcement; /* last time we called sys_clock_announce() */
 
 /*
  * Request a timeout n Zephyr ticks in the future from now.
@@ -188,9 +182,9 @@ void sys_clock_set_timeout(int32_t n, bool idle)
 	ARG_UNUSED(idle);
 
 	uint32_t ccr, temp;
-	int   full_ticks;	/* number of complete ticks we'll wait */
-	uint32_t full_cycles;	/* full_ticks represented as cycles */
-	uint32_t partial_cycles;	/* number of cycles to first tick boundary */
+	int full_ticks;          /* number of complete ticks we'll wait */
+	uint32_t full_cycles;    /* full_ticks represented as cycles */
+	uint32_t partial_cycles; /* number of cycles to first tick boundary */
 
 	if (idle && (n == K_TICKS_FOREVER)) {
 		/*
@@ -415,10 +409,8 @@ static int sys_clock_driver_init(void)
 	girq_src_en(TIMER_GIRQ, TIMER_GIRQ_POS);
 
 #ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
-	uint32_t btmr_ctrl = (MCHP_BTMR_CTRL_ENABLE
-			      | MCHP_BTMR_CTRL_AUTO_RESTART
-			      | MCHP_BTMR_CTRL_COUNT_UP
-			      | (47UL << MCHP_BTMR_CTRL_PRESCALE_POS));
+	uint32_t btmr_ctrl = (MCHP_BTMR_CTRL_ENABLE | MCHP_BTMR_CTRL_AUTO_RESTART |
+			      MCHP_BTMR_CTRL_COUNT_UP | (47UL << MCHP_BTMR_CTRL_PRESCALE_POS));
 
 #if CONFIG_SOC_SERIES_MEC15XX
 	mchp_pcr_periph_slp_ctrl(PCR_B32TMR0, 0);
@@ -444,5 +436,4 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

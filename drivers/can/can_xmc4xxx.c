@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(can_xmc4xxx, CONFIG_CAN_LOG_LEVEL);
 #define CAN_XMC4XXX_MULTICAN_NODE DT_INST(0, infineon_xmc4xxx_can)
 
 #define CAN_XMC4XXX_NUM_MESSAGE_OBJECTS DT_PROP(CAN_XMC4XXX_MULTICAN_NODE, message_objects)
-#define CAN_XMC4XXX_CLOCK_PRESCALER DT_PROP(CAN_XMC4XXX_MULTICAN_NODE, clock_prescaler)
+#define CAN_XMC4XXX_CLOCK_PRESCALER     DT_PROP(CAN_XMC4XXX_MULTICAN_NODE, clock_prescaler)
 
 static CAN_GLOBAL_TypeDef *const can_xmc4xxx_global_reg =
 	(CAN_GLOBAL_TypeDef *)DT_REG_ADDR(CAN_XMC4XXX_MULTICAN_NODE);
@@ -96,8 +96,8 @@ static int can_xmc4xxx_set_mode(const struct device *dev, can_mode_t mode)
 		return -EBUSY;
 	}
 
-	if ((mode & (CAN_MODE_3_SAMPLES | CAN_MODE_ONE_SHOT |
-		     CAN_MODE_LOOPBACK | CAN_MODE_FD)) != 0) {
+	if ((mode & (CAN_MODE_3_SAMPLES | CAN_MODE_ONE_SHOT | CAN_MODE_LOOPBACK | CAN_MODE_FD)) !=
+	    0) {
 		return -ENOTSUP;
 	}
 
@@ -833,8 +833,8 @@ static int can_xmc4xxx_init(const struct device *dev)
 	XMC_CAN_NODE_SetEventNodePointer(dev_cfg->can, XMC_CAN_NODE_POINTER_EVENT_FRAME_COUNTER,
 					 dev_cfg->service_request);
 
-	XMC_CAN_NODE_EnableEvent(dev_cfg->can, XMC_CAN_NODE_EVENT_TX_INT |
-					       XMC_CAN_NODE_EVENT_ALERT);
+	XMC_CAN_NODE_EnableEvent(dev_cfg->can,
+				 XMC_CAN_NODE_EVENT_TX_INT | XMC_CAN_NODE_EVENT_ALERT);
 
 	/* set up tx messages */
 	for (int i = 0; i < CONFIG_CAN_XMC4XXX_MAX_TX_QUEUE; i++) {
@@ -869,8 +869,7 @@ static int can_xmc4xxx_init(const struct device *dev)
 	}
 #endif
 
-	ret = can_calc_timing(dev, &timing, dev_cfg->common.bitrate,
-			      dev_cfg->common.sample_point);
+	ret = can_calc_timing(dev, &timing, dev_cfg->common.bitrate, dev_cfg->common.sample_point);
 	if (ret < 0) {
 		return ret;
 	}
@@ -895,20 +894,22 @@ static const struct can_driver_api can_xmc4xxx_api_funcs = {
 	.set_state_change_callback = can_xmc4xxx_set_state_change_callback,
 	.get_core_clock = can_xmc4xxx_get_core_clock,
 	.get_max_filters = can_xmc4xxx_get_max_filters,
-	.timing_min = {
-		.sjw = 1,
-		.prop_seg = 0,
-		.phase_seg1 = 3,
-		.phase_seg2 = 2,
-		.prescaler = 1,
-	},
-	.timing_max = {
-		.sjw = 4,
-		.prop_seg = 0,
-		.phase_seg1 = 16,
-		.phase_seg2 = 8,
-		.prescaler = 64,
-	},
+	.timing_min =
+		{
+			.sjw = 1,
+			.prop_seg = 0,
+			.phase_seg1 = 3,
+			.phase_seg2 = 2,
+			.prescaler = 1,
+		},
+	.timing_max =
+		{
+			.sjw = 4,
+			.prop_seg = 0,
+			.phase_seg1 = 16,
+			.phase_seg2 = 8,
+			.prescaler = 64,
+		},
 };
 
 #define CAN_XMC4XXX_INIT(inst)                                                                     \

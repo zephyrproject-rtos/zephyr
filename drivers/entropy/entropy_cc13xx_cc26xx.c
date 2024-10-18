@@ -24,8 +24,8 @@
 
 #define CPU_FREQ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
 
-#define US_PER_SAMPLE (1000000ULL * \
-	CONFIG_ENTROPY_CC13XX_CC26XX_SAMPLES_PER_CYCLE / CPU_FREQ + 1ULL)
+#define US_PER_SAMPLE                                                                              \
+	(1000000ULL * CONFIG_ENTROPY_CC13XX_CC26XX_SAMPLES_PER_CYCLE / CPU_FREQ + 1ULL)
 
 struct entropy_cc13xx_cc26xx_data {
 	struct k_sem lock;
@@ -47,17 +47,15 @@ static void start_trng(struct entropy_cc13xx_cc26xx_data *data)
 	}
 
 	/* Set samples per cycle */
-	TRNGConfigure(0, CONFIG_ENTROPY_CC13XX_CC26XX_SAMPLES_PER_CYCLE,
-		0);
+	TRNGConfigure(0, CONFIG_ENTROPY_CC13XX_CC26XX_SAMPLES_PER_CYCLE, 0);
 	/* De-tune FROs */
-	sys_write32(TRNG_FRODETUNE_FRO_MASK_M, TRNG_BASE +
-		TRNG_O_FRODETUNE);
+	sys_write32(TRNG_FRODETUNE_FRO_MASK_M, TRNG_BASE + TRNG_O_FRODETUNE);
 	/* Enable FROs */
 	sys_write32(TRNG_FROEN_FRO_MASK_M, TRNG_BASE + TRNG_O_FROEN);
 	/* Set shutdown and alarm thresholds */
-	sys_write32((CONFIG_ENTROPY_CC13XX_CC26XX_SHUTDOWN_THRESHOLD
-		<< 16) | CONFIG_ENTROPY_CC13XX_CC26XX_ALARM_THRESHOLD,
-		TRNG_BASE + TRNG_O_ALARMCNT);
+	sys_write32((CONFIG_ENTROPY_CC13XX_CC26XX_SHUTDOWN_THRESHOLD << 16) |
+			    CONFIG_ENTROPY_CC13XX_CC26XX_ALARM_THRESHOLD,
+		    TRNG_BASE + TRNG_O_ALARMCNT);
 
 	TRNGEnable();
 	TRNGIntEnable(TRNG_NUMBER_READY | TRNG_FRO_SHUTDOWN);
@@ -90,9 +88,7 @@ static void handle_shutdown_ovf(void)
 	sys_write32(off, TRNG_BASE + TRNG_O_FROEN);
 }
 
-static int entropy_cc13xx_cc26xx_get_entropy(const struct device *dev,
-					     uint8_t *buf,
-					     uint16_t len)
+static int entropy_cc13xx_cc26xx_get_entropy(const struct device *dev, uint8_t *buf, uint16_t len)
 {
 	struct entropy_cc13xx_cc26xx_data *data = dev->data;
 	uint32_t cnt;
@@ -146,9 +142,7 @@ static void entropy_cc13xx_cc26xx_isr(const struct device *dev)
 		if (cnt != sizeof(num)) {
 #ifdef CONFIG_PM
 			if (data->constrained) {
-				pm_policy_state_lock_put(
-					PM_STATE_STANDBY,
-					PM_ALL_SUBSTATES);
+				pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 				data->constrained = false;
 			}
 #endif
@@ -166,9 +160,8 @@ static void entropy_cc13xx_cc26xx_isr(const struct device *dev)
 	}
 }
 
-static int entropy_cc13xx_cc26xx_get_entropy_isr(const struct device *dev,
-						 uint8_t *buf, uint16_t len,
-						 uint32_t flags)
+static int entropy_cc13xx_cc26xx_get_entropy_isr(const struct device *dev, uint8_t *buf,
+						 uint16_t len, uint32_t flags)
 {
 	struct entropy_cc13xx_cc26xx_data *data = dev->data;
 	uint16_t cnt;
@@ -200,8 +193,7 @@ static int entropy_cc13xx_cc26xx_get_entropy_isr(const struct device *dev,
 				num[1] = TRNGNumberGet(TRNG_HI_WORD);
 				num[0] = TRNGNumberGet(TRNG_LOW_WORD);
 
-				ring_buf_put(&data->pool, (uint8_t *)num,
-					sizeof(num));
+				ring_buf_put(&data->pool, (uint8_t *)num, sizeof(num));
 			}
 
 			/*
@@ -224,7 +216,6 @@ static int entropy_cc13xx_cc26xx_get_entropy_isr(const struct device *dev,
 				k_busy_wait(US_PER_SAMPLE);
 			}
 		}
-
 	}
 
 	return read;
@@ -237,8 +228,7 @@ static int entropy_cc13xx_cc26xx_get_entropy_isr(const struct device *dev,
  *  to be reconfigured afterwards, unless Zephyr's device PM turned it off, in
  *  which case it'd be responsible for turning it back on and reconfiguring it.
  */
-static int post_notify_fxn(unsigned int eventType, uintptr_t eventArg,
-	uintptr_t clientArg)
+static int post_notify_fxn(unsigned int eventType, uintptr_t eventArg, uintptr_t clientArg)
 {
 	const struct device *dev = (const struct device *)clientArg;
 	int ret = Power_NOTIFYDONE;
@@ -259,8 +249,7 @@ static int post_notify_fxn(unsigned int eventType, uintptr_t eventArg,
 #endif
 
 #ifdef CONFIG_PM_DEVICE
-static int entropy_cc13xx_cc26xx_pm_action(const struct device *dev,
-					   enum pm_device_action action)
+static int entropy_cc13xx_cc26xx_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	struct entropy_cc13xx_cc26xx_data *data = dev->data;
 
@@ -294,9 +283,8 @@ static int entropy_cc13xx_cc26xx_init(const struct device *dev)
 	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	data->constrained = true;
 	/* Register notification function */
-	Power_registerNotify(&data->post_notify,
-		PowerCC26XX_AWAKE_STANDBY,
-		post_notify_fxn, (uintptr_t)dev);
+	Power_registerNotify(&data->post_notify, PowerCC26XX_AWAKE_STANDBY, post_notify_fxn,
+			     (uintptr_t)dev);
 #else
 	/* Power TRNG domain */
 	PRCMPowerDomainOn(PRCM_DOMAIN_PERIPH);
@@ -309,7 +297,6 @@ static int entropy_cc13xx_cc26xx_init(const struct device *dev)
 	PRCMPeripheralSleepEnable(PRCM_PERIPH_TRNG);
 	PRCMPeripheralDeepSleepEnable(PRCM_PERIPH_TRNG);
 
-
 	/* Load PRCM settings */
 	PRCMLoadSet();
 	while (!PRCMLoadGet()) {
@@ -317,17 +304,14 @@ static int entropy_cc13xx_cc26xx_init(const struct device *dev)
 	}
 
 	/* Peripherals should not be accessed until power domain is on. */
-	while (PRCMPowerDomainsAllOn(PRCM_DOMAIN_PERIPH) !=
-	       PRCM_DOMAIN_POWER_ON) {
+	while (PRCMPowerDomainsAllOn(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON) {
 		continue;
 	}
 #endif
 
 	start_trng(data);
 
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    entropy_cc13xx_cc26xx_isr,
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), entropy_cc13xx_cc26xx_isr,
 		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
 
@@ -346,9 +330,6 @@ static struct entropy_cc13xx_cc26xx_data entropy_cc13xx_cc26xx_data = {
 
 PM_DEVICE_DT_INST_DEFINE(0, entropy_cc13xx_cc26xx_pm_action);
 
-DEVICE_DT_INST_DEFINE(0,
-		entropy_cc13xx_cc26xx_init,
-		PM_DEVICE_DT_INST_GET(0),
-		&entropy_cc13xx_cc26xx_data, NULL,
-		PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
-		&entropy_cc13xx_cc26xx_driver_api);
+DEVICE_DT_INST_DEFINE(0, entropy_cc13xx_cc26xx_init, PM_DEVICE_DT_INST_GET(0),
+		      &entropy_cc13xx_cc26xx_data, NULL, PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
+		      &entropy_cc13xx_cc26xx_driver_api);

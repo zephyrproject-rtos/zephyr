@@ -22,15 +22,15 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(clock_control_rcar);
 
-#define R8A779F0_CLK_SD0_STOP_BIT 8
-#define R8A779F0_CLK_SD0_DIV_MASK 0x3
+#define R8A779F0_CLK_SD0_STOP_BIT  8
+#define R8A779F0_CLK_SD0_DIV_MASK  0x3
 #define R8A779F0_CLK_SD0_DIV_SHIFT 0
 
-#define R8A779F0_CLK_SD0H_STOP_BIT 9
-#define R8A779F0_CLK_SD0H_DIV_MASK 0x7
+#define R8A779F0_CLK_SD0H_STOP_BIT  9
+#define R8A779F0_CLK_SD0H_DIV_MASK  0x7
 #define R8A779F0_CLK_SD0H_DIV_SHIFT 2
 
-#define R8A779F0_CLK_SDSRC_DIV_MASK 0x3
+#define R8A779F0_CLK_SDSRC_DIV_MASK  0x3
 #define R8A779F0_CLK_SDSRC_DIV_SHIFT 29
 
 struct r8a779f0_cpg_mssr_cfg {
@@ -61,8 +61,7 @@ static struct cpg_clk_info_table core_props[] = {
 	RCAR_CORE_CLK_INFO_ITEM(R8A779F0_CLK_SD0H, 0x0870, CLK_SDSRC, RCAR_CPG_NONE),
 	RCAR_CORE_CLK_INFO_ITEM(R8A779F0_CLK_SD0, 0x0870, R8A779F0_CLK_SD0H, RCAR_CPG_NONE),
 
-	RCAR_CORE_CLK_INFO_ITEM(R8A779F0_CLK_SASYNCPERD1, RCAR_CPG_NONE, RCAR_CPG_NONE,
-				266666666),
+	RCAR_CORE_CLK_INFO_ITEM(R8A779F0_CLK_SASYNCPERD1, RCAR_CPG_NONE, RCAR_CPG_NONE, 266666666),
 
 	RCAR_CORE_CLK_INFO_ITEM(CLK_PLL5, RCAR_CPG_NONE, RCAR_CPG_NONE, RCAR_CPG_MHZ(3200)),
 	RCAR_CORE_CLK_INFO_ITEM(CLK_SDSRC, 0x08A4, CLK_PLL5, RCAR_CPG_NONE),
@@ -261,27 +260,21 @@ static const struct clock_control_driver_api r8a779f0_cpg_mssr_api = {
 	.set_rate = rcar_cpg_set_rate,
 };
 
-#define R8A779F0_MSSR_INIT(inst)							\
-	static struct r8a779f0_cpg_mssr_cfg cpg_mssr##inst##_cfg = {		\
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(inst)),			\
-	};									\
-										\
-	static struct r8a779f0_cpg_mssr_data cpg_mssr##inst##_data = {		\
-		.cmn.clk_info_table[CPG_CORE] = core_props,			\
-		.cmn.clk_info_table_size[CPG_CORE] = ARRAY_SIZE(core_props),	\
-		.cmn.clk_info_table[CPG_MOD] = mod_props,			\
-		.cmn.clk_info_table_size[CPG_MOD] = ARRAY_SIZE(mod_props),	\
-		.cmn.get_div_helper = r8a779f0_get_div_helper,			\
-		.cmn.set_rate_helper = r8a779f0_set_rate_helper			\
-	};									\
-										\
-	DEVICE_DT_INST_DEFINE(inst,						\
-			      &r8a779f0_cpg_mssr_init,				\
-			      NULL,						\
-			      &cpg_mssr##inst##_data,				\
-			      &cpg_mssr##inst##_cfg,				\
-			      PRE_KERNEL_1,					\
-			      CONFIG_CLOCK_CONTROL_INIT_PRIORITY,		\
-			      &r8a779f0_cpg_mssr_api);
+#define R8A779F0_MSSR_INIT(inst)                                                                   \
+	static struct r8a779f0_cpg_mssr_cfg cpg_mssr##inst##_cfg = {                               \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(inst)),                                           \
+	};                                                                                         \
+                                                                                                   \
+	static struct r8a779f0_cpg_mssr_data cpg_mssr##inst##_data = {                             \
+		.cmn.clk_info_table[CPG_CORE] = core_props,                                        \
+		.cmn.clk_info_table_size[CPG_CORE] = ARRAY_SIZE(core_props),                       \
+		.cmn.clk_info_table[CPG_MOD] = mod_props,                                          \
+		.cmn.clk_info_table_size[CPG_MOD] = ARRAY_SIZE(mod_props),                         \
+		.cmn.get_div_helper = r8a779f0_get_div_helper,                                     \
+		.cmn.set_rate_helper = r8a779f0_set_rate_helper};                                  \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &r8a779f0_cpg_mssr_init, NULL, &cpg_mssr##inst##_data,         \
+			      &cpg_mssr##inst##_cfg, PRE_KERNEL_1,                                 \
+			      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &r8a779f0_cpg_mssr_api);
 
 DT_INST_FOREACH_STATUS_OKAY(R8A779F0_MSSR_INIT)

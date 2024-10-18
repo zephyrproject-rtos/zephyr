@@ -21,25 +21,22 @@ LOG_MODULE_REGISTER(clock_control_scg);
 
 #define MCUX_SCG_CLOCK_NODE(name) DT_INST_CHILD(0, name)
 
-static int mcux_scg_on(const struct device *dev,
-		       clock_control_subsys_t sub_system)
+static int mcux_scg_on(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	return 0;
 }
 
-static int mcux_scg_off(const struct device *dev,
-			clock_control_subsys_t sub_system)
+static int mcux_scg_off(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	return 0;
 }
 
-static int mcux_scg_get_rate(const struct device *dev,
-			     clock_control_subsys_t sub_system,
+static int mcux_scg_get_rate(const struct device *dev, clock_control_subsys_t sub_system,
 			     uint32_t *rate)
 {
 	clock_name_t clock_name;
 
-	switch ((uint32_t) sub_system) {
+	switch ((uint32_t)sub_system) {
 	case KINETIS_SCG_CORESYS_CLK:
 		clock_name = kCLOCK_CoreSysClk;
 		break;
@@ -113,7 +110,6 @@ static int mcux_scg_get_rate(const struct device *dev,
 		break;
 #endif /* (defined(FSL_FEATURE_SCG_HAS_FLLDIV1) && FSL_FEATURE_SCG_HAS_FLLDIV1) */
 
-
 	default:
 		LOG_ERR("Unsupported clock name");
 		return -EINVAL;
@@ -150,9 +146,5 @@ static const struct clock_control_driver_api mcux_scg_driver_api = {
 	.get_rate = mcux_scg_get_rate,
 };
 
-DEVICE_DT_INST_DEFINE(0,
-		    mcux_scg_init,
-		    NULL,
-		    NULL, NULL,
-		    PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
-		    &mcux_scg_driver_api);
+DEVICE_DT_INST_DEFINE(0, mcux_scg_init, NULL, NULL, NULL, PRE_KERNEL_1,
+		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &mcux_scg_driver_api);

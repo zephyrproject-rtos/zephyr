@@ -32,7 +32,7 @@ struct vf610_adc_data {
 };
 
 static int vf610_adc_channel_setup(const struct device *dev,
-				    const struct adc_channel_cfg *channel_cfg)
+				   const struct adc_channel_cfg *channel_cfg)
 {
 	uint8_t channel_id = channel_cfg->channel_id;
 
@@ -120,8 +120,7 @@ static int start_read(const struct device *dev, const struct adc_sequence *seque
 	return error;
 }
 
-static int vf610_adc_read(const struct device *dev,
-			   const struct adc_sequence *sequence)
+static int vf610_adc_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	struct vf610_adc_data *data = dev->data;
 	int error;
@@ -134,9 +133,8 @@ static int vf610_adc_read(const struct device *dev,
 }
 
 #ifdef CONFIG_ADC_ASYNC
-static int vf610_adc_read_async(struct device *dev,
-				 const struct adc_sequence *sequence,
-				 struct k_poll_signal *async)
+static int vf610_adc_read_async(struct device *dev, const struct adc_sequence *sequence,
+				struct k_poll_signal *async)
 {
 	struct vf610_adc_data *data = dev->driver_data;
 	int error;
@@ -165,8 +163,7 @@ static void vf610_adc_start_channel(const struct device *dev)
 
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
-	struct vf610_adc_data *data =
-		CONTAINER_OF(ctx, struct vf610_adc_data, ctx);
+	struct vf610_adc_data *data = CONTAINER_OF(ctx, struct vf610_adc_data, ctx);
 
 	data->channels = ctx->sequence.channels;
 	data->repeat_buffer = data->buffer;
@@ -174,11 +171,9 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	vf610_adc_start_channel(data->dev);
 }
 
-static void adc_context_update_buffer_pointer(struct adc_context *ctx,
-					      bool repeat_sampling)
+static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat_sampling)
 {
-	struct vf610_adc_data *data =
-		CONTAINER_OF(ctx, struct vf610_adc_data, ctx);
+	struct vf610_adc_data *data = CONTAINER_OF(ctx, struct vf610_adc_data, ctx);
 
 	if (repeat_sampling) {
 		data->buffer = data->repeat_buffer;
@@ -194,8 +189,7 @@ static void vf610_adc_isr(void *arg)
 	uint16_t result;
 
 	result = ADC_GetConvertResult(base);
-	LOG_DBG("Finished channel %d. Result is 0x%04x",
-		data->channel_id, result);
+	LOG_DBG("Finished channel %d. Result is 0x%04x", data->channel_id, result);
 
 	*data->buffer++ = result;
 	data->channels &= ~BIT(data->channel_id);
@@ -241,35 +235,32 @@ static const struct adc_driver_api vf610_adc_driver_api = {
 #endif
 };
 
-#define VF610_ADC_INIT(n)						\
-	static void vf610_adc_config_func_##n(const struct device *dev);\
-									\
-	static const struct vf610_adc_config vf610_adc_config_##n = {	\
-		.base = (ADC_Type *)DT_INST_REG_ADDR(n),		\
-		.clock_source = DT_INST_PROP(n, clk_source),		\
-		.divide_ratio = DT_INST_PROP(n, clk_divider),		\
-		.irq_config_func = vf610_adc_config_func_##n,		\
-	};								\
-									\
-	static struct vf610_adc_data vf610_adc_data_##n = {		\
-		ADC_CONTEXT_INIT_TIMER(vf610_adc_data_##n, ctx),	\
-		ADC_CONTEXT_INIT_LOCK(vf610_adc_data_##n, ctx),		\
-		ADC_CONTEXT_INIT_SYNC(vf610_adc_data_##n, ctx),		\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(n, &vf610_adc_init,			\
-			      NULL, &vf610_adc_data_##n,		\
-			      &vf610_adc_config_##n, POST_KERNEL,	\
-			      CONFIG_ADC_INIT_PRIORITY,			\
-			      &vf610_adc_driver_api);			\
-									\
-	static void vf610_adc_config_func_##n(const struct device *dev)	\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
-			    vf610_adc_isr,				\
-			    DEVICE_DT_INST_GET(n), 0);			\
-									\
-		irq_enable(DT_INST_IRQN(n));				\
+#define VF610_ADC_INIT(n)                                                                          \
+	static void vf610_adc_config_func_##n(const struct device *dev);                           \
+                                                                                                   \
+	static const struct vf610_adc_config vf610_adc_config_##n = {                              \
+		.base = (ADC_Type *)DT_INST_REG_ADDR(n),                                           \
+		.clock_source = DT_INST_PROP(n, clk_source),                                       \
+		.divide_ratio = DT_INST_PROP(n, clk_divider),                                      \
+		.irq_config_func = vf610_adc_config_func_##n,                                      \
+	};                                                                                         \
+                                                                                                   \
+	static struct vf610_adc_data vf610_adc_data_##n = {                                        \
+		ADC_CONTEXT_INIT_TIMER(vf610_adc_data_##n, ctx),                                   \
+		ADC_CONTEXT_INIT_LOCK(vf610_adc_data_##n, ctx),                                    \
+		ADC_CONTEXT_INIT_SYNC(vf610_adc_data_##n, ctx),                                    \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &vf610_adc_init, NULL, &vf610_adc_data_##n,                       \
+			      &vf610_adc_config_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,        \
+			      &vf610_adc_driver_api);                                              \
+                                                                                                   \
+	static void vf610_adc_config_func_##n(const struct device *dev)                            \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), vf610_adc_isr,              \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+                                                                                                   \
+		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(VF610_ADC_INIT)

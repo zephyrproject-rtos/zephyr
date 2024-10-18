@@ -30,8 +30,8 @@ struct mdio_esp32_dev_config {
 	const struct pinctrl_dev_config *pcfg;
 };
 
-static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t regad,
-			 bool write, uint16_t data_in, uint16_t *data_out)
+static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t regad, bool write,
+			 uint16_t data_in, uint16_t *data_out)
 {
 	struct mdio_esp32_dev_data *const dev_data = dev->data;
 
@@ -73,15 +73,12 @@ static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t regad,
 	return 0;
 }
 
-static int mdio_esp32_read(const struct device *dev, uint8_t prtad, uint8_t regad,
-			 uint16_t *data)
+static int mdio_esp32_read(const struct device *dev, uint8_t prtad, uint8_t regad, uint16_t *data)
 {
 	return mdio_transfer(dev, prtad, regad, false, 0, data);
-
 }
 
-static int mdio_esp32_write(const struct device *dev, uint8_t prtad,
-			  uint8_t regad, uint16_t data)
+static int mdio_esp32_write(const struct device *dev, uint8_t prtad, uint8_t regad, uint16_t data)
 {
 	return mdio_transfer(dev, prtad, regad, true, data, NULL);
 }
@@ -99,8 +96,7 @@ static int mdio_esp32_initialize(const struct device *dev)
 		goto err;
 	}
 
-	const struct device *clock_dev =
-		DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_NODELABEL(mdio)));
+	const struct device *clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_NODELABEL(mdio)));
 	clock_control_subsys_t clock_subsys =
 		(clock_control_subsys_t)DT_CLOCKS_CELL(DT_NODELABEL(mdio), offset);
 
@@ -127,21 +123,17 @@ static const struct mdio_driver_api mdio_esp32_driver_api = {
 	.write = mdio_esp32_write,
 };
 
-#define MDIO_ESP32_CONFIG(n)						\
-static const struct mdio_esp32_dev_config mdio_esp32_dev_config_##n = {	\
-	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
-};
+#define MDIO_ESP32_CONFIG(n)                                                                       \
+	static const struct mdio_esp32_dev_config mdio_esp32_dev_config_##n = {                    \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+	};
 
-#define MDIO_ESP32_DEVICE(n)						\
-	PINCTRL_DT_INST_DEFINE(n);					\
-	MDIO_ESP32_CONFIG(n);						\
-	static struct mdio_esp32_dev_data mdio_esp32_dev_data##n;	\
-	DEVICE_DT_INST_DEFINE(n,					\
-			      &mdio_esp32_initialize,			\
-			      NULL,					\
-			      &mdio_esp32_dev_data##n,			\
-			      &mdio_esp32_dev_config_##n, POST_KERNEL,	\
-			      CONFIG_MDIO_INIT_PRIORITY,		\
+#define MDIO_ESP32_DEVICE(n)                                                                       \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	MDIO_ESP32_CONFIG(n);                                                                      \
+	static struct mdio_esp32_dev_data mdio_esp32_dev_data##n;                                  \
+	DEVICE_DT_INST_DEFINE(n, &mdio_esp32_initialize, NULL, &mdio_esp32_dev_data##n,            \
+			      &mdio_esp32_dev_config_##n, POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY,  \
 			      &mdio_esp32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MDIO_ESP32_DEVICE)

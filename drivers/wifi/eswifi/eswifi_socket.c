@@ -19,8 +19,8 @@ LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 
 int eswifi_socket_type_from_zephyr(int proto, enum eswifi_transport_type *type)
 {
-	if (IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS) &&
-	    proto >= IPPROTO_TLS_1_0 && proto <= IPPROTO_TLS_1_2) {
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS) && proto >= IPPROTO_TLS_1_0 &&
+	    proto <= IPPROTO_TLS_1_2) {
 		*type = ESWIFI_TRANSPORT_TCP_SSL;
 	} else if (proto == IPPROTO_TCP) {
 		*type = ESWIFI_TRANSPORT_TCP;
@@ -33,8 +33,7 @@ int eswifi_socket_type_from_zephyr(int proto, enum eswifi_transport_type *type)
 	return 0;
 }
 
-static int __stop_socket(struct eswifi_dev *eswifi,
-			 struct eswifi_off_socket *socket)
+static int __stop_socket(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket)
 {
 	char cmd_srv[] = "P5=0\r";
 	char cmd_cli[] = "P6=0\r";
@@ -75,7 +74,7 @@ static int __read_data(struct eswifi_dev *eswifi, size_t len, char **data)
 }
 
 int __eswifi_bind(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket,
-		      const struct sockaddr *addr, socklen_t addrlen)
+		  const struct sockaddr *addr, socklen_t addrlen)
 {
 	int err;
 
@@ -125,17 +124,15 @@ static void eswifi_off_read_work(struct k_work *work)
 
 	eswifi_lock(eswifi);
 
-	if ((socket->type == ESWIFI_TRANSPORT_TCP ||
-	     socket->type == ESWIFI_TRANSPORT_TCP_SSL) &&
-	     socket->state != ESWIFI_SOCKET_STATE_CONNECTED) {
+	if ((socket->type == ESWIFI_TRANSPORT_TCP || socket->type == ESWIFI_TRANSPORT_TCP_SSL) &&
+	    socket->state != ESWIFI_SOCKET_STATE_CONNECTED) {
 		goto done;
 	}
 
 	__select_socket(eswifi, socket->index);
 
 	/* Verify if we can allocate a rx packet before reading data to prevent leaks */
-	pkt = net_pkt_rx_alloc_with_buffer(eswifi->iface, 1460,
-					   AF_UNSPEC, 0, K_NO_WAIT);
+	pkt = net_pkt_rx_alloc_with_buffer(eswifi->iface, 1460, AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("Cannot allocate rx packet");
 		goto done;
@@ -170,8 +167,7 @@ static void eswifi_off_read_work(struct k_work *work)
 	net_pkt_cursor_init(pkt);
 
 do_recv_cb:
-	socket->recv_cb(socket->context, pkt,
-			NULL, NULL, 0, socket->recv_data);
+	socket->recv_cb(socket->context, pkt, NULL, NULL, 0, socket->recv_data);
 
 	if (!socket->context) {
 		/* something destroyed the socket in the recv path */
@@ -192,8 +188,7 @@ done:
 	eswifi_unlock(eswifi);
 }
 
-int __eswifi_off_start_client(struct eswifi_dev *eswifi,
-			      struct eswifi_off_socket *socket)
+int __eswifi_off_start_client(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket)
 {
 	struct sockaddr *addr = &socket->peer_addr;
 	struct in_addr *sin_addr = &net_sin(addr)->sin_addr;
@@ -228,9 +223,8 @@ int __eswifi_off_start_client(struct eswifi_dev *eswifi,
 	}
 
 	/* Set Remote IP */
-	snprintk(eswifi->buf, sizeof(eswifi->buf), "P3=%u.%u.%u.%u\r",
-		 sin_addr->s4_addr[0], sin_addr->s4_addr[1],
-		 sin_addr->s4_addr[2], sin_addr->s4_addr[3]);
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "P3=%u.%u.%u.%u\r", sin_addr->s4_addr[0],
+		 sin_addr->s4_addr[1], sin_addr->s4_addr[2], sin_addr->s4_addr[3]);
 
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
@@ -240,7 +234,7 @@ int __eswifi_off_start_client(struct eswifi_dev *eswifi,
 
 	/* Set Remote Port */
 	snprintk(eswifi->buf, sizeof(eswifi->buf), "P4=%d\r",
-		(uint16_t)sys_be16_to_cpu(net_sin(addr)->sin_port));
+		 (uint16_t)sys_be16_to_cpu(net_sin(addr)->sin_port));
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
 		LOG_ERR("Unable to set remote port");
@@ -304,8 +298,7 @@ int __eswifi_accept(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket)
 	return 0;
 }
 
-int __eswifi_socket_free(struct eswifi_dev *eswifi,
-			 struct eswifi_off_socket *socket)
+int __eswifi_socket_free(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket)
 {
 	__select_socket(eswifi, socket->index);
 	k_work_cancel_delayable(&socket->read_work);
@@ -316,8 +309,7 @@ int __eswifi_socket_free(struct eswifi_dev *eswifi,
 	return 0;
 }
 
-int __eswifi_socket_new(struct eswifi_dev *eswifi, int family, int type,
-			int proto, void *context)
+int __eswifi_socket_new(struct eswifi_dev *eswifi, int family, int type, int proto, void *context)
 {
 	struct eswifi_off_socket *socket = NULL;
 	int err, i;

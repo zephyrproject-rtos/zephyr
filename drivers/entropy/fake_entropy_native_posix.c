@@ -29,8 +29,7 @@ static unsigned int seed = 0x5678;
 static bool seed_random;
 static bool seed_set;
 
-static int entropy_native_posix_get_entropy(const struct device *dev,
-					    uint8_t *buffer,
+static int entropy_native_posix_get_entropy(const struct device *dev, uint8_t *buffer,
 					    uint16_t length)
 {
 	ARG_UNUSED(dev);
@@ -52,8 +51,7 @@ static int entropy_native_posix_get_entropy(const struct device *dev,
 	return 0;
 }
 
-static int entropy_native_posix_get_entropy_isr(const struct device *dev,
-						uint8_t *buf,
+static int entropy_native_posix_get_entropy_isr(const struct device *dev, uint8_t *buf,
 						uint16_t len, uint32_t flags)
 {
 	ARG_UNUSED(flags);
@@ -80,15 +78,11 @@ static int entropy_native_posix_init(const struct device *dev)
 }
 
 static const struct entropy_driver_api entropy_native_posix_api_funcs = {
-	.get_entropy     = entropy_native_posix_get_entropy,
-	.get_entropy_isr = entropy_native_posix_get_entropy_isr
-};
+	.get_entropy = entropy_native_posix_get_entropy,
+	.get_entropy_isr = entropy_native_posix_get_entropy_isr};
 
-DEVICE_DT_INST_DEFINE(0,
-		    entropy_native_posix_init, NULL,
-		    NULL, NULL,
-		    PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
-		    &entropy_native_posix_api_funcs);
+DEVICE_DT_INST_DEFINE(0, entropy_native_posix_init, NULL, NULL, NULL, PRE_KERNEL_1,
+		      CONFIG_ENTROPY_INIT_PRIORITY, &entropy_native_posix_api_funcs);
 
 static void seed_was_set(char *argv, int offset)
 {
@@ -100,25 +94,20 @@ static void seed_was_set(char *argv, int offset)
 static void add_fake_entropy_option(void)
 {
 	static struct args_struct_t entropy_options[] = {
-		{
-			.option = "seed",
-			.name = "r_seed",
-			.type = 'u',
-			.dest = (void *)&seed,
-			.call_when_found = seed_was_set,
-			.descript = "A 32-bit integer seed value for the entropy device, such as "
-				    "97229 (decimal), 0x17BCD (hex), or 0275715 (octal)"
-		},
-		{
-			.is_switch = true,
-			.option = "seed-random",
-			.type = 'b',
-			.dest = (void *)&seed_random,
-			.descript = "Seed the random generator from /dev/urandom. "
-				    "Note your test may not be reproducible if you set this option"
-		},
-		ARG_TABLE_ENDMARKER
-	};
+		{.option = "seed",
+		 .name = "r_seed",
+		 .type = 'u',
+		 .dest = (void *)&seed,
+		 .call_when_found = seed_was_set,
+		 .descript = "A 32-bit integer seed value for the entropy device, such as "
+			     "97229 (decimal), 0x17BCD (hex), or 0275715 (octal)"},
+		{.is_switch = true,
+		 .option = "seed-random",
+		 .type = 'b',
+		 .dest = (void *)&seed_random,
+		 .descript = "Seed the random generator from /dev/urandom. "
+			     "Note your test may not be reproducible if you set this option"},
+		ARG_TABLE_ENDMARKER};
 
 	native_add_command_line_opts(entropy_options);
 }

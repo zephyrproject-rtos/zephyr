@@ -17,19 +17,19 @@
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(ipm_stm32_hsem, CONFIG_IPM_LOG_LEVEL);
 
-#define HSEM_CPU1                   1
-#define HSEM_CPU2                   2
+#define HSEM_CPU1 1
+#define HSEM_CPU2 2
 
 #if CONFIG_IPM_STM32_HSEM_CPU == HSEM_CPU1
-#define ll_hsem_enableit_cier       LL_HSEM_EnableIT_C1IER
-#define ll_hsem_disableit_cier      LL_HSEM_DisableIT_C1IER
-#define ll_hsem_clearflag_cicr      LL_HSEM_ClearFlag_C1ICR
-#define ll_hsem_isactiveflag_cmisr   LL_HSEM_IsActiveFlag_C1MISR
+#define ll_hsem_enableit_cier      LL_HSEM_EnableIT_C1IER
+#define ll_hsem_disableit_cier     LL_HSEM_DisableIT_C1IER
+#define ll_hsem_clearflag_cicr     LL_HSEM_ClearFlag_C1ICR
+#define ll_hsem_isactiveflag_cmisr LL_HSEM_IsActiveFlag_C1MISR
 #else /* HSEM_CPU2 */
-#define ll_hsem_enableit_cier       LL_HSEM_EnableIT_C2IER
-#define ll_hsem_disableit_cier      LL_HSEM_DisableIT_C2IER
-#define ll_hsem_clearflag_cicr      LL_HSEM_ClearFlag_C2ICR
-#define ll_hsem_isactiveflag_cmisr   LL_HSEM_IsActiveFlag_C2MISR
+#define ll_hsem_enableit_cier      LL_HSEM_EnableIT_C2IER
+#define ll_hsem_disableit_cier     LL_HSEM_DisableIT_C2IER
+#define ll_hsem_clearflag_cicr     LL_HSEM_ClearFlag_C2ICR
+#define ll_hsem_isactiveflag_cmisr LL_HSEM_IsActiveFlag_C2MISR
 #endif /* CONFIG_IPM_STM32_HSEM_CPU */
 
 struct stm32_hsem_mailbox_config {
@@ -69,15 +69,14 @@ static void stm32_hsem_mailbox_irq_config_func(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    stm32_hsem_mailbox_ipm_rx_isr, DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), stm32_hsem_mailbox_ipm_rx_isr,
+		    DEVICE_DT_INST_GET(0), 0);
 
 	irq_enable(DT_INST_IRQN(0));
 }
 
-int stm32_hsem_mailbox_ipm_send(const struct device *dev, int wait, uint32_t id,
-			  const void *buff, int size)
+int stm32_hsem_mailbox_ipm_send(const struct device *dev, int wait, uint32_t id, const void *buff,
+				int size)
 {
 	struct stm32_hsem_mailbox_data *data = dev->data;
 
@@ -106,9 +105,8 @@ int stm32_hsem_mailbox_ipm_send(const struct device *dev, int wait, uint32_t id,
 	return 0;
 }
 
-void stm32_hsem_mailbox_ipm_register_callback(const struct device *dev,
-					ipm_callback_t cb,
-					void *user_data)
+void stm32_hsem_mailbox_ipm_register_callback(const struct device *dev, ipm_callback_t cb,
+					      void *user_data)
 {
 	struct stm32_hsem_mailbox_data *data = dev->data;
 
@@ -194,28 +192,19 @@ static const struct ipm_driver_api stm32_hsem_mailbox_ipm_dirver_api = {
 
 static const struct stm32_hsem_mailbox_config stm32_hsem_mailbox_0_config = {
 	.irq_config_func = stm32_hsem_mailbox_irq_config_func,
-	.pclken = {
-		.bus = DT_INST_CLOCKS_CELL(0, bus),
-		.enr = DT_INST_CLOCKS_CELL(0, bits)
-	},
+	.pclken = {.bus = DT_INST_CLOCKS_CELL(0, bus), .enr = DT_INST_CLOCKS_CELL(0, bits)},
 };
-
 
 /*
  * STM32 HSEM has its own LL_HSEM(low-level HSEM) API provided by the hal_stm32 module.
  * The ipm_stm32_hsem driver only picks up two semaphore IDs from stm32_hsem.h to simulate
  * a virtual mailbox device. So there will have only one instance.
  */
-#define IPM_STM32_HSEM_INIT(inst)						\
-	BUILD_ASSERT((inst) == 0,							\
-		     "multiple instances not supported");		\
-	DEVICE_DT_INST_DEFINE(0,							\
-				&stm32_hsem_mailbox_init,				\
-				NULL,			\
-				&stm32_hsem_mailbox_0_data,				\
-				&stm32_hsem_mailbox_0_config,			\
-				POST_KERNEL,							\
-				CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
-				&stm32_hsem_mailbox_ipm_dirver_api);	\
+#define IPM_STM32_HSEM_INIT(inst)                                                                  \
+	BUILD_ASSERT((inst) == 0, "multiple instances not supported");                             \
+	DEVICE_DT_INST_DEFINE(0, &stm32_hsem_mailbox_init, NULL, &stm32_hsem_mailbox_0_data,       \
+			      &stm32_hsem_mailbox_0_config, POST_KERNEL,                           \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,                                 \
+			      &stm32_hsem_mailbox_ipm_dirver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IPM_STM32_HSEM_INIT)

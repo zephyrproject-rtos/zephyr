@@ -12,8 +12,8 @@
 
 LOG_MODULE_DECLARE(flash_gd32);
 
-#define GD32_NV_FLASH_V2_NODE		DT_INST(0, gd_gd32_nv_flash_v2)
-#define GD32_NV_FLASH_V2_TIMEOUT	DT_PROP(GD32_NV_FLASH_V2_NODE, max_erase_time_ms)
+#define GD32_NV_FLASH_V2_NODE    DT_INST(0, gd_gd32_nv_flash_v2)
+#define GD32_NV_FLASH_V2_TIMEOUT DT_PROP(GD32_NV_FLASH_V2_NODE, max_erase_time_ms)
 
 #if !defined(CONFIG_SOC_GD32A503)
 /**
@@ -22,13 +22,13 @@ LOG_MODULE_DECLARE(flash_gd32);
  * The page size is the same within the same bank, but not equal for all banks.
  */
 #if (PRE_KB(512) >= SOC_NV_FLASH_SIZE)
-#define GD32_NV_FLASH_V2_BANK0_SIZE		SOC_NV_FLASH_SIZE
-#define GD32_NV_FLASH_V2_BANK0_PAGE_SIZE	DT_PROP(GD32_NV_FLASH_V2_NODE, bank0_page_size)
+#define GD32_NV_FLASH_V2_BANK0_SIZE      SOC_NV_FLASH_SIZE
+#define GD32_NV_FLASH_V2_BANK0_PAGE_SIZE DT_PROP(GD32_NV_FLASH_V2_NODE, bank0_page_size)
 #else
-#define GD32_NV_FLASH_V2_BANK0_SIZE		KB(512)
-#define GD32_NV_FLASH_V2_BANK0_PAGE_SIZE	DT_PROP(GD32_NV_FLASH_V2_NODE, bank0_page_size)
-#define GD32_NV_FLASH_V2_BANK1_SIZE		(SOC_NV_FLASH_SIZE - KB(512))
-#define GD32_NV_FLASH_V2_BANK1_PAGE_SIZE	DT_PROP(GD32_NV_FLASH_V2_NODE, bank1_page_size)
+#define GD32_NV_FLASH_V2_BANK0_SIZE      KB(512)
+#define GD32_NV_FLASH_V2_BANK0_PAGE_SIZE DT_PROP(GD32_NV_FLASH_V2_NODE, bank0_page_size)
+#define GD32_NV_FLASH_V2_BANK1_SIZE      (SOC_NV_FLASH_SIZE - KB(512))
+#define GD32_NV_FLASH_V2_BANK1_PAGE_SIZE DT_PROP(GD32_NV_FLASH_V2_NODE, bank1_page_size)
 #endif
 
 #elif defined(CONFIG_SOC_GD32A503)
@@ -38,13 +38,13 @@ LOG_MODULE_DECLARE(flash_gd32);
  * The page size is 1KB for all banks.
  */
 #if (PRE_KB(256) >= SOC_NV_FLASH_SIZE)
-#define GD32_NV_FLASH_V2_BANK0_SIZE		SOC_NV_FLASH_SIZE
-#define GD32_NV_FLASH_V2_BANK0_PAGE_SIZE	DT_PROP(GD32_NV_FLASH_V2_NODE, bank0_page_size)
+#define GD32_NV_FLASH_V2_BANK0_SIZE      SOC_NV_FLASH_SIZE
+#define GD32_NV_FLASH_V2_BANK0_PAGE_SIZE DT_PROP(GD32_NV_FLASH_V2_NODE, bank0_page_size)
 #else
-#define GD32_NV_FLASH_V2_BANK0_SIZE		KB(256)
-#define GD32_NV_FLASH_V2_BANK0_PAGE_SIZE	DT_PROP(GD32_NV_FLASH_V2_NODE, bank0_page_size)
-#define GD32_NV_FLASH_V2_BANK1_SIZE		(SOC_NV_FLASH_SIZE - KB(256))
-#define GD32_NV_FLASH_V2_BANK1_PAGE_SIZE	DT_PROP(GD32_NV_FLASH_V2_NODE, bank1_page_size)
+#define GD32_NV_FLASH_V2_BANK0_SIZE      KB(256)
+#define GD32_NV_FLASH_V2_BANK0_PAGE_SIZE DT_PROP(GD32_NV_FLASH_V2_NODE, bank0_page_size)
+#define GD32_NV_FLASH_V2_BANK1_SIZE      (SOC_NV_FLASH_SIZE - KB(256))
+#define GD32_NV_FLASH_V2_BANK1_PAGE_SIZE DT_PROP(GD32_NV_FLASH_V2_NODE, bank1_page_size)
 #endif
 #endif
 
@@ -56,15 +56,11 @@ LOG_MODULE_DECLARE(flash_gd32);
 
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 static struct flash_pages_layout gd32_fmc_v2_layout[] = {
-	{
-	.pages_size = GD32_NV_FLASH_V2_BANK0_PAGE_SIZE,
-	.pages_count = GD32_NV_FLASH_V2_BANK0_SIZE / GD32_NV_FLASH_V2_BANK0_PAGE_SIZE
-	},
+	{.pages_size = GD32_NV_FLASH_V2_BANK0_PAGE_SIZE,
+	 .pages_count = GD32_NV_FLASH_V2_BANK0_SIZE / GD32_NV_FLASH_V2_BANK0_PAGE_SIZE},
 #ifdef GD32_NV_FLASH_V2_BANK1_SIZE
-	{
-	.pages_size = GD32_NV_FLASH_V2_BANK1_PAGE_SIZE,
-	.pages_count = GD32_NV_FLASH_V2_BANK1_SIZE / GD32_NV_FLASH_V2_BANK1_PAGE_SIZE
-	}
+	{.pages_size = GD32_NV_FLASH_V2_BANK1_PAGE_SIZE,
+	 .pages_count = GD32_NV_FLASH_V2_BANK1_SIZE / GD32_NV_FLASH_V2_BANK1_PAGE_SIZE}
 #endif
 };
 #endif
@@ -301,15 +297,13 @@ static int gd32_fmc_v2_bank1_erase_block(off_t offset, size_t size)
 
 bool flash_gd32_valid_range(off_t offset, uint32_t len, bool write)
 {
-	if ((offset > SOC_NV_FLASH_SIZE) ||
-	    ((offset + len) > SOC_NV_FLASH_SIZE)) {
+	if ((offset > SOC_NV_FLASH_SIZE) || ((offset + len) > SOC_NV_FLASH_SIZE)) {
 		return false;
 	}
 
 	if (write) {
 		/* Check offset and len is flash_prg_t aligned. */
-		if ((offset % sizeof(flash_prg_t)) ||
-		    (len % sizeof(flash_prg_t))) {
+		if ((offset % sizeof(flash_prg_t)) || (len % sizeof(flash_prg_t))) {
 			return false;
 		}
 
@@ -328,7 +322,7 @@ bool flash_gd32_valid_range(off_t offset, uint32_t len, bool write)
 #ifdef GD32_NV_FLASH_V2_BANK1_SIZE
 		/* Remove bank0 info from offset and len. */
 		if ((offset < GD32_NV_FLASH_V2_BANK0_SIZE) &&
-		    ((offset + len) > GD32_NV_FLASH_V2_BANK0_SIZE))  {
+		    ((offset + len) > GD32_NV_FLASH_V2_BANK0_SIZE)) {
 			len -= (GD32_NV_FLASH_V2_BANK0_SIZE - offset);
 			offset = GD32_NV_FLASH_V2_BANK0_SIZE;
 		}
@@ -371,7 +365,7 @@ int flash_gd32_write_range(off_t offset, const void *data, size_t len)
 	}
 
 	/* Will programming bank1, remove bank0 offset. */
-	if (offset < GD32_NV_FLASH_V2_BANK0_SIZE)  {
+	if (offset < GD32_NV_FLASH_V2_BANK0_SIZE) {
 		offset = GD32_NV_FLASH_V2_BANK0_SIZE;
 	}
 
@@ -410,7 +404,7 @@ int flash_gd32_erase_block(off_t offset, size_t size)
 	}
 
 	/* Will programming bank1, remove bank0 info from offset. */
-	if (offset < GD32_NV_FLASH_V2_BANK0_SIZE)  {
+	if (offset < GD32_NV_FLASH_V2_BANK0_SIZE) {
 		offset = GD32_NV_FLASH_V2_BANK0_SIZE;
 	}
 
@@ -424,14 +418,12 @@ int flash_gd32_erase_block(off_t offset, size_t size)
 }
 
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
-void flash_gd32_pages_layout(const struct device *dev,
-			     const struct flash_pages_layout **layout,
+void flash_gd32_pages_layout(const struct device *dev, const struct flash_pages_layout **layout,
 			     size_t *layout_size)
 {
 	ARG_UNUSED(dev);
 
 	*layout = gd32_fmc_v2_layout;
 	*layout_size = ARRAY_SIZE(gd32_fmc_v2_layout);
-
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */

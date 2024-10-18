@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT intel_e1000
 
 #define LOG_MODULE_NAME eth_e1000
-#define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
+#define LOG_LEVEL       CONFIG_ETHERNET_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
@@ -26,41 +26,43 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #endif
 
 #if defined(CONFIG_ETH_E1000_VERBOSE_DEBUG)
-#define hexdump(_buf, _len, fmt, args...)				\
-({									\
-	const size_t STR_SIZE = 80;					\
-	char _str[STR_SIZE];						\
-									\
-	snprintk(_str, STR_SIZE, "%s: " fmt, __func__, ## args);	\
-									\
-	LOG_HEXDUMP_DBG(_buf, _len, _str);			\
-})
+#define hexdump(_buf, _len, fmt, args...)                                                          \
+	({                                                                                         \
+		const size_t STR_SIZE = 80;                                                        \
+		char _str[STR_SIZE];                                                               \
+                                                                                                   \
+		snprintk(_str, STR_SIZE, "%s: " fmt, __func__, ##args);                            \
+                                                                                                   \
+		LOG_HEXDUMP_DBG(_buf, _len, _str);                                                 \
+	})
 #else
 #define hexdump(args...)
 #endif
 
 static const char *e1000_reg_to_string(enum e1000_reg_t r)
 {
-#define _(_x)	case _x: return #_x
+#define _(_x)                                                                                      \
+	case _x:                                                                                   \
+		return #_x
 	switch (r) {
-	_(CTRL);
-	_(ICR);
-	_(ICS);
-	_(IMS);
-	_(RCTL);
-	_(TCTL);
-	_(RDBAL);
-	_(RDBAH);
-	_(RDLEN);
-	_(RDH);
-	_(RDT);
-	_(TDBAL);
-	_(TDBAH);
-	_(TDLEN);
-	_(TDH);
-	_(TDT);
-	_(RAL);
-	_(RAH);
+		_(CTRL);
+		_(ICR);
+		_(ICS);
+		_(IMS);
+		_(RCTL);
+		_(TCTL);
+		_(RDBAL);
+		_(RDBAH);
+		_(RDLEN);
+		_(RDH);
+		_(RDT);
+		_(TDBAL);
+		_(TDBAH);
+		_(TDLEN);
+		_(TDH);
+		_(TDT);
+		_(RAL);
+		_(RAH);
 	}
 #undef _
 	LOG_ERR("Unsupported register: 0x%x", r);
@@ -82,8 +84,7 @@ static enum ethernet_hw_caps e1000_caps(const struct device *dev)
 #if defined(CONFIG_ETH_E1000_PTP_CLOCK)
 		ETHERNET_PTP |
 #endif
-		ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T |
-		ETHERNET_LINK_1000BASE_T |
+		ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T | ETHERNET_LINK_1000BASE_T |
 		/* The driver does not really support TXTIME atm but mark
 		 * it to support it so that we can test the txtime sample.
 		 */
@@ -153,8 +154,7 @@ static struct net_pkt *e1000_rx(struct e1000_dev *dev)
 
 	hexdump(buf, len, "%zd byte(s)", len);
 
-	pkt = net_pkt_rx_alloc_with_buffer(dev->iface, len, AF_UNSPEC, 0,
-					   K_NO_WAIT);
+	pkt = net_pkt_rx_alloc_with_buffer(dev->iface, len, AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("Out of buffers");
 		goto out;
@@ -194,7 +194,6 @@ static void e1000_isr(const struct device *ddev)
 	}
 }
 
-
 int e1000_probe(const struct device *ddev)
 {
 	/* PCI ID is decoded into REG_SIZE */
@@ -207,17 +206,15 @@ int e1000_probe(const struct device *ddev)
 	}
 
 	pcie_probe_mbar(dev->pcie->bdf, 0, &mbar);
-	pcie_set_cmd(dev->pcie->bdf, PCIE_CONF_CMDSTAT_MEM |
-		     PCIE_CONF_CMDSTAT_MASTER, true);
+	pcie_set_cmd(dev->pcie->bdf, PCIE_CONF_CMDSTAT_MEM | PCIE_CONF_CMDSTAT_MASTER, true);
 
-	device_map(&dev->address, mbar.phys_addr, mbar.size,
-		   K_MEM_CACHE_NONE);
+	device_map(&dev->address, mbar.phys_addr, mbar.size, K_MEM_CACHE_NONE);
 
 	/* Setup TX descriptor */
 
 	iow32(dev, TDBAL, (uint32_t)POINTER_TO_UINT(&dev->tx));
 	iow32(dev, TDBAH, (uint32_t)((POINTER_TO_UINT(&dev->tx) >> 16) >> 16));
-	iow32(dev, TDLEN, 1*16);
+	iow32(dev, TDLEN, 1 * 16);
 
 	iow32(dev, TDH, 0);
 	iow32(dev, TDT, 0);
@@ -231,7 +228,7 @@ int e1000_probe(const struct device *ddev)
 
 	iow32(dev, RDBAL, (uint32_t)POINTER_TO_UINT(&dev->rx));
 	iow32(dev, RDBAH, (uint32_t)((POINTER_TO_UINT(&dev->rx) >> 16) >> 16));
-	iow32(dev, RDLEN, 1*16);
+	iow32(dev, RDLEN, 1 * 16);
 
 	iow32(dev, RDH, 0);
 	iow32(dev, RDT, 1);
@@ -247,8 +244,7 @@ int e1000_probe(const struct device *ddev)
 	return 0;
 }
 
-BUILD_ASSERT(DT_INST_IRQN(0) != PCIE_IRQ_DETECT,
-	     "Dynamic IRQ allocation is not supported");
+BUILD_ASSERT(DT_INST_IRQN(0) != PCIE_IRQ_DETECT, "Dynamic IRQ allocation is not supported");
 
 static void e1000_iface_init(struct net_if *iface)
 {
@@ -264,57 +260,48 @@ static void e1000_iface_init(struct net_if *iface)
 
 	ethernet_init(iface);
 
-	net_if_set_link_addr(iface, dev->mac, sizeof(dev->mac),
-			     NET_LINK_ETHERNET);
+	net_if_set_link_addr(iface, dev->mac, sizeof(dev->mac), NET_LINK_ETHERNET);
 
 	LOG_DBG("done");
 }
 
 static const struct ethernet_api e1000_api = {
-	.iface_api.init		= e1000_iface_init,
+	.iface_api.init = e1000_iface_init,
 #if defined(CONFIG_ETH_E1000_PTP_CLOCK)
-	.get_ptp_clock		= e1000_get_ptp_clock,
+	.get_ptp_clock = e1000_get_ptp_clock,
 #endif
-	.get_capabilities	= e1000_caps,
-	.send			= e1000_send,
+	.get_capabilities = e1000_caps,
+	.send = e1000_send,
 };
 
-#define E1000_DT_INST_IRQ_FLAGS(inst)					\
+#define E1000_DT_INST_IRQ_FLAGS(inst)                                                              \
 	COND_CODE_1(DT_INST_IRQ_HAS_CELL(inst, sense),			\
 		    (DT_INST_IRQ(inst, sense)),				\
 		    (DT_INST_IRQ(inst, flags)))
 
-#define E1000_PCI_INIT(inst)						\
-	DEVICE_PCIE_INST_DECLARE(inst);					\
-									\
-	static struct e1000_dev dev_##inst = {				\
-		DEVICE_PCIE_INST_INIT(inst, pcie),			\
-	};								\
-									\
-	static void e1000_config_##inst(const struct e1000_dev *dev)	\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(inst),				\
-			    DT_INST_IRQ(inst, priority),		\
-			    e1000_isr, DEVICE_DT_INST_GET(inst),	\
-			    E1000_DT_INST_IRQ_FLAGS(inst));		\
-									\
-		irq_enable(DT_INST_IRQN(inst));				\
-		iow32(dev, CTRL, CTRL_SLU); /* Set link up */		\
-		iow32(dev, RCTL, RCTL_EN | RCTL_MPE);			\
-	}								\
-									\
-	static const struct e1000_config config_##inst = {		\
-		.config_func = e1000_config_##inst,			\
-	};								\
-									\
-	ETH_NET_DEVICE_DT_INST_DEFINE(inst,				\
-				      e1000_probe,			\
-				      NULL,				\
-				      &dev_##inst,			\
-				      &config_##inst,			\
-				      CONFIG_ETH_INIT_PRIORITY,		\
-				      &e1000_api,			\
-				      NET_ETH_MTU);
+#define E1000_PCI_INIT(inst)                                                                       \
+	DEVICE_PCIE_INST_DECLARE(inst);                                                            \
+                                                                                                   \
+	static struct e1000_dev dev_##inst = {                                                     \
+		DEVICE_PCIE_INST_INIT(inst, pcie),                                                 \
+	};                                                                                         \
+                                                                                                   \
+	static void e1000_config_##inst(const struct e1000_dev *dev)                               \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), e1000_isr,            \
+			    DEVICE_DT_INST_GET(inst), E1000_DT_INST_IRQ_FLAGS(inst));              \
+                                                                                                   \
+		irq_enable(DT_INST_IRQN(inst));                                                    \
+		iow32(dev, CTRL, CTRL_SLU); /* Set link up */                                      \
+		iow32(dev, RCTL, RCTL_EN | RCTL_MPE);                                              \
+	}                                                                                          \
+                                                                                                   \
+	static const struct e1000_config config_##inst = {                                         \
+		.config_func = e1000_config_##inst,                                                \
+	};                                                                                         \
+                                                                                                   \
+	ETH_NET_DEVICE_DT_INST_DEFINE(inst, e1000_probe, NULL, &dev_##inst, &config_##inst,        \
+				      CONFIG_ETH_INIT_PRIORITY, &e1000_api, NET_ETH_MTU);
 
 DT_INST_FOREACH_STATUS_OKAY(E1000_PCI_INIT);
 
@@ -328,8 +315,7 @@ struct ptp_context {
 	uint64_t clock_time;
 };
 
-static int ptp_clock_e1000_set(const struct device *dev,
-			       struct net_ptp_time *tm)
+static int ptp_clock_e1000_set(const struct device *dev, struct net_ptp_time *tm)
 {
 	struct ptp_context *ptp_context = dev->data;
 
@@ -339,8 +325,7 @@ static int ptp_clock_e1000_set(const struct device *dev,
 	return 0;
 }
 
-static int ptp_clock_e1000_get(const struct device *dev,
-			       struct net_ptp_time *tm)
+static int ptp_clock_e1000_get(const struct device *dev, struct net_ptp_time *tm)
 {
 	struct ptp_context *ptp_context = dev->data;
 
@@ -378,8 +363,7 @@ static int ptp_clock_e1000_rate_adjust(const struct device *dev, double ratio)
 	ratio *= context->clk_ratio;
 
 	/* Limit possible ratio. */
-	if ((ratio > 1.0 + 1.0/(2.0 * hw_inc)) ||
-			(ratio < 1.0 - 1.0/(2.0 * hw_inc))) {
+	if ((ratio > 1.0 + 1.0 / (2.0 * hw_inc)) || (ratio < 1.0 - 1.0 / (2.0 * hw_inc))) {
 		return -EINVAL;
 	}
 
@@ -429,14 +413,13 @@ static int ptp_e1000_init(const struct device *port)
 	return 0;
 }
 
-#define E1000_PTP_INIT(inst)						\
-	static struct ptp_context ptp_e1000_context_##inst = {		\
-		.eth_context = DEVICE_DT_INST_GET(inst)->data,		\
-	};								\
-									\
-	DEVICE_DEFINE(e1000_ptp_clock, PTP_CLOCK_NAME,			\
-		      ptp_e1000_init, NULL,				\
-		      &ptp_e1000_context_##inst, NULL, POST_KERNEL,	\
+#define E1000_PTP_INIT(inst)                                                                       \
+	static struct ptp_context ptp_e1000_context_##inst = {                                     \
+		.eth_context = DEVICE_DT_INST_GET(inst)->data,                                     \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DEFINE(e1000_ptp_clock, PTP_CLOCK_NAME, ptp_e1000_init, NULL,                       \
+		      &ptp_e1000_context_##inst, NULL, POST_KERNEL,                                \
 		      CONFIG_APPLICATION_INIT_PRIORITY, &api);
 
 DT_INST_FOREACH_STATUS_OKAY(E1000_PTP_INIT);

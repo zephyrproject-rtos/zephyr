@@ -53,12 +53,12 @@ struct measurement {
 	uint32_t z;
 };
 
-#define START		      BIT(7)
-#define CHANNEL(ch)	      ((ch & 0x7) << 4)
-#define MODE_8_BIT	      BIT(3)
-#define SINGLE_ENDED	      BIT(2)
-#define POWER_OFF	      0
-#define POWER_ON	      0x03
+#define START                 BIT(7)
+#define CHANNEL(ch)           ((ch & 0x7) << 4)
+#define MODE_8_BIT            BIT(3)
+#define SINGLE_ENDED          BIT(2)
+#define POWER_OFF             0
+#define POWER_ON              0x03
 #define CONVERT_U16(buf, idx) ((uint16_t)((buf[idx] & 0x7f) << 5) | (buf[idx + 1] >> 3))
 
 /* Read all Z1, X, Y, Z2 channels using 16 Clocks-per-Conversion mode.

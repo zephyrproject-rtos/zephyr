@@ -34,8 +34,7 @@ struct ptp_clock_nxp_enet_data {
 	struct k_mutex ptp_mutex;
 };
 
-static int ptp_clock_nxp_enet_set(const struct device *dev,
-				struct net_ptp_time *tm)
+static int ptp_clock_nxp_enet_set(const struct device *dev, struct net_ptp_time *tm)
 {
 	struct ptp_clock_nxp_enet_data *data = dev->data;
 	enet_ptp_time_t enet_time;
@@ -48,8 +47,7 @@ static int ptp_clock_nxp_enet_set(const struct device *dev,
 	return 0;
 }
 
-static int ptp_clock_nxp_enet_get(const struct device *dev,
-				struct net_ptp_time *tm)
+static int ptp_clock_nxp_enet_get(const struct device *dev, struct net_ptp_time *tm)
 {
 	struct ptp_clock_nxp_enet_data *data = dev->data;
 	enet_ptp_time_t enet_time;
@@ -62,15 +60,13 @@ static int ptp_clock_nxp_enet_get(const struct device *dev,
 	return 0;
 }
 
-static int ptp_clock_nxp_enet_adjust(const struct device *dev,
-					int increment)
+static int ptp_clock_nxp_enet_adjust(const struct device *dev, int increment)
 {
 	struct ptp_clock_nxp_enet_data *data = dev->data;
 	int ret = 0;
 	int key;
 
-	if ((increment <= (int32_t)(-NSEC_PER_SEC)) ||
-			(increment >= (int32_t)NSEC_PER_SEC)) {
+	if ((increment <= (int32_t)(-NSEC_PER_SEC)) || (increment >= (int32_t)NSEC_PER_SEC)) {
 		ret = -EINVAL;
 	} else {
 		key = irq_lock();
@@ -87,11 +83,9 @@ static int ptp_clock_nxp_enet_adjust(const struct device *dev,
 	}
 
 	return ret;
-
 }
 
-static int ptp_clock_nxp_enet_rate_adjust(const struct device *dev,
-					double ratio)
+static int ptp_clock_nxp_enet_rate_adjust(const struct device *dev, double ratio)
 {
 	const struct ptp_clock_nxp_enet_config *config = dev->config;
 	struct ptp_clock_nxp_enet_data *data = dev->data;
@@ -100,21 +94,19 @@ static int ptp_clock_nxp_enet_rate_adjust(const struct device *dev,
 	double val;
 	uint32_t enet_ref_pll_rate;
 
-	(void) clock_control_get_rate(config->clock_dev, config->clock_subsys,
-				&enet_ref_pll_rate);
+	(void)clock_control_get_rate(config->clock_dev, config->clock_subsys, &enet_ref_pll_rate);
 	int hw_inc = NSEC_PER_SEC / enet_ref_pll_rate;
 
 	/* No change needed. */
 	if ((ratio > 1.0 && ratio - 1.0 < 0.00000001) ||
-	   (ratio < 1.0 && 1.0 - ratio < 0.00000001)) {
+	    (ratio < 1.0 && 1.0 - ratio < 0.00000001)) {
 		return 0;
 	}
 
 	ratio *= data->clock_ratio;
 
 	/* Limit possible ratio. */
-	if ((ratio > 1.0 + 1.0/(2 * hw_inc)) ||
-			(ratio < 1.0 - 1.0/(2 * hw_inc))) {
+	if ((ratio > 1.0 + 1.0 / (2 * hw_inc)) || (ratio < 1.0 - 1.0 / (2 * hw_inc))) {
 		return -EINVAL;
 	}
 
@@ -150,9 +142,8 @@ static int ptp_clock_nxp_enet_rate_adjust(const struct device *dev,
 	return 0;
 }
 
-void nxp_enet_ptp_clock_callback(const struct device *dev,
-			enum nxp_enet_callback_reason event,
-			void *cb_data)
+void nxp_enet_ptp_clock_callback(const struct device *dev, enum nxp_enet_callback_reason event,
+				 void *cb_data)
 {
 	const struct ptp_clock_nxp_enet_config *config = dev->config;
 	struct ptp_clock_nxp_enet_data *data = dev->data;
@@ -160,11 +151,11 @@ void nxp_enet_ptp_clock_callback(const struct device *dev,
 	if (event == NXP_ENET_MODULE_RESET) {
 		enet_ptp_config_t ptp_config;
 		uint32_t enet_ref_pll_rate;
-		uint8_t ptp_multicast[6] = { 0x01, 0x1B, 0x19, 0x00, 0x00, 0x00 };
-		uint8_t ptp_peer_multicast[6] = { 0x01, 0x80, 0xC2, 0x00, 0x00, 0x0E };
+		uint8_t ptp_multicast[6] = {0x01, 0x1B, 0x19, 0x00, 0x00, 0x00};
+		uint8_t ptp_peer_multicast[6] = {0x01, 0x80, 0xC2, 0x00, 0x00, 0x0E};
 
-		(void) clock_control_get_rate(config->clock_dev, config->clock_subsys,
-					&enet_ref_pll_rate);
+		(void)clock_control_get_rate(config->clock_dev, config->clock_subsys,
+					     &enet_ref_pll_rate);
 
 		ENET_AddMulticastGroup(data->base, ptp_multicast);
 		ENET_AddMulticastGroup(data->base, ptp_peer_multicast);
@@ -175,9 +166,8 @@ void nxp_enet_ptp_clock_callback(const struct device *dev,
 		data->clock_ratio = 1.0;
 
 		ENET_Ptp1588SetChannelMode(data->base, kENET_PtpTimerChannel3,
-				kENET_PtpChannelPulseHighonCompare, true);
-		ENET_Ptp1588Configure(data->base, &data->enet_handle,
-				      &ptp_config);
+					   kENET_PtpChannelPulseHighonCompare, true);
+		ENET_Ptp1588Configure(data->base, &data->enet_handle, &ptp_config);
 	}
 
 	if (cb_data != NULL) {
@@ -232,37 +222,29 @@ static const struct ptp_clock_driver_api ptp_clock_nxp_enet_api = {
 	.rate_adjust = ptp_clock_nxp_enet_rate_adjust,
 };
 
-#define PTP_CLOCK_NXP_ENET_INIT(n)						\
-	static void nxp_enet_ptp_clock_##n##_irq_config_func(void)		\
-	{									\
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 0, irq),			\
-				DT_INST_IRQ_BY_IDX(n, 0, priority),		\
-				ptp_clock_nxp_enet_isr,				\
-				DEVICE_DT_INST_GET(n),				\
-				0);						\
-		irq_enable(DT_INST_IRQ_BY_IDX(n, 0, irq));			\
-	}									\
-										\
-	PINCTRL_DT_INST_DEFINE(n);						\
-										\
-	static const struct ptp_clock_nxp_enet_config				\
-		ptp_clock_nxp_enet_##n##_config = {				\
-			.module_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),		\
-			.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
-			.port = DEVICE_DT_INST_GET(n),				\
-			.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
-			.clock_subsys = (void *)				\
-					DT_INST_CLOCKS_CELL_BY_IDX(n, 0, name),	\
-			.irq_config_func =					\
-				nxp_enet_ptp_clock_##n##_irq_config_func,	\
-		};								\
-										\
-	static struct ptp_clock_nxp_enet_data ptp_clock_nxp_enet_##n##_data;	\
-										\
-	DEVICE_DT_INST_DEFINE(n, &ptp_clock_nxp_enet_init, NULL,		\
-				&ptp_clock_nxp_enet_##n##_data,			\
-				&ptp_clock_nxp_enet_##n##_config,		\
-				POST_KERNEL, CONFIG_PTP_CLOCK_INIT_PRIORITY,	\
-				&ptp_clock_nxp_enet_api);
+#define PTP_CLOCK_NXP_ENET_INIT(n)                                                                 \
+	static void nxp_enet_ptp_clock_##n##_irq_config_func(void)                                 \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 0, irq), DT_INST_IRQ_BY_IDX(n, 0, priority),     \
+			    ptp_clock_nxp_enet_isr, DEVICE_DT_INST_GET(n), 0);                     \
+		irq_enable(DT_INST_IRQ_BY_IDX(n, 0, irq));                                         \
+	}                                                                                          \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+                                                                                                   \
+	static const struct ptp_clock_nxp_enet_config ptp_clock_nxp_enet_##n##_config = {          \
+		.module_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                    \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+		.port = DEVICE_DT_INST_GET(n),                                                     \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
+		.clock_subsys = (void *)DT_INST_CLOCKS_CELL_BY_IDX(n, 0, name),                    \
+		.irq_config_func = nxp_enet_ptp_clock_##n##_irq_config_func,                       \
+	};                                                                                         \
+                                                                                                   \
+	static struct ptp_clock_nxp_enet_data ptp_clock_nxp_enet_##n##_data;                       \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &ptp_clock_nxp_enet_init, NULL, &ptp_clock_nxp_enet_##n##_data,   \
+			      &ptp_clock_nxp_enet_##n##_config, POST_KERNEL,                       \
+			      CONFIG_PTP_CLOCK_INIT_PRIORITY, &ptp_clock_nxp_enet_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PTP_CLOCK_NXP_ENET_INIT)

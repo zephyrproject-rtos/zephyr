@@ -21,9 +21,7 @@ struct eeprom_stm32_config {
 	size_t size;
 };
 
-static int eeprom_stm32_read(const struct device *dev, off_t offset,
-				void *buf,
-				size_t len)
+static int eeprom_stm32_read(const struct device *dev, off_t offset, void *buf, size_t len)
 {
 	const struct eeprom_stm32_config *config = dev->config;
 	uint8_t *pbuf = buf;
@@ -40,7 +38,7 @@ static int eeprom_stm32_read(const struct device *dev, off_t offset,
 	k_mutex_lock(&lock, K_FOREVER);
 
 	while (len) {
-		*pbuf = *(__IO uint8_t*)(config->addr + offset);
+		*pbuf = *(__IO uint8_t *)(config->addr + offset);
 
 		pbuf++;
 		offset++;
@@ -52,8 +50,7 @@ static int eeprom_stm32_read(const struct device *dev, off_t offset,
 	return 0;
 }
 
-static int eeprom_stm32_write(const struct device *dev, off_t offset,
-				const void *buf, size_t len)
+static int eeprom_stm32_write(const struct device *dev, off_t offset, const void *buf, size_t len)
 {
 	const struct eeprom_stm32_config *config = dev->config;
 	const uint8_t *pbuf = buf;
@@ -73,9 +70,8 @@ static int eeprom_stm32_write(const struct device *dev, off_t offset,
 	HAL_FLASHEx_DATAEEPROM_Unlock();
 
 	while (len) {
-		ret = HAL_FLASHEx_DATAEEPROM_Program(
-						FLASH_TYPEPROGRAMDATA_BYTE,
-						config->addr + offset, *pbuf);
+		ret = HAL_FLASHEx_DATAEEPROM_Program(FLASH_TYPEPROGRAMDATA_BYTE,
+						     config->addr + offset, *pbuf);
 		if (ret) {
 			LOG_ERR("failed to write to EEPROM (err %d)", ret);
 			HAL_FLASHEx_DATAEEPROM_Lock();
@@ -118,5 +114,5 @@ static const struct eeprom_stm32_config eeprom_config = {
 	.size = DT_INST_REG_SIZE(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &eeprom_config, POST_KERNEL,
-		      CONFIG_EEPROM_INIT_PRIORITY, &eeprom_stm32_api);
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &eeprom_config, POST_KERNEL, CONFIG_EEPROM_INIT_PRIORITY,
+		      &eeprom_stm32_api);

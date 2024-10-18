@@ -21,7 +21,7 @@ struct ltc2451_config {
 };
 
 static int ltc2451_channel_setup(const struct device *dev,
-				const struct adc_channel_cfg *channel_cfg)
+				 const struct adc_channel_cfg *channel_cfg)
 {
 	ARG_UNUSED(dev);
 
@@ -92,14 +92,13 @@ static const struct adc_driver_api ltc2451_api = {
 	.read = ltc2451_read_latest_conversion,
 };
 
-#define LTC2451_DEFINE(index) \
-	static const struct ltc2451_config ltc2451_cfg_##index = { \
-		.i2c = I2C_DT_SPEC_INST_GET(index), \
-		.conversion_speed = DT_INST_PROP(index, conversion_speed), \
-	}; \
- \
-	DEVICE_DT_INST_DEFINE(index, &ltc2451_init, NULL, NULL, \
-			      &ltc2451_cfg_##index, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, \
-			      &ltc2451_api);
+#define LTC2451_DEFINE(index)                                                                      \
+	static const struct ltc2451_config ltc2451_cfg_##index = {                                 \
+		.i2c = I2C_DT_SPEC_INST_GET(index),                                                \
+		.conversion_speed = DT_INST_PROP(index, conversion_speed),                         \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(index, &ltc2451_init, NULL, NULL, &ltc2451_cfg_##index, POST_KERNEL, \
+			      CONFIG_ADC_INIT_PRIORITY, &ltc2451_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LTC2451_DEFINE)

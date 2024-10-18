@@ -19,7 +19,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/linker/sections.h>
 
-#define IS_IOAPIC_IRQ(irq)  ((irq) < z_loapic_irq_base())
+#define IS_IOAPIC_IRQ(irq) ((irq) < z_loapic_irq_base())
 #define HARDWARE_IRQ_LIMIT ((z_loapic_irq_base() + LOAPIC_IRQ_COUNT) - 1)
 
 /**
@@ -42,9 +42,7 @@
  * @param irq the virtualized IRQ
  * @param flags interrupt flags
  */
-__boot_func
-void z_irq_controller_irq_config(unsigned int vector, unsigned int irq,
-				 uint32_t flags)
+__boot_func void z_irq_controller_irq_config(unsigned int vector, unsigned int irq, uint32_t flags)
 {
 	__ASSERT(irq <= HARDWARE_IRQ_LIMIT, "invalid irq line");
 
@@ -69,8 +67,7 @@ void z_irq_controller_irq_config(unsigned int vector, unsigned int irq,
  * comments in _interrupt_vector_allocate() for more information regarding IRQ
  * virtualization.
  */
-__pinned_func
-void arch_irq_enable(unsigned int irq)
+__pinned_func void arch_irq_enable(unsigned int irq)
 {
 	if (IS_IOAPIC_IRQ(irq)) {
 		z_ioapic_irq_enable(irq);
@@ -87,8 +84,7 @@ void arch_irq_enable(unsigned int irq)
  * comments in _interrupt_vector_allocate() for more information regarding IRQ
  * virtualization.
  */
-__pinned_func
-void arch_irq_disable(unsigned int irq)
+__pinned_func void arch_irq_disable(unsigned int irq)
 {
 	if (IS_IOAPIC_IRQ(irq)) {
 		z_ioapic_irq_disable(irq);

@@ -12,11 +12,11 @@
 
 #include <soc.h>
 
-#define REG_EN_ENABLE             0x1
-#define REG_EN_DISABLE            0x0
+#define REG_EN_ENABLE  0x1
+#define REG_EN_DISABLE 0x0
 
 /* PWM device in LiteX has only one channel */
-#define NUMBER_OF_CHANNELS        1
+#define NUMBER_OF_CHANNELS 1
 
 struct pwm_litex_cfg {
 	uint32_t reg_en;
@@ -32,8 +32,7 @@ int pwm_litex_init(const struct device *dev)
 	return 0;
 }
 
-int pwm_litex_set_cycles(const struct device *dev, uint32_t channel,
-			 uint32_t period_cycles,
+int pwm_litex_set_cycles(const struct device *dev, uint32_t channel, uint32_t period_cycles,
 			 uint32_t pulse_cycles, pwm_flags_t flags)
 {
 	const struct pwm_litex_cfg *cfg = dev->config;
@@ -50,8 +49,7 @@ int pwm_litex_set_cycles(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
-int pwm_litex_get_cycles_per_sec(const struct device *dev, uint32_t channel,
-				 uint64_t *cycles)
+int pwm_litex_get_cycles_per_sec(const struct device *dev, uint32_t channel, uint64_t *cycles)
 {
 	if (channel >= NUMBER_OF_CHANNELS) {
 		return -EINVAL;
@@ -68,21 +66,14 @@ static const struct pwm_driver_api pwm_litex_driver_api = {
 
 /* Device Instantiation */
 
-#define PWM_LITEX_INIT(n)						       \
-	static const struct pwm_litex_cfg pwm_litex_cfg_##n = {		       \
-		.reg_en = DT_INST_REG_ADDR_BY_NAME(n, enable),		       \
-		.reg_width = DT_INST_REG_ADDR_BY_NAME(n, width),	       \
-		.reg_period = DT_INST_REG_ADDR_BY_NAME(n, period),	       \
-	};								       \
-									       \
-	DEVICE_DT_INST_DEFINE(n,					       \
-			    pwm_litex_init,				       \
-			    NULL,					       \
-			    NULL,					       \
-			    &pwm_litex_cfg_##n,				       \
-			    POST_KERNEL,				       \
-			    CONFIG_PWM_LITEX_INIT_PRIORITY,		       \
-			    &pwm_litex_driver_api			       \
-			   );
+#define PWM_LITEX_INIT(n)                                                                          \
+	static const struct pwm_litex_cfg pwm_litex_cfg_##n = {                                    \
+		.reg_en = DT_INST_REG_ADDR_BY_NAME(n, enable),                                     \
+		.reg_width = DT_INST_REG_ADDR_BY_NAME(n, width),                                   \
+		.reg_period = DT_INST_REG_ADDR_BY_NAME(n, period),                                 \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, pwm_litex_init, NULL, NULL, &pwm_litex_cfg_##n, POST_KERNEL,      \
+			      CONFIG_PWM_LITEX_INIT_PRIORITY, &pwm_litex_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_LITEX_INIT)

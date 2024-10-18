@@ -208,8 +208,8 @@ static int emul_sbs_gauge_buffer_read(const struct emul *target, int reg, char *
 		break;
 
 	case SBS_GAUGE_CMD_DEVICE_CHEMISTRY:
-		dev_chem->device_chemistry_length = MIN(sizeof(chem),
-							sizeof(dev_chem->device_chemistry));
+		dev_chem->device_chemistry_length =
+			MIN(sizeof(chem), sizeof(dev_chem->device_chemistry));
 		memcpy(dev_chem->device_chemistry, chem, dev_chem->device_chemistry_length);
 		break;
 	default:
@@ -260,7 +260,7 @@ static int sbs_gauge_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 				/* SBS uses SMBus, which sends data in little-endian format. */
 				sys_put_le16(val, msgs->buf);
 				break;
-					/* buffer properties */
+				/* buffer properties */
 			case (sizeof(struct sbs_gauge_manufacturer_name)):
 			case (sizeof(struct sbs_gauge_device_chemistry)):
 				rc = emul_sbs_gauge_buffer_read(target, reg, (char *)msgs->buf);
@@ -332,8 +332,7 @@ static void sbs_gauge_emul_reset(const struct emul *target)
 #include <zephyr/ztest.h>
 
 /* Add test reset handlers in when using emulators with tests */
-#define SBS_GAUGE_EMUL_RESET_RULE_BEFORE(inst)                                                     \
-	sbs_gauge_emul_reset(EMUL_DT_GET(DT_DRV_INST(inst)));
+#define SBS_GAUGE_EMUL_RESET_RULE_BEFORE(inst) sbs_gauge_emul_reset(EMUL_DT_GET(DT_DRV_INST(inst)));
 
 static void emul_sbs_gauge_reset_rule_after(const struct ztest_unit_test *test, void *data)
 {

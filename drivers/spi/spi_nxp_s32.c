@@ -52,15 +52,15 @@ static int spi_nxp_s32_transfer_next_packet(const struct device *dev)
 #endif /* CONFIG_NXP_S32_SPI_INTERRUPT */
 
 	data->transfer_len = spi_context_max_continuous_chunk(&data->ctx);
-	data->transfer_len = MIN(data->transfer_len,
-					SPI_NXP_S32_MAX_BYTES_PER_PACKAGE(data->bytes_per_frame));
+	data->transfer_len =
+		MIN(data->transfer_len, SPI_NXP_S32_MAX_BYTES_PER_PACKAGE(data->bytes_per_frame));
 
 	param.KeepCs = !spi_nxp_s32_last_packet(data);
 	param.DeviceParams = NULL;
 	Spi_Ip_UpdateTransferParam(&data->transfer_cfg, &param);
 
 	status = Spi_Ip_AsyncTransmit(&data->transfer_cfg, (uint8_t *)data->ctx.tx_buf,
-						data->ctx.rx_buf, data->transfer_len, data_cb);
+				      data->ctx.rx_buf, data->transfer_len, data_cb);
 
 	if (status) {
 		LOG_ERR("Transfer could not start");
@@ -89,9 +89,8 @@ static int spi_nxp_s32_transfer_next_packet(const struct device *dev)
  * computated to ensure it will always equal or the nearest approximation
  * lower to the expected one.
  */
-static void spi_nxp_s32_getbestfreq(uint32_t clock_frequency,
-					uint32_t requested_baud,
-					struct spi_nxp_s32_baudrate_param *best_baud)
+static void spi_nxp_s32_getbestfreq(uint32_t clock_frequency, uint32_t requested_baud,
+				    struct spi_nxp_s32_baudrate_param *best_baud)
 {
 	uint8_t scaler;
 	uint8_t prescaler;
@@ -104,9 +103,8 @@ static void spi_nxp_s32_getbestfreq(uint32_t clock_frequency,
 	static const uint8_t prescaler_arr[SPI_NXP_S32_NUM_PRESCALER] = {2U, 3U, 5U, 7U};
 
 	static const uint16_t scaller_arr[SPI_NXP_S32_NUM_SCALER] = {
-		2U, 4U, 6U, 8U, 16U, 32U, 64U, 128U, 256U, 512U, 1024U, 2048U,
-		4096U, 8192U, 16384U, 32768U
-	};
+		2U,   4U,   6U,    8U,    16U,   32U,   64U,    128U,
+		256U, 512U, 1024U, 2048U, 4096U, 8192U, 16384U, 32768U};
 
 	for (prescaler = 0U; prescaler < SPI_NXP_S32_NUM_PRESCALER; prescaler++) {
 		low = 0U;
@@ -117,7 +115,7 @@ static void spi_nxp_s32_getbestfreq(uint32_t clock_frequency,
 			scaler = (low + high) / 2U;
 
 			curr_freq = clock_frequency * 1U /
-					(prescaler_arr[prescaler] * scaller_arr[scaler]);
+				    (prescaler_arr[prescaler] * scaller_arr[scaler]);
 
 			/*
 			 * If the scaler make current frequency higher than the
@@ -133,7 +131,7 @@ static void spi_nxp_s32_getbestfreq(uint32_t clock_frequency,
 			if ((requested_baud - best_freq) > (requested_baud - curr_freq)) {
 				best_freq = curr_freq;
 				best_baud->prescaler = prescaler;
-				best_baud->scaler    = scaler;
+				best_baud->scaler = scaler;
 			}
 
 			if (best_freq == requested_baud) {
@@ -152,14 +150,14 @@ static void spi_nxp_s32_getbestfreq(uint32_t clock_frequency,
 			}
 
 			curr_freq = clock_frequency * 1U /
-					(prescaler_arr[prescaler] * scaller_arr[scaler]);
+				    (prescaler_arr[prescaler] * scaller_arr[scaler]);
 
 			if (curr_freq <= requested_baud) {
 
 				if ((requested_baud - best_freq) > (requested_baud - curr_freq)) {
 					best_freq = curr_freq;
 					best_baud->prescaler = prescaler;
-					best_baud->scaler    = scaler;
+					best_baud->scaler = scaler;
 				}
 			}
 		}
@@ -179,7 +177,7 @@ static void spi_nxp_s32_getbestfreq(uint32_t clock_frequency,
  * the expected one. In the worst case, use the delay as much as possible.
  */
 static void spi_nxp_s32_getbestdelay(uint32_t clock_frequency, uint32_t requested_delay,
-					uint8_t *best_scaler, uint8_t *best_prescaler)
+				     uint8_t *best_scaler, uint8_t *best_prescaler)
 {
 	uint32_t current_delay;
 	uint8_t scaler, prescaler;
@@ -199,8 +197,8 @@ static void spi_nxp_s32_getbestdelay(uint32_t clock_frequency, uint32_t requeste
 		do {
 			scaler = (low + high) / 2U;
 
-			current_delay = NSEC_PER_USEC * prescaler_arr[prescaler]
-						* (1U << (scaler + 1)) / clock_frequency;
+			current_delay = NSEC_PER_USEC * prescaler_arr[prescaler] *
+					(1U << (scaler + 1)) / clock_frequency;
 
 			/*
 			 * If the scaler make current delay smaller than
@@ -234,12 +232,12 @@ static void spi_nxp_s32_getbestdelay(uint32_t clock_frequency, uint32_t requeste
 				scaler = high;
 			}
 
-			current_delay = NSEC_PER_USEC * prescaler_arr[prescaler]
-						* (1U << (scaler + 1)) / clock_frequency;
+			current_delay = NSEC_PER_USEC * prescaler_arr[prescaler] *
+					(1U << (scaler + 1)) / clock_frequency;
 
 			if (current_delay >= requested_delay) {
 				if ((best_delay - requested_delay) >
-					(current_delay - requested_delay)) {
+				    (current_delay - requested_delay)) {
 
 					best_delay = current_delay;
 					*best_prescaler = prescaler;
@@ -260,8 +258,7 @@ static void spi_nxp_s32_getbestdelay(uint32_t clock_frequency, uint32_t requeste
 	}
 }
 
-static int spi_nxp_s32_configure(const struct device *dev,
-				const struct spi_config *spi_cfg)
+static int spi_nxp_s32_configure(const struct device *dev, const struct spi_config *spi_cfg)
 {
 	const struct spi_nxp_s32_config *config = dev->config;
 	struct spi_nxp_s32_data *data = dev->data;
@@ -287,15 +284,15 @@ static int spi_nxp_s32_configure(const struct device *dev,
 		return err;
 	}
 
-	clk_phase	= !!(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA);
-	clk_polarity	= !!(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL);
+	clk_phase = !!(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA);
+	clk_polarity = !!(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL);
 
-	hold_cs		= !!(spi_cfg->operation & SPI_HOLD_ON_CS);
-	lsb		= !!(spi_cfg->operation & SPI_TRANSFER_LSB);
+	hold_cs = !!(spi_cfg->operation & SPI_HOLD_ON_CS);
+	lsb = !!(spi_cfg->operation & SPI_TRANSFER_LSB);
 
-	slave_mode	= !!(SPI_OP_MODE_GET(spi_cfg->operation));
-	frame_size	= SPI_WORD_SIZE_GET(spi_cfg->operation);
-	cs_active_high	= !!(spi_cfg->operation & SPI_CS_ACTIVE_HIGH);
+	slave_mode = !!(SPI_OP_MODE_GET(spi_cfg->operation));
+	frame_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
+	cs_active_high = !!(spi_cfg->operation & SPI_CS_ACTIVE_HIGH);
 
 	if (slave_mode == (!!(config->spi_hw_cfg->Mcr & SPI_MCR_MSTR_MASK))) {
 		LOG_ERR("SPI mode (master/slave) must be same as configured in DT");
@@ -313,8 +310,8 @@ static int spi_nxp_s32_configure(const struct device *dev,
 	}
 
 	if (spi_cfg->slave >= config->num_cs) {
-		LOG_ERR("Slave %d excess the allowed maximum value (%d)",
-			spi_cfg->slave, config->num_cs - 1);
+		LOG_ERR("Slave %d excess the allowed maximum value (%d)", spi_cfg->slave,
+			config->num_cs - 1);
 		return -ENOTSUP;
 	}
 
@@ -342,7 +339,7 @@ static int spi_nxp_s32_configure(const struct device *dev,
 	if (!slave_mode) {
 
 		if ((spi_cfg->frequency < SPI_NXP_S32_MIN_FREQ) ||
-			(spi_cfg->frequency > SPI_NXP_S32_MAX_FREQ)) {
+		    (spi_cfg->frequency > SPI_NXP_S32_MAX_FREQ)) {
 
 			LOG_ERR("The frequency is out of range");
 			return -ENOTSUP;
@@ -351,8 +348,8 @@ static int spi_nxp_s32_configure(const struct device *dev,
 		spi_nxp_s32_getbestfreq(clock_rate, spi_cfg->frequency, &best_baud);
 
 		data->transfer_cfg.Ctar &= ~(SPI_CTAR_BR_MASK | SPI_CTAR_PBR_MASK);
-		data->transfer_cfg.Ctar |= SPI_CTAR_BR(best_baud.scaler) |
-						SPI_CTAR_PBR(best_baud.prescaler);
+		data->transfer_cfg.Ctar |=
+			SPI_CTAR_BR(best_baud.scaler) | SPI_CTAR_PBR(best_baud.prescaler);
 
 		data->transfer_cfg.PushrCmd &= ~((SPI_PUSHR_CONT_MASK | SPI_PUSHR_PCS_MASK) >> 16U);
 
@@ -369,8 +366,8 @@ static int spi_nxp_s32_configure(const struct device *dev,
 	Spi_Ip_UpdateFrameSize(&data->transfer_cfg, frame_size);
 	Spi_Ip_UpdateLsb(&data->transfer_cfg, lsb);
 
-	data->ctx.config	= spi_cfg;
-	data->bytes_per_frame	= SPI_NXP_S32_BYTE_PER_FRAME(frame_size);
+	data->ctx.config = spi_cfg;
+	data->bytes_per_frame = SPI_NXP_S32_BYTE_PER_FRAME(frame_size);
 
 	if (slave_mode) {
 		LOG_DBG("SPI configuration: cpol = %u, cpha = %u,"
@@ -380,20 +377,16 @@ static int spi_nxp_s32_configure(const struct device *dev,
 		LOG_DBG("SPI configuration: frequency = %uHz, cpol = %u,"
 			" cpha = %u, lsb = %u, hold_cs = %u, frame_size = %u,"
 			" mode: master, CS = %u\n",
-			best_baud.frequency, clk_polarity, clk_phase,
-			lsb, hold_cs, frame_size, spi_cfg->slave);
+			best_baud.frequency, clk_polarity, clk_phase, lsb, hold_cs, frame_size,
+			spi_cfg->slave);
 	}
 
 	return 0;
 }
 
-static int transceive(const struct device *dev,
-			const struct spi_config *spi_cfg,
-			const struct spi_buf_set *tx_bufs,
-			const struct spi_buf_set *rx_bufs,
-			bool asynchronous,
-			spi_callback_t cb,
-			void *userdata)
+static int transceive(const struct device *dev, const struct spi_config *spi_cfg,
+		      const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs,
+		      bool asynchronous, spi_callback_t cb, void *userdata)
 {
 	struct spi_nxp_s32_data *data = dev->data;
 	struct spi_context *context = &data->ctx;
@@ -459,27 +452,23 @@ static int transceive(const struct device *dev,
 	return ret;
 }
 
-static int spi_nxp_s32_transceive(const struct device *dev,
-				const struct spi_config *spi_cfg,
-				const struct spi_buf_set *tx_bufs,
-				const struct spi_buf_set *rx_bufs)
+static int spi_nxp_s32_transceive(const struct device *dev, const struct spi_config *spi_cfg,
+				  const struct spi_buf_set *tx_bufs,
+				  const struct spi_buf_set *rx_bufs)
 {
 	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL, NULL);
 }
 #ifdef CONFIG_SPI_ASYNC
-static int spi_nxp_s32_transceive_async(const struct device *dev,
-				const struct spi_config *spi_cfg,
-				const struct spi_buf_set *tx_bufs,
-				const struct spi_buf_set *rx_bufs,
-				spi_callback_t callback,
-				void *userdata)
+static int spi_nxp_s32_transceive_async(const struct device *dev, const struct spi_config *spi_cfg,
+					const struct spi_buf_set *tx_bufs,
+					const struct spi_buf_set *rx_bufs, spi_callback_t callback,
+					void *userdata)
 {
 	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, true, callback, userdata);
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static int spi_nxp_s32_release(const struct device *dev,
-				const struct spi_config *spi_cfg)
+static int spi_nxp_s32_release(const struct device *dev, const struct spi_config *spi_cfg)
 {
 	struct spi_nxp_s32_data *data = dev->data;
 
@@ -563,7 +552,6 @@ static int spi_nxp_s32_init(const struct device *dev)
 	return 0;
 }
 
-
 #ifdef CONFIG_NXP_S32_SPI_INTERRUPT
 void spi_nxp_s32_isr(const struct device *dev)
 {
@@ -610,45 +598,41 @@ static const struct spi_driver_api spi_nxp_s32_driver_api = {
 	.release = spi_nxp_s32_release,
 };
 
-#define SPI_NXP_S32_HW_INSTANCE_CHECK(i, n) \
-	((DT_INST_REG_ADDR(n) == IP_SPI_##i##_BASE) ? i : 0)
+#define SPI_NXP_S32_HW_INSTANCE_CHECK(i, n) ((DT_INST_REG_ADDR(n) == IP_SPI_##i##_BASE) ? i : 0)
 
-#define SPI_NXP_S32_HW_INSTANCE(n) \
+#define SPI_NXP_S32_HW_INSTANCE(n)                                                                 \
 	LISTIFY(__DEBRACKET SPI_INSTANCE_COUNT, SPI_NXP_S32_HW_INSTANCE_CHECK, (|), n)
 
-#define SPI_NXP_S32_NUM_CS(n)		DT_INST_PROP(n, num_cs)
-#define SPI_NXP_S32_IS_MASTER(n)	!DT_INST_PROP(n, slave)
+#define SPI_NXP_S32_NUM_CS(n)    DT_INST_PROP(n, num_cs)
+#define SPI_NXP_S32_IS_MASTER(n) !DT_INST_PROP(n, slave)
 
 #ifdef CONFIG_SPI_SLAVE
-#define SPI_NXP_S32_SET_SLAVE(n)	.SlaveMode = DT_INST_PROP(n, slave),
+#define SPI_NXP_S32_SET_SLAVE(n) .SlaveMode = DT_INST_PROP(n, slave),
 #else
 #define SPI_NXP_S32_SET_SLAVE(n)
 #endif
 
 #ifdef CONFIG_NXP_S32_SPI_INTERRUPT
 
-#define SPI_NXP_S32_CONFIG_INTERRUPT_FUNC(n)						\
-	.irq_config_func = spi_nxp_s32_config_func_##n,
+#define SPI_NXP_S32_CONFIG_INTERRUPT_FUNC(n) .irq_config_func = spi_nxp_s32_config_func_##n,
 
-#define SPI_NXP_S32_INTERRUPT_DEFINE(n)							\
-	static void spi_nxp_s32_config_func_##n(const struct device *dev)		\
-	{										\
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),			\
-			spi_nxp_s32_isr, DEVICE_DT_INST_GET(n),		\
-			DT_INST_IRQ(n, flags));						\
-		irq_enable(DT_INST_IRQN(n));						\
+#define SPI_NXP_S32_INTERRUPT_DEFINE(n)                                                            \
+	static void spi_nxp_s32_config_func_##n(const struct device *dev)                          \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), spi_nxp_s32_isr,            \
+			    DEVICE_DT_INST_GET(n), DT_INST_IRQ(n, flags));                         \
+		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
 
-#define SPI_NXP_S32_CONFIG_CALLBACK_FUNC(n)						\
-	.cb = spi_nxp_s32_##n##_callback,
+#define SPI_NXP_S32_CONFIG_CALLBACK_FUNC(n) .cb = spi_nxp_s32_##n##_callback,
 
-#define SPI_NXP_S32_CALLBACK_DEFINE(n)							\
-	static void spi_nxp_s32_##n##_callback(uint8 instance, Spi_Ip_EventType event)	\
-	{										\
-		ARG_UNUSED(instance);							\
-		const struct device *dev = DEVICE_DT_INST_GET(n);			\
-											\
-		spi_nxp_s32_transfer_callback(dev, event);				\
+#define SPI_NXP_S32_CALLBACK_DEFINE(n)                                                             \
+	static void spi_nxp_s32_##n##_callback(uint8 instance, Spi_Ip_EventType event)             \
+	{                                                                                          \
+		ARG_UNUSED(instance);                                                              \
+		const struct device *dev = DEVICE_DT_INST_GET(n);                                  \
+                                                                                                   \
+		spi_nxp_s32_transfer_callback(dev, event);                                         \
 	}
 #else
 #define SPI_NXP_S32_CONFIG_INTERRUPT_FUNC(n)
@@ -661,52 +645,44 @@ static const struct spi_driver_api spi_nxp_s32_driver_api = {
  * Declare the default configuration for SPI driver, no DMA
  * support, all inner module Chip Selects are active low.
  */
-#define SPI_NXP_S32_INSTANCE_CONFIG(n)							\
-	static const Spi_Ip_ConfigType spi_nxp_s32_default_config_##n = {		\
-		.Instance = SPI_NXP_S32_HW_INSTANCE(n),					\
-		.Mcr = (SPI_MCR_MSTR(SPI_NXP_S32_IS_MASTER(n)) |			\
-			SPI_MCR_CONT_SCKE(0U) |	SPI_MCR_FRZ(0U) |			\
-			SPI_MCR_MTFE(0U) | SPI_MCR_SMPL_PT(0U) |			\
-			SPI_MCR_PCSIS(BIT_MASK(SPI_NXP_S32_NUM_CS(n))) |		\
-			SPI_MCR_MDIS(0U) | SPI_MCR_XSPI(1U) | SPI_MCR_HALT(1U)),	\
-		.TransferMode = SPI_IP_POLLING,						\
-		.StateIndex   = n,							\
-		SPI_NXP_S32_SET_SLAVE(n)						\
+#define SPI_NXP_S32_INSTANCE_CONFIG(n)                                                             \
+	static const Spi_Ip_ConfigType spi_nxp_s32_default_config_##n = {                          \
+		.Instance = SPI_NXP_S32_HW_INSTANCE(n),                                            \
+		.Mcr = (SPI_MCR_MSTR(SPI_NXP_S32_IS_MASTER(n)) | SPI_MCR_CONT_SCKE(0U) |           \
+			SPI_MCR_FRZ(0U) | SPI_MCR_MTFE(0U) | SPI_MCR_SMPL_PT(0U) |                 \
+			SPI_MCR_PCSIS(BIT_MASK(SPI_NXP_S32_NUM_CS(n))) | SPI_MCR_MDIS(0U) |        \
+			SPI_MCR_XSPI(1U) | SPI_MCR_HALT(1U)),                                      \
+		.TransferMode = SPI_IP_POLLING,                                                    \
+		.StateIndex = n,                                                                   \
+		SPI_NXP_S32_SET_SLAVE(n)}
+
+#define SPI_NXP_S32_TRANSFER_CONFIG(n)                                                             \
+	.transfer_cfg = {                                                                          \
+		.Instance = SPI_NXP_S32_HW_INSTANCE(n),                                            \
+		.Ctare = SPI_CTARE_FMSZE(0U) | SPI_CTARE_DTCP(1U),                                 \
 	}
 
-#define SPI_NXP_S32_TRANSFER_CONFIG(n)							\
-	.transfer_cfg = {								\
-		.Instance = SPI_NXP_S32_HW_INSTANCE(n),					\
-		.Ctare = SPI_CTARE_FMSZE(0U) | SPI_CTARE_DTCP(1U),			\
-	}
-
-#define SPI_NXP_S32_DEVICE(n)								\
-	PINCTRL_DT_INST_DEFINE(n);							\
-	SPI_NXP_S32_CALLBACK_DEFINE(n)							\
-	SPI_NXP_S32_INTERRUPT_DEFINE(n)							\
-	SPI_NXP_S32_INSTANCE_CONFIG(n);							\
-	static const struct spi_nxp_s32_config spi_nxp_s32_config_##n = {		\
-		.num_cs	      = SPI_NXP_S32_NUM_CS(n),					\
-		.clock_dev    = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),			\
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
-		.sck_cs_delay = DT_INST_PROP_OR(n, spi_sck_cs_delay, 0U),		\
-		.cs_sck_delay = DT_INST_PROP_OR(n, spi_cs_sck_delay, 0U),		\
-		.cs_cs_delay  = DT_INST_PROP_OR(n, spi_cs_cs_delay, 0U),		\
-		.spi_hw_cfg = (Spi_Ip_ConfigType *)&spi_nxp_s32_default_config_##n,	\
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
-		SPI_NXP_S32_CONFIG_CALLBACK_FUNC(n)					\
-		SPI_NXP_S32_CONFIG_INTERRUPT_FUNC(n)					\
-	};										\
-	static struct spi_nxp_s32_data spi_nxp_s32_data_##n = {				\
-		SPI_NXP_S32_TRANSFER_CONFIG(n),						\
-		SPI_CONTEXT_INIT_LOCK(spi_nxp_s32_data_##n, ctx),			\
-		SPI_CONTEXT_INIT_SYNC(spi_nxp_s32_data_##n, ctx),			\
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)			\
-	};										\
-	DEVICE_DT_INST_DEFINE(n,							\
-			spi_nxp_s32_init, NULL,						\
-			&spi_nxp_s32_data_##n, &spi_nxp_s32_config_##n,			\
-			POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,				\
-			&spi_nxp_s32_driver_api);
+#define SPI_NXP_S32_DEVICE(n)                                                                      \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	SPI_NXP_S32_CALLBACK_DEFINE(n)                                                             \
+	SPI_NXP_S32_INTERRUPT_DEFINE(n)                                                            \
+	SPI_NXP_S32_INSTANCE_CONFIG(n);                                                            \
+	static const struct spi_nxp_s32_config spi_nxp_s32_config_##n = {                          \
+		.num_cs = SPI_NXP_S32_NUM_CS(n),                                                   \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
+		.sck_cs_delay = DT_INST_PROP_OR(n, spi_sck_cs_delay, 0U),                          \
+		.cs_sck_delay = DT_INST_PROP_OR(n, spi_cs_sck_delay, 0U),                          \
+		.cs_cs_delay = DT_INST_PROP_OR(n, spi_cs_cs_delay, 0U),                            \
+		.spi_hw_cfg = (Spi_Ip_ConfigType *)&spi_nxp_s32_default_config_##n,                \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+		SPI_NXP_S32_CONFIG_CALLBACK_FUNC(n) SPI_NXP_S32_CONFIG_INTERRUPT_FUNC(n)};         \
+	static struct spi_nxp_s32_data spi_nxp_s32_data_##n = {                                    \
+		SPI_NXP_S32_TRANSFER_CONFIG(n), SPI_CONTEXT_INIT_LOCK(spi_nxp_s32_data_##n, ctx),  \
+		SPI_CONTEXT_INIT_SYNC(spi_nxp_s32_data_##n, ctx),                                  \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                             \
+	DEVICE_DT_INST_DEFINE(n, spi_nxp_s32_init, NULL, &spi_nxp_s32_data_##n,                    \
+			      &spi_nxp_s32_config_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,      \
+			      &spi_nxp_s32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_NXP_S32_DEVICE)

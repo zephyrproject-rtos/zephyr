@@ -44,7 +44,7 @@ LOG_MODULE_REGISTER(cf1133, CONFIG_INPUT_LOG_LEVEL);
 #define PAGE_REG            0xFF
 
 /* Constants */
-#define SUPPORTED_POINT			 0x1
+#define SUPPORTED_POINT          0x1
 #define PIXEL_DATA_LENGTH_B      0x3
 #define PIXEL_DATA_LENGTH_A      0x4
 #define SITRONIX_RESERVED_TYPE_0 0x0
@@ -55,12 +55,12 @@ LOG_MODULE_REGISTER(cf1133, CONFIG_INPUT_LOG_LEVEL);
 #define ONE_D_SENSING_CONTROL_SHFT GENMASK(1, 1)
 #define ONE_D_SENSING_CONTROL_BMSK GENMASK(1, 0)
 #define I2C_PROTOCOL_BMSK          GENMASK(1, 0)
-#define TOUCH_POINT_VALID_MSK	   GENMASK(7, 7)
+#define TOUCH_POINT_VALID_MSK      GENMASK(7, 7)
 
 /* Offset for coordinates registers */
-#define XY_COORD_H               0x0
-#define X_COORD_L                0x1
-#define Y_COORD_L                0x2
+#define XY_COORD_H 0x0
+#define X_COORD_L  0x1
+#define Y_COORD_L  0x2
 
 /* CF1133 configuration (DT) */
 struct cf1133_config {
@@ -86,8 +86,8 @@ struct cf1133_data {
 	struct k_timer timer;
 #endif
 	/* Last pressed state */
-	uint8_t pressed_old : 1;
-	uint8_t pressed : 1;
+	uint8_t pressed_old: 1;
+	uint8_t pressed: 1;
 
 	int resolution_x;
 	int resolution_y;
@@ -142,8 +142,8 @@ static int cf1133_get_protocol_type(const struct device *dev)
 		}
 		data->touch_protocol_type = FIELD_GET(I2C_PROTOCOL_BMSK, buffer);
 		LOG_DBG("i2c protocol = %d", data->touch_protocol_type);
-		sensing_mode = FIELD_GET(ONE_D_SENSING_CONTROL_BMSK << ONE_D_SENSING_CONTROL_SHFT,
-					 buffer);
+		sensing_mode =
+			FIELD_GET(ONE_D_SENSING_CONTROL_BMSK << ONE_D_SENSING_CONTROL_SHFT, buffer);
 		LOG_DBG("sensing mode = %d", sensing_mode);
 	} else {
 		data->touch_protocol_type = SITRONIX_A_TYPE;
@@ -198,7 +198,7 @@ static int cf1133_process(const struct device *dev)
 
 	/* Coordinates are retrieved for one valid touch point detected*/
 	ret = i2c_burst_read_dt(&config->bus, KEYS_REG, buffer,
-			      1 + SUPPORTED_POINT * data->pixel_length);
+				1 + SUPPORTED_POINT * data->pixel_length);
 	if (ret < 0) {
 		LOG_ERR("Read coordinates failed: %d", ret);
 		return ret;
@@ -318,17 +318,16 @@ static int cf1133_init(const struct device *dev)
 	return 0;
 }
 
-#define CF1133_INIT(index)								\
-	static const struct cf1133_config cf1133_config_##index = {			\
-		.bus = I2C_DT_SPEC_INST_GET(index),					\
+#define CF1133_INIT(index)                                                                         \
+	static const struct cf1133_config cf1133_config_##index = {                                \
+		.bus = I2C_DT_SPEC_INST_GET(index),                                                \
 		IF_ENABLED(CONFIG_INPUT_CF1133_INTERRUPT,				\
 		(.int_gpio = GPIO_DT_SPEC_INST_GET(index, int_gpios),			\
-		))									\
-		};									\
-	static struct cf1133_data cf1133_data_##index;					\
-											\
-	DEVICE_DT_INST_DEFINE(index, cf1133_init, NULL, &cf1133_data_##index,		\
-			      &cf1133_config_##index, POST_KERNEL,			\
-			      CONFIG_INPUT_INIT_PRIORITY, NULL);
+		)) };                 \
+	static struct cf1133_data cf1133_data_##index;                                             \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(index, cf1133_init, NULL, &cf1133_data_##index,                      \
+			      &cf1133_config_##index, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,     \
+			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(CF1133_INIT);

@@ -69,8 +69,8 @@ static int cmp_cpg_clk_info_table_items(const void *key, const void *element)
 	}
 }
 
-struct cpg_clk_info_table *
-rcar_cpg_find_clk_info_by_module_id(const struct device *dev, uint32_t domain, uint32_t id)
+struct cpg_clk_info_table *rcar_cpg_find_clk_info_by_module_id(const struct device *dev,
+							       uint32_t domain, uint32_t id)
 {
 	struct rcar_cpg_mssr_data *data = dev->data;
 	struct cpg_clk_info_table *item;
@@ -131,7 +131,7 @@ static int rcar_cpg_update_out_freq(const struct device *dev, struct cpg_clk_inf
 }
 
 static int64_t rcar_cpg_get_in_update_out_freq(const struct device *dev,
-					   struct cpg_clk_info_table *clk_info)
+					       struct cpg_clk_info_table *clk_info)
 {
 	int64_t freq = -ENOTSUP;
 	struct cpg_clk_info_table *parent_clk;
@@ -225,8 +225,8 @@ int rcar_cpg_get_rate(const struct device *dev, clock_control_subsys_t sys, uint
 	struct cpg_clk_info_table *clk_info;
 
 	if (!dev || !sys || !rate) {
-		LOG_ERR("%s: received null ptr input arg(s) dev %p sys %p rate %p",
-			__func__, dev, sys, rate);
+		LOG_ERR("%s: received null ptr input arg(s) dev %p sys %p rate %p", __func__, dev,
+			sys, rate);
 		return -EINVAL;
 	}
 
@@ -270,8 +270,8 @@ int rcar_cpg_set_rate(const struct device *dev, clock_control_subsys_t sys,
 	uintptr_t u_rate = (uintptr_t)rate;
 
 	if (!dev || !sys || !rate) {
-		LOG_ERR("%s: received null ptr input arg(s) dev %p sys %p rate %p",
-			__func__, dev, sys, rate);
+		LOG_ERR("%s: received null ptr input arg(s) dev %p sys %p rate %p", __func__, dev,
+			sys, rate);
 		return -EINVAL;
 	}
 
@@ -371,8 +371,8 @@ void rcar_cpg_build_clock_relationship(const struct device *dev)
 				continue;
 			}
 
-			parent = rcar_cpg_find_clk_info_by_module_id(dev, CPG_CORE,
-								     item->parent_id);
+			parent =
+				rcar_cpg_find_clk_info_by_module_id(dev, CPG_CORE, item->parent_id);
 			if (!parent) {
 				LOG_ERR("%s: can't find parent for clock with valid parent id, "
 					"domain %u module id %u",

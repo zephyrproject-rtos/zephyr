@@ -30,33 +30,33 @@
 LOG_MODULE_REGISTER(bt_driver);
 
 /* ST Proprietary extended event */
-#define HCI_EXT_EVT		0x82
+#define HCI_EXT_EVT 0x82
 
 /* Special Values */
-#define SPI_WRITE		0x0A
-#define SPI_READ		0x0B
-#define READY_NOW		0x02
+#define SPI_WRITE 0x0A
+#define SPI_READ  0x0B
+#define READY_NOW 0x02
 
-#define EVT_BLUE_INITIALIZED	0x01
-#define FW_STARTED_PROPERLY	0X01
+#define EVT_BLUE_INITIALIZED  0x01
+#define FW_STARTED_PROPERLY   0X01
 /* Offsets */
-#define STATUS_HEADER_READY	0
-#define STATUS_HEADER_TOREAD	3
-#define STATUS_HEADER_TOWRITE	1
+#define STATUS_HEADER_READY   0
+#define STATUS_HEADER_TOREAD  3
+#define STATUS_HEADER_TOWRITE 1
 
-#define PACKET_TYPE		0
-#define EVT_HEADER_TYPE		0
-#define EVT_HEADER_EVENT	1
-#define EVT_HEADER_SIZE		2
-#define EVT_LE_META_SUBEVENT	3
-#define EVT_VENDOR_CODE_LSB	3
-#define EVT_VENDOR_CODE_MSB	4
-#define REASON_CODE		5
+#define PACKET_TYPE          0
+#define EVT_HEADER_TYPE      0
+#define EVT_HEADER_EVENT     1
+#define EVT_HEADER_SIZE      2
+#define EVT_LE_META_SUBEVENT 3
+#define EVT_VENDOR_CODE_LSB  3
+#define EVT_VENDOR_CODE_MSB  4
+#define REASON_CODE          5
 
-#define CMD_OGF			1
-#define CMD_OCF			2
+#define CMD_OGF         1
+#define CMD_OCF         2
 /* packet type (1) + opcode (2) + Parameter Total Length (1) + max parameter length (255) */
-#define SPI_MAX_MSG_LEN		259
+#define SPI_MAX_MSG_LEN 259
 
 /* Single byte header denoting the buffer type */
 #define H4_HDR_SIZE 1
@@ -75,7 +75,7 @@ static uint8_t __noinit txmsg[SPI_MAX_MSG_LEN];
 static const struct gpio_dt_spec irq_gpio = GPIO_DT_SPEC_INST_GET(0, irq_gpios);
 static const struct gpio_dt_spec rst_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios);
 
-static struct gpio_callback	gpio_cb;
+static struct gpio_callback gpio_cb;
 
 static K_SEM_DEFINE(sem_initialised, 0, 1);
 static K_SEM_DEFINE(sem_request, 0, 1);
@@ -84,11 +84,11 @@ static K_SEM_DEFINE(sem_busy, 1, 1);
 static K_KERNEL_STACK_DEFINE(spi_rx_stack, CONFIG_BT_DRV_RX_STACK_SIZE);
 static struct k_thread spi_rx_thread_data;
 
-#define BLUENRG_ACI_WRITE_CONFIG_DATA       BT_OP(BT_OGF_VS, 0x000C)
-#define BLUENRG_CONFIG_PUBADDR_OFFSET       0x00
-#define BLUENRG_CONFIG_PUBADDR_LEN          0x06
-#define BLUENRG_CONFIG_LL_ONLY_OFFSET       0x2C
-#define BLUENRG_CONFIG_LL_ONLY_LEN          0x01
+#define BLUENRG_ACI_WRITE_CONFIG_DATA BT_OP(BT_OGF_VS, 0x000C)
+#define BLUENRG_CONFIG_PUBADDR_OFFSET 0x00
+#define BLUENRG_CONFIG_PUBADDR_LEN    0x06
+#define BLUENRG_CONFIG_LL_ONLY_OFFSET 0x2C
+#define BLUENRG_CONFIG_LL_ONLY_LEN    0x01
 
 struct bt_spi_data {
 	bt_hci_recv_t recv;
@@ -99,14 +99,8 @@ static const struct spi_dt_spec bus = SPI_DT_SPEC_INST_GET(
 
 static struct spi_buf spi_tx_buf;
 static struct spi_buf spi_rx_buf;
-static const struct spi_buf_set spi_tx = {
-	.buffers = &spi_tx_buf,
-	.count = 1
-};
-static const struct spi_buf_set spi_rx = {
-	.buffers = &spi_rx_buf,
-	.count = 1
-};
+static const struct spi_buf_set spi_tx = {.buffers = &spi_tx_buf, .count = 1};
+static const struct spi_buf_set spi_rx = {.buffers = &spi_rx_buf, .count = 1};
 
 struct bt_hci_ext_evt_hdr {
 	uint8_t evt;
@@ -124,7 +118,7 @@ int bluenrg_bt_reset(bool updater_mode)
 	} else {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v2)
 		return -ENOTSUP;
-#else /* DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v1) */
+#else  /* DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v1) */
 		gpio_pin_set_dt(&rst_gpio, 1);
 		gpio_pin_interrupt_configure_dt(&irq_gpio, GPIO_INT_DISABLE);
 		/* Configure IRQ pin as output and force it high */
@@ -150,8 +144,7 @@ int bluenrg_bt_reset(bool updater_mode)
 	return err;
 }
 
-static inline int bt_spi_transceive(void *tx, uint32_t tx_len,
-				    void *rx, uint32_t rx_len)
+static inline int bt_spi_transceive(void *tx, uint32_t tx_len, void *rx, uint32_t rx_len)
 {
 	spi_tx_buf.buf = tx;
 	spi_tx_buf.len = (size_t)tx_len;
@@ -170,8 +163,7 @@ static inline uint16_t bt_spi_get_evt(uint8_t *msg)
 	return (msg[EVT_VENDOR_CODE_MSB] << 8) | msg[EVT_VENDOR_CODE_LSB];
 }
 
-static void bt_spi_isr(const struct device *unused1,
-		       struct gpio_callback *unused2,
+static void bt_spi_isr(const struct device *unused1, struct gpio_callback *unused2,
 		       uint32_t unused3)
 {
 	LOG_DBG("");
@@ -252,8 +244,8 @@ static int bt_spi_get_header(uint8_t op, uint16_t *size)
 			break;
 		}
 
-		*size = (header_slave[STATUS_HEADER_READY] == READY_NOW) ?
-				header_slave[size_offset] : 0;
+		*size = (header_slave[STATUS_HEADER_READY] == READY_NOW) ? header_slave[size_offset]
+									 : 0;
 		attempts--;
 	} while ((*size == 0) && attempts);
 
@@ -355,8 +347,7 @@ static int bt_spi_send_aci_config(uint8_t offset, const uint8_t *value, size_t v
 }
 
 #if !defined(CONFIG_BT_HCI_RAW)
-static int bt_spi_bluenrg_setup(const struct device *dev,
-				const struct bt_hci_setup_params *params)
+static int bt_spi_bluenrg_setup(const struct device *dev, const struct bt_hci_setup_params *params)
 {
 	int ret;
 	const bt_addr_t *addr = &params->public_addr;
@@ -367,9 +358,8 @@ static int bt_spi_bluenrg_setup(const struct device *dev,
 	bt_spi_send_aci_config(BLUENRG_CONFIG_LL_ONLY_OFFSET, &data, 1);
 
 	if (!bt_addr_eq(addr, BT_ADDR_NONE) && !bt_addr_eq(addr, BT_ADDR_ANY)) {
-		ret = bt_spi_send_aci_config(
-			BLUENRG_CONFIG_PUBADDR_OFFSET,
-			addr->val, sizeof(addr->val));
+		ret = bt_spi_send_aci_config(BLUENRG_CONFIG_PUBADDR_OFFSET, addr->val,
+					     sizeof(addr->val));
 
 		if (ret != 0) {
 			LOG_ERR("Failed to set BlueNRG public address (%d)", ret);
@@ -410,8 +400,8 @@ static int bt_spi_rx_buf_construct(uint8_t *msg, struct net_buf **bufp, uint16_t
 	switch (msg[PACKET_TYPE]) {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v2)
 	case HCI_EXT_EVT:
-		struct bt_hci_ext_evt_hdr *evt = (struct bt_hci_ext_evt_hdr *) (msg + 1);
-		struct bt_hci_evt_hdr *evt2 = (struct bt_hci_evt_hdr *) (msg + 1);
+		struct bt_hci_ext_evt_hdr *evt = (struct bt_hci_ext_evt_hdr *)(msg + 1);
+		struct bt_hci_evt_hdr *evt2 = (struct bt_hci_evt_hdr *)(msg + 1);
 
 		if (sys_le16_to_cpu(evt->len) > 0xff) {
 			return -ENOMEM;
@@ -436,8 +426,7 @@ static int bt_spi_rx_buf_construct(uint8_t *msg, struct net_buf **bufp, uint16_t
 				discardable = true;
 				timeout = K_NO_WAIT;
 			}
-			buf = bt_buf_get_evt(msg[EVT_HEADER_EVENT],
-					     discardable, timeout);
+			buf = bt_buf_get_evt(msg[EVT_HEADER_EVENT], discardable, timeout);
 			if (!buf) {
 				LOG_DBG("Discard adv report due to insufficient buf");
 				return -ENOMEM;
@@ -675,11 +664,9 @@ static int bt_spi_open(const struct device *dev, bt_hci_recv_t recv)
 	gpio_pin_set_dt(&rst_gpio, 0);
 
 	/* Start RX thread */
-	k_thread_create(&spi_rx_thread_data, spi_rx_stack,
-			K_KERNEL_STACK_SIZEOF(spi_rx_stack),
+	k_thread_create(&spi_rx_thread_data, spi_rx_stack, K_KERNEL_STACK_SIZEOF(spi_rx_stack),
 			bt_spi_rx_thread, (void *)dev, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO),
-			0, K_NO_WAIT);
+			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO), 0, K_NO_WAIT);
 
 	/* Device will let us know when it's ready */
 	k_sem_take(&sem_initialised, K_FOREVER);
@@ -695,10 +682,10 @@ static int bt_spi_open(const struct device *dev, bt_hci_recv_t recv)
 
 static const struct bt_hci_driver_api drv = {
 #if defined(CONFIG_BT_BLUENRG_ACI) && !defined(CONFIG_BT_HCI_RAW)
-	.setup          = bt_spi_bluenrg_setup,
+	.setup = bt_spi_bluenrg_setup,
 #endif /* CONFIG_BT_BLUENRG_ACI && !CONFIG_BT_HCI_RAW */
-	.open		= bt_spi_open,
-	.send		= bt_spi_send,
+	.open = bt_spi_open,
+	.send = bt_spi_send,
 };
 
 static int bt_spi_init(const struct device *dev)
@@ -724,11 +711,10 @@ static int bt_spi_init(const struct device *dev)
 	return 0;
 }
 
-#define HCI_DEVICE_INIT(inst) \
-	static struct bt_spi_data hci_data_##inst = { \
-	}; \
-	DEVICE_DT_INST_DEFINE(inst, bt_spi_init, NULL, &hci_data_##inst, NULL, \
-			      POST_KERNEL, CONFIG_BT_SPI_INIT_PRIORITY, &drv)
+#define HCI_DEVICE_INIT(inst)                                                                      \
+	static struct bt_spi_data hci_data_##inst = {};                                            \
+	DEVICE_DT_INST_DEFINE(inst, bt_spi_init, NULL, &hci_data_##inst, NULL, POST_KERNEL,        \
+			      CONFIG_BT_SPI_INIT_PRIORITY, &drv)
 
 /* Only one instance supported right now */
 HCI_DEVICE_INIT(0)

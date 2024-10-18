@@ -43,13 +43,11 @@ static int si7060_reg_write(const struct device *dev, uint8_t reg, uint8_t val)
 	return i2c_reg_write_byte_dt(&config->i2c, reg, val);
 }
 
-static int si7060_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
+static int si7060_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct si7060_data *drv_data = dev->data;
 
-	if (si7060_reg_write(dev, SI7060_REG_CONFIG,
-			     SI7060_ONE_BURST_VALUE) != 0) {
+	if (si7060_reg_write(dev, SI7060_REG_CONFIG, SI7060_ONE_BURST_VALUE) != 0) {
 		return -EIO;
 	}
 
@@ -61,8 +59,7 @@ static int si7060_sample_fetch(const struct device *dev,
 	retval += si7060_reg_read(dev, SI7060_REG_TEMP_LOW, &dspsigl);
 
 	if (retval == 0) {
-		drv_data->temperature = (256 * (dspsigm & SIGN_BIT_MASK))
-		+ dspsigl;
+		drv_data->temperature = (256 * (dspsigm & SIGN_BIT_MASK)) + dspsigl;
 	} else {
 		LOG_ERR("Read register err");
 	}
@@ -72,8 +69,7 @@ static int si7060_sample_fetch(const struct device *dev,
 	return retval;
 }
 
-static int si7060_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
+static int si7060_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	struct si7060_data *drv_data = dev->data;
@@ -128,15 +124,15 @@ static int si7060_init(const struct device *dev)
 	return 0;
 }
 
-#define SI7060_DEFINE(inst)								\
-	static struct si7060_data si7060_data_##inst;					\
-											\
-	static const struct si7060_config si7060_config_##inst = {			\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
-	};										\
-											\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, si7060_init, NULL,				\
-			      &si7060_data_##inst, &si7060_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &si7060_api);		\
+#define SI7060_DEFINE(inst)                                                                        \
+	static struct si7060_data si7060_data_##inst;                                              \
+                                                                                                   \
+	static const struct si7060_config si7060_config_##inst = {                                 \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+	};                                                                                         \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, si7060_init, NULL, &si7060_data_##inst,                 \
+				     &si7060_config_##inst, POST_KERNEL,                           \
+				     CONFIG_SENSOR_INIT_PRIORITY, &si7060_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SI7060_DEFINE)

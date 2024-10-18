@@ -44,8 +44,7 @@ int sc18im704_release(const struct device *dev)
 	return k_mutex_unlock(&data->lock);
 }
 
-int sc18im704_transfer(const struct device *dev,
-		       const uint8_t *tx_data, uint8_t tx_len,
+int sc18im704_transfer(const struct device *dev, const uint8_t *tx_data, uint8_t tx_len,
 		       uint8_t *rx_data, uint8_t rx_len)
 {
 	const struct i2c_sc18im_config *cfg = dev->config;
@@ -58,7 +57,7 @@ int sc18im704_transfer(const struct device *dev,
 	}
 
 	if (tx_data != NULL) {
-		for (uint8_t i = 0; i < tx_len; ++i)  {
+		for (uint8_t i = 0; i < tx_len; ++i) {
 			uart_poll_out(cfg->bus, tx_data[i]);
 		}
 	}
@@ -66,7 +65,7 @@ int sc18im704_transfer(const struct device *dev,
 	if (rx_data != NULL) {
 		k_timepoint_t end;
 
-		for (uint8_t i = 0; i < rx_len && ret == 0; ++i)  {
+		for (uint8_t i = 0; i < rx_len && ret == 0; ++i) {
 			/* Make sure we don't wait forever */
 			end = sys_timepoint_calc(K_SECONDS(1));
 
@@ -142,9 +141,7 @@ static int i2c_sc18im_get_config(const struct device *dev, uint32_t *config)
 	return 0;
 }
 
-static int i2c_sc18im_transfer_msg(const struct device *dev,
-				   struct i2c_msg *msg,
-				   uint16_t addr)
+static int i2c_sc18im_transfer_msg(const struct device *dev, struct i2c_msg *msg, uint16_t addr)
 {
 	uint8_t start[] = {
 		SC18IM704_CMD_I2C_START,
@@ -190,9 +187,8 @@ static int i2c_sc18im_transfer_msg(const struct device *dev,
 	return 0;
 }
 
-static int i2c_sc18im_transfer(const struct device *dev,
-			       struct i2c_msg *msgs,
-			       uint8_t num_msgs, uint16_t addr)
+static int i2c_sc18im_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
+			       uint16_t addr)
 {
 	int ret;
 
@@ -291,12 +287,8 @@ static int i2c_sc18im_init(const struct device *dev)
 	if (cfg->bus_speed != 9600) {
 		uint16_t brg = (7372800 / cfg->bus_speed) - 16;
 		uint8_t buf[] = {
-			SC18IM704_CMD_WRITE_REG,
-			SC18IM704_REG_BRG0,
-			brg & 0xff,
-			SC18IM704_REG_BRG1,
-			brg >> 8,
-			SC18IM704_CMD_STOP,
+			SC18IM704_CMD_WRITE_REG, SC18IM704_REG_BRG0, brg & 0xff,
+			SC18IM704_REG_BRG1,      brg >> 8,           SC18IM704_CMD_STOP,
 		};
 
 		ret = sc18im704_transfer(dev, buf, sizeof(buf), NULL, 0);
@@ -329,20 +321,19 @@ static const struct i2c_driver_api i2c_sc18im_driver_api = {
 #endif
 };
 
-#define I2C_SC18IM_DEFINE(n)									\
-												\
-	static const struct i2c_sc18im_config i2c_sc18im_config_##n = {				\
-		.bus = DEVICE_DT_GET(DT_BUS(DT_INST_PARENT(n))),				\
-		.bus_speed = DT_PROP_OR(DT_INST_PARENT(n), target_speed, 9600),			\
-		.reset_gpios = GPIO_DT_SPEC_GET_OR(DT_INST_PARENT(n), reset_gpios, {0}),	\
-	};											\
-	static struct i2c_sc18im_data i2c_sc18im_data_##n = {					\
-		.i2c_config = I2C_MODE_CONTROLLER | (I2C_SPEED_STANDARD << I2C_SPEED_SHIFT),	\
-	};											\
-												\
-	DEVICE_DT_INST_DEFINE(n, i2c_sc18im_init, NULL,						\
-			      &i2c_sc18im_data_##n, &i2c_sc18im_config_##n,			\
-			      POST_KERNEL, CONFIG_I2C_SC18IM704_INIT_PRIORITY,			\
-			      &i2c_sc18im_driver_api);
+#define I2C_SC18IM_DEFINE(n)                                                                       \
+                                                                                                   \
+	static const struct i2c_sc18im_config i2c_sc18im_config_##n = {                            \
+		.bus = DEVICE_DT_GET(DT_BUS(DT_INST_PARENT(n))),                                   \
+		.bus_speed = DT_PROP_OR(DT_INST_PARENT(n), target_speed, 9600),                    \
+		.reset_gpios = GPIO_DT_SPEC_GET_OR(DT_INST_PARENT(n), reset_gpios, {0}),           \
+	};                                                                                         \
+	static struct i2c_sc18im_data i2c_sc18im_data_##n = {                                      \
+		.i2c_config = I2C_MODE_CONTROLLER | (I2C_SPEED_STANDARD << I2C_SPEED_SHIFT),       \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, i2c_sc18im_init, NULL, &i2c_sc18im_data_##n,                      \
+			      &i2c_sc18im_config_##n, POST_KERNEL,                                 \
+			      CONFIG_I2C_SC18IM704_INIT_PRIORITY, &i2c_sc18im_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_SC18IM_DEFINE)

@@ -15,14 +15,14 @@
 #include <zephyr/drivers/sensor/f75303.h>
 #include "f75303.h"
 
-#define F75303_SAMPLE_INT_SHIFT 3
-#define F75303_SAMPLE_FRAC_MASK GENMASK(2, 0)
+#define F75303_SAMPLE_INT_SHIFT            3
+#define F75303_SAMPLE_FRAC_MASK            GENMASK(2, 0)
 #define F75303_SAMPLE_MICROCELSIUS_PER_BIT 125000
 
 LOG_MODULE_REGISTER(F75303, CONFIG_SENSOR_LOG_LEVEL);
 
-static int f75303_fetch(const struct i2c_dt_spec *i2c,
-			uint8_t off_h, uint8_t off_l, uint16_t *sample)
+static int f75303_fetch(const struct i2c_dt_spec *i2c, uint8_t off_h, uint8_t off_l,
+			uint16_t *sample)
 {
 	uint8_t val_h;
 	uint8_t val_l;
@@ -48,9 +48,7 @@ static int f75303_fetch_local(const struct device *dev)
 	struct f75303_data *data = dev->data;
 	const struct f75303_config *config = dev->config;
 
-	return f75303_fetch(&config->i2c,
-			    F75303_LOCAL_TEMP_H,
-			    F75303_LOCAL_TEMP_L,
+	return f75303_fetch(&config->i2c, F75303_LOCAL_TEMP_H, F75303_LOCAL_TEMP_L,
 			    &data->sample_local);
 }
 
@@ -59,9 +57,7 @@ static int f75303_fetch_remote1(const struct device *dev)
 	struct f75303_data *data = dev->data;
 	const struct f75303_config *config = dev->config;
 
-	return f75303_fetch(&config->i2c,
-			    F75303_REMOTE1_TEMP_H,
-			    F75303_REMOTE1_TEMP_L,
+	return f75303_fetch(&config->i2c, F75303_REMOTE1_TEMP_H, F75303_REMOTE1_TEMP_L,
 			    &data->sample_remote1);
 }
 
@@ -70,14 +66,11 @@ static int f75303_fetch_remote2(const struct device *dev)
 	struct f75303_data *data = dev->data;
 	const struct f75303_config *config = dev->config;
 
-	return f75303_fetch(&config->i2c,
-			    F75303_REMOTE2_TEMP_H,
-			    F75303_REMOTE2_TEMP_L,
+	return f75303_fetch(&config->i2c, F75303_REMOTE2_TEMP_H, F75303_REMOTE2_TEMP_L,
 			    &data->sample_remote2);
 }
 
-static int f75303_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
+static int f75303_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	enum pm_device_state pm_state;
 	int res;
@@ -112,8 +105,7 @@ static int f75303_sample_fetch(const struct device *dev,
 	return res;
 }
 
-static int f75303_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
+static int f75303_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	struct f75303_data *data = dev->data;
@@ -185,14 +177,14 @@ static int f75303_pm_action(const struct device *dev, enum pm_device_action acti
 }
 #endif
 
-#define F75303_INST(inst)								\
-	static struct f75303_data f75303_data_##inst;					\
-	static const struct f75303_config f75303_config_##inst = {			\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
-	};										\
-	PM_DEVICE_DT_INST_DEFINE(inst, f75303_pm_action);				\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, f75303_init, PM_DEVICE_DT_INST_GET(inst),	\
-			      &f75303_data_##inst, &f75303_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &f75303_driver_api);
+#define F75303_INST(inst)                                                                          \
+	static struct f75303_data f75303_data_##inst;                                              \
+	static const struct f75303_config f75303_config_##inst = {                                 \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+	};                                                                                         \
+	PM_DEVICE_DT_INST_DEFINE(inst, f75303_pm_action);                                          \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, f75303_init, PM_DEVICE_DT_INST_GET(inst),               \
+				     &f75303_data_##inst, &f75303_config_##inst, POST_KERNEL,      \
+				     CONFIG_SENSOR_INIT_PRIORITY, &f75303_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(F75303_INST)

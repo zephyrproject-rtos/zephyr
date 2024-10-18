@@ -72,17 +72,14 @@ static int cmd_mdio_scan(const struct shell *sh, size_t argc, char **argv)
 		reg_addr = 0;
 	}
 
-	shell_print(sh,
-		    "Scanning bus for devices. Reading register 0x%x",
-		    reg_addr);
+	shell_print(sh, "Scanning bus for devices. Reading register 0x%x", reg_addr);
 	cnt = 0;
 
 	mdio_bus_enable(dev);
 
 	for (int i = 0; i < 32; i++) {
 		data = 0;
-		if (mdio_read(dev, i, reg_addr, &data) >= 0 &&
-			data != UINT16_MAX) {
+		if (mdio_read(dev, i, reg_addr, &data) >= 0 && data != UINT16_MAX) {
 			cnt++;
 			shell_print(sh, "Found MDIO device @ 0x%x", i);
 		}
@@ -233,25 +230,23 @@ static int cmd_mdio_read_c45(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_mdio_cmds,
-	SHELL_CMD_ARG(scan, NULL,
-		"Scan MDIO bus for devices: scan [<reg_addr>]",
-		cmd_mdio_scan, 0, 1),
-	SHELL_CMD_ARG(read, NULL,
-		"Read from MDIO device: read <phy_addr> <reg_addr>",
-		cmd_mdio_read, 3, 0),
-	SHELL_CMD_ARG(write, NULL,
-		"Write to MDIO device: write <phy_addr> <reg_addr> <value>",
-		cmd_mdio_write, 4, 0),
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_mdio_cmds,
+	SHELL_CMD_ARG(scan, NULL, "Scan MDIO bus for devices: scan [<reg_addr>]", cmd_mdio_scan, 0,
+		      1),
+	SHELL_CMD_ARG(read, NULL, "Read from MDIO device: read <phy_addr> <reg_addr>",
+		      cmd_mdio_read, 3, 0),
+	SHELL_CMD_ARG(write, NULL, "Write to MDIO device: write <phy_addr> <reg_addr> <value>",
+		      cmd_mdio_write, 4, 0),
 	SHELL_CMD_ARG(read_c45, NULL,
-		"Read from MDIO Clause 45 device: "
-		"read_c45 <port_addr> <dev_addr> <reg_addr>",
-		cmd_mdio_read_c45, 4, 0),
+		      "Read from MDIO Clause 45 device: "
+		      "read_c45 <port_addr> <dev_addr> <reg_addr>",
+		      cmd_mdio_read_c45, 4, 0),
 	SHELL_CMD_ARG(write_c45, NULL,
-		"Write to MDIO Clause 45 device: "
-		"write_c45 <port_addr> <dev_addr> <reg_addr> <value>",
-		cmd_mdio_write_45, 5, 0),
-	SHELL_SUBCMD_SET_END     /* Array terminated. */
+		      "Write to MDIO Clause 45 device: "
+		      "write_c45 <port_addr> <dev_addr> <reg_addr> <value>",
+		      cmd_mdio_write_45, 5, 0),
+	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
 SHELL_CMD_REGISTER(mdio, &sub_mdio_cmds, "MDIO commands", NULL);

@@ -436,7 +436,7 @@ static inline int npcx_i3c_xfer_stop(struct i3c_reg *inst)
 	case MSTATUS_STATE_NORMACT: /* SDR */
 		ret = npcx_i3c_request_emit_stop(inst);
 		break;
-	case MSTATUS_STATE_MSGDDR:  /* HDR-DDR */
+	case MSTATUS_STATE_MSGDDR: /* HDR-DDR */
 		ret = npcx_i3c_request_hdr_exit(inst);
 		break;
 	default:
@@ -812,7 +812,7 @@ static int npcx_i3c_do_one_xfer_dma(const struct device *dev, uint8_t addr,
 		if (is_hdr_ddr) {
 			if (is_read) {
 				/* The unit of rd_len is "word" in DDR mode */
-				rd_len /= sizeof(uint16_t);    /* byte to word */
+				rd_len /= sizeof(uint16_t); /* byte to word */
 				rd_len += HDR_DDR_CMD_AND_CRC_SZ_WORD;
 				hdr_cmd |= HDR_RD_CMD;
 			} else {
@@ -1078,7 +1078,8 @@ static int npcx_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 			/* Check HDR-DDR moves data by words */
 			if ((msgs[i].len % 2) != 0x0) {
 				LOG_ERR("HDR-DDR data length should be number of words , xfer "
-					"len=%d", msgs[i].num_xfer);
+					"len=%d",
+					msgs[i].num_xfer);
 				ret = -EINVAL;
 				break;
 			}
@@ -1657,7 +1658,8 @@ static int npcx_i3c_ibi_enable(const struct device *dev, struct i3c_device_desc 
 		    (msb != data->ibi.msb)) {
 			ret = -EINVAL;
 			LOG_ERR("%s: New IBI does not have same mandatory byte or msb"
-				" as previous IBI", __func__);
+				" as previous IBI",
+				__func__);
 			goto out_ibi_enable;
 		}
 
@@ -1788,7 +1790,6 @@ static void npcx_i3c_isr(const struct device *dev)
 			i3c_ctrl_notify(dev);
 			return;
 		}
-
 	}
 #endif /* CONFIG_I3C_NPCX_DMA */
 
@@ -1812,7 +1813,6 @@ static void npcx_i3c_isr(const struct device *dev)
 		}
 	}
 #endif /* CONFIG_I3C_USE_IBI */
-
 }
 
 static int npcx_i3c_get_scl_config(struct npcx_i3c_timing_cfg *cfg, uint32_t i3c_src_clk,
@@ -2082,7 +2082,7 @@ static int npcx_i3c_init(const struct device *dev)
 	}
 
 	ctrl_config->is_secondary = false; /* Currently can only act as primary controller. */
-	ctrl_config->supported_hdr = I3C_MSG_HDR_DDR; /* HDR-DDR mode is supported. */
+	ctrl_config->supported_hdr = I3C_MSG_HDR_DDR;        /* HDR-DDR mode is supported. */
 	ctrl_config->scl.i3c = config->clocks.i3c_pp_scl_hz; /* Set I3C frequency */
 
 	ret = npcx_i3c_configure(dev, I3C_CONFIG_CONTROLLER, ctrl_config);
@@ -2136,41 +2136,40 @@ static const struct i3c_driver_api npcx_i3c_driver_api = {
 #endif
 };
 
-#define I3C_NPCX_DEVICE(id)                                                                        \
-	PINCTRL_DT_INST_DEFINE(id);                                                                \
-	static void npcx_i3c_config_func_##id(const struct device *dev)                            \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), npcx_i3c_isr,             \
-			    DEVICE_DT_INST_GET(id), 0);                                            \
-		irq_enable(DT_INST_IRQN(id));                                                      \
-	};                                                                                         \
-	static struct i3c_device_desc npcx_i3c_device_array_##id[] = I3C_DEVICE_ARRAY_DT_INST(id); \
-	static struct i3c_i2c_device_desc npcx_i3c_i2c_device_array_##id[] =                       \
-		I3C_I2C_DEVICE_ARRAY_DT_INST(id);                                                  \
-	static const struct npcx_i3c_config npcx_i3c_config_##id = {                               \
-		.base = (struct i3c_reg *)DT_INST_REG_ADDR(id),                                    \
-		.clock_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE),                                    \
-		.reset = RESET_DT_SPEC_INST_GET(id),                                               \
-		.clock_subsys = NPCX_DT_CLK_CFG_ITEM_BY_NAME(id, mclkd),                           \
-		.ref_clk_subsys = NPCX_DT_CLK_CFG_ITEM_BY_NAME(id, apb4),                          \
-		.irq_config_func = npcx_i3c_config_func_##id,                                      \
-		.common.dev_list.i3c = npcx_i3c_device_array_##id,                                 \
-		.common.dev_list.num_i3c = ARRAY_SIZE(npcx_i3c_device_array_##id),                 \
-		.common.dev_list.i2c = npcx_i3c_i2c_device_array_##id,                             \
-		.common.dev_list.num_i2c = ARRAY_SIZE(npcx_i3c_i2c_device_array_##id),             \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),                                      \
-		.clocks.i3c_pp_scl_hz = DT_INST_PROP_OR(id, i3c_scl_hz, 0),                        \
-		.clocks.i3c_od_scl_hz = DT_INST_PROP_OR(id, i3c_od_scl_hz, 0),                     \
+#define I3C_NPCX_DEVICE(id)                                                                          \
+	PINCTRL_DT_INST_DEFINE(id);                                                                  \
+	static void npcx_i3c_config_func_##id(const struct device *dev)                              \
+	{                                                                                            \
+		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), npcx_i3c_isr,               \
+			    DEVICE_DT_INST_GET(id), 0);                                              \
+		irq_enable(DT_INST_IRQN(id));                                                        \
+	};                                                                                           \
+	static struct i3c_device_desc npcx_i3c_device_array_##id[] = I3C_DEVICE_ARRAY_DT_INST(id);   \
+	static struct i3c_i2c_device_desc npcx_i3c_i2c_device_array_##id[] =                         \
+		I3C_I2C_DEVICE_ARRAY_DT_INST(id);                                                    \
+	static const struct npcx_i3c_config npcx_i3c_config_##id = {                                 \
+		.base = (struct i3c_reg *)DT_INST_REG_ADDR(id),                                      \
+		.clock_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE),                                      \
+		.reset = RESET_DT_SPEC_INST_GET(id),                                                 \
+		.clock_subsys = NPCX_DT_CLK_CFG_ITEM_BY_NAME(id, mclkd),                             \
+		.ref_clk_subsys = NPCX_DT_CLK_CFG_ITEM_BY_NAME(id, apb4),                            \
+		.irq_config_func = npcx_i3c_config_func_##id,                                        \
+		.common.dev_list.i3c = npcx_i3c_device_array_##id,                                   \
+		.common.dev_list.num_i3c = ARRAY_SIZE(npcx_i3c_device_array_##id),                   \
+		.common.dev_list.i2c = npcx_i3c_i2c_device_array_##id,                               \
+		.common.dev_list.num_i2c = ARRAY_SIZE(npcx_i3c_i2c_device_array_##id),               \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),                                        \
+		.clocks.i3c_pp_scl_hz = DT_INST_PROP_OR(id, i3c_scl_hz, 0),                          \
+		.clocks.i3c_od_scl_hz = DT_INST_PROP_OR(id, i3c_od_scl_hz, 0),                       \
 		IF_ENABLED(CONFIG_I3C_NPCX_DMA, (                                                  \
 			.mdma_clk_subsys = NPCX_DT_CLK_CFG_ITEM_BY_IDX(id, 2),                     \
-		))                                                                                 \
-		IF_ENABLED(CONFIG_I3C_NPCX_DMA, (                                                  \
+		)) \
+				    IF_ENABLED(CONFIG_I3C_NPCX_DMA, (                                                  \
 			.mdma_base = (struct mdma_reg *)DT_INST_REG_ADDR_BY_IDX(id, 1),            \
-		))                                                                                 \
-	};                                                                                         \
-	static struct npcx_i3c_data npcx_i3c_data_##id;                                            \
-	DEVICE_DT_INST_DEFINE(id, npcx_i3c_init, NULL, &npcx_i3c_data_##id, &npcx_i3c_config_##id, \
-			      POST_KERNEL, CONFIG_I3C_CONTROLLER_INIT_PRIORITY,                    \
+		)) };          \
+	static struct npcx_i3c_data npcx_i3c_data_##id;                                              \
+	DEVICE_DT_INST_DEFINE(id, npcx_i3c_init, NULL, &npcx_i3c_data_##id, &npcx_i3c_config_##id,   \
+			      POST_KERNEL, CONFIG_I3C_CONTROLLER_INIT_PRIORITY,                      \
 			      &npcx_i3c_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I3C_NPCX_DEVICE)

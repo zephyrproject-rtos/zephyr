@@ -40,9 +40,9 @@ int stts751_i2c_init(const struct device *dev)
 {
 	struct stts751_data *data = dev->data;
 
-	data->ctx_i2c.read_reg = (stmdev_read_ptr) stts751_i2c_read;
-	data->ctx_i2c.write_reg = (stmdev_write_ptr) stts751_i2c_write;
-	data->ctx_i2c.mdelay = (stmdev_mdelay_ptr) stmemsc_mdelay,
+	data->ctx_i2c.read_reg = (stmdev_read_ptr)stts751_i2c_read;
+	data->ctx_i2c.write_reg = (stmdev_write_ptr)stts751_i2c_write;
+	data->ctx_i2c.mdelay = (stmdev_mdelay_ptr)stmemsc_mdelay,
 
 	data->ctx = &data->ctx_i2c;
 	data->ctx->handle = (void *)dev;

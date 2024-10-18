@@ -22,7 +22,7 @@
 LOG_MODULE_REGISTER(dma_dw_common);
 
 /* number of tries to wait for reset */
-#define DW_DMA_CFG_TRIES	10000
+#define DW_DMA_CFG_TRIES 10000
 
 void dw_dma_isr(const struct device *dev)
 {
@@ -70,9 +70,8 @@ void dw_dma_isr(const struct device *dev)
 			 * freed in the user callback function once
 			 * all the blocks are transferred.
 			 */
-			chan_data->dma_blkcallback(dev,
-						   chan_data->blkuser_data,
-						   channel, DMA_STATUS_BLOCK);
+			chan_data->dma_blkcallback(dev, chan_data->blkuser_data, channel,
+						   DMA_STATUS_BLOCK);
 		}
 	}
 
@@ -90,17 +89,15 @@ void dw_dma_isr(const struct device *dev)
 		if (chan_data->dma_tfrcallback) {
 			LOG_DBG("%s: Dispatching transfer callback for channel %d", dev->name,
 				channel);
-			chan_data->dma_tfrcallback(dev,
-						   chan_data->tfruser_data,
-						   channel, DMA_STATUS_COMPLETE);
+			chan_data->dma_tfrcallback(dev, chan_data->tfruser_data, channel,
+						   DMA_STATUS_COMPLETE);
 		}
 	}
 }
 
-
 /* mask address for dma to identify memory space. */
-static void dw_dma_mask_address(struct dma_block_config *block_cfg,
-				struct dw_lli *lli_desc, uint32_t direction)
+static void dw_dma_mask_address(struct dma_block_config *block_cfg, struct dw_lli *lli_desc,
+				uint32_t direction)
 {
 	lli_desc->sar = block_cfg->source_address;
 	lli_desc->dar = block_cfg->dest_address;
@@ -121,18 +118,16 @@ static void dw_dma_mask_address(struct dma_block_config *block_cfg,
 	}
 }
 
-int dw_dma_config(const struct device *dev, uint32_t channel,
-			 struct dma_config *cfg)
+int dw_dma_config(const struct device *dev, uint32_t channel, struct dma_config *cfg)
 {
 	const struct dw_dma_dev_cfg *const dev_cfg = dev->config;
 	struct dw_dma_dev_data *const dev_data = dev->data;
 	struct dma_block_config *block_cfg;
 
-
 	struct dw_lli *lli_desc;
 	struct dw_lli *lli_desc_head;
 	struct dw_lli *lli_desc_tail;
-	uint32_t msize = 3;/* default msize, 8 bytes */
+	uint32_t msize = 3; /* default msize, 8 bytes */
 	int ret = 0;
 
 	if (channel >= DW_CHAN_COUNT) {
@@ -232,8 +227,8 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 			goto out;
 		}
 
-		LOG_DBG("%s: source data size: lli_desc %p, ctrl_lo %x", dev->name,
-			lli_desc, lli_desc->ctrl_lo);
+		LOG_DBG("%s: source data size: lli_desc %p, ctrl_lo %x", dev->name, lli_desc,
+			lli_desc->ctrl_lo);
 
 		switch (cfg->dest_data_size) {
 		case 1:
@@ -264,31 +259,28 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 			goto out;
 		}
 
-		LOG_DBG("%s: dest data size: lli_desc %p, ctrl_lo %x", dev->name,
-			lli_desc, lli_desc->ctrl_lo);
+		LOG_DBG("%s: dest data size: lli_desc %p, ctrl_lo %x", dev->name, lli_desc,
+			lli_desc->ctrl_lo);
 
-		lli_desc->ctrl_lo |= DW_CTLL_SRC_MSIZE(msize) |
-			DW_CTLL_DST_MSIZE(msize);
+		lli_desc->ctrl_lo |= DW_CTLL_SRC_MSIZE(msize) | DW_CTLL_DST_MSIZE(msize);
 
 		if (cfg->dma_callback) {
 			lli_desc->ctrl_lo |= DW_CTLL_INT_EN; /* enable interrupt */
 		}
 
-		LOG_DBG("%s: msize, int_en: lli_desc %p, ctrl_lo %x", dev->name,
-			lli_desc, lli_desc->ctrl_lo);
+		LOG_DBG("%s: msize, int_en: lli_desc %p, ctrl_lo %x", dev->name, lli_desc,
+			lli_desc->ctrl_lo);
 
 		/* config the SINC and DINC fields of CTL_LO,
 		 * SRC/DST_PER fields of CFG_HI
 		 */
 		switch (cfg->channel_direction) {
 		case MEMORY_TO_MEMORY:
-			lli_desc->ctrl_lo |= DW_CTLL_FC_M2M | DW_CTLL_SRC_INC |
-				DW_CTLL_DST_INC;
+			lli_desc->ctrl_lo |= DW_CTLL_FC_M2M | DW_CTLL_SRC_INC | DW_CTLL_DST_INC;
 #if CONFIG_DMA_DW_HW_LLI
 			LOG_DBG("%s: setting LLP_D_EN, LLP_S_EN in lli_desc->ctrl_lo %x", dev->name,
 				lli_desc->ctrl_lo);
-			lli_desc->ctrl_lo |=
-				DW_CTLL_LLP_S_EN | DW_CTLL_LLP_D_EN;
+			lli_desc->ctrl_lo |= DW_CTLL_LLP_S_EN | DW_CTLL_LLP_D_EN;
 			LOG_DBG("%s: lli_desc->ctrl_lo %x", dev->name, lli_desc->ctrl_lo);
 #endif
 #if CONFIG_DMA_DW
@@ -297,8 +289,7 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 #endif
 			break;
 		case MEMORY_TO_PERIPHERAL:
-			lli_desc->ctrl_lo |= DW_CTLL_FC_M2P | DW_CTLL_SRC_INC |
-				DW_CTLL_DST_FIX;
+			lli_desc->ctrl_lo |= DW_CTLL_FC_M2P | DW_CTLL_SRC_INC | DW_CTLL_DST_FIX;
 #if CONFIG_DMA_DW_HW_LLI
 			lli_desc->ctrl_lo |= DW_CTLL_LLP_S_EN;
 			chan_data->cfg_lo |= DW_CFGL_RELOAD_DST;
@@ -312,8 +303,7 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 #endif
 			break;
 		case PERIPHERAL_TO_MEMORY:
-			lli_desc->ctrl_lo |= DW_CTLL_FC_P2M | DW_CTLL_SRC_FIX |
-				DW_CTLL_DST_INC;
+			lli_desc->ctrl_lo |= DW_CTLL_FC_P2M | DW_CTLL_SRC_FIX | DW_CTLL_DST_INC;
 #if CONFIG_DMA_DW_HW_LLI
 			if (!block_cfg->dest_scatter_en) {
 				lli_desc->ctrl_lo |= DW_CTLL_LLP_D_EN;
@@ -358,7 +348,7 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 
 		/* Set class and transfer size */
 		lli_desc->ctrl_hi |= DW_CTLH_CLASS(dev_data->channel_data->chan[channel].class) |
-			(block_cfg->block_size & DW_CTLH_BLOCK_TS_MASK);
+				     (block_cfg->block_size & DW_CTLH_BLOCK_TS_MASK);
 
 		LOG_DBG("%s: block_size, class: lli_desc %p, ctrl_lo %x, cfg_hi %x, cfg_lo %x",
 			dev->name, lli_desc, lli_desc->ctrl_lo, chan_data->cfg_hi,
@@ -399,10 +389,9 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 	chan_data->lli_current = chan_data->lli;
 
 	/* initialize pointers */
-	chan_data->ptr_data.start_ptr = DW_DMA_LLI_ADDRESS(chan_data->lli,
-							 chan_data->direction);
-	chan_data->ptr_data.end_ptr = chan_data->ptr_data.start_ptr +
-				    chan_data->ptr_data.buffer_bytes;
+	chan_data->ptr_data.start_ptr = DW_DMA_LLI_ADDRESS(chan_data->lli, chan_data->direction);
+	chan_data->ptr_data.end_ptr =
+		chan_data->ptr_data.start_ptr + chan_data->ptr_data.buffer_bytes;
 	chan_data->ptr_data.current_ptr = chan_data->ptr_data.start_ptr;
 	chan_data->ptr_data.hw_ptr = chan_data->ptr_data.start_ptr;
 
@@ -430,7 +419,6 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 	dw_write(dev_cfg->base, DW_CLEAR_SRC_TRAN, 0x1 << channel);
 	dw_write(dev_cfg->base, DW_CLEAR_DST_TRAN, 0x1 << channel);
 	dw_write(dev_cfg->base, DW_CLEAR_ERR, 0x1 << channel);
-
 
 out:
 	return ret;
@@ -491,8 +479,8 @@ int dw_dma_start(const struct device *dev, uint32_t channel)
 		LOG_DBG("%s: Setting llp", dev->name);
 	}
 	dw_write(dev_cfg->base, DW_LLP(channel), llp);
-	LOG_DBG("%s: ctrl_lo %x, masked ctrl_lo %x, LLP %x", dev->name,
-		lli->ctrl_lo, masked_ctrl_lo, dw_read(dev_cfg->base, DW_LLP(channel)));
+	LOG_DBG("%s: ctrl_lo %x, masked ctrl_lo %x, LLP %x", dev->name, lli->ctrl_lo,
+		masked_ctrl_lo, dw_read(dev_cfg->base, DW_LLP(channel)));
 #endif /* CONFIG_DMA_DW_HW_LLI */
 
 	/* channel needs to start from scratch, so write SAR and DAR */
@@ -517,19 +505,18 @@ int dw_dma_start(const struct device *dev, uint32_t channel)
 #ifdef CONFIG_DMA_64BIT
 	LOG_DBG("%s: sar %llx, dar %llx, ctrl_lo %x, ctrl_hi %x, cfg_lo %x, cfg_hi %x, llp %x",
 		dev->name, lli->sar, lli->dar, lli->ctrl_lo, lli->ctrl_hi, chan_data->cfg_lo,
-		chan_data->cfg_hi, dw_read(dev_cfg->base, DW_LLP(channel))
-		);
+		chan_data->cfg_hi, dw_read(dev_cfg->base, DW_LLP(channel)));
 #else
 	LOG_DBG("%s: sar %x, dar %x, ctrl_lo %x, ctrl_hi %x, cfg_lo %x, cfg_hi %x, llp %x",
 		dev->name, lli->sar, lli->dar, lli->ctrl_lo, lli->ctrl_hi, chan_data->cfg_lo,
-		chan_data->cfg_hi, dw_read(dev_cfg->base, DW_LLP(channel))
-		);
+		chan_data->cfg_hi, dw_read(dev_cfg->base, DW_LLP(channel)));
 #endif /* CONFIG_DMA_64BIT */
 
 #ifdef CONFIG_DMA_DW_HW_LLI
 	if (lli->ctrl_lo & DW_CTLL_D_SCAT_EN) {
 		LOG_DBG("%s: configuring DW_DSR", dev->name);
-		uint32_t words_per_tfr = (lli->ctrl_hi & DW_CTLH_BLOCK_TS_MASK) >>
+		uint32_t words_per_tfr =
+			(lli->ctrl_hi & DW_CTLH_BLOCK_TS_MASK) >>
 			((lli->ctrl_lo & DW_CTLL_DST_WIDTH_MASK) >> DW_CTLL_DST_WIDTH_SHIFT);
 		dw_write(dev_cfg->base, DW_DSR(channel),
 			 DW_DSR_DSC(words_per_tfr) | DW_DSR_DSI(words_per_tfr));
@@ -582,8 +569,7 @@ int dw_dma_stop(const struct device *dev, uint32_t channel)
 	LOG_INF("%s: channel %d stop", dev->name, channel);
 
 	/* Validate the channel state */
-	if (chan_data->state != DW_DMA_ACTIVE &&
-	    chan_data->state != DW_DMA_SUSPENDED) {
+	if (chan_data->state != DW_DMA_ACTIVE && chan_data->state != DW_DMA_SUSPENDED) {
 		ret = -EINVAL;
 		goto out;
 	}
@@ -597,7 +583,7 @@ int dw_dma_stop(const struct device *dev, uint32_t channel)
 
 	/* now we wait for FIFO to be empty */
 	bool fifo_empty = WAIT_FOR(dw_read(dev_cfg->base, DW_CFG_LOW(channel)) & DW_CFGL_FIFO_EMPTY,
-				DW_DMA_TIMEOUT, k_busy_wait(DW_DMA_TIMEOUT/10));
+				   DW_DMA_TIMEOUT, k_busy_wait(DW_DMA_TIMEOUT / 10));
 	if (!fifo_empty) {
 		LOG_WRN("%s: channel %d drain time out", dev->name, channel);
 
@@ -613,7 +599,7 @@ int dw_dma_stop(const struct device *dev, uint32_t channel)
 
 	/* now we wait for channel to be disabled */
 	bool is_disabled = WAIT_FOR(!(dw_read(dev_cfg->base, DW_DMA_CHAN_EN) & DW_CHAN(channel)),
-				    DW_DMA_TIMEOUT, k_busy_wait(DW_DMA_TIMEOUT/10));
+				    DW_DMA_TIMEOUT, k_busy_wait(DW_DMA_TIMEOUT / 10));
 	if (!is_disabled) {
 		LOG_ERR("%s: channel %d disable timeout", dev->name, channel);
 		return -ETIMEDOUT;
@@ -682,20 +668,16 @@ int dw_dma_suspend(const struct device *dev, uint32_t channel)
 		goto out;
 	}
 
-
 	LOG_DBG("%s: channel %d suspend", dev->name, channel);
 
-	dw_write(dev_cfg->base, DW_CFG_LOW(channel),
-		      chan_data->cfg_lo | DW_CFGL_SUSPEND);
+	dw_write(dev_cfg->base, DW_CFG_LOW(channel), chan_data->cfg_lo | DW_CFGL_SUSPEND);
 
 	/* Channel is now suspended */
 	chan_data->state = DW_DMA_SUSPENDED;
 
-
 out:
 	return ret;
 }
-
 
 int dw_dma_setup(const struct device *dev)
 {
@@ -722,10 +704,9 @@ int dw_dma_setup(const struct device *dev)
 
 	LOG_DBG("%s: ENTER", dev->name);
 
-	for (i = 0; i <  DW_CHAN_COUNT; i++) {
+	for (i = 0; i < DW_CHAN_COUNT; i++) {
 		dw_read(dev_cfg->base, DW_DMA_CHAN_EN);
 	}
-
 
 	/* enable the DMA controller */
 	dw_write(dev_cfg->base, DW_DMA_CFG, 1);
@@ -740,14 +721,13 @@ int dw_dma_setup(const struct device *dev)
 #ifdef CONFIG_DMA_DW_FIFO_PARTITION
 	/* allocate FIFO partitions for each channel */
 	dw_write(dev_cfg->base, DW_FIFO_PART1_HI,
-		      DW_FIFO_CHx(DW_FIFO_SIZE) | DW_FIFO_CHy(DW_FIFO_SIZE));
+		 DW_FIFO_CHx(DW_FIFO_SIZE) | DW_FIFO_CHy(DW_FIFO_SIZE));
 	dw_write(dev_cfg->base, DW_FIFO_PART1_LO,
-		      DW_FIFO_CHx(DW_FIFO_SIZE) | DW_FIFO_CHy(DW_FIFO_SIZE));
+		 DW_FIFO_CHx(DW_FIFO_SIZE) | DW_FIFO_CHy(DW_FIFO_SIZE));
 	dw_write(dev_cfg->base, DW_FIFO_PART0_HI,
-		      DW_FIFO_CHx(DW_FIFO_SIZE) | DW_FIFO_CHy(DW_FIFO_SIZE));
+		 DW_FIFO_CHx(DW_FIFO_SIZE) | DW_FIFO_CHy(DW_FIFO_SIZE));
 	dw_write(dev_cfg->base, DW_FIFO_PART0_LO,
-		      DW_FIFO_CHx(DW_FIFO_SIZE) | DW_FIFO_CHy(DW_FIFO_SIZE) |
-		 DW_FIFO_UPD);
+		 DW_FIFO_CHx(DW_FIFO_SIZE) | DW_FIFO_CHy(DW_FIFO_SIZE) | DW_FIFO_UPD);
 #endif /* CONFIG_DMA_DW_FIFO_PARTITION */
 
 	/* TODO add baytrail/cherrytrail workaround */
@@ -756,8 +736,7 @@ out:
 }
 
 static int dw_dma_avail_data_size(const struct device *dev, uint32_t base,
-				  struct dw_dma_chan_data *chan_data,
-				  uint32_t channel)
+				  struct dw_dma_chan_data *chan_data, uint32_t channel)
 {
 	int32_t read_ptr = chan_data->ptr_data.current_ptr;
 	int32_t write_ptr = dw_read(base, DW_DAR(channel));
@@ -789,8 +768,7 @@ static int dw_dma_avail_data_size(const struct device *dev, uint32_t base,
 }
 
 static int dw_dma_free_data_size(const struct device *dev, uint32_t base,
-				 struct dw_dma_chan_data *chan_data,
-				 uint32_t channel)
+				 struct dw_dma_chan_data *chan_data, uint32_t channel)
 {
 	int32_t read_ptr = dw_read(base, DW_SAR(channel));
 	int32_t write_ptr = chan_data->ptr_data.current_ptr;
@@ -820,8 +798,7 @@ static int dw_dma_free_data_size(const struct device *dev, uint32_t base,
 	return size;
 }
 
-int dw_dma_get_status(const struct device *dev, uint32_t channel,
-		      struct dma_status *stat)
+int dw_dma_get_status(const struct device *dev, uint32_t channel, struct dma_status *stat)
 {
 	struct dw_dma_dev_data *const dev_data = dev->data;
 	const struct dw_dma_dev_cfg *const dev_cfg = dev->config;
@@ -835,8 +812,8 @@ int dw_dma_get_status(const struct device *dev, uint32_t channel,
 
 	if (chan_data->direction == MEMORY_TO_MEMORY ||
 	    chan_data->direction == PERIPHERAL_TO_MEMORY) {
-		stat->pending_length = dw_dma_avail_data_size(dev, dev_cfg->base, chan_data,
-							      channel);
+		stat->pending_length =
+			dw_dma_avail_data_size(dev, dev_cfg->base, chan_data, channel);
 		stat->free = chan_data->ptr_data.buffer_bytes - stat->pending_length;
 
 	} else {

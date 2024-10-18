@@ -17,68 +17,67 @@
 LOG_MODULE_REGISTER(wdt_andes);
 
 /* Watchdog register */
-#define REG_IDR			0x00
-#define REG_CTRL		0x10
-#define REG_RESTAR		0x14
-#define REG_WREN		0x18
-#define REG_STATUS		0x1c
+#define REG_IDR    0x00
+#define REG_CTRL   0x10
+#define REG_RESTAR 0x14
+#define REG_WREN   0x18
+#define REG_STATUS 0x1c
 
-#define WDT_CTRL(addr)		(addr + REG_CTRL)
-#define WDT_RESTAR(addr)	(addr + REG_RESTAR)
-#define WDT_WREN(addr)		(addr + REG_WREN)
-#define WDT_STATUS(addr)	(addr + REG_STATUS)
+#define WDT_CTRL(addr)   (addr + REG_CTRL)
+#define WDT_RESTAR(addr) (addr + REG_RESTAR)
+#define WDT_WREN(addr)   (addr + REG_WREN)
+#define WDT_STATUS(addr) (addr + REG_STATUS)
 
 /* Atcwdt200 magic number */
 /* 0x10 Control Register */
 
-#define WDT_CTRL_RSTTIME_POW_2_7	0x000
-#define WDT_CTRL_RSTTIME_POW_2_8	0x100
-#define WDT_CTRL_RSTTIME_POW_2_9	0x200
-#define WDT_CTRL_RSTTIME_POW_2_10	0x300
-#define WDT_CTRL_RSTTIME_POW_2_11	0x400
-#define WDT_CTRL_RSTTIME_POW_2_12	0x500
-#define WDT_CTRL_RSTTIME_POW_2_13	0x600
-#define WDT_CTRL_RSTTIME_POW_2_14	0x700
+#define WDT_CTRL_RSTTIME_POW_2_7  0x000
+#define WDT_CTRL_RSTTIME_POW_2_8  0x100
+#define WDT_CTRL_RSTTIME_POW_2_9  0x200
+#define WDT_CTRL_RSTTIME_POW_2_10 0x300
+#define WDT_CTRL_RSTTIME_POW_2_11 0x400
+#define WDT_CTRL_RSTTIME_POW_2_12 0x500
+#define WDT_CTRL_RSTTIME_POW_2_13 0x600
+#define WDT_CTRL_RSTTIME_POW_2_14 0x700
 
-#define WDT_CTRL_INTTIME_POW_2_6	0x000
-#define WDT_CTRL_INTTIME_POW_2_8	0x010
-#define WDT_CTRL_INTTIME_POW_2_10	0x020
-#define WDT_CTRL_INTTIME_POW_2_11	0x030
-#define WDT_CTRL_INTTIME_POW_2_12	0x040
-#define WDT_CTRL_INTTIME_POW_2_13	0x050
-#define WDT_CTRL_INTTIME_POW_2_14	0x060
-#define WDT_CTRL_INTTIME_POW_2_15	0x070
-#define WDT_CTRL_INTTIME_POW_2_17	0x080
-#define WDT_CTRL_INTTIME_POW_2_19	0x090
-#define WDT_CTRL_INTTIME_POW_2_21	0x0A0
-#define WDT_CTRL_INTTIME_POW_2_23	0x0B0
-#define WDT_CTRL_INTTIME_POW_2_25	0x0C0
-#define WDT_CTRL_INTTIME_POW_2_27	0x0D0
-#define WDT_CTRL_INTTIME_POW_2_29	0x0E0
-#define WDT_CTRL_INTTIME_POW_2_31	0x0F0
+#define WDT_CTRL_INTTIME_POW_2_6  0x000
+#define WDT_CTRL_INTTIME_POW_2_8  0x010
+#define WDT_CTRL_INTTIME_POW_2_10 0x020
+#define WDT_CTRL_INTTIME_POW_2_11 0x030
+#define WDT_CTRL_INTTIME_POW_2_12 0x040
+#define WDT_CTRL_INTTIME_POW_2_13 0x050
+#define WDT_CTRL_INTTIME_POW_2_14 0x060
+#define WDT_CTRL_INTTIME_POW_2_15 0x070
+#define WDT_CTRL_INTTIME_POW_2_17 0x080
+#define WDT_CTRL_INTTIME_POW_2_19 0x090
+#define WDT_CTRL_INTTIME_POW_2_21 0x0A0
+#define WDT_CTRL_INTTIME_POW_2_23 0x0B0
+#define WDT_CTRL_INTTIME_POW_2_25 0x0C0
+#define WDT_CTRL_INTTIME_POW_2_27 0x0D0
+#define WDT_CTRL_INTTIME_POW_2_29 0x0E0
+#define WDT_CTRL_INTTIME_POW_2_31 0x0F0
 
-#define WDT_CTRL_RSTEN			0x8
-#define WDT_CTRL_INTEN			0x4
-#define WDT_CTRL_APBCLK			0x2
-#define WDT_CTRL_EXTCLK			0x0
-#define WDT_CTRL_EN			0x1
+#define WDT_CTRL_RSTEN  0x8
+#define WDT_CTRL_INTEN  0x4
+#define WDT_CTRL_APBCLK 0x2
+#define WDT_CTRL_EXTCLK 0x0
+#define WDT_CTRL_EN     0x1
 
 /* Magic Number for Restart Register */
-#define WDT_RESTART_NUM                 0xcafe
+#define WDT_RESTART_NUM 0xcafe
 
 /* Magic Number for Write Enable Register */
-#define WDT_WREN_NUM                    0x5aa5
+#define WDT_WREN_NUM 0x5aa5
 
 /* 0x1C Status Register */
-#define WDT_ST_INTEXPIRED               0x1
-#define WDT_ST_INTEXPIRED_CLR           0x1
+#define WDT_ST_INTEXPIRED     0x1
+#define WDT_ST_INTEXPIRED_CLR 0x1
 
-#define WDOGCFG_PERIOD_MIN		BIT(7)
-#define WDOGCFG_PERIOD_MAX		BIT(14)
-#define EXT_CLOCK_FREQ			BIT(15)
+#define WDOGCFG_PERIOD_MIN BIT(7)
+#define WDOGCFG_PERIOD_MAX BIT(14)
+#define EXT_CLOCK_FREQ     BIT(15)
 
-static const struct device *const pit_counter_dev =
-				DEVICE_DT_GET(DT_NODELABEL(pit0));
+static const struct device *const pit_counter_dev = DEVICE_DT_GET(DT_NODELABEL(pit0));
 
 struct counter_alarm_cfg alarm_cfg;
 
@@ -94,9 +93,8 @@ struct wdt_atcwdt200_dev_data {
 
 static int wdt_atcwdt200_disable(const struct device *dev);
 
-static void wdt_counter_cb(const struct device *counter_dev, uint8_t chan_id,
-			uint32_t counter,
-			void *user_data)
+static void wdt_counter_cb(const struct device *counter_dev, uint8_t chan_id, uint32_t counter,
+			   void *user_data)
 {
 	const struct device *dev = DEVICE_DT_INST_GET(0);
 	struct wdt_atcwdt200_dev_data *wdt_data = dev->data;
@@ -185,8 +183,7 @@ static int wdt_atcwdt200_setup(const struct device *dev, uint8_t options)
 	reg = sys_read32(WDT_CTRL(wdt_addr));
 	reg |= (WDT_CTRL_RSTEN | WDT_CTRL_EN);
 
-	if ((options & WDT_OPT_PAUSE_HALTED_BY_DBG) ==
-			WDT_OPT_PAUSE_HALTED_BY_DBG) {
+	if ((options & WDT_OPT_PAUSE_HALTED_BY_DBG) == WDT_OPT_PAUSE_HALTED_BY_DBG) {
 		counter_cancel_channel_alarm(pit_counter_dev, 2);
 		sys_write32(WDT_WREN_NUM, WDT_WREN(wdt_addr));
 		sys_write32(reg, WDT_CTRL(wdt_addr));
@@ -234,7 +231,7 @@ static uint32_t wdt_atcwdt200_convtime(uint32_t timeout, uint32_t *scaler)
 }
 
 static int wdt_atcwdt200_install_timeout(const struct device *dev,
-				      const struct wdt_timeout_cfg *cfg)
+					 const struct wdt_timeout_cfg *cfg)
 {
 	struct wdt_atcwdt200_dev_data *data = dev->data;
 	uint32_t wdt_addr = ((const struct wdt_atcwdt200_config *)(dev->config))->base;
@@ -331,6 +328,5 @@ static const struct wdt_atcwdt200_config wdt_atcwdt200_cfg = {
 	.base = DT_INST_REG_ADDR(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, wdt_atcwdt200_init, NULL,
-		      &wdt_atcwdt200_data, &wdt_atcwdt200_cfg, PRE_KERNEL_2,
-		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wdt_atcwdt200_api);
+DEVICE_DT_INST_DEFINE(0, wdt_atcwdt200_init, NULL, &wdt_atcwdt200_data, &wdt_atcwdt200_cfg,
+		      PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wdt_atcwdt200_api);

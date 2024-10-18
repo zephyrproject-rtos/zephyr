@@ -18,13 +18,13 @@ LOG_MODULE_REGISTER(ssd1306, CONFIG_DISPLAY_LOG_LEVEL);
 
 #include "ssd1306_regs.h"
 
-#define SSD1306_CLOCK_DIV_RATIO		0x0
-#define SSD1306_CLOCK_FREQUENCY		0x8
-#define SSD1306_PANEL_VCOM_DESEL_LEVEL	0x20
-#define SSD1306_PANEL_PUMP_VOLTAGE	SSD1306_SET_PUMP_VOLTAGE_90
+#define SSD1306_CLOCK_DIV_RATIO        0x0
+#define SSD1306_CLOCK_FREQUENCY        0x8
+#define SSD1306_PANEL_VCOM_DESEL_LEVEL 0x20
+#define SSD1306_PANEL_PUMP_VOLTAGE     SSD1306_SET_PUMP_VOLTAGE_90
 
 #ifndef SSD1306_ADDRESSING_MODE
-#define SSD1306_ADDRESSING_MODE		(SSD1306_SET_MEM_ADDRESSING_HORIZONTAL)
+#define SSD1306_ADDRESSING_MODE (SSD1306_SET_MEM_ADDRESSING_HORIZONTAL)
 #endif
 
 union ssd1306_bus {
@@ -64,8 +64,8 @@ struct ssd1306_data {
 	enum display_pixel_format pf;
 };
 
-#if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1306fb, i2c) || \
-	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(sinowealth_sh1106, i2c))
+#if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1306fb, i2c) ||                                   \
+     DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(sinowealth_sh1106, i2c))
 static bool ssd1306_bus_ready_i2c(const struct device *dev)
 {
 	const struct ssd1306_config *config = dev->config;
@@ -77,10 +77,9 @@ static int ssd1306_write_bus_i2c(const struct device *dev, uint8_t *buf, size_t 
 {
 	const struct ssd1306_config *config = dev->config;
 
-	return i2c_burst_write_dt(&config->bus.i2c,
-				  command ? SSD1306_CONTROL_ALL_BYTES_CMD :
-				  SSD1306_CONTROL_ALL_BYTES_DATA,
-				  buf, len);
+	return i2c_burst_write_dt(
+		&config->bus.i2c,
+		command ? SSD1306_CONTROL_ALL_BYTES_CMD : SSD1306_CONTROL_ALL_BYTES_DATA, buf, len);
 }
 
 static const char *ssd1306_bus_name_i2c(const struct device *dev)
@@ -91,8 +90,8 @@ static const char *ssd1306_bus_name_i2c(const struct device *dev)
 }
 #endif
 
-#if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1306fb, spi) || \
-	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(sinowealth_sh1106, spi))
+#if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1306fb, spi) ||                                   \
+     DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(sinowealth_sh1106, spi))
 static bool ssd1306_bus_ready_spi(const struct device *dev)
 {
 	const struct ssd1306_config *config = dev->config;
@@ -110,15 +109,9 @@ static int ssd1306_write_bus_spi(const struct device *dev, uint8_t *buf, size_t 
 	int ret;
 
 	gpio_pin_set_dt(&config->data_cmd, command ? 0 : 1);
-	struct spi_buf tx_buf = {
-		.buf = buf,
-		.len = len
-	};
+	struct spi_buf tx_buf = {.buf = buf, .len = len};
 
-	struct spi_buf_set tx_bufs = {
-		.buffers = &tx_buf,
-		.count = 1
-	};
+	struct spi_buf_set tx_bufs = {.buffers = &tx_buf, .count = 1};
 
 	ret = spi_write_dt(&config->bus.spi, &tx_bufs);
 
@@ -242,16 +235,14 @@ static int ssd1306_write_default(const struct device *dev, const uint16_t x, con
 {
 	const struct ssd1306_config *config = dev->config;
 	uint8_t x_off = config->segment_offset;
-	uint8_t cmd_buf[] = {
-		SSD1306_SET_MEM_ADDRESSING_MODE,
-		SSD1306_ADDRESSING_MODE,
-		SSD1306_SET_COLUMN_ADDRESS,
-		x + x_off,
-		(x + desc->width - 1) + x_off,
-		SSD1306_SET_PAGE_ADDRESS,
-		y/8,
-		((y + desc->height)/8 - 1)
-	};
+	uint8_t cmd_buf[] = {SSD1306_SET_MEM_ADDRESSING_MODE,
+			     SSD1306_ADDRESSING_MODE,
+			     SSD1306_SET_COLUMN_ADDRESS,
+			     x + x_off,
+			     (x + desc->width - 1) + x_off,
+			     SSD1306_SET_PAGE_ADDRESS,
+			     y / 8,
+			     ((y + desc->height) / 8 - 1)};
 
 	if (ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true)) {
 		LOG_ERR("Failed to write command");
@@ -267,18 +258,15 @@ static int ssd1306_write_sh1106(const struct device *dev, const uint16_t x, cons
 {
 	const struct ssd1306_config *config = dev->config;
 	uint8_t x_offset = x + config->segment_offset;
-	uint8_t cmd_buf[] = {
-		SSD1306_SET_LOWER_COL_ADDRESS |
-			(x_offset & SSD1306_SET_LOWER_COL_ADDRESS_MASK),
-		SSD1306_SET_HIGHER_COL_ADDRESS |
-			((x_offset >> 4) & SSD1306_SET_LOWER_COL_ADDRESS_MASK),
-		SSD1306_SET_PAGE_START_ADDRESS | (y / 8)
-	};
+	uint8_t cmd_buf[] = {SSD1306_SET_LOWER_COL_ADDRESS |
+				     (x_offset & SSD1306_SET_LOWER_COL_ADDRESS_MASK),
+			     SSD1306_SET_HIGHER_COL_ADDRESS |
+				     ((x_offset >> 4) & SSD1306_SET_LOWER_COL_ADDRESS_MASK),
+			     SSD1306_SET_PAGE_START_ADDRESS | (y / 8)};
 	uint8_t *buf_ptr = (uint8_t *)buf;
 
 	for (uint8_t n = 0; n < desc->height / 8; n++) {
-		cmd_buf[sizeof(cmd_buf) - 1] =
-			SSD1306_SET_PAGE_START_ADDRESS | (n + (y / 8));
+		cmd_buf[sizeof(cmd_buf) - 1] = SSD1306_SET_PAGE_START_ADDRESS | (n + (y / 8));
 		LOG_HEXDUMP_DBG(cmd_buf, sizeof(cmd_buf), "cmd_buf");
 
 		if (ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true)) {
@@ -346,8 +334,7 @@ static int ssd1306_set_contrast(const struct device *dev, const uint8_t contrast
 	return ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
 }
 
-static void ssd1306_get_capabilities(const struct device *dev,
-				     struct display_capabilities *caps)
+static void ssd1306_get_capabilities(const struct device *dev, struct display_capabilities *caps)
 {
 	const struct ssd1306_config *config = dev->config;
 	struct ssd1306_data *data = dev->data;
@@ -360,8 +347,7 @@ static void ssd1306_get_capabilities(const struct device *dev,
 	caps->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
-static int ssd1306_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format pf)
+static int ssd1306_set_pixel_format(const struct device *dev, const enum display_pixel_format pf)
 {
 	struct ssd1306_data *data = dev->data;
 	uint8_t cmd;
@@ -463,8 +449,7 @@ static int ssd1306_init(const struct device *dev)
 	if (config->reset.port) {
 		int ret;
 
-		ret = gpio_pin_configure_dt(&config->reset,
-					    GPIO_OUTPUT_INACTIVE);
+		ret = gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
 			return ret;
 		}
@@ -490,17 +475,12 @@ static const struct display_driver_api ssd1306_driver_api = {
 #define SSD1306_CONFIG_SPI(node_id)                                                                \
 	.bus = {.spi = SPI_DT_SPEC_GET(                                                            \
 			node_id, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 0)},     \
-	.bus_ready = ssd1306_bus_ready_spi,                                                        \
-	.write_bus = ssd1306_write_bus_spi,                                                        \
-	.bus_name = ssd1306_bus_name_spi,                                                          \
-	.data_cmd = GPIO_DT_SPEC_GET(node_id, data_cmd_gpios),
+	.bus_ready = ssd1306_bus_ready_spi, .write_bus = ssd1306_write_bus_spi,                    \
+	.bus_name = ssd1306_bus_name_spi, .data_cmd = GPIO_DT_SPEC_GET(node_id, data_cmd_gpios),
 
 #define SSD1306_CONFIG_I2C(node_id)                                                                \
-	.bus = {.i2c = I2C_DT_SPEC_GET(node_id)},                                                  \
-	.bus_ready = ssd1306_bus_ready_i2c,                                                        \
-	.write_bus = ssd1306_write_bus_i2c,                                                        \
-	.bus_name = ssd1306_bus_name_i2c,                                                          \
-	.data_cmd = {0},
+	.bus = {.i2c = I2C_DT_SPEC_GET(node_id)}, .bus_ready = ssd1306_bus_ready_i2c,              \
+	.write_bus = ssd1306_write_bus_i2c, .bus_name = ssd1306_bus_name_i2c, .data_cmd = {0},
 
 #define SSD1306_DEFINE(node_id)                                                                    \
 	static struct ssd1306_data data##node_id;                                                  \
@@ -521,8 +501,7 @@ static const struct display_driver_api ssd1306_driver_api = {
 		.ready_time_ms = DT_PROP(node_id, ready_time_ms),                                  \
 		.use_internal_iref = DT_PROP(node_id, use_internal_iref),                          \
 		COND_CODE_1(DT_ON_BUS(node_id, spi), (SSD1306_CONFIG_SPI(node_id)),                \
-			    (SSD1306_CONFIG_I2C(node_id)))                                         \
-	};                                                                                         \
+			    (SSD1306_CONFIG_I2C(node_id))) };                           \
                                                                                                    \
 	DEVICE_DT_DEFINE(node_id, ssd1306_init, NULL, &data##node_id, &config##node_id,            \
 			 POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY, &ssd1306_driver_api);

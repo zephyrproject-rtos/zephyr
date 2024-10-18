@@ -12,20 +12,15 @@
 #include <zephyr/spinlock.h>
 LOG_MODULE_REGISTER(mbox_andes_plic_sw);
 
-#define DT_DRV_COMPAT	andestech_plic_sw
+#define DT_DRV_COMPAT andestech_plic_sw
 
-#define IRQ_REG(n) (n >> 5)
-#define PLIC_BASE(dev) \
-	((const struct mbox_andes_conf * const)(dev)->config)->base
+#define IRQ_REG(n)     (n >> 5)
+#define PLIC_BASE(dev) ((const struct mbox_andes_conf *const)(dev)->config)->base
 
-#define REG_PRIORITY(dev, irq) \
-	(PLIC_BASE(dev) + 0x0 + (irq << 2))
-#define REG_PENDING(dev, irq) \
-	(PLIC_BASE(dev) + 0x1000 + (IRQ_REG(irq) << 2))
-#define REG_ENABLE(dev, hart, irq) \
-	(PLIC_BASE(dev) + 0x2000 + (hart << 7) + IRQ_REG(irq))
-#define REG_CLAIM(dev, hart) \
-	(PLIC_BASE(dev) + 0x200004 + (hart << 12))
+#define REG_PRIORITY(dev, irq)     (PLIC_BASE(dev) + 0x0 + (irq << 2))
+#define REG_PENDING(dev, irq)      (PLIC_BASE(dev) + 0x1000 + (IRQ_REG(irq) << 2))
+#define REG_ENABLE(dev, hart, irq) (PLIC_BASE(dev) + 0x2000 + (hart << 7) + IRQ_REG(irq))
+#define REG_CLAIM(dev, hart)       (PLIC_BASE(dev) + 0x200004 + (hart << 12))
 
 #define IPI_NUM DT_INST_PROP(0, channel_max)
 
@@ -68,8 +63,7 @@ static inline bool is_channel_valid(const struct device *dev, uint32_t ch)
 	return (ch <= conf->channel_max);
 }
 
-static int mbox_andes_send(const struct device *dev, uint32_t ch,
-			   const struct mbox_msg *msg)
+static int mbox_andes_send(const struct device *dev, uint32_t ch, const struct mbox_msg *msg)
 {
 	if (msg) {
 		LOG_WRN("Sending data not supported");
@@ -85,8 +79,8 @@ static int mbox_andes_send(const struct device *dev, uint32_t ch,
 	return 0;
 }
 
-static int mbox_andes_register_callback(const struct device *dev, uint32_t ch,
-					mbox_callback_t cb, void *user_data)
+static int mbox_andes_register_callback(const struct device *dev, uint32_t ch, mbox_callback_t cb,
+					void *user_data)
 {
 	struct mbox_andes_data *data = dev->data;
 	const struct mbox_andes_conf *conf = dev->config;
@@ -129,8 +123,7 @@ static uint32_t mbox_andes_max_channels_get(const struct device *dev)
 	return conf->channel_max;
 }
 
-static int mbox_andes_set_enabled(const struct device *dev, uint32_t ch,
-				  bool enable)
+static int mbox_andes_set_enabled(const struct device *dev, uint32_t ch, bool enable)
 {
 	uint32_t en, is_enabled_ch, hartid, cpu_id, irq;
 	struct mbox_andes_data *data = dev->data;
@@ -200,8 +193,7 @@ static void andes_plic_sw_irq_handler(const struct device *dev)
 static int mbox_andes_init(const struct device *dev)
 {
 	/* Setup IRQ handler for PLIC SW driver */
-	IRQ_CONNECT(RISCV_IRQ_MSOFT, 1,
-		    andes_plic_sw_irq_handler, DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(RISCV_IRQ_MSOFT, 1, andes_plic_sw_irq_handler, DEVICE_DT_INST_GET(0), 0);
 
 #ifndef CONFIG_SMP
 	irq_enable(RISCV_IRQ_MSOFT);
@@ -217,6 +209,5 @@ static const struct mbox_driver_api mbox_andes_driver_api = {
 	.set_enabled = mbox_andes_set_enabled,
 };
 
-DEVICE_DT_INST_DEFINE(0, mbox_andes_init, NULL, &andes_mbox_data,
-		      &andes_mbox_conf, PRE_KERNEL_1, CONFIG_MBOX_INIT_PRIORITY,
-		      &mbox_andes_driver_api);
+DEVICE_DT_INST_DEFINE(0, mbox_andes_init, NULL, &andes_mbox_data, &andes_mbox_conf, PRE_KERNEL_1,
+		      CONFIG_MBOX_INIT_PRIORITY, &mbox_andes_driver_api);

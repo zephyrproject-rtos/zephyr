@@ -12,7 +12,7 @@
  */
 
 #define LOG_MODULE_NAME netlo
-#define LOG_LEVEL CONFIG_NET_LOOPBACK_LOG_LEVEL
+#define LOG_LEVEL       CONFIG_NET_LOOPBACK_LOG_LEVEL
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
@@ -37,15 +37,13 @@ static void loopback_init(struct net_if *iface)
 	struct net_if_addr *ifaddr;
 
 	/* RFC 7042, s.2.1.1. address to use in documentation */
-	net_if_set_link_addr(iface, "\x00\x00\x5e\x00\x53\xff", 6,
-			     NET_LINK_DUMMY);
+	net_if_set_link_addr(iface, "\x00\x00\x5e\x00\x53\xff", 6, NET_LINK_DUMMY);
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
 		struct in_addr ipv4_loopback = INADDR_LOOPBACK_INIT;
-		struct in_addr netmask = { { { 255, 0, 0, 0 } } };
+		struct in_addr netmask = {{{255, 0, 0, 0}}};
 
-		ifaddr = net_if_ipv4_addr_add(iface, &ipv4_loopback,
-					      NET_ADDR_AUTOCONF, 0);
+		ifaddr = net_if_ipv4_addr_add(iface, &ipv4_loopback, NET_ADDR_AUTOCONF, 0);
 		if (!ifaddr) {
 			LOG_ERR("Failed to register IPv4 loopback address");
 		}
@@ -56,8 +54,7 @@ static void loopback_init(struct net_if *iface)
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
 		struct in6_addr ipv6_loopback = IN6ADDR_LOOPBACK_INIT;
 
-		ifaddr = net_if_ipv6_addr_add(iface, &ipv6_loopback,
-					      NET_ADDR_AUTOCONF, 0);
+		ifaddr = net_if_ipv6_addr_add(iface, &ipv6_loopback, NET_ADDR_AUTOCONF, 0);
 		if (!ifaddr) {
 			LOG_ERR("Failed to register IPv6 loopback address");
 		}
@@ -125,15 +122,11 @@ static int loopback_send(const struct device *dev, struct net_pkt *pkt)
 	 * the packet will be dropped.
 	 */
 	if (net_pkt_family(pkt) == AF_INET6) {
-		net_ipv6_addr_copy_raw(NET_IPV6_HDR(cloned)->src,
-				       NET_IPV6_HDR(pkt)->dst);
-		net_ipv6_addr_copy_raw(NET_IPV6_HDR(cloned)->dst,
-				       NET_IPV6_HDR(pkt)->src);
+		net_ipv6_addr_copy_raw(NET_IPV6_HDR(cloned)->src, NET_IPV6_HDR(pkt)->dst);
+		net_ipv6_addr_copy_raw(NET_IPV6_HDR(cloned)->dst, NET_IPV6_HDR(pkt)->src);
 	} else {
-		net_ipv4_addr_copy_raw(NET_IPV4_HDR(cloned)->src,
-				       NET_IPV4_HDR(pkt)->dst);
-		net_ipv4_addr_copy_raw(NET_IPV4_HDR(cloned)->dst,
-				       NET_IPV4_HDR(pkt)->src);
+		net_ipv4_addr_copy_raw(NET_IPV4_HDR(cloned)->src, NET_IPV4_HDR(pkt)->dst);
+		net_ipv4_addr_copy_raw(NET_IPV4_HDR(cloned)->dst, NET_IPV4_HDR(pkt)->src);
 	}
 
 	res = net_recv_data(net_pkt_iface(cloned), cloned);
@@ -154,8 +147,6 @@ static struct dummy_api loopback_api = {
 	.send = loopback_send,
 };
 
-NET_DEVICE_INIT(loopback, "lo",
-		loopback_dev_init, NULL, NULL, NULL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		&loopback_api, DUMMY_L2,
+NET_DEVICE_INIT(loopback, "lo", loopback_dev_init, NULL, NULL, NULL,
+		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &loopback_api, DUMMY_L2,
 		NET_L2_GET_CTX_TYPE(DUMMY_L2), CONFIG_NET_LOOPBACK_MTU);

@@ -46,11 +46,9 @@ static void fdc2x1x_thread_cb(const struct device *dev)
 	k_mutex_unlock(&drv_data->trigger_mutex);
 }
 
-static void fdc2x1x_gpio_callback(const struct device *dev,
-				  struct gpio_callback *cb, uint32_t pins)
+static void fdc2x1x_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	struct fdc2x1x_data *drv_data =
-		CONTAINER_OF(cb, struct fdc2x1x_data, gpio_cb);
+	struct fdc2x1x_data *drv_data = CONTAINER_OF(cb, struct fdc2x1x_data, gpio_cb);
 
 #ifdef CONFIG_FDC2X1X_TRIGGER_OWN_THREAD
 	k_sem_give(&drv_data->gpio_sem);
@@ -76,15 +74,13 @@ static void fdc2x1x_thread(void *p1, void *p2, void *p3)
 #elif CONFIG_FDC2X1X_TRIGGER_GLOBAL_THREAD
 static void fdc2x1x_work_cb(struct k_work *work)
 {
-	struct fdc2x1x_data *drv_data =
-		CONTAINER_OF(work, struct fdc2x1x_data, work);
+	struct fdc2x1x_data *drv_data = CONTAINER_OF(work, struct fdc2x1x_data, work);
 
 	fdc2x1x_thread_cb(drv_data->dev);
 }
 #endif
 
-int fdc2x1x_trigger_set(const struct device *dev,
-			const struct sensor_trigger *trig,
+int fdc2x1x_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
 	struct fdc2x1x_data *drv_data = dev->data;
@@ -116,8 +112,7 @@ int fdc2x1x_trigger_set(const struct device *dev,
 		int_en = 0U;
 	}
 
-	ret = fdc2x1x_reg_write_mask(dev,
-				     FDC2X1X_ERROR_CONFIG, int_mask, int_en);
+	ret = fdc2x1x_reg_write_mask(dev, FDC2X1X_ERROR_CONFIG, int_mask, int_en);
 
 	/* Clear INTB pin by reading STATUS register */
 	fdc2x1x_get_status(dev, &status);
@@ -147,9 +142,7 @@ int fdc2x1x_init_interrupt(const struct device *dev)
 
 	gpio_pin_configure_dt(&cfg->intb_gpio, GPIO_INPUT);
 
-	gpio_init_callback(&drv_data->gpio_cb,
-			   fdc2x1x_gpio_callback,
-			   BIT(cfg->intb_gpio.pin));
+	gpio_init_callback(&drv_data->gpio_cb, fdc2x1x_gpio_callback, BIT(cfg->intb_gpio.pin));
 
 	if (gpio_add_callback(cfg->intb_gpio.port, &drv_data->gpio_cb) < 0) {
 		LOG_ERR("Failed to set gpio callback!");
@@ -161,12 +154,9 @@ int fdc2x1x_init_interrupt(const struct device *dev)
 #ifdef CONFIG_FDC2X1X_TRIGGER_OWN_THREAD
 	k_sem_init(&drv_data->gpio_sem, 0, UINT_MAX);
 
-	k_thread_create(&drv_data->thread, drv_data->thread_stack,
-			CONFIG_FDC2X1X_THREAD_STACK_SIZE,
-			fdc2x1x_thread,
-			drv_data, 0, NULL,
-			K_PRIO_COOP(CONFIG_FDC2X1X_THREAD_PRIORITY),
-			0, K_NO_WAIT);
+	k_thread_create(&drv_data->thread, drv_data->thread_stack, CONFIG_FDC2X1X_THREAD_STACK_SIZE,
+			fdc2x1x_thread, drv_data, 0, NULL,
+			K_PRIO_COOP(CONFIG_FDC2X1X_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif CONFIG_FDC2X1X_TRIGGER_GLOBAL_THREAD
 	drv_data->work.handler = fdc2x1x_work_cb;
 #endif

@@ -44,8 +44,8 @@ static int pd_on_domain_visitor(const struct device *dev, void *context)
 	return 0;
 }
 
-static void pd_gpio_monitor_callback(const struct device *port,
-				    struct gpio_callback *cb, gpio_port_pins_t pins)
+static void pd_gpio_monitor_callback(const struct device *port, struct gpio_callback *cb,
+				     gpio_port_pins_t pins)
 {
 	struct pd_gpio_monitor_data *data = CONTAINER_OF(cb, struct pd_gpio_monitor_data, callback);
 	const struct pd_gpio_monitor_config *config = data->dev->config;
@@ -118,7 +118,7 @@ static int pd_gpio_monitor_init(const struct device *dev)
 	}
 
 	gpio_init_callback(&data->callback, pd_gpio_monitor_callback,
-						BIT(config->power_good_gpio.pin));
+			   BIT(config->power_good_gpio.pin));
 	rc = gpio_add_callback_dt(&config->power_good_gpio, &data->callback);
 	if (rc) {
 		LOG_ERR("Failed to add GPIO callback");
@@ -136,15 +136,14 @@ unconfigure_pin:
 	return rc;
 }
 
-#define POWER_DOMAIN_DEVICE(inst)								\
-	static const struct pd_gpio_monitor_config pd_gpio_monitor_config_##inst = {		\
-		.power_good_gpio = GPIO_DT_SPEC_INST_GET(inst, gpios),				\
-	};											\
-	static struct pd_gpio_monitor_data pd_gpio_monitor_data_##inst;				\
-	PM_DEVICE_DT_INST_DEFINE(inst, pd_gpio_monitor_pm_action);				\
-	DEVICE_DT_INST_DEFINE(inst, pd_gpio_monitor_init,					\
-				PM_DEVICE_DT_INST_GET(inst), &pd_gpio_monitor_data_##inst,	\
-				&pd_gpio_monitor_config_##inst, POST_KERNEL,			\
-				CONFIG_POWER_DOMAIN_GPIO_MONITOR_INIT_PRIORITY, NULL);
+#define POWER_DOMAIN_DEVICE(inst)                                                                  \
+	static const struct pd_gpio_monitor_config pd_gpio_monitor_config_##inst = {               \
+		.power_good_gpio = GPIO_DT_SPEC_INST_GET(inst, gpios),                             \
+	};                                                                                         \
+	static struct pd_gpio_monitor_data pd_gpio_monitor_data_##inst;                            \
+	PM_DEVICE_DT_INST_DEFINE(inst, pd_gpio_monitor_pm_action);                                 \
+	DEVICE_DT_INST_DEFINE(inst, pd_gpio_monitor_init, PM_DEVICE_DT_INST_GET(inst),             \
+			      &pd_gpio_monitor_data_##inst, &pd_gpio_monitor_config_##inst,        \
+			      POST_KERNEL, CONFIG_POWER_DOMAIN_GPIO_MONITOR_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(POWER_DOMAIN_DEVICE)

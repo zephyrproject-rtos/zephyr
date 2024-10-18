@@ -37,12 +37,10 @@ static int uart_rtt_init(const struct device *dev)
 	if (dev->config) {
 		const struct uart_rtt_config *cfg = dev->config;
 
-		SEGGER_RTT_ConfigUpBuffer(cfg->channel, dev->name,
-					  cfg->up_buffer, cfg->up_size,
+		SEGGER_RTT_ConfigUpBuffer(cfg->channel, dev->name, cfg->up_buffer, cfg->up_size,
 					  SEGGER_RTT_MODE_NO_BLOCK_SKIP);
-		SEGGER_RTT_ConfigDownBuffer(cfg->channel, dev->name,
-					    cfg->down_buffer, cfg->down_size,
-					    SEGGER_RTT_MODE_NO_BLOCK_SKIP);
+		SEGGER_RTT_ConfigDownBuffer(cfg->channel, dev->name, cfg->down_buffer,
+					    cfg->down_size, SEGGER_RTT_MODE_NO_BLOCK_SKIP);
 	}
 	return 0;
 }
@@ -81,8 +79,8 @@ static void uart_rtt_poll_out(const struct device *dev, unsigned char c)
 
 #ifdef CONFIG_UART_ASYNC_API
 
-static int uart_rtt_callback_set(const struct device *dev,
-				 uart_callback_t callback, void *user_data)
+static int uart_rtt_callback_set(const struct device *dev, uart_callback_t callback,
+				 void *user_data)
 {
 	struct uart_rtt_data *data = dev->data;
 
@@ -91,8 +89,7 @@ static int uart_rtt_callback_set(const struct device *dev,
 	return 0;
 }
 
-static int uart_rtt_tx(const struct device *dev,
-		       const uint8_t *buf, size_t len, int32_t timeout)
+static int uart_rtt_tx(const struct device *dev, const uint8_t *buf, size_t len, int32_t timeout)
 {
 	const struct uart_rtt_config *cfg = dev->config;
 	struct uart_rtt_data *data = dev->data;
@@ -119,10 +116,7 @@ static int uart_rtt_tx(const struct device *dev,
 	/* Send the TX complete callback */
 	if (data->callback) {
 		struct uart_event evt = {
-			.type = UART_TX_DONE,
-			.data.tx.buf = buf,
-			.data.tx.len = len
-		};
+			.type = UART_TX_DONE, .data.tx.buf = buf, .data.tx.len = len};
 		data->callback(dev, &evt, data->user_data);
 	}
 
@@ -137,8 +131,7 @@ static int uart_rtt_tx_abort(const struct device *dev)
 	return -EFAULT;
 }
 
-static int uart_rtt_rx_enable(const struct device *dev,
-			      uint8_t *buf, size_t len, int32_t timeout)
+static int uart_rtt_rx_enable(const struct device *dev, uint8_t *buf, size_t len, int32_t timeout)
 {
 	/* SEGGER RTT reception is implemented as a direct memory write to RAM
 	 * by a connected debugger. As such there is no hardware interrupt
@@ -162,8 +155,7 @@ static int uart_rtt_rx_disable(const struct device *dev)
 	return -EFAULT;
 }
 
-static int uart_rtt_rx_buf_rsp(const struct device *dev,
-			       uint8_t *buf, size_t len)
+static int uart_rtt_rx_buf_rsp(const struct device *dev, uint8_t *buf, size_t len)
 {
 	/* Asynchronous RX not supported, see uart_rtt_rx_enable */
 	ARG_UNUSED(dev);
@@ -188,31 +180,27 @@ static const struct uart_driver_api uart_rtt_driver_api = {
 #endif /* CONFIG_UART_ASYNC_API */
 };
 
-#define UART_RTT(idx)                   DT_NODELABEL(rtt##idx)
-#define UART_RTT_PROP(idx, prop)        DT_PROP(UART_RTT(idx), prop)
-#define UART_RTT_CONFIG_NAME(idx)       uart_rtt##idx##_config
+#define UART_RTT(idx)             DT_NODELABEL(rtt##idx)
+#define UART_RTT_PROP(idx, prop)  DT_PROP(UART_RTT(idx), prop)
+#define UART_RTT_CONFIG_NAME(idx) uart_rtt##idx##_config
 
-#define UART_RTT_CONFIG(idx)						    \
-	static								    \
-	uint8_t uart_rtt##idx##_tx_buf[UART_RTT_PROP(idx, tx_buffer_size)]; \
-	static								    \
-	uint8_t uart_rtt##idx##_rx_buf[UART_RTT_PROP(idx, rx_buffer_size)]; \
-									    \
-	static const struct uart_rtt_config UART_RTT_CONFIG_NAME(idx) = {   \
-		.up_buffer = uart_rtt##idx##_tx_buf,			    \
-		.up_size = sizeof(uart_rtt##idx##_tx_buf),		    \
-		.down_buffer = uart_rtt##idx##_rx_buf,			    \
-		.down_size = sizeof(uart_rtt##idx##_rx_buf),		    \
-		.channel = idx,						    \
+#define UART_RTT_CONFIG(idx)                                                                       \
+	static uint8_t uart_rtt##idx##_tx_buf[UART_RTT_PROP(idx, tx_buffer_size)];                 \
+	static uint8_t uart_rtt##idx##_rx_buf[UART_RTT_PROP(idx, rx_buffer_size)];                 \
+                                                                                                   \
+	static const struct uart_rtt_config UART_RTT_CONFIG_NAME(idx) = {                          \
+		.up_buffer = uart_rtt##idx##_tx_buf,                                               \
+		.up_size = sizeof(uart_rtt##idx##_tx_buf),                                         \
+		.down_buffer = uart_rtt##idx##_rx_buf,                                             \
+		.down_size = sizeof(uart_rtt##idx##_rx_buf),                                       \
+		.channel = idx,                                                                    \
 	}
 
-#define UART_RTT_INIT(idx, config)					      \
-	struct uart_rtt_data uart_rtt##idx##_data;			      \
-									      \
-	DEVICE_DT_DEFINE(UART_RTT(idx), uart_rtt_init, NULL, \
-			    &uart_rtt##idx##_data, config,		      \
-			    PRE_KERNEL_2, CONFIG_SERIAL_INIT_PRIORITY,	      \
-			    &uart_rtt_driver_api)
+#define UART_RTT_INIT(idx, config)                                                                 \
+	struct uart_rtt_data uart_rtt##idx##_data;                                                 \
+                                                                                                   \
+	DEVICE_DT_DEFINE(UART_RTT(idx), uart_rtt_init, NULL, &uart_rtt##idx##_data, config,        \
+			 PRE_KERNEL_2, CONFIG_SERIAL_INIT_PRIORITY, &uart_rtt_driver_api)
 
 #ifdef CONFIG_UART_RTT_0
 UART_RTT_INIT(0, NULL);

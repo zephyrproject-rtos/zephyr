@@ -17,30 +17,28 @@
 #include <zephyr/irq.h>
 #include <zephyr/arch/riscv/irq.h>
 
-#define SWERV_PIC_MAX_NUM	CONFIG_NUM_IRQS
-#define SWERV_PIC_MAX_ID	(SWERV_PIC_MAX_NUM + RISCV_MAX_GENERIC_IRQ)
-#define SWERV_PIC_MAX_PRIO		16
+#define SWERV_PIC_MAX_NUM  CONFIG_NUM_IRQS
+#define SWERV_PIC_MAX_ID   (SWERV_PIC_MAX_NUM + RISCV_MAX_GENERIC_IRQ)
+#define SWERV_PIC_MAX_PRIO 16
 
-#define SWERV_PIC_mpiccfg		0x3000
-#define SWERV_PIC_meipl(s)		(0x0 + (s)*4)
-#define SWERV_PIC_meip(x)		(0x1000 + (x)*4)
-#define SWERV_PIC_meie(s)		(0x2000 + (s)*4)
-#define SWERV_PIC_meigwctrl(s)		(0x4000 + (s)*4)
-#define SWERV_PIC_meigwclr(s)		(0x5000 + (s)*4)
+#define SWERV_PIC_mpiccfg      0x3000
+#define SWERV_PIC_meipl(s)     (0x0 + (s) * 4)
+#define SWERV_PIC_meip(x)      (0x1000 + (x) * 4)
+#define SWERV_PIC_meie(s)      (0x2000 + (s) * 4)
+#define SWERV_PIC_meigwctrl(s) (0x4000 + (s) * 4)
+#define SWERV_PIC_meigwclr(s)  (0x5000 + (s) * 4)
 
-#define SWERV_PIC_meivt			"0xBC8"
-#define SWERV_PIC_meipt			"0xBC9"
-#define SWERV_PIC_meicpct		"0xBCA"
-#define SWERV_PIC_meicidpl		"0xBCB"
-#define SWERV_PIC_meicurpl		"0xBCC"
-#define SWERV_PIC_meihap		"0xFC8"
+#define SWERV_PIC_meivt    "0xBC8"
+#define SWERV_PIC_meipt    "0xBC9"
+#define SWERV_PIC_meicpct  "0xBCA"
+#define SWERV_PIC_meicidpl "0xBCB"
+#define SWERV_PIC_meicurpl "0xBCC"
+#define SWERV_PIC_meihap   "0xFC8"
 
 #define swerv_piccsr(csr) SWERV_PIC_##csr
 
-#define swerv_pic_readcsr(csr, value) \
-	volatile("csrr %0, "swerv_piccsr(csr) : "=r" (value))
-#define swerv_pic_writecsr(csr, value) \
-	volatile("csrw "swerv_piccsr(csr)", %0" :: "rK" (value))
+#define swerv_pic_readcsr(csr, value)  volatile("csrr %0, " swerv_piccsr(csr) : "=r"(value))
+#define swerv_pic_writecsr(csr, value) volatile("csrw " swerv_piccsr(csr) ", %0" ::"rK"(value))
 
 static int save_irq;
 
@@ -86,8 +84,7 @@ int swerv_pic_irq_is_enabled(uint32_t irq)
 		return -1;
 	}
 
-	return swerv_pic_read(SWERV_PIC_meie(irq - RISCV_MAX_GENERIC_IRQ))
-	  & 0x1;
+	return swerv_pic_read(SWERV_PIC_meie(irq - RISCV_MAX_GENERIC_IRQ)) & 0x1;
 }
 
 void swerv_pic_set_priority(uint32_t irq, uint32_t priority)
@@ -163,7 +160,7 @@ static int swerv_pic_init(const struct device *dev)
 
 	/* Set property of each interrupt line to level-triggered/high */
 	for (i = 1; i < SWERV_PIC_MAX_ID; i++) {
-		swerv_pic_write(SWERV_PIC_meigwctrl(i), (0<<1)|(0<<0));
+		swerv_pic_write(SWERV_PIC_meigwctrl(i), (0 << 1) | (0 << 0));
 	}
 
 	/* clear pending of each interrupt line */
@@ -177,11 +174,7 @@ static int swerv_pic_init(const struct device *dev)
 	__asm__ swerv_pic_writecsr(meicurpl, 0);
 
 	/* Setup IRQ handler for SweRV PIC driver */
-	IRQ_CONNECT(RISCV_IRQ_MEXT,
-		    0,
-		    swerv_pic_irq_handler,
-		    NULL,
-		    0);
+	IRQ_CONNECT(RISCV_IRQ_MEXT, 0, swerv_pic_irq_handler, NULL, 0);
 
 	/* Enable IRQ for SweRV PIC driver */
 	irq_enable(RISCV_IRQ_MEXT);
@@ -202,9 +195,7 @@ void arch_irq_enable(unsigned int irq)
 	 * CSR mie register is updated using atomic instruction csrrs
 	 * (atomic read and set bits in CSR register)
 	 */
-	__asm__ volatile ("csrrs %0, mie, %1\n"
-			  : "=r" (mie)
-			  : "r" (1 << irq));
+	__asm__ volatile("csrrs %0, mie, %1\n" : "=r"(mie) : "r"(1 << irq));
 }
 
 void arch_irq_disable(unsigned int irq)
@@ -220,9 +211,7 @@ void arch_irq_disable(unsigned int irq)
 	 * Use atomic instruction csrrc to disable device interrupt in mie CSR.
 	 * (atomic read and clear bits in CSR register)
 	 */
-	__asm__ volatile ("csrrc %0, mie, %1\n"
-			  : "=r" (mie)
-			  : "r" (1 << irq));
+	__asm__ volatile("csrrc %0, mie, %1\n" : "=r"(mie) : "r"(1 << irq));
 };
 
 int arch_irq_is_enabled(unsigned int irq)
@@ -233,10 +222,10 @@ int arch_irq_is_enabled(unsigned int irq)
 		return swerv_pic_irq_is_enabled(irq);
 	}
 
-	__asm__ volatile ("csrr %0, mie" : "=r" (mie));
+	__asm__ volatile("csrr %0, mie" : "=r"(mie));
 
 	return !!(mie & (1 << irq));
 }
 
-DEVICE_DT_INST_DEFINE(0, swerv_pic_init, NULL,  NULL,  NULL,
-		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
+DEVICE_DT_INST_DEFINE(0, swerv_pic_init, NULL, NULL, NULL, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
+		      NULL);

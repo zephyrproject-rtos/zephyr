@@ -177,8 +177,7 @@ static void m_adc_numaker_start_scan(const struct device *dev)
 		channel_id = find_lsb_set(channel_mask) - 1;
 		module_id = channel_id;
 		channel_mask &= ~BIT(channel_id);
-		EADC_ConfigSampleModule(eadc, module_id,
-					EADC_SOFTWARE_TRIGGER, channel_id);
+		EADC_ConfigSampleModule(eadc, module_id, EADC_SOFTWARE_TRIGGER, channel_id);
 		/* Set sample module external sampling time to 0 */
 		EADC_SetExtendSampleTime(eadc, module_id, data->acq_time);
 	}
@@ -202,8 +201,7 @@ static void m_adc_numaker_start_scan(const struct device *dev)
  */
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
-	struct adc_numaker_data *const data =
-		CONTAINER_OF(ctx, struct adc_numaker_data, ctx);
+	struct adc_numaker_data *const data = CONTAINER_OF(ctx, struct adc_numaker_data, ctx);
 
 	data->repeat_buffer = data->buffer;
 	data->channels = ctx->sequence.channels;
@@ -212,11 +210,9 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	m_adc_numaker_start_scan(data->dev);
 }
 
-static void adc_context_update_buffer_pointer(struct adc_context *ctx,
-					      bool repeat_sampling)
+static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat_sampling)
 {
-	struct adc_numaker_data *data =
-		CONTAINER_OF(ctx, struct adc_numaker_data, ctx);
+	struct adc_numaker_data *data = CONTAINER_OF(ctx, struct adc_numaker_data, ctx);
 
 	if (repeat_sampling) {
 		data->buffer = data->repeat_buffer;
@@ -225,8 +221,7 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 
 static void adc_context_on_complete(struct adc_context *ctx, int status)
 {
-	struct adc_numaker_data *data =
-		CONTAINER_OF(ctx, struct adc_numaker_data, ctx);
+	struct adc_numaker_data *data = CONTAINER_OF(ctx, struct adc_numaker_data, ctx);
 	const struct adc_numaker_config *cfg = data->dev->config;
 	EADC_T *eadc = cfg->eadc_base;
 
@@ -236,8 +231,7 @@ static void adc_context_on_complete(struct adc_context *ctx, int status)
 	EADC_Close(eadc);
 }
 
-static int m_adc_numaker_start_read(const struct device *dev,
-				  const struct adc_sequence *sequence)
+static int m_adc_numaker_start_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	const struct adc_numaker_config *cfg = dev->config;
 	struct adc_numaker_data *data = dev->data;
@@ -272,8 +266,7 @@ static int m_adc_numaker_start_read(const struct device *dev,
 	return adc_context_wait_for_completion(&data->ctx);
 }
 
-static int adc_numaker_read(const struct device *dev,
-			    const struct adc_sequence *sequence)
+static int adc_numaker_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	struct adc_numaker_data *data = dev->data;
 	int err;
@@ -286,8 +279,7 @@ static int adc_numaker_read(const struct device *dev,
 }
 
 #ifdef CONFIG_ADC_ASYNC
-static int adc_numaker_read_async(const struct device *dev,
-				  const struct adc_sequence *sequence,
+static int adc_numaker_read_async(const struct device *dev, const struct adc_sequence *sequence,
 				  struct k_poll_signal *async)
 {
 	struct adc_numaker_data *data = dev->data;
@@ -364,42 +356,38 @@ done:
 	return err;
 }
 
-#define ADC_NUMAKER_IRQ_CONFIG_FUNC(n)                                                       \
-	static void adc_numaker_irq_config_func_##n(const struct device *dev)                \
-	{                                                                                    \
-		IRQ_CONNECT(DT_INST_IRQN(n),                                                 \
-			    DT_INST_IRQ(n, priority),                                        \
-			    adc_numaker_isr,                                                 \
-			    DEVICE_DT_INST_GET(n), 0);                                       \
-											     \
-		irq_enable(DT_INST_IRQN(n));                                                 \
+#define ADC_NUMAKER_IRQ_CONFIG_FUNC(n)                                                             \
+	static void adc_numaker_irq_config_func_##n(const struct device *dev)                      \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), adc_numaker_isr,            \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+                                                                                                   \
+		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
 
-#define ADC_NUMAKER_INIT(inst)						                     \
-	PINCTRL_DT_INST_DEFINE(inst);                                                        \
-	ADC_NUMAKER_IRQ_CONFIG_FUNC(inst)                                                    \
-											     \
-	static const struct adc_numaker_config adc_numaker_cfg_##inst = {                    \
-		.eadc_base = (EADC_T *)DT_INST_REG_ADDR(inst),                               \
-		.channel_cnt = DT_INST_PROP(inst, channels),                                 \
-		.reset = RESET_DT_SPEC_INST_GET(inst),                                       \
-		.clk_modidx = DT_INST_CLOCKS_CELL(inst, clock_module_index),                 \
-		.clk_src = DT_INST_CLOCKS_CELL(inst, clock_source),                          \
-		.clk_div = DT_INST_CLOCKS_CELL(inst, clock_divider),                         \
-		.clk_dev = DEVICE_DT_GET(DT_PARENT(DT_INST_CLOCKS_CTLR(inst))),              \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                              \
-		.irq_config_func = adc_numaker_irq_config_func_##inst,                       \
-	};                                                                                   \
-											     \
-	static struct adc_numaker_data adc_numaker_data_##inst = {			     \
-		ADC_CONTEXT_INIT_TIMER(adc_numaker_data_##inst, ctx),			     \
-		ADC_CONTEXT_INIT_LOCK(adc_numaker_data_##inst, ctx),			     \
-		ADC_CONTEXT_INIT_SYNC(adc_numaker_data_##inst, ctx),			     \
-	};									             \
-	DEVICE_DT_INST_DEFINE(inst,                                                          \
-			      &adc_numaker_init, NULL,                                       \
-			      &adc_numaker_data_##inst, &adc_numaker_cfg_##inst,             \
-			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,			     \
+#define ADC_NUMAKER_INIT(inst)                                                                     \
+	PINCTRL_DT_INST_DEFINE(inst);                                                              \
+	ADC_NUMAKER_IRQ_CONFIG_FUNC(inst)                                                          \
+                                                                                                   \
+	static const struct adc_numaker_config adc_numaker_cfg_##inst = {                          \
+		.eadc_base = (EADC_T *)DT_INST_REG_ADDR(inst),                                     \
+		.channel_cnt = DT_INST_PROP(inst, channels),                                       \
+		.reset = RESET_DT_SPEC_INST_GET(inst),                                             \
+		.clk_modidx = DT_INST_CLOCKS_CELL(inst, clock_module_index),                       \
+		.clk_src = DT_INST_CLOCKS_CELL(inst, clock_source),                                \
+		.clk_div = DT_INST_CLOCKS_CELL(inst, clock_divider),                               \
+		.clk_dev = DEVICE_DT_GET(DT_PARENT(DT_INST_CLOCKS_CTLR(inst))),                    \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                    \
+		.irq_config_func = adc_numaker_irq_config_func_##inst,                             \
+	};                                                                                         \
+                                                                                                   \
+	static struct adc_numaker_data adc_numaker_data_##inst = {                                 \
+		ADC_CONTEXT_INIT_TIMER(adc_numaker_data_##inst, ctx),                              \
+		ADC_CONTEXT_INIT_LOCK(adc_numaker_data_##inst, ctx),                               \
+		ADC_CONTEXT_INIT_SYNC(adc_numaker_data_##inst, ctx),                               \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(inst, &adc_numaker_init, NULL, &adc_numaker_data_##inst,             \
+			      &adc_numaker_cfg_##inst, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,      \
 			      &adc_numaker_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_NUMAKER_INIT)

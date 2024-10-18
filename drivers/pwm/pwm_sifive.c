@@ -18,37 +18,38 @@ LOG_MODULE_REGISTER(pwm_sifive, CONFIG_PWM_LOG_LEVEL);
 
 /* Macros */
 
-#define PWM_REG(z_config, _offset) ((mem_addr_t) ((z_config)->base + _offset))
+#define PWM_REG(z_config, _offset) ((mem_addr_t)((z_config)->base + _offset))
 
 /* Register Offsets */
-#define REG_PWMCFG		0x00
-#define REG_PWMCOUNT		0x08
-#define REG_PWMS		0x10
-#define REG_PWMCMP0		0x20
-#define REG_PWMCMP(_channel)	(REG_PWMCMP0 + ((_channel) * 0x4))
+#define REG_PWMCFG           0x00
+#define REG_PWMCOUNT         0x08
+#define REG_PWMS             0x10
+#define REG_PWMCMP0          0x20
+#define REG_PWMCMP(_channel) (REG_PWMCMP0 + ((_channel) * 0x4))
 
 /* Number of PWM Channels */
-#define SF_NUMCHANNELS		4
+#define SF_NUMCHANNELS 4
 
 /* pwmcfg Bit Offsets */
-#define SF_PWMSTICKY			8
-#define SF_PWMZEROCMP			9
-#define SF_PWMDEGLITCH			10
-#define SF_PWMENALWAYS			12
-#define SF_PWMENONESHOT			13
-#define SF_PWMCMPCENTER(_channel)	(16 + (_channel))
-#define SF_PWMCMPGANG(_channel)		(24 + (_channel))
-#define SF_PWMCMPIP(_channel)		(28 + (_channel))
+#define SF_PWMSTICKY              8
+#define SF_PWMZEROCMP             9
+#define SF_PWMDEGLITCH            10
+#define SF_PWMENALWAYS            12
+#define SF_PWMENONESHOT           13
+#define SF_PWMCMPCENTER(_channel) (16 + (_channel))
+#define SF_PWMCMPGANG(_channel)   (24 + (_channel))
+#define SF_PWMCMPIP(_channel)     (28 + (_channel))
 
 /* pwmcount scale factor */
-#define SF_PWMSCALEMASK		0xF
-#define SF_PWMSCALE(_val)	(SF_PWMSCALEMASK & (_val))
+#define SF_PWMSCALEMASK   0xF
+#define SF_PWMSCALE(_val) (SF_PWMSCALEMASK & (_val))
 
-#define SF_PWMCOUNT_MIN_WIDTH	15
+#define SF_PWMCOUNT_MIN_WIDTH 15
 
 /* Structure Declarations */
 
-struct pwm_sifive_data {};
+struct pwm_sifive_data {
+};
 
 struct pwm_sifive_cfg {
 	uint32_t base;
@@ -106,9 +107,8 @@ static int pwm_sifive_init(const struct device *dev)
 	return 0;
 }
 
-static int pwm_sifive_set_cycles(const struct device *dev, uint32_t channel,
-				 uint32_t period_cycles, uint32_t pulse_cycles,
-				 pwm_flags_t flags)
+static int pwm_sifive_set_cycles(const struct device *dev, uint32_t channel, uint32_t period_cycles,
+				 uint32_t pulse_cycles, pwm_flags_t flags)
 {
 	const struct pwm_sifive_cfg *config = dev->config;
 	uint32_t count_max = 0U;
@@ -135,8 +135,7 @@ static int pwm_sifive_set_cycles(const struct device *dev, uint32_t channel,
 	count_max = (1 << (config->cmpwidth + SF_PWMCOUNT_MIN_WIDTH)) - 1;
 
 	if (period_cycles > count_max) {
-		LOG_ERR("Requested period is %d but maximum is %d\n",
-			period_cycles, count_max);
+		LOG_ERR("Requested period is %d but maximum is %d\n", period_cycles, count_max);
 		return -EIO;
 	}
 
@@ -153,35 +152,28 @@ static int pwm_sifive_set_cycles(const struct device *dev, uint32_t channel,
 
 	/* Make sure that we can scale that much */
 	if (pwmscale > SF_PWMSCALEMASK) {
-		LOG_ERR("Requested period is %d but maximum is %d\n",
-			period_cycles, max_cmp_val << pwmscale);
+		LOG_ERR("Requested period is %d but maximum is %d\n", period_cycles,
+			max_cmp_val << pwmscale);
 		return -EIO;
 	}
 
 	/* Set the pwmscale field */
-	sys_set_mask(PWM_REG(config, REG_PWMCFG),
-		     SF_PWMSCALEMASK,
-		     SF_PWMSCALE(pwmscale));
+	sys_set_mask(PWM_REG(config, REG_PWMCFG), SF_PWMSCALEMASK, SF_PWMSCALE(pwmscale));
 
 	/* Set the period by setting pwmcmp0 */
 	sys_write32((period_cycles >> pwmscale), PWM_REG(config, REG_PWMCMP0));
 
 	/* Set the duty cycle by setting pwmcmpX */
-	sys_write32((pulse_cycles >> pwmscale),
-		    PWM_REG(config, REG_PWMCMP(channel)));
+	sys_write32((pulse_cycles >> pwmscale), PWM_REG(config, REG_PWMCMP(channel)));
 
-	LOG_DBG("channel: %d, pwmscale: %d, pwmcmp0: %d, pwmcmp%d: %d",
-		channel,
-		pwmscale,
-		(period_cycles >> pwmscale),
-		channel,
-		(pulse_cycles >> pwmscale));
+	LOG_DBG("channel: %d, pwmscale: %d, pwmcmp0: %d, pwmcmp%d: %d", channel, pwmscale,
+		(period_cycles >> pwmscale), channel, (pulse_cycles >> pwmscale));
 
 	return 0;
 }
 
-static int pwm_sifive_get_cycles_per_sec(const struct device *dev,
-					 uint32_t channel, uint64_t *cycles)
+static int pwm_sifive_get_cycles_per_sec(const struct device *dev, uint32_t channel,
+					 uint64_t *cycles)
 {
 	const struct pwm_sifive_cfg *config;
 
@@ -213,22 +205,16 @@ static const struct pwm_driver_api pwm_sifive_api = {
 	.get_cycles_per_sec = pwm_sifive_get_cycles_per_sec,
 };
 
-#define PWM_SIFIVE_INIT(n)	\
-	PINCTRL_DT_INST_DEFINE(n);	\
-	static struct pwm_sifive_data pwm_sifive_data_##n;	\
-	static const struct pwm_sifive_cfg pwm_sifive_cfg_##n = {	\
-			.base = DT_INST_REG_ADDR(n),	\
-			.f_sys = SIFIVE_PERIPHERAL_CLOCK_FREQUENCY,  \
-			.cmpwidth = DT_INST_PROP(n, sifive_compare_width), \
-			.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),	\
-		};	\
-	DEVICE_DT_INST_DEFINE(n,	\
-			    pwm_sifive_init,	\
-			    NULL,	\
-			    &pwm_sifive_data_##n,	\
-			    &pwm_sifive_cfg_##n,	\
-			    POST_KERNEL,	\
-			    CONFIG_PWM_INIT_PRIORITY,	\
-			    &pwm_sifive_api);
+#define PWM_SIFIVE_INIT(n)                                                                         \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	static struct pwm_sifive_data pwm_sifive_data_##n;                                         \
+	static const struct pwm_sifive_cfg pwm_sifive_cfg_##n = {                                  \
+		.base = DT_INST_REG_ADDR(n),                                                       \
+		.f_sys = SIFIVE_PERIPHERAL_CLOCK_FREQUENCY,                                        \
+		.cmpwidth = DT_INST_PROP(n, sifive_compare_width),                                 \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(n, pwm_sifive_init, NULL, &pwm_sifive_data_##n, &pwm_sifive_cfg_##n, \
+			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, &pwm_sifive_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_SIFIVE_INIT)

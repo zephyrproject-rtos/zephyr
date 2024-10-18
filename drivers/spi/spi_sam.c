@@ -26,10 +26,10 @@ LOG_MODULE_REGISTER(spi_sam);
 #include <zephyr/sys/util.h>
 #include <soc.h>
 
-#define SAM_SPI_CHIP_SELECT_COUNT			4
+#define SAM_SPI_CHIP_SELECT_COUNT 4
 
 /* Number of bytes in transfer before using DMA if available */
-#define SAM_SPI_DMA_THRESHOLD                           32
+#define SAM_SPI_DMA_THRESHOLD 32
 
 /* Device constant configuration parameters */
 struct spi_sam_config {
@@ -96,8 +96,7 @@ static int spi_slave_to_mr_pcs(int slave)
 	return pcs[slave];
 }
 
-static int spi_sam_configure(const struct device *dev,
-			     const struct spi_config *config)
+static int spi_sam_configure(const struct device *dev, const struct spi_config *config)
 {
 	const struct spi_sam_config *cfg = dev->config;
 	struct spi_sam_data *data = dev->data;
@@ -121,8 +120,8 @@ static int spi_sam_configure(const struct device *dev,
 	}
 
 	if (config->slave > (SAM_SPI_CHIP_SELECT_COUNT - 1)) {
-		LOG_ERR("Slave %d is greater than %d",
-			config->slave, SAM_SPI_CHIP_SELECT_COUNT - 1);
+		LOG_ERR("Slave %d is greater than %d", config->slave,
+			SAM_SPI_CHIP_SELECT_COUNT - 1);
 		return -EINVAL;
 	}
 
@@ -231,9 +230,7 @@ static void spi_sam_fast_rx(Spi *regs, uint8_t *rx_buf, const uint32_t rx_buf_le
 }
 
 /* Fast path that writes and reads bufs of the same length */
-static void spi_sam_fast_txrx(Spi *regs,
-			      const uint8_t *tx_buf,
-			      const uint8_t *rx_buf,
+static void spi_sam_fast_txrx(Spi *regs, const uint8_t *tx_buf, const uint8_t *rx_buf,
 			      const uint32_t len)
 {
 	const uint8_t *tx = tx_buf;
@@ -281,9 +278,7 @@ static void spi_sam_fast_txrx(Spi *regs,
 	}
 
 	*rx = (uint8_t)regs->SPI_RDR;
-
 }
-
 
 #ifdef CONFIG_SPI_SAM_DMA
 
@@ -294,8 +289,8 @@ static __aligned(4) uint32_t rx_dummy;
 static void spi_sam_iodev_complete(const struct device *dev, int status);
 #endif
 
-static void dma_callback(const struct device *dma_dev, void *user_data,
-	uint32_t channel, int status)
+static void dma_callback(const struct device *dma_dev, void *user_data, uint32_t channel,
+			 int status)
 {
 	ARG_UNUSED(dma_dev);
 	ARG_UNUSED(channel);
@@ -313,13 +308,9 @@ static void dma_callback(const struct device *dma_dev, void *user_data,
 	k_sem_give(&drv_data->dma_sem);
 }
 
-
 /* DMA transceive path */
-static int spi_sam_dma_txrx(const struct device *dev,
-			    Spi *regs,
-			    const uint8_t *tx_buf,
-			    const uint8_t *rx_buf,
-			    const uint32_t len)
+static int spi_sam_dma_txrx(const struct device *dev, Spi *regs, const uint8_t *tx_buf,
+			    const uint8_t *rx_buf, const uint32_t len)
 {
 	const struct spi_sam_config *drv_cfg = dev->config;
 	struct spi_sam_data *drv_data = dev->data;
@@ -356,12 +347,10 @@ static int spi_sam_dma_txrx(const struct device *dev,
 		dest_addr_adjust = DMA_ADDR_ADJ_NO_CHANGE;
 	}
 
-	struct dma_block_config rx_block_cfg = {
-		.dest_addr_adj = dest_addr_adjust,
-		.block_size = len,
-		.source_address = (uint32_t)&regs->SPI_RDR,
-		.dest_address = dest_address
-	};
+	struct dma_block_config rx_block_cfg = {.dest_addr_adj = dest_addr_adjust,
+						.block_size = len,
+						.source_address = (uint32_t)&regs->SPI_RDR,
+						.dest_address = dest_address};
 
 	rx_dma_cfg.head_block = &rx_block_cfg;
 
@@ -388,12 +377,10 @@ static int spi_sam_dma_txrx(const struct device *dev,
 		source_addr_adjust = DMA_ADDR_ADJ_NO_CHANGE;
 	}
 
-	struct dma_block_config tx_block_cfg = {
-		.source_addr_adj = source_addr_adjust,
-		.block_size = len,
-		.source_address = source_address,
-		.dest_address = (uint32_t)&regs->SPI_TDR
-	};
+	struct dma_block_config tx_block_cfg = {.source_addr_adj = source_addr_adjust,
+						.block_size = len,
+						.source_address = source_address,
+						.dest_address = (uint32_t)&regs->SPI_TDR};
 
 	tx_dma_cfg.head_block = &tx_block_cfg;
 
@@ -436,11 +423,8 @@ out:
 
 #endif /* CONFIG_SPI_SAM_DMA */
 
-
-static inline int spi_sam_rx(const struct device *dev,
-			      Spi *regs,
-			      uint8_t *rx_buf,
-			      uint32_t rx_buf_len)
+static inline int spi_sam_rx(const struct device *dev, Spi *regs, uint8_t *rx_buf,
+			     uint32_t rx_buf_len)
 {
 	k_spinlock_key_t key;
 
@@ -463,9 +447,7 @@ static inline int spi_sam_rx(const struct device *dev,
 	return 0;
 }
 
-static inline int spi_sam_tx(const struct device *dev,
-			     Spi *regs,
-			     const uint8_t *tx_buf,
+static inline int spi_sam_tx(const struct device *dev, Spi *regs, const uint8_t *tx_buf,
 			     uint32_t tx_buf_len)
 {
 	k_spinlock_key_t key;
@@ -488,12 +470,8 @@ static inline int spi_sam_tx(const struct device *dev,
 	return 0;
 }
 
-
-static inline int spi_sam_txrx(const struct device *dev,
-				Spi *regs,
-				const uint8_t *tx_buf,
-				const uint8_t *rx_buf,
-				uint32_t buf_len)
+static inline int spi_sam_txrx(const struct device *dev, Spi *regs, const uint8_t *tx_buf,
+			       const uint8_t *rx_buf, uint32_t buf_len)
 {
 	k_spinlock_key_t key;
 
@@ -518,8 +496,7 @@ static inline int spi_sam_txrx(const struct device *dev,
 #ifndef CONFIG_SPI_RTIO
 
 /* Fast path where every overlapping tx and rx buffer is the same length */
-static void spi_sam_fast_transceive(const struct device *dev,
-				    const struct spi_config *config,
+static void spi_sam_fast_transceive(const struct device *dev, const struct spi_config *config,
 				    const struct spi_buf_set *tx_bufs,
 				    const struct spi_buf_set *rx_bufs)
 {
@@ -608,8 +585,7 @@ static void spi_sam_shift_master(Spi *regs, struct spi_sam_data *data)
  * - Zero or more trailing RX only bufs
  * - Zero or more trailing TX only bufs
  */
-static bool spi_sam_is_regular(const struct spi_buf_set *tx_bufs,
-			       const struct spi_buf_set *rx_bufs)
+static bool spi_sam_is_regular(const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs)
 {
 	const struct spi_buf *tx = NULL;
 	const struct spi_buf *rx = NULL;
@@ -668,7 +644,7 @@ static void spi_sam_iodev_start(const struct device *dev)
 		break;
 	case RTIO_OP_TXRX:
 		ret = spi_sam_txrx(dev, cfg->regs, sqe->txrx.tx_buf, sqe->txrx.rx_buf,
-			sqe->txrx.buf_len);
+				   sqe->txrx.buf_len);
 		break;
 	default:
 		LOG_ERR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
@@ -687,7 +663,7 @@ static void spi_sam_iodev_next(const struct device *dev, bool completion)
 {
 	struct spi_sam_data *data = dev->data;
 
-	k_spinlock_key_t key  = spi_spin_lock(dev);
+	k_spinlock_key_t key = spi_spin_lock(dev);
 
 	if (!completion && data->txn_curr != NULL) {
 		spi_spin_unlock(dev, key);
@@ -734,8 +710,7 @@ static void spi_sam_iodev_complete(const struct device *dev, int status)
 	}
 }
 
-static void spi_sam_iodev_submit(const struct device *dev,
-				 struct rtio_iodev_sqe *iodev_sqe)
+static void spi_sam_iodev_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
 	struct spi_sam_data *data = dev->data;
 
@@ -744,10 +719,8 @@ static void spi_sam_iodev_submit(const struct device *dev,
 }
 #endif
 
-static int spi_sam_transceive(const struct device *dev,
-			      const struct spi_config *config,
-			      const struct spi_buf_set *tx_bufs,
-			      const struct spi_buf_set *rx_bufs)
+static int spi_sam_transceive(const struct device *dev, const struct spi_config *config,
+			      const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs)
 {
 	struct spi_sam_data *data = dev->data;
 	int err = 0;
@@ -810,8 +783,7 @@ done:
 	return err;
 }
 
-static int spi_sam_transceive_sync(const struct device *dev,
-				   const struct spi_config *config,
+static int spi_sam_transceive_sync(const struct device *dev, const struct spi_config *config,
 				   const struct spi_buf_set *tx_bufs,
 				   const struct spi_buf_set *rx_bufs)
 {
@@ -819,11 +791,9 @@ static int spi_sam_transceive_sync(const struct device *dev,
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int spi_sam_transceive_async(const struct device *dev,
-				    const struct spi_config *config,
+static int spi_sam_transceive_async(const struct device *dev, const struct spi_config *config,
 				    const struct spi_buf_set *tx_bufs,
-				    const struct spi_buf_set *rx_bufs,
-				    spi_callback_t cb,
+				    const struct spi_buf_set *rx_bufs, spi_callback_t cb,
 				    void *userdata)
 {
 	/* TODO: implement async transceive */
@@ -831,8 +801,7 @@ static int spi_sam_transceive_async(const struct device *dev,
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static int spi_sam_release(const struct device *dev,
-			   const struct spi_config *config)
+static int spi_sam_release(const struct device *dev, const struct spi_config *config)
 {
 	struct spi_sam_data *data = dev->data;
 
@@ -848,8 +817,7 @@ static int spi_sam_init(const struct device *dev)
 	struct spi_sam_data *data = dev->data;
 
 	/* Enable SPI clock in PMC */
-	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
-			       (clock_control_subsys_t)&cfg->clock_cfg);
+	(void)clock_control_on(SAM_DT_PMC_CONTROLLER, (clock_control_subsys_t)&cfg->clock_cfg);
 
 	err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
@@ -892,11 +860,11 @@ static const struct spi_driver_api spi_sam_driver_api = {
 	.release = spi_sam_release,
 };
 
-#define SPI_DMA_INIT(n)										\
-	.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, tx)),				\
-	.dma_tx_channel = DT_INST_DMAS_CELL_BY_NAME(n, tx, channel),				\
-	.dma_tx_perid = DT_INST_DMAS_CELL_BY_NAME(n, tx, perid),				\
-	.dma_rx_channel = DT_INST_DMAS_CELL_BY_NAME(n, rx, channel),				\
+#define SPI_DMA_INIT(n)                                                                            \
+	.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, tx)),                                \
+	.dma_tx_channel = DT_INST_DMAS_CELL_BY_NAME(n, tx, channel),                               \
+	.dma_tx_perid = DT_INST_DMAS_CELL_BY_NAME(n, tx, perid),                                   \
+	.dma_rx_channel = DT_INST_DMAS_CELL_BY_NAME(n, rx, channel),                               \
 	.dma_rx_perid = DT_INST_DMAS_CELL_BY_NAME(n, rx, perid),
 
 #ifdef CONFIG_SPI_SAM_DMA
@@ -905,31 +873,27 @@ static const struct spi_driver_api spi_sam_driver_api = {
 #define SPI_SAM_USE_DMA(n) 0
 #endif
 
-#define SPI_SAM_DEFINE_CONFIG(n)								\
-	static const struct spi_sam_config spi_sam_config_##n = {				\
-		.regs = (Spi *)DT_INST_REG_ADDR(n),						\
-		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),					\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),					\
-		.loopback = DT_INST_PROP(n, loopback),						\
-		COND_CODE_1(SPI_SAM_USE_DMA(n), (SPI_DMA_INIT(n)), ())				\
-	}
+#define SPI_SAM_DEFINE_CONFIG(n)                                                                   \
+	static const struct spi_sam_config spi_sam_config_##n = {                                  \
+		.regs = (Spi *)DT_INST_REG_ADDR(n),                                                \
+		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),                                         \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+		.loopback = DT_INST_PROP(n, loopback),                                             \
+		COND_CODE_1(SPI_SAM_USE_DMA(n), (SPI_DMA_INIT(n)), ()) }
 
-#define SPI_SAM_RTIO_DEFINE(n) RTIO_DEFINE(spi_sam_rtio_##n, CONFIG_SPI_SAM_RTIO_SQ_SIZE,	\
-					   CONFIG_SPI_SAM_RTIO_SQ_SIZE)
+#define SPI_SAM_RTIO_DEFINE(n)                                                                     \
+	RTIO_DEFINE(spi_sam_rtio_##n, CONFIG_SPI_SAM_RTIO_SQ_SIZE, CONFIG_SPI_SAM_RTIO_SQ_SIZE)
 
-#define SPI_SAM_DEVICE_INIT(n)									\
-	PINCTRL_DT_INST_DEFINE(n);								\
-	SPI_SAM_DEFINE_CONFIG(n);								\
-	COND_CODE_1(CONFIG_SPI_RTIO, (SPI_SAM_RTIO_DEFINE(n)), ());				\
-	static struct spi_sam_data spi_sam_dev_data_##n = {					\
-		SPI_CONTEXT_INIT_LOCK(spi_sam_dev_data_##n, ctx),				\
-		SPI_CONTEXT_INIT_SYNC(spi_sam_dev_data_##n, ctx),				\
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)				\
-		IF_ENABLED(CONFIG_SPI_RTIO, (.r = &spi_sam_rtio_##n))				\
-	};											\
-	DEVICE_DT_INST_DEFINE(n, &spi_sam_init, NULL,						\
-			    &spi_sam_dev_data_##n,						\
-			    &spi_sam_config_##n, POST_KERNEL,					\
-			    CONFIG_SPI_INIT_PRIORITY, &spi_sam_driver_api);
+#define SPI_SAM_DEVICE_INIT(n)                                                                     \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	SPI_SAM_DEFINE_CONFIG(n);                                                                  \
+	COND_CODE_1(CONFIG_SPI_RTIO, (SPI_SAM_RTIO_DEFINE(n)), ());                                  \
+	static struct spi_sam_data spi_sam_dev_data_##n = {                                        \
+		SPI_CONTEXT_INIT_LOCK(spi_sam_dev_data_##n, ctx),                                  \
+		SPI_CONTEXT_INIT_SYNC(spi_sam_dev_data_##n, ctx),                                  \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)                               \
+			IF_ENABLED(CONFIG_SPI_RTIO, (.r = &spi_sam_rtio_##n)) };                      \
+	DEVICE_DT_INST_DEFINE(n, &spi_sam_init, NULL, &spi_sam_dev_data_##n, &spi_sam_config_##n,  \
+			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &spi_sam_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_SAM_DEVICE_INIT)

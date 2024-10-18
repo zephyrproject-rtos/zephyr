@@ -29,16 +29,14 @@ struct spi_bitbang_config {
 };
 
 static int spi_bitbang_configure(const struct spi_bitbang_config *info,
-			    struct spi_bitbang_data *data,
-			    const struct spi_config *config)
+				 struct spi_bitbang_data *data, const struct spi_config *config)
 {
 	if (config->operation & SPI_OP_MODE_SLAVE) {
 		LOG_ERR("Slave mode not supported");
 		return -ENOTSUP;
 	}
 
-	if (config->operation & (SPI_TRANSFER_LSB | SPI_LINES_DUAL
-			| SPI_LINES_QUAD)) {
+	if (config->operation & (SPI_TRANSFER_LSB | SPI_LINES_DUAL | SPI_LINES_QUAD)) {
 		LOG_ERR("Unsupported configuration");
 		return -ENOTSUP;
 	}
@@ -67,10 +65,9 @@ static int spi_bitbang_configure(const struct spi_bitbang_config *info,
 	return 0;
 }
 
-static int spi_bitbang_transceive(const struct device *dev,
-			      const struct spi_config *spi_cfg,
-			      const struct spi_buf_set *tx_bufs,
-			      const struct spi_buf_set *rx_bufs)
+static int spi_bitbang_transceive(const struct device *dev, const struct spi_config *spi_cfg,
+				  const struct spi_buf_set *tx_bufs,
+				  const struct spi_buf_set *rx_bufs)
 {
 	const struct spi_bitbang_config *info = dev->config;
 	struct spi_bitbang_data *data = dev->data;
@@ -228,19 +225,16 @@ static int spi_bitbang_transceive(const struct device *dev,
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int spi_bitbang_transceive_async(const struct device *dev,
-				    const struct spi_config *spi_cfg,
-				    const struct spi_buf_set *tx_bufs,
-				    const struct spi_buf_set *rx_bufs,
-				    spi_callback_t cb,
-				    void *userdata)
+static int spi_bitbang_transceive_async(const struct device *dev, const struct spi_config *spi_cfg,
+					const struct spi_buf_set *tx_bufs,
+					const struct spi_buf_set *rx_bufs, spi_callback_t cb,
+					void *userdata)
 {
 	return -ENOTSUP;
 }
 #endif
 
-int spi_bitbang_release(const struct device *dev,
-			  const struct spi_config *config)
+int spi_bitbang_release(const struct device *dev, const struct spi_config *config)
 {
 	struct spi_bitbang_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
@@ -281,8 +275,7 @@ int spi_bitbang_init(const struct device *dev)
 			LOG_ERR("GPIO port for mosi pin is not ready");
 			return -ENODEV;
 		}
-		rc = gpio_pin_configure_dt(&config->mosi_gpio,
-				GPIO_OUTPUT_INACTIVE);
+		rc = gpio_pin_configure_dt(&config->mosi_gpio, GPIO_OUTPUT_INACTIVE);
 		if (rc < 0) {
 			LOG_ERR("Couldn't configure mosi pin; (%d)", rc);
 			return rc;
@@ -294,7 +287,6 @@ int spi_bitbang_init(const struct device *dev)
 			LOG_ERR("GPIO port for miso pin is not ready");
 			return -ENODEV;
 		}
-
 
 		rc = gpio_pin_configure_dt(&config->miso_gpio, GPIO_INPUT);
 		if (rc < 0) {
@@ -312,26 +304,20 @@ int spi_bitbang_init(const struct device *dev)
 	return 0;
 }
 
-#define SPI_BITBANG_INIT(inst)						\
-	static struct spi_bitbang_config spi_bitbang_config_##inst = {	\
-		.clk_gpio = GPIO_DT_SPEC_INST_GET(inst, clk_gpios),	\
-		.mosi_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mosi_gpios, {0}),	\
-		.miso_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, miso_gpios, {0}),	\
-	};								\
-									\
-	static struct spi_bitbang_data spi_bitbang_data_##inst = {	\
-		SPI_CONTEXT_INIT_LOCK(spi_bitbang_data_##inst, ctx),	\
-		SPI_CONTEXT_INIT_SYNC(spi_bitbang_data_##inst, ctx),	\
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx)	\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(inst,					\
-			    spi_bitbang_init,				\
-			    NULL,					\
-			    &spi_bitbang_data_##inst,			\
-			    &spi_bitbang_config_##inst,			\
-			    POST_KERNEL,				\
-			    CONFIG_SPI_INIT_PRIORITY,			\
-			    &spi_bitbang_api);
+#define SPI_BITBANG_INIT(inst)                                                                     \
+	static struct spi_bitbang_config spi_bitbang_config_##inst = {                             \
+		.clk_gpio = GPIO_DT_SPEC_INST_GET(inst, clk_gpios),                                \
+		.mosi_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mosi_gpios, {0}),                      \
+		.miso_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, miso_gpios, {0}),                      \
+	};                                                                                         \
+                                                                                                   \
+	static struct spi_bitbang_data spi_bitbang_data_##inst = {                                 \
+		SPI_CONTEXT_INIT_LOCK(spi_bitbang_data_##inst, ctx),                               \
+		SPI_CONTEXT_INIT_SYNC(spi_bitbang_data_##inst, ctx),                               \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx)};                          \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, spi_bitbang_init, NULL, &spi_bitbang_data_##inst,              \
+			      &spi_bitbang_config_##inst, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,   \
+			      &spi_bitbang_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_BITBANG_INIT)

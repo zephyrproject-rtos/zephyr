@@ -8,8 +8,7 @@
 #include <svc/pad/pad_api.h>
 #include <main/ipc.h>
 
-int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins,
-			   uint8_t pin_cnt, uintptr_t reg)
+int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintptr_t reg)
 {
 	sc_ipc_t ipc_handle;
 	int ret, i;

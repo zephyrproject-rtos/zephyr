@@ -16,42 +16,38 @@
 
 LOG_MODULE_DECLARE(bma4xx, CONFIG_SENSOR_LOG_LEVEL);
 
-static int bma4xx_i2c_read_data(const struct device *dev, uint8_t reg_addr,
-				 uint8_t *value, uint8_t len)
+static int bma4xx_i2c_read_data(const struct device *dev, uint8_t reg_addr, uint8_t *value,
+				uint8_t len)
 {
 	const struct bma4xx_config *cfg = dev->config;
 
-	return i2c_burst_read_dt(&cfg->bus_cfg.i2c, reg_addr, value,
-				 len);
+	return i2c_burst_read_dt(&cfg->bus_cfg.i2c, reg_addr, value, len);
 }
 
-static int bma4xx_i2c_write_data(const struct device *dev, uint8_t reg_addr,
-				  uint8_t *value, uint8_t len)
+static int bma4xx_i2c_write_data(const struct device *dev, uint8_t reg_addr, uint8_t *value,
+				 uint8_t len)
 {
 	const struct bma4xx_config *cfg = dev->config;
 
-	return i2c_burst_write_dt(&cfg->bus_cfg.i2c, reg_addr, value,
-				  len);
+	return i2c_burst_write_dt(&cfg->bus_cfg.i2c, reg_addr, value, len);
 }
 
-static int bma4xx_i2c_read_reg(const struct device *dev, uint8_t reg_addr,
-				uint8_t *value)
+static int bma4xx_i2c_read_reg(const struct device *dev, uint8_t reg_addr, uint8_t *value)
 {
 	const struct bma4xx_config *cfg = dev->config;
 
 	return i2c_reg_read_byte_dt(&cfg->bus_cfg.i2c, reg_addr, value);
 }
 
-static int bma4xx_i2c_write_reg(const struct device *dev, uint8_t reg_addr,
-				uint8_t value)
+static int bma4xx_i2c_write_reg(const struct device *dev, uint8_t reg_addr, uint8_t value)
 {
 	const struct bma4xx_config *cfg = dev->config;
 
 	return i2c_reg_write_byte_dt(&cfg->bus_cfg.i2c, reg_addr, value);
 }
 
-static int bma4xx_i2c_update_reg(const struct device *dev, uint8_t reg_addr,
-				  uint8_t mask, uint8_t value)
+static int bma4xx_i2c_update_reg(const struct device *dev, uint8_t reg_addr, uint8_t mask,
+				 uint8_t value)
 {
 	const struct bma4xx_config *cfg = dev->config;
 
@@ -61,8 +57,8 @@ static int bma4xx_i2c_update_reg(const struct device *dev, uint8_t reg_addr,
 static const struct bma4xx_hw_operations i2c_ops = {
 	.read_data = bma4xx_i2c_read_data,
 	.write_data = bma4xx_i2c_write_data,
-	.read_reg  = bma4xx_i2c_read_reg,
-	.write_reg  = bma4xx_i2c_write_reg,
+	.read_reg = bma4xx_i2c_read_reg,
+	.write_reg = bma4xx_i2c_write_reg,
 	.update_reg = bma4xx_i2c_update_reg,
 };
 

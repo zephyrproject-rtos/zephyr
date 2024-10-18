@@ -19,33 +19,32 @@
  *	bit[22]: 23th 32KB from 0x000a_8000 to 0x000a_ffff
  *	bit[23]: 24th 32KB from 0x000b_0000 to 0x000b_ffff
  */
-#define CACHE_AREA_CTRL_REG	0xa50
-#define CACHE_INVALID_REG	0xa54
-#define CACHE_FUNC_CTRL_REG	0xa58
+#define CACHE_AREA_CTRL_REG 0xa50
+#define CACHE_INVALID_REG   0xa54
+#define CACHE_FUNC_CTRL_REG 0xa58
 
-#define CACHED_SRAM_ADDR	CONFIG_SRAM_BASE_ADDRESS
-#define CACHED_SRAM_SIZE	KB(CONFIG_SRAM_SIZE)
-#define CACHED_SRAM_END		(CACHED_SRAM_ADDR + CACHED_SRAM_SIZE - 1)
+#define CACHED_SRAM_ADDR CONFIG_SRAM_BASE_ADDRESS
+#define CACHED_SRAM_SIZE KB(CONFIG_SRAM_SIZE)
+#define CACHED_SRAM_END  (CACHED_SRAM_ADDR + CACHED_SRAM_SIZE - 1)
 
-#define CACHE_AREA_SIZE_LOG2	15
-#define CACHE_AREA_SIZE		(1 << CACHE_AREA_SIZE_LOG2)
+#define CACHE_AREA_SIZE_LOG2 15
+#define CACHE_AREA_SIZE      (1 << CACHE_AREA_SIZE_LOG2)
 
-#define DCACHE_INVALID(addr)	(BIT(31) | ((addr & GENMASK(10, 0)) << 16))
-#define ICACHE_INVALID(addr)	(BIT(15) | ((addr & GENMASK(10, 0)) << 0))
+#define DCACHE_INVALID(addr) (BIT(31) | ((addr & GENMASK(10, 0)) << 16))
+#define ICACHE_INVALID(addr) (BIT(15) | ((addr & GENMASK(10, 0)) << 0))
 
-#define ICACHE_CLEAN		BIT(2)
-#define DCACHE_CLEAN		BIT(1)
-#define CACHE_ENABLE		BIT(0)
+#define ICACHE_CLEAN BIT(2)
+#define DCACHE_CLEAN BIT(1)
+#define CACHE_ENABLE BIT(0)
 
 /* cache size = 32B * 128 = 4KB */
-#define CACHE_LINE_SIZE_LOG2	5
-#define CACHE_LINE_SIZE		(1 << CACHE_LINE_SIZE_LOG2)
-#define N_CACHE_LINE		128
-#define CACHE_ALIGNED_ADDR(addr) \
-	((addr >> CACHE_LINE_SIZE_LOG2) << CACHE_LINE_SIZE_LOG2)
+#define CACHE_LINE_SIZE_LOG2     5
+#define CACHE_LINE_SIZE          (1 << CACHE_LINE_SIZE_LOG2)
+#define N_CACHE_LINE             128
+#define CACHE_ALIGNED_ADDR(addr) ((addr >> CACHE_LINE_SIZE_LOG2) << CACHE_LINE_SIZE_LOG2)
 
 /* prefetch buffer */
-#define PREFETCH_BUF_SIZE	CACHE_LINE_SIZE
+#define PREFETCH_BUF_SIZE CACHE_LINE_SIZE
 
 static void aspeed_cache_init(void)
 {
@@ -164,8 +163,7 @@ int cache_data_invd_range(void *addr, size_t size)
 	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
 	unsigned int key = 0;
 
-	if (((uint32_t)addr < CACHED_SRAM_ADDR) ||
-	    ((uint32_t)addr > CACHED_SRAM_END)) {
+	if (((uint32_t)addr < CACHED_SRAM_ADDR) || ((uint32_t)addr > CACHED_SRAM_END)) {
 		return 0;
 	}
 
@@ -225,8 +223,7 @@ int cache_instr_invd_range(void *addr, size_t size)
 	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
 	unsigned int key = 0;
 
-	if (((uint32_t)addr < CACHED_SRAM_ADDR) ||
-	    ((uint32_t)addr > CACHED_SRAM_END)) {
+	if (((uint32_t)addr < CACHED_SRAM_ADDR) || ((uint32_t)addr > CACHED_SRAM_END)) {
 		return 0;
 	}
 
@@ -303,7 +300,6 @@ int cache_instr_flush_and_invd_range(void *addr, size_t size)
 
 	return -ENOTSUP;
 }
-
 
 #ifdef CONFIG_DCACHE_LINE_SIZE_DETECT
 size_t cache_data_line_size_get(void)

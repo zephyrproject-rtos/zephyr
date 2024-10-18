@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(counter_gd32_timer);
 
 #define TIMER_INT_CH(ch)  (TIMER_INT_CH0 << ch)
 #define TIMER_FLAG_CH(ch) (TIMER_FLAG_CH0 << ch)
-#define TIMER_INT_ALL	  (0xFFu)
+#define TIMER_INT_ALL     (0xFFu)
 
 struct counter_gd32_ch_data {
 	counter_alarm_callback_t callback;
@@ -91,8 +91,7 @@ static void set_prescaler(const struct device *dev, uint16_t prescaler)
 	TIMER_PSC(config->reg) = prescaler;
 }
 
-static void set_compare_value(const struct device *dev, uint16_t chan,
-			      uint32_t compare_value)
+static void set_compare_value(const struct device *dev, uint16_t chan, uint32_t compare_value)
 {
 	const struct counter_gd32_config *config = dev->config;
 
@@ -130,8 +129,7 @@ static uint32_t interrupt_flag_get(const struct device *dev, uint32_t interrupt)
 {
 	const struct counter_gd32_config *config = dev->config;
 
-	return (TIMER_DMAINTEN(config->reg) & TIMER_INTF(config->reg) &
-		interrupt);
+	return (TIMER_DMAINTEN(config->reg) & TIMER_INTF(config->reg) & interrupt);
 }
 
 static void interrupt_flag_clear(const struct device *dev, uint32_t interrupt)
@@ -159,8 +157,7 @@ static int counter_gd32_timer_stop(const struct device *dev)
 	return 0;
 }
 
-static int counter_gd32_timer_get_value(const struct device *dev,
-					uint32_t *ticks)
+static int counter_gd32_timer_get_value(const struct device *dev, uint32_t *ticks)
 {
 	*ticks = get_counter(dev);
 
@@ -204,14 +201,12 @@ static void set_cc_int_pending(const struct device *dev, uint8_t chan)
 	config->set_irq_pending();
 }
 
-static int set_cc(const struct device *dev, uint8_t chan, uint32_t val,
-		  uint32_t flags)
+static int set_cc(const struct device *dev, uint8_t chan, uint32_t val, uint32_t flags)
 {
 	const struct counter_gd32_config *config = dev->config;
 	struct counter_gd32_data *data = dev->data;
 
-	__ASSERT_NO_MSG(data->guard_period <
-			counter_gd32_timer_get_top_value(dev));
+	__ASSERT_NO_MSG(data->guard_period < counter_gd32_timer_get_top_value(dev));
 	bool absolute = flags & COUNTER_ALARM_CFG_ABSOLUTE;
 	uint32_t top = counter_gd32_timer_get_top_value(dev);
 	uint32_t now, diff, max_rel_val;
@@ -275,9 +270,8 @@ static int set_cc(const struct device *dev, uint8_t chan, uint32_t val,
 	return err;
 }
 
-static int
-counter_gd32_timer_set_alarm(const struct device *dev, uint8_t chan,
-			     const struct counter_alarm_cfg *alarm_cfg)
+static int counter_gd32_timer_set_alarm(const struct device *dev, uint8_t chan,
+					const struct counter_alarm_cfg *alarm_cfg)
 {
 	struct counter_gd32_data *data = dev->data;
 	struct counter_gd32_ch_data *chdata = &data->alarm[chan];
@@ -296,8 +290,7 @@ counter_gd32_timer_set_alarm(const struct device *dev, uint8_t chan,
 	return set_cc(dev, chan, alarm_cfg->ticks, alarm_cfg->flags);
 }
 
-static int counter_gd32_timer_cancel_alarm(const struct device *dev,
-					   uint8_t chan)
+static int counter_gd32_timer_cancel_alarm(const struct device *dev, uint8_t chan)
 {
 	struct counter_gd32_data *data = dev->data;
 
@@ -360,16 +353,15 @@ static uint32_t counter_gd32_timer_get_freq(const struct device *dev)
 	return data->freq;
 }
 
-static uint32_t counter_gd32_timer_get_guard_period(const struct device *dev,
-						    uint32_t flags)
+static uint32_t counter_gd32_timer_get_guard_period(const struct device *dev, uint32_t flags)
 {
 	struct counter_gd32_data *data = dev->data;
 
 	return data->guard_period;
 }
 
-static int counter_gd32_timer_set_guard_period(const struct device *dev,
-					       uint32_t guard, uint32_t flags)
+static int counter_gd32_timer_set_guard_period(const struct device *dev, uint32_t guard,
+					       uint32_t flags)
 {
 	struct counter_gd32_data *data = dev->data;
 
@@ -430,10 +422,8 @@ static int counter_gd32_timer_init(const struct device *dev)
 	struct counter_gd32_data *data = dev->data;
 	uint32_t pclk;
 
-	clock_control_on(GD32_CLOCK_CONTROLLER,
-			 (clock_control_subsys_t)&cfg->clkid);
-	clock_control_get_rate(GD32_CLOCK_CONTROLLER,
-			       (clock_control_subsys_t)&cfg->clkid, &pclk);
+	clock_control_on(GD32_CLOCK_CONTROLLER, (clock_control_subsys_t)&cfg->clkid);
+	clock_control_get_rate(GD32_CLOCK_CONTROLLER, (clock_control_subsys_t)&cfg->clkid, &pclk);
 
 	data->freq = pclk / (cfg->prescaler + 1);
 
@@ -462,71 +452,68 @@ static const struct counter_driver_api counter_api = {
 	.get_freq = counter_gd32_timer_get_freq,
 };
 
-#define TIMER_IRQ_CONFIG(n)                                                    \
-	static void irq_config_##n(const struct device *dev)                   \
-	{                                                                      \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, global, irq),               \
-			    DT_INST_IRQ_BY_NAME(n, global, priority),          \
-			    irq_handler, DEVICE_DT_INST_GET(n), 0);            \
-		irq_enable(DT_INST_IRQ_BY_NAME(n, global, irq));               \
-	}                                                                      \
-	static void set_irq_pending_##n(void)                                  \
-	{                                                                      \
-		(NVIC_SetPendingIRQ(DT_INST_IRQ_BY_NAME(n, global, irq)));     \
-	}                                                                      \
-	static uint32_t get_irq_pending_##n(void)                              \
-	{                                                                      \
-		return NVIC_GetPendingIRQ(                                     \
-			DT_INST_IRQ_BY_NAME(n, global, irq));                  \
+#define TIMER_IRQ_CONFIG(n)                                                                        \
+	static void irq_config_##n(const struct device *dev)                                       \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, global, irq),                                   \
+			    DT_INST_IRQ_BY_NAME(n, global, priority), irq_handler,                 \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQ_BY_NAME(n, global, irq));                                   \
+	}                                                                                          \
+	static void set_irq_pending_##n(void)                                                      \
+	{                                                                                          \
+		(NVIC_SetPendingIRQ(DT_INST_IRQ_BY_NAME(n, global, irq)));                         \
+	}                                                                                          \
+	static uint32_t get_irq_pending_##n(void)                                                  \
+	{                                                                                          \
+		return NVIC_GetPendingIRQ(DT_INST_IRQ_BY_NAME(n, global, irq));                    \
 	}
 
-#define TIMER_IRQ_CONFIG_ADVANCED(n)                                           \
-	static void irq_config_##n(const struct device *dev)                   \
-	{                                                                      \
-		IRQ_CONNECT((DT_INST_IRQ_BY_NAME(n, up, irq)),                 \
-			    (DT_INST_IRQ_BY_NAME(n, up, priority)),            \
-			    irq_handler, (DEVICE_DT_INST_GET(n)), 0);          \
-		irq_enable((DT_INST_IRQ_BY_NAME(n, up, irq)));                 \
-		IRQ_CONNECT((DT_INST_IRQ_BY_NAME(n, cc, irq)),                 \
-			    (DT_INST_IRQ_BY_NAME(n, cc, priority)),            \
-			    irq_handler, (DEVICE_DT_INST_GET(n)), 0);          \
-		irq_enable((DT_INST_IRQ_BY_NAME(n, cc, irq)));                 \
-	}                                                                      \
-	static void set_irq_pending_##n(void)                                  \
-	{                                                                      \
-		(NVIC_SetPendingIRQ(DT_INST_IRQ_BY_NAME(n, cc, irq)));         \
-	}                                                                      \
-	static uint32_t get_irq_pending_##n(void)                              \
-	{                                                                      \
-		return NVIC_GetPendingIRQ(DT_INST_IRQ_BY_NAME(n, cc, irq));    \
+#define TIMER_IRQ_CONFIG_ADVANCED(n)                                                               \
+	static void irq_config_##n(const struct device *dev)                                       \
+	{                                                                                          \
+		IRQ_CONNECT((DT_INST_IRQ_BY_NAME(n, up, irq)),                                     \
+			    (DT_INST_IRQ_BY_NAME(n, up, priority)), irq_handler,                   \
+			    (DEVICE_DT_INST_GET(n)), 0);                                           \
+		irq_enable((DT_INST_IRQ_BY_NAME(n, up, irq)));                                     \
+		IRQ_CONNECT((DT_INST_IRQ_BY_NAME(n, cc, irq)),                                     \
+			    (DT_INST_IRQ_BY_NAME(n, cc, priority)), irq_handler,                   \
+			    (DEVICE_DT_INST_GET(n)), 0);                                           \
+		irq_enable((DT_INST_IRQ_BY_NAME(n, cc, irq)));                                     \
+	}                                                                                          \
+	static void set_irq_pending_##n(void)                                                      \
+	{                                                                                          \
+		(NVIC_SetPendingIRQ(DT_INST_IRQ_BY_NAME(n, cc, irq)));                             \
+	}                                                                                          \
+	static uint32_t get_irq_pending_##n(void)                                                  \
+	{                                                                                          \
+		return NVIC_GetPendingIRQ(DT_INST_IRQ_BY_NAME(n, cc, irq));                        \
 	}
 
-#define GD32_TIMER_INIT(n)                                                     \
+#define GD32_TIMER_INIT(n)                                                                         \
 	COND_CODE_1(DT_INST_PROP(n, is_advanced),                              \
-		    (TIMER_IRQ_CONFIG_ADVANCED(n)), (TIMER_IRQ_CONFIG(n)));    \
-	static struct counter_gd32_data_##n {                                  \
-		struct counter_gd32_data data;                                 \
-		struct counter_gd32_ch_data alarm[DT_INST_PROP(n, channels)];  \
-	} timer_data_##n = {0};                                                \
-	static const struct counter_gd32_config timer_config_##n = {           \
-		.counter_info = {.max_top_value = COND_CODE_1(                 \
+		    (TIMER_IRQ_CONFIG_ADVANCED(n)), (TIMER_IRQ_CONFIG(n)));            \
+	static struct counter_gd32_data_##n {                                                      \
+		struct counter_gd32_data data;                                                     \
+		struct counter_gd32_ch_data alarm[DT_INST_PROP(n, channels)];                      \
+	} timer_data_##n = {0};                                                                    \
+	static const struct counter_gd32_config timer_config_##n = {                               \
+		.counter_info = {                                                                  \
+			.max_top_value = COND_CODE_1(                 \
 					 DT_INST_PROP(n, is_32bit),            \
-					 (UINT32_MAX), (UINT16_MAX)),          \
-				 .flags = COUNTER_CONFIG_INFO_COUNT_UP,        \
-				 .freq = 0,                                    \
-				 .channels = DT_INST_PROP(n, channels)},       \
-		.reg = DT_INST_REG_ADDR(n),                                    \
-		.clkid = DT_INST_CLOCKS_CELL(n, id),                           \
-		.reset = RESET_DT_SPEC_INST_GET(n),                            \
-		.prescaler = DT_INST_PROP(n, prescaler),                       \
-		.irq_config = irq_config_##n,                                  \
-		.set_irq_pending = set_irq_pending_##n,                        \
-		.get_irq_pending = get_irq_pending_##n,                        \
-	};                                                                     \
-                                                                               \
-	DEVICE_DT_INST_DEFINE(n, counter_gd32_timer_init, NULL,                \
-			      &timer_data_##n, &timer_config_##n,              \
-			      PRE_KERNEL_1, CONFIG_COUNTER_INIT_PRIORITY,      \
+					 (UINT32_MAX), (UINT16_MAX)), .flags = COUNTER_CONFIG_INFO_COUNT_UP, \
+				 .freq = 0, .channels = DT_INST_PROP(n, channels)},                \
+						     .reg = DT_INST_REG_ADDR(n),                   \
+						     .clkid = DT_INST_CLOCKS_CELL(n, id),          \
+						     .reset = RESET_DT_SPEC_INST_GET(n),           \
+						     .prescaler = DT_INST_PROP(n, prescaler),      \
+						     .irq_config = irq_config_##n,                 \
+						     .set_irq_pending = set_irq_pending_##n,       \
+						     .get_irq_pending = get_irq_pending_##n,       \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, counter_gd32_timer_init, NULL, &timer_data_##n,                   \
+			      &timer_config_##n, PRE_KERNEL_1, CONFIG_COUNTER_INIT_PRIORITY,       \
 			      &counter_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GD32_TIMER_INIT);

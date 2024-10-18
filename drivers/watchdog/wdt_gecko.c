@@ -98,13 +98,10 @@ static int wdt_gecko_setup(const struct device *dev, uint8_t options)
 		return -EINVAL;
 	}
 
-	data->wdog_config.em2Run =
-		(options & WDT_OPT_PAUSE_IN_SLEEP) == 0U;
-	data->wdog_config.em3Run =
-		(options & WDT_OPT_PAUSE_IN_SLEEP) == 0U;
+	data->wdog_config.em2Run = (options & WDT_OPT_PAUSE_IN_SLEEP) == 0U;
+	data->wdog_config.em3Run = (options & WDT_OPT_PAUSE_IN_SLEEP) == 0U;
 
-	data->wdog_config.debugRun =
-		(options & WDT_OPT_PAUSE_HALTED_BY_DBG) == 0U;
+	data->wdog_config.debugRun = (options & WDT_OPT_PAUSE_HALTED_BY_DBG) == 0U;
 
 	if (data->callback != NULL) {
 		/* Interrupt mode for window */
@@ -137,8 +134,7 @@ static int wdt_gecko_disable(const struct device *dev)
 	return 0;
 }
 
-static int wdt_gecko_install_timeout(const struct device *dev,
-				     const struct wdt_timeout_cfg *cfg)
+static int wdt_gecko_install_timeout(const struct device *dev, const struct wdt_timeout_cfg *cfg)
 {
 	struct wdt_gecko_data *data = dev->data;
 	data->wdog_config = (WDOG_Init_TypeDef)WDOG_INIT_DEFAULT;
@@ -150,8 +146,8 @@ static int wdt_gecko_install_timeout(const struct device *dev,
 	}
 
 	if ((cfg->window.max < wdt_gecko_get_timeout_from_persel(0)) ||
-		(cfg->window.max > wdt_gecko_get_timeout_from_persel(
-			WDT_GECKO_MAX_PERIOD_SELECT_VALUE))) {
+	    (cfg->window.max >
+	     wdt_gecko_get_timeout_from_persel(WDT_GECKO_MAX_PERIOD_SELECT_VALUE))) {
 		LOG_ERR("Upper limit timeout out of range");
 		return -EINVAL;
 	}
@@ -160,20 +156,18 @@ static int wdt_gecko_install_timeout(const struct device *dev,
 	data->wdog_config.clkSel = wdogClkSelULFRCO;
 #endif
 
-	data->wdog_config.perSel = (WDOG_PeriodSel_TypeDef)
-		wdt_gecko_get_persel_from_timeout(cfg->window.max);
+	data->wdog_config.perSel =
+		(WDOG_PeriodSel_TypeDef)wdt_gecko_get_persel_from_timeout(cfg->window.max);
 
-	installed_timeout = wdt_gecko_get_timeout_from_persel(
-		data->wdog_config.perSel);
+	installed_timeout = wdt_gecko_get_timeout_from_persel(data->wdog_config.perSel);
 	LOG_INF("Installed timeout value: %u", installed_timeout);
 
 	if (cfg->window.min > 0) {
 		/* Window mode. Use rounded up timeout value to
 		 * calculate minimum window setting.
 		 */
-		data->wdog_config.winSel = (WDOG_WinSel_TypeDef)
-			wdt_gecko_convert_window(cfg->window.min,
-						installed_timeout);
+		data->wdog_config.winSel = (WDOG_WinSel_TypeDef)wdt_gecko_convert_window(
+			cfg->window.min, installed_timeout);
 
 		LOG_INF("Installed window value: %u",
 			(installed_timeout / 8) * data->wdog_config.winSel);
@@ -278,31 +272,26 @@ static const struct wdt_driver_api wdt_gecko_driver_api = {
 	.feed = wdt_gecko_feed,
 };
 
-#define GECKO_WDT_INIT(index)						\
-									\
-	static void wdt_gecko_cfg_func_##index(void);			\
-									\
-	static const struct wdt_gecko_cfg wdt_gecko_cfg_##index = {	\
-		.base = (WDOG_TypeDef *)				\
-			DT_INST_REG_ADDR(index),\
-		.clock = CLOCK_ID(DT_INST_PROP(index, peripheral_id)),  \
-		.irq_cfg_func = wdt_gecko_cfg_func_##index,		\
-	};								\
-	static struct wdt_gecko_data wdt_gecko_data_##index;		\
-									\
-	DEVICE_DT_INST_DEFINE(index,					\
-				&wdt_gecko_init, NULL,			\
-				&wdt_gecko_data_##index,		\
-				&wdt_gecko_cfg_##index, POST_KERNEL,	\
-				CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
-				&wdt_gecko_driver_api);			\
-									\
-	static void wdt_gecko_cfg_func_##index(void)			\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(index),	\
-			DT_INST_IRQ(index, priority),\
-			wdt_gecko_isr, DEVICE_DT_INST_GET(index), 0);	\
-		irq_enable(DT_INST_IRQN(index));	\
+#define GECKO_WDT_INIT(index)                                                                      \
+                                                                                                   \
+	static void wdt_gecko_cfg_func_##index(void);                                              \
+                                                                                                   \
+	static const struct wdt_gecko_cfg wdt_gecko_cfg_##index = {                                \
+		.base = (WDOG_TypeDef *)DT_INST_REG_ADDR(index),                                   \
+		.clock = CLOCK_ID(DT_INST_PROP(index, peripheral_id)),                             \
+		.irq_cfg_func = wdt_gecko_cfg_func_##index,                                        \
+	};                                                                                         \
+	static struct wdt_gecko_data wdt_gecko_data_##index;                                       \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(index, &wdt_gecko_init, NULL, &wdt_gecko_data_##index,               \
+			      &wdt_gecko_cfg_##index, POST_KERNEL,                                 \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &wdt_gecko_driver_api);         \
+                                                                                                   \
+	static void wdt_gecko_cfg_func_##index(void)                                               \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(index), DT_INST_IRQ(index, priority), wdt_gecko_isr,      \
+			    DEVICE_DT_INST_GET(index), 0);                                         \
+		irq_enable(DT_INST_IRQN(index));                                                   \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(GECKO_WDT_INIT)

@@ -16,7 +16,6 @@
 #include "fsl_common.h"
 #include "fsl_flashiap.h"
 
-
 #if DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_iap_fmc11))
 #define DT_DRV_COMPAT nxp_iap_fmc11
 #elif DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_iap_fmc54))
@@ -43,14 +42,13 @@ static const struct flash_parameters flash_lpc_parameters = {
 	.erase_value = 0xff,
 };
 
-static inline void prepare_erase_write(off_t offset, size_t len,
-						uint32_t sector_size)
+static inline void prepare_erase_write(off_t offset, size_t len, uint32_t sector_size)
 {
 	uint32_t start;
 	uint32_t stop;
 
 	start = offset / sector_size;
-	stop = (offset+len-1) / sector_size;
+	stop = (offset + len - 1) / sector_size;
 	FLASHIAP_PrepareSectorForWrite(start, stop);
 }
 
@@ -71,9 +69,8 @@ static int flash_lpc_erase(const struct device *dev, off_t offset, size_t len)
 	prepare_erase_write(offset, len, priv->sector_size);
 	page_size = flash_lpc_parameters.write_block_size;
 	start = offset / page_size;
-	stop = (offset+len-1) / page_size;
-	rc = FLASHIAP_ErasePage(start, stop,
-			CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+	stop = (offset + len - 1) / page_size;
+	rc = FLASHIAP_ErasePage(start, stop, CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 	irq_unlock(key);
 
 	k_sem_give(&priv->write_lock);
@@ -81,21 +78,19 @@ static int flash_lpc_erase(const struct device *dev, off_t offset, size_t len)
 	return (rc == kStatus_FLASHIAP_Success) ? 0 : -EINVAL;
 }
 
-static int flash_lpc_read(const struct device *dev, off_t offset,
-				void *data, size_t len)
+static int flash_lpc_read(const struct device *dev, off_t offset, void *data, size_t len)
 {
 	struct flash_priv *priv = dev->data;
 	uint32_t addr;
 
 	addr = offset + priv->pflash_block_base;
 
-	memcpy(data, (void *) addr, len);
+	memcpy(data, (void *)addr, len);
 
 	return 0;
 }
 
-static int flash_lpc_write(const struct device *dev, off_t offset,
-				const void *data, size_t len)
+static int flash_lpc_write(const struct device *dev, off_t offset, const void *data, size_t len)
 {
 	struct flash_priv *priv = dev->data;
 	uint32_t addr;
@@ -110,8 +105,8 @@ static int flash_lpc_write(const struct device *dev, off_t offset,
 
 	key = irq_lock();
 	prepare_erase_write(offset, len, priv->sector_size);
-	rc = FLASHIAP_CopyRamToFlash(addr, (uint32_t *) data, len,
-				CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+	rc = FLASHIAP_CopyRamToFlash(addr, (uint32_t *)data, len,
+				     CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 	irq_unlock(key);
 
 	k_sem_give(&priv->write_lock);
@@ -121,22 +116,20 @@ static int flash_lpc_write(const struct device *dev, off_t offset,
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 static const struct flash_pages_layout dev_layout = {
-	.pages_count = DT_REG_SIZE(SOC_NV_FLASH_NODE) /
-				DT_PROP(SOC_NV_FLASH_NODE, erase_block_size),
+	.pages_count =
+		DT_REG_SIZE(SOC_NV_FLASH_NODE) / DT_PROP(SOC_NV_FLASH_NODE, erase_block_size),
 	.pages_size = DT_PROP(SOC_NV_FLASH_NODE, erase_block_size),
 };
 
 static void flash_lpc_pages_layout(const struct device *dev,
-			const struct flash_pages_layout **layout,
-			size_t *layout_size)
+				   const struct flash_pages_layout **layout, size_t *layout_size)
 {
 	*layout = &dev_layout;
 	*layout_size = 1;
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-static const struct flash_parameters *
-flash_lpc_get_parameters(const struct device *dev)
+static const struct flash_parameters *flash_lpc_get_parameters(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -166,12 +159,11 @@ static int flash_lpc_init(const struct device *dev)
 #if defined(FSL_FEATURE_SYSCON_FLASH_SECTOR_SIZE_BYTES)
 	priv->sector_size = FSL_FEATURE_SYSCON_FLASH_SECTOR_SIZE_BYTES;
 #else
-	#error "Sector size not set"
+#error "Sector size not set"
 #endif
 
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, flash_lpc_init, NULL,
-			&flash_data, NULL, POST_KERNEL,
-			CONFIG_FLASH_INIT_PRIORITY, &flash_lpc_api);
+DEVICE_DT_INST_DEFINE(0, flash_lpc_init, NULL, &flash_data, NULL, POST_KERNEL,
+		      CONFIG_FLASH_INIT_PRIORITY, &flash_lpc_api);

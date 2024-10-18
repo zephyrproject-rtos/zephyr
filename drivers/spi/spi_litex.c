@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(spi_litex);
 
 struct spi_litex_data {
 	struct spi_context ctx;
-	uint8_t dfs;	/* dfs in bytes: 1,2,3 or 4 */
+	uint8_t dfs; /* dfs in bytes: 1,2,3 or 4 */
 };
 
 struct spi_litex_cfg {
@@ -106,8 +106,7 @@ static int spi_config(const struct device *dev, const struct spi_config *config,
 			     dev_config->loopback_addr);
 	}
 	/* Set word size */
-	*control = (uint16_t) (SPI_WORD_SIZE_GET(config->operation)
-			<< POSITION_WORD_SIZE);
+	*control = (uint16_t)(SPI_WORD_SIZE_GET(config->operation) << POSITION_WORD_SIZE);
 
 	dev_data->dfs = get_dfs_value(config);
 
@@ -119,8 +118,7 @@ static int spi_config(const struct device *dev, const struct spi_config *config,
 	return 0;
 }
 
-static void spi_litex_send(const struct device *dev, uint32_t frame,
-			   uint16_t control)
+static void spi_litex_send(const struct device *dev, uint32_t frame, uint16_t control)
 {
 	const struct spi_litex_cfg *dev_config = dev->config;
 	/* Write frame to register */
@@ -129,7 +127,7 @@ static void spi_litex_send(const struct device *dev, uint32_t frame,
 	litex_write16(control | BIT(0), dev_config->control_addr);
 	/* Wait until the transfer ends */
 	while (!(litex_read8(dev_config->status_addr) & BIT(0))) {
-		;/* Wait */
+		; /* Wait */
 	}
 }
 
@@ -141,8 +139,7 @@ static uint32_t spi_litex_recv(const struct device *dev)
 	return litex_read32(dev_config->miso_addr);
 }
 
-static void spi_litex_xfer(const struct device *dev,
-			   const struct spi_config *config,
+static void spi_litex_xfer(const struct device *dev, const struct spi_config *config,
 			   uint16_t control)
 {
 	const struct spi_litex_cfg *dev_config = dev->config;
@@ -251,13 +248,7 @@ static const struct spi_driver_api spi_litex_api = {
 		.data_width = DT_INST_PROP(n, data_width),                                         \
 		.max_cs = DT_INST_PROP(n, max_cs),                                                 \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n,                                                                   \
-			NULL,                                                                      \
-			NULL,                                                                      \
-			&spi_litex_data_##n,                                                       \
-			&spi_litex_cfg_##n,                                                        \
-			POST_KERNEL,                                                               \
-			CONFIG_SPI_INIT_PRIORITY,                                                  \
-			&spi_litex_api);
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL, &spi_litex_data_##n, &spi_litex_cfg_##n, POST_KERNEL, \
+			      CONFIG_SPI_INIT_PRIORITY, &spi_litex_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_INIT)

@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT	nxp_kinetis_dspi
+#define DT_DRV_COMPAT nxp_kinetis_dspi
 
 #include <errno.h>
 #include <zephyr/drivers/spi.h>
@@ -108,8 +108,7 @@ static int spi_mcux_transfer_next_packet(const struct device *dev)
 		if (ctx->tx_len != 0) {
 			int ret = 0;
 
-			LOG_DBG("Starting DMA Ch%u",
-				data->tx_dma_config.dma_channel);
+			LOG_DBG("Starting DMA Ch%u", data->tx_dma_config.dma_channel);
 			ret = dma_start(data->tx_dma_config.dma_dev,
 					data->tx_dma_config.dma_channel);
 			if (ret < 0) {
@@ -122,8 +121,7 @@ static int spi_mcux_transfer_next_packet(const struct device *dev)
 		if (ctx->rx_len != 0) {
 			int ret = 0;
 
-			LOG_DBG("Starting DMA Ch%u",
-				data->rx_dma_config.dma_channel);
+			LOG_DBG("Starting DMA Ch%u", data->rx_dma_config.dma_channel);
 			ret = dma_start(data->rx_dma_config.dma_dev,
 					data->rx_dma_config.dma_channel);
 			if (ret < 0) {
@@ -134,16 +132,14 @@ static int spi_mcux_transfer_next_packet(const struct device *dev)
 		}
 	}
 
-	DSPI_EnableDMA(base, (uint32_t)kDSPI_RxDmaEnable |
-					      (uint32_t)kDSPI_TxDmaEnable);
+	DSPI_EnableDMA(base, (uint32_t)kDSPI_RxDmaEnable | (uint32_t)kDSPI_TxDmaEnable);
 	DSPI_StartTransfer(base);
 
 	if (config->is_dma_chn_shared) {
 		/* in master mode start tx */
 		dma_start(data->tx_dma_config.dma_dev, data->tx_dma_config.dma_channel);
 		/* TBD kDSPI_TxFifoFillRequestFlag */
-		DSPI_EnableInterrupts(base,
-				      (uint32_t)kDSPI_RxFifoDrainRequestFlag);
+		DSPI_EnableInterrupts(base, (uint32_t)kDSPI_RxFifoDrainRequestFlag);
 		LOG_DBG("trigger tx to start master");
 	}
 
@@ -160,12 +156,12 @@ static int spi_mcux_transfer_next_packet(const struct device *dev)
 		transfer.dataSize = ctx->rx_len;
 	} else if (ctx->rx_len == 0) {
 		/* tx only, nothing to rx */
-		transfer.txData = (uint8_t *) ctx->tx_buf;
+		transfer.txData = (uint8_t *)ctx->tx_buf;
 		transfer.rxData = NULL;
 		transfer.dataSize = ctx->tx_len;
 	} else if (ctx->tx_len == ctx->rx_len) {
 		/* rx and tx are the same length */
-		transfer.txData = (uint8_t *) ctx->tx_buf;
+		transfer.txData = (uint8_t *)ctx->tx_buf;
 		transfer.rxData = ctx->rx_buf;
 		transfer.dataSize = ctx->tx_len;
 	} else if (ctx->tx_len > ctx->rx_len) {
@@ -173,7 +169,7 @@ static int spi_mcux_transfer_next_packet(const struct device *dev)
 		 * rx into a longer intermediate buffer. Leave chip select
 		 * active between transfers.
 		 */
-		transfer.txData = (uint8_t *) ctx->tx_buf;
+		transfer.txData = (uint8_t *)ctx->tx_buf;
 		transfer.rxData = ctx->rx_buf;
 		transfer.dataSize = ctx->rx_len;
 		transfer.configFlags |= kDSPI_MasterActiveAfterTransfer;
@@ -182,7 +178,7 @@ static int spi_mcux_transfer_next_packet(const struct device *dev)
 		 * tx from a longer intermediate buffer. Leave chip select
 		 * active between transfers.
 		 */
-		transfer.txData = (uint8_t *) ctx->tx_buf;
+		transfer.txData = (uint8_t *)ctx->tx_buf;
 		transfer.rxData = ctx->rx_buf;
 		transfer.dataSize = ctx->tx_len;
 		transfer.configFlags |= kDSPI_MasterActiveAfterTransfer;
@@ -212,8 +208,7 @@ static void spi_mcux_isr(const struct device *dev)
 #ifdef CONFIG_DSPI_MCUX_EDMA
 	LOG_DBG("isr is called");
 
-	if (0U != (DSPI_GetStatusFlags(base) &
-		   (uint32_t)kDSPI_RxFifoDrainRequestFlag)) {
+	if (0U != (DSPI_GetStatusFlags(base) & (uint32_t)kDSPI_RxFifoDrainRequestFlag)) {
 		/* start rx */
 		dma_start(data->rx_dma_config.dma_dev, data->rx_dma_config.dma_channel);
 	}
@@ -224,8 +219,7 @@ static void spi_mcux_isr(const struct device *dev)
 
 #ifdef CONFIG_DSPI_MCUX_EDMA
 
-static void mcux_init_inner_buffer_with_cmd(const struct device *dev,
-					    uint16_t dummy)
+static void mcux_init_inner_buffer_with_cmd(const struct device *dev, uint16_t dummy)
 {
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
@@ -290,8 +284,7 @@ static int mcux_spi_context_data_update(const struct device *dev)
 				*pcdata |= temp_data;
 				pcdata++;
 				i++;
-			} while (i < ctx->current_tx->len &&
-				 i < data->inner_tx_buffer->len);
+			} while (i < ctx->current_tx->len && i < data->inner_tx_buffer->len);
 		}
 		/* indicate it is the last data */
 		if (i == ctx->current_tx->len) {
@@ -310,8 +303,7 @@ static int mcux_spi_context_data_update(const struct device *dev)
 				pdata++;
 				pcdata++;
 				i += 2;
-			} while (i < ctx->current_tx->len &&
-				 i < data->inner_tx_buffer->len);
+			} while (i < ctx->current_tx->len && i < data->inner_tx_buffer->len);
 		}
 		if (i == ctx->current_tx->len) {
 			/* indicate it is the last data */
@@ -349,27 +341,23 @@ static int update_tx_dma(const struct device *dev)
 	if (data->ctx.current_tx && data->ctx.current_tx->len > 0 &&
 	    data->ctx.current_tx->buf != NULL) {
 #ifdef CONFIG_MCUX_DSPI_EDMA_SHUFFLE_DATA
-		tx_size = get_size_byte_by_frame_size(data->transfer_len,
-						      frame_size);
+		tx_size = get_size_byte_by_frame_size(data->transfer_len, frame_size);
 		tx_buf = data->inner_tx_buffer->buf;
 #else
 		/* expect the buffer is pre-set */
-		tx_size = get_size_byte_by_frame_size(data->ctx.current_tx->len,
-						      frame_size);
+		tx_size = get_size_byte_by_frame_size(data->ctx.current_tx->len, frame_size);
 		LOG_DBG("tx size is %d", tx_size);
 		tx_buf = data->ctx.current_tx->buf;
 #endif
 	} else {
 		tx_buf = data->inner_tx_buffer->buf;
-		tx_size = get_size_byte_by_frame_size(data->transfer_len,
-						      frame_size);
+		tx_size = get_size_byte_by_frame_size(data->transfer_len, frame_size);
 		rx_only = true;
 		LOG_DBG("rx only 0x%x, size %d", (uint32_t)tx_buf, tx_size);
 	}
 
 	data->tx_dma_block.source_address = (uint32_t)tx_buf;
-	data->tx_dma_block.dest_address =
-		DSPI_MasterGetTxRegisterAddress(base);
+	data->tx_dma_block.dest_address = DSPI_MasterGetTxRegisterAddress(base);
 	data->tx_dma_block.next_block = NULL;
 	if (config->is_dma_chn_shared) {
 		/* transfer FIFO size data */
@@ -378,7 +366,7 @@ static int update_tx_dma(const struct device *dev)
 		data->tx_dma_block.block_size = tx_size;
 	}
 
-	data->tx_dma_config.dma_cfg.user_data = (void *) dev;
+	data->tx_dma_config.dma_cfg.user_data = (void *)dev;
 	dma_config(data->tx_dma_config.dma_dev, data->tx_dma_config.dma_channel,
 		   (struct dma_config *)&data->tx_dma_config.dma_cfg);
 
@@ -431,29 +419,25 @@ static int update_rx_dma(const struct device *dev)
 		}
 
 		data->rx_dma_block.dest_address = (uint32_t)rx_buf;
-		data->rx_dma_block.source_address =
-			DSPI_GetRxRegisterAddress(base);
+		data->rx_dma_block.source_address = DSPI_GetRxRegisterAddress(base);
 		/* do once in share mode */
 		data->rx_dma_block.block_size = frame_size_byte;
-		data->rx_dma_config.dma_cfg.source_burst_length =
-			frame_size_byte;
+		data->rx_dma_config.dma_cfg.source_burst_length = frame_size_byte;
 		data->rx_dma_config.dma_cfg.dest_burst_length = frame_size_byte;
 		data->rx_dma_config.dma_cfg.source_data_size = frame_size_byte;
 		data->rx_dma_config.dma_cfg.dest_data_size = frame_size_byte;
 
 	} else {
 		data->rx_dma_block.dest_address = (uint32_t)rx_buf;
-		data->rx_dma_block.source_address =
-			DSPI_GetRxRegisterAddress(base);
+		data->rx_dma_block.source_address = DSPI_GetRxRegisterAddress(base);
 		data->rx_dma_block.block_size = rx_size;
-		data->rx_dma_config.dma_cfg.source_burst_length =
-			frame_size_byte;
+		data->rx_dma_config.dma_cfg.source_burst_length = frame_size_byte;
 		data->rx_dma_config.dma_cfg.dest_burst_length = frame_size_byte;
 		data->rx_dma_config.dma_cfg.source_data_size = frame_size_byte;
 		data->rx_dma_config.dma_cfg.dest_data_size = frame_size_byte;
 	}
 
-	data->rx_dma_config.dma_cfg.user_data = (void *) dev;
+	data->rx_dma_config.dma_cfg.user_data = (void *)dev;
 	dma_config(data->rx_dma_config.dma_dev, data->rx_dma_config.dma_channel,
 		   (struct dma_config *)&data->rx_dma_config.dma_cfg);
 
@@ -473,8 +457,8 @@ static int configure_dma(const struct device *dev)
 	return 0;
 }
 
-static void dma_callback(const struct device *dma_dev, void *callback_arg,
-			 uint32_t channel, int error_code)
+static void dma_callback(const struct device *dma_dev, void *callback_arg, uint32_t channel,
+			 int error_code)
 {
 	const struct device *dev = (const struct device *)callback_arg;
 	const struct spi_mcux_config *config = dev->config;
@@ -494,8 +478,7 @@ static void dma_callback(const struct device *dma_dev, void *callback_arg,
 
 		spi_context_update_tx(&data->ctx, 1, data->transfer_len);
 		LOG_DBG("tx count %d", data->ctx.tx_count);
-		LOG_DBG("tx buf/len %p/%zu", data->ctx.tx_buf,
-			data->ctx.tx_len);
+		LOG_DBG("tx buf/len %p/%zu", data->ctx.tx_buf, data->ctx.tx_len);
 		data->tx_transfer_count++;
 		/* tx done */
 	} else {
@@ -504,8 +487,7 @@ static void dma_callback(const struct device *dma_dev, void *callback_arg,
 		spi_context_update_rx(&data->ctx, 1, data->transfer_len);
 		LOG_DBG("rx count %d", data->ctx.rx_count);
 		/* setup the inner tx buffer */
-		LOG_DBG("rx buf/len %p/%zu", data->ctx.rx_buf,
-			data->ctx.rx_len);
+		LOG_DBG("rx buf/len %p/%zu", data->ctx.rx_buf, data->ctx.rx_len);
 		data->rx_transfer_count++;
 	}
 
@@ -513,8 +495,7 @@ static void dma_callback(const struct device *dma_dev, void *callback_arg,
 		LOG_DBG("start next packet");
 		DSPI_StopTransfer(base);
 		DSPI_FlushFifo(base, true, true);
-		DSPI_ClearStatusFlags(base,
-				      (uint32_t)kDSPI_AllStatusFlag);
+		DSPI_ClearStatusFlags(base, (uint32_t)kDSPI_AllStatusFlag);
 		mcux_init_inner_buffer_with_cmd(dev, 0);
 		mcux_spi_context_data_update(dev);
 
@@ -526,10 +507,9 @@ static void dma_callback(const struct device *dma_dev, void *callback_arg,
 			} else if (data->ctx.rx_len == 0) {
 				data->transfer_len = data->ctx.tx_len;
 			} else {
-				data->transfer_len =
-					data->ctx.tx_len > data->ctx.rx_len ?
-						data->ctx.rx_len :
-						data->ctx.tx_len;
+				data->transfer_len = data->ctx.tx_len > data->ctx.rx_len
+							     ? data->ctx.rx_len
+							     : data->ctx.tx_len;
 			}
 		}
 		update_tx_dma(dev);
@@ -539,8 +519,7 @@ static void dma_callback(const struct device *dma_dev, void *callback_arg,
 		LOG_DBG("end of transfer");
 		DSPI_StopTransfer(base);
 		DSPI_FlushFifo(base, true, true);
-		DSPI_ClearStatusFlags(base,
-				      (uint32_t)kDSPI_AllStatusFlag);
+		DSPI_ClearStatusFlags(base, (uint32_t)kDSPI_AllStatusFlag);
 		data->transfer_len = 0;
 		spi_mcux_transfer_next_packet(dev);
 	}
@@ -549,8 +528,8 @@ static void dma_callback(const struct device *dma_dev, void *callback_arg,
 
 #else
 
-static void spi_mcux_master_transfer_callback(SPI_Type *base,
-	      dspi_master_handle_t *handle, status_t status, void *userData)
+static void spi_mcux_master_transfer_callback(SPI_Type *base, dspi_master_handle_t *handle,
+					      status_t status, void *userData)
 {
 	struct spi_mcux_data *data = userData;
 
@@ -562,8 +541,7 @@ static void spi_mcux_master_transfer_callback(SPI_Type *base,
 
 #endif /* CONFIG_DSPI_MCUX_EDMA */
 
-static int spi_mcux_configure(const struct device *dev,
-			      const struct spi_config *spi_cfg)
+static int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cfg)
 {
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
@@ -588,45 +566,39 @@ static int spi_mcux_configure(const struct device *dev,
 
 	master_config.whichPcs = 1U << spi_cfg->slave;
 	master_config.whichCtar = config->which_ctar;
-	master_config.pcsActiveHighOrLow =
-		(spi_cfg->operation & SPI_CS_ACTIVE_HIGH) ?
-			kDSPI_PcsActiveHigh :
-			kDSPI_PcsActiveLow;
+	master_config.pcsActiveHighOrLow = (spi_cfg->operation & SPI_CS_ACTIVE_HIGH)
+						   ? kDSPI_PcsActiveHigh
+						   : kDSPI_PcsActiveLow;
 	master_config.samplePoint = config->samplePoint;
 	master_config.enableContinuousSCK = config->enable_continuous_sck;
 	master_config.enableRxFifoOverWrite = config->enable_rxfifo_overwrite;
-	master_config.enableModifiedTimingFormat =
-		config->enable_modified_timing_format;
+	master_config.enableModifiedTimingFormat = config->enable_modified_timing_format;
 
 	if (spi_cfg->slave > FSL_FEATURE_DSPI_CHIP_SELECT_COUNT) {
-		LOG_ERR("Slave %d is greater than %d",
-			    spi_cfg->slave, FSL_FEATURE_DSPI_CHIP_SELECT_COUNT);
+		LOG_ERR("Slave %d is greater than %d", spi_cfg->slave,
+			FSL_FEATURE_DSPI_CHIP_SELECT_COUNT);
 		return -EINVAL;
 	}
 
 	word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
 	if (word_size > FSL_FEATURE_DSPI_MAX_DATA_WIDTH) {
-		LOG_ERR("Word size %d is greater than %d",
-			    word_size, FSL_FEATURE_DSPI_MAX_DATA_WIDTH);
+		LOG_ERR("Word size %d is greater than %d", word_size,
+			FSL_FEATURE_DSPI_MAX_DATA_WIDTH);
 		return -EINVAL;
 	}
 
 	ctar_config->bitsPerFrame = word_size;
 
-	ctar_config->cpol =
-		(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)
-		? kDSPI_ClockPolarityActiveLow
-		: kDSPI_ClockPolarityActiveHigh;
+	ctar_config->cpol = (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)
+				    ? kDSPI_ClockPolarityActiveLow
+				    : kDSPI_ClockPolarityActiveHigh;
 
-	ctar_config->cpha =
-		(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA)
-		? kDSPI_ClockPhaseSecondEdge
-		: kDSPI_ClockPhaseFirstEdge;
+	ctar_config->cpha = (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA)
+				    ? kDSPI_ClockPhaseSecondEdge
+				    : kDSPI_ClockPhaseFirstEdge;
 
 	ctar_config->direction =
-		(spi_cfg->operation & SPI_TRANSFER_LSB)
-		? kDSPI_LsbFirst
-		: kDSPI_MsbFirst;
+		(spi_cfg->operation & SPI_TRANSFER_LSB) ? kDSPI_LsbFirst : kDSPI_MsbFirst;
 
 	ctar_config->baudRate = spi_cfg->frequency;
 
@@ -639,8 +611,7 @@ static int spi_mcux_configure(const struct device *dev,
 		return -ENODEV;
 	}
 
-	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
-				   &clock_freq)) {
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_freq)) {
 		return -EINVAL;
 	}
 
@@ -660,8 +631,7 @@ static int spi_mcux_configure(const struct device *dev,
 	mcux_init_inner_buffer_with_cmd(dev, 0);
 #endif
 #else
-	DSPI_MasterTransferCreateHandle(base, &data->handle,
-					spi_mcux_master_transfer_callback,
+	DSPI_MasterTransferCreateHandle(base, &data->handle, spi_mcux_master_transfer_callback,
 					data);
 
 	DSPI_SetDummyData(base, 0);
@@ -672,13 +642,9 @@ static int spi_mcux_configure(const struct device *dev,
 	return 0;
 }
 
-static int transceive(const struct device *dev,
-		      const struct spi_config *spi_cfg,
-		      const struct spi_buf_set *tx_bufs,
-		      const struct spi_buf_set *rx_bufs,
-		      bool asynchronous,
-		      spi_callback_t cb,
-		      void *userdata)
+static int transceive(const struct device *dev, const struct spi_config *spi_cfg,
+		      const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs,
+		      bool asynchronous, spi_callback_t cb, void *userdata)
 {
 	struct spi_mcux_data *data = dev->data;
 	int ret;
@@ -708,9 +674,8 @@ static int transceive(const struct device *dev,
 	if (config->is_dma_chn_shared) {
 		data->transfer_len = data->frame_size >> 3;
 	} else {
-		data->transfer_len = data->ctx.tx_len > data->ctx.rx_len ?
-					     data->ctx.rx_len :
-					     data->ctx.tx_len;
+		data->transfer_len =
+			data->ctx.tx_len > data->ctx.rx_len ? data->ctx.rx_len : data->ctx.tx_len;
 	}
 	data->tx_transfer_count = 0;
 	data->rx_transfer_count = 0;
@@ -729,28 +694,23 @@ out:
 	return ret;
 }
 
-static int spi_mcux_transceive(const struct device *dev,
-			       const struct spi_config *spi_cfg,
-			       const struct spi_buf_set *tx_bufs,
-			       const struct spi_buf_set *rx_bufs)
+static int spi_mcux_transceive(const struct device *dev, const struct spi_config *spi_cfg,
+			       const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs)
 {
 	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int spi_mcux_transceive_async(const struct device *dev,
-				     const struct spi_config *spi_cfg,
+static int spi_mcux_transceive_async(const struct device *dev, const struct spi_config *spi_cfg,
 				     const struct spi_buf_set *tx_bufs,
-				     const struct spi_buf_set *rx_bufs,
-				     spi_callback_t cb,
+				     const struct spi_buf_set *rx_bufs, spi_callback_t cb,
 				     void *userdata)
 {
 	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, true, cb, userdata);
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static int spi_mcux_release(const struct device *dev,
-			    const struct spi_config *spi_cfg)
+static int spi_mcux_release(const struct device *dev, const struct spi_config *spi_cfg)
 {
 	struct spi_mcux_data *data = dev->data;
 
@@ -770,11 +730,9 @@ static int spi_mcux_init(const struct device *dev)
 	const struct device *dma_dev;
 
 	dma_dev = data->rx_dma_config.dma_dev;
-	data->rx_dma_config.dma_channel =
-	  dma_request_channel(dma_dev, (void *)&spi_filter);
+	data->rx_dma_config.dma_channel = dma_request_channel(dma_dev, (void *)&spi_filter);
 	dma_dev = data->tx_dma_config.dma_dev;
-	data->tx_dma_config.dma_channel =
-	  dma_request_channel(dma_dev, (void *)&spi_filter);
+	data->tx_dma_config.dma_channel = dma_request_channel(dma_dev, (void *)&spi_filter);
 #else
 	config->irq_config_func(dev);
 #endif
@@ -806,70 +764,64 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 	.release = spi_mcux_release,
 };
 
-
 /* if a then b otherwise return 1 */
 #define _UTIL_AND2(a, b) COND_CODE_1(UTIL_BOOL(a), (b), (1))
 
 #ifdef CONFIG_DSPI_MCUX_EDMA
 
-#define TX_BUFFER(id)							\
-	static uint32_t							\
-		edma_tx_buffer_##id[CONFIG_MCUX_DSPI_BUFFER_SIZE >> 2];	\
-	static struct spi_buf spi_edma_tx_buffer_##id = {		\
-		.buf = edma_tx_buffer_##id,				\
-		.len = CONFIG_MCUX_DSPI_BUFFER_SIZE,			\
+#define TX_BUFFER(id)                                                                              \
+	static uint32_t edma_tx_buffer_##id[CONFIG_MCUX_DSPI_BUFFER_SIZE >> 2];                    \
+	static struct spi_buf spi_edma_tx_buffer_##id = {                                          \
+		.buf = edma_tx_buffer_##id,                                                        \
+		.len = CONFIG_MCUX_DSPI_BUFFER_SIZE,                                               \
 	}
 
-#define RX_BUFFER(id)							\
-	static uint32_t							\
-		edma_rx_buffer_##id[CONFIG_MCUX_DSPI_BUFFER_SIZE >> 2];	\
-	static struct spi_buf spi_edma_rx_buffer_##id = {		\
-		.buf = edma_rx_buffer_##id,				\
-		.len = CONFIG_MCUX_DSPI_BUFFER_SIZE,			\
+#define RX_BUFFER(id)                                                                              \
+	static uint32_t edma_rx_buffer_##id[CONFIG_MCUX_DSPI_BUFFER_SIZE >> 2];                    \
+	static struct spi_buf spi_edma_rx_buffer_##id = {                                          \
+		.buf = edma_rx_buffer_##id,                                                        \
+		.len = CONFIG_MCUX_DSPI_BUFFER_SIZE,                                               \
 	}
 
-#define TX_DMA_CONFIG(id)						\
-	.inner_tx_buffer = &spi_edma_tx_buffer_##id,			\
-	.tx_dma_config = {						\
-		.dma_dev =						\
-		    DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, tx)),	\
-		.dma_cfg = {						\
-			.source_burst_length = 4,			\
-			.dest_burst_length = 4,				\
-			.source_data_size = 4,				\
-			.dest_data_size = 4,				\
-			.dma_callback = dma_callback,			\
-			.complete_callback_en = 1,			\
-			.error_callback_dis = 0,			\
-			.block_count = 1,				\
-			.head_block = &spi_mcux_data_##id.tx_dma_block,	\
-			.channel_direction = MEMORY_TO_PERIPHERAL,	\
-			.dma_slot = DT_INST_DMAS_CELL_BY_NAME(		\
-				id, tx, source),			\
-		},							\
+#define TX_DMA_CONFIG(id)                                                                          \
+	.inner_tx_buffer = &spi_edma_tx_buffer_##id,                                               \
+	.tx_dma_config = {                                                                         \
+		.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, tx)),                       \
+		.dma_cfg =                                                                         \
+			{                                                                          \
+				.source_burst_length = 4,                                          \
+				.dest_burst_length = 4,                                            \
+				.source_data_size = 4,                                             \
+				.dest_data_size = 4,                                               \
+				.dma_callback = dma_callback,                                      \
+				.complete_callback_en = 1,                                         \
+				.error_callback_dis = 0,                                           \
+				.block_count = 1,                                                  \
+				.head_block = &spi_mcux_data_##id.tx_dma_block,                    \
+				.channel_direction = MEMORY_TO_PERIPHERAL,                         \
+				.dma_slot = DT_INST_DMAS_CELL_BY_NAME(id, tx, source),             \
+			},                                                                         \
 	},
 
-#define RX_DMA_CONFIG(id)						\
-	.inner_rx_buffer = &spi_edma_rx_buffer_##id,			\
-	.rx_dma_config = {						\
-		.dma_dev =						\
-		    DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, rx)),	\
-		.dma_cfg = {						\
-			.source_burst_length = 2,			\
-			.dest_burst_length = 2,				\
-			.source_data_size = 2,				\
-			.dest_data_size = 2,				\
-			.dma_callback = dma_callback,			\
-			.complete_callback_en = 1,			\
-			.error_callback_dis = 0,			\
-			.block_count =					\
-			_UTIL_AND2(DT_INST_NODE_HAS_PROP(		\
-				id, nxp_rx_tx_chn_share), 2),		\
-			.head_block = &spi_mcux_data_##id.rx_dma_block,	\
-			.channel_direction = PERIPHERAL_TO_MEMORY,	\
-			.dma_slot = DT_INST_DMAS_CELL_BY_NAME(		\
-				id, rx, source),			\
-		},							\
+#define RX_DMA_CONFIG(id)                                                                          \
+	.inner_rx_buffer = &spi_edma_rx_buffer_##id,                                               \
+	.rx_dma_config = {                                                                         \
+		.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, rx)),                       \
+		.dma_cfg =                                                                         \
+			{                                                                          \
+				.source_burst_length = 2,                                          \
+				.dest_burst_length = 2,                                            \
+				.source_data_size = 2,                                             \
+				.dest_data_size = 2,                                               \
+				.dma_callback = dma_callback,                                      \
+				.complete_callback_en = 1,                                         \
+				.error_callback_dis = 0,                                           \
+				.block_count = _UTIL_AND2(                                         \
+					DT_INST_NODE_HAS_PROP(id, nxp_rx_tx_chn_share), 2),        \
+				.head_block = &spi_mcux_data_##id.rx_dma_block,                    \
+				.channel_direction = PERIPHERAL_TO_MEMORY,                         \
+				.dma_slot = DT_INST_DMAS_CELL_BY_NAME(id, rx, source),             \
+			},                                                                         \
 	},
 #else
 #define TX_BUFFER(id)
@@ -879,58 +831,39 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 
 #endif
 
-#define SPI_MCUX_DSPI_DEVICE(id)					\
-	PINCTRL_DT_INST_DEFINE(id);					\
-	static void spi_mcux_config_func_##id(const struct device *dev);\
-	TX_BUFFER(id);							\
-	RX_BUFFER(id);							\
-	static struct spi_mcux_data spi_mcux_data_##id = {		\
-		SPI_CONTEXT_INIT_LOCK(spi_mcux_data_##id, ctx),		\
-		SPI_CONTEXT_INIT_SYNC(spi_mcux_data_##id, ctx),		\
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(id), ctx)	\
-		TX_DMA_CONFIG(id) RX_DMA_CONFIG(id)			\
-	};								\
-	static const struct spi_mcux_config spi_mcux_config_##id = {	\
-		.base = (SPI_Type *)DT_INST_REG_ADDR(id),		\
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),	\
-		.clock_subsys = 					\
-		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),	\
-		.irq_config_func = spi_mcux_config_func_##id,		\
-		.pcs_sck_delay =					\
-		    DT_INST_PROP_OR(id, pcs_sck_delay, 0),		\
-		.sck_pcs_delay =					\
-		    DT_INST_PROP_OR(id, sck_pcs_delay, 0),		\
-		.transfer_delay =					\
-		    DT_INST_PROP_OR(id, transfer_delay, 0),		\
-		.which_ctar =						\
-		    DT_INST_PROP_OR(id, ctar, 0),			\
-		.samplePoint =						\
-		    DT_INST_PROP_OR(id, sample_point, 0),		\
-		.enable_continuous_sck =					\
-		    DT_INST_PROP(id, continuous_sck),			\
-		.enable_rxfifo_overwrite =				\
-		    DT_INST_PROP(id, rx_fifo_overwrite),		\
-		.enable_modified_timing_format =				\
-		    DT_INST_PROP(id, modified_timing_format),		\
-		.is_dma_chn_shared =					\
-		    DT_INST_PROP(id, nxp_rx_tx_chn_share),		\
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),		\
-	};								\
-	DEVICE_DT_INST_DEFINE(id,					\
-			    spi_mcux_init,				\
-			    NULL,					\
-			    &spi_mcux_data_##id,			\
-			    &spi_mcux_config_##id,			\
-			    POST_KERNEL,				\
-			    CONFIG_SPI_INIT_PRIORITY,		\
-			    &spi_mcux_driver_api);			\
-	static void spi_mcux_config_func_##id(const struct device *dev)	\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(id),				\
-			    DT_INST_IRQ(id, priority),			\
-			    spi_mcux_isr, DEVICE_DT_INST_GET(id),	\
-			    0);						\
-		irq_enable(DT_INST_IRQN(id));				\
+#define SPI_MCUX_DSPI_DEVICE(id)                                                                   \
+	PINCTRL_DT_INST_DEFINE(id);                                                                \
+	static void spi_mcux_config_func_##id(const struct device *dev);                           \
+	TX_BUFFER(id);                                                                             \
+	RX_BUFFER(id);                                                                             \
+	static struct spi_mcux_data spi_mcux_data_##id = {                                         \
+		SPI_CONTEXT_INIT_LOCK(spi_mcux_data_##id, ctx),                                    \
+		SPI_CONTEXT_INIT_SYNC(spi_mcux_data_##id, ctx),                                    \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(id), ctx) TX_DMA_CONFIG(id)            \
+			RX_DMA_CONFIG(id)};                                                        \
+	static const struct spi_mcux_config spi_mcux_config_##id = {                               \
+		.base = (SPI_Type *)DT_INST_REG_ADDR(id),                                          \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),                               \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),             \
+		.irq_config_func = spi_mcux_config_func_##id,                                      \
+		.pcs_sck_delay = DT_INST_PROP_OR(id, pcs_sck_delay, 0),                            \
+		.sck_pcs_delay = DT_INST_PROP_OR(id, sck_pcs_delay, 0),                            \
+		.transfer_delay = DT_INST_PROP_OR(id, transfer_delay, 0),                          \
+		.which_ctar = DT_INST_PROP_OR(id, ctar, 0),                                        \
+		.samplePoint = DT_INST_PROP_OR(id, sample_point, 0),                               \
+		.enable_continuous_sck = DT_INST_PROP(id, continuous_sck),                         \
+		.enable_rxfifo_overwrite = DT_INST_PROP(id, rx_fifo_overwrite),                    \
+		.enable_modified_timing_format = DT_INST_PROP(id, modified_timing_format),         \
+		.is_dma_chn_shared = DT_INST_PROP(id, nxp_rx_tx_chn_share),                        \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),                                      \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(id, spi_mcux_init, NULL, &spi_mcux_data_##id, &spi_mcux_config_##id, \
+			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &spi_mcux_driver_api);        \
+	static void spi_mcux_config_func_##id(const struct device *dev)                            \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), spi_mcux_isr,             \
+			    DEVICE_DT_INST_GET(id), 0);                                            \
+		irq_enable(DT_INST_IRQN(id));                                                      \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_MCUX_DSPI_DEVICE)

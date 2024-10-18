@@ -22,8 +22,8 @@
 enum xilinx_wdt_axi_register {
 	REG_TWCSR0 = 0x00, /* Control/Status Register 0 */
 	REG_TWCSR1 = 0x04, /* Control/Status Register 1 */
-	REG_TBR = 0x08,	   /* Timebase Register */
-	REG_MWR = 0x0C,	   /* Master Write Control Register */
+	REG_TBR = 0x08,    /* Timebase Register */
+	REG_MWR = 0x0C,    /* Master Write Control Register */
 };
 
 enum xilinx_wdt_csr0_bits {

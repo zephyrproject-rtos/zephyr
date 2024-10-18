@@ -35,37 +35,37 @@ struct i2c_rcar_data {
 };
 
 /* Registers */
-#define RCAR_I2C_ICSCR          0x00    /* Slave Control Register */
-#define RCAR_I2C_ICMCR          0x04    /* Master Control Register */
-#define RCAR_I2C_ICSIER         0x10    /* Slave IRQ Enable */
-#define RCAR_I2C_ICMIER         0x14    /* Master IRQ Enable */
-#define RCAR_I2C_ICSSR          0x08    /* Slave Status */
-#define RCAR_I2C_ICMSR          0x0c    /* Master Status */
-#define RCAR_I2C_ICCCR          0x18    /* Clock Control Register */
-#define RCAR_I2C_ICSAR          0x1c    /* Slave Address Register */
-#define RCAR_I2C_ICMAR          0x20    /* Master Address Register */
-#define RCAR_I2C_ICRXD_ICTXD    0x24    /* Receive Transmit Data Register */
-#define RCAR_I2C_ICFBSCR        0x38    /* First Bit Setup Cycle (Gen3).*/
-#define RCAR_I2C_ICFBSCR_TCYC17 0x0f    /* 17*Tcyc */
+#define RCAR_I2C_ICSCR          0x00 /* Slave Control Register */
+#define RCAR_I2C_ICMCR          0x04 /* Master Control Register */
+#define RCAR_I2C_ICSIER         0x10 /* Slave IRQ Enable */
+#define RCAR_I2C_ICMIER         0x14 /* Master IRQ Enable */
+#define RCAR_I2C_ICSSR          0x08 /* Slave Status */
+#define RCAR_I2C_ICMSR          0x0c /* Master Status */
+#define RCAR_I2C_ICCCR          0x18 /* Clock Control Register */
+#define RCAR_I2C_ICSAR          0x1c /* Slave Address Register */
+#define RCAR_I2C_ICMAR          0x20 /* Master Address Register */
+#define RCAR_I2C_ICRXD_ICTXD    0x24 /* Receive Transmit Data Register */
+#define RCAR_I2C_ICFBSCR        0x38 /* First Bit Setup Cycle (Gen3).*/
+#define RCAR_I2C_ICFBSCR_TCYC17 0x0f /* 17*Tcyc */
 
-#define RCAR_I2C_ICMCR_MDBS     BIT(7)  /* Master Data Buffer Select */
-#define RCAR_I2C_ICMCR_FSCL     BIT(6)  /* Forced SCL */
-#define RCAR_I2C_ICMCR_FSDA     BIT(5)  /* Forced SDA */
-#define RCAR_I2C_ICMCR_OBPC     BIT(4)  /* Override Bus Pin Control */
-#define RCAR_I2C_ICMCR_MIE      BIT(3)  /* Master Interface Enable */
-#define RCAR_I2C_ICMCR_TSBE     BIT(2)  /* Start Byte Transmission Enable */
-#define RCAR_I2C_ICMCR_FSB      BIT(1)  /* Forced Stop onto the Bus */
-#define RCAR_I2C_ICMCR_ESG      BIT(0)  /* Enable Start Generation */
-#define RCAR_I2C_ICMCR_MASTER   (RCAR_I2C_ICMCR_MDBS | RCAR_I2C_ICMCR_MIE)
+#define RCAR_I2C_ICMCR_MDBS   BIT(7) /* Master Data Buffer Select */
+#define RCAR_I2C_ICMCR_FSCL   BIT(6) /* Forced SCL */
+#define RCAR_I2C_ICMCR_FSDA   BIT(5) /* Forced SDA */
+#define RCAR_I2C_ICMCR_OBPC   BIT(4) /* Override Bus Pin Control */
+#define RCAR_I2C_ICMCR_MIE    BIT(3) /* Master Interface Enable */
+#define RCAR_I2C_ICMCR_TSBE   BIT(2) /* Start Byte Transmission Enable */
+#define RCAR_I2C_ICMCR_FSB    BIT(1) /* Forced Stop onto the Bus */
+#define RCAR_I2C_ICMCR_ESG    BIT(0) /* Enable Start Generation */
+#define RCAR_I2C_ICMCR_MASTER (RCAR_I2C_ICMCR_MDBS | RCAR_I2C_ICMCR_MIE)
 
 /* Bits to manage ICMIER and ICMSR registers */
-#define RCAR_I2C_MNR            BIT(6)  /* Master Nack Received */
-#define RCAR_I2C_MAL            BIT(5)  /* Master Arbitration lost */
-#define RCAR_I2C_MST            BIT(4)  /* Master Stop Transmitted */
-#define RCAR_I2C_MDE            BIT(3)  /* Master Data Empty */
-#define RCAR_I2C_MDT            BIT(2)  /* Master Data Transmitted */
-#define RCAR_I2C_MDR            BIT(1)  /* Master Data Received */
-#define RCAR_I2C_MAT            BIT(0)  /* Master Address Transmitted */
+#define RCAR_I2C_MNR BIT(6) /* Master Nack Received */
+#define RCAR_I2C_MAL BIT(5) /* Master Arbitration lost */
+#define RCAR_I2C_MST BIT(4) /* Master Stop Transmitted */
+#define RCAR_I2C_MDE BIT(3) /* Master Data Empty */
+#define RCAR_I2C_MDT BIT(2) /* Master Data Transmitted */
+#define RCAR_I2C_MDR BIT(1) /* Master Data Received */
+#define RCAR_I2C_MAT BIT(0) /* Master Address Transmitted */
 
 /* Recommended bitrate settings from official documentation */
 #define RCAR_I2C_ICCCR_CDF_100_KHZ  6
@@ -75,14 +75,12 @@ struct i2c_rcar_data {
 
 #define MAX_WAIT_US 100
 
-static uint32_t i2c_rcar_read(const struct i2c_rcar_cfg *config,
-			      uint32_t offs)
+static uint32_t i2c_rcar_read(const struct i2c_rcar_cfg *config, uint32_t offs)
 {
 	return sys_read32(config->reg_addr + offs);
 }
 
-static void i2c_rcar_write(const struct i2c_rcar_cfg *config,
-			   uint32_t offs, uint32_t value)
+static void i2c_rcar_write(const struct i2c_rcar_cfg *config, uint32_t offs, uint32_t value)
 {
 	sys_write32(value, config->reg_addr + offs);
 }
@@ -92,8 +90,7 @@ static void i2c_rcar_isr(const struct device *dev)
 	const struct i2c_rcar_cfg *config = dev->config;
 	struct i2c_rcar_data *data = dev->data;
 
-	if (((i2c_rcar_read(config, RCAR_I2C_ICMSR)) & data->status_mask) ==
-	    data->status_mask) {
+	if (((i2c_rcar_read(config, RCAR_I2C_ICMSR))&data->status_mask) == data->status_mask) {
 		k_sem_give(&data->int_sem);
 		i2c_rcar_write(config, RCAR_I2C_ICMIER, 0);
 	}
@@ -135,8 +132,7 @@ static int i2c_rcar_finish(const struct device *dev)
 	return ret;
 }
 
-static int i2c_rcar_set_addr(const struct device *dev,
-			     uint8_t chip, uint8_t read)
+static int i2c_rcar_set_addr(const struct device *dev, uint8_t chip, uint8_t read)
 {
 	const struct i2c_rcar_cfg *config = dev->config;
 
@@ -167,8 +163,8 @@ static int i2c_rcar_transfer_msg(const struct device *dev, struct i2c_msg *msg)
 
 		for (i = 0; i < msg->len; i++) {
 			if (msg->len - 1 == i) {
-				i2c_rcar_write(config, RCAR_I2C_ICMCR, RCAR_I2C_ICMCR_MASTER |
-					       RCAR_I2C_ICMCR_FSB);
+				i2c_rcar_write(config, RCAR_I2C_ICMCR,
+					       RCAR_I2C_ICMCR_MASTER | RCAR_I2C_ICMCR_FSB);
 			}
 
 			/* Start data reception */
@@ -207,8 +203,7 @@ static int i2c_rcar_transfer_msg(const struct device *dev, struct i2c_msg *msg)
 	return ret;
 }
 
-static int i2c_rcar_transfer(const struct device *dev,
-			     struct i2c_msg *msgs, uint8_t num_msgs,
+static int i2c_rcar_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
 			     uint16_t addr)
 {
 	const struct i2c_rcar_cfg *config = dev->config;
@@ -325,8 +320,7 @@ static int i2c_rcar_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = clock_control_on(config->clock_dev,
-			       (clock_control_subsys_t)&config->mod_clk);
+	ret = clock_control_on(config->clock_dev, (clock_control_subsys_t)&config->mod_clk);
 
 	if (ret != 0) {
 		return ret;
@@ -353,37 +347,26 @@ static const struct i2c_driver_api i2c_rcar_driver_api = {
 };
 
 /* Device Instantiation */
-#define I2C_RCAR_INIT(n)						       \
-	static void i2c_rcar_##n##_init(const struct device *dev);	       \
-	static const struct i2c_rcar_cfg i2c_rcar_cfg_##n = {		       \
-		.reg_addr = DT_INST_REG_ADDR(n),			       \
-		.init_func = i2c_rcar_##n##_init,			       \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	       \
-		.bitrate = DT_INST_PROP(n, clock_frequency),		       \
-		.mod_clk.module =					       \
-			DT_INST_CLOCKS_CELL_BY_IDX(n, 0, module),	       \
-		.mod_clk.domain =					       \
-			DT_INST_CLOCKS_CELL_BY_IDX(n, 0, domain),	       \
-	};								       \
-									       \
-	static struct i2c_rcar_data i2c_rcar_data_##n;			       \
-									       \
-	I2C_DEVICE_DT_INST_DEFINE(n,					       \
-			      i2c_rcar_init,				       \
-			      NULL,					       \
-			      &i2c_rcar_data_##n,			       \
-			      &i2c_rcar_cfg_##n,			       \
-			      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,	       \
-			      &i2c_rcar_driver_api			       \
-			      );					       \
-	static void i2c_rcar_##n##_init(const struct device *dev)	       \
-	{								       \
-		IRQ_CONNECT(DT_INST_IRQN(n),				       \
-			    0,						       \
-			    i2c_rcar_isr,				       \
-			    DEVICE_DT_INST_GET(n), 0);			       \
-									       \
-		irq_enable(DT_INST_IRQN(n));				       \
+#define I2C_RCAR_INIT(n)                                                                           \
+	static void i2c_rcar_##n##_init(const struct device *dev);                                 \
+	static const struct i2c_rcar_cfg i2c_rcar_cfg_##n = {                                      \
+		.reg_addr = DT_INST_REG_ADDR(n),                                                   \
+		.init_func = i2c_rcar_##n##_init,                                                  \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
+		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
+		.mod_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, module),                        \
+		.mod_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, domain),                        \
+	};                                                                                         \
+                                                                                                   \
+	static struct i2c_rcar_data i2c_rcar_data_##n;                                             \
+                                                                                                   \
+	I2C_DEVICE_DT_INST_DEFINE(n, i2c_rcar_init, NULL, &i2c_rcar_data_##n, &i2c_rcar_cfg_##n,   \
+				  POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &i2c_rcar_driver_api);    \
+	static void i2c_rcar_##n##_init(const struct device *dev)                                  \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), 0, i2c_rcar_isr, DEVICE_DT_INST_GET(n), 0);           \
+                                                                                                   \
+		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_RCAR_INIT)

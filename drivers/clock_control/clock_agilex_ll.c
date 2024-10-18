@@ -16,10 +16,10 @@
  * register access. This allow Zephyr to re-use the ATF driver codes
  * without massive changes.
  */
-#define mmio_write_32(addr, data)	sys_write32((data), (addr))
-#define mmio_read_32(addr)		sys_read32((addr))
-#define mmio_setbits_32(addr, mask)	sys_set_bits((addr), (mask))
-#define mmio_clrbits_32(addr, mask)	sys_clear_bits((addr), (mask))
+#define mmio_write_32(addr, data)   sys_write32((data), (addr))
+#define mmio_read_32(addr)          sys_read32((addr))
+#define mmio_setbits_32(addr, mask) sys_set_bits((addr), (mask))
+#define mmio_clrbits_32(addr, mask) sys_clear_bits((addr), (mask))
 
 /* Extract reference clock from platform clock source */
 uint32_t get_ref_clk(uint32_t pllglob)
@@ -87,8 +87,7 @@ uint32_t get_l3_clk(void)
 {
 	uint32_t l3_clk;
 
-	l3_clk = get_clk_freq(CLKMGR_MAINPLL_NOCCLK, CLKMGR_MAINPLL_PLLC1,
-				CLKMGR_PERPLL_PLLC1);
+	l3_clk = get_clk_freq(CLKMGR_MAINPLL_NOCCLK, CLKMGR_MAINPLL_PLLC1, CLKMGR_PERPLL_PLLC1);
 	return l3_clk;
 }
 
@@ -97,8 +96,7 @@ uint32_t get_mpu_clk(void)
 {
 	uint32_t mpu_clk = 0;
 
-	mpu_clk = get_clk_freq(CLKMGR_MAINPLL_MPUCLK, CLKMGR_MAINPLL_PLLC0,
-				CLKMGR_PERPLL_PLLC0);
+	mpu_clk = get_clk_freq(CLKMGR_MAINPLL_MPUCLK, CLKMGR_MAINPLL_PLLC0, CLKMGR_PERPLL_PLLC0);
 	return mpu_clk;
 }
 
@@ -133,8 +131,7 @@ uint32_t get_mmc_clk(void)
 {
 	uint32_t data32, mmc_clk;
 
-	mmc_clk = get_clk_freq(CLKMGR_ALTERA_SDMMCCTR,
-		CLKMGR_MAINPLL_PLLC3, CLKMGR_PERPLL_PLLC3);
+	mmc_clk = get_clk_freq(CLKMGR_ALTERA_SDMMCCTR, CLKMGR_MAINPLL_PLLC3, CLKMGR_PERPLL_PLLC3);
 
 	data32 = mmio_read_32(CLKMGR_ALTERA + CLKMGR_ALTERA_SDMMCCTR);
 	data32 = (data32 & 0x7ff) + 1;

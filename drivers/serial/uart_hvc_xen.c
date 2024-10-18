@@ -38,8 +38,7 @@ static int read_from_ring(const struct device *dev, char *str, int len)
 	XENCONS_RING_IDX in_idx = 0;
 
 	compiler_barrier();
-	__ASSERT((prod - cons) <= sizeof(hvc_data->intf->in),
-			"Invalid input ring buffer");
+	__ASSERT((prod - cons) <= sizeof(hvc_data->intf->in), "Invalid input ring buffer");
 
 	while (cons != prod && recv < len) {
 		in_idx = MASK_XENCONS_IDX(cons, hvc_data->intf->in);
@@ -64,8 +63,7 @@ static int write_to_ring(const struct device *dev, const char *str, int len)
 	XENCONS_RING_IDX out_idx = 0;
 
 	compiler_barrier();
-	__ASSERT((prod - cons) <= sizeof(hvc_data->intf->out),
-			"Invalid output ring buffer");
+	__ASSERT((prod - cons) <= sizeof(hvc_data->intf->out), "Invalid output ring buffer");
 
 	while ((sent < len) && ((prod - cons) < sizeof(hvc_data->intf->out))) {
 		out_idx = MASK_XENCONS_IDX(prod, hvc_data->intf->out);
@@ -84,8 +82,7 @@ static int write_to_ring(const struct device *dev, const char *str, int len)
 	return sent;
 }
 
-static int xen_hvc_poll_in(const struct device *dev,
-			unsigned char *c)
+static int xen_hvc_poll_in(const struct device *dev, unsigned char *c)
 {
 	int ret = 0;
 	char temp;
@@ -100,16 +97,14 @@ static int xen_hvc_poll_in(const struct device *dev,
 	return 0;
 }
 
-static void xen_hvc_poll_out(const struct device *dev,
-			unsigned char c)
+static void xen_hvc_poll_out(const struct device *dev, unsigned char c)
 {
 	/* Not a good solution (notifying HV every time), but needed for poll_out */
-	(void) write_to_ring(dev, &c, sizeof(c));
+	(void)write_to_ring(dev, &c, sizeof(c));
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static int xen_hvc_fifo_fill(const struct device *dev, const uint8_t *tx_data,
-			 int len)
+static int xen_hvc_fifo_fill(const struct device *dev, const uint8_t *tx_data, int len)
 {
 	int ret = 0, sent = 0;
 
@@ -129,8 +124,7 @@ static int xen_hvc_fifo_fill(const struct device *dev, const uint8_t *tx_data,
 	return ret;
 }
 
-static int xen_hvc_fifo_read(const struct device *dev, uint8_t *rx_data,
-			 const int size)
+static int xen_hvc_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
 {
 	return read_from_ring(dev, rx_data, size);
 }
@@ -188,8 +182,8 @@ static int xen_hvc_irq_update(const struct device *dev)
 	return 1;
 }
 
-static void xen_hvc_irq_callback_set(const struct device *dev,
-		 uart_irq_callback_user_data_t cb, void *user_data)
+static void xen_hvc_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
+				     void *user_data)
 {
 	struct hvc_xen_data *data = dev->data;
 
@@ -237,23 +231,20 @@ int xen_console_init(const struct device *dev)
 
 	ret = hvm_get_parameter(HVM_PARAM_CONSOLE_EVTCHN, DOMID_SELF, &data->evtchn);
 	if (ret) {
-		LOG_ERR("%s: failed to get Xen console evtchn, ret = %d\n",
-				__func__, ret);
+		LOG_ERR("%s: failed to get Xen console evtchn, ret = %d\n", __func__, ret);
 		return ret;
 	}
 
 	ret = hvm_get_parameter(HVM_PARAM_CONSOLE_PFN, DOMID_SELF, &console_pfn);
 	if (ret) {
-		LOG_ERR("%s: failed to get Xen console PFN, ret = %d\n",
-				__func__, ret);
+		LOG_ERR("%s: failed to get Xen console PFN, ret = %d\n", __func__, ret);
 		return ret;
 	}
 
-	console_addr = (uintptr_t) (console_pfn << XEN_PAGE_SHIFT);
-	device_map(DEVICE_MMIO_RAM_PTR(dev), console_addr, XEN_PAGE_SIZE,
-		K_MEM_CACHE_WB);
+	console_addr = (uintptr_t)(console_pfn << XEN_PAGE_SHIFT);
+	device_map(DEVICE_MMIO_RAM_PTR(dev), console_addr, XEN_PAGE_SIZE, K_MEM_CACHE_WB);
 
-	data->intf = (struct xencons_interface *) DEVICE_MMIO_GET(dev);
+	data->intf = (struct xencons_interface *)DEVICE_MMIO_GET(dev);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	bind_event_channel(data->evtchn, hvc_uart_evtchn_cb, data);
@@ -264,20 +255,17 @@ int xen_console_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_DEFINE(DT_NODELABEL(xen_hvc), xen_console_init, NULL, &xen_hvc_data,
-		NULL, PRE_KERNEL_1, CONFIG_XEN_HVC_INIT_PRIORITY,
-		&xen_hvc_api);
+DEVICE_DT_DEFINE(DT_NODELABEL(xen_hvc), xen_console_init, NULL, &xen_hvc_data, NULL, PRE_KERNEL_1,
+		 CONFIG_XEN_HVC_INIT_PRIORITY, &xen_hvc_api);
 
 #ifdef CONFIG_XEN_EARLY_CONSOLEIO
 int xen_consoleio_putc(int c)
 {
-	char symbol = (char) c;
+	char symbol = (char)c;
 
 	HYPERVISOR_console_io(CONSOLEIO_write, sizeof(symbol), &symbol);
 	return c;
 }
-
-
 
 int consoleio_hooks_set(void)
 {

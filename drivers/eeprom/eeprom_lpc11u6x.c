@@ -28,8 +28,7 @@ struct eeprom_lpc11u6x_config {
 	size_t size;
 };
 
-static int eeprom_lpc11u6x_read(const struct device *dev,
-				off_t offset, void *data, size_t len)
+static int eeprom_lpc11u6x_read(const struct device *dev, off_t offset, void *data, size_t len)
 {
 	const struct eeprom_lpc11u6x_config *config = dev->config;
 	uint32_t cmd[5];
@@ -46,23 +45,23 @@ static int eeprom_lpc11u6x_read(const struct device *dev,
 
 	cmd[0] = IAP_CMD_EEPROM_READ;
 	cmd[1] = offset;
-	cmd[2] = (uint32_t) data;
+	cmd[2] = (uint32_t)data;
 	cmd[3] = len;
 	cmd[4] = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / 1000;
 
 	ret = iap_cmd(cmd);
 
 	if (ret != IAP_STATUS_CMD_SUCCESS) {
-		LOG_ERR("failed to read EEPROM (offset=%08x len=%d err=%d)",
-			(unsigned int) offset, len, ret);
+		LOG_ERR("failed to read EEPROM (offset=%08x len=%d err=%d)", (unsigned int)offset,
+			len, ret);
 		return -EINVAL;
 	}
 
 	return 0;
 }
 
-static int eeprom_lpc11u6x_write(const struct device *dev,
-				 off_t offset, const void *data, size_t len)
+static int eeprom_lpc11u6x_write(const struct device *dev, off_t offset, const void *data,
+				 size_t len)
 {
 	const struct eeprom_lpc11u6x_config *config = dev->config;
 	uint32_t cmd[5];
@@ -79,15 +78,15 @@ static int eeprom_lpc11u6x_write(const struct device *dev,
 
 	cmd[0] = IAP_CMD_EEPROM_WRITE;
 	cmd[1] = offset;
-	cmd[2] = (uint32_t) data;
+	cmd[2] = (uint32_t)data;
 	cmd[3] = len;
 	cmd[4] = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / 1000;
 
 	ret = iap_cmd(cmd);
 
 	if (ret != IAP_STATUS_CMD_SUCCESS) {
-		LOG_ERR("failed to write EEPROM (offset=%08x len=%d err=%d)",
-			(unsigned int) offset, len, ret);
+		LOG_ERR("failed to write EEPROM (offset=%08x len=%d err=%d)", (unsigned int)offset,
+			len, ret);
 		return -EINVAL;
 	}
 
@@ -111,5 +110,5 @@ static const struct eeprom_lpc11u6x_config eeprom_config = {
 	.size = DT_INST_PROP(0, size),
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &eeprom_config, POST_KERNEL,
-		      CONFIG_EEPROM_INIT_PRIORITY, &eeprom_lpc11u6x_api);
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &eeprom_config, POST_KERNEL, CONFIG_EEPROM_INIT_PRIORITY,
+		      &eeprom_lpc11u6x_api);

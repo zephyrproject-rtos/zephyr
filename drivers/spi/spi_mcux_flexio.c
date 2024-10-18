@@ -20,7 +20,6 @@ LOG_MODULE_REGISTER(spi_mcux_flexio_spi, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_context.h"
 
-
 struct spi_mcux_flexio_config {
 	FLEXIO_SPI_Type *flexio_spi;
 	const struct device *flexio_dev;
@@ -35,7 +34,6 @@ struct spi_mcux_flexio_data {
 	size_t transfer_len;
 	uint8_t transfer_flags;
 };
-
 
 static void spi_mcux_transfer_next_packet(const struct device *dev)
 {
@@ -61,12 +59,12 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 		transfer.dataSize = ctx->rx_len;
 	} else if (ctx->rx_len == 0) {
 		/* tx only, nothing to rx */
-		transfer.txData = (uint8_t *) ctx->tx_buf;
+		transfer.txData = (uint8_t *)ctx->tx_buf;
 		transfer.rxData = NULL;
 		transfer.dataSize = ctx->tx_len;
 	} else if (ctx->tx_len == ctx->rx_len) {
 		/* rx and tx are the same length */
-		transfer.txData = (uint8_t *) ctx->tx_buf;
+		transfer.txData = (uint8_t *)ctx->tx_buf;
 		transfer.rxData = ctx->rx_buf;
 		transfer.dataSize = ctx->tx_len;
 	} else if (ctx->tx_len > ctx->rx_len) {
@@ -74,7 +72,7 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 		 * rx into a longer intermediate buffer. Leave chip select
 		 * active between transfers.
 		 */
-		transfer.txData = (uint8_t *) ctx->tx_buf;
+		transfer.txData = (uint8_t *)ctx->tx_buf;
 		transfer.rxData = ctx->rx_buf;
 		transfer.dataSize = ctx->rx_len;
 	} else {
@@ -82,15 +80,14 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 		 * tx from a longer intermediate buffer. Leave chip select
 		 * active between transfers.
 		 */
-		transfer.txData = (uint8_t *) ctx->tx_buf;
+		transfer.txData = (uint8_t *)ctx->tx_buf;
 		transfer.rxData = ctx->rx_buf;
 		transfer.dataSize = ctx->tx_len;
 	}
 
 	data->transfer_len = transfer.dataSize;
 
-	status = FLEXIO_SPI_MasterTransferNonBlocking(config->flexio_spi, &data->handle,
-						 &transfer);
+	status = FLEXIO_SPI_MasterTransferNonBlocking(config->flexio_spi, &data->handle, &transfer);
 	if (status != kStatus_Success) {
 		LOG_ERR("Transfer could not start");
 	}
@@ -104,8 +101,9 @@ static int spi_mcux_flexio_isr(void *user_data)
 
 #if defined(CONFIG_SOC_SERIES_KE1XZ)
 	/* Wait until data transfer complete. */
-	WAIT_FOR((0U == (FLEXIO_SPI_GetStatusFlags(config->flexio_spi)
-		& (uint32_t)kFLEXIO_SPI_TxBufferEmptyFlag)), 100, NULL);
+	WAIT_FOR((0U == (FLEXIO_SPI_GetStatusFlags(config->flexio_spi) &
+			 (uint32_t)kFLEXIO_SPI_TxBufferEmptyFlag)),
+		 100, NULL);
 #endif
 	FLEXIO_SPI_MasterTransferHandleIRQ(config->flexio_spi, &data->handle);
 
@@ -113,7 +111,8 @@ static int spi_mcux_flexio_isr(void *user_data)
 }
 
 static void spi_mcux_master_transfer_callback(FLEXIO_SPI_Type *flexio_spi,
-	flexio_spi_master_handle_t *handle, status_t status, void *userData)
+					      flexio_spi_master_handle_t *handle, status_t status,
+					      void *userData)
 {
 	struct spi_mcux_flexio_data *data = userData;
 
@@ -124,14 +123,14 @@ static void spi_mcux_master_transfer_callback(FLEXIO_SPI_Type *flexio_spi,
 }
 
 static void spi_flexio_master_init(FLEXIO_SPI_Type *base, flexio_spi_master_config_t *masterConfig,
-	uint8_t pol, uint32_t srcClock_Hz)
+				   uint8_t pol, uint32_t srcClock_Hz)
 {
 	assert(base != NULL);
 	assert(masterConfig != NULL);
 
 	flexio_shifter_config_t shifterConfig;
 	flexio_timer_config_t timerConfig;
-	uint32_t ctrlReg  = 0;
+	uint32_t ctrlReg = 0;
 	uint16_t timerDiv = 0;
 	uint16_t timerCmp = 0;
 
@@ -141,11 +140,11 @@ static void spi_flexio_master_init(FLEXIO_SPI_Type *base, flexio_spi_master_conf
 
 	/* Configure FLEXIO SPI Master */
 	ctrlReg = base->flexioBase->CTRL;
-	ctrlReg &= ~(FLEXIO_CTRL_DOZEN_MASK | FLEXIO_CTRL_DBGE_MASK |
-			FLEXIO_CTRL_FASTACC_MASK | FLEXIO_CTRL_FLEXEN_MASK);
+	ctrlReg &= ~(FLEXIO_CTRL_DOZEN_MASK | FLEXIO_CTRL_DBGE_MASK | FLEXIO_CTRL_FASTACC_MASK |
+		     FLEXIO_CTRL_FLEXEN_MASK);
 	ctrlReg |= (FLEXIO_CTRL_DBGE(masterConfig->enableInDebug) |
-		FLEXIO_CTRL_FASTACC(masterConfig->enableFastAccess) |
-		FLEXIO_CTRL_FLEXEN(masterConfig->enableMaster));
+		    FLEXIO_CTRL_FASTACC(masterConfig->enableFastAccess) |
+		    FLEXIO_CTRL_FLEXEN(masterConfig->enableMaster));
 	if (!masterConfig->enableInDoze) {
 		ctrlReg |= FLEXIO_CTRL_DOZEN_MASK;
 	}
@@ -155,31 +154,31 @@ static void spi_flexio_master_init(FLEXIO_SPI_Type *base, flexio_spi_master_conf
 	/* Do hardware configuration. */
 	/* 1. Configure the shifter 0 for tx. */
 	shifterConfig.timerSelect = base->timerIndex[0];
-	shifterConfig.pinConfig   = kFLEXIO_PinConfigOutput;
-	shifterConfig.pinSelect   = base->SDOPinIndex;
+	shifterConfig.pinConfig = kFLEXIO_PinConfigOutput;
+	shifterConfig.pinSelect = base->SDOPinIndex;
 	shifterConfig.pinPolarity = kFLEXIO_PinActiveHigh;
 	shifterConfig.shifterMode = kFLEXIO_ShifterModeTransmit;
 	shifterConfig.inputSource = kFLEXIO_ShifterInputFromPin;
 	if (masterConfig->phase == kFLEXIO_SPI_ClockPhaseFirstEdge) {
 		shifterConfig.timerPolarity = kFLEXIO_ShifterTimerPolarityOnNegitive;
-		shifterConfig.shifterStop   = kFLEXIO_ShifterStopBitDisable;
-		shifterConfig.shifterStart  = kFLEXIO_ShifterStartBitDisabledLoadDataOnEnable;
+		shifterConfig.shifterStop = kFLEXIO_ShifterStopBitDisable;
+		shifterConfig.shifterStart = kFLEXIO_ShifterStartBitDisabledLoadDataOnEnable;
 	} else {
 		shifterConfig.timerPolarity = kFLEXIO_ShifterTimerPolarityOnPositive;
-		shifterConfig.shifterStop   = kFLEXIO_ShifterStopBitLow;
-		shifterConfig.shifterStart  = kFLEXIO_ShifterStartBitDisabledLoadDataOnShift;
+		shifterConfig.shifterStop = kFLEXIO_ShifterStopBitLow;
+		shifterConfig.shifterStart = kFLEXIO_ShifterStartBitDisabledLoadDataOnShift;
 	}
 
 	FLEXIO_SetShifterConfig(base->flexioBase, base->shifterIndex[0], &shifterConfig);
 
 	/* 2. Configure the shifter 1 for rx. */
-	shifterConfig.timerSelect  = base->timerIndex[0];
-	shifterConfig.pinConfig    = kFLEXIO_PinConfigOutputDisabled;
-	shifterConfig.pinSelect    = base->SDIPinIndex;
-	shifterConfig.pinPolarity  = kFLEXIO_PinActiveHigh;
-	shifterConfig.shifterMode  = kFLEXIO_ShifterModeReceive;
-	shifterConfig.inputSource  = kFLEXIO_ShifterInputFromPin;
-	shifterConfig.shifterStop  = kFLEXIO_ShifterStopBitDisable;
+	shifterConfig.timerSelect = base->timerIndex[0];
+	shifterConfig.pinConfig = kFLEXIO_PinConfigOutputDisabled;
+	shifterConfig.pinSelect = base->SDIPinIndex;
+	shifterConfig.pinPolarity = kFLEXIO_PinActiveHigh;
+	shifterConfig.shifterMode = kFLEXIO_ShifterModeReceive;
+	shifterConfig.inputSource = kFLEXIO_ShifterInputFromPin;
+	shifterConfig.shifterStop = kFLEXIO_ShifterStopBitDisable;
 	shifterConfig.shifterStart = kFLEXIO_ShifterStartBitDisabledLoadDataOnEnable;
 	if (masterConfig->phase == kFLEXIO_SPI_ClockPhaseFirstEdge) {
 		shifterConfig.timerPolarity = kFLEXIO_ShifterTimerPolarityOnPositive;
@@ -190,20 +189,20 @@ static void spi_flexio_master_init(FLEXIO_SPI_Type *base, flexio_spi_master_conf
 	FLEXIO_SetShifterConfig(base->flexioBase, base->shifterIndex[1], &shifterConfig);
 
 	/*3. Configure the timer 0 for SCK. */
-	timerConfig.triggerSelect   = FLEXIO_TIMER_TRIGGER_SEL_SHIFTnSTAT(base->shifterIndex[0]);
+	timerConfig.triggerSelect = FLEXIO_TIMER_TRIGGER_SEL_SHIFTnSTAT(base->shifterIndex[0]);
 	timerConfig.triggerPolarity = kFLEXIO_TimerTriggerPolarityActiveLow;
-	timerConfig.triggerSource   = kFLEXIO_TimerTriggerSourceInternal;
-	timerConfig.pinConfig       = kFLEXIO_PinConfigOutput;
-	timerConfig.pinSelect       = base->SCKPinIndex;
-	timerConfig.pinPolarity     = pol ? kFLEXIO_PinActiveLow : kFLEXIO_PinActiveHigh;
-	timerConfig.timerMode       = kFLEXIO_TimerModeDual8BitBaudBit;
-	timerConfig.timerOutput     = kFLEXIO_TimerOutputZeroNotAffectedByReset;
-	timerConfig.timerDecrement  = kFLEXIO_TimerDecSrcOnFlexIOClockShiftTimerOutput;
-	timerConfig.timerReset      = kFLEXIO_TimerResetNever;
-	timerConfig.timerDisable    = kFLEXIO_TimerDisableOnTimerCompare;
-	timerConfig.timerEnable     = kFLEXIO_TimerEnableOnTriggerHigh;
-	timerConfig.timerStop       = kFLEXIO_TimerStopBitEnableOnTimerDisable;
-	timerConfig.timerStart      = kFLEXIO_TimerStartBitEnabled;
+	timerConfig.triggerSource = kFLEXIO_TimerTriggerSourceInternal;
+	timerConfig.pinConfig = kFLEXIO_PinConfigOutput;
+	timerConfig.pinSelect = base->SCKPinIndex;
+	timerConfig.pinPolarity = pol ? kFLEXIO_PinActiveLow : kFLEXIO_PinActiveHigh;
+	timerConfig.timerMode = kFLEXIO_TimerModeDual8BitBaudBit;
+	timerConfig.timerOutput = kFLEXIO_TimerOutputZeroNotAffectedByReset;
+	timerConfig.timerDecrement = kFLEXIO_TimerDecSrcOnFlexIOClockShiftTimerOutput;
+	timerConfig.timerReset = kFLEXIO_TimerResetNever;
+	timerConfig.timerDisable = kFLEXIO_TimerDisableOnTimerCompare;
+	timerConfig.timerEnable = kFLEXIO_TimerEnableOnTriggerHigh;
+	timerConfig.timerStop = kFLEXIO_TimerStopBitEnableOnTimerDisable;
+	timerConfig.timerStart = kFLEXIO_TimerStartBitEnabled;
 	/* Low 8-bits are used to configure baudrate. */
 	timerDiv = (uint16_t)(srcClock_Hz / masterConfig->baudRate_Bps);
 	timerDiv = timerDiv / 2U - 1U;
@@ -216,8 +215,7 @@ static void spi_flexio_master_init(FLEXIO_SPI_Type *base, flexio_spi_master_conf
 	FLEXIO_SetTimerConfig(base->flexioBase, base->timerIndex[0], &timerConfig);
 }
 
-static int spi_mcux_flexio_configure(const struct device *dev,
-	const struct spi_config *spi_cfg)
+static int spi_mcux_flexio_configure(const struct device *dev, const struct spi_config *spi_cfg)
 {
 	const struct spi_mcux_flexio_config *config = dev->config;
 	struct spi_mcux_flexio_data *data = dev->data;
@@ -272,18 +270,16 @@ static int spi_mcux_flexio_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	master_config.phase =
-		(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA)
-		? kFLEXIO_SPI_ClockPhaseSecondEdge
-		: kFLEXIO_SPI_ClockPhaseFirstEdge;
+	master_config.phase = (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA)
+				      ? kFLEXIO_SPI_ClockPhaseSecondEdge
+				      : kFLEXIO_SPI_ClockPhaseFirstEdge;
 
 	master_config.baudRate_Bps = spi_cfg->frequency;
 	spi_flexio_master_init(config->flexio_spi, &master_config,
-		(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL), clock_freq);
+			       (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL), clock_freq);
 
 	FLEXIO_SPI_MasterTransferCreateHandle(config->flexio_spi, &data->handle,
-					spi_mcux_master_transfer_callback,
-					data);
+					      spi_mcux_master_transfer_callback, data);
 	/* No SetDummyData() for FlexIO_SPI */
 
 	data->ctx.config = spi_cfg;
@@ -291,14 +287,9 @@ static int spi_mcux_flexio_configure(const struct device *dev,
 	return 0;
 }
 
-
-static int transceive(const struct device *dev,
-			const struct spi_config *spi_cfg,
-			const struct spi_buf_set *tx_bufs,
-			const struct spi_buf_set *rx_bufs,
-			bool asynchronous,
-			spi_callback_t cb,
-			void *userdata)
+static int transceive(const struct device *dev, const struct spi_config *spi_cfg,
+		      const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs,
+		      bool asynchronous, spi_callback_t cb, void *userdata)
 {
 	const struct spi_mcux_flexio_config *config = dev->config;
 	struct spi_mcux_flexio_data *data = dev->data;
@@ -332,28 +323,23 @@ out:
 	return ret;
 }
 
-static int spi_mcux_transceive(const struct device *dev,
-				const struct spi_config *spi_cfg,
-				const struct spi_buf_set *tx_bufs,
-				const struct spi_buf_set *rx_bufs)
+static int spi_mcux_transceive(const struct device *dev, const struct spi_config *spi_cfg,
+			       const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs)
 {
 	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int spi_mcux_transceive_async(const struct device *dev,
-				const struct spi_config *spi_cfg,
-				const struct spi_buf_set *tx_bufs,
-				const struct spi_buf_set *rx_bufs,
-				spi_callback_t cb,
-				void *userdata)
+static int spi_mcux_transceive_async(const struct device *dev, const struct spi_config *spi_cfg,
+				     const struct spi_buf_set *tx_bufs,
+				     const struct spi_buf_set *rx_bufs, spi_callback_t cb,
+				     void *userdata)
 {
 	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, true, cb, userdata);
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static int spi_mcux_release(const struct device *dev,
-				const struct spi_config *spi_cfg)
+static int spi_mcux_release(const struct device *dev, const struct spi_config *spi_cfg)
 {
 	struct spi_mcux_flexio_data *data = dev->data;
 
@@ -405,44 +391,38 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 	.release = spi_mcux_release,
 };
 
-#define SPI_MCUX_FLEXIO_SPI_INIT(n)					\
-	PINCTRL_DT_INST_DEFINE(n);					\
-									\
-	static FLEXIO_SPI_Type flexio_spi_##n = {			\
-		.flexioBase = (FLEXIO_Type *)DT_REG_ADDR(DT_INST_PARENT(n)), \
-		.SDOPinIndex = DT_INST_PROP(n, sdo_pin),		\
-		.SDIPinIndex = DT_INST_PROP(n, sdi_pin),		\
-		.SCKPinIndex = DT_INST_PROP(n, sck_pin),		\
-	};								\
-									\
-	static const struct nxp_flexio_child nxp_flexio_spi_child_##n = { \
-		.isr = spi_mcux_flexio_isr,				\
-		.user_data = (void *)DEVICE_DT_INST_GET(n),		\
-		.res = {						\
-			.shifter_index = flexio_spi_##n.shifterIndex,	\
-			.shifter_count = ARRAY_SIZE(flexio_spi_##n.shifterIndex), \
-			.timer_index = flexio_spi_##n.timerIndex,	\
-			.timer_count = ARRAY_SIZE(flexio_spi_##n.timerIndex) \
-		}							\
-	};								\
-									\
-	static const struct spi_mcux_flexio_config spi_mcux_flexio_config_##n = { \
-		.flexio_spi = &flexio_spi_##n,				\
-		.flexio_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),		\
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
-		.child = &nxp_flexio_spi_child_##n,			\
-	};								\
-									\
-	static struct spi_mcux_flexio_data spi_mcux_flexio_data_##n = {	\
-		SPI_CONTEXT_INIT_LOCK(spi_mcux_flexio_data_##n, ctx),	\
-		SPI_CONTEXT_INIT_SYNC(spi_mcux_flexio_data_##n, ctx),	\
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(n, spi_mcux_init, NULL,			\
-				&spi_mcux_flexio_data_##n,		\
-				&spi_mcux_flexio_config_##n, POST_KERNEL, \
-				CONFIG_SPI_INIT_PRIORITY,		\
-				&spi_mcux_driver_api);			\
+#define SPI_MCUX_FLEXIO_SPI_INIT(n)                                                                \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+                                                                                                   \
+	static FLEXIO_SPI_Type flexio_spi_##n = {                                                  \
+		.flexioBase = (FLEXIO_Type *)DT_REG_ADDR(DT_INST_PARENT(n)),                       \
+		.SDOPinIndex = DT_INST_PROP(n, sdo_pin),                                           \
+		.SDIPinIndex = DT_INST_PROP(n, sdi_pin),                                           \
+		.SCKPinIndex = DT_INST_PROP(n, sck_pin),                                           \
+	};                                                                                         \
+                                                                                                   \
+	static const struct nxp_flexio_child nxp_flexio_spi_child_##n = {                          \
+		.isr = spi_mcux_flexio_isr,                                                        \
+		.user_data = (void *)DEVICE_DT_INST_GET(n),                                        \
+		.res = {.shifter_index = flexio_spi_##n.shifterIndex,                              \
+			.shifter_count = ARRAY_SIZE(flexio_spi_##n.shifterIndex),                  \
+			.timer_index = flexio_spi_##n.timerIndex,                                  \
+			.timer_count = ARRAY_SIZE(flexio_spi_##n.timerIndex)}};                    \
+                                                                                                   \
+	static const struct spi_mcux_flexio_config spi_mcux_flexio_config_##n = {                  \
+		.flexio_spi = &flexio_spi_##n,                                                     \
+		.flexio_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                    \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+		.child = &nxp_flexio_spi_child_##n,                                                \
+	};                                                                                         \
+                                                                                                   \
+	static struct spi_mcux_flexio_data spi_mcux_flexio_data_##n = {                            \
+		SPI_CONTEXT_INIT_LOCK(spi_mcux_flexio_data_##n, ctx),                              \
+		SPI_CONTEXT_INIT_SYNC(spi_mcux_flexio_data_##n, ctx),                              \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                             \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, spi_mcux_init, NULL, &spi_mcux_flexio_data_##n,                   \
+			      &spi_mcux_flexio_config_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,  \
+			      &spi_mcux_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_MCUX_FLEXIO_SPI_INIT)

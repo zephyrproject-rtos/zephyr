@@ -74,8 +74,7 @@ static void dac_gd32_disable(uint8_t dacx)
 	}
 }
 
-static void dac_gd32_write(struct dac_gd32_data *data,
-			   uint8_t dacx, uint32_t value)
+static void dac_gd32_write(struct dac_gd32_data *data, uint8_t dacx, uint32_t value)
 {
 	switch (dacx) {
 	case 0U:
@@ -109,8 +108,7 @@ static int dac_gd32_channel_setup(const struct device *dev,
 	}
 
 	/* GD32 DAC only support 8 or 12 bits resolution */
-	if ((channel_cfg->resolution != 8U) &&
-	    (channel_cfg->resolution != 12U)) {
+	if ((channel_cfg->resolution != 8U) && (channel_cfg->resolution != 12U)) {
 		LOG_ERR("Only 8 and 12 bits resolutions are supported!");
 		return -ENOTSUP;
 	}
@@ -129,8 +127,7 @@ static int dac_gd32_channel_setup(const struct device *dev,
 	return 0;
 }
 
-static int dac_gd32_write_value(const struct device *dev,
-				uint8_t dacx, uint32_t value)
+static int dac_gd32_write_value(const struct device *dev, uint8_t dacx, uint32_t value)
 {
 	struct dac_gd32_data *data = dev->data;
 	const struct dac_gd32_config *config = dev->config;
@@ -144,10 +141,8 @@ static int dac_gd32_write_value(const struct device *dev,
 	return 0;
 }
 
-struct dac_driver_api dac_gd32_driver_api = {
-	.channel_setup = dac_gd32_channel_setup,
-	.write_value = dac_gd32_write_value
-};
+struct dac_driver_api dac_gd32_driver_api = {.channel_setup = dac_gd32_channel_setup,
+					     .write_value = dac_gd32_write_value};
 
 static int dac_gd32_init(const struct device *dev)
 {
@@ -160,8 +155,7 @@ static int dac_gd32_init(const struct device *dev)
 		return ret;
 	}
 
-	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
-			       (clock_control_subsys_t)&cfg->clkid);
+	(void)clock_control_on(GD32_CLOCK_CONTROLLER, (clock_control_subsys_t)&cfg->clkid);
 
 	(void)reset_line_toggle_dt(&cfg->reset);
 
@@ -181,6 +175,5 @@ static const struct dac_gd32_config dac_gd32_cfg_0 = {
 	.reset_val = DT_INST_PROP(0, reset_val),
 };
 
-DEVICE_DT_INST_DEFINE(0, &dac_gd32_init, NULL, &dac_gd32_data_0,
-		      &dac_gd32_cfg_0, POST_KERNEL, CONFIG_DAC_INIT_PRIORITY,
-		      &dac_gd32_driver_api);
+DEVICE_DT_INST_DEFINE(0, &dac_gd32_init, NULL, &dac_gd32_data_0, &dac_gd32_cfg_0, POST_KERNEL,
+		      CONFIG_DAC_INIT_PRIORITY, &dac_gd32_driver_api);

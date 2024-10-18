@@ -17,11 +17,11 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pwm_xmc4xxx_ccu8, CONFIG_PWM_LOG_LEVEL);
 
-#define NUM_SLICES 4
-#define NUM_CHANNELS (NUM_SLICES * 2)
-#define MAX_DEAD_TIME_VALUE 255
-#define MAX_SLICE_PRESCALER 15
-#define MAX_DEADTIME_PRESCALER 3
+#define NUM_SLICES                              4
+#define NUM_CHANNELS                            (NUM_SLICES * 2)
+#define MAX_DEAD_TIME_VALUE                     255
+#define MAX_SLICE_PRESCALER                     15
+#define MAX_DEADTIME_PRESCALER                  3
 #define SLICE_ADDR_FROM_MODULE(module_ptr, idx) ((uint32_t)(module_ptr) + ((idx) + 1) * 0x100)
 
 struct pwm_xmc4xxx_ccu8_config {
@@ -66,17 +66,18 @@ static int pwm_xmc4xxx_ccu8_init(const struct device *dev)
 		XMC_CCU8_SLICE_CompareInit(slice, &slice_conf);
 
 		deadtime_conf.div = config->slice_deadtime_prescaler[i];
-		if (config->deadtime_high_ns[2*i] > 0 || config->deadtime_low_ns[2*i] > 0) {
+		if (config->deadtime_high_ns[2 * i] > 0 || config->deadtime_low_ns[2 * i] > 0) {
 			deadtime_conf.enable_dead_time_channel1 = 1;
 		}
-		deadtime_conf.channel1_st_path = config->deadtime_high_ns[2*i] > 0;
-		deadtime_conf.channel1_inv_st_path = config->deadtime_low_ns[2*i] > 0;
+		deadtime_conf.channel1_st_path = config->deadtime_high_ns[2 * i] > 0;
+		deadtime_conf.channel1_inv_st_path = config->deadtime_low_ns[2 * i] > 0;
 
-		if (config->deadtime_high_ns[2*i + 1] > 0 || config->deadtime_low_ns[2*i + 1] > 0) {
+		if (config->deadtime_high_ns[2 * i + 1] > 0 ||
+		    config->deadtime_low_ns[2 * i + 1] > 0) {
 			deadtime_conf.enable_dead_time_channel2 = 1;
 		}
-		deadtime_conf.channel2_st_path = config->deadtime_high_ns[2*i + 1] > 0;
-		deadtime_conf.channel2_inv_st_path = config->deadtime_low_ns[2*i + 1] > 0;
+		deadtime_conf.channel2_st_path = config->deadtime_high_ns[2 * i + 1] > 0;
+		deadtime_conf.channel2_inv_st_path = config->deadtime_low_ns[2 * i + 1] > 0;
 
 		XMC_CCU8_SLICE_DeadTimeInit(slice, &deadtime_conf);
 	}
@@ -85,8 +86,8 @@ static int pwm_xmc4xxx_ccu8_init(const struct device *dev)
 }
 
 static int pwm_xmc4xxx_ccu8_set_cycles(const struct device *dev, uint32_t channel,
-			      uint32_t period_cycles, uint32_t pulse_cycles,
-			      pwm_flags_t flags)
+				       uint32_t period_cycles, uint32_t pulse_cycles,
+				       pwm_flags_t flags)
 {
 	const struct pwm_xmc4xxx_ccu8_config *config = dev->config;
 	XMC_CCU8_SLICE_t *slice;
@@ -153,19 +154,19 @@ static const struct pwm_driver_api pwm_xmc4xxx_ccu8_driver_api = {
 	.get_cycles_per_sec = pwm_xmc4xxx_ccu8_get_cycles_per_sec,
 };
 
-#define PWM_XMC4XXX_CCU8_INIT(n)                                                           \
-PINCTRL_DT_INST_DEFINE(n);                                                                 \
-											   \
-static const struct pwm_xmc4xxx_ccu8_config config##n = {                                  \
-	.ccu8 = (CCU8_GLOBAL_TypeDef *)DT_INST_REG_ADDR(n),                                \
-	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-	.slice_prescaler = DT_INST_PROP(n, slice_prescaler),                               \
-	.slice_deadtime_prescaler = DT_INST_PROP(n, slice_deadtime_prescaler),             \
-	.deadtime_high_ns = DT_INST_PROP(n, channel_deadtime_high),                        \
-	.deadtime_low_ns = DT_INST_PROP(n, channel_deadtime_low),                          \
-};                                                                                         \
-											   \
-DEVICE_DT_INST_DEFINE(n, pwm_xmc4xxx_ccu8_init, NULL, NULL, &config##n, POST_KERNEL,       \
-		      CONFIG_PWM_INIT_PRIORITY, &pwm_xmc4xxx_ccu8_driver_api);
+#define PWM_XMC4XXX_CCU8_INIT(n)                                                                   \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+                                                                                                   \
+	static const struct pwm_xmc4xxx_ccu8_config config##n = {                                  \
+		.ccu8 = (CCU8_GLOBAL_TypeDef *)DT_INST_REG_ADDR(n),                                \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+		.slice_prescaler = DT_INST_PROP(n, slice_prescaler),                               \
+		.slice_deadtime_prescaler = DT_INST_PROP(n, slice_deadtime_prescaler),             \
+		.deadtime_high_ns = DT_INST_PROP(n, channel_deadtime_high),                        \
+		.deadtime_low_ns = DT_INST_PROP(n, channel_deadtime_low),                          \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, pwm_xmc4xxx_ccu8_init, NULL, NULL, &config##n, POST_KERNEL,       \
+			      CONFIG_PWM_INIT_PRIORITY, &pwm_xmc4xxx_ccu8_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_XMC4XXX_CCU8_INIT)

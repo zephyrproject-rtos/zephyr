@@ -12,12 +12,10 @@
 
 LOG_MODULE_DECLARE(FXLS8974, CONFIG_SENSOR_LOG_LEVEL);
 
-static void fxls8974_gpio_callback(const struct device *dev,
-				   struct gpio_callback *cb,
+static void fxls8974_gpio_callback(const struct device *dev, struct gpio_callback *cb,
 				   uint32_t pin_mask)
 {
-	struct fxls8974_data *data =
-		CONTAINER_OF(cb, struct fxls8974_data, gpio_cb);
+	struct fxls8974_data *data = CONTAINER_OF(cb, struct fxls8974_data, gpio_cb);
 	const struct fxls8974_config *config = data->dev->config;
 
 	if ((pin_mask & BIT(config->int_gpio.pin)) == 0U) {
@@ -71,15 +69,13 @@ static void fxls8974_thread_main(void *p1, void *p2, void *p3)
 #ifdef CONFIG_FXLS8974_TRIGGER_GLOBAL_THREAD
 static void fxls8974_work_handler(struct k_work *work)
 {
-	struct fxls8974_data *data =
-		CONTAINER_OF(work, struct fxls8974_data, work);
+	struct fxls8974_data *data = CONTAINER_OF(work, struct fxls8974_data, work);
 
 	fxls8974_handle_int(data->dev);
 }
 #endif
 
-int fxls8974_trigger_set(const struct device *dev,
-			 const struct sensor_trigger *trig,
+int fxls8974_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			 sensor_trigger_handler_t handler)
 {
 	struct fxls8974_data *data = dev->data;
@@ -103,7 +99,6 @@ int fxls8974_trigger_set(const struct device *dev,
 		goto exit;
 	}
 
-
 	/* Restore the previous active mode */
 	if (fxls8974_set_active(dev, FXLS8974_ACTIVE_ON)) {
 		LOG_ERR("Could not restore active mode");
@@ -117,7 +112,6 @@ exit:
 	return ret;
 }
 
-
 int fxls8974_trigger_init(const struct device *dev)
 {
 	const struct fxls8974_config *config = dev->config;
@@ -128,25 +122,20 @@ int fxls8974_trigger_init(const struct device *dev)
 
 #if defined(CONFIG_FXLS8974_TRIGGER_OWN_THREAD)
 	k_sem_init(&data->trig_sem, 0, K_SEM_MAX_LIMIT);
-	k_thread_create(&data->thread, data->thread_stack,
-			CONFIG_FXLS8974_THREAD_STACK_SIZE,
-			fxls8974_thread_main,
-			data, NULL, NULL,
-			K_PRIO_COOP(CONFIG_FXLS8974_THREAD_PRIORITY),
-			0, K_NO_WAIT);
+	k_thread_create(&data->thread, data->thread_stack, CONFIG_FXLS8974_THREAD_STACK_SIZE,
+			fxls8974_thread_main, data, NULL, NULL,
+			K_PRIO_COOP(CONFIG_FXLS8974_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_FXLS8974_TRIGGER_GLOBAL_THREAD)
 	data->work.handler = fxls8974_work_handler;
 #endif
 
-	if (config->ops->byte_write(dev, FXLS8974_INTREG_EN,
-				    FXLS8974_DRDY_MASK)) {
+	if (config->ops->byte_write(dev, FXLS8974_INTREG_EN, FXLS8974_DRDY_MASK)) {
 		LOG_ERR("Could not enable interrupt");
 		return -EIO;
 	}
 
 #if !(CONFIG_FXLS8974_DRDY_INT1)
-	if (config->ops->byte_write(dev, FXLS8974_INT_PIN_SEL_REG,
-				    FXLS8974_DRDY_MASK)) {
+	if (config->ops->byte_write(dev, FXLS8974_INT_PIN_SEL_REG, FXLS8974_DRDY_MASK)) {
 		LOG_ERR("Could not configure interrupt pin routing");
 		return -EIO;
 	}
@@ -162,8 +151,7 @@ int fxls8974_trigger_init(const struct device *dev)
 		return ret;
 	}
 
-	gpio_init_callback(&data->gpio_cb, fxls8974_gpio_callback,
-			   BIT(config->int_gpio.pin));
+	gpio_init_callback(&data->gpio_cb, fxls8974_gpio_callback, BIT(config->int_gpio.pin));
 
 	ret = gpio_add_callback(config->int_gpio.port, &data->gpio_cb);
 	if (ret < 0) {

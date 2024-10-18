@@ -15,22 +15,15 @@
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
-#define XEC_GPIO_EDGE_DLY_COUNT		4
+#define XEC_GPIO_EDGE_DLY_COUNT 4
 
-#define GPIO_IN_BASE(config) \
-	((__IO uint32_t *)(GPIO_PARIN_BASE + (config->port_num << 2)))
+#define GPIO_IN_BASE(config) ((__IO uint32_t *)(GPIO_PARIN_BASE + (config->port_num << 2)))
 
-#define GPIO_OUT_BASE(config) \
-	((__IO uint32_t *)(GPIO_PAROUT_BASE + (config->port_num << 2)))
+#define GPIO_OUT_BASE(config) ((__IO uint32_t *)(GPIO_PAROUT_BASE + (config->port_num << 2)))
 
 static const uint32_t valid_ctrl_masks[NUM_MCHP_GPIO_PORTS] = {
-	(MCHP_GPIO_PORT_A_BITMAP),
-	(MCHP_GPIO_PORT_B_BITMAP),
-	(MCHP_GPIO_PORT_C_BITMAP),
-	(MCHP_GPIO_PORT_D_BITMAP),
-	(MCHP_GPIO_PORT_E_BITMAP),
-	(MCHP_GPIO_PORT_F_BITMAP)
-};
+	(MCHP_GPIO_PORT_A_BITMAP), (MCHP_GPIO_PORT_B_BITMAP), (MCHP_GPIO_PORT_C_BITMAP),
+	(MCHP_GPIO_PORT_D_BITMAP), (MCHP_GPIO_PORT_E_BITMAP), (MCHP_GPIO_PORT_F_BITMAP)};
 
 struct gpio_xec_data {
 	/* gpio_driver_data needs to be first */
@@ -59,8 +52,7 @@ struct gpio_xec_config {
  * Program other GPIO control bits except direction.
  * Last step set the GPIO control register direction bit to output.
  */
-static int gpio_xec_configure(const struct device *dev,
-			      gpio_pin_t pin, gpio_flags_t flags)
+static int gpio_xec_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_xec_config *config = dev->config;
 	__IO uint32_t *current_pcr1;
@@ -73,8 +65,7 @@ static int gpio_xec_configure(const struct device *dev,
 	}
 
 	/* Don't support "open source" mode */
-	if (((flags & GPIO_SINGLE_ENDED) != 0U) &&
-	    ((flags & GPIO_LINE_OPEN_DRAIN) == 0U)) {
+	if (((flags & GPIO_SINGLE_ENDED) != 0U) && ((flags & GPIO_LINE_OPEN_DRAIN) == 0U)) {
 		return -ENOTSUP;
 	}
 
@@ -135,11 +126,9 @@ static int gpio_xec_configure(const struct device *dev,
 		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0U) {
 			pcr1 &= ~BIT(MCHP_GPIO_CTRL_OUTVAL_POS);
 		} else { /* Copy current input state to output state */
-			if ((*current_pcr1 & MCHP_GPIO_CTRL_PWRG_MASK) ==
-			     MCHP_GPIO_CTRL_PWRG_OFF) {
-				*current_pcr1 = (*current_pcr1 &
-						 ~MCHP_GPIO_CTRL_PWRG_MASK) |
-						 MCHP_GPIO_CTRL_PWRG_VTR_IO;
+			if ((*current_pcr1 & MCHP_GPIO_CTRL_PWRG_MASK) == MCHP_GPIO_CTRL_PWRG_OFF) {
+				*current_pcr1 = (*current_pcr1 & ~MCHP_GPIO_CTRL_PWRG_MASK) |
+						MCHP_GPIO_CTRL_PWRG_VTR_IO;
 			}
 			if (*current_pcr1 & BIT(MCHP_GPIO_CTRL_INPAD_VAL_POS)) {
 				pcr1 |= BIT(MCHP_GPIO_CTRL_OUTVAL_POS);
@@ -158,10 +147,8 @@ static int gpio_xec_configure(const struct device *dev,
 	return 0;
 }
 
-static int gpio_xec_pin_interrupt_configure(const struct device *dev,
-					    gpio_pin_t pin,
-					    enum gpio_int_mode mode,
-					    enum gpio_int_trig trig)
+static int gpio_xec_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
+					    enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	const struct gpio_xec_config *config = dev->config;
 	__IO uint32_t *current_pcr1;
@@ -175,8 +162,7 @@ static int gpio_xec_pin_interrupt_configure(const struct device *dev,
 	}
 
 	/* Check if GPIO port supports interrupts */
-	if ((mode != GPIO_INT_MODE_DISABLED) &&
-	    ((config->flags & GPIO_INT_ENABLE) == 0U)) {
+	if ((mode != GPIO_INT_MODE_DISABLED) && ((config->flags & GPIO_INT_ENABLE) == 0U)) {
 		return -ENOTSUP;
 	}
 
@@ -240,9 +226,7 @@ static int gpio_xec_pin_interrupt_configure(const struct device *dev,
 	return 0;
 }
 
-static int gpio_xec_port_set_masked_raw(const struct device *dev,
-					uint32_t mask,
-					uint32_t value)
+static int gpio_xec_port_set_masked_raw(const struct device *dev, uint32_t mask, uint32_t value)
 {
 	const struct gpio_xec_config *config = dev->config;
 
@@ -266,8 +250,7 @@ static int gpio_xec_port_set_bits_raw(const struct device *dev, uint32_t mask)
 	return 0;
 }
 
-static int gpio_xec_port_clear_bits_raw(const struct device *dev,
-					uint32_t mask)
+static int gpio_xec_port_clear_bits_raw(const struct device *dev, uint32_t mask)
 {
 	const struct gpio_xec_config *config = dev->config;
 
@@ -303,8 +286,8 @@ static int gpio_xec_port_get_raw(const struct device *dev, uint32_t *value)
 	return 0;
 }
 
-static int gpio_xec_manage_callback(const struct device *dev,
-				    struct gpio_callback *callback, bool set)
+static int gpio_xec_manage_callback(const struct device *dev, struct gpio_callback *callback,
+				    bool set)
 {
 	struct gpio_xec_data *data = dev->data;
 
@@ -345,11 +328,12 @@ static const struct gpio_driver_api gpio_xec_driver_api = {
 static int gpio_xec_port000_036_init(const struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port000_036_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(
-			DT_NODELABEL(gpio_000_036)),
-	},
-	.pcr1_base = (uint32_t *) DT_REG_ADDR(DT_NODELABEL(gpio_000_036)),
+	.common =
+		{
+			.port_pin_mask =
+				GPIO_PORT_PIN_MASK_FROM_DT_NODE(DT_NODELABEL(gpio_000_036)),
+		},
+	.pcr1_base = (uint32_t *)DT_REG_ADDR(DT_NODELABEL(gpio_000_036)),
 	.port_num = MCHP_GPIO_000_036,
 #if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_000_036), irq)
 	.girq_id = MCHP_GIRQ11_ID,
@@ -361,12 +345,9 @@ static const struct gpio_xec_config gpio_xec_port000_036_config = {
 
 static struct gpio_xec_data gpio_xec_port000_036_data;
 
-DEVICE_DT_DEFINE(DT_NODELABEL(gpio_000_036),
-		    gpio_xec_port000_036_init,
-		    NULL,
-		    &gpio_xec_port000_036_data, &gpio_xec_port000_036_config,
-		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
-		    &gpio_xec_driver_api);
+DEVICE_DT_DEFINE(DT_NODELABEL(gpio_000_036), gpio_xec_port000_036_init, NULL,
+		 &gpio_xec_port000_036_data, &gpio_xec_port000_036_config, PRE_KERNEL_1,
+		 CONFIG_GPIO_INIT_PRIORITY, &gpio_xec_driver_api);
 
 static int gpio_xec_port000_036_init(const struct device *dev)
 {
@@ -377,8 +358,7 @@ static int gpio_xec_port000_036_init(const struct device *dev)
 	MCHP_GIRQ_BLK_SETEN(config->girq_id);
 
 	IRQ_CONNECT(DT_IRQ(DT_NODELABEL(gpio_000_036), irq),
-		    DT_IRQ(DT_NODELABEL(gpio_000_036), priority),
-		    gpio_gpio_xec_port_isr,
+		    DT_IRQ(DT_NODELABEL(gpio_000_036), priority), gpio_gpio_xec_port_isr,
 		    DEVICE_DT_GET(DT_NODELABEL(gpio_000_036)), 0U);
 
 	irq_enable(DT_IRQ(DT_NODELABEL(gpio_000_036), irq));
@@ -391,11 +371,12 @@ static int gpio_xec_port000_036_init(const struct device *dev)
 static int gpio_xec_port040_076_init(const struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port040_076_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(
-			DT_NODELABEL(gpio_040_076)),
-	},
-	.pcr1_base = (uint32_t *) DT_REG_ADDR(DT_NODELABEL(gpio_040_076)),
+	.common =
+		{
+			.port_pin_mask =
+				GPIO_PORT_PIN_MASK_FROM_DT_NODE(DT_NODELABEL(gpio_040_076)),
+		},
+	.pcr1_base = (uint32_t *)DT_REG_ADDR(DT_NODELABEL(gpio_040_076)),
 	.port_num = MCHP_GPIO_040_076,
 #if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_040_076), irq)
 	.girq_id = MCHP_GIRQ10_ID,
@@ -407,12 +388,9 @@ static const struct gpio_xec_config gpio_xec_port040_076_config = {
 
 static struct gpio_xec_data gpio_xec_port040_076_data;
 
-DEVICE_DT_DEFINE(DT_NODELABEL(gpio_040_076),
-		    gpio_xec_port040_076_init,
-		    NULL,
-		    &gpio_xec_port040_076_data, &gpio_xec_port040_076_config,
-		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
-		    &gpio_xec_driver_api);
+DEVICE_DT_DEFINE(DT_NODELABEL(gpio_040_076), gpio_xec_port040_076_init, NULL,
+		 &gpio_xec_port040_076_data, &gpio_xec_port040_076_config, PRE_KERNEL_1,
+		 CONFIG_GPIO_INIT_PRIORITY, &gpio_xec_driver_api);
 
 static int gpio_xec_port040_076_init(const struct device *dev)
 {
@@ -423,8 +401,7 @@ static int gpio_xec_port040_076_init(const struct device *dev)
 	MCHP_GIRQ_BLK_SETEN(config->girq_id);
 
 	IRQ_CONNECT(DT_IRQ(DT_NODELABEL(gpio_040_076), irq),
-		    DT_IRQ(DT_NODELABEL(gpio_040_076), priority),
-		    gpio_gpio_xec_port_isr,
+		    DT_IRQ(DT_NODELABEL(gpio_040_076), priority), gpio_gpio_xec_port_isr,
 		    DEVICE_DT_GET(DT_NODELABEL(gpio_040_076)), 0U);
 
 	irq_enable(DT_IRQ(DT_NODELABEL(gpio_040_076), irq));
@@ -437,11 +414,12 @@ static int gpio_xec_port040_076_init(const struct device *dev)
 static int gpio_xec_port100_136_init(const struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port100_136_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(
-			DT_NODELABEL(gpio_100_136)),
-	},
-	.pcr1_base = (uint32_t *) DT_REG_ADDR(DT_NODELABEL(gpio_100_136)),
+	.common =
+		{
+			.port_pin_mask =
+				GPIO_PORT_PIN_MASK_FROM_DT_NODE(DT_NODELABEL(gpio_100_136)),
+		},
+	.pcr1_base = (uint32_t *)DT_REG_ADDR(DT_NODELABEL(gpio_100_136)),
 	.port_num = MCHP_GPIO_100_136,
 #if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_100_136), irq)
 	.girq_id = MCHP_GIRQ09_ID,
@@ -453,12 +431,9 @@ static const struct gpio_xec_config gpio_xec_port100_136_config = {
 
 static struct gpio_xec_data gpio_xec_port100_136_data;
 
-DEVICE_DT_DEFINE(DT_NODELABEL(gpio_100_136),
-		    gpio_xec_port100_136_init,
-		    NULL,
-		    &gpio_xec_port100_136_data, &gpio_xec_port100_136_config,
-		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
-		    &gpio_xec_driver_api);
+DEVICE_DT_DEFINE(DT_NODELABEL(gpio_100_136), gpio_xec_port100_136_init, NULL,
+		 &gpio_xec_port100_136_data, &gpio_xec_port100_136_config, PRE_KERNEL_1,
+		 CONFIG_GPIO_INIT_PRIORITY, &gpio_xec_driver_api);
 
 static int gpio_xec_port100_136_init(const struct device *dev)
 {
@@ -469,8 +444,7 @@ static int gpio_xec_port100_136_init(const struct device *dev)
 	MCHP_GIRQ_BLK_SETEN(config->girq_id);
 
 	IRQ_CONNECT(DT_IRQ(DT_NODELABEL(gpio_100_136), irq),
-		    DT_IRQ(DT_NODELABEL(gpio_100_136), priority),
-		    gpio_gpio_xec_port_isr,
+		    DT_IRQ(DT_NODELABEL(gpio_100_136), priority), gpio_gpio_xec_port_isr,
 		    DEVICE_DT_GET(DT_NODELABEL(gpio_100_136)), 0U);
 
 	irq_enable(DT_IRQ(DT_NODELABEL(gpio_100_136), irq));
@@ -483,11 +457,12 @@ static int gpio_xec_port100_136_init(const struct device *dev)
 static int gpio_xec_port140_176_init(const struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port140_176_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(
-			DT_NODELABEL(gpio_140_176)),
-	},
-	.pcr1_base = (uint32_t *) DT_REG_ADDR(DT_NODELABEL(gpio_140_176)),
+	.common =
+		{
+			.port_pin_mask =
+				GPIO_PORT_PIN_MASK_FROM_DT_NODE(DT_NODELABEL(gpio_140_176)),
+		},
+	.pcr1_base = (uint32_t *)DT_REG_ADDR(DT_NODELABEL(gpio_140_176)),
 	.port_num = MCHP_GPIO_140_176,
 #if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_140_176), irq)
 	.girq_id = MCHP_GIRQ08_ID,
@@ -499,12 +474,9 @@ static const struct gpio_xec_config gpio_xec_port140_176_config = {
 
 static struct gpio_xec_data gpio_xec_port140_176_data;
 
-DEVICE_DT_DEFINE(DT_NODELABEL(gpio_140_176),
-		    gpio_xec_port140_176_init,
-		    NULL,
-		    &gpio_xec_port140_176_data, &gpio_xec_port140_176_config,
-		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
-		    &gpio_xec_driver_api);
+DEVICE_DT_DEFINE(DT_NODELABEL(gpio_140_176), gpio_xec_port140_176_init, NULL,
+		 &gpio_xec_port140_176_data, &gpio_xec_port140_176_config, PRE_KERNEL_1,
+		 CONFIG_GPIO_INIT_PRIORITY, &gpio_xec_driver_api);
 
 static int gpio_xec_port140_176_init(const struct device *dev)
 {
@@ -515,8 +487,7 @@ static int gpio_xec_port140_176_init(const struct device *dev)
 	MCHP_GIRQ_BLK_SETEN(config->girq_id);
 
 	IRQ_CONNECT(DT_IRQ(DT_NODELABEL(gpio_140_176), irq),
-		    DT_IRQ(DT_NODELABEL(gpio_140_176), priority),
-		    gpio_gpio_xec_port_isr,
+		    DT_IRQ(DT_NODELABEL(gpio_140_176), priority), gpio_gpio_xec_port_isr,
 		    DEVICE_DT_GET(DT_NODELABEL(gpio_140_176)), 0U);
 
 	irq_enable(DT_IRQ(DT_NODELABEL(gpio_140_176), irq));
@@ -529,11 +500,12 @@ static int gpio_xec_port140_176_init(const struct device *dev)
 static int gpio_xec_port200_236_init(const struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port200_236_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(
-			DT_NODELABEL(gpio_200_236)),
-	},
-	.pcr1_base = (uint32_t *) DT_REG_ADDR(DT_NODELABEL(gpio_200_236)),
+	.common =
+		{
+			.port_pin_mask =
+				GPIO_PORT_PIN_MASK_FROM_DT_NODE(DT_NODELABEL(gpio_200_236)),
+		},
+	.pcr1_base = (uint32_t *)DT_REG_ADDR(DT_NODELABEL(gpio_200_236)),
 	.port_num = MCHP_GPIO_200_236,
 #if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_200_236), irq)
 	.girq_id = MCHP_GIRQ12_ID,
@@ -545,12 +517,9 @@ static const struct gpio_xec_config gpio_xec_port200_236_config = {
 
 static struct gpio_xec_data gpio_xec_port200_236_data;
 
-DEVICE_DT_DEFINE(DT_NODELABEL(gpio_200_236),
-		    gpio_xec_port200_236_init,
-		    NULL,
-		    &gpio_xec_port200_236_data, &gpio_xec_port200_236_config,
-		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
-		    &gpio_xec_driver_api);
+DEVICE_DT_DEFINE(DT_NODELABEL(gpio_200_236), gpio_xec_port200_236_init, NULL,
+		 &gpio_xec_port200_236_data, &gpio_xec_port200_236_config, PRE_KERNEL_1,
+		 CONFIG_GPIO_INIT_PRIORITY, &gpio_xec_driver_api);
 
 static int gpio_xec_port200_236_init(const struct device *dev)
 {
@@ -561,8 +530,7 @@ static int gpio_xec_port200_236_init(const struct device *dev)
 	MCHP_GIRQ_BLK_SETEN(config->girq_id);
 
 	IRQ_CONNECT(DT_IRQ(DT_NODELABEL(gpio_200_236), irq),
-		    DT_IRQ(DT_NODELABEL(gpio_200_236), priority),
-		    gpio_gpio_xec_port_isr,
+		    DT_IRQ(DT_NODELABEL(gpio_200_236), priority), gpio_gpio_xec_port_isr,
 		    DEVICE_DT_GET(DT_NODELABEL(gpio_200_236)), 0U);
 
 	irq_enable(DT_IRQ(DT_NODELABEL(gpio_200_236), irq));
@@ -575,11 +543,12 @@ static int gpio_xec_port200_236_init(const struct device *dev)
 static int gpio_xec_port240_276_init(const struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port240_276_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(
-			DT_NODELABEL(gpio_240_276)),
-	},
-	.pcr1_base = (uint32_t *) DT_REG_ADDR(DT_NODELABEL(gpio_240_276)),
+	.common =
+		{
+			.port_pin_mask =
+				GPIO_PORT_PIN_MASK_FROM_DT_NODE(DT_NODELABEL(gpio_240_276)),
+		},
+	.pcr1_base = (uint32_t *)DT_REG_ADDR(DT_NODELABEL(gpio_240_276)),
 	.port_num = MCHP_GPIO_240_276,
 #if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_240_276), irq)
 	.girq_id = MCHP_GIRQ26_ID,
@@ -591,12 +560,9 @@ static const struct gpio_xec_config gpio_xec_port240_276_config = {
 
 static struct gpio_xec_data gpio_xec_port240_276_data;
 
-DEVICE_DT_DEFINE(DT_NODELABEL(gpio_240_276),
-		    gpio_xec_port240_276_init,
-		    NULL,
-		    &gpio_xec_port240_276_data, &gpio_xec_port240_276_config,
-		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
-		    &gpio_xec_driver_api);
+DEVICE_DT_DEFINE(DT_NODELABEL(gpio_240_276), gpio_xec_port240_276_init, NULL,
+		 &gpio_xec_port240_276_data, &gpio_xec_port240_276_config, PRE_KERNEL_1,
+		 CONFIG_GPIO_INIT_PRIORITY, &gpio_xec_driver_api);
 
 static int gpio_xec_port240_276_init(const struct device *dev)
 {
@@ -607,8 +573,7 @@ static int gpio_xec_port240_276_init(const struct device *dev)
 	MCHP_GIRQ_BLK_SETEN(config->girq_id);
 
 	IRQ_CONNECT(DT_IRQ(DT_NODELABEL(gpio_240_276), irq),
-		    DT_IRQ(DT_NODELABEL(gpio_240_276), priority),
-		    gpio_gpio_xec_port_isr,
+		    DT_IRQ(DT_NODELABEL(gpio_240_276), priority), gpio_gpio_xec_port_isr,
 		    DEVICE_DT_GET(DT_NODELABEL(gpio_240_276)), 0U);
 
 	irq_enable(DT_IRQ(DT_NODELABEL(gpio_240_276), irq));

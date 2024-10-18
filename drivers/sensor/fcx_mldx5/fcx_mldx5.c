@@ -32,11 +32,12 @@ LOG_MODULE_REGISTER(fcx_mldx5_sensor, CONFIG_SENSOR_LOG_LEVEL);
 #define FCX_MLDX5_HEADER_LEN                                                                       \
 	(FCX_MLDX5_STX_LEN + FCX_MLDX5_CMD_LEN + FCX_MLDX5_CHECKSUM_LEN + FCX_MLDX5_ETX_LEN)
 
-#define FCX_MLDX5_STX_INDEX                 0
-#define FCX_MLDX5_CMD_INDEX                 (FCX_MLDX5_STX_INDEX + FCX_MLDX5_STX_LEN)
-#define FCX_MLDX5_DATA_INDEX                (FCX_MLDX5_CMD_INDEX + FCX_MLDX5_CMD_LEN)
-#define FCX_MLDX5_CHECKSUM_INDEX(frame_len) ((frame_len)-FCX_MLDX5_CHECKSUM_LEN - FCX_MLDX5_ETX_LEN)
-#define FCX_MLDX5_ETX_INDEX(frame_len)      ((frame_len)-FCX_MLDX5_ETX_LEN)
+#define FCX_MLDX5_STX_INDEX  0
+#define FCX_MLDX5_CMD_INDEX  (FCX_MLDX5_STX_INDEX + FCX_MLDX5_STX_LEN)
+#define FCX_MLDX5_DATA_INDEX (FCX_MLDX5_CMD_INDEX + FCX_MLDX5_CMD_LEN)
+#define FCX_MLDX5_CHECKSUM_INDEX(frame_len)                                                        \
+	((frame_len) - FCX_MLDX5_CHECKSUM_LEN - FCX_MLDX5_ETX_LEN)
+#define FCX_MLDX5_ETX_INDEX(frame_len) ((frame_len) - FCX_MLDX5_ETX_LEN)
 
 #define FCX_MLDX5_MAX_FRAME_LEN      11
 #define FCX_MLDX5_MAX_RESPONSE_DELAY 200 /* Not specified in datasheet */

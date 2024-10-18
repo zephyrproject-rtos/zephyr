@@ -88,8 +88,8 @@ static int gpio_ra_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_
 		WRITE_BIT(pfs_cfg, R_PFS_PORT_PIN_PmnPFS_PCR_Pos, 1);
 	}
 
-	pincfg.cfg = pfs_cfg |
-		     (((flags & RENESAS_GPIO_DS_MSK) >> 8) << R_PFS_PORT_PIN_PmnPFS_DSCR_Pos);
+	pincfg.cfg =
+		pfs_cfg | (((flags & RENESAS_GPIO_DS_MSK) >> 8) << R_PFS_PORT_PIN_PmnPFS_DSCR_Pos);
 
 	return pinctrl_configure_pins(&pincfg, 1, PINCTRL_REG_NONE);
 }

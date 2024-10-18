@@ -93,7 +93,9 @@ static const uint32_t sam_tc_input_freq_table[] = {
 	SOC_ATMEL_SAM_MCK_FREQ_HZ / 128,
 	32768,
 #endif
-	USEC_PER_SEC, USEC_PER_SEC, USEC_PER_SEC,
+	USEC_PER_SEC,
+	USEC_PER_SEC,
+	USEC_PER_SEC,
 };
 
 static int counter_sam_tc_start(const struct device *dev)
@@ -354,68 +356,56 @@ static const struct counter_driver_api counter_sam_driver_api = {
 	.get_pending_int = counter_sam_tc_get_pending_int,
 };
 
-#define COUNTER_SAM_TC_CMR(n)	\
-		 (TC_CMR_TCCLKS(DT_INST_PROP_OR(n, clk, 0)) \
-		| TC_CMR_WAVEFORM_WAVSEL_UP_RC \
-		| TC_CMR_WAVE)
+#define COUNTER_SAM_TC_CMR(n)                                                                      \
+	(TC_CMR_TCCLKS(DT_INST_PROP_OR(n, clk, 0)) | TC_CMR_WAVEFORM_WAVSEL_UP_RC | TC_CMR_WAVE)
 
-#define COUNTER_SAM_TC_REG_CMR(n) \
-		DT_INST_PROP_OR(n, reg_cmr, COUNTER_SAM_TC_CMR(n))
+#define COUNTER_SAM_TC_REG_CMR(n) DT_INST_PROP_OR(n, reg_cmr, COUNTER_SAM_TC_CMR(n))
 
-#define COUNTER_SAM_TC_INPUT_FREQUENCY(n)	\
-		COND_CODE_1(DT_INST_PROP(n, nodivclk), \
+#define COUNTER_SAM_TC_INPUT_FREQUENCY(n)                                                          \
+	COND_CODE_1(DT_INST_PROP(n, nodivclk), \
 			    (SOC_ATMEL_SAM_MCK_FREQ_HZ), \
 			    (sam_tc_input_freq_table[COUNTER_SAM_TC_REG_CMR(n) \
 						     & TC_CMR_TCCLKS_Msk]))
 
-#define COUNTER_SAM_TC_INIT(n)					\
-PINCTRL_DT_INST_DEFINE(n);					\
-								\
-static void counter_##n##_sam_config_func(const struct device *dev); \
-								\
-static const struct counter_sam_dev_cfg counter_##n##_sam_config = { \
-	.info = {						\
-		.max_top_value = COUNTER_SAM_TOP_VALUE_MAX,	\
-		.freq = COUNTER_SAM_TC_INPUT_FREQUENCY(n),	\
-		.flags = COUNTER_CONFIG_INFO_COUNT_UP,		\
-		.channels = MAX_ALARMS_PER_TC_CHANNEL		\
-	},							\
-	.regs = (Tc *)DT_INST_REG_ADDR(n),			\
-	.reg_cmr = COUNTER_SAM_TC_REG_CMR(n),			\
-	.reg_rc = DT_INST_PROP_OR(n, reg_rc, 0),		\
-	.irq_config_func = &counter_##n##_sam_config_func,	\
-	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
-	.nodivclk = DT_INST_PROP(n, nodivclk),			\
-	.tc_chan_num = DT_INST_PROP_OR(n, channel, 0),		\
-	.clock_cfg = SAM_DT_INST_CLOCKS_PMC_CFG(n),		\
-};								\
-								\
-static struct counter_sam_dev_data counter_##n##_sam_data;	\
-								\
-DEVICE_DT_INST_DEFINE(n, counter_sam_initialize, NULL, \
-		&counter_##n##_sam_data, &counter_##n##_sam_config, \
-		PRE_KERNEL_1, CONFIG_COUNTER_INIT_PRIORITY,	\
-		&counter_sam_driver_api);			\
-								\
-static void counter_##n##_sam_config_func(const struct device *dev) \
-{								\
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 0, irq),		\
-		    DT_INST_IRQ_BY_IDX(n, 0, priority),		\
-		    counter_sam_tc_isr,				\
-		    DEVICE_DT_INST_GET(n), 0);			\
-	irq_enable(DT_INST_IRQ_BY_IDX(n, 0, irq));		\
-								\
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 1, irq),		\
-		    DT_INST_IRQ_BY_IDX(n, 1, priority),		\
-		    counter_sam_tc_isr,				\
-		    DEVICE_DT_INST_GET(n), 0);			\
-	irq_enable(DT_INST_IRQ_BY_IDX(n, 1, irq));		\
-								\
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 2, irq),		\
-		    DT_INST_IRQ_BY_IDX(n, 2, priority),		\
-		    counter_sam_tc_isr,				\
-		    DEVICE_DT_INST_GET(n), 0);			\
-	irq_enable(DT_INST_IRQ_BY_IDX(n, 2, irq));		\
-}
+#define COUNTER_SAM_TC_INIT(n)                                                                     \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+                                                                                                   \
+	static void counter_##n##_sam_config_func(const struct device *dev);                       \
+                                                                                                   \
+	static const struct counter_sam_dev_cfg counter_##n##_sam_config = {                       \
+		.info = {.max_top_value = COUNTER_SAM_TOP_VALUE_MAX,                               \
+			 .freq = COUNTER_SAM_TC_INPUT_FREQUENCY(n),                                \
+			 .flags = COUNTER_CONFIG_INFO_COUNT_UP,                                    \
+			 .channels = MAX_ALARMS_PER_TC_CHANNEL},                                   \
+		.regs = (Tc *)DT_INST_REG_ADDR(n),                                                 \
+		.reg_cmr = COUNTER_SAM_TC_REG_CMR(n),                                              \
+		.reg_rc = DT_INST_PROP_OR(n, reg_rc, 0),                                           \
+		.irq_config_func = &counter_##n##_sam_config_func,                                 \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+		.nodivclk = DT_INST_PROP(n, nodivclk),                                             \
+		.tc_chan_num = DT_INST_PROP_OR(n, channel, 0),                                     \
+		.clock_cfg = SAM_DT_INST_CLOCKS_PMC_CFG(n),                                        \
+	};                                                                                         \
+                                                                                                   \
+	static struct counter_sam_dev_data counter_##n##_sam_data;                                 \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, counter_sam_initialize, NULL, &counter_##n##_sam_data,            \
+			      &counter_##n##_sam_config, PRE_KERNEL_1,                             \
+			      CONFIG_COUNTER_INIT_PRIORITY, &counter_sam_driver_api);              \
+                                                                                                   \
+	static void counter_##n##_sam_config_func(const struct device *dev)                        \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 0, irq), DT_INST_IRQ_BY_IDX(n, 0, priority),     \
+			    counter_sam_tc_isr, DEVICE_DT_INST_GET(n), 0);                         \
+		irq_enable(DT_INST_IRQ_BY_IDX(n, 0, irq));                                         \
+                                                                                                   \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 1, irq), DT_INST_IRQ_BY_IDX(n, 1, priority),     \
+			    counter_sam_tc_isr, DEVICE_DT_INST_GET(n), 0);                         \
+		irq_enable(DT_INST_IRQ_BY_IDX(n, 1, irq));                                         \
+                                                                                                   \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 2, irq), DT_INST_IRQ_BY_IDX(n, 2, priority),     \
+			    counter_sam_tc_isr, DEVICE_DT_INST_GET(n), 0);                         \
+		irq_enable(DT_INST_IRQ_BY_IDX(n, 2, irq));                                         \
+	}
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_SAM_TC_INIT)

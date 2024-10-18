@@ -29,39 +29,39 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i3c_mcux, CONFIG_I3C_MCUX_LOG_LEVEL);
 
-#define I3C_MCTRL_REQUEST_NONE			I3C_MCTRL_REQUEST(0)
-#define I3C_MCTRL_REQUEST_EMIT_START_ADDR	I3C_MCTRL_REQUEST(1)
-#define I3C_MCTRL_REQUEST_EMIT_STOP		I3C_MCTRL_REQUEST(2)
-#define I3C_MCTRL_REQUEST_IBI_ACK_NACK		I3C_MCTRL_REQUEST(3)
-#define I3C_MCTRL_REQUEST_PROCESS_DAA		I3C_MCTRL_REQUEST(4)
-#define I3C_MCTRL_REQUEST_FORCE_EXIT		I3C_MCTRL_REQUEST(6)
-#define I3C_MCTRL_REQUEST_AUTO_IBI		I3C_MCTRL_REQUEST(7)
+#define I3C_MCTRL_REQUEST_NONE            I3C_MCTRL_REQUEST(0)
+#define I3C_MCTRL_REQUEST_EMIT_START_ADDR I3C_MCTRL_REQUEST(1)
+#define I3C_MCTRL_REQUEST_EMIT_STOP       I3C_MCTRL_REQUEST(2)
+#define I3C_MCTRL_REQUEST_IBI_ACK_NACK    I3C_MCTRL_REQUEST(3)
+#define I3C_MCTRL_REQUEST_PROCESS_DAA     I3C_MCTRL_REQUEST(4)
+#define I3C_MCTRL_REQUEST_FORCE_EXIT      I3C_MCTRL_REQUEST(6)
+#define I3C_MCTRL_REQUEST_AUTO_IBI        I3C_MCTRL_REQUEST(7)
 
-#define I3C_MCTRL_IBIRESP_ACK			I3C_MCTRL_IBIRESP(0)
-#define I3C_MCTRL_IBIRESP_ACK_AUTO		I3C_MCTRL_IBIRESP(0)
-#define I3C_MCTRL_IBIRESP_NACK			I3C_MCTRL_IBIRESP(1)
-#define I3C_MCTRL_IBIRESP_ACK_WITH_BYTE		I3C_MCTRL_IBIRESP(2)
-#define I3C_MCTRL_IBIRESP_MANUAL		I3C_MCTRL_IBIRESP(3)
+#define I3C_MCTRL_IBIRESP_ACK           I3C_MCTRL_IBIRESP(0)
+#define I3C_MCTRL_IBIRESP_ACK_AUTO      I3C_MCTRL_IBIRESP(0)
+#define I3C_MCTRL_IBIRESP_NACK          I3C_MCTRL_IBIRESP(1)
+#define I3C_MCTRL_IBIRESP_ACK_WITH_BYTE I3C_MCTRL_IBIRESP(2)
+#define I3C_MCTRL_IBIRESP_MANUAL        I3C_MCTRL_IBIRESP(3)
 
-#define I3C_MCTRL_TYPE_I3C			I3C_MCTRL_TYPE(0)
-#define I3C_MCTRL_TYPE_I2C			I3C_MCTRL_TYPE(1)
+#define I3C_MCTRL_TYPE_I3C I3C_MCTRL_TYPE(0)
+#define I3C_MCTRL_TYPE_I2C I3C_MCTRL_TYPE(1)
 
-#define I3C_MCTRL_DIR_WRITE			I3C_MCTRL_DIR(0)
-#define I3C_MCTRL_DIR_READ			I3C_MCTRL_DIR(1)
+#define I3C_MCTRL_DIR_WRITE I3C_MCTRL_DIR(0)
+#define I3C_MCTRL_DIR_READ  I3C_MCTRL_DIR(1)
 
-#define I3C_MSTATUS_STATE_IDLE			I3C_MSTATUS_STATE(0)
-#define I3C_MSTATUS_STATE_SLVREQ		I3C_MSTATUS_STATE(1)
-#define I3C_MSTATUS_STATE_MSGSDR		I3C_MSTATUS_STATE(2)
-#define I3C_MSTATUS_STATE_NORMACT		I3C_MSTATUS_STATE(3)
-#define I3C_MSTATUS_STATE_MSGDDR		I3C_MSTATUS_STATE(4)
-#define I3C_MSTATUS_STATE_DAA			I3C_MSTATUS_STATE(5)
-#define I3C_MSTATUS_STATE_IBIACK		I3C_MSTATUS_STATE(6)
-#define I3C_MSTATUS_STATE_IBIRCV		I3C_MSTATUS_STATE(7)
+#define I3C_MSTATUS_STATE_IDLE    I3C_MSTATUS_STATE(0)
+#define I3C_MSTATUS_STATE_SLVREQ  I3C_MSTATUS_STATE(1)
+#define I3C_MSTATUS_STATE_MSGSDR  I3C_MSTATUS_STATE(2)
+#define I3C_MSTATUS_STATE_NORMACT I3C_MSTATUS_STATE(3)
+#define I3C_MSTATUS_STATE_MSGDDR  I3C_MSTATUS_STATE(4)
+#define I3C_MSTATUS_STATE_DAA     I3C_MSTATUS_STATE(5)
+#define I3C_MSTATUS_STATE_IBIACK  I3C_MSTATUS_STATE(6)
+#define I3C_MSTATUS_STATE_IBIRCV  I3C_MSTATUS_STATE(7)
 
-#define I3C_MSTATUS_IBITYPE_NONE		I3C_MSTATUS_IBITYPE(0)
-#define I3C_MSTATUS_IBITYPE_IBI			I3C_MSTATUS_IBITYPE(1)
-#define I3C_MSTATUS_IBITYPE_MR			I3C_MSTATUS_IBITYPE(2)
-#define I3C_MSTATUS_IBITYPE_HJ			I3C_MSTATUS_IBITYPE(3)
+#define I3C_MSTATUS_IBITYPE_NONE I3C_MSTATUS_IBITYPE(0)
+#define I3C_MSTATUS_IBITYPE_IBI  I3C_MSTATUS_IBITYPE(1)
+#define I3C_MSTATUS_IBITYPE_MR   I3C_MSTATUS_IBITYPE(2)
+#define I3C_MSTATUS_IBITYPE_HJ   I3C_MSTATUS_IBITYPE(3)
 
 #define I3C_MAX_STOP_RETRIES 5
 
@@ -134,8 +134,7 @@ struct mcux_i3c_data {
  * @retval 0 If masked register value matches before time out.
  * @retval -ETIMEDOUT Timedout without matching.
  */
-static int reg32_poll_timeout(volatile uint32_t *reg,
-			      uint32_t mask, uint32_t match,
+static int reg32_poll_timeout(volatile uint32_t *reg, uint32_t mask, uint32_t match,
 			      uint32_t timeout_us)
 {
 	/*
@@ -156,8 +155,7 @@ static int reg32_poll_timeout(volatile uint32_t *reg,
  * @param mask Mask to the register value.
  * @param update Value to be updated in register.
  */
-static inline void reg32_update(volatile uint32_t *reg,
-				uint32_t mask, uint32_t update)
+static inline void reg32_update(volatile uint32_t *reg, uint32_t mask, uint32_t update)
 {
 	uint32_t val = sys_read32((mem_addr_t)reg);
 
@@ -176,8 +174,7 @@ static inline void reg32_update(volatile uint32_t *reg,
  *
  * @return True if bits in @p mask mask matches @p match, false otherwise.
  */
-static inline bool reg32_test_match(volatile uint32_t *reg,
-				    uint32_t mask, uint32_t match)
+static inline bool reg32_test_match(volatile uint32_t *reg, uint32_t mask, uint32_t match)
 {
 	uint32_t val = sys_read32((mem_addr_t)reg);
 
@@ -247,8 +244,7 @@ static bool mcux_i3c_has_error(I3C_Type *base)
 		 * printing any error messages should be handled in
 		 * callers of this function.
 		 */
-		LOG_DBG("ERROR: MSTATUS 0x%08x MERRWARN 0x%08x",
-			mstatus, merrwarn);
+		LOG_DBG("ERROR: MSTATUS 0x%08x MERRWARN 0x%08x", mstatus, merrwarn);
 
 		return true;
 	}
@@ -334,8 +330,7 @@ static inline void mcux_i3c_status_wait(I3C_Type *base, uint32_t mask)
  * @retval 0 If bits are set before time out.
  * @retval -ETIMEDOUT
  */
-static inline int mcux_i3c_status_wait_timeout(I3C_Type *base, uint32_t mask,
-					       uint32_t timeout_us)
+static inline int mcux_i3c_status_wait_timeout(I3C_Type *base, uint32_t mask, uint32_t timeout_us)
 {
 	return reg32_poll_timeout(&base->MSTATUS, mask, mask, timeout_us);
 }
@@ -376,10 +371,8 @@ static inline void mcux_i3c_status_clear(I3C_Type *base, uint32_t mask)
  */
 static inline void mcux_i3c_status_clear_all(I3C_Type *base)
 {
-	uint32_t mask = I3C_MSTATUS_MCTRLDONE_MASK |
-			I3C_MSTATUS_COMPLETE_MASK |
-			I3C_MSTATUS_IBIWON_MASK |
-			I3C_MSTATUS_ERRWARN_MASK;
+	uint32_t mask = I3C_MSTATUS_MCTRLDONE_MASK | I3C_MSTATUS_COMPLETE_MASK |
+			I3C_MSTATUS_IBIWON_MASK | I3C_MSTATUS_ERRWARN_MASK;
 
 	mcux_i3c_status_clear(base, mask);
 }
@@ -394,8 +387,7 @@ static inline void mcux_i3c_status_clear_all(I3C_Type *base)
  * @retval 0 If bits are cleared before time out.
  * @retval -ETIMEDOUT
  */
-static inline int mcux_i3c_status_clear_timeout(I3C_Type *base, uint32_t mask,
-						uint32_t timeout_us)
+static inline int mcux_i3c_status_clear_timeout(I3C_Type *base, uint32_t mask, uint32_t timeout_us)
 {
 	bool result;
 
@@ -534,8 +526,7 @@ static inline uint32_t mcux_i3c_state_get(I3C_Type *base)
  * @retval -ETIMEDOUT Exhausted all delays without matching.
  */
 static inline int mcux_i3c_state_wait_timeout(I3C_Type *base, uint32_t state,
-					      uint32_t step_delay_us,
-					      uint32_t total_delay_us)
+					      uint32_t step_delay_us, uint32_t total_delay_us)
 {
 	uint32_t delayed = 0;
 	int ret = -ETIMEDOUT;
@@ -561,9 +552,7 @@ static inline int mcux_i3c_state_wait_timeout(I3C_Type *base, uint32_t state,
 static inline void mcux_i3c_wait_idle(struct mcux_i3c_data *dev_data, I3C_Type *base)
 {
 	while (mcux_i3c_state_get(base) != I3C_MSTATUS_STATE_IDLE) {
-		k_condvar_wait(&dev_data->condvar,
-				     &dev_data->lock,
-				     K_FOREVER);
+		k_condvar_wait(&dev_data->condvar, &dev_data->lock, K_FOREVER);
 	}
 }
 
@@ -578,8 +567,8 @@ static inline void mcux_i3c_wait_idle(struct mcux_i3c_data *dev_data, I3C_Type *
  *
  * @return 0 if successful, or negative if error.
  */
-static int mcux_i3c_request_emit_start(I3C_Type *base, uint8_t addr, bool is_i2c,
-				       bool is_read, size_t read_sz)
+static int mcux_i3c_request_emit_start(I3C_Type *base, uint8_t addr, bool is_i2c, bool is_read,
+				       size_t read_sz)
 {
 	uint32_t mctrl;
 	int ret = 0;
@@ -601,8 +590,7 @@ static int mcux_i3c_request_emit_start(I3C_Type *base, uint8_t addr, bool is_i2c
 	base->MCTRL = mctrl;
 
 	/* Wait for controller to say the operation is done */
-	ret = mcux_i3c_status_wait_clear_timeout(base, I3C_MSTATUS_MCTRLDONE_MASK,
-						 1000);
+	ret = mcux_i3c_status_wait_clear_timeout(base, I3C_MSTATUS_MCTRLDONE_MASK, 1000);
 	if (ret == 0) {
 		/* Check for NACK */
 		if (mcux_i3c_error_is_nack(base)) {
@@ -649,8 +637,7 @@ static inline int mcux_i3c_do_request_emit_stop(I3C_Type *base, bool wait_stop)
 				 * how that could occur but clear it
 				 * and return the error.
 				 */
-				if (reg32_test(&base->MERRWARN,
-					       I3C_MERRWARN_TIMEOUT_MASK)) {
+				if (reg32_test(&base->MERRWARN, I3C_MERRWARN_TIMEOUT_MASK)) {
 					mcux_i3c_errwarn_clear_all_nowait(base);
 					return -ETIMEDOUT;
 				}
@@ -675,8 +662,8 @@ static inline int mcux_i3c_do_request_emit_stop(I3C_Type *base, bool wait_stop)
  * @param wait_stop True if need to wait for controller to be
  *                  no longer in NORMACT.
  */
-static inline void mcux_i3c_request_emit_stop(struct mcux_i3c_data *dev_data,
-					      I3C_Type *base, bool wait_stop)
+static inline void mcux_i3c_request_emit_stop(struct mcux_i3c_data *dev_data, I3C_Type *base,
+					      bool wait_stop)
 {
 	size_t retries;
 
@@ -691,8 +678,7 @@ static inline void mcux_i3c_request_emit_stop(struct mcux_i3c_data *dev_data,
 	}
 
 	/* Make sure we are in a state where we can emit STOP */
-	if (!reg32_test_match(&base->MSTATUS, I3C_MSTATUS_STATE_MASK,
-			      I3C_MSTATUS_STATE_NORMACT)) {
+	if (!reg32_test_match(&base->MSTATUS, I3C_MSTATUS_STATE_MASK, I3C_MSTATUS_STATE_NORMACT)) {
 		return;
 	}
 
@@ -729,8 +715,7 @@ static inline void mcux_i3c_request_emit_stop(struct mcux_i3c_data *dev_data,
  */
 static inline void mcux_i3c_ibi_respond_nack(I3C_Type *base)
 {
-	reg32_update(&base->MCTRL,
-		     I3C_MCTRL_REQUEST_MASK | I3C_MCTRL_IBIRESP_MASK,
+	reg32_update(&base->MCTRL, I3C_MCTRL_REQUEST_MASK | I3C_MCTRL_IBIRESP_MASK,
 		     I3C_MCTRL_REQUEST_IBI_ACK_NACK | I3C_MCTRL_IBIRESP_NACK);
 
 	mcux_i3c_status_wait_clear(base, I3C_MSTATUS_MCTRLDONE_MASK);
@@ -743,8 +728,7 @@ static inline void mcux_i3c_ibi_respond_nack(I3C_Type *base)
  */
 static inline void mcux_i3c_ibi_respond_ack(I3C_Type *base)
 {
-	reg32_update(&base->MCTRL,
-		     I3C_MCTRL_REQUEST_MASK | I3C_MCTRL_IBIRESP_MASK,
+	reg32_update(&base->MCTRL, I3C_MCTRL_REQUEST_MASK | I3C_MCTRL_IBIRESP_MASK,
 		     I3C_MCTRL_REQUEST_IBI_ACK_NACK | I3C_MCTRL_IBIRESP_ACK);
 
 	mcux_i3c_status_wait_clear(base, I3C_MSTATUS_MCTRLDONE_MASK);
@@ -821,9 +805,8 @@ static void mcux_i3c_fifo_rx_drain(const struct device *dev)
  *
  * @return @see i3c_device_find.
  */
-static
-struct i3c_device_desc *mcux_i3c_device_find(const struct device *dev,
-					     const struct i3c_device_id *id)
+static struct i3c_device_desc *mcux_i3c_device_find(const struct device *dev,
+						    const struct i3c_device_id *id)
 {
 	const struct mcux_i3c_config *config = dev->config;
 
@@ -855,8 +838,8 @@ static int mcux_i3c_recover_bus(const struct device *dev)
 		/* Tell the controller to perform auto IBI. */
 		mcux_i3c_request_auto_ibi(base);
 
-		if (mcux_i3c_status_wait_clear_timeout(base, I3C_MSTATUS_COMPLETE_MASK,
-						       1000) == -ETIMEDOUT) {
+		if (mcux_i3c_status_wait_clear_timeout(base, I3C_MSTATUS_COMPLETE_MASK, 1000) ==
+		    -ETIMEDOUT) {
 			break;
 		}
 
@@ -871,8 +854,8 @@ static int mcux_i3c_recover_bus(const struct device *dev)
 		k_busy_wait(100);
 	}
 
-	if (reg32_poll_timeout(&base->MSTATUS, I3C_MSTATUS_STATE_MASK,
-			       I3C_MSTATUS_STATE_IDLE, 1000) == -ETIMEDOUT) {
+	if (reg32_poll_timeout(&base->MSTATUS, I3C_MSTATUS_STATE_MASK, I3C_MSTATUS_STATE_IDLE,
+			       1000) == -ETIMEDOUT) {
 		ret = -EBUSY;
 	}
 
@@ -998,11 +981,9 @@ one_xfer_write_out:
  *
  * @return Number of bytes read/written, or negative if error.
  */
-static int mcux_i3c_do_one_xfer(I3C_Type *base, struct mcux_i3c_data *data,
-				uint8_t addr, bool is_i2c,
-				uint8_t *buf, size_t buf_sz,
-				bool is_read, bool emit_start, bool emit_stop,
-				bool no_ending)
+static int mcux_i3c_do_one_xfer(I3C_Type *base, struct mcux_i3c_data *data, uint8_t addr,
+				bool is_i2c, uint8_t *buf, size_t buf_sz, bool is_read,
+				bool emit_start, bool emit_stop, bool no_ending)
 {
 	int ret = 0;
 
@@ -1040,8 +1021,7 @@ static int mcux_i3c_do_one_xfer(I3C_Type *base, struct mcux_i3c_data *data,
 		 */
 		ret = mcux_i3c_status_wait_timeout(base, I3C_MSTATUS_COMPLETE_MASK, 1000);
 		if (ret != 0) {
-			LOG_DBG("%s: timed out addr 0x%02x, buf_sz %u",
-				__func__, addr, buf_sz);
+			LOG_DBG("%s: timed out addr 0x%02x, buf_sz %u", __func__, addr, buf_sz);
 			emit_stop = true;
 
 			goto out_one_xfer;
@@ -1072,10 +1052,8 @@ out_one_xfer:
  *
  * @return @see i3c_transfer
  */
-static int mcux_i3c_transfer(const struct device *dev,
-			     struct i3c_device_desc *target,
-			     struct i3c_msg *msgs,
-			     uint8_t num_msgs)
+static int mcux_i3c_transfer(const struct device *dev, struct i3c_device_desc *target,
+			     struct i3c_msg *msgs, uint8_t num_msgs)
 {
 	const struct mcux_i3c_config *config = dev->config;
 	struct mcux_i3c_data *dev_data = dev->data;
@@ -1103,8 +1081,8 @@ static int mcux_i3c_transfer(const struct device *dev,
 		 * Emit start if this is the first message or that
 		 * the RESTART flag is set in message.
 		 */
-		bool emit_start = (i == 0) ||
-				  ((msgs[i].flags & I3C_MSG_RESTART) == I3C_MSG_RESTART);
+		bool emit_start =
+			(i == 0) || ((msgs[i].flags & I3C_MSG_RESTART) == I3C_MSG_RESTART);
 
 		bool emit_stop = (msgs[i].flags & I3C_MSG_STOP) == I3C_MSG_STOP;
 
@@ -1117,8 +1095,7 @@ static int mcux_i3c_transfer(const struct device *dev,
 		 * If not, tell the write function not to treat it that way.
 		 */
 		if (!is_read && !emit_stop && ((i + 1) != num_msgs)) {
-			bool next_is_write =
-				(msgs[i + 1].flags & I3C_MSG_RW_MASK) == I3C_MSG_WRITE;
+			bool next_is_write = (msgs[i + 1].flags & I3C_MSG_RW_MASK) == I3C_MSG_WRITE;
 			bool next_is_restart =
 				((msgs[i + 1].flags & I3C_MSG_RESTART) == I3C_MSG_RESTART);
 
@@ -1133,8 +1110,8 @@ static int mcux_i3c_transfer(const struct device *dev,
 		 */
 		if (!(msgs[i].flags & I3C_MSG_NBCH) && (send_broadcast)) {
 			while (1) {
-				ret = mcux_i3c_request_emit_start(base, I3C_BROADCAST_ADDR,
-								  false, false, 0);
+				ret = mcux_i3c_request_emit_start(base, I3C_BROADCAST_ADDR, false,
+								  false, 0);
 				if (ret == -ENODEV) {
 					LOG_WRN("emit start of broadcast addr got NACK, maybe IBI");
 					/* wait for idle then try again */
@@ -1151,9 +1128,8 @@ static int mcux_i3c_transfer(const struct device *dev,
 			send_broadcast = false;
 		}
 
-		ret = mcux_i3c_do_one_xfer(base, dev_data, target->dynamic_addr, false,
-					   msgs[i].buf, msgs[i].len,
-					   is_read, emit_start, emit_stop, no_ending);
+		ret = mcux_i3c_do_one_xfer(base, dev_data, target->dynamic_addr, false, msgs[i].buf,
+					   msgs[i].len, is_read, emit_start, emit_stop, no_ending);
 		if (ret < 0) {
 			goto out_xfer_i3c_stop_unlock;
 		}
@@ -1232,8 +1208,7 @@ static int mcux_i3c_do_daa(const struct device *dev)
 			rx_count = mcux_i3c_fifo_rx_count_get(base);
 			while (mcux_i3c_status_is_set(base, I3C_MSTATUS_RXPEND_MASK) &&
 			       (rx_count != 0U)) {
-				rx_buf[rx_size] = (uint8_t)(base->MRDATAB &
-							    I3C_MRDATAB_VALUE_MASK);
+				rx_buf[rx_size] = (uint8_t)(base->MRDATAB & I3C_MRDATAB_VALUE_MASK);
 				rx_size++;
 				rx_count--;
 			}
@@ -1253,8 +1228,7 @@ static int mcux_i3c_do_daa(const struct device *dev)
 			rx_size = 0;
 
 			/* Vendor ID portion of Provisioned ID */
-			vendor_id = (((uint16_t)rx_buf[0] << 8U) | (uint16_t)rx_buf[1]) &
-				    0xFFFEU;
+			vendor_id = (((uint16_t)rx_buf[0] << 8U) | (uint16_t)rx_buf[1]) & 0xFFFEU;
 
 			/* Part Number portion of Provisioned ID */
 			part_no = (uint32_t)rx_buf[2] << 24U | (uint32_t)rx_buf[3] << 16U |
@@ -1266,9 +1240,8 @@ static int mcux_i3c_do_daa(const struct device *dev)
 			LOG_DBG("DAA: Rcvd PID 0x%04x%08x", vendor_id, part_no);
 
 			ret = i3c_dev_list_daa_addr_helper(&data->common.attached_dev.addr_slots,
-							   &config->common.dev_list, pid,
-							   false, false,
-							   &target, &dyn_addr);
+							   &config->common.dev_list, pid, false,
+							   false, &target, &dyn_addr);
 			if (ret != 0) {
 				goto out_daa;
 			}
@@ -1296,8 +1269,8 @@ static int mcux_i3c_do_daa(const struct device *dev)
 			base->MWDATAB = dyn_addr;
 			mcux_i3c_request_daa(base);
 
-			LOG_DBG("PID 0x%04x%08x assigned dynamic address 0x%02x",
-				vendor_id, part_no, dyn_addr);
+			LOG_DBG("PID 0x%04x%08x assigned dynamic address 0x%02x", vendor_id,
+				part_no, dyn_addr);
 		}
 
 	} while (!mcux_i3c_status_is_set(base, I3C_MSTATUS_COMPLETE_MASK));
@@ -1326,8 +1299,7 @@ out_daa_unlock:
  *
  * @return @see i3c_do_ccc
  */
-static int mcux_i3c_do_ccc(const struct device *dev,
-			   struct i3c_ccc_payload *payload)
+static int mcux_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *payload)
 {
 	const struct mcux_i3c_config *config = dev->config;
 	struct mcux_i3c_data *data = dev->data;
@@ -1356,10 +1328,8 @@ static int mcux_i3c_do_ccc(const struct device *dev,
 	/* Emit START */
 	ret = mcux_i3c_request_emit_start(base, I3C_BROADCAST_ADDR, false, false, 0);
 	if (ret < 0) {
-		LOG_ERR("CCC[0x%02x] %s START error (%d)",
-			payload->ccc.id,
-			i3c_ccc_is_payload_broadcast(payload) ? "broadcast" : "direct",
-			ret);
+		LOG_ERR("CCC[0x%02x] %s START error (%d)", payload->ccc.id,
+			i3c_ccc_is_payload_broadcast(payload) ? "broadcast" : "direct", ret);
 
 		goto out_ccc_stop;
 	}
@@ -1367,13 +1337,10 @@ static int mcux_i3c_do_ccc(const struct device *dev,
 	/* Write the CCC code */
 	mcux_i3c_status_clear_all(base);
 	mcux_i3c_errwarn_clear_all_nowait(base);
-	ret = mcux_i3c_do_one_xfer_write(base, &payload->ccc.id, 1,
-					 payload->ccc.data_len > 0);
+	ret = mcux_i3c_do_one_xfer_write(base, &payload->ccc.id, 1, payload->ccc.data_len > 0);
 	if (ret < 0) {
-		LOG_ERR("CCC[0x%02x] %s command error (%d)",
-			payload->ccc.id,
-			i3c_ccc_is_payload_broadcast(payload) ? "broadcast" : "direct",
-			ret);
+		LOG_ERR("CCC[0x%02x] %s command error (%d)", payload->ccc.id,
+			i3c_ccc_is_payload_broadcast(payload) ? "broadcast" : "direct", ret);
 
 		goto out_ccc_stop;
 	}
@@ -1382,11 +1349,10 @@ static int mcux_i3c_do_ccc(const struct device *dev,
 	if (payload->ccc.data_len > 0) {
 		mcux_i3c_status_clear_all(base);
 		mcux_i3c_errwarn_clear_all_nowait(base);
-		ret = mcux_i3c_do_one_xfer_write(base, payload->ccc.data,
-						 payload->ccc.data_len, false);
+		ret = mcux_i3c_do_one_xfer_write(base, payload->ccc.data, payload->ccc.data_len,
+						 false);
 		if (ret < 0) {
-			LOG_ERR("CCC[0x%02x] %s command payload error (%d)",
-				payload->ccc.id,
+			LOG_ERR("CCC[0x%02x] %s command payload error (%d)", payload->ccc.id,
 				i3c_ccc_is_payload_broadcast(payload) ? "broadcast" : "direct",
 				ret);
 
@@ -1415,14 +1381,12 @@ static int mcux_i3c_do_ccc(const struct device *dev,
 			bool is_read = tgt_payload->rnw == 1U;
 			bool emit_start = idx == 0;
 
-			ret = mcux_i3c_do_one_xfer(base, data,
-						   tgt_payload->addr, false,
-						   tgt_payload->data,
-						   tgt_payload->data_len,
+			ret = mcux_i3c_do_one_xfer(base, data, tgt_payload->addr, false,
+						   tgt_payload->data, tgt_payload->data_len,
 						   is_read, emit_start, false, false);
 			if (ret < 0) {
-				LOG_ERR("CCC[0x%02x] target payload error (%d)",
-					payload->ccc.id, ret);
+				LOG_ERR("CCC[0x%02x] target payload error (%d)", payload->ccc.id,
+					ret);
 
 				goto out_ccc_stop;
 			}
@@ -1468,8 +1432,7 @@ static void mcux_i3c_ibi_work(struct k_work *work)
 
 	if (mcux_i3c_state_get(base) != I3C_MSTATUS_STATE_SLVREQ) {
 		LOG_DBG("IBI work %p running not because of IBI", work);
-		LOG_DBG("MSTATUS 0x%08x MERRWARN 0x%08x",
-			base->MSTATUS, base->MERRWARN);
+		LOG_DBG("MSTATUS 0x%08x MERRWARN 0x%08x", base->MSTATUS, base->MERRWARN);
 		mcux_i3c_request_emit_stop(data, base, true);
 
 		goto out_ibi_work;
@@ -1500,8 +1463,8 @@ static void mcux_i3c_ibi_work(struct k_work *work)
 		__fallthrough;
 
 	case I3C_MSTATUS_IBITYPE_MR:
-		if (mcux_i3c_status_wait_timeout(base, I3C_MSTATUS_COMPLETE_MASK,
-						 1000) == -ETIMEDOUT) {
+		if (mcux_i3c_status_wait_timeout(base, I3C_MSTATUS_COMPLETE_MASK, 1000) ==
+		    -ETIMEDOUT) {
 			LOG_ERR("Timeout waiting for COMPLETE");
 
 			mcux_i3c_request_emit_stop(data, base, true);
@@ -1518,8 +1481,7 @@ static void mcux_i3c_ibi_work(struct k_work *work)
 	case I3C_MSTATUS_IBITYPE_IBI:
 		target = i3c_dev_list_i3c_addr_find(dev, (uint8_t)ibiaddr);
 		if (target != NULL) {
-			ret = mcux_i3c_do_one_xfer_read(base, &payload[0],
-							sizeof(payload), true);
+			ret = mcux_i3c_do_one_xfer_read(base, &payload[0], sizeof(payload), true);
 			if (ret >= 0) {
 				payload_sz = (size_t)ret;
 			} else {
@@ -1560,8 +1522,7 @@ static void mcux_i3c_ibi_work(struct k_work *work)
 	switch (ibitype) {
 	case I3C_MSTATUS_IBITYPE_IBI:
 		if (target != NULL) {
-			if (i3c_ibi_work_enqueue_target_irq(target,
-							    &payload[0], payload_sz) != 0) {
+			if (i3c_ibi_work_enqueue_target_irq(target, &payload[0], payload_sz) != 0) {
 				LOG_ERR("Error enqueue IBI IRQ work");
 			}
 		}
@@ -1587,8 +1548,7 @@ out_ibi_work:
 	base->MINTSET = I3C_MINTSET_SLVSTART_MASK;
 }
 
-static void mcux_i3c_ibi_rules_setup(struct mcux_i3c_data *data,
-				     I3C_Type *base)
+static void mcux_i3c_ibi_rules_setup(struct mcux_i3c_data *data, I3C_Type *base)
 {
 	uint32_t ibi_rules;
 	int idx;
@@ -1624,8 +1584,7 @@ static void mcux_i3c_ibi_rules_setup(struct mcux_i3c_data *data,
 	LOG_DBG("MIBIRULES 0x%08x", ibi_rules);
 }
 
-int mcux_i3c_ibi_enable(const struct device *dev,
-			struct i3c_device_desc *target)
+int mcux_i3c_ibi_enable(const struct device *dev, struct i3c_device_desc *target)
 {
 	const struct mcux_i3c_config *config = dev->config;
 	struct mcux_i3c_data *data = dev->data;
@@ -1657,8 +1616,7 @@ int mcux_i3c_ibi_enable(const struct device *dev,
 	/* Disable controller interrupt while we configure IBI rules. */
 	base->MINTCLR = I3C_MINTCLR_SLVSTART_MASK;
 
-	LOG_DBG("IBI enabling for 0x%02x (BCR 0x%02x)",
-		target->dynamic_addr, target->bcr);
+	LOG_DBG("IBI enabling for 0x%02x (BCR 0x%02x)", target->dynamic_addr, target->bcr);
 
 	msb = (target->dynamic_addr & BIT(6)) == BIT(6);
 	has_mandatory_byte = i3c_ibi_has_payload(target);
@@ -1720,8 +1678,7 @@ int mcux_i3c_ibi_enable(const struct device *dev,
 	i3c_events.events = I3C_CCC_EVT_INTR;
 	ret = i3c_ccc_do_events_set(target, true, &i3c_events);
 	if (ret != 0) {
-		LOG_ERR("Error sending IBI ENEC for 0x%02x (%d)",
-			target->dynamic_addr, ret);
+		LOG_ERR("Error sending IBI ENEC for 0x%02x (%d)", target->dynamic_addr, ret);
 	}
 
 out:
@@ -1736,8 +1693,7 @@ out1:
 	return ret;
 }
 
-int mcux_i3c_ibi_disable(const struct device *dev,
-			 struct i3c_device_desc *target)
+int mcux_i3c_ibi_disable(const struct device *dev, struct i3c_device_desc *target)
 {
 	const struct mcux_i3c_config *config = dev->config;
 	struct mcux_i3c_data *data = dev->data;
@@ -1773,8 +1729,7 @@ int mcux_i3c_ibi_disable(const struct device *dev,
 	i3c_events.events = I3C_CCC_EVT_INTR;
 	ret = i3c_ccc_do_events_set(target, false, &i3c_events);
 	if (ret != 0) {
-		LOG_ERR("Error sending IBI DISEC for 0x%02x (%d)",
-			target->dynamic_addr, ret);
+		LOG_ERR("Error sending IBI DISEC for 0x%02x (%d)", target->dynamic_addr, ret);
 	}
 
 	mcux_i3c_ibi_rules_setup(data, base);
@@ -1845,8 +1800,7 @@ static void mcux_i3c_isr(const struct device *dev)
  * @retval -EIO General Input/Output errors.
  * @retval -ENOSYS If not implemented.
  */
-static int mcux_i3c_configure(const struct device *dev,
-			      enum i3c_config_type type, void *config)
+static int mcux_i3c_configure(const struct device *dev, enum i3c_config_type type, void *config)
 {
 	const struct mcux_i3c_config *dev_cfg = dev->config;
 	struct mcux_i3c_data *dev_data = dev->data;
@@ -1866,16 +1820,13 @@ static int mcux_i3c_configure(const struct device *dev,
 	 *
 	 * Currently, must be the primary controller.
 	 */
-	if ((ctrl_cfg->is_secondary) ||
-	    (ctrl_cfg->scl.i2c == 0U) ||
-	    (ctrl_cfg->scl.i3c == 0U)) {
+	if ((ctrl_cfg->is_secondary) || (ctrl_cfg->scl.i2c == 0U) || (ctrl_cfg->scl.i3c == 0U)) {
 		ret = -EINVAL;
 		goto out_configure;
 	}
 
 	/* Get the clock frequency */
-	if (clock_control_get_rate(dev_cfg->clock_dev, dev_cfg->clock_subsys,
-				   &clock_freq)) {
+	if (clock_control_get_rate(dev_cfg->clock_dev, dev_cfg->clock_subsys, &clock_freq)) {
 		ret = -EINVAL;
 		goto out_configure;
 	}
@@ -1923,8 +1874,7 @@ out_configure:
  * @retval -EIO General Input/Output errors.
  * @retval -ENOSYS If not implemented.
  */
-static int mcux_i3c_config_get(const struct device *dev,
-			       enum i3c_config_type type, void *config)
+static int mcux_i3c_config_get(const struct device *dev, enum i3c_config_type type, void *config)
 {
 	struct mcux_i3c_data *data = dev->data;
 	int ret = 0;
@@ -1991,14 +1941,10 @@ static int mcux_i3c_init(const struct device *dev)
 	}
 
 	/* Disable all interrupts */
-	base->MINTCLR = I3C_MINTCLR_SLVSTART_MASK |
-			I3C_MINTCLR_MCTRLDONE_MASK |
-			I3C_MINTCLR_COMPLETE_MASK |
-			I3C_MINTCLR_RXPEND_MASK |
-			I3C_MINTCLR_TXNOTFULL_MASK |
-			I3C_MINTCLR_IBIWON_MASK |
-			I3C_MINTCLR_ERRWARN_MASK |
-			I3C_MINTCLR_NOWMASTER_MASK;
+	base->MINTCLR = I3C_MINTCLR_SLVSTART_MASK | I3C_MINTCLR_MCTRLDONE_MASK |
+			I3C_MINTCLR_COMPLETE_MASK | I3C_MINTCLR_RXPEND_MASK |
+			I3C_MINTCLR_TXNOTFULL_MASK | I3C_MINTCLR_IBIWON_MASK |
+			I3C_MINTCLR_ERRWARN_MASK | I3C_MINTCLR_NOWMASTER_MASK;
 
 	/* Just in case the bus is not in idle. */
 	ret = mcux_i3c_recover_bus(dev);
@@ -2022,10 +1968,8 @@ static int mcux_i3c_i2c_api_configure(const struct device *dev, uint32_t dev_con
 	return -ENOSYS;
 }
 
-static int mcux_i3c_i2c_api_transfer(const struct device *dev,
-				     struct i2c_msg *msgs,
-				     uint8_t num_msgs,
-				     uint16_t addr)
+static int mcux_i3c_i2c_api_transfer(const struct device *dev, struct i2c_msg *msgs,
+				     uint8_t num_msgs, uint16_t addr)
 {
 	const struct mcux_i3c_config *config = dev->config;
 	struct mcux_i3c_data *dev_data = dev->data;
@@ -2047,8 +1991,8 @@ static int mcux_i3c_i2c_api_transfer(const struct device *dev,
 		 * Emit start if this is the first message or that
 		 * the RESTART flag is set in message.
 		 */
-		bool emit_start = (i == 0) ||
-				  ((msgs[i].flags & I2C_MSG_RESTART) == I2C_MSG_RESTART);
+		bool emit_start =
+			(i == 0) || ((msgs[i].flags & I2C_MSG_RESTART) == I2C_MSG_RESTART);
 
 		bool emit_stop = (msgs[i].flags & I2C_MSG_STOP) == I2C_MSG_STOP;
 
@@ -2061,8 +2005,7 @@ static int mcux_i3c_i2c_api_transfer(const struct device *dev,
 		 * If not, tell the write function not to treat it that way.
 		 */
 		if (!is_read && !emit_stop && ((i + 1) != num_msgs)) {
-			bool next_is_write =
-				(msgs[i + 1].flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE;
+			bool next_is_write = (msgs[i + 1].flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE;
 			bool next_is_restart =
 				((msgs[i + 1].flags & I2C_MSG_RESTART) == I2C_MSG_RESTART);
 
@@ -2071,8 +2014,7 @@ static int mcux_i3c_i2c_api_transfer(const struct device *dev,
 			}
 		}
 
-		ret = mcux_i3c_do_one_xfer(base, dev_data, addr, true,
-					   msgs[i].buf, msgs[i].len,
+		ret = mcux_i3c_do_one_xfer(base, dev_data, addr, true, msgs[i].buf, msgs[i].len,
 					   is_read, emit_start, emit_stop, no_ending);
 		if (ret < 0) {
 			goto out_xfer_i2c_stop_unlock;
@@ -2113,48 +2055,37 @@ static const struct i3c_driver_api mcux_i3c_driver_api = {
 #endif
 };
 
-#define I3C_MCUX_DEVICE(id)							\
-	PINCTRL_DT_INST_DEFINE(id);						\
-	static void mcux_i3c_config_func_##id(const struct device *dev);	\
-	static struct i3c_device_desc mcux_i3c_device_array_##id[] =		\
-		I3C_DEVICE_ARRAY_DT_INST(id);					\
-	static struct i3c_i2c_device_desc mcux_i3c_i2c_device_array_##id[] =	\
-		I3C_I2C_DEVICE_ARRAY_DT_INST(id);				\
-	static const struct mcux_i3c_config mcux_i3c_config_##id = {		\
-		.base = (I3C_Type *) DT_INST_REG_ADDR(id),			\
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),		\
-		.clock_subsys =							\
-			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),	\
-		.irq_config_func = mcux_i3c_config_func_##id,			\
-		.common.dev_list.i3c = mcux_i3c_device_array_##id,			\
-		.common.dev_list.num_i3c = ARRAY_SIZE(mcux_i3c_device_array_##id),	\
-		.common.dev_list.i2c = mcux_i3c_i2c_device_array_##id,			\
-		.common.dev_list.num_i2c = ARRAY_SIZE(mcux_i3c_i2c_device_array_##id),	\
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),			\
-		.disable_open_drain_high_pp =					\
-			DT_INST_PROP(id, disable_open_drain_high_pp),		\
-	};									\
-	static struct mcux_i3c_data mcux_i3c_data_##id = {			\
-		.i3c_od_scl_hz = DT_INST_PROP_OR(id, i3c_od_scl_hz, 0),		\
-		.common.ctrl_config.scl.i3c = DT_INST_PROP_OR(id, i3c_scl_hz, 0),	\
-		.common.ctrl_config.scl.i2c = DT_INST_PROP_OR(id, i2c_scl_hz, 0),	\
-	};									\
-	DEVICE_DT_INST_DEFINE(id,						\
-			      mcux_i3c_init,					\
-			      NULL,						\
-			      &mcux_i3c_data_##id,				\
-			      &mcux_i3c_config_##id,				\
-			      POST_KERNEL,					\
-			      CONFIG_I3C_CONTROLLER_INIT_PRIORITY,		\
-			      &mcux_i3c_driver_api);				\
-	static void mcux_i3c_config_func_##id(const struct device *dev)		\
-	{									\
-		IRQ_CONNECT(DT_INST_IRQN(id),					\
-			    DT_INST_IRQ(id, priority),				\
-			    mcux_i3c_isr,					\
-			    DEVICE_DT_INST_GET(id),				\
-			    0);							\
-		irq_enable(DT_INST_IRQN(id));					\
-	};									\
+#define I3C_MCUX_DEVICE(id)                                                                        \
+	PINCTRL_DT_INST_DEFINE(id);                                                                \
+	static void mcux_i3c_config_func_##id(const struct device *dev);                           \
+	static struct i3c_device_desc mcux_i3c_device_array_##id[] = I3C_DEVICE_ARRAY_DT_INST(id); \
+	static struct i3c_i2c_device_desc mcux_i3c_i2c_device_array_##id[] =                       \
+		I3C_I2C_DEVICE_ARRAY_DT_INST(id);                                                  \
+	static const struct mcux_i3c_config mcux_i3c_config_##id = {                               \
+		.base = (I3C_Type *)DT_INST_REG_ADDR(id),                                          \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),                               \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),             \
+		.irq_config_func = mcux_i3c_config_func_##id,                                      \
+		.common.dev_list.i3c = mcux_i3c_device_array_##id,                                 \
+		.common.dev_list.num_i3c = ARRAY_SIZE(mcux_i3c_device_array_##id),                 \
+		.common.dev_list.i2c = mcux_i3c_i2c_device_array_##id,                             \
+		.common.dev_list.num_i2c = ARRAY_SIZE(mcux_i3c_i2c_device_array_##id),             \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),                                      \
+		.disable_open_drain_high_pp = DT_INST_PROP(id, disable_open_drain_high_pp),        \
+	};                                                                                         \
+	static struct mcux_i3c_data mcux_i3c_data_##id = {                                         \
+		.i3c_od_scl_hz = DT_INST_PROP_OR(id, i3c_od_scl_hz, 0),                            \
+		.common.ctrl_config.scl.i3c = DT_INST_PROP_OR(id, i3c_scl_hz, 0),                  \
+		.common.ctrl_config.scl.i2c = DT_INST_PROP_OR(id, i2c_scl_hz, 0),                  \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(id, mcux_i3c_init, NULL, &mcux_i3c_data_##id, &mcux_i3c_config_##id, \
+			      POST_KERNEL, CONFIG_I3C_CONTROLLER_INIT_PRIORITY,                    \
+			      &mcux_i3c_driver_api);                                               \
+	static void mcux_i3c_config_func_##id(const struct device *dev)                            \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), mcux_i3c_isr,             \
+			    DEVICE_DT_INST_GET(id), 0);                                            \
+		irq_enable(DT_INST_IRQN(id));                                                      \
+	};
 
 DT_INST_FOREACH_STATUS_OKAY(I3C_MCUX_DEVICE)

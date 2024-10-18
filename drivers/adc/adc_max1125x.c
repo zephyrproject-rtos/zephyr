@@ -754,10 +754,10 @@ static int max1125x_init(const struct device *dev)
 		return -EIO;
 	}
 
-	k_tid_t tid = k_thread_create(
-		&data->thread, data->stack, K_KERNEL_STACK_SIZEOF(data->stack),
-		max1125x_acquisition_thread, (void *)dev, NULL, NULL,
-		CONFIG_ADC_MAX1125X_ACQUISITION_THREAD_PRIORITY, 0, K_NO_WAIT);
+	k_tid_t tid =
+		k_thread_create(&data->thread, data->stack, K_KERNEL_STACK_SIZEOF(data->stack),
+				max1125x_acquisition_thread, (void *)dev, NULL, NULL,
+				CONFIG_ADC_MAX1125X_ACQUISITION_THREAD_PRIORITY, 0, K_NO_WAIT);
 	k_thread_name_set(tid, "adc_max1125x");
 
 	adc_context_unlock_unconditionally(&data->ctx);
@@ -843,10 +843,8 @@ static const struct adc_driver_api max1125x_api = {
  * 1000 SPS, 2000 SPS, 4000 SPS, 8000 SPS, 16000 SPS, 32000 SPS, 64000 SPS}
  */
 #define MAX1125X_ODR_DELAY_US                                                                      \
-	{                                                                                          \
-		526315, 256410, 128205, 64102, 32051, 16000, 8000, 4000, 2000, 1000, 500, 250,     \
-			125, 62, 31, 15                                                            \
-	}
+	{526315, 256410, 128205, 64102, 32051, 16000, 8000, 4000,                                  \
+	 2000,   1000,   500,    250,   125,   62,    31,   15}
 
 /*
  * MAX11253: 16 bit, 6-channel, programmable gain amplifier, delta-sigma

@@ -15,15 +15,14 @@
 #include <string.h>
 #include <soc.h>
 
-#define RTC_SAM_REG_GET_FIELD(value, field) \
-	((RTC_##field##_Msk & value) >> RTC_##field##_Pos)
+#define RTC_SAM_REG_GET_FIELD(value, field) ((RTC_##field##_Msk & value) >> RTC_##field##_Pos)
 
 #define RTC_SAM_WPMR_DISABLE 0x52544300
-#define RTC_SAM_WPMR_ENABLE 0x52544301
+#define RTC_SAM_WPMR_ENABLE  0x52544301
 
-#define RTC_SAM_CALIBRATE_PPB_MAX (1950000)
-#define RTC_SAM_CALIBRATE_PPB_MIN (-1950000)
-#define RTC_SAM_CALIBRATE_PPB_QUANTA (1500)
+#define RTC_SAM_CALIBRATE_PPB_MAX       (1950000)
+#define RTC_SAM_CALIBRATE_PPB_MIN       (-1950000)
+#define RTC_SAM_CALIBRATE_PPB_QUANTA    (1500)
 #define RTC_SAM_CALIBRATE_PPB_LOW_SCALE (30500)
 
 #define RTC_SAM_TIME_MASK                                                                          \
@@ -217,11 +216,8 @@ static void rtc_sam_isr(const struct device *dev)
 #ifdef CONFIG_RTC_ALARM
 static uint16_t rtc_sam_alarm_get_supported_mask(void)
 {
-	return (RTC_ALARM_TIME_MASK_SECOND
-	      | RTC_ALARM_TIME_MASK_MINUTE
-	      | RTC_ALARM_TIME_MASK_HOUR
-	      | RTC_ALARM_TIME_MASK_MONTHDAY
-	      | RTC_ALARM_TIME_MASK_MONTH);
+	return (RTC_ALARM_TIME_MASK_SECOND | RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR |
+		RTC_ALARM_TIME_MASK_MONTHDAY | RTC_ALARM_TIME_MASK_MONTH);
 }
 
 static uint32_t rtc_atmel_timalr_from_tm(const struct rtc_time *timeptr, uint32_t mask)
@@ -297,8 +293,8 @@ static uint32_t rtc_sam_alarm_mask_from_calalr(uint32_t calalr)
 	return mask;
 }
 
-static void rtc_sam_tm_from_timalr_calalr(struct rtc_time *timeptr, uint32_t mask,
-						 uint32_t timalr, uint32_t calalr)
+static void rtc_sam_tm_from_timalr_calalr(struct rtc_time *timeptr, uint32_t mask, uint32_t timalr,
+					  uint32_t calalr)
 {
 	memset(timeptr, 0x00, sizeof(*timeptr));
 
@@ -323,8 +319,7 @@ static void rtc_sam_tm_from_timalr_calalr(struct rtc_time *timeptr, uint32_t mas
 	}
 }
 
-static int rtc_sam_alarm_get_supported_fields(const struct device *dev, uint16_t id,
-					      uint16_t *mask)
+static int rtc_sam_alarm_get_supported_fields(const struct device *dev, uint16_t id, uint16_t *mask)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(id);
@@ -644,12 +639,8 @@ static int rtc_sam_init(const struct device *dev)
 	regs->RTC_MR &= ~(RTC_MR_HRMOD | RTC_MR_PERSIAN);
 	regs->RTC_CR = 0;
 	rtc_sam_enable_wp();
-	regs->RTC_IDR = (RTC_IDR_ACKDIS
-			       | RTC_IDR_ALRDIS
-			       | RTC_IDR_SECDIS
-			       | RTC_IDR_TIMDIS
-			       | RTC_IDR_CALDIS
-			       | RTC_IDR_TDERRDIS);
+	regs->RTC_IDR = (RTC_IDR_ACKDIS | RTC_IDR_ALRDIS | RTC_IDR_SECDIS | RTC_IDR_TIMDIS |
+			 RTC_IDR_CALDIS | RTC_IDR_TDERRDIS);
 
 	k_sem_init(&data->cr_sec_evt_sem, 0, 1);
 	k_sem_init(&data->cr_upd_ack_sem, 0, 1);
@@ -658,25 +649,22 @@ static int rtc_sam_init(const struct device *dev)
 	return 0;
 }
 
-#define RTC_SAM_DEVICE(id)						\
-	static void rtc_sam_irq_init_##id(void)				\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),	\
-			    rtc_sam_isr, DEVICE_DT_INST_GET(id), 0);	\
-	}								\
-									\
-	static const struct rtc_sam_config rtc_sam_config_##id = {	\
-		.regs = (Rtc *)DT_INST_REG_ADDR(id),			\
-		.irq_num = DT_INST_IRQN(id),				\
-		.irq_init_fn_ptr = rtc_sam_irq_init_##id,		\
-	};								\
-									\
-	static struct rtc_sam_data rtc_sam_data_##id;			\
-									\
-	DEVICE_DT_INST_DEFINE(id, rtc_sam_init, NULL,			\
-			      &rtc_sam_data_##id,			\
-			      &rtc_sam_config_##id, POST_KERNEL,	\
-			      CONFIG_RTC_INIT_PRIORITY,			\
-			      &rtc_sam_driver_api);
+#define RTC_SAM_DEVICE(id)                                                                         \
+	static void rtc_sam_irq_init_##id(void)                                                    \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), rtc_sam_isr,                \
+			    DEVICE_DT_INST_GET(id), 0);                                            \
+	}                                                                                          \
+                                                                                                   \
+	static const struct rtc_sam_config rtc_sam_config_##id = {                                 \
+		.regs = (Rtc *)DT_INST_REG_ADDR(id),                                               \
+		.irq_num = DT_INST_IRQN(id),                                                       \
+		.irq_init_fn_ptr = rtc_sam_irq_init_##id,                                          \
+	};                                                                                         \
+                                                                                                   \
+	static struct rtc_sam_data rtc_sam_data_##id;                                              \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(id, rtc_sam_init, NULL, &rtc_sam_data_##id, &rtc_sam_config_##id,    \
+			      POST_KERNEL, CONFIG_RTC_INIT_PRIORITY, &rtc_sam_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RTC_SAM_DEVICE);

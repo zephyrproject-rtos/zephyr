@@ -19,21 +19,21 @@
 LOG_MODULE_REGISTER(auxdisplay_itron, CONFIG_AUXDISPLAY_LOG_LEVEL);
 
 /* Display commands */
-#define AUXDISPLAY_ITRON_CMD_USER_SETTING 0x1f
-#define AUXDISPLAY_ITRON_CMD_ESCAPE 0x1b
-#define AUXDISPLAY_ITRON_CMD_BRIGHTNESS 0x58
+#define AUXDISPLAY_ITRON_CMD_USER_SETTING  0x1f
+#define AUXDISPLAY_ITRON_CMD_ESCAPE        0x1b
+#define AUXDISPLAY_ITRON_CMD_BRIGHTNESS    0x58
 #define AUXDISPLAY_ITRON_CMD_DISPLAY_CLEAR 0x0c
-#define AUXDISPLAY_ITRON_CMD_CURSOR 0x43
-#define AUXDISPLAY_ITRON_CMD_CURSOR_SET 0x24
-#define AUXDISPLAY_ITRON_CMD_ACTION 0x28
-#define AUXDISPLAY_ITRON_CMD_N 0x61
-#define AUXDISPLAY_ITRON_CMD_SCREEN_SAVER 0x40
+#define AUXDISPLAY_ITRON_CMD_CURSOR        0x43
+#define AUXDISPLAY_ITRON_CMD_CURSOR_SET    0x24
+#define AUXDISPLAY_ITRON_CMD_ACTION        0x28
+#define AUXDISPLAY_ITRON_CMD_N             0x61
+#define AUXDISPLAY_ITRON_CMD_SCREEN_SAVER  0x40
 
 /* Time values when multithreading is disabled */
-#define AUXDISPLAY_ITRON_RESET_TIME K_MSEC(2)
-#define AUXDISPLAY_ITRON_RESET_WAIT_TIME K_MSEC(101)
+#define AUXDISPLAY_ITRON_RESET_TIME            K_MSEC(2)
+#define AUXDISPLAY_ITRON_RESET_WAIT_TIME       K_MSEC(101)
 #define AUXDISPLAY_ITRON_BUSY_DELAY_TIME_CHECK K_MSEC(4)
-#define AUXDISPLAY_ITRON_BUSY_WAIT_LOOPS 125
+#define AUXDISPLAY_ITRON_BUSY_WAIT_LOOPS       125
 
 /* Time values when multithreading is enabled */
 #define AUXDISPLAY_ITRON_BUSY_MAX_TIME K_MSEC(500)
@@ -64,12 +64,11 @@ static int auxdisplay_itron_clear(const struct device *dev);
 static int auxdisplay_itron_set_powered(const struct device *dev, bool enabled);
 
 #ifdef CONFIG_MULTITHREADING
-void auxdisplay_itron_busy_gpio_change_callback(const struct device *port,
-						struct gpio_callback *cb,
+void auxdisplay_itron_busy_gpio_change_callback(const struct device *port, struct gpio_callback *cb,
 						gpio_port_pins_t pins)
 {
-	struct auxdisplay_itron_data *data = CONTAINER_OF(cb,
-			struct auxdisplay_itron_data, busy_wait_callback);
+	struct auxdisplay_itron_data *data =
+		CONTAINER_OF(cb, struct auxdisplay_itron_data, busy_wait_callback);
 	k_sem_give(&data->busy_wait_sem);
 }
 #endif
@@ -200,11 +199,10 @@ static int auxdisplay_itron_cursor_set_enabled(const struct device *dev, bool en
 }
 
 static int auxdisplay_itron_cursor_position_set(const struct device *dev,
-					      enum auxdisplay_position type,
-					      int16_t x, int16_t y)
+						enum auxdisplay_position type, int16_t x, int16_t y)
 {
-	uint8_t cmd[] = {AUXDISPLAY_ITRON_CMD_USER_SETTING, AUXDISPLAY_ITRON_CMD_CURSOR_SET,
-			 0, 0, 0, 0};
+	uint8_t cmd[] = {
+		AUXDISPLAY_ITRON_CMD_USER_SETTING, AUXDISPLAY_ITRON_CMD_CURSOR_SET, 0, 0, 0, 0};
 
 	if (type != AUXDISPLAY_POSITION_ABSOLUTE) {
 		return -EINVAL;
@@ -346,8 +344,7 @@ static int send_cmd(const struct device *dev, const uint8_t *command, uint8_t le
 	while (i < length) {
 #ifdef CONFIG_MULTITHREADING
 		if (auxdisplay_itron_is_busy(dev) == 1) {
-			if (k_sem_take(&data->busy_wait_sem,
-				       AUXDISPLAY_ITRON_BUSY_MAX_TIME) != 0) {
+			if (k_sem_take(&data->busy_wait_sem, AUXDISPLAY_ITRON_BUSY_MAX_TIME) != 0) {
 				rc = -EIO;
 				goto cleanup;
 			}
@@ -419,29 +416,25 @@ static const struct auxdisplay_driver_api auxdisplay_itron_auxdisplay_api = {
 	.write = auxdisplay_itron_write,
 };
 
-#define AUXDISPLAY_ITRON_DEVICE(inst)								\
-	static struct auxdisplay_itron_data auxdisplay_itron_data_##inst;			\
-	static const struct auxdisplay_itron_config auxdisplay_itron_config_##inst = {		\
-		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),					\
-		.capabilities = {								\
-			.columns = DT_INST_PROP(inst, columns),					\
-			.rows = DT_INST_PROP(inst, rows),					\
-			.mode = AUXDISPLAY_ITRON_MODE_UART,					\
-			.brightness.minimum = AUXDISPLAY_ITRON_BRIGHTNESS_MIN,			\
-			.brightness.maximum = AUXDISPLAY_ITRON_BRIGHTNESS_MAX,			\
-			.backlight.minimum = AUXDISPLAY_LIGHT_NOT_SUPPORTED,			\
-			.backlight.maximum = AUXDISPLAY_LIGHT_NOT_SUPPORTED,			\
-		},										\
-		.busy_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, busy_gpios, {0}),			\
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),			\
-	};											\
-	DEVICE_DT_INST_DEFINE(inst,								\
-			&auxdisplay_itron_init,							\
-			NULL,									\
-			&auxdisplay_itron_data_##inst,						\
-			&auxdisplay_itron_config_##inst,					\
-			POST_KERNEL,								\
-			CONFIG_AUXDISPLAY_INIT_PRIORITY,					\
-			&auxdisplay_itron_auxdisplay_api);
+#define AUXDISPLAY_ITRON_DEVICE(inst)                                                              \
+	static struct auxdisplay_itron_data auxdisplay_itron_data_##inst;                          \
+	static const struct auxdisplay_itron_config auxdisplay_itron_config_##inst = {             \
+		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
+		.capabilities =                                                                    \
+			{                                                                          \
+				.columns = DT_INST_PROP(inst, columns),                            \
+				.rows = DT_INST_PROP(inst, rows),                                  \
+				.mode = AUXDISPLAY_ITRON_MODE_UART,                                \
+				.brightness.minimum = AUXDISPLAY_ITRON_BRIGHTNESS_MIN,             \
+				.brightness.maximum = AUXDISPLAY_ITRON_BRIGHTNESS_MAX,             \
+				.backlight.minimum = AUXDISPLAY_LIGHT_NOT_SUPPORTED,               \
+				.backlight.maximum = AUXDISPLAY_LIGHT_NOT_SUPPORTED,               \
+			},                                                                         \
+		.busy_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, busy_gpios, {0}),                      \
+		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),                    \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(inst, &auxdisplay_itron_init, NULL, &auxdisplay_itron_data_##inst,   \
+			      &auxdisplay_itron_config_##inst, POST_KERNEL,                        \
+			      CONFIG_AUXDISPLAY_INIT_PRIORITY, &auxdisplay_itron_auxdisplay_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AUXDISPLAY_ITRON_DEVICE)

@@ -32,7 +32,6 @@
 #define UART0_PARITY          0 /* Off */
 #define UART0_STOP            0 /* 1 stop bit */
 
-
 struct uart_efinix_sapphire_config {
 	uint32_t baudrate;
 };

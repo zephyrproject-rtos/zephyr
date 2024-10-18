@@ -17,67 +17,66 @@
 #if DT_HAS_COMPAT_STATUS_OKAY(andestech_machine_timer)
 #define DT_DRV_COMPAT andestech_machine_timer
 
-#define MTIME_REG	DT_INST_REG_ADDR(0)
-#define MTIMECMP_REG	(DT_INST_REG_ADDR(0) + 8)
-#define TIMER_IRQN	DT_INST_IRQN(0)
+#define MTIME_REG    DT_INST_REG_ADDR(0)
+#define MTIMECMP_REG (DT_INST_REG_ADDR(0) + 8)
+#define TIMER_IRQN   DT_INST_IRQN(0)
 /* neorv32-machine-timer */
 #elif DT_HAS_COMPAT_STATUS_OKAY(neorv32_machine_timer)
 #define DT_DRV_COMPAT neorv32_machine_timer
 
-#define MTIME_REG	DT_INST_REG_ADDR(0)
-#define MTIMECMP_REG	(DT_INST_REG_ADDR(0) + 8)
-#define TIMER_IRQN	DT_INST_IRQN(0)
+#define MTIME_REG    DT_INST_REG_ADDR(0)
+#define MTIMECMP_REG (DT_INST_REG_ADDR(0) + 8)
+#define TIMER_IRQN   DT_INST_IRQN(0)
 /* nuclei,systimer */
 #elif DT_HAS_COMPAT_STATUS_OKAY(nuclei_systimer)
 #define DT_DRV_COMPAT nuclei_systimer
 
-#define MTIME_REG	DT_INST_REG_ADDR(0)
-#define MTIMECMP_REG	(DT_INST_REG_ADDR(0) + 8)
-#define TIMER_IRQN	DT_INST_IRQ_BY_IDX(0, 1, irq)
+#define MTIME_REG    DT_INST_REG_ADDR(0)
+#define MTIMECMP_REG (DT_INST_REG_ADDR(0) + 8)
+#define TIMER_IRQN   DT_INST_IRQ_BY_IDX(0, 1, irq)
 /* sifive,clint0 */
 #elif DT_HAS_COMPAT_STATUS_OKAY(sifive_clint0)
 #define DT_DRV_COMPAT sifive_clint0
 
-#define MTIME_REG	(DT_INST_REG_ADDR(0) + 0xbff8U)
-#define MTIMECMP_REG	(DT_INST_REG_ADDR(0) + 0x4000U)
-#define TIMER_IRQN	DT_INST_IRQ_BY_IDX(0, 1, irq)
+#define MTIME_REG    (DT_INST_REG_ADDR(0) + 0xbff8U)
+#define MTIMECMP_REG (DT_INST_REG_ADDR(0) + 0x4000U)
+#define TIMER_IRQN   DT_INST_IRQ_BY_IDX(0, 1, irq)
 /* telink,machine-timer */
 #elif DT_HAS_COMPAT_STATUS_OKAY(telink_machine_timer)
 #define DT_DRV_COMPAT telink_machine_timer
 
-#define MTIME_REG	DT_INST_REG_ADDR(0)
-#define MTIMECMP_REG	(DT_INST_REG_ADDR(0) + 8)
-#define TIMER_IRQN	DT_INST_IRQN(0)
+#define MTIME_REG    DT_INST_REG_ADDR(0)
+#define MTIMECMP_REG (DT_INST_REG_ADDR(0) + 8)
+#define TIMER_IRQN   DT_INST_IRQN(0)
 /* lowrisc,machine-timer */
 #elif DT_HAS_COMPAT_STATUS_OKAY(lowrisc_machine_timer)
 #define DT_DRV_COMPAT lowrisc_machine_timer
 
-#define MTIME_REG	(DT_INST_REG_ADDR(0) + 0x110)
-#define MTIMECMP_REG	(DT_INST_REG_ADDR(0) + 0x118)
-#define TIMER_IRQN	DT_INST_IRQN(0)
+#define MTIME_REG    (DT_INST_REG_ADDR(0) + 0x110)
+#define MTIMECMP_REG (DT_INST_REG_ADDR(0) + 0x118)
+#define TIMER_IRQN   DT_INST_IRQN(0)
 /* niosv-machine-timer */
 #elif DT_HAS_COMPAT_STATUS_OKAY(niosv_machine_timer)
 #define DT_DRV_COMPAT niosv_machine_timer
 
-#define MTIMECMP_REG	DT_INST_REG_ADDR(0)
-#define MTIME_REG	(DT_INST_REG_ADDR(0) + 8)
-#define TIMER_IRQN	DT_INST_IRQN(0)
+#define MTIMECMP_REG DT_INST_REG_ADDR(0)
+#define MTIME_REG    (DT_INST_REG_ADDR(0) + 8)
+#define TIMER_IRQN   DT_INST_IRQN(0)
 /* scr,machine-timer*/
 #elif DT_HAS_COMPAT_STATUS_OKAY(scr_machine_timer)
 #define DT_DRV_COMPAT scr_machine_timer
 #define MTIMER_HAS_DIVIDER
 
-#define MTIMEDIV_REG	(DT_INST_REG_ADDR_U64(0) + 4)
-#define MTIME_REG	(DT_INST_REG_ADDR_U64(0) + 8)
-#define MTIMECMP_REG	(DT_INST_REG_ADDR_U64(0) + 16)
-#define TIMER_IRQN	DT_INST_IRQN(0)
+#define MTIMEDIV_REG (DT_INST_REG_ADDR_U64(0) + 4)
+#define MTIME_REG    (DT_INST_REG_ADDR_U64(0) + 8)
+#define MTIMECMP_REG (DT_INST_REG_ADDR_U64(0) + 16)
+#define TIMER_IRQN   DT_INST_IRQN(0)
 #endif
 
-#define CYC_PER_TICK (uint32_t)(sys_clock_hw_cycles_per_sec() \
-				/ CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define CYC_PER_TICK (uint32_t)(sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
 /* the unsigned long cast limits divisions to native CPU register width */
-#define cycle_diff_t unsigned long
+#define cycle_diff_t   unsigned long
 #define CYCLE_DIFF_MAX (~(cycle_diff_t)0)
 
 /*
@@ -99,11 +98,11 @@
  * consecutive set bits coming from the original max values to produce a
  * nicer literal for assembly generation.
  */
-#define CYCLES_MAX_1	((uint64_t)INT32_MAX * (uint64_t)CYC_PER_TICK)
-#define CYCLES_MAX_2	((uint64_t)CYCLE_DIFF_MAX)
-#define CYCLES_MAX_3	MIN(CYCLES_MAX_1, CYCLES_MAX_2)
-#define CYCLES_MAX_4	(CYCLES_MAX_3 / 2 + CYCLES_MAX_3 / 4)
-#define CYCLES_MAX	(CYCLES_MAX_4 + LSB_GET(CYCLES_MAX_4))
+#define CYCLES_MAX_1 ((uint64_t)INT32_MAX * (uint64_t)CYC_PER_TICK)
+#define CYCLES_MAX_2 ((uint64_t)CYCLE_DIFF_MAX)
+#define CYCLES_MAX_3 MIN(CYCLES_MAX_1, CYCLES_MAX_2)
+#define CYCLES_MAX_4 (CYCLES_MAX_3 / 2 + CYCLES_MAX_3 / 4)
+#define CYCLES_MAX   (CYCLES_MAX_4 + LSB_GET(CYCLES_MAX_4))
 
 static struct k_spinlock lock;
 static uint64_t last_count;
@@ -141,8 +140,7 @@ static void set_mtimecmp(uint64_t time)
 static void set_divider(void)
 {
 #ifdef MTIMER_HAS_DIVIDER
-	*(volatile uint32_t *)MTIMEDIV_REG =
-		CONFIG_RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER;
+	*(volatile uint32_t *)MTIMEDIV_REG = CONFIG_RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER;
 #endif
 }
 
@@ -259,5 +257,4 @@ void smp_timer_init(void)
 }
 #endif
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

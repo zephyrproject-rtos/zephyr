@@ -36,8 +36,8 @@ static inline int z_vrfy_bbram_get_size(const struct device *dev, size_t *size)
 }
 #include <zephyr/syscalls/bbram_get_size_mrsh.c>
 
-static inline int z_vrfy_bbram_read(const struct device *dev, size_t offset,
-				    size_t size, uint8_t *data)
+static inline int z_vrfy_bbram_read(const struct device *dev, size_t offset, size_t size,
+				    uint8_t *data)
 {
 	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_BBRAM));
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(data, size));
@@ -45,8 +45,8 @@ static inline int z_vrfy_bbram_read(const struct device *dev, size_t offset,
 }
 #include <zephyr/syscalls/bbram_read_mrsh.c>
 
-static inline int z_vrfy_bbram_write(const struct device *dev, size_t offset,
-				     size_t size, const uint8_t *data)
+static inline int z_vrfy_bbram_write(const struct device *dev, size_t offset, size_t size,
+				     const uint8_t *data)
 {
 	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_BBRAM));
 	K_OOPS(K_SYSCALL_MEMORY_READ(data, size));

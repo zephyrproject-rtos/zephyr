@@ -47,7 +47,7 @@ static inline bool is_tx_channel_valid(const struct device *dev, uint32_t ch)
 
 static void mbox_dispatcher(uint8_t event_idx, void *p_context)
 {
-	struct mbox_nrf_data *data = (struct mbox_nrf_data *) p_context;
+	struct mbox_nrf_data *data = (struct mbox_nrf_data *)p_context;
 	const struct device *dev = data->dev;
 
 	uint32_t channel = event_idx;
@@ -65,8 +65,7 @@ static void mbox_dispatcher(uint8_t event_idx, void *p_context)
 	}
 }
 
-static int mbox_nrf_send(const struct device *dev, uint32_t channel,
-			 const struct mbox_msg *msg)
+static int mbox_nrf_send(const struct device *dev, uint32_t channel, const struct mbox_msg *msg)
 {
 	if (msg) {
 		LOG_WRN("Sending data not supported");
@@ -116,7 +115,7 @@ static int mbox_nrf_set_enabled(const struct device *dev, uint32_t channel, bool
 	}
 
 	if ((enable == 0 && (!(data->enabled_mask & BIT(channel)))) ||
-	    (enable != 0 &&   (data->enabled_mask & BIT(channel)))) {
+	    (enable != 0 && (data->enabled_mask & BIT(channel)))) {
 		return -EALREADY;
 	}
 
@@ -148,7 +147,7 @@ static int mbox_nrf_set_enabled(const struct device *dev, uint32_t channel, bool
 static void enable_dt_channels(const struct device *dev)
 {
 	const struct mbox_nrf_conf *conf = dev->config;
-	nrfx_ipc_config_t ch_config = { 0 };
+	nrfx_ipc_config_t ch_config = {0};
 
 	if (conf->tx_mask >= BIT(IPC_CONF_NUM)) {
 		LOG_WRN("tx_mask too big (or IPC_CONF_NUM too small)");
@@ -180,10 +179,9 @@ static int mbox_nrf_init(const struct device *dev)
 
 	data->dev = dev;
 
-	nrfx_ipc_init(0, mbox_dispatcher, (void *) data);
+	nrfx_ipc_init(0, mbox_dispatcher, (void *)data);
 
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
-		    nrfx_isr, nrfx_ipc_irq_handler, 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), nrfx_isr, nrfx_ipc_irq_handler, 0);
 
 	enable_dt_channels(dev);
 
@@ -198,6 +196,5 @@ static const struct mbox_driver_api mbox_nrf_driver_api = {
 	.set_enabled = mbox_nrf_set_enabled,
 };
 
-DEVICE_DT_INST_DEFINE(0, mbox_nrf_init, NULL, &nrfx_mbox_data, &nrfx_mbox_conf,
-		    POST_KERNEL, CONFIG_MBOX_INIT_PRIORITY,
-		    &mbox_nrf_driver_api);
+DEVICE_DT_INST_DEFINE(0, mbox_nrf_init, NULL, &nrfx_mbox_data, &nrfx_mbox_conf, POST_KERNEL,
+		      CONFIG_MBOX_INIT_PRIORITY, &mbox_nrf_driver_api);

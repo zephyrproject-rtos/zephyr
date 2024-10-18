@@ -14,7 +14,7 @@
 LOG_MODULE_REGISTER(cap1203, CONFIG_INPUT_LOG_LEVEL);
 
 #define REG_MAIN_CONTROL 0x0
-#define CONTROL_INT 0x1
+#define CONTROL_INT      0x1
 
 #define REG_INPUT_STATUS 0x03
 
@@ -106,8 +106,7 @@ static void cap1203_work_handler(struct k_work *work)
 	cap1203_process(data->dev);
 }
 
-static void cap1203_isr_handler(const struct device *dev,
-				struct gpio_callback *cb, uint32_t pins)
+static void cap1203_isr_handler(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
 	struct cap1203_data *data = CONTAINER_OF(cb, struct cap1203_data, int_gpio_cb);
 
@@ -150,8 +149,7 @@ static int cap1203_init(const struct device *dev)
 			return r;
 		}
 
-		r = gpio_pin_interrupt_configure_dt(&config->int_gpio,
-						   GPIO_INT_EDGE_TO_ACTIVE);
+		r = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 		if (r < 0) {
 			LOG_ERR("Could not configure interrupt GPIO interrupt");
 			return r;

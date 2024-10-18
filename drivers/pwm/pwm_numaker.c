@@ -83,8 +83,7 @@ static int pwm_numaker_set_cycles(const struct device *dev, uint32_t channel,
 	EPWM_T *epwm = cfg->epwm;
 	uint32_t channel_mask = BIT(channel);
 
-	LOG_DBG("Channel=0x%x, CAPIEN=0x%x, CAPIF=0x%x", channel, epwm->CAPIEN,
-		epwm->CAPIF);
+	LOG_DBG("Channel=0x%x, CAPIEN=0x%x, CAPIF=0x%x", channel, epwm->CAPIEN, epwm->CAPIF);
 
 	/* Set EPWM polarity */
 	if (flags & PWM_POLARITY_INVERTED) {
@@ -111,8 +110,8 @@ static int pwm_numaker_set_cycles(const struct device *dev, uint32_t channel,
 	/* Enable Timer for EPWM channel */
 	EPWM_Start(epwm, channel_mask);
 
-	LOG_DBG("cycles_per_sec=0x%x, pulse_cycles=0x%x, period_cycles=0x%x",
-		data->cycles_per_sec, pulse_cycles, period_cycles);
+	LOG_DBG("cycles_per_sec=0x%x, pulse_cycles=0x%x, period_cycles=0x%x", data->cycles_per_sec,
+		pulse_cycles, period_cycles);
 	LOG_DBG("CTL1=0x%x, POEN=0x%x, CNTEN=0x%x", epwm->CTL1, epwm->POEN, epwm->CNTEN);
 	LOG_DBG("Channel=0x%x, CAPIEN=0x%x, CAPIF=0x%x", channel, epwm->CAPIEN, epwm->CAPIF);
 
@@ -224,8 +223,7 @@ static int pwm_numaker_enable_capture(const struct device *dev, uint32_t channel
 	/* EnableInterrupt */
 	EPWM_EnableCaptureInt(epwm, channel, data->capture[pair].curr_edge_mode);
 
-	LOG_DBG("Channel=0x%x, CAPIEN=0x%x, CAPIF=0x%x", channel, epwm->CAPIEN,
-		epwm->CAPIF);
+	LOG_DBG("Channel=0x%x, CAPIEN=0x%x, CAPIF=0x%x", channel, epwm->CAPIEN, epwm->CAPIF);
 
 	return 0;
 }
@@ -256,7 +254,7 @@ static int pwm_numaker_disable_capture(const struct device *dev, uint32_t channe
  * The capture period counter down count from 0x10000, and auto-reload to 0x10000
  */
 static int pwm_numaker_get_cap_cycle(EPWM_T *epwm, uint32_t channel, uint32_t curr_edge,
-				       uint32_t next_edge, uint32_t *cycles)
+				     uint32_t next_edge, uint32_t *cycles)
 {
 	uint16_t curr_cnt;
 	uint16_t next_cnt;
@@ -272,15 +270,15 @@ static int pwm_numaker_get_cap_cycle(EPWM_T *epwm, uint32_t channel, uint32_t cu
 	EPWM_ClearPeriodIntFlag(epwm, channel);
 
 	capif_base = (next_edge == EPWM_CAPTURE_INT_FALLING_LATCH) ? EPWM_CAPIF_CFLIF0_Pos
-								  : EPWM_CAPIF_CRLIF0_Pos;
+								   : EPWM_CAPIF_CRLIF0_Pos;
 	next_if_mask = BIT(capif_base + channel);
 	time_out_cnt = NUMAKER_SYSCLK_FREQ / 2; /* 500 ms time-out */
 	LOG_DBG("Channel=0x%x, R-Cnt=0x%x, F-Cnt0x%x, CNT-0x%x", channel,
 		EPWM_GET_CAPTURE_RISING_DATA(epwm, channel),
 		EPWM_GET_CAPTURE_FALLING_DATA(epwm, channel), epwm->CNT[channel]);
 	curr_cnt = (curr_edge == EPWM_CAPTURE_INT_FALLING_LATCH)
-			  ? EPWM_GET_CAPTURE_FALLING_DATA(epwm, channel)
-			  : (uint16_t)EPWM_GET_CAPTURE_RISING_DATA(epwm, channel);
+			   ? EPWM_GET_CAPTURE_FALLING_DATA(epwm, channel)
+			   : (uint16_t)EPWM_GET_CAPTURE_RISING_DATA(epwm, channel);
 
 	/* Wait for Capture Next Indicator */
 	while ((epwm->CAPIF & next_if_mask) == 0) {
@@ -300,12 +298,12 @@ static int pwm_numaker_get_cap_cycle(EPWM_T *epwm, uint32_t channel, uint32_t cu
 
 	/* Get Capture Latch Counter Data */
 	next_cnt = (next_edge == EPWM_CAPTURE_INT_FALLING_LATCH)
-			  ? (uint16_t)EPWM_GET_CAPTURE_FALLING_DATA(epwm, channel)
-			  : (uint16_t)EPWM_GET_CAPTURE_RISING_DATA(epwm, channel);
+			   ? (uint16_t)EPWM_GET_CAPTURE_FALLING_DATA(epwm, channel)
+			   : (uint16_t)EPWM_GET_CAPTURE_RISING_DATA(epwm, channel);
 
 	*cycles = (period_reloads * NUMAKER_PWM_RELOAD_CNT) + curr_cnt - next_cnt;
-	LOG_DBG("cycles=0x%x, period_reloads=0x%x, CAPIF=0x%x, cur-0x%x ,next-0x%x",
-		*cycles, period_reloads, epwm->CAPIF, curr_cnt, next_cnt);
+	LOG_DBG("cycles=0x%x, period_reloads=0x%x, CAPIF=0x%x, cur-0x%x ,next-0x%x", *cycles,
+		period_reloads, epwm->CAPIF, curr_cnt, next_cnt);
 
 done:
 	return status;
@@ -318,15 +316,14 @@ static void pwm_numaker_channel_cap(const struct device *dev, EPWM_T *epwm, uint
 	uint32_t cycles = 0;
 	int status;
 
-	EPWM_DisableCaptureInt(epwm, channel, EPWM_CAPTURE_INT_RISING_LATCH |
-				EPWM_CAPTURE_INT_FALLING_LATCH);
+	EPWM_DisableCaptureInt(epwm, channel,
+			       EPWM_CAPTURE_INT_RISING_LATCH | EPWM_CAPTURE_INT_FALLING_LATCH);
 
 	capture = &data->capture[channel];
 
 	/* Calculate cycles */
-	status = pwm_numaker_get_cap_cycle(
-		epwm, channel, data->capture[channel].curr_edge_mode,
-		data->capture[channel].next_edge_mode, &cycles);
+	status = pwm_numaker_get_cap_cycle(epwm, channel, data->capture[channel].curr_edge_mode,
+					   data->capture[channel].next_edge_mode, &cycles);
 	if (capture->pulse_capture) {
 		/* For PWM_CAPTURE_TYPE_PULSE */
 		capture->callback(dev, channel, 0, cycles, status, capture->user_data);
@@ -336,12 +333,14 @@ static void pwm_numaker_channel_cap(const struct device *dev, EPWM_T *epwm, uint
 	}
 
 	if (capture->single_mode) {
-		EPWM_DisableCaptureInt(epwm, channel, EPWM_CAPTURE_INT_RISING_LATCH |
-					EPWM_CAPTURE_INT_FALLING_LATCH);
+		EPWM_DisableCaptureInt(epwm, channel,
+				       EPWM_CAPTURE_INT_RISING_LATCH |
+					       EPWM_CAPTURE_INT_FALLING_LATCH);
 		data->capture[channel].is_busy = false;
 	} else {
-		EPWM_ClearCaptureIntFlag(epwm, channel, EPWM_CAPTURE_INT_FALLING_LATCH |
-					EPWM_CAPTURE_INT_RISING_LATCH);
+		EPWM_ClearCaptureIntFlag(epwm, channel,
+					 EPWM_CAPTURE_INT_FALLING_LATCH |
+						 EPWM_CAPTURE_INT_RISING_LATCH);
 		EPWM_EnableCaptureInt(epwm, channel, data->capture[channel].curr_edge_mode);
 		/* data->capture[channel].is_busy = true; */
 	}
@@ -375,8 +374,8 @@ static void pwm_numaker_isr(const struct device *dev, uint32_t st_channel, uint3
 	/* PWM counter is timing critical, to avoid print msg from irq_isr
 	 *  until getting capture cycles.
 	 */
-	LOG_DBG("Channel=0x%x, CAPIEN=0x%x, CAPIF=0x%x, capIntMask=0x%x",
-		st_channel, epwm->CAPIEN, epwm->CAPIF, cap_int_mask);
+	LOG_DBG("Channel=0x%x, CAPIEN=0x%x, CAPIF=0x%x, capIntMask=0x%x", st_channel, epwm->CAPIEN,
+		epwm->CAPIF, cap_int_mask);
 	if (cap_intsts != 0x00) { /* Capture Interrupt */
 		/* Clear CAP int status */
 		epwm->CAPIF = cap_intsts;
@@ -495,7 +494,7 @@ static int pwm_numaker_init(const struct device *dev)
 
 	/* Not support standard clock_control_get_rate yet */
 	/* clock_control_get_rate(cfg->clk_dev,(clock_control_subsys_t)&scc_subsys,&clock_freq); */
-	err =  pwm_numaker_clk_get_rate(epwm, &clock_freq);
+	err = pwm_numaker_clk_get_rate(epwm, &clock_freq);
 
 	if (err < 0) {
 		LOG_ERR("Get EPWM clock rate failure %d", err);

@@ -20,49 +20,49 @@ LOG_MODULE_REGISTER(mspi_emul_controller);
 #include <zephyr/drivers/mspi.h>
 #include <zephyr/drivers/mspi_emul.h>
 
-#define MSPI_MAX_FREQ        250000000
-#define MSPI_MAX_DEVICE      2
-#define MSPI_TIMEOUT_US      1000000
-#define EMUL_MSPI_INST_ID    0
+#define MSPI_MAX_FREQ     250000000
+#define MSPI_MAX_DEVICE   2
+#define MSPI_TIMEOUT_US   1000000
+#define EMUL_MSPI_INST_ID 0
 
 struct mspi_emul_context {
 	/* the request entity currently owns the lock */
-	const struct mspi_dev_id      *owner;
+	const struct mspi_dev_id *owner;
 	/* the current transfer context */
-	struct mspi_xfer              xfer;
+	struct mspi_xfer xfer;
 	/* the transfer controls */
-	bool                          asynchronous;
-	int                           packets_done;
+	bool asynchronous;
+	int packets_done;
 	/* the transfer callback and callback context */
-	mspi_callback_handler_t       callback;
-	struct mspi_callback_context  *callback_ctx;
+	mspi_callback_handler_t callback;
+	struct mspi_callback_context *callback_ctx;
 	/** the transfer lock */
-	struct k_sem                  lock;
+	struct k_sem lock;
 };
 
 struct mspi_emul_data {
 	/* List of struct mspi_emul associated with the device */
-	sys_slist_t                   emuls;
+	sys_slist_t emuls;
 	/* common mspi hardware configurations */
-	struct mspi_cfg               mspicfg;
+	struct mspi_cfg mspicfg;
 	/* device id of the current device occupied the bus */
-	const struct mspi_dev_id      *dev_id;
+	const struct mspi_dev_id *dev_id;
 	/* controller access mutex */
-	struct k_mutex                lock;
+	struct k_mutex lock;
 	/* device specific hardware settings */
-	struct mspi_dev_cfg           dev_cfg;
+	struct mspi_dev_cfg dev_cfg;
 	/* XIP configurations */
-	struct mspi_xip_cfg           xip_cfg;
+	struct mspi_xip_cfg xip_cfg;
 	/* scrambling configurations */
-	struct mspi_scramble_cfg      scramble_cfg;
+	struct mspi_scramble_cfg scramble_cfg;
 	/* Timing configurations */
-	struct mspi_timing_cfg        timing_cfg;
+	struct mspi_timing_cfg timing_cfg;
 	/* local storage of mspi callback hanlder */
-	mspi_callback_handler_t       cbs[MSPI_BUS_EVENT_MAX];
+	mspi_callback_handler_t cbs[MSPI_BUS_EVENT_MAX];
 	/* local storage of mspi callback context */
-	struct mspi_callback_context  *cb_ctxs[MSPI_BUS_EVENT_MAX];
+	struct mspi_callback_context *cb_ctxs[MSPI_BUS_EVENT_MAX];
 	/* local mspi context */
-	struct mspi_emul_context      ctx;
+	struct mspi_emul_context ctx;
 };
 
 /**
@@ -89,8 +89,7 @@ static inline int mspi_verify_device(const struct device *controller,
 			}
 		}
 
-		if (device_index >= data->mspicfg.num_periph ||
-		    device_index != dev_id->dev_idx) {
+		if (device_index >= data->mspicfg.num_periph || device_index != dev_id->dev_idx) {
 			LOG_ERR("%u, invalid device ID.", __LINE__);
 			return -ENODEV;
 		}
@@ -129,11 +128,9 @@ static inline bool mspi_is_inp(const struct device *controller)
  * @return 0 if allowed for hardware configuration.
  * @return 1 if not allowed for hardware configuration.
  */
-static inline int mspi_context_lock(struct mspi_emul_context *ctx,
-				     const struct mspi_dev_id *req,
-				     const struct mspi_xfer *xfer,
-				     mspi_callback_handler_t callback,
-				     struct mspi_callback_context *callback_ctx)
+static inline int mspi_context_lock(struct mspi_emul_context *ctx, const struct mspi_dev_id *req,
+				    const struct mspi_xfer *xfer, mspi_callback_handler_t callback,
+				    struct mspi_callback_context *callback_ctx)
 {
 	int ret = 0;
 
@@ -181,15 +178,14 @@ static inline void mspi_context_release(struct mspi_emul_context *ctx)
  * @param xfer Pointer to the MSPI transfer started by the request entity.
  * @return 0 if successful.
  */
-static int mspi_xfer_config(const struct device *controller,
-			    const struct mspi_xfer *xfer)
+static int mspi_xfer_config(const struct device *controller, const struct mspi_xfer *xfer)
 {
 	struct mspi_emul_data *data = controller->data;
 
-	data->dev_cfg.cmd_length      = xfer->cmd_length;
-	data->dev_cfg.addr_length     = xfer->addr_length;
-	data->dev_cfg.tx_dummy        = xfer->tx_dummy;
-	data->dev_cfg.rx_dummy        = xfer->rx_dummy;
+	data->dev_cfg.cmd_length = xfer->cmd_length;
+	data->dev_cfg.addr_length = xfer->addr_length;
+	data->dev_cfg.tx_dummy = xfer->tx_dummy;
+	data->dev_cfg.rx_dummy = xfer->rx_dummy;
 
 	return 0;
 }
@@ -325,8 +321,7 @@ static inline int mspi_xfer_check(const struct mspi_xfer *xfer)
 
 	for (int i = 0; i < xfer->num_packet; ++i) {
 
-		if (!xfer->packets[i].data_buf ||
-		    !xfer->packets[i].num_bytes) {
+		if (!xfer->packets[i].data_buf || !xfer->packets[i].num_bytes) {
 			LOG_ERR("%u, Invalid xfer payload num: %u.", __LINE__, i);
 			return -EINVAL;
 		}
@@ -352,8 +347,7 @@ static inline int mspi_xfer_check(const struct mspi_xfer *xfer)
  * @return Pointer to a mspi_emul entity if successful.
  * @return NULL if mspi_emul entity not found.
  */
-static struct mspi_emul *mspi_emul_find(const struct device *controller,
-					uint16_t dev_idx)
+static struct mspi_emul *mspi_emul_find(const struct device *controller, uint16_t dev_idx)
 {
 	struct mspi_emul_data *data = controller->data;
 	sys_snode_t *node;
@@ -377,8 +371,7 @@ static struct mspi_emul *mspi_emul_find(const struct device *controller,
  * @param evt_type The bus event to trigger
  * @return 0 if successful.
  */
-static int emul_mspi_trigger_event(const struct device *controller,
-				   enum mspi_bus_event evt_type)
+static int emul_mspi_trigger_event(const struct device *controller, enum mspi_bus_event evt_type)
 {
 	struct mspi_emul_data *data = controller->data;
 	struct mspi_emul_context *ctx = &data->ctx;
@@ -461,8 +454,7 @@ static int mspi_emul_config(const struct mspi_dt_spec *spec)
 		return -ENOTSUP;
 	}
 
-	if (config->num_ce_gpios != 0 &&
-	    config->num_ce_gpios != config->num_periph) {
+	if (config->num_ce_gpios != 0 && config->num_ce_gpios != config->num_periph) {
 		LOG_ERR("%u, Invalid number of ce_gpios.", __LINE__);
 		return -EINVAL;
 	}
@@ -505,8 +497,7 @@ static int mspi_emul_config(const struct mspi_dt_spec *spec)
  * @retval -EINVAL invalid capabilities, failed to configure device.
  * @retval -ENOTSUP capability not supported by MSPI peripheral.
  */
-static int mspi_emul_dev_config(const struct device *controller,
-				const struct mspi_dev_id *dev_id,
+static int mspi_emul_dev_config(const struct device *controller, const struct mspi_dev_id *dev_id,
 				const enum mspi_dev_cfg_mask param_mask,
 				const struct mspi_dev_cfg *dev_cfg)
 {
@@ -528,8 +519,7 @@ static int mspi_emul_dev_config(const struct device *controller,
 	while (mspi_is_inp(controller)) {
 	}
 
-	if (param_mask == MSPI_DEVICE_CONFIG_NONE &&
-	    !data->mspicfg.sw_multi_periph) {
+	if (param_mask == MSPI_DEVICE_CONFIG_NONE && !data->mspicfg.sw_multi_periph) {
 		/* Do nothing except obtaining the controller lock */
 	} else if (param_mask < MSPI_DEVICE_CONFIG_ALL) {
 		if (data->dev_id != dev_id) {
@@ -574,8 +564,7 @@ e_return:
  * @retval 0 if successful.
  * @retval -ESTALE device ID don't match, need to call mspi_dev_config first.
  */
-static int mspi_emul_xip_config(const struct device *controller,
-				const struct mspi_dev_id *dev_id,
+static int mspi_emul_xip_config(const struct device *controller, const struct mspi_dev_id *dev_id,
 				const struct mspi_xip_cfg *xip_cfg)
 {
 	struct mspi_emul_data *data = controller->data;
@@ -632,8 +621,7 @@ static int mspi_emul_scramble_config(const struct device *controller,
  * @retval -ENOTSUP param_mask value is not supported.
  */
 static int mspi_emul_timing_config(const struct device *controller,
-				   const struct mspi_dev_id *dev_id,
-				   const uint32_t param_mask,
+				   const struct mspi_dev_id *dev_id, const uint32_t param_mask,
 				   void *timing_cfg)
 {
 	struct mspi_emul_data *data = controller->data;
@@ -732,8 +720,7 @@ static int mspi_emul_register_callback(const struct device *controller,
  * @retval -ESTALE device ID don't match, need to call mspi_dev_config first.
  * @retval -Error transfer failed.
  */
-static int mspi_emul_transceive(const struct device *controller,
-				const struct mspi_dev_id *dev_id,
+static int mspi_emul_transceive(const struct device *controller, const struct mspi_dev_id *dev_id,
 				const struct mspi_xfer *xfer)
 {
 	struct mspi_emul_data *data = controller->data;
@@ -784,9 +771,7 @@ static int mspi_emul_transceive(const struct device *controller,
 		}
 	}
 
-	ret = emul->api->transceive(emul->target,
-				    ctx->xfer.packets,
-				    ctx->xfer.num_packet,
+	ret = emul->api->transceive(emul->target, ctx->xfer.packets, ctx->xfer.num_packet,
 				    ctx->asynchronous, MSPI_TIMEOUT_US);
 
 trans_err:
@@ -806,7 +791,7 @@ static int mspi_emul_init(const struct device *dev)
 {
 	struct mspi_emul_data *data = dev->data;
 	const struct mspi_dt_spec spec = {
-		.bus    = dev,
+		.bus = dev,
 		.config = data->mspicfg,
 	};
 	int ret = 0;
@@ -843,67 +828,62 @@ int mspi_emul_register(const struct device *dev, struct mspi_emul *emul)
 
 /* Device instantiation */
 static struct emul_mspi_driver_api emul_mspi_driver_api = {
-	.mspi_api = {
-			.config                = mspi_emul_config,
-			.dev_config            = mspi_emul_dev_config,
-			.xip_config            = mspi_emul_xip_config,
-			.scramble_config       = mspi_emul_scramble_config,
-			.timing_config         = mspi_emul_timing_config,
-			.get_channel_status    = mspi_emul_get_channel_status,
-			.register_callback     = mspi_emul_register_callback,
-			.transceive            = mspi_emul_transceive,
+	.mspi_api =
+		{
+			.config = mspi_emul_config,
+			.dev_config = mspi_emul_dev_config,
+			.xip_config = mspi_emul_xip_config,
+			.scramble_config = mspi_emul_scramble_config,
+			.timing_config = mspi_emul_timing_config,
+			.get_channel_status = mspi_emul_get_channel_status,
+			.register_callback = mspi_emul_register_callback,
+			.transceive = mspi_emul_transceive,
 		},
-	.trigger_event                         = emul_mspi_trigger_event,
-	.find_emul                             = mspi_emul_find,
+	.trigger_event = emul_mspi_trigger_event,
+	.find_emul = mspi_emul_find,
 };
 
-#define MSPI_CONFIG(n)                                                                            \
-	{                                                                                         \
-		.channel_num           = EMUL_MSPI_INST_ID,                                       \
-		.op_mode               = DT_ENUM_IDX_OR(n, op_mode, MSPI_OP_MODE_CONTROLLER),     \
-		.duplex                = DT_ENUM_IDX_OR(n, duplex, MSPI_HALF_DUPLEX),             \
-		.max_freq              = DT_INST_PROP(n, clock_frequency),                        \
-		.dqs_support           = DT_INST_PROP_OR(n, dqs_support, false),                  \
-		.sw_multi_periph       = DT_INST_PROP(n, software_multiperipheral),               \
+#define MSPI_CONFIG(n)                                                                             \
+	{                                                                                          \
+		.channel_num = EMUL_MSPI_INST_ID,                                                  \
+		.op_mode = DT_ENUM_IDX_OR(n, op_mode, MSPI_OP_MODE_CONTROLLER),                    \
+		.duplex = DT_ENUM_IDX_OR(n, duplex, MSPI_HALF_DUPLEX),                             \
+		.max_freq = DT_INST_PROP(n, clock_frequency),                                      \
+		.dqs_support = DT_INST_PROP_OR(n, dqs_support, false),                             \
+		.sw_multi_periph = DT_INST_PROP(n, software_multiperipheral),                      \
 	}
 
-#define EMUL_LINK_AND_COMMA(node_id)                                                              \
-	{                                                                                         \
-		.dev = DEVICE_DT_GET(node_id),                                                    \
+#define EMUL_LINK_AND_COMMA(node_id)                                                               \
+	{                                                                                          \
+		.dev = DEVICE_DT_GET(node_id),                                                     \
 	},
 
-#define MSPI_EMUL_INIT(n)                                                                         \
-	static const struct emul_link_for_bus emuls_##n[] = {                                     \
-		DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(n), EMUL_LINK_AND_COMMA)};               \
-	static struct emul_list_for_bus mspi_emul_cfg_##n = {                                     \
-		.children = emuls_##n,                                                            \
-		.num_children = ARRAY_SIZE(emuls_##n),                                            \
-	};                                                                                        \
-	static struct gpio_dt_spec ce_gpios##n[] = MSPI_CE_GPIOS_DT_SPEC_INST_GET(n);             \
-	static struct mspi_emul_data mspi_emul_data_##n = {                                       \
-		.mspicfg               = MSPI_CONFIG(n),                                          \
-		.mspicfg.ce_group      = (struct gpio_dt_spec *)ce_gpios##n,                      \
-		.mspicfg.num_ce_gpios  = ARRAY_SIZE(ce_gpios##n),                                 \
-		.mspicfg.num_periph    = DT_INST_CHILD_NUM(n),                                    \
-		.mspicfg.re_init       = false,                                                   \
-		.dev_id                = 0,                                                       \
-		.lock                  = Z_MUTEX_INITIALIZER(mspi_emul_data_##n.lock),            \
-		.dev_cfg               = {0},                                                     \
-		.xip_cfg               = {0},                                                     \
-		.scramble_cfg          = {0},                                                     \
-		.cbs                   = {0},                                                     \
-		.cb_ctxs               = {0},                                                     \
-		.ctx.lock              = Z_SEM_INITIALIZER(mspi_emul_data_##n.ctx.lock, 0, 1),    \
-		.ctx.callback          = 0,                                                       \
-		.ctx.callback_ctx      = 0,                                                       \
-	};                                                                                        \
-	DEVICE_DT_INST_DEFINE(n,                                                                  \
-			      &mspi_emul_init,                                                    \
-			      NULL,                                                               \
-			      &mspi_emul_data_##n,                                                \
-			      &mspi_emul_cfg_##n,                                                 \
-			      POST_KERNEL,                                                        \
-			      CONFIG_MSPI_INIT_PRIORITY,                                          \
-			      &emul_mspi_driver_api);
+#define MSPI_EMUL_INIT(n)                                                                          \
+	static const struct emul_link_for_bus emuls_##n[] = {                                      \
+		DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(n), EMUL_LINK_AND_COMMA)};                \
+	static struct emul_list_for_bus mspi_emul_cfg_##n = {                                      \
+		.children = emuls_##n,                                                             \
+		.num_children = ARRAY_SIZE(emuls_##n),                                             \
+	};                                                                                         \
+	static struct gpio_dt_spec ce_gpios##n[] = MSPI_CE_GPIOS_DT_SPEC_INST_GET(n);              \
+	static struct mspi_emul_data mspi_emul_data_##n = {                                        \
+		.mspicfg = MSPI_CONFIG(n),                                                         \
+		.mspicfg.ce_group = (struct gpio_dt_spec *)ce_gpios##n,                            \
+		.mspicfg.num_ce_gpios = ARRAY_SIZE(ce_gpios##n),                                   \
+		.mspicfg.num_periph = DT_INST_CHILD_NUM(n),                                        \
+		.mspicfg.re_init = false,                                                          \
+		.dev_id = 0,                                                                       \
+		.lock = Z_MUTEX_INITIALIZER(mspi_emul_data_##n.lock),                              \
+		.dev_cfg = {0},                                                                    \
+		.xip_cfg = {0},                                                                    \
+		.scramble_cfg = {0},                                                               \
+		.cbs = {0},                                                                        \
+		.cb_ctxs = {0},                                                                    \
+		.ctx.lock = Z_SEM_INITIALIZER(mspi_emul_data_##n.ctx.lock, 0, 1),                  \
+		.ctx.callback = 0,                                                                 \
+		.ctx.callback_ctx = 0,                                                             \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(n, &mspi_emul_init, NULL, &mspi_emul_data_##n, &mspi_emul_cfg_##n,   \
+			      POST_KERNEL, CONFIG_MSPI_INIT_PRIORITY, &emul_mspi_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MSPI_EMUL_INIT)

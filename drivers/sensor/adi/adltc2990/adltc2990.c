@@ -143,8 +143,7 @@ static int adltc2990_trigger_measurement(const struct device *dev)
 
 static int adltc2990_fetch_property_value(const struct device *dev,
 					  enum adltc2990_monitoring_type type,
-					  enum adltc2990_monitor_pins pin,
-					  int32_t *output)
+					  enum adltc2990_monitor_pins pin, int32_t *output)
 {
 	const struct adltc2990_config *cfg = dev->config;
 
@@ -283,15 +282,16 @@ static int adltc2990_sample_fetch(const struct device *dev, enum sensor_channel 
 			}
 			data->pins_v1_v2_values[0] =
 				value * (ADLTC2990_MICROOHM_CONVERSION_FACTOR /
-				 (float)cfg->pins_v1_v2.pins_current_resistor);
+					 (float)cfg->pins_v1_v2.pins_current_resistor);
 		}
 		if (mode_v3_v4 == VOLTAGE_DIFFERENTIAL) {
 			ret = adltc2990_fetch_property_value(dev, VOLTAGE_DIFFERENTIAL, V3, &value);
 			if (ret) {
 				return ret;
 			}
-			data->pins_v3_v4_values[0] = value * (ADLTC2990_MICROOHM_CONVERSION_FACTOR /
-				 (float)cfg->pins_v3_v4.pins_current_resistor);
+			data->pins_v3_v4_values[0] =
+				value * (ADLTC2990_MICROOHM_CONVERSION_FACTOR /
+					 (float)cfg->pins_v3_v4.pins_current_resistor);
 		}
 		break;
 	}

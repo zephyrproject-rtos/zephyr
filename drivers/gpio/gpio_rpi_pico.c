@@ -17,8 +17,8 @@
 
 #define DT_DRV_COMPAT raspberrypi_pico_gpio
 
-#define ALL_EVENTS (GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE \
-		| GPIO_IRQ_LEVEL_LOW | GPIO_IRQ_LEVEL_HIGH)
+#define ALL_EVENTS                                                                                 \
+	(GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE | GPIO_IRQ_LEVEL_LOW | GPIO_IRQ_LEVEL_HIGH)
 
 struct gpio_rpi_config {
 	struct gpio_driver_config common;
@@ -33,15 +33,11 @@ struct gpio_rpi_data {
 	uint32_t open_drain_mask;
 };
 
-static int gpio_rpi_configure(const struct device *dev,
-				gpio_pin_t pin,
-				gpio_flags_t flags)
+static int gpio_rpi_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	struct gpio_rpi_data *data = dev->data;
 
-	gpio_set_pulls(pin,
-		(flags & GPIO_PULL_UP) != 0U,
-		(flags & GPIO_PULL_DOWN) != 0U);
+	gpio_set_pulls(pin, (flags & GPIO_PULL_UP) != 0U, (flags & GPIO_PULL_DOWN) != 0U);
 
 	/* Avoid gpio_init, since that also clears previously set direction/high/low */
 	gpio_set_function(pin, GPIO_FUNC_SIO);
@@ -86,8 +82,7 @@ static int gpio_rpi_port_get_raw(const struct device *dev, uint32_t *value)
 	return 0;
 }
 
-static int gpio_rpi_port_set_masked_raw(const struct device *port,
-					uint32_t mask, uint32_t value)
+static int gpio_rpi_port_set_masked_raw(const struct device *port, uint32_t mask, uint32_t value)
 {
 	struct gpio_rpi_data *data = port->data;
 	/* First handle push-pull pins: */
@@ -99,8 +94,7 @@ static int gpio_rpi_port_set_masked_raw(const struct device *port,
 	return 0;
 }
 
-static int gpio_rpi_port_set_bits_raw(const struct device *port,
-					uint32_t pins)
+static int gpio_rpi_port_set_bits_raw(const struct device *port, uint32_t pins)
 {
 	struct gpio_rpi_data *data = port->data;
 	/* First handle push-pull pins: */
@@ -112,8 +106,7 @@ static int gpio_rpi_port_set_bits_raw(const struct device *port,
 	return 0;
 }
 
-static int gpio_rpi_port_clear_bits_raw(const struct device *port,
-					uint32_t pins)
+static int gpio_rpi_port_clear_bits_raw(const struct device *port, uint32_t pins)
 {
 	struct gpio_rpi_data *data = port->data;
 	/* First handle push-pull pins: */
@@ -125,8 +118,7 @@ static int gpio_rpi_port_clear_bits_raw(const struct device *port,
 	return 0;
 }
 
-static int gpio_rpi_port_toggle_bits(const struct device *port,
-					uint32_t pins)
+static int gpio_rpi_port_toggle_bits(const struct device *port, uint32_t pins)
 {
 	struct gpio_rpi_data *data = port->data;
 	/* First handle push-pull pins: */
@@ -139,10 +131,8 @@ static int gpio_rpi_port_toggle_bits(const struct device *port,
 	return 0;
 }
 
-static int gpio_rpi_pin_interrupt_configure(const struct device *dev,
-						gpio_pin_t pin,
-						enum gpio_int_mode mode,
-						enum gpio_int_trig trig)
+static int gpio_rpi_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
+					    enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	struct gpio_rpi_data *data = dev->data;
 	uint32_t events = 0;
@@ -170,8 +160,8 @@ static int gpio_rpi_pin_interrupt_configure(const struct device *dev,
 	return 0;
 }
 
-static int gpio_rpi_manage_callback(const struct device *dev,
-				struct gpio_callback *callback, bool set)
+static int gpio_rpi_manage_callback(const struct device *dev, struct gpio_callback *callback,
+				    bool set)
 {
 	struct gpio_rpi_data *data = dev->data;
 
@@ -216,27 +206,23 @@ static int gpio_rpi_bank_init(const struct device *dev)
 	return 0;
 }
 
-#define GPIO_RPI_INIT(idx)							\
-	static void bank_##idx##_config_func(void)				\
-	{									\
-		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority),	\
-			    gpio_rpi_isr, DEVICE_DT_INST_GET(idx), 0);		\
-		irq_enable(DT_INST_IRQN(idx));					\
-	}									\
-	static const struct gpio_rpi_config gpio_rpi_##idx##_config = {		\
-		.bank_config_func = bank_##idx##_config_func,			\
-		.common =							\
-		{								\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),	\
-		}								\
-	};									\
-										\
-	static struct gpio_rpi_data gpio_rpi_##idx##_data;			\
-										\
-	DEVICE_DT_INST_DEFINE(idx, gpio_rpi_bank_init, NULL,			\
-				&gpio_rpi_##idx##_data,				\
-				&gpio_rpi_##idx##_config,			\
-				POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,		\
-				&gpio_rpi_driver_api);
+#define GPIO_RPI_INIT(idx)                                                                         \
+	static void bank_##idx##_config_func(void)                                                 \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority), gpio_rpi_isr,           \
+			    DEVICE_DT_INST_GET(idx), 0);                                           \
+		irq_enable(DT_INST_IRQN(idx));                                                     \
+	}                                                                                          \
+	static const struct gpio_rpi_config gpio_rpi_##idx##_config = {                            \
+		.bank_config_func = bank_##idx##_config_func,                                      \
+		.common = {                                                                        \
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),                     \
+		}};                                                                                \
+                                                                                                   \
+	static struct gpio_rpi_data gpio_rpi_##idx##_data;                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(idx, gpio_rpi_bank_init, NULL, &gpio_rpi_##idx##_data,               \
+			      &gpio_rpi_##idx##_config, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,    \
+			      &gpio_rpi_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_RPI_INIT)

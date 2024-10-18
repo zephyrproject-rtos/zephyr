@@ -38,8 +38,7 @@
 #include <zephyr/mgmt/mcumgr/transport/serial.h>
 #endif
 
-static const struct device *const uart_console_dev =
-	DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+static const struct device *const uart_console_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 #ifdef CONFIG_UART_CONSOLE_DEBUG_SERVER_HOOKS
 
@@ -49,7 +48,8 @@ void uart_console_in_debug_hook_install(uart_console_in_debug_hook_t hook)
 	debug_hook_in = hook;
 }
 
-static UART_CONSOLE_OUT_DEBUG_HOOK_SIG(debug_hook_out_nop) {
+static UART_CONSOLE_OUT_DEBUG_HOOK_SIG(debug_hook_out_nop)
+{
 	ARG_UNUSED(c);
 	return !UART_CONSOLE_DEBUG_HOOK_HANDLED;
 }
@@ -59,11 +59,9 @@ void uart_console_out_debug_hook_install(uart_console_out_debug_hook_t *hook)
 {
 	debug_hook_out = hook;
 }
-#define HANDLE_DEBUG_HOOK_OUT(c) \
-	(debug_hook_out(c) == UART_CONSOLE_DEBUG_HOOK_HANDLED)
+#define HANDLE_DEBUG_HOOK_OUT(c) (debug_hook_out(c) == UART_CONSOLE_DEBUG_HOOK_HANDLED)
 
 #endif /* CONFIG_UART_CONSOLE_DEBUG_SERVER_HOOKS */
-
 
 #if defined(CONFIG_PRINTK) || defined(CONFIG_STDOUT_CONSOLE)
 /**
@@ -87,7 +85,7 @@ static int console_out(int c)
 		return c;
 	}
 
-#endif  /* CONFIG_UART_CONSOLE_DEBUG_SERVER_HOOKS */
+#endif /* CONFIG_UART_CONSOLE_DEBUG_SERVER_HOOKS */
 
 	if (pm_device_runtime_get(uart_console_dev) < 0) {
 		/* Enabling the UART instance has failed but this
@@ -118,22 +116,21 @@ static struct k_fifo *lines_queue;
 static uint8_t (*completion_cb)(char *line, uint8_t len);
 
 /* Control characters */
-#define BS                 0x08
-#define ESC                0x1b
-#define DEL                0x7f
+#define BS  0x08
+#define ESC 0x1b
+#define DEL 0x7f
 
 /* ANSI escape sequences */
-#define ANSI_ESC           '['
-#define ANSI_UP            'A'
-#define ANSI_DOWN          'B'
-#define ANSI_FORWARD       'C'
-#define ANSI_BACKWARD      'D'
-#define ANSI_END           'F'
-#define ANSI_HOME          'H'
-#define ANSI_DEL           '~'
+#define ANSI_ESC      '['
+#define ANSI_UP       'A'
+#define ANSI_DOWN     'B'
+#define ANSI_FORWARD  'C'
+#define ANSI_BACKWARD 'D'
+#define ANSI_END      'F'
+#define ANSI_HOME     'H'
+#define ANSI_DEL      '~'
 
-static int read_uart(const struct device *uart, uint8_t *buf,
-		     unsigned int size)
+static int read_uart(const struct device *uart, uint8_t *buf, unsigned int size)
 {
 	int rx;
 
@@ -264,8 +261,7 @@ static void handle_ansi(uint8_t byte, char *line)
 		}
 
 		/* Multi value sequence, e.g. Esc[Line;ColumnH */
-		if (byte == ';' &&
-		    !atomic_test_and_set_bit(&esc_state, ESC_ANSI_VAL_2)) {
+		if (byte == ';' && !atomic_test_and_set_bit(&esc_state, ESC_ANSI_VAL_2)) {
 			return;
 		}
 
@@ -339,9 +335,9 @@ static void clear_mcumgr(void)
 /**
  * These states indicate whether an mcumgr frame is being received.
  */
-#define CONSOLE_MCUMGR_STATE_NONE       1
-#define CONSOLE_MCUMGR_STATE_HEADER     2
-#define CONSOLE_MCUMGR_STATE_PAYLOAD    3
+#define CONSOLE_MCUMGR_STATE_NONE    1
+#define CONSOLE_MCUMGR_STATE_HEADER  2
+#define CONSOLE_MCUMGR_STATE_PAYLOAD 3
 
 static int read_mcumgr_byte(uint8_t byte)
 {
@@ -439,8 +435,7 @@ static void uart_console_isr(const struct device *unused, void *user_data)
 	ARG_UNUSED(user_data);
 	static uint8_t last_char = '\0';
 
-	while (uart_irq_update(uart_console_dev) > 0 &&
-	       uart_irq_is_pending(uart_console_dev) > 0) {
+	while (uart_irq_update(uart_console_dev) > 0 && uart_irq_is_pending(uart_console_dev) > 0) {
 		static struct console_input *cmd;
 		uint8_t byte;
 		int rx;
@@ -485,7 +480,7 @@ static void uart_console_isr(const struct device *unused, void *user_data)
 		if (handle_mcumgr(cmd, byte)) {
 			continue;
 		}
-#endif          /* CONFIG_UART_CONSOLE_MCUMGR */
+#endif /* CONFIG_UART_CONSOLE_MCUMGR */
 
 		/* Handle ANSI escape mode */
 		if (atomic_test_bit(&esc_state, ESC_ANSI)) {
@@ -538,7 +533,7 @@ static void uart_console_isr(const struct device *unused, void *user_data)
 				break;
 			}
 
-		/* Ignore characters if there's no more buffer space */
+			/* Ignore characters if there's no more buffer space */
 		} else if (cur + end < sizeof(cmd->line) - 1) {
 			insert_char(&cmd->line[cur++], byte, end);
 		}

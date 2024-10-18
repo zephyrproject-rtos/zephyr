@@ -25,7 +25,7 @@
  * all available CPU cores and provides a synchronized timer under SMP.
  */
 
-#define COMPARATOR_IDX  0 /* 0 or 1 */
+#define COMPARATOR_IDX 0 /* 0 or 1 */
 
 #ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 #define TIMER_IRQ ACE_IRQ_TO_ZEPHYR(ACE_INTL_TTS)
@@ -33,28 +33,27 @@
 #define TIMER_IRQ DSP_WCT_IRQ(COMPARATOR_IDX)
 #endif
 
-#define CYC_PER_TICK	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC	\
-			/ CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-#define MAX_CYC		0xFFFFFFFFUL
-#define MAX_TICKS	((MAX_CYC - CYC_PER_TICK) / CYC_PER_TICK)
-#define MIN_DELAY	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / 100000)
+#define CYC_PER_TICK (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define MAX_CYC      0xFFFFFFFFUL
+#define MAX_TICKS    ((MAX_CYC - CYC_PER_TICK) / CYC_PER_TICK)
+#define MIN_DELAY    (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / 100000)
 
 BUILD_ASSERT(MIN_DELAY < CYC_PER_TICK);
 BUILD_ASSERT(COMPARATOR_IDX >= 0 && COMPARATOR_IDX <= 1);
 
-#define DSP_WCT_CS_TT(x)                     BIT(4 + x)
+#define DSP_WCT_CS_TT(x) BIT(4 + x)
 
 static struct k_spinlock lock;
 static uint64_t last_count;
 
 /* Not using current syscon driver due to overhead due to MMU support */
-#define SYSCON_REG_ADDR	DT_REG_ADDR(DT_INST_PHANDLE(0, syscon))
+#define SYSCON_REG_ADDR DT_REG_ADDR(DT_INST_PHANDLE(0, syscon))
 
-#define DSPWCTCS_ADDR (SYSCON_REG_ADDR + ADSP_DSPWCTCS_OFFSET)
+#define DSPWCTCS_ADDR    (SYSCON_REG_ADDR + ADSP_DSPWCTCS_OFFSET)
 #define DSPWCT0C_LO_ADDR (SYSCON_REG_ADDR + ADSP_DSPWCT0C_OFFSET)
 #define DSPWCT0C_HI_ADDR (SYSCON_REG_ADDR + ADSP_DSPWCT0C_OFFSET + 4)
-#define DSPWC_LO_ADDR (SYSCON_REG_ADDR + ADSP_DSPWC_OFFSET)
-#define DSPWC_HI_ADDR (SYSCON_REG_ADDR + ADSP_DSPWC_OFFSET + 4)
+#define DSPWC_LO_ADDR    (SYSCON_REG_ADDR + ADSP_DSPWC_OFFSET)
+#define DSPWC_HI_ADDR    (SYSCON_REG_ADDR + ADSP_DSPWC_OFFSET + 4)
 
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = TIMER_IRQ; /* See tests/kernel/context */
@@ -64,14 +63,13 @@ static void set_compare(uint64_t time)
 {
 	/* Disarm the comparator to prevent spurious triggers */
 	sys_write32(sys_read32(DSPWCTCS_ADDR) & (~DSP_WCT_CS_TA(COMPARATOR_IDX)),
-			SYSCON_REG_ADDR + ADSP_DSPWCTCS_OFFSET);
+		    SYSCON_REG_ADDR + ADSP_DSPWCTCS_OFFSET);
 
 	sys_write32((uint32_t)time, DSPWCT0C_LO_ADDR);
 	sys_write32((uint32_t)(time >> 32), DSPWCT0C_HI_ADDR);
 
 	/* Arm the timer */
-	sys_write32(sys_read32(DSPWCTCS_ADDR) | (DSP_WCT_CS_TA(COMPARATOR_IDX)),
-			DSPWCTCS_ADDR);
+	sys_write32(sys_read32(DSPWCTCS_ADDR) | (DSP_WCT_CS_TA(COMPARATOR_IDX)), DSPWCTCS_ADDR);
 }
 
 static uint64_t count(void)
@@ -112,8 +110,7 @@ static void compare_isr(const void *arg)
 	dticks = (curr - last_count) / CYC_PER_TICK;
 
 	/* Clear the triggered bit */
-	sys_write32(sys_read32(DSPWCTCS_ADDR) | DSP_WCT_CS_TT(COMPARATOR_IDX),
-			DSPWCTCS_ADDR);
+	sys_write32(sys_read32(DSPWCTCS_ADDR) | DSP_WCT_CS_TT(COMPARATOR_IDX), DSPWCTCS_ADDR);
 
 	last_count += dticks * CYC_PER_TICK;
 
@@ -201,7 +198,7 @@ static void irq_init(void)
 #ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 	ACE_DINT[cpu].ie[ACE_INTL_TTS] |= BIT(COMPARATOR_IDX + 1);
 	sys_write32(sys_read32(DSPWCTCS_ADDR) | ADSP_SHIM_DSPWCTCS_TTIE(COMPARATOR_IDX),
-			DSPWCTCS_ADDR);
+		    DSPWCTCS_ADDR);
 #else
 	CAVS_INTCTRL[cpu].l2.clear = CAVS_L2_DWCT0;
 #endif
@@ -229,5 +226,4 @@ void intel_adsp_clock_soft_off_exit(void)
 	(void)sys_clock_driver_init();
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

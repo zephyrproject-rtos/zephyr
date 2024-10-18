@@ -9,7 +9,7 @@
 #define DT_DRV_COMPAT nxp_kw41z_ieee802154
 
 #define LOG_MODULE_NAME ieee802154_kw41z
-#define LOG_LEVEL CONFIG_IEEE802154_DRIVER_LOG_LEVEL
+#define LOG_LEVEL       CONFIG_IEEE802154_DRIVER_LOG_LEVEL
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
@@ -30,45 +30,43 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/openthread.h>
 #endif
 
-
 /*
  * For non-invasive tracing of IRQ events. Sometimes the print logs
  * will shift the timings around so this trace buffer can be used to
  * post inspect conditions to see what sequence of events occurred.
  */
 
-#define KW41_DBG_TRACE_WTRM	0
-#define KW41_DBG_TRACE_RX	1
-#define KW41_DBG_TRACE_TX	2
-#define KW41_DBG_TRACE_CCA	3
-#define KW41_DBG_TRACE_TMR3	0xFF
+#define KW41_DBG_TRACE_WTRM 0
+#define KW41_DBG_TRACE_RX   1
+#define KW41_DBG_TRACE_TX   2
+#define KW41_DBG_TRACE_CCA  3
+#define KW41_DBG_TRACE_TMR3 0xFF
 
 #if defined(CONFIG_KW41_DBG_TRACE)
 
 #define KW41_DBG_TRACE_SIZE 30
 
 struct kw41_dbg_trace {
-	uint8_t	type;
-	uint32_t	time;
-	uint32_t	irqsts;
-	uint32_t	phy_ctrl;
-	uint32_t	seq_state;
+	uint8_t type;
+	uint32_t time;
+	uint32_t irqsts;
+	uint32_t phy_ctrl;
+	uint32_t seq_state;
 };
 
 struct kw41_dbg_trace kw41_dbg[KW41_DBG_TRACE_SIZE];
 int kw41_dbg_idx;
 
-#define KW_DBG_TRACE(_type, _irqsts, _phy_ctrl, _seq_state) \
-	do { \
-		kw41_dbg[kw41_dbg_idx].type = (_type); \
-		kw41_dbg[kw41_dbg_idx].time = \
-			ZLL->EVENT_TMR >> ZLL_EVENT_TMR_EVENT_TMR_SHIFT; \
-		kw41_dbg[kw41_dbg_idx].irqsts = (_irqsts); \
-		kw41_dbg[kw41_dbg_idx].phy_ctrl = (_phy_ctrl); \
-		kw41_dbg[kw41_dbg_idx].seq_state = (_seq_state); \
-		if (++kw41_dbg_idx == KW41_DBG_TRACE_SIZE) { \
-			kw41_dbg_idx = 0; \
-		} \
+#define KW_DBG_TRACE(_type, _irqsts, _phy_ctrl, _seq_state)                                        \
+	do {                                                                                       \
+		kw41_dbg[kw41_dbg_idx].type = (_type);                                             \
+		kw41_dbg[kw41_dbg_idx].time = ZLL->EVENT_TMR >> ZLL_EVENT_TMR_EVENT_TMR_SHIFT;     \
+		kw41_dbg[kw41_dbg_idx].irqsts = (_irqsts);                                         \
+		kw41_dbg[kw41_dbg_idx].phy_ctrl = (_phy_ctrl);                                     \
+		kw41_dbg[kw41_dbg_idx].seq_state = (_seq_state);                                   \
+		if (++kw41_dbg_idx == KW41_DBG_TRACE_SIZE) {                                       \
+			kw41_dbg_idx = 0;                                                          \
+		}                                                                                  \
 	} while (false)
 
 #else
@@ -77,26 +75,25 @@ int kw41_dbg_idx;
 
 #endif
 
-#define KW41Z_DEFAULT_CHANNEL		26
-#define KW41Z_CCA_TIME			8
-#define KW41Z_SHR_PHY_TIME		12
-#define KW41Z_PER_BYTE_TIME		2
-#define KW41Z_ACK_WAIT_TIME		54
-#define KW41Z_PRE_RX_WAIT_TIME		1
-#define KW40Z_POST_SEQ_WAIT_TIME	1
+#define KW41Z_DEFAULT_CHANNEL    26
+#define KW41Z_CCA_TIME           8
+#define KW41Z_SHR_PHY_TIME       12
+#define KW41Z_PER_BYTE_TIME      2
+#define KW41Z_ACK_WAIT_TIME      54
+#define KW41Z_PRE_RX_WAIT_TIME   1
+#define KW40Z_POST_SEQ_WAIT_TIME 1
 
-#define RADIO_0_IRQ_PRIO		0x0
-#define KW41Z_FCS_LENGTH		2
-#define KW41Z_PSDU_LENGTH		125
-#define KW41Z_OUTPUT_POWER_MAX		4
-#define KW41Z_OUTPUT_POWER_MIN		(-31)
+#define RADIO_0_IRQ_PRIO       0x0
+#define KW41Z_FCS_LENGTH       2
+#define KW41Z_PSDU_LENGTH      125
+#define KW41Z_OUTPUT_POWER_MAX 4
+#define KW41Z_OUTPUT_POWER_MIN (-31)
 
-#define IEEE802154_ACK_LENGTH		5
+#define IEEE802154_ACK_LENGTH 5
 
-#define BM_ZLL_IRQSTS_TMRxMSK (ZLL_IRQSTS_TMR1MSK_MASK | \
-				ZLL_IRQSTS_TMR2MSK_MASK | \
-				ZLL_IRQSTS_TMR3MSK_MASK | \
-				ZLL_IRQSTS_TMR4MSK_MASK)
+#define BM_ZLL_IRQSTS_TMRxMSK                                                                      \
+	(ZLL_IRQSTS_TMR1MSK_MASK | ZLL_IRQSTS_TMR2MSK_MASK | ZLL_IRQSTS_TMR3MSK_MASK |             \
+	 ZLL_IRQSTS_TMR4MSK_MASK)
 
 /*
  * Clear channel assessment types. Note that there is an extra one when
@@ -104,10 +101,10 @@ int kw41_dbg_idx;
  * ACK frames but we will let the hardware handle that automatically.
  */
 enum {
-	KW41Z_CCA_ED,       /* Energy detect */
-	KW41Z_CCA_MODE1,    /* Energy above threshold   */
-	KW41Z_CCA_MODE2,    /* Carrier sense only       */
-	KW41Z_CCA_MODE3     /* Mode 1 + Mode 2          */
+	KW41Z_CCA_ED,    /* Energy detect */
+	KW41Z_CCA_MODE1, /* Energy above threshold   */
+	KW41Z_CCA_MODE2, /* Carrier sense only       */
+	KW41Z_CCA_MODE3  /* Mode 1 + Mode 2          */
 };
 
 /*
@@ -124,27 +121,27 @@ enum {
 
 /* Lookup table for PA_PWR register */
 static const uint8_t pa_pwr_lt[] = {
-	1,                   /* -31.1 dBm: -31 */
-	2, 2, 2, 2, 2, 2, 2, /* -25.0 dBm: -30, -29, -28, -27, -26, -25 */
-	4, 4, 4, 4, 4,       /* -19.0 dBm: -24, -23, -22, -21, -20, -19 */
-	6, 6, 6,             /* -15.6 dBm: -18, -17, -16 */
-	8, 8,                /* -13.1 dBm: -15, -14 */
-	10, 10,              /* -11.2 dBm: -13, -12 */
-	12, 12,              /* - 9.6 dBm: -11, -10 */
-	14,                  /* - 8.3 dBm: -9 */
-	16,                  /* - 7.2 dBm: -8 */
-	18,                  /* - 6.2 dBm: -7 */
-	20,                  /* - 5.3 dBm: -6 */
-	22,                  /* - 4.5 dBm: -5 */
-	24,                  /* - 3.8 dBm: -4 */
-	28,                  /* - 2.5 dBm: -3 */
-	30,                  /* - 1.9 dBm: -2 */
-	34,                  /* - 1.0 dBm: -1 */
-	40,                  /* + 0.3 dBm:  0 */
-	44,                  /* + 1.1 dBm: +1 */
-	50,                  /* + 2.1 dBm: +2 */
-	58,                  /* + 3.1 dBm: +3 */
-	62                   /* + 3.5 dBm: +4 */
+	1,                     /* -31.1 dBm: -31 */
+	2,  2,  2, 2, 2, 2, 2, /* -25.0 dBm: -30, -29, -28, -27, -26, -25 */
+	4,  4,  4, 4, 4,       /* -19.0 dBm: -24, -23, -22, -21, -20, -19 */
+	6,  6,  6,             /* -15.6 dBm: -18, -17, -16 */
+	8,  8,                 /* -13.1 dBm: -15, -14 */
+	10, 10,                /* -11.2 dBm: -13, -12 */
+	12, 12,                /* - 9.6 dBm: -11, -10 */
+	14,                    /* - 8.3 dBm: -9 */
+	16,                    /* - 7.2 dBm: -8 */
+	18,                    /* - 6.2 dBm: -7 */
+	20,                    /* - 5.3 dBm: -6 */
+	22,                    /* - 4.5 dBm: -5 */
+	24,                    /* - 3.8 dBm: -4 */
+	28,                    /* - 2.5 dBm: -3 */
+	30,                    /* - 1.9 dBm: -2 */
+	34,                    /* - 1.0 dBm: -1 */
+	40,                    /* + 0.3 dBm:  0 */
+	44,                    /* + 1.1 dBm: +1 */
+	50,                    /* + 2.1 dBm: +2 */
+	58,                    /* + 3.1 dBm: +3 */
+	62                     /* + 3.5 dBm: +4 */
 };
 
 struct kw41z_context {
@@ -164,14 +161,12 @@ static struct kw41z_context kw41z_context_data;
 
 static inline uint8_t kw41z_get_instant_state(void)
 {
-	return (ZLL->SEQ_STATE & ZLL_SEQ_STATE_SEQ_STATE_MASK) >>
-	       ZLL_SEQ_STATE_SEQ_STATE_SHIFT;
+	return (ZLL->SEQ_STATE & ZLL_SEQ_STATE_SEQ_STATE_MASK) >> ZLL_SEQ_STATE_SEQ_STATE_SHIFT;
 }
 
 static inline uint8_t kw41z_get_seq_state(void)
 {
-	return (ZLL->PHY_CTRL & ZLL_PHY_CTRL_XCVSEQ_MASK) >>
-	       ZLL_PHY_CTRL_XCVSEQ_SHIFT;
+	return (ZLL->PHY_CTRL & ZLL_PHY_CTRL_XCVSEQ_MASK) >> ZLL_PHY_CTRL_XCVSEQ_SHIFT;
 }
 
 static inline void kw41z_set_seq_state(uint8_t state)
@@ -186,8 +181,7 @@ static inline void kw41z_set_seq_state(uint8_t state)
 	}
 #endif
 
-	ZLL->PHY_CTRL = (ZLL->PHY_CTRL & ~ZLL_PHY_CTRL_XCVSEQ_MASK) |
-			ZLL_PHY_CTRL_XCVSEQ(state);
+	ZLL->PHY_CTRL = (ZLL->PHY_CTRL & ~ZLL_PHY_CTRL_XCVSEQ_MASK) | ZLL_PHY_CTRL_XCVSEQ(state);
 }
 
 static inline void kw41z_wait_for_idle(void)
@@ -215,8 +209,7 @@ static void kw41z_phy_abort(void)
 	if (ZLL->PHY_CTRL & ZLL_PHY_CTRL_TMRTRIGEN_MASK) {
 		ZLL->PHY_CTRL &= ~ZLL_PHY_CTRL_TMRTRIGEN_MASK;
 		/* give the FSM enough time to start if it was triggered */
-		while ((XCVR_MISC->XCVR_CTRL &
-			XCVR_CTRL_XCVR_STATUS_TSM_COUNT_MASK) == 0) {
+		while ((XCVR_MISC->XCVR_CTRL & XCVR_CTRL_XCVR_STATUS_TSM_COUNT_MASK) == 0) {
 		}
 	}
 
@@ -230,10 +223,8 @@ static void kw41z_phy_abort(void)
 	}
 
 	/* Stop timers */
-	ZLL->PHY_CTRL &= ~(ZLL_PHY_CTRL_TMR1CMP_EN_MASK |
-			ZLL_PHY_CTRL_TMR2CMP_EN_MASK |
-			ZLL_PHY_CTRL_TMR3CMP_EN_MASK |
-			ZLL_PHY_CTRL_TC3TMOUT_MASK);
+	ZLL->PHY_CTRL &= ~(ZLL_PHY_CTRL_TMR1CMP_EN_MASK | ZLL_PHY_CTRL_TMR2CMP_EN_MASK |
+			   ZLL_PHY_CTRL_TMR3CMP_EN_MASK | ZLL_PHY_CTRL_TC3TMOUT_MASK);
 
 	/*
 	 * Clear all IRQ bits to avoid unexpected interrupts.
@@ -255,15 +246,12 @@ static void kw41z_isr_timeout_cleanup(void)
 	 * Set the PHY sequencer back to IDLE and disable TMR3 comparator
 	 * and timeout
 	 */
-	ZLL->PHY_CTRL &= ~(ZLL_PHY_CTRL_TMR3CMP_EN_MASK |
-			ZLL_PHY_CTRL_TC3TMOUT_MASK   |
-			ZLL_PHY_CTRL_XCVSEQ_MASK);
+	ZLL->PHY_CTRL &= ~(ZLL_PHY_CTRL_TMR3CMP_EN_MASK | ZLL_PHY_CTRL_TC3TMOUT_MASK |
+			   ZLL_PHY_CTRL_XCVSEQ_MASK);
 
 	/* Mask SEQ, RX, TX and CCA interrupts */
-	ZLL->PHY_CTRL |= ZLL_PHY_CTRL_CCAMSK_MASK |
-			ZLL_PHY_CTRL_RXMSK_MASK  |
-			ZLL_PHY_CTRL_TXMSK_MASK  |
-			ZLL_PHY_CTRL_SEQMSK_MASK;
+	ZLL->PHY_CTRL |= ZLL_PHY_CTRL_CCAMSK_MASK | ZLL_PHY_CTRL_RXMSK_MASK |
+			 ZLL_PHY_CTRL_TXMSK_MASK | ZLL_PHY_CTRL_SEQMSK_MASK;
 
 	while (ZLL->SEQ_STATE & ZLL_SEQ_STATE_SEQ_STATE_MASK) {
 	}
@@ -282,10 +270,8 @@ static void kw41z_isr_seq_cleanup(void)
 	/* Set the PHY sequencer back to IDLE */
 	ZLL->PHY_CTRL &= ~ZLL_PHY_CTRL_XCVSEQ_MASK;
 	/* Mask SEQ, RX, TX and CCA interrupts */
-	ZLL->PHY_CTRL |= ZLL_PHY_CTRL_CCAMSK_MASK |
-			ZLL_PHY_CTRL_RXMSK_MASK  |
-			ZLL_PHY_CTRL_TXMSK_MASK  |
-			ZLL_PHY_CTRL_SEQMSK_MASK;
+	ZLL->PHY_CTRL |= ZLL_PHY_CTRL_CCAMSK_MASK | ZLL_PHY_CTRL_RXMSK_MASK |
+			 ZLL_PHY_CTRL_TXMSK_MASK | ZLL_PHY_CTRL_SEQMSK_MASK;
 
 	while (ZLL->SEQ_STATE & ZLL_SEQ_STATE_SEQ_STATE_MASK) {
 	}
@@ -295,10 +281,8 @@ static void kw41z_isr_seq_cleanup(void)
 	irqsts |= ZLL_IRQSTS_TMR3MSK_MASK;
 
 	/* Clear transceiver interrupts except TMRxIRQ */
-	irqsts &= ~(ZLL_IRQSTS_TMR1IRQ_MASK |
-		ZLL_IRQSTS_TMR2IRQ_MASK |
-		ZLL_IRQSTS_TMR3IRQ_MASK |
-		ZLL_IRQSTS_TMR4IRQ_MASK);
+	irqsts &= ~(ZLL_IRQSTS_TMR1IRQ_MASK | ZLL_IRQSTS_TMR2IRQ_MASK | ZLL_IRQSTS_TMR3IRQ_MASK |
+		    ZLL_IRQSTS_TMR4IRQ_MASK);
 	ZLL->IRQSTS = irqsts;
 }
 
@@ -330,12 +314,11 @@ static void kw41z_tmr3_set_timeout(uint32_t timeout)
 	ZLL->T3CMP = timeout & ZLL_T3CMP_T3CMP_MASK;
 
 	/* acknowledge TMR3 IRQ */
-	irqsts  = ZLL->IRQSTS & BM_ZLL_IRQSTS_TMRxMSK;
+	irqsts = ZLL->IRQSTS & BM_ZLL_IRQSTS_TMRxMSK;
 	irqsts |= ZLL_IRQSTS_TMR3IRQ_MASK;
 	ZLL->IRQSTS = irqsts;
 	/* enable TMR3 compare and autosequence stop by TC3 match */
-	ZLL->PHY_CTRL |=
-		(ZLL_PHY_CTRL_TMR3CMP_EN_MASK | ZLL_PHY_CTRL_TC3TMOUT_MASK);
+	ZLL->PHY_CTRL |= (ZLL_PHY_CTRL_TMR3CMP_EN_MASK | ZLL_PHY_CTRL_TC3TMOUT_MASK);
 }
 
 static void kw41z_tmr3_disable(void)
@@ -346,10 +329,9 @@ static void kw41z_tmr3_disable(void)
 	 * disable TMR3 compare and disable autosequence stop by TC3
 	 * match
 	 */
-	ZLL->PHY_CTRL &= ~(ZLL_PHY_CTRL_TMR3CMP_EN_MASK |
-			ZLL_PHY_CTRL_TC3TMOUT_MASK);
+	ZLL->PHY_CTRL &= ~(ZLL_PHY_CTRL_TMR3CMP_EN_MASK | ZLL_PHY_CTRL_TC3TMOUT_MASK);
 	/* mask TMR3 interrupt (do not change other IRQ status) */
-	irqsts  = ZLL->IRQSTS & BM_ZLL_IRQSTS_TMRxMSK;
+	irqsts = ZLL->IRQSTS & BM_ZLL_IRQSTS_TMRxMSK;
 	irqsts |= ZLL_IRQSTS_TMR3MSK_MASK;
 	/* acknowledge TMR3 IRQ */
 	irqsts |= ZLL_IRQSTS_TMR3IRQ_MASK;
@@ -359,8 +341,8 @@ static void kw41z_tmr3_disable(void)
 
 static enum ieee802154_hw_caps kw41z_get_capabilities(const struct device *dev)
 {
-	return IEEE802154_HW_FCS | IEEE802154_HW_FILTER |
-	       IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_RX_TX_ACK;
+	return IEEE802154_HW_FCS | IEEE802154_HW_FILTER | IEEE802154_HW_TX_RX_ACK |
+	       IEEE802154_HW_RX_TX_ACK;
 }
 
 static int kw41z_cca(const struct device *dev)
@@ -394,22 +376,19 @@ static int kw41z_set_channel(const struct device *dev, uint16_t channel)
 
 static int kw41z_set_pan_id(const struct device *dev, uint16_t pan_id)
 {
-	ZLL->MACSHORTADDRS0 = (ZLL->MACSHORTADDRS0 &
-			       ~ZLL_MACSHORTADDRS0_MACPANID0_MASK) |
+	ZLL->MACSHORTADDRS0 = (ZLL->MACSHORTADDRS0 & ~ZLL_MACSHORTADDRS0_MACPANID0_MASK) |
 			      ZLL_MACSHORTADDRS0_MACPANID0(pan_id);
 	return 0;
 }
 
 static int kw41z_set_short_addr(const struct device *dev, uint16_t short_addr)
 {
-	ZLL->MACSHORTADDRS0 = (ZLL->MACSHORTADDRS0 &
-			       ~ZLL_MACSHORTADDRS0_MACSHORTADDRS0_MASK) |
+	ZLL->MACSHORTADDRS0 = (ZLL->MACSHORTADDRS0 & ~ZLL_MACSHORTADDRS0_MACSHORTADDRS0_MASK) |
 			      ZLL_MACSHORTADDRS0_MACSHORTADDRS0(short_addr);
 	return 0;
 }
 
-static int kw41z_set_ieee_addr(const struct device *dev,
-			       const uint8_t *ieee_addr)
+static int kw41z_set_ieee_addr(const struct device *dev, const uint8_t *ieee_addr)
 {
 	uint32_t val;
 
@@ -422,9 +401,7 @@ static int kw41z_set_ieee_addr(const struct device *dev,
 	return 0;
 }
 
-static int kw41z_filter(const struct device *dev,
-			bool set,
-			enum ieee802154_filter_type type,
+static int kw41z_filter(const struct device *dev, bool set, enum ieee802154_filter_type type,
 			const struct ieee802154_filter *filter)
 {
 	LOG_DBG("Applying filter %u", type);
@@ -447,16 +424,12 @@ static int kw41z_filter(const struct device *dev,
 static int kw41z_set_txpower(const struct device *dev, int16_t dbm)
 {
 	if (dbm < KW41Z_OUTPUT_POWER_MIN) {
-		LOG_INF("TX-power %d dBm below min of %d dBm, using %d dBm",
-			    dbm,
-			    KW41Z_OUTPUT_POWER_MIN,
-			    KW41Z_OUTPUT_POWER_MIN);
+		LOG_INF("TX-power %d dBm below min of %d dBm, using %d dBm", dbm,
+			KW41Z_OUTPUT_POWER_MIN, KW41Z_OUTPUT_POWER_MIN);
 		dbm = KW41Z_OUTPUT_POWER_MIN;
 	} else if (dbm > KW41Z_OUTPUT_POWER_MAX) {
-		LOG_INF("TX-power %d dBm above max of %d dBm, using %d dBm",
-			    dbm,
-			    KW41Z_OUTPUT_POWER_MAX,
-			    KW41Z_OUTPUT_POWER_MAX);
+		LOG_INF("TX-power %d dBm above max of %d dBm, using %d dBm", dbm,
+			KW41Z_OUTPUT_POWER_MAX, KW41Z_OUTPUT_POWER_MAX);
 		dbm = KW41Z_OUTPUT_POWER_MAX;
 	}
 
@@ -512,8 +485,7 @@ static inline void kw41z_rx(struct kw41z_context *kw41z, uint8_t len)
 	pkt_len = len - KW41Z_FCS_LENGTH;
 #endif
 
-	pkt = net_pkt_rx_alloc_with_buffer(kw41z->iface, pkt_len,
-					   AF_UNSPEC, 0, K_NO_WAIT);
+	pkt = net_pkt_rx_alloc_with_buffer(kw41z->iface, pkt_len, AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("No buf available");
 		goto out;
@@ -525,7 +497,7 @@ static inline void kw41z_rx(struct kw41z_context *kw41z, uint8_t len)
 	/* PKT_BUFFER_RX needs to be accessed aligned to 16 bits */
 	for (uint16_t reg_val = 0, i = 0; i < pkt_len; i++) {
 		if (i % 2 == 0U) {
-			reg_val = ZLL->PKT_BUFFER_RX[i/2U];
+			reg_val = ZLL->PKT_BUFFER_RX[i / 2U];
 			buf->data[i] = reg_val & 0xFF;
 		} else {
 			buf->data[i] = reg_val >> 8;
@@ -536,7 +508,7 @@ static inline void kw41z_rx(struct kw41z_context *kw41z, uint8_t len)
 	for (uint32_t reg_val = 0, i = 0; i < pkt_len; i++) {
 		switch (i % 4) {
 		case 0:
-			reg_val = ZLL->PKT_BUFFER[i/4U];
+			reg_val = ZLL->PKT_BUFFER[i / 4U];
 			buf->data[i] = reg_val & 0xFF;
 			break;
 		case 1:
@@ -571,8 +543,8 @@ out:
 	}
 }
 
-#define ACK_FRAME_LEN 3
-#define ACK_FRAME_TYPE (2 << 0)
+#define ACK_FRAME_LEN         3
+#define ACK_FRAME_TYPE        (2 << 0)
 #define ACK_FRAME_PENDING_BIT (1 << 4)
 
 static void handle_ack(struct kw41z_context *kw41z, uint8_t seq_number)
@@ -580,16 +552,16 @@ static void handle_ack(struct kw41z_context *kw41z, uint8_t seq_number)
 	struct net_pkt *ack_pkt;
 	uint8_t ack_psdu[ACK_FRAME_LEN];
 
-	ack_pkt = net_pkt_rx_alloc_with_buffer(kw41z->iface, ACK_FRAME_LEN,
-					       AF_UNSPEC, 0, K_NO_WAIT);
+	ack_pkt =
+		net_pkt_rx_alloc_with_buffer(kw41z->iface, ACK_FRAME_LEN, AF_UNSPEC, 0, K_NO_WAIT);
 	if (!ack_pkt) {
 		LOG_ERR("No free packet available.");
 		return;
 	}
 
 	/* Re-create ACK frame. */
-	ack_psdu[0] = kw41z_context_data.frame_pending ?
-		      ACK_FRAME_TYPE | ACK_FRAME_PENDING_BIT : ACK_FRAME_TYPE;
+	ack_psdu[0] = kw41z_context_data.frame_pending ? ACK_FRAME_TYPE | ACK_FRAME_PENDING_BIT
+						       : ACK_FRAME_TYPE;
 	ack_psdu[1] = 0;
 	ack_psdu[2] = seq_number;
 
@@ -612,8 +584,8 @@ out:
 	net_pkt_unref(ack_pkt);
 }
 
-static int kw41z_tx(const struct device *dev, enum ieee802154_tx_mode mode,
-		    struct net_pkt *pkt, struct net_buf *frag)
+static int kw41z_tx(const struct device *dev, enum ieee802154_tx_mode mode, struct net_pkt *pkt,
+		    struct net_buf *frag)
 {
 	struct kw41z_context *kw41z = dev->data;
 	uint8_t payload_len = frag->len;
@@ -649,12 +621,10 @@ static int kw41z_tx(const struct device *dev, enum ieee802154_tx_mode mode,
 
 #if CONFIG_SOC_MKW41Z4
 	((uint8_t *)ZLL->PKT_BUFFER_TX)[0] = payload_len + KW41Z_FCS_LENGTH;
-	memcpy(((uint8_t *)ZLL->PKT_BUFFER_TX) + 1,
-		(void *)frag->data, payload_len);
+	memcpy(((uint8_t *)ZLL->PKT_BUFFER_TX) + 1, (void *)frag->data, payload_len);
 #else /* CONFIG_SOC_MKW40Z4 */
 	((uint8_t *)ZLL->PKT_BUFFER)[0] = payload_len + KW41Z_FCS_LENGTH;
-	memcpy(((uint8_t *)ZLL->PKT_BUFFER) + 1,
-		(void *)frag->data, payload_len);
+	memcpy(((uint8_t *)ZLL->PKT_BUFFER) + 1, (void *)frag->data, payload_len);
 #endif
 
 	/* Set CCA mode */
@@ -667,18 +637,16 @@ static int kw41z_tx(const struct device *dev, enum ieee802154_tx_mode mode,
 	/* Perform automatic reception of ACK frame, if required */
 	if (ieee802154_is_ar_flag_set(frag)) {
 		tx_timeout = kw41z->tx_warmup_time + KW41Z_SHR_PHY_TIME +
-				 payload_len * KW41Z_PER_BYTE_TIME + 10 +
-				 KW41Z_ACK_WAIT_TIME;
+			     payload_len * KW41Z_PER_BYTE_TIME + 10 + KW41Z_ACK_WAIT_TIME;
 
-		LOG_DBG("AUTOACK ENABLED: len: %d, timeout: %d, seq: %d",
-			payload_len, tx_timeout, frag->data[2]);
+		LOG_DBG("AUTOACK ENABLED: len: %d, timeout: %d, seq: %d", payload_len, tx_timeout,
+			frag->data[2]);
 
 		kw41z_tmr3_set_timeout(tx_timeout);
 		ZLL->PHY_CTRL |= ZLL_PHY_CTRL_RXACKRQD_MASK;
 		xcvseq = KW41Z_STATE_TXRX;
 	} else {
-		LOG_DBG("AUTOACK DISABLED: len: %d, seq: %d",
-			payload_len, frag->data[2]);
+		LOG_DBG("AUTOACK DISABLED: len: %d, seq: %d", payload_len, frag->data[2]);
 
 		ZLL->PHY_CTRL &= ~ZLL_PHY_CTRL_RXACKRQD_MASK;
 		xcvseq = KW41Z_STATE_TX;
@@ -720,11 +688,9 @@ static void kw41z_isr(int unused)
 
 	LOG_DBG("ENTRY: irqsts: 0x%08X, PHY_CTRL: 0x%08X, "
 		"SEQ_STATE: 0x%08X, SEQ_CTRL: 0x%08X, TMR: %d, state: %d",
-		irqsts, (unsigned int)ZLL->PHY_CTRL,
-		(unsigned int)seq_state,
+		irqsts, (unsigned int)ZLL->PHY_CTRL, (unsigned int)seq_state,
 		(unsigned int)ZLL->SEQ_CTRL_STS,
-		(unsigned int)(ZLL->EVENT_TMR >> ZLL_EVENT_TMR_EVENT_TMR_SHIFT),
-		state);
+		(unsigned int)(ZLL->EVENT_TMR >> ZLL_EVENT_TMR_EVENT_TMR_SHIFT), state);
 
 	/* Clear interrupts */
 	ZLL->IRQSTS = irqsts;
@@ -733,15 +699,13 @@ static void kw41z_isr(int unused)
 		LOG_DBG("Incoming RX failed packet filtering rules: "
 			"CODE: 0x%08X, irqsts: 0x%08X, PHY_CTRL: 0x%08X, "
 			"SEQ_STATE: 0x%08X, state: %d",
-			(unsigned int)ZLL->FILTERFAIL_CODE,
-			irqsts,
-			(unsigned int)ZLL->PHY_CTRL,
+			(unsigned int)ZLL->FILTERFAIL_CODE, irqsts, (unsigned int)ZLL->PHY_CTRL,
 			(unsigned int)seq_state, state);
 
 		restart_rx = 0U;
 
 	} else if ((!(ZLL->PHY_CTRL & ZLL_PHY_CTRL_RX_WMRK_MSK_MASK)) &&
-	    (irqsts & ZLL_IRQSTS_RXWTRMRKIRQ_MASK)) {
+		   (irqsts & ZLL_IRQSTS_RXWTRMRKIRQ_MASK)) {
 		/*
 		 * There is a bug in the KW41Z where in noisy environments
 		 * the RX sequence can get lost. The watermark mask IRQ can
@@ -751,16 +715,14 @@ static void kw41z_isr(int unused)
 		 * things so the problem is contained a bit in normal
 		 * operation.
 		 */
-		rx_len = (irqsts & ZLL_IRQSTS_RX_FRAME_LENGTH_MASK)
-			>> ZLL_IRQSTS_RX_FRAME_LENGTH_SHIFT;
+		rx_len = (irqsts & ZLL_IRQSTS_RX_FRAME_LENGTH_MASK) >>
+			 ZLL_IRQSTS_RX_FRAME_LENGTH_SHIFT;
 
-		KW_DBG_TRACE(KW41_DBG_TRACE_WTRM, irqsts,
-			(unsigned int)ZLL->PHY_CTRL, seq_state);
+		KW_DBG_TRACE(KW41_DBG_TRACE_WTRM, irqsts, (unsigned int)ZLL->PHY_CTRL, seq_state);
 
 		if (rx_len > IEEE802154_ACK_LENGTH) {
 
-			LOG_DBG("WMRK irq: seq_state: 0x%08x, rx_len: %d",
-				seq_state, rx_len);
+			LOG_DBG("WMRK irq: seq_state: 0x%08x, rx_len: %d", seq_state, rx_len);
 			/*
 			 * Assume the RX includes an auto-ACK so set the
 			 * timer to include the RX frame size, crc, IFS,
@@ -794,25 +756,22 @@ static void kw41z_isr(int unused)
 		 * TMR3 timeout
 		 */
 		else if ((irqsts & ZLL_IRQSTS_TMR3IRQ_MASK) &&
-			(!(irqsts & ZLL_IRQSTS_RXIRQ_MASK)) &&
-			(state != KW41Z_STATE_TX)) {
+			 (!(irqsts & ZLL_IRQSTS_RXIRQ_MASK)) && (state != KW41Z_STATE_TX)) {
 
 			LOG_DBG("a) TMR3 timeout: irqsts: 0x%08X, "
 				"seq_state: 0x%08X, PHY_CTRL: 0x%08X, "
 				"state: %d",
-				irqsts, seq_state,
-				(unsigned int)ZLL->PHY_CTRL, state);
+				irqsts, seq_state, (unsigned int)ZLL->PHY_CTRL, state);
 
-			KW_DBG_TRACE(KW41_DBG_TRACE_TMR3, irqsts,
-				(unsigned int)ZLL->PHY_CTRL, seq_state);
+			KW_DBG_TRACE(KW41_DBG_TRACE_TMR3, irqsts, (unsigned int)ZLL->PHY_CTRL,
+				     seq_state);
 
 			kw41z_isr_timeout_cleanup();
 			restart_rx = 1U;
 
 			if (state == KW41Z_STATE_TXRX) {
 				/* TODO: What is the right error for no ACK? */
-				atomic_set(&kw41z_context_data.seq_retval,
-					   -EBUSY);
+				atomic_set(&kw41z_context_data.seq_retval, -EBUSY);
 				k_sem_give(&kw41z_context_data.seq_sync);
 			}
 		} else {
@@ -820,22 +779,19 @@ static void kw41z_isr(int unused)
 
 			switch (state) {
 			case KW41Z_STATE_RX:
-				LOG_DBG("RX seq done: SEQ_STATE: 0x%08X",
-					(unsigned int)seq_state);
+				LOG_DBG("RX seq done: SEQ_STATE: 0x%08X", (unsigned int)seq_state);
 
-				KW_DBG_TRACE(KW41_DBG_TRACE_RX, irqsts,
-					(unsigned int)ZLL->PHY_CTRL, seq_state);
+				KW_DBG_TRACE(KW41_DBG_TRACE_RX, irqsts, (unsigned int)ZLL->PHY_CTRL,
+					     seq_state);
 
 				kw41z_tmr3_disable();
 
-				rx_len = (ZLL->IRQSTS &
-					  ZLL_IRQSTS_RX_FRAME_LENGTH_MASK) >>
-					  ZLL_IRQSTS_RX_FRAME_LENGTH_SHIFT;
+				rx_len = (ZLL->IRQSTS & ZLL_IRQSTS_RX_FRAME_LENGTH_MASK) >>
+					 ZLL_IRQSTS_RX_FRAME_LENGTH_SHIFT;
 
 				if (irqsts & ZLL_IRQSTS_RXIRQ_MASK) {
 					if (rx_len != 0U) {
-						kw41z_rx(&kw41z_context_data,
-							rx_len);
+						kw41z_rx(&kw41z_context_data, rx_len);
 					}
 				}
 				restart_rx = 1U;
@@ -848,16 +804,12 @@ static void kw41z_isr(int unused)
 					irqsts & ZLL_IRQSTS_RX_FRM_PEND_MASK;
 			case KW41Z_STATE_TX:
 				LOG_DBG("TX seq done");
-				KW_DBG_TRACE(KW41_DBG_TRACE_TX, irqsts,
-					(unsigned int)ZLL->PHY_CTRL, seq_state);
+				KW_DBG_TRACE(KW41_DBG_TRACE_TX, irqsts, (unsigned int)ZLL->PHY_CTRL,
+					     seq_state);
 				if (irqsts & ZLL_IRQSTS_CCA_MASK) {
-					atomic_set(
-						&kw41z_context_data.seq_retval,
-						-EBUSY);
+					atomic_set(&kw41z_context_data.seq_retval, -EBUSY);
 				} else {
-					atomic_set(
-						&kw41z_context_data.seq_retval,
-						0);
+					atomic_set(&kw41z_context_data.seq_retval, 0);
 				}
 
 				k_sem_give(&kw41z_context_data.seq_sync);
@@ -867,16 +819,12 @@ static void kw41z_isr(int unused)
 			case KW41Z_STATE_CCA:
 				LOG_DBG("CCA seq done");
 				KW_DBG_TRACE(KW41_DBG_TRACE_CCA, irqsts,
-					(unsigned int)ZLL->PHY_CTRL, seq_state);
+					     (unsigned int)ZLL->PHY_CTRL, seq_state);
 				if (irqsts & ZLL_IRQSTS_CCA_MASK) {
-					atomic_set(
-						&kw41z_context_data.seq_retval,
-						-EBUSY);
+					atomic_set(&kw41z_context_data.seq_retval, -EBUSY);
 					restart_rx = 1U;
 				} else {
-					atomic_set(
-						&kw41z_context_data.seq_retval,
-						0);
+					atomic_set(&kw41z_context_data.seq_retval, 0);
 					restart_rx = 0U;
 				}
 
@@ -890,8 +838,7 @@ static void kw41z_isr(int unused)
 		}
 	} else {
 		/* Timer 3 Compare Match */
-		if ((irqsts & ZLL_IRQSTS_TMR3IRQ_MASK) &&
-			(!(irqsts & ZLL_IRQSTS_TMR3MSK_MASK))) {
+		if ((irqsts & ZLL_IRQSTS_TMR3IRQ_MASK) && (!(irqsts & ZLL_IRQSTS_TMR3MSK_MASK))) {
 
 			LOG_DBG("b) TMR3 timeout: irqsts: 0x%08X, "
 				"seq_state: 0x%08X, state: %d",
@@ -958,16 +905,12 @@ static int kw41z_init(const struct device *dev)
 	}
 
 	/* Disable all timers, enable AUTOACK, mask all interrupts */
-	ZLL->PHY_CTRL = ZLL_PHY_CTRL_CCATYPE(KW41Z_CCA_MODE1)	|
-			ZLL_PHY_CTRL_CRC_MSK_MASK		|
-			ZLL_PHY_CTRL_PLL_UNLOCK_MSK_MASK	|
+	ZLL->PHY_CTRL = ZLL_PHY_CTRL_CCATYPE(KW41Z_CCA_MODE1) | ZLL_PHY_CTRL_CRC_MSK_MASK |
+			ZLL_PHY_CTRL_PLL_UNLOCK_MSK_MASK |
 			/*ZLL_PHY_CTRL_FILTERFAIL_MSK_MASK	|*/
-			ZLL_PHY_CTRL_RX_WMRK_MSK_MASK	|
-			ZLL_PHY_CTRL_CCAMSK_MASK		|
-			ZLL_PHY_CTRL_RXMSK_MASK			|
-			ZLL_PHY_CTRL_TXMSK_MASK			|
-			ZLL_PHY_CTRL_CCABFRTX_MASK		|
-			ZLL_PHY_CTRL_SEQMSK_MASK;
+			ZLL_PHY_CTRL_RX_WMRK_MSK_MASK | ZLL_PHY_CTRL_CCAMSK_MASK |
+			ZLL_PHY_CTRL_RXMSK_MASK | ZLL_PHY_CTRL_TXMSK_MASK |
+			ZLL_PHY_CTRL_CCABFRTX_MASK | ZLL_PHY_CTRL_SEQMSK_MASK;
 
 #if CONFIG_SOC_MKW41Z4
 	ZLL->PHY_CTRL |= ZLL_IRQSTS_WAKE_IRQ_MASK;
@@ -987,11 +930,9 @@ static int kw41z_init(const struct device *dev)
 	/* Accept FrameVersion 0 and 1 packets, reject all others */
 	ZLL->PHY_CTRL &= ~ZLL_PHY_CTRL_PROMISCUOUS_MASK;
 	ZLL->RX_FRAME_FILTER &= ~ZLL_RX_FRAME_FILTER_FRM_VER_FILTER_MASK;
-	ZLL->RX_FRAME_FILTER = ZLL_RX_FRAME_FILTER_FRM_VER_FILTER(3)	|
-			       ZLL_RX_FRAME_FILTER_CMD_FT_MASK		|
-			       ZLL_RX_FRAME_FILTER_DATA_FT_MASK		|
-			       ZLL_RX_FRAME_FILTER_ACK_FT_MASK		|
-			       ZLL_RX_FRAME_FILTER_BEACON_FT_MASK;
+	ZLL->RX_FRAME_FILTER = ZLL_RX_FRAME_FILTER_FRM_VER_FILTER(3) |
+			       ZLL_RX_FRAME_FILTER_CMD_FT_MASK | ZLL_RX_FRAME_FILTER_DATA_FT_MASK |
+			       ZLL_RX_FRAME_FILTER_ACK_FT_MASK | ZLL_RX_FRAME_FILTER_BEACON_FT_MASK;
 
 	/* Set prescaler to obtain 1 symbol (16us) timebase */
 	ZLL->TMR_PRESCALE = 0x05;
@@ -999,11 +940,9 @@ static int kw41z_init(const struct device *dev)
 	kw41z_tmr3_disable();
 
 	/* Compute warmup times (scaled to 16us) */
-	kw41z->rx_warmup_time = (XCVR_TSM->END_OF_SEQ &
-				 XCVR_TSM_END_OF_SEQ_END_OF_RX_WU_MASK) >>
+	kw41z->rx_warmup_time = (XCVR_TSM->END_OF_SEQ & XCVR_TSM_END_OF_SEQ_END_OF_RX_WU_MASK) >>
 				XCVR_TSM_END_OF_SEQ_END_OF_RX_WU_SHIFT;
-	kw41z->tx_warmup_time = (XCVR_TSM->END_OF_SEQ &
-				 XCVR_TSM_END_OF_SEQ_END_OF_TX_WU_MASK) >>
+	kw41z->tx_warmup_time = (XCVR_TSM->END_OF_SEQ & XCVR_TSM_END_OF_SEQ_END_OF_TX_WU_MASK) >>
 				XCVR_TSM_END_OF_SEQ_END_OF_TX_WU_SHIFT;
 
 	if (kw41z->rx_warmup_time & 0x0F) {
@@ -1038,7 +977,6 @@ static int kw41z_init(const struct device *dev)
 	/* Set Rx watermark level */
 	ZLL->RX_WTR_MARK = 0;
 
-
 	/* Set default channel to 2405 MHZ */
 	kw41z_set_channel(dev, KW41Z_DEFAULT_CHANNEL);
 
@@ -1067,8 +1005,7 @@ static void kw41z_iface_init(struct net_if *iface)
 	ieee802154_init(iface);
 }
 
-static int kw41z_configure(const struct device *dev,
-			   enum ieee802154_config_type type,
+static int kw41z_configure(const struct device *dev, enum ieee802154_config_type type,
 			   const struct ieee802154_config *config)
 {
 	return 0;
@@ -1088,42 +1025,40 @@ static int kw41z_attr_get(const struct device *dev, enum ieee802154_attr attr,
 }
 
 static const struct ieee802154_radio_api kw41z_radio_api = {
-	.iface_api.init	= kw41z_iface_init,
+	.iface_api.init = kw41z_iface_init,
 
-	.get_capabilities	= kw41z_get_capabilities,
-	.cca			= kw41z_cca,
-	.set_channel		= kw41z_set_channel,
-	.filter			= kw41z_filter,
-	.set_txpower		= kw41z_set_txpower,
-	.start			= kw41z_start,
-	.stop			= kw41z_stop,
-	.tx			= kw41z_tx,
-	.configure		= kw41z_configure,
-	.attr_get		= kw41z_attr_get,
+	.get_capabilities = kw41z_get_capabilities,
+	.cca = kw41z_cca,
+	.set_channel = kw41z_set_channel,
+	.filter = kw41z_filter,
+	.set_txpower = kw41z_set_txpower,
+	.start = kw41z_start,
+	.stop = kw41z_stop,
+	.tx = kw41z_tx,
+	.configure = kw41z_configure,
+	.attr_get = kw41z_attr_get,
 };
 
 #if defined(CONFIG_NET_L2_IEEE802154)
 
-#define L2 IEEE802154_L2
+#define L2          IEEE802154_L2
 #define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(IEEE802154_L2)
-#define MTU KW41Z_PSDU_LENGTH
+#define MTU         KW41Z_PSDU_LENGTH
 
 #elif defined(CONFIG_NET_L2_OPENTHREAD)
 
-#define L2 OPENTHREAD_L2
+#define L2          OPENTHREAD_L2
 #define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(OPENTHREAD_L2)
-#define MTU 1280
+#define MTU         1280
 
 #endif
 
-NET_DEVICE_DT_INST_DEFINE(
-	0,
-	kw41z_init,                         /* Initialization Function */
-	NULL,              /* No PM API support */
-	&kw41z_context_data,                /* Context data */
-	NULL,                               /* Configuration info */
-	CONFIG_IEEE802154_KW41Z_INIT_PRIO,  /* Initial priority */
-	&kw41z_radio_api,                   /* API interface functions */
-	L2,                                 /* L2 */
-	L2_CTX_TYPE,                        /* L2 context type */
-	MTU);                               /* MTU size */
+NET_DEVICE_DT_INST_DEFINE(0, kw41z_init,                     /* Initialization Function */
+			  NULL,                              /* No PM API support */
+			  &kw41z_context_data,               /* Context data */
+			  NULL,                              /* Configuration info */
+			  CONFIG_IEEE802154_KW41Z_INIT_PRIO, /* Initial priority */
+			  &kw41z_radio_api,                  /* API interface functions */
+			  L2,                                /* L2 */
+			  L2_CTX_TYPE,                       /* L2 context type */
+			  MTU);                              /* MTU size */

@@ -304,7 +304,7 @@ static int32_t fpga_config_ready_check(const struct device *dev)
 
 	/* Sending the FPGA config status mailbox command */
 	ret = smc_send(dev, SIP_SVC_PROTO_CMD_ASYNC, SMC_FUNC_ID_MAILBOX_SEND_COMMAND, smc_cmd,
-				&priv_data);
+		       &priv_data);
 	if (ret) {
 		LOG_ERR("Failed to Send the Mailbox Command !!");
 		return -ECANCELED;
@@ -314,7 +314,7 @@ static int32_t fpga_config_ready_check(const struct device *dev)
 
 	/* Verify the SMC response */
 	if (!priv_data.response.resp_data_size &&
-		priv_data.mbox_response_len != FPGA_CONFIG_STATUS_RESPONSE_LEN) {
+	    priv_data.mbox_response_len != FPGA_CONFIG_STATUS_RESPONSE_LEN) {
 		return -EINVAL;
 	}
 
@@ -347,7 +347,7 @@ static int32_t socfpga_bridges_reset(const struct device *dev, uint32_t enable)
 	smc_cmd[SMC_REQUEST_A3_INDEX] = BRIDGE_MASK;
 
 	ret = smc_send(dev, SIP_SVC_PROTO_CMD_SYNC, SMC_FUNC_ID_SET_HPS_BRIDGES, smc_cmd,
-				&priv_data);
+		       &priv_data);
 	if (ret) {
 		LOG_ERR("Failed to send the smc Command !!");
 		return ret;
@@ -470,13 +470,9 @@ static const struct fpga_driver_api altera_fpga_api = {
 	.off = altera_fpga_off,
 };
 
-#define CREATE_ALTERA_FPGA_BRIDGE_DEV(inst)						\
-	static struct fpga_bridge_dev_data fpga_bridge_data_##inst;		\
-	DEVICE_DT_INST_DEFINE(inst,						\
-			altera_fpga_init,					\
-			NULL, &fpga_bridge_data_##inst,				\
-			NULL, POST_KERNEL,			\
-			CONFIG_FPGA_INIT_PRIORITY,				\
-			&altera_fpga_api);					\
+#define CREATE_ALTERA_FPGA_BRIDGE_DEV(inst)                                                        \
+	static struct fpga_bridge_dev_data fpga_bridge_data_##inst;                                \
+	DEVICE_DT_INST_DEFINE(inst, altera_fpga_init, NULL, &fpga_bridge_data_##inst, NULL,        \
+			      POST_KERNEL, CONFIG_FPGA_INIT_PRIORITY, &altera_fpga_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CREATE_ALTERA_FPGA_BRIDGE_DEV);

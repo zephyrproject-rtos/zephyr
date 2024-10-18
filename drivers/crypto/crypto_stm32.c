@@ -29,10 +29,9 @@ LOG_MODULE_REGISTER(crypto_stm32);
 #error No STM32 HW Crypto Accelerator in device tree
 #endif
 
-#define CRYP_SUPPORT (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | \
-		      CAP_NO_IV_PREFIX)
-#define BLOCK_LEN_BYTES 16
-#define BLOCK_LEN_WORDS (BLOCK_LEN_BYTES / sizeof(uint32_t))
+#define CRYP_SUPPORT       (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | CAP_NO_IV_PREFIX)
+#define BLOCK_LEN_BYTES    16
+#define BLOCK_LEN_WORDS    (BLOCK_LEN_BYTES / sizeof(uint32_t))
 #define CRYPTO_MAX_SESSION CONFIG_CRYPTO_STM32_MAX_SESSION
 
 #if defined(CRYP_KEYSIZE_192B)
@@ -40,9 +39,9 @@ LOG_MODULE_REGISTER(crypto_stm32);
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_cryp)
-#define STM32_CRYPTO_TYPEDEF            CRYP_TypeDef
+#define STM32_CRYPTO_TYPEDEF CRYP_TypeDef
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_aes)
-#define STM32_CRYPTO_TYPEDEF            AES_TypeDef
+#define STM32_CRYPTO_TYPEDEF AES_TypeDef
 #endif
 
 struct crypto_stm32_session crypto_stm32_sessions[CRYPTO_MAX_SESSION];
@@ -112,7 +111,7 @@ static int copy_words_adjust_endianness(uint8_t *dst_buf, int dst_len, const uin
 }
 
 static int do_aes(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn, uint8_t *in_buf, int in_len,
-		      uint8_t *out_buf)
+		  uint8_t *out_buf)
 {
 	status_t status;
 
@@ -163,8 +162,7 @@ static status_t hal_decrypt(CRYP_HandleTypeDef *hcryp, uint8_t *pCypherData, uin
 }
 #endif
 
-static int crypto_stm32_ecb_encrypt(struct cipher_ctx *ctx,
-				    struct cipher_pkt *pkt)
+static int crypto_stm32_ecb_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 {
 	int ret;
 
@@ -184,8 +182,7 @@ static int crypto_stm32_ecb_encrypt(struct cipher_ctx *ctx,
 	return ret;
 }
 
-static int crypto_stm32_ecb_decrypt(struct cipher_ctx *ctx,
-				    struct cipher_pkt *pkt)
+static int crypto_stm32_ecb_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 {
 	int ret;
 
@@ -205,8 +202,7 @@ static int crypto_stm32_ecb_decrypt(struct cipher_ctx *ctx,
 	return ret;
 }
 
-static int crypto_stm32_cbc_encrypt(struct cipher_ctx *ctx,
-				    struct cipher_pkt *pkt, uint8_t *iv)
+static int crypto_stm32_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv)
 {
 	int ret;
 	uint32_t vec[BLOCK_LEN_WORDS];
@@ -232,8 +228,7 @@ static int crypto_stm32_cbc_encrypt(struct cipher_ctx *ctx,
 	return ret;
 }
 
-static int crypto_stm32_cbc_decrypt(struct cipher_ctx *ctx,
-				    struct cipher_pkt *pkt, uint8_t *iv)
+static int crypto_stm32_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv)
 {
 	int ret;
 	uint32_t vec[BLOCK_LEN_WORDS];
@@ -257,8 +252,7 @@ static int crypto_stm32_cbc_decrypt(struct cipher_ctx *ctx,
 	return ret;
 }
 
-static int crypto_stm32_ctr_encrypt(struct cipher_ctx *ctx,
-				    struct cipher_pkt *pkt, uint8_t *iv)
+static int crypto_stm32_ctr_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv)
 {
 	int ret;
 	uint32_t ctr[BLOCK_LEN_WORDS] = {0};
@@ -280,8 +274,7 @@ static int crypto_stm32_ctr_encrypt(struct cipher_ctx *ctx,
 	return ret;
 }
 
-static int crypto_stm32_ctr_decrypt(struct cipher_ctx *ctx,
-				    struct cipher_pkt *pkt, uint8_t *iv)
+static int crypto_stm32_ctr_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv)
 {
 	int ret;
 	uint32_t ctr[BLOCK_LEN_WORDS] = {0};
@@ -324,10 +317,8 @@ static int crypto_stm32_get_unused_session_index(const struct device *dev)
 	return -1;
 }
 
-static int crypto_stm32_session_setup(const struct device *dev,
-				      struct cipher_ctx *ctx,
-				      enum cipher_algo algo,
-				      enum cipher_mode mode,
+static int crypto_stm32_session_setup(const struct device *dev, struct cipher_ctx *ctx,
+				      enum cipher_algo algo, enum cipher_mode mode,
 				      enum cipher_op op_type)
 {
 	int ctx_idx, ret;
@@ -352,8 +343,7 @@ static int crypto_stm32_session_setup(const struct device *dev,
 	 * not a multiple of 128 bits. Therefore, CCM mode is not supported by
 	 * this driver.
 	 */
-	if ((mode != CRYPTO_CIPHER_MODE_ECB) &&
-	    (mode != CRYPTO_CIPHER_MODE_CBC) &&
+	if ((mode != CRYPTO_CIPHER_MODE_ECB) && (mode != CRYPTO_CIPHER_MODE_CBC) &&
 	    (mode != CRYPTO_CIPHER_MODE_CTR)) {
 		LOG_ERR("Unsupported mode");
 		return -EINVAL;
@@ -454,7 +444,7 @@ static int crypto_stm32_session_setup(const struct device *dev,
 	}
 
 	ret = copy_words_adjust_endianness((uint8_t *)session->key, CRYPTO_STM32_AES_MAX_KEY_LEN,
-				 ctx->key.bit_stream, ctx->keylen);
+					   ctx->key.bit_stream, ctx->keylen);
 	if (ret != 0) {
 		return -EIO;
 	}
@@ -472,8 +462,7 @@ static int crypto_stm32_session_setup(const struct device *dev,
 	return 0;
 }
 
-static int crypto_stm32_session_free(const struct device *dev,
-				     struct cipher_ctx *ctx)
+static int crypto_stm32_session_free(const struct device *dev, struct cipher_ctx *ctx)
 {
 	int i;
 
@@ -551,18 +540,11 @@ static struct crypto_driver_api crypto_enc_funcs = {
 static struct crypto_stm32_data crypto_stm32_dev_data = {
 	.hcryp = {
 		.Instance = (STM32_CRYPTO_TYPEDEF *)DT_INST_REG_ADDR(0),
-	}
-};
+	}};
 
 static const struct crypto_stm32_config crypto_stm32_dev_config = {
 	.reset = RESET_DT_SPEC_INST_GET(0),
-	.pclken = {
-		.enr = DT_INST_CLOCKS_CELL(0, bits),
-		.bus = DT_INST_CLOCKS_CELL(0, bus)
-	}
-};
+	.pclken = {.enr = DT_INST_CLOCKS_CELL(0, bits), .bus = DT_INST_CLOCKS_CELL(0, bus)}};
 
-DEVICE_DT_INST_DEFINE(0, crypto_stm32_init, NULL,
-		    &crypto_stm32_dev_data,
-		    &crypto_stm32_dev_config, POST_KERNEL,
-		    CONFIG_CRYPTO_INIT_PRIORITY, (void *)&crypto_enc_funcs);
+DEVICE_DT_INST_DEFINE(0, crypto_stm32_init, NULL, &crypto_stm32_dev_data, &crypto_stm32_dev_config,
+		      POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY, (void *)&crypto_enc_funcs);

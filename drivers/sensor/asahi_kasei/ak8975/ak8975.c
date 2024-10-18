@@ -19,8 +19,7 @@
 
 LOG_MODULE_REGISTER(AK8975, CONFIG_SENSOR_LOG_LEVEL);
 
-static int ak8975_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
+static int ak8975_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct ak8975_data *drv_data = dev->data;
 	const struct ak8975_config *drv_config = dev->config;
@@ -47,27 +46,22 @@ static int ak8975_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static void ak8975_convert(struct sensor_value *val, int16_t sample,
-			   uint8_t adjustment)
+static void ak8975_convert(struct sensor_value *val, int16_t sample, uint8_t adjustment)
 {
 	int32_t conv_val;
 
-	conv_val = sample * AK8975_MICRO_GAUSS_PER_BIT *
-		   ((uint16_t)adjustment + 128) / 256;
+	conv_val = sample * AK8975_MICRO_GAUSS_PER_BIT * ((uint16_t)adjustment + 128) / 256;
 	val->val1 = conv_val / 1000000;
 	val->val2 = conv_val % 1000000;
 }
 
-static int ak8975_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
+static int ak8975_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	struct ak8975_data *drv_data = dev->data;
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_MAGN_XYZ ||
-			chan == SENSOR_CHAN_MAGN_X ||
-			chan == SENSOR_CHAN_MAGN_Y ||
-			chan == SENSOR_CHAN_MAGN_Z);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_MAGN_XYZ || chan == SENSOR_CHAN_MAGN_X ||
+			chan == SENSOR_CHAN_MAGN_Y || chan == SENSOR_CHAN_MAGN_Z);
 
 	if (chan == SENSOR_CHAN_MAGN_XYZ) {
 		ak8975_convert(val, drv_data->x_sample, drv_data->x_adj);
@@ -142,16 +136,15 @@ int ak8975_init(const struct device *dev)
 	return 0;
 }
 
-#define AK8975_DEFINE(inst)								\
-	static struct ak8975_data ak8975_data_##inst;					\
-											\
-	static const struct ak8975_config ak8975_config_##inst = {			\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
-	};										\
-											\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, ak8975_init, NULL,				\
-			      &ak8975_data_##inst, &ak8975_config_##inst,		\
-			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,			\
-			      &ak8975_driver_api);					\
+#define AK8975_DEFINE(inst)                                                                        \
+	static struct ak8975_data ak8975_data_##inst;                                              \
+                                                                                                   \
+	static const struct ak8975_config ak8975_config_##inst = {                                 \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+	};                                                                                         \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, ak8975_init, NULL, &ak8975_data_##inst,                 \
+				     &ak8975_config_##inst, POST_KERNEL,                           \
+				     CONFIG_SENSOR_INIT_PRIORITY, &ak8975_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AK8975_DEFINE)

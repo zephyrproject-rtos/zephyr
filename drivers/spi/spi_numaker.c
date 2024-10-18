@@ -44,13 +44,9 @@ struct spi_numaker_data {
  * CPOL/CPHA = 1/0 --> SPI_MODE_2
  * CPOL/CPHA = 1/1 --> SPI_MODE_3
  */
-static const uint32_t smode_tbl[4] = {
-	SPI_MODE_0, SPI_MODE_1, SPI_MODE_2, SPI_MODE_3
-};
+static const uint32_t smode_tbl[4] = {SPI_MODE_0, SPI_MODE_1, SPI_MODE_2, SPI_MODE_3};
 
-static const uint32_t qsmode_tbl[4] = {
-	QSPI_MODE_0, QSPI_MODE_1, QSPI_MODE_2, QSPI_MODE_3
-};
+static const uint32_t qsmode_tbl[4] = {QSPI_MODE_0, QSPI_MODE_1, QSPI_MODE_2, QSPI_MODE_3};
 
 static int spi_numaker_configure(const struct device *dev, const struct spi_config *config)
 {
@@ -88,14 +84,13 @@ static int spi_numaker_configure(const struct device *dev, const struct spi_conf
 		QSPI_Open((QSPI_T *)dev_cfg->spi,
 			  (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_SLAVE) ? QSPI_SLAVE
 										    : QSPI_MASTER,
-			  qsmode_tbl[mode],
-			  SPI_WORD_SIZE_GET(config->operation), config->frequency);
+			  qsmode_tbl[mode], SPI_WORD_SIZE_GET(config->operation),
+			  config->frequency);
 	} else {
 		SPI_Open(dev_cfg->spi,
 			 (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_SLAVE) ? SPI_SLAVE
 										   : SPI_MASTER,
-			 smode_tbl[mode],
-			 SPI_WORD_SIZE_GET(config->operation), config->frequency);
+			 smode_tbl[mode], SPI_WORD_SIZE_GET(config->operation), config->frequency);
 	}
 
 	/* Set Transfer LSB or MSB first */
@@ -281,13 +276,12 @@ static int spi_numaker_release(const struct device *dev, const struct spi_config
 	return 0;
 }
 
-static const struct spi_driver_api spi_numaker_driver_api = {
-	.transceive = spi_numaker_transceive,
+static const struct spi_driver_api spi_numaker_driver_api = {.transceive = spi_numaker_transceive,
 #ifdef CONFIG_SPI_RTIO
-	.iodev_submit = spi_rtio_iodev_default_submit,
+							     .iodev_submit =
+								     spi_rtio_iodev_default_submit,
 #endif
-	.release = spi_numaker_release
-};
+							     .release = spi_numaker_release};
 
 static int spi_numaker_init(const struct device *dev)
 {

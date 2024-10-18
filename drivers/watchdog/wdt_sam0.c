@@ -39,7 +39,7 @@ struct wdt_sam0_dev_data {
 	bool timeout_valid;
 };
 
-static struct wdt_sam0_dev_data wdt_sam0_data = { 0 };
+static struct wdt_sam0_dev_data wdt_sam0_data = {0};
 
 static void wdt_sam0_wait_synchronization(void)
 {
@@ -138,8 +138,7 @@ static int wdt_sam0_disable(const struct device *dev)
 	return 0;
 }
 
-static int wdt_sam0_install_timeout(const struct device *dev,
-				    const struct wdt_timeout_cfg *cfg)
+static int wdt_sam0_install_timeout(const struct device *dev, const struct wdt_timeout_cfg *cfg)
 {
 	struct wdt_sam0_dev_data *data = dev->data;
 	uint32_t window, per;
@@ -264,14 +263,11 @@ static int wdt_sam0_init(const struct device *dev)
 	PM->APBAMASK.bit.WDT_ = 1;
 
 	/* Connect to GCLK2 (~1.024 kHz) */
-	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID_WDT
-		| GCLK_CLKCTRL_GEN_GCLK2
-		| GCLK_CLKCTRL_CLKEN;
+	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID_WDT | GCLK_CLKCTRL_GEN_GCLK2 | GCLK_CLKCTRL_CLKEN;
 #endif
 
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority), wdt_sam0_isr,
-		    DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), wdt_sam0_isr, DEVICE_DT_INST_GET(0),
+		    0);
 	irq_enable(DT_INST_IRQN(0));
 
 	return 0;
@@ -279,6 +275,5 @@ static int wdt_sam0_init(const struct device *dev)
 
 static struct wdt_sam0_dev_data wdt_sam0_data;
 
-DEVICE_DT_INST_DEFINE(0, wdt_sam0_init, NULL,
-		    &wdt_sam0_data, NULL, PRE_KERNEL_1,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wdt_sam0_api);
+DEVICE_DT_INST_DEFINE(0, wdt_sam0_init, NULL, &wdt_sam0_data, NULL, PRE_KERNEL_1,
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wdt_sam0_api);

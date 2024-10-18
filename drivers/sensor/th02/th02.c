@@ -81,8 +81,7 @@ uint16_t get_temp(const struct i2c_dt_spec *i2c)
 	return temperature;
 }
 
-static int th02_sample_fetch(const struct device *dev,
-			     enum sensor_channel chan)
+static int th02_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct th02_data *drv_data = dev->data;
 	const struct th02_config *cfg = dev->config;
@@ -97,14 +96,12 @@ static int th02_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static int th02_channel_get(const struct device *dev,
-			    enum sensor_channel chan,
+static int th02_channel_get(const struct device *dev, enum sensor_channel chan,
 			    struct sensor_value *val)
 {
 	struct th02_data *drv_data = dev->data;
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_AMBIENT_TEMP ||
-			chan == SENSOR_CHAN_HUMIDITY);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_AMBIENT_TEMP || chan == SENSOR_CHAN_HUMIDITY);
 
 	if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
 		/* val = sample / 32 - 50 */
@@ -138,15 +135,15 @@ static int th02_init(const struct device *dev)
 	return 0;
 }
 
-#define TH02_DEFINE(inst)								\
-	static struct th02_data th02_data_##inst;					\
-											\
-	static const struct th02_config th02_config_##inst = {				\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
-	};										\
-											\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, th02_init, NULL,				\
-			      &th02_data_##inst, &th02_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &th02_driver_api);		\
+#define TH02_DEFINE(inst)                                                                          \
+	static struct th02_data th02_data_##inst;                                                  \
+                                                                                                   \
+	static const struct th02_config th02_config_##inst = {                                     \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+	};                                                                                         \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, th02_init, NULL, &th02_data_##inst,                     \
+				     &th02_config_##inst, POST_KERNEL,                             \
+				     CONFIG_SENSOR_INIT_PRIORITY, &th02_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TH02_DEFINE)

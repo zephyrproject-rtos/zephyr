@@ -33,14 +33,14 @@ LOG_MODULE_REGISTER(bt_driver);
 
 #define DT_DRV_COMPAT zephyr_bt_hci_3wire_uart
 
-#define HCI_3WIRE_ACK_PKT	0x00
-#define HCI_COMMAND_PKT		0x01
-#define HCI_ACLDATA_PKT		0x02
-#define HCI_SCODATA_PKT		0x03
-#define HCI_EVENT_PKT		0x04
-#define HCI_ISODATA_PKT		0x05
-#define HCI_3WIRE_LINK_PKT	0x0f
-#define HCI_VENDOR_PKT		0xff
+#define HCI_3WIRE_ACK_PKT  0x00
+#define HCI_COMMAND_PKT    0x01
+#define HCI_ACLDATA_PKT    0x02
+#define HCI_SCODATA_PKT    0x03
+#define HCI_EVENT_PKT      0x04
+#define HCI_ISODATA_PKT    0x05
+#define HCI_3WIRE_LINK_PKT 0x0f
+#define HCI_VENDOR_PKT     0xff
 
 static bool reliable_packet(uint8_t type)
 {
@@ -56,64 +56,63 @@ static bool reliable_packet(uint8_t type)
 }
 
 /* FIXME: Correct timeout */
-#define H5_RX_ACK_TIMEOUT	K_MSEC(250)
-#define H5_TX_ACK_TIMEOUT	K_MSEC(250)
+#define H5_RX_ACK_TIMEOUT K_MSEC(250)
+#define H5_TX_ACK_TIMEOUT K_MSEC(250)
 
-#define SLIP_DELIMITER	0xc0
-#define SLIP_ESC	0xdb
-#define SLIP_ESC_DELIM	0xdc
-#define SLIP_ESC_ESC	0xdd
+#define SLIP_DELIMITER 0xc0
+#define SLIP_ESC       0xdb
+#define SLIP_ESC_DELIM 0xdc
+#define SLIP_ESC_ESC   0xdd
 
-#define H5_RX_ESC	1
-#define H5_TX_ACK_PEND	2
+#define H5_RX_ESC      1
+#define H5_TX_ACK_PEND 2
 
-#define H5_HDR_SEQ(hdr)		((hdr)[0] & 0x07)
-#define H5_HDR_ACK(hdr)		(((hdr)[0] >> 3) & 0x07)
-#define H5_HDR_CRC(hdr)		(((hdr)[0] >> 6) & 0x01)
-#define H5_HDR_RELIABLE(hdr)	(((hdr)[0] >> 7) & 0x01)
-#define H5_HDR_PKT_TYPE(hdr)	((hdr)[1] & 0x0f)
-#define H5_HDR_LEN(hdr)		((((hdr)[1] >> 4) & 0x0f) + ((hdr)[2] << 4))
+#define H5_HDR_SEQ(hdr)      ((hdr)[0] & 0x07)
+#define H5_HDR_ACK(hdr)      (((hdr)[0] >> 3) & 0x07)
+#define H5_HDR_CRC(hdr)      (((hdr)[0] >> 6) & 0x01)
+#define H5_HDR_RELIABLE(hdr) (((hdr)[0] >> 7) & 0x01)
+#define H5_HDR_PKT_TYPE(hdr) ((hdr)[1] & 0x0f)
+#define H5_HDR_LEN(hdr)      ((((hdr)[1] >> 4) & 0x0f) + ((hdr)[2] << 4))
 
-#define H5_SET_SEQ(hdr, seq)	((hdr)[0] |= (seq))
-#define H5_SET_ACK(hdr, ack)	((hdr)[0] |= (ack) << 3)
-#define H5_SET_RELIABLE(hdr)	((hdr)[0] |= 1 << 7)
-#define H5_SET_TYPE(hdr, type)	((hdr)[1] |= type)
-#define H5_SET_LEN(hdr, len)	(((hdr)[1] |= ((len) & 0x0f) << 4), \
-				 ((hdr)[2] |= (len) >> 4))
+#define H5_SET_SEQ(hdr, seq)   ((hdr)[0] |= (seq))
+#define H5_SET_ACK(hdr, ack)   ((hdr)[0] |= (ack) << 3)
+#define H5_SET_RELIABLE(hdr)   ((hdr)[0] |= 1 << 7)
+#define H5_SET_TYPE(hdr, type) ((hdr)[1] |= type)
+#define H5_SET_LEN(hdr, len)   (((hdr)[1] |= ((len) & 0x0f) << 4), ((hdr)[2] |= (len) >> 4))
 
 struct h5_data {
 	/* Needed for delayed work callbacks */
-	const struct device     *dev;
+	const struct device *dev;
 
-	bt_hci_recv_t           recv;
+	bt_hci_recv_t recv;
 
-	struct net_buf		*rx_buf;
+	struct net_buf *rx_buf;
 
-	struct k_fifo		tx_queue;
-	struct k_fifo		rx_queue;
-	struct k_fifo		unack_queue;
+	struct k_fifo tx_queue;
+	struct k_fifo rx_queue;
+	struct k_fifo unack_queue;
 
 	struct k_work_delayable ack_work;
 	struct k_work_delayable retx_work;
 
-	uint8_t			tx_win;
-	uint8_t			tx_ack;
-	uint8_t			tx_seq;
+	uint8_t tx_win;
+	uint8_t tx_ack;
+	uint8_t tx_seq;
 
-	uint8_t			rx_ack;
+	uint8_t rx_ack;
 
 	enum {
 		UNINIT,
 		INIT,
 		ACTIVE,
-	}			link_state;
+	} link_state;
 
 	enum {
 		START,
 		HEADER,
 		PAYLOAD,
 		END,
-	}			rx_state;
+	} rx_state;
 
 	uint8_t unack_queue_len;
 };
@@ -130,15 +129,15 @@ struct h5_config {
 	struct k_thread *tx_thread;
 };
 
-static const uint8_t sync_req[] = { 0x01, 0x7e };
-static const uint8_t sync_rsp[] = { 0x02, 0x7d };
+static const uint8_t sync_req[] = {0x01, 0x7e};
+static const uint8_t sync_rsp[] = {0x02, 0x7d};
 /* Third byte may change */
-static uint8_t conf_req[3] = { 0x03, 0xfc };
-static const uint8_t conf_rsp[] = { 0x04, 0x7b };
+static uint8_t conf_req[3] = {0x03, 0xfc};
+static const uint8_t conf_rsp[] = {0x04, 0x7b};
 
 /* H5 signal buffers pool */
-#define MAX_SIG_LEN	3
-#define SIGNAL_COUNT	(2 * DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT))
+#define MAX_SIG_LEN  3
+#define SIGNAL_COUNT (2 * DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT))
 #define SIG_BUF_SIZE (BT_BUF_RESERVE + MAX_SIG_LEN)
 NET_BUF_POOL_DEFINE(h5_pool, SIGNAL_COUNT, SIG_BUF_SIZE, 0, NULL);
 
@@ -205,8 +204,8 @@ static void process_unack(struct h5_data *h5)
 	}
 
 	if (next_seq != h5->rx_ack) {
-		LOG_ERR("Wrong sequence: rx_ack %u tx_seq %u next_seq %u", h5->rx_ack,
-			h5->tx_seq, next_seq);
+		LOG_ERR("Wrong sequence: rx_ack %u tx_seq %u next_seq %u", h5->rx_ack, h5->tx_seq,
+			next_seq);
 	}
 
 	LOG_DBG("Need to remove %u packet from the queue", number_removed);
@@ -434,8 +433,7 @@ static void bt_uart_isr(const struct device *uart, void *user_data)
 	static uint8_t hdr[4];
 	size_t buf_tailroom;
 
-	while (uart_irq_update(uart) &&
-	       uart_irq_is_pending(uart)) {
+	while (uart_irq_update(uart) && uart_irq_is_pending(uart)) {
 
 		if (!uart_irq_rx_ready(uart)) {
 			if (uart_irq_tx_ready(uart)) {
@@ -490,8 +488,7 @@ static void bt_uart_isr(const struct device *uart, void *user_data)
 				h5->rx_state = PAYLOAD;
 				break;
 			case HCI_ACLDATA_PKT:
-				h5->rx_buf = bt_buf_get_rx(BT_BUF_ACL_IN,
-							   K_NO_WAIT);
+				h5->rx_buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_NO_WAIT);
 				if (!h5->rx_buf) {
 					LOG_WRN("No available data buffers");
 					h5_reset_rx(h5);
@@ -575,8 +572,7 @@ static void bt_uart_isr(const struct device *uart, void *user_data)
 			 * when parsing packet header but we need to receive
 			 * full packet anyway to clear UART.
 			 */
-			if (H5_HDR_RELIABLE(hdr) &&
-			    H5_HDR_SEQ(hdr) != h5->tx_ack) {
+			if (H5_HDR_RELIABLE(hdr) && H5_HDR_SEQ(hdr) != h5->tx_ack) {
 				LOG_ERR("Seq expected %u got %u. Drop packet", h5->tx_ack,
 					H5_HDR_SEQ(hdr));
 				h5_reset_rx(h5);
@@ -752,17 +748,15 @@ static void h5_init(const struct device *dev)
 
 	/* TX thread */
 	k_fifo_init(&h5->tx_queue);
-	tid = k_thread_create(cfg->tx_thread, cfg->tx_stack, cfg->tx_stack_size,
-			      tx_thread, (void *)dev, NULL, NULL,
-			      K_PRIO_COOP(CONFIG_BT_HCI_TX_PRIO),
-			      0, K_NO_WAIT);
+	tid = k_thread_create(cfg->tx_thread, cfg->tx_stack, cfg->tx_stack_size, tx_thread,
+			      (void *)dev, NULL, NULL, K_PRIO_COOP(CONFIG_BT_HCI_TX_PRIO), 0,
+			      K_NO_WAIT);
 	k_thread_name_set(tid, "tx_thread");
 
 	k_fifo_init(&h5->rx_queue);
-	tid = k_thread_create(cfg->rx_thread, cfg->rx_stack, cfg->rx_stack_size,
-			      rx_thread, (void *)dev, NULL, NULL,
-			      K_PRIO_COOP(CONFIG_BT_RX_PRIO),
-			      0, K_NO_WAIT);
+	tid = k_thread_create(cfg->rx_thread, cfg->rx_stack, cfg->rx_stack_size, rx_thread,
+			      (void *)dev, NULL, NULL, K_PRIO_COOP(CONFIG_BT_RX_PRIO), 0,
+			      K_NO_WAIT);
 	k_thread_name_set(tid, "rx_thread");
 
 	/* Unack queue */
@@ -806,23 +800,22 @@ static const struct bt_hci_driver_api h5_driver_api = {
 	.send = h5_queue,
 };
 
-#define BT_UART_DEVICE_INIT(inst) \
-	static K_KERNEL_STACK_DEFINE(rx_thread_stack_##inst, CONFIG_BT_DRV_RX_STACK_SIZE); \
-	static struct k_thread rx_thread_##inst; \
-	static K_KERNEL_STACK_DEFINE(tx_thread_stack_##inst, CONFIG_BT_DRV_TX_STACK_SIZE); \
-	static struct k_thread tx_thread_##inst; \
-	static const struct h5_config h5_config_##inst = { \
-		.uart = DEVICE_DT_GET(DT_INST_PARENT(inst)), \
-		.rx_stack = rx_thread_stack_##inst, \
-		.rx_stack_size = K_KERNEL_STACK_SIZEOF(rx_thread_stack_##inst), \
-		.rx_thread = &rx_thread_##inst, \
-		.tx_stack = tx_thread_stack_##inst, \
-		.tx_stack_size = K_KERNEL_STACK_SIZEOF(tx_thread_stack_##inst), \
-		.tx_thread = &tx_thread_##inst, \
-	}; \
-	static struct h5_data h5_##inst; \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &h5_##inst, &h5_config_##inst, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &h5_driver_api)
-
+#define BT_UART_DEVICE_INIT(inst)                                                                  \
+	static K_KERNEL_STACK_DEFINE(rx_thread_stack_##inst, CONFIG_BT_DRV_RX_STACK_SIZE);         \
+	static struct k_thread rx_thread_##inst;                                                   \
+	static K_KERNEL_STACK_DEFINE(tx_thread_stack_##inst, CONFIG_BT_DRV_TX_STACK_SIZE);         \
+	static struct k_thread tx_thread_##inst;                                                   \
+	static const struct h5_config h5_config_##inst = {                                         \
+		.uart = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                       \
+		.rx_stack = rx_thread_stack_##inst,                                                \
+		.rx_stack_size = K_KERNEL_STACK_SIZEOF(rx_thread_stack_##inst),                    \
+		.rx_thread = &rx_thread_##inst,                                                    \
+		.tx_stack = tx_thread_stack_##inst,                                                \
+		.tx_stack_size = K_KERNEL_STACK_SIZEOF(tx_thread_stack_##inst),                    \
+		.tx_thread = &tx_thread_##inst,                                                    \
+	};                                                                                         \
+	static struct h5_data h5_##inst;                                                           \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &h5_##inst, &h5_config_##inst, POST_KERNEL,        \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &h5_driver_api)
 
 DT_INST_FOREACH_STATUS_OKAY(BT_UART_DEVICE_INIT)

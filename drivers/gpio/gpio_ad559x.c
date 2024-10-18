@@ -58,8 +58,7 @@ static int gpio_ad559x_port_get_raw(const struct device *dev, uint32_t *value)
 	return 0;
 }
 
-static int gpio_ad559x_port_set_bits_raw(const struct device *dev,
-					  gpio_port_pins_t pins)
+static int gpio_ad559x_port_set_bits_raw(const struct device *dev, gpio_port_pins_t pins)
 {
 	struct gpio_ad559x_data *data = dev->data;
 	const struct gpio_ad559x_config *config = dev->config;
@@ -73,8 +72,7 @@ static int gpio_ad559x_port_set_bits_raw(const struct device *dev,
 	return mfd_ad559x_write_reg(config->mfd_dev, AD559X_REG_GPIO_SET, data->gpio_val);
 }
 
-static int gpio_ad559x_port_clear_bits_raw(const struct device *dev,
-					    gpio_port_pins_t pins)
+static int gpio_ad559x_port_clear_bits_raw(const struct device *dev, gpio_port_pins_t pins)
 {
 	struct gpio_ad559x_data *data = dev->data;
 	const struct gpio_ad559x_config *config = dev->config;
@@ -88,8 +86,8 @@ static int gpio_ad559x_port_clear_bits_raw(const struct device *dev,
 	return mfd_ad559x_write_reg(config->mfd_dev, AD559X_REG_GPIO_SET, data->gpio_val);
 }
 
-static inline int gpio_ad559x_configure(const struct device *dev,
-					 gpio_pin_t pin, gpio_flags_t flags)
+static inline int gpio_ad559x_configure(const struct device *dev, gpio_pin_t pin,
+					gpio_flags_t flags)
 {
 	struct gpio_ad559x_data *data = dev->data;
 	const struct gpio_ad559x_config *config = dev->config;
@@ -110,27 +108,25 @@ static inline int gpio_ad559x_configure(const struct device *dev,
 		data->gpio_out |= val;
 
 		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0U) {
-			ret = gpio_ad559x_port_set_bits_raw(
-				dev, (gpio_port_pins_t)BIT(pin));
+			ret = gpio_ad559x_port_set_bits_raw(dev, (gpio_port_pins_t)BIT(pin));
 			if (ret < 0) {
 				return ret;
 			}
 		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0U) {
-			ret = gpio_ad559x_port_clear_bits_raw(
-				dev, (gpio_port_pins_t)BIT(pin));
+			ret = gpio_ad559x_port_clear_bits_raw(dev, (gpio_port_pins_t)BIT(pin));
 			if (ret < 0) {
 				return ret;
 			}
 		}
 
-		ret = mfd_ad559x_write_reg(config->mfd_dev,
-					   AD559X_REG_GPIO_OUTPUT_EN, data->gpio_out);
+		ret = mfd_ad559x_write_reg(config->mfd_dev, AD559X_REG_GPIO_OUTPUT_EN,
+					   data->gpio_out);
 		if (ret < 0) {
 			return ret;
 		}
 
-		ret = mfd_ad559x_write_reg(config->mfd_dev,
-					   AD559X_REG_GPIO_INPUT_EN, data->gpio_in);
+		ret = mfd_ad559x_write_reg(config->mfd_dev, AD559X_REG_GPIO_INPUT_EN,
+					   data->gpio_in);
 	} else if ((flags & GPIO_INPUT) != 0U) {
 		data->gpio_in |= val;
 		data->gpio_out &= ~val;
@@ -138,8 +134,7 @@ static inline int gpio_ad559x_configure(const struct device *dev,
 		if ((flags & GPIO_PULL_DOWN) != 0U) {
 			data->gpio_pull_down |= val;
 
-			ret = mfd_ad559x_write_reg(config->mfd_dev,
-						   AD559X_REG_GPIO_PULLDOWN,
+			ret = mfd_ad559x_write_reg(config->mfd_dev, AD559X_REG_GPIO_PULLDOWN,
 						   data->gpio_pull_down);
 			if (ret < 0) {
 				return ret;
@@ -148,14 +143,14 @@ static inline int gpio_ad559x_configure(const struct device *dev,
 			return -ENOTSUP;
 		}
 
-		ret = mfd_ad559x_write_reg(config->mfd_dev,
-					   AD559X_REG_GPIO_OUTPUT_EN, data->gpio_out);
+		ret = mfd_ad559x_write_reg(config->mfd_dev, AD559X_REG_GPIO_OUTPUT_EN,
+					   data->gpio_out);
 		if (ret < 0) {
 			return ret;
 		}
 
-		ret = mfd_ad559x_write_reg(config->mfd_dev,
-					   AD559X_REG_GPIO_INPUT_EN, data->gpio_in);
+		ret = mfd_ad559x_write_reg(config->mfd_dev, AD559X_REG_GPIO_INPUT_EN,
+					   data->gpio_in);
 	} else {
 		return -ENOTSUP;
 	}
@@ -163,9 +158,8 @@ static inline int gpio_ad559x_configure(const struct device *dev,
 	return ret;
 }
 
-static int gpio_ad559x_port_set_masked_raw(const struct device *dev,
-					    gpio_port_pins_t mask,
-					    gpio_port_value_t value)
+static int gpio_ad559x_port_set_masked_raw(const struct device *dev, gpio_port_pins_t mask,
+					   gpio_port_value_t value)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(mask);
@@ -174,8 +168,7 @@ static int gpio_ad559x_port_set_masked_raw(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static int gpio_ad559x_port_toggle_bits(const struct device *dev,
-					 gpio_port_pins_t pins)
+static int gpio_ad559x_port_toggle_bits(const struct device *dev, gpio_port_pins_t pins)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(pins);
@@ -183,10 +176,8 @@ static int gpio_ad559x_port_toggle_bits(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static int gpio_ad559x_pin_interrupt_configure(const struct device *dev,
-						gpio_pin_t pin,
-						enum gpio_int_mode mode,
-						enum gpio_int_trig trig)
+static int gpio_ad559x_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
+					       enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(pin);
@@ -217,20 +208,19 @@ static int gpio_ad559x_init(const struct device *dev)
 	return 0;
 }
 
-#define GPIO_AD559X_DEFINE(inst)							\
-	static const struct gpio_ad559x_config gpio_ad559x_config##inst = {		\
-		.common = {								\
-			.port_pin_mask =						\
-			GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),				\
-		},									\
-		.mfd_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),				\
-	};										\
-											\
-	static struct gpio_ad559x_data gpio_ad559x_data##inst;				\
-											\
-	DEVICE_DT_INST_DEFINE(inst, gpio_ad559x_init, NULL,				\
-			      &gpio_ad559x_data##inst, &gpio_ad559x_config##inst,	\
-			      POST_KERNEL, CONFIG_MFD_INIT_PRIORITY,			\
+#define GPIO_AD559X_DEFINE(inst)                                                                   \
+	static const struct gpio_ad559x_config gpio_ad559x_config##inst = {                        \
+		.common =                                                                          \
+			{                                                                          \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),            \
+			},                                                                         \
+		.mfd_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                    \
+	};                                                                                         \
+                                                                                                   \
+	static struct gpio_ad559x_data gpio_ad559x_data##inst;                                     \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, gpio_ad559x_init, NULL, &gpio_ad559x_data##inst,               \
+			      &gpio_ad559x_config##inst, POST_KERNEL, CONFIG_MFD_INIT_PRIORITY,    \
 			      &gpio_ad559x_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_AD559X_DEFINE)

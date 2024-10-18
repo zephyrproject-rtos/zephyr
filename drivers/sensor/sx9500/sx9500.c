@@ -30,23 +30,22 @@ static uint8_t sx9500_reg_defaults[] = {
 	 */
 	SX9500_REG_PROX_CTRL1,
 
-	0x43,	/* Shield enabled, small range. */
-	0x77,	/* x8 gain, 167kHz frequency, finest resolution. */
-	0x40,	/* Doze enabled, 2x scan period doze, no raw filter. */
-	0x30,	/* Average threshold. */
-	0x0f,	/* Debouncer off, lowest average negative filter,
-		 * highest average positive filter.
-		 */
-	0x0e,	/* Proximity detection threshold: 280 */
-	0x00,	/* No automatic compensation, compensate each pin
-		 * independently, proximity hysteresis: 32, close
-		 * debouncer off, far debouncer off.
-		 */
-	0x00,	/* No stuck timeout, no periodic compensation. */
+	0x43, /* Shield enabled, small range. */
+	0x77, /* x8 gain, 167kHz frequency, finest resolution. */
+	0x40, /* Doze enabled, 2x scan period doze, no raw filter. */
+	0x30, /* Average threshold. */
+	0x0f, /* Debouncer off, lowest average negative filter,
+	       * highest average positive filter.
+	       */
+	0x0e, /* Proximity detection threshold: 280 */
+	0x00, /* No automatic compensation, compensate each pin
+	       * independently, proximity hysteresis: 32, close
+	       * debouncer off, far debouncer off.
+	       */
+	0x00, /* No stuck timeout, no periodic compensation. */
 };
 
-static int sx9500_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
+static int sx9500_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct sx9500_data *data = dev->data;
 	const struct sx9500_config *cfg = dev->config;
@@ -56,11 +55,10 @@ static int sx9500_sample_fetch(const struct device *dev,
 	return i2c_reg_read_byte_dt(&cfg->i2c, SX9500_REG_STAT, &data->prox_stat);
 }
 
-static int sx9500_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
+static int sx9500_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
-	struct sx9500_data *data = (struct sx9500_data *) dev->data;
+	struct sx9500_data *data = (struct sx9500_data *)dev->data;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_PROX);
 
@@ -68,8 +66,7 @@ static int sx9500_channel_get(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	val->val1 = !!(data->prox_stat &
-		       (1 << (4 + CONFIG_SX9500_PROX_CHANNEL)));
+	val->val1 = !!(data->prox_stat & (1 << (4 + CONFIG_SX9500_PROX_CHANNEL)));
 	val->val2 = 0;
 
 	return 0;
@@ -88,9 +85,7 @@ static int sx9500_init_chip(const struct device *dev)
 	const struct sx9500_config *cfg = dev->config;
 	uint8_t val;
 
-	if (i2c_write_dt(&cfg->i2c, sx9500_reg_defaults,
-		      sizeof(sx9500_reg_defaults))
-		      < 0) {
+	if (i2c_write_dt(&cfg->i2c, sx9500_reg_defaults, sizeof(sx9500_reg_defaults)) < 0) {
 		return -EIO;
 	}
 
@@ -136,17 +131,16 @@ int sx9500_init(const struct device *dev)
 	return 0;
 }
 
-#define SX9500_DEFINE(inst)									\
-	struct sx9500_data sx9500_data_##inst;							\
-												\
-	static const struct sx9500_config sx9500_config_##inst = {				\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
+#define SX9500_DEFINE(inst)                                                                        \
+	struct sx9500_data sx9500_data_##inst;                                                     \
+                                                                                                   \
+	static const struct sx9500_config sx9500_config_##inst = {                                 \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		IF_ENABLED(CONFIG_SX9500_TRIGGER,						\
-			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))	\
-	};											\
-												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, sx9500_init, NULL,					\
-			      &sx9500_data_##inst, &sx9500_config_##inst, POST_KERNEL,		\
-			      CONFIG_SENSOR_INIT_PRIORITY, &sx9500_api_funcs);			\
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),)) };           \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, sx9500_init, NULL, &sx9500_data_##inst,                 \
+				     &sx9500_config_##inst, POST_KERNEL,                           \
+				     CONFIG_SENSOR_INIT_PRIORITY, &sx9500_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(SX9500_DEFINE)

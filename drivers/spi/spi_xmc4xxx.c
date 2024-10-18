@@ -28,7 +28,6 @@ LOG_MODULE_REGISTER(spi_xmc4xxx);
 #define SPI_XMC4XXX_DMA_RX_DONE_FLAG BIT(1)
 #define SPI_XMC4XXX_DMA_TX_DONE_FLAG BIT(2)
 
-
 #ifdef CONFIG_SPI_XMC4XXX_DMA
 static const uint8_t __aligned(4) tx_dummy_data;
 #endif
@@ -121,8 +120,8 @@ static void spi_xmc4xxx_shift_frames(const struct device *dev)
 
 	XMC_SPI_CH_ClearStatusFlag(config->spi,
 				   XMC_SPI_CH_STATUS_FLAG_TRANSMIT_SHIFT_INDICATION |
-				   XMC_SPI_CH_STATUS_FLAG_RECEIVE_INDICATION |
-				   XMC_SPI_CH_STATUS_FLAG_ALTERNATIVE_RECEIVE_INDICATION);
+					   XMC_SPI_CH_STATUS_FLAG_RECEIVE_INDICATION |
+					   XMC_SPI_CH_STATUS_FLAG_ALTERNATIVE_RECEIVE_INDICATION);
 
 	spi_context_update_tx(ctx, 1, 1);
 
@@ -258,8 +257,8 @@ static int spi_xmc4xxx_configure(const struct device *dev, const struct spi_conf
 
 static int spi_xmc4xxx_transceive(const struct device *dev, const struct spi_config *spi_cfg,
 				  const struct spi_buf_set *tx_bufs,
-				  const struct spi_buf_set *rx_bufs,
-				  bool asynchronous, spi_callback_t cb, void *userdata)
+				  const struct spi_buf_set *rx_bufs, bool asynchronous,
+				  spi_callback_t cb, void *userdata)
 {
 	struct spi_xmc4xxx_data *data = dev->data;
 	const struct spi_xmc4xxx_config *config = dev->config;
@@ -293,7 +292,7 @@ static int spi_xmc4xxx_transceive(const struct device *dev, const struct spi_con
 
 #if defined(CONFIG_SPI_XMC4XXX_INTERRUPT)
 	XMC_SPI_CH_EnableEvent(config->spi, XMC_SPI_CH_EVENT_STANDARD_RECEIVE |
-					    XMC_SPI_CH_EVENT_ALTERNATIVE_RECEIVE);
+						    XMC_SPI_CH_EVENT_ALTERNATIVE_RECEIVE);
 	spi_xmc4xxx_shift_frames(dev);
 	ret = spi_context_wait_for_completion(ctx);
 	/* cs released in isr */
@@ -315,8 +314,7 @@ static int spi_xmc4xxx_transceive(const struct device *dev, const struct spi_con
 #if defined(CONFIG_SPI_ASYNC)
 static int spi_xmc4xxx_transceive_async(const struct device *dev, const struct spi_config *spi_cfg,
 					const struct spi_buf_set *tx_bufs,
-					const struct spi_buf_set *rx_bufs,
-					spi_callback_t cb,
+					const struct spi_buf_set *rx_bufs, spi_callback_t cb,
 					void *userdata)
 {
 	return spi_xmc4xxx_transceive(dev, spi_cfg, tx_bufs, rx_bufs, true, cb, userdata);
@@ -345,8 +343,7 @@ static int spi_xmc4xxx_dma_rx_tx_done(struct spi_xmc4xxx_data *data)
 
 static int spi_xmc4xxx_transceive_dma(const struct device *dev, const struct spi_config *spi_cfg,
 				      const struct spi_buf_set *tx_bufs,
-				      const struct spi_buf_set *rx_bufs,
-				      bool asynchronous,
+				      const struct spi_buf_set *rx_bufs, bool asynchronous,
 				      spi_callback_t cb, void *userdata)
 {
 	struct spi_xmc4xxx_data *data = dev->data;
@@ -386,7 +383,7 @@ static int spi_xmc4xxx_transceive_dma(const struct device *dev, const struct spi
 
 		/* make sure the tx is not transmitting */
 		while (XMC_USIC_CH_GetTransmitBufferStatus(config->spi) ==
-			XMC_USIC_CH_TBUF_STATUS_BUSY) {
+		       XMC_USIC_CH_TBUF_STATUS_BUSY) {
 		};
 
 		if (data->ctx.rx_len == 0) {
@@ -411,8 +408,9 @@ static int spi_xmc4xxx_transceive_dma(const struct device *dev, const struct spi
 				break;
 			}
 
-			XMC_SPI_CH_EnableEvent(config->spi, XMC_SPI_CH_EVENT_STANDARD_RECEIVE |
-							    XMC_SPI_CH_EVENT_ALTERNATIVE_RECEIVE);
+			XMC_SPI_CH_EnableEvent(config->spi,
+					       XMC_SPI_CH_EVENT_STANDARD_RECEIVE |
+						       XMC_SPI_CH_EVENT_ALTERNATIVE_RECEIVE);
 			dma_completion_flags |= SPI_XMC4XXX_DMA_RX_DONE_FLAG;
 
 			ret = dma_start(dma_rx->dev_dma, dma_rx->dma_channel);
@@ -423,7 +421,7 @@ static int spi_xmc4xxx_transceive_dma(const struct device *dev, const struct spi
 		} else {
 			XMC_SPI_CH_DisableEvent(config->spi,
 						XMC_SPI_CH_EVENT_STANDARD_RECEIVE |
-						XMC_SPI_CH_EVENT_ALTERNATIVE_RECEIVE);
+							XMC_SPI_CH_EVENT_ALTERNATIVE_RECEIVE);
 		}
 
 		if (ctx->tx_buf) {
@@ -517,9 +515,8 @@ static void spi_xmc4xxx_configure_rx_service_requests(const struct device *dev)
 
 	data->service_request_rx = (config->irq_num_rx - USIC_IRQ_MIN) % IRQS_PER_USIC;
 
-	XMC_SPI_CH_SelectInterruptNodePointer(config->spi,
-					      XMC_SPI_CH_INTERRUPT_NODE_POINTER_RECEIVE,
-					      data->service_request_rx);
+	XMC_SPI_CH_SelectInterruptNodePointer(
+		config->spi, XMC_SPI_CH_INTERRUPT_NODE_POINTER_RECEIVE, data->service_request_rx);
 	XMC_SPI_CH_SelectInterruptNodePointer(config->spi,
 					      XMC_SPI_CH_INTERRUPT_NODE_POINTER_ALTERNATE_RECEIVE,
 					      data->service_request_rx);
@@ -636,23 +633,23 @@ static const struct spi_driver_api spi_xmc4xxx_driver_api = {
 		const struct spi_xmc4xxx_config *config = dev->config;                             \
 		uint8_t service_request;                                                           \
 		uint8_t irq_num;                                                                   \
-												   \
+                                                                                                   \
 		irq_num = DT_INST_IRQ_BY_NAME(index, rx, irq);                                     \
 		service_request = (irq_num - USIC_IRQ_MIN) % IRQS_PER_USIC;                        \
-												   \
+                                                                                                   \
 		XMC_SPI_CH_SelectInterruptNodePointer(                                             \
 			config->spi, XMC_SPI_CH_INTERRUPT_NODE_POINTER_RECEIVE, service_request);  \
 		XMC_SPI_CH_SelectInterruptNodePointer(                                             \
 			config->spi, XMC_SPI_CH_INTERRUPT_NODE_POINTER_ALTERNATE_RECEIVE,          \
 			service_request);                                                          \
-												   \
+                                                                                                   \
 		XMC_SPI_CH_EnableEvent(config->spi, XMC_SPI_CH_EVENT_STANDARD_RECEIVE |            \
-						    XMC_SPI_CH_EVENT_ALTERNATIVE_RECEIVE);         \
-												   \
+							    XMC_SPI_CH_EVENT_ALTERNATIVE_RECEIVE); \
+                                                                                                   \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, rx, irq),                                   \
 			    DT_INST_IRQ_BY_NAME(index, rx, priority), spi_xmc4xxx_isr,             \
 			    DEVICE_DT_INST_GET(index), 0);                                         \
-												   \
+                                                                                                   \
 		irq_enable(irq_num);                                                               \
 	}
 
@@ -679,17 +676,16 @@ static const struct spi_driver_api spi_xmc4xxx_driver_api = {
 			SPI_CONTEXT_INIT_LOCK(xmc4xxx_data_##index, ctx),                          \
 		SPI_CONTEXT_INIT_SYNC(xmc4xxx_data_##index, ctx),                                  \
 		SPI_DMA_CHANNEL(index, tx, MEMORY_TO_PERIPHERAL, 8, 1)                             \
-		SPI_DMA_CHANNEL(index, rx, PERIPHERAL_TO_MEMORY, 1, 8)};                           \
+			SPI_DMA_CHANNEL(index, rx, PERIPHERAL_TO_MEMORY, 1, 8)};                   \
                                                                                                    \
 	static const struct spi_xmc4xxx_config xmc4xxx_config_##index = {                          \
 		.spi = (XMC_USIC_CH_t *)DT_INST_REG_ADDR(index),                                   \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
 		.miso_src = DT_INST_ENUM_IDX(index, miso_src),                                     \
-		XMC4XXX_IRQ_HANDLER_STRUCT_INIT(index)                                             \
-		XMC4XXX_IRQ_DMA_STRUCT_INIT(index)};                                               \
+		XMC4XXX_IRQ_HANDLER_STRUCT_INIT(index) XMC4XXX_IRQ_DMA_STRUCT_INIT(index)};        \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(index, spi_xmc4xxx_init, NULL, &xmc4xxx_data_##index,                \
-			      &xmc4xxx_config_##index, POST_KERNEL,                                \
-			      CONFIG_SPI_INIT_PRIORITY, &spi_xmc4xxx_driver_api);
+			      &xmc4xxx_config_##index, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,      \
+			      &spi_xmc4xxx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(XMC4XXX_INIT)

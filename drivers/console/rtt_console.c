@@ -8,7 +8,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/printk-hooks.h>
@@ -26,7 +25,7 @@ static void wait(void)
 {
 	if (!IS_ENABLED(CONFIG_MULTITHREADING) || k_is_in_isr()) {
 		if (IS_ENABLED(CONFIG_RTT_TX_RETRY_IN_INTERRUPT)) {
-			k_busy_wait(1000*CONFIG_RTT_TX_RETRY_DELAY_MS);
+			k_busy_wait(1000 * CONFIG_RTT_TX_RETRY_DELAY_MS);
 		}
 	} else {
 		k_msleep(CONFIG_RTT_TX_RETRY_DELAY_MS);

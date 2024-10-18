@@ -119,12 +119,12 @@ static int mcux_lpc_ctimer_set_alarm(const struct device *dev, uint8_t chan_id,
 	data->channels[chan_id].alarm_callback = alarm_cfg->callback;
 	data->channels[chan_id].alarm_user_data = alarm_cfg->user_data;
 
-	ctimer_match_config_t match_config = { .matchValue = ticks,
-					       .enableCounterReset = false,
-					       .enableCounterStop = false,
-					       .outControl = kCTIMER_Output_NoAction,
-					       .outPinInitState = false,
-					       .enableInterrupt = true };
+	ctimer_match_config_t match_config = {.matchValue = ticks,
+					      .enableCounterReset = false,
+					      .enableCounterStop = false,
+					      .outControl = kCTIMER_Output_NoAction,
+					      .outPinInitState = false,
+					      .enableInterrupt = true};
 
 	CTIMER_SetupMatch(config->base, chan_id, &match_config);
 
@@ -153,8 +153,7 @@ static int mcux_lpc_ctimer_set_top_value(const struct device *dev,
 #ifndef CONFIG_COUNTER_MCUX_CTIMER_RESERVE_CHANNEL_FOR_SETTOP
 	/* Only allow max value when we do not reserve a ctimer channel for setting top value */
 	if (cfg->ticks != config->info.max_top_value) {
-		LOG_ERR("Wrap can only be set to 0x%x",
-			config->info.max_top_value);
+		LOG_ERR("Wrap can only be set to 0x%x", config->info.max_top_value);
 		return -ENOTSUP;
 	}
 #endif
@@ -172,12 +171,12 @@ static int mcux_lpc_ctimer_set_top_value(const struct device *dev,
 	}
 
 #ifdef CONFIG_COUNTER_MCUX_CTIMER_RESERVE_CHANNEL_FOR_SETTOP
-	ctimer_match_config_t match_config = { .matchValue = cfg->ticks,
-					       .enableCounterReset = true,
-					       .enableCounterStop = false,
-					       .outControl = kCTIMER_Output_NoAction,
-					       .outPinInitState = false,
-					       .enableInterrupt = true };
+	ctimer_match_config_t match_config = {.matchValue = cfg->ticks,
+					      .enableCounterReset = true,
+					      .enableCounterStop = false,
+					      .outControl = kCTIMER_Output_NoAction,
+					      .outPinInitState = false,
+					      .enableInterrupt = true};
 
 	CTIMER_SetupMatch(config->base, NUM_CHANNELS, &match_config);
 #endif
@@ -202,8 +201,7 @@ static uint32_t mcux_lpc_ctimer_get_freq(const struct device *dev)
 
 	uint32_t clk_freq = 0;
 
-	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
-					&clk_freq)) {
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &clk_freq)) {
 		LOG_ERR("unable to get clock frequency");
 		return 0;
 	}
@@ -291,21 +289,21 @@ static const struct counter_driver_api mcux_ctimer_driver_api = {
 
 #define COUNTER_LPC_CTIMER_DEVICE(id)                                                              \
 	static void mcux_lpc_ctimer_irq_config_##id(const struct device *dev);                     \
-	static struct mcux_lpc_ctimer_config mcux_lpc_ctimer_config_##id = { \
-		.info = {						\
-			.max_top_value = UINT32_MAX,			\
-			.flags = COUNTER_CONFIG_INFO_COUNT_UP,		\
-			.channels = NUM_CHANNELS,					\
-		},\
-		.base = (CTIMER_Type *)DT_INST_REG_ADDR(id),		\
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),	\
-		.clock_subsys =				\
-		(clock_control_subsys_t)(DT_INST_CLOCKS_CELL(id, name)),\
-		.mode = DT_INST_PROP(id, mode),						\
-		.input = DT_INST_PROP(id, input),					\
-		.prescale = DT_INST_PROP(id, prescale),				\
-		.irq_config_func = mcux_lpc_ctimer_irq_config_##id,	\
-	};                     \
+	static struct mcux_lpc_ctimer_config mcux_lpc_ctimer_config_##id = {                       \
+		.info =                                                                            \
+			{                                                                          \
+				.max_top_value = UINT32_MAX,                                       \
+				.flags = COUNTER_CONFIG_INFO_COUNT_UP,                             \
+				.channels = NUM_CHANNELS,                                          \
+			},                                                                         \
+		.base = (CTIMER_Type *)DT_INST_REG_ADDR(id),                                       \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),                               \
+		.clock_subsys = (clock_control_subsys_t)(DT_INST_CLOCKS_CELL(id, name)),           \
+		.mode = DT_INST_PROP(id, mode),                                                    \
+		.input = DT_INST_PROP(id, input),                                                  \
+		.prescale = DT_INST_PROP(id, prescale),                                            \
+		.irq_config_func = mcux_lpc_ctimer_irq_config_##id,                                \
+	};                                                                                         \
 	static struct mcux_lpc_ctimer_data mcux_lpc_ctimer_data_##id;                              \
 	DEVICE_DT_INST_DEFINE(id, &mcux_lpc_ctimer_init, NULL, &mcux_lpc_ctimer_data_##id,         \
 			      &mcux_lpc_ctimer_config_##id, POST_KERNEL,                           \

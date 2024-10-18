@@ -13,20 +13,20 @@
 #include <zephyr/drivers/pinctrl/pinctrl_esp32_common.h>
 
 #ifdef CONFIG_SOC_SERIES_ESP32C2
-#define out	out.val
-#define in	in.val
+#define out      out.val
+#define in       in.val
 #define out_w1ts out_w1ts.val
 #define out_w1tc out_w1tc.val
 #elif CONFIG_SOC_SERIES_ESP32C3
 /* gpio structs in esp32c3 series are different from xtensa ones */
-#define out out.data
-#define in in.data
+#define out      out.data
+#define in       in.data
 #define out_w1ts out_w1ts.val
 #define out_w1tc out_w1tc.val
 #elif CONFIG_SOC_SERIES_ESP32C6
 /* gpio structs in esp32c6 are also different */
-#define out out.out_data_orig
-#define in in.in_data_next
+#define out      out.out_data_orig
+#define in       in.in_data_next
 #define out_w1ts out_w1ts.val
 #define out_w1tc out_w1tc.val
 #endif
@@ -35,9 +35,9 @@
 #define SOC_GPIO_SUPPORT_RTC_INDEPENDENT 0
 #endif
 
-#define ESP32_INVALID_PORT_ADDR          0UL
+#define ESP32_INVALID_PORT_ADDR 0UL
 
-#define ESP32_GPIO_PORT_ADDR(nodelabel)				\
+#define ESP32_GPIO_PORT_ADDR(nodelabel)                                                            \
 	COND_CODE_1(DT_NODE_EXISTS(DT_NODELABEL(nodelabel)),	\
 		(DT_REG_ADDR(DT_NODELABEL(nodelabel)),),	\
 		(ESP32_INVALID_PORT_ADDR))
@@ -47,10 +47,8 @@
  *
  * Entries will be an invalid address if the port is not enabled.
  */
-static const uint32_t esp32_gpio_ports_addrs[] = {
-	ESP32_GPIO_PORT_ADDR(gpio0)
-	ESP32_GPIO_PORT_ADDR(gpio1)
-};
+static const uint32_t esp32_gpio_ports_addrs[] = {ESP32_GPIO_PORT_ADDR(gpio0)
+							  ESP32_GPIO_PORT_ADDR(gpio1)};
 
 /** Number of GPIO ports. */
 static const size_t esp32_gpio_ports_cnt = ARRAY_SIZE(esp32_gpio_ports_addrs);
@@ -77,7 +75,7 @@ static inline bool esp32_pin_is_output_capable(uint32_t pin)
 static int esp32_pin_apply_config(uint32_t pin, uint32_t flags)
 {
 	gpio_dev_t *const gpio_base = (gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio0));
-	uint32_t io_pin = (uint32_t) pin + ((ESP32_PORT_IDX(pin) == 1 && pin < 32) ? 32 : 0);
+	uint32_t io_pin = (uint32_t)pin + ((ESP32_PORT_IDX(pin) == 1 && pin < 32) ? 32 : 0);
 	int ret = 0;
 
 	if (!esp32_pin_is_valid(io_pin)) {
@@ -251,13 +249,11 @@ static int esp32_pin_configure(const uint32_t pin_mux, const uint32_t pin_cfg)
 
 	if (flags & ESP32_PIN_OUT_HIGH_FLAG) {
 		if (ESP32_PORT_IDX(pin_num) == 0) {
-			gpio_dev_t *const gpio_dev =
-				(gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio0));
+			gpio_dev_t *const gpio_dev = (gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio0));
 			gpio_dev->out_w1ts = BIT(pin_num);
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 		} else {
-			gpio_dev_t *const gpio_dev =
-				(gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio1));
+			gpio_dev_t *const gpio_dev = (gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio1));
 			gpio_dev->out1_w1ts.data = BIT(pin_num - 32);
 #endif
 		}
@@ -265,13 +261,11 @@ static int esp32_pin_configure(const uint32_t pin_mux, const uint32_t pin_cfg)
 
 	if (flags & ESP32_PIN_OUT_LOW_FLAG) {
 		if (ESP32_PORT_IDX(pin_num) == 0) {
-			gpio_dev_t *const gpio_dev =
-				(gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio0));
+			gpio_dev_t *const gpio_dev = (gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio0));
 			gpio_dev->out_w1tc = BIT(pin_num);
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 		} else {
-			gpio_dev_t *const gpio_dev =
-				(gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio1));
+			gpio_dev_t *const gpio_dev = (gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio1));
 			gpio_dev->out1_w1tc.data = BIT(pin_num - 32);
 #endif
 		}
@@ -290,8 +284,7 @@ static int esp32_pin_configure(const uint32_t pin_mux, const uint32_t pin_cfg)
 	return 0;
 }
 
-int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
-			   uintptr_t reg)
+int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintptr_t reg)
 {
 	uint32_t pin_mux, pin_cfg;
 	int ret = 0;

@@ -18,53 +18,39 @@
 
 LOG_MODULE_DECLARE(ADXL367, CONFIG_SENSOR_LOG_LEVEL);
 
-static int adxl367_bus_access(const struct device *dev, uint8_t reg,
-			      void *data, size_t length)
+static int adxl367_bus_access(const struct device *dev, uint8_t reg, void *data, size_t length)
 {
 	const struct adxl367_dev_config *config = dev->config;
 
 	if ((reg & ADXL367_READ) != 0) {
-		return i2c_burst_read_dt(&config->i2c,
-					 ADXL367_TO_REG(reg),
-					 (uint8_t *) data, length);
+		return i2c_burst_read_dt(&config->i2c, ADXL367_TO_REG(reg), (uint8_t *)data,
+					 length);
 	} else {
 		if (length != 1) {
 			return -EINVAL;
 		}
 
-		return i2c_reg_write_byte_dt(&config->i2c,
-					     ADXL367_TO_REG(reg),
-					     *(uint8_t *)data);
+		return i2c_reg_write_byte_dt(&config->i2c, ADXL367_TO_REG(reg), *(uint8_t *)data);
 	}
 }
 
-static int adxl367_i2c_reg_read(const struct device *dev, uint8_t reg_addr,
-			    uint8_t *reg_data)
+static int adxl367_i2c_reg_read(const struct device *dev, uint8_t reg_addr, uint8_t *reg_data)
 {
 	return adxl367_bus_access(dev, ADXL367_REG_READ(reg_addr), reg_data, 1);
 }
 
-static int adxl367_i2c_reg_read_multiple(const struct device *dev,
-					 uint8_t reg_addr,
-					 uint8_t *reg_data,
-					 uint16_t count)
+static int adxl367_i2c_reg_read_multiple(const struct device *dev, uint8_t reg_addr,
+					 uint8_t *reg_data, uint16_t count)
 {
-	return adxl367_bus_access(dev, ADXL367_REG_READ(reg_addr),
-				  reg_data, count);
+	return adxl367_bus_access(dev, ADXL367_REG_READ(reg_addr), reg_data, count);
 }
 
-static int adxl367_i2c_reg_write(const struct device *dev,
-				 uint8_t reg_addr,
-				 uint8_t reg_data)
+static int adxl367_i2c_reg_write(const struct device *dev, uint8_t reg_addr, uint8_t reg_data)
 {
-	return adxl367_bus_access(dev, ADXL367_REG_WRITE(reg_addr),
-				  &reg_data, 1);
+	return adxl367_bus_access(dev, ADXL367_REG_WRITE(reg_addr), &reg_data, 1);
 }
 
-
-int adxl367_i2c_reg_write_mask(const struct device *dev,
-			       uint8_t reg_addr,
-			       uint32_t mask,
+int adxl367_i2c_reg_write_mask(const struct device *dev, uint8_t reg_addr, uint32_t mask,
 			       uint8_t data)
 {
 	int ret;
@@ -84,7 +70,7 @@ int adxl367_i2c_reg_write_mask(const struct device *dev,
 static const struct adxl367_transfer_function adxl367_i2c_transfer_fn = {
 	.read_reg_multiple = adxl367_i2c_reg_read_multiple,
 	.write_reg = adxl367_i2c_reg_write,
-	.read_reg  = adxl367_i2c_reg_read,
+	.read_reg = adxl367_i2c_reg_read,
 	.write_reg_mask = adxl367_i2c_reg_write_mask,
 };
 

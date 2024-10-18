@@ -14,13 +14,13 @@
 #include <hw_counter.h>
 #include <limits.h>
 
-#define DRIVER_CONFIG_INFO_FLAGS (COUNTER_CONFIG_INFO_COUNT_UP)
-#define DRIVER_CONFIG_INFO_CHANNELS CONFIG_COUNTER_NATIVE_POSIX_NBR_CHANNELS
-#define COUNTER_NATIVE_POSIX_IRQ_FLAGS (0)
+#define DRIVER_CONFIG_INFO_FLAGS          (COUNTER_CONFIG_INFO_COUNT_UP)
+#define DRIVER_CONFIG_INFO_CHANNELS       CONFIG_COUNTER_NATIVE_POSIX_NBR_CHANNELS
+#define COUNTER_NATIVE_POSIX_IRQ_FLAGS    (0)
 #define COUNTER_NATIVE_POSIX_IRQ_PRIORITY (2)
 
 #define COUNTER_PERIOD (USEC_PER_SEC / CONFIG_COUNTER_NATIVE_POSIX_FREQUENCY)
-#define TOP_VALUE (UINT_MAX)
+#define TOP_VALUE      (UINT_MAX)
 
 static struct counter_alarm_cfg pending_alarm[DRIVER_CONFIG_INFO_CHANNELS];
 static bool is_alarm_pending[DRIVER_CONFIG_INFO_CHANNELS];
@@ -83,8 +83,8 @@ static int ctr_init(const struct device *dev)
 	is_top_set = false;
 	top.ticks = TOP_VALUE;
 
-	IRQ_CONNECT(COUNTER_EVENT_IRQ, COUNTER_NATIVE_POSIX_IRQ_PRIORITY,
-		    counter_isr, NULL, COUNTER_NATIVE_POSIX_IRQ_FLAGS);
+	IRQ_CONNECT(COUNTER_EVENT_IRQ, COUNTER_NATIVE_POSIX_IRQ_PRIORITY, counter_isr, NULL,
+		    COUNTER_NATIVE_POSIX_IRQ_FLAGS);
 	irq_enable(COUNTER_EVENT_IRQ);
 	hw_counter_set_period(COUNTER_PERIOD);
 	hw_counter_set_wrap_value((uint64_t)top.ticks + 1);
@@ -134,8 +134,7 @@ static bool is_any_alarm_pending(void)
 	return false;
 }
 
-static int ctr_set_top_value(const struct device *dev,
-			     const struct counter_top_cfg *cfg)
+static int ctr_set_top_value(const struct device *dev, const struct counter_top_cfg *cfg)
 {
 	ARG_UNUSED(dev);
 
@@ -188,8 +187,7 @@ static int ctr_set_alarm(const struct device *dev, uint8_t chan_id,
 	uint32_t ticks = alarm_cfg->ticks;
 
 	if (ticks > top.ticks) {
-		posix_print_warning("Alarm ticks %u exceed top ticks %u\n", ticks,
-				top.ticks);
+		posix_print_warning("Alarm ticks %u exceed top ticks %u\n", ticks, top.ticks);
 		return -EINVAL;
 	}
 
@@ -197,7 +195,7 @@ static int ctr_set_alarm(const struct device *dev, uint8_t chan_id,
 		uint32_t current_value = hw_counter_get_value();
 
 		ticks += current_value;
-		if (ticks > top.ticks) { /* Handle wrap arounds */
+		if (ticks > top.ticks) {          /* Handle wrap arounds */
 			ticks -= (top.ticks + 1); /* The count period is top.ticks + 1 */
 		}
 	}
@@ -238,13 +236,10 @@ static const struct counter_driver_api ctr_api = {
 	.get_top_value = ctr_get_top_value,
 };
 
-static const struct counter_config_info ctr_config = {
-	.max_top_value = UINT_MAX,
-	.freq = CONFIG_COUNTER_NATIVE_POSIX_FREQUENCY,
-	.channels = DRIVER_CONFIG_INFO_CHANNELS,
-	.flags = DRIVER_CONFIG_INFO_FLAGS
-};
+static const struct counter_config_info ctr_config = {.max_top_value = UINT_MAX,
+						      .freq = CONFIG_COUNTER_NATIVE_POSIX_FREQUENCY,
+						      .channels = DRIVER_CONFIG_INFO_CHANNELS,
+						      .flags = DRIVER_CONFIG_INFO_FLAGS};
 
-DEVICE_DT_INST_DEFINE(0, ctr_init,
-		    NULL, NULL, &ctr_config, PRE_KERNEL_1,
-		    CONFIG_COUNTER_INIT_PRIORITY, &ctr_api);
+DEVICE_DT_INST_DEFINE(0, ctr_init, NULL, NULL, &ctr_config, PRE_KERNEL_1,
+		      CONFIG_COUNTER_INIT_PRIORITY, &ctr_api);

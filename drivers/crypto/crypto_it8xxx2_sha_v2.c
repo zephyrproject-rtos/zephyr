@@ -15,32 +15,31 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(sha_it8xxx2, CONFIG_CRYPTO_LOG_LEVEL);
 
-BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
-	     "support only one sha compatible node");
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1, "support only one sha compatible node");
 
 #define IT8XXX2_SHA_REGS_BASE DT_REG_ADDR(DT_NODELABEL(sha0))
 
 /* 0x00: SHA Control Register */
-#define IT8XXX2_REG_SHACR        (0x00)
-#define IT8XXX2_SEL1SHA1         BIT(6)
-#define IT8XXX2_SELSHA2ALL       (BIT(5) | BIT(4))
-#define IT8XXX2_SHAWB            BIT(2)
-#define IT8XXX2_SHAINI           BIT(1)
-#define IT8XXX2_SHAEXE           BIT(0)
+#define IT8XXX2_REG_SHACR       (0x00)
+#define IT8XXX2_SEL1SHA1        BIT(6)
+#define IT8XXX2_SELSHA2ALL      (BIT(5) | BIT(4))
+#define IT8XXX2_SHAWB           BIT(2)
+#define IT8XXX2_SHAINI          BIT(1)
+#define IT8XXX2_SHAEXE          BIT(0)
 /* 0x01: SHA Status Register */
-#define IT8XXX2_REG_SHASR        (0x01)
-#define IT8XXX2_SHAIE            BIT(3)
-#define IT8XXX2_SHAIS            BIT(2)
-#define IT8XXX2_SHABUSY          BIT(0)
+#define IT8XXX2_REG_SHASR       (0x01)
+#define IT8XXX2_SHAIE           BIT(3)
+#define IT8XXX2_SHAIS           BIT(2)
+#define IT8XXX2_SHABUSY         BIT(0)
 /* 0x02: SHA Execution Counter Register */
-#define IT8XXX2_REG_SHAECR       (0x02)
-#define IT8XXX2_SHAEXEC_64Byte   0x0
-#define IT8XXX2_SHAEXEC_512Byte  0x7
-#define IT8XXX2_SHAEXEC_1KByte   0xf
+#define IT8XXX2_REG_SHAECR      (0x02)
+#define IT8XXX2_SHAEXEC_64Byte  0x0
+#define IT8XXX2_SHAEXEC_512Byte 0x7
+#define IT8XXX2_SHAEXEC_1KByte  0xf
 /* 0x03: SHA DLM Base Address 0 Register */
-#define IT8XXX2_REG_SHADBA0R     (0x03)
+#define IT8XXX2_REG_SHADBA0R    (0x03)
 /* 0x04: SHA DLM Base Address 1 Register */
-#define IT8XXX2_REG_SHADBA1R     (0x04)
+#define IT8XXX2_REG_SHADBA1R    (0x04)
 
 #define SHA_SHA256_HASH_LEN                32
 #define SHA_SHA256_BLOCK_LEN               64
@@ -78,10 +77,8 @@ static void it8xxx2_sha256_init(bool init_k)
 	chip_ctx.total_len = 0;
 
 	/* Set DLM address for input data */
-	sys_write8(((uint32_t)&chip_ctx) & 0xc0,
-			IT8XXX2_SHA_REGS_BASE + IT8XXX2_REG_SHADBA0R);
-	sys_write8(((uint32_t)&chip_ctx) >> 8,
-			IT8XXX2_SHA_REGS_BASE + IT8XXX2_REG_SHADBA1R);
+	sys_write8(((uint32_t)&chip_ctx) & 0xc0, IT8XXX2_SHA_REGS_BASE + IT8XXX2_REG_SHADBA0R);
+	sys_write8(((uint32_t)&chip_ctx) >> 8, IT8XXX2_SHA_REGS_BASE + IT8XXX2_REG_SHADBA1R);
 }
 
 static int it8xxx2_sha256_module_calculation(void)
@@ -114,8 +111,9 @@ static int it8xxx2_sha256_module_calculation(void)
 	 * HW 64 bytes data calculation ~= 4us;
 	 * HW 1024 bytes data calculation ~= 66us.
 	 */
-	for (count = 0; count <= (SHA_SHA256_CALCULATE_TIMEOUT_US /
-	     SHA_SHA256_WAIT_NEXT_CLOCK_TIME_US); count++) {
+	for (count = 0;
+	     count <= (SHA_SHA256_CALCULATE_TIMEOUT_US / SHA_SHA256_WAIT_NEXT_CLOCK_TIME_US);
+	     count++) {
 		/* Delay 15us */
 		gctrl_regs->GCTRL_WNCKR = IT8XXX2_GCTRL_WN65K;
 
@@ -143,8 +141,7 @@ static int it8xxx2_sha256_module_calculation(void)
 	return 0;
 }
 
-static int it8xxx2_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt,
-				bool finish)
+static int it8xxx2_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt, bool finish)
 {
 	struct gctrl_it8xxx2_regs *const gctrl_regs = GCTRL_IT8XXX2_REGS_BASE;
 	uint32_t rem_len = pkt->in_len;
@@ -161,12 +158,12 @@ static int it8xxx2_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt,
 
 			for (i = 0; i < SHA_SHA256_SRAM_BUF; i++) {
 				chip_ctx.w_input[chip_ctx.w_input_index++] =
-								pkt->in_buf[in_buf_idx++];
+					pkt->in_buf[in_buf_idx++];
 			}
 
 			/* HW automatically load 1KB data from DLM */
 			sys_write8(IT8XXX2_SHAEXEC_1KByte,
-					IT8XXX2_SHA_REGS_BASE + IT8XXX2_REG_SHAECR);
+				   IT8XXX2_SHA_REGS_BASE + IT8XXX2_REG_SHAECR);
 			ret = it8xxx2_sha256_module_calculation();
 
 			if (ret) {
@@ -177,7 +174,7 @@ static int it8xxx2_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt,
 			while (rem_len) {
 				rem_len--;
 				chip_ctx.w_input[chip_ctx.w_input_index++] =
-								pkt->in_buf[in_buf_idx++];
+					pkt->in_buf[in_buf_idx++];
 
 				/*
 				 * If fill full 64byte then execute HW calculation.
@@ -186,7 +183,7 @@ static int it8xxx2_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt,
 				if (chip_ctx.w_input_index >= SHA_SHA256_BLOCK_LEN) {
 					/* HW automatically load 64Bytes data from DLM */
 					sys_write8(IT8XXX2_SHAEXEC_64Byte,
-							IT8XXX2_SHA_REGS_BASE + IT8XXX2_REG_SHAECR);
+						   IT8XXX2_SHA_REGS_BASE + IT8XXX2_REG_SHAECR);
 					ret = it8xxx2_sha256_module_calculation();
 
 					if (ret) {
@@ -203,8 +200,8 @@ static int it8xxx2_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt,
 		uint32_t *ob_ptr = (uint32_t *)pkt->out_buf;
 
 		/* Pre-processing (Padding) */
-		memset(&chip_ctx.w_input[chip_ctx.w_input_index],
-			0, SHA_SHA256_BLOCK_LEN - chip_ctx.w_input_index);
+		memset(&chip_ctx.w_input[chip_ctx.w_input_index], 0,
+		       SHA_SHA256_BLOCK_LEN - chip_ctx.w_input_index);
 		chip_ctx.w_input[chip_ctx.w_input_index] = 0x80;
 
 		/*
@@ -216,14 +213,14 @@ static int it8xxx2_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt,
 		if (chip_ctx.w_input_index >= 56) {
 			/* HW automatically load 64Bytes data from DLM */
 			sys_write8(IT8XXX2_SHAEXEC_64Byte,
-					IT8XXX2_SHA_REGS_BASE + IT8XXX2_REG_SHAECR);
+				   IT8XXX2_SHA_REGS_BASE + IT8XXX2_REG_SHAECR);
 			ret = it8xxx2_sha256_module_calculation();
 
 			if (ret) {
 				return ret;
 			}
-			memset(&chip_ctx.w_input[chip_ctx.w_input_index],
-				0, SHA_SHA256_BLOCK_LEN - chip_ctx.w_input_index);
+			memset(&chip_ctx.w_input[chip_ctx.w_input_index], 0,
+			       SHA_SHA256_BLOCK_LEN - chip_ctx.w_input_index);
 		}
 
 		/*
@@ -244,9 +241,9 @@ static int it8xxx2_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt,
 		/* HW write back the hash result to DLM */
 		/* Set DLM address for input data */
 		sys_write8(((uint32_t)&chip_ctx.h) & 0xc0,
-				IT8XXX2_SHA_REGS_BASE + IT8XXX2_REG_SHADBA0R);
+			   IT8XXX2_SHA_REGS_BASE + IT8XXX2_REG_SHADBA0R);
 		sys_write8(((uint32_t)&chip_ctx.h) >> 8,
-				IT8XXX2_SHA_REGS_BASE + IT8XXX2_REG_SHADBA1R);
+			   IT8XXX2_SHA_REGS_BASE + IT8XXX2_REG_SHADBA1R);
 
 		key = irq_lock();
 		/* Crypto use SRAM */
@@ -256,12 +253,13 @@ static int it8xxx2_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt,
 
 		/* HW write back the hash result to DLM ~= 1us */
 		for (count = 0; count <= (SHA_SHA256_WRITE_BACK_TIMEOUT_US /
-		     SHA_SHA256_WAIT_NEXT_CLOCK_TIME_US); count++) {
+					  SHA_SHA256_WAIT_NEXT_CLOCK_TIME_US);
+		     count++) {
 			/* Delay 15us */
 			gctrl_regs->GCTRL_WNCKR = IT8XXX2_GCTRL_WN65K;
 
-			if ((sys_read8(IT8XXX2_SHA_REGS_BASE + IT8XXX2_REG_SHASR)
-			      & IT8XXX2_SHAIS)) {
+			if ((sys_read8(IT8XXX2_SHA_REGS_BASE + IT8XXX2_REG_SHASR) &
+			     IT8XXX2_SHAIS)) {
 				timeout = 0;
 				break;
 			}
@@ -290,8 +288,7 @@ static int it8xxx2_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt,
 	return 0;
 }
 
-static int it8xxx2_hash_session_free(const struct device *dev,
-				struct hash_ctx *ctx)
+static int it8xxx2_hash_session_free(const struct device *dev, struct hash_ctx *ctx)
 {
 	it8xxx2_sha256_init(true);
 
@@ -303,8 +300,8 @@ static inline int it8xxx2_query_hw_caps(const struct device *dev)
 	return (CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS);
 }
 
-static int it8xxx2_hash_begin_session(const struct device *dev,
-				struct hash_ctx *ctx, enum hash_algo algo)
+static int it8xxx2_hash_begin_session(const struct device *dev, struct hash_ctx *ctx,
+				      enum hash_algo algo)
 {
 	if (algo != CRYPTO_HASH_ALGO_SHA256) {
 		LOG_ERR("Unsupported algorithm");
@@ -347,4 +344,4 @@ static const struct crypto_driver_api it8xxx2_crypto_api = {
 };
 
 DEVICE_DT_INST_DEFINE(0, &it8xxx2_sha_init, NULL, NULL, NULL, POST_KERNEL,
-			CONFIG_CRYPTO_INIT_PRIORITY, &it8xxx2_crypto_api);
+		      CONFIG_CRYPTO_INIT_PRIORITY, &it8xxx2_crypto_api);

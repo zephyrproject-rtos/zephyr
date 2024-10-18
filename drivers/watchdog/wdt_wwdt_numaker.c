@@ -54,7 +54,6 @@ static int m_wwdt_numaker_clk_get_rate(const struct wwdt_numaker_config *cfg, ui
 	return 0;
 }
 
-
 /* Convert watchdog clock to nearest ms (rounded up) */
 static uint32_t m_wwdt_numaker_calc_ms(const struct device *dev, uint32_t pow2)
 {
@@ -70,11 +69,8 @@ static uint32_t m_wwdt_numaker_calc_ms(const struct device *dev, uint32_t pow2)
 	return period_ms;
 }
 
-static int m_wwdt_numaker_calc_window(const struct device *dev,
-				      const struct wdt_window *win,
-				      uint32_t *timeout,
-				      uint32_t *prescaler,
-				      uint32_t *counter)
+static int m_wwdt_numaker_calc_window(const struct device *dev, const struct wdt_window *win,
+				      uint32_t *timeout, uint32_t *prescaler, uint32_t *counter)
 {
 	uint32_t pow2;
 	uint32_t gap;
@@ -88,9 +84,7 @@ static int m_wwdt_numaker_calc_window(const struct device *dev,
 			if (win->min == 0U) {
 				*counter = NUMAKER_COUNTER_MAX;
 			} else {
-				gap = DIV_ROUND_UP(win->min
-						   * NUMAKER_COUNTER_MAX,
-						   *timeout);
+				gap = DIV_ROUND_UP(win->min * NUMAKER_COUNTER_MAX, *timeout);
 				*counter = NUMAKER_COUNTER_MAX - gap;
 				if (*counter < NUMAKER_COUNTER_MIN) {
 					*counter = NUMAKER_COUNTER_MIN;
@@ -104,8 +98,7 @@ static int m_wwdt_numaker_calc_window(const struct device *dev,
 	return -EINVAL;
 }
 
-static int wwdt_numaker_install_timeout(const struct device *dev,
-					const struct wdt_timeout_cfg *cfg)
+static int wwdt_numaker_install_timeout(const struct device *dev, const struct wdt_timeout_cfg *cfg)
 {
 	struct wwdt_numaker_data *data = dev->data;
 	const struct wwdt_numaker_config *config = dev->config;
@@ -192,15 +185,11 @@ static int wwdt_numaker_setup(const struct device *dev, uint8_t options)
 	}
 
 	/* Clear  WWDT Reset & Compared Match Interrupt System Flag */
-	wwdt_base->STATUS = WWDT_STATUS_WWDTRF_Msk |
-			    WWDT_STATUS_WWDTIF_Msk;
+	wwdt_base->STATUS = WWDT_STATUS_WWDTRF_Msk | WWDT_STATUS_WWDTIF_Msk;
 
 	/* Open WWDT and start counting */
-	wwdt_base->CTL = data->prescaler |
-			 (data->counter << WWDT_CTL_CMPDAT_Pos) |
-			 WWDT_CTL_INTEN_Msk |
-			 WWDT_CTL_WWDTEN_Msk |
-			 dbg_mask;
+	wwdt_base->CTL = data->prescaler | (data->counter << WWDT_CTL_CMPDAT_Pos) |
+			 WWDT_CTL_INTEN_Msk | WWDT_CTL_WWDTEN_Msk | dbg_mask;
 
 	irq_enable(DT_INST_IRQN(0));
 
@@ -274,14 +263,13 @@ static int wwdt_numaker_init(const struct device *dev)
 	}
 
 	/* Enable NVIC */
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
-		    wwdt_numaker_isr, DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), wwdt_numaker_isr,
+		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
 
 done:
 	SYS_LockReg();
 	return err;
-
 }
 
 /* Set config based on DTS */
@@ -295,7 +283,5 @@ static struct wwdt_numaker_config wwdt_numaker_cfg_inst = {
 
 static struct wwdt_numaker_data wwdt_numaker_data_inst;
 
-DEVICE_DT_INST_DEFINE(0, wwdt_numaker_init, NULL,
-		      &wwdt_numaker_data_inst, &wwdt_numaker_cfg_inst,
-		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		      &wwdt_numaker_api);
+DEVICE_DT_INST_DEFINE(0, wwdt_numaker_init, NULL, &wwdt_numaker_data_inst, &wwdt_numaker_cfg_inst,
+		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wwdt_numaker_api);

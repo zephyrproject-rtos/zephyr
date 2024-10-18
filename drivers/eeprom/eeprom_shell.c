@@ -48,8 +48,7 @@ static int cmd_read(const struct shell *sh, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	shell_print(sh, "Reading %zu bytes from EEPROM, offset %zu...", len,
-		    addr);
+	shell_print(sh, "Reading %zu bytes from EEPROM, offset %zu...", len, addr);
 
 	for (upto = 0; upto < len; upto += pending) {
 		uint8_t data[SHELL_HEXDUMP_BYTES_IN_LINE];
@@ -84,8 +83,7 @@ static int cmd_write(const struct shell *sh, size_t argc, char **argv)
 	len = argc - args_indx.data;
 
 	if (len > sizeof(wr_buf)) {
-		shell_error(sh, "Write buffer size (%zu bytes) exceeded",
-			    sizeof(wr_buf));
+		shell_error(sh, "Write buffer size (%zu bytes) exceeded", sizeof(wr_buf));
 		return -EINVAL;
 	}
 
@@ -173,8 +171,7 @@ static int cmd_fill(const struct shell *sh, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	shell_print(sh, "Writing %zu bytes of 0x%02lx to EEPROM...", len,
-		    pattern);
+	shell_print(sh, "Writing %zu bytes of 0x%02lx to EEPROM...", len, pattern);
 
 	addr = initial_offset;
 
@@ -226,16 +223,14 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
-SHELL_STATIC_SUBCMD_SET_CREATE(eeprom_cmds,
-	SHELL_CMD_ARG(read, &dsub_device_name,
-		      "<device> <offset> <length>", cmd_read, 4, 0),
-	SHELL_CMD_ARG(write, &dsub_device_name,
-		      "<device> <offset> [byte0] <byte1> .. <byteN>", cmd_write,
-		      4, CONFIG_EEPROM_SHELL_BUFFER_SIZE - 1),
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	eeprom_cmds,
+	SHELL_CMD_ARG(read, &dsub_device_name, "<device> <offset> <length>", cmd_read, 4, 0),
+	SHELL_CMD_ARG(write, &dsub_device_name, "<device> <offset> [byte0] <byte1> .. <byteN>",
+		      cmd_write, 4, CONFIG_EEPROM_SHELL_BUFFER_SIZE - 1),
 	SHELL_CMD_ARG(size, &dsub_device_name, "<device>", cmd_size, 2, 0),
-	SHELL_CMD_ARG(fill, &dsub_device_name,
-		      "<device> <offset> <length> <pattern>", cmd_fill, 5, 0),
-	SHELL_SUBCMD_SET_END
-);
+	SHELL_CMD_ARG(fill, &dsub_device_name, "<device> <offset> <length> <pattern>", cmd_fill, 5,
+		      0),
+	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(eeprom, &eeprom_cmds, "EEPROM shell commands", NULL);

@@ -18,19 +18,17 @@
 
 #include "tmp116.h"
 
-#define  EEPROM_SIZE_REG sizeof(uint16_t)
-#define  EEPROM_TMP117_RESERVED (2 * sizeof(uint16_t))
-#define  EEPROM_MIN_BUSY_MS 7
+#define EEPROM_SIZE_REG        sizeof(uint16_t)
+#define EEPROM_TMP117_RESERVED (2 * sizeof(uint16_t))
+#define EEPROM_MIN_BUSY_MS     7
 
 LOG_MODULE_REGISTER(TMP116, CONFIG_SENSOR_LOG_LEVEL);
 
-static int tmp116_reg_read(const struct device *dev, uint8_t reg,
-			   uint16_t *val)
+static int tmp116_reg_read(const struct device *dev, uint8_t reg, uint16_t *val)
 {
 	const struct tmp116_dev_config *cfg = dev->config;
 
-	if (i2c_burst_read_dt(&cfg->bus, reg, (uint8_t *)val, 2)
-	    < 0) {
+	if (i2c_burst_read_dt(&cfg->bus, reg, (uint8_t *)val, 2) < 0) {
 		return -EIO;
 	}
 
@@ -39,8 +37,7 @@ static int tmp116_reg_read(const struct device *dev, uint8_t reg,
 	return 0;
 }
 
-static int tmp116_reg_write(const struct device *dev, uint8_t reg,
-			    uint16_t val)
+static int tmp116_reg_write(const struct device *dev, uint8_t reg, uint16_t val)
 {
 	const struct tmp116_dev_config *cfg = dev->config;
 	uint8_t tx_buf[3] = {reg, val >> 8, val & 0xFF};
@@ -65,20 +62,17 @@ int tmp116_write_config(const struct device *dev, uint16_t mask, uint16_t conf)
 	return tmp116_reg_write(dev, TMP116_REG_CFGR, config);
 }
 
-static bool check_eeprom_bounds(const struct device *dev, off_t offset,
-			       size_t len)
+static bool check_eeprom_bounds(const struct device *dev, off_t offset, size_t len)
 {
 	struct tmp116_data *drv_data = dev->data;
 
-	if ((offset + len) > EEPROM_TMP116_SIZE ||
-	    offset % EEPROM_SIZE_REG != 0 ||
+	if ((offset + len) > EEPROM_TMP116_SIZE || offset % EEPROM_SIZE_REG != 0 ||
 	    len % EEPROM_SIZE_REG != 0) {
 		return false;
 	}
 
 	/* TMP117 uses EEPROM[2] as temperature offset register */
-	if (drv_data->id == TMP117_DEVICE_ID &&
-	    offset <= EEPROM_TMP117_RESERVED &&
+	if (drv_data->id == TMP117_DEVICE_ID && offset <= EEPROM_TMP117_RESERVED &&
 	    (offset + len) > EEPROM_TMP117_RESERVED) {
 		return false;
 	}
@@ -86,8 +80,7 @@ static bool check_eeprom_bounds(const struct device *dev, off_t offset,
 	return true;
 }
 
-int tmp116_eeprom_write(const struct device *dev, off_t offset,
-			const void *data, size_t len)
+int tmp116_eeprom_write(const struct device *dev, off_t offset, const void *data, size_t len)
 {
 	uint8_t reg;
 	const uint16_t *src = data;
@@ -130,8 +123,7 @@ int tmp116_eeprom_write(const struct device *dev, off_t offset,
 	return res;
 }
 
-int tmp116_eeprom_read(const struct device *dev, off_t offset, void *data,
-		       size_t len)
+int tmp116_eeprom_read(const struct device *dev, off_t offset, void *data, size_t len)
 {
 	uint8_t reg;
 	uint16_t *dst = data;
@@ -152,7 +144,6 @@ int tmp116_eeprom_read(const struct device *dev, off_t offset, void *data,
 	return res;
 }
 
-
 /**
  * @brief Check the Device ID
  *
@@ -165,30 +156,26 @@ int tmp116_eeprom_read(const struct device *dev, off_t offset, void *data,
 static inline int tmp116_device_id_check(const struct device *dev, uint16_t *id)
 {
 	if (tmp116_reg_read(dev, TMP116_REG_DEVICE_ID, id) != 0) {
-		LOG_ERR("%s: Failed to get Device ID register!",
-			dev->name);
+		LOG_ERR("%s: Failed to get Device ID register!", dev->name);
 		return -EIO;
 	}
 
 	if ((*id != TMP116_DEVICE_ID) && (*id != TMP117_DEVICE_ID)) {
-		LOG_ERR("%s: Failed to match the device IDs!",
-			dev->name);
+		LOG_ERR("%s: Failed to match the device IDs!", dev->name);
 		return -EINVAL;
 	}
 
 	return 0;
 }
 
-static int tmp116_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
+static int tmp116_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct tmp116_data *drv_data = dev->data;
 	uint16_t value;
 	uint16_t cfg_reg = 0;
 	int rc;
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL ||
-			chan == SENSOR_CHAN_AMBIENT_TEMP);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_AMBIENT_TEMP);
 
 	/* clear sensor values */
 	drv_data->sample = 0U;
@@ -196,8 +183,7 @@ static int tmp116_sample_fetch(const struct device *dev,
 	/* Make sure that a data is available */
 	rc = tmp116_reg_read(dev, TMP116_REG_CFGR, &cfg_reg);
 	if (rc < 0) {
-		LOG_ERR("%s, Failed to read from CFGR register",
-			dev->name);
+		LOG_ERR("%s, Failed to read from CFGR register", dev->name);
 		return rc;
 	}
 
@@ -209,8 +195,7 @@ static int tmp116_sample_fetch(const struct device *dev,
 	/* Get the most recent temperature measurement */
 	rc = tmp116_reg_read(dev, TMP116_REG_TEMP, &value);
 	if (rc < 0) {
-		LOG_ERR("%s: Failed to read from TEMP register!",
-			dev->name);
+		LOG_ERR("%s: Failed to read from TEMP register!", dev->name);
 		return rc;
 	}
 
@@ -220,8 +205,7 @@ static int tmp116_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static int tmp116_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
+static int tmp116_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	struct tmp116_data *drv_data = dev->data;
@@ -242,10 +226,8 @@ static int tmp116_channel_get(const struct device *dev,
 	return 0;
 }
 
-static int tmp116_attr_set(const struct device *dev,
-			   enum sensor_channel chan,
-			   enum sensor_attribute attr,
-			   const struct sensor_value *val)
+static int tmp116_attr_set(const struct device *dev, enum sensor_channel chan,
+			   enum sensor_attribute attr, const struct sensor_value *val)
 {
 	struct tmp116_data *drv_data = dev->data;
 	int16_t value;
@@ -258,15 +240,14 @@ static int tmp116_attr_set(const struct device *dev,
 	switch ((int)attr) {
 	case SENSOR_ATTR_OFFSET:
 		if (drv_data->id != TMP117_DEVICE_ID) {
-			LOG_ERR("%s: Offset is only supported by TMP117",
-			dev->name);
+			LOG_ERR("%s: Offset is only supported by TMP117", dev->name);
 			return -EINVAL;
 		}
 		/*
 		 * The offset is encoded into the temperature register format.
 		 */
-		value = (((val->val1) * 10000000) + ((val->val2) * 10))
-						/ (int32_t)TMP116_RESOLUTION;
+		value = (((val->val1) * 10000000) + ((val->val2) * 10)) /
+			(int32_t)TMP116_RESOLUTION;
 
 		return tmp116_reg_write(dev, TMP117_REG_TEMP_OFFSET, value);
 
@@ -334,12 +315,10 @@ static int tmp116_attr_get(const struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static const struct sensor_driver_api tmp116_driver_api = {
-	.attr_set = tmp116_attr_set,
-	.attr_get = tmp116_attr_get,
-	.sample_fetch = tmp116_sample_fetch,
-	.channel_get = tmp116_channel_get
-};
+static const struct sensor_driver_api tmp116_driver_api = {.attr_set = tmp116_attr_set,
+							   .attr_get = tmp116_attr_get,
+							   .sample_fetch = tmp116_sample_fetch,
+							   .channel_get = tmp116_channel_get};
 
 static int tmp116_init(const struct device *dev)
 {
@@ -364,13 +343,12 @@ static int tmp116_init(const struct device *dev)
 	return 0;
 }
 
-#define DEFINE_TMP116(_num) \
-	static struct tmp116_data tmp116_data_##_num; \
-	static const struct tmp116_dev_config tmp116_config_##_num = { \
-		.bus = I2C_DT_SPEC_INST_GET(_num) \
-	}; \
-	SENSOR_DEVICE_DT_INST_DEFINE(_num, tmp116_init, NULL, \
-		&tmp116_data_##_num, &tmp116_config_##_num, POST_KERNEL, \
-		CONFIG_SENSOR_INIT_PRIORITY, &tmp116_driver_api);
+#define DEFINE_TMP116(_num)                                                                        \
+	static struct tmp116_data tmp116_data_##_num;                                              \
+	static const struct tmp116_dev_config tmp116_config_##_num = {                             \
+		.bus = I2C_DT_SPEC_INST_GET(_num)};                                                \
+	SENSOR_DEVICE_DT_INST_DEFINE(_num, tmp116_init, NULL, &tmp116_data_##_num,                 \
+				     &tmp116_config_##_num, POST_KERNEL,                           \
+				     CONFIG_SENSOR_INIT_PRIORITY, &tmp116_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_TMP116)

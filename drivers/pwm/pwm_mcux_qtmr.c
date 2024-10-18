@@ -154,7 +154,7 @@ static const struct pwm_driver_api pwm_mcux_qtmr_driver_api = {
 	.get_cycles_per_sec = mcux_qtmr_pwm_get_cycles_per_sec,
 };
 
-#define PWM_MCUX_QTMR_DEVICE_INIT(n)                                                          \
+#define PWM_MCUX_QTMR_DEVICE_INIT(n)                                                               \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	static struct pwm_mcux_qtmr_data pwm_mcux_qtmr_data_##n;                                   \
                                                                                                    \

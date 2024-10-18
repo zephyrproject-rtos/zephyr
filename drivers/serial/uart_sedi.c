@@ -19,70 +19,55 @@ static void uart_sedi_cb(struct device *port);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 /*  UART IRQ handler declaration.  */
-#define  UART_IRQ_HANDLER_DECL(n) \
-	static void irq_config_uart_##n(const struct device *dev)
+#define UART_IRQ_HANDLER_DECL(n) static void irq_config_uart_##n(const struct device *dev)
 
 /* Setting configuration function. */
-#define UART_CONFIG_IRQ_HANDLER_SET(n) \
-	.uart_irq_config_func = irq_config_uart_##n
-#define UART_IRQ_HANDLER_DEFINE(n)				       \
-	static void irq_config_uart_##n(const struct device *dev)      \
-	{							       \
-		ARG_UNUSED(dev);				       \
-		IRQ_CONNECT(DT_INST_IRQN(n),			       \
-			    DT_INST_IRQ(n, priority), uart_sedi_isr,   \
-			    DEVICE_DT_GET(DT_NODELABEL(uart##n)),      \
-			    DT_INST_IRQ(n, sense));		       \
-		irq_enable(DT_INST_IRQN(n));			       \
+#define UART_CONFIG_IRQ_HANDLER_SET(n) .uart_irq_config_func = irq_config_uart_##n
+#define UART_IRQ_HANDLER_DEFINE(n)                                                                 \
+	static void irq_config_uart_##n(const struct device *dev)                                  \
+	{                                                                                          \
+		ARG_UNUSED(dev);                                                                   \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_sedi_isr,              \
+			    DEVICE_DT_GET(DT_NODELABEL(uart##n)), DT_INST_IRQ(n, sense));          \
+		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
 #else /*CONFIG_UART_INTERRUPT_DRIVEN */
 #define UART_IRQ_HANDLER_DECL(n)
 #define UART_CONFIG_IRQ_HANDLER_SET(n) (0)
 
 #define UART_IRQ_HANDLER_DEFINE(n)
-#endif  /* !CONFIG_UART_INTERRUPT_DRIVEN */
+#endif /* !CONFIG_UART_INTERRUPT_DRIVEN */
 
 /* Device init macro for UART instance. As multiple uart instances follow a
  * similar definition of data structures differing only in the instance
  * number.This macro makes adding instances simpler.
  */
-#define UART_SEDI_DEVICE_INIT(n)				      \
-	UART_IRQ_HANDLER_DECL(n);				      \
-	static K_MUTEX_DEFINE(uart_##n##_mutex);		      \
-	static K_SEM_DEFINE(uart_##n##_tx_sem, 1, 1);		      \
-	static K_SEM_DEFINE(uart_##n##_rx_sem, 1, 1);		      \
-	static K_SEM_DEFINE(uart_##n##_sync_read_sem, 0, 1);	      \
-	static const struct uart_sedi_config_info config_info_##n = { \
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),		      \
-		.instance = DT_INST_PROP(n, peripheral_id),	      \
-		.baud_rate = DT_INST_PROP(n, current_speed),	      \
-		.hw_fc = DT_INST_PROP(n, hw_flow_control),	      \
-		.line_ctrl = SEDI_UART_LC_8N1,			      \
-		.mutex = &uart_##n##_mutex,			      \
-		UART_CONFIG_IRQ_HANDLER_SET(n)			      \
-	};							      \
-								      \
-	static struct uart_sedi_drv_data drv_data_##n;		      \
-	PM_DEVICE_DT_DEFINE(DT_NODELABEL(uart##n),                    \
-			    uart_sedi_pm_action);		      \
-	DEVICE_DT_DEFINE(DT_NODELABEL(uart##n),		              \
-		      &uart_sedi_init,				      \
-		      PM_DEVICE_DT_GET(DT_NODELABEL(uart##n)),        \
-		      &drv_data_##n, &config_info_##n,		      \
-		      PRE_KERNEL_1,				      \
-		      CONFIG_SERIAL_INIT_PRIORITY, &api);	      \
+#define UART_SEDI_DEVICE_INIT(n)                                                                   \
+	UART_IRQ_HANDLER_DECL(n);                                                                  \
+	static K_MUTEX_DEFINE(uart_##n##_mutex);                                                   \
+	static K_SEM_DEFINE(uart_##n##_tx_sem, 1, 1);                                              \
+	static K_SEM_DEFINE(uart_##n##_rx_sem, 1, 1);                                              \
+	static K_SEM_DEFINE(uart_##n##_sync_read_sem, 0, 1);                                       \
+	static const struct uart_sedi_config_info config_info_##n = {                              \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
+		.instance = DT_INST_PROP(n, peripheral_id),                                        \
+		.baud_rate = DT_INST_PROP(n, current_speed),                                       \
+		.hw_fc = DT_INST_PROP(n, hw_flow_control),                                         \
+		.line_ctrl = SEDI_UART_LC_8N1,                                                     \
+		.mutex = &uart_##n##_mutex,                                                        \
+		UART_CONFIG_IRQ_HANDLER_SET(n)};                                                   \
+                                                                                                   \
+	static struct uart_sedi_drv_data drv_data_##n;                                             \
+	PM_DEVICE_DT_DEFINE(DT_NODELABEL(uart##n), uart_sedi_pm_action);                           \
+	DEVICE_DT_DEFINE(DT_NODELABEL(uart##n), &uart_sedi_init,                                   \
+			 PM_DEVICE_DT_GET(DT_NODELABEL(uart##n)), &drv_data_##n, &config_info_##n, \
+			 PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, &api);                         \
 	UART_IRQ_HANDLER_DEFINE(n)
 
-
-
 /* Convenient macro to get the controller instance. */
-#define GET_CONTROLLER_INSTANCE(dev)		 \
-	(((const struct uart_sedi_config_info *) \
-	  dev->config)->instance)
+#define GET_CONTROLLER_INSTANCE(dev) (((const struct uart_sedi_config_info *)dev->config)->instance)
 
-#define GET_MUTEX(dev)				 \
-	(((const struct uart_sedi_config_info *) \
-	  dev->config)->mutex)
+#define GET_MUTEX(dev) (((const struct uart_sedi_config_info *)dev->config)->mutex)
 
 struct uart_sedi_config_info {
 	DEVICE_MMIO_ROM;
@@ -105,7 +90,6 @@ struct uart_sedi_config_info {
 	 */
 	uart_irq_config_func_t uart_irq_config_func;
 };
-
 
 static int uart_sedi_init(const struct device *dev);
 
@@ -182,8 +166,7 @@ static int uart_resume_device_from_suspend(const struct device *dev)
 	return 0;
 }
 
-static int uart_sedi_pm_action(const struct device *dev,
-		enum pm_device_action action)
+static int uart_sedi_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	int ret = 0;
 
@@ -203,8 +186,7 @@ static int uart_sedi_pm_action(const struct device *dev,
 
 #else
 
-static int uart_sedi_pm_action(const struct device *dev,
-		enum pm_device_action action)
+static int uart_sedi_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	/* do nothing if using UART print log to avoid clock gating
 	 * pm driver already handled power management for uart.
@@ -222,7 +204,7 @@ static int uart_sedi_poll_in(const struct device *dev, unsigned char *data)
 	uint32_t status;
 	int ret = 0;
 
-	sedi_uart_get_status(instance, (uint32_t *) &status);
+	sedi_uart_get_status(instance, (uint32_t *)&status);
 
 	/* In order to check if there is any data to read from UART
 	 * controller we should check if the SEDI_UART_RX_BUSY bit from
@@ -239,8 +221,7 @@ static int uart_sedi_poll_in(const struct device *dev, unsigned char *data)
 	return ret;
 }
 
-static void uart_sedi_poll_out(const struct device *dev,
-			       unsigned char data)
+static void uart_sedi_poll_out(const struct device *dev, unsigned char data)
 {
 	sedi_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 
@@ -273,7 +254,7 @@ static int get_xfer_error(int bsp_err)
 	}
 	return err;
 }
-#endif  /* CONFIG_UART_LINE_CTRL */
+#endif /* CONFIG_UART_LINE_CTRL */
 
 static int uart_sedi_err_check(const struct device *dev)
 {
@@ -282,7 +263,7 @@ static int uart_sedi_err_check(const struct device *dev)
 	int ret_status = 0;
 
 	sedi_uart_get_status(instance, (uint32_t *const)&status);
-	if (status &  SEDI_UART_RX_OE) {
+	if (status & SEDI_UART_RX_OE) {
 		ret_status = UART_ERROR_OVERRUN;
 	}
 
@@ -301,19 +282,16 @@ static int uart_sedi_err_check(const struct device *dev)
 	return ret_status;
 }
 
-
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-static int uart_sedi_fifo_fill(const struct device *dev, const uint8_t *tx_data,
-			       int size)
+static int uart_sedi_fifo_fill(const struct device *dev, const uint8_t *tx_data, int size)
 {
 	sedi_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 
 	return sedi_uart_fifo_fill(instance, tx_data, size);
 }
 
-static int uart_sedi_fifo_read(const struct device *dev, uint8_t *rx_data,
-			       const int size)
+static int uart_sedi_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
 {
 	sedi_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 
@@ -401,15 +379,13 @@ static int uart_sedi_irq_update(const struct device *dev)
 	return 1;
 }
 
-static void uart_sedi_irq_callback_set(const struct device *dev,
-				       uart_irq_callback_user_data_t cb,
+static void uart_sedi_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
 				       void *user_data)
 {
 	struct uart_sedi_drv_data *drv_data = dev->data;
 
 	drv_data->user_cb = cb;
 	drv_data->user_data = user_data;
-
 }
 
 static void uart_sedi_isr(void *arg)
@@ -435,8 +411,7 @@ static void uart_sedi_cb(struct device *port)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 #ifdef CONFIG_UART_LINE_CTRL
-static int uart_sedi_line_ctrl_set(struct device *dev,
-		uint32_t ctrl, uint32_t val)
+static int uart_sedi_line_ctrl_set(struct device *dev, uint32_t ctrl, uint32_t val)
 {
 	sedi_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 	sedi_uart_config_t cfg;
@@ -459,8 +434,7 @@ static int uart_sedi_line_ctrl_set(struct device *dev,
 	return ret;
 }
 
-static int uart_sedi_line_ctrl_get(struct device *dev,
-		uint32_t ctrl, uint32_t *val)
+static int uart_sedi_line_ctrl_get(struct device *dev, uint32_t ctrl, uint32_t *val)
 {
 	sedi_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 	sedi_uart_config_t cfg;
@@ -486,8 +460,7 @@ static int uart_sedi_line_ctrl_get(struct device *dev,
 	case UART_LINE_CTRL_LINE_STATUS_REPORT_MASK:
 		mask = 0;
 		*val = 0;
-		ret = sedi_get_ln_status_report_mask(instance,
-						     (uint32_t *)&mask);
+		ret = sedi_get_ln_status_report_mask(instance, (uint32_t *)&mask);
 		*val |= ((mask & SEDI_UART_RX_OE) ? UART_ERROR_OVERRUN : 0);
 		*val |= ((mask & SEDI_UART_RX_PE) ? UART_ERROR_PARITY : 0);
 		*val |= ((mask & SEDI_UART_RX_FE) ? UART_ERROR_FRAMING : 0);
@@ -501,7 +474,6 @@ static int uart_sedi_line_ctrl_get(struct device *dev,
 	case UART_LINE_CTRL_CTS:
 		ret = sedi_uart_read_cts(instance, (uint32_t *)val);
 		break;
-
 
 	default:
 		ret = -ENODEV;
@@ -532,11 +504,11 @@ static const struct uart_driver_api api = {
 	.irq_is_pending = uart_sedi_irq_is_pending,
 	.irq_update = uart_sedi_irq_update,
 	.irq_callback_set = uart_sedi_irq_callback_set,
-#endif  /* CONFIG_UART_INTERRUPT_DRIVEN */
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 #ifdef CONFIG_UART_LINE_CTRL
 	.line_ctrl_set = uart_sedi_line_ctrl_set,
 	.line_ctrl_get = uart_sedi_line_ctrl_get,
-#endif  /* CONFIG_UART_LINE_CTRL */
+#endif /* CONFIG_UART_LINE_CTRL */
 
 };
 
@@ -560,7 +532,7 @@ static int uart_sedi_init(const struct device *dev)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	config->uart_irq_config_func(dev);
-#endif  /* CONFIG_UART_INTERRUPT_DRIVEN */
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 	return 0;
 }

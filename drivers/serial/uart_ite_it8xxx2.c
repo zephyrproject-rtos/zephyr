@@ -44,12 +44,10 @@ enum uart_port_num {
 };
 
 #ifdef CONFIG_PM_DEVICE
-void uart1_wui_isr(const struct device *gpio, struct gpio_callback *cb,
-		   uint32_t pins)
+void uart1_wui_isr(const struct device *gpio, struct gpio_callback *cb, uint32_t pins)
 {
 	/* Disable interrupts on UART1 RX pin to avoid repeated interrupts. */
-	(void)gpio_pin_interrupt_configure(gpio, (find_msb_set(pins) - 1),
-					   GPIO_INT_DISABLE);
+	(void)gpio_pin_interrupt_configure(gpio, (find_msb_set(pins) - 1), GPIO_INT_DISABLE);
 
 	/* Refresh console expired time if got UART Rx wake-up event */
 #ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
@@ -64,12 +62,10 @@ void uart1_wui_isr(const struct device *gpio, struct gpio_callback *cb,
 #endif
 }
 
-void uart2_wui_isr(const struct device *gpio, struct gpio_callback *cb,
-		   uint32_t pins)
+void uart2_wui_isr(const struct device *gpio, struct gpio_callback *cb, uint32_t pins)
 {
 	/* Disable interrupts on UART2 RX pin to avoid repeated interrupts. */
-	(void)gpio_pin_interrupt_configure(gpio, (find_msb_set(pins) - 1),
-					   GPIO_INT_DISABLE);
+	(void)gpio_pin_interrupt_configure(gpio, (find_msb_set(pins) - 1), GPIO_INT_DISABLE);
 
 	/* Refresh console expired time if got UART Rx wake-up event */
 #ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
@@ -84,8 +80,7 @@ void uart2_wui_isr(const struct device *gpio, struct gpio_callback *cb,
 #endif
 }
 
-static inline int uart_it8xxx2_pm_action(const struct device *dev,
-					 enum pm_device_action action)
+static inline int uart_it8xxx2_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct uart_it8xxx2_config *const config = dev->config;
 	int ret = 0;
@@ -101,8 +96,7 @@ static inline int uart_it8xxx2_pm_action(const struct device *dev,
 		ret = gpio_pin_interrupt_configure_dt(&config->gpio_wui,
 						      GPIO_INT_MODE_EDGE | GPIO_INT_TRIG_LOW);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure UART%d WUI (ret %d)",
-				config->port, ret);
+			LOG_ERR("Failed to configure UART%d WUI (ret %d)", config->port, ret);
 			return ret;
 		}
 
@@ -124,7 +118,6 @@ static void uart_it8xxx2_rx_refresh_timeout(struct k_work *work)
 #endif
 #endif /* CONFIG_PM_DEVICE */
 
-
 static int uart_it8xxx2_init(const struct device *dev)
 {
 	const struct uart_it8xxx2_config *const config = dev->config;
@@ -138,8 +131,7 @@ static int uart_it8xxx2_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_PM_DEVICE
-	const struct device *uart_console_dev =
-		DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+	const struct device *uart_console_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 	int ret = 0;
 
 	/*
@@ -162,22 +154,19 @@ static int uart_it8xxx2_init(const struct device *dev)
 		if (config->port == UART1) {
 			static struct gpio_callback uart1_wui_cb;
 
-			gpio_init_callback(&uart1_wui_cb, uart1_wui_isr,
-					   BIT(config->gpio_wui.pin));
+			gpio_init_callback(&uart1_wui_cb, uart1_wui_isr, BIT(config->gpio_wui.pin));
 
 			ret = gpio_add_callback(config->gpio_wui.port, &uart1_wui_cb);
 		} else if (config->port == UART2) {
 			static struct gpio_callback uart2_wui_cb;
 
-			gpio_init_callback(&uart2_wui_cb, uart2_wui_isr,
-					   BIT(config->gpio_wui.pin));
+			gpio_init_callback(&uart2_wui_cb, uart2_wui_isr, BIT(config->gpio_wui.pin));
 
 			ret = gpio_add_callback(config->gpio_wui.port, &uart2_wui_cb);
 		}
 
 		if (ret < 0) {
-			LOG_ERR("Failed to add UART%d callback (err %d)",
-				config->port, ret);
+			LOG_ERR("Failed to add UART%d callback (err %d)", config->port, ret);
 			return ret;
 		}
 	}
@@ -186,24 +175,20 @@ static int uart_it8xxx2_init(const struct device *dev)
 	return 0;
 }
 
-#define UART_ITE_IT8XXX2_INIT(inst)                                            \
-	PINCTRL_DT_INST_DEFINE(inst);                                          \
-	static const struct uart_it8xxx2_config uart_it8xxx2_cfg_##inst = {    \
-		.port = DT_INST_PROP(inst, port_num),                          \
-		.gpio_wui = GPIO_DT_SPEC_INST_GET(inst, gpios),                \
-		.uart_dev = DEVICE_DT_GET(DT_INST_PHANDLE(inst, uart_dev)),    \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                  \
-	};                                                                     \
-									       \
-	static struct uart_it8xxx2_data uart_it8xxx2_data_##inst;              \
-									       \
-	PM_DEVICE_DT_INST_DEFINE(inst, uart_it8xxx2_pm_action);                \
-	DEVICE_DT_INST_DEFINE(inst, uart_it8xxx2_init,                         \
-			      PM_DEVICE_DT_INST_GET(inst),                     \
-			      &uart_it8xxx2_data_##inst,                       \
-			      &uart_it8xxx2_cfg_##inst,                        \
-			      PRE_KERNEL_1,                                    \
-			      CONFIG_UART_ITE_IT8XXX2_INIT_PRIORITY,           \
-			      NULL);
+#define UART_ITE_IT8XXX2_INIT(inst)                                                                \
+	PINCTRL_DT_INST_DEFINE(inst);                                                              \
+	static const struct uart_it8xxx2_config uart_it8xxx2_cfg_##inst = {                        \
+		.port = DT_INST_PROP(inst, port_num),                                              \
+		.gpio_wui = GPIO_DT_SPEC_INST_GET(inst, gpios),                                    \
+		.uart_dev = DEVICE_DT_GET(DT_INST_PHANDLE(inst, uart_dev)),                        \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
+	};                                                                                         \
+                                                                                                   \
+	static struct uart_it8xxx2_data uart_it8xxx2_data_##inst;                                  \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(inst, uart_it8xxx2_pm_action);                                    \
+	DEVICE_DT_INST_DEFINE(inst, uart_it8xxx2_init, PM_DEVICE_DT_INST_GET(inst),                \
+			      &uart_it8xxx2_data_##inst, &uart_it8xxx2_cfg_##inst, PRE_KERNEL_1,   \
+			      CONFIG_UART_ITE_IT8XXX2_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_ITE_IT8XXX2_INIT)

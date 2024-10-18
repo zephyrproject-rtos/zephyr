@@ -16,9 +16,9 @@
 
 #include "sx12xx_common.h"
 
-#define STATE_FREE      0
-#define STATE_BUSY      1
-#define STATE_CLEANUP   2
+#define STATE_FREE    0
+#define STATE_BUSY    1
+#define STATE_CLEANUP 2
 
 LOG_MODULE_REGISTER(sx12xx_common, CONFIG_LORA_LOG_LEVEL);
 
@@ -50,8 +50,7 @@ int __sx12xx_configure_pin(const struct gpio_dt_spec *gpio, gpio_flags_t flags)
 
 	err = gpio_pin_configure_dt(gpio, flags);
 	if (err) {
-		LOG_ERR("Cannot configure gpio %s %d: %d", gpio->port->name,
-			gpio->pin, err);
+		LOG_ERR("Cannot configure gpio %s %d: %d", gpio->port->name, gpio->pin, err);
 		return err;
 	}
 
@@ -96,8 +95,7 @@ static bool modem_release(struct sx12xx_data *data)
 	return true;
 }
 
-static void sx12xx_ev_rx_done(uint8_t *payload, uint16_t size, int16_t rssi,
-			      int8_t snr)
+static void sx12xx_ev_rx_done(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
 {
 	struct k_poll_signal *sig = dev_data.operation_done;
 
@@ -133,8 +131,7 @@ static void sx12xx_ev_rx_done(uint8_t *payload, uint16_t size, int16_t rssi,
 		*dev_data.rx_params.size = size;
 	}
 	/* Copy received data to output buffer */
-	memcpy(dev_data.rx_params.buf, payload,
-	       *dev_data.rx_params.size);
+	memcpy(dev_data.rx_params.buf, payload, *dev_data.rx_params.size);
 	/* Output RSSI and SNR */
 	if (dev_data.rx_params.rssi) {
 		*dev_data.rx_params.rssi = rssi;
@@ -190,14 +187,11 @@ static void sx12xx_ev_rx_error(void)
 	}
 }
 
-int sx12xx_lora_send(const struct device *dev, uint8_t *data,
-		     uint32_t data_len)
+int sx12xx_lora_send(const struct device *dev, uint8_t *data, uint32_t data_len)
 {
 	struct k_poll_signal done = K_POLL_SIGNAL_INITIALIZER(done);
-	struct k_poll_event evt = K_POLL_EVENT_INITIALIZER(
-		K_POLL_TYPE_SIGNAL,
-		K_POLL_MODE_NOTIFY_ONLY,
-		&done);
+	struct k_poll_event evt =
+		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &done);
 	uint32_t air_time;
 	int ret;
 
@@ -212,12 +206,9 @@ int sx12xx_lora_send(const struct device *dev, uint8_t *data,
 	}
 
 	/* Calculate expected airtime of the packet */
-	air_time = Radio.TimeOnAir(MODEM_LORA,
-				   dev_data.tx_cfg.bandwidth,
-				   dev_data.tx_cfg.datarate,
-				   dev_data.tx_cfg.coding_rate,
-				   dev_data.tx_cfg.preamble_len,
-				   0, data_len, true);
+	air_time = Radio.TimeOnAir(MODEM_LORA, dev_data.tx_cfg.bandwidth, dev_data.tx_cfg.datarate,
+				   dev_data.tx_cfg.coding_rate, dev_data.tx_cfg.preamble_len, 0,
+				   data_len, true);
 	LOG_DBG("Expected air time of %d bytes = %dms", data_len, air_time);
 
 	/* Wait for the packet to finish transmitting.
@@ -236,8 +227,8 @@ int sx12xx_lora_send(const struct device *dev, uint8_t *data,
 	return ret;
 }
 
-int sx12xx_lora_send_async(const struct device *dev, uint8_t *data,
-			   uint32_t data_len, struct k_poll_signal *async)
+int sx12xx_lora_send_async(const struct device *dev, uint8_t *data, uint32_t data_len,
+			   struct k_poll_signal *async)
 {
 	/* Ensure available, freed by sx12xx_ev_tx_done */
 	if (!modem_acquire(&dev_data)) {
@@ -254,14 +245,12 @@ int sx12xx_lora_send_async(const struct device *dev, uint8_t *data,
 	return 0;
 }
 
-int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
-		     k_timeout_t timeout, int16_t *rssi, int8_t *snr)
+int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size, k_timeout_t timeout,
+		     int16_t *rssi, int8_t *snr)
 {
 	struct k_poll_signal done = K_POLL_SIGNAL_INITIALIZER(done);
-	struct k_poll_event evt = K_POLL_EVENT_INITIALIZER(
-		K_POLL_TYPE_SIGNAL,
-		K_POLL_MODE_NOTIFY_ONLY,
-		&done);
+	struct k_poll_event evt =
+		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &done);
 	int ret;
 
 	/* Ensure available, decremented by sx12xx_ev_rx_done or on timeout */
@@ -331,8 +320,7 @@ int sx12xx_lora_recv_async(const struct device *dev, lora_recv_cb cb)
 	return 0;
 }
 
-int sx12xx_lora_config(const struct device *dev,
-		       struct lora_modem_config *config)
+int sx12xx_lora_config(const struct device *dev, struct lora_modem_config *config)
 {
 	/* Ensure available, decremented after configuration */
 	if (!modem_acquire(&dev_data)) {
@@ -345,16 +333,14 @@ int sx12xx_lora_config(const struct device *dev,
 		/* Store TX config locally for airtime calculations */
 		memcpy(&dev_data.tx_cfg, config, sizeof(dev_data.tx_cfg));
 		/* Configure radio driver */
-		Radio.SetTxConfig(MODEM_LORA, config->tx_power, 0,
-				  config->bandwidth, config->datarate,
-				  config->coding_rate, config->preamble_len,
+		Radio.SetTxConfig(MODEM_LORA, config->tx_power, 0, config->bandwidth,
+				  config->datarate, config->coding_rate, config->preamble_len,
 				  false, true, 0, 0, config->iq_inverted, 4000);
 	} else {
 		/* TODO: Get symbol timeout value from config parameters */
-		Radio.SetRxConfig(MODEM_LORA, config->bandwidth,
-				  config->datarate, config->coding_rate,
-				  0, config->preamble_len, 10, false, 0,
-				  false, 0, 0, config->iq_inverted, true);
+		Radio.SetRxConfig(MODEM_LORA, config->bandwidth, config->datarate,
+				  config->coding_rate, 0, config->preamble_len, 10, false, 0, false,
+				  0, 0, config->iq_inverted, true);
 	}
 
 	Radio.SetPublicNetwork(config->public_network);
@@ -363,8 +349,7 @@ int sx12xx_lora_config(const struct device *dev,
 	return 0;
 }
 
-int sx12xx_lora_test_cw(const struct device *dev, uint32_t frequency,
-			int8_t tx_power,
+int sx12xx_lora_test_cw(const struct device *dev, uint32_t frequency, int8_t tx_power,
 			uint16_t duration)
 {
 	/* Ensure available, freed in sx12xx_ev_tx_done */

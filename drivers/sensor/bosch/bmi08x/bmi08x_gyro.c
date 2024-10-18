@@ -466,13 +466,14 @@ BUILD_ASSERT(CONFIG_BMI08X_GYRO_TRIGGER_NONE,
                                                                                                    \
 	static const struct bmi08x_gyro_config bmi08x_config_##inst = {                            \
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi), (BMI08X_CONFIG_SPI(inst)),                  \
-			    (BMI08X_CONFIG_I2C(inst)))                                             \
-			.api = COND_CODE_1(DT_INST_ON_BUS(inst, spi), (&bmi08x_spi_api),           \
-					   (&bmi08x_i2c_api)),                                     \
-		IF_ENABLED(CONFIG_BMI08X_GYRO_TRIGGER,                                             \
-			   (.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),))                  \
-			.gyro_hz = DT_INST_ENUM_IDX(inst, gyro_hz),                                \
-		BMI08X_GYRO_TRIGGER_PINS(inst).gyro_fs = DT_INST_PROP(inst, gyro_fs),              \
+			    (BMI08X_CONFIG_I2C(inst))) .api =                                         \
+				 COND_CODE_1(DT_INST_ON_BUS(inst, spi), (&bmi08x_spi_api),           \
+					   (&bmi08x_i2c_api)),                     \
+					  IF_ENABLED(CONFIG_BMI08X_GYRO_TRIGGER,                                             \
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),)) .gyro_hz =        \
+							      DT_INST_ENUM_IDX(inst, gyro_hz),     \
+						      BMI08X_GYRO_TRIGGER_PINS(inst).gyro_fs =     \
+							      DT_INST_PROP(inst, gyro_fs),         \
 	};                                                                                         \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, bmi08x_gyro_pm_action);                                     \

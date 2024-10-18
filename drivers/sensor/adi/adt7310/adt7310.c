@@ -21,21 +21,21 @@ LOG_MODULE_REGISTER(ADT7310, CONFIG_SENSOR_LOG_LEVEL);
 #define ADT7310_READ_CMD  BIT(6)
 #define ADT7310_WRITE_CMD 0
 
-#define ADT7310_REG_STATUS	0x00
-#define ADT7310_REG_CONFIG	0x01
-#define ADT7310_REG_TEMP	0x02
-#define ADT7310_REG_ID		0x03
-#define ADT7310_REG_HYST	0x05
+#define ADT7310_REG_STATUS      0x00
+#define ADT7310_REG_CONFIG      0x01
+#define ADT7310_REG_TEMP        0x02
+#define ADT7310_REG_ID          0x03
+#define ADT7310_REG_HYST        0x05
 #define ADT7310_REG_THRESH_HIGH 0x06
-#define ADT7310_REG_THRESH_LOW	0x07
+#define ADT7310_REG_THRESH_LOW  0x07
 
-#define ADT7310_ID			  0xc0
-#define ADT7310_CONFIG_OP_MODE_MASK	  (0x3 << 5)
+#define ADT7310_ID                        0xc0
+#define ADT7310_CONFIG_OP_MODE_MASK       (0x3 << 5)
 #define ADT7310_CONFIG_OP_MODE_CONTINUOUS (0x0 << 5)
-#define ADT7310_CONFIG_OP_MODE_1SPS	  (0x2 << 5)
+#define ADT7310_CONFIG_OP_MODE_1SPS       (0x2 << 5)
 
-#define ADT7310_HYSTERESIS_TEMP_MAX	   15
-#define ADT7310_CONFIG_RESOLUTION_16BIT	   BIT(7)
+#define ADT7310_HYSTERESIS_TEMP_MAX        15
+#define ADT7310_CONFIG_RESOLUTION_16BIT    BIT(7)
 #define ADT7310_CONFIG_INT_COMPARATOR_MODE BIT(4)
 
 /* Continuous conversion time = 240ms -> 1/0.240*1000000 */
@@ -49,12 +49,12 @@ LOG_MODULE_REGISTER(ADT7310, CONFIG_SENSOR_LOG_LEVEL);
 static int adt7310_temp_reg_read(const struct device *dev, uint8_t reg, int16_t *val)
 {
 	const struct adt7310_dev_config *cfg = dev->config;
-	uint8_t cmd_buf[3] = { ADT7310_READ_CMD | (reg << 3) };
+	uint8_t cmd_buf[3] = {ADT7310_READ_CMD | (reg << 3)};
 	int ret;
-	const struct spi_buf tx_buf = { .buf = cmd_buf, .len = sizeof(cmd_buf) };
-	const struct spi_buf rx_buf = { .buf = cmd_buf, .len = sizeof(cmd_buf) };
-	const struct spi_buf_set tx = { .buffers = &tx_buf, .count = 1 };
-	const struct spi_buf_set rx = { .buffers = &rx_buf, .count = 1 };
+	const struct spi_buf tx_buf = {.buf = cmd_buf, .len = sizeof(cmd_buf)};
+	const struct spi_buf rx_buf = {.buf = cmd_buf, .len = sizeof(cmd_buf)};
+	const struct spi_buf_set tx = {.buffers = &tx_buf, .count = 1};
+	const struct spi_buf_set rx = {.buffers = &rx_buf, .count = 1};
 
 	ret = spi_transceive_dt(&cfg->bus, &tx, &rx);
 	if (ret < 0) {
@@ -71,10 +71,10 @@ static int adt7310_temp_reg_write(const struct device *dev, uint8_t reg, int16_t
 {
 	const struct adt7310_dev_config *cfg = dev->config;
 	uint8_t cmd_buf[3];
-	const struct spi_buf tx_buf = { .buf = cmd_buf, .len = sizeof(cmd_buf) };
-	const struct spi_buf rx_buf = { .buf = cmd_buf, .len = sizeof(cmd_buf) };
-	const struct spi_buf_set tx = { .buffers = &tx_buf, .count = 1 };
-	const struct spi_buf_set rx = { .buffers = &rx_buf, .count = 1 };
+	const struct spi_buf tx_buf = {.buf = cmd_buf, .len = sizeof(cmd_buf)};
+	const struct spi_buf rx_buf = {.buf = cmd_buf, .len = sizeof(cmd_buf)};
+	const struct spi_buf_set tx = {.buffers = &tx_buf, .count = 1};
+	const struct spi_buf_set rx = {.buffers = &rx_buf, .count = 1};
 
 	cmd_buf[0] = ADT7310_WRITE_CMD | (reg << 3);
 	val = sys_cpu_to_be16(val);
@@ -86,11 +86,11 @@ static int adt7310_temp_reg_write(const struct device *dev, uint8_t reg, int16_t
 static int adt7310_reg_read(const struct device *dev, uint8_t reg, uint8_t *val)
 {
 	const struct adt7310_dev_config *cfg = dev->config;
-	uint8_t cmd_buf[2] = { ADT7310_READ_CMD | (reg << 3) };
-	const struct spi_buf tx_buf = { .buf = cmd_buf, .len = sizeof(cmd_buf) };
-	const struct spi_buf rx_buf = { .buf = cmd_buf, .len = sizeof(cmd_buf) };
-	const struct spi_buf_set tx = { .buffers = &tx_buf, .count = 1 };
-	const struct spi_buf_set rx = { .buffers = &rx_buf, .count = 1 };
+	uint8_t cmd_buf[2] = {ADT7310_READ_CMD | (reg << 3)};
+	const struct spi_buf tx_buf = {.buf = cmd_buf, .len = sizeof(cmd_buf)};
+	const struct spi_buf rx_buf = {.buf = cmd_buf, .len = sizeof(cmd_buf)};
+	const struct spi_buf_set tx = {.buffers = &tx_buf, .count = 1};
+	const struct spi_buf_set rx = {.buffers = &rx_buf, .count = 1};
 	int ret;
 
 	ret = spi_transceive_dt(&cfg->bus, &tx, &rx);
@@ -106,11 +106,11 @@ static int adt7310_reg_read(const struct device *dev, uint8_t reg, uint8_t *val)
 static int adt7310_reg_write(const struct device *dev, uint8_t reg, uint8_t val)
 {
 	const struct adt7310_dev_config *cfg = dev->config;
-	uint8_t cmd_buf[2] = { ADT7310_WRITE_CMD | (reg << 3), val };
-	const struct spi_buf tx_buf = { .buf = cmd_buf, .len = sizeof(cmd_buf) };
-	const struct spi_buf rx_buf = { .buf = cmd_buf, .len = sizeof(cmd_buf) };
-	const struct spi_buf_set tx = { .buffers = &tx_buf, .count = 1 };
-	const struct spi_buf_set rx = { .buffers = &rx_buf, .count = 1 };
+	uint8_t cmd_buf[2] = {ADT7310_WRITE_CMD | (reg << 3), val};
+	const struct spi_buf tx_buf = {.buf = cmd_buf, .len = sizeof(cmd_buf)};
+	const struct spi_buf rx_buf = {.buf = cmd_buf, .len = sizeof(cmd_buf)};
+	const struct spi_buf_set tx = {.buffers = &tx_buf, .count = 1};
+	const struct spi_buf_set rx = {.buffers = &rx_buf, .count = 1};
 
 	return spi_transceive_dt(&cfg->bus, &tx, &rx);
 }
@@ -178,7 +178,7 @@ static int adt7310_attr_set(const struct device *dev, enum sensor_channel chan,
 		return -ENOTSUP;
 	}
 
-	if (val->val1 > INT32_MAX/1000000 - 1 || val->val1 < INT32_MIN/1000000 + 1) {
+	if (val->val1 > INT32_MAX / 1000000 - 1 || val->val1 < INT32_MIN / 1000000 + 1) {
 		return -EINVAL;
 	}
 
@@ -245,9 +245,8 @@ static int adt7310_probe(const struct device *dev)
 
 	return adt7310_reg_write(dev, ADT7310_REG_CONFIG,
 				 ADT7310_CONFIG_RESOLUTION_16BIT |
-				 ADT7310_CONFIG_INT_COMPARATOR_MODE);
+					 ADT7310_CONFIG_INT_COMPARATOR_MODE);
 }
-
 
 static int adt7310_init(const struct device *dev)
 {
@@ -279,7 +278,7 @@ static int adt7310_init(const struct device *dev)
 static const struct sensor_driver_api adt7310_driver_api = {
 	.attr_set = adt7310_attr_set,
 	.sample_fetch = adt7310_sample_fetch,
-	.channel_get  = adt7310_channel_get,
+	.channel_get = adt7310_channel_get,
 #if defined(CONFIG_ADT7310_TRIGGER)
 	.trigger_set = adt7310_trigger_set,
 #endif
@@ -294,7 +293,7 @@ static const struct sensor_driver_api adt7310_driver_api = {
 			(SPI_WORD_SET(8) | SPI_TRANSFER_MSB | SPI_MODE_CPOL | SPI_MODE_CPHA), 0),  \
                                                                                                    \
 		IF_ENABLED(CONFIG_ADT7310_TRIGGER,                                                 \
-			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),))};        \
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),))};            \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, adt7310_init, NULL, &adt7310_data_##inst,               \
 				     &adt7310_config_##inst, POST_KERNEL,                          \

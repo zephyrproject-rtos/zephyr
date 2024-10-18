@@ -134,7 +134,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr, socklen_t add
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	uint16_t dst_port = 0;
 	char *protocol;
-	struct modem_cmd cmd[] = { MODEM_CMD("+CAOPEN: ", on_cmd_caopen, 2U, ",") };
+	struct modem_cmd cmd[] = {MODEM_CMD("+CAOPEN: ", on_cmd_caopen, 2U, ",")};
 	char buf[sizeof("AT+CAOPEN: #,#,#####,#xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx#,####")];
 	char ip_str[NET_IPV6_ADDR_LEN];
 	int ret;
@@ -173,8 +173,8 @@ static int offload_connect(void *obj, const struct sockaddr *addr, socklen_t add
 		return -1;
 	}
 
-	ret = snprintk(buf, sizeof(buf), "AT+CAOPEN=%d,%d,\"%s\",\"%s\",%d", 0, sock->id,
-		       protocol, ip_str, dst_port);
+	ret = snprintk(buf, sizeof(buf), "AT+CAOPEN=%d,%d,\"%s\",\"%s\",%d", 0, sock->id, protocol,
+		       ip_str, dst_port);
 	if (ret < 0) {
 		LOG_ERR("Failed to build connect command. ID: %d, FD: %d", sock->id, sock->sock_fd);
 		errno = ENOMEM;
@@ -219,7 +219,7 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
 {
 	int ret;
 	struct modem_socket *sock = (struct modem_socket *)obj;
-	char send_buf[sizeof("AT+CASEND=#,####")] = { 0 };
+	char send_buf[sizeof("AT+CASEND=#,####")] = {0};
 	char ctrlz = 0x1A;
 
 	/* Modem is not attached to the network. */
@@ -380,7 +380,7 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t max_len, int flags,
 	int ret, packet_size;
 	struct socket_read_data sock_data;
 
-	struct modem_cmd data_cmd[] = { MODEM_CMD("+CARECV: ", on_cmd_carecv, 1U, ",") };
+	struct modem_cmd data_cmd[] = {MODEM_CMD("+CARECV: ", on_cmd_carecv, 1U, ",")};
 
 	/* Modem is not attached to the network. */
 	if (get_state() != SIM7080_STATE_NETWORKING) {
@@ -577,8 +577,8 @@ static int offload_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 
 		/* If vtable matches, then it's modem socket. */
 		obj = zvfs_get_fd_obj(fds[i].fd,
-				   (const struct fd_op_vtable *)&offload_socket_fd_op_vtable,
-				   EINVAL);
+				      (const struct fd_op_vtable *)&offload_socket_fd_op_vtable,
+				      EINVAL);
 		if (obj == NULL) {
 			return -1;
 		}
@@ -618,21 +618,22 @@ static int offload_ioctl(void *obj, unsigned int request, va_list args)
 }
 
 static const struct socket_op_vtable offload_socket_fd_op_vtable = {
-	.fd_vtable = {
-		.read	= offload_read,
-		.write	= offload_write,
-		.close	= offload_close,
-		.ioctl	= offload_ioctl,
-	},
-	.bind		= NULL,
-	.connect	= offload_connect,
-	.sendto		= offload_sendto,
-	.recvfrom	= offload_recvfrom,
-	.listen		= NULL,
-	.accept		= NULL,
-	.sendmsg	= offload_sendmsg,
-	.getsockopt	= NULL,
-	.setsockopt	= NULL,
+	.fd_vtable =
+		{
+			.read = offload_read,
+			.write = offload_write,
+			.close = offload_close,
+			.ioctl = offload_ioctl,
+		},
+	.bind = NULL,
+	.connect = offload_connect,
+	.sendto = offload_sendto,
+	.recvfrom = offload_recvfrom,
+	.listen = NULL,
+	.accept = NULL,
+	.sendmsg = offload_sendmsg,
+	.getsockopt = NULL,
+	.setsockopt = NULL,
 };
 
 /*
@@ -685,7 +686,7 @@ exit:
 static int offload_getaddrinfo(const char *node, const char *service,
 			       const struct zsock_addrinfo *hints, struct zsock_addrinfo **res)
 {
-	struct modem_cmd cmd[] = { MODEM_CMD("+CDNSGIP: ", on_cmd_cdnsgip, 2U, ",") };
+	struct modem_cmd cmd[] = {MODEM_CMD("+CDNSGIP: ", on_cmd_cdnsgip, 2U, ",")};
 	char sendbuf[sizeof("AT+CDNSGIP=\"\",##,#####") + 128];
 	uint32_t port = 0;
 	int ret;
@@ -767,18 +768,15 @@ static struct offloaded_if_api api_funcs = {
 
 static bool offload_is_supported(int family, int type, int proto)
 {
-	if (family != AF_INET &&
-	    family != AF_INET6) {
+	if (family != AF_INET && family != AF_INET6) {
 		return false;
 	}
 
-	if (type != SOCK_DGRAM &&
-	    type != SOCK_STREAM) {
+	if (type != SOCK_DGRAM && type != SOCK_STREAM) {
 		return false;
 	}
 
-	if (proto != IPPROTO_TCP &&
-	    proto != IPPROTO_UDP) {
+	if (proto != IPPROTO_TCP && proto != IPPROTO_UDP) {
 		return false;
 	}
 
@@ -1108,7 +1106,7 @@ MODEM_CMD_DEFINE(on_cmd_csq)
  */
 static void modem_rssi_query_work(struct k_work *work)
 {
-	struct modem_cmd cmd[] = { MODEM_CMD("+CSQ: ", on_cmd_csq, 2U, ",") };
+	struct modem_cmd cmd[] = {MODEM_CMD("+CSQ: ", on_cmd_csq, 2U, ",")};
 	static char *send_cmd = "AT+CSQ";
 	int ret;
 
@@ -1154,13 +1152,13 @@ static int modem_pdp_activate(void)
 	int ret = 0;
 #if defined(CONFIG_MODEM_SIMCOM_SIM7080_RAT_GSM)
 	const char *buf = "AT+CREG?";
-	struct modem_cmd cmds[] = { MODEM_CMD("+CREG: ", on_cmd_cereg, 2U, ",") };
+	struct modem_cmd cmds[] = {MODEM_CMD("+CREG: ", on_cmd_cereg, 2U, ",")};
 #else
 	const char *buf = "AT+CEREG?";
-	struct modem_cmd cmds[] = { MODEM_CMD("+CEREG: ", on_cmd_cereg, 2U, ",") };
+	struct modem_cmd cmds[] = {MODEM_CMD("+CEREG: ", on_cmd_cereg, 2U, ",")};
 #endif /* defined(CONFIG_MODEM_SIMCOM_SIM7080_RAT_GSM) */
 
-	struct modem_cmd cgatt_cmd[] = { MODEM_CMD("+CGATT: ", on_cmd_cgatt, 1U, "") };
+	struct modem_cmd cgatt_cmd[] = {MODEM_CMD("+CGATT: ", on_cmd_cgatt, 1U, "")};
 
 	counter = 0;
 	while (counter++ < MDM_MAX_CGATT_WAITS && mdata.mdm_cgatt != 1) {
@@ -1211,7 +1209,7 @@ static int modem_pdp_activate(void)
 
 	/* Set dual stack mode (IPv4/IPv6) */
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0, "AT+CNCFG=0,0",
-				&mdata.sem_response, MDM_CMD_TIMEOUT);
+			     &mdata.sem_response, MDM_CMD_TIMEOUT);
 	if (ret < 0) {
 		LOG_ERR("Could not configure pdp context!");
 		goto error;
@@ -1547,7 +1545,7 @@ MODEM_CMD_DEFINE(on_cmd_cgnsinf)
 int mdm_sim7080_query_gnss(struct sim7080_gnss_data *data)
 {
 	int ret;
-	struct modem_cmd cmds[] = { MODEM_CMD("+CGNSINF: ", on_cmd_cgnsinf, 0U, NULL) };
+	struct modem_cmd cmds[] = {MODEM_CMD("+CGNSINF: ", on_cmd_cgnsinf, 0U, NULL)};
 
 	if (get_state() != SIM7080_STATE_GNSS) {
 		LOG_ERR("GNSS functionality is not enabled!!");
@@ -1642,7 +1640,7 @@ int mdm_sim7080_ftp_get_read(char *dst, size_t *size)
 {
 	int ret;
 	char buffer[sizeof("AT+FTPGET=#,######")];
-	struct modem_cmd cmds[] = { MODEM_CMD("+FTPGET: 2,", on_cmd_ftpget, 1U, "") };
+	struct modem_cmd cmds[] = {MODEM_CMD("+FTPGET: 2,", on_cmd_ftpget, 1U, "")};
 
 	/* Some error occurred. */
 	if (mdata.ftp.state == SIM7080_FTP_CONNECTION_STATE_ERROR ||
@@ -1865,20 +1863,19 @@ static int mdm_decode_pdu(const char *pdu, size_t pdu_len, struct sim7080_sms *t
 	 * GSM_03.38 to Unicode conversion table
 	 */
 	const short enc7_basic[128] = {
-		'@',	0xA3,	'$',	0xA5,	0xE8,	0xE9,	0xF9,	0xEC,	0xF2,	0xE7,
-		'\n',	0xD8,	0xF8,	'\r',	0xC5,	0xF8,	0x0394, '_',	0x03A6, 0x0393,
-		0x039B, 0x03A9, 0x03A0, 0x03A8, 0x03A3, 0x0398, 0x039E, '\x1b', 0xC6,	0xE6,
-		0xDF,	0xC9,	' ',	'!',	'\"',	'#',	0xA4,	'%',	'&',	'\'',
-		'(',	')',	'*',	'+',	',',	'-',	'.',	'/',	'0',	'1',
-		'2',	'3',	'4',	'5',	'6',	'7',	'8',	'9',	':',	';',
-		'<',	'=',	'>',	'?',	0xA1,	'A',	'B',	'C',	'D',	'E',
-		'F',	'G',	'H',	'I',	'J',	'K',	'L',	'M',	'N',	'O',
-		'P',	'Q',	'R',	'S',	'T',	'U',	'V',	'W',	'X',	'Y',
-		'Z',	0xC4,	0xD6,	0xD1,	0xDC,	0xA7,	0xBF,	'a',	'b',	'c',
-		'd',	'e',	'f',	'g',	'h',	'i',	'j',	'k',	'l',	'm',
-		'n',	'o',	'p',	'q',	'r',	's',	't',	'u',	'v',	'w',
-		'x',	'y',	'z',	0xE4,	0xF6,	0xF1,	0xFC,	0xE0
-	};
+		'@',    0xA3,   '$',    0xA5,   0xE8,   0xE9,   0xF9,   0xEC,   0xF2,   0xE7,
+		'\n',   0xD8,   0xF8,   '\r',   0xC5,   0xF8,   0x0394, '_',    0x03A6, 0x0393,
+		0x039B, 0x03A9, 0x03A0, 0x03A8, 0x03A3, 0x0398, 0x039E, '\x1b', 0xC6,   0xE6,
+		0xDF,   0xC9,   ' ',    '!',    '\"',   '#',    0xA4,   '%',    '&',    '\'',
+		'(',    ')',    '*',    '+',    ',',    '-',    '.',    '/',    '0',    '1',
+		'2',    '3',    '4',    '5',    '6',    '7',    '8',    '9',    ':',    ';',
+		'<',    '=',    '>',    '?',    0xA1,   'A',    'B',    'C',    'D',    'E',
+		'F',    'G',    'H',    'I',    'J',    'K',    'L',    'M',    'N',    'O',
+		'P',    'Q',    'R',    'S',    'T',    'U',    'V',    'W',    'X',    'Y',
+		'Z',    0xC4,   0xD6,   0xD1,   0xDC,   0xA7,   0xBF,   'a',    'b',    'c',
+		'd',    'e',    'f',    'g',    'h',    'i',    'j',    'k',    'l',    'm',
+		'n',    'o',    'p',    'q',    'r',    's',    't',    'u',    'v',    'w',
+		'x',    'y',    'z',    0xE4,   0xF6,   0xF1,   0xFC,   0xE0};
 
 	/* two bytes in pdu are on real byte */
 	pdu_len = (pdu_len / 2);
@@ -2155,7 +2152,7 @@ MODEM_CMD_DEFINE(on_cmd_cmgl)
 int mdm_sim7080_read_sms(struct sim7080_sms_buffer *buffer)
 {
 	int ret;
-	struct modem_cmd cmds[] = { MODEM_CMD("+CMGL: ", on_cmd_cmgl, 4U, ",\r") };
+	struct modem_cmd cmds[] = {MODEM_CMD("+CMGL: ", on_cmd_cmgl, 4U, ",\r")};
 
 	mdata.sms_buffer = buffer;
 	mdata.sms_buffer_pos = 0;
@@ -2172,7 +2169,7 @@ int mdm_sim7080_read_sms(struct sim7080_sms_buffer *buffer)
 int mdm_sim7080_delete_sms(uint16_t index)
 {
 	int ret;
-	char buf[sizeof("AT+CMGD=#####")] = { 0 };
+	char buf[sizeof("AT+CMGD=#####")] = {0};
 
 	ret = snprintk(buf, sizeof(buf), "AT+CMGD=%u", index);
 	if (ret < 0) {
@@ -2433,5 +2430,5 @@ NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL, &mdata, NULL,
 				  CONFIG_MODEM_SIMCOM_SIM7080_INIT_PRIORITY, &api_funcs,
 				  MDM_MAX_DATA_LENGTH);
 
-NET_SOCKET_OFFLOAD_REGISTER(simcom_sim7080, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY,
-			    AF_UNSPEC, offload_is_supported, offload_socket);
+NET_SOCKET_OFFLOAD_REGISTER(simcom_sim7080, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY, AF_UNSPEC,
+			    offload_is_supported, offload_socket);

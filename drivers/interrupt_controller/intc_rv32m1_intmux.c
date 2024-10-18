@@ -84,8 +84,7 @@ static uint32_t rv32m1_intmux_get_state(const struct device *dev)
 	return 0;
 }
 
-static int rv32m1_intmux_get_line_state(const struct device *dev,
-					unsigned int irq)
+static int rv32m1_intmux_get_line_state(const struct device *dev, unsigned int irq)
 {
 	INTMUX_Type *regs = DEV_REGS(dev);
 	uint32_t channel = rv32m1_intmux_channel(irq);
@@ -102,8 +101,7 @@ static int rv32m1_intmux_get_line_state(const struct device *dev,
  * IRQ handling.
  */
 
-#define ISR_ENTRY(channel, line) \
-	((channel) * CONFIG_MAX_IRQ_PER_AGGREGATOR + line)
+#define ISR_ENTRY(channel, line) ((channel) * CONFIG_MAX_IRQ_PER_AGGREGATOR + line)
 
 static void rv32m1_intmux_isr(const void *arg)
 {
@@ -173,52 +171,43 @@ static int rv32m1_intmux_init(const struct device *dev)
 
 	/* Connect and enable level 1 (channel) interrupts. */
 #ifdef CONFIG_RV32M1_INTMUX_CHANNEL_0
-	IRQ_CONNECT(INTMUX_CH0_IRQ, 0, rv32m1_intmux_isr,
-		    UINT_TO_POINTER(0), 0);
+	IRQ_CONNECT(INTMUX_CH0_IRQ, 0, rv32m1_intmux_isr, UINT_TO_POINTER(0), 0);
 	irq_enable(INTMUX_CH0_IRQ);
 #endif
 #ifdef CONFIG_RV32M1_INTMUX_CHANNEL_1
-	IRQ_CONNECT(INTMUX_CH1_IRQ, 0, rv32m1_intmux_isr,
-		    UINT_TO_POINTER(1), 0);
+	IRQ_CONNECT(INTMUX_CH1_IRQ, 0, rv32m1_intmux_isr, UINT_TO_POINTER(1), 0);
 	irq_enable(INTMUX_CH1_IRQ);
 #endif
 #ifdef CONFIG_RV32M1_INTMUX_CHANNEL_2
-	IRQ_CONNECT(INTMUX_CH2_IRQ, 0, rv32m1_intmux_isr,
-		    UINT_TO_POINTER(2), 0);
+	IRQ_CONNECT(INTMUX_CH2_IRQ, 0, rv32m1_intmux_isr, UINT_TO_POINTER(2), 0);
 	irq_enable(INTMUX_CH2_IRQ);
 #endif
 #ifdef CONFIG_RV32M1_INTMUX_CHANNEL_3
-	IRQ_CONNECT(INTMUX_CH3_IRQ, 0, rv32m1_intmux_isr,
-		    UINT_TO_POINTER(3), 0);
+	IRQ_CONNECT(INTMUX_CH3_IRQ, 0, rv32m1_intmux_isr, UINT_TO_POINTER(3), 0);
 	irq_enable(INTMUX_CH3_IRQ);
 #endif
 #ifdef CONFIG_RV32M1_INTMUX_CHANNEL_4
-	IRQ_CONNECT(INTMUX_CH4_IRQ, 0, rv32m1_intmux_isr,
-		    UINT_TO_POINTER(4), 0);
+	IRQ_CONNECT(INTMUX_CH4_IRQ, 0, rv32m1_intmux_isr, UINT_TO_POINTER(4), 0);
 	irq_enable(INTMUX_CH4_IRQ);
 #endif
 #ifdef CONFIG_RV32M1_INTMUX_CHANNEL_5
-	IRQ_CONNECT(INTMUX_CH5_IRQ, 0, rv32m1_intmux_isr,
-		    UINT_TO_POINTER(5), 0);
+	IRQ_CONNECT(INTMUX_CH5_IRQ, 0, rv32m1_intmux_isr, UINT_TO_POINTER(5), 0);
 	irq_enable(INTMUX_CH5_IRQ);
 #endif
 #ifdef CONFIG_RV32M1_INTMUX_CHANNEL_6
-	IRQ_CONNECT(INTMUX_CH6_IRQ, 0, rv32m1_intmux_isr,
-		    UINT_TO_POINTER(6), 0);
+	IRQ_CONNECT(INTMUX_CH6_IRQ, 0, rv32m1_intmux_isr, UINT_TO_POINTER(6), 0);
 	irq_enable(INTMUX_CH6_IRQ);
 #endif
 #ifdef CONFIG_RV32M1_INTMUX_CHANNEL_7
-	IRQ_CONNECT(INTMUX_CH7_IRQ, 0, rv32m1_intmux_isr,
-		    UINT_TO_POINTER(7), 0);
+	IRQ_CONNECT(INTMUX_CH7_IRQ, 0, rv32m1_intmux_isr, UINT_TO_POINTER(7), 0);
 	irq_enable(INTMUX_CH7_IRQ);
 #endif
 
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, &rv32m1_intmux_init, NULL, NULL,
-		    &rv32m1_intmux_cfg, PRE_KERNEL_1,
-		    CONFIG_RV32M1_INTMUX_INIT_PRIORITY, &rv32m1_intmux_apis);
+DEVICE_DT_INST_DEFINE(0, &rv32m1_intmux_init, NULL, NULL, &rv32m1_intmux_cfg, PRE_KERNEL_1,
+		      CONFIG_RV32M1_INTMUX_INIT_PRIORITY, &rv32m1_intmux_apis);
 
 #define INTC_CHILD_IRQ_ENTRY_DEF(node_id)                                                          \
 	IRQ_PARENT_ENTRY_DEFINE(CONCAT(DT_DRV_COMPAT, _child_, DT_NODE_CHILD_IDX(node_id)), NULL,  \

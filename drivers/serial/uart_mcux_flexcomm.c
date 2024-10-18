@@ -102,8 +102,7 @@ static int mcux_flexcomm_poll_in(const struct device *dev, unsigned char *c)
 	return ret;
 }
 
-static void mcux_flexcomm_poll_out(const struct device *dev,
-					     unsigned char c)
+static void mcux_flexcomm_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
 
@@ -133,24 +132,19 @@ static int mcux_flexcomm_err_check(const struct device *dev)
 	}
 
 	USART_ClearStatusFlags(config->base,
-			       kUSART_RxError |
-			       kUSART_ParityErrorFlag |
-			       kUSART_FramingErrorFlag);
+			       kUSART_RxError | kUSART_ParityErrorFlag | kUSART_FramingErrorFlag);
 
 	return err;
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static int mcux_flexcomm_fifo_fill(const struct device *dev,
-				   const uint8_t *tx_data,
-				   int len)
+static int mcux_flexcomm_fifo_fill(const struct device *dev, const uint8_t *tx_data, int len)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
 	uint8_t num_tx = 0U;
 
 	while ((len - num_tx > 0) &&
-	       (USART_GetStatusFlags(config->base)
-		& kUSART_TxFifoNotFullFlag)) {
+	       (USART_GetStatusFlags(config->base) & kUSART_TxFifoNotFullFlag)) {
 
 		USART_WriteByte(config->base, tx_data[num_tx++]);
 	}
@@ -158,15 +152,13 @@ static int mcux_flexcomm_fifo_fill(const struct device *dev,
 	return num_tx;
 }
 
-static int mcux_flexcomm_fifo_read(const struct device *dev, uint8_t *rx_data,
-				   const int len)
+static int mcux_flexcomm_fifo_read(const struct device *dev, uint8_t *rx_data, const int len)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
 	uint8_t num_rx = 0U;
 
 	while ((len - num_rx > 0) &&
-	       (USART_GetStatusFlags(config->base)
-		& kUSART_RxFifoNotEmptyFlag)) {
+	       (USART_GetStatusFlags(config->base) & kUSART_RxFifoNotEmptyFlag)) {
 
 		rx_data[num_rx++] = USART_ReadByte(config->base);
 	}
@@ -203,8 +195,8 @@ static int mcux_flexcomm_irq_tx_ready(const struct device *dev)
 	uint32_t mask = kUSART_TxLevelInterruptEnable;
 	uint32_t flags = USART_GetStatusFlags(config->base);
 
-	return (USART_GetEnabledInterrupts(config->base) & mask)
-		&& (flags & kUSART_TxFifoEmptyFlag);
+	return (USART_GetEnabledInterrupts(config->base) & mask) &&
+	       (flags & kUSART_TxFifoEmptyFlag);
 }
 
 static void mcux_flexcomm_irq_rx_enable(const struct device *dev)
@@ -236,15 +228,13 @@ static int mcux_flexcomm_irq_rx_pending(const struct device *dev)
 	const struct mcux_flexcomm_config *config = dev->config;
 	uint32_t mask = kUSART_RxLevelInterruptEnable;
 
-	return (USART_GetEnabledInterrupts(config->base) & mask)
-		&& mcux_flexcomm_irq_rx_full(dev);
+	return (USART_GetEnabledInterrupts(config->base) & mask) && mcux_flexcomm_irq_rx_full(dev);
 }
 
 static void mcux_flexcomm_irq_err_enable(const struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
-	uint32_t mask = kUSART_NoiseErrorInterruptEnable |
-			kUSART_FramingErrorInterruptEnable |
+	uint32_t mask = kUSART_NoiseErrorInterruptEnable | kUSART_FramingErrorInterruptEnable |
 			kUSART_ParityErrorInterruptEnable;
 
 	USART_EnableInterrupts(config->base, mask);
@@ -253,8 +243,7 @@ static void mcux_flexcomm_irq_err_enable(const struct device *dev)
 static void mcux_flexcomm_irq_err_disable(const struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
-	uint32_t mask = kUSART_NoiseErrorInterruptEnable |
-			kUSART_FramingErrorInterruptEnable |
+	uint32_t mask = kUSART_NoiseErrorInterruptEnable | kUSART_FramingErrorInterruptEnable |
 			kUSART_ParityErrorInterruptEnable;
 
 	USART_DisableInterrupts(config->base, mask);
@@ -262,8 +251,7 @@ static void mcux_flexcomm_irq_err_disable(const struct device *dev)
 
 static int mcux_flexcomm_irq_is_pending(const struct device *dev)
 {
-	return (mcux_flexcomm_irq_tx_ready(dev)
-		|| mcux_flexcomm_irq_rx_pending(dev));
+	return (mcux_flexcomm_irq_tx_ready(dev) || mcux_flexcomm_irq_rx_pending(dev));
 }
 
 static int mcux_flexcomm_irq_update(const struct device *dev)
@@ -272,8 +260,7 @@ static int mcux_flexcomm_irq_update(const struct device *dev)
 }
 
 static void mcux_flexcomm_irq_callback_set(const struct device *dev,
-					   uart_irq_callback_user_data_t cb,
-					   void *cb_data)
+					   uart_irq_callback_user_data_t cb, void *cb_data)
 {
 	struct mcux_flexcomm_data *data = dev->data;
 
@@ -329,8 +316,7 @@ static int mcux_flexcomm_uart_configure(const struct device *dev, const struct u
 	usart_config.stopBitCount = stop_bits;
 
 	/* Set data bits */
-	if (cfg->data_bits == UART_CFG_DATA_BITS_5 ||
-	    cfg->data_bits == UART_CFG_DATA_BITS_6) {
+	if (cfg->data_bits == UART_CFG_DATA_BITS_5 || cfg->data_bits == UART_CFG_DATA_BITS_6) {
 		return -ENOTSUP;
 	} else if (cfg->data_bits == UART_CFG_DATA_BITS_7) {
 		data_bits = kUSART_7BitsPerChar;
@@ -356,8 +342,7 @@ static int mcux_flexcomm_uart_configure(const struct device *dev, const struct u
 	USART_Deinit(config->base);
 
 	/* Get UART clock frequency */
-	clock_control_get_rate(config->clock_dev,
-		config->clock_subsys, &clock_freq);
+	clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_freq);
 
 	/* Handle 9 bit mode */
 	USART_Enable9bitMode(config->base, nine_bit_mode);
@@ -375,8 +360,7 @@ static int mcux_flexcomm_uart_configure(const struct device *dev, const struct u
 	return 0;
 }
 
-static int mcux_flexcomm_uart_config_get(const struct device *dev,
-					struct uart_config *cfg)
+static int mcux_flexcomm_uart_config_get(const struct device *dev, struct uart_config *cfg)
 {
 	struct mcux_flexcomm_data *data = dev->data;
 	*cfg = data->uart_config;
@@ -386,8 +370,7 @@ static int mcux_flexcomm_uart_config_get(const struct device *dev,
 
 #ifdef CONFIG_UART_ASYNC_API
 /* This function is called by this driver to notify user callback of events */
-static void async_user_callback(const struct device *dev,
-					      struct uart_event *evt)
+static void async_user_callback(const struct device *dev, struct uart_event *evt)
 {
 	const struct mcux_flexcomm_data *data = dev->data;
 
@@ -396,15 +379,13 @@ static void async_user_callback(const struct device *dev,
 	}
 }
 
-static int mcux_flexcomm_uart_callback_set(const struct device *dev,
-					   uart_callback_t callback,
+static int mcux_flexcomm_uart_callback_set(const struct device *dev, uart_callback_t callback,
 					   void *user_data)
 {
 	struct mcux_flexcomm_data *data = dev->data;
 
 	data->async_callback = callback;
 	data->async_cb_data = user_data;
-
 
 #if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
 	data->irq_callback = NULL;
@@ -414,8 +395,8 @@ static int mcux_flexcomm_uart_callback_set(const struct device *dev,
 	return 0;
 }
 
-static int mcux_flexcomm_uart_tx(const struct device *dev, const uint8_t *buf,
-				 size_t len, int32_t timeout)
+static int mcux_flexcomm_uart_tx(const struct device *dev, const uint8_t *buf, size_t len,
+				 int32_t timeout)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
 	struct mcux_flexcomm_data *data = dev->data;
@@ -450,12 +431,12 @@ static int mcux_flexcomm_uart_tx(const struct device *dev, const uint8_t *buf,
 	data->tx_data.xfer_buf = buf;
 	data->tx_data.xfer_len = len;
 	data->tx_data.active_block.source_address = (uint32_t)buf;
-	data->tx_data.active_block.dest_address = (uint32_t) &config->base->FIFOWR;
+	data->tx_data.active_block.dest_address = (uint32_t)&config->base->FIFOWR;
 	data->tx_data.active_block.block_size = len;
 	data->tx_data.active_block.next_block = NULL;
 
 	ret = dma_config(config->tx_dma.dev, config->tx_dma.channel,
-				(struct dma_config *) &config->tx_dma.cfg);
+			 (struct dma_config *)&config->tx_dma.cfg);
 	if (ret) {
 		irq_unlock(key);
 		return ret;
@@ -521,10 +502,7 @@ static int mcux_flexcomm_uart_tx_abort(const struct device *dev)
 	size_t sent_len = data->tx_data.xfer_len - status.pending_length;
 	const uint8_t *aborted_buf = data->tx_data.xfer_buf;
 	struct uart_event tx_abort_event = {
-		.type = UART_TX_ABORTED,
-		.data.tx.buf = aborted_buf,
-		.data.tx.len = sent_len
-	};
+		.type = UART_TX_ABORTED, .data.tx.buf = aborted_buf, .data.tx.len = sent_len};
 
 	/* Driver data needs reset since there is no longer an ongoing
 	 * transfer, this should before the user callback, not after,
@@ -538,8 +516,8 @@ static int mcux_flexcomm_uart_tx_abort(const struct device *dev)
 	return ret;
 }
 
-static int mcux_flexcomm_uart_rx_enable(const struct device *dev, uint8_t *buf,
-					const size_t len, const int32_t timeout)
+static int mcux_flexcomm_uart_rx_enable(const struct device *dev, uint8_t *buf, const size_t len,
+					const int32_t timeout)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
 	struct mcux_flexcomm_data *data = dev->data;
@@ -570,11 +548,11 @@ static int mcux_flexcomm_uart_rx_enable(const struct device *dev, uint8_t *buf,
 	data->rx_data.xfer_buf = buf;
 	data->rx_data.xfer_len = len;
 	data->rx_data.active_block.dest_address = (uint32_t)data->rx_data.xfer_buf;
-	data->rx_data.active_block.source_address = (uint32_t) &config->base->FIFORD;
+	data->rx_data.active_block.source_address = (uint32_t)&config->base->FIFORD;
 	data->rx_data.active_block.block_size = data->rx_data.xfer_len;
 
 	ret = dma_config(config->rx_dma.dev, config->rx_dma.channel,
-				(struct dma_config *) &config->rx_dma.cfg);
+			 (struct dma_config *)&config->rx_dma.cfg);
 	if (ret) {
 		return ret;
 	}
@@ -637,7 +615,6 @@ static void flexcomm_uart_rx_update(const struct device *dev)
 	/* The data is no longer new, update buffer tracking variables */
 	data->rx_data.offset += data->rx_data.count;
 	data->rx_data.count = 0;
-
 }
 
 static int mcux_flexcomm_uart_rx_disable(const struct device *dev)
@@ -658,7 +635,6 @@ static int mcux_flexcomm_uart_rx_disable(const struct device *dev)
 
 	/* In case a user called this function, don't disable twice */
 	(void)k_work_cancel_delayable(&data->rx_data.timeout_work);
-
 
 	/* Disable RX requests to pause DMA first and measure what happened,
 	 * Can't stop yet because DMA pending length is needed to
@@ -685,10 +661,9 @@ static int mcux_flexcomm_uart_rx_disable(const struct device *dev)
 
 	/* Generate buffer release event for next buffer */
 	if (data->rx_data.next_xfer_buf) {
-		struct uart_event next_buffer_release_event = {
-			.type = UART_RX_BUF_RELEASED,
-			.data.rx_buf.buf = data->rx_data.next_xfer_buf
-		};
+		struct uart_event next_buffer_release_event = {.type = UART_RX_BUF_RELEASED,
+							       .data.rx_buf.buf =
+								       data->rx_data.next_xfer_buf};
 
 		async_user_callback(dev, &next_buffer_release_event);
 	}
@@ -702,9 +677,7 @@ static int mcux_flexcomm_uart_rx_disable(const struct device *dev)
 	data->rx_data.count = 0;
 
 	/* Final event is the RX disable event */
-	struct uart_event rx_disabled_event = {
-		.type = UART_RX_DISABLED
-	};
+	struct uart_event rx_disabled_event = {.type = UART_RX_DISABLED};
 
 	async_user_callback(dev, &rx_disabled_event);
 
@@ -735,7 +708,7 @@ static int mcux_flexcomm_uart_rx_buf_rsp(const struct device *dev, uint8_t *buf,
 
 /* This callback is from the TX DMA and consumed by this driver */
 static void mcux_flexcomm_uart_dma_tx_callback(const struct device *dma_device, void *cb_data,
-				uint32_t channel, int status)
+					       uint32_t channel, int status)
 {
 	/* DMA callback data was configured during driver init as UART device ptr */
 	struct device *dev = (struct device *)cb_data;
@@ -756,7 +729,7 @@ static void mcux_flexcomm_uart_dma_tx_callback(const struct device *dma_device, 
 
 /* This callback is from the RX DMA and consumed by this driver */
 static void mcux_flexcomm_uart_dma_rx_callback(const struct device *dma_device, void *cb_data,
-				uint32_t channel, int status)
+					       uint32_t channel, int status)
 {
 	/* DMA callback data was configured during driver init as UART device ptr */
 	struct device *dev = (struct device *)cb_data;
@@ -787,11 +760,11 @@ static void mcux_flexcomm_uart_dma_rx_callback(const struct device *dma_device, 
 
 		/* Reload DMA channel with new buffer */
 		data->rx_data.active_block.block_size = data->rx_data.xfer_len;
-		data->rx_data.active_block.dest_address = (uint32_t) data->rx_data.xfer_buf;
+		data->rx_data.active_block.dest_address = (uint32_t)data->rx_data.xfer_buf;
 		dma_reload(config->rx_dma.dev, config->rx_dma.channel,
-				data->rx_data.active_block.source_address,
-				data->rx_data.active_block.dest_address,
-				data->rx_data.active_block.block_size);
+			   data->rx_data.active_block.source_address,
+			   data->rx_data.active_block.dest_address,
+			   data->rx_data.active_block.block_size);
 
 		/* Request next buffer */
 		struct uart_event rx_buf_request = {
@@ -834,7 +807,6 @@ static uint32_t fc_uart_calc_inmux_connection(uint8_t channel, DMA_Type *base)
 		chmux_sel_id = DMA1_CHMUX_SEL0_ID;
 	}
 
-
 	if (channel >= 16 && !(channel >= 24 && channel <= 27)) {
 		chmux_avl = 1 << CHMUX_AVL_SHIFT;
 	} else {
@@ -844,15 +816,12 @@ static uint32_t fc_uart_calc_inmux_connection(uint8_t channel, DMA_Type *base)
 	/* 1 for flexcomm */
 	chmux_val = 1 << CHMUX_VAL_SHIFT;
 
-
 	if (channel <= 15 || (channel >= 24 && channel <= 27)) {
 		chmux_sel = 0;
 	} else if (channel >= 16 && channel <= 23) {
-		chmux_sel = (chmux_sel_id + 4 * (channel - 16))
-				<< CHMUX_OFF_SHIFT;
+		chmux_sel = (chmux_sel_id + 4 * (channel - 16)) << CHMUX_OFF_SHIFT;
 	} else {
-		chmux_sel = (chmux_sel_id + 4 * (channel - 20))
-				<< CHMUX_OFF_SHIFT;
+		chmux_sel = (chmux_sel_id + 4 * (channel - 20)) << CHMUX_OFF_SHIFT;
 	}
 
 #endif /* RT5xx */
@@ -865,7 +834,6 @@ static uint32_t fc_uart_calc_inmux_connection(uint8_t channel, DMA_Type *base)
 		req_en_id = DMA1_REQ_ENA0_ID;
 	}
 
-
 	uint32_t en_val;
 
 	if (channel <= 31) {
@@ -874,26 +842,22 @@ static uint32_t fc_uart_calc_inmux_connection(uint8_t channel, DMA_Type *base)
 		en_val = (channel - 32) + ((req_en_id + 4) << ENA_SHIFT);
 	}
 
-
 	uint32_t ret = en_val + chmux_avl + chmux_val + chmux_sel;
 
 	return ret;
 }
 #endif /* RT 3-digit */
 
-
 static int flexcomm_uart_async_init(const struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
 	struct mcux_flexcomm_data *data = dev->data;
 
-	if (config->rx_dma.dev == NULL ||
-		config->tx_dma.dev == NULL) {
+	if (config->rx_dma.dev == NULL || config->tx_dma.dev == NULL) {
 		return -ENODEV;
 	}
 
-	if (!device_is_ready(config->rx_dma.dev) ||
-		!device_is_ready(config->tx_dma.dev)) {
+	if (!device_is_ready(config->rx_dma.dev) || !device_is_ready(config->tx_dma.dev)) {
 		return -ENODEV;
 	}
 
@@ -907,20 +871,18 @@ static int flexcomm_uart_async_init(const struct device *dev)
 	 * the UART peripheral to a hardware designated DMA channel
 	 */
 	INPUTMUX_Init(INPUTMUX);
-	INPUTMUX_EnableSignal(INPUTMUX,
-		fc_uart_calc_inmux_connection(config->rx_dma.channel,
-					config->rx_dma.base), true);
-	INPUTMUX_EnableSignal(INPUTMUX,
-		fc_uart_calc_inmux_connection(config->tx_dma.channel,
-					config->tx_dma.base), true);
+	INPUTMUX_EnableSignal(
+		INPUTMUX,
+		fc_uart_calc_inmux_connection(config->rx_dma.channel, config->rx_dma.base), true);
+	INPUTMUX_EnableSignal(
+		INPUTMUX,
+		fc_uart_calc_inmux_connection(config->tx_dma.channel, config->tx_dma.base), true);
 	INPUTMUX_Deinit(INPUTMUX);
 #endif /* RT5xx and RT6xx */
 
 	/* Init work objects for RX and TX timeouts */
-	k_work_init_delayable(&data->tx_data.timeout_work,
-			config->tx_timeout_func);
-	k_work_init_delayable(&data->rx_data.timeout_work,
-			config->rx_timeout_func);
+	k_work_init_delayable(&data->tx_data.timeout_work, config->tx_timeout_func);
+	k_work_init_delayable(&data->rx_data.timeout_work, config->rx_timeout_func);
 
 	return 0;
 }
@@ -963,7 +925,7 @@ static void mcux_flexcomm_isr(const struct device *dev)
 				flexcomm_uart_rx_update(dev);
 			} else if (data->rx_data.timeout != SYS_FOREVER_US) {
 				k_work_reschedule(&data->rx_data.timeout_work,
-						K_USEC(data->rx_data.timeout));
+						  K_USEC(data->rx_data.timeout));
 			}
 
 			/* Write 1 to clear start bit status bit */
@@ -994,12 +956,10 @@ static void mcux_flexcomm_isr(const struct device *dev)
 
 			async_user_callback(dev, &tx_done_event);
 		}
-
 	}
 #endif /* CONFIG_UART_ASYNC_API */
 }
 #endif /* CONFIG_UART_MCUX_FLEXCOMM_ISR_SUPPORT */
-
 
 static int mcux_flexcomm_init(const struct device *dev)
 {
@@ -1023,8 +983,7 @@ static int mcux_flexcomm_init(const struct device *dev)
 	}
 
 	/* Get the clock frequency */
-	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
-				   &clock_freq)) {
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_freq)) {
 		return -EINVAL;
 	}
 
@@ -1045,7 +1004,7 @@ static int mcux_flexcomm_init(const struct device *dev)
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	cfg->baudrate = config->baud_rate;
 	cfg->parity = config->parity;
-	 /* From USART_GetDefaultConfig */
+	/* From USART_GetDefaultConfig */
 	cfg->stop_bits = UART_CFG_STOP_BITS_1;
 	cfg->data_bits = UART_CFG_DATA_BITS_8;
 	cfg->flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
@@ -1101,18 +1060,16 @@ static const struct uart_driver_api mcux_flexcomm_driver_api = {
 #endif
 };
 
-
 #ifdef CONFIG_UART_MCUX_FLEXCOMM_ISR_SUPPORT
-#define UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC(n)					\
-	static void mcux_flexcomm_irq_config_func_##n(const struct device *dev)	\
-	{									\
-		IRQ_CONNECT(DT_INST_IRQN(n),					\
-			    DT_INST_IRQ(n, priority),				\
-			    mcux_flexcomm_isr, DEVICE_DT_INST_GET(n), 0);	\
-										\
-		irq_enable(DT_INST_IRQN(n));					\
+#define UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC(n)                                                         \
+	static void mcux_flexcomm_irq_config_func_##n(const struct device *dev)                    \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_flexcomm_isr,          \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+                                                                                                   \
+		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
-#define UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC_INIT(n)					\
+#define UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC_INIT(n)                                                    \
 	.irq_config_func = mcux_flexcomm_irq_config_func_##n,
 #else
 #define UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC(n)
@@ -1120,99 +1077,89 @@ static const struct uart_driver_api mcux_flexcomm_driver_api = {
 #endif /* CONFIG_UART_MCUX_FLEXCOMM_ISR_SUPPORT */
 
 #ifdef CONFIG_UART_ASYNC_API
-#define UART_MCUX_FLEXCOMM_TX_TIMEOUT_FUNC(n)					\
-	static void mcux_flexcomm_uart_##n##_tx_timeout(struct k_work *work)	\
-	{									\
-		mcux_flexcomm_uart_tx_abort(DEVICE_DT_INST_GET(n));		\
+#define UART_MCUX_FLEXCOMM_TX_TIMEOUT_FUNC(n)                                                      \
+	static void mcux_flexcomm_uart_##n##_tx_timeout(struct k_work *work)                       \
+	{                                                                                          \
+		mcux_flexcomm_uart_tx_abort(DEVICE_DT_INST_GET(n));                                \
 	}
-#define UART_MCUX_FLEXCOMM_RX_TIMEOUT_FUNC(n)					\
-	static void mcux_flexcomm_uart_##n##_rx_timeout(struct k_work *work)	\
-	{									\
-		flexcomm_uart_rx_update(DEVICE_DT_INST_GET(n));			\
+#define UART_MCUX_FLEXCOMM_RX_TIMEOUT_FUNC(n)                                                      \
+	static void mcux_flexcomm_uart_##n##_rx_timeout(struct k_work *work)                       \
+	{                                                                                          \
+		flexcomm_uart_rx_update(DEVICE_DT_INST_GET(n));                                    \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_TX_TIMEOUT_FUNC);
 DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_RX_TIMEOUT_FUNC);
 
-#define UART_MCUX_FLEXCOMM_ASYNC_CFG(n)						\
-	.tx_dma = {								\
-		.dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, tx)),		\
-		.channel = DT_INST_DMAS_CELL_BY_NAME(n, tx, channel),		\
-		.cfg = {							\
-			.source_burst_length = 1,				\
-			.dest_burst_length = 1,					\
-			.source_data_size = 1,					\
-			.dest_data_size = 1,					\
-			.complete_callback_en = 1,				\
-			.error_callback_dis = 1,				\
-			.block_count = 1,					\
-			.head_block =						\
-				&mcux_flexcomm_##n##_data.tx_data.active_block,	\
-			.channel_direction = MEMORY_TO_PERIPHERAL,		\
-			.dma_callback = mcux_flexcomm_uart_dma_tx_callback,	\
-			.user_data = (void *)DEVICE_DT_INST_GET(n),		\
-		},								\
-		.base = (DMA_Type *)						\
-				DT_REG_ADDR(DT_INST_DMAS_CTLR_BY_NAME(n, tx)),	\
-	},									\
-	.rx_dma = {								\
-		.dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, rx)),		\
-		.channel = DT_INST_DMAS_CELL_BY_NAME(n, rx, channel),		\
-		.cfg = {							\
-			.source_burst_length = 1,				\
-			.dest_burst_length = 1,					\
-			.source_data_size = 1,					\
-			.dest_data_size = 1,					\
-			.complete_callback_en = 1,				\
-			.error_callback_dis = 1,				\
-			.block_count = 1,					\
-			.head_block =						\
-				&mcux_flexcomm_##n##_data.rx_data.active_block,	\
-			.channel_direction = PERIPHERAL_TO_MEMORY,		\
-			.dma_callback = mcux_flexcomm_uart_dma_rx_callback,	\
-			.user_data = (void *)DEVICE_DT_INST_GET(n)		\
-		},								\
-		.base = (DMA_Type *)						\
-				DT_REG_ADDR(DT_INST_DMAS_CTLR_BY_NAME(n, rx)),	\
-	},									\
-	.rx_timeout_func = mcux_flexcomm_uart_##n##_rx_timeout,			\
+#define UART_MCUX_FLEXCOMM_ASYNC_CFG(n)                                                            \
+	.tx_dma =                                                                                  \
+		{                                                                                  \
+			.dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, tx)),                    \
+			.channel = DT_INST_DMAS_CELL_BY_NAME(n, tx, channel),                      \
+			.cfg =                                                                     \
+				{                                                                  \
+					.source_burst_length = 1,                                  \
+					.dest_burst_length = 1,                                    \
+					.source_data_size = 1,                                     \
+					.dest_data_size = 1,                                       \
+					.complete_callback_en = 1,                                 \
+					.error_callback_dis = 1,                                   \
+					.block_count = 1,                                          \
+					.head_block =                                              \
+						&mcux_flexcomm_##n##_data.tx_data.active_block,    \
+					.channel_direction = MEMORY_TO_PERIPHERAL,                 \
+					.dma_callback = mcux_flexcomm_uart_dma_tx_callback,        \
+					.user_data = (void *)DEVICE_DT_INST_GET(n),                \
+				},                                                                 \
+			.base = (DMA_Type *)DT_REG_ADDR(DT_INST_DMAS_CTLR_BY_NAME(n, tx)),         \
+	},                                                                                         \
+	.rx_dma =                                                                                  \
+		{                                                                                  \
+			.dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, rx)),                    \
+			.channel = DT_INST_DMAS_CELL_BY_NAME(n, rx, channel),                      \
+			.cfg = {.source_burst_length = 1,                                          \
+				.dest_burst_length = 1,                                            \
+				.source_data_size = 1,                                             \
+				.dest_data_size = 1,                                               \
+				.complete_callback_en = 1,                                         \
+				.error_callback_dis = 1,                                           \
+				.block_count = 1,                                                  \
+				.head_block = &mcux_flexcomm_##n##_data.rx_data.active_block,      \
+				.channel_direction = PERIPHERAL_TO_MEMORY,                         \
+				.dma_callback = mcux_flexcomm_uart_dma_rx_callback,                \
+				.user_data = (void *)DEVICE_DT_INST_GET(n)},                       \
+			.base = (DMA_Type *)DT_REG_ADDR(DT_INST_DMAS_CTLR_BY_NAME(n, rx)),         \
+	},                                                                                         \
+	.rx_timeout_func = mcux_flexcomm_uart_##n##_rx_timeout,                                    \
 	.tx_timeout_func = mcux_flexcomm_uart_##n##_tx_timeout,
 #else
 #define UART_MCUX_FLEXCOMM_ASYNC_CFG(n)
 #endif /* CONFIG_UART_ASYNC_API */
 
-#define UART_MCUX_FLEXCOMM_INIT_CFG(n)						\
-static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config = {		\
-	.base = (USART_Type *)DT_INST_REG_ADDR(n),				\
-	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),			\
-	.clock_subsys =								\
-	(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),			\
-	.baud_rate = DT_INST_PROP(n, current_speed),				\
-	.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),		\
-	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
-	UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC_INIT(n)					\
-	UART_MCUX_FLEXCOMM_ASYNC_CFG(n)						\
-};
+#define UART_MCUX_FLEXCOMM_INIT_CFG(n)                                                             \
+	static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config = {                    \
+		.base = (USART_Type *)DT_INST_REG_ADDR(n),                                         \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
+		.baud_rate = DT_INST_PROP(n, current_speed),                                       \
+		.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),                    \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+		UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC_INIT(n) UART_MCUX_FLEXCOMM_ASYNC_CFG(n)};
 
-#define UART_MCUX_FLEXCOMM_INIT(n)						\
-										\
-	PINCTRL_DT_INST_DEFINE(n);						\
-										\
-	static struct mcux_flexcomm_data mcux_flexcomm_##n##_data;		\
-										\
-	static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config;	\
-										\
-	DEVICE_DT_INST_DEFINE(n,						\
-			    mcux_flexcomm_init,					\
-			    NULL,						\
-			    &mcux_flexcomm_##n##_data,				\
-			    &mcux_flexcomm_##n##_config,			\
-			    PRE_KERNEL_1,					\
-			    CONFIG_SERIAL_INIT_PRIORITY,			\
-			    &mcux_flexcomm_driver_api);				\
-										\
-	UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC(n)					\
-										\
+#define UART_MCUX_FLEXCOMM_INIT(n)                                                                 \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+                                                                                                   \
+	static struct mcux_flexcomm_data mcux_flexcomm_##n##_data;                                 \
+                                                                                                   \
+	static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config;                       \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, mcux_flexcomm_init, NULL, &mcux_flexcomm_##n##_data,              \
+			      &mcux_flexcomm_##n##_config, PRE_KERNEL_1,                           \
+			      CONFIG_SERIAL_INIT_PRIORITY, &mcux_flexcomm_driver_api);             \
+                                                                                                   \
+	UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC(n)                                                         \
+                                                                                                   \
 	UART_MCUX_FLEXCOMM_INIT_CFG(n)
 
 DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_INIT)

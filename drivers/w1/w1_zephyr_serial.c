@@ -27,26 +27,26 @@
 
 LOG_MODULE_REGISTER(w1_serial, CONFIG_W1_LOG_LEVEL);
 
-#define W1_SERIAL_READ_REQ_BYTE   0xFF
-#define W1_SERIAL_BIT_1           0xFF
-#define W1_SERIAL_BIT_0           0x00
+#define W1_SERIAL_READ_REQ_BYTE 0xFF
+#define W1_SERIAL_BIT_1         0xFF
+#define W1_SERIAL_BIT_0         0x00
 
 /* Standard speed signal parameters:
  * RST: t_RSTL=520us; t_slot=1041us
  * DATA: t_low1=8.68us; t_low0=78.1us; t_slot=86.8us
  */
-#define W1_SERIAL_STD_RESET_BYTE   0xF0
-#define W1_SERIAL_STD_RESET_BAUD   9600u
-#define W1_SERIAL_STD_DATA_BAUD    115200u
+#define W1_SERIAL_STD_RESET_BYTE 0xF0
+#define W1_SERIAL_STD_RESET_BAUD 9600u
+#define W1_SERIAL_STD_DATA_BAUD  115200u
 
 /*
  * Overdrive speed signal parameters:
  * RST: t_RSTL=52.1us; t_slot=86.8us
  * DATA: t_low1=1.0us; t_low0=9.0us; t_slot=10.0us
  */
-#define W1_SERIAL_OD_RESET_BYTE    0xE0
-#define W1_SERIAL_OD_RESET_BAUD    115200u
-#define W1_SERIAL_OD_DATA_BAUD     1000000u
+#define W1_SERIAL_OD_RESET_BYTE 0xE0
+#define W1_SERIAL_OD_RESET_BAUD 115200u
+#define W1_SERIAL_OD_DATA_BAUD  1000000u
 
 struct w1_serial_config {
 	/** w1 master config, common to all drivers */
@@ -66,8 +66,8 @@ struct w1_serial_data {
  * Concurrently transmits and receives one 1-Wire bit
  * by sending and receiving one uart byte
  */
-static int serial_tx_rx(const struct device *dev, const uint8_t *tx_data,
-			uint8_t *rx_data, size_t len, uint32_t timeout)
+static int serial_tx_rx(const struct device *dev, const uint8_t *tx_data, uint8_t *rx_data,
+			size_t len, uint32_t timeout)
 {
 	const struct w1_serial_config *cfg = dev->config;
 	k_timepoint_t end;
@@ -94,8 +94,7 @@ static int serial_tx_rx(const struct device *dev, const uint8_t *tx_data,
 }
 
 /* Concurretly tranmits and receives one 1-Wire byte */
-static int serial_tx_rx_byte(const struct device *dev, uint8_t tx_byte,
-			     uint8_t *rx_byte)
+static int serial_tx_rx_byte(const struct device *dev, uint8_t tx_byte, uint8_t *rx_byte)
 {
 	__ASSERT_NO_MSG(rx_byte != NULL);
 	uint8_t byte_representation[8];
@@ -110,8 +109,8 @@ static int serial_tx_rx_byte(const struct device *dev, uint8_t tx_byte,
 			((tx_byte & (1 << i)) != 0) ? W1_SERIAL_BIT_1 : W1_SERIAL_BIT_0;
 	}
 
-	if (serial_tx_rx(dev, &byte_representation[0], &byte_representation[0],
-			 8, CONFIG_W1_ZEPHYR_SERIAL_BIT_TIMEOUT) < 0) {
+	if (serial_tx_rx(dev, &byte_representation[0], &byte_representation[0], 8,
+			 CONFIG_W1_ZEPHYR_SERIAL_BIT_TIMEOUT) < 0) {
 		return -EIO;
 	}
 
@@ -131,15 +130,15 @@ static int w1_serial_reset_bus(const struct device *dev)
 {
 	const struct w1_serial_config *cfg = dev->config;
 	struct w1_serial_data *data = dev->data;
-	uint8_t reset_byte = data->overdrive_active ?
-			     W1_SERIAL_OD_RESET_BYTE : W1_SERIAL_STD_RESET_BYTE;
+	uint8_t reset_byte =
+		data->overdrive_active ? W1_SERIAL_OD_RESET_BYTE : W1_SERIAL_STD_RESET_BYTE;
 	/* reset uses 115200/9600=12 slower baudrate,
 	 * adjust timeout accordingly, also valid for overdrive speed.
 	 */
 	const uint32_t reset_timeout = CONFIG_W1_ZEPHYR_SERIAL_BIT_TIMEOUT * 12;
 
-	data->uart_cfg.baudrate = data->overdrive_active ?
-			W1_SERIAL_OD_RESET_BAUD : W1_SERIAL_STD_RESET_BAUD;
+	data->uart_cfg.baudrate =
+		data->overdrive_active ? W1_SERIAL_OD_RESET_BAUD : W1_SERIAL_STD_RESET_BAUD;
 	if (uart_configure(cfg->uart_dev, &data->uart_cfg) != 0) {
 		LOG_ERR("Failed set baud rate for reset pulse");
 		return -EIO;
@@ -150,8 +149,8 @@ static int w1_serial_reset_bus(const struct device *dev)
 		return -EIO;
 	}
 
-	data->uart_cfg.baudrate = data->overdrive_active ?
-			W1_SERIAL_OD_DATA_BAUD : W1_SERIAL_STD_DATA_BAUD;
+	data->uart_cfg.baudrate =
+		data->overdrive_active ? W1_SERIAL_OD_DATA_BAUD : W1_SERIAL_STD_DATA_BAUD;
 	if (uart_configure(cfg->uart_dev, &data->uart_cfg) != 0) {
 		LOG_ERR("Failed set baud rate for data transfer");
 		return -EIO;
@@ -168,8 +167,7 @@ static int w1_serial_read_bit(const struct device *dev)
 	uint8_t tx_bit = W1_SERIAL_READ_REQ_BYTE;
 	uint8_t rx_bit;
 
-	if (serial_tx_rx(dev, &tx_bit, &rx_bit, 1,
-			 CONFIG_W1_ZEPHYR_SERIAL_BIT_TIMEOUT) != 0) {
+	if (serial_tx_rx(dev, &tx_bit, &rx_bit, 1, CONFIG_W1_ZEPHYR_SERIAL_BIT_TIMEOUT) != 0) {
 		return -EIO;
 	};
 
@@ -182,8 +180,7 @@ static int w1_serial_write_bit(const struct device *dev, const bool bit)
 	uint8_t rx_bit;
 
 	tx_bit = bit ? W1_SERIAL_BIT_1 : W1_SERIAL_BIT_0;
-	if (serial_tx_rx(dev, &tx_bit, &rx_bit, 1,
-			 CONFIG_W1_ZEPHYR_SERIAL_BIT_TIMEOUT) != 0) {
+	if (serial_tx_rx(dev, &tx_bit, &rx_bit, 1, CONFIG_W1_ZEPHYR_SERIAL_BIT_TIMEOUT) != 0) {
 		return -EIO;
 	}
 	return 0;
@@ -208,8 +205,7 @@ static int w1_serial_write_byte(const struct device *dev, const uint8_t byte)
 	return serial_tx_rx_byte(dev, byte, &rx_byte);
 }
 
-static int w1_serial_configure(const struct device *dev,
-			       enum w1_settings_type type, uint32_t value)
+static int w1_serial_configure(const struct device *dev, enum w1_settings_type type, uint32_t value)
 {
 	const struct w1_serial_config *cfg = dev->config;
 	struct w1_serial_data *data = dev->data;
@@ -224,8 +220,8 @@ static int w1_serial_configure(const struct device *dev,
 		}
 
 		data->overdrive_active = temp;
-		data->uart_cfg.baudrate = data->overdrive_active ?
-				W1_SERIAL_OD_DATA_BAUD : W1_SERIAL_STD_DATA_BAUD;
+		data->uart_cfg.baudrate =
+			data->overdrive_active ? W1_SERIAL_OD_DATA_BAUD : W1_SERIAL_STD_DATA_BAUD;
 		if (uart_configure(cfg->uart_dev, &data->uart_cfg) != 0) {
 			LOG_ERR("Failed set baud rate for data transfer");
 			ret = -EIO;
@@ -260,8 +256,7 @@ static int w1_serial_init(const struct device *dev)
 
 	data->overdrive_active = false;
 
-	LOG_DBG("w1-serial initialized, with %d slave devices",
-		cfg->master_config.slave_count);
+	LOG_DBG("w1-serial initialized, with %d slave devices", cfg->master_config.slave_count);
 	return 0;
 }
 
@@ -274,14 +269,13 @@ static const struct w1_driver_api w1_serial_driver_api = {
 	.configure = w1_serial_configure,
 };
 
-#define W1_ZEPHYR_SERIAL_INIT(inst)					   \
-static const struct w1_serial_config w1_serial_cfg_##inst = {		   \
-	.uart_dev = DEVICE_DT_GET(DT_INST_BUS(inst)),			   \
-	.master_config.slave_count = W1_INST_SLAVE_COUNT(inst)		   \
-};									   \
-static struct w1_serial_data w1_serial_data_##inst = {};		   \
-DEVICE_DT_INST_DEFINE(inst, &w1_serial_init, NULL, &w1_serial_data_##inst, \
-		      &w1_serial_cfg_##inst, POST_KERNEL,		   \
-		      CONFIG_W1_INIT_PRIORITY, &w1_serial_driver_api);	   \
+#define W1_ZEPHYR_SERIAL_INIT(inst)                                                                \
+	static const struct w1_serial_config w1_serial_cfg_##inst = {                              \
+		.uart_dev = DEVICE_DT_GET(DT_INST_BUS(inst)),                                      \
+		.master_config.slave_count = W1_INST_SLAVE_COUNT(inst)};                           \
+	static struct w1_serial_data w1_serial_data_##inst = {};                                   \
+	DEVICE_DT_INST_DEFINE(inst, &w1_serial_init, NULL, &w1_serial_data_##inst,                 \
+			      &w1_serial_cfg_##inst, POST_KERNEL, CONFIG_W1_INIT_PRIORITY,         \
+			      &w1_serial_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(W1_ZEPHYR_SERIAL_INIT)

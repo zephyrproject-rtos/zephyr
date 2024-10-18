@@ -55,17 +55,14 @@ struct xlnx_axi_timer_data {
 	void *alarm_user_data;
 };
 
-static inline uint32_t xlnx_axi_timer_read32(const struct device *dev,
-					     mm_reg_t offset)
+static inline uint32_t xlnx_axi_timer_read32(const struct device *dev, mm_reg_t offset)
 {
 	const struct xlnx_axi_timer_config *config = dev->config;
 
 	return sys_read32(config->base + offset);
 }
 
-static inline void xlnx_axi_timer_write32(const struct device *dev,
-					  uint32_t value,
-					  mm_reg_t offset)
+static inline void xlnx_axi_timer_write32(const struct device *dev, uint32_t value, mm_reg_t offset)
 {
 	const struct xlnx_axi_timer_config *config = dev->config;
 
@@ -168,8 +165,7 @@ static int xlnx_axi_timer_set_alarm(const struct device *dev, uint8_t chan_id,
 	return 0;
 }
 
-static int xlnx_axi_timer_cancel_alarm(const struct device *dev,
-				       uint8_t chan_id)
+static int xlnx_axi_timer_cancel_alarm(const struct device *dev, uint8_t chan_id)
 {
 	struct xlnx_axi_timer_data *data = dev->data;
 
@@ -184,8 +180,7 @@ static int xlnx_axi_timer_cancel_alarm(const struct device *dev,
 	return 0;
 }
 
-static int xlnx_axi_timer_set_top_value(const struct device *dev,
-					const struct counter_top_cfg *cfg)
+static int xlnx_axi_timer_set_top_value(const struct device *dev, const struct counter_top_cfg *cfg)
 {
 	struct xlnx_axi_timer_data *data = dev->data;
 	bool reload = true;
@@ -267,8 +262,7 @@ static void xlnx_axi_timer_isr(const struct device *dev)
 
 	tcsr = xlnx_axi_timer_read32(dev, TCSR1_OFFSET);
 	if (tcsr & TCSR_TINT) {
-		xlnx_axi_timer_write32(dev, TCSR1_DEFAULT | TCSR_TINT,
-				       TCSR1_OFFSET);
+		xlnx_axi_timer_write32(dev, TCSR1_DEFAULT | TCSR_TINT, TCSR1_OFFSET);
 
 		if (data->alarm_callback) {
 			now = xlnx_axi_timer_read32(dev, TCR0_OFFSET);
@@ -320,39 +314,32 @@ static const struct counter_driver_api xlnx_axi_timer_driver_api = {
 	.get_top_value = xlnx_axi_timer_get_top_value,
 };
 
-#define XLNX_AXI_TIMER_INIT(n)						\
-	static void xlnx_axi_timer_config_func_##n(const struct device *dev); \
-									\
-	static struct xlnx_axi_timer_config xlnx_axi_timer_config_##n = { \
-		.info = {						\
-			.max_top_value =				\
-			GENMASK(DT_INST_PROP(n, xlnx_count_width) - 1, 0), \
-			.freq = DT_INST_PROP(n, clock_frequency),	\
-			.flags = 0,					\
-			.channels =					\
-			COND_CODE_1(DT_INST_PROP(n, xlnx_one_timer_only), \
-				    (0), (1)),				\
-		},							\
-		.base = DT_INST_REG_ADDR(n),				\
-		.irq_config_func = xlnx_axi_timer_config_func_##n,	\
-	};								\
-									\
-	static struct xlnx_axi_timer_data xlnx_axi_timer_data_##n;	\
-									\
-	DEVICE_DT_INST_DEFINE(n, &xlnx_axi_timer_init,			\
-			NULL,						\
-			&xlnx_axi_timer_data_##n,			\
-			&xlnx_axi_timer_config_##n,			\
-			POST_KERNEL,					\
-			CONFIG_COUNTER_INIT_PRIORITY,			\
-			&xlnx_axi_timer_driver_api);			\
-									\
-	static void xlnx_axi_timer_config_func_##n(const struct device *dev) \
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
-			    xlnx_axi_timer_isr,				\
-			    DEVICE_DT_INST_GET(n), 0);			\
-		irq_enable(DT_INST_IRQN(n));				\
+#define XLNX_AXI_TIMER_INIT(n)                                                                     \
+	static void xlnx_axi_timer_config_func_##n(const struct device *dev);                      \
+                                                                                                   \
+	static struct xlnx_axi_timer_config xlnx_axi_timer_config_##n = {                          \
+		.info = {                                                                          \
+			.max_top_value = GENMASK(DT_INST_PROP(n, xlnx_count_width) - 1, 0),        \
+			.freq = DT_INST_PROP(n, clock_frequency),                                  \
+			.flags = 0,                                                                \
+			.channels = COND_CODE_1(DT_INST_PROP(n, xlnx_one_timer_only), \
+				    (0), (1)),                             \
+			},                                                                         \
+						.base = DT_INST_REG_ADDR(n),                       \
+						.irq_config_func = xlnx_axi_timer_config_func_##n, \
+	};                                                                                         \
+                                                                                                   \
+	static struct xlnx_axi_timer_data xlnx_axi_timer_data_##n;                                 \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &xlnx_axi_timer_init, NULL, &xlnx_axi_timer_data_##n,             \
+			      &xlnx_axi_timer_config_##n, POST_KERNEL,                             \
+			      CONFIG_COUNTER_INIT_PRIORITY, &xlnx_axi_timer_driver_api);           \
+                                                                                                   \
+	static void xlnx_axi_timer_config_func_##n(const struct device *dev)                       \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), xlnx_axi_timer_isr,         \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(XLNX_AXI_TIMER_INIT)

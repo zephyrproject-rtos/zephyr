@@ -45,13 +45,13 @@ struct cy8c95xx_config {
 	uint8_t port_num;
 };
 
-#define CY8C95XX_REG_INPUT_DATA0                0x00
-#define CY8C95XX_REG_OUTPUT_DATA0               0x08
-#define CY8C95XX_REG_PORT_SELECT                0x18
-#define CY8C95XX_REG_DIR                        0x1C
-#define CY8C95XX_REG_PULL_UP                    0x1D
-#define CY8C95XX_REG_PULL_DOWN                  0x1E
-#define CY8C95XX_REG_ID                         0x2E
+#define CY8C95XX_REG_INPUT_DATA0  0x00
+#define CY8C95XX_REG_OUTPUT_DATA0 0x08
+#define CY8C95XX_REG_PORT_SELECT  0x18
+#define CY8C95XX_REG_DIR          0x1C
+#define CY8C95XX_REG_PULL_UP      0x1D
+#define CY8C95XX_REG_PULL_DOWN    0x1E
+#define CY8C95XX_REG_ID           0x2E
 
 static int write_pin_state(const struct cy8c95xx_config *cfg, struct cy8c95xx_pin_state *pins)
 {
@@ -83,9 +83,7 @@ static int write_pin_state(const struct cy8c95xx_config *cfg, struct cy8c95xx_pi
 	return rc;
 }
 
-static int cy8c95xx_config(const struct device *dev,
-			   gpio_pin_t pin,
-			   gpio_flags_t flags)
+static int cy8c95xx_config(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct cy8c95xx_config *cfg = dev->config;
 	struct cy8c95xx_drv_data *drv_data = dev->data;
@@ -125,8 +123,7 @@ static int cy8c95xx_config(const struct device *dev,
 		pins->dir |= BIT(pin);
 	}
 
-	LOG_DBG("CFG %u %x : DIR %04x ; DAT %04x",
-		pin, flags, pins->dir, pins->data_out);
+	LOG_DBG("CFG %u %x : DIR %04x ; DAT %04x", pin, flags, pins->dir, pins->data_out);
 
 	rc = write_pin_state(cfg, pins);
 
@@ -134,8 +131,7 @@ static int cy8c95xx_config(const struct device *dev,
 	return rc;
 }
 
-static int port_get(const struct device *dev,
-		    gpio_port_value_t *value)
+static int port_get(const struct device *dev, gpio_port_value_t *value)
 {
 	const struct cy8c95xx_config *cfg = dev->config;
 	struct cy8c95xx_drv_data *drv_data = dev->data;
@@ -159,9 +155,7 @@ static int port_get(const struct device *dev,
 	return rc;
 }
 
-static int port_write(const struct device *dev,
-		      gpio_port_pins_t mask,
-		      gpio_port_value_t value,
+static int port_write(const struct device *dev, gpio_port_pins_t mask, gpio_port_value_t value,
 		      gpio_port_value_t toggle)
 {
 	const struct cy8c95xx_config *cfg = dev->config;
@@ -183,33 +177,27 @@ static int port_write(const struct device *dev,
 	}
 	k_sem_give(drv_data->lock);
 
-	LOG_DBG("write msk %04x val %04x tog %04x => %04x: %d",
-		mask, value, toggle, out, rc);
+	LOG_DBG("write msk %04x val %04x tog %04x => %04x: %d", mask, value, toggle, out, rc);
 
 	return rc;
 }
 
-static int port_set_masked(const struct device *dev,
-			   gpio_port_pins_t mask,
-			   gpio_port_value_t value)
+static int port_set_masked(const struct device *dev, gpio_port_pins_t mask, gpio_port_value_t value)
 {
 	return port_write(dev, mask, value, 0);
 }
 
-static int port_set_bits(const struct device *dev,
-			 gpio_port_pins_t pins)
+static int port_set_bits(const struct device *dev, gpio_port_pins_t pins)
 {
 	return port_write(dev, pins, pins, 0);
 }
 
-static int port_clear_bits(const struct device *dev,
-			   gpio_port_pins_t pins)
+static int port_clear_bits(const struct device *dev, gpio_port_pins_t pins)
 {
 	return port_write(dev, pins, 0, 0);
 }
 
-static int port_toggle_bits(const struct device *dev,
-			    gpio_port_pins_t pins)
+static int port_toggle_bits(const struct device *dev, gpio_port_pins_t pins)
 {
 	return port_write(dev, 0, 0, pins);
 }
@@ -245,7 +233,7 @@ static int cy8c95xx_init(const struct device *dev)
 	}
 
 	/* Reset state mediated by initial configuration */
-	drv_data->pin_state = (struct cy8c95xx_pin_state) {
+	drv_data->pin_state = (struct cy8c95xx_pin_state){
 		.dir = 0xFF,
 		.data_out = 0xFF,
 		.pull_up = 0xFF,
@@ -273,20 +261,20 @@ static const struct gpio_driver_api api_table = {
 
 static struct k_sem cy8c95xx_lock = Z_SEM_INITIALIZER(cy8c95xx_lock, 1, 1);
 
-#define GPIO_PORT_INIT(idx) \
-static const struct cy8c95xx_config cy8c95xx_##idx##_cfg = { \
-	.common = { \
-		.port_pin_mask = 0xFF, \
-	}, \
-	.i2c = I2C_DT_SPEC_GET(DT_PARENT(DT_INST(idx, DT_DRV_COMPAT))), \
-	.port_num = DT_INST_REG_ADDR(idx), \
-}; \
-static struct cy8c95xx_drv_data cy8c95xx_##idx##_drvdata = { \
-	.lock = &cy8c95xx_lock, \
-}; \
-DEVICE_DT_INST_DEFINE(idx, cy8c95xx_init, NULL, \
-				&cy8c95xx_##idx##_drvdata, &cy8c95xx_##idx##_cfg, \
-				POST_KERNEL, CONFIG_GPIO_CY8C95XX_INIT_PRIORITY, \
-				&api_table);
+#define GPIO_PORT_INIT(idx)                                                                        \
+	static const struct cy8c95xx_config cy8c95xx_##idx##_cfg = {                               \
+		.common =                                                                          \
+			{                                                                          \
+				.port_pin_mask = 0xFF,                                             \
+			},                                                                         \
+		.i2c = I2C_DT_SPEC_GET(DT_PARENT(DT_INST(idx, DT_DRV_COMPAT))),                    \
+		.port_num = DT_INST_REG_ADDR(idx),                                                 \
+	};                                                                                         \
+	static struct cy8c95xx_drv_data cy8c95xx_##idx##_drvdata = {                               \
+		.lock = &cy8c95xx_lock,                                                            \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(idx, cy8c95xx_init, NULL, &cy8c95xx_##idx##_drvdata,                 \
+			      &cy8c95xx_##idx##_cfg, POST_KERNEL,                                  \
+			      CONFIG_GPIO_CY8C95XX_INIT_PRIORITY, &api_table);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_PORT_INIT)

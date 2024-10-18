@@ -15,14 +15,12 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 
-static int vnd_i3c_configure(const struct device *dev,
-			     enum i3c_config_type type, void *config)
+static int vnd_i3c_configure(const struct device *dev, enum i3c_config_type type, void *config)
 {
 	return -ENOTSUP;
 }
 
-static int vnd_i3c_config_get(const struct device *dev,
-			      enum i3c_config_type type, void *config)
+static int vnd_i3c_config_get(const struct device *dev, enum i3c_config_type type, void *config)
 {
 	return -ENOTSUP;
 }
@@ -38,10 +36,8 @@ static const struct i3c_driver_api vnd_i3c_api = {
 	.recover_bus = vnd_i3c_recover_bus,
 };
 
-#define VND_I3C_INIT(n)						  \
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, NULL,	  \
-			      POST_KERNEL,			  \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
-			      &vnd_i3c_api);
+#define VND_I3C_INIT(n)                                                                            \
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, NULL, POST_KERNEL,                              \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &vnd_i3c_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VND_I3C_INIT)

@@ -17,20 +17,20 @@ LOG_MODULE_REGISTER(dac_mcp4725, CONFIG_DAC_LOG_LEVEL);
  */
 
 /* Defines for field values in MCP4725 DAC register */
-#define MCP4725_DAC_MAX_VAL			0xFFF
+#define MCP4725_DAC_MAX_VAL 0xFFF
 
-#define MCP4725_FAST_MODE_POWER_DOWN_POS	4U
-#define MCP4725_FAST_MODE_DAC_UPPER_VAL_POS	8U
-#define MCP4725_FAST_MODE_DAC_UPPER_VAL_MASK	0xF
-#define MCP4725_FAST_MODE_DAC_LOWER_VAL_MASK	0xFF
+#define MCP4725_FAST_MODE_POWER_DOWN_POS     4U
+#define MCP4725_FAST_MODE_DAC_UPPER_VAL_POS  8U
+#define MCP4725_FAST_MODE_DAC_UPPER_VAL_MASK 0xF
+#define MCP4725_FAST_MODE_DAC_LOWER_VAL_MASK 0xFF
 
-#define MCP4725_READ_RDY_POS			7U
-#define MCP4725_READ_RDY_MASK			(0x1 << MCP4725_READ_RDY_POS)
+#define MCP4725_READ_RDY_POS  7U
+#define MCP4725_READ_RDY_MASK (0x1 << MCP4725_READ_RDY_POS)
 
 /* After writing eeprom, the MCP4725 can be in a busy state for 25 - 50ms
  * See section 1.0 of MCP4725 datasheet, 'Electrical Characteristics'
  */
-#define MCP4725_BUSY_TIMEOUT_MS			60U
+#define MCP4725_BUSY_TIMEOUT_MS 60U
 
 struct mcp4725_config {
 	struct i2c_dt_spec i2c;
@@ -66,7 +66,7 @@ static int mcp4725_wait_until_ready(const struct device *dev)
 
 /* MCP4725 is a single channel 12 bit DAC */
 static int mcp4725_channel_setup(const struct device *dev,
-				   const struct dac_channel_cfg *channel_cfg)
+				 const struct dac_channel_cfg *channel_cfg)
 {
 	if (channel_cfg->channel_id != 0) {
 		return -EINVAL;
@@ -83,8 +83,7 @@ static int mcp4725_channel_setup(const struct device *dev,
 	return 0;
 }
 
-static int mcp4725_write_value(const struct device *dev, uint8_t channel,
-				uint32_t value)
+static int mcp4725_write_value(const struct device *dev, uint8_t channel, uint32_t value)
 {
 	const struct mcp4725_config *config = dev->config;
 	uint8_t tx_data[2];
@@ -105,7 +104,7 @@ static int mcp4725_write_value(const struct device *dev, uint8_t channel,
 	 * || Fast mode (0) | Power-down bits (0) | DAC value[11:8] || DAC value[7:0]  ||
 	 */
 	tx_data[0] = ((value >> MCP4725_FAST_MODE_DAC_UPPER_VAL_POS) &
-		MCP4725_FAST_MODE_DAC_UPPER_VAL_MASK);
+		      MCP4725_FAST_MODE_DAC_UPPER_VAL_MASK);
 	tx_data[1] = (value & MCP4725_FAST_MODE_DAC_LOWER_VAL_MASK);
 	ret = i2c_write_dt(&config->i2c, tx_data, sizeof(tx_data));
 
@@ -134,17 +133,12 @@ static const struct dac_driver_api mcp4725_driver_api = {
 	.write_value = mcp4725_write_value,
 };
 
-
-#define INST_DT_MCP4725(index)						\
-	static const struct mcp4725_config mcp4725_config_##index = {	\
-		.i2c = I2C_DT_SPEC_INST_GET(index),			\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(index, dac_mcp4725_init,			\
-			    NULL,					\
-			    NULL,					\
-			    &mcp4725_config_##index, POST_KERNEL,	\
-			    CONFIG_DAC_MCP4725_INIT_PRIORITY,		\
-			    &mcp4725_driver_api);
+#define INST_DT_MCP4725(index)                                                                     \
+	static const struct mcp4725_config mcp4725_config_##index = {                              \
+		.i2c = I2C_DT_SPEC_INST_GET(index),                                                \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(index, dac_mcp4725_init, NULL, NULL, &mcp4725_config_##index,        \
+			      POST_KERNEL, CONFIG_DAC_MCP4725_INIT_PRIORITY, &mcp4725_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INST_DT_MCP4725);

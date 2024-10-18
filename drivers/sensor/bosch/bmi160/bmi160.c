@@ -28,30 +28,15 @@ LOG_MODULE_REGISTER(BMI160, CONFIG_SENSOR_LOG_LEVEL);
 #endif
 
 #if BMI160_BUS_SPI
-static int bmi160_transceive(const struct device *dev, uint8_t reg,
-			     bool write, void *buf, size_t length)
+static int bmi160_transceive(const struct device *dev, uint8_t reg, bool write, void *buf,
+			     size_t length)
 {
 	const struct bmi160_cfg *cfg = dev->config;
-	const struct spi_buf tx_buf[2] = {
-		{
-			.buf = &reg,
-			.len = 1
-		},
-		{
-			.buf = buf,
-			.len = length
-		}
-	};
-	const struct spi_buf_set tx = {
-		.buffers = tx_buf,
-		.count = buf ? 2 : 1
-	};
+	const struct spi_buf tx_buf[2] = {{.buf = &reg, .len = 1}, {.buf = buf, .len = length}};
+	const struct spi_buf_set tx = {.buffers = tx_buf, .count = buf ? 2 : 1};
 
 	if (!write) {
-		const struct spi_buf_set rx = {
-			.buffers = tx_buf,
-			.count = 2
-		};
+		const struct spi_buf_set rx = {.buffers = tx_buf, .count = 2};
 
 		return spi_transceive_dt(&cfg->bus.spi, &tx, &rx);
 	}
@@ -66,18 +51,14 @@ bool bmi160_bus_ready_spi(const struct device *dev)
 	return spi_is_ready_dt(&cfg->bus.spi);
 }
 
-int bmi160_read_spi(const struct device *dev,
-		    uint8_t reg_addr, void *buf, uint8_t len)
+int bmi160_read_spi(const struct device *dev, uint8_t reg_addr, void *buf, uint8_t len)
 {
-	return bmi160_transceive(dev, reg_addr | BMI160_REG_READ, false,
-				 buf, len);
+	return bmi160_transceive(dev, reg_addr | BMI160_REG_READ, false, buf, len);
 }
 
-int bmi160_write_spi(const struct device *dev,
-		     uint8_t reg_addr, void *buf, uint8_t len)
+int bmi160_write_spi(const struct device *dev, uint8_t reg_addr, void *buf, uint8_t len)
 {
-	return bmi160_transceive(dev, reg_addr & BMI160_REG_MASK, true,
-				 buf, len);
+	return bmi160_transceive(dev, reg_addr & BMI160_REG_MASK, true, buf, len);
 }
 
 static const struct bmi160_bus_io bmi160_bus_io_spi = {
@@ -96,16 +77,14 @@ bool bmi160_bus_ready_i2c(const struct device *dev)
 	return device_is_ready(cfg->bus.i2c.bus);
 }
 
-int bmi160_read_i2c(const struct device *dev,
-		    uint8_t reg_addr, void *buf, uint8_t len)
+int bmi160_read_i2c(const struct device *dev, uint8_t reg_addr, void *buf, uint8_t len)
 {
 	const struct bmi160_cfg *cfg = dev->config;
 
 	return i2c_burst_read_dt(&cfg->bus.i2c, reg_addr, buf, len);
 }
 
-int bmi160_write_i2c(const struct device *dev,
-		     uint8_t reg_addr, void *buf, uint8_t len)
+int bmi160_write_i2c(const struct device *dev, uint8_t reg_addr, void *buf, uint8_t len)
 {
 	const struct bmi160_cfg *cfg = dev->config;
 
@@ -119,8 +98,7 @@ static const struct bmi160_bus_io bmi160_bus_io_i2c = {
 };
 #endif
 
-int bmi160_read(const struct device *dev, uint8_t reg_addr, void *buf,
-		uint8_t len)
+int bmi160_read(const struct device *dev, uint8_t reg_addr, void *buf, uint8_t len)
 {
 	const struct bmi160_cfg *cfg = dev->config;
 
@@ -132,8 +110,7 @@ int bmi160_byte_read(const struct device *dev, uint8_t reg_addr, uint8_t *byte)
 	return bmi160_read(dev, reg_addr, byte, 1);
 }
 
-static int bmi160_word_read(const struct device *dev, uint8_t reg_addr,
-			    uint16_t *word)
+static int bmi160_word_read(const struct device *dev, uint8_t reg_addr, uint16_t *word)
 {
 	int rc;
 
@@ -147,33 +124,27 @@ static int bmi160_word_read(const struct device *dev, uint8_t reg_addr,
 	return 0;
 }
 
-int bmi160_write(const struct device *dev, uint8_t reg_addr, void *buf,
-		 uint8_t len)
+int bmi160_write(const struct device *dev, uint8_t reg_addr, void *buf, uint8_t len)
 {
 	const struct bmi160_cfg *cfg = dev->config;
 
 	return cfg->bus_io->write(dev, reg_addr, buf, len);
 }
 
-int bmi160_byte_write(const struct device *dev, uint8_t reg_addr,
-		      uint8_t byte)
+int bmi160_byte_write(const struct device *dev, uint8_t reg_addr, uint8_t byte)
 {
 	return bmi160_write(dev, reg_addr & BMI160_REG_MASK, &byte, 1);
 }
 
-int bmi160_word_write(const struct device *dev, uint8_t reg_addr,
-		      uint16_t word)
+int bmi160_word_write(const struct device *dev, uint8_t reg_addr, uint16_t word)
 {
-	uint8_t tx_word[2] = {
-		(uint8_t)(word & 0xff),
-		(uint8_t)(word >> 8)
-	};
+	uint8_t tx_word[2] = {(uint8_t)(word & 0xff), (uint8_t)(word >> 8)};
 
 	return bmi160_write(dev, reg_addr & BMI160_REG_MASK, tx_word, 2);
 }
 
-int bmi160_reg_field_update(const struct device *dev, uint8_t reg_addr,
-			    uint8_t pos, uint8_t mask, uint8_t val)
+int bmi160_reg_field_update(const struct device *dev, uint8_t reg_addr, uint8_t pos, uint8_t mask,
+			    uint8_t val)
 {
 	uint8_t old_val;
 
@@ -181,21 +152,17 @@ int bmi160_reg_field_update(const struct device *dev, uint8_t reg_addr,
 		return -EIO;
 	}
 
-	return bmi160_byte_write(dev, reg_addr,
-				 (old_val & ~mask) | ((val << pos) & mask));
+	return bmi160_byte_write(dev, reg_addr, (old_val & ~mask) | ((val << pos) & mask));
 }
 
-static int bmi160_pmu_set(const struct device *dev,
-			  union bmi160_pmu_status *pmu_sts)
+static int bmi160_pmu_set(const struct device *dev, union bmi160_pmu_status *pmu_sts)
 {
 	struct {
 		uint8_t cmd;
 		uint16_t delay_us; /* values taken from page 82 */
-	} cmds[] = {
-		{BMI160_CMD_PMU_MAG | pmu_sts->mag, 350},
-		{BMI160_CMD_PMU_ACC | pmu_sts->acc, 3200},
-		{BMI160_CMD_PMU_GYR | pmu_sts->gyr, 55000}
-	};
+	} cmds[] = {{BMI160_CMD_PMU_MAG | pmu_sts->mag, 350},
+		    {BMI160_CMD_PMU_ACC | pmu_sts->acc, 3200},
+		    {BMI160_CMD_PMU_GYR | pmu_sts->gyr, 55000}};
 	size_t i;
 
 	for (i = 0; i < ARRAY_SIZE(cmds); i++) {
@@ -214,8 +181,7 @@ static int bmi160_pmu_set(const struct device *dev,
 
 		/* make sure the PMU_STATUS was set, though */
 		do {
-			if (bmi160_byte_read(dev, BMI160_REG_PMU_STATUS,
-					     &sts.raw) < 0) {
+			if (bmi160_byte_read(dev, BMI160_REG_PMU_STATUS, &sts.raw) < 0) {
 				return -EIO;
 			}
 
@@ -231,13 +197,11 @@ static int bmi160_pmu_set(const struct device *dev,
 	}
 
 	/* set the undersampling flag for accelerometer */
-	return bmi160_reg_field_update(dev, BMI160_REG_ACC_CONF,
-				       BMI160_ACC_CONF_US_POS, BMI160_ACC_CONF_US_MASK,
-				       pmu_sts->acc != BMI160_PMU_NORMAL);
+	return bmi160_reg_field_update(dev, BMI160_REG_ACC_CONF, BMI160_ACC_CONF_US_POS,
+				       BMI160_ACC_CONF_US_MASK, pmu_sts->acc != BMI160_PMU_NORMAL);
 }
 
-#if defined(CONFIG_BMI160_GYRO_ODR_RUNTIME) ||\
-	defined(CONFIG_BMI160_ACCEL_ODR_RUNTIME)
+#if defined(CONFIG_BMI160_GYRO_ODR_RUNTIME) || defined(CONFIG_BMI160_ACCEL_ODR_RUNTIME)
 /*
  * Output data rate map with allowed frequencies:
  * freq = freq_int + freq_milli / 1000
@@ -251,9 +215,8 @@ struct {
 			      * SENSOR_ATTR_SAMPLING_FREQUENCY attribute.
 			      */
 } bmi160_odr_map[] = {
-	{0,    0  }, {0,     781}, {1,     562}, {3,    125}, {6,   250},
-	{12,   500}, {25,    0  }, {50,    0  }, {100,  0  }, {200, 0  },
-	{400,  0  }, {800,   0  }, {1600,  0  }, {3200, 0  },
+	{0, 0},  {0, 781}, {1, 562}, {3, 125}, {6, 250}, {12, 500}, {25, 0},
+	{50, 0}, {100, 0}, {200, 0}, {400, 0}, {800, 0}, {1600, 0}, {3200, 0},
 };
 
 static int bmi160_freq_to_odr_val(uint16_t freq_int, uint16_t freq_milli)
@@ -278,8 +241,7 @@ static int bmi160_freq_to_odr_val(uint16_t freq_int, uint16_t freq_milli)
 #endif
 
 #if defined(CONFIG_BMI160_ACCEL_ODR_RUNTIME)
-static int bmi160_acc_odr_set(const struct device *dev, uint16_t freq_int,
-			      uint16_t freq_milli)
+static int bmi160_acc_odr_set(const struct device *dev, uint16_t freq_int, uint16_t freq_milli)
 {
 	int odr = bmi160_freq_to_odr_val(freq_int, freq_milli);
 
@@ -287,34 +249,28 @@ static int bmi160_acc_odr_set(const struct device *dev, uint16_t freq_int,
 		return odr;
 	}
 
-	return bmi160_reg_field_update(dev, BMI160_REG_ACC_CONF,
-				       BMI160_ACC_CONF_ODR_POS,
-				       BMI160_ACC_CONF_ODR_MASK,
-				       (uint8_t) odr);
+	return bmi160_reg_field_update(dev, BMI160_REG_ACC_CONF, BMI160_ACC_CONF_ODR_POS,
+				       BMI160_ACC_CONF_ODR_MASK, (uint8_t)odr);
 }
 #endif
 
 static const struct bmi160_range bmi160_acc_range_map[] = {
-	{2,	BMI160_ACC_RANGE_2G},
-	{4,	BMI160_ACC_RANGE_4G},
-	{8,	BMI160_ACC_RANGE_8G},
-	{16,	BMI160_ACC_RANGE_16G},
+	{2, BMI160_ACC_RANGE_2G},
+	{4, BMI160_ACC_RANGE_4G},
+	{8, BMI160_ACC_RANGE_8G},
+	{16, BMI160_ACC_RANGE_16G},
 };
-#define BMI160_ACC_RANGE_MAP_SIZE	ARRAY_SIZE(bmi160_acc_range_map)
+#define BMI160_ACC_RANGE_MAP_SIZE ARRAY_SIZE(bmi160_acc_range_map)
 
 static const struct bmi160_range bmi160_gyr_range_map[] = {
-	{125,	BMI160_GYR_RANGE_125DPS},
-	{250,	BMI160_GYR_RANGE_250DPS},
-	{500,	BMI160_GYR_RANGE_500DPS},
-	{1000,	BMI160_GYR_RANGE_1000DPS},
-	{2000,	BMI160_GYR_RANGE_2000DPS},
+	{125, BMI160_GYR_RANGE_125DPS},   {250, BMI160_GYR_RANGE_250DPS},
+	{500, BMI160_GYR_RANGE_500DPS},   {1000, BMI160_GYR_RANGE_1000DPS},
+	{2000, BMI160_GYR_RANGE_2000DPS},
 };
-#define BMI160_GYR_RANGE_MAP_SIZE	ARRAY_SIZE(bmi160_gyr_range_map)
+#define BMI160_GYR_RANGE_MAP_SIZE ARRAY_SIZE(bmi160_gyr_range_map)
 
-#if defined(CONFIG_BMI160_ACCEL_RANGE_RUNTIME) ||\
-	defined(CONFIG_BMI160_GYRO_RANGE_RUNTIME)
-static int32_t bmi160_range_to_reg_val(uint16_t range,
-				       const struct bmi160_range *range_map,
+#if defined(CONFIG_BMI160_ACCEL_RANGE_RUNTIME) || defined(CONFIG_BMI160_GYRO_RANGE_RUNTIME)
+static int32_t bmi160_range_to_reg_val(uint16_t range, const struct bmi160_range *range_map,
 				       uint16_t range_map_size)
 {
 	int i;
@@ -329,8 +285,7 @@ static int32_t bmi160_range_to_reg_val(uint16_t range,
 }
 #endif
 
-static int32_t bmi160_reg_val_to_range(uint8_t reg_val,
-				       const struct bmi160_range *range_map,
+static int32_t bmi160_reg_val_to_range(uint8_t reg_val, const struct bmi160_range *range_map,
 				       uint16_t range_map_size)
 {
 	int i;
@@ -346,14 +301,12 @@ static int32_t bmi160_reg_val_to_range(uint8_t reg_val,
 
 int32_t bmi160_acc_reg_val_to_range(uint8_t reg_val)
 {
-	return bmi160_reg_val_to_range(reg_val, bmi160_acc_range_map,
-				       BMI160_ACC_RANGE_MAP_SIZE);
+	return bmi160_reg_val_to_range(reg_val, bmi160_acc_range_map, BMI160_ACC_RANGE_MAP_SIZE);
 }
 
 int32_t bmi160_gyr_reg_val_to_range(uint8_t reg_val)
 {
-	return bmi160_reg_val_to_range(reg_val, bmi160_gyr_range_map,
-				       BMI160_GYR_RANGE_MAP_SIZE);
+	return bmi160_reg_val_to_range(reg_val, bmi160_gyr_range_map, BMI160_GYR_RANGE_MAP_SIZE);
 }
 
 static int bmi160_do_calibration(const struct device *dev, uint8_t foc_conf)
@@ -376,9 +329,8 @@ static int bmi160_acc_range_set(const struct device *dev, const struct sensor_va
 {
 	int32_t range_g = sensor_ms2_to_g(val);
 	struct bmi160_data *data = dev->data;
-	int32_t reg_val = bmi160_range_to_reg_val(range_g,
-						  bmi160_acc_range_map,
-						  BMI160_ACC_RANGE_MAP_SIZE);
+	int32_t reg_val =
+		bmi160_range_to_reg_val(range_g, bmi160_acc_range_map, BMI160_ACC_RANGE_MAP_SIZE);
 
 	if (reg_val < 0) {
 		return reg_val;
@@ -413,16 +365,12 @@ static int bmi160_acc_range_set(const struct device *dev, const struct sensor_va
  * Accelerometer offset scale, taken from pg. 79, converted to micro m/s^2:
  *	3.9 * 9.80665 * 1000
  */
-#define BMI160_ACC_OFS_LSB		38246
-static int bmi160_acc_ofs_set(const struct device *dev,
-			      enum sensor_channel chan,
+#define BMI160_ACC_OFS_LSB 38246
+static int bmi160_acc_ofs_set(const struct device *dev, enum sensor_channel chan,
 			      const struct sensor_value *ofs)
 {
-	uint8_t reg_addr[] = {
-		BMI160_REG_OFFSET_ACC_X,
-		BMI160_REG_OFFSET_ACC_Y,
-		BMI160_REG_OFFSET_ACC_Z
-	};
+	uint8_t reg_addr[] = {BMI160_REG_OFFSET_ACC_X, BMI160_REG_OFFSET_ACC_Y,
+			      BMI160_REG_OFFSET_ACC_Z};
 	int i;
 	int32_t reg_val;
 
@@ -442,14 +390,12 @@ static int bmi160_acc_ofs_set(const struct device *dev,
 	}
 
 	/* activate accel HW compensation */
-	return bmi160_reg_field_update(dev, BMI160_REG_OFFSET_EN,
-				       BMI160_ACC_OFS_EN_POS,
+	return bmi160_reg_field_update(dev, BMI160_REG_OFFSET_EN, BMI160_ACC_OFS_EN_POS,
 				       BIT(BMI160_ACC_OFS_EN_POS), 1);
 }
 
-static int  bmi160_acc_calibrate(const struct device *dev,
-				 enum sensor_channel chan,
-				 const struct sensor_value *xyz_calib_value)
+static int bmi160_acc_calibrate(const struct device *dev, enum sensor_channel chan,
+				const struct sensor_value *xyz_calib_value)
 {
 	struct bmi160_data *data = dev->data;
 	uint8_t foc_pos[] = {
@@ -494,15 +440,12 @@ static int  bmi160_acc_calibrate(const struct device *dev,
 	}
 
 	/* activate accel HW compensation */
-	return bmi160_reg_field_update(dev, BMI160_REG_OFFSET_EN,
-				       BMI160_ACC_OFS_EN_POS,
+	return bmi160_reg_field_update(dev, BMI160_REG_OFFSET_EN, BMI160_ACC_OFS_EN_POS,
 				       BIT(BMI160_ACC_OFS_EN_POS), 1);
 }
 
-static int bmi160_acc_config(const struct device *dev,
-			     enum sensor_channel chan,
-			     enum sensor_attribute attr,
-			     const struct sensor_value *val)
+static int bmi160_acc_config(const struct device *dev, enum sensor_channel chan,
+			     enum sensor_attribute attr, const struct sensor_value *val)
 {
 	switch (attr) {
 #if defined(CONFIG_BMI160_ACCEL_RANGE_RUNTIME)
@@ -532,8 +475,7 @@ static int bmi160_acc_config(const struct device *dev,
 #endif /* !defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND) */
 
 #if defined(CONFIG_BMI160_GYRO_ODR_RUNTIME)
-static int bmi160_gyr_odr_set(const struct device *dev, uint16_t freq_int,
-			      uint16_t freq_milli)
+static int bmi160_gyr_odr_set(const struct device *dev, uint16_t freq_int, uint16_t freq_milli)
 {
 	int odr = bmi160_freq_to_odr_val(freq_int, freq_milli);
 
@@ -545,10 +487,8 @@ static int bmi160_gyr_odr_set(const struct device *dev, uint16_t freq_int,
 		return -ENOTSUP;
 	}
 
-	return bmi160_reg_field_update(dev, BMI160_REG_GYR_CONF,
-				       BMI160_GYR_CONF_ODR_POS,
-				       BMI160_GYR_CONF_ODR_MASK,
-				       (uint8_t) odr);
+	return bmi160_reg_field_update(dev, BMI160_REG_GYR_CONF, BMI160_GYR_CONF_ODR_POS,
+				       BMI160_GYR_CONF_ODR_MASK, (uint8_t)odr);
 }
 #endif
 
@@ -557,9 +497,8 @@ static int bmi160_gyr_range_set(const struct device *dev, const struct sensor_va
 {
 	uint16_t range = sensor_rad_to_degrees(val);
 	struct bmi160_data *data = dev->data;
-	int32_t reg_val = bmi160_range_to_reg_val(range,
-						bmi160_gyr_range_map,
-						BMI160_GYR_RANGE_MAP_SIZE);
+	int32_t reg_val =
+		bmi160_range_to_reg_val(range, bmi160_gyr_range_map, BMI160_GYR_RANGE_MAP_SIZE);
 
 	if (reg_val < 0) {
 		return reg_val;
@@ -597,9 +536,8 @@ static int bmi160_gyr_range_set(const struct device *dev, const struct sensor_va
  * Gyro offset scale, taken from pg. 79, converted to micro rad/s:
  *		0.061 * (pi / 180) * 1000000, where pi = 3.141592
  */
-#define BMI160_GYR_OFS_LSB		1065
-static int bmi160_gyr_ofs_set(const struct device *dev,
-			      enum sensor_channel chan,
+#define BMI160_GYR_OFS_LSB 1065
+static int bmi160_gyr_ofs_set(const struct device *dev, enum sensor_channel chan,
 			      const struct sensor_value *ofs)
 {
 	struct {
@@ -626,28 +564,23 @@ static int bmi160_gyr_ofs_set(const struct device *dev,
 		val = CLAMP(ofs_u / BMI160_GYR_OFS_LSB, -512, 511);
 
 		/* write the LSB */
-		if (bmi160_byte_write(dev, ofs_desc[i].lsb_addr,
-				      val & 0xff) < 0) {
+		if (bmi160_byte_write(dev, ofs_desc[i].lsb_addr, val & 0xff) < 0) {
 			return -EIO;
 		}
 
 		/* write the MSB */
-		if (bmi160_reg_field_update(dev, BMI160_REG_OFFSET_EN,
-					    ofs_desc[i].msb_pos,
-					    0x3 << ofs_desc[i].msb_pos,
-					    (val >> 8) & 0x3) < 0) {
+		if (bmi160_reg_field_update(dev, BMI160_REG_OFFSET_EN, ofs_desc[i].msb_pos,
+					    0x3 << ofs_desc[i].msb_pos, (val >> 8) & 0x3) < 0) {
 			return -EIO;
 		}
 	}
 
 	/* activate gyro HW compensation */
-	return bmi160_reg_field_update(dev, BMI160_REG_OFFSET_EN,
-				       BMI160_GYR_OFS_EN_POS,
+	return bmi160_reg_field_update(dev, BMI160_REG_OFFSET_EN, BMI160_GYR_OFS_EN_POS,
 				       BIT(BMI160_GYR_OFS_EN_POS), 1);
 }
 
-static int bmi160_gyr_calibrate(const struct device *dev,
-				enum sensor_channel chan)
+static int bmi160_gyr_calibrate(const struct device *dev, enum sensor_channel chan)
 {
 	struct bmi160_data *data = dev->data;
 
@@ -663,15 +596,12 @@ static int bmi160_gyr_calibrate(const struct device *dev,
 	}
 
 	/* activate gyro HW compensation */
-	return bmi160_reg_field_update(dev, BMI160_REG_OFFSET_EN,
-				       BMI160_GYR_OFS_EN_POS,
+	return bmi160_reg_field_update(dev, BMI160_REG_OFFSET_EN, BMI160_GYR_OFS_EN_POS,
 				       BIT(BMI160_GYR_OFS_EN_POS), 1);
 }
 
-static int bmi160_gyr_config(const struct device *dev,
-			     enum sensor_channel chan,
-			     enum sensor_attribute attr,
-			     const struct sensor_value *val)
+static int bmi160_gyr_config(const struct device *dev, enum sensor_channel chan,
+			     enum sensor_attribute attr, const struct sensor_value *val)
 {
 	switch (attr) {
 #if defined(CONFIG_BMI160_GYRO_RANGE_RUNTIME)
@@ -698,8 +628,7 @@ static int bmi160_gyr_config(const struct device *dev,
 #endif /* !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND) */
 
 static int bmi160_attr_set(const struct device *dev, enum sensor_channel chan,
-			   enum sensor_attribute attr,
-			   const struct sensor_value *val)
+			   enum sensor_attribute attr, const struct sensor_value *val)
 {
 	switch (chan) {
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
@@ -808,10 +737,8 @@ static int bmi160_attr_get(const struct device *dev, enum sensor_channel chan,
 			val->val1 = rate_uhz / 1000000;
 			val->val2 = rate_uhz - val->val1 * 1000000;
 			return 0;
-
 		}
 		return -EINVAL;
-
 	}
 	if (attr == SENSOR_ATTR_FULL_SCALE) {
 		if (chan == SENSOR_CHAN_ACCEL_XYZ) {
@@ -846,8 +773,7 @@ static int bmi160_attr_get(const struct device *dev, enum sensor_channel chan,
 	return -EINVAL;
 }
 
-static int bmi160_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
+static int bmi160_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct bmi160_data *data = dev->data;
 	uint8_t status;
@@ -881,16 +807,15 @@ static int bmi160_sample_fetch(const struct device *dev,
 		}
 	}
 
-	if (bmi160_read(dev, BMI160_SAMPLE_BURST_READ_ADDR, data->sample.raw,
-			BMI160_BUF_SIZE) < 0) {
+	if (bmi160_read(dev, BMI160_SAMPLE_BURST_READ_ADDR, data->sample.raw, BMI160_BUF_SIZE) <
+	    0) {
 		ret = -EIO;
 		goto out;
 	}
 
 	/* convert samples to cpu endianness */
 	for (i = 0; i < BMI160_SAMPLE_SIZE; i += 2) {
-		uint16_t *sample =
-			(uint16_t *) &data->sample.raw[i];
+		uint16_t *sample = (uint16_t *)&data->sample.raw[i];
 
 		*sample = sys_le16_to_cpu(*sample);
 	}
@@ -908,10 +833,8 @@ static void bmi160_to_fixed_point(int16_t raw_val, int64_t scale_numerator,
 	val->val2 = converted_val % 1000000;
 }
 
-static void bmi160_channel_convert(enum sensor_channel chan,
-				   int64_t scale_numerator,
-				   uint32_t scale_denominator,
-				   uint16_t *raw_xyz,
+static void bmi160_channel_convert(enum sensor_channel chan, int64_t scale_numerator,
+				   uint32_t scale_denominator, uint16_t *raw_xyz,
 				   struct sensor_value *val)
 {
 	int i;
@@ -931,18 +854,18 @@ static void bmi160_channel_convert(enum sensor_channel chan,
 		ofs_start = ofs_stop = 2U;
 		break;
 	default:
-		ofs_start = 0U; ofs_stop = 2U;
+		ofs_start = 0U;
+		ofs_stop = 2U;
 		break;
 	}
 
-	for (i = ofs_start; i <= ofs_stop ; i++, val++) {
+	for (i = ofs_start; i <= ofs_stop; i++, val++) {
 		bmi160_to_fixed_point(raw_xyz[i], scale_numerator, scale_denominator, val);
 	}
 }
 
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
-static inline void bmi160_gyr_channel_get(const struct device *dev,
-					  enum sensor_channel chan,
+static inline void bmi160_gyr_channel_get(const struct device *dev, enum sensor_channel chan,
 					  struct sensor_value *val)
 {
 	struct bmi160_data *data = dev->data;
@@ -953,8 +876,7 @@ static inline void bmi160_gyr_channel_get(const struct device *dev,
 #endif
 
 #if !defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
-static inline void bmi160_acc_channel_get(const struct device *dev,
-					  enum sensor_channel chan,
+static inline void bmi160_acc_channel_get(const struct device *dev, enum sensor_channel chan,
 					  struct sensor_value *val)
 {
 	struct bmi160_data *data = dev->data;
@@ -964,8 +886,7 @@ static inline void bmi160_acc_channel_get(const struct device *dev,
 }
 #endif
 
-static int bmi160_temp_channel_get(const struct device *dev,
-				   struct sensor_value *val)
+static int bmi160_temp_channel_get(const struct device *dev, struct sensor_value *val)
 {
 	struct bmi160_data *data = dev->data;
 
@@ -978,8 +899,7 @@ static int bmi160_temp_channel_get(const struct device *dev,
 	return 0;
 }
 
-static int bmi160_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
+static int bmi160_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	switch (chan) {
@@ -1018,7 +938,6 @@ static const struct sensor_driver_api bmi160_api = {
 	.sample_fetch = bmi160_sample_fetch,
 	.channel_get = bmi160_channel_get,
 };
-
 
 static inline int bmi160_resume(const struct device *dev)
 {
@@ -1118,8 +1037,7 @@ int bmi160_init(const struct device *dev)
 #endif
 
 	/* set accelerometer default range */
-	if (bmi160_byte_write(dev, BMI160_REG_ACC_RANGE,
-				BMI160_DEFAULT_RANGE_ACC) < 0) {
+	if (bmi160_byte_write(dev, BMI160_REG_ACC_RANGE, BMI160_DEFAULT_RANGE_ACC) < 0) {
 		LOG_DBG("Cannot set default range for accelerometer.");
 		return -EIO;
 	}
@@ -1129,8 +1047,7 @@ int bmi160_init(const struct device *dev)
 	data->scale.acc_numerator = BMI160_ACC_SCALE_NUMERATOR(acc_range);
 
 	/* set gyro default range */
-	if (bmi160_byte_write(dev, BMI160_REG_GYR_RANGE,
-			      BMI160_DEFAULT_RANGE_GYR) < 0) {
+	if (bmi160_byte_write(dev, BMI160_REG_GYR_RANGE, BMI160_DEFAULT_RANGE_GYR) < 0) {
 		LOG_DBG("Cannot set default range for gyroscope.");
 		return -EIO;
 	}
@@ -1139,18 +1056,14 @@ int bmi160_init(const struct device *dev)
 
 	data->scale.gyr_numerator = BMI160_GYR_SCALE_NUMERATOR(gyr_range);
 
-	if (bmi160_reg_field_update(dev, BMI160_REG_ACC_CONF,
-				    BMI160_ACC_CONF_ODR_POS,
-				    BMI160_ACC_CONF_ODR_MASK,
-				    BMI160_DEFAULT_ODR_ACC) < 0) {
+	if (bmi160_reg_field_update(dev, BMI160_REG_ACC_CONF, BMI160_ACC_CONF_ODR_POS,
+				    BMI160_ACC_CONF_ODR_MASK, BMI160_DEFAULT_ODR_ACC) < 0) {
 		LOG_DBG("Failed to set accel's default ODR.");
 		return -EIO;
 	}
 
-	if (bmi160_reg_field_update(dev, BMI160_REG_GYR_CONF,
-				    BMI160_GYR_CONF_ODR_POS,
-				    BMI160_GYR_CONF_ODR_MASK,
-				    BMI160_DEFAULT_ODR_GYR) < 0) {
+	if (bmi160_reg_field_update(dev, BMI160_REG_GYR_CONF, BMI160_GYR_CONF_ODR_POS,
+				    BMI160_GYR_CONF_ODR_MASK, BMI160_DEFAULT_ODR_GYR) < 0) {
 		LOG_DBG("Failed to set gyro's default ODR.");
 		return -EIO;
 	}
@@ -1184,48 +1097,45 @@ int bmi160_pm(const struct device *dev, enum pm_device_action action)
 }
 
 #if defined(CONFIG_BMI160_TRIGGER)
-#define BMI160_TRIGGER_CFG(inst) \
-	.interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),
+#define BMI160_TRIGGER_CFG(inst) .interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),
 #else
 #define BMI160_TRIGGER_CFG(inst)
 #endif
 
-#define BMI160_DEVICE_INIT(inst)								\
-	IF_ENABLED(CONFIG_PM_DEVICE_RUNTIME, (PM_DEVICE_DT_INST_DEFINE(inst, bmi160_pm)));	\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmi160_init,						\
-		COND_CODE_1(CONFIG_PM_DEVICE_RUNTIME, (PM_DEVICE_DT_INST_GET(inst)), (NULL)),	\
-		&bmi160_data_##inst, &bmi160_cfg_##inst,					\
-		POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,					\
-		&bmi160_api);
+#define BMI160_DEVICE_INIT(inst)                                                                   \
+	IF_ENABLED(CONFIG_PM_DEVICE_RUNTIME, (PM_DEVICE_DT_INST_DEFINE(inst, bmi160_pm)));           \
+	SENSOR_DEVICE_DT_INST_DEFINE(                                                              \
+		inst, bmi160_init,                                                                 \
+		COND_CODE_1(CONFIG_PM_DEVICE_RUNTIME, (PM_DEVICE_DT_INST_GET(inst)), (NULL)),        \
+						      &bmi160_data_##inst, &bmi160_cfg_##inst,     \
+						      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,    \
+						      &bmi160_api);
 
 /* Instantiation macros used when a device is on a SPI bus */
-#define BMI160_DEFINE_SPI(inst)						   \
-	static struct bmi160_data bmi160_data_##inst;			   \
-	static const struct bmi160_cfg bmi160_cfg_##inst = {		   \
-		.bus.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0), \
-		.bus_io = &bmi160_bus_io_spi,				   \
-		BMI160_TRIGGER_CFG(inst)				   \
-	};								   \
+#define BMI160_DEFINE_SPI(inst)                                                                    \
+	static struct bmi160_data bmi160_data_##inst;                                              \
+	static const struct bmi160_cfg bmi160_cfg_##inst = {                                       \
+		.bus.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0),                         \
+		.bus_io = &bmi160_bus_io_spi,                                                      \
+		BMI160_TRIGGER_CFG(inst)};                                                         \
 	BMI160_DEVICE_INIT(inst)
 
 /* Instantiation macros used when a device is on an I2C bus */
-#define BMI160_CONFIG_I2C(inst)			       \
-	{					       \
-		.bus.i2c = I2C_DT_SPEC_INST_GET(inst), \
-		.bus_io = &bmi160_bus_io_i2c,	       \
-		BMI160_TRIGGER_CFG(inst)	       \
-	}
+#define BMI160_CONFIG_I2C(inst)                                                                    \
+	{.bus.i2c = I2C_DT_SPEC_INST_GET(inst),                                                    \
+	 .bus_io = &bmi160_bus_io_i2c,                                                             \
+	 BMI160_TRIGGER_CFG(inst)}
 
-#define BMI160_DEFINE_I2C(inst)							    \
-	static struct bmi160_data bmi160_data_##inst;				    \
-	static const struct bmi160_cfg bmi160_cfg_##inst = BMI160_CONFIG_I2C(inst); \
+#define BMI160_DEFINE_I2C(inst)                                                                    \
+	static struct bmi160_data bmi160_data_##inst;                                              \
+	static const struct bmi160_cfg bmi160_cfg_##inst = BMI160_CONFIG_I2C(inst);                \
 	BMI160_DEVICE_INIT(inst)
 
 /*
  * Main instantiation macro. Use of COND_CODE_1() selects the right
  * bus-specific macro at preprocessor time.
  */
-#define BMI160_DEFINE(inst)						\
+#define BMI160_DEFINE(inst)                                                                        \
 	COND_CODE_1(DT_INST_ON_BUS(inst, spi),				\
 		    (BMI160_DEFINE_SPI(inst)),				\
 		    (BMI160_DEFINE_I2C(inst)))

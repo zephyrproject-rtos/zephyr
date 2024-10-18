@@ -21,78 +21,73 @@
 
 LOG_MODULE_REGISTER(rtc_smartbond, CONFIG_RTC_LOG_LEVEL);
 
-#define DT_DRV_COMPAT  renesas_smartbond_rtc
+#define DT_DRV_COMPAT renesas_smartbond_rtc
 
-#define SMARTBOND_IRQN       DT_INST_IRQN(0)
-#define SMARTBOND_IRQ_PRIO   DT_INST_IRQ(0, priority)
+#define SMARTBOND_IRQN     DT_INST_IRQN(0)
+#define SMARTBOND_IRQ_PRIO DT_INST_IRQ(0, priority)
 
-#define RTC_ALARMS_COUNT     DT_PROP(DT_NODELABEL(rtc), alarms_count)
+#define RTC_ALARMS_COUNT DT_PROP(DT_NODELABEL(rtc), alarms_count)
 
-#define TM_YEAR_REF          1900
-#define RTC_DIV_DENOM_1000   0
-#define RTC_DIV_DENOM_1024   1
+#define TM_YEAR_REF        1900
+#define RTC_DIV_DENOM_1000 0
+#define RTC_DIV_DENOM_1024 1
 
-#define RTC_SMARTBOND_SUPPORTED_ALARM_FIELDS \
-	(RTC_ALARM_TIME_MASK_SECOND | RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR | \
+#define RTC_SMARTBOND_SUPPORTED_ALARM_FIELDS                                                       \
+	(RTC_ALARM_TIME_MASK_SECOND | RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR |      \
 	 RTC_ALARM_TIME_MASK_MONTH | RTC_ALARM_TIME_MASK_MONTHDAY)
 
-#define RTC_TIME_REG_SET_FIELD(_field, _var, _val) \
-	((_var) = \
-	((_var) & ~(RTC_RTC_TIME_REG_RTC_TIME_ ## _field ## _T_Msk | \
-	RTC_RTC_TIME_REG_RTC_TIME_ ## _field ## _U_Msk)) | \
-	(((_val) << RTC_RTC_TIME_REG_RTC_TIME_ ## _field ## _U_Pos) & \
-	(RTC_RTC_TIME_REG_RTC_TIME_ ## _field ## _T_Msk | \
-	 RTC_RTC_TIME_REG_RTC_TIME_ ## _field ## _U_Msk)))
+#define RTC_TIME_REG_SET_FIELD(_field, _var, _val)                                                 \
+	((_var) = ((_var) & ~(RTC_RTC_TIME_REG_RTC_TIME_##_field##_T_Msk |                         \
+			      RTC_RTC_TIME_REG_RTC_TIME_##_field##_U_Msk)) |                       \
+		  (((_val) << RTC_RTC_TIME_REG_RTC_TIME_##_field##_U_Pos) &                        \
+		   (RTC_RTC_TIME_REG_RTC_TIME_##_field##_T_Msk |                                   \
+		    RTC_RTC_TIME_REG_RTC_TIME_##_field##_U_Msk)))
 
-#define RTC_CALENDAR_REG_SET_FIELD(_field, _var, _val) \
-	((_var) = \
-	((_var) & ~(RTC_RTC_CALENDAR_REG_RTC_CAL_ ## _field ## _T_Msk | \
-	RTC_RTC_CALENDAR_REG_RTC_CAL_ ## _field ## _U_Msk)) | \
-	(((_val) << RTC_RTC_CALENDAR_REG_RTC_CAL_ ## _field ## _U_Pos) & \
-	(RTC_RTC_CALENDAR_REG_RTC_CAL_ ## _field ## _T_Msk | \
-	 RTC_RTC_CALENDAR_REG_RTC_CAL_ ## _field ## _U_Msk)))
+#define RTC_CALENDAR_REG_SET_FIELD(_field, _var, _val)                                             \
+	((_var) = ((_var) & ~(RTC_RTC_CALENDAR_REG_RTC_CAL_##_field##_T_Msk |                      \
+			      RTC_RTC_CALENDAR_REG_RTC_CAL_##_field##_U_Msk)) |                    \
+		  (((_val) << RTC_RTC_CALENDAR_REG_RTC_CAL_##_field##_U_Pos) &                     \
+		   (RTC_RTC_CALENDAR_REG_RTC_CAL_##_field##_T_Msk |                                \
+		    RTC_RTC_CALENDAR_REG_RTC_CAL_##_field##_U_Msk)))
 
-#define RTC_CALENDAR_ALARM_REG_SET_FIELD(_field, _var, _val) \
-	((_var) = \
-	((_var) & ~(RTC_RTC_CALENDAR_ALARM_REG_RTC_CAL_ ## _field ## _T_Msk | \
-	RTC_RTC_CALENDAR_ALARM_REG_RTC_CAL_ ## _field ## _U_Msk)) | \
-	(((_val) << RTC_RTC_CALENDAR_ALARM_REG_RTC_CAL_ ## _field ## _U_Pos) & \
-	(RTC_RTC_CALENDAR_ALARM_REG_RTC_CAL_ ## _field ## _T_Msk | \
-	 RTC_RTC_CALENDAR_ALARM_REG_RTC_CAL_ ## _field ## _U_Msk)))
+#define RTC_CALENDAR_ALARM_REG_SET_FIELD(_field, _var, _val)                                       \
+	((_var) = ((_var) & ~(RTC_RTC_CALENDAR_ALARM_REG_RTC_CAL_##_field##_T_Msk |                \
+			      RTC_RTC_CALENDAR_ALARM_REG_RTC_CAL_##_field##_U_Msk)) |              \
+		  (((_val) << RTC_RTC_CALENDAR_ALARM_REG_RTC_CAL_##_field##_U_Pos) &               \
+		   (RTC_RTC_CALENDAR_ALARM_REG_RTC_CAL_##_field##_T_Msk |                          \
+		    RTC_RTC_CALENDAR_ALARM_REG_RTC_CAL_##_field##_U_Msk)))
 
-#define RTC_TIME_ALARM_REG_SET_FIELD(_field, _var, _val) \
-	((_var) = \
-	((_var) & ~(RTC_RTC_TIME_ALARM_REG_RTC_TIME_ ## _field ## _T_Msk | \
-	RTC_RTC_TIME_ALARM_REG_RTC_TIME_ ## _field ## _U_Msk)) | \
-	(((_val) << RTC_RTC_TIME_ALARM_REG_RTC_TIME_ ## _field ## _U_Pos) & \
-	(RTC_RTC_TIME_ALARM_REG_RTC_TIME_ ## _field ## _T_Msk | \
-	 RTC_RTC_TIME_ALARM_REG_RTC_TIME_ ## _field ## _U_Msk)))
+#define RTC_TIME_ALARM_REG_SET_FIELD(_field, _var, _val)                                           \
+	((_var) = ((_var) & ~(RTC_RTC_TIME_ALARM_REG_RTC_TIME_##_field##_T_Msk |                   \
+			      RTC_RTC_TIME_ALARM_REG_RTC_TIME_##_field##_U_Msk)) |                 \
+		  (((_val) << RTC_RTC_TIME_ALARM_REG_RTC_TIME_##_field##_U_Pos) &                  \
+		   (RTC_RTC_TIME_ALARM_REG_RTC_TIME_##_field##_T_Msk |                             \
+		    RTC_RTC_TIME_ALARM_REG_RTC_TIME_##_field##_U_Msk)))
 
-#define RTC_TIME_REG_GET_FIELD(_field, _var) \
-	(((_var) & (RTC_RTC_TIME_REG_RTC_TIME_ ## _field ## _T_Msk | \
-	RTC_RTC_TIME_REG_RTC_TIME_ ## _field ## _U_Msk)) >> \
-	RTC_RTC_TIME_REG_RTC_TIME_ ## _field ## _U_Pos)
+#define RTC_TIME_REG_GET_FIELD(_field, _var)                                                       \
+	(((_var) & (RTC_RTC_TIME_REG_RTC_TIME_##_field##_T_Msk |                                   \
+		    RTC_RTC_TIME_REG_RTC_TIME_##_field##_U_Msk)) >>                                \
+	 RTC_RTC_TIME_REG_RTC_TIME_##_field##_U_Pos)
 
-#define RTC_CALENDAR_REG_GET_FIELD(_field, _var) \
-	(((_var) & (RTC_RTC_CALENDAR_REG_RTC_CAL_ ## _field ## _T_Msk | \
-	RTC_RTC_CALENDAR_REG_RTC_CAL_ ## _field ## _U_Msk)) >> \
-	RTC_RTC_CALENDAR_REG_RTC_CAL_ ## _field ## _U_Pos)
+#define RTC_CALENDAR_REG_GET_FIELD(_field, _var)                                                   \
+	(((_var) & (RTC_RTC_CALENDAR_REG_RTC_CAL_##_field##_T_Msk |                                \
+		    RTC_RTC_CALENDAR_REG_RTC_CAL_##_field##_U_Msk)) >>                             \
+	 RTC_RTC_CALENDAR_REG_RTC_CAL_##_field##_U_Pos)
 
-#define RTC_CALENDAR_ALARM_REG_GET_FIELD(_field, _var) \
-	(((_var) & (RTC_RTC_CALENDAR_ALARM_REG_RTC_CAL_ ## _field ## _T_Msk | \
-	RTC_RTC_CALENDAR_ALARM_REG_RTC_CAL_ ## _field ## _U_Msk)) >> \
-	RTC_RTC_CALENDAR_ALARM_REG_RTC_CAL_ ## _field ## _U_Pos)
+#define RTC_CALENDAR_ALARM_REG_GET_FIELD(_field, _var)                                             \
+	(((_var) & (RTC_RTC_CALENDAR_ALARM_REG_RTC_CAL_##_field##_T_Msk |                          \
+		    RTC_RTC_CALENDAR_ALARM_REG_RTC_CAL_##_field##_U_Msk)) >>                       \
+	 RTC_RTC_CALENDAR_ALARM_REG_RTC_CAL_##_field##_U_Pos)
 
-#define RTC_TIME_ALARM_REG_GET_FIELD(_field, _var) \
-	(((_var) & (RTC_RTC_TIME_ALARM_REG_RTC_TIME_ ## _field ## _T_Msk | \
-	RTC_RTC_TIME_ALARM_REG_RTC_TIME_ ## _field ## _U_Msk)) >> \
-	RTC_RTC_TIME_ALARM_REG_RTC_TIME_ ## _field ## _U_Pos)
+#define RTC_TIME_ALARM_REG_GET_FIELD(_field, _var)                                                 \
+	(((_var) & (RTC_RTC_TIME_ALARM_REG_RTC_TIME_##_field##_T_Msk |                             \
+		    RTC_RTC_TIME_ALARM_REG_RTC_TIME_##_field##_U_Msk)) >>                          \
+	 RTC_RTC_TIME_ALARM_REG_RTC_TIME_##_field##_U_Pos)
 
-#define CLK_RTCDIV_REG_SET_FIELD(_field, _var, _val) \
-	((_var) = \
-	((_var) & ~CRG_TOP_CLK_RTCDIV_REG_RTC_DIV_ ## _field ## _Msk) | \
-	(((_val) << CRG_TOP_CLK_RTCDIV_REG_RTC_DIV_ ## _field ## _Pos) & \
-	CRG_TOP_CLK_RTCDIV_REG_RTC_DIV_ ## _field ## _Msk))
+#define CLK_RTCDIV_REG_SET_FIELD(_field, _var, _val)                                               \
+	((_var) = ((_var) & ~CRG_TOP_CLK_RTCDIV_REG_RTC_DIV_##_field##_Msk) |                      \
+		  (((_val) << CRG_TOP_CLK_RTCDIV_REG_RTC_DIV_##_field##_Pos) &                     \
+		   CRG_TOP_CLK_RTCDIV_REG_RTC_DIV_##_field##_Msk))
 
 struct rtc_smartbond_data {
 	struct k_mutex lock;
@@ -119,7 +114,7 @@ static void smartbond_rtc_isr(const struct device *dev)
 
 #if defined(CONFIG_RTC_ALARM)
 	if ((rtc_event_flags_reg & RTC_RTC_EVENT_FLAGS_REG_RTC_EVENT_ALRM_Msk) &&
-		!(rtc_interrupt_mask_reg & RTC_RTC_INTERRUPT_MASK_REG_RTC_ALRM_INT_MSK_Msk)) {
+	    !(rtc_interrupt_mask_reg & RTC_RTC_INTERRUPT_MASK_REG_RTC_ALRM_INT_MSK_Msk)) {
 		if (data->alarm_cb) {
 			data->alarm_cb(dev, 0, data->alarm_user_data);
 			data->is_alarm_pending = false;
@@ -131,7 +126,7 @@ static void smartbond_rtc_isr(const struct device *dev)
 
 #if defined(CONFIG_RTC_UPDATE)
 	if ((rtc_event_flags_reg & RTC_RTC_EVENT_FLAGS_REG_RTC_EVENT_SEC_Msk) &&
-		!(rtc_interrupt_mask_reg & RTC_RTC_INTERRUPT_MASK_REG_RTC_SEC_INT_MSK_Msk)) {
+	    !(rtc_interrupt_mask_reg & RTC_RTC_INTERRUPT_MASK_REG_RTC_SEC_INT_MSK_Msk)) {
 		if (data->update_cb) {
 			data->update_cb(dev, data->update_user_data);
 		}
@@ -147,7 +142,7 @@ static inline void rtc_smartbond_set_status(bool status)
 		RTC->RTC_CONTROL_REG = 0;
 	} else {
 		RTC->RTC_CONTROL_REG = (RTC_RTC_CONTROL_REG_RTC_CAL_DISABLE_Msk |
-							RTC_RTC_CONTROL_REG_RTC_TIME_DISABLE_Msk);
+					RTC_RTC_CONTROL_REG_RTC_TIME_DISABLE_Msk);
 		CRG_TOP->CLK_RTCDIV_REG &= ~CRG_TOP_CLK_RTCDIV_REG_RTC_DIV_ENABLE_Msk;
 	}
 }
@@ -156,8 +151,8 @@ static uint32_t rtc_time_to_bcd(const struct rtc_time *timeptr)
 {
 	uint32_t rtc_time_reg = 0;
 
-	RTC_TIME_REG_SET_FIELD(S, rtc_time_reg, bin2bcd(timeptr->tm_sec)); /*[0, 59]*/
-	RTC_TIME_REG_SET_FIELD(M, rtc_time_reg, bin2bcd(timeptr->tm_min)); /*[0, 59]*/
+	RTC_TIME_REG_SET_FIELD(S, rtc_time_reg, bin2bcd(timeptr->tm_sec));   /*[0, 59]*/
+	RTC_TIME_REG_SET_FIELD(M, rtc_time_reg, bin2bcd(timeptr->tm_min));   /*[0, 59]*/
 	RTC_TIME_REG_SET_FIELD(HR, rtc_time_reg, bin2bcd(timeptr->tm_hour)); /*[0, 23]*/
 
 	return rtc_time_reg;
@@ -168,15 +163,16 @@ static uint32_t rtc_calendar_to_bcd(const struct rtc_time *timeptr)
 	uint32_t rtc_calendar_reg = 0;
 
 	RTC_CALENDAR_REG_SET_FIELD(D, rtc_calendar_reg, bin2bcd(timeptr->tm_mday)); /*[1, 31]*/
-	RTC_CALENDAR_REG_SET_FIELD(Y, rtc_calendar_reg,
+	RTC_CALENDAR_REG_SET_FIELD(
+		Y, rtc_calendar_reg,
 		bin2bcd((timeptr->tm_year + TM_YEAR_REF) % 100)); /*[year - 1900]*/
 	RTC_CALENDAR_REG_SET_FIELD(C, rtc_calendar_reg,
-		bin2bcd((timeptr->tm_year + TM_YEAR_REF) / 100));
+				   bin2bcd((timeptr->tm_year + TM_YEAR_REF) / 100));
 	RTC_CALENDAR_REG_SET_FIELD(M, rtc_calendar_reg, bin2bcd(timeptr->tm_mon + 1)); /*[0, 11]*/
 
 	if (timeptr->tm_wday != -1) {
-		rtc_calendar_reg |= ((timeptr->tm_wday + 1) &
-			RTC_RTC_CALENDAR_REG_RTC_DAY_Msk); /*[0, 6]*/
+		rtc_calendar_reg |=
+			((timeptr->tm_wday + 1) & RTC_RTC_CALENDAR_REG_RTC_DAY_Msk); /*[0, 6]*/
 	}
 
 	return rtc_calendar_reg;
@@ -200,7 +196,8 @@ static void bcd_to_rtc_calendar(struct rtc_time *timeptr)
 	timeptr->tm_mday = bcd2bin(RTC_CALENDAR_REG_GET_FIELD(D, rtc_calendar_reg));
 	timeptr->tm_mon = bcd2bin(RTC_CALENDAR_REG_GET_FIELD(M, rtc_calendar_reg)) - 1;
 	timeptr->tm_year = bcd2bin(RTC_CALENDAR_REG_GET_FIELD(Y, rtc_calendar_reg)) +
-	    (bcd2bin(RTC_CALENDAR_REG_GET_FIELD(C, rtc_calendar_reg)) * 100) - TM_YEAR_REF;
+			   (bcd2bin(RTC_CALENDAR_REG_GET_FIELD(C, rtc_calendar_reg)) * 100) -
+			   TM_YEAR_REF;
 	timeptr->tm_wday = (rtc_calendar_reg & RTC_RTC_CALENDAR_REG_RTC_DAY_Msk) - 1;
 
 	timeptr->tm_yday = timeptr->tm_isdst = -1; /*Unknown*/
@@ -239,7 +236,7 @@ static int rtc_smartbond_set_time(const struct device *dev, const struct rtc_tim
 	/* Check if the new values were valid, otherwise reset back to the previous ones. */
 	rtc_status_reg = RTC->RTC_STATUS_REG;
 	if (!(rtc_status_reg & RTC_RTC_STATUS_REG_RTC_VALID_CAL_Msk) ||
-		 !(rtc_status_reg & RTC_RTC_STATUS_REG_RTC_VALID_TIME_Msk)) {
+	    !(rtc_status_reg & RTC_RTC_STATUS_REG_RTC_VALID_TIME_Msk)) {
 		RTC->RTC_TIME_REG = rtc_time_reg;
 		RTC->RTC_CALENDAR_REG = rtc_calendar_reg;
 		ret = -EINVAL;
@@ -296,12 +293,12 @@ static uint32_t alarm_calendar_to_bcd(const struct rtc_time *timeptr, uint16_t m
 
 	if (mask & RTC_ALARM_TIME_MASK_MONTHDAY) {
 		RTC_CALENDAR_ALARM_REG_SET_FIELD(D, rtc_calendar_alarm_reg,
-					bin2bcd(timeptr->tm_mday));
+						 bin2bcd(timeptr->tm_mday));
 	}
 
 	if (mask & RTC_ALARM_TIME_MASK_MONTH) {
 		RTC_CALENDAR_ALARM_REG_SET_FIELD(M, rtc_calendar_alarm_reg,
-					bin2bcd(timeptr->tm_mon + 1));
+						 bin2bcd(timeptr->tm_mon + 1));
 	}
 
 	return rtc_calendar_alarm_reg;
@@ -401,7 +398,7 @@ static uint16_t rtc_to_tm_alarm_mask(uint32_t rtc_alarm_enable_reg)
 }
 
 static int rtc_smartbond_alarm_set_time(const struct device *dev, uint16_t id, uint16_t mask,
-						const struct rtc_time *timeptr)
+					const struct rtc_time *timeptr)
 {
 	int ret = 0;
 	struct rtc_smartbond_data *data = dev->data;
@@ -452,7 +449,7 @@ static int rtc_smartbond_alarm_set_time(const struct device *dev, uint16_t id, u
 
 		rtc_status_reg = RTC->RTC_STATUS_REG;
 		if (!(rtc_status_reg & RTC_RTC_STATUS_REG_RTC_VALID_CAL_ALM_Msk) ||
-			!(rtc_status_reg & RTC_RTC_STATUS_REG_RTC_VALID_TIME_ALM_Msk)) {
+		    !(rtc_status_reg & RTC_RTC_STATUS_REG_RTC_VALID_TIME_ALM_Msk)) {
 			RTC->RTC_TIME_ALARM_REG = rtc_time_alarm_reg;
 			RTC->RTC_CALENDAR_ALARM_REG = rtc_calendar_alarm_reg;
 			RTC->RTC_ALARM_ENABLE_REG = rtc_alarm_enable_reg;
@@ -470,7 +467,7 @@ static int rtc_smartbond_alarm_set_time(const struct device *dev, uint16_t id, u
 }
 
 static int rtc_smartbond_alarm_get_time(const struct device *dev, uint16_t id, uint16_t *mask,
-						struct rtc_time *timeptr)
+					struct rtc_time *timeptr)
 {
 	struct rtc_smartbond_data *data = dev->data;
 
@@ -521,7 +518,7 @@ static int rtc_smartbond_alarm_is_pending(const struct device *dev, uint16_t id)
 }
 
 static int rtc_smartbond_alarm_set_callback(const struct device *dev, uint16_t id,
-		rtc_alarm_callback callback, void *user_data)
+					    rtc_alarm_callback callback, void *user_data)
 {
 	struct rtc_smartbond_data *data = dev->data;
 
@@ -541,7 +538,7 @@ static int rtc_smartbond_alarm_set_callback(const struct device *dev, uint16_t i
 }
 
 static int rtc_smartbond_alarm_get_supported_fields(const struct device *dev, uint16_t id,
-						uint16_t *mask)
+						    uint16_t *mask)
 {
 	if (id >= RTC_ALARMS_COUNT) {
 		LOG_ERR("Alarm id is out of range");
@@ -561,7 +558,7 @@ static int rtc_smartbond_alarm_get_supported_fields(const struct device *dev, ui
 
 #if defined(CONFIG_RTC_UPDATE)
 static int rtc_smartbond_update_set_callback(const struct device *dev, rtc_update_callback callback,
-						void *user_data)
+					     void *user_data)
 {
 	struct rtc_smartbond_data *data = dev->data;
 
@@ -600,7 +597,7 @@ static const struct rtc_driver_api rtc_smartbond_driver_api = {
 
 static void rtc_smartbond_100HZ_clock_cfg(void)
 {
-	const struct device * const dev = DEVICE_DT_GET(DT_NODELABEL(osc));
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(osc));
 	uint32_t lp_clk_rate;
 	uint32_t clk_rtcdiv_reg;
 
@@ -609,7 +606,7 @@ static void rtc_smartbond_100HZ_clock_cfg(void)
 	}
 
 	if (clock_control_get_rate(dev, (clock_control_subsys_t)SMARTBOND_CLK_LP_CLK,
-								&lp_clk_rate) < 0) {
+				   &lp_clk_rate) < 0) {
 		__ASSERT_MSG_INFO("Cannot extract LP clock rate");
 	}
 
@@ -628,7 +625,7 @@ static int rtc_smartbond_init(const struct device *dev)
 #if CONFIG_PM
 	bool is_xtal32m_enabled = DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(xtal32m));
 	int pdc_idx = da1469x_pdc_add(MCU_PDC_TRIGGER_RTC_ALARM, MCU_PDC_MASTER_M33,
-					is_xtal32m_enabled ? MCU_PDC_EN_XTAL : 0);
+				      is_xtal32m_enabled ? MCU_PDC_EN_XTAL : 0);
 
 	__ASSERT(pdc_idx >= 0, "Failed to add RTC PDC entry");
 	da1469x_pdc_set(pdc_idx);
@@ -641,23 +638,20 @@ static int rtc_smartbond_init(const struct device *dev)
 	RTC->RTC_KEEP_RTC_REG |= RTC_RTC_KEEP_RTC_REG_RTC_KEEP_Msk;
 
 #if defined(CONFIG_RTC_ALARM) || defined(CONFIG_RTC_UPDATE)
-	IRQ_CONNECT(SMARTBOND_IRQN, SMARTBOND_IRQ_PRIO, smartbond_rtc_isr,
-				DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(SMARTBOND_IRQN, SMARTBOND_IRQ_PRIO, smartbond_rtc_isr, DEVICE_DT_INST_GET(0),
+		    0);
 	irq_enable(SMARTBOND_IRQN);
 #endif
 
 	return 0;
 }
 
-#define SMARTBOND_RTC_INIT(inst) \
-	BUILD_ASSERT((inst) == 0, "multiple instances are not supported"); \
-	\
-	static struct rtc_smartbond_data rtc_smartbond_data_ ## inst; \
-	\
-	DEVICE_DT_INST_DEFINE(0, rtc_smartbond_init, NULL, \
-		&rtc_smartbond_data_ ## inst, NULL, \
-		POST_KERNEL, \
-		CONFIG_RTC_INIT_PRIORITY, \
-		&rtc_smartbond_driver_api);
+#define SMARTBOND_RTC_INIT(inst)                                                                   \
+	BUILD_ASSERT((inst) == 0, "multiple instances are not supported");                         \
+                                                                                                   \
+	static struct rtc_smartbond_data rtc_smartbond_data_##inst;                                \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(0, rtc_smartbond_init, NULL, &rtc_smartbond_data_##inst, NULL,       \
+			      POST_KERNEL, CONFIG_RTC_INIT_PRIORITY, &rtc_smartbond_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SMARTBOND_RTC_INIT)

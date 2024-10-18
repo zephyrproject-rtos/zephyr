@@ -148,8 +148,7 @@ static int gnss_emul_get_fix_rate(const struct device *dev, uint32_t *fix_interv
 	return 0;
 }
 
-static int gnss_emul_set_navigation_mode(const struct device *dev,
-					 enum gnss_navigation_mode mode)
+static int gnss_emul_set_navigation_mode(const struct device *dev, enum gnss_navigation_mode mode)
 {
 	struct gnss_emul_data *data = dev->data;
 
@@ -161,8 +160,7 @@ static int gnss_emul_set_navigation_mode(const struct device *dev,
 	return 0;
 }
 
-static int gnss_emul_get_navigation_mode(const struct device *dev,
-					 enum gnss_navigation_mode *mode)
+static int gnss_emul_get_navigation_mode(const struct device *dev, enum gnss_navigation_mode *mode)
 {
 	struct gnss_emul_data *data = dev->data;
 
@@ -279,7 +277,7 @@ unlock_return:
 }
 
 static int gnss_emul_api_get_navigation_mode(const struct device *dev,
-					 enum gnss_navigation_mode *mode)
+					     enum gnss_navigation_mode *mode)
 {
 	int ret = -ENODEV;
 
@@ -373,8 +371,8 @@ static void gnss_emul_set_utc(const struct device *dev)
 	timestamp = (time_t)(data->fix_timestamp_ms / 1000);
 	gmtime_r(&timestamp, &datetime);
 
-	millisecond = (uint16_t)(data->fix_timestamp_ms % 1000)
-		    + (uint16_t)(datetime.tm_sec * 1000);
+	millisecond =
+		(uint16_t)(data->fix_timestamp_ms % 1000) + (uint16_t)(datetime.tm_sec * 1000);
 
 	data->data.utc.hour = datetime.tm_hour;
 	data->data.utc.millisecond = millisecond;
@@ -487,24 +485,17 @@ static int gnss_emul_init(const struct device *dev)
 
 #define GNSS_EMUL_NAME(inst, name) _CONCAT(name, inst)
 
-#define GNSS_EMUL_DEVICE(inst)								\
-	static struct gnss_emul_data GNSS_EMUL_NAME(inst, data) = {			\
-		.fix_interval_ms = GNSS_EMUL_DEFAULT_FIX_INTERVAL_MS,			\
-		.nav_mode = GNSS_EMUL_DEFAULT_NAV_MODE,					\
-		.enabled_systems = GNSS_EMUL_DEFAULT_ENABLED_SYSTEMS_MASK,		\
-	};										\
-											\
-	PM_DEVICE_DT_INST_DEFINE(inst, gnss_emul_pm_action);				\
-											\
-	DEVICE_DT_INST_DEFINE(								\
-		inst,									\
-		gnss_emul_init,								\
-		PM_DEVICE_DT_INST_GET(inst),						\
-		&GNSS_EMUL_NAME(inst, data),						\
-		NULL,									\
-		POST_KERNEL,								\
-		CONFIG_GNSS_INIT_PRIORITY,						\
-		&api									\
-	);
+#define GNSS_EMUL_DEVICE(inst)                                                                     \
+	static struct gnss_emul_data GNSS_EMUL_NAME(inst, data) = {                                \
+		.fix_interval_ms = GNSS_EMUL_DEFAULT_FIX_INTERVAL_MS,                              \
+		.nav_mode = GNSS_EMUL_DEFAULT_NAV_MODE,                                            \
+		.enabled_systems = GNSS_EMUL_DEFAULT_ENABLED_SYSTEMS_MASK,                         \
+	};                                                                                         \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(inst, gnss_emul_pm_action);                                       \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, gnss_emul_init, PM_DEVICE_DT_INST_GET(inst),                   \
+			      &GNSS_EMUL_NAME(inst, data), NULL, POST_KERNEL,                      \
+			      CONFIG_GNSS_INIT_PRIORITY, &api);
 
 DT_INST_FOREACH_STATUS_OKAY(GNSS_EMUL_DEVICE)

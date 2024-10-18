@@ -26,13 +26,13 @@ static void analog_axis_calibration_log(const struct device *dev)
 	for (i = 0; i < analog_axis_num_axes(dev); i++) {
 		analog_axis_calibration_get(dev, i, &cal);
 
-		LOG_INF("%s: ch: %d min: %d max: %d deadzone: %d",
-			dev->name, i, cal.in_min, cal.in_max, cal.in_deadzone);
+		LOG_INF("%s: ch: %d min: %d max: %d deadzone: %d", dev->name, i, cal.in_min,
+			cal.in_max, cal.in_deadzone);
 	}
 }
 
-static int analog_axis_calibration_load(const char *key, size_t len_rd,
-					settings_read_cb read_cb, void *cb_arg)
+static int analog_axis_calibration_load(const char *key, size_t len_rd, settings_read_cb read_cb,
+					void *cb_arg)
 {
 	const struct device *dev;
 	struct analog_axis_calibration cal[MAX_AXES];
@@ -64,8 +64,8 @@ static int analog_axis_calibration_load(const char *key, size_t len_rd,
 
 	axes = analog_axis_num_axes(dev);
 	if (len != sizeof(struct analog_axis_calibration) * axes) {
-		LOG_ERR("Invalid settings data length: %d, expected %d",
-			len, sizeof(struct analog_axis_calibration) * axes);
+		LOG_ERR("Invalid settings data length: %d, expected %d", len,
+			sizeof(struct analog_axis_calibration) * axes);
 		return -EIO;
 	}
 
@@ -78,8 +78,8 @@ static int analog_axis_calibration_load(const char *key, size_t len_rd,
 	return 0;
 }
 
-SETTINGS_STATIC_HANDLER_DEFINE(analog_axis, "aa-cal", NULL,
-			       analog_axis_calibration_load, NULL, NULL);
+SETTINGS_STATIC_HANDLER_DEFINE(analog_axis, "aa-cal", NULL, analog_axis_calibration_load, NULL,
+			       NULL);
 
 int analog_axis_calibration_save(const struct device *dev)
 {
@@ -100,8 +100,7 @@ int analog_axis_calibration_save(const struct device *dev)
 		analog_axis_calibration_get(dev, i, &cal[i]);
 	}
 
-	ret = settings_save_one(path, &cal[0],
-				sizeof(struct analog_axis_calibration) * axes);
+	ret = settings_save_one(path, &cal[0], sizeof(struct analog_axis_calibration) * axes);
 	if (ret < 0) {
 		LOG_ERR("Settings save errord: %d", ret);
 		return ret;

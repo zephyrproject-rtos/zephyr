@@ -31,32 +31,32 @@ LOG_MODULE_REGISTER(flash_nios2_qspi);
  * Remove the following macros once the Altera HAL
  * supports the QSPI Controller v2 IP.
  */
-#define ALTERA_QSPI_CONTROLLER2_FLAG_STATUS_REG		0x0000001C
-#define FLAG_STATUS_PROTECTION_ERROR			(1 << 1)
-#define FLAG_STATUS_PROGRAM_SUSPENDED			(1 << 2)
-#define FLAG_STATUS_PROGRAM_ERROR			(1 << 4)
-#define FLAG_STATUS_ERASE_ERROR				(1 << 5)
-#define FLAG_STATUS_ERASE_SUSPENDED			(1 << 6)
-#define FLAG_STATUS_CONTROLLER_READY			(1 << 7)
+#define ALTERA_QSPI_CONTROLLER2_FLAG_STATUS_REG 0x0000001C
+#define FLAG_STATUS_PROTECTION_ERROR            (1 << 1)
+#define FLAG_STATUS_PROGRAM_SUSPENDED           (1 << 2)
+#define FLAG_STATUS_PROGRAM_ERROR               (1 << 4)
+#define FLAG_STATUS_ERASE_ERROR                 (1 << 5)
+#define FLAG_STATUS_ERASE_SUSPENDED             (1 << 6)
+#define FLAG_STATUS_CONTROLLER_READY            (1 << 7)
 
 /* ALTERA_QSPI_CONTROLLER2_STATUS_REG bits */
-#define STATUS_PROTECTION_POS				2
-#define STATUS_PROTECTION_MASK				0x1F
-#define STATUS_PROTECTION_EN_VAL			0x17
-#define STATUS_PROTECTION_DIS_VAL			0x0
+#define STATUS_PROTECTION_POS     2
+#define STATUS_PROTECTION_MASK    0x1F
+#define STATUS_PROTECTION_EN_VAL  0x17
+#define STATUS_PROTECTION_DIS_VAL 0x0
 
 /* ALTERA_QSPI_CONTROLLER2_MEM_OP_REG bits */
-#define MEM_OP_ERASE_CMD				0x00000002
-#define MEM_OP_WRITE_EN_CMD				0x00000004
-#define MEM_OP_SECTOR_OFFSET_BIT_POS			8
-#define MEM_OP_UNLOCK_ALL_SECTORS			0x00000003
-#define MEM_OP_LOCK_ALL_SECTORS				0x00000F03
+#define MEM_OP_ERASE_CMD             0x00000002
+#define MEM_OP_WRITE_EN_CMD          0x00000004
+#define MEM_OP_SECTOR_OFFSET_BIT_POS 8
+#define MEM_OP_UNLOCK_ALL_SECTORS    0x00000003
+#define MEM_OP_LOCK_ALL_SECTORS      0x00000F03
 
-#define NIOS2_QSPI_BLANK_WORD				0xFFFFFFFF
+#define NIOS2_QSPI_BLANK_WORD 0xFFFFFFFF
 
-#define NIOS2_WRITE_BLOCK_SIZE				4
+#define NIOS2_WRITE_BLOCK_SIZE 4
 
-#define USEC_TO_MSEC(x)					(x / 1000)
+#define USEC_TO_MSEC(x) (x / 1000)
 
 struct flash_nios2_qspi_config {
 	alt_qspi_controller2_dev qspi_dev;
@@ -68,16 +68,14 @@ static const struct flash_parameters flash_nios2_qspi_parameters = {
 	.erase_value = 0xff,
 };
 
-static int flash_nios2_qspi_write_protection(const struct device *dev,
-					     bool enable);
+static int flash_nios2_qspi_write_protection(const struct device *dev, bool enable);
 
-static int flash_nios2_qspi_erase(const struct device *dev, off_t offset,
-				  size_t len)
+static int flash_nios2_qspi_erase(const struct device *dev, off_t offset, size_t len)
 {
 	struct flash_nios2_qspi_config *flash_cfg = dev->data;
 	alt_qspi_controller2_dev *qspi_dev = &flash_cfg->qspi_dev;
 	uint32_t block_offset, offset_in_block, length_to_erase;
-	uint32_t erase_offset = offset; /* address of next byte to erase */
+	uint32_t erase_offset = offset;  /* address of next byte to erase */
 	uint32_t remaining_length = len; /* length of data left to be erased */
 	uint32_t flag_status;
 	int32_t rc = 0, i, timeout, rc2;
@@ -93,22 +91,19 @@ static int flash_nios2_qspi_erase(const struct device *dev, off_t offset,
 	 * length is with in the range
 	 */
 	if (((offset + len) > qspi_dev->data_end) ||
-			(0 != (erase_offset &
-			       (NIOS2_WRITE_BLOCK_SIZE - 1)))) {
+	    (0 != (erase_offset & (NIOS2_WRITE_BLOCK_SIZE - 1)))) {
 		LOG_ERR("erase failed at offset 0x%lx", (long)offset);
 		rc = -EINVAL;
 		goto qspi_erase_err;
 	}
 
-	for (i = offset/qspi_dev->sector_size;
-			i < qspi_dev->number_of_sectors; i++) {
+	for (i = offset / qspi_dev->sector_size; i < qspi_dev->number_of_sectors; i++) {
 
-		if ((remaining_length <= 0U) ||
-				erase_offset >= (offset + len)) {
+		if ((remaining_length <= 0U) || erase_offset >= (offset + len)) {
 			break;
 		}
 
-		block_offset = 0U; /* block offset in byte addressing */
+		block_offset = 0U;    /* block offset in byte addressing */
 		offset_in_block = 0U; /* offset into current sector to erase */
 		length_to_erase = 0U; /* length to erase in current sector */
 
@@ -121,17 +116,13 @@ static int flash_nios2_qspi_erase(const struct device *dev, off_t offset,
 		}
 
 		/* calculate the byte size of data to be written in a sector */
-		length_to_erase = MIN(qspi_dev->sector_size - offset_in_block,
-							remaining_length);
+		length_to_erase = MIN(qspi_dev->sector_size - offset_in_block, remaining_length);
 
 		/* Erase sector */
-		IOWR_32DIRECT(qspi_dev->csr_base,
-				ALTERA_QSPI_CONTROLLER2_MEM_OP_REG,
-				MEM_OP_WRITE_EN_CMD);
-		IOWR_32DIRECT(qspi_dev->csr_base,
-				ALTERA_QSPI_CONTROLLER2_MEM_OP_REG,
-				(i << MEM_OP_SECTOR_OFFSET_BIT_POS)
-				| MEM_OP_ERASE_CMD);
+		IOWR_32DIRECT(qspi_dev->csr_base, ALTERA_QSPI_CONTROLLER2_MEM_OP_REG,
+			      MEM_OP_WRITE_EN_CMD);
+		IOWR_32DIRECT(qspi_dev->csr_base, ALTERA_QSPI_CONTROLLER2_MEM_OP_REG,
+			      (i << MEM_OP_SECTOR_OFFSET_BIT_POS) | MEM_OP_ERASE_CMD);
 
 		/*
 		 * poll the status register to know the
@@ -143,7 +134,7 @@ static int flash_nios2_qspi_erase(const struct device *dev, off_t offset,
 			k_busy_wait(1);
 
 			flag_status = IORD_32DIRECT(qspi_dev->csr_base,
-				ALTERA_QSPI_CONTROLLER2_FLAG_STATUS_REG);
+						    ALTERA_QSPI_CONTROLLER2_FLAG_STATUS_REG);
 
 			if (flag_status & FLAG_STATUS_CONTROLLER_READY) {
 				break;
@@ -153,9 +144,8 @@ static int flash_nios2_qspi_erase(const struct device *dev, off_t offset,
 		}
 
 		if ((flag_status & FLAG_STATUS_ERASE_ERROR) ||
-				(flag_status & FLAG_STATUS_PROTECTION_ERROR)) {
-			LOG_ERR("erase failed, Flag Status Reg:0x%x",
-								flag_status);
+		    (flag_status & FLAG_STATUS_PROTECTION_ERROR)) {
+			LOG_ERR("erase failed, Flag Status Reg:0x%x", flag_status);
 			rc = -EIO;
 			goto qspi_erase_err;
 		}
@@ -174,18 +164,15 @@ qspi_erase_err:
 
 	k_sem_give(&flash_cfg->sem_lock);
 	return rc;
-
 }
 
-static int flash_nios2_qspi_write_block(const struct device *dev,
-					int block_offset,
-					int mem_offset, const void *data,
-					size_t len)
+static int flash_nios2_qspi_write_block(const struct device *dev, int block_offset, int mem_offset,
+					const void *data, size_t len)
 {
 	struct flash_nios2_qspi_config *flash_cfg = dev->data;
 	alt_qspi_controller2_dev *qspi_dev = &flash_cfg->qspi_dev;
-	uint32_t buffer_offset = 0U; /* offset into data buffer to get write data */
-	int32_t remaining_length = len; /* length left to write */
+	uint32_t buffer_offset = 0U;        /* offset into data buffer to get write data */
+	int32_t remaining_length = len;     /* length left to write */
 	uint32_t write_offset = mem_offset; /* offset into flash to write too */
 	uint32_t word_to_write, padding, bytes_to_copy;
 	uint32_t flag_status;
@@ -224,8 +211,7 @@ static int flash_nios2_qspi_write_block(const struct device *dev,
 
 			write_offset = write_offset - padding;
 
-			if (0 != (write_offset &
-					(NIOS2_WRITE_BLOCK_SIZE - 1))) {
+			if (0 != (write_offset & (NIOS2_WRITE_BLOCK_SIZE - 1))) {
 				rc = -EINVAL;
 				goto qspi_write_block_err;
 			}
@@ -242,26 +228,23 @@ static int flash_nios2_qspi_write_block(const struct device *dev,
 		}
 
 		/* prepare the word to be written */
-		memcpy((uint8_t *)&word_to_write + padding,
-				(const uint8_t *)data + buffer_offset,
-				bytes_to_copy);
+		memcpy((uint8_t *)&word_to_write + padding, (const uint8_t *)data + buffer_offset,
+		       bytes_to_copy);
 
 		/* enable write */
-		IOWR_32DIRECT(qspi_dev->csr_base,
-				ALTERA_QSPI_CONTROLLER2_MEM_OP_REG,
-				MEM_OP_WRITE_EN_CMD);
+		IOWR_32DIRECT(qspi_dev->csr_base, ALTERA_QSPI_CONTROLLER2_MEM_OP_REG,
+			      MEM_OP_WRITE_EN_CMD);
 
 		/* write to flash 32 bits at a time */
 		IOWR_32DIRECT(qspi_dev->data_base, write_offset, word_to_write);
 
 		/* check whether write operation is successful */
-		flag_status = IORD_32DIRECT(qspi_dev->csr_base,
-				ALTERA_QSPI_CONTROLLER2_FLAG_STATUS_REG);
+		flag_status =
+			IORD_32DIRECT(qspi_dev->csr_base, ALTERA_QSPI_CONTROLLER2_FLAG_STATUS_REG);
 
 		if ((flag_status & FLAG_STATUS_PROGRAM_ERROR) ||
-			(flag_status & FLAG_STATUS_PROTECTION_ERROR)) {
-			LOG_ERR("write failed, Flag Status Reg:0x%x",
-								flag_status);
+		    (flag_status & FLAG_STATUS_PROTECTION_ERROR)) {
+			LOG_ERR("write failed, Flag Status Reg:0x%x", flag_status);
 			rc = -EIO; /* sector might be protected */
 			goto qspi_write_block_err;
 		}
@@ -276,14 +259,14 @@ qspi_write_block_err:
 	return rc;
 }
 
-static int flash_nios2_qspi_write(const struct device *dev, off_t offset,
-				  const void *data, size_t len)
+static int flash_nios2_qspi_write(const struct device *dev, off_t offset, const void *data,
+				  size_t len)
 {
 	struct flash_nios2_qspi_config *flash_cfg = dev->data;
 	alt_qspi_controller2_dev *qspi_dev = &flash_cfg->qspi_dev;
 	uint32_t block_offset, offset_in_block, length_to_write;
-	uint32_t write_offset = offset; /* address of next byte to write */
-	uint32_t buffer_offset = 0U; /* offset into source buffer */
+	uint32_t write_offset = offset;  /* address of next byte to write */
+	uint32_t buffer_offset = 0U;     /* offset into source buffer */
 	uint32_t remaining_length = len; /* length of data left to be written */
 	int32_t rc = 0, i, rc2;
 
@@ -298,21 +281,19 @@ static int flash_nios2_qspi_write(const struct device *dev, off_t offset,
 	 * length is with in the range
 	 */
 	if ((data == NULL) || ((offset + len) > qspi_dev->data_end) ||
-			(0 != (write_offset &
-			       (NIOS2_WRITE_BLOCK_SIZE - 1)))) {
+	    (0 != (write_offset & (NIOS2_WRITE_BLOCK_SIZE - 1)))) {
 		LOG_ERR("write failed at offset 0x%lx", (long)offset);
 		rc = -EINVAL;
 		goto qspi_write_err;
 	}
 
-	for (i = offset/qspi_dev->sector_size;
-			i < qspi_dev->number_of_sectors; i++) {
+	for (i = offset / qspi_dev->sector_size; i < qspi_dev->number_of_sectors; i++) {
 
 		if (remaining_length <= 0U) {
 			break;
 		}
 
-		block_offset = 0U; /* block offset in byte addressing */
+		block_offset = 0U;    /* block offset in byte addressing */
 		offset_in_block = 0U; /* offset into current sector to write */
 		length_to_write = 0U; /* length to write to current sector */
 
@@ -325,13 +306,11 @@ static int flash_nios2_qspi_write(const struct device *dev, off_t offset,
 		}
 
 		/* calculate the byte size of data to be written in a sector */
-		length_to_write = MIN(qspi_dev->sector_size - offset_in_block,
-							remaining_length);
+		length_to_write = MIN(qspi_dev->sector_size - offset_in_block, remaining_length);
 
-		rc = flash_nios2_qspi_write_block(dev,
-				block_offset, write_offset,
-				(const uint8_t *)data + buffer_offset,
-				length_to_write);
+		rc = flash_nios2_qspi_write_block(dev, block_offset, write_offset,
+						  (const uint8_t *)data + buffer_offset,
+						  length_to_write);
 		if (rc < 0) {
 			goto qspi_write_err;
 		}
@@ -353,14 +332,13 @@ qspi_write_err:
 	return rc;
 }
 
-static int flash_nios2_qspi_read(const struct device *dev, off_t offset,
-				 void *data, size_t len)
+static int flash_nios2_qspi_read(const struct device *dev, off_t offset, void *data, size_t len)
 {
 	struct flash_nios2_qspi_config *flash_cfg = dev->data;
 	alt_qspi_controller2_dev *qspi_dev = &flash_cfg->qspi_dev;
-	uint32_t buffer_offset = 0U; /* offset into data buffer to get read data */
+	uint32_t buffer_offset = 0U;     /* offset into data buffer to get read data */
 	uint32_t remaining_length = len; /* length left to read */
-	uint32_t read_offset = offset; /* offset into flash to read from */
+	uint32_t read_offset = offset;   /* offset into flash to read from */
 	uint32_t word_to_read, bytes_to_copy;
 	int32_t rc = 0;
 
@@ -389,8 +367,8 @@ static int flash_nios2_qspi_read(const struct device *dev, off_t offset,
 		}
 		/* read from flash 32 bits at a time */
 		word_to_read = IORD_32DIRECT(qspi_dev->data_base, read_offset);
-		memcpy((uint8_t *)data, (uint8_t *)&word_to_read + offset -
-		       read_offset, bytes_to_copy);
+		memcpy((uint8_t *)data, (uint8_t *)&word_to_read + offset - read_offset,
+		       bytes_to_copy);
 		/* update offset and length variables */
 		read_offset += NIOS2_WRITE_BLOCK_SIZE;
 		buffer_offset += bytes_to_copy;
@@ -408,8 +386,7 @@ static int flash_nios2_qspi_read(const struct device *dev, off_t offset,
 
 		/* read from flash 32 bits at a time */
 		word_to_read = IORD_32DIRECT(qspi_dev->data_base, read_offset);
-		memcpy((uint8_t *)data + buffer_offset, &word_to_read,
-		       bytes_to_copy);
+		memcpy((uint8_t *)data + buffer_offset, &word_to_read, bytes_to_copy);
 		/* update offset and length variables */
 		read_offset += bytes_to_copy;
 		buffer_offset += bytes_to_copy;
@@ -420,8 +397,7 @@ static int flash_nios2_qspi_read(const struct device *dev, off_t offset,
 	return rc;
 }
 
-static int flash_nios2_qspi_write_protection(const struct device *dev,
-					     bool enable)
+static int flash_nios2_qspi_write_protection(const struct device *dev, bool enable)
 {
 	struct flash_nios2_qspi_config *flash_cfg = dev->data;
 	alt_qspi_controller2_dev *qspi_dev = &flash_cfg->qspi_dev;
@@ -429,18 +405,14 @@ static int flash_nios2_qspi_write_protection(const struct device *dev,
 	int32_t rc = 0, timeout;
 
 	/* set write enable */
-	IOWR_32DIRECT(qspi_dev->csr_base,
-			ALTERA_QSPI_CONTROLLER2_MEM_OP_REG,
-			MEM_OP_WRITE_EN_CMD);
+	IOWR_32DIRECT(qspi_dev->csr_base, ALTERA_QSPI_CONTROLLER2_MEM_OP_REG, MEM_OP_WRITE_EN_CMD);
 	if (enable) {
-		IOWR_32DIRECT(qspi_dev->csr_base,
-				ALTERA_QSPI_CONTROLLER2_MEM_OP_REG,
-				MEM_OP_LOCK_ALL_SECTORS);
+		IOWR_32DIRECT(qspi_dev->csr_base, ALTERA_QSPI_CONTROLLER2_MEM_OP_REG,
+			      MEM_OP_LOCK_ALL_SECTORS);
 		lock_val = STATUS_PROTECTION_EN_VAL;
 	} else {
-		IOWR_32DIRECT(qspi_dev->csr_base,
-				ALTERA_QSPI_CONTROLLER2_MEM_OP_REG,
-				MEM_OP_UNLOCK_ALL_SECTORS);
+		IOWR_32DIRECT(qspi_dev->csr_base, ALTERA_QSPI_CONTROLLER2_MEM_OP_REG,
+			      MEM_OP_UNLOCK_ALL_SECTORS);
 		lock_val = STATUS_PROTECTION_DIS_VAL;
 	}
 
@@ -457,14 +429,11 @@ static int flash_nios2_qspi_write_protection(const struct device *dev,
 		 * read flash flag status register before
 		 * checking the QSPI status
 		 */
-		IORD_32DIRECT(qspi_dev->csr_base,
-				ALTERA_QSPI_CONTROLLER2_FLAG_STATUS_REG);
+		IORD_32DIRECT(qspi_dev->csr_base, ALTERA_QSPI_CONTROLLER2_FLAG_STATUS_REG);
 
 		/* read QPSI status register */
-		status = IORD_32DIRECT(qspi_dev->csr_base,
-				ALTERA_QSPI_CONTROLLER2_STATUS_REG);
-		if (((status >> STATUS_PROTECTION_POS) &
-			STATUS_PROTECTION_MASK) == lock_val) {
+		status = IORD_32DIRECT(qspi_dev->csr_base, ALTERA_QSPI_CONTROLLER2_STATUS_REG);
+		if (((status >> STATUS_PROTECTION_POS) & STATUS_PROTECTION_MASK) == lock_val) {
 			break;
 		}
 
@@ -477,13 +446,11 @@ static int flash_nios2_qspi_write_protection(const struct device *dev,
 	}
 
 	/* clear flag status register */
-	IOWR_32DIRECT(qspi_dev->csr_base,
-			ALTERA_QSPI_CONTROLLER2_FLAG_STATUS_REG, 0x0);
+	IOWR_32DIRECT(qspi_dev->csr_base, ALTERA_QSPI_CONTROLLER2_FLAG_STATUS_REG, 0x0);
 	return rc;
 }
 
-static const struct flash_parameters *
-flash_nios2_qspi_get_parameters(const struct device *dev)
+static const struct flash_parameters *flash_nios2_qspi_get_parameters(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -496,8 +463,7 @@ static const struct flash_driver_api flash_nios2_qspi_api = {
 	.read = flash_nios2_qspi_read,
 	.get_parameters = flash_nios2_qspi_get_parameters,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
-	.page_layout = (flash_api_pages_layout)
-		       flash_page_layout_not_implemented,
+	.page_layout = (flash_api_pages_layout)flash_page_layout_not_implemented,
 #endif
 };
 
@@ -519,13 +485,10 @@ struct flash_nios2_qspi_config flash_cfg = {
 		.number_of_sectors = EXT_FLASH_AVL_MEM_NUMBER_OF_SECTORS,
 		.sector_size = EXT_FLASH_AVL_MEM_SECTOR_SIZE,
 		.page_size = EXT_FLASH_AVL_MEM_PAGE_SIZE,
-	}
-};
+	}};
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
-	"only one 'altr,nios2-qspi-nor' compatible node may be present");
+	     "only one 'altr,nios2-qspi-nor' compatible node may be present");
 
-DEVICE_DT_INST_DEFINE(0,
-		flash_nios2_qspi_init, NULL, &flash_cfg, NULL,
-		POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,
-		&flash_nios2_qspi_api);
+DEVICE_DT_INST_DEFINE(0, flash_nios2_qspi_init, NULL, &flash_cfg, NULL, POST_KERNEL,
+		      CONFIG_FLASH_INIT_PRIORITY, &flash_nios2_qspi_api);

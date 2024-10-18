@@ -22,17 +22,16 @@ struct npcx_pcc_config {
 };
 
 /* Driver convenience defines */
-#define HAL_CDCG_INST(dev) \
+#define HAL_CDCG_INST(dev)                                                                         \
 	((struct cdcg_reg *)((const struct npcx_pcc_config *)(dev)->config)->base_cdcg)
 
-#define HAL_PMC_INST(dev) \
+#define HAL_PMC_INST(dev)                                                                          \
 	((struct pmc_reg *)((const struct npcx_pcc_config *)(dev)->config)->base_pmc)
 
 static uint8_t pddwn_ctl_val[] = {NPCX_PWDWN_CTL_INIT};
 
 /* Clock controller local functions */
-static inline int npcx_clock_control_on(const struct device *dev,
-					 clock_control_subsys_t sub_system)
+static inline int npcx_clock_control_on(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	ARG_UNUSED(dev);
 	struct npcx_clk_cfg *clk_cfg = (struct npcx_clk_cfg *)(sub_system);
@@ -48,7 +47,7 @@ static inline int npcx_clock_control_on(const struct device *dev,
 }
 
 static inline int npcx_clock_control_off(const struct device *dev,
-					  clock_control_subsys_t sub_system)
+					 clock_control_subsys_t sub_system)
 {
 	ARG_UNUSED(dev);
 	struct npcx_clk_cfg *clk_cfg = (struct npcx_clk_cfg *)(sub_system);
@@ -64,8 +63,7 @@ static inline int npcx_clock_control_off(const struct device *dev,
 }
 
 static int npcx_clock_control_get_subsys_rate(const struct device *dev,
-					      clock_control_subsys_t sub_system,
-					      uint32_t *rate)
+					      clock_control_subsys_t sub_system, uint32_t *rate)
 {
 	ARG_UNUSED(dev);
 	struct npcx_clk_cfg *clk_cfg = (struct npcx_clk_cfg *)(sub_system);
@@ -86,14 +84,14 @@ static int npcx_clock_control_get_subsys_rate(const struct device *dev,
 		break;
 #endif
 	case NPCX_CLOCK_BUS_AHB6:
-		*rate = CORE_CLK/(AHB6DIV_VAL + 1);
+		*rate = CORE_CLK / (AHB6DIV_VAL + 1);
 		break;
 	case NPCX_CLOCK_BUS_FIU:
-		*rate = CORE_CLK/(FIUDIV_VAL + 1);
+		*rate = CORE_CLK / (FIUDIV_VAL + 1);
 		break;
 #if defined(FIU1DIV_VAL)
 	case NPCX_CLOCK_BUS_FIU1:
-		*rate = CORE_CLK/(FIU1DIV_VAL + 1);
+		*rate = CORE_CLK / (FIU1DIV_VAL + 1);
 		break;
 #endif
 	case NPCX_CLOCK_BUS_CORE:
@@ -106,7 +104,7 @@ static int npcx_clock_control_get_subsys_rate(const struct device *dev,
 		*rate = FMCLK;
 		break;
 	case NPCX_CLOCK_BUS_MCLKD:
-		*rate = OFMCLK/(MCLKD_SL + 1);
+		*rate = OFMCLK / (MCLKD_SL + 1);
 		break;
 	default:
 		*rate = 0U;
@@ -156,45 +154,42 @@ static const struct clock_control_driver_api npcx_clock_control_api = {
 
 /* valid clock frequency check */
 BUILD_ASSERT(OFMCLK <= MAX_OFMCLK, "Exceed maximum OFMCLK setting");
-BUILD_ASSERT(CORE_CLK <= MAX_OFMCLK && CORE_CLK >= MHZ(4) &&
-	     OFMCLK % CORE_CLK == 0 &&
-	     OFMCLK / CORE_CLK <= 10,
+BUILD_ASSERT(CORE_CLK <= MAX_OFMCLK && CORE_CLK >= MHZ(4) && OFMCLK % CORE_CLK == 0 &&
+		     OFMCLK / CORE_CLK <= 10,
 	     "Invalid CORE_CLK setting");
 BUILD_ASSERT(CORE_CLK / (FIUDIV_VAL + 1) <= (MAX_OFMCLK / 2) &&
-	     CORE_CLK / (FIUDIV_VAL + 1) >= MHZ(4),
+		     CORE_CLK / (FIUDIV_VAL + 1) >= MHZ(4),
 	     "Invalid FIUCLK setting");
 #if defined(FIU1DIV_VAL)
 BUILD_ASSERT(CORE_CLK / (FIU1DIV_VAL + 1) <= (MAX_OFMCLK / 2) &&
-	     CORE_CLK / (FIU1DIV_VAL + 1) >= MHZ(4),
+		     CORE_CLK / (FIU1DIV_VAL + 1) >= MHZ(4),
 	     "Invalid FIU1CLK setting");
 #endif
 BUILD_ASSERT(CORE_CLK / (AHB6DIV_VAL + 1) <= (MAX_OFMCLK / 2) &&
-	     CORE_CLK / (AHB6DIV_VAL + 1) >= MHZ(4),
+		     CORE_CLK / (AHB6DIV_VAL + 1) >= MHZ(4),
 	     "Invalid AHB6_CLK setting");
 BUILD_ASSERT(APBSRC_CLK / (APB1DIV_VAL + 1) <= (MAX_OFMCLK / 2) &&
-	     APBSRC_CLK / (APB1DIV_VAL + 1) >= MHZ(4) &&
-	     (APB1DIV_VAL + 1) % (FPRED_VAL + 1) == 0,
+		     APBSRC_CLK / (APB1DIV_VAL + 1) >= MHZ(4) &&
+		     (APB1DIV_VAL + 1) % (FPRED_VAL + 1) == 0,
 	     "Invalid APB1_CLK setting");
 BUILD_ASSERT(APBSRC_CLK / (APB2DIV_VAL + 1) <= (MAX_OFMCLK / 2) &&
-	     APBSRC_CLK / (APB2DIV_VAL + 1) >= MHZ(8) &&
-	     (APB2DIV_VAL + 1) % (FPRED_VAL + 1) == 0,
+		     APBSRC_CLK / (APB2DIV_VAL + 1) >= MHZ(8) &&
+		     (APB2DIV_VAL + 1) % (FPRED_VAL + 1) == 0,
 	     "Invalid APB2_CLK setting");
 BUILD_ASSERT(APBSRC_CLK / (APB3DIV_VAL + 1) <= (MAX_OFMCLK / 2) &&
-	     APBSRC_CLK / (APB3DIV_VAL + 1) >= KHZ(12500) &&
-	     (APB3DIV_VAL + 1) % (FPRED_VAL + 1) == 0,
+		     APBSRC_CLK / (APB3DIV_VAL + 1) >= KHZ(12500) &&
+		     (APB3DIV_VAL + 1) % (FPRED_VAL + 1) == 0,
 	     "Invalid APB3_CLK setting");
 #if defined(APB4DIV_VAL)
 BUILD_ASSERT(APBSRC_CLK / (APB4DIV_VAL + 1) <= MAX_OFMCLK &&
-	     APBSRC_CLK / (APB4DIV_VAL + 1) >= MHZ(8) &&
-	     (APB4DIV_VAL + 1) % (FPRED_VAL + 1) == 0,
+		     APBSRC_CLK / (APB4DIV_VAL + 1) >= MHZ(8) &&
+		     (APB4DIV_VAL + 1) % (FPRED_VAL + 1) == 0,
 	     "Invalid APB4_CLK setting");
 #endif
 #if defined(CONFIG_I3C_NPCX)
-BUILD_ASSERT(OFMCLK / (MCLKD_SL + 1) <= MHZ(50) &&
-	     OFMCLK / (MCLKD_SL + 1) >= MHZ(40),
+BUILD_ASSERT(OFMCLK / (MCLKD_SL + 1) <= MHZ(50) && OFMCLK / (MCLKD_SL + 1) >= MHZ(40),
 	     "Invalid MCLKD_SL setting");
-BUILD_ASSERT(APBSRC_CLK / (APB4DIV_VAL + 1) >= MHZ(20),
-	     "Invalid PDMA CLK setting");
+BUILD_ASSERT(APBSRC_CLK / (APB4DIV_VAL + 1) >= MHZ(20), "Invalid PDMA CLK setting");
 #endif
 
 static int npcx_clock_control_init(const struct device *dev)
@@ -211,13 +206,13 @@ static int npcx_clock_control_init(const struct device *dev)
 	 * unstable for a little which can affect peripheral communication like
 	 * eSPI. Skip this if not needed.
 	 */
-	if (inst_cdcg->HFCGN != HFCGN_VAL || inst_cdcg->HFCGML != HFCGML_VAL
-			|| inst_cdcg->HFCGMH != HFCGMH_VAL) {
+	if (inst_cdcg->HFCGN != HFCGN_VAL || inst_cdcg->HFCGML != HFCGML_VAL ||
+	    inst_cdcg->HFCGMH != HFCGMH_VAL) {
 		/*
 		 * Configure frequency multiplier M/N values according to
 		 * the requested OFMCLK (Unit:Hz).
 		 */
-		inst_cdcg->HFCGN  = HFCGN_VAL;
+		inst_cdcg->HFCGN = HFCGN_VAL;
 		inst_cdcg->HFCGML = HFCGML_VAL;
 		inst_cdcg->HFCGMH = HFCGMH_VAL;
 
@@ -230,8 +225,8 @@ static int npcx_clock_control_init(const struct device *dev)
 	}
 
 	/* Set all clock prescalers of core and peripherals. */
-	inst_cdcg->HFCGP   = VAL_HFCGP;
-	inst_cdcg->HFCBCD  = VAL_HFCBCD;
+	inst_cdcg->HFCGP = VAL_HFCGP;
+	inst_cdcg->HFCBCD = VAL_HFCBCD;
 	inst_cdcg->HFCBCD1 = VAL_HFCBCD1;
 	inst_cdcg->HFCBCD2 = VAL_HFCBCD2;
 #if defined(CONFIG_SOC_SERIES_NPCX4)
@@ -256,13 +251,8 @@ static int npcx_clock_control_init(const struct device *dev)
 
 const struct npcx_pcc_config pcc_config = {
 	.base_cdcg = DT_INST_REG_ADDR_BY_NAME(0, cdcg),
-	.base_pmc  = DT_INST_REG_ADDR_BY_NAME(0, pmc),
+	.base_pmc = DT_INST_REG_ADDR_BY_NAME(0, pmc),
 };
 
-DEVICE_DT_INST_DEFINE(0,
-		    npcx_clock_control_init,
-		    NULL,
-		    NULL, &pcc_config,
-		    PRE_KERNEL_1,
-		    CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
-		    &npcx_clock_control_api);
+DEVICE_DT_INST_DEFINE(0, npcx_clock_control_init, NULL, NULL, &pcc_config, PRE_KERNEL_1,
+		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &npcx_clock_control_api);

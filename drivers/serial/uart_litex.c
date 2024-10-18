@@ -16,8 +16,8 @@
 
 #include <soc.h>
 
-#define UART_EV_TX		BIT(0)
-#define UART_EV_RX		BIT(1)
+#define UART_EV_TX BIT(0)
+#define UART_EV_RX BIT(1)
 
 struct uart_litex_device_config {
 	uint32_t rxtx_addr;
@@ -198,8 +198,7 @@ static int uart_litex_irq_rx_ready(const struct device *dev)
  *
  * @return Number of bytes sent
  */
-static int uart_litex_fifo_fill(const struct device *dev,
-				const uint8_t *tx_data, int size)
+static int uart_litex_fifo_fill(const struct device *dev, const uint8_t *tx_data, int size)
 {
 	const struct uart_litex_device_config *config = dev->config;
 	int i;
@@ -220,8 +219,7 @@ static int uart_litex_fifo_fill(const struct device *dev,
  *
  * @return Number of bytes read
  */
-static int uart_litex_fifo_read(const struct device *dev,
-				uint8_t *rx_data, const int size)
+static int uart_litex_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
 {
 	const struct uart_litex_device_config *config = dev->config;
 	int i;
@@ -266,8 +264,7 @@ static int uart_litex_irq_update(const struct device *dev)
  * @param dev UART device struct
  * @param cb Callback function pointer.
  */
-static void uart_litex_irq_callback_set(const struct device *dev,
-					uart_irq_callback_user_data_t cb,
+static void uart_litex_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
 					void *cb_data)
 {
 	struct uart_litex_data *data;
@@ -299,26 +296,26 @@ static void uart_litex_tx_soft_isr(struct k_timer *timer)
 
 	uart_litex_irq_handler(dev);
 }
-#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 static const struct uart_driver_api uart_litex_driver_api = {
-	.poll_in		= uart_litex_poll_in,
-	.poll_out		= uart_litex_poll_out,
-	.err_check		= NULL,
+	.poll_in = uart_litex_poll_in,
+	.poll_out = uart_litex_poll_out,
+	.err_check = NULL,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.fifo_fill		= uart_litex_fifo_fill,
-	.fifo_read		= uart_litex_fifo_read,
-	.irq_tx_enable		= uart_litex_irq_tx_enable,
-	.irq_tx_disable		= uart_litex_irq_tx_disable,
-	.irq_tx_ready		= uart_litex_irq_tx_ready,
-	.irq_rx_enable		= uart_litex_irq_rx_enable,
-	.irq_rx_disable		= uart_litex_irq_rx_disable,
-	.irq_rx_ready		= uart_litex_irq_rx_ready,
-	.irq_err_enable		= uart_litex_irq_err,
-	.irq_err_disable	= uart_litex_irq_err,
-	.irq_is_pending		= uart_litex_irq_is_pending,
-	.irq_update		= uart_litex_irq_update,
-	.irq_callback_set	= uart_litex_irq_callback_set
+	.fifo_fill = uart_litex_fifo_fill,
+	.fifo_read = uart_litex_fifo_read,
+	.irq_tx_enable = uart_litex_irq_tx_enable,
+	.irq_tx_disable = uart_litex_irq_tx_disable,
+	.irq_tx_ready = uart_litex_irq_tx_ready,
+	.irq_rx_enable = uart_litex_irq_rx_enable,
+	.irq_rx_disable = uart_litex_irq_rx_disable,
+	.irq_rx_ready = uart_litex_irq_rx_ready,
+	.irq_err_enable = uart_litex_irq_err,
+	.irq_err_disable = uart_litex_irq_err,
+	.irq_is_pending = uart_litex_irq_is_pending,
+	.irq_update = uart_litex_irq_update,
+	.irq_callback_set = uart_litex_irq_callback_set
 #endif
 };
 
@@ -350,7 +347,7 @@ static int uart_litex_init(const struct device *dev)
 	}
 
 #define LITEX_UART_INIT(n)                                                                         \
-	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (LITEX_UART_IRQ_INIT(n)))                         \
+	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (LITEX_UART_IRQ_INIT(n)))                                                                                 \
                                                                                                    \
 	static struct uart_litex_data uart_litex_data_##n;                                         \
                                                                                                    \
@@ -364,7 +361,7 @@ static int uart_litex_init(const struct device *dev)
 		.txempty_addr = DT_INST_REG_ADDR_BY_NAME(n, txempty),                              \
 		.rxfull_addr = DT_INST_REG_ADDR_BY_NAME(n, rxfull),                                \
 		.baud_rate = DT_INST_PROP(n, current_speed),                                       \
-		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (.config_func = uart_irq_config##n,))};   \
+		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (.config_func = uart_irq_config##n,))};      \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, uart_litex_init, NULL, &uart_litex_data_##n,                      \
 			      &uart_litex_dev_cfg_##n, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,  \

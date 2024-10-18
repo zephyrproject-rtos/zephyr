@@ -20,8 +20,7 @@ struct scu_pd_data {
 	sc_rsrc_t rsrc;
 };
 
-static int scu_pd_pm_action(const struct device *dev,
-			    enum pm_device_action action)
+static int scu_pd_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	int ret;
 	sc_pm_power_mode_t mode;
@@ -43,12 +42,9 @@ static int scu_pd_pm_action(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	ret = sc_pm_set_resource_power_mode(scu_data->handle,
-					    scu_data->rsrc,
-					    mode);
+	ret = sc_pm_set_resource_power_mode(scu_data->handle, scu_data->rsrc, mode);
 	if (ret != SC_ERR_NONE) {
-		LOG_ERR("failed to set rsrc %d power mode to %d",
-			scu_data->rsrc, mode);
+		LOG_ERR("failed to set rsrc %d power mode to %d", scu_data->rsrc, mode);
 		return -EIO;
 	}
 
@@ -68,21 +64,18 @@ static int scu_pd_init(const struct device *dev)
 	return pm_device_runtime_enable(dev);
 }
 
-
-#define SCU_PD_DEVICE_DEFINE(inst)					\
-									\
-BUILD_ASSERT(DT_INST_PROP(inst, nxp_resource_id) < IMX_SC_R_LAST,	\
-	     "invalid resource ID");					\
-									\
-static struct scu_pd_data scu_pd_data_##inst = {			\
-	.rsrc = DT_INST_PROP(inst, nxp_resource_id),			\
-};									\
-									\
-PM_DEVICE_DT_INST_DEFINE(inst, scu_pd_pm_action);			\
-									\
-DEVICE_DT_INST_DEFINE(inst, scu_pd_init, PM_DEVICE_DT_INST_GET(inst),	\
-		      &scu_pd_data_##inst, NULL, PRE_KERNEL_1,		\
-		      CONFIG_POWER_DOMAIN_NXP_SCU_INIT_PRIORITY,	\
-		      NULL);
+#define SCU_PD_DEVICE_DEFINE(inst)                                                                 \
+                                                                                                   \
+	BUILD_ASSERT(DT_INST_PROP(inst, nxp_resource_id) < IMX_SC_R_LAST, "invalid resource ID");  \
+                                                                                                   \
+	static struct scu_pd_data scu_pd_data_##inst = {                                           \
+		.rsrc = DT_INST_PROP(inst, nxp_resource_id),                                       \
+	};                                                                                         \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(inst, scu_pd_pm_action);                                          \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, scu_pd_init, PM_DEVICE_DT_INST_GET(inst), &scu_pd_data_##inst, \
+			      NULL, PRE_KERNEL_1, CONFIG_POWER_DOMAIN_NXP_SCU_INIT_PRIORITY,       \
+			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(SCU_PD_DEVICE_DEFINE);

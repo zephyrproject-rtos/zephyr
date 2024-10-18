@@ -14,79 +14,73 @@
 
 #include "fsl_device_registers.h"
 
-
 #if defined(CONFIG_MEMC_NXP_FLEXRAM_MAGIC_ADDR_API)
 BUILD_ASSERT(DT_PROP(FLEXRAM_DT_NODE, flexram_has_magic_addr),
-		"SOC does not support magic flexram addresses");
+	     "SOC does not support magic flexram addresses");
 #endif
 
 #define BANK_SIZE (DT_PROP(FLEXRAM_DT_NODE, flexram_bank_size) * 1024)
 #define NUM_BANKS DT_PROP(FLEXRAM_DT_NODE, flexram_num_ram_banks)
 
 #define IS_CHILD_RAM_TYPE(node_id, compat) DT_NODE_HAS_COMPAT(node_id, compat)
-#define DOES_RAM_TYPE_EXIST(compat) \
+#define DOES_RAM_TYPE_EXIST(compat)                                                                \
 	DT_FOREACH_CHILD_SEP_VARGS(FLEXRAM_DT_NODE, IS_CHILD_RAM_TYPE, (+), compat)
 
 #if DOES_RAM_TYPE_EXIST(mmio_sram)
-#define FIND_OCRAM_NODE(node_id) \
-	COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, mmio_sram), (node_id), ())
-#define OCRAM_DT_NODE DT_FOREACH_CHILD(FLEXRAM_DT_NODE, FIND_OCRAM_NODE)
-#define OCRAM_START	(DT_REG_ADDR(OCRAM_DT_NODE))
-#define OCRAM_END	(OCRAM_START + DT_REG_SIZE(OCRAM_DT_NODE))
+#define FIND_OCRAM_NODE(node_id) COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, mmio_sram), (node_id), ())
+#define OCRAM_DT_NODE            DT_FOREACH_CHILD(FLEXRAM_DT_NODE, FIND_OCRAM_NODE)
+#define OCRAM_START              (DT_REG_ADDR(OCRAM_DT_NODE))
+#define OCRAM_END                (OCRAM_START + DT_REG_SIZE(OCRAM_DT_NODE))
 #endif /* OCRAM */
 #if DOES_RAM_TYPE_EXIST(nxp_imx_dtcm)
-#define FIND_DTCM_NODE(node_id) \
-	COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, nxp_imx_dtcm), (node_id), ())
-#define DTCM_DT_NODE DT_FOREACH_CHILD(FLEXRAM_DT_NODE, FIND_DTCM_NODE)
-#define DTCM_START	(DT_REG_ADDR(DTCM_DT_NODE))
-#define DTCM_END	(DTCM_START + DT_REG_SIZE(DTCM_DT_NODE))
+#define FIND_DTCM_NODE(node_id) COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, nxp_imx_dtcm), (node_id), ())
+#define DTCM_DT_NODE            DT_FOREACH_CHILD(FLEXRAM_DT_NODE, FIND_DTCM_NODE)
+#define DTCM_START              (DT_REG_ADDR(DTCM_DT_NODE))
+#define DTCM_END                (DTCM_START + DT_REG_SIZE(DTCM_DT_NODE))
 #endif /* DTCM */
 #if DOES_RAM_TYPE_EXIST(nxp_imx_itcm)
-#define FIND_ITCM_NODE(node_id) \
-	COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, nxp_imx_itcm), (node_id), ())
-#define ITCM_DT_NODE DT_FOREACH_CHILD(FLEXRAM_DT_NODE, FIND_ITCM_NODE)
-#define ITCM_START	(DT_REG_ADDR(ITCM_DT_NODE))
-#define ITCM_END	(ITCM_START + DT_REG_SIZE(ITCM_DT_NODE))
+#define FIND_ITCM_NODE(node_id) COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, nxp_imx_itcm), (node_id), ())
+#define ITCM_DT_NODE            DT_FOREACH_CHILD(FLEXRAM_DT_NODE, FIND_ITCM_NODE)
+#define ITCM_START              (DT_REG_ADDR(ITCM_DT_NODE))
+#define ITCM_END                (ITCM_START + DT_REG_SIZE(ITCM_DT_NODE))
 #endif /* ITCM */
-
 
 #ifdef FLEXRAM_RUNTIME_BANKS_USED
 
 #define PLUS_ONE_BANK(node_id, prop, idx) 1
-#define COUNT_BANKS \
-	DT_FOREACH_PROP_ELEM_SEP(FLEXRAM_DT_NODE, flexram_bank_spec, PLUS_ONE_BANK, (+))
+#define COUNT_BANKS                       DT_FOREACH_PROP_ELEM_SEP(FLEXRAM_DT_NODE, flexram_bank_spec, PLUS_ONE_BANK, (+))
 BUILD_ASSERT(COUNT_BANKS == NUM_BANKS, "wrong number of flexram banks defined");
 
 #ifdef OCRAM_DT_NODE
-#define ADD_BANK_IF_OCRAM(node_id, prop, idx) \
+#define ADD_BANK_IF_OCRAM(node_id, prop, idx)                                                      \
 	COND_CODE_1(IS_EQ(DT_PROP_BY_IDX(node_id, prop, idx), FLEXRAM_OCRAM), \
 			(BANK_SIZE), (0))
-#define OCRAM_TOTAL \
+#define OCRAM_TOTAL                                                                                \
 	DT_FOREACH_PROP_ELEM_SEP(FLEXRAM_DT_NODE, flexram_bank_spec, ADD_BANK_IF_OCRAM, (+))
 BUILD_ASSERT((OCRAM_TOTAL) == DT_REG_SIZE(OCRAM_DT_NODE), "OCRAM node size is wrong");
 #endif /* OCRAM */
 
 #ifdef DTCM_DT_NODE
-#define ADD_BANK_IF_DTCM(node_id, prop, idx) \
+#define ADD_BANK_IF_DTCM(node_id, prop, idx)                                                       \
 	COND_CODE_1(IS_EQ(DT_PROP_BY_IDX(node_id, prop, idx), FLEXRAM_DTCM), \
 			(BANK_SIZE), (0))
-#define DTCM_TOTAL \
+#define DTCM_TOTAL                                                                                 \
 	DT_FOREACH_PROP_ELEM_SEP(FLEXRAM_DT_NODE, flexram_bank_spec, ADD_BANK_IF_DTCM, (+))
 BUILD_ASSERT((DTCM_TOTAL) == DT_REG_SIZE(DTCM_DT_NODE), "DTCM node size is wrong");
 #endif /* DTCM */
 
 #ifdef ITCM_DT_NODE
-#define ADD_BANK_IF_ITCM(node_id, prop, idx) \
+#define ADD_BANK_IF_ITCM(node_id, prop, idx)                                                       \
 	COND_CODE_1(IS_EQ(DT_PROP_BY_IDX(node_id, prop, idx), FLEXRAM_ITCM), \
 			(BANK_SIZE), (0))
-#define ITCM_TOTAL \
+#define ITCM_TOTAL                                                                                 \
 	DT_FOREACH_PROP_ELEM_SEP(FLEXRAM_DT_NODE, flexram_bank_spec, ADD_BANK_IF_ITCM, (+))
 BUILD_ASSERT((ITCM_TOTAL) == DT_REG_SIZE(ITCM_DT_NODE), "ITCM node size is wrong");
 #endif /* ITCM */
 
 #endif /* FLEXRAM_RUNTIME_BANKS_USED */
 
-static FLEXRAM_Type *const base = (FLEXRAM_Type *) DT_REG_ADDR(FLEXRAM_DT_NODE);
+static FLEXRAM_Type *const base = (FLEXRAM_Type *)DT_REG_ADDR(FLEXRAM_DT_NODE);
 
 #ifdef FLEXRAM_INTERRUPTS_USED
 static flexram_callback_t flexram_callback;
@@ -220,8 +214,8 @@ static int nxp_flexram_init(void)
 #endif /* CONFIG_MEMC_NXP_FLEXRAM_MAGIC_ADDR_API */
 
 #ifdef FLEXRAM_INTERRUPTS_USED
-	IRQ_CONNECT(DT_IRQN(FLEXRAM_DT_NODE), DT_IRQ(FLEXRAM_DT_NODE, priority),
-			nxp_flexram_isr, NULL, 0);
+	IRQ_CONNECT(DT_IRQN(FLEXRAM_DT_NODE), DT_IRQ(FLEXRAM_DT_NODE, priority), nxp_flexram_isr,
+		    NULL, 0);
 	irq_enable(DT_IRQN(FLEXRAM_DT_NODE));
 #endif /* FLEXRAM_INTERRUPTS_USED */
 

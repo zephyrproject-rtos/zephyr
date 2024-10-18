@@ -18,17 +18,13 @@
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
-#define XEC_GPIO_EDGE_DLY_COUNT		4
+#define XEC_GPIO_EDGE_DLY_COUNT 4
 
 LOG_MODULE_REGISTER(gpio, CONFIG_GPIO_LOG_LEVEL);
 
 static const uint32_t valid_ctrl_masks[NUM_MCHP_GPIO_PORTS] = {
-	(MCHP_GPIO_PORT_A_BITMAP),
-	(MCHP_GPIO_PORT_B_BITMAP),
-	(MCHP_GPIO_PORT_C_BITMAP),
-	(MCHP_GPIO_PORT_D_BITMAP),
-	(MCHP_GPIO_PORT_E_BITMAP),
-	(MCHP_GPIO_PORT_F_BITMAP),
+	(MCHP_GPIO_PORT_A_BITMAP), (MCHP_GPIO_PORT_B_BITMAP), (MCHP_GPIO_PORT_C_BITMAP),
+	(MCHP_GPIO_PORT_D_BITMAP), (MCHP_GPIO_PORT_E_BITMAP), (MCHP_GPIO_PORT_F_BITMAP),
 };
 
 struct gpio_xec_data {
@@ -91,13 +87,12 @@ static inline void xec_mask_write32(uintptr_t addr, uint32_t mask, uint32_t val)
  */
 static int gpio_xec_validate_flags(gpio_flags_t flags)
 {
-	if ((flags & (GPIO_SINGLE_ENDED | GPIO_LINE_OPEN_DRAIN))
-	    == (GPIO_SINGLE_ENDED | GPIO_LINE_OPEN_SOURCE)) {
+	if ((flags & (GPIO_SINGLE_ENDED | GPIO_LINE_OPEN_DRAIN)) ==
+	    (GPIO_SINGLE_ENDED | GPIO_LINE_OPEN_SOURCE)) {
 		return -ENOTSUP;
 	}
 
-	if ((flags & (GPIO_INPUT | GPIO_OUTPUT))
-	    == (GPIO_INPUT | GPIO_OUTPUT)) {
+	if ((flags & (GPIO_INPUT | GPIO_OUTPUT)) == (GPIO_INPUT | GPIO_OUTPUT)) {
 		return -ENOTSUP;
 	}
 
@@ -120,16 +115,15 @@ static int gpio_xec_validate_flags(gpio_flags_t flags)
  * we use Control 1 to configure all pin features and output state. Before exiting,
  * we set the output select for parallel mode enabling writes to the parallel output bit.
  */
-static int gpio_xec_configure(const struct device *dev,
-			      gpio_pin_t pin, gpio_flags_t flags)
+static int gpio_xec_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_xec_config *config = dev->config;
 	uintptr_t pcr1_addr = 0u;
 	uint32_t pcr1 = 0u, pcr1_new = 0u;
-	uint32_t msk = (MCHP_GPIO_CTRL_PWRG_MASK
-		| MCHP_GPIO_CTRL_BUFT_MASK | MCHP_GPIO_CTRL_DIR_MASK
-		| MCHP_GPIO_CTRL_AOD_MASK | BIT(MCHP_GPIO_CTRL_POL_POS)
-		| MCHP_GPIO_CTRL_MUX_MASK | MCHP_GPIO_CTRL_INPAD_DIS_MASK);
+	uint32_t msk =
+		(MCHP_GPIO_CTRL_PWRG_MASK | MCHP_GPIO_CTRL_BUFT_MASK | MCHP_GPIO_CTRL_DIR_MASK |
+		 MCHP_GPIO_CTRL_AOD_MASK | BIT(MCHP_GPIO_CTRL_POL_POS) | MCHP_GPIO_CTRL_MUX_MASK |
+		 MCHP_GPIO_CTRL_INPAD_DIS_MASK);
 
 	if (!(valid_ctrl_masks[config->port_num] & BIT(pin))) {
 		return -EINVAL;
@@ -207,14 +201,13 @@ static int gpio_xec_configure(const struct device *dev,
 	 */
 	pcr1 = (pcr1 & ~msk) | (pcr1_new & msk);
 	sys_write32(pcr1, pcr1_addr); /* configuration. may generate a single edge */
-	 /* Control output bit becomes read-only and parallel out register bit becomes r/w */
+	/* Control output bit becomes read-only and parallel out register bit becomes r/w */
 	sys_write32(pcr1 | BIT(MCHP_GPIO_CTRL_AOD_POS), pcr1_addr);
 
 	return 0;
 }
 
-static int gen_gpio_ctrl_icfg(enum gpio_int_mode mode, enum gpio_int_trig trig,
-			      uint32_t *pin_ctr1)
+static int gen_gpio_ctrl_icfg(enum gpio_int_mode mode, enum gpio_int_trig trig, uint32_t *pin_ctr1)
 {
 	if (!pin_ctr1) {
 		return -EINVAL;
@@ -249,8 +242,7 @@ static int gen_gpio_ctrl_icfg(enum gpio_int_mode mode, enum gpio_int_trig trig,
 	return 0;
 }
 
-static void gpio_xec_intr_en(gpio_pin_t pin, enum gpio_int_mode mode,
-			     uint8_t girq_id)
+static void gpio_xec_intr_en(gpio_pin_t pin, enum gpio_int_mode mode, uint8_t girq_id)
 {
 	if (mode != GPIO_INT_MODE_DISABLED) {
 		/* Enable interrupt to propagate via its GIRQ to the NVIC */
@@ -258,10 +250,8 @@ static void gpio_xec_intr_en(gpio_pin_t pin, enum gpio_int_mode mode,
 	}
 }
 
-static int gpio_xec_pin_interrupt_configure(const struct device *dev,
-					    gpio_pin_t pin,
-					    enum gpio_int_mode mode,
-					    enum gpio_int_trig trig)
+static int gpio_xec_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
+					    enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	const struct gpio_xec_config *config = dev->config;
 	uintptr_t pcr1_addr = pin_ctrl_addr(dev, pin);
@@ -274,8 +264,7 @@ static int gpio_xec_pin_interrupt_configure(const struct device *dev,
 	}
 
 	/* Check if GPIO port supports interrupts */
-	if ((mode != GPIO_INT_MODE_DISABLED) &&
-	    ((config->flags & GPIO_INT_ENABLE) == 0)) {
+	if ((mode != GPIO_INT_MODE_DISABLED) && ((config->flags & GPIO_INT_ENABLE) == 0)) {
 		return -ENOTSUP;
 	}
 
@@ -330,9 +319,7 @@ static int gpio_xec_pin_interrupt_configure(const struct device *dev,
 	return 0;
 }
 
-static int gpio_xec_port_set_masked_raw(const struct device *dev,
-					uint32_t mask,
-					uint32_t value)
+static int gpio_xec_port_set_masked_raw(const struct device *dev, uint32_t mask, uint32_t value)
 {
 	uintptr_t pout_addr = pin_parout_addr(dev);
 
@@ -350,8 +337,7 @@ static int gpio_xec_port_set_bits_raw(const struct device *dev, uint32_t mask)
 	return 0;
 }
 
-static int gpio_xec_port_clear_bits_raw(const struct device *dev,
-					uint32_t mask)
+static int gpio_xec_port_clear_bits_raw(const struct device *dev, uint32_t mask)
 {
 	uintptr_t pout_addr = pin_parout_addr(dev);
 
@@ -378,8 +364,8 @@ static int gpio_xec_port_get_raw(const struct device *dev, uint32_t *value)
 	return 0;
 }
 
-static int gpio_xec_manage_callback(const struct device *dev,
-				    struct gpio_callback *callback, bool set)
+static int gpio_xec_manage_callback(const struct device *dev, struct gpio_callback *callback,
+				    bool set)
 {
 	struct gpio_xec_data *data = dev->data;
 
@@ -505,48 +491,44 @@ static const struct gpio_driver_api gpio_xec_driver_api = {
 #endif
 };
 
-#define XEC_GPIO_PORT_FLAGS(n)						\
-	((DT_INST_IRQ_HAS_CELL(n, irq)) ? GPIO_INT_ENABLE : 0)
+#define XEC_GPIO_PORT_FLAGS(n) ((DT_INST_IRQ_HAS_CELL(n, irq)) ? GPIO_INT_ENABLE : 0)
 
-#define XEC_GPIO_PORT(n)						\
-	static int gpio_xec_port_init_##n(const struct device *dev)	\
-	{								\
-		if (!(DT_INST_IRQ_HAS_CELL(n, irq))) {			\
-			return 0;					\
-		}							\
-									\
-		const struct gpio_xec_config *config = dev->config;	\
-									\
-		mchp_soc_ecia_girq_aggr_en(config->girq_id, 1);		\
-									\
-		IRQ_CONNECT(DT_INST_IRQN(n),				\
-			    DT_INST_IRQ(n, priority),			\
-			    gpio_gpio_xec_port_isr,			\
-			    DEVICE_DT_INST_GET(n), 0U);			\
-									\
-		irq_enable(DT_INST_IRQN(n));				\
-									\
-		return 0;						\
-	}								\
-									\
-	static struct gpio_xec_data gpio_xec_port_data_##n;		\
-									\
-	static const struct gpio_xec_config xec_gpio_config_##n = {	\
-		.common = {						\
-			.port_pin_mask =				\
-				GPIO_PORT_PIN_MASK_FROM_DT_INST(n),	\
-		},							\
-		.pcr1_base = (uintptr_t)DT_INST_REG_ADDR_BY_IDX(n, 0),	\
-		.parin_addr = (uintptr_t)DT_INST_REG_ADDR_BY_IDX(n, 1),	\
-		.parout_addr = (uintptr_t)DT_INST_REG_ADDR_BY_IDX(n, 2),\
-		.port_num = DT_INST_PROP(n, port_id),			\
-		.girq_id = DT_INST_PROP_OR(n, girq_id, 0),		\
-		.flags = XEC_GPIO_PORT_FLAGS(n),			\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(n, gpio_xec_port_init_##n, NULL,		\
-		&gpio_xec_port_data_##n, &xec_gpio_config_##n,		\
-		PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,			\
-		&gpio_xec_driver_api);
+#define XEC_GPIO_PORT(n)                                                                           \
+	static int gpio_xec_port_init_##n(const struct device *dev)                                \
+	{                                                                                          \
+		if (!(DT_INST_IRQ_HAS_CELL(n, irq))) {                                             \
+			return 0;                                                                  \
+		}                                                                                  \
+                                                                                                   \
+		const struct gpio_xec_config *config = dev->config;                                \
+                                                                                                   \
+		mchp_soc_ecia_girq_aggr_en(config->girq_id, 1);                                    \
+                                                                                                   \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_gpio_xec_port_isr,     \
+			    DEVICE_DT_INST_GET(n), 0U);                                            \
+                                                                                                   \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+                                                                                                   \
+		return 0;                                                                          \
+	}                                                                                          \
+                                                                                                   \
+	static struct gpio_xec_data gpio_xec_port_data_##n;                                        \
+                                                                                                   \
+	static const struct gpio_xec_config xec_gpio_config_##n = {                                \
+		.common =                                                                          \
+			{                                                                          \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
+			},                                                                         \
+		.pcr1_base = (uintptr_t)DT_INST_REG_ADDR_BY_IDX(n, 0),                             \
+		.parin_addr = (uintptr_t)DT_INST_REG_ADDR_BY_IDX(n, 1),                            \
+		.parout_addr = (uintptr_t)DT_INST_REG_ADDR_BY_IDX(n, 2),                           \
+		.port_num = DT_INST_PROP(n, port_id),                                              \
+		.girq_id = DT_INST_PROP_OR(n, girq_id, 0),                                         \
+		.flags = XEC_GPIO_PORT_FLAGS(n),                                                   \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, gpio_xec_port_init_##n, NULL, &gpio_xec_port_data_##n,            \
+			      &xec_gpio_config_##n, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,       \
+			      &gpio_xec_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(XEC_GPIO_PORT)

@@ -13,12 +13,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(sx126x, CONFIG_LORA_LOG_LEVEL);
 
-static const struct gpio_dt_spec sx126x_gpio_reset = GPIO_DT_SPEC_INST_GET(
-		0, reset_gpios);
-static const struct gpio_dt_spec sx126x_gpio_busy = GPIO_DT_SPEC_INST_GET(
-		0, busy_gpios);
-static const struct gpio_dt_spec sx126x_gpio_dio1 = GPIO_DT_SPEC_INST_GET(
-		0, dio1_gpios);
+static const struct gpio_dt_spec sx126x_gpio_reset = GPIO_DT_SPEC_INST_GET(0, reset_gpios);
+static const struct gpio_dt_spec sx126x_gpio_busy = GPIO_DT_SPEC_INST_GET(0, busy_gpios);
+static const struct gpio_dt_spec sx126x_gpio_dio1 = GPIO_DT_SPEC_INST_GET(0, dio1_gpios);
 
 void sx126x_reset(struct sx126x_data *dev_data)
 {
@@ -40,21 +37,18 @@ uint32_t sx126x_get_dio1_pin_state(struct sx126x_data *dev_data)
 
 void sx126x_dio1_irq_enable(struct sx126x_data *dev_data)
 {
-	gpio_pin_interrupt_configure_dt(&sx126x_gpio_dio1,
-				     GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&sx126x_gpio_dio1, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
 void sx126x_dio1_irq_disable(struct sx126x_data *dev_data)
 {
-	gpio_pin_interrupt_configure_dt(&sx126x_gpio_dio1,
-				     GPIO_INT_DISABLE);
+	gpio_pin_interrupt_configure_dt(&sx126x_gpio_dio1, GPIO_INT_DISABLE);
 }
 
-static void sx126x_dio1_irq_callback(const struct device *dev,
-				     struct gpio_callback *cb, uint32_t pins)
+static void sx126x_dio1_irq_callback(const struct device *dev, struct gpio_callback *cb,
+				     uint32_t pins)
 {
-	struct sx126x_data *dev_data = CONTAINER_OF(cb, struct sx126x_data,
-						    dio1_irq_callback);
+	struct sx126x_data *dev_data = CONTAINER_OF(cb, struct sx126x_data, dio1_irq_callback);
 
 	if (pins & BIT(sx126x_gpio_dio1.pin)) {
 		k_work_submit(&dev_data->dio1_irq_work);
@@ -77,10 +71,9 @@ int sx126x_variant_init(const struct device *dev)
 		return -EIO;
 	}
 
-	gpio_init_callback(&dev_data->dio1_irq_callback,
-			   sx126x_dio1_irq_callback, BIT(sx126x_gpio_dio1.pin));
-	if (gpio_add_callback(sx126x_gpio_dio1.port,
-			      &dev_data->dio1_irq_callback) < 0) {
+	gpio_init_callback(&dev_data->dio1_irq_callback, sx126x_dio1_irq_callback,
+			   BIT(sx126x_gpio_dio1.pin));
+	if (gpio_add_callback(sx126x_gpio_dio1.port, &dev_data->dio1_irq_callback) < 0) {
 		LOG_ERR("Could not set GPIO callback for DIO1 interrupt.");
 		return -EIO;
 	}

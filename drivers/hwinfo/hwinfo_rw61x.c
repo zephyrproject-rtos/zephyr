@@ -29,14 +29,8 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 
 int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 {
-	*supported = (
-		RESET_SOFTWARE		|
-		RESET_CPU_LOCKUP	|
-		RESET_WATCHDOG		|
-		RESET_SECURITY		|
-		RESET_DEBUG		|
-		RESET_HARDWARE
-	);
+	*supported = (RESET_SOFTWARE | RESET_CPU_LOCKUP | RESET_WATCHDOG | RESET_SECURITY |
+		      RESET_DEBUG | RESET_HARDWARE);
 
 	return 0;
 }

@@ -176,18 +176,14 @@ static int native_tty_configure(const struct device *dev, const struct uart_conf
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static int native_tty_uart_fifo_fill(const struct device *dev,
-				     const uint8_t *tx_data,
-				     int size)
+static int native_tty_uart_fifo_fill(const struct device *dev, const uint8_t *tx_data, int size)
 {
 	struct native_tty_data *data = dev->data;
 
 	return nsi_host_write(data->fd, (void *)tx_data, size);
 }
 
-static int native_tty_uart_fifo_read(const struct device *dev,
-				     uint8_t *rx_data,
-				     const int size)
+static int native_tty_uart_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
 {
 	struct native_tty_data *data = dev->data;
 
@@ -247,8 +243,7 @@ static int native_tty_uart_irq_rx_ready(const struct device *dev)
 
 static int native_tty_uart_irq_is_pending(const struct device *dev)
 {
-	return native_tty_uart_irq_rx_ready(dev) ||
-		native_tty_uart_irq_tx_ready(dev);
+	return native_tty_uart_irq_rx_ready(dev) || native_tty_uart_irq_tx_ready(dev);
 }
 
 static int native_tty_uart_irq_update(const struct device *dev)
@@ -300,8 +295,7 @@ void native_tty_uart_irq_function(void *arg1, void *arg2, void *arg3)
 }
 
 static void native_tty_uart_irq_callback_set(const struct device *dev,
-					     uart_irq_callback_user_data_t cb,
-					     void *cb_data)
+					     uart_irq_callback_user_data_t cb, void *cb_data)
 {
 	struct native_tty_data *data = dev->data;
 
@@ -313,8 +307,7 @@ static void native_tty_irq_init(const struct device *dev)
 {
 	/* Create a thread which will wait for data - replacement for IRQ */
 	k_thread_create(&rx_thread, rx_stack, K_KERNEL_STACK_SIZEOF(rx_stack),
-			native_tty_uart_irq_function,
-			(void *)dev, NULL, NULL,
+			native_tty_uart_irq_function, (void *)dev, NULL, NULL,
 			K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
@@ -373,17 +366,17 @@ static struct uart_driver_api native_tty_uart_driver_api = {
 	.configure = native_tty_configure,
 #endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.fifo_fill        = native_tty_uart_fifo_fill,
-	.fifo_read        = native_tty_uart_fifo_read,
-	.irq_tx_enable    = native_tty_uart_irq_tx_enable,
-	.irq_tx_disable	  = native_tty_uart_irq_tx_disable,
-	.irq_tx_ready     = native_tty_uart_irq_tx_ready,
-	.irq_tx_complete  = native_tty_uart_irq_tx_complete,
-	.irq_rx_enable    = native_tty_uart_irq_rx_enable,
-	.irq_rx_disable   = native_tty_uart_irq_rx_disable,
-	.irq_rx_ready     = native_tty_uart_irq_rx_ready,
-	.irq_is_pending   = native_tty_uart_irq_is_pending,
-	.irq_update       = native_tty_uart_irq_update,
+	.fifo_fill = native_tty_uart_fifo_fill,
+	.fifo_read = native_tty_uart_fifo_read,
+	.irq_tx_enable = native_tty_uart_irq_tx_enable,
+	.irq_tx_disable = native_tty_uart_irq_tx_disable,
+	.irq_tx_ready = native_tty_uart_irq_tx_ready,
+	.irq_tx_complete = native_tty_uart_irq_tx_complete,
+	.irq_rx_enable = native_tty_uart_irq_rx_enable,
+	.irq_rx_disable = native_tty_uart_irq_rx_disable,
+	.irq_rx_ready = native_tty_uart_irq_rx_ready,
+	.irq_is_pending = native_tty_uart_irq_is_pending,
+	.irq_update = native_tty_uart_irq_update,
 	.irq_callback_set = native_tty_uart_irq_callback_set,
 #endif
 };
@@ -414,22 +407,23 @@ DT_INST_FOREACH_STATUS_OKAY(NATIVE_TTY_INSTANCE);
 
 #define NATIVE_TTY_COMMAND_LINE_OPTS(inst)                                                         \
 	{                                                                                          \
-		.option = INST_NAME(inst) "_port",						   \
+		.option = INST_NAME(inst) "_port",                                                 \
 		.name = "\"serial_port\"",                                                         \
 		.type = 's',                                                                       \
 		.dest = &native_tty_##inst##_data.cmd_serial_port,                                 \
-		.descript = "Set a serial port for " INST_NAME(inst) " uart device, "		   \
-		"overriding the one in devicetree.",						   \
+		.descript = "Set a serial port for " INST_NAME(                                    \
+			inst) " uart device, "                                                     \
+			      "overriding the one in devicetree.",                                 \
 	},                                                                                         \
-	{											   \
-		.option = INST_NAME(inst) "_baud",						   \
-		.name = "baudrate",								   \
-		.type = 'u',									   \
-		.dest = &native_tty_##inst##_data.cmd_baudrate,					   \
-		.descript = "Set a baudrate for " INST_NAME(inst) " device, overriding the "	   \
-		"baudrate of " STRINGIFY(DT_INST_PROP(inst, current_speed))			   \
-		"set in the devicetree.",							   \
-	},
+		{                                                                                  \
+			.option = INST_NAME(inst) "_baud",                                         \
+			.name = "baudrate",                                                        \
+			.type = 'u',                                                               \
+			.dest = &native_tty_##inst##_data.cmd_baudrate,                            \
+			.descript = "Set a baudrate for " INST_NAME(                               \
+				inst) " device, overriding the "                                   \
+				      "baudrate of " STRINGIFY(DT_INST_PROP(inst, current_speed)) "set in the devicetree.",    \
+				      },
 
 /**
  * @brief Adds command line options for setting serial port and baud rate for each uart

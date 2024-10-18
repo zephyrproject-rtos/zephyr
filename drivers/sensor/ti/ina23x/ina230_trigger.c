@@ -13,8 +13,7 @@
 
 LOG_MODULE_DECLARE(INA230, CONFIG_SENSOR_LOG_LEVEL);
 
-static void ina230_gpio_callback(const struct device *port,
-				 struct gpio_callback *cb, uint32_t pin)
+static void ina230_gpio_callback(const struct device *port, struct gpio_callback *cb, uint32_t pin)
 {
 	struct ina230_data *ina230 = CONTAINER_OF(cb, struct ina230_data, gpio_cb);
 	const struct device *dev = (const struct device *)ina230->dev;
@@ -28,8 +27,7 @@ static void ina230_gpio_callback(const struct device *port,
 	}
 }
 
-int ina230_trigger_set(const struct device *dev,
-		       const struct sensor_trigger *trig,
+int ina230_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler)
 {
 	struct ina230_data *ina230 = dev->data;
@@ -62,9 +60,7 @@ int ina230_trigger_mode_init(const struct device *dev)
 		return ret;
 	}
 
-	gpio_init_callback(&ina230->gpio_cb,
-			   ina230_gpio_callback,
-			   BIT(config->alert_gpio.pin));
+	gpio_init_callback(&ina230->gpio_cb, ina230_gpio_callback, BIT(config->alert_gpio.pin));
 
 	ret = gpio_add_callback(config->alert_gpio.port, &ina230->gpio_cb);
 	if (ret < 0) {
@@ -72,6 +68,5 @@ int ina230_trigger_mode_init(const struct device *dev)
 		return ret;
 	}
 
-	return gpio_pin_interrupt_configure_dt(&config->alert_gpio,
-					       GPIO_INT_EDGE_BOTH);
+	return gpio_pin_interrupt_configure_dt(&config->alert_gpio, GPIO_INT_EDGE_BOTH);
 }

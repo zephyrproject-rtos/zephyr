@@ -13,8 +13,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(clock_control_nrf2, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
-BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
-	     "multiple instances not supported");
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1, "multiple instances not supported");
 
 #define FLAG_HFXO_STARTED BIT(FLAGS_COMMON_BITS)
 
@@ -28,11 +27,11 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 
 #define FLL16M_HAS_LFXO DT_NODE_HAS_STATUS_OKAY(FLL16M_LFXO_NODE)
 
-#define FLL16M_LFXO_ACCURACY DT_PROP(FLL16M_LFXO_NODE, accuracy_ppm)
-#define FLL16M_HFXO_ACCURACY DT_PROP(FLL16M_HFXO_NODE, accuracy_ppm)
-#define FLL16M_OPEN_LOOP_ACCURACY DT_INST_PROP(0, open_loop_accuracy_ppm)
+#define FLL16M_LFXO_ACCURACY             DT_PROP(FLL16M_LFXO_NODE, accuracy_ppm)
+#define FLL16M_HFXO_ACCURACY             DT_PROP(FLL16M_HFXO_NODE, accuracy_ppm)
+#define FLL16M_OPEN_LOOP_ACCURACY        DT_INST_PROP(0, open_loop_accuracy_ppm)
 #define FLL16M_CLOSED_LOOP_BASE_ACCURACY DT_INST_PROP(0, closed_loop_base_accuracy_ppm)
-#define FLL16M_MAX_ACCURACY FLL16M_HFXO_ACCURACY
+#define FLL16M_MAX_ACCURACY              FLL16M_HFXO_ACCURACY
 
 /* Closed-loop mode uses LFXO as source if present, HFXO otherwise */
 #if FLL16M_HAS_LFXO
@@ -90,16 +89,12 @@ static void activate_fll16m_mode(struct fll16m_dev_data *dev_data, uint8_t mode)
 	clock_config_update_end(&dev_data->clk_cfg, 0);
 }
 
-static void hfxo_cb(struct onoff_manager *mgr,
-		    struct onoff_client *cli,
-		    uint32_t state,
-		    int res)
+static void hfxo_cb(struct onoff_manager *mgr, struct onoff_client *cli, uint32_t state, int res)
 {
 	ARG_UNUSED(mgr);
 	ARG_UNUSED(state);
 
-	struct fll16m_dev_data *dev_data =
-		CONTAINER_OF(cli, struct fll16m_dev_data, hfxo_cli);
+	struct fll16m_dev_data *dev_data = CONTAINER_OF(cli, struct fll16m_dev_data, hfxo_cli);
 
 	if (res < 0) {
 		clock_config_update_end(&dev_data->clk_cfg, res);
@@ -113,8 +108,7 @@ static void hfxo_cb(struct onoff_manager *mgr,
 static void fll16m_work_handler(struct k_work *work)
 {
 	const struct device *hfxo = DEVICE_DT_GET(FLL16M_HFXO_NODE);
-	struct fll16m_dev_data *dev_data =
-		CONTAINER_OF(work, struct fll16m_dev_data, clk_cfg.work);
+	struct fll16m_dev_data *dev_data = CONTAINER_OF(work, struct fll16m_dev_data, clk_cfg.work);
 	uint8_t to_activate_idx;
 
 	to_activate_idx = clock_config_update_begin(work);
@@ -130,14 +124,12 @@ static void fll16m_work_handler(struct k_work *work)
 	} else {
 		atomic_val_t prev_flags;
 
-		prev_flags = atomic_and(&dev_data->clk_cfg.flags,
-					~FLAG_HFXO_STARTED);
+		prev_flags = atomic_and(&dev_data->clk_cfg.flags, ~FLAG_HFXO_STARTED);
 		if (prev_flags & FLAG_HFXO_STARTED) {
 			(void)nrf_clock_control_release(hfxo, NULL);
 		}
 
-		activate_fll16m_mode(dev_data,
-				     clock_options[to_activate_idx].mode);
+		activate_fll16m_mode(dev_data, clock_options[to_activate_idx].mode);
 	}
 }
 
@@ -162,13 +154,11 @@ static struct onoff_manager *fll16m_find_mgr(const struct device *dev,
 		return NULL;
 	}
 
-	accuracy = spec->accuracy == NRF_CLOCK_CONTROL_ACCURACY_MAX
-		 ? FLL16M_MAX_ACCURACY
-		 : spec->accuracy;
+	accuracy = spec->accuracy == NRF_CLOCK_CONTROL_ACCURACY_MAX ? FLL16M_MAX_ACCURACY
+								    : spec->accuracy;
 
 	for (int i = 0; i < ARRAY_SIZE(clock_options); ++i) {
-		if (accuracy &&
-		    accuracy < clock_options[i].accuracy) {
+		if (accuracy && accuracy < clock_options[i].accuracy) {
 			continue;
 		}
 
@@ -179,8 +169,7 @@ static struct onoff_manager *fll16m_find_mgr(const struct device *dev,
 	return NULL;
 }
 
-static int api_request_fll16m(const struct device *dev,
-			      const struct nrf_clock_spec *spec,
+static int api_request_fll16m(const struct device *dev, const struct nrf_clock_spec *spec,
 			      struct onoff_client *cli)
 {
 	struct onoff_manager *mgr = fll16m_find_mgr(dev, spec);
@@ -192,8 +181,7 @@ static int api_request_fll16m(const struct device *dev,
 	return -EINVAL;
 }
 
-static int api_release_fll16m(const struct device *dev,
-			      const struct nrf_clock_spec *spec)
+static int api_release_fll16m(const struct device *dev, const struct nrf_clock_spec *spec)
 {
 	struct onoff_manager *mgr = fll16m_find_mgr(dev, spec);
 
@@ -204,8 +192,7 @@ static int api_release_fll16m(const struct device *dev,
 	return -EINVAL;
 }
 
-static int api_cancel_or_release_fll16m(const struct device *dev,
-					const struct nrf_clock_spec *spec,
+static int api_cancel_or_release_fll16m(const struct device *dev, const struct nrf_clock_spec *spec,
 					struct onoff_client *cli)
 {
 	struct onoff_manager *mgr = fll16m_find_mgr(dev, spec);
@@ -217,9 +204,7 @@ static int api_cancel_or_release_fll16m(const struct device *dev,
 	return -EINVAL;
 }
 
-static int api_get_rate_fll16m(const struct device *dev,
-			       clock_control_subsys_t sys,
-			       uint32_t *rate)
+static int api_get_rate_fll16m(const struct device *dev, clock_control_subsys_t sys, uint32_t *rate)
 {
 	ARG_UNUSED(sys);
 
@@ -234,17 +219,17 @@ static int fll16m_init(const struct device *dev)
 {
 	struct fll16m_dev_data *dev_data = dev->data;
 
-	return clock_config_init(&dev_data->clk_cfg,
-				 ARRAY_SIZE(dev_data->clk_cfg.onoff),
+	return clock_config_init(&dev_data->clk_cfg, ARRAY_SIZE(dev_data->clk_cfg.onoff),
 				 fll16m_work_handler);
 }
 
 static struct nrf_clock_control_driver_api fll16m_drv_api = {
-	.std_api = {
-		.on = api_nosys_on_off,
-		.off = api_nosys_on_off,
-		.get_rate = api_get_rate_fll16m,
-	},
+	.std_api =
+		{
+			.on = api_nosys_on_off,
+			.off = api_nosys_on_off,
+			.get_rate = api_get_rate_fll16m,
+		},
 	.request = api_request_fll16m,
 	.release = api_release_fll16m,
 	.cancel_or_release = api_cancel_or_release_fll16m,
@@ -256,7 +241,5 @@ static const struct fll16m_dev_config fll16m_config = {
 	.fixed_frequency = DT_INST_PROP(0, clock_frequency),
 };
 
-DEVICE_DT_INST_DEFINE(0, fll16m_init, NULL,
-		      &fll16m_data, &fll16m_config,
-		      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
-		      &fll16m_drv_api);
+DEVICE_DT_INST_DEFINE(0, fll16m_init, NULL, &fll16m_data, &fll16m_config, PRE_KERNEL_1,
+		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &fll16m_drv_api);

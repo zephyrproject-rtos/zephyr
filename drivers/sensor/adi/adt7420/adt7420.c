@@ -19,12 +19,11 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ADT7420, CONFIG_SENSOR_LOG_LEVEL);
 
-static int adt7420_temp_reg_read(const struct device *dev, uint8_t reg,
-				 int16_t *val)
+static int adt7420_temp_reg_read(const struct device *dev, uint8_t reg, int16_t *val)
 {
 	const struct adt7420_dev_config *cfg = dev->config;
 
-	if (i2c_burst_read_dt(&cfg->i2c, reg, (uint8_t *) val, 2) < 0) {
+	if (i2c_burst_read_dt(&cfg->i2c, reg, (uint8_t *)val, 2) < 0) {
 		return -EIO;
 	}
 
@@ -33,8 +32,7 @@ static int adt7420_temp_reg_read(const struct device *dev, uint8_t reg,
 	return 0;
 }
 
-static int adt7420_temp_reg_write(const struct device *dev, uint8_t reg,
-				  int16_t val)
+static int adt7420_temp_reg_write(const struct device *dev, uint8_t reg, int16_t val)
 {
 	const struct adt7420_dev_config *cfg = dev->config;
 	uint8_t buf[3] = {reg, val >> 8, val & 0xFF};
@@ -42,10 +40,8 @@ static int adt7420_temp_reg_write(const struct device *dev, uint8_t reg,
 	return i2c_write_dt(&cfg->i2c, buf, sizeof(buf));
 }
 
-static int adt7420_attr_set(const struct device *dev,
-			    enum sensor_channel chan,
-			    enum sensor_attribute attr,
-			    const struct sensor_value *val)
+static int adt7420_attr_set(const struct device *dev, enum sensor_channel chan,
+			    enum sensor_attribute attr, const struct sensor_value *val)
 {
 	const struct adt7420_dev_config *cfg = dev->config;
 	uint8_t val8, reg = 0U;
@@ -71,8 +67,7 @@ static int adt7420_attr_set(const struct device *dev,
 			return -EINVAL;
 		}
 
-		if (i2c_reg_update_byte_dt(&cfg->i2c,
-					   ADT7420_REG_CONFIG,
+		if (i2c_reg_update_byte_dt(&cfg->i2c, ADT7420_REG_CONFIG,
 					   ADT7420_CONFIG_OP_MODE(~0),
 					   ADT7420_CONFIG_OP_MODE(val8)) < 0) {
 			LOG_DBG("Failed to set attribute!");
@@ -108,14 +103,12 @@ static int adt7420_attr_set(const struct device *dev,
 	return 0;
 }
 
-static int adt7420_sample_fetch(const struct device *dev,
-				enum sensor_channel chan)
+static int adt7420_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct adt7420_data *drv_data = dev->data;
 	int16_t value;
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL ||
-			chan == SENSOR_CHAN_AMBIENT_TEMP);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_AMBIENT_TEMP);
 
 	if (adt7420_temp_reg_read(dev, ADT7420_REG_TEMP_MSB, &value) < 0) {
 		return -EIO;
@@ -126,8 +119,7 @@ static int adt7420_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static int adt7420_channel_get(const struct device *dev,
-			       enum sensor_channel chan,
+static int adt7420_channel_get(const struct device *dev, enum sensor_channel chan,
 			       struct sensor_value *val)
 {
 	struct adt7420_data *drv_data = dev->data;
@@ -168,21 +160,20 @@ static int adt7420_probe(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = i2c_reg_write_byte_dt(&cfg->i2c,
-			ADT7420_REG_CONFIG, ADT7420_CONFIG_RESOLUTION |
-			ADT7420_CONFIG_OP_MODE(ADT7420_OP_MODE_CONT_CONV));
+	ret = i2c_reg_write_byte_dt(&cfg->i2c, ADT7420_REG_CONFIG,
+				    ADT7420_CONFIG_RESOLUTION |
+					    ADT7420_CONFIG_OP_MODE(ADT7420_OP_MODE_CONT_CONV));
 	if (ret) {
 		return ret;
 	}
 
-	ret = i2c_reg_write_byte_dt(&cfg->i2c,
-				    ADT7420_REG_HIST, CONFIG_ADT7420_TEMP_HYST);
+	ret = i2c_reg_write_byte_dt(&cfg->i2c, ADT7420_REG_HIST, CONFIG_ADT7420_TEMP_HYST);
 	if (ret) {
 		return ret;
 	}
 	ret = adt7420_temp_reg_write(dev, ADT7420_REG_T_CRIT_MSB,
-				     (CONFIG_ADT7420_TEMP_CRIT * 1000000 /
-				     ADT7420_TEMP_SCALE) << 1);
+				     (CONFIG_ADT7420_TEMP_CRIT * 1000000 / ADT7420_TEMP_SCALE)
+					     << 1);
 	if (ret) {
 		return ret;
 	}
@@ -212,18 +203,17 @@ static int adt7420_init(const struct device *dev)
 	return adt7420_probe(dev);
 }
 
-#define ADT7420_DEFINE(inst)								\
-	static struct adt7420_data adt7420_data_##inst;					\
-											\
-	static const struct adt7420_dev_config adt7420_config_##inst = {		\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
-											\
-	IF_ENABLED(CONFIG_ADT7420_TRIGGER,						\
-		   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))	\
-	};										\
-											\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, adt7420_init, NULL, &adt7420_data_##inst,	\
-			      &adt7420_config_##inst, POST_KERNEL,			\
-			      CONFIG_SENSOR_INIT_PRIORITY, &adt7420_driver_api);	\
+#define ADT7420_DEFINE(inst)                                                                       \
+	static struct adt7420_data adt7420_data_##inst;                                            \
+                                                                                                   \
+	static const struct adt7420_dev_config adt7420_config_##inst = {                           \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+                                                                                                   \
+		IF_ENABLED(CONFIG_ADT7420_TRIGGER,						\
+		   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),)) };           \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, adt7420_init, NULL, &adt7420_data_##inst,               \
+				     &adt7420_config_##inst, POST_KERNEL,                          \
+				     CONFIG_SENSOR_INIT_PRIORITY, &adt7420_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADT7420_DEFINE)

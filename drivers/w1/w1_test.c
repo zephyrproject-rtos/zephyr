@@ -47,8 +47,7 @@ static int w1_vnd_write_byte(const struct device *dev, const uint8_t byte)
 	return -ENOTSUP;
 }
 
-static int w1_vnd_configure(const struct device *dev,
-			    enum w1_settings_type type, uint32_t value)
+static int w1_vnd_configure(const struct device *dev, enum w1_settings_type type, uint32_t value)
 {
 	return -ENOTSUP;
 }
@@ -62,13 +61,11 @@ static const struct w1_driver_api w1_vnd_api = {
 	.configure = w1_vnd_configure,
 };
 
-#define W1_VND_INIT(n)							\
-static const struct w1_vnd_config w1_vnd_cfg_##inst = {			\
-	.master_config.slave_count = W1_INST_SLAVE_COUNT(inst)		\
-};									\
-static struct w1_vnd_data w1_vnd_data_##inst = {};			\
-DEVICE_DT_INST_DEFINE(n, NULL, NULL, &w1_vnd_data_##inst,		\
-		      &w1_vnd_cfg_##inst, POST_KERNEL,			\
-		      CONFIG_W1_INIT_PRIORITY, &w1_vnd_api);
+#define W1_VND_INIT(n)                                                                             \
+	static const struct w1_vnd_config w1_vnd_cfg_##inst = {.master_config.slave_count =        \
+								       W1_INST_SLAVE_COUNT(inst)}; \
+	static struct w1_vnd_data w1_vnd_data_##inst = {};                                         \
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL, &w1_vnd_data_##inst, &w1_vnd_cfg_##inst, POST_KERNEL, \
+			      CONFIG_W1_INIT_PRIORITY, &w1_vnd_api);
 
 DT_INST_FOREACH_STATUS_OKAY(W1_VND_INIT)

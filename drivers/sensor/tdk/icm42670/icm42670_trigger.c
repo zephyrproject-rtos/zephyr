@@ -149,7 +149,7 @@ int icm42670_trigger_enable_interrupt(const struct device *dev)
 
 	/* pulse-mode (auto clearing), push-pull and active-high */
 	res = cfg->bus_io->write(&cfg->bus, REG_INT_CONFIG,
-					BIT_INT1_DRIVE_CIRCUIT | BIT_INT1_POLARITY);
+				 BIT_INT1_DRIVE_CIRCUIT | BIT_INT1_POLARITY);
 
 	if (res) {
 		return res;

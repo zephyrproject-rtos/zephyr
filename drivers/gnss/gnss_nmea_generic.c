@@ -22,10 +22,10 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gnss_nmea_generic, CONFIG_GNSS_LOG_LEVEL);
 
-#define UART_RX_BUF_SZ (256 + IS_ENABLED(CONFIG_GNSS_SATELLITES) * 512)
-#define UART_TX_BUF_SZ 64
+#define UART_RX_BUF_SZ   (256 + IS_ENABLED(CONFIG_GNSS_SATELLITES) * 512)
+#define UART_TX_BUF_SZ   64
 #define CHAT_RECV_BUF_SZ 256
-#define CHAT_ARGV_SZ 32
+#define CHAT_ARGV_SZ     32
 
 struct gnss_nmea_generic_config {
 	const struct device *uart;
@@ -50,8 +50,8 @@ struct gnss_nmea_generic_data {
 	uint8_t *chat_argv[CHAT_ARGV_SZ];
 };
 
-MODEM_CHAT_MATCHES_DEFINE(unsol_matches,
-	MODEM_CHAT_MATCH_WILDCARD("$??GGA,", ",*", gnss_nmea0183_match_gga_callback),
+MODEM_CHAT_MATCHES_DEFINE(
+	unsol_matches, MODEM_CHAT_MATCH_WILDCARD("$??GGA,", ",*", gnss_nmea0183_match_gga_callback),
 	MODEM_CHAT_MATCH_WILDCARD("$??RMC,", ",*", gnss_nmea0183_match_rmc_callback),
 #if CONFIG_GNSS_SATELLITES
 	MODEM_CHAT_MATCH_WILDCARD("$??GSV,", ",*", gnss_nmea0183_match_gsv_callback),
@@ -81,8 +81,7 @@ static int gnss_nmea_generic_resume(const struct device *dev)
 	return ret;
 }
 
-static const struct gnss_driver_api gnss_api = {
-};
+static const struct gnss_driver_api gnss_api = {};
 
 static int gnss_nmea_generic_init_nmea0183_match(const struct device *dev)
 {
@@ -182,19 +181,18 @@ static int gnss_nmea_generic_pm_action(const struct device *dev, enum pm_device_
 MODEM_CHAT_SCRIPT_EMPTY_DEFINE(gnss_nmea_generic_init_chat_script);
 #endif
 
-#define GNSS_NMEA_GENERIC(inst)								\
-	static const struct gnss_nmea_generic_config gnss_nmea_generic_cfg_##inst = {	\
-		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),				\
-		.init_chat_script = &_CONCAT(DT_DRV_COMPAT, _init_chat_script),         \
-	};										\
-											\
-	static struct gnss_nmea_generic_data gnss_nmea_generic_data_##inst;		\
-											\
-	PM_DEVICE_DT_INST_DEFINE(inst, gnss_nmea_generic_pm_action);                    \
-                                                                                        \
-	DEVICE_DT_INST_DEFINE(inst, gnss_nmea_generic_init, PM_DEVICE_DT_INST_GET(inst),\
-			      &gnss_nmea_generic_data_##inst,				\
-			      &gnss_nmea_generic_cfg_##inst,				\
+#define GNSS_NMEA_GENERIC(inst)                                                                    \
+	static const struct gnss_nmea_generic_config gnss_nmea_generic_cfg_##inst = {              \
+		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
+		.init_chat_script = &_CONCAT(DT_DRV_COMPAT, _init_chat_script),                    \
+	};                                                                                         \
+                                                                                                   \
+	static struct gnss_nmea_generic_data gnss_nmea_generic_data_##inst;                        \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(inst, gnss_nmea_generic_pm_action);                               \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, gnss_nmea_generic_init, PM_DEVICE_DT_INST_GET(inst),           \
+			      &gnss_nmea_generic_data_##inst, &gnss_nmea_generic_cfg_##inst,       \
 			      POST_KERNEL, CONFIG_GNSS_INIT_PRIORITY, &gnss_api);
 
 #define DT_DRV_COMPAT gnss_nmea_generic

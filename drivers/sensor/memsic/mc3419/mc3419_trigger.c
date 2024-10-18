@@ -9,12 +9,10 @@
 
 LOG_MODULE_DECLARE(MC3419, CONFIG_SENSOR_LOG_LEVEL);
 
-static void mc3419_gpio_callback(const struct device *dev,
-				 struct gpio_callback *cb,
+static void mc3419_gpio_callback(const struct device *dev, struct gpio_callback *cb,
 				 uint32_t pin_mask)
 {
-	struct mc3419_driver_data *data = CONTAINER_OF(cb,
-					  struct mc3419_driver_data, gpio_cb);
+	struct mc3419_driver_data *data = CONTAINER_OF(cb, struct mc3419_driver_data, gpio_cb);
 
 	const struct mc3419_config *cfg = data->gpio_dev->config;
 
@@ -43,20 +41,19 @@ static void mc3419_process_int(const struct device *dev)
 
 	if (int_source & MC3419_DATA_READY_MASK) {
 		if (data->handler[MC3419_TRIG_DATA_READY]) {
-			data->handler[MC3419_TRIG_DATA_READY](dev,
-				data->trigger[MC3419_TRIG_DATA_READY]);
+			data->handler[MC3419_TRIG_DATA_READY](
+				dev, data->trigger[MC3419_TRIG_DATA_READY]);
 		}
 	}
 
 	if (int_source & MC3419_ANY_MOTION_MASK) {
 		if (data->handler[MC3419_TRIG_ANY_MOTION]) {
-			data->handler[MC3419_TRIG_ANY_MOTION](dev,
-				data->trigger[MC3419_TRIG_ANY_MOTION]);
+			data->handler[MC3419_TRIG_ANY_MOTION](
+				dev, data->trigger[MC3419_TRIG_ANY_MOTION]);
 		}
 	}
 exit:
-	ret = i2c_reg_write_byte_dt(&cfg->i2c, MC3419_REG_INT_STATUS,
-				    MC3419_INT_CLEAR);
+	ret = i2c_reg_write_byte_dt(&cfg->i2c, MC3419_REG_INT_STATUS, MC3419_INT_CLEAR);
 	if (ret < 0) {
 		LOG_ERR("Failed to clear interrupt (%d)", ret);
 	}
@@ -73,15 +70,13 @@ static void mc3419_thread(struct mc3419_driver_data *data)
 #else
 static void mc3419_work_cb(struct k_work *work)
 {
-	struct mc3419_driver_data *data = CONTAINER_OF(work,
-					  struct mc3419_driver_data, work);
+	struct mc3419_driver_data *data = CONTAINER_OF(work, struct mc3419_driver_data, work);
 
 	mc3419_process_int(data->gpio_dev);
 }
 #endif
 
-int mc3419_configure_trigger(const struct device *dev,
-			     const struct sensor_trigger *trig,
+int mc3419_configure_trigger(const struct device *dev, const struct sensor_trigger *trig,
 			     sensor_trigger_handler_t handler)
 {
 	int ret = 0;
@@ -89,8 +84,7 @@ int mc3419_configure_trigger(const struct device *dev,
 	const struct mc3419_config *cfg = dev->config;
 	struct mc3419_driver_data *data = dev->data;
 
-	if (!(trig->type & SENSOR_TRIG_DATA_READY) &&
-	    !(trig->type & SENSOR_TRIG_MOTION)) {
+	if (!(trig->type & SENSOR_TRIG_DATA_READY) && !(trig->type & SENSOR_TRIG_MOTION)) {
 		LOG_ERR("Unsupported sensor trigger");
 		return -ENOTSUP;
 	}
@@ -108,16 +102,15 @@ int mc3419_configure_trigger(const struct device *dev,
 		data->handler[MC3419_TRIG_ANY_MOTION] = handler;
 		data->trigger[MC3419_TRIG_ANY_MOTION] = trig;
 
-		ret = i2c_reg_update_byte_dt(&cfg->i2c, MC3419_REG_MOTION_CTRL,
-					     int_mask, handler ? int_mask : 0);
+		ret = i2c_reg_update_byte_dt(&cfg->i2c, MC3419_REG_MOTION_CTRL, int_mask,
+					     handler ? int_mask : 0);
 		if (ret < 0) {
 			LOG_ERR("Failed to configure motion interrupt (%d)", ret);
 			return ret;
 		}
 	}
 
-	ret = i2c_reg_update_byte_dt(&cfg->i2c, MC3419_REG_INT_CTRL,
-				     buf, buf);
+	ret = i2c_reg_update_byte_dt(&cfg->i2c, MC3419_REG_INT_CTRL, buf, buf);
 	if (ret < 0) {
 		LOG_ERR("Failed to configure interrupt (%d)", ret);
 		return ret;
@@ -149,16 +142,13 @@ int mc3419_trigger_init(const struct device *dev)
 
 #if defined(CONFIG_MC3419_TRIGGER_OWN_THREAD)
 	k_sem_init(&data->trig_sem, 0, 1);
-	k_thread_create(&data->thread, data->thread_stack,
-			CONFIG_MC3419_THREAD_STACK_SIZE,
-			(k_thread_entry_t)mc3419_thread, data, NULL,
-			NULL, K_PRIO_COOP(CONFIG_MC3419_THREAD_PRIORITY), 0,
-			K_NO_WAIT);
+	k_thread_create(&data->thread, data->thread_stack, CONFIG_MC3419_THREAD_STACK_SIZE,
+			(k_thread_entry_t)mc3419_thread, data, NULL, NULL,
+			K_PRIO_COOP(CONFIG_MC3419_THREAD_PRIORITY), 0, K_NO_WAIT);
 #else
 	k_work_init(&data->work, mc3419_work_cb);
 #endif
-	gpio_init_callback(&data->gpio_cb, mc3419_gpio_callback,
-			   BIT(cfg->int_gpio.pin));
+	gpio_init_callback(&data->gpio_cb, mc3419_gpio_callback, BIT(cfg->int_gpio.pin));
 	ret = gpio_add_callback(cfg->int_gpio.port, &data->gpio_cb);
 	if (ret < 0) {
 		LOG_ERR("Failed to set int callback");
@@ -166,8 +156,7 @@ int mc3419_trigger_init(const struct device *dev)
 	}
 
 	if (cfg->int_cfg) {
-		ret = i2c_reg_write_byte_dt(&cfg->i2c, MC3419_REG_COMM_CTRL,
-					    MC3419_INT_ROUTE);
+		ret = i2c_reg_write_byte_dt(&cfg->i2c, MC3419_REG_COMM_CTRL, MC3419_INT_ROUTE);
 		if (ret < 0) {
 			LOG_ERR("Failed to route the interrupt to INT2 pin (%d)", ret);
 			return ret;

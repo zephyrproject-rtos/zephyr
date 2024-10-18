@@ -9,7 +9,7 @@
  */
 
 #define LOG_MODULE_NAME ieee802154_cc1200
-#define LOG_LEVEL CONFIG_IEEE802154_DRIVER_LOG_LEVEL
+#define LOG_LEVEL       CONFIG_IEEE802154_DRIVER_LOG_LEVEL
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
@@ -42,9 +42,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
  *
  * Note: GPIO3 is unused.
  */
-#define CC1200_IOCFG3	CC1200_GPIO_SIG_MARC_2PIN_STATUS_0
-#define CC1200_IOCFG2	CC1200_GPIO_SIG_MARC_2PIN_STATUS_1
-#define CC1200_IOCFG0	CC1200_GPIO_SIG_PKT_SYNC_RXTX
+#define CC1200_IOCFG3 CC1200_GPIO_SIG_MARC_2PIN_STATUS_0
+#define CC1200_IOCFG2 CC1200_GPIO_SIG_MARC_2PIN_STATUS_1
+#define CC1200_IOCFG0 CC1200_GPIO_SIG_PKT_SYNC_RXTX
 
 /***********************
  * Debugging functions *
@@ -74,23 +74,21 @@ static void cc1200_print_status(uint8_t status)
  * Generic functions *
  ********************/
 
-bool z_cc1200_access_reg(const struct device *dev, bool read, uint8_t addr,
-			 void *data, size_t length, bool extended, bool burst)
+bool z_cc1200_access_reg(const struct device *dev, bool read, uint8_t addr, void *data,
+			 size_t length, bool extended, bool burst)
 {
 	const struct cc1200_config *config = dev->config;
 	uint8_t cmd_buf[2];
-	const struct spi_buf buf[2] = {
-		{
-			.buf = cmd_buf,
-			.len = extended ? 2 : 1,
-		},
-		{
-			.buf = data,
-			.len = length,
+	const struct spi_buf buf[2] = {{
+					       .buf = cmd_buf,
+					       .len = extended ? 2 : 1,
+				       },
+				       {
+					       .buf = data,
+					       .len = length,
 
-		}
-	};
-	struct spi_buf_set tx = { .buffers = buf };
+				       }};
+	struct spi_buf_set tx = {.buffers = buf};
 
 	cmd_buf[0] = 0U;
 
@@ -106,10 +104,7 @@ bool z_cc1200_access_reg(const struct device *dev, bool read, uint8_t addr,
 	}
 
 	if (read) {
-		const struct spi_buf_set rx = {
-			.buffers = buf,
-			.count = 2
-		};
+		const struct spi_buf_set rx = {.buffers = buf, .count = 2};
 
 		cmd_buf[0] |= CC1200_ACCESS_RD;
 
@@ -119,7 +114,7 @@ bool z_cc1200_access_reg(const struct device *dev, bool read, uint8_t addr,
 	}
 
 	/* CC1200_ACCESS_WR is 0 so no need to play with it */
-	tx.count =  data ? 2 : 1;
+	tx.count = data ? 2 : 1;
 
 	return (spi_write_dt(&config->bus, &tx) == 0);
 }
@@ -151,8 +146,7 @@ static uint8_t get_status(const struct device *dev)
 {
 	uint8_t val;
 
-	if (z_cc1200_access_reg(dev, true, CC1200_INS_SNOP,
-				&val, 1, false, false)) {
+	if (z_cc1200_access_reg(dev, true, CC1200_INS_SNOP, &val, 1, false, false)) {
 		/* See Section 3.1.2 */
 		return val & CC1200_STATUS_MASK;
 	}
@@ -165,11 +159,10 @@ static uint8_t get_status(const struct device *dev)
  * GPIO functions *
  *****************/
 
-static inline void gpio0_int_handler(const struct device *port,
-				     struct gpio_callback *cb, uint32_t pins)
+static inline void gpio0_int_handler(const struct device *port, struct gpio_callback *cb,
+				     uint32_t pins)
 {
-	struct cc1200_context *cc1200 =
-		CONTAINER_OF(cb, struct cc1200_context, rx_tx_cb);
+	struct cc1200_context *cc1200 = CONTAINER_OF(cb, struct cc1200_context, rx_tx_cb);
 
 	if (atomic_get(&cc1200->tx) == 1) {
 		if (atomic_get(&cc1200->tx_start) == 0) {
@@ -229,10 +222,8 @@ static bool write_reg_freq(const struct device *dev, uint32_t freq)
 	freq_data[1] = (uint8_t)((freq & 0x0000FF00) >> 8);
 	freq_data[2] = (uint8_t)(freq & 0x000000FF);
 
-	return z_cc1200_access_reg(dev, false, CC1200_REG_FREQ2,
-				   freq_data, 3, true, true);
+	return z_cc1200_access_reg(dev, false, CC1200_REG_FREQ2, freq_data, 3, true, true);
 }
-
 
 /* See Section 9.12 - RF programming
  *
@@ -297,7 +288,7 @@ static uint32_t rf_evaluate_freq_setting(const struct device *dev, uint32_t chan
 		rst = freq_tmp % factor;
 		freq_tmp /= factor;
 
-		if (factor > 1 && (rst/(factor/10U)) > 5) {
+		if (factor > 1 && (rst / (factor / 10U)) > 5) {
 			freq_tmp++;
 		}
 
@@ -314,18 +305,15 @@ static uint32_t rf_evaluate_freq_setting(const struct device *dev, uint32_t chan
 	return freq;
 }
 
-static bool
-rf_install_settings(const struct device *dev,
-		    const struct cc1200_rf_registers_set *rf_settings)
+static bool rf_install_settings(const struct device *dev,
+				const struct cc1200_rf_registers_set *rf_settings)
 {
 	struct cc1200_context *cc1200 = dev->data;
 
-	if (!z_cc1200_access_reg(dev, false, CC1200_REG_SYNC3,
-				 (void *)rf_settings->registers,
+	if (!z_cc1200_access_reg(dev, false, CC1200_REG_SYNC3, (void *)rf_settings->registers,
 				 CC1200_RF_NON_EXT_SPACE_REGS, false, true) ||
 	    !z_cc1200_access_reg(dev, false, CC1200_REG_IF_MIX_CFG,
-				 (uint8_t *)rf_settings->registers
-				 + CC1200_RF_NON_EXT_SPACE_REGS,
+				 (uint8_t *)rf_settings->registers + CC1200_RF_NON_EXT_SPACE_REGS,
 				 CC1200_RF_EXT_SPACE_REGS, true, true) ||
 	    !write_reg_pkt_len(dev, 0xFF)) {
 		LOG_ERR("Could not install RF settings");
@@ -347,9 +335,7 @@ static int rf_calibrate(const struct device *dev)
 	k_busy_wait(USEC_PER_MSEC * 5U);
 
 	/* We need to re-enable RX as SCAL shuts off the freq synth */
-	if (!instruct_sidle(dev) ||
-	    !instruct_sfrx(dev) ||
-	    !instruct_srx(dev)) {
+	if (!instruct_sidle(dev) || !instruct_sfrx(dev) || !instruct_srx(dev)) {
 		LOG_ERR("Could not switch to RX");
 		return -EIO;
 	}
@@ -365,56 +351,45 @@ static int rf_calibrate(const struct device *dev)
  * TX functions *
  ***************/
 
-static inline bool write_txfifo(const struct device *dev,
-				void *data, size_t length)
+static inline bool write_txfifo(const struct device *dev, void *data, size_t length)
 {
-	return z_cc1200_access_reg(dev, false,
-				   CC1200_REG_TXFIFO,
-				   data, length, false, true);
+	return z_cc1200_access_reg(dev, false, CC1200_REG_TXFIFO, data, length, false, true);
 }
 
 /****************
  * RX functions *
  ***************/
 
-static inline bool read_rxfifo(const struct device *dev,
-			       void *data, size_t length)
+static inline bool read_rxfifo(const struct device *dev, void *data, size_t length)
 {
-	return z_cc1200_access_reg(dev, true,
-				   CC1200_REG_RXFIFO,
-				   data, length, false, true);
+	return z_cc1200_access_reg(dev, true, CC1200_REG_RXFIFO, data, length, false, true);
 }
 
 static inline uint8_t get_packet_length(const struct device *dev)
 {
 	uint8_t len;
 
-	if (z_cc1200_access_reg(dev, true, CC1200_REG_RXFIFO,
-				&len, 1, false, true)) {
+	if (z_cc1200_access_reg(dev, true, CC1200_REG_RXFIFO, &len, 1, false, true)) {
 		return len;
 	}
 
 	return 0;
 }
 
-static inline bool verify_rxfifo_validity(const struct device *dev,
-					  uint8_t pkt_len)
+static inline bool verify_rxfifo_validity(const struct device *dev, uint8_t pkt_len)
 {
 	/* packet should be at least 3 bytes as a ACK */
-	if (pkt_len < 3 ||
-	    read_reg_num_rxbytes(dev) > (pkt_len + CC1200_FCS_LEN)) {
+	if (pkt_len < 3 || read_reg_num_rxbytes(dev) > (pkt_len + CC1200_FCS_LEN)) {
 		return false;
 	}
 
 	return true;
 }
 
-static inline bool read_rxfifo_content(const struct device *dev,
-				       struct net_buf *buf, uint8_t len)
+static inline bool read_rxfifo_content(const struct device *dev, struct net_buf *buf, uint8_t len)
 {
 
-	if (!read_rxfifo(dev, buf->data, len) ||
-	    (get_status(dev) == CC1200_STATUS_RX_FIFO_ERROR)) {
+	if (!read_rxfifo(dev, buf->data, len) || (get_status(dev) == CC1200_STATUS_RX_FIFO_ERROR)) {
 		return false;
 	}
 
@@ -436,7 +411,7 @@ static inline bool verify_crc(const struct device *dev, struct net_pkt *pkt)
 		return false;
 	}
 
-	rssi = (int8_t) status[0];
+	rssi = (int8_t)status[0];
 	net_pkt_set_ieee802154_rssi_dbm(
 		pkt, rssi == CC1200_INVALID_RSSI ? IEEE802154_MAC_RSSI_DBM_UNDEFINED : rssi);
 	net_pkt_set_ieee802154_lqi(pkt, status[1] & CC1200_FCS_LQI_MASK);
@@ -470,8 +445,7 @@ static void cc1200_rx(void *p1, void *p2, void *p3)
 			goto flush;
 		}
 
-		pkt = net_pkt_rx_alloc_with_buffer(cc1200->iface, pkt_len,
-						   AF_UNSPEC, 0, K_NO_WAIT);
+		pkt = net_pkt_rx_alloc_with_buffer(cc1200->iface, pkt_len, AF_UNSPEC, 0, K_NO_WAIT);
 		if (!pkt) {
 			LOG_ERR("No free pkt available");
 			goto flush;
@@ -510,10 +484,8 @@ out:
 		if (pkt) {
 			net_pkt_unref(pkt);
 		}
-
 	}
 }
-
 
 /********************
  * Radio device API *
@@ -530,8 +502,7 @@ static int cc1200_cca(const struct device *dev)
 	if (atomic_get(&cc1200->rx) == 0) {
 		uint8_t status = read_reg_rssi0(dev);
 
-		if (!(status & CARRIER_SENSE) &&
-		    (status & CARRIER_SENSE_VALID)) {
+		if (!(status & CARRIER_SENSE) && (status & CARRIER_SENSE_VALID)) {
 			return 0;
 		}
 	}
@@ -568,8 +539,7 @@ static int cc1200_set_channel(const struct device *dev, uint16_t channel)
 
 	freq = rf_evaluate_freq_setting(dev, channel);
 
-	if (!write_reg_freq(dev, freq) ||
-		rf_calibrate(dev)) {
+	if (!write_reg_freq(dev, freq) || rf_calibrate(dev)) {
 		LOG_ERR("Could not set channel %u", channel);
 		return -EIO;
 	}
@@ -591,7 +561,7 @@ static int cc1200_set_txpower(const struct device *dev, int16_t dbm)
 	}
 
 	pa_power_ramp = read_reg_pa_cfg1(dev) & ~PA_POWER_RAMP_MASK;
-	pa_power_ramp |= ((uint8_t) dbm) & PA_POWER_RAMP_MASK;
+	pa_power_ramp |= ((uint8_t)dbm) & PA_POWER_RAMP_MASK;
 
 	if (!write_reg_pa_cfg1(dev, pa_power_ramp)) {
 		LOG_ERR("Could not proceed");
@@ -601,9 +571,7 @@ static int cc1200_set_txpower(const struct device *dev, int16_t dbm)
 	return 0;
 }
 
-static int cc1200_tx(const struct device *dev,
-		     enum ieee802154_tx_mode mode,
-		     struct net_pkt *pkt,
+static int cc1200_tx(const struct device *dev, enum ieee802154_tx_mode mode, struct net_pkt *pkt,
 		     struct net_buf *frag)
 {
 	struct cc1200_context *cc1200 = dev->data;
@@ -623,16 +591,13 @@ static int cc1200_tx(const struct device *dev,
 	 * depending on len value, this will also take more time.
 	 */
 
-	if (!instruct_sidle(dev) ||
-	    !instruct_sfrx(dev) ||
-	    !instruct_sftx(dev) ||
+	if (!instruct_sidle(dev) || !instruct_sfrx(dev) || !instruct_sftx(dev) ||
 	    !instruct_sfstxon(dev)) {
 		LOG_ERR("Cannot switch to TX mode");
 		goto out;
 	}
 
-	if (!write_txfifo(dev, &len, CC1200_PHY_HDR_LEN) ||
-	    !write_txfifo(dev, frame, len) ||
+	if (!write_txfifo(dev, &len, CC1200_PHY_HDR_LEN) || !write_txfifo(dev, frame, len) ||
 	    read_reg_num_txbytes(dev) != (len + CC1200_PHY_HDR_LEN)) {
 		LOG_ERR("Cannot fill-in TX fifo");
 		goto out;
@@ -656,8 +621,7 @@ static int cc1200_tx(const struct device *dev,
 out:
 	cc1200_print_status(get_status(dev));
 
-	if (atomic_get(&cc1200->tx) == 1 &&
-	    read_reg_num_txbytes(dev) != 0) {
+	if (atomic_get(&cc1200->tx) == 1 && read_reg_num_txbytes(dev) != 0) {
 		LOG_ERR("TX Failed");
 
 		atomic_set(&cc1200->tx_start, 0);
@@ -677,9 +641,7 @@ out:
 
 static int cc1200_start(const struct device *dev)
 {
-	if (!instruct_sidle(dev) ||
-	    !instruct_sftx(dev) ||
-	    !instruct_sfrx(dev) ||
+	if (!instruct_sidle(dev) || !instruct_sftx(dev) || !instruct_sfrx(dev) ||
 	    rf_calibrate(dev)) {
 		LOG_ERR("Could not proceed");
 		return -EIO;
@@ -734,8 +696,7 @@ static int power_on_and_setup(const struct device *dev)
 		return -EIO;
 	}
 
-	if (!write_reg_iocfg3(dev, CC1200_IOCFG3) ||
-	    !write_reg_iocfg2(dev, CC1200_IOCFG2) ||
+	if (!write_reg_iocfg3(dev, CC1200_IOCFG3) || !write_reg_iocfg2(dev, CC1200_IOCFG2) ||
 	    !write_reg_iocfg0(dev, CC1200_IOCFG0)) {
 		LOG_ERR("Cannot configure GPIOs");
 		return -EIO;
@@ -761,8 +722,7 @@ static int cc1200_init(const struct device *dev)
 
 	/* Configure GPIOs */
 	if (!gpio_is_ready_dt(&config->interrupt)) {
-		LOG_ERR("GPIO port %s is not ready",
-			config->interrupt.port->name);
+		LOG_ERR("GPIO port %s is not ready", config->interrupt.port->name);
 		return -ENODEV;
 	}
 	gpio_pin_configure_dt(&config->interrupt, GPIO_INPUT);
@@ -779,9 +739,8 @@ static int cc1200_init(const struct device *dev)
 	}
 
 	k_thread_create(&cc1200->rx_thread, cc1200->rx_stack,
-			CONFIG_IEEE802154_CC1200_RX_STACK_SIZE,
-			cc1200_rx,
-			(void *)dev, NULL, NULL, K_PRIO_COOP(2), 0, K_NO_WAIT);
+			CONFIG_IEEE802154_CC1200_RX_STACK_SIZE, cc1200_rx, (void *)dev, NULL, NULL,
+			K_PRIO_COOP(2), 0, K_NO_WAIT);
 	k_thread_name_set(&cc1200->rx_thread, "cc1200_rx");
 
 	LOG_INF("CC1200 initialized");
@@ -806,25 +765,23 @@ static void cc1200_iface_init(struct net_if *iface)
 
 static const struct cc1200_config cc1200_config = {
 	.bus = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8), 0),
-	.interrupt = GPIO_DT_SPEC_INST_GET(0, int_gpios)
-};
+	.interrupt = GPIO_DT_SPEC_INST_GET(0, int_gpios)};
 
 static struct cc1200_context cc1200_context_data;
 
 static const struct ieee802154_radio_api cc1200_radio_api = {
-	.iface_api.init	= cc1200_iface_init,
+	.iface_api.init = cc1200_iface_init,
 
-	.get_capabilities	= cc1200_get_capabilities,
-	.cca			= cc1200_cca,
-	.set_channel		= cc1200_set_channel,
-	.set_txpower		= cc1200_set_txpower,
-	.tx			= cc1200_tx,
-	.start			= cc1200_start,
-	.stop			= cc1200_stop,
-	.attr_get		= cc1200_attr_get,
+	.get_capabilities = cc1200_get_capabilities,
+	.cca = cc1200_cca,
+	.set_channel = cc1200_set_channel,
+	.set_txpower = cc1200_set_txpower,
+	.tx = cc1200_tx,
+	.start = cc1200_start,
+	.stop = cc1200_stop,
+	.attr_get = cc1200_attr_get,
 };
 
-NET_DEVICE_DT_INST_DEFINE(0, cc1200_init, NULL, &cc1200_context_data,
-			  &cc1200_config, CONFIG_IEEE802154_CC1200_INIT_PRIO,
-			  &cc1200_radio_api, IEEE802154_L2,
+NET_DEVICE_DT_INST_DEFINE(0, cc1200_init, NULL, &cc1200_context_data, &cc1200_config,
+			  CONFIG_IEEE802154_CC1200_INIT_PRIO, &cc1200_radio_api, IEEE802154_L2,
 			  NET_L2_GET_CTX_TYPE(IEEE802154_L2), 125);

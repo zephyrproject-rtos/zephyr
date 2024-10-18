@@ -1127,29 +1127,28 @@ static int uart_npcx_init(const struct device *dev)
 
 #define NPCX_UART_INIT(i)                                                                          \
 	NPCX_UART_IRQ_CONFIG_FUNC_DECL(i);                                                         \
-	                                                                                           \
+                                                                                                   \
 	PINCTRL_DT_INST_DEFINE(i);                                                                 \
-	                                                                                           \
+                                                                                                   \
 	static const struct uart_npcx_config uart_npcx_cfg_##i = {                                 \
 		.inst = (struct uart_reg *)DT_INST_REG_ADDR(i),                                    \
 		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(i),                                                \
 		.uart_rx_wui = NPCX_DT_WUI_ITEM_BY_NAME(i, uart_rx),                               \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(i),                                         \
 		NPCX_UART_IRQ_CONFIG_FUNC_INIT(i)                                                  \
-	                                                                                           \
-		IF_ENABLED(CONFIG_UART_ASYNC_API, (                                                \
+                                                                                                   \
+			IF_ENABLED(CONFIG_UART_ASYNC_API, (                                                \
 			.mdma_clk_cfg = NPCX_DT_CLK_CFG_ITEM_BY_IDX(i, 1),                         \
 			.mdma_reg_base = (struct mdma_reg *)DT_INST_REG_ADDR_BY_IDX(i, 1),         \
-		))                                                                                 \
-	};                                                                                         \
-	                                                                                           \
+		)) };             \
+                                                                                                   \
 	static struct uart_npcx_data uart_npcx_data_##i = {                                        \
 		.baud_rate = DT_INST_PROP(i, current_speed),                                       \
 	};                                                                                         \
-	                                                                                           \
+                                                                                                   \
 	DEVICE_DT_INST_DEFINE(i, uart_npcx_init, NULL, &uart_npcx_data_##i, &uart_npcx_cfg_##i,    \
 			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, &uart_npcx_driver_api);   \
-												   \
+                                                                                                   \
 	NPCX_UART_IRQ_CONFIG_FUNC(i)
 
 DT_INST_FOREACH_STATUS_OKAY(NPCX_UART_INIT)

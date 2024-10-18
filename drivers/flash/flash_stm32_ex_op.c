@@ -21,8 +21,7 @@
 LOG_MODULE_REGISTER(flash_stm32_ex_op, CONFIG_FLASH_LOG_LEVEL);
 
 #if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
-int flash_stm32_ex_op_sector_wp(const struct device *dev, const uintptr_t in,
-				void *out)
+int flash_stm32_ex_op_sector_wp(const struct device *dev, const uintptr_t in, void *out)
 {
 	const struct flash_stm32_ex_op_sector_wp_in *request =
 		(const struct flash_stm32_ex_op_sector_wp_in *)in;
@@ -39,22 +38,19 @@ int flash_stm32_ex_op_sector_wp(const struct device *dev, const uintptr_t in,
 		struct flash_stm32_ex_op_sector_wp_in in_copy;
 
 		if (syscall_trap) {
-			K_OOPS(k_usermode_from_copy(&in_copy, request,
-						sizeof(in_copy)));
+			K_OOPS(k_usermode_from_copy(&in_copy, request, sizeof(in_copy)));
 			request = &in_copy;
 		}
 #endif
 		change_mask = request->enable_mask;
 
-		if (!IS_ENABLED(
-			    CONFIG_FLASH_STM32_WRITE_PROTECT_DISABLE_PREVENTION)) {
+		if (!IS_ENABLED(CONFIG_FLASH_STM32_WRITE_PROTECT_DISABLE_PREVENTION)) {
 			change_mask |= request->disable_mask;
 		}
 
 		rc = flash_stm32_option_bytes_lock(dev, false);
 		if (rc == 0) {
-			rc = flash_stm32_update_wp_sectors(
-				dev, change_mask, request->enable_mask);
+			rc = flash_stm32_update_wp_sectors(dev, change_mask, request->enable_mask);
 		}
 
 		rc2 = flash_stm32_option_bytes_lock(dev, true);
@@ -88,8 +84,7 @@ int flash_stm32_ex_op_sector_wp(const struct device *dev, const uintptr_t in,
 #endif /* CONFIG_FLASH_STM32_WRITE_PROTECT */
 
 #if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
-int flash_stm32_ex_op_update_rdp(const struct device *dev, bool enable,
-			   bool permanent)
+int flash_stm32_ex_op_update_rdp(const struct device *dev, bool enable, bool permanent)
 {
 	uint8_t current_level, target_level;
 
@@ -145,21 +140,17 @@ int flash_stm32_ex_op_update_rdp(const struct device *dev, bool enable,
 
 	/* Update RDP level if needed */
 	if (current_level != target_level) {
-		LOG_INF("RDP changed from 0x%02x to 0x%02x", current_level,
-			target_level);
+		LOG_INF("RDP changed from 0x%02x to 0x%02x", current_level, target_level);
 
 		flash_stm32_set_rdp_level(dev, target_level);
 	}
 	return 0;
 }
 
-int flash_stm32_ex_op_rdp(const struct device *dev, const uintptr_t in,
-			  void *out)
+int flash_stm32_ex_op_rdp(const struct device *dev, const uintptr_t in, void *out)
 {
-	const struct flash_stm32_ex_op_rdp *request =
-		(const struct flash_stm32_ex_op_rdp *)in;
-	struct flash_stm32_ex_op_rdp *result =
-		(struct flash_stm32_ex_op_rdp *)out;
+	const struct flash_stm32_ex_op_rdp *request = (const struct flash_stm32_ex_op_rdp *)in;
+	struct flash_stm32_ex_op_rdp *result = (struct flash_stm32_ex_op_rdp *)out;
 	uint8_t current_level;
 
 #ifdef CONFIG_USERSPACE
@@ -177,8 +168,7 @@ int flash_stm32_ex_op_rdp(const struct device *dev, const uintptr_t in,
 #endif
 		rc = flash_stm32_option_bytes_lock(dev, false);
 		if (rc == 0) {
-			rc = flash_stm32_ex_op_update_rdp(dev, request->enable,
-						    request->permanent);
+			rc = flash_stm32_ex_op_update_rdp(dev, request->enable, request->permanent);
 		}
 
 		rc2 = flash_stm32_option_bytes_lock(dev, true);

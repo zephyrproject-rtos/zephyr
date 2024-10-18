@@ -212,7 +212,7 @@ static const struct mdio_driver_api mdio_dwcxgmac_driver_api = {
 
 #define XGMAC_SNPS_DESIGNWARE_RESET_SPEC_INIT(n) .reset = RESET_DT_SPEC_INST_GET(n),
 
-#define MDIO_DWCXGMAC_CONFIG(n)                                                                   \
+#define MDIO_DWCXGMAC_CONFIG(n)                                                                    \
 	static const struct mdio_dwcxgmac_dev_config mdio_dwcxgmac_dev_config_##n = {              \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
 		.clk_range = DT_INST_PROP(n, csr_clock_indx),                                      \

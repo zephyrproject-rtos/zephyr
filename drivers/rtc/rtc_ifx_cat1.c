@@ -172,9 +172,12 @@ static int ifx_cat1_rtc_init(const struct device *dev)
 		rslt = Cy_SysPm_RegisterCallback(&_ifx_cat1_rtc_pm_cb)
 #endif /* CONFIG_PM */
 
-		if (rslt == CY_RSLT_SUCCESS) {
+			if (rslt == CY_RSLT_SUCCESS)
+		{
 			_ifx_cat1_rtc_set_state(_IFX_CAT1_RTC_STATE_ENABLED);
-		} else {
+		}
+		else
+		{
 			rslt = -EINVAL;
 		}
 
@@ -336,8 +339,7 @@ static const struct rtc_driver_api ifx_cat1_rtc_driver_api = {
 #define INFINEON_CAT1_RTC_INIT(n)                                                                  \
 	static struct ifx_cat1_rtc_data ifx_cat1_rtc_data##n;                                      \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, ifx_cat1_rtc_init, NULL, &ifx_cat1_rtc_data##n,                   \
-			      NULL, PRE_KERNEL_1, CONFIG_RTC_INIT_PRIORITY,        \
-			      &ifx_cat1_rtc_driver_api);
+	DEVICE_DT_INST_DEFINE(n, ifx_cat1_rtc_init, NULL, &ifx_cat1_rtc_data##n, NULL,             \
+			      PRE_KERNEL_1, CONFIG_RTC_INIT_PRIORITY, &ifx_cat1_rtc_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_CAT1_RTC_INIT)

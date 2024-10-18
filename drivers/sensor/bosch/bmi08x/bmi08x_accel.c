@@ -775,7 +775,8 @@ int bmi08x_accel_init(const struct device *dev)
  * have the config file sent over
  */
 #define BMI08X_DATA_SYNC_REG(inst)                                                                 \
-	.data_sync = COND_CODE_1(BMI08X_ACCEL_DATA_SYNC_EN(inst),                                  \
+	.data_sync =                                                                               \
+		COND_CODE_1(BMI08X_ACCEL_DATA_SYNC_EN(inst),                                  \
 				 (BMI08X_DATA_SYNC_REG_VAL(inst)), (0)),
 #define BMI08X_ACCEL_TRIGGER_PINS(inst) BMI08X_ACCEL_TRIG(inst)
 #else
@@ -784,14 +785,14 @@ int bmi08x_accel_init(const struct device *dev)
 	IF_ENABLED(CONFIG_BMI08X_ACCEL_TRIGGER, (BMI08X_ACCEL_TRIG(inst)))
 #endif
 
-#define BMI08X_CREATE_INST(inst)                                                                   \
-                                                                                                   \
-	IF_ENABLED(BMI08X_ACCEL_DATA_SYNC_EN(inst), (BMI08X_VERIFY_DATA_SYNC(inst);))              \
-	IF_ENABLED(BMI08X_ACCEL_DATA_SYNC_EN(inst), (BMI08X_VERIFY_DATA_SYNC_ODR(inst);))          \
-	IF_ENABLED(BMI08X_ACCEL_DATA_SYNC_EN(inst), (BMI08X_VERIFY_GYRO_DATA_SYNC_EN(inst);))      \
-                                                                                                   \
-	static struct bmi08x_accel_data bmi08x_drv_##inst;                                         \
-                                                                                                   \
+#define BMI08X_CREATE_INST(inst)                                                                     \
+                                                                                                     \
+	IF_ENABLED(BMI08X_ACCEL_DATA_SYNC_EN(inst), (BMI08X_VERIFY_DATA_SYNC(inst);))                                                                                   \
+	IF_ENABLED(BMI08X_ACCEL_DATA_SYNC_EN(inst), (BMI08X_VERIFY_DATA_SYNC_ODR(inst);))                                                                                   \
+	IF_ENABLED(BMI08X_ACCEL_DATA_SYNC_EN(inst), (BMI08X_VERIFY_GYRO_DATA_SYNC_EN(inst);))                                                                                   \
+                                                                                                     \
+	static struct bmi08x_accel_data bmi08x_drv_##inst;                                           \
+                                                                                                     \
 	static const struct bmi08x_accel_config bmi08x_config_##inst = {                           \
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi), (BMI08X_CONFIG_SPI(inst)),                  \
 			    (BMI08X_CONFIG_I2C(inst)))                                             \
@@ -801,11 +802,11 @@ int bmi08x_accel_init(const struct device *dev)
 			   (.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),))                  \
 			BMI08X_ACCEL_TRIGGER_PINS(inst)                                            \
 				.accel_hz = DT_INST_ENUM_IDX(inst, accel_hz) + 5,                  \
-		.accel_fs = DT_INST_PROP(inst, accel_fs), BMI08X_DATA_SYNC_REG(inst)};             \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, bmi08x_accel_pm_action);                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmi08x_accel_init, PM_DEVICE_DT_INST_GET(inst),         \
-				     &bmi08x_drv_##inst, &bmi08x_config_##inst, POST_KERNEL,       \
+		.accel_fs = DT_INST_PROP(inst, accel_fs), BMI08X_DATA_SYNC_REG(inst)}; \
+                                                                                                     \
+	PM_DEVICE_DT_INST_DEFINE(inst, bmi08x_accel_pm_action);                                      \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmi08x_accel_init, PM_DEVICE_DT_INST_GET(inst),           \
+				     &bmi08x_drv_##inst, &bmi08x_config_##inst, POST_KERNEL,         \
 				     CONFIG_SENSOR_INIT_PRIORITY, &bmi08x_api);
 
 /* Create the struct device for every status "okay" node in the devicetree. */

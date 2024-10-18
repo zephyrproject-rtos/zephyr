@@ -20,20 +20,20 @@
 #include <zephyr/drivers/i2c.h>
 
 /* Device register addresses. */
-#define INA226_REG_CONFIG		0x00
-#define INA226_REG_SHUNT_VOLT		0x01
-#define INA226_REG_BUS_VOLT		0x02
-#define INA226_REG_POWER		0x03
-#define INA226_REG_CURRENT		0x04
-#define INA226_REG_CALIB		0x05
-#define INA226_REG_MASK			0x06
-#define INA226_REG_ALERT		0x07
-#define INA226_REG_MANUFACTURER_ID	0xFE
-#define INA226_REG_DEVICE_ID		0xFF
+#define INA226_REG_CONFIG          0x00
+#define INA226_REG_SHUNT_VOLT      0x01
+#define INA226_REG_BUS_VOLT        0x02
+#define INA226_REG_POWER           0x03
+#define INA226_REG_CURRENT         0x04
+#define INA226_REG_CALIB           0x05
+#define INA226_REG_MASK            0x06
+#define INA226_REG_ALERT           0x07
+#define INA226_REG_MANUFACTURER_ID 0xFE
+#define INA226_REG_DEVICE_ID       0xFF
 
 /* Device register values. */
-#define INA226_MANUFACTURER_ID		0x5449
-#define INA226_DEVICE_ID		0x2260
+#define INA226_MANUFACTURER_ID 0x5449
+#define INA226_DEVICE_ID       0x2260
 
 struct ina226_data {
 	const struct device *dev;
@@ -56,17 +56,16 @@ struct ina226_config {
 LOG_MODULE_REGISTER(INA226, CONFIG_SENSOR_LOG_LEVEL);
 
 /** @brief Calibration scaling value (scaled by 10^-5) */
-#define INA226_CAL_SCALING		512ULL
+#define INA226_CAL_SCALING 512ULL
 
 /** @brief The LSB value for the bus voltage register, in microvolts/LSB. */
-#define INA226_BUS_VOLTAGE_TO_uV(x)	((x) * 1250U)
+#define INA226_BUS_VOLTAGE_TO_uV(x) ((x) * 1250U)
 
 /** @brief The LSB value for the shunt voltage register, in microvolts/LSB. */
-#define INA226_SHUNT_VOLTAGE_TO_uV(x)	((x) * 2500U / 1000U)
+#define INA226_SHUNT_VOLTAGE_TO_uV(x) ((x) * 2500U / 1000U)
 
 /** @brief Power scaling (need factor of 0.2) */
-#define INA226_POWER_TO_uW(x)		((x) * 25ULL)
-
+#define INA226_POWER_TO_uW(x) ((x) * 25ULL)
 
 int ina226_reg_read_16(const struct i2c_dt_spec *bus, uint8_t reg, uint16_t *val)
 {
@@ -115,8 +114,8 @@ static int ina226_channel_get(const struct device *dev, enum sensor_channel chan
 		break;
 	case SENSOR_CHAN_POWER:
 		/* power in uW is power_reg * current_lsb * 0.2 */
-		micro_s32_to_sensor_value(val,
-			INA226_POWER_TO_uW((uint32_t)data->power * config->current_lsb));
+		micro_s32_to_sensor_value(
+			val, INA226_POWER_TO_uW((uint32_t)data->power * config->current_lsb));
 		break;
 #ifdef CONFIG_INA226_VSHUNT
 	case SENSOR_CHAN_VSHUNT:
@@ -177,12 +176,12 @@ static int ina226_sample_fetch(const struct device *dev, enum sensor_channel cha
 {
 	struct ina226_data *data = dev->data;
 
-	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_VOLTAGE
-	    && chan != SENSOR_CHAN_CURRENT && chan != SENSOR_CHAN_POWER
+	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_VOLTAGE && chan != SENSOR_CHAN_CURRENT &&
+	    chan != SENSOR_CHAN_POWER
 #ifdef CONFIG_INA226_VSHUNT
 	    && chan != SENSOR_CHAN_VSHUNT
 #endif /* CONFIG_INA226_VSHUNT */
-	    ) {
+	) {
 		return -ENOTSUP;
 	}
 
@@ -310,26 +309,21 @@ static const struct sensor_driver_api ina226_driver_api = {
 	.channel_get = ina226_channel_get,
 };
 
-#define INA226_DRIVER_INIT(inst)							\
-	static struct ina226_data ina226_data_##inst;					\
-	static const struct ina226_config ina226_config_##inst = {			\
-		.bus = I2C_DT_SPEC_INST_GET(inst),					\
-		.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),		\
-		.cal = INA226_CAL_SCALING * 10000000ULL /				\
-			(DT_INST_PROP(inst, current_lsb_microamps) *			\
-			DT_INST_PROP(inst, rshunt_micro_ohms)),				\
-		.config = (DT_INST_ENUM_IDX(inst, avg_count) << 9) |			\
-			(DT_INST_ENUM_IDX(inst, vbus_conversion_time_us) << 6) |	\
-			(DT_INST_ENUM_IDX(inst, vshunt_conversion_time_us) << 3) |	\
-			DT_INST_ENUM_IDX(inst, operating_mode),				\
-	};										\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,						\
-				     &ina226_init,					\
-				     NULL,						\
-				     &ina226_data_##inst,				\
-				     &ina226_config_##inst,				\
-				     POST_KERNEL,					\
-				     CONFIG_SENSOR_INIT_PRIORITY,			\
-				     &ina226_driver_api);
+#define INA226_DRIVER_INIT(inst)                                                                   \
+	static struct ina226_data ina226_data_##inst;                                              \
+	static const struct ina226_config ina226_config_##inst = {                                 \
+		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
+		.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),                          \
+		.cal = INA226_CAL_SCALING * 10000000ULL /                                          \
+		       (DT_INST_PROP(inst, current_lsb_microamps) *                                \
+			DT_INST_PROP(inst, rshunt_micro_ohms)),                                    \
+		.config = (DT_INST_ENUM_IDX(inst, avg_count) << 9) |                               \
+			  (DT_INST_ENUM_IDX(inst, vbus_conversion_time_us) << 6) |                 \
+			  (DT_INST_ENUM_IDX(inst, vshunt_conversion_time_us) << 3) |               \
+			  DT_INST_ENUM_IDX(inst, operating_mode),                                  \
+	};                                                                                         \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, &ina226_init, NULL, &ina226_data_##inst,                \
+				     &ina226_config_##inst, POST_KERNEL,                           \
+				     CONFIG_SENSOR_INIT_PRIORITY, &ina226_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INA226_DRIVER_INIT)

@@ -35,8 +35,7 @@ static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 		k_sem_take(&driver_data->sem, K_FOREVER);
 
 		ret = ring_buf_item_get(&driver_data->rb, &type,
-					(uint8_t *)&config_info->line_buf[pos],
-					NULL, &size32);
+					(uint8_t *)&config_info->line_buf[pos], NULL, &size32);
 		if (ret) {
 			/* Shouldn't ever happen... */
 			printk("ipm console ring buffer error: %d\n", ret);
@@ -44,20 +43,17 @@ static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 			continue;
 		}
 
-		if (config_info->line_buf[pos] == '\n' ||
-		    pos == config_info->lb_size - 2) {
+		if (config_info->line_buf[pos] == '\n' || pos == config_info->lb_size - 2) {
 			if (pos != config_info->lb_size - 2) {
 				config_info->line_buf[pos] = '\0';
 			} else {
 				config_info->line_buf[pos + 1] = '\0';
 			}
 			if (config_info->flags & IPM_CONSOLE_PRINTK) {
-				printk("ipm_console: '%s'\n",
-				       config_info->line_buf);
+				printk("ipm_console: '%s'\n", config_info->line_buf);
 			}
 			if (config_info->flags & IPM_CONSOLE_STDOUT) {
-				printf("ipm_console: '%s'\n",
-				       config_info->line_buf);
+				printf("ipm_console: '%s'\n", config_info->line_buf);
 			}
 			pos = 0;
 		} else {
@@ -72,8 +68,7 @@ static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 		 * the buffer fills up in between enabling the channel and
 		 * clearing the channel_disabled flag.
 		 */
-		if (driver_data->channel_disabled &&
-		    ring_buf_item_space_get(&driver_data->rb)) {
+		if (driver_data->channel_disabled && ring_buf_item_space_get(&driver_data->rb)) {
 			key = irq_lock();
 			ipm_set_enabled(driver_data->ipm_device, 1);
 			driver_data->channel_disabled = 0;
@@ -82,9 +77,8 @@ static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 	}
 }
 
-static void ipm_console_receive_callback(const struct device *ipm_dev,
-					 void *user_data,
-					 uint32_t id, volatile void *data)
+static void ipm_console_receive_callback(const struct device *ipm_dev, void *user_data, uint32_t id,
+					 volatile void *data)
 {
 	struct ipm_console_receiver_runtime_data *driver_data = user_data;
 	int ret;
@@ -110,40 +104,34 @@ static void ipm_console_receive_callback(const struct device *ipm_dev,
 	}
 }
 
-
 int ipm_console_receiver_init(const struct device *d)
 {
-	const struct ipm_console_receiver_config_info *config_info =
-		d->config;
+	const struct ipm_console_receiver_config_info *config_info = d->config;
 	struct ipm_console_receiver_runtime_data *driver_data = d->data;
 	const struct device *ipm;
 
 	ipm = device_get_binding(config_info->bind_to);
 
 	if (!ipm) {
-		printk("unable to bind IPM console receiver to '%s'\n",
-		       config_info->bind_to);
+		printk("unable to bind IPM console receiver to '%s'\n", config_info->bind_to);
 		return -EINVAL;
 	}
 
 	if (ipm_max_id_val_get(ipm) < 0xFF) {
-		printk("IPM driver %s doesn't support 8-bit id values",
-		       config_info->bind_to);
+		printk("IPM driver %s doesn't support 8-bit id values", config_info->bind_to);
 		return -EINVAL;
 	}
 
 	driver_data->ipm_device = ipm;
 	driver_data->channel_disabled = 0;
 	k_sem_init(&driver_data->sem, 0, K_SEM_MAX_LIMIT);
-	ring_buf_item_init(&driver_data->rb, config_info->rb_size32,
-			   config_info->ring_buf_data);
+	ring_buf_item_init(&driver_data->rb, config_info->rb_size32, config_info->ring_buf_data);
 
 	ipm_register_callback(ipm, ipm_console_receive_callback, driver_data);
 
 	k_thread_create(&driver_data->rx_thread, config_info->thread_stack,
-			CONFIG_IPM_CONSOLE_STACK_SIZE, ipm_console_thread,
-			driver_data, (void *)config_info, NULL,
-			K_PRIO_COOP(IPM_CONSOLE_PRI), 0, K_NO_WAIT);
+			CONFIG_IPM_CONSOLE_STACK_SIZE, ipm_console_thread, driver_data,
+			(void *)config_info, NULL, K_PRIO_COOP(IPM_CONSOLE_PRI), 0, K_NO_WAIT);
 	ipm_set_enabled(ipm, 1);
 
 	return 0;

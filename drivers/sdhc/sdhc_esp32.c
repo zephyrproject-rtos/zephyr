@@ -431,7 +431,7 @@ static int process_events(const struct device *dev, struct sdmmc_event evt,
 		evt.sdmmc_status, evt.dma_status);
 
 	enum sdmmc_req_state next_state = *pstate;
-	enum sdmmc_req_state state = (enum sdmmc_req_state) -1;
+	enum sdmmc_req_state state = (enum sdmmc_req_state) - 1;
 
 	while (next_state != state) {
 
@@ -1188,8 +1188,8 @@ static int sdhc_esp32_request(const struct device *dev, struct sdhc_command *cmd
 	}
 
 	if ((ret_esp != 0) || esp_cmd.error) {
-		LOG_DBG("Error command: %u arg %08x ret_esp = 0x%x error = 0x%x\n",
-			cmd->opcode, cmd->arg, ret_esp, esp_cmd.error);
+		LOG_DBG("Error command: %u arg %08x ret_esp = 0x%x error = 0x%x\n", cmd->opcode,
+			cmd->arg, ret_esp, esp_cmd.error);
 
 		ret_esp = (ret_esp > 0) ? ret_esp : esp_cmd.error;
 
@@ -1341,10 +1341,9 @@ static int sdhc_esp32_init(const struct device *dev)
 
 	/* Attach interrupt handler */
 	ret = esp_intr_alloc(cfg->irq_source,
-				ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
-				ESP_INT_FLAGS_CHECK(cfg->irq_flags) | ESP_INTR_FLAG_IRAM,
-				&sdio_esp32_isr, (void *)dev,
-				&data->s_host_ctx.intr_handle);
+			     ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
+				     ESP_INT_FLAGS_CHECK(cfg->irq_flags) | ESP_INTR_FLAG_IRAM,
+			     &sdio_esp32_isr, (void *)dev, &data->s_host_ctx.intr_handle);
 
 	if (ret != 0) {
 		k_msgq_purge(data->s_host_ctx.event_queue);

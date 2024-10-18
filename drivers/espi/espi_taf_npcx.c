@@ -47,21 +47,21 @@ struct espi_taf_npcx_data {
 static struct espi_taf_npcx_data npcx_espi_taf_data;
 static struct espi_callback espi_taf_cb;
 
-#define HAL_INSTANCE(dev)						\
-	((struct espi_reg *)((const struct espi_taf_npcx_config *)	\
-	(dev)->config)->base)
+#define HAL_INSTANCE(dev)                                                                          \
+	((struct espi_reg *)((const struct espi_taf_npcx_config *)(dev)->config)->base)
 
-#define FLBASE_ADDR (							\
-	GET_FIELD(inst->FLASHBASE, NPCX_FLASHBASE_FLBASE_ADDR)		\
-	<< GET_FIELD_POS(NPCX_FLASHBASE_FLBASE_ADDR))
+#define FLBASE_ADDR                                                                                \
+	(GET_FIELD(inst->FLASHBASE, NPCX_FLASHBASE_FLBASE_ADDR)                                    \
+	 << GET_FIELD_POS(NPCX_FLASHBASE_FLBASE_ADDR))
 
-#define PRTR_BADDR(i) (							\
-	GET_FIELD(inst->FLASH_PRTR_BADDR[i], NPCX_FLASH_PRTR_BADDR)	\
-	<< GET_FIELD_POS(NPCX_FLASH_PRTR_BADDR))
+#define PRTR_BADDR(i)                                                                              \
+	(GET_FIELD(inst->FLASH_PRTR_BADDR[i], NPCX_FLASH_PRTR_BADDR)                               \
+	 << GET_FIELD_POS(NPCX_FLASH_PRTR_BADDR))
 
-#define PRTR_HADDR(i) (							\
-	GET_FIELD(inst->FLASH_PRTR_HADDR[i], NPCX_FLASH_PRTR_HADDR)	\
-	<< GET_FIELD_POS(NPCX_FLASH_PRTR_HADDR)) | 0xFFF;
+#define PRTR_HADDR(i)                                                                              \
+	(GET_FIELD(inst->FLASH_PRTR_HADDR[i], NPCX_FLASH_PRTR_HADDR)                               \
+	 << GET_FIELD_POS(NPCX_FLASH_PRTR_HADDR)) |                                                \
+		0xFFF;
 
 static void espi_taf_get_pckt(const struct device *dev, struct espi_taf_npcx_data *pckt,
 			      struct espi_event event)
@@ -112,8 +112,8 @@ static bool espi_taf_check_read_protect(const struct device *dev, uint32_t addr,
 #endif
 
 /* Check access region of write request is protected or not */
-static bool espi_taf_check_write_protect(const struct device *dev, uint32_t addr,
-					 uint32_t len, uint8_t tag)
+static bool espi_taf_check_write_protect(const struct device *dev, uint32_t addr, uint32_t len,
+					 uint8_t tag)
 {
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
 	uint32_t flash_addr = addr;
@@ -187,8 +187,8 @@ static int espi_taf_npcx_set_pr(const struct device *dev, const struct espi_saf_
 		if (preg->flags) {
 			bitmask = BIT_MASK(GET_FIELD_SZ(NPCX_FLASH_PRTR_BADDR));
 			offset = GET_FIELD_POS(NPCX_FLASH_PRTR_BADDR);
-			inst->FLASH_PRTR_BADDR[regnum] = ((preg->start & bitmask) << offset)
-							 | rw_pr;
+			inst->FLASH_PRTR_BADDR[regnum] =
+				((preg->start & bitmask) << offset) | rw_pr;
 			bitmask = BIT_MASK(GET_FIELD_SZ(NPCX_FLASH_PRTR_HADDR));
 			offset = GET_FIELD_POS(NPCX_FLASH_PRTR_HADDR);
 			inst->FLASH_PRTR_HADDR[regnum] = (preg->end & bitmask) << offset;
@@ -386,8 +386,7 @@ static int espi_taf_npcx_flash_write(const struct device *dev, struct espi_saf_p
 	uint8_t *data_ptr = (uint8_t *)(taf_data_ptr->data);
 	int rc;
 
-	if (espi_taf_check_write_protect(dev, pckt->flash_addr,
-					 pckt->len, taf_data_ptr->tag)) {
+	if (espi_taf_check_write_protect(dev, pckt->flash_addr, pckt->len, taf_data_ptr->tag)) {
 		LOG_ERR("Access protection region");
 		return -EINVAL;
 	}
@@ -525,12 +524,9 @@ static int espi_taf_npcx_init(const struct device *dev)
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
 	struct espi_taf_npcx_config *config = ((struct espi_taf_npcx_config *)(dev)->config);
 
-	SET_FIELD(inst->FLASHCFG, NPCX_FLASHCFG_FLCAPA,
-		  NPCX_FLASH_SHARING_CAP_SUPP_TAF_AND_CAF);
-	SET_FIELD(inst->FLASHCFG, NPCX_FLASHCFG_TRGFLEBLKSIZE,
-		  BIT(config->erase_sz));
-	SET_FIELD(inst->FLASHCFG, NPCX_FLASHCFG_FLREQSUP,
-		  config->max_rd_sz);
+	SET_FIELD(inst->FLASHCFG, NPCX_FLASHCFG_FLCAPA, NPCX_FLASH_SHARING_CAP_SUPP_TAF_AND_CAF);
+	SET_FIELD(inst->FLASHCFG, NPCX_FLASHCFG_TRGFLEBLKSIZE, BIT(config->erase_sz));
+	SET_FIELD(inst->FLASHCFG, NPCX_FLASHCFG_FLREQSUP, config->max_rd_sz);
 	inst->FLASHBASE = config->mapped_addr;
 
 	return 0;
@@ -551,7 +547,5 @@ static const struct espi_taf_npcx_config espi_taf_npcx_config = {
 	.max_rd_sz = DT_INST_STRING_TOKEN(0, max_read_sz),
 };
 
-DEVICE_DT_INST_DEFINE(0, &espi_taf_npcx_init, NULL,
-			&npcx_espi_taf_data, &espi_taf_npcx_config,
-			PRE_KERNEL_2, CONFIG_ESPI_INIT_PRIORITY,
-			&espi_taf_npcx_driver_api);
+DEVICE_DT_INST_DEFINE(0, &espi_taf_npcx_init, NULL, &npcx_espi_taf_data, &espi_taf_npcx_config,
+		      PRE_KERNEL_2, CONFIG_ESPI_INIT_PRIORITY, &espi_taf_npcx_driver_api);

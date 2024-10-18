@@ -30,14 +30,11 @@
 
 /* swap both arguments */
 #define PFC_REG_ADDRESS(idx, inst) DT_INST_REG_ADDR_BY_IDX(inst, idx)
-static uintptr_t reg_base[] = {
-	LISTIFY(DT_NUM_REGS(DT_DRV_INST(0)), PFC_REG_ADDRESS, (,), 0)
-};
+static uintptr_t reg_base[] = {LISTIFY(DT_NUM_REGS(DT_DRV_INST(0)), PFC_REG_ADDRESS, (,), 0) };
 
 #define PFC_REG_SIZE(idx, inst) DT_INST_REG_SIZE_BY_IDX(inst, idx)
 static const uintptr_t __maybe_unused reg_sizes[] = {
-	LISTIFY(DT_NUM_REGS(DT_DRV_INST(0)), PFC_REG_SIZE, (,), 0)
-};
+	LISTIFY(DT_NUM_REGS(DT_DRV_INST(0)), PFC_REG_SIZE, (,), 0) };
 
 #ifdef CONFIG_PINCTRL_RCAR_VOLTAGE_CONTROL
 /* POC Control Register can control IO voltage level that is supplied to the pin */
@@ -52,9 +49,8 @@ struct pfc_pocctrl_reg {
  * So based on a 24 mA maximum value each step is either
  * 24/4 mA or 24/8 mA.
  */
-#define PFC_RCAR_DRIVE_MAX 24U
-#define PFC_RCAR_DRIVE_STEP(size) \
-	(size == 2 ? PFC_RCAR_DRIVE_MAX / 4 : PFC_RCAR_DRIVE_MAX / 8)
+#define PFC_RCAR_DRIVE_MAX        24U
+#define PFC_RCAR_DRIVE_STEP(size) (size == 2 ? PFC_RCAR_DRIVE_MAX / 4 : PFC_RCAR_DRIVE_MAX / 8)
 
 /* Some registers such as IPSR GPSR or DRVCTRL are protected and
  * must be preceded to a write to PMMR with the inverse value.
@@ -66,8 +62,7 @@ static void pfc_rcar_write(uintptr_t pfc_base, uint32_t offs, uint32_t val)
 }
 
 /* Set the pin either in gpio or peripheral */
-static void pfc_rcar_set_gpsr(uintptr_t pfc_base,
-			      uint16_t pin, bool peripheral)
+static void pfc_rcar_set_gpsr(uintptr_t pfc_base, uint16_t pin, bool peripheral)
 {
 #if defined(CONFIG_SOC_SERIES_RCAR_GEN3)
 	/* On Gen3 we have multiple GPSR at one base address */
@@ -77,8 +72,7 @@ static void pfc_rcar_set_gpsr(uintptr_t pfc_base,
 	uint8_t bank = 0;
 #endif
 	uint8_t bit = pin % 32;
-	uint32_t val = sys_read32(pfc_base + PFC_RCAR_GPSR +
-				  bank * sizeof(uint32_t));
+	uint32_t val = sys_read32(pfc_base + PFC_RCAR_GPSR + bank * sizeof(uint32_t));
 
 	if (peripheral) {
 		val |= BIT(bit);
@@ -89,8 +83,7 @@ static void pfc_rcar_set_gpsr(uintptr_t pfc_base,
 }
 
 /* Set peripheral function */
-static void pfc_rcar_set_ipsr(uintptr_t pfc_base,
-			      const struct rcar_pin_func *rcar_func)
+static void pfc_rcar_set_ipsr(uintptr_t pfc_base, const struct rcar_pin_func *rcar_func)
 {
 	uint16_t reg_offs = PFC_RCAR_IPSR + rcar_func->bank * sizeof(uint32_t);
 	uint32_t val = sys_read32(pfc_base + reg_offs);
@@ -100,8 +93,7 @@ static void pfc_rcar_set_ipsr(uintptr_t pfc_base,
 	pfc_rcar_write(pfc_base, reg_offs, val);
 }
 
-static uint32_t pfc_rcar_get_drive_reg(uint16_t pin, uint8_t *offset,
-				       uint8_t *size)
+static uint32_t pfc_rcar_get_drive_reg(uint16_t pin, uint8_t *offset, uint8_t *size)
 {
 	const struct pfc_drive_reg *drive_regs = pfc_rcar_get_drive_regs();
 
@@ -124,8 +116,7 @@ static uint32_t pfc_rcar_get_drive_reg(uint16_t pin, uint8_t *offset,
  * using DRVCTRLx registers, some pins have 8 steps (3 bits size encoded)
  * some have 4 steps (2 bits size encoded).
  */
-static int pfc_rcar_set_drive_strength(uintptr_t pfc_base, uint16_t pin,
-				       uint8_t strength)
+static int pfc_rcar_set_drive_strength(uintptr_t pfc_base, uint16_t pin, uint8_t strength)
 {
 	uint8_t offset, size, step;
 	uint32_t reg, val;
@@ -154,8 +145,7 @@ static int pfc_rcar_set_drive_strength(uintptr_t pfc_base, uint16_t pin,
 	return 0;
 }
 
-static const struct pfc_bias_reg *pfc_rcar_get_bias_reg(uint16_t pin,
-							uint8_t *bit)
+static const struct pfc_bias_reg *pfc_rcar_get_bias_reg(uint16_t pin, uint8_t *bit)
 {
 	const struct pfc_bias_reg *bias_regs = pfc_rcar_get_bias_regs();
 
@@ -204,44 +194,43 @@ int pfc_rcar_set_bias(uintptr_t pfc_base, uint16_t pin, uint16_t flags)
 #ifdef CONFIG_PINCTRL_RCAR_VOLTAGE_CONTROL
 
 const struct pfc_pocctrl_reg pfc_r8a77951_r8a77961_volt_regs[] = {
-	{
-		.offset = 0x0380,
-		.pins = {
-			[0]  = RCAR_GP_PIN(3,  0),    /* SD0_CLK  */
-			[1]  = RCAR_GP_PIN(3,  1),    /* SD0_CMD  */
-			[2]  = RCAR_GP_PIN(3,  2),    /* SD0_DAT0 */
-			[3]  = RCAR_GP_PIN(3,  3),    /* SD0_DAT1 */
-			[4]  = RCAR_GP_PIN(3,  4),    /* SD0_DAT2 */
-			[5]  = RCAR_GP_PIN(3,  5),    /* SD0_DAT3 */
-			[6]  = RCAR_GP_PIN(3,  6),    /* SD1_CLK  */
-			[7]  = RCAR_GP_PIN(3,  7),    /* SD1_CMD  */
-			[8]  = RCAR_GP_PIN(3,  8),    /* SD1_DAT0 */
-			[9]  = RCAR_GP_PIN(3,  9),    /* SD1_DAT1 */
-			[10] = RCAR_GP_PIN(3,  10),   /* SD1_DAT2 */
-			[11] = RCAR_GP_PIN(3,  11),   /* SD1_DAT3 */
-			[12] = RCAR_GP_PIN(4,  0),    /* SD2_CLK  */
-			[13] = RCAR_GP_PIN(4,  1),    /* SD2_CMD  */
-			[14] = RCAR_GP_PIN(4,  2),    /* SD2_DAT0 */
-			[15] = RCAR_GP_PIN(4,  3),    /* SD2_DAT1 */
-			[16] = RCAR_GP_PIN(4,  4),    /* SD2_DAT2 */
-			[17] = RCAR_GP_PIN(4,  5),    /* SD2_DAT3 */
-			[18] = RCAR_GP_PIN(4,  6),    /* SD2_DS   */
-			[19] = RCAR_GP_PIN(4,  7),    /* SD3_CLK  */
-			[20] = RCAR_GP_PIN(4,  8),    /* SD3_CMD  */
-			[21] = RCAR_GP_PIN(4,  9),    /* SD3_DAT0 */
-			[22] = RCAR_GP_PIN(4,  10),   /* SD3_DAT1 */
-			[23] = RCAR_GP_PIN(4,  11),   /* SD3_DAT2 */
-			[24] = RCAR_GP_PIN(4,  12),   /* SD3_DAT3 */
-			[25] = RCAR_GP_PIN(4,  13),   /* SD3_DAT4 */
-			[26] = RCAR_GP_PIN(4,  14),   /* SD3_DAT5 */
-			[27] = RCAR_GP_PIN(4,  15),   /* SD3_DAT6 */
-			[28] = RCAR_GP_PIN(4,  16),   /* SD3_DAT7 */
-			[29] = RCAR_GP_PIN(4,  17),   /* SD3_DS   */
-			[30] = -1,
-			[31] = -1,
-		}
-	},
-	{ /* sentinel */ },
+	{.offset = 0x0380,
+	 .pins =
+		 {
+			 [0] = RCAR_GP_PIN(3, 0),   /* SD0_CLK  */
+			 [1] = RCAR_GP_PIN(3, 1),   /* SD0_CMD  */
+			 [2] = RCAR_GP_PIN(3, 2),   /* SD0_DAT0 */
+			 [3] = RCAR_GP_PIN(3, 3),   /* SD0_DAT1 */
+			 [4] = RCAR_GP_PIN(3, 4),   /* SD0_DAT2 */
+			 [5] = RCAR_GP_PIN(3, 5),   /* SD0_DAT3 */
+			 [6] = RCAR_GP_PIN(3, 6),   /* SD1_CLK  */
+			 [7] = RCAR_GP_PIN(3, 7),   /* SD1_CMD  */
+			 [8] = RCAR_GP_PIN(3, 8),   /* SD1_DAT0 */
+			 [9] = RCAR_GP_PIN(3, 9),   /* SD1_DAT1 */
+			 [10] = RCAR_GP_PIN(3, 10), /* SD1_DAT2 */
+			 [11] = RCAR_GP_PIN(3, 11), /* SD1_DAT3 */
+			 [12] = RCAR_GP_PIN(4, 0),  /* SD2_CLK  */
+			 [13] = RCAR_GP_PIN(4, 1),  /* SD2_CMD  */
+			 [14] = RCAR_GP_PIN(4, 2),  /* SD2_DAT0 */
+			 [15] = RCAR_GP_PIN(4, 3),  /* SD2_DAT1 */
+			 [16] = RCAR_GP_PIN(4, 4),  /* SD2_DAT2 */
+			 [17] = RCAR_GP_PIN(4, 5),  /* SD2_DAT3 */
+			 [18] = RCAR_GP_PIN(4, 6),  /* SD2_DS   */
+			 [19] = RCAR_GP_PIN(4, 7),  /* SD3_CLK  */
+			 [20] = RCAR_GP_PIN(4, 8),  /* SD3_CMD  */
+			 [21] = RCAR_GP_PIN(4, 9),  /* SD3_DAT0 */
+			 [22] = RCAR_GP_PIN(4, 10), /* SD3_DAT1 */
+			 [23] = RCAR_GP_PIN(4, 11), /* SD3_DAT2 */
+			 [24] = RCAR_GP_PIN(4, 12), /* SD3_DAT3 */
+			 [25] = RCAR_GP_PIN(4, 13), /* SD3_DAT4 */
+			 [26] = RCAR_GP_PIN(4, 14), /* SD3_DAT5 */
+			 [27] = RCAR_GP_PIN(4, 15), /* SD3_DAT6 */
+			 [28] = RCAR_GP_PIN(4, 16), /* SD3_DAT7 */
+			 [29] = RCAR_GP_PIN(4, 17), /* SD3_DS   */
+			 [30] = -1,
+			 [31] = -1,
+		 }},
+	{/* sentinel */},
 };
 
 static const struct pfc_pocctrl_reg *pfc_rcar_get_io_voltage_regs(void)
@@ -356,15 +345,13 @@ int pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 	}
 
 	if (pin->drive_strength != 0U) {
-		ret = pfc_rcar_set_drive_strength(pfc_base, pin->pin,
-						  pin->drive_strength);
+		ret = pfc_rcar_set_drive_strength(pfc_base, pin->pin, pin->drive_strength);
 	}
 
 	return ret;
 }
 
-int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
-			   uintptr_t reg)
+int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintptr_t reg)
 {
 	int ret = 0;
 

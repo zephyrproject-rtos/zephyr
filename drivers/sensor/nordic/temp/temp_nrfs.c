@@ -39,9 +39,9 @@ struct temp_nrfs_data {
 
 #ifdef CONFIG_TEMP_NRFS_TRIGGER
 
-#define DEFAULT_SAMPLING_FREQ {  1, 0 }
-#define DEFAULT_UP_THRESHOLD  { 25, 0 }
-#define DEFAULT_LOW_THRESHOLD {  0, 0 }
+#define DEFAULT_SAMPLING_FREQ {1, 0}
+#define DEFAULT_UP_THRESHOLD  {25, 0}
+#define DEFAULT_LOW_THRESHOLD {0, 0}
 
 static void temp_nrfs_handle_event(const struct device *dev)
 {
@@ -75,8 +75,7 @@ static void temp_nrfs_thread(void *p1, void *p2, void *p3)
 #elif defined(CONFIG_TEMP_NRFS_TRIGGER_GLOBAL_THREAD)
 static void temp_nrfs_work_handler(struct k_work *work)
 {
-	struct temp_nrfs_data *data =
-		CONTAINER_OF(work, struct temp_nrfs_data, work);
+	struct temp_nrfs_data *data = CONTAINER_OF(work, struct temp_nrfs_data, work);
 
 	temp_nrfs_handle_event(data->dev);
 }
@@ -84,8 +83,8 @@ static void temp_nrfs_work_handler(struct k_work *work)
 
 static uint16_t to_measure_rate_ms(const struct sensor_value *freq_val)
 {
-	uint32_t measure_rate_ms = (MSEC_PER_SEC * 1000) /
-		(uint32_t)sensor_value_to_milli(freq_val);
+	uint32_t measure_rate_ms =
+		(MSEC_PER_SEC * 1000) / (uint32_t)sensor_value_to_milli(freq_val);
 
 	return (uint16_t)MIN(measure_rate_ms, UINT16_MAX);
 }
@@ -97,15 +96,13 @@ static int32_t to_raw_temp(const struct sensor_value *temp_val)
 	return nrfs_temp_to_raw(temp_mul_100);
 }
 
-static int api_sensor_trigger_set(const struct device *dev,
-				  const struct sensor_trigger *trig,
+static int api_sensor_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 				  sensor_trigger_handler_t handler)
 {
 	struct temp_nrfs_data *data = dev->data;
 	nrfs_err_t err;
 
-	if (trig->chan != SENSOR_CHAN_ALL &&
-	    trig->chan != SENSOR_CHAN_DIE_TEMP) {
+	if (trig->chan != SENSOR_CHAN_ALL && trig->chan != SENSOR_CHAN_DIE_TEMP) {
 		return -ENOTSUP;
 	}
 
@@ -117,11 +114,9 @@ static int api_sensor_trigger_set(const struct device *dev,
 		k_mutex_unlock(&data->mutex);
 
 		if (handler) {
-			err = nrfs_temp_subscribe(
-				to_measure_rate_ms(&data->sampling_freq),
-				to_raw_temp(&data->low_threshold),
-				to_raw_temp(&data->up_threshold),
-				data);
+			err = nrfs_temp_subscribe(to_measure_rate_ms(&data->sampling_freq),
+						  to_raw_temp(&data->low_threshold),
+						  to_raw_temp(&data->up_threshold), data);
 		} else {
 			err = nrfs_temp_unsubscribe();
 		}
@@ -143,10 +138,8 @@ static int api_sensor_trigger_set(const struct device *dev,
 	return 0;
 }
 
-static int api_sensor_attr_set(const struct device *dev,
-			       enum sensor_channel chan,
-			       enum sensor_attribute attr,
-			       const struct sensor_value *val)
+static int api_sensor_attr_set(const struct device *dev, enum sensor_channel chan,
+			       enum sensor_attribute attr, const struct sensor_value *val)
 {
 	struct temp_nrfs_data *data = dev->data;
 
@@ -199,14 +192,12 @@ static void sensor_handler(nrfs_temp_evt_t const *p_evt, void *context)
 #endif /* CONFIG_TEMP_NRFS_TRIGGER */
 
 	default:
-		LOG_DBG("Temperature handler - unsupported event: 0x%x",
-			p_evt->type);
+		LOG_DBG("Temperature handler - unsupported event: 0x%x", p_evt->type);
 		break;
 	}
 }
 
-static int api_sample_fetch(const struct device *dev,
-			    enum sensor_channel chan)
+static int api_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct temp_nrfs_data *data = dev->data;
 	int nrfs_rc;
@@ -237,8 +228,7 @@ static int api_sample_fetch(const struct device *dev,
 	return rc;
 }
 
-static int api_channel_get(const struct device *dev,
-			   enum sensor_channel chan,
+static int api_channel_get(const struct device *dev, enum sensor_channel chan,
 			   struct sensor_value *val)
 {
 	struct temp_nrfs_data *data = dev->data;
@@ -269,12 +259,9 @@ static int temp_nrfs_init(const struct device *dev)
 #if defined(CONFIG_TEMP_NRFS_TRIGGER_OWN_THREAD)
 	struct temp_nrfs_data *data = dev->data;
 
-	k_thread_create(&data->thread, data->thread_stack,
-			CONFIG_TEMP_NRFS_THREAD_STACK_SIZE,
-			temp_nrfs_thread,
-			data, NULL, NULL,
-			K_PRIO_COOP(CONFIG_TEMP_NRFS_THREAD_PRIORITY),
-			0, K_NO_WAIT);
+	k_thread_create(&data->thread, data->thread_stack, CONFIG_TEMP_NRFS_THREAD_STACK_SIZE,
+			temp_nrfs_thread, data, NULL, NULL,
+			K_PRIO_COOP(CONFIG_TEMP_NRFS_THREAD_PRIORITY), 0, K_NO_WAIT);
 	k_thread_name_set(&data->thread, dev->name);
 #endif
 
@@ -287,8 +274,7 @@ static const struct sensor_driver_api temp_nrfs_drv_api = {
 	.trigger_set = api_sensor_trigger_set,
 #endif
 	.sample_fetch = api_sample_fetch,
-	.channel_get = api_channel_get
-};
+	.channel_get = api_channel_get};
 
 static struct temp_nrfs_data temp_nrfs_drv_data = {
 	.mutex = Z_MUTEX_INITIALIZER(temp_nrfs_drv_data.mutex),
@@ -296,7 +282,7 @@ static struct temp_nrfs_data temp_nrfs_drv_data = {
 #ifdef CONFIG_TEMP_NRFS_TRIGGER
 	.dev = DEVICE_DT_INST_GET(0),
 	.sampling_freq = DEFAULT_SAMPLING_FREQ,
-	.up_threshold  = DEFAULT_UP_THRESHOLD,
+	.up_threshold = DEFAULT_UP_THRESHOLD,
 	.low_threshold = DEFAULT_LOW_THRESHOLD,
 #endif
 #if defined(CONFIG_TEMP_NRFS_TRIGGER_OWN_THREAD)
@@ -306,7 +292,5 @@ static struct temp_nrfs_data temp_nrfs_drv_data = {
 #endif
 };
 
-DEVICE_DT_INST_DEFINE(0, temp_nrfs_init, NULL,
-		      &temp_nrfs_drv_data, NULL,
-		      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-		      &temp_nrfs_drv_api);
+DEVICE_DT_INST_DEFINE(0, temp_nrfs_init, NULL, &temp_nrfs_drv_data, NULL, POST_KERNEL,
+		      CONFIG_SENSOR_INIT_PRIORITY, &temp_nrfs_drv_api);

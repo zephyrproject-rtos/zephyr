@@ -20,8 +20,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/dt-bindings/gpio/espressif-esp32-gpio.h>
-#if defined(CONFIG_SOC_SERIES_ESP32C2) || \
-	defined(CONFIG_SOC_SERIES_ESP32C3) || \
+#if defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C3) ||                    \
 	defined(CONFIG_SOC_SERIES_ESP32C6)
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
 #else
@@ -36,33 +35,33 @@
 LOG_MODULE_REGISTER(gpio_esp32, CONFIG_LOG_DEFAULT_LEVEL);
 
 #ifdef CONFIG_SOC_SERIES_ESP32C2
-#define out	out.val
-#define in	in.val
-#define out_w1ts out_w1ts.val
-#define out_w1tc out_w1tc.val
+#define out         out.val
+#define in          in.val
+#define out_w1ts    out_w1ts.val
+#define out_w1tc    out_w1tc.val
 /* arch_curr_cpu() is not available for riscv based chips */
-#define CPU_ID()  0
+#define CPU_ID()    0
 #define ISR_HANDLER isr_handler_t
 #elif CONFIG_SOC_SERIES_ESP32C3
 /* gpio structs in esp32c3 series are different from xtensa ones */
-#define out out.data
-#define in in.data
-#define out_w1ts out_w1ts.val
-#define out_w1tc out_w1tc.val
+#define out         out.data
+#define in          in.data
+#define out_w1ts    out_w1ts.val
+#define out_w1tc    out_w1tc.val
 /* arch_curr_cpu() is not available for riscv based chips */
-#define CPU_ID()  0
+#define CPU_ID()    0
 #define ISR_HANDLER isr_handler_t
 #elif defined(CONFIG_SOC_SERIES_ESP32C6)
 /* gpio structs in esp32c6 are also different */
-#define out out.out_data_orig
-#define in in.in_data_next
-#define out_w1ts out_w1ts.val
-#define out_w1tc out_w1tc.val
+#define out         out.out_data_orig
+#define in          in.in_data_next
+#define out_w1ts    out_w1ts.val
+#define out_w1tc    out_w1tc.val
 /* arch_curr_cpu() is not available for riscv based chips */
-#define CPU_ID()  0
+#define CPU_ID()    0
 #define ISR_HANDLER isr_handler_t
 #else
-#define CPU_ID() arch_curr_cpu()->id
+#define CPU_ID()    arch_curr_cpu()->id
 #define ISR_HANDLER intr_handler_t
 #endif
 
@@ -103,12 +102,10 @@ static inline bool gpio_pin_is_output_capable(uint32_t pin)
 	return ((BIT(pin) & SOC_GPIO_VALID_OUTPUT_GPIO_MASK) != 0);
 }
 
-static int gpio_esp32_config(const struct device *dev,
-			     gpio_pin_t pin,
-			     gpio_flags_t flags)
+static int gpio_esp32_config(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_esp32_config *const cfg = dev->config;
-	uint32_t io_pin = (uint32_t) pin + ((cfg->gpio_port == 1 && pin < 32) ? 32 : 0);
+	uint32_t io_pin = (uint32_t)pin + ((cfg->gpio_port == 1 && pin < 32) ? 32 : 0);
 	uint32_t key;
 	int ret = 0;
 
@@ -226,25 +223,23 @@ static int gpio_esp32_config(const struct device *dev,
 		switch (flags & ESP32_GPIO_DS_MASK) {
 		case ESP32_GPIO_DS_DFLT:
 			if (!rtc_gpio_is_valid_gpio(io_pin) || SOC_GPIO_SUPPORT_RTC_INDEPENDENT) {
-				gpio_ll_set_drive_capability(cfg->gpio_base,
-						io_pin,
-						GPIO_DRIVE_CAP_3);
+				gpio_ll_set_drive_capability(cfg->gpio_base, io_pin,
+							     GPIO_DRIVE_CAP_3);
 			} else {
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 				rtcio_hal_set_drive_capability(rtc_io_num_map[io_pin],
-						GPIO_DRIVE_CAP_3);
+							       GPIO_DRIVE_CAP_3);
 #endif
 			}
 			break;
 		case ESP32_GPIO_DS_ALT:
 			if (!rtc_gpio_is_valid_gpio(io_pin) || SOC_GPIO_SUPPORT_RTC_INDEPENDENT) {
-				gpio_ll_set_drive_capability(cfg->gpio_base,
-						io_pin,
-						GPIO_DRIVE_CAP_0);
+				gpio_ll_set_drive_capability(cfg->gpio_base, io_pin,
+							     GPIO_DRIVE_CAP_0);
 			} else {
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 				rtcio_hal_set_drive_capability(rtc_io_num_map[io_pin],
-						GPIO_DRIVE_CAP_0);
+							       GPIO_DRIVE_CAP_0);
 #endif
 			}
 			break;
@@ -293,8 +288,7 @@ static int gpio_esp32_port_get_raw(const struct device *port, uint32_t *value)
 	return 0;
 }
 
-static int gpio_esp32_port_set_masked_raw(const struct device *port,
-					  uint32_t mask, uint32_t value)
+static int gpio_esp32_port_set_masked_raw(const struct device *port, uint32_t mask, uint32_t value)
 {
 	const struct gpio_esp32_config *const cfg = port->config;
 
@@ -313,8 +307,7 @@ static int gpio_esp32_port_set_masked_raw(const struct device *port,
 	return 0;
 }
 
-static int gpio_esp32_port_set_bits_raw(const struct device *port,
-					uint32_t pins)
+static int gpio_esp32_port_set_bits_raw(const struct device *port, uint32_t pins)
 {
 	const struct gpio_esp32_config *const cfg = port->config;
 
@@ -329,8 +322,7 @@ static int gpio_esp32_port_set_bits_raw(const struct device *port,
 	return 0;
 }
 
-static int gpio_esp32_port_clear_bits_raw(const struct device *port,
-					  uint32_t pins)
+static int gpio_esp32_port_clear_bits_raw(const struct device *port, uint32_t pins)
 {
 	const struct gpio_esp32_config *const cfg = port->config;
 
@@ -345,8 +337,7 @@ static int gpio_esp32_port_clear_bits_raw(const struct device *port,
 	return 0;
 }
 
-static int gpio_esp32_port_toggle_bits(const struct device *port,
-				       uint32_t pins)
+static int gpio_esp32_port_toggle_bits(const struct device *port, uint32_t pins)
 {
 	const struct gpio_esp32_config *const cfg = port->config;
 	uint32_t key = irq_lock();
@@ -364,8 +355,7 @@ static int gpio_esp32_port_toggle_bits(const struct device *port,
 	return 0;
 }
 
-static int convert_int_type(enum gpio_int_mode mode,
-			    enum gpio_int_trig trig)
+static int convert_int_type(enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	if (mode == GPIO_INT_MODE_DISABLED) {
 		return GPIO_INTR_DISABLE;
@@ -397,13 +387,11 @@ static int convert_int_type(enum gpio_int_mode mode,
 	return -EINVAL;
 }
 
-static int gpio_esp32_pin_interrupt_configure(const struct device *port,
-					      gpio_pin_t pin,
-					      enum gpio_int_mode mode,
-					      enum gpio_int_trig trig)
+static int gpio_esp32_pin_interrupt_configure(const struct device *port, gpio_pin_t pin,
+					      enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	const struct gpio_esp32_config *const cfg = port->config;
-	uint32_t io_pin = (uint32_t) pin + ((cfg->gpio_port == 1 && pin < 32) ? 32 : 0);
+	uint32_t io_pin = (uint32_t)pin + ((cfg->gpio_port == 1 && pin < 32) ? 32 : 0);
 	int intr_trig_mode = convert_int_type(mode, trig);
 	uint32_t key;
 
@@ -425,8 +413,7 @@ static int gpio_esp32_pin_interrupt_configure(const struct device *port,
 	return 0;
 }
 
-static int gpio_esp32_manage_callback(const struct device *dev,
-				      struct gpio_callback *callback,
+static int gpio_esp32_manage_callback(const struct device *dev, struct gpio_callback *callback,
 				      bool set)
 {
 	struct gpio_esp32_data *data = dev->data;
@@ -476,12 +463,11 @@ static int gpio_esp32_init(const struct device *dev)
 	static bool isr_connected;
 
 	if (!isr_connected) {
-		int ret = esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, irq),
+		int ret = esp_intr_alloc(
+			DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, irq),
 			ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, priority)) |
-			ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, flags)),
-			(ISR_HANDLER)gpio_esp32_isr,
-			(void *)dev,
-			NULL);
+				ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, flags)),
+			(ISR_HANDLER)gpio_esp32_isr, (void *)dev, NULL);
 
 		if (ret != 0) {
 			LOG_ERR("could not allocate interrupt (err %d)", ret);
@@ -503,27 +489,21 @@ static const struct gpio_driver_api gpio_esp32_driver_api = {
 	.port_toggle_bits = gpio_esp32_port_toggle_bits,
 	.pin_interrupt_configure = gpio_esp32_pin_interrupt_configure,
 	.manage_callback = gpio_esp32_manage_callback,
-	.get_pending_int = gpio_esp32_get_pending_int
-};
+	.get_pending_int = gpio_esp32_get_pending_int};
 
-#define ESP_SOC_GPIO_INIT(_id)							\
-	static struct gpio_esp32_data gpio_data_##_id;	\
-	static struct gpio_esp32_config gpio_config_##_id = {			\
-		.drv_cfg = {							\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(_id),	\
-		},								\
-		.gpio_base = (gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio0)),	\
-		.gpio_dev = (gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio##_id)),	\
-		.gpio_port = _id	\
-	};									\
-	DEVICE_DT_DEFINE(DT_NODELABEL(gpio##_id),				\
-			&gpio_esp32_init,					\
-			NULL,							\
-			&gpio_data_##_id,					\
-			&gpio_config_##_id,					\
-			PRE_KERNEL_1,						\
-			CONFIG_GPIO_INIT_PRIORITY,				\
-			&gpio_esp32_driver_api);
+#define ESP_SOC_GPIO_INIT(_id)                                                                     \
+	static struct gpio_esp32_data gpio_data_##_id;                                             \
+	static struct gpio_esp32_config gpio_config_##_id = {                                      \
+		.drv_cfg =                                                                         \
+			{                                                                          \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(_id),             \
+			},                                                                         \
+		.gpio_base = (gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio0)),                       \
+		.gpio_dev = (gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio##_id)),                    \
+		.gpio_port = _id};                                                                 \
+	DEVICE_DT_DEFINE(DT_NODELABEL(gpio##_id), &gpio_esp32_init, NULL, &gpio_data_##_id,        \
+			 &gpio_config_##_id, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,              \
+			 &gpio_esp32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP_SOC_GPIO_INIT);
 

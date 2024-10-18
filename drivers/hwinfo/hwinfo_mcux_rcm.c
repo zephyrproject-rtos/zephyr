@@ -92,7 +92,7 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 
 #if (defined(FSL_FEATURE_RCM_HAS_SSRS) && FSL_FEATURE_RCM_HAS_SSRS)
 	sources = RCM_GetStickyResetSources(RCM) & kRCM_SourceAll;
-#else /* (defined(FSL_FEATURE_RCM_HAS_SSRS) && FSL_FEATURE_RCM_HAS_SSRS) */
+#else  /* (defined(FSL_FEATURE_RCM_HAS_SSRS) && FSL_FEATURE_RCM_HAS_SSRS) */
 	sources = RCM_GetPreviousResetSources(RCM) & kRCM_SourceAll;
 #endif /* !(defined(FSL_FEATURE_RCM_HAS_PARAM) && FSL_FEATURE_RCM_HAS_PARAM) */
 

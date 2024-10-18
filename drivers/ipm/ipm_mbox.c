@@ -34,8 +34,8 @@ static void ipm_mbox_callback(const struct device *mboxdev, mbox_channel_id_t ch
 	ipm_mbox_data->callback(ipmdev, ipm_mbox_data->user_data, channel_id, (void *)data->data);
 }
 
-static int ipm_mbox_send(const struct device *ipmdev, int wait, uint32_t id,
-			 const void *data, int size)
+static int ipm_mbox_send(const struct device *ipmdev, int wait, uint32_t id, const void *data,
+			 int size)
 {
 	const struct ipm_mbox_config *config = ipmdev->config;
 
@@ -47,8 +47,7 @@ static int ipm_mbox_send(const struct device *ipmdev, int wait, uint32_t id,
 	return mbox_send_dt(&config->mbox_tx, &message);
 }
 
-static void ipm_mbox_register_callback(const struct device *ipmdev,
-				       ipm_callback_t cb,
+static void ipm_mbox_register_callback(const struct device *ipmdev, ipm_callback_t cb,
 				       void *user_data)
 {
 	struct ipm_mbox_data *data = ipmdev->data;
@@ -97,19 +96,13 @@ static const struct ipm_driver_api ipm_mbox_funcs = {
 	.set_enabled = ipm_mbox_set_enable,
 };
 
-#define IPM_MBOX_DEV_DEFINE(n)						\
-	static struct ipm_mbox_data ipm_mbox_data_##n;			\
-	static const struct ipm_mbox_config ipm_mbox_config_##n = {	\
-		.mbox_tx = MBOX_DT_SPEC_INST_GET(n, tx),		\
-		.mbox_rx = MBOX_DT_SPEC_INST_GET(n, rx),		\
-	};								\
-	DEVICE_DT_INST_DEFINE(n,					\
-			      &ipm_mbox_init,				\
-			      NULL,					\
-			      &ipm_mbox_data_##n,			\
-			      &ipm_mbox_config_##n,			\
-			      POST_KERNEL,				\
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
-			      &ipm_mbox_funcs);
+#define IPM_MBOX_DEV_DEFINE(n)                                                                     \
+	static struct ipm_mbox_data ipm_mbox_data_##n;                                             \
+	static const struct ipm_mbox_config ipm_mbox_config_##n = {                                \
+		.mbox_tx = MBOX_DT_SPEC_INST_GET(n, tx),                                           \
+		.mbox_rx = MBOX_DT_SPEC_INST_GET(n, rx),                                           \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(n, &ipm_mbox_init, NULL, &ipm_mbox_data_##n, &ipm_mbox_config_##n,   \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &ipm_mbox_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(IPM_MBOX_DEV_DEFINE)

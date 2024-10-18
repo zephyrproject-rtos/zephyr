@@ -19,8 +19,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flashdisk, CONFIG_FLASHDISK_LOG_LEVEL);
 
-#if defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE) &&	\
-	defined(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE)
+#if defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE) && defined(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE)
 #define DISK_ERASE_RUNTIME_CHECK
 #endif
 
@@ -40,15 +39,14 @@ struct flashdisk_data {
 	bool erase_required;
 };
 
-#define GET_SIZE_TO_BOUNDARY(start, block_size) \
-	(block_size - (start & (block_size - 1)))
+#define GET_SIZE_TO_BOUNDARY(start, block_size) (block_size - (start & (block_size - 1)))
 
 /*
  * The default block size is used for devices not requiring erase.
  * It defaults to 512 as this is most widely used sector size
  * on storage devices.
  */
-#define DEFAULT_BLOCK_SIZE	512
+#define DEFAULT_BLOCK_SIZE 512
 
 static inline bool flashdisk_with_erase(const struct flashdisk_data *ctx)
 {
@@ -66,9 +64,8 @@ static inline bool flashdisk_with_erase(const struct flashdisk_data *ctx)
 static inline void flashdisk_probe_erase(struct flashdisk_data *ctx)
 {
 #if defined(DISK_ERASE_RUNTIME_CHECK)
-	ctx->erase_required =
-		flash_params_get_erase_cap(flash_get_parameters(ctx->info.dev)) &
-			FLASH_ERASE_C_EXPLICIT;
+	ctx->erase_required = flash_params_get_erase_cap(flash_get_parameters(ctx->info.dev)) &
+			      FLASH_ERASE_C_EXPLICIT;
 #else
 	ARG_UNUSED(ctx);
 #endif
@@ -84,8 +81,7 @@ static int disk_flash_access_status(struct disk_info *disk)
 	return DISK_STATUS_OK;
 }
 
-static int flashdisk_init_runtime(struct flashdisk_data *ctx,
-				  const struct flash_area *fap)
+static int flashdisk_init_runtime(struct flashdisk_data *ctx, const struct flash_area *fap)
 {
 	int rc;
 	struct flash_pages_info page;
@@ -106,8 +102,8 @@ static int flashdisk_init_runtime(struct flashdisk_data *ctx,
 	}
 
 	LOG_INF("Initialize device %s", ctx->info.name);
-	LOG_INF("offset %lx, sector size %zu, page size %zu, volume size %zu",
-		(long)ctx->offset, ctx->sector_size, ctx->page_size, ctx->size);
+	LOG_INF("offset %lx, sector size %zu, page size %zu, volume size %zu", (long)ctx->offset,
+		ctx->sector_size, ctx->page_size, ctx->size);
 
 	if (ctx->cache_size == 0) {
 		/* Read-only flashdisk, no flash partition constraints */
@@ -117,8 +113,7 @@ static int flashdisk_init_runtime(struct flashdisk_data *ctx,
 
 	if (IS_ENABLED(CONFIG_FLASHDISK_VERIFY_PAGE_LAYOUT) && flashdisk_with_erase(ctx)) {
 		if (ctx->offset != page.start_offset) {
-			LOG_ERR("Disk %s does not start at page boundary",
-				ctx->info.name);
+			LOG_ERR("Disk %s does not start at page boundary", ctx->info.name);
 			return -EINVAL;
 		}
 
@@ -137,15 +132,13 @@ static int flashdisk_init_runtime(struct flashdisk_data *ctx,
 		}
 
 		if (offset != ctx->offset + ctx->size) {
-			LOG_ERR("Last page crossess disk %s boundary",
-				ctx->info.name);
+			LOG_ERR("Last page crossess disk %s boundary", ctx->info.name);
 			return -EINVAL;
 		}
 	}
 
 	if (ctx->page_size > ctx->cache_size) {
-		LOG_ERR("Cache too small (%zu needs %zu)",
-			ctx->cache_size, ctx->page_size);
+		LOG_ERR("Cache too small (%zu needs %zu)", ctx->cache_size, ctx->page_size);
 		return -ENOMEM;
 	}
 
@@ -179,8 +172,8 @@ static int disk_flash_access_init(struct disk_info *disk)
 	return rc;
 }
 
-static bool sectors_in_range(struct flashdisk_data *ctx,
-			     uint32_t start_sector, uint32_t sector_count)
+static bool sectors_in_range(struct flashdisk_data *ctx, uint32_t start_sector,
+			     uint32_t sector_count)
 {
 	uint32_t start, end;
 
@@ -191,13 +184,13 @@ static bool sectors_in_range(struct flashdisk_data *ctx,
 		return true;
 	}
 
-	LOG_ERR("sector start %" PRIu32 " count %" PRIu32
-		" outside partition boundary", start_sector, sector_count);
+	LOG_ERR("sector start %" PRIu32 " count %" PRIu32 " outside partition boundary",
+		start_sector, sector_count);
 	return false;
 }
 
-static int disk_flash_access_read(struct disk_info *disk, uint8_t *buff,
-				uint32_t start_sector, uint32_t sector_count)
+static int disk_flash_access_read(struct disk_info *disk, uint8_t *buff, uint32_t start_sector,
+				  uint32_t sector_count)
 {
 	struct flashdisk_data *ctx;
 	off_t fl_addr;
@@ -308,8 +301,8 @@ static int flashdisk_cache_load(struct flashdisk_data *ctx, off_t fl_addr)
 /* input size is either less or equal to a block size (ctx->page_size)
  * and write data never spans across adjacent blocks.
  */
-static int flashdisk_cache_write(struct flashdisk_data *ctx, off_t start_addr,
-				uint32_t size, const void *buff)
+static int flashdisk_cache_write(struct flashdisk_data *ctx, off_t start_addr, uint32_t size,
+				 const void *buff)
 {
 	int rc;
 	off_t fl_addr;
@@ -344,7 +337,7 @@ static int flashdisk_cache_write(struct flashdisk_data *ctx, off_t start_addr,
 }
 
 static int disk_flash_access_write(struct disk_info *disk, const uint8_t *buff,
-				 uint32_t start_sector, uint32_t sector_count)
+				   uint32_t start_sector, uint32_t sector_count)
 {
 	struct flashdisk_data *ctx;
 	off_t fl_addr;
@@ -473,31 +466,30 @@ static const struct disk_operations flash_disk_ops = {
 
 #define PARTITION_PHANDLE(n) DT_PHANDLE_BY_IDX(DT_DRV_INST(n), partition, 0)
 /* Force cache size to 0 if partition is read-only */
-#define CACHE_SIZE(n) (DT_INST_PROP(n, cache_size) * !DT_PROP(PARTITION_PHANDLE(n), read_only))
+#define CACHE_SIZE(n)        (DT_INST_PROP(n, cache_size) * !DT_PROP(PARTITION_PHANDLE(n), read_only))
 
-#define DEFINE_FLASHDISKS_CACHE(n) \
-	static uint8_t __aligned(4) flashdisk##n##_cache[CACHE_SIZE(n)];
+#define DEFINE_FLASHDISKS_CACHE(n) static uint8_t __aligned(4) flashdisk##n##_cache[CACHE_SIZE(n)];
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_FLASHDISKS_CACHE)
 
-#define DEFINE_FLASHDISKS_DEVICE(n)						\
-{										\
-	.info = {								\
-		.ops = &flash_disk_ops,						\
-		.name = DT_INST_PROP(n, disk_name),				\
-	},									\
-	.area_id = DT_FIXED_PARTITION_ID(PARTITION_PHANDLE(n)),			\
-	.offset = DT_REG_ADDR(PARTITION_PHANDLE(n)),				\
-	.cache = flashdisk##n##_cache,						\
-	.cache_size = sizeof(flashdisk##n##_cache),				\
-	.size = DT_REG_SIZE(PARTITION_PHANDLE(n)),				\
-	.sector_size = DT_INST_PROP(n, sector_size),				\
-},
+#define DEFINE_FLASHDISKS_DEVICE(n)                                                                \
+	{                                                                                          \
+		.info =                                                                            \
+			{                                                                          \
+				.ops = &flash_disk_ops,                                            \
+				.name = DT_INST_PROP(n, disk_name),                                \
+			},                                                                         \
+		.area_id = DT_FIXED_PARTITION_ID(PARTITION_PHANDLE(n)),                            \
+		.offset = DT_REG_ADDR(PARTITION_PHANDLE(n)),                                       \
+		.cache = flashdisk##n##_cache,                                                     \
+		.cache_size = sizeof(flashdisk##n##_cache),                                        \
+		.size = DT_REG_SIZE(PARTITION_PHANDLE(n)),                                         \
+		.sector_size = DT_INST_PROP(n, sector_size),                                       \
+	},
 
 static struct flashdisk_data flash_disks[] = {
-	DT_INST_FOREACH_STATUS_OKAY(DEFINE_FLASHDISKS_DEVICE)
-};
+	DT_INST_FOREACH_STATUS_OKAY(DEFINE_FLASHDISKS_DEVICE)};
 
-#define VERIFY_CACHE_SIZE_IS_NOT_ZERO_IF_NOT_READ_ONLY(n)			\
+#define VERIFY_CACHE_SIZE_IS_NOT_ZERO_IF_NOT_READ_ONLY(n)                                          \
 	COND_CODE_1(DT_PROP(PARTITION_PHANDLE(n), read_only),			\
 		(/* cache-size is not used for read-only disks */),		\
 		(BUILD_ASSERT(DT_INST_PROP(n, cache_size) != 0,			\
@@ -505,10 +497,10 @@ static struct flashdisk_data flash_disks[] = {
 		" must have non-zero cache-size");))
 DT_INST_FOREACH_STATUS_OKAY(VERIFY_CACHE_SIZE_IS_NOT_ZERO_IF_NOT_READ_ONLY)
 
-#define VERIFY_CACHE_SIZE_IS_MULTIPLY_OF_SECTOR_SIZE(n)					\
-	BUILD_ASSERT(DT_INST_PROP(n, cache_size) % DT_INST_PROP(n, sector_size) == 0,	\
-		"Devicetree node " DT_NODE_PATH(DT_DRV_INST(n))				\
-		" has cache size which is not a multiple of its sector size");
+#define VERIFY_CACHE_SIZE_IS_MULTIPLY_OF_SECTOR_SIZE(n)                                            \
+	BUILD_ASSERT(DT_INST_PROP(n, cache_size) % DT_INST_PROP(n, sector_size) == 0,              \
+		     "Devicetree node " DT_NODE_PATH(DT_DRV_INST(                                  \
+			     n)) " has cache size which is not a multiple of its sector size");
 DT_INST_FOREACH_STATUS_OKAY(VERIFY_CACHE_SIZE_IS_MULTIPLY_OF_SECTOR_SIZE)
 
 static int disk_flash_init(void)
@@ -522,8 +514,8 @@ static int disk_flash_init(void)
 
 		rc = disk_access_register(&flash_disks[i].info);
 		if (rc < 0) {
-			LOG_ERR("Failed to register disk %s error %d",
-				flash_disks[i].info.name, rc);
+			LOG_ERR("Failed to register disk %s error %d", flash_disks[i].info.name,
+				rc);
 			err = rc;
 		}
 	}

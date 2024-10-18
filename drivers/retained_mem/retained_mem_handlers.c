@@ -14,8 +14,8 @@ static inline ssize_t z_vrfy_retained_mem_size(const struct device *dev)
 }
 #include <zephyr/syscalls/retained_mem_size_mrsh.c>
 
-static inline int z_vrfy_retained_mem_read(const struct device *dev, off_t offset,
-					   uint8_t *buffer, size_t size)
+static inline int z_vrfy_retained_mem_read(const struct device *dev, off_t offset, uint8_t *buffer,
+					   size_t size)
 {
 	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_RETAINED_MEM));
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(buffer, size));

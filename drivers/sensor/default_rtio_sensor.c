@@ -157,23 +157,15 @@ static void sensor_submit_fallback_sync(struct rtio_iodev_sqe *iodev_sqe)
 		rc = sensor_channel_get(dev, channels[i].chan_type, value);
 
 		if (num_samples == 3) {
-			header->channels[sample_idx++] = (struct sensor_chan_spec) {
-				rc == 0 ? channels[i].chan_type - 3 : SENSOR_CHAN_MAX,
-				0
-			};
-			header->channels[sample_idx++] = (struct sensor_chan_spec) {
-				rc == 0 ? channels[i].chan_type - 2 : SENSOR_CHAN_MAX,
-				0
-			};
-			header->channels[sample_idx++] = (struct sensor_chan_spec) {
-				rc == 0 ? channels[i].chan_type - 1 : SENSOR_CHAN_MAX,
-				0
-			};
+			header->channels[sample_idx++] = (struct sensor_chan_spec){
+				rc == 0 ? channels[i].chan_type - 3 : SENSOR_CHAN_MAX, 0};
+			header->channels[sample_idx++] = (struct sensor_chan_spec){
+				rc == 0 ? channels[i].chan_type - 2 : SENSOR_CHAN_MAX, 0};
+			header->channels[sample_idx++] = (struct sensor_chan_spec){
+				rc == 0 ? channels[i].chan_type - 1 : SENSOR_CHAN_MAX, 0};
 		} else {
-			header->channels[sample_idx++] = (struct sensor_chan_spec) {
-				rc == 0 ? channels[i].chan_type : SENSOR_CHAN_MAX,
-				0
-			};
+			header->channels[sample_idx++] = (struct sensor_chan_spec){
+				rc == 0 ? channels[i].chan_type : SENSOR_CHAN_MAX, 0};
 		}
 
 		if (rc != 0) {
@@ -243,11 +235,11 @@ static void sensor_submit_fallback_sync(struct rtio_iodev_sqe *iodev_sqe)
 			q[sample_idx + sample] =
 				((value_u * ((INT64_C(1) << 31) - 1)) / 1000000) >> header->shift;
 
-			LOG_DBG("value[%d]=%s%d.%06d, q[%d]@%p=%d, shift: %d",
-				sample, value_u < 0 ? "-" : "",
-				abs((int)value[sample].val1), abs((int)value[sample].val2),
-				(int)(sample_idx + sample), (void *)&q[sample_idx + sample],
-				q[sample_idx + sample], header->shift);
+			LOG_DBG("value[%d]=%s%d.%06d, q[%d]@%p=%d, shift: %d", sample,
+				value_u < 0 ? "-" : "", abs((int)value[sample].val1),
+				abs((int)value[sample].val2), (int)(sample_idx + sample),
+				(void *)&q[sample_idx + sample], q[sample_idx + sample],
+				header->shift);
 		}
 		sample_idx += num_samples;
 	}
@@ -457,8 +449,8 @@ static int decode_q31(const struct sensor_data_generic_header *header, const q31
  * @return >0 the number of decoded frames
  * @return <0 on error
  */
-static int decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
-		  uint32_t *fit, uint16_t max_count, void *data_out)
+static int decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec, uint32_t *fit,
+		  uint16_t max_count, void *data_out)
 {
 	const struct sensor_data_generic_header *header =
 		(const struct sensor_data_generic_header *)buffer;

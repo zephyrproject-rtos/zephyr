@@ -28,22 +28,17 @@ static void bmi270_raise_int_flag(const struct device *dev, int bit)
 #endif
 }
 
-static void bmi270_int1_callback(const struct device *dev,
-				 struct gpio_callback *cb, uint32_t pins)
+static void bmi270_int1_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	struct bmi270_data *data =
-		CONTAINER_OF(cb, struct bmi270_data, int1_cb);
+	struct bmi270_data *data = CONTAINER_OF(cb, struct bmi270_data, int1_cb);
 	bmi270_raise_int_flag(data->dev, INT_FLAGS_INT1);
 }
 
-static void bmi270_int2_callback(const struct device *dev,
-				 struct gpio_callback *cb, uint32_t pins)
+static void bmi270_int2_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	struct bmi270_data *data =
-		CONTAINER_OF(cb, struct bmi270_data, int2_cb);
+	struct bmi270_data *data = CONTAINER_OF(cb, struct bmi270_data, int2_cb);
 	bmi270_raise_int_flag(data->dev, INT_FLAGS_INT2);
 }
-
 
 static void bmi270_thread_cb(const struct device *dev)
 {
@@ -54,8 +49,8 @@ static void bmi270_thread_cb(const struct device *dev)
 	if (atomic_test_and_clear_bit(&data->int_flags, INT_FLAGS_INT1)) {
 		uint16_t int_status;
 
-		ret = bmi270_reg_read(dev, BMI270_REG_INT_STATUS_0,
-			(uint8_t *)&int_status, sizeof(int_status));
+		ret = bmi270_reg_read(dev, BMI270_REG_INT_STATUS_0, (uint8_t *)&int_status,
+				      sizeof(int_status));
 		if (ret < 0) {
 			LOG_ERR("read interrupt status returned %d", ret);
 			return;
@@ -102,16 +97,14 @@ static void bmi270_thread(void *p1, void *p2, void *p3)
 #ifdef CONFIG_BMI270_TRIGGER_GLOBAL_THREAD
 static void bmi270_trig_work_cb(struct k_work *work)
 {
-	struct bmi270_data *data =
-		CONTAINER_OF(work, struct bmi270_data, trig_work);
+	struct bmi270_data *data = CONTAINER_OF(work, struct bmi270_data, trig_work);
 
 	bmi270_thread_cb(data->dev);
 }
 #endif
 
-static int bmi270_feature_reg_write(const struct device *dev,
-			     const struct bmi270_feature_reg *reg,
-			     uint16_t value)
+static int bmi270_feature_reg_write(const struct device *dev, const struct bmi270_feature_reg *reg,
+				    uint16_t value)
 {
 	int ret;
 	uint8_t feat_page = reg->page;
@@ -133,8 +126,7 @@ static int bmi270_feature_reg_write(const struct device *dev,
 	return 0;
 }
 
-static int bmi270_init_int_pin(const struct gpio_dt_spec *pin,
-			       struct gpio_callback *pin_cb,
+static int bmi270_init_int_pin(const struct gpio_dt_spec *pin, struct gpio_callback *pin_cb,
 			       gpio_callback_handler_t handler)
 {
 	int ret;
@@ -168,7 +160,6 @@ static int bmi270_init_int_pin(const struct gpio_dt_spec *pin,
 	return 0;
 }
 
-
 int bmi270_init_interrupts(const struct device *dev)
 {
 	const struct bmi270_config *cfg = dev->config;
@@ -178,21 +169,19 @@ int bmi270_init_interrupts(const struct device *dev)
 #if CONFIG_BMI270_TRIGGER_OWN_THREAD
 	k_sem_init(&data->trig_sem, 0, 1);
 	k_thread_create(&data->thread, data->thread_stack, CONFIG_BMI270_THREAD_STACK_SIZE,
-			bmi270_thread, data, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BMI270_THREAD_PRIORITY), 0, K_NO_WAIT);
+			bmi270_thread, data, NULL, NULL, K_PRIO_COOP(CONFIG_BMI270_THREAD_PRIORITY),
+			0, K_NO_WAIT);
 #elif CONFIG_BMI270_TRIGGER_GLOBAL_THREAD
 	k_work_init(&data->trig_work, bmi270_trig_work_cb);
 #endif
 
-	ret = bmi270_init_int_pin(&cfg->int1, &data->int1_cb,
-				  bmi270_int1_callback);
+	ret = bmi270_init_int_pin(&cfg->int1, &data->int1_cb, bmi270_int1_callback);
 	if (ret) {
 		LOG_ERR("Failed to initialize INT1");
 		return -EINVAL;
 	}
 
-	ret = bmi270_init_int_pin(&cfg->int2, &data->int2_cb,
-				  bmi270_int2_callback);
+	ret = bmi270_init_int_pin(&cfg->int2, &data->int2_cb, bmi270_int2_callback);
 	if (ret) {
 		LOG_ERR("Failed to initialize INT2");
 		return -EINVAL;
@@ -229,8 +218,7 @@ static int bmi270_anymo_config(const struct device *dev, bool enable)
 	int ret;
 
 	if (enable) {
-		ret = bmi270_feature_reg_write(dev, cfg->feature->anymo_1,
-					       data->anymo_1);
+		ret = bmi270_feature_reg_write(dev, cfg->feature->anymo_1, data->anymo_1);
 		if (ret < 0) {
 			return ret;
 		}
@@ -280,8 +268,7 @@ static int bmi270_drdy_config(const struct device *dev, bool enable)
 	return 0;
 }
 
-int bmi270_trigger_set(const struct device *dev,
-		       const struct sensor_trigger *trig,
+int bmi270_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler)
 {
 	struct bmi270_data *data = dev->data;

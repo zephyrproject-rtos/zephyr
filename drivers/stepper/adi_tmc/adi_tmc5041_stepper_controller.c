@@ -693,69 +693,74 @@ static int tmc5041_stepper_init(const struct device *dev)
 	return 0;
 }
 
-#define TMC5041_SHAFT_CONFIG(child)								\
+#define TMC5041_SHAFT_CONFIG(child)                                                                \
 	(DT_PROP(child, invert_direction) << TMC5041_GCONF_SHAFT_SHIFT(DT_REG_ADDR(child))) |
 
-#define TMC5041_STEPPER_CONFIG_DEFINE(child)							\
+#define TMC5041_STEPPER_CONFIG_DEFINE(child)                                                       \
 	COND_CODE_1(DT_PROP_EXISTS(child, stallguard_threshold_velocity),			\
 	BUILD_ASSERT(DT_PROP(child, stallguard_threshold_velocity),				\
-		     "stallguard threshold velocity must be a positive value"), ());		\
-	IF_ENABLED(CONFIG_STEPPER_ADI_TMC_RAMP_GEN, (CHECK_RAMP_DT_DATA(child)));		\
-	static const struct tmc5041_stepper_config tmc5041_stepper_config_##child = {		\
-		.controller = DEVICE_DT_GET(DT_PARENT(child)),					\
-		.default_micro_step_res = DT_PROP(child, micro_step_res),			\
-		.index = DT_REG_ADDR(child),							\
-		.sg_threshold = DT_PROP(child, stallguard2_threshold),				\
-		.sg_threshold_velocity = DT_PROP(child, stallguard_threshold_velocity),		\
-		.sg_velocity_check_interval_ms = DT_PROP(child,					\
-						stallguard_velocity_check_interval_ms),		\
-		.is_sg_enabled = DT_PROP(child, activate_stallguard2),				\
+		     "stallguard threshold velocity must be a positive value"), ());                                                                  \
+	IF_ENABLED(CONFIG_STEPPER_ADI_TMC_RAMP_GEN, (CHECK_RAMP_DT_DATA(child)));                   \
+	static const struct tmc5041_stepper_config tmc5041_stepper_config_##child = {              \
+		.controller = DEVICE_DT_GET(DT_PARENT(child)),                                     \
+		.default_micro_step_res = DT_PROP(child, micro_step_res),                          \
+		.index = DT_REG_ADDR(child),                                                       \
+		.sg_threshold = DT_PROP(child, stallguard2_threshold),                             \
+		.sg_threshold_velocity = DT_PROP(child, stallguard_threshold_velocity),            \
+		.sg_velocity_check_interval_ms =                                                   \
+			DT_PROP(child, stallguard_velocity_check_interval_ms),                     \
+		.is_sg_enabled = DT_PROP(child, activate_stallguard2),                             \
 		IF_ENABLED(CONFIG_STEPPER_ADI_TMC_RAMP_GEN,					\
 		(.default_ramp_config = TMC_RAMP_DT_SPEC_GET(child))) };
 
-#define TMC5041_STEPPER_DATA_DEFINE(child)							\
-	static struct tmc5041_stepper_data tmc5041_stepper_data_##child = {			\
-		.stepper = DEVICE_DT_GET(child),};
+#define TMC5041_STEPPER_DATA_DEFINE(child)                                                         \
+	static struct tmc5041_stepper_data tmc5041_stepper_data_##child = {                        \
+		.stepper = DEVICE_DT_GET(child),                                                   \
+	};
 
-#define TMC5041_STEPPER_API_DEFINE(child)							\
-	static const struct stepper_driver_api tmc5041_stepper_api_##child = {			\
-		.enable = tmc5041_stepper_enable,						\
-		.is_moving = tmc5041_stepper_is_moving,						\
-		.move = tmc5041_stepper_move,							\
-		.set_max_velocity = tmc5041_stepper_set_max_velocity,				\
-		.set_micro_step_res = tmc5041_stepper_set_micro_step_res,			\
-		.get_micro_step_res = tmc5041_stepper_get_micro_step_res,			\
-		.set_actual_position = tmc5041_stepper_set_actual_position,			\
-		.get_actual_position = tmc5041_stepper_get_actual_position,			\
-		.set_target_position = tmc5041_stepper_set_target_position,			\
-		.enable_constant_velocity_mode = tmc5041_stepper_enable_constant_velocity_mode,	\
-		.set_event_callback = tmc5041_stepper_set_event_callback, };
+#define TMC5041_STEPPER_API_DEFINE(child)                                                          \
+	static const struct stepper_driver_api tmc5041_stepper_api_##child = {                     \
+		.enable = tmc5041_stepper_enable,                                                  \
+		.is_moving = tmc5041_stepper_is_moving,                                            \
+		.move = tmc5041_stepper_move,                                                      \
+		.set_max_velocity = tmc5041_stepper_set_max_velocity,                              \
+		.set_micro_step_res = tmc5041_stepper_set_micro_step_res,                          \
+		.get_micro_step_res = tmc5041_stepper_get_micro_step_res,                          \
+		.set_actual_position = tmc5041_stepper_set_actual_position,                        \
+		.get_actual_position = tmc5041_stepper_get_actual_position,                        \
+		.set_target_position = tmc5041_stepper_set_target_position,                        \
+		.enable_constant_velocity_mode = tmc5041_stepper_enable_constant_velocity_mode,    \
+		.set_event_callback = tmc5041_stepper_set_event_callback,                          \
+	};
 
-#define TMC5041_STEPPER_DEFINE(child)								\
-	DEVICE_DT_DEFINE(child, tmc5041_stepper_init, NULL, &tmc5041_stepper_data_##child,	\
-			 &tmc5041_stepper_config_##child, POST_KERNEL,				\
+#define TMC5041_STEPPER_DEFINE(child)                                                              \
+	DEVICE_DT_DEFINE(child, tmc5041_stepper_init, NULL, &tmc5041_stepper_data_##child,         \
+			 &tmc5041_stepper_config_##child, POST_KERNEL,                             \
 			 CONFIG_STEPPER_INIT_PRIORITY, &tmc5041_stepper_api_##child);
 
-#define TMC5041_DEFINE(inst)									\
-	BUILD_ASSERT(DT_INST_CHILD_NUM(inst) <= 2, "tmc5041 can drive two steppers at max");	\
-	BUILD_ASSERT((DT_INST_PROP(inst, clock_frequency) > 0),					\
-		     "clock frequency must be non-zero positive value");			\
-	static struct tmc5041_data tmc5041_data_##inst;						\
-	static const struct tmc5041_config tmc5041_config_##inst = {				\
-		.gconf = (									\
-		(DT_INST_PROP(inst, poscmp_enable) << TMC5041_GCONF_POSCMP_ENABLE_SHIFT) |	\
-		(DT_INST_PROP(inst, test_mode) << TMC5041_GCONF_TEST_MODE_SHIFT) |		\
-		DT_INST_FOREACH_CHILD(inst, TMC5041_SHAFT_CONFIG)				\
-		(DT_INST_PROP(inst, lock_gconf) << TMC5041_LOCK_GCONF_SHIFT)),			\
-		.spi = SPI_DT_SPEC_INST_GET(inst, (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |	\
-					SPI_MODE_CPOL | SPI_MODE_CPHA |	SPI_WORD_SET(8)), 0),	\
-		.clock_frequency = DT_INST_PROP(inst, clock_frequency),};			\
-	DT_INST_FOREACH_CHILD(inst, TMC5041_STEPPER_CONFIG_DEFINE);				\
-	DT_INST_FOREACH_CHILD(inst, TMC5041_STEPPER_DATA_DEFINE);				\
-	DT_INST_FOREACH_CHILD(inst, TMC5041_STEPPER_API_DEFINE);				\
-	DT_INST_FOREACH_CHILD(inst, TMC5041_STEPPER_DEFINE);					\
-	DEVICE_DT_INST_DEFINE(inst, tmc5041_init, NULL, &tmc5041_data_##inst,			\
-			      &tmc5041_config_##inst, POST_KERNEL, CONFIG_STEPPER_INIT_PRIORITY,\
+#define TMC5041_DEFINE(inst)                                                                       \
+	BUILD_ASSERT(DT_INST_CHILD_NUM(inst) <= 2, "tmc5041 can drive two steppers at max");       \
+	BUILD_ASSERT((DT_INST_PROP(inst, clock_frequency) > 0),                                    \
+		     "clock frequency must be non-zero positive value");                           \
+	static struct tmc5041_data tmc5041_data_##inst;                                            \
+	static const struct tmc5041_config tmc5041_config_##inst = {                               \
+		.gconf = ((DT_INST_PROP(inst, poscmp_enable)                                       \
+			   << TMC5041_GCONF_POSCMP_ENABLE_SHIFT) |                                 \
+			  (DT_INST_PROP(inst, test_mode) << TMC5041_GCONF_TEST_MODE_SHIFT) |       \
+			  DT_INST_FOREACH_CHILD(inst, TMC5041_SHAFT_CONFIG)(                       \
+				  DT_INST_PROP(inst, lock_gconf) << TMC5041_LOCK_GCONF_SHIFT)),    \
+		.spi = SPI_DT_SPEC_INST_GET(inst,                                                  \
+					    (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |               \
+					     SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8)),     \
+					    0),                                                    \
+		.clock_frequency = DT_INST_PROP(inst, clock_frequency),                            \
+	};                                                                                         \
+	DT_INST_FOREACH_CHILD(inst, TMC5041_STEPPER_CONFIG_DEFINE);                                \
+	DT_INST_FOREACH_CHILD(inst, TMC5041_STEPPER_DATA_DEFINE);                                  \
+	DT_INST_FOREACH_CHILD(inst, TMC5041_STEPPER_API_DEFINE);                                   \
+	DT_INST_FOREACH_CHILD(inst, TMC5041_STEPPER_DEFINE);                                       \
+	DEVICE_DT_INST_DEFINE(inst, tmc5041_init, NULL, &tmc5041_data_##inst,                      \
+			      &tmc5041_config_##inst, POST_KERNEL, CONFIG_STEPPER_INIT_PRIORITY,   \
 			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(TMC5041_DEFINE)

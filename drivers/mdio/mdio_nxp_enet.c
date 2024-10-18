@@ -60,8 +60,8 @@ static int nxp_enet_mdio_wait_xfer(const struct device *dev)
 }
 
 /* MDIO Read API implementation */
-static int nxp_enet_mdio_read(const struct device *dev,
-			uint8_t prtad, uint8_t regad, uint16_t *read_data)
+static int nxp_enet_mdio_read(const struct device *dev, uint8_t prtad, uint8_t regad,
+			      uint16_t *read_data)
 {
 	struct nxp_enet_mdio_data *data = dev->data;
 	int ret;
@@ -85,11 +85,8 @@ static int nxp_enet_mdio_read(const struct device *dev,
 	 * TA = Turnaround, must be 2 to be valid
 	 * data = data to be written to the PHY register
 	 */
-	data->base->MMFR = ENET_MMFR_ST(0x1U) |
-				ENET_MMFR_OP(MDIO_OP_C22_READ) |
-				ENET_MMFR_PA(prtad) |
-				ENET_MMFR_RA(regad) |
-				ENET_MMFR_TA(0x2U);
+	data->base->MMFR = ENET_MMFR_ST(0x1U) | ENET_MMFR_OP(MDIO_OP_C22_READ) |
+			   ENET_MMFR_PA(prtad) | ENET_MMFR_RA(regad) | ENET_MMFR_TA(0x2U);
 
 	ret = nxp_enet_mdio_wait_xfer(dev);
 	if (ret) {
@@ -110,8 +107,8 @@ static int nxp_enet_mdio_read(const struct device *dev,
 }
 
 /* MDIO Write API implementation */
-static int nxp_enet_mdio_write(const struct device *dev,
-			uint8_t prtad, uint8_t regad, uint16_t write_data)
+static int nxp_enet_mdio_write(const struct device *dev, uint8_t prtad, uint8_t regad,
+			       uint16_t write_data)
 {
 	struct nxp_enet_mdio_data *data = dev->data;
 	int ret;
@@ -135,12 +132,9 @@ static int nxp_enet_mdio_write(const struct device *dev,
 	 * TA = Turnaround, must be 2 to be valid
 	 * data = data to be written to the PHY register
 	 */
-	data->base->MMFR = ENET_MMFR_ST(0x1U) |
-				ENET_MMFR_OP(MDIO_OP_C22_WRITE) |
-				ENET_MMFR_PA(prtad) |
-				ENET_MMFR_RA(regad) |
-				ENET_MMFR_TA(0x2U) |
-				write_data;
+	data->base->MMFR = ENET_MMFR_ST(0x1U) | ENET_MMFR_OP(MDIO_OP_C22_WRITE) |
+			   ENET_MMFR_PA(prtad) | ENET_MMFR_RA(regad) | ENET_MMFR_TA(0x2U) |
+			   write_data;
 
 	ret = nxp_enet_mdio_wait_xfer(dev);
 	if (ret) {
@@ -178,19 +172,20 @@ static void nxp_enet_mdio_post_module_reset_init(const struct device *dev)
 	uint32_t enet_module_clock_rate;
 
 	/* Set up MSCR register */
-	(void) clock_control_get_rate(config->clock_dev, config->clock_subsys,
-							&enet_module_clock_rate);
-	uint32_t mii_speed = (enet_module_clock_rate + 2 * config->mdc_freq - 1) /
-					(2 * config->mdc_freq) - 1;
+	(void)clock_control_get_rate(config->clock_dev, config->clock_subsys,
+				     &enet_module_clock_rate);
+	uint32_t mii_speed =
+		(enet_module_clock_rate + 2 * config->mdc_freq - 1) / (2 * config->mdc_freq) - 1;
 	uint32_t holdtime = (10 + NSEC_PER_SEC / enet_module_clock_rate - 1) /
-					(NSEC_PER_SEC / enet_module_clock_rate) - 1;
+				    (NSEC_PER_SEC / enet_module_clock_rate) -
+			    1;
 	uint32_t mscr = ENET_MSCR_MII_SPEED(mii_speed) | ENET_MSCR_HOLDTIME(holdtime) |
 			(config->disable_preamble ? ENET_MSCR_DIS_PRE_MASK : 0);
 	data->base->MSCR = mscr;
 }
 
-void nxp_enet_mdio_callback(const struct device *dev,
-				enum nxp_enet_callback_reason event, void *cb_data)
+void nxp_enet_mdio_callback(const struct device *dev, enum nxp_enet_callback_reason event,
+			    void *cb_data)
 {
 	struct nxp_enet_mdio_data *data = dev->data;
 
@@ -242,25 +237,22 @@ static int nxp_enet_mdio_init(const struct device *dev)
 	return ret;
 }
 
-#define NXP_ENET_MDIO_INIT(inst)							\
-	PINCTRL_DT_INST_DEFINE(inst);							\
-											\
-	static const struct nxp_enet_mdio_config nxp_enet_mdio_cfg_##inst = {		\
-		.module_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),			\
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),				\
-		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(inst))),	\
-		.clock_subsys = (void *) DT_CLOCKS_CELL_BY_IDX(				\
-							DT_INST_PARENT(inst), 0, name),	\
-		.disable_preamble = DT_INST_PROP(inst, suppress_preamble),		\
-		.mdc_freq = DT_INST_PROP(inst, clock_frequency),			\
-	};										\
-											\
-	static struct nxp_enet_mdio_data nxp_enet_mdio_data_##inst;			\
-											\
-	DEVICE_DT_INST_DEFINE(inst, &nxp_enet_mdio_init, NULL,				\
-			      &nxp_enet_mdio_data_##inst, &nxp_enet_mdio_cfg_##inst,	\
-			      POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY,			\
+#define NXP_ENET_MDIO_INIT(inst)                                                                   \
+	PINCTRL_DT_INST_DEFINE(inst);                                                              \
+                                                                                                   \
+	static const struct nxp_enet_mdio_config nxp_enet_mdio_cfg_##inst = {                      \
+		.module_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                 \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                    \
+		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(inst))),                  \
+		.clock_subsys = (void *)DT_CLOCKS_CELL_BY_IDX(DT_INST_PARENT(inst), 0, name),      \
+		.disable_preamble = DT_INST_PROP(inst, suppress_preamble),                         \
+		.mdc_freq = DT_INST_PROP(inst, clock_frequency),                                   \
+	};                                                                                         \
+                                                                                                   \
+	static struct nxp_enet_mdio_data nxp_enet_mdio_data_##inst;                                \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &nxp_enet_mdio_init, NULL, &nxp_enet_mdio_data_##inst,         \
+			      &nxp_enet_mdio_cfg_##inst, POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY,   \
 			      &nxp_enet_mdio_api);
-
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_ENET_MDIO_INIT)

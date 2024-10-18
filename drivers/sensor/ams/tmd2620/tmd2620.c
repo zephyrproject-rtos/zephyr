@@ -91,7 +91,7 @@ static int tmd2620_sample_fetch(const struct device *dev, enum sensor_channel ch
 #ifndef CONFIG_TMD2620_TRIGGER
 	/* enabling interrupt */
 	ret = i2c_reg_update_byte_dt(&config->i2c, TMD2620_INTENAB_REG, TMD2620_INTENAB_PIEN,
-					TMD2620_INTENAB_PIEN);
+				     TMD2620_INTENAB_PIEN);
 	if (ret < 0) {
 		LOG_ERR("Failed enabling interrupt.");
 		return ret;
@@ -363,8 +363,8 @@ static int tmd2620_pm_action(const struct device *dev, enum pm_device_action act
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		ret = i2c_reg_update_byte_dt(&config->i2c, TMD2620_ENABLE_REG,
-				TMD2620_ENABLE_PON, TMD2620_ENABLE_PON);
+		ret = i2c_reg_update_byte_dt(&config->i2c, TMD2620_ENABLE_REG, TMD2620_ENABLE_PON,
+					     TMD2620_ENABLE_PON);
 		if (ret < 0) {
 			LOG_ERR("Failed enabling sensor.");
 			return ret;
@@ -372,8 +372,8 @@ static int tmd2620_pm_action(const struct device *dev, enum pm_device_action act
 		break;
 
 	case PM_DEVICE_ACTION_SUSPEND:
-		ret = i2c_reg_update_byte_dt(&config->i2c, TMD2620_ENABLE_REG,
-				TMD2620_ENABLE_PON, 0);
+		ret = i2c_reg_update_byte_dt(&config->i2c, TMD2620_ENABLE_REG, TMD2620_ENABLE_PON,
+					     0);
 		if (ret < 0) {
 			LOG_ERR("Failed suspending sensor.");
 			return ret;

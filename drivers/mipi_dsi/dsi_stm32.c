@@ -22,11 +22,11 @@
 LOG_MODULE_REGISTER(dsi_stm32, CONFIG_MIPI_DSI_LOG_LEVEL);
 
 #if defined(CONFIG_STM32_LTDC_ARGB8888)
-#define STM32_DSI_INIT_PIXEL_FORMAT	DSI_RGB888
+#define STM32_DSI_INIT_PIXEL_FORMAT DSI_RGB888
 #elif defined(CONFIG_STM32_LTDC_RGB888)
-#define STM32_DSI_INIT_PIXEL_FORMAT	DSI_RGB888
+#define STM32_DSI_INIT_PIXEL_FORMAT DSI_RGB888
 #elif defined(CONFIG_STM32_LTDC_RGB565)
-#define STM32_DSI_INIT_PIXEL_FORMAT	DSI_RGB565
+#define STM32_DSI_INIT_PIXEL_FORMAT DSI_RGB565
 #else
 #error "Invalid LTDC pixel format chosen"
 #endif /* CONFIG_STM32_LTDC_ARGB8888 */
@@ -229,7 +229,6 @@ static int mipi_dsi_stm32_host_init(const struct device *dev)
 	return 0;
 }
 
-
 static int mipi_dsi_stm32_attach(const struct device *dev, uint8_t channel,
 				 const struct mipi_dsi_device *mdev)
 {
@@ -260,11 +259,11 @@ static int mipi_dsi_stm32_attach(const struct device *dev, uint8_t channel,
 
 	vcfg->HorizontalSyncActive =
 		(mdev->timings.hsync * data->lane_clk_khz) / data->pixel_clk_khz;
-	vcfg->HorizontalBackPorch =
-		(mdev->timings.hbp * data->lane_clk_khz) / data->pixel_clk_khz;
-	vcfg->HorizontalLine =
-		((mdev->timings.hactive + mdev->timings.hsync + mdev->timings.hbp +
-		  mdev->timings.hfp) * data->lane_clk_khz) / data->pixel_clk_khz;
+	vcfg->HorizontalBackPorch = (mdev->timings.hbp * data->lane_clk_khz) / data->pixel_clk_khz;
+	vcfg->HorizontalLine = ((mdev->timings.hactive + mdev->timings.hsync + mdev->timings.hbp +
+				 mdev->timings.hfp) *
+				data->lane_clk_khz) /
+			       data->pixel_clk_khz;
 	vcfg->VerticalSyncActive = mdev->timings.vsync;
 	vcfg->VerticalBackPorch = mdev->timings.vbp;
 	vcfg->VerticalFrontPorch = mdev->timings.vfp;
@@ -323,7 +322,7 @@ static ssize_t mipi_dsi_stm32_transfer(const struct device *dev, uint8_t channel
 	case MIPI_DSI_DCS_READ:
 		ret = HAL_DSI_Read(&data->hdsi, channel, (uint8_t *)msg->rx_buf, msg->rx_len,
 				   msg->type, msg->cmd, (uint8_t *)msg->rx_buf);
-		len =  msg->rx_len;
+		len = msg->rx_len;
 		break;
 	case MIPI_DSI_DCS_SHORT_WRITE:
 	case MIPI_DSI_DCS_SHORT_WRITE_PARAM:
@@ -369,12 +368,12 @@ static ssize_t mipi_dsi_stm32_transfer(const struct device *dev, uint8_t channel
 		char tmp[64];
 
 		if (msg->type == MIPI_DSI_DCS_READ) {
-			snprintk(tmp, sizeof(tmp), "RX: ch %3d, reg 0x%02x, len %2d",
-				 channel, msg->cmd, msg->rx_len);
+			snprintk(tmp, sizeof(tmp), "RX: ch %3d, reg 0x%02x, len %2d", channel,
+				 msg->cmd, msg->rx_len);
 			LOG_HEXDUMP_DBG(msg->rx_buf, msg->rx_len, tmp);
 		} else {
-			snprintk(tmp, sizeof(tmp), "TX: ch %3d, reg 0x%02x, len %2d",
-				 channel, msg->cmd, msg->tx_len);
+			snprintk(tmp, sizeof(tmp), "TX: ch %3d, reg 0x%02x, len %2d", channel,
+				 msg->cmd, msg->tx_len);
 			LOG_HEXDUMP_DBG(msg->tx_buf, msg->tx_len, tmp);
 		}
 	}
@@ -421,7 +420,7 @@ static int mipi_dsi_stm32_init(const struct device *dev)
 
 #define CHILD_GET_DATA_LANES(child) DT_PROP(child, data_lanes)
 
-#define STM32_MIPI_DSI_DEVICE(inst)								\
+#define STM32_MIPI_DSI_DEVICE(inst)                                                                \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, host_timeouts),					\
 		(static DSI_HOST_TimeoutTypeDef host_timeouts_##inst = {			\
 			.TimeoutCkdiv = DT_INST_PROP_BY_IDX(inst, host_timeouts, 0),		\
@@ -435,7 +434,7 @@ static int mipi_dsi_stm32_init(const struct device *dev)
 			.HighSpeedWritePrespMode = DT_INST_PROP_BY_IDX(inst, host_timeouts, 6),	\
 			.LowPowerWriteTimeout = DT_INST_PROP_BY_IDX(inst, host_timeouts, 7),	\
 			.BTATimeout = DT_INST_PROP_BY_IDX(inst, host_timeouts, 8)		\
-		}), ());									\
+		}), ());      \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, phy_timings),					\
 		(static DSI_PHY_TimerTypeDef phy_timings_##inst = {				\
 			.ClockLaneHS2LPTime = DT_INST_PROP_BY_IDX(inst, phy_timings, 0),	\
@@ -444,69 +443,84 @@ static int mipi_dsi_stm32_init(const struct device *dev)
 			.DataLaneLP2HSTime = DT_INST_PROP_BY_IDX(inst, phy_timings, 3),		\
 			.DataLaneMaxReadTime = DT_INST_PROP_BY_IDX(inst, phy_timings, 4),	\
 			.StopWaitTime = DT_INST_PROP_BY_IDX(inst, phy_timings, 5)		\
-		}), ());									\
-	/* Only child data-lanes property at index 0 is taken into account */			\
-	static const uint32_t data_lanes_##inst[] = {						\
-		DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP_VARGS(inst, DT_PROP_BY_IDX, (,),		\
-							    data_lanes, 0)			\
-	};											\
-	static const struct mipi_dsi_stm32_config stm32_dsi_config_##inst = {			\
-		.rcc = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),					\
-		.reset = RESET_DT_SPEC_INST_GET(inst),						\
-		.dsi_clk = {									\
-			.enr = DT_INST_CLOCKS_CELL_BY_NAME(inst, dsiclk, bits),			\
-			.bus = DT_INST_CLOCKS_CELL_BY_NAME(inst, dsiclk, bus),			\
-		},										\
-		.ref_clk = {									\
-			.enr = DT_INST_CLOCKS_CELL_BY_NAME(inst, refclk, bits),			\
-			.bus = DT_INST_CLOCKS_CELL_BY_NAME(inst, refclk, bus),			\
-		},										\
-		.pix_clk = {									\
-			.enr = DT_INST_CLOCKS_CELL_BY_NAME(inst, pixelclk, bits),		\
-			.bus = DT_INST_CLOCKS_CELL_BY_NAME(inst, pixelclk, bus),		\
-		},										\
-		/* Use only one (the first) display configuration for DSI HOST configuration */	\
-		.data_lanes = data_lanes_##inst[0],						\
-		.active_errors = DT_INST_PROP_OR(inst, active_errors, HAL_DSI_ERROR_NONE),	\
-		.lp_rx_filter_freq = DT_INST_PROP_OR(inst, lp_rx_filter, 0),			\
-		.test_pattern = DT_INST_PROP_OR(inst, test_pattern, -1),			\
-	};											\
-	static struct mipi_dsi_stm32_data stm32_dsi_data_##inst = {				\
-		.hdsi = {									\
-			.Instance = (DSI_TypeDef *)DT_INST_REG_ADDR(inst),			\
-			.Init = {								\
-				.AutomaticClockLaneControl =					\
-					DT_INST_PROP(inst, non_continuous) ?			\
-						DSI_AUTO_CLK_LANE_CTRL_ENABLE :			\
-						DSI_AUTO_CLK_LANE_CTRL_DISABLE,			\
-			},									\
-		},										\
+		}), ());                              \
+	/* Only child data-lanes property at index 0 is taken into account */                      \
+	static const uint32_t data_lanes_##inst[] = {DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP_VARGS(  \
+		inst, DT_PROP_BY_IDX, (, ), data_lanes, 0)};                                       \
+	static const struct mipi_dsi_stm32_config stm32_dsi_config_##inst = {                      \
+		.rcc = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),                                    \
+		.reset = RESET_DT_SPEC_INST_GET(inst),                                             \
+		.dsi_clk =                                                                         \
+			{                                                                          \
+				.enr = DT_INST_CLOCKS_CELL_BY_NAME(inst, dsiclk, bits),            \
+				.bus = DT_INST_CLOCKS_CELL_BY_NAME(inst, dsiclk, bus),             \
+			},                                                                         \
+		.ref_clk =                                                                         \
+			{                                                                          \
+				.enr = DT_INST_CLOCKS_CELL_BY_NAME(inst, refclk, bits),            \
+				.bus = DT_INST_CLOCKS_CELL_BY_NAME(inst, refclk, bus),             \
+			},                                                                         \
+		.pix_clk =                                                                         \
+			{                                                                          \
+				.enr = DT_INST_CLOCKS_CELL_BY_NAME(inst, pixelclk, bits),          \
+				.bus = DT_INST_CLOCKS_CELL_BY_NAME(inst, pixelclk, bus),           \
+			}, /* Use only one (the first) display configuration for DSI HOST          \
+			      configuration */                                                     \
+		.data_lanes = data_lanes_##inst[0],                                                \
+		.active_errors = DT_INST_PROP_OR(inst, active_errors, HAL_DSI_ERROR_NONE),         \
+		.lp_rx_filter_freq = DT_INST_PROP_OR(inst, lp_rx_filter, 0),                       \
+		.test_pattern = DT_INST_PROP_OR(inst, test_pattern, -1),                           \
+	};                                                                                         \
+	static struct mipi_dsi_stm32_data stm32_dsi_data_##inst = {                                \
+		.hdsi =                                                                            \
+			{                                                                          \
+				.Instance = (DSI_TypeDef *)DT_INST_REG_ADDR(inst),                 \
+				.Init =                                                            \
+					{                                                          \
+						.AutomaticClockLaneControl =                       \
+							DT_INST_PROP(inst, non_continuous)         \
+								? DSI_AUTO_CLK_LANE_CTRL_ENABLE    \
+								: DSI_AUTO_CLK_LANE_CTRL_DISABLE,  \
+					},                                                         \
+			},                                                                         \
 		.host_timeouts = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, host_timeouts),	\
-					     (&host_timeouts_##inst), (NULL)),			\
-		.phy_timings = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, phy_timings),		\
-					   (&phy_timings_##inst), (NULL)),			\
-		.vid_cfg = {									\
-			.HSPolarity = DT_INST_PROP(inst, hs_active_high) ?			\
-				      DSI_HSYNC_ACTIVE_HIGH : DSI_HSYNC_ACTIVE_LOW,		\
-			.VSPolarity = DT_INST_PROP(inst, vs_active_high) ?			\
-				      DSI_VSYNC_ACTIVE_HIGH : DSI_VSYNC_ACTIVE_LOW,		\
-			.DEPolarity = DT_INST_PROP(inst, de_active_high) ?			\
-				      DSI_DATA_ENABLE_ACTIVE_HIGH : DSI_DATA_ENABLE_ACTIVE_LOW, \
-			.LooselyPacked = DT_INST_PROP(inst, loosely_packed) ? \
-				      DSI_LOOSELY_PACKED_ENABLE : DSI_LOOSELY_PACKED_DISABLE,	\
-			.LPLargestPacketSize =  DT_INST_PROP_OR(inst, largest_packet_size, 4), \
-			.LPVACTLargestPacketSize = DT_INST_PROP_OR(inst, largest_packet_size, 4), \
-			.FrameBTAAcknowledgeEnable = DT_INST_PROP(inst, bta_ack_disable) ?	\
-					  DSI_FBTAA_DISABLE : DSI_FBTAA_ENABLE,	\
-		},										\
-		.pll_init = {									\
-			.PLLNDIV = DT_INST_PROP(inst, pll_ndiv),				\
-			.PLLIDF = DT_INST_PROP(inst, pll_idf),					\
-			.PLLODF = DT_INST_PROP(inst, pll_odf),					\
-		},										\
-	};											\
-	DEVICE_DT_INST_DEFINE(inst, &mipi_dsi_stm32_init, NULL,					\
-			      &stm32_dsi_data_##inst, &stm32_dsi_config_##inst,			\
-			      POST_KERNEL, CONFIG_MIPI_DSI_INIT_PRIORITY, &dsi_stm32_api);
+					     (&host_timeouts_##inst), (NULL)),                                           \
+			 .phy_timings = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, phy_timings),		\
+					   (&phy_timings_##inst), (NULL)),                                    \
+				  .vid_cfg =                                                       \
+					  {                                                        \
+						  .HSPolarity = DT_INST_PROP(inst, hs_active_high) \
+									? DSI_HSYNC_ACTIVE_HIGH    \
+									: DSI_HSYNC_ACTIVE_LOW,    \
+						  .VSPolarity = DT_INST_PROP(inst, vs_active_high) \
+									? DSI_VSYNC_ACTIVE_HIGH    \
+									: DSI_VSYNC_ACTIVE_LOW,    \
+						  .DEPolarity =                                    \
+							  DT_INST_PROP(inst, de_active_high)       \
+								  ? DSI_DATA_ENABLE_ACTIVE_HIGH    \
+								  : DSI_DATA_ENABLE_ACTIVE_LOW,    \
+						  .LooselyPacked =                                 \
+							  DT_INST_PROP(inst, loosely_packed)       \
+								  ? DSI_LOOSELY_PACKED_ENABLE      \
+								  : DSI_LOOSELY_PACKED_DISABLE,    \
+						  .LPLargestPacketSize = DT_INST_PROP_OR(          \
+							  inst, largest_packet_size, 4),           \
+						  .LPVACTLargestPacketSize = DT_INST_PROP_OR(      \
+							  inst, largest_packet_size, 4),           \
+						  .FrameBTAAcknowledgeEnable =                     \
+							  DT_INST_PROP(inst, bta_ack_disable)      \
+								  ? DSI_FBTAA_DISABLE              \
+								  : DSI_FBTAA_ENABLE,              \
+					  },                                                       \
+				  .pll_init =                                                      \
+					  {                                                        \
+						  .PLLNDIV = DT_INST_PROP(inst, pll_ndiv),         \
+						  .PLLIDF = DT_INST_PROP(inst, pll_idf),           \
+						  .PLLODF = DT_INST_PROP(inst, pll_odf),           \
+					  },                                                       \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(inst, &mipi_dsi_stm32_init, NULL, &stm32_dsi_data_##inst,            \
+			      &stm32_dsi_config_##inst, POST_KERNEL,                               \
+			      CONFIG_MIPI_DSI_INIT_PRIORITY, &dsi_stm32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_MIPI_DSI_DEVICE)

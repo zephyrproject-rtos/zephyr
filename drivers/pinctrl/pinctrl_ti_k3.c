@@ -17,9 +17,7 @@ static struct pinctrl_ti_k3_dev_data {
 
 static struct pinctrl_ti_k3_cfg_data {
 	DEVICE_MMIO_ROM;
-} pinctrl_ti_k3_cfg = {
-	DEVICE_MMIO_ROM_INIT(PINCTRL_NODE)
-};
+} pinctrl_ti_k3_cfg = {DEVICE_MMIO_ROM_INIT(PINCTRL_NODE)};
 
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintptr_t reg)
 {
@@ -40,11 +38,5 @@ static int pinctrl_ti_k3_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_DEFINE(PINCTRL_NODE,
-		 pinctrl_ti_k3_init,
-		 NULL,
-		 &pinctrl_ti_k3_dev,
-		 &pinctrl_ti_k3_cfg,
-		 PRE_KERNEL_1,
-		 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		 NULL);
+DEVICE_DT_DEFINE(PINCTRL_NODE, pinctrl_ti_k3_init, NULL, &pinctrl_ti_k3_dev, &pinctrl_ti_k3_cfg,
+		 PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);

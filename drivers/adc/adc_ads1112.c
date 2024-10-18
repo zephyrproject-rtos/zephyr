@@ -21,10 +21,10 @@
 
 LOG_MODULE_REGISTER(ADS1112, CONFIG_ADC_LOG_LEVEL);
 
-#define ADS1112_CONFIG_GAIN(x) ((x)&BIT_MASK(2))
-#define ADS1112_CONFIG_DR(x)   (((x)&BIT_MASK(2)) << 2)
-#define ADS1112_CONFIG_CM(x)   (((x)&BIT_MASK(1)) << 4)
-#define ADS1112_CONFIG_MUX(x)  (((x)&BIT_MASK(2)) << 5)
+#define ADS1112_CONFIG_GAIN(x) ((x) & BIT_MASK(2))
+#define ADS1112_CONFIG_DR(x)   (((x) & BIT_MASK(2)) << 2)
+#define ADS1112_CONFIG_CM(x)   (((x) & BIT_MASK(1)) << 4)
+#define ADS1112_CONFIG_MUX(x)  (((x) & BIT_MASK(2)) << 5)
 
 #define ADS1112_CONFIG_MASK_READY BIT(7)
 
@@ -385,7 +385,7 @@ static const struct adc_driver_api api = {
 	.ref_internal = ADS1112_REF_INTERNAL,
 };
 #define ADC_ADS1112_INST_DEFINE(n)                                                                 \
-	static const struct ads1112_config config_##n = {.bus = I2C_DT_SPEC_INST_GET(n)};  \
+	static const struct ads1112_config config_##n = {.bus = I2C_DT_SPEC_INST_GET(n)};          \
 	static struct ads1112_data data_##n;                                                       \
 	DEVICE_DT_INST_DEFINE(n, ads1112_init, NULL, &data_##n, &config_##n, POST_KERNEL,          \
 			      CONFIG_ADC_INIT_PRIORITY, &api);

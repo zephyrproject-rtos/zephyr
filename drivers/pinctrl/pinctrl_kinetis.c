@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #define DT_DRV_COMPAT nxp_kinetis_pinmux
 
 #include <zephyr/drivers/clock_control.h>
@@ -30,8 +29,8 @@ static PORT_Type *ports[] = {
 #endif
 };
 
-#define PIN(mux) (((mux) & 0xFC00000) >> 22)
-#define PORT(mux) (((mux) & 0xF0000000) >> 28)
+#define PIN(mux)    (((mux) & 0xFC00000) >> 22)
+#define PORT(mux)   (((mux) & 0xF0000000) >> 28)
 #define PINCFG(mux) ((mux) & Z_PINCTRL_KINETIS_PCR_MASK)
 
 struct pinctrl_mcux_config {
@@ -39,8 +38,7 @@ struct pinctrl_mcux_config {
 	clock_control_subsys_t clock_subsys;
 };
 
-int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
-			   uintptr_t reg)
+int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintptr_t reg)
 {
 	for (uint8_t i = 0; i < pin_cnt; i++) {
 		PORT_Type *base = ports[PORT(pins[i])];
@@ -84,23 +82,16 @@ static int pinctrl_mcux_init(const struct device *dev)
 		 ? 0                                                                               \
 		 : MAKE_MRCC_REGADDR(MRCC_BASE, DT_INST_CLOCKS_CELL(n, mrcc_offset)))
 #else
-#define PINCTRL_MCUX_DT_INST_CLOCK_SUBSYS(n) \
-	DT_INST_CLOCKS_CELL(n, name)
+#define PINCTRL_MCUX_DT_INST_CLOCK_SUBSYS(n) DT_INST_CLOCKS_CELL(n, name)
 #endif
 
-#define PINCTRL_MCUX_INIT(n)						\
-	static const struct pinctrl_mcux_config pinctrl_mcux_##n##_config = {\
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
-		.clock_subsys = (clock_control_subsys_t)		\
-				PINCTRL_MCUX_DT_INST_CLOCK_SUBSYS(n),	\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(n,					\
-			    &pinctrl_mcux_init,				\
-			    NULL,					\
-			    NULL, &pinctrl_mcux_##n##_config,		\
-			    PRE_KERNEL_1,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
-			    NULL);
+#define PINCTRL_MCUX_INIT(n)                                                                       \
+	static const struct pinctrl_mcux_config pinctrl_mcux_##n##_config = {                      \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
+		.clock_subsys = (clock_control_subsys_t)PINCTRL_MCUX_DT_INST_CLOCK_SUBSYS(n),      \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &pinctrl_mcux_init, NULL, NULL, &pinctrl_mcux_##n##_config,       \
+			      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(PINCTRL_MCUX_INIT)

@@ -36,10 +36,10 @@ LOG_MODULE_REGISTER(flexspi_hyperflash, CONFIG_FLASH_LOG_LEVEL);
 
 #include "memc_mcux_flexspi.h"
 
-#define SPI_HYPERFLASH_SECTOR_SIZE              (0x40000U)
-#define SPI_HYPERFLASH_PAGE_SIZE                (512U)
+#define SPI_HYPERFLASH_SECTOR_SIZE (0x40000U)
+#define SPI_HYPERFLASH_PAGE_SIZE   (512U)
 
-#define HYPERFLASH_ERASE_VALUE                  (0xFF)
+#define HYPERFLASH_ERASE_VALUE (0xFF)
 
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_HYPERFLASH_WRITE_BUFFER
 static uint8_t hyperflash_write_buf[SPI_HYPERFLASH_PAGE_SIZE];
@@ -56,192 +56,136 @@ enum {
 	ERASE_CHIP = 12,
 };
 
-#define CUSTOM_LUT_LENGTH                      64
+#define CUSTOM_LUT_LENGTH 64
 
 static const uint32_t flash_flexspi_hyperflash_lut[CUSTOM_LUT_LENGTH] = {
 	/* Read Data */
-	[4 * READ_DATA] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR,       kFLEXSPI_8PAD, 0xA0,
-				kFLEXSPI_Command_RADDR_DDR, kFLEXSPI_8PAD, 0x18),
-	[4 * READ_DATA + 1] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_CADDR_DDR, kFLEXSPI_8PAD, 0x10,
-				kFLEXSPI_Command_READ_DDR,  kFLEXSPI_8PAD, 0x04),
+	[4 * READ_DATA] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0xA0,
+					  kFLEXSPI_Command_RADDR_DDR, kFLEXSPI_8PAD, 0x18),
+	[4 * READ_DATA + 1] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_CADDR_DDR, kFLEXSPI_8PAD, 0x10,
+					      kFLEXSPI_Command_READ_DDR, kFLEXSPI_8PAD, 0x04),
 	/* Write Data */
-	[4 * WRITE_DATA] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR,       kFLEXSPI_8PAD, 0x20,
-				kFLEXSPI_Command_RADDR_DDR, kFLEXSPI_8PAD, 0x18),
-	[4 * WRITE_DATA + 1] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_CADDR_DDR, kFLEXSPI_8PAD, 0x10,
-				kFLEXSPI_Command_WRITE_DDR, kFLEXSPI_8PAD, 0x02),
+	[4 * WRITE_DATA] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x20,
+					   kFLEXSPI_Command_RADDR_DDR, kFLEXSPI_8PAD, 0x18),
+	[4 * WRITE_DATA + 1] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_CADDR_DDR, kFLEXSPI_8PAD, 0x10,
+					       kFLEXSPI_Command_WRITE_DDR, kFLEXSPI_8PAD, 0x02),
 	/* Read Status */
-	[4 * READ_STATUS] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00),
-	[4 * READ_STATUS + 1] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0xAA),
-	[4 * READ_STATUS + 2] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x05),
-	[4 * READ_STATUS + 3] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x70),
-	[4 * READ_STATUS + 4] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR,       kFLEXSPI_8PAD, 0xA0,
-				kFLEXSPI_Command_RADDR_DDR, kFLEXSPI_8PAD, 0x18),
+	[4 * READ_STATUS] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+					    kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00),
+	[4 * READ_STATUS + 1] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+						kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0xAA),
+	[4 * READ_STATUS + 2] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+						kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x05),
+	[4 * READ_STATUS + 3] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+						kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x70),
+	[4 * READ_STATUS + 4] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0xA0,
+						kFLEXSPI_Command_RADDR_DDR, kFLEXSPI_8PAD, 0x18),
 	[4 * READ_STATUS + 5] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_CADDR_DDR,      kFLEXSPI_8PAD, 0x10,
+		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_CADDR_DDR, kFLEXSPI_8PAD, 0x10,
 				kFLEXSPI_Command_DUMMY_RWDS_DDR, kFLEXSPI_8PAD, 0x0B),
-	[4 * READ_STATUS + 6] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_DDR, kFLEXSPI_8PAD, 0x04,
-				kFLEXSPI_Command_STOP,     kFLEXSPI_1PAD, 0x0),
+	[4 * READ_STATUS + 6] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_DDR, kFLEXSPI_8PAD, 0x04,
+						kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0),
 	/* Write Enable */
-	[4 * WRITE_ENABLE] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x20,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00),
-	[4 * WRITE_ENABLE + 1] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0xAA),
-	[4 * WRITE_ENABLE + 2] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x05),
-	[4 * WRITE_ENABLE + 3] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0xAA),
-	[4 * WRITE_ENABLE + 4] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x20,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00),
-	[4 * WRITE_ENABLE + 5] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x55),
-	[4 * WRITE_ENABLE + 6] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x02),
-	[4 * WRITE_ENABLE + 7] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x55),
+	[4 * WRITE_ENABLE] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x20,
+					     kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00),
+	[4 * WRITE_ENABLE + 1] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+						 kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0xAA),
+	[4 * WRITE_ENABLE + 2] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+						 kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x05),
+	[4 * WRITE_ENABLE + 3] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+						 kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0xAA),
+	[4 * WRITE_ENABLE + 4] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x20,
+						 kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00),
+	[4 * WRITE_ENABLE + 5] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+						 kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x55),
+	[4 * WRITE_ENABLE + 6] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+						 kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x02),
+	[4 * WRITE_ENABLE + 7] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+						 kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x55),
 
 	/* Erase Sector  */
-	[4 * ERASE_SECTOR] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00),
-	[4 * ERASE_SECTOR + 1] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0xAA),
-	[4 * ERASE_SECTOR + 2] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x05),
-	[4 * ERASE_SECTOR + 3] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x80),
-	[4 * ERASE_SECTOR + 4] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00),
-	[4 * ERASE_SECTOR + 5] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0xAA),
-	[4 * ERASE_SECTOR + 6] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x05),
-	[4 * ERASE_SECTOR + 7] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0xAA),
-	[4 * ERASE_SECTOR + 8] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00),
-	[4 * ERASE_SECTOR + 9] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x55),
-	[4 * ERASE_SECTOR + 10] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x02),
-	[4 * ERASE_SECTOR + 11] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x55),
-	[4 * ERASE_SECTOR + 12] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR,       kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_RADDR_DDR, kFLEXSPI_8PAD, 0x18),
-	[4 * ERASE_SECTOR + 13] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_CADDR_DDR, kFLEXSPI_8PAD, 0x10,
-				kFLEXSPI_Command_DDR,       kFLEXSPI_8PAD, 0x00),
-	[4 * ERASE_SECTOR + 14] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR,  kFLEXSPI_8PAD, 0x30,
-				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x00),
+	[4 * ERASE_SECTOR] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+					     kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00),
+	[4 * ERASE_SECTOR + 1] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+						 kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0xAA),
+	[4 * ERASE_SECTOR + 2] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+						 kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x05),
+	[4 * ERASE_SECTOR + 3] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+						 kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x80),
+	[4 * ERASE_SECTOR + 4] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+						 kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00),
+	[4 * ERASE_SECTOR + 5] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+						 kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0xAA),
+	[4 * ERASE_SECTOR + 6] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+						 kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x05),
+	[4 * ERASE_SECTOR + 7] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+						 kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0xAA),
+	[4 * ERASE_SECTOR + 8] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+						 kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00),
+	[4 * ERASE_SECTOR + 9] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+						 kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x55),
+	[4 * ERASE_SECTOR + 10] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+						  kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x02),
+	[4 * ERASE_SECTOR + 11] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+						  kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x55),
+	[4 * ERASE_SECTOR + 12] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+						  kFLEXSPI_Command_RADDR_DDR, kFLEXSPI_8PAD, 0x18),
+	[4 * ERASE_SECTOR + 13] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_CADDR_DDR, kFLEXSPI_8PAD, 0x10,
+						  kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00),
+	[4 * ERASE_SECTOR + 14] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x30,
+						  kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x00),
 
 	/* program page with word program command sequence */
-	[4 * PAGE_PROGRAM] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x20,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00),
-	[4 * PAGE_PROGRAM + 1] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0xAA),
-	[4 * PAGE_PROGRAM + 2] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x05),
-	[4 * PAGE_PROGRAM + 3] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0xA0),
-	[4 * PAGE_PROGRAM + 4] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR,       kFLEXSPI_8PAD, 0x20,
-				kFLEXSPI_Command_RADDR_DDR, kFLEXSPI_8PAD, 0x18),
-	[4 * PAGE_PROGRAM + 5] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_CADDR_DDR, kFLEXSPI_8PAD, 0x10,
-				kFLEXSPI_Command_WRITE_DDR, kFLEXSPI_8PAD, 0x80),
+	[4 * PAGE_PROGRAM] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x20,
+					     kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00),
+	[4 * PAGE_PROGRAM + 1] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+						 kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0xAA),
+	[4 * PAGE_PROGRAM + 2] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+						 kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x05),
+	[4 * PAGE_PROGRAM + 3] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+						 kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0xA0),
+	[4 * PAGE_PROGRAM + 4] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x20,
+						 kFLEXSPI_Command_RADDR_DDR, kFLEXSPI_8PAD, 0x18),
+	[4 * PAGE_PROGRAM + 5] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_CADDR_DDR, kFLEXSPI_8PAD, 0x10,
+						 kFLEXSPI_Command_WRITE_DDR, kFLEXSPI_8PAD, 0x80),
 
 	/* Erase chip */
-	[4 * ERASE_CHIP] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00),
-	[4 * ERASE_CHIP + 1] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0xAA),
-	[4 * ERASE_CHIP + 2] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x05),
-	[4 * ERASE_CHIP + 3] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x80),
+	[4 * ERASE_CHIP] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+					   kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00),
+	[4 * ERASE_CHIP + 1] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+					       kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0xAA),
+	[4 * ERASE_CHIP + 2] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+					       kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x05),
+	[4 * ERASE_CHIP + 3] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+					       kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x80),
 	/* 1 */
-	[4 * ERASE_CHIP + 4] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00),
-	[4 * ERASE_CHIP + 5] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0xAA),
-	[4 * ERASE_CHIP + 6] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x05),
-	[4 * ERASE_CHIP + 7] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0xAA),
+	[4 * ERASE_CHIP + 4] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+					       kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00),
+	[4 * ERASE_CHIP + 5] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+					       kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0xAA),
+	[4 * ERASE_CHIP + 6] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+					       kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x05),
+	[4 * ERASE_CHIP + 7] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+					       kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0xAA),
 	/* 2 */
-	[4 * ERASE_CHIP + 8] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00),
-	[4 * ERASE_CHIP + 9] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x55),
-	[4 * ERASE_CHIP + 10] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x02),
-	[4 * ERASE_CHIP + 11] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x55),
+	[4 * ERASE_CHIP + 8] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+					       kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00),
+	[4 * ERASE_CHIP + 9] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+					       kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x55),
+	[4 * ERASE_CHIP + 10] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+						kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x02),
+	[4 * ERASE_CHIP + 11] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+						kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x55),
 	/* 3 */
-	[4 * ERASE_CHIP + 12] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00),
-	[4 * ERASE_CHIP + 13] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0xAA),
-	[4 * ERASE_CHIP + 14] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x05),
-	[4 * ERASE_CHIP + 15] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
-				kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x10),
+	[4 * ERASE_CHIP + 12] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+						kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00),
+	[4 * ERASE_CHIP + 13] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+						kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0xAA),
+	[4 * ERASE_CHIP + 14] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+						kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x05),
+	[4 * ERASE_CHIP + 15] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x00,
+						kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x10),
 };
-
 
 struct flash_flexspi_hyperflash_config {
 	const struct device *controller;
@@ -370,8 +314,8 @@ static int flash_flexspi_hyperflash_check_vendor_id(const struct device *dev)
 	return ret;
 }
 
-static int flash_flexspi_hyperflash_page_program(const struct device *dev, off_t
-		offset, const void *buffer, size_t len)
+static int flash_flexspi_hyperflash_page_program(const struct device *dev, off_t offset,
+						 const void *buffer, size_t len)
 {
 	struct flash_flexspi_hyperflash_data *data = dev->data;
 
@@ -390,14 +334,12 @@ static int flash_flexspi_hyperflash_page_program(const struct device *dev, off_t
 	return memc_flexspi_transfer(&data->controller, &transfer);
 }
 
-static int flash_flexspi_hyperflash_read(const struct device *dev, off_t offset,
-		void *buffer, size_t len)
+static int flash_flexspi_hyperflash_read(const struct device *dev, off_t offset, void *buffer,
+					 size_t len)
 {
 	struct flash_flexspi_hyperflash_data *data = dev->data;
 
-	uint8_t *src = memc_flexspi_get_ahb_address(&data->controller,
-			data->port,
-			offset);
+	uint8_t *src = memc_flexspi_get_ahb_address(&data->controller, data->port, offset);
 	if (!src) {
 		return -EINVAL;
 	}
@@ -408,7 +350,7 @@ static int flash_flexspi_hyperflash_read(const struct device *dev, off_t offset,
 }
 
 static int flash_flexspi_hyperflash_write(const struct device *dev, off_t offset,
-		const void *buffer, size_t len)
+					  const void *buffer, size_t len)
 {
 	struct flash_flexspi_hyperflash_data *data = dev->data;
 	size_t size = len;
@@ -417,9 +359,7 @@ static int flash_flexspi_hyperflash_write(const struct device *dev, off_t offset
 	int i, j;
 	int ret = -1;
 
-	uint8_t *dst = memc_flexspi_get_ahb_address(&data->controller,
-			data->port,
-			offset);
+	uint8_t *dst = memc_flexspi_get_ahb_address(&data->controller, data->port, offset);
 	if (!dst) {
 		return -EINVAL;
 	}
@@ -434,16 +374,14 @@ static int flash_flexspi_hyperflash_write(const struct device *dev, off_t offset
 	}
 
 	/* Clock FlexSPI at 84 MHZ (42MHz SCLK in DDR mode) */
-	(void)memc_flexspi_update_clock(&data->controller, &data->config,
-					data->port, MHZ(84));
+	(void)memc_flexspi_update_clock(&data->controller, &data->config, data->port, MHZ(84));
 
 	while (len) {
 		/* Writing between two page sizes crashes the platform so we
 		 * have to write the part that fits in the first page and then
 		 * update the offset.
 		 */
-		i = MIN(SPI_HYPERFLASH_PAGE_SIZE - (offset %
-					SPI_HYPERFLASH_PAGE_SIZE), len);
+		i = MIN(SPI_HYPERFLASH_PAGE_SIZE - (offset % SPI_HYPERFLASH_PAGE_SIZE), len);
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_HYPERFLASH_WRITE_BUFFER
 		for (j = 0; j < i; j++) {
 			hyperflash_write_buf[j] = src[j];
@@ -455,8 +393,7 @@ static int flash_flexspi_hyperflash_write(const struct device *dev, off_t offset
 			break;
 		}
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_HYPERFLASH_WRITE_BUFFER
-		ret = flash_flexspi_hyperflash_page_program(dev, offset,
-				hyperflash_write_buf, i);
+		ret = flash_flexspi_hyperflash_page_program(dev, offset, hyperflash_write_buf, i);
 #else
 		ret = flash_flexspi_hyperflash_page_program(dev, offset, src, i);
 #endif
@@ -479,11 +416,10 @@ static int flash_flexspi_hyperflash_write(const struct device *dev, off_t offset
 	}
 
 	/* Clock FlexSPI at 332 MHZ (166 MHz SCLK in DDR mode) */
-	(void)memc_flexspi_update_clock(&data->controller, &data->config,
-					data->port, MHZ(332));
+	(void)memc_flexspi_update_clock(&data->controller, &data->config, data->port, MHZ(332));
 
 #ifdef CONFIG_HAS_MCUX_CACHE
-	DCACHE_InvalidateByRange((uint32_t) dst, size);
+	DCACHE_InvalidateByRange((uint32_t)dst, size);
 #endif
 
 	if (memc_flexspi_is_running_xip(&data->controller)) {
@@ -502,9 +438,7 @@ static int flash_flexspi_hyperflash_erase(const struct device *dev, off_t offset
 	int i;
 	unsigned int key = 0;
 	int num_sectors = size / SPI_HYPERFLASH_SECTOR_SIZE;
-	uint8_t *dst = memc_flexspi_get_ahb_address(&data->controller,
-			data->port,
-			offset);
+	uint8_t *dst = memc_flexspi_get_ahb_address(&data->controller, data->port, offset);
 
 	if (!dst) {
 		return -EINVAL;
@@ -564,7 +498,7 @@ static int flash_flexspi_hyperflash_erase(const struct device *dev, off_t offset
 	}
 
 #ifdef CONFIG_HAS_MCUX_CACHE
-	DCACHE_InvalidateByRange((uint32_t) dst, size);
+	DCACHE_InvalidateByRange((uint32_t)dst, size);
 #endif
 
 	if (memc_flexspi_is_running_xip(&data->controller)) {
@@ -575,18 +509,17 @@ static int flash_flexspi_hyperflash_erase(const struct device *dev, off_t offset
 	return ret;
 }
 
-static const struct flash_parameters *flash_flexspi_hyperflash_get_parameters(
-		const struct device *dev)
+static const struct flash_parameters *
+flash_flexspi_hyperflash_get_parameters(const struct device *dev)
 {
 	struct flash_flexspi_hyperflash_data *data = dev->data;
 
 	return &data->flash_parameters;
 }
 
-
 static void flash_flexspi_hyperflash_pages_layout(const struct device *dev,
-		const struct flash_pages_layout **layout,
-		size_t *layout_size)
+						  const struct flash_pages_layout **layout,
+						  size_t *layout_size)
 {
 	struct flash_flexspi_hyperflash_data *data = dev->data;
 
@@ -615,10 +548,10 @@ static int flash_flexspi_hyperflash_init(const struct device *dev)
 		/* Wait for bus idle before configuring */
 		memc_flexspi_wait_bus_idle(&data->controller);
 	}
-	if (memc_flexspi_set_device_config(&data->controller, &data->config,
-	    (const uint32_t *)flash_flexspi_hyperflash_lut,
-	    sizeof(flash_flexspi_hyperflash_lut) / MEMC_FLEXSPI_CMD_SIZE,
-	    data->port)) {
+	if (memc_flexspi_set_device_config(
+		    &data->controller, &data->config,
+		    (const uint32_t *)flash_flexspi_hyperflash_lut,
+		    sizeof(flash_flexspi_hyperflash_lut) / MEMC_FLEXSPI_CMD_SIZE, data->port)) {
 		LOG_ERR("Could not set device configuration");
 		return -EINVAL;
 	}
@@ -643,65 +576,54 @@ static const struct flash_driver_api flash_flexspi_hyperflash_api = {
 #endif
 };
 
-#define CONCAT3(x, y, z) x ## y ## z
+#define CONCAT3(x, y, z) x##y##z
 
-#define CS_INTERVAL_UNIT(unit)						\
-	CONCAT3(kFLEXSPI_CsIntervalUnit, unit, SckCycle)
+#define CS_INTERVAL_UNIT(unit) CONCAT3(kFLEXSPI_CsIntervalUnit, unit, SckCycle)
 
-#define AHB_WRITE_WAIT_UNIT(unit)					\
-	CONCAT3(kFLEXSPI_AhbWriteWaitUnit, unit, AhbCycle)
+#define AHB_WRITE_WAIT_UNIT(unit) CONCAT3(kFLEXSPI_AhbWriteWaitUnit, unit, AhbCycle)
 
-#define FLASH_FLEXSPI_DEVICE_CONFIG(n)					\
-	{								\
-		.flexspiRootClk = MHZ(42),				\
-		.flashSize = DT_INST_PROP(n, size) / 8 / KB(1),		\
-		.CSIntervalUnit =					\
-			CS_INTERVAL_UNIT(				\
-				DT_INST_PROP(n, cs_interval_unit)),	\
-		.CSInterval = DT_INST_PROP(n, cs_interval),		\
-		.CSHoldTime = DT_INST_PROP(n, cs_hold_time),		\
-		.CSSetupTime = DT_INST_PROP(n, cs_setup_time),		\
-		.dataValidTime = DT_INST_PROP(n, data_valid_time),	\
-		.columnspace = DT_INST_PROP(n, column_space),		\
-		.enableWordAddress = DT_INST_PROP(n, word_addressable),	\
-		.AWRSeqIndex = WRITE_DATA,					\
-		.AWRSeqNumber = 1,					\
-		.ARDSeqIndex = READ_DATA,				\
-		.ARDSeqNumber = 1,					\
-		.AHBWriteWaitUnit =					\
-			AHB_WRITE_WAIT_UNIT(				\
-				DT_INST_PROP(n, ahb_write_wait_unit)),	\
-		.AHBWriteWaitInterval =					\
-			DT_INST_PROP(n, ahb_write_wait_interval),	\
-	}								\
+#define FLASH_FLEXSPI_DEVICE_CONFIG(n)                                                             \
+	{                                                                                          \
+		.flexspiRootClk = MHZ(42),                                                         \
+		.flashSize = DT_INST_PROP(n, size) / 8 / KB(1),                                    \
+		.CSIntervalUnit = CS_INTERVAL_UNIT(DT_INST_PROP(n, cs_interval_unit)),             \
+		.CSInterval = DT_INST_PROP(n, cs_interval),                                        \
+		.CSHoldTime = DT_INST_PROP(n, cs_hold_time),                                       \
+		.CSSetupTime = DT_INST_PROP(n, cs_setup_time),                                     \
+		.dataValidTime = DT_INST_PROP(n, data_valid_time),                                 \
+		.columnspace = DT_INST_PROP(n, column_space),                                      \
+		.enableWordAddress = DT_INST_PROP(n, word_addressable),                            \
+		.AWRSeqIndex = WRITE_DATA,                                                         \
+		.AWRSeqNumber = 1,                                                                 \
+		.ARDSeqIndex = READ_DATA,                                                          \
+		.ARDSeqNumber = 1,                                                                 \
+		.AHBWriteWaitUnit = AHB_WRITE_WAIT_UNIT(DT_INST_PROP(n, ahb_write_wait_unit)),     \
+		.AHBWriteWaitInterval = DT_INST_PROP(n, ahb_write_wait_interval),                  \
+	}
 
-#define FLASH_FLEXSPI_HYPERFLASH(n)					\
-	static struct flash_flexspi_hyperflash_config			\
-		flash_flexspi_hyperflash_config_##n = {			\
-		.controller = DEVICE_DT_GET(DT_INST_BUS(n)),		\
-	};								\
-	static struct flash_flexspi_hyperflash_data			\
-		flash_flexspi_hyperflash_data_##n = {			\
-		.config = FLASH_FLEXSPI_DEVICE_CONFIG(n),		\
-		.port = DT_INST_REG_ADDR(n),				\
-		.layout = {						\
-			.pages_count = DT_INST_PROP(n, size) / 8	\
-				/ SPI_HYPERFLASH_SECTOR_SIZE,		\
-			.pages_size = SPI_HYPERFLASH_SECTOR_SIZE,	\
-		},							\
-		.flash_parameters = {					\
-			.write_block_size = DT_INST_PROP(n, write_block_size), \
-			.erase_value = HYPERFLASH_ERASE_VALUE,		\
-		},							\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(n,					\
-			      flash_flexspi_hyperflash_init,		\
-			      NULL,					\
-			      &flash_flexspi_hyperflash_data_##n,	\
-			      &flash_flexspi_hyperflash_config_##n,	\
-			      POST_KERNEL,				\
-			      CONFIG_FLASH_INIT_PRIORITY,		\
-			      &flash_flexspi_hyperflash_api);
+#define FLASH_FLEXSPI_HYPERFLASH(n)                                                                \
+	static struct flash_flexspi_hyperflash_config flash_flexspi_hyperflash_config_##n = {      \
+		.controller = DEVICE_DT_GET(DT_INST_BUS(n)),                                       \
+	};                                                                                         \
+	static struct flash_flexspi_hyperflash_data flash_flexspi_hyperflash_data_##n = {          \
+		.config = FLASH_FLEXSPI_DEVICE_CONFIG(n),                                          \
+		.port = DT_INST_REG_ADDR(n),                                                       \
+		.layout =                                                                          \
+			{                                                                          \
+				.pages_count =                                                     \
+					DT_INST_PROP(n, size) / 8 / SPI_HYPERFLASH_SECTOR_SIZE,    \
+				.pages_size = SPI_HYPERFLASH_SECTOR_SIZE,                          \
+			},                                                                         \
+		.flash_parameters =                                                                \
+			{                                                                          \
+				.write_block_size = DT_INST_PROP(n, write_block_size),             \
+				.erase_value = HYPERFLASH_ERASE_VALUE,                             \
+			},                                                                         \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, flash_flexspi_hyperflash_init, NULL,                              \
+			      &flash_flexspi_hyperflash_data_##n,                                  \
+			      &flash_flexspi_hyperflash_config_##n, POST_KERNEL,                   \
+			      CONFIG_FLASH_INIT_PRIORITY, &flash_flexspi_hyperflash_api);
 
 DT_INST_FOREACH_STATUS_OKAY(FLASH_FLEXSPI_HYPERFLASH)

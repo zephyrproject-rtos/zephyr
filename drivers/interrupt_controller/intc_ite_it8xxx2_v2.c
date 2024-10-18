@@ -13,25 +13,21 @@
 #include "intc_ite_it8xxx2.h"
 LOG_MODULE_REGISTER(intc_it8xxx2_v2, LOG_LEVEL_DBG);
 
-#define IT8XXX2_INTC_BASE		DT_REG_ADDR(DT_NODELABEL(intc))
-#define IT8XXX2_INTC_BASE_SHIFT(g)	(IT8XXX2_INTC_BASE + ((g) << 2))
+#define IT8XXX2_INTC_BASE          DT_REG_ADDR(DT_NODELABEL(intc))
+#define IT8XXX2_INTC_BASE_SHIFT(g) (IT8XXX2_INTC_BASE + ((g) << 2))
 
 /* Interrupt status register */
-#define IT8XXX2_INTC_ISR(g)	ECREG(IT8XXX2_INTC_BASE_SHIFT(g) + \
-				((g) < 4 ? 0x0 : 0x4))
+#define IT8XXX2_INTC_ISR(g)   ECREG(IT8XXX2_INTC_BASE_SHIFT(g) + ((g) < 4 ? 0x0 : 0x4))
 /* Interrupt enable register */
-#define IT8XXX2_INTC_IER(g)	ECREG(IT8XXX2_INTC_BASE_SHIFT(g) + \
-				((g) < 4 ? 0x1 : 0x5))
+#define IT8XXX2_INTC_IER(g)   ECREG(IT8XXX2_INTC_BASE_SHIFT(g) + ((g) < 4 ? 0x1 : 0x5))
 /* Interrupt edge/level triggered mode register */
-#define IT8XXX2_INTC_IELMR(g)	ECREG(IT8XXX2_INTC_BASE_SHIFT(g) + \
-				((g) < 4 ? 0x2 : 0x6))
+#define IT8XXX2_INTC_IELMR(g) ECREG(IT8XXX2_INTC_BASE_SHIFT(g) + ((g) < 4 ? 0x2 : 0x6))
 /* Interrupt polarity register */
-#define IT8XXX2_INTC_IPOLR(g)	ECREG(IT8XXX2_INTC_BASE_SHIFT(g) + \
-				((g) < 4 ? 0x3 : 0x7))
+#define IT8XXX2_INTC_IPOLR(g) ECREG(IT8XXX2_INTC_BASE_SHIFT(g) + ((g) < 4 ? 0x3 : 0x7))
 
-#define IT8XXX2_INTC_GROUP_CNT      24
-#define MAX_REGISR_IRQ_NUM          8
-#define IVECT_OFFSET_WITH_IRQ       0x10
+#define IT8XXX2_INTC_GROUP_CNT 24
+#define MAX_REGISR_IRQ_NUM     8
+#define IVECT_OFFSET_WITH_IRQ  0x10
 
 /* Interrupt number of INTC module */
 static uint8_t intc_irq;
@@ -210,13 +206,10 @@ uint8_t __soc_ram_code get_irq(void *arg)
 		uint8_t int_pending;
 
 		for (int i = (IT8XXX2_INTC_GROUP_CNT - 1); i >= 0; i--) {
-			int_pending =
-				(IT8XXX2_INTC_ISR(i) & IT8XXX2_INTC_IER(i));
+			int_pending = (IT8XXX2_INTC_ISR(i) & IT8XXX2_INTC_IER(i));
 			if (int_pending != 0) {
-				intc_irq = (MAX_REGISR_IRQ_NUM * i) +
-						find_msb_set(int_pending) - 1;
-				LOG_DBG("Pending interrupt found: %d",
-						intc_irq);
+				intc_irq = (MAX_REGISR_IRQ_NUM * i) + find_msb_set(int_pending) - 1;
+				LOG_DBG("Pending interrupt found: %d", intc_irq);
 				LOG_DBG("CPU mepc: 0x%lx", csr_read(mepc));
 				break;
 			}

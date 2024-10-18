@@ -94,7 +94,7 @@ static void rx_thread(void *arg1, void *arg2, void *arg3)
 	while (true) {
 		while (linux_socketcan_poll_data(data->dev_fd) == 0) {
 			count = linux_socketcan_read_data(data->dev_fd, (void *)(&sframe),
-							   sizeof(sframe), &msg_confirm);
+							  sizeof(sframe), &msg_confirm);
 			if (msg_confirm) {
 				data->tx_callback(dev, 0, data->tx_user_data);
 				k_sem_give(&data->tx_idle);
@@ -115,8 +115,7 @@ static void rx_thread(void *arg1, void *arg2, void *arg3)
 			}
 #endif /* !CONFIG_CAN_ACCEPT_RTR*/
 
-			LOG_DBG("Received %d bytes. Id: 0x%x, ID type: %s %s",
-				frame.dlc, frame.id,
+			LOG_DBG("Received %d bytes. Id: 0x%x, ID type: %s %s", frame.dlc, frame.id,
 				(frame.flags & CAN_FRAME_IDE) != 0 ? "extended" : "standard",
 				(frame.flags & CAN_FRAME_RTR) != 0 ? ", RTR frame" : "");
 
@@ -137,14 +136,13 @@ static int can_native_linux_send(const struct device *dev, const struct can_fram
 	size_t mtu = CAN_MTU;
 	int ret = -EIO;
 
-	LOG_DBG("Sending %d bytes on %s. Id: 0x%x, ID type: %s %s",
-		frame->dlc, dev->name, frame->id,
-		(frame->flags & CAN_FRAME_IDE) != 0 ? "extended" : "standard",
+	LOG_DBG("Sending %d bytes on %s. Id: 0x%x, ID type: %s %s", frame->dlc, dev->name,
+		frame->id, (frame->flags & CAN_FRAME_IDE) != 0 ? "extended" : "standard",
 		(frame->flags & CAN_FRAME_RTR) != 0 ? ", RTR frame" : "");
 
 #ifdef CONFIG_CAN_FD_MODE
-	if ((frame->flags & ~(CAN_FRAME_IDE | CAN_FRAME_RTR |
-		CAN_FRAME_FDF | CAN_FRAME_BRS)) != 0) {
+	if ((frame->flags & ~(CAN_FRAME_IDE | CAN_FRAME_RTR | CAN_FRAME_FDF | CAN_FRAME_BRS)) !=
+	    0) {
 		LOG_ERR("unsupported CAN frame flags 0x%02x", frame->flags);
 		return -ENOTSUP;
 	}
@@ -157,7 +155,7 @@ static int can_native_linux_send(const struct device *dev, const struct can_fram
 		max_dlc = CANFD_MAX_DLC;
 		mtu = CANFD_MTU;
 	}
-#else /* CONFIG_CAN_FD_MODE */
+#else  /* CONFIG_CAN_FD_MODE */
 	if ((frame->flags & ~(CAN_FRAME_IDE | CAN_FRAME_RTR)) != 0) {
 		LOG_ERR("unsupported CAN frame flags 0x%02x", frame->flags);
 		return -ENOTSUP;
@@ -202,8 +200,7 @@ static int can_native_linux_add_rx_filter(const struct device *dev, can_rx_callb
 	struct can_filter_context *filter_ctx;
 	int filter_id = -ENOSPC;
 
-	LOG_DBG("Setting filter ID: 0x%x, mask: 0x%x", filter->id,
-		filter->mask);
+	LOG_DBG("Setting filter ID: 0x%x, mask: 0x%x", filter->id, filter->mask);
 
 	if ((filter->flags & ~(CAN_FILTER_IDE)) != 0) {
 		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
@@ -412,36 +409,28 @@ static const struct can_driver_api can_native_linux_driver_api = {
 	.set_state_change_callback = can_native_linux_set_state_change_callback,
 	.get_core_clock = can_native_linux_get_core_clock,
 	.get_max_filters = can_native_linux_get_max_filters,
-	.timing_min = {
-		.sjw = 0x1,
-		.prop_seg = 0x01,
-		.phase_seg1 = 0x01,
-		.phase_seg2 = 0x01,
-		.prescaler = 0x01
-	},
-	.timing_max = {
-		.sjw = 0x0F,
-		.prop_seg = 0x0F,
-		.phase_seg1 = 0x0F,
-		.phase_seg2 = 0x0F,
-		.prescaler = 0xFFFF
-	},
+	.timing_min = {.sjw = 0x1,
+		       .prop_seg = 0x01,
+		       .phase_seg1 = 0x01,
+		       .phase_seg2 = 0x01,
+		       .prescaler = 0x01},
+	.timing_max = {.sjw = 0x0F,
+		       .prop_seg = 0x0F,
+		       .phase_seg1 = 0x0F,
+		       .phase_seg2 = 0x0F,
+		       .prescaler = 0xFFFF},
 #ifdef CONFIG_CAN_FD_MODE
 	.set_timing_data = can_native_linux_set_timing_data,
-	.timing_data_min = {
-		.sjw = 0x1,
-		.prop_seg = 0x01,
-		.phase_seg1 = 0x01,
-		.phase_seg2 = 0x01,
-		.prescaler = 0x01
-	},
-	.timing_data_max = {
-		.sjw = 0x0F,
-		.prop_seg = 0x0F,
-		.phase_seg1 = 0x0F,
-		.phase_seg2 = 0x0F,
-		.prescaler = 0xFFFF
-	},
+	.timing_data_min = {.sjw = 0x1,
+			    .prop_seg = 0x01,
+			    .phase_seg1 = 0x01,
+			    .phase_seg2 = 0x01,
+			    .prescaler = 0x01},
+	.timing_data_max = {.sjw = 0x0F,
+			    .prop_seg = 0x0F,
+			    .phase_seg1 = 0x0F,
+			    .phase_seg2 = 0x0F,
+			    .prescaler = 0xFFFF},
 #endif /* CONFIG_CAN_FD_MODE */
 };
 
@@ -468,30 +457,27 @@ static int can_native_linux_init(const struct device *dev)
 	}
 
 	k_thread_create(&data->rx_thread, data->rx_thread_stack,
-			K_KERNEL_STACK_SIZEOF(data->rx_thread_stack),
-			rx_thread, (void *)dev, NULL, NULL,
-			CONFIG_CAN_NATIVE_LINUX_RX_THREAD_PRIORITY,
-			0, K_NO_WAIT);
+			K_KERNEL_STACK_SIZEOF(data->rx_thread_stack), rx_thread, (void *)dev, NULL,
+			NULL, CONFIG_CAN_NATIVE_LINUX_RX_THREAD_PRIORITY, 0, K_NO_WAIT);
 
 	LOG_DBG("Init of %s done", dev->name);
 
 	return 0;
 }
 
-#define CAN_NATIVE_LINUX_INIT(inst)						\
-										\
-static const struct can_native_linux_config can_native_linux_cfg_##inst = {	\
-	.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0, 0),			\
-	.if_name = DT_INST_PROP(inst, host_interface),				\
-};										\
-										\
-static struct can_native_linux_data can_native_linux_data_##inst;		\
-										\
-CAN_DEVICE_DT_INST_DEFINE(inst, can_native_linux_init, NULL,			\
-			  &can_native_linux_data_##inst,			\
-			  &can_native_linux_cfg_##inst,				\
-			  POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,		\
-			  &can_native_linux_driver_api);
+#define CAN_NATIVE_LINUX_INIT(inst)                                                                \
+                                                                                                   \
+	static const struct can_native_linux_config can_native_linux_cfg_##inst = {                \
+		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0, 0),                               \
+		.if_name = DT_INST_PROP(inst, host_interface),                                     \
+	};                                                                                         \
+                                                                                                   \
+	static struct can_native_linux_data can_native_linux_data_##inst;                          \
+                                                                                                   \
+	CAN_DEVICE_DT_INST_DEFINE(inst, can_native_linux_init, NULL,                               \
+				  &can_native_linux_data_##inst, &can_native_linux_cfg_##inst,     \
+				  POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,                           \
+				  &can_native_linux_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_NATIVE_LINUX_INIT)
 

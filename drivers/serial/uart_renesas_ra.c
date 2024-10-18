@@ -663,8 +663,7 @@ static const struct uart_driver_api uart_ra_driver_api = {
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_INST_PARENT(n)),                              \
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (                                         \
 			.irq_config_func = irq_config_func_##n,                                    \
-		))                                                                                 \
-	}
+		)) }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
@@ -715,13 +714,14 @@ err_txi:                                                                        
 	UART_RA_INIT_CFG(n);                                                                       \
                                                                                                    \
 	static struct uart_ra_data uart_ra_data_##n = {                                            \
-		.current_config = {                                                                \
-			.baudrate = DT_INST_PROP(n, current_speed),                                \
-			.parity = UART_CFG_PARITY_NONE,                                            \
-			.stop_bits = UART_CFG_STOP_BITS_1,                                         \
-			.data_bits = UART_CFG_DATA_BITS_8,                                         \
-			.flow_ctrl = UART_CFG_FLOW_CTRL_NONE,                                      \
-		},                                                                                 \
+		.current_config =                                                                  \
+			{                                                                          \
+				.baudrate = DT_INST_PROP(n, current_speed),                        \
+				.parity = UART_CFG_PARITY_NONE,                                    \
+				.stop_bits = UART_CFG_STOP_BITS_1,                                 \
+				.data_bits = UART_CFG_DATA_BITS_8,                                 \
+				.flow_ctrl = UART_CFG_FLOW_CTRL_NONE,                              \
+			},                                                                         \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, uart_ra_init, NULL, &uart_ra_data_##n, &uart_ra_cfg_##n,          \

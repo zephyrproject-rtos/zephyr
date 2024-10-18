@@ -27,20 +27,17 @@ LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 /* Increment by 1 to make sure we do not store the value of 0, which has
  * a special meaning in the fdtable subsys.
  */
-#define SD_TO_OBJ(sd) ((void *)(sd + 1))
-#define OBJ_TO_SD(obj) (((int)obj) - 1)
+#define SD_TO_OBJ(sd)       ((void *)(sd + 1))
+#define OBJ_TO_SD(obj)      (((int)obj) - 1)
 /* Default socket context (50CE) */
-#define ESWIFI_INIT_CONTEXT	INT_TO_POINTER(0x50CE)
+#define ESWIFI_INIT_CONTEXT INT_TO_POINTER(0x50CE)
 
 static struct eswifi_dev *eswifi;
 static const struct socket_op_vtable eswifi_socket_fd_op_vtable;
 
-static void __process_received(struct net_context *context,
-			      struct net_pkt *pkt,
-			      union net_ip_header *ip_hdr,
-			      union net_proto_header *proto_hdr,
-			      int status,
-			      void *user_data)
+static void __process_received(struct net_context *context, struct net_pkt *pkt,
+			       union net_ip_header *ip_hdr, union net_proto_header *proto_hdr,
+			       int status, void *user_data)
 {
 	struct eswifi_off_socket *socket = user_data;
 
@@ -52,15 +49,13 @@ static void __process_received(struct net_context *context,
 	k_fifo_put(&socket->fifo, pkt);
 }
 
-static int eswifi_socket_connect(void *obj, const struct sockaddr *addr,
-				 socklen_t addrlen)
+static int eswifi_socket_connect(void *obj, const struct sockaddr *addr, socklen_t addrlen)
 {
 	int sock = OBJ_TO_SD(obj);
 	struct eswifi_off_socket *socket;
 	int ret;
 
-	if ((addrlen == 0) || (addr == NULL) ||
-	    (sock >= ESWIFI_OFFLOAD_MAX_SOCKETS)) {
+	if ((addrlen == 0) || (addr == NULL) || (sock >= ESWIFI_OFFLOAD_MAX_SOCKETS)) {
 		return -EINVAL;
 	}
 
@@ -106,23 +101,21 @@ static int eswifi_socket_listen(void *obj, int backlog)
 	return ret;
 }
 
-void __eswifi_socket_accept_cb(struct net_context *context, struct sockaddr *addr,
-			       unsigned int len, int val, void *data)
+void __eswifi_socket_accept_cb(struct net_context *context, struct sockaddr *addr, unsigned int len,
+			       int val, void *data)
 {
 	struct sockaddr *addr_target = data;
 
 	memcpy(addr_target, addr, len);
 }
 
-static int __eswifi_socket_accept(void *obj, struct sockaddr *addr,
-				  socklen_t *addrlen)
+static int __eswifi_socket_accept(void *obj, struct sockaddr *addr, socklen_t *addrlen)
 {
 	int sock = OBJ_TO_SD(obj);
 	struct eswifi_off_socket *socket;
 	int ret;
 
-	if ((addrlen == NULL) || (addr == NULL) ||
-	    (sock >= ESWIFI_OFFLOAD_MAX_SOCKETS)) {
+	if ((addrlen == NULL) || (addr == NULL) || (sock >= ESWIFI_OFFLOAD_MAX_SOCKETS)) {
 		return -EINVAL;
 	}
 
@@ -142,8 +135,7 @@ static int __eswifi_socket_accept(void *obj, struct sockaddr *addr,
 	return 0;
 }
 
-static int eswifi_socket_accept(void *obj, struct sockaddr *addr,
-				socklen_t *addrlen)
+static int eswifi_socket_accept(void *obj, struct sockaddr *addr, socklen_t *addrlen)
 {
 	int fd = zvfs_reserve_fd();
 	int sock;
@@ -159,8 +151,8 @@ static int eswifi_socket_accept(void *obj, struct sockaddr *addr,
 	}
 
 	zvfs_finalize_typed_fd(fd, SD_TO_OBJ(sock),
-			    (const struct fd_op_vtable *)&eswifi_socket_fd_op_vtable,
-			    ZVFS_MODE_IFSOCK);
+			       (const struct fd_op_vtable *)&eswifi_socket_fd_op_vtable,
+			       ZVFS_MODE_IFSOCK);
 
 	return fd;
 }
@@ -205,14 +197,14 @@ static int map_credentials(int sd, const void *optval, socklen_t optlen)
 				return -EINVAL;
 			}
 
-			snprintk(eswifi->buf, sizeof(eswifi->buf),
-				 "PG=%d,%d,%d\r", 0, id, cert->len);
+			snprintk(eswifi->buf, sizeof(eswifi->buf), "PG=%d,%d,%d\r", 0, id,
+				 cert->len);
 			bytes = strlen(eswifi->buf);
 			memcpy(&eswifi->buf[bytes], cert->buf, cert->len);
 			bytes += cert->len;
 			LOG_DBG("cert write len %d\n", cert->len);
-			ret = eswifi_request(eswifi, eswifi->buf, bytes + 1,
-				     eswifi->buf, sizeof(eswifi->buf));
+			ret = eswifi_request(eswifi, eswifi->buf, bytes + 1, eswifi->buf,
+					     sizeof(eswifi->buf));
 			LOG_DBG("cert write err %d\n", ret);
 			if (ret < 0) {
 				return ret;
@@ -237,8 +229,8 @@ static int map_credentials(int sd, const void *optval, socklen_t optlen)
 }
 #endif
 
-static int eswifi_socket_setsockopt(void *obj, int level, int optname,
-				    const void *optval, socklen_t optlen)
+static int eswifi_socket_setsockopt(void *obj, int level, int optname, const void *optval,
+				    socklen_t optlen)
 {
 	int sd = OBJ_TO_SD(obj);
 	int ret;
@@ -262,8 +254,7 @@ static int eswifi_socket_setsockopt(void *obj, int level, int optname,
 	return ret;
 }
 
-static ssize_t eswifi_socket_send(void *obj, const void *buf, size_t len,
-				  int flags)
+static ssize_t eswifi_socket_send(void *obj, const void *buf, size_t len, int flags)
 {
 	int sock = OBJ_TO_SD(obj);
 	struct eswifi_off_socket *socket;
@@ -292,8 +283,7 @@ static ssize_t eswifi_socket_send(void *obj, const void *buf, size_t len,
 	memcpy(&eswifi->buf[offset], buf, len);
 	offset += len;
 
-	ret = eswifi_request(eswifi, eswifi->buf, offset + 1, eswifi->buf,
-				sizeof(eswifi->buf));
+	ret = eswifi_request(eswifi, eswifi->buf, offset + 1, eswifi->buf, sizeof(eswifi->buf));
 	if (ret < 0) {
 		LOG_DBG("Unable to send data");
 		ret = -EIO;
@@ -305,9 +295,8 @@ static ssize_t eswifi_socket_send(void *obj, const void *buf, size_t len,
 	return ret;
 }
 
-static ssize_t eswifi_socket_sendto(void *obj, const void *buf, size_t len,
-				    int flags, const struct sockaddr *to,
-				    socklen_t tolen)
+static ssize_t eswifi_socket_sendto(void *obj, const void *buf, size_t len, int flags,
+				    const struct sockaddr *to, socklen_t tolen)
 {
 	if (to != NULL) {
 		errno = EOPNOTSUPP;
@@ -317,16 +306,14 @@ static ssize_t eswifi_socket_sendto(void *obj, const void *buf, size_t len,
 	return eswifi_socket_send(obj, buf, len, flags);
 }
 
-static ssize_t eswifi_socket_recv(void *obj, void *buf, size_t max_len,
-				  int flags)
+static ssize_t eswifi_socket_recv(void *obj, void *buf, size_t max_len, int flags)
 {
 	int sock = OBJ_TO_SD(obj);
 	struct eswifi_off_socket *socket;
 	int len = 0, ret = 0;
 	struct net_pkt *pkt;
 
-	if ((max_len == 0) || (buf == NULL) ||
-	    (sock >= ESWIFI_OFFLOAD_MAX_SOCKETS)) {
+	if ((max_len == 0) || (buf == NULL) || (sock >= ESWIFI_OFFLOAD_MAX_SOCKETS)) {
 		return -EINVAL;
 	}
 
@@ -386,9 +373,8 @@ done:
 	return len;
 }
 
-static ssize_t eswifi_socket_recvfrom(void *obj, void *buf, size_t len,
-				      int flags, struct sockaddr *from,
-				      socklen_t *fromlen)
+static ssize_t eswifi_socket_recvfrom(void *obj, void *buf, size_t len, int flags,
+				      struct sockaddr *from, socklen_t *fromlen)
 {
 	if (fromlen != NULL) {
 		errno = EOPNOTSUPP;
@@ -455,8 +441,7 @@ static int eswifi_socket_open(int family, int type, int proto)
 	socket->recv_cb = __process_received;
 	socket->recv_data = socket;
 
-	k_work_reschedule_for_queue(&eswifi->work_q, &socket->read_work,
-				    K_MSEC(500));
+	k_work_reschedule_for_queue(&eswifi->work_q, &socket->read_work, K_MSEC(500));
 
 unlock:
 	eswifi_unlock(eswifi);
@@ -475,10 +460,8 @@ static int eswifi_socket_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 		return -1;
 	}
 
-	obj = zvfs_get_fd_obj(fds[0].fd,
-			   (const struct fd_op_vtable *)
-						&eswifi_socket_fd_op_vtable,
-			   0);
+	obj = zvfs_get_fd_obj(fds[0].fd, (const struct fd_op_vtable *)&eswifi_socket_fd_op_vtable,
+			      0);
 	if (obj != NULL) {
 		sock = OBJ_TO_SD(obj);
 	} else {
@@ -537,15 +520,13 @@ done:
 	return 1;
 }
 
-static int eswifi_socket_bind(void *obj, const struct sockaddr *addr,
-			      socklen_t addrlen)
+static int eswifi_socket_bind(void *obj, const struct sockaddr *addr, socklen_t addrlen)
 {
 	int sock = OBJ_TO_SD(obj);
 	struct eswifi_off_socket *socket;
 	int ret;
 
-	if ((addrlen == 0) || (addr == NULL) ||
-	    (sock >= ESWIFI_OFFLOAD_MAX_SOCKETS)) {
+	if ((addrlen == 0) || (addr == NULL) || (sock >= ESWIFI_OFFLOAD_MAX_SOCKETS)) {
 		return -EINVAL;
 	}
 
@@ -566,8 +547,7 @@ static bool eswifi_socket_is_supported(int family, int type, int proto)
 		return false;
 	}
 
-	if (type != SOCK_DGRAM &&
-	    type != SOCK_STREAM) {
+	if (type != SOCK_DGRAM && type != SOCK_STREAM) {
 		return false;
 	}
 
@@ -595,8 +575,8 @@ int eswifi_socket_create(int family, int type, int proto)
 	}
 
 	zvfs_finalize_typed_fd(fd, SD_TO_OBJ(sock),
-			    (const struct fd_op_vtable *)&eswifi_socket_fd_op_vtable,
-			    ZVFS_MODE_IFSOCK);
+			       (const struct fd_op_vtable *)&eswifi_socket_fd_op_vtable,
+			       ZVFS_MODE_IFSOCK);
 
 	return fd;
 }
@@ -633,19 +613,19 @@ static ssize_t eswifi_socket_read(void *obj, void *buffer, size_t count)
 	return eswifi_socket_recvfrom(obj, buffer, count, 0, NULL, 0);
 }
 
-static ssize_t eswifi_socket_write(void *obj, const void *buffer,
-				   size_t count)
+static ssize_t eswifi_socket_write(void *obj, const void *buffer, size_t count)
 {
 	return eswifi_socket_sendto(obj, buffer, count, 0, NULL, 0);
 }
 
 static const struct socket_op_vtable eswifi_socket_fd_op_vtable = {
-	.fd_vtable = {
-		.read = eswifi_socket_read,
-		.write = eswifi_socket_write,
-		.close = eswifi_socket_close,
-		.ioctl = eswifi_socket_ioctl,
-	},
+	.fd_vtable =
+		{
+			.read = eswifi_socket_read,
+			.write = eswifi_socket_write,
+			.close = eswifi_socket_close,
+			.ioctl = eswifi_socket_ioctl,
+		},
 	.bind = eswifi_socket_bind,
 	.connect = eswifi_socket_connect,
 	.listen = eswifi_socket_listen,
@@ -661,8 +641,7 @@ NET_SOCKET_OFFLOAD_REGISTER(eswifi, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY, AF_UNSP
 #endif
 
 static int eswifi_off_getaddrinfo(const char *node, const char *service,
-				  const struct zsock_addrinfo *hints,
-				  struct zsock_addrinfo **res)
+				  const struct zsock_addrinfo *hints, struct zsock_addrinfo **res)
 {
 	struct sockaddr_in *ai_addr;
 	struct zsock_addrinfo *ai;

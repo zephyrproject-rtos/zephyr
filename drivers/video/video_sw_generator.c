@@ -46,7 +46,8 @@ static const struct video_format_cap fmts[] = {{
 						       .height_max = 1080,
 						       .width_step = 1,
 						       .height_step = 1,
-					       }, {
+					       },
+					       {
 						       .pixelformat = VIDEO_PIX_FMT_XRGB32,
 						       .width_min = 64,
 						       .width_max = 1920,

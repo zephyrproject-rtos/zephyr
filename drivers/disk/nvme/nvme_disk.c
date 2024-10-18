@@ -16,15 +16,11 @@ static int nvme_disk_status(struct disk_info *disk)
 	return 0;
 }
 
-static int nvme_disk_read(struct disk_info *disk,
-			  uint8_t *data_buf,
-			  uint32_t start_sector,
+static int nvme_disk_read(struct disk_info *disk, uint8_t *data_buf, uint32_t start_sector,
 			  uint32_t num_sector)
 {
-	struct nvme_namespace *ns = CONTAINER_OF(disk->name,
-						 struct nvme_namespace, name[0]);
-	struct nvme_completion_poll_status status =
-		NVME_CPL_STATUS_POLL_INIT(status);
+	struct nvme_namespace *ns = CONTAINER_OF(disk->name, struct nvme_namespace, name[0]);
+	struct nvme_completion_poll_status status = NVME_CPL_STATUS_POLL_INIT(status);
 	struct nvme_request *request;
 	uint32_t payload_size;
 	int ret = 0;
@@ -45,8 +41,7 @@ static int nvme_disk_read(struct disk_info *disk,
 		goto out;
 	}
 
-	nvme_namespace_read_cmd(&request->cmd, ns->id,
-				start_sector, num_sector);
+	nvme_namespace_read_cmd(&request->cmd, ns->id, start_sector, num_sector);
 
 	/* We use only the first ioq atm
 	 * ToDo: use smp cpu id and use it to select ioq
@@ -55,8 +50,8 @@ static int nvme_disk_read(struct disk_info *disk,
 
 	nvme_completion_poll(&status);
 	if (nvme_cpl_status_is_error(&status)) {
-		LOG_WRN("Reading at sector %u (count %d) on disk %s failed",
-			start_sector, num_sector, ns->name);
+		LOG_WRN("Reading at sector %u (count %d) on disk %s failed", start_sector,
+			num_sector, ns->name);
 		nvme_completion_print(&status.cpl);
 		ret = -EIO;
 	}
@@ -65,15 +60,11 @@ out:
 	return ret;
 }
 
-static int nvme_disk_write(struct disk_info *disk,
-			   const uint8_t *data_buf,
-			   uint32_t start_sector,
+static int nvme_disk_write(struct disk_info *disk, const uint8_t *data_buf, uint32_t start_sector,
 			   uint32_t num_sector)
 {
-	struct nvme_namespace *ns = CONTAINER_OF(disk->name,
-						 struct nvme_namespace, name[0]);
-	struct nvme_completion_poll_status status =
-		NVME_CPL_STATUS_POLL_INIT(status);
+	struct nvme_namespace *ns = CONTAINER_OF(disk->name, struct nvme_namespace, name[0]);
+	struct nvme_completion_poll_status status = NVME_CPL_STATUS_POLL_INIT(status);
 	struct nvme_request *request;
 	uint32_t payload_size;
 	int ret = 0;
@@ -94,8 +85,7 @@ static int nvme_disk_write(struct disk_info *disk,
 		goto out;
 	}
 
-	nvme_namespace_write_cmd(&request->cmd, ns->id,
-				 start_sector, num_sector);
+	nvme_namespace_write_cmd(&request->cmd, ns->id, start_sector, num_sector);
 
 	/* We use only the first ioq atm
 	 * ToDo: use smp cpu id and use it to select ioq
@@ -104,8 +94,8 @@ static int nvme_disk_write(struct disk_info *disk,
 
 	nvme_completion_poll(&status);
 	if (nvme_cpl_status_is_error(&status)) {
-		LOG_WRN("Writing at sector %u (count %d) on disk %s failed",
-			start_sector, num_sector, ns->name);
+		LOG_WRN("Writing at sector %u (count %d) on disk %s failed", start_sector,
+			num_sector, ns->name);
 		nvme_completion_print(&status.cpl);
 		ret = -EIO;
 	}
@@ -116,8 +106,7 @@ out:
 
 static int nvme_disk_flush(struct nvme_namespace *ns)
 {
-	struct nvme_completion_poll_status status =
-		NVME_CPL_STATUS_POLL_INIT(status);
+	struct nvme_completion_poll_status status = NVME_CPL_STATUS_POLL_INIT(status);
 	struct nvme_request *request;
 
 	request = nvme_allocate_request_null(nvme_completion_poll_cb, &status);
@@ -144,8 +133,7 @@ static int nvme_disk_flush(struct nvme_namespace *ns)
 
 static int nvme_disk_ioctl(struct disk_info *disk, uint8_t cmd, void *buff)
 {
-	struct nvme_namespace *ns = CONTAINER_OF(disk->name,
-						 struct nvme_namespace, name[0]);
+	struct nvme_namespace *ns = CONTAINER_OF(disk->name, struct nvme_namespace, name[0]);
 	int ret = 0;
 
 	nvme_lock(disk->dev);
@@ -206,8 +194,7 @@ static const struct disk_operations nvme_disk_ops = {
 	.ioctl = nvme_disk_ioctl,
 };
 
-int nvme_namespace_disk_setup(struct nvme_namespace *ns,
-			      struct disk_info *disk)
+int nvme_namespace_disk_setup(struct nvme_namespace *ns, struct disk_info *disk)
 {
 	disk->name = ns->name;
 	disk->ops = &nvme_disk_ops;

@@ -39,8 +39,7 @@
 
 DEVICE_MMIO_TOPLEVEL_STATIC(tlb_regs, DT_DRV_INST(0));
 
-#define TLB_BASE \
-	((mm_reg_t)DEVICE_MMIO_TOPLEVEL_GET(tlb_regs))
+#define TLB_BASE ((mm_reg_t)DEVICE_MMIO_TOPLEVEL_GET(tlb_regs))
 
 /*
  * Number of significant bits in the page index (defines the size of
@@ -60,8 +59,7 @@ static struct k_spinlock tlb_lock;
  */
 static uint32_t get_tlb_entry_idx(uintptr_t vaddr)
 {
-	return (POINTER_TO_UINT(vaddr) - CONFIG_KERNEL_VM_BASE) /
-	       CONFIG_MM_DRV_PAGE_SIZE;
+	return (POINTER_TO_UINT(vaddr) - CONFIG_KERNEL_VM_BASE) / CONFIG_MM_DRV_PAGE_SIZE;
 }
 
 int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
@@ -85,15 +83,13 @@ int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 	ARG_UNUSED(flags);
 
 	/* Make sure inputs are page-aligned */
-	CHECKIF(!sys_mm_drv_is_addr_aligned(pa) ||
-		!sys_mm_drv_is_addr_aligned(va)) {
+	CHECKIF(!sys_mm_drv_is_addr_aligned(pa) || !sys_mm_drv_is_addr_aligned(va)) {
 		ret = -EINVAL;
 		goto out;
 	}
 
 	/* Check bounds of physical address space */
-	CHECKIF((pa < L2_SRAM_BASE) ||
-		(pa >= (L2_SRAM_BASE + L2_SRAM_SIZE))) {
+	CHECKIF((pa < L2_SRAM_BASE) || (pa >= (L2_SRAM_BASE + L2_SRAM_SIZE))) {
 		ret = -EINVAL;
 		goto out;
 	}
@@ -141,16 +137,14 @@ out:
 	return ret;
 }
 
-int sys_mm_drv_map_region(void *virt, uintptr_t phys,
-			  size_t size, uint32_t flags)
+int sys_mm_drv_map_region(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
 	void *va = (__sparse_force void *)sys_cache_cached_ptr_get(virt);
 
 	return sys_mm_drv_simple_map_region(va, phys, size, flags);
 }
 
-int sys_mm_drv_map_array(void *virt, uintptr_t *phys,
-			 size_t cnt, uint32_t flags)
+int sys_mm_drv_map_array(void *virt, uintptr_t *phys, size_t cnt, uint32_t flags)
 {
 	void *va = (__sparse_force void *)sys_cache_cached_ptr_get(virt);
 
@@ -270,17 +264,14 @@ int sys_mm_drv_update_page_flags(void *virt, uint32_t flags)
 	return 0;
 }
 
-int sys_mm_drv_update_region_flags(void *virt, size_t size,
-				   uint32_t flags)
+int sys_mm_drv_update_region_flags(void *virt, size_t size, uint32_t flags)
 {
 	void *va = (__sparse_force void *)sys_cache_cached_ptr_get(virt);
 
 	return sys_mm_drv_simple_update_region_flags(va, size, flags);
 }
 
-
-int sys_mm_drv_remap_region(void *virt_old, size_t size,
-			    void *virt_new)
+int sys_mm_drv_remap_region(void *virt_old, size_t size, void *virt_new)
 {
 	void *va_new = (__sparse_force void *)sys_cache_cached_ptr_get(virt_new);
 	void *va_old = (__sparse_force void *)sys_cache_cached_ptr_get(virt_old);
@@ -288,8 +279,7 @@ int sys_mm_drv_remap_region(void *virt_old, size_t size,
 	return sys_mm_drv_simple_remap_region(va_old, size, va_new);
 }
 
-int sys_mm_drv_move_region(void *virt_old, size_t size, void *virt_new,
-			   uintptr_t phys_new)
+int sys_mm_drv_move_region(void *virt_old, size_t size, void *virt_new, uintptr_t phys_new)
 {
 	int ret;
 
@@ -308,16 +298,15 @@ int sys_mm_drv_move_region(void *virt_old, size_t size, void *virt_new,
 	return ret;
 }
 
-int sys_mm_drv_move_array(void *virt_old, size_t size, void *virt_new,
-			  uintptr_t *phys_new, size_t phys_cnt)
+int sys_mm_drv_move_array(void *virt_old, size_t size, void *virt_new, uintptr_t *phys_new,
+			  size_t phys_cnt)
 {
 	int ret;
 
 	void *va_new = (__sparse_force void *)sys_cache_cached_ptr_get(virt_new);
 	void *va_old = (__sparse_force void *)sys_cache_cached_ptr_get(virt_old);
 
-	ret = sys_mm_drv_simple_move_array(va_old, size, va_new,
-					    phys_new, phys_cnt);
+	ret = sys_mm_drv_simple_move_array(va_old, size, va_new, phys_new, phys_cnt);
 
 	/*
 	 * Since memcpy() is done in virtual space, need to

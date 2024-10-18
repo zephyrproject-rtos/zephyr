@@ -16,8 +16,7 @@ struct scmi_clock_data {
 	uint32_t clk_num;
 };
 
-static int scmi_clock_on_off(const struct device *dev,
-			     clock_control_subsys_t clk, bool on)
+static int scmi_clock_on_off(const struct device *dev, clock_control_subsys_t clk, bool on)
 {
 	struct scmi_clock_data *data;
 	struct scmi_protocol *proto;
@@ -50,8 +49,7 @@ static int scmi_clock_off(const struct device *dev, clock_control_subsys_t clk)
 	return scmi_clock_on_off(dev, clk, false);
 }
 
-static int scmi_clock_get_rate(const struct device *dev,
-			       clock_control_subsys_t clk, uint32_t *rate)
+static int scmi_clock_get_rate(const struct device *dev, clock_control_subsys_t clk, uint32_t *rate)
 {
 	struct scmi_clock_data *data;
 	struct scmi_protocol *proto;
@@ -97,6 +95,5 @@ static int scmi_clock_init(const struct device *dev)
 
 static struct scmi_clock_data data;
 
-DT_INST_SCMI_PROTOCOL_DEFINE(0, &scmi_clock_init, NULL, &data, NULL,
-			     PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
-			     &scmi_clock_api);
+DT_INST_SCMI_PROTOCOL_DEFINE(0, &scmi_clock_init, NULL, &data, NULL, PRE_KERNEL_1,
+			     CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &scmi_clock_api);

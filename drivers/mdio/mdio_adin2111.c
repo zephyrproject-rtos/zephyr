@@ -17,24 +17,23 @@ LOG_MODULE_REGISTER(mdio_adin2111, CONFIG_MDIO_LOG_LEVEL);
 #include <zephyr/drivers/ethernet/eth_adin2111.h>
 
 /* MDIO ready check retry delay */
-#define ADIN2111_MDIO_READY_AWAIT_DELAY_POLL_US		5U
+#define ADIN2111_MDIO_READY_AWAIT_DELAY_POLL_US 5U
 /* Number of retries for MDIO ready check */
-#define ADIN2111_MDIO_READY_AWAIT_RETRY_COUNT		10U
+#define ADIN2111_MDIO_READY_AWAIT_RETRY_COUNT   10U
 
 /* MDIO Access Register 1 */
-#define ADIN2111_MDIOACC0				0x20U
+#define ADIN2111_MDIOACC0 0x20U
 /* MDIO Access Register 2 */
-#define ADIN2111_MDIOACC1				0x21U
+#define ADIN2111_MDIOACC1 0x21U
 
 /* MDIO MDIOACC Transaction Done */
-#define ADIN211_MDIOACC_MDIO_TRDONE			BIT(31)
+#define ADIN211_MDIOACC_MDIO_TRDONE BIT(31)
 
 struct mdio_adin2111_config {
 	const struct device *adin;
 };
 
-static int mdio_adin2111_wait_ready(const struct device *dev, uint16_t reg,
-				    uint32_t *out)
+static int mdio_adin2111_wait_ready(const struct device *dev, uint16_t reg, uint32_t *out)
 {
 	const struct mdio_adin2111_config *const cfg = dev->config;
 	uint32_t count;
@@ -54,10 +53,8 @@ static int mdio_adin2111_wait_ready(const struct device *dev, uint16_t reg,
 	return ret;
 }
 
-
-static int mdio_adin2111_read_c45(const struct device *dev, uint8_t prtad,
-				  uint8_t devad, uint16_t regad,
-				  uint16_t *data)
+static int mdio_adin2111_read_c45(const struct device *dev, uint8_t prtad, uint8_t devad,
+				  uint16_t regad, uint16_t *data)
 {
 	const struct mdio_adin2111_config *const cfg = dev->config;
 	uint32_t rdy;
@@ -95,9 +92,8 @@ static int mdio_adin2111_read_c45(const struct device *dev, uint8_t prtad,
 	return ret;
 }
 
-static int mdio_adin2111_write_c45(const struct device *dev, uint8_t prtad,
-				   uint8_t devad, uint16_t regad,
-				   uint16_t data)
+static int mdio_adin2111_write_c45(const struct device *dev, uint8_t prtad, uint8_t devad,
+				   uint16_t regad, uint16_t data)
 {
 	const struct mdio_adin2111_config *const cfg = dev->config;
 
@@ -129,8 +125,8 @@ static int mdio_adin2111_write_c45(const struct device *dev, uint8_t prtad,
 	return ret;
 }
 
-static int mdio_adin2111_read(const struct device *dev, uint8_t prtad,
-			      uint8_t regad, uint16_t *data)
+static int mdio_adin2111_read(const struct device *dev, uint8_t prtad, uint8_t regad,
+			      uint16_t *data)
 {
 	const struct mdio_adin2111_config *const cfg = dev->config;
 	uint32_t read;
@@ -151,8 +147,8 @@ static int mdio_adin2111_read(const struct device *dev, uint8_t prtad,
 	return ret;
 }
 
-static int mdio_adin2111_write(const struct device *dev, uint8_t prtad,
-			       uint8_t regad, uint16_t data)
+static int mdio_adin2111_write(const struct device *dev, uint8_t prtad, uint8_t regad,
+			       uint16_t data)
 {
 	const struct mdio_adin2111_config *const cfg = dev->config;
 	uint32_t cmd;
@@ -187,22 +183,18 @@ static void mdio_adin2111_bus_disable(const struct device *dev)
 	eth_adin2111_unlock(cfg->adin);
 }
 
-static const struct mdio_driver_api mdio_adin2111_api = {
-	.read = mdio_adin2111_read,
-	.write = mdio_adin2111_write,
-	.read_c45 = mdio_adin2111_read_c45,
-	.write_c45 = mdio_adin2111_write_c45,
-	.bus_enable = mdio_adin2111_bus_enable,
-	.bus_disable = mdio_adin2111_bus_disable
-};
+static const struct mdio_driver_api mdio_adin2111_api = {.read = mdio_adin2111_read,
+							 .write = mdio_adin2111_write,
+							 .read_c45 = mdio_adin2111_read_c45,
+							 .write_c45 = mdio_adin2111_write_c45,
+							 .bus_enable = mdio_adin2111_bus_enable,
+							 .bus_disable = mdio_adin2111_bus_disable};
 
-#define ADIN2111_MDIO_INIT(n)							\
-	static const struct mdio_adin2111_config mdio_adin2111_config_##n = {	\
-		.adin = DEVICE_DT_GET(DT_INST_BUS(n)),				\
-	};									\
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL,					\
-			      NULL, &mdio_adin2111_config_##n,			\
-			      POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY,		\
-			      &mdio_adin2111_api);
+#define ADIN2111_MDIO_INIT(n)                                                                      \
+	static const struct mdio_adin2111_config mdio_adin2111_config_##n = {                      \
+		.adin = DEVICE_DT_GET(DT_INST_BUS(n)),                                             \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, &mdio_adin2111_config_##n, POST_KERNEL,         \
+			      CONFIG_MDIO_INIT_PRIORITY, &mdio_adin2111_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADIN2111_MDIO_INIT)

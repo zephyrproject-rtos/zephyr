@@ -16,8 +16,7 @@
 
 LOG_MODULE_REGISTER(opt3001, CONFIG_SENSOR_LOG_LEVEL);
 
-static int opt3001_reg_read(const struct device *dev, uint8_t reg,
-			    uint16_t *val)
+static int opt3001_reg_read(const struct device *dev, uint8_t reg, uint16_t *val)
 {
 	const struct opt3001_config *config = dev->config;
 	uint8_t value[2];
@@ -31,8 +30,7 @@ static int opt3001_reg_read(const struct device *dev, uint8_t reg,
 	return 0;
 }
 
-static int opt3001_reg_write(const struct device *dev, uint8_t reg,
-			     uint16_t val)
+static int opt3001_reg_write(const struct device *dev, uint8_t reg, uint16_t val)
 {
 	const struct opt3001_config *config = dev->config;
 	uint8_t new_value[2];
@@ -40,13 +38,12 @@ static int opt3001_reg_write(const struct device *dev, uint8_t reg,
 	new_value[0] = val >> 8;
 	new_value[1] = val & 0xff;
 
-	uint8_t tx_buf[3] = { reg, new_value[0], new_value[1] };
+	uint8_t tx_buf[3] = {reg, new_value[0], new_value[1]};
 
 	return i2c_write_dt(&config->i2c, tx_buf, sizeof(tx_buf));
 }
 
-static int opt3001_reg_update(const struct device *dev, uint8_t reg,
-			      uint16_t mask, uint16_t val)
+static int opt3001_reg_update(const struct device *dev, uint8_t reg, uint16_t mask, uint16_t val)
 {
 	uint16_t old_val;
 	uint16_t new_val;
@@ -61,8 +58,7 @@ static int opt3001_reg_update(const struct device *dev, uint8_t reg,
 	return opt3001_reg_write(dev, reg, new_val);
 }
 
-static int opt3001_sample_fetch(const struct device *dev,
-				enum sensor_channel chan)
+static int opt3001_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct opt3001_data *drv_data = dev->data;
 	uint16_t value;
@@ -80,8 +76,7 @@ static int opt3001_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static int opt3001_channel_get(const struct device *dev,
-			       enum sensor_channel chan,
+static int opt3001_channel_get(const struct device *dev, enum sensor_channel chan,
 			       struct sensor_value *val)
 {
 	struct opt3001_data *drv_data = dev->data;
@@ -99,8 +94,8 @@ static int opt3001_channel_get(const struct device *dev,
 	 * lux is the integer obtained using the following formula:
 	 * (2^(exponent value)) * 0.01 * mantissa value
 	 */
-	uval = (1 << (drv_data->sample >> OPT3001_SAMPLE_EXPONENT_SHIFT))
-		* (drv_data->sample & OPT3001_MANTISSA_MASK);
+	uval = (1 << (drv_data->sample >> OPT3001_SAMPLE_EXPONENT_SHIFT)) *
+	       (drv_data->sample & OPT3001_MANTISSA_MASK);
 	val->val1 = uval / 100;
 	val->val2 = (uval % 100) * 10000;
 
@@ -140,8 +135,7 @@ static int opt3001_chip_init(const struct device *dev)
 		return -ENOTSUP;
 	}
 
-	if (opt3001_reg_update(dev, OPT3001_REG_CONFIG,
-			       OPT3001_CONVERSION_MODE_MASK,
+	if (opt3001_reg_update(dev, OPT3001_REG_CONFIG, OPT3001_CONVERSION_MODE_MASK,
 			       OPT3001_CONVERSION_MODE_CONTINUOUS) != 0) {
 		LOG_ERR("Failed to set mode to continuous conversion");
 		return -EIO;
@@ -159,15 +153,15 @@ int opt3001_init(const struct device *dev)
 	return 0;
 }
 
-#define OPT3001_DEFINE(inst)									\
-	static struct opt3001_data opt3001_data_##inst;						\
-												\
-	static const struct opt3001_config opt3001_config_##inst = {				\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
-	};											\
-												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, opt3001_init, NULL,					\
-			      &opt3001_data_##inst, &opt3001_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &opt3001_driver_api);		\
+#define OPT3001_DEFINE(inst)                                                                       \
+	static struct opt3001_data opt3001_data_##inst;                                            \
+                                                                                                   \
+	static const struct opt3001_config opt3001_config_##inst = {                               \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+	};                                                                                         \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, opt3001_init, NULL, &opt3001_data_##inst,               \
+				     &opt3001_config_##inst, POST_KERNEL,                          \
+				     CONFIG_SENSOR_INIT_PRIORITY, &opt3001_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(OPT3001_DEFINE)

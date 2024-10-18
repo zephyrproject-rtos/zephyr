@@ -23,7 +23,7 @@
 #define CLK_ID  (clock_control_subsys_t) DT_INST_PHA_BY_IDX(0, clocks, 0, clk_id)
 
 /* struct tm start time:   1st, Jan, 1900 */
-#define TM_YEAR_REF 1900
+#define TM_YEAR_REF         1900
 /* See section 4.8.1 of the RP2040 datasheet. */
 #define RP2040_RTC_YEAR_MAX 4095
 #ifdef CONFIG_RTC_ALARM

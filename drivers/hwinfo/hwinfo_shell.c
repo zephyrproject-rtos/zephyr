@@ -29,7 +29,7 @@ static int cmd_get_device_id(const struct shell *sh, size_t argc, char **argv)
 	shell_fprintf(sh, SHELL_NORMAL, "Length: %zd\n", length);
 	shell_fprintf(sh, SHELL_NORMAL, "ID: 0x");
 
-	for (i = 0 ; i < length ; i++) {
+	for (i = 0; i < length; i++) {
 		shell_fprintf(sh, SHELL_NORMAL, "%02x", dev_id[i]);
 	}
 
@@ -56,7 +56,7 @@ static int cmd_get_device_eui64(const struct shell *sh, size_t argc, char **argv
 
 	shell_fprintf(sh, SHELL_NORMAL, "EUI64: 0x");
 
-	for (i = 0 ; i < 8 ; i++) {
+	for (i = 0; i < 8; i++) {
 		shell_fprintf(sh, SHELL_NORMAL, "%02x", dev_eui64[i]);
 	}
 
@@ -122,14 +122,12 @@ static void print_all_reset_causes(const struct shell *sh, uint32_t cause)
 {
 	for (uint32_t cause_mask = 1; cause_mask; cause_mask <<= 1) {
 		if (cause & cause_mask) {
-			shell_print(sh, "- %s",
-				    cause_to_string(cause & cause_mask));
+			shell_print(sh, "- %s", cause_to_string(cause & cause_mask));
 		}
 	}
 }
 
-static int cmd_show_reset_cause(const struct shell *sh, size_t argc,
-				char **argv)
+static int cmd_show_reset_cause(const struct shell *sh, size_t argc, char **argv)
 {
 	int res;
 	uint32_t cause;
@@ -156,8 +154,7 @@ static int cmd_show_reset_cause(const struct shell *sh, size_t argc,
 	return 0;
 }
 
-static int cmd_clear_reset_cause(const struct shell *sh, size_t argc,
-				 char **argv)
+static int cmd_clear_reset_cause(const struct shell *sh, size_t argc, char **argv)
 {
 	int res;
 
@@ -175,8 +172,7 @@ static int cmd_clear_reset_cause(const struct shell *sh, size_t argc,
 	return 0;
 }
 
-static int cmd_supported_reset_cause(const struct shell *sh, size_t argc,
-				     char **argv)
+static int cmd_supported_reset_cause(const struct shell *sh, size_t argc, char **argv)
 {
 	uint32_t cause;
 	int res;
@@ -203,21 +199,21 @@ static int cmd_supported_reset_cause(const struct shell *sh, size_t argc,
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_reset_cause,
-	SHELL_CMD_ARG(show, NULL, "Show persistent reset causes",
-		      cmd_show_reset_cause, 1, 0),
-	SHELL_CMD_ARG(clear, NULL, "Clear all persistent reset causes",
-		      cmd_clear_reset_cause, 1, 0),
-	SHELL_CMD_ARG(supported, NULL,
-		      "Get a list of all supported reset causes",
-		      cmd_supported_reset_cause, 1, 0),
-	SHELL_SUBCMD_SET_END /* Array terminated. */
+			       SHELL_CMD_ARG(show, NULL, "Show persistent reset causes",
+					     cmd_show_reset_cause, 1, 0),
+			       SHELL_CMD_ARG(clear, NULL, "Clear all persistent reset causes",
+					     cmd_clear_reset_cause, 1, 0),
+			       SHELL_CMD_ARG(supported, NULL,
+					     "Get a list of all supported reset causes",
+					     cmd_supported_reset_cause, 1, 0),
+			       SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_hwinfo,
-	SHELL_CMD_ARG(devid, NULL, "Show device id", cmd_get_device_id, 1, 0),
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_hwinfo, SHELL_CMD_ARG(devid, NULL, "Show device id", cmd_get_device_id, 1, 0),
 	SHELL_CMD_ARG(deveui64, NULL, "Show device eui64", cmd_get_device_eui64, 1, 0),
-	SHELL_CMD_ARG(reset_cause, &sub_reset_cause, "Reset cause commands",
-		      cmd_show_reset_cause, 1, 0),
+	SHELL_CMD_ARG(reset_cause, &sub_reset_cause, "Reset cause commands", cmd_show_reset_cause,
+		      1, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 

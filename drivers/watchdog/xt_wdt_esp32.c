@@ -78,8 +78,7 @@ static int esp32_xt_wdt_feed(const struct device *dev, int channel_id)
 	return -ENOSYS;
 }
 
-static int esp32_xt_wdt_install_timeout(const struct device *dev,
-				     const struct wdt_timeout_cfg *cfg)
+static int esp32_xt_wdt_install_timeout(const struct device *dev, const struct wdt_timeout_cfg *cfg)
 {
 	struct esp32_xt_wdt_data *data = dev->data;
 
@@ -125,13 +124,12 @@ static int esp32_xt_wdt_init(const struct device *dev)
 	};
 
 	xt_wdt_hal_init(&data->hal, &xt_wdt_hal_config);
-	xt_wdt_hal_enable_backup_clk(&data->hal,
-						ESP32_RTC_SLOW_CLK_SRC_RC_SLOW_FREQ/1000);
+	xt_wdt_hal_enable_backup_clk(&data->hal, ESP32_RTC_SLOW_CLK_SRC_RC_SLOW_FREQ / 1000);
 
 	int err = esp_intr_alloc(cfg->irq_source,
-				ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
-				ESP_INT_FLAGS_CHECK(cfg->irq_flags),
-				(ISR_HANDLER)esp32_xt_wdt_isr, (void *)dev, NULL);
+				 ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
+					 ESP_INT_FLAGS_CHECK(cfg->irq_flags),
+				 (ISR_HANDLER)esp32_xt_wdt_isr, (void *)dev, NULL);
 
 	if (err) {
 		LOG_ERR("Failed to register ISR\n");
@@ -144,12 +142,11 @@ static int esp32_xt_wdt_init(const struct device *dev)
 	return 0;
 }
 
-static const struct wdt_driver_api esp32_xt_wdt_api = {
-	.setup = esp32_xt_wdt_setup,
-	.disable = esp32_xt_wdt_disable,
-	.install_timeout = esp32_xt_wdt_install_timeout,
-	.feed = esp32_xt_wdt_feed
-};
+static const struct wdt_driver_api esp32_xt_wdt_api = {.setup = esp32_xt_wdt_setup,
+						       .disable = esp32_xt_wdt_disable,
+						       .install_timeout =
+							       esp32_xt_wdt_install_timeout,
+						       .feed = esp32_xt_wdt_feed};
 
 static struct esp32_xt_wdt_data esp32_xt_wdt_data0;
 
@@ -158,21 +155,14 @@ static struct esp32_xt_wdt_config esp32_xt_wdt_config0 = {
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(0, offset),
 	.irq_source = DT_INST_IRQ_BY_IDX(0, 0, irq),
 	.irq_priority = DT_INST_IRQ_BY_IDX(0, 0, priority),
-	.irq_flags = DT_INST_IRQ_BY_IDX(0, 0, flags)
-};
+	.irq_flags = DT_INST_IRQ_BY_IDX(0, 0, flags)};
 
-DEVICE_DT_DEFINE(DT_NODELABEL(xt_wdt),
-		 &esp32_xt_wdt_init,
-		 NULL,
-		 &esp32_xt_wdt_data0,
-		 &esp32_xt_wdt_config0,
-		 POST_KERNEL,
-		 CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+DEVICE_DT_DEFINE(DT_NODELABEL(xt_wdt), &esp32_xt_wdt_init, NULL, &esp32_xt_wdt_data0,
+		 &esp32_xt_wdt_config0, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		 &esp32_xt_wdt_api);
 
-#if !(defined(CONFIG_SOC_SERIES_ESP32S2) ||	\
-	defined(CONFIG_SOC_SERIES_ESP32S3) ||   \
-	defined(CONFIG_SOC_SERIES_ESP32C3))
+#if !(defined(CONFIG_SOC_SERIES_ESP32S2) || defined(CONFIG_SOC_SERIES_ESP32S3) ||                  \
+      defined(CONFIG_SOC_SERIES_ESP32C3))
 #error "XT WDT is not supported"
 #else
 BUILD_ASSERT((DT_PROP(DT_INST(0, espressif_esp32_rtc), slow_clk_src) ==

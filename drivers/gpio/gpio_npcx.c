@@ -21,9 +21,7 @@ LOG_MODULE_REGISTER(gpio_npcx, LOG_LEVEL_ERR);
 
 /* GPIO module instances */
 #define NPCX_GPIO_DEV(inst) DEVICE_DT_INST_GET(inst),
-static const struct device *const gpio_devs[] = {
-	DT_INST_FOREACH_STATUS_OKAY(NPCX_GPIO_DEV)
-};
+static const struct device *const gpio_devs[] = {DT_INST_FOREACH_STATUS_OKAY(NPCX_GPIO_DEV)};
 
 /* Driver config */
 struct gpio_npcx_config {
@@ -98,8 +96,7 @@ void npcx_gpio_disable_io_pads(const struct device *dev, int pin)
 }
 
 /* GPIO api functions */
-static int gpio_npcx_config(const struct device *dev,
-			     gpio_pin_t pin, gpio_flags_t flags)
+static int gpio_npcx_config(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_npcx_config *const config = dev->config;
 	const struct npcx_lvol *lvol = &config->lvol_maps[pin];
@@ -112,8 +109,7 @@ static int gpio_npcx_config(const struct device *dev,
 	}
 
 	/* Don't support "open source" mode */
-	if (((flags & GPIO_SINGLE_ENDED) != 0) &&
-	    ((flags & GPIO_LINE_OPEN_DRAIN) == 0)) {
+	if (((flags & GPIO_SINGLE_ENDED) != 0) && ((flags & GPIO_LINE_OPEN_DRAIN) == 0)) {
 		return -ENOTSUP;
 	}
 
@@ -151,10 +147,10 @@ static int gpio_npcx_config(const struct device *dev,
 
 	/* Select pull-up/down of GPIO 0:pull-up 1:pull-down */
 	if ((flags & GPIO_PULL_UP) != 0) {
-		inst->PPUD  &= ~mask;
+		inst->PPUD &= ~mask;
 		inst->PPULL |= mask;
 	} else if ((flags & GPIO_PULL_DOWN) != 0) {
-		inst->PPUD  |= mask;
+		inst->PPUD |= mask;
 		inst->PPULL |= mask;
 	} else {
 		/* disable pull down/up */
@@ -217,7 +213,7 @@ static int gpio_npcx_pin_get_config(const struct device *port, gpio_pin_t pin,
 
 	/* Enable low-voltage detection? */
 	if (lvol->ctrl != NPCX_DT_LVOL_CTRL_NONE &&
-		npcx_lvol_get_detect_level(lvol->ctrl, lvol->bit)) {
+	    npcx_lvol_get_detect_level(lvol->ctrl, lvol->bit)) {
 		flags |= NPCX_GPIO_VOLTAGE_1P8;
 	};
 
@@ -227,8 +223,7 @@ static int gpio_npcx_pin_get_config(const struct device *port, gpio_pin_t pin,
 }
 #endif
 
-static int gpio_npcx_port_get_raw(const struct device *dev,
-				  gpio_port_value_t *value)
+static int gpio_npcx_port_get_raw(const struct device *dev, gpio_port_value_t *value)
 {
 	struct gpio_reg *const inst = HAL_INSTANCE(dev);
 
@@ -238,9 +233,8 @@ static int gpio_npcx_port_get_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_npcx_port_set_masked_raw(const struct device *dev,
-					  gpio_port_pins_t mask,
-					  gpio_port_value_t value)
+static int gpio_npcx_port_set_masked_raw(const struct device *dev, gpio_port_pins_t mask,
+					 gpio_port_value_t value)
 {
 	struct gpio_reg *const inst = HAL_INSTANCE(dev);
 	uint8_t out = inst->PDOUT;
@@ -250,8 +244,7 @@ static int gpio_npcx_port_set_masked_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_npcx_port_set_bits_raw(const struct device *dev,
-				       gpio_port_pins_t mask)
+static int gpio_npcx_port_set_bits_raw(const struct device *dev, gpio_port_pins_t mask)
 {
 	struct gpio_reg *const inst = HAL_INSTANCE(dev);
 
@@ -261,8 +254,7 @@ static int gpio_npcx_port_set_bits_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_npcx_port_clear_bits_raw(const struct device *dev,
-					 gpio_port_pins_t mask)
+static int gpio_npcx_port_clear_bits_raw(const struct device *dev, gpio_port_pins_t mask)
 {
 	struct gpio_reg *const inst = HAL_INSTANCE(dev);
 
@@ -272,8 +264,7 @@ static int gpio_npcx_port_clear_bits_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_npcx_port_toggle_bits(const struct device *dev,
-				      gpio_port_pins_t mask)
+static int gpio_npcx_port_toggle_bits(const struct device *dev, gpio_port_pins_t mask)
 {
 	struct gpio_reg *const inst = HAL_INSTANCE(dev);
 
@@ -283,10 +274,8 @@ static int gpio_npcx_port_toggle_bits(const struct device *dev,
 	return 0;
 }
 
-static int gpio_npcx_pin_interrupt_configure(const struct device *dev,
-					     gpio_pin_t pin,
-					     enum gpio_int_mode mode,
-					     enum gpio_int_trig trig)
+static int gpio_npcx_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
+					     enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	const struct gpio_npcx_config *const config = dev->config;
 
@@ -295,10 +284,9 @@ static int gpio_npcx_pin_interrupt_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	LOG_DBG("pin_int_conf (%d, %d) match (%d, %d, %d)!!!",
-			config->port, pin, config->wui_maps[pin].table,
-			config->wui_maps[pin].group,
-			config->wui_maps[pin].bit);
+	LOG_DBG("pin_int_conf (%d, %d) match (%d, %d, %d)!!!", config->port, pin,
+		config->wui_maps[pin].table, config->wui_maps[pin].group,
+		config->wui_maps[pin].bit);
 #ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
 	if (mode == GPIO_INT_MODE_DISABLE_ONLY) {
 		npcx_miwu_irq_disable(&config->wui_maps[pin]);
@@ -338,8 +326,7 @@ static int gpio_npcx_pin_interrupt_configure(const struct device *dev,
 		}
 
 		/* Call MIWU routine to setup interrupt configuration */
-		ret = npcx_miwu_interrupt_configure(&config->wui_maps[pin],
-						miwu_mode, miwu_trig);
+		ret = npcx_miwu_interrupt_configure(&config->wui_maps[pin], miwu_mode, miwu_trig);
 		if (ret != 0) {
 			LOG_ERR("Configure MIWU interrupt failed");
 			return ret;
@@ -352,8 +339,8 @@ static int gpio_npcx_pin_interrupt_configure(const struct device *dev,
 	return 0;
 }
 
-static int gpio_npcx_manage_callback(const struct device *dev,
-				      struct gpio_callback *callback, bool set)
+static int gpio_npcx_manage_callback(const struct device *dev, struct gpio_callback *callback,
+				     bool set)
 {
 	const struct gpio_npcx_config *const config = dev->config;
 	struct miwu_callback *miwu_cb = (struct miwu_callback *)callback;
@@ -366,14 +353,12 @@ static int gpio_npcx_manage_callback(const struct device *dev,
 
 	/* Has the IO pin valid MIWU input source? */
 	if (config->wui_maps[pin].table == NPCX_MIWU_TABLE_NONE) {
-		LOG_ERR("Cannot manage GPIO(%x, %d) callback!", config->port,
-				pin);
+		LOG_ERR("Cannot manage GPIO(%x, %d) callback!", config->port, pin);
 		return -EINVAL;
 	}
 
 	/* Initialize WUI information in unused bits field */
-	npcx_miwu_init_gpio_callback(miwu_cb, &config->wui_maps[pin],
-			config->port);
+	npcx_miwu_init_gpio_callback(miwu_cb, &config->wui_maps[pin], config->port);
 
 	/* Insert or remove a IO callback which being called in MIWU ISRs */
 	return npcx_miwu_manage_callback(miwu_cb, set);
@@ -401,31 +386,27 @@ int gpio_npcx_init(const struct device *dev)
 	return 0;
 }
 
-#define NPCX_GPIO_DEVICE_INIT(inst)                                            \
-	static const struct gpio_npcx_config gpio_npcx_cfg_##inst = {          \
-		.common = {						       \
-			.port_pin_mask =                                       \
-			GPIO_PORT_PIN_MASK_FROM_NGPIOS(NPCX_GPIO_PORT_PIN_NUM),\
-		},                                                             \
-		.base = DT_INST_REG_ADDR(inst),                                \
-		.port = inst,                                                  \
-		.wui_maps = NPCX_DT_WUI_ITEMS_LIST(inst),                      \
-		.lvol_maps = NPCX_DT_LVOL_ITEMS_LIST(inst),                    \
-	};                                                                     \
-	BUILD_ASSERT(NPCX_DT_WUI_ITEMS_LEN(inst) == NPCX_GPIO_PORT_PIN_NUM,    \
-			"size of prop. wui-maps must equal to pin number!");   \
-	BUILD_ASSERT(NPCX_DT_LVOL_ITEMS_LEN(inst) == NPCX_GPIO_PORT_PIN_NUM,   \
-			"size of prop. lvol-maps must equal to pin number!");  \
-									       \
-	static struct gpio_npcx_data gpio_npcx_data_##inst;	               \
-									       \
-	DEVICE_DT_INST_DEFINE(inst,					       \
-			    gpio_npcx_init,                                    \
-			    NULL,					       \
-			    &gpio_npcx_data_##inst,                            \
-			    &gpio_npcx_cfg_##inst,                             \
-			    PRE_KERNEL_1,                                       \
-			    CONFIG_GPIO_INIT_PRIORITY,                         \
-			    &gpio_npcx_driver);
+#define NPCX_GPIO_DEVICE_INIT(inst)                                                                \
+	static const struct gpio_npcx_config gpio_npcx_cfg_##inst = {                              \
+		.common =                                                                          \
+			{                                                                          \
+				.port_pin_mask =                                                   \
+					GPIO_PORT_PIN_MASK_FROM_NGPIOS(NPCX_GPIO_PORT_PIN_NUM),    \
+			},                                                                         \
+		.base = DT_INST_REG_ADDR(inst),                                                    \
+		.port = inst,                                                                      \
+		.wui_maps = NPCX_DT_WUI_ITEMS_LIST(inst),                                          \
+		.lvol_maps = NPCX_DT_LVOL_ITEMS_LIST(inst),                                        \
+	};                                                                                         \
+	BUILD_ASSERT(NPCX_DT_WUI_ITEMS_LEN(inst) == NPCX_GPIO_PORT_PIN_NUM,                        \
+		     "size of prop. wui-maps must equal to pin number!");                          \
+	BUILD_ASSERT(NPCX_DT_LVOL_ITEMS_LEN(inst) == NPCX_GPIO_PORT_PIN_NUM,                       \
+		     "size of prop. lvol-maps must equal to pin number!");                         \
+                                                                                                   \
+	static struct gpio_npcx_data gpio_npcx_data_##inst;                                        \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, gpio_npcx_init, NULL, &gpio_npcx_data_##inst,                  \
+			      &gpio_npcx_cfg_##inst, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,      \
+			      &gpio_npcx_driver);
 
 DT_INST_FOREACH_STATUS_OKAY(NPCX_GPIO_DEVICE_INIT)

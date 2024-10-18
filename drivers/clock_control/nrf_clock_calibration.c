@@ -32,17 +32,14 @@ LOG_MODULE_DECLARE(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
  */
 
 static atomic_t cal_process_in_progress;
-static uint8_t calib_skip_cnt; /* Counting down skipped calibrations. */
-static volatile int total_cnt; /* Total number of calibrations. */
+static uint8_t calib_skip_cnt;       /* Counting down skipped calibrations. */
+static volatile int total_cnt;       /* Total number of calibrations. */
 static volatile int total_skips_cnt; /* Total number of skipped calibrations. */
 
-
-static void cal_hf_callback(struct onoff_manager *mgr,
-			    struct onoff_client *cli,
-			    uint32_t state, int res);
-static void cal_lf_callback(struct onoff_manager *mgr,
-			    struct onoff_client *cli,
-			    uint32_t state, int res);
+static void cal_hf_callback(struct onoff_manager *mgr, struct onoff_client *cli, uint32_t state,
+			    int res);
+static void cal_lf_callback(struct onoff_manager *mgr, struct onoff_client *cli, uint32_t state,
+			    int res);
 
 static struct onoff_client client;
 static struct onoff_manager *mgrs;
@@ -52,17 +49,15 @@ static struct onoff_manager *mgrs;
  * indicates performing calibration periodically regardless of temperature
  * change.
  */
-#define USE_TEMP_SENSOR							\
-	(CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP > 0)
+#define USE_TEMP_SENSOR (CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP > 0)
 
 #if USE_TEMP_SENSOR
-static const struct device *const temp_sensor =
-	DEVICE_DT_GET_OR_NULL(DT_INST(0, nordic_nrf_temp));
+static const struct device *const temp_sensor = DEVICE_DT_GET_OR_NULL(DT_INST(0, nordic_nrf_temp));
 
 static void measure_temperature(struct k_work *work);
 static K_WORK_DEFINE(temp_measure_work, measure_temperature);
 static int16_t prev_temperature; /* Previous temperature measurement. */
-#endif /* USE_TEMP_SENSOR */
+#endif                           /* USE_TEMP_SENSOR */
 
 static void timeout_handler(struct k_timer *timer);
 static K_TIMER_DEFINE(backoff_timer, timeout_handler, NULL);
@@ -105,9 +100,8 @@ static void lf_release(void)
 	clk_release(&mgrs[CLOCK_CONTROL_NRF_TYPE_LFCLK]);
 }
 
-static void cal_lf_callback(struct onoff_manager *mgr,
-			    struct onoff_client *cli,
-			    uint32_t state, int res)
+static void cal_lf_callback(struct onoff_manager *mgr, struct onoff_client *cli, uint32_t state,
+			    int res)
 {
 	hf_request();
 }
@@ -122,8 +116,7 @@ static void start_hw_cal(void)
 /* Start cycle by starting backoff timer and releasing HFCLK XTAL. */
 static void start_cycle(void)
 {
-	k_timer_start(&backoff_timer,
-		      K_MSEC(CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_PERIOD),
+	k_timer_start(&backoff_timer, K_MSEC(CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_PERIOD),
 		      K_NO_WAIT);
 	hf_release();
 
@@ -161,9 +154,8 @@ static void timeout_handler(struct k_timer *timer)
 /* Called when HFCLK XTAL is on. Schedules temperature measurement or triggers
  * calibration.
  */
-static void cal_hf_callback(struct onoff_manager *mgr,
-			    struct onoff_client *cli,
-			    uint32_t state, int res)
+static void cal_hf_callback(struct onoff_manager *mgr, struct onoff_client *cli, uint32_t state,
+			    int res)
 {
 #if USE_TEMP_SENSOR
 	if (!device_is_ready(temp_sensor)) {
@@ -190,8 +182,7 @@ static int get_temperature(int16_t *tvp)
 	int rc = sensor_sample_fetch(temp_sensor);
 
 	if (rc == 0) {
-		rc = sensor_channel_get(temp_sensor, SENSOR_CHAN_DIE_TEMP,
-					&sensor_val);
+		rc = sensor_channel_get(temp_sensor, SENSOR_CHAN_DIE_TEMP, &sensor_val);
 	}
 	if (rc == 0) {
 		*tvp = sensor_value_to_temp_unit(&sensor_val);
@@ -219,8 +210,7 @@ static void measure_temperature(struct k_work *work)
 		diff = abs(temperature - prev_temperature);
 	}
 
-	if ((calib_skip_cnt == 0) ||
-		(diff >= CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_TEMP_DIFF)) {
+	if ((calib_skip_cnt == 0) || (diff >= CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_TEMP_DIFF)) {
 		prev_temperature = temperature;
 		started = true;
 		start_hw_cal();
@@ -231,7 +221,7 @@ static void measure_temperature(struct k_work *work)
 	}
 
 	LOG_DBG("Calibration %s. Temperature diff: %d (in 0.25'C units).",
-			started ? "started" : "skipped", diff);
+		started ? "started" : "skipped", diff);
 }
 #endif /* USE_TEMP_SENSOR */
 

@@ -21,7 +21,7 @@ static const struct {
 			      * SENSOR_ATTR_SAMPLING_FREQUENCY attribute.
 			      */
 } bmi08x_odr_map[] = {
-	{0, 0},	 {0, 780}, {1, 562}, {3, 120}, {6, 250}, {12, 500}, {25, 0},
+	{0, 0},  {0, 780}, {1, 562}, {3, 120}, {6, 250}, {12, 500}, {25, 0},
 	{50, 0}, {100, 0}, {200, 0}, {400, 0}, {800, 0}, {1600, 0}, {3200, 0},
 };
 
@@ -46,7 +46,7 @@ int bmi08x_freq_to_odr_val(uint16_t freq_int, uint16_t freq_milli)
 }
 
 int32_t bmi08x_range_to_reg_val(uint16_t range, const struct bmi08x_range *range_map,
-				       uint16_t range_map_size)
+				uint16_t range_map_size)
 {
 	int i;
 
@@ -60,7 +60,7 @@ int32_t bmi08x_range_to_reg_val(uint16_t range, const struct bmi08x_range *range
 }
 
 int32_t bmi08x_reg_val_to_range(uint8_t reg_val, const struct bmi08x_range *range_map,
-				       uint16_t range_map_size)
+				uint16_t range_map_size)
 {
 	int i;
 

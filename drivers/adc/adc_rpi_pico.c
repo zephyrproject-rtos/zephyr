@@ -133,8 +133,7 @@ static int adc_rpi_channel_setup(const struct device *dev,
  * @return 0 on success
  * @return -ENOMEM if buffer is not big enough
  */
-static int adc_rpi_check_buffer_size(const struct device *dev,
-				     const struct adc_sequence *sequence)
+static int adc_rpi_check_buffer_size(const struct device *dev, const struct adc_sequence *sequence)
 {
 	const struct adc_rpi_config *config = dev->config;
 	uint8_t channels = 0;
@@ -172,22 +171,19 @@ static int adc_rpi_check_buffer_size(const struct device *dev,
  *         (see @ref adc_rpi_check_buffer_size)
  * @return other error code returned by adc_context_wait_for_completion
  */
-static int adc_rpi_start_read(const struct device *dev,
-			      const struct adc_sequence *sequence)
+static int adc_rpi_start_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	const struct adc_rpi_config *config = dev->config;
 	struct adc_rpi_data *data = dev->data;
 	int err;
 
-	if (sequence->resolution > ADC_RPI_MAX_RESOLUTION ||
-	    sequence->resolution == 0) {
+	if (sequence->resolution > ADC_RPI_MAX_RESOLUTION || sequence->resolution == 0) {
 		LOG_ERR("unsupported resolution %d", sequence->resolution);
 		return -ENOTSUP;
 	}
 
 	if (find_msb_set(sequence->channels) > config->num_channels) {
-		LOG_ERR("unsupported channels in mask: 0x%08x",
-			sequence->channels);
+		LOG_ERR("unsupported channels in mask: 0x%08x", sequence->channels);
 		return -ENOTSUP;
 	}
 
@@ -243,8 +239,7 @@ static void adc_rpi_isr(const struct device *dev)
 	adc_start_once();
 }
 
-static int adc_rpi_read_async(const struct device *dev,
-			      const struct adc_sequence *sequence,
+static int adc_rpi_read_async(const struct device *dev, const struct adc_sequence *sequence,
 			      struct k_poll_signal *async)
 {
 	struct adc_rpi_data *data = dev->data;
@@ -257,16 +252,14 @@ static int adc_rpi_read_async(const struct device *dev,
 	return err;
 }
 
-static int adc_rpi_read(const struct device *dev,
-			const struct adc_sequence *sequence)
+static int adc_rpi_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	return adc_rpi_read_async(dev, sequence, NULL);
 }
 
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
-	struct adc_rpi_data *data = CONTAINER_OF(ctx, struct adc_rpi_data,
-						 ctx);
+	struct adc_rpi_data *data = CONTAINER_OF(ctx, struct adc_rpi_data, ctx);
 
 	data->channels = ctx->sequence.channels;
 	data->repeat_buf = data->buf;
@@ -278,11 +271,9 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	adc_start_once();
 }
 
-static void adc_context_update_buffer_pointer(struct adc_context *ctx,
-					      bool repeat_sampling)
+static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat_sampling)
 {
-	struct adc_rpi_data *data = CONTAINER_OF(ctx, struct adc_rpi_data,
-						 ctx);
+	struct adc_rpi_data *data = CONTAINER_OF(ctx, struct adc_rpi_data, ctx);
 
 	if (repeat_sampling) {
 		data->buf = data->repeat_buf;
@@ -341,12 +332,12 @@ static int adc_rpi_init(const struct device *dev)
 	return 0;
 }
 
-#define IRQ_CONFIGURE_FUNC(idx)						   \
-	static void adc_rpi_configure_func_##idx(void)			   \
-	{								   \
-		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority), \
-			    adc_rpi_isr, DEVICE_DT_INST_GET(idx), 0);	   \
-		irq_enable(DT_INST_IRQN(idx));				   \
+#define IRQ_CONFIGURE_FUNC(idx)                                                                    \
+	static void adc_rpi_configure_func_##idx(void)                                             \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority), adc_rpi_isr,            \
+			    DEVICE_DT_INST_GET(idx), 0);                                           \
+		irq_enable(DT_INST_IRQN(idx));                                                     \
 	}
 
 #define IRQ_CONFIGURE_DEFINE(idx) .irq_configure = adc_rpi_configure_func_##idx
@@ -358,8 +349,7 @@ static int adc_rpi_init(const struct device *dev)
 		.channel_setup = adc_rpi_channel_setup,                                            \
 		.read = adc_rpi_read,                                                              \
 		.ref_internal = DT_INST_PROP(idx, vref_mv),                                        \
-		IF_ENABLED(CONFIG_ADC_ASYNC, (.read_async = adc_rpi_read_async,))                  \
-	};                                                                                         \
+		IF_ENABLED(CONFIG_ADC_ASYNC, (.read_async = adc_rpi_read_async,)) };                  \
 	static const struct adc_rpi_config adc_rpi_config_##idx = {                                \
 		.num_channels = ADC_RPI_CHANNEL_NUM,                                               \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                       \
@@ -375,10 +365,7 @@ static int adc_rpi_init(const struct device *dev)
 		.dev = DEVICE_DT_INST_GET(idx),                                                    \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(idx, adc_rpi_init, NULL,                                             \
-			      &adc_rpi_data_##idx,                                                 \
-			      &adc_rpi_config_##idx, POST_KERNEL,                                  \
-			      CONFIG_ADC_INIT_PRIORITY,                                            \
-			      &adc_rpi_api_##idx)
+	DEVICE_DT_INST_DEFINE(idx, adc_rpi_init, NULL, &adc_rpi_data_##idx, &adc_rpi_config_##idx, \
+			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, &adc_rpi_api_##idx)
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_RPI_INIT);

@@ -16,8 +16,8 @@
 
 #include "crypto_ataes132a_priv.h"
 
-#define D10D24S 11
-#define MAX_RETRIES 3
+#define D10D24S                11
+#define MAX_RETRIES            3
 #define ATAES132A_AES_KEY_SIZE 16
 
 /* ATAES132A can store up to 16 different crypto keys */
@@ -39,9 +39,8 @@ static void ataes132a_init_states(void)
 	}
 }
 
-static int ataes132a_send_command(const struct device *dev, uint8_t opcode,
-				  uint8_t mode, uint8_t *params,
-				  uint8_t nparams, uint8_t *response,
+static int ataes132a_send_command(const struct device *dev, uint8_t opcode, uint8_t mode,
+				  uint8_t *params, uint8_t nparams, uint8_t *response,
 				  uint8_t *nresponse)
 {
 	int retry_count = 0;
@@ -85,8 +84,8 @@ static int ataes132a_send_command(const struct device *dev, uint8_t opcode,
 	write_reg_i2c(&cfg->i2c, ATAES_COMMAND_ADDRR_RESET, 0x0);
 
 	/*Send a command through the command buffer*/
-	i2c_return = burst_write_i2c(&cfg->i2c, ATAES_COMMAND_MEM_ADDR,
-				     data->command_buffer, count);
+	i2c_return =
+		burst_write_i2c(&cfg->i2c, ATAES_COMMAND_MEM_ADDR, data->command_buffer, count);
 
 	LOG_DBG("BURST WRITE RETURN: %d", i2c_return);
 
@@ -115,7 +114,7 @@ static int ataes132a_send_command(const struct device *dev, uint8_t opcode,
 	ataes132a_atmel_crc(data->command_buffer, count - 2, crc);
 
 	LOG_DBG("COMMAND CRC %x%x", data->command_buffer[count - 2],
-		     data->command_buffer[count - 1]);
+		data->command_buffer[count - 1]);
 	LOG_DBG("CALCULATED CRC %x%x", crc[0], crc[1]);
 
 	/* If CRC fails retry reading MAX RETRIES times */
@@ -123,7 +122,7 @@ static int ataes132a_send_command(const struct device *dev, uint8_t opcode,
 	       crc[1] != data->command_buffer[count - 1]) {
 		if (retry_count > MAX_RETRIES - 1) {
 			LOG_ERR("response crc validation rebase"
-				    " max retries");
+				" max retries");
 			return -EINVAL;
 		}
 
@@ -131,19 +130,17 @@ static int ataes132a_send_command(const struct device *dev, uint8_t opcode,
 
 		count = data->command_buffer[0];
 
-		ataes132a_atmel_crc(data->command_buffer, count -  2, crc);
+		ataes132a_atmel_crc(data->command_buffer, count - 2, crc);
 		retry_count++;
 
 		LOG_DBG("COMMAND RETRY %d", retry_count);
-		LOG_DBG("COMMAND CRC %x%x",
-			    data->command_buffer[count - 2],
-			    data->command_buffer[count - 1]);
+		LOG_DBG("COMMAND CRC %x%x", data->command_buffer[count - 2],
+			data->command_buffer[count - 1]);
 		LOG_DBG("CALCULATED CRC %x%x", crc[0], crc[1]);
-		}
+	}
 
 	if ((status & ATAES_STATUS_ERR) || data->command_buffer[1] != 0x00) {
-		LOG_ERR("command execution error %x",
-			    data->command_buffer[1]);
+		LOG_ERR("command execution error %x", data->command_buffer[1]);
 		return -EIO;
 	}
 
@@ -182,12 +179,10 @@ int ataes132a_init(const struct device *dev)
 	return 0;
 }
 
-int ataes132a_aes_ccm_decrypt(const struct device *dev,
-			      uint8_t key_id,
+int ataes132a_aes_ccm_decrypt(const struct device *dev, uint8_t key_id,
 			      struct ataes132a_mac_mode *mac_mode,
 			      struct ataes132a_mac_packet *mac_packet,
-			      struct cipher_aead_pkt *aead_op,
-			      uint8_t *nonce_buf)
+			      struct cipher_aead_pkt *aead_op, uint8_t *nonce_buf)
 {
 	uint8_t command_mode = 0x0;
 	struct ataes132a_device_data *data = dev->data;
@@ -218,13 +213,13 @@ int ataes132a_aes_ccm_decrypt(const struct device *dev,
 
 	if (in_buf_len != 16U && in_buf_len != 32U) {
 		LOG_ERR("ccm mode only accepts input blocks of 16"
-			    " and 32 bytes");
+			" and 32 bytes");
 		return -EINVAL;
 	}
 
 	if (expected_out_len > 32) {
 		LOG_ERR("ccm mode cannot generate more than"
-			    " 32 output bytes");
+			" 32 output bytes");
 		return -EINVAL;
 	}
 
@@ -233,7 +228,8 @@ int ataes132a_aes_ccm_decrypt(const struct device *dev,
 	 */
 	if (!(ataes132a_state[key_id].key_config & ATAES_KEYCONFIG_AUTHKEY)) {
 		LOG_DBG("keep in mind key %x will require"
-			    " previous authentication", key_id);
+			" previous authentication",
+			key_id);
 	}
 
 	if (!aead_op->pkt->in_buf || !aead_op->pkt->out_buf) {
@@ -248,10 +244,10 @@ int ataes132a_aes_ccm_decrypt(const struct device *dev,
 	 */
 	if (ataes132a_state[key_id].key_config & ATAES_KEYCONFIG_RAND_NONCE) {
 		LOG_DBG("key %x requires random nonce,"
-			    " nonce_buf will be ignored", key_id);
+			" nonce_buf will be ignored",
+			key_id);
 
 		LOG_DBG("current nonce register will be used");
-
 	}
 
 	k_sem_take(&data->device_sem, K_FOREVER);
@@ -260,28 +256,26 @@ int ataes132a_aes_ccm_decrypt(const struct device *dev,
 	 * then the nonce send as parameter will be loaded into
 	 * the nonce register.
 	 */
-	if (!(ataes132a_state[key_id].key_config & ATAES_KEYCONFIG_RAND_NONCE)
-	    && nonce_buf) {
+	if (!(ataes132a_state[key_id].key_config & ATAES_KEYCONFIG_RAND_NONCE) && nonce_buf) {
 		param_buffer[0] = 0x0;
 		param_buffer[1] = 0x0;
 		param_buffer[2] = 0x0;
 		param_buffer[3] = 0x0;
-		memcpy(param_buffer + 4,  nonce_buf, 12);
+		memcpy(param_buffer + 4, nonce_buf, 12);
 
-		return_code = ataes132a_send_command(dev, ATAES_NONCE_OP,
-						     0x0, param_buffer, 16,
+		return_code = ataes132a_send_command(dev, ATAES_NONCE_OP, 0x0, param_buffer, 16,
 						     param_buffer, &out_len);
 
 		if (return_code != 0U) {
-			LOG_ERR("nonce command ended with code %d",
-				    return_code);
+			LOG_ERR("nonce command ended with code %d", return_code);
 			k_sem_give(&data->device_sem);
 			return -EINVAL;
 		}
 
 		if (param_buffer[0] != 0U) {
 			LOG_ERR("nonce command failed with error"
-				    " code %d", param_buffer[0]);
+				" code %d",
+				param_buffer[0]);
 			k_sem_give(&data->device_sem);
 			return -EIO;
 		}
@@ -291,8 +285,7 @@ int ataes132a_aes_ccm_decrypt(const struct device *dev,
 	 * and the nonce send as parameter is a null value,
 	 * the command will use the current nonce register value.
 	 */
-	if (!(ataes132a_state[key_id].key_config & ATAES_KEYCONFIG_RAND_NONCE)
-	    && !nonce_buf) {
+	if (!(ataes132a_state[key_id].key_config & ATAES_KEYCONFIG_RAND_NONCE) && !nonce_buf) {
 		LOG_DBG("current nonce register will be used");
 	}
 
@@ -307,7 +300,7 @@ int ataes132a_aes_ccm_decrypt(const struct device *dev,
 		param_buffer[0] = 0x0;
 		param_buffer[2] = 0x0;
 		LOG_DBG("normal decryption mode"
-			    " ignores mac_packet parameter");
+			" ignores mac_packet parameter");
 	}
 
 	/* Client decryption mode requires a MAC packet to specify
@@ -317,20 +310,20 @@ int ataes132a_aes_ccm_decrypt(const struct device *dev,
 	if (mac_mode) {
 		if (mac_mode->include_counter) {
 			LOG_DBG("including usage counter in the MAC: "
-				    "decrypt and encrypt dev must be the same");
+				"decrypt and encrypt dev must be the same");
 			command_mode = command_mode | ATAES_MAC_MODE_COUNTER;
 		}
 
 		if (mac_mode->include_serial) {
 			LOG_DBG("including serial number in the MAC: "
-				    "decrypt and encrypt dev must be the same");
+				"decrypt and encrypt dev must be the same");
 			command_mode = command_mode | ATAES_MAC_MODE_SERIAL;
 		}
 
 		if (mac_mode->include_smallzone) {
 			LOG_DBG("including small zone in the MAC: "
-				    "decrypt and encrypt dev share the "
-				    "first four bytes of their small zone");
+				"decrypt and encrypt dev share the "
+				"first four bytes of their small zone");
 			command_mode = command_mode | ATAES_MAC_MODE_SMALLZONE;
 		}
 	}
@@ -338,14 +331,12 @@ int ataes132a_aes_ccm_decrypt(const struct device *dev,
 	param_buffer[1] = key_id;
 	param_buffer[3] = expected_out_len;
 	if (aead_op->tag) {
-		memcpy(param_buffer + 4,  aead_op->tag, 16);
+		memcpy(param_buffer + 4, aead_op->tag, 16);
 	}
 	memcpy(param_buffer + 20, aead_op->pkt->in_buf, in_buf_len);
 
-	return_code = ataes132a_send_command(dev, ATAES_DECRYPT_OP,
-					     command_mode, param_buffer,
-					     in_buf_len + 4, param_buffer,
-					     &out_len);
+	return_code = ataes132a_send_command(dev, ATAES_DECRYPT_OP, command_mode, param_buffer,
+					     in_buf_len + 4, param_buffer, &out_len);
 
 	if (return_code != 0U) {
 		LOG_ERR("decrypt command ended with code %d", return_code);
@@ -355,22 +346,24 @@ int ataes132a_aes_ccm_decrypt(const struct device *dev,
 
 	if (out_len < 2 || out_len > 33) {
 		LOG_ERR("decrypt command response has invalid"
-			    " size %d", out_len);
+			" size %d",
+			out_len);
 		k_sem_give(&data->device_sem);
 		return -EINVAL;
 	}
 
 	if (param_buffer[0] != 0U) {
 		LOG_ERR("legacy command failed with error"
-			    " code %d", param_buffer[0]);
+			" code %d",
+			param_buffer[0]);
 		k_sem_give(&data->device_sem);
 		return -param_buffer[0];
 	}
 
 	if (expected_out_len != out_len - 1) {
 		LOG_ERR("decrypted output data size %d and expected data"
-			    " size %d  are different", out_len - 1,
-			    expected_out_len);
+			" size %d  are different",
+			out_len - 1, expected_out_len);
 		k_sem_give(&data->device_sem);
 		return -EINVAL;
 	}
@@ -382,12 +375,9 @@ int ataes132a_aes_ccm_decrypt(const struct device *dev,
 	return 0;
 }
 
-int ataes132a_aes_ccm_encrypt(const struct device *dev,
-			      uint8_t key_id,
-			      struct ataes132a_mac_mode *mac_mode,
-			      struct cipher_aead_pkt *aead_op,
-			      uint8_t *nonce_buf,
-			      uint8_t *mac_count)
+int ataes132a_aes_ccm_encrypt(const struct device *dev, uint8_t key_id,
+			      struct ataes132a_mac_mode *mac_mode, struct cipher_aead_pkt *aead_op,
+			      uint8_t *nonce_buf, uint8_t *mac_count)
 {
 	uint8_t command_mode = 0x0;
 	struct ataes132a_device_data *data = dev->data;
@@ -416,7 +406,7 @@ int ataes132a_aes_ccm_encrypt(const struct device *dev,
 
 	if (buf_len > 32) {
 		LOG_ERR("only up to 32 bytes accepted for ccm mode");
-			return -EINVAL;
+		return -EINVAL;
 	}
 
 	/* If KeyConfig[key_id].AuthKey is set, then prior authentication
@@ -424,7 +414,8 @@ int ataes132a_aes_ccm_encrypt(const struct device *dev,
 	 */
 	if (!(ataes132a_state[key_id].key_config & ATAES_KEYCONFIG_AUTHKEY)) {
 		LOG_DBG("keep in mind key %x will require"
-			    " previous authentication", key_id);
+			" previous authentication",
+			key_id);
 	}
 
 	if (!aead_op->pkt->in_buf || !aead_op->pkt->out_buf) {
@@ -439,10 +430,10 @@ int ataes132a_aes_ccm_encrypt(const struct device *dev,
 	 */
 	if (ataes132a_state[key_id].key_config & ATAES_KEYCONFIG_RAND_NONCE) {
 		LOG_DBG("key %x requires random nonce,"
-			    " nonce_buf will be ignored", key_id);
+			" nonce_buf will be ignored",
+			key_id);
 
 		LOG_DBG("current nonce register will be used");
-
 	}
 
 	k_sem_take(&data->device_sem, K_FOREVER);
@@ -451,28 +442,26 @@ int ataes132a_aes_ccm_encrypt(const struct device *dev,
 	 * then the nonce send as parameter will be loaded into
 	 * the nonce register.
 	 */
-	if (!(ataes132a_state[key_id].key_config & ATAES_KEYCONFIG_RAND_NONCE)
-	    && nonce_buf) {
+	if (!(ataes132a_state[key_id].key_config & ATAES_KEYCONFIG_RAND_NONCE) && nonce_buf) {
 		param_buffer[0] = 0x0;
 		param_buffer[1] = 0x0;
 		param_buffer[2] = 0x0;
 		param_buffer[3] = 0x0;
-		memcpy(param_buffer + 4,  nonce_buf, 12);
+		memcpy(param_buffer + 4, nonce_buf, 12);
 
-		return_code = ataes132a_send_command(dev, ATAES_NONCE_OP,
-						     0x0, param_buffer, 16,
+		return_code = ataes132a_send_command(dev, ATAES_NONCE_OP, 0x0, param_buffer, 16,
 						     param_buffer, &out_len);
 
 		if (return_code != 0U) {
-			LOG_ERR("nonce command ended with code %d",
-				    return_code);
+			LOG_ERR("nonce command ended with code %d", return_code);
 			k_sem_give(&data->device_sem);
 			return -EINVAL;
 		}
 
 		if (param_buffer[0] != 0U) {
 			LOG_ERR("nonce command failed with error"
-				    " code %d", param_buffer[0]);
+				" code %d",
+				param_buffer[0]);
 			k_sem_give(&data->device_sem);
 			return -EIO;
 		}
@@ -481,8 +470,7 @@ int ataes132a_aes_ccm_encrypt(const struct device *dev,
 	 * and the nonce send as parameter is a null value,
 	 * the command will use the current nonce register value.
 	 */
-	if (!(ataes132a_state[key_id].key_config & ATAES_KEYCONFIG_RAND_NONCE)
-	    && !nonce_buf) {
+	if (!(ataes132a_state[key_id].key_config & ATAES_KEYCONFIG_RAND_NONCE) && !nonce_buf) {
 		LOG_DBG("current nonce register will be used");
 	}
 
@@ -492,20 +480,20 @@ int ataes132a_aes_ccm_encrypt(const struct device *dev,
 	if (mac_mode) {
 		if (mac_mode->include_counter) {
 			LOG_DBG("including usage counter in the MAC: "
-				    "decrypt and encrypt dev must be the same");
+				"decrypt and encrypt dev must be the same");
 			command_mode = command_mode | ATAES_MAC_MODE_COUNTER;
 		}
 
 		if (mac_mode->include_serial) {
 			LOG_DBG("including serial number in the MAC: "
-				    "decrypt and encrypt dev must be the same");
+				"decrypt and encrypt dev must be the same");
 			command_mode = command_mode | ATAES_MAC_MODE_SERIAL;
 		}
 
 		if (mac_mode->include_smallzone) {
 			LOG_DBG("including small zone in the MAC: "
-				    "decrypt and encrypt dev share the "
-				    "first four bytes of their small zone");
+				"decrypt and encrypt dev share the "
+				"first four bytes of their small zone");
 			command_mode = command_mode | ATAES_MAC_MODE_SMALLZONE;
 		}
 	}
@@ -514,10 +502,8 @@ int ataes132a_aes_ccm_encrypt(const struct device *dev,
 	param_buffer[1] = buf_len;
 	memcpy(param_buffer + 2, aead_op->pkt->in_buf, buf_len);
 
-	return_code = ataes132a_send_command(dev, ATAES_ENCRYPT_OP,
-					     command_mode, param_buffer,
-					     buf_len + 2, param_buffer,
-					     &out_len);
+	return_code = ataes132a_send_command(dev, ATAES_ENCRYPT_OP, command_mode, param_buffer,
+					     buf_len + 2, param_buffer, &out_len);
 
 	if (return_code != 0U) {
 		LOG_ERR("encrypt command ended with code %d", return_code);
@@ -527,14 +513,16 @@ int ataes132a_aes_ccm_encrypt(const struct device *dev,
 
 	if (out_len < 33 || out_len > 49) {
 		LOG_ERR("encrypt command response has invalid"
-			    " size %d", out_len);
+			" size %d",
+			out_len);
 		k_sem_give(&data->device_sem);
 		return -EINVAL;
 	}
 
 	if (param_buffer[0] != 0U) {
 		LOG_ERR("encrypt command failed with error"
-			    " code %d", param_buffer[0]);
+			" code %d",
+			param_buffer[0]);
 		k_sem_give(&data->device_sem);
 		return -EIO;
 	}
@@ -550,12 +538,12 @@ int ataes132a_aes_ccm_encrypt(const struct device *dev,
 			param_buffer[1] = 0x0;
 			param_buffer[2] = 0x0;
 			param_buffer[3] = 0x0;
-			ataes132a_send_command(dev, ATAES_INFO_OP, 0x0,
-					       param_buffer,	4,
+			ataes132a_send_command(dev, ATAES_INFO_OP, 0x0, param_buffer, 4,
 					       param_buffer, &out_len);
 			if (param_buffer[0] != 0U) {
 				LOG_ERR("info command failed with error"
-					    " code %d", param_buffer[0]);
+					" code %d",
+					param_buffer[0]);
 				k_sem_give(&data->device_sem);
 				return -EIO;
 			}
@@ -570,9 +558,7 @@ int ataes132a_aes_ccm_encrypt(const struct device *dev,
 	return 0;
 }
 
-int ataes132a_aes_ecb_block(const struct device *dev,
-			    uint8_t key_id,
-			    struct cipher_pkt *pkt)
+int ataes132a_aes_ecb_block(const struct device *dev, uint8_t key_id, struct cipher_pkt *pkt)
 {
 	struct ataes132a_device_data *data = dev->data;
 	uint8_t buf_len;
@@ -613,7 +599,8 @@ int ataes132a_aes_ecb_block(const struct device *dev,
 	 */
 	if (!(ataes132a_state[key_id].key_config & ATAES_KEYCONFIG_AUTHKEY)) {
 		LOG_DBG("keep in mind key %x will require"
-			    " previous authentication", key_id);
+			" previous authentication",
+			key_id);
 	}
 
 	if (!pkt->in_buf || !pkt->out_buf) {
@@ -628,8 +615,7 @@ int ataes132a_aes_ecb_block(const struct device *dev,
 	memcpy(param_buffer + 3, pkt->in_buf, buf_len);
 	(void)memset(param_buffer + 3 + buf_len, 0x0, 16 - buf_len);
 
-	return_code = ataes132a_send_command(dev, ATAES_LEGACY_OP, 0x00,
-					     param_buffer, buf_len + 3,
+	return_code = ataes132a_send_command(dev, ATAES_LEGACY_OP, 0x00, param_buffer, buf_len + 3,
 					     param_buffer, &out_len);
 
 	if (return_code != 0U) {
@@ -640,13 +626,15 @@ int ataes132a_aes_ecb_block(const struct device *dev,
 
 	if (out_len != 17U) {
 		LOG_ERR("legacy command response has invalid"
-			    " size %d", out_len);
+			" size %d",
+			out_len);
 		k_sem_give(&data->device_sem);
 		return -EINVAL;
 	}
 	if (param_buffer[0] != 0U) {
 		LOG_ERR("legacy command failed with error"
-			    " code %d", param_buffer[0]);
+			" code %d",
+			param_buffer[0]);
 		k_sem_give(&data->device_sem);
 		return -EIO;
 	}
@@ -658,8 +646,8 @@ int ataes132a_aes_ecb_block(const struct device *dev,
 	return 0;
 }
 
-static int do_ccm_encrypt_mac(struct cipher_ctx *ctx,
-			      struct cipher_aead_pkt *aead_op, uint8_t *nonce)
+static int do_ccm_encrypt_mac(struct cipher_ctx *ctx, struct cipher_aead_pkt *aead_op,
+			      uint8_t *nonce)
 {
 	const struct device *dev = ctx->device;
 	struct ataes132a_driver_state *state = ctx->drv_sessn_state;
@@ -678,21 +666,19 @@ static int do_ccm_encrypt_mac(struct cipher_ctx *ctx,
 	mac_mode.include_serial = false;
 	mac_mode.include_smallzone = false;
 
-	if (aead_op->pkt->in_len <= 16 &&
-	    aead_op->pkt->out_buf_max < 16) {
+	if (aead_op->pkt->in_len <= 16 && aead_op->pkt->out_buf_max < 16) {
 		LOG_ERR("Not enough space available in out buffer.");
 		return -EINVAL;
 	}
 
-	if (aead_op->pkt->in_len > 16 &&
-	    aead_op->pkt->out_buf_max < 32) {
+	if (aead_op->pkt->in_len > 16 && aead_op->pkt->out_buf_max < 32) {
 		LOG_ERR("Not enough space available in out buffer.");
 		return -EINVAL;
 	}
 
 	if (aead_op->pkt->in_len <= 16) {
 		aead_op->pkt->out_len = 16;
-	} else  if (aead_op->pkt->in_len > 16) {
+	} else if (aead_op->pkt->in_len > 16) {
 		aead_op->pkt->out_len = 32;
 	}
 
@@ -701,14 +687,13 @@ static int do_ccm_encrypt_mac(struct cipher_ctx *ctx,
 		return -EINVAL;
 	}
 
-	ataes132a_aes_ccm_encrypt(dev, key_id, &mac_mode,
-				  aead_op, nonce, NULL);
+	ataes132a_aes_ccm_encrypt(dev, key_id, &mac_mode, aead_op, nonce, NULL);
 
 	return 0;
 }
 
-static int do_ccm_decrypt_auth(struct cipher_ctx *ctx,
-			       struct cipher_aead_pkt *aead_op, uint8_t *nonce)
+static int do_ccm_decrypt_auth(struct cipher_ctx *ctx, struct cipher_aead_pkt *aead_op,
+			       uint8_t *nonce)
 {
 	const struct device *dev = ctx->device;
 	struct ataes132a_driver_state *state = ctx->drv_sessn_state;
@@ -727,14 +712,12 @@ static int do_ccm_decrypt_auth(struct cipher_ctx *ctx,
 	mac_mode.include_serial = false;
 	mac_mode.include_smallzone = false;
 
-	if (aead_op->pkt->in_len <= 16 &&
-	    aead_op->pkt->out_buf_max < 16) {
+	if (aead_op->pkt->in_len <= 16 && aead_op->pkt->out_buf_max < 16) {
 		LOG_ERR("Not enough space available in out buffer.");
 		return -EINVAL;
 	}
 
-	if (aead_op->pkt->in_len > 16 &&
-	    aead_op->pkt->out_buf_max < 32) {
+	if (aead_op->pkt->in_len > 16 && aead_op->pkt->out_buf_max < 32) {
 		LOG_ERR("Not enough space available in out buffer.");
 		return -EINVAL;
 	}
@@ -747,8 +730,7 @@ static int do_ccm_decrypt_auth(struct cipher_ctx *ctx,
 	}
 
 	/* Normal Decryption Mode will only decrypt host generated packets */
-	ataes132a_aes_ccm_decrypt(dev, key_id, &mac_mode,
-				  NULL, aead_op, nonce);
+	ataes132a_aes_ccm_decrypt(dev, key_id, &mac_mode, NULL, aead_op, nonce);
 
 	return 0;
 }
@@ -773,8 +755,7 @@ static int do_block(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 	return ataes132a_aes_ecb_block(dev, key_id, pkt);
 }
 
-static int ataes132a_session_free(const struct device *dev,
-				  struct cipher_ctx *session)
+static int ataes132a_session_free(const struct device *dev, struct cipher_ctx *session)
 {
 	struct ataes132a_driver_state *state = session->drv_sessn_state;
 
@@ -785,8 +766,7 @@ static int ataes132a_session_free(const struct device *dev,
 	return 0;
 }
 
-static int ataes132a_session_setup(const struct device *dev,
-				   struct cipher_ctx *ctx,
+static int ataes132a_session_setup(const struct device *dev, struct cipher_ctx *ctx,
 				   enum cipher_algo algo, enum cipher_mode mode,
 				   enum cipher_op op_type)
 {
@@ -798,13 +778,11 @@ static int ataes132a_session_setup(const struct device *dev,
 		LOG_ERR("Session in progress");
 		return -EINVAL;
 	}
-	if (mode == CRYPTO_CIPHER_MODE_CCM &&
-	    ctx->mode_params.ccm_info.tag_len != 16U) {
+	if (mode == CRYPTO_CIPHER_MODE_CCM && ctx->mode_params.ccm_info.tag_len != 16U) {
 		LOG_ERR("ATAES132A support 16 byte tag only.");
 		return -EINVAL;
 	}
-	if (mode == CRYPTO_CIPHER_MODE_CCM &&
-	    ctx->mode_params.ccm_info.nonce_len != 12U) {
+	if (mode == CRYPTO_CIPHER_MODE_CCM && ctx->mode_params.ccm_info.nonce_len != 12U) {
 		LOG_ERR("ATAES132A support 12 byte nonce only.");
 		return -EINVAL;
 	}
@@ -867,8 +845,7 @@ static int ataes132a_session_setup(const struct device *dev,
 
 static int ataes132a_query_caps(const struct device *dev)
 {
-	return (CAP_OPAQUE_KEY_HNDL | CAP_SEPARATE_IO_BUFS |
-		CAP_SYNC_OPS | CAP_AUTONONCE);
+	return (CAP_OPAQUE_KEY_HNDL | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | CAP_AUTONONCE);
 }
 
 static const struct ataes132a_device_config ataes132a_config = {
@@ -884,7 +861,5 @@ static struct crypto_driver_api crypto_enc_funcs = {
 
 struct ataes132a_device_data ataes132a_data;
 
-DEVICE_DT_INST_DEFINE(0, ataes132a_init,
-		NULL, &ataes132a_data, &ataes132a_config,
-		POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY,
-		(void *)&crypto_enc_funcs);
+DEVICE_DT_INST_DEFINE(0, ataes132a_init, NULL, &ataes132a_data, &ataes132a_config, POST_KERNEL,
+		      CONFIG_CRYPTO_INIT_PRIORITY, (void *)&crypto_enc_funcs);

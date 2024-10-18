@@ -23,7 +23,7 @@ struct phy_mii_dev_config {
 	bool no_reset;
 	bool fixed;
 	int fixed_speed;
-	const struct device * const mdio;
+	const struct device *const mdio;
 };
 
 struct phy_mii_dev_data {
@@ -41,11 +41,9 @@ struct phy_mii_dev_data {
 
 #define MII_INVALID_PHY_ID UINT32_MAX
 
-static int phy_mii_get_link_state(const struct device *dev,
-				  struct phy_link_state *state);
+static int phy_mii_get_link_state(const struct device *dev, struct phy_link_state *state);
 
-static inline int reg_read(const struct device *dev, uint16_t reg_addr,
-			   uint16_t *value)
+static inline int reg_read(const struct device *dev, uint16_t reg_addr, uint16_t *value)
 {
 	const struct phy_mii_dev_config *const cfg = dev->config;
 
@@ -56,8 +54,7 @@ static inline int reg_read(const struct device *dev, uint16_t reg_addr,
 	return mdio_read(cfg->mdio, cfg->phy_addr, reg_addr, value);
 }
 
-static inline int reg_write(const struct device *dev, uint16_t reg_addr,
-			    uint16_t value)
+static inline int reg_write(const struct device *dev, uint16_t reg_addr, uint16_t value)
 {
 	const struct phy_mii_dev_config *const cfg = dev->config;
 
@@ -82,8 +79,7 @@ static bool is_gigabit_supported(const struct device *dev)
 			return -EIO;
 		}
 
-		if (estat_reg & (MII_ESTAT_1000BASE_T_HALF
-				 | MII_ESTAT_1000BASE_T_FULL)) {
+		if (estat_reg & (MII_ESTAT_1000BASE_T_HALF | MII_ESTAT_1000BASE_T_FULL)) {
 			return true;
 		}
 	}
@@ -174,8 +170,7 @@ static int update_link_state(const struct device *dev)
 	/**
 	 * Perform auto-negotiation sequence.
 	 */
-	LOG_DBG("PHY (%d) Starting MII PHY auto-negotiate sequence",
-		cfg->phy_addr);
+	LOG_DBG("PHY (%d) Starting MII PHY auto-negotiate sequence", cfg->phy_addr);
 
 	/* Read PHY default advertising parameters */
 	if (reg_read(dev, MII_ANAR, &anar_reg) < 0) {
@@ -188,7 +183,7 @@ static int update_link_state(const struct device *dev)
 	}
 
 	bmcr_reg |= MII_BMCR_AUTONEG_ENABLE | MII_BMCR_AUTONEG_RESTART;
-	bmcr_reg &= ~MII_BMCR_ISOLATE;  /* Don't isolate the PHY */
+	bmcr_reg &= ~MII_BMCR_ISOLATE; /* Don't isolate the PHY */
 
 	if (reg_write(dev, MII_BMCR, bmcr_reg) < 0) {
 		return -EIO;
@@ -197,8 +192,7 @@ static int update_link_state(const struct device *dev)
 	/* Wait for the auto-negotiation process to complete */
 	do {
 		if (timeout-- == 0U) {
-			LOG_DBG("PHY (%d) auto-negotiate timedout",
-				cfg->phy_addr);
+			LOG_DBG("PHY (%d) auto-negotiate timedout", cfg->phy_addr);
 			return -ETIMEDOUT;
 		}
 
@@ -209,8 +203,7 @@ static int update_link_state(const struct device *dev)
 		}
 	} while (!(bmsr_reg & MII_BMSR_AUTONEG_COMPLETE));
 
-	LOG_DBG("PHY (%d) auto-negotiate sequence completed",
-		cfg->phy_addr);
+	LOG_DBG("PHY (%d) auto-negotiate sequence completed", cfg->phy_addr);
 
 	/** Read peer device capability */
 	if (reg_read(dev, MII_ANLPAR, &anlpar_reg) < 0) {
@@ -227,11 +220,9 @@ static int update_link_state(const struct device *dev)
 		s1kt_reg = (uint16_t)(s1kt_reg >> MII_1KSTSR_OFFSET);
 	}
 
-	if (data->gigabit_supported &&
-			((c1kt_reg & s1kt_reg) & MII_ADVERTISE_1000_FULL)) {
+	if (data->gigabit_supported && ((c1kt_reg & s1kt_reg) & MII_ADVERTISE_1000_FULL)) {
 		data->state.speed = LINK_FULL_1000BASE_T;
-	} else if (data->gigabit_supported &&
-			((c1kt_reg & s1kt_reg) & MII_ADVERTISE_1000_HALF)) {
+	} else if (data->gigabit_supported && ((c1kt_reg & s1kt_reg) & MII_ADVERTISE_1000_HALF)) {
 		data->state.speed = LINK_HALF_1000BASE_T;
 	} else if ((anar_reg & anlpar_reg) & MII_ADVERTISE_100_FULL) {
 		data->state.speed = LINK_FULL_100BASE_T;
@@ -243,10 +234,10 @@ static int update_link_state(const struct device *dev)
 		data->state.speed = LINK_HALF_10BASE_T;
 	}
 
-	LOG_INF("PHY (%d) Link speed %s Mb, %s duplex\n",
-		cfg->phy_addr,
-		PHY_LINK_IS_SPEED_1000M(data->state.speed) ? "1000" :
-		(PHY_LINK_IS_SPEED_100M(data->state.speed) ? "100" : "10"),
+	LOG_INF("PHY (%d) Link speed %s Mb, %s duplex\n", cfg->phy_addr,
+		PHY_LINK_IS_SPEED_1000M(data->state.speed)
+			? "1000"
+			: (PHY_LINK_IS_SPEED_100M(data->state.speed) ? "100" : "10"),
 		PHY_LINK_IS_FULL_DUPLEX(data->state.speed) ? "full" : "half");
 
 	return 0;
@@ -286,24 +277,20 @@ static void monitor_work_handler(struct k_work *work)
 	}
 
 	/* Submit delayed work */
-	k_work_reschedule(&data->monitor_work,
-			  K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
+	k_work_reschedule(&data->monitor_work, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
 }
 
-static int phy_mii_read(const struct device *dev, uint16_t reg_addr,
-			uint32_t *data)
+static int phy_mii_read(const struct device *dev, uint16_t reg_addr, uint32_t *data)
 {
 	return reg_read(dev, reg_addr, (uint16_t *)data);
 }
 
-static int phy_mii_write(const struct device *dev, uint16_t reg_addr,
-			 uint32_t data)
+static int phy_mii_write(const struct device *dev, uint16_t reg_addr, uint32_t data)
 {
 	return reg_write(dev, reg_addr, (uint16_t)data);
 }
 
-static int phy_mii_cfg_link(const struct device *dev,
-			    enum phy_link_speed adv_speeds)
+static int phy_mii_cfg_link(const struct device *dev, enum phy_link_speed adv_speeds)
 {
 	struct phy_mii_dev_data *const data = dev->data;
 	uint16_t anar_reg;
@@ -379,8 +366,7 @@ static int phy_mii_cfg_link(const struct device *dev,
 	return 0;
 }
 
-static int phy_mii_get_link_state(const struct device *dev,
-				  struct phy_link_state *state)
+static int phy_mii_get_link_state(const struct device *dev, struct phy_link_state *state)
 {
 	struct phy_mii_dev_data *const data = dev->data;
 
@@ -393,8 +379,7 @@ static int phy_mii_get_link_state(const struct device *dev,
 	return 0;
 }
 
-static int phy_mii_link_cb_set(const struct device *dev, phy_callback_t cb,
-			       void *user_data)
+static int phy_mii_link_cb_set(const struct device *dev, phy_callback_t cb, void *user_data)
 {
 	struct phy_mii_dev_data *const data = dev->data;
 
@@ -428,12 +413,8 @@ static int phy_mii_initialize(const struct device *dev)
 	 */
 	if (cfg->fixed) {
 		const static int speed_to_phy_link_speed[] = {
-			LINK_HALF_10BASE_T,
-			LINK_FULL_10BASE_T,
-			LINK_HALF_100BASE_T,
-			LINK_FULL_100BASE_T,
-			LINK_HALF_1000BASE_T,
-			LINK_FULL_1000BASE_T,
+			LINK_HALF_10BASE_T,  LINK_FULL_10BASE_T,   LINK_HALF_100BASE_T,
+			LINK_FULL_100BASE_T, LINK_HALF_1000BASE_T, LINK_FULL_1000BASE_T,
 		};
 
 		data->state.speed = speed_to_phy_link_speed[cfg->fixed_speed];
@@ -449,8 +430,7 @@ static int phy_mii_initialize(const struct device *dev)
 
 		if (get_id(dev, &phy_id) == 0) {
 			if (phy_id == MII_INVALID_PHY_ID) {
-				LOG_ERR("No PHY found at address %d",
-					cfg->phy_addr);
+				LOG_ERR("No PHY found at address %d", cfg->phy_addr);
 
 				return -EINVAL;
 			}
@@ -461,15 +441,11 @@ static int phy_mii_initialize(const struct device *dev)
 		data->gigabit_supported = is_gigabit_supported(dev);
 
 		/* Advertise all speeds */
-		phy_mii_cfg_link(dev, LINK_HALF_10BASE_T |
-				      LINK_FULL_10BASE_T |
-				      LINK_HALF_100BASE_T |
-				      LINK_FULL_100BASE_T |
-				      LINK_HALF_1000BASE_T |
-				      LINK_FULL_1000BASE_T);
+		phy_mii_cfg_link(dev, LINK_HALF_10BASE_T | LINK_FULL_10BASE_T |
+					      LINK_HALF_100BASE_T | LINK_FULL_100BASE_T |
+					      LINK_HALF_1000BASE_T | LINK_FULL_1000BASE_T);
 
-		k_work_init_delayable(&data->monitor_work,
-					monitor_work_handler);
+		k_work_init_delayable(&data->monitor_work, monitor_work_handler);
 
 		monitor_work_handler(&data->monitor_work.work);
 	}
@@ -477,7 +453,7 @@ static int phy_mii_initialize(const struct device *dev)
 	return 0;
 }
 
-#define IS_FIXED_LINK(n)	DT_INST_NODE_HAS_PROP(n, fixed_link)
+#define IS_FIXED_LINK(n) DT_INST_NODE_HAS_PROP(n, fixed_link)
 
 static const struct ethphy_driver_api phy_mii_driver_api = {
 	.get_link = phy_mii_get_link_state,
@@ -487,25 +463,19 @@ static const struct ethphy_driver_api phy_mii_driver_api = {
 	.write = phy_mii_write,
 };
 
-#define PHY_MII_CONFIG(n)						 \
-static const struct phy_mii_dev_config phy_mii_dev_config_##n = {	 \
-	.phy_addr = DT_INST_REG_ADDR(n),				 \
-	.no_reset = DT_INST_PROP(n, no_reset),				 \
-	.fixed = IS_FIXED_LINK(n),					 \
-	.fixed_speed = DT_INST_ENUM_IDX_OR(n, fixed_link, 0),		 \
-	.mdio = UTIL_AND(UTIL_NOT(IS_FIXED_LINK(n)),			 \
-			 DEVICE_DT_GET(DT_INST_BUS(n)))			 \
-};
+#define PHY_MII_CONFIG(n)                                                                          \
+	static const struct phy_mii_dev_config phy_mii_dev_config_##n = {                          \
+		.phy_addr = DT_INST_REG_ADDR(n),                                                   \
+		.no_reset = DT_INST_PROP(n, no_reset),                                             \
+		.fixed = IS_FIXED_LINK(n),                                                         \
+		.fixed_speed = DT_INST_ENUM_IDX_OR(n, fixed_link, 0),                              \
+		.mdio = UTIL_AND(UTIL_NOT(IS_FIXED_LINK(n)), DEVICE_DT_GET(DT_INST_BUS(n)))};
 
-#define PHY_MII_DEVICE(n)						\
-	PHY_MII_CONFIG(n);						\
-	static struct phy_mii_dev_data phy_mii_dev_data_##n;		\
-	DEVICE_DT_INST_DEFINE(n,					\
-			      &phy_mii_initialize,			\
-			      NULL,					\
-			      &phy_mii_dev_data_##n,			\
-			      &phy_mii_dev_config_##n, POST_KERNEL,	\
-			      CONFIG_PHY_INIT_PRIORITY,			\
+#define PHY_MII_DEVICE(n)                                                                          \
+	PHY_MII_CONFIG(n);                                                                         \
+	static struct phy_mii_dev_data phy_mii_dev_data_##n;                                       \
+	DEVICE_DT_INST_DEFINE(n, &phy_mii_initialize, NULL, &phy_mii_dev_data_##n,                 \
+			      &phy_mii_dev_config_##n, POST_KERNEL, CONFIG_PHY_INIT_PRIORITY,      \
 			      &phy_mii_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PHY_MII_DEVICE)

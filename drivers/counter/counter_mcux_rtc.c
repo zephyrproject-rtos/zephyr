@@ -32,14 +32,12 @@ struct mcux_rtc_config {
 static int mcux_rtc_start(const struct device *dev)
 {
 	const struct counter_config_info *info = dev->config;
-	const struct mcux_rtc_config *config =
-		CONTAINER_OF(info, struct mcux_rtc_config, info);
+	const struct mcux_rtc_config *config = CONTAINER_OF(info, struct mcux_rtc_config, info);
 
 	RTC_StartTimer(config->base);
-	RTC_EnableInterrupts(config->base,
-			     kRTC_AlarmInterruptEnable |
-			     kRTC_TimeOverflowInterruptEnable |
-			     kRTC_TimeInvalidInterruptEnable);
+	RTC_EnableInterrupts(config->base, kRTC_AlarmInterruptEnable |
+						   kRTC_TimeOverflowInterruptEnable |
+						   kRTC_TimeInvalidInterruptEnable);
 
 	return 0;
 }
@@ -47,13 +45,11 @@ static int mcux_rtc_start(const struct device *dev)
 static int mcux_rtc_stop(const struct device *dev)
 {
 	const struct counter_config_info *info = dev->config;
-	const struct mcux_rtc_config *config =
-		CONTAINER_OF(info, struct mcux_rtc_config, info);
+	const struct mcux_rtc_config *config = CONTAINER_OF(info, struct mcux_rtc_config, info);
 
-	RTC_DisableInterrupts(config->base,
-			      kRTC_AlarmInterruptEnable |
-			      kRTC_TimeOverflowInterruptEnable |
-			      kRTC_TimeInvalidInterruptEnable);
+	RTC_DisableInterrupts(config->base, kRTC_AlarmInterruptEnable |
+						    kRTC_TimeOverflowInterruptEnable |
+						    kRTC_TimeInvalidInterruptEnable);
 	RTC_StopTimer(config->base);
 
 	/* clear out any set alarms */
@@ -65,8 +61,7 @@ static int mcux_rtc_stop(const struct device *dev)
 static uint32_t mcux_rtc_read(const struct device *dev)
 {
 	const struct counter_config_info *info = dev->config;
-	const struct mcux_rtc_config *config =
-		CONTAINER_OF(info, struct mcux_rtc_config, info);
+	const struct mcux_rtc_config *config = CONTAINER_OF(info, struct mcux_rtc_config, info);
 
 	uint32_t ticks = config->base->TSR;
 
@@ -94,8 +89,7 @@ static int mcux_rtc_set_alarm(const struct device *dev, uint8_t chan_id,
 			      const struct counter_alarm_cfg *alarm_cfg)
 {
 	const struct counter_config_info *info = dev->config;
-	const struct mcux_rtc_config *config =
-		CONTAINER_OF(info, struct mcux_rtc_config, info);
+	const struct mcux_rtc_config *config = CONTAINER_OF(info, struct mcux_rtc_config, info);
 	struct mcux_rtc_data *data = dev->data;
 
 	uint32_t ticks = alarm_cfg->ticks;
@@ -144,12 +138,10 @@ static int mcux_rtc_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	return 0;
 }
 
-static int mcux_rtc_set_top_value(const struct device *dev,
-				  const struct counter_top_cfg *cfg)
+static int mcux_rtc_set_top_value(const struct device *dev, const struct counter_top_cfg *cfg)
 {
 	const struct counter_config_info *info = dev->config;
-	const struct mcux_rtc_config *config =
-			CONTAINER_OF(info, struct mcux_rtc_config, info);
+	const struct mcux_rtc_config *config = CONTAINER_OF(info, struct mcux_rtc_config, info);
 	struct mcux_rtc_data *data = dev->data;
 
 	if (cfg->ticks != info->max_top_value) {
@@ -172,8 +164,7 @@ static int mcux_rtc_set_top_value(const struct device *dev,
 static uint32_t mcux_rtc_get_pending_int(const struct device *dev)
 {
 	const struct counter_config_info *info = dev->config;
-	const struct mcux_rtc_config *config =
-		CONTAINER_OF(info, struct mcux_rtc_config, info);
+	const struct mcux_rtc_config *config = CONTAINER_OF(info, struct mcux_rtc_config, info);
 
 	return RTC_GetStatusFlags(config->base) & RTC_SR_TAF_MASK;
 }
@@ -188,24 +179,20 @@ static uint32_t mcux_rtc_get_top_value(const struct device *dev)
 static void mcux_rtc_isr(const struct device *dev)
 {
 	const struct counter_config_info *info = dev->config;
-	const struct mcux_rtc_config *config =
-		CONTAINER_OF(info, struct mcux_rtc_config, info);
+	const struct mcux_rtc_config *config = CONTAINER_OF(info, struct mcux_rtc_config, info);
 	struct mcux_rtc_data *data = dev->data;
 	counter_alarm_callback_t cb;
 	uint32_t current = mcux_rtc_read(dev);
 
-
 	LOG_DBG("Current time is %d ticks", current);
 
-	if ((RTC_GetStatusFlags(config->base) & RTC_SR_TAF_MASK) &&
-	    (data->alarm_callback)) {
+	if ((RTC_GetStatusFlags(config->base) & RTC_SR_TAF_MASK) && (data->alarm_callback)) {
 		cb = data->alarm_callback;
 		data->alarm_callback = NULL;
 		cb(dev, 0, current, data->alarm_user_data);
 	}
 
-	if ((RTC_GetStatusFlags(config->base) & RTC_SR_TOF_MASK) &&
-	    (data->top_callback)) {
+	if ((RTC_GetStatusFlags(config->base) & RTC_SR_TOF_MASK) && (data->top_callback)) {
 		data->top_callback(dev, data->top_user_data);
 	}
 
@@ -229,8 +216,7 @@ static void mcux_rtc_isr(const struct device *dev)
 static int mcux_rtc_init(const struct device *dev)
 {
 	const struct counter_config_info *info = dev->config;
-	const struct mcux_rtc_config *config =
-		CONTAINER_OF(info, struct mcux_rtc_config, info);
+	const struct mcux_rtc_config *config = CONTAINER_OF(info, struct mcux_rtc_config, info);
 	rtc_config_t rtc_config;
 
 	RTC_GetDefaultConfig(&rtc_config);
@@ -240,9 +226,9 @@ static int mcux_rtc_init(const struct device *dev)
 	 * "RTC": 0
 	 * "LPO": 1
 	 */
-	BUILD_ASSERT((((DT_INST_ENUM_IDX(0, clock_source) == 1) &&
-		FSL_FEATURE_RTC_HAS_LPO_ADJUST) ||
-		DT_INST_ENUM_IDX(0, clock_source) == 0),
+	BUILD_ASSERT(
+		(((DT_INST_ENUM_IDX(0, clock_source) == 1) && FSL_FEATURE_RTC_HAS_LPO_ADJUST) ||
+		 DT_INST_ENUM_IDX(0, clock_source) == 0),
 		"Cannot choose the LPO clock for that instance of the RTC");
 #if (defined(FSL_FEATURE_RTC_HAS_LPO_ADJUST) && FSL_FEATURE_RTC_HAS_LPO_ADJUST)
 	/* The RTC prescaler increments using the LPO 1 kHz clock
@@ -280,24 +266,21 @@ static void mcux_rtc_irq_config_0(const struct device *dev);
 static struct mcux_rtc_config mcux_rtc_config_0 = {
 	.base = (RTC_Type *)DT_INST_REG_ADDR(0),
 	.irq_config_func = mcux_rtc_irq_config_0,
-	.info = {
-		.max_top_value = UINT32_MAX,
-		.freq = DT_INST_PROP(0, clock_frequency) /
-				DT_INST_PROP(0, prescaler),
-		.flags = COUNTER_CONFIG_INFO_COUNT_UP,
-		.channels = 1,
-	},
+	.info =
+		{
+			.max_top_value = UINT32_MAX,
+			.freq = DT_INST_PROP(0, clock_frequency) / DT_INST_PROP(0, prescaler),
+			.flags = COUNTER_CONFIG_INFO_COUNT_UP,
+			.channels = 1,
+		},
 };
 
-DEVICE_DT_INST_DEFINE(0, &mcux_rtc_init, NULL,
-		    &mcux_rtc_data_0, &mcux_rtc_config_0.info,
-		    POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,
-		    &mcux_rtc_driver_api);
+DEVICE_DT_INST_DEFINE(0, &mcux_rtc_init, NULL, &mcux_rtc_data_0, &mcux_rtc_config_0.info,
+		      POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY, &mcux_rtc_driver_api);
 
 static void mcux_rtc_irq_config_0(const struct device *dev)
 {
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    mcux_rtc_isr, DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), mcux_rtc_isr, DEVICE_DT_INST_GET(0),
+		    0);
 	irq_enable(DT_INST_IRQN(0));
 }

@@ -46,8 +46,7 @@ static bool spi_esp32_transfer_ongoing(struct spi_esp32_data *data)
 	return spi_context_tx_on(&data->ctx) || spi_context_rx_on(&data->ctx);
 }
 
-static inline void spi_esp32_complete(const struct device *dev,
-				      struct spi_esp32_data *data,
+static inline void spi_esp32_complete(const struct device *dev, struct spi_esp32_data *data,
 				      spi_dev_t *spi, int status)
 {
 #ifdef CONFIG_SPI_ESP32_INTERRUPT
@@ -60,7 +59,6 @@ static inline void spi_esp32_complete(const struct device *dev,
 #ifdef CONFIG_SPI_ESP32_INTERRUPT
 	spi_context_complete(&data->ctx, dev, status);
 #endif
-
 }
 
 static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
@@ -248,11 +246,9 @@ static int spi_esp32_init(const struct device *dev)
 	spi_ll_clear_int_stat(cfg->spi);
 
 	err = esp_intr_alloc(cfg->irq_source,
-			ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
-			ESP_INT_FLAGS_CHECK(cfg->irq_flags) | ESP_INTR_FLAG_IRAM,
-			(ISR_HANDLER)spi_esp32_isr,
-			(void *)dev,
-			NULL);
+			     ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
+				     ESP_INT_FLAGS_CHECK(cfg->irq_flags) | ESP_INTR_FLAG_IRAM,
+			     (ISR_HANDLER)spi_esp32_isr, (void *)dev, NULL);
 
 	if (err != 0) {
 		LOG_ERR("could not allocate interrupt (err %d)", err);
@@ -297,8 +293,7 @@ static inline uint8_t spi_esp32_get_line_mode(uint16_t operation)
 	return 1;
 }
 
-static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
-					 const struct spi_config *spi_cfg)
+static int IRAM_ATTR spi_esp32_configure(const struct device *dev, const struct spi_config *spi_cfg)
 {
 	const struct spi_esp32_config *cfg = dev->config;
 	struct spi_esp32_data *data = dev->data;
@@ -417,12 +412,9 @@ static inline uint8_t spi_esp32_get_frame_size(const struct spi_config *spi_cfg)
 	return dfs;
 }
 
-static int transceive(const struct device *dev,
-		      const struct spi_config *spi_cfg,
-		      const struct spi_buf_set *tx_bufs,
-		      const struct spi_buf_set *rx_bufs, bool asynchronous,
-		      spi_callback_t cb,
-		      void *userdata)
+static int transceive(const struct device *dev, const struct spi_config *spi_cfg,
+		      const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs,
+		      bool asynchronous, spi_callback_t cb, void *userdata)
 {
 	const struct spi_esp32_config *cfg = dev->config;
 	struct spi_esp32_data *data = dev->data;
@@ -462,7 +454,7 @@ static int transceive(const struct device *dev,
 
 	spi_esp32_complete(dev, data, cfg->spi, 0);
 
-#endif  /* CONFIG_SPI_ESP32_INTERRUPT */
+#endif /* CONFIG_SPI_ESP32_INTERRUPT */
 
 done:
 	spi_context_release(&data->ctx, ret);
@@ -470,8 +462,7 @@ done:
 	return ret;
 }
 
-static int spi_esp32_transceive(const struct device *dev,
-				const struct spi_config *spi_cfg,
+static int spi_esp32_transceive(const struct device *dev, const struct spi_config *spi_cfg,
 				const struct spi_buf_set *tx_bufs,
 				const struct spi_buf_set *rx_bufs)
 {
@@ -479,19 +470,16 @@ static int spi_esp32_transceive(const struct device *dev,
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int spi_esp32_transceive_async(const struct device *dev,
-				      const struct spi_config *spi_cfg,
+static int spi_esp32_transceive_async(const struct device *dev, const struct spi_config *spi_cfg,
 				      const struct spi_buf_set *tx_bufs,
-				      const struct spi_buf_set *rx_bufs,
-				      spi_callback_t cb,
+				      const struct spi_buf_set *rx_bufs, spi_callback_t cb,
 				      void *userdata)
 {
 	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, true, cb, userdata);
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static int spi_esp32_release(const struct device *dev,
-			     const struct spi_config *config)
+static int spi_esp32_release(const struct device *dev, const struct spi_config *config)
 {
 	struct spi_esp32_data *data = dev->data;
 
@@ -500,16 +488,14 @@ static int spi_esp32_release(const struct device *dev,
 	return 0;
 }
 
-static const struct spi_driver_api spi_api = {
-	.transceive = spi_esp32_transceive,
+static const struct spi_driver_api spi_api = {.transceive = spi_esp32_transceive,
 #ifdef CONFIG_SPI_ASYNC
-	.transceive_async = spi_esp32_transceive_async,
+					      .transceive_async = spi_esp32_transceive_async,
 #endif
 #ifdef CONFIG_SPI_RTIO
-	.iodev_submit = spi_rtio_iodev_default_submit,
+					      .iodev_submit = spi_rtio_iodev_default_submit,
 #endif
-	.release = spi_esp32_release
-};
+					      .release = spi_esp32_release};
 
 #ifdef CONFIG_SOC_SERIES_ESP32
 #define GET_AS_CS(idx) .as_cs = DT_INST_PROP(idx, clk_as_cs),
@@ -517,51 +503,44 @@ static const struct spi_driver_api spi_api = {
 #define GET_AS_CS(idx)
 #endif
 
-#define ESP32_SPI_INIT(idx)	\
-				\
-	PINCTRL_DT_INST_DEFINE(idx);	\
-										\
-	static struct spi_esp32_data spi_data_##idx = {	\
-		SPI_CONTEXT_INIT_LOCK(spi_data_##idx, ctx),	\
-		SPI_CONTEXT_INIT_SYNC(spi_data_##idx, ctx),	\
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(idx), ctx)	\
-		.hal = {	\
-			.hw = (spi_dev_t *)DT_INST_REG_ADDR(idx),	\
-		},	\
-		.dev_config = {	\
-			.half_duplex = DT_INST_PROP(idx, half_duplex),	\
-			GET_AS_CS(idx)							\
-			.positive_cs = DT_INST_PROP(idx, positive_cs),	\
-			.no_compensate = DT_INST_PROP(idx, dummy_comp),	\
-			.sio = DT_INST_PROP(idx, sio)	\
-		}	\
-	};	\
-		\
-	static const struct spi_esp32_config spi_config_##idx = {	\
-		.spi = (spi_dev_t *)DT_INST_REG_ADDR(idx),	\
-			\
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),	\
-		.duty_cycle = 0, \
-		.input_delay_ns = 0, \
-		.irq_source = DT_INST_IRQ_BY_IDX(idx, 0, irq), \
-		.irq_priority = DT_INST_IRQ_BY_IDX(idx, 0, priority), \
-		.irq_flags = DT_INST_IRQ_BY_IDX(idx, 0, flags), \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),	\
-		.clock_subsys =	\
-			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset),	\
-		.use_iomux = DT_INST_PROP(idx, use_iomux),	\
-		.dma_enabled = DT_INST_PROP(idx, dma_enabled),	\
-		.dma_clk_src = DT_INST_PROP(idx, dma_clk),	\
-		.dma_host = DT_INST_PROP(idx, dma_host),	\
-		.cs_setup = DT_INST_PROP_OR(idx, cs_setup_time, 0), \
-		.cs_hold = DT_INST_PROP_OR(idx, cs_hold_time, 0), \
-		.line_idle_low = DT_INST_PROP(idx, line_idle_low), \
-		.clock_source = SPI_CLK_SRC_DEFAULT,	\
-	};	\
-		\
-	DEVICE_DT_INST_DEFINE(idx, spi_esp32_init,	\
-			      NULL, &spi_data_##idx,	\
-			      &spi_config_##idx, POST_KERNEL,	\
-			      CONFIG_SPI_INIT_PRIORITY, &spi_api);
+#define ESP32_SPI_INIT(idx)                                                                        \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(idx);                                                               \
+                                                                                                   \
+	static struct spi_esp32_data spi_data_##idx = {                                            \
+		SPI_CONTEXT_INIT_LOCK(spi_data_##idx, ctx),                                        \
+		SPI_CONTEXT_INIT_SYNC(spi_data_##idx, ctx),                                        \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(idx), ctx).hal =                       \
+			{                                                                          \
+				.hw = (spi_dev_t *)DT_INST_REG_ADDR(idx),                          \
+			},                                                                         \
+		.dev_config = {.half_duplex = DT_INST_PROP(idx, half_duplex),                      \
+			       GET_AS_CS(idx).positive_cs = DT_INST_PROP(idx, positive_cs),        \
+			       .no_compensate = DT_INST_PROP(idx, dummy_comp),                     \
+			       .sio = DT_INST_PROP(idx, sio)}};                                    \
+                                                                                                   \
+	static const struct spi_esp32_config spi_config_##idx = {                                  \
+		.spi = (spi_dev_t *)DT_INST_REG_ADDR(idx),                                         \
+                                                                                                   \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                              \
+		.duty_cycle = 0,                                                                   \
+		.input_delay_ns = 0,                                                               \
+		.irq_source = DT_INST_IRQ_BY_IDX(idx, 0, irq),                                     \
+		.irq_priority = DT_INST_IRQ_BY_IDX(idx, 0, priority),                              \
+		.irq_flags = DT_INST_IRQ_BY_IDX(idx, 0, flags),                                    \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                       \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset),          \
+		.use_iomux = DT_INST_PROP(idx, use_iomux),                                         \
+		.dma_enabled = DT_INST_PROP(idx, dma_enabled),                                     \
+		.dma_clk_src = DT_INST_PROP(idx, dma_clk),                                         \
+		.dma_host = DT_INST_PROP(idx, dma_host),                                           \
+		.cs_setup = DT_INST_PROP_OR(idx, cs_setup_time, 0),                                \
+		.cs_hold = DT_INST_PROP_OR(idx, cs_hold_time, 0),                                  \
+		.line_idle_low = DT_INST_PROP(idx, line_idle_low),                                 \
+		.clock_source = SPI_CLK_SRC_DEFAULT,                                               \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(idx, spi_esp32_init, NULL, &spi_data_##idx, &spi_config_##idx,       \
+			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &spi_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_SPI_INIT)

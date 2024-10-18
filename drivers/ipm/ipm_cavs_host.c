@@ -30,7 +30,6 @@
 #define DMWBA(win_base) (win_base + 0x0)
 #define DMWLO(win_base) (win_base + 0x4)
 
-
 struct ipm_cavs_host_data {
 	ipm_callback_t callback;
 	void *user_data;
@@ -41,8 +40,7 @@ struct ipm_cavs_host_data {
  * whether this is required, and the SOF code that will be using this
  * is externally synchronized already.
  */
-static int send(const struct device *dev, int wait, uint32_t id,
-		const void *data, int size)
+static int send(const struct device *dev, int wait, uint32_t id, const void *data, int size)
 {
 	const struct device *mw0 = DEVICE_DT_GET(DT_NODELABEL(mem_window0));
 
@@ -51,8 +49,7 @@ static int send(const struct device *dev, int wait, uint32_t id,
 	}
 	const struct mem_win_config *mw0_config = mw0->config;
 	uint32_t *buf = (uint32_t *)sys_cache_uncached_ptr_get(
-			(void *)((uint32_t)mw0_config->mem_base
-			+ CONFIG_IPM_CAVS_HOST_OUTBOX_OFFSET));
+		(void *)((uint32_t)mw0_config->mem_base + CONFIG_IPM_CAVS_HOST_OUTBOX_OFFSET));
 
 	if (!intel_adsp_ipc_is_complete(INTEL_ADSP_IPC_HOST_DEV)) {
 		return -EBUSY;
@@ -98,8 +95,7 @@ static int send(const struct device *dev, int wait, uint32_t id,
 	return ret;
 }
 
-static bool ipc_handler(const struct device *dev, void *arg,
-			uint32_t data, uint32_t ext_data)
+static bool ipc_handler(const struct device *dev, void *arg, uint32_t data, uint32_t ext_data)
 {
 	ARG_UNUSED(arg);
 	struct device *ipmdev = arg;
@@ -124,8 +120,7 @@ static bool ipc_handler(const struct device *dev, void *arg,
 	}
 
 	if (devdata->enabled && (devdata->callback != NULL)) {
-		devdata->callback(ipmdev, devdata->user_data,
-				  data & 0x3fffffff, msg);
+		devdata->callback(ipmdev, devdata->user_data, data & 0x3fffffff, msg);
 	}
 
 	/* Return false for async handling */
@@ -143,9 +138,7 @@ static uint32_t max_id_val_get(const struct device *ipmdev)
 	return 0x3fffffff;
 }
 
-static void register_callback(const struct device *port,
-			      ipm_callback_t cb,
-			      void *user_data)
+static void register_callback(const struct device *port, ipm_callback_t cb, void *user_data)
 {
 	struct ipm_cavs_host_data *data = port->data;
 
@@ -208,5 +201,4 @@ static const struct ipm_driver_api api = {
 
 static struct ipm_cavs_host_data data;
 
-DEVICE_DEFINE(ipm_cavs_host, "ipm_cavs_host", init, NULL, &data, NULL,
-	      PRE_KERNEL_2, 1, &api);
+DEVICE_DEFINE(ipm_cavs_host, "ipm_cavs_host", init, NULL, &data, NULL, PRE_KERNEL_2, 1, &api);

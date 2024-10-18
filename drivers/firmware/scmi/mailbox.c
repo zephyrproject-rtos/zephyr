@@ -9,9 +9,7 @@
 
 LOG_MODULE_REGISTER(scmi_mbox);
 
-static void scmi_mbox_cb(const struct device *mbox,
-			 mbox_channel_id_t channel_id,
-			 void *user_data,
+static void scmi_mbox_cb(const struct device *mbox, mbox_channel_id_t channel_id, void *user_data,
 			 struct mbox_msg *data)
 {
 	struct scmi_channel *scmi_chan = user_data;
@@ -21,8 +19,7 @@ static void scmi_mbox_cb(const struct device *mbox,
 	}
 }
 
-static int scmi_mbox_send_message(const struct device *transport,
-				  struct scmi_channel *chan,
+static int scmi_mbox_send_message(const struct device *transport, struct scmi_channel *chan,
 				  struct scmi_message *msg)
 {
 	struct scmi_mbox_channel *mbox_chan;
@@ -45,8 +42,7 @@ static int scmi_mbox_send_message(const struct device *transport,
 	return 0;
 }
 
-static int scmi_mbox_read_message(const struct device *transport,
-				  struct scmi_channel *chan,
+static int scmi_mbox_read_message(const struct device *transport, struct scmi_channel *chan,
 				  struct scmi_message *msg)
 {
 	struct scmi_mbox_channel *mbox_chan;
@@ -56,18 +52,14 @@ static int scmi_mbox_read_message(const struct device *transport,
 	return scmi_shmem_read_message(mbox_chan->shmem, msg);
 }
 
-static bool scmi_mbox_channel_is_free(const struct device *transport,
-				      struct scmi_channel *chan)
+static bool scmi_mbox_channel_is_free(const struct device *transport, struct scmi_channel *chan)
 {
 	struct scmi_mbox_channel *mbox_chan = chan->data;
 
-	return scmi_shmem_channel_status(mbox_chan->shmem) &
-		SCMI_SHMEM_CHAN_STATUS_BUSY_BIT;
+	return scmi_shmem_channel_status(mbox_chan->shmem) & SCMI_SHMEM_CHAN_STATUS_BUSY_BIT;
 }
 
-static int scmi_mbox_setup_chan(const struct device *transport,
-				struct scmi_channel *chan,
-				bool tx)
+static int scmi_mbox_setup_chan(const struct device *transport, struct scmi_channel *chan, bool tx)
 {
 	int ret;
 	struct scmi_mbox_channel *mbox_chan;
@@ -97,8 +89,7 @@ static int scmi_mbox_setup_chan(const struct device *transport,
 	}
 
 	/* enable interrupt-based communication */
-	scmi_shmem_update_flags(mbox_chan->shmem,
-				SCMI_SHMEM_CHAN_FLAG_IRQ_BIT,
+	scmi_shmem_update_flags(mbox_chan->shmem, SCMI_SHMEM_CHAN_FLAG_IRQ_BIT,
 				SCMI_SHMEM_CHAN_FLAG_IRQ_BIT);
 
 	return 0;
@@ -111,6 +102,5 @@ static struct scmi_transport_api scmi_mbox_api = {
 	.channel_is_free = scmi_mbox_channel_is_free,
 };
 
-DT_INST_SCMI_MAILBOX_DEFINE(0, PRE_KERNEL_1,
-			    CONFIG_ARM_SCMI_TRANSPORT_INIT_PRIORITY,
+DT_INST_SCMI_MAILBOX_DEFINE(0, PRE_KERNEL_1, CONFIG_ARM_SCMI_TRANSPORT_INIT_PRIORITY,
 			    &scmi_mbox_api);

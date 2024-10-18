@@ -8,7 +8,7 @@
 #define DT_DRV_COMPAT litex_liteeth
 
 #define LOG_MODULE_NAME eth_litex_liteeth
-#define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
+#define LOG_LEVEL       CONFIG_ETHERNET_LOG_LEVEL
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
@@ -135,8 +135,7 @@ static void eth_rx(const struct device *port)
 	rxslot = litex_read8(config->rx_slot_addr);
 
 	/* obtain rx buffer */
-	pkt = net_pkt_rx_alloc_with_buffer(context->iface, len, AF_UNSPEC, 0,
-					   K_NO_WAIT);
+	pkt = net_pkt_rx_alloc_with_buffer(context->iface, len, AF_UNSPEC, 0, K_NO_WAIT);
 	if (pkt == NULL) {
 		LOG_ERR("Failed to obtain RX buffer");
 		goto out;
@@ -227,8 +226,7 @@ static const struct device *eth_get_phy(const struct device *dev)
 	return config->phy_dev;
 }
 
-static void phy_link_state_changed(const struct device *phy_dev,
-				   struct phy_link_state *state,
+static void phy_link_state_changed(const struct device *phy_dev, struct phy_link_state *state,
 				   void *user_data)
 {
 	const struct device *dev = (const struct device *)user_data;
@@ -259,7 +257,7 @@ static void eth_iface_init(struct net_if *iface)
 
 	/* set MAC address */
 	if (net_if_set_link_addr(iface, context->mac_addr, sizeof(context->mac_addr),
-			     NET_LINK_ETHERNET) < 0) {
+				 NET_LINK_ETHERNET) < 0) {
 		LOG_ERR("setting mac failed");
 		return;
 	}
@@ -289,15 +287,13 @@ static enum ethernet_hw_caps eth_caps(const struct device *dev)
 		ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T | ETHERNET_LINK_1000BASE_T;
 }
 
-static const struct ethernet_api eth_api = {
-	.iface_api.init = eth_iface_init,
-	.start = eth_start,
-	.stop = eth_stop,
-	.get_capabilities = eth_caps,
-	.set_config = eth_set_config,
-	.get_phy = eth_get_phy,
-	.send = eth_tx
-};
+static const struct ethernet_api eth_api = {.iface_api.init = eth_iface_init,
+					    .start = eth_start,
+					    .stop = eth_stop,
+					    .get_capabilities = eth_caps,
+					    .set_config = eth_set_config,
+					    .get_phy = eth_get_phy,
+					    .send = eth_tx};
 
 #define ETH_LITEX_SLOT_SIZE 0x0800
 
@@ -325,28 +321,30 @@ static const struct ethernet_api eth_api = {
                                                                                                    \
 	static const struct eth_litex_config eth_config##n = {                                     \
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, phy_handle),                                   \
-			   (.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),))            \
-		.config_func = eth_irq_config##n,                                                  \
-		.random_mac_address = DT_INST_PROP(n, zephyr_random_mac_address),                  \
-		.rx_slot_addr = DT_INST_REG_ADDR_BY_NAME(n, rx_slot),                              \
-		.rx_length_addr = DT_INST_REG_ADDR_BY_NAME(n, rx_length),                          \
-		.rx_ev_pending_addr = DT_INST_REG_ADDR_BY_NAME(n, rx_ev_pending),                  \
-		.rx_ev_enable_addr = DT_INST_REG_ADDR_BY_NAME(n, rx_ev_enable),                    \
-		.tx_start_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_start),                            \
-		.tx_ready_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_ready),                            \
-		.tx_slot_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_slot),                              \
-		.tx_length_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_length),                          \
-		.tx_ev_pending_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_ev_pending),                  \
-		.tx_ev_enable_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_ev_enable),                    \
-		.rx_buf = {                                                                        \
-			(uint8_t *)ETH_LITEX_SLOT_RX0_ADDR(n),                                     \
-			(uint8_t *)ETH_LITEX_SLOT_RX1_ADDR(n),                                     \
-												   \
-		},                                                                                 \
-		.tx_buf = {                                                                        \
-			(uint8_t *)ETH_LITEX_SLOT_TX0_ADDR(n),                                     \
-			(uint8_t *)ETH_LITEX_SLOT_TX1_ADDR(n),                                     \
-		},                                                                                 \
+			   (.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),)) .config_func =   \
+				 eth_irq_config##n,                                                \
+			 .random_mac_address = DT_INST_PROP(n, zephyr_random_mac_address),         \
+			 .rx_slot_addr = DT_INST_REG_ADDR_BY_NAME(n, rx_slot),                     \
+			 .rx_length_addr = DT_INST_REG_ADDR_BY_NAME(n, rx_length),                 \
+			 .rx_ev_pending_addr = DT_INST_REG_ADDR_BY_NAME(n, rx_ev_pending),         \
+			 .rx_ev_enable_addr = DT_INST_REG_ADDR_BY_NAME(n, rx_ev_enable),           \
+			 .tx_start_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_start),                   \
+			 .tx_ready_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_ready),                   \
+			 .tx_slot_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_slot),                     \
+			 .tx_length_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_length),                 \
+			 .tx_ev_pending_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_ev_pending),         \
+			 .tx_ev_enable_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_ev_enable),           \
+			 .rx_buf =                                                                 \
+				 {                                                                 \
+					 (uint8_t *)ETH_LITEX_SLOT_RX0_ADDR(n),                    \
+					 (uint8_t *)ETH_LITEX_SLOT_RX1_ADDR(n),                    \
+                                                                                                   \
+				 },                                                                \
+			 .tx_buf =                                                                 \
+				 {                                                                 \
+					 (uint8_t *)ETH_LITEX_SLOT_TX0_ADDR(n),                    \
+					 (uint8_t *)ETH_LITEX_SLOT_TX1_ADDR(n),                    \
+				 },                                                                \
                                                                                                    \
 	};                                                                                         \
                                                                                                    \

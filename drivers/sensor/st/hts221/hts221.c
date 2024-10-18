@@ -22,13 +22,12 @@ struct str2odr {
 };
 
 static const struct str2odr hts221_odrs[] = {
-	{ "1", HTS221_ODR_1Hz },
-	{ "7", HTS221_ODR_7Hz },
-	{ "12.5", HTS221_ODR_12Hz5 },
+	{"1", HTS221_ODR_1Hz},
+	{"7", HTS221_ODR_7Hz},
+	{"12.5", HTS221_ODR_12Hz5},
 };
 
-static int hts221_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
+static int hts221_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	struct hts221_data *data = dev->data;
@@ -40,8 +39,7 @@ static int hts221_channel_get(const struct device *dev,
 	 */
 	if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
 		conv_val = (int32_t)(data->t1_degc_x8 - data->t0_degc_x8) *
-			   (data->t_sample - data->t0_out) /
-			   (data->t1_out - data->t0_out) +
+				   (data->t_sample - data->t0_out) / (data->t1_out - data->t0_out) +
 			   data->t0_degc_x8;
 
 		/* convert temperature x8 to degrees Celsius */
@@ -49,8 +47,8 @@ static int hts221_channel_get(const struct device *dev,
 		val->val2 = (conv_val % 8) * (1000000 / 8);
 	} else if (chan == SENSOR_CHAN_HUMIDITY) {
 		conv_val = (int32_t)(data->h1_rh_x2 - data->h0_rh_x2) *
-			   (data->rh_sample - data->h0_t0_out) /
-			   (data->h1_t0_out - data->h0_t0_out) +
+				   (data->rh_sample - data->h0_t0_out) /
+				   (data->h1_t0_out - data->h0_t0_out) +
 			   data->h0_rh_x2;
 
 		/* convert humidity x2 to percent */
@@ -63,8 +61,7 @@ static int hts221_channel_get(const struct device *dev,
 	return 0;
 }
 
-static int hts221_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
+static int hts221_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct hts221_data *data = dev->data;
 	const struct hts221_config *cfg = dev->config;
@@ -74,8 +71,7 @@ static int hts221_sample_fetch(const struct device *dev,
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-	status = hts221_read_reg(ctx, HTS221_HUMIDITY_OUT_L |
-				 HTS221_AUTOINCREMENT_ADDR, buf, 4);
+	status = hts221_read_reg(ctx, HTS221_HUMIDITY_OUT_L | HTS221_AUTOINCREMENT_ADDR, buf, 4);
 	if (status < 0) {
 		LOG_ERR("Failed to fetch data sample.");
 		return status;
@@ -95,8 +91,7 @@ static int hts221_read_conversion_data(const struct device *dev)
 	uint8_t buf[16];
 	int status;
 
-	status = hts221_read_reg(ctx, HTS221_H0_RH_X2 |
-				 HTS221_AUTOINCREMENT_ADDR, buf, 16);
+	status = hts221_read_reg(ctx, HTS221_H0_RH_X2 | HTS221_AUTOINCREMENT_ADDR, buf, 16);
 	if (status < 0) {
 		LOG_ERR("Failed to read conversion data.");
 		return status;
@@ -203,72 +198,58 @@ int hts221_init(const struct device *dev)
  * Device creation macros
  */
 
-#define HTS221_DEVICE_INIT(inst)					\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
-			      hts221_init,				\
-			      NULL,					\
-			      &hts221_data_##inst,			\
-			      &hts221_config_##inst,			\
-			      POST_KERNEL,				\
-			      CONFIG_SENSOR_INIT_PRIORITY,		\
-			      &hts221_driver_api);
+#define HTS221_DEVICE_INIT(inst)                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, hts221_init, NULL, &hts221_data_##inst,                 \
+				     &hts221_config_##inst, POST_KERNEL,                           \
+				     CONFIG_SENSOR_INIT_PRIORITY, &hts221_driver_api);
 
 /*
  * Instantiation macros used when a device is on a SPI bus.
  */
 
 #ifdef CONFIG_HTS221_TRIGGER
-#define HTS221_CFG_IRQ(inst)					\
-	.gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, drdy_gpios)
+#define HTS221_CFG_IRQ(inst) .gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, drdy_gpios)
 #else
 #define HTS221_CFG_IRQ(inst)
 #endif /* CONFIG_HTS221_TRIGGER */
 
-#define HTS221_CONFIG_COMMON(inst)					\
+#define HTS221_CONFIG_COMMON(inst)                                                                 \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),		\
 		(HTS221_CFG_IRQ(inst)), ())
 
-#define HTS221_SPI_OPERATION (SPI_WORD_SET(8) |				\
-			      SPI_OP_MODE_MASTER |			\
-			      SPI_MODE_CPOL |				\
-			      SPI_MODE_CPHA |				\
-			      SPI_HALF_DUPLEX)				\
+#define HTS221_SPI_OPERATION                                                                       \
+	(SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_HALF_DUPLEX)
 
-#define HTS221_CONFIG_SPI(inst)							\
-		{								\
-		STMEMSC_CTX_SPI(&hts221_config_##inst.stmemsc_cfg),		\
-		.stmemsc_cfg = {						\
-			.spi = SPI_DT_SPEC_INST_GET(inst,			\
-						    HTS221_SPI_OPERATION,	\
-						    0),				\
-		},								\
-		HTS221_CONFIG_COMMON(inst)					\
-	}
+#define HTS221_CONFIG_SPI(inst)                                                                    \
+	{STMEMSC_CTX_SPI(&hts221_config_##inst.stmemsc_cfg),                                       \
+	 .stmemsc_cfg =                                                                            \
+		 {                                                                                 \
+			 .spi = SPI_DT_SPEC_INST_GET(inst, HTS221_SPI_OPERATION, 0),               \
+		 },                                                                                \
+	 HTS221_CONFIG_COMMON(inst)}
 
 /*
  * Instantiation macros used when a device is on an I2C bus.
  */
 
-#define HTS221_CONFIG_I2C(inst)						\
-	{								\
-		STMEMSC_CTX_I2C(&hts221_config_##inst.stmemsc_cfg),	\
-		.stmemsc_cfg = {					\
-			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
-		},							\
-		HTS221_CONFIG_COMMON(inst)				\
-	}
+#define HTS221_CONFIG_I2C(inst)                                                                    \
+	{STMEMSC_CTX_I2C(&hts221_config_##inst.stmemsc_cfg),                                       \
+	 .stmemsc_cfg =                                                                            \
+		 {                                                                                 \
+			 .i2c = I2C_DT_SPEC_INST_GET(inst),                                        \
+		 },                                                                                \
+	 HTS221_CONFIG_COMMON(inst)}
 
 /*
  * Main instantiation macro. Use of COND_CODE_1() selects the right
  * bus-specific macro at preprocessor time.
  */
 
-#define HTS221_DEFINE(inst)						\
-	static struct hts221_data hts221_data_##inst;			\
-	static const struct hts221_config hts221_config_##inst =	\
-		COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
+#define HTS221_DEFINE(inst)                                                                        \
+	static struct hts221_data hts221_data_##inst;                                              \
+	static const struct hts221_config hts221_config_##inst = COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
 			    (HTS221_CONFIG_SPI(inst)),			\
-			    (HTS221_CONFIG_I2C(inst)));			\
+			    (HTS221_CONFIG_I2C(inst)));                    \
 	HTS221_DEVICE_INIT(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(HTS221_DEFINE)

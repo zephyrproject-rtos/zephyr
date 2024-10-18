@@ -406,7 +406,7 @@ static const struct uart_driver_api uart_numaker_driver_api = {
 #define CLOCK_CTRL_INIT(n) .clk_dev = DEVICE_DT_GET(DT_PARENT(DT_INST_CLOCKS_CTLR(n))),
 
 #define PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
-#define PINCTRL_INIT(n)	  .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
+#define PINCTRL_INIT(n)   .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 #define NUMAKER_UART_IRQ_CONFIG_FUNC(n)                                                            \

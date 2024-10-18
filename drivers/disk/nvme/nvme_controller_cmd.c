@@ -16,14 +16,13 @@ LOG_MODULE_DECLARE(nvme, CONFIG_NVME_LOG_LEVEL);
 #include "nvme.h"
 #include "nvme_helpers.h"
 
-int nvme_ctrlr_cmd_identify_controller(struct nvme_controller *ctrlr,
-				       nvme_cb_fn_t cb_fn, void *cb_arg)
+int nvme_ctrlr_cmd_identify_controller(struct nvme_controller *ctrlr, nvme_cb_fn_t cb_fn,
+				       void *cb_arg)
 {
 	struct nvme_request *request;
 
-	request = nvme_allocate_request_vaddr(
-		&ctrlr->cdata, sizeof(struct nvme_controller_data),
-		cb_fn, cb_arg);
+	request = nvme_allocate_request_vaddr(&ctrlr->cdata, sizeof(struct nvme_controller_data),
+					      cb_fn, cb_arg);
 	if (!request) {
 		return -ENOMEM;
 	}
@@ -35,15 +34,13 @@ int nvme_ctrlr_cmd_identify_controller(struct nvme_controller *ctrlr,
 	return nvme_cmd_qpair_submit_request(ctrlr->adminq, request);
 }
 
-int nvme_ctrlr_cmd_identify_namespace(struct nvme_controller *ctrlr,
-				      uint32_t nsid, void *payload,
+int nvme_ctrlr_cmd_identify_namespace(struct nvme_controller *ctrlr, uint32_t nsid, void *payload,
 				      nvme_cb_fn_t cb_fn, void *cb_arg)
 {
 	struct nvme_request *request;
 
-	request = nvme_allocate_request_vaddr(
-		payload, sizeof(struct nvme_namespace_data),
-		cb_fn, cb_arg);
+	request = nvme_allocate_request_vaddr(payload, sizeof(struct nvme_namespace_data), cb_fn,
+					      cb_arg);
 	if (!request) {
 		return -ENOMEM;
 	}
@@ -57,8 +54,7 @@ int nvme_ctrlr_cmd_identify_namespace(struct nvme_controller *ctrlr,
 	return nvme_cmd_qpair_submit_request(ctrlr->adminq, request);
 }
 
-int nvme_ctrlr_cmd_create_io_cq(struct nvme_controller *ctrlr,
-				struct nvme_cmd_qpair *io_queue,
+int nvme_ctrlr_cmd_create_io_cq(struct nvme_controller *ctrlr, struct nvme_cmd_qpair *io_queue,
 				nvme_cb_fn_t cb_fn, void *cb_arg)
 {
 	struct nvme_request *request;
@@ -76,8 +72,7 @@ int nvme_ctrlr_cmd_create_io_cq(struct nvme_controller *ctrlr,
 	 * TODO: create a create io completion queue command data
 	 *  structure.
 	 */
-	cmd->cdw10 = sys_cpu_to_le32(((io_queue->num_entries-1) << 16) |
-				     io_queue->id);
+	cmd->cdw10 = sys_cpu_to_le32(((io_queue->num_entries - 1) << 16) | io_queue->id);
 	/* 0x3 = interrupts enabled | physically contiguous */
 	cmd->cdw11 = sys_cpu_to_le32((io_queue->vector << 16) | 0x3);
 	cmd->dptr.prp1 = sys_cpu_to_le64(io_queue->cpl_bus_addr);
@@ -85,8 +80,7 @@ int nvme_ctrlr_cmd_create_io_cq(struct nvme_controller *ctrlr,
 	return nvme_cmd_qpair_submit_request(ctrlr->adminq, request);
 }
 
-int nvme_ctrlr_cmd_create_io_sq(struct nvme_controller *ctrlr,
-				struct nvme_cmd_qpair *io_queue,
+int nvme_ctrlr_cmd_create_io_sq(struct nvme_controller *ctrlr, struct nvme_cmd_qpair *io_queue,
 				nvme_cb_fn_t cb_fn, void *cb_arg)
 {
 	struct nvme_request *request;
@@ -104,8 +98,7 @@ int nvme_ctrlr_cmd_create_io_sq(struct nvme_controller *ctrlr,
 	 * TODO: create a create io submission queue command data
 	 *  structure.
 	 */
-	cmd->cdw10 = sys_cpu_to_le32(((io_queue->num_entries - 1) << 16) |
-				     io_queue->id);
+	cmd->cdw10 = sys_cpu_to_le32(((io_queue->num_entries - 1) << 16) | io_queue->id);
 	/* 0x1 = physically contiguous */
 	cmd->cdw11 = sys_cpu_to_le32((io_queue->id << 16) | 0x1);
 	cmd->dptr.prp1 = sys_cpu_to_le64(io_queue->cmd_bus_addr);
@@ -113,8 +106,7 @@ int nvme_ctrlr_cmd_create_io_sq(struct nvme_controller *ctrlr,
 	return nvme_cmd_qpair_submit_request(ctrlr->adminq, request);
 }
 
-int nvme_ctrlr_cmd_delete_io_cq(struct nvme_controller *ctrlr,
-				struct nvme_cmd_qpair *io_queue,
+int nvme_ctrlr_cmd_delete_io_cq(struct nvme_controller *ctrlr, struct nvme_cmd_qpair *io_queue,
 				nvme_cb_fn_t cb_fn, void *cb_arg)
 {
 	struct nvme_request *request;
@@ -137,8 +129,7 @@ int nvme_ctrlr_cmd_delete_io_cq(struct nvme_controller *ctrlr,
 	return nvme_cmd_qpair_submit_request(ctrlr->adminq, request);
 }
 
-int nvme_ctrlr_cmd_delete_io_sq(struct nvme_controller *ctrlr,
-				struct nvme_cmd_qpair *io_queue,
+int nvme_ctrlr_cmd_delete_io_sq(struct nvme_controller *ctrlr, struct nvme_cmd_qpair *io_queue,
 				nvme_cb_fn_t cb_fn, void *cb_arg)
 {
 	struct nvme_request *request;
@@ -161,12 +152,10 @@ int nvme_ctrlr_cmd_delete_io_sq(struct nvme_controller *ctrlr,
 	return nvme_cmd_qpair_submit_request(ctrlr->adminq, request);
 }
 
-int nvme_ctrlr_cmd_set_feature(struct nvme_controller *ctrlr,
-			       uint8_t feature, uint32_t cdw11,
-			       uint32_t cdw12, uint32_t cdw13,
-			       uint32_t cdw14, uint32_t cdw15,
-			       void *payload, uint32_t payload_size,
-			       nvme_cb_fn_t cb_fn, void *cb_arg)
+int nvme_ctrlr_cmd_set_feature(struct nvme_controller *ctrlr, uint8_t feature, uint32_t cdw11,
+			       uint32_t cdw12, uint32_t cdw13, uint32_t cdw14, uint32_t cdw15,
+			       void *payload, uint32_t payload_size, nvme_cb_fn_t cb_fn,
+			       void *cb_arg)
 {
 	struct nvme_request *request;
 	struct nvme_command *cmd;
@@ -188,10 +177,9 @@ int nvme_ctrlr_cmd_set_feature(struct nvme_controller *ctrlr,
 	return nvme_cmd_qpair_submit_request(ctrlr->adminq, request);
 }
 
-int nvme_ctrlr_cmd_get_feature(struct nvme_controller *ctrlr,
-			       uint8_t feature, uint32_t cdw11,
-			       void *payload, uint32_t payload_size,
-			       nvme_cb_fn_t cb_fn, void *cb_arg)
+int nvme_ctrlr_cmd_get_feature(struct nvme_controller *ctrlr, uint8_t feature, uint32_t cdw11,
+			       void *payload, uint32_t payload_size, nvme_cb_fn_t cb_fn,
+			       void *cb_arg)
 {
 	struct nvme_request *request;
 	struct nvme_command *cmd;
@@ -209,15 +197,13 @@ int nvme_ctrlr_cmd_get_feature(struct nvme_controller *ctrlr,
 	return nvme_cmd_qpair_submit_request(ctrlr->adminq, request);
 }
 
-int nvme_ctrlr_cmd_set_num_queues(struct nvme_controller *ctrlr,
-				  uint32_t num_queues,
+int nvme_ctrlr_cmd_set_num_queues(struct nvme_controller *ctrlr, uint32_t num_queues,
 				  nvme_cb_fn_t cb_fn, void *cb_arg)
 {
 	uint32_t cdw11;
 
 	cdw11 = ((num_queues - 1) << 16) | (num_queues - 1);
 
-	return nvme_ctrlr_cmd_set_feature(ctrlr, NVME_FEAT_NUMBER_OF_QUEUES,
-					  cdw11, 0, 0, 0, 0, NULL, 0,
-					  cb_fn, cb_arg);
+	return nvme_ctrlr_cmd_set_feature(ctrlr, NVME_FEAT_NUMBER_OF_QUEUES, cdw11, 0, 0, 0, 0,
+					  NULL, 0, cb_fn, cb_arg);
 }

@@ -126,7 +126,6 @@ struct mss_i2c_data {
 	sys_slist_t cb;
 };
 
-
 static int mss_i2c_configure(const struct device *dev, uint32_t dev_config_raw)
 {
 	const struct mss_i2c_config *cfg = dev->config;
@@ -213,7 +212,6 @@ static int mss_i2c_write(const struct device *dev, uint8_t serial_addr, uint8_t 
 	return 0;
 }
 
-
 static int mss_i2c_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
 			    uint16_t addr)
 {
@@ -251,7 +249,6 @@ static void mss_i2c_reset(const struct device *dev)
 
 	sys_write8((ctrl | CTRL_ENS1), cfg->i2c_base_addr + CORE_I2C_CTRL);
 }
-
 
 static void mss_i2c_irq_handler(const struct device *dev)
 {

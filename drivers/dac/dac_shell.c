@@ -94,7 +94,8 @@ static int cmd_write_value(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(dac_cmds,
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	dac_cmds,
 	SHELL_CMD_ARG(setup, NULL,
 		      "Setup DAC channel\n"
 		      "Usage: setup <device> <channel> <resolution> [-b] [-i]\n"
@@ -105,7 +106,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(dac_cmds,
 		      "Write DAC value\n"
 		      "Usage: write <device> <channel> <value>",
 		      cmd_write_value, 4, 0),
-	SHELL_SUBCMD_SET_END
-);
+	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(dac, &dac_cmds, "DAC shell commands", NULL);

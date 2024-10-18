@@ -54,71 +54,73 @@ static const struct dma_driver_api dw_dma_driver_api = {
 	.stop = dw_dma_stop,
 };
 
-#define DW_DMAC_INIT(inst)						\
-									\
-	static struct dw_drv_plat_data dmac##inst = {			\
-		.chan[0] = {						\
-			.class  = 6,					\
-			.weight = 0,					\
-		},							\
-		.chan[1] = {						\
-			.class  = 6,					\
-			.weight = 0,					\
-		},							\
-		.chan[2] = {						\
-			.class  = 6,					\
-			.weight = 0,					\
-		},							\
-		.chan[3] = {						\
-			.class  = 6,					\
-			.weight = 0,					\
-		},							\
-		.chan[4] = {						\
-			.class  = 6,					\
-			.weight = 0,					\
-		},							\
-		.chan[5] = {						\
-			.class  = 6,					\
-			.weight = 0,					\
-		},							\
-		.chan[6] = {						\
-			.class  = 6,					\
-			.weight = 0,					\
-		},							\
-		.chan[7] = {						\
-			.class  = 6,					\
-			.weight = 0,					\
-		},							\
-	};								\
-									\
-	static void dw_dma##inst##_irq_config(void);			\
-									\
-	static const struct dw_dma_cfg dw_dma##inst##_config = {	\
-		.dw_cfg = {						\
-			.base = DT_INST_REG_ADDR(inst),			\
-		},							\
-		.irq_config = dw_dma##inst##_irq_config			\
-	};								\
-									\
-	static struct dw_dma_dev_data dw_dma##inst##_data = {		\
-		.channel_data = &dmac##inst,				\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(inst,					\
-			    &dw_dma_init,				\
-			    NULL,					\
-			    &dw_dma##inst##_data,			\
-			    &dw_dma##inst##_config, POST_KERNEL,	\
-			    CONFIG_DMA_INIT_PRIORITY,			\
-			    &dw_dma_driver_api);			\
-									\
-	static void dw_dma##inst##_irq_config(void)			\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(inst),				\
-			    DT_INST_IRQ(inst, priority), dw_dma_isr,	\
-			    DEVICE_DT_INST_GET(inst),			\
-			    DT_INST_IRQ(inst, sense));			\
-		irq_enable(DT_INST_IRQN(inst));				\
+#define DW_DMAC_INIT(inst)                                                                         \
+                                                                                                   \
+	static struct dw_drv_plat_data dmac##inst = {                                              \
+		.chan[0] =                                                                         \
+			{                                                                          \
+				.class = 6,                                                        \
+				.weight = 0,                                                       \
+			},                                                                         \
+		.chan[1] =                                                                         \
+			{                                                                          \
+				.class = 6,                                                        \
+				.weight = 0,                                                       \
+			},                                                                         \
+		.chan[2] =                                                                         \
+			{                                                                          \
+				.class = 6,                                                        \
+				.weight = 0,                                                       \
+			},                                                                         \
+		.chan[3] =                                                                         \
+			{                                                                          \
+				.class = 6,                                                        \
+				.weight = 0,                                                       \
+			},                                                                         \
+		.chan[4] =                                                                         \
+			{                                                                          \
+				.class = 6,                                                        \
+				.weight = 0,                                                       \
+			},                                                                         \
+		.chan[5] =                                                                         \
+			{                                                                          \
+				.class = 6,                                                        \
+				.weight = 0,                                                       \
+			},                                                                         \
+		.chan[6] =                                                                         \
+			{                                                                          \
+				.class = 6,                                                        \
+				.weight = 0,                                                       \
+			},                                                                         \
+		.chan[7] =                                                                         \
+			{                                                                          \
+				.class = 6,                                                        \
+				.weight = 0,                                                       \
+			},                                                                         \
+	};                                                                                         \
+                                                                                                   \
+	static void dw_dma##inst##_irq_config(void);                                               \
+                                                                                                   \
+	static const struct dw_dma_cfg dw_dma##inst##_config = {                                   \
+		.dw_cfg =                                                                          \
+			{                                                                          \
+				.base = DT_INST_REG_ADDR(inst),                                    \
+			},                                                                         \
+		.irq_config = dw_dma##inst##_irq_config};                                          \
+                                                                                                   \
+	static struct dw_dma_dev_data dw_dma##inst##_data = {                                      \
+		.channel_data = &dmac##inst,                                                       \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &dw_dma_init, NULL, &dw_dma##inst##_data,                      \
+			      &dw_dma##inst##_config, POST_KERNEL, CONFIG_DMA_INIT_PRIORITY,       \
+			      &dw_dma_driver_api);                                                 \
+                                                                                                   \
+	static void dw_dma##inst##_irq_config(void)                                                \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), dw_dma_isr,           \
+			    DEVICE_DT_INST_GET(inst), DT_INST_IRQ(inst, sense));                   \
+		irq_enable(DT_INST_IRQN(inst));                                                    \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(DW_DMAC_INIT)

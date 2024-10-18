@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(uc81xx, CONFIG_DISPLAY_LOG_LEVEL);
  * also first gate/source should be 0.
  */
 
-#define UC81XX_PIXELS_PER_BYTE		8U
+#define UC81XX_PIXELS_PER_BYTE 8U
 
 struct uc81xx_dt_array {
 	uint8_t *data;
@@ -47,9 +47,9 @@ struct uc81xx_profile {
 	bool override_cdi;
 	uint8_t tcon;
 	bool override_tcon;
-	uint8_t  pll;
+	uint8_t pll;
 	bool override_pll;
-	uint8_t  vdcs;
+	uint8_t vdcs;
 	bool override_vdcs;
 
 	const struct uc81xx_dt_array lutc;
@@ -68,9 +68,8 @@ struct uc81xx_quirks {
 
 	int (*set_cdi)(const struct device *dev, bool border);
 	int (*set_tres)(const struct device *dev);
-	int (*set_ptl)(const struct device *dev, uint16_t x, uint16_t y,
-		       uint16_t x_end_idx, uint16_t y_end_idx,
-		       const struct display_buffer_descriptor *desc);
+	int (*set_ptl)(const struct device *dev, uint16_t x, uint16_t y, uint16_t x_end_idx,
+		       uint16_t y_end_idx, const struct display_buffer_descriptor *desc);
 };
 
 struct uc81xx_config {
@@ -93,7 +92,6 @@ struct uc81xx_data {
 	enum uc81xx_profile_type profile;
 };
 
-
 static inline void uc81xx_busy_wait(const struct device *dev)
 {
 	const struct uc81xx_config *config = dev->config;
@@ -106,23 +104,21 @@ static inline void uc81xx_busy_wait(const struct device *dev)
 	}
 }
 
-static inline int uc81xx_write_cmd(const struct device *dev, uint8_t cmd,
-				   const uint8_t *data, size_t len)
+static inline int uc81xx_write_cmd(const struct device *dev, uint8_t cmd, const uint8_t *data,
+				   size_t len)
 {
 	const struct uc81xx_config *config = dev->config;
 	int err;
 
 	uc81xx_busy_wait(dev);
 
-	err = mipi_dbi_command_write(config->mipi_dev, &config->dbi_config,
-				     cmd, data, len);
+	err = mipi_dbi_command_write(config->mipi_dev, &config->dbi_config, cmd, data, len);
 	mipi_dbi_release(config->mipi_dev, &config->dbi_config);
 	return err;
 }
 
-static inline int uc81xx_write_cmd_pattern(const struct device *dev,
-					   uint8_t cmd,
-					   uint8_t pattern, size_t len)
+static inline int uc81xx_write_cmd_pattern(const struct device *dev, uint8_t cmd, uint8_t pattern,
+					   size_t len)
 {
 	const struct uc81xx_config *config = dev->config;
 	struct display_buffer_descriptor mipi_desc;
@@ -131,8 +127,7 @@ static inline int uc81xx_write_cmd_pattern(const struct device *dev,
 
 	uc81xx_busy_wait(dev);
 
-	err = mipi_dbi_command_write(config->mipi_dev, &config->dbi_config,
-				     cmd, NULL, 0);
+	err = mipi_dbi_command_write(config->mipi_dev, &config->dbi_config, cmd, NULL, 0);
 	if (err < 0) {
 		return err;
 	}
@@ -145,13 +140,10 @@ static inline int uc81xx_write_cmd_pattern(const struct device *dev,
 
 	memset(data, pattern, sizeof(data));
 	while (len) {
-		mipi_desc.buf_size = mipi_desc.width = mipi_desc.pitch =
-			MIN(len, sizeof(data));
+		mipi_desc.buf_size = mipi_desc.width = mipi_desc.pitch = MIN(len, sizeof(data));
 
-		err = mipi_dbi_write_display(config->mipi_dev,
-					     &config->dbi_config,
-					     data, &mipi_desc,
-					     PIXEL_FORMAT_MONO10);
+		err = mipi_dbi_write_display(config->mipi_dev, &config->dbi_config, data,
+					     &mipi_desc, PIXEL_FORMAT_MONO10);
 		if (err < 0) {
 			goto out;
 		}
@@ -164,8 +156,7 @@ out:
 	return err;
 }
 
-static inline int uc81xx_write_cmd_uint8(const struct device *dev, uint8_t cmd,
-					 uint8_t data)
+static inline int uc81xx_write_cmd_uint8(const struct device *dev, uint8_t cmd, uint8_t data)
 {
 	return uc81xx_write_cmd(dev, cmd, &data, 1);
 }
@@ -180,27 +171,20 @@ static inline int uc81xx_write_array_opt(const struct device *dev, uint8_t cmd,
 	}
 }
 
-static int uc81xx_have_profile(const struct device *dev,
-			       enum uc81xx_profile_type type)
+static int uc81xx_have_profile(const struct device *dev, enum uc81xx_profile_type type)
 {
 	const struct uc81xx_config *config = dev->config;
 
-	return type < UC81XX_NUM_PROFILES &&
-		config->profiles[type];
+	return type < UC81XX_NUM_PROFILES && config->profiles[type];
 }
 
-static int uc81xx_set_profile(const struct device *dev,
-			      enum uc81xx_profile_type type)
+static int uc81xx_set_profile(const struct device *dev, enum uc81xx_profile_type type)
 {
 	const struct uc81xx_config *config = dev->config;
 	const struct uc81xx_profile *p;
 	struct uc81xx_data *data = dev->data;
 	uint8_t psr =
-		UC81XX_PSR_KW_R |
-		UC81XX_PSR_UD |
-		UC81XX_PSR_SHL |
-		UC81XX_PSR_SHD |
-		UC81XX_PSR_RST;
+		UC81XX_PSR_KW_R | UC81XX_PSR_UD | UC81XX_PSR_SHL | UC81XX_PSR_SHD | UC81XX_PSR_RST;
 
 	if (type >= UC81XX_NUM_PROFILES) {
 		return -EINVAL;
@@ -222,8 +206,7 @@ static int uc81xx_set_profile(const struct device *dev,
 			return -EIO;
 		}
 
-		if (uc81xx_write_array_opt(dev, UC81XX_CMD_BTST,
-					   &config->softstart)) {
+		if (uc81xx_write_array_opt(dev, UC81XX_CMD_BTST, &config->softstart)) {
 			return -EIO;
 		}
 
@@ -231,8 +214,7 @@ static int uc81xx_set_profile(const struct device *dev,
 		 * Enable LUT overrides if a LUT has been provided by
 		 * the user.
 		 */
-		if (p->lutc.len || p->lutww.len || p->lutkw.len ||
-		    p->lutwk.len || p->lutbd.len) {
+		if (p->lutc.len || p->lutww.len || p->lutkw.len || p->lutwk.len || p->lutbd.len) {
 			LOG_DBG("Using LUT from registers");
 			psr |= UC81XX_PSR_REG;
 		}
@@ -366,8 +348,7 @@ static int uc81xx_blanking_on(const struct device *dev)
 }
 
 static int uc81xx_write(const struct device *dev, const uint16_t x, const uint16_t y,
-			const struct display_buffer_descriptor *desc,
-			const void *buf)
+			const struct display_buffer_descriptor *desc, const void *buf)
 {
 	const struct uc81xx_config *config = dev->config;
 	struct uc81xx_data *data = dev->data;
@@ -375,22 +356,19 @@ static int uc81xx_write(const struct device *dev, const uint16_t x, const uint16
 	uint16_t x_end_idx = x + desc->width - 1;
 	uint16_t y_end_idx = y + desc->height - 1;
 	size_t buf_len;
-	const uint8_t back_buffer = data->blanking_on ?
-		UC81XX_CMD_DTM1 : UC81XX_CMD_DTM2;
+	const uint8_t back_buffer = data->blanking_on ? UC81XX_CMD_DTM1 : UC81XX_CMD_DTM2;
 
-	LOG_DBG("x %u, y %u, height %u, width %u, pitch %u",
-		x, y, desc->height, desc->width, desc->pitch);
+	LOG_DBG("x %u, y %u, height %u, width %u, pitch %u", x, y, desc->height, desc->width,
+		desc->pitch);
 
-	buf_len = MIN(desc->buf_size,
-		      desc->height * desc->width / UC81XX_PIXELS_PER_BYTE);
+	buf_len = MIN(desc->buf_size, desc->height * desc->width / UC81XX_PIXELS_PER_BYTE);
 	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller then width");
 	__ASSERT(buf != NULL, "Buffer is not available");
 	__ASSERT(buf_len != 0U, "Buffer of length zero");
-	__ASSERT(!(desc->width % UC81XX_PIXELS_PER_BYTE),
-		 "Buffer width not multiple of %d", UC81XX_PIXELS_PER_BYTE);
+	__ASSERT(!(desc->width % UC81XX_PIXELS_PER_BYTE), "Buffer width not multiple of %d",
+		 UC81XX_PIXELS_PER_BYTE);
 
-	if ((y_end_idx > (config->height - 1)) ||
-	    (x_end_idx > (config->width - 1))) {
+	if ((y_end_idx > (config->height - 1)) || (x_end_idx > (config->width - 1))) {
 		LOG_ERR("Position out of bounds");
 		return -EINVAL;
 	}
@@ -451,8 +429,7 @@ static int uc81xx_write(const struct device *dev, const uint16_t x, const uint16
 			return -EIO;
 		}
 
-		if (uc81xx_write_cmd(dev, back_buffer,
-				     (uint8_t *)buf, buf_len)) {
+		if (uc81xx_write_cmd(dev, back_buffer, (uint8_t *)buf, buf_len)) {
 			return -EIO;
 		}
 	}
@@ -464,8 +441,7 @@ static int uc81xx_write(const struct device *dev, const uint16_t x, const uint16
 	return 0;
 }
 
-static void uc81xx_get_capabilities(const struct device *dev,
-				    struct display_capabilities *caps)
+static void uc81xx_get_capabilities(const struct device *dev, struct display_capabilities *caps)
 {
 	const struct uc81xx_config *config = dev->config;
 
@@ -477,8 +453,7 @@ static void uc81xx_get_capabilities(const struct device *dev,
 	caps->screen_info = SCREEN_INFO_MONO_MSB_FIRST | SCREEN_INFO_EPD;
 }
 
-static int uc81xx_set_pixel_format(const struct device *dev,
-				   const enum display_pixel_format pf)
+static int uc81xx_set_pixel_format(const struct device *dev, const enum display_pixel_format pf)
 {
 	if (pf == PIXEL_FORMAT_MONO10) {
 		return 0;
@@ -488,12 +463,10 @@ static int uc81xx_set_pixel_format(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static int uc81xx_clear_and_write_buffer(const struct device *dev,
-					 uint8_t pattern, bool update)
+static int uc81xx_clear_and_write_buffer(const struct device *dev, uint8_t pattern, bool update)
 {
 	const struct uc81xx_config *config = dev->config;
-	const int size = config->width * config->height
-		/ UC81XX_PIXELS_PER_BYTE;
+	const int size = config->width * config->height / UC81XX_PIXELS_PER_BYTE;
 
 	if (uc81xx_write_cmd_pattern(dev, UC81XX_CMD_DTM1, pattern, size)) {
 		return -EIO;
@@ -634,8 +607,7 @@ static int uc8176_set_cdi(const struct device *dev, bool border)
 	const struct uc81xx_config *config = dev->config;
 	const struct uc81xx_data *data = dev->data;
 	const struct uc81xx_profile *p = config->profiles[data->profile];
-	uint8_t cdi = UC8176_CDI_VBD1 | UC8176_CDI_DDX0 |
-		(p ? (p->cdi & UC8176_CDI_CDI_MASK) : 0);
+	uint8_t cdi = UC8176_CDI_VBD1 | UC8176_CDI_DDX0 | (p ? (p->cdi & UC8176_CDI_CDI_MASK) : 0);
 
 	if (!p || !p->override_cdi) {
 		return 0;
@@ -718,97 +690,86 @@ static const struct display_driver_api uc81xx_driver_api = {
 	.set_pixel_format = uc81xx_set_pixel_format,
 };
 
-#define UC81XX_MAKE_ARRAY_OPT(n, p)					\
-	static uint8_t data_ ## n ## _ ## p[] = DT_PROP_OR(n, p, {})
+#define UC81XX_MAKE_ARRAY_OPT(n, p) static uint8_t data_##n##_##p[] = DT_PROP_OR(n, p, {})
 
-#define UC81XX_MAKE_ARRAY(n, p)						\
-	static uint8_t data_ ## n ## _ ## p[] = DT_PROP(n, p)
+#define UC81XX_MAKE_ARRAY(n, p) static uint8_t data_##n##_##p[] = DT_PROP(n, p)
 
-#define UC81XX_ASSIGN_ARRAY(n, p)					\
-	{								\
-		.data = data_ ## n ## _ ## p,				\
-		.len = sizeof(data_ ## n ## _ ## p),			\
+#define UC81XX_ASSIGN_ARRAY(n, p)                                                                  \
+	{                                                                                          \
+		.data = data_##n##_##p,                                                            \
+		.len = sizeof(data_##n##_##p),                                                     \
 	}
 
-#define UC81XX_PROFILE(n)						\
-	UC81XX_MAKE_ARRAY_OPT(n, pwr);					\
-	UC81XX_MAKE_ARRAY_OPT(n, lutc);					\
-	UC81XX_MAKE_ARRAY_OPT(n, lutww);				\
-	UC81XX_MAKE_ARRAY_OPT(n, lutkw);				\
-	UC81XX_MAKE_ARRAY_OPT(n, lutwk);				\
-	UC81XX_MAKE_ARRAY_OPT(n, lutkk);				\
-	UC81XX_MAKE_ARRAY_OPT(n, lutbd);				\
-									\
-	static const struct uc81xx_profile uc81xx_profile_ ## n = {	\
-		.pwr = UC81XX_ASSIGN_ARRAY(n, pwr),			\
-		.cdi = DT_PROP_OR(n, cdi, 0),				\
-		.override_cdi = DT_NODE_HAS_PROP(n, cdi),		\
-		.tcon = DT_PROP_OR(n, tcon, 0),				\
-		.override_tcon = DT_NODE_HAS_PROP(n, tcon),		\
-		.pll = DT_PROP_OR(n, pll, 0),				\
-		.override_pll = DT_NODE_HAS_PROP(n, pll),		\
-		.vdcs = DT_PROP_OR(n, vdcs, 0),				\
-		.override_vdcs = DT_NODE_HAS_PROP(n, vdcs),		\
-									\
-		.lutc = UC81XX_ASSIGN_ARRAY(n, lutc),			\
-		.lutww = UC81XX_ASSIGN_ARRAY(n, lutww),			\
-		.lutkw = UC81XX_ASSIGN_ARRAY(n, lutkw),			\
-		.lutwk = UC81XX_ASSIGN_ARRAY(n, lutwk),			\
-		.lutkk = UC81XX_ASSIGN_ARRAY(n, lutkk),			\
-		.lutbd = UC81XX_ASSIGN_ARRAY(n, lutbd),			\
+#define UC81XX_PROFILE(n)                                                                          \
+	UC81XX_MAKE_ARRAY_OPT(n, pwr);                                                             \
+	UC81XX_MAKE_ARRAY_OPT(n, lutc);                                                            \
+	UC81XX_MAKE_ARRAY_OPT(n, lutww);                                                           \
+	UC81XX_MAKE_ARRAY_OPT(n, lutkw);                                                           \
+	UC81XX_MAKE_ARRAY_OPT(n, lutwk);                                                           \
+	UC81XX_MAKE_ARRAY_OPT(n, lutkk);                                                           \
+	UC81XX_MAKE_ARRAY_OPT(n, lutbd);                                                           \
+                                                                                                   \
+	static const struct uc81xx_profile uc81xx_profile_##n = {                                  \
+		.pwr = UC81XX_ASSIGN_ARRAY(n, pwr),                                                \
+		.cdi = DT_PROP_OR(n, cdi, 0),                                                      \
+		.override_cdi = DT_NODE_HAS_PROP(n, cdi),                                          \
+		.tcon = DT_PROP_OR(n, tcon, 0),                                                    \
+		.override_tcon = DT_NODE_HAS_PROP(n, tcon),                                        \
+		.pll = DT_PROP_OR(n, pll, 0),                                                      \
+		.override_pll = DT_NODE_HAS_PROP(n, pll),                                          \
+		.vdcs = DT_PROP_OR(n, vdcs, 0),                                                    \
+		.override_vdcs = DT_NODE_HAS_PROP(n, vdcs),                                        \
+                                                                                                   \
+		.lutc = UC81XX_ASSIGN_ARRAY(n, lutc),                                              \
+		.lutww = UC81XX_ASSIGN_ARRAY(n, lutww),                                            \
+		.lutkw = UC81XX_ASSIGN_ARRAY(n, lutkw),                                            \
+		.lutwk = UC81XX_ASSIGN_ARRAY(n, lutwk),                                            \
+		.lutkk = UC81XX_ASSIGN_ARRAY(n, lutkk),                                            \
+		.lutbd = UC81XX_ASSIGN_ARRAY(n, lutbd),                                            \
 	};
 
-#define _UC81XX_PROFILE_PTR(n) &uc81xx_profile_ ## n
+#define _UC81XX_PROFILE_PTR(n) &uc81xx_profile_##n
 
-#define UC81XX_PROFILE_PTR(n)						\
-	COND_CODE_1(DT_NODE_EXISTS(n),					\
+#define UC81XX_PROFILE_PTR(n) COND_CODE_1(DT_NODE_EXISTS(n),					\
 		    (_UC81XX_PROFILE_PTR(n)),				\
 		    NULL)
 
-#define UC81XX_DEFINE(n, quirks_ptr)					\
-	UC81XX_MAKE_ARRAY_OPT(n, softstart);				\
-									\
-	DT_FOREACH_CHILD(n, UC81XX_PROFILE);				\
-									\
-	static const struct uc81xx_config uc81xx_cfg_ ## n = {		\
-		.quirks = quirks_ptr,					\
-		.mipi_dev = DEVICE_DT_GET(DT_PARENT(n)),                \
-		.dbi_config = {                                         \
-			.mode = MIPI_DBI_MODE_SPI_4WIRE,                \
-			.config = MIPI_DBI_SPI_CONFIG_DT(n,             \
-					SPI_OP_MODE_MASTER |            \
-					SPI_LOCK_ON | SPI_WORD_SET(8),  \
-					0),                             \
-		},                                                      \
-		.busy_gpio = GPIO_DT_SPEC_GET(n, busy_gpios),		\
-									\
-		.height = DT_PROP(n, height),				\
-		.width = DT_PROP(n, width),				\
-									\
-		.softstart = UC81XX_ASSIGN_ARRAY(n, softstart),		\
-									\
-		.profiles = {						\
-			[UC81XX_PROFILE_FULL] =				\
-				UC81XX_PROFILE_PTR(DT_CHILD(n, full)),	\
-			[UC81XX_PROFILE_PARTIAL] =			\
-				UC81XX_PROFILE_PTR(DT_CHILD(n, partial)), \
-		},							\
-	};								\
-									\
-	static struct uc81xx_data uc81xx_data_##n = {};			\
-									\
-	DEVICE_DT_DEFINE(n, uc81xx_init, NULL,				\
-			 &uc81xx_data_ ## n,				\
-			 &uc81xx_cfg_ ## n,				\
-			 POST_KERNEL,					\
-			 CONFIG_DISPLAY_INIT_PRIORITY,			\
-			 &uc81xx_driver_api);
+#define UC81XX_DEFINE(n, quirks_ptr)                                                               \
+	UC81XX_MAKE_ARRAY_OPT(n, softstart);                                                       \
+                                                                                                   \
+	DT_FOREACH_CHILD(n, UC81XX_PROFILE);                                                       \
+                                                                                                   \
+	static const struct uc81xx_config uc81xx_cfg_##n = {                                       \
+		.quirks = quirks_ptr,                                                              \
+		.mipi_dev = DEVICE_DT_GET(DT_PARENT(n)),                                           \
+		.dbi_config =                                                                      \
+			{                                                                          \
+				.mode = MIPI_DBI_MODE_SPI_4WIRE,                                   \
+				.config = MIPI_DBI_SPI_CONFIG_DT(                                  \
+					n, SPI_OP_MODE_MASTER | SPI_LOCK_ON | SPI_WORD_SET(8), 0), \
+			},                                                                         \
+		.busy_gpio = GPIO_DT_SPEC_GET(n, busy_gpios),                                      \
+                                                                                                   \
+		.height = DT_PROP(n, height),                                                      \
+		.width = DT_PROP(n, width),                                                        \
+                                                                                                   \
+		.softstart = UC81XX_ASSIGN_ARRAY(n, softstart),                                    \
+                                                                                                   \
+		.profiles =                                                                        \
+			{                                                                          \
+				[UC81XX_PROFILE_FULL] = UC81XX_PROFILE_PTR(DT_CHILD(n, full)),     \
+				[UC81XX_PROFILE_PARTIAL] =                                         \
+					UC81XX_PROFILE_PTR(DT_CHILD(n, partial)),                  \
+			},                                                                         \
+	};                                                                                         \
+                                                                                                   \
+	static struct uc81xx_data uc81xx_data_##n = {};                                            \
+                                                                                                   \
+	DEVICE_DT_DEFINE(n, uc81xx_init, NULL, &uc81xx_data_##n, &uc81xx_cfg_##n, POST_KERNEL,     \
+			 CONFIG_DISPLAY_INIT_PRIORITY, &uc81xx_driver_api);
 
-DT_FOREACH_STATUS_OKAY_VARGS(ultrachip_uc8175, UC81XX_DEFINE,
-			     &uc8175_quirks);
+DT_FOREACH_STATUS_OKAY_VARGS(ultrachip_uc8175, UC81XX_DEFINE, &uc8175_quirks);
 
-DT_FOREACH_STATUS_OKAY_VARGS(ultrachip_uc8176, UC81XX_DEFINE,
-			     &uc8176_quirks);
+DT_FOREACH_STATUS_OKAY_VARGS(ultrachip_uc8176, UC81XX_DEFINE, &uc8176_quirks);
 
-DT_FOREACH_STATUS_OKAY_VARGS(ultrachip_uc8179, UC81XX_DEFINE,
-			     &uc8179_quirks);
+DT_FOREACH_STATUS_OKAY_VARGS(ultrachip_uc8179, UC81XX_DEFINE, &uc8179_quirks);

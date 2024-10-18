@@ -18,12 +18,12 @@ LOG_MODULE_REGISTER(grove_temp, CONFIG_SENSOR_LOG_LEVEL);
 
 /* The effect of gain and reference voltage must cancel. */
 #ifdef CONFIG_ADC_NRFX_SAADC
-#define GROVE_GAIN ADC_GAIN_1_4
-#define GROVE_REF ADC_REF_VDD_1_4
+#define GROVE_GAIN       ADC_GAIN_1_4
+#define GROVE_REF        ADC_REF_VDD_1_4
 #define GROVE_RESOLUTION 12
 #else
-#define GROVE_GAIN ADC_GAIN_1
-#define GROVE_REF ADC_REF_VDD_1
+#define GROVE_GAIN       ADC_GAIN_1
+#define GROVE_REF        ADC_REF_VDD_1
 #define GROVE_RESOLUTION 12
 #endif
 
@@ -47,16 +47,14 @@ static struct adc_sequence adc_table = {
 	.options = &options,
 };
 
-static int gts_sample_fetch(const struct device *dev,
-			    enum sensor_channel chan)
+static int gts_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	const struct gts_config *cfg = dev->config;
 
 	return adc_read(cfg->adc, &adc_table);
 }
 
-static int gts_channel_get(const struct device *dev,
-			   enum sensor_channel chan,
+static int gts_channel_get(const struct device *dev, enum sensor_channel chan,
 			   struct sensor_value *val)
 {
 	struct gts_data *drv_data = dev->data;
@@ -68,12 +66,9 @@ static int gts_channel_get(const struct device *dev,
 	 * is taken from the sensor reference page:
 	 *     http://www.seeedstudio.com/wiki/Grove_-_Temperature_Sensor
 	 */
-	dval = (1 / (log((BIT(GROVE_RESOLUTION) - 1.0)
-			/ drv_data->raw
-			- 1.0)
-		     / cfg->b_const
-		     + (1 / 298.15)))
-		- 273.15;
+	dval = (1 / (log((BIT(GROVE_RESOLUTION) - 1.0) / drv_data->raw - 1.0) / cfg->b_const +
+		     (1 / 298.15))) -
+	       273.15;
 	val->val1 = (int32_t)dval;
 	val->val2 = ((int32_t)(dval * 1000000)) % 1000000;
 
@@ -115,19 +110,16 @@ static int gts_init(const struct device *dev)
 	return 0;
 }
 
-#define GTS_DEFINE(inst)							\
-	static struct gts_data gts_data_##inst;					\
-										\
-	static const struct gts_config gts_cfg_##inst = {			\
-		.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst)),		\
-		.b_const = (IS_ENABLED(DT_INST_PROP(inst, v1p0))		\
-			? 3975							\
-			: 4250),						\
-		.adc_channel = DT_INST_IO_CHANNELS_INPUT(inst),			\
-	};									\
-										\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &gts_init, NULL,			\
-			      &gts_data_##inst, &gts_cfg_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &gts_api);		\
+#define GTS_DEFINE(inst)                                                                           \
+	static struct gts_data gts_data_##inst;                                                    \
+                                                                                                   \
+	static const struct gts_config gts_cfg_##inst = {                                          \
+		.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst)),                              \
+		.b_const = (IS_ENABLED(DT_INST_PROP(inst, v1p0)) ? 3975 : 4250),                   \
+		.adc_channel = DT_INST_IO_CHANNELS_INPUT(inst),                                    \
+	};                                                                                         \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, &gts_init, NULL, &gts_data_##inst, &gts_cfg_##inst,     \
+				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &gts_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GTS_DEFINE)

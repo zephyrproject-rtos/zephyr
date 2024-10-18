@@ -21,8 +21,7 @@
 
 LOG_MODULE_REGISTER(espressif_esp32_touch, CONFIG_INPUT_LOG_LEVEL);
 
-BUILD_ASSERT(!IS_ENABLED(CONFIG_COUNTER_RTC_ESP32),
-	     "Conflict detected: COUNTER_RTC_ESP32 enabled");
+BUILD_ASSERT(!IS_ENABLED(CONFIG_COUNTER_RTC_ESP32), "Conflict detected: COUNTER_RTC_ESP32 enabled");
 
 #define ESP32_SCAN_DONE_MAX_COUNT 5
 
@@ -30,16 +29,14 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_COUNTER_RTC_ESP32),
 #define ESP32_RTC_INTR_MSK RTC_CNTL_TOUCH_INT_ST_M
 #elif defined(CONFIG_SOC_SERIES_ESP32S2) || defined(CONFIG_SOC_SERIES_ESP32S3)
 
-#define ESP32_RTC_INTR_MSK (RTC_CNTL_TOUCH_DONE_INT_ST_M |		\
-			    RTC_CNTL_TOUCH_ACTIVE_INT_ST_M |		\
-			    RTC_CNTL_TOUCH_INACTIVE_INT_ST_M |		\
-			    RTC_CNTL_TOUCH_SCAN_DONE_INT_ST_M |		\
-			    RTC_CNTL_TOUCH_TIMEOUT_INT_ST_M)
+#define ESP32_RTC_INTR_MSK                                                                         \
+	(RTC_CNTL_TOUCH_DONE_INT_ST_M | RTC_CNTL_TOUCH_ACTIVE_INT_ST_M |                           \
+	 RTC_CNTL_TOUCH_INACTIVE_INT_ST_M | RTC_CNTL_TOUCH_SCAN_DONE_INT_ST_M |                    \
+	 RTC_CNTL_TOUCH_TIMEOUT_INT_ST_M)
 
-#define ESP32_TOUCH_PAD_INTR_MASK (TOUCH_PAD_INTR_MASK_ACTIVE |		\
-				   TOUCH_PAD_INTR_MASK_INACTIVE |	\
-				   TOUCH_PAD_INTR_MASK_TIMEOUT |	\
-				   TOUCH_PAD_INTR_MASK_SCAN_DONE)
+#define ESP32_TOUCH_PAD_INTR_MASK                                                                  \
+	(TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE | TOUCH_PAD_INTR_MASK_TIMEOUT | \
+	 TOUCH_PAD_INTR_MASK_SCAN_DONE)
 
 #endif /* defined(CONFIG_SOC_SERIES_ESP32) */
 
@@ -104,9 +101,10 @@ static void esp32_touch_sensor_interrupt_cb(void *arg)
 				uint32_t benchmark_value;
 
 				touch_hal_read_benchmark(channel_cfg->channel_num,
-					&benchmark_value);
+							 &benchmark_value);
 				touch_hal_set_threshold(channel_cfg->channel_num,
-					channel_cfg->channel_sens * benchmark_value / 100);
+							channel_cfg->channel_sens *
+								benchmark_value / 100);
 			}
 		}
 		return;
@@ -130,8 +128,8 @@ static void esp32_touch_sensor_interrupt_cb(void *arg)
 
 		if (channel_cfg->channel_num == channel_num) {
 #endif /* CONFIG_SOC_SERIES_ESP32 */
-			struct esp32_touch_sensor_channel_data
-				*channel_data = &dev_cfg->channel_data[i];
+			struct esp32_touch_sensor_channel_data *channel_data =
+				&dev_cfg->channel_data[i];
 
 			channel_data->status = channel_status;
 			(void)k_work_reschedule(&channel_data->work,
@@ -163,10 +161,11 @@ static esp_err_t esp32_rtc_isr_install(intr_handler_t intr_handler, const void *
 	REG_WRITE(RTC_CNTL_INT_ENA_REG, 0);
 	REG_WRITE(RTC_CNTL_INT_CLR_REG, UINT32_MAX);
 
-	err = esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, irq),
-			ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, priority)) |
+	err = esp_intr_alloc(
+		DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, irq),
+		ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, priority)) |
 			ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, flags)),
-			intr_handler, (void *)handler_arg, NULL);
+		intr_handler, (void *)handler_arg, NULL);
 
 	return err;
 }
@@ -178,18 +177,18 @@ static void esp32_touch_sensor_change_deferred(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct esp32_touch_sensor_channel_data *channel_data =
-			CONTAINER_OF(dwork, struct esp32_touch_sensor_channel_data, work);
+		CONTAINER_OF(dwork, struct esp32_touch_sensor_channel_data, work);
 	const struct device *dev = channel_data->dev;
 	const struct esp32_touch_sensor_config *dev_cfg = dev->config;
 	int key_index = channel_data - &dev_cfg->channel_data[0];
-	const struct esp32_touch_sensor_channel_config
-		*channel_cfg = &dev_cfg->channel_cfg[key_index];
+	const struct esp32_touch_sensor_channel_config *channel_cfg =
+		&dev_cfg->channel_cfg[key_index];
 
 #if defined(CONFIG_SOC_SERIES_ESP32S2) || defined(CONFIG_SOC_SERIES_ESP32S3)
 	if (channel_data->last_status != channel_data->status) {
 #endif /* defined(CONFIG_SOC_SERIES_ESP32S2) || defined(CONFIG_SOC_SERIES_ESP32S3) */
-		input_report_key(dev, channel_cfg->zephyr_code,
-				channel_data->status, true, K_FOREVER);
+		input_report_key(dev, channel_cfg->zephyr_code, channel_data->status, true,
+				 K_FOREVER);
 #if defined(CONFIG_SOC_SERIES_ESP32S2) || defined(CONFIG_SOC_SERIES_ESP32S3)
 		channel_data->last_status = channel_data->status;
 	}
@@ -205,11 +204,9 @@ static int esp32_touch_sensor_init(const struct device *dev)
 	touch_hal_init();
 
 #if defined(CONFIG_SOC_SERIES_ESP32)
-	touch_hal_volt_t volt = {
-		.refh = dev_cfg->href_microvolt_enum_idx,
-		.refh = dev_cfg->href_microvolt_enum_idx,
-		.atten = dev_cfg->href_atten_microvolt_enum_idx
-	};
+	touch_hal_volt_t volt = {.refh = dev_cfg->href_microvolt_enum_idx,
+				 .refh = dev_cfg->href_microvolt_enum_idx,
+				 .atten = dev_cfg->href_atten_microvolt_enum_idx};
 
 	touch_hal_set_voltage(&volt);
 	touch_hal_set_fsm_mode(TOUCH_FSM_MODE_TIMER);
@@ -221,19 +218,21 @@ static int esp32_touch_sensor_init(const struct device *dev)
 			&dev_cfg->channel_cfg[i];
 
 		if (!(channel_cfg->channel_num > 0 &&
-			channel_cfg->channel_num < SOC_TOUCH_SENSOR_NUM)) {
+		      channel_cfg->channel_num < SOC_TOUCH_SENSOR_NUM)) {
 			LOG_ERR("Touch %d configuration failed: "
-				"Touch channel error", i);
+				"Touch channel error",
+				i);
 			return -EINVAL;
 		}
 
 #if defined(CONFIG_SOC_SERIES_ESP32S2) || defined(CONFIG_SOC_SERIES_ESP32S3)
 		if (channel_cfg->channel_num == SOC_TOUCH_DENOISE_CHANNEL) {
 			LOG_ERR("Touch %d configuration failed: "
-				"TOUCH0 is internal denoise channel", i);
+				"TOUCH0 is internal denoise channel",
+				i);
 			return -EINVAL;
 		}
-#endif  /* defined(CONFIG_SOC_SERIES_ESP32S2) || defined(CONFIG_SOC_SERIES_ESP32S3) */
+#endif /* defined(CONFIG_SOC_SERIES_ESP32S2) || defined(CONFIG_SOC_SERIES_ESP32S3) */
 
 		gpio_num_t gpio_num = touch_sensor_channel_io_map[channel_cfg->channel_num];
 
@@ -307,46 +306,42 @@ static int esp32_touch_sensor_init(const struct device *dev)
 	return 0;
 }
 
-#define ESP32_TOUCH_SENSOR_CHANNEL_CFG_INIT(node_id)						\
-	{											\
-		.channel_num  = DT_PROP(node_id, channel_num),					\
-		.channel_sens = DT_PROP(node_id, channel_sens),					\
-		.zephyr_code  = DT_PROP(node_id, zephyr_code),					\
+#define ESP32_TOUCH_SENSOR_CHANNEL_CFG_INIT(node_id)                                               \
+	{                                                                                          \
+		.channel_num = DT_PROP(node_id, channel_num),                                      \
+		.channel_sens = DT_PROP(node_id, channel_sens),                                    \
+		.zephyr_code = DT_PROP(node_id, zephyr_code),                                      \
 	}
 
-#define ESP32_TOUCH_SENSOR_INIT(inst)								\
-	static const struct esp32_touch_sensor_channel_config					\
-		esp32_touch_sensor_channel_config_##inst[] = {					\
-			DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(inst,				\
-				ESP32_TOUCH_SENSOR_CHANNEL_CFG_INIT, (,))			\
-		};										\
-												\
-	static struct esp32_touch_sensor_channel_data esp32_touch_sensor_channel_data_##inst	\
-				[ARRAY_SIZE(esp32_touch_sensor_channel_config_##inst)];		\
-												\
-	static const struct esp32_touch_sensor_config esp32_touch_sensor_config_##inst = {	\
-		.debounce_interval_ms = DT_INST_PROP(inst, debounce_interval_ms),		\
-		.num_channels = ARRAY_SIZE(esp32_touch_sensor_channel_config_##inst),		\
-		.href_microvolt_enum_idx = DT_INST_ENUM_IDX(inst, href_microvolt),		\
-		.lref_microvolt_enum_idx = DT_INST_ENUM_IDX(inst, lref_microvolt),		\
-		.href_atten_microvolt_enum_idx = DT_INST_ENUM_IDX(inst, href_atten_microvolt),	\
-		.filter_mode = DT_INST_PROP(inst, filter_mode),					\
-		.filter_debounce_cnt = DT_INST_PROP(inst, filter_debounce_cnt),			\
-		.filter_noise_thr = DT_INST_PROP(inst, filter_noise_thr),			\
-		.filter_jitter_step = DT_INST_PROP(inst, filter_jitter_step),			\
-		.filter_smooth_level = DT_INST_PROP(inst, filter_smooth_level),			\
-		.channel_cfg = esp32_touch_sensor_channel_config_##inst,			\
-		.channel_data = esp32_touch_sensor_channel_data_##inst,				\
-	};											\
-												\
-	static struct esp32_touch_sensor_data esp32_touch_sensor_data_##inst;			\
-												\
-	DEVICE_DT_INST_DEFINE(inst,								\
-			      &esp32_touch_sensor_init,						\
-			      NULL,								\
-			      &esp32_touch_sensor_data_##inst,					\
-			      &esp32_touch_sensor_config_##inst,				\
-			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,				\
-			      NULL);
+#define ESP32_TOUCH_SENSOR_INIT(inst)                                                              \
+	static const struct esp32_touch_sensor_channel_config                                      \
+		esp32_touch_sensor_channel_config_##inst[] = {                                     \
+			DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(                                     \
+				inst, ESP32_TOUCH_SENSOR_CHANNEL_CFG_INIT, (, ))};                 \
+                                                                                                   \
+	static struct esp32_touch_sensor_channel_data                                              \
+		esp32_touch_sensor_channel_data_##inst[ARRAY_SIZE(                                 \
+			esp32_touch_sensor_channel_config_##inst)];                                \
+                                                                                                   \
+	static const struct esp32_touch_sensor_config esp32_touch_sensor_config_##inst = {         \
+		.debounce_interval_ms = DT_INST_PROP(inst, debounce_interval_ms),                  \
+		.num_channels = ARRAY_SIZE(esp32_touch_sensor_channel_config_##inst),              \
+		.href_microvolt_enum_idx = DT_INST_ENUM_IDX(inst, href_microvolt),                 \
+		.lref_microvolt_enum_idx = DT_INST_ENUM_IDX(inst, lref_microvolt),                 \
+		.href_atten_microvolt_enum_idx = DT_INST_ENUM_IDX(inst, href_atten_microvolt),     \
+		.filter_mode = DT_INST_PROP(inst, filter_mode),                                    \
+		.filter_debounce_cnt = DT_INST_PROP(inst, filter_debounce_cnt),                    \
+		.filter_noise_thr = DT_INST_PROP(inst, filter_noise_thr),                          \
+		.filter_jitter_step = DT_INST_PROP(inst, filter_jitter_step),                      \
+		.filter_smooth_level = DT_INST_PROP(inst, filter_smooth_level),                    \
+		.channel_cfg = esp32_touch_sensor_channel_config_##inst,                           \
+		.channel_data = esp32_touch_sensor_channel_data_##inst,                            \
+	};                                                                                         \
+                                                                                                   \
+	static struct esp32_touch_sensor_data esp32_touch_sensor_data_##inst;                      \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &esp32_touch_sensor_init, NULL,                                \
+			      &esp32_touch_sensor_data_##inst, &esp32_touch_sensor_config_##inst,  \
+			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_TOUCH_SENSOR_INIT)

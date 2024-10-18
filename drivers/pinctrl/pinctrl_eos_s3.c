@@ -15,18 +15,18 @@
 
 LOG_MODULE_REGISTER(pinctrl_eos_s3, CONFIG_PINCTRL_LOG_LEVEL);
 
-#define FUNCTION_REGISTER(func)	(func >> 13)
-#define PAD_FUNC_SEL_MASK	GENMASK(2, 0)
-#define PAD_CTRL_SEL_BIT0	3
-#define PAD_CTRL_SEL_BIT1	4
-#define PAD_OUTPUT_EN_BIT	5
-#define PAD_PULL_UP_BIT		6
-#define PAD_PULL_DOWN_BIT	7
-#define PAD_DRIVE_STRENGTH_BIT0	8
-#define PAD_DRIVE_STRENGTH_BIT1	9
-#define PAD_SLEW_RATE_BIT	10
-#define PAD_INPUT_EN_BIT	11
-#define PAD_SCHMITT_EN_BIT	12
+#define FUNCTION_REGISTER(func) (func >> 13)
+#define PAD_FUNC_SEL_MASK       GENMASK(2, 0)
+#define PAD_CTRL_SEL_BIT0       3
+#define PAD_CTRL_SEL_BIT1       4
+#define PAD_OUTPUT_EN_BIT       5
+#define PAD_PULL_UP_BIT         6
+#define PAD_PULL_DOWN_BIT       7
+#define PAD_DRIVE_STRENGTH_BIT0 8
+#define PAD_DRIVE_STRENGTH_BIT1 9
+#define PAD_SLEW_RATE_BIT       10
+#define PAD_INPUT_EN_BIT        11
+#define PAD_SCHMITT_EN_BIT      12
 
 /*
  * Program IOMUX_func_SEL register.

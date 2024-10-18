@@ -869,7 +869,7 @@ static int write_data_port(const struct device *dev, struct sdhc_data *sdhc)
 }
 
 static int emmc_send_cmd_no_data(const struct device *dev, uint32_t cmd_idx,
-				     struct sdhc_command *cmd)
+				 struct sdhc_command *cmd)
 {
 	struct emmc_cmd_config emmc_cmd;
 
@@ -883,8 +883,8 @@ static int emmc_send_cmd_no_data(const struct device *dev, uint32_t cmd_idx,
 	return emmc_host_send_cmd(dev, &emmc_cmd);
 }
 
-static int emmc_send_cmd_data(const struct device *dev, uint32_t cmd_idx,
-				  struct sdhc_command *cmd, struct sdhc_data *data, bool read)
+static int emmc_send_cmd_data(const struct device *dev, uint32_t cmd_idx, struct sdhc_command *cmd,
+			      struct sdhc_data *data, bool read)
 {
 	struct emmc_cmd_config emmc_cmd;
 	int ret;
@@ -1279,8 +1279,7 @@ static const struct sdhc_driver_api emmc_api = {
 
 #define EMMC_HOST_IRQ_FLAGS_SENSE0(n) 0
 #define EMMC_HOST_IRQ_FLAGS_SENSE1(n) DT_INST_IRQ(n, sense)
-#define EMMC_HOST_IRQ_FLAGS(n)\
-	_CONCAT(EMMC_HOST_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, sense))(n)
+#define EMMC_HOST_IRQ_FLAGS(n)        _CONCAT(EMMC_HOST_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, sense))(n)
 
 /* Not PCI(e) */
 #define EMMC_HOST_IRQ_CONFIG_PCIE0(n)                                                              \

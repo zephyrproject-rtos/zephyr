@@ -5,7 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <soc.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>
@@ -21,8 +20,7 @@
 /**
  * @brief Return PLL source
  */
-__unused
-static uint32_t get_pll_source(void)
+__unused static uint32_t get_pll_source(void)
 {
 	if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
 		return LL_RCC_PLLSOURCE_HSI;
@@ -37,8 +35,7 @@ static uint32_t get_pll_source(void)
 /**
  * @brief get the pll source frequency
  */
-__unused
-uint32_t get_pllsrc_frequency(void)
+__unused uint32_t get_pllsrc_frequency(void)
 {
 	if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
 		return STM32_HSI_FREQ;
@@ -53,16 +50,13 @@ uint32_t get_pllsrc_frequency(void)
 /**
  * @brief Set up pll configuration
  */
-__unused
-void config_pll_sysclock(void)
+__unused void config_pll_sysclock(void)
 {
 #if defined(STM32_SRC_PLL_R) && STM32_PLL_R_ENABLED && defined(RCC_PLLCFGR_PLLR)
 	MODIFY_REG(RCC->PLLCFGR, RCC_PLLCFGR_PLLR, pllr(STM32_PLL_R_DIVISOR));
 #endif
-	LL_RCC_PLL_ConfigDomain_SYS(get_pll_source(),
-				    pllm(STM32_PLL_M_DIVISOR),
-				    STM32_PLL_N_MULTIPLIER,
-				    pllp(STM32_PLL_P_DIVISOR));
+	LL_RCC_PLL_ConfigDomain_SYS(get_pll_source(), pllm(STM32_PLL_M_DIVISOR),
+				    STM32_PLL_N_MULTIPLIER, pllp(STM32_PLL_P_DIVISOR));
 
 #if defined(CONFIG_SOC_SERIES_STM32F7X)
 	/* Assuming we stay on Power Scale default value: Power Scale 1 */
@@ -101,19 +95,14 @@ void config_pll_sysclock(void)
 /**
  * @brief Set up PLL I2S configuration
  */
-__unused
-void config_plli2s(void)
+__unused void config_plli2s(void)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_plli2s_clock)
-	LL_RCC_PLLI2S_ConfigDomain_I2S(get_pll_source(),
-				       pllm(STM32_PLLI2S_M_DIVISOR),
-				       STM32_PLLI2S_N_MULTIPLIER,
-				       plli2sr(STM32_PLLI2S_R_DIVISOR));
+	LL_RCC_PLLI2S_ConfigDomain_I2S(get_pll_source(), pllm(STM32_PLLI2S_M_DIVISOR),
+				       STM32_PLLI2S_N_MULTIPLIER, plli2sr(STM32_PLLI2S_R_DIVISOR));
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32f412_plli2s_clock)
-	LL_RCC_PLL_ConfigDomain_I2S(get_pll_source(),
-				       plli2sm(STM32_PLLI2S_M_DIVISOR),
-				       STM32_PLLI2S_N_MULTIPLIER,
-				       plli2sr(STM32_PLLI2S_R_DIVISOR));
+	LL_RCC_PLL_ConfigDomain_I2S(get_pll_source(), plli2sm(STM32_PLLI2S_M_DIVISOR),
+				    STM32_PLLI2S_N_MULTIPLIER, plli2sr(STM32_PLLI2S_R_DIVISOR));
 #endif
 }
 

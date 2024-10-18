@@ -6,9 +6,7 @@
  * Emulator for max17048 fuel gauge
  */
 
-
 #define DT_DRV_COMPAT maxim_max17048
-
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(maxim_max17048);
@@ -45,16 +43,16 @@ static int emul_max17048_reg_read(const struct emul *target, int reg, int *val)
 
 	switch (reg) {
 	case REGISTER_VERSION:
-	*val = 0x1000;
+		*val = 0x1000;
 		break;
 	case REGISTER_CRATE:
-	*val = crate_value;
-	break;
+		*val = crate_value;
+		break;
 	case REGISTER_SOC:
-	*val = 0x3525;
+		*val = 0x3525;
 		break;
 	case REGISTER_VCELL:
-	*val = 0x4387;
+		*val = 0x4387;
 		break;
 	default:
 		LOG_ERR("Unknown register 0x%x read", reg);
@@ -65,8 +63,8 @@ static int emul_max17048_reg_read(const struct emul *target, int reg, int *val)
 	return 0;
 }
 
-static int max17048_emul_transfer_i2c(const struct emul *target, struct i2c_msg *msgs,
-				       int num_msgs, int addr)
+static int max17048_emul_transfer_i2c(const struct emul *target, struct i2c_msg *msgs, int num_msgs,
+				      int addr)
 {
 	/* Largely copied from emul_bmi160.c */
 	unsigned int val;
@@ -146,11 +144,11 @@ static int emul_max17048_init(const struct emul *target, const struct device *pa
 /*
  * Main instantiation macro.
  */
-#define MAX17048_EMUL(n)                                                                          \
-	static const struct max17048_emul_cfg max17048_emul_cfg_##n = {                          \
+#define MAX17048_EMUL(n)                                                                           \
+	static const struct max17048_emul_cfg max17048_emul_cfg_##n = {                            \
 		.addr = DT_INST_REG_ADDR(n),                                                       \
 	};                                                                                         \
-	EMUL_DT_INST_DEFINE(n, emul_max17048_init, NULL,                  \
-			    &max17048_emul_cfg_##n, &max17048_emul_api_i2c, NULL)
+	EMUL_DT_INST_DEFINE(n, emul_max17048_init, NULL, &max17048_emul_cfg_##n,                   \
+			    &max17048_emul_api_i2c, NULL)
 
 DT_INST_FOREACH_STATUS_OKAY(MAX17048_EMUL)

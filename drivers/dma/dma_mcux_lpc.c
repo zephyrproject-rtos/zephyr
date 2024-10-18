@@ -64,22 +64,20 @@ struct dma_mcux_lpc_dma_data {
 
 struct k_spinlock configuring_otrigs;
 
-#define NXP_LPC_DMA_MAX_XFER ((DMA_CHANNEL_XFERCFG_XFERCOUNT_MASK >> \
-			      DMA_CHANNEL_XFERCFG_XFERCOUNT_SHIFT) + 1)
+#define NXP_LPC_DMA_MAX_XFER                                                                       \
+	((DMA_CHANNEL_XFERCFG_XFERCOUNT_MASK >> DMA_CHANNEL_XFERCFG_XFERCOUNT_SHIFT) + 1)
 
-#define DEV_BASE(dev) \
-	((DMA_Type *)((const struct dma_mcux_lpc_config *const)(dev)->config)->base)
+#define DEV_BASE(dev) ((DMA_Type *)((const struct dma_mcux_lpc_config *const)(dev)->config)->base)
 
-#define DEV_CHANNEL_DATA(dev, ch)                                              \
+#define DEV_CHANNEL_DATA(dev, ch)                                                                  \
 	((struct channel_data *)(&(((struct dma_mcux_lpc_dma_data *)dev->data)->channel_data[ch])))
 
-#define DEV_DMA_HANDLE(dev, ch)                                               \
-		((dma_handle_t *)(&(DEV_CHANNEL_DATA(dev, ch)->dma_handle)))
+#define DEV_DMA_HANDLE(dev, ch) ((dma_handle_t *)(&(DEV_CHANNEL_DATA(dev, ch)->dma_handle)))
 
 #define EMPTY_OTRIG -1
 
-static void nxp_lpc_dma_callback(dma_handle_t *handle, void *param,
-			      bool transferDone, uint32_t intmode)
+static void nxp_lpc_dma_callback(dma_handle_t *handle, void *param, bool transferDone,
+				 uint32_t intmode)
 {
 	int ret = -EIO;
 	struct channel_data *data = (struct channel_data *)param;
@@ -125,22 +123,18 @@ static inline void rw6xx_dma_addr_fixup(struct dma_block_config *block)
 	 * 0x4800_0000 or 0x5800_000.
 	 */
 	if (((block->source_address & 0xF8000000) == 0x18000000) ||
-	  ((block->source_address & 0xF8000000) == 0x8000000)) {
+	    ((block->source_address & 0xF8000000) == 0x8000000)) {
 		block->source_address = block->source_address + 0x40000000;
 	}
 	if (((block->dest_address & 0xF8000000) == 0x18000000) ||
-	  ((block->dest_address & 0xF8000000) == 0x8000000)) {
+	    ((block->dest_address & 0xF8000000) == 0x8000000)) {
 		block->dest_address = block->dest_address + 0x40000000;
 	}
-
 }
 #endif
 
-static int dma_mcux_lpc_queue_descriptors(struct channel_data *data,
-					   struct dma_block_config *block,
-					   uint8_t src_inc,
-					   uint8_t dest_inc,
-					   bool callback_en)
+static int dma_mcux_lpc_queue_descriptors(struct channel_data *data, struct dma_block_config *block,
+					  uint8_t src_inc, uint8_t dest_inc, bool callback_en)
 {
 	uint32_t xfer_config = 0U;
 	dma_descriptor_t *next_descriptor = NULL;
@@ -188,8 +182,9 @@ static int dma_mcux_lpc_queue_descriptors(struct channel_data *data,
 						/* Allocate one more descriptors for
 						 * ping-pong transfer
 						 */
-						next_descriptor = &data->dma_descriptor_table[
-							data->num_of_descriptors];
+						next_descriptor =
+							&data->dma_descriptor_table
+								 [data->num_of_descriptors];
 
 						setup_extra_descriptor = true;
 					} else {
@@ -211,7 +206,7 @@ static int dma_mcux_lpc_queue_descriptors(struct channel_data *data,
 		 * transactions and the transfer width is 4 bytes
 		 */
 		if ((local_block.source_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) &&
-			(local_block.dest_addr_adj == DMA_ADDR_ADJ_NO_CHANGE)) {
+		    (local_block.dest_addr_adj == DMA_ADDR_ADJ_NO_CHANGE)) {
 			src_inc = 0;
 			dest_inc = 0;
 			width = sizeof(uint32_t);
@@ -243,21 +238,16 @@ static int dma_mcux_lpc_queue_descriptors(struct channel_data *data,
 		}
 
 		/* Enable interrupt and reload for the descriptor */
-		xfer_config = DMA_CHANNEL_XFER(reload, 0UL, enable_a_interrupt,
-					enable_b_interrupt,
-					width,
-					src_inc,
-					dest_inc,
-					MIN(local_block.block_size, max_xfer_bytes));
+		xfer_config = DMA_CHANNEL_XFER(reload, 0UL, enable_a_interrupt, enable_b_interrupt,
+					       width, src_inc, dest_inc,
+					       MIN(local_block.block_size, max_xfer_bytes));
 
 #ifdef CONFIG_SOC_SERIES_RW6XX
 		rw6xx_dma_addr_fixup(&local_block);
 #endif
-		DMA_SetupDescriptor(data->curr_descriptor,
-				xfer_config,
-				(void *)local_block.source_address,
-				(void *)local_block.dest_address,
-				(void *)next_descriptor);
+		DMA_SetupDescriptor(data->curr_descriptor, xfer_config,
+				    (void *)local_block.source_address,
+				    (void *)local_block.dest_address, (void *)next_descriptor);
 
 		data->curr_descriptor = next_descriptor;
 
@@ -289,21 +279,16 @@ static int dma_mcux_lpc_queue_descriptors(struct channel_data *data,
 		/* Enable or disable interrupt based on user request.
 		 * Reload for the descriptor.
 		 */
-		xfer_config = DMA_CHANNEL_XFER(1UL, 0UL, callback_en, 0U,
-					width,
-					src_inc,
-					dest_inc,
-					MIN(local_block.block_size, max_xfer_bytes));
+		xfer_config = DMA_CHANNEL_XFER(1UL, 0UL, callback_en, 0U, width, src_inc, dest_inc,
+					       MIN(local_block.block_size, max_xfer_bytes));
 		/* Mark this as invalid */
 		xfer_config &= ~DMA_CHANNEL_XFERCFG_CFGVALID_MASK;
 #ifdef CONFIG_SOC_SERIES_RW6XX
 		rw6xx_dma_addr_fixup(&local_block);
 #endif
-		DMA_SetupDescriptor(data->curr_descriptor,
-				xfer_config,
-				(void *)local_block.source_address,
-				(void *)local_block.dest_address,
-				(void *)next_descriptor);
+		DMA_SetupDescriptor(data->curr_descriptor, xfer_config,
+				    (void *)local_block.source_address,
+				    (void *)local_block.dest_address, (void *)next_descriptor);
 	}
 
 	return 0;
@@ -359,8 +344,7 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 	 * then skip by the same amount on both sides
 	 */
 	if (block_config->source_gather_en && block_config->dest_scatter_en) {
-		assert(block_config->source_gather_interval ==
-		       block_config->dest_scatter_interval);
+		assert(block_config->source_gather_interval == block_config->dest_scatter_interval);
 	}
 
 	max_xfer_bytes = NXP_LPC_DMA_MAX_XFER * width;
@@ -368,8 +352,7 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 	/*
 	 * Check if circular mode is requested.
 	 */
-	if (config->head_block->source_reload_en ||
-	    config->head_block->dest_reload_en) {
+	if (config->head_block->source_reload_en || config->head_block->dest_reload_en) {
 		reload = 1;
 	}
 
@@ -385,16 +368,14 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
-	if (config->source_data_size != 4U &&
-		config->source_data_size != 2U &&
-		config->source_data_size != 1U) {
+	if (config->source_data_size != 4U && config->source_data_size != 2U &&
+	    config->source_data_size != 1U) {
 		LOG_ERR("Source unit size error, %d", config->source_data_size);
 		return -EINVAL;
 	}
 
-	if (config->dest_data_size != 4U &&
-		config->dest_data_size != 2U &&
-		config->dest_data_size != 1U) {
+	if (config->dest_data_size != 4U && config->dest_data_size != 2U &&
+	    config->dest_data_size != 1U) {
 		LOG_ERR("Dest unit size error, %d", config->dest_data_size);
 		return -EINVAL;
 	}
@@ -505,18 +486,16 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 		/* Chaining is enabled */
 		if (!dev_config->otrig_base_address || !dev_config->itrig_base_address) {
 			LOG_ERR("Calling function tried to setup up channel"
-			" chaining but the current platform is missing"
-			" the correct trigger base addresses.");
+				" chaining but the current platform is missing"
+				" the correct trigger base addresses.");
 			k_spin_unlock(&configuring_otrigs, otrigs_key);
 			return -ENXIO;
 		}
 
-		LOG_DBG("link dma 0 channel %d with channel %d",
-			channel, config->linked_channel);
+		LOG_DBG("link dma 0 channel %d with channel %d", channel, config->linked_channel);
 		uint8_t is_otrig_available = 0;
 
-		for (otrig_index = 0; otrig_index < dev_config->num_of_otrigs;
-			++otrig_index) {
+		for (otrig_index = 0; otrig_index < dev_config->num_of_otrigs; ++otrig_index) {
 			if (dma_data->otrig_array[otrig_index].linked_channel == EMPTY_OTRIG ||
 			    dma_data->otrig_array[otrig_index].source_channel == channel) {
 				if (dma_data->otrig_array[otrig_index].source_channel == channel) {
@@ -532,8 +511,8 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 		}
 		if (!is_otrig_available) {
 			LOG_ERR("Calling function tried to setup up multiple"
-			" channels to be configured but the dma driver has"
-			" run out of OTrig Muxes");
+				" channels to be configured but the dma driver has"
+				" run out of OTrig Muxes");
 			k_spin_unlock(&configuring_otrigs, otrigs_key);
 			return -EINVAL;
 		}
@@ -542,16 +521,15 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 		 * must be hardware triggered via the INPUTMUX
 		 * hardware.
 		 */
-		DEV_BASE(dev)->CHANNEL[config->linked_channel].CFG |=
-			DMA_CHANNEL_CFG_HWTRIGEN_MASK;
+		DEV_BASE(dev)->CHANNEL[config->linked_channel].CFG |= DMA_CHANNEL_CFG_HWTRIGEN_MASK;
 
 		DMA_EnableChannel(DEV_BASE(dev), config->linked_channel);
 
 		/* Link OTrig Muxes with passed-in channels */
 		INPUTMUX_AttachSignal(INPUTMUX, otrig_index,
-			dev_config->otrig_base_address + channel);
+				      dev_config->otrig_base_address + channel);
 		INPUTMUX_AttachSignal(INPUTMUX, config->linked_channel,
-				dev_config->itrig_base_address + otrig_index);
+				      dev_config->itrig_base_address + otrig_index);
 
 		/* Otrig is now connected with linked channel */
 		dma_data->otrig_array[otrig_index].source_channel = channel;
@@ -560,7 +538,7 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 		/* Chaining is _NOT_ enabled, Freeing connected OTrig */
 		for (otrig_index = 0; otrig_index < dev_config->num_of_otrigs; otrig_index++) {
 			if (dma_data->otrig_array[otrig_index].linked_channel != EMPTY_OTRIG &&
-			   (channel == dma_data->otrig_array[otrig_index].source_channel)) {
+			    (channel == dma_data->otrig_array[otrig_index].source_channel)) {
 				int ChannelToDisable =
 					dma_data->otrig_array[otrig_index].linked_channel;
 				DMA_DisableChannel(DEV_BASE(dev), ChannelToDisable);
@@ -578,8 +556,7 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 	complete_callback = config->complete_callback_en;
 
 	/* Check if we need to queue DMA descriptors */
-	if ((block_config->block_size > max_xfer_bytes) ||
-		(block_config->next_block != NULL)) {
+	if ((block_config->block_size > max_xfer_bytes) || (block_config->next_block != NULL)) {
 		/* Allocate a DMA descriptor */
 		data->curr_descriptor = data->dma_descriptor_table;
 
@@ -587,28 +564,19 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 			/* Disable interrupt as this is not the entire data.
 			 * Reload for the descriptor
 			 */
-			xfer_config = DMA_CHANNEL_XFER(1UL, 0UL, 0UL, 0UL,
-					width,
-					src_inc,
-					dst_inc,
-					max_xfer_bytes);
+			xfer_config = DMA_CHANNEL_XFER(1UL, 0UL, 0UL, 0UL, width, src_inc, dst_inc,
+						       max_xfer_bytes);
 		} else {
 			/* Enable INTA interrupt if user requested DMA for each block.
 			 * Reload for the descriptor.
 			 */
-			xfer_config = DMA_CHANNEL_XFER(1UL, 0UL, complete_callback, 0UL,
-					width,
-					src_inc,
-					dst_inc,
-					block_config->block_size);
+			xfer_config = DMA_CHANNEL_XFER(1UL, 0UL, complete_callback, 0UL, width,
+						       src_inc, dst_inc, block_config->block_size);
 		}
 	} else {
 		/* Enable interrupt for the descriptor */
-		xfer_config = DMA_CHANNEL_XFER(0UL, 0UL, 1UL, 0UL,
-				width,
-				src_inc,
-				dst_inc,
-				block_config->block_size);
+		xfer_config = DMA_CHANNEL_XFER(0UL, 0UL, 1UL, 0UL, width, src_inc, dst_inc,
+					       block_config->block_size);
 	}
 	/* DMA controller requires that the address be aligned to transfer size */
 	assert(block_config->source_address == ROUND_UP(block_config->source_address, width));
@@ -618,11 +586,9 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 	rw6xx_dma_addr_fixup(block_config);
 #endif
 
-	DMA_SubmitChannelTransferParameter(p_handle,
-					xfer_config,
-					(void *)block_config->source_address,
-					(void *)block_config->dest_address,
-					(void *)data->curr_descriptor);
+	DMA_SubmitChannelTransferParameter(
+		p_handle, xfer_config, (void *)block_config->source_address,
+		(void *)block_config->dest_address, (void *)data->curr_descriptor);
 
 	/* Start queuing DMA descriptors */
 	if (data->curr_descriptor) {
@@ -630,17 +596,17 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 			/* Queue additional DMA descriptors because the amount of data to
 			 * be transferred is greater that the DMA descriptors max XFERCOUNT.
 			 */
-			struct dma_block_config local_block = { 0 };
+			struct dma_block_config local_block = {0};
 
 			if (src_inc) {
-				local_block.source_address = block_config->source_address
-							     + max_xfer_bytes;
+				local_block.source_address =
+					block_config->source_address + max_xfer_bytes;
 			} else {
 				local_block.source_address = block_config->source_address;
 			}
 			if (dst_inc) {
-				local_block.dest_address = block_config->dest_address
-							     + max_xfer_bytes;
+				local_block.dest_address =
+					block_config->dest_address + max_xfer_bytes;
 			} else {
 				local_block.dest_address = block_config->dest_address;
 			}
@@ -653,8 +619,8 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 				complete_callback = true;
 			}
 
-			if (dma_mcux_lpc_queue_descriptors(data, &local_block,
-					src_inc, dst_inc, complete_callback)) {
+			if (dma_mcux_lpc_queue_descriptors(data, &local_block, src_inc, dst_inc,
+							   complete_callback)) {
 				return -ENOMEM;
 			}
 		}
@@ -674,8 +640,8 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 				/* This is the last block. Enable callback if not enabled. */
 				complete_callback = true;
 			}
-			if (dma_mcux_lpc_queue_descriptors(data, block_config,
-				src_inc, dst_inc, complete_callback)) {
+			if (dma_mcux_lpc_queue_descriptors(data, block_config, src_inc, dst_inc,
+							   complete_callback)) {
 				return -ENOMEM;
 			}
 
@@ -756,8 +722,8 @@ static int dma_mcux_lpc_stop(const struct device *dev, uint32_t channel)
 	return 0;
 }
 
-static int dma_mcux_lpc_reload(const struct device *dev, uint32_t channel,
-			       uint32_t src, uint32_t dst, size_t size)
+static int dma_mcux_lpc_reload(const struct device *dev, uint32_t channel, uint32_t src,
+			       uint32_t dst, size_t size)
 {
 	struct dma_mcux_lpc_dma_data *dev_data = dev->data;
 	int8_t virtual_channel = dev_data->channel_index[channel];
@@ -774,25 +740,19 @@ static int dma_mcux_lpc_reload(const struct device *dev, uint32_t channel,
 		p_handle = DEV_DMA_HANDLE(dev, virtual_channel);
 
 		/* Only one buffer, enable interrupt */
-		xfer_config = DMA_CHANNEL_XFER(0UL, 0UL, 1UL, 0UL,
-					data->width,
-					data->src_inc,
-					data->dst_inc,
-					size);
-		DMA_SubmitChannelTransferParameter(p_handle,
-						xfer_config,
-						(void *)src,
-						(void *)dst,
-						NULL);
+		xfer_config = DMA_CHANNEL_XFER(0UL, 0UL, 1UL, 0UL, data->width, data->src_inc,
+					       data->dst_inc, size);
+		DMA_SubmitChannelTransferParameter(p_handle, xfer_config, (void *)src, (void *)dst,
+						   NULL);
 	} else {
-		struct dma_block_config local_block = { 0 };
+		struct dma_block_config local_block = {0};
 
 		local_block.source_address = src;
 		local_block.dest_address = dst;
 		local_block.block_size = size;
 		local_block.source_reload_en = 1;
-		dma_mcux_lpc_queue_descriptors(data, &local_block,
-					       data->src_inc, data->dst_inc, true);
+		dma_mcux_lpc_queue_descriptors(data, &local_block, data->src_inc, data->dst_inc,
+					       true);
 	}
 
 	return 0;
@@ -862,65 +822,53 @@ static const struct dma_driver_api dma_mcux_lpc_api = {
 	.get_status = dma_mcux_lpc_get_status,
 };
 
-#define DMA_MCUX_LPC_CONFIG_FUNC(n)					\
-	static void dma_mcux_lpc_config_func_##n(const struct device *dev)	\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n),				\
-			    DT_INST_IRQ(n, priority),			\
-			    dma_mcux_lpc_irq_handler, DEVICE_DT_INST_GET(n), 0);\
-									\
-		irq_enable(DT_INST_IRQN(n));				\
+#define DMA_MCUX_LPC_CONFIG_FUNC(n)                                                                \
+	static void dma_mcux_lpc_config_func_##n(const struct device *dev)                         \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), dma_mcux_lpc_irq_handler,   \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+                                                                                                   \
+		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
-#define DMA_MCUX_LPC_IRQ_CFG_FUNC_INIT(n)				\
-	.irq_config_func = dma_mcux_lpc_config_func_##n
-#define DMA_MCUX_LPC_INIT_CFG(n)					\
-	DMA_MCUX_LPC_DECLARE_CFG(n,					\
-				 DMA_MCUX_LPC_IRQ_CFG_FUNC_INIT(n))
+#define DMA_MCUX_LPC_IRQ_CFG_FUNC_INIT(n) .irq_config_func = dma_mcux_lpc_config_func_##n
+#define DMA_MCUX_LPC_INIT_CFG(n)          DMA_MCUX_LPC_DECLARE_CFG(n, DMA_MCUX_LPC_IRQ_CFG_FUNC_INIT(n))
 
-#define DMA_MCUX_LPC_NUM_USED_CHANNELS(n)				\
+#define DMA_MCUX_LPC_NUM_USED_CHANNELS(n)                                                          \
 	COND_CODE_0(CONFIG_DMA_MCUX_LPC_NUMBER_OF_CHANNELS_ALLOCATED,	\
 		    (DT_INST_PROP(n, dma_channels)),			\
 		    (MIN(CONFIG_DMA_MCUX_LPC_NUMBER_OF_CHANNELS_ALLOCATED,	\
 			DT_INST_PROP(n, dma_channels))))
 
-#define DMA_MCUX_LPC_DECLARE_CFG(n, IRQ_FUNC_INIT)			\
-static const struct dma_mcux_lpc_config dma_##n##_config = {		\
-	.base = (DMA_Type *)DT_INST_REG_ADDR(n),			\
-	.num_of_channels = DT_INST_PROP(n, dma_channels),		\
-	.num_of_otrigs = DT_INST_PROP_OR(n, nxp_dma_num_of_otrigs, 0),			\
-	.otrig_base_address = DT_INST_PROP_OR(n, nxp_dma_otrig_base_address, 0x0),	\
-	.itrig_base_address = DT_INST_PROP_OR(n, nxp_dma_itrig_base_address, 0x0),	\
-	IRQ_FUNC_INIT							\
-}
+#define DMA_MCUX_LPC_DECLARE_CFG(n, IRQ_FUNC_INIT)                                                 \
+	static const struct dma_mcux_lpc_config dma_##n##_config = {                               \
+		.base = (DMA_Type *)DT_INST_REG_ADDR(n),                                           \
+		.num_of_channels = DT_INST_PROP(n, dma_channels),                                  \
+		.num_of_otrigs = DT_INST_PROP_OR(n, nxp_dma_num_of_otrigs, 0),                     \
+		.otrig_base_address = DT_INST_PROP_OR(n, nxp_dma_otrig_base_address, 0x0),         \
+		.itrig_base_address = DT_INST_PROP_OR(n, nxp_dma_itrig_base_address, 0x0),         \
+		IRQ_FUNC_INIT}
 
-#define DMA_INIT(n) \
-									\
-	static const struct dma_mcux_lpc_config dma_##n##_config;	\
-									\
-	static struct channel_data dma_##n##_channel_data_arr		\
-			[DMA_MCUX_LPC_NUM_USED_CHANNELS(n)] = {0};	\
-									\
-	static struct dma_otrig dma_##n##_otrig_arr			\
-			[DT_INST_PROP_OR(n, nxp_dma_num_of_otrigs, 0)]; \
-									\
-	static int8_t							\
-		dma_##n##_channel_index_arr				\
-				[DT_INST_PROP(n, dma_channels)] = {0};	\
-									\
-	static struct dma_mcux_lpc_dma_data dma_data_##n = {		\
-		.channel_data = dma_##n##_channel_data_arr,		\
-		.channel_index = dma_##n##_channel_index_arr,		\
-		.otrig_array = dma_##n##_otrig_arr,			\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(n,					\
-			    &dma_mcux_lpc_init,				\
-			    NULL,					\
-			    &dma_data_##n, &dma_##n##_config,		\
-			    PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,	\
-			    &dma_mcux_lpc_api);				\
-									\
-	DMA_MCUX_LPC_CONFIG_FUNC(n)					\
+#define DMA_INIT(n)                                                                                \
+                                                                                                   \
+	static const struct dma_mcux_lpc_config dma_##n##_config;                                  \
+                                                                                                   \
+	static struct channel_data dma_##n##_channel_data_arr[DMA_MCUX_LPC_NUM_USED_CHANNELS(n)] = \
+		{0};                                                                               \
+                                                                                                   \
+	static struct dma_otrig dma_##n##_otrig_arr[DT_INST_PROP_OR(n, nxp_dma_num_of_otrigs, 0)]; \
+                                                                                                   \
+	static int8_t dma_##n##_channel_index_arr[DT_INST_PROP(n, dma_channels)] = {0};            \
+                                                                                                   \
+	static struct dma_mcux_lpc_dma_data dma_data_##n = {                                       \
+		.channel_data = dma_##n##_channel_data_arr,                                        \
+		.channel_index = dma_##n##_channel_index_arr,                                      \
+		.otrig_array = dma_##n##_otrig_arr,                                                \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &dma_mcux_lpc_init, NULL, &dma_data_##n, &dma_##n##_config,       \
+			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY, &dma_mcux_lpc_api);          \
+                                                                                                   \
+	DMA_MCUX_LPC_CONFIG_FUNC(n)                                                                \
 	DMA_MCUX_LPC_INIT_CFG(n);
 
 DT_INST_FOREACH_STATUS_OKAY(DMA_INIT)

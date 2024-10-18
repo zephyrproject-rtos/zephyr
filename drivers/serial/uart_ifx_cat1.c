@@ -23,15 +23,15 @@
 
 /* Data structure */
 struct ifx_cat1_uart_data {
-	cyhal_uart_t obj;                               /* UART CYHAL object */
+	cyhal_uart_t obj; /* UART CYHAL object */
 	struct uart_config cfg;
 	cyhal_resource_inst_t hw_resource;
 	cyhal_clock_t clock;
 
 #if CONFIG_UART_INTERRUPT_DRIVEN
-	uart_irq_callback_user_data_t irq_cb;           /* Interrupt Callback */
-	void *irq_cb_data;                              /* Interrupt Callback Arg */
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+	uart_irq_callback_user_data_t irq_cb; /* Interrupt Callback */
+	void *irq_cb_data;                    /* Interrupt Callback Arg */
+#endif                                        /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
 /* Device config structure */
@@ -78,8 +78,7 @@ static const cy_stc_scb_uart_config_t _cyhal_uart_default_config = {
 
 	/* Level triggers when half-fifo is half empty */
 	.txFifoTriggerLevel = (CY_SCB_FIFO_SIZE / 2 - 1),
-	.txFifoIntEnableMask = 0x0UL
-};
+	.txFifoIntEnableMask = 0x0UL};
 
 /* Helper API */
 static cyhal_uart_parity_t _convert_uart_parity_z_to_cyhal(enum uart_config_parity parity)
@@ -178,7 +177,7 @@ static void ifx_cat1_uart_poll_out(const struct device *dev, unsigned char c)
 {
 	struct ifx_cat1_uart_data *data = dev->data;
 
-	(void) cyhal_uart_putc(&data->obj, (uint32_t)c);
+	(void)cyhal_uart_putc(&data->obj, (uint32_t)c);
 }
 
 static int ifx_cat1_uart_err_check(const struct device *dev)
@@ -202,8 +201,7 @@ static int ifx_cat1_uart_err_check(const struct device *dev)
 	return errors;
 }
 
-static int ifx_cat1_uart_configure(const struct device *dev,
-				   const struct uart_config *cfg)
+static int ifx_cat1_uart_configure(const struct device *dev, const struct uart_config *cfg)
 {
 	__ASSERT_NO_MSG(cfg != NULL);
 
@@ -213,8 +211,7 @@ static int ifx_cat1_uart_configure(const struct device *dev,
 	cyhal_uart_cfg_t uart_cfg = {
 		.data_bits = _convert_uart_data_bits_z_to_cyhal(cfg->data_bits),
 		.stop_bits = _convert_uart_stop_bits_z_to_cyhal(cfg->stop_bits),
-		.parity = _convert_uart_parity_z_to_cyhal(cfg->parity)
-	};
+		.parity = _convert_uart_parity_z_to_cyhal(cfg->parity)};
 
 	/* Store Uart Zephyr configuration (uart config) into data structure */
 	data->cfg = *cfg;
@@ -239,8 +236,7 @@ static int ifx_cat1_uart_configure(const struct device *dev,
 	return (result == CY_RSLT_SUCCESS) ? 0 : -ENOTSUP;
 };
 
-static int ifx_cat1_uart_config_get(const struct device *dev,
-				    struct uart_config *cfg)
+static int ifx_cat1_uart_config_get(const struct device *dev, struct uart_config *cfg)
 {
 	ARG_UNUSED(dev);
 
@@ -261,7 +257,7 @@ static void _uart_event_callback_irq_mode(void *arg, cyhal_uart_event_t event)
 {
 	ARG_UNUSED(event);
 
-	const struct device *dev = (const struct device *) arg;
+	const struct device *dev = (const struct device *)arg;
 	struct ifx_cat1_uart_data *const data = dev->data;
 
 	if (data->irq_cb != NULL) {
@@ -270,25 +266,23 @@ static void _uart_event_callback_irq_mode(void *arg, cyhal_uart_event_t event)
 }
 
 /* Fill FIFO with data */
-static int ifx_cat1_uart_fifo_fill(const struct device *dev,
-				   const uint8_t *tx_data, int size)
+static int ifx_cat1_uart_fifo_fill(const struct device *dev, const uint8_t *tx_data, int size)
 {
 	struct ifx_cat1_uart_data *const data = dev->data;
-	size_t _size = (size_t) size;
+	size_t _size = (size_t)size;
 
-	(void)cyhal_uart_write(&data->obj, (uint8_t *) tx_data,  &_size);
-	return (int) _size;
+	(void)cyhal_uart_write(&data->obj, (uint8_t *)tx_data, &_size);
+	return (int)_size;
 }
 
 /* Read data from FIFO */
-static int ifx_cat1_uart_fifo_read(const struct device *dev,
-				   uint8_t *rx_data, const int size)
+static int ifx_cat1_uart_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
 {
 	struct ifx_cat1_uart_data *const data = dev->data;
-	size_t _size = (size_t) size;
+	size_t _size = (size_t)size;
 
 	(void)cyhal_uart_read(&data->obj, rx_data, &_size);
-	return (int) _size;
+	return (int)_size;
 }
 
 /* Enable TX interrupt */
@@ -297,8 +291,7 @@ static void ifx_cat1_uart_irq_tx_enable(const struct device *dev)
 	struct ifx_cat1_uart_data *const data = dev->data;
 	const struct ifx_cat1_uart_config *const config = dev->config;
 
-	cyhal_uart_enable_event(&data->obj,
-				(cyhal_uart_event_t) CYHAL_UART_IRQ_TX_EMPTY,
+	cyhal_uart_enable_event(&data->obj, (cyhal_uart_event_t)CYHAL_UART_IRQ_TX_EMPTY,
 				config->irq_priority, 1);
 }
 
@@ -308,8 +301,7 @@ static void ifx_cat1_uart_irq_tx_disable(const struct device *dev)
 	struct ifx_cat1_uart_data *const data = dev->data;
 	const struct ifx_cat1_uart_config *const config = dev->config;
 
-	cyhal_uart_enable_event(&data->obj,
-				(cyhal_uart_event_t) CYHAL_UART_IRQ_TX_EMPTY,
+	cyhal_uart_enable_event(&data->obj, (cyhal_uart_event_t)CYHAL_UART_IRQ_TX_EMPTY,
 				config->irq_priority, 0);
 }
 
@@ -327,7 +319,7 @@ static int ifx_cat1_uart_irq_tx_complete(const struct device *dev)
 {
 	struct ifx_cat1_uart_data *const data = dev->data;
 
-	return (int) !(cyhal_uart_is_tx_active(&data->obj));
+	return (int)!(cyhal_uart_is_tx_active(&data->obj));
 }
 
 /* Enable RX interrupt */
@@ -336,8 +328,7 @@ static void ifx_cat1_uart_irq_rx_enable(const struct device *dev)
 	struct ifx_cat1_uart_data *const data = dev->data;
 	const struct ifx_cat1_uart_config *const config = dev->config;
 
-	cyhal_uart_enable_event(&data->obj,
-				(cyhal_uart_event_t) CYHAL_UART_IRQ_RX_NOT_EMPTY,
+	cyhal_uart_enable_event(&data->obj, (cyhal_uart_event_t)CYHAL_UART_IRQ_RX_NOT_EMPTY,
 				config->irq_priority, 1);
 }
 
@@ -347,8 +338,7 @@ static void ifx_cat1_uart_irq_rx_disable(const struct device *dev)
 	struct ifx_cat1_uart_data *const data = dev->data;
 	const struct ifx_cat1_uart_config *const config = dev->config;
 
-	cyhal_uart_enable_event(&data->obj,
-				(cyhal_uart_event_t) CYHAL_UART_IRQ_RX_NOT_EMPTY,
+	cyhal_uart_enable_event(&data->obj, (cyhal_uart_event_t)CYHAL_UART_IRQ_RX_NOT_EMPTY,
 				config->irq_priority, 0);
 }
 
@@ -366,9 +356,9 @@ static void ifx_cat1_uart_irq_err_enable(const struct device *dev)
 	struct ifx_cat1_uart_data *const data = dev->data;
 	const struct ifx_cat1_uart_config *const config = dev->config;
 
-	cyhal_uart_enable_event(&data->obj, (cyhal_uart_event_t)
-				(CYHAL_UART_IRQ_TX_ERROR | CYHAL_UART_IRQ_RX_ERROR),
-				config->irq_priority, 1);
+	cyhal_uart_enable_event(
+		&data->obj, (cyhal_uart_event_t)(CYHAL_UART_IRQ_TX_ERROR | CYHAL_UART_IRQ_RX_ERROR),
+		config->irq_priority, 1);
 }
 
 /* Disable Error interrupts */
@@ -377,9 +367,9 @@ static void ifx_cat1_uart_irq_err_disable(const struct device *dev)
 	struct ifx_cat1_uart_data *const data = dev->data;
 	const struct ifx_cat1_uart_config *const config = dev->config;
 
-	cyhal_uart_enable_event(&data->obj, (cyhal_uart_event_t)
-				(CYHAL_UART_IRQ_TX_ERROR | CYHAL_UART_IRQ_RX_ERROR),
-				config->irq_priority, 0);
+	cyhal_uart_enable_event(
+		&data->obj, (cyhal_uart_event_t)(CYHAL_UART_IRQ_TX_ERROR | CYHAL_UART_IRQ_RX_ERROR),
+		config->irq_priority, 0);
 }
 
 /* Check if any IRQs is pending */
@@ -388,7 +378,7 @@ static int ifx_cat1_uart_irq_is_pending(const struct device *dev)
 	struct ifx_cat1_uart_data *const data = dev->data;
 	uint32_t intcause = Cy_SCB_GetInterruptCause(data->obj.base);
 
-	return (int) (intcause & (CY_SCB_TX_INTR | CY_SCB_RX_INTR));
+	return (int)(intcause & (CY_SCB_TX_INTR | CY_SCB_RX_INTR));
 }
 
 /* Start processing interrupts in ISR.
@@ -410,8 +400,7 @@ static int ifx_cat1_uart_irq_update(const struct device *dev)
 }
 
 static void ifx_cat1_uart_irq_callback_set(const struct device *dev,
-					   uart_irq_callback_user_data_t cb,
-					   void *cb_data)
+					   uart_irq_callback_user_data_t cb, void *cb_data)
 {
 	struct ifx_cat1_uart_data *data = dev->data;
 	cyhal_uart_t *uart_obj = &data->obj;
@@ -421,10 +410,9 @@ static void ifx_cat1_uart_irq_callback_set(const struct device *dev,
 	data->irq_cb_data = cb_data;
 
 	/* Register a uart general callback handler  */
-	cyhal_uart_register_callback(uart_obj, _uart_event_callback_irq_mode, (void *) dev);
+	cyhal_uart_register_callback(uart_obj, _uart_event_callback_irq_mode, (void *)dev);
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
-
 
 static int ifx_cat1_uart_init(const struct device *dev)
 {
@@ -437,11 +425,12 @@ static int ifx_cat1_uart_init(const struct device *dev)
 		.resource = &data->hw_resource,
 		.config = &_cyhal_uart_default_config,
 		.clock = &data->clock,
-		.gpios = {
-			.pin_tx  = NC,
-			.pin_rts = NC,
-			.pin_cts = NC,
-		},
+		.gpios =
+			{
+				.pin_tx = NC,
+				.pin_rts = NC,
+				.pin_cts = NC,
+			},
 	};
 
 	/* Dedicate SCB HW resource */
@@ -507,29 +496,25 @@ static const struct uart_driver_api ifx_cat1_uart_driver_api = {
 	.irq_is_pending = ifx_cat1_uart_irq_is_pending,
 	.irq_update = ifx_cat1_uart_irq_update,
 	.irq_callback_set = ifx_cat1_uart_irq_callback_set,
-#endif    /* CONFIG_UART_INTERRUPT_DRIVEN */
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-#define INFINEON_CAT1_UART_INIT(n)							     \
-	PINCTRL_DT_INST_DEFINE(n);							     \
-	static struct ifx_cat1_uart_data ifx_cat1_uart##n##_data;			     \
-											     \
-	static struct ifx_cat1_uart_config ifx_cat1_uart##n##_cfg = {			     \
-		.dt_cfg.baudrate = DT_INST_PROP(n, current_speed),			     \
-		.dt_cfg.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),	     \
-		.dt_cfg.stop_bits = DT_INST_ENUM_IDX_OR(n, stop_bits, UART_CFG_STOP_BITS_1), \
-		.dt_cfg.data_bits = DT_INST_ENUM_IDX_OR(n, data_bits, UART_CFG_DATA_BITS_8), \
-		.dt_cfg.flow_ctrl = DT_INST_PROP(n, hw_flow_control),			     \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				     \
-		.reg_addr = (CySCB_Type *)DT_INST_REG_ADDR(n),				     \
-		.irq_priority = DT_INST_IRQ(n, priority)				     \
-	};										     \
-											     \
-	DEVICE_DT_INST_DEFINE(n,							     \
-			      ifx_cat1_uart_init, NULL,					     \
-			      &ifx_cat1_uart##n##_data,					     \
-			      &ifx_cat1_uart##n##_cfg, PRE_KERNEL_1,			     \
-			      CONFIG_SERIAL_INIT_PRIORITY,				     \
+#define INFINEON_CAT1_UART_INIT(n)                                                                 \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	static struct ifx_cat1_uart_data ifx_cat1_uart##n##_data;                                  \
+                                                                                                   \
+	static struct ifx_cat1_uart_config ifx_cat1_uart##n##_cfg = {                              \
+		.dt_cfg.baudrate = DT_INST_PROP(n, current_speed),                                 \
+		.dt_cfg.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),             \
+		.dt_cfg.stop_bits = DT_INST_ENUM_IDX_OR(n, stop_bits, UART_CFG_STOP_BITS_1),       \
+		.dt_cfg.data_bits = DT_INST_ENUM_IDX_OR(n, data_bits, UART_CFG_DATA_BITS_8),       \
+		.dt_cfg.flow_ctrl = DT_INST_PROP(n, hw_flow_control),                              \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+		.reg_addr = (CySCB_Type *)DT_INST_REG_ADDR(n),                                     \
+		.irq_priority = DT_INST_IRQ(n, priority)};                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, ifx_cat1_uart_init, NULL, &ifx_cat1_uart##n##_data,               \
+			      &ifx_cat1_uart##n##_cfg, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,  \
 			      &ifx_cat1_uart_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_CAT1_UART_INIT)

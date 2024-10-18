@@ -19,7 +19,7 @@
 /** RCU offset (from id cell) */
 #define GD32_CLOCK_ID_OFFSET(id) (((id) >> 6U) & 0xFFU)
 /** RCU configuration bit (from id cell) */
-#define GD32_CLOCK_ID_BIT(id)	 ((id)&0x1FU)
+#define GD32_CLOCK_ID_BIT(id)    ((id) & 0x1FU)
 
 #define CPU_FREQ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
 
@@ -42,7 +42,7 @@ struct clock_control_gd32_config {
 
 #if DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_timer)
 /* timer identifiers */
-#define TIMER_ID_OR_NONE(nodelabel)                                            \
+#define TIMER_ID_OR_NONE(nodelabel)                                                                \
 	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(nodelabel)),          \
 		    (DT_CLOCKS_CELL(DT_NODELABEL(nodelabel), id),), ())
 
@@ -67,32 +67,27 @@ static const uint16_t timer_ids[] = {
 };
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_timer) */
 
-static int clock_control_gd32_on(const struct device *dev,
-				 clock_control_subsys_t sys)
+static int clock_control_gd32_on(const struct device *dev, clock_control_subsys_t sys)
 {
 	const struct clock_control_gd32_config *config = dev->config;
 	uint16_t id = *(uint16_t *)sys;
 
-	sys_set_bit(config->base + GD32_CLOCK_ID_OFFSET(id),
-		    GD32_CLOCK_ID_BIT(id));
+	sys_set_bit(config->base + GD32_CLOCK_ID_OFFSET(id), GD32_CLOCK_ID_BIT(id));
 
 	return 0;
 }
 
-static int clock_control_gd32_off(const struct device *dev,
-				  clock_control_subsys_t sys)
+static int clock_control_gd32_off(const struct device *dev, clock_control_subsys_t sys)
 {
 	const struct clock_control_gd32_config *config = dev->config;
 	uint16_t id = *(uint16_t *)sys;
 
-	sys_clear_bit(config->base + GD32_CLOCK_ID_OFFSET(id),
-		      GD32_CLOCK_ID_BIT(id));
+	sys_clear_bit(config->base + GD32_CLOCK_ID_OFFSET(id), GD32_CLOCK_ID_BIT(id));
 
 	return 0;
 }
 
-static int clock_control_gd32_get_rate(const struct device *dev,
-				       clock_control_subsys_t sys,
+static int clock_control_gd32_get_rate(const struct device *dev, clock_control_subsys_t sys,
 				       uint32_t *rate)
 {
 	const struct clock_control_gd32_config *config = dev->config;
@@ -114,8 +109,7 @@ static int clock_control_gd32_get_rate(const struct device *dev,
 		*rate = CPU_FREQ >> ahb_exp[psc];
 		break;
 	case RCU_APB1EN_OFFSET:
-#if !defined(CONFIG_SOC_SERIES_GD32VF103) && \
-	!defined(CONFIG_SOC_SERIES_GD32A50X) && \
+#if !defined(CONFIG_SOC_SERIES_GD32VF103) && !defined(CONFIG_SOC_SERIES_GD32A50X) &&               \
 	!defined(CONFIG_SOC_SERIES_GD32L23X)
 	case RCU_ADDAPB1EN_OFFSET:
 #endif
@@ -158,7 +152,7 @@ static int clock_control_gd32_get_rate(const struct device *dev,
 			} else {
 				*rate *= 2U;
 			}
-		/* TIMERSEL = 1 */
+			/* TIMERSEL = 1 */
 		} else {
 			if (psc <= 4U) {
 				*rate = CPU_FREQ;
@@ -183,15 +177,13 @@ static int clock_control_gd32_get_rate(const struct device *dev,
 	return 0;
 }
 
-static enum clock_control_status
-clock_control_gd32_get_status(const struct device *dev,
-			      clock_control_subsys_t sys)
+static enum clock_control_status clock_control_gd32_get_status(const struct device *dev,
+							       clock_control_subsys_t sys)
 {
 	const struct clock_control_gd32_config *config = dev->config;
 	uint16_t id = *(uint16_t *)sys;
 
-	if (sys_test_bit(config->base + GD32_CLOCK_ID_OFFSET(id),
-			 GD32_CLOCK_ID_BIT(id)) != 0) {
+	if (sys_test_bit(config->base + GD32_CLOCK_ID_OFFSET(id), GD32_CLOCK_ID_BIT(id)) != 0) {
 		return CLOCK_CONTROL_STATUS_ON;
 	}
 
@@ -210,5 +202,4 @@ static const struct clock_control_gd32_config config = {
 };
 
 DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &config, PRE_KERNEL_1,
-		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
-		      &clock_control_gd32_api);
+		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &clock_control_gd32_api);

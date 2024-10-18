@@ -40,21 +40,21 @@ struct gptimer_regs {
 	struct gptimer_timer_regs timer[GPTIMER_MAX_SUBTIMERS];
 };
 
-#define GPTIMER_CTRL_WN         (1 << 7)
-#define GPTIMER_CTRL_IP         (1 << 4)
-#define GPTIMER_CTRL_IE         (1 << 3)
-#define GPTIMER_CTRL_LD         (1 << 2)
-#define GPTIMER_CTRL_RS         (1 << 1)
-#define GPTIMER_CTRL_EN         (1 << 0)
-#define GPTIMER_CFG_EL          (1 << 11)
-#define GPTIMER_CFG_DF          (1 << 9)
-#define GPTIMER_CFG_SI          (1 << 8)
-#define GPTIMER_CFG_IRQ         (0x1f << 3)
-#define GPTIMER_CFG_TIMERS      (7 << 0)
+#define GPTIMER_CTRL_WN    (1 << 7)
+#define GPTIMER_CTRL_IP    (1 << 4)
+#define GPTIMER_CTRL_IE    (1 << 3)
+#define GPTIMER_CTRL_LD    (1 << 2)
+#define GPTIMER_CTRL_RS    (1 << 1)
+#define GPTIMER_CTRL_EN    (1 << 0)
+#define GPTIMER_CFG_EL     (1 << 11)
+#define GPTIMER_CFG_DF     (1 << 9)
+#define GPTIMER_CFG_SI     (1 << 8)
+#define GPTIMER_CFG_IRQ    (0x1f << 3)
+#define GPTIMER_CFG_TIMERS (7 << 0)
 
 static volatile struct gptimer_regs *get_regs(void)
 {
-	return (struct gptimer_regs *) DT_INST_REG_ADDR(0);
+	return (struct gptimer_regs *)DT_INST_REG_ADDR(0);
 }
 
 static int get_timer_irq(void)
@@ -77,8 +77,7 @@ static void timer_isr(const void *unused)
 	}
 
 	/* Clear pending */
-	tmr->ctrl = GPTIMER_CTRL_IE | GPTIMER_CTRL_RS |
-		    GPTIMER_CTRL_EN | gptimer_ctrl_clear_ip;
+	tmr->ctrl = GPTIMER_CTRL_IE | GPTIMER_CTRL_RS | GPTIMER_CTRL_EN | gptimer_ctrl_clear_ip;
 
 	sys_clock_announce(1);
 }
@@ -121,13 +120,11 @@ static int sys_clock_driver_init(void)
 	/* Configure timer scaler for 1 MHz subtimer tick */
 	regs->scaler_reload = PRESCALER - 1;
 	tmr->reload = 1000000U / CONFIG_SYS_CLOCK_TICKS_PER_SEC - 1;
-	tmr->ctrl = GPTIMER_CTRL_IE | GPTIMER_CTRL_LD | GPTIMER_CTRL_RS |
-		    GPTIMER_CTRL_EN;
+	tmr->ctrl = GPTIMER_CTRL_IE | GPTIMER_CTRL_LD | GPTIMER_CTRL_RS | GPTIMER_CTRL_EN;
 
 	irq_connect_dynamic(timer_interrupt, 0, timer_isr, NULL, 0);
 	irq_enable(timer_interrupt);
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

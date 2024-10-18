@@ -19,10 +19,10 @@ LOG_MODULE_REGISTER(MAX31875, CONFIG_SENSOR_LOG_LEVEL);
 
 /* Conversions per second */
 #define MAX31875_CONV_PER_SEC_SHIFT 0x01
-#define MAX31875_CONV_PER_SEC_0_25 0x00
-#define MAX31875_CONV_PER_SEC_1    0x01
-#define MAX31875_CONV_PER_SEC_4    0x02
-#define MAX31875_CONV_PER_SEC_8    0x03
+#define MAX31875_CONV_PER_SEC_0_25  0x00
+#define MAX31875_CONV_PER_SEC_1     0x01
+#define MAX31875_CONV_PER_SEC_4     0x02
+#define MAX31875_CONV_PER_SEC_8     0x03
 
 #define MAX31875_CONV_PER_SEC_MASK (BIT_MASK(2) << MAX31875_CONV_PER_SEC_SHIFT)
 
@@ -53,8 +53,8 @@ LOG_MODULE_REGISTER(MAX31875, CONFIG_SENSOR_LOG_LEVEL);
  * @param res   Resolution (number of bits)
  * @param convs Conversions per second
  */
-#define MAX31875_CONFIG(format, res, convs)						       \
-	(((format) << (MAX31875_DATA_FORMAT_SHIFT)) | ((res) << (MAX31875_RESOLUTION_SHIFT)) | \
+#define MAX31875_CONFIG(format, res, convs)                                                        \
+	(((format) << (MAX31875_DATA_FORMAT_SHIFT)) | ((res) << (MAX31875_RESOLUTION_SHIFT)) |     \
 	 ((convs) << (MAX31875_CONV_PER_SEC_SHIFT)))
 
 #define MAX31875_REG_TEMPERATURE 0x00
@@ -72,8 +72,7 @@ struct max31875_config {
 	uint8_t resolution;
 };
 
-static int max31875_reg_read(const struct max31875_config *cfg,
-			     uint8_t reg, uint16_t *val)
+static int max31875_reg_read(const struct max31875_config *cfg, uint8_t reg, uint16_t *val)
 {
 	int ret;
 
@@ -86,16 +85,14 @@ static int max31875_reg_read(const struct max31875_config *cfg,
 	return 0;
 }
 
-static int max31875_reg_write(const struct max31875_config *cfg,
-			      uint8_t reg, uint16_t val)
+static int max31875_reg_write(const struct max31875_config *cfg, uint8_t reg, uint16_t val)
 {
 	uint16_t val_be = sys_cpu_to_be16(val);
 
 	return i2c_burst_write_dt(&cfg->bus, reg, (uint8_t *)&val_be, 2);
 }
 
-static uint16_t set_config_flags(struct max31875_data *data, uint16_t mask,
-				 uint16_t value)
+static uint16_t set_config_flags(struct max31875_data *data, uint16_t mask, uint16_t value)
 {
 	return (data->config_reg & ~mask) | (value & mask);
 }
@@ -117,10 +114,8 @@ static int max31875_update_config(const struct device *dev, uint16_t mask, uint1
 	return rc;
 }
 
-static int max31875_attr_set(const struct device *dev,
-			     enum sensor_channel chan,
-			     enum sensor_attribute attr,
-			     const struct sensor_value *val)
+static int max31875_attr_set(const struct device *dev, enum sensor_channel chan,
+			     enum sensor_attribute attr, const struct sensor_value *val)
 {
 	int ret;
 	uint16_t value;
@@ -190,8 +185,7 @@ static int max31875_attr_set(const struct device *dev,
 	return 0;
 }
 
-static int max31875_sample_fetch(const struct device *dev,
-				 enum sensor_channel chan)
+static int max31875_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct max31875_data *data = dev->data;
 	const struct max31875_config *cfg = dev->config;
@@ -209,18 +203,17 @@ static int max31875_sample_fetch(const struct device *dev,
 	}
 
 	if (data->config_reg & BIT(MAX31875_DATA_FORMAT_SHIFT)) {
-		data->sample = arithmetic_shift_right((int16_t)val,
-						      MAX31875_DATA_FORMAT_EXTENDED_SHIFT);
+		data->sample =
+			arithmetic_shift_right((int16_t)val, MAX31875_DATA_FORMAT_EXTENDED_SHIFT);
 	} else {
-		data->sample = arithmetic_shift_right((int16_t)val,
-						      MAX31875_DATA_FORMAT_NORMAL_SHIFT);
+		data->sample =
+			arithmetic_shift_right((int16_t)val, MAX31875_DATA_FORMAT_NORMAL_SHIFT);
 	}
 
 	return 0;
 }
 
-static int max31875_channel_get(const struct device *dev,
-				enum sensor_channel chan,
+static int max31875_channel_get(const struct device *dev, enum sensor_channel chan,
 				struct sensor_value *val)
 {
 	struct max31875_data *data = dev->data;
@@ -253,23 +246,22 @@ static int max31875_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	data->config_reg = MAX31875_CONFIG(cfg->data_format, cfg->resolution,
-					   cfg->conversions_per_second);
+	data->config_reg =
+		MAX31875_CONFIG(cfg->data_format, cfg->resolution, cfg->conversions_per_second);
 
 	return max31875_update_config(dev, 0, 0);
 }
 
-
-#define MAX31875_INST(inst)								  \
-	static struct max31875_data max31875_data_##inst;				  \
-	static const struct max31875_config max31875_config_##inst = {			  \
-		.bus = I2C_DT_SPEC_INST_GET(inst),					  \
-		.conversions_per_second = DT_INST_ENUM_IDX(inst, conversions_per_second), \
-		.resolution = DT_INST_ENUM_IDX(inst, resolution),			  \
-		.data_format = DT_INST_PROP(inst, extended_mode),			  \
-	};										  \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, max31875_init, NULL, &max31875_data_##inst,	  \
-			      &max31875_config_##inst, POST_KERNEL,			  \
-			      CONFIG_SENSOR_INIT_PRIORITY, &max31875_driver_api);
+#define MAX31875_INST(inst)                                                                        \
+	static struct max31875_data max31875_data_##inst;                                          \
+	static const struct max31875_config max31875_config_##inst = {                             \
+		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
+		.conversions_per_second = DT_INST_ENUM_IDX(inst, conversions_per_second),          \
+		.resolution = DT_INST_ENUM_IDX(inst, resolution),                                  \
+		.data_format = DT_INST_PROP(inst, extended_mode),                                  \
+	};                                                                                         \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, max31875_init, NULL, &max31875_data_##inst,             \
+				     &max31875_config_##inst, POST_KERNEL,                         \
+				     CONFIG_SENSOR_INIT_PRIORITY, &max31875_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX31875_INST)

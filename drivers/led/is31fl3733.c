@@ -16,31 +16,31 @@
 LOG_MODULE_REGISTER(is31fl3733, CONFIG_LED_LOG_LEVEL);
 
 /* IS31FL3733 register definitions */
-#define CMD_SEL_REG		0xFD /* Command/page selection reg */
-#define CMD_SEL_LED		0x0  /* LED configuration page */
-#define CMD_SEL_PWM		0x1  /* PWM configuration page */
-#define CMD_SEL_FUNC		0x3  /* Function configuration page */
+#define CMD_SEL_REG  0xFD /* Command/page selection reg */
+#define CMD_SEL_LED  0x0  /* LED configuration page */
+#define CMD_SEL_PWM  0x1  /* PWM configuration page */
+#define CMD_SEL_FUNC 0x3  /* Function configuration page */
 
-#define CMD_LOCK_REG		0xFE /* Command selection lock reg */
-#define CMD_LOCK_UNLOCK		0xC5 /* Command sel unlock value */
+#define CMD_LOCK_REG    0xFE /* Command selection lock reg */
+#define CMD_LOCK_UNLOCK 0xC5 /* Command sel unlock value */
 
 /* IS31FL3733 page specific register definitions */
 
 /* Function configuration page */
-#define CONF_REG		0x0 /* configuration register */
-#define CONF_REG_SSD_MASK	0x1 /* Software shutdown mask */
-#define CONF_REG_SSD_SHIFT	0x0 /* Software shutdown shift */
-#define CONF_REG_SYNC_SHIFT	0x6 /* Sync mode shift */
-#define CONF_REG_SYNC_MASK	0xC /* Sync mode mask */
+#define CONF_REG            0x0 /* configuration register */
+#define CONF_REG_SSD_MASK   0x1 /* Software shutdown mask */
+#define CONF_REG_SSD_SHIFT  0x0 /* Software shutdown shift */
+#define CONF_REG_SYNC_SHIFT 0x6 /* Sync mode shift */
+#define CONF_REG_SYNC_MASK  0xC /* Sync mode mask */
 
 #define GLOBAL_CURRENT_CTRL_REG 0x1 /* global current control register */
 
-#define RESET_REG		0x11 /* Reset all registers to POR state */
+#define RESET_REG 0x11 /* Reset all registers to POR state */
 
 /* Matrix Layout definitions */
 #define IS31FL3733_ROW_COUNT 12
 #define IS31FL3733_COL_COUNT 16
-#define IS31FL3733_MAX_LED (IS31FL3733_ROW_COUNT * IS31FL3733_COL_COUNT)
+#define IS31FL3733_MAX_LED   (IS31FL3733_ROW_COUNT * IS31FL3733_COL_COUNT)
 
 /* Max brightness */
 #define IS31FL3733_MAX_BRIGHTNESS 100
@@ -191,8 +191,7 @@ static int is31fl3733_init(const struct device *dev)
 		return ret;
 	}
 	/* Set global current control register based off devicetree value */
-	ret = i2c_reg_write_byte_dt(&config->bus, GLOBAL_CURRENT_CTRL_REG,
-				config->current_limit);
+	ret = i2c_reg_write_byte_dt(&config->bus, GLOBAL_CURRENT_CTRL_REG, config->current_limit);
 	if (ret < 0) {
 		return ret;
 	}
@@ -213,8 +212,7 @@ static int is31fl3733_init(const struct device *dev)
 		return ret;
 	}
 
-	return i2c_write_dt(&config->bus, data->scratch_buf,
-			(IS31FL3733_MAX_LED / 8) + 1);
+	return i2c_write_dt(&config->bus, data->scratch_buf, (IS31FL3733_MAX_LED / 8) + 1);
 }
 
 /* Custom IS31FL3733 specific APIs */
@@ -287,7 +285,7 @@ static const struct led_driver_api is31fl3733_api = {
 		.bus = I2C_DT_SPEC_INST_GET(n),                                                    \
 		.sdb = GPIO_DT_SPEC_INST_GET_OR(n, sdb_gpios, {}),                                 \
 		.current_limit = DT_INST_PROP(n, current_limit),                                   \
-		.sync = DT_INST_ENUM_IDX(n, sync_mode),						   \
+		.sync = DT_INST_ENUM_IDX(n, sync_mode),                                            \
 	};                                                                                         \
                                                                                                    \
 	static struct is31fl3733_data is31fl3733_data_##n = {                                      \

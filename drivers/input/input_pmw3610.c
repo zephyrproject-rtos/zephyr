@@ -24,77 +24,77 @@
 LOG_MODULE_REGISTER(input_pmw3610, CONFIG_INPUT_LOG_LEVEL);
 
 /* Page 0 */
-#define PMW3610_PROD_ID		0x00
-#define PMW3610_REV_ID		0x01
-#define PMW3610_MOTION		0x02
-#define PMW3610_DELTA_X_L	0x03
-#define PMW3610_DELTA_Y_L	0x04
-#define PMW3610_DELTA_XY_H	0x05
-#define PMW3610_PERFORMANCE	0x11
-#define PMW3610_BURST_READ	0x12
-#define PMW3610_RUN_DOWNSHIFT	0x1b
-#define PMW3610_REST1_RATE	0x1c
-#define PMW3610_REST1_DOWNSHIFT	0x1d
-#define PMW3610_OBSERVATION1	0x2d
-#define PMW3610_SMART_MODE	0x32
-#define PMW3610_POWER_UP_RESET	0x3a
-#define PMW3610_SHUTDOWN	0x3b
-#define PMW3610_SPI_CLK_ON_REQ	0x41
-#define PWM3610_SPI_PAGE0	0x7f
+#define PMW3610_PROD_ID         0x00
+#define PMW3610_REV_ID          0x01
+#define PMW3610_MOTION          0x02
+#define PMW3610_DELTA_X_L       0x03
+#define PMW3610_DELTA_Y_L       0x04
+#define PMW3610_DELTA_XY_H      0x05
+#define PMW3610_PERFORMANCE     0x11
+#define PMW3610_BURST_READ      0x12
+#define PMW3610_RUN_DOWNSHIFT   0x1b
+#define PMW3610_REST1_RATE      0x1c
+#define PMW3610_REST1_DOWNSHIFT 0x1d
+#define PMW3610_OBSERVATION1    0x2d
+#define PMW3610_SMART_MODE      0x32
+#define PMW3610_POWER_UP_RESET  0x3a
+#define PMW3610_SHUTDOWN        0x3b
+#define PMW3610_SPI_CLK_ON_REQ  0x41
+#define PWM3610_SPI_PAGE0       0x7f
 
 /* Page 1 */
-#define PMW3610_RES_STEP	0x05
-#define PWM3610_SPI_PAGE1	0x7f
+#define PMW3610_RES_STEP  0x05
+#define PWM3610_SPI_PAGE1 0x7f
 
 /* Burst register offsets */
-#define BURST_MOTION		0
-#define BURST_DELTA_X_L		1
-#define BURST_DELTA_Y_L		2
-#define BURST_DELTA_XY_H	3
-#define BURST_SQUAL		4
-#define BURST_SHUTTER_HI	5
-#define BURST_SHUTTER_LO	6
+#define BURST_MOTION     0
+#define BURST_DELTA_X_L  1
+#define BURST_DELTA_Y_L  2
+#define BURST_DELTA_XY_H 3
+#define BURST_SQUAL      4
+#define BURST_SHUTTER_HI 5
+#define BURST_SHUTTER_LO 6
 
-#define BURST_DATA_LEN_NORMAL	(BURST_DELTA_XY_H + 1)
-#define BURST_DATA_LEN_SMART	(BURST_SHUTTER_LO + 1)
-#define BURST_DATA_LEN_MAX	MAX(BURST_DATA_LEN_NORMAL, BURST_DATA_LEN_SMART)
+#define BURST_DATA_LEN_NORMAL (BURST_DELTA_XY_H + 1)
+#define BURST_DATA_LEN_SMART  (BURST_SHUTTER_LO + 1)
+#define BURST_DATA_LEN_MAX    MAX(BURST_DATA_LEN_NORMAL, BURST_DATA_LEN_SMART)
 
 /* Init sequence values */
 #define OBSERVATION1_INIT_MASK 0x0f
-#define PERFORMANCE_INIT 0x0d
-#define RUN_DOWNSHIFT_INIT 0x04
-#define REST1_RATE_INIT 0x04
-#define REST1_DOWNSHIFT_INIT 0x0f
+#define PERFORMANCE_INIT       0x0d
+#define RUN_DOWNSHIFT_INIT     0x04
+#define REST1_RATE_INIT        0x04
+#define REST1_DOWNSHIFT_INIT   0x0f
 
-#define PRODUCT_ID_PMW3610 0x3e
-#define SPI_WRITE BIT(7)
-#define MOTION_STATUS_MOTION BIT(7)
-#define SPI_CLOCK_ON_REQ_ON 0xba
-#define SPI_CLOCK_ON_REQ_OFF 0xb5
-#define RES_STEP_INV_X_BIT 6
-#define RES_STEP_INV_Y_BIT 5
-#define RES_STEP_RES_MASK 0x1f
-#define PERFORMANCE_FMODE_MASK (0x0f << 4)
-#define PERFORMANCE_FMODE_NORMAL (0x00 << 4)
+#define PRODUCT_ID_PMW3610            0x3e
+#define SPI_WRITE                     BIT(7)
+#define MOTION_STATUS_MOTION          BIT(7)
+#define SPI_CLOCK_ON_REQ_ON           0xba
+#define SPI_CLOCK_ON_REQ_OFF          0xb5
+#define RES_STEP_INV_X_BIT            6
+#define RES_STEP_INV_Y_BIT            5
+#define RES_STEP_RES_MASK             0x1f
+#define PERFORMANCE_FMODE_MASK        (0x0f << 4)
+#define PERFORMANCE_FMODE_NORMAL      (0x00 << 4)
 #define PERFORMANCE_FMODE_FORCE_AWAKE (0x0f << 4)
-#define POWER_UP_RESET 0x5a
-#define POWER_UP_WAKEUP 0x96
-#define SHUTDOWN_ENABLE 0xe7
-#define SPI_PAGE0_1 0xff
-#define SPI_PAGE1_0 0x00
-#define SHUTTER_SMART_THRESHOLD 45
-#define SMART_MODE_ENABLE 0x00
-#define SMART_MODE_DISABLE 0x80
+#define POWER_UP_RESET                0x5a
+#define POWER_UP_WAKEUP               0x96
+#define SHUTDOWN_ENABLE               0xe7
+#define SPI_PAGE0_1                   0xff
+#define SPI_PAGE1_0                   0x00
+#define SHUTTER_SMART_THRESHOLD       45
+#define SMART_MODE_ENABLE             0x00
+#define SMART_MODE_DISABLE            0x80
 
 #define PMW3610_DATA_SIZE_BITS 12
 
-#define RESET_DELAY_MS 10
+#define RESET_DELAY_MS            10
 #define INIT_OBSERVATION_DELAY_MS 10
-#define CLOCK_ON_DELAY_US 300
+#define CLOCK_ON_DELAY_US         300
 
 #define RES_STEP 200
-#define RES_MIN 200
-#define RES_MAX 3200
+#define RES_MIN  200
+#define RES_MAX  3200
 
 struct pmw3610_config {
 	struct spi_dt_spec spi;
@@ -116,8 +116,7 @@ struct pmw3610_data {
 	bool smart_flag;
 };
 
-static int pmw3610_read(const struct device *dev,
-			uint8_t addr, uint8_t *value, uint8_t len)
+static int pmw3610_read(const struct device *dev, uint8_t addr, uint8_t *value, uint8_t len)
 {
 	const struct pmw3610_config *cfg = dev->config;
 
@@ -188,8 +187,7 @@ static int pmw3610_spi_clk_off(const struct device *dev)
 
 static void pmw3610_motion_work_handler(struct k_work *work)
 {
-	struct pmw3610_data *data = CONTAINER_OF(
-			work, struct pmw3610_data, motion_work);
+	struct pmw3610_data *data = CONTAINER_OF(work, struct pmw3610_data, motion_work);
 	const struct device *dev = data->dev;
 	const struct pmw3610_config *cfg = dev->config;
 	uint8_t burst_data[BURST_DATA_LEN_MAX];
@@ -250,12 +248,10 @@ static void pmw3610_motion_work_handler(struct k_work *work)
 	}
 }
 
-static void pmw3610_motion_handler(const struct device *gpio_dev,
-				   struct gpio_callback *cb,
+static void pmw3610_motion_handler(const struct device *gpio_dev, struct gpio_callback *cb,
 				   uint32_t pins)
 {
-	struct pmw3610_data *data = CONTAINER_OF(
-			cb, struct pmw3610_data, motion_cb);
+	struct pmw3610_data *data = CONTAINER_OF(cb, struct pmw3610_data, motion_cb);
 
 	k_work_submit(&data->motion_work);
 }
@@ -458,7 +454,6 @@ static int pmw3610_configure(const struct device *dev)
 		if (ret < 0) {
 			return ret;
 		}
-
 	}
 
 	ret = pmw3610_spi_clk_off(dev);
@@ -503,8 +498,7 @@ static int pmw3610_init(const struct device *dev)
 		return ret;
 	}
 
-	gpio_init_callback(&data->motion_cb, pmw3610_motion_handler,
-			   BIT(cfg->motion_gpio.pin));
+	gpio_init_callback(&data->motion_cb, pmw3610_motion_handler, BIT(cfg->motion_gpio.pin));
 
 	ret = gpio_add_callback_dt(&cfg->motion_gpio, &data->motion_cb);
 	if (ret < 0) {
@@ -518,8 +512,7 @@ static int pmw3610_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = gpio_pin_interrupt_configure_dt(&cfg->motion_gpio,
-					      GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_interrupt_configure_dt(&cfg->motion_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret != 0) {
 		LOG_ERR("Motion interrupt configuration failed: %d", ret);
 		return ret;
@@ -535,8 +528,7 @@ static int pmw3610_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int pmw3610_pm_action(const struct device *dev,
-			     enum pm_device_action action)
+static int pmw3610_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	int ret;
 
@@ -561,33 +553,31 @@ static int pmw3610_pm_action(const struct device *dev,
 }
 #endif
 
-#define PMW3610_SPI_MODE (SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | \
-			  SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_TRANSFER_MSB)
+#define PMW3610_SPI_MODE                                                                           \
+	(SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_TRANSFER_MSB)
 
-#define PMW3610_INIT(n)								\
-	BUILD_ASSERT(IN_RANGE(DT_INST_PROP_OR(n, res_cpi, RES_MIN),		\
-			      RES_MIN, RES_MAX), "invalid res-cpi");		\
-										\
-	static const struct pmw3610_config pmw3610_cfg_##n = {			\
-		.spi = SPI_DT_SPEC_INST_GET(n, PMW3610_SPI_MODE, 0),		\
-		.motion_gpio = GPIO_DT_SPEC_INST_GET(n, motion_gpios),		\
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {}),	\
-		.axis_x = DT_INST_PROP(n, zephyr_axis_x),			\
-		.axis_y = DT_INST_PROP(n, zephyr_axis_y),			\
-		.res_cpi = DT_INST_PROP_OR(n, res_cpi, -1),			\
-		.invert_x = DT_INST_PROP(n, invert_x),				\
-		.invert_y = DT_INST_PROP(n, invert_y),				\
-		.force_awake = DT_INST_PROP(n, force_awake),			\
-		.smart_mode = DT_INST_PROP(n, smart_mode),			\
-	};									\
-										\
-	static struct pmw3610_data pmw3610_data_##n;				\
-										\
-	PM_DEVICE_DT_INST_DEFINE(n, pmw3610_pm_action);				\
-										\
-	DEVICE_DT_INST_DEFINE(n, pmw3610_init, PM_DEVICE_DT_INST_GET(n),	\
-			      &pmw3610_data_##n, &pmw3610_cfg_##n,		\
-			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,		\
-			      NULL);
+#define PMW3610_INIT(n)                                                                            \
+	BUILD_ASSERT(IN_RANGE(DT_INST_PROP_OR(n, res_cpi, RES_MIN), RES_MIN, RES_MAX),             \
+		     "invalid res-cpi");                                                           \
+                                                                                                   \
+	static const struct pmw3610_config pmw3610_cfg_##n = {                                     \
+		.spi = SPI_DT_SPEC_INST_GET(n, PMW3610_SPI_MODE, 0),                               \
+		.motion_gpio = GPIO_DT_SPEC_INST_GET(n, motion_gpios),                             \
+		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {}),                        \
+		.axis_x = DT_INST_PROP(n, zephyr_axis_x),                                          \
+		.axis_y = DT_INST_PROP(n, zephyr_axis_y),                                          \
+		.res_cpi = DT_INST_PROP_OR(n, res_cpi, -1),                                        \
+		.invert_x = DT_INST_PROP(n, invert_x),                                             \
+		.invert_y = DT_INST_PROP(n, invert_y),                                             \
+		.force_awake = DT_INST_PROP(n, force_awake),                                       \
+		.smart_mode = DT_INST_PROP(n, smart_mode),                                         \
+	};                                                                                         \
+                                                                                                   \
+	static struct pmw3610_data pmw3610_data_##n;                                               \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(n, pmw3610_pm_action);                                            \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, pmw3610_init, PM_DEVICE_DT_INST_GET(n), &pmw3610_data_##n,        \
+			      &pmw3610_cfg_##n, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(PMW3610_INIT)

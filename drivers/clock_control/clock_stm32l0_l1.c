@@ -5,7 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <soc.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_rcc.h>
@@ -19,17 +18,16 @@
 #if defined(STM32_PLL_ENABLED)
 
 /* Macros to fill up multiplication and division factors values */
-#define z_pll_mul(v) LL_RCC_PLL_MUL_ ## v
-#define pll_mul(v) z_pll_mul(v)
+#define z_pll_mul(v) LL_RCC_PLL_MUL_##v
+#define pll_mul(v)   z_pll_mul(v)
 
-#define z_pll_div(v) LL_RCC_PLL_DIV_ ## v
-#define pll_div(v) z_pll_div(v)
+#define z_pll_div(v) LL_RCC_PLL_DIV_##v
+#define pll_div(v)   z_pll_div(v)
 
 /**
  * @brief Return PLL source
  */
-__unused
-static uint32_t get_pll_source(void)
+__unused static uint32_t get_pll_source(void)
 {
 	/* Configure PLL source */
 	if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
@@ -45,8 +43,7 @@ static uint32_t get_pll_source(void)
 /**
  * @brief get the pll source frequency
  */
-__unused
-uint32_t get_pllsrc_frequency(void)
+__unused uint32_t get_pllsrc_frequency(void)
 {
 	if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
 		return STM32_HSI_FREQ;
@@ -61,22 +58,18 @@ uint32_t get_pllsrc_frequency(void)
 /**
  * @brief Set up pll configuration
  */
-__unused
-void config_pll_sysclock(void)
+__unused void config_pll_sysclock(void)
 {
-	LL_RCC_PLL_ConfigDomain_SYS(get_pll_source(),
-				    pll_mul(STM32_PLL_MULTIPLIER),
+	LL_RCC_PLL_ConfigDomain_SYS(get_pll_source(), pll_mul(STM32_PLL_MULTIPLIER),
 				    pll_div(STM32_PLL_DIVISOR));
 }
 
 /**
  * @brief Return pllout frequency
  */
-__unused
-uint32_t get_pllout_frequency(void)
+__unused uint32_t get_pllout_frequency(void)
 {
-	return __LL_RCC_CALC_PLLCLK_FREQ(get_pllsrc_frequency(),
-					 pll_mul(STM32_PLL_MULTIPLIER),
+	return __LL_RCC_CALC_PLLCLK_FREQ(get_pllsrc_frequency(), pll_mul(STM32_PLL_MULTIPLIER),
 					 pll_div(STM32_PLL_DIVISOR));
 }
 
@@ -103,9 +96,8 @@ void config_regulator_voltage(uint32_t hclk_freq)
  */
 void config_enable_default_clocks(void)
 {
-#if defined(CONFIG_EXTI_STM32) || defined(CONFIG_USB_DC_STM32) || \
-	(defined(CONFIG_SOC_SERIES_STM32L0X) &&			  \
-	 defined(CONFIG_ENTROPY_STM32_RNG))
+#if defined(CONFIG_EXTI_STM32) || defined(CONFIG_USB_DC_STM32) ||                                  \
+	(defined(CONFIG_SOC_SERIES_STM32L0X) && defined(CONFIG_ENTROPY_STM32_RNG))
 	/* Enable System Configuration Controller clock. */
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG);
 #endif

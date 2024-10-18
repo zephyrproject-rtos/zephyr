@@ -17,7 +17,6 @@
 
 LOG_MODULE_REGISTER(temp_nrf5, CONFIG_SENSOR_LOG_LEVEL);
 
-
 /* The nRF5 temperature device returns measurements in 0.25C
  * increments.  Scale to mDegrees C.
  */
@@ -30,16 +29,13 @@ struct temp_nrf5_data {
 	struct onoff_manager *clk_mgr;
 };
 
-static void hfclk_on_callback(struct onoff_manager *mgr,
-			      struct onoff_client *cli,
-			      uint32_t state,
+static void hfclk_on_callback(struct onoff_manager *mgr, struct onoff_client *cli, uint32_t state,
 			      int res)
 {
 	nrf_temp_task_trigger(NRF_TEMP, NRF_TEMP_TASK_START);
 }
 
-static int temp_nrf5_sample_fetch(const struct device *dev,
-				  enum sensor_channel chan)
+static int temp_nrf5_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct temp_nrf5_data *data = dev->data;
 	struct onoff_client cli;
@@ -74,13 +70,11 @@ static int temp_nrf5_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static int temp_nrf5_channel_get(const struct device *dev,
-				 enum sensor_channel chan,
+static int temp_nrf5_channel_get(const struct device *dev, enum sensor_channel chan,
 				 struct sensor_value *val)
 {
 	struct temp_nrf5_data *data = dev->data;
 	int32_t uval;
-
 
 	if (chan != SENSOR_CHAN_DIE_TEMP) {
 		return -ENOTSUP;
@@ -114,19 +108,14 @@ static int temp_nrf5_init(const struct device *dev)
 	struct temp_nrf5_data *data = dev->data;
 
 	/* A null clk_mgr indicates sensor has not been initialized */
-	data->clk_mgr =
-		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
+	data->clk_mgr = z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
 	__ASSERT_NO_MSG(data->clk_mgr);
 
 	k_sem_init(&data->device_sync_sem, 0, K_SEM_MAX_LIMIT);
 	k_mutex_init(&data->mutex);
 
-	IRQ_CONNECT(
-		DT_INST_IRQN(0),
-		DT_INST_IRQ(0, priority),
-		temp_nrf5_isr,
-		DEVICE_DT_INST_GET(0),
-		0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), temp_nrf5_isr, DEVICE_DT_INST_GET(0),
+		    0);
 	irq_enable(DT_INST_IRQN(0));
 
 	nrf_temp_int_enable(NRF_TEMP, NRF_TEMP_INT_DATARDY_MASK);
@@ -134,11 +123,11 @@ static int temp_nrf5_init(const struct device *dev)
 	return 0;
 }
 
-#define NRF_TEMP_DEFINE(inst)								\
-	static struct temp_nrf5_data temp_nrf5_data_##inst;				\
-											\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, temp_nrf5_init, NULL,			\
-			      &temp_nrf5_data_##inst, NULL, POST_KERNEL,		\
-			      CONFIG_SENSOR_INIT_PRIORITY, &temp_nrf5_driver_api);	\
+#define NRF_TEMP_DEFINE(inst)                                                                      \
+	static struct temp_nrf5_data temp_nrf5_data_##inst;                                        \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, temp_nrf5_init, NULL, &temp_nrf5_data_##inst, NULL,     \
+				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,                     \
+				     &temp_nrf5_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NRF_TEMP_DEFINE)

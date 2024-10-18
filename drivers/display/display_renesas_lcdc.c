@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT  renesas_smartbond_display
+#define DT_DRV_COMPAT renesas_smartbond_display
 
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/gpio.h>
@@ -26,29 +26,27 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(smartbond_display, CONFIG_DISPLAY_LOG_LEVEL);
 
-#define SMARTBOND_IRQN		DT_INST_IRQN(0)
-#define SMARTBOND_IRQ_PRIO  DT_INST_IRQ(0, priority)
+#define SMARTBOND_IRQN     DT_INST_IRQN(0)
+#define SMARTBOND_IRQ_PRIO DT_INST_IRQ(0, priority)
 
-#define LCDC_SMARTBOND_CLK_DIV(_freq)                           \
+#define LCDC_SMARTBOND_CLK_DIV(_freq)                                                              \
 	((32000000U % (_freq)) ? (96000000U / (_freq)) : (32000000U / (_freq)))
 
-#define LCDC_SMARTBOND_IS_PLL_REQUIRED \
+#define LCDC_SMARTBOND_IS_PLL_REQUIRED                                                             \
 	!!(32000000U % DT_PROP(DT_INST_CHILD(0, display_timings), clock_frequency))
 
-#define DISPLAY_SMARTBOND_IS_DMA_PREFETCH_ENABLED \
-	DT_INST_ENUM_IDX_OR(0, dma_prefetch, 0)
+#define DISPLAY_SMARTBOND_IS_DMA_PREFETCH_ENABLED DT_INST_ENUM_IDX_OR(0, dma_prefetch, 0)
 
-#define LCDC_LAYER0_OFFSETX_REG_SET_FIELD(_field, _var, _val)\
-	((_var)) =	\
-	((_var) & ~(LCDC_LCDC_LAYER0_OFFSETX_REG_ ## _field ## _Msk)) |	\
-	(((_val) << LCDC_LCDC_LAYER0_OFFSETX_REG_ ## _field ## _Pos) &	\
-	LCDC_LCDC_LAYER0_OFFSETX_REG_ ## _field ## _Msk)
+#define LCDC_LAYER0_OFFSETX_REG_SET_FIELD(_field, _var, _val)                                      \
+	((_var)) = ((_var) & ~(LCDC_LCDC_LAYER0_OFFSETX_REG_##_field##_Msk)) |                     \
+		   (((_val) << LCDC_LCDC_LAYER0_OFFSETX_REG_##_field##_Pos) &                      \
+		    LCDC_LCDC_LAYER0_OFFSETX_REG_##_field##_Msk)
 
-#define DISPLAY_SMARTBOND_PIXEL_SIZE(inst)	\
+#define DISPLAY_SMARTBOND_PIXEL_SIZE(inst)                                                         \
 	(DISPLAY_BITS_PER_PIXEL(DT_INST_PROP(inst, pixel_format)) / 8)
 
 #if CONFIG_DISPLAY_RENESAS_LCDC_BUFFER_PSRAM
-#define DISPLAY_BUFFER_LINKER_SECTION \
+#define DISPLAY_BUFFER_LINKER_SECTION                                                              \
 	Z_GENERIC_SECTION(LINKER_DT_NODE_REGION_NAME(DT_NODELABEL(psram)))
 #else
 #define DISPLAY_BUFFER_LINKER_SECTION
@@ -162,7 +160,7 @@ static int display_smartbond_configure(const struct device *dev)
 	 * once at initialization.
 	 */
 	ret = da1469x_lcdc_timings_configure(config->x_res, config->y_res,
-						(lcdc_smartbond_timing_cfg *)&config->timing_cfg);
+					     (lcdc_smartbond_timing_cfg *)&config->timing_cfg);
 	if (ret < 0) {
 		LOG_ERR("Unable to configure timing settings");
 		da1469x_lcdc_set_status(false, false, 0);
@@ -173,8 +171,7 @@ static int display_smartbond_configure(const struct device *dev)
 	 * Stride should be updated at the end of a frame update (typically in ISR context).
 	 * It's OK to update stride here as continuous mode should not be enabled yet.
 	 */
-	data->layer.color_format =
-		lcdc_smartbond_pixel_to_lcm(config->pixel_format);
+	data->layer.color_format = lcdc_smartbond_pixel_to_lcm(config->pixel_format);
 	data->layer.stride =
 		da1469x_lcdc_stride_calculation(data->layer.color_format, config->x_res);
 
@@ -184,8 +181,8 @@ static int display_smartbond_configure(const struct device *dev)
 		da1469x_lcdc_set_status(false, false, 0);
 	}
 
-	LCDC_LAYER0_OFFSETX_REG_SET_FIELD(LCDC_L0_DMA_PREFETCH,
-		LCDC->LCDC_LAYER0_OFFSETX_REG, DISPLAY_SMARTBOND_IS_DMA_PREFETCH_ENABLED);
+	LCDC_LAYER0_OFFSETX_REG_SET_FIELD(LCDC_L0_DMA_PREFETCH, LCDC->LCDC_LAYER0_OFFSETX_REG,
+					  DISPLAY_SMARTBOND_IS_DMA_PREFETCH_ENABLED);
 
 	LCDC->LCDC_MODE_REG |= LCDC_LCDC_MODE_REG_LCDC_MODE_EN_Msk;
 
@@ -194,7 +191,7 @@ static int display_smartbond_configure(const struct device *dev)
 
 static void smartbond_display_isr(const void *arg)
 {
-	struct display_smartbond_data *data =  ((const struct device *)arg)->data;
+	struct display_smartbond_data *data = ((const struct device *)arg)->data;
 
 	data->underflow_flag = LCDC_STATUS_REG_GET_FIELD(LCDC_STICKY_UNDERFLOW);
 
@@ -208,8 +205,7 @@ static void smartbond_display_isr(const void *arg)
 	k_sem_give(&data->sync_sem);
 }
 
-static void display_smartbond_dma_cb(const struct device *dma, void *arg,
-				uint32_t id, int status)
+static void display_smartbond_dma_cb(const struct device *dma, void *arg, uint32_t id, int status)
 {
 	struct display_smartbond_data *data = arg;
 
@@ -335,7 +331,7 @@ static int display_smartbond_init(const struct device *dev)
 	}
 
 	IRQ_CONNECT(SMARTBOND_IRQN, SMARTBOND_IRQ_PRIO, smartbond_display_isr,
-								DEVICE_DT_INST_GET(0), 0);
+		    DEVICE_DT_INST_GET(0), 0);
 
 	/*
 	 * Currently, there is no API to explicitly enable/disable the display controller.
@@ -438,7 +434,7 @@ static void *display_smartbond_get_framebuffer(const struct device *dev)
 }
 
 static void display_smartbond_get_capabilities(const struct device *dev,
-			struct display_capabilities *capabilities)
+					       struct display_capabilities *capabilities)
 {
 	memset(capabilities, 0, sizeof(*capabilities));
 
@@ -458,10 +454,8 @@ static void display_smartbond_get_capabilities(const struct device *dev,
 	capabilities->y_resolution = DT_INST_PROP(0, height);
 }
 
-static int display_smartbond_read(const struct device *dev,
-			const uint16_t x, const uint16_t y,
-			const struct display_buffer_descriptor *desc,
-			void *buf)
+static int display_smartbond_read(const struct device *dev, const uint16_t x, const uint16_t y,
+				  const struct display_buffer_descriptor *desc, void *buf)
 {
 	struct display_smartbond_data *data = dev->data;
 	const struct display_smartbond_config *config = dev->config;
@@ -481,12 +475,14 @@ static int display_smartbond_read(const struct device *dev,
 	 * cursor is shifted multiple of pixel color depth.
 	 */
 	data->dma_cfg.source_data_size = data->dma_cfg.dest_data_size =
-			!(config->pixel_size & 3) ? 4 :
-			!(config->pixel_size & 1) ? 2 : 1;
+		!(config->pixel_size & 3)   ? 4
+		: !(config->pixel_size & 1) ? 2
+					    : 1;
 
 	data->dma_cfg.dest_burst_length = data->dma_cfg.source_burst_length =
-		!((data->dma_block_cfg.block_size / data->dma_cfg.source_data_size) & 7) ? 8 :
-		!((data->dma_block_cfg.block_size / data->dma_cfg.source_data_size) & 3) ? 4 : 1;
+		!((data->dma_block_cfg.block_size / data->dma_cfg.source_data_size) & 7)   ? 8
+		: !((data->dma_block_cfg.block_size / data->dma_cfg.source_data_size) & 3) ? 4
+											   : 1;
 
 	for (int row = 0; row < desc->height; row++) {
 
@@ -520,10 +516,8 @@ static int display_smartbond_read(const struct device *dev,
 	return 0;
 }
 
-static int display_smartbond_write(const struct device *dev,
-				const uint16_t x, const uint16_t y,
-				const struct display_buffer_descriptor *desc,
-				const void *buf)
+static int display_smartbond_write(const struct device *dev, const uint16_t x, const uint16_t y,
+				   const struct display_buffer_descriptor *desc, const void *buf)
 {
 	struct display_smartbond_data *data = dev->data;
 	const struct display_smartbond_config *config = dev->config;
@@ -550,12 +544,14 @@ static int display_smartbond_write(const struct device *dev,
 	 * cursor is shifted multiple of pixel color depth.
 	 */
 	data->dma_cfg.source_data_size = data->dma_cfg.dest_data_size =
-			!(config->pixel_size & 3) ? 4 :
-			!(config->pixel_size & 1) ? 2 : 1;
+		!(config->pixel_size & 3)   ? 4
+		: !(config->pixel_size & 1) ? 2
+					    : 1;
 
 	data->dma_cfg.dest_burst_length = data->dma_cfg.source_burst_length =
-		!((data->dma_block_cfg.block_size / data->dma_cfg.source_data_size) & 7) ? 8 :
-		!((data->dma_block_cfg.block_size / data->dma_cfg.source_data_size) & 3) ? 4 : 1;
+		!((data->dma_block_cfg.block_size / data->dma_cfg.source_data_size) & 7)   ? 8
+		: !((data->dma_block_cfg.block_size / data->dma_cfg.source_data_size) & 3) ? 4
+											   : 1;
 
 	for (int row = 0; row < desc->height; row++) {
 
@@ -615,67 +611,62 @@ static int display_smartbond_pm_action(const struct device *dev, enum pm_device_
 #endif
 
 static const struct display_driver_api display_smartbond_driver_api = {
-	.write =  display_smartbond_write,
+	.write = display_smartbond_write,
 	.read = display_smartbond_read,
 	.get_framebuffer = display_smartbond_get_framebuffer,
 	.get_capabilities = display_smartbond_get_capabilities,
 	.blanking_off = display_smartbond_blanking_off,
-	.blanking_on = display_smartbond_blanking_on
-};
+	.blanking_on = display_smartbond_blanking_on};
 
-#define SMARTBOND_DISPLAY_INIT(inst)	\
-	PINCTRL_DT_INST_DEFINE(inst);	\
-	PM_DEVICE_DT_INST_DEFINE(inst, display_smartbond_pm_action);	\
-									\
-	__aligned(4) static uint8_t buffer_ ## inst[(((DT_INST_PROP(inst, width) * \
-	DISPLAY_SMARTBOND_PIXEL_SIZE(inst)) + 0x3) & ~0x3) *	\
-	DT_INST_PROP(inst, height)] DISPLAY_BUFFER_LINKER_SECTION;	\
-                                            \
-	static const struct display_smartbond_config display_smartbond_config_## inst = {  \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),	\
-		.disp = GPIO_DT_SPEC_INST_GET_OR(inst, disp_gpios, {}), \
-		.timing_cfg.vsync_len =	\
-			DT_PROP(DT_INST_CHILD(inst, display_timings), vsync_len),	\
-		.timing_cfg.hsync_len =	\
-			DT_PROP(DT_INST_CHILD(inst, display_timings), hsync_len),	\
-		.timing_cfg.hfront_porch =	\
-			DT_PROP(DT_INST_CHILD(inst, display_timings), hfront_porch),	\
-		.timing_cfg.vfront_porch =	\
-			DT_PROP(DT_INST_CHILD(inst, display_timings), vfront_porch),	\
-		.timing_cfg.hback_porch =	\
-			DT_PROP(DT_INST_CHILD(inst, display_timings), hback_porch),	\
-		.timing_cfg.vback_porch =	\
-			DT_PROP(DT_INST_CHILD(inst, display_timings), vback_porch),	\
-		.bgcolor_cfg = {0xFF, 0xFF, 0xFF, 0}, \
-		.x_res = DT_INST_PROP(inst, width), \
-		.y_res = DT_INST_PROP(inst, height),	\
-		.pixel_size = DISPLAY_SMARTBOND_PIXEL_SIZE(inst),	\
-		.pixel_format = DT_INST_PROP(0, pixel_format),	\
-		.mode.vsync_pol =	\
-			DT_PROP(DT_INST_CHILD(inst, display_timings), vsync_active) ? 0 : 1,	\
-		.mode.hsync_pol =	\
-			DT_PROP(DT_INST_CHILD(inst, display_timings), vsync_active) ? 0 : 1,	\
-		.mode.de_pol =	\
-			DT_PROP(DT_INST_CHILD(inst, display_timings), de_active) ? 0 : 1,	\
-		.mode.pixelclk_pol =	\
-			DT_PROP(DT_INST_CHILD(inst, display_timings), pixelclk_active) ? 0 : 1,	\
-	};							\
-								\
-	static struct display_smartbond_data display_smartbond_data_## inst = {	\
-		.buffer = buffer_ ##inst,	\
-		.layer.start_x = 0, \
-		.layer.start_y = 0, \
-		.layer.size_x = DT_INST_PROP(inst, width),	\
-		.layer.size_y = DT_INST_PROP(inst, height),	\
-		.layer.frame_buf = (uint32_t)buffer_ ## inst, \
-	}; \
-							\
-							\
-	DEVICE_DT_INST_DEFINE(inst, display_smartbond_init, PM_DEVICE_DT_INST_GET(inst), \
-				&display_smartbond_data_## inst,	\
-				&display_smartbond_config_## inst,	\
-				POST_KERNEL,	\
-				CONFIG_DISPLAY_INIT_PRIORITY,	\
-				&display_smartbond_driver_api);
+#define SMARTBOND_DISPLAY_INIT(inst)                                                               \
+	PINCTRL_DT_INST_DEFINE(inst);                                                              \
+	PM_DEVICE_DT_INST_DEFINE(inst, display_smartbond_pm_action);                               \
+                                                                                                   \
+	__aligned(4) static uint8_t                                                                \
+		buffer_##inst[(((DT_INST_PROP(inst, width) * DISPLAY_SMARTBOND_PIXEL_SIZE(inst)) + \
+				0x3) &                                                             \
+			       ~0x3) *                                                             \
+			      DT_INST_PROP(inst, height)] DISPLAY_BUFFER_LINKER_SECTION;           \
+                                                                                                   \
+	static const struct display_smartbond_config display_smartbond_config_##inst = {           \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
+		.disp = GPIO_DT_SPEC_INST_GET_OR(inst, disp_gpios, {}),                            \
+		.timing_cfg.vsync_len = DT_PROP(DT_INST_CHILD(inst, display_timings), vsync_len),  \
+		.timing_cfg.hsync_len = DT_PROP(DT_INST_CHILD(inst, display_timings), hsync_len),  \
+		.timing_cfg.hfront_porch =                                                         \
+			DT_PROP(DT_INST_CHILD(inst, display_timings), hfront_porch),               \
+		.timing_cfg.vfront_porch =                                                         \
+			DT_PROP(DT_INST_CHILD(inst, display_timings), vfront_porch),               \
+		.timing_cfg.hback_porch =                                                          \
+			DT_PROP(DT_INST_CHILD(inst, display_timings), hback_porch),                \
+		.timing_cfg.vback_porch =                                                          \
+			DT_PROP(DT_INST_CHILD(inst, display_timings), vback_porch),                \
+		.bgcolor_cfg = {0xFF, 0xFF, 0xFF, 0},                                              \
+		.x_res = DT_INST_PROP(inst, width),                                                \
+		.y_res = DT_INST_PROP(inst, height),                                               \
+		.pixel_size = DISPLAY_SMARTBOND_PIXEL_SIZE(inst),                                  \
+		.pixel_format = DT_INST_PROP(0, pixel_format),                                     \
+		.mode.vsync_pol =                                                                  \
+			DT_PROP(DT_INST_CHILD(inst, display_timings), vsync_active) ? 0 : 1,       \
+		.mode.hsync_pol =                                                                  \
+			DT_PROP(DT_INST_CHILD(inst, display_timings), vsync_active) ? 0 : 1,       \
+		.mode.de_pol = DT_PROP(DT_INST_CHILD(inst, display_timings), de_active) ? 0 : 1,   \
+		.mode.pixelclk_pol =                                                               \
+			DT_PROP(DT_INST_CHILD(inst, display_timings), pixelclk_active) ? 0 : 1,    \
+	};                                                                                         \
+                                                                                                   \
+	static struct display_smartbond_data display_smartbond_data_##inst = {                     \
+		.buffer = buffer_##inst,                                                           \
+		.layer.start_x = 0,                                                                \
+		.layer.start_y = 0,                                                                \
+		.layer.size_x = DT_INST_PROP(inst, width),                                         \
+		.layer.size_y = DT_INST_PROP(inst, height),                                        \
+		.layer.frame_buf = (uint32_t)buffer_##inst,                                        \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, display_smartbond_init, PM_DEVICE_DT_INST_GET(inst),           \
+			      &display_smartbond_data_##inst, &display_smartbond_config_##inst,    \
+			      POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,                           \
+			      &display_smartbond_driver_api);
 
 SMARTBOND_DISPLAY_INIT(0);

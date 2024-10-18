@@ -14,17 +14,15 @@
 #include <zephyr/sys/time_units.h>
 #include <zephyr/irq.h>
 
-
 /*
  * By limiting counter to 30 bits, we ensure that
  * timeout calculations will never overflow in sys_clock_set_timeout
  */
 #define COUNTER_MAX 0x3fffffff
 
-#define CYC_PER_TICK (sys_clock_hw_cycles_per_sec() \
-				  / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define CYC_PER_TICK (sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
-#define MAX_TICKS ((COUNTER_MAX / CYC_PER_TICK) - 1)
+#define MAX_TICKS  ((COUNTER_MAX / CYC_PER_TICK) - 1)
 #define MAX_CYCLES (MAX_TICKS * CYC_PER_TICK)
 
 /* Use the first device defined with GPT HW timer compatible string */
@@ -74,8 +72,7 @@ static void gpt_set_safe(uint32_t next)
 			next = now + bump;
 			bump *= 2;
 			next = MIN(MAX_CYCLES, next);
-			GPT_SetOutputCompareValue(base,
-					kGPT_OutputCompare_Channel2, next - 1);
+			GPT_SetOutputCompareValue(base, kGPT_OutputCompare_Channel2, next - 1);
 			now = GPT_GetCurrentTimerCount(base);
 		} while ((((int32_t)(next - now)) <= 1) && (next < MAX_CYCLES));
 	}
@@ -92,8 +89,8 @@ void mcux_imx_gpt_isr(const void *arg)
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* Get current timer count */
 		now = GPT_GetCurrentTimerCount(base);
-		status = GPT_GetStatusFlags(base,
-			kGPT_OutputCompare2Flag | kGPT_OutputCompare1Flag);
+		status =
+			GPT_GetStatusFlags(base, kGPT_OutputCompare2Flag | kGPT_OutputCompare1Flag);
 		/* Clear GPT capture interrupts */
 		GPT_ClearStatusFlags(base, status);
 		if (status & kGPT_OutputCompare1Flag) {
@@ -112,8 +109,8 @@ void mcux_imx_gpt_isr(const void *arg)
 		if (status & kGPT_OutputCompare2Flag) {
 			/* Normal counter interrupt. Get delta since last announcement */
 			tick_delta += (now - announced_cycles) / CYC_PER_TICK;
-			announced_cycles += (((now - announced_cycles) / CYC_PER_TICK) *
-					CYC_PER_TICK);
+			announced_cycles +=
+				(((now - announced_cycles) / CYC_PER_TICK) * CYC_PER_TICK);
 		}
 	} else {
 		GPT_ClearStatusFlags(base, kGPT_OutputCompare1Flag);
@@ -196,8 +193,7 @@ int sys_clock_driver_init(void)
 	gpt_config_t gpt_config;
 
 	/* Configure ISR. Use instance 0 of the GPT timer */
-	IRQ_CONNECT(DT_IRQN(GPT_INST), DT_IRQ(GPT_INST, priority),
-		    mcux_imx_gpt_isr, NULL, 0);
+	IRQ_CONNECT(DT_IRQN(GPT_INST), DT_IRQ(GPT_INST, priority), mcux_imx_gpt_isr, NULL, 0);
 
 	base = (GPT_Type *)DT_REG_ADDR(GPT_INST);
 
@@ -223,19 +219,16 @@ int sys_clock_driver_init(void)
 		 * use the counter as a free running timer, but it will roll
 		 * over on a tick boundary.
 		 */
-		GPT_SetOutputCompareValue(base, kGPT_OutputCompare_Channel1,
-			MAX_CYCLES - 1);
+		GPT_SetOutputCompareValue(base, kGPT_OutputCompare_Channel1, MAX_CYCLES - 1);
 
 		/* Set initial trigger value to one tick worth of cycles */
-		GPT_SetOutputCompareValue(base, kGPT_OutputCompare_Channel2,
-			CYC_PER_TICK - 1);
+		GPT_SetOutputCompareValue(base, kGPT_OutputCompare_Channel2, CYC_PER_TICK - 1);
 		/* Enable GPT interrupts for timer match, and reset at capture value 1 */
 		GPT_EnableInterrupts(base, kGPT_OutputCompare1InterruptEnable |
-					kGPT_OutputCompare2InterruptEnable);
+						   kGPT_OutputCompare2InterruptEnable);
 	} else {
 		/* For a tickful kernel, just roll the counter over every tick */
-		GPT_SetOutputCompareValue(base, kGPT_OutputCompare_Channel1,
-			CYC_PER_TICK - 1);
+		GPT_SetOutputCompareValue(base, kGPT_OutputCompare_Channel1, CYC_PER_TICK - 1);
 		GPT_EnableInterrupts(base, kGPT_OutputCompare1InterruptEnable);
 	}
 	/* Enable IRQ */
@@ -246,5 +239,4 @@ int sys_clock_driver_init(void)
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

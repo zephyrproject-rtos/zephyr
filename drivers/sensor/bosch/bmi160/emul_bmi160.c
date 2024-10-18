@@ -616,7 +616,6 @@ static int emul_bosch_bmi160_init(const struct emul *target, const struct device
  * Main instantiation macro. Use of COND_CODE_1() selects the right
  * bus-specific macro at preprocessor time.
  */
-#define BMI160_EMUL(n)                                                                             \
-	COND_CODE_1(DT_INST_ON_BUS(n, spi), (BMI160_EMUL_SPI(n)), (BMI160_EMUL_I2C(n)))
+#define BMI160_EMUL(n) COND_CODE_1(DT_INST_ON_BUS(n, spi), (BMI160_EMUL_SPI(n)), (BMI160_EMUL_I2C(n)))
 
 DT_INST_FOREACH_STATUS_OKAY(BMI160_EMUL)

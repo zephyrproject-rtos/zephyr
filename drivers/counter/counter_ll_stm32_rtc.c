@@ -37,25 +37,17 @@ LOG_MODULE_REGISTER(counter_rtc_stm32, CONFIG_COUNTER_LOG_LEVEL);
 #define T_TIME_OFFSET 946684800
 
 #if defined(CONFIG_SOC_SERIES_STM32L4X)
-#define RTC_EXTI_LINE	LL_EXTI_LINE_18
-#elif defined(CONFIG_SOC_SERIES_STM32C0X) \
-	|| defined(CONFIG_SOC_SERIES_STM32G0X)
-#define RTC_EXTI_LINE	LL_EXTI_LINE_19
-#elif defined(CONFIG_SOC_SERIES_STM32F4X) \
-	|| defined(CONFIG_SOC_SERIES_STM32F0X) \
-	|| defined(CONFIG_SOC_SERIES_STM32F1X) \
-	|| defined(CONFIG_SOC_SERIES_STM32F2X) \
-	|| defined(CONFIG_SOC_SERIES_STM32F3X) \
-	|| defined(CONFIG_SOC_SERIES_STM32F7X) \
-	|| defined(CONFIG_SOC_SERIES_STM32WBX) \
-	|| defined(CONFIG_SOC_SERIES_STM32G4X) \
-	|| defined(CONFIG_SOC_SERIES_STM32L0X) \
-	|| defined(CONFIG_SOC_SERIES_STM32L1X) \
-	|| defined(CONFIG_SOC_SERIES_STM32L5X) \
-	|| defined(CONFIG_SOC_SERIES_STM32H7X) \
-	|| defined(CONFIG_SOC_SERIES_STM32H5X) \
-	|| defined(CONFIG_SOC_SERIES_STM32WLX)
-#define RTC_EXTI_LINE	LL_EXTI_LINE_17
+#define RTC_EXTI_LINE LL_EXTI_LINE_18
+#elif defined(CONFIG_SOC_SERIES_STM32C0X) || defined(CONFIG_SOC_SERIES_STM32G0X)
+#define RTC_EXTI_LINE LL_EXTI_LINE_19
+#elif defined(CONFIG_SOC_SERIES_STM32F4X) || defined(CONFIG_SOC_SERIES_STM32F0X) ||                \
+	defined(CONFIG_SOC_SERIES_STM32F1X) || defined(CONFIG_SOC_SERIES_STM32F2X) ||              \
+	defined(CONFIG_SOC_SERIES_STM32F3X) || defined(CONFIG_SOC_SERIES_STM32F7X) ||              \
+	defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_SOC_SERIES_STM32G4X) ||              \
+	defined(CONFIG_SOC_SERIES_STM32L0X) || defined(CONFIG_SOC_SERIES_STM32L1X) ||              \
+	defined(CONFIG_SOC_SERIES_STM32L5X) || defined(CONFIG_SOC_SERIES_STM32H7X) ||              \
+	defined(CONFIG_SOC_SERIES_STM32H5X) || defined(CONFIG_SOC_SERIES_STM32WLX)
+#define RTC_EXTI_LINE LL_EXTI_LINE_17
 #endif
 
 #if defined(CONFIG_SOC_SERIES_STM32F1X)
@@ -77,7 +69,7 @@ LOG_MODULE_REGISTER(counter_rtc_stm32, CONFIG_COUNTER_LOG_LEVEL);
 /* Get the highest possible clock for the subsecond register */
 #define RTC_ASYNCPRE 1
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
-#else /* CONFIG_SOC_SERIES_STM32F1X */
+#else  /* CONFIG_SOC_SERIES_STM32F1X */
 #define RTC_ASYNCPRE (RTCCLK_FREQ - 1)
 #endif /* CONFIG_SOC_SERIES_STM32F1X */
 
@@ -182,7 +174,6 @@ static inline void ll_func_disable_alarm(RTC_TypeDef *rtc)
 
 static void rtc_stm32_irq_config(const struct device *dev);
 
-
 static int rtc_stm32_start(const struct device *dev)
 {
 #if defined(CONFIG_SOC_SERIES_STM32WBAX) || defined(CONFIG_SOC_SERIES_STM32U5X)
@@ -190,7 +181,7 @@ static int rtc_stm32_start(const struct device *dev)
 	const struct rtc_stm32_config *cfg = dev->config;
 
 	/* Enable RTC bus clock */
-	if (clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken[0]) != 0) {
+	if (clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]) != 0) {
 		LOG_ERR("RTC clock enabling failed\n");
 		return -EIO;
 	}
@@ -205,7 +196,6 @@ static int rtc_stm32_start(const struct device *dev)
 	return 0;
 }
 
-
 static int rtc_stm32_stop(const struct device *dev)
 {
 #if defined(CONFIG_SOC_SERIES_STM32WBAX) || defined(CONFIG_SOC_SERIES_STM32U5X)
@@ -213,7 +203,7 @@ static int rtc_stm32_stop(const struct device *dev)
 	const struct rtc_stm32_config *cfg = dev->config;
 
 	/* Disable RTC bus clock */
-	if (clock_control_off(clk, (clock_control_subsys_t) &cfg->pclken[0]) != 0) {
+	if (clock_control_off(clk, (clock_control_subsys_t)&cfg->pclken[0]) != 0) {
 		LOG_ERR("RTC clock disabling failed\n");
 		return -EIO;
 	}
@@ -231,7 +221,7 @@ static int rtc_stm32_stop(const struct device *dev)
 #if !defined(COUNTER_NO_DATE)
 tick_t rtc_stm32_read(const struct device *dev)
 {
-	struct tm now = { 0 };
+	struct tm now = {0};
 	time_t ts;
 	uint32_t rtc_date, rtc_time;
 	tick_t ticks;
@@ -241,8 +231,7 @@ tick_t rtc_stm32_read(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	/* Enable Backup access */
-#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || \
-	defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
 	LL_PWR_EnableBkUpAccess();
 #endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
 
@@ -266,8 +255,7 @@ tick_t rtc_stm32_read(const struct device *dev)
 	/* Convert calendar datetime to UNIX timestamp */
 	/* RTC start time: 1st, Jan, 2000 */
 	/* time_t start:   1st, Jan, 1970 */
-	now.tm_year = 100 +
-			__LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_YEAR(rtc_date));
+	now.tm_year = 100 + __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_YEAR(rtc_date));
 	/* tm_mon allowed values are 0-11 */
 	now.tm_mon = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_MONTH(rtc_date)) - 1;
 	now.tm_mday = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_DAY(rtc_date));
@@ -302,8 +290,7 @@ tick_t rtc_stm32_read(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	/* Enable Backup access */
-#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || \
-	defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
 	LL_PWR_EnableBkUpAccess();
 #endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
 
@@ -337,7 +324,7 @@ static void rtc_stm32_set_int_pending(void)
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 
 static int rtc_stm32_set_alarm(const struct device *dev, uint8_t chan_id,
-				const struct counter_alarm_cfg *alarm_cfg)
+			       const struct counter_alarm_cfg *alarm_cfg)
 {
 #if !defined(COUNTER_NO_DATE)
 	struct tm alarm_tm;
@@ -358,7 +345,6 @@ static int rtc_stm32_set_alarm(const struct device *dev, uint8_t chan_id,
 		LOG_DBG("Alarm busy\n");
 		return -EBUSY;
 	}
-
 
 	data->callback = alarm_cfg->callback;
 	data->user_data = alarm_cfg->user_data;
@@ -395,7 +381,7 @@ static int rtc_stm32_set_alarm(const struct device *dev, uint8_t chan_id,
 #if !defined(COUNTER_NO_DATE)
 #ifndef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
 	LOG_DBG("Set Alarm: %d\n", ticks);
-#else /* !CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
+#else  /* !CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 	LOG_DBG("Set Alarm: %llu\n", ticks);
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 
@@ -458,7 +444,6 @@ static int rtc_stm32_set_alarm(const struct device *dev, uint8_t chan_id,
 	return 0;
 }
 
-
 static int rtc_stm32_cancel_alarm(const struct device *dev, uint8_t chan_id)
 {
 	struct rtc_stm32_data *data = dev->data;
@@ -474,12 +459,10 @@ static int rtc_stm32_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	return 0;
 }
 
-
 static uint32_t rtc_stm32_get_pending_int(const struct device *dev)
 {
 	return ll_func_is_active_alarm(RTC) != 0;
 }
-
 
 static uint32_t rtc_stm32_get_top_value(const struct device *dev)
 {
@@ -488,20 +471,15 @@ static uint32_t rtc_stm32_get_top_value(const struct device *dev)
 	return info->max_top_value;
 }
 
-
-static int rtc_stm32_set_top_value(const struct device *dev,
-				   const struct counter_top_cfg *cfg)
+static int rtc_stm32_set_top_value(const struct device *dev, const struct counter_top_cfg *cfg)
 {
 	const struct counter_config_info *info = dev->config;
 
-	if ((cfg->ticks != info->max_top_value) ||
-		!(cfg->flags & COUNTER_TOP_CFG_DONT_RESET)) {
+	if ((cfg->ticks != info->max_top_value) || !(cfg->flags & COUNTER_TOP_CFG_DONT_RESET)) {
 		return -ENOTSUP;
 	} else {
 		return 0;
 	}
-
-
 }
 
 void rtc_stm32_isr(const struct device *dev)
@@ -534,10 +512,8 @@ void rtc_stm32_isr(const struct device *dev)
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
 	LL_C2_EXTI_ClearFlag_0_31(RTC_EXTI_LINE);
-#elif defined(CONFIG_SOC_SERIES_STM32C0X) \
-	|| defined(CONFIG_SOC_SERIES_STM32G0X) \
-	|| defined(CONFIG_SOC_SERIES_STM32L5X) \
-	|| defined(CONFIG_SOC_SERIES_STM32H5X)
+#elif defined(CONFIG_SOC_SERIES_STM32C0X) || defined(CONFIG_SOC_SERIES_STM32G0X) ||                \
+	defined(CONFIG_SOC_SERIES_STM32L5X) || defined(CONFIG_SOC_SERIES_STM32H5X)
 	LL_EXTI_ClearRisingFlag_0_31(RTC_EXTI_LINE);
 #elif defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32WBAX)
 	/* in STM32U5 family RTC is not connected to EXTI */
@@ -545,7 +521,6 @@ void rtc_stm32_isr(const struct device *dev)
 	LL_EXTI_ClearFlag_0_31(RTC_EXTI_LINE);
 #endif
 }
-
 
 static int rtc_stm32_init(const struct device *dev)
 {
@@ -561,22 +536,19 @@ static int rtc_stm32_init(const struct device *dev)
 	}
 
 	/* Enable RTC bus clock */
-	if (clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken[0]) != 0) {
+	if (clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]) != 0) {
 		LOG_ERR("clock op failed\n");
 		return -EIO;
 	}
 
 	/* Enable Backup access */
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
-#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || \
-	defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
 	LL_PWR_EnableBkUpAccess();
 #endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
 
 	/* Enable RTC clock source */
-	if (clock_control_configure(clk,
-				    (clock_control_subsys_t) &cfg->pclken[1],
-				    NULL) != 0) {
+	if (clock_control_configure(clk, (clock_control_subsys_t)&cfg->pclken[1], NULL) != 0) {
 		LOG_ERR("clock configure failed\n");
 		return -EIO;
 	}
@@ -593,8 +565,7 @@ static int rtc_stm32_init(const struct device *dev)
 	}
 #endif
 
-	if (LL_RTC_Init(RTC, ((LL_RTC_InitTypeDef *)
-			      &cfg->ll_rtc_config)) != SUCCESS) {
+	if (LL_RTC_Init(RTC, ((LL_RTC_InitTypeDef *)&cfg->ll_rtc_config)) != SUCCESS) {
 		return -EIO;
 	}
 
@@ -624,32 +595,33 @@ static struct rtc_stm32_data rtc_data;
 static const struct stm32_pclken rtc_clk[] = STM32_DT_INST_CLOCKS(0);
 
 static const struct rtc_stm32_config rtc_config = {
-	.counter_info = {
-		.max_top_value = UINT32_MAX,
+	.counter_info =
+		{
+			.max_top_value = UINT32_MAX,
 #ifndef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
-		/* freq = 1Hz for not subsec based driver */
-		.freq = RTCCLK_FREQ / ((RTC_ASYNCPRE + 1) * (RTC_SYNCPRE + 1)),
-#else /* !CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
-		.freq = RTCCLK_FREQ / (RTC_ASYNCPRE + 1),
+			/* freq = 1Hz for not subsec based driver */
+			.freq = RTCCLK_FREQ / ((RTC_ASYNCPRE + 1) * (RTC_SYNCPRE + 1)),
+#else  /* !CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
+			.freq = RTCCLK_FREQ / (RTC_ASYNCPRE + 1),
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
-		.flags = COUNTER_CONFIG_INFO_COUNT_UP,
-		.channels = 1,
-	},
-	.ll_rtc_config = {
-		.AsynchPrescaler = RTC_ASYNCPRE,
+			.flags = COUNTER_CONFIG_INFO_COUNT_UP,
+			.channels = 1,
+		},
+	.ll_rtc_config =
+		{
+			.AsynchPrescaler = RTC_ASYNCPRE,
 #if !defined(CONFIG_SOC_SERIES_STM32F1X)
-		.HourFormat = LL_RTC_HOURFORMAT_24HOUR,
-		.SynchPrescaler = RTC_SYNCPRE,
-#else /* CONFIG_SOC_SERIES_STM32F1X */
-		.OutPutSource = LL_RTC_CALIB_OUTPUT_NONE,
+			.HourFormat = LL_RTC_HOURFORMAT_24HOUR,
+			.SynchPrescaler = RTC_SYNCPRE,
+#else  /* CONFIG_SOC_SERIES_STM32F1X */
+			.OutPutSource = LL_RTC_CALIB_OUTPUT_NONE,
 #endif /* CONFIG_SOC_SERIES_STM32F1X */
-	},
+		},
 	.pclken = rtc_clk,
 };
 
 #ifdef CONFIG_PM_DEVICE
-static int rtc_stm32_pm_action(const struct device *dev,
-			       enum pm_device_action action)
+static int rtc_stm32_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	const struct rtc_stm32_config *cfg = dev->config;
@@ -657,7 +629,7 @@ static int rtc_stm32_pm_action(const struct device *dev,
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
 		/* Enable RTC bus clock */
-		if (clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken[0]) != 0) {
+		if (clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]) != 0) {
 			LOG_ERR("clock op failed\n");
 			return -EIO;
 		}
@@ -688,14 +660,12 @@ static const struct counter_driver_api rtc_stm32_driver_api = {
 
 PM_DEVICE_DT_INST_DEFINE(0, rtc_stm32_pm_action);
 
-DEVICE_DT_INST_DEFINE(0, &rtc_stm32_init, PM_DEVICE_DT_INST_GET(0),
-		    &rtc_data, &rtc_config, PRE_KERNEL_1,
-		    CONFIG_COUNTER_INIT_PRIORITY, &rtc_stm32_driver_api);
+DEVICE_DT_INST_DEFINE(0, &rtc_stm32_init, PM_DEVICE_DT_INST_GET(0), &rtc_data, &rtc_config,
+		      PRE_KERNEL_1, CONFIG_COUNTER_INIT_PRIORITY, &rtc_stm32_driver_api);
 
 static void rtc_stm32_irq_config(const struct device *dev)
 {
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    rtc_stm32_isr, DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), rtc_stm32_isr, DEVICE_DT_INST_GET(0),
+		    0);
 	irq_enable(DT_INST_IRQN(0));
 }

@@ -11,7 +11,7 @@
 #define DT_DRV_COMPAT gpio_i2c_switch
 
 #define GPIO_I2C_TOGGLE_DELAY_US 1
-#define GPIO_I2C_LOCK_TIMEOUT_US   (GPIO_I2C_TOGGLE_DELAY_US * 2 + 100)
+#define GPIO_I2C_LOCK_TIMEOUT_US (GPIO_I2C_TOGGLE_DELAY_US * 2 + 100)
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>

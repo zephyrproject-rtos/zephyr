@@ -713,7 +713,7 @@ static const struct rtc_driver_api rv8263c8_driver_api = {
 		.i2c_bus = I2C_DT_SPEC_INST_GET(inst),                                             \
 		.clkout = DT_INST_ENUM_IDX(inst, clkout),                                          \
 		IF_ENABLED(DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios),                            \
-			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0})))};         \
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0})))};     \
 	DEVICE_DT_INST_DEFINE(inst, &rv8263c8_init, NULL, &rv8263c8_data_##inst,                   \
 			      &rv8263c8_config_##inst, POST_KERNEL, CONFIG_RTC_INIT_PRIORITY,      \
 			      &rv8263c8_driver_api);

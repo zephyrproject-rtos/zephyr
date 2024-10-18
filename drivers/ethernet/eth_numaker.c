@@ -30,8 +30,9 @@ LOG_MODULE_REGISTER(eth_numaker, CONFIG_ETHERNET_LOG_LEVEL);
 /* 2KB Data Flash at 0xFF800 */
 #define NUMAKER_DATA_FLASH (0xFF800U)
 #define NUMAKER_MASK_32    (0xFFFFFFFFU)
-#define NUMAKER_MII_CONFIG (ADVERTISE_CSMA | ADVERTISE_10HALF | ADVERTISE_10FULL | \
-							ADVERTISE_100HALF | ADVERTISE_100FULL)
+#define NUMAKER_MII_CONFIG                                                                         \
+	(ADVERTISE_CSMA | ADVERTISE_10HALF | ADVERTISE_10FULL | ADVERTISE_100HALF |                \
+	 ADVERTISE_100FULL)
 #define NUMAKER_MII_LINKED (BMSR_ANEGCOMPLETE | BMSR_LSTATUS)
 
 extern synopGMACdevice GMACdev[GMAC_CNT];
@@ -101,8 +102,8 @@ static int reset_phy(synopGMACdevice *gmacdev)
 	mdio_write(gmacdev, eth_phy_addr, MII_BMCR, BMCR_RESET);
 
 	delay_us = 200000U;
-	ret = WAIT_FOR(!(mdio_read(gmacdev, eth_phy_addr, MII_BMCR) & BMCR_RESET),
-					delay_us, k_msleep(1));
+	ret = WAIT_FOR(!(mdio_read(gmacdev, eth_phy_addr, MII_BMCR) & BMCR_RESET), delay_us,
+		       k_msleep(1));
 	if (ret == false) {
 		LOG_DBG("Reset phy failed");
 		return -EIO;
@@ -125,9 +126,9 @@ static int reset_phy(synopGMACdevice *gmacdev)
 	reg = mdio_read(gmacdev, eth_phy_addr, MII_BMCR);
 	mdio_write(gmacdev, eth_phy_addr, MII_BMCR, reg | BMCR_ANRESTART);
 	delay_us = 3000000U;
-	ret = WAIT_FOR((mdio_read(gmacdev, eth_phy_addr, MII_BMSR) &
-					NUMAKER_MII_LINKED) == NUMAKER_MII_LINKED,
-					delay_us, k_msleep(1));
+	ret = WAIT_FOR((mdio_read(gmacdev, eth_phy_addr, MII_BMSR) & NUMAKER_MII_LINKED) ==
+			       NUMAKER_MII_LINKED,
+		       delay_us, k_msleep(1));
 	if (ret == false) {
 		LOG_DBG("AN failed. Set to 100 FULL");
 		synopGMAC_set_full_duplex(gmacdev);
@@ -205,8 +206,8 @@ static void m_numaker_read_mac_addr(char *mac)
 	mac[4] = (word0 & 0x0000ff00) >> 8;
 	mac[5] = (word0 & 0x000000ff);
 
-	LOG_INF("mac address %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3],
-	       mac[4], mac[5]);
+	LOG_INF("mac address %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4],
+		mac[5]);
 }
 
 static void m_numaker_gmacdev_enable(synopGMACdevice *gmacdev)

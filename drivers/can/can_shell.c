@@ -30,39 +30,33 @@ struct can_shell_mode_mapping {
 	can_mode_t mode;
 };
 
-#define CAN_SHELL_MODE_MAPPING(_name, _mode) { .name = _name, .mode = _mode }
+#define CAN_SHELL_MODE_MAPPING(_name, _mode) {.name = _name, .mode = _mode}
 
 static const struct can_shell_mode_mapping can_shell_mode_map[] = {
 	/* zephyr-keep-sorted-start */
-	CAN_SHELL_MODE_MAPPING("fd",              CAN_MODE_FD),
-	CAN_SHELL_MODE_MAPPING("listen-only",     CAN_MODE_LISTENONLY),
-	CAN_SHELL_MODE_MAPPING("loopback",        CAN_MODE_LOOPBACK),
+	CAN_SHELL_MODE_MAPPING("fd", CAN_MODE_FD),
+	CAN_SHELL_MODE_MAPPING("listen-only", CAN_MODE_LISTENONLY),
+	CAN_SHELL_MODE_MAPPING("loopback", CAN_MODE_LOOPBACK),
 	CAN_SHELL_MODE_MAPPING("manual-recovery", CAN_MODE_MANUAL_RECOVERY),
-	CAN_SHELL_MODE_MAPPING("normal",          CAN_MODE_NORMAL),
-	CAN_SHELL_MODE_MAPPING("one-shot",        CAN_MODE_ONE_SHOT),
+	CAN_SHELL_MODE_MAPPING("normal", CAN_MODE_NORMAL),
+	CAN_SHELL_MODE_MAPPING("one-shot", CAN_MODE_ONE_SHOT),
 	CAN_SHELL_MODE_MAPPING("triple-sampling", CAN_MODE_3_SAMPLES),
 	/* zephyr-keep-sorted-stop */
 };
 
-K_MSGQ_DEFINE(can_shell_tx_msgq, sizeof(struct can_shell_tx_event),
-	      CONFIG_CAN_SHELL_TX_QUEUE_SIZE, 4);
+K_MSGQ_DEFINE(can_shell_tx_msgq, sizeof(struct can_shell_tx_event), CONFIG_CAN_SHELL_TX_QUEUE_SIZE,
+	      4);
 const struct shell *can_shell_tx_msgq_sh;
 static struct k_work_poll can_shell_tx_msgq_work;
-static struct k_poll_event can_shell_tx_msgq_events[] = {
-	K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
-					K_POLL_MODE_NOTIFY_ONLY,
-					&can_shell_tx_msgq, 0)
-};
+static struct k_poll_event can_shell_tx_msgq_events[] = {K_POLL_EVENT_STATIC_INITIALIZER(
+	K_POLL_TYPE_MSGQ_DATA_AVAILABLE, K_POLL_MODE_NOTIFY_ONLY, &can_shell_tx_msgq, 0)};
 
-K_MSGQ_DEFINE(can_shell_rx_msgq, sizeof(struct can_shell_rx_event),
-	      CONFIG_CAN_SHELL_RX_QUEUE_SIZE, 4);
+K_MSGQ_DEFINE(can_shell_rx_msgq, sizeof(struct can_shell_rx_event), CONFIG_CAN_SHELL_RX_QUEUE_SIZE,
+	      4);
 const struct shell *can_shell_rx_msgq_sh;
 static struct k_work_poll can_shell_rx_msgq_work;
-static struct k_poll_event can_shell_rx_msgq_events[] = {
-	K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
-					K_POLL_MODE_NOTIFY_ONLY,
-					&can_shell_rx_msgq, 0)
-};
+static struct k_poll_event can_shell_rx_msgq_events[] = {K_POLL_EVENT_STATIC_INITIALIZER(
+	K_POLL_TYPE_MSGQ_DATA_AVAILABLE, K_POLL_MODE_NOTIFY_ONLY, &can_shell_rx_msgq, 0)};
 
 /* Forward declarations */
 static void can_shell_tx_msgq_triggered_work_handler(struct k_work *work);
@@ -97,23 +91,19 @@ static void can_shell_print_frame(const struct shell *sh, const struct device *d
 
 #ifdef CONFIG_CAN_FD_MODE
 	/* Flags */
-	shell_fprintf_normal(sh, "%c%c  ",
-			     (frame->flags & CAN_FRAME_BRS) == 0 ? '-' : 'B',
+	shell_fprintf_normal(sh, "%c%c  ", (frame->flags & CAN_FRAME_BRS) == 0 ? '-' : 'B',
 			     (frame->flags & CAN_FRAME_ESI) == 0 ? '-' : 'P');
 #endif /* CONFIG_CAN_FD_MODE */
 
 	/* CAN ID */
-	shell_fprintf_normal(sh, "%*s%0*x  ",
-			     (frame->flags & CAN_FRAME_IDE) != 0 ? 0 : 5, "",
+	shell_fprintf_normal(sh, "%*s%0*x  ", (frame->flags & CAN_FRAME_IDE) != 0 ? 0 : 5, "",
 			     (frame->flags & CAN_FRAME_IDE) != 0 ? 8 : 3,
-			     (frame->flags & CAN_FRAME_IDE) != 0 ?
-			     frame->id & CAN_EXT_ID_MASK : frame->id & CAN_STD_ID_MASK);
+			     (frame->flags & CAN_FRAME_IDE) != 0 ? frame->id & CAN_EXT_ID_MASK
+								 : frame->id & CAN_STD_ID_MASK);
 
 	/* DLC as number of bytes */
-	shell_fprintf_normal(sh, "%s[%0*d]  ",
-			     (frame->flags & CAN_FRAME_FDF) != 0 ? "" : " ",
-			     (frame->flags & CAN_FRAME_FDF) != 0 ? 2 : 1,
-			     nbytes);
+	shell_fprintf_normal(sh, "%s[%0*d]  ", (frame->flags & CAN_FRAME_FDF) != 0 ? "" : " ",
+			     (frame->flags & CAN_FRAME_FDF) != 0 ? 2 : 1, nbytes);
 
 	/* Data payload */
 	if ((frame->flags & CAN_FRAME_RTR) != 0) {
@@ -143,8 +133,7 @@ static int can_shell_tx_msgq_poll_submit(const struct shell *sh)
 	err = k_work_poll_submit(&can_shell_tx_msgq_work, can_shell_tx_msgq_events,
 				 ARRAY_SIZE(can_shell_tx_msgq_events), K_FOREVER);
 	if (err != 0) {
-		shell_error(can_shell_tx_msgq_sh, "failed to submit tx msgq polling (err %d)",
-			    err);
+		shell_error(can_shell_tx_msgq_sh, "failed to submit tx msgq polling (err %d)", err);
 	}
 
 	return err;
@@ -212,8 +201,7 @@ static int can_shell_rx_msgq_poll_submit(const struct shell *sh)
 	err = k_work_poll_submit(&can_shell_rx_msgq_work, can_shell_rx_msgq_events,
 				 ARRAY_SIZE(can_shell_rx_msgq_events), K_FOREVER);
 	if (err != 0) {
-		shell_error(can_shell_rx_msgq_sh, "failed to submit rx msgq polling (err %d)",
-			    err);
+		shell_error(can_shell_rx_msgq_sh, "failed to submit rx msgq polling (err %d)", err);
 	}
 
 	return err;
@@ -388,25 +376,24 @@ static int cmd_can_show(const struct shell *sh, size_t argc, char **argv)
 	timing_min = can_get_timing_min(dev);
 	timing_max = can_get_timing_max(dev);
 
-	shell_print(sh, "timing:          sjw %u..%u, prop_seg %u..%u, "
+	shell_print(sh,
+		    "timing:          sjw %u..%u, prop_seg %u..%u, "
 		    "phase_seg1 %u..%u, phase_seg2 %u..%u, prescaler %u..%u",
-		    timing_min->sjw, timing_max->sjw,
-		    timing_min->prop_seg, timing_max->prop_seg,
-		    timing_min->phase_seg1, timing_max->phase_seg1,
-		    timing_min->phase_seg2, timing_max->phase_seg2,
-		    timing_min->prescaler, timing_max->prescaler);
+		    timing_min->sjw, timing_max->sjw, timing_min->prop_seg, timing_max->prop_seg,
+		    timing_min->phase_seg1, timing_max->phase_seg1, timing_min->phase_seg2,
+		    timing_max->phase_seg2, timing_min->prescaler, timing_max->prescaler);
 
 	if (IS_ENABLED(CONFIG_CAN_FD_MODE) && (cap & CAN_MODE_FD) != 0) {
 		timing_min = can_get_timing_data_min(dev);
 		timing_max = can_get_timing_data_max(dev);
 
-		shell_print(sh, "timing data:     sjw %u..%u, prop_seg %u..%u, "
+		shell_print(sh,
+			    "timing data:     sjw %u..%u, prop_seg %u..%u, "
 			    "phase_seg1 %u..%u, phase_seg2 %u..%u, prescaler %u..%u",
-			    timing_min->sjw, timing_max->sjw,
-			    timing_min->prop_seg, timing_max->prop_seg,
-			    timing_min->phase_seg1, timing_max->phase_seg1,
-			    timing_min->phase_seg2, timing_max->phase_seg2,
-			    timing_min->prescaler, timing_max->prescaler);
+			    timing_min->sjw, timing_max->sjw, timing_min->prop_seg,
+			    timing_max->prop_seg, timing_min->phase_seg1, timing_max->phase_seg1,
+			    timing_min->phase_seg2, timing_max->phase_seg2, timing_min->prescaler,
+			    timing_max->prescaler);
 	}
 
 	phy = can_get_transceiver(dev);
@@ -430,7 +417,7 @@ static int cmd_can_show(const struct shell *sh, size_t argc, char **argv)
 static int cmd_can_bitrate_set(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev = device_get_binding(argv[1]);
-	struct can_timing timing = { 0 };
+	struct can_timing timing = {0};
 	uint16_t sample_pnt;
 	uint32_t bitrate;
 	char *endptr;
@@ -456,7 +443,8 @@ static int cmd_can_bitrate_set(const struct shell *sh, size_t argc, char **argv)
 
 		err = can_calc_timing(dev, &timing, bitrate, sample_pnt);
 		if (err < 0) {
-			shell_error(sh, "failed to calculate timing for "
+			shell_error(sh,
+				    "failed to calculate timing for "
 				    "bitrate %d bps, sample point %d.%d%% (err %d)",
 				    bitrate, sample_pnt / 10, sample_pnt % 10, err);
 			return err;
@@ -471,7 +459,8 @@ static int cmd_can_bitrate_set(const struct shell *sh, size_t argc, char **argv)
 			}
 		}
 
-		shell_print(sh, "setting bitrate to %d bps, sample point %d.%d%% "
+		shell_print(sh,
+			    "setting bitrate to %d bps, sample point %d.%d%% "
 			    "(+/- %d.%d%%), sjw %d",
 			    bitrate, sample_pnt / 10, sample_pnt % 10, err / 10, err % 10,
 			    timing.sjw);
@@ -501,7 +490,7 @@ static int cmd_can_bitrate_set(const struct shell *sh, size_t argc, char **argv)
 static int cmd_can_dbitrate_set(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev = device_get_binding(argv[1]);
-	struct can_timing timing = { 0 };
+	struct can_timing timing = {0};
 	uint16_t sample_pnt;
 	uint32_t bitrate;
 	char *endptr;
@@ -527,7 +516,8 @@ static int cmd_can_dbitrate_set(const struct shell *sh, size_t argc, char **argv
 
 		err = can_calc_timing_data(dev, &timing, bitrate, sample_pnt);
 		if (err < 0) {
-			shell_error(sh, "failed to calculate timing for "
+			shell_error(sh,
+				    "failed to calculate timing for "
 				    "data bitrate %d bps, sample point %d.%d%% (err %d)",
 				    bitrate, sample_pnt / 10, sample_pnt % 10, err);
 			return err;
@@ -542,7 +532,8 @@ static int cmd_can_dbitrate_set(const struct shell *sh, size_t argc, char **argv
 			}
 		}
 
-		shell_print(sh, "setting data bitrate to %d bps, sample point %d.%d%% "
+		shell_print(sh,
+			    "setting data bitrate to %d bps, sample point %d.%d%% "
 			    "(+/- %d.%d%%), sjw %d",
 			    bitrate, sample_pnt / 10, sample_pnt % 10, err / 10, err % 10,
 			    timing.sjw);
@@ -610,7 +601,7 @@ static int can_shell_parse_timing(const struct shell *sh, size_t argc, char **ar
 static int cmd_can_timing_set(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev = device_get_binding(argv[1]);
-	struct can_timing timing = { 0 };
+	struct can_timing timing = {0};
 	int err;
 
 	if (!device_is_ready(dev)) {
@@ -623,9 +614,11 @@ static int cmd_can_timing_set(const struct shell *sh, size_t argc, char **argv)
 		return err;
 	}
 
-	shell_print(sh, "setting timing to sjw %u, prop_seg %u, phase_seg1 %u, phase_seg2 %u, "
-		    "prescaler %u", timing.sjw, timing.prop_seg, timing.phase_seg1,
-		    timing.phase_seg2, timing.prescaler);
+	shell_print(sh,
+		    "setting timing to sjw %u, prop_seg %u, phase_seg1 %u, phase_seg2 %u, "
+		    "prescaler %u",
+		    timing.sjw, timing.prop_seg, timing.phase_seg1, timing.phase_seg2,
+		    timing.prescaler);
 
 	err = can_set_timing(dev, &timing);
 	if (err != 0) {
@@ -639,7 +632,7 @@ static int cmd_can_timing_set(const struct shell *sh, size_t argc, char **argv)
 static int cmd_can_dtiming_set(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev = device_get_binding(argv[1]);
-	struct can_timing timing = { 0 };
+	struct can_timing timing = {0};
 	int err;
 
 	if (!device_is_ready(dev)) {
@@ -652,9 +645,11 @@ static int cmd_can_dtiming_set(const struct shell *sh, size_t argc, char **argv)
 		return err;
 	}
 
-	shell_print(sh, "setting data phase timing to sjw %u, prop_seg %u, phase_seg1 %u, "
-		    "phase_seg2 %u, prescaler %u", timing.sjw, timing.prop_seg, timing.phase_seg1,
-		    timing.phase_seg2, timing.prescaler);
+	shell_print(sh,
+		    "setting data phase timing to sjw %u, prop_seg %u, phase_seg1 %u, "
+		    "phase_seg2 %u, prescaler %u",
+		    timing.sjw, timing.prop_seg, timing.phase_seg1, timing.phase_seg2,
+		    timing.prescaler);
 
 	err = can_set_timing_data(dev, &timing);
 	if (err != 0) {
@@ -718,7 +713,7 @@ static int cmd_can_send(const struct shell *sh, size_t argc, char **argv)
 	const struct device *dev = device_get_binding(argv[1]);
 	static unsigned int frame_counter;
 	unsigned int frame_no;
-	struct can_frame frame = { 0 };
+	struct can_frame frame = {0};
 	uint32_t id_mask;
 	int argidx = 2;
 	uint32_t val;
@@ -777,8 +772,7 @@ static int cmd_can_send(const struct shell *sh, size_t argc, char **argv)
 
 	if (val > id_mask) {
 		shell_error(sh, "CAN ID 0x%0*x out of range",
-			    (frame.flags & CAN_FRAME_IDE) != 0 ? 8 : 3,
-			    val);
+			    (frame.flags & CAN_FRAME_IDE) != 0 ? 8 : 3, val);
 		return -EINVAL;
 	}
 
@@ -815,15 +809,15 @@ static int cmd_can_send(const struct shell *sh, size_t argc, char **argv)
 
 	frame_no = frame_counter++;
 
-	shell_print(sh, "enqueuing CAN frame #%u with %s (%d-bit) CAN ID 0x%0*x, "
-		    "RTR %d, CAN FD %d, BRS %d, DLC %d", frame_no,
-		    (frame.flags & CAN_FRAME_IDE) != 0 ? "extended" : "standard",
+	shell_print(sh,
+		    "enqueuing CAN frame #%u with %s (%d-bit) CAN ID 0x%0*x, "
+		    "RTR %d, CAN FD %d, BRS %d, DLC %d",
+		    frame_no, (frame.flags & CAN_FRAME_IDE) != 0 ? "extended" : "standard",
 		    (frame.flags & CAN_FRAME_IDE) != 0 ? 29 : 11,
 		    (frame.flags & CAN_FRAME_IDE) != 0 ? 8 : 3, frame.id,
 		    (frame.flags & CAN_FRAME_RTR) != 0 ? 1 : 0,
 		    (frame.flags & CAN_FRAME_FDF) != 0 ? 1 : 0,
-		    (frame.flags & CAN_FRAME_BRS) != 0 ? 1 : 0,
-		    frame.dlc);
+		    (frame.flags & CAN_FRAME_BRS) != 0 ? 1 : 0, frame.dlc);
 
 	err = can_send(dev, &frame, K_NO_WAIT, can_shell_tx_callback, UINT_TO_POINTER(frame_no));
 	if (err != 0) {
@@ -884,8 +878,7 @@ static int cmd_can_filter_add(const struct shell *sh, size_t argc, char **argv)
 
 	if (val > id_mask) {
 		shell_error(sh, "CAN ID 0x%0*x out of range",
-			    (filter.flags & CAN_FILTER_IDE) != 0 ? 8 : 3,
-			    val);
+			    (filter.flags & CAN_FILTER_IDE) != 0 ? 8 : 3, val);
 		return -EINVAL;
 	}
 
@@ -901,8 +894,7 @@ static int cmd_can_filter_add(const struct shell *sh, size_t argc, char **argv)
 
 		if (val > id_mask) {
 			shell_error(sh, "CAN ID mask 0x%0*x out of range",
-				    (filter.flags & CAN_FILTER_IDE) != 0 ? 8 : 3,
-				    val);
+				    (filter.flags & CAN_FILTER_IDE) != 0 ? 8 : 3, val);
 			return -EINVAL;
 		}
 
@@ -1036,72 +1028,71 @@ static void cmd_can_device_name_mode(size_t idx, struct shell_static_entry *entr
 
 SHELL_DYNAMIC_CMD_CREATE(dsub_can_device_name_mode, cmd_can_device_name_mode);
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_can_filter_cmds,
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_can_filter_cmds,
 	SHELL_CMD_ARG(add, &dsub_can_device_name,
-		"Add rx filter\n"
-		"Usage: can filter add <device> [-e] <CAN ID> [CAN ID mask]\n"
-		"-e  use extended (29-bit) CAN ID/CAN ID mask\n",
-		cmd_can_filter_add, 3, 2),
+		      "Add rx filter\n"
+		      "Usage: can filter add <device> [-e] <CAN ID> [CAN ID mask]\n"
+		      "-e  use extended (29-bit) CAN ID/CAN ID mask\n",
+		      cmd_can_filter_add, 3, 2),
 	SHELL_CMD_ARG(remove, &dsub_can_device_name,
-		"Remove rx filter\n"
-		"Usage: can filter remove <device> <filter_id>",
-		cmd_can_filter_remove, 3, 0),
-	SHELL_SUBCMD_SET_END
-);
+		      "Remove rx filter\n"
+		      "Usage: can filter remove <device> <filter_id>",
+		      cmd_can_filter_remove, 3, 0),
+	SHELL_SUBCMD_SET_END);
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_can_cmds,
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_can_cmds,
 	SHELL_CMD_ARG(start, &dsub_can_device_name,
-		"Start CAN controller\n"
-		"Usage: can start <device>",
-		cmd_can_start, 2, 0),
+		      "Start CAN controller\n"
+		      "Usage: can start <device>",
+		      cmd_can_start, 2, 0),
 	SHELL_CMD_ARG(stop, &dsub_can_device_name,
-		"Stop CAN controller\n"
-		"Usage: can stop <device>",
-		cmd_can_stop, 2, 0),
+		      "Stop CAN controller\n"
+		      "Usage: can stop <device>",
+		      cmd_can_stop, 2, 0),
 	SHELL_CMD_ARG(show, &dsub_can_device_name,
-		"Show CAN controller information\n"
-		"Usage: can show <device>",
-		cmd_can_show, 2, 0),
+		      "Show CAN controller information\n"
+		      "Usage: can show <device>",
+		      cmd_can_show, 2, 0),
 	SHELL_CMD_ARG(bitrate, &dsub_can_device_name,
-		"Set CAN controller bitrate (sample point and SJW optional)\n"
-		"Usage: can bitrate <device> <bitrate> [sample point] [sjw]",
-		cmd_can_bitrate_set, 3, 2),
-	SHELL_COND_CMD_ARG(CONFIG_CAN_FD_MODE,
-		dbitrate, &dsub_can_device_name,
-		"Set CAN controller data phase bitrate (sample point and SJW optional)\n"
-		"Usage: can dbitrate <device> <data phase bitrate> [sample point] [sjw]",
-		cmd_can_dbitrate_set, 3, 2),
-	SHELL_CMD_ARG(timing, &dsub_can_device_name,
+		      "Set CAN controller bitrate (sample point and SJW optional)\n"
+		      "Usage: can bitrate <device> <bitrate> [sample point] [sjw]",
+		      cmd_can_bitrate_set, 3, 2),
+	SHELL_COND_CMD_ARG(CONFIG_CAN_FD_MODE, dbitrate, &dsub_can_device_name,
+			   "Set CAN controller data phase bitrate (sample point and SJW optional)\n"
+			   "Usage: can dbitrate <device> <data phase bitrate> [sample point] [sjw]",
+			   cmd_can_dbitrate_set, 3, 2),
+	SHELL_CMD_ARG(
+		timing, &dsub_can_device_name,
 		"Set CAN controller timing\n"
 		"Usage: can timing <device> <sjw> <prop_seg> <phase_seg1> <phase_seg2> <prescaler>",
 		cmd_can_timing_set, 7, 0),
-	SHELL_COND_CMD_ARG(CONFIG_CAN_FD_MODE,
-		dtiming, &dsub_can_device_name,
-		"Set CAN controller data phase timing\n"
-		"Usage: can dtiming <device> <sjw> <prop_seg> <phase_seg1> <phase_seg2> <prescaler>",
-		cmd_can_dtiming_set, 7, 0),
+	SHELL_COND_CMD_ARG(CONFIG_CAN_FD_MODE, dtiming, &dsub_can_device_name,
+			   "Set CAN controller data phase timing\n"
+			   "Usage: can dtiming <device> <sjw> <prop_seg> <phase_seg1> <phase_seg2> "
+			   "<prescaler>",
+			   cmd_can_dtiming_set, 7, 0),
 	SHELL_CMD_ARG(mode, &dsub_can_device_name_mode,
-		"Set CAN controller mode\n"
-		"Usage: can mode <device> <mode> [mode] [mode] [...]",
-		cmd_can_mode_set, 3, SHELL_OPT_ARG_CHECK_SKIP),
+		      "Set CAN controller mode\n"
+		      "Usage: can mode <device> <mode> [mode] [mode] [...]",
+		      cmd_can_mode_set, 3, SHELL_OPT_ARG_CHECK_SKIP),
 	SHELL_CMD_ARG(send, &dsub_can_device_name,
-		"Enqueue a CAN frame for sending\n"
-		"Usage: can send <device> [-e] [-r] [-f] [-b] <CAN ID> [data] [...]\n"
-		"-e  use extended (29-bit) CAN ID\n"
-		"-r  send Remote Transmission Request (RTR) frame\n"
-		"-f  use CAN FD frame format\n"
-		"-b  use CAN FD Bit Rate Switching (BRS)",
-		cmd_can_send, 3, SHELL_OPT_ARG_CHECK_SKIP),
+		      "Enqueue a CAN frame for sending\n"
+		      "Usage: can send <device> [-e] [-r] [-f] [-b] <CAN ID> [data] [...]\n"
+		      "-e  use extended (29-bit) CAN ID\n"
+		      "-r  send Remote Transmission Request (RTR) frame\n"
+		      "-f  use CAN FD frame format\n"
+		      "-b  use CAN FD Bit Rate Switching (BRS)",
+		      cmd_can_send, 3, SHELL_OPT_ARG_CHECK_SKIP),
 	SHELL_CMD(filter, &sub_can_filter_cmds,
-		"CAN rx filter commands\n"
-		"Usage: can filter <add|remove> <device> ...",
-		NULL),
-	SHELL_COND_CMD_ARG(CONFIG_CAN_MANUAL_RECOVERY_MODE,
-		recover, &dsub_can_device_name,
-		"Manually recover CAN controller from bus-off state\n"
-		"Usage: can recover <device> [timeout ms]",
-		cmd_can_recover, 2, 1),
-	SHELL_SUBCMD_SET_END
-);
+		  "CAN rx filter commands\n"
+		  "Usage: can filter <add|remove> <device> ...",
+		  NULL),
+	SHELL_COND_CMD_ARG(CONFIG_CAN_MANUAL_RECOVERY_MODE, recover, &dsub_can_device_name,
+			   "Manually recover CAN controller from bus-off state\n"
+			   "Usage: can recover <device> [timeout ms]",
+			   cmd_can_recover, 2, 1),
+	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(can, &sub_can_cmds, "CAN controller commands", NULL);

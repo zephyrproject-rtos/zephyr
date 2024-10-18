@@ -10,7 +10,6 @@
 #include <zephyr/drivers/entropy.h>
 #include <string.h>
 
-
 /* API implementation: driver initialization */
 static int entropy_b91_trng_init(const struct device *dev)
 {
@@ -22,8 +21,7 @@ static int entropy_b91_trng_init(const struct device *dev)
 }
 
 /* API implementation: get_entropy */
-static int entropy_b91_trng_get_entropy(const struct device *dev,
-					uint8_t *buffer, uint16_t length)
+static int entropy_b91_trng_get_entropy(const struct device *dev, uint8_t *buffer, uint16_t length)
 {
 	ARG_UNUSED(dev);
 
@@ -46,9 +44,8 @@ static int entropy_b91_trng_get_entropy(const struct device *dev,
 }
 
 /* API implementation: get_entropy_isr */
-static int entropy_b91_trng_get_entropy_isr(const struct device *dev,
-					    uint8_t *buffer, uint16_t length,
-					    uint32_t flags)
+static int entropy_b91_trng_get_entropy_isr(const struct device *dev, uint8_t *buffer,
+					    uint16_t length, uint32_t flags)
 {
 	ARG_UNUSED(flags);
 
@@ -61,11 +58,8 @@ static int entropy_b91_trng_get_entropy_isr(const struct device *dev,
 /* Entropy driver APIs structure */
 static const struct entropy_driver_api entropy_b91_trng_api = {
 	.get_entropy = entropy_b91_trng_get_entropy,
-	.get_entropy_isr = entropy_b91_trng_get_entropy_isr
-};
+	.get_entropy_isr = entropy_b91_trng_get_entropy_isr};
 
 /* Entropy driver registration */
-DEVICE_DT_INST_DEFINE(0, entropy_b91_trng_init,
-		      NULL, NULL, NULL,
-		      PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
-		      &entropy_b91_trng_api);
+DEVICE_DT_INST_DEFINE(0, entropy_b91_trng_init, NULL, NULL, NULL, PRE_KERNEL_1,
+		      CONFIG_ENTROPY_INIT_PRIORITY, &entropy_b91_trng_api);

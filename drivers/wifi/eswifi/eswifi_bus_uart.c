@@ -53,8 +53,7 @@ static void eswifi_iface_uart_flush(struct eswifi_uart_data *uart)
 	}
 }
 
-static void eswifi_iface_uart_isr(const struct device *uart_dev,
-				  void *user_data)
+static void eswifi_iface_uart_isr(const struct device *uart_dev, void *user_data)
 {
 	struct eswifi_uart_data *uart = &eswifi_uart0; /* Static instance */
 	int rx = 0;
@@ -64,11 +63,9 @@ static void eswifi_iface_uart_isr(const struct device *uart_dev,
 
 	ARG_UNUSED(user_data);
 
-	while (uart_irq_update(uart->dev) &&
-	       uart_irq_rx_ready(uart->dev)) {
+	while (uart_irq_update(uart->dev) && uart_irq_rx_ready(uart->dev)) {
 		if (!partial_size) {
-			partial_size = ring_buf_put_claim(&uart->rx_rb, &dst,
-							  UINT32_MAX);
+			partial_size = ring_buf_put_claim(&uart->rx_rb, &dst, UINT32_MAX);
 		}
 		if (!partial_size) {
 			LOG_ERR("Rx buffer doesn't have enough space");
@@ -93,18 +90,18 @@ static char get_fsm_char(int fsm)
 {
 	switch (fsm) {
 	case ESWIFI_UART_FSM_WAIT_CR:
-		return('C');
+		return ('C');
 	case ESWIFI_UART_FSM_WAIT_LF:
-		return('L');
+		return ('L');
 	case ESWIFI_UART_FSM_WAIT_MARK:
-		return('M');
+		return ('M');
 	case ESWIFI_UART_FSM_WAIT_SPACE:
-		return('S');
+		return ('S');
 	case ESWIFI_UART_FSM_END:
-		return('E');
+		return ('E');
 	}
 
-	return('?');
+	return ('?');
 }
 
 static int eswifi_uart_get_resp(struct eswifi_uart_data *uart)
@@ -112,8 +109,7 @@ static int eswifi_uart_get_resp(struct eswifi_uart_data *uart)
 	uint8_t c;
 
 	while (ring_buf_get(&uart->rx_rb, &c, 1) > 0) {
-		LOG_DBG("FSM: %c, RX: 0x%02x : %c",
-			get_fsm_char(uart->fsm), c, c);
+		LOG_DBG("FSM: %c, RX: 0x%02x : %c", get_fsm_char(uart->fsm), c, c);
 
 		if (uart->rx_buf_size > 0) {
 			uart->rx_buf[uart->rx_count++] = c;
@@ -187,8 +183,8 @@ static int eswifi_uart_wait_prompt(struct eswifi_uart_data *uart)
 	return -ETIMEDOUT;
 }
 
-static int eswifi_uart_request(struct eswifi_dev *eswifi, char *cmd,
-			       size_t clen, char *rsp, size_t rlen)
+static int eswifi_uart_request(struct eswifi_dev *eswifi, char *cmd, size_t clen, char *rsp,
+			       size_t rlen)
 {
 	struct eswifi_uart_data *uart = eswifi->bus_data;
 	int count;
@@ -233,8 +229,7 @@ int eswifi_uart_init(struct eswifi_dev *eswifi)
 	uart_irq_callback_set(uart->dev, eswifi_iface_uart_isr);
 	uart_irq_rx_enable(uart->dev);
 
-	ring_buf_init(&uart->rx_rb, sizeof(uart->iface_rb_buf),
-		      uart->iface_rb_buf);
+	ring_buf_init(&uart->rx_rb, sizeof(uart->iface_rb_buf), uart->iface_rb_buf);
 
 	LOG_DBG("success");
 

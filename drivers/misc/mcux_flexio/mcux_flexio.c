@@ -15,7 +15,6 @@
 
 LOG_MODULE_REGISTER(mcux_flexio, CONFIG_MCUX_FLEXIO_LOG_LEVEL);
 
-
 struct mcux_flexio_config {
 	FLEXIO_Type *base;
 	const struct device *clock_dev;
@@ -36,7 +35,6 @@ struct mcux_flexio_data {
 	uint32_t map_shifter_child_count;
 	uint32_t map_timer_child_count;
 };
-
 
 static int mcux_flexio_child_take_shifter_idx(const struct device *dev)
 {
@@ -166,8 +164,7 @@ int nxp_flexio_get_rate(const struct device *dev, uint32_t *rate)
 	return clock_control_get_rate(config->clock_dev, config->clock_subsys, rate);
 }
 
-int nxp_flexio_child_attach(const struct device *dev,
-	const struct nxp_flexio_child *child)
+int nxp_flexio_child_attach(const struct device *dev, const struct nxp_flexio_child *child)
 {
 	struct mcux_flexio_data *data = dev->data;
 	const struct nxp_flexio_child_res *child_res = &child->res;
@@ -199,62 +196,55 @@ int nxp_flexio_child_attach(const struct device *dev,
 	return 0;
 }
 
-#define MCUX_FLEXIO_SHIFTER_COUNT_MAX(n) \
-	ARRAY_SIZE(((FLEXIO_Type *)DT_INST_REG_ADDR(n))->SHIFTCTL)
+#define MCUX_FLEXIO_SHIFTER_COUNT_MAX(n) ARRAY_SIZE(((FLEXIO_Type *)DT_INST_REG_ADDR(n))->SHIFTCTL)
 
-#define MCUX_FLEXIO_TIMER_COUNT_MAX(n) \
-	ARRAY_SIZE(((FLEXIO_Type *)DT_INST_REG_ADDR(n))->TIMCTL)
+#define MCUX_FLEXIO_TIMER_COUNT_MAX(n) ARRAY_SIZE(((FLEXIO_Type *)DT_INST_REG_ADDR(n))->TIMCTL)
 
-#define MCUX_FLEXIO_INIT(n)						\
-	static void mcux_flexio_irq_config_func_##n(const struct device *dev); \
-	static void mcux_flexio_irq_enable_func_##n(void);		\
-	static void mcux_flexio_irq_disable_func_##n(void);		\
-									\
-	static nxp_flexio_map_child_t					\
-		nxp_flexio_map_shifter_child_##n[MCUX_FLEXIO_SHIFTER_COUNT_MAX(n)] = {0}; \
-	static nxp_flexio_map_child_t					\
-		nxp_flexio_map_timer_child_##n[MCUX_FLEXIO_TIMER_COUNT_MAX(n)] = {0}; \
-									\
-	static struct mcux_flexio_data mcux_flexio_data_##n = {		\
-		.map_shifter_child = nxp_flexio_map_shifter_child_##n, \
-		.map_shifter_child_count = ARRAY_SIZE(nxp_flexio_map_shifter_child_##n), \
-		.map_timer_child = nxp_flexio_map_timer_child_##n, \
-		.map_timer_child_count = ARRAY_SIZE(nxp_flexio_map_timer_child_##n), \
-	};								\
-									\
-	static const struct mcux_flexio_config mcux_flexio_config_##n = { \
-		.base = (FLEXIO_Type *)DT_INST_REG_ADDR(n),		\
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
-		.clock_subsys =						\
-		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
-		.irq_config_func = mcux_flexio_irq_config_func_##n,	\
-		.irq_enable_func = mcux_flexio_irq_enable_func_##n,	\
-		.irq_disable_func = mcux_flexio_irq_disable_func_##n,	\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(n, &mcux_flexio_init,			\
-				NULL,					\
-				&mcux_flexio_data_##n,			\
-				&mcux_flexio_config_##n,		\
-				POST_KERNEL,				\
-				CONFIG_MCUX_FLEXIO_INIT_PRIORITY,	\
-				NULL);					\
-									\
-	static void mcux_flexio_irq_config_func_##n(const struct device *dev) \
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
-			mcux_flexio_isr, DEVICE_DT_INST_GET(n), 0);	\
-		irq_enable(DT_INST_IRQN(n));				\
-	}								\
-									\
-	static void mcux_flexio_irq_enable_func_##n(void)		\
-	{								\
-		irq_enable(DT_INST_IRQN(n));				\
-	}								\
-									\
-	static void mcux_flexio_irq_disable_func_##n(void)		\
-	{								\
-		irq_disable(DT_INST_IRQN(n));				\
+#define MCUX_FLEXIO_INIT(n)                                                                        \
+	static void mcux_flexio_irq_config_func_##n(const struct device *dev);                     \
+	static void mcux_flexio_irq_enable_func_##n(void);                                         \
+	static void mcux_flexio_irq_disable_func_##n(void);                                        \
+                                                                                                   \
+	static nxp_flexio_map_child_t                                                              \
+		nxp_flexio_map_shifter_child_##n[MCUX_FLEXIO_SHIFTER_COUNT_MAX(n)] = {0};          \
+	static nxp_flexio_map_child_t                                                              \
+		nxp_flexio_map_timer_child_##n[MCUX_FLEXIO_TIMER_COUNT_MAX(n)] = {0};              \
+                                                                                                   \
+	static struct mcux_flexio_data mcux_flexio_data_##n = {                                    \
+		.map_shifter_child = nxp_flexio_map_shifter_child_##n,                             \
+		.map_shifter_child_count = ARRAY_SIZE(nxp_flexio_map_shifter_child_##n),           \
+		.map_timer_child = nxp_flexio_map_timer_child_##n,                                 \
+		.map_timer_child_count = ARRAY_SIZE(nxp_flexio_map_timer_child_##n),               \
+	};                                                                                         \
+                                                                                                   \
+	static const struct mcux_flexio_config mcux_flexio_config_##n = {                          \
+		.base = (FLEXIO_Type *)DT_INST_REG_ADDR(n),                                        \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
+		.irq_config_func = mcux_flexio_irq_config_func_##n,                                \
+		.irq_enable_func = mcux_flexio_irq_enable_func_##n,                                \
+		.irq_disable_func = mcux_flexio_irq_disable_func_##n,                              \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &mcux_flexio_init, NULL, &mcux_flexio_data_##n,                   \
+			      &mcux_flexio_config_##n, POST_KERNEL,                                \
+			      CONFIG_MCUX_FLEXIO_INIT_PRIORITY, NULL);                             \
+                                                                                                   \
+	static void mcux_flexio_irq_config_func_##n(const struct device *dev)                      \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_flexio_isr,            \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+	}                                                                                          \
+                                                                                                   \
+	static void mcux_flexio_irq_enable_func_##n(void)                                          \
+	{                                                                                          \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+	}                                                                                          \
+                                                                                                   \
+	static void mcux_flexio_irq_disable_func_##n(void)                                         \
+	{                                                                                          \
+		irq_disable(DT_INST_IRQN(n));                                                      \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_FLEXIO_INIT)

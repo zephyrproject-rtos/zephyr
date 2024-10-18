@@ -18,36 +18,28 @@
 
 LOG_MODULE_REGISTER(HMC5883L, CONFIG_SENSOR_LOG_LEVEL);
 
-static void hmc5883l_convert(struct sensor_value *val, int16_t raw_val,
-			     uint16_t divider)
+static void hmc5883l_convert(struct sensor_value *val, int16_t raw_val, uint16_t divider)
 {
 	/* val = raw_val / divider */
 	val->val1 = raw_val / divider;
 	val->val2 = (((int64_t)raw_val % divider) * 1000000L) / divider;
 }
 
-static int hmc5883l_channel_get(const struct device *dev,
-				enum sensor_channel chan,
+static int hmc5883l_channel_get(const struct device *dev, enum sensor_channel chan,
 				struct sensor_value *val)
 {
 	struct hmc5883l_data *drv_data = dev->data;
 
 	if (chan == SENSOR_CHAN_MAGN_X) {
-		hmc5883l_convert(val, drv_data->x_sample,
-				 hmc5883l_gain[drv_data->gain_idx]);
+		hmc5883l_convert(val, drv_data->x_sample, hmc5883l_gain[drv_data->gain_idx]);
 	} else if (chan == SENSOR_CHAN_MAGN_Y) {
-		hmc5883l_convert(val, drv_data->y_sample,
-				 hmc5883l_gain[drv_data->gain_idx]);
+		hmc5883l_convert(val, drv_data->y_sample, hmc5883l_gain[drv_data->gain_idx]);
 	} else if (chan == SENSOR_CHAN_MAGN_Z) {
-		hmc5883l_convert(val, drv_data->z_sample,
-				 hmc5883l_gain[drv_data->gain_idx]);
+		hmc5883l_convert(val, drv_data->z_sample, hmc5883l_gain[drv_data->gain_idx]);
 	} else if (chan == SENSOR_CHAN_MAGN_XYZ) {
-		hmc5883l_convert(val, drv_data->x_sample,
-				 hmc5883l_gain[drv_data->gain_idx]);
-		hmc5883l_convert(val + 1, drv_data->y_sample,
-				 hmc5883l_gain[drv_data->gain_idx]);
-		hmc5883l_convert(val + 2, drv_data->z_sample,
-				 hmc5883l_gain[drv_data->gain_idx]);
+		hmc5883l_convert(val, drv_data->x_sample, hmc5883l_gain[drv_data->gain_idx]);
+		hmc5883l_convert(val + 1, drv_data->y_sample, hmc5883l_gain[drv_data->gain_idx]);
+		hmc5883l_convert(val + 2, drv_data->z_sample, hmc5883l_gain[drv_data->gain_idx]);
 	} else {
 		return -ENOTSUP;
 	}
@@ -55,8 +47,7 @@ static int hmc5883l_channel_get(const struct device *dev,
 	return 0;
 }
 
-static int hmc5883l_sample_fetch(const struct device *dev,
-				 enum sensor_channel chan)
+static int hmc5883l_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct hmc5883l_data *drv_data = dev->data;
 	const struct hmc5883l_config *config = dev->config;
@@ -65,8 +56,7 @@ static int hmc5883l_sample_fetch(const struct device *dev,
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 	/* fetch magnetometer sample */
-	if (i2c_burst_read_dt(&config->i2c, HMC5883L_REG_DATA_START,
-			      (uint8_t *)buf, 6) < 0) {
+	if (i2c_burst_read_dt(&config->i2c, HMC5883L_REG_DATA_START, (uint8_t *)buf, 6) < 0) {
 		LOG_ERR("Failed to fetch magnetometer sample.");
 		return -EIO;
 	}
@@ -140,8 +130,7 @@ int hmc5883l_init(const struct device *dev)
 	chip_cfg[1] = drv_data->gain_idx << HMC5883L_GAIN_SHIFT;
 	chip_cfg[2] = HMC5883L_MODE_CONTINUOUS;
 
-	if (i2c_burst_write_dt(&config->i2c, HMC5883L_REG_CONFIG_A,
-			       chip_cfg, 3) < 0) {
+	if (i2c_burst_write_dt(&config->i2c, HMC5883L_REG_CONFIG_A, chip_cfg, 3) < 0) {
 		LOG_ERR("Failed to configure chip.");
 		return -EIO;
 	}
@@ -158,17 +147,16 @@ int hmc5883l_init(const struct device *dev)
 	return 0;
 }
 
-#define HMC5883L_DEFINE(inst)									\
-	static struct hmc5883l_data hmc5883l_data_##inst;					\
-												\
-	static const struct hmc5883l_config hmc5883l_config_##inst = {				\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
+#define HMC5883L_DEFINE(inst)                                                                      \
+	static struct hmc5883l_data hmc5883l_data_##inst;                                          \
+                                                                                                   \
+	static const struct hmc5883l_config hmc5883l_config_##inst = {                             \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		IF_ENABLED(CONFIG_HMC5883L_TRIGGER,						\
-			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))	\
-	};											\
-												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, hmc5883l_init, NULL,					\
-			      &hmc5883l_data_##inst, &hmc5883l_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &hmc5883l_driver_api);		\
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),)) };           \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, hmc5883l_init, NULL, &hmc5883l_data_##inst,             \
+				     &hmc5883l_config_##inst, POST_KERNEL,                         \
+				     CONFIG_SENSOR_INIT_PRIORITY, &hmc5883l_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(HMC5883L_DEFINE)

@@ -56,8 +56,7 @@ static int strtomicro(char *inp, char units, int32_t *val)
 	*val = 0;
 	for (size_t i = start; (i <= end) && (decdiv <= mult); i++) {
 		if (isdigit((unsigned char)inp[i]) > 0) {
-			*val = *val * 10 / decdiv +
-			       (int32_t)(inp[i] - '0') * mult / decdiv;
+			*val = *val * 10 / decdiv + (int32_t)(inp[i] - '0') * mult / decdiv;
 			if (decdiv > 1) {
 				mult /= 10;
 			}
@@ -462,11 +461,9 @@ static int cmd_errors(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	shell_print(sh, "Overvoltage:\t[%s]",
-		    ((errors & REGULATOR_ERROR_OVER_VOLTAGE) != 0U) ? "X"
-								    : " ");
+		    ((errors & REGULATOR_ERROR_OVER_VOLTAGE) != 0U) ? "X" : " ");
 	shell_print(sh, "Overcurrent:\t[%s]",
-		    ((errors & REGULATOR_ERROR_OVER_CURRENT) != 0U) ? "X"
-								    : " ");
+		    ((errors & REGULATOR_ERROR_OVER_CURRENT) != 0U) ? "X" : " ");
 	shell_print(sh, "Overtemp.:\t[%s]",
 		    ((errors & REGULATOR_ERROR_OVER_TEMP) != 0U) ? "X" : " ");
 
@@ -606,5 +603,4 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      cmd_shipmode, 2, 0),
 	SHELL_SUBCMD_SET_END);
 
-SHELL_CMD_REGISTER(regulator, &sub_regulator_cmds, "Regulator playground",
-		   NULL);
+SHELL_CMD_REGISTER(regulator, &sub_regulator_cmds, "Regulator playground", NULL);

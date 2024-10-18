@@ -13,9 +13,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(CCS811);
 
-int ccs811_attr_set(const struct device *dev,
-		    enum sensor_channel chan,
-		    enum sensor_attribute attr,
+int ccs811_attr_set(const struct device *dev, enum sensor_channel chan, enum sensor_attribute attr,
 		    const struct sensor_value *thr)
 {
 	struct ccs811_data *drv_data = dev->data;
@@ -30,15 +28,13 @@ int ccs811_attr_set(const struct device *dev,
 		rc = -ENOTSUP;
 	} else if (attr == SENSOR_ATTR_LOWER_THRESH) {
 		rc = -EINVAL;
-		if ((thr->val1 >= CCS811_CO2_MIN_PPM)
-		    && (thr->val1 <= CCS811_CO2_MAX_PPM)) {
+		if ((thr->val1 >= CCS811_CO2_MIN_PPM) && (thr->val1 <= CCS811_CO2_MAX_PPM)) {
 			drv_data->co2_l2m = thr->val1;
 			rc = 0;
 		}
 	} else if (attr == SENSOR_ATTR_UPPER_THRESH) {
 		rc = -EINVAL;
-		if ((thr->val1 >= CCS811_CO2_MIN_PPM)
-		    && (thr->val1 <= CCS811_CO2_MAX_PPM)) {
+		if ((thr->val1 >= CCS811_CO2_MIN_PPM) && (thr->val1 <= CCS811_CO2_MAX_PPM)) {
 			drv_data->co2_m2h = thr->val1;
 			rc = 0;
 		}
@@ -48,13 +44,10 @@ int ccs811_attr_set(const struct device *dev,
 	return rc;
 }
 
-static inline void setup_irq(const struct device *dev,
-			     bool enable)
+static inline void setup_irq(const struct device *dev, bool enable)
 {
 	const struct ccs811_config *config = dev->config;
-	unsigned int flags = enable
-			     ? GPIO_INT_LEVEL_ACTIVE
-			     : GPIO_INT_DISABLE;
+	unsigned int flags = enable ? GPIO_INT_LEVEL_ACTIVE : GPIO_INT_DISABLE;
 
 	gpio_pin_interrupt_configure_dt(&config->irq_gpio, flags);
 }
@@ -85,12 +78,9 @@ static void process_irq(const struct device *dev)
 	}
 }
 
-static void gpio_callback(const struct device *dev,
-			  struct gpio_callback *cb,
-			  uint32_t pins)
+static void gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	struct ccs811_data *data =
-		CONTAINER_OF(cb, struct ccs811_data, gpio_cb);
+	struct ccs811_data *data = CONTAINER_OF(cb, struct ccs811_data, gpio_cb);
 
 	ARG_UNUSED(pins);
 
@@ -121,8 +111,7 @@ static void work_cb(struct k_work *work)
 #error Unhandled trigger configuration
 #endif
 
-int ccs811_trigger_set(const struct device *dev,
-		       const struct sensor_trigger *trig,
+int ccs811_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler)
 {
 	struct ccs811_data *drv_data = dev->data;
@@ -143,15 +132,14 @@ int ccs811_trigger_set(const struct device *dev,
 	}
 
 	if (trig->type == SENSOR_TRIG_DATA_READY) {
-		rc = ccs811_mutate_meas_mode(dev, CCS811_MODE_DATARDY,
-					     CCS811_MODE_THRESH);
+		rc = ccs811_mutate_meas_mode(dev, CCS811_MODE_DATARDY, CCS811_MODE_THRESH);
 	} else if (trig->type == SENSOR_TRIG_THRESHOLD) {
 		rc = -EINVAL;
-		if ((drv_data->co2_l2m >= CCS811_CO2_MIN_PPM)
-		    && (drv_data->co2_l2m <= CCS811_CO2_MAX_PPM)
-		    && (drv_data->co2_m2h >= CCS811_CO2_MIN_PPM)
-		    && (drv_data->co2_m2h <= CCS811_CO2_MAX_PPM)
-		    && (drv_data->co2_l2m <= drv_data->co2_m2h)) {
+		if ((drv_data->co2_l2m >= CCS811_CO2_MIN_PPM) &&
+		    (drv_data->co2_l2m <= CCS811_CO2_MAX_PPM) &&
+		    (drv_data->co2_m2h >= CCS811_CO2_MIN_PPM) &&
+		    (drv_data->co2_m2h <= CCS811_CO2_MAX_PPM) &&
+		    (drv_data->co2_l2m <= drv_data->co2_m2h)) {
 			rc = ccs811_set_thresholds(dev);
 		}
 		if (rc == 0) {
@@ -195,11 +183,9 @@ int ccs811_init_interrupt(const struct device *dev)
 #if defined(CONFIG_CCS811_TRIGGER_OWN_THREAD)
 	k_sem_init(&drv_data->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
-	k_thread_create(&drv_data->thread, drv_data->thread_stack,
-			CONFIG_CCS811_THREAD_STACK_SIZE,
-			irq_thread, drv_data,
-			NULL, NULL, K_PRIO_COOP(CONFIG_CCS811_THREAD_PRIORITY),
-			0, K_NO_WAIT);
+	k_thread_create(&drv_data->thread, drv_data->thread_stack, CONFIG_CCS811_THREAD_STACK_SIZE,
+			irq_thread, drv_data, NULL, NULL,
+			K_PRIO_COOP(CONFIG_CCS811_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_CCS811_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = work_cb;
 #else

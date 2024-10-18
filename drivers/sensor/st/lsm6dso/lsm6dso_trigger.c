@@ -43,8 +43,7 @@ static int lsm6dso_enable_t_int(const struct device *dev, int enable)
 
 	lsm6dso_read_reg(ctx, LSM6DSO_INT2_CTRL, (uint8_t *)&int2_ctrl, 1);
 	int2_ctrl.int2_drdy_temp = enable;
-	return lsm6dso_write_reg(ctx, LSM6DSO_INT2_CTRL,
-				 (uint8_t *)&int2_ctrl, 1);
+	return lsm6dso_write_reg(ctx, LSM6DSO_INT2_CTRL, (uint8_t *)&int2_ctrl, 1);
 }
 #endif
 
@@ -67,20 +66,16 @@ static int lsm6dso_enable_xl_int(const struct device *dev, int enable)
 	if (cfg->int_pin == 1) {
 		lsm6dso_int1_ctrl_t int1_ctrl;
 
-		lsm6dso_read_reg(ctx, LSM6DSO_INT1_CTRL,
-				 (uint8_t *)&int1_ctrl, 1);
+		lsm6dso_read_reg(ctx, LSM6DSO_INT1_CTRL, (uint8_t *)&int1_ctrl, 1);
 
 		int1_ctrl.int1_drdy_xl = enable;
-		return lsm6dso_write_reg(ctx, LSM6DSO_INT1_CTRL,
-					 (uint8_t *)&int1_ctrl, 1);
+		return lsm6dso_write_reg(ctx, LSM6DSO_INT1_CTRL, (uint8_t *)&int1_ctrl, 1);
 	} else {
 		lsm6dso_int2_ctrl_t int2_ctrl;
 
-		lsm6dso_read_reg(ctx, LSM6DSO_INT2_CTRL,
-				 (uint8_t *)&int2_ctrl, 1);
+		lsm6dso_read_reg(ctx, LSM6DSO_INT2_CTRL, (uint8_t *)&int2_ctrl, 1);
 		int2_ctrl.int2_drdy_xl = enable;
-		return lsm6dso_write_reg(ctx, LSM6DSO_INT2_CTRL,
-					 (uint8_t *)&int2_ctrl, 1);
+		return lsm6dso_write_reg(ctx, LSM6DSO_INT2_CTRL, (uint8_t *)&int2_ctrl, 1);
 	}
 }
 
@@ -103,28 +98,23 @@ static int lsm6dso_enable_g_int(const struct device *dev, int enable)
 	if (cfg->int_pin == 1) {
 		lsm6dso_int1_ctrl_t int1_ctrl;
 
-		lsm6dso_read_reg(ctx, LSM6DSO_INT1_CTRL,
-				 (uint8_t *)&int1_ctrl, 1);
+		lsm6dso_read_reg(ctx, LSM6DSO_INT1_CTRL, (uint8_t *)&int1_ctrl, 1);
 		int1_ctrl.int1_drdy_g = enable;
-		return lsm6dso_write_reg(ctx, LSM6DSO_INT1_CTRL,
-					 (uint8_t *)&int1_ctrl, 1);
+		return lsm6dso_write_reg(ctx, LSM6DSO_INT1_CTRL, (uint8_t *)&int1_ctrl, 1);
 	} else {
 		lsm6dso_int2_ctrl_t int2_ctrl;
 
-		lsm6dso_read_reg(ctx, LSM6DSO_INT2_CTRL,
-				 (uint8_t *)&int2_ctrl, 1);
+		lsm6dso_read_reg(ctx, LSM6DSO_INT2_CTRL, (uint8_t *)&int2_ctrl, 1);
 		int2_ctrl.int2_drdy_g = enable;
-		return lsm6dso_write_reg(ctx, LSM6DSO_INT2_CTRL,
-					 (uint8_t *)&int2_ctrl, 1);
+		return lsm6dso_write_reg(ctx, LSM6DSO_INT2_CTRL, (uint8_t *)&int2_ctrl, 1);
 	}
 }
 
 /**
  * lsm6dso_trigger_set - link external trigger to event data ready
  */
-int lsm6dso_trigger_set(const struct device *dev,
-			  const struct sensor_trigger *trig,
-			  sensor_trigger_handler_t handler)
+int lsm6dso_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
+			sensor_trigger_handler_t handler)
 {
 	const struct lsm6dso_config *cfg = dev->config;
 	struct lsm6dso_data *lsm6dso = dev->data;
@@ -185,9 +175,9 @@ static void lsm6dso_handle_interrupt(const struct device *dev)
 
 		if ((status.xlda == 0) && (status.gda == 0)
 #if defined(CONFIG_LSM6DSO_ENABLE_TEMP)
-					&& (status.tda == 0)
+		    && (status.tda == 0)
 #endif
-					) {
+		) {
 			break;
 		}
 
@@ -206,15 +196,12 @@ static void lsm6dso_handle_interrupt(const struct device *dev)
 #endif
 	}
 
-	gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy,
-					GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
-static void lsm6dso_gpio_callback(const struct device *dev,
-				    struct gpio_callback *cb, uint32_t pins)
+static void lsm6dso_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	struct lsm6dso_data *lsm6dso =
-		CONTAINER_OF(cb, struct lsm6dso_data, gpio_cb);
+	struct lsm6dso_data *lsm6dso = CONTAINER_OF(cb, struct lsm6dso_data, gpio_cb);
 	const struct lsm6dso_config *cfg = lsm6dso->dev->config;
 
 	ARG_UNUSED(pins);
@@ -246,8 +233,7 @@ static void lsm6dso_thread(void *p1, void *p2, void *p3)
 #ifdef CONFIG_LSM6DSO_TRIGGER_GLOBAL_THREAD
 static void lsm6dso_work_cb(struct k_work *work)
 {
-	struct lsm6dso_data *lsm6dso =
-		CONTAINER_OF(work, struct lsm6dso_data, work);
+	struct lsm6dso_data *lsm6dso = CONTAINER_OF(work, struct lsm6dso_data, work);
 
 	lsm6dso_handle_interrupt(lsm6dso->dev);
 }
@@ -269,11 +255,9 @@ int lsm6dso_init_interrupt(const struct device *dev)
 #if defined(CONFIG_LSM6DSO_TRIGGER_OWN_THREAD)
 	k_sem_init(&lsm6dso->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
-	k_thread_create(&lsm6dso->thread, lsm6dso->thread_stack,
-			CONFIG_LSM6DSO_THREAD_STACK_SIZE,
-			lsm6dso_thread, lsm6dso,
-			NULL, NULL, K_PRIO_COOP(CONFIG_LSM6DSO_THREAD_PRIORITY),
-			0, K_NO_WAIT);
+	k_thread_create(&lsm6dso->thread, lsm6dso->thread_stack, CONFIG_LSM6DSO_THREAD_STACK_SIZE,
+			lsm6dso_thread, lsm6dso, NULL, NULL,
+			K_PRIO_COOP(CONFIG_LSM6DSO_THREAD_PRIORITY), 0, K_NO_WAIT);
 	k_thread_name_set(&lsm6dso->thread, "lsm6dso");
 #elif defined(CONFIG_LSM6DSO_TRIGGER_GLOBAL_THREAD)
 	lsm6dso->work.handler = lsm6dso_work_cb;
@@ -285,20 +269,17 @@ int lsm6dso_init_interrupt(const struct device *dev)
 		return ret;
 	}
 
-	gpio_init_callback(&lsm6dso->gpio_cb,
-			   lsm6dso_gpio_callback,
-			   BIT(cfg->gpio_drdy.pin));
+	gpio_init_callback(&lsm6dso->gpio_cb, lsm6dso_gpio_callback, BIT(cfg->gpio_drdy.pin));
 
 	if (gpio_add_callback(cfg->gpio_drdy.port, &lsm6dso->gpio_cb) < 0) {
 		LOG_DBG("Could not set gpio callback");
 		return -EIO;
 	}
 
-
 	/* set data ready mode on int1/int2 */
 	LOG_DBG("drdy_pulsed is %d", (int)cfg->drdy_pulsed);
-	lsm6dso_dataready_pulsed_t mode = cfg->drdy_pulsed ? LSM6DSO_DRDY_PULSED :
-							     LSM6DSO_DRDY_LATCHED;
+	lsm6dso_dataready_pulsed_t mode =
+		cfg->drdy_pulsed ? LSM6DSO_DRDY_PULSED : LSM6DSO_DRDY_LATCHED;
 
 	ret = lsm6dso_data_ready_mode_set(ctx, mode);
 	if (ret < 0) {
@@ -306,6 +287,5 @@ int lsm6dso_init_interrupt(const struct device *dev)
 		return ret;
 	}
 
-	return gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy,
-					       GPIO_INT_EDGE_TO_ACTIVE);
+	return gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy, GPIO_INT_EDGE_TO_ACTIVE);
 }

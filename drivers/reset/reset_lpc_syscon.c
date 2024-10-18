@@ -13,11 +13,11 @@
 #include <fsl_device_registers.h>
 
 #define LPC_RESET_OFFSET(id) (id >> 16)
-#define LPC_RESET_BIT(id) (BIT(id & 0xFFFF))
+#define LPC_RESET_BIT(id)    (BIT(id & 0xFFFF))
 
 static int reset_nxp_syscon_status(const struct device *dev, uint32_t id, uint8_t *status)
 {
-	const volatile uint32_t *ctrl_reg = ((uint32_t *)dev->config)+(LPC_RESET_OFFSET(id));
+	const volatile uint32_t *ctrl_reg = ((uint32_t *)dev->config) + (LPC_RESET_OFFSET(id));
 	*status = (uint8_t)FIELD_GET((uint32_t)LPC_RESET_BIT(id), *ctrl_reg);
 
 	return 0;
@@ -59,7 +59,5 @@ static const struct reset_driver_api reset_nxp_syscon_driver_api = {
 	.line_toggle = reset_nxp_syscon_line_toggle,
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL,
-			(void *)(DT_REG_ADDR(DT_INST_PARENT(0)) + 0x100),
-			PRE_KERNEL_1, CONFIG_RESET_INIT_PRIORITY,
-			&reset_nxp_syscon_driver_api);
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, (void *)(DT_REG_ADDR(DT_INST_PARENT(0)) + 0x100),
+		      PRE_KERNEL_1, CONFIG_RESET_INIT_PRIORITY, &reset_nxp_syscon_driver_api);

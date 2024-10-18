@@ -391,7 +391,7 @@ static const struct gpio_driver_api gpio_ra_driver_api = {
 
 #define GPIO_RA_DECL_PINS(n, p, i)                                                                 \
 	const uint8_t _CONCAT(n, ___pins##i[]) = {DT_FOREACH_PROP_ELEM_SEP(                        \
-		n, _CONCAT(DT_STRING_TOKEN_BY_IDX(n, p, i), _pins), DT_PROP_BY_IDX, (,))};
+		n, _CONCAT(DT_STRING_TOKEN_BY_IDX(n, p, i), _pins), DT_PROP_BY_IDX, (, ))};
 
 #define GPIO_RA_IRQ_INFO(n, p, i)                                                                  \
 	{                                                                                          \
@@ -419,9 +419,10 @@ static const struct gpio_driver_api gpio_ra_driver_api = {
 	struct gpio_ra_irq_info gpio_ra_irq_info_##idx[] = {                                       \
 		DT_INST_FOREACH_PROP_ELEM(idx, interrupt_names, GPIO_RA_IRQ_INFO)};                \
 	static struct gpio_ra_config gpio_ra_config_##idx = {                                      \
-		.common = {                                                                        \
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),                     \
-		},                                                                                 \
+		.common =                                                                          \
+			{                                                                          \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),             \
+			},                                                                         \
 		.regs = DT_INST_REG_ADDR(idx),                                                     \
 		.port = (DT_INST_REG_ADDR(idx) - DT_REG_ADDR(DT_NODELABEL(ioport0))) /             \
 			DT_INST_REG_SIZE(idx),                                                     \

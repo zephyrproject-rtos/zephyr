@@ -21,8 +21,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_infineon_cat1, CONFIG_I2C_LOG_LEVEL);
 
-#define I2C_CAT1_EVENTS_MASK  (CYHAL_I2C_MASTER_WR_CMPLT_EVENT | CYHAL_I2C_MASTER_RD_CMPLT_EVENT | \
-			       CYHAL_I2C_MASTER_ERR_EVENT)
+#define I2C_CAT1_EVENTS_MASK                                                                       \
+	(CYHAL_I2C_MASTER_WR_CMPLT_EVENT | CYHAL_I2C_MASTER_RD_CMPLT_EVENT |                       \
+	 CYHAL_I2C_MASTER_ERR_EVENT)
 
 #define I2C_CAT1_SLAVE_EVENTS_MASK                                                                 \
 	(CYHAL_I2C_SLAVE_READ_EVENT | CYHAL_I2C_SLAVE_WRITE_EVENT |                                \
@@ -31,15 +32,15 @@ LOG_MODULE_REGISTER(i2c_infineon_cat1, CONFIG_I2C_LOG_LEVEL);
 	 CYHAL_I2C_SLAVE_ERR_EVENT)
 
 /* States for ASYNC operations */
-#define CAT1_I2C_PENDING_NONE           (0U)
-#define CAT1_I2C_PENDING_RX             (1U)
-#define CAT1_I2C_PENDING_TX             (2U)
-#define CAT1_I2C_PENDING_TX_RX          (3U)
+#define CAT1_I2C_PENDING_NONE  (0U)
+#define CAT1_I2C_PENDING_RX    (1U)
+#define CAT1_I2C_PENDING_TX    (2U)
+#define CAT1_I2C_PENDING_TX_RX (3U)
 
 /* I2C speed */
-#define CAT1_I2C_SPEED_STANDARD_HZ      (100000UL)
-#define CAT1_I2C_SPEED_FAST_HZ          (400000UL)
-#define CAT1_I2C_SPEED_FAST_PLUS_HZ     (1000000UL)
+#define CAT1_I2C_SPEED_STANDARD_HZ  (100000UL)
+#define CAT1_I2C_SPEED_FAST_HZ      (400000UL)
+#define CAT1_I2C_SPEED_FAST_PLUS_HZ (1000000UL)
 
 /* Data structure */
 struct ifx_cat1_i2c_data {
@@ -95,7 +96,7 @@ static int32_t _get_hw_block_num(CySCB_Type *reg_addr)
 #ifdef CONFIG_I2C_INFINEON_CAT1_ASYNC
 static void ifx_master_event_handler(void *callback_arg, cyhal_i2c_event_t event)
 {
-	const struct device *dev = (const struct device *) callback_arg;
+	const struct device *dev = (const struct device *)callback_arg;
 	struct ifx_cat1_i2c_data *data = dev->data;
 
 	if (((CYHAL_I2C_MASTER_ERR_EVENT | CYHAL_I2C_SLAVE_ERR_EVENT) & event) != 0U) {
@@ -316,11 +317,10 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 		/* Initiate master write and read transfer
 		 * using tx_buff and rx_buff respectively
 		 */
-		rslt = cyhal_i2c_master_transfer_async(&data->obj, addr,
-						       (tx_msg == NULL) ? NULL : tx_msg->buf,
-						       (tx_msg == NULL) ? 0u : tx_msg->len,
-						       (rx_msg == NULL) ? NULL : rx_msg->buf,
-						       (rx_msg == NULL) ? 0u : rx_msg->len);
+		rslt = cyhal_i2c_master_transfer_async(
+			&data->obj, addr, (tx_msg == NULL) ? NULL : tx_msg->buf,
+			(tx_msg == NULL) ? 0u : tx_msg->len, (rx_msg == NULL) ? NULL : rx_msg->buf,
+			(rx_msg == NULL) ? 0u : rx_msg->len);
 
 		if (rslt != CY_RSLT_SUCCESS) {
 			k_sem_give(&data->operation_sem);
@@ -345,19 +345,19 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 	}
 
 	/* Disable I2C Interrupt */
-	cyhal_i2c_enable_event(&data->obj, (cyhal_i2c_event_t)
-			       I2C_CAT1_EVENTS_MASK, config->irq_priority, false);
+	cyhal_i2c_enable_event(&data->obj, (cyhal_i2c_event_t)I2C_CAT1_EVENTS_MASK,
+			       config->irq_priority, false);
 #else
 	for (uint32_t i = 0u; i < num_msgs; i++) {
 		bool stop_flag = ((msg[i].flags & I2C_MSG_STOP) != 0u) ? true : false;
 
 		if ((msg[i].flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
-			rslt = cyhal_i2c_master_write(&data->obj,
-						      addr, msg[i].buf, msg[i].len, 0, stop_flag);
+			rslt = cyhal_i2c_master_write(&data->obj, addr, msg[i].buf, msg[i].len, 0,
+						      stop_flag);
 		}
 		if ((msg[i].flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
-			rslt = cyhal_i2c_master_read(&data->obj,
-						     addr, msg[i].buf, msg[i].len, 0, stop_flag);
+			rslt = cyhal_i2c_master_read(&data->obj, addr, msg[i].buf, msg[i].len, 0,
+						     stop_flag);
 		}
 
 		if (rslt != CY_RSLT_SUCCESS) {
@@ -389,7 +389,6 @@ static int ifx_cat1_i2c_init(const struct device *dev)
 	/* Dedicate SCB HW resource */
 	data->hw_resource.type = CYHAL_RSC_SCB;
 	data->hw_resource.block_num = _get_hw_block_num(config->reg_addr);
-
 
 	/* Configure semaphores */
 	ret = k_sem_init(&data->transfer_sem, 0, 1);
@@ -517,7 +516,7 @@ static const struct i2c_driver_api i2c_cat1_driver_api = {
 	};                                                                                         \
                                                                                                    \
 	I2C_DEVICE_DT_INST_DEFINE(n, ifx_cat1_i2c_init, NULL, &ifx_cat1_i2c_data##n,               \
-				  &i2c_cat1_cfg_##n, POST_KERNEL,                                  \
-				  CONFIG_I2C_INIT_PRIORITY, &i2c_cat1_driver_api);
+				  &i2c_cat1_cfg_##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,        \
+				  &i2c_cat1_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_CAT1_I2C_INIT)

@@ -197,8 +197,9 @@ static int wkpu_nxp_s32_init(const struct device *dev)
 #define WKPU_NXP_S32_INIT_DEVICE(n)                                                                \
 	static const struct wkpu_nxp_s32_config wkpu_nxp_s32_conf_##n = {                          \
 		.base = DT_INST_REG_ADDR(n),                                                       \
-		.filter_enable = LISTIFY(CONFIG_NXP_S32_WKPU_SOURCES_MAX,                          \
-					 WKPU_NXP_S32_FILTER_CONFIG, (|), n),                      \
+		.filter_enable =                                                                   \
+			LISTIFY(CONFIG_NXP_S32_WKPU_SOURCES_MAX,                          \
+					 WKPU_NXP_S32_FILTER_CONFIG, (|), n), \
 	};                                                                                         \
 	static struct wkpu_nxp_s32_cb wkpu_nxp_s32_cb_##n[CONFIG_NXP_S32_WKPU_SOURCES_MAX];        \
 	static struct wkpu_nxp_s32_data wkpu_nxp_s32_data_##n = {                                  \
@@ -215,7 +216,7 @@ static int wkpu_nxp_s32_init(const struct device *dev)
                                                                                                    \
 		IRQ_CONNECT(DT_INST_IRQ(n, irq), DT_INST_IRQ(n, priority),                         \
 			    wkpu_nxp_s32_interrupt_handler, DEVICE_DT_INST_GET(n),                 \
-			    COND_CODE_1(CONFIG_GIC, (DT_INST_IRQ(n, flags)), (0U)));               \
+			    COND_CODE_1(CONFIG_GIC, (DT_INST_IRQ(n, flags)), (0U)));                  \
 		irq_enable(DT_INST_IRQ(n, irq));                                                   \
                                                                                                    \
 		return 0;                                                                          \

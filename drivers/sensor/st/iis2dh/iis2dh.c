@@ -30,24 +30,24 @@ LOG_MODULE_REGISTER(IIS2DH, CONFIG_SENSOR_LOG_LEVEL);
 static const uint32_t iis2dh_gain[3][4] = {
 	{
 		/* HR mode */
-		980/16,		/* 2G */
-		1950/16,	/* 4G */
-		3910/16,	/* 8G */
-		11720/16,	/* 16G */
+		980 / 16,   /* 2G */
+		1950 / 16,  /* 4G */
+		3910 / 16,  /* 8G */
+		11720 / 16, /* 16G */
 	},
 	{
 		/* NM mode */
-		3910/64,	/* 2G */
-		7810/64,	/* 4G */
-		15630/64,	/* 8G */
-		46950/64,	/* 16G */
+		3910 / 64,  /* 2G */
+		7810 / 64,  /* 4G */
+		15630 / 64, /* 8G */
+		46950 / 64, /* 16G */
 	},
 	{
 		/* LP mode */
-		15630/256,	/* 2G */
-		31250/256,	/* 4G */
-		62500/256,	/* 8G */
-		188680/256,	/* 16G */
+		15630 / 256,  /* 2G */
+		31250 / 256,  /* 4G */
+		62500 / 256,  /* 8G */
+		188680 / 256, /* 16G */
 	},
 };
 
@@ -101,8 +101,7 @@ static int iis2dh_set_odr(const struct device *dev, uint16_t odr)
 }
 #endif
 
-static inline void iis2dh_convert(struct sensor_value *val, int raw_val,
-				  uint32_t gain)
+static inline void iis2dh_convert(struct sensor_value *val, int raw_val, uint32_t gain)
 {
 	int64_t dval;
 
@@ -113,8 +112,7 @@ static inline void iis2dh_convert(struct sensor_value *val, int raw_val,
 	val->val2 = dval % 1000000LL;
 }
 
-static inline void iis2dh_channel_get_acc(const struct device *dev,
-					  enum sensor_channel chan,
+static inline void iis2dh_channel_get_acc(const struct device *dev, enum sensor_channel chan,
 					  struct sensor_value *val)
 {
 	int i;
@@ -133,17 +131,17 @@ static inline void iis2dh_channel_get_acc(const struct device *dev,
 		ofs_start = ofs_stop = 2U;
 		break;
 	default:
-		ofs_start = 0U; ofs_stop = 2U;
+		ofs_start = 0U;
+		ofs_stop = 2U;
 		break;
 	}
 
-	for (i = ofs_start; i <= ofs_stop ; i++) {
+	for (i = ofs_start; i <= ofs_stop; i++) {
 		iis2dh_convert(pval++, iis2dh->acc[i], iis2dh->gain);
 	}
 }
 
-static int iis2dh_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
+static int iis2dh_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	switch (chan) {
@@ -162,8 +160,7 @@ static int iis2dh_channel_get(const struct device *dev,
 }
 
 static int iis2dh_config(const struct device *dev, enum sensor_channel chan,
-			 enum sensor_attribute attr,
-			 const struct sensor_value *val)
+			 enum sensor_attribute attr, const struct sensor_value *val)
 {
 	switch (attr) {
 #if (CONFIG_IIS2DH_RANGE == 0)
@@ -183,8 +180,7 @@ static int iis2dh_config(const struct device *dev, enum sensor_channel chan,
 }
 
 static int iis2dh_attr_set(const struct device *dev, enum sensor_channel chan,
-			   enum sensor_attribute attr,
-			   const struct sensor_value *val)
+			   enum sensor_attribute attr, const struct sensor_value *val)
 {
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
@@ -200,8 +196,7 @@ static int iis2dh_attr_set(const struct device *dev, enum sensor_channel chan,
 	return -ENOTSUP;
 }
 
-static int iis2dh_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
+static int iis2dh_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct iis2dh_data *iis2dh = dev->data;
 	int16_t buf[3];
@@ -302,23 +297,21 @@ static int iis2dh_init(const struct device *dev)
 
 #define IIS2DH_SPI(inst)                                                                           \
 	(.spi = SPI_DT_SPEC_INST_GET(                                                              \
-		 0, SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8), 0),)
+		 0, SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8), 0), )
 
-#define IIS2DH_I2C(inst) (.i2c = I2C_DT_SPEC_INST_GET(inst),)
+#define IIS2DH_I2C(inst) (.i2c = I2C_DT_SPEC_INST_GET(inst), )
 
-#define IIS2DH_DEFINE(inst)									\
-	static struct iis2dh_data iis2dh_data_##inst;						\
-												\
-	static const struct iis2dh_device_config iis2dh_device_config_##inst = {		\
-		COND_CODE_1(DT_INST_ON_BUS(inst, i2c), IIS2DH_I2C(inst), ())			\
-		COND_CODE_1(DT_INST_ON_BUS(inst, spi), IIS2DH_SPI(inst), ())			\
-		.pm = CONFIG_IIS2DH_POWER_MODE,							\
-		IF_ENABLED(CONFIG_IIS2DH_TRIGGER,						\
-			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, drdy_gpios, { 0 }),))	\
-	};											\
-												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, iis2dh_init, NULL,					\
-			      &iis2dh_data_##inst, &iis2dh_device_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &iis2dh_driver_api);			\
+#define IIS2DH_DEFINE(inst)                                                                        \
+	static struct iis2dh_data iis2dh_data_##inst;                                              \
+                                                                                                   \
+	static const struct iis2dh_device_config iis2dh_device_config_##inst = {                   \
+		COND_CODE_1(DT_INST_ON_BUS(inst, i2c), IIS2DH_I2C(inst), ())                                                                        \
+				COND_CODE_1(DT_INST_ON_BUS(inst, spi), IIS2DH_SPI(inst), ()) .pm = CONFIG_IIS2DH_POWER_MODE,       \
+						   IF_ENABLED(CONFIG_IIS2DH_TRIGGER,						\
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, drdy_gpios, { 0 }),)) };  \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, iis2dh_init, NULL, &iis2dh_data_##inst,                 \
+				     &iis2dh_device_config_##inst, POST_KERNEL,                    \
+				     CONFIG_SENSOR_INIT_PRIORITY, &iis2dh_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IIS2DH_DEFINE)

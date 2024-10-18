@@ -11,25 +11,25 @@
 #define DT_DRV_COMPAT intel_adsp_gpdma
 
 #define GPDMA_CTL_OFFSET 0x0004
-#define GPDMA_CTL_FDCGB BIT(0)
-#define GPDMA_CTL_DCGD BIT(30)
+#define GPDMA_CTL_FDCGB  BIT(0)
+#define GPDMA_CTL_DCGD   BIT(30)
 
 /* TODO make device tree defined? */
-#define GPDMA_CHLLPC_OFFSET(channel) (0x0010 + channel*0x10)
-#define GPDMA_CHLLPC_EN BIT(7)
-#define GPDMA_CHLLPC_DHRS(x) SET_BITS(6, 0, x)
+#define GPDMA_CHLLPC_OFFSET(channel) (0x0010 + channel * 0x10)
+#define GPDMA_CHLLPC_EN              BIT(7)
+#define GPDMA_CHLLPC_DHRS(x)         SET_BITS(6, 0, x)
 
 /* TODO make device tree defined? */
-#define GPDMA_CHLLPL(channel) (0x0018 + channel*0x10)
-#define GPDMA_CHLLPU(channel) (0x001c + channel*0x10)
+#define GPDMA_CHLLPL(channel) (0x0018 + channel * 0x10)
+#define GPDMA_CHLLPU(channel) (0x001c + channel * 0x10)
 
-#define GPDMA_OSEL(x) SET_BITS(25, 24, x)
-#define SHIM_CLKCTL_LPGPDMA_SPA	BIT(0)
-#define SHIM_CLKCTL_LPGPDMA_CPA	BIT(8)
+#define GPDMA_OSEL(x)           SET_BITS(25, 24, x)
+#define SHIM_CLKCTL_LPGPDMA_SPA BIT(0)
+#define SHIM_CLKCTL_LPGPDMA_CPA BIT(8)
 
-# define DSP_INIT_LPGPDMA(x)	  (0x71A60 + (2*x))
-# define LPGPDMA_CTLOSEL_FLAG	  BIT(15)
-# define LPGPDMA_CHOSEL_FLAG	  0xFF
+#define DSP_INIT_LPGPDMA(x)  (0x71A60 + (2 * x))
+#define LPGPDMA_CTLOSEL_FLAG BIT(15)
+#define LPGPDMA_CHOSEL_FLAG  0xFF
 
 #include "dma_dw_common.h"
 #include <zephyr/pm/device.h>
@@ -39,7 +39,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(dma_intel_adsp_gpdma);
-
 
 /* Device run time data */
 struct intel_adsp_gpdma_data {
@@ -86,19 +85,17 @@ static void intel_adsp_gpdma_dump_registers(const struct device *dev, uint32_t c
 }
 #endif
 
-static void intel_adsp_gpdma_llp_config(const struct device *dev,
-					uint32_t channel, uint32_t dma_slot)
+static void intel_adsp_gpdma_llp_config(const struct device *dev, uint32_t channel,
+					uint32_t dma_slot)
 {
 #ifdef CONFIG_DMA_INTEL_ADSP_GPDMA_HAS_LLP
 	const struct intel_adsp_gpdma_cfg *const dev_cfg = dev->config;
 
-	dw_write(dev_cfg->shim, GPDMA_CHLLPC_OFFSET(channel),
-		 GPDMA_CHLLPC_DHRS(dma_slot));
+	dw_write(dev_cfg->shim, GPDMA_CHLLPC_OFFSET(channel), GPDMA_CHLLPC_DHRS(dma_slot));
 #endif
 }
 
-static inline void intel_adsp_gpdma_llp_enable(const struct device *dev,
-					       uint32_t channel)
+static inline void intel_adsp_gpdma_llp_enable(const struct device *dev, uint32_t channel)
 {
 #ifdef CONFIG_DMA_INTEL_ADSP_GPDMA_HAS_LLP
 	const struct intel_adsp_gpdma_cfg *const dev_cfg = dev->config;
@@ -106,28 +103,24 @@ static inline void intel_adsp_gpdma_llp_enable(const struct device *dev,
 
 	val = dw_read(dev_cfg->shim, GPDMA_CHLLPC_OFFSET(channel));
 	if (!(val & GPDMA_CHLLPC_EN)) {
-		dw_write(dev_cfg->shim, GPDMA_CHLLPC_OFFSET(channel),
-			 val | GPDMA_CHLLPC_EN);
+		dw_write(dev_cfg->shim, GPDMA_CHLLPC_OFFSET(channel), val | GPDMA_CHLLPC_EN);
 	}
 #endif
 }
 
-static inline void intel_adsp_gpdma_llp_disable(const struct device *dev,
-						uint32_t channel)
+static inline void intel_adsp_gpdma_llp_disable(const struct device *dev, uint32_t channel)
 {
 #ifdef CONFIG_DMA_INTEL_ADSP_GPDMA_HAS_LLP
 	const struct intel_adsp_gpdma_cfg *const dev_cfg = dev->config;
 	uint32_t val;
 
 	val = dw_read(dev_cfg->shim, GPDMA_CHLLPC_OFFSET(channel));
-	dw_write(dev_cfg->shim, GPDMA_CHLLPC_OFFSET(channel),
-		 val | GPDMA_CHLLPC_EN);
+	dw_write(dev_cfg->shim, GPDMA_CHLLPC_OFFSET(channel), val | GPDMA_CHLLPC_EN);
 #endif
 }
 
-static inline void intel_adsp_gpdma_llp_read(const struct device *dev,
-					uint32_t channel, uint32_t *llp_l,
-					uint32_t *llp_u)
+static inline void intel_adsp_gpdma_llp_read(const struct device *dev, uint32_t channel,
+					     uint32_t *llp_l, uint32_t *llp_u)
 {
 #ifdef CONFIG_DMA_INTEL_ADSP_GPDMA_HAS_LLP
 	const struct intel_adsp_gpdma_cfg *const dev_cfg = dev->config;
@@ -137,9 +130,8 @@ static inline void intel_adsp_gpdma_llp_read(const struct device *dev,
 #endif
 }
 
-
 static int intel_adsp_gpdma_config(const struct device *dev, uint32_t channel,
-				struct dma_config *cfg)
+				   struct dma_config *cfg)
 {
 	int res = dw_dma_config(dev, channel, cfg);
 
@@ -213,8 +205,8 @@ static int intel_adsp_gpdma_stop(const struct device *dev, uint32_t channel)
 	return ret;
 }
 
-static int intel_adsp_gpdma_copy(const struct device *dev, uint32_t channel,
-		    uint32_t src, uint32_t dst, size_t size)
+static int intel_adsp_gpdma_copy(const struct device *dev, uint32_t channel, uint32_t src,
+				 uint32_t dst, size_t size)
 {
 	struct dw_dma_dev_data *const dev_data = dev->data;
 	struct dw_dma_chan_data *chan_data;
@@ -234,7 +226,8 @@ static int intel_adsp_gpdma_copy(const struct device *dev, uint32_t channel,
 
 	chan_data->ptr_data.current_ptr += size;
 	if (chan_data->ptr_data.current_ptr >= chan_data->ptr_data.end_ptr) {
-		chan_data->ptr_data.current_ptr = chan_data->ptr_data.start_ptr +
+		chan_data->ptr_data.current_ptr =
+			chan_data->ptr_data.start_ptr +
 			(chan_data->ptr_data.current_ptr - chan_data->ptr_data.end_ptr);
 	}
 
@@ -313,8 +306,7 @@ static int intel_adsp_gpdma_enable(const struct device *dev)
 
 	sys_write32(SHIM_CLKCTL_LPGPDMA_SPA, reg);
 
-	if (!WAIT_FOR((sys_read32(reg) & SHIM_CLKCTL_LPGPDMA_CPA), 10000,
-		      k_busy_wait(1))) {
+	if (!WAIT_FOR((sys_read32(reg) & SHIM_CLKCTL_LPGPDMA_CPA), 10000, k_busy_wait(1))) {
 		return -1;
 	}
 
@@ -431,9 +423,10 @@ static inline void ace_gpdma_intc_unmask(void)
 	ACE_DINT[0].ie[ACE_INTL_GPDMA] = BIT(0);
 }
 #else
-static inline void ace_gpdma_intc_unmask(void) {}
+static inline void ace_gpdma_intc_unmask(void)
+{
+}
 #endif
-
 
 int intel_adsp_gpdma_init(const struct device *dev)
 {
@@ -492,77 +485,82 @@ static const struct dma_driver_api intel_adsp_gpdma_driver_api = {
 	.get_attribute = intel_adsp_gpdma_get_attribute,
 };
 
-#define INTEL_ADSP_GPDMA_CHAN_ARB_DATA(inst)				\
-	static struct dw_drv_plat_data dmac##inst = {			\
-		.chan[0] = {						\
-			.class  = 6,					\
-			.weight = 0,					\
-		},							\
-		.chan[1] = {						\
-			.class  = 6,					\
-			.weight = 0,					\
-		},							\
-		.chan[2] = {						\
-			.class  = 6,					\
-			.weight = 0,					\
-		},							\
-		.chan[3] = {						\
-			.class  = 6,					\
-			.weight = 0,					\
-		},							\
-		.chan[4] = {						\
-			.class  = 6,					\
-			.weight = 0,					\
-		},							\
-		.chan[5] = {						\
-			.class  = 6,					\
-			.weight = 0,					\
-		},							\
-		.chan[6] = {						\
-			.class  = 6,					\
-			.weight = 0,					\
-		},							\
-		.chan[7] = {						\
-			.class  = 6,					\
-			.weight = 0,					\
-		},							\
+#define INTEL_ADSP_GPDMA_CHAN_ARB_DATA(inst)                                                       \
+	static struct dw_drv_plat_data dmac##inst = {                                              \
+		.chan[0] =                                                                         \
+			{                                                                          \
+				.class = 6,                                                        \
+				.weight = 0,                                                       \
+			},                                                                         \
+		.chan[1] =                                                                         \
+			{                                                                          \
+				.class = 6,                                                        \
+				.weight = 0,                                                       \
+			},                                                                         \
+		.chan[2] =                                                                         \
+			{                                                                          \
+				.class = 6,                                                        \
+				.weight = 0,                                                       \
+			},                                                                         \
+		.chan[3] =                                                                         \
+			{                                                                          \
+				.class = 6,                                                        \
+				.weight = 0,                                                       \
+			},                                                                         \
+		.chan[4] =                                                                         \
+			{                                                                          \
+				.class = 6,                                                        \
+				.weight = 0,                                                       \
+			},                                                                         \
+		.chan[5] =                                                                         \
+			{                                                                          \
+				.class = 6,                                                        \
+				.weight = 0,                                                       \
+			},                                                                         \
+		.chan[6] =                                                                         \
+			{                                                                          \
+				.class = 6,                                                        \
+				.weight = 0,                                                       \
+			},                                                                         \
+		.chan[7] =                                                                         \
+			{                                                                          \
+				.class = 6,                                                        \
+				.weight = 0,                                                       \
+			},                                                                         \
 	}
 
-#define INTEL_ADSP_GPDMA_INIT(inst)					\
-	INTEL_ADSP_GPDMA_CHAN_ARB_DATA(inst);				\
-	static void intel_adsp_gpdma##inst##_irq_config(void);		\
-									\
-	static const struct intel_adsp_gpdma_cfg intel_adsp_gpdma##inst##_config = {\
-		.dw_cfg = {						\
-			.base = DT_INST_REG_ADDR(inst),		\
-			.irq_config = intel_adsp_gpdma##inst##_irq_config,\
-		},							\
-		.shim = DT_INST_PROP_BY_IDX(inst, shim, 0),		\
-	};								\
-									\
-	static struct intel_adsp_gpdma_data intel_adsp_gpdma##inst##_data = {\
-		.dw_data = {						\
-			.channel_data = &dmac##inst,			\
-		},							\
-	};								\
-									\
-	PM_DEVICE_DT_INST_DEFINE(inst, gpdma_pm_action);		\
-									\
-	DEVICE_DT_INST_DEFINE(inst,					\
-			      &intel_adsp_gpdma_init,			\
-			      PM_DEVICE_DT_INST_GET(inst),		\
-			      &intel_adsp_gpdma##inst##_data,		\
-			      &intel_adsp_gpdma##inst##_config, POST_KERNEL,\
-			      CONFIG_DMA_INIT_PRIORITY,		\
-			      &intel_adsp_gpdma_driver_api);		\
-									\
-	static void intel_adsp_gpdma##inst##_irq_config(void)		\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(inst),			\
-			    DT_INST_IRQ(inst, priority), dw_dma_isr,	\
-			    DEVICE_DT_INST_GET(inst),			\
-			    DT_INST_IRQ(inst, sense));			\
-		irq_enable(DT_INST_IRQN(inst));			\
+#define INTEL_ADSP_GPDMA_INIT(inst)                                                                \
+	INTEL_ADSP_GPDMA_CHAN_ARB_DATA(inst);                                                      \
+	static void intel_adsp_gpdma##inst##_irq_config(void);                                     \
+                                                                                                   \
+	static const struct intel_adsp_gpdma_cfg intel_adsp_gpdma##inst##_config = {               \
+		.dw_cfg =                                                                          \
+			{                                                                          \
+				.base = DT_INST_REG_ADDR(inst),                                    \
+				.irq_config = intel_adsp_gpdma##inst##_irq_config,                 \
+			},                                                                         \
+		.shim = DT_INST_PROP_BY_IDX(inst, shim, 0),                                        \
+	};                                                                                         \
+                                                                                                   \
+	static struct intel_adsp_gpdma_data intel_adsp_gpdma##inst##_data = {                      \
+		.dw_data =                                                                         \
+			{                                                                          \
+				.channel_data = &dmac##inst,                                       \
+			},                                                                         \
+	};                                                                                         \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(inst, gpdma_pm_action);                                           \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &intel_adsp_gpdma_init, PM_DEVICE_DT_INST_GET(inst),           \
+			      &intel_adsp_gpdma##inst##_data, &intel_adsp_gpdma##inst##_config,    \
+			      POST_KERNEL, CONFIG_DMA_INIT_PRIORITY,                               \
+			      &intel_adsp_gpdma_driver_api);                                       \
+                                                                                                   \
+	static void intel_adsp_gpdma##inst##_irq_config(void)                                      \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), dw_dma_isr,           \
+			    DEVICE_DT_INST_GET(inst), DT_INST_IRQ(inst, sense));                   \
+		irq_enable(DT_INST_IRQN(inst));                                                    \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(INTEL_ADSP_GPDMA_INIT)

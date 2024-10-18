@@ -12,30 +12,26 @@
 
 LOG_MODULE_DECLARE(flash_gd32);
 
-#define GD32_NV_FLASH_V1_NODE		DT_INST(0, gd_gd32_nv_flash_v1)
-#define GD32_NV_FLASH_V1_TIMEOUT	DT_PROP(GD32_NV_FLASH_V1_NODE, max_erase_time_ms)
-#define GD32_NV_FLASH_V1_PAGE_SIZE	DT_PROP(GD32_NV_FLASH_V1_NODE, page_size)
+#define GD32_NV_FLASH_V1_NODE      DT_INST(0, gd_gd32_nv_flash_v1)
+#define GD32_NV_FLASH_V1_TIMEOUT   DT_PROP(GD32_NV_FLASH_V1_NODE, max_erase_time_ms)
+#define GD32_NV_FLASH_V1_PAGE_SIZE DT_PROP(GD32_NV_FLASH_V1_NODE, page_size)
 
-#if defined(CONFIG_SOC_SERIES_GD32E10X) || \
-	defined(CONFIG_SOC_SERIES_GD32E50X)
+#if defined(CONFIG_SOC_SERIES_GD32E10X) || defined(CONFIG_SOC_SERIES_GD32E50X)
 /* Some GD32 FMC v1 series require offset and len to word aligned. */
 #define GD32_FMC_V1_WORK_ALIGNED
 #endif
 
 #ifdef FLASH_GD32_FMC_WORK_ALIGNED
-#define GD32_FMC_V1_WRITE_ERR	(FMC_STAT_PGERR | FMC_STAT_WPERR | FMC_STAT_PGAERR)
+#define GD32_FMC_V1_WRITE_ERR (FMC_STAT_PGERR | FMC_STAT_WPERR | FMC_STAT_PGAERR)
 #else
-#define GD32_FMC_V1_WRITE_ERR	(FMC_STAT_PGERR | FMC_STAT_WPERR)
+#define GD32_FMC_V1_WRITE_ERR (FMC_STAT_PGERR | FMC_STAT_WPERR)
 #endif
-#define GD32_FMC_V1_ERASE_ERR	FMC_STAT_WPERR
+#define GD32_FMC_V1_ERASE_ERR FMC_STAT_WPERR
 
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 static const struct flash_pages_layout gd32_fmc_v1_layout[] = {
-	{
-	.pages_size = GD32_NV_FLASH_V1_PAGE_SIZE,
-	.pages_count = SOC_NV_FLASH_SIZE / GD32_NV_FLASH_V1_PAGE_SIZE
-	}
-};
+	{.pages_size = GD32_NV_FLASH_V1_PAGE_SIZE,
+	 .pages_count = SOC_NV_FLASH_SIZE / GD32_NV_FLASH_V1_PAGE_SIZE}};
 #endif
 
 static inline void gd32_fmc_v1_unlock(void)
@@ -64,29 +60,25 @@ static int gd32_fmc_v1_wait_idle(void)
 
 bool flash_gd32_valid_range(off_t offset, uint32_t len, bool write)
 {
-	if ((offset > SOC_NV_FLASH_SIZE) ||
-	    ((offset + len) > SOC_NV_FLASH_SIZE)) {
+	if ((offset > SOC_NV_FLASH_SIZE) || ((offset + len) > SOC_NV_FLASH_SIZE)) {
 		return false;
 	}
 
 	if (write) {
 		/* Check offset and len is flash_prg_t aligned. */
-		if ((offset % sizeof(flash_prg_t)) ||
-		    (len % sizeof(flash_prg_t))) {
+		if ((offset % sizeof(flash_prg_t)) || (len % sizeof(flash_prg_t))) {
 			return false;
 		}
 
 #ifdef FLASH_GD32_FMC_WORK_ALIGNED
 		/* Check offset and len is word aligned. */
-		if ((offset % sizeof(uint32_t)) ||
-		    (len % sizeof(uint32_t))) {
+		if ((offset % sizeof(uint32_t)) || (len % sizeof(uint32_t))) {
 			return false;
 		}
 #endif
 
 	} else {
-		if ((offset % GD32_NV_FLASH_V1_PAGE_SIZE) ||
-		    (len % GD32_NV_FLASH_V1_PAGE_SIZE)) {
+		if ((offset % GD32_NV_FLASH_V1_PAGE_SIZE) || (len % GD32_NV_FLASH_V1_PAGE_SIZE)) {
 			return false;
 		}
 	}
@@ -185,8 +177,7 @@ int flash_gd32_erase_block(off_t offset, size_t size)
 }
 
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
-void flash_gd32_pages_layout(const struct device *dev,
-			     const struct flash_pages_layout **layout,
+void flash_gd32_pages_layout(const struct device *dev, const struct flash_pages_layout **layout,
 			     size_t *layout_size)
 {
 	ARG_UNUSED(dev);

@@ -16,69 +16,69 @@
 
 LOG_MODULE_REGISTER(am1805, CONFIG_RTC_LOG_LEVEL);
 
-#define AM1805_IDENTITY_CODE	0x69
+#define AM1805_IDENTITY_CODE 0x69
 
 /* AM1805 register address */
-#define REG_HUNDREDS_ADDR	0x00
-#define REG_SECONDS_ADDR	0x01
-#define REG_MINUTES_ADDR	0x02
-#define REG_HOURS_ADDR		0x03
-#define REG_MDAY_ADDR		0x04
-#define REG_MONTH_ADDR		0x05
-#define REG_YEAR_ADDR		0x06
-#define REG_WDAY_ADDR		0x07
+#define REG_HUNDREDS_ADDR 0x00
+#define REG_SECONDS_ADDR  0x01
+#define REG_MINUTES_ADDR  0x02
+#define REG_HOURS_ADDR    0x03
+#define REG_MDAY_ADDR     0x04
+#define REG_MONTH_ADDR    0x05
+#define REG_YEAR_ADDR     0x06
+#define REG_WDAY_ADDR     0x07
 
-#define REG_ALM_HUNDREDS_ADDR	0x08
-#define REG_ALM_SECONDS_ADDR	0x09
-#define REG_ALM_MINUTES_ADDR	0x0A
-#define REG_ALM_HOURS_ADDR	0x0B
-#define REG_ALM_MDAY_ADDR	0x0C
-#define REG_ALM_MONTH_ADDR	0x0D
-#define REG_ALM_WDAY_ADDR	0x0E
-#define REG_STATUS_ADDR		0x0F
-#define REG_CONTROL1_ADDR	0x10
-#define REG_CONTROL2_ADDR	0x11
-#define REG_XT_CALIB_ADDR	0x14
-#define REG_TIMER_CTRL_ADDR	0x18
-#define REG_IRQ_MASK_ADDR       0x12
-#define REG_WATCHDOG_ADDR	0x1B
-#define REG_OSC_STATUS_ADDR	0x1D
+#define REG_ALM_HUNDREDS_ADDR 0x08
+#define REG_ALM_SECONDS_ADDR  0x09
+#define REG_ALM_MINUTES_ADDR  0x0A
+#define REG_ALM_HOURS_ADDR    0x0B
+#define REG_ALM_MDAY_ADDR     0x0C
+#define REG_ALM_MONTH_ADDR    0x0D
+#define REG_ALM_WDAY_ADDR     0x0E
+#define REG_STATUS_ADDR       0x0F
+#define REG_CONTROL1_ADDR     0x10
+#define REG_CONTROL2_ADDR     0x11
+#define REG_XT_CALIB_ADDR     0x14
+#define REG_TIMER_CTRL_ADDR   0x18
+#define REG_IRQ_MASK_ADDR     0x12
+#define REG_WATCHDOG_ADDR     0x1B
+#define REG_OSC_STATUS_ADDR   0x1D
 
 /* AM1805 control bits */
-#define SECONDS_BITS		GENMASK(6, 0)
-#define MINUTES_BITS		GENMASK(6, 0)
-#define HOURS_BITS		GENMASK(5, 0)
-#define DATE_BITS		GENMASK(5, 0)
-#define MONTHS_BITS		GENMASK(4, 0)
-#define WEEKDAY_BITS		GENMASK(2, 0)
-#define YEAR_BITS		GENMASK(7, 0)
+#define SECONDS_BITS            GENMASK(6, 0)
+#define MINUTES_BITS            GENMASK(6, 0)
+#define HOURS_BITS              GENMASK(5, 0)
+#define DATE_BITS               GENMASK(5, 0)
+#define MONTHS_BITS             GENMASK(4, 0)
+#define WEEKDAY_BITS            GENMASK(2, 0)
+#define YEAR_BITS               GENMASK(7, 0)
 #define REG_CONTROL2_OUT2S_BITS GENMASK(4, 2)
 #define REG_TIMER_CTRL_RPT_BITS GENMASK(4, 2)
-#define REG_XT_CALIB_OFF_MASK	GENMASK(6, 0)
+#define REG_XT_CALIB_OFF_MASK   GENMASK(6, 0)
 
-#define REG_STATUS_ALM		BIT(2)
-#define REG_CONTROL1_STOP	BIT(7)
-#define REG_IRQ_MASK_AIE        BIT(2)
-#define REG_XT_CALIB_CMDX       BIT(7)
+#define REG_STATUS_ALM    BIT(2)
+#define REG_CONTROL1_STOP BIT(7)
+#define REG_IRQ_MASK_AIE  BIT(2)
+#define REG_XT_CALIB_CMDX BIT(7)
 
-#define TIMER_CTRL_ALM_OFF	0x00
-#define TIMER_CTRL_ALM_DAY	BIT(4)
-#define TIMER_CTRL_ALM_YEAR	BIT(2)
-#define TIMER_CTRL_ALM_HR	(BIT(2) | BIT(4))
-#define TIMER_CTRL_ALM_SEC	GENMASK(4, 2)
-#define TIMER_CTRL_ALM_MIN	GENMASK(4, 3)
-#define TIMER_CTRL_ALM_WEEK	GENMASK(3, 2)
+#define TIMER_CTRL_ALM_OFF  0x00
+#define TIMER_CTRL_ALM_DAY  BIT(4)
+#define TIMER_CTRL_ALM_YEAR BIT(2)
+#define TIMER_CTRL_ALM_HR   (BIT(2) | BIT(4))
+#define TIMER_CTRL_ALM_SEC  GENMASK(4, 2)
+#define TIMER_CTRL_ALM_MIN  GENMASK(4, 3)
+#define TIMER_CTRL_ALM_WEEK GENMASK(3, 2)
 
-#define REG_WATCHDOG_WDS	BIT(7)
-#define WRB_1_SECOND		BIT(1)
-#define WRB_4_SECONDS		GENMASK(1, 0)
+#define REG_WATCHDOG_WDS BIT(7)
+#define WRB_1_SECOND     BIT(1)
+#define WRB_4_SECONDS    GENMASK(1, 0)
 
-#define REG_OSC_STATUS_ACAL_0	0x00
-#define REG_OSC_STATUS_ACAL_1	BIT(6)
-#define REG_OSC_STATUS_ACAL_2	BIT(7)
-#define REG_OSC_STATUS_ACAL_3	GENMASK(7, 6)
-#define REG_OSC_STATUS_MASK	BIT(1)
-#define REG_STATUS_DEFAULT	0x00
+#define REG_OSC_STATUS_ACAL_0 0x00
+#define REG_OSC_STATUS_ACAL_1 BIT(6)
+#define REG_OSC_STATUS_ACAL_2 BIT(7)
+#define REG_OSC_STATUS_ACAL_3 GENMASK(7, 6)
+#define REG_OSC_STATUS_MASK   BIT(1)
+#define REG_STATUS_DEFAULT    0x00
 
 #define AM1805_RTC_ALARM_TIME_MASK                                                                 \
 	(RTC_ALARM_TIME_MASK_SECOND | RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR |      \
@@ -124,16 +124,16 @@ static int am1805_set_time(const struct device *dev, const struct rtc_time *tm)
 	k_mutex_lock(&data->lock, K_FOREVER);
 
 	/* To unlock Stop-bit */
-	err = i2c_reg_update_byte_dt(&config->int_i2c, REG_CONTROL1_ADDR,
-					REG_CONTROL1_STOP, REG_CONTROL1_STOP);
+	err = i2c_reg_update_byte_dt(&config->int_i2c, REG_CONTROL1_ADDR, REG_CONTROL1_STOP,
+				     REG_CONTROL1_STOP);
 	if (err != 0) {
 		goto unlock;
 	}
 
 	LOG_DBG("set time: year = %d, mon = %d, mday = %d, wday = %d, hour = %d, "
-			"min = %d, sec = %d",
-			tm->tm_year, tm->tm_mon, tm->tm_mday, tm->tm_wday, tm->tm_hour, tm->tm_min,
-			tm->tm_sec);
+		"min = %d, sec = %d",
+		tm->tm_year, tm->tm_mon, tm->tm_mday, tm->tm_wday, tm->tm_hour, tm->tm_min,
+		tm->tm_sec);
 
 	regs[0] = bin2bcd(tm->tm_sec) & SECONDS_BITS;
 	regs[1] = bin2bcd(tm->tm_min) & MINUTES_BITS;
@@ -194,9 +194,9 @@ static int am1805_get_time(const struct device *dev, struct rtc_time *timeptr)
 	timeptr->tm_wday = bcd2bin(regs[6] & WEEKDAY_BITS);
 
 	LOG_DBG("get time: year = %d, mon = %d, mday = %d, wday = %d, hour = %d, "
-			"min = %d, sec = %d",
-			timeptr->tm_year, timeptr->tm_mon, timeptr->tm_mday, timeptr->tm_wday,
-			timeptr->tm_hour, timeptr->tm_min, timeptr->tm_sec);
+		"min = %d, sec = %d",
+		timeptr->tm_year, timeptr->tm_mon, timeptr->tm_mday, timeptr->tm_wday,
+		timeptr->tm_hour, timeptr->tm_min, timeptr->tm_sec);
 
 unlock:
 	k_mutex_unlock(&data->lock);
@@ -305,7 +305,7 @@ static int am1805_get_calibration(const struct device *dev, int32_t *calib)
 	WRITE_BIT(reg, 7, (reg & BIT(6)));
 	WRITE_BIT(reg, 6, 0);
 
-	LOG_DBG("XTCAL = %d, CMDX = %d, OFFSETX = %d\n", xtcal, cmdx, (int8_t) reg);
+	LOG_DBG("XTCAL = %d, CMDX = %d, OFFSETX = %d\n", xtcal, cmdx, (int8_t)reg);
 
 unlock:
 	k_mutex_unlock(&data->lock);
@@ -317,7 +317,7 @@ unlock:
 #ifdef CONFIG_RTC_ALARM
 /* To get from the alarm registers */
 static int am1805_alarm_get_time(const struct device *dev, uint16_t id, uint16_t *mask,
-		struct rtc_time *timeptr)
+				 struct rtc_time *timeptr)
 {
 
 	int err;
@@ -348,8 +348,9 @@ static int am1805_alarm_get_time(const struct device *dev, uint16_t id, uint16_t
 	*mask = (AM1805_RTC_ALARM_TIME_MASK);
 
 	LOG_DBG("get alarm: wday = %d, mon = %d, mday = %d, hour = %d, min = %d, sec = %d, "
-		"mask = 0x%04x", timeptr->tm_wday, timeptr->tm_mon, timeptr->tm_mday,
-		timeptr->tm_hour, timeptr->tm_min, timeptr->tm_sec, *mask);
+		"mask = 0x%04x",
+		timeptr->tm_wday, timeptr->tm_mon, timeptr->tm_mday, timeptr->tm_hour,
+		timeptr->tm_min, timeptr->tm_sec, *mask);
 
 unlock:
 	k_mutex_unlock(&data->lock);
@@ -358,7 +359,7 @@ unlock:
 }
 
 static int am1805_alarm_set_time(const struct device *dev, uint16_t id, uint16_t mask,
-		const struct rtc_time *timeptr)
+				 const struct rtc_time *timeptr)
 {
 	int err;
 	uint8_t regs[6];
@@ -379,22 +380,20 @@ static int am1805_alarm_set_time(const struct device *dev, uint16_t id, uint16_t
 	k_mutex_lock(&data->lock, K_FOREVER);
 
 	/* Disable timer control registers before the initialization */
-	err = i2c_reg_update_byte_dt(&config->int_i2c, REG_TIMER_CTRL_ADDR,
-					REG_TIMER_CTRL_RPT_BITS, 0);
+	err = i2c_reg_update_byte_dt(&config->int_i2c, REG_TIMER_CTRL_ADDR, REG_TIMER_CTRL_RPT_BITS,
+				     0);
 	if (err != 0) {
 		goto unlock;
 	}
 
 	/* Clear the interrupt mask for alarm */
-	err = i2c_reg_update_byte_dt(&config->int_i2c, REG_IRQ_MASK_ADDR,
-					REG_IRQ_MASK_AIE, 0);
+	err = i2c_reg_update_byte_dt(&config->int_i2c, REG_IRQ_MASK_ADDR, REG_IRQ_MASK_AIE, 0);
 	if (err != 0) {
 		goto unlock;
 	}
 
 	/* Clear the status bit */
-	err = i2c_reg_update_byte_dt(&config->int_i2c, REG_STATUS_ADDR,
-					REG_STATUS_ALM, 0);
+	err = i2c_reg_update_byte_dt(&config->int_i2c, REG_STATUS_ADDR, REG_STATUS_ALM, 0);
 	if (err != 0) {
 		goto unlock;
 	}
@@ -413,9 +412,9 @@ static int am1805_alarm_set_time(const struct device *dev, uint16_t id, uint16_t
 	regs[5] = bin2bcd(timeptr->tm_wday) & WEEKDAY_BITS;
 
 	LOG_DBG("set alarm: second = %d, min = %d, hour = %d, mday = %d, month = %d,"
-			"wday = %d,  mask = 0x%04x",
-			timeptr->tm_sec, timeptr->tm_min, timeptr->tm_hour, timeptr->tm_mday,
-			timeptr->tm_mon, timeptr->tm_wday, mask);
+		"wday = %d,  mask = 0x%04x",
+		timeptr->tm_sec, timeptr->tm_min, timeptr->tm_hour, timeptr->tm_mday,
+		timeptr->tm_mon, timeptr->tm_wday, mask);
 
 	err = i2c_burst_write_dt(&config->int_i2c, REG_ALM_SECONDS_ADDR, regs, sizeof(regs));
 	if (err != 0) {
@@ -423,15 +422,15 @@ static int am1805_alarm_set_time(const struct device *dev, uint16_t id, uint16_t
 	}
 
 	/* Enable irq timer after the initialization */
-	err = i2c_reg_update_byte_dt(&config->int_i2c, REG_IRQ_MASK_ADDR,
-					REG_IRQ_MASK_AIE, REG_IRQ_MASK_AIE);
+	err = i2c_reg_update_byte_dt(&config->int_i2c, REG_IRQ_MASK_ADDR, REG_IRQ_MASK_AIE,
+				     REG_IRQ_MASK_AIE);
 	if (err != 0) {
 		goto unlock;
 	}
 
 	/* Enable timer after the initialization for the config of repetation */
-	err = i2c_reg_update_byte_dt(&config->int_i2c, REG_TIMER_CTRL_ADDR,
-					TIMER_CTRL_ALM_SEC, TIMER_CTRL_ALM_SEC);
+	err = i2c_reg_update_byte_dt(&config->int_i2c, REG_TIMER_CTRL_ADDR, TIMER_CTRL_ALM_SEC,
+				     TIMER_CTRL_ALM_SEC);
 
 unlock:
 	k_mutex_unlock(&data->lock);
@@ -454,7 +453,7 @@ static int am1805_alarm_get_supported_fields(const struct device *dev, uint16_t 
 }
 
 static int am1805_alarm_set_callback(const struct device *dev, uint16_t id,
-		rtc_alarm_callback callback, void *user_data)
+				     rtc_alarm_callback callback, void *user_data)
 {
 
 	struct am1805_data *data = dev->data;
@@ -496,7 +495,7 @@ static void am1805_interrupt_thread(const struct device *dev)
 }
 
 static void am1805_gpio_callback_handler(const struct device *port, struct gpio_callback *cb,
-		gpio_port_pins_t pins)
+					 gpio_port_pins_t pins)
 {
 	struct am1805_data *data = CONTAINER_OF(cb, struct am1805_data, am1805_callback);
 
@@ -544,15 +543,14 @@ static int am1805_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	err = gpio_pin_interrupt_configure_dt(&config->int_gpio,
-			GPIO_INT_EDGE_TO_INACTIVE);
+	err = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_INACTIVE);
 	if (err != 0) {
 		LOG_ERR("failed to configure interrupt (err %d)", err);
 		return -ENODEV;
 	}
 
 	gpio_init_callback(&data->am1805_callback, am1805_gpio_callback_handler,
-			BIT(config->int_gpio.pin));
+			   BIT(config->int_gpio.pin));
 
 	err = gpio_add_callback_dt(&config->int_gpio, &data->am1805_callback);
 	if (err != 0) {
@@ -561,9 +559,9 @@ static int am1805_init(const struct device *dev)
 	}
 
 	tid = k_thread_create(&data->am1805_thread, data->am1805_stack,
-			K_THREAD_STACK_SIZEOF(data->am1805_stack),
-			(k_thread_entry_t)am1805_interrupt_thread, (void *)dev, NULL,
-			NULL, CONFIG_RTC_AM1805_THREAD_PRIO, 0, K_NO_WAIT);
+			      K_THREAD_STACK_SIZEOF(data->am1805_stack),
+			      (k_thread_entry_t)am1805_interrupt_thread, (void *)dev, NULL, NULL,
+			      CONFIG_RTC_AM1805_THREAD_PRIO, 0, K_NO_WAIT);
 	k_thread_name_set(tid, dev->name);
 #endif
 	return 0;
@@ -584,16 +582,16 @@ static const struct rtc_driver_api am1805_driver_api = {
 #endif
 };
 
-#define AM1805_INIT(inst)									\
-static const struct am1805_config am1805_config_##inst = {					\
-	.int_i2c = I2C_DT_SPEC_INST_GET(inst),							\
-	IF_ENABLED(CONFIG_RTC_ALARM,								\
-		(.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, am1805_gpios, {0})))};		\
-												\
-static struct am1805_data am1805_data_##inst;							\
-												\
-DEVICE_DT_INST_DEFINE(inst, &am1805_init, NULL, &am1805_data_##inst,				\
-		      &am1805_config_##inst, POST_KERNEL, CONFIG_RTC_INIT_PRIORITY,		\
-		      &am1805_driver_api);
+#define AM1805_INIT(inst)                                                                          \
+	static const struct am1805_config am1805_config_##inst = {                                 \
+		.int_i2c = I2C_DT_SPEC_INST_GET(inst),                                             \
+		IF_ENABLED(CONFIG_RTC_ALARM,								\
+		(.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, am1805_gpios, {0})))};           \
+                                                                                                   \
+	static struct am1805_data am1805_data_##inst;                                              \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &am1805_init, NULL, &am1805_data_##inst,                       \
+			      &am1805_config_##inst, POST_KERNEL, CONFIG_RTC_INIT_PRIORITY,        \
+			      &am1805_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AM1805_INIT)

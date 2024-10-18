@@ -25,15 +25,14 @@ struct npcx_pwm_pinctrl_config {
 	int channel;
 };
 
-#define NPCX_PWM_PINCTRL_CFG_INIT(node_id)			\
-	{							\
-		.base = DT_REG_ADDR(node_id),			\
-		.channel = DT_PROP(node_id, pwm_channel),	\
+#define NPCX_PWM_PINCTRL_CFG_INIT(node_id)                                                         \
+	{                                                                                          \
+		.base = DT_REG_ADDR(node_id),                                                      \
+		.channel = DT_PROP(node_id, pwm_channel),                                          \
 	},
 
 static const struct npcx_pwm_pinctrl_config pwm_pinctrl_cfg[] = {
-	DT_FOREACH_STATUS_OKAY(nuvoton_npcx_pwm, NPCX_PWM_PINCTRL_CFG_INIT)
-};
+	DT_FOREACH_STATUS_OKAY(nuvoton_npcx_pwm, NPCX_PWM_PINCTRL_CFG_INIT)};
 
 /* Pin-control local functions for peripheral devices */
 static bool npcx_periph_pinmux_has_lock(int group)
@@ -46,7 +45,7 @@ static bool npcx_periph_pinmux_has_lock(int group)
 }
 
 static void npcx_periph_pinmux_configure(const struct npcx_periph *alt, bool is_alternate,
-	bool is_locked)
+					 bool is_locked)
 {
 	const uintptr_t scfg_base = npcx_pinctrl_cfg.base_scfg;
 	uint8_t alt_mask = BIT(alt->bit);
@@ -59,7 +58,7 @@ static void npcx_periph_pinmux_configure(const struct npcx_periph *alt, bool is_
 	 *    Clear devalt bit to select Alternate Func.
 	 */
 	if (is_alternate != alt->inverted) {
-		NPCX_DEVALT(scfg_base, alt->group) |=  alt_mask;
+		NPCX_DEVALT(scfg_base, alt->group) |= alt_mask;
 	} else {
 		NPCX_DEVALT(scfg_base, alt->group) &= ~alt_mask;
 	}
@@ -69,20 +68,18 @@ static void npcx_periph_pinmux_configure(const struct npcx_periph *alt, bool is_
 	}
 }
 
-static void npcx_periph_pupd_configure(const struct npcx_periph *pupd,
-	enum npcx_io_bias_type type)
+static void npcx_periph_pupd_configure(const struct npcx_periph *pupd, enum npcx_io_bias_type type)
 {
 	const uintptr_t scfg_base = npcx_pinctrl_cfg.base_scfg;
 
 	if (type == NPCX_BIAS_TYPE_NONE) {
 		NPCX_PUPD_EN(scfg_base, pupd->group) &= ~BIT(pupd->bit);
 	} else {
-		NPCX_PUPD_EN(scfg_base, pupd->group) |=  BIT(pupd->bit);
+		NPCX_PUPD_EN(scfg_base, pupd->group) |= BIT(pupd->bit);
 	}
 }
 
-static void npcx_periph_pwm_drive_mode_configure(const struct npcx_periph *periph,
-	bool is_od)
+static void npcx_periph_pwm_drive_mode_configure(const struct npcx_periph *periph, bool is_od)
 {
 	uintptr_t reg = 0;
 
@@ -111,17 +108,15 @@ static void npcx_periph_configure(const pinctrl_soc_pin_t *pin, uintptr_t reg)
 {
 	if (pin->cfg.periph.type == NPCX_PINCTRL_TYPE_PERIPH_PINMUX) {
 		/* Configure peripheral device's pinmux functionality */
-		npcx_periph_pinmux_configure(&pin->cfg.periph,
-					     !pin->flags.pinmux_gpio,
+		npcx_periph_pinmux_configure(&pin->cfg.periph, !pin->flags.pinmux_gpio,
 					     pin->flags.pinmux_lock);
 	} else if (pin->cfg.periph.type == NPCX_PINCTRL_TYPE_PERIPH_PUPD) {
 		/* Configure peripheral device's internal PU/PD */
-		npcx_periph_pupd_configure(&pin->cfg.periph,
-			pin->flags.io_bias_type);
+		npcx_periph_pupd_configure(&pin->cfg.periph, pin->flags.io_bias_type);
 	} else if (pin->cfg.periph.type == NPCX_PINCTRL_TYPE_PERIPH_DRIVE) {
 		/* Configure peripheral device's drive mode. (Only PWM pads support it) */
-		npcx_periph_pwm_drive_mode_configure(&pin->cfg.periph,
-			pin->flags.io_drive_type == NPCX_DRIVE_TYPE_OPEN_DRAIN);
+		npcx_periph_pwm_drive_mode_configure(
+			&pin->cfg.periph, pin->flags.io_drive_type == NPCX_DRIVE_TYPE_OPEN_DRAIN);
 	}
 }
 
@@ -133,7 +128,7 @@ static void npcx_psl_input_detection_configure(const pinctrl_soc_pin_t *pin)
 
 	/* Configure detection polarity of PSL input pads */
 	if (pin->flags.psl_in_polarity == NPCX_PSL_IN_POL_HIGH) {
-		NPCX_DEVALT(scfg_base, psl_in->pol_group) |=  BIT(psl_in->pol_bit);
+		NPCX_DEVALT(scfg_base, psl_in->pol_group) |= BIT(psl_in->pol_bit);
 	} else {
 		NPCX_DEVALT(scfg_base, psl_in->pol_group) &= ~BIT(psl_in->pol_bit);
 	}
@@ -152,13 +147,11 @@ static void npcx_device_control_configure(const pinctrl_soc_pin_t *pin)
 	const uintptr_t scfg_base = npcx_pinctrl_cfg.base_scfg;
 
 	SET_FIELD(NPCX_DEV_CTL(scfg_base, ctrl->offest),
-			      FIELD(ctrl->field_offset, ctrl->field_size),
-			      ctrl->field_value);
+		  FIELD(ctrl->field_offset, ctrl->field_size), ctrl->field_value);
 }
 
 /* Pinctrl API implementation */
-int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
-			   uintptr_t reg)
+int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintptr_t reg)
 {
 	ARG_UNUSED(reg);
 

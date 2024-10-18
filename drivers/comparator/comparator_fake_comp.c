@@ -12,24 +12,15 @@
 
 #define DT_DRV_COMPAT zephyr_fake_comp
 
-DEFINE_FAKE_VALUE_FUNC(int,
-		       comp_fake_comp_get_output,
-		       const struct device *);
+DEFINE_FAKE_VALUE_FUNC(int, comp_fake_comp_get_output, const struct device *);
 
-DEFINE_FAKE_VALUE_FUNC(int,
-		       comp_fake_comp_set_trigger,
-		       const struct device *,
+DEFINE_FAKE_VALUE_FUNC(int, comp_fake_comp_set_trigger, const struct device *,
 		       enum comparator_trigger);
 
-DEFINE_FAKE_VALUE_FUNC(int,
-		       comp_fake_comp_set_trigger_callback,
-		       const struct device *,
-		       comparator_callback_t,
-		       void *);
+DEFINE_FAKE_VALUE_FUNC(int, comp_fake_comp_set_trigger_callback, const struct device *,
+		       comparator_callback_t, void *);
 
-DEFINE_FAKE_VALUE_FUNC(int,
-		       comp_fake_comp_trigger_is_pending,
-		       const struct device *);
+DEFINE_FAKE_VALUE_FUNC(int, comp_fake_comp_trigger_is_pending, const struct device *);
 
 static const struct comparator_driver_api fake_comp_api = {
 	.get_output = comp_fake_comp_get_output,
@@ -53,13 +44,5 @@ static void fake_comp_reset_rule_before(const struct ztest_unit_test *test, void
 ZTEST_RULE(comp_fake_comp_reset_rule, fake_comp_reset_rule_before, NULL);
 #endif
 
-DEVICE_DT_INST_DEFINE(
-	0,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	POST_KERNEL,
-	CONFIG_COMPARATOR_INIT_PRIORITY,
-	&fake_comp_api
-);
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, POST_KERNEL, CONFIG_COMPARATOR_INIT_PRIORITY,
+		      &fake_comp_api);

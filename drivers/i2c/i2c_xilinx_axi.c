@@ -205,8 +205,7 @@ static void i2c_xilinx_axi_target_isr(const struct i2c_xilinx_axi_config *config
 		uint8_t read_byte = 0xFF;
 
 		if (!data->target_read_aborted &&
-		   (*data->target_cfg->callbacks->read_processed)(data->target_cfg,
-								  &read_byte)) {
+		    (*data->target_cfg->callbacks->read_processed)(data->target_cfg, &read_byte)) {
 			LOG_DBG("target read_processed rejected");
 			data->target_read_aborted = true;
 		}

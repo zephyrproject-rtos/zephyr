@@ -84,7 +84,7 @@ static unsigned char fw_upload_crc8(unsigned char *array, unsigned char len)
 }
 
 static unsigned long fw_upload_update_crc32(unsigned long crc_accum, char *data_blk_ptr,
-					 int data_blk_size)
+					    int data_blk_size)
 {
 	unsigned int i, j;
 
@@ -727,7 +727,7 @@ static int fw_upload_change_speed(uint8_t hdr)
 	crc = sys_cpu_to_be32(crc);
 	memcpy(cmd5_hdrData + 12, &crc, CRC32_LEN);
 	crc = fw_upload_update_crc32(0, (char *)fw_upload.change_speed_buffer,
-				  (int)sizeof(struct change_speed_config));
+				     (int)sizeof(struct change_speed_config));
 	crc = sys_cpu_to_be32(crc);
 	memcpy(&fw_upload.change_speed_buffer[sizeof(struct change_speed_config)], &crc, CRC32_LEN);
 
@@ -775,7 +775,7 @@ static int fw_upload_change_speed(uint8_t hdr)
 				       fw_upload.change_speed_buffer, hdr_len);
 
 				err = fw_upload_write_hdr_and_payload(len_to_send,
-								   fw_upload.send_buffer, true);
+								      fw_upload.send_buffer, true);
 				if (err < 0) {
 					return err;
 				}

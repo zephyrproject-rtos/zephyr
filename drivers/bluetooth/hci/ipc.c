@@ -47,14 +47,13 @@ static bool is_hci_event_discardable(const uint8_t *evt_data)
 		case BT_HCI_EVT_LE_ADVERTISING_REPORT:
 			return true;
 #if defined(CONFIG_BT_EXT_ADV)
-		case BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT:
-		{
+		case BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT: {
 			const struct bt_hci_evt_le_ext_advertising_report *ext_adv =
 				(void *)&evt_data[3];
 
 			return (ext_adv->num_reports == 1) &&
-				   ((ext_adv->adv_info[0].evt_type &
-					 BT_HCI_LE_ADV_EVT_TYPE_LEGACY) != 0);
+			       ((ext_adv->adv_info[0].evt_type & BT_HCI_LE_ADV_EVT_TYPE_LEGACY) !=
+				0);
 		}
 #endif
 		default:
@@ -380,25 +379,27 @@ static int bt_ipc_close(const struct device *dev)
 }
 
 static const struct bt_hci_driver_api drv = {
-	.open		= bt_ipc_open,
-	.close		= bt_ipc_close,
-	.send		= bt_ipc_send,
+	.open = bt_ipc_open,
+	.close = bt_ipc_close,
+	.send = bt_ipc_send,
 };
 
-#define IPC_DEVICE_INIT(inst) \
-	static struct ipc_data ipc_data_##inst = { \
-		.bound_sem = Z_SEM_INITIALIZER(ipc_data_##inst.bound_sem, 0, 1), \
-		.hci_ept_cfg = { \
-			.name = DT_INST_PROP(inst, bt_hci_ipc_name), \
-			.cb = { \
-				.bound    = hci_ept_bound, \
-				.received = hci_ept_recv, \
-			}, \
-			.priv = (void *)DEVICE_DT_INST_GET(inst), \
-		}, \
-		.ipc = DEVICE_DT_GET(DT_INST_PARENT(inst)), \
-	}; \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &ipc_data_##inst, NULL, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
+#define IPC_DEVICE_INIT(inst)                                                                      \
+	static struct ipc_data ipc_data_##inst = {                                                 \
+		.bound_sem = Z_SEM_INITIALIZER(ipc_data_##inst.bound_sem, 0, 1),                   \
+		.hci_ept_cfg =                                                                     \
+			{                                                                          \
+				.name = DT_INST_PROP(inst, bt_hci_ipc_name),                       \
+				.cb =                                                              \
+					{                                                          \
+						.bound = hci_ept_bound,                            \
+						.received = hci_ept_recv,                          \
+					},                                                         \
+				.priv = (void *)DEVICE_DT_INST_GET(inst),                          \
+			},                                                                         \
+		.ipc = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                        \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &ipc_data_##inst, NULL, POST_KERNEL,               \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
 DT_INST_FOREACH_STATUS_OKAY(IPC_DEVICE_INIT)

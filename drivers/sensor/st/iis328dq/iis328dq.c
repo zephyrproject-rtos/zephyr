@@ -401,51 +401,45 @@ static int iis328dq_init(const struct device *dev)
 	(SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA)
 
 #define IIS328DQ_CONFIG_SPI(inst)                                                                  \
-	{                                                                                          \
-		STMEMSC_CTX_SPI_INCR(&iis328dq_config_##inst.stmemsc_cfg),                         \
-			.stmemsc_cfg =                                                             \
-				{                                                                  \
-					.spi = SPI_DT_SPEC_INST_GET(inst, IIS328DQ_SPI_OPERATION,  \
-								    0),                            \
-				},                                                                 \
-			IIS328DQ_CONFIG_COMMON(inst)                                               \
-	}
+	{STMEMSC_CTX_SPI_INCR(&iis328dq_config_##inst.stmemsc_cfg),                                \
+	 .stmemsc_cfg =                                                                            \
+		 {                                                                                 \
+			 .spi = SPI_DT_SPEC_INST_GET(inst, IIS328DQ_SPI_OPERATION, 0),             \
+		 },                                                                                \
+	 IIS328DQ_CONFIG_COMMON(inst)}
 
 /*
  * Instantiation macros used when a device is on an I2C bus.
  */
 
 #define IIS328DQ_CONFIG_I2C(inst)                                                                  \
-	{                                                                                          \
-		STMEMSC_CTX_I2C_INCR(&iis328dq_config_##inst.stmemsc_cfg),                         \
-			.stmemsc_cfg =                                                             \
-				{                                                                  \
-					.i2c = I2C_DT_SPEC_INST_GET(inst),                         \
-				},                                                                 \
-			IIS328DQ_CONFIG_COMMON(inst)                                               \
-	}
+	{STMEMSC_CTX_I2C_INCR(&iis328dq_config_##inst.stmemsc_cfg),                                \
+	 .stmemsc_cfg =                                                                            \
+		 {                                                                                 \
+			 .i2c = I2C_DT_SPEC_INST_GET(inst),                                        \
+		 },                                                                                \
+	 IIS328DQ_CONFIG_COMMON(inst)}
 
 /*
  * Main instantiation macro. Use of COND_CODE_1() selects the right
  * bus-specific macro at preprocessor time.
  */
 
-#define IIS328DQ_DEFINE(inst)                                                                      \
-	static struct iis328dq_data iis328dq_data_##inst;                                          \
-	static const struct iis328dq_config iis328dq_config_##inst =                               \
-		COND_CODE_1(DT_INST_ON_BUS(inst, spi), (IIS328DQ_CONFIG_SPI(inst)),                \
-			    (IIS328DQ_CONFIG_I2C(inst)));                                          \
-	IIS328DQ_DEVICE_INIT(inst)                                                                 \
+#define IIS328DQ_DEFINE(inst)                                                                        \
+	static struct iis328dq_data iis328dq_data_##inst;                                            \
+	static const struct iis328dq_config iis328dq_config_##inst = COND_CODE_1(DT_INST_ON_BUS(inst, spi), (IIS328DQ_CONFIG_SPI(inst)),                \
+			    (IIS328DQ_CONFIG_I2C(inst)));                  \
+	IIS328DQ_DEVICE_INIT(inst)                                                                   \
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, drdy_int_pad),                                      \
 		   (BUILD_ASSERT(                                                                  \
 			    DT_INST_NODE_HAS_PROP(                                                 \
 				    inst, CONCAT(int, DT_INST_PROP(inst, drdy_int_pad), _gpios)),  \
-			    "No GPIO pin defined for IIS328DQ DRDY interrupt");))                  \
+			    "No GPIO pin defined for IIS328DQ DRDY interrupt");)) \
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, threshold_int_pad),                                 \
 		   (BUILD_ASSERT(DT_INST_NODE_HAS_PROP(                                            \
 					 inst, CONCAT(int, DT_INST_PROP(inst, threshold_int_pad),  \
 						      _gpios)),                                    \
-				 "No GPIO pin defined for IIS328DQ threshold interrupt");))        \
+				 "No GPIO pin defined for IIS328DQ threshold interrupt");)) \
 	IF_ENABLED(                                                                                \
 		UTIL_AND(DT_INST_NODE_HAS_PROP(inst, drdy_int_pad),                                \
 			 DT_INST_NODE_HAS_PROP(inst, threshold_int_pad)),                          \

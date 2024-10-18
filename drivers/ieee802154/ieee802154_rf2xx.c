@@ -9,7 +9,7 @@
  */
 
 #define LOG_MODULE_NAME ieee802154_rf2xx
-#define LOG_LEVEL CONFIG_IEEE802154_DRIVER_LOG_LEVEL
+#define LOG_LEVEL       CONFIG_IEEE802154_DRIVER_LOG_LEVEL
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
@@ -45,38 +45,33 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #if defined(CONFIG_NET_L2_OPENTHREAD)
 #include <zephyr/net/openthread.h>
 
-#define RF2XX_OT_PSDU_LENGTH              1280
+#define RF2XX_OT_PSDU_LENGTH 1280
 
-#define RF2XX_ACK_FRAME_LEN               3
-#define RF2XX_ACK_FRAME_TYPE              (2 << 0)
-#define RF2XX_ACK_FRAME_PENDING_BIT       (1 << 4)
-#define RF2XX_FRAME_CTRL_ACK_REQUEST_BIT  (1 << 5)
+#define RF2XX_ACK_FRAME_LEN              3
+#define RF2XX_ACK_FRAME_TYPE             (2 << 0)
+#define RF2XX_ACK_FRAME_PENDING_BIT      (1 << 4)
+#define RF2XX_FRAME_CTRL_ACK_REQUEST_BIT (1 << 5)
 
-static uint8_t rf2xx_ack_psdu[RF2XX_ACK_FRAME_LEN] = { 0 };
+static uint8_t rf2xx_ack_psdu[RF2XX_ACK_FRAME_LEN] = {0};
 static struct net_buf rf2xx_ack_frame = {
-	.data  = rf2xx_ack_psdu,
-	.size  = RF2XX_ACK_FRAME_LEN,
-	.len   = RF2XX_ACK_FRAME_LEN,
+	.data = rf2xx_ack_psdu,
+	.size = RF2XX_ACK_FRAME_LEN,
+	.len = RF2XX_ACK_FRAME_LEN,
 	.__buf = rf2xx_ack_psdu,
 	.frags = NULL,
 };
-static struct net_pkt rf2xx_ack_pkt = {
-	.buffer = &rf2xx_ack_frame,
-	.cb = {
-		.lqi = 80,
-		.rssi = -40,
-	}
-};
+static struct net_pkt rf2xx_ack_pkt = {.buffer = &rf2xx_ack_frame,
+				       .cb = {
+					       .lqi = 80,
+					       .rssi = -40,
+				       }};
 #endif /* CONFIG_NET_L2_OPENTHREAD */
 
 /* Radio Transceiver ISR */
-static inline void trx_isr_handler(const struct device *port,
-				   struct gpio_callback *cb,
+static inline void trx_isr_handler(const struct device *port, struct gpio_callback *cb,
 				   uint32_t pins)
 {
-	struct rf2xx_context *ctx = CONTAINER_OF(cb,
-						 struct rf2xx_context,
-						 irq_cb);
+	struct rf2xx_context *ctx = CONTAINER_OF(cb, struct rf2xx_context, irq_cb);
 
 	ARG_UNUSED(port);
 	ARG_UNUSED(pins);
@@ -84,21 +79,18 @@ static inline void trx_isr_handler(const struct device *port,
 	k_sem_give(&ctx->trx_isr_lock);
 }
 
-static void rf2xx_trx_set_state(const struct device *dev,
-				enum rf2xx_trx_state_cmd_t state)
+static void rf2xx_trx_set_state(const struct device *dev, enum rf2xx_trx_state_cmd_t state)
 {
 	do {
 		rf2xx_iface_reg_write(dev, RF2XX_TRX_STATE_REG,
 				      RF2XX_TRX_PHY_STATE_CMD_FORCE_TRX_OFF);
 	} while (RF2XX_TRX_PHY_STATUS_TRX_OFF !=
-		 (rf2xx_iface_reg_read(dev, RF2XX_TRX_STATUS_REG) &
-		  RF2XX_TRX_PHY_STATUS_MASK));
+		 (rf2xx_iface_reg_read(dev, RF2XX_TRX_STATUS_REG) & RF2XX_TRX_PHY_STATUS_MASK));
 
 	do {
 		rf2xx_iface_reg_write(dev, RF2XX_TRX_STATE_REG, state);
 	} while (state !=
-		 (rf2xx_iface_reg_read(dev, RF2XX_TRX_STATUS_REG) &
-		  RF2XX_TRX_PHY_STATUS_MASK));
+		 (rf2xx_iface_reg_read(dev, RF2XX_TRX_STATUS_REG) & RF2XX_TRX_PHY_STATUS_MASK));
 }
 
 static void rf2xx_trx_set_tx_state(const struct device *dev)
@@ -142,13 +134,9 @@ static void rf2xx_set_rssi_base(const struct device *dev, uint16_t channel)
 	int8_t base;
 
 	if (ctx->cc_page == IEEE802154_ATTR_PHY_CHANNEL_PAGE_ZERO_OQPSK_2450_BPSK_868_915) {
-		base = channel == 0
-				? RF2XX_RSSI_BPSK_20
-				: RF2XX_RSSI_BPSK_40;
+		base = channel == 0 ? RF2XX_RSSI_BPSK_20 : RF2XX_RSSI_BPSK_40;
 	} else if (ctx->cc_page == IEEE802154_ATTR_PHY_CHANNEL_PAGE_TWO_OQPSK_868_915) {
-		base = channel == 0
-				? RF2XX_RSSI_OQPSK_SIN_RC_100
-				: RF2XX_RSSI_OQPSK_SIN_250;
+		base = channel == 0 ? RF2XX_RSSI_OQPSK_SIN_RC_100 : RF2XX_RSSI_OQPSK_SIN_250;
 	} else {
 		base = RF2XX_RSSI_OQPSK_RC_250;
 	}
@@ -184,8 +172,7 @@ static void rf2xx_trx_rx(const struct device *dev)
 		return;
 	}
 
-	frame_len = RX2XX_FRAME_HEADER_SIZE + pkt_len +
-		    RX2XX_FRAME_FOOTER_SIZE;
+	frame_len = RX2XX_FRAME_HEADER_SIZE + pkt_len + RX2XX_FRAME_FOOTER_SIZE;
 
 	rf2xx_iface_frame_read(dev, rx_buf, frame_len);
 
@@ -195,11 +182,11 @@ static void rf2xx_trx_rx(const struct device *dev)
 
 		ctx->pkt_ed = rx_buf[pkt_len + RX2XX_FRAME_ED_INDEX];
 	} else {
-		trac = (rf2xx_iface_reg_read(dev, RF2XX_TRX_STATE_REG)
-			>> RF2XX_TRAC_STATUS) & RF2XX_TRAC_BIT_MASK;
+		trac = (rf2xx_iface_reg_read(dev, RF2XX_TRX_STATE_REG) >> RF2XX_TRAC_STATUS) &
+		       RF2XX_TRAC_BIT_MASK;
 
-		ctx->pkt_ed = (rf2xx_iface_reg_read(dev, RF2XX_PHY_RSSI_REG)
-			       >> RF2XX_RSSI) & RF2XX_RSSI_MASK;
+		ctx->pkt_ed = (rf2xx_iface_reg_read(dev, RF2XX_PHY_RSSI_REG) >> RF2XX_RSSI) &
+			      RF2XX_RSSI_MASK;
 	}
 	ctx->pkt_lqi = rx_buf[pkt_len + RX2XX_FRAME_LQI_INDEX];
 
@@ -208,14 +195,12 @@ static void rf2xx_trx_rx(const struct device *dev)
 		return;
 	}
 
-	if (!IS_ENABLED(CONFIG_IEEE802154_RAW_MODE) &&
-	    !IS_ENABLED(CONFIG_NET_L2_OPENTHREAD) &&
+	if (!IS_ENABLED(CONFIG_IEEE802154_RAW_MODE) && !IS_ENABLED(CONFIG_NET_L2_OPENTHREAD) &&
 	    pkt_len >= RX2XX_FRAME_FCS_LENGTH) {
 		pkt_len -= RX2XX_FRAME_FCS_LENGTH;
 	}
 
-	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, pkt_len,
-					   AF_UNSPEC, 0, K_NO_WAIT);
+	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, pkt_len, AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("No RX buffer available");
 		return;
@@ -226,9 +211,8 @@ static void rf2xx_trx_rx(const struct device *dev)
 	net_pkt_set_ieee802154_lqi(pkt, ctx->pkt_lqi);
 	net_pkt_set_ieee802154_rssi_dbm(pkt, ctx->pkt_ed + ctx->trx_rssi_base);
 
-	LOG_DBG("Caught a packet (%02X) (LQI: %02X, RSSI: %d, ED: %02X)",
-		pkt_len, ctx->pkt_lqi, ctx->trx_rssi_base + ctx->pkt_ed,
-		ctx->pkt_ed);
+	LOG_DBG("Caught a packet (%02X) (LQI: %02X, RSSI: %d, ED: %02X)", pkt_len, ctx->pkt_lqi,
+		ctx->trx_rssi_base + ctx->pkt_ed, ctx->pkt_ed);
 
 	if (net_recv_data(ctx->iface, pkt) < 0) {
 		LOG_DBG("RX Packet dropped by NET stack");
@@ -273,16 +257,16 @@ static void rf2xx_process_tx_frame(const struct device *dev)
 {
 	struct rf2xx_context *ctx = dev->data;
 
-	ctx->trx_trac = (rf2xx_iface_reg_read(dev, RF2XX_TRX_STATE_REG) >>
-			 RF2XX_TRAC_STATUS) & RF2XX_TRAC_BIT_MASK;
+	ctx->trx_trac = (rf2xx_iface_reg_read(dev, RF2XX_TRX_STATE_REG) >> RF2XX_TRAC_STATUS) &
+			RF2XX_TRAC_BIT_MASK;
 	k_sem_give(&ctx->trx_tx_sync);
 	rf2xx_trx_set_rx_state(dev);
 }
 
 static void rf2xx_process_trx_end(const struct device *dev)
 {
-	uint8_t trx_status = (rf2xx_iface_reg_read(dev, RF2XX_TRX_STATUS_REG) &
-			   RF2XX_TRX_PHY_STATUS_MASK);
+	uint8_t trx_status =
+		(rf2xx_iface_reg_read(dev, RF2XX_TRX_STATUS_REG) & RF2XX_TRX_PHY_STATUS_MASK);
 
 	if (trx_status == RF2XX_TRX_PHY_STATUS_TX_ARET_ON) {
 		rf2xx_process_tx_frame(dev);
@@ -302,8 +286,7 @@ static void rf2xx_thread_main(void *p1, void *p2, void *p3)
 	while (true) {
 		k_sem_take(&ctx->trx_isr_lock, K_FOREVER);
 
-		isr_status = rf2xx_iface_reg_read(ctx->dev,
-						  RF2XX_IRQ_STATUS_REG);
+		isr_status = rf2xx_iface_reg_read(ctx->dev, RF2XX_IRQ_STATUS_REG);
 
 		/*
 		 *  IRQ_7 (BAT_LOW) Indicates a supply voltage below the
@@ -333,8 +316,7 @@ static void rf2xx_thread_main(void *p1, void *p2, void *p3)
 		 */
 		if (isr_status & (1 << RF2XX_RX_START)) {
 			if (ctx->trx_model != RF2XX_TRX_MODEL_231) {
-				rf2xx_iface_sram_read(ctx->dev, 0,
-						      &ctx->rx_phr, 1);
+				rf2xx_iface_sram_read(ctx->dev, 0, &ctx->rx_phr, 1);
 			}
 		}
 		if (isr_status & (1 << RF2XX_TRX_END)) {
@@ -366,12 +348,8 @@ static enum ieee802154_hw_caps rf2xx_get_capabilities(const struct device *dev)
 {
 	LOG_DBG("HW Caps");
 
-	return IEEE802154_HW_FCS |
-	       IEEE802154_HW_PROMISC |
-	       IEEE802154_HW_FILTER |
-	       IEEE802154_HW_CSMA |
-	       IEEE802154_HW_RETRANSMISSION |
-	       IEEE802154_HW_TX_RX_ACK |
+	return IEEE802154_HW_FCS | IEEE802154_HW_PROMISC | IEEE802154_HW_FILTER |
+	       IEEE802154_HW_CSMA | IEEE802154_HW_RETRANSMISSION | IEEE802154_HW_TX_RX_ACK |
 	       IEEE802154_HW_RX_TX_ACK;
 }
 
@@ -382,19 +360,14 @@ static int rf2xx_configure_sub_channel(const struct device *dev, uint16_t channe
 	uint8_t cc_mask;
 
 	if (ctx->cc_page == IEEE802154_ATTR_PHY_CHANNEL_PAGE_ZERO_OQPSK_2450_BPSK_868_915) {
-		cc_mask = channel == 0
-				   ? RF2XX_CC_BPSK_20
-				   : RF2XX_CC_BPSK_40;
+		cc_mask = channel == 0 ? RF2XX_CC_BPSK_20 : RF2XX_CC_BPSK_40;
 	} else if (ctx->cc_page == IEEE802154_ATTR_PHY_CHANNEL_PAGE_TWO_OQPSK_868_915) {
-		cc_mask = channel == 0
-				   ? RF2XX_CC_OQPSK_SIN_RC_100
-				   : RF2XX_CC_OQPSK_SIN_250;
+		cc_mask = channel == 0 ? RF2XX_CC_OQPSK_SIN_RC_100 : RF2XX_CC_OQPSK_SIN_250;
 	} else {
 		cc_mask = RF2XX_CC_OQPSK_RC_250;
 	}
 
-	reg = rf2xx_iface_reg_read(dev, RF2XX_TRX_CTRL_2_REG)
-	    & ~RF2XX_SUB_CHANNEL_MASK;
+	reg = rf2xx_iface_reg_read(dev, RF2XX_TRX_CTRL_2_REG) & ~RF2XX_SUB_CHANNEL_MASK;
 	rf2xx_iface_reg_write(dev, RF2XX_TRX_CTRL_2_REG, reg | cc_mask);
 
 	return 0;
@@ -412,8 +385,7 @@ static int rf2xx_configure_trx_path(const struct device *dev)
 		gc_tx_offset = 0x02;
 	}
 
-	reg = rf2xx_iface_reg_read(dev, RF2XX_RF_CTRL_0_REG)
-	    & ~RF2XX_GC_TX_OFFS_MASK;
+	reg = rf2xx_iface_reg_read(dev, RF2XX_RF_CTRL_0_REG) & ~RF2XX_GC_TX_OFFS_MASK;
 	rf2xx_iface_reg_write(dev, RF2XX_RF_CTRL_0_REG, reg | gc_tx_offset);
 
 	return 0;
@@ -436,9 +408,10 @@ static int rf2xx_set_channel(const struct device *dev, uint16_t channel)
 	LOG_DBG("Set Channel %d", channel);
 
 	if (ctx->trx_model == RF2XX_TRX_MODEL_212) {
-		if ((ctx->cc_page == IEEE802154_ATTR_PHY_CHANNEL_PAGE_ZERO_OQPSK_2450_BPSK_868_915
-		     || ctx->cc_page == IEEE802154_ATTR_PHY_CHANNEL_PAGE_TWO_OQPSK_868_915)
-		    && channel > 10) {
+		if ((ctx->cc_page ==
+			     IEEE802154_ATTR_PHY_CHANNEL_PAGE_ZERO_OQPSK_2450_BPSK_868_915 ||
+		     ctx->cc_page == IEEE802154_ATTR_PHY_CHANNEL_PAGE_TWO_OQPSK_868_915) &&
+		    channel > 10) {
 			LOG_ERR("Unsupported channel %u", channel);
 			return channel > 26 ? -EINVAL : -ENOTSUP;
 		}
@@ -507,20 +480,20 @@ static int rf2xx_set_txpower(const struct device *dev, int16_t dbm)
 		step = 1.0f;
 	}
 
-	LOG_DBG("Tx-power values: min %f, max %f, step %f, entries %d",
-		(double)min, (double)max, (double)step, conf->tx_pwr_table_size);
+	LOG_DBG("Tx-power values: min %f, max %f, step %f, entries %d", (double)min, (double)max,
+		(double)step, conf->tx_pwr_table_size);
 
 	if (dbm < min) {
-		LOG_INF("TX-power %d dBm below min of %f dBm, using %f dBm",
-			dbm, (double)min, (double)max);
+		LOG_INF("TX-power %d dBm below min of %f dBm, using %f dBm", dbm, (double)min,
+			(double)max);
 		dbm = min;
 	} else if (dbm > max) {
-		LOG_INF("TX-power %d dBm above max of %f dBm, using %f dBm",
-			dbm, (double)min, (double)max);
+		LOG_INF("TX-power %d dBm above max of %f dBm, using %f dBm", dbm, (double)min,
+			(double)max);
 		dbm = max;
 	}
 
-	idx = abs((int) (((float)(dbm - max) / step)));
+	idx = abs((int)(((float)(dbm - max) / step)));
 	LOG_DBG("Tx-power idx: %d", idx);
 
 	if (idx >= conf->tx_pwr_table_size) {
@@ -534,42 +507,36 @@ static int rf2xx_set_txpower(const struct device *dev, int16_t dbm)
 		val = reg + (val & 0x0f);
 	}
 
-	LOG_DBG("Tx-power normalized: %d dBm, PHY_TX_PWR 0x%02x, idx %d",
-		dbm, val, idx);
+	LOG_DBG("Tx-power normalized: %d dBm, PHY_TX_PWR 0x%02x, idx %d", dbm, val, idx);
 
 	rf2xx_iface_reg_write(dev, RF2XX_PHY_TX_PWR_REG, val);
 
 	return 0;
 }
 
-static int rf2xx_set_ieee_addr(const struct device *dev, bool set,
-			       const uint8_t *ieee_addr)
+static int rf2xx_set_ieee_addr(const struct device *dev, bool set, const uint8_t *ieee_addr)
 {
 	const uint8_t *ptr_to_reg = ieee_addr;
 
-	LOG_DBG("IEEE address %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
-		ieee_addr[7], ieee_addr[6], ieee_addr[5], ieee_addr[4],
-		ieee_addr[3], ieee_addr[2], ieee_addr[1], ieee_addr[0]);
+	LOG_DBG("IEEE address %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x", ieee_addr[7], ieee_addr[6],
+		ieee_addr[5], ieee_addr[4], ieee_addr[3], ieee_addr[2], ieee_addr[1], ieee_addr[0]);
 
 	if (set) {
 		for (uint8_t i = 0; i < 8; i++, ptr_to_reg++) {
-			rf2xx_iface_reg_write(dev, (RF2XX_IEEE_ADDR_0_REG + i),
-					      *ptr_to_reg);
+			rf2xx_iface_reg_write(dev, (RF2XX_IEEE_ADDR_0_REG + i), *ptr_to_reg);
 		}
 	} else {
 		for (uint8_t i = 0; i < 8; i++) {
-			rf2xx_iface_reg_write(dev, (RF2XX_IEEE_ADDR_0_REG + i),
-					      0);
+			rf2xx_iface_reg_write(dev, (RF2XX_IEEE_ADDR_0_REG + i), 0);
 		}
 	}
 
 	return 0;
 }
 
-static int rf2xx_set_short_addr(const struct device *dev, bool set,
-				uint16_t short_addr)
+static int rf2xx_set_short_addr(const struct device *dev, bool set, uint16_t short_addr)
 {
-	uint8_t short_addr_le[2] = { 0xFF, 0xFF };
+	uint8_t short_addr_le[2] = {0xFF, 0xFF};
 
 	if (set) {
 		sys_put_le16(short_addr, short_addr_le);
@@ -577,19 +544,16 @@ static int rf2xx_set_short_addr(const struct device *dev, bool set,
 
 	rf2xx_iface_reg_write(dev, RF2XX_SHORT_ADDR_0_REG, short_addr_le[0]);
 	rf2xx_iface_reg_write(dev, RF2XX_SHORT_ADDR_1_REG, short_addr_le[1]);
-	rf2xx_iface_reg_write(dev, RF2XX_CSMA_SEED_0_REG,
-			      short_addr_le[0] + short_addr_le[1]);
+	rf2xx_iface_reg_write(dev, RF2XX_CSMA_SEED_0_REG, short_addr_le[0] + short_addr_le[1]);
 
-	LOG_DBG("Short Address: 0x%02X%02X", short_addr_le[1],
-		short_addr_le[0]);
+	LOG_DBG("Short Address: 0x%02X%02X", short_addr_le[1], short_addr_le[0]);
 
 	return 0;
 }
 
-static int rf2xx_set_pan_id(const struct device *dev, bool set,
-			    uint16_t pan_id)
+static int rf2xx_set_pan_id(const struct device *dev, bool set, uint16_t pan_id)
 {
-	uint8_t pan_id_le[2] = { 0xFF, 0xFF };
+	uint8_t pan_id_le[2] = {0xFF, 0xFF};
 
 	if (set) {
 		sys_put_le16(pan_id, pan_id_le);
@@ -603,8 +567,7 @@ static int rf2xx_set_pan_id(const struct device *dev, bool set,
 	return 0;
 }
 
-static int rf2xx_filter(const struct device *dev,
-			bool set, enum ieee802154_filter_type type,
+static int rf2xx_filter(const struct device *dev, bool set, enum ieee802154_filter_type type,
 			const struct ieee802154_filter *filter)
 {
 	LOG_DBG("Applying filter %u", type);
@@ -641,12 +604,10 @@ static void rf2xx_handle_ack(struct rf2xx_context *ctx, struct net_buf *frag)
 	}
 }
 #else
-	#define rf2xx_handle_ack(...)
+#define rf2xx_handle_ack(...)
 #endif
 
-static int rf2xx_tx(const struct device *dev,
-		    enum ieee802154_tx_mode mode,
-		    struct net_pkt *pkt,
+static int rf2xx_tx(const struct device *dev, enum ieee802154_tx_mode mode, struct net_pkt *pkt,
 		    struct net_buf *frag)
 {
 	ARG_UNUSED(pkt);
@@ -734,8 +695,7 @@ static int rf2xx_start(const struct device *dev)
 
 	rf2xx_trx_set_state(dev, RF2XX_TRX_PHY_STATE_CMD_TRX_OFF);
 	rf2xx_iface_reg_read(dev, RF2XX_IRQ_STATUS_REG);
-	gpio_pin_interrupt_configure_dt(&conf->irq_gpio,
-					GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&conf->irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	rf2xx_trx_set_rx_state(dev);
 
 	return 0;
@@ -799,8 +759,7 @@ static int rf2xx_promiscuous_set(const struct device *dev, bool promiscuous)
 	return 0;
 }
 
-int rf2xx_configure(const struct device *dev,
-		    enum ieee802154_config_type type,
+int rf2xx_configure(const struct device *dev, enum ieee802154_config_type type,
 		    const struct ieee802154_config *config)
 {
 	int ret = -EINVAL;
@@ -829,7 +788,7 @@ int rf2xx_configure(const struct device *dev,
 }
 
 static int rf2xx_attr_get(const struct device *dev, enum ieee802154_attr attr,
-			   struct ieee802154_attr_value *value)
+			  struct ieee802154_attr_value *value)
 {
 	struct rf2xx_context *ctx = dev->data;
 
@@ -857,11 +816,9 @@ static int power_on_and_setup(const struct device *dev)
 
 	/* Sync transceiver state */
 	do {
-		rf2xx_iface_reg_write(dev, RF2XX_TRX_STATE_REG,
-				      RF2XX_TRX_PHY_STATE_CMD_TRX_OFF);
+		rf2xx_iface_reg_write(dev, RF2XX_TRX_STATE_REG, RF2XX_TRX_PHY_STATE_CMD_TRX_OFF);
 	} while (RF2XX_TRX_PHY_STATUS_TRX_OFF !=
-		 (rf2xx_iface_reg_read(dev, RF2XX_TRX_STATUS_REG) &
-		  RF2XX_TRX_PHY_STATUS_MASK));
+		 (rf2xx_iface_reg_read(dev, RF2XX_TRX_STATUS_REG) & RF2XX_TRX_PHY_STATUS_MASK));
 
 	/* get device identification */
 	ctx->trx_model = rf2xx_iface_reg_read(dev, RF2XX_PART_NUM_REG);
@@ -899,8 +856,7 @@ static int power_on_and_setup(const struct device *dev)
 	rf2xx_iface_reg_write(dev, RF2XX_TRX_CTRL_0_REG, config);
 
 	/* Configure PHY behaviour */
-	config = (1 << RF2XX_TX_AUTO_CRC_ON) |
-		 (3 << RF2XX_SPI_CMD_MODE) |
+	config = (1 << RF2XX_TX_AUTO_CRC_ON) | (3 << RF2XX_SPI_CMD_MODE) |
 		 (1 << RF2XX_IRQ_MASK_MODE);
 	rf2xx_iface_reg_write(dev, RF2XX_TRX_CTRL_1_REG, config);
 
@@ -919,12 +875,10 @@ static int power_on_and_setup(const struct device *dev)
 	ctx->promiscuous = false;
 
 	/* Configure INT behaviour */
-	config = (1 << RF2XX_RX_START) |
-		 (1 << RF2XX_TRX_END);
+	config = (1 << RF2XX_RX_START) | (1 << RF2XX_TRX_END);
 	rf2xx_iface_reg_write(dev, RF2XX_IRQ_MASK_REG, config);
 
-	gpio_init_callback(&ctx->irq_cb, trx_isr_handler,
-			   BIT(conf->irq_gpio.pin));
+	gpio_init_callback(&ctx->irq_cb, trx_isr_handler, BIT(conf->irq_gpio.pin));
 
 	if (gpio_add_callback(conf->irq_gpio.port, &ctx->irq_cb) < 0) {
 		LOG_ERR("Could not set IRQ callback.");
@@ -944,8 +898,7 @@ static inline int configure_gpios(const struct device *dev)
 		return -ENODEV;
 	}
 	gpio_pin_configure_dt(&conf->irq_gpio, GPIO_INPUT);
-	gpio_pin_interrupt_configure_dt(&conf->irq_gpio,
-					GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&conf->irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 
 	/* Chip RESET line */
 	if (!gpio_is_ready_dt(&conf->reset_gpio)) {
@@ -967,11 +920,9 @@ static inline int configure_gpios(const struct device *dev)
 			LOG_ERR("DIG2 GPIO device not ready");
 			return -ENODEV;
 		}
-		LOG_INF("Optional instance of %s device activated",
-			conf->dig2_gpio.port->name);
+		LOG_INF("Optional instance of %s device activated", conf->dig2_gpio.port->name);
 		gpio_pin_configure_dt(&conf->dig2_gpio, GPIO_INPUT);
-		gpio_pin_interrupt_configure_dt(&conf->dig2_gpio,
-						GPIO_INT_EDGE_TO_ACTIVE);
+		gpio_pin_interrupt_configure_dt(&conf->dig2_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	}
 
 	/* Chip CLKM line (Optional feature) */
@@ -980,8 +931,7 @@ static inline int configure_gpios(const struct device *dev)
 			LOG_ERR("CLKM GPIO device not ready");
 			return -ENODEV;
 		}
-		LOG_INF("Optional instance of %s device activated",
-			conf->clkm_gpio.port->name);
+		LOG_INF("Optional instance of %s device activated", conf->clkm_gpio.port->name);
 		gpio_pin_configure_dt(&conf->clkm_gpio, GPIO_INPUT);
 	}
 
@@ -993,8 +943,7 @@ static inline int configure_spi(const struct device *dev)
 	const struct rf2xx_config *conf = dev->config;
 
 	if (!spi_is_ready_dt(&conf->spi)) {
-		LOG_ERR("SPI bus %s is not ready",
-			conf->spi.bus->name);
+		LOG_ERR("SPI bus %s is not ready", conf->spi.bus->name);
 		return -ENODEV;
 	}
 
@@ -1033,15 +982,10 @@ static int rf2xx_init(const struct device *dev)
 
 	LOG_DBG("RADIO configured");
 
-	k_thread_create(&ctx->trx_thread,
-			ctx->trx_stack,
-			CONFIG_IEEE802154_RF2XX_RX_STACK_SIZE,
-			rf2xx_thread_main,
-			ctx, NULL, NULL,
-			K_PRIO_COOP(2), 0, K_NO_WAIT);
+	k_thread_create(&ctx->trx_thread, ctx->trx_stack, CONFIG_IEEE802154_RF2XX_RX_STACK_SIZE,
+			rf2xx_thread_main, ctx, NULL, NULL, K_PRIO_COOP(2), 0, K_NO_WAIT);
 
-	snprintk(thread_name, sizeof(thread_name),
-		 "rf2xx_trx [%d]", conf->inst);
+	snprintk(thread_name, sizeof(thread_name), "rf2xx_trx [%d]", conf->inst);
 	k_thread_name_set(&ctx->trx_thread, thread_name);
 
 	LOG_DBG("Thread OK");
@@ -1082,101 +1026,83 @@ static void rf2xx_iface_init(struct net_if *iface)
 }
 
 static const struct ieee802154_radio_api rf2xx_radio_api = {
-	.iface_api.init		= rf2xx_iface_init,
+	.iface_api.init = rf2xx_iface_init,
 
-	.get_capabilities	= rf2xx_get_capabilities,
-	.cca			= rf2xx_cca,
-	.set_channel		= rf2xx_set_channel,
-	.filter			= rf2xx_filter,
-	.set_txpower		= rf2xx_set_txpower,
-	.tx			= rf2xx_tx,
-	.start			= rf2xx_start,
-	.stop			= rf2xx_stop,
-	.configure		= rf2xx_configure,
-	.attr_get		= rf2xx_attr_get,
+	.get_capabilities = rf2xx_get_capabilities,
+	.cca = rf2xx_cca,
+	.set_channel = rf2xx_set_channel,
+	.filter = rf2xx_filter,
+	.set_txpower = rf2xx_set_txpower,
+	.tx = rf2xx_tx,
+	.start = rf2xx_start,
+	.stop = rf2xx_stop,
+	.configure = rf2xx_configure,
+	.attr_get = rf2xx_attr_get,
 };
 
 #if !defined(CONFIG_IEEE802154_RAW_MODE)
-    #if defined(CONFIG_NET_L2_IEEE802154)
-	#define L2 IEEE802154_L2
-	#define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(IEEE802154_L2)
-	#define MTU RF2XX_MAX_PSDU_LENGTH
-    #elif defined(CONFIG_NET_L2_OPENTHREAD)
-	#define L2 OPENTHREAD_L2
-	#define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(OPENTHREAD_L2)
-	#define MTU RF2XX_OT_PSDU_LENGTH
-    #endif
+#if defined(CONFIG_NET_L2_IEEE802154)
+#define L2          IEEE802154_L2
+#define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(IEEE802154_L2)
+#define MTU         RF2XX_MAX_PSDU_LENGTH
+#elif defined(CONFIG_NET_L2_OPENTHREAD)
+#define L2          OPENTHREAD_L2
+#define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(OPENTHREAD_L2)
+#define MTU         RF2XX_OT_PSDU_LENGTH
+#endif
 #endif /* CONFIG_IEEE802154_RAW_MODE */
 
-#define DRV_INST_LOCAL_MAC_ADDRESS(n)					\
-	UTIL_AND(DT_INST_NODE_HAS_PROP(n, local_mac_address),		\
-		 UTIL_AND(DT_INST_PROP_LEN(n, local_mac_address) == 8,	\
+#define DRV_INST_LOCAL_MAC_ADDRESS(n)                                                              \
+	UTIL_AND(DT_INST_NODE_HAS_PROP(n, local_mac_address),                                      \
+		 UTIL_AND(DT_INST_PROP_LEN(n, local_mac_address) == 8,                             \
 			  DT_INST_PROP(n, local_mac_address)))
 
-#define IEEE802154_RF2XX_DEVICE_CONFIG(n)				  \
-	BUILD_ASSERT(DT_INST_PROP_LEN(n, tx_pwr_min) == 2,		  \
-	"rf2xx: Error TX-PWR-MIN len is different of two");		  \
-	BUILD_ASSERT(DT_INST_PROP_LEN(n, tx_pwr_max) == 2,		  \
-	"rf2xx: Error TX-PWR-MAX len is different of two");		  \
-	BUILD_ASSERT(DT_INST_PROP_LEN(n, tx_pwr_table) != 0,		  \
-	"rf2xx: Error TX-PWR-TABLE len must be greater than zero");	  \
-	static const uint8_t rf2xx_pwr_table_##n[] =			  \
-		DT_INST_PROP_OR(n, tx_pwr_table, 0);			  \
-	static const struct rf2xx_config rf2xx_ctx_config_##n = {	  \
-		.inst = n,						  \
-		.has_mac = DT_INST_NODE_HAS_PROP(n, local_mac_address),   \
-		.irq_gpio = GPIO_DT_SPEC_INST_GET(n, irq_gpios),	  \
-		.reset_gpio = GPIO_DT_SPEC_INST_GET(n, reset_gpios),	  \
-		.slptr_gpio = GPIO_DT_SPEC_INST_GET(n, slptr_gpios),	  \
-		.dig2_gpio = GPIO_DT_SPEC_INST_GET_OR(n, dig2_gpios, {}), \
-		.clkm_gpio = GPIO_DT_SPEC_INST_GET_OR(n, clkm_gpios, {}), \
-		.spi = SPI_DT_SPEC_INST_GET(n, SPI_WORD_SET(8) |	  \
-				 SPI_TRANSFER_MSB, 0),			  \
-									  \
-		.tx_pwr_min = DT_INST_PROP_OR(n, tx_pwr_min, 0),	  \
-		.tx_pwr_max = DT_INST_PROP_OR(n, tx_pwr_max, 0),	  \
-		.tx_pwr_table = rf2xx_pwr_table_##n,			  \
-		.tx_pwr_table_size = DT_INST_PROP_LEN(n, tx_pwr_table),	  \
+#define IEEE802154_RF2XX_DEVICE_CONFIG(n)                                                          \
+	BUILD_ASSERT(DT_INST_PROP_LEN(n, tx_pwr_min) == 2,                                         \
+		     "rf2xx: Error TX-PWR-MIN len is different of two");                           \
+	BUILD_ASSERT(DT_INST_PROP_LEN(n, tx_pwr_max) == 2,                                         \
+		     "rf2xx: Error TX-PWR-MAX len is different of two");                           \
+	BUILD_ASSERT(DT_INST_PROP_LEN(n, tx_pwr_table) != 0,                                       \
+		     "rf2xx: Error TX-PWR-TABLE len must be greater than zero");                   \
+	static const uint8_t rf2xx_pwr_table_##n[] = DT_INST_PROP_OR(n, tx_pwr_table, 0);          \
+	static const struct rf2xx_config rf2xx_ctx_config_##n = {                                  \
+		.inst = n,                                                                         \
+		.has_mac = DT_INST_NODE_HAS_PROP(n, local_mac_address),                            \
+		.irq_gpio = GPIO_DT_SPEC_INST_GET(n, irq_gpios),                                   \
+		.reset_gpio = GPIO_DT_SPEC_INST_GET(n, reset_gpios),                               \
+		.slptr_gpio = GPIO_DT_SPEC_INST_GET(n, slptr_gpios),                               \
+		.dig2_gpio = GPIO_DT_SPEC_INST_GET_OR(n, dig2_gpios, {}),                          \
+		.clkm_gpio = GPIO_DT_SPEC_INST_GET_OR(n, clkm_gpios, {}),                          \
+		.spi = SPI_DT_SPEC_INST_GET(n, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),             \
+                                                                                                   \
+		.tx_pwr_min = DT_INST_PROP_OR(n, tx_pwr_min, 0),                                   \
+		.tx_pwr_max = DT_INST_PROP_OR(n, tx_pwr_max, 0),                                   \
+		.tx_pwr_table = rf2xx_pwr_table_##n,                                               \
+		.tx_pwr_table_size = DT_INST_PROP_LEN(n, tx_pwr_table),                            \
 	}
 
-#define IEEE802154_RF2XX_DEVICE_DATA(n)                                 \
-	static struct rf2xx_context rf2xx_ctx_data_##n = {              \
-		.mac_addr = { DRV_INST_LOCAL_MAC_ADDRESS(n) },          \
-		.cc_page = BIT(DT_INST_ENUM_IDX_OR(n, channel_page, 0)),\
-		.cc_channels = {                                        \
-			.ranges = &rf2xx_ctx_data_##n.cc_range,         \
-			.num_ranges = 1U,                               \
-		}                                                       \
-	}
+#define IEEE802154_RF2XX_DEVICE_DATA(n)                                                            \
+	static struct rf2xx_context rf2xx_ctx_data_##n = {                                         \
+		.mac_addr = {DRV_INST_LOCAL_MAC_ADDRESS(n)},                                       \
+		.cc_page = BIT(DT_INST_ENUM_IDX_OR(n, channel_page, 0)),                           \
+		.cc_channels = {                                                                   \
+			.ranges = &rf2xx_ctx_data_##n.cc_range,                                    \
+			.num_ranges = 1U,                                                          \
+		}}
 
-#define IEEE802154_RF2XX_RAW_DEVICE_INIT(n)	   \
-	DEVICE_DT_INST_DEFINE(			   \
-		n,				   \
-		&rf2xx_init,			   \
-		NULL,				   \
-		&rf2xx_ctx_data_##n,		   \
-		&rf2xx_ctx_config_##n,		   \
-		POST_KERNEL,			   \
-		CONFIG_IEEE802154_RF2XX_INIT_PRIO, \
-		&rf2xx_radio_api)
+#define IEEE802154_RF2XX_RAW_DEVICE_INIT(n)                                                        \
+	DEVICE_DT_INST_DEFINE(n, &rf2xx_init, NULL, &rf2xx_ctx_data_##n, &rf2xx_ctx_config_##n,    \
+			      POST_KERNEL, CONFIG_IEEE802154_RF2XX_INIT_PRIO, &rf2xx_radio_api)
 
-#define IEEE802154_RF2XX_NET_DEVICE_INIT(n)	   \
-	NET_DEVICE_DT_INST_DEFINE(		   \
-		n,				   \
-		&rf2xx_init,			   \
-		NULL,				   \
-		&rf2xx_ctx_data_##n,		   \
-		&rf2xx_ctx_config_##n,		   \
-		CONFIG_IEEE802154_RF2XX_INIT_PRIO, \
-		&rf2xx_radio_api,		   \
-		L2,				   \
-		L2_CTX_TYPE,			   \
-		MTU)
+#define IEEE802154_RF2XX_NET_DEVICE_INIT(n)                                                        \
+	NET_DEVICE_DT_INST_DEFINE(n, &rf2xx_init, NULL, &rf2xx_ctx_data_##n,                       \
+				  &rf2xx_ctx_config_##n, CONFIG_IEEE802154_RF2XX_INIT_PRIO,        \
+				  &rf2xx_radio_api, L2, L2_CTX_TYPE, MTU)
 
-#define IEEE802154_RF2XX_INIT(inst)				\
-	IEEE802154_RF2XX_DEVICE_CONFIG(inst);			\
-	IEEE802154_RF2XX_DEVICE_DATA(inst);			\
-								\
+#define IEEE802154_RF2XX_INIT(inst)                                                                \
+	IEEE802154_RF2XX_DEVICE_CONFIG(inst);                                                      \
+	IEEE802154_RF2XX_DEVICE_DATA(inst);                                                        \
+                                                                                                   \
 	COND_CODE_1(CONFIG_IEEE802154_RAW_MODE,			\
 		    (IEEE802154_RF2XX_RAW_DEVICE_INIT(inst);),	\
 		    (IEEE802154_RF2XX_NET_DEVICE_INIT(inst);))

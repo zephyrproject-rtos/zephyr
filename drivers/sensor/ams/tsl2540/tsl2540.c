@@ -17,10 +17,10 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 
-#define TSL2540_INTEGRATION_TIME_MS	(2.81)
-#define TSL2540_DEVICE_FACTOR		(53.0)
+#define TSL2540_INTEGRATION_TIME_MS (2.81)
+#define TSL2540_DEVICE_FACTOR       (53.0)
 
-#define FIXED_ATTENUATION_TO_DBL(x)	(x * 0.00001)
+#define FIXED_ATTENUATION_TO_DBL(x) (x * 0.00001)
 
 LOG_MODULE_REGISTER(tsl2540, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -84,12 +84,12 @@ static int tsl2540_channel_get(const struct device *dev, enum sensor_channel cha
 
 	switch (chan) {
 	case SENSOR_CHAN_LIGHT:
-		sensor_value_from_double(val, data->count_vis / cpl *
-					 TSL2540_DEVICE_FACTOR * glass_attenuation);
+		sensor_value_from_double(val, data->count_vis / cpl * TSL2540_DEVICE_FACTOR *
+						      glass_attenuation);
 		break;
 	case SENSOR_CHAN_IR:
-		sensor_value_from_double(val, data->count_ir / cpl *
-					 TSL2540_DEVICE_FACTOR * glass_ir_attenuation);
+		sensor_value_from_double(val, data->count_ir / cpl * TSL2540_DEVICE_FACTOR *
+						      glass_ir_attenuation);
 		break;
 	default:
 		ret = -ENOTSUP;
@@ -148,7 +148,7 @@ static int tsl2540_attr_set_gain(const struct device *dev, enum sensor_gain_tsl2
 }
 
 static int tsl2540_attr_set(const struct device *dev, enum sensor_channel chan,
-				enum sensor_attribute attr, const struct sensor_value *val)
+			    enum sensor_attribute attr, const struct sensor_value *val)
 {
 	const struct tsl2540_config *cfg = dev->config;
 	struct tsl2540_data *data = dev->data;
@@ -162,8 +162,8 @@ static int tsl2540_attr_set(const struct device *dev, enum sensor_channel chan,
 
 	k_sem_take(&data->sem, K_FOREVER);
 
-	ret = i2c_reg_write_byte_dt(&cfg->i2c_spec, TSL2540_ENABLE_ADDR, TSL2540_ENABLE_MASK &
-				    ~TSL2540_ENABLE_CONF);
+	ret = i2c_reg_write_byte_dt(&cfg->i2c_spec, TSL2540_ENABLE_ADDR,
+				    TSL2540_ENABLE_MASK & ~TSL2540_ENABLE_CONF);
 	if (ret) {
 		k_sem_give(&data->sem);
 		return ret;
@@ -208,7 +208,6 @@ static int tsl2540_attr_set(const struct device *dev, enum sensor_channel chan,
 
 			goto exit;
 		}
-
 	}
 #endif /* CONFIG_TSL2540_TRIGGER */
 
@@ -251,23 +250,23 @@ static int tsl2540_attr_set(const struct device *dev, enum sensor_channel chan,
 	case SENSOR_ATTR_TSL2540_SHUTDOWN_MODE:
 		data->enable_mode = TSL2540_ENABLE_DISABLE;
 		ret = i2c_reg_update_byte_dt(&cfg->i2c_spec, TSL2540_CFG3_ADDR, TSL2540_CFG3_MASK,
-						TSL2540_CFG3_CONF);
+					     TSL2540_CFG3_CONF);
 		break;
 	case SENSOR_ATTR_TSL2540_CONTINUOUS_MODE:
 		data->enable_mode = TSL2540_ENABLE_CONF;
 		ret = i2c_reg_update_byte_dt(&cfg->i2c_spec, TSL2540_CFG3_ADDR, TSL2540_CFG3_MASK,
-						TSL2540_CFG3_CONF);
+					     TSL2540_CFG3_CONF);
 		break;
 	case SENSOR_ATTR_TSL2540_CONTINUOUS_NO_WAIT_MODE:
 		data->enable_mode = TSL2540_ENABLE_AEN_PON;
 		ret = i2c_reg_update_byte_dt(&cfg->i2c_spec, TSL2540_CFG3_ADDR, TSL2540_CFG3_MASK,
-						TSL2540_CFG3_DFLT);
+					     TSL2540_CFG3_DFLT);
 		break;
 	}
 
 exit:
 	i2c_reg_update_byte_dt(&cfg->i2c_spec, TSL2540_ENABLE_ADDR, TSL2540_ENABLE_MASK,
-				data->enable_mode);
+			       data->enable_mode);
 
 	k_sem_give(&data->sem);
 
@@ -355,11 +354,11 @@ static int tsl2540_pm_action(const struct device *dev, enum pm_device_action act
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
 		ret = i2c_reg_update_byte_dt(&cfg->i2c_spec, TSL2540_ENABLE_ADDR,
-					    TSL2540_ENABLE_MASK, data->enable_mode);
+					     TSL2540_ENABLE_MASK, data->enable_mode);
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		ret = i2c_reg_update_byte_dt(&cfg->i2c_spec, TSL2540_ENABLE_ADDR,
-					    TSL2540_ENABLE_MASK, TSL2540_ENABLE_DISABLE);
+					     TSL2540_ENABLE_MASK, TSL2540_ENABLE_DISABLE);
 		break;
 	default:
 		return -ENOTSUP;
@@ -369,21 +368,21 @@ static int tsl2540_pm_action(const struct device *dev, enum pm_device_action act
 }
 #endif
 
-#define TSL2540_GLASS_ATTEN(inst)						\
-	.glass_attenuation = DT_INST_PROP(inst, glass_attenuation),		\
-	.glass_ir_attenuation = DT_INST_PROP(inst, glass_ir_attenuation),	\
+#define TSL2540_GLASS_ATTEN(inst)                                                                  \
+	.glass_attenuation = DT_INST_PROP(inst, glass_attenuation),                                \
+	.glass_ir_attenuation = DT_INST_PROP(inst, glass_ir_attenuation),
 
-#define TSL2540_DEFINE(inst)									\
-	static struct tsl2540_data tsl2540_prv_data_##inst;					\
-	static const struct tsl2540_config tsl2540_config_##inst = {				\
-		.i2c_spec = I2C_DT_SPEC_INST_GET(inst),						\
+#define TSL2540_DEFINE(inst)                                                                       \
+	static struct tsl2540_data tsl2540_prv_data_##inst;                                        \
+	static const struct tsl2540_config tsl2540_config_##inst = {                               \
+		.i2c_spec = I2C_DT_SPEC_INST_GET(inst),                                            \
 		IF_ENABLED(CONFIG_TSL2540_TRIGGER,						\
-		(.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),))				\
-		TSL2540_GLASS_ATTEN(inst)							\
-	};											\
-	PM_DEVICE_DT_INST_DEFINE(inst, tsl2540_pm_action);					\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &tsl2540_init, PM_DEVICE_DT_INST_GET(inst),		\
-				&tsl2540_prv_data_##inst, &tsl2540_config_##inst, POST_KERNEL,	\
-				CONFIG_SENSOR_INIT_PRIORITY, &tsl2540_driver_api);
+		(.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),))                                          \
+							   TSL2540_GLASS_ATTEN(inst)};             \
+	PM_DEVICE_DT_INST_DEFINE(inst, tsl2540_pm_action);                                         \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, &tsl2540_init, PM_DEVICE_DT_INST_GET(inst),             \
+				     &tsl2540_prv_data_##inst, &tsl2540_config_##inst,             \
+				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,                     \
+				     &tsl2540_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TSL2540_DEFINE)

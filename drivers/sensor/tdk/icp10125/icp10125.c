@@ -17,11 +17,11 @@
 
 LOG_MODULE_REGISTER(ICP10125, CONFIG_SENSOR_LOG_LEVEL);
 
-#define CRC_POLY	 0x31
+#define CRC_POLY         0x31
 #define SENSOR_DATA_SIZE 2
 
-#define AMBIENT_TEMP_DATA_NUM		1
-#define PRESS_DATA_NUM			2
+#define AMBIENT_TEMP_DATA_NUM           1
+#define PRESS_DATA_NUM                  2
 #define PRESS_AND_AMBIENT_TEMP_DATA_NUM (AMBIENT_TEMP_DATA_NUM + PRESS_DATA_NUM)
 
 enum {
@@ -62,23 +62,19 @@ struct icp10125_otp_read_setup {
  * (Section 5.2 MEASUREMENT COMMANDS in the Datasheet)
  */
 static const struct icp10125_cmd ambient_temp_measurement_cmds[] = {
-	{{0x60, 0x9C}}, {{0x68, 0x25}}, {{0x70, 0xDF}}, {{0x78, 0x66}}
-};
+	{{0x60, 0x9C}}, {{0x68, 0x25}}, {{0x70, 0xDF}}, {{0x78, 0x66}}};
 
 /* pressure measurement command for each mode.
  * (Section 5.2 MEASUREMENT COMMANDS in the Datasheet)
  */
 static const struct icp10125_cmd press_measurement_cmds[] = {
-	{{0x40, 0x1A}}, {{0x48, 0xA3}}, {{0x50, 0x59}}, {{0x59, 0xE0}}
-};
+	{{0x40, 0x1A}}, {{0x48, 0xA3}}, {{0x50, 0x59}}, {{0x59, 0xE0}}};
 
 /* Request preparation for OTP data read. It should issue before data read request.
  * (Section 5.2 MEASUREMENT COMMANDS in the Datasheet)
  */
-static const struct icp10125_otp_read_setup otp_read_setup = {
-		.cmd = {{0xC5, 0x95}},
-		.data = {0x00, 0x66, 0x9C}
-};
+static const struct icp10125_otp_read_setup otp_read_setup = {.cmd = {{0xC5, 0x95}},
+							      .data = {0x00, 0x66, 0x9C}};
 
 /* OTP data read request.
  * After issue this command 2byte x 4 sensor constant value can readable.

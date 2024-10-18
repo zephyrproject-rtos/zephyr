@@ -51,8 +51,7 @@
 #include <soc.h>
 #include <zephyr/drivers/uart.h>
 
-#if defined(CONFIG_SOC_SERIES_ESP32C2) || \
-	defined(CONFIG_SOC_SERIES_ESP32C3) || \
+#if defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C3) ||                    \
 	defined(CONFIG_SOC_SERIES_ESP32C6)
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
 #else
@@ -67,8 +66,7 @@
 
 LOG_MODULE_REGISTER(uart_esp32, CONFIG_UART_LOG_LEVEL);
 
-#if defined(CONFIG_SOC_SERIES_ESP32C2) || \
-	defined(CONFIG_SOC_SERIES_ESP32C3) || \
+#if defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C3) ||                    \
 	defined(CONFIG_SOC_SERIES_ESP32C6)
 #define ISR_HANDLER isr_handler_t
 #else
@@ -124,7 +122,7 @@ struct uart_esp32_data {
 #endif
 };
 
-#define UART_FIFO_LIMIT	    (UART_LL_FIFO_DEF_LEN)
+#define UART_FIFO_LIMIT     (UART_LL_FIFO_DEF_LEN)
 #define UART_TX_FIFO_THRESH (CONFIG_UART_ESP32_TX_FIFO_THRESH)
 #define UART_RX_FIFO_THRESH (CONFIG_UART_ESP32_RX_FIFO_THRESH)
 
@@ -182,7 +180,7 @@ static int uart_esp32_config_get(const struct device *dev, struct uart_config *c
 
 	uart_hal_get_sclk(&data->hal, &src_clk);
 	esp_clk_tree_src_get_freq_hz((soc_module_clk_t)src_clk,
-		ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq);
+				     ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq);
 	uart_hal_get_baudrate(&data->hal, &cfg->baudrate, sclk_freq);
 
 	uart_hal_get_parity(&data->hal, &parity);
@@ -340,7 +338,7 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 
 	uart_hal_get_sclk(&data->hal, &src_clk);
 	esp_clk_tree_src_get_freq_hz((soc_module_clk_t)src_clk,
-		ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq);
+				     ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq);
 	uart_hal_set_baudrate(&data->hal, cfg->baudrate, sclk_freq);
 
 	uart_hal_set_rx_timeout(&data->hal, 0x16);
@@ -933,11 +931,9 @@ static int uart_esp32_init(const struct device *dev)
 	const struct uart_esp32_config *config = dev->config;
 
 	ret = esp_intr_alloc(config->irq_source,
-			ESP_PRIO_TO_FLAGS(config->irq_priority) |
-			ESP_INT_FLAGS_CHECK(config->irq_flags),
-			(ISR_HANDLER)uart_esp32_isr,
-			(void *)dev,
-			NULL);
+			     ESP_PRIO_TO_FLAGS(config->irq_priority) |
+				     ESP_INT_FLAGS_CHECK(config->irq_flags),
+			     (ISR_HANDLER)uart_esp32_isr, (void *)dev, NULL);
 	if (ret < 0) {
 		LOG_ERR("Error allocating UART interrupt (%d)", ret);
 		return ret;
@@ -1003,8 +999,7 @@ static const DRAM_ATTR struct uart_driver_api uart_esp32_api = {
 	.tx_dma_channel = ESP32_DT_INST_DMA_CELL(n, tx, channel),                                  \
 	.rx_dma_channel = ESP32_DT_INST_DMA_CELL(n, rx, channel)
 
-#define ESP_UART_UHCI_INIT(n)                                                                      \
-	.uhci_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas), (&UHCI0), (NULL))
+#define ESP_UART_UHCI_INIT(n) .uhci_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas), (&UHCI0), (NULL))
 
 #else
 #define ESP_UART_DMA_INIT(n)
@@ -1027,23 +1022,22 @@ static const DRAM_ATTR struct uart_driver_api uart_esp32_api = {
 		ESP_UART_DMA_INIT(idx)};                                                           \
                                                                                                    \
 	static struct uart_esp32_data uart_esp32_data_##idx = {                                    \
-		.uart_config = {.baudrate = DT_INST_PROP(idx, current_speed),                      \
-				.parity = DT_INST_ENUM_IDX_OR(idx, parity, UART_CFG_PARITY_NONE),  \
-				.stop_bits = DT_INST_ENUM_IDX_OR(idx, stop_bits,                   \
-								 UART_CFG_STOP_BITS_1),            \
-				.data_bits = DT_INST_ENUM_IDX_OR(idx, data_bits,                   \
-								 UART_CFG_DATA_BITS_8),            \
-				.flow_ctrl = MAX(COND_CODE_1(DT_INST_PROP(idx, hw_rs485_hd_mode),  \
+		.uart_config = {                                                                   \
+			.baudrate = DT_INST_PROP(idx, current_speed),                              \
+			.parity = DT_INST_ENUM_IDX_OR(idx, parity, UART_CFG_PARITY_NONE),          \
+			.stop_bits = DT_INST_ENUM_IDX_OR(idx, stop_bits, UART_CFG_STOP_BITS_1),    \
+			.data_bits = DT_INST_ENUM_IDX_OR(idx, data_bits, UART_CFG_DATA_BITS_8),    \
+			.flow_ctrl = MAX(COND_CODE_1(DT_INST_PROP(idx, hw_rs485_hd_mode),  \
 							     (UART_CFG_FLOW_CTRL_RS485),           \
-							     (UART_CFG_FLOW_CTRL_NONE)),           \
-						 COND_CODE_1(DT_INST_PROP(idx, hw_flow_control),   \
+							     (UART_CFG_FLOW_CTRL_NONE)),             \
+				 COND_CODE_1(DT_INST_PROP(idx, hw_flow_control),   \
 							     (UART_CFG_FLOW_CTRL_RTS_CTS),         \
-							     (UART_CFG_FLOW_CTRL_NONE)))},         \
-		.hal =                                                                             \
-			{                                                                          \
-				.dev = (uart_dev_t *)DT_INST_REG_ADDR(idx),                        \
-			},                                                                         \
-		ESP_UART_UHCI_INIT(idx)};                                                          \
+							     (UART_CFG_FLOW_CTRL_NONE)))},           \
+				.hal =                                                             \
+					{                                                          \
+						.dev = (uart_dev_t *)DT_INST_REG_ADDR(idx),        \
+					},                                                         \
+				ESP_UART_UHCI_INIT(idx)};                                          \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(idx, uart_esp32_init, NULL, &uart_esp32_data_##idx,                  \
 			      &uart_esp32_cfg_port_##idx, PRE_KERNEL_1,                            \

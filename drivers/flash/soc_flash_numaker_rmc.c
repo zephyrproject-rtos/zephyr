@@ -17,7 +17,7 @@
 
 LOG_MODULE_REGISTER(flash_numaker_rmc, CONFIG_FLASH_LOG_LEVEL);
 
-#define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
+#define SOC_NV_FLASH_NODE             DT_INST(0, soc_nv_flash)
 #define SOC_NV_FLASH_WRITE_BLOCK_SIZE DT_PROP_OR(SOC_NV_FLASH_NODE, write_block_size, 0x04)
 
 struct flash_numaker_data {
@@ -29,9 +29,10 @@ struct flash_numaker_data {
 static const struct flash_parameters flash_numaker_parameters = {
 	.write_block_size = SOC_NV_FLASH_WRITE_BLOCK_SIZE,
 	.erase_value = 0xff,
-	.caps = {
-		.no_explicit_erase = true,
-	},
+	.caps =
+		{
+			.no_explicit_erase = true,
+		},
 };
 
 /* Validate offset and length */
@@ -152,8 +153,8 @@ static int32_t flash_numaker_block_write(uint32_t u32_addr, const uint8_t *pu8_d
 	if (block_size == 4) {
 		retval = RMC_Write(u32_addr, *pu32_data);
 	} else if (block_size == 8) {
-		retval = RMC_Write(u32_addr, *pu32_data) |
-			 RMC_Write(u32_addr + 4, *(pu32_data + 1));
+		retval =
+			RMC_Write(u32_addr, *pu32_data) | RMC_Write(u32_addr + 4, *(pu32_data + 1));
 	} else {
 		retval = -1;
 	}
@@ -223,8 +224,8 @@ done:
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 static const struct flash_pages_layout dev_layout = {
-	.pages_count = DT_REG_SIZE(SOC_NV_FLASH_NODE) /
-		       DT_PROP(SOC_NV_FLASH_NODE, erase_block_size),
+	.pages_count =
+		DT_REG_SIZE(SOC_NV_FLASH_NODE) / DT_PROP(SOC_NV_FLASH_NODE, erase_block_size),
 	.pages_size = DT_PROP(SOC_NV_FLASH_NODE, erase_block_size),
 };
 

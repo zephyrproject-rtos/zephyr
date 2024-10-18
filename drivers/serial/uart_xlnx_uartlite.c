@@ -59,8 +59,8 @@ struct xlnx_uartlite_data {
 	uart_irq_callback_user_data_t callback;
 	void *callback_data;
 
-	volatile uint8_t tx_irq_enabled : 1;
-	volatile uint8_t rx_irq_enabled : 1;
+	volatile uint8_t tx_irq_enabled: 1;
+	volatile uint8_t rx_irq_enabled: 1;
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
@@ -93,8 +93,7 @@ static inline unsigned char xlnx_uartlite_read_rx_fifo(const struct device *dev)
 	return (sys_read32(config->base + RX_FIFO_OFFSET) & BIT_MASK(8));
 }
 
-static inline void xlnx_uartlite_write_tx_fifo(const struct device *dev,
-					       unsigned char c)
+static inline void xlnx_uartlite_write_tx_fifo(const struct device *dev, unsigned char c)
 {
 	const struct xlnx_uartlite_config *config = dev->config;
 
@@ -178,9 +177,7 @@ static inline void xlnx_uartlite_irq_cond_disable(const struct device *dev)
 	}
 }
 
-static int xlnx_uartlite_fifo_fill(const struct device *dev,
-				   const uint8_t *tx_data,
-				   int len)
+static int xlnx_uartlite_fifo_fill(const struct device *dev, const uint8_t *tx_data, int len)
 {
 	uint32_t status;
 	k_spinlock_key_t key;
@@ -199,8 +196,7 @@ static int xlnx_uartlite_fifo_fill(const struct device *dev,
 	return count;
 }
 
-static int xlnx_uartlite_fifo_read(const struct device *dev, uint8_t *rx_data,
-				   const int len)
+static int xlnx_uartlite_fifo_read(const struct device *dev, uint8_t *rx_data, const int len)
 {
 	uint32_t status;
 	k_spinlock_key_t key;
@@ -224,8 +220,7 @@ static int xlnx_uartlite_fifo_read(const struct device *dev, uint8_t *rx_data,
 
 static void xlnx_uartlite_tx_soft_isr(struct k_timer *timer)
 {
-	struct xlnx_uartlite_data *data =
-		CONTAINER_OF(timer, struct xlnx_uartlite_data, timer);
+	struct xlnx_uartlite_data *data = CONTAINER_OF(timer, struct xlnx_uartlite_data, timer);
 
 	if (data->callback) {
 		data->callback(data->dev, data->callback_data);
@@ -264,8 +259,7 @@ static int xlnx_uartlite_irq_tx_ready(const struct device *dev)
 	struct xlnx_uartlite_data *data = dev->data;
 	uint32_t status = xlnx_uartlite_read_status(dev);
 
-	return (((status & STAT_REG_TX_FIFO_FULL) == 0U) &&
-		data->tx_irq_enabled);
+	return (((status & STAT_REG_TX_FIFO_FULL) == 0U) && data->tx_irq_enabled);
 }
 
 static int xlnx_uartlite_irq_tx_complete(const struct device *dev)
@@ -297,14 +291,12 @@ static int xlnx_uartlite_irq_rx_ready(const struct device *dev)
 	struct xlnx_uartlite_data *data = dev->data;
 	uint32_t status = xlnx_uartlite_read_status(dev);
 
-	return ((status & STAT_REG_RX_FIFO_VALID_DATA) &&
-		data->rx_irq_enabled);
+	return ((status & STAT_REG_RX_FIFO_VALID_DATA) && data->rx_irq_enabled);
 }
 
 static int xlnx_uartlite_irq_is_pending(const struct device *dev)
 {
-	return (xlnx_uartlite_irq_tx_ready(dev) ||
-		xlnx_uartlite_irq_rx_ready(dev));
+	return (xlnx_uartlite_irq_tx_ready(dev) || xlnx_uartlite_irq_rx_ready(dev));
 }
 
 static int xlnx_uartlite_irq_update(const struct device *dev)
@@ -313,8 +305,7 @@ static int xlnx_uartlite_irq_update(const struct device *dev)
 }
 
 static void xlnx_uartlite_irq_callback_set(const struct device *dev,
-					   uart_irq_callback_user_data_t cb,
-					   void *user_data)
+					   uart_irq_callback_user_data_t cb, void *user_data)
 {
 	struct xlnx_uartlite_data *data = dev->data;
 
@@ -344,8 +335,7 @@ static int xlnx_uartlite_init(const struct device *dev)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 	/* Reset FIFOs and disable interrupts */
-	sys_write32(CTRL_REG_RST_RX_FIFO | CTRL_REG_RST_TX_FIFO,
-		    config->base + CTRL_REG_OFFSET);
+	sys_write32(CTRL_REG_RST_RX_FIFO | CTRL_REG_RST_TX_FIFO, config->base + CTRL_REG_OFFSET);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	config->irq_config_func(dev);
@@ -375,55 +365,43 @@ static const struct uart_driver_api xlnx_uartlite_driver_api = {
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define XLNX_UARTLITE_IRQ_INIT(n, i)					\
-	do {								\
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, i, irq),		\
-			    DT_INST_IRQ_BY_IDX(n, i, priority),		\
-			    xlnx_uartlite_isr,				\
-			    DEVICE_DT_INST_GET(n), 0);			\
-									\
-		irq_enable(DT_INST_IRQ_BY_IDX(n, i, irq));		\
+#define XLNX_UARTLITE_IRQ_INIT(n, i)                                                               \
+	do {                                                                                       \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, i, irq), DT_INST_IRQ_BY_IDX(n, i, priority),     \
+			    xlnx_uartlite_isr, DEVICE_DT_INST_GET(n), 0);                          \
+                                                                                                   \
+		irq_enable(DT_INST_IRQ_BY_IDX(n, i, irq));                                         \
 	} while (false)
-#define XLNX_UARTLITE_CONFIG_FUNC(n)					\
-	static void xlnx_uartlite_config_func_##n(const struct device *dev) \
-	{								\
-		/* IRQ line not always present on all instances */	\
+#define XLNX_UARTLITE_CONFIG_FUNC(n)                                                               \
+	static void xlnx_uartlite_config_func_##n(const struct device *dev)                        \
+	{                                                                                          \
+		/* IRQ line not always present on all instances */                                 \
 		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0),			\
-			   (XLNX_UARTLITE_IRQ_INIT(n, 0);))		\
+			   (XLNX_UARTLITE_IRQ_INIT(n, 0);))                                          \
 	}
-#define XLNX_UARTLITE_IRQ_CFG_FUNC_INIT(n)				\
-	.irq_config_func = xlnx_uartlite_config_func_##n
-#define XLNX_UARTLITE_INIT_CFG(n)					\
-	XLNX_UARTLITE_DECLARE_CFG(n, XLNX_UARTLITE_IRQ_CFG_FUNC_INIT(n))
+#define XLNX_UARTLITE_IRQ_CFG_FUNC_INIT(n) .irq_config_func = xlnx_uartlite_config_func_##n
+#define XLNX_UARTLITE_INIT_CFG(n)          XLNX_UARTLITE_DECLARE_CFG(n, XLNX_UARTLITE_IRQ_CFG_FUNC_INIT(n))
 #else
 #define XLNX_UARTLITE_CONFIG_FUNC(n)
 #define XLNX_UARTLITE_IRQ_CFG_FUNC_INIT
-#define XLNX_UARTLITE_INIT_CFG(n)					\
-	XLNX_UARTLITE_DECLARE_CFG(n, XLNX_UARTLITE_IRQ_CFG_FUNC_INIT)
+#define XLNX_UARTLITE_INIT_CFG(n) XLNX_UARTLITE_DECLARE_CFG(n, XLNX_UARTLITE_IRQ_CFG_FUNC_INIT)
 #endif
 
-#define XLNX_UARTLITE_DECLARE_CFG(n, IRQ_FUNC_INIT)			\
-static const struct xlnx_uartlite_config xlnx_uartlite_##n##_config = {	\
-	.base = DT_INST_REG_ADDR(n),					\
-	IRQ_FUNC_INIT							\
-}
+#define XLNX_UARTLITE_DECLARE_CFG(n, IRQ_FUNC_INIT)                                                \
+	static const struct xlnx_uartlite_config xlnx_uartlite_##n##_config = {                    \
+		.base = DT_INST_REG_ADDR(n), IRQ_FUNC_INIT}
 
-#define XLNX_UARTLITE_INIT(n)						\
-	static struct xlnx_uartlite_data xlnx_uartlite_##n##_data;	\
-									\
-	static const struct xlnx_uartlite_config xlnx_uartlite_##n##_config;\
-									\
-	DEVICE_DT_INST_DEFINE(n,					\
-			    &xlnx_uartlite_init,			\
-			    NULL,					\
-			    &xlnx_uartlite_##n##_data,			\
-			    &xlnx_uartlite_##n##_config,		\
-			    PRE_KERNEL_1,				\
-			    CONFIG_SERIAL_INIT_PRIORITY,		\
-			    &xlnx_uartlite_driver_api);			\
-									\
-	XLNX_UARTLITE_CONFIG_FUNC(n)					\
-									\
+#define XLNX_UARTLITE_INIT(n)                                                                      \
+	static struct xlnx_uartlite_data xlnx_uartlite_##n##_data;                                 \
+                                                                                                   \
+	static const struct xlnx_uartlite_config xlnx_uartlite_##n##_config;                       \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &xlnx_uartlite_init, NULL, &xlnx_uartlite_##n##_data,             \
+			      &xlnx_uartlite_##n##_config, PRE_KERNEL_1,                           \
+			      CONFIG_SERIAL_INIT_PRIORITY, &xlnx_uartlite_driver_api);             \
+                                                                                                   \
+	XLNX_UARTLITE_CONFIG_FUNC(n)                                                               \
+                                                                                                   \
 	XLNX_UARTLITE_INIT_CFG(n);
 
 DT_INST_FOREACH_STATUS_OKAY(XLNX_UARTLITE_INIT)

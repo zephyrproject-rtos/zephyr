@@ -48,8 +48,7 @@ static int framebuf_set_orientation(const struct device *dev,
 	}
 }
 
-static void framebuf_get_capabilities(const struct device *dev,
-				      struct display_capabilities *caps)
+static void framebuf_get_capabilities(const struct device *dev, struct display_capabilities *caps)
 {
 	const struct framebuf_dev_config *config = dev->config;
 
@@ -61,10 +60,8 @@ static void framebuf_get_capabilities(const struct device *dev,
 	caps->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
-static int framebuf_write(const struct device *dev, const uint16_t x,
-			  const uint16_t y,
-			  const struct display_buffer_descriptor *desc,
-			  const void *buf)
+static int framebuf_write(const struct device *dev, const uint16_t x, const uint16_t y,
+			  const struct display_buffer_descriptor *desc, const void *buf)
 {
 	struct framebuf_dev_data *data = dev->data;
 	uint32_t *dst = data->buffer;
@@ -75,7 +72,7 @@ static int framebuf_write(const struct device *dev, const uint16_t x,
 	dst += (y * data->pitch);
 
 	for (row = 0; row < desc->height; ++row) {
-		(void) memcpy(dst, src, desc->width * sizeof(uint32_t));
+		(void)memcpy(dst, src, desc->width * sizeof(uint32_t));
 		dst += data->pitch;
 		src += desc->pitch;
 	}
@@ -83,10 +80,8 @@ static int framebuf_write(const struct device *dev, const uint16_t x,
 	return 0;
 }
 
-static int framebuf_read(const struct device *dev, const uint16_t x,
-			 const uint16_t y,
-			 const struct display_buffer_descriptor *desc,
-			 void *buf)
+static int framebuf_read(const struct device *dev, const uint16_t x, const uint16_t y,
+			 const struct display_buffer_descriptor *desc, void *buf)
 {
 	struct framebuf_dev_data *data = dev->data;
 	uint32_t *src = data->buffer;
@@ -97,7 +92,7 @@ static int framebuf_read(const struct device *dev, const uint16_t x,
 	src += (y * data->pitch);
 
 	for (row = 0; row < desc->height; ++row) {
-		(void) memcpy(dst, src, desc->width * sizeof(uint32_t));
+		(void)memcpy(dst, src, desc->width * sizeof(uint32_t));
 		src += data->pitch;
 		dst += desc->pitch;
 	}
@@ -110,8 +105,7 @@ const struct display_driver_api framebuf_display_api = {
 	.read = framebuf_read,
 	.get_capabilities = framebuf_get_capabilities,
 	.set_pixel_format = framebuf_set_pixel_format,
-	.set_orientation = framebuf_set_orientation
-};
+	.set_orientation = framebuf_set_orientation};
 
 static int multiboot_framebuf_init(const struct device *dev)
 {
@@ -119,10 +113,9 @@ static int multiboot_framebuf_init(const struct device *dev)
 	struct framebuf_dev_data *data = dev->data;
 	struct multiboot_info *info = &multiboot_info;
 
-	if ((info->flags & MULTIBOOT_INFO_FLAGS_FB) &&
-	    (info->fb_width >= config->width) &&
-	    (info->fb_height >= config->height) &&
-	    (info->fb_bpp == 32) && (info->fb_addr_hi == 0)) {
+	if ((info->flags & MULTIBOOT_INFO_FLAGS_FB) && (info->fb_width >= config->width) &&
+	    (info->fb_height >= config->height) && (info->fb_bpp == 32) &&
+	    (info->fb_addr_hi == 0)) {
 		/*
 		 * We have a usable multiboot framebuffer - it is 32 bpp
 		 * and at least as large as the requested dimensions. Compute
@@ -138,7 +131,7 @@ static int multiboot_framebuf_init(const struct device *dev)
 		data->pitch = (info->fb_pitch / 4) + adj_x;
 		adj_x /= 2U;
 		adj_y /= 2U;
-		buffer = (uint32_t *) (uintptr_t) info->fb_addr_lo;
+		buffer = (uint32_t *)(uintptr_t)info->fb_addr_lo;
 		buffer += adj_x;
 		buffer += adj_y * data->pitch;
 		data->buffer = buffer;
@@ -155,6 +148,5 @@ static const struct framebuf_dev_config config = {
 
 static struct framebuf_dev_data data;
 
-DEVICE_DT_INST_DEFINE(0, multiboot_framebuf_init, NULL, &data, &config,
-		      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		      &framebuf_display_api);
+DEVICE_DT_INST_DEFINE(0, multiboot_framebuf_init, NULL, &data, &config, PRE_KERNEL_1,
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &framebuf_display_api);

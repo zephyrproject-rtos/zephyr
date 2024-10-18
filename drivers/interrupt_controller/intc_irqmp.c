@@ -26,31 +26,31 @@
  */
 #define IRQMP_NCPU_MAX 16
 struct irqmp_regs {
-	uint32_t ilevel;                                /* 0x00 */
-	uint32_t ipend;                                 /* 0x04 */
-	uint32_t iforce0;                               /* 0x08 */
-	uint32_t iclear;                                /* 0x0c */
-	uint32_t mpstat;                                /* 0x10 */
-	uint32_t brdlst;                                /* 0x14 */
-	uint32_t errstat;                               /* 0x18 */
-	uint32_t wdogctrl;                              /* 0x1c */
-	uint32_t asmpctrl;                              /* 0x20 */
-	uint32_t icselr[2];                             /* 0x24 */
-	uint32_t reserved2c;                            /* 0x2c */
-	uint32_t reserved30;                            /* 0x30 */
-	uint32_t reserved34;                            /* 0x34 */
-	uint32_t reserved38;                            /* 0x38 */
-	uint32_t reserved3c;                            /* 0x3c */
-	uint32_t pimask[IRQMP_NCPU_MAX];                /* 0x40 */
-	uint32_t piforce[IRQMP_NCPU_MAX];               /* 0x80 */
-	uint32_t pextack[IRQMP_NCPU_MAX];               /* 0xc0 */
+	uint32_t ilevel;                  /* 0x00 */
+	uint32_t ipend;                   /* 0x04 */
+	uint32_t iforce0;                 /* 0x08 */
+	uint32_t iclear;                  /* 0x0c */
+	uint32_t mpstat;                  /* 0x10 */
+	uint32_t brdlst;                  /* 0x14 */
+	uint32_t errstat;                 /* 0x18 */
+	uint32_t wdogctrl;                /* 0x1c */
+	uint32_t asmpctrl;                /* 0x20 */
+	uint32_t icselr[2];               /* 0x24 */
+	uint32_t reserved2c;              /* 0x2c */
+	uint32_t reserved30;              /* 0x30 */
+	uint32_t reserved34;              /* 0x34 */
+	uint32_t reserved38;              /* 0x38 */
+	uint32_t reserved3c;              /* 0x3c */
+	uint32_t pimask[IRQMP_NCPU_MAX];  /* 0x40 */
+	uint32_t piforce[IRQMP_NCPU_MAX]; /* 0x80 */
+	uint32_t pextack[IRQMP_NCPU_MAX]; /* 0xc0 */
 };
 
-#define IRQMP_PEXTACK_EID       (0x1f << 0)
+#define IRQMP_PEXTACK_EID (0x1f << 0)
 
 static volatile struct irqmp_regs *get_irqmp_regs(void)
 {
-	return (struct irqmp_regs *) DT_INST_REG_ADDR(0);
+	return (struct irqmp_regs *)DT_INST_REG_ADDR(0);
 }
 
 static int get_irqmp_eirq(void)
@@ -121,5 +121,5 @@ static int irqmp_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, irqmp_init, NULL, NULL, NULL,
-		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
+DEVICE_DT_INST_DEFINE(0, irqmp_init, NULL, NULL, NULL, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
+		      NULL);

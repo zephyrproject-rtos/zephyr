@@ -7,10 +7,8 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/internal/syscall_handler.h>
 
-static inline int z_vrfy_sensor_attr_set(const struct device *dev,
-					 enum sensor_channel chan,
-					 enum sensor_attribute attr,
-					 const struct sensor_value *val)
+static inline int z_vrfy_sensor_attr_set(const struct device *dev, enum sensor_channel chan,
+					 enum sensor_attribute attr, const struct sensor_value *val)
 {
 	K_OOPS(K_SYSCALL_DRIVER_SENSOR(dev, attr_set));
 	K_OOPS(K_SYSCALL_MEMORY_READ(val, sizeof(struct sensor_value)));
@@ -19,10 +17,8 @@ static inline int z_vrfy_sensor_attr_set(const struct device *dev,
 }
 #include <zephyr/syscalls/sensor_attr_set_mrsh.c>
 
-static inline int z_vrfy_sensor_attr_get(const struct device *dev,
-					 enum sensor_channel chan,
-					 enum sensor_attribute attr,
-					 struct sensor_value *val)
+static inline int z_vrfy_sensor_attr_get(const struct device *dev, enum sensor_channel chan,
+					 enum sensor_attribute attr, struct sensor_value *val)
 {
 	K_OOPS(K_SYSCALL_DRIVER_SENSOR(dev, attr_get));
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(val, sizeof(struct sensor_value)));
@@ -42,13 +38,11 @@ static inline int z_vrfy_sensor_sample_fetch_chan(const struct device *dev,
 						  enum sensor_channel type)
 {
 	K_OOPS(K_SYSCALL_DRIVER_SENSOR(dev, sample_fetch));
-	return z_impl_sensor_sample_fetch_chan((const struct device *)dev,
-					       type);
+	return z_impl_sensor_sample_fetch_chan((const struct device *)dev, type);
 }
 #include <zephyr/syscalls/sensor_sample_fetch_chan_mrsh.c>
 
-static inline int z_vrfy_sensor_channel_get(const struct device *dev,
-					    enum sensor_channel chan,
+static inline int z_vrfy_sensor_channel_get(const struct device *dev, enum sensor_channel chan,
 					    struct sensor_value *val)
 {
 	K_OOPS(K_SYSCALL_DRIVER_SENSOR(dev, channel_get));

@@ -6,7 +6,7 @@
  */
 
 #define LOG_DOMAIN flash_stm32wb
-#define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
+#define LOG_LEVEL  CONFIG_FLASH_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include "shci.h"
 #endif
 
-#define STM32WBX_PAGE_SHIFT	12
+#define STM32WBX_PAGE_SHIFT 12
 
 /*
  * Up to 255 4K pages
@@ -78,8 +78,7 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 	 * It is allowed to write only zeros over an already written dword
 	 * See 3.3.8 in reference manual.
 	 */
-	if ((flash[0] != 0xFFFFFFFFUL ||
-	     flash[1] != 0xFFFFFFFFUL) && val != 0UL) {
+	if ((flash[0] != 0xFFFFFFFFUL || flash[1] != 0xFFFFFFFFUL) && val != 0UL) {
 		LOG_ERR("Word at offs %ld not erased", (long)offset);
 		return -EIO;
 	}
@@ -127,8 +126,7 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 		 *  The only way for CPU1 to disallow flash processing is to
 		 *  take CFG_HW_BLOCK_FLASH_REQ_BY_CPU1_SEMID.
 		 */
-		cpu1_sem_status = LL_HSEM_GetStatus(HSEM,
-			CFG_HW_BLOCK_FLASH_REQ_BY_CPU1_SEMID);
+		cpu1_sem_status = LL_HSEM_GetStatus(HSEM, CFG_HW_BLOCK_FLASH_REQ_BY_CPU1_SEMID);
 		if (cpu1_sem_status == 0) {
 			/**
 			 *  Check now if the CPU2 disallows flash processing to
@@ -145,8 +143,8 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 			 *  with the command SHCI_C2_SetFlashActivityControl()
 			 *
 			 */
-			cpu2_sem_status = LL_HSEM_1StepLock(HSEM,
-				CFG_HW_BLOCK_FLASH_REQ_BY_CPU2_SEMID);
+			cpu2_sem_status =
+				LL_HSEM_1StepLock(HSEM, CFG_HW_BLOCK_FLASH_REQ_BY_CPU2_SEMID);
 			if (cpu2_sem_status == 0) {
 				/**
 				 * When CFG_HW_BLOCK_FLASH_REQ_BY_CPU2_SEMID is
@@ -179,9 +177,7 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 				 *  This is why this code is protected by a
 				 *  critical section.
 				 */
-				LL_HSEM_ReleaseLock(HSEM,
-					CFG_HW_BLOCK_FLASH_REQ_BY_CPU2_SEMID,
-					0);
+				LL_HSEM_ReleaseLock(HSEM, CFG_HW_BLOCK_FLASH_REQ_BY_CPU2_SEMID, 0);
 			}
 		}
 
@@ -264,8 +260,7 @@ static int erase_page(const struct device *dev, uint32_t page)
 		 *  The only way for CPU1 to disallow flash processing is to
 		 *  take CFG_HW_BLOCK_FLASH_REQ_BY_CPU1_SEMID.
 		 */
-		cpu1_sem_status = LL_HSEM_GetStatus(HSEM,
-			CFG_HW_BLOCK_FLASH_REQ_BY_CPU1_SEMID);
+		cpu1_sem_status = LL_HSEM_GetStatus(HSEM, CFG_HW_BLOCK_FLASH_REQ_BY_CPU1_SEMID);
 		if (cpu1_sem_status == 0) {
 			/**
 			 *  Check now if the CPU2 disallows flash processing to
@@ -282,8 +277,8 @@ static int erase_page(const struct device *dev, uint32_t page)
 			 *  with the command SHCI_C2_SetFlashActivityControl()
 			 *
 			 */
-			cpu2_sem_status = LL_HSEM_1StepLock(HSEM,
-				CFG_HW_BLOCK_FLASH_REQ_BY_CPU2_SEMID);
+			cpu2_sem_status =
+				LL_HSEM_1StepLock(HSEM, CFG_HW_BLOCK_FLASH_REQ_BY_CPU2_SEMID);
 			if (cpu2_sem_status == 0) {
 				/**
 				 * When CFG_HW_BLOCK_FLASH_REQ_BY_CPU2_SEMID is
@@ -310,9 +305,7 @@ static int erase_page(const struct device *dev, uint32_t page)
 				 *  This is why this code is protected by a
 				 *  critical section.
 				 */
-				LL_HSEM_ReleaseLock(HSEM,
-					CFG_HW_BLOCK_FLASH_REQ_BY_CPU2_SEMID,
-					0);
+				LL_HSEM_ReleaseLock(HSEM, CFG_HW_BLOCK_FLASH_REQ_BY_CPU2_SEMID, 0);
 			}
 		}
 
@@ -320,7 +313,6 @@ static int erase_page(const struct device *dev, uint32_t page)
 		irq_unlock(key);
 
 	} while (cpu2_sem_status || cpu1_sem_status);
-
 
 	/* Wait for the BSY bit */
 	rc = flash_stm32_wait_flash_idle(dev);
@@ -330,9 +322,7 @@ static int erase_page(const struct device *dev, uint32_t page)
 	return rc;
 }
 
-int flash_stm32_block_erase_loop(const struct device *dev,
-				 unsigned int offset,
-				 unsigned int len)
+int flash_stm32_block_erase_loop(const struct device *dev, unsigned int offset, unsigned int len)
 {
 	int i, rc = 0;
 
@@ -350,7 +340,7 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 #endif /* CONFIG_BT */
 
 	i = get_page(offset);
-	for (; i <= get_page(offset + len - 1) ; ++i) {
+	for (; i <= get_page(offset + len - 1); ++i) {
 		rc = erase_page(dev, i);
 		if (rc < 0) {
 			break;
@@ -369,14 +359,13 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 	return rc;
 }
 
-int flash_stm32_write_range(const struct device *dev, unsigned int offset,
-			    const void *data, unsigned int len)
+int flash_stm32_write_range(const struct device *dev, unsigned int offset, const void *data,
+			    unsigned int len)
 {
 	int i, rc = 0;
 
 	for (i = 0; i < len; i += 8, offset += 8U) {
-		rc = write_dword(dev, offset,
-				UNALIGNED_GET((const uint64_t *) data + (i >> 3)));
+		rc = write_dword(dev, offset, UNALIGNED_GET((const uint64_t *)data + (i >> 3)));
 		if (rc < 0) {
 			return rc;
 		}
@@ -385,8 +374,7 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 	return rc;
 }
 
-void flash_stm32_page_layout(const struct device *dev,
-			     const struct flash_pages_layout **layout,
+void flash_stm32_page_layout(const struct device *dev, const struct flash_pages_layout **layout,
 			     size_t *layout_size)
 {
 	static struct flash_pages_layout stm32wb_flash_layout = {

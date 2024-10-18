@@ -20,39 +20,39 @@ LOG_MODULE_REGISTER(i2c_numaker, CONFIG_I2C_LOG_LEVEL);
 #include <NuMicro.h>
 
 /* i2c Master Mode Status */
-#define  M_START               0x08  /* Start */
-#define  M_REPEAT_START        0x10  /* Master Repeat Start */
-#define  M_TRAN_ADDR_ACK       0x18  /* Master Transmit Address ACK */
-#define  M_TRAN_ADDR_NACK      0x20  /* Master Transmit Address NACK */
-#define  M_TRAN_DATA_ACK       0x28  /* Master Transmit Data ACK */
-#define  M_TRAN_DATA_NACK      0x30  /* Master Transmit Data NACK */
-#define  M_ARB_LOST            0x38  /* Master Arbitration Los */
-#define  M_RECE_ADDR_ACK       0x40  /* Master Receive Address ACK */
-#define  M_RECE_ADDR_NACK      0x48  /* Master Receive Address NACK */
-#define  M_RECE_DATA_ACK       0x50  /* Master Receive Data ACK */
-#define  M_RECE_DATA_NACK      0x58  /* Master Receive Data NACK */
-#define  BUS_ERROR             0x00  /* Bus error */
+#define M_START          0x08 /* Start */
+#define M_REPEAT_START   0x10 /* Master Repeat Start */
+#define M_TRAN_ADDR_ACK  0x18 /* Master Transmit Address ACK */
+#define M_TRAN_ADDR_NACK 0x20 /* Master Transmit Address NACK */
+#define M_TRAN_DATA_ACK  0x28 /* Master Transmit Data ACK */
+#define M_TRAN_DATA_NACK 0x30 /* Master Transmit Data NACK */
+#define M_ARB_LOST       0x38 /* Master Arbitration Los */
+#define M_RECE_ADDR_ACK  0x40 /* Master Receive Address ACK */
+#define M_RECE_ADDR_NACK 0x48 /* Master Receive Address NACK */
+#define M_RECE_DATA_ACK  0x50 /* Master Receive Data ACK */
+#define M_RECE_DATA_NACK 0x58 /* Master Receive Data NACK */
+#define BUS_ERROR        0x00 /* Bus error */
 
 /* i2c Slave Mode Status */
-#define  S_REPEAT_START_STOP   0xA0  /* Slave Transmit Repeat Start or Stop */
-#define  S_TRAN_ADDR_ACK       0xA8  /* Slave Transmit Address ACK */
-#define  S_TRAN_DATA_ACK       0xB8  /* Slave Transmit Data ACK */
-#define  S_TRAN_DATA_NACK      0xC0  /* Slave Transmit Data NACK */
-#define  S_TRAN_LAST_DATA_ACK  0xC8  /* Slave Transmit Last Data ACK */
-#define  S_RECE_ADDR_ACK       0x60  /* Slave Receive Address ACK */
-#define  S_RECE_ARB_LOST       0x68  /* Slave Receive Arbitration Lost */
-#define  S_RECE_DATA_ACK       0x80  /* Slave Receive Data ACK */
-#define  S_RECE_DATA_NACK      0x88  /* Slave Receive Data NACK */
+#define S_REPEAT_START_STOP  0xA0 /* Slave Transmit Repeat Start or Stop */
+#define S_TRAN_ADDR_ACK      0xA8 /* Slave Transmit Address ACK */
+#define S_TRAN_DATA_ACK      0xB8 /* Slave Transmit Data ACK */
+#define S_TRAN_DATA_NACK     0xC0 /* Slave Transmit Data NACK */
+#define S_TRAN_LAST_DATA_ACK 0xC8 /* Slave Transmit Last Data ACK */
+#define S_RECE_ADDR_ACK      0x60 /* Slave Receive Address ACK */
+#define S_RECE_ARB_LOST      0x68 /* Slave Receive Arbitration Lost */
+#define S_RECE_DATA_ACK      0x80 /* Slave Receive Data ACK */
+#define S_RECE_DATA_NACK     0x88 /* Slave Receive Data NACK */
 
 /* i2c GC Mode Status */
-#define  GC_ADDR_ACK           0x70  /* GC mode Address ACK */
-#define  GC_ARB_LOST           0x78  /* GC mode Arbitration Lost */
-#define  GC_DATA_ACK           0x90  /* GC mode Data ACK */
-#define  GC_DATA_NACK          0x98  /* GC mode Data NACK */
+#define GC_ADDR_ACK  0x70 /* GC mode Address ACK */
+#define GC_ARB_LOST  0x78 /* GC mode Arbitration Lost */
+#define GC_DATA_ACK  0x90 /* GC mode Data ACK */
+#define GC_DATA_NACK 0x98 /* GC mode Data NACK */
 
 /* i2c Other Status */
-#define  ADDR_TRAN_ARB_LOST    0xB0  /* Address Transmit Arbitration Lost */
-#define  BUS_RELEASED          0xF8  /* Bus Released */
+#define ADDR_TRAN_ARB_LOST 0xB0 /* Address Transmit Arbitration Lost */
+#define BUS_RELEASED       0xF8 /* Bus Released */
 
 struct i2c_numaker_config {
 	I2C_T *i2c_base;
@@ -211,7 +211,7 @@ static void m_numaker_i2c_master_xfer_msg_end(const struct device *dev)
 		 * Different R/W bit so message merge is disallowed.
 		 * Force I2C Repeat Start on I2C Stop/Repeat Start missing
 		 */
-		if (!is_read_prev != !is_read_next) {   /* Logical XOR idiom */
+		if (!is_read_prev != !is_read_next) { /* Logical XOR idiom */
 			if (!do_stop_prev && !do_restart_next) {
 				LOG_WRN("Cannot merge adjacent messages, force I2C Repeat Start");
 				do_restart_next = true;
@@ -220,8 +220,8 @@ static void m_numaker_i2c_master_xfer_msg_end(const struct device *dev)
 
 		if (do_stop_prev) {
 			/* Do I2C Stop and then Start */
-			I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_STA_Msk |
-					    I2C_CTL0_STO_Msk | I2C_CTL0_SI_Msk);
+			I2C_SET_CONTROL_REG(i2c_base,
+					    I2C_CTL0_STA_Msk | I2C_CTL0_STO_Msk | I2C_CTL0_SI_Msk);
 		} else if (do_restart_next) {
 			/* Do I2C Repeat Start */
 			I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_STA_Msk | I2C_CTL0_SI_Msk);
@@ -231,8 +231,8 @@ static void m_numaker_i2c_master_xfer_msg_end(const struct device *dev)
 			/* Prepare buffer for current message */
 			data->master_xfer.buf_beg = data->master_xfer.msgs_pos->buf;
 			data->master_xfer.buf_pos = data->master_xfer.msgs_pos->buf;
-			data->master_xfer.buf_end = data->master_xfer.msgs_pos->buf +
-						    data->master_xfer.msgs_pos->len;
+			data->master_xfer.buf_end =
+				data->master_xfer.msgs_pos->buf + data->master_xfer.msgs_pos->len;
 
 			if (is_read_prev) {
 				m_numaker_i2c_master_xfer_msg_read_next_byte(dev);
@@ -330,8 +330,8 @@ static int i2c_numaker_get_config(const struct device *dev, uint32_t *dev_config
  * 1. Prepare callback (thread)
  * 2. Do data transfer via above callback (ISR)
  */
-static int i2c_numaker_transfer(const struct device *dev, struct i2c_msg *msgs,
-				uint8_t num_msgs, uint16_t addr)
+static int i2c_numaker_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
+				uint16_t addr)
 {
 	const struct i2c_numaker_config *config = dev->config;
 	struct i2c_numaker_data *data = dev->data;
@@ -430,10 +430,7 @@ static int i2c_numaker_slave_register(const struct device *dev,
 
 	data->slave_xfer.slave_config = slave_config;
 	/* Slave address */
-	I2C_SetSlaveAddr(i2c_base,
-			 0,
-			 slave_config->address,
-			 I2C_GCMODE_DISABLE);
+	I2C_SetSlaveAddr(i2c_base, 0, slave_config->address, I2C_GCMODE_DISABLE);
 
 	/* Slave address state */
 	data->slave_xfer.slave_addressed = false;
@@ -476,10 +473,7 @@ static int i2c_numaker_slave_unregister(const struct device *dev,
 	}
 
 	/* Slave address: Zero */
-	I2C_SetSlaveAddr(i2c_base,
-			 0,
-			 0,
-			 I2C_GCMODE_DISABLE);
+	I2C_SetSlaveAddr(i2c_base, 0, 0, I2C_GCMODE_DISABLE);
 
 	/* Slave address state */
 	data->slave_xfer.slave_addressed = false;
@@ -532,13 +526,13 @@ static void i2c_numaker_isr(const struct device *dev)
 	status = I2C_GET_STATUS(i2c_base);
 
 	switch (status) {
-	case M_START: /* Start */
+	case M_START:        /* Start */
 	case M_REPEAT_START: /* Master Repeat Start */
 		/* Prepare buffer for current message */
 		data->master_xfer.buf_beg = data->master_xfer.msgs_pos->buf;
 		data->master_xfer.buf_pos = data->master_xfer.msgs_pos->buf;
-		data->master_xfer.buf_end = data->master_xfer.msgs_pos->buf +
-					      data->master_xfer.msgs_pos->len;
+		data->master_xfer.buf_end =
+			data->master_xfer.msgs_pos->buf + data->master_xfer.msgs_pos->len;
 
 		/* Write I2C address */
 		struct i2c_msg *msgs_pos = data->master_xfer.msgs_pos;
@@ -546,7 +540,7 @@ static void i2c_numaker_isr(const struct device *dev)
 		uint16_t addr = data->master_xfer.addr;
 		int addr_rw = is_read ? ((addr << 1) | 1) : (addr << 1);
 
-		I2C_SET_DATA(i2c_base, (uint8_t) (addr_rw & 0xFF));
+		I2C_SET_DATA(i2c_base, (uint8_t)(addr_rw & 0xFF));
 		I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_SI_Msk);
 		break;
 	case M_TRAN_ADDR_ACK: /* Master Transmit Address ACK */
@@ -560,33 +554,33 @@ static void i2c_numaker_isr(const struct device *dev)
 			m_numaker_i2c_master_xfer_msg_end(dev);
 		}
 		break;
-	case M_TRAN_ADDR_NACK:  /* Master Transmit Address NACK */
-	case M_TRAN_DATA_NACK:  /* Master Transmit Data NACK */
-	case M_RECE_ADDR_NACK:  /* Master Receive Address NACK */
-	case M_ARB_LOST:  /* Master Arbitration Lost */
+	case M_TRAN_ADDR_NACK: /* Master Transmit Address NACK */
+	case M_TRAN_DATA_NACK: /* Master Transmit Data NACK */
+	case M_RECE_ADDR_NACK: /* Master Receive Address NACK */
+	case M_ARB_LOST:       /* Master Arbitration Lost */
 		m_numaker_i2c_master_xfer_end(dev, true);
 		break;
-	case M_RECE_ADDR_ACK:  /* Master Receive Address ACK */
-	case M_RECE_DATA_ACK:  /* Master Receive Data ACK */
+	case M_RECE_ADDR_ACK: /* Master Receive Address ACK */
+	case M_RECE_DATA_ACK: /* Master Receive Data ACK */
 		__ASSERT_NO_MSG(data->master_xfer.buf_pos);
 
 		if (status == M_RECE_ADDR_ACK) {
 			__ASSERT_NO_MSG(data->master_xfer.buf_pos < data->master_xfer.buf_end);
 		} else if (status == M_RECE_DATA_ACK) {
-			__ASSERT_NO_MSG((data->master_xfer.buf_end -
-					 data->master_xfer.buf_pos) >= 1);
+			__ASSERT_NO_MSG((data->master_xfer.buf_end - data->master_xfer.buf_pos) >=
+					1);
 			*data->master_xfer.buf_pos++ = I2C_GET_DATA(i2c_base);
 		}
 
 		m_numaker_i2c_master_xfer_msg_read_next_byte(dev);
 		break;
-	case M_RECE_DATA_NACK:  /* Master Receive Data NACK */
+	case M_RECE_DATA_NACK: /* Master Receive Data NACK */
 		__ASSERT_NO_MSG((data->master_xfer.buf_end - data->master_xfer.buf_pos) == 1);
 		*data->master_xfer.buf_pos++ = I2C_GET_DATA(i2c_base);
 		/* End this message */
 		m_numaker_i2c_master_xfer_msg_end(dev);
 		break;
-	case BUS_ERROR:	 /* Bus error */
+	case BUS_ERROR: /* Bus error */
 		m_numaker_i2c_master_xfer_end(dev, true);
 		break;
 #ifdef CONFIG_I2C_TARGET
@@ -594,8 +588,8 @@ static void i2c_numaker_isr(const struct device *dev)
 	/* for passive transfer in ISR. */
 
 	/* Slave Transmit */
-	case S_TRAN_ADDR_ACK:  /* Slave Transmit Address ACK */
-	case ADDR_TRAN_ARB_LOST:  /* Slave Transmit Arbitration Lost */
+	case S_TRAN_ADDR_ACK:    /* Slave Transmit Address ACK */
+	case ADDR_TRAN_ARB_LOST: /* Slave Transmit Arbitration Lost */
 		data->slave_xfer.slave_addressed = true;
 		if (slave_callbacks->read_requested(slave_config, &data_byte) == 0) {
 			/* Non-last data byte */
@@ -607,7 +601,7 @@ static void i2c_numaker_isr(const struct device *dev)
 			I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_SI_Msk);
 		}
 		break;
-	case S_TRAN_DATA_ACK:  /* Slave Transmit Data ACK */
+	case S_TRAN_DATA_ACK: /* Slave Transmit Data ACK */
 		if (slave_callbacks->read_processed(slave_config, &data_byte) == 0) {
 			/* Non-last data byte */
 			I2C_SET_DATA(i2c_base, data_byte);
@@ -618,15 +612,15 @@ static void i2c_numaker_isr(const struct device *dev)
 			I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_SI_Msk);
 		}
 		break;
-	case S_TRAN_DATA_NACK:  /* Slave Transmit Data NACK */
-	case S_TRAN_LAST_DATA_ACK:  /* Slave Transmit Last Data ACK */
+	case S_TRAN_DATA_NACK:     /* Slave Transmit Data NACK */
+	case S_TRAN_LAST_DATA_ACK: /* Slave Transmit Last Data ACK */
 		/* Go slave end */
 		data->slave_xfer.slave_addressed = false;
 		slave_callbacks->stop(slave_config);
 		I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_SI_Msk | I2C_CTL0_AA_Msk);
 		break;
 		/* Slave Receive */
-	case S_RECE_DATA_ACK:  /* Slave Receive Data ACK */
+	case S_RECE_DATA_ACK: /* Slave Receive Data ACK */
 		data_byte = I2C_GET_DATA(i2c_base);
 		if (slave_callbacks->write_received(slave_config, data_byte) == 0) {
 			/* Write OK, ACK next data byte */
@@ -636,14 +630,14 @@ static void i2c_numaker_isr(const struct device *dev)
 			I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_SI_Msk);
 		}
 		break;
-	case S_RECE_DATA_NACK:  /* Slave Receive Data NACK */
+	case S_RECE_DATA_NACK: /* Slave Receive Data NACK */
 		/* Go slave end */
 		data->slave_xfer.slave_addressed = false;
 		slave_callbacks->stop(slave_config);
 		I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_SI_Msk | I2C_CTL0_AA_Msk);
 		break;
-	case S_RECE_ADDR_ACK:  /* Slave Receive Address ACK */
-	case S_RECE_ARB_LOST:  /* Slave Receive Arbitration Lost */
+	case S_RECE_ADDR_ACK: /* Slave Receive Address ACK */
+	case S_RECE_ARB_LOST: /* Slave Receive Arbitration Lost */
 		data->slave_xfer.slave_addressed = true;
 		if (slave_callbacks->write_requested(slave_config) == 0) {
 			/* Write ready, ACK next byte */
@@ -653,15 +647,15 @@ static void i2c_numaker_isr(const struct device *dev)
 			I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_SI_Msk);
 		}
 		break;
-	case S_REPEAT_START_STOP:  /* Slave Transmit/Receive Repeat Start or Stop */
+	case S_REPEAT_START_STOP: /* Slave Transmit/Receive Repeat Start or Stop */
 		/* Go slave end */
 		data->slave_xfer.slave_addressed = false;
 		slave_callbacks->stop(slave_config);
 		I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_SI_Msk | I2C_CTL0_AA_Msk);
 		break;
-#endif  /* CONFIG_I2C_TARGET */
+#endif /* CONFIG_I2C_TARGET */
 
-	case BUS_RELEASED:  /* Bus Released */
+	case BUS_RELEASED: /* Bus Released */
 		/* Ignore the interrupt raised by BUS_RELEASED. */
 		break;
 	default:
@@ -698,13 +692,12 @@ static int i2c_numaker_init(const struct device *dev)
 	scc_subsys.pcc.clk_div = config->clk_div;
 
 	/* Equivalent to CLK_EnableModuleClock() */
-	err = clock_control_on(config->clkctrl_dev, (clock_control_subsys_t) &scc_subsys);
+	err = clock_control_on(config->clkctrl_dev, (clock_control_subsys_t)&scc_subsys);
 	if (err != 0) {
 		goto cleanup;
 	}
 	/* Equivalent to CLK_SetModuleClock() */
-	err = clock_control_configure(config->clkctrl_dev,
-				      (clock_control_subsys_t) &scc_subsys,
+	err = clock_control_configure(config->clkctrl_dev, (clock_control_subsys_t)&scc_subsys,
 				      NULL);
 	if (err != 0) {
 		goto cleanup;
@@ -746,42 +739,34 @@ static const struct i2c_driver_api i2c_numaker_driver_api = {
 	.recover_bus = i2c_numaker_recover_bus,
 };
 
-#define I2C_NUMAKER_INIT(inst)                                                     \
-	PINCTRL_DT_INST_DEFINE(inst);                                              \
-                                                                                   \
-	static void i2c_numaker_irq_config_func_##inst(const struct device *dev)   \
-	{                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(inst),                                    \
-			    DT_INST_IRQ(inst, priority),                           \
-			    i2c_numaker_isr,                                       \
-			    DEVICE_DT_INST_GET(inst),                              \
-			    0);                                                    \
-                                                                                   \
-		irq_enable(DT_INST_IRQN(inst));                                    \
-	}                                                                          \
-                                                                                   \
-	static const struct i2c_numaker_config i2c_numaker_config_##inst = {       \
-		.i2c_base = (I2C_T *) DT_INST_REG_ADDR(inst),                      \
-		.reset = RESET_DT_SPEC_INST_GET(inst),                             \
-		.clk_modidx = DT_INST_CLOCKS_CELL(inst, clock_module_index),       \
-		.clk_src = DT_INST_CLOCKS_CELL(inst, clock_source),                \
-		.clk_div = DT_INST_CLOCKS_CELL(inst, clock_divider),               \
-		.clkctrl_dev = DEVICE_DT_GET(DT_PARENT(DT_INST_CLOCKS_CTLR(inst))),\
-		.irq_n = DT_INST_IRQN(inst),                                       \
-		.irq_config_func = i2c_numaker_irq_config_func_##inst,             \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                    \
-		.bitrate = DT_INST_PROP(inst, clock_frequency),                    \
-	};                                                                         \
-                                                                                   \
-	static struct i2c_numaker_data i2c_numaker_data_##inst;                    \
-                                                                                   \
-	I2C_DEVICE_DT_INST_DEFINE(inst,                                            \
-				  i2c_numaker_init,                                \
-				  NULL,                                            \
-				  &i2c_numaker_data_##inst,                        \
-				  &i2c_numaker_config_##inst,                      \
-				  POST_KERNEL,                                     \
-				  CONFIG_I2C_INIT_PRIORITY,                        \
-				  &i2c_numaker_driver_api);
+#define I2C_NUMAKER_INIT(inst)                                                                     \
+	PINCTRL_DT_INST_DEFINE(inst);                                                              \
+                                                                                                   \
+	static void i2c_numaker_irq_config_func_##inst(const struct device *dev)                   \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), i2c_numaker_isr,      \
+			    DEVICE_DT_INST_GET(inst), 0);                                          \
+                                                                                                   \
+		irq_enable(DT_INST_IRQN(inst));                                                    \
+	}                                                                                          \
+                                                                                                   \
+	static const struct i2c_numaker_config i2c_numaker_config_##inst = {                       \
+		.i2c_base = (I2C_T *)DT_INST_REG_ADDR(inst),                                       \
+		.reset = RESET_DT_SPEC_INST_GET(inst),                                             \
+		.clk_modidx = DT_INST_CLOCKS_CELL(inst, clock_module_index),                       \
+		.clk_src = DT_INST_CLOCKS_CELL(inst, clock_source),                                \
+		.clk_div = DT_INST_CLOCKS_CELL(inst, clock_divider),                               \
+		.clkctrl_dev = DEVICE_DT_GET(DT_PARENT(DT_INST_CLOCKS_CTLR(inst))),                \
+		.irq_n = DT_INST_IRQN(inst),                                                       \
+		.irq_config_func = i2c_numaker_irq_config_func_##inst,                             \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                    \
+		.bitrate = DT_INST_PROP(inst, clock_frequency),                                    \
+	};                                                                                         \
+                                                                                                   \
+	static struct i2c_numaker_data i2c_numaker_data_##inst;                                    \
+                                                                                                   \
+	I2C_DEVICE_DT_INST_DEFINE(inst, i2c_numaker_init, NULL, &i2c_numaker_data_##inst,          \
+				  &i2c_numaker_config_##inst, POST_KERNEL,                         \
+				  CONFIG_I2C_INIT_PRIORITY, &i2c_numaker_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_NUMAKER_INIT);

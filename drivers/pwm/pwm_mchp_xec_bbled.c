@@ -24,23 +24,21 @@
 
 LOG_MODULE_REGISTER(pwmbbled_mchp_xec, CONFIG_PWM_LOG_LEVEL);
 
-#define XEC_PWM_BBLED_MAX_FREQ_DIV	256U
+#define XEC_PWM_BBLED_MAX_FREQ_DIV 256U
 
 /* We will choose frequency from Device Tree */
-#define XEC_PWM_BBLED_INPUT_FREQ_HI	48000000
-#define XEC_PWM_BBLED_INPUT_FREQ_LO	32768
+#define XEC_PWM_BBLED_INPUT_FREQ_HI 48000000
+#define XEC_PWM_BBLED_INPUT_FREQ_LO 32768
 
 /* Hardware blink mode equation is Fpwm = Fin / (256 * (LD + 1))
  * The maximum Fpwm is actually Fin / 256
  * LD in [0, 4095]
  */
-#define XEC_PWM_BBLED_MAX_PWM_FREQ_HI	(XEC_PWM_BBLED_INPUT_FREQ_HI / \
-		XEC_PWM_BBLED_MAX_FREQ_DIV)
-#define XEC_PWM_BBLED_MAX_PWM_FREQ_LO	(XEC_PWM_BBLED_INPUT_FREQ_LO / \
-		XEC_PWM_BBLED_MAX_FREQ_DIV)
-#define XEC_PWM_BBLED_LD_MAX 4095
-#define XEC_PWM_BBLED_DC_MIN 1u /* 0 full off */
-#define XEC_PWM_BBLED_DC_MAX 254u /* 255 is full on */
+#define XEC_PWM_BBLED_MAX_PWM_FREQ_HI (XEC_PWM_BBLED_INPUT_FREQ_HI / XEC_PWM_BBLED_MAX_FREQ_DIV)
+#define XEC_PWM_BBLED_MAX_PWM_FREQ_LO (XEC_PWM_BBLED_INPUT_FREQ_LO / XEC_PWM_BBLED_MAX_FREQ_DIV)
+#define XEC_PWM_BBLED_LD_MAX          4095
+#define XEC_PWM_BBLED_DC_MIN          1u   /* 0 full off */
+#define XEC_PWM_BBLED_DC_MAX          254u /* 255 is full on */
 
 /* BBLED PWM mode uses the duty cycle to set the PWM frequency:
  * Fpwm = Fclock / (256 * (LD + 1)) OR
@@ -66,46 +64,45 @@ LOG_MODULE_REGISTER(pwmbbled_mchp_xec, CONFIG_PWM_LOG_LEVEL);
 /* Same BBLED hardware block in MEC15xx and MEC172x families
  * Config register
  */
-#define XEC_PWM_BBLED_CFG_MSK			0x1ffffu
-#define XEC_PWM_BBLED_CFG_MODE_POS		0
-#define XEC_PWM_BBLED_CFG_MODE_MSK		0x3u
-#define XEC_PWM_BBLED_CFG_MODE_OFF		0
-#define XEC_PWM_BBLED_CFG_MODE_PWM		0x2u
-#define XEC_PWM_BBLED_CFG_MODE_ALWAYS_ON	0x3u
-#define XEC_PWM_BBLED_CFG_CLK_SRC_48M_POS	2
-#define XEC_PWM_BBLED_CFG_EN_UPDATE_POS		6
-#define XEC_PWM_BBLED_CFG_RST_PWM_POS		7
-#define XEC_PWM_BBLED_CFG_WDT_RLD_POS		8
-#define XEC_PWM_BBLED_CFG_WDT_RLD_MSK0		0xffu
-#define XEC_PWM_BBLED_CFG_WDT_RLD_MSK		0xff00u
-#define XEC_PWM_BBLED_CFG_WDT_RLD_DFLT		0x1400u
+#define XEC_PWM_BBLED_CFG_MSK             0x1ffffu
+#define XEC_PWM_BBLED_CFG_MODE_POS        0
+#define XEC_PWM_BBLED_CFG_MODE_MSK        0x3u
+#define XEC_PWM_BBLED_CFG_MODE_OFF        0
+#define XEC_PWM_BBLED_CFG_MODE_PWM        0x2u
+#define XEC_PWM_BBLED_CFG_MODE_ALWAYS_ON  0x3u
+#define XEC_PWM_BBLED_CFG_CLK_SRC_48M_POS 2
+#define XEC_PWM_BBLED_CFG_EN_UPDATE_POS   6
+#define XEC_PWM_BBLED_CFG_RST_PWM_POS     7
+#define XEC_PWM_BBLED_CFG_WDT_RLD_POS     8
+#define XEC_PWM_BBLED_CFG_WDT_RLD_MSK0    0xffu
+#define XEC_PWM_BBLED_CFG_WDT_RLD_MSK     0xff00u
+#define XEC_PWM_BBLED_CFG_WDT_RLD_DFLT    0x1400u
 
 /* Limits register */
-#define XEC_PWM_BBLED_LIM_MSK			0xffffu
-#define XEC_PWM_BBLED_LIM_MIN_POS		0
-#define XEC_PWM_BBLED_LIM_MIN_MSK		0xffu
-#define XEC_PWM_BBLED_LIM_MAX_POS		8
-#define XEC_PWM_BBLED_LIM_MAX_MSK		0xff00u
+#define XEC_PWM_BBLED_LIM_MSK     0xffffu
+#define XEC_PWM_BBLED_LIM_MIN_POS 0
+#define XEC_PWM_BBLED_LIM_MIN_MSK 0xffu
+#define XEC_PWM_BBLED_LIM_MAX_POS 8
+#define XEC_PWM_BBLED_LIM_MAX_MSK 0xff00u
 
 /* Delay register */
-#define XEC_PWM_BBLED_DLY_MSK			0xffffffu
-#define XEC_PWM_BBLED_DLY_LO_POS		0
-#define XEC_PWM_BBLED_DLY_LO_MSK		0xfffu
-#define XEC_PWM_BBLED_DLY_HI_POS		12
-#define XEC_PWM_BBLED_DLY_HI_MSK		0xfff000u
+#define XEC_PWM_BBLED_DLY_MSK    0xffffffu
+#define XEC_PWM_BBLED_DLY_LO_POS 0
+#define XEC_PWM_BBLED_DLY_LO_MSK 0xfffu
+#define XEC_PWM_BBLED_DLY_HI_POS 12
+#define XEC_PWM_BBLED_DLY_HI_MSK 0xfff000u
 
 /* Output delay in clocks for initial enable and enable on resume from sleep
  * Clocks are either 48MHz or 32KHz selected in CONFIG register.
  */
-#define XEC_PWM_BBLED_OUT_DLY_MSK		0xffu
+#define XEC_PWM_BBLED_OUT_DLY_MSK 0xffu
 
 /* DT enum values */
-#define XEC_PWM_BBLED_CLKSEL_32K	0
-#define XEC_PWM_BBLED_CLKSEL_AHB_48M	1
+#define XEC_PWM_BBLED_CLKSEL_32K     0
+#define XEC_PWM_BBLED_CLKSEL_AHB_48M 1
 
-#define XEC_PWM_BBLED_CLKSEL_0		XEC_PWM_BBLED_CLKSEL_32K
-#define XEC_PWM_BBLED_CLKSEL_1		XEC_PWM_BBLED_CLKSEL_AHB_48M
-
+#define XEC_PWM_BBLED_CLKSEL_0 XEC_PWM_BBLED_CLKSEL_32K
+#define XEC_PWM_BBLED_CLKSEL_1 XEC_PWM_BBLED_CLKSEL_AHB_48M
 
 struct bbled_regs {
 	volatile uint32_t config;
@@ -116,11 +113,11 @@ struct bbled_regs {
 	volatile uint32_t output_delay;
 };
 
-#define XEC_PWM_BBLED_CLK_SEL_48M	0
-#define XEC_PWM_BBLED_CLK_SEL_32K	1
+#define XEC_PWM_BBLED_CLK_SEL_48M 0
+#define XEC_PWM_BBLED_CLK_SEL_32K 1
 
 struct pwm_bbled_xec_config {
-	struct bbled_regs * const regs;
+	struct bbled_regs *const regs;
 	const struct pinctrl_dev_config *pcfg;
 	uint8_t girq;
 	uint8_t girq_pos;
@@ -144,8 +141,8 @@ struct bbled_xec_data {
  */
 static void xec_pwmbb_progam_pwm(const struct device *dev, uint32_t ld, uint32_t dc)
 {
-	const struct pwm_bbled_xec_config * const cfg = dev->config;
-	struct bbled_regs * const regs = cfg->regs;
+	const struct pwm_bbled_xec_config *const cfg = dev->config;
+	struct bbled_regs *const regs = cfg->regs;
 	uint32_t val;
 
 	val = regs->limits & ~(XEC_PWM_BBLED_LIM_MIN_MSK);
@@ -153,10 +150,10 @@ static void xec_pwmbb_progam_pwm(const struct device *dev, uint32_t ld, uint32_t
 	regs->limits = val;
 
 	val = regs->delay & ~(XEC_PWM_BBLED_DLY_LO_MSK);
-	val |= ((ld  << XEC_PWM_BBLED_DLY_LO_POS) & XEC_PWM_BBLED_DLY_LO_MSK);
+	val |= ((ld << XEC_PWM_BBLED_DLY_LO_POS) & XEC_PWM_BBLED_DLY_LO_MSK);
 	regs->delay = val;
 
-	 /* transfer new delay value from holding register */
+	/* transfer new delay value from holding register */
 	regs->config |= BIT(XEC_PWM_BBLED_CFG_EN_UPDATE_POS);
 
 	val = regs->config & ~(XEC_PWM_BBLED_CFG_MODE_MSK);
@@ -170,11 +167,11 @@ static void xec_pwmbb_progam_pwm(const struct device *dev, uint32_t ld, uint32_t
  * field of the DELAY register. We return the maximum PWM frequency which is configured
  * hardware input frequency (32K or 48M) divided by 256.
  */
-static int pwm_bbled_xec_get_cycles_per_sec(const struct device *dev,
-					    uint32_t channel, uint64_t *cycles)
+static int pwm_bbled_xec_get_cycles_per_sec(const struct device *dev, uint32_t channel,
+					    uint64_t *cycles)
 {
-	const struct pwm_bbled_xec_config * const cfg = dev->config;
-	struct bbled_regs * const regs = cfg->regs;
+	const struct pwm_bbled_xec_config *const cfg = dev->config;
+	struct bbled_regs *const regs = cfg->regs;
 
 	if (channel > 0) {
 		return -EIO;
@@ -213,8 +210,8 @@ static int pwm_bbled_xec_set_cycles(const struct device *dev, uint32_t channel,
 				    uint32_t period_cycles, uint32_t pulse_cycles,
 				    pwm_flags_t flags)
 {
-	const struct pwm_bbled_xec_config * const cfg = dev->config;
-	struct bbled_regs * const regs = cfg->regs;
+	const struct pwm_bbled_xec_config *const cfg = dev->config;
+	struct bbled_regs *const regs = cfg->regs;
 	uint32_t dc, ld;
 
 	if (channel > 0) {
@@ -230,14 +227,14 @@ static int pwm_bbled_xec_set_cycles(const struct device *dev, uint32_t channel,
 
 	if (pulse_cycles == 0u) {
 		/* drive pin to inactive state */
-		regs->config = (regs->config & ~XEC_PWM_BBLED_CFG_MODE_MSK)
-			       | XEC_PWM_BBLED_CFG_MODE_OFF;
+		regs->config =
+			(regs->config & ~XEC_PWM_BBLED_CFG_MODE_MSK) | XEC_PWM_BBLED_CFG_MODE_OFF;
 		regs->limits &= ~XEC_PWM_BBLED_LIM_MIN_MSK;
 		regs->delay &= ~(XEC_PWM_BBLED_DLY_LO_MSK);
 	} else if (pulse_cycles >= period_cycles) {
 		/* drive pin to active state */
-		regs->config = (regs->config & ~XEC_PWM_BBLED_CFG_MODE_MSK)
-			       | XEC_PWM_BBLED_CFG_MODE_ALWAYS_ON;
+		regs->config = (regs->config & ~XEC_PWM_BBLED_CFG_MODE_MSK) |
+			       XEC_PWM_BBLED_CFG_MODE_ALWAYS_ON;
 		regs->limits &= ~XEC_PWM_BBLED_LIM_MIN_MSK;
 		regs->delay &= ~(XEC_PWM_BBLED_DLY_LO_MSK);
 	} else {
@@ -264,13 +261,12 @@ static int pwm_bbled_xec_set_cycles(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
-
 #ifdef CONFIG_PM_DEVICE
 static int pwm_bbled_xec_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct pwm_bbled_xec_config *const devcfg = dev->config;
-	struct bbled_regs * const regs = devcfg->regs;
-	struct bbled_xec_data * const data = dev->data;
+	struct bbled_regs *const regs = devcfg->regs;
+	struct bbled_xec_data *const data = dev->data;
 	int ret = 0;
 
 	/* 32K core clock is not gated by PCR in sleep, so BBLED can blink the LED even
@@ -280,7 +276,7 @@ static int pwm_bbled_xec_pm_action(const struct device *dev, enum pm_device_acti
 	 * will not get clock during sleep.
 	 */
 	if ((!devcfg->enable_low_power_32K) &&
-			(!(regs->config & BIT(XEC_PWM_BBLED_CFG_CLK_SRC_48M_POS)))) {
+	    (!(regs->config & BIT(XEC_PWM_BBLED_CFG_CLK_SRC_48M_POS)))) {
 		return ret;
 	}
 
@@ -299,7 +295,7 @@ static int pwm_bbled_xec_pm_action(const struct device *dev, enum pm_device_acti
 
 			data->config = XEC_PWM_BBLED_CFG_MODE_OFF;
 		}
-	break;
+		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		if ((regs->config & XEC_PWM_BBLED_CFG_MODE_MSK) != XEC_PWM_BBLED_CFG_MODE_OFF) {
 			/* Do copy first, then clear mode. */
@@ -313,9 +309,9 @@ static int pwm_bbled_xec_pm_action(const struct device *dev, enum pm_device_acti
 		if (ret == -ENOENT) {
 			ret = 0;
 		}
-	break;
+		break;
 	default:
-	ret = -ENOTSUP;
+		ret = -ENOTSUP;
 	}
 	return ret;
 }
@@ -328,8 +324,8 @@ static const struct pwm_driver_api pwm_bbled_xec_driver_api = {
 
 static int pwm_bbled_xec_init(const struct device *dev)
 {
-	const struct pwm_bbled_xec_config * const cfg = dev->config;
-	struct bbled_regs * const regs = cfg->regs;
+	const struct pwm_bbled_xec_config *const cfg = dev->config;
+	struct bbled_regs *const regs = cfg->regs;
 	int ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 
 	if (ret != 0) {
@@ -347,37 +343,34 @@ static int pwm_bbled_xec_init(const struct device *dev)
 	return 0;
 }
 
-#define XEC_PWM_BBLED_CLKSEL(n)							\
+#define XEC_PWM_BBLED_CLKSEL(n)                                                                    \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clock_select),			\
 		    (DT_INST_ENUM_IDX(n, clock_select)), (0))
 
-#define XEC_PWM_BBLED_CONFIG(inst)						\
-	static struct pwm_bbled_xec_config pwm_bbled_xec_config_##inst = {	\
-		.regs = (struct bbled_regs * const)DT_INST_REG_ADDR(inst),	\
-		.girq = (uint8_t)(DT_INST_PROP_BY_IDX(0, girqs, 0)),		\
-		.girq_pos = (uint8_t)(DT_INST_PROP_BY_IDX(0, girqs, 1)),	\
-		.pcr_idx = (uint8_t)DT_INST_PROP_BY_IDX(inst, pcrs, 0),		\
-		.pcr_pos = (uint8_t)DT_INST_PROP_BY_IDX(inst, pcrs, 1),		\
-		.clk_sel = UTIL_CAT(XEC_PWM_BBLED_CLKSEL_, XEC_PWM_BBLED_CLKSEL(inst)),	\
-		.enable_low_power_32K = DT_INST_PROP(inst, enable_low_power_32k),\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),			\
+#define XEC_PWM_BBLED_CONFIG(inst)                                                                 \
+	static struct pwm_bbled_xec_config pwm_bbled_xec_config_##inst = {                         \
+		.regs = (struct bbled_regs *const)DT_INST_REG_ADDR(inst),                          \
+		.girq = (uint8_t)(DT_INST_PROP_BY_IDX(0, girqs, 0)),                               \
+		.girq_pos = (uint8_t)(DT_INST_PROP_BY_IDX(0, girqs, 1)),                           \
+		.pcr_idx = (uint8_t)DT_INST_PROP_BY_IDX(inst, pcrs, 0),                            \
+		.pcr_pos = (uint8_t)DT_INST_PROP_BY_IDX(inst, pcrs, 1),                            \
+		.clk_sel = UTIL_CAT(XEC_PWM_BBLED_CLKSEL_, XEC_PWM_BBLED_CLKSEL(inst)),            \
+		.enable_low_power_32K = DT_INST_PROP(inst, enable_low_power_32k),                  \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
 	};
 
-#define XEC_PWM_BBLED_DEVICE_INIT(index)				\
-									\
-	static struct bbled_xec_data bbled_xec_data_##index;	\
-									\
-	PINCTRL_DT_INST_DEFINE(index);					\
-									\
-	XEC_PWM_BBLED_CONFIG(index);					\
-									\
-	PM_DEVICE_DT_INST_DEFINE(index, pwm_bbled_xec_pm_action);	\
-									\
-	DEVICE_DT_INST_DEFINE(index, &pwm_bbled_xec_init,		\
-			      PM_DEVICE_DT_INST_GET(index),		\
-			      &bbled_xec_data_##index,			\
-			      &pwm_bbled_xec_config_##index, POST_KERNEL,	\
-			      CONFIG_PWM_INIT_PRIORITY,			\
-			      &pwm_bbled_xec_driver_api);
+#define XEC_PWM_BBLED_DEVICE_INIT(index)                                                           \
+                                                                                                   \
+	static struct bbled_xec_data bbled_xec_data_##index;                                       \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(index);                                                             \
+                                                                                                   \
+	XEC_PWM_BBLED_CONFIG(index);                                                               \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(index, pwm_bbled_xec_pm_action);                                  \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(index, &pwm_bbled_xec_init, PM_DEVICE_DT_INST_GET(index),            \
+			      &bbled_xec_data_##index, &pwm_bbled_xec_config_##index, POST_KERNEL, \
+			      CONFIG_PWM_INIT_PRIORITY, &pwm_bbled_xec_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(XEC_PWM_BBLED_DEVICE_INIT)

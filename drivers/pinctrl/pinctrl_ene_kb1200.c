@@ -44,10 +44,10 @@
  * b[11:8] = function
  */
 
-#define ENE_KB1200_PINMUX_PIN(p)       FIELD_GET(GENMASK(4, 0), p)
-#define ENE_KB1200_PINMUX_PORT(p)      FIELD_GET(GENMASK(7, 5), p)
-#define ENE_KB1200_PINMUX_FUNC(p)      FIELD_GET(GENMASK(11, 8), p)
-#define ENE_KB1200_PINMUX_PORT_PIN(p)  FIELD_GET(GENMASK(7, 0), p)
+#define ENE_KB1200_PINMUX_PIN(p)      FIELD_GET(GENMASK(4, 0), p)
+#define ENE_KB1200_PINMUX_PORT(p)     FIELD_GET(GENMASK(7, 5), p)
+#define ENE_KB1200_PINMUX_FUNC(p)     FIELD_GET(GENMASK(11, 8), p)
+#define ENE_KB1200_PINMUX_PORT_PIN(p) FIELD_GET(GENMASK(7, 0), p)
 
 static const uint32_t gcfg_reg_addr = DT_REG_ADDR(DT_NODELABEL(gcfg));
 static const uint32_t gpio_reg_bases[] = {

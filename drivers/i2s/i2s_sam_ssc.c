@@ -32,25 +32,29 @@
 #include <soc.h>
 
 #define LOG_DOMAIN dev_i2s_sam_ssc
-#define LOG_LEVEL CONFIG_I2S_LOG_LEVEL
+#define LOG_LEVEL  CONFIG_I2S_LOG_LEVEL
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #if __DCACHE_PRESENT == 1
-#define DCACHE_INVALIDATE(addr, size) \
-	SCB_InvalidateDCache_by_Addr((uint32_t *)addr, size)
-#define DCACHE_CLEAN(addr, size) \
-	SCB_CleanDCache_by_Addr((uint32_t *)addr, size)
+#define DCACHE_INVALIDATE(addr, size) SCB_InvalidateDCache_by_Addr((uint32_t *)addr, size)
+#define DCACHE_CLEAN(addr, size)      SCB_CleanDCache_by_Addr((uint32_t *)addr, size)
 #else
-#define DCACHE_INVALIDATE(addr, size) {; }
-#define DCACHE_CLEAN(addr, size) {; }
+#define DCACHE_INVALIDATE(addr, size)                                                              \
+	{                                                                                          \
+		;                                                                                  \
+	}
+#define DCACHE_CLEAN(addr, size)                                                                   \
+	{                                                                                          \
+		;                                                                                  \
+	}
 #endif
 
-#define SAM_SSC_WORD_SIZE_BITS_MIN    2
-#define SAM_SSC_WORD_SIZE_BITS_MAX   32
-#define SAM_SSC_WORD_PER_FRAME_MIN    1
-#define SAM_SSC_WORD_PER_FRAME_MAX   16
+#define SAM_SSC_WORD_SIZE_BITS_MIN 2
+#define SAM_SSC_WORD_SIZE_BITS_MAX 32
+#define SAM_SSC_WORD_PER_FRAME_MIN 1
+#define SAM_SSC_WORD_PER_FRAME_MAX 16
 
 struct queue_item {
 	void *mem_block;
@@ -85,13 +89,10 @@ struct stream {
 	struct i2s_config cfg;
 	struct ring_buf mem_block_queue;
 	void *mem_block;
-	int (*stream_start)(struct stream *, Ssc *const,
-			    const struct device *);
-	void (*stream_disable)(struct stream *, Ssc *const,
-			       const struct device *);
+	int (*stream_start)(struct stream *, Ssc *const, const struct device *);
+	void (*stream_disable)(struct stream *, Ssc *const, const struct device *);
 	void (*queue_drop)(struct stream *);
-	int (*set_data_format)(const struct i2s_sam_dev_cfg *const,
-			       const struct i2s_config *);
+	int (*set_data_format)(const struct i2s_sam_dev_cfg *const, const struct i2s_config *);
 };
 
 /* Device run time data */
@@ -100,15 +101,16 @@ struct i2s_sam_dev_data {
 	struct stream tx;
 };
 
-#define MODULO_INC(val, max) { val = (++val < max) ? val : 0; }
+#define MODULO_INC(val, max)                                                                       \
+	{                                                                                          \
+		val = (++val < max) ? val : 0;                                                     \
+	}
 
 static const struct device *get_dev_from_dma_channel(uint32_t dma_channel);
 static void dma_rx_callback(const struct device *, void *, uint32_t, int);
 static void dma_tx_callback(const struct device *, void *, uint32_t, int);
-static void rx_stream_disable(struct stream *, Ssc *const,
-			      const struct device *);
-static void tx_stream_disable(struct stream *, Ssc *const,
-			      const struct device *);
+static void rx_stream_disable(struct stream *, Ssc *const, const struct device *);
+static void tx_stream_disable(struct stream *, Ssc *const, const struct device *);
 
 /*
  * Get data from the queue
@@ -162,8 +164,8 @@ static int queue_put(struct ring_buf *rb, void *mem_block, size_t size)
 	return 0;
 }
 
-static int reload_dma(const struct device *dev_dma, uint32_t channel,
-		      void *src, void *dst, size_t size)
+static int reload_dma(const struct device *dev_dma, uint32_t channel, void *src, void *dst,
+		      size_t size)
 {
 	int ret;
 
@@ -177,9 +179,8 @@ static int reload_dma(const struct device *dev_dma, uint32_t channel,
 	return ret;
 }
 
-static int start_dma(const struct device *dev_dma, uint32_t channel,
-		     struct dma_config *cfg, void *src, void *dst,
-		     uint32_t blk_size)
+static int start_dma(const struct device *dev_dma, uint32_t channel, struct dma_config *cfg,
+		     void *src, void *dst, uint32_t blk_size)
 {
 	struct dma_block_config blk_cfg;
 	int ret;
@@ -202,8 +203,8 @@ static int start_dma(const struct device *dev_dma, uint32_t channel,
 }
 
 /* This function is executed in the interrupt context */
-static void dma_rx_callback(const struct device *dma_dev, void *user_data,
-			    uint32_t channel, int status)
+static void dma_rx_callback(const struct device *dma_dev, void *user_data, uint32_t channel,
+			    int status)
 {
 	const struct device *dev = get_dev_from_dma_channel(channel);
 	const struct i2s_sam_dev_cfg *const dev_cfg = dev->config;
@@ -221,8 +222,7 @@ static void dma_rx_callback(const struct device *dma_dev, void *user_data,
 	}
 
 	/* All block data received */
-	ret = queue_put(&stream->mem_block_queue, stream->mem_block,
-			stream->cfg.block_size);
+	ret = queue_put(&stream->mem_block_queue, stream->mem_block, stream->cfg.block_size);
 	if (ret < 0) {
 		stream->state = I2S_STATE_ERROR;
 		goto rx_disable;
@@ -237,8 +237,7 @@ static void dma_rx_callback(const struct device *dma_dev, void *user_data,
 	}
 
 	/* Prepare to receive the next data block */
-	ret = k_mem_slab_alloc(stream->cfg.mem_slab, &stream->mem_block,
-			       K_NO_WAIT);
+	ret = k_mem_slab_alloc(stream->cfg.mem_slab, &stream->mem_block, K_NO_WAIT);
 	if (ret < 0) {
 		stream->state = I2S_STATE_ERROR;
 		goto rx_disable;
@@ -247,9 +246,8 @@ static void dma_rx_callback(const struct device *dma_dev, void *user_data,
 	/* Assure cache coherency before DMA write operation */
 	DCACHE_INVALIDATE(stream->mem_block, stream->cfg.block_size);
 
-	ret = reload_dma(dev_cfg->dev_dma, stream->dma_channel,
-			 (void *)&(ssc->SSC_RHR), stream->mem_block,
-			 stream->cfg.block_size);
+	ret = reload_dma(dev_cfg->dev_dma, stream->dma_channel, (void *)&(ssc->SSC_RHR),
+			 stream->mem_block, stream->cfg.block_size);
 	if (ret < 0) {
 		LOG_DBG("Failed to reload RX DMA transfer: %d", ret);
 		goto rx_disable;
@@ -262,8 +260,8 @@ rx_disable:
 }
 
 /* This function is executed in the interrupt context */
-static void dma_tx_callback(const struct device *dma_dev, void *user_data,
-			    uint32_t channel, int status)
+static void dma_tx_callback(const struct device *dma_dev, void *user_data, uint32_t channel,
+			    int status)
 {
 	const struct device *dev = get_dev_from_dma_channel(channel);
 	const struct i2s_sam_dev_cfg *const dev_cfg = dev->config;
@@ -293,8 +291,7 @@ static void dma_tx_callback(const struct device *dma_dev, void *user_data,
 	}
 
 	/* Prepare to send the next data block */
-	ret = queue_get(&stream->mem_block_queue, &stream->mem_block,
-			&mem_block_size);
+	ret = queue_get(&stream->mem_block_queue, &stream->mem_block, &mem_block_size);
 	if (ret < 0) {
 		if (stream->state == I2S_STATE_STOPPING) {
 			stream->state = I2S_STATE_READY;
@@ -308,9 +305,8 @@ static void dma_tx_callback(const struct device *dma_dev, void *user_data,
 	/* Assure cache coherency before DMA read operation */
 	DCACHE_CLEAN(stream->mem_block, mem_block_size);
 
-	ret = reload_dma(dev_cfg->dev_dma, stream->dma_channel,
-			 stream->mem_block, (void *)&(ssc->SSC_THR),
-			 mem_block_size);
+	ret = reload_dma(dev_cfg->dev_dma, stream->dma_channel, stream->mem_block,
+			 (void *)&(ssc->SSC_THR), mem_block_size);
 	if (ret < 0) {
 		LOG_DBG("Failed to reload TX DMA transfer: %d", ret);
 		goto tx_disable;
@@ -341,41 +337,37 @@ static int set_rx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 		num_words = 2U;
 		fslen = word_size_bits - 1;
 
-		ssc_rcmr = SSC_RCMR_CKI
-			   | (pin_rf_en ? SSC_RCMR_START_RF_FALLING : 0)
-			   | SSC_RCMR_STTDLY(1);
+		ssc_rcmr = SSC_RCMR_CKI | (pin_rf_en ? SSC_RCMR_START_RF_FALLING : 0) |
+			   SSC_RCMR_STTDLY(1);
 
-		ssc_rfmr = (pin_rf_en && frame_clk_master
-			    ? SSC_RFMR_FSOS_NEGATIVE : SSC_RFMR_FSOS_NONE);
+		ssc_rfmr = (pin_rf_en && frame_clk_master ? SSC_RFMR_FSOS_NEGATIVE
+							  : SSC_RFMR_FSOS_NONE);
 		break;
 
 	case I2S_FMT_DATA_FORMAT_PCM_SHORT:
-		ssc_rcmr = (pin_rf_en ? SSC_RCMR_START_RF_FALLING : 0)
-			   | SSC_RCMR_STTDLY(0);
+		ssc_rcmr = (pin_rf_en ? SSC_RCMR_START_RF_FALLING : 0) | SSC_RCMR_STTDLY(0);
 
-		ssc_rfmr = (pin_rf_en && frame_clk_master
-			    ? SSC_RFMR_FSOS_POSITIVE : SSC_RFMR_FSOS_NONE);
+		ssc_rfmr = (pin_rf_en && frame_clk_master ? SSC_RFMR_FSOS_POSITIVE
+							  : SSC_RFMR_FSOS_NONE);
 		break;
 
 	case I2S_FMT_DATA_FORMAT_PCM_LONG:
 		fslen = num_words * word_size_bits / 2U - 1;
 
-		ssc_rcmr = (pin_rf_en ? SSC_RCMR_START_RF_RISING : 0)
-			   | SSC_RCMR_STTDLY(0);
+		ssc_rcmr = (pin_rf_en ? SSC_RCMR_START_RF_RISING : 0) | SSC_RCMR_STTDLY(0);
 
-		ssc_rfmr = (pin_rf_en && frame_clk_master
-			    ? SSC_RFMR_FSOS_POSITIVE : SSC_RFMR_FSOS_NONE);
+		ssc_rfmr = (pin_rf_en && frame_clk_master ? SSC_RFMR_FSOS_POSITIVE
+							  : SSC_RFMR_FSOS_NONE);
 		break;
 
 	case I2S_FMT_DATA_FORMAT_LEFT_JUSTIFIED:
 		fslen = num_words * word_size_bits / 2U - 1;
 
-		ssc_rcmr = SSC_RCMR_CKI
-			   | (pin_rf_en ? SSC_RCMR_START_RF_RISING : 0)
-			   | SSC_RCMR_STTDLY(0);
+		ssc_rcmr = SSC_RCMR_CKI | (pin_rf_en ? SSC_RCMR_START_RF_RISING : 0) |
+			   SSC_RCMR_STTDLY(0);
 
-		ssc_rfmr = (pin_rf_en && frame_clk_master
-			    ? SSC_RFMR_FSOS_POSITIVE : SSC_RFMR_FSOS_NONE);
+		ssc_rfmr = (pin_rf_en && frame_clk_master ? SSC_RFMR_FSOS_POSITIVE
+							  : SSC_RFMR_FSOS_NONE);
 		break;
 
 	default:
@@ -384,30 +376,27 @@ static int set_rx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 	}
 
 	if (pin_rk_en) {
-		ssc_rcmr |= ((i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE)
-			     ? SSC_RCMR_CKS_RK : SSC_RCMR_CKS_MCK)
-			    | ((i2s_cfg->options & I2S_OPT_BIT_CLK_GATED)
-			       ? SSC_RCMR_CKO_TRANSFER : SSC_RCMR_CKO_CONTINUOUS);
+		ssc_rcmr |= ((i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE) ? SSC_RCMR_CKS_RK
+									: SSC_RCMR_CKS_MCK) |
+			    ((i2s_cfg->options & I2S_OPT_BIT_CLK_GATED) ? SSC_RCMR_CKO_TRANSFER
+									: SSC_RCMR_CKO_CONTINUOUS);
 	} else {
-		ssc_rcmr |= SSC_RCMR_CKS_TK
-			    | SSC_RCMR_CKO_NONE;
+		ssc_rcmr |= SSC_RCMR_CKS_TK | SSC_RCMR_CKO_NONE;
 	}
 	/* SSC_RCMR.PERIOD bit filed does not support setting the
 	 * frame period with one bit resolution. In case the required
 	 * frame period is an odd number set it to be one bit longer.
 	 */
-	ssc_rcmr |= (pin_rf_en ? 0 : SSC_RCMR_START_TRANSMIT)
-		    | SSC_RCMR_PERIOD((num_words * word_size_bits + 1) / 2U - 1);
+	ssc_rcmr |= (pin_rf_en ? 0 : SSC_RCMR_START_TRANSMIT) |
+		    SSC_RCMR_PERIOD((num_words * word_size_bits + 1) / 2U - 1);
 
 	/* Receive Clock Mode Register */
 	ssc->SSC_RCMR = ssc_rcmr;
 
-	ssc_rfmr |= SSC_RFMR_DATLEN(word_size_bits - 1)
-		    | ((i2s_cfg->format & I2S_FMT_DATA_ORDER_LSB)
-		       ? 0 : SSC_RFMR_MSBF)
-		    | SSC_RFMR_DATNB(num_words - 1)
-		    | SSC_RFMR_FSLEN(fslen)
-		    | SSC_RFMR_FSLEN_EXT(fslen >> 4);
+	ssc_rfmr |= SSC_RFMR_DATLEN(word_size_bits - 1) |
+		    ((i2s_cfg->format & I2S_FMT_DATA_ORDER_LSB) ? 0 : SSC_RFMR_MSBF) |
+		    SSC_RFMR_DATNB(num_words - 1) | SSC_RFMR_FSLEN(fslen) |
+		    SSC_RFMR_FSLEN_EXT(fslen >> 4);
 
 	/* Receive Frame Mode Register */
 	ssc->SSC_RFMR = ssc_rfmr;
@@ -431,16 +420,13 @@ static int set_tx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 		num_words = 2U;
 		fslen = word_size_bits - 1;
 
-		ssc_tcmr = SSC_TCMR_START_TF_FALLING
-			   | SSC_TCMR_STTDLY(1);
+		ssc_tcmr = SSC_TCMR_START_TF_FALLING | SSC_TCMR_STTDLY(1);
 
 		ssc_tfmr = SSC_TFMR_FSOS_NEGATIVE;
 		break;
 
 	case I2S_FMT_DATA_FORMAT_PCM_SHORT:
-		ssc_tcmr = SSC_TCMR_CKI
-			   | SSC_TCMR_START_TF_FALLING
-			   | SSC_TCMR_STTDLY(0);
+		ssc_tcmr = SSC_TCMR_CKI | SSC_TCMR_START_TF_FALLING | SSC_TCMR_STTDLY(0);
 
 		ssc_tfmr = SSC_TFMR_FSOS_POSITIVE;
 		break;
@@ -448,9 +434,7 @@ static int set_tx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 	case I2S_FMT_DATA_FORMAT_PCM_LONG:
 		fslen = num_words * word_size_bits / 2U - 1;
 
-		ssc_tcmr = SSC_TCMR_CKI
-			   | SSC_TCMR_START_TF_RISING
-			   | SSC_TCMR_STTDLY(0);
+		ssc_tcmr = SSC_TCMR_CKI | SSC_TCMR_START_TF_RISING | SSC_TCMR_STTDLY(0);
 
 		ssc_tfmr = SSC_TFMR_FSOS_POSITIVE;
 		break;
@@ -458,8 +442,7 @@ static int set_tx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 	case I2S_FMT_DATA_FORMAT_LEFT_JUSTIFIED:
 		fslen = num_words * word_size_bits / 2U - 1;
 
-		ssc_tcmr = SSC_TCMR_START_TF_RISING
-			   | SSC_TCMR_STTDLY(0);
+		ssc_tcmr = SSC_TCMR_START_TF_RISING | SSC_TCMR_STTDLY(0);
 
 		ssc_tfmr = SSC_TFMR_FSOS_POSITIVE;
 		break;
@@ -473,11 +456,11 @@ static int set_tx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 	 * frame period with one bit resolution. In case the required
 	 * frame period is an odd number set it to be one bit longer.
 	 */
-	ssc_tcmr |= ((i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE)
-		     ? SSC_TCMR_CKS_TK : SSC_TCMR_CKS_MCK)
-		    | ((i2s_cfg->options & I2S_OPT_BIT_CLK_GATED)
-		       ? SSC_TCMR_CKO_TRANSFER : SSC_TCMR_CKO_CONTINUOUS)
-		    | SSC_TCMR_PERIOD((num_words * word_size_bits + 1) / 2U - 1);
+	ssc_tcmr |=
+		((i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE) ? SSC_TCMR_CKS_TK : SSC_TCMR_CKS_MCK) |
+		((i2s_cfg->options & I2S_OPT_BIT_CLK_GATED) ? SSC_TCMR_CKO_TRANSFER
+							    : SSC_TCMR_CKO_CONTINUOUS) |
+		SSC_TCMR_PERIOD((num_words * word_size_bits + 1) / 2U - 1);
 
 	/* Transmit Clock Mode Register */
 	ssc->SSC_TCMR = ssc_tcmr;
@@ -487,12 +470,10 @@ static int set_tx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 		ssc_tfmr |= SSC_TFMR_FSOS_NONE;
 	}
 
-	ssc_tfmr |= SSC_TFMR_DATLEN(word_size_bits - 1)
-		    | ((i2s_cfg->format & I2S_FMT_DATA_ORDER_LSB)
-		       ? 0 : SSC_TFMR_MSBF)
-		    | SSC_TFMR_DATNB(num_words - 1)
-		    | SSC_TFMR_FSLEN(fslen)
-		    | SSC_TFMR_FSLEN_EXT(fslen >> 4);
+	ssc_tfmr |= SSC_TFMR_DATLEN(word_size_bits - 1) |
+		    ((i2s_cfg->format & I2S_FMT_DATA_ORDER_LSB) ? 0 : SSC_TFMR_MSBF) |
+		    SSC_TFMR_DATNB(num_words - 1) | SSC_TFMR_FSLEN(fslen) |
+		    SSC_TFMR_FSLEN_EXT(fslen >> 4);
 
 	/* Transmit Frame Mode Register */
 	ssc->SSC_TFMR = ssc_tfmr;
@@ -527,8 +508,7 @@ static int bit_clock_set(Ssc *const ssc, uint32_t bit_clk_freq)
 	return 0;
 }
 
-static const struct i2s_config *i2s_sam_config_get(const struct device *dev,
-						   enum i2s_dir dir)
+static const struct i2s_config *i2s_sam_config_get(const struct device *dev, enum i2s_dir dir)
 {
 	struct i2s_sam_dev_data *const dev_data = dev->data;
 	struct stream *stream;
@@ -569,8 +549,7 @@ static int i2s_sam_configure(const struct device *dev, enum i2s_dir dir,
 		return -EINVAL;
 	}
 
-	if (stream->state != I2S_STATE_NOT_READY &&
-	    stream->state != I2S_STATE_READY) {
+	if (stream->state != I2S_STATE_NOT_READY && stream->state != I2S_STATE_READY) {
 		LOG_ERR("invalid state");
 		return -EINVAL;
 	}
@@ -600,8 +579,7 @@ static int i2s_sam_configure(const struct device *dev, enum i2s_dir dir,
 		return -EINVAL;
 	}
 
-	if (num_words < SAM_SSC_WORD_PER_FRAME_MIN ||
-	    num_words > SAM_SSC_WORD_PER_FRAME_MAX) {
+	if (num_words < SAM_SSC_WORD_PER_FRAME_MIN || num_words > SAM_SSC_WORD_PER_FRAME_MAX) {
 		LOG_ERR("Unsupported words per frame number");
 		return -EINVAL;
 	}
@@ -631,13 +609,11 @@ static int i2s_sam_configure(const struct device *dev, enum i2s_dir dir,
 	return 0;
 }
 
-static int rx_stream_start(struct stream *stream, Ssc *const ssc,
-			   const struct device *dev_dma)
+static int rx_stream_start(struct stream *stream, Ssc *const ssc, const struct device *dev_dma)
 {
 	int ret;
 
-	ret = k_mem_slab_alloc(stream->cfg.mem_slab, &stream->mem_block,
-			       K_NO_WAIT);
+	ret = k_mem_slab_alloc(stream->cfg.mem_slab, &stream->mem_block, K_NO_WAIT);
 	if (ret < 0) {
 		return ret;
 	}
@@ -659,9 +635,8 @@ static int rx_stream_start(struct stream *stream, Ssc *const ssc,
 		.dma_callback = dma_rx_callback,
 	};
 
-	ret = start_dma(dev_dma, stream->dma_channel, &dma_cfg,
-			(void *)&(ssc->SSC_RHR), stream->mem_block,
-			stream->cfg.block_size);
+	ret = start_dma(dev_dma, stream->dma_channel, &dma_cfg, (void *)&(ssc->SSC_RHR),
+			stream->mem_block, stream->cfg.block_size);
 	if (ret < 0) {
 		LOG_ERR("Failed to start RX DMA transfer: %d", ret);
 		return ret;
@@ -677,14 +652,12 @@ static int rx_stream_start(struct stream *stream, Ssc *const ssc,
 	return 0;
 }
 
-static int tx_stream_start(struct stream *stream, Ssc *const ssc,
-			   const struct device *dev_dma)
+static int tx_stream_start(struct stream *stream, Ssc *const ssc, const struct device *dev_dma)
 {
 	size_t mem_block_size;
 	int ret;
 
-	ret = queue_get(&stream->mem_block_queue, &stream->mem_block,
-			&mem_block_size);
+	ret = queue_get(&stream->mem_block_queue, &stream->mem_block, &mem_block_size);
 	if (ret < 0) {
 		return ret;
 	}
@@ -711,9 +684,8 @@ static int tx_stream_start(struct stream *stream, Ssc *const ssc,
 	/* Assure cache coherency before DMA read operation */
 	DCACHE_CLEAN(stream->mem_block, mem_block_size);
 
-	ret = start_dma(dev_dma, stream->dma_channel, &dma_cfg,
-			stream->mem_block, (void *)&(ssc->SSC_THR),
-			mem_block_size);
+	ret = start_dma(dev_dma, stream->dma_channel, &dma_cfg, stream->mem_block,
+			(void *)&(ssc->SSC_THR), mem_block_size);
 	if (ret < 0) {
 		LOG_ERR("Failed to start TX DMA transfer: %d", ret);
 		return ret;
@@ -729,8 +701,7 @@ static int tx_stream_start(struct stream *stream, Ssc *const ssc,
 	return 0;
 }
 
-static void rx_stream_disable(struct stream *stream, Ssc *const ssc,
-			      const struct device *dev_dma)
+static void rx_stream_disable(struct stream *stream, Ssc *const ssc, const struct device *dev_dma)
 {
 	ssc->SSC_CR = SSC_CR_RXDIS;
 	ssc->SSC_IDR = SSC_IDR_OVRUN;
@@ -741,8 +712,7 @@ static void rx_stream_disable(struct stream *stream, Ssc *const ssc,
 	}
 }
 
-static void tx_stream_disable(struct stream *stream, Ssc *const ssc,
-			      const struct device *dev_dma)
+static void tx_stream_disable(struct stream *stream, Ssc *const ssc, const struct device *dev_dma)
 {
 	ssc->SSC_CR = SSC_CR_TXDIS;
 	ssc->SSC_IDR = SSC_IDR_TXEMPTY;
@@ -781,8 +751,7 @@ static void tx_queue_drop(struct stream *stream)
 	}
 }
 
-static int i2s_sam_trigger(const struct device *dev, enum i2s_dir dir,
-			   enum i2s_trigger_cmd cmd)
+static int i2s_sam_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_trigger_cmd cmd)
 {
 	const struct i2s_sam_dev_cfg *const dev_cfg = dev->config;
 	struct i2s_sam_dev_data *const dev_data = dev->data;
@@ -871,8 +840,7 @@ static int i2s_sam_trigger(const struct device *dev, enum i2s_dir dir,
 	return 0;
 }
 
-static int i2s_sam_read(const struct device *dev, void **mem_block,
-			size_t *size)
+static int i2s_sam_read(const struct device *dev, void **mem_block, size_t *size)
 {
 	struct i2s_sam_dev_data *const dev_data = dev->data;
 	int ret;
@@ -883,8 +851,7 @@ static int i2s_sam_read(const struct device *dev, void **mem_block,
 	}
 
 	if (dev_data->rx.state != I2S_STATE_ERROR) {
-		ret = k_sem_take(&dev_data->rx.sem,
-				 SYS_TIMEOUT_MS(dev_data->rx.cfg.timeout));
+		ret = k_sem_take(&dev_data->rx.sem, SYS_TIMEOUT_MS(dev_data->rx.cfg.timeout));
 		if (ret < 0) {
 			return ret;
 		}
@@ -899,20 +866,17 @@ static int i2s_sam_read(const struct device *dev, void **mem_block,
 	return 0;
 }
 
-static int i2s_sam_write(const struct device *dev, void *mem_block,
-			 size_t size)
+static int i2s_sam_write(const struct device *dev, void *mem_block, size_t size)
 {
 	struct i2s_sam_dev_data *const dev_data = dev->data;
 	int ret;
 
-	if (dev_data->tx.state != I2S_STATE_RUNNING &&
-	    dev_data->tx.state != I2S_STATE_READY) {
+	if (dev_data->tx.state != I2S_STATE_RUNNING && dev_data->tx.state != I2S_STATE_READY) {
 		LOG_DBG("invalid state");
 		return -EIO;
 	}
 
-	ret = k_sem_take(&dev_data->tx.sem,
-			 SYS_TIMEOUT_MS(dev_data->tx.cfg.timeout));
+	ret = k_sem_take(&dev_data->tx.sem, SYS_TIMEOUT_MS(dev_data->tx.cfg.timeout));
 	if (ret < 0) {
 		return ret;
 	}
@@ -976,8 +940,7 @@ static int i2s_sam_initialize(const struct device *dev)
 	}
 
 	/* Enable SSC clock in PMC */
-	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
-			       (clock_control_subsys_t)&dev_cfg->clock_cfg);
+	(void)clock_control_on(SAM_DT_PMC_CONTROLLER, (clock_control_subsys_t)&dev_cfg->clock_cfg);
 
 	/* Reset the module, disable receiver & transmitter */
 	ssc->SSC_CR = SSC_CR_RXDIS | SSC_CR_TXDIS | SSC_CR_SWRST;
@@ -1007,8 +970,8 @@ static const struct device *get_dev_from_dma_channel(uint32_t dma_channel)
 
 static void i2s0_sam_irq_config(void)
 {
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), i2s_sam_isr,
-		    DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), i2s_sam_isr, DEVICE_DT_INST_GET(0),
+		    0);
 }
 
 PINCTRL_DT_INST_DEFINE(0);
@@ -1026,28 +989,29 @@ struct queue_item rx_0_ring_buf[CONFIG_I2S_SAM_SSC_RX_BLOCK_COUNT + 1];
 struct queue_item tx_0_ring_buf[CONFIG_I2S_SAM_SSC_TX_BLOCK_COUNT + 1];
 
 static struct i2s_sam_dev_data i2s0_sam_data = {
-	.rx = {
-		.dma_channel = DT_INST_DMAS_CELL_BY_NAME(0, rx, channel),
-		.dma_perid = DT_INST_DMAS_CELL_BY_NAME(0, rx, perid),
-		.mem_block_queue.buf = rx_0_ring_buf,
-		.mem_block_queue.len = ARRAY_SIZE(rx_0_ring_buf),
-		.stream_start = rx_stream_start,
-		.stream_disable = rx_stream_disable,
-		.queue_drop = rx_queue_drop,
-		.set_data_format = set_rx_data_format,
-	},
-	.tx = {
-		.dma_channel = DT_INST_DMAS_CELL_BY_NAME(0, tx, channel),
-		.dma_perid = DT_INST_DMAS_CELL_BY_NAME(0, tx, perid),
-		.mem_block_queue.buf = tx_0_ring_buf,
-		.mem_block_queue.len = ARRAY_SIZE(tx_0_ring_buf),
-		.stream_start = tx_stream_start,
-		.stream_disable = tx_stream_disable,
-		.queue_drop = tx_queue_drop,
-		.set_data_format = set_tx_data_format,
-	},
+	.rx =
+		{
+			.dma_channel = DT_INST_DMAS_CELL_BY_NAME(0, rx, channel),
+			.dma_perid = DT_INST_DMAS_CELL_BY_NAME(0, rx, perid),
+			.mem_block_queue.buf = rx_0_ring_buf,
+			.mem_block_queue.len = ARRAY_SIZE(rx_0_ring_buf),
+			.stream_start = rx_stream_start,
+			.stream_disable = rx_stream_disable,
+			.queue_drop = rx_queue_drop,
+			.set_data_format = set_rx_data_format,
+		},
+	.tx =
+		{
+			.dma_channel = DT_INST_DMAS_CELL_BY_NAME(0, tx, channel),
+			.dma_perid = DT_INST_DMAS_CELL_BY_NAME(0, tx, perid),
+			.mem_block_queue.buf = tx_0_ring_buf,
+			.mem_block_queue.len = ARRAY_SIZE(tx_0_ring_buf),
+			.stream_start = tx_stream_start,
+			.stream_disable = tx_stream_disable,
+			.queue_drop = tx_queue_drop,
+			.set_data_format = set_tx_data_format,
+		},
 };
 
-DEVICE_DT_INST_DEFINE(0, &i2s_sam_initialize, NULL,
-		    &i2s0_sam_data, &i2s0_sam_config, POST_KERNEL,
-		    CONFIG_I2S_INIT_PRIORITY, &i2s_sam_driver_api);
+DEVICE_DT_INST_DEFINE(0, &i2s_sam_initialize, NULL, &i2s0_sam_data, &i2s0_sam_config, POST_KERNEL,
+		      CONFIG_I2S_INIT_PRIORITY, &i2s_sam_driver_api);

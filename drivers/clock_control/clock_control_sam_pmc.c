@@ -18,8 +18,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
-static int atmel_sam_clock_control_on(const struct device *dev,
-				      clock_control_subsys_t sys)
+static int atmel_sam_clock_control_on(const struct device *dev, clock_control_subsys_t sys)
 {
 	ARG_UNUSED(dev);
 
@@ -44,8 +43,7 @@ static int atmel_sam_clock_control_on(const struct device *dev,
 	return 0;
 }
 
-static int atmel_sam_clock_control_off(const struct device *dev,
-				       clock_control_subsys_t sys)
+static int atmel_sam_clock_control_off(const struct device *dev, clock_control_subsys_t sys)
 {
 	ARG_UNUSED(dev);
 
@@ -70,8 +68,7 @@ static int atmel_sam_clock_control_off(const struct device *dev,
 	return 0;
 }
 
-static int atmel_sam_clock_control_get_rate(const struct device *dev,
-					    clock_control_subsys_t sys,
+static int atmel_sam_clock_control_get_rate(const struct device *dev, clock_control_subsys_t sys,
 					    uint32_t *rate)
 {
 	ARG_UNUSED(dev);
@@ -99,9 +96,8 @@ static int atmel_sam_clock_control_get_rate(const struct device *dev,
 	return 0;
 }
 
-static enum clock_control_status
-atmel_sam_clock_control_get_status(const struct device *dev,
-				   clock_control_subsys_t sys)
+static enum clock_control_status atmel_sam_clock_control_get_status(const struct device *dev,
+								    clock_control_subsys_t sys)
 {
 	ARG_UNUSED(dev);
 
@@ -118,8 +114,8 @@ atmel_sam_clock_control_get_status(const struct device *dev,
 	switch (cfg->clock_type) {
 	case PMC_TYPE_PERIPHERAL:
 		status = soc_pmc_peripheral_is_enabled(cfg->peripheral_id) > 0
-		       ? CLOCK_CONTROL_STATUS_ON
-		       : CLOCK_CONTROL_STATUS_OFF;
+				 ? CLOCK_CONTROL_STATUS_ON
+				 : CLOCK_CONTROL_STATUS_OFF;
 		break;
 	default:
 		LOG_ERR("The PMC clock type is not implemented.");
@@ -136,6 +132,5 @@ static const struct clock_control_driver_api atmel_sam_clock_control_api = {
 	.get_status = atmel_sam_clock_control_get_status,
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, PRE_KERNEL_1,
-		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		      &atmel_sam_clock_control_api);

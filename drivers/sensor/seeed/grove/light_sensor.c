@@ -18,15 +18,14 @@ LOG_MODULE_REGISTER(grove_light, CONFIG_SENSOR_LOG_LEVEL);
 
 /* The effect of gain and reference voltage must cancel. */
 #ifdef CONFIG_ADC_NRFX_SAADC
-#define GROVE_GAIN ADC_GAIN_1_4
-#define GROVE_REF ADC_REF_VDD_1_4
+#define GROVE_GAIN       ADC_GAIN_1_4
+#define GROVE_REF        ADC_REF_VDD_1_4
 #define GROVE_RESOLUTION 12
 #else
-#define GROVE_GAIN ADC_GAIN_1
-#define GROVE_REF ADC_REF_VDD_1
+#define GROVE_GAIN       ADC_GAIN_1
+#define GROVE_REF        ADC_REF_VDD_1
 #define GROVE_RESOLUTION 12
 #endif
-
 
 struct gls_data {
 	const struct device *adc;
@@ -48,16 +47,14 @@ static struct adc_sequence adc_table = {
 	.options = &options,
 };
 
-static int gls_sample_fetch(const struct device *dev,
-			    enum sensor_channel chan)
+static int gls_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	const struct gls_config *cfg = dev->config;
 
 	return adc_read(cfg->adc, &adc_table);
 }
 
-static int gls_channel_get(const struct device *dev,
-			   enum sensor_channel chan,
+static int gls_channel_get(const struct device *dev, enum sensor_channel chan,
 			   struct sensor_value *val)
 {
 	struct gls_data *drv_data = dev->data;
@@ -70,7 +67,7 @@ static int gls_channel_get(const struct device *dev,
 	 * https://github.com/intel-iot-devkit/upm/blob/master/src/grove/grove.cxx#L161
 	 */
 	ldr_val = (BIT(GROVE_RESOLUTION) - 1.0 - analog_val) * 10.0 / analog_val;
-	dval = 10000.0 / pow(ldr_val * 15.0, 4.0/3.0);
+	dval = 10000.0 / pow(ldr_val * 15.0, 4.0 / 3.0);
 
 	val->val1 = (int32_t)dval;
 	val->val2 = ((int32_t)(dval * 1000000)) % 1000000;
@@ -113,16 +110,15 @@ static int gls_init(const struct device *dev)
 	return 0;
 }
 
-#define GLS_DEFINE(inst)							\
-	static struct gls_data gls_data_##inst;					\
-										\
-	static const struct gls_config gls_cfg_##inst = {			\
-		.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst)),		\
-		.adc_channel = DT_INST_IO_CHANNELS_INPUT(inst),			\
-	};									\
-										\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &gls_init, NULL,			\
-			      &gls_data_##inst, &gls_cfg_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &gls_api);		\
+#define GLS_DEFINE(inst)                                                                           \
+	static struct gls_data gls_data_##inst;                                                    \
+                                                                                                   \
+	static const struct gls_config gls_cfg_##inst = {                                          \
+		.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst)),                              \
+		.adc_channel = DT_INST_IO_CHANNELS_INPUT(inst),                                    \
+	};                                                                                         \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, &gls_init, NULL, &gls_data_##inst, &gls_cfg_##inst,     \
+				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &gls_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GLS_DEFINE)

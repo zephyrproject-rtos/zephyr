@@ -20,9 +20,10 @@
 #include "fsl_power.h"
 #endif
 
-#define CYC_PER_TICK ((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec()	\
-			      / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
-#define MAX_CYC INT_MAX
+#define CYC_PER_TICK                                                                               \
+	((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec() /                                      \
+		    (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
+#define MAX_CYC   INT_MAX
 #define MAX_TICKS ((MAX_CYC - CYC_PER_TICK) / CYC_PER_TICK)
 #define MIN_DELAY 1000
 
@@ -85,7 +86,7 @@ static uint32_t mcux_lpc_ostick_set_counter_timeout(int32_t curr_timeout)
 	if (counter_dev) {
 		uint32_t timeout;
 		int32_t ticks;
-		struct counter_top_cfg top_cfg = { 0 };
+		struct counter_top_cfg top_cfg = {0};
 
 		timeout = k_ticks_to_us_ceil32(curr_timeout);
 
@@ -228,8 +229,9 @@ uint32_t sys_clock_elapsed(void)
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint32_t ret = ((uint32_t)mcux_lpc_ostick_get_compensated_timer_value() -
-					(uint32_t)last_count) / CYC_PER_TICK;
+	uint32_t ret =
+		((uint32_t)mcux_lpc_ostick_get_compensated_timer_value() - (uint32_t)last_count) /
+		CYC_PER_TICK;
 
 	k_spin_unlock(&lock, key);
 	return ret;
@@ -261,8 +263,7 @@ static int sys_clock_driver_init(void)
 {
 
 	/* Configure event timer's ISR */
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
-					mcux_lpc_ostick_isr, NULL, 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), mcux_lpc_ostick_isr, NULL, 0);
 
 	base = (OSTIMER_Type *)DT_INST_REG_ADDR(0);
 
@@ -287,5 +288,4 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

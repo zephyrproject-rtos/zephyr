@@ -51,14 +51,12 @@ struct i2c_npcx_port_config {
 };
 
 /* I2C api functions */
-static int i2c_npcx_port_configure(const struct device *dev,
-							uint32_t dev_config)
+static int i2c_npcx_port_configure(const struct device *dev, uint32_t dev_config)
 {
 	const struct i2c_npcx_port_config *const config = dev->config;
 
 	if (config->i2c_ctrl == NULL) {
-		LOG_ERR("Cannot find i2c controller on port%02x!",
-								config->port);
+		LOG_ERR("Cannot find i2c controller on port%02x!", config->port);
 		return -EIO;
 	}
 
@@ -93,8 +91,8 @@ static int i2c_npcx_port_get_config(const struct device *dev, uint32_t *dev_conf
 	return ret;
 }
 
-static int i2c_npcx_port_transfer(const struct device *dev,
-		struct i2c_msg *msgs, uint8_t num_msgs, uint16_t addr)
+static int i2c_npcx_port_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
+				  uint16_t addr)
 {
 	const struct i2c_npcx_port_config *const config = dev->config;
 	int ret = 0;
@@ -102,8 +100,7 @@ static int i2c_npcx_port_transfer(const struct device *dev,
 	int idx_port = (config->port & 0x0F);
 
 	if (config->i2c_ctrl == NULL) {
-		LOG_ERR("Cannot find i2c controller on port%02x!",
-								config->port);
+		LOG_ERR("Cannot find i2c controller on port%02x!", config->port);
 		return -EIO;
 	}
 
@@ -114,8 +111,7 @@ static int i2c_npcx_port_transfer(const struct device *dev,
 	npcx_pinctrl_i2c_port_sel(idx_ctrl, idx_port);
 
 	/* Start transaction with i2c controller */
-	ret = npcx_i2c_ctrl_transfer(config->i2c_ctrl, msgs, num_msgs, addr,
-								config->port);
+	ret = npcx_i2c_ctrl_transfer(config->i2c_ctrl, msgs, num_msgs, addr, config->port);
 
 	/* Unlock mutex of i2c/smb controller */
 	npcx_i2c_ctrl_mutex_unlock(config->i2c_ctrl);
@@ -144,8 +140,7 @@ static int i2c_npcx_port_recover_bus(const struct device *dev)
 }
 
 #ifdef CONFIG_I2C_TARGET
-static int i2c_npcx_target_register(const struct device *dev,
-				  struct i2c_target_config *target_cfg)
+static int i2c_npcx_target_register(const struct device *dev, struct i2c_target_config *target_cfg)
 {
 	const struct i2c_npcx_port_config *const config = dev->config;
 
@@ -162,7 +157,7 @@ static int i2c_npcx_target_register(const struct device *dev,
 }
 
 static int i2c_npcx_target_unregister(const struct device *dev,
-				     struct i2c_target_config *target_cfg)
+				      struct i2c_target_config *target_cfg)
 {
 	const struct i2c_npcx_port_config *const config = dev->config;
 
@@ -189,7 +184,6 @@ static int i2c_npcx_port_init(const struct device *dev)
 		return ret;
 	}
 
-
 	/* Setup initial i2c configuration */
 	i2c_config = (I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(config->bitrate));
 	ret = i2c_npcx_port_configure(dev, i2c_config);
@@ -215,21 +209,18 @@ static const struct i2c_driver_api i2c_port_npcx_driver_api = {
 };
 
 /* I2C port init macro functions */
-#define NPCX_I2C_PORT_INIT(inst)                                               \
-	PINCTRL_DT_INST_DEFINE(inst);					       \
-									       \
-	static const struct i2c_npcx_port_config i2c_npcx_port_cfg_##inst = {  \
-		.port = DT_INST_PROP(inst, port),                              \
-		.bitrate = DT_INST_PROP(inst, clock_frequency),                \
-		.i2c_ctrl = DEVICE_DT_GET(DT_INST_PHANDLE(inst, controller)),  \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                  \
-	};                                                                     \
-									       \
-	I2C_DEVICE_DT_INST_DEFINE(inst,                                        \
-			    i2c_npcx_port_init,                                \
-			    NULL, NULL,                                        \
-			    &i2c_npcx_port_cfg_##inst,                         \
-			    PRE_KERNEL_1, CONFIG_I2C_NPCX_PORT_INIT_PRIORITY,  \
-			    &i2c_port_npcx_driver_api);
+#define NPCX_I2C_PORT_INIT(inst)                                                                   \
+	PINCTRL_DT_INST_DEFINE(inst);                                                              \
+                                                                                                   \
+	static const struct i2c_npcx_port_config i2c_npcx_port_cfg_##inst = {                      \
+		.port = DT_INST_PROP(inst, port),                                                  \
+		.bitrate = DT_INST_PROP(inst, clock_frequency),                                    \
+		.i2c_ctrl = DEVICE_DT_GET(DT_INST_PHANDLE(inst, controller)),                      \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
+	};                                                                                         \
+                                                                                                   \
+	I2C_DEVICE_DT_INST_DEFINE(inst, i2c_npcx_port_init, NULL, NULL, &i2c_npcx_port_cfg_##inst, \
+				  PRE_KERNEL_1, CONFIG_I2C_NPCX_PORT_INIT_PRIORITY,                \
+				  &i2c_port_npcx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NPCX_I2C_PORT_INIT)

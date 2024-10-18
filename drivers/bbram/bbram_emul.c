@@ -24,11 +24,11 @@ struct bbram_emul_data {
 	/** Status register */
 	struct {
 		/** True if BBRAM is in an invalid state */
-		uint8_t is_invalid : 1;
+		uint8_t is_invalid: 1;
 		/** True if BBRAM incurred a standby power failure */
-		uint8_t standby_failure : 1;
+		uint8_t standby_failure: 1;
 		/** True if BBRAM incurred a power failure */
-		uint8_t power_failure : 1;
+		uint8_t power_failure: 1;
 	} status;
 };
 
@@ -91,8 +91,7 @@ static int bbram_emul_get_size(const struct device *dev, size_t *size)
 	return 0;
 }
 
-static int bbram_emul_read(const struct device *dev, size_t offset, size_t size,
-			   uint8_t *data)
+static int bbram_emul_read(const struct device *dev, size_t offset, size_t size, uint8_t *data)
 {
 	const struct bbram_emul_config *config = dev->config;
 	struct bbram_emul_data *dev_data = dev->data;

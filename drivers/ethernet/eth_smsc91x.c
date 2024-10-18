@@ -15,19 +15,19 @@
 
 LOG_MODULE_REGISTER(eth_smsc91x, CONFIG_ETHERNET_LOG_LEVEL);
 
-#define SMSC_LOCK(sc)	   k_mutex_lock(&(sc)->lock, K_FOREVER)
-#define SMSC_UNLOCK(sc)	   k_mutex_unlock(&(sc)->lock)
-#define HW_CYCLE_PER_US	   (sys_clock_hw_cycles_per_sec() / 1000000UL)
+#define SMSC_LOCK(sc)      k_mutex_lock(&(sc)->lock, K_FOREVER)
+#define SMSC_UNLOCK(sc)    k_mutex_unlock(&(sc)->lock)
+#define HW_CYCLE_PER_US    (sys_clock_hw_cycles_per_sec() / 1000000UL)
 #define TX_ALLOC_WAIT_TIME 100
-#define MAX_IRQ_LOOPS	   8
+#define MAX_IRQ_LOOPS      8
 
 /*
  * MII
  */
-#define MDO	 MGMT_MDO
-#define MDI	 MGMT_MDI
-#define MDC	 MGMT_MCLK
-#define MDIRPHY	 MGMT_MDOE
+#define MDO      MGMT_MDO
+#define MDI      MGMT_MDI
+#define MDC      MGMT_MCLK
+#define MDIRPHY  MGMT_MDOE
 #define MDIRHOST 0
 
 #define MII_IDLE_DETECT_CYCLES 32
@@ -35,7 +35,7 @@ LOG_MODULE_REGISTER(eth_smsc91x, CONFIG_ETHERNET_LOG_LEVEL);
 #define MII_COMMAND_START 0x01
 #define MII_COMMAND_READ  0x02
 #define MII_COMMAND_WRITE 0x01
-#define MII_COMMAND_ACK	  0x02
+#define MII_COMMAND_ACK   0x02
 
 static const char *smsc_chip_ids[16] = {
 	NULL,
@@ -325,8 +325,8 @@ static void smsc_enable(struct smsc_data *sc)
 	smsc_select_bank(sc, 0);
 	smsc_write_2(sc, RPCR,
 		     RPCR_ANEG | RPCR_DPLX | RPCR_SPEED |
-		     FIELD_PREP(RPCR_LSA_MASK, RPCR_LED_LINK_ANY) |
-		     FIELD_PREP(RPCR_LSB_MASK, RPCR_LED_ACT_ANY));
+			     FIELD_PREP(RPCR_LSA_MASK, RPCR_LED_LINK_ANY) |
+			     FIELD_PREP(RPCR_LSB_MASK, RPCR_LED_ACT_ANY));
 
 	/*
 	 * Set up the transmit and receive control registers.
@@ -688,8 +688,7 @@ static enum ethernet_hw_caps eth_smsc_get_caps(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return (ETHERNET_LINK_10BASE_T
-		| ETHERNET_LINK_100BASE_T
+	return (ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 		| ETHERNET_PROMISC_MODE
 #endif
@@ -711,8 +710,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	return smsc_send_pkt(sc, tx_buffer, len);
 }
 
-static int eth_smsc_set_config(const struct device *dev,
-			       enum ethernet_config_type type,
+static int eth_smsc_set_config(const struct device *dev, enum ethernet_config_type type,
 			       const struct ethernet_config *config)
 {
 	int ret = 0;
@@ -775,11 +773,11 @@ static void eth_initialize(struct net_if *iface)
 }
 
 static const struct ethernet_api api_funcs = {
-	.iface_api.init   = eth_initialize,
+	.iface_api.init = eth_initialize,
 	.get_capabilities = eth_smsc_get_caps,
-	.get_phy          = eth_get_phy,
-	.set_config       = eth_smsc_set_config,
-	.send             = eth_tx,
+	.get_phy = eth_get_phy,
+	.set_config = eth_smsc_set_config,
+	.send = eth_tx,
 };
 
 static void eth_smsc_isr(const struct device *dev)
@@ -834,10 +832,8 @@ static struct eth_config eth_0_config = {
 	.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle)),
 };
 
-ETH_NET_DEVICE_DT_INST_DEFINE(0,
-	eth_init, NULL, &eth_0_context,
-	&eth_0_config, CONFIG_ETH_INIT_PRIORITY,
-	&api_funcs, NET_ETH_MTU);
+ETH_NET_DEVICE_DT_INST_DEFINE(0, eth_init, NULL, &eth_0_context, &eth_0_config,
+			      CONFIG_ETH_INIT_PRIORITY, &api_funcs, NET_ETH_MTU);
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT smsc_lan91c111_mdio

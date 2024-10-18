@@ -33,8 +33,7 @@ struct dac_sam0_cfg {
 };
 
 /* Write to the DAC. */
-static int dac_sam0_write_value(const struct device *dev, uint8_t channel,
-				uint32_t value)
+static int dac_sam0_write_value(const struct device *dev, uint8_t channel, uint32_t value)
 {
 	const struct dac_sam0_cfg *const cfg = dev->config;
 	Dac *regs = cfg->regs;
@@ -78,8 +77,7 @@ static int dac_sam0_init(const struct device *dev)
 	int retval;
 
 	/* Enable the GCLK */
-	GCLK->CLKCTRL.reg = cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK0 |
-			    GCLK_CLKCTRL_CLKEN;
+	GCLK->CLKCTRL.reg = cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_CLKEN;
 
 	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (retval < 0) {
@@ -105,29 +103,24 @@ static int dac_sam0_init(const struct device *dev)
 	return 0;
 }
 
-static const struct dac_driver_api api_sam0_driver_api = {
-	.channel_setup = dac_sam0_channel_setup,
-	.write_value = dac_sam0_write_value
-};
+static const struct dac_driver_api api_sam0_driver_api = {.channel_setup = dac_sam0_channel_setup,
+							  .write_value = dac_sam0_write_value};
 
-#define SAM0_DAC_REFSEL(n)						       \
+#define SAM0_DAC_REFSEL(n)                                                                         \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, reference),		       \
 		    (DT_INST_ENUM_IDX(n, reference)), (0))
 
-#define SAM0_DAC_INIT(n)						       \
-	PINCTRL_DT_INST_DEFINE(n);					       \
-	static const struct dac_sam0_cfg dac_sam0_cfg_##n = {		       \
-		.regs = (Dac *)DT_INST_REG_ADDR(n),			       \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		       \
-		.pm_apbc_bit = DT_INST_CLOCKS_CELL_BY_NAME(n, pm, bit),	       \
-		.gclk_clkctrl_id =					       \
-			DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, clkctrl_id),      \
-		.refsel = UTIL_CAT(SAM0_DAC_REFSEL_, SAM0_DAC_REFSEL(n)),      \
-	};								       \
-									       \
-	DEVICE_DT_INST_DEFINE(n, &dac_sam0_init, NULL, NULL,		       \
-			    &dac_sam0_cfg_##n, POST_KERNEL,		       \
-			    CONFIG_DAC_INIT_PRIORITY,			       \
-			    &api_sam0_driver_api)
+#define SAM0_DAC_INIT(n)                                                                           \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	static const struct dac_sam0_cfg dac_sam0_cfg_##n = {                                      \
+		.regs = (Dac *)DT_INST_REG_ADDR(n),                                                \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+		.pm_apbc_bit = DT_INST_CLOCKS_CELL_BY_NAME(n, pm, bit),                            \
+		.gclk_clkctrl_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, clkctrl_id),               \
+		.refsel = UTIL_CAT(SAM0_DAC_REFSEL_, SAM0_DAC_REFSEL(n)),                          \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &dac_sam0_init, NULL, NULL, &dac_sam0_cfg_##n, POST_KERNEL,       \
+			      CONFIG_DAC_INIT_PRIORITY, &api_sam0_driver_api)
 
 DT_INST_FOREACH_STATUS_OKAY(SAM0_DAC_INIT);

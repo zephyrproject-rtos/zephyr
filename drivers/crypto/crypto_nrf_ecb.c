@@ -43,8 +43,7 @@ static int do_ecb_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 	}
 
 	if (pkt->in_buf != drv_state.data.cleartext) {
-		memcpy(drv_state.data.cleartext, pkt->in_buf,
-		       ECB_AES_BLOCK_SIZE);
+		memcpy(drv_state.data.cleartext, pkt->in_buf, ECB_AES_BLOCK_SIZE);
 	}
 
 	nrf_ecb_event_clear(NRF_ECB, NRF_ECB_EVENT_ENDECB);
@@ -58,8 +57,7 @@ static int do_ecb_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 		return -EIO;
 	}
 	if (pkt->out_buf != drv_state.data.ciphertext) {
-		memcpy(pkt->out_buf, drv_state.data.ciphertext,
-		       ECB_AES_BLOCK_SIZE);
+		memcpy(pkt->out_buf, drv_state.data.ciphertext, ECB_AES_BLOCK_SIZE);
 	}
 	pkt->out_len = pkt->in_len;
 	return 0;
@@ -81,17 +79,14 @@ static int nrf_ecb_query_caps(const struct device *dev)
 	return (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS);
 }
 
-static int nrf_ecb_session_setup(const struct device *dev,
-				 struct cipher_ctx *ctx,
+static int nrf_ecb_session_setup(const struct device *dev, struct cipher_ctx *ctx,
 				 enum cipher_algo algo, enum cipher_mode mode,
 				 enum cipher_op op_type)
 {
 	ARG_UNUSED(dev);
 
-	if ((algo != CRYPTO_CIPHER_ALGO_AES) ||
-	    !(ctx->flags & CAP_SYNC_OPS) ||
-	    (ctx->keylen != ECB_AES_KEY_SIZE) ||
-	    (op_type != CRYPTO_CIPHER_OP_ENCRYPT) ||
+	if ((algo != CRYPTO_CIPHER_ALGO_AES) || !(ctx->flags & CAP_SYNC_OPS) ||
+	    (ctx->keylen != ECB_AES_KEY_SIZE) || (op_type != CRYPTO_CIPHER_OP_ENCRYPT) ||
 	    (mode != CRYPTO_CIPHER_MODE_ECB)) {
 		LOG_ERR("This driver only supports 128-bit AES ECB encryption"
 			" in synchronous mode");
@@ -114,15 +109,13 @@ static int nrf_ecb_session_setup(const struct device *dev,
 	ctx->ops.cipher_mode = mode;
 
 	if (ctx->key.bit_stream != drv_state.data.key) {
-		memcpy(drv_state.data.key, ctx->key.bit_stream,
-		       ECB_AES_KEY_SIZE);
+		memcpy(drv_state.data.key, ctx->key.bit_stream, ECB_AES_KEY_SIZE);
 	}
 
 	return 0;
 }
 
-static int nrf_ecb_session_free(const struct device *dev,
-				struct cipher_ctx *sessn)
+static int nrf_ecb_session_free(const struct device *dev, struct cipher_ctx *sessn)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(sessn);
@@ -139,7 +132,5 @@ static const struct crypto_driver_api crypto_enc_funcs = {
 	.query_hw_caps = nrf_ecb_query_caps,
 };
 
-DEVICE_DT_INST_DEFINE(0, nrf_ecb_driver_init, NULL,
-		      NULL, NULL,
-		      POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY,
-		      &crypto_enc_funcs);
+DEVICE_DT_INST_DEFINE(0, nrf_ecb_driver_init, NULL, NULL, NULL, POST_KERNEL,
+		      CONFIG_CRYPTO_INIT_PRIORITY, &crypto_enc_funcs);

@@ -11,17 +11,12 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uhc, CONFIG_UHC_DRIVER_LOG_LEVEL);
 
-K_MEM_SLAB_DEFINE_STATIC(uhc_xfer_pool, sizeof(struct uhc_transfer),
-			 CONFIG_UHC_XFER_COUNT, sizeof(void *));
+K_MEM_SLAB_DEFINE_STATIC(uhc_xfer_pool, sizeof(struct uhc_transfer), CONFIG_UHC_XFER_COUNT,
+			 sizeof(void *));
 
-NET_BUF_POOL_VAR_DEFINE(uhc_ep_pool,
-			CONFIG_UHC_BUF_COUNT, CONFIG_UHC_BUF_POOL_SIZE,
-			0, NULL);
+NET_BUF_POOL_VAR_DEFINE(uhc_ep_pool, CONFIG_UHC_BUF_COUNT, CONFIG_UHC_BUF_POOL_SIZE, 0, NULL);
 
-
-int uhc_submit_event(const struct device *dev,
-		     const enum uhc_event_type type,
-		     const int status)
+int uhc_submit_event(const struct device *dev, const enum uhc_event_type type, const int status)
 {
 	struct uhc_data *data = dev->data;
 	struct uhc_event drv_evt = {
@@ -37,9 +32,7 @@ int uhc_submit_event(const struct device *dev,
 	return data->event_cb(dev, &drv_evt);
 }
 
-void uhc_xfer_return(const struct device *dev,
-		     struct uhc_transfer *const xfer,
-		     const int err)
+void uhc_xfer_return(const struct device *dev, struct uhc_transfer *const xfer, const int err)
 {
 	struct uhc_data *data = dev->data;
 	struct uhc_event drv_evt = {
@@ -70,8 +63,7 @@ struct uhc_transfer *uhc_xfer_get_next(const struct device *dev)
 	return (node == NULL) ? NULL : SYS_DLIST_CONTAINER(node, xfer, node);
 }
 
-int uhc_xfer_append(const struct device *dev,
-		    struct uhc_transfer *const xfer)
+int uhc_xfer_append(const struct device *dev, struct uhc_transfer *const xfer)
 {
 	struct uhc_data *data = dev->data;
 
@@ -80,8 +72,7 @@ int uhc_xfer_append(const struct device *dev,
 	return 0;
 }
 
-struct net_buf *uhc_xfer_buf_alloc(const struct device *dev,
-				   const size_t size)
+struct net_buf *uhc_xfer_buf_alloc(const struct device *dev, const size_t size)
 {
 	return net_buf_alloc_len(&uhc_ep_pool, size, K_NO_WAIT);
 }
@@ -91,14 +82,9 @@ void uhc_xfer_buf_free(const struct device *dev, struct net_buf *const buf)
 	net_buf_unref(buf);
 }
 
-struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
-				    const uint8_t addr,
-				    const uint8_t ep,
-				    const uint8_t attrib,
-				    const uint16_t mps,
-				    const uint16_t timeout,
-				    void *const udev,
-				    void *const cb)
+struct uhc_transfer *uhc_xfer_alloc(const struct device *dev, const uint8_t addr, const uint8_t ep,
+				    const uint8_t attrib, const uint16_t mps,
+				    const uint16_t timeout, void *const udev, void *const cb)
 {
 	const struct uhc_api *api = dev->api;
 	struct uhc_transfer *xfer = NULL;
@@ -109,8 +95,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 		goto xfer_alloc_error;
 	}
 
-	LOG_DBG("Allocate xfer, ep 0x%02x attrib 0x%02x cb %p",
-		ep, attrib, cb);
+	LOG_DBG("Allocate xfer, ep 0x%02x attrib 0x%02x cb %p", ep, attrib, cb);
 
 	if (k_mem_slab_alloc(&uhc_xfer_pool, (void **)&xfer, K_NO_WAIT)) {
 		LOG_ERR("Failed to allocate transfer");
@@ -132,15 +117,10 @@ xfer_alloc_error:
 	return xfer;
 }
 
-struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev,
-					     const uint8_t addr,
-					     const uint8_t ep,
-					     const uint8_t attrib,
-					     const uint16_t mps,
-					     const uint16_t timeout,
-					     void *const udev,
-					     void *const cb,
-					     size_t size)
+struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev, const uint8_t addr,
+					     const uint8_t ep, const uint8_t attrib,
+					     const uint16_t mps, const uint16_t timeout,
+					     void *const udev, void *const cb, size_t size)
 {
 	struct uhc_transfer *xfer;
 	struct net_buf *buf;
@@ -182,9 +162,7 @@ xfer_free_error:
 	return ret;
 }
 
-int uhc_xfer_buf_add(const struct device *dev,
-		     struct uhc_transfer *const xfer,
-		     struct net_buf *buf)
+int uhc_xfer_buf_add(const struct device *dev, struct uhc_transfer *const xfer, struct net_buf *buf)
 {
 	const struct uhc_api *api = dev->api;
 	int ret = 0;
@@ -218,7 +196,6 @@ int uhc_ep_enqueue(const struct device *dev, struct uhc_transfer *const xfer)
 	if (ret) {
 		xfer->queued = 0;
 	}
-
 
 ep_enqueue_error:
 	api->unlock(dev);

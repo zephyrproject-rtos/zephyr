@@ -18,10 +18,10 @@ LOG_MODULE_REGISTER(can_kvaser_pci, CONFIG_CAN_LOG_LEVEL);
 /* AMCC S5920 I/O BAR registers */
 #define S5920_INTCSR_REG       0x38
 #define S5920_INTCSR_ADDINT_EN BIT(13)
-#define S5920_PTCR_REG	       0x60
+#define S5920_PTCR_REG         0x60
 
 /* Xilinx I/O BAR registers */
-#define XLNX_VERINT_REG		0x07
+#define XLNX_VERINT_REG         0x07
 #define XLNX_VERINT_VERSION_POS 4U
 
 struct can_kvaser_pci_config {
@@ -162,8 +162,7 @@ const struct can_driver_api can_kvaser_pci_driver_api = {
                                                                                                    \
 	static const struct can_kvaser_pci_config can_kvaser_pci_config_##inst = {                 \
 		DEVICE_PCIE_INST_INIT(inst, pcie),                                                 \
-		.irq_config_func = can_kvaser_pci_config_func_##inst                               \
-	};                                                                                         \
+		.irq_config_func = can_kvaser_pci_config_func_##inst};                             \
                                                                                                    \
 	static const struct can_sja1000_config can_sja1000_config_##inst =                         \
 		CAN_SJA1000_DT_CONFIG_INST_GET(inst, &can_kvaser_pci_config_##inst,                \

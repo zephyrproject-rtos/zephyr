@@ -18,8 +18,8 @@
  * freertos_gateware/inc/eoss3_hal_fpga_usbserial.h
  */
 
-volatile struct fpga_usbserial_regs *usbserial_regs
-	= (struct fpga_usbserial_regs *)(FPGA_PERIPH_BASE);
+volatile struct fpga_usbserial_regs *usbserial_regs =
+	(struct fpga_usbserial_regs *)(FPGA_PERIPH_BASE);
 
 static uint32_t usbserial_tx_fifo_status(void)
 {
@@ -77,10 +77,9 @@ static int uart_usbserial_poll_in(const struct device *dev, unsigned char *c)
 }
 
 static const struct uart_driver_api uart_usbserial_driver_api = {
-	.poll_in		= uart_usbserial_poll_in,
-	.poll_out		= uart_usbserial_poll_out,
+	.poll_in = uart_usbserial_poll_in,
+	.poll_out = uart_usbserial_poll_out,
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, PRE_KERNEL_1,
-		      CONFIG_SERIAL_INIT_PRIORITY,
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,
 		      (void *)&uart_usbserial_driver_api);

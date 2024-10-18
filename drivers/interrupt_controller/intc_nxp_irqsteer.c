@@ -219,7 +219,8 @@
  *	> PLEASE DON'T MISTAKE THE ZEPHYR MULTI-LEVEL INTERRUPT ORGANIZATION WITH THE XTENSA ONE.
  *	THEY ARE DIFFERENT THINGS.
  *
- * [1]: https://docs.zephyrproject.org/latest/kernel/services/interrupts.html#multi-level-interrupt-handling
+ * [1]:
+ *https://docs.zephyrproject.org/latest/kernel/services/interrupts.html#multi-level-interrupt-handling
  */
 
 #include <zephyr/device.h>
@@ -240,30 +241,26 @@ LOG_MODULE_REGISTER(nxp_irqstr);
 #define DT_DRV_COMPAT nxp_irqsteer_intc
 
 /* macros used for DTS parsing */
-#define _IRQSTEER_REGISTER_DISPATCHER(node_id)				\
-	IRQ_CONNECT(DT_IRQN(node_id),					\
-		    DT_IRQ(node_id, priority),				\
-		    irqsteer_isr_dispatcher,				\
-		    &dispatchers[DT_REG_ADDR(node_id)],			\
-		    0)
+#define _IRQSTEER_REGISTER_DISPATCHER(node_id)                                                     \
+	IRQ_CONNECT(DT_IRQN(node_id), DT_IRQ(node_id, priority), irqsteer_isr_dispatcher,          \
+		    &dispatchers[DT_REG_ADDR(node_id)], 0)
 
-#define _IRQSTEER_DECLARE_DISPATCHER(node_id)				\
-{									\
-	.dev = DEVICE_DT_GET(DT_PARENT(node_id)),			\
-	.master_index = DT_REG_ADDR(node_id),				\
-	.irq = DT_IRQN(node_id),					\
-}
+#define _IRQSTEER_DECLARE_DISPATCHER(node_id)                                                      \
+	{                                                                                          \
+		.dev = DEVICE_DT_GET(DT_PARENT(node_id)),                                          \
+		.master_index = DT_REG_ADDR(node_id),                                              \
+		.irq = DT_IRQN(node_id),                                                           \
+	}
 
-#define IRQSTEER_DECLARE_DISPATCHERS(parent_id)\
-	DT_FOREACH_CHILD_STATUS_OKAY_SEP(parent_id, _IRQSTEER_DECLARE_DISPATCHER, (,))
+#define IRQSTEER_DECLARE_DISPATCHERS(parent_id)                                                    \
+	DT_FOREACH_CHILD_STATUS_OKAY_SEP(parent_id, _IRQSTEER_DECLARE_DISPATCHER, (, ))
 
-#define IRQSTEER_REGISTER_DISPATCHERS(parent_id)\
+#define IRQSTEER_REGISTER_DISPATCHERS(parent_id)                                                   \
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP(parent_id, _IRQSTEER_REGISTER_DISPATCHER, (;))
 
 /* utility macros */
-#define UINT_TO_IRQSTEER(x) ((IRQSTEER_Type *)(x))
-#define DISPATCHER_REGMAP(disp) \
-	(((const struct irqsteer_config *)disp->dev->config)->regmap_phys)
+#define UINT_TO_IRQSTEER(x)     ((IRQSTEER_Type *)(x))
+#define DISPATCHER_REGMAP(disp) (((const struct irqsteer_config *)disp->dev->config)->regmap_phys)
 
 struct irqsteer_config {
 	uint32_t regmap_phys;
@@ -286,12 +283,10 @@ struct irqsteer_dispatcher {
 };
 
 static struct irqsteer_dispatcher dispatchers[] = {
-	IRQSTEER_DECLARE_DISPATCHERS(DT_NODELABEL(irqsteer))
-};
+	IRQSTEER_DECLARE_DISPATCHERS(DT_NODELABEL(irqsteer))};
 
 /* used to convert system INTID to zephyr INTID */
-static int to_zephyr_irq(uint32_t regmap, uint32_t irq,
-			 struct irqsteer_dispatcher *dispatcher)
+static int to_zephyr_irq(uint32_t regmap, uint32_t irq, struct irqsteer_dispatcher *dispatcher)
 {
 	int i, idx;
 
@@ -330,8 +325,7 @@ static int from_zephyr_irq(uint32_t regmap, uint32_t irq, uint32_t master_index)
 	return idx;
 }
 
-static void _irqstr_disp_enable_disable(struct irqsteer_dispatcher *disp,
-					bool enable)
+static void _irqstr_disp_enable_disable(struct irqsteer_dispatcher *disp, bool enable)
 {
 	uint32_t regmap = DISPATCHER_REGMAP(disp);
 
@@ -367,8 +361,7 @@ static void _irqstr_disp_get_unlocked(struct irqsteer_dispatcher *disp)
 
 	disp->refcnt++;
 
-	LOG_DBG("get on disp for irq %d results in refcnt: %d",
-		disp->irq, disp->refcnt);
+	LOG_DBG("get on disp for irq %d results in refcnt: %d", disp->irq, disp->refcnt);
 }
 
 static void _irqstr_disp_put_unlocked(struct irqsteer_dispatcher *disp)
@@ -392,12 +385,11 @@ static void _irqstr_disp_put_unlocked(struct irqsteer_dispatcher *disp)
 		}
 	}
 
-	LOG_DBG("put on disp for irq %d results in refcnt: %d",
-		disp->irq, disp->refcnt);
+	LOG_DBG("put on disp for irq %d results in refcnt: %d", disp->irq, disp->refcnt);
 }
 
-static void _irqstr_enable_disable_irq(struct irqsteer_dispatcher *disp,
-				       uint32_t system_irq, bool enable)
+static void _irqstr_enable_disable_irq(struct irqsteer_dispatcher *disp, uint32_t system_irq,
+				       bool enable)
 {
 	uint32_t regmap = DISPATCHER_REGMAP(disp);
 
@@ -408,11 +400,10 @@ static void _irqstr_enable_disable_irq(struct irqsteer_dispatcher *disp,
 	}
 }
 
-static void irqstr_request_irq_unlocked(struct irqsteer_dispatcher *disp,
-					uint32_t zephyr_irq)
+static void irqstr_request_irq_unlocked(struct irqsteer_dispatcher *disp, uint32_t zephyr_irq)
 {
-	uint32_t system_irq = from_zephyr_irq(DISPATCHER_REGMAP(disp),
-					      zephyr_irq, disp->master_index);
+	uint32_t system_irq =
+		from_zephyr_irq(DISPATCHER_REGMAP(disp), zephyr_irq, disp->master_index);
 
 #ifndef CONFIG_SHARED_INTERRUPTS
 	if (disp->irq_refcnt[zephyr_irq]) {
@@ -433,15 +424,13 @@ static void irqstr_request_irq_unlocked(struct irqsteer_dispatcher *disp,
 
 	disp->irq_refcnt[zephyr_irq]++;
 
-	LOG_DBG("requested irq %d has refcount %d",
-		system_irq, disp->irq_refcnt[zephyr_irq]);
+	LOG_DBG("requested irq %d has refcount %d", system_irq, disp->irq_refcnt[zephyr_irq]);
 }
 
-static void irqstr_release_irq_unlocked(struct irqsteer_dispatcher *disp,
-					uint32_t zephyr_irq)
+static void irqstr_release_irq_unlocked(struct irqsteer_dispatcher *disp, uint32_t zephyr_irq)
 {
-	uint32_t system_irq = from_zephyr_irq(DISPATCHER_REGMAP(disp),
-					      zephyr_irq, disp->master_index);
+	uint32_t system_irq =
+		from_zephyr_irq(DISPATCHER_REGMAP(disp), zephyr_irq, disp->master_index);
 
 	if (!disp->irq_refcnt[zephyr_irq]) {
 		LOG_WRN("irq %d already released", system_irq);
@@ -455,8 +444,7 @@ static void irqstr_release_irq_unlocked(struct irqsteer_dispatcher *disp,
 		_irqstr_disp_put_unlocked(disp);
 	}
 
-	LOG_DBG("released irq %d has refcount %d",
-		system_irq, disp->irq_refcnt[zephyr_irq]);
+	LOG_DBG("released irq %d has refcount %d", system_irq, disp->irq_refcnt[zephyr_irq]);
 }
 
 void z_soc_irq_enable_disable(uint32_t irq, bool enable)
@@ -537,7 +525,6 @@ int z_soc_irq_is_enabled(unsigned int irq)
 	return false;
 }
 
-
 static void irqsteer_isr_dispatcher(const void *data)
 {
 	struct irqsteer_dispatcher *dispatcher;
@@ -557,8 +544,7 @@ static void irqsteer_isr_dispatcher(const void *data)
 		/* if bit 0 is set then that means relative INTID i is asserted */
 		if (status & 1) {
 			/* convert master-relative INTID to a system INTID */
-			system_irq = to_system_irq(cfg->regmap_phys, i,
-						   dispatcher->master_index);
+			system_irq = to_system_irq(cfg->regmap_phys, i, dispatcher->master_index);
 
 			/* convert system INTID to a Zephyr INTID */
 			zephyr_irq = to_zephyr_irq(cfg->regmap_phys, system_irq, dispatcher);
@@ -574,8 +560,7 @@ static void irqsteer_isr_dispatcher(const void *data)
 	}
 }
 
-__maybe_unused static int irqstr_pm_action(const struct device *dev,
-					   enum pm_device_action action)
+__maybe_unused static int irqstr_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	/* nothing to be done here */
 	return 0;
@@ -588,7 +573,6 @@ static int irqsteer_init(const struct device *dev)
 	return pm_device_runtime_enable(dev);
 }
 
-
 /* TODO: do we need to add support for MMU-based SoCs? */
 static struct irqsteer_config irqsteer_config = {
 	.regmap_phys = DT_REG_ADDR(DT_NODELABEL(irqsteer)),
@@ -598,12 +582,8 @@ static struct irqsteer_config irqsteer_config = {
 
 /* assumption: only 1 IRQ_STEER instance */
 PM_DEVICE_DT_INST_DEFINE(0, irqstr_pm_action);
-DEVICE_DT_INST_DEFINE(0,
-		      &irqsteer_init,
-		      PM_DEVICE_DT_INST_GET(0),
-		      NULL, &irqsteer_config,
-		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
-		      NULL);
+DEVICE_DT_INST_DEFINE(0, &irqsteer_init, PM_DEVICE_DT_INST_GET(0), NULL, &irqsteer_config,
+		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
 
 #define NXP_IRQSTEER_MASTER_IRQ_ENTRY_DEF(node_id)                                                 \
 	IRQ_PARENT_ENTRY_DEFINE(CONCAT(nxp_irqsteer_master_, DT_NODE_CHILD_IDX(node_id)), NULL,    \

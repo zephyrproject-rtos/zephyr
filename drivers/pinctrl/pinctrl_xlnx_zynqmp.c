@@ -21,15 +21,15 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 		uint32_t sel = 0;
 
 		switch (pins[i].func) {
-			case UART_FUNCTION: {
-				sel = UARTX_SEL;
-				break;
-			}
+		case UART_FUNCTION: {
+			sel = UARTX_SEL;
+			break;
+		}
 
-			default: {
-				LOG_ERR("Unsupported function enum was selected");
-				break;
-			}
+		default: {
+			LOG_ERR("Unsupported function enum was selected");
+			break;
+		}
 		}
 		sys_write32(sel, base + mio_pin_offset * pins[i].pin);
 	}

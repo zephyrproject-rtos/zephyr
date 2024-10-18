@@ -87,26 +87,24 @@ static int qdec_s32_fetch(const struct device *dev, enum sensor_channel ch)
 	}
 
 	data->counter_CW = (uint32_t)(Emios_Icu_Ip_GetEdgeNumbers(
-	config->emios_inst, config->emios_channels[EMIOS_CW_CH_IDX])); /* CW counter */
+		config->emios_inst, config->emios_channels[EMIOS_CW_CH_IDX])); /* CW counter */
 	data->counter_CCW = (uint32_t)(Emios_Icu_Ip_GetEdgeNumbers(
-	config->emios_inst, config->emios_channels[EMIOS_CCW_CH_IDX]));/* CCW counter*/
+		config->emios_inst, config->emios_channels[EMIOS_CCW_CH_IDX])); /* CCW counter*/
 
-	data->abs_counter = (int32_t)(
-		+(data->counter_CW  + EMIOS_ICU_IP_COUNTER_MASK *
-			data->emios_cw_overflow_count)
-		-(data->counter_CCW + EMIOS_ICU_IP_COUNTER_MASK *
-			data->emios_ccw_overflow_count));
+	data->abs_counter = (int32_t)(+(data->counter_CW +
+					EMIOS_ICU_IP_COUNTER_MASK * data->emios_cw_overflow_count) -
+				      (data->counter_CCW +
+				       EMIOS_ICU_IP_COUNTER_MASK * data->emios_ccw_overflow_count));
 
 	LOG_DBG("ABS_COUNT = %d CW = %u OverFlow_CW = %u CCW = %u Overflow_CCW = %u",
-		data->abs_counter, data->counter_CW,
-		data->emios_cw_overflow_count,
+		data->abs_counter, data->counter_CW, data->emios_cw_overflow_count,
 		data->counter_CCW, data->emios_ccw_overflow_count);
 
 	return 0;
 }
 
 static int qdec_s32_ch_get(const struct device *dev, enum sensor_channel ch,
-		struct sensor_value *val)
+			   struct sensor_value *val)
 {
 	struct qdec_s32_data *data = dev->data;
 
@@ -163,17 +161,17 @@ static int qdec_s32_initialize(const struct device *dev)
 	Lcu_Ip_SetSyncOutputEnable(EncLcuEnable, 4U);
 
 	emios_inst = config->emios_inst;
-	emios_hw_ch_cw =  config->emios_channels[EMIOS_CW_CH_IDX];
-	emios_hw_ch_ccw =  config->emios_channels[EMIOS_CCW_CH_IDX];
+	emios_hw_ch_cw = config->emios_channels[EMIOS_CW_CH_IDX];
+	emios_hw_ch_ccw = config->emios_channels[EMIOS_CCW_CH_IDX];
 
 	/* Initialize the positions of the eMios hw channels used for QDEC
 	 * to be beyond the eMios pwm hw channels. Currently only pwm and qdec
 	 * are using the eMios channels so qdec ones are the last two.
 	 */
-	eMios_Icu_Ip_IndexInChState[emios_inst][emios_hw_ch_cw]
-		= EMIOS_ICU_IP_NUM_OF_CHANNELS_USED - 2;
-	eMios_Icu_Ip_IndexInChState[emios_inst][emios_hw_ch_ccw]
-		= EMIOS_ICU_IP_NUM_OF_CHANNELS_USED - 1;
+	eMios_Icu_Ip_IndexInChState[emios_inst][emios_hw_ch_cw] =
+		EMIOS_ICU_IP_NUM_OF_CHANNELS_USED - 2;
+	eMios_Icu_Ip_IndexInChState[emios_inst][emios_hw_ch_ccw] =
+		EMIOS_ICU_IP_NUM_OF_CHANNELS_USED - 1;
 
 	/* Set Overflow Notification for eMIOS channels meant
 	 * for Clockwise and Counterclock rotation counters
@@ -188,12 +186,11 @@ static int qdec_s32_initialize(const struct device *dev)
 	Emios_Icu_Ip_SetInitialCounterValue(
 		config->emios_inst, config->emios_channels[EMIOS_CCW_CH_IDX], (uint32_t)0x1U);
 
+	Emios_Icu_Ip_SetMaxCounterValue(config->emios_inst, config->emios_channels[EMIOS_CW_CH_IDX],
+					EMIOS_ICU_IP_COUNTER_MASK);
 	Emios_Icu_Ip_SetMaxCounterValue(config->emios_inst,
-		config->emios_channels[EMIOS_CW_CH_IDX],
-		EMIOS_ICU_IP_COUNTER_MASK);
-	Emios_Icu_Ip_SetMaxCounterValue(config->emios_inst,
-		config->emios_channels[EMIOS_CCW_CH_IDX],
-		EMIOS_ICU_IP_COUNTER_MASK);
+					config->emios_channels[EMIOS_CCW_CH_IDX],
+					EMIOS_ICU_IP_COUNTER_MASK);
 
 	/* This API sets MCB/EMIOS_ICU_MODE_EDGE_COUNTER mode */
 	Emios_Icu_Ip_EnableEdgeCount(config->emios_inst, config->emios_channels[EMIOS_CW_CH_IDX]);
@@ -204,248 +201,264 @@ static int qdec_s32_initialize(const struct device *dev)
 	return 0;
 }
 
-#define EMIOS_NXP_S32_MCB_OVERFLOW_CALLBACK(n)							\
-	static void qdec##n##_emios_overflow_count_cw_callback(void)				\
-	{											\
-		qdec_emios_overflow_count_cw_callback(DEVICE_DT_INST_GET(n));			\
-	}											\
-												\
-	static void qdec##n##_emios_overflow_count_ccw_callback(void)				\
-	{											\
-		qdec_emios_overflow_count_ccw_callback(DEVICE_DT_INST_GET(n));			\
+#define EMIOS_NXP_S32_MCB_OVERFLOW_CALLBACK(n)                                                     \
+	static void qdec##n##_emios_overflow_count_cw_callback(void)                               \
+	{                                                                                          \
+		qdec_emios_overflow_count_cw_callback(DEVICE_DT_INST_GET(n));                      \
+	}                                                                                          \
+                                                                                                   \
+	static void qdec##n##_emios_overflow_count_ccw_callback(void)                              \
+	{                                                                                          \
+		qdec_emios_overflow_count_ccw_callback(DEVICE_DT_INST_GET(n));                     \
 	}
 
-#define EMIOS_NXP_S32_INSTANCE_CHECK(idx, node_id)						\
+#define EMIOS_NXP_S32_INSTANCE_CHECK(idx, node_id)                                                 \
 	((DT_REG_ADDR(node_id) == IP_EMIOS_##idx##_BASE) ? idx : 0)
 
-#define EMIOS_NXP_S32_GET_INSTANCE(node_id)							\
+#define EMIOS_NXP_S32_GET_INSTANCE(node_id)                                                        \
 	LISTIFY(__DEBRACKET eMIOS_INSTANCE_COUNT, EMIOS_NXP_S32_INSTANCE_CHECK, (|), node_id)
 
-#define LCU_NXP_S32_INSTANCE_CHECK(idx, node_id)						\
+#define LCU_NXP_S32_INSTANCE_CHECK(idx, node_id)                                                   \
 	((DT_REG_ADDR(node_id) == IP_LCU_##idx##_BASE) ? idx : 0)
 
-#define LCU_NXP_S32_GET_INSTANCE(node_id)							\
+#define LCU_NXP_S32_GET_INSTANCE(node_id)                                                          \
 	LISTIFY(__DEBRACKET LCU_INSTANCE_COUNT, LCU_NXP_S32_INSTANCE_CHECK, (|), node_id)
 
-#define TRGMUX_NXP_S32_INSTANCE_CHECK(node_id)							\
-	((DT_REG_ADDR(node_id) == IP_TRGMUX_BASE) ? 0 : -1)
+#define TRGMUX_NXP_S32_INSTANCE_CHECK(node_id) ((DT_REG_ADDR(node_id) == IP_TRGMUX_BASE) ? 0 : -1)
 
-#define TRGMUX_NXP_S32_GET_INSTANCE(node_id)	TRGMUX_NXP_S32_INSTANCE_CHECK(node_id)
+#define TRGMUX_NXP_S32_GET_INSTANCE(node_id) TRGMUX_NXP_S32_INSTANCE_CHECK(node_id)
 
 /* LCU Logic Input Configuration */
-#define LogicInputCfg_Common(n, mux_sel_idx)							\
-	{											\
-		.MuxSel = DT_INST_PROP_BY_IDX(n, lcu_mux_sel, mux_sel_idx),			\
-		.SwSynMode = LCU_IP_SW_SYNC_IMMEDIATE,						\
-		.SwValue = LCU_IP_SW_OVERRIDE_LOGIC_LOW,					\
+#define LogicInputCfg_Common(n, mux_sel_idx)                                                       \
+	{                                                                                          \
+		.MuxSel = DT_INST_PROP_BY_IDX(n, lcu_mux_sel, mux_sel_idx),                        \
+		.SwSynMode = LCU_IP_SW_SYNC_IMMEDIATE,                                             \
+		.SwValue = LCU_IP_SW_OVERRIDE_LOGIC_LOW,                                           \
 	};
-#define LogicInput_Config_Common(n, hw_lc_input_id, logic_input_n_cfg)				\
-	{											\
-		.xLogicInputId = {								\
-			.HwInstId = LCU_NXP_S32_GET_INSTANCE(DT_INST_PHANDLE(n, lcu)),		\
-			.HwLcInputId = DT_INST_PROP_BY_IDX(n, lcu_input_idx, hw_lc_input_id),	\
-		},										\
-		.pxLcInputConfig = &logic_input_n_cfg,						\
+#define LogicInput_Config_Common(n, hw_lc_input_id, logic_input_n_cfg)                             \
+	{                                                                                          \
+		.xLogicInputId =                                                                   \
+			{                                                                          \
+				.HwInstId = LCU_NXP_S32_GET_INSTANCE(DT_INST_PHANDLE(n, lcu)),     \
+				.HwLcInputId =                                                     \
+					DT_INST_PROP_BY_IDX(n, lcu_input_idx, hw_lc_input_id),     \
+			},                                                                         \
+		.pxLcInputConfig = &logic_input_n_cfg,                                             \
 	};
 
 /* LCU Logic Output Configuration */
-#define LogicOutputCfg_Common(En_Debug_Mode, Lut_Control, Lut_Rise_Filt, Lut_Fall_Filt)		\
-	{											\
-		.EnDebugMode = (boolean)En_Debug_Mode,						\
-		.LutControl = Lut_Control,							\
-		.LutRiseFilt = Lut_Rise_Filt,							\
-		.LutFallFilt = Lut_Fall_Filt,							\
-		.EnLutDma = (boolean)FALSE,							\
-		.EnForceDma = (boolean)FALSE,							\
-		.EnLutInt = (boolean)FALSE,							\
-		.EnForceInt = (boolean)FALSE,							\
-		.InvertOutput = (boolean)FALSE,							\
-		.ForceSignalSel = 0U,								\
-		.ClearForceMode = LCU_IP_CLEAR_FORCE_SIGNAL_IMMEDIATE,				\
-		.ForceSyncSel = LCU_IP_SYNC_SEL_INPUT0,						\
+#define LogicOutputCfg_Common(En_Debug_Mode, Lut_Control, Lut_Rise_Filt, Lut_Fall_Filt)            \
+	{                                                                                          \
+		.EnDebugMode = (boolean)En_Debug_Mode,                                             \
+		.LutControl = Lut_Control,                                                         \
+		.LutRiseFilt = Lut_Rise_Filt,                                                      \
+		.LutFallFilt = Lut_Fall_Filt,                                                      \
+		.EnLutDma = (boolean)FALSE,                                                        \
+		.EnForceDma = (boolean)FALSE,                                                      \
+		.EnLutInt = (boolean)FALSE,                                                        \
+		.EnForceInt = (boolean)FALSE,                                                      \
+		.InvertOutput = (boolean)FALSE,                                                    \
+		.ForceSignalSel = 0U,                                                              \
+		.ClearForceMode = LCU_IP_CLEAR_FORCE_SIGNAL_IMMEDIATE,                             \
+		.ForceSyncSel = LCU_IP_SYNC_SEL_INPUT0,                                            \
 	};
-#define LogicOutput_Config_Common(n, logic_output_cfg, hw_lc_output_id)				\
-	{											\
-		.xLogicOutputId = {								\
-			.HwInstId = LCU_NXP_S32_GET_INSTANCE(DT_INST_PHANDLE(n, lcu)),		\
-			.HwLcOutputId = hw_lc_output_id,					\
-			.IntCallback = NULL_PTR,						\
-		},										\
-		.pxLcOutputConfig = &logic_output_cfg,						\
-	};
-
-#define LCU_IP_INIT_CONFIG(n)									\
-	const Lcu_Ip_LogicInputConfigType LogicInput##n##_0_Cfg =				\
-		LogicInputCfg_Common(n, 0)							\
-	const Lcu_Ip_LogicInputConfigType LogicInput##n##_1_Cfg =				\
-		LogicInputCfg_Common(n, 1)							\
-	const Lcu_Ip_LogicInputConfigType LogicInput##n##_2_Cfg =				\
-		LogicInputCfg_Common(n, 2)							\
-	const Lcu_Ip_LogicInputConfigType LogicInput##n##_3_Cfg =				\
-		LogicInputCfg_Common(n, 3)							\
-												\
-	const Lcu_Ip_LogicInputType LogicInput##n##_0_Config =					\
-		LogicInput_Config_Common(n, 0, LogicInput##n##_0_Cfg)				\
-	const Lcu_Ip_LogicInputType LogicInput##n##_1_Config =					\
-		LogicInput_Config_Common(n, 1, LogicInput##n##_1_Cfg)				\
-	const Lcu_Ip_LogicInputType LogicInput##n##_2_Config =					\
-		LogicInput_Config_Common(n, 2, LogicInput##n##_2_Cfg)				\
-	const Lcu_Ip_LogicInputType LogicInput##n##_3_Config =					\
-		LogicInput_Config_Common(n, 3, LogicInput##n##_3_Cfg)				\
-												\
-	const Lcu_Ip_LogicInputType								\
-		*const Lcu_Ip_ppxLogicInputArray##n##_Config[LCU_IP_NOF_CFG_LOGIC_INPUTS] = {	\
-			&LogicInput##n##_0_Config,						\
-			&LogicInput##n##_1_Config,						\
-			&LogicInput##n##_2_Config,						\
-			&LogicInput##n##_3_Config,						\
-		};										\
-												\
-	const Lcu_Ip_LogicOutputConfigType LogicOutput##n##_0_Cfg = LogicOutputCfg_Common(	\
-		LCU_IP_DEBUG_DISABLE, LCU_O0_LUT,						\
-		DT_INST_PROP_BY_IDX(n, lcu_output_filter_config, 1),				\
-		DT_INST_PROP_BY_IDX(n, lcu_output_filter_config, 2))				\
-	const Lcu_Ip_LogicOutputConfigType LogicOutput##n##_1_Cfg = LogicOutputCfg_Common(	\
-		LCU_IP_DEBUG_DISABLE, LCU_O1_LUT,						\
-		DT_INST_PROP_BY_IDX(n, lcu_output_filter_config, 4),				\
-		DT_INST_PROP_BY_IDX(n, lcu_output_filter_config, 5))				\
-	const Lcu_Ip_LogicOutputConfigType LogicOutput##n##_2_Cfg = LogicOutputCfg_Common(	\
-		LCU_IP_DEBUG_ENABLE, LCU_O2_LUT,						\
-		DT_INST_PROP_BY_IDX(n, lcu_output_filter_config, 7),				\
-		DT_INST_PROP_BY_IDX(n, lcu_output_filter_config, 8))				\
-	const Lcu_Ip_LogicOutputConfigType LogicOutput##n##_3_Cfg = LogicOutputCfg_Common(	\
-		LCU_IP_DEBUG_ENABLE, LCU_O3_LUT,						\
-		DT_INST_PROP_BY_IDX(n, lcu_output_filter_config, 10),				\
-		DT_INST_PROP_BY_IDX(n, lcu_output_filter_config, 11))				\
-												\
-	const Lcu_Ip_LogicOutputType LogicOutput##n##_0_Config =				\
-		LogicOutput_Config_Common(n, LogicOutput##n##_0_Cfg,				\
-		DT_INST_PROP_BY_IDX(n, lcu_output_filter_config, 0))				\
-	const Lcu_Ip_LogicOutputType LogicOutput##n##_1_Config =				\
-		LogicOutput_Config_Common(n, LogicOutput##n##_1_Cfg,				\
-		DT_INST_PROP_BY_IDX(n, lcu_output_filter_config, 3))				\
-	const Lcu_Ip_LogicOutputType LogicOutput##n##_2_Config =				\
-		LogicOutput_Config_Common(n, LogicOutput##n##_2_Cfg,				\
-		DT_INST_PROP_BY_IDX(n, lcu_output_filter_config, 6))				\
-	const Lcu_Ip_LogicOutputType LogicOutput##n##_3_Config =				\
-		LogicOutput_Config_Common(n, LogicOutput##n##_3_Cfg,				\
-		DT_INST_PROP_BY_IDX(n, lcu_output_filter_config, 9))				\
-												\
-	const Lcu_Ip_LogicOutputType								\
-		*const Lcu_Ip_ppxLogicOutputArray##n##_Config[LCU_IP_NOF_CFG_LOGIC_OUTPUTS] = {	\
-			&LogicOutput##n##_0_Config,						\
-			&LogicOutput##n##_1_Config,						\
-			&LogicOutput##n##_2_Config,						\
-			&LogicOutput##n##_3_Config,						\
-		};										\
-												\
-	const Lcu_Ip_LogicInputConfigType Lcu_Ip_LogicInputResetConfig##n = {			\
-		.MuxSel = LCU_IP_MUX_SEL_LOGIC_0,						\
-		.SwSynMode = LCU_IP_SW_SYNC_IMMEDIATE,						\
-		.SwValue = LCU_IP_SW_OVERRIDE_LOGIC_LOW,					\
-	};											\
-												\
-	const Lcu_Ip_LogicOutputConfigType Lcu_Ip_LogicOutputResetConfig##n =			\
-		LogicOutputCfg_Common(LCU_IP_DEBUG_DISABLE, 0U, 0U, 0U)				\
-												\
-	const Lcu_Ip_LogicInstanceType LcuLogicInstance##n##_0_Config = {			\
-		.HwInstId = LCU_NXP_S32_GET_INSTANCE(DT_INST_PHANDLE(n, lcu)),			\
-		.NumLogicCellConfig = 0U,							\
-		.ppxLogicCellConfigArray = NULL_PTR,						\
-		.OperationMode = LCU_IP_INTERRUPT_MODE,						\
-	};											\
-	const Lcu_Ip_LogicInstanceType								\
-	*const Lcu_Ip_ppxLogicInstanceArray##n##_Config[LCU_IP_NOF_CFG_LOGIC_INSTANCES] = {	\
-			&LcuLogicInstance##n##_0_Config,					\
-		};										\
-												\
-	Lcu_Ip_HwOutputStateType HwOutput##n##_0_State_Config;					\
-	Lcu_Ip_HwOutputStateType HwOutput##n##_1_State_Config;					\
-	Lcu_Ip_HwOutputStateType HwOutput##n##_2_State_Config;					\
-	Lcu_Ip_HwOutputStateType HwOutput##n##_3_State_Config;					\
-	Lcu_Ip_HwOutputStateType								\
-		*Lcu_Ip_ppxHwOutputStateArray##n##_Config[LCU_IP_NOF_CFG_LOGIC_OUTPUTS] = {	\
-			&HwOutput##n##_0_State_Config,						\
-			&HwOutput##n##_1_State_Config,						\
-			&HwOutput##n##_2_State_Config,						\
-			&HwOutput##n##_3_State_Config,						\
-	};											\
-												\
-	const Lcu_Ip_InitType Lcu_Ip_Init_Config##n = {						\
-		.ppxHwOutputStateArray = &Lcu_Ip_ppxHwOutputStateArray##n##_Config[0],		\
-		.ppxLogicInstanceConfigArray = &Lcu_Ip_ppxLogicInstanceArray##n##_Config[0],	\
-		.pxLogicOutputResetConfigArray = &Lcu_Ip_LogicOutputResetConfig##n,		\
-		.pxLogicInputResetConfigArray = &Lcu_Ip_LogicInputResetConfig##n,		\
-		.ppxLogicOutputConfigArray = &Lcu_Ip_ppxLogicOutputArray##n##_Config[0],	\
-		.ppxLogicInputConfigArray = &Lcu_Ip_ppxLogicInputArray##n##_Config[0],		\
+#define LogicOutput_Config_Common(n, logic_output_cfg, hw_lc_output_id)                            \
+	{                                                                                          \
+		.xLogicOutputId =                                                                  \
+			{                                                                          \
+				.HwInstId = LCU_NXP_S32_GET_INSTANCE(DT_INST_PHANDLE(n, lcu)),     \
+				.HwLcOutputId = hw_lc_output_id,                                   \
+				.IntCallback = NULL_PTR,                                           \
+			},                                                                         \
+		.pxLcOutputConfig = &logic_output_cfg,                                             \
 	};
 
-#define Trgmux_Ip_LogicTrigger_Config(n, logic_channel, output, input)				\
-	{											\
-		.LogicChannel = logic_channel,							\
-		.Output = output,								\
-		.Input = input,									\
-		.HwInstId = TRGMUX_NXP_S32_GET_INSTANCE(DT_INST_PHANDLE(n, trgmux)),		\
-		.Lock = (boolean)FALSE,								\
+#define LCU_IP_INIT_CONFIG(n)                                                                                                                      \
+	const Lcu_Ip_LogicInputConfigType LogicInput##n##_0_Cfg = LogicInputCfg_Common(                                                            \
+		n,                                                                                                                                 \
+		0) const Lcu_Ip_LogicInputConfigType LogicInput##n##_1_Cfg = LogicInputCfg_Common(n,                                               \
+												  1)                                               \
+		const Lcu_Ip_LogicInputConfigType LogicInput##n##_2_Cfg = LogicInputCfg_Common(                                                    \
+			n,                                                                                                                         \
+			2) const Lcu_Ip_LogicInputConfigType LogicInput##n##_3_Cfg = LogicInputCfg_Common(n,                                       \
+													  3)                                       \
+                                                                                                                                                   \
+			const Lcu_Ip_LogicInputType LogicInput##n##_0_Config = LogicInput_Config_Common(                                           \
+				n, 0, LogicInput##n##_0_Cfg) const Lcu_Ip_LogicInputType                                                           \
+				LogicInput##n##_1_Config = LogicInput_Config_Common(                                                               \
+					n, 1, LogicInput##n##_1_Cfg) const Lcu_Ip_LogicInputType                                                   \
+					LogicInput##n##_2_Config = LogicInput_Config_Common(                                                       \
+						n, 2,                                                                                              \
+						LogicInput##n##_2_Cfg) const Lcu_Ip_LogicInputType                                                 \
+						LogicInput##n##_3_Config = LogicInput_Config_Common(                                               \
+							n, 3, LogicInput##n##_3_Cfg)                                                               \
+                                                                                                                                                   \
+							const Lcu_Ip_LogicInputType *const                                                         \
+								Lcu_Ip_ppxLogicInputArray##n##_Config                                              \
+									[LCU_IP_NOF_CFG_LOGIC_INPUTS] = {                                          \
+										&LogicInput##n##_0_Config,                                         \
+										&LogicInput##n##_1_Config,                                         \
+										&LogicInput##n##_2_Config,                                         \
+										&LogicInput##n##_3_Config,                                         \
+	};                                                                                                                                         \
+                                                                                                                                                   \
+	const Lcu_Ip_LogicOutputConfigType LogicOutput##n##_0_Cfg = LogicOutputCfg_Common(                                                         \
+		LCU_IP_DEBUG_DISABLE, LCU_O0_LUT,                                                                                                  \
+		DT_INST_PROP_BY_IDX(n, lcu_output_filter_config, 1),                                                                               \
+		DT_INST_PROP_BY_IDX(n, lcu_output_filter_config, 2))                                                                               \
+		const Lcu_Ip_LogicOutputConfigType LogicOutput##n##_1_Cfg = LogicOutputCfg_Common(                                                 \
+			LCU_IP_DEBUG_DISABLE, LCU_O1_LUT,                                                                                          \
+			DT_INST_PROP_BY_IDX(n, lcu_output_filter_config, 4),                                                                       \
+			DT_INST_PROP_BY_IDX(                                                                                                       \
+				n, lcu_output_filter_config,                                                                                       \
+				5)) const Lcu_Ip_LogicOutputConfigType LogicOutput##n##_2_Cfg =                                                    \
+			LogicOutputCfg_Common(                                                                                                     \
+				LCU_IP_DEBUG_ENABLE, LCU_O2_LUT,                                                                                   \
+				DT_INST_PROP_BY_IDX(n, lcu_output_filter_config, 7),                                                               \
+				DT_INST_PROP_BY_IDX(n, lcu_output_filter_config,                                                                   \
+						    8)) const Lcu_Ip_LogicOutputConfigType                                                         \
+				LogicOutput##n##_3_Cfg = LogicOutputCfg_Common(                                                                    \
+					LCU_IP_DEBUG_ENABLE, LCU_O3_LUT,                                                                           \
+					DT_INST_PROP_BY_IDX(n, lcu_output_filter_config, 10),                                                      \
+					DT_INST_PROP_BY_IDX(n, lcu_output_filter_config, 11))                                                      \
+                                                                                                                                                   \
+					const Lcu_Ip_LogicOutputType LogicOutput##n##_0_Config = LogicOutput_Config_Common(                        \
+						n, LogicOutput##n##_0_Cfg,                                                                         \
+						DT_INST_PROP_BY_IDX(                                                                               \
+							n, lcu_output_filter_config,                                                               \
+							0)) const Lcu_Ip_LogicOutputType                                                           \
+						LogicOutput##n##_1_Config = LogicOutput_Config_Common(                                             \
+							n, LogicOutput##n##_1_Cfg,                                                                 \
+							DT_INST_PROP_BY_IDX(                                                                       \
+								n, lcu_output_filter_config,                                                       \
+								3)) const Lcu_Ip_LogicOutputType                                                   \
+							LogicOutput##n##_2_Config = LogicOutput_Config_Common(                                     \
+								n, LogicOutput##n##_2_Cfg,                                                         \
+								DT_INST_PROP_BY_IDX(                                                               \
+									n,                                                                         \
+									lcu_output_filter_config,                                                  \
+									6)) const Lcu_Ip_LogicOutputType                                           \
+								LogicOutput##n##_3_Config = LogicOutput_Config_Common(                             \
+									n, LogicOutput##n##_3_Cfg,                                                 \
+									DT_INST_PROP_BY_IDX(                                                       \
+										n,                                                                 \
+										lcu_output_filter_config,                                          \
+										9))                                                                \
+                                                                                                                                                   \
+									const Lcu_Ip_LogicOutputType *const Lcu_Ip_ppxLogicOutputArray##n##_Config \
+										[LCU_IP_NOF_CFG_LOGIC_OUTPUTS] = {                                 \
+											&LogicOutput##n##_0_Config,                                \
+											&LogicOutput##n##_1_Config,                                \
+											&LogicOutput##n##_2_Config,                                \
+											&LogicOutput##n##_3_Config,                                \
+	};                                                                                                                                         \
+                                                                                                                                                   \
+	const Lcu_Ip_LogicInputConfigType Lcu_Ip_LogicInputResetConfig##n = {                                                                      \
+		.MuxSel = LCU_IP_MUX_SEL_LOGIC_0,                                                                                                  \
+		.SwSynMode = LCU_IP_SW_SYNC_IMMEDIATE,                                                                                             \
+		.SwValue = LCU_IP_SW_OVERRIDE_LOGIC_LOW,                                                                                           \
+	};                                                                                                                                         \
+                                                                                                                                                   \
+	const Lcu_Ip_LogicOutputConfigType Lcu_Ip_LogicOutputResetConfig##n =                                                                      \
+		LogicOutputCfg_Common(LCU_IP_DEBUG_DISABLE, 0U, 0U, 0U)                                                                            \
+                                                                                                                                                   \
+			const Lcu_Ip_LogicInstanceType LcuLogicInstance##n##_0_Config = {                                                          \
+				.HwInstId = LCU_NXP_S32_GET_INSTANCE(DT_INST_PHANDLE(n, lcu)),                                                     \
+				.NumLogicCellConfig = 0U,                                                                                          \
+				.ppxLogicCellConfigArray = NULL_PTR,                                                                               \
+				.OperationMode = LCU_IP_INTERRUPT_MODE,                                                                            \
+	};                                                                                                                                         \
+	const Lcu_Ip_LogicInstanceType *const                                                                                                      \
+		Lcu_Ip_ppxLogicInstanceArray##n##_Config[LCU_IP_NOF_CFG_LOGIC_INSTANCES] = {                                                       \
+			&LcuLogicInstance##n##_0_Config,                                                                                           \
+	};                                                                                                                                         \
+                                                                                                                                                   \
+	Lcu_Ip_HwOutputStateType HwOutput##n##_0_State_Config;                                                                                     \
+	Lcu_Ip_HwOutputStateType HwOutput##n##_1_State_Config;                                                                                     \
+	Lcu_Ip_HwOutputStateType HwOutput##n##_2_State_Config;                                                                                     \
+	Lcu_Ip_HwOutputStateType HwOutput##n##_3_State_Config;                                                                                     \
+	Lcu_Ip_HwOutputStateType                                                                                                                   \
+		*Lcu_Ip_ppxHwOutputStateArray##n##_Config[LCU_IP_NOF_CFG_LOGIC_OUTPUTS] = {                                                        \
+			&HwOutput##n##_0_State_Config,                                                                                             \
+			&HwOutput##n##_1_State_Config,                                                                                             \
+			&HwOutput##n##_2_State_Config,                                                                                             \
+			&HwOutput##n##_3_State_Config,                                                                                             \
+	};                                                                                                                                         \
+                                                                                                                                                   \
+	const Lcu_Ip_InitType Lcu_Ip_Init_Config##n = {                                                                                            \
+		.ppxHwOutputStateArray = &Lcu_Ip_ppxHwOutputStateArray##n##_Config[0],                                                             \
+		.ppxLogicInstanceConfigArray = &Lcu_Ip_ppxLogicInstanceArray##n##_Config[0],                                                       \
+		.pxLogicOutputResetConfigArray = &Lcu_Ip_LogicOutputResetConfig##n,                                                                \
+		.pxLogicInputResetConfigArray = &Lcu_Ip_LogicInputResetConfig##n,                                                                  \
+		.ppxLogicOutputConfigArray = &Lcu_Ip_ppxLogicOutputArray##n##_Config[0],                                                           \
+		.ppxLogicInputConfigArray = &Lcu_Ip_ppxLogicInputArray##n##_Config[0],                                                             \
 	};
 
-#define TRGMUX_IP_INIT_CONFIG(n)								\
-	const Trgmux_Ip_LogicTriggerType							\
-		Trgmux_Ip_LogicTrigger##n##_0_Config = Trgmux_Ip_LogicTrigger_Config(n,		\
-		DT_INST_PROP_BY_IDX(n, trgmux_io_config, 0),					\
-		DT_INST_PROP_BY_IDX(n, trgmux_io_config, 1),					\
-		DT_INST_PROP_BY_IDX(n, trgmux_io_config, 2))					\
-	const Trgmux_Ip_LogicTriggerType							\
-		Trgmux_Ip_LogicTrigger##n##_1_Config = Trgmux_Ip_LogicTrigger_Config(n,		\
-			DT_INST_PROP_BY_IDX(n, trgmux_io_config, 3),				\
-			DT_INST_PROP_BY_IDX(n, trgmux_io_config, 4),				\
-			DT_INST_PROP_BY_IDX(n, trgmux_io_config, 5))				\
-	const Trgmux_Ip_LogicTriggerType							\
-		Trgmux_Ip_LogicTrigger##n##_2_Config = Trgmux_Ip_LogicTrigger_Config(n,		\
-			DT_INST_PROP_BY_IDX(n, trgmux_io_config, 6),				\
-			DT_INST_PROP_BY_IDX(n, trgmux_io_config, 7),				\
-			DT_INST_PROP_BY_IDX(n, trgmux_io_config, 8))				\
-	const Trgmux_Ip_LogicTriggerType							\
-		Trgmux_Ip_LogicTrigger##n##_3_Config = Trgmux_Ip_LogicTrigger_Config(n,		\
-			DT_INST_PROP_BY_IDX(n, trgmux_io_config, 9),				\
-			DT_INST_PROP_BY_IDX(n, trgmux_io_config, 10),				\
-			DT_INST_PROP_BY_IDX(n, trgmux_io_config, 11))				\
-	const Trgmux_Ip_InitType Trgmux_Ip_Init_##n##_Config = {				\
-		.paxLogicTrigger = {								\
-			&Trgmux_Ip_LogicTrigger##n##_0_Config,					\
-			&Trgmux_Ip_LogicTrigger##n##_1_Config,					\
-			&Trgmux_Ip_LogicTrigger##n##_2_Config,					\
-			&Trgmux_Ip_LogicTrigger##n##_3_Config,					\
-		},										\
+#define Trgmux_Ip_LogicTrigger_Config(n, logic_channel, output, input)                             \
+	{                                                                                          \
+		.LogicChannel = logic_channel,                                                     \
+		.Output = output,                                                                  \
+		.Input = input,                                                                    \
+		.HwInstId = TRGMUX_NXP_S32_GET_INSTANCE(DT_INST_PHANDLE(n, trgmux)),               \
+		.Lock = (boolean)FALSE,                                                            \
 	};
 
+#define TRGMUX_IP_INIT_CONFIG(n)                                                                               \
+	const Trgmux_Ip_LogicTriggerType Trgmux_Ip_LogicTrigger##n##_0_Config = Trgmux_Ip_LogicTrigger_Config( \
+		n, DT_INST_PROP_BY_IDX(n, trgmux_io_config, 0),                                                \
+		DT_INST_PROP_BY_IDX(n, trgmux_io_config, 1),                                                   \
+		DT_INST_PROP_BY_IDX(n, trgmux_io_config, 2)) const Trgmux_Ip_LogicTriggerType                  \
+		Trgmux_Ip_LogicTrigger##n##_1_Config = Trgmux_Ip_LogicTrigger_Config(                          \
+			n, DT_INST_PROP_BY_IDX(n, trgmux_io_config, 3),                                        \
+			DT_INST_PROP_BY_IDX(n, trgmux_io_config, 4),                                           \
+			DT_INST_PROP_BY_IDX(n, trgmux_io_config,                                               \
+					    5)) const Trgmux_Ip_LogicTriggerType                               \
+			Trgmux_Ip_LogicTrigger##n##_2_Config = Trgmux_Ip_LogicTrigger_Config(                  \
+				n, DT_INST_PROP_BY_IDX(n, trgmux_io_config, 6),                                \
+				DT_INST_PROP_BY_IDX(n, trgmux_io_config, 7),                                   \
+				DT_INST_PROP_BY_IDX(n, trgmux_io_config,                                       \
+						    8)) const Trgmux_Ip_LogicTriggerType                       \
+				Trgmux_Ip_LogicTrigger##n##_3_Config = Trgmux_Ip_LogicTrigger_Config(          \
+					n, DT_INST_PROP_BY_IDX(n, trgmux_io_config, 9),                        \
+					DT_INST_PROP_BY_IDX(n, trgmux_io_config, 10),                          \
+					DT_INST_PROP_BY_IDX(                                                   \
+						n, trgmux_io_config,                                           \
+						11)) const Trgmux_Ip_InitType Trgmux_Ip_Init_##n##_Config = {  \
+					.paxLogicTrigger =                                                     \
+						{                                                              \
+							&Trgmux_Ip_LogicTrigger##n##_0_Config,                 \
+							&Trgmux_Ip_LogicTrigger##n##_1_Config,                 \
+							&Trgmux_Ip_LogicTrigger##n##_2_Config,                 \
+							&Trgmux_Ip_LogicTrigger##n##_3_Config,                 \
+						},                                                             \
+	};
 
-#define QDEC_NXP_S32_INIT(n)									\
-												\
-	static struct qdec_s32_data qdec_s32_##n##_data = {					\
-		.micro_ticks_per_rev = (double)(DT_INST_PROP(n, micro_ticks_per_rev) / 1000000),\
-		.counter_CW = 1,								\
-		.counter_CCW = 1,								\
-	};											\
-												\
-	PINCTRL_DT_INST_DEFINE(n);								\
-	TRGMUX_IP_INIT_CONFIG(n)								\
-	LCU_IP_INIT_CONFIG(n)									\
-	EMIOS_NXP_S32_MCB_OVERFLOW_CALLBACK(n)							\
-												\
-	static const struct qdec_s32_config qdec_s32_##n##_config = {				\
-		.emios_inst = EMIOS_NXP_S32_GET_INSTANCE(DT_INST_PHANDLE(n, emios)),		\
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),					\
-		.trgmux_config = &Trgmux_Ip_Init_##n##_Config,					\
-		.lcu_config = &Lcu_Ip_Init_Config##n,						\
-		.emios_channels = {DT_INST_PROP_BY_IDX(n, emios_channels, EMIOS_CW_CH_IDX),	\
-				   DT_INST_PROP_BY_IDX(n, emios_channels, EMIOS_CCW_CH_IDX)},	\
-		.emios_cw_overflow_cb = &qdec##n##_emios_overflow_count_cw_callback,		\
-		.emios_ccw_overflow_cb = &qdec##n##_emios_overflow_count_ccw_callback,		\
-	};											\
-												\
-	SENSOR_DEVICE_DT_INST_DEFINE(n, qdec_s32_initialize, NULL, &qdec_s32_##n##_data,	\
-				     &qdec_s32_##n##_config, POST_KERNEL,			\
+#define QDEC_NXP_S32_INIT(n)                                                                       \
+                                                                                                   \
+	static struct qdec_s32_data qdec_s32_##n##_data = {                                        \
+		.micro_ticks_per_rev = (double)(DT_INST_PROP(n, micro_ticks_per_rev) / 1000000),   \
+		.counter_CW = 1,                                                                   \
+		.counter_CCW = 1,                                                                  \
+	};                                                                                         \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	TRGMUX_IP_INIT_CONFIG(n)                                                                   \
+	LCU_IP_INIT_CONFIG(n)                                                                      \
+	EMIOS_NXP_S32_MCB_OVERFLOW_CALLBACK(n)                                                     \
+                                                                                                   \
+	static const struct qdec_s32_config qdec_s32_##n##_config = {                              \
+		.emios_inst = EMIOS_NXP_S32_GET_INSTANCE(DT_INST_PHANDLE(n, emios)),               \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+		.trgmux_config = &Trgmux_Ip_Init_##n##_Config,                                     \
+		.lcu_config = &Lcu_Ip_Init_Config##n,                                              \
+		.emios_channels = {DT_INST_PROP_BY_IDX(n, emios_channels, EMIOS_CW_CH_IDX),        \
+				   DT_INST_PROP_BY_IDX(n, emios_channels, EMIOS_CCW_CH_IDX)},      \
+		.emios_cw_overflow_cb = &qdec##n##_emios_overflow_count_cw_callback,               \
+		.emios_ccw_overflow_cb = &qdec##n##_emios_overflow_count_ccw_callback,             \
+	};                                                                                         \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, qdec_s32_initialize, NULL, &qdec_s32_##n##_data,           \
+				     &qdec_s32_##n##_config, POST_KERNEL,                          \
 				     CONFIG_SENSOR_INIT_PRIORITY, &qdec_s32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(QDEC_NXP_S32_INIT)

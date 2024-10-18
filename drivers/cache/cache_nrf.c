@@ -16,7 +16,6 @@ LOG_MODULE_REGISTER(cache_nrfx, CONFIG_CACHE_LOG_LEVEL);
 
 #define CACHE_BUSY_RETRY_INTERVAL_US 10
 
-
 enum k_nrf_cache_op {
 	/*
 	 * Sequentially loop through all dirty lines and write those data units to

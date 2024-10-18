@@ -58,11 +58,9 @@ LOG_MODULE_REGISTER(xlnx_quadspi, CONFIG_SPI_LOG_LEVEL);
 #define SPISR_LOOPBACK_ERROR    BIT(9)
 #define SPISR_COMMAND_ERROR     BIT(10)
 
-#define SPISR_ERROR_MASK (SPISR_COMMAND_ERROR |		\
-			  SPISR_LOOPBACK_ERROR |	\
-			  SPISR_MSB_ERROR |		\
-			  SPISR_SLAVE_MODE_ERROR |	\
-			  SPISR_CPOL_CPHA_ERROR)
+#define SPISR_ERROR_MASK                                                                           \
+	(SPISR_COMMAND_ERROR | SPISR_LOOPBACK_ERROR | SPISR_MSB_ERROR | SPISR_SLAVE_MODE_ERROR |   \
+	 SPISR_CPOL_CPHA_ERROR)
 
 /* DGIER bit definitions */
 #define DGIER_GIE BIT(31)
@@ -99,17 +97,14 @@ struct xlnx_quadspi_data {
 	struct k_event dtr_empty;
 };
 
-static inline uint32_t xlnx_quadspi_read32(const struct device *dev,
-					   mm_reg_t offset)
+static inline uint32_t xlnx_quadspi_read32(const struct device *dev, mm_reg_t offset)
 {
 	const struct xlnx_quadspi_config *config = dev->config;
 
 	return sys_read32(config->base + offset);
 }
 
-static inline void xlnx_quadspi_write32(const struct device *dev,
-					uint32_t value,
-					mm_reg_t offset)
+static inline void xlnx_quadspi_write32(const struct device *dev, uint32_t value, mm_reg_t offset)
 {
 	const struct xlnx_quadspi_config *config = dev->config;
 
@@ -140,8 +135,7 @@ static void xlnx_quadspi_cs_control(const struct device *dev, bool on)
 	spi_context_cs_control(ctx, on);
 }
 
-static int xlnx_quadspi_configure(const struct device *dev,
-				  const struct spi_config *spi_cfg)
+static int xlnx_quadspi_configure(const struct device *dev, const struct spi_config *spi_cfg)
 {
 	const struct xlnx_quadspi_config *config = dev->config;
 	struct xlnx_quadspi_data *data = dev->data;
@@ -164,8 +158,8 @@ static int xlnx_quadspi_configure(const struct device *dev,
 	}
 
 	if (spi_cfg->slave >= config->num_ss_bits) {
-		LOG_ERR("unsupported slave %d, num_ss_bits %d",
-			spi_cfg->slave, config->num_ss_bits);
+		LOG_ERR("unsupported slave %d, num_ss_bits %d", spi_cfg->slave,
+			config->num_ss_bits);
 		return -ENOTSUP;
 	}
 
@@ -174,16 +168,15 @@ static int xlnx_quadspi_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (!IS_ENABLED(CONFIG_SPI_SLAVE) && \
-	    (spi_cfg->operation & SPI_OP_MODE_SLAVE)) {
+	if (!IS_ENABLED(CONFIG_SPI_SLAVE) && (spi_cfg->operation & SPI_OP_MODE_SLAVE)) {
 		LOG_ERR("slave mode support not enabled");
 		return -ENOTSUP;
 	}
 
 	word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
 	if (word_size != (config->num_xfer_bytes * 8)) {
-		LOG_ERR("unsupported word size %d bits, num_xfer_bytes %d",
-			word_size, config->num_xfer_bytes);
+		LOG_ERR("unsupported word size %d bits, num_xfer_bytes %d", word_size,
+			config->num_xfer_bytes);
 		return -ENOTSUP;
 	}
 
@@ -191,8 +184,7 @@ static int xlnx_quadspi_configure(const struct device *dev,
 	spicr = SPICR_TX_FIFO_RESET | SPICR_RX_FIFO_RESET | SPICR_SPE;
 
 	/* Master mode, inhibit master transmit, manual slave select */
-	if (!IS_ENABLED(CONFIG_SPI_SLAVE) ||
-	    (spi_cfg->operation & SPI_OP_MODE_SLAVE) == 0U) {
+	if (!IS_ENABLED(CONFIG_SPI_SLAVE) || (spi_cfg->operation & SPI_OP_MODE_SLAVE) == 0U) {
 		spicr |= SPICR_MASTER | SPICR_MASTER_XFER_INH | SPICR_MANUAL_SS;
 	}
 
@@ -302,8 +294,9 @@ static bool xlnx_quadspi_start_tx(const struct device *dev)
 			} else if (spisr & SPISR_TX_EMPTY) {
 				fifo_avail_words = config->fifo_size;
 			} else {
-				fifo_avail_words = config->fifo_size -
-					 xlnx_quadspi_read32(dev, SPI_TX_FIFO_OCR_OFFSET) - 1;
+				fifo_avail_words =
+					config->fifo_size -
+					xlnx_quadspi_read32(dev, SPI_TX_FIFO_OCR_OFFSET) - 1;
 			}
 		}
 	}
@@ -319,8 +312,7 @@ static bool xlnx_quadspi_start_tx(const struct device *dev)
 			/* Tri-state SPI IOs */
 			spicr &= ~(SPICR_SPE);
 		}
-		xlnx_quadspi_write32(dev, spicr | SPICR_TX_FIFO_RESET,
-				     SPICR_OFFSET);
+		xlnx_quadspi_write32(dev, spicr | SPICR_TX_FIFO_RESET, SPICR_OFFSET);
 
 		spi_context_complete(ctx, dev, -ENOTSUP);
 		complete = true;
@@ -341,8 +333,8 @@ static void xlnx_quadspi_read_fifo(const struct device *dev)
 	struct spi_context *ctx = &data->ctx;
 	uint32_t spisr = xlnx_quadspi_read32(dev, SPISR_OFFSET);
 	/* RX FIFO occupancy register only exists if FIFO is implemented */
-	uint32_t rx_fifo_words = config->fifo_size ?
-		xlnx_quadspi_read32(dev, SPI_RX_FIFO_OCR_OFFSET) + 1 : 1;
+	uint32_t rx_fifo_words =
+		config->fifo_size ? xlnx_quadspi_read32(dev, SPI_RX_FIFO_OCR_OFFSET) + 1 : 1;
 
 	/* Read RX data */
 	while (!(spisr & SPISR_RX_EMPTY)) {
@@ -368,18 +360,17 @@ static void xlnx_quadspi_read_fifo(const struct device *dev)
 
 		if (--rx_fifo_words == 0) {
 			spisr = xlnx_quadspi_read32(dev, SPISR_OFFSET);
-			rx_fifo_words = config->fifo_size ?
-				xlnx_quadspi_read32(dev, SPI_RX_FIFO_OCR_OFFSET) + 1 : 1;
+			rx_fifo_words =
+				config->fifo_size
+					? xlnx_quadspi_read32(dev, SPI_RX_FIFO_OCR_OFFSET) + 1
+					: 1;
 		}
 	}
 }
 
-static int xlnx_quadspi_transceive(const struct device *dev,
-				   const struct spi_config *spi_cfg,
+static int xlnx_quadspi_transceive(const struct device *dev, const struct spi_config *spi_cfg,
 				   const struct spi_buf_set *tx_bufs,
-				   const struct spi_buf_set *rx_bufs,
-				   bool async,
-				   spi_callback_t cb,
+				   const struct spi_buf_set *rx_bufs, bool async, spi_callback_t cb,
 				   void *userdata)
 {
 	const struct xlnx_quadspi_config *config = dev->config;
@@ -394,8 +385,7 @@ static int xlnx_quadspi_transceive(const struct device *dev,
 		goto out;
 	}
 
-	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs,
-				  config->num_xfer_bytes);
+	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, config->num_xfer_bytes);
 
 	xlnx_quadspi_cs_control(dev, true);
 
@@ -433,25 +423,20 @@ static int xlnx_quadspi_transceive_blocking(const struct device *dev,
 					    const struct spi_buf_set *tx_bufs,
 					    const struct spi_buf_set *rx_bufs)
 {
-	return xlnx_quadspi_transceive(dev, spi_cfg, tx_bufs, rx_bufs, false,
-				       NULL, NULL);
+	return xlnx_quadspi_transceive(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int xlnx_quadspi_transceive_async(const struct device *dev,
-					 const struct spi_config *spi_cfg,
+static int xlnx_quadspi_transceive_async(const struct device *dev, const struct spi_config *spi_cfg,
 					 const struct spi_buf_set *tx_bufs,
-					 const struct spi_buf_set *rx_bufs,
-					 spi_callback_t cb,
+					 const struct spi_buf_set *rx_bufs, spi_callback_t cb,
 					 void *userdata)
 {
-	return xlnx_quadspi_transceive(dev, spi_cfg, tx_bufs, rx_bufs, true,
-				       cb, userdata);
+	return xlnx_quadspi_transceive(dev, spi_cfg, tx_bufs, rx_bufs, true, cb, userdata);
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static int xlnx_quadspi_release(const struct device *dev,
-				const struct spi_config *spi_cfg)
+static int xlnx_quadspi_release(const struct device *dev, const struct spi_config *spi_cfg)
 {
 	const struct xlnx_quadspi_config *config = dev->config;
 	struct xlnx_quadspi_data *data = dev->data;
@@ -524,8 +509,8 @@ static int xlnx_quadspi_startup_block_workaround(const struct device *dev)
 	spicr = SPICR_MANUAL_SS | SPICR_MASTER | SPICR_SPE;
 	xlnx_quadspi_write32(dev, spicr, SPICR_OFFSET);
 
-	for (int i = 0;
-		 i < 10 && (xlnx_quadspi_read32(dev, SPISR_OFFSET) & SPISR_TX_EMPTY) == 0; i++) {
+	for (int i = 0; i < 10 && (xlnx_quadspi_read32(dev, SPISR_OFFSET) & SPISR_TX_EMPTY) == 0;
+	     i++) {
 		k_msleep(1);
 	}
 	if ((xlnx_quadspi_read32(dev, SPISR_OFFSET) & SPISR_TX_EMPTY) == 0) {
@@ -601,38 +586,31 @@ static const struct spi_driver_api xlnx_quadspi_driver_api = {
 #define STARTUP_BLOCK_INIT(n)
 #endif
 
-#define XLNX_QUADSPI_INIT(n)						\
-	static void xlnx_quadspi_config_func_##n(const struct device *dev);	\
-									\
-	static const struct xlnx_quadspi_config xlnx_quadspi_config_##n = { \
-		.base = DT_INST_REG_ADDR(n),				\
-		.irq_config_func = xlnx_quadspi_config_func_##n,	\
-		.num_ss_bits = DT_INST_PROP(n, xlnx_num_ss_bits),	\
-		.num_xfer_bytes =					\
-			DT_INST_PROP(n, xlnx_num_transfer_bits) / 8,	\
-		.fifo_size = DT_INST_PROP_OR(n, fifo_size, 0),		\
-		STARTUP_BLOCK_INIT(n)					\
-	};								\
-									\
-	static struct xlnx_quadspi_data xlnx_quadspi_data_##n = {	\
-		SPI_CONTEXT_INIT_LOCK(xlnx_quadspi_data_##n, ctx),	\
-		SPI_CONTEXT_INIT_SYNC(xlnx_quadspi_data_##n, ctx),	\
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(n, &xlnx_quadspi_init,			\
-			    NULL,					\
-			    &xlnx_quadspi_data_##n,			\
-			    &xlnx_quadspi_config_##n, POST_KERNEL,	\
-			    CONFIG_SPI_INIT_PRIORITY,			\
-			    &xlnx_quadspi_driver_api);			\
-									\
-	static void xlnx_quadspi_config_func_##n(const struct device *dev)	\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
-			    xlnx_quadspi_isr,				\
-			    DEVICE_DT_INST_GET(n), 0);			\
-		irq_enable(DT_INST_IRQN(n));				\
+#define XLNX_QUADSPI_INIT(n)                                                                       \
+	static void xlnx_quadspi_config_func_##n(const struct device *dev);                        \
+                                                                                                   \
+	static const struct xlnx_quadspi_config xlnx_quadspi_config_##n = {                        \
+		.base = DT_INST_REG_ADDR(n),                                                       \
+		.irq_config_func = xlnx_quadspi_config_func_##n,                                   \
+		.num_ss_bits = DT_INST_PROP(n, xlnx_num_ss_bits),                                  \
+		.num_xfer_bytes = DT_INST_PROP(n, xlnx_num_transfer_bits) / 8,                     \
+		.fifo_size = DT_INST_PROP_OR(n, fifo_size, 0),                                     \
+		STARTUP_BLOCK_INIT(n)};                                                            \
+                                                                                                   \
+	static struct xlnx_quadspi_data xlnx_quadspi_data_##n = {                                  \
+		SPI_CONTEXT_INIT_LOCK(xlnx_quadspi_data_##n, ctx),                                 \
+		SPI_CONTEXT_INIT_SYNC(xlnx_quadspi_data_##n, ctx),                                 \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                             \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &xlnx_quadspi_init, NULL, &xlnx_quadspi_data_##n,                 \
+			      &xlnx_quadspi_config_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,     \
+			      &xlnx_quadspi_driver_api);                                           \
+                                                                                                   \
+	static void xlnx_quadspi_config_func_##n(const struct device *dev)                         \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), xlnx_quadspi_isr,           \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(XLNX_QUADSPI_INIT)

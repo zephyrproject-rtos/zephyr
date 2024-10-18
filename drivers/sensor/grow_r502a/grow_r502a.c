@@ -20,7 +20,7 @@
 LOG_MODULE_REGISTER(GROW_R502A, CONFIG_SENSOR_LOG_LEVEL);
 
 static int transceive_packet(const struct device *dev, union r502a_packet *tx_packet,
-				union r502a_packet *rx_packet, uint16_t data_len)
+			     union r502a_packet *rx_packet, uint16_t data_len)
 {
 	const struct grow_r502a_config *cfg = dev->config;
 	struct grow_r502a_data *drv_data = dev->data;
@@ -106,7 +106,7 @@ static int r502a_validate_rx_packet(union r502a_packet *rx_packet)
 	recv_cks = sys_get_be16(&rx_packet->data[cks_start_idx]);
 
 	calc_cks += rx_packet->pid + (sys_be16_to_cpu(rx_packet->len) >> 8) +
-					(sys_be16_to_cpu(rx_packet->len) & 0xFF);
+		    (sys_be16_to_cpu(rx_packet->len) & 0xFF);
 
 	for (int i = 0; i < cks_start_idx; i++) {
 		calc_cks += rx_packet->data[i];
@@ -129,8 +129,7 @@ static void uart_cb_tx_handler(const struct device *dev)
 	int sent = 0;
 
 	if (drv_data->tx_buf.len > 0) {
-		sent = uart_fifo_fill(config->dev, drv_data->tx_buf.data,
-							drv_data->tx_buf.len);
+		sent = uart_fifo_fill(config->dev, drv_data->tx_buf.data, drv_data->tx_buf.len);
 		drv_data->tx_buf.data += sent;
 		drv_data->tx_buf.len -= sent;
 	}
@@ -156,7 +155,7 @@ static void uart_cb_handler(const struct device *dev, void *user_data)
 
 		while (uart_irq_rx_ready(dev)) {
 			len = uart_fifo_read(dev, &drv_data->rx_buf.data[offset],
-								drv_data->pkt_len);
+					     drv_data->pkt_len);
 			offset += len;
 			drv_data->rx_buf.len = offset;
 
@@ -166,9 +165,8 @@ static void uart_cb_handler(const struct device *dev, void *user_data)
 			}
 
 			if (offset == R502A_HEADER_LEN) {
-				drv_data->pkt_len = sys_get_be16(
-							&drv_data->rx_buf.data[R502A_PKG_LEN_IDX]
-							);
+				drv_data->pkt_len =
+					sys_get_be16(&drv_data->rx_buf.data[R502A_PKG_LEN_IDX]);
 				continue;
 			}
 
@@ -190,10 +188,8 @@ static int fps_set_sys_param(const struct device *dev, const struct sensor_value
 	int ret = 0;
 	char const set_sys_param_len = 3;
 
-	union r502a_packet tx_packet = {
-		.pid = R502A_COMMAND_PACKET,
-		.data = { R502A_SETSYSPARAM, val->val1, val->val2}
-	};
+	union r502a_packet tx_packet = {.pid = R502A_COMMAND_PACKET,
+					.data = {R502A_SETSYSPARAM, val->val1, val->val2}};
 
 	ret = transceive_packet(dev, &tx_packet, &rx_packet, set_sys_param_len);
 	if (ret != 0) {
@@ -223,10 +219,7 @@ int r502a_read_sys_param(const struct device *dev, struct r502a_sys_param *val)
 	int offset = 0, ret = 0;
 	char const read_sys_param_len = 1;
 
-	union r502a_packet tx_packet = {
-		.pid = R502A_COMMAND_PACKET,
-		.data = {R502A_READSYSPARAM}
-	};
+	union r502a_packet tx_packet = {.pid = R502A_COMMAND_PACKET, .data = {R502A_READSYSPARAM}};
 
 	k_mutex_lock(&drv_data->lock, K_FOREVER);
 
@@ -248,28 +241,19 @@ int r502a_read_sys_param(const struct device *dev, struct r502a_sys_param *val)
 		goto unlock;
 	}
 
-	val->status_reg = sys_get_be16(
-				&rx_packet.data[offsetof(struct r502a_sys_param, status_reg) + 1]
-				);
-	val->system_id = sys_get_be16(
-				&rx_packet.data[offsetof(struct r502a_sys_param, system_id) + 1]
-				);
-	val->lib_size = sys_get_be16(
-				&rx_packet.data[offsetof(struct r502a_sys_param, lib_size) + 1]
-				);
-	val->sec_level = sys_get_be16(
-				&rx_packet.data[offsetof(struct r502a_sys_param, sec_level) + 1]
-				);
-	val->addr = sys_get_be32(
-			&rx_packet.data[offsetof(struct r502a_sys_param, addr) + 1]
-			);
-	offset = sys_get_be16(
-			&rx_packet.data[offsetof(struct r502a_sys_param, data_pkt_size) + 1]
-			);
+	val->status_reg =
+		sys_get_be16(&rx_packet.data[offsetof(struct r502a_sys_param, status_reg) + 1]);
+	val->system_id =
+		sys_get_be16(&rx_packet.data[offsetof(struct r502a_sys_param, system_id) + 1]);
+	val->lib_size =
+		sys_get_be16(&rx_packet.data[offsetof(struct r502a_sys_param, lib_size) + 1]);
+	val->sec_level =
+		sys_get_be16(&rx_packet.data[offsetof(struct r502a_sys_param, sec_level) + 1]);
+	val->addr = sys_get_be32(&rx_packet.data[offsetof(struct r502a_sys_param, addr) + 1]);
+	offset = sys_get_be16(&rx_packet.data[offsetof(struct r502a_sys_param, data_pkt_size) + 1]);
 	val->data_pkt_size = 32 * (1 << offset);
-	val->baud = sys_get_be16(
-			&rx_packet.data[offsetof(struct r502a_sys_param, baud) + 1]
-			) * 9600;
+	val->baud =
+		sys_get_be16(&rx_packet.data[offsetof(struct r502a_sys_param, baud) + 1]) * 9600;
 
 unlock:
 	k_mutex_unlock(&drv_data->lock);
@@ -282,11 +266,10 @@ static int fps_led_control(const struct device *dev, struct r502a_led_params *le
 	char const led_ctrl_len = 5;
 	int ret = 0;
 
-	union r502a_packet tx_packet = {
-		.pid = R502A_COMMAND_PACKET,
-		.data = { R502A_LED_CONFIG, led_control->ctrl_code,
-				led_control->speed, led_control->color_idx, led_control->cycle}
-	};
+	union r502a_packet tx_packet = {.pid = R502A_COMMAND_PACKET,
+					.data = {R502A_LED_CONFIG, led_control->ctrl_code,
+						 led_control->speed, led_control->color_idx,
+						 led_control->cycle}};
 
 	ret = transceive_packet(dev, &tx_packet, &rx_packet, led_ctrl_len);
 	if (ret != 0) {
@@ -383,10 +366,8 @@ static int fps_read_template_table(const struct device *dev, uint32_t *free_idx)
 	char const temp_table_len = 2;
 	int ret = 0;
 
-	union r502a_packet tx_packet = {
-		.pid = R502A_COMMAND_PACKET,
-		.data = {R502A_READTEMPLATEINDEX, 0x00}
-	};
+	union r502a_packet tx_packet = {.pid = R502A_COMMAND_PACKET,
+					.data = {R502A_READTEMPLATEINDEX, 0x00}};
 
 	k_mutex_lock(&drv_data->lock, K_FOREVER);
 
@@ -473,10 +454,8 @@ static int fps_image_to_char(const struct device *dev, uint8_t char_buf_idx)
 	char const img_to_char_len = 2;
 	int ret = 0;
 
-	union r502a_packet tx_packet = {
-		.pid = R502A_COMMAND_PACKET,
-		.data = {R502A_IMAGE2TZ, char_buf_idx}
-	};
+	union r502a_packet tx_packet = {.pid = R502A_COMMAND_PACKET,
+					.data = {R502A_IMAGE2TZ, char_buf_idx}};
 
 	ret = transceive_packet(dev, &tx_packet, &rx_packet, img_to_char_len);
 	if (ret != 0) {
@@ -504,10 +483,7 @@ static int fps_create_model(const struct device *dev)
 	char const create_model_len = 1;
 	int ret = 0;
 
-	union r502a_packet tx_packet = {
-		.pid = R502A_COMMAND_PACKET,
-		.data = {R502A_REGMODEL}
-	};
+	union r502a_packet tx_packet = {.pid = R502A_COMMAND_PACKET, .data = {R502A_REGMODEL}};
 
 	ret = transceive_packet(dev, &tx_packet, &rx_packet, create_model_len);
 	if (ret != 0) {
@@ -543,10 +519,8 @@ static int fps_store_model(const struct device *dev, uint16_t id)
 		.cycle = 0x01,
 	};
 
-	union r502a_packet tx_packet = {
-		.pid = R502A_COMMAND_PACKET,
-		.data = {R502A_STORE, R502A_CHAR_BUF_1}
-	};
+	union r502a_packet tx_packet = {.pid = R502A_COMMAND_PACKET,
+					.data = {R502A_STORE, R502A_CHAR_BUF_1}};
 	sys_put_be16(id, &tx_packet.data[2]);
 
 	k_mutex_lock(&drv_data->lock, K_FOREVER);
@@ -583,10 +557,7 @@ static int fps_delete_model(const struct device *dev, uint16_t id, uint16_t coun
 	char const delete_model_len = 5;
 	int ret = 0;
 
-	union r502a_packet tx_packet = {
-		.pid = R502A_COMMAND_PACKET,
-		.data = {R502A_DELETE}
-	};
+	union r502a_packet tx_packet = {.pid = R502A_COMMAND_PACKET, .data = {R502A_DELETE}};
 	sys_put_be16(id, &tx_packet.data[1]);
 	sys_put_be16(count + R502A_DELETE_COUNT_OFFSET, &tx_packet.data[3]);
 
@@ -620,10 +591,7 @@ static int fps_empty_db(const struct device *dev)
 	char const empty_db_len = 1;
 	int ret = 0;
 
-	union r502a_packet tx_packet = {
-		.pid = R502A_COMMAND_PACKET,
-		.data = {R502A_EMPTYLIBRARY}
-	};
+	union r502a_packet tx_packet = {.pid = R502A_COMMAND_PACKET, .data = {R502A_EMPTYLIBRARY}};
 
 	k_mutex_lock(&drv_data->lock, K_FOREVER);
 
@@ -640,8 +608,7 @@ static int fps_empty_db(const struct device *dev)
 	if (rx_packet.buf[R502A_CC_IDX] == R502A_OK) {
 		LOG_INF("Emptied Fingerprint Library");
 	} else {
-		LOG_ERR("Error emptying fingerprint library 0x%X",
-					rx_packet.buf[R502A_CC_IDX]);
+		LOG_ERR("Error emptying fingerprint library 0x%X", rx_packet.buf[R502A_CC_IDX]);
 		ret = -EIO;
 	}
 
@@ -664,10 +631,8 @@ static int fps_search(const struct device *dev, struct sensor_value *val)
 		.cycle = 0x01,
 	};
 
-	union r502a_packet tx_packet = {
-		.pid = R502A_COMMAND_PACKET,
-		.data = {R502A_SEARCH, R502A_CHAR_BUF_1}
-	};
+	union r502a_packet tx_packet = {.pid = R502A_COMMAND_PACKET,
+					.data = {R502A_SEARCH, R502A_CHAR_BUF_1}};
 	sys_put_be16(R02A_LIBRARY_START_IDX, &tx_packet.data[2]);
 	sys_put_be16(R502A_DEFAULT_CAPACITY, &tx_packet.data[4]);
 
@@ -717,10 +682,8 @@ static int fps_load_template(const struct device *dev, uint16_t id)
 	char const load_tmp_len = 4;
 	int ret = 0;
 
-	union r502a_packet tx_packet = {
-		.pid = R502A_COMMAND_PACKET,
-		.data = {R502A_LOAD, R502A_CHAR_BUF_1}
-	};
+	union r502a_packet tx_packet = {.pid = R502A_COMMAND_PACKET,
+					.data = {R502A_LOAD, R502A_CHAR_BUF_1}};
 	sys_put_be16(id, &tx_packet.data[2]);
 
 	k_mutex_lock(&drv_data->lock, K_FOREVER);
@@ -738,8 +701,7 @@ static int fps_load_template(const struct device *dev, uint16_t id)
 	if (rx_packet.buf[R502A_CC_IDX] == R502A_OK) {
 		LOG_DBG("Load template data from id #%d to Char_buffer2", id);
 	} else {
-		LOG_ERR("Error Loading template 0x%X",
-					rx_packet.buf[R502A_CC_IDX]);
+		LOG_ERR("Error Loading template 0x%X", rx_packet.buf[R502A_CC_IDX]);
 		ret = -EIO;
 	}
 
@@ -762,10 +724,7 @@ static int fps_match_templates(const struct device *dev, struct sensor_value *va
 		.cycle = 0x01,
 	};
 
-	union r502a_packet tx_packet = {
-		.pid = R502A_COMMAND_PACKET,
-		.data = {R502A_MATCH}
-	};
+	union r502a_packet tx_packet = {.pid = R502A_COMMAND_PACKET, .data = {R502A_MATCH}};
 
 	k_mutex_lock(&drv_data->lock, K_FOREVER);
 
@@ -792,8 +751,7 @@ static int fps_match_templates(const struct device *dev, struct sensor_value *va
 		led_ctrl.ctrl_code = R502A_LED_CTRL_ON_ALWAYS;
 		led_ctrl.color_idx = R502A_LED_COLOR_RED;
 		fps_led_control(dev, &led_ctrl);
-		LOG_ERR("Error Matching templates 0x%X",
-					rx_packet.buf[R502A_CC_IDX]);
+		LOG_ERR("Error Matching templates 0x%X", rx_packet.buf[R502A_CC_IDX]);
 		ret = -EIO;
 	}
 unlock:
@@ -848,10 +806,8 @@ int fps_upload_char_buf(const struct device *dev, struct r502a_template *temp)
 		return -EINVAL;
 	}
 
-	union r502a_packet tx_packet = {
-		.pid = R502A_COMMAND_PACKET,
-		.data = {R502A_UPCHAR, R502A_CHAR_BUF_1}
-	};
+	union r502a_packet tx_packet = {.pid = R502A_COMMAND_PACKET,
+					.data = {R502A_UPCHAR, R502A_CHAR_BUF_1}};
 
 	k_mutex_lock(&drv_data->lock, K_FOREVER);
 
@@ -868,8 +824,7 @@ int fps_upload_char_buf(const struct device *dev, struct r502a_template *temp)
 	if (rx_packet.buf[R502A_CC_IDX] == R502A_OK) {
 		LOG_DBG("Upload to host controller");
 	} else {
-		LOG_ERR("Error uploading template 0x%X",
-					rx_packet.buf[R502A_CC_IDX]);
+		LOG_ERR("Error uploading template 0x%X", rx_packet.buf[R502A_CC_IDX]);
 		ret = -EIO;
 		goto unlock;
 	}
@@ -886,7 +841,7 @@ int fps_upload_char_buf(const struct device *dev, struct r502a_template *temp)
 		}
 
 		memcpy(&temp->data[idx], &rx_packet.data,
-				sys_be16_to_cpu(rx_packet.len) - R502A_CHECKSUM_LEN);
+		       sys_be16_to_cpu(rx_packet.len) - R502A_CHECKSUM_LEN);
 		idx += sys_be16_to_cpu(rx_packet.len) - R502A_CHECKSUM_LEN;
 	} while (rx_packet.pid != R502A_END_DATA_PACKET);
 
@@ -903,7 +858,7 @@ unlock:
  *				by R502A sensor.
  */
 int fps_download_char_buf(const struct device *dev, uint8_t char_buf_id,
-						const struct r502a_template *temp)
+			  const struct r502a_template *temp)
 {
 	struct grow_r502a_data *drv_data = dev->data;
 	union r502a_packet rx_packet = {0};
@@ -915,10 +870,8 @@ int fps_download_char_buf(const struct device *dev, uint8_t char_buf_id,
 		return -EINVAL;
 	}
 
-	union r502a_packet tx_packet = {
-		.pid = R502A_COMMAND_PACKET,
-		.data = {R502A_DOWNCHAR, char_buf_id}
-	};
+	union r502a_packet tx_packet = {.pid = R502A_COMMAND_PACKET,
+					.data = {R502A_DOWNCHAR, char_buf_id}};
 
 	k_mutex_lock(&drv_data->lock, K_FOREVER);
 
@@ -935,8 +888,7 @@ int fps_download_char_buf(const struct device *dev, uint8_t char_buf_id,
 	if (rx_packet.buf[R502A_CC_IDX] == R502A_OK) {
 		LOG_DBG("Download to R502A sensor");
 	} else {
-		LOG_ERR("Error downloading template 0x%X",
-					rx_packet.buf[R502A_CC_IDX]);
+		LOG_ERR("Error downloading template 0x%X", rx_packet.buf[R502A_CC_IDX]);
 		ret = -EIO;
 		goto unlock;
 	}
@@ -1066,7 +1018,6 @@ static int grow_r502a_attr_set(const struct device *dev, enum sensor_channel cha
 		LOG_ERR("Sensor attribute not supported");
 		return -ENOTSUP;
 	}
-
 }
 
 static int grow_r502a_attr_get(const struct device *dev, enum sensor_channel chan,
@@ -1179,8 +1130,8 @@ static const struct sensor_driver_api grow_r502a_api = {
 };
 
 #ifdef CONFIG_LED
-static int grow_r502a_led_set_color(const struct device *dev, uint32_t led,
-					uint8_t num_colors, const uint8_t *color)
+static int grow_r502a_led_set_color(const struct device *dev, uint32_t led, uint8_t num_colors,
+				    const uint8_t *color)
 {
 	struct grow_r502a_data *drv_data = dev->data;
 
@@ -1225,27 +1176,26 @@ static const struct led_driver_api grow_r502a_leds_api = {
 };
 #endif
 
-#define GROW_R502A_INIT(index)									\
-	static struct grow_r502a_data grow_r502a_data_##index;					\
-												\
-	static struct grow_r502a_config grow_r502a_config_##index = {				\
-		.dev = DEVICE_DT_GET(DT_INST_BUS(index)),					\
-		.comm_addr = DT_INST_REG_ADDR(index),						\
+#define GROW_R502A_INIT(index)                                                                     \
+	static struct grow_r502a_data grow_r502a_data_##index;                                     \
+                                                                                                   \
+	static struct grow_r502a_config grow_r502a_config_##index = {                              \
+		.dev = DEVICE_DT_GET(DT_INST_BUS(index)),                                          \
+		.comm_addr = DT_INST_REG_ADDR(index),                                              \
 		IF_ENABLED(CONFIG_GROW_R502A_GPIO_POWER,					\
 		(.vin_gpios = GPIO_DT_SPEC_INST_GET_OR(index, vin_gpios, {}),			\
-		 .act_gpios = GPIO_DT_SPEC_INST_GET_OR(index, act_gpios, {}),))			\
-		IF_ENABLED(CONFIG_GROW_R502A_TRIGGER,						\
-		(.int_gpios = GPIO_DT_SPEC_INST_GET_OR(index, int_gpios, {}),))			\
-	};											\
-												\
-	DEVICE_DT_INST_DEFINE(index, &grow_r502a_init, NULL, &grow_r502a_data_##index,		\
-				&grow_r502a_config_##index, POST_KERNEL,			\
-				CONFIG_SENSOR_INIT_PRIORITY, &grow_r502a_api);			\
+		 .act_gpios = GPIO_DT_SPEC_INST_GET_OR(index, act_gpios, {}),))                                     \
+					    IF_ENABLED(CONFIG_GROW_R502A_TRIGGER,						\
+		(.int_gpios = GPIO_DT_SPEC_INST_GET_OR(index, int_gpios, {}),)) };          \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(index, &grow_r502a_init, NULL, &grow_r502a_data_##index,             \
+			      &grow_r502a_config_##index, POST_KERNEL,                             \
+			      CONFIG_SENSOR_INIT_PRIORITY, &grow_r502a_api);
 
-#define GROW_R502A_LED_INIT(index)								\
-	DEVICE_DT_INST_DEFINE(index, NULL, NULL, &grow_r502a_data_##index,			\
-				&grow_r502a_config_##index, POST_KERNEL,			\
-				CONFIG_LED_INIT_PRIORITY, &grow_r502a_leds_api);		\
+#define GROW_R502A_LED_INIT(index)                                                                 \
+	DEVICE_DT_INST_DEFINE(index, NULL, NULL, &grow_r502a_data_##index,                         \
+			      &grow_r502a_config_##index, POST_KERNEL, CONFIG_LED_INIT_PRIORITY,   \
+			      &grow_r502a_leds_api);
 
 #define DT_DRV_COMPAT hzgrow_r502a
 DT_INST_FOREACH_STATUS_OKAY(GROW_R502A_INIT)

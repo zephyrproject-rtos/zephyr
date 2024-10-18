@@ -25,11 +25,11 @@ LOG_MODULE_REGISTER(spi_smartbond);
 #include <DA1469xAB.h>
 #include <da1469x_pd.h>
 
-#define DIVN_CLK	32000000	/* DIVN clock: fixed @32MHz */
-#define SCLK_FREQ_2MHZ	(DIVN_CLK / 14) /* 2.285714 MHz*/
-#define SCLK_FREQ_4MHZ	(DIVN_CLK / 8)	/* 4 MHz */
-#define SCLK_FREQ_8MHZ	(DIVN_CLK / 4)	/* 8 MHz */
-#define SCLK_FREQ_16MHZ (DIVN_CLK / 2)	/* 16 MHz */
+#define DIVN_CLK        32000000        /* DIVN clock: fixed @32MHz */
+#define SCLK_FREQ_2MHZ  (DIVN_CLK / 14) /* 2.285714 MHz*/
+#define SCLK_FREQ_4MHZ  (DIVN_CLK / 8)  /* 4 MHz */
+#define SCLK_FREQ_8MHZ  (DIVN_CLK / 4)  /* 8 MHz */
+#define SCLK_FREQ_16MHZ (DIVN_CLK / 2)  /* 16 MHz */
 
 enum spi_smartbond_transfer {
 	SPI_SMARTBOND_TRANSFER_TX_ONLY,
@@ -95,10 +95,9 @@ struct spi_smartbond_data {
 #endif
 };
 
-#define SPI_CTRL_REG_SET_FIELD(_field, _var, _val) \
-	(_var) = \
-	(((_var) & ~SPI_SPI_CTRL_REG_ ## _field ## _Msk) | \
-	(((_val) << SPI_SPI_CTRL_REG_ ## _field ## _Pos) & SPI_SPI_CTRL_REG_ ## _field ## _Msk))
+#define SPI_CTRL_REG_SET_FIELD(_field, _var, _val)                                                 \
+	(_var) = (((_var) & ~SPI_SPI_CTRL_REG_##_field##_Msk) |                                    \
+		  (((_val) << SPI_SPI_CTRL_REG_##_field##_Pos) & SPI_SPI_CTRL_REG_##_field##_Msk))
 
 static inline void spi_smartbond_enable(const struct spi_smartbond_cfg *cfg, bool enable)
 {
@@ -356,7 +355,7 @@ static inline uint8_t spi_smartbond_get_fifo_mode(const struct device *dev)
 	const struct spi_smartbond_cfg *cfg = dev->config;
 
 	return ((cfg->regs->SPI_CTRL_REG & SPI_SPI_CTRL_REG_SPI_FIFO_MODE_Msk) >>
-			SPI_SPI_CTRL_REG_SPI_FIFO_MODE_Pos);
+		SPI_SPI_CTRL_REG_SPI_FIFO_MODE_Pos);
 }
 
 static void spi_smartbond_set_fifo_mode(const struct device *dev, enum spi_smartbond_fifo_mode mode)
@@ -372,9 +371,9 @@ static void spi_smartbond_set_fifo_mode(const struct device *dev, enum spi_smart
 
 	if ((current_mode != mode)
 #ifdef CONFIG_SPI_SMARTBOND_DMA
-		|| (data->dfs == 4)
+	    || (data->dfs == 4)
 #endif
-		) {
+	) {
 		if (current_mode != SPI_SMARTBOND_FIFO_MODE_RX_ONLY) {
 			while (spi_smartbond_is_busy(dev)) {
 				;
@@ -393,7 +392,6 @@ static void spi_smartbond_set_fifo_mode(const struct device *dev, enum spi_smart
 		}
 #endif
 		SPI_CTRL_REG_SET_FIELD(SPI_FIFO_MODE, spi_ctrl_reg, mode);
-
 
 		if (mode != SPI_SMARTBOND_FIFO_NONE) {
 			SPI_CTRL_REG_SET_FIELD(SPI_DMA_TXREQ_MODE, spi_ctrl_reg, 0);
@@ -707,11 +705,10 @@ static int spi_smartbond_dma_tx_channel_request(const struct device *dev)
 	struct spi_smartbond_data *data = dev->data;
 	const struct spi_smartbond_cfg *config = dev->config;
 
-	if (!atomic_test_and_set_bit(data->dma_channel_atomic_flag,
-		SPI_SMARTBOND_DMA_TX_CHANNEL)) {
+	if (!atomic_test_and_set_bit(data->dma_channel_atomic_flag, SPI_SMARTBOND_DMA_TX_CHANNEL)) {
 		if (dma_request_channel(config->tx_dma_ctrl, (void *)&config->tx_dma_chan) < 0) {
 			atomic_clear_bit(data->dma_channel_atomic_flag,
-				SPI_SMARTBOND_DMA_TX_CHANNEL);
+					 SPI_SMARTBOND_DMA_TX_CHANNEL);
 			return -EIO;
 		}
 	}
@@ -726,7 +723,7 @@ static void spi_smartbond_dma_tx_channel_release(const struct device *dev)
 	const struct spi_smartbond_cfg *config = dev->config;
 
 	if (atomic_test_and_clear_bit(data->dma_channel_atomic_flag,
-		SPI_SMARTBOND_DMA_TX_CHANNEL)) {
+				      SPI_SMARTBOND_DMA_TX_CHANNEL)) {
 		dma_release_channel(config->tx_dma_ctrl, config->tx_dma_chan);
 	}
 }
@@ -737,11 +734,10 @@ static int spi_smartbond_dma_rx_channel_request(const struct device *dev)
 	struct spi_smartbond_data *data = dev->data;
 	const struct spi_smartbond_cfg *config = dev->config;
 
-	if (!atomic_test_and_set_bit(data->dma_channel_atomic_flag,
-		SPI_SMARTBOND_DMA_RX_CHANNEL)) {
+	if (!atomic_test_and_set_bit(data->dma_channel_atomic_flag, SPI_SMARTBOND_DMA_RX_CHANNEL)) {
 		if (dma_request_channel(config->rx_dma_ctrl, (void *)&config->rx_dma_chan) < 0) {
 			atomic_clear_bit(data->dma_channel_atomic_flag,
-				SPI_SMARTBOND_DMA_RX_CHANNEL);
+					 SPI_SMARTBOND_DMA_RX_CHANNEL);
 			return -EIO;
 		}
 	}
@@ -756,14 +752,13 @@ static void spi_smartbond_dma_rx_channel_release(const struct device *dev)
 	const struct spi_smartbond_cfg *config = dev->config;
 
 	if (atomic_test_and_clear_bit(data->dma_channel_atomic_flag,
-		SPI_SMARTBOND_DMA_RX_CHANNEL)) {
+				      SPI_SMARTBOND_DMA_RX_CHANNEL)) {
 		dma_release_channel(config->rx_dma_ctrl, config->rx_dma_chan);
 	}
 }
 #endif
 
-static void spi_smartbond_tx_dma_cb(const struct device *dma, void *arg,
-		uint32_t id, int status)
+static void spi_smartbond_tx_dma_cb(const struct device *dma, void *arg, uint32_t id, int status)
 {
 	const struct device *dev = arg;
 	struct spi_smartbond_data *data = dev->data;
@@ -777,8 +772,7 @@ static void spi_smartbond_tx_dma_cb(const struct device *dma, void *arg,
 	k_sem_give(&data->tx_dma_sync);
 }
 
-static void spi_smartbond_rx_dma_cb(const struct device *dma, void *arg,
-		uint32_t id, int status)
+static void spi_smartbond_rx_dma_cb(const struct device *dma, void *arg, uint32_t id, int status)
 {
 	const struct device *dev = arg;
 	struct spi_smartbond_data *data = dev->data;
@@ -821,9 +815,8 @@ static int spi_smartbond_dma_config(const struct device *dev)
 	 * DMA TX should be assigned the right next
 	 * channel (odd number).
 	 */
-	if (!(config->tx_dma_chan & 0x1) ||
-			(config->rx_dma_chan & 0x1) ||
-			(config->tx_dma_chan != (config->rx_dma_chan + 1))) {
+	if (!(config->tx_dma_chan & 0x1) || (config->rx_dma_chan & 0x1) ||
+	    (config->tx_dma_chan != (config->rx_dma_chan + 1))) {
 		LOG_ERR("Invalid RX/TX channel selection");
 		return -EINVAL;
 	}
@@ -833,8 +826,7 @@ static int spi_smartbond_dma_config(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (!device_is_ready(config->tx_dma_ctrl) ||
-		!device_is_ready(config->rx_dma_ctrl)) {
+	if (!device_is_ready(config->tx_dma_ctrl) || !device_is_ready(config->rx_dma_ctrl)) {
 		LOG_ERR("TX/RX DMA device is not ready");
 		return -ENODEV;
 	}
@@ -1188,8 +1180,7 @@ static int spi_smartbond_suspend(const struct device *dev)
 	return ret;
 }
 
-static int spi_smartbond_pm_action(const struct device *dev,
-				   enum pm_device_action action)
+static int spi_smartbond_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	int ret;
 
@@ -1210,15 +1201,15 @@ static int spi_smartbond_pm_action(const struct device *dev,
 }
 #endif
 
-#define SPI_SMARTBOND_ISR_CONNECT \
-		IRQ_CONNECT(DT_IRQN(DT_NODELABEL(spi)), DT_IRQ(DT_NODELABEL(spi), priority), \
-			spi_smartbond_isr, DEVICE_DT_GET(DT_NODELABEL(spi)), 0); \
-		irq_enable(DT_IRQN(DT_NODELABEL(spi)));
+#define SPI_SMARTBOND_ISR_CONNECT                                                                  \
+	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(spi)), DT_IRQ(DT_NODELABEL(spi), priority),               \
+		    spi_smartbond_isr, DEVICE_DT_GET(DT_NODELABEL(spi)), 0);                       \
+	irq_enable(DT_IRQN(DT_NODELABEL(spi)));
 
-#define SPI2_SMARTBOND_ISR_CONNECT \
-		IRQ_CONNECT(DT_IRQN(DT_NODELABEL(spi2)), DT_IRQ(DT_NODELABEL(spi2), priority), \
-			spi_smartbond_isr, DEVICE_DT_GET(DT_NODELABEL(spi2)), 0); \
-		irq_enable(DT_IRQN(DT_NODELABEL(spi2)));
+#define SPI2_SMARTBOND_ISR_CONNECT                                                                 \
+	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(spi2)), DT_IRQ(DT_NODELABEL(spi2), priority),             \
+		    spi_smartbond_isr, DEVICE_DT_GET(DT_NODELABEL(spi2)), 0);                      \
+	irq_enable(DT_IRQN(DT_NODELABEL(spi2)));
 
 #if defined(CONFIG_SPI_ASYNC) || defined(CONFIG_SPI_SMARTBOND_DMA)
 static int spi_smartbond_isr_connect(const struct device *dev)
@@ -1275,37 +1266,33 @@ static int spi_smartbond_init(const struct device *dev)
 }
 
 #ifdef CONFIG_SPI_SMARTBOND_DMA
-#define SPI_SMARTBOND_DMA_TX_INIT(id) \
-	.tx_dma_chan = DT_INST_DMAS_CELL_BY_NAME(id, tx, channel), \
-	.tx_slot_mux = (uint8_t)DT_INST_DMAS_CELL_BY_NAME(id, tx, config), \
+#define SPI_SMARTBOND_DMA_TX_INIT(id)                                                              \
+	.tx_dma_chan = DT_INST_DMAS_CELL_BY_NAME(id, tx, channel),                                 \
+	.tx_slot_mux = (uint8_t)DT_INST_DMAS_CELL_BY_NAME(id, tx, config),                         \
 	.tx_dma_ctrl = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, tx)),
 #else
 #define SPI_SMARTBOND_DMA_TX_INIT(id)
 #endif
 
 #ifdef CONFIG_SPI_SMARTBOND_DMA
-#define SPI_SMARTBOND_DMA_RX_INIT(id) \
-	.rx_dma_chan = DT_INST_DMAS_CELL_BY_NAME(id, rx, channel),	\
-	.rx_slot_mux = (uint8_t)DT_INST_DMAS_CELL_BY_NAME(id, rx, config),	\
+#define SPI_SMARTBOND_DMA_RX_INIT(id)                                                              \
+	.rx_dma_chan = DT_INST_DMAS_CELL_BY_NAME(id, rx, channel),                                 \
+	.rx_slot_mux = (uint8_t)DT_INST_DMAS_CELL_BY_NAME(id, rx, config),                         \
 	.rx_dma_ctrl = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, rx)),
 #else
 #define SPI_SMARTBOND_DMA_RX_INIT(id)
 #endif
 
 #ifdef CONFIG_SPI_SMARTBOND_DMA
-#define SPI_SMARTBOND_DMA_TX_INVALIDATE(id) \
-	.tx_dma_chan = 255, \
-	.tx_slot_mux = 255, \
-	.tx_dma_ctrl = NULL,
+#define SPI_SMARTBOND_DMA_TX_INVALIDATE(id)                                                        \
+	.tx_dma_chan = 255, .tx_slot_mux = 255, .tx_dma_ctrl = NULL,
 #else
 #define SPI_SMARTBOND_DMA_TX_INVALIDATE(id)
 #endif
 
 #ifdef CONFIG_SPI_SMARTBOND_DMA
-#define SPI_SMARTBOND_DMA_RX_INVALIDATE(id) \
-	.rx_dma_chan = 255, \
-	.rx_slot_mux = 255, \
-	.rx_dma_ctrl = NULL,
+#define SPI_SMARTBOND_DMA_RX_INVALIDATE(id)                                                        \
+	.rx_dma_chan = 255, .rx_slot_mux = 255, .rx_dma_ctrl = NULL,
 #else
 #define SPI_SMARTBOND_DMA_RX_INVALIDATE(id)
 #endif
@@ -1318,22 +1305,17 @@ static int spi_smartbond_init(const struct device *dev)
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),                                        \
 		COND_CODE_1(DT_INST_DMAS_HAS_NAME(id, tx),	\
 			(SPI_SMARTBOND_DMA_TX_INIT(id)),	\
-			(SPI_SMARTBOND_DMA_TX_INVALIDATE(id))) \
-		COND_CODE_1(DT_INST_DMAS_HAS_NAME(id, rx), \
+			(SPI_SMARTBOND_DMA_TX_INVALIDATE(id)))                                       \
+				COND_CODE_1(DT_INST_DMAS_HAS_NAME(id, rx), \
 			(SPI_SMARTBOND_DMA_RX_INIT(id)),	\
-			(SPI_SMARTBOND_DMA_RX_INVALIDATE(id)))	\
-	};                                                                                         \
+			(SPI_SMARTBOND_DMA_RX_INVALIDATE(id))) };                 \
 	static struct spi_smartbond_data spi_smartbond_##id##_data = {                             \
 		SPI_CONTEXT_INIT_LOCK(spi_smartbond_##id##_data, ctx),                             \
 		SPI_CONTEXT_INIT_SYNC(spi_smartbond_##id##_data, ctx),                             \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(id), ctx)};                            \
 	PM_DEVICE_DT_INST_DEFINE(id, spi_smartbond_pm_action);                                     \
-	DEVICE_DT_INST_DEFINE(id,                                                                  \
-			      spi_smartbond_init,                                                  \
-			      PM_DEVICE_DT_INST_GET(id),                                           \
-			      &spi_smartbond_##id##_data,                                          \
-			      &spi_smartbond_##id##_cfg,                                           \
-			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,                               \
-			      &spi_smartbond_driver_api);
+	DEVICE_DT_INST_DEFINE(id, spi_smartbond_init, PM_DEVICE_DT_INST_GET(id),                   \
+			      &spi_smartbond_##id##_data, &spi_smartbond_##id##_cfg, POST_KERNEL,  \
+			      CONFIG_SPI_INIT_PRIORITY, &spi_smartbond_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_SMARTBOND_DEVICE)

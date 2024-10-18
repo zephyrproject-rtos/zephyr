@@ -23,9 +23,9 @@ LOG_MODULE_REGISTER(smbus_shell, CONFIG_LOG_DEFAULT_LEVEL);
  * Simplify argument parsing, smbus arguments always go in this order:
  * smbus <shell command> <device> <peripheral address> <command byte>
  */
-#define ARGV_DEV	1
-#define ARGV_ADDR	2
-#define ARGV_CMD	3
+#define ARGV_DEV  1
+#define ARGV_ADDR 2
+#define ARGV_CMD  3
 
 /**
  * This sends SMBUS messages without any data (i.e. stop condition after
@@ -121,8 +121,7 @@ static int cmd_smbus_byte_read(const struct shell *sh, size_t argc, char **argv)
 
 	ret = smbus_byte_read(dev, addr, &out);
 	if (ret < 0) {
-		shell_error(sh, "SMBus: Failed to read from periph: 0x%02x",
-			    addr);
+		shell_error(sh, "SMBus: Failed to read from periph: 0x%02x", addr);
 		return -EIO;
 	}
 
@@ -132,8 +131,7 @@ static int cmd_smbus_byte_read(const struct shell *sh, size_t argc, char **argv)
 }
 
 /* smbus byte_write <device> <dev_addr> <value> */
-static int cmd_smbus_byte_write(const struct shell *sh,
-				size_t argc, char **argv)
+static int cmd_smbus_byte_write(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	uint8_t addr;
@@ -152,8 +150,7 @@ static int cmd_smbus_byte_write(const struct shell *sh,
 
 	ret = smbus_byte_write(dev, addr, value);
 	if (ret < 0) {
-		shell_error(sh, "SMBus: Failed to write to periph: 0x%02x",
-			    addr);
+		shell_error(sh, "SMBus: Failed to write to periph: 0x%02x", addr);
 		return -EIO;
 	}
 
@@ -161,8 +158,7 @@ static int cmd_smbus_byte_write(const struct shell *sh,
 }
 
 /* smbus byte_data_read <device> <dev_addr> <cmd> */
-static int cmd_smbus_byte_data_read(const struct shell *sh,
-				    size_t argc, char **argv)
+static int cmd_smbus_byte_data_read(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	uint8_t addr, command;
@@ -180,8 +176,7 @@ static int cmd_smbus_byte_data_read(const struct shell *sh,
 
 	ret = smbus_byte_data_read(dev, addr, command, &out);
 	if (ret < 0) {
-		shell_error(sh, "SMBus: Failed to read from periph: 0x%02x",
-			    addr);
+		shell_error(sh, "SMBus: Failed to read from periph: 0x%02x", addr);
 		return -EIO;
 	}
 
@@ -191,8 +186,7 @@ static int cmd_smbus_byte_data_read(const struct shell *sh,
 }
 
 /* smbus byte_data_write <device> <dev_addr> <cmd> <value> */
-static int cmd_smbus_byte_data_write(const struct shell *sh,
-				     size_t argc, char **argv)
+static int cmd_smbus_byte_data_write(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	uint8_t addr, command;
@@ -211,8 +205,7 @@ static int cmd_smbus_byte_data_write(const struct shell *sh,
 
 	ret = smbus_byte_data_write(dev, addr, command, value);
 	if (ret < 0) {
-		shell_error(sh, "SMBus: Failed to write to periph: 0x%02x",
-			    addr);
+		shell_error(sh, "SMBus: Failed to write to periph: 0x%02x", addr);
 		return -EIO;
 	}
 
@@ -220,8 +213,7 @@ static int cmd_smbus_byte_data_write(const struct shell *sh,
 }
 
 /* smbus word_data_read <device> <dev_addr> <cmd> */
-static int cmd_smbus_word_data_read(const struct shell *sh,
-				    size_t argc, char **argv)
+static int cmd_smbus_word_data_read(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	uint8_t addr, command;
@@ -239,8 +231,7 @@ static int cmd_smbus_word_data_read(const struct shell *sh,
 
 	ret = smbus_word_data_read(dev, addr, command, &out);
 	if (ret < 0) {
-		shell_error(sh, "SMBus: Failed to read from periph: 0x%02x",
-			    addr);
+		shell_error(sh, "SMBus: Failed to read from periph: 0x%02x", addr);
 		return -EIO;
 	}
 
@@ -250,8 +241,7 @@ static int cmd_smbus_word_data_read(const struct shell *sh,
 }
 
 /* smbus word_data_write <device> <dev_addr> <cmd> <value> */
-static int cmd_smbus_word_data_write(const struct shell *sh,
-				     size_t argc, char **argv)
+static int cmd_smbus_word_data_write(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	uint8_t addr, command;
@@ -270,8 +260,7 @@ static int cmd_smbus_word_data_write(const struct shell *sh,
 
 	ret = smbus_word_data_write(dev, addr, command, value);
 	if (ret < 0) {
-		shell_error(sh, "SMBus: Failed to write to periph: 0x%02x",
-			    addr);
+		shell_error(sh, "SMBus: Failed to write to periph: 0x%02x", addr);
 		return -EIO;
 	}
 
@@ -279,14 +268,13 @@ static int cmd_smbus_word_data_write(const struct shell *sh,
 }
 
 /* smbus block_write <device> <dev_addr> <cmd> <bytes ... > */
-static int cmd_smbus_block_write(const struct shell *sh,
-				 size_t argc, char **argv)
+static int cmd_smbus_block_write(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	uint8_t addr, command;
 	uint8_t count = argc - 4;
 	char **p = &argv[4]; /* start data bytes */
-	uint8_t buf[32]; /* max block count */
+	uint8_t buf[32];     /* max block count */
 	int ret;
 
 	if (count == 0 || count > sizeof(buf)) {
@@ -310,8 +298,7 @@ static int cmd_smbus_block_write(const struct shell *sh,
 
 	ret = smbus_block_write(dev, addr, command, count, buf);
 	if (ret < 0) {
-		shell_error(sh, "Failed block write to periph: 0x%02x",
-			    addr);
+		shell_error(sh, "Failed block write to periph: 0x%02x", addr);
 		return ret;
 	}
 
@@ -319,8 +306,7 @@ static int cmd_smbus_block_write(const struct shell *sh,
 }
 
 /* smbus block_read <device> <dev_addr> <cmd> */
-static int cmd_smbus_block_read(const struct shell *sh,
-				size_t argc, char **argv)
+static int cmd_smbus_block_read(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	uint8_t addr, command;
@@ -339,8 +325,7 @@ static int cmd_smbus_block_read(const struct shell *sh,
 
 	ret = smbus_block_read(dev, addr, command, &count, buf);
 	if (ret < 0) {
-		shell_error(sh, "Failed block read from periph: 0x%02x",
-			    addr);
+		shell_error(sh, "Failed block read from periph: 0x%02x", addr);
 		return ret;
 	}
 
@@ -367,7 +352,8 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_smbus_cmds,
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_smbus_cmds,
 	SHELL_CMD_ARG(quick, &dsub_device_name,
 		      "SMBus Quick command\n"
 		      "Usage: quick <device> <addr>",
@@ -408,7 +394,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_smbus_cmds,
 		      "SMBus: Block Read command\n"
 		      "Usage: block_read <device> <addr> <cmd>",
 		      cmd_smbus_block_read, 4, 0),
-	SHELL_SUBCMD_SET_END     /* Array terminated. */
+	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
 SHELL_CMD_REGISTER(smbus, &sub_smbus_cmds, "smbus commands", NULL);

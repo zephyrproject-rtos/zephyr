@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <errno.h>
 #include <limits.h>
 #include <stddef.h>
@@ -20,12 +19,10 @@
 
 LOG_MODULE_REGISTER(flash, CONFIG_FLASH_LOG_LEVEL);
 
-int z_impl_flash_fill(const struct device *dev, uint8_t val, off_t offset,
-		      size_t size)
+int z_impl_flash_fill(const struct device *dev, uint8_t val, off_t offset, size_t size)
 {
 	uint8_t filler[CONFIG_FLASH_FILL_BUFFER_SIZE];
-	const struct flash_driver_api *api =
-		(const struct flash_driver_api *)dev->api;
+	const struct flash_driver_api *api = (const struct flash_driver_api *)dev->api;
 	const struct flash_parameters *fparams = api->get_parameters(dev);
 	int rc = 0;
 	size_t stored = 0;
@@ -59,8 +56,8 @@ int z_impl_flash_fill(const struct device *dev, uint8_t val, off_t offset,
 
 		rc = api->write(dev, offset + stored, filler, chunk);
 		if (rc < 0) {
-			LOG_DBG("Fill to dev %p failed at offset 0x%zx\n",
-				dev, (size_t)offset + stored);
+			LOG_DBG("Fill to dev %p failed at offset 0x%zx\n", dev,
+				(size_t)offset + stored);
 			break;
 		}
 		stored += chunk;
@@ -70,13 +67,11 @@ int z_impl_flash_fill(const struct device *dev, uint8_t val, off_t offset,
 
 int z_impl_flash_flatten(const struct device *dev, off_t offset, size_t size)
 {
-	const struct flash_driver_api *api =
-		(const struct flash_driver_api *)dev->api;
+	const struct flash_driver_api *api = (const struct flash_driver_api *)dev->api;
 	__maybe_unused const struct flash_parameters *params = api->get_parameters(dev);
 
 #if defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
-	if ((flash_params_get_erase_cap(params) & FLASH_ERASE_C_EXPLICIT) &&
-		api->erase != NULL) {
+	if ((flash_params_get_erase_cap(params) & FLASH_ERASE_C_EXPLICIT) && api->erase != NULL) {
 		return api->erase(dev, offset, size);
 	}
 #endif

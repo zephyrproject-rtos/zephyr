@@ -133,8 +133,7 @@ static int rt1718s_init(const struct device *dev)
 	static const struct rt1718s_config rt1718s_cfg_##inst = {                                  \
 		.i2c_dev = I2C_DT_SPEC_INST_GET(inst),                                             \
 		.gpio_port_dev = GET_PORT_DEVICE(inst),                                            \
-		IRQ_GPIO(inst)                                                                     \
-	};                                                                                         \
+		IRQ_GPIO(inst)};                                                                   \
 	static struct rt1718s_data rt1718s_data_##inst = {                                         \
 		.dev = DEVICE_DT_INST_GET(inst),                                                   \
 	};                                                                                         \

@@ -5,7 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <soc.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_rcc.h>
@@ -20,8 +19,7 @@
 /**
  * @brief Set up pll configuration
  */
-__unused
-void config_pll_sysclock(void)
+__unused void config_pll_sysclock(void)
 {
 	uint32_t pll_source, pll_mul, pll_div;
 
@@ -80,8 +78,7 @@ void config_pll_sysclock(void)
 /**
  * @brief Return pllout frequency
  */
-__unused
-uint32_t get_pllout_frequency(void)
+__unused uint32_t get_pllout_frequency(void)
 {
 	uint32_t pll_input_freq, pll_mul, pll_div;
 
@@ -129,7 +126,7 @@ uint32_t get_pllout_frequency(void)
 		pll_input_freq = STM32_HSE_FREQ;
 	} else if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
 		pll_input_freq = STM32_HSI_FREQ / 2;
-	}  else {
+	} else {
 		return 0;
 	}
 

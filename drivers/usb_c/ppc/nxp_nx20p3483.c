@@ -422,8 +422,10 @@ static int nx20p3483_dev_init(const struct device *dev)
 
 #define NX20P3483_DRIVER_CFG_INIT(node)                                                            \
 	{                                                                                          \
-		.bus = I2C_DT_SPEC_GET(node), .irq_gpio = GPIO_DT_SPEC_GET(node, irq_gpios),       \
-		.snk_ovp_thresh = DT_PROP(node, snk_ovp), .src_use_hv = DT_PROP(node, src_hv),     \
+		.bus = I2C_DT_SPEC_GET(node),                                                      \
+		.irq_gpio = GPIO_DT_SPEC_GET(node, irq_gpios),                                     \
+		.snk_ovp_thresh = DT_PROP(node, snk_ovp),                                          \
+		.src_use_hv = DT_PROP(node, src_hv),                                               \
 		.src_5v_ocp_thresh = DT_PROP(node, src_5v_ocp),                                    \
 		.src_hv_ocp_thresh = DT_PROP(node, src_hv_ocp),                                    \
 	}

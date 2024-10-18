@@ -15,7 +15,6 @@
 #include <zephyr/init.h>
 #include <string.h>
 
-
 #include <zephyr/cache.h>
 
 #include <zephyr/arch/x86/intel_vtd.h>
@@ -33,8 +32,7 @@ static inline void vtd_pause_cpu(void)
 	__asm__ volatile("pause" ::: "memory");
 }
 
-static void vtd_write_reg32(const struct device *dev,
-			    uint16_t reg, uint32_t value)
+static void vtd_write_reg32(const struct device *dev, uint16_t reg, uint32_t value)
 {
 	uintptr_t base_address = DEVICE_MMIO_GET(dev);
 
@@ -48,8 +46,7 @@ static uint32_t vtd_read_reg32(const struct device *dev, uint16_t reg)
 	return sys_read32(base_address + reg);
 }
 
-static void vtd_write_reg64(const struct device *dev,
-			    uint16_t reg, uint64_t value)
+static void vtd_write_reg64(const struct device *dev, uint16_t reg, uint64_t value)
 {
 	uintptr_t base_address = DEVICE_MMIO_GET(dev);
 
@@ -63,8 +60,7 @@ static uint64_t vtd_read_reg64(const struct device *dev, uint16_t reg)
 	return sys_read64(base_address + reg);
 }
 
-static void vtd_send_cmd(const struct device *dev,
-			 uint16_t cmd_bit, uint16_t status_bit)
+static void vtd_send_cmd(const struct device *dev, uint16_t cmd_bit, uint16_t status_bit)
 {
 	uintptr_t base_address = DEVICE_MMIO_GET(dev);
 	uint32_t value;
@@ -74,20 +70,17 @@ static void vtd_send_cmd(const struct device *dev,
 
 	vtd_write_reg32(dev, VTD_GCMD_REG, value);
 
-	while (!sys_test_bit((base_address + VTD_GSTS_REG),
-			     status_bit)) {
+	while (!sys_test_bit((base_address + VTD_GSTS_REG), status_bit)) {
 		/* Do nothing */
 	}
 }
 
-static void vtd_flush_irte_from_cache(const struct device *dev,
-				      uint8_t irte_idx)
+static void vtd_flush_irte_from_cache(const struct device *dev, uint8_t irte_idx)
 {
 	struct vtd_ictl_data *data = dev->data;
 
 	if (!data->pwc) {
-		cache_data_flush_range(&data->irte[irte_idx],
-				       sizeof(union vtd_irte));
+		cache_data_flush_range(&data->irte[irte_idx], sizeof(union vtd_irte));
 	}
 }
 
@@ -99,8 +92,7 @@ static void vtd_qi_init(const struct device *dev)
 	vtd_write_reg64(dev, VTD_IQT_REG, 0);
 	data->qi_tail = 0;
 
-	value = VTD_IQA_REG_GEN_CONTENT((uintptr_t)data->qi,
-					VTD_IQA_WIDTH_128_BIT, QI_SIZE);
+	value = VTD_IQA_REG_GEN_CONTENT((uintptr_t)data->qi, VTD_IQA_WIDTH_128_BIT, QI_SIZE);
 	vtd_write_reg64(dev, VTD_IQA_REG, value);
 
 	vtd_send_cmd(dev, VTD_GCMD_QIE, VTD_GSTS_QIES);
@@ -114,11 +106,10 @@ static inline void vtd_qi_tail_inc(const struct device *dev)
 	data->qi_tail %= (QI_NUM * sizeof(struct qi_descriptor));
 }
 
-static int vtd_qi_send(const struct device *dev,
-		       struct qi_descriptor *descriptor)
+static int vtd_qi_send(const struct device *dev, struct qi_descriptor *descriptor)
 {
 	struct vtd_ictl_data *data = dev->data;
-	union qi_wait_descriptor wait_desc = { 0 };
+	union qi_wait_descriptor wait_desc = {0};
 	struct qi_descriptor *desc;
 	uint32_t wait_status;
 	uint32_t wait_count;
@@ -172,7 +163,7 @@ static int vtd_qi_send(const struct device *dev,
 
 static int vtd_global_cc_invalidate(const struct device *dev)
 {
-	union qi_icc_descriptor iec_desc = { 0 };
+	union qi_icc_descriptor iec_desc = {0};
 
 	iec_desc.icc.type = QI_TYPE_ICC;
 	iec_desc.icc.granularity = 1; /* Global Invalidation requested */
@@ -182,7 +173,7 @@ static int vtd_global_cc_invalidate(const struct device *dev)
 
 static int vtd_global_iec_invalidate(const struct device *dev)
 {
-	union qi_iec_descriptor iec_desc = { 0 };
+	union qi_iec_descriptor iec_desc = {0};
 
 	iec_desc.iec.type = QI_TYPE_IEC;
 	iec_desc.iec.granularity = 0; /* Global Invalidation requested */
@@ -192,7 +183,7 @@ static int vtd_global_iec_invalidate(const struct device *dev)
 
 static int vtd_index_iec_invalidate(const struct device *dev, uint8_t irte_idx)
 {
-	union qi_iec_descriptor iec_desc = { 0 };
+	union qi_iec_descriptor iec_desc = {0};
 
 	iec_desc.iec.type = QI_TYPE_IEC;
 	iec_desc.iec.granularity = 1; /* Index based invalidation requested */
@@ -230,16 +221,15 @@ static void fault_status_description(uint32_t status)
 	}
 
 	if (status & VTD_FSTS_PPF) {
-		printk("Primary Pending Fault (PPF) %u\n",
-		       VTD_FSTS_FRI(status));
+		printk("Primary Pending Fault (PPF) %u\n", VTD_FSTS_FRI(status));
 	}
 }
 
 static void fault_record_description(uint64_t low, uint64_t high)
 {
 	printk("Fault %s request: Reason 0x%x info 0x%llx src 0x%x\n",
-	       (high & VTD_FRCD_T) ? "Read/Atomic" : "Write/Page",
-	       VTD_FRCD_FR(high), VTD_FRCD_FI(low), VTD_FRCD_SID(high));
+	       (high & VTD_FRCD_T) ? "Read/Atomic" : "Write/Page", VTD_FRCD_FR(high),
+	       VTD_FRCD_FI(low), VTD_FRCD_SID(high));
 }
 
 static void fault_event_isr(const void *arg)
@@ -261,21 +251,19 @@ static void fault_event_isr(const void *arg)
 		uint64_t fault_l, fault_h;
 
 		/* Reading fault's 64 lowest bits */
-		fault_l = vtd_read_reg64(dev, data->fault_record_reg +
-					 (VTD_FRCD_REG_SIZE * f_idx));
+		fault_l = vtd_read_reg64(dev, data->fault_record_reg + (VTD_FRCD_REG_SIZE * f_idx));
 		/* Reading fault's 64 highest bits */
-		fault_h = vtd_read_reg64(dev, data->fault_record_reg +
-				       (VTD_FRCD_REG_SIZE * f_idx) + 8);
+		fault_h = vtd_read_reg64(dev,
+					 data->fault_record_reg + (VTD_FRCD_REG_SIZE * f_idx) + 8);
 
 		if (fault_h & VTD_FRCD_F) {
 			fault_record_description(fault_l, fault_h);
 		}
 
 		/* Clearing the fault */
-		vtd_write_reg64(dev, data->fault_record_reg +
-				(VTD_FRCD_REG_SIZE * f_idx), fault_l);
-		vtd_write_reg64(dev, data->fault_record_reg +
-				(VTD_FRCD_REG_SIZE * f_idx) + 8, fault_h);
+		vtd_write_reg64(dev, data->fault_record_reg + (VTD_FRCD_REG_SIZE * f_idx), fault_l);
+		vtd_write_reg64(dev, data->fault_record_reg + (VTD_FRCD_REG_SIZE * f_idx) + 8,
+				fault_h);
 		f_idx++;
 	}
 out:
@@ -291,8 +279,7 @@ static void vtd_fault_event_init(const struct device *dev)
 
 	value = vtd_read_reg64(dev, VTD_CAP_REG);
 	data->fault_record_num = VTD_CAP_NFR(value) + 1;
-	data->fault_record_reg = DEVICE_MMIO_GET(dev) +
-		(uintptr_t)(16 * VTD_CAP_FRO(value));
+	data->fault_record_reg = DEVICE_MMIO_GET(dev) + (uintptr_t)(16 * VTD_CAP_FRO(value));
 
 	/* Allocating IRQ & vector and connecting the ISR handler,
 	 * by-passing remapping by using x86 functions directly.
@@ -301,15 +288,12 @@ static void vtd_fault_event_init(const struct device *dev)
 	data->fault_vector = z_x86_allocate_vector(0, -1);
 
 	vtd_write_reg32(dev, VTD_FEDATA_REG, data->fault_vector);
-	vtd_write_reg32(dev, VTD_FEADDR_REG,
-			pcie_msi_map(data->fault_irq, NULL, 0));
+	vtd_write_reg32(dev, VTD_FEADDR_REG, pcie_msi_map(data->fault_irq, NULL, 0));
 	vtd_write_reg32(dev, VTD_FEUADDR_REG, 0);
 
-	z_x86_irq_connect_on_vector(data->fault_irq, data->fault_vector,
-				    fault_event_isr, dev);
+	z_x86_irq_connect_on_vector(data->fault_irq, data->fault_vector, fault_event_isr, dev);
 
-	vtd_write_reg32(dev, VTD_FSTS_REG,
-			VTD_FSTS_CLEAR(vtd_read_reg32(dev, VTD_FSTS_REG)));
+	vtd_write_reg32(dev, VTD_FSTS_REG, VTD_FSTS_CLEAR(vtd_read_reg32(dev, VTD_FSTS_REG)));
 
 	/* Unmasking interrupts */
 	reg = vtd_read_reg32(dev, VTD_FECTL_REG);
@@ -317,8 +301,7 @@ static void vtd_fault_event_init(const struct device *dev)
 	vtd_write_reg32(dev, VTD_FECTL_REG, reg);
 }
 
-static int vtd_ictl_allocate_entries(const struct device *dev,
-				     uint8_t n_entries)
+static int vtd_ictl_allocate_entries(const struct device *dev, uint8_t n_entries)
 {
 	struct vtd_ictl_data *data = dev->data;
 	int irte_idx_start;
@@ -333,23 +316,18 @@ static int vtd_ictl_allocate_entries(const struct device *dev,
 	return irte_idx_start;
 }
 
-static uint32_t vtd_ictl_remap_msi(const struct device *dev,
-				   msi_vector_t *vector,
-				   uint8_t n_vector)
+static uint32_t vtd_ictl_remap_msi(const struct device *dev, msi_vector_t *vector, uint8_t n_vector)
 {
 	uint32_t shv = (n_vector > 1) ? VTD_INT_SHV : 0;
 
 	return VTD_MSI_MAP(vector->arch.irte, shv);
 }
 
-static int vtd_ictl_remap(const struct device *dev,
-			  uint8_t irte_idx,
-			  uint16_t vector,
-			  uint32_t flags,
-			  uint16_t src_id)
+static int vtd_ictl_remap(const struct device *dev, uint8_t irte_idx, uint16_t vector,
+			  uint32_t flags, uint16_t src_id)
 {
 	struct vtd_ictl_data *data = dev->data;
-	union vtd_irte irte = { 0 };
+	union vtd_irte irte = {0};
 	uint32_t delivery_mode;
 
 	irte.bits.vector = vector;
@@ -362,15 +340,13 @@ static int vtd_ictl_remap(const struct device *dev,
 		irte.bits.dst_id = 0xFF << 8;
 	}
 
-	if (src_id != USHRT_MAX &&
-	    !IS_ENABLED(CONFIG_INTEL_VTD_ICTL_NO_SRC_ID_CHECK)) {
+	if (src_id != USHRT_MAX && !IS_ENABLED(CONFIG_INTEL_VTD_ICTL_NO_SRC_ID_CHECK)) {
 		irte.bits.src_validation_type = 1;
 		irte.bits.src_id = src_id;
 	}
 
 	delivery_mode = (flags & IOAPIC_DELIVERY_MODE_MASK);
-	if ((delivery_mode != IOAPIC_FIXED) ||
-	    (delivery_mode != IOAPIC_LOW)) {
+	if ((delivery_mode != IOAPIC_FIXED) || (delivery_mode != IOAPIC_LOW)) {
 		delivery_mode = IOAPIC_LOW;
 	}
 
@@ -390,9 +366,7 @@ static int vtd_ictl_remap(const struct device *dev,
 	return 0;
 }
 
-static int vtd_ictl_set_irte_vector(const struct device *dev,
-				    uint8_t irte_idx,
-				    uint16_t vector)
+static int vtd_ictl_set_irte_vector(const struct device *dev, uint8_t irte_idx, uint16_t vector)
 {
 	struct vtd_ictl_data *data = dev->data;
 
@@ -401,8 +375,7 @@ static int vtd_ictl_set_irte_vector(const struct device *dev,
 	return 0;
 }
 
-static int vtd_ictl_get_irte_by_vector(const struct device *dev,
-				       uint16_t vector)
+static int vtd_ictl_get_irte_by_vector(const struct device *dev, uint16_t vector)
 {
 	struct vtd_ictl_data *data = dev->data;
 	int irte_idx;
@@ -416,17 +389,14 @@ static int vtd_ictl_get_irte_by_vector(const struct device *dev,
 	return -EINVAL;
 }
 
-static uint16_t vtd_ictl_get_irte_vector(const struct device *dev,
-					 uint8_t irte_idx)
+static uint16_t vtd_ictl_get_irte_vector(const struct device *dev, uint8_t irte_idx)
 {
 	struct vtd_ictl_data *data = dev->data;
 
 	return data->vectors[irte_idx];
 }
 
-static int vtd_ictl_set_irte_irq(const struct device *dev,
-				 uint8_t irte_idx,
-				 unsigned int irq)
+static int vtd_ictl_set_irte_irq(const struct device *dev, uint8_t irte_idx, unsigned int irq)
 {
 	struct vtd_ictl_data *data = dev->data;
 
@@ -435,8 +405,7 @@ static int vtd_ictl_set_irte_irq(const struct device *dev,
 	return 0;
 }
 
-static int vtd_ictl_get_irte_by_irq(const struct device *dev,
-				    unsigned int irq)
+static int vtd_ictl_get_irte_by_irq(const struct device *dev, unsigned int irq)
 {
 	struct vtd_ictl_data *data = dev->data;
 	int irte_idx;
@@ -450,16 +419,14 @@ static int vtd_ictl_get_irte_by_irq(const struct device *dev,
 	return -EINVAL;
 }
 
-static void vtd_ictl_set_irte_msi(const struct device *dev,
-				  uint8_t irte_idx, bool msi)
+static void vtd_ictl_set_irte_msi(const struct device *dev, uint8_t irte_idx, bool msi)
 {
 	struct vtd_ictl_data *data = dev->data;
 
 	data->msi[irte_idx] = msi;
 }
 
-static bool vtd_ictl_irte_is_msi(const struct device *dev,
-				 uint8_t irte_idx)
+static bool vtd_ictl_irte_is_msi(const struct device *dev, uint8_t irte_idx)
 {
 	struct vtd_ictl_data *data = dev->data;
 
@@ -495,8 +462,7 @@ static int vtd_ictl_init(const struct device *dev)
 		eime = VTD_IRTA_EIME;
 	}
 
-	value = VTD_IRTA_REG_GEN_CONTENT((uintptr_t)data->irte,
-					 IRTA_SIZE, eime);
+	value = VTD_IRTA_REG_GEN_CONTENT((uintptr_t)data->irte, IRTA_SIZE, eime);
 
 	vtd_write_reg64(dev, VTD_IRTA_REG, value);
 
@@ -506,16 +472,14 @@ static int vtd_ictl_init(const struct device *dev)
 		goto out;
 	}
 
-	if (!IS_ENABLED(CONFIG_X2APIC) &&
-	    IS_ENABLED(CONFIG_INTEL_VTD_ICTL_XAPIC_PASSTHROUGH)) {
+	if (!IS_ENABLED(CONFIG_X2APIC) && IS_ENABLED(CONFIG_INTEL_VTD_ICTL_XAPIC_PASSTHROUGH)) {
 		vtd_send_cmd(dev, VTD_GCMD_CFI, VTD_GSTS_CFIS);
 	}
 
 	vtd_send_cmd(dev, VTD_GCMD_SIRTP, VTD_GSTS_SIRTPS);
 	vtd_send_cmd(dev, VTD_GCMD_IRE, VTD_GSTS_IRES);
 
-	printk("Intel VT-D up and running (status 0x%x)\n",
-	       vtd_read_reg32(dev, VTD_GSTS_REG));
+	printk("Intel VT-D up and running (status 0x%x)\n", vtd_read_reg32(dev, VTD_GSTS_REG));
 
 out:
 	irq_unlock(key);
@@ -523,29 +487,25 @@ out:
 	return ret;
 }
 
-static const struct vtd_driver_api vtd_api = {
-	.allocate_entries = vtd_ictl_allocate_entries,
-	.remap_msi = vtd_ictl_remap_msi,
-	.remap = vtd_ictl_remap,
-	.set_irte_vector = vtd_ictl_set_irte_vector,
-	.get_irte_by_vector = vtd_ictl_get_irte_by_vector,
-	.get_irte_vector = vtd_ictl_get_irte_vector,
-	.set_irte_irq = vtd_ictl_set_irte_irq,
-	.get_irte_by_irq = vtd_ictl_get_irte_by_irq,
-	.set_irte_msi = vtd_ictl_set_irte_msi,
-	.irte_is_msi = vtd_ictl_irte_is_msi
-};
+static const struct vtd_driver_api vtd_api = {.allocate_entries = vtd_ictl_allocate_entries,
+					      .remap_msi = vtd_ictl_remap_msi,
+					      .remap = vtd_ictl_remap,
+					      .set_irte_vector = vtd_ictl_set_irte_vector,
+					      .get_irte_by_vector = vtd_ictl_get_irte_by_vector,
+					      .get_irte_vector = vtd_ictl_get_irte_vector,
+					      .set_irte_irq = vtd_ictl_set_irte_irq,
+					      .get_irte_by_irq = vtd_ictl_get_irte_by_irq,
+					      .set_irte_msi = vtd_ictl_set_irte_msi,
+					      .irte_is_msi = vtd_ictl_irte_is_msi};
 
 static struct vtd_ictl_data vtd_ictl_data_0 = {
-	.irqs = { -EINVAL },
-	.vectors = { -EINVAL },
+	.irqs = {-EINVAL},
+	.vectors = {-EINVAL},
 };
 
 static const struct vtd_ictl_cfg vtd_ictl_cfg_0 = {
 	DEVICE_MMIO_ROM_INIT(DT_DRV_INST(0)),
 };
 
-DEVICE_DT_INST_DEFINE(0,
-	      vtd_ictl_init, NULL,
-	      &vtd_ictl_data_0, &vtd_ictl_cfg_0,
-	      PRE_KERNEL_1, CONFIG_INTEL_VTD_ICTL_INIT_PRIORITY, &vtd_api);
+DEVICE_DT_INST_DEFINE(0, vtd_ictl_init, NULL, &vtd_ictl_data_0, &vtd_ictl_cfg_0, PRE_KERNEL_1,
+		      CONFIG_INTEL_VTD_ICTL_INIT_PRIORITY, &vtd_api);

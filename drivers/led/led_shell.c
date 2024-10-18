@@ -16,27 +16,25 @@ LOG_MODULE_REGISTER(led_shell);
 #define MAX_CHANNEL_ARGS 8
 
 enum {
-	arg_idx_dev		= 1,
-	arg_idx_led		= 2,
-	arg_idx_value		= 3,
+	arg_idx_dev = 1,
+	arg_idx_led = 2,
+	arg_idx_value = 3,
 };
 
-static int parse_common_args(const struct shell *sh, char **argv,
-			     const struct device * *dev, uint32_t *led)
+static int parse_common_args(const struct shell *sh, char **argv, const struct device **dev,
+			     uint32_t *led)
 {
 	char *end_ptr;
 
 	*dev = device_get_binding(argv[arg_idx_dev]);
 	if (!*dev) {
-		shell_error(sh,
-			    "LED device %s not found", argv[arg_idx_dev]);
+		shell_error(sh, "LED device %s not found", argv[arg_idx_dev]);
 		return -ENODEV;
 	}
 
 	*led = strtoul(argv[arg_idx_led], &end_ptr, 0);
 	if (*end_ptr != '\0') {
-		shell_error(sh, "Invalid LED number parameter %s",
-			    argv[arg_idx_led]);
+		shell_error(sh, "Invalid LED number parameter %s", argv[arg_idx_led]);
 		return -EINVAL;
 	}
 
@@ -128,7 +126,7 @@ static int cmd_get_info(const struct shell *sh, size_t argc, char **argv)
 		return err;
 	}
 
-	shell_print(sh, "Label      : %s", info->label ? : "<NULL>");
+	shell_print(sh, "Label      : %s", info->label ?: "<NULL>");
 	shell_print(sh, "Index      : %d", info->index);
 	shell_print(sh, "Num colors : %d", info->num_colors);
 	if (info->color_mapping) {
@@ -144,8 +142,7 @@ static int cmd_get_info(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-static int cmd_set_brightness(const struct shell *sh,
-			      size_t argc, char **argv)
+static int cmd_set_brightness(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	uint32_t led;
@@ -160,20 +157,17 @@ static int cmd_set_brightness(const struct shell *sh,
 
 	value = strtoul(argv[arg_idx_value], &end_ptr, 0);
 	if (*end_ptr != '\0') {
-		shell_error(sh, "Invalid LED brightness parameter %s",
-			     argv[arg_idx_value]);
+		shell_error(sh, "Invalid LED brightness parameter %s", argv[arg_idx_value]);
 		return -EINVAL;
 	}
 	if (value > 100) {
-		shell_error(sh, "Invalid LED brightness value %lu (max 100)",
-			    value);
+		shell_error(sh, "Invalid LED brightness value %lu (max 100)", value);
 		return -EINVAL;
 	}
 
-	shell_print(sh, "%s: setting LED %d brightness to %lu",
-		    dev->name, led, value);
+	shell_print(sh, "%s: setting LED %d brightness to %lu", dev->name, led, value);
 
-	err = led_set_brightness(dev, led, (uint8_t) value);
+	err = led_set_brightness(dev, led, (uint8_t)value);
 	if (err) {
 		shell_error(sh, "Error: %d", err);
 	}
@@ -197,9 +191,8 @@ static int cmd_set_color(const struct shell *sh, size_t argc, char **argv)
 
 	num_colors = argc - arg_idx_value;
 	if (num_colors > MAX_CHANNEL_ARGS) {
-		shell_error(sh,
-			    "Invalid number of colors %d (max %d)",
-			     num_colors, MAX_CHANNEL_ARGS);
+		shell_error(sh, "Invalid number of colors %d (max %d)", num_colors,
+			    MAX_CHANNEL_ARGS);
 		return -EINVAL;
 	}
 
@@ -209,21 +202,17 @@ static int cmd_set_color(const struct shell *sh, size_t argc, char **argv)
 
 		col = strtoul(argv[arg_idx_value + i], &end_ptr, 0);
 		if (*end_ptr != '\0') {
-			shell_error(sh, "Invalid LED color parameter %s",
-				    argv[arg_idx_value + i]);
+			shell_error(sh, "Invalid LED color parameter %s", argv[arg_idx_value + i]);
 			return -EINVAL;
 		}
 		if (col > 255) {
-			shell_error(sh,
-				    "Invalid LED color value %lu (max 255)",
-				    col);
+			shell_error(sh, "Invalid LED color value %lu (max 255)", col);
 			return -EINVAL;
 		}
 		color[i] = col;
 	}
 
-	shell_fprintf(sh, SHELL_NORMAL, "%s: setting LED %d color to %d",
-		      dev->name, led, color[0]);
+	shell_fprintf(sh, SHELL_NORMAL, "%s: setting LED %d color to %d", dev->name, led, color[0]);
 	for (i = 1; i < num_colors; i++) {
 		shell_fprintf(sh, SHELL_NORMAL, ":%d", color[i]);
 	}
@@ -252,20 +241,17 @@ static int cmd_set_channel(const struct shell *sh, size_t argc, char **argv)
 
 	value = strtoul(argv[arg_idx_value], &end_ptr, 0);
 	if (*end_ptr != '\0') {
-		shell_error(sh, "Invalid channel value parameter %s",
-			     argv[arg_idx_value]);
+		shell_error(sh, "Invalid channel value parameter %s", argv[arg_idx_value]);
 		return -EINVAL;
 	}
 	if (value > 255) {
-		shell_error(sh, "Invalid channel value %lu (max 255)",
-			    value);
+		shell_error(sh, "Invalid channel value %lu (max 255)", value);
 		return -EINVAL;
 	}
 
-	shell_print(sh, "%s: setting channel %d to %lu",
-		    dev->name, channel, value);
+	shell_print(sh, "%s: setting channel %d to %lu", dev->name, channel, value);
 
-	err = led_set_channel(dev, channel, (uint8_t) value);
+	err = led_set_channel(dev, channel, (uint8_t)value);
 	if (err) {
 		shell_error(sh, "Error: %d", err);
 	}
@@ -273,8 +259,7 @@ static int cmd_set_channel(const struct shell *sh, size_t argc, char **argv)
 	return err;
 }
 
-static int
-cmd_write_channels(const struct shell *sh, size_t argc, char **argv)
+static int cmd_write_channels(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	uint32_t start_channel;
@@ -290,9 +275,7 @@ cmd_write_channels(const struct shell *sh, size_t argc, char **argv)
 
 	num_channels = argc - arg_idx_value;
 	if (num_channels > MAX_CHANNEL_ARGS) {
-		shell_error(sh,
-			    "Can't write %d channels (max %d)",
-			     num_channels, MAX_CHANNEL_ARGS);
+		shell_error(sh, "Can't write %d channels (max %d)", num_channels, MAX_CHANNEL_ARGS);
 		return -EINVAL;
 	}
 
@@ -302,21 +285,19 @@ cmd_write_channels(const struct shell *sh, size_t argc, char **argv)
 
 		val = strtoul(argv[arg_idx_value + i], &end_ptr, 0);
 		if (*end_ptr != '\0') {
-			shell_error(sh,
-				    "Invalid channel value parameter %s",
+			shell_error(sh, "Invalid channel value parameter %s",
 				    argv[arg_idx_value + i]);
 			return -EINVAL;
 		}
 		if (val > 255) {
-			shell_error(sh,
-				    "Invalid channel value %lu (max 255)", val);
+			shell_error(sh, "Invalid channel value %lu (max 255)", val);
 			return -EINVAL;
 		}
 		value[i] = val;
 	}
 
-	shell_fprintf(sh, SHELL_NORMAL, "%s: writing from channel %d: %d",
-		      dev->name, start_channel, value[0]);
+	shell_fprintf(sh, SHELL_NORMAL, "%s: writing from channel %d: %d", dev->name, start_channel,
+		      value[0]);
 	for (i = 1; i < num_channels; i++) {
 		shell_fprintf(sh, SHELL_NORMAL, " %d", value[i]);
 	}

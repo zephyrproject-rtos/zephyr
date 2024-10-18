@@ -19,25 +19,16 @@ static int bmi270_bus_check_spi(const union bmi270_bus *bus)
 	return spi_is_ready_dt(&bus->spi) ? 0 : -ENODEV;
 }
 
-static int bmi270_reg_read_spi(const union bmi270_bus *bus,
-			       uint8_t start, uint8_t *data, uint16_t len)
+static int bmi270_reg_read_spi(const union bmi270_bus *bus, uint8_t start, uint8_t *data,
+			       uint16_t len)
 {
 	int ret;
 	uint8_t addr;
 	uint8_t tmp[2];
-	const struct spi_buf tx_buf = {
-		.buf = &addr,
-		.len = 1
-	};
-	const struct spi_buf_set tx = {
-		.buffers = &tx_buf,
-		.count = 1
-	};
+	const struct spi_buf tx_buf = {.buf = &addr, .len = 1};
+	const struct spi_buf_set tx = {.buffers = &tx_buf, .count = 1};
 	struct spi_buf rx_buf[2];
-	const struct spi_buf_set rx = {
-		.buffers = rx_buf,
-		.count = ARRAY_SIZE(rx_buf)
-	};
+	const struct spi_buf_set rx = {.buffers = rx_buf, .count = ARRAY_SIZE(rx_buf)};
 
 	/* First byte we read should be discarded. */
 	rx_buf[0].buf = &tmp;
@@ -57,19 +48,14 @@ static int bmi270_reg_read_spi(const union bmi270_bus *bus,
 	return 0;
 }
 
-static int bmi270_reg_write_spi(const union bmi270_bus *bus, uint8_t start,
-				const uint8_t *data, uint16_t len)
+static int bmi270_reg_write_spi(const union bmi270_bus *bus, uint8_t start, const uint8_t *data,
+				uint16_t len)
 {
 	int ret;
 	uint8_t addr;
-	const struct spi_buf tx_buf[2] = {
-		{.buf = &addr, .len = sizeof(addr)},
-		{.buf = (uint8_t *)data, .len = len}
-	};
-	const struct spi_buf_set tx = {
-		.buffers = tx_buf,
-		.count = ARRAY_SIZE(tx_buf)
-	};
+	const struct spi_buf tx_buf[2] = {{.buf = &addr, .len = sizeof(addr)},
+					  {.buf = (uint8_t *)data, .len = len}};
+	const struct spi_buf_set tx = {.buffers = tx_buf, .count = ARRAY_SIZE(tx_buf)};
 
 	addr = start & BMI270_REG_MASK;
 

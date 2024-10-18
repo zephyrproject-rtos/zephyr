@@ -19,9 +19,10 @@
 #include <zephyr/init.h>
 #include <zephyr/spinlock.h>
 
-#define CYC_PER_TICK ((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec()	\
-			      / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
-#define MAX_CYC 0xffffffffu
+#define CYC_PER_TICK                                                                               \
+	((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec() /                                      \
+		    (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
+#define MAX_CYC   0xffffffffu
 #define MAX_TICKS ((MAX_CYC - CYC_PER_TICK) / CYC_PER_TICK)
 #define MIN_DELAY 1
 
@@ -39,8 +40,8 @@ static systimer_hal_context_t systimer_hal;
 
 static void set_systimer_alarm(uint64_t time)
 {
-	systimer_hal_select_alarm_mode(&systimer_hal,
-		SYSTIMER_ALARM_OS_TICK_CORE0, SYSTIMER_ALARM_MODE_ONESHOT);
+	systimer_hal_select_alarm_mode(&systimer_hal, SYSTIMER_ALARM_OS_TICK_CORE0,
+				       SYSTIMER_ALARM_MODE_ONESHOT);
 
 	systimer_counter_value_t alarm = {.val = time};
 
@@ -145,20 +146,19 @@ static int sys_clock_driver_init(void)
 {
 	int ret;
 
-	ret = esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(systimer0), 0, irq),
+	ret = esp_intr_alloc(
+		DT_IRQ_BY_IDX(DT_NODELABEL(systimer0), 0, irq),
 		ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(systimer0), 0, priority)) |
-		ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(systimer0), 0, flags)),
-		sys_timer_isr,
-		NULL,
-		NULL);
+			ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(systimer0), 0, flags)),
+		sys_timer_isr, NULL, NULL);
 
 	if (ret != 0) {
 		return ret;
 	}
 
 	systimer_hal_init(&systimer_hal);
-	systimer_hal_connect_alarm_counter(&systimer_hal,
-		SYSTIMER_ALARM_OS_TICK_CORE0, SYSTIMER_COUNTER_OS_TICK);
+	systimer_hal_connect_alarm_counter(&systimer_hal, SYSTIMER_ALARM_OS_TICK_CORE0,
+					   SYSTIMER_COUNTER_OS_TICK);
 
 	systimer_hal_enable_counter(&systimer_hal, SYSTIMER_COUNTER_OS_TICK);
 	systimer_hal_counter_can_stall_by_cpu(&systimer_hal, SYSTIMER_COUNTER_OS_TICK, 0, true);
@@ -167,5 +167,4 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_1,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_1, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

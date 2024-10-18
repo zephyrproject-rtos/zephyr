@@ -14,7 +14,7 @@
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(dma_sam0, CONFIG_DMA_LOG_LEVEL);
 
-#define DMA_REGS	((Dmac *)DT_INST_REG_ADDR(0))
+#define DMA_REGS ((Dmac *)DT_INST_REG_ADDR(0))
 
 struct dma_sam0_channel {
 	dma_callback_t cb;
@@ -43,8 +43,7 @@ static void dma_sam0_isr(const struct device *dev)
 
 	if (pend & DMAC_INTPEND_TERR) {
 		if (chdata->cb) {
-			chdata->cb(dev, chdata->user_data,
-				   channel, -DMAC_INTPEND_TERR);
+			chdata->cb(dev, chdata->user_data, channel, -DMAC_INTPEND_TERR);
 		}
 	} else if (pend & DMAC_INTPEND_TCMPL) {
 		if (chdata->cb) {
@@ -59,14 +58,13 @@ static void dma_sam0_isr(const struct device *dev)
 }
 
 /* Configure a channel */
-static int dma_sam0_config(const struct device *dev, uint32_t channel,
-			   struct dma_config *config)
+static int dma_sam0_config(const struct device *dev, uint32_t channel, struct dma_config *config)
 {
 	struct dma_sam0_data *data = dev->data;
 	DmacDescriptor *desc = &data->descriptors[channel];
 	struct dma_block_config *block = config->head_block;
 	struct dma_sam0_channel *channel_control;
-	DMAC_BTCTRL_Type btctrl = { .reg = 0 };
+	DMAC_BTCTRL_Type btctrl = {.reg = 0};
 	unsigned int key;
 
 	if (channel >= DMAC_CH_NUM) {
@@ -107,12 +105,12 @@ static int dma_sam0_config(const struct device *dev, uint32_t channel,
 		 * A single software trigger will start the
 		 * transfer
 		 */
-		DMA_REGS->CHCTRLB.reg = DMAC_CHCTRLB_TRIGACT_TRANSACTION |
-				    DMAC_CHCTRLB_TRIGSRC(config->dma_slot);
+		DMA_REGS->CHCTRLB.reg =
+			DMAC_CHCTRLB_TRIGACT_TRANSACTION | DMAC_CHCTRLB_TRIGSRC(config->dma_slot);
 	} else {
 		/* One peripheral trigger per beat */
-		DMA_REGS->CHCTRLB.reg = DMAC_CHCTRLB_TRIGACT_BEAT |
-				    DMAC_CHCTRLB_TRIGSRC(config->dma_slot);
+		DMA_REGS->CHCTRLB.reg =
+			DMAC_CHCTRLB_TRIGACT_BEAT | DMAC_CHCTRLB_TRIGSRC(config->dma_slot);
 	}
 
 	/* Set the priority */
@@ -134,20 +132,20 @@ static int dma_sam0_config(const struct device *dev, uint32_t channel,
 	DMA_REGS->CHINTFLAG.reg = DMAC_CHINTFLAG_TERR | DMAC_CHINTFLAG_TCMPL;
 #else
 	/* Channels have separate configuration registers */
-	DmacChannel * chcfg = &DMA_REGS->Channel[channel];
+	DmacChannel *chcfg = &DMA_REGS->Channel[channel];
 
 	if (config->channel_direction == MEMORY_TO_MEMORY) {
 		/*
 		 * A single software trigger will start the
 		 * transfer
 		 */
-		chcfg->CHCTRLA.reg = DMAC_CHCTRLA_TRIGACT_TRANSACTION |
-				     DMAC_CHCTRLA_TRIGSRC(config->dma_slot);
+		chcfg->CHCTRLA.reg =
+			DMAC_CHCTRLA_TRIGACT_TRANSACTION | DMAC_CHCTRLA_TRIGSRC(config->dma_slot);
 	} else if ((config->channel_direction == MEMORY_TO_PERIPHERAL) ||
-		(config->channel_direction == PERIPHERAL_TO_MEMORY)) {
+		   (config->channel_direction == PERIPHERAL_TO_MEMORY)) {
 		/* One peripheral trigger per beat */
-		chcfg->CHCTRLA.reg = DMAC_CHCTRLA_TRIGACT_BURST |
-				     DMAC_CHCTRLA_TRIGSRC(config->dma_slot);
+		chcfg->CHCTRLA.reg =
+			DMAC_CHCTRLA_TRIGACT_BURST | DMAC_CHCTRLA_TRIGSRC(config->dma_slot);
 	} else {
 		LOG_ERR("Direction error. %d", config->channel_direction);
 		goto inval;
@@ -173,8 +171,7 @@ static int dma_sam0_config(const struct device *dev, uint32_t channel,
 	}
 
 	if (config->source_burst_length > 0U) {
-		chcfg->CHCTRLA.reg |= DMAC_CHCTRLA_BURSTLEN(
-			config->source_burst_length - 1U);
+		chcfg->CHCTRLA.reg |= DMAC_CHCTRLA_BURSTLEN(config->source_burst_length - 1U);
 	}
 
 	/* Enable the interrupts */
@@ -247,11 +244,8 @@ static int dma_sam0_config(const struct device *dev, uint32_t channel,
 	channel_control->cb = config->dma_callback;
 	channel_control->user_data = config->user_data;
 
-	LOG_DBG("Configured channel %d for %08X to %08X (%u)",
-		channel,
-		block->source_address,
-		block->dest_address,
-		block->block_size);
+	LOG_DBG("Configured channel %d for %08X to %08X (%u)", channel, block->source_address,
+		block->dest_address, block->block_size);
 
 	irq_unlock(key);
 	return 0;
@@ -277,7 +271,7 @@ static int dma_sam0_start(const struct device *dev, uint32_t channel)
 	}
 
 #else
-	DmacChannel * chcfg = &DMA_REGS->Channel[channel];
+	DmacChannel *chcfg = &DMA_REGS->Channel[channel];
 
 	chcfg->CHCTRLA.bit.ENABLE = 1;
 
@@ -302,7 +296,7 @@ static int dma_sam0_stop(const struct device *dev, uint32_t channel)
 	DMA_REGS->CHID.reg = channel;
 	DMA_REGS->CHCTRLA.reg = 0;
 #else
-	DmacChannel * chcfg = &DMA_REGS->Channel[channel];
+	DmacChannel *chcfg = &DMA_REGS->Channel[channel];
 
 	chcfg->CHCTRLA.bit.ENABLE = 0;
 #endif
@@ -312,8 +306,8 @@ static int dma_sam0_stop(const struct device *dev, uint32_t channel)
 	return 0;
 }
 
-static int dma_sam0_reload(const struct device *dev, uint32_t channel,
-			   uint32_t src, uint32_t dst, size_t size)
+static int dma_sam0_reload(const struct device *dev, uint32_t channel, uint32_t src, uint32_t dst,
+			   size_t size)
 {
 	struct dma_sam0_data *data = dev->data;
 	DmacDescriptor *desc = &data->descriptors[channel];
@@ -345,8 +339,7 @@ static int dma_sam0_reload(const struct device *dev, uint32_t channel,
 		desc->DSTADDR.reg = dst;
 	}
 
-	LOG_DBG("Reloaded channel %d for %08X to %08X (%u)",
-		channel, src, dst, size);
+	LOG_DBG("Reloaded channel %d for %08X to %08X (%u)", channel, src, dst, size);
 
 	irq_unlock(key);
 	return 0;
@@ -356,8 +349,7 @@ inval:
 	return -EINVAL;
 }
 
-static int dma_sam0_get_status(const struct device *dev, uint32_t channel,
-			       struct dma_status *stat)
+static int dma_sam0_get_status(const struct device *dev, uint32_t channel, struct dma_status *stat)
 {
 	struct dma_sam0_data *data = dev->data;
 	uint32_t act;
@@ -370,8 +362,7 @@ static int dma_sam0_get_status(const struct device *dev, uint32_t channel,
 	if ((act & DMAC_ACTIVE_ABUSY) &&
 	    ((act & DMAC_ACTIVE_ID_Msk) >> DMAC_ACTIVE_ID_Pos) == channel) {
 		stat->busy = true;
-		stat->pending_length = (act & DMAC_ACTIVE_BTCNT_Msk) >>
-				       DMAC_ACTIVE_BTCNT_Pos;
+		stat->pending_length = (act & DMAC_ACTIVE_BTCNT_Msk) >> DMAC_ACTIVE_BTCNT_Pos;
 	} else {
 		stat->busy = false;
 		stat->pending_length = data->descriptors_wb[channel].BTCNT.reg;
@@ -393,12 +384,11 @@ static int dma_sam0_get_status(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
-#define DMA_SAM0_IRQ_CONNECT(n)						 \
-	do {								 \
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, n, irq),		 \
-			    DT_INST_IRQ_BY_IDX(0, n, priority),		 \
-			    dma_sam0_isr, DEVICE_DT_INST_GET(0), 0);	 \
-		irq_enable(DT_INST_IRQ_BY_IDX(0, n, irq));		 \
+#define DMA_SAM0_IRQ_CONNECT(n)                                                                    \
+	do {                                                                                       \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, n, irq), DT_INST_IRQ_BY_IDX(0, n, priority),     \
+			    dma_sam0_isr, DEVICE_DT_INST_GET(0), 0);                               \
+		irq_enable(DT_INST_IRQ_BY_IDX(0, n, irq));                                         \
 	} while (false)
 
 static int dma_sam0_init(const struct device *dev)
@@ -418,9 +408,8 @@ static int dma_sam0_init(const struct device *dev)
 	DMA_REGS->WRBADDR.reg = (uintptr_t)&data->descriptors_wb;
 
 	/* Statically map each level to the same numeric priority */
-	DMA_REGS->PRICTRL0.reg =
-		DMAC_PRICTRL0_LVLPRI0(0) | DMAC_PRICTRL0_LVLPRI1(1) |
-		DMAC_PRICTRL0_LVLPRI2(2) | DMAC_PRICTRL0_LVLPRI3(3);
+	DMA_REGS->PRICTRL0.reg = DMAC_PRICTRL0_LVLPRI0(0) | DMAC_PRICTRL0_LVLPRI1(1) |
+				 DMAC_PRICTRL0_LVLPRI2(2) | DMAC_PRICTRL0_LVLPRI3(3);
 
 	/* Enable the unit and enable all priorities */
 	DMA_REGS->CTRL.reg = DMAC_CTRL_DMAENABLE | DMAC_CTRL_LVLEN(0x0F);
@@ -454,6 +443,5 @@ static const struct dma_driver_api dma_sam0_api = {
 	.get_status = dma_sam0_get_status,
 };
 
-DEVICE_DT_INST_DEFINE(0, &dma_sam0_init, NULL,
-		    &dmac_data, NULL, PRE_KERNEL_1,
-		    CONFIG_DMA_INIT_PRIORITY, &dma_sam0_api);
+DEVICE_DT_INST_DEFINE(0, &dma_sam0_init, NULL, &dmac_data, NULL, PRE_KERNEL_1,
+		      CONFIG_DMA_INIT_PRIORITY, &dma_sam0_api);

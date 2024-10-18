@@ -142,7 +142,7 @@ static void IRAM_ATTR dma_esp32_isr_handle(const struct device *dev, uint8_t rx_
 #endif
 
 static int dma_esp32_config_rx_descriptor(struct dma_esp32_channel *dma_channel,
-						struct dma_block_config *block)
+					  struct dma_block_config *block)
 {
 	if (!block) {
 		LOG_ERR("At least one dma block is required");
@@ -151,7 +151,7 @@ static int dma_esp32_config_rx_descriptor(struct dma_esp32_channel *dma_channel,
 
 	if (!esp_ptr_dma_capable((uint32_t *)block->dest_address)
 #if defined(CONFIG_ESP_SPIRAM)
-	&& !esp_ptr_dma_ext_capable((uint32_t *)block->dest_address)
+	    && !esp_ptr_dma_ext_capable((uint32_t *)block->dest_address)
 #endif
 	) {
 		LOG_ERR("Rx buffer not in DMA capable memory: %p", (uint32_t *)block->dest_address);
@@ -188,7 +188,7 @@ static int dma_esp32_config_rx_descriptor(struct dma_esp32_channel *dma_channel,
 }
 
 static int dma_esp32_config_rx(const struct device *dev, struct dma_esp32_channel *dma_channel,
-				struct dma_config *config_dma)
+			       struct dma_config *config_dma)
 {
 	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
 	struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;
@@ -225,7 +225,7 @@ static int dma_esp32_config_rx(const struct device *dev, struct dma_esp32_channe
 }
 
 static int dma_esp32_config_tx_descriptor(struct dma_esp32_channel *dma_channel,
-						struct dma_block_config *block)
+					  struct dma_block_config *block)
 {
 	if (!block) {
 		LOG_ERR("At least one dma block is required");
@@ -234,7 +234,7 @@ static int dma_esp32_config_tx_descriptor(struct dma_esp32_channel *dma_channel,
 
 	if (!esp_ptr_dma_capable((uint32_t *)block->source_address)
 #if defined(CONFIG_ESP_SPIRAM)
-	&& !esp_ptr_dma_ext_capable((uint32_t *)block->source_address)
+	    && !esp_ptr_dma_ext_capable((uint32_t *)block->source_address)
 #endif
 	) {
 		LOG_ERR("Tx buffer not in DMA capable memory: %p",
@@ -274,7 +274,7 @@ static int dma_esp32_config_tx_descriptor(struct dma_esp32_channel *dma_channel,
 }
 
 static int dma_esp32_config_tx(const struct device *dev, struct dma_esp32_channel *dma_channel,
-				struct dma_config *config_dma)
+			       struct dma_config *config_dma)
 {
 	struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;
 
@@ -309,7 +309,7 @@ static int dma_esp32_config_tx(const struct device *dev, struct dma_esp32_channe
 }
 
 static int dma_esp32_config(const struct device *dev, uint32_t channel,
-				struct dma_config *config_dma)
+			    struct dma_config *config_dma)
 {
 	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
 	struct dma_esp32_channel *dma_channel = &config->dma_channel[channel];
@@ -385,10 +385,10 @@ static int dma_esp32_start(const struct device *dev, uint32_t channel)
 		struct dma_esp32_channel *dma_channel_tx =
 			&config->dma_channel[(dma_channel->channel_id * 2) + 1];
 
-		gdma_ll_rx_enable_interrupt(data->hal.dev, dma_channel->channel_id,
-					UINT32_MAX, true);
+		gdma_ll_rx_enable_interrupt(data->hal.dev, dma_channel->channel_id, UINT32_MAX,
+					    true);
 		gdma_ll_tx_enable_interrupt(data->hal.dev, dma_channel->channel_id,
-					GDMA_LL_EVENT_TX_EOF, true);
+					    GDMA_LL_EVENT_TX_EOF, true);
 
 		gdma_ll_rx_set_desc_addr(data->hal.dev, dma_channel->channel_id,
 					 (int32_t)dma_channel_rx->desc_list);
@@ -400,13 +400,13 @@ static int dma_esp32_start(const struct device *dev, uint32_t channel)
 	} else {
 		if (dma_channel->dir == DMA_RX) {
 			gdma_ll_rx_enable_interrupt(data->hal.dev, dma_channel->channel_id,
-					UINT32_MAX, true);
+						    UINT32_MAX, true);
 			gdma_ll_rx_set_desc_addr(data->hal.dev, dma_channel->channel_id,
 						 (int32_t)dma_channel->desc_list);
 			gdma_ll_rx_start(data->hal.dev, dma_channel->channel_id);
 		} else if (dma_channel->dir == DMA_TX) {
 			gdma_ll_tx_enable_interrupt(data->hal.dev, dma_channel->channel_id,
-					GDMA_LL_EVENT_TX_EOF, true);
+						    GDMA_LL_EVENT_TX_EOF, true);
 			gdma_ll_tx_set_desc_addr(data->hal.dev, dma_channel->channel_id,
 						 (int32_t)dma_channel->desc_list);
 			gdma_ll_tx_start(data->hal.dev, dma_channel->channel_id);
@@ -431,21 +431,21 @@ static int dma_esp32_stop(const struct device *dev, uint32_t channel)
 	}
 
 	if (dma_channel->periph_id == SOC_GDMA_TRIG_PERIPH_M2M0) {
-		gdma_ll_rx_enable_interrupt(data->hal.dev, dma_channel->channel_id,
-				UINT32_MAX, false);
+		gdma_ll_rx_enable_interrupt(data->hal.dev, dma_channel->channel_id, UINT32_MAX,
+					    false);
 		gdma_ll_tx_enable_interrupt(data->hal.dev, dma_channel->channel_id,
-				GDMA_LL_EVENT_TX_EOF, false);
+					    GDMA_LL_EVENT_TX_EOF, false);
 		gdma_ll_rx_stop(data->hal.dev, dma_channel->channel_id);
 		gdma_ll_tx_stop(data->hal.dev, dma_channel->channel_id);
 	}
 
 	if (dma_channel->dir == DMA_RX) {
-		gdma_ll_rx_enable_interrupt(data->hal.dev, dma_channel->channel_id,
-				UINT32_MAX, false);
+		gdma_ll_rx_enable_interrupt(data->hal.dev, dma_channel->channel_id, UINT32_MAX,
+					    false);
 		gdma_ll_rx_stop(data->hal.dev, dma_channel->channel_id);
 	} else if (dma_channel->dir == DMA_TX) {
 		gdma_ll_tx_enable_interrupt(data->hal.dev, dma_channel->channel_id,
-				GDMA_LL_EVENT_TX_EOF, false);
+					    GDMA_LL_EVENT_TX_EOF, false);
 		gdma_ll_tx_stop(data->hal.dev, dma_channel->channel_id);
 	}
 
@@ -478,9 +478,9 @@ static int dma_esp32_get_status(const struct device *dev, uint32_t channel,
 			data->hal.dev, dma_channel->channel_id);
 		if (desc >= dma_channel->desc_list) {
 			status->read_position = desc - dma_channel->desc_list;
-			status->total_copied = desc->dw0.length
-						+ dma_channel->desc_list[0].dw0.size
-						* status->read_position;
+			status->total_copied =
+				desc->dw0.length +
+				dma_channel->desc_list[0].dw0.size * status->read_position;
 		}
 	} else if (dma_channel->dir == DMA_TX) {
 		status->busy = !gdma_ll_tx_is_fsm_idle(data->hal.dev, dma_channel->channel_id);
@@ -557,11 +557,10 @@ static int dma_esp32_configure_irq(const struct device *dev)
 
 	for (uint8_t i = 0; i < config->irq_size; i++) {
 		int ret = esp_intr_alloc(irq_cfg[i].irq_source,
-			ESP_PRIO_TO_FLAGS(irq_cfg[i].irq_priority) |
-				ESP_INT_FLAGS_CHECK(irq_cfg[i].irq_flags) | ESP_INTR_FLAG_IRAM,
-			(ISR_HANDLER)config->irq_handlers[i],
-			(void *)dev,
-			NULL);
+					 ESP_PRIO_TO_FLAGS(irq_cfg[i].irq_priority) |
+						 ESP_INT_FLAGS_CHECK(irq_cfg[i].irq_flags) |
+						 ESP_INTR_FLAG_IRAM,
+					 (ISR_HANDLER)config->irq_handlers[i], (void *)dev, NULL);
 		if (ret != 0) {
 			LOG_ERR("Could not allocate interrupt handler");
 			return ret;
@@ -670,25 +669,19 @@ DMA_ESP32_DEFINE_IRQ_HANDLER(4)
 #endif
 
 static void *irq_handlers[] = {
-	ESP32_DMA_HANDLER(0),
-	ESP32_DMA_HANDLER(1),
-	ESP32_DMA_HANDLER(2),
+	ESP32_DMA_HANDLER(0), ESP32_DMA_HANDLER(1), ESP32_DMA_HANDLER(2),
 #if DMA_MAX_CHANNEL >= 5
-	ESP32_DMA_HANDLER(3),
-	ESP32_DMA_HANDLER(4),
+	ESP32_DMA_HANDLER(3), ESP32_DMA_HANDLER(4),
 #endif
-	};
+};
 
-#define IRQ_NUM(idx)	DT_NUM_IRQS(DT_DRV_INST(idx))
-#define IRQ_ENTRY(n, idx) {	\
-	DT_INST_IRQ_BY_IDX(idx, n, irq),	\
-	DT_INST_IRQ_BY_IDX(idx, n, priority),	\
-	DT_INST_IRQ_BY_IDX(idx, n, flags)	},
+#define IRQ_NUM(idx) DT_NUM_IRQS(DT_DRV_INST(idx))
+#define IRQ_ENTRY(n, idx)                                                                          \
+	{DT_INST_IRQ_BY_IDX(idx, n, irq), DT_INST_IRQ_BY_IDX(idx, n, priority),                    \
+	 DT_INST_IRQ_BY_IDX(idx, n, flags)},
 
 #define DMA_ESP32_INIT(idx)                                                                        \
-	static struct irq_config irq_config_##idx[] = {                                            \
-		LISTIFY(IRQ_NUM(idx), IRQ_ENTRY, (), idx)                                          \
-	};                                                                                         \
+	static struct irq_config irq_config_##idx[] = {LISTIFY(IRQ_NUM(idx), IRQ_ENTRY, (), idx) };   \
 	static struct dma_esp32_config dma_config_##idx = {                                        \
 		.irq_config = irq_config_##idx,                                                    \
 		.irq_size = IRQ_NUM(idx),                                                          \
@@ -704,7 +697,7 @@ static void *irq_handlers[] = {
 				.dev = (gdma_dev_t *)DT_INST_REG_ADDR(idx),                        \
 			},                                                                         \
 	};                                                                                         \
-												   \
+                                                                                                   \
 	DEVICE_DT_INST_DEFINE(idx, &dma_esp32_init, NULL, &dma_data_##idx, &dma_config_##idx,      \
 			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY, &dma_esp32_api);
 

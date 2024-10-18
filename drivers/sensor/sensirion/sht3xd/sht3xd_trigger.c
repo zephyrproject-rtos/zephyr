@@ -32,9 +32,7 @@ static int sht3xd_rh_processed_to_raw(const struct sensor_value *val)
 	return ((uval * 0xFFFF) / 100) / 1000000;
 }
 
-int sht3xd_attr_set(const struct device *dev,
-		    enum sensor_channel chan,
-		    enum sensor_attribute attr,
+int sht3xd_attr_set(const struct device *dev, enum sensor_channel chan, enum sensor_attribute attr,
 		    const struct sensor_value *val)
 {
 	struct sht3xd_data *data = dev->data;
@@ -81,14 +79,10 @@ int sht3xd_attr_set(const struct device *dev,
 	return 0;
 }
 
-static inline void setup_alert(const struct device *dev,
-			       bool enable)
+static inline void setup_alert(const struct device *dev, bool enable)
 {
-	const struct sht3xd_config *cfg =
-		(const struct sht3xd_config *)dev->config;
-	unsigned int flags = enable
-		? GPIO_INT_EDGE_TO_ACTIVE
-		: GPIO_INT_DISABLE;
+	const struct sht3xd_config *cfg = (const struct sht3xd_config *)dev->config;
+	unsigned int flags = enable ? GPIO_INT_EDGE_TO_ACTIVE : GPIO_INT_DISABLE;
 
 	gpio_pin_interrupt_configure_dt(&cfg->alert_gpio, flags);
 }
@@ -108,13 +102,11 @@ static inline void handle_alert(const struct device *dev)
 #endif
 }
 
-int sht3xd_trigger_set(const struct device *dev,
-		       const struct sensor_trigger *trig,
+int sht3xd_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler)
 {
 	struct sht3xd_data *data = dev->data;
-	const struct sht3xd_config *cfg =
-		(const struct sht3xd_config *)dev->config;
+	const struct sht3xd_config *cfg = (const struct sht3xd_config *)dev->config;
 
 	setup_alert(dev, false);
 
@@ -141,11 +133,9 @@ int sht3xd_trigger_set(const struct device *dev,
 	return 0;
 }
 
-static void sht3xd_gpio_callback(const struct device *dev,
-				 struct gpio_callback *cb, uint32_t pins)
+static void sht3xd_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	struct sht3xd_data *data =
-		CONTAINER_OF(cb, struct sht3xd_data, alert_cb);
+	struct sht3xd_data *data = CONTAINER_OF(cb, struct sht3xd_data, alert_cb);
 
 	handle_alert(data->dev);
 }
@@ -179,8 +169,7 @@ static void sht3xd_thread(void *p1, void *p2, void *p3)
 #ifdef CONFIG_SHT3XD_TRIGGER_GLOBAL_THREAD
 static void sht3xd_work_cb(struct k_work *work)
 {
-	struct sht3xd_data *data =
-		CONTAINER_OF(work, struct sht3xd_data, work);
+	struct sht3xd_data *data = CONTAINER_OF(work, struct sht3xd_data, work);
 
 	sht3xd_thread_cb(data->dev);
 }
@@ -203,8 +192,7 @@ int sht3xd_init_interrupt(const struct device *dev)
 		return -EIO;
 	}
 
-	gpio_init_callback(&data->alert_cb, sht3xd_gpio_callback,
-			   BIT(cfg->alert_gpio.pin));
+	gpio_init_callback(&data->alert_cb, sht3xd_gpio_callback, BIT(cfg->alert_gpio.pin));
 	rc = gpio_add_callback(cfg->alert_gpio.port, &data->alert_cb);
 	if (rc < 0) {
 		LOG_DBG("Failed to set gpio callback!");
@@ -216,14 +204,12 @@ int sht3xd_init_interrupt(const struct device *dev)
 	data->rh_low = 0U;
 	data->t_high = 0xFFFF;
 	data->rh_high = 0xFFFF;
-	if (sht3xd_write_reg(dev, SHT3XD_CMD_WRITE_TH_HIGH_SET, 0xFFFF)
-	    < 0) {
+	if (sht3xd_write_reg(dev, SHT3XD_CMD_WRITE_TH_HIGH_SET, 0xFFFF) < 0) {
 		LOG_DBG("Failed to write threshold high set value!");
 		return -EIO;
 	}
 
-	if (sht3xd_write_reg(dev, SHT3XD_CMD_WRITE_TH_HIGH_CLEAR,
-			     0xFFFF) < 0) {
+	if (sht3xd_write_reg(dev, SHT3XD_CMD_WRITE_TH_HIGH_CLEAR, 0xFFFF) < 0) {
 		LOG_DBG("Failed to write threshold high clear value!");
 		return -EIO;
 	}
@@ -241,10 +227,8 @@ int sht3xd_init_interrupt(const struct device *dev)
 #if defined(CONFIG_SHT3XD_TRIGGER_OWN_THREAD)
 	k_sem_init(&data->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
-	k_thread_create(&data->thread, data->thread_stack,
-			CONFIG_SHT3XD_THREAD_STACK_SIZE,
-			sht3xd_thread, data,
-			NULL, NULL, K_PRIO_COOP(CONFIG_SHT3XD_THREAD_PRIORITY),
+	k_thread_create(&data->thread, data->thread_stack, CONFIG_SHT3XD_THREAD_STACK_SIZE,
+			sht3xd_thread, data, NULL, NULL, K_PRIO_COOP(CONFIG_SHT3XD_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_SHT3XD_TRIGGER_GLOBAL_THREAD)
 	data->work.handler = sht3xd_work_cb;

@@ -21,23 +21,17 @@
 LOG_MODULE_REGISTER(SHT3XD, CONFIG_SENSOR_LOG_LEVEL);
 
 #ifdef CONFIG_SHT3XD_SINGLE_SHOT_MODE
-static const uint16_t measure_cmd[3] = {
-	0x2416, 0x240B, 0x2400
-};
+static const uint16_t measure_cmd[3] = {0x2416, 0x240B, 0x2400};
 #endif
 #ifdef CONFIG_SHT3XD_PERIODIC_MODE
-static const uint16_t measure_cmd[5][3] = {
-	{ 0x202F, 0x2024, 0x2032 },
-	{ 0x212D, 0x2126, 0x2130 },
-	{ 0x222B, 0x2220, 0x2236 },
-	{ 0x2329, 0x2322, 0x2334 },
-	{ 0x272A, 0x2721, 0x2737 }
-};
+static const uint16_t measure_cmd[5][3] = {{0x202F, 0x2024, 0x2032},
+					   {0x212D, 0x2126, 0x2130},
+					   {0x222B, 0x2220, 0x2236},
+					   {0x2329, 0x2322, 0x2334},
+					   {0x272A, 0x2721, 0x2737}};
 #endif
 
-static const int measure_wait[3] = {
-	4000, 6000, 15000
-};
+static const int measure_wait[3] = {4000, 6000, 15000};
 
 /*
  * CRC algorithm parameters were taken from the
@@ -72,8 +66,7 @@ int sht3xd_write_reg(const struct device *dev, uint16_t cmd, uint16_t val)
 	return i2c_write_dt(&config->bus, tx_buf, sizeof(tx_buf));
 }
 
-static int sht3xd_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
+static int sht3xd_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	const struct sht3xd_config *config = dev->config;
 	struct sht3xd_data *data = dev->data;
@@ -84,9 +77,7 @@ static int sht3xd_sample_fetch(const struct device *dev,
 
 #ifdef CONFIG_SHT3XD_SINGLE_SHOT_MODE
 	/* start single shot measurement */
-	if (sht3xd_write_command(dev,
-				 measure_cmd[SHT3XD_REPEATABILITY_IDX])
-	    < 0) {
+	if (sht3xd_write_command(dev, measure_cmd[SHT3XD_REPEATABILITY_IDX]) < 0) {
 		LOG_DBG("Failed to set single shot measurement mode!");
 		return -EIO;
 	}
@@ -102,8 +93,7 @@ static int sht3xd_sample_fetch(const struct device *dev,
 
 	sys_put_be16(SHT3XD_CMD_FETCH, tx_buf);
 
-	if (i2c_write_read_dt(&config->bus, tx_buf, sizeof(tx_buf),
-			      rx_buf, sizeof(rx_buf)) < 0) {
+	if (i2c_write_read_dt(&config->bus, tx_buf, sizeof(tx_buf), rx_buf, sizeof(rx_buf)) < 0) {
 		LOG_DBG("Failed to read data sample!");
 		return -EIO;
 	}
@@ -127,8 +117,7 @@ static int sht3xd_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static int sht3xd_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
+static int sht3xd_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	const struct sht3xd_data *data = dev->data;
@@ -184,9 +173,7 @@ static int sht3xd_init(const struct device *dev)
 
 #ifdef CONFIG_SHT3XD_PERIODIC_MODE
 	/* set periodic measurement mode */
-	if (sht3xd_write_command(dev,
-				 measure_cmd[SHT3XD_MPS_IDX][SHT3XD_REPEATABILITY_IDX])
-	    < 0) {
+	if (sht3xd_write_command(dev, measure_cmd[SHT3XD_MPS_IDX][SHT3XD_REPEATABILITY_IDX]) < 0) {
 		LOG_DBG("Failed to set measurement mode!");
 		return -EIO;
 	}
@@ -207,21 +194,17 @@ static int sht3xd_init(const struct device *dev)
 }
 
 #ifdef CONFIG_SHT3XD_TRIGGER
-#define SHT3XD_TRIGGER_INIT(inst)						\
-	.alert_gpio = GPIO_DT_SPEC_INST_GET(inst, alert_gpios),
+#define SHT3XD_TRIGGER_INIT(inst) .alert_gpio = GPIO_DT_SPEC_INST_GET(inst, alert_gpios),
 #else
 #define SHT3XD_TRIGGER_INIT(inst)
 #endif
 
-#define SHT3XD_DEFINE(inst)							\
-	struct sht3xd_data sht3xd0_data_##inst;					\
-	static const struct sht3xd_config sht3xd0_cfg_##inst = {		\
-		.bus = I2C_DT_SPEC_INST_GET(inst),				\
-		SHT3XD_TRIGGER_INIT(inst)					\
-	};									\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, sht3xd_init, NULL,			\
-		&sht3xd0_data_##inst, &sht3xd0_cfg_##inst,			\
-		POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,			\
-		&sht3xd_driver_api);
+#define SHT3XD_DEFINE(inst)                                                                        \
+	struct sht3xd_data sht3xd0_data_##inst;                                                    \
+	static const struct sht3xd_config sht3xd0_cfg_##inst = {.bus = I2C_DT_SPEC_INST_GET(inst), \
+								SHT3XD_TRIGGER_INIT(inst)};        \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, sht3xd_init, NULL, &sht3xd0_data_##inst,                \
+				     &sht3xd0_cfg_##inst, POST_KERNEL,                             \
+				     CONFIG_SENSOR_INIT_PRIORITY, &sht3xd_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SHT3XD_DEFINE)

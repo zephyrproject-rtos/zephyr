@@ -7,9 +7,7 @@
 #include <zephyr/drivers/peci.h>
 #include <zephyr/internal/syscall_handler.h>
 
-
-static inline int z_vrfy_peci_config(const struct device *dev,
-				     uint32_t bitrate)
+static inline int z_vrfy_peci_config(const struct device *dev, uint32_t bitrate)
 {
 	K_OOPS(K_SYSCALL_DRIVER_PECI(dev, config));
 
@@ -33,8 +31,7 @@ static inline int z_vrfy_peci_disable(const struct device *dev)
 }
 #include <zephyr/syscalls/peci_disable_mrsh.c>
 
-static inline int z_vrfy_peci_transfer(const struct device *dev,
-				       struct peci_msg *msg)
+static inline int z_vrfy_peci_transfer(const struct device *dev, struct peci_msg *msg)
 {
 	struct peci_msg msg_copy;
 

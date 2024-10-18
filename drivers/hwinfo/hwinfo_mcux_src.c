@@ -21,8 +21,7 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 
 	uint32_t reason = SRC_GetResetStatusFlags((SRC_Type *)DT_INST_REG_ADDR(0));
 
-#if (defined(FSL_FEATURE_SRC_HAS_SRSR_IPP_RESET_B) && \
-	FSL_FEATURE_SRC_HAS_SRSR_IPP_RESET_B)
+#if (defined(FSL_FEATURE_SRC_HAS_SRSR_IPP_RESET_B) && FSL_FEATURE_SRC_HAS_SRSR_IPP_RESET_B)
 	if (reason & kSRC_IppResetPinFlag) {
 		flags |= RESET_PIN;
 	}
@@ -37,8 +36,8 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 		flags |= RESET_CPU_LOCKUP;
 	}
 #endif
-#if (defined(FSL_FEATURE_SRC_HAS_SRSR_LOCKUP_SYSRESETREQ) && \
-	FSL_FEATURE_SRC_HAS_SRSR_LOCKUP_SYSRESETREQ)
+#if (defined(FSL_FEATURE_SRC_HAS_SRSR_LOCKUP_SYSRESETREQ) &&                                       \
+     FSL_FEATURE_SRC_HAS_SRSR_LOCKUP_SYSRESETREQ)
 	if (reason & kSRC_LockupSysResetFlag) {
 		flags |= RESET_CPU_LOCKUP | RESET_SOFTWARE;
 	}
@@ -53,8 +52,8 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 		flags |= RESET_HARDWARE;
 	}
 #endif
-#if (defined(FSL_FEATURE_SRC_HAS_SRSR_IPP_USER_RESET_B) && \
-	FSL_FEATURE_SRC_HAS_SRSR_IPP_USER_RESET_B)
+#if (defined(FSL_FEATURE_SRC_HAS_SRSR_IPP_USER_RESET_B) &&                                         \
+     FSL_FEATURE_SRC_HAS_SRSR_IPP_USER_RESET_B)
 	if (reason & kSRC_IppUserResetFlag) {
 		flags |= RESET_USER;
 	}
@@ -108,11 +107,8 @@ int z_impl_hwinfo_clear_reset_cause(void)
 
 int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 {
-	*supported = (RESET_WATCHDOG
-		      | RESET_DEBUG
-		      | RESET_TEMPERATURE
-#if (defined(FSL_FEATURE_SRC_HAS_SRSR_IPP_RESET_B) && \
-		      FSL_FEATURE_SRC_HAS_SRSR_IPP_RESET_B)
+	*supported = (RESET_WATCHDOG | RESET_DEBUG | RESET_TEMPERATURE
+#if (defined(FSL_FEATURE_SRC_HAS_SRSR_IPP_RESET_B) && FSL_FEATURE_SRC_HAS_SRSR_IPP_RESET_B)
 		      | RESET_PIN
 #endif
 #if (defined(FSL_FEATURE_SRC_HAS_SRSR_POR) && FSL_FEATURE_SRC_HAS_SRSR_POR)
@@ -121,8 +117,8 @@ int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 #if (defined(FSL_FEATURE_SRC_HAS_SCR_LOCKUP_RST) && FSL_FEATURE_SRC_HAS_SCR_LOCKUP_RST)
 		      | RESET_CPU_LOCKUP
 #endif
-#if (defined(FSL_FEATURE_SRC_HAS_SRSR_LOCKUP_SYSRESETREQ) && \
-		      FSL_FEATURE_SRC_HAS_SRSR_LOCKUP_SYSRESETREQ)
+#if (defined(FSL_FEATURE_SRC_HAS_SRSR_LOCKUP_SYSRESETREQ) &&                                       \
+     FSL_FEATURE_SRC_HAS_SRSR_LOCKUP_SYSRESETREQ)
 		      | RESET_CPU_LOCKUP | RESET_SOFTWARE
 #endif
 #if (defined(FSL_FEATURE_SRC_HAS_SRSR_CSU_RESET_B) && FSL_FEATURE_SRC_HAS_SRSR_CSU_RESET_B)
@@ -131,14 +127,14 @@ int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 #if (defined(FSL_FEATURE_SRC_HAS_SRSR_SNVS) && FSL_FEATURE_SRC_HAS_SRSR_SNVS)
 		      | RESET_HARDWARE
 #endif
-#if (defined(FSL_FEATURE_SRC_HAS_SRSR_IPP_USER_RESET_B) && \
-		      FSL_FEATURE_SRC_HAS_SRSR_IPP_USER_RESET_B)
+#if (defined(FSL_FEATURE_SRC_HAS_SRSR_IPP_USER_RESET_B) &&                                         \
+     FSL_FEATURE_SRC_HAS_SRSR_IPP_USER_RESET_B)
 		      | RESET_USER
 #endif
 #if (defined(FSL_FEATURE_SRC_HAS_SRSR_SW) && FSL_FEATURE_SRC_HAS_SRSR_SW)
 		      | RESET_SOFTWARE
 #endif
-		      );
+	);
 
 	return 0;
 }

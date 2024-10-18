@@ -29,8 +29,7 @@ struct mcux_pcc_config {
 #define MAKE_PCC_REGADDR(base, offset) ((base) + (offset))
 #endif
 
-static inline int get_clock_encoding(const struct device *dev,
-				     clock_control_subsys_t sub_system,
+static inline int get_clock_encoding(const struct device *dev, clock_control_subsys_t sub_system,
 				     uint32_t *clock_encoding)
 {
 	const struct mcux_pcc_config *cfg;
@@ -54,8 +53,7 @@ static inline int get_clock_encoding(const struct device *dev,
 	return 0;
 }
 
-static int mcux_pcc_on(const struct device *dev,
-		       clock_control_subsys_t sub_system)
+static int mcux_pcc_on(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	uint32_t clock_encoding;
 	int ret;
@@ -70,8 +68,7 @@ static int mcux_pcc_on(const struct device *dev,
 	return 0;
 }
 
-static int mcux_pcc_off(const struct device *dev,
-			clock_control_subsys_t sub_system)
+static int mcux_pcc_off(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	uint32_t clock_encoding;
 	int ret;
@@ -86,9 +83,8 @@ static int mcux_pcc_off(const struct device *dev,
 	return 0;
 }
 
-static int mcux_pcc_get_rate(const struct device *dev,
-			       clock_control_subsys_t sub_system,
-			       uint32_t *rate)
+static int mcux_pcc_get_rate(const struct device *dev, clock_control_subsys_t sub_system,
+			     uint32_t *rate)
 {
 	uint32_t clock_encoding;
 	int ret;
@@ -135,19 +131,14 @@ static uint32_t clocks[] = {
 static uint32_t clocks[] = {};
 #endif /* CONFIG_SOC_MIMX8UD7 */
 
-#define MCUX_PCC_INIT(inst)						\
-	static const struct mcux_pcc_config mcux_pcc##inst##_config = {	\
-		.base_address = DT_INST_REG_ADDR(inst),			\
-		.clocks = clocks,					\
-		.clock_num = ARRAY_SIZE(clocks),			\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(inst,					\
-			    mcux_pcc_init,				\
-			    NULL,					\
-			    NULL, &mcux_pcc##inst##_config,		\
-			    PRE_KERNEL_1,				\
-			    CONFIG_CLOCK_CONTROL_INIT_PRIORITY,		\
-			    &mcux_pcc_api);
+#define MCUX_PCC_INIT(inst)                                                                        \
+	static const struct mcux_pcc_config mcux_pcc##inst##_config = {                            \
+		.base_address = DT_INST_REG_ADDR(inst),                                            \
+		.clocks = clocks,                                                                  \
+		.clock_num = ARRAY_SIZE(clocks),                                                   \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, mcux_pcc_init, NULL, NULL, &mcux_pcc##inst##_config,           \
+			      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &mcux_pcc_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_PCC_INIT)

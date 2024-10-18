@@ -43,7 +43,7 @@ struct adc_smartbond_data {
 	uint8_t result_index;
 };
 
-#define SMARTBOND_ADC_CHANNEL_COUNT	8
+#define SMARTBOND_ADC_CHANNEL_COUNT 8
 
 /*
  * Channels are handled by software this array holds individual
@@ -99,8 +99,8 @@ static int adc_smartbond_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	config->gp_adc_ctrl_reg =
-		channel_cfg->input_positive << GPADC_GP_ADC_CTRL_REG_GP_ADC_SEL_Pos;
+	config->gp_adc_ctrl_reg = channel_cfg->input_positive
+				  << GPADC_GP_ADC_CTRL_REG_GP_ADC_SEL_Pos;
 	if (!channel_cfg->differential) {
 		config->gp_adc_ctrl_reg |= GPADC_GP_ADC_CTRL_REG_GP_ADC_SE_Msk;
 	}
@@ -109,7 +109,7 @@ static int adc_smartbond_channel_setup(const struct device *dev,
 }
 
 static inline void gpadc_smartbond_pm_policy_state_lock_get(const struct device *dev,
-					      struct adc_smartbond_data *data)
+							    struct adc_smartbond_data *data)
 {
 #if defined(CONFIG_PM_DEVICE)
 	pm_device_runtime_get(dev);
@@ -121,7 +121,7 @@ static inline void gpadc_smartbond_pm_policy_state_lock_get(const struct device 
 }
 
 static inline void gpadc_smartbond_pm_policy_state_lock_put(const struct device *dev,
-					      struct adc_smartbond_data *data)
+							    struct adc_smartbond_data *data)
 {
 #if defined(CONFIG_PM_DEVICE)
 	/*
@@ -132,8 +132,8 @@ static inline void gpadc_smartbond_pm_policy_state_lock_put(const struct device 
 #endif
 }
 
-#define PER_CHANNEL_ADC_CONFIG_MASK (GPADC_GP_ADC_CTRL_REG_GP_ADC_SEL_Msk |	\
-				     GPADC_GP_ADC_CTRL_REG_GP_ADC_SE_Msk)
+#define PER_CHANNEL_ADC_CONFIG_MASK                                                                \
+	(GPADC_GP_ADC_CTRL_REG_GP_ADC_SEL_Msk | GPADC_GP_ADC_CTRL_REG_GP_ADC_SE_Msk)
 
 static int pop_count(uint32_t n)
 {
@@ -143,8 +143,7 @@ static int pop_count(uint32_t n)
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
 	uint32_t val;
-	struct adc_smartbond_data *data =
-		CONTAINER_OF(ctx, struct adc_smartbond_data, ctx);
+	struct adc_smartbond_data *data = CONTAINER_OF(ctx, struct adc_smartbond_data, ctx);
 	/* Extract lower channel from sequence mask */
 	int current_channel = u32_count_trailing_zeros(data->channel_read_mask);
 
@@ -161,19 +160,16 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	}
 }
 
-static void adc_context_update_buffer_pointer(struct adc_context *ctx,
-					      bool repeat)
+static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat)
 {
-	struct adc_smartbond_data *data =
-		CONTAINER_OF(ctx, struct adc_smartbond_data, ctx);
+	struct adc_smartbond_data *data = CONTAINER_OF(ctx, struct adc_smartbond_data, ctx);
 
 	if (!repeat) {
 		data->buffer += data->sequence_channel_count;
 	}
 }
 
-static int check_buffer_size(const struct adc_sequence *sequence,
-			     uint8_t active_channels)
+static int check_buffer_size(const struct adc_sequence *sequence, uint8_t active_channels)
 {
 	size_t needed_buffer_size;
 
@@ -183,16 +179,15 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 	}
 
 	if (sequence->buffer_size < needed_buffer_size) {
-		LOG_ERR("Provided buffer is too small (%u/%u)",
-			sequence->buffer_size, needed_buffer_size);
+		LOG_ERR("Provided buffer is too small (%u/%u)", sequence->buffer_size,
+			needed_buffer_size);
 		return -ENOMEM;
 	}
 
 	return 0;
 }
 
-static int start_read(const struct device *dev,
-		      const struct adc_sequence *sequence)
+static int start_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	int error;
 	struct adc_smartbond_data *data = dev->data;
@@ -209,8 +204,7 @@ static int start_read(const struct device *dev,
 	}
 
 	if (sequence->resolution < 8 || sequence->resolution > 15) {
-		LOG_ERR("ADC resolution value %d is not valid",
-			sequence->resolution);
+		LOG_ERR("ADC resolution value %d is not valid", sequence->resolution);
 		return -EINVAL;
 	}
 
@@ -237,8 +231,8 @@ static void adc_smartbond_isr(const struct device *dev)
 
 	GPADC->GP_ADC_CLEAR_INT_REG = 0;
 	/* Store current channel value, result is left justified, move bits right */
-	data->buffer[data->result_index++] = ((uint16_t)GPADC->GP_ADC_RESULT_REG) >>
-		(16 - data->ctx.sequence.resolution);
+	data->buffer[data->result_index++] =
+		((uint16_t)GPADC->GP_ADC_RESULT_REG) >> (16 - data->ctx.sequence.resolution);
 	/* Exclude channel from mask for further reading */
 	data->channel_read_mask ^= 1 << current_channel;
 
@@ -253,8 +247,7 @@ static void adc_smartbond_isr(const struct device *dev)
 }
 
 /* Implementation of the ADC driver API function: adc_read. */
-static int adc_smartbond_read(const struct device *dev,
-			      const struct adc_sequence *sequence)
+static int adc_smartbond_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	int error;
 	struct adc_smartbond_data *data = dev->data;
@@ -269,8 +262,7 @@ static int adc_smartbond_read(const struct device *dev,
 
 #if defined(CONFIG_ADC_ASYNC)
 /* Implementation of the ADC driver API function: adc_read_sync. */
-static int adc_smartbond_read_async(const struct device *dev,
-				    const struct adc_sequence *sequence,
+static int adc_smartbond_read_async(const struct device *dev, const struct adc_sequence *sequence,
 				    struct k_poll_signal *async)
 {
 	struct adc_smartbond_data *data = dev->data;
@@ -295,7 +287,7 @@ static int gpadc_smartbond_resume(const struct device *dev)
 
 	/* Get current clock to determine GP_ADC_EN_DEL */
 	clock_control_get_rate(clock_dev, (clock_control_subsys_t)SMARTBOND_CLK_SYS_CLK, &rate);
-	GPADC->GP_ADC_CTRL3_REG = (rate/1600000)&0xff;
+	GPADC->GP_ADC_CTRL3_REG = (rate / 1600000) & 0xff;
 
 	GPADC->GP_ADC_CTRL_REG = GPADC_GP_ADC_CTRL_REG_GP_ADC_EN_Msk;
 
@@ -343,8 +335,7 @@ static int gpadc_smartbond_suspend(const struct device *dev)
 	return 0;
 }
 
-static int gpadc_smartbond_pm_action(const struct device *dev,
-				   enum pm_device_action action)
+static int gpadc_smartbond_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	int ret;
 
@@ -378,8 +369,8 @@ static int adc_smartbond_init(const struct device *dev)
 
 #endif
 
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
-		    adc_smartbond_isr, DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), adc_smartbond_isr,
+		    DEVICE_DT_INST_GET(0), 0);
 
 	NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
 	NVIC_EnableIRQ(DT_INST_IRQN(0));
@@ -391,11 +382,11 @@ static int adc_smartbond_init(const struct device *dev)
 
 static const struct adc_driver_api adc_smartbond_driver_api = {
 	.channel_setup = adc_smartbond_channel_setup,
-	.read          = adc_smartbond_read,
+	.read = adc_smartbond_read,
 #ifdef CONFIG_ADC_ASYNC
-	.read_async    = adc_smartbond_read_async,
+	.read_async = adc_smartbond_read_async,
 #endif
-	.ref_internal  = 1200,
+	.ref_internal = 1200,
 };
 
 /*
@@ -407,26 +398,20 @@ static const struct adc_driver_api adc_smartbond_driver_api = {
  * Just in case that assumption becomes invalid in the future, we use
  * a BUILD_ASSERT().
  */
-#define ADC_INIT(inst)							\
-	BUILD_ASSERT((inst) == 0,					\
-		     "multiple instances not supported");		\
-	PINCTRL_DT_INST_DEFINE(inst);					\
-	static const struct adc_smartbond_cfg adc_smartbond_cfg_##inst = {\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		\
-	};								\
-	static struct adc_smartbond_data adc_smartbond_data_##inst = {	\
-		ADC_CONTEXT_INIT_TIMER(adc_smartbond_data_##inst, ctx),	\
-		ADC_CONTEXT_INIT_LOCK(adc_smartbond_data_##inst, ctx),	\
-		ADC_CONTEXT_INIT_SYNC(adc_smartbond_data_##inst, ctx),	\
-	};								\
-	PM_DEVICE_DT_INST_DEFINE(inst, gpadc_smartbond_pm_action);	\
-	DEVICE_DT_INST_DEFINE(inst,					\
-			      adc_smartbond_init,  \
-				  PM_DEVICE_DT_INST_GET(inst),			\
-			      &adc_smartbond_data_##inst,		\
-			      &adc_smartbond_cfg_##inst,		\
-			      POST_KERNEL,				\
-			      CONFIG_ADC_INIT_PRIORITY,			\
-			      &adc_smartbond_driver_api);
+#define ADC_INIT(inst)                                                                             \
+	BUILD_ASSERT((inst) == 0, "multiple instances not supported");                             \
+	PINCTRL_DT_INST_DEFINE(inst);                                                              \
+	static const struct adc_smartbond_cfg adc_smartbond_cfg_##inst = {                         \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
+	};                                                                                         \
+	static struct adc_smartbond_data adc_smartbond_data_##inst = {                             \
+		ADC_CONTEXT_INIT_TIMER(adc_smartbond_data_##inst, ctx),                            \
+		ADC_CONTEXT_INIT_LOCK(adc_smartbond_data_##inst, ctx),                             \
+		ADC_CONTEXT_INIT_SYNC(adc_smartbond_data_##inst, ctx),                             \
+	};                                                                                         \
+	PM_DEVICE_DT_INST_DEFINE(inst, gpadc_smartbond_pm_action);                                 \
+	DEVICE_DT_INST_DEFINE(inst, adc_smartbond_init, PM_DEVICE_DT_INST_GET(inst),               \
+			      &adc_smartbond_data_##inst, &adc_smartbond_cfg_##inst, POST_KERNEL,  \
+			      CONFIG_ADC_INIT_PRIORITY, &adc_smartbond_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_INIT)

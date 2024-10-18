@@ -18,14 +18,14 @@ struct uid {
 
 ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
-	volatile const uint32_t * const uid_addr = (uint32_t *) DT_INST_REG_ADDR(0);
+	volatile const uint32_t *const uid_addr = (uint32_t *)DT_INST_REG_ADDR(0);
 	struct uid dev_id;
 
 	if (buffer == NULL) {
 		return 0;
 	}
 
-	for (size_t i = 0 ; i < UID_WORD_COUNT ; i++) {
+	for (size_t i = 0; i < UID_WORD_COUNT; i++) {
 		dev_id.id[i] = sys_cpu_to_be32(uid_addr[i]);
 	}
 

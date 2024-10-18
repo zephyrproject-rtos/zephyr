@@ -32,34 +32,31 @@ struct st7796s_config {
 	uint16_t height;
 	bool inverted; /* Display color inversion */
 	/* Display configuration parameters */
-	uint8_t dic; /* Display inversion control */
+	uint8_t dic;        /* Display inversion control */
 	uint8_t frmctl1[2]; /* Frame rate control, normal mode */
 	uint8_t frmctl2[2]; /* Frame rate control, idle mode */
 	uint8_t frmctl3[2]; /* Frame rate control, partial mode */
-	uint8_t bpc[4]; /* Blanking porch control */
-	uint8_t dfc[4]; /* Display function control */
-	uint8_t pwr1[2]; /* Power control 1 */
-	uint8_t pwr2; /* Power control 2 */
-	uint8_t pwr3; /* Power control 3 */
-	uint8_t vcmpctl; /* VCOM control */
-	uint8_t doca[8]; /* Display output ctrl */
-	uint8_t pgc[14]; /* Positive gamma control */
-	uint8_t ngc[14]; /* Negative gamma control */
-	uint8_t madctl; /* Memory data access control */
+	uint8_t bpc[4];     /* Blanking porch control */
+	uint8_t dfc[4];     /* Display function control */
+	uint8_t pwr1[2];    /* Power control 1 */
+	uint8_t pwr2;       /* Power control 2 */
+	uint8_t pwr3;       /* Power control 3 */
+	uint8_t vcmpctl;    /* VCOM control */
+	uint8_t doca[8];    /* Display output ctrl */
+	uint8_t pgc[14];    /* Positive gamma control */
+	uint8_t ngc[14];    /* Negative gamma control */
+	uint8_t madctl;     /* Memory data access control */
 	bool rgb_is_inverted;
 };
 
-static int st7796s_send_cmd(const struct device *dev,
-			uint8_t cmd, const uint8_t *data, size_t len)
+static int st7796s_send_cmd(const struct device *dev, uint8_t cmd, const uint8_t *data, size_t len)
 {
 	const struct st7796s_config *config = dev->config;
 
-	return mipi_dbi_command_write(config->mipi_dbi, &config->dbi_config,
-				      cmd, data, len);
+	return mipi_dbi_command_write(config->mipi_dbi, &config->dbi_config, cmd, data, len);
 }
 
-static int st7796s_set_cursor(const struct device *dev,
-			      const uint16_t x, const uint16_t y,
+static int st7796s_set_cursor(const struct device *dev, const uint16_t x, const uint16_t y,
 			      const uint16_t width, const uint16_t height)
 {
 	uint16_t addr_data[2];
@@ -69,8 +66,7 @@ static int st7796s_set_cursor(const struct device *dev,
 	addr_data[0] = sys_cpu_to_be16(x);
 	addr_data[1] = sys_cpu_to_be16(x + width - 1);
 
-	ret = st7796s_send_cmd(dev, ST7796S_CMD_CASET,
-			       (uint8_t *)addr_data, sizeof(addr_data));
+	ret = st7796s_send_cmd(dev, ST7796S_CMD_CASET, (uint8_t *)addr_data, sizeof(addr_data));
 	if (ret < 0) {
 		return ret;
 	}
@@ -78,8 +74,7 @@ static int st7796s_set_cursor(const struct device *dev,
 	/* Row address */
 	addr_data[0] = sys_cpu_to_be16(y);
 	addr_data[1] = sys_cpu_to_be16(y + height - 1);
-	ret = st7796s_send_cmd(dev, ST7796S_CMD_RASET,
-			       (uint8_t *)addr_data, sizeof(addr_data));
+	ret = st7796s_send_cmd(dev, ST7796S_CMD_RASET, (uint8_t *)addr_data, sizeof(addr_data));
 	return ret;
 }
 
@@ -123,8 +118,7 @@ static int st7796s_get_pixelfmt(const struct device *dev)
 		 * invert the reported pixel format if "rgb_is_inverted"
 		 * is enabled
 		 */
-		if (((bool)(config->madctl & ST7796S_MADCTL_BGR)) !=
-		    config->rgb_is_inverted) {
+		if (((bool)(config->madctl & ST7796S_MADCTL_BGR)) != config->rgb_is_inverted) {
 			return PIXEL_FORMAT_RGB_565;
 		} else {
 			return PIXEL_FORMAT_BGR_565;
@@ -139,19 +133,15 @@ static int st7796s_get_pixelfmt(const struct device *dev)
 	 * if rgb_is_inverted is enabled.
 	 * It is a workaround for supporting buggy modules that display RGB as BGR.
 	 */
-	if (((bool)(config->madctl & ST7796S_MADCTL_BGR)) !=
-	    config->rgb_is_inverted) {
+	if (((bool)(config->madctl & ST7796S_MADCTL_BGR)) != config->rgb_is_inverted) {
 		return PIXEL_FORMAT_BGR_565;
 	} else {
 		return PIXEL_FORMAT_RGB_565;
 	}
 }
 
-static int st7796s_write(const struct device *dev,
-			 const uint16_t x,
-			 const uint16_t y,
-			 const struct display_buffer_descriptor *desc,
-			 const void *buf)
+static int st7796s_write(const struct device *dev, const uint16_t x, const uint16_t y,
+			 const struct display_buffer_descriptor *desc, const void *buf)
 {
 	const struct st7796s_config *config = dev->config;
 	int ret;
@@ -165,18 +155,16 @@ static int st7796s_write(const struct device *dev,
 
 	mipi_desc.buf_size = desc->width * desc->height * ST7796S_PIXEL_SIZE;
 
-	ret =  mipi_dbi_command_write(config->mipi_dbi,
-				      &config->dbi_config, ST7796S_CMD_RAMWR,
-				      NULL, 0);
+	ret = mipi_dbi_command_write(config->mipi_dbi, &config->dbi_config, ST7796S_CMD_RAMWR, NULL,
+				     0);
 	if (ret < 0) {
 		return ret;
 	}
 
 	pixfmt = st7796s_get_pixelfmt(dev);
 
-	return mipi_dbi_write_display(config->mipi_dbi,
-				      &config->dbi_config, buf,
-				      &mipi_desc, pixfmt);
+	return mipi_dbi_write_display(config->mipi_dbi, &config->dbi_config, buf, &mipi_desc,
+				      pixfmt);
 }
 
 static void st7796s_get_capabilities(const struct device *dev,
@@ -217,20 +205,17 @@ static int st7796s_lcd_config(const struct device *dev)
 		return ret;
 	}
 
-	ret = st7796s_send_cmd(dev, ST7796S_CMD_FRMCTR1, config->frmctl1,
-			       sizeof(config->frmctl1));
+	ret = st7796s_send_cmd(dev, ST7796S_CMD_FRMCTR1, config->frmctl1, sizeof(config->frmctl1));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = st7796s_send_cmd(dev, ST7796S_CMD_FRMCTR2, config->frmctl2,
-			       sizeof(config->frmctl2));
+	ret = st7796s_send_cmd(dev, ST7796S_CMD_FRMCTR2, config->frmctl2, sizeof(config->frmctl2));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = st7796s_send_cmd(dev, ST7796S_CMD_FRMCTR3, config->frmctl3,
-			       sizeof(config->frmctl3));
+	ret = st7796s_send_cmd(dev, ST7796S_CMD_FRMCTR3, config->frmctl3, sizeof(config->frmctl3));
 	if (ret < 0) {
 		return ret;
 	}
@@ -260,14 +245,12 @@ static int st7796s_lcd_config(const struct device *dev)
 		return ret;
 	}
 
-	ret = st7796s_send_cmd(dev, ST7796S_CMD_VCMPCTL, &config->vcmpctl,
-			       sizeof(config->vcmpctl));
+	ret = st7796s_send_cmd(dev, ST7796S_CMD_VCMPCTL, &config->vcmpctl, sizeof(config->vcmpctl));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = st7796s_send_cmd(dev, ST7796S_CMD_DOCA, config->doca,
-			       sizeof(config->doca));
+	ret = st7796s_send_cmd(dev, ST7796S_CMD_DOCA, config->doca, sizeof(config->doca));
 	if (ret < 0) {
 		return ret;
 	}
@@ -354,44 +337,36 @@ static const struct display_driver_api st7796s_api = {
 	.get_capabilities = st7796s_get_capabilities,
 };
 
-
-#define ST7796S_INIT(n)								\
-	static const struct st7796s_config st7796s_config_##n = {		\
-		.mipi_dbi = DEVICE_DT_GET(DT_INST_PARENT(n)),			\
-		.dbi_config = {							\
-			.config = MIPI_DBI_SPI_CONFIG_DT(			\
-						DT_DRV_INST(n),			\
-						SPI_OP_MODE_MASTER |		\
-						SPI_WORD_SET(8),		\
-						0),				\
-			.mode = DT_INST_PROP_OR(n, mipi_mode,			\
-						MIPI_DBI_MODE_SPI_4WIRE),	\
-		},								\
-		.width = DT_INST_PROP(n, width),				\
-		.height = DT_INST_PROP(n, height),				\
-		.inverted = DT_INST_PROP(n, color_invert),			\
-		.dic = DT_INST_ENUM_IDX(n, invert_mode),			\
-		.frmctl1 = DT_INST_PROP(n, frmctl1),				\
-		.frmctl2 = DT_INST_PROP(n, frmctl2),				\
-		.frmctl3 = DT_INST_PROP(n, frmctl3),				\
-		.bpc = DT_INST_PROP(n, bpc),					\
-		.dfc = DT_INST_PROP(n, dfc),					\
-		.pwr1 = DT_INST_PROP(n, pwr1),					\
-		.pwr2 = DT_INST_PROP(n, pwr2),					\
-		.pwr3 = DT_INST_PROP(n, pwr3),					\
-		.vcmpctl = DT_INST_PROP(n, vcmpctl),				\
-		.doca = DT_INST_PROP(n, doca),					\
-		.pgc = DT_INST_PROP(n, pgc),					\
-		.ngc = DT_INST_PROP(n, ngc),					\
-		.madctl = DT_INST_PROP(n, madctl),				\
-		.rgb_is_inverted = DT_INST_PROP(n, rgb_is_inverted),		\
-	};									\
-										\
-	DEVICE_DT_INST_DEFINE(n, st7796s_init,					\
-			NULL,							\
-			NULL,							\
-			&st7796s_config_##n,					\
-			POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,		\
-			&st7796s_api);
+#define ST7796S_INIT(n)                                                                            \
+	static const struct st7796s_config st7796s_config_##n = {                                  \
+		.mipi_dbi = DEVICE_DT_GET(DT_INST_PARENT(n)),                                      \
+		.dbi_config =                                                                      \
+			{                                                                          \
+				.config = MIPI_DBI_SPI_CONFIG_DT(                                  \
+					DT_DRV_INST(n), SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),  \
+				.mode = DT_INST_PROP_OR(n, mipi_mode, MIPI_DBI_MODE_SPI_4WIRE),    \
+			},                                                                         \
+		.width = DT_INST_PROP(n, width),                                                   \
+		.height = DT_INST_PROP(n, height),                                                 \
+		.inverted = DT_INST_PROP(n, color_invert),                                         \
+		.dic = DT_INST_ENUM_IDX(n, invert_mode),                                           \
+		.frmctl1 = DT_INST_PROP(n, frmctl1),                                               \
+		.frmctl2 = DT_INST_PROP(n, frmctl2),                                               \
+		.frmctl3 = DT_INST_PROP(n, frmctl3),                                               \
+		.bpc = DT_INST_PROP(n, bpc),                                                       \
+		.dfc = DT_INST_PROP(n, dfc),                                                       \
+		.pwr1 = DT_INST_PROP(n, pwr1),                                                     \
+		.pwr2 = DT_INST_PROP(n, pwr2),                                                     \
+		.pwr3 = DT_INST_PROP(n, pwr3),                                                     \
+		.vcmpctl = DT_INST_PROP(n, vcmpctl),                                               \
+		.doca = DT_INST_PROP(n, doca),                                                     \
+		.pgc = DT_INST_PROP(n, pgc),                                                       \
+		.ngc = DT_INST_PROP(n, ngc),                                                       \
+		.madctl = DT_INST_PROP(n, madctl),                                                 \
+		.rgb_is_inverted = DT_INST_PROP(n, rgb_is_inverted),                               \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, st7796s_init, NULL, NULL, &st7796s_config_##n, POST_KERNEL,       \
+			      CONFIG_DISPLAY_INIT_PRIORITY, &st7796s_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ST7796S_INIT)

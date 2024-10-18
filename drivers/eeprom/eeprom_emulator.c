@@ -55,7 +55,7 @@
 #define DT_DRV_COMPAT zephyr_emu_eeprom
 
 #define EEPROM_EMU_VERSION 0
-#define EEPROM_EMU_MAGIC 0x45454d55 /* EEMU in hex */
+#define EEPROM_EMU_MAGIC   0x45454d55 /* EEMU in hex */
 
 #include <zephyr/drivers/eeprom.h>
 #include <zephyr/drivers/flash.h>
@@ -97,35 +97,33 @@ struct eeprom_emu_data {
 
 /* read/write context */
 struct eeprom_emu_ctx {
-	const void *data; /* pointer to data */
-	const size_t len; /* data length */
+	const void *data;    /* pointer to data */
+	const size_t len;    /* data length */
 	const off_t address; /* eeprom address */
-	size_t rlen; /* data remaining (unprocessed) length */
+	size_t rlen;         /* data remaining (unprocessed) length */
 };
 
 /*
  * basic flash read, only used with offset aligned to flash write block size
  */
-static inline int eeprom_emu_flash_read(const struct device *dev, off_t offset,
-					uint8_t *blk, size_t len)
+static inline int eeprom_emu_flash_read(const struct device *dev, off_t offset, uint8_t *blk,
+					size_t len)
 {
 	const struct eeprom_emu_config *dev_config = dev->config;
 
-	return flash_read(dev_config->flash_dev, dev_config->flash_offset +
-			  offset, blk, len);
+	return flash_read(dev_config->flash_dev, dev_config->flash_offset + offset, blk, len);
 }
 
 /*
  * basic flash write, only used with offset aligned to flash write block size
  */
-static inline int eeprom_emu_flash_write(const struct device *dev, off_t offset,
-				   const uint8_t *blk, size_t len)
+static inline int eeprom_emu_flash_write(const struct device *dev, off_t offset, const uint8_t *blk,
+					 size_t len)
 {
 	const struct eeprom_emu_config *dev_config = dev->config;
 	int rc;
 
-	rc = flash_write(dev_config->flash_dev, dev_config->flash_offset +
-			 offset, blk, len);
+	rc = flash_write(dev_config->flash_dev, dev_config->flash_offset + offset, blk, len);
 	return rc;
 }
 
@@ -133,14 +131,12 @@ static inline int eeprom_emu_flash_write(const struct device *dev, off_t offset,
  * basic flash erase, only used with offset aligned to flash page and len a
  * multiple of the flash page size
  */
-static inline int eeprom_emu_flash_erase(const struct device *dev, off_t offset,
-				   size_t len)
+static inline int eeprom_emu_flash_erase(const struct device *dev, off_t offset, size_t len)
 {
 	const struct eeprom_emu_config *dev_config = dev->config;
 	int rc;
 
-	rc = flash_erase(dev_config->flash_dev, dev_config->flash_offset +
-			 offset, len);
+	rc = flash_erase(dev_config->flash_dev, dev_config->flash_offset + offset, len);
 	return rc;
 }
 
@@ -163,8 +159,7 @@ static int eeprom_emu_page_invalidate(const struct device *dev, off_t offset)
 /*
  * eeprom_emu_get_address: read the address from a change block
  */
-static uint32_t eeprom_emu_get_address(const struct device *dev,
-				       const uint8_t *blk)
+static uint32_t eeprom_emu_get_address(const struct device *dev, const uint8_t *blk)
 {
 	const struct eeprom_emu_config *dev_config = dev->config;
 	uint32_t address = 0U;
@@ -185,9 +180,8 @@ static uint32_t eeprom_emu_get_address(const struct device *dev,
 /*
  * eeprom_emu_set_change: create change blocks from data in blk and address
  */
-static void eeprom_emu_set_change(const struct device *dev,
-				  const uint32_t address, const uint8_t *data,
-				  uint8_t *blk)
+static void eeprom_emu_set_change(const struct device *dev, const uint32_t address,
+				  const uint8_t *data, uint8_t *blk)
 {
 	const struct eeprom_emu_config *dev_config = dev->config;
 
@@ -201,9 +195,7 @@ static void eeprom_emu_set_change(const struct device *dev,
 		} else {
 			(*blk++) = 0xff;
 		}
-
 	}
-
 }
 
 /*
@@ -217,7 +209,6 @@ static int eeprom_emu_is_word_used(const struct device *dev, const uint8_t *blk)
 		if ((*blk++) != 0xff) {
 			return 1;
 		}
-
 	}
 
 	return 0;
@@ -227,8 +218,7 @@ static int eeprom_emu_is_word_used(const struct device *dev, const uint8_t *blk)
  * eeprom_emu_word_read: read basic word (cbs byte of data) item from
  * address directly from flash.
  */
-static int eeprom_emu_word_read(const struct device *dev, off_t address,
-				uint8_t *data)
+static int eeprom_emu_word_read(const struct device *dev, off_t address, uint8_t *data)
 {
 	const struct eeprom_emu_config *dev_config = dev->config;
 	const struct eeprom_emu_data *dev_data = dev->data;
@@ -252,8 +242,7 @@ static int eeprom_emu_word_read(const struct device *dev, off_t address,
 	while (((!mc1) || (!mc2)) && (offset > dev_config->size)) {
 		offset -= sizeof(buf);
 		/* read the change */
-		rc = eeprom_emu_flash_read(dev, dev_data->page_offset + offset,
-					   buf, sizeof(buf));
+		rc = eeprom_emu_flash_read(dev, dev_data->page_offset + offset, buf, sizeof(buf));
 		if (rc) {
 			return rc;
 		}
@@ -261,23 +250,21 @@ static int eeprom_emu_word_read(const struct device *dev, off_t address,
 		/* get the address from a change block */
 		ch_address = eeprom_emu_get_address(dev, buf);
 		if ((!mc1) && (ch_address == address)) {
-			memcpy(data, buf, sizeof(buf)/2);
+			memcpy(data, buf, sizeof(buf) / 2);
 			mc1 = true;
 		}
 
-		if ((!mc2) && (ch_address == (address + sizeof(buf)/2))) {
-			memcpy(data + sizeof(buf)/2, buf, sizeof(buf)/2);
+		if ((!mc2) && (ch_address == (address + sizeof(buf) / 2))) {
+			memcpy(data + sizeof(buf) / 2, buf, sizeof(buf) / 2);
 			mc2 = true;
 		}
-
 	}
 
 	return rc;
 }
 
 /* Update data specified in ctx from flash */
-static int eeprom_emu_flash_get(const struct device *dev,
-				struct eeprom_emu_ctx *ctx)
+static int eeprom_emu_flash_get(const struct device *dev, struct eeprom_emu_ctx *ctx)
 {
 	const struct eeprom_emu_config *dev_config = dev->config;
 	off_t address = ctx->address + ctx->len - ctx->rlen;
@@ -305,16 +292,14 @@ static int eeprom_emu_flash_get(const struct device *dev,
  * new page. During copy update the data with present write data. Invalidate
  * the old page.
  */
-static int eeprom_emu_compactor(const struct device *dev,
-				struct eeprom_emu_ctx *ctx)
+static int eeprom_emu_compactor(const struct device *dev, struct eeprom_emu_ctx *ctx)
 {
 	const struct eeprom_emu_config *dev_config = dev->config;
 	struct eeprom_emu_data *dev_data = dev->data;
 	off_t next_page_offset;
 	int rc = 0;
 
-	LOG_DBG("Compactor called for page at [0x%tx]",
-		(ptrdiff_t)dev_data->page_offset);
+	LOG_DBG("Compactor called for page at [0x%tx]", (ptrdiff_t)dev_data->page_offset);
 
 	next_page_offset = dev_data->page_offset + dev_config->page_size;
 	if (next_page_offset >= dev_config->flash_size) {
@@ -323,12 +308,10 @@ static int eeprom_emu_compactor(const struct device *dev,
 
 	if (!dev_config->partitionerase) {
 		/* erase the new page */
-		rc = eeprom_emu_flash_erase(dev, next_page_offset,
-					    dev_config->page_size);
+		rc = eeprom_emu_flash_erase(dev, next_page_offset, dev_config->page_size);
 	} else if (next_page_offset == 0) {
 		/* erase the entire partition */
-		rc = eeprom_emu_flash_erase(dev, next_page_offset,
-					    dev_config->flash_size);
+		rc = eeprom_emu_flash_erase(dev, next_page_offset, dev_config->flash_size);
 	} else {
 		rc = 0;
 	}
@@ -338,8 +321,7 @@ static int eeprom_emu_compactor(const struct device *dev,
 	}
 
 	if (dev_config->rambuf && (ctx != NULL)) {
-		rc = eeprom_emu_flash_write(dev, next_page_offset,
-					    dev_config->rambuf,
+		rc = eeprom_emu_flash_write(dev, next_page_offset, dev_config->rambuf,
 					    dev_config->size);
 		if (rc) {
 			return rc;
@@ -364,7 +346,7 @@ static int eeprom_emu_compactor(const struct device *dev,
 			}
 
 			if ((ctx != NULL) && (ctx->len) &&
-			    (rd_offset > (ctx->address - sizeof(buf))))  {
+			    (rd_offset > (ctx->address - sizeof(buf)))) {
 				/* overwrite buf data with context data */
 				uint8_t *data8 = (uint8_t *)(ctx->data);
 				off_t address, addr_jmp;
@@ -379,19 +361,15 @@ static int eeprom_emu_compactor(const struct device *dev,
 			}
 
 			if (eeprom_emu_is_word_used(dev, buf)) {
-				rc = eeprom_emu_flash_write(dev,
-							    next_page_offset +
-							    rd_offset, buf,
+				rc = eeprom_emu_flash_write(dev, next_page_offset + rd_offset, buf,
 							    sizeof(buf));
 				if (rc) {
 					return rc;
 				}
-
 			}
 
 			rd_offset += sizeof(buf);
 		}
-
 	}
 
 	if ((dev_config->partitionerase) && (next_page_offset == 0)) {
@@ -412,8 +390,7 @@ static int eeprom_emu_compactor(const struct device *dev,
 /*
  * eeprom_emu_word_write: write basic word (cbs bytes of data) item to address,
  */
-static int eeprom_emu_word_write(const struct device *dev, off_t address,
-				 const uint8_t *data,
+static int eeprom_emu_word_write(const struct device *dev, off_t address, const uint8_t *data,
 				 struct eeprom_emu_ctx *ctx)
 {
 	const struct eeprom_emu_config *dev_config = dev->config;
@@ -431,8 +408,7 @@ static int eeprom_emu_word_write(const struct device *dev, off_t address,
 
 	if (!eeprom_emu_is_word_used(dev, buf)) {
 		if (eeprom_emu_is_word_used(dev, data)) {
-			rc = eeprom_emu_flash_write(dev, direct_address, data,
-						    sizeof(buf));
+			rc = eeprom_emu_flash_write(dev, direct_address, data, sizeof(buf));
 		}
 
 		return rc;
@@ -451,35 +427,31 @@ static int eeprom_emu_word_write(const struct device *dev, off_t address,
 	wraddr = address;
 	/* store change */
 	for (uint8_t i = 0; i < 2; i++) {
-		if (memcmp(&buf[i*sizeof(buf)/2], data, sizeof(buf)/2)) {
+		if (memcmp(&buf[i * sizeof(buf) / 2], data, sizeof(buf) / 2)) {
 			eeprom_emu_set_change(dev, wraddr, data, tmp);
-			rc = eeprom_emu_flash_write(dev, dev_data->page_offset +
-						    dev_data->write_offset, tmp,
-						    sizeof(buf));
+			rc = eeprom_emu_flash_write(dev,
+						    dev_data->page_offset + dev_data->write_offset,
+						    tmp, sizeof(buf));
 			if (rc) {
 				return rc;
 			}
 
 			dev_data->write_offset += sizeof(buf);
-			if ((dev_data->write_offset + sizeof(buf)) >=
-			    dev_config->page_size) {
+			if ((dev_data->write_offset + sizeof(buf)) >= dev_config->page_size) {
 				rc = eeprom_emu_compactor(dev, ctx);
 				return rc;
-
 			}
-
 		}
 
-		data += sizeof(buf)/2;
-		wraddr += sizeof(buf)/2;
+		data += sizeof(buf) / 2;
+		wraddr += sizeof(buf) / 2;
 	}
 
 	return rc;
 }
 
 /* Update flash with data specified in ctx */
-static int eeprom_emu_flash_set(const struct device *dev,
-				struct eeprom_emu_ctx *ctx)
+static int eeprom_emu_flash_set(const struct device *dev, struct eeprom_emu_ctx *ctx)
 {
 	const struct eeprom_emu_config *dev_config = dev->config;
 	off_t address = ctx->address + ctx->len - ctx->rlen;
@@ -509,8 +481,7 @@ static int eeprom_emu_flash_set(const struct device *dev,
 	return rc;
 }
 
-static int eeprom_emu_range_is_valid(const struct device *dev, off_t address,
-				     size_t len)
+static int eeprom_emu_range_is_valid(const struct device *dev, off_t address, size_t len)
 {
 	const struct eeprom_emu_config *dev_config = dev->config;
 
@@ -521,8 +492,7 @@ static int eeprom_emu_range_is_valid(const struct device *dev, off_t address,
 	return 0;
 }
 
-static int eeprom_emu_read(const struct device *dev, off_t address, void *data,
-			   size_t len)
+static int eeprom_emu_read(const struct device *dev, off_t address, void *data, size_t len)
 {
 	const struct eeprom_emu_config *dev_config = dev->config;
 	struct eeprom_emu_data *dev_data = dev->data;
@@ -563,7 +533,6 @@ static int eeprom_emu_read(const struct device *dev, off_t address, void *data,
 			if (rc) {
 				break;
 			}
-
 		}
 	}
 
@@ -572,8 +541,7 @@ static int eeprom_emu_read(const struct device *dev, off_t address, void *data,
 	return rc;
 }
 
-static int eeprom_emu_write(const struct device *dev, off_t address,
-			    const void *data, size_t len)
+static int eeprom_emu_write(const struct device *dev, off_t address, const void *data, size_t len)
 {
 	const struct eeprom_emu_config *dev_config = dev->config;
 	struct eeprom_emu_data *dev_data = dev->data;
@@ -621,7 +589,6 @@ static int eeprom_emu_write(const struct device *dev, off_t address,
 		if (rc) {
 			break;
 		}
-
 	}
 
 	k_mutex_unlock(&dev_data->lock);
@@ -699,7 +666,6 @@ static int eeprom_emu_init(const struct device *dev)
 		if (rc) {
 			return rc;
 		}
-
 	}
 
 	/* Fill the ram buffer if enabled */
@@ -714,7 +680,6 @@ static int eeprom_emu_init(const struct device *dev)
 			memcpy(dev_config->rambuf + offset, buf, sizeof(buf));
 			offset += sizeof(buf);
 		}
-
 	}
 
 	return rc;
@@ -728,81 +693,72 @@ static const struct eeprom_driver_api eeprom_emu_api = {
 
 #define EEPROM_PARTITION(n) DT_INST_PHANDLE_BY_IDX(n, partition, 0)
 
-#define PART_WBS(part) \
+#define PART_WBS(part)                                                                             \
 	DT_PROP(COND_CODE_1(DT_NODE_HAS_COMPAT(DT_GPARENT(part), soc_nv_flash),\
-		(DT_GPARENT(part)), (DT_PARENT(part))), write_block_size)
+		(DT_GPARENT(part)), (DT_PARENT(part))),              \
+						write_block_size)
 
-#define PART_CBS(part, size) (PART_WBS(part) < 4) ? \
-	((size > KB(64)) ? 8 : 4) : PART_WBS(part)
+#define PART_CBS(part, size) (PART_WBS(part) < 4) ? ((size > KB(64)) ? 8 : 4) : PART_WBS(part)
 
-#define PART_DEV_ID(part) \
+#define PART_DEV_ID(part)                                                                          \
 	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_GPARENT(part), soc_nv_flash), \
 		 (DT_PARENT(DT_GPARENT(part))), (DT_GPARENT(part)))
 
-#define PART_DEV(part) \
-	DEVICE_DT_GET(PART_DEV_ID(part))
+#define PART_DEV(part) DEVICE_DT_GET(PART_DEV_ID(part))
 
-#define RECALC_SIZE(size, cbs) \
-	(size % cbs) ? ((size + cbs - 1) & ~(cbs - 1)) : size
+#define RECALC_SIZE(size, cbs) (size % cbs) ? ((size + cbs - 1) & ~(cbs - 1)) : size
 
-#define ASSERT_SIZE_PAGESIZE_VALID(size, pagesize, readonly) \
-	BUILD_ASSERT(readonly ? (size <= pagesize) : (4*size <= 3*pagesize), \
+#define ASSERT_SIZE_PAGESIZE_VALID(size, pagesize, readonly)                                       \
+	BUILD_ASSERT(readonly ? (size <= pagesize) : (4 * size <= 3 * pagesize),                   \
 		     "EEPROM size to big for pagesize")
 
-#define ASSERT_PAGESIZE_PARTSIZE_VALID(pagesize, partsize) \
-	BUILD_ASSERT(partsize % pagesize == 0U, \
-		     "Partition size not a multiple of pagesize")
+#define ASSERT_PAGESIZE_PARTSIZE_VALID(pagesize, partsize)                                         \
+	BUILD_ASSERT(partsize % pagesize == 0U, "Partition size not a multiple of pagesize")
 
-#define ASSERT_PAGESIZE_SIZE(pagesize, partsize, onepage) \
-	BUILD_ASSERT(onepage ? (partsize >= pagesize) : (partsize > pagesize),\
+#define ASSERT_PAGESIZE_SIZE(pagesize, partsize, onepage)                                          \
+	BUILD_ASSERT(onepage ? (partsize >= pagesize) : (partsize > pagesize),                     \
 		     "Partition size to small")
 
-#define EEPROM_EMU_READ_ONLY(n) \
-	DT_INST_PROP(n, read_only) || \
-	DT_PROP(EEPROM_PARTITION(n), read_only)
+#define EEPROM_EMU_READ_ONLY(n)                                                                    \
+	DT_INST_PROP(n, read_only) || DT_PROP(EEPROM_PARTITION(n), read_only)
 
-#define EEPROM_EMU_ONEPAGE(n) \
-	EEPROM_EMU_READ_ONLY(n) || DT_INST_PROP(n, partition_erase)
+#define EEPROM_EMU_ONEPAGE(n) EEPROM_EMU_READ_ONLY(n) || DT_INST_PROP(n, partition_erase)
 
-#define EEPROM_EMU_ENABLE_RAMBUF(n) \
+#define EEPROM_EMU_ENABLE_RAMBUF(n)                                                                \
 	COND_CODE_1(DT_INST_PROP(n, rambuf), (1), \
 		(COND_CODE_1(DT_INST_PROP(n, partition_erase), (1), (0))))
 
-#define EEPROM_EMU_RAMBUF(n) \
+#define EEPROM_EMU_RAMBUF(n)                                                                       \
 	COND_CODE_0(EEPROM_EMU_ENABLE_RAMBUF(n), (), \
 		(static uint8_t eeprom_emu_##n##_rambuf[DT_INST_PROP(n, size)];))
 
-#define EEPROM_EMU_RAMBUF_LINK(n) \
+#define EEPROM_EMU_RAMBUF_LINK(n)                                                                  \
 	COND_CODE_0(EEPROM_EMU_ENABLE_RAMBUF(n), (NULL), \
 		(eeprom_emu_##n##_rambuf))
 
-#define EEPROM_EMU_INIT(n) \
-	ASSERT_SIZE_PAGESIZE_VALID(DT_INST_PROP(n, size), \
-		DT_INST_PROP(n, pagesize), EEPROM_EMU_ONEPAGE(n)); \
-	ASSERT_PAGESIZE_PARTSIZE_VALID(DT_INST_PROP(n, pagesize), \
-		DT_REG_SIZE(EEPROM_PARTITION(n))); \
-	ASSERT_PAGESIZE_SIZE(DT_INST_PROP(n, pagesize), \
-		DT_REG_SIZE(EEPROM_PARTITION(n)), EEPROM_EMU_ONEPAGE(n)); \
-	EEPROM_EMU_RAMBUF(n) \
-	static const struct eeprom_emu_config eeprom_emu_##n##_config = { \
-		.size = RECALC_SIZE( \
-			DT_INST_PROP(n, size), \
-			(PART_CBS(EEPROM_PARTITION(n), DT_INST_PROP(n, size))) \
-			), \
-		.readonly = EEPROM_EMU_READ_ONLY(n), \
-		.page_size = DT_INST_PROP(n, pagesize), \
-		.flash_offset = DT_REG_ADDR(EEPROM_PARTITION(n)), \
-		.flash_size = DT_REG_SIZE(EEPROM_PARTITION(n)), \
-		.partitionerase = DT_INST_PROP(n, partition_erase), \
-		.flash_cbs = PART_CBS(EEPROM_PARTITION(n), \
-				      DT_INST_PROP(n, size)), \
-		.flash_dev = PART_DEV(EEPROM_PARTITION(n)),\
-		.rambuf = EEPROM_EMU_RAMBUF_LINK(n), \
-	}; \
-	static struct eeprom_emu_data eeprom_emu_##n##_data; \
-	DEVICE_DT_INST_DEFINE(n, &eeprom_emu_init, \
-		NULL, &eeprom_emu_##n##_data, \
-		&eeprom_emu_##n##_config, POST_KERNEL, \
-		CONFIG_EEPROM_INIT_PRIORITY, &eeprom_emu_api); \
+#define EEPROM_EMU_INIT(n)                                                                         \
+	ASSERT_SIZE_PAGESIZE_VALID(DT_INST_PROP(n, size), DT_INST_PROP(n, pagesize),               \
+				   EEPROM_EMU_ONEPAGE(n));                                         \
+	ASSERT_PAGESIZE_PARTSIZE_VALID(DT_INST_PROP(n, pagesize),                                  \
+				       DT_REG_SIZE(EEPROM_PARTITION(n)));                          \
+	ASSERT_PAGESIZE_SIZE(DT_INST_PROP(n, pagesize), DT_REG_SIZE(EEPROM_PARTITION(n)),          \
+			     EEPROM_EMU_ONEPAGE(n));                                               \
+	EEPROM_EMU_RAMBUF(n)                                                                       \
+	static const struct eeprom_emu_config eeprom_emu_##n##_config = {                          \
+		.size = RECALC_SIZE(DT_INST_PROP(n, size),                                         \
+				    (PART_CBS(EEPROM_PARTITION(n), DT_INST_PROP(n, size)))),       \
+		.readonly = EEPROM_EMU_READ_ONLY(n),                                               \
+		.page_size = DT_INST_PROP(n, pagesize),                                            \
+		.flash_offset = DT_REG_ADDR(EEPROM_PARTITION(n)),                                  \
+		.flash_size = DT_REG_SIZE(EEPROM_PARTITION(n)),                                    \
+		.partitionerase = DT_INST_PROP(n, partition_erase),                                \
+		.flash_cbs = PART_CBS(EEPROM_PARTITION(n), DT_INST_PROP(n, size)),                 \
+		.flash_dev = PART_DEV(EEPROM_PARTITION(n)),                                        \
+		.rambuf = EEPROM_EMU_RAMBUF_LINK(n),                                               \
+	};                                                                                         \
+	static struct eeprom_emu_data eeprom_emu_##n##_data;                                       \
+	DEVICE_DT_INST_DEFINE(n, &eeprom_emu_init, NULL, &eeprom_emu_##n##_data,                   \
+			      &eeprom_emu_##n##_config, POST_KERNEL, CONFIG_EEPROM_INIT_PRIORITY,  \
+			      &eeprom_emu_api);
 
 DT_INST_FOREACH_STATUS_OKAY(EEPROM_EMU_INIT)

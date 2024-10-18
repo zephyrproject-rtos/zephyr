@@ -18,25 +18,22 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control_mcg);
 
-static int mcux_mcg_on(const struct device *dev,
-		       clock_control_subsys_t sub_system)
+static int mcux_mcg_on(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	return 0;
 }
 
-static int mcux_mcg_off(const struct device *dev,
-			clock_control_subsys_t sub_system)
+static int mcux_mcg_off(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	return 0;
 }
 
-static int mcux_mcg_get_rate(const struct device *dev,
-			     clock_control_subsys_t sub_system,
+static int mcux_mcg_get_rate(const struct device *dev, clock_control_subsys_t sub_system,
 			     uint32_t *rate)
 {
 	clock_name_t clock_name;
 
-	switch ((uint32_t) sub_system) {
+	switch ((uint32_t)sub_system) {
 #if defined(FSL_FEATURE_MCG_FFCLK_DIV) && (FSL_FEATURE_MCG_FFCLK_DIV)
 	case KINETIS_MCG_FIXED_FREQ_CLK:
 		clock_name = kCLOCK_McgFixedFreqClk;
@@ -61,6 +58,5 @@ static const struct clock_control_driver_api mcux_mcg_driver_api = {
 	.get_rate = mcux_mcg_get_rate,
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, PRE_KERNEL_1,
-		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		      &mcux_mcg_driver_api);

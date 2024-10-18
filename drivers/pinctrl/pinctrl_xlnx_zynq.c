@@ -14,8 +14,7 @@ LOG_MODULE_REGISTER(pinctrl_xlnx_zynq, CONFIG_PINCTRL_LOG_LEVEL);
 
 #define DT_DRV_COMPAT xlnx_pinctrl_zynq
 
-BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
-	     "Unsupported number of instances");
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1, "Unsupported number of instances");
 
 /* Relative SLCR register offsets for use in asserts */
 #define MIO_PIN_53_OFFSET    0x00d4

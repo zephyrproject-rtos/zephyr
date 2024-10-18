@@ -71,8 +71,8 @@ static int si7006_get_temperature(const struct device *dev)
 	uint16_t temp;
 	int retval;
 
-	retval = i2c_burst_read_dt(&config->i2c, config->read_temp_cmd,
-				   (uint8_t *)&temp, sizeof(temp));
+	retval = i2c_burst_read_dt(&config->i2c, config->read_temp_cmd, (uint8_t *)&temp,
+				   sizeof(temp));
 
 	if (retval == 0) {
 		si_data->temperature = sys_be16_to_cpu(temp) & ~3;
@@ -88,8 +88,7 @@ static int si7006_get_temperature(const struct device *dev)
  *
  * @return 0
  */
-static int si7006_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
+static int si7006_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	int retval;
 
@@ -106,8 +105,7 @@ static int si7006_sample_fetch(const struct device *dev,
  *
  * @return -ENOTSUP for unsupported channels
  */
-static int si7006_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
+static int si7006_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	struct si7006_data *si_data = dev->data;
@@ -142,8 +140,8 @@ static int si7006_channel_get(const struct device *dev,
 		/* Remove a constant factor of 64 from (temp_frac * 1000000) >> 23 */
 		val->val2 = (temp_frac * 15625ULL) >> 17;
 
-		LOG_DBG("temperature %u = val1:%d, val2:%d", si_data->temperature,
-			val->val1, val->val2);
+		LOG_DBG("temperature %u = val1:%d, val2:%d", si_data->temperature, val->val1,
+			val->val2);
 
 		return 0;
 	} else if (chan == SENSOR_CHAN_HUMIDITY) {
@@ -197,19 +195,17 @@ static int si7006_init(const struct device *dev)
 	return 0;
 }
 
-#define SI7006_DEFINE(inst, name, temp_cmd)						\
-	static struct si7006_data si7006_data_##name##_##inst;				\
-											\
-	static const struct si7006_config si7006_config_##name##_##inst = {		\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
-		.read_temp_cmd = temp_cmd,						\
-	};										\
-											\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, si7006_init, NULL,				\
-				     &si7006_data_##name##_##inst,			\
-				     &si7006_config_##name##_##inst,			\
-				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,		\
-				     &si7006_api);
+#define SI7006_DEFINE(inst, name, temp_cmd)                                                        \
+	static struct si7006_data si7006_data_##name##_##inst;                                     \
+                                                                                                   \
+	static const struct si7006_config si7006_config_##name##_##inst = {                        \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+		.read_temp_cmd = temp_cmd,                                                         \
+	};                                                                                         \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, si7006_init, NULL, &si7006_data_##name##_##inst,        \
+				     &si7006_config_##name##_##inst, POST_KERNEL,                  \
+				     CONFIG_SENSOR_INIT_PRIORITY, &si7006_api);
 
 #define DT_DRV_COMPAT silabs_si7006
 DT_INST_FOREACH_STATUS_OKAY_VARGS(SI7006_DEFINE, DT_DRV_COMPAT, SI7006_READ_OLD_TEMP);

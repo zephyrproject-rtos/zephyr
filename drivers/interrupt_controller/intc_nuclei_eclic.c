@@ -20,11 +20,11 @@
 
 union CLICCFG {
 	struct {
-		uint8_t _reserved0 : 1;
+		uint8_t _reserved0: 1;
 		/** number of interrupt level bits */
-		uint8_t nlbits : 4;
-		uint8_t _reserved1 : 2;
-		uint8_t _reserved2 : 1;
+		uint8_t nlbits: 4;
+		uint8_t _reserved1: 2;
+		uint8_t _reserved2: 1;
 	} b;
 	uint8_t w;
 };
@@ -32,12 +32,12 @@ union CLICCFG {
 union CLICINFO {
 	struct {
 		/** number of max supported interrupts */
-		uint32_t numint : 13;
+		uint32_t numint: 13;
 		/** architecture version */
-		uint32_t version : 8;
+		uint32_t version: 8;
 		/** supported bits in the clicintctl */
-		uint32_t intctlbits : 4;
-		uint32_t _reserved0 : 7;
+		uint32_t intctlbits: 4;
+		uint32_t _reserved0: 7;
 	} b;
 	uint32_t qw;
 };
@@ -49,8 +49,8 @@ union CLICMTH {
 union CLICINTIP {
 	struct {
 		/** Interrupt Pending */
-		uint8_t IP : 1;
-		uint8_t reserved0 : 7;
+		uint8_t IP: 1;
+		uint8_t reserved0: 7;
 	} b;
 	uint8_t w;
 };
@@ -58,8 +58,8 @@ union CLICINTIP {
 union CLICINTIE {
 	struct {
 		/** Interrupt Enabled */
-		uint8_t IE : 1;
-		uint8_t reserved0 : 7;
+		uint8_t IE: 1;
+		uint8_t reserved0: 7;
 	} b;
 	uint8_t w;
 };
@@ -67,11 +67,11 @@ union CLICINTIE {
 union CLICINTATTR {
 	struct {
 		/** 0: non-vectored 1:vectored */
-		uint8_t shv : 1;
+		uint8_t shv: 1;
 		/** 0: level 1: rising edge 2: falling edge */
-		uint8_t trg : 2;
-		uint8_t reserved0 : 3;
-		uint8_t reserved1 : 2;
+		uint8_t trg: 2;
+		uint8_t reserved0: 3;
+		uint8_t reserved1: 2;
 	} b;
 	uint8_t w;
 };
@@ -84,12 +84,12 @@ struct CLICCTRL {
 };
 
 /** CLIC INTATTR: TRIG Mask */
-#define CLIC_INTATTR_TRIG_Msk  0x3U
+#define CLIC_INTATTR_TRIG_Msk 0x3U
 
-#define ECLIC_CFG       (*((volatile union CLICCFG  *)(DT_REG_ADDR_BY_IDX(DT_NODELABEL(eclic), 0))))
+#define ECLIC_CFG       (*((volatile union CLICCFG *)(DT_REG_ADDR_BY_IDX(DT_NODELABEL(eclic), 0))))
 #define ECLIC_INFO      (*((volatile union CLICINFO *)(DT_REG_ADDR_BY_IDX(DT_NODELABEL(eclic), 1))))
-#define ECLIC_MTH       (*((volatile union CLICMTH  *)(DT_REG_ADDR_BY_IDX(DT_NODELABEL(eclic), 2))))
-#define ECLIC_CTRL      ((volatile  struct CLICCTRL *)(DT_REG_ADDR_BY_IDX(DT_NODELABEL(eclic), 3)))
+#define ECLIC_MTH       (*((volatile union CLICMTH *)(DT_REG_ADDR_BY_IDX(DT_NODELABEL(eclic), 2))))
+#define ECLIC_CTRL      ((volatile struct CLICCTRL *)(DT_REG_ADDR_BY_IDX(DT_NODELABEL(eclic), 3)))
 #define ECLIC_CTRL_SIZE (DT_REG_SIZE_BY_IDX(DT_NODELABEL(eclic), 3))
 
 static uint8_t nlbits;
@@ -138,7 +138,7 @@ int riscv_clic_irq_is_enabled(uint32_t irq)
 void riscv_clic_irq_priority_set(uint32_t irq, uint32_t pri, uint32_t flags)
 {
 	const uint8_t prio = leftalign8(MIN(pri, max_prio), intctlbits);
-	const uint8_t level =  leftalign8(max_level, nlbits);
+	const uint8_t level = leftalign8(max_level, nlbits);
 	const uint8_t intctrl = (prio | level) | (~intctrl_mask);
 
 	ECLIC_CTRL[irq].INTCTRL = intctrl;
@@ -177,7 +177,7 @@ static int nuclei_eclic_init(const struct device *dev)
 	ECLIC_CFG.w = 0;
 	ECLIC_CFG.b.nlbits = 0;
 	for (int i = 0; i < ECLIC_CTRL_SIZE; i++) {
-		ECLIC_CTRL[i] = (struct CLICCTRL) { 0 };
+		ECLIC_CTRL[i] = (struct CLICCTRL){0};
 	}
 
 	nlbits = ECLIC_CFG.b.nlbits;
@@ -189,5 +189,5 @@ static int nuclei_eclic_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, nuclei_eclic_init, NULL, NULL, NULL,
-		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
+DEVICE_DT_INST_DEFINE(0, nuclei_eclic_init, NULL, NULL, NULL, PRE_KERNEL_1,
+		      CONFIG_INTC_INIT_PRIORITY, NULL);

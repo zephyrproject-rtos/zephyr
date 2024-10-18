@@ -38,7 +38,7 @@ static int flash_xmc4xxx_init(const struct device *dev)
 	return 0;
 }
 
-#define SET_PAGES(node_id)    \
+#define SET_PAGES(node_id)                                                                         \
 	{.pages_count = DT_PROP(node_id, pages_count), .pages_size = DT_PROP(node_id, pages_size)},
 
 #if CONFIG_FLASH_PAGE_LAYOUT

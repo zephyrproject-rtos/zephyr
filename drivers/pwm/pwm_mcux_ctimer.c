@@ -196,7 +196,6 @@ static int mcux_ctimer_pwm_get_cycles_per_sec(const struct device *dev, uint32_t
 	const struct pwm_mcux_ctimer_config *config = dev->config;
 	int err = 0;
 
-
 	/* clean up upper word of return parameter */
 	*cycles &= 0xFFFFFFFF;
 

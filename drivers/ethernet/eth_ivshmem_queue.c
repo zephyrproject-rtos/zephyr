@@ -17,19 +17,17 @@
 #define ETH_IVSHMEM_VRING_ALIGNMENT 64
 #define ETH_IVSHMEM_FRAME_SIZE(len) ROUND_UP(18 + (len), L1_CACHE_BYTES)
 
-#define VRING_FLUSH(x)		sys_cache_data_flush_range(&(x), sizeof(x))
-#define VRING_INVALIDATE(x)	sys_cache_data_invd_range(&(x), sizeof(x))
+#define VRING_FLUSH(x)      sys_cache_data_flush_range(&(x), sizeof(x))
+#define VRING_INVALIDATE(x) sys_cache_data_invd_range(&(x), sizeof(x))
 
-static int calc_vring_size(
-		size_t section_size, uint16_t *vring_desc_len,
-		uint32_t *vring_header_size);
+static int calc_vring_size(size_t section_size, uint16_t *vring_desc_len,
+			   uint32_t *vring_header_size);
 static uint32_t tx_buffer_advance(uint32_t max_len, uint32_t *position, uint32_t *len);
 static int tx_clean_used(struct eth_ivshmem_queue *q);
 static int get_rx_avail_desc_idx(struct eth_ivshmem_queue *q, uint16_t *avail_desc_idx);
 
-int eth_ivshmem_queue_init(
-		struct eth_ivshmem_queue *q, uintptr_t tx_shmem,
-		uintptr_t rx_shmem, size_t shmem_section_size)
+int eth_ivshmem_queue_init(struct eth_ivshmem_queue *q, uintptr_t tx_shmem, uintptr_t rx_shmem,
+			   size_t shmem_section_size)
 {
 	memset(q, 0, sizeof(*q));
 
@@ -173,9 +171,8 @@ int eth_ivshmem_queue_rx(struct eth_ivshmem_queue *q, const void **data, size_t 
 	uint64_t offset = desc->addr - q->vring_header_size;
 	uint32_t rx_len = desc->len;
 
-	if (offset > q->vring_data_max_len ||
-		rx_len > q->vring_data_max_len ||
-		offset > q->vring_data_max_len - rx_len) {
+	if (offset > q->vring_data_max_len || rx_len > q->vring_data_max_len ||
+	    offset > q->vring_data_max_len - rx_len) {
 		return -EINVAL;
 	}
 
@@ -217,9 +214,8 @@ int eth_ivshmem_queue_rx_complete(struct eth_ivshmem_queue *q)
  * Calculates the vring descriptor length and header size.
  * This must match what is calculated by the peer.
  */
-static int calc_vring_size(
-		size_t section_size, uint16_t *vring_desc_len,
-		uint32_t *vring_header_size)
+static int calc_vring_size(size_t section_size, uint16_t *vring_desc_len,
+			   uint32_t *vring_header_size)
 {
 	static const int eth_min_mtu = 68;
 	uint32_t header_size;
@@ -272,8 +268,8 @@ static int tx_clean_used(struct eth_ivshmem_queue *q)
 			break;
 		}
 
-		struct vring_used_elem *used = &q->tx.vring.used->ring[
-				q->tx.used_idx % q->desc_max_len];
+		struct vring_used_elem *used =
+			&q->tx.vring.used->ring[q->tx.used_idx % q->desc_max_len];
 
 		atomic_thread_fence(memory_order_seq_cst);
 		VRING_INVALIDATE(*used);
@@ -291,8 +287,7 @@ static int tx_clean_used(struct eth_ivshmem_queue *q)
 		uint32_t consumed_len = len;
 		uint32_t new_tail = tx_buffer_advance(q->vring_data_max_len, &tail, &consumed_len);
 
-		if (consumed_len > q->tx.data_len ||
-			offset != tail) {
+		if (consumed_len > q->tx.data_len || offset != tail) {
 			return -EINVAL;
 		}
 

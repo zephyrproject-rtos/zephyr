@@ -13,9 +13,7 @@
 
 #include "flash_stm32.h"
 
-bool flash_stm32_valid_range(const struct device *dev, off_t offset,
-			     uint32_t len,
-			     bool write)
+bool flash_stm32_valid_range(const struct device *dev, off_t offset, uint32_t len, bool write)
 {
 	ARG_UNUSED(write);
 
@@ -76,7 +74,7 @@ static int write_byte(const struct device *dev, off_t offset, uint8_t val)
 	/* flush the register write */
 	tmp = regs->CR;
 
-	*((uint8_t *) offset + FLASH_STM32_BASE_ADDRESS) = val;
+	*((uint8_t *)offset + FLASH_STM32_BASE_ADDRESS) = val;
 
 	/* Wait until the BSY bit is cleared */
 	rc = flash_stm32_wait_flash_idle(dev);
@@ -121,9 +119,7 @@ static int erase_sector(const struct device *dev, uint32_t sector)
 	return rc;
 }
 
-int flash_stm32_block_erase_loop(const struct device *dev,
-				 unsigned int offset,
-				 unsigned int len)
+int flash_stm32_block_erase_loop(const struct device *dev, unsigned int offset, unsigned int len)
 {
 	struct flash_pages_info info;
 	uint32_t start_sector, end_sector;
@@ -151,13 +147,13 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 	return rc;
 }
 
-int flash_stm32_write_range(const struct device *dev, unsigned int offset,
-			    const void *data, unsigned int len)
+int flash_stm32_write_range(const struct device *dev, unsigned int offset, const void *data,
+			    unsigned int len)
 {
 	int i, rc = 0;
 
 	for (i = 0; i < len; i++, offset++) {
-		rc = write_byte(dev, offset, ((const uint8_t *) data)[i]);
+		rc = write_byte(dev, offset, ((const uint8_t *)data)[i]);
 		if (rc < 0) {
 			return rc;
 		}
@@ -173,7 +169,7 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
  */
 #ifndef FLASH_SECTOR_TOTAL
 #error "Unknown flash layout"
-#else  /* defined(FLASH_SECTOR_TOTAL) */
+#else /* defined(FLASH_SECTOR_TOTAL) */
 #if FLASH_SECTOR_TOTAL == 12
 static const struct flash_pages_layout stm32f2_flash_layout[] = {
 	/*
@@ -186,10 +182,9 @@ static const struct flash_pages_layout stm32f2_flash_layout[] = {
 #else
 #error "Unknown flash layout"
 #endif /* FLASH_SECTOR_TOTAL == 12 */
-#endif/* !defined(FLASH_SECTOR_TOTAL) */
+#endif /* !defined(FLASH_SECTOR_TOTAL) */
 
-void flash_stm32_page_layout(const struct device *dev,
-			     const struct flash_pages_layout **layout,
+void flash_stm32_page_layout(const struct device *dev, const struct flash_pages_layout **layout,
 			     size_t *layout_size)
 {
 	ARG_UNUSED(dev);

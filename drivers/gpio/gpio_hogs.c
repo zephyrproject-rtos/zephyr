@@ -23,72 +23,63 @@ struct gpio_hogs {
 };
 
 /* Static initializer for a struct gpio_hog_dt_spec */
-#define GPIO_HOG_DT_SPEC_GET_BY_IDX(node_id, idx)						\
-	{											\
-		.pin = DT_GPIO_HOG_PIN_BY_IDX(node_id, idx),					\
-		.flags = DT_GPIO_HOG_FLAGS_BY_IDX(node_id, idx) |				\
+#define GPIO_HOG_DT_SPEC_GET_BY_IDX(node_id, idx)                                                  \
+	{                                                                                          \
+		.pin = DT_GPIO_HOG_PIN_BY_IDX(node_id, idx),                                       \
+		.flags = DT_GPIO_HOG_FLAGS_BY_IDX(node_id, idx) |                                  \
 			 COND_CODE_1(DT_PROP(node_id, input), (GPIO_INPUT),			\
 				     (COND_CODE_1(DT_PROP(node_id, output_low),			\
 						 (GPIO_OUTPUT_INACTIVE),			\
 						 (COND_CODE_1(DT_PROP(node_id, output_high),	\
-							     (GPIO_OUTPUT_ACTIVE), (0)))))),	\
-	}
+							     (GPIO_OUTPUT_ACTIVE), (0)))))),            \
+				  }
 
 /* Expands to 1 if node_id is a GPIO controller, 0 otherwise */
-#define GPIO_HOGS_NODE_IS_GPIO_CTLR(node_id)			\
-	DT_PROP_OR(node_id, gpio_controller, 0)
+#define GPIO_HOGS_NODE_IS_GPIO_CTLR(node_id) DT_PROP_OR(node_id, gpio_controller, 0)
 
 /* Expands to 1 if node_id is a GPIO hog, empty otherwise */
-#define GPIO_HOGS_NODE_IS_GPIO_HOG(node_id)			\
-	IF_ENABLED(DT_PROP_OR(node_id, gpio_hog, 0), 1)
+#define GPIO_HOGS_NODE_IS_GPIO_HOG(node_id) IF_ENABLED(DT_PROP_OR(node_id, gpio_hog, 0), 1)
 
 /* Expands to 1 if GPIO controller node_id has GPIO hog children, 0 otherwise */
-#define GPIO_HOGS_GPIO_CTLR_HAS_HOGS(node_id)			\
+#define GPIO_HOGS_GPIO_CTLR_HAS_HOGS(node_id)                                                      \
 	COND_CODE_0(						\
 		IS_EMPTY(DT_FOREACH_CHILD_STATUS_OKAY(node_id,	\
 			GPIO_HOGS_NODE_IS_GPIO_HOG)),		\
 		(1), (0))
 
 /* Called for GPIO hog indexes */
-#define GPIO_HOGS_INIT_GPIO_HOG_BY_IDX(idx, node_id)		\
-	GPIO_HOG_DT_SPEC_GET_BY_IDX(node_id, idx)
+#define GPIO_HOGS_INIT_GPIO_HOG_BY_IDX(idx, node_id) GPIO_HOG_DT_SPEC_GET_BY_IDX(node_id, idx)
 
 /* Called for GPIO hog dts nodes */
-#define GPIO_HOGS_INIT_GPIO_HOGS(node_id)			\
+#define GPIO_HOGS_INIT_GPIO_HOGS(node_id)                                                          \
 	LISTIFY(DT_NUM_GPIO_HOGS(node_id),			\
 		GPIO_HOGS_INIT_GPIO_HOG_BY_IDX, (,), node_id),
 
 /* Called for GPIO controller dts node children */
-#define GPIO_HOGS_COND_INIT_GPIO_HOGS(node_id)			\
+#define GPIO_HOGS_COND_INIT_GPIO_HOGS(node_id)                                                     \
 	COND_CODE_0(IS_EMPTY(GPIO_HOGS_NODE_IS_GPIO_HOG(node_id)),	\
 		    (GPIO_HOGS_INIT_GPIO_HOGS(node_id)), ())
 
 /* Called for each GPIO controller dts node which has GPIO hog children */
-#define GPIO_HOGS_INIT_GPIO_CTLR(node_id)				\
-	{								\
-		.port = DEVICE_DT_GET(node_id),				\
-		.specs = (const struct gpio_hog_dt_spec []) {		\
-			DT_FOREACH_CHILD_STATUS_OKAY(node_id,		\
-				GPIO_HOGS_COND_INIT_GPIO_HOGS)		\
-		},							\
-		.num_specs =						\
-			DT_FOREACH_CHILD_STATUS_OKAY_SEP(node_id,	\
-				DT_NUM_GPIO_HOGS, (+)),			\
+#define GPIO_HOGS_INIT_GPIO_CTLR(node_id)                                                          \
+	{                                                                                          \
+		.port = DEVICE_DT_GET(node_id),                                                    \
+		.specs = (const struct gpio_hog_dt_spec[]){DT_FOREACH_CHILD_STATUS_OKAY(           \
+			node_id, GPIO_HOGS_COND_INIT_GPIO_HOGS)},                                  \
+		.num_specs = DT_FOREACH_CHILD_STATUS_OKAY_SEP(node_id, DT_NUM_GPIO_HOGS, (+)),     \
 	},
 
 /* Called for each GPIO controller dts node */
-#define GPIO_HOGS_COND_INIT_GPIO_CTLR(node_id)			\
+#define GPIO_HOGS_COND_INIT_GPIO_CTLR(node_id)                                                     \
 	IF_ENABLED(GPIO_HOGS_GPIO_CTLR_HAS_HOGS(node_id),	\
 		   (GPIO_HOGS_INIT_GPIO_CTLR(node_id)))
 
 /* Called for each dts node */
-#define GPIO_HOGS_COND_INIT(node_id)				\
+#define GPIO_HOGS_COND_INIT(node_id)                                                               \
 	IF_ENABLED(GPIO_HOGS_NODE_IS_GPIO_CTLR(node_id),	\
 		   (GPIO_HOGS_COND_INIT_GPIO_CTLR(node_id)))
 
-static const struct gpio_hogs gpio_hogs[] = {
-	DT_FOREACH_STATUS_OKAY_NODE(GPIO_HOGS_COND_INIT)
-};
+static const struct gpio_hogs gpio_hogs[] = {DT_FOREACH_STATUS_OKAY_NODE(GPIO_HOGS_COND_INIT)};
 
 static int gpio_hogs_init(void)
 {
@@ -97,7 +88,6 @@ static int gpio_hogs_init(void)
 	int err;
 	int i;
 	int j;
-
 
 	for (i = 0; i < ARRAY_SIZE(gpio_hogs); i++) {
 		hogs = &gpio_hogs[i];

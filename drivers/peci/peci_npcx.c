@@ -18,7 +18,7 @@
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(peci_npcx, CONFIG_PECI_LOG_LEVEL);
 
-#define PECI_TIMEOUT		 K_MSEC(300)
+#define PECI_TIMEOUT             K_MSEC(300)
 #define PECI_NPCX_MAX_TX_BUF_LEN 65
 #define PECI_NPCX_MAX_RX_BUF_LEN 64
 

@@ -25,13 +25,12 @@ LOG_MODULE_REGISTER(cs_etr_tbm);
 
 #define ETR_BUFFER_NODE DT_NODELABEL(etr_buffer)
 
-#define DROP_CHECK_PERIOD                            \
-	COND_CODE_1(CONFIG_NRF_ETR_DECODE, \
+#define DROP_CHECK_PERIOD COND_CODE_1(CONFIG_NRF_ETR_DECODE, \
 		    (CONFIG_NRF_ETR_DECODE_DROP_PERIOD), (0))
 
 #define MIN_DATA (2 * CORESIGHT_TRACE_FRAME_SIZE32)
 
-#define MEMORY_SECTION(node)                                                                  \
+#define MEMORY_SECTION(node)                                                                       \
 	COND_CODE_1(DT_NODE_HAS_PROP(node, memory_regions),                                   \
 		    (__attribute__((__section__(                                              \
 			    LINKER_DT_NODE_REGION_NAME(DT_PHANDLE(node, memory_regions)))))), \
@@ -47,28 +46,28 @@ LOG_MODULE_REGISTER(cs_etr_tbm);
  * @param _data Data variable.
  * @param _nlen Number of nibbles in @p _data to print.
  */
-#define DBG_DATA(_data, _nlen, _marked)                   \
-	do {                                              \
-		char *fmt;                                \
-		switch (_nlen) {                          \
-		case 2:                                   \
-			fmt = "D%s\t%02x ";               \
-			break;                            \
-		case 4:                                   \
-			fmt = "D%s\t%04x ";               \
-			break;                            \
-		case 8:                                   \
-			fmt = "D%s\t%08x ";               \
-			break;                            \
-		default:                                  \
-			fmt = "D%s\t%016x ";              \
-			break;                            \
-		}                                         \
-		DBG(fmt, _marked ? "M" : "", _data);      \
-		for (int i = 0; i < _nlen / 2; i++) {     \
-			DBG("%c ", ((char *)&_data)[i]);  \
-		}                                         \
-		DBG("\n");                                \
+#define DBG_DATA(_data, _nlen, _marked)                                                            \
+	do {                                                                                       \
+		char *fmt;                                                                         \
+		switch (_nlen) {                                                                   \
+		case 2:                                                                            \
+			fmt = "D%s\t%02x ";                                                        \
+			break;                                                                     \
+		case 4:                                                                            \
+			fmt = "D%s\t%04x ";                                                        \
+			break;                                                                     \
+		case 8:                                                                            \
+			fmt = "D%s\t%08x ";                                                        \
+			break;                                                                     \
+		default:                                                                           \
+			fmt = "D%s\t%016x ";                                                       \
+			break;                                                                     \
+		}                                                                                  \
+		DBG(fmt, _marked ? "M" : "", _data);                                               \
+		for (int i = 0; i < _nlen / 2; i++) {                                              \
+			DBG("%c ", ((char *)&_data)[i]);                                           \
+		}                                                                                  \
+		DBG("\n");                                                                         \
 	} while (0)
 
 static const uint32_t wsize_mask = DT_REG_SIZE(ETR_BUFFER_NODE) / sizeof(int) - 1;
@@ -89,8 +88,7 @@ static const struct device *uart_dev = DEVICE_DT_GET(UART_NODE);
 static uint32_t frame_buf0[CORESIGHT_TRACE_FRAME_SIZE32] MEMORY_SECTION(UART_NODE);
 static uint32_t frame_buf1[CORESIGHT_TRACE_FRAME_SIZE32] MEMORY_SECTION(UART_NODE);
 static uint32_t frame_buf_decode[CORESIGHT_TRACE_FRAME_SIZE32];
-static uint32_t *frame_buf = IS_ENABLED(CONFIG_NRF_ETR_DECODE) ?
-				frame_buf_decode : frame_buf0;
+static uint32_t *frame_buf = IS_ENABLED(CONFIG_NRF_ETR_DECODE) ? frame_buf_decode : frame_buf0;
 
 K_KERNEL_STACK_DEFINE(etr_stack, CONFIG_NRF_ETR_STACK_SIZE);
 static struct k_thread etr_thread;
@@ -102,32 +100,32 @@ BUILD_ASSERT((DT_REG_ADDR(ETR_BUFFER_NODE) % CONFIG_DCACHE_LINE_SIZE) == 0);
 static const uint16_t stm_m_id[] = {0x21, 0x22, 0x23, 0x2c, 0x2d, 0x2e, 0x24, 0x80};
 static const char *const stm_m_name[] = {"sec", "app", "rad", "sys", "flpr", "ppr", "mod", "hw"};
 static const char *const hw_evts[] = {
-	"CTI211_0",  /* 0 CTI211 triger out 1 */
-	"CTI211_1",  /* 1 CTI211 triger out 1 inverted */
-	"CTI211_2",  /* 2 CTI211 triger out 2 */
-	"CTI211_3",  /* 3 CTI211 triger out 2 inverted*/
-	"Sec up",    /* 4 Secure Domain up */
-	"Sec down",  /* 5 Secure Domain down */
-	"App up",    /* 6 Application Domain up */
-	"App down",  /* 7 Application Domain down */
-	"Rad up",    /* 8 Radio Domain up */
-	"Rad down",  /* 9 Radio Domain down */
-	"Radf up",   /* 10 Radio fast up */
-	"Radf down", /* 11 Radio fast down */
-	NULL, /* Reserved */
-	NULL, /* Reserved */
-	NULL, /* Reserved */
-	NULL, /* Reserved */
-	NULL, /* Reserved */
-	NULL, /* Reserved */
-	NULL, /* Reserved */
-	NULL, /* Reserved */
-	NULL, /* Reserved */
-	NULL, /* Reserved */
-	NULL, /* Reserved */
-	NULL, /* Reserved */
-	NULL, /* Reserved */
-	NULL, /* Reserved */
+	"CTI211_0",    /* 0 CTI211 triger out 1 */
+	"CTI211_1",    /* 1 CTI211 triger out 1 inverted */
+	"CTI211_2",    /* 2 CTI211 triger out 2 */
+	"CTI211_3",    /* 3 CTI211 triger out 2 inverted*/
+	"Sec up",      /* 4 Secure Domain up */
+	"Sec down",    /* 5 Secure Domain down */
+	"App up",      /* 6 Application Domain up */
+	"App down",    /* 7 Application Domain down */
+	"Rad up",      /* 8 Radio Domain up */
+	"Rad down",    /* 9 Radio Domain down */
+	"Radf up",     /* 10 Radio fast up */
+	"Radf down",   /* 11 Radio fast down */
+	NULL,          /* Reserved */
+	NULL,          /* Reserved */
+	NULL,          /* Reserved */
+	NULL,          /* Reserved */
+	NULL,          /* Reserved */
+	NULL,          /* Reserved */
+	NULL,          /* Reserved */
+	NULL,          /* Reserved */
+	NULL,          /* Reserved */
+	NULL,          /* Reserved */
+	NULL,          /* Reserved */
+	NULL,          /* Reserved */
+	NULL,          /* Reserved */
+	NULL,          /* Reserved */
 	"GD LL up",    /* 26 Global domain low leakage up */
 	"GD LL down",  /* 27 Global domain low leakage down */
 	"GD1 HS up",   /* 28 Global domain high speed 1 up */
@@ -150,8 +148,8 @@ static int log_output_func(uint8_t *buf, size_t size, void *ctx)
 		err = uart_tx(uart_dev, tx_buf, size, SYS_FOREVER_US);
 		__ASSERT_NO_MSG(err >= 0);
 
-		tx_buf = (tx_buf == (uint8_t *)frame_buf0) ?
-			(uint8_t *)frame_buf1 : (uint8_t *)frame_buf0;
+		tx_buf = (tx_buf == (uint8_t *)frame_buf0) ? (uint8_t *)frame_buf1
+							   : (uint8_t *)frame_buf0;
 	} else {
 		for (int i = 0; i < size; i++) {
 			uart_poll_out(uart_dev, buf[i]);
@@ -205,8 +203,8 @@ static void trace_point_process(struct log_frontend_stmesp_demux_trace_point *pa
 	static const union cbprintf_package_hdr desc = {.desc = {.len = 3 /* hdr + fmt + id */}};
 	uint32_t tp_p[] = {(uint32_t)desc.raw, (uint32_t)tp, packet->id};
 
-	log_output_process(&log_output, packet->timestamp, dname, sname, NULL,
-			   1, (const uint8_t *)tp_p, NULL, 0, flags);
+	log_output_process(&log_output, packet->timestamp, dname, sname, NULL, 1,
+			   (const uint8_t *)tp_p, NULL, 0, flags);
 }
 
 /** @brief Process a HW event message. */
@@ -220,8 +218,8 @@ static void hw_event_process(struct log_frontend_stmesp_demux_hw_event *packet)
 	static const union cbprintf_package_hdr desc = {.desc = {.len = 3 /* hdr + fmt + id */}};
 	uint32_t tp_p[] = {(uint32_t)desc.raw, (uint32_t)tp, (uint32_t)evt_name};
 
-	log_output_process(&log_output, packet->timestamp, dname, sname, NULL,
-			   1, (const uint8_t *)tp_p, NULL, 0, flags);
+	log_output_process(&log_output, packet->timestamp, dname, sname, NULL, 1,
+			   (const uint8_t *)tp_p, NULL, 0, flags);
 }
 
 static void message_process(union log_frontend_stmesp_demux_packet packet)
@@ -266,8 +264,7 @@ static void on_resync(void)
 	}
 }
 
-static void decoder_cb_debug(enum mipi_stp_decoder_ctrl_type type,
-			     union mipi_stp_decoder_data data,
+static void decoder_cb_debug(enum mipi_stp_decoder_ctrl_type type, union mipi_stp_decoder_data data,
 			     uint64_t *ts, bool marked)
 {
 	switch (type) {
@@ -326,9 +323,8 @@ static void decoder_cb_debug(enum mipi_stp_decoder_ctrl_type type,
 	}
 }
 
-static void decoder_cb(enum mipi_stp_decoder_ctrl_type type,
-		       union mipi_stp_decoder_data data, uint64_t *ts,
-		       bool marked)
+static void decoder_cb(enum mipi_stp_decoder_ctrl_type type, union mipi_stp_decoder_data data,
+		       uint64_t *ts, bool marked)
 {
 	int rv = 0;
 
@@ -551,8 +547,8 @@ static void process(void)
 			}
 		} else {
 			dump_frame((uint8_t *)frame_buf);
-			frame_buf = (use_async_uart && (frame_buf == frame_buf0)) ?
-						frame_buf1 : frame_buf0;
+			frame_buf = (use_async_uart && (frame_buf == frame_buf0)) ? frame_buf1
+										  : frame_buf0;
 		}
 	}
 
@@ -573,8 +569,8 @@ static int decoder_init(void)
 
 	once = true;
 	if (IS_ENABLED(CONFIG_NRF_ETR_DECODE)) {
-		static const struct log_frontend_stmesp_demux_config config = {.m_ids = stm_m_id,
-							       .m_ids_cnt = ARRAY_SIZE(stm_m_id)};
+		static const struct log_frontend_stmesp_demux_config config = {
+			.m_ids = stm_m_id, .m_ids_cnt = ARRAY_SIZE(stm_m_id)};
 
 		err = log_frontend_stmesp_demux_init(&config);
 		if (err < 0) {
@@ -583,7 +579,7 @@ static int decoder_init(void)
 	}
 
 	static const struct mipi_stp_decoder_config stp_decoder_cfg = {.cb = decoder_cb,
-								  .start_out_of_sync = true};
+								       .start_out_of_sync = true};
 
 	mipi_stp_decoder_init(&stp_decoder_cfg);
 
@@ -596,8 +592,7 @@ void nrf_etr_flush(void)
 {
 	int cnt = 4;
 
-	if (IS_ENABLED(CONFIG_NRF_ETR_DECODE) ||
-	    IS_ENABLED(CONFIG_NRF_ETR_DEBUG)) {
+	if (IS_ENABLED(CONFIG_NRF_ETR_DECODE) || IS_ENABLED(CONFIG_NRF_ETR_DEBUG)) {
 		(void)decoder_init();
 	}
 
@@ -619,8 +614,7 @@ static void etr_thread_func(void *dummy1, void *dummy2, void *dummy3)
 {
 	uint64_t checkpoint = 0;
 
-	if (IS_ENABLED(CONFIG_NRF_ETR_DECODE) ||
-	    IS_ENABLED(CONFIG_NRF_ETR_DEBUG)) {
+	if (IS_ENABLED(CONFIG_NRF_ETR_DECODE) || IS_ENABLED(CONFIG_NRF_ETR_DEBUG)) {
 		int err;
 
 		err = decoder_init();
@@ -687,13 +681,12 @@ int etr_process_init(void)
 
 	nrfx_tbm_init(&config, tbm_event_handler);
 
-	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(tbm)), DT_IRQ(DT_NODELABEL(tbm), priority),
-			    nrfx_isr, nrfx_tbm_irq_handler, 0);
+	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(tbm)), DT_IRQ(DT_NODELABEL(tbm), priority), nrfx_isr,
+		    nrfx_tbm_irq_handler, 0);
 	irq_enable(DT_IRQN(DT_NODELABEL(tbm)));
 
-	k_thread_create(&etr_thread, etr_stack, K_KERNEL_STACK_SIZEOF(etr_stack),
-			etr_thread_func, NULL, NULL, NULL, K_LOWEST_APPLICATION_THREAD_PRIO, 0,
-			K_NO_WAIT);
+	k_thread_create(&etr_thread, etr_stack, K_KERNEL_STACK_SIZEOF(etr_stack), etr_thread_func,
+			NULL, NULL, NULL, K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
 	k_thread_name_set(&etr_thread, "etr_process");
 
 	return 0;

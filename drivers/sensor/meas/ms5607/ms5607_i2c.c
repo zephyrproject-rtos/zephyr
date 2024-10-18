@@ -33,8 +33,7 @@ static int ms5607_i2c_reset(const struct ms5607_config *config)
 	return 0;
 }
 
-static int ms5607_i2c_read_prom(const struct ms5607_config *config, uint8_t cmd,
-				uint16_t *val)
+static int ms5607_i2c_read_prom(const struct ms5607_config *config, uint8_t cmd, uint16_t *val)
 {
 	uint8_t valb[2];
 	int err;
@@ -48,7 +47,6 @@ static int ms5607_i2c_read_prom(const struct ms5607_config *config, uint8_t cmd,
 
 	return 0;
 }
-
 
 static int ms5607_i2c_start_conversion(const struct ms5607_config *config, uint8_t cmd)
 {
@@ -69,7 +67,6 @@ static int ms5607_i2c_read_adc(const struct ms5607_config *config, uint32_t *val
 
 	return 0;
 }
-
 
 static int ms5607_i2c_check(const struct ms5607_config *config)
 {

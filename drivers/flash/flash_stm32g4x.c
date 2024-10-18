@@ -5,7 +5,7 @@
  */
 
 #define LOG_DOMAIN flash_stm32g4
-#define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
+#define LOG_LEVEL  CONFIG_FLASH_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
@@ -20,16 +20,14 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #include "flash_stm32.h"
 
-#define STM32G4_SERIES_MAX_FLASH	512
-#define BANK2_OFFSET	(KB(STM32G4_SERIES_MAX_FLASH) / 2)
+#define STM32G4_SERIES_MAX_FLASH 512
+#define BANK2_OFFSET             (KB(STM32G4_SERIES_MAX_FLASH) / 2)
 
 /*
  * offset and len must be aligned on 8 for write,
  * positive and not beyond end of flash
  */
-bool flash_stm32_valid_range(const struct device *dev, off_t offset,
-			     uint32_t len,
-			     bool write)
+bool flash_stm32_valid_range(const struct device *dev, off_t offset, uint32_t len, bool write)
 {
 
 #if defined(FLASH_STM32_DBANK) && (CONFIG_FLASH_SIZE < STM32G4_SERIES_MAX_FLASH)
@@ -100,8 +98,7 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 	 * It is allowed to write only zeros over an already written dword
 	 * See 3.3.7 in reference manual.
 	 */
-	if ((flash[0] != 0xFFFFFFFFUL ||
-	    flash[1] != 0xFFFFFFFFUL) && val != 0UL) {
+	if ((flash[0] != 0xFFFFFFFFUL || flash[1] != 0xFFFFFFFFUL) && val != 0UL) {
 		LOG_ERR("Word at offs %ld not erased", (long)offset);
 		return -EIO;
 	}
@@ -195,7 +192,7 @@ static int erase_page(const struct device *dev, unsigned int offset)
 	}
 #else
 	page = offset / FLASH_PAGE_SIZE;
-		LOG_DBG("Erase page %d", page);
+	LOG_DBG("Erase page %d", page);
 #endif
 
 	/* Set the PER bit and select the page you wish to erase */
@@ -223,14 +220,12 @@ static int erase_page(const struct device *dev, unsigned int offset)
 	return rc;
 }
 
-int flash_stm32_block_erase_loop(const struct device *dev,
-				 unsigned int offset,
-				 unsigned int len)
+int flash_stm32_block_erase_loop(const struct device *dev, unsigned int offset, unsigned int len)
 {
 	unsigned int address = offset;
 	int rc = 0;
 
-	for (; address <= offset + len - 1 ; address += FLASH_PAGE_SIZE) {
+	for (; address <= offset + len - 1; address += FLASH_PAGE_SIZE) {
 		rc = erase_page(dev, address);
 		if (rc < 0) {
 			break;
@@ -240,13 +235,13 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 	return rc;
 }
 
-int flash_stm32_write_range(const struct device *dev, unsigned int offset,
-			    const void *data, unsigned int len)
+int flash_stm32_write_range(const struct device *dev, unsigned int offset, const void *data,
+			    unsigned int len)
 {
 	int i, rc = 0;
 
 	for (i = 0; i < len; i += 8, offset += 8) {
-		rc = write_dword(dev, offset, ((const uint64_t *) data)[i>>3]);
+		rc = write_dword(dev, offset, ((const uint64_t *)data)[i >> 3]);
 		if (rc < 0) {
 			return rc;
 		}
@@ -255,8 +250,7 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 	return rc;
 }
 
-static __unused int write_optb(const struct device *dev, uint32_t mask,
-			       uint32_t value)
+static __unused int write_optb(const struct device *dev, uint32_t mask, uint32_t value)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	int rc;
@@ -314,19 +308,17 @@ uint8_t flash_stm32_get_rdp_level(const struct device *dev)
 
 void flash_stm32_set_rdp_level(const struct device *dev, uint8_t level)
 {
-	write_optb(dev, FLASH_OPTR_RDP_Msk,
-		(uint32_t)level << FLASH_OPTR_RDP_Pos);
+	write_optb(dev, FLASH_OPTR_RDP_Msk, (uint32_t)level << FLASH_OPTR_RDP_Pos);
 }
 #endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
 
-void flash_stm32_page_layout(const struct device *dev,
-			     const struct flash_pages_layout **layout,
+void flash_stm32_page_layout(const struct device *dev, const struct flash_pages_layout **layout,
 			     size_t *layout_size)
 {
 	ARG_UNUSED(dev);
 
 #if defined(FLASH_STM32_DBANK) && (CONFIG_FLASH_SIZE < STM32G4_SERIES_MAX_FLASH)
-#define PAGES_PER_BANK  ((FLASH_SIZE / FLASH_PAGE_SIZE) / 2)
+#define PAGES_PER_BANK ((FLASH_SIZE / FLASH_PAGE_SIZE) / 2)
 	static struct flash_pages_layout stm32g4_flash_layout[3];
 
 	if (stm32g4_flash_layout[0].pages_count == 0) {
@@ -335,8 +327,8 @@ void flash_stm32_page_layout(const struct device *dev,
 		stm32g4_flash_layout[0].pages_size = FLASH_PAGE_SIZE;
 		/* Dummy page corresponding to discontinuity between bank1/2 */
 		stm32g4_flash_layout[1].pages_count = 1;
-		stm32g4_flash_layout[1].pages_size = BANK2_OFFSET
-					- (PAGES_PER_BANK * FLASH_PAGE_SIZE);
+		stm32g4_flash_layout[1].pages_size =
+			BANK2_OFFSET - (PAGES_PER_BANK * FLASH_PAGE_SIZE);
 		/* Bank2 */
 		stm32g4_flash_layout[2].pages_count = PAGES_PER_BANK;
 		stm32g4_flash_layout[2].pages_size = FLASH_PAGE_SIZE;
@@ -345,8 +337,7 @@ void flash_stm32_page_layout(const struct device *dev,
 	static struct flash_pages_layout stm32g4_flash_layout[1];
 
 	if (stm32g4_flash_layout[0].pages_count == 0) {
-		stm32g4_flash_layout[0].pages_count = FLASH_SIZE
-						/ FLASH_PAGE_SIZE;
+		stm32g4_flash_layout[0].pages_count = FLASH_SIZE / FLASH_PAGE_SIZE;
 		stm32g4_flash_layout[0].pages_size = FLASH_PAGE_SIZE;
 	}
 #endif
@@ -356,7 +347,7 @@ void flash_stm32_page_layout(const struct device *dev,
 }
 
 /* Override weak function */
-int  flash_stm32_check_configuration(void)
+int flash_stm32_check_configuration(void)
 {
 #if defined(FLASH_STM32_DBANK)
 	if (READ_BIT(FLASH->OPTR, FLASH_STM32_DBANK) == 0U) {

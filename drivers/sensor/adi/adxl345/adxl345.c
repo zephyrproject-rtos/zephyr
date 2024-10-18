@@ -103,8 +103,7 @@ static inline bool adxl345_bus_is_ready(const struct device *dev)
 	return cfg->bus_is_ready(&cfg->bus);
 }
 
-static int adxl345_read_sample(const struct device *dev,
-			       struct adxl345_sample *sample)
+static int adxl345_read_sample(const struct device *dev, struct adxl345_sample *sample)
 {
 	int16_t raw_x, raw_y, raw_z;
 	uint8_t axis_data[6];
@@ -137,8 +136,7 @@ static void adxl345_accel_convert(struct sensor_value *val, int16_t sample)
 	val->val2 = ((sample * SENSOR_G) / 32) % 1000000;
 }
 
-static int adxl345_sample_fetch(const struct device *dev,
-				enum sensor_channel chan)
+static int adxl345_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct adxl345_dev_data *data = dev->data;
 	struct adxl345_sample sample;
@@ -168,8 +166,7 @@ static int adxl345_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static int adxl345_channel_get(const struct device *dev,
-			       enum sensor_channel chan,
+static int adxl345_channel_get(const struct device *dev, enum sensor_channel chan,
 			       struct sensor_value *val)
 {
 	struct adxl345_dev_data *data = dev->data;
@@ -194,7 +191,7 @@ static int adxl345_channel_get(const struct device *dev,
 	case SENSOR_CHAN_ACCEL_XYZ:
 		adxl345_accel_convert(val++, data->bufx[data->sample_number]);
 		adxl345_accel_convert(val++, data->bufy[data->sample_number]);
-		adxl345_accel_convert(val,   data->bufz[data->sample_number]);
+		adxl345_accel_convert(val, data->bufz[data->sample_number]);
 		data->sample_number++;
 		break;
 	default:
@@ -255,34 +252,31 @@ static int adxl345_init(const struct device *dev)
 	return 0;
 }
 
-#define ADXL345_CONFIG_SPI(inst)                                       \
-	{                                                              \
-		.bus = {.spi = SPI_DT_SPEC_INST_GET(inst,              \
-						    SPI_WORD_SET(8) |  \
-						    SPI_TRANSFER_MSB | \
-						    SPI_MODE_CPOL |    \
-						    SPI_MODE_CPHA,     \
-						    0)},               \
-		.bus_is_ready = adxl345_bus_is_ready_spi,              \
-		.reg_access = adxl345_reg_access_spi,                  \
+#define ADXL345_CONFIG_SPI(inst)                                                                   \
+	{                                                                                          \
+		.bus = {.spi = SPI_DT_SPEC_INST_GET(inst,                                          \
+						    SPI_WORD_SET(8) | SPI_TRANSFER_MSB |           \
+							    SPI_MODE_CPOL | SPI_MODE_CPHA,         \
+						    0)},                                           \
+		.bus_is_ready = adxl345_bus_is_ready_spi,                                          \
+		.reg_access = adxl345_reg_access_spi,                                              \
 	}
 
-#define ADXL345_CONFIG_I2C(inst)			    \
-	{						    \
-		.bus = {.i2c = I2C_DT_SPEC_INST_GET(inst)}, \
-		.bus_is_ready = adxl345_bus_is_ready_i2c,   \
-		.reg_access = adxl345_reg_access_i2c,	    \
+#define ADXL345_CONFIG_I2C(inst)                                                                   \
+	{                                                                                          \
+		.bus = {.i2c = I2C_DT_SPEC_INST_GET(inst)},                                        \
+		.bus_is_ready = adxl345_bus_is_ready_i2c,                                          \
+		.reg_access = adxl345_reg_access_i2c,                                              \
 	}
 
-#define ADXL345_DEFINE(inst)								\
-	static struct adxl345_dev_data adxl345_data_##inst;				\
-											\
-	static const struct adxl345_dev_config adxl345_config_##inst =                  \
-		COND_CODE_1(DT_INST_ON_BUS(inst, spi), (ADXL345_CONFIG_SPI(inst)),      \
-			    (ADXL345_CONFIG_I2C(inst)));                                \
-                                                                                        \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, adxl345_init, NULL,				\
-			      &adxl345_data_##inst, &adxl345_config_##inst, POST_KERNEL,\
-			      CONFIG_SENSOR_INIT_PRIORITY, &adxl345_api_funcs);		\
+#define ADXL345_DEFINE(inst)                                                                       \
+	static struct adxl345_dev_data adxl345_data_##inst;                                        \
+                                                                                                   \
+	static const struct adxl345_dev_config adxl345_config_##inst = COND_CODE_1(DT_INST_ON_BUS(inst, spi), (ADXL345_CONFIG_SPI(inst)),      \
+			    (ADXL345_CONFIG_I2C(inst)));                  \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, adxl345_init, NULL, &adxl345_data_##inst,               \
+				     &adxl345_config_##inst, POST_KERNEL,                          \
+				     CONFIG_SENSOR_INIT_PRIORITY, &adxl345_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(ADXL345_DEFINE)

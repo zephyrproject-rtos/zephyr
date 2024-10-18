@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(TMP007, CONFIG_SENSOR_LOG_LEVEL);
 
 int tmp007_reg_read(const struct i2c_dt_spec *i2c, uint8_t reg, uint16_t *val)
 {
-	if (i2c_burst_read_dt(i2c, reg, (uint8_t *) val, 2) < 0) {
+	if (i2c_burst_read_dt(i2c, reg, (uint8_t *)val, 2) < 0) {
 		LOG_ERR("I2C read failed");
 		return -EIO;
 	}
@@ -39,8 +39,7 @@ int tmp007_reg_write(const struct i2c_dt_spec *i2c, uint8_t reg, uint16_t val)
 	return i2c_write_dt(i2c, tx_buf, sizeof(tx_buf));
 }
 
-int tmp007_reg_update(const struct i2c_dt_spec *i2c, uint8_t reg,
-		      uint16_t mask, uint16_t val)
+int tmp007_reg_update(const struct i2c_dt_spec *i2c, uint8_t reg, uint16_t mask, uint16_t val)
 {
 	uint16_t old_val = 0U;
 	uint16_t new_val;
@@ -55,8 +54,7 @@ int tmp007_reg_update(const struct i2c_dt_spec *i2c, uint8_t reg,
 	return tmp007_reg_write(i2c, reg, new_val);
 }
 
-static int tmp007_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
+static int tmp007_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct tmp007_data *drv_data = dev->data;
 	const struct tmp007_config *cfg = dev->config;
@@ -77,9 +75,8 @@ static int tmp007_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static int tmp007_channel_get(const struct device *dev,
-			       enum sensor_channel chan,
-			       struct sensor_value *val)
+static int tmp007_channel_get(const struct device *dev, enum sensor_channel chan,
+			      struct sensor_value *val)
 {
 	struct tmp007_data *drv_data = dev->data;
 	int32_t uval;
@@ -125,17 +122,16 @@ int tmp007_init(const struct device *dev)
 	return 0;
 }
 
-#define TMP007_DEFINE(inst)									\
-	static struct tmp007_data tmp007_data_##inst;						\
-												\
-	static const struct tmp007_config tmp007_config_##inst = {				\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
+#define TMP007_DEFINE(inst)                                                                        \
+	static struct tmp007_data tmp007_data_##inst;                                              \
+                                                                                                   \
+	static const struct tmp007_config tmp007_config_##inst = {                                 \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		IF_ENABLED(CONFIG_TMP007_TRIGGER,						\
-			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))	\
-	};											\
-												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, tmp007_init, NULL,					\
-			      &tmp007_data_##inst, &tmp007_config_##inst, POST_KERNEL,		\
-			      CONFIG_SENSOR_INIT_PRIORITY, &tmp007_driver_api);			\
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),)) };           \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, tmp007_init, NULL, &tmp007_data_##inst,                 \
+				     &tmp007_config_##inst, POST_KERNEL,                           \
+				     CONFIG_SENSOR_INIT_PRIORITY, &tmp007_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TMP007_DEFINE)

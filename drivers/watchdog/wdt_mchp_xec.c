@@ -82,8 +82,7 @@ static int wdt_xec_disable(const struct device *dev)
 	return 0;
 }
 
-static int wdt_xec_install_timeout(const struct device *dev,
-				   const struct wdt_timeout_cfg *config)
+static int wdt_xec_install_timeout(const struct device *dev, const struct wdt_timeout_cfg *config)
 {
 	struct wdt_xec_config const *cfg = dev->config;
 	struct wdt_xec_data *data = dev->data;
@@ -187,9 +186,8 @@ static int wdt_xec_init(const struct device *dev)
 	MCHP_GIRQ_ENSET(MCHP_WDT_GIRQ) = BIT(cfg->girq_pos);
 #endif
 
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    wdt_xec_isr, DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), wdt_xec_isr, DEVICE_DT_INST_GET(0),
+		    0);
 	irq_enable(DT_INST_IRQN(0));
 
 	return 0;
@@ -203,7 +201,5 @@ static const struct wdt_xec_config wdt_xec_config_0 = {
 
 static struct wdt_xec_data wdt_xec_dev_data;
 
-DEVICE_DT_INST_DEFINE(0, wdt_xec_init, NULL,
-		    &wdt_xec_dev_data, &wdt_xec_config_0,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &wdt_xec_api);
+DEVICE_DT_INST_DEFINE(0, wdt_xec_init, NULL, &wdt_xec_dev_data, &wdt_xec_config_0, PRE_KERNEL_1,
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wdt_xec_api);

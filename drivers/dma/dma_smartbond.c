@@ -22,37 +22,36 @@ LOG_MODULE_REGISTER(dma_smartbond, CONFIG_DMA_LOG_LEVEL);
 
 #define DT_DRV_COMPAT renesas_smartbond_dma
 
-#define SMARTBOND_IRQN      DT_INST_IRQN(0)
-#define SMARTBOND_IRQ_PRIO  DT_INST_IRQ(0, priority)
+#define SMARTBOND_IRQN     DT_INST_IRQN(0)
+#define SMARTBOND_IRQ_PRIO DT_INST_IRQ(0, priority)
 
-#define DMA_CHANNELS_COUNT   DT_PROP(DT_NODELABEL(dma), dma_channels)
-#define DMA_BLOCK_COUNT     DT_PROP(DT_NODELABEL(dma), block_count)
-#define DMA_SECURE_CHANNEL  7
+#define DMA_CHANNELS_COUNT DT_PROP(DT_NODELABEL(dma), dma_channels)
+#define DMA_BLOCK_COUNT    DT_PROP(DT_NODELABEL(dma), block_count)
+#define DMA_SECURE_CHANNEL 7
 
-#define DMA_CTRL_REG_SET_FIELD(_field, _var, _val) \
-	(_var) = \
-	(((_var) & ~DMA_DMA0_CTRL_REG_ ## _field ## _Msk) | \
-	(((_val) << DMA_DMA0_CTRL_REG_ ## _field ## _Pos) & DMA_DMA0_CTRL_REG_ ## _field ## _Msk))
+#define DMA_CTRL_REG_SET_FIELD(_field, _var, _val)                                                 \
+	(_var) = (((_var) & ~DMA_DMA0_CTRL_REG_##_field##_Msk) |                                   \
+		  (((_val) << DMA_DMA0_CTRL_REG_##_field##_Pos) &                                  \
+		   DMA_DMA0_CTRL_REG_##_field##_Msk))
 
-#define DMA_CTRL_REG_GET_FIELD(_field, _var) \
-	(((_var) & DMA_DMA0_CTRL_REG_ ## _field ## _Msk) >> DMA_DMA0_CTRL_REG_ ## _field ## _Pos)
+#define DMA_CTRL_REG_GET_FIELD(_field, _var)                                                       \
+	(((_var) & DMA_DMA0_CTRL_REG_##_field##_Msk) >> DMA_DMA0_CTRL_REG_##_field##_Pos)
 
-#define DMA_CHN2REG(_idx)   (&((struct channel_regs *)DMA)[(_idx)])
+#define DMA_CHN2REG(_idx) (&((struct channel_regs *)DMA)[(_idx)])
 
-#define DMA_MUX_SHIFT(_idx)   (((_idx) >> 1) * 4)
+#define DMA_MUX_SHIFT(_idx) (((_idx) >> 1) * 4)
 
-#define DMA_REQ_MUX_REG_SET(_idx, _val) \
-	DMA->DMA_REQ_MUX_REG = \
-		(DMA->DMA_REQ_MUX_REG & ~(0xf << DMA_MUX_SHIFT((_idx)))) | \
-		(((_val) & 0xf) << DMA_MUX_SHIFT((_idx)))
+#define DMA_REQ_MUX_REG_SET(_idx, _val)                                                            \
+	DMA->DMA_REQ_MUX_REG = (DMA->DMA_REQ_MUX_REG & ~(0xf << DMA_MUX_SHIFT((_idx)))) |          \
+			       (((_val) & 0xf) << DMA_MUX_SHIFT((_idx)))
 
-#define DMA_REQ_MUX_REG_GET(_idx) \
-	((DMA->DMA_REQ_MUX_REG >> DMA_MUX_SHIFT((_idx))) & 0xf)
+#define DMA_REQ_MUX_REG_GET(_idx) ((DMA->DMA_REQ_MUX_REG >> DMA_MUX_SHIFT((_idx))) & 0xf)
 
-#define CRYPTO_KEYS_BUF_ADDR   0x30040100
-#define CRYPTO_KEYS_BUF_SIZE   0x100
-#define IS_AES_KEYS_BUF_RANGE(_a)  ((uint32_t)(_a) >= (uint32_t)(CRYPTO_KEYS_BUF_ADDR)) && \
-	((uint32_t)(_a) < (uint32_t)(CRYPTO_KEYS_BUF_ADDR + CRYPTO_KEYS_BUF_SIZE))
+#define CRYPTO_KEYS_BUF_ADDR 0x30040100
+#define CRYPTO_KEYS_BUF_SIZE 0x100
+#define IS_AES_KEYS_BUF_RANGE(_a)                                                                  \
+	((uint32_t)(_a) >= (uint32_t)(CRYPTO_KEYS_BUF_ADDR)) &&                                    \
+		((uint32_t)(_a) < (uint32_t)(CRYPTO_KEYS_BUF_ADDR + CRYPTO_KEYS_BUF_SIZE))
 
 /*
  * DMA channel priority level. The smaller the value the lower the priority granted to a channel
@@ -60,14 +59,14 @@ LOG_MODULE_REGISTER(dma_smartbond, CONFIG_DMA_LOG_LEVEL);
  * inherent mechanism is applied in which the lower the channel number the higher the priority.
  */
 enum dma_smartbond_channel_prio {
-	DMA_SMARTBOND_CHANNEL_PRIO_0 = 0x0,  /* Lowest channel priority */
+	DMA_SMARTBOND_CHANNEL_PRIO_0 = 0x0, /* Lowest channel priority */
 	DMA_SMARTBOND_CHANNEL_PRIO_1,
 	DMA_SMARTBOND_CHANNEL_PRIO_2,
 	DMA_SMARTBOND_CHANNEL_PRIO_3,
 	DMA_SMARTBOND_CHANNEL_PRIO_4,
 	DMA_SMARTBOND_CHANNEL_PRIO_5,
 	DMA_SMARTBOND_CHANNEL_PRIO_6,
-	DMA_SMARTBOND_CHANNEL_PRIO_7,         /* Highest channel priority */
+	DMA_SMARTBOND_CHANNEL_PRIO_7, /* Highest channel priority */
 	DMA_SMARTBOND_CHANNEL_PRIO_MAX
 };
 
@@ -84,9 +83,9 @@ enum dma_smartbond_channel {
 };
 
 enum dma_smartbond_burst_len {
-	DMA_SMARTBOND_BURST_LEN_1B  = 0x1, /* Burst mode is disabled */
-	DMA_SMARTBOND_BURST_LEN_4B  = 0x4, /* Perform bursts of 4 beats (INCR4) */
-	DMA_SMARTBOND_BURST_LEN_8B  = 0x8  /* Perform bursts of 8 beats (INCR8) */
+	DMA_SMARTBOND_BURST_LEN_1B = 0x1, /* Burst mode is disabled */
+	DMA_SMARTBOND_BURST_LEN_4B = 0x4, /* Perform bursts of 4 beats (INCR4) */
+	DMA_SMARTBOND_BURST_LEN_8B = 0x8  /* Perform bursts of 8 beats (INCR8) */
 };
 
 /*
@@ -192,8 +191,8 @@ static inline void dma_smartbond_pm_policy_state_lock_put(void)
 #endif
 }
 
-static void dma_smartbond_set_channel_status(const struct device *dev,
-	uint32_t channel, bool status)
+static void dma_smartbond_set_channel_status(const struct device *dev, uint32_t channel,
+					     bool status)
 {
 	unsigned int key;
 	struct channel_regs *regs = DMA_CHN2REG(channel);
@@ -249,8 +248,7 @@ static bool dma_channel_dst_addr_check_and_adjust(uint32_t channel, uint32_t *ds
 	phy_address = black_orca_phy_addr(*dst);
 
 	secure_boot_reg = CRG_TOP->SECURE_BOOT_REG;
-	is_aes_keys_protected =
-		(secure_boot_reg & CRG_TOP_SECURE_BOOT_REG_PROT_AES_KEY_READ_Msk);
+	is_aes_keys_protected = (secure_boot_reg & CRG_TOP_SECURE_BOOT_REG_PROT_AES_KEY_READ_Msk);
 	is_qspic_keys_protected =
 		(secure_boot_reg & CRG_TOP_SECURE_BOOT_REG_PROT_QSPI_KEY_READ_Msk);
 
@@ -259,14 +257,14 @@ static bool dma_channel_dst_addr_check_and_adjust(uint32_t channel, uint32_t *ds
 	 * then only the secure channel #7 can be used to transfer data to AES key buffer.
 	 */
 	if ((IS_AES_KEYS_BUF_RANGE(phy_address) &&
-		(is_aes_keys_protected || is_qspic_keys_protected) &&
-		(channel != DMA_SECURE_CHANNEL))) {
+	     (is_aes_keys_protected || is_qspic_keys_protected) &&
+	     (channel != DMA_SECURE_CHANNEL))) {
 		LOG_ERR("Keys are protected. Only secure channel #7 can be employed.");
 		return false;
 	}
 
 	if (IS_QSPIF_ADDRESS(phy_address) || IS_QSPIF_CACHED_ADDRESS(phy_address) ||
-				IS_OTP_ADDRESS(phy_address) || IS_OTP_P_ADDRESS(phy_address)) {
+	    IS_OTP_ADDRESS(phy_address) || IS_OTP_P_ADDRESS(phy_address)) {
 		LOG_ERR("Invalid destination location.");
 		return false;
 	}
@@ -297,8 +295,7 @@ static bool dma_channel_src_addr_check_and_adjust(uint32_t channel, uint32_t *sr
 	}
 
 	secure_boot_reg = CRG_TOP->SECURE_BOOT_REG;
-	is_aes_keys_protected =
-		(secure_boot_reg & CRG_TOP_SECURE_BOOT_REG_PROT_AES_KEY_READ_Msk);
+	is_aes_keys_protected = (secure_boot_reg & CRG_TOP_SECURE_BOOT_REG_PROT_AES_KEY_READ_Msk);
 	is_qspic_keys_protected =
 		(secure_boot_reg & CRG_TOP_SECURE_BOOT_REG_PROT_QSPI_KEY_READ_Msk);
 
@@ -308,7 +305,7 @@ static bool dma_channel_src_addr_check_and_adjust(uint32_t channel, uint32_t *sr
 	 */
 	if (((IS_ADDRESS_USER_DATA_KEYS_SEGMENT(phy_address) && is_aes_keys_protected) ||
 	     (IS_ADDRESS_QSPI_FW_KEYS_SEGMENT(phy_address) && is_qspic_keys_protected)) &&
-							(channel != DMA_SECURE_CHANNEL)) {
+	    (channel != DMA_SECURE_CHANNEL)) {
 		LOG_ERR("Keys are protected. Only secure channel #7 can be employed.");
 		return false;
 	}
@@ -319,7 +316,7 @@ static bool dma_channel_src_addr_check_and_adjust(uint32_t channel, uint32_t *sr
 }
 
 static bool dma_channel_update_dreq_mode(enum dma_channel_direction direction,
-									uint32_t *dma_ctrl_reg)
+					 uint32_t *dma_ctrl_reg)
 {
 	switch (direction) {
 	case MEMORY_TO_HOST:
@@ -411,8 +408,8 @@ static bool dma_channel_update_burst_mode(uint16_t burst, uint32_t *dma_ctrl_reg
 	return true;
 }
 
-static void dma_channel_update_req_sense(enum dma_smartbond_trig_mux trig_mux,
-						uint32_t channel, uint32_t *dma_ctrl_reg)
+static void dma_channel_update_req_sense(enum dma_smartbond_trig_mux trig_mux, uint32_t channel,
+					 uint32_t *dma_ctrl_reg)
 {
 	switch (trig_mux) {
 	case DMA_SMARTBOND_TRIG_MUX_UART:
@@ -455,21 +452,21 @@ static void dma_set_mux_request(enum dma_smartbond_trig_mux trig_mux, uint32_t c
 		case DMA_SMARTBOND_CHANNEL_6:
 			if (DMA_REQ_MUX_REG_GET(DMA_SMARTBOND_CHANNEL_5) == trig_mux) {
 				DMA_REQ_MUX_REG_SET(DMA_SMARTBOND_CHANNEL_5,
-								DMA_SMARTBOND_TRIG_MUX_NONE);
+						    DMA_SMARTBOND_TRIG_MUX_NONE);
 			}
 			/* fall-through */
 		case DMA_SMARTBOND_CHANNEL_5:
 		case DMA_SMARTBOND_CHANNEL_4:
 			if (DMA_REQ_MUX_REG_GET(DMA_SMARTBOND_CHANNEL_3) == trig_mux) {
 				DMA_REQ_MUX_REG_SET(DMA_SMARTBOND_CHANNEL_3,
-								DMA_SMARTBOND_TRIG_MUX_NONE);
+						    DMA_SMARTBOND_TRIG_MUX_NONE);
 			}
 			/* fall-through */
 		case DMA_SMARTBOND_CHANNEL_3:
 		case DMA_SMARTBOND_CHANNEL_2:
 			if (DMA_REQ_MUX_REG_GET(DMA_SMARTBOND_CHANNEL_1) == trig_mux) {
 				DMA_REQ_MUX_REG_SET(DMA_SMARTBOND_CHANNEL_1,
-								DMA_SMARTBOND_TRIG_MUX_NONE);
+						    DMA_SMARTBOND_TRIG_MUX_NONE);
 			}
 		case DMA_SMARTBOND_CHANNEL_1:
 		case DMA_SMARTBOND_CHANNEL_0:
@@ -535,7 +532,7 @@ static int dma_smartbond_config(const struct device *dev, uint32_t channel, stru
 	DMA_CTRL_REG_SET_FIELD(DMA_PRIO, dma_ctrl_reg, cfg->channel_priority);
 
 	if (((cfg->source_burst_length != cfg->dest_burst_length) ||
-		!dma_channel_update_burst_mode(cfg->source_burst_length, &dma_ctrl_reg))) {
+	     !dma_channel_update_burst_mode(cfg->source_burst_length, &dma_ctrl_reg))) {
 		LOG_ERR("Invalid burst mode or source and destination mode mismatch");
 		return -EINVAL;
 	}
@@ -543,21 +540,20 @@ static int dma_smartbond_config(const struct device *dev, uint32_t channel, stru
 	data->channel_data[channel].burst_len = cfg->source_burst_length;
 
 	if (cfg->source_data_size != cfg->dest_data_size ||
-		!dma_channel_update_bus_width(cfg->source_data_size, &dma_ctrl_reg)) {
+	    !dma_channel_update_bus_width(cfg->source_data_size, &dma_ctrl_reg)) {
 		LOG_ERR("Invalid bus width or source and destination bus width mismatch");
 		return -EINVAL;
 	}
 
 	data->channel_data[channel].bus_width = cfg->source_data_size;
 
-	if (cfg->source_chaining_en || cfg->dest_chaining_en ||
-		cfg->head_block->source_gather_en || cfg->head_block->dest_scatter_en ||
-		cfg->head_block->source_reload_en || cfg->head_block->dest_reload_en) {
+	if (cfg->source_chaining_en || cfg->dest_chaining_en || cfg->head_block->source_gather_en ||
+	    cfg->head_block->dest_scatter_en || cfg->head_block->source_reload_en ||
+	    cfg->head_block->dest_reload_en) {
 		LOG_WRN("Chainning, scattering, gathering or reloading is not supported");
 	}
 
-	if (!dma_channel_update_src_addr_adj(cfg->head_block->source_addr_adj,
-								&dma_ctrl_reg)) {
+	if (!dma_channel_update_src_addr_adj(cfg->head_block->source_addr_adj, &dma_ctrl_reg)) {
 		LOG_ERR("Invalid source address adjustment");
 		return -EINVAL;
 	}
@@ -581,8 +577,8 @@ static int dma_smartbond_config(const struct device *dev, uint32_t channel, stru
 	DMA_CTRL_REG_SET_FIELD(CIRCULAR, dma_ctrl_reg, cfg->cyclic);
 
 	if (DMA_CTRL_REG_GET_FIELD(DREQ_MODE, dma_ctrl_reg) == DREQ_MODE_SW &&
-		DMA_CTRL_REG_GET_FIELD(AINC, dma_ctrl_reg) == ADDR_ADJ_NO_CHANGE &&
-		DMA_CTRL_REG_GET_FIELD(BINC, dma_ctrl_reg) == ADDR_ADJ_INCR) {
+	    DMA_CTRL_REG_GET_FIELD(AINC, dma_ctrl_reg) == ADDR_ADJ_NO_CHANGE &&
+	    DMA_CTRL_REG_GET_FIELD(BINC, dma_ctrl_reg) == ADDR_ADJ_INCR) {
 		/*
 		 * Valid for memory initialization to a specific value. This process
 		 * cannot be interrupted by other DMA channels.
@@ -631,8 +627,7 @@ static int dma_smartbond_config(const struct device *dev, uint32_t channel, stru
 	/* Interrupt will be raised once all transfers are complete. */
 	regs->DMA_INT_REG = (cfg->head_block->block_size / cfg->source_data_size) - 1;
 
-	if ((cfg->source_handshake != cfg->dest_handshake) ||
-		(cfg->source_handshake != 0)/*HW*/) {
+	if ((cfg->source_handshake != cfg->dest_handshake) || (cfg->source_handshake != 0) /*HW*/) {
 		LOG_ERR("Source/destination handshakes mismatch or invalid");
 		return -EINVAL;
 	}
@@ -645,9 +640,8 @@ static int dma_smartbond_config(const struct device *dev, uint32_t channel, stru
 	return 0;
 }
 
-
 static int dma_smartbond_reload(const struct device *dev, uint32_t channel, uint32_t src,
-									uint32_t dst, size_t size)
+				uint32_t dst, size_t size)
 {
 	struct dma_smartbond_data *data = dev->data;
 	struct channel_regs *regs;
@@ -695,8 +689,8 @@ static int dma_smartbond_reload(const struct device *dev, uint32_t channel, uint
 
 	regs->DMA_B_START = dst;
 
-	if (size % (data->channel_data[channel].burst_len *
-							data->channel_data[channel].bus_width)) {
+	if (size %
+	    (data->channel_data[channel].burst_len * data->channel_data[channel].bus_width)) {
 		LOG_ERR("Requested data size is not multiple of bus width");
 		return -EINVAL;
 	}
@@ -794,7 +788,7 @@ static int dma_smartbond_resume(const struct device *dev, uint32_t channel)
 }
 
 static int dma_smartbond_get_status(const struct device *dev, uint32_t channel,
-							struct dma_status *stat)
+				    struct dma_status *stat)
 {
 	struct channel_regs *regs;
 	int key;
@@ -907,17 +901,16 @@ static bool dma_smartbond_chan_filter(const struct device *dev, int channel, voi
 	return false;
 }
 
-static struct dma_driver_api dma_smartbond_driver_api = {
-	.config = dma_smartbond_config,
-	.reload = dma_smartbond_reload,
-	.start = dma_smartbond_start,
-	.stop = dma_smartbond_stop,
-	.suspend = dma_smartbond_suspend,
-	.resume = dma_smartbond_resume,
-	.get_status = dma_smartbond_get_status,
-	.get_attribute = dma_smartbond_get_attribute,
-	.chan_filter = dma_smartbond_chan_filter
-};
+static struct dma_driver_api dma_smartbond_driver_api = {.config = dma_smartbond_config,
+							 .reload = dma_smartbond_reload,
+							 .start = dma_smartbond_start,
+							 .stop = dma_smartbond_stop,
+							 .suspend = dma_smartbond_suspend,
+							 .resume = dma_smartbond_resume,
+							 .get_status = dma_smartbond_get_status,
+							 .get_attribute =
+								 dma_smartbond_get_attribute,
+							 .chan_filter = dma_smartbond_chan_filter};
 
 static void smartbond_dma_isr(const void *arg)
 {
@@ -931,7 +924,7 @@ static void smartbond_dma_isr(const void *arg)
 	 * should be parsed separately.
 	 */
 	for (i = 0, dma_int_status_reg = DMA->DMA_INT_STATUS_REG;
-		 i < DMA_CHANNELS_COUNT && dma_int_status_reg != 0; ++i, dma_int_status_reg >>= 1) {
+	     i < DMA_CHANNELS_COUNT && dma_int_status_reg != 0; ++i, dma_int_status_reg >>= 1) {
 		/* Check if the selected channel has raised the interrupt line */
 		if (dma_int_status_reg & BIT(0)) {
 
@@ -943,7 +936,8 @@ static void smartbond_dma_isr(const void *arg)
 			 */
 			if (data->channel_data[i].cb) {
 				data->channel_data[i].cb((const struct device *)arg,
-				data->channel_data[i].user_data, i, DMA_STATUS_COMPLETE);
+							 data->channel_data[i].user_data, i,
+							 DMA_STATUS_COMPLETE);
 			}
 			/* Channel line should be cleared otherwise ISR will keep firing! */
 			DMA->DMA_CLEAR_INT_REG = BIT(i);
@@ -966,8 +960,7 @@ static bool dma_smartbond_is_sleep_allowed(const struct device *dev)
 	return true;
 }
 
-static int dma_smartbond_pm_action(const struct device *dev,
-	enum pm_device_action action)
+static int dma_smartbond_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	int ret = 0;
 
@@ -1023,24 +1016,21 @@ static int dma_smartbond_init(const struct device *dev)
 		data->channel_data[idx].is_dma_configured = false;
 	}
 
-	IRQ_CONNECT(SMARTBOND_IRQN, SMARTBOND_IRQ_PRIO, smartbond_dma_isr,
-								DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(SMARTBOND_IRQN, SMARTBOND_IRQ_PRIO, smartbond_dma_isr, DEVICE_DT_INST_GET(0),
+		    0);
 
 	return 0;
 }
 
-#define SMARTBOND_DMA_INIT(inst) \
-	BUILD_ASSERT((inst) == 0, "multiple instances are not supported"); \
-	\
-	PM_DEVICE_DT_INST_DEFINE(inst, dma_smartbond_pm_action);	\
-	\
-	static struct dma_smartbond_data dma_smartbond_data_ ## inst; \
-	\
-	DEVICE_DT_INST_DEFINE(0, dma_smartbond_init, \
-		PM_DEVICE_DT_INST_GET(inst), \
-		&dma_smartbond_data_ ## inst, NULL,	\
-		POST_KERNEL, \
-		CONFIG_DMA_INIT_PRIORITY, \
-		&dma_smartbond_driver_api);
+#define SMARTBOND_DMA_INIT(inst)                                                                   \
+	BUILD_ASSERT((inst) == 0, "multiple instances are not supported");                         \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(inst, dma_smartbond_pm_action);                                   \
+                                                                                                   \
+	static struct dma_smartbond_data dma_smartbond_data_##inst;                                \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(0, dma_smartbond_init, PM_DEVICE_DT_INST_GET(inst),                  \
+			      &dma_smartbond_data_##inst, NULL, POST_KERNEL,                       \
+			      CONFIG_DMA_INIT_PRIORITY, &dma_smartbond_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SMARTBOND_DMA_INIT)

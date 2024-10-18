@@ -16,45 +16,45 @@ LOG_MODULE_REGISTER(spi_opentitan);
 #include <stdbool.h>
 
 /* Register offsets within the SPI host register space. */
-#define SPI_HOST_INTR_STATE_REG_OFFSET 0x00
-#define SPI_HOST_INTR_ENABLE_REG_OFFSET 0x04
-#define SPI_HOST_INTR_TEST_REG_OFFSET 0x08
-#define SPI_HOST_ALERT_TEST_REG_OFFSET 0x0c
-#define SPI_HOST_CONTROL_REG_OFFSET 0x10
-#define SPI_HOST_STATUS_REG_OFFSET 0x14
-#define SPI_HOST_CONFIGOPTS_REG_OFFSET 0x18
-#define SPI_HOST_CSID_REG_OFFSET 0x1c
-#define SPI_HOST_COMMAND_REG_OFFSET 0x20
-#define SPI_HOST_RXDATA_REG_OFFSET 0x24
-#define SPI_HOST_TXDATA_REG_OFFSET 0x28
+#define SPI_HOST_INTR_STATE_REG_OFFSET   0x00
+#define SPI_HOST_INTR_ENABLE_REG_OFFSET  0x04
+#define SPI_HOST_INTR_TEST_REG_OFFSET    0x08
+#define SPI_HOST_ALERT_TEST_REG_OFFSET   0x0c
+#define SPI_HOST_CONTROL_REG_OFFSET      0x10
+#define SPI_HOST_STATUS_REG_OFFSET       0x14
+#define SPI_HOST_CONFIGOPTS_REG_OFFSET   0x18
+#define SPI_HOST_CSID_REG_OFFSET         0x1c
+#define SPI_HOST_COMMAND_REG_OFFSET      0x20
+#define SPI_HOST_RXDATA_REG_OFFSET       0x24
+#define SPI_HOST_TXDATA_REG_OFFSET       0x28
 #define SPI_HOST_ERROR_ENABLE_REG_OFFSET 0x2c
 #define SPI_HOST_ERROR_STATUS_REG_OFFSET 0x30
 #define SPI_HOST_EVENT_ENABLE_REG_OFFSET 0x34
 
 /* Control register fields. */
 #define SPI_HOST_CONTROL_OUTPUT_EN_BIT BIT(29)
-#define SPI_HOST_CONTROL_SW_RST_BIT BIT(30)
-#define SPI_HOST_CONTROL_SPIEN_BIT BIT(31)
+#define SPI_HOST_CONTROL_SW_RST_BIT    BIT(30)
+#define SPI_HOST_CONTROL_SPIEN_BIT     BIT(31)
 
 /* Status register fields. */
-#define SPI_HOST_STATUS_TXQD_MASK GENMASK(7, 0)
-#define SPI_HOST_STATUS_RXQD_MASK GENMASK(15, 8)
+#define SPI_HOST_STATUS_TXQD_MASK     GENMASK(7, 0)
+#define SPI_HOST_STATUS_RXQD_MASK     GENMASK(15, 8)
 #define SPI_HOST_STATUS_BYTEORDER_BIT BIT(22)
-#define SPI_HOST_STATUS_RXEMPTY_BIT BIT(24)
-#define SPI_HOST_STATUS_ACTIVE_BIT BIT(30)
-#define SPI_HOST_STATUS_READY_BIT BIT(31)
+#define SPI_HOST_STATUS_RXEMPTY_BIT   BIT(24)
+#define SPI_HOST_STATUS_ACTIVE_BIT    BIT(30)
+#define SPI_HOST_STATUS_READY_BIT     BIT(31)
 
 /* Command register fields. */
-#define SPI_HOST_COMMAND_LEN_MASK GENMASK(8, 0)
+#define SPI_HOST_COMMAND_LEN_MASK       GENMASK(8, 0)
 /* "Chip select active after transaction" */
-#define SPI_HOST_COMMAND_CSAAT_BIT BIT(9)
-#define SPI_HOST_COMMAND_SPEED_MASK GENMASK(11, 10)
+#define SPI_HOST_COMMAND_CSAAT_BIT      BIT(9)
+#define SPI_HOST_COMMAND_SPEED_MASK     GENMASK(11, 10)
 #define SPI_HOST_COMMAND_SPEED_STANDARD (0 << 10)
-#define SPI_HOST_COMMAND_SPEED_DUAL (1 << 10)
-#define SPI_HOST_COMMAND_SPEED_QUAD (2 << 10)
+#define SPI_HOST_COMMAND_SPEED_DUAL     (1 << 10)
+#define SPI_HOST_COMMAND_SPEED_QUAD     (2 << 10)
 #define SPI_HOST_COMMAND_DIRECTION_MASK GENMASK(13, 12)
-#define SPI_HOST_COMMAND_DIRECTION_RX (0x1 << 12)
-#define SPI_HOST_COMMAND_DIRECTION_TX (0x2 << 12)
+#define SPI_HOST_COMMAND_DIRECTION_RX   (0x1 << 12)
+#define SPI_HOST_COMMAND_DIRECTION_TX   (0x2 << 12)
 #define SPI_HOST_COMMAND_DIRECTION_BOTH (0x3 << 12)
 
 /* Configopts register fields. */
@@ -72,8 +72,7 @@ struct spi_opentitan_cfg {
 	uint32_t f_input;
 };
 
-static int spi_config(const struct device *dev, uint32_t frequency,
-		uint16_t operation)
+static int spi_config(const struct device *dev, uint32_t frequency, uint16_t operation)
 {
 	const struct spi_opentitan_cfg *cfg = dev->config;
 
@@ -96,7 +95,7 @@ static int spi_config(const struct device *dev, uint32_t frequency,
 	}
 
 	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
-		(operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
+	    (operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
 		return -ENOTSUP;
 	}
 
@@ -173,7 +172,7 @@ static void spi_opentitan_xfer(const struct device *dev, const bool gpio_cs_cont
 		 * segments remain (because we will handle one Rx segment after the
 		 * forthcoming transaction).
 		 */
-		if (ctx->tx_count > 0 || ctx->rx_count > 1)  {
+		if (ctx->tx_count > 0 || ctx->rx_count > 1) {
 			host_command_reg |= SPI_HOST_COMMAND_CSAAT_BIT;
 		}
 		/* Segment length field holds COMMAND.LEN + 1. */
@@ -189,8 +188,7 @@ static void spi_opentitan_xfer(const struct device *dev, const bool gpio_cs_cont
 			while (!spi_opentitan_rx_available(cfg)) {
 				;
 			}
-			uint32_t rx_word = sys_read32(cfg->base +
-				SPI_HOST_RXDATA_REG_OFFSET);
+			uint32_t rx_word = sys_read32(cfg->base + SPI_HOST_RXDATA_REG_OFFSET);
 			for (int byte = 0; byte < 4; ++byte) {
 				if (rx_bytes_to_read == 0) {
 					break;
@@ -217,16 +215,15 @@ static int spi_opentitan_init(const struct device *dev)
 	int err;
 
 	/* Place SPI host peripheral in reset and wait for reset to complete. */
-	sys_write32(SPI_HOST_CONTROL_SW_RST_BIT,
-		cfg->base + SPI_HOST_CONTROL_REG_OFFSET);
-	while (sys_read32(cfg->base + SPI_HOST_STATUS_REG_OFFSET)
-			& (SPI_HOST_STATUS_ACTIVE_BIT | SPI_HOST_STATUS_TXQD_MASK |
-				SPI_HOST_STATUS_RXQD_MASK)) {
+	sys_write32(SPI_HOST_CONTROL_SW_RST_BIT, cfg->base + SPI_HOST_CONTROL_REG_OFFSET);
+	while (sys_read32(cfg->base + SPI_HOST_STATUS_REG_OFFSET) &
+	       (SPI_HOST_STATUS_ACTIVE_BIT | SPI_HOST_STATUS_TXQD_MASK |
+		SPI_HOST_STATUS_RXQD_MASK)) {
 		;
 	}
 	/* Clear reset and enable SPI host peripheral. */
 	sys_write32(SPI_HOST_CONTROL_OUTPUT_EN_BIT | SPI_HOST_CONTROL_SPIEN_BIT,
-		cfg->base + SPI_HOST_CONTROL_REG_OFFSET);
+		    cfg->base + SPI_HOST_CONTROL_REG_OFFSET);
 
 	err = spi_context_cs_configure_all(&data->ctx);
 	if (err < 0) {
@@ -238,10 +235,9 @@ static int spi_opentitan_init(const struct device *dev)
 	return 0;
 }
 
-static int spi_opentitan_transceive(const struct device *dev,
-			  const struct spi_config *config,
-			  const struct spi_buf_set *tx_bufs,
-			  const struct spi_buf_set *rx_bufs)
+static int spi_opentitan_transceive(const struct device *dev, const struct spi_config *config,
+				    const struct spi_buf_set *tx_bufs,
+				    const struct spi_buf_set *rx_bufs)
 {
 	int rc = 0;
 	bool gpio_cs_control = false;
@@ -281,18 +277,16 @@ static int spi_opentitan_transceive(const struct device *dev,
 
 #ifdef CONFIG_SPI_ASYNC
 static int spi_opentitan_transceive_async(const struct device *dev,
-					const struct spi_config *spi_cfg,
-					const struct spi_buf_set *tx_bufs,
-					const struct spi_buf_set *rx_bufs,
-					spi_callback_t cb,
-					void *userdata)
+					  const struct spi_config *spi_cfg,
+					  const struct spi_buf_set *tx_bufs,
+					  const struct spi_buf_set *rx_bufs, spi_callback_t cb,
+					  void *userdata)
 {
 	return -ENOTSUP;
 }
 #endif
 
-static int spi_opentitan_release(const struct device *dev,
-			   const struct spi_config *config)
+static int spi_opentitan_release(const struct device *dev, const struct spi_config *config)
 {
 	struct spi_opentitan_data *data = dev->data;
 
@@ -313,23 +307,17 @@ static const struct spi_driver_api spi_opentitan_api = {
 	.release = spi_opentitan_release,
 };
 
-#define SPI_INIT(n) \
-	static struct spi_opentitan_data spi_opentitan_data_##n = { \
-		SPI_CONTEXT_INIT_LOCK(spi_opentitan_data_##n, ctx), \
-		SPI_CONTEXT_INIT_SYNC(spi_opentitan_data_##n, ctx), \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
-	}; \
-	static struct spi_opentitan_cfg spi_opentitan_cfg_##n = { \
-		.base = DT_INST_REG_ADDR(n), \
-		.f_input = DT_INST_PROP(n, clock_frequency), \
-	}; \
-	DEVICE_DT_INST_DEFINE(n, \
-			spi_opentitan_init, \
-			NULL, \
-			&spi_opentitan_data_##n, \
-			&spi_opentitan_cfg_##n, \
-			POST_KERNEL, \
-			CONFIG_SPI_INIT_PRIORITY, \
-			&spi_opentitan_api);
+#define SPI_INIT(n)                                                                                \
+	static struct spi_opentitan_data spi_opentitan_data_##n = {                                \
+		SPI_CONTEXT_INIT_LOCK(spi_opentitan_data_##n, ctx),                                \
+		SPI_CONTEXT_INIT_SYNC(spi_opentitan_data_##n, ctx),                                \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                             \
+	static struct spi_opentitan_cfg spi_opentitan_cfg_##n = {                                  \
+		.base = DT_INST_REG_ADDR(n),                                                       \
+		.f_input = DT_INST_PROP(n, clock_frequency),                                       \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(n, spi_opentitan_init, NULL, &spi_opentitan_data_##n,                \
+			      &spi_opentitan_cfg_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,       \
+			      &spi_opentitan_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_INIT)

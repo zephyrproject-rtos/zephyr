@@ -60,9 +60,9 @@ LOG_MODULE_REGISTER(stmpe811, CONFIG_INPUT_LOG_LEVEL);
 #define STMPE811_SYS_CTRL2_BIT_IO_FCT  BIT(2)
 
 /* Global Interrupts definitions */
-#define STMPE811_INT_BIT_FIFO_THRESHOLD  BIT(1)       /* FIFO above threshold interrupt       */
-#define STMPE811_INT_BIT_TOUCH           BIT(0)       /* Touch/release is detected interrupt  */
-#define STMPE811_INT_ALL		 BIT_MASK(8)  /* All interrupts */
+#define STMPE811_INT_BIT_FIFO_THRESHOLD BIT(1)      /* FIFO above threshold interrupt       */
+#define STMPE811_INT_BIT_TOUCH          BIT(0)      /* Touch/release is detected interrupt  */
+#define STMPE811_INT_ALL                BIT_MASK(8) /* All interrupts */
 
 /* Reset control */
 #define STMPE811_SYS_CTRL1_RESET_ON   0
@@ -222,7 +222,8 @@ static int stmpe811_ts_init(const struct device *dev)
 	 */
 	err = i2c_reg_update_byte_dt(&config->bus, STMPE811_SYS_CTRL2_REG,
 				     STMPE811_SYS_CTRL2_BIT_IO_FCT | STMPE811_SYS_CTRL2_BIT_TS_FCT |
-				     STMPE811_SYS_CTRL2_BIT_ADC_FCT, 0);
+					     STMPE811_SYS_CTRL2_BIT_ADC_FCT,
+				     0);
 	if (err < 0) {
 		return err;
 	}
@@ -340,9 +341,9 @@ static void stmpe811_report_touch(const struct device *dev)
 
 	if (common->screen_width > 0 && common->screen_height > 0) {
 		x = (((int)data->touch_x - config->raw_x_min) * common->screen_width) /
-			(config->raw_x_max - config->raw_x_min);
+		    (config->raw_x_max - config->raw_x_min);
 		y = (((int)data->touch_y - config->raw_y_min) * common->screen_height) /
-			(config->raw_y_max - config->raw_y_min);
+		    (config->raw_y_max - config->raw_y_min);
 
 		x = CLAMP(x, 0, common->screen_width);
 		y = CLAMP(y, 0, common->screen_height);
@@ -523,10 +524,10 @@ static int stmpe811_init(const struct device *dev)
 
 #define STMPE811_DEFINE(index)                                                                     \
 	BUILD_ASSERT(DT_INST_PROP_OR(index, raw_x_max, 4096) >                                     \
-		     DT_INST_PROP_OR(index, raw_x_min, 0),                                         \
+			     DT_INST_PROP_OR(index, raw_x_min, 0),                                 \
 		     "raw-x-max should be larger than raw-x-min");                                 \
 	BUILD_ASSERT(DT_INST_PROP_OR(index, raw_y_max, 4096) >                                     \
-		     DT_INST_PROP_OR(index, raw_y_min, 0),                                         \
+			     DT_INST_PROP_OR(index, raw_y_min, 0),                                 \
 		     "raw-y-max should be larger than raw-y-min");                                 \
 	static const struct stmpe811_config stmpe811_config_##index = {                            \
 		.common = INPUT_TOUCH_DT_INST_COMMON_CONFIG_INIT(index),                           \

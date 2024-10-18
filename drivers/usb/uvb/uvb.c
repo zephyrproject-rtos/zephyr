@@ -39,16 +39,14 @@ struct uvb_msg {
 	};
 };
 
-K_MEM_SLAB_DEFINE_STATIC(uvb_msg_slab, sizeof(struct uvb_msg),
-			 CONFIG_UVB_MAX_MESSAGES, sizeof(void *));
+K_MEM_SLAB_DEFINE_STATIC(uvb_msg_slab, sizeof(struct uvb_msg), CONFIG_UVB_MAX_MESSAGES,
+			 sizeof(void *));
 
-K_MEM_SLAB_DEFINE_STATIC(uvb_pkt_slab, sizeof(struct uvb_packet),
-			 CONFIG_UVB_MAX_MESSAGES, sizeof(void *));
+K_MEM_SLAB_DEFINE_STATIC(uvb_pkt_slab, sizeof(struct uvb_packet), CONFIG_UVB_MAX_MESSAGES,
+			 sizeof(void *));
 
-struct uvb_packet *uvb_alloc_pkt(const enum uvb_request request,
-				 const uint8_t addr, const uint8_t ep,
-				 uint8_t *const data,
-				 const size_t length)
+struct uvb_packet *uvb_alloc_pkt(const enum uvb_request request, const uint8_t addr,
+				 const uint8_t ep, uint8_t *const data, const size_t length)
 {
 	static uint32_t seq;
 	struct uvb_packet *pkt;
@@ -96,8 +94,7 @@ static struct uvb_msg *uvb_alloc_msg(const struct uvb_node *const node)
 	return msg;
 }
 
-int uvb_advert(const struct uvb_node *const host_node,
-	       const enum uvb_event_type type,
+int uvb_advert(const struct uvb_node *const host_node, const enum uvb_event_type type,
 	       const struct uvb_packet *const pkt)
 {
 	struct uvb_msg *msg;
@@ -116,8 +113,7 @@ int uvb_advert(const struct uvb_node *const host_node,
 	return err < 0 ? err : 0;
 }
 
-int uvb_to_host(const struct uvb_node *const dev_node,
-		const enum uvb_event_type type,
+int uvb_to_host(const struct uvb_node *const dev_node, const enum uvb_event_type type,
 		const struct uvb_packet *const pkt)
 {
 	struct uvb_msg *msg;
@@ -136,8 +132,7 @@ int uvb_to_host(const struct uvb_node *const dev_node,
 	return err < 0 ? err : 0;
 }
 
-static int subscribe_msg(const struct uvb_node *const host_node,
-			 struct uvb_node *const dev_node,
+static int subscribe_msg(const struct uvb_node *const host_node, struct uvb_node *const dev_node,
 			 const enum uvb_msg_type type)
 {
 	struct uvb_msg *msg;
@@ -155,8 +150,7 @@ static int subscribe_msg(const struct uvb_node *const host_node,
 	return err < 0 ? err : 0;
 }
 
-static int unsubscribe_msg(const struct uvb_node *const host_node,
-			   struct uvb_node *const dev_node)
+static int unsubscribe_msg(const struct uvb_node *const host_node, struct uvb_node *const dev_node)
 {
 	struct uvb_msg *msg;
 	int err;
@@ -257,9 +251,7 @@ static ALWAYS_INLINE void handle_msg_event(struct uvb_msg *const msg)
 	SYS_DLIST_FOR_EACH_CONTAINER(&host_node->list, dev_node, node) {
 		LOG_DBG("%p from %p to %p", msg, host_node, dev_node);
 		if (dev_node->notify) {
-			dev_node->notify(dev_node->priv,
-					 msg->event.type,
-					 msg->event.data);
+			dev_node->notify(dev_node->priv, msg->event.type, msg->event.data);
 		}
 	}
 }
@@ -277,9 +269,7 @@ static ALWAYS_INLINE void handle_msg_to_host(struct uvb_msg *const msg)
 	SYS_DLIST_FOR_EACH_CONTAINER(&source->node, host_node, node) {
 		LOG_DBG("%p from %p to %p", msg, source, host_node);
 		if (host_node->head && host_node->notify) {
-			host_node->notify(host_node->priv,
-					  msg->event.type,
-					  msg->event.data);
+			host_node->notify(host_node->priv, msg->event.type, msg->event.data);
 		}
 	}
 }

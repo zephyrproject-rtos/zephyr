@@ -13,10 +13,10 @@
 #include <hal/nrf_rng.h>
 #include <zephyr/irq.h>
 
-#define DT_DRV_COMPAT	nordic_nrf_rng
+#define DT_DRV_COMPAT nordic_nrf_rng
 
-#define IRQN		DT_INST_IRQN(0)
-#define IRQ_PRIO	DT_INST_IRQ(0, priority)
+#define IRQN     DT_INST_IRQN(0)
+#define IRQ_PRIO DT_INST_IRQ(0, priority)
 
 /*
  * The nRF5 RNG HW has several characteristics that need to be taken
@@ -82,12 +82,10 @@ struct rng_pool {
 
 #define RNG_POOL_DEFINE(name, len) uint8_t name[sizeof(struct rng_pool) + (len)]
 
-BUILD_ASSERT((CONFIG_ENTROPY_NRF5_ISR_POOL_SIZE &
-	      (CONFIG_ENTROPY_NRF5_ISR_POOL_SIZE - 1)) == 0,
+BUILD_ASSERT((CONFIG_ENTROPY_NRF5_ISR_POOL_SIZE & (CONFIG_ENTROPY_NRF5_ISR_POOL_SIZE - 1)) == 0,
 	     "The CONFIG_ENTROPY_NRF5_ISR_POOL_SIZE must be a power of 2!");
 
-BUILD_ASSERT((CONFIG_ENTROPY_NRF5_THR_POOL_SIZE &
-	      (CONFIG_ENTROPY_NRF5_THR_POOL_SIZE - 1)) == 0,
+BUILD_ASSERT((CONFIG_ENTROPY_NRF5_THR_POOL_SIZE & (CONFIG_ENTROPY_NRF5_THR_POOL_SIZE - 1)) == 0,
 	     "The CONFIG_ENTROPY_NRF5_THR_POOL_SIZE must be a power of 2!");
 
 struct entropy_nrf5_dev_data {
@@ -119,9 +117,9 @@ static int random_byte_get(void)
 
 static uint16_t rng_pool_get(struct rng_pool *rngp, uint8_t *buf, uint16_t len)
 {
-	uint32_t last  = rngp->last;
-	uint32_t mask  = rngp->mask;
-	uint8_t *dst   = buf;
+	uint32_t last = rngp->last;
+	uint32_t mask = rngp->mask;
+	uint8_t *dst = buf;
 	uint32_t first, available;
 	uint32_t other_read_in_progress;
 	unsigned int key;
@@ -176,8 +174,8 @@ static uint16_t rng_pool_get(struct rng_pool *rngp, uint8_t *buf, uint16_t len)
 static int rng_pool_put(struct rng_pool *rngp, uint8_t byte)
 {
 	uint8_t first = rngp->first_read;
-	uint8_t last  = rngp->last;
-	uint8_t mask  = rngp->mask;
+	uint8_t last = rngp->last;
+	uint8_t mask = rngp->mask;
 
 	/* Signal error if the pool is full. */
 	if (((last - first) & mask) == mask) {
@@ -193,10 +191,10 @@ static int rng_pool_put(struct rng_pool *rngp, uint8_t byte)
 static void rng_pool_init(struct rng_pool *rngp, uint16_t size, uint8_t threshold)
 {
 	rngp->first_alloc = 0U;
-	rngp->first_read  = 0U;
-	rngp->last	  = 0U;
-	rngp->mask	  = size - 1;
-	rngp->threshold	  = threshold;
+	rngp->first_read = 0U;
+	rngp->last = 0U;
+	rngp->mask = size - 1;
+	rngp->threshold = threshold;
 }
 
 static void isr(const void *arg)
@@ -212,8 +210,7 @@ static void isr(const void *arg)
 
 	ret = rng_pool_put((struct rng_pool *)(entropy_nrf5_data.isr), byte);
 	if (ret < 0) {
-		ret = rng_pool_put((struct rng_pool *)(entropy_nrf5_data.thr),
-				   byte);
+		ret = rng_pool_put((struct rng_pool *)(entropy_nrf5_data.thr), byte);
 		if (ret < 0) {
 			nrf_rng_task_trigger(NRF_RNG, NRF_RNG_TASK_STOP);
 		}
@@ -222,8 +219,7 @@ static void isr(const void *arg)
 	}
 }
 
-static int entropy_nrf5_get_entropy(const struct device *dev, uint8_t *buf,
-				    uint16_t len)
+static int entropy_nrf5_get_entropy(const struct device *dev, uint8_t *buf, uint16_t len)
 {
 	/* Check if this API is called on correct driver instance. */
 	__ASSERT_NO_MSG(&entropy_nrf5_data == dev->data);
@@ -232,8 +228,7 @@ static int entropy_nrf5_get_entropy(const struct device *dev, uint8_t *buf,
 		uint16_t bytes;
 
 		k_sem_take(&entropy_nrf5_data.sem_lock, K_FOREVER);
-		bytes = rng_pool_get((struct rng_pool *)(entropy_nrf5_data.thr),
-				     buf, len);
+		bytes = rng_pool_get((struct rng_pool *)(entropy_nrf5_data.thr), buf, len);
 		k_sem_give(&entropy_nrf5_data.sem_lock);
 
 		if (bytes == 0U) {
@@ -249,8 +244,7 @@ static int entropy_nrf5_get_entropy(const struct device *dev, uint8_t *buf,
 	return 0;
 }
 
-static int entropy_nrf5_get_entropy_isr(const struct device *dev,
-					uint8_t *buf, uint16_t len,
+static int entropy_nrf5_get_entropy_isr(const struct device *dev, uint8_t *buf, uint16_t len,
 					uint32_t flags)
 {
 	uint16_t cnt = len;
@@ -259,8 +253,7 @@ static int entropy_nrf5_get_entropy_isr(const struct device *dev,
 	__ASSERT_NO_MSG(&entropy_nrf5_data == dev->data);
 
 	if (likely((flags & ENTROPY_BUSYWAIT) == 0U)) {
-		return rng_pool_get((struct rng_pool *)(entropy_nrf5_data.isr),
-				    buf, len);
+		return rng_pool_get((struct rng_pool *)(entropy_nrf5_data.isr), buf, len);
 	}
 
 	if (len) {
@@ -285,8 +278,7 @@ static int entropy_nrf5_get_entropy_isr(const struct device *dev,
 		do {
 			int byte;
 
-			while (!nrf_rng_event_check(NRF_RNG,
-						    NRF_RNG_EVENT_VALRDY)) {
+			while (!nrf_rng_event_check(NRF_RNG, NRF_RNG_EVENT_VALRDY)) {
 				k_cpu_atomic_idle(irq_lock());
 			}
 
@@ -311,15 +303,10 @@ static int entropy_nrf5_get_entropy_isr(const struct device *dev,
 static int entropy_nrf5_init(const struct device *dev);
 
 static const struct entropy_driver_api entropy_nrf5_api_funcs = {
-	.get_entropy = entropy_nrf5_get_entropy,
-	.get_entropy_isr = entropy_nrf5_get_entropy_isr
-};
+	.get_entropy = entropy_nrf5_get_entropy, .get_entropy_isr = entropy_nrf5_get_entropy_isr};
 
-DEVICE_DT_INST_DEFINE(0,
-		    entropy_nrf5_init, NULL,
-		    &entropy_nrf5_data, NULL,
-		    PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
-		    &entropy_nrf5_api_funcs);
+DEVICE_DT_INST_DEFINE(0, entropy_nrf5_init, NULL, &entropy_nrf5_data, NULL, PRE_KERNEL_1,
+		      CONFIG_ENTROPY_INIT_PRIORITY, &entropy_nrf5_api_funcs);
 
 static int entropy_nrf5_init(const struct device *dev)
 {
@@ -332,11 +319,9 @@ static int entropy_nrf5_init(const struct device *dev)
 	/* Synching semaphore */
 	k_sem_init(&entropy_nrf5_data.sem_sync, 0, 1);
 
-	rng_pool_init((struct rng_pool *)(entropy_nrf5_data.thr),
-		      CONFIG_ENTROPY_NRF5_THR_POOL_SIZE,
+	rng_pool_init((struct rng_pool *)(entropy_nrf5_data.thr), CONFIG_ENTROPY_NRF5_THR_POOL_SIZE,
 		      CONFIG_ENTROPY_NRF5_THR_THRESHOLD);
-	rng_pool_init((struct rng_pool *)(entropy_nrf5_data.isr),
-		      CONFIG_ENTROPY_NRF5_ISR_POOL_SIZE,
+	rng_pool_init((struct rng_pool *)(entropy_nrf5_data.isr), CONFIG_ENTROPY_NRF5_ISR_POOL_SIZE,
 		      CONFIG_ENTROPY_NRF5_ISR_THRESHOLD);
 
 	/* Enable or disable bias correction */

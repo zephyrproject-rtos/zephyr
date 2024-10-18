@@ -15,9 +15,8 @@
 
 LOG_MODULE_DECLARE(JC42, CONFIG_SENSOR_LOG_LEVEL);
 
-int jc42_attr_set(const struct device *dev, enum sensor_channel chan,
-		     enum sensor_attribute attr,
-		     const struct sensor_value *val)
+int jc42_attr_set(const struct device *dev, enum sensor_channel chan, enum sensor_attribute attr,
+		  const struct sensor_value *val)
 {
 	const struct jc42_config *cfg = dev->config;
 	uint8_t reg_addr;
@@ -46,17 +45,13 @@ int jc42_attr_set(const struct device *dev, enum sensor_channel chan,
 	temp = val->val1 * JC42_TEMP_SCALE_CEL;
 	temp += (JC42_TEMP_SCALE_CEL * val->val2) / 1000000;
 
-	return jc42_reg_write_16bit(dev, reg_addr,
-				 jc42_temp_reg_from_signed(temp));
+	return jc42_reg_write_16bit(dev, reg_addr, jc42_temp_reg_from_signed(temp));
 }
 
-static inline void setup_int(const struct device *dev,
-			     bool enable)
+static inline void setup_int(const struct device *dev, bool enable)
 {
 	const struct jc42_config *cfg = dev->config;
-	unsigned int flags = enable
-		? GPIO_INT_EDGE_TO_ACTIVE
-		: GPIO_INT_DISABLE;
+	unsigned int flags = enable ? GPIO_INT_EDGE_TO_ACTIVE : GPIO_INT_DISABLE;
 
 	gpio_pin_interrupt_configure_dt(&cfg->int_gpio, flags);
 }
@@ -87,9 +82,8 @@ static void process_int(const struct device *dev)
 	}
 }
 
-int jc42_trigger_set(const struct device *dev,
-			const struct sensor_trigger *trig,
-			sensor_trigger_handler_t handler)
+int jc42_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
+		     sensor_trigger_handler_t handler)
 {
 	struct jc42_data *data = dev->data;
 	const struct jc42_config *cfg = dev->config;
@@ -117,11 +111,9 @@ int jc42_trigger_set(const struct device *dev,
 	return rv;
 }
 
-static void alert_cb(const struct device *dev, struct gpio_callback *cb,
-		     uint32_t pins)
+static void alert_cb(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	struct jc42_data *data =
-		CONTAINER_OF(cb, struct jc42_data, alert_cb);
+	struct jc42_data *data = CONTAINER_OF(cb, struct jc42_data, alert_cb);
 
 	ARG_UNUSED(pins);
 
@@ -149,8 +141,7 @@ static struct k_thread jc42_thread;
 
 static void jc42_gpio_thread_cb(struct k_work *work)
 {
-	struct jc42_data *data =
-		CONTAINER_OF(work, struct jc42_data, work);
+	struct jc42_data *data = CONTAINER_OF(work, struct jc42_data, work);
 
 	process_int(data->dev);
 }
@@ -161,11 +152,9 @@ int jc42_setup_interrupt(const struct device *dev)
 {
 	struct jc42_data *data = dev->data;
 	const struct jc42_config *cfg = dev->config;
-	int rc = jc42_reg_write_16bit(dev, JC42_REG_CRITICAL,
-				   JC42_TEMP_ABS_MASK);
+	int rc = jc42_reg_write_16bit(dev, JC42_REG_CRITICAL, JC42_TEMP_ABS_MASK);
 	if (rc == 0) {
-		rc = jc42_reg_write_16bit(dev, JC42_REG_CONFIG,
-				       JC42_CFG_ALERT_ENA);
+		rc = jc42_reg_write_16bit(dev, JC42_REG_CONFIG, JC42_CFG_ALERT_ENA);
 	}
 
 	data->dev = dev;
@@ -173,12 +162,10 @@ int jc42_setup_interrupt(const struct device *dev)
 #ifdef CONFIG_JC42_TRIGGER_OWN_THREAD
 	k_sem_init(&data->sem, 0, K_SEM_MAX_LIMIT);
 
-	k_thread_create(&jc42_thread, jc42_thread_stack,
-			CONFIG_JC42_THREAD_STACK_SIZE,
+	k_thread_create(&jc42_thread, jc42_thread_stack, CONFIG_JC42_THREAD_STACK_SIZE,
 			jc42_thread_main, data, NULL, NULL,
-			K_PRIO_COOP(CONFIG_JC42_THREAD_PRIORITY),
-			0, K_NO_WAIT);
-#else /* CONFIG_JC42_TRIGGER_GLOBAL_THREAD */
+			K_PRIO_COOP(CONFIG_JC42_THREAD_PRIORITY), 0, K_NO_WAIT);
+#else  /* CONFIG_JC42_TRIGGER_GLOBAL_THREAD */
 	data->work.handler = jc42_gpio_thread_cb;
 #endif /* trigger type */
 

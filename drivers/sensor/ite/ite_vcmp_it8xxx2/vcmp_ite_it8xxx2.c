@@ -20,12 +20,12 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(vcmp_ite_it8xxx2, CONFIG_SENSOR_LOG_LEVEL);
 
-#define VCMP_REG_MASK		0x7
-#define VCMP_RESOLUTION		BIT(10)
+#define VCMP_REG_MASK   0x7
+#define VCMP_RESOLUTION BIT(10)
 #ifdef CONFIG_ADC_IT8XXX2_VOL_FULL_SCALE
-#define VCMP_MAX_MVOLT		3300
+#define VCMP_MAX_MVOLT 3300
 #else
-#define VCMP_MAX_MVOLT		3000
+#define VCMP_MAX_MVOLT 3000
 #endif
 
 /* Device config */
@@ -116,9 +116,7 @@ static void vcmp_enable(const struct device *dev, int enable)
 	}
 }
 
-static int vcmp_set_threshold(const struct device *dev,
-			      enum sensor_attribute attr,
-			      int32_t reg_val)
+static int vcmp_set_threshold(const struct device *dev, enum sensor_attribute attr, int32_t reg_val)
 {
 	const struct vcmp_it8xxx2_config *const config = dev->config;
 	volatile uint8_t *reg_vcmpxthrdatm = config->reg_vcmpxthrdatm;
@@ -136,7 +134,7 @@ static int vcmp_set_threshold(const struct device *dev,
 
 	/* Set lower or higher threshold */
 	if ((attr == SENSOR_ATTR_UPPER_THRESH) ||
-	    (attr == (uint16_t) SENSOR_ATTR_UPPER_VOLTAGE_THRESH)) {
+	    (attr == (uint16_t)SENSOR_ATTR_UPPER_VOLTAGE_THRESH)) {
 		*reg_vcmpxctl |= IT8XXX2_VCMP_GREATER_THRESHOLD;
 	} else {
 		*reg_vcmpxctl &= ~IT8XXX2_VCMP_GREATER_THRESHOLD;
@@ -147,18 +145,15 @@ static int vcmp_set_threshold(const struct device *dev,
 
 static void it8xxx2_vcmp_trigger_work_handler(struct k_work *item)
 {
-	struct vcmp_it8xxx2_data *data =
-			CONTAINER_OF(item, struct vcmp_it8xxx2_data, work);
+	struct vcmp_it8xxx2_data *data = CONTAINER_OF(item, struct vcmp_it8xxx2_data, work);
 
 	if (data->handler) {
 		data->handler(data->vcmp, data->trig);
 	}
 }
 
-static int vcmp_ite_it8xxx2_attr_set(const struct device *dev,
-				     enum sensor_channel chan,
-				     enum sensor_attribute attr,
-				     const struct sensor_value *val)
+static int vcmp_ite_it8xxx2_attr_set(const struct device *dev, enum sensor_channel chan,
+				     enum sensor_attribute attr, const struct sensor_value *val)
 {
 	const struct vcmp_it8xxx2_config *const config = dev->config;
 	int32_t reg_val, ret = 0;
@@ -198,28 +193,25 @@ static int vcmp_ite_it8xxx2_attr_set(const struct device *dev,
 	return ret;
 }
 
-static int vcmp_ite_it8xxx2_trigger_set(const struct device *dev,
-					const struct sensor_trigger *trig,
+static int vcmp_ite_it8xxx2_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 					sensor_trigger_handler_t handler)
 {
 	const struct vcmp_it8xxx2_config *const config = dev->config;
 	struct vcmp_it8xxx2_data *const data = dev->data;
 
-	if (trig->type != SENSOR_TRIG_THRESHOLD ||
-	    trig->chan != SENSOR_CHAN_VOLTAGE) {
+	if (trig->type != SENSOR_TRIG_THRESHOLD || trig->chan != SENSOR_CHAN_VOLTAGE) {
 		return -ENOTSUP;
 	}
 
 	data->handler = handler;
 	data->trig = trig;
 
-	vcmp_work_addr[config->vcmp_ch] = (uint32_t) &data->work;
+	vcmp_work_addr[config->vcmp_ch] = (uint32_t)&data->work;
 
 	return 0;
 }
 
-static int vcmp_it8xxx2_channel_get(const struct device *dev,
-				    enum sensor_channel chan,
+static int vcmp_it8xxx2_channel_get(const struct device *dev, enum sensor_channel chan,
 				    struct sensor_value *val)
 {
 	const struct vcmp_it8xxx2_config *const config = dev->config;
@@ -258,9 +250,9 @@ static void vcmp_it8xxx2_isr(const struct device *dev)
 			if (vcmp_work_addr[idx]) {
 #ifdef CONFIG_VCMP_IT8XXX2_WORKQUEUE
 				k_work_submit_to_queue(work_q,
-						       (struct k_work *) vcmp_work_addr[idx]);
+						       (struct k_work *)vcmp_work_addr[idx]);
 #else
-				k_work_submit((struct k_work *) vcmp_work_addr[idx]);
+				k_work_submit((struct k_work *)vcmp_work_addr[idx]);
 #endif
 			}
 			/* W/C voltage comparator specific channel interrupt status */
@@ -314,11 +306,11 @@ static int vcmp_it8xxx2_init(const struct device *dev)
 
 	/* Init and set work item to enable notifications */
 	k_work_init(&data->work, it8xxx2_vcmp_trigger_work_handler);
-	vcmp_work_addr[config->vcmp_ch] = (uint32_t) &data->work;
+	vcmp_work_addr[config->vcmp_ch] = (uint32_t)&data->work;
 
 	/* Set threshold and comparison if set on device tree */
 	if ((config->threshold_mv != IT8XXX2_VCMP_UNDEFINED) &&
-	     (config->comparison != IT8XXX2_VCMP_UNDEFINED)) {
+	    (config->comparison != IT8XXX2_VCMP_UNDEFINED)) {
 		enum sensor_attribute attr;
 		struct sensor_value val;
 
@@ -342,8 +334,7 @@ static int vcmp_it8xxx2_init(const struct device *dev)
 	if (!irq_is_enabled(config->irq)) {
 		ite_intc_isr_clear(config->irq);
 
-		irq_connect_dynamic(config->irq, 0,
-				    (void (*)(const void *))vcmp_it8xxx2_isr,
+		irq_connect_dynamic(config->irq, 0, (void (*)(const void *))vcmp_it8xxx2_isr,
 				    (const void *)dev, 0);
 
 		irq_enable(config->irq);
@@ -361,8 +352,7 @@ static const struct sensor_driver_api vcmp_ite_it8xxx2_api = {
 #ifdef CONFIG_VCMP_IT8XXX2_WORKQUEUE
 struct k_work_q vcmp_it8xxx2_work_q;
 
-static K_KERNEL_STACK_DEFINE(vcmp_it8xxx2_work_q_stack,
-			     CONFIG_VCMP_IT8XXX2_WORKQUEUE_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(vcmp_it8xxx2_work_q_stack, CONFIG_VCMP_IT8XXX2_WORKQUEUE_STACK_SIZE);
 
 static int vcmp_it8xxx2_init_work_q(void)
 {
@@ -371,8 +361,7 @@ static int vcmp_it8xxx2_init_work_q(void)
 		.no_yield = false,
 	};
 
-	k_work_queue_start(&vcmp_it8xxx2_work_q,
-			   vcmp_it8xxx2_work_q_stack,
+	k_work_queue_start(&vcmp_it8xxx2_work_q, vcmp_it8xxx2_work_q_stack,
 			   K_KERNEL_STACK_SIZEOF(vcmp_it8xxx2_work_q_stack),
 			   CONFIG_VCMP_IT8XXX2_WORKQUEUE_PRIORITY, &cfg);
 
@@ -383,41 +372,36 @@ static int vcmp_it8xxx2_init_work_q(void)
 SYS_INIT(vcmp_it8xxx2_init_work_q, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);
 #endif
 
-#define VCMP_IT8XXX2_INIT(inst)								\
-	static const struct vcmp_it8xxx2_config vcmp_it8xxx2_cfg_##inst = {		\
-		.reg_vcmpxctl = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 0),		\
-		.reg_vcmpxcselm = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 1),		\
-		.reg_vcmpscp = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 2),		\
-		.reg_vcmpxthrdatm = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 3),	\
-		.reg_vcmpxthrdatl = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 4),	\
-		.reg_vcmpsts = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 5),		\
-		.reg_vcmpsts2 = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 6),		\
-		.irq = DT_INST_IRQN(inst),						\
-		.vcmp_ch = DT_INST_PROP(inst, vcmp_ch),					\
-		.scan_period = DT_INST_PROP(inst, scan_period),				\
-		.comparison = DT_INST_PROP(inst, comparison),				\
-		.threshold_mv = DT_INST_PROP(inst, threshold_mv),			\
-		.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst)),			\
-	};										\
-											\
-	static struct vcmp_it8xxx2_data vcmp_it8xxx2_data_##inst = {			\
-		.adc_ch_cfg.gain = ADC_GAIN_1,						\
-		.adc_ch_cfg.reference = ADC_REF_INTERNAL,				\
-		.adc_ch_cfg.acquisition_time = ADC_ACQ_TIME_DEFAULT,			\
-		.adc_ch_cfg.channel_id = (uint8_t)DT_INST_IO_CHANNELS_INPUT(inst),	\
-	};										\
-											\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,						\
-			      vcmp_it8xxx2_init,					\
-			      NULL,							\
-			      &vcmp_it8xxx2_data_##inst,				\
-			      &vcmp_it8xxx2_cfg_##inst,					\
-			      POST_KERNEL,						\
-			      CONFIG_VCMP_IT8XXX2_INIT_PRIORITY,			\
-			      &vcmp_ite_it8xxx2_api);
+#define VCMP_IT8XXX2_INIT(inst)                                                                    \
+	static const struct vcmp_it8xxx2_config vcmp_it8xxx2_cfg_##inst = {                        \
+		.reg_vcmpxctl = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 0),                       \
+		.reg_vcmpxcselm = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 1),                     \
+		.reg_vcmpscp = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 2),                        \
+		.reg_vcmpxthrdatm = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 3),                   \
+		.reg_vcmpxthrdatl = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 4),                   \
+		.reg_vcmpsts = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 5),                        \
+		.reg_vcmpsts2 = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 6),                       \
+		.irq = DT_INST_IRQN(inst),                                                         \
+		.vcmp_ch = DT_INST_PROP(inst, vcmp_ch),                                            \
+		.scan_period = DT_INST_PROP(inst, scan_period),                                    \
+		.comparison = DT_INST_PROP(inst, comparison),                                      \
+		.threshold_mv = DT_INST_PROP(inst, threshold_mv),                                  \
+		.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst)),                              \
+	};                                                                                         \
+                                                                                                   \
+	static struct vcmp_it8xxx2_data vcmp_it8xxx2_data_##inst = {                               \
+		.adc_ch_cfg.gain = ADC_GAIN_1,                                                     \
+		.adc_ch_cfg.reference = ADC_REF_INTERNAL,                                          \
+		.adc_ch_cfg.acquisition_time = ADC_ACQ_TIME_DEFAULT,                               \
+		.adc_ch_cfg.channel_id = (uint8_t)DT_INST_IO_CHANNELS_INPUT(inst),                 \
+	};                                                                                         \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, vcmp_it8xxx2_init, NULL, &vcmp_it8xxx2_data_##inst,     \
+				     &vcmp_it8xxx2_cfg_##inst, POST_KERNEL,                        \
+				     CONFIG_VCMP_IT8XXX2_INIT_PRIORITY, &vcmp_ite_it8xxx2_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VCMP_IT8XXX2_INIT)
 #ifdef CONFIG_VCMP_IT8XXX2_WORKQUEUE
 BUILD_ASSERT(CONFIG_SENSOR_INIT_PRIORITY < CONFIG_VCMP_IT8XXX2_INIT_PRIORITY,
-	"CONFIG_SENSOR_INIT_PRIORITY must be less than CONFIG_VCMP_IT8XXX2_INIT_PRIORITY");
+	     "CONFIG_SENSOR_INIT_PRIORITY must be less than CONFIG_VCMP_IT8XXX2_INIT_PRIORITY");
 #endif

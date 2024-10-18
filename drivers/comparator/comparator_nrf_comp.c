@@ -12,37 +12,31 @@
 
 #define DT_DRV_COMPAT nordic_nrf_comp
 
-#define SHIM_NRF_COMP_DT_INST_REFSEL(inst) \
+#define SHIM_NRF_COMP_DT_INST_REFSEL(inst)                                                         \
 	_CONCAT(COMP_NRF_COMP_REFSEL_, DT_INST_STRING_TOKEN(inst, refsel))
 
-#define SHIM_NRF_COMP_DT_INST_REFSEL_IS_AREF(inst) \
-	DT_INST_ENUM_HAS_VALUE(inst, refsel, AREF)
+#define SHIM_NRF_COMP_DT_INST_REFSEL_IS_AREF(inst) DT_INST_ENUM_HAS_VALUE(inst, refsel, AREF)
 
-#define SHIM_NRF_COMP_DT_INST_EXTREFSEL(inst) \
+#define SHIM_NRF_COMP_DT_INST_EXTREFSEL(inst)                                                      \
 	_CONCAT(COMP_NRF_COMP_EXTREFSEL_, DT_INST_STRING_TOKEN(inst, extrefsel))
 
-#define SHIM_NRF_COMP_DT_INST_MAIN_MODE_IS_SE(inst) \
-	DT_INST_ENUM_HAS_VALUE(inst, main_mode, SE)
+#define SHIM_NRF_COMP_DT_INST_MAIN_MODE_IS_SE(inst) DT_INST_ENUM_HAS_VALUE(inst, main_mode, SE)
 
-#define SHIM_NRF_COMP_DT_INST_MAIN_MODE_IS_DIFF(inst) \
-	DT_INST_ENUM_HAS_VALUE(inst, main_mode, DIFF)
+#define SHIM_NRF_COMP_DT_INST_MAIN_MODE_IS_DIFF(inst) DT_INST_ENUM_HAS_VALUE(inst, main_mode, DIFF)
 
-#define SHIM_NRF_COMP_DT_INST_TH_DOWN(inst) \
-	DT_INST_PROP(inst, th_down)
+#define SHIM_NRF_COMP_DT_INST_TH_DOWN(inst) DT_INST_PROP(inst, th_down)
 
-#define SHIM_NRF_COMP_DT_INST_TH_UP(inst) \
-	DT_INST_PROP(inst, th_up)
+#define SHIM_NRF_COMP_DT_INST_TH_UP(inst) DT_INST_PROP(inst, th_up)
 
-#define SHIM_NRF_COMP_DT_INST_SP_MODE(inst) \
+#define SHIM_NRF_COMP_DT_INST_SP_MODE(inst)                                                        \
 	_CONCAT(COMP_NRF_COMP_SP_MODE_, DT_INST_STRING_TOKEN(inst, sp_mode))
 
-#define SHIM_NRF_COMP_DT_INST_ENABLE_HYST(inst) \
-	DT_INST_PROP(inst, enable_hyst)
+#define SHIM_NRF_COMP_DT_INST_ENABLE_HYST(inst) DT_INST_PROP(inst, enable_hyst)
 
-#define SHIM_NRF_COMP_DT_INST_ISOURCE(inst) \
+#define SHIM_NRF_COMP_DT_INST_ISOURCE(inst)                                                        \
 	_CONCAT(COMP_NRF_COMP_ISOURCE_, DT_INST_STRING_TOKEN(inst, isource))
 
-#define SHIM_NRF_COMP_DT_INST_PSEL(inst) \
+#define SHIM_NRF_COMP_DT_INST_PSEL(inst)                                                           \
 	_CONCAT(COMP_NRF_COMP_PSEL_, DT_INST_STRING_TOKEN(inst, psel))
 
 #if defined(COMP_HYST_HYST_Hyst40mV)
@@ -70,23 +64,15 @@ struct shim_nrf_comp_data {
 #if (NRF_COMP_HAS_AIN_AS_PIN)
 static const uint32_t shim_nrf_comp_ain_map[] = {
 #if defined(CONFIG_SOC_NRF54H20) || defined(CONFIG_SOC_NRF9280)
-	NRF_PIN_PORT_TO_PIN_NUMBER(0U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(1U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(2U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(3U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(4U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(5U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(6U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(7U, 1),
+	NRF_PIN_PORT_TO_PIN_NUMBER(0U, 1), NRF_PIN_PORT_TO_PIN_NUMBER(1U, 1),
+	NRF_PIN_PORT_TO_PIN_NUMBER(2U, 1), NRF_PIN_PORT_TO_PIN_NUMBER(3U, 1),
+	NRF_PIN_PORT_TO_PIN_NUMBER(4U, 1), NRF_PIN_PORT_TO_PIN_NUMBER(5U, 1),
+	NRF_PIN_PORT_TO_PIN_NUMBER(6U, 1), NRF_PIN_PORT_TO_PIN_NUMBER(7U, 1),
 #elif defined(CONFIG_SOC_NRF54L15)
-	NRF_PIN_PORT_TO_PIN_NUMBER(4U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(5U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(6U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(7U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(11U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(12U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(13U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(14U, 1),
+	NRF_PIN_PORT_TO_PIN_NUMBER(4U, 1),  NRF_PIN_PORT_TO_PIN_NUMBER(5U, 1),
+	NRF_PIN_PORT_TO_PIN_NUMBER(6U, 1),  NRF_PIN_PORT_TO_PIN_NUMBER(7U, 1),
+	NRF_PIN_PORT_TO_PIN_NUMBER(11U, 1), NRF_PIN_PORT_TO_PIN_NUMBER(12U, 1),
+	NRF_PIN_PORT_TO_PIN_NUMBER(13U, 1), NRF_PIN_PORT_TO_PIN_NUMBER(14U, 1),
 #endif
 };
 #endif
@@ -269,8 +255,7 @@ static int shim_nrf_comp_pm_callback(const struct device *dev, enum pm_device_ac
 }
 
 #if (NRF_COMP_HAS_AIN_AS_PIN)
-static int shim_nrf_comp_psel_to_nrf(enum comp_nrf_comp_psel shim,
-				     nrf_comp_input_t *nrf)
+static int shim_nrf_comp_psel_to_nrf(enum comp_nrf_comp_psel shim, nrf_comp_input_t *nrf)
 {
 	if (shim >= ARRAY_SIZE(shim_nrf_comp_ain_map)) {
 		return -EINVAL;
@@ -280,8 +265,7 @@ static int shim_nrf_comp_psel_to_nrf(enum comp_nrf_comp_psel shim,
 	return 0;
 }
 #else
-static int shim_nrf_comp_psel_to_nrf(enum comp_nrf_comp_psel shim,
-				     nrf_comp_input_t *nrf)
+static int shim_nrf_comp_psel_to_nrf(enum comp_nrf_comp_psel shim, nrf_comp_input_t *nrf)
 {
 	switch (shim) {
 	case COMP_NRF_COMP_PSEL_AIN0:
@@ -344,8 +328,7 @@ static int shim_nrf_comp_psel_to_nrf(enum comp_nrf_comp_psel shim,
 }
 #endif
 
-static int shim_nrf_comp_sp_mode_to_nrf(enum comp_nrf_comp_sp_mode shim,
-					nrf_comp_sp_mode_t *nrf)
+static int shim_nrf_comp_sp_mode_to_nrf(enum comp_nrf_comp_sp_mode shim, nrf_comp_sp_mode_t *nrf)
 {
 	switch (shim) {
 	case COMP_NRF_COMP_SP_MODE_LOW:
@@ -370,8 +353,7 @@ static int shim_nrf_comp_sp_mode_to_nrf(enum comp_nrf_comp_sp_mode shim,
 }
 
 #if NRF_COMP_HAS_ISOURCE
-static int shim_nrf_comp_isource_to_nrf(enum comp_nrf_comp_isource shim,
-					nrf_isource_t *nrf)
+static int shim_nrf_comp_isource_to_nrf(enum comp_nrf_comp_isource shim, nrf_isource_t *nrf)
 {
 	switch (shim) {
 	case COMP_NRF_COMP_ISOURCE_DISABLED:
@@ -468,8 +450,7 @@ static int shim_nrf_comp_extrefsel_to_nrf(enum comp_nrf_comp_extrefsel shim,
 }
 #endif
 
-static int shim_nrf_comp_refsel_to_nrf(enum comp_nrf_comp_refsel shim,
-				       nrf_comp_ref_t *nrf)
+static int shim_nrf_comp_refsel_to_nrf(enum comp_nrf_comp_refsel shim, nrf_comp_ref_t *nrf)
 {
 	switch (shim) {
 	case COMP_NRF_COMP_REFSEL_INT_1V2:
@@ -609,8 +590,7 @@ static int shim_nrf_comp_get_output(const struct device *dev)
 	return nrfx_comp_sample();
 }
 
-static int shim_nrf_comp_set_trigger(const struct device *dev,
-				     enum comparator_trigger trigger)
+static int shim_nrf_comp_set_trigger(const struct device *dev, enum comparator_trigger trigger)
 {
 	shim_nrf_comp_stop();
 
@@ -640,8 +620,7 @@ static int shim_nrf_comp_set_trigger(const struct device *dev,
 }
 
 static int shim_nrf_comp_set_trigger_callback(const struct device *dev,
-					      comparator_callback_t callback,
-					      void *user_data)
+					      comparator_callback_t callback, void *user_data)
 {
 	shim_nrf_comp_stop();
 
@@ -731,11 +710,7 @@ static int shim_nrf_comp_init(const struct device *dev)
 {
 	nrfx_comp_config_t nrf = {};
 
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    nrfx_isr,
-		    nrfx_comp_irq_handler,
-		    0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), nrfx_isr, nrfx_comp_irq_handler, 0);
 
 	irq_enable(DT_INST_IRQN(0));
 
@@ -754,11 +729,5 @@ static int shim_nrf_comp_init(const struct device *dev)
 
 PM_DEVICE_DT_INST_DEFINE(0, shim_nrf_comp_pm_callback);
 
-DEVICE_DT_INST_DEFINE(0,
-		      shim_nrf_comp_init,
-		      PM_DEVICE_DT_INST_GET(0),
-		      NULL,
-		      NULL,
-		      POST_KERNEL,
-		      CONFIG_COMPARATOR_INIT_PRIORITY,
-		      &shim_nrf_comp_api);
+DEVICE_DT_INST_DEFINE(0, shim_nrf_comp_init, PM_DEVICE_DT_INST_GET(0), NULL, NULL, POST_KERNEL,
+		      CONFIG_COMPARATOR_INIT_PRIORITY, &shim_nrf_comp_api);

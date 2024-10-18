@@ -446,8 +446,9 @@ static void tcan4x5x_int_thread(void *p1, void *p2, void *p3)
 
 				LOG_ERR("SPIERR, status = 0x%08x", status);
 
-				err = tcan4x5x_write_tcan_reg(dev, CAN_TCAN4X5X_STATUS, status &
-							      CAN_TCAN4X5X_STATUS_CLEAR_ALL);
+				err = tcan4x5x_write_tcan_reg(
+					dev, CAN_TCAN4X5X_STATUS,
+					status & CAN_TCAN4X5X_STATUS_CLEAR_ALL);
 				if (err != 0) {
 					LOG_ERR("failed to write status register (err %d)", err);
 					continue;
@@ -640,9 +641,9 @@ static int tcan4x5x_init(const struct device *dev)
 	}
 
 	tid = k_thread_create(&tcan_data->int_thread, tcan_data->int_stack,
-			      K_KERNEL_STACK_SIZEOF(tcan_data->int_stack),
-			      tcan4x5x_int_thread, (void *)dev, NULL, NULL,
-			      CONFIG_CAN_TCAN4X5X_THREAD_PRIO, 0, K_NO_WAIT);
+			      K_KERNEL_STACK_SIZEOF(tcan_data->int_stack), tcan4x5x_int_thread,
+			      (void *)dev, NULL, NULL, CONFIG_CAN_TCAN4X5X_THREAD_PRIO, 0,
+			      K_NO_WAIT);
 	k_thread_name_set(tid, "tcan4x5x");
 
 	/* Reset TCAN */
@@ -747,8 +748,7 @@ static const struct can_mcan_ops tcan4x5x_ops = {
 };
 
 #if TCAN4X5X_RST_GPIO_SUPPORT
-#define TCAN4X5X_RST_GPIO_INIT(inst)                                                               \
-	.rst_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),
+#define TCAN4X5X_RST_GPIO_INIT(inst) .rst_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),
 #else /* TCAN4X5X_RST_GPIO_SUPPORT */
 #define TCAN4X5X_RST_GPIO_INIT(inst)
 #endif /* !TCAN4X5X_RST_GPIO_SUPPORT */
@@ -779,10 +779,8 @@ static const struct can_mcan_ops tcan4x5x_ops = {
 		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0),                             \
 		.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                                \
 		.clk_freq = DT_INST_PROP(inst, clock_frequency),                                   \
-		TCAN4X5X_RST_GPIO_INIT(inst)                                                       \
-		TCAN4X5X_NWKRQ_GPIO_INIT(inst)                                                     \
-		TCAN4X5X_WAKE_GPIO_INIT(inst)                                                      \
-	};                                                                                         \
+		TCAN4X5X_RST_GPIO_INIT(inst) TCAN4X5X_NWKRQ_GPIO_INIT(inst)                        \
+			TCAN4X5X_WAKE_GPIO_INIT(inst)};                                            \
                                                                                                    \
 	static const struct can_mcan_config can_mcan_config_##inst = CAN_MCAN_DT_CONFIG_INST_GET(  \
 		inst, &tcan4x5x_config_##inst, &tcan4x5x_ops, &tcan4x5x_cbs_##inst);               \

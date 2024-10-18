@@ -18,8 +18,8 @@
 
 LOG_MODULE_REGISTER(MS5837, CONFIG_SENSOR_LOG_LEVEL);
 
-static int ms5837_get_measurement(const struct device *dev, uint32_t *val,
-				  uint8_t cmd, const uint8_t delay)
+static int ms5837_get_measurement(const struct device *dev, uint32_t *val, uint8_t cmd,
+				  const uint8_t delay)
 {
 	const struct ms5837_config *cfg = dev->config;
 	uint8_t adc_read_cmd = MS5837_CMD_CONV_READ_ADC;
@@ -34,8 +34,7 @@ static int ms5837_get_measurement(const struct device *dev, uint32_t *val,
 
 	k_msleep(delay);
 
-	err = i2c_burst_read_dt(&cfg->i2c, adc_read_cmd, ((uint8_t *)val) + 1,
-				3);
+	err = i2c_burst_read_dt(&cfg->i2c, adc_read_cmd, ((uint8_t *)val) + 1, 3);
 	if (err < 0) {
 		return err;
 	}
@@ -45,8 +44,7 @@ static int ms5837_get_measurement(const struct device *dev, uint32_t *val,
 	return 0;
 }
 
-static void ms5837_compensate_30(const struct device *dev,
-				 const int32_t adc_temperature,
+static void ms5837_compensate_30(const struct device *dev, const int32_t adc_temperature,
 				 const int32_t adc_pressure)
 {
 	struct ms5837_data *data = dev->data;
@@ -79,8 +77,7 @@ static void ms5837_compensate_30(const struct device *dev,
 		OFFi = (3ll * temp_sq) / (1ll << 1);
 		SENSi = (5ll * temp_sq) / (1ll << 3);
 		if (data->temperature < -1500) {
-			temp_sq = (data->temperature + 1500) *
-				  (data->temperature + 1500);
+			temp_sq = (data->temperature + 1500) * (data->temperature + 1500);
 			OFFi += 7ll * temp_sq;
 			SENSi += 4ll * temp_sq;
 		}
@@ -94,16 +91,14 @@ static void ms5837_compensate_30(const struct device *dev,
 	SENS -= SENSi;
 
 	data->temperature -= Ti;
-	data->pressure =
-	    (((SENS * adc_pressure) / (1ll << 21)) - OFF) / (1ll << 13);
+	data->pressure = (((SENS * adc_pressure) / (1ll << 21)) - OFF) / (1ll << 13);
 }
 
 /*
  * First and second order pressure and temperature calculations, as per the flowchart in the
  * MS5837-02B datasheet. (see "Pressure and Temperature Calculation", pages 6 and 7, REV a8 12/2019)
  */
-static void ms5837_compensate_02(const struct device *dev,
-				 const int32_t adc_temperature,
+static void ms5837_compensate_02(const struct device *dev, const int32_t adc_temperature,
 				 const int32_t adc_pressure)
 {
 	struct ms5837_data *data = dev->data;
@@ -138,8 +133,7 @@ static void ms5837_compensate_02(const struct device *dev,
 	data->pressure = (((SENS * adc_pressure) / (1ll << 21)) - OFF) / (1ll << 15);
 }
 
-static int ms5837_sample_fetch(const struct device *dev,
-			       enum sensor_channel channel)
+static int ms5837_sample_fetch(const struct device *dev, enum sensor_channel channel)
 {
 	struct ms5837_data *data = dev->data;
 	int err;
@@ -154,8 +148,7 @@ static int ms5837_sample_fetch(const struct device *dev,
 		return err;
 	}
 
-	err = ms5837_get_measurement(dev, &adc_temperature,
-				     data->temperature_conv_cmd,
+	err = ms5837_get_measurement(dev, &adc_temperature, data->temperature_conv_cmd,
 				     data->temperature_conv_delay);
 	if (err < 0) {
 		return err;
@@ -166,8 +159,7 @@ static int ms5837_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static int ms5837_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
+static int ms5837_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	struct ms5837_data *data = dev->data;
@@ -191,8 +183,7 @@ static int ms5837_channel_get(const struct device *dev,
 }
 
 static int ms5837_attr_set(const struct device *dev, enum sensor_channel chan,
-			   enum sensor_attribute attr,
-			   const struct sensor_value *val)
+			   enum sensor_attribute attr, const struct sensor_value *val)
 {
 	struct ms5837_data *data = dev->data;
 	uint8_t p_conv_cmd;
@@ -269,8 +260,7 @@ static const struct sensor_driver_api ms5837_api_funcs = {
 	.channel_get = ms5837_channel_get,
 };
 
-static int ms5837_read_prom(const struct device *dev, const uint8_t cmd,
-			    uint16_t *val)
+static int ms5837_read_prom(const struct device *dev, const uint8_t cmd, uint16_t *val)
 {
 	const struct ms5837_config *cfg = dev->config;
 	int err;
@@ -342,8 +332,7 @@ static int ms5837_init(const struct device *dev)
 		return err;
 	}
 
-	err = ms5837_read_prom(dev, MS5837_CMD_CONV_READ_TEMPSENS,
-			       &data->tempsens);
+	err = ms5837_read_prom(dev, MS5837_CMD_CONV_READ_TEMPSENS, &data->tempsens);
 	if (err < 0) {
 		return err;
 	}
@@ -351,7 +340,7 @@ static int ms5837_init(const struct device *dev)
 	const int type_id = (data->factory >> 5) & 0x7f;
 
 	switch (type_id) {
-	case  MS5837_02BA01:
+	case MS5837_02BA01:
 	case MS5837_02BA21:
 		data->comp_func = ms5837_compensate_02;
 		break;
@@ -367,15 +356,15 @@ static int ms5837_init(const struct device *dev)
 	return 0;
 }
 
-#define MS5837_DEFINE(inst)								\
-	static struct ms5837_data ms5837_data_##inst;					\
-											\
-	static const struct ms5837_config ms5837_config_##inst = {			\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
-	};										\
-											\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, ms5837_init, NULL,				\
-			      &ms5837_data_##inst, &ms5837_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &ms5837_api_funcs);		\
+#define MS5837_DEFINE(inst)                                                                        \
+	static struct ms5837_data ms5837_data_##inst;                                              \
+                                                                                                   \
+	static const struct ms5837_config ms5837_config_##inst = {                                 \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+	};                                                                                         \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, ms5837_init, NULL, &ms5837_data_##inst,                 \
+				     &ms5837_config_##inst, POST_KERNEL,                           \
+				     CONFIG_SENSOR_INIT_PRIORITY, &ms5837_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(MS5837_DEFINE)

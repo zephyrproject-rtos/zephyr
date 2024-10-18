@@ -18,10 +18,9 @@
  * CONFIG_APIC_TSC_DEADLINE_TIMER is selected. The later is preferred over
  * the former when the TSC deadline comparator is available.
  */
-BUILD_ASSERT((!IS_ENABLED(CONFIG_APIC_TIMER_TSC) &&
-	       IS_ENABLED(CONFIG_APIC_TSC_DEADLINE_TIMER)) ||
-	     (!IS_ENABLED(CONFIG_APIC_TSC_DEADLINE_TIMER) &&
-	       IS_ENABLED(CONFIG_APIC_TIMER_TSC)),
+BUILD_ASSERT((!IS_ENABLED(CONFIG_APIC_TIMER_TSC) && IS_ENABLED(CONFIG_APIC_TSC_DEADLINE_TIMER)) ||
+		     (!IS_ENABLED(CONFIG_APIC_TSC_DEADLINE_TIMER) &&
+		      IS_ENABLED(CONFIG_APIC_TIMER_TSC)),
 	     "one of CONFIG_APIC_TIMER_TSC or CONFIG_APIC_TSC_DEADLINE_TIMER must be set");
 
 /*
@@ -47,11 +46,10 @@ BUILD_ASSERT((!IS_ENABLED(CONFIG_APIC_TIMER_TSC) &&
 #define IA32_TSC_DEADLINE_MSR 0x6e0
 #define IA32_TSC_ADJUST_MSR   0x03b
 
-#define CYC_PER_TICK (uint32_t)(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC \
-				/ CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define CYC_PER_TICK (uint32_t)(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
 /* the unsigned long cast limits divisors to native CPU register width */
-#define cycle_diff_t unsigned long
+#define cycle_diff_t   unsigned long
 #define CYCLE_DIFF_MAX (~(cycle_diff_t)0)
 
 /*
@@ -73,25 +71,32 @@ BUILD_ASSERT((!IS_ENABLED(CONFIG_APIC_TIMER_TSC) &&
  * consecutive set bits coming from the original max values to produce a
  * nicer literal for assembly generation.
  */
-#define CYCLES_MAX_1	((uint64_t)INT32_MAX * (uint64_t)CYC_PER_TICK)
-#define CYCLES_MAX_2	((uint64_t)CYCLE_DIFF_MAX)
-#define CYCLES_MAX_3	MIN(CYCLES_MAX_1, CYCLES_MAX_2)
-#define CYCLES_MAX_4	(CYCLES_MAX_3 / 2 + CYCLES_MAX_3 / 4)
-#define CYCLES_MAX	(CYCLES_MAX_4 + LSB_GET(CYCLES_MAX_4))
+#define CYCLES_MAX_1 ((uint64_t)INT32_MAX * (uint64_t)CYC_PER_TICK)
+#define CYCLES_MAX_2 ((uint64_t)CYCLE_DIFF_MAX)
+#define CYCLES_MAX_3 MIN(CYCLES_MAX_1, CYCLES_MAX_2)
+#define CYCLES_MAX_4 (CYCLES_MAX_3 / 2 + CYCLES_MAX_3 / 4)
+#define CYCLES_MAX   (CYCLES_MAX_4 + LSB_GET(CYCLES_MAX_4))
 
 struct apic_timer_lvt {
-	uint8_t vector   : 8;
-	uint8_t unused0  : 8;
-	uint8_t masked   : 1;
-	enum { ONE_SHOT, PERIODIC, TSC_DEADLINE } mode: 2;
-	uint32_t unused2 : 13;
+	uint8_t vector: 8;
+	uint8_t unused0: 8;
+	uint8_t masked: 1;
+	enum {
+		ONE_SHOT,
+		PERIODIC,
+		TSC_DEADLINE
+	} mode: 2;
+	uint32_t unused2: 13;
 };
 
 static struct k_spinlock lock;
 static uint64_t last_cycle;
 static uint64_t last_tick;
 static uint32_t last_elapsed;
-static union { uint32_t val; struct apic_timer_lvt lvt; } lvt_reg;
+static union {
+	uint32_t val;
+	struct apic_timer_lvt lvt;
+} lvt_reg;
 
 static ALWAYS_INLINE uint64_t rdtsc(void)
 {
@@ -103,10 +108,10 @@ static ALWAYS_INLINE uint64_t rdtsc(void)
 
 static inline void wrmsr(int32_t msr, uint64_t val)
 {
-	uint32_t hi = (uint32_t) (val >> 32);
-	uint32_t lo = (uint32_t) val;
+	uint32_t hi = (uint32_t)(val >> 32);
+	uint32_t lo = (uint32_t)val;
 
-	__asm__ volatile("wrmsr" :: "d"(hi), "a"(lo), "c"(msr));
+	__asm__ volatile("wrmsr" ::"d"(hi), "a"(lo), "c"(msr));
 }
 
 static void set_trigger(uint64_t deadline)
@@ -202,7 +207,7 @@ uint32_t sys_clock_elapsed(void)
 
 uint32_t sys_clock_cycle_get_32(void)
 {
-	return (uint32_t) rdtsc();
+	return (uint32_t)rdtsc();
 }
 
 uint64_t sys_clock_cycle_get_64(void)
@@ -291,13 +296,12 @@ static int sys_clock_driver_init(void)
 
 		timer_conf = x86_read_loapic(LOAPIC_TIMER_CONFIG);
 		timer_conf &= ~0x0f; /* clear divider bits */
-		timer_conf |=  0x0b; /* divide by 1 */
+		timer_conf |= 0x0b;  /* divide by 1 */
 		x86_write_loapic(LOAPIC_TIMER_CONFIG, timer_conf);
 	}
 
 	lvt_reg.val = x86_read_loapic(LOAPIC_TIMER);
-	lvt_reg.lvt.mode = IS_ENABLED(CONFIG_APIC_TSC_DEADLINE_TIMER) ?
-		TSC_DEADLINE : ONE_SHOT;
+	lvt_reg.lvt.mode = IS_ENABLED(CONFIG_APIC_TSC_DEADLINE_TIMER) ? TSC_DEADLINE : ONE_SHOT;
 	lvt_reg.lvt.masked = 0;
 	x86_write_loapic(LOAPIC_TIMER, lvt_reg.val);
 
@@ -318,5 +322,4 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

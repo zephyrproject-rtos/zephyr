@@ -18,11 +18,11 @@ LOG_MODULE_REGISTER(usb_dc_sam_usbc, CONFIG_USB_DRIVER_LOG_LEVEL);
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
 
-#define EP_UDINT_MASK           0x000FF000
+#define EP_UDINT_MASK 0x000FF000
 
-#define NUM_OF_EP_MAX           DT_INST_PROP(0, num_bidir_endpoints)
-#define USBC_RAM_ADDR           DT_REG_ADDR(DT_NODELABEL(sram1))
-#define USBC_RAM_SIZE           DT_REG_SIZE(DT_NODELABEL(sram1))
+#define NUM_OF_EP_MAX DT_INST_PROP(0, num_bidir_endpoints)
+#define USBC_RAM_ADDR DT_REG_ADDR(DT_NODELABEL(sram1))
+#define USBC_RAM_SIZE DT_REG_SIZE(DT_NODELABEL(sram1))
 
 /**
  * @brief USB Driver Control Endpoint Finite State Machine states
@@ -45,28 +45,28 @@ enum usb_dc_epctrl_state {
 };
 
 struct sam_usbc_udesc_sizes {
-	uint32_t byte_count:15;
-	uint32_t reserved:1;
-	uint32_t multi_packet_size:15;
-	uint32_t auto_zlp:1;
+	uint32_t byte_count: 15;
+	uint32_t reserved: 1;
+	uint32_t multi_packet_size: 15;
+	uint32_t auto_zlp: 1;
 };
 
 struct sam_usbc_udesc_bk_ctrl_stat {
-	uint32_t stallrq:1;
-	uint32_t reserved1:15;
-	uint32_t crcerri:1;
-	uint32_t overfi:1;
-	uint32_t underfi:1;
-	uint32_t reserved2:13;
+	uint32_t stallrq: 1;
+	uint32_t reserved1: 15;
+	uint32_t crcerri: 1;
+	uint32_t overfi: 1;
+	uint32_t underfi: 1;
+	uint32_t reserved2: 13;
 };
 
 struct sam_usbc_udesc_ep_ctrl_stat {
-	uint32_t pipe_dev_addr:7;
-	uint32_t reserved1:1;
-	uint32_t pipe_num:4;
-	uint32_t pipe_error_cnt_max:4;
-	uint32_t pipe_error_status:8;
-	uint32_t reserved2:8;
+	uint32_t pipe_dev_addr: 7;
+	uint32_t reserved1: 1;
+	uint32_t pipe_num: 4;
+	uint32_t pipe_error_cnt_max: 4;
+	uint32_t pipe_error_status: 8;
+	uint32_t reserved2: 8;
 };
 
 struct sam_usbc_desc_table {
@@ -101,17 +101,12 @@ struct usb_device_data {
 
 static struct sam_usbc_desc_table dev_desc[(NUM_OF_EP_MAX + 1) * 2];
 static struct usb_device_data dev_data;
-static volatile Usbc *regs = (Usbc *) DT_INST_REG_ADDR(0);
+static volatile Usbc *regs = (Usbc *)DT_INST_REG_ADDR(0);
 PINCTRL_DT_INST_DEFINE(0);
 static const struct pinctrl_dev_config *pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0);
 static enum usb_dc_epctrl_state epctrl_fsm;
 static const char *const usb_dc_epctrl_state_string[] = {
-	"STP",
-	"DOUT",
-	"DIN",
-	"IN_ZLP",
-	"OUT_ZLP",
-	"STALL",
+	"STP", "DOUT", "DIN", "IN_ZLP", "OUT_ZLP", "STALL",
 };
 
 #if defined(CONFIG_USB_DRIVER_LOG_LEVEL_DBG)
@@ -124,17 +119,16 @@ static void usb_dc_sam_usbc_isr_sta_dbg(uint32_t ep_idx, uint32_t sr)
 		dev_ep_sta_dbg[1][ep_idx] = 0;
 
 		LOG_INF("ISR[%d] CON=%08x INT=%08x INTE=%08x "
-			"ECON=%08x ESTA=%08x%s", ep_idx,
-			regs->UDCON, regs->UDINT, regs->UDINTE,
-			regs->UECON[ep_idx], regs->UESTA[ep_idx],
-			((sr & USBC_UESTA0_RXSTPI) ? " STP" : ""));
+			"ECON=%08x ESTA=%08x%s",
+			ep_idx, regs->UDCON, regs->UDINT, regs->UDINTE, regs->UECON[ep_idx],
+			regs->UESTA[ep_idx], ((sr & USBC_UESTA0_RXSTPI) ? " STP" : ""));
 	} else if (dev_ep_sta_dbg[0][ep_idx] != dev_ep_sta_dbg[1][ep_idx]) {
 		dev_ep_sta_dbg[1][ep_idx] = dev_ep_sta_dbg[0][ep_idx];
 
 		LOG_INF("ISR[%d] CON=%08x INT=%08x INTE=%08x "
-			"ECON=%08x ESTA=%08x LOOP", ep_idx,
-			regs->UDCON, regs->UDINT, regs->UDINTE,
-			regs->UECON[ep_idx], regs->UESTA[ep_idx]);
+			"ECON=%08x ESTA=%08x LOOP",
+			ep_idx, regs->UDCON, regs->UDINT, regs->UDINTE, regs->UECON[ep_idx],
+			regs->UESTA[ep_idx]);
 	}
 }
 
@@ -173,8 +167,7 @@ static uint8_t usb_dc_sam_usbc_ep_curr_bank(uint8_t ep_idx)
 {
 	uint8_t idx = ep_idx * 2;
 
-	if ((ep_idx > 0) &&
-	    (regs->UESTA[ep_idx] & USBC_UESTA0_CURRBK(1)) > 0) {
+	if ((ep_idx > 0) && (regs->UESTA[ep_idx] & USBC_UESTA0_CURRBK(1)) > 0) {
 		idx++;
 	}
 
@@ -206,9 +199,8 @@ static int usb_dc_sam_usbc_ep_alloc_buf(int ep_idx)
 
 	desc_mem_alloc = 0;
 
-	mps = dev_data.ep_data[ep_idx].mps_x2
-	    ? dev_data.ep_data[ep_idx].mps * 2
-	    : dev_data.ep_data[ep_idx].mps;
+	mps = dev_data.ep_data[ep_idx].mps_x2 ? dev_data.ep_data[ep_idx].mps * 2
+					      : dev_data.ep_data[ep_idx].mps;
 
 	/* Check if there are memory to all endpoints */
 	for (int i = 0; i < NUM_OF_EP_MAX; i++) {
@@ -216,14 +208,12 @@ static int usb_dc_sam_usbc_ep_alloc_buf(int ep_idx)
 			continue;
 		}
 
-		desc_mem_alloc += dev_data.ep_data[i].mps_x2
-				? dev_data.ep_data[i].mps * 2
-				: dev_data.ep_data[i].mps;
+		desc_mem_alloc += dev_data.ep_data[i].mps_x2 ? dev_data.ep_data[i].mps * 2
+							     : dev_data.ep_data[i].mps;
 	}
 
 	if ((desc_mem_alloc + mps) > USBC_RAM_SIZE) {
-		memset(&dev_data.ep_data[ep_idx], 0,
-		       sizeof(struct usb_device_ep_data));
+		memset(&dev_data.ep_data[ep_idx], 0, sizeof(struct usb_device_ep_data));
 		return -ENOMEM;
 	}
 
@@ -240,13 +230,11 @@ static int usb_dc_sam_usbc_ep_alloc_buf(int ep_idx)
 			continue;
 		}
 
-		desc_mem_alloc += dev_data.ep_data[i].mps_x2
-				? dev_data.ep_data[i].mps * 2
-				: dev_data.ep_data[i].mps;
+		desc_mem_alloc += dev_data.ep_data[i].mps_x2 ? dev_data.ep_data[i].mps * 2
+							     : dev_data.ep_data[i].mps;
 	}
 
-	ep_desc_bk = ((struct sam_usbc_desc_table *) &dev_desc)
-		   + (ep_idx * 2);
+	ep_desc_bk = ((struct sam_usbc_desc_table *)&dev_desc) + (ep_idx * 2);
 	for (int i = ep_idx; i < NUM_OF_EP_MAX; i++) {
 		if (!dev_data.ep_data[i].is_configured && (i != ep_idx)) {
 			ep_desc_bk += 2;
@@ -254,8 +242,7 @@ static int usb_dc_sam_usbc_ep_alloc_buf(int ep_idx)
 		}
 
 		/* Alloc bank 0 */
-		ep_desc_bk->ep_pipe_addr = ((uint8_t *) USBC_RAM_ADDR)
-					 + desc_mem_alloc;
+		ep_desc_bk->ep_pipe_addr = ((uint8_t *)USBC_RAM_ADDR) + desc_mem_alloc;
 		ep_desc_bk->sizes = 0;
 		ep_desc_bk->bk_ctrl_stat = 0;
 		ep_desc_bk->ep_ctrl_stat = 0;
@@ -268,19 +255,16 @@ static int usb_dc_sam_usbc_ep_alloc_buf(int ep_idx)
 		 * then ep_pipe_addr[1] = ep_pipe_addr[0] address + mps size
 		 * else ep_pipe_addr[1] = ep_pipe_addr[0] address
 		 */
-		ep_desc_bk->ep_pipe_addr = ((uint8_t *) USBC_RAM_ADDR)
-					 + desc_mem_alloc
-					 + (dev_data.ep_data[i].mps_x2
-					 ?  dev_data.ep_data[i].mps
-					 :  0);
+		ep_desc_bk->ep_pipe_addr =
+			((uint8_t *)USBC_RAM_ADDR) + desc_mem_alloc +
+			(dev_data.ep_data[i].mps_x2 ? dev_data.ep_data[i].mps : 0);
 		ep_desc_bk->sizes = 0;
 		ep_desc_bk->bk_ctrl_stat = 0;
 		ep_desc_bk->ep_ctrl_stat = 0;
 		ep_desc_bk++;
 
-		desc_mem_alloc += dev_data.ep_data[i].mps_x2
-				? dev_data.ep_data[i].mps * 2
-				: dev_data.ep_data[i].mps;
+		desc_mem_alloc += dev_data.ep_data[i].mps_x2 ? dev_data.ep_data[i].mps * 2
+							     : dev_data.ep_data[i].mps;
 	}
 
 	ep_enabled[ep_idx] = false;
@@ -333,9 +317,8 @@ static void usb_dc_ctrl_init(void)
 
 	/* In case of OUT ZLP event is no processed before Setup event occurs */
 	regs->UESTACLR[0] = USBC_UESTA0CLR_RXOUTIC;
-	regs->UECONCLR[0] = USBC_UECON0CLR_RXOUTEC
-			  | USBC_UECON0CLR_NAKOUTEC
-			  | USBC_UECON0CLR_NAKINEC;
+	regs->UECONCLR[0] =
+		USBC_UECON0CLR_RXOUTEC | USBC_UECON0CLR_NAKOUTEC | USBC_UECON0CLR_NAKINEC;
 
 	epctrl_fsm = USB_EPCTRL_SETUP;
 }
@@ -411,12 +394,11 @@ static void usb_dc_ep0_isr(void)
 	}
 
 	if (sr & USBC_UESTA0_RXOUTI) {
-		LOG_DBG("RXOUT= fsm: %s",
-			usb_dc_epctrl_state_string[epctrl_fsm]);
+		LOG_DBG("RXOUT= fsm: %s", usb_dc_epctrl_state_string[epctrl_fsm]);
 
 		if (epctrl_fsm != USB_EPCTRL_DATA_OUT) {
-			if ((epctrl_fsm == USB_EPCTRL_DATA_IN)
-			||  (epctrl_fsm == USB_EPCTRL_HANDSHAKE_WAIT_OUT_ZLP)) {
+			if ((epctrl_fsm == USB_EPCTRL_DATA_IN) ||
+			    (epctrl_fsm == USB_EPCTRL_HANDSHAKE_WAIT_OUT_ZLP)) {
 				/* End of SETUP request:
 				 * - Data IN Phase aborted,
 				 * - or last Data IN Phase hidden by ZLP OUT
@@ -439,16 +421,14 @@ static void usb_dc_ep0_isr(void)
 		return;
 	}
 
-	if ((sr & USBC_UESTA0_TXINI) &&
-	    (regs->UECON[0] & USBC_UECON0_TXINE)) {
-		LOG_DBG("TXINI= fsm: %s",
-			usb_dc_epctrl_state_string[epctrl_fsm]);
+	if ((sr & USBC_UESTA0_TXINI) && (regs->UECON[0] & USBC_UECON0_TXINE)) {
+		LOG_DBG("TXINI= fsm: %s", usb_dc_epctrl_state_string[epctrl_fsm]);
 
 		regs->UECONCLR[0] = USBC_UECON0CLR_TXINEC;
 
 		if (epctrl_fsm == USB_EPCTRL_HANDSHAKE_WAIT_IN_ZLP) {
-			if (!(dev_ctrl & USBC_UDCON_ADDEN)
-			&&   (dev_ctrl & USBC_UDCON_UADD_Msk) != 0U) {
+			if (!(dev_ctrl & USBC_UDCON_ADDEN) &&
+			    (dev_ctrl & USBC_UDCON_UADD_Msk) != 0U) {
 				/* Commit the pending address update.  This
 				 * must be done after the ack to the host
 				 * completes else the ack will get dropped.
@@ -467,8 +447,7 @@ static void usb_dc_ep0_isr(void)
 	}
 
 	if (sr & USBC_UESTA0_NAKOUTI) {
-		LOG_DBG("NAKOUT= fsm: %s",
-			usb_dc_epctrl_state_string[epctrl_fsm]);
+		LOG_DBG("NAKOUT= fsm: %s", usb_dc_epctrl_state_string[epctrl_fsm]);
 
 		regs->UESTACLR[0] = USBC_UESTA0CLR_NAKOUTIC;
 
@@ -487,8 +466,7 @@ static void usb_dc_ep0_isr(void)
 	}
 
 	if (sr & USBC_UESTA0_NAKINI) {
-		LOG_DBG("NAKIN= fsm: %s",
-			usb_dc_epctrl_state_string[epctrl_fsm]);
+		LOG_DBG("NAKIN= fsm: %s", usb_dc_epctrl_state_string[epctrl_fsm]);
 
 		regs->UESTACLR[0] = USBC_UESTA0CLR_NAKINIC;
 
@@ -672,20 +650,17 @@ int usb_dc_attach(void)
 	 * For SAM USB wake up device except BACKUP mode
 	 */
 	pmcon = BPM->PMCON | BPM_PMCON_FASTWKUP;
-	BPM->UNLOCK = BPM_UNLOCK_KEY(0xAAu)
-		    | BPM_UNLOCK_ADDR((uint32_t)&BPM->PMCON - (uint32_t)BPM);
+	BPM->UNLOCK =
+		BPM_UNLOCK_KEY(0xAAu) | BPM_UNLOCK_ADDR((uint32_t)&BPM->PMCON - (uint32_t)BPM);
 	BPM->PMCON = pmcon;
 
 	/* Start the peripheral clock PBB & DATA */
-	soc_pmc_peripheral_enable(
-		PM_CLOCK_MASK(PM_CLK_GRP_PBB, SYSCLK_USBC_REGS));
-	soc_pmc_peripheral_enable(
-		PM_CLOCK_MASK(PM_CLK_GRP_HSB, SYSCLK_USBC_DATA));
+	soc_pmc_peripheral_enable(PM_CLOCK_MASK(PM_CLK_GRP_PBB, SYSCLK_USBC_REGS));
+	soc_pmc_peripheral_enable(PM_CLOCK_MASK(PM_CLK_GRP_HSB, SYSCLK_USBC_DATA));
 
 	/* Enable USB Generic clock */
 	SCIF->GCCTRL[GEN_CLK_USBC] = 0;
-	SCIF->GCCTRL[GEN_CLK_USBC] = SCIF_GCCTRL_OSCSEL(SCIF_GC_USES_CLK_HSB)
-				   | SCIF_GCCTRL_CEN;
+	SCIF->GCCTRL[GEN_CLK_USBC] = SCIF_GCCTRL_OSCSEL(SCIF_GC_USES_CLK_HSB) | SCIF_GCCTRL_CEN;
 
 	/* Sync Generic Clock */
 	while ((regs->USBSTA & USBC_USBSTA_CLKUSABLE) == 0) {
@@ -702,7 +677,7 @@ int usb_dc_attach(void)
 
 	usb_dc_sam_usbc_unfreeze_clk();
 
-	regs->UDESC = USBC_UDESC_UDESCA((int) &dev_desc);
+	regs->UDESC = USBC_UDESC_UDESCA((int)&dev_desc);
 
 	/* Select the speed with pads detached */
 	regval = USBC_UDCON_DETACH;
@@ -730,24 +705,17 @@ int usb_dc_attach(void)
 	 *  SUSP	Suspend Interrupt
 	 *  WAKEUP	Wake-Up Interrupt
 	 */
-	regs->UDINTCLR = USBC_UDINTCLR_EORSMC
-		       | USBC_UDINTCLR_EORSTC
-		       | USBC_UDINTCLR_SOFC
-		       | USBC_UDINTCLR_SUSPC
-		       | USBC_UDINTCLR_WAKEUPC;
+	regs->UDINTCLR = USBC_UDINTCLR_EORSMC | USBC_UDINTCLR_EORSTC | USBC_UDINTCLR_SOFC |
+			 USBC_UDINTCLR_SUSPC | USBC_UDINTCLR_WAKEUPC;
 
-	regs->UDINTESET = USBC_UDINTESET_EORSMES
-			| USBC_UDINTESET_EORSTES
-			| USBC_UDINTESET_SUSPES
-			| USBC_UDINTESET_WAKEUPES;
+	regs->UDINTESET = USBC_UDINTESET_EORSMES | USBC_UDINTESET_EORSTES | USBC_UDINTESET_SUSPES |
+			  USBC_UDINTESET_WAKEUPES;
 
 	if (IS_ENABLED(CONFIG_USB_DEVICE_SOF)) {
 		regs->UDINTESET |= USBC_UDINTESET_SOFES;
 	}
 
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    usb_dc_sam_usbc_isr, 0, 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), usb_dc_sam_usbc_isr, 0, 0);
 	irq_enable(DT_INST_IRQN(0));
 
 	/* Attach the device */
@@ -781,10 +749,8 @@ int usb_dc_detach(void)
 	PM->AWEN &= ~(BIT(PM_AWEN_USBC));
 
 	/* Disable the peripheral clock HSB & PBB */
-	soc_pmc_peripheral_enable(
-		PM_CLOCK_MASK(PM_CLK_GRP_HSB, SYSCLK_USBC_DATA));
-	soc_pmc_peripheral_enable(
-		PM_CLOCK_MASK(PM_CLK_GRP_PBB, SYSCLK_USBC_REGS));
+	soc_pmc_peripheral_enable(PM_CLOCK_MASK(PM_CLK_GRP_HSB, SYSCLK_USBC_DATA));
+	soc_pmc_peripheral_enable(PM_CLOCK_MASK(PM_CLK_GRP_PBB, SYSCLK_USBC_REGS));
 
 	irq_disable(DT_INST_IRQN(0));
 	irq_unlock(key);
@@ -836,7 +802,7 @@ void usb_dc_set_status_callback(const usb_dc_status_callback cb)
 	LOG_DBG("USB DC set callback");
 }
 
-int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
+int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data *const cfg)
 {
 	uint8_t ep_idx = USB_EP_GET_IDX(cfg->ep_addr);
 
@@ -890,8 +856,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 		usb_dc_ep_disable(ep_idx);
 	}
 
-	LOG_DBG("Configure ep 0x%02x, mps %d, type %d",
-		cfg->ep_addr, cfg->ep_mps, cfg->ep_type);
+	LOG_DBG("Configure ep 0x%02x, mps %d, type %d", cfg->ep_addr, cfg->ep_mps, cfg->ep_type);
 
 	switch (cfg->ep_type) {
 	case USB_DC_EP_CONTROL:
@@ -910,8 +875,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 		return -EINVAL;
 	}
 
-	if (USB_EP_DIR_IS_OUT(cfg->ep_addr) ||
-	    cfg->ep_type == USB_DC_EP_CONTROL) {
+	if (USB_EP_DIR_IS_OUT(cfg->ep_addr) || cfg->ep_type == USB_DC_EP_CONTROL) {
 		regval |= USBC_UECFG0_EPDIR_OUT;
 	} else {
 		regval |= USBC_UECFG0_EPDIR_IN;
@@ -1133,13 +1097,11 @@ int usb_dc_ep_set_callback(uint8_t ep, const usb_dc_ep_callback cb)
 		dev_data.ep_data[ep_idx].cb_out = cb;
 	}
 
-	LOG_DBG("set ep 0x%02x %s callback", ep,
-		USB_EP_DIR_IS_IN(ep) ? "IN" : "OUT");
+	LOG_DBG("set ep 0x%02x %s callback", ep, USB_EP_DIR_IS_IN(ep) ? "IN" : "OUT");
 	return 0;
 }
 
-static int usb_dc_ep_write_stp(uint8_t ep_bank, const uint8_t *data,
-			       uint32_t packet_len)
+static int usb_dc_ep_write_stp(uint8_t ep_bank, const uint8_t *data, uint32_t packet_len)
 {
 	uint32_t key;
 
@@ -1185,8 +1147,7 @@ static int usb_dc_ep_write_stp(uint8_t ep_bank, const uint8_t *data,
 		}
 
 		if (data) {
-			memcpy(dev_desc[ep_bank].ep_pipe_addr,
-			       data, packet_len);
+			memcpy(dev_desc[ep_bank].ep_pipe_addr, data, packet_len);
 			barrier_dsync_fence_full();
 		}
 		dev_desc[ep_bank].sizes = packet_len;
@@ -1220,8 +1181,7 @@ static int usb_dc_ep_write_stp(uint8_t ep_bank, const uint8_t *data,
 	return 0;
 }
 
-int usb_dc_ep_write(uint8_t ep, const uint8_t *data,
-		    uint32_t data_len, uint32_t *ret_bytes)
+int usb_dc_ep_write(uint8_t ep, const uint8_t *data, uint32_t data_len, uint32_t *ret_bytes)
 {
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	uint8_t ep_bank;
@@ -1280,9 +1240,8 @@ int usb_dc_ep_write(uint8_t ep, const uint8_t *data,
 		regs->UECONCLR[ep_idx] = USBC_UECON0CLR_FIFOCONC;
 	}
 
-	LOG_INF("ep 0x%02x write %d bytes from %d to bank %d%s",
-		ep, packet_len, data_len, ep_bank % 2,
-		packet_len == 0 ? " (ZLP)" : "");
+	LOG_INF("ep 0x%02x write %d bytes from %d to bank %d%s", ep, packet_len, data_len,
+		ep_bank % 2, packet_len == 0 ? " (ZLP)" : "");
 	return 0;
 }
 
@@ -1335,8 +1294,8 @@ static int usb_dc_ep_read_ex_stp(uint32_t take, uint32_t wLength)
 	return 0;
 }
 
-int usb_dc_ep_read_ex(uint8_t ep, uint8_t *data, uint32_t max_data_len,
-		      uint32_t *read_bytes, bool wait)
+int usb_dc_ep_read_ex(uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_t *read_bytes,
+		      bool wait)
 {
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	struct usb_setup_packet *setup;
@@ -1382,8 +1341,7 @@ int usb_dc_ep_read_ex(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 	take = MIN(max_data_len, remaining);
 	if (take) {
 		memcpy(data,
-		       (uint8_t *) dev_desc[ep_bank].ep_pipe_addr +
-		       dev_data.ep_data[ep_idx].out_at,
+		       (uint8_t *)dev_desc[ep_bank].ep_pipe_addr + dev_data.ep_data[ep_idx].out_at,
 		       take);
 		barrier_dsync_fence_full();
 	}
@@ -1397,9 +1355,8 @@ int usb_dc_ep_read_ex(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 			dev_data.ep_data[ep_idx].out_at = 0U;
 
 			if (ep_idx == 0) {
-				setup = (struct usb_setup_packet *) data;
-				rc = usb_dc_ep_read_ex_stp(take,
-							   setup->wLength);
+				setup = (struct usb_setup_packet *)data;
+				rc = usb_dc_ep_read_ex_stp(take, setup->wLength);
 			} else {
 				rc = usb_dc_ep_read_continue(ep);
 			}
@@ -1408,8 +1365,8 @@ int usb_dc_ep_read_ex(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 		dev_data.ep_data[ep_idx].out_at += take;
 	}
 
-	LOG_INF("ep 0x%02x read %d bytes from bank %d and %s",
-		ep, take, ep_bank % 2, wait ? "wait" : "NO wait");
+	LOG_INF("ep 0x%02x read %d bytes from bank %d and %s", ep, take, ep_bank % 2,
+		wait ? "wait" : "NO wait");
 	return rc;
 }
 
@@ -1436,14 +1393,12 @@ int usb_dc_ep_read_continue(uint8_t ep)
 	return 0;
 }
 
-int usb_dc_ep_read(uint8_t ep, uint8_t *data, uint32_t max_data_len,
-		   uint32_t *read_bytes)
+int usb_dc_ep_read(uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_t *read_bytes)
 {
 	return usb_dc_ep_read_ex(ep, data, max_data_len, read_bytes, false);
 }
 
-int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
-			uint32_t *read_bytes)
+int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_t *read_bytes)
 {
 	return usb_dc_ep_read_ex(ep, data, max_data_len, read_bytes, true);
 }

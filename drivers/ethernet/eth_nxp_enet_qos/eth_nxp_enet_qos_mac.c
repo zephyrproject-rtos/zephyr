@@ -29,8 +29,7 @@ static int rx_queue_init(void)
 	k_work_queue_init(&rx_work_queue);
 	k_work_queue_start(&rx_work_queue, enet_qos_rx_stack,
 			   K_THREAD_STACK_SIZEOF(enet_qos_rx_stack),
-			   K_PRIO_COOP(CONFIG_ETH_NXP_ENET_QOS_RX_THREAD_PRIORITY),
-			   &cfg);
+			   K_PRIO_COOP(CONFIG_ETH_NXP_ENET_QOS_RX_THREAD_PRIORITY), &cfg);
 
 	return 0;
 }
@@ -71,8 +70,7 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 		fragment = fragment->frags;
 	}
 
-	if (total_bytes > config->hw_info.max_frame_len ||
-	    frags_count > NUM_TX_BUFDESC) {
+	if (total_bytes > config->hw_info.max_frame_len || frags_count > NUM_TX_BUFDESC) {
 		LOG_ERR("TX packet too large");
 		return -E2BIG;
 	}
@@ -123,7 +121,7 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 	base->DMA_CH[0].DMA_CHX_TXDESC_RING_LENGTH = frags_count - 1;
 	base->DMA_CH[0].DMA_CHX_TXDESC_TAIL_PTR =
 		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_TXDESC_TAIL_PTR, TDTP,
-			ENET_QOS_ALIGN_ADDR_SHIFT((uint32_t) tx_desc_ptr));
+				  ENET_QOS_ALIGN_ADDR_SHIFT((uint32_t)tx_desc_ptr));
 
 	return 0;
 }
@@ -254,7 +252,8 @@ static void eth_nxp_enet_qos_mac_isr(const struct device *dev)
 	volatile uint32_t dma_interrupts = base->DMA_INTERRUPT_STATUS;
 	volatile uint32_t dma_ch0_interrupts = base->DMA_CH[0].DMA_CHX_STAT;
 
-	mac_interrupts; mac_rx_tx_status;
+	mac_interrupts;
+	mac_rx_tx_status;
 
 	base->DMA_CH[0].DMA_CHX_STAT = 0xFFFFFFFF;
 
@@ -268,8 +267,8 @@ static void eth_nxp_enet_qos_mac_isr(const struct device *dev)
 	}
 }
 
-static void eth_nxp_enet_qos_phy_cb(const struct device *phy,
-		struct phy_link_state *state, void *eth_dev)
+static void eth_nxp_enet_qos_phy_cb(const struct device *phy, struct phy_link_state *state,
+				    void *eth_dev)
 {
 	const struct device *dev = eth_dev;
 	struct nxp_enet_qos_mac_data *data = dev->data;
@@ -300,12 +299,11 @@ static inline int enet_qos_dma_reset(enet_qos_t *base)
 		goto done;
 	}
 
-	int wait_chunk = DIV_ROUND_UP(CONFIG_ETH_NXP_ENET_QOS_DMA_RESET_WAIT_TIME,
-				      NUM_SWR_WAIT_CHUNKS);
+	int wait_chunk =
+		DIV_ROUND_UP(CONFIG_ETH_NXP_ENET_QOS_DMA_RESET_WAIT_TIME, NUM_SWR_WAIT_CHUNKS);
 
-	for (int time_elapsed = 0;
-		time_elapsed < CONFIG_ETH_NXP_ENET_QOS_DMA_RESET_WAIT_TIME;
-		time_elapsed += wait_chunk) {
+	for (int time_elapsed = 0; time_elapsed < CONFIG_ETH_NXP_ENET_QOS_DMA_RESET_WAIT_TIME;
+	     time_elapsed += wait_chunk) {
 
 		k_busy_wait(wait_chunk);
 
@@ -327,10 +325,8 @@ done:
 
 static inline void enet_qos_dma_config_init(enet_qos_t *base)
 {
-	base->DMA_CH[0].DMA_CHX_TX_CTRL |=
-		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_TX_CTRL, TxPBL, 0b1);
-	base->DMA_CH[0].DMA_CHX_RX_CTRL |=
-		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_RX_CTRL, RxPBL, 0b1);
+	base->DMA_CH[0].DMA_CHX_TX_CTRL |= ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_TX_CTRL, TxPBL, 0b1);
+	base->DMA_CH[0].DMA_CHX_RX_CTRL |= ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_RX_CTRL, RxPBL, 0b1);
 }
 
 static inline void enet_qos_mtl_config_init(enet_qos_t *base)
@@ -360,25 +356,20 @@ static inline void enet_qos_mtl_config_init(enet_qos_t *base)
 		ENET_QOS_REG_PREP(MTL_QUEUE_MTL_RXQX_OP_MODE, FUP, 0b1);
 }
 
-static inline void enet_qos_mac_config_init(enet_qos_t *base,
-				struct nxp_enet_qos_mac_data *data, uint32_t clk_rate)
+static inline void enet_qos_mac_config_init(enet_qos_t *base, struct nxp_enet_qos_mac_data *data,
+					    uint32_t clk_rate)
 {
 	/* Set MAC address */
-	base->MAC_ADDRESS0_HIGH =
-		ENET_QOS_REG_PREP(MAC_ADDRESS0_HIGH, ADDRHI,
-					data->mac_addr.addr[5] << 8 |
-					data->mac_addr.addr[4]);
+	base->MAC_ADDRESS0_HIGH = ENET_QOS_REG_PREP(
+		MAC_ADDRESS0_HIGH, ADDRHI, data->mac_addr.addr[5] << 8 | data->mac_addr.addr[4]);
 	base->MAC_ADDRESS0_LOW =
 		ENET_QOS_REG_PREP(MAC_ADDRESS0_LOW, ADDRLO,
-					data->mac_addr.addr[3] << 24 |
-					data->mac_addr.addr[2] << 16 |
-					data->mac_addr.addr[1] << 8  |
-					data->mac_addr.addr[0]);
+				  data->mac_addr.addr[3] << 24 | data->mac_addr.addr[2] << 16 |
+					  data->mac_addr.addr[1] << 8 | data->mac_addr.addr[0]);
 
 	/* Set the reference for 1 microsecond of ENET QOS CSR clock cycles */
-	base->MAC_ONEUS_TIC_COUNTER =
-		ENET_QOS_REG_PREP(MAC_ONEUS_TIC_COUNTER, TIC_1US_CNTR,
-					(clk_rate / USEC_PER_SEC) - 1);
+	base->MAC_ONEUS_TIC_COUNTER = ENET_QOS_REG_PREP(MAC_ONEUS_TIC_COUNTER, TIC_1US_CNTR,
+							(clk_rate / USEC_PER_SEC) - 1);
 
 	base->MAC_CONFIGURATION |=
 		/* For 10/100 Mbps operation */
@@ -391,17 +382,14 @@ static inline void enet_qos_mac_config_init(enet_qos_t *base,
 		ENET_QOS_REG_PREP(MAC_CONFIGURATION, ECRSFD, 0b1);
 
 	/* Enable the MAC RX channel 0 */
-	base->MAC_RXQ_CTRL[0] |=
-		ENET_QOS_REG_PREP(MAC_RXQ_CTRL, RXQ0EN, 0b1);
+	base->MAC_RXQ_CTRL[0] |= ENET_QOS_REG_PREP(MAC_RXQ_CTRL, RXQ0EN, 0b1);
 }
 
 static inline void enet_qos_start(enet_qos_t *base)
 {
 	/* Set start bits of the RX and TX DMAs */
-	base->DMA_CH[0].DMA_CHX_RX_CTRL |=
-		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_RX_CTRL, SR, 0b1);
-	base->DMA_CH[0].DMA_CHX_TX_CTRL |=
-		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_TX_CTRL, ST, 0b1);
+	base->DMA_CH[0].DMA_CHX_RX_CTRL |= ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_RX_CTRL, SR, 0b1);
+	base->DMA_CH[0].DMA_CHX_TX_CTRL |= ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_TX_CTRL, ST, 0b1);
 
 	/* Enable interrupts */
 	base->DMA_CH[0].DMA_CHX_INT_EN =
@@ -417,9 +405,8 @@ static inline void enet_qos_start(enet_qos_t *base)
 		ENET_QOS_REG_PREP(MAC_INTERRUPT_ENABLE, RXSTSIE, 0b1);
 
 	/* Start the TX and RX on the MAC */
-	base->MAC_CONFIGURATION |=
-		ENET_QOS_REG_PREP(MAC_CONFIGURATION, TE, 0b1) |
-		ENET_QOS_REG_PREP(MAC_CONFIGURATION, RE, 0b1);
+	base->MAC_CONFIGURATION |= ENET_QOS_REG_PREP(MAC_CONFIGURATION, TE, 0b1) |
+				   ENET_QOS_REG_PREP(MAC_CONFIGURATION, RE, 0b1);
 }
 
 static inline void enet_qos_tx_desc_init(enet_qos_t *base, struct nxp_enet_qos_tx_data *tx)
@@ -429,11 +416,11 @@ static inline void enet_qos_tx_desc_init(enet_qos_t *base, struct nxp_enet_qos_t
 	base->DMA_CH[0].DMA_CHX_TXDESC_LIST_ADDR =
 		/* Start of tx descriptors buffer */
 		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_TXDESC_LIST_ADDR, TDESLA,
-			ENET_QOS_ALIGN_ADDR_SHIFT((uint32_t)tx->descriptors));
+				  ENET_QOS_ALIGN_ADDR_SHIFT((uint32_t)tx->descriptors));
 	base->DMA_CH[0].DMA_CHX_TXDESC_TAIL_PTR =
 		/* Do not move the tail pointer past the start until send is requested */
 		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_TXDESC_TAIL_PTR, TDTP,
-			ENET_QOS_ALIGN_ADDR_SHIFT((uint32_t)tx->descriptors));
+				  ENET_QOS_ALIGN_ADDR_SHIFT((uint32_t)tx->descriptors));
 	base->DMA_CH[0].DMA_CHX_TXDESC_RING_LENGTH =
 		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_TXDESC_RING_LENGTH, TDRL, NUM_TX_BUFDESC);
 }
@@ -460,10 +447,11 @@ static inline int enet_qos_rx_desc_init(enet_qos_t *base, struct nxp_enet_qos_rx
 	base->DMA_CH[0].DMA_CHX_RXDESC_LIST_ADDR =
 		/* Start of tx descriptors buffer */
 		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_RXDESC_LIST_ADDR, RDESLA,
-			ENET_QOS_ALIGN_ADDR_SHIFT((uint32_t)&rx->descriptors[0]));
+				  ENET_QOS_ALIGN_ADDR_SHIFT((uint32_t)&rx->descriptors[0]));
 	base->DMA_CH[0].DMA_CHX_RXDESC_TAIL_PTR =
 		/* When the DMA reaches the tail pointer, it suspends. Set to last descriptor */
-		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_RXDESC_TAIL_PTR, RDTP,
+		ENET_QOS_REG_PREP(
+			DMA_CH_DMA_CHX_RXDESC_TAIL_PTR, RDTP,
 			ENET_QOS_ALIGN_ADDR_SHIFT((uint32_t)&rx->descriptors[NUM_RX_BUFDESC]));
 	base->DMA_CH[0].DMA_CHX_RX_CONTROL2 =
 		/* Ring length == Buffer size. Register is this value minus one. */
@@ -498,8 +486,7 @@ static int eth_nxp_enet_qos_mac_init(const struct device *dev)
 
 	/* Random mac therefore overrides local mac that may have been initialized */
 	if (config->random_mac) {
-		gen_random_mac(data->mac_addr.addr,
-			       NXP_OUI_BYTE_0, NXP_OUI_BYTE_1, NXP_OUI_BYTE_2);
+		gen_random_mac(data->mac_addr.addr, NXP_OUI_BYTE_0, NXP_OUI_BYTE_1, NXP_OUI_BYTE_2);
 	}
 
 	/* This driver cannot work without interrupts. */
@@ -577,56 +564,51 @@ static const struct ethernet_api api_funcs = {
 	.get_phy = eth_nxp_enet_qos_get_phy,
 };
 
-#define NXP_ENET_QOS_NODE_HAS_MAC_ADDR_CHECK(n)						\
-	BUILD_ASSERT(NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(n)) ||				\
-			DT_INST_PROP(n, zephyr_random_mac_address),			\
-			"MAC address not specified on ENET QOS DT node");
+#define NXP_ENET_QOS_NODE_HAS_MAC_ADDR_CHECK(n)                                                    \
+	BUILD_ASSERT(NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(n)) ||                                    \
+			     DT_INST_PROP(n, zephyr_random_mac_address),                           \
+		     "MAC address not specified on ENET QOS DT node");
 
-#define NXP_ENET_QOS_CONNECT_IRQS(node_id, prop, idx)					\
-	do {										\
-		IRQ_CONNECT(DT_IRQN_BY_IDX(node_id, idx),				\
-				DT_IRQ_BY_IDX(node_id, idx, priority),			\
-				eth_nxp_enet_qos_mac_isr,				\
-				DEVICE_DT_GET(node_id),					\
-				0);							\
-		irq_enable(DT_IRQN_BY_IDX(node_id, idx));				\
+#define NXP_ENET_QOS_CONNECT_IRQS(node_id, prop, idx)                                              \
+	do {                                                                                       \
+		IRQ_CONNECT(DT_IRQN_BY_IDX(node_id, idx), DT_IRQ_BY_IDX(node_id, idx, priority),   \
+			    eth_nxp_enet_qos_mac_isr, DEVICE_DT_GET(node_id), 0);                  \
+		irq_enable(DT_IRQN_BY_IDX(node_id, idx));                                          \
 	} while (false);
 
-#define NXP_ENET_QOS_IRQ_CONFIG_FUNC(n)							\
-	static void nxp_enet_qos_##n##_irq_config_func(void)				\
-	{										\
-		DT_FOREACH_PROP_ELEM(DT_DRV_INST(n),					\
-				interrupt_names,					\
-				NXP_ENET_QOS_CONNECT_IRQS)				\
+#define NXP_ENET_QOS_IRQ_CONFIG_FUNC(n)                                                            \
+	static void nxp_enet_qos_##n##_irq_config_func(void)                                       \
+	{                                                                                          \
+		DT_FOREACH_PROP_ELEM(DT_DRV_INST(n), interrupt_names, NXP_ENET_QOS_CONNECT_IRQS)   \
 	}
 
-#define NXP_ENET_QOS_DRIVER_STRUCTS_INIT(n)						\
-	static const struct nxp_enet_qos_mac_config enet_qos_##n##_mac_config = {	\
-		.enet_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),				\
-		.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),		\
-		.base = (enet_qos_t *)DT_REG_ADDR(DT_INST_PARENT(n)),			\
-		.hw_info = {								\
-			.max_frame_len = ENET_QOS_MAX_NORMAL_FRAME_LEN,			\
-		},									\
-		.irq_config_func = nxp_enet_qos_##n##_irq_config_func,			\
-		.random_mac = DT_INST_PROP(n, zephyr_random_mac_address),		\
-	};										\
-											\
-	static struct nxp_enet_qos_mac_data enet_qos_##n##_mac_data =			\
-	{										\
-		.mac_addr.addr = DT_INST_PROP_OR(n, local_mac_address, {0}),		\
+#define NXP_ENET_QOS_DRIVER_STRUCTS_INIT(n)                                                        \
+	static const struct nxp_enet_qos_mac_config enet_qos_##n##_mac_config = {                  \
+		.enet_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                      \
+		.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),                          \
+		.base = (enet_qos_t *)DT_REG_ADDR(DT_INST_PARENT(n)),                              \
+		.hw_info =                                                                         \
+			{                                                                          \
+				.max_frame_len = ENET_QOS_MAX_NORMAL_FRAME_LEN,                    \
+			},                                                                         \
+		.irq_config_func = nxp_enet_qos_##n##_irq_config_func,                             \
+		.random_mac = DT_INST_PROP(n, zephyr_random_mac_address),                          \
+	};                                                                                         \
+                                                                                                   \
+	static struct nxp_enet_qos_mac_data enet_qos_##n##_mac_data = {                            \
+		.mac_addr.addr = DT_INST_PROP_OR(n, local_mac_address, {0}),                       \
 	};
 
-#define NXP_ENET_QOS_DRIVER_INIT(n)							\
-	NXP_ENET_QOS_NODE_HAS_MAC_ADDR_CHECK(n)						\
-	NXP_ENET_QOS_IRQ_CONFIG_FUNC(n)							\
+#define NXP_ENET_QOS_DRIVER_INIT(n)                                                                \
+	NXP_ENET_QOS_NODE_HAS_MAC_ADDR_CHECK(n)                                                    \
+	NXP_ENET_QOS_IRQ_CONFIG_FUNC(n)                                                            \
 	NXP_ENET_QOS_DRIVER_STRUCTS_INIT(n)
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_ENET_QOS_DRIVER_INIT)
 
-#define NXP_ENET_QOS_MAC_DEVICE_DEFINE(n)						\
-	ETH_NET_DEVICE_DT_INST_DEFINE(n, eth_nxp_enet_qos_mac_init, NULL,		\
-				&enet_qos_##n##_mac_data, &enet_qos_##n##_mac_config,	\
-				CONFIG_ETH_INIT_PRIORITY, &api_funcs, NET_ETH_MTU);
+#define NXP_ENET_QOS_MAC_DEVICE_DEFINE(n)                                                          \
+	ETH_NET_DEVICE_DT_INST_DEFINE(n, eth_nxp_enet_qos_mac_init, NULL,                          \
+				      &enet_qos_##n##_mac_data, &enet_qos_##n##_mac_config,        \
+				      CONFIG_ETH_INIT_PRIORITY, &api_funcs, NET_ETH_MTU);
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_ENET_QOS_MAC_DEVICE_DEFINE)

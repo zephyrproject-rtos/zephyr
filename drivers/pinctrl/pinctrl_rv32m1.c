@@ -21,16 +21,15 @@ static PORT_Type *ports[] = {
 	(PORT_Type *)DT_REG_ADDR(DT_NODELABEL(porte)),
 };
 
-#define PIN(mux) (((mux) & 0xFC00000) >> 22)
-#define PORT(mux) (((mux) & 0xF0000000) >> 28)
+#define PIN(mux)    (((mux) & 0xFC00000) >> 22)
+#define PORT(mux)   (((mux) & 0xF0000000) >> 28)
 #define PINCFG(mux) ((mux) & Z_PINCTRL_RV32M1_PCR_MASK)
 
 struct pinctrl_rv32m1_config {
 	clock_ip_name_t clock_ip_name;
 };
 
-int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
-			   uintptr_t reg)
+int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintptr_t reg)
 {
 	for (uint8_t i = 0; i < pin_cnt; i++) {
 		PORT_Type *base = ports[PORT(pins[i])];
@@ -51,17 +50,12 @@ static int pinctrl_rv32m1_init(const struct device *dev)
 	return 0;
 }
 
-#define PINCTRL_RV32M1_INIT(n)						\
-	static const struct pinctrl_rv32m1_config pinctrl_rv32m1_##n##_config = {\
-		.clock_ip_name = INST_DT_CLOCK_IP_NAME(n),		\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(n,					\
-			    &pinctrl_rv32m1_init,			\
-			    NULL,					\
-			    NULL, &pinctrl_rv32m1_##n##_config,		\
-			    PRE_KERNEL_1,				\
-			    CONFIG_PINCTRL_RV32M1_INIT_PRIORITY,	\
-			    NULL);
+#define PINCTRL_RV32M1_INIT(n)                                                                     \
+	static const struct pinctrl_rv32m1_config pinctrl_rv32m1_##n##_config = {                  \
+		.clock_ip_name = INST_DT_CLOCK_IP_NAME(n),                                         \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &pinctrl_rv32m1_init, NULL, NULL, &pinctrl_rv32m1_##n##_config,   \
+			      PRE_KERNEL_1, CONFIG_PINCTRL_RV32M1_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(PINCTRL_RV32M1_INIT)

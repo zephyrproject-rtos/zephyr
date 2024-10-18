@@ -28,9 +28,8 @@ LOG_MODULE_REGISTER(eth_esp32, CONFIG_ETHERNET_LOG_LEVEL);
 #define MAC_RESET_TIMEOUT_MS 100
 
 struct eth_esp32_dma_data {
-	uint8_t descriptors[
-		CONFIG_ETH_DMA_RX_BUFFER_NUM * sizeof(eth_dma_rx_descriptor_t) +
-		CONFIG_ETH_DMA_TX_BUFFER_NUM * sizeof(eth_dma_tx_descriptor_t)];
+	uint8_t descriptors[CONFIG_ETH_DMA_RX_BUFFER_NUM * sizeof(eth_dma_rx_descriptor_t) +
+			    CONFIG_ETH_DMA_TX_BUFFER_NUM * sizeof(eth_dma_tx_descriptor_t)];
 	uint8_t rx_buf[CONFIG_ETH_DMA_RX_BUFFER_NUM][CONFIG_ETH_DMA_BUFFER_SIZE];
 	uint8_t tx_buf[CONFIG_ETH_DMA_TX_BUFFER_NUM][CONFIG_ETH_DMA_BUFFER_SIZE];
 };
@@ -50,8 +49,7 @@ struct eth_esp32_dev_data {
 	struct k_thread rx_thread;
 };
 
-static const struct device *eth_esp32_phy_dev = DEVICE_DT_GET(
-		DT_INST_PHANDLE(0, phy_handle));
+static const struct device *eth_esp32_phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle));
 
 static enum ethernet_hw_caps eth_esp32_caps(const struct device *dev)
 {
@@ -59,8 +57,7 @@ static enum ethernet_hw_caps eth_esp32_caps(const struct device *dev)
 	return ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T;
 }
 
-static int eth_esp32_set_config(const struct device *dev,
-				enum ethernet_config_type type,
+static int eth_esp32_set_config(const struct device *dev, enum ethernet_config_type type,
 				const struct ethernet_config *config)
 {
 	struct eth_esp32_dev_data *const dev_data = dev->data;
@@ -71,8 +68,7 @@ static int eth_esp32_set_config(const struct device *dev,
 		memcpy(dev_data->mac_addr, config->mac_address.addr, 6);
 		emac_hal_set_address(&dev_data->hal, dev_data->mac_addr);
 		net_if_set_link_addr(dev_data->iface, dev_data->mac_addr,
-				     sizeof(dev_data->mac_addr),
-				     NET_LINK_ETHERNET);
+				     sizeof(dev_data->mac_addr), NET_LINK_ETHERNET);
 		ret = 0;
 		break;
 	default:
@@ -98,20 +94,20 @@ static int eth_esp32_send(const struct device *dev, struct net_pkt *pkt)
 	return res;
 }
 
-static struct net_pkt *eth_esp32_rx(
-	struct eth_esp32_dev_data *const dev_data, uint32_t *frames_remaining)
+static struct net_pkt *eth_esp32_rx(struct eth_esp32_dev_data *const dev_data,
+				    uint32_t *frames_remaining)
 {
 	uint32_t free_rx_descriptor;
-	uint32_t receive_len = emac_hal_receive_frame(
-		&dev_data->hal, dev_data->rxb, sizeof(dev_data->rxb),
-		frames_remaining, &free_rx_descriptor);
+	uint32_t receive_len =
+		emac_hal_receive_frame(&dev_data->hal, dev_data->rxb, sizeof(dev_data->rxb),
+				       frames_remaining, &free_rx_descriptor);
 	if (receive_len == 0) {
 		/* Nothing to receive */
 		return NULL;
 	}
 
-	struct net_pkt *pkt = net_pkt_rx_alloc_with_buffer(
-		dev_data->iface, receive_len, AF_UNSPEC, 0, K_MSEC(100));
+	struct net_pkt *pkt = net_pkt_rx_alloc_with_buffer(dev_data->iface, receive_len, AF_UNSPEC,
+							   0, K_MSEC(100));
 	if (pkt == NULL) {
 		eth_stats_update_errors_rx(dev_data->iface);
 		LOG_ERR("Could not allocate rx buffer");
@@ -142,8 +138,7 @@ FUNC_NORETURN static void eth_esp32_rx_thread(void *arg1, void *arg2, void *arg3
 		uint32_t frames_remaining;
 
 		do {
-			struct net_pkt *pkt = eth_esp32_rx(
-				dev_data, &frames_remaining);
+			struct net_pkt *pkt = eth_esp32_rx(dev_data, &frames_remaining);
 			if (pkt == NULL) {
 				break;
 			}
@@ -186,8 +181,7 @@ static int generate_mac_addr(uint8_t mac_addr[6])
 	return res;
 }
 
-static void phy_link_state_changed(const struct device *phy_dev,
-				   struct phy_link_state *state,
+static void phy_link_state_changed(const struct device *phy_dev, struct phy_link_state *state,
 				   void *user_data)
 {
 	const struct device *dev = (const struct device *)user_data;
@@ -238,8 +232,7 @@ int eth_esp32_initialize(const struct device *dev)
 
 	k_sem_init(&dev_data->int_sem, 0, 1);
 
-	const struct device *clock_dev =
-		DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_NODELABEL(eth)));
+	const struct device *clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_NODELABEL(eth)));
 	clock_control_subsys_t clock_subsys =
 		(clock_control_subsys_t)DT_CLOCKS_CELL(DT_NODELABEL(eth), offset);
 
@@ -257,17 +250,16 @@ int eth_esp32_initialize(const struct device *dev)
 		dev_data->dma_tx_buf[i] = dev_data->dma->tx_buf[i];
 	}
 
-	emac_hal_init(&dev_data->hal, dev_data->dma->descriptors,
-		      dev_data->dma_rx_buf, dev_data->dma_tx_buf);
+	emac_hal_init(&dev_data->hal, dev_data->dma->descriptors, dev_data->dma_rx_buf,
+		      dev_data->dma_tx_buf);
 
 	/* Configure ISR */
-	res = esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, irq),
-			ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, priority)) |
+	res = esp_intr_alloc(
+		DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, irq),
+		ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, priority)) |
 			ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, flags)) |
-				ESP_INTR_FLAG_IRAM,
-			eth_esp32_isr,
-			(void *)dev,
-			NULL);
+			ESP_INTR_FLAG_IRAM,
+		eth_esp32_isr, (void *)dev, NULL);
 	if (res != 0) {
 		goto err;
 	}
@@ -275,16 +267,14 @@ int eth_esp32_initialize(const struct device *dev)
 	/* Configure phy for Media-Independent Interface (MII) or
 	 * Reduced Media-Independent Interface (RMII) mode
 	 */
-	const char *phy_connection_type = DT_INST_PROP_OR(0,
-						phy_connection_type,
-						"rmii");
+	const char *phy_connection_type = DT_INST_PROP_OR(0, phy_connection_type, "rmii");
 
 	if (strcmp(phy_connection_type, "rmii") == 0) {
 		emac_hal_iomux_init_rmii();
 #if DT_INST_NODE_HAS_PROP(0, ref_clk_output_gpios)
 		BUILD_ASSERT(DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 16 ||
-			DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 17,
-			"Only GPIO16/17 are allowed as a GPIO REF_CLK source!");
+				     DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 17,
+			     "Only GPIO16/17 are allowed as a GPIO REF_CLK source!");
 		int ref_clk_gpio = DT_INST_GPIO_PIN(0, ref_clk_output_gpios);
 		emac_hal_iomux_rmii_clk_output(ref_clk_gpio);
 		emac_ll_clock_enable_rmii_output(dev_data->hal.ext_regs);
@@ -324,7 +314,7 @@ int eth_esp32_initialize(const struct device *dev)
 	}
 
 	/* Set dma_burst_len as ETH_DMA_BURST_LEN_32 by default */
-	emac_hal_dma_config_t dma_config = { .dma_burst_len = 0 };
+	emac_hal_dma_config_t dma_config = {.dma_burst_len = 0};
 
 	emac_hal_reset_desc_chain(&dev_data->hal);
 	emac_hal_init_mac_default(&dev_data->hal);
@@ -336,13 +326,10 @@ int eth_esp32_initialize(const struct device *dev)
 	}
 	emac_hal_set_address(&dev_data->hal, dev_data->mac_addr);
 
-	k_tid_t tid = k_thread_create(
-		&dev_data->rx_thread, dev_data->rx_thread_stack,
-		K_KERNEL_STACK_SIZEOF(dev_data->rx_thread_stack),
-		eth_esp32_rx_thread,
-		(void *)dev, NULL, NULL,
-		CONFIG_ETH_ESP32_RX_THREAD_PRIORITY,
-		K_ESSENTIAL, K_NO_WAIT);
+	k_tid_t tid = k_thread_create(&dev_data->rx_thread, dev_data->rx_thread_stack,
+				      K_KERNEL_STACK_SIZEOF(dev_data->rx_thread_stack),
+				      eth_esp32_rx_thread, (void *)dev, NULL, NULL,
+				      CONFIG_ETH_ESP32_RX_THREAD_PRIORITY, K_ESSENTIAL, K_NO_WAIT);
 	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
 		k_thread_name_set(tid, "esp32_eth");
 	}
@@ -368,15 +355,13 @@ static void eth_esp32_iface_init(struct net_if *iface)
 
 	dev_data->iface = iface;
 
-	net_if_set_link_addr(iface, dev_data->mac_addr,
-			     sizeof(dev_data->mac_addr),
+	net_if_set_link_addr(iface, dev_data->mac_addr, sizeof(dev_data->mac_addr),
 			     NET_LINK_ETHERNET);
 
 	ethernet_init(iface);
 
 	if (device_is_ready(eth_esp32_phy_dev)) {
-		phy_link_callback_set(eth_esp32_phy_dev, phy_link_state_changed,
-				      (void *)dev);
+		phy_link_callback_set(eth_esp32_phy_dev, phy_link_state_changed, (void *)dev);
 	} else {
 		LOG_ERR("PHY device not ready");
 	}
@@ -386,11 +371,11 @@ static void eth_esp32_iface_init(struct net_if *iface)
 }
 
 static const struct ethernet_api eth_esp32_api = {
-	.iface_api.init		= eth_esp32_iface_init,
-	.get_capabilities	= eth_esp32_caps,
-	.set_config		= eth_esp32_set_config,
-	.get_phy		= eth_esp32_phy_get,
-	.send			= eth_esp32_send,
+	.iface_api.init = eth_esp32_iface_init,
+	.get_capabilities = eth_esp32_caps,
+	.set_config = eth_esp32_set_config,
+	.get_phy = eth_esp32_phy_get,
+	.send = eth_esp32_send,
 };
 
 /* DMA data must be in DRAM */
@@ -400,11 +385,5 @@ static struct eth_esp32_dev_data eth_esp32_dev = {
 	.dma = &eth_esp32_dma_data,
 };
 
-ETH_NET_DEVICE_DT_INST_DEFINE(0,
-		    eth_esp32_initialize,
-		    NULL,
-		    &eth_esp32_dev,
-		    NULL,
-		    CONFIG_ETH_INIT_PRIORITY,
-		    &eth_esp32_api,
-		    NET_ETH_MTU);
+ETH_NET_DEVICE_DT_INST_DEFINE(0, eth_esp32_initialize, NULL, &eth_esp32_dev, NULL,
+			      CONFIG_ETH_INIT_PRIORITY, &eth_esp32_api, NET_ETH_MTU);

@@ -52,8 +52,8 @@ struct at24_emul_cfg {
  * @retval 0 If successful
  * @retval -EIO General input / output error
  */
-static int at24_emul_transfer(const struct emul *target, struct i2c_msg *msgs,
-			      int num_msgs, int addr)
+static int at24_emul_transfer(const struct emul *target, struct i2c_msg *msgs, int num_msgs,
+			      int addr)
 {
 	struct at24_emul_data *data;
 	const struct at24_emul_cfg *cfg;
@@ -65,8 +65,7 @@ static int at24_emul_transfer(const struct emul *target, struct i2c_msg *msgs,
 	cfg = target->cfg;
 
 	if (cfg->addr != addr) {
-		LOG_ERR("Address mismatch, expected %02x, got %02x", cfg->addr,
-			addr);
+		LOG_ERR("Address mismatch, expected %02x, got %02x", cfg->addr, addr);
 		return -EIO;
 	}
 

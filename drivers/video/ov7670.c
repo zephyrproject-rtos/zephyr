@@ -45,50 +45,41 @@ struct ov7670_resolution_cfg {
 };
 
 /* Resolution settings for camera, based on those present in MCUX SDK */
-const struct ov7670_resolution_cfg OV7670_RESOLUTION_QCIF = {
-	.com7 = 0x2c,
-	.com3 = 0x00,
-	.com14 = 0x11,
-	.scaling_xsc = 0x3a,
-	.scaling_ysc = 0x35,
-	.dcwctr = 0x11,
-	.pclk_div = 0xf1,
-	.pclk_delay = 0x52
-};
+const struct ov7670_resolution_cfg OV7670_RESOLUTION_QCIF = {.com7 = 0x2c,
+							     .com3 = 0x00,
+							     .com14 = 0x11,
+							     .scaling_xsc = 0x3a,
+							     .scaling_ysc = 0x35,
+							     .dcwctr = 0x11,
+							     .pclk_div = 0xf1,
+							     .pclk_delay = 0x52};
 
-const struct ov7670_resolution_cfg OV7670_RESOLUTION_QVGA = {
-	.com7 = 0x14,
-	.com3 = 0x04,
-	.com14 = 0x19,
-	.scaling_xsc = 0x3a,
-	.scaling_ysc = 0x35,
-	.dcwctr = 0x11,
-	.pclk_div = 0xf1,
-	.pclk_delay = 0x02
-};
+const struct ov7670_resolution_cfg OV7670_RESOLUTION_QVGA = {.com7 = 0x14,
+							     .com3 = 0x04,
+							     .com14 = 0x19,
+							     .scaling_xsc = 0x3a,
+							     .scaling_ysc = 0x35,
+							     .dcwctr = 0x11,
+							     .pclk_div = 0xf1,
+							     .pclk_delay = 0x02};
 
-const struct ov7670_resolution_cfg OV7670_RESOLUTION_CIF = {
-	.com7 = 0x24,
-	.com3 = 0x08,
-	.com14 = 0x11,
-	.scaling_xsc = 0x3a,
-	.scaling_ysc = 0x35,
-	.dcwctr = 0x11,
-	.pclk_div = 0xf1,
-	.pclk_delay = 0x02
-};
+const struct ov7670_resolution_cfg OV7670_RESOLUTION_CIF = {.com7 = 0x24,
+							    .com3 = 0x08,
+							    .com14 = 0x11,
+							    .scaling_xsc = 0x3a,
+							    .scaling_ysc = 0x35,
+							    .dcwctr = 0x11,
+							    .pclk_div = 0xf1,
+							    .pclk_delay = 0x02};
 
-const struct ov7670_resolution_cfg OV7670_RESOLUTION_VGA = {
-	.com7 = 0x04,
-	.com3 = 0x00,
-	.com14 = 0x00,
-	.scaling_xsc = 0x3a,
-	.scaling_ysc = 0x35,
-	.dcwctr = 0x11,
-	.pclk_div = 0xf0,
-	.pclk_delay = 0x02
-};
-
+const struct ov7670_resolution_cfg OV7670_RESOLUTION_VGA = {.com7 = 0x04,
+							    .com3 = 0x00,
+							    .com14 = 0x00,
+							    .scaling_xsc = 0x3a,
+							    .scaling_ysc = 0x35,
+							    .dcwctr = 0x11,
+							    .pclk_div = 0xf0,
+							    .pclk_delay = 0x02};
 
 /* OV7670 registers */
 #define OV7670_PID                0x0A
@@ -183,10 +174,13 @@ const struct ov7670_resolution_cfg OV7670_RESOLUTION_VGA = {
 #define OV7670_PROD_ID 0x76
 
 #define OV7670_VIDEO_FORMAT_CAP(width, height, format)                                             \
-	{                                                                                          \
-		.pixelformat = (format), .width_min = (width), .width_max = (width),               \
-		.height_min = (height), .height_max = (height), .width_step = 0, .height_step = 0  \
-	}
+	{.pixelformat = (format),                                                                  \
+	 .width_min = (width),                                                                     \
+	 .width_max = (width),                                                                     \
+	 .height_min = (height),                                                                   \
+	 .height_max = (height),                                                                   \
+	 .width_step = 0,                                                                          \
+	 .height_step = 0}
 
 static const struct video_format_cap fmts[] = {
 	OV7670_VIDEO_FORMAT_CAP(176, 144, VIDEO_PIX_FMT_RGB565), /* QCIF  */
@@ -389,18 +383,15 @@ static int ov7670_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 				break;
 			}
 			/* Program resolution bytes settings */
-			ret = i2c_reg_write_byte_dt(&config->bus, OV7670_COM7,
-						    resolution->com7);
+			ret = i2c_reg_write_byte_dt(&config->bus, OV7670_COM7, resolution->com7);
 			if (ret < 0) {
 				return ret;
 			}
-			ret = i2c_reg_write_byte_dt(&config->bus, OV7670_COM3,
-						    resolution->com3);
+			ret = i2c_reg_write_byte_dt(&config->bus, OV7670_COM3, resolution->com3);
 			if (ret < 0) {
 				return ret;
 			}
-			ret = i2c_reg_write_byte_dt(&config->bus, OV7670_COM14,
-						    resolution->com14);
+			ret = i2c_reg_write_byte_dt(&config->bus, OV7670_COM14, resolution->com14);
 			if (ret < 0) {
 				return ret;
 			}

@@ -101,16 +101,15 @@ struct pwm_stm32_config {
 /** Maximum number of timer channels : some stm32 soc have 6 else only 4 */
 #if defined(LL_TIM_CHANNEL_CH6)
 #define TIMER_HAS_6CH 1
-#define TIMER_MAX_CH 6u
+#define TIMER_MAX_CH  6u
 #else
 #define TIMER_HAS_6CH 0
-#define TIMER_MAX_CH 4u
+#define TIMER_MAX_CH  4u
 #endif
 
 /** Channel to LL mapping. */
 static const uint32_t ch2ll[TIMER_MAX_CH] = {
-	LL_TIM_CHANNEL_CH1, LL_TIM_CHANNEL_CH2,
-	LL_TIM_CHANNEL_CH3, LL_TIM_CHANNEL_CH4,
+	LL_TIM_CHANNEL_CH1, LL_TIM_CHANNEL_CH2, LL_TIM_CHANNEL_CH3, LL_TIM_CHANNEL_CH4,
 #if TIMER_HAS_6CH
 	LL_TIM_CHANNEL_CH5, LL_TIM_CHANNEL_CH6
 #endif
@@ -123,7 +122,7 @@ static const uint32_t ch2ll_n[] = {
 	LL_TIM_CHANNEL_CH2N,
 	LL_TIM_CHANNEL_CH3N,
 #if defined(LL_TIM_CHANNEL_CH4N)
-/** stm32g4x and stm32u5x have 4 complementary channels */
+	/** stm32g4x and stm32u5x have 4 complementary channels */
 	LL_TIM_CHANNEL_CH4N,
 #endif /* LL_TIM_CHANNEL_CH4N */
 #endif /* LL_TIM_CHANNEL_CH1N */
@@ -131,10 +130,9 @@ static const uint32_t ch2ll_n[] = {
 /** Maximum number of complemented timer channels is ARRAY_SIZE(ch2ll_n)*/
 
 /** Channel to compare set function mapping. */
-static void (*const set_timer_compare[TIMER_MAX_CH])(TIM_TypeDef *,
-						     uint32_t) = {
-	LL_TIM_OC_SetCompareCH1, LL_TIM_OC_SetCompareCH2,
-	LL_TIM_OC_SetCompareCH3, LL_TIM_OC_SetCompareCH4,
+static void (*const set_timer_compare[TIMER_MAX_CH])(TIM_TypeDef *, uint32_t) = {
+	LL_TIM_OC_SetCompareCH1, LL_TIM_OC_SetCompareCH2, LL_TIM_OC_SetCompareCH3,
+	LL_TIM_OC_SetCompareCH4,
 #if TIMER_HAS_6CH
 	LL_TIM_OC_SetCompareCH5, LL_TIM_OC_SetCompareCH6
 #endif
@@ -146,21 +144,26 @@ static uint32_t __maybe_unused (*const get_channel_capture[])(const TIM_TypeDef 
 #else
 static uint32_t __maybe_unused (*const get_channel_capture[])(TIM_TypeDef *) = {
 #endif
-	LL_TIM_IC_GetCaptureCH1, LL_TIM_IC_GetCaptureCH2,
-	LL_TIM_IC_GetCaptureCH3, LL_TIM_IC_GetCaptureCH4
+	LL_TIM_IC_GetCaptureCH1,
+	LL_TIM_IC_GetCaptureCH2,
+	LL_TIM_IC_GetCaptureCH3,
+	LL_TIM_IC_GetCaptureCH4
 };
-
 
 /** Channel to enable capture interrupt mapping. */
 static void __maybe_unused (*const enable_capture_interrupt[])(TIM_TypeDef *) = {
-	LL_TIM_EnableIT_CC1, LL_TIM_EnableIT_CC2,
-	LL_TIM_EnableIT_CC3, LL_TIM_EnableIT_CC4
+	LL_TIM_EnableIT_CC1,
+	LL_TIM_EnableIT_CC2,
+	LL_TIM_EnableIT_CC3,
+	LL_TIM_EnableIT_CC4
 };
 
 /** Channel to disable capture interrupt mapping. */
 static void __maybe_unused (*const disable_capture_interrupt[])(TIM_TypeDef *) = {
-	LL_TIM_DisableIT_CC1, LL_TIM_DisableIT_CC2,
-	LL_TIM_DisableIT_CC3, LL_TIM_DisableIT_CC4
+	LL_TIM_DisableIT_CC1,
+	LL_TIM_DisableIT_CC2,
+	LL_TIM_DisableIT_CC3,
+	LL_TIM_DisableIT_CC4
 };
 
 /** Channel to is capture active flag mapping. */
@@ -169,14 +172,18 @@ static uint32_t __maybe_unused (*const is_capture_active[])(const TIM_TypeDef *)
 #else
 static uint32_t __maybe_unused (*const is_capture_active[])(TIM_TypeDef *) = {
 #endif
-	LL_TIM_IsActiveFlag_CC1, LL_TIM_IsActiveFlag_CC2,
-	LL_TIM_IsActiveFlag_CC3, LL_TIM_IsActiveFlag_CC4
+	LL_TIM_IsActiveFlag_CC1,
+	LL_TIM_IsActiveFlag_CC2,
+	LL_TIM_IsActiveFlag_CC3,
+	LL_TIM_IsActiveFlag_CC4
 };
 
 /** Channel to clearing capture flag mapping. */
 static void __maybe_unused (*const clear_capture_interrupt[])(TIM_TypeDef *) = {
-	LL_TIM_ClearFlag_CC1, LL_TIM_ClearFlag_CC2,
-	LL_TIM_ClearFlag_CC3, LL_TIM_ClearFlag_CC4
+	LL_TIM_ClearFlag_CC1,
+	LL_TIM_ClearFlag_CC2,
+	LL_TIM_ClearFlag_CC3,
+	LL_TIM_ClearFlag_CC4
 };
 
 /**
@@ -225,8 +232,7 @@ static int get_tim_clk(const struct stm32_pclken *pclken, uint32_t *tim_clk)
 
 	clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
-	r = clock_control_get_rate(clk, (clock_control_subsys_t)pclken,
-				   &bus_clk);
+	r = clock_control_get_rate(clk, (clock_control_subsys_t)pclken, &bus_clk);
 	if (r < 0) {
 		return r;
 	}
@@ -257,8 +263,7 @@ static int get_tim_clk(const struct stm32_pclken *pclken, uint32_t *tim_clk)
 #endif
 #endif
 
-#if defined(RCC_DCKCFGR_TIMPRE) || defined(RCC_DCKCFGR1_TIMPRE) || \
-	defined(RCC_CFGR_TIMPRE)
+#if defined(RCC_DCKCFGR_TIMPRE) || defined(RCC_DCKCFGR1_TIMPRE) || defined(RCC_CFGR_TIMPRE)
 	/*
 	 * There are certain series (some F4, F7 and H7) that have the TIMPRE
 	 * bit to control the clock frequency of all the timers connected to
@@ -309,9 +314,8 @@ static int get_tim_clk(const struct stm32_pclken *pclken, uint32_t *tim_clk)
 	return 0;
 }
 
-static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
-				uint32_t period_cycles, uint32_t pulse_cycles,
-				pwm_flags_t flags)
+static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel, uint32_t period_cycles,
+				uint32_t pulse_cycles, pwm_flags_t flags)
 {
 	const struct pwm_stm32_config *cfg = dev->config;
 
@@ -328,8 +332,7 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 	 * Non 32-bit timers count from 0 up to the value in the ARR register
 	 * (16-bit). Thus period_cycles cannot be greater than UINT16_MAX + 1.
 	 */
-	if (!IS_TIM_32B_COUNTER_INSTANCE(cfg->timer) &&
-	    (period_cycles > UINT16_MAX + 1)) {
+	if (!IS_TIM_32B_COUNTER_INSTANCE(cfg->timer) && (period_cycles > UINT16_MAX + 1)) {
 		LOG_ERR("Cannot set PWM output, value exceeds 16-bit timer limit.");
 		return -ENOTSUP;
 	}
@@ -416,7 +419,7 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 					LL_TIM_OC_GetPolarity(cfg->timer, negative_ll_channel);
 			}
 		}
-#else /* LL_TIM_CHANNEL_CH1N */
+#else  /* LL_TIM_CHANNEL_CH1N */
 
 		oc_init.OCState = LL_TIM_OCSTATE_ENABLE;
 		oc_init.OCPolarity = get_polarity(flags);
@@ -425,8 +428,7 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 
 #ifdef CONFIG_PWM_CAPTURE
 		if (IS_TIM_SLAVE_INSTANCE(cfg->timer)) {
-			LL_TIM_SetSlaveMode(cfg->timer,
-					LL_TIM_SLAVEMODE_DISABLED);
+			LL_TIM_SetSlaveMode(cfg->timer, LL_TIM_SLAVEMODE_DISABLED);
 			LL_TIM_SetTriggerInput(cfg->timer, LL_TIM_TS_ITR0);
 			LL_TIM_DisableMasterSlaveMode(cfg->timer);
 		}
@@ -454,8 +456,7 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 }
 
 #ifdef CONFIG_PWM_CAPTURE
-static int init_capture_channels(const struct device *dev, uint32_t channel,
-				pwm_flags_t flags)
+static int init_capture_channels(const struct device *dev, uint32_t channel, pwm_flags_t flags)
 {
 	const struct pwm_stm32_config *cfg = dev->config;
 	bool is_inverted = (flags & PWM_POLARITY_MASK) == PWM_POLARITY_INVERTED;
@@ -486,9 +487,8 @@ static int init_capture_channels(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
-static int pwm_stm32_configure_capture(const struct device *dev,
-				       uint32_t channel, pwm_flags_t flags,
-				       pwm_capture_callback_handler_t cb,
+static int pwm_stm32_configure_capture(const struct device *dev, uint32_t channel,
+				       pwm_flags_t flags, pwm_capture_callback_handler_t cb,
 				       void *user_data)
 {
 	/*
@@ -603,7 +603,7 @@ static int pwm_stm32_enable_capture(const struct device *dev, uint32_t channel)
 
 	cpt->channel = channel;
 	cpt->state = CAPTURE_STATE_WAIT_FOR_PULSE_START;
-	data->capture.skip_irq = cfg->four_channel_capture_support ?  0 : SKIPPED_PWM_CAPTURES;
+	data->capture.skip_irq = cfg->four_channel_capture_support ? 0 : SKIPPED_PWM_CAPTURES;
 	data->capture.overflows = 0u;
 
 	clear_capture_interrupt[channel - 1](cfg->timer);
@@ -660,10 +660,8 @@ static void pwm_stm32_isr(const struct device *dev)
 			LL_TIM_ClearFlag_UPDATE(cfg->timer);
 		}
 
-		if (LL_TIM_IsActiveFlag_CC1(cfg->timer)
-				|| LL_TIM_IsActiveFlag_CC2(cfg->timer)
-				|| LL_TIM_IsActiveFlag_CC3(cfg->timer)
-				|| LL_TIM_IsActiveFlag_CC4(cfg->timer)) {
+		if (LL_TIM_IsActiveFlag_CC1(cfg->timer) || LL_TIM_IsActiveFlag_CC2(cfg->timer) ||
+		    LL_TIM_IsActiveFlag_CC3(cfg->timer) || LL_TIM_IsActiveFlag_CC4(cfg->timer)) {
 			LL_TIM_ClearFlag_CC1(cfg->timer);
 			LL_TIM_ClearFlag_CC2(cfg->timer);
 			LL_TIM_ClearFlag_CC3(cfg->timer);
@@ -677,7 +675,7 @@ static void pwm_stm32_isr(const struct device *dev)
 	if (LL_TIM_IsActiveFlag_UPDATE(cfg->timer)) {
 		LL_TIM_ClearFlag_UPDATE(cfg->timer);
 		if (cfg->four_channel_capture_support &&
-				cpt->state == CAPTURE_STATE_WAIT_FOR_UPDATE_EVENT) {
+		    cpt->state == CAPTURE_STATE_WAIT_FOR_UPDATE_EVENT) {
 			/* Special handling of UPDATE event in case it's triggered */
 			cpt->state = CAPTURE_STATE_WAIT_FOR_PERIOD_END;
 		} else {
@@ -689,12 +687,12 @@ static void pwm_stm32_isr(const struct device *dev)
 		if (is_capture_active[cpt->channel - 1](cfg->timer) ||
 		    is_capture_active[complimentary_channel[cpt->channel] - 1](cfg->timer)) {
 			clear_capture_interrupt[cpt->channel - 1](cfg->timer);
-			clear_capture_interrupt
-					[complimentary_channel[cpt->channel] - 1](cfg->timer);
+			clear_capture_interrupt[complimentary_channel[cpt->channel] - 1](
+				cfg->timer);
 
 			cpt->period = get_channel_capture[cpt->channel - 1](cfg->timer);
-			cpt->pulse = get_channel_capture
-					[complimentary_channel[cpt->channel] - 1](cfg->timer);
+			cpt->pulse = get_channel_capture[complimentary_channel[cpt->channel] - 1](
+				cfg->timer);
 		}
 	} else {
 		if (cpt->state == CAPTURE_STATE_WAIT_FOR_PULSE_START &&
@@ -712,14 +710,14 @@ static void pwm_stm32_isr(const struct device *dev)
 			LL_TIM_GenerateEvent_UPDATE(cfg->timer);
 
 		} else if ((cpt->state == CAPTURE_STATE_WAIT_FOR_UPDATE_EVENT ||
-				cpt->state == CAPTURE_STATE_WAIT_FOR_PERIOD_END) &&
-			    is_capture_active[cpt->channel - 1](cfg->timer)) {
+			    cpt->state == CAPTURE_STATE_WAIT_FOR_PERIOD_END) &&
+			   is_capture_active[cpt->channel - 1](cfg->timer)) {
 			cpt->state = CAPTURE_STATE_IDLE;
 			/* The end of the period. Both capture channels should now contain
 			 * the timer value when the pulse and period ended respectively.
 			 */
-			cpt->pulse = get_channel_capture[complimentary_channel[cpt->channel] - 1]
-					(cfg->timer);
+			cpt->pulse = get_channel_capture[complimentary_channel[cpt->channel] - 1](
+				cfg->timer);
 			cpt->period = get_channel_capture[cpt->channel - 1](cfg->timer);
 		}
 
@@ -744,14 +742,14 @@ static void pwm_stm32_isr(const struct device *dev)
 
 	if (cpt->callback != NULL) {
 		cpt->callback(dev, cpt->channel, cpt->capture_period ? cpt->period : 0u,
-				cpt->capture_pulse ? cpt->pulse : 0u, status, cpt->user_data);
+			      cpt->capture_pulse ? cpt->pulse : 0u, status, cpt->user_data);
 	}
 }
 
 #endif /* CONFIG_PWM_CAPTURE */
 
-static int pwm_stm32_get_cycles_per_sec(const struct device *dev,
-					uint32_t channel, uint64_t *cycles)
+static int pwm_stm32_get_cycles_per_sec(const struct device *dev, uint32_t channel,
+					uint64_t *cycles)
 {
 	struct pwm_stm32_data *data = dev->data;
 	const struct pwm_stm32_config *cfg = dev->config;
@@ -842,30 +840,29 @@ static int pwm_stm32_init(const struct device *dev)
 #define PWM(index) DT_INST_PARENT(index)
 
 #ifdef CONFIG_PWM_CAPTURE
-#define IRQ_CONNECT_AND_ENABLE_BY_NAME(index, name)				\
-{										\
-	IRQ_CONNECT(DT_IRQ_BY_NAME(PWM(index), name, irq),			\
-			DT_IRQ_BY_NAME(PWM(index), name, priority),		\
-			pwm_stm32_isr, DEVICE_DT_INST_GET(index), 0);		\
-	irq_enable(DT_IRQ_BY_NAME(PWM(index), name, irq));			\
-}
+#define IRQ_CONNECT_AND_ENABLE_BY_NAME(index, name)                                                \
+	{                                                                                          \
+		IRQ_CONNECT(DT_IRQ_BY_NAME(PWM(index), name, irq),                                 \
+			    DT_IRQ_BY_NAME(PWM(index), name, priority), pwm_stm32_isr,             \
+			    DEVICE_DT_INST_GET(index), 0);                                         \
+		irq_enable(DT_IRQ_BY_NAME(PWM(index), name, irq));                                 \
+	}
 
-#define IRQ_CONNECT_AND_ENABLE_DEFAULT(index)					\
-{										\
-	IRQ_CONNECT(DT_IRQN(PWM(index)),					\
-			DT_IRQ(PWM(index), priority),				\
-			pwm_stm32_isr, DEVICE_DT_INST_GET(index), 0);		\
-	irq_enable(DT_IRQN(PWM(index)));					\
-}
+#define IRQ_CONNECT_AND_ENABLE_DEFAULT(index)                                                      \
+	{                                                                                          \
+		IRQ_CONNECT(DT_IRQN(PWM(index)), DT_IRQ(PWM(index), priority), pwm_stm32_isr,      \
+			    DEVICE_DT_INST_GET(index), 0);                                         \
+		irq_enable(DT_IRQN(PWM(index)));                                                   \
+	}
 
-#define IRQ_CONFIG_FUNC(index)                                                  \
-static void pwm_stm32_irq_config_func_##index(const struct device *dev)		\
-{										\
-	COND_CODE_1(DT_IRQ_HAS_NAME(PWM(index), cc),				\
+#define IRQ_CONFIG_FUNC(index)                                                                     \
+	static void pwm_stm32_irq_config_func_##index(const struct device *dev)                    \
+	{                                                                                          \
+		COND_CODE_1(DT_IRQ_HAS_NAME(PWM(index), cc),				\
 		(IRQ_CONNECT_AND_ENABLE_BY_NAME(index, cc)),			\
 		(IRQ_CONNECT_AND_ENABLE_DEFAULT(index))				\
-	);									\
-}
+	);             \
+	}
 #define CAPTURE_INIT(index)                                                                        \
 	.irq_config_func = pwm_stm32_irq_config_func_##index,                                      \
 	.four_channel_capture_support = DT_INST_PROP(index, four_channel_capture_support)
@@ -874,35 +871,28 @@ static void pwm_stm32_irq_config_func_##index(const struct device *dev)		\
 #define CAPTURE_INIT(index)
 #endif /* CONFIG_PWM_CAPTURE */
 
-#define DT_INST_CLK(index, inst)                                               \
-	{                                                                      \
-		.bus = DT_CLOCKS_CELL(PWM(index), bus),				\
-		.enr = DT_CLOCKS_CELL(PWM(index), bits)				\
-	}
+#define DT_INST_CLK(index, inst)                                                                   \
+	{.bus = DT_CLOCKS_CELL(PWM(index), bus), .enr = DT_CLOCKS_CELL(PWM(index), bits)}
 
-
-#define PWM_DEVICE_INIT(index)                                                 \
-	static struct pwm_stm32_data pwm_stm32_data_##index = {		       \
-		.reset = RESET_DT_SPEC_GET(PWM(index)),			       \
-	};								       \
-									       \
-	IRQ_CONFIG_FUNC(index)						       \
-									       \
-	PINCTRL_DT_INST_DEFINE(index);					       \
-									       \
-	static const struct pwm_stm32_config pwm_stm32_config_##index = {      \
-		.timer = (TIM_TypeDef *)DT_REG_ADDR(PWM(index)),	       \
-		.prescaler = DT_PROP(PWM(index), st_prescaler),		       \
-		.countermode = DT_PROP(PWM(index), st_countermode),	       \
-		.pclken = DT_INST_CLK(index, timer),                           \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),		       \
-		CAPTURE_INIT(index)					       \
-	};                                                                     \
-									       \
-	DEVICE_DT_INST_DEFINE(index, &pwm_stm32_init, NULL,                    \
-			    &pwm_stm32_data_##index,                           \
-			    &pwm_stm32_config_##index, POST_KERNEL,            \
-			    CONFIG_PWM_INIT_PRIORITY,                          \
-			    &pwm_stm32_driver_api);
+#define PWM_DEVICE_INIT(index)                                                                     \
+	static struct pwm_stm32_data pwm_stm32_data_##index = {                                    \
+		.reset = RESET_DT_SPEC_GET(PWM(index)),                                            \
+	};                                                                                         \
+                                                                                                   \
+	IRQ_CONFIG_FUNC(index)                                                                     \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(index);                                                             \
+                                                                                                   \
+	static const struct pwm_stm32_config pwm_stm32_config_##index = {                          \
+		.timer = (TIM_TypeDef *)DT_REG_ADDR(PWM(index)),                                   \
+		.prescaler = DT_PROP(PWM(index), st_prescaler),                                    \
+		.countermode = DT_PROP(PWM(index), st_countermode),                                \
+		.pclken = DT_INST_CLK(index, timer),                                               \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
+		CAPTURE_INIT(index)};                                                              \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(index, &pwm_stm32_init, NULL, &pwm_stm32_data_##index,               \
+			      &pwm_stm32_config_##index, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,    \
+			      &pwm_stm32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_DEVICE_INIT)

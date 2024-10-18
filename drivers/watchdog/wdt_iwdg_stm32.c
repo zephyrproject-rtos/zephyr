@@ -20,7 +20,7 @@
 
 #include "wdt_iwdg_stm32.h"
 
-#define IWDG_PRESCALER_MIN	(4U)
+#define IWDG_PRESCALER_MIN (4U)
 
 #if defined(LL_IWDG_PRESCALER_1024)
 #define IWDG_PRESCALER_MAX (1024U)
@@ -28,29 +28,25 @@
 #define IWDG_PRESCALER_MAX (256U)
 #endif
 
-#define IWDG_RELOAD_MIN		(0x0000U)
-#define IWDG_RELOAD_MAX		(0x0FFFU)
+#define IWDG_RELOAD_MIN (0x0000U)
+#define IWDG_RELOAD_MAX (0x0FFFU)
 
 /* Minimum timeout in microseconds. */
-#define IWDG_TIMEOUT_MIN	(IWDG_PRESCALER_MIN * (IWDG_RELOAD_MIN + 1U) \
-				 * USEC_PER_SEC / LSI_VALUE)
+#define IWDG_TIMEOUT_MIN (IWDG_PRESCALER_MIN * (IWDG_RELOAD_MIN + 1U) * USEC_PER_SEC / LSI_VALUE)
 
 /* Maximum timeout in microseconds. */
-#define IWDG_TIMEOUT_MAX	((uint64_t)IWDG_PRESCALER_MAX * \
-				 (IWDG_RELOAD_MAX + 1U) * \
-				 USEC_PER_SEC / LSI_VALUE)
+#define IWDG_TIMEOUT_MAX                                                                           \
+	((uint64_t)IWDG_PRESCALER_MAX * (IWDG_RELOAD_MAX + 1U) * USEC_PER_SEC / LSI_VALUE)
 
-#define IS_IWDG_TIMEOUT(__TIMEOUT__)		\
-	(((__TIMEOUT__) >= IWDG_TIMEOUT_MIN) &&	\
-	 ((__TIMEOUT__) <= IWDG_TIMEOUT_MAX))
+#define IS_IWDG_TIMEOUT(__TIMEOUT__)                                                               \
+	(((__TIMEOUT__) >= IWDG_TIMEOUT_MIN) && ((__TIMEOUT__) <= IWDG_TIMEOUT_MAX))
 
 /*
  * Status register needs 5 LSI clock cycles divided by prescaler to be updated.
  * With highest prescaler and considering clock variation, we will wait
  * maximum 6 cycles (48 ms at 32 kHz) for register update.
  */
-#define IWDG_SR_UPDATE_TIMEOUT	(6U * IWDG_PRESCALER_MAX * \
-				 MSEC_PER_SEC / LSI_VALUE)
+#define IWDG_SR_UPDATE_TIMEOUT (6U * IWDG_PRESCALER_MAX * MSEC_PER_SEC / LSI_VALUE)
 
 /**
  * @brief Calculates prescaler & reload values.
@@ -59,9 +55,7 @@
  * @param prescaler Pointer to prescaler value.
  * @param reload Pointer to reload value.
  */
-static void iwdg_stm32_convert_timeout(uint32_t timeout,
-				       uint32_t *prescaler,
-				       uint32_t *reload)
+static void iwdg_stm32_convert_timeout(uint32_t timeout, uint32_t *prescaler, uint32_t *reload)
 {
 	uint16_t divider = 4U;
 	uint8_t shift = 0U;
@@ -155,8 +149,7 @@ static int iwdg_stm32_install_timeout(const struct device *dev,
 	/* Calculating parameters to be applied later, on setup */
 	iwdg_stm32_convert_timeout(timeout, &prescaler, &reload);
 
-	if (!(IS_IWDG_TIMEOUT(timeout) && IS_IWDG_PRESCALER(prescaler) &&
-	    IS_IWDG_RELOAD(reload))) {
+	if (!(IS_IWDG_TIMEOUT(timeout) && IS_IWDG_PRESCALER(prescaler) && IS_IWDG_RELOAD(reload))) {
 		/* One of the parameters provided is invalid */
 		return -EINVAL;
 	}
@@ -189,9 +182,7 @@ static const struct wdt_driver_api iwdg_stm32_api = {
 static int iwdg_stm32_init(const struct device *dev)
 {
 #ifndef CONFIG_WDT_DISABLE_AT_BOOT
-	struct wdt_timeout_cfg config = {
-		.window.max = CONFIG_IWDG_STM32_INITIAL_TIMEOUT
-	};
+	struct wdt_timeout_cfg config = {.window.max = CONFIG_IWDG_STM32_INITIAL_TIMEOUT};
 	/* Watchdog should be configured and started by `wdt_setup`*/
 	iwdg_stm32_install_timeout(dev, &config);
 	iwdg_stm32_setup(dev, 0); /* no option specified */
@@ -210,11 +201,8 @@ static int iwdg_stm32_init(const struct device *dev)
 	return 0;
 }
 
-static struct iwdg_stm32_data iwdg_stm32_dev_data = {
-	.Instance = (IWDG_TypeDef *)DT_INST_REG_ADDR(0)
-};
+static struct iwdg_stm32_data iwdg_stm32_dev_data = {.Instance =
+							     (IWDG_TypeDef *)DT_INST_REG_ADDR(0)};
 
-DEVICE_DT_INST_DEFINE(0, iwdg_stm32_init, NULL,
-		    &iwdg_stm32_dev_data, NULL,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &iwdg_stm32_api);
+DEVICE_DT_INST_DEFINE(0, iwdg_stm32_init, NULL, &iwdg_stm32_dev_data, NULL, POST_KERNEL,
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &iwdg_stm32_api);

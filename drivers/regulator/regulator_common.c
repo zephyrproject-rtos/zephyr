@@ -41,8 +41,8 @@ int regulator_common_init(const struct device *dev, bool is_enabled)
 
 	if (REGULATOR_ACTIVE_DISCHARGE_GET_BITS(config->flags) !=
 	    REGULATOR_ACTIVE_DISCHARGE_DEFAULT) {
-		ret = regulator_set_active_discharge(dev,
-		    (bool)REGULATOR_ACTIVE_DISCHARGE_GET_BITS(config->flags));
+		ret = regulator_set_active_discharge(
+			dev, (bool)REGULATOR_ACTIVE_DISCHARGE_GET_BITS(config->flags));
 		if (ret < 0) {
 			return ret;
 		}
@@ -115,7 +115,7 @@ int regulator_enable(const struct device *dev)
 	}
 
 	/* regulator must stay always on */
-	if  ((config->flags & REGULATOR_ALWAYS_ON) != 0U) {
+	if ((config->flags & REGULATOR_ALWAYS_ON) != 0U) {
 		return 0;
 	}
 
@@ -175,7 +175,7 @@ int regulator_disable(const struct device *dev)
 	}
 
 	/* regulator must stay always on */
-	if  ((config->flags & REGULATOR_ALWAYS_ON) != 0U) {
+	if ((config->flags & REGULATOR_ALWAYS_ON) != 0U) {
 		return 0;
 	}
 
@@ -201,8 +201,7 @@ int regulator_disable(const struct device *dev)
 	return ret;
 }
 
-bool regulator_is_supported_voltage(const struct device *dev, int32_t min_uv,
-				    int32_t max_uv)
+bool regulator_is_supported_voltage(const struct device *dev, int32_t min_uv, int32_t max_uv)
 {
 	const struct regulator_common_config *config = dev->config;
 	unsigned int volt_cnt;
@@ -227,8 +226,7 @@ bool regulator_is_supported_voltage(const struct device *dev, int32_t min_uv,
 	return false;
 }
 
-int regulator_set_voltage(const struct device *dev, int32_t min_uv,
-			  int32_t max_uv)
+int regulator_set_voltage(const struct device *dev, int32_t min_uv, int32_t max_uv)
 {
 	const struct regulator_common_config *config = dev->config;
 	const struct regulator_driver_api *api = dev->api;
@@ -245,8 +243,7 @@ int regulator_set_voltage(const struct device *dev, int32_t min_uv,
 	return api->set_voltage(dev, min_uv, max_uv);
 }
 
-int regulator_set_current_limit(const struct device *dev, int32_t min_ua,
-				int32_t max_ua)
+int regulator_set_current_limit(const struct device *dev, int32_t min_ua, int32_t max_ua)
 {
 	const struct regulator_common_config *config = dev->config;
 	const struct regulator_driver_api *api = dev->api;

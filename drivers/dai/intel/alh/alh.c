@@ -16,7 +16,7 @@
 #endif
 
 #define DT_DRV_COMPAT intel_alh_dai
-#define LOG_DOMAIN dai_intel_alh
+#define LOG_DOMAIN    dai_intel_alh
 
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
@@ -65,8 +65,7 @@ static int dai_alh_set_config_blob(struct dai_intel_alh *dp, const struct dai_co
 	return 0;
 }
 
-static int dai_alh_trigger(const struct device *dev, enum dai_dir dir,
-			   enum dai_trigger_cmd cmd)
+static int dai_alh_trigger(const struct device *dev, enum dai_dir dir, enum dai_trigger_cmd cmd)
 {
 	LOG_DBG("cmd %d", cmd);
 
@@ -102,9 +101,7 @@ static void alh_release_ownership(void)
 #endif
 }
 
-
-static int dai_alh_config_get(const struct device *dev, struct dai_config *cfg,
-			      enum dai_dir dir)
+static int dai_alh_config_get(const struct device *dev, struct dai_config *cfg, enum dai_dir dir)
 {
 	struct dai_config *params = (struct dai_config *)dev->config;
 	struct dai_intel_alh *dp = (struct dai_intel_alh *)dev->data;
@@ -124,7 +121,7 @@ static int dai_alh_config_get(const struct device *dev, struct dai_config *cfg,
 }
 
 static int dai_alh_config_set(const struct device *dev, const struct dai_config *cfg,
-				  const void *bespoke_cfg)
+			      const void *bespoke_cfg)
 {
 	struct dai_intel_alh *dp = (struct dai_intel_alh *)dev->data;
 
@@ -143,8 +140,7 @@ static const struct dai_properties *dai_alh_get_properties(const struct device *
 	struct dai_intel_alh *dp = (struct dai_intel_alh *)dev->data;
 	struct dai_intel_alh_pdata *alh = dai_get_drvdata(dp);
 	struct dai_properties *prop = &alh->props;
-	uint32_t offset = dir == DAI_DIR_PLAYBACK ?
-		ALH_TXDA_OFFSET : ALH_RXDA_OFFSET;
+	uint32_t offset = dir == DAI_DIR_PLAYBACK ? ALH_TXDA_OFFSET : ALH_RXDA_OFFSET;
 
 	prop->fifo_address = dai_base(dp) + offset + ALH_STREAM_OFFSET * stream_id;
 	prop->fifo_depth = ALH_GPDMA_BURST_LENGTH;
@@ -195,35 +191,32 @@ static int dai_alh_remove(const struct device *dev)
 }
 
 static const struct dai_driver_api dai_intel_alh_api_funcs = {
-	.probe			= dai_alh_probe,
-	.remove			= dai_alh_remove,
-	.config_set		= dai_alh_config_set,
-	.config_get		= dai_alh_config_get,
-	.trigger		= dai_alh_trigger,
-	.get_properties		= dai_alh_get_properties,
+	.probe = dai_alh_probe,
+	.remove = dai_alh_remove,
+	.config_set = dai_alh_config_set,
+	.config_get = dai_alh_config_get,
+	.trigger = dai_alh_trigger,
+	.get_properties = dai_alh_get_properties,
 };
 
-#define DAI_INTEL_ALH_DEVICE_INIT(n)						\
-	static struct dai_config dai_intel_alh_config_##n = {			\
-		.type = DAI_INTEL_ALH,						\
-		.dai_index = (n / DAI_NUM_ALH_BI_DIR_LINKS_GROUP) << 8 |	\
-			(n % DAI_NUM_ALH_BI_DIR_LINKS_GROUP),			\
-	};									\
-	static struct dai_intel_alh dai_intel_alh_data_##n = {			\
-		.index = (n / DAI_NUM_ALH_BI_DIR_LINKS_GROUP) << 8 |		\
-			(n % DAI_NUM_ALH_BI_DIR_LINKS_GROUP),			\
-		.plat_data = {							\
-			.base =	DT_INST_PROP_BY_IDX(n, reg, 0),			\
-			.fifo_depth[DAI_DIR_PLAYBACK] =	ALH_GPDMA_BURST_LENGTH,		\
-			.fifo_depth[DAI_DIR_CAPTURE] = ALH_GPDMA_BURST_LENGTH,		\
-		},								\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(n,					\
-			NULL, NULL,					\
-			&dai_intel_alh_data_##n,			\
-			&dai_intel_alh_config_##n,			\
-			POST_KERNEL, 32,				\
-			&dai_intel_alh_api_funcs);
+#define DAI_INTEL_ALH_DEVICE_INIT(n)                                                               \
+	static struct dai_config dai_intel_alh_config_##n = {                                      \
+		.type = DAI_INTEL_ALH,                                                             \
+		.dai_index = (n / DAI_NUM_ALH_BI_DIR_LINKS_GROUP) << 8 |                           \
+			     (n % DAI_NUM_ALH_BI_DIR_LINKS_GROUP),                                 \
+	};                                                                                         \
+	static struct dai_intel_alh dai_intel_alh_data_##n = {                                     \
+		.index = (n / DAI_NUM_ALH_BI_DIR_LINKS_GROUP) << 8 |                               \
+			 (n % DAI_NUM_ALH_BI_DIR_LINKS_GROUP),                                     \
+		.plat_data =                                                                       \
+			{                                                                          \
+				.base = DT_INST_PROP_BY_IDX(n, reg, 0),                            \
+				.fifo_depth[DAI_DIR_PLAYBACK] = ALH_GPDMA_BURST_LENGTH,            \
+				.fifo_depth[DAI_DIR_CAPTURE] = ALH_GPDMA_BURST_LENGTH,             \
+			},                                                                         \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL, &dai_intel_alh_data_##n, &dai_intel_alh_config_##n,   \
+			      POST_KERNEL, 32, &dai_intel_alh_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(DAI_INTEL_ALH_DEVICE_INIT)

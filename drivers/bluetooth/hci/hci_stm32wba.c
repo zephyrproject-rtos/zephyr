@@ -36,28 +36,25 @@ static K_SEM_DEFINE(hci_sem, 1, 1);
 
 #define BLE_CTRLR_STACK_BUFFER_SIZE 300
 
-#define MBLOCK_COUNT	(BLE_MBLOCKS_CALC(PREP_WRITE_LIST_SIZE, \
-					  CFG_BLE_ATT_MTU_MAX, \
-					  CFG_BLE_NUM_LINK) \
-			 + CFG_BLE_MBLOCK_COUNT_MARGIN)
+#define MBLOCK_COUNT                                                                               \
+	(BLE_MBLOCKS_CALC(PREP_WRITE_LIST_SIZE, CFG_BLE_ATT_MTU_MAX, CFG_BLE_NUM_LINK) +           \
+	 CFG_BLE_MBLOCK_COUNT_MARGIN)
 
-#define BLE_DYN_ALLOC_SIZE \
-	(BLE_TOTAL_BUFFER_SIZE(CFG_BLE_NUM_LINK, MBLOCK_COUNT))
+#define BLE_DYN_ALLOC_SIZE (BLE_TOTAL_BUFFER_SIZE(CFG_BLE_NUM_LINK, MBLOCK_COUNT))
 
 /* GATT buffer size (in bytes)*/
-#define BLE_GATT_BUF_SIZE \
-	BLE_TOTAL_BUFFER_SIZE_GATT(CFG_BLE_NUM_GATT_ATTRIBUTES, \
-				   CFG_BLE_NUM_GATT_SERVICES, \
+#define BLE_GATT_BUF_SIZE                                                                          \
+	BLE_TOTAL_BUFFER_SIZE_GATT(CFG_BLE_NUM_GATT_ATTRIBUTES, CFG_BLE_NUM_GATT_SERVICES,         \
 				   CFG_BLE_ATT_VALUE_ARRAY_SIZE)
 
-#define DIVC(x, y)         (((x)+(y)-1)/(y))
+#define DIVC(x, y) (((x) + (y) - 1) / (y))
 
 #if defined(CONFIG_BT_HCI_SETUP)
 /* Bluetooth LE public STM32WBA default device address (if udn not available) */
 static bt_addr_t bd_addr_dflt = {{0x65, 0x43, 0x21, 0x1E, 0x08, 0x00}};
 
-#define ACI_HAL_WRITE_CONFIG_DATA	   BT_OP(BT_OGF_VS, 0xFC0C)
-#define HCI_CONFIG_DATA_PUBADDR_OFFSET	   0
+#define ACI_HAL_WRITE_CONFIG_DATA      BT_OP(BT_OGF_VS, 0xFC0C)
+#define HCI_CONFIG_DATA_PUBADDR_OFFSET 0
 static bt_addr_t bd_addr_udn;
 struct aci_set_ble_addr {
 	uint8_t config_offset;
@@ -127,7 +124,6 @@ static struct net_buf *treat_evt(const uint8_t *data, size_t len)
 			LOG_DBG("Discardable buffer pool full, ignoring event");
 		} else {
 			LOG_ERR("No available event buffers!");
-
 		}
 		__ASSERT_NO_MSG(buf);
 		return buf;
@@ -147,8 +143,8 @@ static struct net_buf *treat_evt(const uint8_t *data, size_t len)
 	return buf;
 }
 
-static struct net_buf *treat_acl(const uint8_t *data, size_t len,
-				 const uint8_t *ext_data, size_t ext_len)
+static struct net_buf *treat_acl(const uint8_t *data, size_t len, const uint8_t *ext_data,
+				 size_t ext_len)
 {
 	struct bt_hci_acl_hdr hdr;
 	struct net_buf *buf;
@@ -189,8 +185,8 @@ static struct net_buf *treat_acl(const uint8_t *data, size_t len,
 	return buf;
 }
 
-static struct net_buf *treat_iso(const uint8_t *data, size_t len,
-				 const uint8_t *ext_data, size_t ext_len)
+static struct net_buf *treat_iso(const uint8_t *data, size_t len, const uint8_t *ext_data,
+				 size_t ext_len)
 {
 	struct bt_hci_iso_hdr hdr;
 	struct net_buf *buf;
@@ -271,8 +267,8 @@ static int receive_data(const struct device *dev, const uint8_t *data, size_t le
 	return err;
 }
 
-uint8_t BLECB_Indication(const uint8_t *data, uint16_t length,
-			 const uint8_t *ext_data, uint16_t ext_length)
+uint8_t BLECB_Indication(const uint8_t *data, uint16_t length, const uint8_t *ext_data,
+			 uint16_t ext_length)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
 	int ret = 0;
@@ -285,8 +281,7 @@ uint8_t BLECB_Indication(const uint8_t *data, uint16_t length,
 
 	k_sem_take(&hci_sem, K_FOREVER);
 
-	err = receive_data(dev, data, (size_t)length - 1,
-			   ext_data, (size_t)ext_length);
+	err = receive_data(dev, data, (size_t)length - 1, ext_data, (size_t)ext_length);
 
 	k_sem_give(&hci_sem);
 
@@ -348,22 +343,22 @@ static int bt_ble_ctlr_init(void)
 {
 	BleStack_init_t init_params_p = {0};
 
-	init_params_p.numAttrRecord           = CFG_BLE_NUM_GATT_ATTRIBUTES;
-	init_params_p.numAttrServ             = CFG_BLE_NUM_GATT_SERVICES;
-	init_params_p.attrValueArrSize        = CFG_BLE_ATT_VALUE_ARRAY_SIZE;
-	init_params_p.prWriteListSize         = CFG_BLE_ATTR_PREPARE_WRITE_VALUE_SIZE;
-	init_params_p.attMtu                  = CFG_BLE_ATT_MTU_MAX;
-	init_params_p.max_coc_nbr             = CFG_BLE_COC_NBR_MAX;
-	init_params_p.max_coc_mps             = CFG_BLE_COC_MPS_MAX;
-	init_params_p.max_coc_initiator_nbr   = CFG_BLE_COC_INITIATOR_NBR_MAX;
-	init_params_p.numOfLinks              = CFG_BLE_NUM_LINK;
-	init_params_p.mblockCount             = CFG_BLE_MBLOCK_COUNT;
-	init_params_p.bleStartRamAddress      = (uint8_t *)buffer;
-	init_params_p.total_buffer_size       = BLE_DYN_ALLOC_SIZE;
+	init_params_p.numAttrRecord = CFG_BLE_NUM_GATT_ATTRIBUTES;
+	init_params_p.numAttrServ = CFG_BLE_NUM_GATT_SERVICES;
+	init_params_p.attrValueArrSize = CFG_BLE_ATT_VALUE_ARRAY_SIZE;
+	init_params_p.prWriteListSize = CFG_BLE_ATTR_PREPARE_WRITE_VALUE_SIZE;
+	init_params_p.attMtu = CFG_BLE_ATT_MTU_MAX;
+	init_params_p.max_coc_nbr = CFG_BLE_COC_NBR_MAX;
+	init_params_p.max_coc_mps = CFG_BLE_COC_MPS_MAX;
+	init_params_p.max_coc_initiator_nbr = CFG_BLE_COC_INITIATOR_NBR_MAX;
+	init_params_p.numOfLinks = CFG_BLE_NUM_LINK;
+	init_params_p.mblockCount = CFG_BLE_MBLOCK_COUNT;
+	init_params_p.bleStartRamAddress = (uint8_t *)buffer;
+	init_params_p.total_buffer_size = BLE_DYN_ALLOC_SIZE;
 	init_params_p.bleStartRamAddress_GATT = (uint8_t *)gatt_buffer;
-	init_params_p.total_buffer_size_GATT  = BLE_GATT_BUF_SIZE;
-	init_params_p.options                 = CFG_BLE_OPTIONS;
-	init_params_p.debug                   = 0U;
+	init_params_p.total_buffer_size_GATT = BLE_GATT_BUF_SIZE;
+	init_params_p.options = CFG_BLE_OPTIONS;
+	init_params_p.debug = 0U;
 
 	if (BleStack_Init(&init_params_p) != BLE_STATUS_SUCCESS) {
 		return -EIO;
@@ -437,8 +432,7 @@ bt_addr_t *bt_get_ble_addr(void)
 	return bd_addr;
 }
 
-static int bt_hci_stm32wba_setup(const struct device *dev,
-				 const struct bt_hci_setup_params *params)
+static int bt_hci_stm32wba_setup(const struct device *dev, const struct bt_hci_setup_params *params)
 {
 	bt_addr_t *uid_addr;
 	struct aci_set_ble_addr *param;
@@ -476,17 +470,16 @@ static int bt_hci_stm32wba_setup(const struct device *dev,
 
 static const struct bt_hci_driver_api drv = {
 #if defined(CONFIG_BT_HCI_SETUP)
-	.setup          = bt_hci_stm32wba_setup,
+	.setup = bt_hci_stm32wba_setup,
 #endif
-	.open           = bt_hci_stm32wba_open,
-	.send           = bt_hci_stm32wba_send,
+	.open = bt_hci_stm32wba_open,
+	.send = bt_hci_stm32wba_send,
 };
 
-#define HCI_DEVICE_INIT(inst) \
-	static struct hci_data hci_data_##inst = { \
-	}; \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &hci_data_##inst, NULL, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
+#define HCI_DEVICE_INIT(inst)                                                                      \
+	static struct hci_data hci_data_##inst = {};                                               \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &hci_data_##inst, NULL, POST_KERNEL,               \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
 /* Only one instance supported */
 HCI_DEVICE_INIT(0)

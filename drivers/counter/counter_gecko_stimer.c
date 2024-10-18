@@ -24,10 +24,10 @@ LOG_MODULE_REGISTER(counter_gecko, CONFIG_COUNTER_LOG_LEVEL);
 
 #if SL_SLEEPTIMER_PERIPHERAL == SL_SLEEPTIMER_PERIPHERAL_RTCC
 #define STIMER_IRQ_HANDLER RTCC_IRQHandler
-#define STIMER_MAX_VALUE _RTCC_CNT_MASK
+#define STIMER_MAX_VALUE   _RTCC_CNT_MASK
 #elif SL_SLEEPTIMER_PERIPHERAL == SL_SLEEPTIMER_PERIPHERAL_SYSRTC
 #define STIMER_IRQ_HANDLER SYSRTC_APP_IRQHandler
-#define STIMER_MAX_VALUE _SYSRTC_CNT_MASK
+#define STIMER_MAX_VALUE   _SYSRTC_CNT_MASK
 #else
 #error "Unsupported sleep timer peripheral"
 #endif
@@ -286,7 +286,8 @@ static void counter_gecko_0_irq_config(void)
 }
 
 static const struct counter_gecko_config counter_gecko_0_config = {
-	.info = {
+	.info =
+		{
 			.max_top_value = STIMER_MAX_VALUE,
 			.freq = DT_INST_PROP(0, clock_frequency) / DT_INST_PROP(0, prescaler),
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP,

@@ -96,8 +96,7 @@ int ps2_npcx_ctrl_configure(const struct device *dev, uint8_t channel_id,
 	return 0;
 }
 
-int ps2_npcx_ctrl_enable_interface(const struct device *dev, uint8_t channel_id,
-				   bool enable)
+int ps2_npcx_ctrl_enable_interface(const struct device *dev, uint8_t channel_id, bool enable)
 {
 	struct ps2_npcx_ctrl_data *const data = dev->data;
 	struct ps2_reg *const inst = HAL_PS2_INSTANCE(dev);
@@ -145,14 +144,12 @@ static int ps2_npcx_ctrl_bus_busy(const struct device *dev)
 	 * but both SOT and EOT are cleared when all CLKs are pull low
 	 * (due to Shift Mechanism is reset)
 	 */
-	return (IS_BIT_SET(inst->PSTAT, NPCX_PSTAT_SOT) ||
-		IS_BIT_SET(inst->PSTAT, NPCX_PSTAT_EOT)) ?
-		       -EBUSY :
-		       0;
+	return (IS_BIT_SET(inst->PSTAT, NPCX_PSTAT_SOT) || IS_BIT_SET(inst->PSTAT, NPCX_PSTAT_EOT))
+		       ? -EBUSY
+		       : 0;
 }
 
-int ps2_npcx_ctrl_write(const struct device *dev, uint8_t channel_id,
-			uint8_t value)
+int ps2_npcx_ctrl_write(const struct device *dev, uint8_t channel_id, uint8_t value)
 {
 	struct ps2_npcx_ctrl_data *const data = dev->data;
 	struct ps2_reg *const inst = HAL_PS2_INSTANCE(dev);
@@ -163,8 +160,7 @@ int ps2_npcx_ctrl_write(const struct device *dev, uint8_t channel_id,
 		return -EINVAL;
 	}
 
-	if (!(ps2_npcx_ctrl_get_ch_clk_mask(channel_id) &
-	      data->channel_enabled_mask)) {
+	if (!(ps2_npcx_ctrl_get_ch_clk_mask(channel_id) & data->channel_enabled_mask)) {
 		LOG_ERR("channel %d is not enabled", channel_id);
 		return -EINVAL;
 	}
@@ -263,8 +259,7 @@ static void ps2_npcx_ctrl_isr(const struct device *dev)
 	inst->PSOSIG &= mask;
 
 	/* PS/2 Start of Transaction */
-	if (IS_BIT_SET(inst->PSTAT, NPCX_PSTAT_SOT) &&
-	    IS_BIT_SET(inst->PSIEN, NPCX_PSIEN_SOTIE)) {
+	if (IS_BIT_SET(inst->PSTAT, NPCX_PSTAT_SOT) && IS_BIT_SET(inst->PSIEN, NPCX_PSIEN_SOTIE)) {
 		/*
 		 * Once set, SOT is not cleared until the shift mechanism
 		 * is reset. Therefore, SOTIE should be cleared on the
@@ -322,9 +317,8 @@ static const struct ps2_npcx_ctrl_config ps2_npcx_ctrl_config_0 = {
 	.clk_cfg = NPCX_DT_CLK_CFG_ITEM(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, &ps2_npcx_ctrl_init, NULL, &ps2_npcx_ctrl_data_0,
-		      &ps2_npcx_ctrl_config_0, POST_KERNEL,
-		      CONFIG_PS2_INIT_PRIORITY, NULL);
+DEVICE_DT_INST_DEFINE(0, &ps2_npcx_ctrl_init, NULL, &ps2_npcx_ctrl_data_0, &ps2_npcx_ctrl_config_0,
+		      POST_KERNEL, CONFIG_PS2_INIT_PRIORITY, NULL);
 
 static int ps2_npcx_ctrl_init(const struct device *dev)
 {
@@ -340,8 +334,7 @@ static int ps2_npcx_ctrl_init(const struct device *dev)
 	}
 
 	/* Turn on PS/2 controller device clock */
-	ret = clock_control_on(clk_dev,
-			       (clock_control_subsys_t)&config->clk_cfg);
+	ret = clock_control_on(clk_dev, (clock_control_subsys_t)&config->clk_cfg);
 	if (ret < 0) {
 		LOG_ERR("Turn on PS/2 clock fail %d", ret);
 		return ret;
@@ -359,8 +352,7 @@ static int ps2_npcx_ctrl_init(const struct device *dev)
 	 * [7] - : CLK_SEL = 1: Select Free-Run clock as the basic clock
 	 *                   0: Select APB1 clock as the basic clock
 	 */
-	inst->PSIEN = BIT(NPCX_PSIEN_SOTIE) | BIT(NPCX_PSIEN_EOTIE) |
-		      BIT(NPCX_PSIEN_PS2_WUE);
+	inst->PSIEN = BIT(NPCX_PSIEN_SOTIE) | BIT(NPCX_PSIEN_EOTIE) | BIT(NPCX_PSIEN_PS2_WUE);
 	if (config->clk_cfg.bus == NPCX_CLOCK_BUS_FREERUN) {
 		inst->PSIEN |= BIT(NPCX_PSIEN_PS2_CLK_SEL);
 	}
@@ -372,8 +364,8 @@ static int ps2_npcx_ctrl_init(const struct device *dev)
 	k_sem_init(&data->lock, 1, 1);
 	k_sem_init(&data->tx_sync_sem, 0, 1);
 
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
-		    ps2_npcx_ctrl_isr, DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), ps2_npcx_ctrl_isr,
+		    DEVICE_DT_INST_GET(0), 0);
 
 	irq_enable(DT_INST_IRQN(0));
 

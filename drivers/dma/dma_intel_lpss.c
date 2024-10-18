@@ -45,11 +45,11 @@ void dma_intel_lpss_set_base(const struct device *dev, uintptr_t base)
 }
 
 #ifdef CONFIG_DMA_64BIT
-int dma_intel_lpss_reload(const struct device *dev, uint32_t channel,
-			      uint64_t src, uint64_t dst, size_t size)
+int dma_intel_lpss_reload(const struct device *dev, uint32_t channel, uint64_t src, uint64_t dst,
+			  size_t size)
 #else
-int dma_intel_lpss_reload(const struct device *dev, uint32_t channel,
-			      uint32_t src, uint32_t dst, size_t size)
+int dma_intel_lpss_reload(const struct device *dev, uint32_t channel, uint32_t src, uint32_t dst,
+			  size_t size)
 #endif
 {
 	struct dw_dma_dev_data *const dev_data = dev->data;
@@ -74,10 +74,10 @@ int dma_intel_lpss_reload(const struct device *dev, uint32_t channel,
 	ctrl_hi |= size & DW_CTLH_BLOCK_TS_MASK;
 
 	chan_data->lli_current->ctrl_hi = ctrl_hi;
-	chan_data->ptr_data.start_ptr = DW_DMA_LLI_ADDRESS(chan_data->lli_current,
-							 chan_data->direction);
-	chan_data->ptr_data.end_ptr = chan_data->ptr_data.start_ptr +
-				    chan_data->ptr_data.buffer_bytes;
+	chan_data->ptr_data.start_ptr =
+		DW_DMA_LLI_ADDRESS(chan_data->lli_current, chan_data->direction);
+	chan_data->ptr_data.end_ptr =
+		chan_data->ptr_data.start_ptr + chan_data->ptr_data.buffer_bytes;
 	chan_data->ptr_data.hw_ptr = chan_data->ptr_data.start_ptr;
 
 	chan_data->state = DW_DMA_PREPARED;
@@ -85,8 +85,7 @@ int dma_intel_lpss_reload(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
-int dma_intel_lpss_get_status(const struct device *dev, uint32_t channel,
-			      struct dma_status *stat)
+int dma_intel_lpss_get_status(const struct device *dev, uint32_t channel, struct dma_status *stat)
 {
 	struct dma_intel_lpss_cfg *lpss_dev_cfg = (struct dma_intel_lpss_cfg *)dev->config;
 	struct dw_dma_dev_cfg *const dev_cfg = &lpss_dev_cfg->dw_cfg;
@@ -117,8 +116,7 @@ int dma_intel_lpss_get_status(const struct device *dev, uint32_t channel,
 	} else if (current_length == chan_data->ptr_data.buffer_bytes) {
 		stat->pending_length = chan_data->ptr_data.buffer_bytes;
 	} else {
-		stat->pending_length =
-			chan_data->ptr_data.buffer_bytes - current_length;
+		stat->pending_length = chan_data->ptr_data.buffer_bytes - current_length;
 	}
 
 	return 0;
@@ -137,36 +135,34 @@ static const struct dma_driver_api dma_intel_lpss_driver_api = {
 	.stop = dw_dma_stop,
 };
 
-#define DMA_INTEL_LPSS_INIT(n)						\
-									\
-	static struct dw_drv_plat_data dma_intel_lpss##n = {		\
-		.chan[0] = {						\
-			.class  = 6,					\
-			.weight = 0,					\
-		},							\
-		.chan[1] = {						\
-			.class  = 6,					\
-			.weight = 0,					\
-		},							\
-	};								\
-									\
-									\
-	static struct dma_intel_lpss_cfg dma_intel_lpss##n##_config = {	\
-		.dw_cfg = {						\
-			.base = 0,					\
-		},							\
-	};								\
-									\
-	static struct dw_dma_dev_data dma_intel_lpss##n##_data = {	\
-		.channel_data = &dma_intel_lpss##n,			\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(n,					\
-			    NULL,					\
-			    NULL,					\
-			    &dma_intel_lpss##n##_data,			\
-			    &dma_intel_lpss##n##_config, PRE_KERNEL_1,	\
-			    CONFIG_DMA_INIT_PRIORITY,			\
-			    &dma_intel_lpss_driver_api);		\
+#define DMA_INTEL_LPSS_INIT(n)                                                                     \
+                                                                                                   \
+	static struct dw_drv_plat_data dma_intel_lpss##n = {                                       \
+		.chan[0] =                                                                         \
+			{                                                                          \
+				.class = 6,                                                        \
+				.weight = 0,                                                       \
+			},                                                                         \
+		.chan[1] =                                                                         \
+			{                                                                          \
+				.class = 6,                                                        \
+				.weight = 0,                                                       \
+			},                                                                         \
+	};                                                                                         \
+                                                                                                   \
+	static struct dma_intel_lpss_cfg dma_intel_lpss##n##_config = {                            \
+		.dw_cfg =                                                                          \
+			{                                                                          \
+				.base = 0,                                                         \
+			},                                                                         \
+	};                                                                                         \
+                                                                                                   \
+	static struct dw_dma_dev_data dma_intel_lpss##n##_data = {                                 \
+		.channel_data = &dma_intel_lpss##n,                                                \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL, &dma_intel_lpss##n##_data,                            \
+			      &dma_intel_lpss##n##_config, PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY, \
+			      &dma_intel_lpss_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DMA_INTEL_LPSS_INIT)

@@ -36,8 +36,8 @@ static void net_canbus_recv(const struct device *dev, struct can_frame *frame, v
 	ARG_UNUSED(dev);
 
 	LOG_DBG("pkt on interface %p", ctx->iface);
-	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, sizeof(struct can_frame),
-					   AF_CAN, 0, K_NO_WAIT);
+	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, sizeof(struct can_frame), AF_CAN, 0,
+					   K_NO_WAIT);
 	if (pkt == NULL) {
 		LOG_ERR("Failed to obtain net_pkt");
 		return;
@@ -56,8 +56,8 @@ static void net_canbus_recv(const struct device *dev, struct can_frame *frame, v
 	}
 }
 
-static int net_canbus_setsockopt(const struct device *dev, void *obj, int level,
-				 int optname, const void *optval, socklen_t optlen)
+static int net_canbus_setsockopt(const struct device *dev, void *obj, int level, int optname,
+				 const void *optval, socklen_t optlen)
 {
 	const struct net_canbus_config *cfg = dev->config;
 	struct net_canbus_context *context = dev->data;
@@ -108,8 +108,8 @@ static int net_canbus_send(const struct device *dev, struct net_pkt *pkt)
 		return -EPFNOSUPPORT;
 	}
 
-	ret = can_send(cfg->can_dev, (struct can_frame *)pkt->frags->data,
-		       SEND_TIMEOUT, net_canbus_send_tx_callback, NULL);
+	ret = can_send(cfg->can_dev, (struct can_frame *)pkt->frags->data, SEND_TIMEOUT,
+		       net_canbus_send_tx_callback, NULL);
 
 	if (ret == 0) {
 		net_pkt_unref(pkt);
@@ -155,8 +155,7 @@ static struct canbus_api net_canbus_api = {
 static struct net_canbus_context net_canbus_ctx;
 
 static const struct net_canbus_config net_canbus_cfg = {
-	.can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus))
-};
+	.can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus))};
 
 NET_DEVICE_INIT(net_canbus, "NET_CANBUS", net_canbus_init, NULL, &net_canbus_ctx, &net_canbus_cfg,
 		CONFIG_NET_CANBUS_INIT_PRIORITY, &net_canbus_api, CANBUS_RAW_L2,

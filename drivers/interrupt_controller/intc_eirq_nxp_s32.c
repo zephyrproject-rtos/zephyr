@@ -215,7 +215,7 @@ static int eirq_nxp_s32_init(const struct device *dev)
 	do {                                                                                       \
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, idx, irq), DT_INST_IRQ_BY_IDX(n, idx, priority), \
 			    eirq_nxp_s32_isr##idx##_##n, DEVICE_DT_INST_GET(n),                    \
-			    COND_CODE_1(CONFIG_GIC, (DT_INST_IRQ_BY_IDX(n, idx, flags)), (0)));    \
+			    COND_CODE_1(CONFIG_GIC, (DT_INST_IRQ_BY_IDX(n, idx, flags)), (0)));        \
 		irq_enable(DT_INST_IRQ_BY_IDX(n, idx, irq));                                       \
 	} while (false);
 
@@ -229,14 +229,14 @@ static int eirq_nxp_s32_init(const struct device *dev)
 		    (GLITCH_FILTER_DISABLED))
 
 #define EIRQ_NXP_S32_INIT_DEVICE(n)                                                                \
-	LISTIFY(DT_NUM_IRQS(DT_DRV_INST(n)), EIRQ_NXP_S32_ISR_DEFINE, (), n)                       \
+	LISTIFY(DT_NUM_IRQS(DT_DRV_INST(n)), EIRQ_NXP_S32_ISR_DEFINE, (), n)                                                                                    \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	static const struct eirq_nxp_s32_config eirq_nxp_s32_conf_##n = {                          \
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
 		.filter_clock_prescaler = DT_INST_PROP_OR(n, filter_prescaler, 0),                 \
 		.max_filter_counter = {LISTIFY(CONFIG_NXP_S32_EIRQ_EXT_INTERRUPTS_MAX,             \
-					       EIRQ_NXP_S32_FILTER_CONFIG, (,), n)},               \
+					       EIRQ_NXP_S32_FILTER_CONFIG, (,), n)},                 \
 	};                                                                                         \
 	static struct eirq_nxp_s32_cb eirq_nxp_s32_cb_##n[CONFIG_NXP_S32_EIRQ_EXT_INTERRUPTS_MAX]; \
 	static struct eirq_nxp_s32_data eirq_nxp_s32_data_##n = {                                  \

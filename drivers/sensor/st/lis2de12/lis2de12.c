@@ -23,7 +23,7 @@
 
 LOG_MODULE_REGISTER(LIS2DE12, CONFIG_SENSOR_LOG_LEVEL);
 
-static const uint16_t lis2de12_odr_map[10] = { 0, 1, 10, 25, 50, 100, 200, 400, 1620, 5376};
+static const uint16_t lis2de12_odr_map[10] = {0, 1, 10, 25, 50, 100, 200, 400, 1620, 5376};
 
 static int lis2de12_freq_to_odr_val(const struct device *dev, uint16_t freq)
 {
@@ -44,11 +44,11 @@ typedef struct {
 } fs_map;
 
 static const fs_map lis2de12_accel_fs_map[] = {
-				{2, 15600},
-				{4, 31200},
-				{8, 62500},
-				{16, 187500},
-			};
+	{2, 15600},
+	{4, 31200},
+	{8, 62500},
+	{16, 187500},
+};
 
 static int lis2de12_accel_range_to_fs_val(int32_t range)
 {
@@ -129,10 +129,8 @@ static int lis2de12_accel_range_set(const struct device *dev, int32_t range)
 	return 0;
 }
 
-static int lis2de12_accel_config(const struct device *dev,
-				 enum sensor_channel chan,
-				 enum sensor_attribute attr,
-				 const struct sensor_value *val)
+static int lis2de12_accel_config(const struct device *dev, enum sensor_channel chan,
+				 enum sensor_attribute attr, const struct sensor_value *val)
 {
 	switch (attr) {
 	case SENSOR_ATTR_FULL_SCALE:
@@ -145,10 +143,8 @@ static int lis2de12_accel_config(const struct device *dev,
 	}
 }
 
-static int lis2de12_attr_set(const struct device *dev,
-			     enum sensor_channel chan,
-			     enum sensor_attribute attr,
-			     const struct sensor_value *val)
+static int lis2de12_attr_set(const struct device *dev, enum sensor_channel chan,
+			     enum sensor_attribute attr, const struct sensor_value *val)
 {
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
@@ -189,8 +185,7 @@ static int lis2de12_sample_fetch_temp(const struct device *dev)
 }
 #endif
 
-static int lis2de12_sample_fetch(const struct device *dev,
-				 enum sensor_channel chan)
+static int lis2de12_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
@@ -224,13 +219,10 @@ static inline void lis2de12_accel_convert(struct sensor_value *val, int raw_val,
 	dval = (int64_t)(raw_val / 256) * sensitivity * SENSOR_G_DOUBLE;
 	val->val1 = (int32_t)(dval / 1000000);
 	val->val2 = (int32_t)(dval % 1000000);
-
 }
 
-static inline int lis2de12_accel_get_channel(enum sensor_channel chan,
-					     struct sensor_value *val,
-					     struct lis2de12_data *data,
-					     uint32_t sensitivity)
+static inline int lis2de12_accel_get_channel(enum sensor_channel chan, struct sensor_value *val,
+					     struct lis2de12_data *data, uint32_t sensitivity)
 {
 	uint8_t i;
 
@@ -256,8 +248,7 @@ static inline int lis2de12_accel_get_channel(enum sensor_channel chan,
 	return 0;
 }
 
-static int lis2de12_accel_channel_get(enum sensor_channel chan,
-				      struct sensor_value *val,
+static int lis2de12_accel_channel_get(enum sensor_channel chan, struct sensor_value *val,
 				      struct lis2de12_data *data)
 {
 	return lis2de12_accel_get_channel(chan, val, data, data->acc_gain);
@@ -278,8 +269,7 @@ static void lis2de12_temp_channel_get(struct sensor_value *val, struct lis2de12_
 }
 #endif
 
-static int lis2de12_channel_get(const struct device *dev,
-				enum sensor_channel chan,
+static int lis2de12_channel_get(const struct device *dev, enum sensor_channel chan,
 				struct sensor_value *val)
 {
 	struct lis2de12_data *data = dev->data;
@@ -393,38 +383,29 @@ static int lis2de12_init(const struct device *dev)
  * LIS2DE12_DEFINE_I2C().
  */
 
-#define LIS2DE12_DEVICE_INIT(inst)					\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
-			    lis2de12_init,				\
-			    NULL,					\
-			    &lis2de12_data_##inst,			\
-			    &lis2de12_config_##inst,			\
-			    POST_KERNEL,				\
-			    CONFIG_SENSOR_INIT_PRIORITY,		\
-			    &lis2de12_driver_api);
+#define LIS2DE12_DEVICE_INIT(inst)                                                                 \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, lis2de12_init, NULL, &lis2de12_data_##inst,             \
+				     &lis2de12_config_##inst, POST_KERNEL,                         \
+				     CONFIG_SENSOR_INIT_PRIORITY, &lis2de12_driver_api);
 
 /*
  * Instantiation macros used when a device is on a SPI bus.
  */
 
 #ifdef CONFIG_LIS2DE12_TRIGGER
-#define LIS2DE12_CFG_IRQ(inst)						\
-	.trig_enabled = true,						\
-	.int1_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, { 0 }), \
-	.int2_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int2_gpios, { 0 }), \
+#define LIS2DE12_CFG_IRQ(inst)                                                                     \
+	.trig_enabled = true, .int1_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, {0}),        \
+	.int2_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int2_gpios, {0}),                              \
 	.drdy_pulsed = DT_INST_PROP(inst, drdy_pulsed)
 #else
 #define LIS2DE12_CFG_IRQ(inst)
 #endif /* CONFIG_LIS2DE12_TRIGGER */
 
-#define LIS2DE12_SPI_OP  (SPI_WORD_SET(8) |				\
-			 SPI_OP_MODE_MASTER |				\
-			 SPI_MODE_CPOL |				\
-			 SPI_MODE_CPHA)					\
+#define LIS2DE12_SPI_OP (SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA)
 
-#define LIS2DE12_CONFIG_COMMON(inst)					\
-	.accel_odr = DT_INST_PROP(inst, accel_odr),			\
-	.accel_range = DT_INST_PROP(inst, accel_range),			\
+#define LIS2DE12_CONFIG_COMMON(inst)                                                               \
+	.accel_odr = DT_INST_PROP(inst, accel_odr),                                                \
+	.accel_range = DT_INST_PROP(inst, accel_range),                                            \
 	IF_ENABLED(UTIL_OR(DT_INST_NODE_HAS_PROP(inst, int1_gpios),	\
 			   DT_INST_NODE_HAS_PROP(inst, int2_gpios)),	\
 		   (LIS2DE12_CFG_IRQ(inst)))
@@ -433,39 +414,36 @@ static int lis2de12_init(const struct device *dev)
  * Instantiation macros used when a device is on a SPI bus.
  */
 
-#define LIS2DE12_CONFIG_SPI(inst)						\
-	{									\
-		STMEMSC_CTX_SPI(&lis2de12_config_##inst.stmemsc_cfg),		\
-		.stmemsc_cfg = {						\
-			.spi = SPI_DT_SPEC_INST_GET(inst, LIS2DE12_SPI_OP, 0),	\
-		},								\
-		LIS2DE12_CONFIG_COMMON(inst)					\
-	}
+#define LIS2DE12_CONFIG_SPI(inst)                                                                  \
+	{STMEMSC_CTX_SPI(&lis2de12_config_##inst.stmemsc_cfg),                                     \
+	 .stmemsc_cfg =                                                                            \
+		 {                                                                                 \
+			 .spi = SPI_DT_SPEC_INST_GET(inst, LIS2DE12_SPI_OP, 0),                    \
+		 },                                                                                \
+	 LIS2DE12_CONFIG_COMMON(inst)}
 
 /*
  * Instantiation macros used when a device is on an I2C bus.
  */
 
-#define LIS2DE12_CONFIG_I2C(inst)						\
-	{									\
-		STMEMSC_CTX_I2C_INCR(&lis2de12_config_##inst.stmemsc_cfg),	\
-		.stmemsc_cfg = {						\
-			.i2c = I2C_DT_SPEC_INST_GET(inst),			\
-		},								\
-		LIS2DE12_CONFIG_COMMON(inst)					\
-	}
+#define LIS2DE12_CONFIG_I2C(inst)                                                                  \
+	{STMEMSC_CTX_I2C_INCR(&lis2de12_config_##inst.stmemsc_cfg),                                \
+	 .stmemsc_cfg =                                                                            \
+		 {                                                                                 \
+			 .i2c = I2C_DT_SPEC_INST_GET(inst),                                        \
+		 },                                                                                \
+	 LIS2DE12_CONFIG_COMMON(inst)}
 
 /*
  * Main instantiation macro. Use of COND_CODE_1() selects the right
  * bus-specific macro at preprocessor time.
  */
 
-#define LIS2DE12_DEFINE(inst)						\
-	static struct lis2de12_data lis2de12_data_##inst;			\
-	static const struct lis2de12_config lis2de12_config_##inst =	\
-		COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
+#define LIS2DE12_DEFINE(inst)                                                                      \
+	static struct lis2de12_data lis2de12_data_##inst;                                          \
+	static const struct lis2de12_config lis2de12_config_##inst = COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
 			(LIS2DE12_CONFIG_SPI(inst)),			\
-			(LIS2DE12_CONFIG_I2C(inst)));			\
+			(LIS2DE12_CONFIG_I2C(inst)));                \
 	LIS2DE12_DEVICE_INIT(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(LIS2DE12_DEFINE)

@@ -20,23 +20,19 @@ extern struct lsm9ds0_gyro_data lsm9ds0_gyro_data;
 
 LOG_MODULE_DECLARE(LSM9DS0_GYRO, CONFIG_SENSOR_LOG_LEVEL);
 
-static inline void setup_drdy(const struct device *dev,
-			      bool enable)
+static inline void setup_drdy(const struct device *dev, bool enable)
 {
 	const struct lsm9ds0_gyro_config *cfg = dev->config;
 
 	gpio_pin_interrupt_configure_dt(&cfg->int_gpio,
-					enable ? GPIO_INT_EDGE_TO_ACTIVE
-					       : GPIO_INT_DISABLE);
+					enable ? GPIO_INT_EDGE_TO_ACTIVE : GPIO_INT_DISABLE);
 }
 
-int lsm9ds0_gyro_trigger_set(const struct device *dev,
-			     const struct sensor_trigger *trig,
+int lsm9ds0_gyro_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			     sensor_trigger_handler_t handler)
 {
 	struct lsm9ds0_gyro_data *data = dev->data;
-	const struct lsm9ds0_gyro_config * const config =
-					 dev->config;
+	const struct lsm9ds0_gyro_config *const config = dev->config;
 	uint8_t state;
 
 	if (!config->int_gpio.port) {
@@ -56,8 +52,7 @@ int lsm9ds0_gyro_trigger_set(const struct device *dev,
 
 		if (i2c_reg_update_byte_dt(&config->i2c, LSM9DS0_GYRO_REG_CTRL_REG3_G,
 					   LSM9DS0_GYRO_MASK_CTRL_REG3_G_I2_DRDY,
-					   state << LSM9DS0_GYRO_SHIFT_CTRL_REG3_G_I2_DRDY)
-					   < 0) {
+					   state << LSM9DS0_GYRO_SHIFT_CTRL_REG3_G_I2_DRDY) < 0) {
 			LOG_DBG("failed to set DRDY interrupt");
 			return -EIO;
 		}
@@ -69,11 +64,10 @@ int lsm9ds0_gyro_trigger_set(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static void lsm9ds0_gyro_gpio_drdy_callback(const struct device *dev,
-					    struct gpio_callback *cb, uint32_t pins)
+static void lsm9ds0_gyro_gpio_drdy_callback(const struct device *dev, struct gpio_callback *cb,
+					    uint32_t pins)
 {
-	struct lsm9ds0_gyro_data *data =
-		CONTAINER_OF(cb, struct lsm9ds0_gyro_data, gpio_cb);
+	struct lsm9ds0_gyro_data *data = CONTAINER_OF(cb, struct lsm9ds0_gyro_data, gpio_cb);
 
 	setup_drdy(data->dev, false);
 
@@ -101,17 +95,15 @@ static void lsm9ds0_gyro_thread_main(void *p1, void *p2, void *p3)
 
 int lsm9ds0_gyro_init_interrupt(const struct device *dev)
 {
-	const struct lsm9ds0_gyro_config * const config =
-					   dev->config;
+	const struct lsm9ds0_gyro_config *const config = dev->config;
 	struct lsm9ds0_gyro_data *data = dev->data;
 
 	data->dev = dev;
 	k_sem_init(&data->sem, 0, K_SEM_MAX_LIMIT);
 
-	k_thread_create(&data->thread, data->thread_stack,
-			CONFIG_LSM9DS0_GYRO_THREAD_STACK_SIZE,
-			lsm9ds0_gyro_thread_main,
-			(void *)dev, NULL, NULL, K_PRIO_COOP(10), 0, K_NO_WAIT);
+	k_thread_create(&data->thread, data->thread_stack, CONFIG_LSM9DS0_GYRO_THREAD_STACK_SIZE,
+			lsm9ds0_gyro_thread_main, (void *)dev, NULL, NULL, K_PRIO_COOP(10), 0,
+			K_NO_WAIT);
 
 	if (!gpio_is_ready_dt(&config->int_gpio)) {
 		LOG_ERR("GPIO device not ready");
@@ -120,8 +112,7 @@ int lsm9ds0_gyro_init_interrupt(const struct device *dev)
 
 	gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 
-	gpio_init_callback(&data->gpio_cb,
-			   lsm9ds0_gyro_gpio_drdy_callback,
+	gpio_init_callback(&data->gpio_cb, lsm9ds0_gyro_gpio_drdy_callback,
 			   BIT(config->int_gpio.pin));
 
 	if (gpio_add_callback(config->int_gpio.port, &data->gpio_cb) < 0) {

@@ -38,8 +38,7 @@ static uint32_t ens210_crc7(uint32_t bitstream)
 }
 #endif /* CONFIG_ENS210_CRC_CHECK */
 
-#if defined(CONFIG_ENS210_TEMPERATURE_SINGLE) \
-		|| defined(CONFIG_ENS210_HUMIDITY_SINGLE)
+#if defined(CONFIG_ENS210_TEMPERATURE_SINGLE) || defined(CONFIG_ENS210_HUMIDITY_SINGLE)
 static int ens210_measure(const struct device *dev, enum sensor_channel chan)
 {
 	struct ens210_data *drv_data = dev->data;
@@ -47,18 +46,16 @@ static int ens210_measure(const struct device *dev, enum sensor_channel chan)
 	uint8_t buf;
 	int ret;
 	const struct ens210_sens_start sense_start = {
-		.t_start = ENS210_T_START && (chan == SENSOR_CHAN_ALL
-				|| chan == SENSOR_CHAN_AMBIENT_TEMP),
-		.h_start = ENS210_H_START && (chan == SENSOR_CHAN_ALL
-				|| chan == SENSOR_CHAN_HUMIDITY)
-	};
+		.t_start = ENS210_T_START &&
+			   (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_AMBIENT_TEMP),
+		.h_start = ENS210_H_START &&
+			   (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_HUMIDITY)};
 
 	/* Start measuring */
 	ret = i2c_reg_write_byte_dt(&config->i2c, ENS210_REG_SENS_START, *(uint8_t *)&sense_start);
 
 	if (ret < 0) {
-		LOG_ERR("Failed to set SENS_START to 0x%x",
-				*(uint8_t *)&sense_start);
+		LOG_ERR("Failed to set SENS_START to 0x%x", *(uint8_t *)&sense_start);
 		return -EIO;
 	}
 
@@ -76,8 +73,7 @@ static int ens210_measure(const struct device *dev, enum sensor_channel chan)
 }
 #endif /* Single shot mode */
 
-static int ens210_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
+static int ens210_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct ens210_data *drv_data = dev->data;
 	const struct ens210_config *config = dev->config;
@@ -88,12 +84,10 @@ static int ens210_sample_fetch(const struct device *dev,
 	uint32_t temp_valid, humidity_valid;
 #endif /* CONFIG_ENS210_CRC_CHECK */
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL
-			|| chan == SENSOR_CHAN_AMBIENT_TEMP
-			|| chan == SENSOR_CHAN_HUMIDITY);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_AMBIENT_TEMP ||
+			chan == SENSOR_CHAN_HUMIDITY);
 
-#if defined(CONFIG_ENS210_TEMPERATURE_SINGLE) \
-		|| defined(CONFIG_ENS210_HUMIDITY_SINGLE)
+#if defined(CONFIG_ENS210_TEMPERATURE_SINGLE) || defined(CONFIG_ENS210_HUMIDITY_SINGLE)
 	ret = ens210_measure(dev, chan);
 	if (ret < 0) {
 		LOG_ERR("Failed to measure");
@@ -118,8 +112,7 @@ static int ens210_sample_fetch(const struct device *dev,
 			}
 
 #ifdef CONFIG_ENS210_CRC_CHECK
-			temp_valid = data[0].val |
-					(data[0].valid << (sizeof(data[0].val) * 8));
+			temp_valid = data[0].val | (data[0].valid << (sizeof(data[0].val) * 8));
 
 			if (ens210_crc7(temp_valid) != data[0].crc7) {
 				LOG_WRN("Temperature CRC error");
@@ -139,8 +132,7 @@ static int ens210_sample_fetch(const struct device *dev,
 			}
 
 #ifdef CONFIG_ENS210_CRC_CHECK
-			humidity_valid = data[1].val |
-					  (data[1].valid << (sizeof(data[1].val) * 8));
+			humidity_valid = data[1].val | (data[1].valid << (sizeof(data[1].val) * 8));
 
 			if (ens210_crc7(humidity_valid) != data[1].crc7) {
 				LOG_WRN("Humidity CRC error");
@@ -157,8 +149,7 @@ static int ens210_sample_fetch(const struct device *dev,
 	return -EIO;
 }
 
-static int ens210_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
+static int ens210_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	struct ens210_data *drv_data = dev->data;
@@ -174,9 +165,8 @@ static int ens210_channel_get(const struct device *dev,
 		val->val1 = temp_frac / 1000000;
 		val->val2 = temp_frac % 1000000;
 		break;
-	case  SENSOR_CHAN_HUMIDITY:
-		humidity_frac = sys_le16_to_cpu(drv_data->humidity.val) *
-				(1000000 / 512);
+	case SENSOR_CHAN_HUMIDITY:
+		humidity_frac = sys_le16_to_cpu(drv_data->humidity.val) * (1000000 / 512);
 		val->val1 = humidity_frac / 1000000;
 		val->val2 = humidity_frac % 1000000;
 
@@ -192,10 +182,7 @@ static int ens210_sys_reset(const struct device *dev)
 {
 	const struct ens210_config *config = dev->config;
 
-	const struct ens210_sys_ctrl sys_ctrl = {
-			.low_power = 0,
-			.reset = 1
-	};
+	const struct ens210_sys_ctrl sys_ctrl = {.low_power = 0, .reset = 1};
 	int ret;
 
 	ret = i2c_reg_write_byte_dt(&config->i2c, ENS210_REG_SYS_CTRL, *(uint8_t *)&sys_ctrl);
@@ -209,10 +196,7 @@ static int ens210_sys_enable(const struct device *dev, uint8_t low_power)
 {
 	const struct ens210_config *config = dev->config;
 
-	const struct ens210_sys_ctrl sys_ctrl = {
-			.low_power = low_power,
-			.reset = 0
-	};
+	const struct ens210_sys_ctrl sys_ctrl = {.low_power = low_power, .reset = 0};
 	int ret;
 
 	ret = i2c_reg_write_byte_dt(&config->i2c, ENS210_REG_SYS_CTRL, *(uint8_t *)&sys_ctrl);
@@ -255,7 +239,6 @@ static int ens210_wait_boot(const struct device *dev)
 		LOG_ERR("Failed to read SYS_STATE");
 	}
 
-
 	LOG_ERR("Sensor is not in active state");
 	return -EIO;
 }
@@ -268,17 +251,11 @@ static const struct sensor_driver_api en210_driver_api = {
 static int ens210_init(const struct device *dev)
 {
 	const struct ens210_config *config = dev->config;
-	const struct ens210_sens_run sense_run = {
-		.t_run = ENS210_T_RUN,
-		.h_run = ENS210_H_RUN
-	};
+	const struct ens210_sens_run sense_run = {.t_run = ENS210_T_RUN, .h_run = ENS210_H_RUN};
 
-#if defined(CONFIG_ENS210_TEMPERATURE_CONTINUOUS) \
-	|| defined(CONFIG_ENS210_HUMIDITY_CONTINUOUS)
-	const struct ens210_sens_start sense_start = {
-		.t_start = ENS210_T_RUN,
-		.h_start = ENS210_H_RUN
-	};
+#if defined(CONFIG_ENS210_TEMPERATURE_CONTINUOUS) || defined(CONFIG_ENS210_HUMIDITY_CONTINUOUS)
+	const struct ens210_sens_start sense_start = {.t_start = ENS210_T_RUN,
+						      .h_start = ENS210_H_RUN};
 #endif
 
 	int ret;
@@ -306,8 +283,7 @@ static int ens210_init(const struct device *dev)
 	}
 
 	if (part_id != ENS210_PART_ID) {
-		LOG_ERR("Part ID does not match. Want 0x%x, got 0x%x",
-			    ENS210_PART_ID, part_id);
+		LOG_ERR("Part ID does not match. Want 0x%x, got 0x%x", ENS210_PART_ID, part_id);
 		return -EIO;
 	}
 
@@ -319,33 +295,30 @@ static int ens210_init(const struct device *dev)
 	/* Set measurement mode*/
 	ret = i2c_reg_write_byte_dt(&config->i2c, ENS210_REG_SENS_RUN, *(uint8_t *)&sense_run);
 	if (ret < 0) {
-		LOG_ERR("Failed to set SENS_RUN to 0x%x",
-			    *(uint8_t *)&sense_run);
+		LOG_ERR("Failed to set SENS_RUN to 0x%x", *(uint8_t *)&sense_run);
 		return -EIO;
 	}
 
-#if defined(CONFIG_ENS210_TEMPERATURE_CONTINUOUS) \
-	|| defined(CONFIG_ENS210_HUMIDITY_CONTINUOUS)
+#if defined(CONFIG_ENS210_TEMPERATURE_CONTINUOUS) || defined(CONFIG_ENS210_HUMIDITY_CONTINUOUS)
 	/* Start measuring */
 	ret = i2c_reg_write_byte_dt(&config->i2c, ENS210_REG_SENS_START, *(uint8_t *)&sense_start);
 	if (ret < 0) {
-		LOG_ERR("Failed to set SENS_START to 0x%x",
-			    *(uint8_t *)&sense_start);
+		LOG_ERR("Failed to set SENS_START to 0x%x", *(uint8_t *)&sense_start);
 		return -EIO;
 	}
 #endif
 	return 0;
 }
 
-#define ENS210_DEFINE(inst)								\
-	static struct ens210_data ens210_data_##inst;					\
-											\
-	static const struct ens210_config ens210_config_##inst = {			\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
-	};										\
-											\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, ens210_init, NULL,				\
-			      &ens210_data_##inst, &ens210_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &en210_driver_api);		\
+#define ENS210_DEFINE(inst)                                                                        \
+	static struct ens210_data ens210_data_##inst;                                              \
+                                                                                                   \
+	static const struct ens210_config ens210_config_##inst = {                                 \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+	};                                                                                         \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, ens210_init, NULL, &ens210_data_##inst,                 \
+				     &ens210_config_##inst, POST_KERNEL,                           \
+				     CONFIG_SENSOR_INIT_PRIORITY, &en210_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ENS210_DEFINE)

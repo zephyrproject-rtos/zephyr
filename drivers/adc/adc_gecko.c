@@ -18,7 +18,7 @@
 LOG_MODULE_REGISTER(adc_gecko, CONFIG_ADC_LOG_LEVEL);
 
 /* Number of channels available. */
-#define GECKO_CHANNEL_COUNT	16
+#define GECKO_CHANNEL_COUNT 16
 
 struct adc_gecko_channel_config {
 	bool initialized;
@@ -69,8 +69,7 @@ static void adc_gecko_set_config(const struct device *dev)
 	ADC_InitSingle(adc_base, &initSingle);
 }
 
-static int adc_gecko_check_buffer_size(const struct adc_sequence *sequence,
-					uint8_t active_channels)
+static int adc_gecko_check_buffer_size(const struct adc_sequence *sequence, uint8_t active_channels)
 {
 	size_t needed_buffer_size;
 
@@ -81,8 +80,8 @@ static int adc_gecko_check_buffer_size(const struct adc_sequence *sequence,
 	}
 
 	if (sequence->buffer_size < needed_buffer_size) {
-		LOG_DBG("Provided buffer is too small (%u/%u)",
-			sequence->buffer_size, needed_buffer_size);
+		LOG_DBG("Provided buffer is too small (%u/%u)", sequence->buffer_size,
+			needed_buffer_size);
 		return -ENOMEM;
 	}
 
@@ -205,8 +204,7 @@ static void adc_gecko_isr(void *arg)
 	ADC_IntClear(adc_base, ADC_IF_SINGLE | err);
 }
 
-static int adc_gecko_read(const struct device *dev,
-			  const struct adc_sequence *sequence)
+static int adc_gecko_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	struct adc_gecko_data *data = dev->data;
 	int error;
@@ -219,7 +217,7 @@ static int adc_gecko_read(const struct device *dev,
 }
 
 static int adc_gecko_channel_setup(const struct device *dev,
-				const struct adc_channel_cfg *channel_cfg)
+				   const struct adc_channel_cfg *channel_cfg)
 {
 	struct adc_gecko_data *data = dev->data;
 	struct adc_gecko_channel_config *channel_config = NULL;
@@ -285,31 +283,28 @@ static const struct adc_driver_api api_gecko_adc_driver_api = {
 	.read = adc_gecko_read,
 };
 
-#define GECKO_ADC_INIT(n)						\
-									\
-	static void adc_gecko_config_func_##n(void);			\
-									\
-	const static struct adc_gecko_config adc_gecko_config_##n = {	\
-		.base = (ADC_TypeDef *)DT_INST_REG_ADDR(n),		\
-		.irq_cfg_func = adc_gecko_config_func_##n,		\
-		.frequency = DT_INST_PROP(n, frequency),		\
-	};								\
-	static struct adc_gecko_data adc_gecko_data_##n = {		\
-		ADC_CONTEXT_INIT_TIMER(adc_gecko_data_##n, ctx),	\
-		ADC_CONTEXT_INIT_LOCK(adc_gecko_data_##n, ctx),		\
-		ADC_CONTEXT_INIT_SYNC(adc_gecko_data_##n, ctx),		\
-	};								\
-	static void adc_gecko_config_func_##n(void)			\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n),	\
-			    DT_INST_IRQ(n, priority), \
-			    adc_gecko_isr, DEVICE_DT_INST_GET(n), 0);	\
-		irq_enable(DT_INST_IRQN(n));	\
-	}; \
-	DEVICE_DT_INST_DEFINE(n,					 \
-			      &adc_gecko_init, NULL,			 \
-			      &adc_gecko_data_##n, &adc_gecko_config_##n,\
-			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,	 \
+#define GECKO_ADC_INIT(n)                                                                          \
+                                                                                                   \
+	static void adc_gecko_config_func_##n(void);                                               \
+                                                                                                   \
+	const static struct adc_gecko_config adc_gecko_config_##n = {                              \
+		.base = (ADC_TypeDef *)DT_INST_REG_ADDR(n),                                        \
+		.irq_cfg_func = adc_gecko_config_func_##n,                                         \
+		.frequency = DT_INST_PROP(n, frequency),                                           \
+	};                                                                                         \
+	static struct adc_gecko_data adc_gecko_data_##n = {                                        \
+		ADC_CONTEXT_INIT_TIMER(adc_gecko_data_##n, ctx),                                   \
+		ADC_CONTEXT_INIT_LOCK(adc_gecko_data_##n, ctx),                                    \
+		ADC_CONTEXT_INIT_SYNC(adc_gecko_data_##n, ctx),                                    \
+	};                                                                                         \
+	static void adc_gecko_config_func_##n(void)                                                \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), adc_gecko_isr,              \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(n, &adc_gecko_init, NULL, &adc_gecko_data_##n,                       \
+			      &adc_gecko_config_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,        \
 			      &api_gecko_adc_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GECKO_ADC_INIT)

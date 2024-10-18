@@ -114,23 +114,19 @@ static const struct retained_mem_driver_api nrf_gpregret_api = {
 	.clear = nrf_gpregret_clear,
 };
 
-#define NRF_GPREGRET_DEVICE(inst)						\
+#define NRF_GPREGRET_DEVICE(inst)                                                                  \
 	IF_ENABLED(CONFIG_RETAINED_MEM_MUTEXES,					\
 		   (static struct nrf_gpregret_data nrf_gpregret_data_##inst;)	\
-	)									\
-	static const struct nrf_gpregret_config nrf_gpregret_config_##inst = {	\
-		.addr = (uint8_t *)DT_INST_REG_ADDR(inst),			\
-		.size = DT_INST_REG_SIZE(inst),					\
-	};									\
-	DEVICE_DT_INST_DEFINE(inst,						\
-			      &nrf_gpregret_init,				\
-			      NULL,						\
+	)                                              \
+	static const struct nrf_gpregret_config nrf_gpregret_config_##inst = {                     \
+		.addr = (uint8_t *)DT_INST_REG_ADDR(inst),                                         \
+		.size = DT_INST_REG_SIZE(inst),                                                    \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(inst, &nrf_gpregret_init, NULL,                                      \
 			      COND_CODE_1(CONFIG_RETAINED_MEM_MUTEXES,		\
 					  (&nrf_gpregret_data_##inst), (NULL)	\
-			      ),						\
-			      &nrf_gpregret_config_##inst,			\
-			      POST_KERNEL,					\
-			      CONFIG_RETAINED_MEM_INIT_PRIORITY,		\
-			      &nrf_gpregret_api);
+			      ),                     \
+					   &nrf_gpregret_config_##inst, POST_KERNEL,               \
+					   CONFIG_RETAINED_MEM_INIT_PRIORITY, &nrf_gpregret_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NRF_GPREGRET_DEVICE)

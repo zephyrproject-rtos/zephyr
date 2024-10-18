@@ -43,8 +43,8 @@ static inline int bme680_set_mem_page(const struct device *dev, uint8_t addr)
 		};
 
 		const struct spi_buf rx_buf[] = {
-			{ .buf = NULL, .len = 1 },
-			{ .buf = &buf[1], .len = 1 },
+			{.buf = NULL, .len = 1},
+			{.buf = &buf[1], .len = 1},
 		};
 		const struct spi_buf_set rx = {
 			.buffers = rx_buf,
@@ -76,20 +76,13 @@ static inline int bme680_set_mem_page(const struct device *dev, uint8_t addr)
 	return err;
 }
 
-static int bme680_reg_write_spi(const struct device *dev,
-				uint8_t reg, uint8_t val)
+static int bme680_reg_write_spi(const struct device *dev, uint8_t reg, uint8_t val)
 {
 	const struct bme680_config *config = dev->config;
 	int err;
-	uint8_t cmd[] = { reg & BME680_SPI_WRITE_MSK, val };
-	const struct spi_buf tx_buf = {
-		.buf = cmd,
-		.len = sizeof(cmd)
-	};
-	const struct spi_buf_set tx = {
-		.buffers = &tx_buf,
-		.count = 1
-	};
+	uint8_t cmd[] = {reg & BME680_SPI_WRITE_MSK, val};
+	const struct spi_buf tx_buf = {.buf = cmd, .len = sizeof(cmd)};
+	const struct spi_buf_set tx = {.buffers = &tx_buf, .count = 1};
 
 	err = bme680_set_mem_page(dev, reg);
 	if (err) {
@@ -101,25 +94,15 @@ static int bme680_reg_write_spi(const struct device *dev,
 	return err;
 }
 
-static int bme680_reg_read_spi(const struct device *dev,
-			       uint8_t start, uint8_t *buf, int size)
+static int bme680_reg_read_spi(const struct device *dev, uint8_t start, uint8_t *buf, int size)
 {
 	const struct bme680_config *config = dev->config;
 	int err;
 	uint8_t addr;
-	const struct spi_buf tx_buf = {
-		.buf = &addr,
-		.len = 1
-	};
-	const struct spi_buf_set tx = {
-		.buffers = &tx_buf,
-		.count = 1
-	};
+	const struct spi_buf tx_buf = {.buf = &addr, .len = 1};
+	const struct spi_buf_set tx = {.buffers = &tx_buf, .count = 1};
 	struct spi_buf rx_buf[2];
-	const struct spi_buf_set rx = {
-		.buffers = rx_buf,
-		.count = ARRAY_SIZE(rx_buf)
-	};
+	const struct spi_buf_set rx = {.buffers = rx_buf, .count = ARRAY_SIZE(rx_buf)};
 
 	rx_buf[0].buf = NULL;
 	rx_buf[0].len = 1;

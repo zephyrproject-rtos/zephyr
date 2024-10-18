@@ -11,7 +11,6 @@
 #include <zephyr/drivers/syscon.h>
 #include <zephyr/sys/util.h>
 
-
 /*
  * RESET_CTRL0/1_ASSERT registers:
  *   - Each bit in these registers controls a reset line
@@ -21,10 +20,10 @@
  *   - Write '1' to a bit: clear the corresponding bit in RESET_CTRL0/1_ASSERT.
  *                         (deassert the corresponding reset line)
  */
-#define RESET_CTRL0_ASSERT		0x40
-#define RESET_CTRL0_DEASSERT		0x44
-#define RESET_CTRL1_ASSERT		0x50
-#define RESET_CTRL1_DEASSERT		0x54
+#define RESET_CTRL0_ASSERT   0x40
+#define RESET_CTRL0_DEASSERT 0x44
+#define RESET_CTRL1_ASSERT   0x50
+#define RESET_CTRL1_DEASSERT 0x54
 
 struct reset_aspeed_config {
 	const struct device *syscon;
@@ -91,19 +90,17 @@ static int aspeed_reset_line_toggle(const struct device *dev, uint32_t id)
 	return ret;
 }
 
-static const struct reset_driver_api aspeed_reset_api = {
-	.status = aspeed_reset_status,
-	.line_assert = aspeed_reset_line_assert,
-	.line_deassert = aspeed_reset_line_deassert,
-	.line_toggle = aspeed_reset_line_toggle
-};
+static const struct reset_driver_api aspeed_reset_api = {.status = aspeed_reset_status,
+							 .line_assert = aspeed_reset_line_assert,
+							 .line_deassert =
+								 aspeed_reset_line_deassert,
+							 .line_toggle = aspeed_reset_line_toggle};
 
 #define ASPEED_RESET_INIT(n)                                                                       \
 	static const struct reset_aspeed_config reset_aspeed_cfg_##n = {                           \
 		.syscon = DEVICE_DT_GET(DT_NODELABEL(syscon)),                                     \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, &reset_aspeed_cfg_##n,                          \
-			      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                    \
-			      &aspeed_reset_api);
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, &reset_aspeed_cfg_##n, PRE_KERNEL_1,            \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &aspeed_reset_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ASPEED_RESET_INIT)

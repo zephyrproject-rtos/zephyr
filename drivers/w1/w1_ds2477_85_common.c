@@ -210,7 +210,7 @@ int ds2477_85_write_block(const struct device *dev, const uint8_t *buffer, size_
 		return ret;
 	}
 
-	k_usleep(cfg->t_op_us + (cfg->t_seq_us * tx_len) +  w1_timing);
+	k_usleep(cfg->t_op_us + (cfg->t_seq_us * tx_len) + w1_timing);
 
 	ret = i2c_read_dt(&cfg->i2c_spec, buf, 2);
 	if (ret < 0) {
@@ -231,8 +231,7 @@ int ds2477_85_read_block(const struct device *dev, uint8_t *buffer, size_t rx_le
 	uint8_t buf[3] = {CMD_RD_BLOCK, CMD_RD_BLOCK_LEN, rx_len};
 	struct i2c_msg rx_msg[2] = {
 		{.buf = buf, .len = 2, .flags = I2C_MSG_READ},
-		{.buf = buffer, .len = rx_len, .flags = (I2C_MSG_READ | I2C_MSG_STOP)}
-	};
+		{.buf = buffer, .len = rx_len, .flags = (I2C_MSG_READ | I2C_MSG_STOP)}};
 	int ret;
 
 	__ASSERT_NO_MSG(rx_len <= MAX_BLOCK_LEN);
@@ -247,7 +246,7 @@ int ds2477_85_read_block(const struct device *dev, uint8_t *buffer, size_t rx_le
 		return ret;
 	}
 
-	k_usleep(cfg->t_op_us + (cfg->t_seq_us * rx_len) +  w1_timing);
+	k_usleep(cfg->t_op_us + (cfg->t_seq_us * rx_len) + w1_timing);
 
 	ret = i2c_transfer_dt(&cfg->i2c_spec, rx_msg, 2);
 	if (ret < 0) {
@@ -302,8 +301,7 @@ int w1_ds2477_85_init(const struct device *dev)
 	/* RPUP/BUF configuration is applied after a bus reset */
 	(void)ds2477_85_reset_bus(dev);
 
-	LOG_DBG("w1-ds2477/85 init; %d slave devices",
-		cfg->master_config.slave_count);
+	LOG_DBG("w1-ds2477/85 init; %d slave devices", cfg->master_config.slave_count);
 
 	return 0;
 }

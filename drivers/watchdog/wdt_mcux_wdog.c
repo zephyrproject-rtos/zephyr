@@ -42,11 +42,9 @@ static int mcux_wdog_setup(const struct device *dev, uint8_t options)
 		return -EINVAL;
 	}
 
-	data->wdog_config.workMode.enableStop =
-		(options & WDT_OPT_PAUSE_IN_SLEEP) == 0U;
+	data->wdog_config.workMode.enableStop = (options & WDT_OPT_PAUSE_IN_SLEEP) == 0U;
 
-	data->wdog_config.workMode.enableDebug =
-		(options & WDT_OPT_PAUSE_HALTED_BY_DBG) == 0U;
+	data->wdog_config.workMode.enableDebug = (options & WDT_OPT_PAUSE_HALTED_BY_DBG) == 0U;
 
 	WDOG_Init(base, &data->wdog_config);
 	LOG_DBG("Setup the watchdog");
@@ -67,8 +65,7 @@ static int mcux_wdog_disable(const struct device *dev)
 	return 0;
 }
 
-static int mcux_wdog_install_timeout(const struct device *dev,
-				     const struct wdt_timeout_cfg *cfg)
+static int mcux_wdog_install_timeout(const struct device *dev, const struct wdt_timeout_cfg *cfg)
 {
 	const struct mcux_wdog_config *config = dev->config;
 	struct mcux_wdog_data *data = dev->data;
@@ -84,8 +81,7 @@ static int mcux_wdog_install_timeout(const struct device *dev,
 		return -ENODEV;
 	}
 
-	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
-				   &clock_freq)) {
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_freq)) {
 		return -EINVAL;
 	}
 
@@ -95,8 +91,7 @@ static int mcux_wdog_install_timeout(const struct device *dev,
 
 	if (cfg->window.min) {
 		data->wdog_config.enableWindowMode = true;
-		data->wdog_config.windowValue =
-			clock_freq * cfg->window.min / 1000U;
+		data->wdog_config.windowValue = clock_freq * cfg->window.min / 1000U;
 	} else {
 		data->wdog_config.enableWindowMode = false;
 		data->wdog_config.windowValue = 0;
@@ -166,27 +161,21 @@ static const struct wdt_driver_api mcux_wdog_api = {
 static void mcux_wdog_config_func_0(const struct device *dev);
 
 static const struct mcux_wdog_config mcux_wdog_config_0 = {
-	.base = (WDOG_Type *) DT_INST_REG_ADDR(0),
+	.base = (WDOG_Type *)DT_INST_REG_ADDR(0),
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
-	.clock_subsys = (clock_control_subsys_t)
-		DT_INST_CLOCKS_CELL(0, name),
+	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(0, name),
 	.irq_config_func = mcux_wdog_config_func_0,
 };
 
 static struct mcux_wdog_data mcux_wdog_data_0;
 
-DEVICE_DT_INST_DEFINE(0,
-		    &mcux_wdog_init,
-		    NULL,
-		    &mcux_wdog_data_0, &mcux_wdog_config_0,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &mcux_wdog_api);
+DEVICE_DT_INST_DEFINE(0, &mcux_wdog_init, NULL, &mcux_wdog_data_0, &mcux_wdog_config_0, POST_KERNEL,
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &mcux_wdog_api);
 
 static void mcux_wdog_config_func_0(const struct device *dev)
 {
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    mcux_wdog_isr, DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), mcux_wdog_isr, DEVICE_DT_INST_GET(0),
+		    0);
 
 	irq_enable(DT_INST_IRQN(0));
 }

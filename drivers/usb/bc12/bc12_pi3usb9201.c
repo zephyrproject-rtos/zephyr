@@ -278,8 +278,8 @@ static void pi3usb9201_client_detect_finish(const struct device *dev, const int 
 	new_partner_state.current_ua = bc12_chg_limits[bit_pos].current_limit;
 	new_partner_state.type = bc12_chg_limits[bit_pos].partner_type;
 
-	LOG_DBG("client status = 0x%x, current = %d mA, type = %d",
-		status, new_partner_state.current_ua, new_partner_state.type);
+	LOG_DBG("client status = 0x%x, current = %d mA, type = %d", status,
+		new_partner_state.current_ua, new_partner_state.type);
 
 	/* bc1.2 is complete and start bit does not auto clear */
 	if (pi3usb9201_bc12_detect_ctrl(dev, false) < 0) {

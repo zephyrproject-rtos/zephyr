@@ -71,7 +71,6 @@ static int stm32_vref_sample_fetch(const struct device *dev, enum sensor_channel
 	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(data->adc_base),
 				       path &= ~LL_ADC_PATH_INTERNAL_VREFINT);
 
-
 unlock:
 	pm_device_runtime_put(data->adc);
 	k_mutex_unlock(&data->mutex);
@@ -157,8 +156,9 @@ static int stm32_vref_init(const struct device *dev)
 #if !DT_NODE_HAS_STATUS_OKAY(DT_INST_IO_CHANNELS_CTLR(0))
 
 /* Use BUILD_ASSERT to get preprocessing on the message */
-BUILD_ASSERT(0,	"ADC '" DT_NODE_FULL_NAME(DT_INST_IO_CHANNELS_CTLR(0)) "' needed by "
-		"Vref sensor '" DT_NODE_FULL_NAME(DT_DRV_INST(0)) "' is not enabled");
+BUILD_ASSERT(0, "ADC '" DT_NODE_FULL_NAME(DT_INST_IO_CHANNELS_CTLR(
+			0)) "' needed by "
+			    "Vref sensor '" DT_NODE_FULL_NAME(DT_DRV_INST(0)) "' is not enabled");
 
 /* To reduce noise in the compiler error log, do not attempt
  * to instantiate device if the sensor's ADC is not enabled.

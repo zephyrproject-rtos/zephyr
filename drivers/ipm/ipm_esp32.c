@@ -20,7 +20,7 @@
 LOG_MODULE_REGISTER(ipm_esp32, CONFIG_IPM_LOG_LEVEL);
 
 #define ESP32_IPM_LOCK_FREE_VAL 0xB33FFFFF
-#define ESP32_IPM_NOOP_VAL 0xFF
+#define ESP32_IPM_NOOP_VAL      0xFF
 
 __packed struct esp32_ipm_control {
 	uint16_t dest_cpu_msg_id[2];
@@ -85,18 +85,16 @@ IRAM_ATTR static void esp32_ipm_isr(const struct device *dev)
 			shm = dev_data->shm.app_cpu_shm;
 		}
 
-		dev_data->cb(dev,
-				dev_data->user_data,
-				dev_data->control->dest_cpu_msg_id[core_id],
-				shm);
+		dev_data->cb(dev, dev_data->user_data, dev_data->control->dest_cpu_msg_id[core_id],
+			     shm);
 	}
 
 	/* unlock the shared memory */
 	atomic_set(&dev_data->control->lock, ESP32_IPM_LOCK_FREE_VAL);
 }
 
-static int esp32_ipm_send(const struct device *dev, int wait, uint32_t id,
-			 const void *data, int size)
+static int esp32_ipm_send(const struct device *dev, int wait, uint32_t id, const void *data,
+			  int size)
 {
 	struct esp32_ipm_data *dev_data = (struct esp32_ipm_data *)dev->data;
 
@@ -118,16 +116,15 @@ static int esp32_ipm_send(const struct device *dev, int wait, uint32_t id,
 	uint32_t key = irq_lock();
 
 	/* try to lock the shared memory */
-	while (!atomic_cas(&dev_data->control->lock,
-		ESP32_IPM_LOCK_FREE_VAL,
-		dev_data->this_core_id)) {
+	while (!atomic_cas(&dev_data->control->lock, ESP32_IPM_LOCK_FREE_VAL,
+			   dev_data->this_core_id)) {
 
 		k_busy_wait(1);
 
 		if ((wait != -1) && (wait > 0)) {
 			/* lock could not be held this time, return */
 			wait--;
-			if (wait == 0)  {
+			if (wait == 0) {
 				irq_unlock(key);
 
 				return -ETIMEDOUT;
@@ -165,9 +162,8 @@ static int esp32_ipm_send(const struct device *dev, int wait, uint32_t id,
 	return 0;
 }
 
-static void esp32_ipm_register_callback(const struct device *dev,
-				       ipm_callback_t cb,
-				       void *user_data)
+static void esp32_ipm_register_callback(const struct device *dev, ipm_callback_t cb,
+					void *user_data)
 {
 	struct esp32_ipm_data *data = (struct esp32_ipm_data *)dev->data;
 
@@ -205,7 +201,6 @@ static int esp_32_ipm_set_enabled(const struct device *dev, int enable)
 	return 0;
 }
 
-
 static int esp32_ipm_init(const struct device *dev)
 {
 	struct esp32_ipm_data *data = (struct esp32_ipm_data *)dev->data;
@@ -213,7 +208,7 @@ static int esp32_ipm_init(const struct device *dev)
 	int ret;
 
 	data->this_core_id = esp_core_id();
-	data->other_core_id = (data->this_core_id  == 0) ? 1 : 0;
+	data->other_core_id = (data->this_core_id == 0) ? 1 : 0;
 
 	LOG_DBG("Size of IPM shared memory: %d", data->shm_size);
 	LOG_DBG("Address of PRO_CPU IPM shared memory: %p", data->shm.pro_cpu_shm);
@@ -223,12 +218,10 @@ static int esp32_ipm_init(const struct device *dev)
 	/* pro_cpu is responsible to initialize the lock of shared memory */
 	if (data->this_core_id == 0) {
 		ret = esp_intr_alloc(cfg->irq_source_pro_cpu,
-				ESP_PRIO_TO_FLAGS(cfg->irq_priority_pro_cpu) |
-				ESP_INT_FLAGS_CHECK(cfg->irq_flags_pro_cpu) |
-					ESP_INTR_FLAG_IRAM,
-				(intr_handler_t)esp32_ipm_isr,
-				(void *)dev,
-				NULL);
+				     ESP_PRIO_TO_FLAGS(cfg->irq_priority_pro_cpu) |
+					     ESP_INT_FLAGS_CHECK(cfg->irq_flags_pro_cpu) |
+					     ESP_INTR_FLAG_IRAM,
+				     (intr_handler_t)esp32_ipm_isr, (void *)dev, NULL);
 
 		if (ret != 0) {
 			LOG_ERR("could not allocate interrupt (err %d)", ret);
@@ -241,12 +234,10 @@ static int esp32_ipm_init(const struct device *dev)
 		 * after that releases
 		 */
 		ret = esp_intr_alloc(cfg->irq_source_app_cpu,
-				ESP_PRIO_TO_FLAGS(cfg->irq_priority_app_cpu) |
-				ESP_INT_FLAGS_CHECK(cfg->irq_flags_app_cpu) |
-					ESP_INTR_FLAG_IRAM,
-				(intr_handler_t)esp32_ipm_isr,
-				(void *)dev,
-				NULL);
+				     ESP_PRIO_TO_FLAGS(cfg->irq_priority_app_cpu) |
+					     ESP_INT_FLAGS_CHECK(cfg->irq_flags_app_cpu) |
+					     ESP_INTR_FLAG_IRAM,
+				     (intr_handler_t)esp32_ipm_isr, (void *)dev, NULL);
 
 		if (ret != 0) {
 			LOG_ERR("could not allocate interrupt (err %d)", ret);
@@ -254,15 +245,14 @@ static int esp32_ipm_init(const struct device *dev)
 		}
 
 		LOG_DBG("Waiting CPU0 to sync");
-		while (!atomic_cas(&data->control->lock,
-			ESP32_IPM_LOCK_FREE_VAL, data->this_core_id)) {
+		while (!atomic_cas(&data->control->lock, ESP32_IPM_LOCK_FREE_VAL,
+				   data->this_core_id)) {
 			;
 		}
 
 		atomic_set(&data->control->lock, ESP32_IPM_LOCK_FREE_VAL);
 
 		LOG_DBG("Synchronization done");
-
 	}
 
 	return 0;
@@ -273,37 +263,33 @@ static const struct ipm_driver_api esp32_ipm_driver_api = {
 	.register_callback = esp32_ipm_register_callback,
 	.max_data_size_get = esp32_ipm_max_data_size_get,
 	.max_id_val_get = esp_32_ipm_max_id_val_get,
-	.set_enabled = esp_32_ipm_set_enabled
-};
+	.set_enabled = esp_32_ipm_set_enabled};
 
-#define ESP32_IPM_SHM_SIZE_BY_IDX(idx)		\
-	DT_INST_PROP(idx, shared_memory_size)	\
+#define ESP32_IPM_SHM_SIZE_BY_IDX(idx) DT_INST_PROP(idx, shared_memory_size)
 
-#define ESP32_IPM_SHM_ADDR_BY_IDX(idx)		\
-	DT_REG_ADDR(DT_PHANDLE(DT_DRV_INST(idx), shared_memory))	\
+#define ESP32_IPM_SHM_ADDR_BY_IDX(idx) DT_REG_ADDR(DT_PHANDLE(DT_DRV_INST(idx), shared_memory))
 
-#define ESP32_IPM_INIT(idx)			\
-										\
-static struct esp32_ipm_config esp32_ipm_device_cfg_##idx = {		\
-	.irq_source_pro_cpu = DT_INST_IRQ_BY_IDX(idx, 0, irq),			\
-	.irq_priority_pro_cpu = DT_INST_IRQ_BY_IDX(idx, 0, priority),	\
-	.irq_flags_pro_cpu = DT_INST_IRQ_BY_IDX(idx, 0, flags),			\
-	.irq_source_app_cpu = DT_INST_IRQ_BY_IDX(idx, 1, irq),			\
-	.irq_priority_app_cpu = DT_INST_IRQ_BY_IDX(idx, 1, priority),	\
-	.irq_flags_app_cpu = DT_INST_IRQ_BY_IDX(idx, 1, flags),			\
-};	\
-	\
-static struct esp32_ipm_data esp32_ipm_device_data_##idx = {	\
-	.shm_size = ESP32_IPM_SHM_SIZE_BY_IDX(idx),		\
-	.shm.pro_cpu_shm = (uint8_t *)ESP32_IPM_SHM_ADDR_BY_IDX(idx),		\
-	.shm.app_cpu_shm = (uint8_t *)ESP32_IPM_SHM_ADDR_BY_IDX(idx) +	\
-					ESP32_IPM_SHM_SIZE_BY_IDX(idx)/2,	\
-	.control = (struct esp32_ipm_control *)DT_INST_REG_ADDR(idx),	\
-};	\
-	\
-DEVICE_DT_INST_DEFINE(idx, &esp32_ipm_init, NULL,	\
-		    &esp32_ipm_device_data_##idx, &esp32_ipm_device_cfg_##idx,	\
-		    PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
-		    &esp32_ipm_driver_api);	\
+#define ESP32_IPM_INIT(idx)                                                                        \
+                                                                                                   \
+	static struct esp32_ipm_config esp32_ipm_device_cfg_##idx = {                              \
+		.irq_source_pro_cpu = DT_INST_IRQ_BY_IDX(idx, 0, irq),                             \
+		.irq_priority_pro_cpu = DT_INST_IRQ_BY_IDX(idx, 0, priority),                      \
+		.irq_flags_pro_cpu = DT_INST_IRQ_BY_IDX(idx, 0, flags),                            \
+		.irq_source_app_cpu = DT_INST_IRQ_BY_IDX(idx, 1, irq),                             \
+		.irq_priority_app_cpu = DT_INST_IRQ_BY_IDX(idx, 1, priority),                      \
+		.irq_flags_app_cpu = DT_INST_IRQ_BY_IDX(idx, 1, flags),                            \
+	};                                                                                         \
+                                                                                                   \
+	static struct esp32_ipm_data esp32_ipm_device_data_##idx = {                               \
+		.shm_size = ESP32_IPM_SHM_SIZE_BY_IDX(idx),                                        \
+		.shm.pro_cpu_shm = (uint8_t *)ESP32_IPM_SHM_ADDR_BY_IDX(idx),                      \
+		.shm.app_cpu_shm = (uint8_t *)ESP32_IPM_SHM_ADDR_BY_IDX(idx) +                     \
+				   ESP32_IPM_SHM_SIZE_BY_IDX(idx) / 2,                             \
+		.control = (struct esp32_ipm_control *)DT_INST_REG_ADDR(idx),                      \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(idx, &esp32_ipm_init, NULL, &esp32_ipm_device_data_##idx,            \
+			      &esp32_ipm_device_cfg_##idx, PRE_KERNEL_2,                           \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &esp32_ipm_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_IPM_INIT);

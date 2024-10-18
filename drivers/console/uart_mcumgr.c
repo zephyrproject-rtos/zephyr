@@ -15,8 +15,7 @@
 #include <zephyr/mgmt/mcumgr/transport/serial.h>
 #include <zephyr/drivers/console/uart_mcumgr.h>
 
-static const struct device *const uart_mcumgr_dev =
-	DEVICE_DT_GET(DT_CHOSEN(zephyr_uart_mcumgr));
+static const struct device *const uart_mcumgr_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_uart_mcumgr));
 
 /** Callback to execute when a valid fragment has been received. */
 static uart_mcumgr_recv_fn *uart_mgumgr_recv_cb;
@@ -179,8 +178,7 @@ static void uart_mcumgr_isr(const struct device *unused, void *user_data)
 	ARG_UNUSED(unused);
 	ARG_UNUSED(user_data);
 
-	while (uart_irq_update(uart_mcumgr_dev) &&
-	       uart_irq_is_pending(uart_mcumgr_dev)) {
+	while (uart_irq_update(uart_mcumgr_dev) && uart_irq_is_pending(uart_mcumgr_dev)) {
 
 		chunk_len = uart_mcumgr_read_chunk(buf, sizeof(buf));
 		if (chunk_len == 0) {
@@ -216,7 +214,6 @@ int uart_mcumgr_send(const uint8_t *data, int len)
 {
 	return mcumgr_serial_tx_pkt(data, len, uart_mcumgr_send_raw);
 }
-
 
 #if defined(CONFIG_MCUMGR_TRANSPORT_UART_ASYNC)
 static void uart_mcumgr_setup(const struct device *uart)

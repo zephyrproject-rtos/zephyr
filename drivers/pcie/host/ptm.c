@@ -57,17 +57,15 @@ static int pcie_ptm_root_init(const struct device *dev)
 	return pcie_ptm_root_setup(dev, reg);
 }
 
-#define PCIE_PTM_ROOT_INIT(index)					\
-	DEVICE_PCIE_INST_DECLARE(index);                                \
-	static const struct pcie_ptm_root_config ptm_config_##index = {	\
-		DEVICE_PCIE_INST_INIT(index, pcie),                     \
-	};								\
-	DEVICE_DT_INST_DEFINE(index, &pcie_ptm_root_init, NULL, NULL,	\
-			      &ptm_config_##index, PRE_KERNEL_1,	\
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
+#define PCIE_PTM_ROOT_INIT(index)                                                                  \
+	DEVICE_PCIE_INST_DECLARE(index);                                                           \
+	static const struct pcie_ptm_root_config ptm_config_##index = {                            \
+		DEVICE_PCIE_INST_INIT(index, pcie),                                                \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(index, &pcie_ptm_root_init, NULL, NULL, &ptm_config_##index,         \
+			      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(PCIE_PTM_ROOT_INIT)
-
 
 bool pcie_ptm_enable(pcie_bdf_t bdf)
 {

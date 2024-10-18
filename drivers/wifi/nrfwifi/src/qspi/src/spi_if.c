@@ -24,54 +24,45 @@ LOG_MODULE_DECLARE(wifi_nrf_bus, CONFIG_WIFI_NRF70_BUS_LOG_LEVEL);
 static struct qspi_config *spim_config;
 
 static const struct spi_dt_spec spi_spec =
-SPI_DT_SPEC_GET(NRF7002_NODE, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0);
+	SPI_DT_SPEC_GET(NRF7002_NODE, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0);
 
 static int spim_xfer_tx(unsigned int addr, void *data, unsigned int len)
 {
 	int err;
-	uint8_t hdr[4] = {
-		0x02, /* PP opcode */
-		(((addr >> 16) & 0xFF) | 0x80),
-		(addr >> 8) & 0xFF,
-		(addr & 0xFF)
-	};
+	uint8_t hdr[4] = {0x02, /* PP opcode */
+			  (((addr >> 16) & 0xFF) | 0x80), (addr >> 8) & 0xFF, (addr & 0xFF)};
 
 	const struct spi_buf tx_buf[] = {
-		{.buf = hdr,  .len = sizeof(hdr) },
-		{.buf = data, .len = len },
+		{.buf = hdr, .len = sizeof(hdr)},
+		{.buf = data, .len = len},
 	};
-	const struct spi_buf_set tx = { .buffers = tx_buf, .count = 2 };
-
+	const struct spi_buf_set tx = {.buffers = tx_buf, .count = 2};
 
 	err = spi_transceive_dt(&spi_spec, &tx, NULL);
 
 	return err;
 }
 
-
 static int spim_xfer_rx(unsigned int addr, void *data, unsigned int len, unsigned int discard_bytes)
 {
 	uint8_t hdr[] = {
-		0x0b, /* FASTREAD opcode */
-		(addr >> 16) & 0xFF,
-		(addr >> 8) & 0xFF,
-		addr & 0xFF,
-		0 /* dummy byte */
+		0x0b,                                                   /* FASTREAD opcode */
+		(addr >> 16) & 0xFF, (addr >> 8) & 0xFF, addr & 0xFF, 0 /* dummy byte */
 	};
 
 	const struct spi_buf tx_buf[] = {
-		{.buf = hdr,  .len = sizeof(hdr) },
-		{.buf = NULL, .len = len },
+		{.buf = hdr, .len = sizeof(hdr)},
+		{.buf = NULL, .len = len},
 	};
 
-	const struct spi_buf_set tx = { .buffers = tx_buf, .count = 2 };
+	const struct spi_buf_set tx = {.buffers = tx_buf, .count = 2};
 
 	const struct spi_buf rx_buf[] = {
-		{.buf = NULL,  .len = sizeof(hdr) + discard_bytes},
-		{.buf = data, .len = len },
+		{.buf = NULL, .len = sizeof(hdr) + discard_bytes},
+		{.buf = data, .len = len},
 	};
 
-	const struct spi_buf_set rx = { .buffers = rx_buf, .count = 2 };
+	const struct spi_buf_set rx = {.buffers = rx_buf, .count = 2};
 
 	return spi_transceive_dt(&spi_spec, &tx, &rx);
 }
@@ -79,17 +70,11 @@ static int spim_xfer_rx(unsigned int addr, void *data, unsigned int len, unsigne
 int spim_read_reg(uint32_t reg_addr, uint8_t *reg_value)
 {
 	int err;
-	uint8_t tx_buffer[6] = { reg_addr };
+	uint8_t tx_buffer[6] = {reg_addr};
 
-	const struct spi_buf tx_buf = {
-		.buf = tx_buffer,
-		.len = sizeof(tx_buffer)
-	};
+	const struct spi_buf tx_buf = {.buf = tx_buffer, .len = sizeof(tx_buffer)};
 
-	const struct spi_buf_set tx = {
-		.buffers = &tx_buf,
-		.count = 1
-	};
+	const struct spi_buf_set tx = {.buffers = &tx_buf, .count = 1};
 
 	uint8_t sr[6];
 
@@ -97,7 +82,7 @@ int spim_read_reg(uint32_t reg_addr, uint8_t *reg_value)
 		.buf = &sr,
 		.len = sizeof(sr),
 	};
-	const struct spi_buf_set rx = { .buffers = &rx_buf, .count = 1 };
+	const struct spi_buf_set rx = {.buffers = &rx_buf, .count = 1};
 
 	err = spi_transceive_dt(&spi_spec, &tx, &rx);
 
@@ -113,10 +98,10 @@ int spim_read_reg(uint32_t reg_addr, uint8_t *reg_value)
 int spim_write_reg(uint32_t reg_addr, const uint8_t reg_value)
 {
 	int err;
-	uint8_t tx_buffer[] = { reg_addr, reg_value };
+	uint8_t tx_buffer[] = {reg_addr, reg_value};
 
-	const struct spi_buf tx_buf = { .buf = tx_buffer, .len = sizeof(tx_buffer) };
-	const struct spi_buf_set tx = { .buffers = &tx_buf, .count = 1 };
+	const struct spi_buf tx_buf = {.buf = tx_buffer, .len = sizeof(tx_buffer)};
+	const struct spi_buf_set tx = {.buffers = &tx_buf, .count = 1};
 
 	err = spi_transceive_dt(&spi_spec, &tx, NULL);
 
@@ -126,7 +111,6 @@ int spim_write_reg(uint32_t reg_addr, const uint8_t reg_value)
 
 	return err;
 }
-
 
 int spim_RDSR1(const struct device *dev, uint8_t *rdsr1)
 {
@@ -208,10 +192,10 @@ int spim_cmd_rpu_wakeup(uint32_t data)
 unsigned int spim_cmd_sleep_rpu(void)
 {
 	int err;
-	uint8_t tx_buffer[] = { 0x3f, 0x0 };
+	uint8_t tx_buffer[] = {0x3f, 0x0};
 
-	const struct spi_buf tx_buf = { .buf = tx_buffer, .len = sizeof(tx_buffer) };
-	const struct spi_buf_set tx = { .buffers = &tx_buf, .count = 1 };
+	const struct spi_buf tx_buf = {.buf = tx_buffer, .len = sizeof(tx_buffer)};
+	const struct spi_buf_set tx = {.buffers = &tx_buf, .count = 1};
 
 	err = spi_transceive_dt(&spi_spec, &tx, NULL);
 
@@ -237,8 +221,7 @@ int spim_init(struct qspi_config *config)
 		spim_config->qspi_slave_latency = 1;
 	}
 
-	LOG_INF("SPIM %s: freq = %d MHz", spi_spec.bus->name,
-		spi_spec.config.frequency / MHZ(1));
+	LOG_INF("SPIM %s: freq = %d MHz", spi_spec.bus->name, spi_spec.config.frequency / MHZ(1));
 	LOG_INF("SPIM %s: latency = %d", spi_spec.bus->name, spim_config->qspi_slave_latency);
 
 	return 0;
@@ -254,9 +237,8 @@ int spim_deinit(void)
 static void spim_addr_check(unsigned int addr, const void *data, unsigned int len)
 {
 	if ((addr % 4 != 0) || (((unsigned int)data) % 4 != 0) || (len % 4 != 0)) {
-		LOG_ERR("%s : Unaligned address %x %x %d %x %x", __func__, addr,
-		       (unsigned int)data, (addr % 4 != 0), (((unsigned int)data) % 4 != 0),
-		       (len % 4 != 0));
+		LOG_ERR("%s : Unaligned address %x %x %d %x %x", __func__, addr, (unsigned int)data,
+			(addr % 4 != 0), (((unsigned int)data) % 4 != 0), (len % 4 != 0));
 	}
 }
 

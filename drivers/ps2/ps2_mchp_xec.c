@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(ps2_mchp_xec);
 #define PS2_TIMEOUT 10000
 
 struct ps2_xec_config {
-	struct ps2_regs * const regs;
+	struct ps2_regs *const regs;
 	int isr_nvic;
 	uint8_t girq_id;
 	uint8_t girq_bit;
@@ -47,17 +47,15 @@ struct ps2_xec_config {
 #endif
 };
 
-
 struct ps2_xec_data {
 	ps2_callback_t callback_isr;
 	struct k_sem tx_lock;
 };
 
-
 #ifdef CONFIG_SOC_SERIES_MEC172X
 static inline void ps2_xec_slp_en_clr(const struct device *dev)
 {
-	const struct ps2_xec_config * const cfg = dev->config;
+	const struct ps2_xec_config *const cfg = dev->config;
 
 	z_mchp_xec_pcr_periph_sleep(cfg->pcr_idx, cfg->pcr_pos, 0);
 }
@@ -79,7 +77,7 @@ static inline void ps2_xec_girq_dis(uint8_t girq_idx, uint8_t girq_posn)
 #else
 static inline void ps2_xec_slp_en_clr(const struct device *dev)
 {
-	const struct ps2_xec_config * const cfg = dev->config;
+	const struct ps2_xec_config *const cfg = dev->config;
 
 	if (cfg->pcr_pos == MCHP_PCR3_PS2_0_POS) {
 		mchp_pcr_periph_slp_ctrl(PCR_PS2_0, 0);
@@ -104,14 +102,13 @@ static inline void ps2_xec_girq_dis(uint8_t girq_idx, uint8_t girq_posn)
 }
 #endif /* CONFIG_SOC_SERIES_MEC172X */
 
-static int ps2_xec_configure(const struct device *dev,
-			     ps2_callback_t callback_isr)
+static int ps2_xec_configure(const struct device *dev, ps2_callback_t callback_isr)
 {
-	const struct ps2_xec_config * const config = dev->config;
-	struct ps2_xec_data * const data = dev->data;
-	struct ps2_regs * const regs = config->regs;
+	const struct ps2_xec_config *const config = dev->config;
+	struct ps2_xec_data *const data = dev->data;
+	struct ps2_regs *const regs = config->regs;
 
-	uint8_t  __attribute__((unused)) temp;
+	uint8_t __attribute__((unused)) temp;
 
 	if (!callback_isr) {
 		return -EINVAL;
@@ -142,15 +139,14 @@ static int ps2_xec_configure(const struct device *dev,
 	return 0;
 }
 
-
 static int ps2_xec_write(const struct device *dev, uint8_t value)
 {
-	const struct ps2_xec_config * const config = dev->config;
-	struct ps2_xec_data * const data = dev->data;
-	struct ps2_regs * const regs = config->regs;
+	const struct ps2_xec_config *const config = dev->config;
+	struct ps2_xec_data *const data = dev->data;
+	struct ps2_regs *const regs = config->regs;
 	int i = 0;
 
-	uint8_t  __attribute__((unused)) temp;
+	uint8_t __attribute__((unused)) temp;
 
 	if (k_sem_take(&data->tx_lock, K_NO_WAIT)) {
 		return -EACCES;
@@ -161,9 +157,9 @@ static int ps2_xec_write(const struct device *dev, uint8_t value)
 	 * transaction to complete. The PS2 block has a single
 	 * FSM.
 	 */
-	while (((regs->STATUS &
-		(MCHP_PS2_STATUS_RX_BUSY | MCHP_PS2_STATUS_TX_IDLE))
-		!= MCHP_PS2_STATUS_TX_IDLE) && (i < PS2_TIMEOUT)) {
+	while (((regs->STATUS & (MCHP_PS2_STATUS_RX_BUSY | MCHP_PS2_STATUS_TX_IDLE)) !=
+		MCHP_PS2_STATUS_TX_IDLE) &&
+	       (i < PS2_TIMEOUT)) {
 		k_busy_wait(50);
 		i++;
 	}
@@ -196,9 +192,9 @@ static int ps2_xec_write(const struct device *dev, uint8_t value)
 
 static int ps2_xec_inhibit_interface(const struct device *dev)
 {
-	const struct ps2_xec_config * const config = dev->config;
-	struct ps2_xec_data * const data = dev->data;
-	struct ps2_regs * const regs = config->regs;
+	const struct ps2_xec_config *const config = dev->config;
+	struct ps2_xec_data *const data = dev->data;
+	struct ps2_regs *const regs = config->regs;
 
 	if (k_sem_take(&data->tx_lock, K_MSEC(10)) != 0) {
 		return -EACCES;
@@ -216,9 +212,9 @@ static int ps2_xec_inhibit_interface(const struct device *dev)
 
 static int ps2_xec_enable_interface(const struct device *dev)
 {
-	const struct ps2_xec_config * const config = dev->config;
-	struct ps2_xec_data * const data = dev->data;
-	struct ps2_regs * const regs = config->regs;
+	const struct ps2_xec_config *const config = dev->config;
+	struct ps2_xec_data *const data = dev->data;
+	struct ps2_regs *const regs = config->regs;
 
 	ps2_xec_girq_clr(config->girq_id, config->girq_bit);
 	regs->CTRL = MCHP_PS2_CTRL_EN;
@@ -232,7 +228,7 @@ static int ps2_xec_enable_interface(const struct device *dev)
 static int ps2_xec_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct ps2_xec_config *const devcfg = dev->config;
-	struct ps2_regs * const regs = devcfg->regs;
+	struct ps2_regs *const regs = devcfg->regs;
 	int ret = 0;
 
 	switch (action) {
@@ -242,9 +238,8 @@ static int ps2_xec_pm_action(const struct device *dev, enum pm_device_action act
 			 * Disable interrupt on PS2DAT pin
 			 */
 			if (devcfg->wakerx_gpio.port != NULL) {
-				ret = gpio_pin_interrupt_configure_dt(
-						&devcfg->wakerx_gpio,
-						GPIO_INT_DISABLE);
+				ret = gpio_pin_interrupt_configure_dt(&devcfg->wakerx_gpio,
+								      GPIO_INT_DISABLE);
 				if (ret < 0) {
 					LOG_ERR("Fail to disable PS2 wake interrupt (ret %d)", ret);
 					return ret;
@@ -256,7 +251,7 @@ static int ps2_xec_pm_action(const struct device *dev, enum pm_device_action act
 			ret = pinctrl_apply_state(devcfg->pcfg, PINCTRL_STATE_DEFAULT);
 			regs->CTRL |= MCHP_PS2_CTRL_EN;
 		}
-	break;
+		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		if (devcfg->wakeup_source) {
 			/* Enable PS2 wake interrupt
@@ -265,9 +260,9 @@ static int ps2_xec_pm_action(const struct device *dev, enum pm_device_action act
 			ps2_xec_girq_clr(devcfg->girq_id_wk, devcfg->girq_bit_wk);
 			ps2_xec_girq_en(devcfg->girq_id_wk, devcfg->girq_bit_wk);
 			if (devcfg->wakerx_gpio.port != NULL) {
-				ret = gpio_pin_interrupt_configure_dt(
-					&devcfg->wakerx_gpio,
-					GPIO_INT_MODE_EDGE | GPIO_INT_TRIG_LOW);
+				ret = gpio_pin_interrupt_configure_dt(&devcfg->wakerx_gpio,
+								      GPIO_INT_MODE_EDGE |
+									      GPIO_INT_TRIG_LOW);
 				if (ret < 0) {
 					LOG_ERR("Fail to enable PS2 wake interrupt(ret %d)", ret);
 					return ret;
@@ -283,7 +278,7 @@ static int ps2_xec_pm_action(const struct device *dev, enum pm_device_action act
 				ret = 0;
 			}
 		}
-	break;
+		break;
 	default:
 		ret = -ENOTSUP;
 	}
@@ -294,9 +289,9 @@ static int ps2_xec_pm_action(const struct device *dev, enum pm_device_action act
 
 static void ps2_xec_isr(const struct device *dev)
 {
-	const struct ps2_xec_config * const config = dev->config;
-	struct ps2_xec_data * const data = dev->data;
-	struct ps2_regs * const regs = config->regs;
+	const struct ps2_xec_config *const config = dev->config;
+	struct ps2_xec_data *const data = dev->data;
+	struct ps2_regs *const regs = config->regs;
 	uint32_t status;
 
 	/* Read and clear status */
@@ -314,15 +309,13 @@ static void ps2_xec_isr(const struct device *dev)
 		}
 
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-	} else if (status &
-		    (MCHP_PS2_STATUS_TX_TMOUT | MCHP_PS2_STATUS_TX_ST_TMOUT)) {
+	} else if (status & (MCHP_PS2_STATUS_TX_TMOUT | MCHP_PS2_STATUS_TX_ST_TMOUT)) {
 		/* Clear sticky bits and go to read mode */
 		regs->STATUS = MCHP_PS2_STATUS_RW1C_MASK;
 		LOG_ERR("TX time out: %0x", status);
 
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-	} else if (status &
-			(MCHP_PS2_STATUS_RX_TMOUT | MCHP_PS2_STATUS_PE | MCHP_PS2_STATUS_FE)) {
+	} else if (status & (MCHP_PS2_STATUS_RX_TMOUT | MCHP_PS2_STATUS_PE | MCHP_PS2_STATUS_FE)) {
 		/* catch and clear rx error if any */
 		regs->STATUS = MCHP_PS2_STATUS_RW1C_MASK;
 	} else if (status & MCHP_PS2_STATUS_TX_IDLE) {
@@ -347,8 +340,8 @@ static const struct ps2_driver_api ps2_xec_driver_api = {
 
 static int ps2_xec_init(const struct device *dev)
 {
-	const struct ps2_xec_config * const cfg = dev->config;
-	struct ps2_xec_data * const data = dev->data;
+	const struct ps2_xec_config *const cfg = dev->config;
+	struct ps2_xec_data *const data = dev->data;
 	int ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
 		LOG_ERR("XEC PS2 pinctrl init failed (%d)", ret);
@@ -372,52 +365,47 @@ static int ps2_xec_init(const struct device *dev)
  *	wakeup-source;
  */
 #ifdef CONFIG_PM_DEVICE
-#define XEC_PS2_PM_WAKEUP(n)						\
-		.wakeup_source = (uint8_t)DT_INST_PROP_OR(n, wakeup_source, 0),	\
-		.wakerx_gpio = GPIO_DT_SPEC_INST_GET_OR(n, wakerx_gpios, {0}),
+#define XEC_PS2_PM_WAKEUP(n)                                                                       \
+	.wakeup_source = (uint8_t)DT_INST_PROP_OR(n, wakeup_source, 0),                            \
+	.wakerx_gpio = GPIO_DT_SPEC_INST_GET_OR(n, wakerx_gpios, {0}),
 #else
 #define XEC_PS2_PM_WAKEUP(index) /* Not used */
 #endif
 
 #define XEC_PS2_PINCTRL_CFG(inst) PINCTRL_DT_INST_DEFINE(inst)
-#define XEC_PS2_CONFIG(inst)							\
-	static const struct ps2_xec_config ps2_xec_config_##inst = {		\
-		.regs = (struct ps2_regs * const)(DT_INST_REG_ADDR(inst)),	\
-		.isr_nvic = DT_INST_IRQN(inst),					\
-		.girq_id = (uint8_t)(DT_INST_PROP_BY_IDX(inst, girqs, 0)),	\
-		.girq_bit = (uint8_t)(DT_INST_PROP_BY_IDX(inst, girqs, 1)),	\
-		.girq_id_wk = (uint8_t)(DT_INST_PROP_BY_IDX(inst, girqs, 2)),	\
-		.girq_bit_wk = (uint8_t)(DT_INST_PROP_BY_IDX(inst, girqs, 3)),	\
-		.pcr_idx = (uint8_t)(DT_INST_PROP_BY_IDX(inst, pcrs, 0)),	\
-		.pcr_pos = (uint8_t)(DT_INST_PROP_BY_IDX(inst, pcrs, 1)),	\
-		.irq_config_func = ps2_xec_irq_config_func_##inst,		\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),			\
-		XEC_PS2_PM_WAKEUP(inst)						\
-	}
+#define XEC_PS2_CONFIG(inst)                                                                       \
+	static const struct ps2_xec_config ps2_xec_config_##inst = {                               \
+		.regs = (struct ps2_regs *const)(DT_INST_REG_ADDR(inst)),                          \
+		.isr_nvic = DT_INST_IRQN(inst),                                                    \
+		.girq_id = (uint8_t)(DT_INST_PROP_BY_IDX(inst, girqs, 0)),                         \
+		.girq_bit = (uint8_t)(DT_INST_PROP_BY_IDX(inst, girqs, 1)),                        \
+		.girq_id_wk = (uint8_t)(DT_INST_PROP_BY_IDX(inst, girqs, 2)),                      \
+		.girq_bit_wk = (uint8_t)(DT_INST_PROP_BY_IDX(inst, girqs, 3)),                     \
+		.pcr_idx = (uint8_t)(DT_INST_PROP_BY_IDX(inst, pcrs, 0)),                          \
+		.pcr_pos = (uint8_t)(DT_INST_PROP_BY_IDX(inst, pcrs, 1)),                          \
+		.irq_config_func = ps2_xec_irq_config_func_##inst,                                 \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
+		XEC_PS2_PM_WAKEUP(inst)}
 
-#define PS2_XEC_DEVICE(i)						\
-									\
-	static void ps2_xec_irq_config_func_##i(void)			\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(i),				\
-			    DT_INST_IRQ(i, priority),			\
-			    ps2_xec_isr,				\
-			    DEVICE_DT_INST_GET(i), 0);			\
-		irq_enable(DT_INST_IRQN(i));				\
-	}								\
-									\
-	static struct ps2_xec_data ps2_xec_port_data_##i;		\
-									\
-	XEC_PS2_PINCTRL_CFG(i);						\
-									\
-	XEC_PS2_CONFIG(i);						\
-									\
-	PM_DEVICE_DT_INST_DEFINE(i, ps2_xec_pm_action);		\
-									\
-	DEVICE_DT_INST_DEFINE(i, &ps2_xec_init,				\
-		PM_DEVICE_DT_INST_GET(i),				\
-		&ps2_xec_port_data_##i, &ps2_xec_config_##i,		\
-		POST_KERNEL, CONFIG_PS2_INIT_PRIORITY,			\
-		&ps2_xec_driver_api);
+#define PS2_XEC_DEVICE(i)                                                                          \
+                                                                                                   \
+	static void ps2_xec_irq_config_func_##i(void)                                              \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(i), DT_INST_IRQ(i, priority), ps2_xec_isr,                \
+			    DEVICE_DT_INST_GET(i), 0);                                             \
+		irq_enable(DT_INST_IRQN(i));                                                       \
+	}                                                                                          \
+                                                                                                   \
+	static struct ps2_xec_data ps2_xec_port_data_##i;                                          \
+                                                                                                   \
+	XEC_PS2_PINCTRL_CFG(i);                                                                    \
+                                                                                                   \
+	XEC_PS2_CONFIG(i);                                                                         \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(i, ps2_xec_pm_action);                                            \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(i, &ps2_xec_init, PM_DEVICE_DT_INST_GET(i), &ps2_xec_port_data_##i,  \
+			      &ps2_xec_config_##i, POST_KERNEL, CONFIG_PS2_INIT_PRIORITY,          \
+			      &ps2_xec_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PS2_XEC_DEVICE)

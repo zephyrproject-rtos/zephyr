@@ -13,8 +13,7 @@
 LOG_MODULE_REGISTER(lora_shell, CONFIG_LORA_LOG_LEVEL);
 
 #define DEFAULT_RADIO_NODE DT_ALIAS(lora0)
-BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DEFAULT_RADIO_NODE),
-	     "No default LoRa radio specified in DT");
+BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DEFAULT_RADIO_NODE), "No default LoRa radio specified in DT");
 
 static struct lora_modem_config modem_config = {
 	.frequency = 0,
@@ -46,9 +45,8 @@ static int parse_long(long *out, const struct shell *sh, const char *arg)
 	return 0;
 }
 
-static int parse_long_range(long *out, const struct shell *sh,
-			    const char *arg, const char *name, long min,
-			    long max)
+static int parse_long_range(long *out, const struct shell *sh, const char *arg, const char *name,
+			    long min, long max)
 {
 	int ret;
 
@@ -58,7 +56,8 @@ static int parse_long_range(long *out, const struct shell *sh,
 	}
 
 	if (*out < min || *out > max) {
-		shell_error(sh, "Parameter '%s' is out of range. "
+		shell_error(sh,
+			    "Parameter '%s' is out of range. "
 			    "Valid range is %li -- %li.",
 			    name, min, max);
 		return -EINVAL;
@@ -74,8 +73,7 @@ static int parse_freq(uint32_t *out, const struct shell *sh, const char *arg)
 
 	val = strtoul(arg, &eptr, 0);
 	if (*eptr != '\0') {
-		shell_error(sh, "Invalid frequency, '%s' is not an integer",
-			    arg);
+		shell_error(sh, "Invalid frequency, '%s' is not an integer", arg);
 		return -EINVAL;
 	}
 
@@ -128,24 +126,17 @@ static const struct device *get_configured_modem(const struct shell *sh)
 
 static int lora_conf_dump(const struct shell *sh)
 {
-	shell_print(sh, "  Frequency: %" PRIu32 " Hz",
-		    modem_config.frequency);
-	shell_print(sh, "  TX power: %" PRIi8 " dBm",
-		    modem_config.tx_power);
-	shell_print(sh, "  Bandwidth: %i kHz",
-		    bw_table[modem_config.bandwidth]);
-	shell_print(sh, "  Spreading factor: SF%i",
-		    (int)modem_config.datarate);
-	shell_print(sh, "  Coding rate: 4/%i",
-		    (int)modem_config.coding_rate + 4);
-	shell_print(sh, "  Preamble length: %" PRIu16,
-		    modem_config.preamble_len);
+	shell_print(sh, "  Frequency: %" PRIu32 " Hz", modem_config.frequency);
+	shell_print(sh, "  TX power: %" PRIi8 " dBm", modem_config.tx_power);
+	shell_print(sh, "  Bandwidth: %i kHz", bw_table[modem_config.bandwidth]);
+	shell_print(sh, "  Spreading factor: SF%i", (int)modem_config.datarate);
+	shell_print(sh, "  Coding rate: 4/%i", (int)modem_config.coding_rate + 4);
+	shell_print(sh, "  Preamble length: %" PRIu16, modem_config.preamble_len);
 
 	return 0;
 }
 
-static int lora_conf_set(const struct shell *sh, const char *param,
-			 const char *value)
+static int lora_conf_set(const struct shell *sh, const char *param, const char *value)
 {
 	long lval;
 
@@ -154,14 +145,12 @@ static int lora_conf_set(const struct shell *sh, const char *param,
 			return -EINVAL;
 		}
 	} else if (!strcmp("tx-power", param)) {
-		if (parse_long_range(&lval, sh, value,
-				     "tx-power", INT8_MIN, INT8_MAX) < 0) {
+		if (parse_long_range(&lval, sh, value, "tx-power", INT8_MIN, INT8_MAX) < 0) {
 			return -EINVAL;
 		}
 		modem_config.tx_power = lval;
 	} else if (!strcmp("bw", param)) {
-		if (parse_long_range(&lval, sh, value,
-				     "bw", 0, INT16_MAX) < 0) {
+		if (parse_long_range(&lval, sh, value, "bw", 0, INT16_MAX) < 0) {
 			return -EINVAL;
 		}
 		switch (lval) {
@@ -189,8 +178,7 @@ static int lora_conf_set(const struct shell *sh, const char *param,
 		}
 		modem_config.coding_rate = CR_4_5 + (unsigned int)lval - 5;
 	} else if (!strcmp("pre-len", param)) {
-		if (parse_long_range(&lval, sh, value,
-				     "pre-len", 0, UINT16_MAX) < 0) {
+		if (parse_long_range(&lval, sh, value, "pre-len", 0, UINT16_MAX) < 0) {
 			return -EINVAL;
 		}
 		modem_config.preamble_len = lval;
@@ -213,8 +201,7 @@ static int cmd_lora_conf(const struct shell *sh, size_t argc, char **argv)
 
 	for (i = 1; i < argc; i += 2) {
 		if (i + 1 >= argc) {
-			shell_error(sh, "'%s' expects an argument",
-				    argv[i]);
+			shell_error(sh, "'%s' expects an argument", argv[i]);
 			return -EINVAL;
 		}
 
@@ -227,8 +214,7 @@ static int cmd_lora_conf(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-static int cmd_lora_send(const struct shell *sh,
-			size_t argc, char **argv)
+static int cmd_lora_send(const struct shell *sh, size_t argc, char **argv)
 {
 	int ret;
 	const struct device *dev;
@@ -263,27 +249,23 @@ static int cmd_lora_recv(const struct shell *sh, size_t argc, char **argv)
 		return -ENODEV;
 	}
 
-	if (argc >= 2 && parse_long_range(&timeout, sh, argv[1],
-					  "timeout", 0, INT_MAX) < 0) {
+	if (argc >= 2 && parse_long_range(&timeout, sh, argv[1], "timeout", 0, INT_MAX) < 0) {
 		return -EINVAL;
 	}
 
-	ret = lora_recv(dev, buf, sizeof(buf),
-			timeout ? K_MSEC(timeout) : K_FOREVER, &rssi, &snr);
+	ret = lora_recv(dev, buf, sizeof(buf), timeout ? K_MSEC(timeout) : K_FOREVER, &rssi, &snr);
 	if (ret < 0) {
 		shell_error(sh, "LoRa recv failed: %i", ret);
 		return ret;
 	}
 
 	shell_hexdump(sh, buf, ret);
-	shell_print(sh, "RSSI: %" PRIi16 " dBm, SNR:%" PRIi8 " dBm",
-		    rssi, snr);
+	shell_print(sh, "RSSI: %" PRIi16 " dBm, SNR:%" PRIi8 " dBm", rssi, snr);
 
 	return 0;
 }
 
-static int cmd_lora_test_cw(const struct shell *sh,
-			    size_t argc, char **argv)
+static int cmd_lora_test_cw(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	int ret;
@@ -296,10 +278,8 @@ static int cmd_lora_test_cw(const struct shell *sh,
 	}
 
 	if (parse_freq(&freq, sh, argv[1]) < 0 ||
-	    parse_long_range(&power, sh, argv[2],
-			     "power", INT8_MIN, INT8_MAX) < 0 ||
-	    parse_long_range(&duration, sh, argv[3],
-			     "duration", 0, UINT16_MAX) < 0) {
+	    parse_long_range(&power, sh, argv[2], "power", INT8_MIN, INT8_MAX) < 0 ||
+	    parse_long_range(&duration, sh, argv[3], "duration", 0, UINT16_MAX) < 0) {
 		return -EINVAL;
 	}
 
@@ -312,7 +292,8 @@ static int cmd_lora_test_cw(const struct shell *sh,
 	return 0;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_lora,
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_lora,
 	SHELL_CMD(config, NULL,
 		  "Configure the LoRa radio\n"
 		  " Usage: config [freq <Hz>] [tx-power <dBm>] [bw <kHz>] "
@@ -327,9 +308,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_lora,
 		      " Usage: recv [timeout (ms)]",
 		      cmd_lora_recv, 1, 1),
 	SHELL_CMD_ARG(test_cw, NULL,
-		  "Send a continuous wave\n"
-		  " Usage: test_cw <freq (Hz)> <power (dBm)> <duration (s)>",
-		  cmd_lora_test_cw, 4, 0),
+		      "Send a continuous wave\n"
+		      " Usage: test_cw <freq (Hz)> <power (dBm)> <duration (s)>",
+		      cmd_lora_test_cw, 4, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 

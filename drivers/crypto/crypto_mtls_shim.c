@@ -8,7 +8,6 @@
  * @file Shim layer for mbedTLS, crypto API compliant.
  */
 
-
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <errno.h>
@@ -29,8 +28,7 @@
 #include <mbedtls/sha256.h>
 #include <mbedtls/sha512.h>
 
-#define MTLS_SUPPORT (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | \
-		      CAP_NO_IV_PREFIX)
+#define MTLS_SUPPORT (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | CAP_NO_IV_PREFIX)
 
 #define LOG_LEVEL CONFIG_CRYPTO_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -63,11 +61,9 @@ struct mtls_shim_session mtls_sessions[CRYPTO_MAX_SESSION];
 #error "You need to define MBEDTLS_MEMORY_BUFFER_ALLOC_C"
 #endif /* MBEDTLS_MEMORY_BUFFER_ALLOC_C */
 
-#define MTLS_GET_CTX(c, m) \
-	(&((struct mtls_shim_session *)c->drv_sessn_state)->mtls_ ## m)
+#define MTLS_GET_CTX(c, m) (&((struct mtls_shim_session *)c->drv_sessn_state)->mtls_##m)
 
-#define MTLS_GET_ALGO(c) \
-	(((struct mtls_shim_session *)c->drv_sessn_state)->algo)
+#define MTLS_GET_ALGO(c) (((struct mtls_shim_session *)c->drv_sessn_state)->algo)
 
 int mtls_ecb_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 {
@@ -82,8 +78,7 @@ int mtls_ecb_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 		return -EINVAL;
 	}
 
-	ret = mbedtls_aes_crypt_ecb(ecb_ctx, MBEDTLS_AES_ENCRYPT,
-				    pkt->in_buf, pkt->out_buf);
+	ret = mbedtls_aes_crypt_ecb(ecb_ctx, MBEDTLS_AES_ENCRYPT, pkt->in_buf, pkt->out_buf);
 	if (ret) {
 		LOG_ERR("Could not encrypt (%d)", ret);
 		return -EINVAL;
@@ -107,8 +102,7 @@ int mtls_ecb_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 		return -EINVAL;
 	}
 
-	ret = mbedtls_aes_crypt_ecb(ecb_ctx, MBEDTLS_AES_DECRYPT,
-				    pkt->in_buf, pkt->out_buf);
+	ret = mbedtls_aes_crypt_ecb(ecb_ctx, MBEDTLS_AES_DECRYPT, pkt->in_buf, pkt->out_buf);
 	if (ret) {
 		LOG_ERR("Could not encrypt (%d)", ret);
 		return -EINVAL;
@@ -138,8 +132,8 @@ int mtls_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv
 		p_iv = iv_loc;
 	}
 
-	ret = mbedtls_aes_crypt_cbc(cbc_ctx, MBEDTLS_AES_ENCRYPT, pkt->in_len,
-				    p_iv, pkt->in_buf, pkt->out_buf + iv_bytes);
+	ret = mbedtls_aes_crypt_cbc(cbc_ctx, MBEDTLS_AES_ENCRYPT, pkt->in_len, p_iv, pkt->in_buf,
+				    pkt->out_buf + iv_bytes);
 	if (ret) {
 		LOG_ERR("Could not encrypt (%d)", ret);
 		return -EINVAL;
@@ -165,8 +159,8 @@ int mtls_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv
 		p_iv = iv_loc;
 	}
 
-	ret = mbedtls_aes_crypt_cbc(cbc_ctx, MBEDTLS_AES_DECRYPT, pkt->in_len,
-				    p_iv, pkt->in_buf + iv_bytes, pkt->out_buf);
+	ret = mbedtls_aes_crypt_cbc(cbc_ctx, MBEDTLS_AES_DECRYPT, pkt->in_len, p_iv,
+				    pkt->in_buf + iv_bytes, pkt->out_buf);
 	if (ret) {
 		LOG_ERR("Could not encrypt (%d)", ret);
 		return -EINVAL;
@@ -177,19 +171,16 @@ int mtls_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv
 	return 0;
 }
 
-static int mtls_ccm_encrypt_auth(struct cipher_ctx *ctx,
-				 struct cipher_aead_pkt *apkt,
+static int mtls_ccm_encrypt_auth(struct cipher_ctx *ctx, struct cipher_aead_pkt *apkt,
 				 uint8_t *nonce)
 {
 	mbedtls_ccm_context *mtls_ctx = MTLS_GET_CTX(ctx, ccm);
 	int ret;
 
 	ret = mbedtls_ccm_encrypt_and_tag(mtls_ctx, apkt->pkt->in_len, nonce,
-					  ctx->mode_params.ccm_info.nonce_len,
-					  apkt->ad, apkt->ad_len,
-					  apkt->pkt->in_buf,
-					  apkt->pkt->out_buf, apkt->tag,
-					  ctx->mode_params.ccm_info.tag_len);
+					  ctx->mode_params.ccm_info.nonce_len, apkt->ad,
+					  apkt->ad_len, apkt->pkt->in_buf, apkt->pkt->out_buf,
+					  apkt->tag, ctx->mode_params.ccm_info.tag_len);
 	if (ret) {
 		LOG_ERR("Could not encrypt/auth (%d)", ret);
 
@@ -206,18 +197,15 @@ static int mtls_ccm_encrypt_auth(struct cipher_ctx *ctx,
 	return 0;
 }
 
-static int mtls_ccm_decrypt_auth(struct cipher_ctx *ctx,
-				 struct cipher_aead_pkt *apkt,
+static int mtls_ccm_decrypt_auth(struct cipher_ctx *ctx, struct cipher_aead_pkt *apkt,
 				 uint8_t *nonce)
 {
 	mbedtls_ccm_context *mtls_ctx = MTLS_GET_CTX(ctx, ccm);
 	int ret;
 
 	ret = mbedtls_ccm_auth_decrypt(mtls_ctx, apkt->pkt->in_len, nonce,
-				       ctx->mode_params.ccm_info.nonce_len,
-				       apkt->ad, apkt->ad_len,
-				       apkt->pkt->in_buf,
-				       apkt->pkt->out_buf, apkt->tag,
+				       ctx->mode_params.ccm_info.nonce_len, apkt->ad, apkt->ad_len,
+				       apkt->pkt->in_buf, apkt->pkt->out_buf, apkt->tag,
 				       ctx->mode_params.ccm_info.tag_len);
 	if (ret) {
 		if (ret == MBEDTLS_ERR_CCM_AUTH_FAILED) {
@@ -238,21 +226,16 @@ static int mtls_ccm_decrypt_auth(struct cipher_ctx *ctx,
 }
 
 #ifdef CONFIG_MBEDTLS_CIPHER_GCM_ENABLED
-static int mtls_gcm_encrypt_auth(struct cipher_ctx *ctx,
-				 struct cipher_aead_pkt *apkt,
+static int mtls_gcm_encrypt_auth(struct cipher_ctx *ctx, struct cipher_aead_pkt *apkt,
 				 uint8_t *nonce)
 {
 	mbedtls_gcm_context *mtls_ctx = MTLS_GET_CTX(ctx, gcm);
 	int ret;
 
-	ret = mbedtls_gcm_crypt_and_tag(mtls_ctx, MBEDTLS_GCM_ENCRYPT,
-					  apkt->pkt->in_len, nonce,
-					  ctx->mode_params.gcm_info.nonce_len,
-					  apkt->ad, apkt->ad_len,
-					  apkt->pkt->in_buf,
-					  apkt->pkt->out_buf,
-					  ctx->mode_params.gcm_info.tag_len,
-					  apkt->tag);
+	ret = mbedtls_gcm_crypt_and_tag(mtls_ctx, MBEDTLS_GCM_ENCRYPT, apkt->pkt->in_len, nonce,
+					ctx->mode_params.gcm_info.nonce_len, apkt->ad, apkt->ad_len,
+					apkt->pkt->in_buf, apkt->pkt->out_buf,
+					ctx->mode_params.gcm_info.tag_len, apkt->tag);
 	if (ret) {
 		LOG_ERR("Could not encrypt/auth (%d)", ret);
 
@@ -266,20 +249,16 @@ static int mtls_gcm_encrypt_auth(struct cipher_ctx *ctx,
 	return 0;
 }
 
-static int mtls_gcm_decrypt_auth(struct cipher_ctx *ctx,
-				 struct cipher_aead_pkt *apkt,
+static int mtls_gcm_decrypt_auth(struct cipher_ctx *ctx, struct cipher_aead_pkt *apkt,
 				 uint8_t *nonce)
 {
 	mbedtls_gcm_context *mtls_ctx = MTLS_GET_CTX(ctx, gcm);
 	int ret;
 
 	ret = mbedtls_gcm_auth_decrypt(mtls_ctx, apkt->pkt->in_len, nonce,
-				       ctx->mode_params.gcm_info.nonce_len,
-				       apkt->ad, apkt->ad_len,
-				       apkt->tag,
-				       ctx->mode_params.gcm_info.tag_len,
-				       apkt->pkt->in_buf,
-				       apkt->pkt->out_buf);
+				       ctx->mode_params.gcm_info.nonce_len, apkt->ad, apkt->ad_len,
+				       apkt->tag, ctx->mode_params.gcm_info.tag_len,
+				       apkt->pkt->in_buf, apkt->pkt->out_buf);
 	if (ret) {
 		if (ret == MBEDTLS_ERR_GCM_AUTH_FAILED) {
 			LOG_ERR("Message authentication failed");
@@ -311,10 +290,8 @@ static int mtls_get_unused_session_index(void)
 	return -1;
 }
 
-static int mtls_session_setup(const struct device *dev,
-			      struct cipher_ctx *ctx,
-			      enum cipher_algo algo, enum cipher_mode mode,
-			      enum cipher_op op_type)
+static int mtls_session_setup(const struct device *dev, struct cipher_ctx *ctx,
+			      enum cipher_algo algo, enum cipher_mode mode, enum cipher_op op_type)
 {
 	mbedtls_aes_context *aes_ctx;
 	mbedtls_ccm_context *ccm_ctx;
@@ -334,8 +311,7 @@ static int mtls_session_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (mode != CRYPTO_CIPHER_MODE_CCM &&
-	    mode != CRYPTO_CIPHER_MODE_CBC &&
+	if (mode != CRYPTO_CIPHER_MODE_CCM && mode != CRYPTO_CIPHER_MODE_CBC &&
 #ifdef CONFIG_MBEDTLS_CIPHER_GCM_ENABLED
 	    mode != CRYPTO_CIPHER_MODE_GCM &&
 #endif
@@ -355,18 +331,17 @@ static int mtls_session_setup(const struct device *dev,
 		return -ENOSPC;
 	}
 
-
 	switch (mode) {
 	case CRYPTO_CIPHER_MODE_ECB:
 		aes_ctx = &mtls_sessions[ctx_idx].mtls_aes;
 		mbedtls_aes_init(aes_ctx);
 		if (op_type == CRYPTO_CIPHER_OP_ENCRYPT) {
-			ret = mbedtls_aes_setkey_enc(aes_ctx,
-					ctx->key.bit_stream, ctx->keylen * 8U);
+			ret = mbedtls_aes_setkey_enc(aes_ctx, ctx->key.bit_stream,
+						     ctx->keylen * 8U);
 			ctx->ops.block_crypt_hndlr = mtls_ecb_encrypt;
 		} else {
-			ret = mbedtls_aes_setkey_dec(aes_ctx,
-					ctx->key.bit_stream, ctx->keylen * 8U);
+			ret = mbedtls_aes_setkey_dec(aes_ctx, ctx->key.bit_stream,
+						     ctx->keylen * 8U);
 			ctx->ops.block_crypt_hndlr = mtls_ecb_decrypt;
 		}
 		if (ret) {
@@ -380,12 +355,12 @@ static int mtls_session_setup(const struct device *dev,
 		aes_ctx = &mtls_sessions[ctx_idx].mtls_aes;
 		mbedtls_aes_init(aes_ctx);
 		if (op_type == CRYPTO_CIPHER_OP_ENCRYPT) {
-			ret = mbedtls_aes_setkey_enc(aes_ctx,
-					ctx->key.bit_stream, ctx->keylen * 8U);
+			ret = mbedtls_aes_setkey_enc(aes_ctx, ctx->key.bit_stream,
+						     ctx->keylen * 8U);
 			ctx->ops.cbc_crypt_hndlr = mtls_cbc_encrypt;
 		} else {
-			ret = mbedtls_aes_setkey_dec(aes_ctx,
-					ctx->key.bit_stream, ctx->keylen * 8U);
+			ret = mbedtls_aes_setkey_dec(aes_ctx, ctx->key.bit_stream,
+						     ctx->keylen * 8U);
 			ctx->ops.cbc_crypt_hndlr = mtls_cbc_decrypt;
 		}
 		if (ret) {
@@ -398,8 +373,8 @@ static int mtls_session_setup(const struct device *dev,
 	case CRYPTO_CIPHER_MODE_CCM:
 		ccm_ctx = &mtls_sessions[ctx_idx].mtls_ccm;
 		mbedtls_ccm_init(ccm_ctx);
-		ret = mbedtls_ccm_setkey(ccm_ctx, MBEDTLS_CIPHER_ID_AES,
-					 ctx->key.bit_stream, ctx->keylen * 8U);
+		ret = mbedtls_ccm_setkey(ccm_ctx, MBEDTLS_CIPHER_ID_AES, ctx->key.bit_stream,
+					 ctx->keylen * 8U);
 		if (ret) {
 			LOG_ERR("AES_CCM: failed at setkey (%d)", ret);
 			mtls_sessions[ctx_idx].in_use = false;
@@ -416,8 +391,8 @@ static int mtls_session_setup(const struct device *dev,
 	case CRYPTO_CIPHER_MODE_GCM:
 		gcm_ctx = &mtls_sessions[ctx_idx].mtls_gcm;
 		mbedtls_gcm_init(gcm_ctx);
-		ret = mbedtls_gcm_setkey(gcm_ctx, MBEDTLS_CIPHER_ID_AES,
-					 ctx->key.bit_stream, ctx->keylen * 8U);
+		ret = mbedtls_gcm_setkey(gcm_ctx, MBEDTLS_CIPHER_ID_AES, ctx->key.bit_stream,
+					 ctx->keylen * 8U);
 		if (ret) {
 			LOG_ERR("AES_GCM: failed at setkey (%d)", ret);
 			mtls_sessions[ctx_idx].in_use = false;
@@ -445,8 +420,7 @@ static int mtls_session_setup(const struct device *dev,
 
 static int mtls_session_free(const struct device *dev, struct cipher_ctx *ctx)
 {
-	struct mtls_shim_session *mtls_session =
-		(struct mtls_shim_session *)ctx->drv_sessn_state;
+	struct mtls_shim_session *mtls_session = (struct mtls_shim_session *)ctx->drv_sessn_state;
 
 	if (mtls_session->mode == CRYPTO_CIPHER_MODE_CCM) {
 		mbedtls_ccm_free(&mtls_session->mtls_ccm);
@@ -462,12 +436,10 @@ static int mtls_session_free(const struct device *dev, struct cipher_ctx *ctx)
 	return 0;
 }
 
-static int mtls_sha256_compute(struct hash_ctx *ctx, struct hash_pkt *pkt,
-			       bool finish)
+static int mtls_sha256_compute(struct hash_ctx *ctx, struct hash_pkt *pkt, bool finish)
 {
 	int ret;
 	mbedtls_sha256_context *sha256_ctx = MTLS_GET_CTX(ctx, sha256);
-
 
 	if (!ctx->started) {
 		ret = mbedtls_sha256_starts(sha256_ctx,
@@ -498,8 +470,7 @@ static int mtls_sha256_compute(struct hash_ctx *ctx, struct hash_pkt *pkt,
 	return 0;
 }
 
-static int mtls_sha512_compute(struct hash_ctx *ctx, struct hash_pkt *pkt,
-			       bool finish)
+static int mtls_sha512_compute(struct hash_ctx *ctx, struct hash_pkt *pkt, bool finish)
 {
 	int ret;
 	mbedtls_sha512_context *sha512_ctx = MTLS_GET_CTX(ctx, sha512);
@@ -533,8 +504,7 @@ static int mtls_sha512_compute(struct hash_ctx *ctx, struct hash_pkt *pkt,
 	return 0;
 }
 
-static int mtls_hash_session_setup(const struct device *dev,
-				   struct hash_ctx *ctx,
+static int mtls_hash_session_setup(const struct device *dev, struct hash_ctx *ctx,
 				   enum hash_algo algo)
 {
 	int ctx_idx;
@@ -544,10 +514,8 @@ static int mtls_hash_session_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if ((algo != CRYPTO_HASH_ALGO_SHA224) &&
-	    (algo != CRYPTO_HASH_ALGO_SHA256) &&
-	    (algo != CRYPTO_HASH_ALGO_SHA384) &&
-	    (algo != CRYPTO_HASH_ALGO_SHA512)) {
+	if ((algo != CRYPTO_HASH_ALGO_SHA224) && (algo != CRYPTO_HASH_ALGO_SHA256) &&
+	    (algo != CRYPTO_HASH_ALGO_SHA384) && (algo != CRYPTO_HASH_ALGO_SHA512)) {
 		LOG_ERR("Unsupported algo: %d", algo);
 		return -EINVAL;
 	}
@@ -562,15 +530,12 @@ static int mtls_hash_session_setup(const struct device *dev,
 	ctx->drv_sessn_state = &mtls_sessions[ctx_idx];
 	ctx->started = false;
 
-	if ((algo == CRYPTO_HASH_ALGO_SHA224) ||
-	    (algo == CRYPTO_HASH_ALGO_SHA256)) {
-		mbedtls_sha256_context *sha256_ctx =
-			&mtls_sessions[ctx_idx].mtls_sha256;
+	if ((algo == CRYPTO_HASH_ALGO_SHA224) || (algo == CRYPTO_HASH_ALGO_SHA256)) {
+		mbedtls_sha256_context *sha256_ctx = &mtls_sessions[ctx_idx].mtls_sha256;
 		mbedtls_sha256_init(sha256_ctx);
 		ctx->hash_hndlr = mtls_sha256_compute;
 	} else {
-		mbedtls_sha512_context *sha512_ctx =
-			&mtls_sessions[ctx_idx].mtls_sha512;
+		mbedtls_sha512_context *sha512_ctx = &mtls_sessions[ctx_idx].mtls_sha512;
 		mbedtls_sha512_init(sha512_ctx);
 		ctx->hash_hndlr = mtls_sha512_compute;
 	}
@@ -580,8 +545,7 @@ static int mtls_hash_session_setup(const struct device *dev,
 
 static int mtls_hash_session_free(const struct device *dev, struct hash_ctx *ctx)
 {
-	struct mtls_shim_session *mtls_session =
-		(struct mtls_shim_session *)ctx->drv_sessn_state;
+	struct mtls_shim_session *mtls_session = (struct mtls_shim_session *)ctx->drv_sessn_state;
 
 	if (mtls_session->algo == CRYPTO_HASH_ALGO_SHA256) {
 		mbedtls_sha256_free(&mtls_session->mtls_sha256);
@@ -592,7 +556,6 @@ static int mtls_hash_session_free(const struct device *dev, struct hash_ctx *ctx
 
 	return 0;
 }
-
 
 static int mtls_query_caps(const struct device *dev)
 {
@@ -608,6 +571,5 @@ static struct crypto_driver_api mtls_crypto_funcs = {
 	.query_hw_caps = mtls_query_caps,
 };
 
-DEVICE_DEFINE(crypto_mtls, CONFIG_CRYPTO_MBEDTLS_SHIM_DRV_NAME,
-	      NULL, NULL, NULL, NULL, POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY,
-	      (void *)&mtls_crypto_funcs);
+DEVICE_DEFINE(crypto_mtls, CONFIG_CRYPTO_MBEDTLS_SHIM_DRV_NAME, NULL, NULL, NULL, NULL, POST_KERNEL,
+	      CONFIG_CRYPTO_INIT_PRIORITY, (void *)&mtls_crypto_funcs);

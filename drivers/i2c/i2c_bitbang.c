@@ -29,14 +29,14 @@
  * these. (Actually, we're simplifying a little, T_SU_STA could be T_HIGH on
  * Fast mode)
  */
-#define T_LOW		0
-#define T_HIGH		1
-#define T_SU_STA	T_LOW
-#define T_HD_STA	T_HIGH
-#define T_SU_STP	T_HIGH
-#define T_BUF		T_LOW
+#define T_LOW    0
+#define T_HIGH   1
+#define T_SU_STA T_LOW
+#define T_HD_STA T_HIGH
+#define T_SU_STP T_HIGH
+#define T_BUF    T_LOW
 
-#define NS_TO_SYS_CLOCK_HW_CYCLES(ns) \
+#define NS_TO_SYS_CLOCK_HW_CYCLES(ns)                                                              \
 	((uint64_t)sys_clock_hw_cycles_per_sec() * (ns) / NSEC_PER_SEC + 1)
 
 int i2c_bitbang_configure(struct i2c_bitbang *context, uint32_t dev_config)
@@ -49,11 +49,11 @@ int i2c_bitbang_configure(struct i2c_bitbang *context, uint32_t dev_config)
 	/* Setup speed to use */
 	switch (I2C_SPEED_GET(dev_config)) {
 	case I2C_SPEED_STANDARD:
-		context->delays[T_LOW]  = NS_TO_SYS_CLOCK_HW_CYCLES(4700);
+		context->delays[T_LOW] = NS_TO_SYS_CLOCK_HW_CYCLES(4700);
 		context->delays[T_HIGH] = NS_TO_SYS_CLOCK_HW_CYCLES(4000);
 		break;
 	case I2C_SPEED_FAST:
-		context->delays[T_LOW]  = NS_TO_SYS_CLOCK_HW_CYCLES(1300);
+		context->delays[T_LOW] = NS_TO_SYS_CLOCK_HW_CYCLES(1300);
 		context->delays[T_HIGH] = NS_TO_SYS_CLOCK_HW_CYCLES(600);
 		break;
 	default:
@@ -193,9 +193,8 @@ static uint8_t i2c_read_byte(struct i2c_bitbang *context)
 	return byte;
 }
 
-int i2c_bitbang_transfer(struct i2c_bitbang *context,
-			   struct i2c_msg *msgs, uint8_t num_msgs,
-			   uint16_t slave_address)
+int i2c_bitbang_transfer(struct i2c_bitbang *context, struct i2c_msg *msgs, uint8_t num_msgs,
+			 uint16_t slave_address)
 {
 	uint8_t *buf, *buf_end;
 	unsigned int flags;
@@ -314,8 +313,8 @@ int i2c_bitbang_recover_bus(struct i2c_bitbang *context)
 	}
 }
 
-void i2c_bitbang_init(struct i2c_bitbang *context,
-			const struct i2c_bitbang_io *io, void *io_context)
+void i2c_bitbang_init(struct i2c_bitbang *context, const struct i2c_bitbang_io *io,
+		      void *io_context)
 {
 	context->io = io;
 	context->io_context = io_context;

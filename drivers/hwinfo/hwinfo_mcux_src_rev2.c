@@ -13,27 +13,25 @@
 #include <fsl_soc_src.h>
 
 #ifdef CONFIG_CPU_CORTEX_M7
-#define MCUX_RESET_PIN_FLAG kSRC_M7CoreIppUserResetFlag
+#define MCUX_RESET_PIN_FLAG      kSRC_M7CoreIppUserResetFlag
 #define MCUX_RESET_SOFTWARE_FLAG kSRC_M7CoreM7LockUpResetFlag
-#define MCUX_RESET_POR_FLAG kSRC_M7CoreIppResetFlag
-#define MCUX_RESET_WATCHDOG_FLAG (kSRC_M7CoreWdogResetFlag |			\
-				kSRC_M7CoreWdog3ResetFlag |			\
-				kSRC_M7CoreWdog4ResetFlag)
-#define MCUX_RESET_DEBUG_FLAG kSRC_M7CoreJtagResetFlag
-#define MCUX_RESET_SECURITY_FLAG kSRC_M7CoreCSUResetFlag
+#define MCUX_RESET_POR_FLAG      kSRC_M7CoreIppResetFlag
+#define MCUX_RESET_WATCHDOG_FLAG                                                                   \
+	(kSRC_M7CoreWdogResetFlag | kSRC_M7CoreWdog3ResetFlag | kSRC_M7CoreWdog4ResetFlag)
+#define MCUX_RESET_DEBUG_FLAG       kSRC_M7CoreJtagResetFlag
+#define MCUX_RESET_SECURITY_FLAG    kSRC_M7CoreCSUResetFlag
 #define MCUX_RESET_TEMPERATURE_FLAG kSRC_M7CoreTempsenseResetFlag
-#define MCUX_RESET_USER_FLAG kSRC_M7CoreM7RequestResetFlag
+#define MCUX_RESET_USER_FLAG        kSRC_M7CoreM7RequestResetFlag
 #elif defined(CONFIG_CPU_CORTEX_M4)
-#define MCUX_RESET_PIN_FLAG kSRC_M4CoreIppUserResetFlag
+#define MCUX_RESET_PIN_FLAG      kSRC_M4CoreIppUserResetFlag
 #define MCUX_RESET_SOFTWARE_FLAG kSRC_M4CoreM7LockUpResetFlag
-#define MCUX_RESET_POR_FLAG kSRC_M4CoreIppResetFlag
-#define MCUX_RESET_WATCHDOG_FLAG (kSRC_M4CoreWdogResetFlag |			\
-				kSRC_M4CoreWdog3ResetFlag |			\
-				kSRC_M4CoreWdog4ResetFlag)
-#define MCUX_RESET_DEBUG_FLAG kSRC_M4CoreJtagResetFlag
-#define MCUX_RESET_SECURITY_FLAG kSRC_M4CoreCSUResetFlag
+#define MCUX_RESET_POR_FLAG      kSRC_M4CoreIppResetFlag
+#define MCUX_RESET_WATCHDOG_FLAG                                                                   \
+	(kSRC_M4CoreWdogResetFlag | kSRC_M4CoreWdog3ResetFlag | kSRC_M4CoreWdog4ResetFlag)
+#define MCUX_RESET_DEBUG_FLAG       kSRC_M4CoreJtagResetFlag
+#define MCUX_RESET_SECURITY_FLAG    kSRC_M4CoreCSUResetFlag
 #define MCUX_RESET_TEMPERATURE_FLAG kSRC_M4CoreTempsenseResetFlag
-#define MCUX_RESET_USER_FLAG kSRC_M4CoreM7RequestResetFlag
+#define MCUX_RESET_USER_FLAG        kSRC_M4CoreM7RequestResetFlag
 #else
 /* The SOCs currently supported have an M7 or M4 core */
 #error "MCUX SRC driver not supported for this CPU!"
@@ -87,15 +85,8 @@ int z_impl_hwinfo_clear_reset_cause(void)
 
 int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 {
-	*supported = (RESET_WATCHDOG
-		      | RESET_DEBUG
-		      | RESET_TEMPERATURE
-		      | RESET_PIN
-		      | RESET_SOFTWARE
-		      | RESET_POR
-		      | RESET_SECURITY
-		      | RESET_USER
-		      );
+	*supported = (RESET_WATCHDOG | RESET_DEBUG | RESET_TEMPERATURE | RESET_PIN |
+		      RESET_SOFTWARE | RESET_POR | RESET_SECURITY | RESET_USER);
 
 	return 0;
 }

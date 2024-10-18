@@ -57,8 +57,8 @@ static int neorv32_trng_get_entropy(const struct device *dev, uint8_t *buffer, u
 	return 0;
 }
 
-static int neorv32_trng_get_entropy_isr(const struct device *dev, uint8_t *buffer,
-					uint16_t len, uint32_t flags)
+static int neorv32_trng_get_entropy_isr(const struct device *dev, uint8_t *buffer, uint16_t len,
+					uint32_t flags)
 {
 	uint32_t ctrl;
 	int err;
@@ -132,20 +132,16 @@ static const struct entropy_driver_api neorv32_trng_driver_api = {
 	.get_entropy_isr = neorv32_trng_get_entropy_isr,
 };
 
-#define NEORV32_TRNG_INIT(n)						\
-	static const struct neorv32_trng_config neorv32_trng_##n##_config = { \
-		.syscon = DEVICE_DT_GET(DT_INST_PHANDLE(n, syscon)),	\
-		.base = DT_INST_REG_ADDR(n),				\
-	};								\
-									\
-	PM_DEVICE_DT_INST_DEFINE(n, neorv32_trng_pm_action);		\
-									\
-	DEVICE_DT_INST_DEFINE(n, &neorv32_trng_init,			\
-			 PM_DEVICE_DT_INST_GET(n),			\
-			 NULL,						\
-			 &neorv32_trng_##n##_config,			\
-			 PRE_KERNEL_1,					\
-			 CONFIG_ENTROPY_INIT_PRIORITY,			\
-			 &neorv32_trng_driver_api);
+#define NEORV32_TRNG_INIT(n)                                                                       \
+	static const struct neorv32_trng_config neorv32_trng_##n##_config = {                      \
+		.syscon = DEVICE_DT_GET(DT_INST_PHANDLE(n, syscon)),                               \
+		.base = DT_INST_REG_ADDR(n),                                                       \
+	};                                                                                         \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(n, neorv32_trng_pm_action);                                       \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &neorv32_trng_init, PM_DEVICE_DT_INST_GET(n), NULL,               \
+			      &neorv32_trng_##n##_config, PRE_KERNEL_1,                            \
+			      CONFIG_ENTROPY_INIT_PRIORITY, &neorv32_trng_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NEORV32_TRNG_INIT)

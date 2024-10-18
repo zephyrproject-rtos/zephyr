@@ -14,8 +14,7 @@
 LOG_MODULE_DECLARE(clock_control_nrf2, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 /* TODO: add support for other HSFLLs */
-BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
-	     "multiple instances not supported");
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1, "multiple instances not supported");
 
 #ifdef CONFIG_NRFS_HAS_DVFS_SERVICE
 #include <ld_dvfs_handler.h>
@@ -61,8 +60,7 @@ static void freq_setting_applied_cb(enum dvfs_frequency_setting new_setting)
 	atomic_val_t prev_flags;
 
 	/* Process only expected notifications (after sent requests). */
-	prev_flags = atomic_and(&dev_data->clk_cfg.flags,
-				~FLAG_FREQ_CHANGE_CB_EXPECTED);
+	prev_flags = atomic_and(&dev_data->clk_cfg.flags, ~FLAG_FREQ_CHANGE_CB_EXPECTED);
 	if (prev_flags & FLAG_FREQ_CHANGE_CB_EXPECTED) {
 		k_timer_stop(&dev_data->timer);
 
@@ -72,16 +70,14 @@ static void freq_setting_applied_cb(enum dvfs_frequency_setting new_setting)
 
 static void hsfll_update_timeout_handler(struct k_timer *timer)
 {
-	struct hsfll_dev_data *dev_data =
-		CONTAINER_OF(timer, struct hsfll_dev_data, timer);
+	struct hsfll_dev_data *dev_data = CONTAINER_OF(timer, struct hsfll_dev_data, timer);
 
 	clock_config_update_end(&dev_data->clk_cfg, -ETIMEDOUT);
 }
 
 static void hsfll_work_handler(struct k_work *work)
 {
-	struct hsfll_dev_data *dev_data =
-		CONTAINER_OF(work, struct hsfll_dev_data, clk_cfg.work);
+	struct hsfll_dev_data *dev_data = CONTAINER_OF(work, struct hsfll_dev_data, clk_cfg.work);
 	enum dvfs_frequency_setting required_setting;
 	uint8_t to_activate_idx;
 	int rc;
@@ -116,9 +112,8 @@ static struct onoff_manager *hsfll_find_mgr(const struct device *dev,
 		return NULL;
 	}
 
-	frequency = spec->frequency == NRF_CLOCK_CONTROL_FREQUENCY_MAX
-		  ? HSFLL_FREQ_HIGH
-		  : spec->frequency;
+	frequency = spec->frequency == NRF_CLOCK_CONTROL_FREQUENCY_MAX ? HSFLL_FREQ_HIGH
+								       : spec->frequency;
 
 	for (int i = 0; i < ARRAY_SIZE(clock_options); ++i) {
 		if (frequency > clock_options[i].frequency) {
@@ -133,8 +128,7 @@ static struct onoff_manager *hsfll_find_mgr(const struct device *dev,
 }
 #endif /* CONFIG_NRFS_HAS_DVFS_SERVICE */
 
-static int api_request_hsfll(const struct device *dev,
-			     const struct nrf_clock_spec *spec,
+static int api_request_hsfll(const struct device *dev, const struct nrf_clock_spec *spec,
 			     struct onoff_client *cli)
 {
 #ifdef CONFIG_NRFS_HAS_DVFS_SERVICE
@@ -150,8 +144,7 @@ static int api_request_hsfll(const struct device *dev,
 #endif
 }
 
-static int api_release_hsfll(const struct device *dev,
-			     const struct nrf_clock_spec *spec)
+static int api_release_hsfll(const struct device *dev, const struct nrf_clock_spec *spec)
 {
 #ifdef CONFIG_NRFS_HAS_DVFS_SERVICE
 	struct onoff_manager *mgr = hsfll_find_mgr(dev, spec);
@@ -166,8 +159,7 @@ static int api_release_hsfll(const struct device *dev,
 #endif
 }
 
-static int api_cancel_or_release_hsfll(const struct device *dev,
-				       const struct nrf_clock_spec *spec,
+static int api_cancel_or_release_hsfll(const struct device *dev, const struct nrf_clock_spec *spec,
 				       struct onoff_client *cli)
 {
 #ifdef CONFIG_NRFS_HAS_DVFS_SERVICE
@@ -183,9 +175,7 @@ static int api_cancel_or_release_hsfll(const struct device *dev,
 #endif
 }
 
-static int api_get_rate_hsfll(const struct device *dev,
-			      clock_control_subsys_t sys,
-			      uint32_t *rate)
+static int api_get_rate_hsfll(const struct device *dev, clock_control_subsys_t sys, uint32_t *rate)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(sys);
@@ -201,8 +191,7 @@ static int hsfll_init(const struct device *dev)
 	struct hsfll_dev_data *dev_data = dev->data;
 	int rc;
 
-	rc = clock_config_init(&dev_data->clk_cfg,
-			       ARRAY_SIZE(dev_data->clk_cfg.onoff),
+	rc = clock_config_init(&dev_data->clk_cfg, ARRAY_SIZE(dev_data->clk_cfg.onoff),
 			       hsfll_work_handler);
 	if (rc < 0) {
 		return rc;
@@ -210,19 +199,19 @@ static int hsfll_init(const struct device *dev)
 
 	k_timer_init(&dev_data->timer, hsfll_update_timeout_handler, NULL);
 
-	dvfs_service_handler_register_freq_setting_applied_callback(
-		freq_setting_applied_cb);
+	dvfs_service_handler_register_freq_setting_applied_callback(freq_setting_applied_cb);
 #endif
 
 	return 0;
 }
 
 static struct nrf_clock_control_driver_api hsfll_drv_api = {
-	.std_api = {
-		.on = api_nosys_on_off,
-		.off = api_nosys_on_off,
-		.get_rate = api_get_rate_hsfll,
-	},
+	.std_api =
+		{
+			.on = api_nosys_on_off,
+			.off = api_nosys_on_off,
+			.get_rate = api_get_rate_hsfll,
+		},
 	.request = api_request_hsfll,
 	.release = api_release_hsfll,
 	.cancel_or_release = api_cancel_or_release_hsfll,
@@ -235,7 +224,5 @@ static struct hsfll_dev_data hsfll_data;
 DEVICE_DT_INST_DEFINE(0, hsfll_init, NULL,
 		      COND_CODE_1(CONFIG_NRFS_HAS_DVFS_SERVICE,
 				  (&hsfll_data),
-				  (NULL)),
-		      NULL,
-		      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
-		      &hsfll_drv_api);
+				  (NULL)), NULL, PRE_KERNEL_1,
+				   CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &hsfll_drv_api);

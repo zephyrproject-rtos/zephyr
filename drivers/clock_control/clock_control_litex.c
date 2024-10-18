@@ -22,19 +22,13 @@
 
 LOG_MODULE_REGISTER(CLK_CTRL_LITEX, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
-static struct litex_clk_device *ldev;	/* global struct for whole driver */
-static struct litex_clk_clkout *clkouts;/* clkout array for whole driver */
+static struct litex_clk_device *ldev;    /* global struct for whole driver */
+static struct litex_clk_clkout *clkouts; /* clkout array for whole driver */
 
 /* All DRP regs addresses and sizes */
 static const struct litex_drp_reg drp[] = {
-	{DRP_ADDR_RESET,  1},
-	{DRP_ADDR_LOCKED, 1},
-	{DRP_ADDR_READ,   1},
-	{DRP_ADDR_WRITE,  1},
-	{DRP_ADDR_DRDY,   1},
-	{DRP_ADDR_ADR,    1},
-	{DRP_ADDR_DAT_W,  2},
-	{DRP_ADDR_DAT_R,  2},
+	{DRP_ADDR_RESET, 1}, {DRP_ADDR_LOCKED, 1}, {DRP_ADDR_READ, 1},  {DRP_ADDR_WRITE, 1},
+	{DRP_ADDR_DRDY, 1},  {DRP_ADDR_ADR, 1},    {DRP_ADDR_DAT_W, 2}, {DRP_ADDR_DAT_R, 2},
 };
 
 struct litex_clk_regs_addr litex_clk_regs_addr_init(void)
@@ -45,10 +39,10 @@ struct litex_clk_regs_addr litex_clk_regs_addr_init(void)
 	addr = CLKOUT0_REG1;
 	for (i = 0; i <= CLKOUT_MAX; i++) {
 		if (i == 5) {
-		/*
-		 *special case because CLKOUT5 have its reg addresses
-		 *placed lower than other CLKOUTs
-		 */
+			/*
+			 *special case because CLKOUT5 have its reg addresses
+			 *placed lower than other CLKOUTs
+			 */
 			m.clkout[5].reg1 = CLKOUT5_REG1;
 			m.clkout[5].reg2 = CLKOUT5_REG2;
 		} else {
@@ -72,139 +66,52 @@ struct litex_clk_regs_addr litex_clk_regs_addr_init(void)
 
 /* MMCM loop filter lookup table */
 static const uint32_t litex_clk_filter_table[] = {
-	 0b0001011111,
-	 0b0001010111,
-	 0b0001111011,
-	 0b0001011011,
-	 0b0001101011,
-	 0b0001110011,
-	 0b0001110011,
-	 0b0001110011,
-	 0b0001110011,
-	 0b0001001011,
-	 0b0001001011,
-	 0b0001001011,
-	 0b0010110011,
-	 0b0001010011,
-	 0b0001010011,
-	 0b0001010011,
-	 0b0001010011,
-	 0b0001010011,
-	 0b0001010011,
-	 0b0001010011,
-	 0b0001010011,
-	 0b0001010011,
-	 0b0001010011,
-	 0b0001100011,
-	 0b0001100011,
-	 0b0001100011,
-	 0b0001100011,
-	 0b0001100011,
-	 0b0001100011,
-	 0b0001100011,
-	 0b0001100011,
-	 0b0001100011,
-	 0b0001100011,
-	 0b0001100011,
-	 0b0001100011,
-	 0b0001100011,
-	 0b0001100011,
-	 0b0010010011,
-	 0b0010010011,
-	 0b0010010011,
-	 0b0010010011,
-	 0b0010010011,
-	 0b0010010011,
-	 0b0010010011,
-	 0b0010010011,
-	 0b0010010011,
-	 0b0010010011,
-	 0b0010100011,
-	 0b0010100011,
-	 0b0010100011,
-	 0b0010100011,
-	 0b0010100011,
-	 0b0010100011,
-	 0b0010100011,
-	 0b0010100011,
-	 0b0010100011,
-	 0b0010100011,
-	 0b0010100011,
-	 0b0010100011,
-	 0b0010100011,
-	 0b0010100011,
-	 0b0010100011,
-	 0b0010100011,
-	 0b0010100011
-};
+	0b0001011111, 0b0001010111, 0b0001111011, 0b0001011011, 0b0001101011, 0b0001110011,
+	0b0001110011, 0b0001110011, 0b0001110011, 0b0001001011, 0b0001001011, 0b0001001011,
+	0b0010110011, 0b0001010011, 0b0001010011, 0b0001010011, 0b0001010011, 0b0001010011,
+	0b0001010011, 0b0001010011, 0b0001010011, 0b0001010011, 0b0001010011, 0b0001100011,
+	0b0001100011, 0b0001100011, 0b0001100011, 0b0001100011, 0b0001100011, 0b0001100011,
+	0b0001100011, 0b0001100011, 0b0001100011, 0b0001100011, 0b0001100011, 0b0001100011,
+	0b0001100011, 0b0010010011, 0b0010010011, 0b0010010011, 0b0010010011, 0b0010010011,
+	0b0010010011, 0b0010010011, 0b0010010011, 0b0010010011, 0b0010010011, 0b0010100011,
+	0b0010100011, 0b0010100011, 0b0010100011, 0b0010100011, 0b0010100011, 0b0010100011,
+	0b0010100011, 0b0010100011, 0b0010100011, 0b0010100011, 0b0010100011, 0b0010100011,
+	0b0010100011, 0b0010100011, 0b0010100011, 0b0010100011};
 
 /* MMCM lock detection lookup table */
 static const uint64_t litex_clk_lock_table[] = {
-	0b0011000110111110100011111010010000000001,
-	0b0011000110111110100011111010010000000001,
-	0b0100001000111110100011111010010000000001,
-	0b0101101011111110100011111010010000000001,
-	0b0111001110111110100011111010010000000001,
-	0b1000110001111110100011111010010000000001,
-	0b1001110011111110100011111010010000000001,
-	0b1011010110111110100011111010010000000001,
-	0b1100111001111110100011111010010000000001,
-	0b1110011100111110100011111010010000000001,
-	0b1111111111111000010011111010010000000001,
-	0b1111111111110011100111111010010000000001,
-	0b1111111111101110111011111010010000000001,
-	0b1111111111101011110011111010010000000001,
-	0b1111111111101000101011111010010000000001,
-	0b1111111111100111000111111010010000000001,
-	0b1111111111100011111111111010010000000001,
-	0b1111111111100010011011111010010000000001,
-	0b1111111111100000110111111010010000000001,
-	0b1111111111011111010011111010010000000001,
-	0b1111111111011101101111111010010000000001,
-	0b1111111111011100001011111010010000000001,
-	0b1111111111011010100111111010010000000001,
-	0b1111111111011001000011111010010000000001,
-	0b1111111111011001000011111010010000000001,
-	0b1111111111010111011111111010010000000001,
-	0b1111111111010101111011111010010000000001,
-	0b1111111111010101111011111010010000000001,
-	0b1111111111010100010111111010010000000001,
-	0b1111111111010100010111111010010000000001,
-	0b1111111111010010110011111010010000000001,
-	0b1111111111010010110011111010010000000001,
-	0b1111111111010010110011111010010000000001,
-	0b1111111111010001001111111010010000000001,
-	0b1111111111010001001111111010010000000001,
-	0b1111111111010001001111111010010000000001,
-	0b1111111111001111101011111010010000000001,
-	0b1111111111001111101011111010010000000001,
-	0b1111111111001111101011111010010000000001,
-	0b1111111111001111101011111010010000000001,
-	0b1111111111001111101011111010010000000001,
-	0b1111111111001111101011111010010000000001,
-	0b1111111111001111101011111010010000000001,
-	0b1111111111001111101011111010010000000001,
-	0b1111111111001111101011111010010000000001,
-	0b1111111111001111101011111010010000000001,
-	0b1111111111001111101011111010010000000001,
-	0b1111111111001111101011111010010000000001,
-	0b1111111111001111101011111010010000000001,
-	0b1111111111001111101011111010010000000001,
-	0b1111111111001111101011111010010000000001,
-	0b1111111111001111101011111010010000000001,
-	0b1111111111001111101011111010010000000001,
-	0b1111111111001111101011111010010000000001,
-	0b1111111111001111101011111010010000000001,
-	0b1111111111001111101011111010010000000001,
-	0b1111111111001111101011111010010000000001,
-	0b1111111111001111101011111010010000000001,
-	0b1111111111001111101011111010010000000001,
-	0b1111111111001111101011111010010000000001,
-	0b1111111111001111101011111010010000000001,
-	0b1111111111001111101011111010010000000001,
-	0b1111111111001111101011111010010000000001,
-	0b1111111111001111101011111010010000000001
-};
+	0b0011000110111110100011111010010000000001, 0b0011000110111110100011111010010000000001,
+	0b0100001000111110100011111010010000000001, 0b0101101011111110100011111010010000000001,
+	0b0111001110111110100011111010010000000001, 0b1000110001111110100011111010010000000001,
+	0b1001110011111110100011111010010000000001, 0b1011010110111110100011111010010000000001,
+	0b1100111001111110100011111010010000000001, 0b1110011100111110100011111010010000000001,
+	0b1111111111111000010011111010010000000001, 0b1111111111110011100111111010010000000001,
+	0b1111111111101110111011111010010000000001, 0b1111111111101011110011111010010000000001,
+	0b1111111111101000101011111010010000000001, 0b1111111111100111000111111010010000000001,
+	0b1111111111100011111111111010010000000001, 0b1111111111100010011011111010010000000001,
+	0b1111111111100000110111111010010000000001, 0b1111111111011111010011111010010000000001,
+	0b1111111111011101101111111010010000000001, 0b1111111111011100001011111010010000000001,
+	0b1111111111011010100111111010010000000001, 0b1111111111011001000011111010010000000001,
+	0b1111111111011001000011111010010000000001, 0b1111111111010111011111111010010000000001,
+	0b1111111111010101111011111010010000000001, 0b1111111111010101111011111010010000000001,
+	0b1111111111010100010111111010010000000001, 0b1111111111010100010111111010010000000001,
+	0b1111111111010010110011111010010000000001, 0b1111111111010010110011111010010000000001,
+	0b1111111111010010110011111010010000000001, 0b1111111111010001001111111010010000000001,
+	0b1111111111010001001111111010010000000001, 0b1111111111010001001111111010010000000001,
+	0b1111111111001111101011111010010000000001, 0b1111111111001111101011111010010000000001,
+	0b1111111111001111101011111010010000000001, 0b1111111111001111101011111010010000000001,
+	0b1111111111001111101011111010010000000001, 0b1111111111001111101011111010010000000001,
+	0b1111111111001111101011111010010000000001, 0b1111111111001111101011111010010000000001,
+	0b1111111111001111101011111010010000000001, 0b1111111111001111101011111010010000000001,
+	0b1111111111001111101011111010010000000001, 0b1111111111001111101011111010010000000001,
+	0b1111111111001111101011111010010000000001, 0b1111111111001111101011111010010000000001,
+	0b1111111111001111101011111010010000000001, 0b1111111111001111101011111010010000000001,
+	0b1111111111001111101011111010010000000001, 0b1111111111001111101011111010010000000001,
+	0b1111111111001111101011111010010000000001, 0b1111111111001111101011111010010000000001,
+	0b1111111111001111101011111010010000000001, 0b1111111111001111101011111010010000000001,
+	0b1111111111001111101011111010010000000001, 0b1111111111001111101011111010010000000001,
+	0b1111111111001111101011111010010000000001, 0b1111111111001111101011111010010000000001,
+	0b1111111111001111101011111010010000000001, 0b1111111111001111101011111010010000000001};
 /* End of copied code */
 
 /* Helper function for filter lookup table */
@@ -245,7 +152,8 @@ static int litex_clk_wait(uint32_t reg)
 {
 	uint32_t timeout;
 
-	__ASSERT(reg == DRP_LOCKED || reg == DRP_DRDY, "Unsupported register! Please provide DRP_LOCKED or DRP_DRDY");
+	__ASSERT(reg == DRP_LOCKED || reg == DRP_DRDY,
+		 "Unsupported register! Please provide DRP_LOCKED or DRP_DRDY");
 
 	if (reg == DRP_LOCKED) {
 		timeout = ldev->timeout.lock;
@@ -340,8 +248,7 @@ static uint64_t litex_clk_get_real_global_frequency(void)
 	uint64_t f;
 
 	litex_clk_update_global_config();
-	f = litex_clk_calc_global_frequency(ldev->g_config.mul,
-					    ldev->g_config.div);
+	f = litex_clk_calc_global_frequency(ldev->g_config.mul, ldev->g_config.div);
 	ldev->g_config.freq = f;
 	ldev->ts_g_config.div = ldev->g_config.div;
 	ldev->ts_g_config.mul = ldev->g_config.mul;
@@ -351,8 +258,8 @@ static uint64_t litex_clk_get_real_global_frequency(void)
 }
 
 /* Return dividers of given CLKOUT */
-static int litex_clk_get_clkout_divider(struct litex_clk_clkout *lcko,
-					uint32_t *divider, uint32_t *fract_cnt)
+static int litex_clk_get_clkout_divider(struct litex_clk_clkout *lcko, uint32_t *divider,
+					uint32_t *fract_cnt)
 {
 	struct litex_clk_regs_addr drp_addr = litex_clk_regs_addr_init();
 	int ret;
@@ -380,8 +287,7 @@ static int litex_clk_get_clkout_divider(struct litex_clk_clkout *lcko,
 /* Debug functions */
 #ifdef CONFIG_CLOCK_CONTROL_LOG_LEVEL_DBG
 
-static void litex_clk_check_DO(char *reg_name, uint8_t clk_reg_addr,
-					       uint16_t *res)
+static void litex_clk_check_DO(char *reg_name, uint8_t clk_reg_addr, uint16_t *res)
 {
 	int ret;
 
@@ -395,8 +301,8 @@ static void litex_clk_check_DO(char *reg_name, uint8_t clk_reg_addr,
 
 static void litex_clk_print_general_regs(void)
 {
-	uint16_t power_reg, div_reg, clkfbout_reg1, clkfbout_reg2,
-	lock_reg1, lock_reg2, lock_reg3, filt_reg1, filt_reg2;
+	uint16_t power_reg, div_reg, clkfbout_reg1, clkfbout_reg2, lock_reg1, lock_reg2, lock_reg3,
+		filt_reg1, filt_reg2;
 
 	litex_clk_check_DO("POWER_REG", POWER_REG, &power_reg);
 	litex_clk_check_DO("DIV_REG", DIV_REG, &div_reg);
@@ -409,8 +315,7 @@ static void litex_clk_print_general_regs(void)
 	litex_clk_check_DO("FILT_REG2", FILT_REG2, &filt_reg2);
 }
 
-static void litex_clk_print_clkout_regs(uint8_t clkout, uint8_t reg1,
-							uint8_t reg2)
+static void litex_clk_print_clkout_regs(uint8_t clkout, uint8_t reg1, uint8_t reg2)
 {
 	uint16_t clkout_reg1, clkout_reg2;
 	char reg_name[16];
@@ -429,8 +334,7 @@ static void litex_clk_print_all_regs(void)
 
 	litex_clk_print_general_regs();
 	for (i = 0; i < ldev->nclkout; i++) {
-		litex_clk_print_clkout_regs(i, drp_addr.clkout[i].reg1,
-					       drp_addr.clkout[i].reg2);
+		litex_clk_print_clkout_regs(i, drp_addr.clkout[i].reg1, drp_addr.clkout[i].reg2);
 	}
 }
 
@@ -438,30 +342,25 @@ static void litex_clk_print_params(struct litex_clk_clkout *lcko)
 {
 	LOG_DBG("CLKOUT%d DUMP:", lcko->id);
 	LOG_DBG("Defaults:");
-	LOG_DBG("f: %u d: %u/%u p: %u",
-		lcko->def.freq, lcko->def.duty.num,
-		lcko->def.duty.den, lcko->def.phase);
+	LOG_DBG("f: %u d: %u/%u p: %u", lcko->def.freq, lcko->def.duty.num, lcko->def.duty.den,
+		lcko->def.phase);
 	LOG_DBG("Config to set:");
-	LOG_DBG("div: %u freq: %u duty: %u/%u phase: %d per_off: %u",
-		lcko->ts_config.div, lcko->ts_config.freq,
-		lcko->ts_config.duty.num, lcko->ts_config.duty.den,
+	LOG_DBG("div: %u freq: %u duty: %u/%u phase: %d per_off: %u", lcko->ts_config.div,
+		lcko->ts_config.freq, lcko->ts_config.duty.num, lcko->ts_config.duty.den,
 		lcko->ts_config.phase, lcko->config.period_off);
 	LOG_DBG("Config:");
-	LOG_DBG("div: %u freq: %u duty: %u/%u phase: %d per_off: %u",
-		lcko->config.div, lcko->config.freq,
-		lcko->config.duty.num, lcko->config.duty.den,
-		lcko->config.phase, lcko->config.period_off);
+	LOG_DBG("div: %u freq: %u duty: %u/%u phase: %d per_off: %u", lcko->config.div,
+		lcko->config.freq, lcko->config.duty.num, lcko->config.duty.den, lcko->config.phase,
+		lcko->config.period_off);
 	LOG_DBG("Divide group:");
-	LOG_DBG("e: %u ht: %u lt: %u nc: %u",
-		lcko->div.edge, lcko->div.high_time,
+	LOG_DBG("e: %u ht: %u lt: %u nc: %u", lcko->div.edge, lcko->div.high_time,
 		lcko->div.low_time, lcko->div.no_cnt);
 	LOG_DBG("Frac group:");
-	LOG_DBG("f: %u fen: %u fwff: %u fwfr: %u pmf: %u",
-		lcko->frac.frac, lcko->frac.frac_en, lcko->frac.frac_wf_f,
-		lcko->frac.frac_wf_r, lcko->frac.phase_mux_f);
+	LOG_DBG("f: %u fen: %u fwff: %u fwfr: %u pmf: %u", lcko->frac.frac, lcko->frac.frac_en,
+		lcko->frac.frac_wf_f, lcko->frac.frac_wf_r, lcko->frac.phase_mux_f);
 	LOG_DBG("Phase group:");
-	LOG_DBG("dt: %u pm: %u mx: %u",
-		lcko->phase.delay_time, lcko->phase.phase_mux, lcko->phase.mx);
+	LOG_DBG("dt: %u pm: %u mx: %u", lcko->phase.delay_time, lcko->phase.phase_mux,
+		lcko->phase.mx);
 }
 
 static void litex_clk_print_all_params(void)
@@ -469,12 +368,11 @@ static void litex_clk_print_all_params(void)
 	uint32_t c;
 
 	LOG_DBG("Global Config to set:");
-	LOG_DBG("freq: %llu mul: %u div: %u",
-		ldev->ts_g_config.freq, ldev->ts_g_config.mul,
-					ldev->ts_g_config.div);
+	LOG_DBG("freq: %llu mul: %u div: %u", ldev->ts_g_config.freq, ldev->ts_g_config.mul,
+		ldev->ts_g_config.div);
 	LOG_DBG("Global Config:");
-	LOG_DBG("freq: %llu mul: %u div: %u",
-		ldev->g_config.freq, ldev->g_config.mul, ldev->g_config.div);
+	LOG_DBG("freq: %llu mul: %u div: %u", ldev->g_config.freq, ldev->g_config.mul,
+		ldev->g_config.div);
 	for (c = 0; c < ldev->nclkout; c++) {
 		litex_clk_print_params(&ldev->clkouts[c]);
 	}
@@ -482,8 +380,7 @@ static void litex_clk_print_all_params(void)
 #endif /* CONFIG_CLOCK_CONTROL_LOG_LEVEL_DBG */
 
 /* Returns raw value ready to be written into MMCM */
-static inline uint16_t litex_clk_calc_DI(uint16_t DO_val, uint16_t mask,
-							  uint16_t bitset)
+static inline uint16_t litex_clk_calc_DI(uint16_t DO_val, uint16_t mask, uint16_t bitset)
 {
 	uint16_t DI_val;
 
@@ -514,8 +411,7 @@ static int litex_clk_set_DI(uint16_t DI_val)
  * clk_reg_addr:	internal MMCM address of control register
  *
  */
-static int litex_clk_change_value(uint16_t mask, uint16_t bitset,
-						 uint8_t clk_reg_addr)
+static int litex_clk_change_value(uint16_t mask, uint16_t bitset, uint8_t clk_reg_addr)
 {
 	uint16_t DO_val, DI_val;
 	int ret;
@@ -550,9 +446,8 @@ static int litex_clk_change_value(uint16_t mask, uint16_t bitset,
  * bitset_regX:		set those bits in MMCM register X which are 1 in bitset
  *
  */
-static int litex_clk_set_clock(uint8_t clkout_nr, uint16_t mask_reg1,
-			      uint16_t bitset_reg1, uint16_t mask_reg2,
-						 uint16_t bitset_reg2)
+static int litex_clk_set_clock(uint8_t clkout_nr, uint16_t mask_reg1, uint16_t bitset_reg1,
+			       uint16_t mask_reg2, uint16_t bitset_reg2)
 {
 	struct litex_clk_regs_addr drp_addr = litex_clk_regs_addr_init();
 	int ret;
@@ -579,8 +474,7 @@ static int litex_clk_set_clock(uint8_t clkout_nr, uint16_t mask_reg1,
 static int litex_clk_set_divreg(void)
 {
 	int ret;
-	uint8_t no_cnt = 0, edge = 0, ht = 0, lt = 0,
-		div = ldev->ts_g_config.div;
+	uint8_t no_cnt = 0, edge = 0, ht = 0, lt = 0, div = ldev->ts_g_config.div;
 	uint16_t bitset = 0;
 
 	if (div == 1) {
@@ -594,9 +488,7 @@ static int litex_clk_set_divreg(void)
 		}
 	}
 
-	bitset = (edge << EDGE_DIVREG_POS)	|
-		 (no_cnt << NO_CNT_DIVREG_POS)	|
-		 (ht << HIGH_TIME_POS)		|
+	bitset = (edge << EDGE_DIVREG_POS) | (no_cnt << NO_CNT_DIVREG_POS) | (ht << HIGH_TIME_POS) |
 		 (lt << LOW_TIME_POS);
 
 	ret = litex_clk_change_value(KEEP_IN_DIV, bitset, DIV_REG);
@@ -614,8 +506,7 @@ static int litex_clk_set_divreg(void)
 static int litex_clk_set_mulreg(void)
 {
 	int ret;
-	uint8_t no_cnt = 0, edge = 0, ht = 0, lt = 0,
-		mul = ldev->ts_g_config.mul;
+	uint8_t no_cnt = 0, edge = 0, ht = 0, lt = 0, mul = ldev->ts_g_config.mul;
 	uint16_t bitset1 = 0;
 
 	if (mul == 1) {
@@ -629,8 +520,7 @@ static int litex_clk_set_mulreg(void)
 		}
 	}
 
-	bitset1 = (ht << HIGH_TIME_POS) |
-		  (lt << LOW_TIME_POS);
+	bitset1 = (ht << HIGH_TIME_POS) | (lt << LOW_TIME_POS);
 
 	ret = litex_clk_change_value(KEEP_IN_MUL_REG1, bitset1, CLKFBOUT_REG1);
 	if (ret != 0) {
@@ -638,11 +528,9 @@ static int litex_clk_set_mulreg(void)
 	}
 
 	if (edge || no_cnt) {
-		uint16_t bitset2 = (edge << EDGE_POS)	|
-				(no_cnt << NO_CNT_POS);
+		uint16_t bitset2 = (edge << EDGE_POS) | (no_cnt << NO_CNT_POS);
 
-		ret = litex_clk_change_value(KEEP_IN_MUL_REG2,
-				       bitset2, CLKFBOUT_REG2);
+		ret = litex_clk_change_value(KEEP_IN_MUL_REG2, bitset2, CLKFBOUT_REG2);
 		if (ret != 0) {
 			return ret;
 		}
@@ -667,18 +555,15 @@ static int litex_clk_set_filt(void)
 	 * Preparing and setting filter register values
 	 * according to reg map form Xilinx XAPP888
 	 */
-	filt_reg = (((filt >> 9) & 0x1) << 15) |
-		   (((filt >> 7) & 0x3) << 11) |
+	filt_reg = (((filt >> 9) & 0x1) << 15) | (((filt >> 7) & 0x3) << 11) |
 		   (((filt >> 6) & 0x1) << 8);
 	ret = litex_clk_change_value(FILT1_MASK, filt_reg, FILT_REG1);
-	if (ret != 0)  {
+	if (ret != 0) {
 		return ret;
 	}
 
-	filt_reg = (((filt >> 5) & 0x1) << 15) |
-		   (((filt >> 3) & 0x3) << 11) |
-		   (((filt >> 1) & 0x3) << 7) |
-		   (((filt) & 0x1) << 4);
+	filt_reg = (((filt >> 5) & 0x1) << 15) | (((filt >> 3) & 0x3) << 11) |
+		   (((filt >> 1) & 0x3) << 7) | (((filt) & 0x1) << 4);
 	ret = litex_clk_change_value(FILT2_MASK, filt_reg, FILT_REG2);
 
 	return ret;
@@ -704,15 +589,13 @@ static int litex_clk_set_lock(void)
 		return ret;
 	}
 
-	lock_reg = (((lock >> 30) & 0x1F) << 10) |
-		     (lock & 0x3FF);
+	lock_reg = (((lock >> 30) & 0x1F) << 10) | (lock & 0x3FF);
 	ret = litex_clk_change_value(LOCK23_MASK, lock_reg, LOCK_REG2);
 	if (ret != 0) {
 		return ret;
 	}
 
-	lock_reg = (((lock >> 35) & 0x1F) << 10) |
-		   ((lock >> 10) & 0x3FF);
+	lock_reg = (((lock >> 35) & 0x1F) << 10) | ((lock >> 10) & 0x3FF);
 	ret = litex_clk_change_value(LOCK23_MASK, lock_reg, LOCK_REG3);
 
 	return ret;
@@ -745,14 +628,11 @@ static int litex_clk_set_both_globs(void)
 	int ret;
 
 	/* div-first case */
-	vco_freq = litex_clk_calc_global_frequency(
-					ldev->g_config.mul,
-					ldev->ts_g_config.div);
+	vco_freq = litex_clk_calc_global_frequency(ldev->g_config.mul, ldev->ts_g_config.div);
 	if (vco_freq > ldev->vco.max || vco_freq < ldev->vco.min) {
 		/* div-first not safe */
-		vco_freq = litex_clk_calc_global_frequency(
-					ldev->ts_g_config.mul,
-					ldev->g_config.div);
+		vco_freq =
+			litex_clk_calc_global_frequency(ldev->ts_g_config.mul, ldev->g_config.div);
 		if (vco_freq > ldev->vco.max || vco_freq < ldev->vco.min) {
 			/* mul-first not safe */
 			ret = litex_clk_set_divreg();
@@ -761,8 +641,7 @@ static int litex_clk_set_both_globs(void)
 				return ret;
 			} else if (ret == -ETIME) {
 				ldev->g_config.div = ldev->ts_g_config.div;
-				LOG_DBG("Global divider set to %u",
-					 ldev->g_config.div);
+				LOG_DBG("Global divider set to %u", ldev->g_config.div);
 			}
 			ret = litex_clk_set_mul();
 			if (ret != 0) {
@@ -797,8 +676,7 @@ static int litex_clk_set_both_globs(void)
 static int litex_clk_set_globs(void)
 {
 	int ret;
-	uint8_t set_div = 0,
-	   set_mul = 0;
+	uint8_t set_div = 0, set_mul = 0;
 
 	set_div = ldev->ts_g_config.div != ldev->g_config.div;
 	set_mul = ldev->ts_g_config.mul != ldev->g_config.mul;
@@ -841,8 +719,7 @@ static inline uint32_t litex_round(uint32_t val, uint32_t mod)
  */
 
 /* Returns accurate duty ratio of given clkout*/
-int litex_clk_get_duty_cycle(struct litex_clk_clkout *lcko,
-			     struct clk_duty *duty)
+int litex_clk_get_duty_cycle(struct litex_clk_clkout *lcko, struct clk_duty *duty)
 {
 	struct litex_clk_regs_addr drp_addr = litex_clk_regs_addr_init();
 	int ret;
@@ -898,14 +775,12 @@ static inline uint8_t litex_clk_calc_duty_percent(struct clk_duty *duty)
 }
 
 /* Calculate necessary values for setting duty cycle in normal mode */
-static int litex_clk_calc_duty_normal(struct litex_clk_clkout *lcko,
-					 int calc_new)
+static int litex_clk_calc_duty_normal(struct litex_clk_clkout *lcko, int calc_new)
 {
 	struct clk_duty duty;
 	int delta_d;
 	uint32_t ht_aprox, synth_duty, min_d;
-	uint8_t high_time_it, edge_it, high_duty,
-	   divider = lcko->config.div;
+	uint8_t high_time_it, edge_it, high_duty, divider = lcko->config.div;
 	int err;
 
 	if (calc_new) {
@@ -923,27 +798,23 @@ static int litex_clk_calc_duty_normal(struct litex_clk_clkout *lcko,
 	ht_aprox = high_duty * divider;
 
 	if (ht_aprox > ((HIGH_LOW_TIME_REG_MAX * 100) + 50) ||
-		       ((HIGH_LOW_TIME_REG_MAX * 100) + 50) <
-			(divider * 100) - ht_aprox) {
+	    ((HIGH_LOW_TIME_REG_MAX * 100) + 50) < (divider * 100) - ht_aprox) {
 		return -EINVAL;
 	}
 
 	/* to prevent high_time == 0 or low_time == 0 */
 	for (high_time_it = 1; high_time_it < divider; high_time_it++) {
 		for (edge_it = 0; edge_it < 2; edge_it++) {
-			synth_duty = (high_time_it * 100 + 50 * edge_it) /
-								  divider;
+			synth_duty = (high_time_it * 100 + 50 * edge_it) / divider;
 			delta_d = synth_duty - high_duty;
 			delta_d = abs(delta_d);
 			/* check if low_time won't be above acceptable range */
-			if (delta_d < min_d && (divider - high_time_it) <=
-						  HIGH_LOW_TIME_REG_MAX) {
+			if (delta_d < min_d && (divider - high_time_it) <= HIGH_LOW_TIME_REG_MAX) {
 				min_d = delta_d;
 				lcko->div.high_time = high_time_it;
 				lcko->div.low_time = divider - high_time_it;
 				lcko->div.edge = edge_it;
-				lcko->config.duty.num = high_time_it * 100 + 50
-								     * edge_it;
+				lcko->config.duty.num = high_time_it * 100 + 50 * edge_it;
 				lcko->config.duty.den = divider * 100;
 			}
 		}
@@ -959,8 +830,7 @@ static int litex_clk_calc_duty_normal(struct litex_clk_clkout *lcko,
 }
 
 /* Calculates duty high_time for given divider and ratio */
-static inline int litex_clk_calc_duty_high_time(struct clk_duty *duty,
-						   uint32_t divider)
+static inline int litex_clk_calc_duty_high_time(struct clk_duty *duty, uint32_t divider)
 {
 	uint32_t high_duty;
 
@@ -970,42 +840,34 @@ static inline int litex_clk_calc_duty_high_time(struct clk_duty *duty,
 }
 
 /* Set duty cycle with given ratio */
-static int litex_clk_set_duty_cycle(struct litex_clk_clkout *lcko,
-			     struct clk_duty *duty)
+static int litex_clk_set_duty_cycle(struct litex_clk_clkout *lcko, struct clk_duty *duty)
 {
 	int ret;
 	uint16_t bitset1, bitset2;
-	uint8_t clkout_nr = lcko->id,
-	   *edge = &lcko->div.edge,
-	   *high_time = &lcko->div.high_time,
-	    high_duty = litex_clk_calc_duty_percent(duty),
-	   *low_time = &lcko->div.low_time;
+	uint8_t clkout_nr = lcko->id, *edge = &lcko->div.edge, *high_time = &lcko->div.high_time,
+		high_duty = litex_clk_calc_duty_percent(duty), *low_time = &lcko->div.low_time;
 
 	if (lcko->frac.frac == 0) {
 		lcko->ts_config.duty = *duty;
-		LOG_DBG("CLKOUT%d: setting duty: %u/%u",
-			lcko->id, duty->num, duty->den);
+		LOG_DBG("CLKOUT%d: setting duty: %u/%u", lcko->id, duty->num, duty->den);
 		ret = litex_clk_calc_duty_normal(lcko, true);
 		if (ret != 0) {
-			LOG_ERR("CLKOUT%d: cannot set %d%% duty cycle",
-				clkout_nr, high_duty);
+			LOG_ERR("CLKOUT%d: cannot set %d%% duty cycle", clkout_nr, high_duty);
 			return ret;
 		}
 	} else {
 		LOG_ERR("CLKOUT%d: cannot set duty cycle when fractional divider enabled",
-								     clkout_nr);
+			clkout_nr);
 		return -EACCES;
 	}
 
-	bitset1 = (*high_time << HIGH_TIME_POS) |
-		  (*low_time << LOW_TIME_POS);
+	bitset1 = (*high_time << HIGH_TIME_POS) | (*low_time << LOW_TIME_POS);
 	bitset2 = (*edge << EDGE_POS);
 
-	LOG_DBG("SET DUTY CYCLE: e:%u ht:%u lt:%u\nbitset1: 0x%x bitset2: 0x%x",
-		*edge, *high_time, *low_time, bitset1, bitset2);
+	LOG_DBG("SET DUTY CYCLE: e:%u ht:%u lt:%u\nbitset1: 0x%x bitset2: 0x%x", *edge, *high_time,
+		*low_time, bitset1, bitset2);
 
-	ret = litex_clk_set_clock(clkout_nr, REG1_DUTY_MASK, bitset1,
-					     REG2_DUTY_MASK, bitset2);
+	ret = litex_clk_set_clock(clkout_nr, REG1_DUTY_MASK, bitset1, REG2_DUTY_MASK, bitset2);
 	if (ret != 0) {
 		return ret;
 	}
@@ -1023,8 +885,8 @@ static int litex_clk_set_duty_cycle(struct litex_clk_clkout *lcko,
 static int litex_clk_calc_phase_normal(struct litex_clk_clkout *lcko)
 {
 	uint64_t period_buff;
-	uint32_t post_glob_div_f, global_period,  clkout_period,
-	    *period_off = &lcko->ts_config.period_off;
+	uint32_t post_glob_div_f, global_period, clkout_period,
+		*period_off = &lcko->ts_config.period_off;
 	uint8_t divider = lcko->config.div;
 	/* ps unit */
 
@@ -1051,7 +913,7 @@ static int litex_clk_calc_phase_normal(struct litex_clk_clkout *lcko)
 			/* phase_mux: (0-7) */
 			for (p_m = 0; p_m <= PHASE_MUX_MAX; p_m++) {
 				synth_phase = (delay * global_period) +
-				((p_m * ((global_period * 100) / 8) / 100));
+					      ((p_m * ((global_period * 100) / 8) / 100));
 
 				delta_p = synth_phase - p_o;
 				delta_p = abs(delta_p);
@@ -1102,8 +964,8 @@ static int litex_clk_calc_phase(struct litex_clk_clkout *lcko)
 }
 
 /* Returns phase-specific values of given clock output */
-static int litex_clk_get_phase_data(struct litex_clk_clkout *lcko,
-				    uint8_t *phase_mux, uint8_t *delay_time)
+static int litex_clk_get_phase_data(struct litex_clk_clkout *lcko, uint8_t *phase_mux,
+				    uint8_t *delay_time)
 {
 	struct litex_clk_regs_addr drp_addr = litex_clk_regs_addr_init();
 	int ret;
@@ -1129,8 +991,7 @@ static int litex_clk_get_phase_data(struct litex_clk_clkout *lcko,
 int litex_clk_get_phase(struct litex_clk_clkout *lcko)
 {
 	uint64_t period_buff;
-	uint32_t divider = 0, fract_cnt, post_glob_div_f,
-	    pm, global_period, clkout_period, period;
+	uint32_t divider = 0, fract_cnt, post_glob_div_f, pm, global_period, clkout_period, period;
 	uint8_t phase_mux = 0, delay_time = 0;
 	int err = 0;
 
@@ -1180,9 +1041,8 @@ int litex_clk_set_phase(struct litex_clk_clkout *lcko, int degrees)
 {
 	int ret;
 	uint16_t bitset1, bitset2, reg2_mask;
-	uint8_t *phase_mux = &lcko->phase.phase_mux,
-	   *delay_time = &lcko->phase.delay_time,
-	   clkout_nr = lcko->id;
+	uint8_t *phase_mux = &lcko->phase.phase_mux, *delay_time = &lcko->phase.delay_time,
+		clkout_nr = lcko->id;
 
 	lcko->ts_config.phase = degrees;
 	reg2_mask = REG2_PHASE_MASK;
@@ -1190,23 +1050,21 @@ int litex_clk_set_phase(struct litex_clk_clkout *lcko, int degrees)
 
 	ret = litex_clk_calc_phase(lcko);
 	if (ret != 0) {
-		LOG_ERR("CLKOUT%d: phase offset %d deg is too high",
-			 clkout_nr, degrees);
+		LOG_ERR("CLKOUT%d: phase offset %d deg is too high", clkout_nr, degrees);
 		return ret;
 	}
 
 	bitset1 = (*phase_mux << PHASE_MUX_POS);
 	bitset2 = (*delay_time << DELAY_TIME_POS);
 
-	ret = litex_clk_set_clock(clkout_nr, REG1_PHASE_MASK, bitset1,
-						   reg2_mask, bitset2);
+	ret = litex_clk_set_clock(clkout_nr, REG1_PHASE_MASK, bitset1, reg2_mask, bitset2);
 	if (ret != 0) {
 		return ret;
 	}
 	lcko->config.phase = litex_clk_get_phase_deg(lcko);
 	LOG_INF("CLKOUT%d: set phase: %d deg", lcko->id, lcko->config.phase);
-	LOG_DBG("SET PHASE: pm:%u dt:%u\nbitset1: 0x%x bitset2: 0x%x",
-		*phase_mux, *delay_time, bitset1, bitset2);
+	LOG_DBG("SET PHASE: pm:%u dt:%u\nbitset1: 0x%x bitset2: 0x%x", *phase_mux, *delay_time,
+		bitset1, bitset2);
 
 	return 0;
 }
@@ -1218,8 +1076,7 @@ int litex_clk_set_phase(struct litex_clk_clkout *lcko, int degrees)
 /* Returns rate in Hz */
 static inline uint32_t litex_clk_calc_rate(struct litex_clk_clkout *lcko)
 {
-	uint64_t f = litex_clk_calc_global_frequency(ldev->ts_g_config.mul,
-						  ldev->ts_g_config.div);
+	uint64_t f = litex_clk_calc_global_frequency(ldev->ts_g_config.mul, ldev->ts_g_config.div);
 
 	f /= lcko->config.div;
 
@@ -1244,8 +1101,7 @@ static uint32_t litex_clk_pow(uint32_t base, uint32_t exp)
 }
 
 /* Returns true when possible to set frequency with given global settings */
-static int litex_clk_calc_clkout_params(struct litex_clk_clkout *lcko,
-					 uint64_t vco_freq)
+static int litex_clk_calc_clkout_params(struct litex_clk_clkout *lcko, uint64_t vco_freq)
 {
 	int delta_f;
 	uint64_t m, clk_freq = 0;
@@ -1282,9 +1138,9 @@ static int litex_clk_calc_clkout_params(struct litex_clk_clkout *lcko,
 			if (d == 1) {
 				lcko->div.no_cnt = 1;
 			}
-			LOG_DBG("CLKOUT%d: freq:%u div:%u gdiv:%u gmul:%u",
-				 lcko->id, lcko->config.freq, lcko->config.div,
-				 ldev->ts_g_config.div, ldev->ts_g_config.mul);
+			LOG_DBG("CLKOUT%d: freq:%u div:%u gdiv:%u gmul:%u", lcko->id,
+				lcko->config.freq, lcko->config.div, ldev->ts_g_config.div,
+				ldev->ts_g_config.mul);
 			return true;
 		}
 	}
@@ -1315,26 +1171,21 @@ static int litex_clk_calc_all_params(void)
 
 	for (div = ldev->divclk.min; div <= ldev->divclk.max; div++) {
 		ldev->ts_g_config.div = div;
-		for (mul = ldev->clkfbout.max; mul >= ldev->clkfbout.min;
-								 mul--) {
+		for (mul = ldev->clkfbout.max; mul >= ldev->clkfbout.min; mul--) {
 			int below, above, all_valid = true;
 
 			vco_freq = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC * (uint64_t)mul;
 			vco_freq /= div;
-			below = vco_freq < (ldev->vco.min
-					     * (1 + ldev->vco_margin));
-			above = vco_freq > (ldev->vco.max
-					    * (1 - ldev->vco_margin));
+			below = vco_freq < (ldev->vco.min * (1 + ldev->vco_margin));
+			above = vco_freq > (ldev->vco.max * (1 - ldev->vco_margin));
 
 			if (!below && !above) {
-				all_valid = litex_clk_calc_all_clkout_params
-								     (vco_freq);
+				all_valid = litex_clk_calc_all_clkout_params(vco_freq);
 				if (all_valid) {
 					ldev->ts_g_config.mul = mul;
 					ldev->ts_g_config.freq = vco_freq;
 					LOG_DBG("GLOBAL: freq:%llu g_div:%u g_mul:%u",
-						ldev->ts_g_config.freq,
-						ldev->ts_g_config.div,
+						ldev->ts_g_config.freq, ldev->ts_g_config.div,
 						ldev->ts_g_config.mul);
 					return 0;
 				}
@@ -1400,30 +1251,22 @@ int litex_clk_write_rate(struct litex_clk_clkout *lcko)
 {
 	int ret;
 	uint16_t bitset1, bitset2;
-	uint8_t *divider = &lcko->config.div,
-	   *edge = &lcko->div.edge,
-	   *high_time = &lcko->div.high_time,
-	   *low_time = &lcko->div.low_time,
-	   *no_cnt = &lcko->div.no_cnt,
-	   *frac = &lcko->frac.frac,
-	   *frac_en = &lcko->frac.frac_en,
-	   *frac_wf_r = &lcko->frac.frac_wf_r;
+	uint8_t *divider = &lcko->config.div, *edge = &lcko->div.edge,
+		*high_time = &lcko->div.high_time, *low_time = &lcko->div.low_time,
+		*no_cnt = &lcko->div.no_cnt, *frac = &lcko->frac.frac,
+		*frac_en = &lcko->frac.frac_en, *frac_wf_r = &lcko->frac.frac_wf_r;
 
-	bitset1 = (*high_time << HIGH_TIME_POS)	|
-		  (*low_time << LOW_TIME_POS);
+	bitset1 = (*high_time << HIGH_TIME_POS) | (*low_time << LOW_TIME_POS);
 
-	bitset2 = (*frac << FRAC_POS)		|
-		  (*frac_en << FRAC_EN_POS)	|
-		  (*frac_wf_r << FRAC_WF_R_POS)	|
-		  (*edge << EDGE_POS)		|
-		  (*no_cnt << NO_CNT_POS);
+	bitset2 = (*frac << FRAC_POS) | (*frac_en << FRAC_EN_POS) | (*frac_wf_r << FRAC_WF_R_POS) |
+		  (*edge << EDGE_POS) | (*no_cnt << NO_CNT_POS);
 
-	LOG_DBG("SET RATE: div:%u f:%u fwfr:%u fen:%u nc:%u e:%u ht:%u lt:%u\nbitset1: 0x%x bitset2: 0x%x",
-		*divider, *frac, *frac_wf_r, *frac_en,
-		*no_cnt, *edge, *high_time, *low_time, bitset1, bitset2);
+	LOG_DBG("SET RATE: div:%u f:%u fwfr:%u fen:%u nc:%u e:%u ht:%u lt:%u\nbitset1: 0x%x "
+		"bitset2: 0x%x",
+		*divider, *frac, *frac_wf_r, *frac_en, *no_cnt, *edge, *high_time, *low_time,
+		bitset1, bitset2);
 
-	ret = litex_clk_set_clock(lcko->id, REG1_FREQ_MASK, bitset1,
-					    REG2_FREQ_MASK, bitset2);
+	ret = litex_clk_set_clock(lcko->id, REG1_FREQ_MASK, bitset1, REG2_FREQ_MASK, bitset2);
 	if (ret != 0) {
 		return ret;
 	}
@@ -1450,9 +1293,8 @@ int litex_clk_update_clkouts(void)
 			if (ret != 0) {
 				return ret;
 			}
-			LOG_INF("CLKOUT%d: updated rate: %u to %u HZ",
-					lcko->id, lcko->ts_config.freq,
-						     lcko->config.freq);
+			LOG_INF("CLKOUT%d: updated rate: %u to %u HZ", lcko->id,
+				lcko->ts_config.freq, lcko->config.freq);
 		}
 	}
 
@@ -1532,8 +1374,8 @@ static int litex_clk_set_all_def_clkouts(void)
  *			casted to clock_control_subsys with
  *			all clkout parameters
  */
-static int litex_clk_get_subsys_rate(const struct device *clock,
-				     clock_control_subsys_t sys, uint32_t *rate)
+static int litex_clk_get_subsys_rate(const struct device *clock, clock_control_subsys_t sys,
+				     uint32_t *rate)
 {
 	struct litex_clk_setup *setup = sys;
 	struct litex_clk_clkout *lcko;
@@ -1545,7 +1387,7 @@ static int litex_clk_get_subsys_rate(const struct device *clock,
 }
 
 static enum clock_control_status litex_clk_get_status(const struct device *dev,
-						     clock_control_subsys_t sys)
+						      clock_control_subsys_t sys)
 {
 	struct litex_clk_setup *setup = sys;
 	struct clk_duty duty;
@@ -1599,18 +1441,15 @@ static inline int litex_clk_on(const struct device *dev, clock_control_subsys_t 
 	return 0;
 }
 
-static inline int litex_clk_off(const struct device *dev,
-				clock_control_subsys_t sub_system)
+static inline int litex_clk_off(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	return litex_clk_change_value(ZERO_REG, ZERO_REG, POWER_REG);
 }
 
-static const struct clock_control_driver_api litex_clk_api = {
-	.on = litex_clk_on,
-	.off = litex_clk_off,
-	.get_rate = litex_clk_get_subsys_rate,
-	.get_status = litex_clk_get_status
-};
+static const struct clock_control_driver_api litex_clk_api = {.on = litex_clk_on,
+							      .off = litex_clk_off,
+							      .get_rate = litex_clk_get_subsys_rate,
+							      .get_status = litex_clk_get_status};
 
 static void litex_clk_dts_clkout_ranges_read(struct litex_clk_range *clkout_div)
 {
@@ -1645,25 +1484,25 @@ static int litex_clk_dts_clkouts_read(void)
 	litex_clk_dts_clkout_ranges_read(&clkout_div);
 
 #if CLKOUT_EXIST(0) == 1
-		CLKOUT_INIT(0)
+	CLKOUT_INIT(0)
 #endif
 #if CLKOUT_EXIST(1) == 1
-		CLKOUT_INIT(1)
+	CLKOUT_INIT(1)
 #endif
 #if CLKOUT_EXIST(2) == 1
-		CLKOUT_INIT(2)
+	CLKOUT_INIT(2)
 #endif
 #if CLKOUT_EXIST(3) == 1
-		CLKOUT_INIT(3)
+	CLKOUT_INIT(3)
 #endif
 #if CLKOUT_EXIST(4) == 1
-		CLKOUT_INIT(4)
+	CLKOUT_INIT(4)
 #endif
 #if CLKOUT_EXIST(5) == 1
-		CLKOUT_INIT(5)
+	CLKOUT_INIT(5)
 #endif
 #if CLKOUT_EXIST(6) == 1
-		CLKOUT_INIT(6)
+	CLKOUT_INIT(6)
 #endif
 	return 0;
 }
@@ -1789,9 +1628,7 @@ static const struct litex_clk_device ldev_init = {
 	.clkfbout = {CLKFBOUT_MULT_MIN, CLKFBOUT_MULT_MAX},
 	.vco = {VCO_FREQ_MIN, VCO_FREQ_MAX},
 	.vco_margin = VCO_MARGIN,
-	.nclkout = NCLKOUT
-};
+	.nclkout = NCLKOUT};
 
-DEVICE_DT_DEFINE(DT_NODELABEL(clock0), litex_clk_init, NULL,
-		    NULL, &ldev_init, POST_KERNEL,
-		    CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &litex_clk_api);
+DEVICE_DT_DEFINE(DT_NODELABEL(clock0), litex_clk_init, NULL, NULL, &ldev_init, POST_KERNEL,
+		 CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &litex_clk_api);

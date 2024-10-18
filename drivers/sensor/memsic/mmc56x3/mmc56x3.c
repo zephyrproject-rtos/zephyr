@@ -93,7 +93,7 @@ static int mmc56x3_chip_set_continuous_mode(const struct device *dev, uint16_t o
 		data->ctrl2_cache |= MMC56X3_CMD_HPOWER;
 		ret = mmc56x3_reg_write(dev, MMC56X3_REG_INTERNAL_ODR, 255);
 	} else {
-		ret  = mmc56x3_reg_write(dev, MMC56X3_REG_INTERNAL_ODR, (uint8_t) odr);
+		ret = mmc56x3_reg_write(dev, MMC56X3_REG_INTERNAL_ODR, (uint8_t)odr);
 	}
 
 	if (ret < 0) {
@@ -471,7 +471,7 @@ static const struct sensor_driver_api mmc56x3_api_funcs = {
 
 #define MMC56X3_DEFINE(inst)                                                                       \
 	MMC56X3_DATA_INIT(inst);                                                                   \
-	const static struct mmc56x3_dev_config mmc56x3_dev_config_##inst =  \
+	const static struct mmc56x3_dev_config mmc56x3_dev_config_##inst =                         \
 		MMC56X3_DT_DEV_CONFIG_INIT(inst);                                                  \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, mmc56x3_chip_init, NULL, &mmc56x3_data_##inst,          \
 				     &mmc56x3_dev_config_##inst, POST_KERNEL,                      \

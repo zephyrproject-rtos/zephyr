@@ -11,12 +11,11 @@
 #include <soc.h>
 #include <counter/counter_ace_v1x_rtc_regs.h>
 
-static int counter_ace_v1x_rtc_get_value(const struct device *dev,
-		uint64_t *value)
+static int counter_ace_v1x_rtc_get_value(const struct device *dev, uint64_t *value)
 {
 	ARG_UNUSED(dev);
 
-		uint32_t hi0, lo, hi1;
+	uint32_t hi0, lo, hi1;
 	do {
 		hi0 = sys_read32(ACE_RTCWC_HI);
 		lo = sys_read32(ACE_RTCWC_LO);
@@ -36,9 +35,7 @@ int counter_ace_v1x_rtc_init(const struct device *dev)
 }
 
 static const struct counter_driver_api ace_v1x_rtc_counter_apis = {
-	.get_value_64 = counter_ace_v1x_rtc_get_value
-};
+	.get_value_64 = counter_ace_v1x_rtc_get_value};
 
 DEVICE_DT_DEFINE(DT_NODELABEL(ace_rtc_counter), counter_ace_v1x_rtc_init, NULL, NULL, NULL,
-		 PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		 &ace_v1x_rtc_counter_apis);
+		 PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &ace_v1x_rtc_counter_apis);

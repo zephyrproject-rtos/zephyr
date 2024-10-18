@@ -94,8 +94,8 @@ DT_FOREACH_STATUS_OKAY(nxp_mcux_i3c, I3C_CTRL_FN)
 const struct i3c_ctrl i3c_list[] = {
 	/* zephyr-keep-sorted-start */
 	DT_FOREACH_STATUS_OKAY(cdns_i3c, I3C_CTRL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(nuvoton_npcx_i3c, I3C_CTRL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(nxp_mcux_i3c, I3C_CTRL_LIST_ENTRY)
+		DT_FOREACH_STATUS_OKAY(nuvoton_npcx_i3c, I3C_CTRL_LIST_ENTRY)
+			DT_FOREACH_STATUS_OKAY(nxp_mcux_i3c, I3C_CTRL_LIST_ENTRY)
 	/* zephyr-keep-sorted-stop */
 };
 
@@ -1091,7 +1091,6 @@ static int cmd_i3c_ccc_rstact(const struct shell *sh, size_t argc, char **argv)
 
 	return ret;
 }
-
 
 /* i3c ccc enec_bc <device> <defining byte> */
 static int cmd_i3c_ccc_enec_bc(const struct shell *sh, size_t argc, char **argv)
@@ -2096,29 +2095,28 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_i3c_device_name, i3c_device_name_get);
 
 #ifdef I3C_USE_IBI
 /* L2 I3C IBI Shell Commands*/
-SHELL_STATIC_SUBCMD_SET_CREATE(
-	sub_i3c_ibi_cmds,
-	SHELL_CMD_ARG(hj, &dsub_i3c_device_name,
-		      "Send IBI HJ\n"
-		      "Usage: ibi hj <device>",
-		      cmd_i3c_ibi_hj, 2, 0),
-	SHELL_CMD_ARG(tir, &dsub_i3c_device_name,
-		      "Send IBI TIR\n"
-		      "Usage: ibi tir <device> [<byte1>, ...]",
-		      cmd_i3c_ibi_tir, 2, MAX_I3C_BYTES),
-	SHELL_CMD_ARG(cr, &dsub_i3c_device_name,
-		      "Send IBI CR\n"
-		      "Usage: ibi cr <device>",
-		      cmd_i3c_ibi_cr, 2, 0),
-	SHELL_CMD_ARG(enable, &dsub_i3c_device_attached_name,
-		      "Enable receiving IBI from target\n"
-		      "Usage: ibi enable <device> <target>",
-		      cmd_i3c_ibi_enable, 3, 0),
-	SHELL_CMD_ARG(disable, &dsub_i3c_device_attached_name,
-		      "Disable receiving IBI from target\n"
-		      "Usage: ibi disable <device> <target>",
-		      cmd_i3c_ibi_disable, 3, 0),
-	SHELL_SUBCMD_SET_END /* Array terminated. */
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_i3c_ibi_cmds,
+			       SHELL_CMD_ARG(hj, &dsub_i3c_device_name,
+					     "Send IBI HJ\n"
+					     "Usage: ibi hj <device>",
+					     cmd_i3c_ibi_hj, 2, 0),
+			       SHELL_CMD_ARG(tir, &dsub_i3c_device_name,
+					     "Send IBI TIR\n"
+					     "Usage: ibi tir <device> [<byte1>, ...]",
+					     cmd_i3c_ibi_tir, 2, MAX_I3C_BYTES),
+			       SHELL_CMD_ARG(cr, &dsub_i3c_device_name,
+					     "Send IBI CR\n"
+					     "Usage: ibi cr <device>",
+					     cmd_i3c_ibi_cr, 2, 0),
+			       SHELL_CMD_ARG(enable, &dsub_i3c_device_attached_name,
+					     "Enable receiving IBI from target\n"
+					     "Usage: ibi enable <device> <target>",
+					     cmd_i3c_ibi_enable, 3, 0),
+			       SHELL_CMD_ARG(disable, &dsub_i3c_device_attached_name,
+					     "Disable receiving IBI from target\n"
+					     "Usage: ibi disable <device> <target>",
+					     cmd_i3c_ibi_disable, 3, 0),
+			       SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 #endif
 
@@ -2137,13 +2135,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 );
 
 /* L2 I3C HDR Shell Commands*/
-SHELL_STATIC_SUBCMD_SET_CREATE(
-	sub_i3c_hdr_cmds,
-	SHELL_CMD_ARG(ddr, &sub_i3c_hdr_ddr_cmds,
-		      "Send HDR DDR\n"
-		      "Usage: hdr ddr <sub cmd>",
-		      NULL, 2, 0),
-	SHELL_SUBCMD_SET_END /* Array terminated. */
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_i3c_hdr_cmds,
+			       SHELL_CMD_ARG(ddr, &sub_i3c_hdr_ddr_cmds,
+					     "Send HDR DDR\n"
+					     "Usage: hdr ddr <sub cmd>",
+					     NULL, 2, 0),
+			       SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
 /* L2 I3C CCC Shell Commands*/

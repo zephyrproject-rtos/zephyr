@@ -30,26 +30,23 @@ struct sam_pwm_config {
 	uint8_t divider;
 };
 
-static int sam_pwm_get_cycles_per_sec(const struct device *dev,
-				      uint32_t channel, uint64_t *cycles)
+static int sam_pwm_get_cycles_per_sec(const struct device *dev, uint32_t channel, uint64_t *cycles)
 {
 	const struct sam_pwm_config *config = dev->config;
 	uint8_t prescaler = config->prescaler;
 	uint8_t divider = config->divider;
 
-	*cycles = SOC_ATMEL_SAM_MCK_FREQ_HZ /
-		  ((1 << prescaler) * divider);
+	*cycles = SOC_ATMEL_SAM_MCK_FREQ_HZ / ((1 << prescaler) * divider);
 
 	return 0;
 }
 
-static int sam_pwm_set_cycles(const struct device *dev, uint32_t channel,
-			      uint32_t period_cycles, uint32_t pulse_cycles,
-			      pwm_flags_t flags)
+static int sam_pwm_set_cycles(const struct device *dev, uint32_t channel, uint32_t period_cycles,
+			      uint32_t pulse_cycles, pwm_flags_t flags)
 {
 	const struct sam_pwm_config *config = dev->config;
 
-	Pwm * const pwm = config->regs;
+	Pwm *const pwm = config->regs;
 	uint32_t cmr;
 
 	if (channel >= PWMCHNUM_NUMBER) {
@@ -96,7 +93,7 @@ static int sam_pwm_init(const struct device *dev)
 {
 	const struct sam_pwm_config *config = dev->config;
 
-	Pwm * const pwm = config->regs;
+	Pwm *const pwm = config->regs;
 	uint8_t prescaler = config->prescaler;
 	uint8_t divider = config->divider;
 	int retval;
@@ -104,8 +101,7 @@ static int sam_pwm_init(const struct device *dev)
 	/* FIXME: way to validate prescaler & divider */
 
 	/* Enable PWM clock in PMC */
-	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
-			       (clock_control_subsys_t)&config->clock_cfg);
+	(void)clock_control_on(SAM_DT_PMC_CONTROLLER, (clock_control_subsys_t)&config->clock_cfg);
 
 	retval = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (retval < 0) {
@@ -123,21 +119,17 @@ static const struct pwm_driver_api sam_pwm_driver_api = {
 	.get_cycles_per_sec = sam_pwm_get_cycles_per_sec,
 };
 
-#define SAM_INST_INIT(inst)						\
-	PINCTRL_DT_INST_DEFINE(inst);					\
-	static const struct sam_pwm_config sam_pwm_config_##inst = {	\
-		.regs = (Pwm *)DT_INST_REG_ADDR(inst),			\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		\
-		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(inst),		\
-		.prescaler = DT_INST_PROP(inst, prescaler),		\
-		.divider = DT_INST_PROP(inst, divider),			\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(inst,					\
-			    &sam_pwm_init, NULL,			\
-			    NULL, &sam_pwm_config_##inst,		\
-			    POST_KERNEL,				\
-			    CONFIG_PWM_INIT_PRIORITY,			\
-			    &sam_pwm_driver_api);
+#define SAM_INST_INIT(inst)                                                                        \
+	PINCTRL_DT_INST_DEFINE(inst);                                                              \
+	static const struct sam_pwm_config sam_pwm_config_##inst = {                               \
+		.regs = (Pwm *)DT_INST_REG_ADDR(inst),                                             \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
+		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(inst),                                      \
+		.prescaler = DT_INST_PROP(inst, prescaler),                                        \
+		.divider = DT_INST_PROP(inst, divider),                                            \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &sam_pwm_init, NULL, NULL, &sam_pwm_config_##inst,             \
+			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, &sam_pwm_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SAM_INST_INIT)

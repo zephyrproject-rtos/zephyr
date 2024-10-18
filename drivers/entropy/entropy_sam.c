@@ -20,7 +20,7 @@ struct trng_sam_dev_cfg {
 	Trng *regs;
 };
 
-static inline bool _ready(Trng * const trng)
+static inline bool _ready(Trng *const trng)
 {
 #ifdef TRNG_ISR_DATRDY
 	return trng->TRNG_ISR & TRNG_ISR_DATRDY;
@@ -29,17 +29,17 @@ static inline bool _ready(Trng * const trng)
 #endif
 }
 
-static inline uint32_t _data(Trng * const trng)
+static inline uint32_t _data(Trng *const trng)
 {
 #ifdef REG_TRNG_DATA
-	(void) trng;
+	(void)trng;
 	return TRNG->DATA.reg;
 #else
 	return trng->TRNG_ODATA;
 #endif
 }
 
-static int entropy_sam_wait_ready(Trng * const trng)
+static int entropy_sam_wait_ready(Trng *const trng)
 {
 	/* According to the reference manual, the generator provides
 	 * one 32-bit random value every 84 peripheral clock cycles.
@@ -61,8 +61,7 @@ static int entropy_sam_wait_ready(Trng * const trng)
 	return 0;
 }
 
-static int entropy_sam_get_entropy_internal(const struct device *dev,
-					    uint8_t *buffer,
+static int entropy_sam_get_entropy_internal(const struct device *dev, uint8_t *buffer,
 					    uint16_t length)
 {
 	const struct trng_sam_dev_cfg *config = dev->config;
@@ -89,24 +88,21 @@ static int entropy_sam_get_entropy_internal(const struct device *dev,
 	return 0;
 }
 
-static int entropy_sam_get_entropy(const struct device *dev, uint8_t *buffer,
-				   uint16_t length)
+static int entropy_sam_get_entropy(const struct device *dev, uint8_t *buffer, uint16_t length)
 {
 	return entropy_sam_get_entropy_internal(dev, buffer, length);
 }
 
-static int entropy_sam_get_entropy_isr(const struct device *dev,
-				       uint8_t *buffer,
-				       uint16_t length, uint32_t flags)
+static int entropy_sam_get_entropy_isr(const struct device *dev, uint8_t *buffer, uint16_t length,
+				       uint32_t flags)
 {
 	uint16_t cnt = length;
-
 
 	if ((flags & ENTROPY_BUSYWAIT) == 0U) {
 		const struct trng_sam_dev_cfg *config = dev->config;
 		/* No busy wait; return whatever data is available. */
 
-		Trng * const trng = config->regs;
+		Trng *const trng = config->regs;
 
 		do {
 			size_t to_copy;
@@ -131,9 +127,7 @@ static int entropy_sam_get_entropy_isr(const struct device *dev,
 
 	} else {
 		/* Allowed to busy-wait */
-		int ret =
-			entropy_sam_get_entropy_internal(dev,
-				buffer, length);
+		int ret = entropy_sam_get_entropy_internal(dev, buffer, length);
 
 		if (ret == 0) {
 			/* Data retrieved successfully. */
@@ -158,8 +152,7 @@ static int entropy_sam_init(const struct device *dev)
 #else
 	/* Enable TRNG in PMC */
 	const struct atmel_sam_pmc_config clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(0);
-	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
-			       (clock_control_subsys_t)&clock_cfg);
+	(void)clock_control_on(SAM_DT_PMC_CONTROLLER, (clock_control_subsys_t)&clock_cfg);
 
 	/* Enable the TRNG */
 	trng->TRNG_CR = TRNG_CR_KEY_PASSWD | TRNG_CR_ENABLE;
@@ -168,16 +161,11 @@ static int entropy_sam_init(const struct device *dev)
 }
 
 static const struct entropy_driver_api entropy_sam_api = {
-	.get_entropy = entropy_sam_get_entropy,
-	.get_entropy_isr = entropy_sam_get_entropy_isr
-};
+	.get_entropy = entropy_sam_get_entropy, .get_entropy_isr = entropy_sam_get_entropy_isr};
 
 static const struct trng_sam_dev_cfg trng_sam_cfg = {
 	.regs = (Trng *)DT_INST_REG_ADDR(0),
 };
 
-DEVICE_DT_INST_DEFINE(0,
-		    entropy_sam_init, NULL,
-		    NULL, &trng_sam_cfg,
-		    PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
-		    &entropy_sam_api);
+DEVICE_DT_INST_DEFINE(0, entropy_sam_init, NULL, NULL, &trng_sam_cfg, PRE_KERNEL_1,
+		      CONFIG_ENTROPY_INIT_PRIORITY, &entropy_sam_api);

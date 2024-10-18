@@ -15,9 +15,7 @@
 
 #include "flash_stm32.h"
 
-bool flash_stm32_valid_range(const struct device *dev, off_t offset,
-			     uint32_t len,
-			     bool write)
+bool flash_stm32_valid_range(const struct device *dev, off_t offset, uint32_t len, bool write)
 {
 	ARG_UNUSED(write);
 
@@ -54,13 +52,12 @@ static int write_byte(const struct device *dev, off_t offset, uint8_t val)
 	}
 
 	/* prepare to write a single byte */
-	regs->CR = (regs->CR & CR_PSIZE_MASK) |
-		   FLASH_PSIZE_BYTE | FLASH_CR_PG;
+	regs->CR = (regs->CR & CR_PSIZE_MASK) | FLASH_PSIZE_BYTE | FLASH_CR_PG;
 	/* flush the register write */
 	barrier_dsync_fence_full();
 
 	/* write the data */
-	*((uint8_t *) offset + FLASH_STM32_BASE_ADDRESS) = val;
+	*((uint8_t *)offset + FLASH_STM32_BASE_ADDRESS) = val;
 	/* flush the register write */
 	barrier_dsync_fence_full();
 
@@ -100,11 +97,8 @@ static int erase_sector(const struct device *dev, uint32_t sector)
 #endif /* CONFIG_FLASH_SIZE */
 #endif /* defined(FLASH_OPTCR_nDBANK) && FLASH_SECTOR_TOTAL == 24 */
 
-	regs->CR = (regs->CR & ~(FLASH_CR_PSIZE | FLASH_CR_SNB)) |
-		   FLASH_PSIZE_BYTE |
-		   FLASH_CR_SER |
-		   (sector << FLASH_CR_SNB_Pos) |
-		   FLASH_CR_STRT;
+	regs->CR = (regs->CR & ~(FLASH_CR_PSIZE | FLASH_CR_SNB)) | FLASH_PSIZE_BYTE | FLASH_CR_SER |
+		   (sector << FLASH_CR_SNB_Pos) | FLASH_CR_STRT;
 	/* flush the register write */
 	barrier_dsync_fence_full();
 
@@ -114,9 +108,7 @@ static int erase_sector(const struct device *dev, uint32_t sector)
 	return rc;
 }
 
-int flash_stm32_block_erase_loop(const struct device *dev,
-				 unsigned int offset,
-				 unsigned int len)
+int flash_stm32_block_erase_loop(const struct device *dev, unsigned int offset, unsigned int len)
 {
 	struct flash_pages_info info;
 	uint32_t start_sector, end_sector;
@@ -144,13 +136,13 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 	return rc;
 }
 
-int flash_stm32_write_range(const struct device *dev, unsigned int offset,
-			    const void *data, unsigned int len)
+int flash_stm32_write_range(const struct device *dev, unsigned int offset, const void *data,
+			    unsigned int len)
 {
 	int i, rc = 0;
 
 	for (i = 0; i < len; i++, offset++) {
-		rc = write_byte(dev, offset, ((const uint8_t *) data)[i]);
+		rc = write_byte(dev, offset, ((const uint8_t *)data)[i]);
 		if (rc < 0) {
 			return rc;
 		}
@@ -159,8 +151,7 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 	return rc;
 }
 
-static __unused int write_optb(const struct device *dev, uint32_t mask,
-			       uint32_t value)
+static __unused int write_optb(const struct device *dev, uint32_t mask, uint32_t value)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	int rc;
@@ -197,8 +188,7 @@ uint8_t flash_stm32_get_rdp_level(const struct device *dev)
 
 void flash_stm32_set_rdp_level(const struct device *dev, uint8_t level)
 {
-	write_optb(dev, FLASH_OPTCR_RDP_Msk,
-		(uint32_t)level << FLASH_OPTCR_RDP_Pos);
+	write_optb(dev, FLASH_OPTCR_RDP_Msk, (uint32_t)level << FLASH_OPTCR_RDP_Pos);
 }
 #endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
 
@@ -251,19 +241,15 @@ static const struct flash_pages_layout stm32f7_flash_layout_single_bank[] = {
 };
 static const struct flash_pages_layout stm32f7_flash_layout_dual_bank[] = {
 	/* RM0410, table 4: STM32F76xxx and STM32F77xxx in dual bank */
-	{.pages_count = 4, .pages_size = KB(16)},
-	{.pages_count = 1, .pages_size = KB(64)},
-	{.pages_count = 7, .pages_size = KB(128)},
-	{.pages_count = 4, .pages_size = KB(16)},
-	{.pages_count = 1, .pages_size = KB(64)},
-	{.pages_count = 7, .pages_size = KB(128)},
+	{.pages_count = 4, .pages_size = KB(16)},  {.pages_count = 1, .pages_size = KB(64)},
+	{.pages_count = 7, .pages_size = KB(128)}, {.pages_count = 4, .pages_size = KB(16)},
+	{.pages_count = 1, .pages_size = KB(64)},  {.pages_count = 7, .pages_size = KB(128)},
 };
 #else
 #error "Unknown flash layout"
-#endif/* !defined(FLASH_SECTOR_TOTAL) */
+#endif /* !defined(FLASH_SECTOR_TOTAL) */
 
-void flash_stm32_page_layout(const struct device *dev,
-			     const struct flash_pages_layout **layout,
+void flash_stm32_page_layout(const struct device *dev, const struct flash_pages_layout **layout,
 			     size_t *layout_size)
 {
 #if FLASH_OPTCR_nDBANK

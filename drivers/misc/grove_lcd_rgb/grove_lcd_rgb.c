@@ -16,7 +16,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(grove_lcd, CONFIG_GROVE_LCD_RGB_LOG_LEVEL);
 
-#define GROVE_RGB_BACKLIGHT_ADDR	(0x62)
+#define GROVE_RGB_BACKLIGHT_ADDR (0x62)
 
 struct glcd_data {
 	uint8_t input_set;
@@ -36,42 +36,40 @@ struct glcd_config {
 /* GLCD_CMD_CURSOR_RETURN has no options */
 
 /* Defines for the GLCD_CMD_CURSOR_SHIFT */
-#define GLCD_CS_DISPLAY_SHIFT		(1 << 3)
-#define GLCD_CS_RIGHT_SHIFT		(1 << 2)
+#define GLCD_CS_DISPLAY_SHIFT (1 << 3)
+#define GLCD_CS_RIGHT_SHIFT   (1 << 2)
 
 /* LCD Display Commands */
-#define GLCD_CMD_SCREEN_CLEAR		(1 << 0)
-#define GLCD_CMD_CURSOR_RETURN		(1 << 1)
-#define GLCD_CMD_INPUT_SET		(1 << 2)
-#define GLCD_CMD_DISPLAY_SWITCH		(1 << 3)
-#define GLCD_CMD_CURSOR_SHIFT		(1 << 4)
-#define GLCD_CMD_FUNCTION_SET		(1 << 5)
-#define GLCD_CMD_SET_CGRAM_ADDR		(1 << 6)
-#define GLCD_CMD_SET_DDRAM_ADDR		(1 << 7)
-
+#define GLCD_CMD_SCREEN_CLEAR   (1 << 0)
+#define GLCD_CMD_CURSOR_RETURN  (1 << 1)
+#define GLCD_CMD_INPUT_SET      (1 << 2)
+#define GLCD_CMD_DISPLAY_SWITCH (1 << 3)
+#define GLCD_CMD_CURSOR_SHIFT   (1 << 4)
+#define GLCD_CMD_FUNCTION_SET   (1 << 5)
+#define GLCD_CMD_SET_CGRAM_ADDR (1 << 6)
+#define GLCD_CMD_SET_DDRAM_ADDR (1 << 7)
 
 /********************************************
  *  RGB FUNCTIONS
  *******************************************/
 
-#define REGISTER_R	0x04
-#define REGISTER_G	0x03
-#define REGISTER_B	0x02
+#define REGISTER_R 0x04
+#define REGISTER_G 0x03
+#define REGISTER_B 0x02
 
 static uint8_t color_define[][3] = {
-	{ 255, 255, 255 },	/* white */
-	{ 255, 0,   0   },      /* red */
-	{ 0,   255, 0   },      /* green */
-	{ 0,   0,   255 },      /* blue */
+	{255, 255, 255}, /* white */
+	{255, 0, 0},     /* red */
+	{0, 255, 0},     /* green */
+	{0, 0, 255},     /* blue */
 };
-
 
 /********************************************
  *  PRIVATE FUNCTIONS
  *******************************************/
 static void rgb_reg_set(const struct device *i2c, uint8_t addr, uint8_t dta)
 {
-	uint8_t data[2] = { addr, dta };
+	uint8_t data[2] = {addr, dta};
 
 	i2c_write(i2c, data, sizeof(data), GROVE_RGB_BACKLIGHT_ADDR);
 }
@@ -82,7 +80,7 @@ static void rgb_reg_set(const struct device *i2c, uint8_t addr, uint8_t dta)
 void glcd_print(const struct device *dev, char *data, uint32_t size)
 {
 	const struct glcd_config *config = dev->config;
-	uint8_t buf[] = { GLCD_CMD_SET_CGRAM_ADDR, 0 };
+	uint8_t buf[] = {GLCD_CMD_SET_CGRAM_ADDR, 0};
 	int i;
 
 	for (i = 0; i < size; i++) {
@@ -90,7 +88,6 @@ void glcd_print(const struct device *dev, char *data, uint32_t size)
 		i2c_write_dt(&config->bus, buf, sizeof(buf));
 	}
 }
-
 
 void glcd_cursor_pos_set(const struct device *dev, uint8_t col, uint8_t row)
 {
@@ -110,23 +107,21 @@ void glcd_cursor_pos_set(const struct device *dev, uint8_t col, uint8_t row)
 	i2c_write_dt(&config->bus, data, 2);
 }
 
-
 void glcd_clear(const struct device *dev)
 {
 	const struct glcd_config *config = dev->config;
-	uint8_t clear[] = { 0, GLCD_CMD_SCREEN_CLEAR };
+	uint8_t clear[] = {0, GLCD_CMD_SCREEN_CLEAR};
 
 	i2c_write_dt(&config->bus, clear, sizeof(clear));
 	LOG_DBG("clear, delay 20 ms");
 	k_sleep(K_MSEC(20));
 }
 
-
 void glcd_display_state_set(const struct device *dev, uint8_t opt)
 {
 	const struct glcd_config *config = dev->config;
 	struct glcd_data *data = dev->data;
-	uint8_t buf[] = { 0, 0 };
+	uint8_t buf[] = {0, 0};
 
 	data->display_switch = opt;
 	buf[1] = (opt | GLCD_CMD_DISPLAY_SWITCH);
@@ -137,7 +132,6 @@ void glcd_display_state_set(const struct device *dev, uint8_t opt)
 	k_sleep(K_MSEC(5));
 }
 
-
 uint8_t glcd_display_state_get(const struct device *dev)
 {
 	struct glcd_data *data = dev->data;
@@ -145,12 +139,11 @@ uint8_t glcd_display_state_get(const struct device *dev)
 	return data->display_switch;
 }
 
-
 void glcd_input_state_set(const struct device *dev, uint8_t opt)
 {
 	const struct glcd_config *config = dev->config;
 	struct glcd_data *data = dev->data;
-	uint8_t buf[] = { 0, 0 };
+	uint8_t buf[] = {0, 0};
 
 	data->input_set = opt;
 	buf[1] = (opt | GLCD_CMD_INPUT_SET);
@@ -159,7 +152,6 @@ void glcd_input_state_set(const struct device *dev, uint8_t opt)
 	LOG_DBG("set the input_set, no delay");
 }
 
-
 uint8_t glcd_input_state_get(const struct device *dev)
 {
 	struct glcd_data *data = dev->data;
@@ -167,20 +159,16 @@ uint8_t glcd_input_state_get(const struct device *dev)
 	return data->input_set;
 }
 
-
 void glcd_color_select(const struct device *dev, uint8_t color)
 {
 	if (color > 3) {
 		LOG_WRN("selected color is too high a value");
 		return;
 	}
-	glcd_color_set(dev, color_define[color][0], color_define[color][1],
-		       color_define[color][2]);
+	glcd_color_set(dev, color_define[color][0], color_define[color][1], color_define[color][2]);
 }
 
-
-void glcd_color_set(const struct device *dev, uint8_t r, uint8_t g,
-		    uint8_t b)
+void glcd_color_set(const struct device *dev, uint8_t r, uint8_t g, uint8_t b)
 {
 	const struct glcd_config *config = dev->config;
 
@@ -189,12 +177,11 @@ void glcd_color_set(const struct device *dev, uint8_t r, uint8_t g,
 	rgb_reg_set(config->bus.bus, REGISTER_B, b);
 }
 
-
 void glcd_function_set(const struct device *dev, uint8_t opt)
 {
 	const struct glcd_config *config = dev->config;
 	struct glcd_data *data = dev->data;
-	uint8_t buf[] = { 0, 0 };
+	uint8_t buf[] = {0, 0};
 
 	data->function = opt;
 	buf[1] = (opt | GLCD_CMD_FUNCTION_SET);
@@ -205,14 +192,12 @@ void glcd_function_set(const struct device *dev, uint8_t opt)
 	k_sleep(K_MSEC(5));
 }
 
-
 uint8_t glcd_function_get(const struct device *dev)
 {
 	struct glcd_data *data = dev->data;
 
 	return data->function;
 }
-
 
 static int glcd_initialize(const struct device *dev)
 {
@@ -238,7 +223,6 @@ static int glcd_initialize(const struct device *dev)
 	 * 5 - send ENTRY Mode
 	 * 6 - Initialization is done
 	 */
-
 
 	/*
 	 * We're here!  Let's just make sure we've had enough time for the
@@ -285,6 +269,5 @@ static const struct glcd_config grove_lcd_config = {
 
 static struct glcd_data grove_lcd_data;
 
-DEVICE_DT_INST_DEFINE(0, glcd_initialize, NULL, &grove_lcd_data,
-		      &grove_lcd_config, POST_KERNEL,
+DEVICE_DT_INST_DEFINE(0, glcd_initialize, NULL, &grove_lcd_data, &grove_lcd_config, POST_KERNEL,
 		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);

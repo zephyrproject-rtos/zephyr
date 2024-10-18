@@ -15,14 +15,14 @@ static int bmi270_bus_check_i2c(const union bmi270_bus *bus)
 	return device_is_ready(bus->i2c.bus) ? 0 : -ENODEV;
 }
 
-static int bmi270_reg_read_i2c(const union bmi270_bus *bus,
-			       uint8_t start, uint8_t *data, uint16_t len)
+static int bmi270_reg_read_i2c(const union bmi270_bus *bus, uint8_t start, uint8_t *data,
+			       uint16_t len)
 {
 	return i2c_burst_read_dt(&bus->i2c, start, data, len);
 }
 
-static int bmi270_reg_write_i2c(const union bmi270_bus *bus, uint8_t start,
-				const uint8_t *data, uint16_t len)
+static int bmi270_reg_write_i2c(const union bmi270_bus *bus, uint8_t start, const uint8_t *data,
+				uint16_t len)
 {
 	return i2c_burst_write_dt(&bus->i2c, start, data, len);
 }

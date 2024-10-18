@@ -20,35 +20,22 @@ LOG_MODULE_REGISTER(mhz19b, CONFIG_SENSOR_LOG_LEVEL);
 
 /* Table of supported MH-Z19B commands with precomputed checksum */
 static const uint8_t mhz19b_cmds[MHZ19B_CMD_IDX_MAX][MHZ19B_BUF_LEN] = {
-	[MHZ19B_CMD_IDX_GET_CO2] = {
-		MHZ19B_HEADER, MHZ19B_RESERVED, MHZ19B_CMD_GET_CO2, MHZ19B_NULL_COUNT(5), 0x79
-	},
-	[MHZ19B_CMD_IDX_GET_RANGE] = {
-		MHZ19B_HEADER, MHZ19B_RESERVED, MHZ19B_CMD_GET_RANGE, MHZ19B_NULL_COUNT(5), 0x64
-	},
-	[MHZ19B_CMD_IDX_GET_ABC] = {
-		MHZ19B_HEADER, MHZ19B_RESERVED, MHZ19B_CMD_GET_ABC, MHZ19B_NULL_COUNT(5), 0x82
-	},
-	[MHZ19B_CMD_IDX_SET_ABC_ON] = {
-		MHZ19B_HEADER, MHZ19B_RESERVED, MHZ19B_CMD_SET_ABC, MHZ19B_ABC_ON,
-		MHZ19B_NULL_COUNT(4), 0xE6
-	},
-	[MHZ19B_CMD_IDX_SET_ABC_OFF] = {
-		MHZ19B_HEADER, MHZ19B_RESERVED, MHZ19B_CMD_SET_ABC, MHZ19B_ABC_OFF,
-		MHZ19B_NULL_COUNT(4), 0x86
-	},
-	[MHZ19B_CMD_IDX_SET_RANGE_2000] = {
-		MHZ19B_HEADER, MHZ19B_RESERVED, MHZ19B_CMD_SET_RANGE, MHZ19B_NULL_COUNT(3),
-		MHZ19B_RANGE_2000, 0x8F
-	},
-	[MHZ19B_CMD_IDX_SET_RANGE_5000] = {
-		MHZ19B_HEADER, MHZ19B_RESERVED, MHZ19B_CMD_SET_RANGE, MHZ19B_NULL_COUNT(3),
-		MHZ19B_RANGE_5000, 0xCB
-	},
-	[MHZ19B_CMD_IDX_SET_RANGE_10000] = {
-		MHZ19B_HEADER, MHZ19B_RESERVED, MHZ19B_CMD_SET_RANGE, MHZ19B_NULL_COUNT(3),
-		MHZ19B_RANGE_10000, 0x2F
-	},
+	[MHZ19B_CMD_IDX_GET_CO2] = {MHZ19B_HEADER, MHZ19B_RESERVED, MHZ19B_CMD_GET_CO2,
+				    MHZ19B_NULL_COUNT(5), 0x79},
+	[MHZ19B_CMD_IDX_GET_RANGE] = {MHZ19B_HEADER, MHZ19B_RESERVED, MHZ19B_CMD_GET_RANGE,
+				      MHZ19B_NULL_COUNT(5), 0x64},
+	[MHZ19B_CMD_IDX_GET_ABC] = {MHZ19B_HEADER, MHZ19B_RESERVED, MHZ19B_CMD_GET_ABC,
+				    MHZ19B_NULL_COUNT(5), 0x82},
+	[MHZ19B_CMD_IDX_SET_ABC_ON] = {MHZ19B_HEADER, MHZ19B_RESERVED, MHZ19B_CMD_SET_ABC,
+				       MHZ19B_ABC_ON, MHZ19B_NULL_COUNT(4), 0xE6},
+	[MHZ19B_CMD_IDX_SET_ABC_OFF] = {MHZ19B_HEADER, MHZ19B_RESERVED, MHZ19B_CMD_SET_ABC,
+					MHZ19B_ABC_OFF, MHZ19B_NULL_COUNT(4), 0x86},
+	[MHZ19B_CMD_IDX_SET_RANGE_2000] = {MHZ19B_HEADER, MHZ19B_RESERVED, MHZ19B_CMD_SET_RANGE,
+					   MHZ19B_NULL_COUNT(3), MHZ19B_RANGE_2000, 0x8F},
+	[MHZ19B_CMD_IDX_SET_RANGE_5000] = {MHZ19B_HEADER, MHZ19B_RESERVED, MHZ19B_CMD_SET_RANGE,
+					   MHZ19B_NULL_COUNT(3), MHZ19B_RANGE_5000, 0xCB},
+	[MHZ19B_CMD_IDX_SET_RANGE_10000] = {MHZ19B_HEADER, MHZ19B_RESERVED, MHZ19B_CMD_SET_RANGE,
+					    MHZ19B_NULL_COUNT(3), MHZ19B_RANGE_10000, 0x2F},
 };
 
 static void mhz19b_uart_flush(const struct device *uart_dev)
@@ -330,19 +317,19 @@ static int mhz19b_init(const struct device *dev)
 	return ret;
 }
 
-#define MHZ19B_INIT(inst)									\
-												\
-	static struct mhz19b_data mhz19b_data_##inst;						\
-												\
-	static const struct mhz19b_cfg mhz19b_cfg_##inst = {					\
-		.uart_dev = DEVICE_DT_GET(DT_INST_BUS(inst)),					\
-		.range = DT_INST_PROP(inst, maximum_range),					\
-		.abc_on = DT_INST_PROP(inst, abc_on),						\
-		.cb = mhz19b_uart_isr,								\
-	};											\
-												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, mhz19b_init, NULL,					\
-			      &mhz19b_data_##inst, &mhz19b_cfg_##inst,				\
-			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &mhz19b_api_funcs);
+#define MHZ19B_INIT(inst)                                                                          \
+                                                                                                   \
+	static struct mhz19b_data mhz19b_data_##inst;                                              \
+                                                                                                   \
+	static const struct mhz19b_cfg mhz19b_cfg_##inst = {                                       \
+		.uart_dev = DEVICE_DT_GET(DT_INST_BUS(inst)),                                      \
+		.range = DT_INST_PROP(inst, maximum_range),                                        \
+		.abc_on = DT_INST_PROP(inst, abc_on),                                              \
+		.cb = mhz19b_uart_isr,                                                             \
+	};                                                                                         \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, mhz19b_init, NULL, &mhz19b_data_##inst,                 \
+				     &mhz19b_cfg_##inst, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, \
+				     &mhz19b_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(MHZ19B_INIT)

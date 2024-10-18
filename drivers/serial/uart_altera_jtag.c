@@ -17,38 +17,38 @@
 
 #include <zephyr/sys/__assert.h>
 
-#define DT_DRV_COMPAT   altr_jtag_uart
+#define DT_DRV_COMPAT altr_jtag_uart
 
-#define UART_ALTERA_JTAG_DATA_OFFSET    0x00        /* DATA : Register offset */
-#define UART_ALTERA_JTAG_CTRL_OFFSET    0x04        /* CTRL : Register offset */
-#define UART_IE_TX                      (1 << 1)    /* CTRL : TX Interrupt Enable */
-#define UART_IE_RX                      (1 << 0)    /* CTRL : RX Interrupt Enable */
-#define UART_DATA_MASK                  0xFF        /* DATA : Data Mask */
-#define UART_WFIFO_MASK                 0xFFFF0000  /* CTRL : Transmit FIFO Mask */
-#define UART_WFIFO_OFST                 (16)
+#define UART_ALTERA_JTAG_DATA_OFFSET 0x00       /* DATA : Register offset */
+#define UART_ALTERA_JTAG_CTRL_OFFSET 0x04       /* CTRL : Register offset */
+#define UART_IE_TX                   (1 << 1)   /* CTRL : TX Interrupt Enable */
+#define UART_IE_RX                   (1 << 0)   /* CTRL : RX Interrupt Enable */
+#define UART_DATA_MASK               0xFF       /* DATA : Data Mask */
+#define UART_WFIFO_MASK              0xFFFF0000 /* CTRL : Transmit FIFO Mask */
+#define UART_WFIFO_OFST              (16)
 
-#define ALTERA_AVALON_JTAG_UART_DATA_DATA_OFST            (0)
-#define ALTERA_AVALON_JTAG_UART_DATA_RVALID_MSK           (0x00008000)
+#define ALTERA_AVALON_JTAG_UART_DATA_DATA_OFST  (0)
+#define ALTERA_AVALON_JTAG_UART_DATA_RVALID_MSK (0x00008000)
 
-#define ALTERA_AVALON_JTAG_UART_CONTROL_RI_MSK            (0x00000100)
-#define ALTERA_AVALON_JTAG_UART_CONTROL_WI_MSK            (0x00000200)
+#define ALTERA_AVALON_JTAG_UART_CONTROL_RI_MSK (0x00000100)
+#define ALTERA_AVALON_JTAG_UART_CONTROL_WI_MSK (0x00000200)
 
 #ifdef CONFIG_UART_ALTERA_JTAG_HAL
 #include "altera_avalon_jtag_uart.h"
 #include "altera_avalon_jtag_uart_regs.h"
 
-extern int altera_avalon_jtag_uart_read(altera_avalon_jtag_uart_state *sp,
-		char *buffer, int space, int flags);
-extern int altera_avalon_jtag_uart_write(altera_avalon_jtag_uart_state *sp,
-		const char *ptr, int count, int flags);
+extern int altera_avalon_jtag_uart_read(altera_avalon_jtag_uart_state *sp, char *buffer, int space,
+					int flags);
+extern int altera_avalon_jtag_uart_write(altera_avalon_jtag_uart_state *sp, const char *ptr,
+					 int count, int flags);
 #else
 
 /* device data */
 struct uart_altera_jtag_device_data {
 	struct k_spinlock lock;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	uart_irq_callback_user_data_t cb;  /* Callback function pointer */
-	void *cb_data;                     /* Callback function arg */
+	uart_irq_callback_user_data_t cb; /* Callback function pointer */
+	void *cb_data;                    /* Callback function arg */
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
@@ -56,7 +56,7 @@ struct uart_altera_jtag_device_data {
 struct uart_altera_jtag_device_config {
 	mm_reg_t base;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	uart_irq_config_func_t  irq_config_func;
+	uart_irq_config_func_t irq_config_func;
 	unsigned int irq_num;
 	uint16_t write_fifo_depth;
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
@@ -73,8 +73,7 @@ struct uart_altera_jtag_device_config {
  * @return 0 if a character arrived, -1 otherwise.
  * -EINVAL if c is null pointer.
  */
-static int uart_altera_jtag_poll_in(const struct device *dev,
-					       unsigned char *c)
+static int uart_altera_jtag_poll_in(const struct device *dev, unsigned char *c)
 {
 	int ret = -1;
 	const struct uart_altera_jtag_device_config *config = dev->config;
@@ -103,7 +102,7 @@ static int uart_altera_jtag_poll_in(const struct device *dev,
 
 	return ret;
 }
-#endif  /* CONFIG_UART_ALTERA_JTAG_HAL */
+#endif /* CONFIG_UART_ALTERA_JTAG_HAL */
 
 /**
  * @brief Output a character in polled mode.
@@ -115,8 +114,7 @@ static int uart_altera_jtag_poll_in(const struct device *dev,
  * @param dev UART device instance
  * @param c Character to send
  */
-static void uart_altera_jtag_poll_out(const struct device *dev,
-					       unsigned char c)
+static void uart_altera_jtag_poll_out(const struct device *dev, unsigned char c)
 {
 #ifdef CONFIG_UART_ALTERA_JTAG_HAL
 	altera_avalon_jtag_uart_state ustate;
@@ -191,9 +189,7 @@ static int uart_altera_jtag_init(const struct device *dev)
  *
  * @return Number of bytes sent
  */
-static int uart_altera_jtag_fifo_fill(const struct device *dev,
-									  const uint8_t *tx_data,
-									  int size)
+static int uart_altera_jtag_fifo_fill(const struct device *dev, const uint8_t *tx_data, int size)
 {
 	const struct uart_altera_jtag_device_config *config = dev->config;
 	struct uart_altera_jtag_device_data *data = dev->data;
@@ -238,8 +234,7 @@ static int uart_altera_jtag_fifo_fill(const struct device *dev,
  *
  * @return Number of bytes read
  */
-static int uart_altera_jtag_fifo_read(const struct device *dev, uint8_t *rx_data,
-									  const int size)
+static int uart_altera_jtag_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
 {
 	const struct uart_altera_jtag_device_config *config = dev->config;
 	struct uart_altera_jtag_device_data *data = dev->data;
@@ -261,7 +256,7 @@ static int uart_altera_jtag_fifo_read(const struct device *dev, uint8_t *rx_data
 
 		if (input_data & ALTERA_AVALON_JTAG_UART_DATA_RVALID_MSK) {
 			rx_data[i] = (input_data & UART_DATA_MASK) >>
-						  ALTERA_AVALON_JTAG_UART_DATA_DATA_OFST;
+				     ALTERA_AVALON_JTAG_UART_DATA_DATA_OFST;
 		} else {
 			/* break upon invalid data or no more data */
 			break;
@@ -462,7 +457,7 @@ static int uart_altera_jtag_irq_is_pending(const struct device *dev)
 	int ret = 0;
 
 	if (ctrl_val &
-		(ALTERA_AVALON_JTAG_UART_CONTROL_RI_MSK|ALTERA_AVALON_JTAG_UART_CONTROL_WI_MSK)) {
+	    (ALTERA_AVALON_JTAG_UART_CONTROL_RI_MSK | ALTERA_AVALON_JTAG_UART_CONTROL_WI_MSK)) {
 		ret = 1;
 	}
 
@@ -479,8 +474,7 @@ static int uart_altera_jtag_irq_is_pending(const struct device *dev)
  * @param cb_data Data to pass to callback function.
  */
 static void uart_altera_jtag_irq_callback_set(const struct device *dev,
-								  uart_irq_callback_user_data_t cb,
-								  void *cb_data)
+					      uart_irq_callback_user_data_t cb, void *cb_data)
 {
 	struct uart_altera_jtag_device_data *data = dev->data;
 
@@ -537,28 +531,24 @@ static const struct uart_driver_api uart_altera_jtag_driver_api = {
 };
 
 #ifdef CONFIG_UART_ALTERA_JTAG_HAL
-#define UART_ALTERA_JTAG_DEVICE_INIT(n)						\
-DEVICE_DT_INST_DEFINE(n, uart_altera_jtag_init, NULL, NULL, NULL, PRE_KERNEL_1,	\
-		      CONFIG_SERIAL_INIT_PRIORITY,					\
-		      &uart_altera_jtag_driver_api);
+#define UART_ALTERA_JTAG_DEVICE_INIT(n)                                                            \
+	DEVICE_DT_INST_DEFINE(n, uart_altera_jtag_init, NULL, NULL, NULL, PRE_KERNEL_1,            \
+			      CONFIG_SERIAL_INIT_PRIORITY, &uart_altera_jtag_driver_api);
 #else
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define UART_ALTERA_JTAG_CONFIG_FUNC(n)					\
-	static void uart_altera_jtag_irq_config_func_##n(const struct device *dev)  \
-	{										\
-		IRQ_CONNECT(DT_INST_IRQN(n),		\
-				DT_INST_IRQ(n, priority),	\
-				uart_altera_jtag_isr,		\
-				DEVICE_DT_INST_GET(n), 0);	\
-											\
-		irq_enable(DT_INST_IRQN(n));		\
+#define UART_ALTERA_JTAG_CONFIG_FUNC(n)                                                            \
+	static void uart_altera_jtag_irq_config_func_##n(const struct device *dev)                 \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_altera_jtag_isr,       \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+                                                                                                   \
+		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
 
-#define UART_ALTERA_JTAG_CONFIG_INIT(n)		\
-	.irq_config_func = uart_altera_jtag_irq_config_func_##n,	\
-	.irq_num = DT_INST_IRQN(n),				\
-	.write_fifo_depth = DT_INST_PROP_OR(n, write_fifo_depth, 0),\
+#define UART_ALTERA_JTAG_CONFIG_INIT(n)                                                            \
+	.irq_config_func = uart_altera_jtag_irq_config_func_##n, .irq_num = DT_INST_IRQN(n),       \
+	.write_fifo_depth = DT_INST_PROP_OR(n, write_fifo_depth, 0),
 
 #else
 #define UART_ALTERA_JTAG_CONFIG_FUNC(n)
@@ -566,23 +556,15 @@ DEVICE_DT_INST_DEFINE(n, uart_altera_jtag_init, NULL, NULL, NULL, PRE_KERNEL_1,	
 #define UART_ALTERA_JTAG_DATA_INIT(n)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-#define UART_ALTERA_JTAG_DEVICE_INIT(n)				\
-UART_ALTERA_JTAG_CONFIG_FUNC(n)						\
-static struct uart_altera_jtag_device_data uart_altera_jtag_device_data_##n = {		\
-};											\
-											\
-static const struct uart_altera_jtag_device_config uart_altera_jtag_dev_cfg_##n = { \
-	.base = DT_INST_REG_ADDR(n),					\
-	UART_ALTERA_JTAG_CONFIG_INIT(n)					\
-};											\
-DEVICE_DT_INST_DEFINE(n,							\
-		      uart_altera_jtag_init,				\
-		      NULL,									\
-		      &uart_altera_jtag_device_data_##n,	\
-		      &uart_altera_jtag_dev_cfg_##n,		\
-		      PRE_KERNEL_1,							\
-		      CONFIG_SERIAL_INIT_PRIORITY,			\
-		      &uart_altera_jtag_driver_api);
+#define UART_ALTERA_JTAG_DEVICE_INIT(n)                                                            \
+	UART_ALTERA_JTAG_CONFIG_FUNC(n)                                                            \
+	static struct uart_altera_jtag_device_data uart_altera_jtag_device_data_##n = {};          \
+                                                                                                   \
+	static const struct uart_altera_jtag_device_config uart_altera_jtag_dev_cfg_##n = {        \
+		.base = DT_INST_REG_ADDR(n), UART_ALTERA_JTAG_CONFIG_INIT(n)};                     \
+	DEVICE_DT_INST_DEFINE(n, uart_altera_jtag_init, NULL, &uart_altera_jtag_device_data_##n,   \
+			      &uart_altera_jtag_dev_cfg_##n, PRE_KERNEL_1,                         \
+			      CONFIG_SERIAL_INIT_PRIORITY, &uart_altera_jtag_driver_api);
 #endif /* CONFIG_UART_ALTERA_JTAG_HAL */
 
 DT_INST_FOREACH_STATUS_OKAY(UART_ALTERA_JTAG_DEVICE_INIT)

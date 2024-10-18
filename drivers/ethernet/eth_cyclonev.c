@@ -10,7 +10,7 @@
  */
 
 #define LOG_MODULE_NAME eth_cyclonev
-#define LOG_LEVEL	CONFIG_ETHERNET_LOG_LEVEL
+#define LOG_LEVEL       CONFIG_ETHERNET_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
@@ -28,14 +28,14 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <ethernet/eth_stats.h>
 #include <sys/types.h>
 #include <zephyr/irq.h>
-#define TX_AVAIL_WAIT	    K_MSEC(1)
+#define TX_AVAIL_WAIT       K_MSEC(1)
 #define INC_WRAP(idx, size) ({ idx = (idx + 1) % size; })
 
 static const uint8_t eth_cyclonev_mac_addr[6] = DT_INST_PROP(0, local_mac_address);
 
 void eth_cyclonev_reset(uint32_t instance);
 void eth_cyclonev_set_mac_addr(uint8_t *address, uint32_t instance, uint32_t n,
-				struct eth_cyclonev_priv *p);
+			       struct eth_cyclonev_priv *p);
 int eth_cyclonev_get_software_reset_status(uint32_t instance, struct eth_cyclonev_priv *p);
 int eth_cyclonev_software_reset(uint32_t instance, struct eth_cyclonev_priv *p);
 void eth_cyclonev_setup_rxdesc(struct eth_cyclonev_priv *p);
@@ -44,14 +44,14 @@ static void eth_cyclonev_iface_init(struct net_if *iface);
 static int eth_cyclonev_send(const struct device *dev, struct net_pkt *pkt);
 void eth_cyclonev_isr(const struct device *dev);
 int set_mac_conf_status(int instance, uint32_t *mac_config_reg_settings,
-				struct eth_cyclonev_priv *p);
+			struct eth_cyclonev_priv *p);
 int eth_cyclonev_probe(const struct device *dev);
 static int eth_cyclonev_start(const struct device *dev);
 static int eth_cyclonev_stop(const struct device *dev);
 static void eth_cyclonev_receive(struct eth_cyclonev_priv *p);
 static void eth_cyclonev_tx_release(struct eth_cyclonev_priv *p);
 static int eth_cyclonev_set_config(const struct device *dev, enum ethernet_config_type type,
-				const struct ethernet_config *config);
+				   const struct ethernet_config *config);
 static enum ethernet_hw_caps eth_cyclonev_caps(const struct device *dev);
 
 /** Device config */
@@ -116,7 +116,7 @@ void eth_cyclonev_reset(uint32_t instance)
  */
 
 void eth_cyclonev_set_mac_addr(uint8_t *address, uint32_t instance, uint32_t n,
-	struct eth_cyclonev_priv *p)
+			       struct eth_cyclonev_priv *p)
 {
 	uint32_t tmpreg;
 
@@ -226,8 +226,7 @@ void eth_cyclonev_setup_rxdesc(struct eth_cyclonev_priv *p)
 	p->rxints = 0;
 
 	/* Set RX Descriptor List Address Register */
-	sys_write32((uint32_t)&p->rx_desc_ring[0],
-		    EMAC_DMA_RX_DESC_LIST_ADDR(p->base_addr));
+	sys_write32((uint32_t)&p->rx_desc_ring[0], EMAC_DMA_RX_DESC_LIST_ADDR(p->base_addr));
 }
 
 /**
@@ -262,8 +261,7 @@ void eth_cyclonev_setup_txdesc(struct eth_cyclonev_priv *p)
 	p->tx_tail = 0;
 
 	/* Set TX Descriptor List Address Register */
-	sys_write32((uint32_t)&p->tx_desc_ring[0],
-		    EMAC_DMA_TX_DESC_LIST_ADDR(p->base_addr));
+	sys_write32((uint32_t)&p->tx_desc_ring[0], EMAC_DMA_TX_DESC_LIST_ADDR(p->base_addr));
 }
 
 /**
@@ -478,15 +476,13 @@ static int eth_cyclonev_send(const struct device *dev, struct net_pkt *pkt)
 					/* Restart DMA transmission and re-initialise
 					 * TX descriptors
 					 */
-					sys_clear_bits(EMAC_DMAGRP_OPERATION_MODE_ADDR(
-							       p->base_addr),
-						       EMAC_DMAGRP_OPERATION_MODE_ST_SET_MSK);
-					sys_set_bits(EMAC_DMAGRP_OPERATION_MODE_ADDR(
-							     p->base_addr),
+					sys_clear_bits(
+						EMAC_DMAGRP_OPERATION_MODE_ADDR(p->base_addr),
+						EMAC_DMAGRP_OPERATION_MODE_ST_SET_MSK);
+					sys_set_bits(EMAC_DMAGRP_OPERATION_MODE_ADDR(p->base_addr),
 						     EMAC_DMAGRP_OPERATION_MODE_FTF_SET_MSK);
 					eth_cyclonev_setup_txdesc(p);
-					sys_set_bits(EMAC_DMAGRP_OPERATION_MODE_ADDR(
-							     p->base_addr),
+					sys_set_bits(EMAC_DMAGRP_OPERATION_MODE_ADDR(p->base_addr),
 						     EMAC_DMAGRP_OPERATION_MODE_ST_SET_MSK);
 					goto abort;
 				}
@@ -505,11 +501,9 @@ static int eth_cyclonev_send(const struct device *dev, struct net_pkt *pkt)
 			}
 
 			LOG_DBG("Current Host Transmit Descriptor Register: 0x%08x",
-				sys_read32(
-					EMAC_DMA_CURR_HOST_TX_DESC_ADDR(p->base_addr)));
+				sys_read32(EMAC_DMA_CURR_HOST_TX_DESC_ADDR(p->base_addr)));
 			LOG_DBG("Current Host Transmit Buffer Register: 0x%08x",
-				sys_read32(
-					EMAC_DMA_CURR_HOST_TX_BUFF_ADDR(p->base_addr)));
+				sys_read32(EMAC_DMA_CURR_HOST_TX_BUFF_ADDR(p->base_addr)));
 
 			/* If the DMA transmission is suspended, resume transmission.  */
 			if (sys_read32(EMAC_DMAGRP_STATUS_ADDR(p->base_addr)) &
@@ -520,8 +514,7 @@ static int eth_cyclonev_send(const struct device *dev, struct net_pkt *pkt)
 					    EMAC_DMAGRP_STATUS_ADDR(p->base_addr));
 
 				/* Resume DMA transmission */
-				sys_write32(0,
-					    EMAC_DMA_TX_POLL_DEMAND_ADDR(p->base_addr));
+				sys_write32(0, EMAC_DMA_TX_POLL_DEMAND_ADDR(p->base_addr));
 			}
 		}
 		frag = frag->frags;
@@ -551,30 +544,26 @@ void eth_cyclonev_isr(const struct device *dev)
 	uint32_t irq_status = 0;
 	uint32_t irq_status_emac = 0;
 
-	irq_status =
-		sys_read32(EMAC_DMAGRP_STATUS_ADDR(p->base_addr)) & p->interrupt_mask;
+	irq_status = sys_read32(EMAC_DMAGRP_STATUS_ADDR(p->base_addr)) & p->interrupt_mask;
 	irq_status_emac = sys_read32(EMAC_GMAC_INT_STAT_ADDR(p->base_addr));
 	LOG_DBG("DMA_IRQ_STATUS = 0x%08x, emac: 0x%08x", irq_status, irq_status_emac);
 
 	if (irq_status & EMAC_DMA_INT_EN_NIE_SET_MSK) {
-		sys_write32(EMAC_DMA_INT_EN_NIE_SET_MSK,
-			    EMAC_DMAGRP_STATUS_ADDR(p->base_addr));
+		sys_write32(EMAC_DMA_INT_EN_NIE_SET_MSK, EMAC_DMAGRP_STATUS_ADDR(p->base_addr));
 	}
 
 	if (irq_status & EMAC_DMA_INT_EN_TIE_SET_MSK) {
 		p->txints++;
 		eth_cyclonev_tx_release(p);
 		/* Clear the selected ETHERNET DMA bit(s) */
-		sys_write32(EMAC_DMA_INT_EN_TIE_SET_MSK,
-			    EMAC_DMAGRP_STATUS_ADDR(p->base_addr));
+		sys_write32(EMAC_DMA_INT_EN_TIE_SET_MSK, EMAC_DMAGRP_STATUS_ADDR(p->base_addr));
 	}
 
 	if (irq_status & EMAC_DMA_INT_EN_RIE_SET_MSK) {
 		p->rxints++;
 		eth_cyclonev_receive(p);
 		/* Clear the selected ETHERNET DMA bit(s) */
-		sys_write32(EMAC_DMA_INT_EN_RIE_SET_MSK,
-			    EMAC_DMAGRP_STATUS_ADDR(p->base_addr));
+		sys_write32(EMAC_DMA_INT_EN_RIE_SET_MSK, EMAC_DMAGRP_STATUS_ADDR(p->base_addr));
 	}
 
 	if (irq_status_emac & EMAC_GMAC_INT_STAT_RGSMIIIS_SET_MSK) {
@@ -797,7 +786,7 @@ static void eth_cyclonev_tx_release(struct eth_cyclonev_priv *p)
  */
 /* Configure the MAC with the speed fixed by the auto-negotiation process */
 int set_mac_conf_status(int instance, uint32_t *mac_config_reg_settings,
-	struct eth_cyclonev_priv *p)
+			struct eth_cyclonev_priv *p)
 {
 	uint16_t phy_duplex_status, phy_speed;
 	int ret;
@@ -913,9 +902,8 @@ int eth_cyclonev_probe(const struct device *dev)
 
 	tmpreg = sys_read32(EMAC_DMAGRP_AXI_BUS_MODE_ADDR(p->base_addr));
 
-	sys_write32(
-		tmpreg | EMAC_DMAGRP_AXI_BUS_MODE_BLEN16_SET_MSK,
-		EMAC_DMAGRP_AXI_BUS_MODE_ADDR(p->base_addr)); /* Set Burst Length = 16 */
+	sys_write32(tmpreg | EMAC_DMAGRP_AXI_BUS_MODE_BLEN16_SET_MSK,
+		    EMAC_DMAGRP_AXI_BUS_MODE_ADDR(p->base_addr)); /* Set Burst Length = 16 */
 
 	/* 6. Create a proper descriptor chain for transmit and receive. In addition,
 	 * ensure that the receive descriptors are owned by DMA (bit 31 of descriptor
@@ -936,8 +924,8 @@ int eth_cyclonev_probe(const struct device *dev)
 	 */
 
 	sys_write32((0 | EMAC_DMAGRP_OPERATION_MODE_TSF_SET_MSK /* Transmit Store and Forward */
-		     | EMAC_DMAGRP_OPERATION_MODE_RSF_SET_MSK	/* Receive Store and Forward */
-		     | EMAC_DMAGRP_OPERATION_MODE_FTF_SET_MSK	/* Receive Store and Forward */
+		     | EMAC_DMAGRP_OPERATION_MODE_RSF_SET_MSK   /* Receive Store and Forward */
+		     | EMAC_DMAGRP_OPERATION_MODE_FTF_SET_MSK   /* Receive Store and Forward */
 		     ),
 		    EMAC_DMAGRP_OPERATION_MODE_ADDR(p->base_addr));
 
@@ -1023,7 +1011,7 @@ int eth_cyclonev_probe(const struct device *dev)
 	 */
 
 	sys_set_bits(EMAC_GMAC_INT_MSK_ADDR(p->base_addr),
-		     EMAC_GMAC_INT_STAT_LPIIS_SET_MSK |	       /* Disable Low Power IRQ */
+		     EMAC_GMAC_INT_STAT_LPIIS_SET_MSK |        /* Disable Low Power IRQ */
 			     EMAC_GMAC_INT_STAT_TSIS_SET_MSK); /* Disable Timestamp IRQ */
 
 	/* 8. Program the appropriate fields in MAC Configuration Register to
@@ -1126,8 +1114,7 @@ static int eth_cyclonev_stop(const struct device *dev)
 
 	/* 5. Make sure that both the TX FIFO buffer and RX FIFO buffer are empty. */
 
-	if (EMAC_DMAGRP_DEBUG_RXFSTS_GET(
-		    sys_read32(EMAC_DMAGRP_DEBUG_ADDR(p->base_addr))) != 0x0) {
+	if (EMAC_DMAGRP_DEBUG_RXFSTS_GET(sys_read32(EMAC_DMAGRP_DEBUG_ADDR(p->base_addr))) != 0x0) {
 		return -1;
 	}
 
@@ -1143,28 +1130,23 @@ const struct ethernet_api eth_cyclonev_api = {.iface_api.init = eth_cyclonev_ifa
 					      .stop = eth_cyclonev_stop,
 					      .set_config = eth_cyclonev_set_config};
 
-#define CYCLONEV_ETH_INIT(inst) \
-	static struct eth_cyclonev_priv eth_cyclonev_##inst##_data; \
-	static void eth_cyclonev_##inst##_irq_config(void); \
- \
-	static const struct eth_cyclonev_config eth_cyclonev_##inst##_cfg = { \
-			.base = (uint8_t *)(DT_INST_REG_ADDR(inst)), \
-			.size = DT_INST_REG_SIZE(inst), \
-			.emac_index = DT_INST_PROP(inst, emac_index), \
-			.irq_config = eth_cyclonev_##inst##_irq_config, \
-	}; \
-	ETH_NET_DEVICE_DT_INST_DEFINE(inst, eth_cyclonev_probe, NULL, \
-			&eth_cyclonev_##inst##_data, \
-			&eth_cyclonev_##inst##_cfg, \
-			CONFIG_ETH_INIT_PRIORITY, \
-			&eth_cyclonev_api, \
-			NET_ETH_MTU); \
- \
-	static void eth_cyclonev_##inst##_irq_config(void) \
-	{ \
-		IRQ_CONNECT(DT_INST_IRQN(inst), \
-			    DT_INST_IRQ(inst, priority), eth_cyclonev_isr, \
-			    DEVICE_DT_INST_GET(inst), \
-			    0); \
-		irq_enable(DT_INST_IRQN(inst)); \
-DT_INST_FOREACH_STATUS_OKAY(CYCLONEV_ETH_INIT)
+#define CYCLONEV_ETH_INIT(inst)                                                                    \
+	static struct eth_cyclonev_priv eth_cyclonev_##inst##_data;                                \
+	static void eth_cyclonev_##inst##_irq_config(void);                                        \
+                                                                                                   \
+	static const struct eth_cyclonev_config eth_cyclonev_##inst##_cfg = {                      \
+		.base = (uint8_t *)(DT_INST_REG_ADDR(inst)),                                       \
+		.size = DT_INST_REG_SIZE(inst),                                                    \
+		.emac_index = DT_INST_PROP(inst, emac_index),                                      \
+		.irq_config = eth_cyclonev_##inst##_irq_config,                                    \
+	};                                                                                         \
+	ETH_NET_DEVICE_DT_INST_DEFINE(inst, eth_cyclonev_probe, NULL, &eth_cyclonev_##inst##_data, \
+				      &eth_cyclonev_##inst##_cfg, CONFIG_ETH_INIT_PRIORITY,        \
+				      &eth_cyclonev_api, NET_ETH_MTU);                             \
+                                                                                                   \
+	static void eth_cyclonev_##inst##_irq_config(void)                                         \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), eth_cyclonev_isr,     \
+			    DEVICE_DT_INST_GET(inst), 0);                                          \
+		irq_enable(DT_INST_IRQN(inst));                                                    \
+		DT_INST_FOREACH_STATUS_OKAY(CYCLONEV_ETH_INIT)

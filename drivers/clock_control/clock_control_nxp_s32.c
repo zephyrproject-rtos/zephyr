@@ -12,11 +12,9 @@
 
 #define NXP_S32_CLOCK_CONFIG_IDX CONFIG_CLOCK_CONTROL_NXP_S32_CLOCK_CONFIG_IDX
 
-BUILD_ASSERT(CLOCK_IP_GET_FREQUENCY_API == STD_ON,
-	     "Clock Get Frequency API must be enabled");
+BUILD_ASSERT(CLOCK_IP_GET_FREQUENCY_API == STD_ON, "Clock Get Frequency API must be enabled");
 
-static int nxp_s32_clock_on(const struct device *dev,
-			    clock_control_subsys_t sub_system)
+static int nxp_s32_clock_on(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	Clock_Ip_NameType clock_name = (Clock_Ip_NameType)sub_system;
 
@@ -29,8 +27,7 @@ static int nxp_s32_clock_on(const struct device *dev,
 	return 0;
 }
 
-static int nxp_s32_clock_off(const struct device *dev,
-			     clock_control_subsys_t sub_system)
+static int nxp_s32_clock_off(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	Clock_Ip_NameType clock_name = (Clock_Ip_NameType)sub_system;
 
@@ -43,8 +40,7 @@ static int nxp_s32_clock_off(const struct device *dev,
 	return 0;
 }
 
-static int nxp_s32_clock_get_rate(const struct device *dev,
-				  clock_control_subsys_t sub_system,
+static int nxp_s32_clock_get_rate(const struct device *dev, clock_control_subsys_t sub_system,
 				  uint32_t *rate)
 {
 	Clock_Ip_NameType clock_name = (Clock_Ip_NameType)sub_system;
@@ -73,8 +69,5 @@ static const struct clock_control_driver_api nxp_s32_clock_driver_api = {
 	.get_rate = nxp_s32_clock_get_rate,
 };
 
-DEVICE_DT_INST_DEFINE(0,
-		      nxp_s32_clock_init,
-		      NULL, NULL, NULL,
-		      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
-		      &nxp_s32_clock_driver_api);
+DEVICE_DT_INST_DEFINE(0, nxp_s32_clock_init, NULL, NULL, NULL, PRE_KERNEL_1,
+		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &nxp_s32_clock_driver_api);

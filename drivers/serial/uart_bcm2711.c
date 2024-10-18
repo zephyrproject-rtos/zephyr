@@ -19,35 +19,35 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/irq.h>
 
-#define BCM2711_MU_IO			0x00
-#define BCM2711_MU_IER			0x04
-#define BCM2711_MU_IIR			0x08
-#define BCM2711_MU_LCR			0x0c
-#define BCM2711_MU_MCR			0x10
-#define BCM2711_MU_LSR			0x14
-#define BCM2711_MU_MSR			0x18
-#define BCM2711_MU_SCRATCH		0x1c
-#define BCM2711_MU_CNTL			0x20
-#define BCM2711_MU_STAT			0x24
-#define BCM2711_MU_BAUD			0x28
+#define BCM2711_MU_IO      0x00
+#define BCM2711_MU_IER     0x04
+#define BCM2711_MU_IIR     0x08
+#define BCM2711_MU_LCR     0x0c
+#define BCM2711_MU_MCR     0x10
+#define BCM2711_MU_LSR     0x14
+#define BCM2711_MU_MSR     0x18
+#define BCM2711_MU_SCRATCH 0x1c
+#define BCM2711_MU_CNTL    0x20
+#define BCM2711_MU_STAT    0x24
+#define BCM2711_MU_BAUD    0x28
 
-#define BCM2711_MU_IER_TX_INTERRUPT	BIT(1)
-#define BCM2711_MU_IER_RX_INTERRUPT	BIT(0)
+#define BCM2711_MU_IER_TX_INTERRUPT BIT(1)
+#define BCM2711_MU_IER_RX_INTERRUPT BIT(0)
 
-#define BCM2711_MU_IIR_RX_INTERRUPT	BIT(2)
-#define BCM2711_MU_IIR_TX_INTERRUPT	BIT(1)
-#define BCM2711_MU_IIR_FLUSH		0xc6
+#define BCM2711_MU_IIR_RX_INTERRUPT BIT(2)
+#define BCM2711_MU_IIR_TX_INTERRUPT BIT(1)
+#define BCM2711_MU_IIR_FLUSH        0xc6
 
-#define BCM2711_MU_LCR_7BIT		0x02
-#define BCM2711_MU_LCR_8BIT		0x03
+#define BCM2711_MU_LCR_7BIT 0x02
+#define BCM2711_MU_LCR_8BIT 0x03
 
-#define BCM2711_MU_LSR_TX_IDLE		BIT(6)
-#define BCM2711_MU_LSR_TX_EMPTY		BIT(5)
-#define BCM2711_MU_LSR_RX_OVERRUN	BIT(1)
-#define BCM2711_MU_LSR_RX_READY		BIT(0)
+#define BCM2711_MU_LSR_TX_IDLE    BIT(6)
+#define BCM2711_MU_LSR_TX_EMPTY   BIT(5)
+#define BCM2711_MU_LSR_RX_OVERRUN BIT(1)
+#define BCM2711_MU_LSR_RX_READY   BIT(0)
 
-#define BCM2711_MU_CNTL_RX_ENABLE	BIT(0)
-#define BCM2711_MU_CNTL_TX_ENABLE	BIT(1)
+#define BCM2711_MU_CNTL_RX_ENABLE BIT(0)
+#define BCM2711_MU_CNTL_TX_ENABLE BIT(1)
 
 struct bcm2711_uart_config {
 	DEVICE_MMIO_ROM; /* Must be first */
@@ -88,8 +88,8 @@ static void bcm2711_mu_lowlevel_putc(mem_addr_t base, uint8_t ch)
 	sys_write32(ch, base + BCM2711_MU_IO);
 }
 
-static void bcm2711_mu_lowlevel_init(mem_addr_t base, bool skip_baudrate_config,
-			      uint32_t baudrate, uint32_t input_clock)
+static void bcm2711_mu_lowlevel_init(mem_addr_t base, bool skip_baudrate_config, uint32_t baudrate,
+				     uint32_t input_clock)
 {
 	uint32_t divider;
 
@@ -159,9 +159,7 @@ static int uart_bcm2711_poll_in(const struct device *dev, unsigned char *c)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-static int uart_bcm2711_fifo_fill(const struct device *dev,
-				  const uint8_t *tx_data,
-				  int size)
+static int uart_bcm2711_fifo_fill(const struct device *dev, const uint8_t *tx_data, int size)
 {
 	int num_tx = 0U;
 	struct bcm2711_uart_data *uart_data = dev->data;
@@ -175,8 +173,7 @@ static int uart_bcm2711_fifo_fill(const struct device *dev,
 	return num_tx;
 }
 
-static int uart_bcm2711_fifo_read(const struct device *dev, uint8_t *rx_data,
-				  const int size)
+static int uart_bcm2711_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
 {
 	int num_rx = 0U;
 	struct bcm2711_uart_data *uart_data = dev->data;
@@ -237,7 +234,7 @@ static int uart_bcm2711_irq_is_pending(const struct device *dev)
 	struct bcm2711_uart_data *uart_data = dev->data;
 
 	return bcm2711_mu_lowlevel_can_getc(uart_data->uart_addr) ||
-		bcm2711_mu_lowlevel_can_putc(uart_data->uart_addr);
+	       bcm2711_mu_lowlevel_can_putc(uart_data->uart_addr);
 }
 
 static int uart_bcm2711_irq_update(const struct device *dev)
@@ -246,8 +243,7 @@ static int uart_bcm2711_irq_update(const struct device *dev)
 }
 
 static void uart_bcm2711_irq_callback_set(const struct device *dev,
-				      uart_irq_callback_user_data_t cb,
-				      void *cb_data)
+					  uart_irq_callback_user_data_t cb, void *cb_data)
 {
 	struct bcm2711_uart_data *data = dev->data;
 
@@ -276,22 +272,22 @@ void uart_isr(const struct device *dev)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 static const struct uart_driver_api uart_bcm2711_driver_api = {
-	.poll_in  = uart_bcm2711_poll_in,
+	.poll_in = uart_bcm2711_poll_in,
 	.poll_out = uart_bcm2711_poll_out,
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.fifo_fill		  = uart_bcm2711_fifo_fill,
-	.fifo_read		  = uart_bcm2711_fifo_read,
-	.irq_tx_enable	  = uart_bcm2711_irq_tx_enable,
-	.irq_tx_disable   = uart_bcm2711_irq_tx_disable,
-	.irq_tx_ready	  = uart_bcm2711_irq_tx_ready,
-	.irq_rx_enable	  = uart_bcm2711_irq_rx_enable,
-	.irq_rx_disable   = uart_bcm2711_irq_rx_disable,
-	.irq_rx_ready	  = uart_bcm2711_irq_rx_ready,
-	.irq_is_pending   = uart_bcm2711_irq_is_pending,
-	.irq_update		  = uart_bcm2711_irq_update,
+	.fifo_fill = uart_bcm2711_fifo_fill,
+	.fifo_read = uart_bcm2711_fifo_read,
+	.irq_tx_enable = uart_bcm2711_irq_tx_enable,
+	.irq_tx_disable = uart_bcm2711_irq_tx_disable,
+	.irq_tx_ready = uart_bcm2711_irq_tx_ready,
+	.irq_rx_enable = uart_bcm2711_irq_rx_enable,
+	.irq_rx_disable = uart_bcm2711_irq_rx_disable,
+	.irq_rx_ready = uart_bcm2711_irq_rx_ready,
+	.irq_is_pending = uart_bcm2711_irq_is_pending,
+	.irq_update = uart_bcm2711_irq_update,
 	.irq_callback_set = uart_bcm2711_irq_callback_set,
-#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 };
 

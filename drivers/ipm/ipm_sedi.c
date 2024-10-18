@@ -34,8 +34,8 @@ static void clear_ipm_dev_busy(const struct device *dev, bool is_write)
 	unsigned int key = irq_lock();
 
 	atomic_clear_bit(&ipm->status, is_write ? IPM_WRITE_BUSY_BIT : IPM_READ_BUSY_BIT);
-	if ((!atomic_test_bit(&ipm->status, IPM_WRITE_BUSY_BIT))
-		&& (!atomic_test_bit(&ipm->status, IPM_READ_BUSY_BIT))) {
+	if ((!atomic_test_bit(&ipm->status, IPM_WRITE_BUSY_BIT)) &&
+	    (!atomic_test_bit(&ipm->status, IPM_READ_BUSY_BIT))) {
 		pm_device_busy_clear(dev);
 	}
 	irq_unlock(key);
@@ -55,9 +55,8 @@ static void ipm_event_dispose(IN sedi_ipc_t device, IN uint32_t event, INOUT voi
 			sedi_ipc_read_dbl(device, &drbl_in);
 			len = IPC_HEADER_GET_LENGTH(drbl_in);
 			sedi_ipc_read_msg(device, ipm->incoming_data_buf, len);
-			ipm->rx_msg_notify_cb(dev,
-					      ipm->rx_msg_notify_cb_data,
-					      drbl_in, ipm->incoming_data_buf);
+			ipm->rx_msg_notify_cb(dev, ipm->rx_msg_notify_cb_data, drbl_in,
+					      ipm->incoming_data_buf);
 		} else {
 			LOG_WRN("no handler for ipm new msg");
 		}
@@ -92,17 +91,13 @@ static int ipm_init(const struct device *dev)
 	return 0;
 }
 
-static int ipm_send_isr(const struct device *dev,
-			 uint32_t drbl,
-			 const void *msg,
-			 int msg_size)
+static int ipm_send_isr(const struct device *dev, uint32_t drbl, const void *msg, int msg_size)
 {
 	const struct ipm_sedi_config_t *info = dev->config;
 	sedi_ipc_t device = info->ipc_device;
 	uint32_t drbl_acked = 0;
 
-	sedi_ipc_write_msg(device, (uint8_t *)msg,
-			   (uint32_t)msg_size);
+	sedi_ipc_write_msg(device, (uint8_t *)msg, (uint32_t)msg_size);
 	sedi_ipc_write_dbl(device, drbl);
 	do {
 		sedi_ipc_read_ack_drbl(device, &drbl_acked);
@@ -111,11 +106,8 @@ static int ipm_send_isr(const struct device *dev,
 	return 0;
 }
 
-static int ipm_sedi_send(const struct device *dev,
-		     int wait,
-		     uint32_t drbl,
-		     const void *msg,
-		     int msg_size)
+static int ipm_sedi_send(const struct device *dev, int wait, uint32_t drbl, const void *msg,
+			 int msg_size)
 {
 	__ASSERT((dev != NULL), "bad params\n");
 	const struct ipm_sedi_config_t *info = dev->config;
@@ -150,8 +142,7 @@ static int ipm_sedi_send(const struct device *dev,
 
 	/* write data regs */
 	if (msg_size > 0) {
-		sedi_ret = sedi_ipc_write_msg(device, (uint8_t *)msg,
-					 (uint32_t)msg_size);
+		sedi_ret = sedi_ipc_write_msg(device, (uint8_t *)msg, (uint32_t)msg_size);
 		if (sedi_ret != SEDI_DRIVER_OK) {
 			LOG_ERR("ipm write data fail on device: %p", dev);
 			ret = -EBUSY;
@@ -183,14 +174,12 @@ write_err:
 	clear_ipm_dev_busy(dev, true);
 	k_mutex_unlock(&ipm->device_write_lock);
 	if (ret == 0) {
-		LOG_DBG("ipm wrote a new message on device: %p, drbl=%08x",
-			dev, drbl);
+		LOG_DBG("ipm wrote a new message on device: %p, drbl=%08x", dev, drbl);
 	}
 	return ret;
 }
 
-static void ipm_sedi_register_callback(const struct device *dev, ipm_callback_t cb,
-			  void *user_data)
+static void ipm_sedi_register_callback(const struct device *dev, ipm_callback_t cb, void *user_data)
 {
 	__ASSERT((dev != NULL), "bad params\n");
 
@@ -253,45 +242,34 @@ static int ipm_sedi_set_enable(const struct device *dev, int enable)
 }
 
 #if defined(CONFIG_PM_DEVICE)
-static int ipm_power_ctrl(const struct device *dev,
-			  enum pm_device_action action)
+static int ipm_power_ctrl(const struct device *dev, enum pm_device_action action)
 {
 	return 0;
 }
 #endif
 
-static const struct ipm_driver_api ipm_funcs = {
-	.send = ipm_sedi_send,
-	.register_callback = ipm_sedi_register_callback,
-	.max_data_size_get = ipm_sedi_get_max_data_size,
-	.max_id_val_get = ipm_sedi_get_max_id,
-	.complete = ipm_sedi_complete,
-	.set_enabled = ipm_sedi_set_enable
-};
+static const struct ipm_driver_api ipm_funcs = {.send = ipm_sedi_send,
+						.register_callback = ipm_sedi_register_callback,
+						.max_data_size_get = ipm_sedi_get_max_data_size,
+						.max_id_val_get = ipm_sedi_get_max_id,
+						.complete = ipm_sedi_complete,
+						.set_enabled = ipm_sedi_set_enable};
 
-#define IPM_SEDI_DEV_DEFINE(n)						\
-	static struct ipm_sedi_context ipm_data_##n;			\
-	static void ipm_##n##_irq_config(void);				\
-	static const struct ipm_sedi_config_t ipm_config_##n = {	\
-		.ipc_device = DT_INST_PROP(n, peripheral_id),		\
-		.irq_num = DT_INST_IRQN(n),				\
-		.irq_config = ipm_##n##_irq_config,			\
-	};								\
-	static void ipm_##n##_irq_config(void)				\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n),				\
-			    DT_INST_IRQ(n, priority), sedi_ipc_isr,	\
-			    DT_INST_PROP(n, peripheral_id),		\
-			    DT_INST_IRQ(n, sense));			\
-	}								\
-	PM_DEVICE_DT_DEFINE(DT_NODELABEL(ipm##n), ipm_power_ctrl);	\
-	DEVICE_DT_INST_DEFINE(n,					\
-			      &ipm_init,				\
-			      PM_DEVICE_DT_GET(DT_NODELABEL(ipm##n)),   \
-			      &ipm_data_##n,				\
-			      &ipm_config_##n,				\
-			      POST_KERNEL,				\
-			      0,					\
-			      &ipm_funcs);
+#define IPM_SEDI_DEV_DEFINE(n)                                                                     \
+	static struct ipm_sedi_context ipm_data_##n;                                               \
+	static void ipm_##n##_irq_config(void);                                                    \
+	static const struct ipm_sedi_config_t ipm_config_##n = {                                   \
+		.ipc_device = DT_INST_PROP(n, peripheral_id),                                      \
+		.irq_num = DT_INST_IRQN(n),                                                        \
+		.irq_config = ipm_##n##_irq_config,                                                \
+	};                                                                                         \
+	static void ipm_##n##_irq_config(void)                                                     \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), sedi_ipc_isr,               \
+			    DT_INST_PROP(n, peripheral_id), DT_INST_IRQ(n, sense));                \
+	}                                                                                          \
+	PM_DEVICE_DT_DEFINE(DT_NODELABEL(ipm##n), ipm_power_ctrl);                                 \
+	DEVICE_DT_INST_DEFINE(n, &ipm_init, PM_DEVICE_DT_GET(DT_NODELABEL(ipm##n)), &ipm_data_##n, \
+			      &ipm_config_##n, POST_KERNEL, 0, &ipm_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(IPM_SEDI_DEV_DEFINE)

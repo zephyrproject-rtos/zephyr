@@ -46,9 +46,9 @@ static void np_timer_isr(const void *arg)
 	ARG_UNUSED(arg);
 
 	uint64_t now = hwm_get_time();
-	int32_t elapsed_ticks = (now - last_tick_time)/tick_period;
+	int32_t elapsed_ticks = (now - last_tick_time) / tick_period;
 
-	last_tick_time += elapsed_ticks*tick_period;
+	last_tick_time += elapsed_ticks * tick_period;
 	sys_clock_announce(elapsed_ticks);
 }
 
@@ -104,7 +104,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
  */
 uint32_t sys_clock_elapsed(void)
 {
-	return (hwm_get_time() - last_tick_time)/tick_period;
+	return (hwm_get_time() - last_tick_time) / tick_period;
 }
 
 /**
@@ -137,5 +137,4 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

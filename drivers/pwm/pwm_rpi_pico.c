@@ -17,8 +17,8 @@ LOG_MODULE_REGISTER(pwm_rpi_pico, CONFIG_PWM_LOG_LEVEL);
 #include <hardware/pwm.h>
 #include <hardware/structs/pwm.h>
 
-#define PWM_RPI_PICO_COUNTER_TOP_MAX    UINT16_MAX
-#define PWM_RPI_NUM_CHANNELS            (16U)
+#define PWM_RPI_PICO_COUNTER_TOP_MAX UINT16_MAX
+#define PWM_RPI_NUM_CHANNELS         (16U)
 
 struct pwm_rpi_slice_config {
 	uint8_t integral;
@@ -44,7 +44,7 @@ static float pwm_rpi_get_clkdiv(const struct device *dev, int slice)
 
 	/* the divider is a fixed point 8.4 convert to float for use in pico-sdk */
 	return (float)cfg->slice_configs[slice].integral +
-		(float)cfg->slice_configs[slice].frac / 16.0f;
+	       (float)cfg->slice_configs[slice].frac / 16.0f;
 }
 
 static inline uint32_t pwm_rpi_channel_to_slice(uint32_t channel)
@@ -89,8 +89,8 @@ static int pwm_rpi_get_cycles_per_sec(const struct device *dev, uint32_t ch, uin
  * This is a convenience function to make setting the polarity of a single
  * channel easier.
  */
-static void pwm_rpi_set_channel_polarity(const struct device *dev, int slice,
-					 int pico_channel, bool inverted)
+static void pwm_rpi_set_channel_polarity(const struct device *dev, int slice, int pico_channel,
+					 bool inverted)
 {
 	const struct pwm_rpi_config *cfg = dev->config;
 
@@ -107,7 +107,7 @@ static void pwm_rpi_set_channel_polarity(const struct device *dev, int slice,
 }
 
 static int pwm_rpi_set_cycles(const struct device *dev, uint32_t ch, uint32_t period_cycles,
-			   uint32_t pulse_cycles, pwm_flags_t flags)
+			      uint32_t pulse_cycles, pwm_flags_t flags)
 {
 	const struct pwm_rpi_config *cfg = dev->config;
 	int slice = pwm_rpi_channel_to_slice(ch);
@@ -190,8 +190,7 @@ static int pwm_rpi_init(const struct device *dev)
 		if (cfg->slice_configs[slice_idx].integral == 0) {
 			pwm_set_clkdiv_int_frac(slice_idx, 1, 0);
 		} else {
-			pwm_set_clkdiv_int_frac(slice_idx,
-						cfg->slice_configs[slice_idx].integral,
+			pwm_set_clkdiv_int_frac(slice_idx, cfg->slice_configs[slice_idx].integral,
 						cfg->slice_configs[slice_idx].frac);
 		}
 		pwm_set_enabled(slice_idx, true);
@@ -200,33 +199,34 @@ static int pwm_rpi_init(const struct device *dev)
 	return 0;
 }
 
-#define PWM_INST_RPI_SLICE_DIVIDER(idx, n)				   \
-	{								   \
-		.integral = DT_INST_PROP_OR(idx, UTIL_CAT(divider_int_, n), 0),			   \
-		.frac = DT_INST_PROP_OR(idx, UTIL_CAT(divider_frac_, n), 0),			   \
+#define PWM_INST_RPI_SLICE_DIVIDER(idx, n)                                                         \
+	{                                                                                          \
+		.integral = DT_INST_PROP_OR(idx, UTIL_CAT(divider_int_, n), 0),                    \
+		.frac = DT_INST_PROP_OR(idx, UTIL_CAT(divider_frac_, n), 0),                       \
 	}
 
-#define PWM_RPI_INIT(idx)									   \
-												   \
-	PINCTRL_DT_INST_DEFINE(idx);								   \
-	static const struct pwm_rpi_config pwm_rpi_config_##idx = {				   \
-		.pwm_controller = (pwm_hw_t *)DT_INST_REG_ADDR(idx),				   \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),					   \
-		.slice_configs = {								   \
-			PWM_INST_RPI_SLICE_DIVIDER(idx, 0),					   \
-			PWM_INST_RPI_SLICE_DIVIDER(idx, 1),					   \
-			PWM_INST_RPI_SLICE_DIVIDER(idx, 2),					   \
-			PWM_INST_RPI_SLICE_DIVIDER(idx, 3),					   \
-			PWM_INST_RPI_SLICE_DIVIDER(idx, 4),					   \
-			PWM_INST_RPI_SLICE_DIVIDER(idx, 5),					   \
-			PWM_INST_RPI_SLICE_DIVIDER(idx, 6),					   \
-			PWM_INST_RPI_SLICE_DIVIDER(idx, 7),					   \
-		},										   \
-		.reset = RESET_DT_SPEC_INST_GET(idx),						   \
-		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),				   \
-		.clk_id = (clock_control_subsys_t)DT_INST_PHA_BY_IDX(idx, clocks, 0, clk_id),	   \
-	};											   \
-												   \
+#define PWM_RPI_INIT(idx)                                                                          \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(idx);                                                               \
+	static const struct pwm_rpi_config pwm_rpi_config_##idx = {                                \
+		.pwm_controller = (pwm_hw_t *)DT_INST_REG_ADDR(idx),                               \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                       \
+		.slice_configs =                                                                   \
+			{                                                                          \
+				PWM_INST_RPI_SLICE_DIVIDER(idx, 0),                                \
+				PWM_INST_RPI_SLICE_DIVIDER(idx, 1),                                \
+				PWM_INST_RPI_SLICE_DIVIDER(idx, 2),                                \
+				PWM_INST_RPI_SLICE_DIVIDER(idx, 3),                                \
+				PWM_INST_RPI_SLICE_DIVIDER(idx, 4),                                \
+				PWM_INST_RPI_SLICE_DIVIDER(idx, 5),                                \
+				PWM_INST_RPI_SLICE_DIVIDER(idx, 6),                                \
+				PWM_INST_RPI_SLICE_DIVIDER(idx, 7),                                \
+			},                                                                         \
+		.reset = RESET_DT_SPEC_INST_GET(idx),                                              \
+		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                                \
+		.clk_id = (clock_control_subsys_t)DT_INST_PHA_BY_IDX(idx, clocks, 0, clk_id),      \
+	};                                                                                         \
+                                                                                                   \
 	DEVICE_DT_INST_DEFINE(idx, pwm_rpi_init, NULL, NULL, &pwm_rpi_config_##idx, POST_KERNEL,   \
 			      CONFIG_PWM_INIT_PRIORITY, &pwm_rpi_driver_api);
 

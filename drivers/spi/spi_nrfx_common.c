@@ -40,10 +40,8 @@ int spi_nrfx_wake_request(const nrfx_gpiote_t *gpiote, uint32_t wake_pin)
 {
 	nrf_gpiote_event_t trigger_event = nrfx_gpiote_in_event_get(gpiote, wake_pin);
 	uint32_t start_cycles;
-	uint32_t max_wait_cycles =
-		DIV_ROUND_UP(CONFIG_SPI_NRFX_WAKE_TIMEOUT_US *
-				 CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
-			     1000000);
+	uint32_t max_wait_cycles = DIV_ROUND_UP(
+		CONFIG_SPI_NRFX_WAKE_TIMEOUT_US * CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC, 1000000);
 	int err = 0;
 
 	/* Enable the trigger (a high-to-low transition) without its interrupt.

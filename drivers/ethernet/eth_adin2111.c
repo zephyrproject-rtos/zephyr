@@ -28,34 +28,34 @@ LOG_MODULE_REGISTER(eth_adin2111, CONFIG_ETHERNET_LOG_LEVEL);
 #define DT_DRV_COMPAT adi_adin2111
 
 /* SPI Communication check retry delay */
-#define ADIN2111_DEV_AWAIT_DELAY_POLL_US	100U
+#define ADIN2111_DEV_AWAIT_DELAY_POLL_US 100U
 /* Number of retries SPI Communication check */
-#define ADIN2111_DEV_AWAIT_RETRY_COUNT		200U
+#define ADIN2111_DEV_AWAIT_RETRY_COUNT   200U
 
 /* ADIN RESETC check retry delay */
-#define ADIN2111_RESETC_AWAIT_DELAY_POLL_US	100U
+#define ADIN2111_RESETC_AWAIT_DELAY_POLL_US 100U
 /* Number of retries for ADIN RESETC check */
-#define ADIN2111_RESETC_AWAIT_RETRY_COUNT	200U
+#define ADIN2111_RESETC_AWAIT_RETRY_COUNT   200U
 
 /* Boot delay for clocks stabilisation (maximum 90ms) */
-#define ADIN2111_HW_BOOT_DELAY_MS		100
+#define ADIN2111_HW_BOOT_DELAY_MS 100
 
 /* MAC Address Rule and DA Filter multicast slot/idx */
-#define ADIN2111_MULTICAST_ADDR_SLOT		0U
+#define ADIN2111_MULTICAST_ADDR_SLOT  0U
 /* MAC Address Rule and DA Filter broadcast slot/idx */
-#define ADIN2111_BROADCAST_ADDR_SLOT		1U
+#define ADIN2111_BROADCAST_ADDR_SLOT  1U
 /* MAC Address Rule and DA Filter Port 1 slot/idx */
-#define ADIN2111_UNICAST_P1_ADDR_SLOT		2U
+#define ADIN2111_UNICAST_P1_ADDR_SLOT 2U
 /* MAC Address Rule and DA Filter Port 2 slot/idx */
-#define ADIN2111_UNICAST_P2_ADDR_SLOT		3U
+#define ADIN2111_UNICAST_P2_ADDR_SLOT 3U
 /* Free slots for further filtering */
-#define ADIN2111_FILTER_FIRST_SLOT		4U
-#define ADIN2111_FILTER_SLOTS			16U
+#define ADIN2111_FILTER_FIRST_SLOT    4U
+#define ADIN2111_FILTER_SLOTS         16U
 
 /* As per RM rev. A table 3, t3 >= 50ms, delay for SPI interface to be ready */
-#define ADIN2111_SPI_ACTIVE_DELAY_MS		50U
+#define ADIN2111_SPI_ACTIVE_DELAY_MS 50U
 /* As per RM rev. A page 20: approximately 10 ms (maximum) for internal logic to be ready. */
-#define ADIN2111_SW_RESET_DELAY_MS		10U
+#define ADIN2111_SW_RESET_DELAY_MS   10U
 
 int eth_adin2111_mac_reset(const struct device *dev)
 {
@@ -89,8 +89,8 @@ int eth_adin2111_mac_reset(const struct device *dev)
 	return 0;
 }
 
-int eth_adin2111_reg_update(const struct device *dev, const uint16_t reg,
-			    uint32_t mask,  uint32_t data)
+int eth_adin2111_reg_update(const struct device *dev, const uint16_t reg, uint32_t mask,
+			    uint32_t data)
 {
 	uint32_t val;
 	int ret;
@@ -169,8 +169,7 @@ int eth_adin2111_oa_spi_xfer(const struct device *dev, uint8_t *buf_rx, uint8_t 
 	return 0;
 }
 
-static int eth_adin2111_reg_read_oa(const struct device *dev, const uint16_t reg,
-				    uint32_t *val)
+static int eth_adin2111_reg_read_oa(const struct device *dev, const uint16_t reg, uint32_t *val)
 {
 	struct adin2111_data *ctx = dev->data;
 	uint32_t pval;
@@ -207,8 +206,7 @@ static int eth_adin2111_reg_read_oa(const struct device *dev, const uint16_t reg
 	return 0;
 }
 
-static int eth_adin2111_reg_write_oa(const struct device *dev, const uint16_t reg,
-				     uint32_t val)
+static int eth_adin2111_reg_write_oa(const struct device *dev, const uint16_t reg, uint32_t val)
 {
 	struct adin2111_data *ctx = dev->data;
 	uint32_t pval;
@@ -305,9 +303,10 @@ int eth_adin2111_oa_data_read(const struct device *dev, const uint16_t port_idx)
 			ctx->scur = 0;
 		}
 
-		len = (ftr & ADIN2111_OA_DATA_FTR_EV) ?
-		       ((ftr & ADIN2111_OA_DATA_FTR_EBO_MSK) >> ADIN2111_OA_DATA_FTR_EBO) + 1 :
-		       ctx->oa_cps;
+		len = (ftr & ADIN2111_OA_DATA_FTR_EV)
+			      ? ((ftr & ADIN2111_OA_DATA_FTR_EBO_MSK) >> ADIN2111_OA_DATA_FTR_EBO) +
+					1
+			      : ctx->oa_cps;
 		memcpy(&ctx->buf[ctx->scur], &ctx->oa_rx_buf[rx_pos], len);
 		ctx->scur += len;
 
@@ -329,8 +328,8 @@ int eth_adin2111_oa_data_read(const struct device *dev, const uint16_t port_idx)
 			ret = net_recv_data(iface, pkt);
 			if (ret < 0) {
 				net_pkt_unref(pkt);
-				LOG_ERR("Port %u failed to enqueue frame to RX queue, %d",
-					port_idx, ret);
+				LOG_ERR("Port %u failed to enqueue frame to RX queue, %d", port_idx,
+					ret);
 				return ret;
 			}
 		}
@@ -373,7 +372,7 @@ static int eth_adin2111_send_oa_frame(const struct device *dev, struct net_pkt *
 	/* Prepare for single dma transfer */
 	for (i = 1, cur = 0; i <= chunks; i++) {
 		hdr = ADIN2111_OA_DATA_HDR_DNC | ADIN2111_OA_DATA_HDR_DV |
-			ADIN2111_OA_DATA_HDR_NORX;
+		      ADIN2111_OA_DATA_HDR_NORX;
 		hdr |= (!!port_idx << ADIN2111_OA_DATA_HDR_VS);
 		if (i == 1) {
 			hdr |= ADIN2111_OA_DATA_HDR_SV;
@@ -407,8 +406,7 @@ static int eth_adin2111_send_oa_frame(const struct device *dev, struct net_pkt *
 	return 0;
 }
 
-static int eth_adin2111_reg_read_generic(const struct device *dev,
-					 const uint16_t reg,
+static int eth_adin2111_reg_read_generic(const struct device *dev, const uint16_t reg,
 					 uint32_t *val)
 {
 	const struct adin2111_config *cfg = dev->config;
@@ -418,9 +416,9 @@ static int eth_adin2111_reg_read_generic(const struct device *dev,
 #if CONFIG_ETH_ADIN2111_SPI_CFG0
 	uint8_t rcv_crc;
 	uint8_t comp_crc;
-	uint8_t buf[ADIN2111_REG_READ_BUF_SIZE_CRC] = { 0 };
+	uint8_t buf[ADIN2111_REG_READ_BUF_SIZE_CRC] = {0};
 #else
-	uint8_t buf[ADIN2111_REG_READ_BUF_SIZE] = { 0 };
+	uint8_t buf[ADIN2111_REG_READ_BUF_SIZE] = {0};
 #endif /* CONFIG_ETH_ADIN2111_SPI_CFG0 */
 
 	/* spi header */
@@ -436,10 +434,10 @@ static int eth_adin2111_reg_read_generic(const struct device *dev,
 	buf[2] = 0U;
 #endif /* CONFIG_ETH_ADIN2111_SPI_CFG0 */
 
-	const struct spi_buf tx_buf = { .buf = buf, .len = header_len + read_len };
-	const struct spi_buf rx_buf = { .buf = buf, .len = header_len + read_len };
-	const struct spi_buf_set tx = { .buffers = &tx_buf, .count = 1U };
-	const struct spi_buf_set rx = { .buffers = &rx_buf, .count = 1U };
+	const struct spi_buf tx_buf = {.buf = buf, .len = header_len + read_len};
+	const struct spi_buf rx_buf = {.buf = buf, .len = header_len + read_len};
+	const struct spi_buf_set tx = {.buffers = &tx_buf, .count = 1U};
+	const struct spi_buf_set rx = {.buffers = &rx_buf, .count = 1U};
 
 	ret = spi_transceive_dt(&cfg->spi, &tx, &rx);
 	if (ret < 0) {
@@ -461,22 +459,21 @@ static int eth_adin2111_reg_read_generic(const struct device *dev,
 	return ret;
 }
 
-static int eth_adin2111_reg_write_generic(const struct device *dev,
-					  const uint16_t reg,
+static int eth_adin2111_reg_write_generic(const struct device *dev, const uint16_t reg,
 					  const uint32_t val)
 {
 	const struct adin2111_config *cfg = dev->config;
 	size_t header_size = ADIN2111_WRITE_HEADER_SIZE;
 	size_t data_size = sizeof(uint32_t);
 #if CONFIG_ETH_ADIN2111_SPI_CFG0
-	uint8_t buf[ADIN2111_REG_WRITE_BUF_SIZE_CRC] = { 0 };
+	uint8_t buf[ADIN2111_REG_WRITE_BUF_SIZE_CRC] = {0};
 #else
-	uint8_t buf[ADIN2111_REG_WRITE_BUF_SIZE] = { 0 };
+	uint8_t buf[ADIN2111_REG_WRITE_BUF_SIZE] = {0};
 #endif /* CONFIG_ETH_ADIN2111_SPI_CFG0 */
 
 	/* spi header */
 	*(uint16_t *)buf = htons((ADIN2111_WRITE_TXN_CTRL | reg));
-	#if CONFIG_ETH_ADIN2111_SPI_CFG0
+#if CONFIG_ETH_ADIN2111_SPI_CFG0
 	buf[2] = crc8_ccitt(0, buf, header_size);
 	++header_size;
 #endif /* CONFIG_ETH_ADIN2111_SPI_CFG0 */
@@ -488,17 +485,13 @@ static int eth_adin2111_reg_write_generic(const struct device *dev,
 	++data_size;
 #endif /* CONFIG_ETH_ADIN2111_SPI_CFG0 */
 
-	const struct spi_buf spi_tx_buf = {
-		.buf = buf,
-		.len = header_size + data_size
-	};
-	const struct spi_buf_set tx = { .buffers = &spi_tx_buf, .count = 1U };
+	const struct spi_buf spi_tx_buf = {.buf = buf, .len = header_size + data_size};
+	const struct spi_buf_set tx = {.buffers = &spi_tx_buf, .count = 1U};
 
 	return spi_write_dt(&cfg->spi, &tx);
 }
 
-int eth_adin2111_reg_read(const struct device *dev, const uint16_t reg,
-			  uint32_t *val)
+int eth_adin2111_reg_read(const struct device *dev, const uint16_t reg, uint32_t *val)
 {
 	struct adin2111_data *ctx = dev->data;
 	int rval;
@@ -512,8 +505,7 @@ int eth_adin2111_reg_read(const struct device *dev, const uint16_t reg,
 	return rval;
 }
 
-int eth_adin2111_reg_write(const struct device *dev, const uint16_t reg,
-			   const uint32_t val)
+int eth_adin2111_reg_write(const struct device *dev, const uint16_t reg, const uint32_t val)
 {
 	struct adin2111_data *ctx = dev->data;
 	int rval;
@@ -539,9 +531,9 @@ static int adin2111_read_fifo(const struct device *dev, const uint16_t port_idx)
 	uint32_t fsize_real;
 	uint32_t padding_len;
 #if CONFIG_ETH_ADIN2111_SPI_CFG0
-	uint8_t cmd_buf[ADIN2111_FIFO_READ_CMD_BUF_SIZE_CRC] = { 0 };
+	uint8_t cmd_buf[ADIN2111_FIFO_READ_CMD_BUF_SIZE_CRC] = {0};
 #else
-	uint8_t cmd_buf[ADIN2111_FIFO_READ_CMD_BUF_SIZE] = { 0 };
+	uint8_t cmd_buf[ADIN2111_FIFO_READ_CMD_BUF_SIZE] = {0};
 #endif /* CONFIG_ETH_ADIN2111_SPI_CFG0 */
 	int ret;
 
@@ -571,17 +563,13 @@ static int adin2111_read_fifo(const struct device *dev, const uint16_t port_idx)
 	cmd_buf[2] = 0U;
 #endif /* CONFIG_ETH_ADIN2111_SPI_CFG0 */
 
-	const struct spi_buf tx_buf = { .buf = cmd_buf, .len = sizeof(cmd_buf) };
+	const struct spi_buf tx_buf = {.buf = cmd_buf, .len = sizeof(cmd_buf)};
 	const struct spi_buf rx_buf[3] = {
 		{.buf = NULL, .len = sizeof(cmd_buf) + ADIN2111_FRAME_HEADER_SIZE},
 		{.buf = ctx->buf, .len = fsize},
-		{.buf = NULL, .len = padding_len }
-	};
-	const struct spi_buf_set tx = { .buffers = &tx_buf, .count = 1U };
-	const struct spi_buf_set rx = {
-		.buffers = rx_buf,
-		.count = ((padding_len == 0U) ? 2U : 3U)
-	};
+		{.buf = NULL, .len = padding_len}};
+	const struct spi_buf_set tx = {.buffers = &tx_buf, .count = 1U};
+	const struct spi_buf_set rx = {.buffers = rx_buf, .count = ((padding_len == 0U) ? 2U : 3U)};
 
 	ret = spi_transceive_dt(&cfg->spi, &tx, &rx);
 	if (ret < 0) {
@@ -597,8 +585,7 @@ static int adin2111_read_fifo(const struct device *dev, const uint16_t port_idx)
 					   K_MSEC(CONFIG_ETH_ADIN2111_TIMEOUT));
 	if (!pkt) {
 		eth_stats_update_errors_rx(iface);
-		LOG_ERR("Port %u failed to alloc frame RX buffer, %u bytes",
-			port_idx, fsize_real);
+		LOG_ERR("Port %u failed to alloc frame RX buffer, %u bytes", port_idx, fsize_real);
 		return -ENOMEM;
 	}
 
@@ -614,8 +601,7 @@ static int adin2111_read_fifo(const struct device *dev, const uint16_t port_idx)
 	if (ret < 0) {
 		eth_stats_update_errors_rx(iface);
 		net_pkt_unref(pkt);
-		LOG_ERR("Port %u failed to enqueue frame to RX queue, %d",
-			port_idx, ret);
+		LOG_ERR("Port %u failed to enqueue frame to RX queue, %d", port_idx, ret);
 		return ret;
 	}
 
@@ -770,9 +756,7 @@ continue_unlock:
 	}
 }
 
-static void adin2111_int_callback(const struct device *dev,
-				  struct gpio_callback *cb,
-				  uint32_t pins)
+static void adin2111_int_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(pins);
@@ -852,8 +836,7 @@ static int adin2111_port_send(const struct device *dev, struct net_pkt *pkt)
 	 * verify that there is space for the frame
 	 * (frame + 2b header + 2b size field)
 	 */
-	if (tx_space <
-	   (pkt_len + ADIN2111_FRAME_HEADER_SIZE + ADIN2111_INTERNAL_HEADER_SIZE)) {
+	if (tx_space < (pkt_len + ADIN2111_FRAME_HEADER_SIZE + ADIN2111_INTERNAL_HEADER_SIZE)) {
 		/* tx buffer is full */
 		eth_stats_update_errors_tx(data->iface);
 		ret = -EBUSY;
@@ -865,9 +848,8 @@ static int adin2111_port_send(const struct device *dev, struct net_pkt *pkt)
 	 * internally MAC adds 4 bytes for forward error correction
 	 */
 	if ((pkt_len + ADIN2111_TX_FIFO_BUFFER_MARGIN) < 64) {
-		padded_size = pkt_len
-			+ (64 - (pkt_len + ADIN2111_TX_FIFO_BUFFER_MARGIN))
-			+ ADIN2111_FRAME_HEADER_SIZE;
+		padded_size = pkt_len + (64 - (pkt_len + ADIN2111_TX_FIFO_BUFFER_MARGIN)) +
+			      ADIN2111_FRAME_HEADER_SIZE;
 	} else {
 		padded_size = pkt_len + ADIN2111_FRAME_HEADER_SIZE;
 	}
@@ -894,13 +876,10 @@ static int adin2111_port_send(const struct device *dev, struct net_pkt *pkt)
 	*(uint16_t *)(ctx->buf + header_size) = htons(cfg->port_idx);
 
 	/* read pkt into tx buffer */
-	ret = net_pkt_read(pkt,
-			   (ctx->buf + header_size + ADIN2111_FRAME_HEADER_SIZE),
-			   pkt_len);
+	ret = net_pkt_read(pkt, (ctx->buf + header_size + ADIN2111_FRAME_HEADER_SIZE), pkt_len);
 	if (ret < 0) {
 		eth_stats_update_errors_tx(data->iface);
-		LOG_ERR("Port %u failed to read PKT into TX buffer, %d",
-			cfg->port_idx, ret);
+		LOG_ERR("Port %u failed to read PKT into TX buffer, %d", cfg->port_idx, ret);
 		goto end_unlock;
 	}
 
@@ -913,14 +892,10 @@ static int adin2111_port_send(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	/* write transaction */
-	const struct spi_buf buf = {
-		.buf = ctx->buf,
-		.len = header_size + burst_size
-	};
-	const struct spi_buf_set tx = { .buffers = &buf, .count = 1U };
+	const struct spi_buf buf = {.buf = ctx->buf, .len = header_size + burst_size};
+	const struct spi_buf_set tx = {.buffers = &buf, .count = 1U};
 
-	ret = spi_write_dt(&((const struct adin2111_config *) adin->config)->spi,
-			   &tx);
+	ret = spi_write_dt(&((const struct adin2111_config *)adin->config)->spi, &tx);
 end_check:
 	if (ret < 0) {
 		eth_stats_update_errors_tx(data->iface);
@@ -956,8 +931,7 @@ static int adin2111_config_sync(const struct device *dev)
 	return 0;
 }
 
-static int adin2111_write_filter_address(const struct device *dev,
-					 uint8_t *addr, uint8_t *mask,
+static int adin2111_write_filter_address(const struct device *dev, uint8_t *addr, uint8_t *mask,
 					 uint32_t rules, uint16_t slot)
 {
 	uint16_t offset = slot * 2U;
@@ -969,8 +943,7 @@ static int adin2111_write_filter_address(const struct device *dev,
 		return ret;
 	}
 
-	ret = eth_adin2111_reg_write(dev, ADIN2111_ADDR_FILT_LWR  + offset,
-				     sys_get_be32(&addr[2]));
+	ret = eth_adin2111_reg_write(dev, ADIN2111_ADDR_FILT_LWR + offset, sys_get_be32(&addr[2]));
 	if (ret < 0) {
 		return ret;
 	}
@@ -980,14 +953,12 @@ static int adin2111_write_filter_address(const struct device *dev,
 		return 0;
 	}
 
-	ret = eth_adin2111_reg_write(dev, ADIN2111_ADDR_MSK_UPR + offset,
-				     sys_get_be16(&mask[0]));
+	ret = eth_adin2111_reg_write(dev, ADIN2111_ADDR_MSK_UPR + offset, sys_get_be16(&mask[0]));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = eth_adin2111_reg_write(dev, ADIN2111_ADDR_MSK_LWR + offset,
-				     sys_get_be32(&mask[2]));
+	ret = eth_adin2111_reg_write(dev, ADIN2111_ADDR_MSK_LWR + offset, sys_get_be32(&mask[2]));
 	if (ret < 0) {
 		return ret;
 	}
@@ -1001,13 +972,10 @@ static int adin2111_filter_multicast(const struct device *dev)
 	bool is_adin2111 = (cfg->id == ADIN2111_MAC);
 	uint8_t mm[NET_ETH_ADDR_LEN] = {BIT(0), 0U, 0U, 0U, 0U, 0U};
 	uint8_t mmask[NET_ETH_ADDR_LEN] = {0xFFU, 0U, 0U, 0U, 0U, 0U};
-	uint32_t rules = ADIN2111_ADDR_APPLY2PORT1 |
-			 (is_adin2111 ? ADIN2111_ADDR_APPLY2PORT2 : 0) |
-			 ADIN2111_ADDR_TO_HOST |
-			 ADIN2111_ADDR_TO_OTHER_PORT;
+	uint32_t rules = ADIN2111_ADDR_APPLY2PORT1 | (is_adin2111 ? ADIN2111_ADDR_APPLY2PORT2 : 0) |
+			 ADIN2111_ADDR_TO_HOST | ADIN2111_ADDR_TO_OTHER_PORT;
 
-	return adin2111_write_filter_address(dev, mm, mmask, rules,
-					     ADIN2111_MULTICAST_ADDR_SLOT);
+	return adin2111_write_filter_address(dev, mm, mmask, rules, ADIN2111_MULTICAST_ADDR_SLOT);
 }
 
 static int adin2111_filter_broadcast(const struct device *dev)
@@ -1015,23 +983,18 @@ static int adin2111_filter_broadcast(const struct device *dev)
 	const struct adin2111_config *cfg = dev->config;
 	bool is_adin2111 = (cfg->id == ADIN2111_MAC);
 	uint8_t mac[NET_ETH_ADDR_LEN] = {0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU};
-	uint32_t rules = ADIN2111_ADDR_APPLY2PORT1 |
-			 (is_adin2111 ? ADIN2111_ADDR_APPLY2PORT2 : 0) |
-			 ADIN2111_ADDR_TO_HOST |
-			 ADIN2111_ADDR_TO_OTHER_PORT;
+	uint32_t rules = ADIN2111_ADDR_APPLY2PORT1 | (is_adin2111 ? ADIN2111_ADDR_APPLY2PORT2 : 0) |
+			 ADIN2111_ADDR_TO_HOST | ADIN2111_ADDR_TO_OTHER_PORT;
 
-	return adin2111_write_filter_address(dev, mac, mac, rules,
-					     ADIN2111_BROADCAST_ADDR_SLOT);
+	return adin2111_write_filter_address(dev, mac, mac, rules, ADIN2111_BROADCAST_ADDR_SLOT);
 }
 
-static int adin2111_filter_unicast(const struct device *dev, uint8_t *addr,
-				   const uint16_t port_idx)
+static int adin2111_filter_unicast(const struct device *dev, uint8_t *addr, const uint16_t port_idx)
 {
-	uint32_t rules = (port_idx == 0 ? ADIN2111_ADDR_APPLY2PORT1
-					: ADIN2111_ADDR_APPLY2PORT2)
-			 | ADIN2111_ADDR_TO_HOST;
-	uint16_t slot = (port_idx == 0 ? ADIN2111_UNICAST_P1_ADDR_SLOT
-				       : ADIN2111_UNICAST_P2_ADDR_SLOT);
+	uint32_t rules = (port_idx == 0 ? ADIN2111_ADDR_APPLY2PORT1 : ADIN2111_ADDR_APPLY2PORT2) |
+			 ADIN2111_ADDR_TO_HOST;
+	uint16_t slot =
+		(port_idx == 0 ? ADIN2111_UNICAST_P1_ADDR_SLOT : ADIN2111_UNICAST_P2_ADDR_SLOT);
 
 	return adin2111_write_filter_address(dev, addr, NULL, rules, slot);
 }
@@ -1104,8 +1067,8 @@ static int eth_adin2111_set_mac_filter(const struct device *dev, uint8_t *mac,
 		}
 		if (reg == 0) {
 			uint32_t rules = (port_idx == 0 ? ADIN2111_ADDR_APPLY2PORT1
-					: ADIN2111_ADDR_APPLY2PORT2)
-					| ADIN2111_ADDR_TO_HOST;
+							: ADIN2111_ADDR_APPLY2PORT2) |
+					 ADIN2111_ADDR_TO_HOST;
 
 			return adin2111_write_filter_address(dev, mac, NULL, rules, i);
 		}
@@ -1156,14 +1119,14 @@ static void adin2111_port_iface_init(struct net_if *iface)
 	int ret;
 
 	if (!device_is_ready(adin)) {
-		LOG_ERR("ADIN %s is not ready, can't init port %u iface",
-			cfg->adin->name, cfg->port_idx);
+		LOG_ERR("ADIN %s is not ready, can't init port %u iface", cfg->adin->name,
+			cfg->port_idx);
 		return;
 	}
 
 	if (!device_is_ready(cfg->phy)) {
-		LOG_ERR("PHY %u is not ready, can't init port %u iface",
-			cfg->phy_addr, cfg->port_idx);
+		LOG_ERR("PHY %u is not ready, can't init port %u iface", cfg->phy_addr,
+			cfg->port_idx);
 		return;
 	}
 
@@ -1172,12 +1135,10 @@ static void adin2111_port_iface_init(struct net_if *iface)
 
 	ret = adin2111_filter_unicast(adin, data->mac_addr, cfg->port_idx);
 	if (ret < 0) {
-		LOG_ERR("Port %u, failed to set unicast filter, %d",
-			cfg->port_idx, ret);
+		LOG_ERR("Port %u, failed to set unicast filter, %d", cfg->port_idx, ret);
 		return;
 	}
-	net_if_set_link_addr(iface, data->mac_addr, sizeof(data->mac_addr),
-			     NET_LINK_ETHERNET);
+	net_if_set_link_addr(iface, data->mac_addr, sizeof(data->mac_addr), NET_LINK_ETHERNET);
 	ethernet_init(iface);
 	net_if_carrier_off(iface);
 
@@ -1207,10 +1168,8 @@ static void adin2111_port_iface_init(struct net_if *iface)
 		/* all ifaces are done, start INT processing */
 		k_thread_create(&ctx->rx_thread, ctx->rx_thread_stack,
 				K_KERNEL_STACK_SIZEOF(ctx->rx_thread_stack),
-				adin2111_offload_thread,
-				(void *)adin, NULL, NULL,
-				CONFIG_ETH_ADIN2111_IRQ_THREAD_PRIO,
-				K_ESSENTIAL, K_NO_WAIT);
+				adin2111_offload_thread, (void *)adin, NULL, NULL,
+				CONFIG_ETH_ADIN2111_IRQ_THREAD_PRIO, K_ESSENTIAL, K_NO_WAIT);
 		k_thread_name_set(&ctx->rx_thread, "eth_adin2111_offload");
 	}
 }
@@ -1218,16 +1177,14 @@ static void adin2111_port_iface_init(struct net_if *iface)
 static enum ethernet_hw_caps adin2111_port_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-	return ETHERNET_LINK_10BASE_T |
-		ETHERNET_HW_FILTERING
+	return ETHERNET_LINK_10BASE_T | ETHERNET_HW_FILTERING
 #if defined(CONFIG_NET_LLDP)
-		| ETHERNET_LLDP
+	       | ETHERNET_LLDP
 #endif
-		| ETHERNET_PROMISC_MODE;
+	       | ETHERNET_PROMISC_MODE;
 }
 
-static int adin2111_port_set_config(const struct device *dev,
-				    enum ethernet_config_type type,
+static int adin2111_port_set_config(const struct device *dev, enum ethernet_config_type type,
 				    const struct ethernet_config *config)
 {
 	const struct adin2111_port_config *cfg = dev->config;
@@ -1322,7 +1279,7 @@ static int adin2111_await_device(const struct device *dev)
 			if ((val >> 10) == ADIN2111_PHYID_OUI) {
 				/* clear RESETC */
 				ret = eth_adin2111_reg_write(dev, ADIN2111_STATUS0,
-							 ADIN2111_STATUS0_RESETC);
+							     ADIN2111_STATUS0_RESETC);
 				if (ret >= 0) {
 					break;
 				}
@@ -1372,8 +1329,7 @@ static int adin2111_init(const struct device *dev)
 	}
 
 	if (!gpio_is_ready_dt(&cfg->interrupt)) {
-		LOG_ERR("Interrupt GPIO device %s is not ready",
-			cfg->interrupt.port->name);
+		LOG_ERR("Interrupt GPIO device %s is not ready", cfg->interrupt.port->name);
 		return -ENODEV;
 	}
 
@@ -1385,8 +1341,7 @@ static int adin2111_init(const struct device *dev)
 
 	if (cfg->reset.port != NULL) {
 		if (!gpio_is_ready_dt(&cfg->reset)) {
-			LOG_ERR("Reset GPIO device %s is not ready",
-			cfg->reset.port->name);
+			LOG_ERR("Reset GPIO device %s is not ready", cfg->reset.port->name);
 			return -ENODEV;
 		}
 
@@ -1405,8 +1360,7 @@ static int adin2111_init(const struct device *dev)
 		k_msleep(ADIN2111_HW_BOOT_DELAY_MS);
 	}
 
-	gpio_init_callback(&(ctx->gpio_int_callback),
-			   adin2111_int_callback,
+	gpio_init_callback(&(ctx->gpio_int_callback), adin2111_int_callback,
 			   BIT(cfg->interrupt.pin));
 
 	ret = gpio_add_callback(cfg->interrupt.port, &ctx->gpio_int_callback);
@@ -1478,8 +1432,7 @@ static int adin2111_init(const struct device *dev)
 
 	/* configure interrupt masks */
 	ctx->imask0 = ~((uint32_t)ADIN2111_IMASK0_PHYINTM);
-	ctx->imask1 = ~(ADIN2111_IMASK1_TX_RDY_MASK |
-			ADIN2111_IMASK1_P1_RX_RDY_MASK |
+	ctx->imask1 = ~(ADIN2111_IMASK1_TX_RDY_MASK | ADIN2111_IMASK1_P1_RX_RDY_MASK |
 			ADIN2111_IMASK1_SPI_ERR_MASK |
 			(is_adin2111 ? ADIN2111_IMASK1_P2_RX_RDY_MASK : 0) |
 			(is_adin2111 ? ADIN2111_IMASK1_P2_PHYINT_MASK : 0));
@@ -1496,8 +1449,7 @@ static int adin2111_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
-						GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
 		LOG_ERR("Failed to enable INT, %d", ret);
 		return ret;
@@ -1516,77 +1468,77 @@ static const struct ethernet_api adin2111_port_api = {
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
 };
 
-#define ADIN2111_STR(x)		#x
-#define ADIN2111_XSTR(x)	ADIN2111_STR(x)
+#define ADIN2111_STR(x)  #x
+#define ADIN2111_XSTR(x) ADIN2111_STR(x)
 
 #define ADIN2111_DEF_BUF(name, size) static uint8_t __aligned(4) name[size]
 
-#define ADIN2111_MDIO_PHY_BY_ADDR(adin_n, phy_addr)						\
+#define ADIN2111_MDIO_PHY_BY_ADDR(adin_n, phy_addr)                                                \
 	DEVICE_DT_GET(DT_CHILD(DT_INST_CHILD(adin_n, mdio), ethernet_phy_##phy_addr))
 
-#define ADIN2111_PORT_MAC(adin_n, port_n)							\
+#define ADIN2111_PORT_MAC(adin_n, port_n)                                                          \
 	DT_PROP(DT_CHILD(DT_DRV_INST(adin_n), port##port_n), local_mac_address)
 
-#define ADIN2111_PORT_DEVICE_INIT_INSTANCE(parent_n, port_n, phy_n, name)			\
-	static struct adin2111_port_data name##_port_data_##port_n = {				\
-		.mac_addr = ADIN2111_PORT_MAC(parent_n, phy_n),					\
-	};											\
-	static const struct adin2111_port_config name##_port_config_##port_n = {		\
-		.adin = DEVICE_DT_INST_GET(parent_n),						\
-		.phy = ADIN2111_MDIO_PHY_BY_ADDR(parent_n, phy_n),				\
-		.port_idx = port_n,								\
-		.phy_addr = phy_n,								\
-	};											\
-	ETH_NET_DEVICE_INIT_INSTANCE(name##_port_##port_n, "port_" ADIN2111_XSTR(port_n),	\
-				     port_n, NULL, NULL, &name##_port_data_##port_n,		\
-				     &name##_port_config_##port_n, CONFIG_ETH_INIT_PRIORITY,	\
+#define ADIN2111_PORT_DEVICE_INIT_INSTANCE(parent_n, port_n, phy_n, name)                          \
+	static struct adin2111_port_data name##_port_data_##port_n = {                             \
+		.mac_addr = ADIN2111_PORT_MAC(parent_n, phy_n),                                    \
+	};                                                                                         \
+	static const struct adin2111_port_config name##_port_config_##port_n = {                   \
+		.adin = DEVICE_DT_INST_GET(parent_n),                                              \
+		.phy = ADIN2111_MDIO_PHY_BY_ADDR(parent_n, phy_n),                                 \
+		.port_idx = port_n,                                                                \
+		.phy_addr = phy_n,                                                                 \
+	};                                                                                         \
+	ETH_NET_DEVICE_INIT_INSTANCE(name##_port_##port_n, "port_" ADIN2111_XSTR(port_n), port_n,  \
+				     NULL, NULL, &name##_port_data_##port_n,                       \
+				     &name##_port_config_##port_n, CONFIG_ETH_INIT_PRIORITY,       \
 				     &adin2111_port_api, NET_ETH_MTU);
 
 #define ADIN2111_SPI_OPERATION ((uint16_t)(SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8)))
-#define ADIN2111_MAC_INITIALIZE(inst, dev_id, ifaces, name)					\
-	ADIN2111_DEF_BUF(name##_buffer_##inst, CONFIG_ETH_ADIN2111_BUFFER_SIZE);		\
+#define ADIN2111_MAC_INITIALIZE(inst, dev_id, ifaces, name)                                        \
+	ADIN2111_DEF_BUF(name##_buffer_##inst, CONFIG_ETH_ADIN2111_BUFFER_SIZE);                   \
 	COND_CODE_1(DT_INST_PROP(inst, spi_oa),							\
 	(											\
 		ADIN2111_DEF_BUF(name##_oa_tx_buf_##inst, ADIN2111_OA_BUF_SZ);			\
 		ADIN2111_DEF_BUF(name##_oa_rx_buf_##inst, ADIN2111_OA_BUF_SZ);			\
-	), ())											\
-	static const struct adin2111_config name##_config_##inst = {				\
-		.id = dev_id,									\
-		.spi = SPI_DT_SPEC_INST_GET(inst, ADIN2111_SPI_OPERATION, 0),			\
-		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),				\
-		.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, { 0 }),			\
-	};											\
-	static struct adin2111_data name##_data_##inst = {					\
-		.ifaces_left_to_init = ifaces,							\
-		.port = {},									\
-		.offload_sem = Z_SEM_INITIALIZER(name##_data_##inst.offload_sem, 0, 1),		\
-		.lock = Z_MUTEX_INITIALIZER(name##_data_##inst.lock),				\
-		.buf = name##_buffer_##inst,							\
-		.oa = DT_INST_PROP(inst, spi_oa),						\
-		.oa_prot = DT_INST_PROP(inst, spi_oa_protection),				\
-		.oa_cps = 64,									\
+	), ())                                            \
+	static const struct adin2111_config name##_config_##inst = {                               \
+		.id = dev_id,                                                                      \
+		.spi = SPI_DT_SPEC_INST_GET(inst, ADIN2111_SPI_OPERATION, 0),                      \
+		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                               \
+		.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),                         \
+	};                                                                                         \
+	static struct adin2111_data name##_data_##inst = {                                         \
+		.ifaces_left_to_init = ifaces,                                                     \
+		.port = {},                                                                        \
+		.offload_sem = Z_SEM_INITIALIZER(name##_data_##inst.offload_sem, 0, 1),            \
+		.lock = Z_MUTEX_INITIALIZER(name##_data_##inst.lock),                              \
+		.buf = name##_buffer_##inst,                                                       \
+		.oa = DT_INST_PROP(inst, spi_oa),                                                  \
+		.oa_prot = DT_INST_PROP(inst, spi_oa_protection),                                  \
+		.oa_cps = 64,                                                                      \
 		.oa_tx_buf = COND_CODE_1(DT_INST_PROP(inst, spi_oa),				\
-					 (name##_oa_tx_buf_##inst), (NULL)),			\
-		.oa_rx_buf = COND_CODE_1(DT_INST_PROP(inst, spi_oa),				\
-					 (name##_oa_rx_buf_##inst), (NULL)),			\
-	};											\
-	/* adin */										\
-	DEVICE_DT_DEFINE(DT_DRV_INST(inst), adin2111_init, NULL,				\
-			 &name##_data_##inst, &name##_config_##inst,				\
-			 POST_KERNEL, CONFIG_ETH_INIT_PRIORITY,					\
-			 NULL);
+					 (name##_oa_tx_buf_##inst), (NULL)),                                         \
+			 .oa_rx_buf = COND_CODE_1(DT_INST_PROP(inst, spi_oa),				\
+					 (name##_oa_rx_buf_##inst), (NULL)),  \
+	};                                                                                         \
+	/* adin */                                                                                 \
+	DEVICE_DT_DEFINE(DT_DRV_INST(inst), adin2111_init, NULL, &name##_data_##inst,              \
+			 &name##_config_##inst, POST_KERNEL, CONFIG_ETH_INIT_PRIORITY, NULL);
 
-#define ADIN2111_MAC_INIT(inst)	ADIN2111_MAC_INITIALIZE(inst, ADIN2111_MAC, 2, adin2111)	\
-	/* ports */										\
-	ADIN2111_PORT_DEVICE_INIT_INSTANCE(inst, 0, 1, adin2111)				\
+#define ADIN2111_MAC_INIT(inst)                                                                    \
+	ADIN2111_MAC_INITIALIZE(inst, ADIN2111_MAC, 2, adin2111)                                   \
+	/* ports */                                                                                \
+	ADIN2111_PORT_DEVICE_INIT_INSTANCE(inst, 0, 1, adin2111)                                   \
 	ADIN2111_PORT_DEVICE_INIT_INSTANCE(inst, 1, 2, adin2111)
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT adi_adin2111
 DT_INST_FOREACH_STATUS_OKAY(ADIN2111_MAC_INIT)
 
-#define ADIN1110_MAC_INIT(inst)	ADIN2111_MAC_INITIALIZE(inst, ADIN1110_MAC, 1, adin1110)	\
-	/* ports */										\
+#define ADIN1110_MAC_INIT(inst)                                                                    \
+	ADIN2111_MAC_INITIALIZE(inst, ADIN1110_MAC, 1, adin1110)                                   \
+	/* ports */                                                                                \
 	ADIN2111_PORT_DEVICE_INIT_INSTANCE(inst, 0, 1, adin1110)
 
 #undef DT_DRV_COMPAT

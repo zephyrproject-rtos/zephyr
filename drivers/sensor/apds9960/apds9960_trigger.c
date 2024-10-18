@@ -19,9 +19,7 @@ LOG_MODULE_DECLARE(APDS9960, CONFIG_SENSOR_LOG_LEVEL);
 
 void apds9960_work_cb(struct k_work *work)
 {
-	struct apds9960_data *data = CONTAINER_OF(work,
-						  struct apds9960_data,
-						  work);
+	struct apds9960_data *data = CONTAINER_OF(work, struct apds9960_data, work);
 	const struct device *dev = data->dev;
 
 	if (data->p_th_handler != NULL) {
@@ -31,17 +29,14 @@ void apds9960_work_cb(struct k_work *work)
 	apds9960_setup_int(dev->config, true);
 }
 
-int apds9960_attr_set(const struct device *dev,
-		      enum sensor_channel chan,
-		      enum sensor_attribute attr,
-		      const struct sensor_value *val)
+int apds9960_attr_set(const struct device *dev, enum sensor_channel chan,
+		      enum sensor_attribute attr, const struct sensor_value *val)
 {
 	const struct apds9960_config *config = dev->config;
 
 	if (chan == SENSOR_CHAN_PROX) {
 		if (attr == SENSOR_ATTR_UPPER_THRESH) {
-			if (i2c_reg_write_byte_dt(&config->i2c,
-						  APDS9960_PIHT_REG,
+			if (i2c_reg_write_byte_dt(&config->i2c, APDS9960_PIHT_REG,
 						  (uint8_t)val->val1)) {
 				return -EIO;
 			}
@@ -49,8 +44,7 @@ int apds9960_attr_set(const struct device *dev,
 			return 0;
 		}
 		if (attr == SENSOR_ATTR_LOWER_THRESH) {
-			if (i2c_reg_write_byte_dt(&config->i2c,
-						  APDS9960_PILT_REG,
+			if (i2c_reg_write_byte_dt(&config->i2c, APDS9960_PILT_REG,
 						  (uint8_t)val->val1)) {
 				return -EIO;
 			}
@@ -62,8 +56,7 @@ int apds9960_attr_set(const struct device *dev,
 	return -ENOTSUP;
 }
 
-int apds9960_trigger_set(const struct device *dev,
-			 const struct sensor_trigger *trig,
+int apds9960_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			 sensor_trigger_handler_t handler)
 {
 	const struct apds9960_config *config = dev->config;
@@ -76,10 +69,8 @@ int apds9960_trigger_set(const struct device *dev,
 		if (trig->chan == SENSOR_CHAN_PROX) {
 			data->p_th_handler = handler;
 			data->p_th_trigger = trig;
-			if (i2c_reg_update_byte_dt(&config->i2c,
-						   APDS9960_ENABLE_REG,
-						   APDS9960_ENABLE_PIEN,
-						   APDS9960_ENABLE_PIEN)) {
+			if (i2c_reg_update_byte_dt(&config->i2c, APDS9960_ENABLE_REG,
+						   APDS9960_ENABLE_PIEN, APDS9960_ENABLE_PIEN)) {
 				return -EIO;
 			}
 		} else {

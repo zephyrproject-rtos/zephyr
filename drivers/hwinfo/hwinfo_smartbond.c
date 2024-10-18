@@ -53,11 +53,7 @@ int z_impl_hwinfo_clear_reset_cause(void)
 
 int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 {
-	*supported = (RESET_PIN
-		| RESET_SOFTWARE
-		| RESET_POR
-		| RESET_WATCHDOG
-		| RESET_DEBUG);
+	*supported = (RESET_PIN | RESET_SOFTWARE | RESET_POR | RESET_WATCHDOG | RESET_DEBUG);
 
 	return 0;
 }

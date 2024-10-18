@@ -14,7 +14,7 @@
 LOG_MODULE_REGISTER(memc_stm32_nor_psram, CONFIG_MEMC_LOG_LEVEL);
 
 /** SRAM base register offset, see FMC_Bank1_R_BASE */
-#define SRAM_OFFSET 0x0000UL
+#define SRAM_OFFSET     0x0000UL
 /** SRAM extended mode register offset, see FMC_Bank1E_R_BASE */
 #define SRAM_EXT_OFFSET 0x0104UL
 
@@ -37,7 +37,7 @@ static int memc_stm32_nor_init(const struct memc_stm32_nor_psram_config *config,
 			       const struct memc_stm32_nor_psram_bank_config *bank_config)
 {
 	FMC_NORSRAM_TimingTypeDef *ext_timing;
-	NOR_HandleTypeDef hnor = { 0 };
+	NOR_HandleTypeDef hnor = {0};
 
 	hnor.Instance = config->nor_psram;
 	hnor.Extended = config->extended;
@@ -50,9 +50,8 @@ static int memc_stm32_nor_init(const struct memc_stm32_nor_psram_config *config,
 		ext_timing = NULL;
 	}
 
-	if (HAL_NOR_Init(&hnor,
-			 (FMC_NORSRAM_TimingTypeDef *)&bank_config->timing,
-			 ext_timing) != HAL_OK) {
+	if (HAL_NOR_Init(&hnor, (FMC_NORSRAM_TimingTypeDef *)&bank_config->timing, ext_timing) !=
+	    HAL_OK) {
 		return -ENODEV;
 	}
 
@@ -63,7 +62,7 @@ static int memc_stm32_psram_init(const struct memc_stm32_nor_psram_config *confi
 				 const struct memc_stm32_nor_psram_bank_config *bank_config)
 {
 	FMC_NORSRAM_TimingTypeDef *ext_timing;
-	SRAM_HandleTypeDef hsram = { 0 };
+	SRAM_HandleTypeDef hsram = {0};
 
 	hsram.Instance = config->nor_psram;
 	hsram.Extended = config->extended;
@@ -76,9 +75,8 @@ static int memc_stm32_psram_init(const struct memc_stm32_nor_psram_config *confi
 		ext_timing = NULL;
 	}
 
-	if (HAL_SRAM_Init(&hsram,
-			  (FMC_NORSRAM_TimingTypeDef *)&bank_config->timing,
-			  ext_timing) != HAL_OK) {
+	if (HAL_SRAM_Init(&hsram, (FMC_NORSRAM_TimingTypeDef *)&bank_config->timing, ext_timing) !=
+	    HAL_OK) {
 		return -ENODEV;
 	}
 
@@ -122,57 +120,52 @@ end:
 }
 
 /** SDRAM bank/s configuration initialization macro. */
-#define BANK_CONFIG(node_id)                                                    \
-	{ .init = {                                                             \
-	    .NSBank = DT_REG_ADDR(node_id),                                     \
-	    .DataAddressMux = DT_PROP_BY_IDX(node_id, st_control, 0),           \
-	    .MemoryType = DT_PROP_BY_IDX(node_id, st_control, 1),               \
-	    .MemoryDataWidth = DT_PROP_BY_IDX(node_id, st_control, 2),          \
-	    .BurstAccessMode = DT_PROP_BY_IDX(node_id, st_control, 3),          \
-	    .WaitSignalPolarity = DT_PROP_BY_IDX(node_id, st_control, 4),       \
-	    .WaitSignalActive = DT_PROP_BY_IDX(node_id, st_control, 5),         \
-	    .WriteOperation = DT_PROP_BY_IDX(node_id, st_control, 6),           \
-	    .WaitSignal = DT_PROP_BY_IDX(node_id, st_control, 7),               \
-	    .ExtendedMode = DT_PROP_BY_IDX(node_id, st_control, 8),             \
-	    .AsynchronousWait = DT_PROP_BY_IDX(node_id, st_control, 9),         \
-	    .WriteBurst = DT_PROP_BY_IDX(node_id, st_control, 10),              \
-	    .ContinuousClock = DT_PROP_BY_IDX(node_id, st_control, 11),         \
-	    .WriteFifo = DT_PROP_BY_IDX(node_id, st_control, 12),               \
-	    .PageSize = DT_PROP_BY_IDX(node_id, st_control, 13)                 \
-	  },                                                                    \
-	  .timing = {                                                           \
-	    .AddressSetupTime = DT_PROP_BY_IDX(node_id, st_timing, 0),          \
-	    .AddressHoldTime =  DT_PROP_BY_IDX(node_id, st_timing, 1),          \
-	    .DataSetupTime = DT_PROP_BY_IDX(node_id, st_timing, 2),             \
-	    .BusTurnAroundDuration = DT_PROP_BY_IDX(node_id, st_timing, 3),     \
-	    .CLKDivision = DT_PROP_BY_IDX(node_id, st_timing, 4),               \
-	    .DataLatency = DT_PROP_BY_IDX(node_id, st_timing, 5),               \
-	    .AccessMode = DT_PROP_BY_IDX(node_id, st_timing, 6),                \
-	  },                                                                    \
-	  .timing_ext = {                                                       \
-	    .AddressSetupTime = DT_PROP_BY_IDX(node_id, st_timing_ext, 0),      \
-	    .AddressHoldTime =  DT_PROP_BY_IDX(node_id, st_timing_ext, 1),      \
-	    .DataSetupTime = DT_PROP_BY_IDX(node_id, st_timing_ext, 2),         \
-	    .BusTurnAroundDuration = DT_PROP_BY_IDX(node_id, st_timing_ext, 3), \
-	    .AccessMode = DT_PROP_BY_IDX(node_id, st_timing_ext, 4),            \
-	  }                                                                     \
-	},
+#define BANK_CONFIG(node_id)                                                                       \
+	{.init = {.NSBank = DT_REG_ADDR(node_id),                                                  \
+		  .DataAddressMux = DT_PROP_BY_IDX(node_id, st_control, 0),                        \
+		  .MemoryType = DT_PROP_BY_IDX(node_id, st_control, 1),                            \
+		  .MemoryDataWidth = DT_PROP_BY_IDX(node_id, st_control, 2),                       \
+		  .BurstAccessMode = DT_PROP_BY_IDX(node_id, st_control, 3),                       \
+		  .WaitSignalPolarity = DT_PROP_BY_IDX(node_id, st_control, 4),                    \
+		  .WaitSignalActive = DT_PROP_BY_IDX(node_id, st_control, 5),                      \
+		  .WriteOperation = DT_PROP_BY_IDX(node_id, st_control, 6),                        \
+		  .WaitSignal = DT_PROP_BY_IDX(node_id, st_control, 7),                            \
+		  .ExtendedMode = DT_PROP_BY_IDX(node_id, st_control, 8),                          \
+		  .AsynchronousWait = DT_PROP_BY_IDX(node_id, st_control, 9),                      \
+		  .WriteBurst = DT_PROP_BY_IDX(node_id, st_control, 10),                           \
+		  .ContinuousClock = DT_PROP_BY_IDX(node_id, st_control, 11),                      \
+		  .WriteFifo = DT_PROP_BY_IDX(node_id, st_control, 12),                            \
+		  .PageSize = DT_PROP_BY_IDX(node_id, st_control, 13)},                            \
+	 .timing =                                                                                 \
+		 {                                                                                 \
+			 .AddressSetupTime = DT_PROP_BY_IDX(node_id, st_timing, 0),                \
+			 .AddressHoldTime = DT_PROP_BY_IDX(node_id, st_timing, 1),                 \
+			 .DataSetupTime = DT_PROP_BY_IDX(node_id, st_timing, 2),                   \
+			 .BusTurnAroundDuration = DT_PROP_BY_IDX(node_id, st_timing, 3),           \
+			 .CLKDivision = DT_PROP_BY_IDX(node_id, st_timing, 4),                     \
+			 .DataLatency = DT_PROP_BY_IDX(node_id, st_timing, 5),                     \
+			 .AccessMode = DT_PROP_BY_IDX(node_id, st_timing, 6),                      \
+		 },                                                                                \
+	 .timing_ext = {                                                                           \
+		 .AddressSetupTime = DT_PROP_BY_IDX(node_id, st_timing_ext, 0),                    \
+		 .AddressHoldTime = DT_PROP_BY_IDX(node_id, st_timing_ext, 1),                     \
+		 .DataSetupTime = DT_PROP_BY_IDX(node_id, st_timing_ext, 2),                       \
+		 .BusTurnAroundDuration = DT_PROP_BY_IDX(node_id, st_timing_ext, 3),               \
+		 .AccessMode = DT_PROP_BY_IDX(node_id, st_timing_ext, 4),                          \
+	 }},
 
 /** SRAM bank/s configuration. */
 static const struct memc_stm32_nor_psram_bank_config bank_config[] = {
-	DT_INST_FOREACH_CHILD(0, BANK_CONFIG)
-};
+	DT_INST_FOREACH_CHILD(0, BANK_CONFIG)};
 
 /** SRAM configuration. */
 static const struct memc_stm32_nor_psram_config config = {
 	.nor_psram = (FMC_NORSRAM_TypeDef *)(DT_REG_ADDR(DT_INST_PARENT(0)) + SRAM_OFFSET),
-	.extended = (FMC_NORSRAM_EXTENDED_TypeDef *)(DT_REG_ADDR(DT_INST_PARENT(0))
-								 + SRAM_EXT_OFFSET),
+	.extended =
+		(FMC_NORSRAM_EXTENDED_TypeDef *)(DT_REG_ADDR(DT_INST_PARENT(0)) + SRAM_EXT_OFFSET),
 	.banks = bank_config,
 	.banks_len = ARRAY_SIZE(bank_config),
 };
 
-DEVICE_DT_INST_DEFINE(0, memc_stm32_nor_psram_init, NULL,
-		      NULL, &config,
-		      POST_KERNEL, CONFIG_MEMC_INIT_PRIORITY,
-		      NULL);
+DEVICE_DT_INST_DEFINE(0, memc_stm32_nor_psram_init, NULL, NULL, &config, POST_KERNEL,
+		      CONFIG_MEMC_INIT_PRIORITY, NULL);

@@ -107,16 +107,14 @@ static void pch_reg_write(const struct device *dev, uint8_t reg, uint8_t val)
 #if defined(CONFIG_SMBUS_INTEL_PCH_HOST_NOTIFY)
 static void host_notify_work(struct k_work *work)
 {
-	struct pch_data *data = CONTAINER_OF(work, struct pch_data,
-					     host_notify_work);
+	struct pch_data *data = CONTAINER_OF(work, struct pch_data, host_notify_work);
 	const struct device *dev = data->dev;
 	uint8_t addr = data->notify_addr;
 
 	smbus_fire_callbacks(&data->host_notify_cbs, dev, addr);
 }
 
-static int pch_smbus_host_notify_set_cb(const struct device *dev,
-					struct smbus_callback *cb)
+static int pch_smbus_host_notify_set_cb(const struct device *dev, struct smbus_callback *cb)
 {
 	struct pch_data *data = dev->data;
 
@@ -125,8 +123,7 @@ static int pch_smbus_host_notify_set_cb(const struct device *dev,
 	return smbus_callback_set(&data->host_notify_cbs, cb);
 }
 
-static int pch_smbus_host_notify_remove_cb(const struct device *dev,
-					   struct smbus_callback *cb)
+static int pch_smbus_host_notify_remove_cb(const struct device *dev, struct smbus_callback *cb)
 {
 	struct pch_data *data = dev->data;
 
@@ -139,15 +136,13 @@ static int pch_smbus_host_notify_remove_cb(const struct device *dev,
 #if defined(CONFIG_SMBUS_INTEL_PCH_SMBALERT)
 static void smbalert_work(struct k_work *work)
 {
-	struct pch_data *data = CONTAINER_OF(work, struct pch_data,
-					     smb_alert_work);
+	struct pch_data *data = CONTAINER_OF(work, struct pch_data, smb_alert_work);
 	const struct device *dev = data->dev;
 
 	smbus_loop_alert_devices(dev, &data->smbalert_cbs);
 }
 
-static int pch_smbus_smbalert_set_sb(const struct device *dev,
-				     struct smbus_callback *cb)
+static int pch_smbus_smbalert_set_sb(const struct device *dev, struct smbus_callback *cb)
 {
 	struct pch_data *data = dev->data;
 
@@ -156,8 +151,7 @@ static int pch_smbus_smbalert_set_sb(const struct device *dev,
 	return smbus_callback_set(&data->smbalert_cbs, cb);
 }
 
-static int pch_smbus_smbalert_remove_sb(const struct device *dev,
-					struct smbus_callback *cb)
+static int pch_smbus_smbalert_remove_sb(const struct device *dev, struct smbus_callback *cb)
 {
 	struct pch_data *data = dev->data;
 
@@ -219,7 +213,7 @@ static int pch_get_config(const struct device *dev, uint32_t *config)
 /* Device initialization function */
 static int pch_smbus_init(const struct device *dev)
 {
-	const struct pch_config * const config = dev->config;
+	const struct pch_config *const config = dev->config;
 	struct pch_data *data = dev->data;
 	struct pcie_bar mbar;
 	uint32_t val;
@@ -238,11 +232,10 @@ static int pch_smbus_init(const struct device *dev)
 		pcie_probe_mbar(config->pcie->bdf, 0, &mbar);
 		pcie_set_cmd(config->pcie->bdf, PCIE_CONF_CMDSTAT_MEM, true);
 
-		device_map(DEVICE_MMIO_RAM_PTR(dev), mbar.phys_addr, mbar.size,
-			   K_MEM_CACHE_NONE);
+		device_map(DEVICE_MMIO_RAM_PTR(dev), mbar.phys_addr, mbar.size, K_MEM_CACHE_NONE);
 
-		LOG_DBG("Mapped 0x%lx size 0x%lx to 0x%lx",
-			mbar.phys_addr, mbar.size, DEVICE_MMIO_GET(dev));
+		LOG_DBG("Mapped 0x%lx size 0x%lx to 0x%lx", mbar.phys_addr, mbar.size,
+			DEVICE_MMIO_GET(dev));
 	} else {
 		pcie_set_cmd(config->pcie->bdf, PCIE_CONF_CMDSTAT_IO, true);
 		val = pcie_conf_read(config->pcie->bdf, PCIE_CONF_BAR4);
@@ -302,8 +295,7 @@ static int pch_prepare_transfer(const struct device *dev)
 	}
 
 	/* Check and clear HSTS status bits */
-	hsts &= PCH_SMBUS_HSTS_ERROR | PCH_SMBUS_HSTS_BYTE_DONE |
-		PCH_SMBUS_HSTS_INTERRUPT;
+	hsts &= PCH_SMBUS_HSTS_ERROR | PCH_SMBUS_HSTS_BYTE_DONE | PCH_SMBUS_HSTS_INTERRUPT;
 	if (hsts) {
 		pch_reg_write(dev, PCH_SMBUS_HSTS, hsts);
 	}
@@ -332,8 +324,7 @@ static int pch_check_status(const struct device *dev)
 		if (auxs & PCH_SMBUS_AUXS_CRC_ERROR) {
 			LOG_DBG("AUXS register 0x%02x", auxs);
 			/* Clear CRC error status bit */
-			pch_reg_write(dev, PCH_SMBUS_AUXS,
-				      PCH_SMBUS_AUXS_CRC_ERROR);
+			pch_reg_write(dev, PCH_SMBUS_AUXS, PCH_SMBUS_AUXS_CRC_ERROR);
 		}
 
 		return -EIO;
@@ -362,9 +353,8 @@ static int pch_check_status(const struct device *dev)
 	return 0;
 }
 
-static int pch_smbus_block_start(const struct device *dev, uint16_t periph_addr,
-				 uint8_t rw, uint8_t command, uint8_t count,
-				 uint8_t *buf, uint8_t protocol)
+static int pch_smbus_block_start(const struct device *dev, uint16_t periph_addr, uint8_t rw,
+				 uint8_t command, uint8_t count, uint8_t *buf, uint8_t protocol)
 {
 	uint8_t reg;
 	int ret;
@@ -416,9 +406,8 @@ static int pch_smbus_block_start(const struct device *dev, uint16_t periph_addr,
 }
 
 /* Start PCH SMBus operation */
-static int pch_smbus_start(const struct device *dev, uint16_t periph_addr,
-			   enum smbus_direction rw, uint8_t command,
-			   uint8_t *buf, uint8_t protocol)
+static int pch_smbus_start(const struct device *dev, uint16_t periph_addr, enum smbus_direction rw,
+			   uint8_t command, uint8_t *buf, uint8_t protocol)
 {
 	uint8_t reg;
 	int ret;
@@ -440,8 +429,7 @@ static int pch_smbus_start(const struct device *dev, uint16_t periph_addr,
 			pch_reg_write(dev, PCH_SMBUS_HD0, buf[0]);
 
 			/* If we need to write second byte */
-			if (protocol == SMBUS_CMD_WORD_DATA ||
-			    protocol == SMBUS_CMD_PROC_CALL) {
+			if (protocol == SMBUS_CMD_WORD_DATA || protocol == SMBUS_CMD_PROC_CALL) {
 				pch_reg_write(dev, PCH_SMBUS_HD1, buf[1]);
 			}
 		}
@@ -464,8 +452,7 @@ static int pch_smbus_start(const struct device *dev, uint16_t periph_addr,
 /* Implementation of PCH SMBus API */
 
 /* Implementation of SMBus Quick */
-static int pch_smbus_quick(const struct device *dev, uint16_t periph_addr,
-			   enum smbus_direction rw)
+static int pch_smbus_quick(const struct device *dev, uint16_t periph_addr, enum smbus_direction rw)
 {
 	struct pch_data *data = dev->data;
 	int ret;
@@ -496,8 +483,7 @@ unlock:
 }
 
 /* Implementation of SMBus Byte Write */
-static int pch_smbus_byte_write(const struct device *dev, uint16_t periph_addr,
-				uint8_t command)
+static int pch_smbus_byte_write(const struct device *dev, uint16_t periph_addr, uint8_t command)
 {
 	struct pch_data *data = dev->data;
 	int ret;
@@ -506,8 +492,7 @@ static int pch_smbus_byte_write(const struct device *dev, uint16_t periph_addr,
 
 	k_mutex_lock(&data->mutex, K_FOREVER);
 
-	ret = pch_smbus_start(dev, periph_addr, SMBUS_MSG_WRITE, command, NULL,
-			      SMBUS_CMD_BYTE);
+	ret = pch_smbus_start(dev, periph_addr, SMBUS_MSG_WRITE, command, NULL, SMBUS_CMD_BYTE);
 	if (ret < 0) {
 		goto unlock;
 	}
@@ -529,8 +514,7 @@ unlock:
 }
 
 /* Implementation of SMBus Byte Read */
-static int pch_smbus_byte_read(const struct device *dev, uint16_t periph_addr,
-			       uint8_t *byte)
+static int pch_smbus_byte_read(const struct device *dev, uint16_t periph_addr, uint8_t *byte)
 {
 	struct pch_data *data = dev->data;
 	int ret;
@@ -539,8 +523,7 @@ static int pch_smbus_byte_read(const struct device *dev, uint16_t periph_addr,
 
 	k_mutex_lock(&data->mutex, K_FOREVER);
 
-	ret = pch_smbus_start(dev, periph_addr, SMBUS_MSG_READ, 0, NULL,
-			      SMBUS_CMD_BYTE);
+	ret = pch_smbus_start(dev, periph_addr, SMBUS_MSG_READ, 0, NULL, SMBUS_CMD_BYTE);
 	if (ret < 0) {
 		goto unlock;
 	}
@@ -567,8 +550,7 @@ unlock:
 }
 
 /* Implementation of SMBus Byte Data Write */
-static int pch_smbus_byte_data_write(const struct device *dev,
-				     uint16_t periph_addr,
+static int pch_smbus_byte_data_write(const struct device *dev, uint16_t periph_addr,
 				     uint8_t command, uint8_t byte)
 {
 	struct pch_data *data = dev->data;
@@ -578,8 +560,8 @@ static int pch_smbus_byte_data_write(const struct device *dev,
 
 	k_mutex_lock(&data->mutex, K_FOREVER);
 
-	ret = pch_smbus_start(dev, periph_addr, SMBUS_MSG_WRITE, command,
-			      &byte, SMBUS_CMD_BYTE_DATA);
+	ret = pch_smbus_start(dev, periph_addr, SMBUS_MSG_WRITE, command, &byte,
+			      SMBUS_CMD_BYTE_DATA);
 	if (ret < 0) {
 		goto unlock;
 	}
@@ -601,9 +583,8 @@ unlock:
 }
 
 /* Implementation of SMBus Byte Data Read */
-static int pch_smbus_byte_data_read(const struct device *dev,
-				    uint16_t periph_addr,
-				    uint8_t command, uint8_t *byte)
+static int pch_smbus_byte_data_read(const struct device *dev, uint16_t periph_addr, uint8_t command,
+				    uint8_t *byte)
 {
 	struct pch_data *data = dev->data;
 	int ret;
@@ -612,8 +593,7 @@ static int pch_smbus_byte_data_read(const struct device *dev,
 
 	k_mutex_lock(&data->mutex, K_FOREVER);
 
-	ret = pch_smbus_start(dev, periph_addr, SMBUS_MSG_READ, command,
-			      NULL, SMBUS_CMD_BYTE_DATA);
+	ret = pch_smbus_start(dev, periph_addr, SMBUS_MSG_READ, command, NULL, SMBUS_CMD_BYTE_DATA);
 	if (ret < 0) {
 		goto unlock;
 	}
@@ -640,8 +620,7 @@ unlock:
 }
 
 /* Implementation of SMBus Word Data Write */
-static int pch_smbus_word_data_write(const struct device *dev,
-				     uint16_t periph_addr,
+static int pch_smbus_word_data_write(const struct device *dev, uint16_t periph_addr,
 				     uint8_t command, uint16_t word)
 {
 	struct pch_data *data = dev->data;
@@ -651,8 +630,8 @@ static int pch_smbus_word_data_write(const struct device *dev,
 
 	k_mutex_lock(&data->mutex, K_FOREVER);
 
-	ret = pch_smbus_start(dev, periph_addr, SMBUS_MSG_WRITE, command,
-			      (uint8_t *)&word, SMBUS_CMD_WORD_DATA);
+	ret = pch_smbus_start(dev, periph_addr, SMBUS_MSG_WRITE, command, (uint8_t *)&word,
+			      SMBUS_CMD_WORD_DATA);
 	if (ret < 0) {
 		goto unlock;
 	}
@@ -674,9 +653,8 @@ unlock:
 }
 
 /* Implementation of SMBus Word Data Read */
-static int pch_smbus_word_data_read(const struct device *dev,
-				    uint16_t periph_addr,
-				    uint8_t command, uint16_t *word)
+static int pch_smbus_word_data_read(const struct device *dev, uint16_t periph_addr, uint8_t command,
+				    uint16_t *word)
 {
 	struct pch_data *data = dev->data;
 	uint8_t *p = (uint8_t *)word;
@@ -686,8 +664,7 @@ static int pch_smbus_word_data_read(const struct device *dev,
 
 	k_mutex_lock(&data->mutex, K_FOREVER);
 
-	ret = pch_smbus_start(dev, periph_addr, SMBUS_MSG_READ, command,
-			      NULL, SMBUS_CMD_WORD_DATA);
+	ret = pch_smbus_start(dev, periph_addr, SMBUS_MSG_READ, command, NULL, SMBUS_CMD_WORD_DATA);
 	if (ret < 0) {
 		goto unlock;
 	}
@@ -715,8 +692,7 @@ unlock:
 }
 
 /* Implementation of SMBus Process Call */
-static int pch_smbus_pcall(const struct device *dev,
-			   uint16_t periph_addr, uint8_t command,
+static int pch_smbus_pcall(const struct device *dev, uint16_t periph_addr, uint8_t command,
 			   uint16_t send_word, uint16_t *recv_word)
 {
 	struct pch_data *data = dev->data;
@@ -727,8 +703,8 @@ static int pch_smbus_pcall(const struct device *dev,
 
 	k_mutex_lock(&data->mutex, K_FOREVER);
 
-	ret = pch_smbus_start(dev, periph_addr, SMBUS_MSG_WRITE, command,
-			      (uint8_t *)&send_word, SMBUS_CMD_PROC_CALL);
+	ret = pch_smbus_start(dev, periph_addr, SMBUS_MSG_WRITE, command, (uint8_t *)&send_word,
+			      SMBUS_CMD_PROC_CALL);
 	if (ret < 0) {
 		goto unlock;
 	}
@@ -756,19 +732,18 @@ unlock:
 }
 
 /* Implementation of SMBus Block Write */
-static int pch_smbus_block_write(const struct device *dev, uint16_t periph_addr,
-				 uint8_t command, uint8_t count, uint8_t *buf)
+static int pch_smbus_block_write(const struct device *dev, uint16_t periph_addr, uint8_t command,
+				 uint8_t count, uint8_t *buf)
 {
 	struct pch_data *data = dev->data;
 	int ret;
 
-	LOG_DBG("dev %p addr 0x%02x command 0x%02x count %u",
-		dev, periph_addr, command, count);
+	LOG_DBG("dev %p addr 0x%02x command 0x%02x count %u", dev, periph_addr, command, count);
 
 	k_mutex_lock(&data->mutex, K_FOREVER);
 
-	ret = pch_smbus_block_start(dev, periph_addr, SMBUS_MSG_WRITE, command,
-				    count, buf, SMBUS_CMD_BLOCK);
+	ret = pch_smbus_block_start(dev, periph_addr, SMBUS_MSG_WRITE, command, count, buf,
+				    SMBUS_CMD_BLOCK);
 	if (ret < 0) {
 		goto unlock;
 	}
@@ -790,19 +765,18 @@ unlock:
 }
 
 /* Implementation of SMBus Block Read */
-static int pch_smbus_block_read(const struct device *dev, uint16_t periph_addr,
-				uint8_t command, uint8_t *count, uint8_t *buf)
+static int pch_smbus_block_read(const struct device *dev, uint16_t periph_addr, uint8_t command,
+				uint8_t *count, uint8_t *buf)
 {
 	struct pch_data *data = dev->data;
 	int ret;
 
-	LOG_DBG("dev %p addr 0x%02x command 0x%02x",
-		dev, periph_addr, command);
+	LOG_DBG("dev %p addr 0x%02x command 0x%02x", dev, periph_addr, command);
 
 	k_mutex_lock(&data->mutex, K_FOREVER);
 
-	ret = pch_smbus_block_start(dev, periph_addr, SMBUS_MSG_READ, command,
-				    0, buf, SMBUS_CMD_BLOCK);
+	ret = pch_smbus_block_start(dev, periph_addr, SMBUS_MSG_READ, command, 0, buf,
+				    SMBUS_CMD_BLOCK);
 	if (ret < 0) {
 		goto unlock;
 	}
@@ -837,21 +811,19 @@ unlock:
 }
 
 /* Implementation of SMBus Block Process Call */
-static int pch_smbus_block_pcall(const struct device *dev,
-				 uint16_t periph_addr, uint8_t command,
-				 uint8_t send_count, uint8_t *send_buf,
-				 uint8_t *recv_count, uint8_t *recv_buf)
+static int pch_smbus_block_pcall(const struct device *dev, uint16_t periph_addr, uint8_t command,
+				 uint8_t send_count, uint8_t *send_buf, uint8_t *recv_count,
+				 uint8_t *recv_buf)
 {
 	struct pch_data *data = dev->data;
 	int ret;
 
-	LOG_DBG("dev %p addr 0x%02x command 0x%02x",
-		dev, periph_addr, command);
+	LOG_DBG("dev %p addr 0x%02x command 0x%02x", dev, periph_addr, command);
 
 	k_mutex_lock(&data->mutex, K_FOREVER);
 
-	ret = pch_smbus_block_start(dev, periph_addr, SMBUS_MSG_WRITE, command,
-				    send_count, send_buf, SMBUS_CMD_BLOCK_PROC);
+	ret = pch_smbus_block_start(dev, periph_addr, SMBUS_MSG_WRITE, command, send_count,
+				    send_buf, SMBUS_CMD_BLOCK_PROC);
 	if (ret < 0) {
 		goto unlock;
 	}
@@ -870,8 +842,7 @@ static int pch_smbus_block_pcall(const struct device *dev,
 	}
 
 	*recv_count = pch_reg_read(dev, PCH_SMBUS_HD0);
-	if (*recv_count == 0 ||
-	    *recv_count + send_count > SMBUS_BLOCK_BYTES_MAX) {
+	if (*recv_count == 0 || *recv_count + send_count > SMBUS_BLOCK_BYTES_MAX) {
 		ret = -ENODATA;
 		goto unlock;
 	}
@@ -912,7 +883,7 @@ static const struct smbus_driver_api funcs = {
 
 static void smbus_isr(const struct device *dev)
 {
-	const struct pch_config * const config = dev->config;
+	const struct pch_config *const config = dev->config;
 	struct pch_data *data = dev->data;
 	uint32_t sts;
 	uint8_t status;
@@ -934,13 +905,11 @@ static void smbus_isr(const struct device *dev)
 		status = pch_reg_read(dev, PCH_SMBUS_SSTS);
 		if (status & PCH_SMBUS_SSTS_HNS) {
 			/* Notify address */
-			data->notify_addr =
-				pch_reg_read(dev, PCH_SMBUS_NDA) >> 1;
+			data->notify_addr = pch_reg_read(dev, PCH_SMBUS_NDA) >> 1;
 
 			/* Notify data */
 			data->notify_data = pch_reg_read(dev, PCH_SMBUS_NDLB);
-			data->notify_data |=
-				pch_reg_read(dev, PCH_SMBUS_NDHB) << 8;
+			data->notify_data |= pch_reg_read(dev, PCH_SMBUS_NDHB) << 8;
 
 			k_work_submit(&data->host_notify_work);
 
@@ -963,8 +932,7 @@ static void smbus_isr(const struct device *dev)
 
 	/* Handle SMBALERT# signal */
 #if defined(CONFIG_SMBUS_INTEL_PCH_SMBALERT)
-	if (data->config & SMBUS_MODE_SMBALERT &&
-	    status & PCH_SMBUS_HSTS_SMB_ALERT) {
+	if (data->config & SMBUS_MODE_SMBALERT && status & PCH_SMBUS_HSTS_SMB_ALERT) {
 		k_work_submit(&data->smb_alert_work);
 	}
 #endif /* CONFIG_SMBUS_INTEL_PCH_SMBALERT */
@@ -979,49 +947,44 @@ static void smbus_isr(const struct device *dev)
 
 /* Device macro initialization  / DTS hackery */
 
-#define SMBUS_PCH_IRQ_FLAGS(n)                                                 \
-	COND_CODE_1(DT_INST_IRQ_HAS_CELL(n, sense),                            \
+#define SMBUS_PCH_IRQ_FLAGS(n) COND_CODE_1(DT_INST_IRQ_HAS_CELL(n, sense),                            \
 		    (DT_INST_IRQ(n, sense)),                                   \
 		    (0))
 
-#define SMBUS_IRQ_CONFIG(n)                                                    \
-	BUILD_ASSERT(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),                    \
-		     "SMBus PCIe requires dynamic interrupts");                \
-	static void pch_config_##n(const struct device *dev)                   \
-	{                                                                      \
-		const struct pch_config * const config = dev->config;          \
-		unsigned int irq;                                              \
-		if (DT_INST_IRQN(n) == PCIE_IRQ_DETECT) {                      \
-			irq = pcie_alloc_irq(config->pcie->bdf);               \
-			if (irq == PCIE_CONF_INTR_IRQ_NONE) {                  \
-				return;                                        \
-			}                                                      \
-		} else {                                                       \
-			irq = DT_INST_IRQN(n);                                 \
-			pcie_conf_write(config->pcie->bdf,                     \
-					PCIE_CONF_INTR, irq);                  \
-		}                                                              \
-		pcie_connect_dynamic_irq(config->pcie->bdf, irq,               \
-					 DT_INST_IRQ(n, priority),             \
-					 (void (*)(const void *))smbus_isr,    \
-					 DEVICE_DT_INST_GET(n),                \
-					 SMBUS_PCH_IRQ_FLAGS(n));              \
-		pcie_irq_enable(config->pcie->bdf, irq);                       \
-		LOG_DBG("Configure irq %d", irq);                              \
+#define SMBUS_IRQ_CONFIG(n)                                                                        \
+	BUILD_ASSERT(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),                                        \
+		     "SMBus PCIe requires dynamic interrupts");                                    \
+	static void pch_config_##n(const struct device *dev)                                       \
+	{                                                                                          \
+		const struct pch_config *const config = dev->config;                               \
+		unsigned int irq;                                                                  \
+		if (DT_INST_IRQN(n) == PCIE_IRQ_DETECT) {                                          \
+			irq = pcie_alloc_irq(config->pcie->bdf);                                   \
+			if (irq == PCIE_CONF_INTR_IRQ_NONE) {                                      \
+				return;                                                            \
+			}                                                                          \
+		} else {                                                                           \
+			irq = DT_INST_IRQN(n);                                                     \
+			pcie_conf_write(config->pcie->bdf, PCIE_CONF_INTR, irq);                   \
+		}                                                                                  \
+		pcie_connect_dynamic_irq(config->pcie->bdf, irq, DT_INST_IRQ(n, priority),         \
+					 (void (*)(const void *))smbus_isr, DEVICE_DT_INST_GET(n), \
+					 SMBUS_PCH_IRQ_FLAGS(n));                                  \
+		pcie_irq_enable(config->pcie->bdf, irq);                                           \
+		LOG_DBG("Configure irq %d", irq);                                                  \
 	}
 
-#define SMBUS_DEVICE_INIT(n)                                                   \
-	DEVICE_PCIE_INST_DECLARE(n);                                           \
-	static void pch_config_##n(const struct device *dev);                  \
-	static const struct pch_config pch_config_data_##n = {                 \
-		DEVICE_PCIE_INST_INIT(n, pcie),                                \
-		.config_func = pch_config_##n,                                 \
-	};                                                                     \
-	static struct pch_data smbus_##n##_data;                               \
-	SMBUS_DEVICE_DT_INST_DEFINE(n, pch_smbus_init, NULL,                   \
-				    &smbus_##n##_data, &pch_config_data_##n,   \
-				    POST_KERNEL, CONFIG_SMBUS_INIT_PRIORITY,   \
-				    &funcs);                                   \
+#define SMBUS_DEVICE_INIT(n)                                                                       \
+	DEVICE_PCIE_INST_DECLARE(n);                                                               \
+	static void pch_config_##n(const struct device *dev);                                      \
+	static const struct pch_config pch_config_data_##n = {                                     \
+		DEVICE_PCIE_INST_INIT(n, pcie),                                                    \
+		.config_func = pch_config_##n,                                                     \
+	};                                                                                         \
+	static struct pch_data smbus_##n##_data;                                                   \
+	SMBUS_DEVICE_DT_INST_DEFINE(n, pch_smbus_init, NULL, &smbus_##n##_data,                    \
+				    &pch_config_data_##n, POST_KERNEL, CONFIG_SMBUS_INIT_PRIORITY, \
+				    &funcs);                                                       \
 	SMBUS_IRQ_CONFIG(n);
 
 DT_INST_FOREACH_STATUS_OKAY(SMBUS_DEVICE_INIT)

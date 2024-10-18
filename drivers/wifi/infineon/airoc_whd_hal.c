@@ -67,12 +67,11 @@ struct whd_bus_priv {
 	whd_sdio_t sdio_obj;
 };
 
-static whd_init_config_t init_config_default = {
-	.thread_stack_size = CY_WIFI_THREAD_STACK_SIZE,
-	.thread_stack_start = NULL,
-	.thread_priority = (uint32_t)CY_WIFI_THREAD_PRIORITY,
-	.country = CY_WIFI_COUNTRY
-};
+static whd_init_config_t init_config_default = {.thread_stack_size = CY_WIFI_THREAD_STACK_SIZE,
+						.thread_stack_start = NULL,
+						.thread_priority =
+							(uint32_t)CY_WIFI_THREAD_PRIORITY,
+						.country = CY_WIFI_COUNTRY};
 
 /******************************************************
  *                 Function

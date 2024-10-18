@@ -27,8 +27,7 @@ LOG_MODULE_REGISTER(ADXL372, CONFIG_SENSOR_LOG_LEVEL);
  * @param act - The activity config structure.
  * @return 0 in case of success, negative error code otherwise.
  */
-static int adxl372_set_activity_threshold(const struct device *dev,
-					  uint8_t axis_reg_h,
+static int adxl372_set_activity_threshold(const struct device *dev, uint8_t axis_reg_h,
 					  const struct adxl372_activity_threshold *act)
 {
 	int ret;
@@ -60,8 +59,7 @@ static int adxl372_set_activity_threshold(const struct device *dev,
  * @param act - The activity config structure.
  * @return 0 in case of success, negative error code otherwise.
  */
-static int adxl372_set_activity_threshold_xyz(const struct device *dev,
-					      uint8_t axis_reg_h,
+static int adxl372_set_activity_threshold_xyz(const struct device *dev, uint8_t axis_reg_h,
 					      const struct adxl372_activity_threshold *act)
 {
 	int i, ret;
@@ -87,13 +85,11 @@ static int adxl372_set_activity_threshold_xyz(const struct device *dev,
  *				 ADXL372_FULL_BW_MEASUREMENT
  * @return 0 in case of success, negative error code otherwise.
  */
-static int adxl372_set_op_mode(const struct device *dev,
-			       enum adxl372_op_mode op_mode)
+static int adxl372_set_op_mode(const struct device *dev, enum adxl372_op_mode op_mode)
 {
 	struct adxl372_data *data = dev->data;
 
-	return data->hw_tf->write_reg_mask(dev, ADXL372_POWER_CTL,
-					   ADXL372_POWER_CTL_MODE_MSK,
+	return data->hw_tf->write_reg_mask(dev, ADXL372_POWER_CTL, ADXL372_POWER_CTL_MODE_MSK,
 					   ADXL372_POWER_CTL_MODE(op_mode));
 }
 
@@ -109,8 +105,7 @@ static int adxl372_set_autosleep(const struct device *dev, bool enable)
 {
 	struct adxl372_data *data = dev->data;
 
-	return data->hw_tf->write_reg_mask(dev, ADXL372_MEASURE,
-					   ADXL372_MEASURE_AUTOSLEEP_MSK,
+	return data->hw_tf->write_reg_mask(dev, ADXL372_MEASURE, ADXL372_MEASURE_AUTOSLEEP_MSK,
 					   ADXL372_MEASURE_AUTOSLEEP_MODE(enable));
 }
 
@@ -126,8 +121,7 @@ static int adxl372_set_autosleep(const struct device *dev, bool enable)
  *				 ADXL372_BW_LPF_DISABLED
  * @return 0 in case of success, negative error code otherwise.
  */
-static int adxl372_set_bandwidth(const struct device *dev,
-				 enum adxl372_bandwidth bw)
+static int adxl372_set_bandwidth(const struct device *dev, enum adxl372_bandwidth bw)
 {
 	int ret;
 	uint8_t mask;
@@ -139,14 +133,13 @@ static int adxl372_set_bandwidth(const struct device *dev,
 		mask = 0U;
 	}
 
-	ret = data->hw_tf->write_reg_mask(dev, ADXL372_POWER_CTL,
-					  ADXL372_POWER_CTL_LPF_DIS_MSK, mask);
+	ret = data->hw_tf->write_reg_mask(dev, ADXL372_POWER_CTL, ADXL372_POWER_CTL_LPF_DIS_MSK,
+					  mask);
 	if (ret) {
 		return ret;
 	}
 
-	return data->hw_tf->write_reg_mask(dev, ADXL372_MEASURE,
-					   ADXL372_MEASURE_BANDWIDTH_MSK,
+	return data->hw_tf->write_reg_mask(dev, ADXL372_MEASURE, ADXL372_MEASURE_BANDWIDTH_MSK,
 					   ADXL372_MEASURE_BANDWIDTH_MODE(bw));
 }
 
@@ -161,8 +154,7 @@ static int adxl372_set_bandwidth(const struct device *dev,
  *				 ADXL372_HPF_DISABLED
  * @return 0 in case of success, negative error code otherwise.
  */
-static int adxl372_set_hpf_corner(const struct device *dev,
-				  enum adxl372_hpf_corner c)
+static int adxl372_set_hpf_corner(const struct device *dev, enum adxl372_hpf_corner c)
 {
 
 	int ret;
@@ -175,15 +167,14 @@ static int adxl372_set_hpf_corner(const struct device *dev,
 		mask = 0U;
 	}
 
-	ret = data->hw_tf->write_reg_mask(dev, ADXL372_POWER_CTL,
-					  ADXL372_POWER_CTL_HPF_DIS_MSK, mask);
+	ret = data->hw_tf->write_reg_mask(dev, ADXL372_POWER_CTL, ADXL372_POWER_CTL_HPF_DIS_MSK,
+					  mask);
 	if (ret) {
 		return ret;
 	}
 
 	return data->hw_tf->write_reg(dev, ADXL372_HPF, ADXL372_HPF_CORNER(c));
 }
-
 
 /**
  * Link/Loop Activity Processing.
@@ -194,13 +185,11 @@ static int adxl372_set_hpf_corner(const struct device *dev,
  *				 ADXL372_LOOPED
  * @return 0 in case of success, negative error code otherwise.
  */
-static int adxl372_set_act_proc_mode(const struct device *dev,
-				     enum adxl372_act_proc_mode mode)
+static int adxl372_set_act_proc_mode(const struct device *dev, enum adxl372_act_proc_mode mode)
 {
 	struct adxl372_data *data = dev->data;
 
-	return data->hw_tf->write_reg_mask(dev, ADXL372_MEASURE,
-					   ADXL372_MEASURE_LINKLOOP_MSK,
+	return data->hw_tf->write_reg_mask(dev, ADXL372_MEASURE, ADXL372_MEASURE_LINKLOOP_MSK,
 					   ADXL372_MEASURE_LINKLOOP_MODE(mode));
 }
 
@@ -219,8 +208,7 @@ static int adxl372_set_odr(const struct device *dev, enum adxl372_odr odr)
 {
 	struct adxl372_data *data = dev->data;
 
-	return data->hw_tf->write_reg_mask(dev, ADXL372_TIMING,
-					   ADXL372_TIMING_ODR_MSK,
+	return data->hw_tf->write_reg_mask(dev, ADXL372_TIMING, ADXL372_TIMING_ODR_MSK,
 					   ADXL372_TIMING_ODR_MODE(odr));
 }
 
@@ -232,8 +220,7 @@ static int adxl372_set_odr(const struct device *dev, enum adxl372_odr odr)
  *				 ADXL372_INSTANT_ON_HIGH_TH
  * @return 0 in case of success, negative error code otherwise.
  */
-static int adxl372_set_instant_on_th(const struct device *dev,
-				     enum adxl372_instant_on_th_mode mode)
+static int adxl372_set_instant_on_th(const struct device *dev, enum adxl372_instant_on_th_mode mode)
 {
 	struct adxl372_data *data = dev->data;
 
@@ -256,13 +243,11 @@ static int adxl372_set_instant_on_th(const struct device *dev,
  *				 ADXL372_WUR_24576ms
  * @return 0 in case of success, negative error code otherwise.
  */
-static int adxl372_set_wakeup_rate(const struct device *dev,
-				   enum adxl372_wakeup_rate wur)
+static int adxl372_set_wakeup_rate(const struct device *dev, enum adxl372_wakeup_rate wur)
 {
 	struct adxl372_data *data = dev->data;
 
-	return data->hw_tf->write_reg_mask(dev, ADXL372_TIMING,
-					   ADXL372_TIMING_WAKE_UP_RATE_MSK,
+	return data->hw_tf->write_reg_mask(dev, ADXL372_TIMING, ADXL372_TIMING_WAKE_UP_RATE_MSK,
 					   ADXL372_TIMING_WAKE_UP_RATE_MODE(wur));
 }
 
@@ -286,8 +271,7 @@ static int adxl372_set_activity_time(const struct device *dev, uint8_t time)
  *		 (eight LSBs) and the TIME_INACT_H register (eight MSBs).
  * @return 0 in case of success, negative error code otherwise.
  */
-static int adxl372_set_inactivity_time(const struct device *dev,
-				       uint16_t time)
+static int adxl372_set_inactivity_time(const struct device *dev, uint16_t time)
 {
 	int ret;
 	struct adxl372_data *data = dev->data;
@@ -308,13 +292,11 @@ static int adxl372_set_inactivity_time(const struct device *dev,
  *				 ADXL372_FILTER_SETTLE_16
  * @return 0 in case of success, negative error code otherwise.
  */
-static int adxl372_set_filter_settle(const struct device *dev,
-				     enum adxl372_filter_settle mode)
+static int adxl372_set_filter_settle(const struct device *dev, enum adxl372_filter_settle mode)
 {
 	struct adxl372_data *data = dev->data;
 
-	return data->hw_tf->write_reg_mask(dev, ADXL372_POWER_CTL,
-					   ADXL372_POWER_CTL_FIL_SETTLE_MSK,
+	return data->hw_tf->write_reg_mask(dev, ADXL372_POWER_CTL, ADXL372_POWER_CTL_FIL_SETTLE_MSK,
 					   ADXL372_POWER_CTL_FIL_SETTLE_MODE(mode));
 }
 
@@ -325,9 +307,7 @@ static int adxl372_set_filter_settle(const struct device *dev,
  * @param int2 -  INT2 interrupt pins.
  * @return 0 in case of success, negative error code otherwise.
  */
-static int adxl372_interrupt_config(const struct device *dev,
-				    uint8_t int1,
-				    uint8_t int2)
+static int adxl372_interrupt_config(const struct device *dev, uint8_t int1, uint8_t int2)
 {
 	int ret;
 	struct adxl372_data *data = dev->data;
@@ -337,8 +317,7 @@ static int adxl372_interrupt_config(const struct device *dev,
 		return ret;
 	}
 
-	return  data->hw_tf->write_reg(dev, ADXL372_INT2_MAP, int2);
-
+	return data->hw_tf->write_reg(dev, ADXL372_INT2_MAP, int2);
 }
 
 /**
@@ -350,10 +329,8 @@ static int adxl372_interrupt_config(const struct device *dev,
  *			 FIFO buffer (0 to 512)
  * @return 0 in case of success, negative error code otherwise.
  */
-int adxl372_get_status(const struct device *dev,
-			   uint8_t *status1,
-			   uint8_t *status2,
-			   uint16_t *fifo_entries)
+int adxl372_get_status(const struct device *dev, uint8_t *status1, uint8_t *status2,
+		       uint16_t *fifo_entries)
 {
 	struct adxl372_data *data = dev->data;
 	uint8_t buf[4], length = 1U;
@@ -435,10 +412,8 @@ static int adxl372_reset(const struct device *dev)
 
  * @return 0 in case of success, negative error code otherwise.
  */
-static int adxl372_configure_fifo(const struct device *dev,
-				  enum adxl372_fifo_mode mode,
-				  enum adxl372_fifo_format format,
-				  uint16_t fifo_samples)
+static int adxl372_configure_fifo(const struct device *dev, enum adxl372_fifo_mode mode,
+				  enum adxl372_fifo_format format, uint16_t fifo_samples)
 {
 	struct adxl372_data *data = dev->data;
 	uint8_t fifo_config;
@@ -456,8 +431,7 @@ static int adxl372_configure_fifo(const struct device *dev,
 		return ret;
 	}
 
-	fifo_config = (ADXL372_FIFO_CTL_FORMAT_MODE(format) |
-		       ADXL372_FIFO_CTL_MODE_MODE(mode) |
+	fifo_config = (ADXL372_FIFO_CTL_FORMAT_MODE(format) | ADXL372_FIFO_CTL_MODE_MODE(mode) |
 		       ADXL372_FIFO_CTL_SAMPLES_MODE(fifo_samples));
 
 	ret = data->hw_tf->write_reg(dev, ADXL372_FIFO_CTL, fifo_config);
@@ -499,8 +473,8 @@ static int adxl372_get_accel_data(const struct device *dev, bool maxpeak,
 		} while (!(ADXL372_STATUS_1_DATA_RDY(status1)));
 	}
 
-	ret = data->hw_tf->read_reg_multiple(dev, maxpeak ? ADXL372_X_MAXPEAK_H :
-					     ADXL372_X_DATA_H, buf, 6);
+	ret = data->hw_tf->read_reg_multiple(dev, maxpeak ? ADXL372_X_MAXPEAK_H : ADXL372_X_DATA_H,
+					     buf, 6);
 
 	accel_data->x = (buf[0] << 8) | (buf[1] & 0xF0);
 	accel_data->y = (buf[2] << 8) | (buf[3] & 0xF0);
@@ -509,10 +483,8 @@ static int adxl372_get_accel_data(const struct device *dev, bool maxpeak,
 	return ret;
 }
 
-static int adxl372_attr_set_odr(const struct device *dev,
-				enum sensor_channel chan,
-				enum sensor_attribute attr,
-				const struct sensor_value *val)
+static int adxl372_attr_set_odr(const struct device *dev, enum sensor_channel chan,
+				enum sensor_attribute attr, const struct sensor_value *val)
 {
 	enum adxl372_odr odr;
 
@@ -539,10 +511,8 @@ static int adxl372_attr_set_odr(const struct device *dev,
 	return adxl372_set_odr(dev, odr);
 }
 
-static int adxl372_attr_set_thresh(const struct device *dev,
-				   enum sensor_channel chan,
-				   enum sensor_attribute attr,
-				   const struct sensor_value *val)
+static int adxl372_attr_set_thresh(const struct device *dev, enum sensor_channel chan,
+				   enum sensor_attribute attr, const struct sensor_value *val)
 {
 	const struct adxl372_dev_config *cfg = dev->config;
 	struct adxl372_activity_threshold threshold;
@@ -557,13 +527,13 @@ static int adxl372_attr_set_thresh(const struct device *dev,
 		return -EINVAL;
 	}
 
-	value = (int32_t) llvalue;
+	value = (int32_t)llvalue;
 
 	threshold.thresh = value;
 	threshold.enable = cfg->activity_th.enable;
 	threshold.referenced = cfg->activity_th.referenced;
 
-	if (attr ==  SENSOR_ATTR_UPPER_THRESH) {
+	if (attr == SENSOR_ATTR_UPPER_THRESH) {
 		reg = ADXL372_X_THRESH_ACT_H;
 	} else {
 		reg = ADXL372_X_THRESH_INACT_H;
@@ -584,10 +554,8 @@ static int adxl372_attr_set_thresh(const struct device *dev,
 	}
 }
 
-static int adxl372_attr_set(const struct device *dev,
-			    enum sensor_channel chan,
-			    enum sensor_attribute attr,
-			    const struct sensor_value *val)
+static int adxl372_attr_set(const struct device *dev, enum sensor_channel chan,
+			    enum sensor_attribute attr, const struct sensor_value *val)
 {
 	switch (attr) {
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
@@ -600,14 +568,12 @@ static int adxl372_attr_set(const struct device *dev,
 	}
 }
 
-static int adxl372_sample_fetch(const struct device *dev,
-				enum sensor_channel chan)
+static int adxl372_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	const struct adxl372_dev_config *cfg = dev->config;
 	struct adxl372_data *data = dev->data;
 
-	return adxl372_get_accel_data(dev, cfg->max_peak_detect_mode,
-				      &data->sample);
+	return adxl372_get_accel_data(dev, cfg->max_peak_detect_mode, &data->sample);
 }
 
 static void adxl372_accel_convert(struct sensor_value *val, int16_t value)
@@ -622,8 +588,7 @@ static void adxl372_accel_convert(struct sensor_value *val, int16_t value)
 	val->val2 = micro_ms2 % 1000000;
 }
 
-static int adxl372_channel_get(const struct device *dev,
-			       enum sensor_channel chan,
+static int adxl372_channel_get(const struct device *dev, enum sensor_channel chan,
 			       struct sensor_value *val)
 {
 	struct adxl372_data *data = dev->data;
@@ -651,9 +616,9 @@ static int adxl372_channel_get(const struct device *dev,
 }
 
 static const struct sensor_driver_api adxl372_api_funcs = {
-	.attr_set     = adxl372_attr_set,
+	.attr_set = adxl372_attr_set,
 	.sample_fetch = adxl372_sample_fetch,
-	.channel_get  = adxl372_channel_get,
+	.channel_get = adxl372_channel_get,
 #ifdef CONFIG_ADXL372_TRIGGER
 	.trigger_set = adxl372_trigger_set,
 #endif
@@ -688,7 +653,7 @@ static int adxl372_probe(const struct device *dev)
 #endif
 
 	/* Device settings */
-	ret = adxl372_set_op_mode(dev, ADXL372_STANDBY);
+		ret = adxl372_set_op_mode(dev, ADXL372_STANDBY);
 	if (ret) {
 		return ret;
 	}
@@ -728,8 +693,7 @@ static int adxl372_probe(const struct device *dev)
 		return ret;
 	}
 
-	ret = adxl372_set_activity_threshold_xyz(dev, ADXL372_X_THRESH_ACT_H,
-						 &cfg->activity_th);
+	ret = adxl372_set_activity_threshold_xyz(dev, ADXL372_X_THRESH_ACT_H, &cfg->activity_th);
 	if (ret) {
 		return ret;
 	}
@@ -755,8 +719,7 @@ static int adxl372_probe(const struct device *dev)
 		return ret;
 	}
 
-	ret = adxl372_configure_fifo(dev, cfg->fifo_config.fifo_mode,
-				     cfg->fifo_config.fifo_format,
+	ret = adxl372_configure_fifo(dev, cfg->fifo_config.fifo_mode, cfg->fifo_config.fifo_format,
 				     cfg->fifo_config.fifo_samples);
 	if (ret) {
 		return ret;
@@ -809,91 +772,70 @@ static int adxl372_init(const struct device *dev)
  * ADXL372_DEFINE_I2C().
  */
 
-#define ADXL372_DEVICE_INIT(inst)					\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
-			      adxl372_init,				\
-			      NULL,					\
-			      &adxl372_data_##inst,			\
-			      &adxl372_config_##inst,			\
-			      POST_KERNEL,				\
-			      CONFIG_SENSOR_INIT_PRIORITY,		\
-			      &adxl372_api_funcs);
+#define ADXL372_DEVICE_INIT(inst)                                                                  \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, adxl372_init, NULL, &adxl372_data_##inst,               \
+				     &adxl372_config_##inst, POST_KERNEL,                          \
+				     CONFIG_SENSOR_INIT_PRIORITY, &adxl372_api_funcs);
 
 /*
  * Instantiation macros used when a device is on a SPI bus.
  */
 
 #ifdef CONFIG_ADXL372_TRIGGER
-#define ADXL372_CFG_IRQ(inst) \
-		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int1_gpios),
+#define ADXL372_CFG_IRQ(inst) .interrupt = GPIO_DT_SPEC_INST_GET(inst, int1_gpios),
 #else
 #define ADXL372_CFG_IRQ(inst)
 #endif /* CONFIG_ADXL372_TRIGGER */
 
-#define ADXL372_CONFIG(inst)								\
-		.bw = DT_INST_PROP(inst, bw),						\
-		.hpf = DT_INST_PROP(inst, hpf),						\
-		.odr = DT_INST_PROP(inst, odr),						\
-		.max_peak_detect_mode = IS_ENABLED(CONFIG_ADXL372_PEAK_DETECT_MODE),	\
-		.th_mode = ADXL372_INSTANT_ON_LOW_TH,					\
-		.autosleep = false,							\
-		.wur = ADXL372_WUR_52ms,						\
-		.activity_th.thresh = CONFIG_ADXL372_ACTIVITY_THRESHOLD / 100,		\
-		.activity_th.referenced =						\
-			IS_ENABLED(CONFIG_ADXL372_REFERENCED_ACTIVITY_DETECTION_MODE),	\
-		.activity_th.enable = 1,						\
-		.activity_time = CONFIG_ADXL372_ACTIVITY_TIME,				\
-		.inactivity_th.thresh = CONFIG_ADXL372_INACTIVITY_THRESHOLD / 100,	\
-		.inactivity_th.referenced =						\
-			IS_ENABLED(CONFIG_ADXL372_REFERENCED_ACTIVITY_DETECTION_MODE),	\
-		.inactivity_th.enable = 1,						\
-		.inactivity_time = CONFIG_ADXL372_INACTIVITY_TIME,			\
-		.filter_settle = ADXL372_FILTER_SETTLE_370,				\
-		.fifo_config.fifo_mode = ADXL372_FIFO_STREAMED,				\
-		.fifo_config.fifo_format = ADXL372_XYZ_PEAK_FIFO,			\
-		.fifo_config.fifo_samples = 128,					\
-		.op_mode = ADXL372_FULL_BW_MEASUREMENT,					\
+#define ADXL372_CONFIG(inst)                                                                       \
+	.bw = DT_INST_PROP(inst, bw), .hpf = DT_INST_PROP(inst, hpf),                              \
+	.odr = DT_INST_PROP(inst, odr),                                                            \
+	.max_peak_detect_mode = IS_ENABLED(CONFIG_ADXL372_PEAK_DETECT_MODE),                       \
+	.th_mode = ADXL372_INSTANT_ON_LOW_TH, .autosleep = false, .wur = ADXL372_WUR_52ms,         \
+	.activity_th.thresh = CONFIG_ADXL372_ACTIVITY_THRESHOLD / 100,                             \
+	.activity_th.referenced = IS_ENABLED(CONFIG_ADXL372_REFERENCED_ACTIVITY_DETECTION_MODE),   \
+	.activity_th.enable = 1, .activity_time = CONFIG_ADXL372_ACTIVITY_TIME,                    \
+	.inactivity_th.thresh = CONFIG_ADXL372_INACTIVITY_THRESHOLD / 100,                         \
+	.inactivity_th.referenced = IS_ENABLED(CONFIG_ADXL372_REFERENCED_ACTIVITY_DETECTION_MODE), \
+	.inactivity_th.enable = 1, .inactivity_time = CONFIG_ADXL372_INACTIVITY_TIME,              \
+	.filter_settle = ADXL372_FILTER_SETTLE_370,                                                \
+	.fifo_config.fifo_mode = ADXL372_FIFO_STREAMED,                                            \
+	.fifo_config.fifo_format = ADXL372_XYZ_PEAK_FIFO, .fifo_config.fifo_samples = 128,         \
+	.op_mode = ADXL372_FULL_BW_MEASUREMENT,
 
-#define ADXL372_CONFIG_SPI(inst)					\
-	{								\
-		.bus_init = adxl372_spi_init,				\
-		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8) |	\
-					SPI_TRANSFER_MSB, 0),		\
-		ADXL372_CONFIG(inst)					\
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int1_gpios),	\
-		(ADXL372_CFG_IRQ(inst)), ())				\
-	}
+#define ADXL372_CONFIG_SPI(inst)                                                                   \
+	{.bus_init = adxl372_spi_init,                                                             \
+	 .spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),                 \
+	 ADXL372_CONFIG(inst)                                                                      \
+		 COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int1_gpios),	\
+		(ADXL372_CFG_IRQ(inst)), ()) }
 
-#define ADXL372_DEFINE_SPI(inst)					\
-	static struct adxl372_data adxl372_data_##inst;			\
-	static const struct adxl372_dev_config adxl372_config_##inst =	\
-		ADXL372_CONFIG_SPI(inst);				\
+#define ADXL372_DEFINE_SPI(inst)                                                                   \
+	static struct adxl372_data adxl372_data_##inst;                                            \
+	static const struct adxl372_dev_config adxl372_config_##inst = ADXL372_CONFIG_SPI(inst);   \
 	ADXL372_DEVICE_INIT(inst)
 
 /*
  * Instantiation macros used when a device is on an I2C bus.
  */
 
-#define ADXL372_CONFIG_I2C(inst)					\
-	{								\
-		.bus_init = adxl372_i2c_init,				\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),			\
-		ADXL372_CONFIG(inst)					\
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int1_gpios),	\
-		(ADXL372_CFG_IRQ(inst)), ())				\
-	}
+#define ADXL372_CONFIG_I2C(inst)                                                                   \
+	{.bus_init = adxl372_i2c_init,                                                             \
+	 .i2c = I2C_DT_SPEC_INST_GET(inst),                                                        \
+	 ADXL372_CONFIG(inst)                                                                      \
+		 COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int1_gpios),	\
+		(ADXL372_CFG_IRQ(inst)), ()) }
 
-#define ADXL372_DEFINE_I2C(inst)					\
-	static struct adxl372_data adxl372_data_##inst;			\
-	static const struct adxl372_dev_config adxl372_config_##inst =	\
-		ADXL372_CONFIG_I2C(inst);				\
+#define ADXL372_DEFINE_I2C(inst)                                                                   \
+	static struct adxl372_data adxl372_data_##inst;                                            \
+	static const struct adxl372_dev_config adxl372_config_##inst = ADXL372_CONFIG_I2C(inst);   \
 	ADXL372_DEVICE_INIT(inst)
 /*
  * Main instantiation macro. Use of COND_CODE_1() selects the right
  * bus-specific macro at preprocessor time.
  */
 
-#define ADXL372_DEFINE(inst)						\
+#define ADXL372_DEFINE(inst)                                                                       \
 	COND_CODE_1(DT_INST_ON_BUS(inst, spi),				\
 		    (ADXL372_DEFINE_SPI(inst)),				\
 		    (ADXL372_DEFINE_I2C(inst)))

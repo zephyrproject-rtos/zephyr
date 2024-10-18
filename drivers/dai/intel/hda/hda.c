@@ -12,14 +12,13 @@
 #include <zephyr/logging/log.h>
 
 #define DT_DRV_COMPAT intel_hda_dai
-#define LOG_DOMAIN dai_intel_hda
+#define LOG_DOMAIN    dai_intel_hda
 
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #include "hda.h"
 
-static int dai_hda_trigger(const struct device *dev, enum dai_dir dir,
-			   enum dai_trigger_cmd cmd)
+static int dai_hda_trigger(const struct device *dev, enum dai_dir dir, enum dai_trigger_cmd cmd)
 {
 	LOG_DBG("cmd %d", cmd);
 
@@ -64,7 +63,7 @@ static int dai_hda_config_get(const struct device *dev, struct dai_config *cfg, 
 }
 
 static int dai_hda_config_set(const struct device *dev, const struct dai_config *cfg,
-				  const void *bespoke_cfg)
+			      const void *bespoke_cfg)
 {
 	struct dai_intel_hda *dp = (struct dai_intel_hda *)dev->data;
 
@@ -104,29 +103,24 @@ static int dai_hda_remove(const struct device *dev)
 }
 
 static const struct dai_driver_api dai_intel_hda_api_funcs = {
-	.probe			= dai_hda_probe,
-	.remove			= dai_hda_remove,
-	.config_set		= dai_hda_config_set,
-	.config_get		= dai_hda_config_get,
-	.trigger		= dai_hda_trigger,
-	.get_properties		= dai_hda_get_properties,
+	.probe = dai_hda_probe,
+	.remove = dai_hda_remove,
+	.config_set = dai_hda_config_set,
+	.config_get = dai_hda_config_get,
+	.trigger = dai_hda_trigger,
+	.get_properties = dai_hda_get_properties,
 };
 
-#define DAI_INTEL_HDA_DEVICE_INIT(n)				\
-	static struct dai_config dai_intel_hda_config_##n = {	\
-		.type = DAI_INTEL_HDA,				\
-		.dai_index = DT_INST_REG_ADDR(n),	\
-	};							\
-	static struct dai_intel_hda dai_intel_hda_data_##n = {	\
-		.index = DT_INST_REG_ADDR(n)		\
-								\
-	};							\
-								\
-	DEVICE_DT_INST_DEFINE(n,				\
-			NULL, NULL,				\
-			&dai_intel_hda_data_##n,		\
-			&dai_intel_hda_config_##n,		\
-			POST_KERNEL, 32,			\
-			&dai_intel_hda_api_funcs);
+#define DAI_INTEL_HDA_DEVICE_INIT(n)                                                               \
+	static struct dai_config dai_intel_hda_config_##n = {                                      \
+		.type = DAI_INTEL_HDA,                                                             \
+		.dai_index = DT_INST_REG_ADDR(n),                                                  \
+	};                                                                                         \
+	static struct dai_intel_hda dai_intel_hda_data_##n = {.index = DT_INST_REG_ADDR(n)         \
+                                                                                                   \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL, &dai_intel_hda_data_##n, &dai_intel_hda_config_##n,   \
+			      POST_KERNEL, 32, &dai_intel_hda_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(DAI_INTEL_HDA_DEVICE_INIT)

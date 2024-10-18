@@ -58,7 +58,6 @@ static void winstream_console_hook_install(void)
 #endif
 }
 
-
 static int winstream_console_init(void)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));

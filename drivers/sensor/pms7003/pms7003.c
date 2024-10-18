@@ -46,8 +46,7 @@ struct pms7003_data {
  * @param timeout the timeout in milliseconds
  * @return 0 if success; -ETIME if timeout
  */
-static int uart_wait_for(const struct device *dev, uint8_t *data, int len,
-			 int timeout)
+static int uart_wait_for(const struct device *dev, uint8_t *data, int len, int timeout)
 {
 	int matched_size = 0;
 	int64_t timeout_time = k_uptime_get() + timeout;
@@ -84,8 +83,7 @@ static int uart_wait_for(const struct device *dev, uint8_t *data, int len,
  * @param timeout the timeout in milliseconds
  * @return 0 if success; -ETIME if timeout
  */
-static int uart_read_bytes(const struct device *dev, uint8_t *data, int len,
-			   int timeout)
+static int uart_read_bytes(const struct device *dev, uint8_t *data, int len, int timeout)
 {
 	int read_size = 0;
 	int64_t timeout_time = k_uptime_get() + timeout;
@@ -107,8 +105,7 @@ static int uart_read_bytes(const struct device *dev, uint8_t *data, int len,
 	return 0;
 }
 
-static int pms7003_sample_fetch(const struct device *dev,
-				enum sensor_channel chan)
+static int pms7003_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct pms7003_data *drv_data = dev->data;
 	const struct pms7003_config *cfg = dev->config;
@@ -121,24 +118,20 @@ static int pms7003_sample_fetch(const struct device *dev,
 	uint8_t pms7003_start_bytes[] = {0x42, 0x4d};
 	uint8_t pms7003_receive_buffer[30];
 
-	if (uart_wait_for(cfg->uart_dev, pms7003_start_bytes,
-			  sizeof(pms7003_start_bytes),
+	if (uart_wait_for(cfg->uart_dev, pms7003_start_bytes, sizeof(pms7003_start_bytes),
 			  CFG_PMS7003_SERIAL_TIMEOUT) < 0) {
 		LOG_WRN("waiting for start bytes is timeout");
 		return -ETIME;
 	}
 
-	if (uart_read_bytes(cfg->uart_dev, pms7003_receive_buffer, 30,
-			    CFG_PMS7003_SERIAL_TIMEOUT) < 0) {
+	if (uart_read_bytes(cfg->uart_dev, pms7003_receive_buffer, 30, CFG_PMS7003_SERIAL_TIMEOUT) <
+	    0) {
 		return -ETIME;
 	}
 
-	drv_data->pm_1_0 =
-	    (pms7003_receive_buffer[8] << 8) + pms7003_receive_buffer[9];
-	drv_data->pm_2_5 =
-	    (pms7003_receive_buffer[10] << 8) + pms7003_receive_buffer[11];
-	drv_data->pm_10 =
-	    (pms7003_receive_buffer[12] << 8) + pms7003_receive_buffer[13];
+	drv_data->pm_1_0 = (pms7003_receive_buffer[8] << 8) + pms7003_receive_buffer[9];
+	drv_data->pm_2_5 = (pms7003_receive_buffer[10] << 8) + pms7003_receive_buffer[11];
+	drv_data->pm_10 = (pms7003_receive_buffer[12] << 8) + pms7003_receive_buffer[13];
 
 	LOG_DBG("pm1.0 = %d", drv_data->pm_1_0);
 	LOG_DBG("pm2.5 = %d", drv_data->pm_2_5);
@@ -146,8 +139,7 @@ static int pms7003_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static int pms7003_channel_get(const struct device *dev,
-			       enum sensor_channel chan,
+static int pms7003_channel_get(const struct device *dev, enum sensor_channel chan,
 			       struct sensor_value *val)
 {
 	struct pms7003_data *drv_data = dev->data;
@@ -184,15 +176,15 @@ static int pms7003_init(const struct device *dev)
 	return 0;
 }
 
-#define PMS7003_DEFINE(inst)									\
-	static struct pms7003_data pms7003_data_##inst;						\
-												\
-	static const struct pms7003_config pms7003_config_##inst = {				\
-		.uart_dev = DEVICE_DT_GET(DT_INST_BUS(inst)),					\
-	};											\
-												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &pms7003_init, NULL,					\
-			      &pms7003_data_##inst, &pms7003_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &pms7003_api);			\
+#define PMS7003_DEFINE(inst)                                                                       \
+	static struct pms7003_data pms7003_data_##inst;                                            \
+                                                                                                   \
+	static const struct pms7003_config pms7003_config_##inst = {                               \
+		.uart_dev = DEVICE_DT_GET(DT_INST_BUS(inst)),                                      \
+	};                                                                                         \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, &pms7003_init, NULL, &pms7003_data_##inst,              \
+				     &pms7003_config_##inst, POST_KERNEL,                          \
+				     CONFIG_SENSOR_INIT_PRIORITY, &pms7003_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PMS7003_DEFINE)

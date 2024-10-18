@@ -14,14 +14,15 @@
 /* macros used to parse DTS properties */
 #define IDENTITY_VARGS(V, ...) IDENTITY(V)
 
-#define _SOF_HOST_DMA_CHANNEL_INDEX_ARRAY(inst)\
+#define _SOF_HOST_DMA_CHANNEL_INDEX_ARRAY(inst)                                                    \
 	LISTIFY(DT_INST_PROP_OR(inst, dma_channels, 0), IDENTITY_VARGS, (,))
 
-#define _SOF_HOST_DMA_CHANNEL_DECLARE(idx) {}
+#define _SOF_HOST_DMA_CHANNEL_DECLARE(idx)                                                         \
+	{                                                                                          \
+	}
 
-#define SOF_HOST_DMA_CHANNELS_DECLARE(inst)\
-	FOR_EACH(_SOF_HOST_DMA_CHANNEL_DECLARE,\
-		 (,), _SOF_HOST_DMA_CHANNEL_INDEX_ARRAY(inst))
+#define SOF_HOST_DMA_CHANNELS_DECLARE(inst)                                                        \
+	FOR_EACH(_SOF_HOST_DMA_CHANNEL_DECLARE, (, ), _SOF_HOST_DMA_CHANNEL_INDEX_ARRAY(inst))
 
 LOG_MODULE_REGISTER(nxp_sof_host_dma);
 
@@ -53,8 +54,7 @@ struct sof_host_dma_data {
 	struct sof_host_dma_channel *channels;
 };
 
-static int channel_change_state(struct sof_host_dma_channel *chan,
-				enum channel_state next)
+static int channel_change_state(struct sof_host_dma_channel *chan, enum channel_state next)
 {
 	enum channel_state prev = chan->state;
 
@@ -76,8 +76,8 @@ static int channel_change_state(struct sof_host_dma_channel *chan,
 	return 0;
 }
 
-static int sof_host_dma_reload(const struct device *dev, uint32_t chan_id,
-			       uint32_t src, uint32_t dst, size_t size)
+static int sof_host_dma_reload(const struct device *dev, uint32_t chan_id, uint32_t src,
+			       uint32_t dst, size_t size)
 {
 	ARG_UNUSED(src);
 	ARG_UNUSED(dst);
@@ -108,8 +108,7 @@ static int sof_host_dma_reload(const struct device *dev, uint32_t chan_id,
 		 * to local memory. In this case, the data cache holds stale
 		 * data so invalidate it to force a read from the main memory.
 		 */
-		ret = sys_cache_data_invd_range(UINT_TO_POINTER(chan->src),
-						chan->size);
+		ret = sys_cache_data_invd_range(UINT_TO_POINTER(chan->src), chan->size);
 		if (ret < 0) {
 			LOG_ERR("failed to invalidate data cache range");
 			return ret;
@@ -157,7 +156,6 @@ static int sof_host_dma_reload(const struct device *dev, uint32_t chan_id,
 
 	return 0;
 }
-
 
 static int sof_host_dma_config(const struct device *dev, uint32_t chan_id,
 			       struct dma_config *config)
@@ -207,8 +205,7 @@ static int sof_host_dma_config(const struct device *dev, uint32_t chan_id,
 	/* for now, only H2M and M2H transfers are supported */
 	if (config->channel_direction != HOST_TO_MEMORY &&
 	    config->channel_direction != MEMORY_TO_HOST) {
-		LOG_ERR("invalid channel direction: %d",
-			config->channel_direction);
+		LOG_ERR("invalid channel direction: %d", config->channel_direction);
 		return -EINVAL;
 	}
 
@@ -218,8 +215,8 @@ static int sof_host_dma_config(const struct device *dev, uint32_t chan_id,
 	chan->size = config->head_block->block_size;
 	chan->direction = config->channel_direction;
 
-	LOG_DBG("configured channel %d with SRC 0x%x DST 0x%x SIZE 0x%x",
-		chan_id, chan->src, chan->dest, chan->size);
+	LOG_DBG("configured channel %d with SRC 0x%x DST 0x%x SIZE 0x%x", chan_id, chan->src,
+		chan->dest, chan->size);
 
 	return 0;
 }
@@ -248,8 +245,8 @@ static int sof_host_dma_resume(const struct device *dev, uint32_t chan_id)
 	return 0;
 }
 
-static int sof_host_dma_get_status(const struct device *dev,
-				   uint32_t chan_id, struct dma_status *stat)
+static int sof_host_dma_get_status(const struct device *dev, uint32_t chan_id,
+				   struct dma_status *stat)
 {
 	/* nothing to be done here */
 	return 0;
@@ -303,7 +300,5 @@ static struct sof_host_dma_data sof_host_dma_data = {
 };
 
 /* assumption: only 1 SOF_HOST_DMA instance */
-DEVICE_DT_INST_DEFINE(0, sof_host_dma_init, NULL,
-		      &sof_host_dma_data, NULL,
-		      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,
-		      &sof_host_dma_api);
+DEVICE_DT_INST_DEFINE(0, sof_host_dma_init, NULL, &sof_host_dma_data, NULL, PRE_KERNEL_1,
+		      CONFIG_DMA_INIT_PRIORITY, &sof_host_dma_api);

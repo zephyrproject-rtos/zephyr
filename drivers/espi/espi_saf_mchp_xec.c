@@ -69,14 +69,12 @@ static uint32_t slave_mem[MAX_SAF_ECP_BUFFER_SIZE];
  * @brief eSPI SAF configuration
  */
 
-static inline void mchp_saf_cs_descr_wr(MCHP_SAF_HW_REGS *regs, uint8_t cs,
-					uint32_t val)
+static inline void mchp_saf_cs_descr_wr(MCHP_SAF_HW_REGS *regs, uint8_t cs, uint32_t val)
 {
 	regs->SAF_CS_OP[cs].OP_DESCR = val;
 }
 
-static inline void mchp_saf_poll2_mask_wr(MCHP_SAF_HW_REGS *regs, uint8_t cs,
-					  uint16_t val)
+static inline void mchp_saf_poll2_mask_wr(MCHP_SAF_HW_REGS *regs, uint8_t cs, uint16_t val)
 {
 	LOG_DBG("%s cs: %d mask %x", __func__, cs, val);
 	if (cs == 0) {
@@ -86,8 +84,7 @@ static inline void mchp_saf_poll2_mask_wr(MCHP_SAF_HW_REGS *regs, uint8_t cs,
 	}
 }
 
-static inline void mchp_saf_cm_prefix_wr(MCHP_SAF_HW_REGS *regs, uint8_t cs,
-					 uint16_t val)
+static inline void mchp_saf_cm_prefix_wr(MCHP_SAF_HW_REGS *regs, uint8_t cs, uint16_t val)
 {
 	if (cs == 0) {
 		regs->SAF_CS0_CM_PRF = val;
@@ -149,15 +146,12 @@ static void saf_protection_regions_init(MCHP_SAF_HW_REGS *regs)
 	for (size_t n = 0; n < MCHP_ESPI_SAF_PR_MAX; n++) {
 		if (n == 0) {
 			regs->SAF_PROT_RG[0].START = 0U;
-			regs->SAF_PROT_RG[0].LIMIT =
-				regs->SAF_FL_CFG_SIZE_LIM >> 12;
+			regs->SAF_PROT_RG[0].LIMIT = regs->SAF_FL_CFG_SIZE_LIM >> 12;
 			regs->SAF_PROT_RG[0].WEBM = MCHP_SAF_MSTR_ALL;
 			regs->SAF_PROT_RG[0].RDBM = MCHP_SAF_MSTR_ALL;
 		} else {
-			regs->SAF_PROT_RG[n].START =
-				MCHP_SAF_PROT_RG_START_DFLT;
-			regs->SAF_PROT_RG[n].LIMIT =
-				MCHP_SAF_PROT_RG_LIMIT_DFLT;
+			regs->SAF_PROT_RG[n].START = MCHP_SAF_PROT_RG_START_DFLT;
+			regs->SAF_PROT_RG[n].LIMIT = MCHP_SAF_PROT_RG_LIMIT_DFLT;
 			regs->SAF_PROT_RG[n].WEBM = 0U;
 			regs->SAF_PROT_RG[n].RDBM = 0U;
 		}
@@ -204,8 +198,7 @@ static uint32_t qmspi_freq_div(uint32_t freqhz)
  *    or chip select timing derive user values.
  * 9. Program QMSPI MODE and CSTIM registers with activate set.
  */
-static int saf_qmspi_init(const struct espi_saf_xec_config *xcfg,
-			  const struct espi_saf_cfg *cfg)
+static int saf_qmspi_init(const struct espi_saf_xec_config *xcfg, const struct espi_saf_cfg *cfg)
 {
 	uint32_t qmode, cstim, n;
 	QMSPI_Type *regs = (QMSPI_Type *)xcfg->qmspi_base_addr;
@@ -224,29 +217,24 @@ static int saf_qmspi_init(const struct espi_saf_xec_config *xcfg,
 	MCHP_GIRQ_ENCLR(MCHP_QMSPI_GIRQ_NUM) = MCHP_QMSPI_GIRQ_VAL;
 	MCHP_GIRQ_SRC(MCHP_QMSPI_GIRQ_NUM) = MCHP_QMSPI_GIRQ_VAL;
 
-	regs->IFCTRL =
-		(MCHP_QMSPI_IFC_WP_OUT_HI | MCHP_QMSPI_IFC_WP_OUT_EN |
-		 MCHP_QMSPI_IFC_HOLD_OUT_HI | MCHP_QMSPI_IFC_HOLD_OUT_EN);
+	regs->IFCTRL = (MCHP_QMSPI_IFC_WP_OUT_HI | MCHP_QMSPI_IFC_WP_OUT_EN |
+			MCHP_QMSPI_IFC_HOLD_OUT_HI | MCHP_QMSPI_IFC_HOLD_OUT_EN);
 
 	for (n = 0; n < MCHP_SAF_NUM_GENERIC_DESCR; n++) {
-		regs->DESCR[MCHP_SAF_CM_EXIT_START_DESCR + n] =
-			hwcfg->generic_descr[n];
+		regs->DESCR[MCHP_SAF_CM_EXIT_START_DESCR + n] = hwcfg->generic_descr[n];
 	}
 
 	regs->IEN = MCHP_QMSPI_IEN_XFR_DONE;
 
-	qmode |= (MCHP_QMSPI_M_SAF_DMA_MODE_EN | MCHP_QMSPI_M_CS0 |
-		  MCHP_QMSPI_M_ACTIVATE);
+	qmode |= (MCHP_QMSPI_M_SAF_DMA_MODE_EN | MCHP_QMSPI_M_CS0 | MCHP_QMSPI_M_ACTIVATE);
 
 	if (hwcfg->flags & MCHP_SAF_HW_CFG_FLAG_CPHA) {
 		qmode = (qmode & ~(MCHP_QMSPI_M_SIG_MASK)) |
-			((hwcfg->qmspi_cpha << MCHP_QMSPI_M_SIG_POS) &
-			 MCHP_QMSPI_M_SIG_MASK);
+			((hwcfg->qmspi_cpha << MCHP_QMSPI_M_SIG_POS) & MCHP_QMSPI_M_SIG_MASK);
 	}
 
 	if (hwcfg->flags & MCHP_SAF_HW_CFG_FLAG_FREQ) {
-		qmode = (qmode & ~(MCHP_QMSPI_M_FDIV_MASK)) |
-			qmspi_freq_div(hwcfg->qmspi_freq_hz);
+		qmode = (qmode & ~(MCHP_QMSPI_M_FDIV_MASK)) | qmspi_freq_div(hwcfg->qmspi_freq_hz);
 	}
 
 	if (hwcfg->flags & MCHP_SAF_HW_CFG_FLAG_CSTM) {
@@ -272,8 +260,7 @@ static int saf_qmspi_init(const struct espi_saf_xec_config *xcfg,
  * SAF Suspend Check Delay @ 0x1ac. Not touched.
  *	Default = 0. Recommend = 20us. Units = MCLK. b[19:0]
  */
-static void saf_flash_timing_init(MCHP_SAF_HW_REGS *regs,
-				  const struct espi_saf_xec_config *cfg)
+static void saf_flash_timing_init(MCHP_SAF_HW_REGS *regs, const struct espi_saf_xec_config *cfg)
 {
 	LOG_DBG("%s\n", __func__);
 	regs->SAF_POLL_TMOUT = cfg->poll_timeout;
@@ -389,8 +376,8 @@ static void saf_flash_misc_cfg(MCHP_SAF_HW_REGS *regs, uint8_t cs,
  * CS0: QMSPI descriptors 0-5 or CS1 QMSPI descriptors 6-11
  * CS0 Descrs @ 0x58 or CS1 Descrs @ 0x68
  */
-static void saf_flash_cfg(const struct device *dev,
-			  const struct espi_saf_flash_cfg *fcfg, uint8_t cs)
+static void saf_flash_cfg(const struct device *dev, const struct espi_saf_flash_cfg *fcfg,
+			  uint8_t cs)
 {
 	uint32_t d, did;
 	const struct espi_saf_xec_config *xcfg = dev->config;
@@ -411,8 +398,7 @@ static void saf_flash_cfg(const struct device *dev,
 
 	for (size_t i = 0; i < MCHP_SAF_QMSPI_NUM_FLASH_DESCR; i++) {
 		d = fcfg->descr[i] & ~(MCHP_QMSPI_C_NEXT_DESCR_MASK);
-		d |= (((did + 1) << MCHP_QMSPI_C_NEXT_DESCR_POS) &
-		      MCHP_QMSPI_C_NEXT_DESCR_MASK);
+		d |= (((did + 1) << MCHP_QMSPI_C_NEXT_DESCR_POS) & MCHP_QMSPI_C_NEXT_DESCR_MASK);
 		qregs->DESCR[did++] = d;
 	}
 
@@ -422,11 +408,9 @@ static void saf_flash_cfg(const struct device *dev,
 }
 
 static const uint32_t tag_map_dflt[MCHP_ESPI_SAF_TAGMAP_MAX] = {
-	MCHP_SAF_TAG_MAP0_DFLT, MCHP_SAF_TAG_MAP1_DFLT, MCHP_SAF_TAG_MAP2_DFLT
-};
+	MCHP_SAF_TAG_MAP0_DFLT, MCHP_SAF_TAG_MAP1_DFLT, MCHP_SAF_TAG_MAP2_DFLT};
 
-static void saf_tagmap_init(MCHP_SAF_HW_REGS *regs,
-			    const struct espi_saf_cfg *cfg)
+static void saf_tagmap_init(MCHP_SAF_HW_REGS *regs, const struct espi_saf_cfg *cfg)
 {
 	const struct espi_saf_hw_cfg *hwcfg = &cfg->hwcfg;
 
@@ -450,8 +434,7 @@ static void saf_tagmap_init(MCHP_SAF_HW_REGS *regs,
  * activated only when eSPI master sends Flash Channel enable
  * message with MAF/SAF select flag.
  */
-static int espi_saf_xec_configuration(const struct device *dev,
-				      const struct espi_saf_cfg *cfg)
+static int espi_saf_xec_configuration(const struct device *dev, const struct espi_saf_cfg *cfg)
 {
 	int ret = 0;
 	uint32_t totalsz = 0;
@@ -502,8 +485,8 @@ static int espi_saf_xec_configuration(const struct device *dev,
 
 	regs->SAF_FL_CFG_SIZE_LIM = totalsz - 1;
 
-	LOG_DBG("SAF_FL_CFG_THRH = %x SAF_FL_CFG_SIZE_LIM = %x",
-		regs->SAF_FL_CFG_THRH, regs->SAF_FL_CFG_SIZE_LIM);
+	LOG_DBG("SAF_FL_CFG_THRH = %x SAF_FL_CFG_SIZE_LIM = %x", regs->SAF_FL_CFG_THRH,
+		regs->SAF_FL_CFG_SIZE_LIM);
 
 	saf_tagmap_init(regs, cfg);
 
@@ -525,8 +508,7 @@ static int espi_saf_xec_configuration(const struct device *dev,
 		u = MCHP_SAF_FL_CFG_MISC_PFOE_EXP;
 	}
 
-	regs->SAF_FL_CFG_MISC =
-		(regs->SAF_FL_CFG_MISC & ~(MCHP_SAF_FL_CFG_MISC_PFOE_MASK)) | u;
+	regs->SAF_FL_CFG_MISC = (regs->SAF_FL_CFG_MISC & ~(MCHP_SAF_FL_CFG_MISC_PFOE_MASK)) | u;
 
 	/* enable prefetch ? */
 	if (cfg->hwcfg.flags & MCHP_SAF_HW_CFG_FLAG_PFEN) {
@@ -536,14 +518,12 @@ static int espi_saf_xec_configuration(const struct device *dev,
 	}
 
 	LOG_DBG("%s SAF_FL_CFG_MISC: %x", __func__, regs->SAF_FL_CFG_MISC);
-	LOG_DBG("%s Aft MCHP_SAF_COMM_MODE_REG: %x", __func__,
-		MCHP_SAF_COMM_MODE_REG);
+	LOG_DBG("%s Aft MCHP_SAF_COMM_MODE_REG: %x", __func__, MCHP_SAF_COMM_MODE_REG);
 
 	return 0;
 }
 
-static int espi_saf_xec_set_pr(const struct device *dev,
-			       const struct espi_saf_protection *pr)
+static int espi_saf_xec_set_pr(const struct device *dev, const struct espi_saf_protection *pr)
 {
 	if ((dev == NULL) || (pr == NULL)) {
 		return -EINVAL;
@@ -573,8 +553,7 @@ static int espi_saf_xec_set_pr(const struct device *dev,
 		/* NOTE: If previously locked writes have no effect */
 		if (preg->flags & MCHP_SAF_PR_FLAG_ENABLE) {
 			regs->SAF_PROT_RG[regnum].START = preg->start >> 12U;
-			regs->SAF_PROT_RG[regnum].LIMIT =
-				(preg->start + preg->size - 1U) >> 12U;
+			regs->SAF_PROT_RG[regnum].LIMIT = (preg->start + preg->size - 1U) >> 12U;
 			regs->SAF_PROT_RG[regnum].WEBM = preg->master_bm_we;
 			regs->SAF_PROT_RG[regnum].RDBM = preg->master_bm_rd;
 		} else {
@@ -622,14 +601,11 @@ struct erase_size_encoding {
 	uint8_t encoding;
 };
 
-static const struct erase_size_encoding ersz_enc[] = {
-	{ MCHP_ESPI_SERASE_SZ_4K_BITPOS, 0 },
-	{ MCHP_ESPI_SERASE_SZ_32K_BITPOS, 1 },
-	{ MCHP_ESPI_SERASE_SZ_64K_BITPOS, 2 }
-};
+static const struct erase_size_encoding ersz_enc[] = {{MCHP_ESPI_SERASE_SZ_4K_BITPOS, 0},
+						      {MCHP_ESPI_SERASE_SZ_32K_BITPOS, 1},
+						      {MCHP_ESPI_SERASE_SZ_64K_BITPOS, 2}};
 
-#define SAF_ERASE_ENCODING_MAX_ENTRY                                           \
-	(sizeof(ersz_enc) / sizeof(struct erase_size_encoding))
+#define SAF_ERASE_ENCODING_MAX_ENTRY (sizeof(ersz_enc) / sizeof(struct erase_size_encoding))
 
 static uint32_t get_erase_size_encoding(uint32_t erase_size)
 {
@@ -639,8 +615,7 @@ static uint32_t get_erase_size_encoding(uint32_t erase_size)
 	for (int i = 0; i < SAF_ERASE_ENCODING_MAX_ENTRY; i++) {
 		uint32_t sz = MCHP_ESPI_SERASE_SZ(ersz_enc[i].hwbitpos);
 
-		if ((sz == erase_size) &&
-		    (supsz & (1 << ersz_enc[i].hwbitpos))) {
+		if ((sz == erase_size) && (supsz & (1 << ersz_enc[i].hwbitpos))) {
 			return ersz_enc[i].encoding;
 		}
 	}
@@ -650,8 +625,7 @@ static uint32_t get_erase_size_encoding(uint32_t erase_size)
 
 static int check_ecp_access_size(uint32_t reqlen)
 {
-	if ((reqlen < MCHP_SAF_ECP_CMD_RW_LEN_MIN) ||
-	    (reqlen > MCHP_SAF_ECP_CMD_RW_LEN_MAX)) {
+	if ((reqlen < MCHP_SAF_ECP_CMD_RW_LEN_MIN) || (reqlen > MCHP_SAF_ECP_CMD_RW_LEN_MAX)) {
 		return -EAGAIN;
 	}
 
@@ -664,8 +638,7 @@ static int check_ecp_access_size(uint32_t reqlen)
  *	1 = write
  *	2 = erase
  */
-static int saf_ecp_access(const struct device *dev,
-			  struct espi_saf_packet *pckt, uint8_t cmd)
+static int saf_ecp_access(const struct device *dev, struct espi_saf_packet *pckt, uint8_t cmd)
 {
 	uint32_t err_mask, n;
 	int rc, counter;
@@ -688,8 +661,7 @@ static int saf_ecp_access(const struct device *dev,
 		return -EBUSY;
 	}
 
-	if ((cmd == MCHP_SAF_ECP_CMD_CTYPE_READ0) ||
-	    (cmd == MCHP_SAF_ECP_CMD_CTYPE_WRITE0)) {
+	if ((cmd == MCHP_SAF_ECP_CMD_CTYPE_READ0) || (cmd == MCHP_SAF_ECP_CMD_CTYPE_WRITE0)) {
 		rc = check_ecp_access_size(pckt->len);
 		if (rc) {
 			LOG_ERR("SAF EC Portal size out of bounds");
@@ -729,10 +701,9 @@ static int saf_ecp_access(const struct device *dev,
 	regs->SAF_ECP_FLAR = pckt->flash_addr;
 	regs->SAF_ECP_BFAR = (uint32_t)&slave_mem[0];
 
-	regs->SAF_ECP_CMD =
-		MCHP_SAF_ECP_CMD_PUT_FLASH_NP |
-		((uint32_t)cmd << MCHP_SAF_ECP_CMD_CTYPE_POS) |
-		((n << MCHP_SAF_ECP_CMD_LEN_POS) & MCHP_SAF_ECP_CMD_LEN_MASK);
+	regs->SAF_ECP_CMD = MCHP_SAF_ECP_CMD_PUT_FLASH_NP |
+			    ((uint32_t)cmd << MCHP_SAF_ECP_CMD_CTYPE_POS) |
+			    ((n << MCHP_SAF_ECP_CMD_LEN_POS) & MCHP_SAF_ECP_CMD_LEN_MASK);
 
 	/* TODO when interrupts are available enable here */
 	regs->SAF_ECP_START = MCHP_SAF_ECP_START;
@@ -769,29 +740,25 @@ ecp_exit:
 }
 
 /* Flash read using SAF EC Portal */
-static int saf_xec_flash_read(const struct device *dev,
-			      struct espi_saf_packet *pckt)
+static int saf_xec_flash_read(const struct device *dev, struct espi_saf_packet *pckt)
 {
 	LOG_DBG("%s", __func__);
 	return saf_ecp_access(dev, pckt, MCHP_SAF_ECP_CMD_CTYPE_READ0);
 }
 
 /* Flash write using SAF EC Portal */
-static int saf_xec_flash_write(const struct device *dev,
-			       struct espi_saf_packet *pckt)
+static int saf_xec_flash_write(const struct device *dev, struct espi_saf_packet *pckt)
 {
 	return saf_ecp_access(dev, pckt, MCHP_SAF_ECP_CMD_CTYPE_WRITE0);
 }
 
 /* Flash erase using SAF EC Portal */
-static int saf_xec_flash_erase(const struct device *dev,
-			       struct espi_saf_packet *pckt)
+static int saf_xec_flash_erase(const struct device *dev, struct espi_saf_packet *pckt)
 {
 	return saf_ecp_access(dev, pckt, MCHP_SAF_ECP_CMD_CTYPE_ERASE0);
 }
 
-static int espi_saf_xec_manage_callback(const struct device *dev,
-					struct espi_callback *callback,
+static int espi_saf_xec_manage_callback(const struct device *dev, struct espi_callback *callback,
 					bool set)
 {
 	struct espi_saf_xec_data *data = dev->data;
@@ -835,21 +802,17 @@ static const struct espi_saf_xec_config espi_saf_xec_config = {
 	.saf_base_addr = DT_INST_REG_ADDR_BY_IDX(0, 0),
 	.qmspi_base_addr = DT_INST_REG_ADDR_BY_IDX(0, 1),
 	.saf_comm_base_addr = DT_INST_REG_ADDR_BY_IDX(0, 2),
-	.poll_timeout = DT_INST_PROP_OR(inst, poll_timeout,
-					MCHP_SAF_FLASH_POLL_TIMEOUT),
-	.consec_rd_timeout = DT_INST_PROP_OR(
-		inst, consec_rd_timeout, MCHP_SAF_FLASH_CONSEC_READ_TIMEOUT),
-	.sus_chk_delay = DT_INST_PROP_OR(inst, sus_chk_delay,
-					 MCHP_SAF_FLASH_SUS_CHK_DELAY),
-	.sus_rsm_interval = DT_INST_PROP_OR(inst, sus_rsm_interval,
-					    MCHP_SAF_FLASH_SUS_RSM_INTERVAL),
-	.poll_interval = DT_INST_PROP_OR(inst, poll_interval,
-					 MCHP_SAF_FLASH_POLL_INTERVAL),
+	.poll_timeout = DT_INST_PROP_OR(inst, poll_timeout, MCHP_SAF_FLASH_POLL_TIMEOUT),
+	.consec_rd_timeout =
+		DT_INST_PROP_OR(inst, consec_rd_timeout, MCHP_SAF_FLASH_CONSEC_READ_TIMEOUT),
+	.sus_chk_delay = DT_INST_PROP_OR(inst, sus_chk_delay, MCHP_SAF_FLASH_SUS_CHK_DELAY),
+	.sus_rsm_interval =
+		DT_INST_PROP_OR(inst, sus_rsm_interval, MCHP_SAF_FLASH_SUS_RSM_INTERVAL),
+	.poll_interval = DT_INST_PROP_OR(inst, poll_interval, MCHP_SAF_FLASH_POLL_INTERVAL),
 };
 
-DEVICE_DT_INST_DEFINE(0, &espi_saf_xec_init, NULL,
-		      &espi_saf_xec_data, &espi_saf_xec_config, POST_KERNEL,
-		      CONFIG_ESPI_TAF_INIT_PRIORITY, &espi_saf_xec_driver_api);
+DEVICE_DT_INST_DEFINE(0, &espi_saf_xec_init, NULL, &espi_saf_xec_data, &espi_saf_xec_config,
+		      POST_KERNEL, CONFIG_ESPI_TAF_INIT_PRIORITY, &espi_saf_xec_driver_api);
 
 static int espi_saf_xec_init(const struct device *dev)
 {

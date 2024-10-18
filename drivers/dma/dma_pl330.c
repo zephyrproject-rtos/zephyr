@@ -19,14 +19,12 @@ LOG_MODULE_REGISTER(dma_pl330);
 
 #define BYTE_WIDTH(burst_size) (1 << (burst_size))
 
-static int dma_pl330_submit(const struct device *dev, uint64_t dst,
-			    uint64_t src, uint32_t channel, uint32_t size);
+static int dma_pl330_submit(const struct device *dev, uint64_t dst, uint64_t src, uint32_t channel,
+			    uint32_t size);
 
 static void dma_pl330_get_counter(struct dma_pl330_ch_internal *ch_handle,
-				  uint32_t *psrc_byte_width,
-				  uint32_t *pdst_byte_width,
-				  uint32_t *ploop_counter,
-				  uint32_t *presidue)
+				  uint32_t *psrc_byte_width, uint32_t *pdst_byte_width,
+				  uint32_t *ploop_counter, uint32_t *presidue)
 {
 	uint32_t srcbytewidth, dstbytewidth;
 	uint32_t loop_counter, residue;
@@ -34,11 +32,10 @@ static void dma_pl330_get_counter(struct dma_pl330_ch_internal *ch_handle,
 	srcbytewidth = BYTE_WIDTH(ch_handle->src_burst_sz);
 	dstbytewidth = BYTE_WIDTH(ch_handle->dst_burst_sz);
 
-	loop_counter = ch_handle->trans_size /
-		       (srcbytewidth * (ch_handle->src_burst_len + 1));
+	loop_counter = ch_handle->trans_size / (srcbytewidth * (ch_handle->src_burst_len + 1));
 
-	residue = ch_handle->trans_size - loop_counter *
-		  (srcbytewidth * (ch_handle->src_burst_len + 1));
+	residue = ch_handle->trans_size -
+		  loop_counter * (srcbytewidth * (ch_handle->src_burst_len + 1));
 
 	*psrc_byte_width = srcbytewidth;
 	*pdst_byte_width = dstbytewidth;
@@ -49,34 +46,29 @@ static void dma_pl330_get_counter(struct dma_pl330_ch_internal *ch_handle,
 static uint32_t dma_pl330_ch_ccr(struct dma_pl330_ch_internal *ch_handle)
 {
 	uint32_t ccr;
-	int secure = ch_handle->nonsec_mode ? SRC_PRI_NONSEC_VALUE :
-		     SRC_PRI_SEC_VALUE;
+	int secure = ch_handle->nonsec_mode ? SRC_PRI_NONSEC_VALUE : SRC_PRI_SEC_VALUE;
 
-	ccr = ((ch_handle->dst_cache_ctrl & CC_SRCCCTRL_MASK) <<
-		CC_DSTCCTRL_SHIFT) +
-	       ((ch_handle->nonsec_mode) << CC_DSTNS_SHIFT) +
-	       (ch_handle->dst_burst_len << CC_DSTBRSTLEN_SHIFT) +
-	       (ch_handle->dst_burst_sz << CC_DSTBRSTSIZE_SHIFT) +
-	       (ch_handle->dst_inc << CC_DSTINC_SHIFT) +
-	       ((ch_handle->src_cache_ctrl & CC_SRCCCTRL_MASK) <<
-		CC_SRCCCTRL_SHIFT) +
-	       (secure << CC_SRCPRI_SHIFT) +
-	       (ch_handle->src_burst_len << CC_SRCBRSTLEN_SHIFT)  +
-	       (ch_handle->src_burst_sz << CC_SRCBRSTSIZE_SHIFT)  +
-	       (ch_handle->src_inc << CC_SRCINC_SHIFT);
+	ccr = ((ch_handle->dst_cache_ctrl & CC_SRCCCTRL_MASK) << CC_DSTCCTRL_SHIFT) +
+	      ((ch_handle->nonsec_mode) << CC_DSTNS_SHIFT) +
+	      (ch_handle->dst_burst_len << CC_DSTBRSTLEN_SHIFT) +
+	      (ch_handle->dst_burst_sz << CC_DSTBRSTSIZE_SHIFT) +
+	      (ch_handle->dst_inc << CC_DSTINC_SHIFT) +
+	      ((ch_handle->src_cache_ctrl & CC_SRCCCTRL_MASK) << CC_SRCCCTRL_SHIFT) +
+	      (secure << CC_SRCPRI_SHIFT) + (ch_handle->src_burst_len << CC_SRCBRSTLEN_SHIFT) +
+	      (ch_handle->src_burst_sz << CC_SRCBRSTSIZE_SHIFT) +
+	      (ch_handle->src_inc << CC_SRCINC_SHIFT);
 
 	return ccr;
 }
 
-static void dma_pl330_calc_burstsz_len(struct dma_pl330_ch_internal *ch_handle,
-				       uint64_t dst, uint64_t src,
-				       uint32_t size)
+static void dma_pl330_calc_burstsz_len(struct dma_pl330_ch_internal *ch_handle, uint64_t dst,
+				       uint64_t src, uint32_t size)
 {
 	uint32_t byte_width, burst_sz, burst_len;
 
 	burst_sz = MAX_BURST_SIZE_LOG2;
 	/* src, dst and size should be aligned to burst size in bytes */
-	while ((src | dst | size) & ((BYTE_WIDTH(burst_sz)) - 1)) {
+	while ((src | dst | size) & ((BYTE_WIDTH(burst_sz))-1)) {
 		burst_sz--;
 	}
 
@@ -99,25 +91,22 @@ static void dma_pl330_calc_burstsz_len(struct dma_pl330_ch_internal *ch_handle,
 }
 
 #ifdef CONFIG_DMA_64BIT
-static void dma_pl330_cfg_dmac_add_control(uint32_t control_reg_base,
-					   uint64_t dst, uint64_t src, int ch)
+static void dma_pl330_cfg_dmac_add_control(uint32_t control_reg_base, uint64_t dst, uint64_t src,
+					   int ch)
 {
 	uint32_t src_h = src >> 32;
 	uint32_t dst_h = dst >> 32;
 	uint32_t dmac_higher_addr;
 
-	dmac_higher_addr = ((dst_h & HIGHER_32_ADDR_MASK) << DST_ADDR_SHIFT) |
-			   (src_h & HIGHER_32_ADDR_MASK);
+	dmac_higher_addr =
+		((dst_h & HIGHER_32_ADDR_MASK) << DST_ADDR_SHIFT) | (src_h & HIGHER_32_ADDR_MASK);
 
-	sys_write32(dmac_higher_addr,
-		    control_reg_base +
-		    (ch * CONTROL_OFFSET)
-		   );
+	sys_write32(dmac_higher_addr, control_reg_base + (ch * CONTROL_OFFSET));
 }
 #endif
 
-static void dma_pl330_config_channel(struct dma_pl330_ch_config *ch_cfg,
-				     uint64_t dst, uint64_t src, uint32_t size)
+static void dma_pl330_config_channel(struct dma_pl330_ch_config *ch_cfg, uint64_t dst, uint64_t src,
+				     uint32_t size)
 {
 	struct dma_pl330_ch_internal *ch_handle = &ch_cfg->internal;
 
@@ -134,9 +123,7 @@ static void dma_pl330_config_channel(struct dma_pl330_ch_config *ch_cfg,
 	}
 }
 
-static inline uint32_t dma_pl330_gen_mov(mem_addr_t buf,
-					 enum dmamov_type type,
-					 uint32_t val)
+static inline uint32_t dma_pl330_gen_mov(mem_addr_t buf, enum dmamov_type type, uint32_t val)
 {
 	sys_write8(OP_DMA_MOV, buf);
 	sys_write8(type, buf + 1);
@@ -154,8 +141,7 @@ static inline void dma_pl330_gen_op(uint8_t opcode, uint32_t addr, uint32_t val)
 	sys_write8(val, addr + 1);
 }
 
-static int dma_pl330_setup_ch(const struct device *dev,
-			      struct dma_pl330_ch_internal *ch_dat,
+static int dma_pl330_setup_ch(const struct device *dev, struct dma_pl330_ch_internal *ch_dat,
 			      int ch)
 {
 	mem_addr_t dma_exec_addr;
@@ -166,34 +152,27 @@ static int dma_pl330_setup_ch(const struct device *dev,
 	uint32_t loop_counter, residue;
 	struct dma_pl330_dev_data *const dev_data = dev->data;
 	struct dma_pl330_ch_config *channel_cfg;
-	int secure = ch_dat->nonsec_mode ? SRC_PRI_NONSEC_VALUE :
-				SRC_PRI_SEC_VALUE;
+	int secure = ch_dat->nonsec_mode ? SRC_PRI_NONSEC_VALUE : SRC_PRI_SEC_VALUE;
 
 	channel_cfg = &dev_data->channels[ch];
 	dma_exec_addr = channel_cfg->dma_exec_addr;
 
-	offset  += dma_pl330_gen_mov(dma_exec_addr,
-				     SAR, ch_dat->src_addr);
+	offset += dma_pl330_gen_mov(dma_exec_addr, SAR, ch_dat->src_addr);
 
-	offset  += dma_pl330_gen_mov(dma_exec_addr + offset,
-				     DAR, ch_dat->dst_addr);
+	offset += dma_pl330_gen_mov(dma_exec_addr + offset, DAR, ch_dat->dst_addr);
 
 	ccr = dma_pl330_ch_ccr(ch_dat);
 
-	offset  += dma_pl330_gen_mov(dma_exec_addr + offset,
-				     CCR, ccr);
+	offset += dma_pl330_gen_mov(dma_exec_addr + offset, CCR, ccr);
 
-	dma_pl330_get_counter(ch_dat, &srcbytewidth, &dstbytewidth,
-			      &loop_counter, &residue);
+	dma_pl330_get_counter(ch_dat, &srcbytewidth, &dstbytewidth, &loop_counter, &residue);
 
 	if (loop_counter >= PL330_LOOP_COUNTER0_MAX) {
 		loop_counter0 = PL330_LOOP_COUNTER0_MAX - 1;
 		loop_counter1 = loop_counter / PL330_LOOP_COUNTER0_MAX - 1;
-		dma_pl330_gen_op(OP_DMA_LOOP_COUNT1, dma_exec_addr + offset,
-				 loop_counter1 & 0xff);
+		dma_pl330_gen_op(OP_DMA_LOOP_COUNT1, dma_exec_addr + offset, loop_counter1 & 0xff);
 		offset = offset + 2;
-		dma_pl330_gen_op(OP_DMA_LOOP, dma_exec_addr + offset,
-				 loop_counter0 & 0xff);
+		dma_pl330_gen_op(OP_DMA_LOOP, dma_exec_addr + offset, loop_counter0 & 0xff);
 		offset = offset + 2;
 		lp1_start = offset;
 		lp0_start = offset;
@@ -203,8 +182,7 @@ static int dma_pl330_setup_ch(const struct device *dev,
 		dma_pl330_gen_op(OP_DMA_LP_BK_JMP1, dma_exec_addr + offset,
 				 ((offset - lp0_start) & 0xff));
 		offset = offset + 2;
-		dma_pl330_gen_op(OP_DMA_LOOP, dma_exec_addr + offset,
-				 (loop_counter0 & 0xff));
+		dma_pl330_gen_op(OP_DMA_LOOP, dma_exec_addr + offset, (loop_counter0 & 0xff));
 		offset = offset + 2;
 		loop_counter1--;
 		dma_pl330_gen_op(OP_DMA_LP_BK_JMP2, dma_exec_addr + offset,
@@ -214,8 +192,7 @@ static int dma_pl330_setup_ch(const struct device *dev,
 
 	if ((loop_counter % PL330_LOOP_COUNTER0_MAX) != 0) {
 		loop_counter0 = (loop_counter % PL330_LOOP_COUNTER0_MAX) - 1;
-		dma_pl330_gen_op(OP_DMA_LOOP, dma_exec_addr + offset,
-				 (loop_counter0 & 0xff));
+		dma_pl330_gen_op(OP_DMA_LOOP, dma_exec_addr + offset, (loop_counter0 & 0xff));
 		offset = offset + 2;
 		loop_counter1--;
 		lp0_start = offset;
@@ -228,18 +205,12 @@ static int dma_pl330_setup_ch(const struct device *dev,
 	}
 
 	if (residue != 0) {
-		ccr = ((ch_dat->nonsec_mode) << CC_DSTNS_SHIFT) +
-		       (0x0 << CC_DSTBRSTLEN_SHIFT) +
-		       (0x0 << CC_DSTBRSTSIZE_SHIFT) +
-		       (ch_dat->dst_inc << CC_DSTINC_SHIFT) +
-		       (secure << CC_SRCPRI_SHIFT) +
-		       (0x0 << CC_SRCBRSTLEN_SHIFT) +
-		       (0x0 << CC_SRCBRSTSIZE_SHIFT) +
-		       ch_dat->src_inc;
-		offset += dma_pl330_gen_mov(dma_exec_addr + offset,
-					    CCR, ccr);
-		dma_pl330_gen_op(OP_DMA_LOOP, dma_exec_addr + offset,
-				 ((residue - 1) & 0xff));
+		ccr = ((ch_dat->nonsec_mode) << CC_DSTNS_SHIFT) + (0x0 << CC_DSTBRSTLEN_SHIFT) +
+		      (0x0 << CC_DSTBRSTSIZE_SHIFT) + (ch_dat->dst_inc << CC_DSTINC_SHIFT) +
+		      (secure << CC_SRCPRI_SHIFT) + (0x0 << CC_SRCBRSTLEN_SHIFT) +
+		      (0x0 << CC_SRCBRSTSIZE_SHIFT) + ch_dat->src_inc;
+		offset += dma_pl330_gen_mov(dma_exec_addr + offset, CCR, ccr);
+		dma_pl330_gen_op(OP_DMA_LOOP, dma_exec_addr + offset, ((residue - 1) & 0xff));
 		offset = offset + 2;
 		lp0_start = offset;
 		sys_write8(OP_DMA_LD, dma_exec_addr + offset);
@@ -258,8 +229,7 @@ static int dma_pl330_setup_ch(const struct device *dev,
 	return 0;
 }
 
-static int dma_pl330_start_dma_ch(const struct device *dev,
-				  uint32_t reg_base, int ch, int secure)
+static int dma_pl330_start_dma_ch(const struct device *dev, uint32_t reg_base, int ch, int secure)
 {
 	struct dma_pl330_dev_data *const dev_data = dev->data;
 	struct dma_pl330_ch_config *channel_cfg;
@@ -275,13 +245,11 @@ static int dma_pl330_start_dma_ch(const struct device *dev,
 		k_busy_wait(1);
 	} while ((data & DATA_MASK) != 0);
 
-	sys_write32(((ch << DMA_INTSR1_SHIFT) +
-		    (DMA_INTSR0 << DMA_INTSR0_SHIFT) +
-		    (secure << DMA_SECURE_SHIFT) + (ch << DMA_CH_SHIFT)),
+	sys_write32(((ch << DMA_INTSR1_SHIFT) + (DMA_INTSR0 << DMA_INTSR0_SHIFT) +
+		     (secure << DMA_SECURE_SHIFT) + (ch << DMA_CH_SHIFT)),
 		    reg_base + DMAC_PL330_DBGINST0);
 
-	sys_write32(channel_cfg->dma_exec_addr,
-		    reg_base + DMAC_PL330_DBGINST1);
+	sys_write32(channel_cfg->dma_exec_addr, reg_base + DMAC_PL330_DBGINST1);
 
 	sys_write32(0x0, reg_base + DMAC_PL330_DBGCMD);
 
@@ -312,9 +280,8 @@ static int dma_pl330_wait(uint32_t reg_base, int ch)
 	return 0;
 }
 
-static int dma_pl330_xfer(const struct device *dev, uint64_t dst,
-			  uint64_t src, uint32_t size, uint32_t channel,
-			  uint32_t *xfer_size)
+static int dma_pl330_xfer(const struct device *dev, uint64_t dst, uint64_t src, uint32_t size,
+			  uint32_t channel, uint32_t *xfer_size)
 {
 	struct dma_pl330_dev_data *const dev_data = dev->data;
 	const struct dma_pl330_config *const dev_cfg = dev->config;
@@ -328,8 +295,7 @@ static int dma_pl330_xfer(const struct device *dev, uint64_t dst,
 
 	dma_pl330_calc_burstsz_len(ch_handle, dst, src, size);
 
-	max_size = GET_MAX_DMA_SIZE((1 << ch_handle->src_burst_sz),
-				    ch_handle->src_burst_len);
+	max_size = GET_MAX_DMA_SIZE((1 << ch_handle->src_burst_sz), ch_handle->src_burst_len);
 
 	if (size > max_size) {
 		size = max_size;
@@ -346,8 +312,7 @@ static int dma_pl330_xfer(const struct device *dev, uint64_t dst,
 	 * Each channel has 1 control register to configure higher 4bit address.
 	 */
 
-	dma_pl330_cfg_dmac_add_control(dev_cfg->control_reg_base,
-				       dst, src, channel);
+	dma_pl330_cfg_dmac_add_control(dev_cfg->control_reg_base, dst, src, channel);
 #endif
 	ret = dma_pl330_setup_ch(dev, ch_handle, channel);
 	if (ret) {
@@ -355,8 +320,7 @@ static int dma_pl330_xfer(const struct device *dev, uint64_t dst,
 		goto err;
 	}
 
-	ret = dma_pl330_start_dma_ch(dev, dev_cfg->reg_base, channel,
-				     ch_handle->nonsec_mode);
+	ret = dma_pl330_start_dma_ch(dev, dev_cfg->reg_base, channel, ch_handle->nonsec_mode);
 	if (ret) {
 		LOG_ERR("Failed to start DMA PL330");
 		goto err;
@@ -374,9 +338,8 @@ err:
 }
 
 #if CONFIG_DMA_64BIT
-static int dma_pl330_handle_boundary(const struct device *dev, uint64_t dst,
-				     uint64_t src, uint32_t channel,
-				     uint32_t size)
+static int dma_pl330_handle_boundary(const struct device *dev, uint64_t dst, uint64_t src,
+				     uint32_t channel, uint32_t size)
 {
 	uint32_t dst_low = (uint32_t)dst;
 	uint32_t src_low = (uint32_t)src;
@@ -393,8 +356,7 @@ static int dma_pl330_handle_boundary(const struct device *dev, uint64_t dst,
 
 	if (size > (PL330_MAX_OFFSET - dst_low)) {
 		transfer_size = PL330_MAX_OFFSET - dst_low;
-		ret = dma_pl330_submit(dev, dst, src, channel,
-				       transfer_size);
+		ret = dma_pl330_submit(dev, dst, src, channel, transfer_size);
 		if (ret < 0) {
 			return ret;
 		}
@@ -422,9 +384,8 @@ static int dma_pl330_handle_boundary(const struct device *dev, uint64_t dst,
 }
 #endif
 
-static int dma_pl330_submit(const struct device *dev, uint64_t dst,
-			    uint64_t src,
-			    uint32_t channel, uint32_t size)
+static int dma_pl330_submit(const struct device *dev, uint64_t dst, uint64_t src, uint32_t channel,
+			    uint32_t size)
 {
 	int ret;
 	uint32_t xfer_size;
@@ -439,14 +400,12 @@ static int dma_pl330_submit(const struct device *dev, uint64_t dst,
 
 	if ((size > (PL330_MAX_OFFSET - (uint32_t)dst)) ||
 	    (size > (PL330_MAX_OFFSET - (uint32_t)src))) {
-		return dma_pl330_handle_boundary(dev, dst, src,
-						 channel, size);
+		return dma_pl330_handle_boundary(dev, dst, src, channel, size);
 	}
 #endif
 	while (size) {
 		xfer_size = 0;
-		ret = dma_pl330_xfer(dev, dst, src, size,
-				     channel, &xfer_size);
+		ret = dma_pl330_xfer(dev, dst, src, size, channel, &xfer_size);
 		if (ret) {
 			return ret;
 		}
@@ -461,8 +420,7 @@ static int dma_pl330_submit(const struct device *dev, uint64_t dst,
 	return 0;
 }
 
-static int dma_pl330_configure(const struct device *dev, uint32_t channel,
-			       struct dma_config *cfg)
+static int dma_pl330_configure(const struct device *dev, uint32_t channel, struct dma_config *cfg)
 {
 	struct dma_pl330_dev_data *const dev_data = dev->data;
 	struct dma_pl330_ch_config *channel_cfg;
@@ -515,8 +473,7 @@ static int dma_pl330_configure(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
-static int dma_pl330_transfer_start(const struct device *dev,
-				    uint32_t channel)
+static int dma_pl330_transfer_start(const struct device *dev, uint32_t channel)
 {
 	struct dma_pl330_dev_data *const dev_data = dev->data;
 	struct dma_pl330_ch_config *channel_cfg;
@@ -527,8 +484,7 @@ static int dma_pl330_transfer_start(const struct device *dev,
 	}
 
 	channel_cfg = &dev_data->channels[channel];
-	ret = dma_pl330_submit(dev, channel_cfg->dst_addr,
-			       channel_cfg->src_addr, channel,
+	ret = dma_pl330_submit(dev, channel_cfg->dst_addr, channel_cfg->src_addr, channel,
 			       channel_cfg->trans_size);
 
 	k_mutex_lock(&channel_cfg->ch_mutex, K_FOREVER);
@@ -556,8 +512,7 @@ static int dma_pl330_initialize(const struct device *dev)
 
 	for (int channel = 0; channel < MAX_DMA_CHANNELS; channel++) {
 		channel_cfg = &dev_data->channels[channel];
-		channel_cfg->dma_exec_addr = dev_cfg->mcode_base +
-					(channel * MICROCODE_SIZE_MAX);
+		channel_cfg->dma_exec_addr = dev_cfg->mcode_base + (channel * MICROCODE_SIZE_MAX);
 		k_mutex_init(&channel_cfg->ch_mutex);
 	}
 
@@ -581,7 +536,5 @@ static const struct dma_pl330_config pl330_config = {
 
 static struct dma_pl330_dev_data pl330_data;
 
-DEVICE_DT_INST_DEFINE(0, &dma_pl330_initialize, NULL,
-		    &pl330_data, &pl330_config,
-		    POST_KERNEL, CONFIG_DMA_INIT_PRIORITY,
-		    &pl330_driver_api);
+DEVICE_DT_INST_DEFINE(0, &dma_pl330_initialize, NULL, &pl330_data, &pl330_config, POST_KERNEL,
+		      CONFIG_DMA_INIT_PRIORITY, &pl330_driver_api);

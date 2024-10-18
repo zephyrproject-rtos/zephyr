@@ -20,67 +20,66 @@
 
 LOG_MODULE_REGISTER(ADS1119, CONFIG_ADC_LOG_LEVEL);
 
-
 #define ADS1119_CONFIG_VREF(x) (FIELD_PREP(BIT(0), x))
-#define ADS1119_CONFIG_CM(x) (FIELD_PREP(BIT(1), x))
-#define ADS1119_CONFIG_DR(x) (FIELD_PREP(BIT_MASK(2) << 2, x))
+#define ADS1119_CONFIG_CM(x)   (FIELD_PREP(BIT(1), x))
+#define ADS1119_CONFIG_DR(x)   (FIELD_PREP(BIT_MASK(2) << 2, x))
 #define ADS1119_CONFIG_GAIN(x) (FIELD_PREP(BIT(4), x))
-#define ADS1119_CONFIG_MUX(x) (FIELD_PREP(BIT_MASK(3) << 5, x))
+#define ADS1119_CONFIG_MUX(x)  (FIELD_PREP(BIT_MASK(3) << 5, x))
 
-#define ADS1119_STATUS_MASK_ID BIT_MASK(7)
+#define ADS1119_STATUS_MASK_ID    BIT_MASK(7)
 #define ADS1119_STATUS_MASK_READY BIT(7)
 
 #define ADS1119_REG_SHIFT 2
 
-#define ADS1119_RESOLUTION 16
+#define ADS1119_RESOLUTION   16
 #define ADS1119_REF_INTERNAL 2048
 
 enum ads1119_cmd {
-	ADS1119_CMD_RESET       = 0x06,
-	ADS1119_CMD_START_SYNC  = 0x08,
-	ADS1119_CMD_POWER_DOWN  = 0x02,
-	ADS1119_CMD_READ_DATA   = 0x10,
-	ADS1119_CMD_READ_REG    = 0x20,
-	ADS1119_CMD_WRITE_REG   = 0x40,
+	ADS1119_CMD_RESET = 0x06,
+	ADS1119_CMD_START_SYNC = 0x08,
+	ADS1119_CMD_POWER_DOWN = 0x02,
+	ADS1119_CMD_READ_DATA = 0x10,
+	ADS1119_CMD_READ_REG = 0x20,
+	ADS1119_CMD_WRITE_REG = 0x40,
 };
 
 enum ads1119_reg {
-	ADS1119_REG_CONFIG      = 0 << ADS1119_REG_SHIFT,
-	ADS1119_REG_STATUS      = 1 << ADS1119_REG_SHIFT,
+	ADS1119_REG_CONFIG = 0 << ADS1119_REG_SHIFT,
+	ADS1119_REG_STATUS = 1 << ADS1119_REG_SHIFT,
 };
 
 enum {
-	ADS1119_CONFIG_VREF_INTERNAL    = 0,
-	ADS1119_CONFIG_VREF_EXTERNAL    = 1,
+	ADS1119_CONFIG_VREF_INTERNAL = 0,
+	ADS1119_CONFIG_VREF_EXTERNAL = 1,
 };
 
 enum {
-	ADS1119_CONFIG_MUX_DIFF_0_1     = 0,
-	ADS1119_CONFIG_MUX_DIFF_2_3     = 1,
-	ADS1119_CONFIG_MUX_DIFF_1_2     = 2,
-	ADS1119_CONFIG_MUX_SINGLE_0     = 3,
-	ADS1119_CONFIG_MUX_SINGLE_1     = 4,
-	ADS1119_CONFIG_MUX_SINGLE_2     = 5,
-	ADS1119_CONFIG_MUX_SINGLE_3     = 6,
-	ADS1119_CONFIG_MUX_SHORTED      = 7,
+	ADS1119_CONFIG_MUX_DIFF_0_1 = 0,
+	ADS1119_CONFIG_MUX_DIFF_2_3 = 1,
+	ADS1119_CONFIG_MUX_DIFF_1_2 = 2,
+	ADS1119_CONFIG_MUX_SINGLE_0 = 3,
+	ADS1119_CONFIG_MUX_SINGLE_1 = 4,
+	ADS1119_CONFIG_MUX_SINGLE_2 = 5,
+	ADS1119_CONFIG_MUX_SINGLE_3 = 6,
+	ADS1119_CONFIG_MUX_SHORTED = 7,
 };
 
 enum {
-	ADS1119_CONFIG_DR_20            = 0,
-	ADS1119_CONFIG_DR_90            = 1,
-	ADS1119_CONFIG_DR_330           = 2,
-	ADS1119_CONFIG_DR_1000          = 3,
-	ADS1119_CONFIG_DR_DEFAULT       = ADS1119_CONFIG_DR_20,
+	ADS1119_CONFIG_DR_20 = 0,
+	ADS1119_CONFIG_DR_90 = 1,
+	ADS1119_CONFIG_DR_330 = 2,
+	ADS1119_CONFIG_DR_1000 = 3,
+	ADS1119_CONFIG_DR_DEFAULT = ADS1119_CONFIG_DR_20,
 };
 
 enum {
-	ADS1119_CONFIG_GAIN_1   = 0,
-	ADS1119_CONFIG_GAIN_4   = 1,
+	ADS1119_CONFIG_GAIN_1 = 0,
+	ADS1119_CONFIG_GAIN_4 = 1,
 };
 
 enum {
-	ADS1119_CONFIG_CM_SINGLE        = 0,
-	ADS1119_CONFIG_CM_CONTINUOUS    = 1,
+	ADS1119_CONFIG_CM_SINGLE = 0,
+	ADS1119_CONFIG_CM_CONTINUOUS = 1,
 };
 
 struct ads1119_config {
@@ -116,8 +115,7 @@ static int ads1119_write_reg(const struct device *dev, uint8_t reg)
 	return i2c_reg_write_byte_dt(&config->bus, ADS1119_CMD_WRITE_REG, reg);
 }
 
-static inline int ads1119_acq_time_to_dr(const struct device *dev,
-					 uint16_t acq_time)
+static inline int ads1119_acq_time_to_dr(const struct device *dev, uint16_t acq_time)
 {
 	struct ads1119_data *data = dev->data;
 	int odr = -EINVAL;
@@ -133,19 +131,19 @@ static inline int ads1119_acq_time_to_dr(const struct device *dev,
 	switch (acq_value) {
 	case ADS1119_CONFIG_DR_20:
 		odr = ADS1119_CONFIG_DR_20;
-		ready_time_us = (1000*1000) / 20;
+		ready_time_us = (1000 * 1000) / 20;
 		break;
 	case ADS1119_CONFIG_DR_90:
 		odr = ADS1119_CONFIG_DR_90;
-		ready_time_us = (1000*1000) / 90;
+		ready_time_us = (1000 * 1000) / 90;
 		break;
 	case ADS1119_CONFIG_DR_330:
 		odr = ADS1119_CONFIG_DR_330;
-		ready_time_us = (1000*1000) / 330;
+		ready_time_us = (1000 * 1000) / 330;
 		break;
 	case ADS1119_CONFIG_DR_1000:
 		odr = ADS1119_CONFIG_DR_1000;
-		ready_time_us = (1000*1000) / 1000;
+		ready_time_us = (1000 * 1000) / 1000;
 		break;
 	default:
 		break;
@@ -199,9 +197,7 @@ static int ads1119_read_sample(const struct device *dev, uint16_t *buff)
 	const struct ads1119_config *config = dev->config;
 	const uint8_t cmd = ADS1119_CMD_READ_DATA;
 
-	res = i2c_write_read_dt(&config->bus,
-			     &cmd, sizeof(cmd),
-			     rx_bytes, sizeof(rx_bytes));
+	res = i2c_write_read_dt(&config->bus, &cmd, sizeof(cmd), rx_bytes, sizeof(rx_bytes));
 
 	*buff = sys_get_be16(rx_bytes);
 	return res;
@@ -277,7 +273,6 @@ static int ads1119_channel_setup(const struct device *dev,
 	return ads1119_write_reg(dev, config);
 }
 
-
 static int ads1119_validate_buffer_size(const struct adc_sequence *sequence)
 {
 	size_t needed = sizeof(int16_t);
@@ -313,12 +308,9 @@ static int ads1119_validate_sequence(const struct device *dev, const struct adc_
 	return ads1119_validate_buffer_size(sequence);
 }
 
-static void adc_context_update_buffer_pointer(struct adc_context *ctx,
-					      bool repeat_sampling)
+static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat_sampling)
 {
-	struct ads1119_data *data = CONTAINER_OF(ctx,
-						 struct ads1119_data,
-						 ctx);
+	struct ads1119_data *data = CONTAINER_OF(ctx, struct ads1119_data, ctx);
 
 	if (repeat_sampling) {
 		data->buffer = data->buffer_ptr;
@@ -327,15 +319,13 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
-	struct ads1119_data *data = CONTAINER_OF(ctx,
-						 struct ads1119_data, ctx);
+	struct ads1119_data *data = CONTAINER_OF(ctx, struct ads1119_data, ctx);
 
 	data->buffer_ptr = data->buffer;
 	k_sem_give(&data->acq_sem);
 }
 
-static int ads1119_adc_start_read(const struct device *dev,
-				  const struct adc_sequence *sequence,
+static int ads1119_adc_start_read(const struct device *dev, const struct adc_sequence *sequence,
 				  bool wait)
 {
 	int rc;
@@ -388,8 +378,7 @@ static int ads1119_adc_perform_read(const struct device *dev)
 }
 
 #if CONFIG_ADC_ASYNC
-static int ads1119_adc_read_async(const struct device *dev,
-				  const struct adc_sequence *sequence,
+static int ads1119_adc_read_async(const struct device *dev, const struct adc_sequence *sequence,
 				  struct k_poll_signal *async)
 {
 	int rc;
@@ -401,8 +390,7 @@ static int ads1119_adc_read_async(const struct device *dev,
 
 	return rc;
 }
-static int ads1119_read(const struct device *dev,
-			const struct adc_sequence *sequence)
+static int ads1119_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	int rc;
 	struct ads1119_data *data = dev->data;
@@ -414,8 +402,7 @@ static int ads1119_read(const struct device *dev,
 	return rc;
 }
 #else
-static int ads1119_read(const struct device *dev,
-			const struct adc_sequence *sequence)
+static int ads1119_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	int rc;
 	struct ads1119_data *data = dev->data;
@@ -467,13 +454,10 @@ static int ads1119_init(const struct device *dev)
 	}
 
 #if CONFIG_ADC_ASYNC
-	k_tid_t tid =
-		k_thread_create(&data->thread, config->stack,
-				CONFIG_ADC_ADS1119_ACQUISITION_THREAD_STACK_SIZE,
-				ads1119_acquisition_thread,
-				(void *)dev, NULL, NULL,
-				CONFIG_ADC_ADS1119_ASYNC_THREAD_INIT_PRIO,
-				0, K_NO_WAIT);
+	k_tid_t tid = k_thread_create(&data->thread, config->stack,
+				      CONFIG_ADC_ADS1119_ACQUISITION_THREAD_STACK_SIZE,
+				      ads1119_acquisition_thread, (void *)dev, NULL, NULL,
+				      CONFIG_ADC_ADS1119_ASYNC_THREAD_INIT_PRIO, 0, K_NO_WAIT);
 	k_thread_name_set(tid, "adc_ads1119");
 #endif
 	adc_context_unlock_unconditionally(&data->ctx);
@@ -489,19 +473,16 @@ static const struct adc_driver_api api = {
 	.read_async = ads1119_adc_read_async,
 #endif
 };
-#define ADC_ADS1119_INST_DEFINE(n)							   \
+#define ADC_ADS1119_INST_DEFINE(n)                                                                 \
 	IF_ENABLED(CONFIG_ADC_ASYNC,							   \
 		   (static								   \
 		   K_KERNEL_STACK_DEFINE(thread_stack_##n,				   \
-				      CONFIG_ADC_ADS1119_ACQUISITION_THREAD_STACK_SIZE);)) \
-	static const struct ads1119_config config_##n = {				   \
-		.bus = I2C_DT_SPEC_GET(DT_DRV_INST(n)),					   \
-		IF_ENABLED(CONFIG_ADC_ASYNC, (.stack = thread_stack_##n))		   \
-	};										   \
-	static struct ads1119_data data_##n;						   \
-	DEVICE_DT_INST_DEFINE(n, ads1119_init,						   \
-		      NULL, &data_##n, &config_##n,					   \
-		      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,				   \
-		      &api);
+				      CONFIG_ADC_ADS1119_ACQUISITION_THREAD_STACK_SIZE);))                                                    \
+	static const struct ads1119_config config_##n = {                                          \
+		.bus = I2C_DT_SPEC_GET(DT_DRV_INST(n)),                                            \
+		IF_ENABLED(CONFIG_ADC_ASYNC, (.stack = thread_stack_##n)) };                          \
+	static struct ads1119_data data_##n;                                                       \
+	DEVICE_DT_INST_DEFINE(n, ads1119_init, NULL, &data_##n, &config_##n, POST_KERNEL,          \
+			      CONFIG_ADC_INIT_PRIORITY, &api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_ADS1119_INST_DEFINE);

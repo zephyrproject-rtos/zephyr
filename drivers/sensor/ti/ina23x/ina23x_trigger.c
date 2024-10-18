@@ -10,8 +10,7 @@
 
 LOG_MODULE_REGISTER(INA23X_TRIGGER, CONFIG_SENSOR_LOG_LEVEL);
 
-static void ina23x_gpio_callback(const struct device *port,
-				 struct gpio_callback *cb, uint32_t pin)
+static void ina23x_gpio_callback(const struct device *port, struct gpio_callback *cb, uint32_t pin)
 {
 	ARG_UNUSED(pin);
 
@@ -35,9 +34,7 @@ int ina23x_trigger_mode_init(struct ina23x_trigger *trigg, const struct gpio_dt_
 		return ret;
 	}
 
-	gpio_init_callback(&trigg->gpio_cb,
-			   ina23x_gpio_callback,
-			   BIT(alert_gpio->pin));
+	gpio_init_callback(&trigg->gpio_cb, ina23x_gpio_callback, BIT(alert_gpio->pin));
 
 	ret = gpio_add_callback(alert_gpio->port, &trigg->gpio_cb);
 	if (ret < 0) {
@@ -45,6 +42,5 @@ int ina23x_trigger_mode_init(struct ina23x_trigger *trigg, const struct gpio_dt_
 		return ret;
 	}
 
-	return gpio_pin_interrupt_configure_dt(alert_gpio,
-					       GPIO_INT_EDGE_FALLING);
+	return gpio_pin_interrupt_configure_dt(alert_gpio, GPIO_INT_EDGE_FALLING);
 }

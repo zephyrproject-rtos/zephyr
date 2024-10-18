@@ -277,9 +277,7 @@ bool gnss_nmea0183_validate_message(char **argv, uint16_t argc)
 		checksum ^= ',';
 	}
 
-	if ((gnss_parse_atoi(argv[argc - 1], 16, &tmp) < 0) ||
-	    (tmp > UINT8_MAX) ||
-	    (tmp < 0)) {
+	if ((gnss_parse_atoi(argv[argc - 1], 16, &tmp) < 0) || (tmp > UINT8_MAX) || (tmp < 0)) {
 		return false;
 	}
 
@@ -316,26 +314,20 @@ int gnss_nmea0183_parse_hhmmss(const char *hhmmss, struct gnss_time *utc)
 	}
 
 	memcpy(part, hhmmss, 2);
-	if ((gnss_parse_atoi(part, 10, &i32) < 0) ||
-	    (i32 < 0) ||
-	    (i32 > 23)) {
+	if ((gnss_parse_atoi(part, 10, &i32) < 0) || (i32 < 0) || (i32 > 23)) {
 		return -EINVAL;
 	}
 
 	utc->hour = (uint8_t)i32;
 
 	memcpy(part, &hhmmss[2], 2);
-	if ((gnss_parse_atoi(part, 10, &i32) < 0) ||
-	    (i32 < 0) ||
-	    (i32 > 59)) {
+	if ((gnss_parse_atoi(part, 10, &i32) < 0) || (i32 < 0) || (i32 > 59)) {
 		return -EINVAL;
 	}
 
 	utc->minute = (uint8_t)i32;
 
-	if ((gnss_parse_dec_to_milli(&hhmmss[4], &i64) < 0) ||
-	    (i64 < 0) ||
-	    (i64 > 59999)) {
+	if ((gnss_parse_dec_to_milli(&hhmmss[4], &i64) < 0) || (i64 < 0) || (i64 > 59999)) {
 		return -EINVAL;
 	}
 
@@ -356,27 +348,21 @@ int gnss_nmea0183_parse_ddmmyy(const char *ddmmyy, struct gnss_time *utc)
 	}
 
 	memcpy(part, ddmmyy, 2);
-	if ((gnss_parse_atoi(part, 10, &i32) < 0) ||
-	    (i32 < 1) ||
-	    (i32 > 31)) {
+	if ((gnss_parse_atoi(part, 10, &i32) < 0) || (i32 < 1) || (i32 > 31)) {
 		return -EINVAL;
 	}
 
 	utc->month_day = (uint8_t)i32;
 
 	memcpy(part, &ddmmyy[2], 2);
-	if ((gnss_parse_atoi(part, 10, &i32) < 0) ||
-	    (i32 < 1) ||
-	    (i32 > 12)) {
+	if ((gnss_parse_atoi(part, 10, &i32) < 0) || (i32 < 1) || (i32 > 12)) {
 		return -EINVAL;
 	}
 
 	utc->month = (uint8_t)i32;
 
 	memcpy(part, &ddmmyy[4], 2);
-	if ((gnss_parse_atoi(part, 10, &i32) < 0) ||
-	    (i32 < 0) ||
-	    (i32 > 99)) {
+	if ((gnss_parse_atoi(part, 10, &i32) < 0) || (i32 < 0) || (i32 > 99)) {
 		return -EINVAL;
 	}
 
@@ -391,7 +377,7 @@ int gnss_nmea0183_parse_rmc(const char **argv, uint16_t argc, struct gnss_data *
 	__ASSERT(argv != NULL, "argv argument must be provided");
 	__ASSERT(data != NULL, "data argument must be provided");
 
-	if (argc < 10)  {
+	if (argc < 10) {
 		return -EINVAL;
 	}
 
@@ -422,26 +408,21 @@ int gnss_nmea0183_parse_rmc(const char **argv, uint16_t argc, struct gnss_data *
 	}
 
 	/* Align sign of coordinates with cardinal directions */
-	data->nav_data.latitude = argv[4][0] == 'N'
-				    ? data->nav_data.latitude
-				    : -data->nav_data.latitude;
+	data->nav_data.latitude =
+		argv[4][0] == 'N' ? data->nav_data.latitude : -data->nav_data.latitude;
 
-	data->nav_data.longitude = argv[6][0] == 'E'
-				     ? data->nav_data.longitude
-				     : -data->nav_data.longitude;
+	data->nav_data.longitude =
+		argv[6][0] == 'E' ? data->nav_data.longitude : -data->nav_data.longitude;
 
 	/* Parse speed */
-	if ((gnss_nmea0183_knots_to_mms(argv[7], &tmp) < 0) ||
-	    (tmp > UINT32_MAX)) {
+	if ((gnss_nmea0183_knots_to_mms(argv[7], &tmp) < 0) || (tmp > UINT32_MAX)) {
 		return -EINVAL;
 	}
 
 	data->nav_data.speed = (uint32_t)tmp;
 
 	/* Parse bearing */
-	if ((gnss_parse_dec_to_milli(argv[8], &tmp) < 0) ||
-	    (tmp > 359999) ||
-	    (tmp < 0)) {
+	if ((gnss_parse_dec_to_milli(argv[8], &tmp) < 0) || (tmp > 359999) || (tmp < 0)) {
 		return -EINVAL;
 	}
 
@@ -503,7 +484,7 @@ int gnss_nmea0183_parse_gga(const char **argv, uint16_t argc, struct gnss_data *
 	__ASSERT(argv != NULL, "argv argument must be provided");
 	__ASSERT(data != NULL, "data argument must be provided");
 
-	if (argc < 12)  {
+	if (argc < 12) {
 		return -EINVAL;
 	}
 
@@ -520,26 +501,21 @@ int gnss_nmea0183_parse_gga(const char **argv, uint16_t argc, struct gnss_data *
 	}
 
 	/* Parse number of satellites */
-	if ((gnss_parse_atoi(argv[7], 10, &tmp32) < 0) ||
-	    (tmp32 > UINT16_MAX) ||
-	    (tmp32 < 0)) {
+	if ((gnss_parse_atoi(argv[7], 10, &tmp32) < 0) || (tmp32 > UINT16_MAX) || (tmp32 < 0)) {
 		return -EINVAL;
 	}
 
 	data->info.satellites_cnt = (uint16_t)tmp32;
 
 	/* Parse HDOP */
-	if ((gnss_parse_dec_to_milli(argv[8], &tmp64) < 0) ||
-	    (tmp64 > UINT32_MAX) ||
-	    (tmp64 < 0)) {
+	if ((gnss_parse_dec_to_milli(argv[8], &tmp64) < 0) || (tmp64 > UINT32_MAX) || (tmp64 < 0)) {
 		return -EINVAL;
 	}
 
 	data->info.hdop = (uint16_t)tmp64;
 
 	/* Parse altitude */
-	if ((gnss_parse_dec_to_milli(argv[9], &tmp64) < 0) ||
-	    (tmp64 > INT32_MAX) ||
+	if ((gnss_parse_dec_to_milli(argv[9], &tmp64) < 0) || (tmp64 > INT32_MAX) ||
 	    (tmp64 < INT32_MIN)) {
 		return -EINVAL;
 	}
@@ -555,24 +531,22 @@ static int parse_gsv_svs(struct gnss_satellite *satellites, const struct gsv_sv_
 
 	for (uint16_t i = 0; i < svs_size; i++) {
 		/* Parse PRN */
-		if ((gnss_parse_atoi(svs[i].prn, 10, &i32) < 0) ||
-		    (i32 < 0) || (i32 > UINT16_MAX)) {
+		if ((gnss_parse_atoi(svs[i].prn, 10, &i32) < 0) || (i32 < 0) ||
+		    (i32 > UINT16_MAX)) {
 			return -EINVAL;
 		}
 
 		satellites[i].prn = (uint16_t)i32;
 
 		/* Parse elevation */
-		if ((gnss_parse_atoi(svs[i].elevation, 10, &i32) < 0) ||
-		    (i32 < 0) || (i32 > 90)) {
+		if ((gnss_parse_atoi(svs[i].elevation, 10, &i32) < 0) || (i32 < 0) || (i32 > 90)) {
 			return -EINVAL;
 		}
 
 		satellites[i].elevation = (uint8_t)i32;
 
 		/* Parse azimuth */
-		if ((gnss_parse_atoi(svs[i].azimuth, 10, &i32) < 0) ||
-		    (i32 < 0) || (i32 > 359)) {
+		if ((gnss_parse_atoi(svs[i].azimuth, 10, &i32) < 0) || (i32 < 0) || (i32 > 359)) {
 			return -EINVAL;
 		}
 
@@ -585,8 +559,7 @@ static int parse_gsv_svs(struct gnss_satellite *satellites, const struct gsv_sv_
 			continue;
 		}
 
-		if ((gnss_parse_atoi(svs[i].snr, 10, &i32) < 0) ||
-			(i32 < 0) || (i32 > 99)) {
+		if ((gnss_parse_atoi(svs[i].snr, 10, &i32) < 0) || (i32 < 0) || (i32 > 99)) {
 			return -EINVAL;
 		}
 
@@ -616,24 +589,24 @@ int gnss_nmea0183_parse_gsv_header(const char **argv, uint16_t argc,
 	}
 
 	/* Parse number of messages */
-	if ((gnss_parse_atoi(args->number_of_messages, 10, &i32) < 0) ||
-		(i32 < 0) || (i32 > UINT16_MAX)) {
+	if ((gnss_parse_atoi(args->number_of_messages, 10, &i32) < 0) || (i32 < 0) ||
+	    (i32 > UINT16_MAX)) {
 		return -EINVAL;
 	}
 
 	header->number_of_messages = (uint16_t)i32;
 
 	/* Parse message number */
-	if ((gnss_parse_atoi(args->message_number, 10, &i32) < 0) ||
-		(i32 < 0) || (i32 > UINT16_MAX)) {
+	if ((gnss_parse_atoi(args->message_number, 10, &i32) < 0) || (i32 < 0) ||
+	    (i32 > UINT16_MAX)) {
 		return -EINVAL;
 	}
 
 	header->message_number = (uint16_t)i32;
 
 	/* Parse message number */
-	if ((gnss_parse_atoi(args->numver_of_svs, 10, &i32) < 0) ||
-		(i32 < 0) || (i32 > UINT16_MAX)) {
+	if ((gnss_parse_atoi(args->numver_of_svs, 10, &i32) < 0) || (i32 < 0) ||
+	    (i32 > UINT16_MAX)) {
 		return -EINVAL;
 	}
 
@@ -641,8 +614,8 @@ int gnss_nmea0183_parse_gsv_header(const char **argv, uint16_t argc,
 	return 0;
 }
 
-int gnss_nmea0183_parse_gsv_svs(const char **argv, uint16_t argc,
-				struct gnss_satellite *satellites, uint16_t size)
+int gnss_nmea0183_parse_gsv_svs(const char **argv, uint16_t argc, struct gnss_satellite *satellites,
+				uint16_t size)
 {
 	const struct gsv_header_args *header_args = (const struct gsv_header_args *)argv;
 	const struct gsv_sv_args *sv_args = (const struct gsv_sv_args *)(argv + 4);

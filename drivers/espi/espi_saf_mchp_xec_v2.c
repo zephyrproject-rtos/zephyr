@@ -22,7 +22,7 @@
 LOG_MODULE_REGISTER(espi_saf, CONFIG_ESPI_LOG_LEVEL);
 
 /* common clock control device node for all Microchip XEC chips */
-#define MCHP_XEC_CLOCK_CONTROL_NODE	DT_NODELABEL(pcr)
+#define MCHP_XEC_CLOCK_CONTROL_NODE DT_NODELABEL(pcr)
 
 /* SAF EC Portal read/write flash access limited to 1-64 bytes */
 #define MAX_SAF_ECP_BUFFER_SIZE 64ul
@@ -39,16 +39,15 @@ LOG_MODULE_REGISTER(espi_saf, CONFIG_ESPI_LOG_LEVEL);
 #define SAF_YIELD_THRESHOLD 64
 
 /* Get QMSPI 0 encoded GIRQ information */
-#define XEC_QMSPI_ENC_GIRQ						\
-	DT_PROP_BY_IDX(DT_INST(0, microchip_xec_qmspi_ldma), girqs, 0)
+#define XEC_QMSPI_ENC_GIRQ DT_PROP_BY_IDX(DT_INST(0, microchip_xec_qmspi_ldma), girqs, 0)
 
-#define XEC_QMSPI_GIRQ MCHP_XEC_ECIA_GIRQ(XEC_QMSPI_ENC_GIRQ)
+#define XEC_QMSPI_GIRQ     MCHP_XEC_ECIA_GIRQ(XEC_QMSPI_ENC_GIRQ)
 #define XEC_QMSPI_GIRQ_POS MCHP_XEC_ECIA_GIRQ_POS(XEC_QMSPI_ENC_GIRQ)
 
 #define XEC_SAF_DONE_ENC_GIRQ DT_INST_PROP_BY_IDX(0, girqs, 0)
-#define XEC_SAF_ERR_ENC_GIRQ DT_INST_PROP_BY_IDX(0, girqs, 1)
+#define XEC_SAF_ERR_ENC_GIRQ  DT_INST_PROP_BY_IDX(0, girqs, 1)
 
-#define XEC_SAF_DONE_GIRQ MCHP_XEC_ECIA_GIRQ(XEC_SAF_DONE_ENC_GIRQ)
+#define XEC_SAF_DONE_GIRQ     MCHP_XEC_ECIA_GIRQ(XEC_SAF_DONE_ENC_GIRQ)
 #define XEC_SAF_DONE_GIRQ_POS MCHP_XEC_ECIA_GIRQ_POS(XEC_SAF_ERR_ENC_GIRQ)
 
 /*
@@ -63,10 +62,10 @@ LOG_MODULE_REGISTER(espi_saf, CONFIG_ESPI_LOG_LEVEL);
  * Add delay between Poll STATUS1 commands in 20 ns units.
  */
 struct espi_saf_xec_config {
-	struct mchp_espi_saf * const saf_base;
-	struct qmspi_regs * const qmspi_base;
-	struct mchp_espi_saf_comm * const saf_comm_base;
-	struct espi_iom_regs * const iom_base;
+	struct mchp_espi_saf *const saf_base;
+	struct qmspi_regs *const qmspi_base;
+	struct mchp_espi_saf_comm *const saf_comm_base;
+	struct espi_iom_regs *const iom_base;
 	void (*irq_config_func)(void);
 	uint32_t poll_timeout;
 	uint32_t consec_rd_timeout;
@@ -93,14 +92,12 @@ static uint32_t slave_mem[MAX_SAF_ECP_BUFFER_SIZE];
  * @brief eSPI SAF configuration
  */
 
-static inline void mchp_saf_cs_descr_wr(struct mchp_espi_saf *regs, uint8_t cs,
-					uint32_t val)
+static inline void mchp_saf_cs_descr_wr(struct mchp_espi_saf *regs, uint8_t cs, uint32_t val)
 {
 	regs->SAF_CS_OP[cs].OP_DESCR = val;
 }
 
-static inline void mchp_saf_poll2_mask_wr(struct mchp_espi_saf *regs, uint8_t cs,
-					  uint16_t val)
+static inline void mchp_saf_poll2_mask_wr(struct mchp_espi_saf *regs, uint8_t cs, uint16_t val)
 {
 	LOG_DBG("%s cs: %d mask %x", __func__, cs, val);
 	if (cs == 0) {
@@ -110,8 +107,7 @@ static inline void mchp_saf_poll2_mask_wr(struct mchp_espi_saf *regs, uint8_t cs
 	}
 }
 
-static inline void mchp_saf_cm_prefix_wr(struct mchp_espi_saf *regs, uint8_t cs,
-					 uint16_t val)
+static inline void mchp_saf_cm_prefix_wr(struct mchp_espi_saf *regs, uint8_t cs, uint16_t val)
 {
 	if (cs == 0) {
 		regs->SAF_CS0_CM_PRF = val;
@@ -155,15 +151,12 @@ static void saf_protection_regions_init(struct mchp_espi_saf *regs)
 	for (size_t n = 0; n < MCHP_ESPI_SAF_PR_MAX; n++) {
 		if (n == 0) {
 			regs->SAF_PROT_RG[0].START = 0U;
-			regs->SAF_PROT_RG[0].LIMIT =
-				regs->SAF_FL_CFG_SIZE_LIM >> 12;
+			regs->SAF_PROT_RG[0].LIMIT = regs->SAF_FL_CFG_SIZE_LIM >> 12;
 			regs->SAF_PROT_RG[0].WEBM = MCHP_SAF_MSTR_ALL;
 			regs->SAF_PROT_RG[0].RDBM = MCHP_SAF_MSTR_ALL;
 		} else {
-			regs->SAF_PROT_RG[n].START =
-				MCHP_SAF_PROT_RG_START_DFLT;
-			regs->SAF_PROT_RG[n].LIMIT =
-				MCHP_SAF_PROT_RG_LIMIT_DFLT;
+			regs->SAF_PROT_RG[n].START = MCHP_SAF_PROT_RG_START_DFLT;
+			regs->SAF_PROT_RG[n].LIMIT = MCHP_SAF_PROT_RG_LIMIT_DFLT;
 			regs->SAF_PROT_RG[n].WEBM = 0U;
 			regs->SAF_PROT_RG[n].RDBM = 0U;
 		}
@@ -177,8 +170,7 @@ static void saf_protection_regions_init(struct mchp_espi_saf *regs)
 
 static int qmspi_freq_div(uint32_t freqhz, uint32_t *fdiv)
 {
-	clock_control_subsys_t clkss =
-		(clock_control_subsys_t)(MCHP_XEC_PCR_CLK_PERIPH_FAST);
+	clock_control_subsys_t clkss = (clock_control_subsys_t)(MCHP_XEC_PCR_CLK_PERIPH_FAST);
 	uint32_t clk = 0u;
 
 	if (!fdiv) {
@@ -186,7 +178,7 @@ static int qmspi_freq_div(uint32_t freqhz, uint32_t *fdiv)
 	}
 
 	if (clock_control_get_rate(DEVICE_DT_GET(MCHP_XEC_CLOCK_CONTROL_NODE),
-				    (clock_control_subsys_t)clkss, &clk)) {
+				   (clock_control_subsys_t)clkss, &clk)) {
 		return -EIO;
 	}
 
@@ -221,12 +213,11 @@ static int qmspi_freq_div_from_mhz(uint32_t freqmhz, uint32_t *fdiv)
  *    or chip select timing derive user values.
  * 9. Program QMSPI MODE and CSTIM registers with activate set.
  */
-static int saf_qmspi_init(const struct espi_saf_xec_config *xcfg,
-			  const struct espi_saf_cfg *cfg)
+static int saf_qmspi_init(const struct espi_saf_xec_config *xcfg, const struct espi_saf_cfg *cfg)
 {
 	uint32_t qmode, qfdiv, cstim, n;
-	struct qmspi_regs * const qregs = xcfg->qmspi_base;
-	struct mchp_espi_saf * const regs = xcfg->saf_base;
+	struct qmspi_regs *const qregs = xcfg->qmspi_base;
+	struct mchp_espi_saf *const regs = xcfg->saf_base;
 	const struct espi_saf_hw_cfg *hwcfg = &cfg->hwcfg;
 
 	qmode = qregs->MODE;
@@ -242,27 +233,22 @@ static int saf_qmspi_init(const struct espi_saf_xec_config *xcfg,
 	mchp_soc_ecia_girq_src_dis(XEC_QMSPI_GIRQ, XEC_QMSPI_GIRQ_POS);
 	mchp_soc_ecia_girq_src_clr(XEC_QMSPI_GIRQ, XEC_QMSPI_GIRQ_POS);
 
-	qregs->IFCTRL =
-		(MCHP_QMSPI_IFC_WP_OUT_HI | MCHP_QMSPI_IFC_WP_OUT_EN |
-		 MCHP_QMSPI_IFC_HOLD_OUT_HI | MCHP_QMSPI_IFC_HOLD_OUT_EN);
+	qregs->IFCTRL = (MCHP_QMSPI_IFC_WP_OUT_HI | MCHP_QMSPI_IFC_WP_OUT_EN |
+			 MCHP_QMSPI_IFC_HOLD_OUT_HI | MCHP_QMSPI_IFC_HOLD_OUT_EN);
 
 	for (n = 0; n < MCHP_SAF_NUM_GENERIC_DESCR; n++) {
-		qregs->DESCR[MCHP_SAF_CM_EXIT_START_DESCR + n] =
-			hwcfg->generic_descr[n];
+		qregs->DESCR[MCHP_SAF_CM_EXIT_START_DESCR + n] = hwcfg->generic_descr[n];
 	}
 
 	/* SAF HW uses QMSPI interrupt signal */
 	qregs->IEN = MCHP_QMSPI_IEN_XFR_DONE;
 
-	qmode |= (MCHP_QMSPI_M_SAF_DMA_MODE_EN | MCHP_QMSPI_M_CS0 |
-		  MCHP_QMSPI_M_ACTIVATE);
+	qmode |= (MCHP_QMSPI_M_SAF_DMA_MODE_EN | MCHP_QMSPI_M_CS0 | MCHP_QMSPI_M_ACTIVATE);
 
 	if (hwcfg->flags & MCHP_SAF_HW_CFG_FLAG_CPHA) {
 		qmode = (qmode & ~(MCHP_QMSPI_M_SIG_MASK)) |
-			((hwcfg->qmspi_cpha << MCHP_QMSPI_M_SIG_POS) &
-			 MCHP_QMSPI_M_SIG_MASK);
+			((hwcfg->qmspi_cpha << MCHP_QMSPI_M_SIG_POS) & MCHP_QMSPI_M_SIG_MASK);
 	}
-
 
 	/* Copy QMSPI frequency divider into SAF CS0 and CS1 QMSPI frequency
 	 * dividers. SAF HW uses CS0/CS1 divider register fields to overwrite
@@ -307,7 +293,7 @@ static int saf_qmspi_init(const struct espi_saf_xec_config *xcfg,
  * SAF Suspend Check Delay @ 0x1ac. Not touched.
  *	Default = 0. Recommend = 20us. Units = MCLK. b[19:0]
  */
-static void saf_flash_timing_init(struct mchp_espi_saf * const regs,
+static void saf_flash_timing_init(struct mchp_espi_saf *const regs,
 				  const struct espi_saf_xec_config *cfg)
 {
 	LOG_DBG("%s\n", __func__);
@@ -326,7 +312,7 @@ static void saf_flash_timing_init(struct mchp_espi_saf * const regs,
 /*
  * Disable DnX bypass feature.
  */
-static void saf_dnx_bypass_init(struct mchp_espi_saf * const regs)
+static void saf_dnx_bypass_init(struct mchp_espi_saf *const regs)
 {
 	regs->SAF_DNX_PROT_BYP = 0;
 	regs->SAF_DNX_PROT_BYP = 0xffffffff;
@@ -341,8 +327,8 @@ static void saf_dnx_bypass_init(struct mchp_espi_saf * const regs)
  */
 static int saf_init_erase_block_size(const struct device *dev, const struct espi_saf_cfg *cfg)
 {
-	const struct espi_saf_xec_config * const xcfg = dev->config;
-	struct espi_iom_regs * const espi_iom = xcfg->iom_base;
+	const struct espi_saf_xec_config *const xcfg = dev->config;
+	struct espi_iom_regs *const espi_iom = xcfg->iom_base;
 	struct espi_saf_flash_cfg *fcfg = cfg->flash_cfgs;
 	uint32_t opb = fcfg->opb;
 	uint8_t erase_bitmap = MCHP_ESPI_SERASE_SZ_4K;
@@ -380,7 +366,7 @@ static int saf_init_erase_block_size(const struct device *dev, const struct espi
  * SAF Flash Config Special Mode @ 0x1B0
  * SAF Flash Misc Config @ 0x38
  */
-static void saf_flash_misc_cfg(struct mchp_espi_saf * const regs, uint8_t cs,
+static void saf_flash_misc_cfg(struct mchp_espi_saf *const regs, uint8_t cs,
 			       const struct espi_saf_flash_cfg *fcfg)
 {
 	uint32_t d, v;
@@ -415,7 +401,7 @@ static void saf_flash_misc_cfg(struct mchp_espi_saf * const regs, uint8_t cs,
 	LOG_DBG("%s SAF_FL_CFG_MISC: %x", __func__, d);
 }
 
-static void saf_flash_pd_cfg(struct mchp_espi_saf * const regs, uint8_t cs,
+static void saf_flash_pd_cfg(struct mchp_espi_saf *const regs, uint8_t cs,
 			     const struct espi_saf_flash_cfg *fcfg)
 {
 	uint32_t pdval = 0u;
@@ -448,8 +434,8 @@ static void saf_flash_pd_cfg(struct mchp_espi_saf * const regs, uint8_t cs,
  *   b[15:0] = QMSPI clock divider for SPI read
  *   b[31:16] = QMSPI clock divider for all other SPI commands
  */
-static int saf_flash_freq_cfg(struct mchp_espi_saf * const regs, uint8_t cs,
-			       const struct espi_saf_flash_cfg *fcfg)
+static int saf_flash_freq_cfg(struct mchp_espi_saf *const regs, uint8_t cs,
+			      const struct espi_saf_flash_cfg *fcfg)
 {
 	uint32_t fmhz, fdiv, saf_qclk;
 
@@ -463,13 +449,11 @@ static int saf_flash_freq_cfg(struct mchp_espi_saf * const regs, uint8_t cs,
 	if (fmhz) {
 		fdiv = 0u;
 		if (qmspi_freq_div_from_mhz(fmhz, &fdiv)) {
-			LOG_ERR("%s SAF CLKDIV CS0 bad freq MHz %u",
-				__func__, fmhz);
+			LOG_ERR("%s SAF CLKDIV CS0 bad freq MHz %u", __func__, fmhz);
 			return -EIO;
 		}
 		if (fdiv) {
-			saf_qclk = (saf_qclk & ~SAF_CLKDIV_CS_MSK0) |
-				   (fdiv & SAF_CLKDIV_CS_MSK0);
+			saf_qclk = (saf_qclk & ~SAF_CLKDIV_CS_MSK0) | (fdiv & SAF_CLKDIV_CS_MSK0);
 		}
 	}
 
@@ -477,8 +461,7 @@ static int saf_flash_freq_cfg(struct mchp_espi_saf * const regs, uint8_t cs,
 	if (fmhz) {
 		fdiv = 0u;
 		if (qmspi_freq_div_from_mhz(fmhz, &fdiv)) {
-			LOG_ERR("%s SAF CLKDIV CS1 bad freq MHz %u",
-				__func__, fmhz);
+			LOG_ERR("%s SAF CLKDIV CS1 bad freq MHz %u", __func__, fmhz);
 			return -EIO;
 		}
 		if (fdiv) {
@@ -509,13 +492,13 @@ static int saf_flash_freq_cfg(struct mchp_espi_saf * const regs, uint8_t cs,
  * SAF CS0 QMSPI frequency dividers (read/all other) commands
  * SAF CS1 QMSPI frequency dividers (read/all other) commands
  */
-static int saf_flash_cfg(const struct device *dev,
-			 const struct espi_saf_flash_cfg *fcfg, uint8_t cs)
+static int saf_flash_cfg(const struct device *dev, const struct espi_saf_flash_cfg *fcfg,
+			 uint8_t cs)
 {
 	uint32_t d, did;
-	const struct espi_saf_xec_config * const xcfg = dev->config;
-	struct mchp_espi_saf * const regs = xcfg->saf_base;
-	struct qmspi_regs * const qregs = xcfg->qmspi_base;
+	const struct espi_saf_xec_config *const xcfg = dev->config;
+	struct mchp_espi_saf *const regs = xcfg->saf_base;
+	struct qmspi_regs *const qregs = xcfg->qmspi_base;
 
 	LOG_DBG("%s cs=%u", __func__, cs);
 
@@ -531,8 +514,7 @@ static int saf_flash_cfg(const struct device *dev,
 
 	for (size_t i = 0; i < MCHP_SAF_QMSPI_NUM_FLASH_DESCR; i++) {
 		d = fcfg->descr[i] & ~(MCHP_QMSPI_C_NEXT_DESCR_MASK);
-		d |= (((did + 1) << MCHP_QMSPI_C_NEXT_DESCR_POS) &
-		      MCHP_QMSPI_C_NEXT_DESCR_MASK);
+		d |= (((did + 1) << MCHP_QMSPI_C_NEXT_DESCR_POS) & MCHP_QMSPI_C_NEXT_DESCR_MASK);
 		qregs->DESCR[did++] = d;
 	}
 
@@ -545,11 +527,9 @@ static int saf_flash_cfg(const struct device *dev,
 }
 
 static const uint32_t tag_map_dflt[MCHP_ESPI_SAF_TAGMAP_MAX] = {
-	MCHP_SAF_TAG_MAP0_DFLT, MCHP_SAF_TAG_MAP1_DFLT, MCHP_SAF_TAG_MAP2_DFLT
-};
+	MCHP_SAF_TAG_MAP0_DFLT, MCHP_SAF_TAG_MAP1_DFLT, MCHP_SAF_TAG_MAP2_DFLT};
 
-static void saf_tagmap_init(struct mchp_espi_saf * const regs,
-			    const struct espi_saf_cfg *cfg)
+static void saf_tagmap_init(struct mchp_espi_saf *const regs, const struct espi_saf_cfg *cfg)
 {
 	const struct espi_saf_hw_cfg *hwcfg = &cfg->hwcfg;
 
@@ -566,13 +546,11 @@ static void saf_tagmap_init(struct mchp_espi_saf * const regs,
 	LOG_DBG("SAF TAG2 %x", regs->SAF_TAG_MAP[2]);
 }
 
-#define SAF_QSPI_LDMA_CTRL						\
-	(MCHP_QMSPI_LDC_EN | MCHP_QMSPI_LDC_RS_EN |			\
-	 MCHP_QMSPI_LDC_ASZ_4)
+#define SAF_QSPI_LDMA_CTRL (MCHP_QMSPI_LDC_EN | MCHP_QMSPI_LDC_RS_EN | MCHP_QMSPI_LDC_ASZ_4)
 
-static void saf_qmspi_ldma_cfg(const struct espi_saf_xec_config * const xcfg)
+static void saf_qmspi_ldma_cfg(const struct espi_saf_xec_config *const xcfg)
 {
-	struct qmspi_regs * const qregs = xcfg->qmspi_base;
+	struct qmspi_regs *const qregs = xcfg->qmspi_base;
 	uint32_t qmode = qregs->MODE;
 	uint32_t n, temp, chan;
 
@@ -582,7 +560,7 @@ static void saf_qmspi_ldma_cfg(const struct espi_saf_xec_config * const xcfg)
 		temp = qregs->DESCR[n];
 		if (temp & MCHP_QMSPI_C_TX_MASK) {
 			chan = (temp & MCHP_QMSPI_C_TX_DMA_MASK) >> MCHP_QMSPI_C_TX_DMA_POS;
-			if (chan) { /* zero is disabled */
+			if (chan) {     /* zero is disabled */
 				chan--; /* register array index starts at 0 */
 				qregs->LDMA_TX_DESCR_BM |= BIT(n);
 				qregs->LDTX[chan].CTRL = SAF_QSPI_LDMA_CTRL;
@@ -608,8 +586,7 @@ static void saf_qmspi_ldma_cfg(const struct espi_saf_xec_config * const xcfg)
  * activated only when eSPI master sends Flash Channel enable
  * message with MAF/SAF select flag.
  */
-static int espi_saf_xec_configuration(const struct device *dev,
-				      const struct espi_saf_cfg *cfg)
+static int espi_saf_xec_configuration(const struct device *dev, const struct espi_saf_cfg *cfg)
 {
 	int ret = 0;
 	uint32_t totalsz = 0;
@@ -621,9 +598,9 @@ static int espi_saf_xec_configuration(const struct device *dev,
 		return -EINVAL;
 	}
 
-	const struct espi_saf_xec_config * const xcfg = dev->config;
-	struct mchp_espi_saf * const regs = xcfg->saf_base;
-	struct mchp_espi_saf_comm * const comm_regs = xcfg->saf_comm_base;
+	const struct espi_saf_xec_config *const xcfg = dev->config;
+	struct mchp_espi_saf *const regs = xcfg->saf_base;
+	struct mchp_espi_saf_comm *const comm_regs = xcfg->saf_comm_base;
 	const struct espi_saf_hw_cfg *hwcfg = &cfg->hwcfg;
 	const struct espi_saf_flash_cfg *fcfg = cfg->flash_cfgs;
 
@@ -672,8 +649,8 @@ static int espi_saf_xec_configuration(const struct device *dev,
 
 	regs->SAF_FL_CFG_SIZE_LIM = totalsz - 1;
 
-	LOG_DBG("SAF_FL_CFG_THRH = %x SAF_FL_CFG_SIZE_LIM = %x",
-		regs->SAF_FL_CFG_THRH, regs->SAF_FL_CFG_SIZE_LIM);
+	LOG_DBG("SAF_FL_CFG_THRH = %x SAF_FL_CFG_SIZE_LIM = %x", regs->SAF_FL_CFG_THRH,
+		regs->SAF_FL_CFG_SIZE_LIM);
 
 	saf_tagmap_init(regs, cfg);
 
@@ -695,8 +672,7 @@ static int espi_saf_xec_configuration(const struct device *dev,
 		u = MCHP_SAF_FL_CFG_MISC_PFOE_EXP;
 	}
 
-	regs->SAF_FL_CFG_MISC =
-		(regs->SAF_FL_CFG_MISC & ~(MCHP_SAF_FL_CFG_MISC_PFOE_MASK)) | u;
+	regs->SAF_FL_CFG_MISC = (regs->SAF_FL_CFG_MISC & ~(MCHP_SAF_FL_CFG_MISC_PFOE_MASK)) | u;
 
 	/* enable prefetch ? */
 	if (cfg->hwcfg.flags & MCHP_SAF_HW_CFG_FLAG_PFEN) {
@@ -706,16 +682,14 @@ static int espi_saf_xec_configuration(const struct device *dev,
 	}
 
 	LOG_DBG("%s SAF_FL_CFG_MISC: %x", __func__, regs->SAF_FL_CFG_MISC);
-	LOG_DBG("%s Aft MCHP_SAF_COMM_MODE_REG: %x", __func__,
-		comm_regs->SAF_COMM_MODE);
+	LOG_DBG("%s Aft MCHP_SAF_COMM_MODE_REG: %x", __func__, comm_regs->SAF_COMM_MODE);
 
 	saf_qmspi_ldma_cfg(xcfg);
 
 	return 0;
 }
 
-static int espi_saf_xec_set_pr(const struct device *dev,
-			       const struct espi_saf_protection *pr)
+static int espi_saf_xec_set_pr(const struct device *dev, const struct espi_saf_protection *pr)
 {
 	if ((dev == NULL) || (pr == NULL)) {
 		return -EINVAL;
@@ -725,8 +699,8 @@ static int espi_saf_xec_set_pr(const struct device *dev,
 		return -EINVAL;
 	}
 
-	const struct espi_saf_xec_config * const xcfg = dev->config;
-	struct mchp_espi_saf * const regs = xcfg->saf_base;
+	const struct espi_saf_xec_config *const xcfg = dev->config;
+	struct mchp_espi_saf *const regs = xcfg->saf_base;
 
 	if (regs->SAF_FL_CFG_MISC & MCHP_SAF_FL_CFG_MISC_SAF_EN) {
 		return -EAGAIN;
@@ -745,8 +719,7 @@ static int espi_saf_xec_set_pr(const struct device *dev,
 		/* NOTE: If previously locked writes have no effect */
 		if (preg->flags & MCHP_SAF_PR_FLAG_ENABLE) {
 			regs->SAF_PROT_RG[regnum].START = preg->start >> 12U;
-			regs->SAF_PROT_RG[regnum].LIMIT =
-				(preg->start + preg->size - 1U) >> 12U;
+			regs->SAF_PROT_RG[regnum].LIMIT = (preg->start + preg->size - 1U) >> 12U;
 			regs->SAF_PROT_RG[regnum].WEBM = preg->master_bm_we;
 			regs->SAF_PROT_RG[regnum].RDBM = preg->master_bm_rd;
 		} else {
@@ -768,8 +741,8 @@ static int espi_saf_xec_set_pr(const struct device *dev,
 
 static bool espi_saf_xec_channel_ready(const struct device *dev)
 {
-	const struct espi_saf_xec_config * const xcfg = dev->config;
-	struct mchp_espi_saf * const regs = xcfg->saf_base;
+	const struct espi_saf_xec_config *const xcfg = dev->config;
+	struct mchp_espi_saf *const regs = xcfg->saf_base;
 
 	if (regs->SAF_FL_CFG_MISC & MCHP_SAF_FL_CFG_MISC_SAF_EN) {
 		return true;
@@ -794,27 +767,23 @@ struct erase_size_encoding {
 	uint8_t encoding;
 };
 
-static const struct erase_size_encoding ersz_enc[] = {
-	{ MCHP_ESPI_SERASE_SZ_4K_BITPOS, 0 },
-	{ MCHP_ESPI_SERASE_SZ_32K_BITPOS, 1 },
-	{ MCHP_ESPI_SERASE_SZ_64K_BITPOS, 2 }
-};
+static const struct erase_size_encoding ersz_enc[] = {{MCHP_ESPI_SERASE_SZ_4K_BITPOS, 0},
+						      {MCHP_ESPI_SERASE_SZ_32K_BITPOS, 1},
+						      {MCHP_ESPI_SERASE_SZ_64K_BITPOS, 2}};
 
-#define SAF_ERASE_ENCODING_MAX_ENTRY                                           \
-	(sizeof(ersz_enc) / sizeof(struct erase_size_encoding))
+#define SAF_ERASE_ENCODING_MAX_ENTRY (sizeof(ersz_enc) / sizeof(struct erase_size_encoding))
 
 static uint32_t get_erase_size_encoding(const struct device *dev, uint32_t erase_size)
 {
-	const struct espi_saf_xec_config * const xcfg = dev->config;
-	struct espi_iom_regs * const espi_iom = xcfg->iom_base;
+	const struct espi_saf_xec_config *const xcfg = dev->config;
+	struct espi_iom_regs *const espi_iom = xcfg->iom_base;
 	uint8_t supsz = espi_iom->SAFEBS;
 
 	LOG_DBG("%s\n", __func__);
 	for (int i = 0; i < SAF_ERASE_ENCODING_MAX_ENTRY; i++) {
 		uint32_t sz = MCHP_ESPI_SERASE_SZ(ersz_enc[i].hwbitpos);
 
-		if ((sz == erase_size) &&
-		    (supsz & (1 << ersz_enc[i].hwbitpos))) {
+		if ((sz == erase_size) && (supsz & (1 << ersz_enc[i].hwbitpos))) {
 			return ersz_enc[i].encoding;
 		}
 	}
@@ -824,8 +793,7 @@ static uint32_t get_erase_size_encoding(const struct device *dev, uint32_t erase
 
 static int check_ecp_access_size(uint32_t reqlen)
 {
-	if ((reqlen < MCHP_SAF_ECP_CMD_RW_LEN_MIN) ||
-	    (reqlen > MCHP_SAF_ECP_CMD_RW_LEN_MAX)) {
+	if ((reqlen < MCHP_SAF_ECP_CMD_RW_LEN_MIN) || (reqlen > MCHP_SAF_ECP_CMD_RW_LEN_MAX)) {
 		return -EAGAIN;
 	}
 
@@ -840,14 +808,13 @@ static int check_ecp_access_size(uint32_t reqlen)
  * MCHP_SAF_ECP_CMD_RPMC_OP2_CS0(0x04), MCHP_SAF_ECP_CMD_RPMC_OP1_CS1(0x83),
  * MCHP_SAF_ECP_CMD_RPMC_OP2_CS1(0x84)
  */
-static int saf_ecp_access(const struct device *dev,
-			  struct espi_saf_packet *pckt, uint8_t cmd)
+static int saf_ecp_access(const struct device *dev, struct espi_saf_packet *pckt, uint8_t cmd)
 {
 	uint32_t scmd, err_mask, n;
 	int rc, counter;
 	struct espi_saf_xec_data *xdat = dev->data;
-	const struct espi_saf_xec_config * const xcfg = dev->config;
-	struct mchp_espi_saf * const regs = xcfg->saf_base;
+	const struct espi_saf_xec_config *const xcfg = dev->config;
+	struct mchp_espi_saf *const regs = xcfg->saf_base;
 	const struct espi_xec_irq_info *safirq = &xcfg->irq_info_list[0];
 
 	counter = 0;
@@ -930,9 +897,8 @@ static int saf_ecp_access(const struct device *dev,
 	regs->SAF_ECP_FLAR = pckt->flash_addr;
 	regs->SAF_ECP_BFAR = (uint32_t)&slave_mem[0];
 
-	scmd = MCHP_SAF_ECP_CMD_PUT_FLASH_NP |
-		((uint32_t)cmd << MCHP_SAF_ECP_CMD_CTYPE_POS) |
-		((n << MCHP_SAF_ECP_CMD_LEN_POS) & MCHP_SAF_ECP_CMD_LEN_MASK);
+	scmd = MCHP_SAF_ECP_CMD_PUT_FLASH_NP | ((uint32_t)cmd << MCHP_SAF_ECP_CMD_CTYPE_POS) |
+	       ((n << MCHP_SAF_ECP_CMD_LEN_POS) & MCHP_SAF_ECP_CMD_LEN_MASK);
 
 	LOG_DBG("%s ECP_FLAR=0x%x", __func__, regs->SAF_ECP_FLAR);
 	LOG_DBG("%s ECP_BFAR=0x%x", __func__, regs->SAF_ECP_BFAR);
@@ -965,29 +931,25 @@ static int saf_ecp_access(const struct device *dev,
 }
 
 /* Flash read using SAF EC Portal */
-static int saf_xec_flash_read(const struct device *dev,
-			      struct espi_saf_packet *pckt)
+static int saf_xec_flash_read(const struct device *dev, struct espi_saf_packet *pckt)
 {
 	LOG_DBG("%s", __func__);
 	return saf_ecp_access(dev, pckt, MCHP_SAF_ECP_CMD_READ);
 }
 
 /* Flash write using SAF EC Portal */
-static int saf_xec_flash_write(const struct device *dev,
-			       struct espi_saf_packet *pckt)
+static int saf_xec_flash_write(const struct device *dev, struct espi_saf_packet *pckt)
 {
 	return saf_ecp_access(dev, pckt, MCHP_SAF_ECP_CMD_WRITE);
 }
 
 /* Flash erase using SAF EC Portal */
-static int saf_xec_flash_erase(const struct device *dev,
-			       struct espi_saf_packet *pckt)
+static int saf_xec_flash_erase(const struct device *dev, struct espi_saf_packet *pckt)
 {
 	return saf_ecp_access(dev, pckt, MCHP_SAF_ECP_CMD_ERASE);
 }
 
-static int espi_saf_xec_manage_callback(const struct device *dev,
-					struct espi_callback *callback,
+static int espi_saf_xec_manage_callback(const struct device *dev, struct espi_callback *callback,
 					bool set)
 {
 	struct espi_saf_xec_data *data = dev->data;
@@ -1001,19 +963,18 @@ static int espi_saf_xec_activate(const struct device *dev)
 		return -EINVAL;
 	}
 
-	const struct espi_saf_xec_config * const xcfg = dev->config;
-	struct mchp_espi_saf * const regs = xcfg->saf_base;
+	const struct espi_saf_xec_config *const xcfg = dev->config;
+	struct mchp_espi_saf *const regs = xcfg->saf_base;
 	const struct espi_xec_irq_info *safirq = &xcfg->irq_info_list[1];
 
 	regs->SAF_ESPI_MON_STATUS = MCHP_SAF_ESPI_MON_STS_IEN_MSK;
 	mchp_xec_ecia_girq_src_clr(safirq->gid, safirq->gpos);
 
 	regs->SAF_FL_CFG_MISC |= MCHP_SAF_FL_CFG_MISC_SAF_EN;
-	regs->SAF_ESPI_MON_INTEN = (BIT(MCHP_SAF_ESPI_MON_STS_IEN_TMOUT_POS) |
-				    BIT(MCHP_SAF_ESPI_MON_STS_IEN_OOR_POS) |
-				    BIT(MCHP_SAF_ESPI_MON_STS_IEN_AV_POS) |
-				    BIT(MCHP_SAF_ESPI_MON_STS_IEN_BND_4K_POS) |
-				    BIT(MCHP_SAF_ESPI_MON_STS_IEN_ERSZ_POS));
+	regs->SAF_ESPI_MON_INTEN =
+		(BIT(MCHP_SAF_ESPI_MON_STS_IEN_TMOUT_POS) | BIT(MCHP_SAF_ESPI_MON_STS_IEN_OOR_POS) |
+		 BIT(MCHP_SAF_ESPI_MON_STS_IEN_AV_POS) | BIT(MCHP_SAF_ESPI_MON_STS_IEN_BND_4K_POS) |
+		 BIT(MCHP_SAF_ESPI_MON_STS_IEN_ERSZ_POS));
 
 	k_busy_wait(1000); /* TODO FIXME get estimate of time interval */
 
@@ -1022,14 +983,14 @@ static int espi_saf_xec_activate(const struct device *dev)
 
 static void espi_saf_done_isr(const struct device *dev)
 {
-	const struct espi_saf_xec_config * const xcfg = dev->config;
+	const struct espi_saf_xec_config *const xcfg = dev->config;
 	struct espi_saf_xec_data *data = dev->data;
-	struct mchp_espi_saf * const regs = xcfg->saf_base;
+	struct mchp_espi_saf *const regs = xcfg->saf_base;
 	const struct espi_xec_irq_info *safirq = &xcfg->irq_info_list[0];
 	uint32_t ecp_status = regs->SAF_ECP_STATUS;
-	struct espi_event evt = { .evt_type = ESPI_BUS_TAF_NOTIFICATION,
-				  .evt_details = BIT(0),
-				  .evt_data = ecp_status };
+	struct espi_event evt = {.evt_type = ESPI_BUS_TAF_NOTIFICATION,
+				 .evt_details = BIT(0),
+				 .evt_data = ecp_status};
 
 	regs->SAF_ECP_INTEN = 0u;
 	regs->SAF_ECP_STATUS = BIT(MCHP_SAF_ECP_STS_DONE_POS);
@@ -1046,14 +1007,14 @@ static void espi_saf_done_isr(const struct device *dev)
 
 static void espi_saf_err_isr(const struct device *dev)
 {
-	const struct espi_saf_xec_config * const xcfg = dev->config;
+	const struct espi_saf_xec_config *const xcfg = dev->config;
 	struct espi_saf_xec_data *data = dev->data;
-	struct mchp_espi_saf * const regs = xcfg->saf_base;
+	struct mchp_espi_saf *const regs = xcfg->saf_base;
 	const struct espi_xec_irq_info *safirq = &xcfg->irq_info_list[1];
 	uint32_t mon_status = regs->SAF_ESPI_MON_STATUS;
-	struct espi_event evt = { .evt_type = ESPI_BUS_PERIPHERAL_NOTIFICATION,
-				  .evt_details = BIT(7),
-				  .evt_data = mon_status };
+	struct espi_event evt = {.evt_type = ESPI_BUS_PERIPHERAL_NOTIFICATION,
+				 .evt_details = BIT(7),
+				 .evt_data = mon_status};
 
 	regs->SAF_ESPI_MON_STATUS = mon_status;
 	mchp_xec_ecia_girq_src_clr(safirq->gid, safirq->gpos);
@@ -1075,9 +1036,9 @@ static const struct espi_saf_driver_api espi_saf_xec_driver_api = {
 
 static int espi_saf_xec_init(const struct device *dev)
 {
-	const struct espi_saf_xec_config * const xcfg = dev->config;
-	struct espi_saf_xec_data * const data = dev->data;
-	struct espi_iom_regs * const espi_iom = xcfg->iom_base;
+	const struct espi_saf_xec_config *const xcfg = dev->config;
+	struct espi_saf_xec_data *const data = dev->data;
+	struct espi_iom_regs *const espi_iom = xcfg->iom_base;
 
 	/* ungate SAF clocks by disabling PCR sleep enable */
 	z_mchp_xec_pcr_periph_sleep(xcfg->pcr_idx, xcfg->pcr_pos, 0);
@@ -1094,82 +1055,69 @@ static int espi_saf_xec_init(const struct device *dev)
 	return 0;
 }
 
-
 /* n = node-id, p = property, i = index */
-#define XEC_SAF_IRQ_INFO(n, p, i)					    \
-	{								    \
-		.gid = MCHP_XEC_ECIA_GIRQ(DT_PROP_BY_IDX(n, p, i)),	    \
-		.gpos = MCHP_XEC_ECIA_GIRQ_POS(DT_PROP_BY_IDX(n, p, i)),    \
-		.anid = MCHP_XEC_ECIA_NVIC_AGGR(DT_PROP_BY_IDX(n, p, i)),   \
-		.dnid = MCHP_XEC_ECIA_NVIC_DIRECT(DT_PROP_BY_IDX(n, p, i)), \
+#define XEC_SAF_IRQ_INFO(n, p, i)                                                                  \
+	{                                                                                          \
+		.gid = MCHP_XEC_ECIA_GIRQ(DT_PROP_BY_IDX(n, p, i)),                                \
+		.gpos = MCHP_XEC_ECIA_GIRQ_POS(DT_PROP_BY_IDX(n, p, i)),                           \
+		.anid = MCHP_XEC_ECIA_NVIC_AGGR(DT_PROP_BY_IDX(n, p, i)),                          \
+		.dnid = MCHP_XEC_ECIA_NVIC_DIRECT(DT_PROP_BY_IDX(n, p, i)),                        \
 	},
 
-#define ESPI_SAF_XEC_DEVICE(n)								\
-											\
-	static struct espi_saf_xec_data espisaf_xec_data_##n;				\
-											\
-	static void espi_saf_xec_connect_irqs_##n(void);				\
-											\
-	static const struct espi_xec_irq_info espi_saf_xec_irq_info_##n[] = {		\
-		DT_INST_FOREACH_PROP_ELEM(n, girqs, XEC_SAF_IRQ_INFO)			\
-	};										\
-											\
-	static const struct espi_saf_xec_config espisaf_xec_config_##n = {		\
-		.saf_base = (struct mchp_espi_saf * const)(				\
-					DT_INST_REG_ADDR_BY_IDX(n, 0)),			\
-		.qmspi_base = (struct qmspi_regs * const)(				\
-						DT_INST_REG_ADDR_BY_IDX(n, 1)),		\
-		.saf_comm_base = (struct mchp_espi_saf_comm * const)(			\
-							DT_INST_REG_ADDR_BY_IDX(n, 2)),	\
-		.iom_base = (struct espi_iom_regs * const)(				\
-					DT_REG_ADDR_BY_NAME(DT_INST_PARENT(n), io)),	\
-		.poll_timeout = DT_INST_PROP_OR(n, poll_timeout,			\
-						MCHP_SAF_FLASH_POLL_TIMEOUT),		\
-		.consec_rd_timeout = DT_INST_PROP_OR(					\
-			n, consec_rd_timeout, MCHP_SAF_FLASH_CONSEC_READ_TIMEOUT),	\
-		.sus_chk_delay = DT_INST_PROP_OR(n, sus_chk_delay,			\
-						 MCHP_SAF_FLASH_SUS_CHK_DELAY),		\
-		.sus_rsm_interval = DT_INST_PROP_OR(n, sus_rsm_interval,		\
-						    MCHP_SAF_FLASH_SUS_RSM_INTERVAL),	\
-		.poll_interval = DT_INST_PROP_OR(n, poll_interval,			\
-						 MCHP_SAF_FLASH_POLL_INTERVAL),		\
-		.pcr_idx = DT_INST_PROP_BY_IDX(n, pcrs, 0),				\
-		.pcr_pos = DT_INST_PROP_BY_IDX(n, pcrs, 1),				\
-		.irq_config_func = espi_saf_xec_connect_irqs_##n,			\
-		.irq_info_size = ARRAY_SIZE(espi_saf_xec_irq_info_##n),			\
-		.irq_info_list = espi_saf_xec_irq_info_##n,				\
-	};										\
-	DEVICE_DT_INST_DEFINE(0, &espi_saf_xec_init, NULL,				\
-				  &espisaf_xec_data_##n,				\
-				  &espisaf_xec_config_##n, POST_KERNEL,			\
-				  CONFIG_ESPI_TAF_INIT_PRIORITY,			\
-				  &espi_saf_xec_driver_api);				\
-											\
-	static void espi_saf_xec_connect_irqs_##n(void)					\
-	{										\
-		uint8_t girq, gpos;							\
-											\
-		/* SAF Done */								\
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 0, irq),				\
-				DT_INST_IRQ_BY_IDX(n, 0, priority),			\
-				espi_saf_done_isr,					\
-				DEVICE_DT_INST_GET(n), 0);				\
-		irq_enable(DT_INST_IRQ_BY_IDX(n, 0, irq));				\
-											\
-		girq = MCHP_XEC_ECIA_GIRQ(DT_INST_PROP_BY_IDX(n, girqs, 0));		\
-		gpos = MCHP_XEC_ECIA_GIRQ_POS(DT_INST_PROP_BY_IDX(n, girqs, 0));	\
-		mchp_xec_ecia_girq_src_en(girq, gpos);					\
-											\
-		/* SAF Error */								\
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 1, irq),				\
-				DT_INST_IRQ_BY_IDX(n, 1, priority),			\
-				espi_saf_err_isr,					\
-				DEVICE_DT_INST_GET(n), 0);				\
-		irq_enable(DT_INST_IRQ_BY_IDX(n, 1, irq));				\
-											\
-		girq = MCHP_XEC_ECIA_GIRQ(DT_INST_PROP_BY_IDX(n, girqs, 1));		\
-		gpos = MCHP_XEC_ECIA_GIRQ_POS(DT_INST_PROP_BY_IDX(n, girqs, 1));	\
-		mchp_xec_ecia_girq_src_en(girq, gpos);					\
+#define ESPI_SAF_XEC_DEVICE(n)                                                                     \
+                                                                                                   \
+	static struct espi_saf_xec_data espisaf_xec_data_##n;                                      \
+                                                                                                   \
+	static void espi_saf_xec_connect_irqs_##n(void);                                           \
+                                                                                                   \
+	static const struct espi_xec_irq_info espi_saf_xec_irq_info_##n[] = {                      \
+		DT_INST_FOREACH_PROP_ELEM(n, girqs, XEC_SAF_IRQ_INFO)};                            \
+                                                                                                   \
+	static const struct espi_saf_xec_config espisaf_xec_config_##n = {                         \
+		.saf_base = (struct mchp_espi_saf *const)(DT_INST_REG_ADDR_BY_IDX(n, 0)),          \
+		.qmspi_base = (struct qmspi_regs *const)(DT_INST_REG_ADDR_BY_IDX(n, 1)),           \
+		.saf_comm_base =                                                                   \
+			(struct mchp_espi_saf_comm *const)(DT_INST_REG_ADDR_BY_IDX(n, 2)),         \
+		.iom_base =                                                                        \
+			(struct espi_iom_regs *const)(DT_REG_ADDR_BY_NAME(DT_INST_PARENT(n), io)), \
+		.poll_timeout = DT_INST_PROP_OR(n, poll_timeout, MCHP_SAF_FLASH_POLL_TIMEOUT),     \
+		.consec_rd_timeout =                                                               \
+			DT_INST_PROP_OR(n, consec_rd_timeout, MCHP_SAF_FLASH_CONSEC_READ_TIMEOUT), \
+		.sus_chk_delay = DT_INST_PROP_OR(n, sus_chk_delay, MCHP_SAF_FLASH_SUS_CHK_DELAY),  \
+		.sus_rsm_interval =                                                                \
+			DT_INST_PROP_OR(n, sus_rsm_interval, MCHP_SAF_FLASH_SUS_RSM_INTERVAL),     \
+		.poll_interval = DT_INST_PROP_OR(n, poll_interval, MCHP_SAF_FLASH_POLL_INTERVAL),  \
+		.pcr_idx = DT_INST_PROP_BY_IDX(n, pcrs, 0),                                        \
+		.pcr_pos = DT_INST_PROP_BY_IDX(n, pcrs, 1),                                        \
+		.irq_config_func = espi_saf_xec_connect_irqs_##n,                                  \
+		.irq_info_size = ARRAY_SIZE(espi_saf_xec_irq_info_##n),                            \
+		.irq_info_list = espi_saf_xec_irq_info_##n,                                        \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(0, &espi_saf_xec_init, NULL, &espisaf_xec_data_##n,                  \
+			      &espisaf_xec_config_##n, POST_KERNEL, CONFIG_ESPI_TAF_INIT_PRIORITY, \
+			      &espi_saf_xec_driver_api);                                           \
+                                                                                                   \
+	static void espi_saf_xec_connect_irqs_##n(void)                                            \
+	{                                                                                          \
+		uint8_t girq, gpos;                                                                \
+                                                                                                   \
+		/* SAF Done */                                                                     \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 0, irq), DT_INST_IRQ_BY_IDX(n, 0, priority),     \
+			    espi_saf_done_isr, DEVICE_DT_INST_GET(n), 0);                          \
+		irq_enable(DT_INST_IRQ_BY_IDX(n, 0, irq));                                         \
+                                                                                                   \
+		girq = MCHP_XEC_ECIA_GIRQ(DT_INST_PROP_BY_IDX(n, girqs, 0));                       \
+		gpos = MCHP_XEC_ECIA_GIRQ_POS(DT_INST_PROP_BY_IDX(n, girqs, 0));                   \
+		mchp_xec_ecia_girq_src_en(girq, gpos);                                             \
+                                                                                                   \
+		/* SAF Error */                                                                    \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 1, irq), DT_INST_IRQ_BY_IDX(n, 1, priority),     \
+			    espi_saf_err_isr, DEVICE_DT_INST_GET(n), 0);                           \
+		irq_enable(DT_INST_IRQ_BY_IDX(n, 1, irq));                                         \
+                                                                                                   \
+		girq = MCHP_XEC_ECIA_GIRQ(DT_INST_PROP_BY_IDX(n, girqs, 1));                       \
+		gpos = MCHP_XEC_ECIA_GIRQ_POS(DT_INST_PROP_BY_IDX(n, girqs, 1));                   \
+		mchp_xec_ecia_girq_src_en(girq, gpos);                                             \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(ESPI_SAF_XEC_DEVICE)

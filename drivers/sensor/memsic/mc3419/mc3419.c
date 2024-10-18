@@ -16,16 +16,13 @@
 LOG_MODULE_REGISTER(MC3419, CONFIG_SENSOR_LOG_LEVEL);
 
 static const uint16_t mc3419_accel_sense_map[] = {1, 2, 4, 8, 6};
-static struct mc3419_odr_map odr_map_table[] = {
-	{25}, {50}, {62, 500}, {100},
-	{125}, {250}, {500}, {1000}
-};
+static struct mc3419_odr_map odr_map_table[] = {{25},  {50},  {62, 500}, {100},
+						{125}, {250}, {500},     {1000}};
 
 static int mc3419_get_odr_value(uint16_t freq, uint16_t m_freq)
 {
 	for (int i = 0; i < ARRAY_SIZE(odr_map_table); i++) {
-		if (odr_map_table[i].freq == freq &&
-		    odr_map_table[i].mfreq == m_freq) {
+		if (odr_map_table[i].freq == freq && odr_map_table[i].mfreq == m_freq) {
 			return i;
 		}
 	}
@@ -33,29 +30,25 @@ static int mc3419_get_odr_value(uint16_t freq, uint16_t m_freq)
 	return -EINVAL;
 }
 
-static inline int mc3419_set_op_mode(const struct mc3419_config *cfg,
-				     enum mc3419_op_mode mode)
+static inline int mc3419_set_op_mode(const struct mc3419_config *cfg, enum mc3419_op_mode mode)
 {
 	return i2c_reg_write_byte_dt(&cfg->i2c, MC3419_REG_OP_MODE, mode);
 }
 
-static int mc3419_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
+static int mc3419_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	int ret = 0;
 	const struct mc3419_config *cfg = dev->config;
 	struct mc3419_driver_data *data = dev->data;
 
 	k_sem_take(&data->sem, K_FOREVER);
-	ret = i2c_burst_read_dt(&cfg->i2c, MC3419_REG_XOUT_L,
-				(uint8_t *)data->samples,
+	ret = i2c_burst_read_dt(&cfg->i2c, MC3419_REG_XOUT_L, (uint8_t *)data->samples,
 				MC3419_SAMPLE_READ_SIZE);
 	k_sem_give(&data->sem);
 	return ret;
 }
 
-static int mc3419_to_sensor_value(double sensitivity, int16_t *raw_data,
-				  struct sensor_value *val)
+static int mc3419_to_sensor_value(double sensitivity, int16_t *raw_data, struct sensor_value *val)
 {
 	double value = sys_le16_to_cpu(*raw_data);
 
@@ -64,8 +57,7 @@ static int mc3419_to_sensor_value(double sensitivity, int16_t *raw_data,
 	return sensor_value_from_double(val, value);
 }
 
-static int mc3419_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
+static int mc3419_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	int ret = 0;
@@ -107,21 +99,19 @@ static int mc3419_set_accel_range(const struct device *dev, uint8_t range)
 		return -EINVAL;
 	}
 
-	ret = i2c_reg_update_byte_dt(&cfg->i2c, MC3419_REG_RANGE_SELECT_CTRL,
-				     MC3419_RANGE_MASK, range << 4);
+	ret = i2c_reg_update_byte_dt(&cfg->i2c, MC3419_REG_RANGE_SELECT_CTRL, MC3419_RANGE_MASK,
+				     range << 4);
 	if (ret < 0) {
 		LOG_ERR("Failed to set resolution (%d)", ret);
 		return ret;
 	}
 
-	data->sensitivity = (double)(mc3419_accel_sense_map[range] *
-				     SENSOR_GRAIN_VALUE);
+	data->sensitivity = (double)(mc3419_accel_sense_map[range] * SENSOR_GRAIN_VALUE);
 
 	return 0;
 }
 
-static int mc3419_set_odr(const struct device *dev,
-			  const struct sensor_value *val)
+static int mc3419_set_odr(const struct device *dev, const struct sensor_value *val)
 {
 	int ret = 0;
 	int data_rate = 0;
@@ -135,8 +125,7 @@ static int mc3419_set_odr(const struct device *dev,
 
 	data_rate = MC3419_BASE_ODR_VAL + ret;
 
-	ret = i2c_reg_write_byte_dt(&cfg->i2c, MC3419_REG_SAMPLE_RATE,
-				    data_rate);
+	ret = i2c_reg_write_byte_dt(&cfg->i2c, MC3419_REG_SAMPLE_RATE, data_rate);
 	if (ret < 0) {
 		LOG_ERR("Failed to set ODR (%d)", ret);
 		return ret;
@@ -153,8 +142,7 @@ static int mc3419_set_odr(const struct device *dev,
 }
 
 #if defined(CONFIG_MC3419_TRIGGER)
-static int mc3419_set_anymotion_threshold(const struct device *dev,
-					  const struct sensor_value *val)
+static int mc3419_set_anymotion_threshold(const struct device *dev, const struct sensor_value *val)
 {
 	int ret = 0;
 	const struct mc3419_config *cfg = dev->config;
@@ -176,8 +164,7 @@ static int mc3419_set_anymotion_threshold(const struct device *dev,
 	return 0;
 }
 
-static int mc3419_trigger_set(const struct device *dev,
-			      const struct sensor_trigger *trig,
+static int mc3419_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			      sensor_trigger_handler_t handler)
 {
 	int ret = 0;
@@ -203,18 +190,14 @@ exit:
 }
 #endif
 
-static int mc3419_attr_set(const struct device *dev,
-			   enum sensor_channel chan,
-			   enum sensor_attribute attr,
-			   const struct sensor_value *val)
+static int mc3419_attr_set(const struct device *dev, enum sensor_channel chan,
+			   enum sensor_attribute attr, const struct sensor_value *val)
 {
 	int ret = 0;
 	struct mc3419_driver_data *data = dev->data;
 
-	if (chan != SENSOR_CHAN_ACCEL_X &&
-	    chan != SENSOR_CHAN_ACCEL_Y &&
-	    chan != SENSOR_CHAN_ACCEL_Z &&
-	    chan != SENSOR_CHAN_ACCEL_XYZ) {
+	if (chan != SENSOR_CHAN_ACCEL_X && chan != SENSOR_CHAN_ACCEL_Y &&
+	    chan != SENSOR_CHAN_ACCEL_Z && chan != SENSOR_CHAN_ACCEL_XYZ) {
 		LOG_ERR("Not supported on this channel.");
 		return -ENOTSUP;
 	}
@@ -295,9 +278,9 @@ static const struct sensor_driver_api mc3419_api = {
 };
 
 #if defined(CONFIG_MC3419_TRIGGER)
-#define MC3419_CFG_IRQ(idx)						\
-	.int_gpio = GPIO_DT_SPEC_INST_GET_OR(idx, int_gpios, { 0 }),	\
-	.int_cfg  = DT_INST_PROP(idx, int_pin2),
+#define MC3419_CFG_IRQ(idx)                                                                        \
+	.int_gpio = GPIO_DT_SPEC_INST_GET_OR(idx, int_gpios, {0}),                                 \
+	.int_cfg = DT_INST_PROP(idx, int_pin2),
 #else
 #define MC3419_CFG_IRQ(idx)
 #endif

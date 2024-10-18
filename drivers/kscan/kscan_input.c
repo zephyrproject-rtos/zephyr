@@ -41,16 +41,14 @@ static void kscan_input_cb(struct input_event *evt, void *user_data)
 	}
 
 	if (evt->sync) {
-		LOG_DBG("input event: %3d %3d %d",
-			data->row, data->col, data->pressed);
+		LOG_DBG("input event: %3d %3d %d", data->row, data->col, data->pressed);
 		if (data->callback) {
 			data->callback(dev, data->row, data->col, data->pressed);
 		}
 	}
 }
 
-static int kscan_input_configure(const struct device *dev,
-				      kscan_callback_t callback)
+static int kscan_input_configure(const struct device *dev, kscan_callback_t callback)
 {
 	struct kscan_input_data *data = dev->data;
 
@@ -100,19 +98,15 @@ static const struct kscan_driver_api kscan_input_driver_api = {
 	.disable_callback = kscan_input_disable_callback,
 };
 
-#define KSCAN_INPUT_INIT(index) \
-	INPUT_CALLBACK_DEFINE_NAMED(DEVICE_DT_GET(DT_INST_PARENT(index)),      \
-				    kscan_input_cb,                            \
-				    (void *)DEVICE_DT_INST_GET(index),         \
-				    kscan_input_cb_##index);                   \
-	static const struct kscan_input_config kscan_input_config_##index = {  \
-		.input_dev = DEVICE_DT_GET(DT_INST_PARENT(index)),             \
-	};                                                                     \
-	static struct kscan_input_data kscan_input_data_##index;               \
-	DEVICE_DT_INST_DEFINE(index, kscan_input_init, NULL,                   \
-			      &kscan_input_data_##index,                       \
-			      &kscan_input_config_##index,                     \
-			      POST_KERNEL, CONFIG_KSCAN_INIT_PRIORITY,         \
-			      &kscan_input_driver_api);
+#define KSCAN_INPUT_INIT(index)                                                                    \
+	INPUT_CALLBACK_DEFINE_NAMED(DEVICE_DT_GET(DT_INST_PARENT(index)), kscan_input_cb,          \
+				    (void *)DEVICE_DT_INST_GET(index), kscan_input_cb_##index);    \
+	static const struct kscan_input_config kscan_input_config_##index = {                      \
+		.input_dev = DEVICE_DT_GET(DT_INST_PARENT(index)),                                 \
+	};                                                                                         \
+	static struct kscan_input_data kscan_input_data_##index;                                   \
+	DEVICE_DT_INST_DEFINE(index, kscan_input_init, NULL, &kscan_input_data_##index,            \
+			      &kscan_input_config_##index, POST_KERNEL,                            \
+			      CONFIG_KSCAN_INIT_PRIORITY, &kscan_input_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(KSCAN_INPUT_INIT)

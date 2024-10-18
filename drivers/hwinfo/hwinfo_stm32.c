@@ -44,8 +44,7 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 	return length;
 }
 
-#if defined(CONFIG_SOC_SERIES_STM32WBAX) || \
-	defined(CONFIG_SOC_SERIES_STM32WBX) || \
+#if defined(CONFIG_SOC_SERIES_STM32WBAX) || defined(CONFIG_SOC_SERIES_STM32WBX) ||                 \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
 struct stm32_eui64 {
 	uint32_t id[2];
@@ -186,13 +185,8 @@ int z_impl_hwinfo_clear_reset_cause(void)
 
 int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 {
-	*supported = (RESET_PIN
-		      | RESET_WATCHDOG
-		      | RESET_SOFTWARE
-		      | RESET_SECURITY
-		      | RESET_LOW_POWER_WAKE
-		      | RESET_POR
-		      | RESET_BROWNOUT);
+	*supported = (RESET_PIN | RESET_WATCHDOG | RESET_SOFTWARE | RESET_SECURITY |
+		      RESET_LOW_POWER_WAKE | RESET_POR | RESET_BROWNOUT);
 
 	return 0;
 }

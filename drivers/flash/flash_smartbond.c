@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT renesas_smartbond_flash_controller
+#define DT_DRV_COMPAT     renesas_smartbond_flash_controller
 #define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
-#define QSPIF_NODE DT_NODELABEL(qspif)
+#define QSPIF_NODE        DT_NODELABEL(qspif)
 
 #include <stddef.h>
 #include <string.h>
@@ -17,8 +17,8 @@
 #include <zephyr/sys/byteorder.h>
 #include <DA1469xAB.h>
 
-#define FLASH_ERASE_SIZE	DT_PROP(SOC_NV_FLASH_NODE, erase_block_size)
-#define FLASH_PAGE_SIZE		256
+#define FLASH_ERASE_SIZE DT_PROP(SOC_NV_FLASH_NODE, erase_block_size)
+#define FLASH_PAGE_SIZE  256
 
 struct flash_smartbond_config {
 	uint32_t qspif_base_address;
@@ -67,7 +67,6 @@ static __ramfunc uint8_t qspic_read_status(void)
 	return status;
 }
 
-
 static __ramfunc void qspic_wait_busy(void)
 {
 	do {
@@ -113,7 +112,7 @@ static __ramfunc size_t qspic_write_page(uint32_t address, const uint8_t *data, 
 	qspic_data_write32(address | 0x02);
 
 	while (size >= 4) {
-		qspic_data_write32(*(uint32_t *) data);
+		qspic_data_write32(*(uint32_t *)data);
 		data += 4;
 		size -= 4;
 	}
@@ -145,8 +144,7 @@ static __ramfunc void qspic_write(uint32_t address, const uint8_t *data, size_t 
 	}
 }
 
-static int flash_smartbond_read(const struct device *dev, off_t offset,
-			      void *data, size_t size)
+static int flash_smartbond_read(const struct device *dev, off_t offset, void *data, size_t size)
 {
 	const struct flash_smartbond_config *config = dev->config;
 
@@ -163,9 +161,8 @@ static int flash_smartbond_read(const struct device *dev, off_t offset,
 	return 0;
 }
 
-static __ramfunc int flash_smartbond_write(const struct device *dev,
-					 off_t offset, const void *data,
-					 size_t size)
+static __ramfunc int flash_smartbond_write(const struct device *dev, off_t offset, const void *data,
+					   size_t size)
 {
 	unsigned int key;
 	uint32_t ctrlmode;
@@ -194,8 +191,7 @@ static __ramfunc int flash_smartbond_write(const struct device *dev,
 	return 0;
 }
 
-static __ramfunc int flash_smartbond_erase(const struct device *dev, off_t offset,
-					 size_t size)
+static __ramfunc int flash_smartbond_erase(const struct device *dev, off_t offset, size_t size)
 {
 	unsigned int key;
 	uint32_t ctrlmode;
@@ -246,8 +242,7 @@ static __ramfunc int flash_smartbond_erase(const struct device *dev, off_t offse
 	return 0;
 }
 
-static const struct flash_parameters *
-flash_smartbond_get_parameters(const struct device *dev)
+static const struct flash_parameters *flash_smartbond_get_parameters(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -256,14 +251,13 @@ flash_smartbond_get_parameters(const struct device *dev)
 
 #if CONFIG_FLASH_PAGE_LAYOUT
 static const struct flash_pages_layout flash_smartbond_0_pages_layout = {
-	.pages_count = DT_REG_SIZE(SOC_NV_FLASH_NODE) /
-				DT_PROP(SOC_NV_FLASH_NODE, erase_block_size),
+	.pages_count =
+		DT_REG_SIZE(SOC_NV_FLASH_NODE) / DT_PROP(SOC_NV_FLASH_NODE, erase_block_size),
 	.pages_size = DT_PROP(SOC_NV_FLASH_NODE, erase_block_size),
 };
 
-void flash_smartbond_page_layout(const struct device *dev,
-			       const struct flash_pages_layout **layout,
-			       size_t *layout_size)
+void flash_smartbond_page_layout(const struct device *dev, const struct flash_pages_layout **layout,
+				 size_t *layout_size)
 {
 	*layout = &flash_smartbond_0_pages_layout;
 	*layout_size = 1;
@@ -284,5 +278,5 @@ static const struct flash_smartbond_config flash_smartbond_0_config = {
 	.qspif_base_address = DT_REG_ADDR(QSPIF_NODE),
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &flash_smartbond_0_config,
-		      POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY, &flash_smartbond_driver_api);
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &flash_smartbond_0_config, POST_KERNEL,
+		      CONFIG_FLASH_INIT_PRIORITY, &flash_smartbond_driver_api);

@@ -25,8 +25,7 @@ struct sb_tsi_config {
 	struct i2c_dt_spec i2c;
 };
 
-static int sb_tsi_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
+static int sb_tsi_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct sb_tsi_data *data = dev->data;
 	const struct sb_tsi_config *config = dev->config;
@@ -59,8 +58,7 @@ static int sb_tsi_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static int sb_tsi_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
+static int sb_tsi_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	struct sb_tsi_data *data = dev->data;
@@ -70,8 +68,7 @@ static int sb_tsi_channel_get(const struct device *dev,
 	}
 
 	val->val1 = data->sample_int;
-	val->val2 = (data->sample_dec >> SB_TSI_TEMP_DEC_SHIFT) *
-		    (1000000 / SB_TSI_TEMP_DEC_SCALE);
+	val->val2 = (data->sample_dec >> SB_TSI_TEMP_DEC_SHIFT) * (1000000 / SB_TSI_TEMP_DEC_SCALE);
 
 	return 0;
 }
@@ -118,14 +115,14 @@ static int sb_tsi_pm_action(const struct device *dev, enum pm_device_action acti
 }
 #endif
 
-#define SB_TSI_INST(inst)								\
-	static struct sb_tsi_data sb_tsi_data_##inst;					\
-	static const struct sb_tsi_config sb_tsi_config_##inst = {			\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
-	};										\
-	PM_DEVICE_DT_INST_DEFINE(inst, sb_tsi_pm_action);				\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, sb_tsi_init, PM_DEVICE_DT_INST_GET(inst),	\
-			      &sb_tsi_data_##inst, &sb_tsi_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &sb_tsi_driver_api);
+#define SB_TSI_INST(inst)                                                                          \
+	static struct sb_tsi_data sb_tsi_data_##inst;                                              \
+	static const struct sb_tsi_config sb_tsi_config_##inst = {                                 \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+	};                                                                                         \
+	PM_DEVICE_DT_INST_DEFINE(inst, sb_tsi_pm_action);                                          \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, sb_tsi_init, PM_DEVICE_DT_INST_GET(inst),               \
+				     &sb_tsi_data_##inst, &sb_tsi_config_##inst, POST_KERNEL,      \
+				     CONFIG_SENSOR_INIT_PRIORITY, &sb_tsi_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SB_TSI_INST)

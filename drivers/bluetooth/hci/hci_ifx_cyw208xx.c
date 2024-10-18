@@ -5,46 +5,46 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- /**
-  * @brief Zephyr CYW20829 driver.
-  *
-  *  This driver uses btstack-integration asset as hosts platform adaptation layer
-  *  (porting layer) for CYW20829. btstack-integration layer implements/
-  *  invokes the interfaces defined by BTSTACK to enable communication
-  *  with the BT controller by using IPC_BTSS (IPC Bluetooth sub-system interface).
-  *  Zephyr CYW20829 driver implements wiced_bt_**** functions requreds for
-  *  btstack-integration asset and Zephyr Bluetooth driver interface
-  *  (defined in struct bt_hci_driver).
-  *
-  *                                               CM33 (application core)
-  *                                   |=========================================|
-  *                                   |            |-------------------------|  |
-  *                                   |            |     Zephyr application  |  |
-  *                                   |            |-------------------------|  |
-  *                                   |                               |         |
-  *                                   |                         |------------|  |
-  *                                   |                         |  Zephyr    |  |
-  *                                   |                         |  Bluetooth |  |
-  *      CM33 (BTSS core)             |                         |  Host      |  |
-  *  |=====================|          |                         |------------|  |
-  *  |                     |          |                               |         |
-  *  |  |---------------|  |          |   |--------------|      | -----------|  |
-  *  |  | Bluetooth     |  | IPC_BTSS |   | btstack-     |      |  Zephyr    |  |
-  *  |  | Controller FW |  | <--------|-> | integration  | ---- |  CYW20829  |  |
-  *  |  |---------------|  |          |   | asset        |      |  driver    |  |
-  *  |                     |          |   |--------------|      |------------|  |
-  *  |=====================|          |                                         |
-  *            |                      |=========================================|
-  *  |====================|
-  *  |     CYW20829       |
-  *  |     Bluetooth      |
-  *  |====================|
-  *
-  *  NOTE:
-  *   cyw920829 requires fetch binary files of Bluetooth controller firmware.
-  *   To fetch Binary Blobs:  west blobs fetch hal_infineon
-  *
-  */
+/**
+ * @brief Zephyr CYW20829 driver.
+ *
+ *  This driver uses btstack-integration asset as hosts platform adaptation layer
+ *  (porting layer) for CYW20829. btstack-integration layer implements/
+ *  invokes the interfaces defined by BTSTACK to enable communication
+ *  with the BT controller by using IPC_BTSS (IPC Bluetooth sub-system interface).
+ *  Zephyr CYW20829 driver implements wiced_bt_**** functions requreds for
+ *  btstack-integration asset and Zephyr Bluetooth driver interface
+ *  (defined in struct bt_hci_driver).
+ *
+ *                                               CM33 (application core)
+ *                                   |=========================================|
+ *                                   |            |-------------------------|  |
+ *                                   |            |     Zephyr application  |  |
+ *                                   |            |-------------------------|  |
+ *                                   |                               |         |
+ *                                   |                         |------------|  |
+ *                                   |                         |  Zephyr    |  |
+ *                                   |                         |  Bluetooth |  |
+ *      CM33 (BTSS core)             |                         |  Host      |  |
+ *  |=====================|          |                         |------------|  |
+ *  |                     |          |                               |         |
+ *  |  |---------------|  |          |   |--------------|      | -----------|  |
+ *  |  | Bluetooth     |  | IPC_BTSS |   | btstack-     |      |  Zephyr    |  |
+ *  |  | Controller FW |  | <--------|-> | integration  | ---- |  CYW20829  |  |
+ *  |  |---------------|  |          |   | asset        |      |  driver    |  |
+ *  |                     |          |   |--------------|      |------------|  |
+ *  |=====================|          |                                         |
+ *            |                      |=========================================|
+ *  |====================|
+ *  |     CYW20829       |
+ *  |     Bluetooth      |
+ *  |====================|
+ *
+ *  NOTE:
+ *   cyw920829 requires fetch binary files of Bluetooth controller firmware.
+ *   To fetch Binary Blobs:  west blobs fetch hal_infineon
+ *
+ */
 
 #include <errno.h>
 #include <stddef.h>
@@ -69,7 +69,7 @@
 #include <cyabs_rtos.h>
 #include <cybt_result.h>
 
-#define LOG_LEVEL  CONFIG_BT_HCI_DRIVER_LOG_LEVEL
+#define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(cyw208xx);
 
@@ -92,11 +92,10 @@ extern const uint8_t brcm_patchram_buf[];
 extern const int brcm_patch_ram_length;
 
 #define CYBSP_BT_PLATFORM_CFG_SLEEP_MODE_LP_ENABLED (0)
-#define BTM_SET_LOCAL_DEV_ADDR_LENGTH 6
+#define BTM_SET_LOCAL_DEV_ADDR_LENGTH               6
 
 static K_SEM_DEFINE(hci_sem, 1, 1);
 static K_SEM_DEFINE(cybt_platform_task_init_sem, 0, 1);
-
 
 /******************************************************************************
  *                          Function Declarations
@@ -104,8 +103,8 @@ static K_SEM_DEFINE(cybt_platform_task_init_sem, 0, 1);
 extern void host_stack_platform_interface_init(void);
 extern void cybt_platform_hci_wait_for_boot_fully_up(bool is_from_isr);
 extern uint8_t *host_stack_get_acl_to_lower_buffer(wiced_bt_transport_t transport, uint32_t size);
-extern wiced_result_t host_stack_send_acl_to_lower(wiced_bt_transport_t transport,
-						   uint8_t *data, uint16_t len);
+extern wiced_result_t host_stack_send_acl_to_lower(wiced_bt_transport_t transport, uint8_t *data,
+						   uint16_t len);
 extern wiced_result_t host_stack_send_cmd_to_lower(uint8_t *cmd, uint16_t cmd_len);
 extern wiced_result_t host_stack_send_iso_to_lower(uint8_t *data, uint16_t len);
 extern cybt_result_t cybt_platform_msg_to_bt_task(const uint16_t msg, bool is_from_isr);
@@ -299,28 +298,28 @@ done:
 	return ret ? -EIO : 0;
 }
 
-static const struct bt_hci_driver_api drv = {
-	.open = cyw208xx_open,
-	.close = cyw208xx_close,
-	.send = cyw208xx_send,
-	.setup = cyw208xx_setup
-};
+static const struct bt_hci_driver_api drv = {.open = cyw208xx_open,
+					     .close = cyw208xx_close,
+					     .send = cyw208xx_send,
+					     .setup = cyw208xx_setup};
 
 static int cyw208xx_hci_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	const cybt_platform_config_t cybsp_bt_platform_cfg = {
-		.hci_config = {
-			.hci_transport = CYBT_HCI_IPC,
-		},
+		.hci_config =
+			{
+				.hci_transport = CYBT_HCI_IPC,
+			},
 
 		.controller_config = {
-			.sleep_mode = {
-				.sleep_mode_enabled = CYBSP_BT_PLATFORM_CFG_SLEEP_MODE_LP_ENABLED,
-			},
-		}
-	};
+			.sleep_mode =
+				{
+					.sleep_mode_enabled =
+						CYBSP_BT_PLATFORM_CFG_SLEEP_MODE_LP_ENABLED,
+				},
+		}};
 
 	/* Configure platform specific settings for the BT device */
 	cybt_platform_config_init(&cybsp_bt_platform_cfg);
@@ -330,8 +329,9 @@ static int cyw208xx_hci_init(const struct device *dev)
 
 /* Implements wiced_bt_**** functions requreds for the btstack-integration asset */
 
-wiced_result_t wiced_bt_dev_vendor_specific_command(uint16_t opcode, uint8_t param_len,
-	uint8_t *param_buf, wiced_bt_dev_vendor_specific_command_complete_cback_t cback)
+wiced_result_t
+wiced_bt_dev_vendor_specific_command(uint16_t opcode, uint8_t param_len, uint8_t *param_buf,
+				     wiced_bt_dev_vendor_specific_command_complete_cback_t cback)
 
 {
 	/*
@@ -393,7 +393,6 @@ void wiced_bt_process_hci(hci_packet_type_t pti, uint8_t *data, uint32_t length)
 
 	default:
 		return;
-
 	}
 
 	buf_tailroom = net_buf_tailroom(buf);
@@ -445,10 +444,9 @@ void wiced_bt_process_timer(void)
 	/* NA for Zephyr */
 }
 
-#define CYW208XX_DEVICE_INIT(inst) \
-	static struct cyw208xx_data cyw208xx_data_##inst = { \
-	}; \
-	DEVICE_DT_INST_DEFINE(inst, cyw208xx_hci_init, NULL, &cyw208xx_data_##inst, NULL, \
+#define CYW208XX_DEVICE_INIT(inst)                                                                 \
+	static struct cyw208xx_data cyw208xx_data_##inst = {};                                     \
+	DEVICE_DT_INST_DEFINE(inst, cyw208xx_hci_init, NULL, &cyw208xx_data_##inst, NULL,          \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
 /* Only one instance supported */

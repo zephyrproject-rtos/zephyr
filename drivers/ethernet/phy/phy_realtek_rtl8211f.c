@@ -21,7 +21,7 @@
 #endif
 
 #define LOG_MODULE_NAME phy_rt_rtl8211f
-#define LOG_LEVEL CONFIG_PHY_LOG_LEVEL
+#define LOG_LEVEL       CONFIG_PHY_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
@@ -79,8 +79,7 @@ struct rt_rtl8211f_data {
 	struct k_work_delayable phy_monitor_work;
 };
 
-static int phy_rt_rtl8211f_read(const struct device *dev,
-				uint16_t reg_addr, uint32_t *data)
+static int phy_rt_rtl8211f_read(const struct device *dev, uint16_t reg_addr, uint32_t *data)
 {
 	const struct rt_rtl8211f_config *config = dev->config;
 	int ret;
@@ -97,8 +96,7 @@ static int phy_rt_rtl8211f_read(const struct device *dev,
 	return 0;
 }
 
-static int phy_rt_rtl8211f_write(const struct device *dev,
-				uint16_t reg_addr, uint32_t data)
+static int phy_rt_rtl8211f_write(const struct device *dev, uint16_t reg_addr, uint32_t data)
 {
 	const struct rt_rtl8211f_config *config = dev->config;
 	int ret;
@@ -201,8 +199,7 @@ static int phy_rt_rtl8211f_restart_autonegotiation(const struct device *dev)
 	return 0;
 }
 
-static int phy_rt_rtl8211f_get_link(const struct device *dev,
-					struct phy_link_state *state)
+static int phy_rt_rtl8211f_get_link(const struct device *dev, struct phy_link_state *state)
 {
 	const struct rt_rtl8211f_config *config = dev->config;
 	struct rt_rtl8211f_data *data = dev->data;
@@ -237,38 +234,40 @@ static int phy_rt_rtl8211f_get_link(const struct device *dev,
 	}
 
 	duplex = (physr & PHY_RT_RTL8211F_PHYSR_LINKDUPLEX_MASK);
-	switch ((physr & PHY_RT_RTL8211F_PHYSR_LINKSPEED_MASK)
-				>> PHY_RT_RTL8211F_PHYSR_LINKSPEED_SHIFT) {
-		case PHY_RT_RTL8211F_PHYSR_LINKSPEED_100M:
-			if (duplex) {
-				new_state.speed = LINK_FULL_100BASE_T;
-			} else {
-				new_state.speed = LINK_HALF_100BASE_T;
-			}
-			break;
-		case PHY_RT_RTL8211F_PHYSR_LINKSPEED_1000M:
-			if (duplex) {
-				new_state.speed = LINK_FULL_1000BASE_T;
-			} else {
-				new_state.speed = LINK_HALF_1000BASE_T;
-			}
-			break;
-		case PHY_RT_RTL8211F_PHYSR_LINKSPEED_10M:
-		default:
-			if (duplex) {
-				new_state.speed = LINK_FULL_10BASE_T;
-			} else {
-				new_state.speed = LINK_HALF_10BASE_T;
-			}
-			break;
+	switch ((physr & PHY_RT_RTL8211F_PHYSR_LINKSPEED_MASK) >>
+		PHY_RT_RTL8211F_PHYSR_LINKSPEED_SHIFT) {
+	case PHY_RT_RTL8211F_PHYSR_LINKSPEED_100M:
+		if (duplex) {
+			new_state.speed = LINK_FULL_100BASE_T;
+		} else {
+			new_state.speed = LINK_HALF_100BASE_T;
+		}
+		break;
+	case PHY_RT_RTL8211F_PHYSR_LINKSPEED_1000M:
+		if (duplex) {
+			new_state.speed = LINK_FULL_1000BASE_T;
+		} else {
+			new_state.speed = LINK_HALF_1000BASE_T;
+		}
+		break;
+	case PHY_RT_RTL8211F_PHYSR_LINKSPEED_10M:
+	default:
+		if (duplex) {
+			new_state.speed = LINK_FULL_10BASE_T;
+		} else {
+			new_state.speed = LINK_HALF_10BASE_T;
+		}
+		break;
 	}
 result:
 	if (memcmp(&old_state, &new_state, sizeof(struct phy_link_state)) != 0) {
 		LOG_INF("PHY %d is %s", config->addr, new_state.is_up ? "up" : "down");
 		if (new_state.is_up) {
 			LOG_INF("PHY (%d) Link speed %s Mb, %s duplex", config->addr,
-				(PHY_LINK_IS_SPEED_1000M(new_state.speed) ? "1000" :
-				(PHY_LINK_IS_SPEED_100M(new_state.speed) ? "100" : "10")),
+				(PHY_LINK_IS_SPEED_1000M(new_state.speed)
+					 ? "1000"
+					 : (PHY_LINK_IS_SPEED_100M(new_state.speed) ? "100"
+										    : "10")),
 				PHY_LINK_IS_FULL_DUPLEX(new_state.speed) ? "full" : "half");
 		}
 	}
@@ -278,8 +277,7 @@ result:
 	return ret;
 }
 
-static int phy_rt_rtl8211f_cfg_link(const struct device *dev,
-					enum phy_link_speed speeds)
+static int phy_rt_rtl8211f_cfg_link(const struct device *dev, enum phy_link_speed speeds)
 {
 	const struct rt_rtl8211f_config *config = dev->config;
 	struct rt_rtl8211f_data *data = dev->data;
@@ -382,8 +380,7 @@ done:
 	return ret;
 }
 
-static int phy_rt_rtl8211f_link_cb_set(const struct device *dev,
-					phy_callback_t cb, void *user_data)
+static int phy_rt_rtl8211f_link_cb_set(const struct device *dev, phy_callback_t cb, void *user_data)
 {
 	struct rt_rtl8211f_data *data = dev->data;
 
@@ -424,9 +421,8 @@ static int phy_rt_rtl8211f_clear_interrupt(struct rt_rtl8211f_data *data)
 	return ret;
 }
 
-static void phy_rt_rtl8211f_interrupt_handler(const struct device *port,
-						struct gpio_callback *cb,
-						gpio_port_pins_t pins)
+static void phy_rt_rtl8211f_interrupt_handler(const struct device *port, struct gpio_callback *cb,
+					      gpio_port_pins_t pins)
 {
 	struct rt_rtl8211f_data *data = CONTAINER_OF(cb, struct rt_rtl8211f_data, gpio_callback);
 	int ret;
@@ -512,7 +508,7 @@ static int phy_rt_rtl8211f_init(const struct device *dev)
 
 	/* Set RGMII Tx/Rx Delay. */
 	ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_PAGSR_REG,
-					PHY_RT_RTL8211F_PAGE_MIICR_ADDR);
+				    PHY_RT_RTL8211F_PAGE_MIICR_ADDR);
 	if (ret) {
 		LOG_ERR("Error writing phy (%d) page select register", config->addr);
 		return ret;
@@ -561,7 +557,7 @@ static int phy_rt_rtl8211f_init(const struct device *dev)
 
 	/* Set INTB/PMEB pin to interrupt mode */
 	ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_PAGSR_REG,
-					PHY_RT_RTL8211F_PAGE_INTR_PIN_ADDR);
+				    PHY_RT_RTL8211F_PAGE_INTR_PIN_ADDR);
 	if (ret) {
 		LOG_ERR("Error writing phy (%d) page select register", config->addr);
 		return ret;
@@ -599,7 +595,7 @@ static int phy_rt_rtl8211f_init(const struct device *dev)
 	}
 
 	gpio_init_callback(&data->gpio_callback, phy_rt_rtl8211f_interrupt_handler,
-				BIT(config->interrupt_gpio.pin));
+			   BIT(config->interrupt_gpio.pin));
 	ret = gpio_add_callback_dt(&config->interrupt_gpio, &data->gpio_callback);
 	if (ret) {
 		return ret;
@@ -611,8 +607,7 @@ static int phy_rt_rtl8211f_init(const struct device *dev)
 	}
 
 	/* Enable PHY interrupt. */
-	ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_PAGSR_REG,
-					PHY_RT_RTL8211F_PAGE_INTR_ADDR);
+	ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_PAGSR_REG, PHY_RT_RTL8211F_PAGE_INTR_ADDR);
 	if (ret) {
 		LOG_ERR("Error writing phy (%d) page select register", config->addr);
 		return ret;
@@ -651,32 +646,27 @@ static const struct ethphy_driver_api rt_rtl8211f_phy_api = {
 };
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
-#define RESET_GPIO(n) \
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),
+#define RESET_GPIO(n) .reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),
 #else
 #define RESET_GPIO(n)
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios) */
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
-#define INTERRUPT_GPIO(n) \
-		.interrupt_gpio = GPIO_DT_SPEC_INST_GET_OR(n, int_gpios, {0}),
+#define INTERRUPT_GPIO(n) .interrupt_gpio = GPIO_DT_SPEC_INST_GET_OR(n, int_gpios, {0}),
 #else
 #define INTERRUPT_GPIO(n)
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
 
-#define REALTEK_RTL8211F_INIT(n)						\
-	static const struct rt_rtl8211f_config rt_rtl8211f_##n##_config = {	\
-		.addr = DT_INST_REG_ADDR(n),					\
-		.mdio_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),			\
-		RESET_GPIO(n)							\
-		INTERRUPT_GPIO(n)						\
-	};									\
-										\
-	static struct rt_rtl8211f_data rt_rtl8211f_##n##_data;			\
-										\
-	DEVICE_DT_INST_DEFINE(n, &phy_rt_rtl8211f_init, NULL,			\
-			&rt_rtl8211f_##n##_data, &rt_rtl8211f_##n##_config,	\
-			POST_KERNEL, CONFIG_PHY_INIT_PRIORITY,			\
-			&rt_rtl8211f_phy_api);
+#define REALTEK_RTL8211F_INIT(n)                                                                   \
+	static const struct rt_rtl8211f_config rt_rtl8211f_##n##_config = {                        \
+		.addr = DT_INST_REG_ADDR(n),                                                       \
+		.mdio_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                      \
+		RESET_GPIO(n) INTERRUPT_GPIO(n)};                                                  \
+                                                                                                   \
+	static struct rt_rtl8211f_data rt_rtl8211f_##n##_data;                                     \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &phy_rt_rtl8211f_init, NULL, &rt_rtl8211f_##n##_data,             \
+			      &rt_rtl8211f_##n##_config, POST_KERNEL, CONFIG_PHY_INIT_PRIORITY,    \
+			      &rt_rtl8211f_phy_api);
 
 DT_INST_FOREACH_STATUS_OKAY(REALTEK_RTL8211F_INIT)

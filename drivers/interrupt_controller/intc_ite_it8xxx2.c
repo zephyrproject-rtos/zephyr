@@ -13,49 +13,34 @@ LOG_MODULE_REGISTER(intc_it8xxx2, LOG_LEVEL_DBG);
 #include <zephyr/sw_isr_table.h>
 #include "intc_ite_it8xxx2.h"
 
-#define MAX_REGISR_IRQ_NUM		8
-#define IVECT_OFFSET_WITH_IRQ		0x10
+#define MAX_REGISR_IRQ_NUM    8
+#define IVECT_OFFSET_WITH_IRQ 0x10
 
 /* Interrupt number of INTC module */
 static uint8_t intc_irq;
 
-static volatile uint8_t *const reg_status[] = {
-	&ISR0, &ISR1, &ISR2, &ISR3,
-	&ISR4, &ISR5, &ISR6, &ISR7,
-	&ISR8, &ISR9, &ISR10, &ISR11,
-	&ISR12, &ISR13, &ISR14, &ISR15,
-	&ISR16, &ISR17, &ISR18, &ISR19,
-	&ISR20, &ISR21, &ISR22, &ISR23
-};
+static volatile uint8_t *const reg_status[] = {&ISR0,  &ISR1,  &ISR2,  &ISR3,  &ISR4,  &ISR5,
+					       &ISR6,  &ISR7,  &ISR8,  &ISR9,  &ISR10, &ISR11,
+					       &ISR12, &ISR13, &ISR14, &ISR15, &ISR16, &ISR17,
+					       &ISR18, &ISR19, &ISR20, &ISR21, &ISR22, &ISR23};
 
-static volatile uint8_t *const reg_enable[] = {
-	&IER0, &IER1, &IER2, &IER3,
-	&IER4, &IER5, &IER6, &IER7,
-	&IER8, &IER9, &IER10, &IER11,
-	&IER12, &IER13, &IER14, &IER15,
-	&IER16, &IER17, &IER18, &IER19,
-	&IER20, &IER21, &IER22, &IER23
-};
+static volatile uint8_t *const reg_enable[] = {&IER0,  &IER1,  &IER2,  &IER3,  &IER4,  &IER5,
+					       &IER6,  &IER7,  &IER8,  &IER9,  &IER10, &IER11,
+					       &IER12, &IER13, &IER14, &IER15, &IER16, &IER17,
+					       &IER18, &IER19, &IER20, &IER21, &IER22, &IER23};
 
 /* edge/level trigger register */
 static volatile uint8_t *const reg_ielmr[] = {
-	&IELMR0, &IELMR1, &IELMR2, &IELMR3,
-	&IELMR4, &IELMR5, &IELMR6, &IELMR7,
-	&IELMR8, &IELMR9, &IELMR10, &IELMR11,
-	&IELMR12, &IELMR13, &IELMR14, &IELMR15,
-	&IELMR16, &IELMR17, &IELMR18, &IELMR19,
-	&IELMR20, &IELMR21, &IELMR22, &IELMR23,
+	&IELMR0,  &IELMR1,  &IELMR2,  &IELMR3,  &IELMR4,  &IELMR5,  &IELMR6,  &IELMR7,
+	&IELMR8,  &IELMR9,  &IELMR10, &IELMR11, &IELMR12, &IELMR13, &IELMR14, &IELMR15,
+	&IELMR16, &IELMR17, &IELMR18, &IELMR19, &IELMR20, &IELMR21, &IELMR22, &IELMR23,
 };
 
 /* high/low trigger register */
 static volatile uint8_t *const reg_ipolr[] = {
-	&IPOLR0, &IPOLR1, &IPOLR2, &IPOLR3,
-	&IPOLR4, &IPOLR5, &IPOLR6, &IPOLR7,
-	&IPOLR8, &IPOLR9, &IPOLR10, &IPOLR11,
-	&IPOLR12, &IPOLR13, &IPOLR14, &IPOLR15,
-	&IPOLR16, &IPOLR17, &IPOLR18, &IPOLR19,
-	&IPOLR20, &IPOLR21, &IPOLR22, &IPOLR23
-};
+	&IPOLR0,  &IPOLR1,  &IPOLR2,  &IPOLR3,  &IPOLR4,  &IPOLR5,  &IPOLR6,  &IPOLR7,
+	&IPOLR8,  &IPOLR9,  &IPOLR10, &IPOLR11, &IPOLR12, &IPOLR13, &IPOLR14, &IPOLR15,
+	&IPOLR16, &IPOLR17, &IPOLR18, &IPOLR19, &IPOLR20, &IPOLR21, &IPOLR22, &IPOLR23};
 
 #define IT8XXX2_IER_COUNT ARRAY_SIZE(reg_enable)
 static uint8_t ier_setting[IT8XXX2_IER_COUNT];
@@ -157,19 +142,19 @@ void ite_intc_irq_polarity_set(unsigned int irq, unsigned int flags)
 	uint32_t g, i;
 	volatile uint8_t *tri;
 
-	if ((irq > CONFIG_NUM_IRQS) || ((flags&IRQ_TYPE_EDGE_BOTH) == IRQ_TYPE_EDGE_BOTH)) {
+	if ((irq > CONFIG_NUM_IRQS) || ((flags & IRQ_TYPE_EDGE_BOTH) == IRQ_TYPE_EDGE_BOTH)) {
 		return;
 	}
 	g = irq / MAX_REGISR_IRQ_NUM;
 	i = irq % MAX_REGISR_IRQ_NUM;
 	tri = reg_ipolr[g];
-	if ((flags&IRQ_TYPE_LEVEL_HIGH) || (flags&IRQ_TYPE_EDGE_RISING)) {
+	if ((flags & IRQ_TYPE_LEVEL_HIGH) || (flags & IRQ_TYPE_EDGE_RISING)) {
 		CLEAR_MASK(*tri, BIT(i));
 	} else {
 		SET_MASK(*tri, BIT(i));
 	}
 	tri = reg_ielmr[g];
-	if ((flags&IRQ_TYPE_LEVEL_LOW) || (flags&IRQ_TYPE_LEVEL_HIGH)) {
+	if ((flags & IRQ_TYPE_LEVEL_LOW) || (flags & IRQ_TYPE_LEVEL_HIGH)) {
 		CLEAR_MASK(*tri, BIT(i));
 	} else {
 		SET_MASK(*tri, BIT(i));
@@ -226,10 +211,8 @@ uint8_t __soc_ram_code get_irq(void *arg)
 		for (int i = (IT8XXX2_IER_COUNT - 1); i >= 0; i--) {
 			int_pending = (*reg_status[i] & *reg_enable[i]);
 			if (int_pending != 0) {
-				intc_irq = (MAX_REGISR_IRQ_NUM * i) +
-						find_msb_set(int_pending) - 1;
-				LOG_DBG("Pending interrupt found: %d",
-						intc_irq);
+				intc_irq = (MAX_REGISR_IRQ_NUM * i) + find_msb_set(int_pending) - 1;
+				LOG_DBG("Pending interrupt found: %d", intc_irq);
 				LOG_DBG("CPU mepc: 0x%lx", csr_read(mepc));
 				break;
 			}

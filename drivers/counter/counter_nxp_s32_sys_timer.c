@@ -44,11 +44,11 @@ LOG_MODULE_REGISTER(nxp_s32_sys_timer, CONFIG_COUNTER_LOG_LEVEL);
 #define STM_CMP_CMP(v)   FIELD_PREP(STM_CMP_CMP_MASK, (v))
 
 /* Handy accessors */
-#define REG_READ(r)      sys_read32(config->base + (r))
-#define REG_WRITE(r, v)  sys_write32((v), config->base + (r))
+#define REG_READ(r)     sys_read32(config->base + (r))
+#define REG_WRITE(r, v) sys_write32((v), config->base + (r))
 
-#define SYS_TIMER_MAX_VALUE     0xFFFFFFFFU
-#define SYS_TIMER_NUM_CHANNELS  4
+#define SYS_TIMER_MAX_VALUE    0xFFFFFFFFU
+#define SYS_TIMER_NUM_CHANNELS 4
 
 struct nxp_s32_sys_timer_chan_data {
 	counter_alarm_callback_t callback;
@@ -353,9 +353,7 @@ static int nxp_s32_sys_timer_init(const struct device *dev)
 
 	REG_WRITE(STM_CNT, 0U);
 	REG_WRITE(STM_CR,
-		  STM_CR_FRZ(config->freeze) |
-		  STM_CR_CPS(config->prescaler) |
-		  STM_CR_TEN(1U));
+		  STM_CR_FRZ(config->freeze) | STM_CR_CPS(config->prescaler) | STM_CR_TEN(1U));
 
 	for (i = 0; i < counter_get_num_of_channels(dev); i++) {
 		ch_data = &data->ch_data[i];
@@ -381,44 +379,39 @@ static const struct counter_driver_api nxp_s32_sys_timer_driver_api = {
 	.set_guard_period = nxp_s32_sys_timer_set_guard_period,
 	.get_guard_period = nxp_s32_sys_timer_get_guard_period,
 	.get_pending_int = nxp_s32_sys_timer_get_pending_int,
-	.get_freq = nxp_s32_sys_timer_get_frequency
-};
+	.get_freq = nxp_s32_sys_timer_get_frequency};
 
-#define SYS_TIMER_INIT_DEVICE(n)							\
-	static int nxp_s32_sys_timer_##n##_init(const struct device *dev)		\
-	{										\
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),			\
-			    stm_isr, DEVICE_DT_INST_GET(n),				\
-			    COND_CODE_1(DT_INST_IRQ_HAS_CELL(n, flags),			\
-					(DT_INST_IRQ(n, flags)), (0)));			\
-		irq_enable(DT_INST_IRQN(n));						\
-											\
-		return nxp_s32_sys_timer_init(dev);					\
-	}										\
-											\
-	static struct nxp_s32_sys_timer_data nxp_s32_sys_timer_data_##n;		\
-											\
-	static const struct nxp_s32_sys_timer_config nxp_s32_sys_timer_config_##n = {	\
-		.info = {								\
-			.max_top_value = SYS_TIMER_MAX_VALUE,				\
-			.channels = SYS_TIMER_NUM_CHANNELS,				\
-			.flags = COUNTER_CONFIG_INFO_COUNT_UP,				\
-		},									\
-		.base = DT_INST_REG_ADDR(n),						\
-		.freeze = DT_INST_PROP(n, freeze),					\
-		.prescaler = DT_INST_PROP(n, prescaler) - 1,				\
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),			\
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
-		.irqn = DT_INST_IRQN(n),						\
-	};										\
-											\
-	DEVICE_DT_INST_DEFINE(n,							\
-			 nxp_s32_sys_timer_##n##_init,					\
-			 NULL,								\
-			 &nxp_s32_sys_timer_data_##n,					\
-			 &nxp_s32_sys_timer_config_##n,					\
-			 POST_KERNEL,							\
-			 CONFIG_COUNTER_INIT_PRIORITY,					\
-			 &nxp_s32_sys_timer_driver_api);
+#define SYS_TIMER_INIT_DEVICE(n)                                                                   \
+	static int nxp_s32_sys_timer_##n##_init(const struct device *dev)                          \
+	{                                                                                          \
+		IRQ_CONNECT(                                                                       \
+			DT_INST_IRQN(n), DT_INST_IRQ(n, priority), stm_isr, DEVICE_DT_INST_GET(n), \
+			COND_CODE_1(DT_INST_IRQ_HAS_CELL(n, flags),			\
+					(DT_INST_IRQ(n, flags)), (0)));    \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+                                                                                                   \
+		return nxp_s32_sys_timer_init(dev);                                                \
+	}                                                                                          \
+                                                                                                   \
+	static struct nxp_s32_sys_timer_data nxp_s32_sys_timer_data_##n;                           \
+                                                                                                   \
+	static const struct nxp_s32_sys_timer_config nxp_s32_sys_timer_config_##n = {              \
+		.info =                                                                            \
+			{                                                                          \
+				.max_top_value = SYS_TIMER_MAX_VALUE,                              \
+				.channels = SYS_TIMER_NUM_CHANNELS,                                \
+				.flags = COUNTER_CONFIG_INFO_COUNT_UP,                             \
+			},                                                                         \
+		.base = DT_INST_REG_ADDR(n),                                                       \
+		.freeze = DT_INST_PROP(n, freeze),                                                 \
+		.prescaler = DT_INST_PROP(n, prescaler) - 1,                                       \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
+		.irqn = DT_INST_IRQN(n),                                                           \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, nxp_s32_sys_timer_##n##_init, NULL, &nxp_s32_sys_timer_data_##n,  \
+			      &nxp_s32_sys_timer_config_##n, POST_KERNEL,                          \
+			      CONFIG_COUNTER_INIT_PRIORITY, &nxp_s32_sys_timer_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SYS_TIMER_INIT_DEVICE)

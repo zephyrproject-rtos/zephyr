@@ -28,13 +28,13 @@ LOG_MODULE_REGISTER(adc_mchp_xec);
 #define XEC_ADC_VREF_ANALOG 3300
 
 /* ADC Control Register */
-#define XEC_ADC_CTRL_SINGLE_DONE_STATUS		BIT(7)
-#define XEC_ADC_CTRL_REPEAT_DONE_STATUS		BIT(6)
-#define XER_ADC_CTRL_SOFT_RESET			BIT(4)
-#define XEC_ADC_CTRL_POWER_SAVER_DIS		BIT(3)
-#define XEC_ADC_CTRL_START_REPEAT		BIT(2)
-#define XEC_ADC_CTRL_START_SINGLE		BIT(1)
-#define XEC_ADC_CTRL_ACTIVATE			BIT(0)
+#define XEC_ADC_CTRL_SINGLE_DONE_STATUS BIT(7)
+#define XEC_ADC_CTRL_REPEAT_DONE_STATUS BIT(6)
+#define XER_ADC_CTRL_SOFT_RESET         BIT(4)
+#define XEC_ADC_CTRL_POWER_SAVER_DIS    BIT(3)
+#define XEC_ADC_CTRL_START_REPEAT       BIT(2)
+#define XEC_ADC_CTRL_START_SINGLE       BIT(1)
+#define XEC_ADC_CTRL_ACTIVATE           BIT(0)
 
 /* ADC implements two interrupt signals:
  * One-shot(single) conversion of a set of channels
@@ -46,7 +46,6 @@ enum adc_pm_policy_state_flag {
 	ADC_PM_POLICY_STATE_REPEAT_FLAG,
 	ADC_PM_POLICY_STATE_FLAG_COUNT,
 };
-
 
 struct adc_xec_regs {
 	uint32_t control_reg;
@@ -86,7 +85,7 @@ struct adc_xec_data {
 
 #ifdef CONFIG_PM_DEVICE
 static void adc_xec_pm_policy_state_lock_get(struct adc_xec_data *data,
-					       enum adc_pm_policy_state_flag flag)
+					     enum adc_pm_policy_state_flag flag)
 {
 	if (atomic_test_and_set_bit(data->pm_policy_state_flag, flag) == 0) {
 		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
@@ -94,7 +93,7 @@ static void adc_xec_pm_policy_state_lock_get(struct adc_xec_data *data,
 }
 
 static void adc_xec_pm_policy_state_lock_put(struct adc_xec_data *data,
-					    enum adc_pm_policy_state_flag flag)
+					     enum adc_pm_policy_state_flag flag)
 {
 	if (atomic_test_and_clear_bit(data->pm_policy_state_flag, flag) == 1) {
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
@@ -106,7 +105,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 {
 	struct adc_xec_data *data = CONTAINER_OF(ctx, struct adc_xec_data, ctx);
 	const struct device *adc_dev = data->adc_dev;
-	const struct adc_xec_config * const devcfg = adc_dev->config;
+	const struct adc_xec_config *const devcfg = adc_dev->config;
 	struct adc_xec_regs *regs = devcfg->regs;
 
 	data->repeat_buffer = data->buffer;
@@ -118,8 +117,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	regs->control_reg |= XEC_ADC_CTRL_START_SINGLE;
 }
 
-static void adc_context_update_buffer_pointer(struct adc_context *ctx,
-					      bool repeat_sampling)
+static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat_sampling)
 {
 	struct adc_xec_data *data = CONTAINER_OF(ctx, struct adc_xec_data, ctx);
 
@@ -132,7 +130,7 @@ static int adc_xec_channel_setup(const struct device *dev,
 				 const struct adc_channel_cfg *channel_cfg)
 {
 	const struct adc_xec_config *const cfg = dev->config;
-	struct adc_xec_regs * const regs = cfg->regs;
+	struct adc_xec_regs *const regs = cfg->regs;
 	uint32_t areg;
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
@@ -197,12 +195,11 @@ static bool adc_xec_validate_buffer_size(const struct adc_sequence *sequence)
 	return true;
 }
 
-static int adc_xec_start_read(const struct device *dev,
-			      const struct adc_sequence *sequence)
+static int adc_xec_start_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	const struct adc_xec_config *const cfg = dev->config;
-	struct adc_xec_regs * const regs = cfg->regs;
-	struct adc_xec_data * const data = dev->data;
+	struct adc_xec_regs *const regs = cfg->regs;
+	struct adc_xec_data *const data = dev->data;
 	uint32_t sar_ctrl;
 
 	if (sequence->channels & ~BIT_MASK(MCHP_ADC_MAX_CHAN)) {
@@ -222,8 +219,7 @@ static int adc_xec_start_read(const struct device *dev,
 
 	/* Setup ADC resolution */
 	sar_ctrl = regs->sar_control_reg;
-	sar_ctrl &= ~(MCHP_ADC_SAR_CTRL_RES_MASK |
-		      (1 << MCHP_ADC_SAR_CTRL_SHIFTD_POS));
+	sar_ctrl &= ~(MCHP_ADC_SAR_CTRL_RES_MASK | (1 << MCHP_ADC_SAR_CTRL_SHIFTD_POS));
 
 	if (sequence->resolution == 12) {
 		sar_ctrl |= MCHP_ADC_SAR_CTRL_RES_12_BITS;
@@ -243,10 +239,9 @@ static int adc_xec_start_read(const struct device *dev,
 	return adc_context_wait_for_completion(&data->ctx);
 }
 
-static int adc_xec_read(const struct device *dev,
-			const struct adc_sequence *sequence)
+static int adc_xec_read(const struct device *dev, const struct adc_sequence *sequence)
 {
-	struct adc_xec_data * const data = dev->data;
+	struct adc_xec_data *const data = dev->data;
 	int error;
 
 	adc_context_lock(&data->ctx, false, NULL);
@@ -257,11 +252,10 @@ static int adc_xec_read(const struct device *dev,
 }
 
 #ifdef CONFIG_ADC_ASYNC
-static int adc_xec_read_async(const struct device *dev,
-			      const struct adc_sequence *sequence,
+static int adc_xec_read_async(const struct device *dev, const struct adc_sequence *sequence,
 			      struct k_poll_signal *async)
 {
-	struct adc_xec_data * const data = dev->data;
+	struct adc_xec_data *const data = dev->data;
 	int error;
 
 	adc_context_lock(&data->ctx, true, async);
@@ -275,8 +269,8 @@ static int adc_xec_read_async(const struct device *dev,
 static void xec_adc_get_sample(const struct device *dev)
 {
 	const struct adc_xec_config *const cfg = dev->config;
-	struct adc_xec_regs * const regs = cfg->regs;
-	struct adc_xec_data * const data = dev->data;
+	struct adc_xec_regs *const regs = cfg->regs;
+	struct adc_xec_data *const data = dev->data;
 	uint32_t idx;
 	uint32_t channels = regs->status_reg;
 	uint32_t ch_status = channels;
@@ -340,8 +334,8 @@ static inline void adc_xec_girq_dis(uint8_t girq_idx, uint8_t girq_posn)
 static void adc_xec_single_isr(const struct device *dev)
 {
 	const struct adc_xec_config *const cfg = dev->config;
-	struct adc_xec_regs * const regs = cfg->regs;
-	struct adc_xec_data * const data = dev->data;
+	struct adc_xec_regs *const regs = cfg->regs;
+	struct adc_xec_data *const data = dev->data;
 	uint32_t ctrl;
 
 	/* Clear START_SINGLE bit and clear SINGLE_DONE_STATUS */
@@ -364,12 +358,11 @@ static void adc_xec_single_isr(const struct device *dev)
 	LOG_DBG("ADC ISR triggered.");
 }
 
-
 #ifdef CONFIG_PM_DEVICE
 static int adc_xec_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct adc_xec_config *const devcfg = dev->config;
-	struct adc_xec_regs * const adc_regs = devcfg->regs;
+	struct adc_xec_regs *const adc_regs = devcfg->regs;
 	int ret;
 
 	switch (action) {
@@ -407,15 +400,14 @@ struct adc_driver_api adc_xec_api = {
 };
 
 /* ADC Config Register */
-#define XEC_ADC_CFG_CLK_VAL(clk_time)	(		\
-	(clk_time << MCHP_ADC_CFG_CLK_LO_TIME_POS) |	\
-	(clk_time << MCHP_ADC_CFG_CLK_HI_TIME_POS))
+#define XEC_ADC_CFG_CLK_VAL(clk_time)                                                              \
+	((clk_time << MCHP_ADC_CFG_CLK_LO_TIME_POS) | (clk_time << MCHP_ADC_CFG_CLK_HI_TIME_POS))
 
 static int adc_xec_init(const struct device *dev)
 {
 	const struct adc_xec_config *const cfg = dev->config;
-	struct adc_xec_regs * const regs = cfg->regs;
-	struct adc_xec_data * const data = dev->data;
+	struct adc_xec_regs *const regs = cfg->regs;
+	struct adc_xec_data *const data = dev->data;
 	int ret;
 
 	data->adc_dev = dev;
@@ -428,10 +420,8 @@ static int adc_xec_init(const struct device *dev)
 
 	regs->config_reg = XEC_ADC_CFG_CLK_VAL(DT_INST_PROP(0, clktime));
 
-	regs->control_reg =  XEC_ADC_CTRL_ACTIVATE
-		| XEC_ADC_CTRL_POWER_SAVER_DIS
-		| XEC_ADC_CTRL_SINGLE_DONE_STATUS
-		| XEC_ADC_CTRL_REPEAT_DONE_STATUS;
+	regs->control_reg = XEC_ADC_CTRL_ACTIVATE | XEC_ADC_CTRL_POWER_SAVER_DIS |
+			    XEC_ADC_CTRL_SINGLE_DONE_STATUS | XEC_ADC_CTRL_REPEAT_DONE_STATUS;
 
 	adc_xec_girq_dis(cfg->girq_repeat, cfg->girq_repeat_pos);
 	adc_xec_girq_clr(cfg->girq_repeat, cfg->girq_repeat_pos);
@@ -439,9 +429,8 @@ static int adc_xec_init(const struct device *dev)
 	adc_xec_girq_clr(cfg->girq_single, cfg->girq_single_pos);
 	adc_xec_girq_en(cfg->girq_single, cfg->girq_single_pos);
 
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    adc_xec_single_isr, DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), adc_xec_single_isr,
+		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
 
 	adc_context_unlock_unconditionally(&data->ctx);
@@ -470,7 +459,5 @@ static struct adc_xec_data adc_xec_dev_data_0 = {
 
 PM_DEVICE_DT_INST_DEFINE(0, adc_xec_pm_action);
 
-DEVICE_DT_INST_DEFINE(0, adc_xec_init, PM_DEVICE_DT_INST_GET(0),
-		    &adc_xec_dev_data_0, &adc_xec_dev_cfg_0,
-		    PRE_KERNEL_1, CONFIG_ADC_INIT_PRIORITY,
-		    &adc_xec_api);
+DEVICE_DT_INST_DEFINE(0, adc_xec_init, PM_DEVICE_DT_INST_GET(0), &adc_xec_dev_data_0,
+		      &adc_xec_dev_cfg_0, PRE_KERNEL_1, CONFIG_ADC_INIT_PRIORITY, &adc_xec_api);

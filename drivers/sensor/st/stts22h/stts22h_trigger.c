@@ -22,8 +22,7 @@ LOG_MODULE_DECLARE(STTS22H, CONFIG_SENSOR_LOG_LEVEL);
 /**
  * stts22h_trigger_set - link external trigger to event data ready
  */
-int stts22h_trigger_set(const struct device *dev,
-			const struct sensor_trigger *trig,
+int stts22h_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
 	struct stts22h_data *stts22h = dev->data;
@@ -33,8 +32,7 @@ int stts22h_trigger_set(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (trig->chan != SENSOR_CHAN_ALL &&
-	    trig->chan != SENSOR_CHAN_AMBIENT_TEMP) {
+	if (trig->chan != SENSOR_CHAN_ALL && trig->chan != SENSOR_CHAN_AMBIENT_TEMP) {
 		LOG_ERR("Unsupported sensor trigger %d", trig->chan);
 		return -ENOTSUP;
 	}
@@ -58,19 +56,16 @@ static void stts22h_handle_interrupt(const struct device *dev)
 
 	stts22h_temp_trshld_src_get(ctx, &status);
 
-	if (stts22h->thsld_handler != NULL &&
-	    (status.under_thl || status.over_thh)) {
+	if (stts22h->thsld_handler != NULL && (status.under_thl || status.over_thh)) {
 		stts22h->thsld_handler(dev, stts22h->thsld_trigger);
 	}
 
 	gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
-static void stts22h_gpio_callback(const struct device *dev,
-				  struct gpio_callback *cb, uint32_t pins)
+static void stts22h_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	struct stts22h_data *stts22h =
-		CONTAINER_OF(cb, struct stts22h_data, gpio_cb);
+	struct stts22h_data *stts22h = CONTAINER_OF(cb, struct stts22h_data, gpio_cb);
 	const struct stts22h_config *cfg = stts22h->dev->config;
 
 	ARG_UNUSED(pins);
@@ -102,8 +97,7 @@ static void stts22h_thread(void *p1, void *p2, void *p3)
 #ifdef CONFIG_STTS22H_TRIGGER_GLOBAL_THREAD
 static void stts22h_work_cb(struct k_work *work)
 {
-	struct stts22h_data *stts22h =
-		CONTAINER_OF(work, struct stts22h_data, work);
+	struct stts22h_data *stts22h = CONTAINER_OF(work, struct stts22h_data, work);
 
 	stts22h_handle_interrupt(stts22h->dev);
 }
@@ -124,11 +118,9 @@ int stts22h_init_interrupt(const struct device *dev)
 #if defined(CONFIG_STTS22H_TRIGGER_OWN_THREAD)
 	k_sem_init(&stts22h->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
-	k_thread_create(&stts22h->thread, stts22h->thread_stack,
-			CONFIG_STTS22H_THREAD_STACK_SIZE,
-			stts22h_thread, stts22h,
-			NULL, NULL, K_PRIO_COOP(CONFIG_STTS22H_THREAD_PRIORITY),
-			0, K_NO_WAIT);
+	k_thread_create(&stts22h->thread, stts22h->thread_stack, CONFIG_STTS22H_THREAD_STACK_SIZE,
+			stts22h_thread, stts22h, NULL, NULL,
+			K_PRIO_COOP(CONFIG_STTS22H_THREAD_PRIORITY), 0, K_NO_WAIT);
 	k_thread_name_set(&stts22h->thread, dev->name);
 #elif defined(CONFIG_STTS22H_TRIGGER_GLOBAL_THREAD)
 	stts22h->work.handler = stts22h_work_cb;

@@ -30,7 +30,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "ieee802154_b91.h"
 
-
 /* B91 data structure */
 static struct b91_data data;
 
@@ -68,10 +67,8 @@ static int b91_set_ieee_addr(const uint8_t *ieee_addr)
 static bool b91_run_filter(uint8_t *rx_buffer)
 {
 	/* Check destination PAN Id */
-	if (memcmp(&rx_buffer[B91_PAN_ID_OFFSET], data.filter_pan_id,
-		   B91_PAN_ID_SIZE) != 0 &&
-	    memcmp(&rx_buffer[B91_PAN_ID_OFFSET], B91_BROADCAST_ADDRESS,
-		   B91_PAN_ID_SIZE) != 0) {
+	if (memcmp(&rx_buffer[B91_PAN_ID_OFFSET], data.filter_pan_id, B91_PAN_ID_SIZE) != 0 &&
+	    memcmp(&rx_buffer[B91_PAN_ID_OFFSET], B91_BROADCAST_ADDRESS, B91_PAN_ID_SIZE) != 0) {
 		return false;
 	}
 
@@ -162,8 +159,9 @@ static void b91_update_rssi_and_lqi(struct net_pkt *pkt)
 	int8_t rssi;
 	uint8_t lqi;
 
-	rssi = ((signed char)(data.rx_buffer
-			      [data.rx_buffer[B91_LENGTH_OFFSET] + B91_RSSI_OFFSET])) - 110;
+	rssi = ((signed char)(data.rx_buffer[data.rx_buffer[B91_LENGTH_OFFSET] +
+					     B91_RSSI_OFFSET])) -
+	       110;
 	lqi = b91_convert_rssi_to_lqi(rssi);
 
 	net_pkt_set_ieee802154_lqi(pkt, lqi);
@@ -211,16 +209,15 @@ static void b91_handle_ack(void)
 	struct net_pkt *ack_pkt;
 
 	/* allocate ack packet */
-	ack_pkt = net_pkt_rx_alloc_with_buffer(data.iface, B91_ACK_FRAME_LEN,
-					       AF_UNSPEC, 0, K_NO_WAIT);
+	ack_pkt = net_pkt_rx_alloc_with_buffer(data.iface, B91_ACK_FRAME_LEN, AF_UNSPEC, 0,
+					       K_NO_WAIT);
 	if (!ack_pkt) {
 		LOG_ERR("No free packet available.");
 		return;
 	}
 
 	/* update packet data */
-	if (net_pkt_write(ack_pkt, data.rx_buffer + B91_PAYLOAD_OFFSET,
-			  B91_ACK_FRAME_LEN) < 0) {
+	if (net_pkt_write(ack_pkt, data.rx_buffer + B91_PAYLOAD_OFFSET, B91_ACK_FRAME_LEN) < 0) {
 		LOG_ERR("Failed to write to a packet.");
 		goto out;
 	}
@@ -246,7 +243,7 @@ out:
 /* Send acknowledge packet */
 static void b91_send_ack(uint8_t seq_num)
 {
-	uint8_t ack_buf[] = { B91_ACK_TYPE, 0, seq_num };
+	uint8_t ack_buf[] = {B91_ACK_TYPE, 0, seq_num};
 
 	if (b91_set_tx_payload(ack_buf, sizeof(ack_buf))) {
 		return;
@@ -411,8 +408,8 @@ static enum ieee802154_hw_caps b91_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return IEEE802154_HW_FCS | IEEE802154_HW_FILTER |
-	       IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_RX_TX_ACK;
+	return IEEE802154_HW_FCS | IEEE802154_HW_FILTER | IEEE802154_HW_TX_RX_ACK |
+	       IEEE802154_HW_RX_TX_ACK;
 }
 
 /* API implementation: cca */
@@ -454,9 +451,7 @@ static int b91_set_channel(const struct device *dev, uint16_t channel)
 }
 
 /* API implementation: filter */
-static int b91_filter(const struct device *dev,
-		      bool set,
-		      enum ieee802154_filter_type type,
+static int b91_filter(const struct device *dev, bool set, enum ieee802154_filter_type type,
 		      const struct ieee802154_filter *filter)
 {
 	if (!set) {
@@ -525,9 +520,7 @@ static int b91_stop(const struct device *dev)
 }
 
 /* API implementation: tx */
-static int b91_tx(const struct device *dev,
-		  enum ieee802154_tx_mode mode,
-		  struct net_pkt *pkt,
+static int b91_tx(const struct device *dev, enum ieee802154_tx_mode mode, struct net_pkt *pkt,
 		  struct net_buf *frag)
 {
 	ARG_UNUSED(pkt);
@@ -574,8 +567,7 @@ static int b91_tx(const struct device *dev,
 }
 
 /* API implementation: ed_scan */
-static int b91_ed_scan(const struct device *dev, uint16_t duration,
-		       energy_scan_done_cb_t done_cb)
+static int b91_ed_scan(const struct device *dev, uint16_t duration, energy_scan_done_cb_t done_cb)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(duration);
@@ -587,8 +579,7 @@ static int b91_ed_scan(const struct device *dev, uint16_t duration,
 }
 
 /* API implementation: configure */
-static int b91_configure(const struct device *dev,
-			 enum ieee802154_config_type type,
+static int b91_configure(const struct device *dev, enum ieee802154_config_type type,
 			 const struct ieee802154_config *config)
 {
 	ARG_UNUSED(dev);
@@ -630,25 +621,21 @@ static const struct ieee802154_radio_api b91_radio_api = {
 	.attr_get = b91_attr_get,
 };
 
-
 #if defined(CONFIG_NET_L2_IEEE802154)
-#define L2 IEEE802154_L2
+#define L2          IEEE802154_L2
 #define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(IEEE802154_L2)
-#define MTU 125
+#define MTU         125
 #elif defined(CONFIG_NET_L2_OPENTHREAD)
-#define L2 OPENTHREAD_L2
+#define L2          OPENTHREAD_L2
 #define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(OPENTHREAD_L2)
-#define MTU 1280
+#define MTU         1280
 #endif
-
 
 /* IEEE802154 driver registration */
 #if defined(CONFIG_NET_L2_IEEE802154) || defined(CONFIG_NET_L2_OPENTHREAD)
-NET_DEVICE_DT_INST_DEFINE(0, b91_init, NULL, &data, NULL,
-			  CONFIG_IEEE802154_B91_INIT_PRIO,
+NET_DEVICE_DT_INST_DEFINE(0, b91_init, NULL, &data, NULL, CONFIG_IEEE802154_B91_INIT_PRIO,
 			  &b91_radio_api, L2, L2_CTX_TYPE, MTU);
 #else
-DEVICE_DT_INST_DEFINE(0, b91_init, NULL, &data, NULL,
-		      POST_KERNEL, CONFIG_IEEE802154_B91_INIT_PRIO,
+DEVICE_DT_INST_DEFINE(0, b91_init, NULL, &data, NULL, POST_KERNEL, CONFIG_IEEE802154_B91_INIT_PRIO,
 		      &b91_radio_api);
 #endif

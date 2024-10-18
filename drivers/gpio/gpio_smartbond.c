@@ -17,10 +17,10 @@
 #include <da1469x_pdc.h>
 #include <da1469x_pd.h>
 
-#define GPIO_PUPD_INPUT		0
-#define GPIO_PUPD_INPUT_PU	1
-#define GPIO_PUPD_INPUT_PD	2
-#define GPIO_PUPD_OUTPUT	3
+#define GPIO_PUPD_INPUT    0
+#define GPIO_PUPD_INPUT_PU 1
+#define GPIO_PUPD_INPUT_PD 2
+#define GPIO_PUPD_OUTPUT   3
 
 /* GPIO P0 and P1 share single GPIO and WKUP peripheral instance with separate
  * set registers for P0 and P1 interleaved. The starting registers for direct
@@ -109,8 +109,8 @@ static void gpio_smartbond_wkup_init(void)
 	}
 }
 
-static int gpio_smartbond_pin_configure(const struct device *dev,
-				      gpio_pin_t pin, gpio_flags_t flags)
+static int gpio_smartbond_pin_configure(const struct device *dev, gpio_pin_t pin,
+					gpio_flags_t flags)
 {
 	const struct gpio_smartbond_config *config = dev->config;
 
@@ -148,8 +148,7 @@ static int gpio_smartbond_pin_configure(const struct device *dev,
 	return 0;
 }
 
-static int gpio_smartbond_port_get_raw(const struct device *dev,
-				     gpio_port_value_t *value)
+static int gpio_smartbond_port_get_raw(const struct device *dev, gpio_port_value_t *value)
 {
 	const struct gpio_smartbond_config *config = dev->config;
 
@@ -158,9 +157,8 @@ static int gpio_smartbond_port_get_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_smartbond_port_set_masked_raw(const struct device *dev,
-					    gpio_port_pins_t mask,
-					    gpio_port_value_t value)
+static int gpio_smartbond_port_set_masked_raw(const struct device *dev, gpio_port_pins_t mask,
+					      gpio_port_value_t value)
 {
 	const struct gpio_smartbond_config *config = dev->config;
 
@@ -170,8 +168,7 @@ static int gpio_smartbond_port_set_masked_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_smartbond_port_set_bits_raw(const struct device *dev,
-					  gpio_port_pins_t pins)
+static int gpio_smartbond_port_set_bits_raw(const struct device *dev, gpio_port_pins_t pins)
 {
 	const struct gpio_smartbond_config *config = dev->config;
 
@@ -180,8 +177,7 @@ static int gpio_smartbond_port_set_bits_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_smartbond_port_clear_bits_raw(const struct device *dev,
-					    gpio_port_pins_t pins)
+static int gpio_smartbond_port_clear_bits_raw(const struct device *dev, gpio_port_pins_t pins)
 {
 	const struct gpio_smartbond_config *config = dev->config;
 
@@ -190,8 +186,7 @@ static int gpio_smartbond_port_clear_bits_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_smartbond_port_toggle_bits(const struct device *dev,
-					 gpio_port_pins_t mask)
+static int gpio_smartbond_port_toggle_bits(const struct device *dev, gpio_port_pins_t mask)
 {
 	const struct gpio_smartbond_config *config = dev->config;
 	volatile uint32_t *reg = &config->data_regs->data;
@@ -201,8 +196,7 @@ static int gpio_smartbond_port_toggle_bits(const struct device *dev,
 	return 0;
 }
 
-static void gpio_smartbond_arm_next_edge_interrupt(const struct device *dev,
-						   uint32_t pin_mask)
+static void gpio_smartbond_arm_next_edge_interrupt(const struct device *dev, uint32_t pin_mask)
 {
 	const struct gpio_smartbond_config *config = dev->config;
 	uint32_t pin_value;
@@ -217,10 +211,8 @@ static void gpio_smartbond_arm_next_edge_interrupt(const struct device *dev,
 	} while (pin_value != (config->data_regs->data & pin_mask));
 }
 
-static int gpio_smartbond_pin_interrupt_configure(const struct device *dev,
-						gpio_pin_t pin,
-						enum gpio_int_mode mode,
-						enum gpio_int_trig trig)
+static int gpio_smartbond_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
+						  enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	const struct gpio_smartbond_config *config = dev->config;
 	struct gpio_smartbond_data *data = dev->data;
@@ -273,8 +265,8 @@ static int gpio_smartbond_pin_interrupt_configure(const struct device *dev,
 	return 0;
 }
 
-static int gpio_smartbond_manage_callback(const struct device *dev,
-				       struct gpio_callback *callback, bool set)
+static int gpio_smartbond_manage_callback(const struct device *dev, struct gpio_callback *callback,
+					  bool set)
 {
 	struct gpio_smartbond_data *data = dev->data;
 
@@ -318,7 +310,6 @@ static void gpio_latch_inst(mem_addr_t data_reg, mem_addr_t mode_reg, mem_addr_t
 		mode[idx] = sys_read32(mode_reg);
 	}
 	sys_write32(BIT_MASK(ngpios), latch_reg);
-
 }
 
 static void gpio_unlatch_inst(mem_addr_t data_reg, mem_addr_t mode_reg, mem_addr_t latch_reg,
@@ -338,10 +329,9 @@ static void gpio_latch(const struct device *dev)
 	const struct gpio_smartbond_config *config = dev->config;
 	const struct gpio_smartbond_data *data = dev->data;
 
-	gpio_latch_inst((mem_addr_t)&config->data_regs->data,
-			(mem_addr_t)config->mode_regs,
-			(mem_addr_t)&config->latch_regs->reset,
-			config->ngpios, data->gpio_saved_state, data->gpio_saved_state + 1);
+	gpio_latch_inst((mem_addr_t)&config->data_regs->data, (mem_addr_t)config->mode_regs,
+			(mem_addr_t)&config->latch_regs->reset, config->ngpios,
+			data->gpio_saved_state, data->gpio_saved_state + 1);
 }
 
 static void gpio_unlatch(const struct device *dev)
@@ -349,14 +339,12 @@ static void gpio_unlatch(const struct device *dev)
 	const struct gpio_smartbond_config *config = dev->config;
 	const struct gpio_smartbond_data *data = dev->data;
 
-	gpio_unlatch_inst((mem_addr_t)&config->data_regs->data,
-			  (mem_addr_t)config->mode_regs,
-			  (mem_addr_t)&config->latch_regs->set,
-			  config->ngpios, data->gpio_saved_state[0], data->gpio_saved_state + 1);
+	gpio_unlatch_inst((mem_addr_t)&config->data_regs->data, (mem_addr_t)config->mode_regs,
+			  (mem_addr_t)&config->latch_regs->set, config->ngpios,
+			  data->gpio_saved_state[0], data->gpio_saved_state + 1);
 }
 
-static int gpio_smartbond_pm_action(const struct device *dev,
-				    enum pm_device_action action)
+static int gpio_smartbond_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	int ret = 0;
 
@@ -390,53 +378,46 @@ static const struct gpio_driver_api gpio_smartbond_drv_api_funcs = {
 	.manage_callback = gpio_smartbond_manage_callback,
 };
 
-#define GPIO_SAVED_STATE(id) gpio_smartbond_saved_state_##id
-#define GPIO_PM_DEVICE_CFG(fld, val) \
-	COND_CODE_1(CONFIG_PM_DEVICE, (fld = val,), ())
-#define GPIO_PM_DEVICE_STATE(id, ngpios) \
+#define GPIO_SAVED_STATE(id)         gpio_smartbond_saved_state_##id
+#define GPIO_PM_DEVICE_CFG(fld, val) COND_CODE_1(CONFIG_PM_DEVICE, (fld = val,), ())
+#define GPIO_PM_DEVICE_STATE(id, ngpios)                                                           \
 	COND_CODE_1(CONFIG_PM_DEVICE, (static uint32_t GPIO_SAVED_STATE(id)[1 + ngpios];), ())
 
-#define GPIO_SMARTBOND_DEVICE(id)							\
-	GPIO_PM_DEVICE_STATE(id, DT_INST_PROP(id, ngpios))				\
-	static const struct gpio_smartbond_config gpio_smartbond_config_##id = {	\
-		.common = {								\
-			.port_pin_mask =						\
-			GPIO_PORT_PIN_MASK_FROM_DT_INST(id),				\
-		},									\
-		.data_regs = (volatile struct gpio_smartbond_data_regs *)		\
-						DT_INST_REG_ADDR_BY_NAME(id, data),	\
-		.mode_regs = (volatile uint32_t *)DT_INST_REG_ADDR_BY_NAME(id, mode),	\
-		.latch_regs = (volatile struct gpio_smartbond_latch_regs *)		\
-						DT_INST_REG_ADDR_BY_NAME(id, latch),	\
-		.wkup_regs = (volatile struct gpio_smartbond_wkup_regs *)		\
-						DT_INST_REG_ADDR_BY_NAME(id, wkup),	\
-		.wkup_trig_select = id,							\
-		GPIO_PM_DEVICE_CFG(.ngpios, DT_INST_PROP(id, ngpios))			\
-	};										\
-											\
-	static struct gpio_smartbond_data gpio_smartbond_data_##id = {			\
-		GPIO_PM_DEVICE_CFG(.gpio_saved_state, GPIO_SAVED_STATE(id))		\
-	};										\
-											\
-	static int gpio_smartbond_init_##id(const struct device *dev)			\
-	{										\
-		da1469x_pd_acquire(MCU_PD_DOMAIN_COM);					\
-		gpio_smartbond_wkup_init();						\
-		IRQ_CONNECT(DT_INST_IRQN(id),						\
-			    DT_INST_IRQ(id, priority),					\
-			    gpio_smartbond_isr,						\
-			    DEVICE_DT_INST_GET(id), 0);					\
-		irq_enable(DT_INST_IRQN(id));						\
-		return 0;								\
-	}										\
-											\
-	PM_DEVICE_DEFINE(id, gpio_smartbond_pm_action);					\
-	DEVICE_DT_INST_DEFINE(id, gpio_smartbond_init_##id,				\
-			      PM_DEVICE_GET(id),					\
-			      &gpio_smartbond_data_##id,				\
-			      &gpio_smartbond_config_##id,				\
-			      PRE_KERNEL_1,						\
-			      CONFIG_GPIO_INIT_PRIORITY,				\
+#define GPIO_SMARTBOND_DEVICE(id)                                                                  \
+	GPIO_PM_DEVICE_STATE(id, DT_INST_PROP(id, ngpios))                                         \
+	static const struct gpio_smartbond_config gpio_smartbond_config_##id = {                   \
+		.common =                                                                          \
+			{                                                                          \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(id),              \
+			},                                                                         \
+		.data_regs = (volatile struct gpio_smartbond_data_regs *)DT_INST_REG_ADDR_BY_NAME( \
+			id, data),                                                                 \
+		.mode_regs = (volatile uint32_t *)DT_INST_REG_ADDR_BY_NAME(id, mode),              \
+		.latch_regs =                                                                      \
+			(volatile struct gpio_smartbond_latch_regs *)DT_INST_REG_ADDR_BY_NAME(     \
+				id, latch),                                                        \
+		.wkup_regs = (volatile struct gpio_smartbond_wkup_regs *)DT_INST_REG_ADDR_BY_NAME( \
+			id, wkup),                                                                 \
+		.wkup_trig_select = id,                                                            \
+		GPIO_PM_DEVICE_CFG(.ngpios, DT_INST_PROP(id, ngpios))};                            \
+                                                                                                   \
+	static struct gpio_smartbond_data gpio_smartbond_data_##id = {                             \
+		GPIO_PM_DEVICE_CFG(.gpio_saved_state, GPIO_SAVED_STATE(id))};                      \
+                                                                                                   \
+	static int gpio_smartbond_init_##id(const struct device *dev)                              \
+	{                                                                                          \
+		da1469x_pd_acquire(MCU_PD_DOMAIN_COM);                                             \
+		gpio_smartbond_wkup_init();                                                        \
+		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), gpio_smartbond_isr,       \
+			    DEVICE_DT_INST_GET(id), 0);                                            \
+		irq_enable(DT_INST_IRQN(id));                                                      \
+		return 0;                                                                          \
+	}                                                                                          \
+                                                                                                   \
+	PM_DEVICE_DEFINE(id, gpio_smartbond_pm_action);                                            \
+	DEVICE_DT_INST_DEFINE(id, gpio_smartbond_init_##id, PM_DEVICE_GET(id),                     \
+			      &gpio_smartbond_data_##id, &gpio_smartbond_config_##id,              \
+			      PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,                             \
 			      &gpio_smartbond_drv_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_SMARTBOND_DEVICE)

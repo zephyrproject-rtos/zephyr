@@ -12,16 +12,16 @@
 
 #include "mm_drv_intel_adsp.h"
 
-struct sys_mm_drv_region
-virtual_memory_regions[CONFIG_MP_MAX_NUM_CPUS + VIRTUAL_REGION_COUNT] = { {0} };
+struct sys_mm_drv_region virtual_memory_regions[CONFIG_MP_MAX_NUM_CPUS + VIRTUAL_REGION_COUNT] = {
+	{0}};
 
 const struct sys_mm_drv_region *sys_mm_drv_query_memory_regions(void)
 {
-	return (const struct sys_mm_drv_region *) virtual_memory_regions;
+	return (const struct sys_mm_drv_region *)virtual_memory_regions;
 }
 
-static inline void append_region(void *address, uint32_t mem_size,
-	uint32_t attributes, uint32_t position, uint32_t *total_size)
+static inline void append_region(void *address, uint32_t mem_size, uint32_t attributes,
+				 uint32_t position, uint32_t *total_size)
 {
 	virtual_memory_regions[position].addr = address;
 	virtual_memory_regions[position].size = mem_size;
@@ -33,9 +33,9 @@ int calculate_memory_regions(uintptr_t static_alloc_end_ptr)
 {
 	int i, total_size = 0;
 
-	for (i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++)	{
-		append_region((void *)(static_alloc_end_ptr + i * CORE_HEAP_SIZE),
-			      CORE_HEAP_SIZE, MEM_REG_ATTR_CORE_HEAP, i, &total_size);
+	for (i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
+		append_region((void *)(static_alloc_end_ptr + i * CORE_HEAP_SIZE), CORE_HEAP_SIZE,
+			      MEM_REG_ATTR_CORE_HEAP, i, &total_size);
 	}
 
 	append_region((void *)((uintptr_t)virtual_memory_regions[i - 1].addr +

@@ -32,14 +32,12 @@ static uint8_t sht4x_compute_crc(uint16_t value)
 static int sht4x_write_command(const struct device *dev, uint8_t cmd)
 {
 	const struct sht4x_config *cfg = dev->config;
-	uint8_t tx_buf[1] = { cmd };
+	uint8_t tx_buf[1] = {cmd};
 
 	return i2c_write_dt(&cfg->bus, tx_buf, sizeof(tx_buf));
 }
 
-static int sht4x_read_sample(const struct device *dev,
-		uint16_t *t_sample,
-		uint16_t *rh_sample)
+static int sht4x_read_sample(const struct device *dev, uint16_t *t_sample, uint16_t *rh_sample)
 {
 	const struct sht4x_config *cfg = dev->config;
 	uint8_t rx_buf[6];
@@ -72,8 +70,7 @@ int sht4x_fetch_with_heater(const struct device *dev)
 	struct sht4x_data *data = dev->data;
 	int rc;
 
-	rc = sht4x_write_command(dev,
-			heater_cmd[data->heater_power][data->heater_duration]);
+	rc = sht4x_write_command(dev, heater_cmd[data->heater_power][data->heater_duration]);
 	if (rc < 0) {
 		LOG_ERR("Failed to start measurement.");
 		return rc;
@@ -90,16 +87,14 @@ int sht4x_fetch_with_heater(const struct device *dev)
 	return 0;
 }
 
-static int sht4x_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
+static int sht4x_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	const struct sht4x_config *cfg = dev->config;
 	struct sht4x_data *data = dev->data;
 	int rc;
 
-	if (chan != SENSOR_CHAN_ALL &&
-		chan != SENSOR_CHAN_AMBIENT_TEMP &&
-		chan != SENSOR_CHAN_HUMIDITY) {
+	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_AMBIENT_TEMP &&
+	    chan != SENSOR_CHAN_HUMIDITY) {
 		return -ENOTSUP;
 	}
 
@@ -120,9 +115,8 @@ static int sht4x_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static int sht4x_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
-			      struct sensor_value *val)
+static int sht4x_channel_get(const struct device *dev, enum sensor_channel chan,
+			     struct sensor_value *val)
 {
 	const struct sht4x_data *data = dev->data;
 
@@ -149,10 +143,8 @@ static int sht4x_channel_get(const struct device *dev,
 	return 0;
 }
 
-static int sht4x_attr_set(const struct device *dev,
-				enum sensor_channel chan,
-				enum sensor_attribute attr,
-				const struct sensor_value *val)
+static int sht4x_attr_set(const struct device *dev, enum sensor_channel chan,
+			  enum sensor_attribute attr, const struct sensor_value *val)
 {
 	struct sht4x_data *data = dev->data;
 
@@ -201,28 +193,19 @@ static int sht4x_init(const struct device *dev)
 	return 0;
 }
 
-
 static const struct sensor_driver_api sht4x_api = {
 	.sample_fetch = sht4x_sample_fetch,
 	.channel_get = sht4x_channel_get,
 	.attr_set = sht4x_attr_set,
 };
 
-#define SHT4X_INIT(n)						\
-	static struct sht4x_data sht4x_data_##n;		\
-								\
-	static const struct sht4x_config sht4x_config_##n = {	\
-		.bus = I2C_DT_SPEC_INST_GET(n),			\
-		.repeatability = DT_INST_PROP(n, repeatability)	\
-	};							\
-								\
-	SENSOR_DEVICE_DT_INST_DEFINE(n,				\
-			      sht4x_init,			\
-			      NULL,				\
-			      &sht4x_data_##n,			\
-			      &sht4x_config_##n,		\
-			      POST_KERNEL,			\
-			      CONFIG_SENSOR_INIT_PRIORITY,	\
-			      &sht4x_api);
+#define SHT4X_INIT(n)                                                                              \
+	static struct sht4x_data sht4x_data_##n;                                                   \
+                                                                                                   \
+	static const struct sht4x_config sht4x_config_##n = {                                      \
+		.bus = I2C_DT_SPEC_INST_GET(n), .repeatability = DT_INST_PROP(n, repeatability)};  \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, sht4x_init, NULL, &sht4x_data_##n, &sht4x_config_##n,      \
+				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &sht4x_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SHT4X_INIT)

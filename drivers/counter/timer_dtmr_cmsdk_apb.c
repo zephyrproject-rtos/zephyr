@@ -41,7 +41,7 @@ struct dtmr_cmsdk_apb_dev_data {
 
 static int dtmr_cmsdk_apb_start(const struct device *dev)
 {
-	const struct dtmr_cmsdk_apb_cfg * const cfg = dev->config;
+	const struct dtmr_cmsdk_apb_cfg *const cfg = dev->config;
 	struct dtmr_cmsdk_apb_dev_data *data = dev->data;
 
 	/* Set the timer reload to count */
@@ -55,7 +55,7 @@ static int dtmr_cmsdk_apb_start(const struct device *dev)
 
 static int dtmr_cmsdk_apb_stop(const struct device *dev)
 {
-	const struct dtmr_cmsdk_apb_cfg * const cfg = dev->config;
+	const struct dtmr_cmsdk_apb_cfg *const cfg = dev->config;
 
 	/* Disable the dualtimer */
 	cfg->dtimer->timer1ctrl = 0x0;
@@ -65,7 +65,7 @@ static int dtmr_cmsdk_apb_stop(const struct device *dev)
 
 static int dtmr_cmsdk_apb_get_value(const struct device *dev, uint32_t *ticks)
 {
-	const struct dtmr_cmsdk_apb_cfg * const cfg = dev->config;
+	const struct dtmr_cmsdk_apb_cfg *const cfg = dev->config;
 	struct dtmr_cmsdk_apb_dev_data *data = dev->data;
 
 	*ticks = data->load - cfg->dtimer->timer1value;
@@ -75,7 +75,7 @@ static int dtmr_cmsdk_apb_get_value(const struct device *dev, uint32_t *ticks)
 static int dtmr_cmsdk_apb_set_top_value(const struct device *dev,
 					const struct counter_top_cfg *top_cfg)
 {
-	const struct dtmr_cmsdk_apb_cfg * const cfg = dev->config;
+	const struct dtmr_cmsdk_apb_cfg *const cfg = dev->config;
 	struct dtmr_cmsdk_apb_dev_data *data = dev->data;
 
 	data->top_callback = top_cfg->callback;
@@ -100,8 +100,7 @@ static int dtmr_cmsdk_apb_set_top_value(const struct device *dev,
 	}
 
 	/* Enable IRQ */
-	cfg->dtimer->timer1ctrl |= (DUALTIMER_CTRL_INTEN
-				    | DUALTIMER_CTRL_MODE);
+	cfg->dtimer->timer1ctrl |= (DUALTIMER_CTRL_INTEN | DUALTIMER_CTRL_MODE);
 
 	return 0;
 }
@@ -117,7 +116,7 @@ static uint32_t dtmr_cmsdk_apb_get_top_value(const struct device *dev)
 
 static uint32_t dtmr_cmsdk_apb_get_pending_int(const struct device *dev)
 {
-	const struct dtmr_cmsdk_apb_cfg * const cfg = dev->config;
+	const struct dtmr_cmsdk_apb_cfg *const cfg = dev->config;
 
 	return cfg->dtimer->timer1ris;
 }
@@ -134,7 +133,7 @@ static const struct counter_driver_api dtmr_cmsdk_apb_api = {
 static void dtmr_cmsdk_apb_isr(const struct device *dev)
 {
 	struct dtmr_cmsdk_apb_dev_data *data = dev->data;
-	const struct dtmr_cmsdk_apb_cfg * const cfg = dev->config;
+	const struct dtmr_cmsdk_apb_cfg *const cfg = dev->config;
 
 	cfg->dtimer->timer1intclr = DUALTIMER_INTCLR;
 	if (data->top_callback) {
@@ -144,7 +143,7 @@ static void dtmr_cmsdk_apb_isr(const struct device *dev)
 
 static int dtmr_cmsdk_apb_init(const struct device *dev)
 {
-	const struct dtmr_cmsdk_apb_cfg * const cfg = dev->config;
+	const struct dtmr_cmsdk_apb_cfg *const cfg = dev->config;
 
 #ifdef CONFIG_CLOCK_CONTROL
 	/* Enable clock for subsystem */
@@ -155,9 +154,9 @@ static int dtmr_cmsdk_apb_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_SOC_SERIES_BEETLE
-	clock_control_on(clk, (clock_control_subsys_t) &cfg->dtimer_cc_as);
-	clock_control_on(clk, (clock_control_subsys_t) &cfg->dtimer_cc_ss);
-	clock_control_on(clk, (clock_control_subsys_t) &cfg->dtimer_cc_dss);
+	clock_control_on(clk, (clock_control_subsys_t)&cfg->dtimer_cc_as);
+	clock_control_on(clk, (clock_control_subsys_t)&cfg->dtimer_cc_ss);
+	clock_control_on(clk, (clock_control_subsys_t)&cfg->dtimer_cc_dss);
 #endif /* CONFIG_SOC_SERIES_BEETLE */
 #endif /* CONFIG_CLOCK_CONTROL */
 
@@ -166,54 +165,54 @@ static int dtmr_cmsdk_apb_init(const struct device *dev)
 	return 0;
 }
 
-#define DTIMER_CMSDK_REG(inst)						\
-	((volatile struct dualtimer_cmsdk_apb *)DT_INST_REG_ADDR(inst))
+#define DTIMER_CMSDK_REG(inst) ((volatile struct dualtimer_cmsdk_apb *)DT_INST_REG_ADDR(inst))
 
-#define DTIMER_CMSDK_INIT(inst)						\
-	static void dtimer_cmsdk_apb_config_##inst(const struct device *dev); \
-									\
-	static const struct dtmr_cmsdk_apb_cfg				\
-	dtmr_cmsdk_apb_cfg_##inst = {					\
-		.info = {						\
-			.max_top_value = UINT32_MAX,			\
-			.freq = 24000000U,				\
-			.flags = COUNTER_CONFIG_INFO_COUNT_UP,		\
-			.channels = 0U,					\
-		},							\
-		.dtimer = DTIMER_CMSDK_REG(inst),			\
-		.dtimer_config_func = dtimer_cmsdk_apb_config_##inst,	\
-		.dtimer_cc_as = {.bus = CMSDK_APB,			\
-				 .state = SOC_ACTIVE,			\
-				 .device = DT_INST_REG_ADDR(inst),},	\
-		.dtimer_cc_ss = {.bus = CMSDK_APB,			\
-				 .state = SOC_SLEEP,			\
-				 .device = DT_INST_REG_ADDR(inst),},	\
-		.dtimer_cc_dss = {.bus = CMSDK_APB,			\
-				  .state = SOC_DEEPSLEEP,		\
-				  .device = DT_INST_REG_ADDR(inst),},	\
-	};								\
-									\
-	static struct dtmr_cmsdk_apb_dev_data				\
-	dtmr_cmsdk_apb_dev_data_##inst = {				\
-		.load = UINT_MAX,					\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(inst,					\
-			    dtmr_cmsdk_apb_init,			\
-			    NULL,			\
-			    &dtmr_cmsdk_apb_dev_data_##inst,		\
-			    &dtmr_cmsdk_apb_cfg_##inst, POST_KERNEL,	\
-			    CONFIG_COUNTER_INIT_PRIORITY,		\
-			    &dtmr_cmsdk_apb_api);			\
-									\
-	static void dtimer_cmsdk_apb_config_##inst(const struct device *dev) \
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(inst),				\
-			    DT_INST_IRQ(inst, priority),		\
-			    dtmr_cmsdk_apb_isr,				\
-			    DEVICE_DT_INST_GET(inst),			\
-			    0);						\
-		irq_enable(DT_INST_IRQN(inst));				\
+#define DTIMER_CMSDK_INIT(inst)                                                                    \
+	static void dtimer_cmsdk_apb_config_##inst(const struct device *dev);                      \
+                                                                                                   \
+	static const struct dtmr_cmsdk_apb_cfg dtmr_cmsdk_apb_cfg_##inst = {                       \
+		.info =                                                                            \
+			{                                                                          \
+				.max_top_value = UINT32_MAX,                                       \
+				.freq = 24000000U,                                                 \
+				.flags = COUNTER_CONFIG_INFO_COUNT_UP,                             \
+				.channels = 0U,                                                    \
+			},                                                                         \
+		.dtimer = DTIMER_CMSDK_REG(inst),                                                  \
+		.dtimer_config_func = dtimer_cmsdk_apb_config_##inst,                              \
+		.dtimer_cc_as =                                                                    \
+			{                                                                          \
+				.bus = CMSDK_APB,                                                  \
+				.state = SOC_ACTIVE,                                               \
+				.device = DT_INST_REG_ADDR(inst),                                  \
+			},                                                                         \
+		.dtimer_cc_ss =                                                                    \
+			{                                                                          \
+				.bus = CMSDK_APB,                                                  \
+				.state = SOC_SLEEP,                                                \
+				.device = DT_INST_REG_ADDR(inst),                                  \
+			},                                                                         \
+		.dtimer_cc_dss =                                                                   \
+			{                                                                          \
+				.bus = CMSDK_APB,                                                  \
+				.state = SOC_DEEPSLEEP,                                            \
+				.device = DT_INST_REG_ADDR(inst),                                  \
+			},                                                                         \
+	};                                                                                         \
+                                                                                                   \
+	static struct dtmr_cmsdk_apb_dev_data dtmr_cmsdk_apb_dev_data_##inst = {                   \
+		.load = UINT_MAX,                                                                  \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, dtmr_cmsdk_apb_init, NULL, &dtmr_cmsdk_apb_dev_data_##inst,    \
+			      &dtmr_cmsdk_apb_cfg_##inst, POST_KERNEL,                             \
+			      CONFIG_COUNTER_INIT_PRIORITY, &dtmr_cmsdk_apb_api);                  \
+                                                                                                   \
+	static void dtimer_cmsdk_apb_config_##inst(const struct device *dev)                       \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), dtmr_cmsdk_apb_isr,   \
+			    DEVICE_DT_INST_GET(inst), 0);                                          \
+		irq_enable(DT_INST_IRQN(inst));                                                    \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(DTIMER_CMSDK_INIT)

@@ -178,8 +178,7 @@ static int dw_wdt_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = clock_control_get_rate(dev_config->clk_dev, dev_config->clkid,
-				&dev_data->clk_freq);
+	ret = clock_control_get_rate(dev_config->clk_dev, dev_config->clkid, &dev_data->clk_freq);
 	if (ret != 0) {
 		LOG_ERR("Failed to get watchdog clock rate");
 		return ret;
@@ -235,48 +234,45 @@ static void dw_wdt_isr(const struct device *dev)
 #endif
 
 /* Bindings to the platform */
-#define DW_WDT_IRQ_FLAGS(inst) \
+#define DW_WDT_IRQ_FLAGS(inst)                                                                     \
 	COND_CODE_1(DT_INST_IRQ_HAS_CELL(inst, sense), (DT_INST_IRQ(inst, sense)), (0))
 
-#define DW_WDT_RESET_SPEC_INIT(inst) \
-	.reset_spec = RESET_DT_SPEC_INST_GET(inst),
+#define DW_WDT_RESET_SPEC_INIT(inst) .reset_spec = RESET_DT_SPEC_INST_GET(inst),
 
 #define IRQ_CONFIG(inst)                                                                           \
 	static void dw_wdt##inst##_irq_config(void)                                                \
 	{                                                                                          \
 		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), dw_wdt_isr,           \
-			DEVICE_DT_INST_GET(inst), DW_WDT_IRQ_FLAGS(inst));                         \
+			    DEVICE_DT_INST_GET(inst), DW_WDT_IRQ_FLAGS(inst));                     \
 		irq_enable(DT_INST_IRQN(inst));                                                    \
 	}
 
-#define DW_WDT_INIT(inst)                                                                          \
-	IF_ENABLED(DT_NODE_HAS_PROP(DT_DRV_INST(inst), interrupts), (IRQ_CONFIG(inst)))            \
-                                                                                                   \
-	static const struct dw_wdt_dev_cfg wdt_dw##inst##_config = {                               \
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(inst)),                                           \
-		.reset_pulse_length = ilog2(DT_INST_PROP_OR(inst, reset_pulse_length, 2)) - 1,     \
+#define DW_WDT_INIT(inst)                                                                                                                                                          \
+	IF_ENABLED(DT_NODE_HAS_PROP(DT_DRV_INST(inst), interrupts), (IRQ_CONFIG(inst)))                                                                                                                                                                 \
+                                                                                                                                                                                   \
+	static const struct dw_wdt_dev_cfg wdt_dw##inst##_config = {                                                                                                               \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(inst)),                                                                                                                           \
+		.reset_pulse_length = ilog2(DT_INST_PROP_OR(inst, reset_pulse_length, 2)) - 1,                                                                                     \
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, resets),                                    \
-			(DW_WDT_RESET_SPEC_INIT(inst)))                                            \
-		IF_ENABLED(DT_PHA_HAS_CELL(DT_DRV_INST(inst), clocks, clkid),                      \
+			(DW_WDT_RESET_SPEC_INIT(inst))) IF_ENABLED(DT_PHA_HAS_CELL(DT_DRV_INST(inst), clocks, clkid),                      \
 		(                                                                                  \
 			.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                       \
 			.clkid = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, clkid),         \
-		))                                                                                 \
-		IF_ENABLED(DT_NODE_HAS_PROP(DT_DRV_INST(inst), interrupts),                        \
+		)) \
+						 IF_ENABLED(DT_NODE_HAS_PROP(DT_DRV_INST(inst), interrupts),                        \
 			(.irq_config = dw_wdt##inst##_irq_config,)                                 \
-		)                                                                                  \
-	};                                                                                         \
-                                                                                                   \
-	static struct dw_wdt_dev_data wdt_dw##inst##_data = {                                      \
+		) };                                                                                  \
+                                                                                                                                                                                   \
+	static struct dw_wdt_dev_data wdt_dw##inst##_data = {                                                                                                                      \
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clock_frequency),                          \
 			(.clk_freq = DT_INST_PROP(inst, clock_frequency)),                         \
 			(COND_CODE_1(DT_PHA_HAS_CELL(DT_DRV_INST(inst), clocks, clkid),            \
 			(.clk_freq = 0),                                                           \
-			(.clk_freq = DT_INST_PROP_BY_PHANDLE(inst, clocks, clock_frequency))))),   \
-	};											   \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, &dw_wdt_init, NULL, &wdt_dw##inst##_data,                      \
-			      &wdt_dw##inst##_config, POST_KERNEL,                                 \
+			(.clk_freq = DT_INST_PROP_BY_PHANDLE(inst, clocks, clock_frequency))))),                                                                                  \
+			 };                                                                                                                                                        \
+                                                                                                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &dw_wdt_init, NULL, &wdt_dw##inst##_data,                                                                                                      \
+			      &wdt_dw##inst##_config, POST_KERNEL,                                                                                                                 \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &dw_wdt_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DW_WDT_INIT)

@@ -18,25 +18,22 @@
 typedef void (*atciic100_dt_init_func_t)(void);
 
 struct i2c_atciic100_config {
-	uint32_t			base;
-	uint32_t			irq_num;
-	atciic100_dt_init_func_t	dt_init_fn;
+	uint32_t base;
+	uint32_t irq_num;
+	atciic100_dt_init_func_t dt_init_fn;
 };
 
-static int i2c_atciic100_controller_send(const struct device *dev,
-	uint16_t addr, const uint8_t *data, uint32_t num, uint8_t flags);
-static int i2c_atciic100_controller_receive(const struct device *dev,
-	uint16_t addr, uint8_t *data, uint32_t num, uint8_t flags);
-static void i2c_controller_fifo_write(const struct device *dev,
-	uint8_t is_init);
+static int i2c_atciic100_controller_send(const struct device *dev, uint16_t addr,
+					 const uint8_t *data, uint32_t num, uint8_t flags);
+static int i2c_atciic100_controller_receive(const struct device *dev, uint16_t addr, uint8_t *data,
+					    uint32_t num, uint8_t flags);
+static void i2c_controller_fifo_write(const struct device *dev, uint8_t is_init);
 static void i2c_controller_fifo_read(const struct device *dev);
 static int i2c_atciic100_init(const struct device *dev);
 
 #if defined(CONFIG_I2C_TARGET)
-static void i2c_atciic100_target_send(const struct device *dev,
-		const uint8_t *data);
-static void i2c_atciic100_target_receive(const struct device *dev,
-		uint8_t *data);
+static void i2c_atciic100_target_send(const struct device *dev, const uint8_t *data);
+static void i2c_atciic100_target_receive(const struct device *dev, uint8_t *data);
 #endif
 
 static void i2c_atciic100_default_control(const struct device *dev)
@@ -76,12 +73,8 @@ static void i2c_atciic100_default_control(const struct device *dev)
 	 */
 	sys_write32(0x0, I2C_SET(dev));
 	reg = sys_read32(I2C_SET(dev));
-	reg |= ((SETUP_T_SUDAT_STD << 24)	|
-		(SETUP_T_SP_STD  << 21)		|
-		(SETUP_T_HDDAT_STD << 16)	|
-		(SETUP_T_SCL_RATIO_STD << 13)	|
-		(SETUP_T_SCLHI_STD << 4)	|
-		SETUP_I2C_EN);
+	reg |= ((SETUP_T_SUDAT_STD << 24) | (SETUP_T_SP_STD << 21) | (SETUP_T_HDDAT_STD << 16) |
+		(SETUP_T_SCL_RATIO_STD << 13) | (SETUP_T_SCLHI_STD << 4) | SETUP_I2C_EN);
 
 	sys_write32(reg, I2C_SET(dev));
 
@@ -91,8 +84,7 @@ static void i2c_atciic100_default_control(const struct device *dev)
 	dev_data->status.target_ack = 0;
 }
 
-static int i2c_atciic100_configure(const struct device *dev,
-		uint32_t dev_config)
+static int i2c_atciic100_configure(const struct device *dev, uint32_t dev_config)
 {
 	struct i2c_atciic100_dev_data_t *dev_data = dev->data;
 	uint32_t reg = 0;
@@ -146,8 +138,8 @@ unlock:
 	return ret;
 }
 
-static int i2c_atciic100_transfer(const struct device *dev,
-	struct i2c_msg *msgs, uint8_t num_msgs, uint16_t addr)
+static int i2c_atciic100_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
+				  uint16_t addr)
 {
 	struct i2c_atciic100_dev_data_t *dev_data = dev->data;
 	int ret = 0;
@@ -157,8 +149,7 @@ static int i2c_atciic100_transfer(const struct device *dev,
 
 	k_sem_take(&dev_data->bus_lock, K_FOREVER);
 
-	if ((msgs[0].flags == I2C_MSG_WRITE)
-		&& (msgs[1].flags == (I2C_MSG_WRITE | I2C_MSG_STOP))) {
+	if ((msgs[0].flags == I2C_MSG_WRITE) && (msgs[1].flags == (I2C_MSG_WRITE | I2C_MSG_STOP))) {
 
 		burst_write_len = msgs[0].len + msgs[1].len;
 		if (burst_write_len > MAX_XFER_SZ) {
@@ -168,22 +159,21 @@ static int i2c_atciic100_transfer(const struct device *dev,
 			if (count < msgs[0].len) {
 				burst_write_buf[count] = msgs[0].buf[count];
 			} else {
-				burst_write_buf[count] =
-					msgs[1].buf[count - msgs[0].len];
+				burst_write_buf[count] = msgs[1].buf[count - msgs[0].len];
 			}
 		}
-		ret = i2c_atciic100_controller_send(dev, addr, burst_write_buf,
-							burst_write_len, true);
+		ret = i2c_atciic100_controller_send(dev, addr, burst_write_buf, burst_write_len,
+						    true);
 		goto exit;
 	}
 
 	for (uint8_t i = 0; i < num_msgs; i++) {
 		if ((msgs[i].flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
-			ret = i2c_atciic100_controller_send(dev,
-				addr, msgs[i].buf, msgs[i].len, msgs[i].flags);
+			ret = i2c_atciic100_controller_send(dev, addr, msgs[i].buf, msgs[i].len,
+							    msgs[i].flags);
 		} else {
-			ret = i2c_atciic100_controller_receive(dev,
-				addr, msgs[i].buf, msgs[i].len, msgs[i].flags);
+			ret = i2c_atciic100_controller_receive(dev, addr, msgs[i].buf, msgs[i].len,
+							       msgs[i].flags);
 		}
 
 		if (ret < 0) {
@@ -197,9 +187,8 @@ exit:
 	return ret;
 }
 
-
-static int i2c_atciic100_controller_send(const struct device *dev,
-	uint16_t addr, const uint8_t *data, uint32_t num, uint8_t flags)
+static int i2c_atciic100_controller_send(const struct device *dev, uint16_t addr,
+					 const uint8_t *data, uint32_t num, uint8_t flags)
 {
 	struct i2c_atciic100_dev_data_t *dev_data = dev->data;
 	uint32_t reg = 0;
@@ -244,8 +233,8 @@ static int i2c_atciic100_controller_send(const struct device *dev,
 	 * I2C direction : controller tx, set xfer DATA count.
 	 */
 	reg = sys_read32(I2C_CTRL(dev));
-	reg &= (~(CTRL_PHASE_START | CTRL_PHASE_ADDR | CTRL_PHASE_STOP |
-		CTRL_DIR | CTRL_DATA_COUNT));
+	reg &= (~(CTRL_PHASE_START | CTRL_PHASE_ADDR | CTRL_PHASE_STOP | CTRL_DIR |
+		  CTRL_DATA_COUNT));
 
 	if (flags & I2C_MSG_STOP) {
 		reg |= CTRL_PHASE_STOP;
@@ -308,8 +297,8 @@ static int i2c_atciic100_controller_send(const struct device *dev,
 	return 0;
 }
 
-static int i2c_atciic100_controller_receive(const struct device *dev,
-	uint16_t addr, uint8_t *data, uint32_t num, uint8_t flags)
+static int i2c_atciic100_controller_receive(const struct device *dev, uint16_t addr, uint8_t *data,
+					    uint32_t num, uint8_t flags)
 {
 	struct i2c_atciic100_dev_data_t *dev_data = dev->data;
 	uint32_t reg = 0;
@@ -354,8 +343,8 @@ static int i2c_atciic100_controller_receive(const struct device *dev,
 	 * I2C direction : controller rx, set xfer data count.
 	 */
 	reg = sys_read32(I2C_CTRL(dev));
-	reg &= (~(CTRL_PHASE_START | CTRL_PHASE_ADDR | CTRL_PHASE_STOP |
-		CTRL_DIR | CTRL_DATA_COUNT));
+	reg &= (~(CTRL_PHASE_START | CTRL_PHASE_ADDR | CTRL_PHASE_STOP | CTRL_DIR |
+		  CTRL_DATA_COUNT));
 	reg |= (CTRL_PHASE_START | CTRL_PHASE_ADDR | CTRL_DIR);
 
 	if (flags & I2C_MSG_STOP) {
@@ -405,8 +394,7 @@ static int i2c_atciic100_controller_receive(const struct device *dev,
 }
 
 #if defined(CONFIG_I2C_TARGET)
-static void i2c_atciic100_target_send(const struct device *dev,
-	const uint8_t *data)
+static void i2c_atciic100_target_send(const struct device *dev, const uint8_t *data)
 {
 	uint32_t reg = 0;
 
@@ -419,15 +407,13 @@ static void i2c_atciic100_target_send(const struct device *dev,
 	sys_write32(*data, I2C_DATA(dev));
 }
 
-static void i2c_atciic100_target_receive(const struct device *dev,
-	uint8_t *data)
+static void i2c_atciic100_target_receive(const struct device *dev, uint8_t *data)
 {
 	*data = sys_read32(I2C_DATA(dev));
 }
 #endif
 
-static void i2c_controller_fifo_write(const struct device *dev,
-		uint8_t is_init)
+static void i2c_controller_fifo_write(const struct device *dev, uint8_t is_init)
 {
 	struct i2c_atciic100_dev_data_t *dev_data = dev->data;
 	uint32_t i = 0, write_fifo_count = 0, reg = 0;
@@ -446,8 +432,7 @@ static void i2c_controller_fifo_write(const struct device *dev,
 	/* I2C write a patch of data(FIFO_Depth) to FIFO */
 	for (i = 0; i < write_fifo_count; i++) {
 
-		write_data =
-			dev_data->middleware_tx_buf[dev_data->xfered_data_wt_ptr];
+		write_data = dev_data->middleware_tx_buf[dev_data->xfered_data_wt_ptr];
 		sys_write32((write_data & DATA_MSK), I2C_DATA(dev));
 		dev_data->xfered_data_wt_ptr++;
 
@@ -478,8 +463,7 @@ static void i2c_controller_fifo_read(const struct device *dev)
 
 		read_data = sys_read32(I2C_DATA(dev)) & DATA_MSK;
 
-		dev_data->middleware_rx_buf[dev_data->xfered_data_rd_ptr] =
-			read_data;
+		dev_data->middleware_rx_buf[dev_data->xfered_data_rd_ptr] = read_data;
 		dev_data->xfered_data_rd_ptr++;
 
 		/* Disable the FIFO Full Interrupt if no more data to receive */
@@ -524,8 +508,7 @@ static void i2c_cmpl_handler(const struct device *dev, uint32_t reg_stat)
 		sys_write32(reg, I2C_INTE(dev));
 	}
 
-	if (dev_data->driver_state &
-		(I2C_DRV_CONTROLLER_TX | I2C_DRV_CONTROLLER_RX)) {
+	if (dev_data->driver_state & (I2C_DRV_CONTROLLER_TX | I2C_DRV_CONTROLLER_RX)) {
 
 		/* Get the remain number of data */
 		reg_ctrl = sys_read32(I2C_CTRL(dev)) & CTRL_DATA_COUNT;
@@ -586,16 +569,14 @@ static void i2c_cmpl_handler(const struct device *dev, uint32_t reg_stat)
 	dev_data->status.mode = 0;
 	dev_data->status.arbitration_lost = 0;
 #endif
-
 }
 
 #if defined(CONFIG_I2C_TARGET)
-static void andes_i2c_target_event(const struct device *dev,
-		uint32_t reg_stat, uint32_t reg_ctrl)
+static void andes_i2c_target_event(const struct device *dev, uint32_t reg_stat, uint32_t reg_ctrl)
 {
 	struct i2c_atciic100_dev_data_t *dev_data = dev->data;
 	uint32_t reg_set = 0;
-	uint8_t  val;
+	uint8_t val;
 	/*
 	 * Here is the entry for target mode driver to detect
 	 * target RX/TX action depend on controller TX/RX action.
@@ -609,15 +590,13 @@ static void andes_i2c_target_event(const struct device *dev,
 		if (((reg_ctrl & CTRL_DIR) >> 8) == I2C_TARGET_TX) {
 			/* Notify middleware to do target rx action */
 			dev_data->driver_state = I2C_DRV_TARGET_TX;
-			dev_data->target_callbacks->read_requested
-				(dev_data->target_config, &val);
+			dev_data->target_callbacks->read_requested(dev_data->target_config, &val);
 			i2c_atciic100_target_send(dev, &val);
 
 		} else if (((reg_ctrl & CTRL_DIR) >> 8) == I2C_TARGET_RX) {
 			/* Notify middleware to do target tx action */
 			dev_data->driver_state = I2C_DRV_TARGET_RX;
-			dev_data->target_callbacks->write_requested
-				(dev_data->target_config);
+			dev_data->target_callbacks->write_requested(dev_data->target_config);
 		}
 		reg_set |= (CMD_ACK);
 		sys_write32(reg_set, I2C_CMD(dev));
@@ -625,8 +604,7 @@ static void andes_i2c_target_event(const struct device *dev,
 
 	if (reg_stat & STATUS_BYTE_RECV) {
 		i2c_atciic100_target_receive(dev, &val);
-		dev_data->target_callbacks->write_received
-			(dev_data->target_config, val);
+		dev_data->target_callbacks->write_received(dev_data->target_config, val);
 
 		reg_set = 0;
 		if ((reg_stat & STATUS_CMPL) == 0) {
@@ -638,8 +616,7 @@ static void andes_i2c_target_event(const struct device *dev,
 		}
 
 	} else if (reg_stat & STATUS_BYTE_TRANS) {
-		dev_data->target_callbacks->read_processed
-			(dev_data->target_config, &val);
+		dev_data->target_callbacks->read_processed(dev_data->target_config, &val);
 		i2c_atciic100_target_send(dev, &val);
 	}
 
@@ -649,8 +626,7 @@ static void andes_i2c_target_event(const struct device *dev,
 	}
 }
 
-static int i2c_atciic100_target_register(const struct device *dev,
-	struct i2c_target_config *cfg)
+static int i2c_atciic100_target_register(const struct device *dev, struct i2c_target_config *cfg)
 {
 	struct i2c_atciic100_dev_data_t *dev_data = dev->data;
 	uint16_t reg_addr = 0;
@@ -673,8 +649,7 @@ static int i2c_atciic100_target_register(const struct device *dev,
 	return 0;
 }
 
-static int i2c_atciic100_target_unregister(const struct device *dev,
-	struct i2c_target_config *cfg)
+static int i2c_atciic100_target_unregister(const struct device *dev, struct i2c_target_config *cfg)
 {
 	uint32_t reg;
 
@@ -760,40 +735,28 @@ static int i2c_atciic100_init(const struct device *dev)
 #if defined(CONFIG_I2C_TARGET)
 	i2c_atciic100_configure(dev, I2C_SPEED_SET(I2C_SPEED_STANDARD));
 #else
-	i2c_atciic100_configure(dev, I2C_SPEED_SET(I2C_SPEED_STANDARD)
-							| I2C_MODE_CONTROLLER);
+	i2c_atciic100_configure(dev, I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_CONTROLLER);
 #endif
 	irq_enable(dev_cfg->irq_num);
 
 	return 0;
 }
 
-#define I2C_INIT(n)							\
-	static struct i2c_atciic100_dev_data_t				\
-					i2c_atciic100_dev_data_##n;	\
-	static void i2c_dt_init_##n(void);				\
-	static const struct i2c_atciic100_config			\
-		i2c_atciic100_config_##n = {				\
-		.base	= DT_INST_REG_ADDR(n),				\
-		.irq_num	= DT_INST_IRQN(n),			\
-		.dt_init_fn	= i2c_dt_init_##n			\
-	};								\
-	I2C_DEVICE_DT_INST_DEFINE(n,					\
-		i2c_atciic100_init,					\
-		NULL,							\
-		&i2c_atciic100_dev_data_##n,				\
-		&i2c_atciic100_config_##n,				\
-		POST_KERNEL,						\
-		CONFIG_I2C_INIT_PRIORITY,				\
-		&i2c_atciic100_driver);					\
-									\
-	static void i2c_dt_init_##n(void)				\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n),				\
-		DT_INST_IRQ(n, priority),				\
-		i2c_atciic100_irq_handler,				\
-		DEVICE_DT_INST_GET(n),					\
-		0);							\
+#define I2C_INIT(n)                                                                                \
+	static struct i2c_atciic100_dev_data_t i2c_atciic100_dev_data_##n;                         \
+	static void i2c_dt_init_##n(void);                                                         \
+	static const struct i2c_atciic100_config i2c_atciic100_config_##n = {                      \
+		.base = DT_INST_REG_ADDR(n),                                                       \
+		.irq_num = DT_INST_IRQN(n),                                                        \
+		.dt_init_fn = i2c_dt_init_##n};                                                    \
+	I2C_DEVICE_DT_INST_DEFINE(n, i2c_atciic100_init, NULL, &i2c_atciic100_dev_data_##n,        \
+				  &i2c_atciic100_config_##n, POST_KERNEL,                          \
+				  CONFIG_I2C_INIT_PRIORITY, &i2c_atciic100_driver);                \
+                                                                                                   \
+	static void i2c_dt_init_##n(void)                                                          \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), i2c_atciic100_irq_handler,  \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_INIT)

@@ -15,17 +15,14 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(sbs_gauge, CONFIG_SENSOR_LOG_LEVEL);
 
-static int sbs_cmd_reg_read(const struct device *dev,
-			    uint8_t reg_addr,
-			    uint16_t *val)
+static int sbs_cmd_reg_read(const struct device *dev, uint8_t reg_addr, uint16_t *val)
 {
 	const struct sbs_gauge_config *cfg;
 	uint8_t i2c_data[2];
 	int status;
 
 	cfg = dev->config;
-	status = i2c_burst_read_dt(&cfg->i2c, reg_addr, i2c_data,
-				   ARRAY_SIZE(i2c_data));
+	status = i2c_burst_read_dt(&cfg->i2c, reg_addr, i2c_data, ARRAY_SIZE(i2c_data));
 	if (status < 0) {
 		LOG_ERR("Unable to read register");
 		return status;
@@ -41,8 +38,7 @@ static int sbs_cmd_reg_read(const struct device *dev,
  *
  * @return -ENOTSUP for unsupported channels
  */
-static int sbs_gauge_channel_get(const struct device *dev,
-				 enum sensor_channel chan,
+static int sbs_gauge_channel_get(const struct device *dev, enum sensor_channel chan,
 				 struct sensor_value *val)
 {
 	struct sbs_gauge_data *data;
@@ -108,22 +104,19 @@ static int sbs_gauge_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const uint16_t all_channels[] = {
-	SENSOR_CHAN_GAUGE_VOLTAGE,
-	SENSOR_CHAN_GAUGE_AVG_CURRENT,
-	SENSOR_CHAN_GAUGE_TEMP,
-	SENSOR_CHAN_GAUGE_STATE_OF_CHARGE,
-	SENSOR_CHAN_GAUGE_FULL_CHARGE_CAPACITY,
-	SENSOR_CHAN_GAUGE_REMAINING_CHARGE_CAPACITY,
-	SENSOR_CHAN_GAUGE_NOM_AVAIL_CAPACITY,
-	SENSOR_CHAN_GAUGE_FULL_AVAIL_CAPACITY,
-	SENSOR_CHAN_GAUGE_TIME_TO_EMPTY,
-	SENSOR_CHAN_GAUGE_TIME_TO_FULL,
-	SENSOR_CHAN_GAUGE_CYCLE_COUNT
-};
+static const uint16_t all_channels[] = {SENSOR_CHAN_GAUGE_VOLTAGE,
+					SENSOR_CHAN_GAUGE_AVG_CURRENT,
+					SENSOR_CHAN_GAUGE_TEMP,
+					SENSOR_CHAN_GAUGE_STATE_OF_CHARGE,
+					SENSOR_CHAN_GAUGE_FULL_CHARGE_CAPACITY,
+					SENSOR_CHAN_GAUGE_REMAINING_CHARGE_CAPACITY,
+					SENSOR_CHAN_GAUGE_NOM_AVAIL_CAPACITY,
+					SENSOR_CHAN_GAUGE_FULL_AVAIL_CAPACITY,
+					SENSOR_CHAN_GAUGE_TIME_TO_EMPTY,
+					SENSOR_CHAN_GAUGE_TIME_TO_FULL,
+					SENSOR_CHAN_GAUGE_CYCLE_COUNT};
 
-static int sbs_gauge_sample_fetch(const struct device *dev,
-			    enum sensor_channel chan)
+static int sbs_gauge_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct sbs_gauge_data *data;
 	int status = 0;
@@ -132,44 +125,35 @@ static int sbs_gauge_sample_fetch(const struct device *dev,
 
 	switch (chan) {
 	case SENSOR_CHAN_GAUGE_VOLTAGE:
-		status = sbs_cmd_reg_read(dev,
-					  SBS_GAUGE_CMD_VOLTAGE,
-					  &data->voltage);
+		status = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_VOLTAGE, &data->voltage);
 		if (status < 0) {
 			LOG_ERR("Failed to read voltage");
 		}
 		break;
 
 	case SENSOR_CHAN_GAUGE_AVG_CURRENT:
-		status = sbs_cmd_reg_read(dev,
-					  SBS_GAUGE_CMD_AVG_CURRENT,
-					  &data->avg_current);
+		status = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_AVG_CURRENT, &data->avg_current);
 		if (status < 0) {
 			LOG_ERR("Failed to read average current ");
 		}
 		break;
 
 	case SENSOR_CHAN_GAUGE_TEMP:
-		status = sbs_cmd_reg_read(dev,
-					  SBS_GAUGE_CMD_TEMP,
-					  &data->internal_temperature);
+		status = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_TEMP, &data->internal_temperature);
 		if (status < 0) {
 			LOG_ERR("Failed to read internal temperature");
 		}
 		break;
 
 	case SENSOR_CHAN_GAUGE_STATE_OF_CHARGE:
-		status = sbs_cmd_reg_read(dev,
-					  SBS_GAUGE_CMD_ASOC,
-					  &data->state_of_charge);
+		status = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_ASOC, &data->state_of_charge);
 		if (status < 0) {
 			LOG_ERR("Failed to read state of charge");
 		}
 		break;
 
 	case SENSOR_CHAN_GAUGE_FULL_CHARGE_CAPACITY:
-		status = sbs_cmd_reg_read(dev,
-					  SBS_GAUGE_CMD_FULL_CAPACITY,
+		status = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_FULL_CAPACITY,
 					  &data->full_charge_capacity);
 		if (status < 0) {
 			LOG_ERR("Failed to read full charge capacity");
@@ -177,8 +161,7 @@ static int sbs_gauge_sample_fetch(const struct device *dev,
 		break;
 
 	case SENSOR_CHAN_GAUGE_REMAINING_CHARGE_CAPACITY:
-		status = sbs_cmd_reg_read(dev,
-					  SBS_GAUGE_CMD_REM_CAPACITY,
+		status = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_REM_CAPACITY,
 					  &data->remaining_charge_capacity);
 		if (status < 0) {
 			LOG_ERR("Failed to read remaining charge capacity");
@@ -186,8 +169,7 @@ static int sbs_gauge_sample_fetch(const struct device *dev,
 		break;
 
 	case SENSOR_CHAN_GAUGE_NOM_AVAIL_CAPACITY:
-		status = sbs_cmd_reg_read(dev,
-					  SBS_GAUGE_CMD_NOM_CAPACITY,
+		status = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_NOM_CAPACITY,
 					  &data->nom_avail_capacity);
 		if (status < 0) {
 			LOG_ERR("Failed to read nominal available capacity");
@@ -195,8 +177,7 @@ static int sbs_gauge_sample_fetch(const struct device *dev,
 		break;
 
 	case SENSOR_CHAN_GAUGE_FULL_AVAIL_CAPACITY:
-		status = sbs_cmd_reg_read(dev,
-					  SBS_GAUGE_CMD_FULL_CAPACITY,
+		status = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_FULL_CAPACITY,
 					  &data->full_avail_capacity);
 		if (status < 0) {
 			LOG_ERR("Failed to read full available capacity");
@@ -204,9 +185,7 @@ static int sbs_gauge_sample_fetch(const struct device *dev,
 		break;
 
 	case SENSOR_CHAN_GAUGE_TIME_TO_EMPTY:
-		status = sbs_cmd_reg_read(dev,
-					  SBS_GAUGE_CMD_AVG_TIME2EMPTY,
-					  &data->time_to_empty);
+		status = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_AVG_TIME2EMPTY, &data->time_to_empty);
 		data->time_to_empty = (data->time_to_empty) & 0x00FF;
 
 		if (status < 0) {
@@ -215,9 +194,7 @@ static int sbs_gauge_sample_fetch(const struct device *dev,
 		break;
 
 	case SENSOR_CHAN_GAUGE_TIME_TO_FULL:
-		status = sbs_cmd_reg_read(dev,
-					  SBS_GAUGE_CMD_AVG_TIME2FULL,
-					  &data->time_to_full);
+		status = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_AVG_TIME2FULL, &data->time_to_full);
 		data->time_to_full = (data->time_to_full) & 0x00FF;
 
 		if (status < 0) {
@@ -226,9 +203,7 @@ static int sbs_gauge_sample_fetch(const struct device *dev,
 		break;
 
 	case SENSOR_CHAN_GAUGE_CYCLE_COUNT:
-		status = sbs_cmd_reg_read(dev,
-					  SBS_GAUGE_CMD_CYCLE_COUNT,
-					  &data->cycle_count);
+		status = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_CYCLE_COUNT, &data->cycle_count);
 		data->cycle_count = (data->cycle_count) & 0x00FF;
 
 		if (status < 0) {
@@ -277,19 +252,15 @@ static const struct sensor_driver_api sbs_gauge_driver_api = {
 	.channel_get = sbs_gauge_channel_get,
 };
 
-#define SBS_GAUGE_INIT(index) \
-	static struct sbs_gauge_data sbs_gauge_driver_##index; \
-\
-	static const struct sbs_gauge_config sbs_gauge_config_##index = { \
-		.i2c = I2C_DT_SPEC_INST_GET(index), \
-	}; \
-\
-	SENSOR_DEVICE_DT_INST_DEFINE(index, \
-			    &sbs_gauge_init, \
-			    NULL, \
-			    &sbs_gauge_driver_##index, \
-			    &sbs_gauge_config_##index, POST_KERNEL, \
-			    CONFIG_SENSOR_INIT_PRIORITY, \
-			    &sbs_gauge_driver_api);
+#define SBS_GAUGE_INIT(index)                                                                      \
+	static struct sbs_gauge_data sbs_gauge_driver_##index;                                     \
+                                                                                                   \
+	static const struct sbs_gauge_config sbs_gauge_config_##index = {                          \
+		.i2c = I2C_DT_SPEC_INST_GET(index),                                                \
+	};                                                                                         \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(index, &sbs_gauge_init, NULL, &sbs_gauge_driver_##index,      \
+				     &sbs_gauge_config_##index, POST_KERNEL,                       \
+				     CONFIG_SENSOR_INIT_PRIORITY, &sbs_gauge_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SBS_GAUGE_INIT)

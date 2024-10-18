@@ -26,85 +26,84 @@ struct hx8394_config {
 };
 
 /* MIPI DCS commands specific to this display driver */
-#define HX8394_SETMIPI 0xBA
-#define HX8394_MIPI_LPTX_BTA_READ BIT(6)
-#define HX8394_MIPI_LP_CD_DIS BIT(5)
-#define HX8394_MIPI_TA_6TL 0x3
-#define HX8394_MIPI_DPHYCMD_LPRX_8NS 0x40
-#define HX8394_MIPI_DPHYCMD_LPRX_66mV 0x20
-#define HX8394_MIPI_DPHYCMD_LPTX_SRLIM 0x8
-#define HX8394_MIPI_DPHYCMD_LDO_1_55V 0x60
-#define HX8394_MIPI_DPHYCMD_HSRX_7X 0x8
+#define HX8394_SETMIPI                  0xBA
+#define HX8394_MIPI_LPTX_BTA_READ       BIT(6)
+#define HX8394_MIPI_LP_CD_DIS           BIT(5)
+#define HX8394_MIPI_TA_6TL              0x3
+#define HX8394_MIPI_DPHYCMD_LPRX_8NS    0x40
+#define HX8394_MIPI_DPHYCMD_LPRX_66mV   0x20
+#define HX8394_MIPI_DPHYCMD_LPTX_SRLIM  0x8
+#define HX8394_MIPI_DPHYCMD_LDO_1_55V   0x60
+#define HX8394_MIPI_DPHYCMD_HSRX_7X     0x8
 #define HX8394_MIPI_DPHYCMD_HSRX_100OHM 0x2
-#define HX8394_MIPI_DPHYCMD_LPCD_1X 0x1
+#define HX8394_MIPI_DPHYCMD_LPCD_1X     0x1
 
-#define HX8394_SET_ADDRESS 0x36
+#define HX8394_SET_ADDRESS     0x36
 #define HX8394_FLIP_HORIZONTAL BIT(1)
-#define HX8394_FLIP_VERTICAL BIT(0)
+#define HX8394_FLIP_VERTICAL   BIT(0)
 
-#define HX8394_SETPOWER 0xB1
-#define HX8394_POWER_AP_1_0UA 0x8
-#define HX8394_POWER_HX5186 0x40
-#define HX8394_POWER_VRHP_4_8V 0x12
-#define HX8394_POWER_VRHN_4_8V 0x12
-#define HX8394_POWER_VPPS_8_25V 0x60
-#define HX8394_POWER_XDK_X2 0x1
-#define HX8394_POWER_VSP_FBOFF 0x8
-#define HX8394_POWER_FS0_DIV_8 0x2
+#define HX8394_SETPOWER                    0xB1
+#define HX8394_POWER_AP_1_0UA              0x8
+#define HX8394_POWER_HX5186                0x40
+#define HX8394_POWER_VRHP_4_8V             0x12
+#define HX8394_POWER_VRHN_4_8V             0x12
+#define HX8394_POWER_VPPS_8_25V            0x60
+#define HX8394_POWER_XDK_X2                0x1
+#define HX8394_POWER_VSP_FBOFF             0x8
+#define HX8394_POWER_FS0_DIV_8             0x2
 #define HX8394_POWER_CLK_OPT_VGH_HSYNC_RST 0x10
 #define HX8394_POWER_CLK_OPT_VGL_HSYNC_RST 0x20
-#define HX8394_POWER_FS2_DIV_192 0x4
-#define HX8394_POWER_FS1_DIV_224 0x50
-#define HX8394_POWER_BTP_5_55V 0x11
-#define HX8394_POWER_VGH_RATIO_2VSPVSN 0x60
-#define HX8394_POWER_BTN_5_55V 0x11
-#define HX8394_POWER_VGL_RATIO_2VSPVSN 0x60
-#define HX8394_POWER_VGHS_16V 0x57
-#define HX8394_POWER_VGLS_12_4V 0x47
+#define HX8394_POWER_FS2_DIV_192           0x4
+#define HX8394_POWER_FS1_DIV_224           0x50
+#define HX8394_POWER_BTP_5_55V             0x11
+#define HX8394_POWER_VGH_RATIO_2VSPVSN     0x60
+#define HX8394_POWER_BTN_5_55V             0x11
+#define HX8394_POWER_VGL_RATIO_2VSPVSN     0x60
+#define HX8394_POWER_VGHS_16V              0x57
+#define HX8394_POWER_VGLS_12_4V            0x47
 
-#define HX8394_SETDISP 0xB2
-#define HX8394_DISP_COL_INV 0x0
+#define HX8394_SETDISP        0xB2
+#define HX8394_DISP_COL_INV   0x0
 #define HX8394_DISP_MESSI_ENB 0x80
-#define HX8394_DISP_NL_1280 0x64
-#define HX8394_DISP_BP_14 0xC
-#define HX8394_DISP_FP_15 0xD
-#define HX8394_DISP_RTN_144 0x2F
+#define HX8394_DISP_NL_1280   0x64
+#define HX8394_DISP_BP_14     0xC
+#define HX8394_DISP_FP_15     0xD
+#define HX8394_DISP_RTN_144   0x2F
 
 #define HX8394_SETCYC 0xB4
 
-#define HX8394_SETGIP0 0xD3
-#define HX8394_GIP0_EQ_OPT_BOTH 0x0
+#define HX8394_SETGIP0              0xD3
+#define HX8394_GIP0_EQ_OPT_BOTH     0x0
 #define HX8394_GIP0_EQ_HSYNC_NORMAL 0x0
-#define HX8394_GIP0_EQ_VSEL_VSSA 0x0
-#define HX8394_SHP_START_4 0x40
-#define HX8394_SCP_WIDTH_7X_HSYNC 0x7
-#define HX8394_CHR0_12X_HSYNC 0xA
-#define HX8394_CHR1_18X_HSYNC 0x10
+#define HX8394_GIP0_EQ_VSEL_VSSA    0x0
+#define HX8394_SHP_START_4          0x40
+#define HX8394_SCP_WIDTH_7X_HSYNC   0x7
+#define HX8394_CHR0_12X_HSYNC       0xA
+#define HX8394_CHR1_18X_HSYNC       0x10
 
 #define HX8394_SETGIP1 0xD5
 
 #define HX8394_SETGIP2 0xD6
 
-#define HX8394_SETVCOM 0xB6
+#define HX8394_SETVCOM      0xB6
 #define HX8394_VCMC_F_1_76V 0x92
 #define HX8394_VCMC_B_1_76V 0x92
 
 #define HX8394_SETGAMMA 0xE0
 
-#define HX8394_SETPANEL 0xCC
+#define HX8394_SETPANEL  0xCC
 #define HX8394_COLOR_BGR BIT(0)
 #define HX8394_REV_PANEL BIT(1)
 
 #define HX8394_SETBANK 0xBD
 
-#define HX8394_SET_TEAR 0x35
+#define HX8394_SET_TEAR    0x35
 #define HX8394_TEAR_VBLANK 0x0
 
-#define HX8394_SETEXTC 0xB9
+#define HX8394_SETEXTC     0xB9
 #define HX8394_EXTC1_MAGIC 0xFF
 #define HX8394_EXTC2_MAGIC 0x83
 #define HX8394_EXTC3_MAGIC 0x94
-
 
 const uint8_t enable_extension[] = {
 	HX8394_SETEXTC,
@@ -113,102 +112,81 @@ const uint8_t enable_extension[] = {
 	HX8394_EXTC3_MAGIC,
 };
 
-const uint8_t address_config[] = {
-	HX8394_SET_ADDRESS,
-	HX8394_FLIP_HORIZONTAL
-};
+const uint8_t address_config[] = {HX8394_SET_ADDRESS, HX8394_FLIP_HORIZONTAL};
 
-const uint8_t power_config[] = {
-	HX8394_SETPOWER,
-	(HX8394_POWER_HX5186 | HX8394_POWER_AP_1_0UA),
-	HX8394_POWER_VRHP_4_8V,
-	(HX8394_POWER_VPPS_8_25V | HX8394_POWER_VRHN_4_8V),
-	(HX8394_POWER_VSP_FBOFF | HX8394_POWER_XDK_X2),
-	(HX8394_POWER_CLK_OPT_VGL_HSYNC_RST |
-		    HX8394_POWER_CLK_OPT_VGH_HSYNC_RST |
-		    HX8394_POWER_FS0_DIV_8),
-	(HX8394_POWER_FS1_DIV_224 | HX8394_POWER_FS2_DIV_192),
-	(HX8394_POWER_VGH_RATIO_2VSPVSN | HX8394_POWER_BTP_5_55V),
-	(HX8394_POWER_VGL_RATIO_2VSPVSN | HX8394_POWER_BTN_5_55V),
-	HX8394_POWER_VGHS_16V,
-	HX8394_POWER_VGLS_12_4V
-};
+const uint8_t power_config[] = {HX8394_SETPOWER,
+				(HX8394_POWER_HX5186 | HX8394_POWER_AP_1_0UA),
+				HX8394_POWER_VRHP_4_8V,
+				(HX8394_POWER_VPPS_8_25V | HX8394_POWER_VRHN_4_8V),
+				(HX8394_POWER_VSP_FBOFF | HX8394_POWER_XDK_X2),
+				(HX8394_POWER_CLK_OPT_VGL_HSYNC_RST |
+				 HX8394_POWER_CLK_OPT_VGH_HSYNC_RST | HX8394_POWER_FS0_DIV_8),
+				(HX8394_POWER_FS1_DIV_224 | HX8394_POWER_FS2_DIV_192),
+				(HX8394_POWER_VGH_RATIO_2VSPVSN | HX8394_POWER_BTP_5_55V),
+				(HX8394_POWER_VGL_RATIO_2VSPVSN | HX8394_POWER_BTN_5_55V),
+				HX8394_POWER_VGHS_16V,
+				HX8394_POWER_VGLS_12_4V};
 
-const uint8_t line_config[] = {
-	HX8394_SETDISP,
-	HX8394_DISP_COL_INV,
-	HX8394_DISP_MESSI_ENB,
-	HX8394_DISP_NL_1280,
-	HX8394_DISP_BP_14,
-	HX8394_DISP_FP_15,
-	HX8394_DISP_RTN_144
-};
+const uint8_t line_config[] = {HX8394_SETDISP,      HX8394_DISP_COL_INV, HX8394_DISP_MESSI_ENB,
+			       HX8394_DISP_NL_1280, HX8394_DISP_BP_14,   HX8394_DISP_FP_15,
+			       HX8394_DISP_RTN_144};
 
 const uint8_t cycle_config[] = {
-	HX8394_SETCYC,
-	0x73, /* SPON delay */
-	0x74, /* SPOFF delay */
-	0x73, /* CON delay */
-	0x74, /* COFF delay */
-	0x73, /* CON1 delay */
-	0x74, /* COFF1 delay */
-	0x1, /* EQON time */
-	0xC, /* SON time */
-	0x86, /* SOFF time */
-	0x75, /* SAP1_P, SAP2 (1st and second stage op amp bias) */
-	0x00, /* DX2 off, EQ off, EQ_MI off */
-	0x3F, /* DX2 off period setting */
-	0x73, /* SPON_MPU delay */
-	0x74, /* SPOFF_MPU delay */
-	0x73, /* CON_MPU delay */
-	0x74, /* COFF_MPU delay */
-	0x73, /* CON1_MPU delay */
-	0x74, /* COFF1_MPU delay */
-	0x1, /* EQON_MPU time */
-	0xC, /* SON_MPU time */
-	0x86 /* SOFF_MPU time */
+	HX8394_SETCYC, 0x73, /* SPON delay */
+	0x74,                /* SPOFF delay */
+	0x73,                /* CON delay */
+	0x74,                /* COFF delay */
+	0x73,                /* CON1 delay */
+	0x74,                /* COFF1 delay */
+	0x1,                 /* EQON time */
+	0xC,                 /* SON time */
+	0x86,                /* SOFF time */
+	0x75,                /* SAP1_P, SAP2 (1st and second stage op amp bias) */
+	0x00,                /* DX2 off, EQ off, EQ_MI off */
+	0x3F,                /* DX2 off period setting */
+	0x73,                /* SPON_MPU delay */
+	0x74,                /* SPOFF_MPU delay */
+	0x73,                /* CON_MPU delay */
+	0x74,                /* COFF_MPU delay */
+	0x73,                /* CON1_MPU delay */
+	0x74,                /* COFF1_MPU delay */
+	0x1,                 /* EQON_MPU time */
+	0xC,                 /* SON_MPU time */
+	0x86                 /* SOFF_MPU time */
 };
 
 const uint8_t gip0_config[] = {
-	HX8394_SETGIP0,
-	(HX8394_GIP0_EQ_OPT_BOTH | HX8394_GIP0_EQ_HSYNC_NORMAL),
-	HX8394_GIP0_EQ_VSEL_VSSA,
-	0x7, /* EQ_DELAY_ON1 (in cycles of TCON CLK */
-	0x7, /* EQ_DELAY_OFF1 (in cycles of TCON CLK */
-	0x40, /* GPWR signal frequency (64x per frame) */
-	0x7, /* GPWR signal non overlap timing (in cycles of TCON */
-	0xC, /* GIP dummy clock for first CKV */
-	0x00, /* GIP dummy clock for second CKV */
+	HX8394_SETGIP0, (HX8394_GIP0_EQ_OPT_BOTH | HX8394_GIP0_EQ_HSYNC_NORMAL),
+	HX8394_GIP0_EQ_VSEL_VSSA, 0x7, /* EQ_DELAY_ON1 (in cycles of TCON CLK */
+	0x7,                           /* EQ_DELAY_OFF1 (in cycles of TCON CLK */
+	0x40,                          /* GPWR signal frequency (64x per frame) */
+	0x7,                           /* GPWR signal non overlap timing (in cycles of TCON */
+	0xC,                           /* GIP dummy clock for first CKV */
+	0x00,                          /* GIP dummy clock for second CKV */
 	/* Group delays. Sets start/end signal delay from VYSNC
 	 * falling edge in multiples of HSYNC
 	 */
-	0x8, /* SHR0_2 = 8, SHR0_3 = 0 */
+	0x8,  /* SHR0_2 = 8, SHR0_3 = 0 */
 	0x10, /* SHR0_1 = 1, SHR0[11:8] = 0x0 */
-	0x8, /* SHR0 = 0x8 */
-	0x0, /* SHR0_GS[11:8]. Unset. */
-	0x8, /* SHR0_GS = 0x8 */
+	0x8,  /* SHR0 = 0x8 */
+	0x0,  /* SHR0_GS[11:8]. Unset. */
+	0x8,  /* SHR0_GS = 0x8 */
 	0x54, /* SHR1_3 = 0x5, SHR1_2 = 0x4 */
 	0x15, /* SHR1_1 = 0x1, SHR1[11:8] = 0x5 */
-	0xA, /* SHR1[7:0] = 0xA (SHR1 = 0x50A) */
-	0x5, /* SHR1_GS[11:8] = 0x5 */
-	0xA, /* SHR1_GS[7:0] = 0xA (SHR1_GS = 0x50A) */
-	0x2, /* SHR2_3 = 0x0, SHR2_2 = 0x2 */
+	0xA,  /* SHR1[7:0] = 0xA (SHR1 = 0x50A) */
+	0x5,  /* SHR1_GS[11:8] = 0x5 */
+	0xA,  /* SHR1_GS[7:0] = 0xA (SHR1_GS = 0x50A) */
+	0x2,  /* SHR2_3 = 0x0, SHR2_2 = 0x2 */
 	0x15, /* SHR2_1 = 0x1, SHR2[11:8] = 0x5 */
-	0x6, /* SHR2[7:0] = 0x6 (SHR2 = 0x506) */
-	0x5, /* SHR2_GS[11:8] = 0x5 */
-	0x6, /* SHR2_GS[7:0 = 0x6 (SHR2_GS = 0x506) */
-	(HX8394_SHP_START_4 | HX8394_SCP_WIDTH_7X_HSYNC),
-	0x44, /* SHP2 = 0x4, SHP1 = 0x4 */
-	HX8394_CHR0_12X_HSYNC,
-	HX8394_CHR0_12X_HSYNC,
-	0x4B, /* CHP0 = 4x hsync, CCP0 = 0xB */
-	HX8394_CHR1_18X_HSYNC,
-	0x7, /* CHR1_GS = 9x hsync */
-	0x7, /* CHP1 = 1x hsync, CCP1 = 0x7 */
+	0x6,  /* SHR2[7:0] = 0x6 (SHR2 = 0x506) */
+	0x5,  /* SHR2_GS[11:8] = 0x5 */
+	0x6,  /* SHR2_GS[7:0 = 0x6 (SHR2_GS = 0x506) */
+	(HX8394_SHP_START_4 | HX8394_SCP_WIDTH_7X_HSYNC), 0x44, /* SHP2 = 0x4, SHP1 = 0x4 */
+	HX8394_CHR0_12X_HSYNC, HX8394_CHR0_12X_HSYNC, 0x4B,     /* CHP0 = 4x hsync, CCP0 = 0xB */
+	HX8394_CHR1_18X_HSYNC, 0x7,                             /* CHR1_GS = 9x hsync */
+	0x7,                                                    /* CHP1 = 1x hsync, CCP1 = 0x7 */
 	/* These parameters are not documented in datasheet */
-	0xC,
-	0x40
-};
+	0xC, 0x40};
 
 const uint8_t gip1_config[] = {
 	HX8394_SETGIP1,
@@ -258,7 +236,7 @@ const uint8_t gip1_config[] = {
 	0x18, /* COS21_L */
 	0x18, /* COS21_R */
 	0x18, /* COS22_L */
-	0x18 /* COS22_R */
+	0x18  /* COS22_R */
 };
 
 const uint8_t gip2_config[] = {
@@ -312,11 +290,7 @@ const uint8_t gip2_config[] = {
 	0x18  /* COS22_R_GS */
 };
 
-const uint8_t vcom_config[] = {
-	HX8394_SETVCOM,
-	HX8394_VCMC_F_1_76V,
-	HX8394_VCMC_B_1_76V
-};
+const uint8_t vcom_config[] = {HX8394_SETVCOM, HX8394_VCMC_F_1_76V, HX8394_VCMC_B_1_76V};
 
 const uint8_t gamma_config[] = {
 	HX8394_SETGAMMA,
@@ -382,32 +356,23 @@ const uint8_t gamma_config[] = {
 
 const uint8_t hx8394_cmd1[] = {0xC0U, 0x1FU, 0x31U};
 
-const uint8_t panel_config[] = {
-	HX8394_SETPANEL,
-	(HX8394_COLOR_BGR | HX8394_REV_PANEL)
-};
+const uint8_t panel_config[] = {HX8394_SETPANEL, (HX8394_COLOR_BGR | HX8394_REV_PANEL)};
 
 const uint8_t hx8394_cmd2[] = {0xD4, 0x2};
 
-const uint8_t hx8394_bank2[] = {
-	0xD8U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU,
-	0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU,
-	0xFFU
-};
+const uint8_t hx8394_bank2[] = {0xD8U, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU,
+				0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU};
 
 const uint8_t hx8394_bank1[] = {0xB1U, 0x00U};
 
-const uint8_t hx8394_bank0[] = {
-	0xBFU, 0x40U, 0x81U, 0x50U,
-	0x00U, 0x1AU, 0xFCU, 0x01
-};
+const uint8_t hx8394_bank0[] = {0xBFU, 0x40U, 0x81U, 0x50U, 0x00U, 0x1AU, 0xFCU, 0x01};
 
 const uint8_t hx8394_cmd3[] = {0xC6U, 0xEDU};
 
 const uint8_t tear_config[] = {HX8394_SET_TEAR, HX8394_TEAR_VBLANK};
 
-static ssize_t hx8394_mipi_tx(const struct device *mipi_dev, uint8_t channel,
-			      const void *buf, size_t len)
+static ssize_t hx8394_mipi_tx(const struct device *mipi_dev, uint8_t channel, const void *buf,
+			      size_t len)
 {
 	/* Send MIPI transfers using low power mode */
 	struct mipi_dsi_msg msg = {
@@ -437,10 +402,8 @@ static ssize_t hx8394_mipi_tx(const struct device *mipi_dev, uint8_t channel,
 	return mipi_dsi_transfer(mipi_dev, channel, &msg);
 }
 
-static int hx8394_write(const struct device *dev, const uint16_t x,
-			 const uint16_t y,
-			 const struct display_buffer_descriptor *desc,
-			 const void *buf)
+static int hx8394_write(const struct device *dev, const uint16_t x, const uint16_t y,
+			const struct display_buffer_descriptor *desc, const void *buf)
 {
 	LOG_WRN("Write not supported, use LCD controller display driver");
 	return 0;
@@ -469,7 +432,7 @@ static int hx8394_blanking_on(const struct device *dev)
 }
 
 static int hx8394_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format pixel_format)
+				   const enum display_pixel_format pixel_format)
 {
 	const struct hx8394_config *config = dev->config;
 
@@ -481,7 +444,7 @@ static int hx8394_set_pixel_format(const struct device *dev,
 }
 
 static int hx8394_set_orientation(const struct device *dev,
-				   const enum display_orientation orientation)
+				  const enum display_orientation orientation)
 {
 	const struct hx8394_config *config = dev->config;
 	uint8_t param[2] = {0};
@@ -512,7 +475,7 @@ static int hx8394_set_orientation(const struct device *dev,
 }
 
 static void hx8394_get_capabilities(const struct device *dev,
-				     struct display_capabilities *capabilities)
+				    struct display_capabilities *capabilities)
 {
 	const struct hx8394_config *config = dev->config;
 
@@ -539,19 +502,14 @@ static int hx8394_init(const struct device *dev)
 	int ret;
 	struct mipi_dsi_device mdev;
 	uint8_t param[2];
-	uint8_t setmipi[7] = {
-		HX8394_SETMIPI,
-		(HX8394_MIPI_LPTX_BTA_READ | HX8394_MIPI_LP_CD_DIS),
-		HX8394_MIPI_TA_6TL,
-		(HX8394_MIPI_DPHYCMD_LPRX_8NS |
-		 HX8394_MIPI_DPHYCMD_LPRX_66mV |
-		 HX8394_MIPI_DPHYCMD_LPTX_SRLIM),
-		(HX8394_MIPI_DPHYCMD_LDO_1_55V |
-		HX8394_MIPI_DPHYCMD_HSRX_7X |
-		HX8394_MIPI_DPHYCMD_HSRX_100OHM |
-		HX8394_MIPI_DPHYCMD_LPCD_1X),
-		/* The remaining parameters here are not documented */
-		0xB2U, 0xC0U};
+	uint8_t setmipi[7] = {HX8394_SETMIPI, (HX8394_MIPI_LPTX_BTA_READ | HX8394_MIPI_LP_CD_DIS),
+			      HX8394_MIPI_TA_6TL,
+			      (HX8394_MIPI_DPHYCMD_LPRX_8NS | HX8394_MIPI_DPHYCMD_LPRX_66mV |
+			       HX8394_MIPI_DPHYCMD_LPTX_SRLIM),
+			      (HX8394_MIPI_DPHYCMD_LDO_1_55V | HX8394_MIPI_DPHYCMD_HSRX_7X |
+			       HX8394_MIPI_DPHYCMD_HSRX_100OHM | HX8394_MIPI_DPHYCMD_LPCD_1X),
+			      /* The remaining parameters here are not documented */
+			      0xB2U, 0xC0U};
 
 	mdev.data_lanes = config->num_of_lanes;
 	mdev.pixfmt = config->pixel_format;
@@ -588,66 +546,58 @@ static int hx8394_init(const struct device *dev)
 		k_sleep(K_MSEC(50));
 	}
 	/* Enable extended commands */
-	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
-			     enable_extension, sizeof(enable_extension));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel, enable_extension,
+			     sizeof(enable_extension));
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Set the number of lanes to DSISETUP0 parameter */
 	setmipi[1] |= (config->num_of_lanes - 1);
-	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
-			     setmipi, sizeof(setmipi));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel, setmipi, sizeof(setmipi));
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Set scan direction */
-	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
-			     address_config, sizeof(address_config));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel, address_config,
+			     sizeof(address_config));
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Set voltage and current targets */
-	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
-			     power_config, sizeof(power_config));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel, power_config, sizeof(power_config));
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Setup display line count and front/back porch size */
-	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
-			     line_config, sizeof(line_config));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel, line_config, sizeof(line_config));
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Setup display cycle counts (in counts of TCON CLK) */
-	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
-			     cycle_config, sizeof(cycle_config));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel, cycle_config, sizeof(cycle_config));
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Set group delay values */
-	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
-			     gip0_config, sizeof(gip0_config));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel, gip0_config, sizeof(gip0_config));
 	if (ret < 0) {
 		return ret;
 	}
 
-
 	/* Set group clock selections */
-	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
-			     gip1_config, sizeof(gip1_config));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel, gip1_config, sizeof(gip1_config));
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Set group clock selections for GS mode */
-	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
-			     gip2_config, sizeof(gip2_config));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel, gip2_config, sizeof(gip2_config));
 	if (ret < 0) {
 		return ret;
 	}
@@ -658,15 +608,13 @@ static int hx8394_init(const struct device *dev)
 	 */
 	k_msleep(1);
 	/* Set VCOM voltage config */
-	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
-			     vcom_config, sizeof(vcom_config));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel, vcom_config, sizeof(vcom_config));
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Set manufacturer supplied gamma values */
-	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
-			     gamma_config, sizeof(gamma_config));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel, gamma_config, sizeof(gamma_config));
 	if (ret < 0) {
 		return ret;
 	}
@@ -674,15 +622,13 @@ static int hx8394_init(const struct device *dev)
 	/* This command is not documented in datasheet, but is included
 	 * in the display initialization done by MCUXpresso SDK
 	 */
-	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
-			     hx8394_cmd1, sizeof(hx8394_cmd1));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel, hx8394_cmd1, sizeof(hx8394_cmd1));
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Set panel to BGR mode, and reverse colors */
-	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
-			     panel_config, sizeof(panel_config));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel, panel_config, sizeof(panel_config));
 	if (ret < 0) {
 		return ret;
 	}
@@ -690,8 +636,7 @@ static int hx8394_init(const struct device *dev)
 	/* This command is not documented in datasheet, but is included
 	 * in the display initialization done by MCUXpresso SDK
 	 */
-	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
-			     hx8394_cmd2, sizeof(hx8394_cmd2));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel, hx8394_cmd2, sizeof(hx8394_cmd2));
 	if (ret < 0) {
 		return ret;
 	}
@@ -699,43 +644,36 @@ static int hx8394_init(const struct device *dev)
 	/* Write values to manufacturer register banks */
 	param[0] = HX8394_SETBANK;
 	param[1] = 0x2;
-	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
-			     param, 2);
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel, param, 2);
 	if (ret < 0) {
 		return ret;
 	}
-	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
-			     hx8394_bank2, sizeof(hx8394_bank2));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel, hx8394_bank2, sizeof(hx8394_bank2));
 	if (ret < 0) {
 		return ret;
 	}
 	param[1] = 0x0;
-	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
-			     param, 2);
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel, param, 2);
 	if (ret < 0) {
 		return ret;
 	}
 	/* Select bank 1 */
 	param[1] = 0x1;
-	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
-			     param, 2);
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel, param, 2);
 	if (ret < 0) {
 		return ret;
 	}
-	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
-			     hx8394_bank1, sizeof(hx8394_bank1));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel, hx8394_bank1, sizeof(hx8394_bank1));
 	if (ret < 0) {
 		return ret;
 	}
 	/* Select bank 0 */
 	param[1] = 0x0;
-	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
-			     param, 2);
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel, param, 2);
 	if (ret < 0) {
 		return ret;
 	}
-	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
-			     hx8394_bank0, sizeof(hx8394_bank0));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel, hx8394_bank0, sizeof(hx8394_bank0));
 	if (ret < 0) {
 		return ret;
 	}
@@ -743,22 +681,19 @@ static int hx8394_init(const struct device *dev)
 	/* This command is not documented in datasheet, but is included
 	 * in the display initialization done by MCUXpresso SDK
 	 */
-	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
-			     hx8394_cmd3, sizeof(hx8394_cmd3));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel, hx8394_cmd3, sizeof(hx8394_cmd3));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
-			     tear_config, sizeof(tear_config));
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel, tear_config, sizeof(tear_config));
 	if (ret < 0) {
 		return ret;
 	}
 
 	param[0] = MIPI_DCS_EXIT_SLEEP_MODE;
 
-	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
-			     param, 1);
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel, param, 1);
 	if (ret < 0) {
 		return ret;
 	}
@@ -766,8 +701,7 @@ static int hx8394_init(const struct device *dev)
 	k_sleep(K_MSEC(120));
 
 	param[0] = MIPI_DCS_SET_DISPLAY_ON;
-	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel,
-			     param, 1);
+	ret = hx8394_mipi_tx(config->mipi_dsi, config->channel, param, 1);
 
 	if (config->bl_gpio.port != NULL) {
 		ret = gpio_pin_configure_dt(&config->bl_gpio, GPIO_OUTPUT_ACTIVE);
@@ -780,24 +714,18 @@ static int hx8394_init(const struct device *dev)
 	return ret;
 }
 
-#define HX8394_PANEL(id)							\
-	static const struct hx8394_config hx8394_config_##id = {		\
-		.mipi_dsi = DEVICE_DT_GET(DT_INST_BUS(id)),			\
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(id, reset_gpios, {0}),	\
-		.bl_gpio = GPIO_DT_SPEC_INST_GET_OR(id, bl_gpios, {0}),		\
-		.num_of_lanes = DT_INST_PROP_BY_IDX(id, data_lanes, 0),		\
-		.pixel_format = DT_INST_PROP(id, pixel_format),			\
-		.panel_width = DT_INST_PROP(id, width),				\
-		.panel_height = DT_INST_PROP(id, height),			\
-		.channel = DT_INST_REG_ADDR(id),				\
-	};									\
-	DEVICE_DT_INST_DEFINE(id,						\
-			    &hx8394_init,					\
-			    NULL,						\
-			    NULL,						\
-			    &hx8394_config_##id,				\
-			    POST_KERNEL,					\
-			    CONFIG_APPLICATION_INIT_PRIORITY,			\
-			    &hx8394_api);
+#define HX8394_PANEL(id)                                                                           \
+	static const struct hx8394_config hx8394_config_##id = {                                   \
+		.mipi_dsi = DEVICE_DT_GET(DT_INST_BUS(id)),                                        \
+		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(id, reset_gpios, {0}),                      \
+		.bl_gpio = GPIO_DT_SPEC_INST_GET_OR(id, bl_gpios, {0}),                            \
+		.num_of_lanes = DT_INST_PROP_BY_IDX(id, data_lanes, 0),                            \
+		.pixel_format = DT_INST_PROP(id, pixel_format),                                    \
+		.panel_width = DT_INST_PROP(id, width),                                            \
+		.panel_height = DT_INST_PROP(id, height),                                          \
+		.channel = DT_INST_REG_ADDR(id),                                                   \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(id, &hx8394_init, NULL, NULL, &hx8394_config_##id, POST_KERNEL,      \
+			      CONFIG_APPLICATION_INIT_PRIORITY, &hx8394_api);
 
 DT_INST_FOREACH_STATUS_OKAY(HX8394_PANEL)

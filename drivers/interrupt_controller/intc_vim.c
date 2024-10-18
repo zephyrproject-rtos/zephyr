@@ -67,8 +67,8 @@ void z_vim_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 
 	if (irq > CONFIG_NUM_IRQS || prio > VIM_PRI_INT_MAX ||
 	    (flags != IRQ_TYPE_EDGE && flags != IRQ_TYPE_LEVEL)) {
-		LOG_ERR("%s: Invalid argument irq = %u prio = %u flags = %u\n",
-			__func__, irq, prio, flags);
+		LOG_ERR("%s: Invalid argument irq = %u prio = %u flags = %u\n", __func__, irq, prio,
+			flags);
 		return;
 	}
 

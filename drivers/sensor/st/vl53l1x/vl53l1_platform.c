@@ -20,8 +20,7 @@
 
 LOG_MODULE_DECLARE(VL53L1X, CONFIG_SENSOR_LOG_LEVEL);
 
-VL53L1_Error VL53L1_WriteMulti(VL53L1_Dev_t *pdev, uint16_t reg,
-		uint8_t *pdata, uint32_t count)
+VL53L1_Error VL53L1_WriteMulti(VL53L1_Dev_t *pdev, uint16_t reg, uint8_t *pdata, uint32_t count)
 {
 	VL53L1_Error status = VL53L1_ERROR_NONE;
 	int32_t status_int = 0;
@@ -43,8 +42,7 @@ VL53L1_Error VL53L1_WriteMulti(VL53L1_Dev_t *pdev, uint16_t reg,
 	return status;
 }
 
-VL53L1_Error VL53L1_ReadMulti(VL53L1_Dev_t *pdev, uint16_t reg,
-		uint8_t *pdata, uint32_t count)
+VL53L1_Error VL53L1_ReadMulti(VL53L1_Dev_t *pdev, uint16_t reg, uint8_t *pdata, uint32_t count)
 {
 	VL53L1_Error status = VL53L1_ERROR_NONE;
 	int32_t status_int = 0;
@@ -140,7 +138,7 @@ VL53L1_Error VL53L1_GetTickCount(uint32_t *ptick_count_ms)
 }
 
 VL53L1_Error VL53L1_WaitValueMaskEx(VL53L1_Dev_t *dev, uint32_t timeout, uint16_t i, uint8_t val,
-	uint8_t mask, uint32_t delay)
+				    uint8_t mask, uint32_t delay)
 {
 	VL53L1_Error status = VL53L1_ERROR_NONE;
 	uint32_t start_time_ms = 0;
@@ -153,8 +151,7 @@ VL53L1_Error VL53L1_WaitValueMaskEx(VL53L1_Dev_t *dev, uint32_t timeout, uint16_
 	dev->new_data_ready_poll_duration_ms = 0;
 
 	/* wait until val is found, timeout reached on error occurred */
-	while ((status == VL53L1_ERROR_NONE) &&
-	       (dev->new_data_ready_poll_duration_ms < timeout) &&
+	while ((status == VL53L1_ERROR_NONE) && (dev->new_data_ready_poll_duration_ms < timeout) &&
 	       (found == 0)) {
 		status = VL53L1_RdByte(dev, i, &byte_val);
 

@@ -22,35 +22,33 @@
 
 LOG_MODULE_DECLARE(IIS2ICLX, CONFIG_SENSOR_LOG_LEVEL);
 
-#define IIS2ICLX_SHUB_DATA_OUT				0x02
+#define IIS2ICLX_SHUB_DATA_OUT 0x02
 
-#define IIS2ICLX_SHUB_SLV0_ADDR				0x15
-#define IIS2ICLX_SHUB_SLV0_SUBADDR			0x16
-#define IIS2ICLX_SHUB_SLV0_CONFIG			0x17
-#define IIS2ICLX_SHUB_SLV1_ADDR				0x18
-#define IIS2ICLX_SHUB_SLV1_SUBADDR			0x19
-#define IIS2ICLX_SHUB_SLV1_CONFIG			0x1A
-#define IIS2ICLX_SHUB_SLV2_ADDR				0x1B
-#define IIS2ICLX_SHUB_SLV2_SUBADDR			0x1C
-#define IIS2ICLX_SHUB_SLV2_CONFIG			0x1D
-#define IIS2ICLX_SHUB_SLV3_ADDR				0x1E
-#define IIS2ICLX_SHUB_SLV3_SUBADDR			0x1F
-#define IIS2ICLX_SHUB_SLV3_CONFIG			0x20
-#define IIS2ICLX_SHUB_SLV0_DATAWRITE			0x21
+#define IIS2ICLX_SHUB_SLV0_ADDR      0x15
+#define IIS2ICLX_SHUB_SLV0_SUBADDR   0x16
+#define IIS2ICLX_SHUB_SLV0_CONFIG    0x17
+#define IIS2ICLX_SHUB_SLV1_ADDR      0x18
+#define IIS2ICLX_SHUB_SLV1_SUBADDR   0x19
+#define IIS2ICLX_SHUB_SLV1_CONFIG    0x1A
+#define IIS2ICLX_SHUB_SLV2_ADDR      0x1B
+#define IIS2ICLX_SHUB_SLV2_SUBADDR   0x1C
+#define IIS2ICLX_SHUB_SLV2_CONFIG    0x1D
+#define IIS2ICLX_SHUB_SLV3_ADDR      0x1E
+#define IIS2ICLX_SHUB_SLV3_SUBADDR   0x1F
+#define IIS2ICLX_SHUB_SLV3_CONFIG    0x20
+#define IIS2ICLX_SHUB_SLV0_DATAWRITE 0x21
 
-#define IIS2ICLX_SHUB_STATUS_MASTER			0x22
-#define IIS2ICLX_SHUB_STATUS_SLV0_NACK			BIT(3)
-#define IIS2ICLX_SHUB_STATUS_ENDOP			BIT(0)
+#define IIS2ICLX_SHUB_STATUS_MASTER    0x22
+#define IIS2ICLX_SHUB_STATUS_SLV0_NACK BIT(3)
+#define IIS2ICLX_SHUB_STATUS_ENDOP     BIT(0)
 
-#define IIS2ICLX_SHUB_SLVX_WRITE				0x0
-#define IIS2ICLX_SHUB_SLVX_READ				0x1
+#define IIS2ICLX_SHUB_SLVX_WRITE 0x0
+#define IIS2ICLX_SHUB_SLVX_READ  0x1
 
-static int iis2iclx_shub_write_slave_reg(const struct device *dev,
-					uint8_t slv_addr, uint8_t slv_reg,
+static int iis2iclx_shub_write_slave_reg(const struct device *dev, uint8_t slv_addr,
+					 uint8_t slv_reg, uint8_t *value, uint16_t len);
+static int iis2iclx_shub_read_slave_reg(const struct device *dev, uint8_t slv_addr, uint8_t slv_reg,
 					uint8_t *value, uint16_t len);
-static int iis2iclx_shub_read_slave_reg(const struct device *dev,
-				       uint8_t slv_addr, uint8_t slv_reg,
-				       uint8_t *value, uint16_t len);
 static void iis2iclx_shub_enable(const struct device *dev, uint8_t enable);
 
 /*
@@ -58,16 +56,16 @@ static void iis2iclx_shub_enable(const struct device *dev, uint8_t enable);
  */
 #if defined(CONFIG_IIS2ICLX_EXT_LIS2MDL) || defined(CONFIG_IIS2ICLX_EXT_IIS2MDC)
 
-#define LIS2MDL_CFG_REG_A		0x60
-#define LIS2MDL_CFG_REG_B		0x61
-#define LIS2MDL_CFG_REG_C		0x62
-#define LIS2MDL_STATUS_REG		0x67
+#define LIS2MDL_CFG_REG_A  0x60
+#define LIS2MDL_CFG_REG_B  0x61
+#define LIS2MDL_CFG_REG_C  0x62
+#define LIS2MDL_STATUS_REG 0x67
 
-#define LIS2MDL_SW_RESET		0x20
-#define LIS2MDL_ODR_10HZ		0x00
-#define LIS2MDL_ODR_100HZ		0x0C
-#define LIS2MDL_OFF_CANC		0x02
-#define LIS2MDL_SENSITIVITY		1500
+#define LIS2MDL_SW_RESET    0x20
+#define LIS2MDL_ODR_10HZ    0x00
+#define LIS2MDL_ODR_100HZ   0x0C
+#define LIS2MDL_OFF_CANC    0x02
+#define LIS2MDL_SENSITIVITY 1500
 
 static int iis2iclx_lis2mdl_init(const struct device *dev, uint8_t i2c_addr)
 {
@@ -78,24 +76,21 @@ static int iis2iclx_lis2mdl_init(const struct device *dev, uint8_t i2c_addr)
 
 	/* sw reset device */
 	mag_cfg[0] = LIS2MDL_SW_RESET;
-	iis2iclx_shub_write_slave_reg(dev, i2c_addr,
-				     LIS2MDL_CFG_REG_A, mag_cfg, 1);
+	iis2iclx_shub_write_slave_reg(dev, i2c_addr, LIS2MDL_CFG_REG_A, mag_cfg, 1);
 
 	k_sleep(K_MSEC(10)); /* turn-on time in ms */
 
 	/* configure mag */
 	mag_cfg[0] = LIS2MDL_ODR_10HZ;
 	mag_cfg[1] = LIS2MDL_OFF_CANC;
-	iis2iclx_shub_write_slave_reg(dev, i2c_addr,
-				     LIS2MDL_CFG_REG_A, mag_cfg, 2);
+	iis2iclx_shub_write_slave_reg(dev, i2c_addr, LIS2MDL_CFG_REG_A, mag_cfg, 2);
 
 	return 0;
 }
 
 static const uint16_t lis2mdl_map[] = {10, 20, 50, 100};
 
-static int iis2iclx_lis2mdl_odr_set(const struct device *dev,
-				   uint8_t i2c_addr, uint16_t freq)
+static int iis2iclx_lis2mdl_odr_set(const struct device *dev, uint8_t i2c_addr, uint16_t freq)
 {
 	uint8_t odr, cfg;
 
@@ -111,17 +106,15 @@ static int iis2iclx_lis2mdl_odr_set(const struct device *dev,
 	}
 
 	cfg = (odr << 2);
-	iis2iclx_shub_write_slave_reg(dev, i2c_addr,
-				     LIS2MDL_CFG_REG_A, &cfg, 1);
+	iis2iclx_shub_write_slave_reg(dev, i2c_addr, LIS2MDL_CFG_REG_A, &cfg, 1);
 
 	iis2iclx_shub_enable(dev, 1);
 	return 0;
 }
 
 static int iis2iclx_lis2mdl_conf(const struct device *dev, uint8_t i2c_addr,
-				enum sensor_channel chan,
-				enum sensor_attribute attr,
-				const struct sensor_value *val)
+				 enum sensor_channel chan, enum sensor_attribute attr,
+				 const struct sensor_value *val)
 {
 	switch (attr) {
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
@@ -140,17 +133,16 @@ static int iis2iclx_lis2mdl_conf(const struct device *dev, uint8_t i2c_addr,
  */
 #ifdef CONFIG_IIS2ICLX_EXT_HTS221
 
-#define HTS221_AUTOINCREMENT		BIT(7)
+#define HTS221_AUTOINCREMENT BIT(7)
 
-#define HTS221_REG_CTRL1		0x20
-#define HTS221_ODR_1HZ			0x01
-#define HTS221_BDU			0x04
-#define HTS221_PD			0x80
+#define HTS221_REG_CTRL1 0x20
+#define HTS221_ODR_1HZ   0x01
+#define HTS221_BDU       0x04
+#define HTS221_PD        0x80
 
-#define HTS221_REG_CONV_START		0x30
+#define HTS221_REG_CONV_START 0x30
 
-static int hts221_read_conv_data(const struct device *dev,
-					uint8_t i2c_addr)
+static int hts221_read_conv_data(const struct device *dev, uint8_t i2c_addr)
 {
 	struct iis2iclx_data *data = dev->data;
 	uint8_t buf[16], i;
@@ -160,9 +152,8 @@ static int hts221_read_conv_data(const struct device *dev,
 		unsigned char len = MIN(7, sizeof(buf) - i);
 
 		if (iis2iclx_shub_read_slave_reg(dev, i2c_addr,
-						(HTS221_REG_CONV_START + i) |
-						HTS221_AUTOINCREMENT,
-						&buf[i], len) < 0) {
+						 (HTS221_REG_CONV_START + i) | HTS221_AUTOINCREMENT,
+						 &buf[i], len) < 0) {
 			LOG_ERR("shub: failed to read hts221 conv data");
 			return -EIO;
 		}
@@ -182,16 +173,14 @@ static int iis2iclx_hts221_init(const struct device *dev, uint8_t i2c_addr)
 
 	/* configure ODR and BDU */
 	hum_cfg = HTS221_ODR_1HZ | HTS221_BDU | HTS221_PD;
-	iis2iclx_shub_write_slave_reg(dev, i2c_addr,
-				     HTS221_REG_CTRL1, &hum_cfg, 1);
+	iis2iclx_shub_write_slave_reg(dev, i2c_addr, HTS221_REG_CTRL1, &hum_cfg, 1);
 
 	return hts221_read_conv_data(dev, i2c_addr);
 }
 
 static const uint16_t hts221_map[] = {0, 1, 7, 12};
 
-static int iis2iclx_hts221_odr_set(const struct device *dev,
-				   uint8_t i2c_addr, uint16_t freq)
+static int iis2iclx_hts221_odr_set(const struct device *dev, uint8_t i2c_addr, uint16_t freq)
 {
 	uint8_t odr, cfg;
 
@@ -207,16 +196,14 @@ static int iis2iclx_hts221_odr_set(const struct device *dev,
 	}
 
 	cfg = odr | HTS221_BDU | HTS221_PD;
-	iis2iclx_shub_write_slave_reg(dev, i2c_addr,
-				     HTS221_REG_CTRL1, &cfg, 1);
+	iis2iclx_shub_write_slave_reg(dev, i2c_addr, HTS221_REG_CTRL1, &cfg, 1);
 
 	iis2iclx_shub_enable(dev, 1);
 	return 0;
 }
 
 static int iis2iclx_hts221_conf(const struct device *dev, uint8_t i2c_addr,
-				enum sensor_channel chan,
-				enum sensor_attribute attr,
+				enum sensor_channel chan, enum sensor_attribute attr,
 				const struct sensor_value *val)
 {
 	switch (attr) {
@@ -236,13 +223,13 @@ static int iis2iclx_hts221_conf(const struct device *dev, uint8_t i2c_addr,
  */
 #ifdef CONFIG_IIS2ICLX_EXT_LPS22HB
 
-#define LPS22HB_CTRL_REG1		0x10
-#define LPS22HB_CTRL_REG2		0x11
+#define LPS22HB_CTRL_REG1 0x10
+#define LPS22HB_CTRL_REG2 0x11
 
-#define LPS22HB_SW_RESET		0x04
-#define LPS22HB_ODR_10HZ		0x20
-#define LPS22HB_LPF_EN			0x08
-#define LPS22HB_BDU_EN			0x02
+#define LPS22HB_SW_RESET 0x04
+#define LPS22HB_ODR_10HZ 0x20
+#define LPS22HB_LPF_EN   0x08
+#define LPS22HB_BDU_EN   0x02
 
 static int iis2iclx_lps22hb_init(const struct device *dev, uint8_t i2c_addr)
 {
@@ -250,15 +237,13 @@ static int iis2iclx_lps22hb_init(const struct device *dev, uint8_t i2c_addr)
 
 	/* sw reset device */
 	baro_cfg[0] = LPS22HB_SW_RESET;
-	iis2iclx_shub_write_slave_reg(dev, i2c_addr,
-				     LPS22HB_CTRL_REG2, baro_cfg, 1);
+	iis2iclx_shub_write_slave_reg(dev, i2c_addr, LPS22HB_CTRL_REG2, baro_cfg, 1);
 
 	k_sleep(K_MSEC(1)); /* turn-on time in ms */
 
 	/* configure device */
 	baro_cfg[0] = LPS22HB_ODR_10HZ | LPS22HB_LPF_EN | LPS22HB_BDU_EN;
-	iis2iclx_shub_write_slave_reg(dev, i2c_addr,
-				     LPS22HB_CTRL_REG1, baro_cfg, 1);
+	iis2iclx_shub_write_slave_reg(dev, i2c_addr, LPS22HB_CTRL_REG1, baro_cfg, 1);
 
 	return 0;
 }
@@ -269,14 +254,14 @@ static int iis2iclx_lps22hb_init(const struct device *dev, uint8_t i2c_addr)
  */
 #ifdef CONFIG_IIS2ICLX_EXT_LPS22HH
 
-#define LPS22HH_CTRL_REG1		0x10
-#define LPS22HH_CTRL_REG2		0x11
+#define LPS22HH_CTRL_REG1 0x10
+#define LPS22HH_CTRL_REG2 0x11
 
-#define LPS22HH_SW_RESET		0x04
-#define LPS22HH_IF_ADD_INC		0x10
-#define LPS22HH_ODR_10HZ		0x20
-#define LPS22HH_LPF_EN			0x08
-#define LPS22HH_BDU_EN			0x02
+#define LPS22HH_SW_RESET   0x04
+#define LPS22HH_IF_ADD_INC 0x10
+#define LPS22HH_ODR_10HZ   0x20
+#define LPS22HH_LPF_EN     0x08
+#define LPS22HH_BDU_EN     0x02
 
 static int iis2iclx_lps22hh_init(const struct device *dev, uint8_t i2c_addr)
 {
@@ -284,27 +269,23 @@ static int iis2iclx_lps22hh_init(const struct device *dev, uint8_t i2c_addr)
 
 	/* sw reset device */
 	baro_cfg[0] = LPS22HH_SW_RESET;
-	iis2iclx_shub_write_slave_reg(dev, i2c_addr,
-				     LPS22HH_CTRL_REG2, baro_cfg, 1);
+	iis2iclx_shub_write_slave_reg(dev, i2c_addr, LPS22HH_CTRL_REG2, baro_cfg, 1);
 
 	k_sleep(K_MSEC(100)); /* turn-on time in ms */
 
 	/* configure device */
 	baro_cfg[0] = LPS22HH_IF_ADD_INC;
-	iis2iclx_shub_write_slave_reg(dev, i2c_addr,
-				     LPS22HH_CTRL_REG2, baro_cfg, 1);
+	iis2iclx_shub_write_slave_reg(dev, i2c_addr, LPS22HH_CTRL_REG2, baro_cfg, 1);
 
 	baro_cfg[0] = LPS22HH_ODR_10HZ | LPS22HH_LPF_EN | LPS22HH_BDU_EN;
-	iis2iclx_shub_write_slave_reg(dev, i2c_addr,
-				     LPS22HH_CTRL_REG1, baro_cfg, 1);
+	iis2iclx_shub_write_slave_reg(dev, i2c_addr, LPS22HH_CTRL_REG1, baro_cfg, 1);
 
 	return 0;
 }
 
 static const uint16_t lps22hh_map[] = {0, 1, 10, 25, 50, 75, 100, 200};
 
-static int iis2iclx_lps22hh_odr_set(const struct device *dev,
-				   uint8_t i2c_addr, uint16_t freq)
+static int iis2iclx_lps22hh_odr_set(const struct device *dev, uint8_t i2c_addr, uint16_t freq)
 {
 	uint8_t odr, cfg;
 
@@ -320,17 +301,15 @@ static int iis2iclx_lps22hh_odr_set(const struct device *dev,
 	}
 
 	cfg = (odr << 4) | LPS22HH_LPF_EN | LPS22HH_BDU_EN;
-	iis2iclx_shub_write_slave_reg(dev, i2c_addr,
-				     LPS22HH_CTRL_REG1, &cfg, 1);
+	iis2iclx_shub_write_slave_reg(dev, i2c_addr, LPS22HH_CTRL_REG1, &cfg, 1);
 
 	iis2iclx_shub_enable(dev, 1);
 	return 0;
 }
 
 static int iis2iclx_lps22hh_conf(const struct device *dev, uint8_t i2c_addr,
-				enum sensor_channel chan,
-				enum sensor_attribute attr,
-				const struct sensor_value *val)
+				 enum sensor_channel chan, enum sensor_attribute attr,
+				 const struct sensor_value *val)
 {
 	switch (attr) {
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
@@ -355,62 +334,61 @@ static struct iis2iclx_shub_slist {
 	uint8_t out_data_len;
 	uint8_t sh_out_reg;
 	int (*dev_init)(const struct device *dev, uint8_t i2c_addr);
-	int (*dev_conf)(const struct device *dev, uint8_t i2c_addr,
-			enum sensor_channel chan, enum sensor_attribute attr,
-			const struct sensor_value *val);
+	int (*dev_conf)(const struct device *dev, uint8_t i2c_addr, enum sensor_channel chan,
+			enum sensor_attribute attr, const struct sensor_value *val);
 } iis2iclx_shub_slist[] = {
 #if defined(CONFIG_IIS2ICLX_EXT_LIS2MDL) || defined(CONFIG_IIS2ICLX_EXT_IIS2MDC)
 	{
 		/* LIS2MDL */
-		.type		= SENSOR_CHAN_MAGN_XYZ,
-		.i2c_addr       = { 0x1E },
-		.wai_addr       = 0x4F,
-		.wai_val        = 0x40,
-		.out_data_addr  = 0x68,
-		.out_data_len   = 0x06,
-		.dev_init       = (iis2iclx_lis2mdl_init),
-		.dev_conf       = (iis2iclx_lis2mdl_conf),
+		.type = SENSOR_CHAN_MAGN_XYZ,
+		.i2c_addr = {0x1E},
+		.wai_addr = 0x4F,
+		.wai_val = 0x40,
+		.out_data_addr = 0x68,
+		.out_data_len = 0x06,
+		.dev_init = (iis2iclx_lis2mdl_init),
+		.dev_conf = (iis2iclx_lis2mdl_conf),
 	},
 #endif /* CONFIG_IIS2ICLX_EXT_LIS2MDL || CONFIG_IIS2ICLX_EXT_IIS2MDC */
 
 #ifdef CONFIG_IIS2ICLX_EXT_HTS221
 	{
 		/* HTS221 */
-		.type		= SENSOR_CHAN_HUMIDITY,
-		.i2c_addr       = { 0x5F },
-		.wai_addr       = 0x0F,
-		.wai_val        = 0xBC,
-		.out_data_addr  = 0x28 | HTS221_AUTOINCREMENT,
-		.out_data_len   = 0x02,
-		.dev_init       = (iis2iclx_hts221_init),
-		.dev_conf       = (iis2iclx_hts221_conf),
+		.type = SENSOR_CHAN_HUMIDITY,
+		.i2c_addr = {0x5F},
+		.wai_addr = 0x0F,
+		.wai_val = 0xBC,
+		.out_data_addr = 0x28 | HTS221_AUTOINCREMENT,
+		.out_data_len = 0x02,
+		.dev_init = (iis2iclx_hts221_init),
+		.dev_conf = (iis2iclx_hts221_conf),
 	},
 #endif /* CONFIG_IIS2ICLX_EXT_HTS221 */
 
 #ifdef CONFIG_IIS2ICLX_EXT_LPS22HB
 	{
 		/* LPS22HB */
-		.type		= SENSOR_CHAN_PRESS,
-		.i2c_addr       = { 0x5C, 0x5D },
-		.wai_addr       = 0x0F,
-		.wai_val        = 0xB1,
-		.out_data_addr  = 0x28,
-		.out_data_len   = 0x05,
-		.dev_init       = (iis2iclx_lps22hb_init),
+		.type = SENSOR_CHAN_PRESS,
+		.i2c_addr = {0x5C, 0x5D},
+		.wai_addr = 0x0F,
+		.wai_val = 0xB1,
+		.out_data_addr = 0x28,
+		.out_data_len = 0x05,
+		.dev_init = (iis2iclx_lps22hb_init),
 	},
 #endif /* CONFIG_IIS2ICLX_EXT_LPS22HB */
 
 #ifdef CONFIG_IIS2ICLX_EXT_LPS22HH
 	{
 		/* LPS22HH */
-		.type		= SENSOR_CHAN_PRESS,
-		.i2c_addr       = { 0x5C, 0x5D },
-		.wai_addr       = 0x0F,
-		.wai_val        = 0xB3,
-		.out_data_addr  = 0x28,
-		.out_data_len   = 0x05,
-		.dev_init       = (iis2iclx_lps22hh_init),
-		.dev_conf       = (iis2iclx_lps22hh_conf),
+		.type = SENSOR_CHAN_PRESS,
+		.i2c_addr = {0x5C, 0x5D},
+		.wai_addr = 0x0F,
+		.wai_val = 0xB3,
+		.out_data_addr = 0x28,
+		.out_data_len = 0x05,
+		.dev_init = (iis2iclx_lps22hh_init),
+		.dev_conf = (iis2iclx_lps22hh_conf),
 	},
 #endif /* CONFIG_IIS2ICLX_EXT_LPS22HH */
 };
@@ -425,23 +403,19 @@ static inline void iis2iclx_shub_wait_completed(const struct iis2iclx_config *cf
 	} while (status.sens_hub_endop == 0);
 }
 
-static inline void iis2iclx_shub_embedded_en(const struct iis2iclx_config *cfg,
-					     bool on)
+static inline void iis2iclx_shub_embedded_en(const struct iis2iclx_config *cfg, bool on)
 {
 	if (on) {
-		(void) iis2iclx_mem_bank_set((stmdev_ctx_t *)&cfg->ctx,
-					     IIS2ICLX_SENSOR_HUB_BANK);
+		(void)iis2iclx_mem_bank_set((stmdev_ctx_t *)&cfg->ctx, IIS2ICLX_SENSOR_HUB_BANK);
 	} else {
-		(void) iis2iclx_mem_bank_set((stmdev_ctx_t *)&cfg->ctx,
-					     IIS2ICLX_USER_BANK);
+		(void)iis2iclx_mem_bank_set((stmdev_ctx_t *)&cfg->ctx, IIS2ICLX_USER_BANK);
 	}
 
 	k_busy_wait(150);
 }
 
-static int iis2iclx_shub_read_embedded_regs(const struct iis2iclx_config *cfg,
-					      uint8_t reg_addr,
-					      uint8_t *value, int len)
+static int iis2iclx_shub_read_embedded_regs(const struct iis2iclx_config *cfg, uint8_t reg_addr,
+					    uint8_t *value, int len)
 {
 	iis2iclx_shub_embedded_en(cfg, true);
 
@@ -456,9 +430,8 @@ static int iis2iclx_shub_read_embedded_regs(const struct iis2iclx_config *cfg,
 	return 0;
 }
 
-static int iis2iclx_shub_write_embedded_regs(const struct iis2iclx_config *cfg,
-					       uint8_t reg_addr,
-					       uint8_t *value, uint8_t len)
+static int iis2iclx_shub_write_embedded_regs(const struct iis2iclx_config *cfg, uint8_t reg_addr,
+					     uint8_t *value, uint8_t len)
 {
 	iis2iclx_shub_embedded_en(cfg, true);
 
@@ -504,8 +477,7 @@ static int iis2iclx_shub_check_slv0_nack(const struct iis2iclx_config *cfg)
 {
 	uint8_t status;
 
-	if (iis2iclx_shub_read_embedded_regs(cfg, IIS2ICLX_SHUB_STATUS_MASTER,
-					       &status, 1) < 0) {
+	if (iis2iclx_shub_read_embedded_regs(cfg, IIS2ICLX_SHUB_STATUS_MASTER, &status, 1) < 0) {
 		LOG_ERR("shub: error reading embedded reg");
 		return -EIO;
 	}
@@ -521,9 +493,8 @@ static int iis2iclx_shub_check_slv0_nack(const struct iis2iclx_config *cfg)
 /*
  * use SLV0 for generic read to slave device
  */
-static int iis2iclx_shub_read_slave_reg(const struct device *dev,
-					  uint8_t slv_addr, uint8_t slv_reg,
-					  uint8_t *value, uint16_t len)
+static int iis2iclx_shub_read_slave_reg(const struct device *dev, uint8_t slv_addr, uint8_t slv_reg,
+					uint8_t *value, uint16_t len)
 {
 	const struct iis2iclx_config *cfg = dev->config;
 	uint8_t slave[3];
@@ -532,8 +503,7 @@ static int iis2iclx_shub_read_slave_reg(const struct device *dev,
 	slave[1] = slv_reg;
 	slave[2] = (len & 0x7);
 
-	if (iis2iclx_shub_write_embedded_regs(cfg, IIS2ICLX_SHUB_SLV0_ADDR,
-						slave, 3) < 0) {
+	if (iis2iclx_shub_write_embedded_regs(cfg, IIS2ICLX_SHUB_SLV0_ADDR, slave, 3) < 0) {
 		LOG_ERR("shub: error writing embedded reg");
 		return -EIO;
 	}
@@ -549,8 +519,7 @@ static int iis2iclx_shub_read_slave_reg(const struct device *dev,
 
 	/* read data from external slave */
 	iis2iclx_shub_embedded_en(cfg, true);
-	if (iis2iclx_read_reg((stmdev_ctx_t *)&cfg->ctx, IIS2ICLX_SHUB_DATA_OUT,
-				value, len) < 0) {
+	if (iis2iclx_read_reg((stmdev_ctx_t *)&cfg->ctx, IIS2ICLX_SHUB_DATA_OUT, value, len) < 0) {
 		LOG_ERR("shub: error reading sensor data");
 		iis2iclx_shub_embedded_en(cfg, false);
 		return -EIO;
@@ -564,9 +533,8 @@ static int iis2iclx_shub_read_slave_reg(const struct device *dev,
 /*
  * use SLV0 to configure slave device
  */
-static int iis2iclx_shub_write_slave_reg(const struct device *dev,
-					   uint8_t slv_addr, uint8_t slv_reg,
-					   uint8_t *value, uint16_t len)
+static int iis2iclx_shub_write_slave_reg(const struct device *dev, uint8_t slv_addr,
+					 uint8_t slv_reg, uint8_t *value, uint16_t len)
 {
 	const struct iis2iclx_config *cfg = dev->config;
 	uint8_t slv_cfg[3];
@@ -576,17 +544,15 @@ static int iis2iclx_shub_write_slave_reg(const struct device *dev,
 		slv_cfg[0] = (slv_addr << 1) & ~IIS2ICLX_SHUB_SLVX_READ;
 		slv_cfg[1] = slv_reg + cnt;
 
-		if (iis2iclx_shub_write_embedded_regs(cfg,
-							IIS2ICLX_SHUB_SLV0_ADDR,
-							slv_cfg, 2) < 0) {
+		if (iis2iclx_shub_write_embedded_regs(cfg, IIS2ICLX_SHUB_SLV0_ADDR, slv_cfg, 2) <
+		    0) {
 			LOG_ERR("shub: error writing embedded reg");
 			return -EIO;
 		}
 
 		slv_cfg[0] = value[cnt];
-		if (iis2iclx_shub_write_embedded_regs(cfg,
-					IIS2ICLX_SHUB_SLV0_DATAWRITE,
-					slv_cfg, 1) < 0) {
+		if (iis2iclx_shub_write_embedded_regs(cfg, IIS2ICLX_SHUB_SLV0_DATAWRITE, slv_cfg,
+						      1) < 0) {
 			LOG_ERR("shub: error writing embedded reg");
 			return -EIO;
 		}
@@ -609,8 +575,7 @@ static int iis2iclx_shub_write_slave_reg(const struct device *dev,
 	slv_cfg[0] = 0x7;
 	slv_cfg[1] = 0x0;
 	slv_cfg[2] = 0x0;
-	if (iis2iclx_shub_write_embedded_regs(cfg, IIS2ICLX_SHUB_SLV0_ADDR,
-						slv_cfg, 3) < 0) {
+	if (iis2iclx_shub_write_embedded_regs(cfg, IIS2ICLX_SHUB_SLV0_ADDR, slv_cfg, 3) < 0) {
 		LOG_ERR("shub: error writing embedded reg");
 		return -EIO;
 	}
@@ -643,9 +608,7 @@ static int iis2iclx_shub_set_data_channel(const struct device *dev)
 		slv_cfg[i + 2] = sp->out_data_len;
 	}
 
-	if (iis2iclx_shub_write_embedded_regs(cfg,
-						IIS2ICLX_SHUB_SLV1_ADDR,
-						slv_cfg, n*3) < 0) {
+	if (iis2iclx_shub_write_embedded_regs(cfg, IIS2ICLX_SHUB_SLV1_ADDR, slv_cfg, n * 3) < 0) {
 		LOG_ERR("shub: error writing embedded reg");
 		return -EIO;
 	}
@@ -664,7 +627,6 @@ static int iis2iclx_shub_set_data_channel(const struct device *dev)
 		LOG_ERR("shub: error setting write once");
 		return -EIO;
 	}
-
 
 	/* turn SH on */
 	iis2iclx_shub_enable(dev, 1);
@@ -703,8 +665,8 @@ int iis2iclx_shub_fetch_external_devs(const struct device *dev)
 	for (n = 0; n < data->num_ext_dev; n++) {
 		sp = &iis2iclx_shub_slist[data->shub_ext[n]];
 
-		if (iis2iclx_read_reg((stmdev_ctx_t *)&cfg->ctx, sp->sh_out_reg,
-				     data->ext_data[n], sp->out_data_len) < 0) {
+		if (iis2iclx_read_reg((stmdev_ctx_t *)&cfg->ctx, sp->sh_out_reg, data->ext_data[n],
+				      sp->out_data_len) < 0) {
 			LOG_ERR("shub: failed to read sample");
 			iis2iclx_shub_embedded_en(cfg, false);
 			return -EIO;
@@ -717,8 +679,7 @@ int iis2iclx_shub_fetch_external_devs(const struct device *dev)
 }
 
 int iis2iclx_shub_config(const struct device *dev, enum sensor_channel chan,
-			   enum sensor_attribute attr,
-			   const struct sensor_value *val)
+			 enum sensor_attribute attr, const struct sensor_value *val)
 {
 	struct iis2iclx_data *data = dev->data;
 	struct iis2iclx_shub_slist *sp = NULL;
@@ -767,10 +728,8 @@ int iis2iclx_shub_init(const struct device *dev)
 		 * chip ID.
 		 */
 		for (i = 0U; i < ARRAY_SIZE(sp->i2c_addr); i++) {
-			if (iis2iclx_shub_read_slave_reg(dev,
-							   sp->i2c_addr[i],
-							   sp->wai_addr,
-							   &chip_id, 1) < 0) {
+			if (iis2iclx_shub_read_slave_reg(dev, sp->i2c_addr[i], sp->wai_addr,
+							 &chip_id, 1) < 0) {
 				continue;
 			}
 			if (chip_id == sp->wai_val) {

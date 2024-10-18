@@ -40,9 +40,8 @@ struct rv32m1_tpm_data {
 	tpm_chnl_pwm_signal_param_t channel[MAX_CHANNELS];
 };
 
-static int rv32m1_tpm_set_cycles(const struct device *dev, uint32_t channel,
-				 uint32_t period_cycles, uint32_t pulse_cycles,
-				 pwm_flags_t flags)
+static int rv32m1_tpm_set_cycles(const struct device *dev, uint32_t channel, uint32_t period_cycles,
+				 uint32_t pulse_cycles, pwm_flags_t flags)
 {
 	const struct rv32m1_tpm_config *config = dev->config;
 	struct rv32m1_tpm_data *data = dev->data;
@@ -67,8 +66,8 @@ static int rv32m1_tpm_set_cycles(const struct device *dev, uint32_t channel,
 		data->channel[channel].level = kTPM_LowTrue;
 	}
 
-	LOG_DBG("pulse_cycles=%d, period_cycles=%d, duty_cycle=%d, flags=%d",
-		pulse_cycles, period_cycles, duty_cycle, flags);
+	LOG_DBG("pulse_cycles=%d, period_cycles=%d, duty_cycle=%d, flags=%d", pulse_cycles,
+		period_cycles, duty_cycle, flags);
 
 	if (period_cycles != data->period_cycles) {
 		uint32_t pwm_freq;
@@ -78,17 +77,15 @@ static int rv32m1_tpm_set_cycles(const struct device *dev, uint32_t channel,
 			/* Only warn when not changing from zero */
 			LOG_WRN("Changing period cycles from %d to %d"
 				" affects all %d channels in %s",
-				data->period_cycles, period_cycles,
-				config->channel_count, dev->name);
+				data->period_cycles, period_cycles, config->channel_count,
+				dev->name);
 		}
 
 		data->period_cycles = period_cycles;
 
-		pwm_freq = (data->clock_freq >> config->prescale) /
-			   period_cycles;
+		pwm_freq = (data->clock_freq >> config->prescale) / period_cycles;
 
-		LOG_DBG("pwm_freq=%d, clock_freq=%d", pwm_freq,
-			data->clock_freq);
+		LOG_DBG("pwm_freq=%d, clock_freq=%d", pwm_freq, data->clock_freq);
 
 		if (pwm_freq == 0U) {
 			LOG_ERR("Could not set up pwm_freq=%d", pwm_freq);
@@ -97,9 +94,8 @@ static int rv32m1_tpm_set_cycles(const struct device *dev, uint32_t channel,
 
 		TPM_StopTimer(config->base);
 
-		status = TPM_SetupPwm(config->base, data->channel,
-				      config->channel_count, config->mode,
-				      pwm_freq, data->clock_freq);
+		status = TPM_SetupPwm(config->base, data->channel, config->channel_count,
+				      config->mode, pwm_freq, data->clock_freq);
 
 		if (status != kStatus_Success) {
 			LOG_ERR("Could not set up pwm");
@@ -107,17 +103,15 @@ static int rv32m1_tpm_set_cycles(const struct device *dev, uint32_t channel,
 		}
 		TPM_StartTimer(config->base, config->tpm_clock_source);
 	} else {
-		TPM_UpdateChnlEdgeLevelSelect(config->base, channel,
-					      data->channel[channel].level);
-		TPM_UpdatePwmDutycycle(config->base, channel, config->mode,
-				       duty_cycle);
+		TPM_UpdateChnlEdgeLevelSelect(config->base, channel, data->channel[channel].level);
+		TPM_UpdatePwmDutycycle(config->base, channel, config->mode, duty_cycle);
 	}
 
 	return 0;
 }
 
-static int rv32m1_tpm_get_cycles_per_sec(const struct device *dev,
-					 uint32_t channel, uint64_t *cycles)
+static int rv32m1_tpm_get_cycles_per_sec(const struct device *dev, uint32_t channel,
+					 uint64_t *cycles)
 {
 	const struct rv32m1_tpm_config *config = dev->config;
 	struct rv32m1_tpm_data *data = dev->data;
@@ -151,8 +145,7 @@ static int rv32m1_tpm_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
-				   &data->clock_freq)) {
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &data->clock_freq)) {
 		LOG_ERR("Could not get clock frequency");
 		return -EINVAL;
 	}
@@ -183,26 +176,21 @@ static const struct pwm_driver_api rv32m1_tpm_driver_api = {
 	.get_cycles_per_sec = rv32m1_tpm_get_cycles_per_sec,
 };
 
-#define TPM_DEVICE(n) \
-	PINCTRL_DT_INST_DEFINE(n); \
-	static const struct rv32m1_tpm_config rv32m1_tpm_config_##n = { \
-		.base =	(TPM_Type *) \
-			DT_INST_REG_ADDR(n), \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)), \
-		.clock_subsys = (clock_control_subsys_t) \
-			DT_INST_CLOCKS_CELL(n, name), \
-		.tpm_clock_source = kTPM_SystemClock, \
-		.prescale = kTPM_Prescale_Divide_16, \
-		.channel_count = FSL_FEATURE_TPM_CHANNEL_COUNTn((TPM_Type *) \
-			DT_INST_REG_ADDR(n)), \
-		.mode = kTPM_EdgeAlignedPwm, \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n), \
-	}; \
-	static struct rv32m1_tpm_data rv32m1_tpm_data_##n; \
-	DEVICE_DT_INST_DEFINE(n, &rv32m1_tpm_init, NULL, \
-			    &rv32m1_tpm_data_##n, \
-			    &rv32m1_tpm_config_##n, \
-			    POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, \
-			    &rv32m1_tpm_driver_api);
+#define TPM_DEVICE(n)                                                                              \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	static const struct rv32m1_tpm_config rv32m1_tpm_config_##n = {                            \
+		.base = (TPM_Type *)DT_INST_REG_ADDR(n),                                           \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
+		.tpm_clock_source = kTPM_SystemClock,                                              \
+		.prescale = kTPM_Prescale_Divide_16,                                               \
+		.channel_count = FSL_FEATURE_TPM_CHANNEL_COUNTn((TPM_Type *)DT_INST_REG_ADDR(n)),  \
+		.mode = kTPM_EdgeAlignedPwm,                                                       \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+	};                                                                                         \
+	static struct rv32m1_tpm_data rv32m1_tpm_data_##n;                                         \
+	DEVICE_DT_INST_DEFINE(n, &rv32m1_tpm_init, NULL, &rv32m1_tpm_data_##n,                     \
+			      &rv32m1_tpm_config_##n, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,       \
+			      &rv32m1_tpm_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TPM_DEVICE)

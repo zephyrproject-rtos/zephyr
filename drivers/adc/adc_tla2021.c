@@ -311,7 +311,7 @@ static const struct adc_driver_api tla2021_driver_api = {
 #define TLA2021_INIT(n)                                                                            \
 	static const struct tla2021_config inst_##n##_config;                                      \
 	static struct tla2021_data inst_##n##_data;                                                \
-	IF_ENABLED(CONFIG_ADC_ASYNC, (TLA2021_THREAD_INIT(n)))                                     \
+	IF_ENABLED(CONFIG_ADC_ASYNC, (TLA2021_THREAD_INIT(n)))                                                                                 \
 	static const struct tla2021_config inst_##n##_config = {                                   \
 		.bus = I2C_DT_SPEC_INST_GET(n),                                                    \
 	};                                                                                         \
@@ -322,8 +322,7 @@ static const struct adc_driver_api tla2021_driver_api = {
 		ADC_CONTEXT_INIT_SYNC(inst_##n##_data, ctx),                                       \
 		.reg_config = REG_CONFIG_DEFAULT,                                                  \
 		IF_ENABLED(CONFIG_ADC_ASYNC,                                                       \
-			   (.acq_lock = Z_SEM_INITIALIZER(inst_##n##_data.acq_lock, 0, 1),))       \
-	};                                                                                         \
+			   (.acq_lock = Z_SEM_INITIALIZER(inst_##n##_data.acq_lock, 0, 1),)) };                \
 	DEVICE_DT_INST_DEFINE(n, &tla2021_init, NULL, &inst_##n##_data, &inst_##n##_config,        \
 			      POST_KERNEL, CONFIG_ADC_TLA2021_INIT_PRIORITY, &tla2021_driver_api);
 

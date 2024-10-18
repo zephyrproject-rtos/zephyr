@@ -15,16 +15,14 @@
 
 LOG_MODULE_DECLARE(ICM42605, CONFIG_SENSOR_LOG_LEVEL);
 
-int icm42605_trigger_set(const struct device *dev,
-			 const struct sensor_trigger *trig,
+int icm42605_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			 sensor_trigger_handler_t handler)
 {
 	struct icm42605_data *drv_data = dev->data;
 	const struct icm42605_config *cfg = dev->config;
 
-	if (trig->type != SENSOR_TRIG_DATA_READY
-	    && trig->type != SENSOR_TRIG_TAP
-	    && trig->type != SENSOR_TRIG_DOUBLE_TAP) {
+	if (trig->type != SENSOR_TRIG_DATA_READY && trig->type != SENSOR_TRIG_TAP &&
+	    trig->type != SENSOR_TRIG_DOUBLE_TAP) {
 		return -ENOTSUP;
 	}
 
@@ -57,11 +55,10 @@ int icm42605_trigger_set(const struct device *dev,
 	return 0;
 }
 
-static void icm42605_gpio_callback(const struct device *dev,
-				   struct gpio_callback *cb, uint32_t pins)
+static void icm42605_gpio_callback(const struct device *dev, struct gpio_callback *cb,
+				   uint32_t pins)
 {
-	struct icm42605_data *drv_data =
-		CONTAINER_OF(cb, struct icm42605_data, gpio_cb);
+	struct icm42605_data *drv_data = CONTAINER_OF(cb, struct icm42605_data, gpio_cb);
 	const struct icm42605_config *cfg = drv_data->dev->config;
 
 	ARG_UNUSED(pins);
@@ -77,12 +74,10 @@ static void icm42605_thread_cb(const struct device *dev)
 	const struct icm42605_config *cfg = dev->config;
 
 	if (drv_data->data_ready_handler != NULL) {
-		drv_data->data_ready_handler(dev,
-					     drv_data->data_ready_trigger);
+		drv_data->data_ready_handler(dev, drv_data->data_ready_trigger);
 	}
 
-	if (drv_data->tap_handler != NULL ||
-	    drv_data->double_tap_handler != NULL) {
+	if (drv_data->tap_handler != NULL || drv_data->double_tap_handler != NULL) {
 		icm42605_tap_fetch(dev);
 	}
 

@@ -32,16 +32,14 @@ static int ens160_read_reg_spi(const struct device *dev, uint8_t reg, uint8_t *v
 		.count = 1,
 	};
 
-	struct spi_buf rx_buf[2] = {
-		{
-			.buf = NULL,
-			.len = 1,
-		},
-		{
-			.buf = val,
-			.len = 1,
-		}
-	};
+	struct spi_buf rx_buf[2] = {{
+					    .buf = NULL,
+					    .len = 1,
+				    },
+				    {
+					    .buf = val,
+					    .len = 1,
+				    }};
 
 	const struct spi_buf_set rx = {
 		.buffers = rx_buf,
@@ -67,16 +65,14 @@ static int ens160_read_data_spi(const struct device *dev, uint8_t start, uint8_t
 		.count = 1,
 	};
 
-	struct spi_buf rx_buf[2] = {
-		{
-			.buf = NULL,
-			.len = 1,
-		},
-		{
-			.buf = data,
-			.len = len,
-		}
-	};
+	struct spi_buf rx_buf[2] = {{
+					    .buf = NULL,
+					    .len = 1,
+				    },
+				    {
+					    .buf = data,
+					    .len = len,
+				    }};
 
 	const struct spi_buf_set rx = {
 		.buffers = rx_buf,
@@ -92,16 +88,14 @@ static int ens160_write_reg_spi(const struct device *dev, uint8_t reg, uint8_t v
 
 	uint8_t tx_buffer = reg << 1;
 
-	const struct spi_buf buf[2] = {
-		{
-			.buf = &tx_buffer,
-			.len = 1,
-		},
-		{
-			.buf = &val,
-			.len = 1,
-		}
-	};
+	const struct spi_buf buf[2] = {{
+					       .buf = &tx_buffer,
+					       .len = 1,
+				       },
+				       {
+					       .buf = &val,
+					       .len = 1,
+				       }};
 
 	const struct spi_buf_set tx = {
 		.buffers = buf,
@@ -117,16 +111,14 @@ static int ens160_write_data_spi(const struct device *dev, uint8_t reg, uint8_t 
 
 	uint8_t tx_buffer = reg << 1;
 
-	const struct spi_buf buf[2] = {
-		{
-			.buf = &tx_buffer,
-			.len = 1,
-		},
-		{
-			.buf = &data,
-			.len = len,
-		}
-	};
+	const struct spi_buf buf[2] = {{
+					       .buf = &tx_buffer,
+					       .len = 1,
+				       },
+				       {
+					       .buf = &data,
+					       .len = len,
+				       }};
 
 	const struct spi_buf_set tx = {
 		.buffers = buf,

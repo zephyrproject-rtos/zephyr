@@ -526,7 +526,7 @@ static int tsl2591_pm_action(const struct device *dev, enum pm_device_action act
 	static const struct tsl2591_config tsl2591_config_##n = {                                  \
 		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
 		IF_ENABLED(CONFIG_TSL2591_TRIGGER,                                                 \
-			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(n, int_gpios, {0}),))};           \
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(n, int_gpios, {0}),))};    \
 	PM_DEVICE_DT_INST_DEFINE(n, tsl2591_pm_action);                                            \
 	SENSOR_DEVICE_DT_INST_DEFINE(n, tsl2591_init, PM_DEVICE_DT_INST_GET(n), &tsl2591_data_##n, \
 				     &tsl2591_config_##n, POST_KERNEL,                             \

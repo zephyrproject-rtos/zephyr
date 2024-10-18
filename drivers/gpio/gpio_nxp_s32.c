@@ -30,10 +30,10 @@ LOG_MODULE_REGISTER(nxp_s32_gpio, CONFIG_GPIO_LOG_LEVEL);
 #define SIUL2_PGPDI   0x40
 
 /* Handy accessors */
-#define GPIO_READ(r)      sys_read16(config->gpio_base + (r))
-#define GPIO_WRITE(r, v)  sys_write16((v), config->gpio_base + (r))
-#define PORT_READ(p)      sys_read32(config->port_base + SIUL2_MSCR(p))
-#define PORT_WRITE(p, v)  sys_write32((v), config->port_base + SIUL2_MSCR(p))
+#define GPIO_READ(r)     sys_read16(config->gpio_base + (r))
+#define GPIO_WRITE(r, v) sys_write16((v), config->gpio_base + (r))
+#define PORT_READ(p)     sys_read32(config->port_base + SIUL2_MSCR(p))
+#define PORT_WRITE(p, v) sys_write32((v), config->port_base + SIUL2_MSCR(p))
 
 #if defined(CONFIG_NXP_S32_EIRQ) || defined(CONFIG_NXP_S32_WKPU)
 #define NXP_S32_GPIO_LINE_NOT_FOUND 0xff
@@ -80,8 +80,7 @@ static ALWAYS_INLINE uint16_t reverse_bits_16(uint16_t value)
 	return (uint16_t)(__RBIT((uint32_t)value) >> 16);
 }
 
-static int nxp_s32_gpio_configure(const struct device *dev, gpio_pin_t pin,
-				  gpio_flags_t flags)
+static int nxp_s32_gpio_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_nxp_s32_config *config = dev->config;
 	uint32_t mscr_val;
@@ -139,8 +138,7 @@ static int nxp_s32_gpio_port_get_raw(const struct device *port, uint32_t *value)
 	return 0;
 }
 
-static int nxp_s32_gpio_port_set_masked_raw(const struct device *port,
-					    gpio_port_pins_t mask,
+static int nxp_s32_gpio_port_set_masked_raw(const struct device *port, gpio_port_pins_t mask,
 					    gpio_port_value_t value)
 {
 	const struct gpio_nxp_s32_config *config = port->config;
@@ -153,8 +151,7 @@ static int nxp_s32_gpio_port_set_masked_raw(const struct device *port,
 	return 0;
 }
 
-static int nxp_s32_gpio_port_set_bits_raw(const struct device *port,
-					  gpio_port_pins_t pins)
+static int nxp_s32_gpio_port_set_bits_raw(const struct device *port, gpio_port_pins_t pins)
 {
 	const struct gpio_nxp_s32_config *config = port->config;
 	uint16_t reg_val;
@@ -166,8 +163,7 @@ static int nxp_s32_gpio_port_set_bits_raw(const struct device *port,
 	return 0;
 }
 
-static int nxp_s32_gpio_port_clear_bits_raw(const struct device *port,
-					    gpio_port_pins_t pins)
+static int nxp_s32_gpio_port_clear_bits_raw(const struct device *port, gpio_port_pins_t pins)
 {
 	const struct gpio_nxp_s32_config *config = port->config;
 	uint16_t reg_val;
@@ -179,8 +175,7 @@ static int nxp_s32_gpio_port_clear_bits_raw(const struct device *port,
 	return 0;
 }
 
-static int nxp_s32_gpio_port_toggle_bits(const struct device *port,
-					 gpio_port_pins_t pins)
+static int nxp_s32_gpio_port_toggle_bits(const struct device *port, gpio_port_pins_t pins)
 {
 	const struct gpio_nxp_s32_config *config = port->config;
 	uint16_t reg_val;
@@ -194,8 +189,7 @@ static int nxp_s32_gpio_port_toggle_bits(const struct device *port,
 
 #if defined(CONFIG_NXP_S32_EIRQ) || defined(CONFIG_NXP_S32_WKPU)
 
-static uint8_t nxp_s32_gpio_pin_to_line(const struct gpio_nxp_s32_irq_config *irq_cfg,
-					uint8_t pin)
+static uint8_t nxp_s32_gpio_pin_to_line(const struct gpio_nxp_s32_irq_config *irq_cfg, uint8_t pin)
 {
 	uint8_t i;
 
@@ -237,10 +231,8 @@ static int nxp_s32_gpio_eirq_get_trigger(enum eirq_nxp_s32_trigger *eirq_trigger
 	return 0;
 }
 
-static int nxp_s32_gpio_config_eirq(const struct device *dev,
-				    gpio_pin_t pin,
-				    enum gpio_int_mode mode,
-				    enum gpio_int_trig trig)
+static int nxp_s32_gpio_config_eirq(const struct device *dev, gpio_pin_t pin,
+				    enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	const struct gpio_nxp_s32_config *config = dev->config;
 	const struct gpio_nxp_s32_irq_config *irq_cfg = config->eirq_info;
@@ -272,8 +264,8 @@ static int nxp_s32_gpio_config_eirq(const struct device *dev,
 		if (nxp_s32_gpio_eirq_get_trigger(&eirq_trigger, trig)) {
 			return -ENOTSUP;
 		}
-		if (eirq_nxp_s32_set_callback(irq_cfg->ctrl, irq_line, pin,
-					nxp_s32_gpio_isr, (void *)dev)) {
+		if (eirq_nxp_s32_set_callback(irq_cfg->ctrl, irq_line, pin, nxp_s32_gpio_isr,
+					      (void *)dev)) {
 			LOG_ERR("pin %d is already in use", pin);
 			return -EBUSY;
 		}
@@ -305,10 +297,8 @@ static int nxp_s32_gpio_wkpu_get_trigger(enum wkpu_nxp_s32_trigger *wkpu_trigger
 	return 0;
 }
 
-static int nxp_s32_gpio_config_wkpu(const struct device *dev,
-				    gpio_pin_t pin,
-				    enum gpio_int_mode mode,
-				    enum gpio_int_trig trig)
+static int nxp_s32_gpio_config_wkpu(const struct device *dev, gpio_pin_t pin,
+				    enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	const struct gpio_nxp_s32_config *config = dev->config;
 	const struct gpio_nxp_s32_irq_config *irq_cfg = config->wkpu_info;
@@ -340,8 +330,8 @@ static int nxp_s32_gpio_config_wkpu(const struct device *dev,
 		if (nxp_s32_gpio_wkpu_get_trigger(&wkpu_trigger, trig)) {
 			return -ENOTSUP;
 		}
-		if (wkpu_nxp_s32_set_callback(irq_cfg->ctrl, irq_line, pin,
-					      nxp_s32_gpio_isr, (void *)dev)) {
+		if (wkpu_nxp_s32_set_callback(irq_cfg->ctrl, irq_line, pin, nxp_s32_gpio_isr,
+					      (void *)dev)) {
 			LOG_ERR("pin %d is already in use", pin);
 			return -EBUSY;
 		}
@@ -352,10 +342,8 @@ static int nxp_s32_gpio_config_wkpu(const struct device *dev,
 }
 #endif /* CONFIG_NXP_S32_WKPU */
 
-static int nxp_s32_gpio_pin_interrupt_configure(const struct device *dev,
-						gpio_pin_t pin,
-						enum gpio_int_mode mode,
-						enum gpio_int_trig trig)
+static int nxp_s32_gpio_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
+						enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 #if defined(CONFIG_NXP_S32_WKPU)
 	struct gpio_nxp_s32_data *data = dev->data;
@@ -370,8 +358,8 @@ static int nxp_s32_gpio_pin_interrupt_configure(const struct device *dev,
 #endif
 }
 
-static int nxp_s32_gpio_manage_callback(const struct device *dev,
-					struct gpio_callback *cb, bool set)
+static int nxp_s32_gpio_manage_callback(const struct device *dev, struct gpio_callback *cb,
+					bool set)
 {
 	struct gpio_nxp_s32_data *data = dev->data;
 
@@ -380,8 +368,7 @@ static int nxp_s32_gpio_manage_callback(const struct device *dev,
 #endif /* defined(CONFIG_NXP_S32_EIRQ) || defined(CONFIG_NXP_S32_WKPU) */
 
 #ifdef CONFIG_GPIO_GET_CONFIG
-static int nxp_s32_gpio_pin_get_config(const struct device *dev,
-				       gpio_pin_t pin,
+static int nxp_s32_gpio_pin_get_config(const struct device *dev, gpio_pin_t pin,
 				       gpio_flags_t *out_flags)
 {
 	const struct gpio_nxp_s32_config *config = dev->config;
@@ -426,10 +413,8 @@ static int nxp_s32_gpio_pin_get_config(const struct device *dev,
 #endif /* CONFIG_GPIO_GET_CONFIG */
 
 #ifdef CONFIG_GPIO_GET_DIRECTION
-static int nxp_s32_gpio_port_get_direction(const struct device *dev,
-					   gpio_port_pins_t map,
-					   gpio_port_pins_t *inputs,
-					   gpio_port_pins_t *outputs)
+static int nxp_s32_gpio_port_get_direction(const struct device *dev, gpio_port_pins_t map,
+					   gpio_port_pins_t *inputs, gpio_port_pins_t *outputs)
 {
 	const struct gpio_nxp_s32_config *config = dev->config;
 	gpio_port_pins_t ip = 0;
@@ -494,31 +479,28 @@ static const struct gpio_driver_api gpio_nxp_s32_driver_api = {
  *
  * the generated mask will be will be 0x3C00.
  */
-#define GPIO_NXP_S32_RESERVED_PIN_MASK(n)					\
-	(GENMASK(DT_INST_PROP_BY_IDX(n, gpio_reserved_ranges, 0) +		\
-			DT_INST_PROP_BY_IDX(n, gpio_reserved_ranges, 1) - 1,	\
-		 DT_INST_PROP_BY_IDX(n, gpio_reserved_ranges, 0)		\
-	))
+#define GPIO_NXP_S32_RESERVED_PIN_MASK(n)                                                          \
+	(GENMASK(DT_INST_PROP_BY_IDX(n, gpio_reserved_ranges, 0) +                                 \
+			 DT_INST_PROP_BY_IDX(n, gpio_reserved_ranges, 1) - 1,                      \
+		 DT_INST_PROP_BY_IDX(n, gpio_reserved_ranges, 0)))
 
-#define GPIO_NXP_S32_PORT_PIN_MASK(n)						\
+#define GPIO_NXP_S32_PORT_PIN_MASK(n)                                                              \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, gpio_reserved_ranges),		\
 		(GPIO_PORT_PIN_MASK_FROM_DT_INST(n)				\
 			& ~(GPIO_NXP_S32_RESERVED_PIN_MASK(n))),		\
 		(GPIO_PORT_PIN_MASK_FROM_DT_INST(n)))
 
 #ifdef CONFIG_NXP_S32_EIRQ
-#define GPIO_NXP_S32_EIRQ_NODE(n)						\
-	DT_INST_PHANDLE(n, interrupt_parent)
+#define GPIO_NXP_S32_EIRQ_NODE(n) DT_INST_PHANDLE(n, interrupt_parent)
 
-#define GPIO_NXP_S32_EIRQ_PIN_LINE(idx, n)					\
-	DT_INST_IRQ_BY_IDX(n, idx, gpio_pin),					\
-	DT_INST_IRQ_BY_IDX(n, idx, eirq_line)					\
+#define GPIO_NXP_S32_EIRQ_PIN_LINE(idx, n)                                                         \
+	DT_INST_IRQ_BY_IDX(n, idx, gpio_pin), DT_INST_IRQ_BY_IDX(n, idx, eirq_line)
 
-#define GPIO_NXP_S32_SET_EIRQ_INFO(n)						\
-	BUILD_ASSERT((DT_NODE_HAS_PROP(DT_DRV_INST(n), interrupt_parent) ==	\
-			DT_NODE_HAS_PROP(DT_DRV_INST(n), interrupts)),		\
-			"interrupts and interrupt-parent must be set when "	\
-			"using external interrupts");				\
+#define GPIO_NXP_S32_SET_EIRQ_INFO(n)                                                              \
+	BUILD_ASSERT((DT_NODE_HAS_PROP(DT_DRV_INST(n), interrupt_parent) ==                        \
+		      DT_NODE_HAS_PROP(DT_DRV_INST(n), interrupts)),                               \
+		     "interrupts and interrupt-parent must be set when "                           \
+		     "using external interrupts");                                                 \
 	IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(GPIO_NXP_S32_EIRQ_NODE(n)), (	\
 		static uint8_t gpio_nxp_s32_eirq_data_##n[] = {			\
 			LISTIFY(DT_NUM_IRQS(DT_DRV_INST(n)),			\
@@ -532,9 +514,9 @@ static const struct gpio_driver_api gpio_nxp_s32_driver_api = {
 		};								\
 	))
 
-#define GPIO_NXP_S32_GET_EIRQ_INFO(n)						\
-	.eirq_info = UTIL_AND(DT_NODE_HAS_STATUS_OKAY(GPIO_NXP_S32_EIRQ_NODE(n)),\
-				&gpio_nxp_s32_eirq_##n),
+#define GPIO_NXP_S32_GET_EIRQ_INFO(n)                                                              \
+	.eirq_info = UTIL_AND(DT_NODE_HAS_STATUS_OKAY(GPIO_NXP_S32_EIRQ_NODE(n)),                  \
+			      &gpio_nxp_s32_eirq_##n),
 #else
 #define GPIO_NXP_S32_SET_EIRQ_INFO(n)
 #define GPIO_NXP_S32_GET_EIRQ_INFO(n)
@@ -543,10 +525,10 @@ static const struct gpio_driver_api gpio_nxp_s32_driver_api = {
 #ifdef CONFIG_NXP_S32_WKPU
 #define GPIO_NXP_S32_WKPU_NODE(n) DT_INST_PHANDLE(n, nxp_wkpu)
 
-#define GPIO_NXP_S32_SET_WKPU_INFO(n)						\
-	BUILD_ASSERT((DT_INST_NODE_HAS_PROP(n, nxp_wkpu) ==			\
-			DT_INST_NODE_HAS_PROP(n, nxp_wkpu_interrupts)),		\
-			"nxp,wkpu and nxp,wkpu-interrupts must be provided");	\
+#define GPIO_NXP_S32_SET_WKPU_INFO(n)                                                              \
+	BUILD_ASSERT((DT_INST_NODE_HAS_PROP(n, nxp_wkpu) ==                                        \
+		      DT_INST_NODE_HAS_PROP(n, nxp_wkpu_interrupts)),                              \
+		     "nxp,wkpu and nxp,wkpu-interrupts must be provided");                         \
 	IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(GPIO_NXP_S32_WKPU_NODE(n)), (	\
 		static uint8_t gpio_nxp_s32_wkpu_data_##n[] =			\
 			DT_INST_PROP(n, nxp_wkpu_interrupts);			\
@@ -559,38 +541,32 @@ static const struct gpio_driver_api gpio_nxp_s32_driver_api = {
 		};								\
 	))
 
-#define GPIO_NXP_S32_GET_WKPU_INFO(n)						\
-	.wkpu_info = UTIL_AND(DT_NODE_HAS_STATUS_OKAY(GPIO_NXP_S32_WKPU_NODE(n)),\
-				&gpio_nxp_s32_wkpu_##n)
+#define GPIO_NXP_S32_GET_WKPU_INFO(n)                                                              \
+	.wkpu_info = UTIL_AND(DT_NODE_HAS_STATUS_OKAY(GPIO_NXP_S32_WKPU_NODE(n)),                  \
+			      &gpio_nxp_s32_wkpu_##n)
 #else
 #define GPIO_NXP_S32_SET_WKPU_INFO(n)
 #define GPIO_NXP_S32_GET_WKPU_INFO(n)
 #endif /* CONFIG_NXP_S32_WKPU */
 
-#define GPIO_NXP_S32_DEVICE_INIT(n)						\
-	GPIO_NXP_S32_SET_EIRQ_INFO(n)						\
-	GPIO_NXP_S32_SET_WKPU_INFO(n)						\
-	static const struct gpio_nxp_s32_config gpio_nxp_s32_config_##n = {	\
-		.common = {							\
-			.port_pin_mask = GPIO_NXP_S32_PORT_PIN_MASK(n),		\
-		},								\
-		.gpio_base = DT_INST_REG_ADDR_BY_NAME(n, pgpdo),		\
-		.port_base = DT_INST_REG_ADDR_BY_NAME(n, mscr),			\
-		GPIO_NXP_S32_GET_EIRQ_INFO(n)					\
-		GPIO_NXP_S32_GET_WKPU_INFO(n)					\
-	};									\
-	static struct gpio_nxp_s32_data gpio_nxp_s32_data_##n;			\
-	static int gpio_nxp_s32_init_##n(const struct device *dev)		\
-	{									\
-		return 0;							\
-	}									\
-	DEVICE_DT_INST_DEFINE(n,						\
-			gpio_nxp_s32_init_##n,					\
-			NULL,							\
-			&gpio_nxp_s32_data_##n,					\
-			&gpio_nxp_s32_config_##n,				\
-			POST_KERNEL,						\
-			CONFIG_GPIO_INIT_PRIORITY,				\
-			&gpio_nxp_s32_driver_api);
+#define GPIO_NXP_S32_DEVICE_INIT(n)                                                                \
+	GPIO_NXP_S32_SET_EIRQ_INFO(n)                                                              \
+	GPIO_NXP_S32_SET_WKPU_INFO(n)                                                              \
+	static const struct gpio_nxp_s32_config gpio_nxp_s32_config_##n = {                        \
+		.common =                                                                          \
+			{                                                                          \
+				.port_pin_mask = GPIO_NXP_S32_PORT_PIN_MASK(n),                    \
+			},                                                                         \
+		.gpio_base = DT_INST_REG_ADDR_BY_NAME(n, pgpdo),                                   \
+		.port_base = DT_INST_REG_ADDR_BY_NAME(n, mscr),                                    \
+		GPIO_NXP_S32_GET_EIRQ_INFO(n) GPIO_NXP_S32_GET_WKPU_INFO(n)};                      \
+	static struct gpio_nxp_s32_data gpio_nxp_s32_data_##n;                                     \
+	static int gpio_nxp_s32_init_##n(const struct device *dev)                                 \
+	{                                                                                          \
+		return 0;                                                                          \
+	}                                                                                          \
+	DEVICE_DT_INST_DEFINE(n, gpio_nxp_s32_init_##n, NULL, &gpio_nxp_s32_data_##n,              \
+			      &gpio_nxp_s32_config_##n, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,    \
+			      &gpio_nxp_s32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_NXP_S32_DEVICE_INIT)

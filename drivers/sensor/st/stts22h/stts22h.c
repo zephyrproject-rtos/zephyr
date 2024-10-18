@@ -58,8 +58,7 @@ static inline void stts22h_temp_convert(struct sensor_value *val, int16_t raw_va
 	val->val2 = ((int32_t)raw_val % 100) * 10000;
 }
 
-static int stts22h_channel_get(const struct device *dev,
-			       enum sensor_channel chan,
+static int stts22h_channel_get(const struct device *dev, enum sensor_channel chan,
 			       struct sensor_value *val)
 {
 	struct stts22h_data *data = dev->data;
@@ -76,8 +75,7 @@ static int stts22h_channel_get(const struct device *dev,
 
 static const uint8_t stts22h_map[6] = {0, 1, 25, 50, 100, 200};
 
-static int stts22h_odr_set(const struct device *dev,
-			   const struct sensor_value *val)
+static int stts22h_odr_set(const struct device *dev, const struct sensor_value *val)
 {
 	int odr;
 
@@ -106,10 +104,8 @@ static int stts22h_odr_set(const struct device *dev,
 	}
 }
 
-static int stts22h_attr_set(const struct device *dev,
-			    enum sensor_channel chan,
-			    enum sensor_attribute attr,
-			    const struct sensor_value *val)
+static int stts22h_attr_set(const struct device *dev, enum sensor_channel chan,
+			    enum sensor_attribute attr, const struct sensor_value *val)
 {
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_AMBIENT_TEMP) {
 		LOG_ERR("Invalid channel: %d", chan);
@@ -192,21 +188,20 @@ static int stts22h_init(const struct device *dev)
 	return 0;
 }
 
-#define STTS22H_DEFINE(inst)									\
-	static struct stts22h_data stts22h_data_##inst;						\
-												\
-	static const struct stts22h_config stts22h_config_##inst = {				\
-		STMEMSC_CTX_I2C(&stts22h_config_##inst.i2c),					\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
-		.temp_hi = DT_INST_PROP(inst, temperature_hi_threshold),			\
-		.temp_lo = DT_INST_PROP(inst, temperature_lo_threshold),			\
-		.odr = DT_INST_PROP(inst, sampling_rate),					\
+#define STTS22H_DEFINE(inst)                                                                       \
+	static struct stts22h_data stts22h_data_##inst;                                            \
+                                                                                                   \
+	static const struct stts22h_config stts22h_config_##inst = {                               \
+		STMEMSC_CTX_I2C(&stts22h_config_##inst.i2c),                                       \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+		.temp_hi = DT_INST_PROP(inst, temperature_hi_threshold),                           \
+		.temp_lo = DT_INST_PROP(inst, temperature_lo_threshold),                           \
+		.odr = DT_INST_PROP(inst, sampling_rate),                                          \
 		IF_ENABLED(CONFIG_STTS22H_TRIGGER,						\
-			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))	\
-	};											\
-												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, stts22h_init, NULL,					\
-			      &stts22h_data_##inst, &stts22h_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &stts22h_api_funcs);			\
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),)) };           \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, stts22h_init, NULL, &stts22h_data_##inst,               \
+				     &stts22h_config_##inst, POST_KERNEL,                          \
+				     CONFIG_SENSOR_INIT_PRIORITY, &stts22h_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(STTS22H_DEFINE)

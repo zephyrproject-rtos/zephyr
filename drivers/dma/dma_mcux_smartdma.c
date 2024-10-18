@@ -35,11 +35,11 @@ struct dma_mcux_smartdma_data {
 /* Seems to be written to smartDMA control register when it is configured */
 #define SMARTDMA_MAGIC 0xC0DE0000U
 /* These bits are set when the SMARTDMA boots, cleared to reset it */
-#define SMARTDMA_BOOT 0x11
+#define SMARTDMA_BOOT  0x11
 
 /* Configure a channel */
-static int dma_mcux_smartdma_configure(const struct device *dev,
-				uint32_t channel, struct dma_config *config)
+static int dma_mcux_smartdma_configure(const struct device *dev, uint32_t channel,
+				       struct dma_config *config)
 {
 	const struct dma_mcux_smartdma_config *dev_config = dev->config;
 	struct dma_mcux_smartdma_data *data = dev->data;
@@ -74,7 +74,6 @@ static int dma_mcux_smartdma_start(const struct device *dev, uint32_t channel)
 
 	return 0;
 }
-
 
 static int dma_mcux_smartdma_stop(const struct device *dev, uint32_t channel)
 {
@@ -121,8 +120,7 @@ static void dma_mcux_smartdma_irq(const struct device *dev)
  * @param firmware: address of buffer containing smartDMA firmware
  * @param len: length of firmware buffer
  */
-void dma_smartdma_install_fw(const struct device *dev, uint8_t *firmware,
-			     uint32_t len)
+void dma_smartdma_install_fw(const struct device *dev, uint8_t *firmware, uint32_t len)
 {
 	const struct dma_mcux_smartdma_config *config = dev->config;
 
@@ -135,28 +133,23 @@ static const struct dma_driver_api dma_mcux_smartdma_api = {
 	.stop = dma_mcux_smartdma_stop,
 };
 
-
-#define SMARTDMA_INIT(n)							\
-	static void dma_mcux_smartdma_config_func_##n(const struct device *dev) \
-	{									\
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),		\
-				dma_mcux_smartdma_irq,				\
-				DEVICE_DT_INST_GET(n), 0);			\
-		irq_enable(DT_INST_IRQN(n));					\
-	}									\
-										\
-	static const struct dma_mcux_smartdma_config smartdma_##n##_config = {	\
-		.base = (SMARTDMA_Type *)DT_INST_REG_ADDR(n),			\
-		.smartdma_progs = (void (**)(void))DT_INST_PROP(n, program_mem),\
-		.irq_config_func = dma_mcux_smartdma_config_func_##n,		\
-	};									\
-	static struct dma_mcux_smartdma_data smartdma_##n##_data;		\
-										\
-	DEVICE_DT_INST_DEFINE(n,						\
-				&dma_mcux_smartdma_init,			\
-				NULL,						\
-				&smartdma_##n##_data, &smartdma_##n##_config,	\
-				POST_KERNEL, CONFIG_DMA_INIT_PRIORITY,		\
-				&dma_mcux_smartdma_api);
+#define SMARTDMA_INIT(n)                                                                           \
+	static void dma_mcux_smartdma_config_func_##n(const struct device *dev)                    \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), dma_mcux_smartdma_irq,      \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+	}                                                                                          \
+                                                                                                   \
+	static const struct dma_mcux_smartdma_config smartdma_##n##_config = {                     \
+		.base = (SMARTDMA_Type *)DT_INST_REG_ADDR(n),                                      \
+		.smartdma_progs = (void (**)(void))DT_INST_PROP(n, program_mem),                   \
+		.irq_config_func = dma_mcux_smartdma_config_func_##n,                              \
+	};                                                                                         \
+	static struct dma_mcux_smartdma_data smartdma_##n##_data;                                  \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &dma_mcux_smartdma_init, NULL, &smartdma_##n##_data,              \
+			      &smartdma_##n##_config, POST_KERNEL, CONFIG_DMA_INIT_PRIORITY,       \
+			      &dma_mcux_smartdma_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SMARTDMA_INIT)

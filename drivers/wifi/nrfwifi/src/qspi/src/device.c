@@ -21,21 +21,17 @@
 static struct qspi_config config;
 
 #if defined(CONFIG_NRF70_ON_QSPI)
-static struct qspi_dev qspi = {
-	.init = qspi_init,
-	.deinit = qspi_deinit,
-	.read = qspi_read,
-	.write = qspi_write,
-	.hl_read = qspi_hl_read
-};
+static struct qspi_dev qspi = {.init = qspi_init,
+			       .deinit = qspi_deinit,
+			       .read = qspi_read,
+			       .write = qspi_write,
+			       .hl_read = qspi_hl_read};
 #else
-static struct qspi_dev spim = {
-	.init = spim_init,
-	.deinit = spim_deinit,
-	.read = spim_read,
-	.write = spim_write,
-	.hl_read = spim_hl_read
-};
+static struct qspi_dev spim = {.init = spim_init,
+			       .deinit = spim_deinit,
+			       .read = spim_read,
+			       .write = spim_write,
+			       .hl_read = spim_hl_read};
 #endif
 
 struct qspi_config *qspi_defconfig(void)

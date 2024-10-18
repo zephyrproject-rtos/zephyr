@@ -18,14 +18,12 @@ static int bmp388_bus_check_i2c(const union bmp388_bus *bus)
 	return i2c_is_ready_dt(&bus->i2c) ? 0 : -ENODEV;
 }
 
-static int bmp388_reg_read_i2c(const union bmp388_bus *bus,
-			       uint8_t start, uint8_t *buf, int size)
+static int bmp388_reg_read_i2c(const union bmp388_bus *bus, uint8_t start, uint8_t *buf, int size)
 {
 	return i2c_burst_read_dt(&bus->i2c, start, buf, size);
 }
 
-static int bmp388_reg_write_i2c(const union bmp388_bus *bus,
-				uint8_t reg, uint8_t val)
+static int bmp388_reg_write_i2c(const union bmp388_bus *bus, uint8_t reg, uint8_t val)
 {
 	return i2c_reg_write_byte_dt(&bus->i2c, reg, val);
 }

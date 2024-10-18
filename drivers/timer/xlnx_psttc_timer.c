@@ -15,15 +15,15 @@
 #include <zephyr/drivers/timer/system_timer.h>
 #include "xlnx_psttc_timer_priv.h"
 
-#define TIMER_INDEX		CONFIG_XLNX_PSTTC_TIMER_INDEX
+#define TIMER_INDEX CONFIG_XLNX_PSTTC_TIMER_INDEX
 
-#define TIMER_IRQ		DT_INST_IRQN(0)
-#define TIMER_BASE_ADDR		DT_INST_REG_ADDR(0)
-#define TIMER_CLOCK_FREQUECY	DT_INST_PROP(0, clock_frequency)
+#define TIMER_IRQ            DT_INST_IRQN(0)
+#define TIMER_BASE_ADDR      DT_INST_REG_ADDR(0)
+#define TIMER_CLOCK_FREQUECY DT_INST_PROP(0, clock_frequency)
 
-#define TICKS_PER_SEC		CONFIG_SYS_CLOCK_TICKS_PER_SEC
-#define CYCLES_PER_SEC		TIMER_CLOCK_FREQUECY
-#define CYCLES_PER_TICK		(CYCLES_PER_SEC / TICKS_PER_SEC)
+#define TICKS_PER_SEC   CONFIG_SYS_CLOCK_TICKS_PER_SEC
+#define CYCLES_PER_SEC  TIMER_CLOCK_FREQUECY
+#define CYCLES_PER_TICK (CYCLES_PER_SEC / TICKS_PER_SEC)
 
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = DT_IRQN(DT_INST(0, xlnx_ttcps));
@@ -33,11 +33,10 @@ const int32_t z_sys_timer_irq_for_test = DT_IRQN(DT_INST(0, xlnx_ttcps));
  * interrupts.  This value was conservatively set using the trial and error
  * method, and there is room for improvement.
  */
-#define CYCLES_NEXT_MIN		(10000)
-#define CYCLES_NEXT_MAX		(XTTC_MAX_INTERVAL_COUNT)
+#define CYCLES_NEXT_MIN (10000)
+#define CYCLES_NEXT_MAX (XTTC_MAX_INTERVAL_COUNT)
 
-BUILD_ASSERT(TIMER_CLOCK_FREQUECY ==
-			CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
+BUILD_ASSERT(TIMER_CLOCK_FREQUECY == CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
 	     "Configured system timer frequency does not match the TTC "
 	     "clock frequency in the device tree");
 
@@ -151,8 +150,7 @@ static int sys_clock_driver_init(void)
 	uint32_t reg_val;
 
 	/* Stop timer */
-	sys_write32(XTTCPS_CNT_CNTRL_DIS_MASK,
-		    TIMER_BASE_ADDR + XTTCPS_CNT_CNTRL_OFFSET);
+	sys_write32(XTTCPS_CNT_CNTRL_DIS_MASK, TIMER_BASE_ADDR + XTTCPS_CNT_CNTRL_OFFSET);
 
 #ifdef CONFIG_TICKLESS_KERNEL
 	/* Initialise internal states */
@@ -160,8 +158,7 @@ static int sys_clock_driver_init(void)
 #endif
 
 	/* Initialise timer registers */
-	sys_write32(XTTCPS_CNT_CNTRL_RESET_VALUE,
-		    TIMER_BASE_ADDR + XTTCPS_CNT_CNTRL_OFFSET);
+	sys_write32(XTTCPS_CNT_CNTRL_RESET_VALUE, TIMER_BASE_ADDR + XTTCPS_CNT_CNTRL_OFFSET);
 	sys_write32(0, TIMER_BASE_ADDR + XTTCPS_CLK_CNTRL_OFFSET);
 	sys_write32(0, TIMER_BASE_ADDR + XTTCPS_INTERVAL_VAL_OFFSET);
 	sys_write32(0, TIMER_BASE_ADDR + XTTCPS_MATCH_0_OFFSET);
@@ -181,8 +178,7 @@ static int sys_clock_driver_init(void)
 	sys_write32(reg_val, TIMER_BASE_ADDR + XTTCPS_CNT_CNTRL_OFFSET);
 
 	/* Set initial timeout */
-	reg_val = IS_ENABLED(CONFIG_TICKLESS_KERNEL) ?
-			CYCLES_NEXT_MAX : CYCLES_PER_TICK;
+	reg_val = IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? CYCLES_NEXT_MAX : CYCLES_PER_TICK;
 	sys_write32(reg_val, TIMER_BASE_ADDR + XTTCPS_MATCH_0_OFFSET);
 
 	/* Connect timer interrupt */
@@ -202,5 +198,4 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

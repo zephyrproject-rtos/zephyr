@@ -39,9 +39,9 @@ struct i2s_nrfx_drv_data {
 	bool stop;       /* stop after the current (TX or RX) block */
 	bool discard_rx; /* discard further RX blocks */
 	volatile bool next_tx_buffer_needed;
-	bool tx_configured : 1;
-	bool rx_configured : 1;
-	bool request_clock : 1;
+	bool tx_configured: 1;
+	bool rx_configured: 1;
+	bool request_clock: 1;
 };
 
 struct i2s_nrfx_drv_cfg {
@@ -59,35 +59,27 @@ struct i2s_nrfx_drv_cfg {
 /* Finds the clock settings that give the frame clock frequency closest to
  * the one requested, taking into account the hardware limitations.
  */
-static void find_suitable_clock(const struct i2s_nrfx_drv_cfg *drv_cfg,
-				nrfx_i2s_config_t *config,
+static void find_suitable_clock(const struct i2s_nrfx_drv_cfg *drv_cfg, nrfx_i2s_config_t *config,
 				const struct i2s_config *i2s_cfg)
 {
 	static const struct {
-		uint16_t        ratio_val;
+		uint16_t ratio_val;
 		nrf_i2s_ratio_t ratio_enum;
 	} ratios[] = {
-		{  32, NRF_I2S_RATIO_32X },
-		{  48, NRF_I2S_RATIO_48X },
-		{  64, NRF_I2S_RATIO_64X },
-		{  96, NRF_I2S_RATIO_96X },
-		{ 128, NRF_I2S_RATIO_128X },
-		{ 192, NRF_I2S_RATIO_192X },
-		{ 256, NRF_I2S_RATIO_256X },
-		{ 384, NRF_I2S_RATIO_384X },
-		{ 512, NRF_I2S_RATIO_512X }
-	};
+		{32, NRF_I2S_RATIO_32X},   {48, NRF_I2S_RATIO_48X},   {64, NRF_I2S_RATIO_64X},
+		{96, NRF_I2S_RATIO_96X},   {128, NRF_I2S_RATIO_128X}, {192, NRF_I2S_RATIO_192X},
+		{256, NRF_I2S_RATIO_256X}, {384, NRF_I2S_RATIO_384X}, {512, NRF_I2S_RATIO_512X}};
 	const uint32_t src_freq =
 		(NRF_I2S_HAS_CLKCONFIG && drv_cfg->clk_src == ACLK)
-		/* The I2S_NRFX_DEVICE() macro contains build assertions that
-		 * make sure that the ACLK clock source is only used when it is
-		 * available and only with the "hfclkaudio-frequency" property
-		 * defined, but the default value of 0 here needs to be used to
-		 * prevent compilation errors when the property is not defined
-		 * (this expression will be eventually optimized away then).
-		 */
-		? DT_PROP_OR(DT_NODELABEL(clock), hfclkaudio_frequency, 0)
-		: 32*1000*1000UL;
+			/* The I2S_NRFX_DEVICE() macro contains build assertions that
+			 * make sure that the ACLK clock source is only used when it is
+			 * available and only with the "hfclkaudio-frequency" property
+			 * defined, but the default value of 0 here needs to be used to
+			 * prevent compilation errors when the property is not defined
+			 * (this expression will be eventually optimized away then).
+			 */
+			? DT_PROP_OR(DT_NODELABEL(clock), hfclkaudio_frequency, 0)
+			: 32 * 1000 * 1000UL;
 	uint32_t bits_per_frame = 2 * i2s_cfg->word_size;
 	uint32_t best_diff = UINT32_MAX;
 	uint8_t r, best_r = 0;
@@ -101,8 +93,7 @@ static void find_suitable_clock(const struct i2s_nrfx_drv_cfg *drv_cfg,
 		}
 
 		if (IS_ENABLED(CONFIG_SOC_SERIES_NRF53X) || IS_ENABLED(CONFIG_SOC_SERIES_NRF54LX)) {
-			uint32_t requested_mck =
-				i2s_cfg->frame_clk_freq * ratios[r].ratio_val;
+			uint32_t requested_mck = i2s_cfg->frame_clk_freq * ratios[r].ratio_val;
 			/* As specified in the nRF5340 PS:
 			 *
 			 * MCKFREQ = 4096 * floor(f_MCK * 1048576 /
@@ -110,10 +101,11 @@ static void find_suitable_clock(const struct i2s_nrfx_drv_cfg *drv_cfg,
 			 * f_actual = f_source /
 			 *            floor(1048576 * 4096 / MCKFREQ)
 			 */
-			enum { MCKCONST = 1048576 };
-			uint32_t mck_factor =
-				(uint32_t)(((uint64_t)requested_mck * MCKCONST) /
-					   (src_freq + requested_mck / 2));
+			enum {
+				MCKCONST = 1048576
+			};
+			uint32_t mck_factor = (uint32_t)(((uint64_t)requested_mck * MCKCONST) /
+							 (src_freq + requested_mck / 2));
 
 			/* skip cases when mck_factor is too big for dividing */
 			if (mck_factor > MCKCONST) {
@@ -123,8 +115,8 @@ static void find_suitable_clock(const struct i2s_nrfx_drv_cfg *drv_cfg,
 
 			uint32_t lrck_freq = actual_mck / ratios[r].ratio_val;
 			uint32_t diff = lrck_freq >= i2s_cfg->frame_clk_freq
-					? (lrck_freq - i2s_cfg->frame_clk_freq)
-					: (i2s_cfg->frame_clk_freq - lrck_freq);
+						? (lrck_freq - i2s_cfg->frame_clk_freq)
+						: (i2s_cfg->frame_clk_freq - lrck_freq);
 
 			if (diff < best_diff) {
 				best_mck_cfg = mck_factor * 4096;
@@ -134,33 +126,22 @@ static void find_suitable_clock(const struct i2s_nrfx_drv_cfg *drv_cfg,
 			}
 		} else {
 			static const struct {
-				uint8_t       divider_val;
+				uint8_t divider_val;
 				nrf_i2s_mck_t divider_enum;
-			} dividers[] = {
-				{   8, NRF_I2S_MCK_32MDIV8 },
-				{  10, NRF_I2S_MCK_32MDIV10 },
-				{  11, NRF_I2S_MCK_32MDIV11 },
-				{  15, NRF_I2S_MCK_32MDIV15 },
-				{  16, NRF_I2S_MCK_32MDIV16 },
-				{  21, NRF_I2S_MCK_32MDIV21 },
-				{  23, NRF_I2S_MCK_32MDIV23 },
-				{  30, NRF_I2S_MCK_32MDIV30 },
-				{  31, NRF_I2S_MCK_32MDIV31 },
-				{  32, NRF_I2S_MCK_32MDIV32 },
-				{  42, NRF_I2S_MCK_32MDIV42 },
-				{  63, NRF_I2S_MCK_32MDIV63 },
-				{ 125, NRF_I2S_MCK_32MDIV125 }
-			};
+			} dividers[] = {{8, NRF_I2S_MCK_32MDIV8},    {10, NRF_I2S_MCK_32MDIV10},
+					{11, NRF_I2S_MCK_32MDIV11},  {15, NRF_I2S_MCK_32MDIV15},
+					{16, NRF_I2S_MCK_32MDIV16},  {21, NRF_I2S_MCK_32MDIV21},
+					{23, NRF_I2S_MCK_32MDIV23},  {30, NRF_I2S_MCK_32MDIV30},
+					{31, NRF_I2S_MCK_32MDIV31},  {32, NRF_I2S_MCK_32MDIV32},
+					{42, NRF_I2S_MCK_32MDIV42},  {63, NRF_I2S_MCK_32MDIV63},
+					{125, NRF_I2S_MCK_32MDIV125}};
 
 			for (uint8_t d = 0; (best_diff != 0) && (d < ARRAY_SIZE(dividers)); ++d) {
-				uint32_t mck_freq =
-					src_freq / dividers[d].divider_val;
-				uint32_t lrck_freq =
-					mck_freq / ratios[r].ratio_val;
-				uint32_t diff =
-					lrck_freq >= i2s_cfg->frame_clk_freq
-					? (lrck_freq - i2s_cfg->frame_clk_freq)
-					: (i2s_cfg->frame_clk_freq - lrck_freq);
+				uint32_t mck_freq = src_freq / dividers[d].divider_val;
+				uint32_t lrck_freq = mck_freq / ratios[r].ratio_val;
+				uint32_t diff = lrck_freq >= i2s_cfg->frame_clk_freq
+							? (lrck_freq - i2s_cfg->frame_clk_freq)
+							: (i2s_cfg->frame_clk_freq - lrck_freq);
 
 				if (diff < best_diff) {
 					best_mck_cfg = dividers[d].divider_enum;
@@ -183,17 +164,14 @@ static void find_suitable_clock(const struct i2s_nrfx_drv_cfg *drv_cfg,
 
 	config->mck_setup = best_mck_cfg;
 	config->ratio = ratios[best_r].ratio_enum;
-	LOG_INF("I2S MCK frequency: %u, actual PCM rate: %u",
-		best_mck, best_mck / ratios[best_r].ratio_val);
+	LOG_INF("I2S MCK frequency: %u, actual PCM rate: %u", best_mck,
+		best_mck / ratios[best_r].ratio_val);
 }
 
-static bool get_next_tx_buffer(struct i2s_nrfx_drv_data *drv_data,
-			       nrfx_i2s_buffers_t *buffers)
+static bool get_next_tx_buffer(struct i2s_nrfx_drv_data *drv_data, nrfx_i2s_buffers_t *buffers)
 {
 	struct i2s_buf buf;
-	int ret = k_msgq_get(&drv_data->tx_queue,
-			     &buf,
-			     K_NO_WAIT);
+	int ret = k_msgq_get(&drv_data->tx_queue, &buf, K_NO_WAIT);
 	if (ret == 0) {
 		buffers->p_tx_buffer = buf.mem_block;
 		buffers->buffer_size = buf.size / sizeof(uint32_t);
@@ -201,23 +179,19 @@ static bool get_next_tx_buffer(struct i2s_nrfx_drv_data *drv_data,
 	return (ret == 0);
 }
 
-static bool get_next_rx_buffer(struct i2s_nrfx_drv_data *drv_data,
-			       nrfx_i2s_buffers_t *buffers)
+static bool get_next_rx_buffer(struct i2s_nrfx_drv_data *drv_data, nrfx_i2s_buffers_t *buffers)
 {
-	int ret = k_mem_slab_alloc(drv_data->rx.cfg.mem_slab,
-				   (void **)&buffers->p_rx_buffer,
+	int ret = k_mem_slab_alloc(drv_data->rx.cfg.mem_slab, (void **)&buffers->p_rx_buffer,
 				   K_NO_WAIT);
 	if (ret < 0) {
-		LOG_ERR("Failed to allocate next RX buffer: %d",
-			ret);
+		LOG_ERR("Failed to allocate next RX buffer: %d", ret);
 		return false;
 	}
 
 	return true;
 }
 
-static void free_tx_buffer(struct i2s_nrfx_drv_data *drv_data,
-			   const void *buffer)
+static void free_tx_buffer(struct i2s_nrfx_drv_data *drv_data, const void *buffer)
 {
 	k_mem_slab_free(drv_data->tx.cfg.mem_slab, (void *)buffer);
 	LOG_DBG("Freed TX %p", buffer);
@@ -229,8 +203,7 @@ static void free_rx_buffer(struct i2s_nrfx_drv_data *drv_data, void *buffer)
 	LOG_DBG("Freed RX %p", buffer);
 }
 
-static bool supply_next_buffers(struct i2s_nrfx_drv_data *drv_data,
-				nrfx_i2s_buffers_t *next)
+static bool supply_next_buffers(struct i2s_nrfx_drv_data *drv_data, nrfx_i2s_buffers_t *next)
 {
 	if (drv_data->active_dir != I2S_DIR_TX) { /* -> RX active */
 		if (!get_next_rx_buffer(drv_data, next)) {
@@ -242,8 +215,7 @@ static bool supply_next_buffers(struct i2s_nrfx_drv_data *drv_data,
 		 * controls how many bytes will be received).
 		 */
 		if (drv_data->active_dir == I2S_DIR_RX) {
-			next->buffer_size =
-				drv_data->rx.cfg.block_size / sizeof(uint32_t);
+			next->buffer_size = drv_data->rx.cfg.block_size / sizeof(uint32_t);
 		}
 	}
 
@@ -254,8 +226,8 @@ static bool supply_next_buffers(struct i2s_nrfx_drv_data *drv_data,
 	return true;
 }
 
-static void data_handler(const struct device *dev,
-			 const nrfx_i2s_buffers_t *released, uint32_t status)
+static void data_handler(const struct device *dev, const nrfx_i2s_buffers_t *released,
+			 uint32_t status)
 {
 	struct i2s_nrfx_drv_data *drv_data = dev->data;
 	bool stop_transfer = false;
@@ -277,8 +249,7 @@ static void data_handler(const struct device *dev,
 			 * freed here.
 			 */
 			if (drv_data->last_tx_buffer != released->p_tx_buffer) {
-				free_tx_buffer(drv_data,
-					       drv_data->last_tx_buffer);
+				free_tx_buffer(drv_data, drv_data->last_tx_buffer);
 			}
 			drv_data->last_tx_buffer = NULL;
 		}
@@ -307,13 +278,9 @@ static void data_handler(const struct device *dev,
 		if (drv_data->discard_rx) {
 			free_rx_buffer(drv_data, released->p_rx_buffer);
 		} else {
-			struct i2s_buf buf = {
-				.mem_block = released->p_rx_buffer,
-				.size = released->buffer_size * sizeof(uint32_t)
-			};
-			int ret = k_msgq_put(&drv_data->rx_queue,
-					     &buf,
-					     K_NO_WAIT);
+			struct i2s_buf buf = {.mem_block = released->p_rx_buffer,
+					      .size = released->buffer_size * sizeof(uint32_t)};
+			int ret = k_msgq_put(&drv_data->rx_queue, &buf, K_NO_WAIT);
 			if (ret < 0) {
 				LOG_ERR("No room in RX queue");
 				drv_data->state = I2S_STATE_ERROR;
@@ -327,8 +294,7 @@ static void data_handler(const struct device *dev,
 				 * the transfer should be stopped after
 				 * the current block, stop the reception.
 				 */
-				if (drv_data->active_dir == I2S_DIR_RX &&
-				    drv_data->stop) {
+				if (drv_data->active_dir == I2S_DIR_RX && drv_data->stop) {
 					drv_data->discard_rx = true;
 					stop_transfer = true;
 				}
@@ -351,7 +317,7 @@ static void data_handler(const struct device *dev,
 	if (stop_transfer) {
 		nrfx_i2s_stop(drv_data->p_i2s);
 	} else if (status & NRFX_I2S_STATUS_NEXT_BUFFERS_NEEDED) {
-		nrfx_i2s_buffers_t next = { 0 };
+		nrfx_i2s_buffers_t next = {0};
 
 		if (drv_data->active_dir != I2S_DIR_RX) { /* -> TX active */
 			if (drv_data->stop) {
@@ -399,17 +365,13 @@ static void purge_queue(const struct device *dev, enum i2s_dir dir)
 	struct i2s_buf buf;
 
 	if (dir == I2S_DIR_TX || dir == I2S_DIR_BOTH) {
-		while (k_msgq_get(&drv_data->tx_queue,
-				  &buf,
-				  K_NO_WAIT) == 0) {
+		while (k_msgq_get(&drv_data->tx_queue, &buf, K_NO_WAIT) == 0) {
 			free_tx_buffer(drv_data, buf.mem_block);
 		}
 	}
 
 	if (dir == I2S_DIR_RX || dir == I2S_DIR_BOTH) {
-		while (k_msgq_get(&drv_data->rx_queue,
-				  &buf,
-				  K_NO_WAIT) == 0) {
+		while (k_msgq_get(&drv_data->rx_queue, &buf, K_NO_WAIT) == 0) {
 			free_rx_buffer(drv_data, buf.mem_block);
 		}
 	}
@@ -440,8 +402,7 @@ static int i2s_nrfx_configure(const struct device *dev, enum i2s_dir dir,
 		return 0;
 	}
 
-	__ASSERT_NO_MSG(i2s_cfg->mem_slab != NULL &&
-			i2s_cfg->block_size != 0);
+	__ASSERT_NO_MSG(i2s_cfg->mem_slab != NULL && i2s_cfg->block_size != 0);
 
 	if ((i2s_cfg->block_size % sizeof(uint32_t)) != 0) {
 		LOG_ERR("This device can transfer only full 32-bit words");
@@ -488,8 +449,7 @@ static int i2s_nrfx_configure(const struct device *dev, enum i2s_dir dir,
 		return -EINVAL;
 	}
 
-	if ((i2s_cfg->format & I2S_FMT_DATA_ORDER_LSB) ||
-	    (i2s_cfg->format & I2S_FMT_BIT_CLK_INV) ||
+	if ((i2s_cfg->format & I2S_FMT_DATA_ORDER_LSB) || (i2s_cfg->format & I2S_FMT_BIT_CLK_INV) ||
 	    (i2s_cfg->format & I2S_FMT_FRAME_CLK_INV)) {
 		LOG_ERR("Unsupported stream format: 0x%02x", i2s_cfg->format);
 		return -EINVAL;
@@ -500,8 +460,7 @@ static int i2s_nrfx_configure(const struct device *dev, enum i2s_dir dir,
 	} else if (i2s_cfg->channels == 1) {
 		nrfx_cfg.channels = NRF_I2S_CHANNELS_LEFT;
 	} else {
-		LOG_ERR("Unsupported number of channels: %u",
-			i2s_cfg->channels);
+		LOG_ERR("Unsupported number of channels: %u", i2s_cfg->channels);
 		return -EINVAL;
 	}
 
@@ -520,8 +479,8 @@ static int i2s_nrfx_configure(const struct device *dev, enum i2s_dir dir,
 	 * the MCK output is used), find a suitable clock configuration for it.
 	 */
 	if (nrfx_cfg.mode == NRF_I2S_MODE_MASTER ||
-	    (nrf_i2s_mck_pin_get(drv_cfg->i2s.p_reg) & I2S_PSEL_MCK_CONNECT_Msk)
-	    == I2S_PSEL_MCK_CONNECT_Connected << I2S_PSEL_MCK_CONNECT_Pos) {
+	    (nrf_i2s_mck_pin_get(drv_cfg->i2s.p_reg) & I2S_PSEL_MCK_CONNECT_Msk) ==
+		    I2S_PSEL_MCK_CONNECT_Connected << I2S_PSEL_MCK_CONNECT_Pos) {
 		find_suitable_clock(drv_cfg, &nrfx_cfg, i2s_cfg);
 		/* Unless the PCLK32M source is used with the HFINT oscillator
 		 * (which is always available without any additional actions),
@@ -534,8 +493,7 @@ static int i2s_nrfx_configure(const struct device *dev, enum i2s_dir dir,
 		drv_data->request_clock = false;
 	}
 
-	if ((i2s_cfg->options & I2S_OPT_LOOPBACK) ||
-	    (i2s_cfg->options & I2S_OPT_PINGPONG)) {
+	if ((i2s_cfg->options & I2S_OPT_LOOPBACK) || (i2s_cfg->options & I2S_OPT_PINGPONG)) {
 		LOG_ERR("Unsupported options: 0x%02x", i2s_cfg->options);
 		return -EINVAL;
 	}
@@ -555,8 +513,7 @@ static int i2s_nrfx_configure(const struct device *dev, enum i2s_dir dir,
 	return 0;
 }
 
-static const struct i2s_config *i2s_nrfx_config_get(const struct device *dev,
-						    enum i2s_dir dir)
+static const struct i2s_config *i2s_nrfx_config_get(const struct device *dev, enum i2s_dir dir)
 {
 	struct i2s_nrfx_drv_data *drv_data = dev->data;
 
@@ -570,8 +527,7 @@ static const struct i2s_config *i2s_nrfx_config_get(const struct device *dev,
 	return NULL;
 }
 
-static int i2s_nrfx_read(const struct device *dev,
-			 void **mem_block, size_t *size)
+static int i2s_nrfx_read(const struct device *dev, void **mem_block, size_t *size)
 {
 	struct i2s_nrfx_drv_data *drv_data = dev->data;
 	struct i2s_buf buf;
@@ -582,11 +538,10 @@ static int i2s_nrfx_read(const struct device *dev,
 		return -EIO;
 	}
 
-	ret = k_msgq_get(&drv_data->rx_queue,
-			 &buf,
+	ret = k_msgq_get(&drv_data->rx_queue, &buf,
 			 (drv_data->state == I2S_STATE_ERROR)
-				? K_NO_WAIT
-				: SYS_TIMEOUT_MS(drv_data->rx.cfg.timeout));
+				 ? K_NO_WAIT
+				 : SYS_TIMEOUT_MS(drv_data->rx.cfg.timeout));
 	if (ret == -ENOMSG) {
 		return -EIO;
 	}
@@ -601,11 +556,10 @@ static int i2s_nrfx_read(const struct device *dev,
 	return ret;
 }
 
-static int i2s_nrfx_write(const struct device *dev,
-			  void *mem_block, size_t size)
+static int i2s_nrfx_write(const struct device *dev, void *mem_block, size_t size)
 {
 	struct i2s_nrfx_drv_data *drv_data = dev->data;
-	struct i2s_buf buf = { .mem_block = mem_block, .size = size };
+	struct i2s_buf buf = {.mem_block = mem_block, .size = size};
 	int ret;
 
 	if (!drv_data->tx_configured) {
@@ -613,8 +567,7 @@ static int i2s_nrfx_write(const struct device *dev,
 		return -EIO;
 	}
 
-	if (drv_data->state != I2S_STATE_RUNNING &&
-	    drv_data->state != I2S_STATE_READY) {
+	if (drv_data->state != I2S_STATE_RUNNING && drv_data->state != I2S_STATE_READY) {
 		LOG_ERR("Cannot write in state: %d", drv_data->state);
 		return -EIO;
 	}
@@ -625,9 +578,7 @@ static int i2s_nrfx_write(const struct device *dev,
 		return -EIO;
 	}
 
-	ret = k_msgq_put(&drv_data->tx_queue,
-			 &buf,
-			 SYS_TIMEOUT_MS(drv_data->tx.cfg.timeout));
+	ret = k_msgq_put(&drv_data->tx_queue, &buf, SYS_TIMEOUT_MS(drv_data->tx.cfg.timeout));
 	if (ret < 0) {
 		return ret;
 	}
@@ -639,9 +590,8 @@ static int i2s_nrfx_write(const struct device *dev,
 	 * opens the possibility for a race condition between this function and
 	 * data_handler() that is called in interrupt context.
 	 */
-	if (drv_data->state == I2S_STATE_RUNNING &&
-	    drv_data->next_tx_buffer_needed) {
-		nrfx_i2s_buffers_t next = { 0 };
+	if (drv_data->state == I2S_STATE_RUNNING && drv_data->next_tx_buffer_needed) {
+		nrfx_i2s_buffers_t next = {0};
 
 		if (!get_next_tx_buffer(drv_data, &next)) {
 			/* Log error because this is definitely unexpected.
@@ -659,7 +609,6 @@ static int i2s_nrfx_write(const struct device *dev,
 		if (!supply_next_buffers(drv_data, &next)) {
 			return -EIO;
 		}
-
 	}
 
 	return 0;
@@ -667,7 +616,7 @@ static int i2s_nrfx_write(const struct device *dev,
 
 static int start_transfer(struct i2s_nrfx_drv_data *drv_data)
 {
-	nrfx_i2s_buffers_t initial_buffers = { 0 };
+	nrfx_i2s_buffers_t initial_buffers = {0};
 	int ret;
 
 	if (drv_data->active_dir != I2S_DIR_RX && /* -> TX to be started */
@@ -717,13 +666,10 @@ static int start_transfer(struct i2s_nrfx_drv_data *drv_data)
 	return ret;
 }
 
-static void clock_started_callback(struct onoff_manager *mgr,
-				   struct onoff_client *cli,
-				   uint32_t state,
-				   int res)
+static void clock_started_callback(struct onoff_manager *mgr, struct onoff_client *cli,
+				   uint32_t state, int res)
 {
-	struct i2s_nrfx_drv_data *drv_data =
-		CONTAINER_OF(cli, struct i2s_nrfx_drv_data, clk_cli);
+	struct i2s_nrfx_drv_data *drv_data = CONTAINER_OF(cli, struct i2s_nrfx_drv_data, clk_cli);
 
 	/* The driver state can be set back to READY at this point if the DROP
 	 * command was triggered before the clock has started. Do not start
@@ -744,8 +690,8 @@ static int trigger_start(const struct device *dev)
 	nrfx_err_t err;
 	int ret;
 	const nrfx_i2s_config_t *nrfx_cfg = (drv_data->active_dir == I2S_DIR_TX)
-					    ? &drv_data->tx.nrfx_cfg
-					    : &drv_data->rx.nrfx_cfg;
+						    ? &drv_data->tx.nrfx_cfg
+						    : &drv_data->rx.nrfx_cfg;
 
 	err = nrfx_i2s_init(drv_data->p_i2s, nrfx_cfg, drv_cfg->data_handler);
 	if (err != NRFX_SUCCESS) {
@@ -756,18 +702,16 @@ static int trigger_start(const struct device *dev)
 	drv_data->state = I2S_STATE_RUNNING;
 
 #if NRF_I2S_HAS_CLKCONFIG
-	nrf_i2s_clk_configure(drv_cfg->i2s.p_reg,
-			      drv_cfg->clk_src == ACLK ? NRF_I2S_CLKSRC_ACLK
-						       : NRF_I2S_CLKSRC_PCLK32M,
-			      false);
+	nrf_i2s_clk_configure(
+		drv_cfg->i2s.p_reg,
+		drv_cfg->clk_src == ACLK ? NRF_I2S_CLKSRC_ACLK : NRF_I2S_CLKSRC_PCLK32M, false);
 #endif
 
 	/* If it is required to use certain HF clock, request it to be running
 	 * first. If not, start the transfer directly.
 	 */
 	if (drv_data->request_clock) {
-		sys_notify_init_callback(&drv_data->clk_cli.notify,
-					 clock_started_callback);
+		sys_notify_init_callback(&drv_data->clk_cli.notify, clock_started_callback);
 		ret = onoff_request(drv_data->clk_mgr, &drv_data->clk_cli);
 		if (ret < 0) {
 			nrfx_i2s_uninit(drv_data->p_i2s);
@@ -786,8 +730,7 @@ static int trigger_start(const struct device *dev)
 	return 0;
 }
 
-static int i2s_nrfx_trigger(const struct device *dev,
-			    enum i2s_dir dir, enum i2s_trigger_cmd cmd)
+static int i2s_nrfx_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_trigger_cmd cmd)
 {
 	struct i2s_nrfx_drv_data *drv_data = dev->data;
 	bool configured = false;
@@ -810,12 +753,9 @@ static int i2s_nrfx_trigger(const struct device *dev,
 		return -EIO;
 	}
 
-	if (dir == I2S_DIR_BOTH &&
-	    (memcmp(&drv_data->tx.nrfx_cfg,
-		    &drv_data->rx.nrfx_cfg,
-		    sizeof(drv_data->rx.nrfx_cfg)) != 0
-	     ||
-	     (drv_data->tx.cfg.block_size != drv_data->rx.cfg.block_size))) {
+	if (dir == I2S_DIR_BOTH && (memcmp(&drv_data->tx.nrfx_cfg, &drv_data->rx.nrfx_cfg,
+					   sizeof(drv_data->rx.nrfx_cfg)) != 0 ||
+				    (drv_data->tx.cfg.block_size != drv_data->rx.cfg.block_size))) {
 		LOG_ERR("TX and RX configurations are different");
 		return -EIO;
 	}
@@ -848,10 +788,9 @@ static int i2s_nrfx_trigger(const struct device *dev,
 	 * that are currently active (this device cannot e.g. stop only TX
 	 * without stopping RX).
 	 */
-	if (drv_data->state == I2S_STATE_RUNNING &&
-	    drv_data->active_dir != dir) {
-		LOG_ERR("Inappropriate trigger (%d/%d), active stream(s): %d",
-			cmd, dir, drv_data->active_dir);
+	if (drv_data->state == I2S_STATE_RUNNING && drv_data->active_dir != dir) {
+		LOG_ERR("Inappropriate trigger (%d/%d), active stream(s): %d", cmd, dir,
+			drv_data->active_dir);
 		return -EINVAL;
 	}
 
@@ -922,65 +861,55 @@ static const struct i2s_driver_api i2s_nrf_drv_api = {
 	.trigger = i2s_nrfx_trigger,
 };
 
-#define I2S(idx) DT_NODELABEL(i2s##idx)
+#define I2S(idx)         DT_NODELABEL(i2s##idx)
 #define I2S_CLK_SRC(idx) DT_STRING_TOKEN(I2S(idx), clock_source)
 
-#define I2S_NRFX_DEVICE(idx)						     \
-	static struct i2s_buf tx_msgs##idx[CONFIG_I2S_NRFX_TX_BLOCK_COUNT];  \
-	static struct i2s_buf rx_msgs##idx[CONFIG_I2S_NRFX_RX_BLOCK_COUNT];  \
-	static void data_handler##idx(nrfx_i2s_buffers_t const *p_released,  \
-				      uint32_t status)			     \
-	{								     \
-		data_handler(DEVICE_DT_GET(I2S(idx)), p_released, status);   \
-	}								     \
-	PINCTRL_DT_DEFINE(I2S(idx));					     \
-	static const struct i2s_nrfx_drv_cfg i2s_nrfx_cfg##idx = {	     \
-		.data_handler = data_handler##idx,			     \
-		.i2s = NRFX_I2S_INSTANCE(idx),				     \
-		.nrfx_def_cfg = NRFX_I2S_DEFAULT_CONFIG(		     \
-			NRF_I2S_PIN_NOT_CONNECTED,			     \
-			NRF_I2S_PIN_NOT_CONNECTED,			     \
-			NRF_I2S_PIN_NOT_CONNECTED,			     \
-			NRF_I2S_PIN_NOT_CONNECTED,			     \
-			NRF_I2S_PIN_NOT_CONNECTED),			     \
-		.nrfx_def_cfg.skip_gpio_cfg = true,			     \
-		.nrfx_def_cfg.skip_psel_cfg = true,			     \
-		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(I2S(idx)),		     \
-		.clk_src = I2S_CLK_SRC(idx),				     \
-	};								     \
-	static struct i2s_nrfx_drv_data i2s_nrfx_data##idx = {		     \
-		.state = I2S_STATE_READY,				     \
-		.p_i2s = &i2s_nrfx_cfg##idx.i2s				     \
-	};								     \
-	static int i2s_nrfx_init##idx(const struct device *dev)		     \
-	{								     \
-		IRQ_CONNECT(DT_IRQN(I2S(idx)), DT_IRQ(I2S(idx), priority),   \
-			    nrfx_isr, nrfx_i2s_##idx##_irq_handler, 0);	     \
-		const struct i2s_nrfx_drv_cfg *drv_cfg = dev->config;	     \
-		int err = pinctrl_apply_state(drv_cfg->pcfg,		     \
-					      PINCTRL_STATE_DEFAULT);	     \
-		if (err < 0) {						     \
-			return err;					     \
-		}							     \
-		k_msgq_init(&i2s_nrfx_data##idx.tx_queue,		     \
-			    (char *)tx_msgs##idx, sizeof(struct i2s_buf),    \
-			    ARRAY_SIZE(tx_msgs##idx));			     \
-		k_msgq_init(&i2s_nrfx_data##idx.rx_queue,		     \
-			    (char *)rx_msgs##idx, sizeof(struct i2s_buf),    \
-			    ARRAY_SIZE(rx_msgs##idx));			     \
-		init_clock_manager(dev);				     \
-		return 0;						     \
-	}								     \
-	BUILD_ASSERT(I2S_CLK_SRC(idx) != ACLK || NRF_I2S_HAS_CLKCONFIG,	     \
-		"Clock source ACLK is not available.");			     \
-	BUILD_ASSERT(I2S_CLK_SRC(idx) != ACLK ||			     \
-		     DT_NODE_HAS_PROP(DT_NODELABEL(clock),		     \
-				      hfclkaudio_frequency),		     \
-		"Clock source ACLK requires the hfclkaudio-frequency "	     \
-		"property to be defined in the nordic,nrf-clock node.");     \
-	DEVICE_DT_DEFINE(I2S(idx), i2s_nrfx_init##idx, NULL,		     \
-			 &i2s_nrfx_data##idx, &i2s_nrfx_cfg##idx,	     \
-			 POST_KERNEL, CONFIG_I2S_INIT_PRIORITY,		     \
+#define I2S_NRFX_DEVICE(idx)                                                                       \
+	static struct i2s_buf tx_msgs##idx[CONFIG_I2S_NRFX_TX_BLOCK_COUNT];                        \
+	static struct i2s_buf rx_msgs##idx[CONFIG_I2S_NRFX_RX_BLOCK_COUNT];                        \
+	static void data_handler##idx(nrfx_i2s_buffers_t const *p_released, uint32_t status)       \
+	{                                                                                          \
+		data_handler(DEVICE_DT_GET(I2S(idx)), p_released, status);                         \
+	}                                                                                          \
+	PINCTRL_DT_DEFINE(I2S(idx));                                                               \
+	static const struct i2s_nrfx_drv_cfg i2s_nrfx_cfg##idx = {                                 \
+		.data_handler = data_handler##idx,                                                 \
+		.i2s = NRFX_I2S_INSTANCE(idx),                                                     \
+		.nrfx_def_cfg = NRFX_I2S_DEFAULT_CONFIG(                                           \
+			NRF_I2S_PIN_NOT_CONNECTED, NRF_I2S_PIN_NOT_CONNECTED,                      \
+			NRF_I2S_PIN_NOT_CONNECTED, NRF_I2S_PIN_NOT_CONNECTED,                      \
+			NRF_I2S_PIN_NOT_CONNECTED),                                                \
+		.nrfx_def_cfg.skip_gpio_cfg = true,                                                \
+		.nrfx_def_cfg.skip_psel_cfg = true,                                                \
+		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(I2S(idx)),                                       \
+		.clk_src = I2S_CLK_SRC(idx),                                                       \
+	};                                                                                         \
+	static struct i2s_nrfx_drv_data i2s_nrfx_data##idx = {.state = I2S_STATE_READY,            \
+							      .p_i2s = &i2s_nrfx_cfg##idx.i2s};    \
+	static int i2s_nrfx_init##idx(const struct device *dev)                                    \
+	{                                                                                          \
+		IRQ_CONNECT(DT_IRQN(I2S(idx)), DT_IRQ(I2S(idx), priority), nrfx_isr,               \
+			    nrfx_i2s_##idx##_irq_handler, 0);                                      \
+		const struct i2s_nrfx_drv_cfg *drv_cfg = dev->config;                              \
+		int err = pinctrl_apply_state(drv_cfg->pcfg, PINCTRL_STATE_DEFAULT);               \
+		if (err < 0) {                                                                     \
+			return err;                                                                \
+		}                                                                                  \
+		k_msgq_init(&i2s_nrfx_data##idx.tx_queue, (char *)tx_msgs##idx,                    \
+			    sizeof(struct i2s_buf), ARRAY_SIZE(tx_msgs##idx));                     \
+		k_msgq_init(&i2s_nrfx_data##idx.rx_queue, (char *)rx_msgs##idx,                    \
+			    sizeof(struct i2s_buf), ARRAY_SIZE(rx_msgs##idx));                     \
+		init_clock_manager(dev);                                                           \
+		return 0;                                                                          \
+	}                                                                                          \
+	BUILD_ASSERT(I2S_CLK_SRC(idx) != ACLK || NRF_I2S_HAS_CLKCONFIG,                            \
+		     "Clock source ACLK is not available.");                                       \
+	BUILD_ASSERT(I2S_CLK_SRC(idx) != ACLK ||                                                   \
+			     DT_NODE_HAS_PROP(DT_NODELABEL(clock), hfclkaudio_frequency),          \
+		     "Clock source ACLK requires the hfclkaudio-frequency "                        \
+		     "property to be defined in the nordic,nrf-clock node.");                      \
+	DEVICE_DT_DEFINE(I2S(idx), i2s_nrfx_init##idx, NULL, &i2s_nrfx_data##idx,                  \
+			 &i2s_nrfx_cfg##idx, POST_KERNEL, CONFIG_I2S_INIT_PRIORITY,                \
 			 &i2s_nrf_drv_api);
 
 #ifdef CONFIG_HAS_HW_NRF_I2S0

@@ -19,9 +19,9 @@
 LOG_MODULE_REGISTER(wdt_wwdgt_gd32, CONFIG_WDT_LOG_LEVEL);
 
 #define WWDGT_PRESCALER_EXP_MAX (3U)
-#define WWDGT_COUNTER_MIN	(0x40U)
-#define WWDGT_COUNTER_MAX	(0x7fU)
-#define WWDGT_INTERNAL_DIVIDER	(4096ULL)
+#define WWDGT_COUNTER_MIN       (0x40U)
+#define WWDGT_COUNTER_MAX       (0x7fU)
+#define WWDGT_INTERNAL_DIVIDER  (4096ULL)
 
 struct gd32_wwdgt_config {
 	uint16_t clkid;
@@ -50,19 +50,17 @@ static void gd32_wwdgt_irq_config(const struct device *dev);
  *
  *  and add WWDGT_COUNTER_MIN to this as a offset value.
  */
-static inline uint32_t gd32_wwdgt_calc_ticks(const struct device *dev,
-					    uint32_t timeout, uint32_t exp)
+static inline uint32_t gd32_wwdgt_calc_ticks(const struct device *dev, uint32_t timeout,
+					     uint32_t exp)
 {
 	const struct gd32_wwdgt_config *config = dev->config;
 	uint32_t pclk;
 
-	(void)clock_control_get_rate(GD32_CLOCK_CONTROLLER,
-				       (clock_control_subsys_t)&config->clkid,
-				       &pclk);
+	(void)clock_control_get_rate(GD32_CLOCK_CONTROLLER, (clock_control_subsys_t)&config->clkid,
+				     &pclk);
 
-	return ((timeout * pclk)
-		/ (WWDGT_INTERNAL_DIVIDER * (1 << exp) * MSEC_PER_SEC) - 1)
-		+ WWDGT_COUNTER_MIN;
+	return ((timeout * pclk) / (WWDGT_INTERNAL_DIVIDER * (1 << exp) * MSEC_PER_SEC) - 1) +
+	       WWDGT_COUNTER_MIN;
 }
 
 /**
@@ -75,10 +73,8 @@ static inline uint32_t gd32_wwdgt_calc_ticks(const struct device *dev,
  *
  * @return 0 on success, -EINVAL if the window-max is out of range
  */
-static int gd32_wwdgt_calc_window(const struct device *dev,
-				  const struct wdt_window *win,
-				  uint32_t *counter, uint32_t *wval,
-				  uint32_t *prescaler)
+static int gd32_wwdgt_calc_window(const struct device *dev, const struct wdt_window *win,
+				  uint32_t *counter, uint32_t *wval, uint32_t *prescaler)
 {
 	for (uint32_t shift = 0U; shift <= WWDGT_PRESCALER_EXP_MAX; shift++) {
 		uint32_t max_count = gd32_wwdgt_calc_ticks(dev, win->max, shift);
@@ -145,8 +141,7 @@ static int gd32_wwdgt_install_timeout(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (gd32_wwdgt_calc_window(dev, &config->window, &counter, &window,
-				   &prescaler) != 0) {
+	if (gd32_wwdgt_calc_window(dev, &config->window, &counter, &window, &prescaler) != 0) {
 		LOG_ERR("window.max in out of range");
 		return -EINVAL;
 	}
@@ -203,8 +198,7 @@ static int gd32_wwdgt_init(const struct device *dev)
 {
 	const struct gd32_wwdgt_config *config = dev->config;
 
-	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
-			       (clock_control_subsys_t)&config->clkid);
+	(void)clock_control_on(GD32_CLOCK_CONTROLLER, (clock_control_subsys_t)&config->clkid);
 	(void)reset_line_toggle_dt(&config->reset);
 	gd32_wwdgt_irq_config(dev);
 
@@ -216,10 +210,7 @@ static const struct gd32_wwdgt_config wwdgt_cfg = {
 	.reset = RESET_DT_SPEC_INST_GET(0),
 };
 
-static struct gd32_wwdgt_data wwdgt_data = {
-	.counter = WWDGT_COUNTER_MIN,
-	.callback = NULL
-};
+static struct gd32_wwdgt_data wwdgt_data = {.counter = WWDGT_COUNTER_MIN, .callback = NULL};
 
 DEVICE_DT_INST_DEFINE(0, gd32_wwdgt_init, NULL, &wwdgt_data, &wwdgt_cfg, POST_KERNEL,
 		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wwdgt_gd32_api);

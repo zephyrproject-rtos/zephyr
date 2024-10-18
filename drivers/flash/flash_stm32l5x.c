@@ -5,7 +5,7 @@
  */
 
 #define LOG_DOMAIN flash_stm32l5
-#define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
+#define LOG_LEVEL  CONFIG_FLASH_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
@@ -22,22 +22,22 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
 /* at this time stm32h5 mcus have 128KB (stm32h50x) or 2MB (stm32h56x/57x) */
-#define STM32_SERIES_MAX_FLASH	2048
+#define STM32_SERIES_MAX_FLASH 2048
 #elif defined(CONFIG_SOC_SERIES_STM32L5X)
-#define STM32_SERIES_MAX_FLASH	512
+#define STM32_SERIES_MAX_FLASH 512
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
 /* It is used to handle the 2 banks discontinuity case, the discontinuity is not happen on STM32U5,
  *  so define it to flash size to avoid the unexptected check.
  */
-#define STM32_SERIES_MAX_FLASH	(CONFIG_FLASH_SIZE)
+#define STM32_SERIES_MAX_FLASH (CONFIG_FLASH_SIZE)
 #endif
 
 #define PAGES_PER_BANK ((FLASH_SIZE / FLASH_PAGE_SIZE) / 2)
 
-#define BANK2_OFFSET	(KB(STM32_SERIES_MAX_FLASH) / 2)
+#define BANK2_OFFSET (KB(STM32_SERIES_MAX_FLASH) / 2)
 
-#define ICACHE_DISABLE_TIMEOUT_VALUE           1U   /* 1ms */
-#define ICACHE_INVALIDATE_TIMEOUT_VALUE        1U   /* 1ms */
+#define ICACHE_DISABLE_TIMEOUT_VALUE    1U /* 1ms */
+#define ICACHE_INVALIDATE_TIMEOUT_VALUE 1U /* 1ms */
 
 static int stm32_icache_disable(void)
 {
@@ -57,8 +57,7 @@ static int stm32_icache_disable(void)
 
 	/* Wait for instruction cache to get disabled */
 	while (LL_ICACHE_IsEnabled()) {
-		if ((k_uptime_get_32() - tickstart) >
-						ICACHE_DISABLE_TIMEOUT_VALUE) {
+		if ((k_uptime_get_32() - tickstart) > ICACHE_DISABLE_TIMEOUT_VALUE) {
 			/* New check to avoid false timeout detection in case
 			 * of preemption.
 			 */
@@ -90,8 +89,7 @@ static int icache_wait_for_invalidate_complete(void)
 
 		/* Wait for end of cache invalidation */
 		while (!LL_ICACHE_IsActiveFlag_BSYEND()) {
-			if ((k_uptime_get_32() - tickstart) >
-					ICACHE_INVALIDATE_TIMEOUT_VALUE) {
+			if ((k_uptime_get_32() - tickstart) > ICACHE_INVALIDATE_TIMEOUT_VALUE) {
 				break;
 			}
 		}
@@ -123,30 +121,26 @@ static int icache_wait_for_invalidate_complete(void)
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
 #define stm32_flash_has_2_banks(flash_device) true
 #else
-#define stm32_flash_has_2_banks(flash_device) \
-	(((FLASH_STM32_REGS(flash_device)->OPTR & FLASH_STM32_DBANK) \
-	== FLASH_STM32_DBANK) \
-	? (true) : (false))
+#define stm32_flash_has_2_banks(flash_device)                                                      \
+	(((FLASH_STM32_REGS(flash_device)->OPTR & FLASH_STM32_DBANK) == FLASH_STM32_DBANK)         \
+		 ? (true)                                                                          \
+		 : (false))
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
 
 /*
  * offset and len must be aligned on write-block-size for write,
  * positive and not beyond end of flash
  */
-bool flash_stm32_valid_range(const struct device *dev, off_t offset,
-			     uint32_t len,
-			     bool write)
+bool flash_stm32_valid_range(const struct device *dev, off_t offset, uint32_t len, bool write)
 {
-	if (stm32_flash_has_2_banks(dev) &&
-			(CONFIG_FLASH_SIZE < STM32_SERIES_MAX_FLASH)) {
+	if (stm32_flash_has_2_banks(dev) && (CONFIG_FLASH_SIZE < STM32_SERIES_MAX_FLASH)) {
 		/*
 		 * In case of bank1/2 discontinuity, the range should not
 		 * start before bank2 and end beyond bank1 at the same time.
 		 * Locations beyond bank2 are caught by
 		 * flash_stm32_range_exists.
 		 */
-		if ((offset < BANK2_OFFSET) &&
-					(offset + len > FLASH_SIZE / 2)) {
+		if ((offset < BANK2_OFFSET) && (offset + len > FLASH_SIZE / 2)) {
 			return 0;
 		}
 	}
@@ -160,8 +154,7 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 static int write_nwords(const struct device *dev, off_t offset, const uint32_t *buff, size_t n)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-	volatile uint32_t *flash = (uint32_t *)(offset
-						+ FLASH_STM32_BASE_ADDRESS);
+	volatile uint32_t *flash = (uint32_t *)(offset + FLASH_STM32_BASE_ADDRESS);
 	bool full_zero = true;
 	uint32_t tmp;
 	int rc;
@@ -243,8 +236,7 @@ static int erase_page(const struct device *dev, unsigned int offset)
 	if (stm32_flash_has_2_banks(dev)) {
 		bool bank_swap;
 		/* Check whether bank1/2 are swapped */
-		bank_swap =
-		((regs->OPTR & FLASH_OPTR_SWAP_BANK) == FLASH_OPTR_SWAP_BANK);
+		bank_swap = ((regs->OPTR & FLASH_OPTR_SWAP_BANK) == FLASH_OPTR_SWAP_BANK);
 
 		if ((offset < (FLASH_SIZE / 2)) && !bank_swap) {
 			/* The pages to be erased is in bank 1 */
@@ -298,9 +290,7 @@ static int erase_page(const struct device *dev, unsigned int offset)
 	return rc;
 }
 
-int flash_stm32_block_erase_loop(const struct device *dev,
-				 unsigned int offset,
-				 unsigned int len)
+int flash_stm32_block_erase_loop(const struct device *dev, unsigned int offset, unsigned int len)
 {
 	unsigned int address = offset;
 	int rc = 0;
@@ -318,7 +308,7 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 		}
 	}
 
-	for (; address <= offset + len - 1 ; address += FLASH_PAGE_SIZE) {
+	for (; address <= offset + len - 1; address += FLASH_PAGE_SIZE) {
 		rc = erase_page(dev, address);
 		if (rc < 0) {
 			break;
@@ -340,8 +330,8 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 	return rc;
 }
 
-int flash_stm32_write_range(const struct device *dev, unsigned int offset,
-			    const void *data, unsigned int len)
+int flash_stm32_write_range(const struct device *dev, unsigned int offset, const void *data,
+			    unsigned int len)
 {
 	int i, rc = 0;
 	bool icache_enabled = LL_ICACHE_IsEnabled();
@@ -359,7 +349,7 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 	}
 
 	for (i = 0; i < len; i += FLASH_STM32_WRITE_BLOCK_SIZE) {
-		rc = write_nwords(dev, offset + i, ((const uint32_t *) data + (i>>2)),
+		rc = write_nwords(dev, offset + i, ((const uint32_t *)data + (i >> 2)),
 				  FLASH_STM32_WRITE_BLOCK_SIZE / 4);
 		if (rc < 0) {
 			break;
@@ -387,8 +377,7 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 	return rc;
 }
 
-void flash_stm32_page_layout(const struct device *dev,
-			     const struct flash_pages_layout **layout,
+void flash_stm32_page_layout(const struct device *dev, const struct flash_pages_layout **layout,
 			     size_t *layout_size)
 {
 	static struct flash_pages_layout stm32_flash_layout[3];
@@ -402,8 +391,7 @@ void flash_stm32_page_layout(const struct device *dev,
 		return;
 	}
 
-	if (stm32_flash_has_2_banks(dev) &&
-			(CONFIG_FLASH_SIZE < STM32_SERIES_MAX_FLASH)) {
+	if (stm32_flash_has_2_banks(dev) && (CONFIG_FLASH_SIZE < STM32_SERIES_MAX_FLASH)) {
 		/*
 		 * For stm32l552xx with 256 kB flash
 		 * which have space between banks 1 and 2.
@@ -415,8 +403,8 @@ void flash_stm32_page_layout(const struct device *dev,
 
 		/* Dummy page corresponding to space between banks 1 and 2 */
 		stm32_flash_layout[1].pages_count = 1;
-		stm32_flash_layout[1].pages_size = BANK2_OFFSET
-				- (PAGES_PER_BANK * FLASH_PAGE_SIZE);
+		stm32_flash_layout[1].pages_size =
+			BANK2_OFFSET - (PAGES_PER_BANK * FLASH_PAGE_SIZE);
 
 		/* Bank2 */
 		stm32_flash_layout[2].pages_count = PAGES_PER_BANK;

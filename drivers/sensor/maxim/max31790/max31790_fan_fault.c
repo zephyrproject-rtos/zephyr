@@ -74,8 +74,8 @@ static int max31790_fan_fault_init(const struct device *dev)
 	static struct max31790_fan_fault_data max31790_fan_fault_##inst##_data;                    \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, max31790_fan_fault_init, NULL,                          \
-			      &max31790_fan_fault_##inst##_data,                                   \
-			      &max31790_fan_fault_##inst##_config, POST_KERNEL,                    \
-			      CONFIG_SENSOR_INIT_PRIORITY, &max31790_fan_fault_api);
+				     &max31790_fan_fault_##inst##_data,                            \
+				     &max31790_fan_fault_##inst##_config, POST_KERNEL,             \
+				     CONFIG_SENSOR_INIT_PRIORITY, &max31790_fan_fault_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX31790_FAN_FAULT_INIT);

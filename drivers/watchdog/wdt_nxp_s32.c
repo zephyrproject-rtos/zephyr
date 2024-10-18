@@ -69,8 +69,8 @@ LOG_MODULE_REGISTER(swt_nxp_s32);
 
 #define SWT_TO_WTO_MIN 0x100
 
-#define SWT_SR_WSC_UNLOCK_KEY1  0xC520U
-#define SWT_SR_WSC_UNLOCK_KEY2  0xD928U
+#define SWT_SR_WSC_UNLOCK_KEY1 0xC520U
+#define SWT_SR_WSC_UNLOCK_KEY2 0xD928U
 
 #define SWT_SR_WSC_SERVICE_KEY1 0xA602U
 #define SWT_SR_WSC_SERVICE_KEY2 0xB480U
@@ -78,8 +78,8 @@ LOG_MODULE_REGISTER(swt_nxp_s32);
 #define SWT_SOFT_LOCK_TIMEOUT_US 3000
 
 /* Handy accessors */
-#define REG_READ(r)      sys_read32(config->base + (r))
-#define REG_WRITE(r, v)  sys_write32((v), config->base + (r))
+#define REG_READ(r)     sys_read32(config->base + (r))
+#define REG_WRITE(r, v) sys_write32((v), config->base + (r))
 
 enum swt_service_mode {
 	SWT_FIXED_SERVICE = 0,
@@ -87,7 +87,7 @@ enum swt_service_mode {
 };
 
 enum swt_lock_mode {
-	SWT_UNLOCKED  = 0,
+	SWT_UNLOCKED = 0,
 	SWT_SOFT_LOCK = 1,
 	SWT_HARD_LOCK = 2,
 };
@@ -181,11 +181,10 @@ static int swt_nxp_s32_setup(const struct device *dev, uint8_t options)
 
 	reg_val = REG_READ(SWT_CR);
 	reg_val &= ~(SWT_CR_WND_MASK | SWT_CR_STP_MASK | SWT_CR_FRZ_MASK | SWT_CR_ITR_MASK);
-	REG_WRITE(SWT_CR, reg_val |
-		  SWT_CR_WND(data->timeout.window_mode ? 1U : 0U) |
-		  SWT_CR_ITR(data->callback ? 1U : 0U) |
-		  SWT_CR_STP((options & WDT_OPT_PAUSE_IN_SLEEP) ? 1U : 0U) |
-		  SWT_CR_FRZ((options & WDT_OPT_PAUSE_HALTED_BY_DBG) ? 1U : 0U));
+	REG_WRITE(SWT_CR, reg_val | SWT_CR_WND(data->timeout.window_mode ? 1U : 0U) |
+				  SWT_CR_ITR(data->callback ? 1U : 0U) |
+				  SWT_CR_STP((options & WDT_OPT_PAUSE_IN_SLEEP) ? 1U : 0U) |
+				  SWT_CR_FRZ((options & WDT_OPT_PAUSE_HALTED_BY_DBG) ? 1U : 0U));
 
 	REG_WRITE(SWT_IR, SWT_IR_TIF(1U));
 	REG_WRITE(SWT_TO, SWT_TO_WTO(data->timeout.period));
@@ -228,8 +227,7 @@ static int swt_nxp_s32_disable(const struct device *dev)
 	return 0;
 }
 
-static int swt_nxp_s32_install_timeout(const struct device *dev,
-				       const struct wdt_timeout_cfg *cfg)
+static int swt_nxp_s32_install_timeout(const struct device *dev, const struct wdt_timeout_cfg *cfg)
 {
 	const struct swt_nxp_s32_config *config = dev->config;
 	struct swt_nxp_s32_data *data = dev->data;
@@ -267,8 +265,8 @@ static int swt_nxp_s32_install_timeout(const struct device *dev,
 	data->timeout.window_mode = window_mode;
 	data->callback = cfg->callback;
 	data->timeout_valid = true;
-	LOG_DBG("Installed timeout: period=%d, window=%d (%s)",
-		period, window, window_mode ? "enabled" : "disabled");
+	LOG_DBG("Installed timeout: period=%d, window=%d (%s)", period, window,
+		window_mode ? "enabled" : "disabled");
 
 	return 0;
 }
@@ -355,10 +353,9 @@ static int swt_nxp_s32_init(const struct device *dev)
 		return err;
 	}
 
-	REG_WRITE(SWT_CR,
-		  SWT_CR_MAP(config->master_access_mask) |
-		  SWT_CR_RIA(config->reset_on_invalid_access) |
-		  SWT_CR_SMD(config->service_mode));
+	REG_WRITE(SWT_CR, SWT_CR_MAP(config->master_access_mask) |
+				  SWT_CR_RIA(config->reset_on_invalid_access) |
+				  SWT_CR_SMD(config->service_mode));
 
 	return 0;
 }
@@ -370,45 +367,41 @@ static const struct wdt_driver_api swt_nxp_s32_driver_api = {
 	.feed = swt_nxp_s32_feed,
 };
 
-#define SWT_NXP_S32_DEVICE_INIT(n)							\
-	static struct swt_nxp_s32_data swt_nxp_s32_data_##n;				\
-											\
-	static const struct swt_nxp_s32_config swt_nxp_s32_config_##n = {		\
-		.base = DT_INST_REG_ADDR(n),						\
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),			\
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
-		.master_access_mask = DT_INST_PROP(n, master_access_mask),		\
-		.reset_on_invalid_access = DT_INST_PROP(n, reset_on_invalid_access),	\
-		.service_mode = DT_INST_ENUM_IDX(n, service_mode),			\
-		.initial_key = (uint16_t)DT_INST_PROP(n, initial_key),			\
-		.lock_mode = DT_INST_ENUM_IDX(n, lock_mode),				\
-	};										\
-											\
-	static int swt_nxp_s32_##n##_init(const struct device *dev)			\
-	{										\
-		int err;								\
-											\
-		err = swt_nxp_s32_init(dev);						\
-		if (err) {								\
-			return err;							\
-		}									\
-											\
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),			\
-			    swt_nxp_s32_isr, DEVICE_DT_INST_GET(n),			\
-			    COND_CODE_1(DT_INST_IRQ_HAS_CELL(n, flags),			\
-					(DT_INST_IRQ(n, flags)), (0)));			\
-		irq_enable(DT_INST_IRQN(n));						\
-											\
-		return 0;								\
-	}										\
-											\
-	DEVICE_DT_INST_DEFINE(n,							\
-			 swt_nxp_s32_##n##_init,					\
-			 NULL,								\
-			 &swt_nxp_s32_data_##n,						\
-			 &swt_nxp_s32_config_##n,					\
-			 POST_KERNEL,							\
-			 CONFIG_KERNEL_INIT_PRIORITY_DEVICE,				\
-			 &swt_nxp_s32_driver_api);
+#define SWT_NXP_S32_DEVICE_INIT(n)                                                                 \
+	static struct swt_nxp_s32_data swt_nxp_s32_data_##n;                                       \
+                                                                                                   \
+	static const struct swt_nxp_s32_config swt_nxp_s32_config_##n = {                          \
+		.base = DT_INST_REG_ADDR(n),                                                       \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
+		.master_access_mask = DT_INST_PROP(n, master_access_mask),                         \
+		.reset_on_invalid_access = DT_INST_PROP(n, reset_on_invalid_access),               \
+		.service_mode = DT_INST_ENUM_IDX(n, service_mode),                                 \
+		.initial_key = (uint16_t)DT_INST_PROP(n, initial_key),                             \
+		.lock_mode = DT_INST_ENUM_IDX(n, lock_mode),                                       \
+	};                                                                                         \
+                                                                                                   \
+	static int swt_nxp_s32_##n##_init(const struct device *dev)                                \
+	{                                                                                          \
+		int err;                                                                           \
+                                                                                                   \
+		err = swt_nxp_s32_init(dev);                                                       \
+		if (err) {                                                                         \
+			return err;                                                                \
+		}                                                                                  \
+                                                                                                   \
+		IRQ_CONNECT(                                                                       \
+			DT_INST_IRQN(n), DT_INST_IRQ(n, priority), swt_nxp_s32_isr,                \
+			DEVICE_DT_INST_GET(n),                                                     \
+			COND_CODE_1(DT_INST_IRQ_HAS_CELL(n, flags),			\
+					(DT_INST_IRQ(n, flags)), (0)));    \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+                                                                                                   \
+		return 0;                                                                          \
+	}                                                                                          \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, swt_nxp_s32_##n##_init, NULL, &swt_nxp_s32_data_##n,              \
+			      &swt_nxp_s32_config_##n, POST_KERNEL,                                \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &swt_nxp_s32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SWT_NXP_S32_DEVICE_INIT)

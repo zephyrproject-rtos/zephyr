@@ -587,12 +587,13 @@ static int tle9104_init(const struct device *dev)
 			inst, SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(8), 0),            \
 		.gpio_enable = TLE9104_INIT_GPIO_FIELDS(inst, en_gpios),                           \
 		.gpio_reset = TLE9104_INIT_GPIO_FIELDS(inst, resn_gpios),                          \
-		.gpio_control = {                                                                  \
-			TLE9104_INIT_GPIO_FIELDS(inst, in1_gpios),                                 \
-			TLE9104_INIT_GPIO_FIELDS(inst, in2_gpios),                                 \
-			TLE9104_INIT_GPIO_FIELDS(inst, in3_gpios),                                 \
-			TLE9104_INIT_GPIO_FIELDS(inst, in4_gpios),                                 \
-		},                                                                                 \
+		.gpio_control =                                                                    \
+			{                                                                          \
+				TLE9104_INIT_GPIO_FIELDS(inst, in1_gpios),                         \
+				TLE9104_INIT_GPIO_FIELDS(inst, in2_gpios),                         \
+				TLE9104_INIT_GPIO_FIELDS(inst, in3_gpios),                         \
+				TLE9104_INIT_GPIO_FIELDS(inst, in4_gpios),                         \
+			},                                                                         \
 		.diagnostic_filter_time = DT_INST_ENUM_IDX(inst, diagnostic_filter_time),          \
 		.overcurrent_shutdown_delay_time =                                                 \
 			DT_INST_ENUM_IDX(inst, overcurrent_shutdown_delay_time),                   \

@@ -14,8 +14,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control);
 
-static int mcux_ccm_on(const struct device *dev,
-				  clock_control_subsys_t sub_system)
+static int mcux_ccm_on(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	uint32_t clock_name = (uintptr_t)sub_system;
 	uint32_t peripheral, instance;
@@ -26,10 +25,10 @@ static int mcux_ccm_on(const struct device *dev,
 #ifdef CONFIG_ETH_NXP_ENET
 
 #ifdef CONFIG_SOC_MIMX9352
-#define ENET1G_CLOCK	kCLOCK_Enet1
+#define ENET1G_CLOCK kCLOCK_Enet1
 #else
-#define ENET_CLOCK	kCLOCK_Enet
-#define ENET1G_CLOCK	kCLOCK_Enet_1g
+#define ENET_CLOCK   kCLOCK_Enet
+#define ENET1G_CLOCK kCLOCK_Enet_1g
 #endif
 #ifdef ENET_CLOCK
 	case IMX_CCM_ENET_CLK:
@@ -46,17 +45,15 @@ static int mcux_ccm_on(const struct device *dev,
 	}
 }
 
-static int mcux_ccm_off(const struct device *dev,
-				   clock_control_subsys_t sub_system)
+static int mcux_ccm_off(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	return 0;
 }
 
-static int mcux_ccm_get_subsys_rate(const struct device *dev,
-					clock_control_subsys_t sub_system,
-					uint32_t *rate)
+static int mcux_ccm_get_subsys_rate(const struct device *dev, clock_control_subsys_t sub_system,
+				    uint32_t *rate)
 {
-	uint32_t clock_name = (size_t) sub_system;
+	uint32_t clock_name = (size_t)sub_system;
 	uint32_t clock_root, peripheral, instance;
 
 	peripheral = (clock_name & IMX_CCM_PERIPHERAL_MASK);
@@ -130,16 +127,16 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 
 #ifdef CONFIG_I2S_MCUX_SAI
 	case IMX_CCM_SAI1_CLK:
-		clock_root =  kCLOCK_Root_Sai1;
+		clock_root = kCLOCK_Root_Sai1;
 		break;
 	case IMX_CCM_SAI2_CLK:
-		clock_root =  kCLOCK_Root_Sai2;
+		clock_root = kCLOCK_Root_Sai2;
 		break;
 	case IMX_CCM_SAI3_CLK:
-		clock_root =  kCLOCK_Root_Sai3;
+		clock_root = kCLOCK_Root_Sai3;
 		break;
 	case IMX_CCM_SAI4_CLK:
-		clock_root =  kCLOCK_Root_Sai4;
+		clock_root = kCLOCK_Root_Sai4;
 		break;
 #endif
 
@@ -241,8 +238,8 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #endif
 
 static int CCM_SET_FUNC_ATTR mcux_ccm_set_subsys_rate(const struct device *dev,
-			clock_control_subsys_t subsys,
-			clock_control_subsys_rate_t rate)
+						      clock_control_subsys_t subsys,
+						      clock_control_subsys_rate_t rate)
 {
 	uint32_t clock_name = (uintptr_t)subsys;
 	uint32_t clock_rate = (uintptr_t)rate;
@@ -272,6 +269,5 @@ static const struct clock_control_driver_api mcux_ccm_driver_api = {
 	.set_rate = mcux_ccm_set_subsys_rate,
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, PRE_KERNEL_1,
-		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		      &mcux_ccm_driver_api);

@@ -21,7 +21,7 @@
  * parent node. A zero value in the PINCTRL pinmux field means
  * do not touch.
  */
-static void config_drive_slew(struct gpio_regs * const regs, uint32_t idx, uint32_t conf)
+static void config_drive_slew(struct gpio_regs *const regs, uint32_t idx, uint32_t conf)
 {
 	uint32_t slew = (conf >> MCHP_XEC_SLEW_RATE_POS) & MCHP_XEC_SLEW_RATE_MSK0;
 	uint32_t drvstr = (conf >> MCHP_XEC_DRV_STR_POS) & MCHP_XEC_DRV_STR_MSK0;
@@ -90,7 +90,7 @@ static uint32_t prog_pud(uint32_t pcr1, uint32_t conf)
  */
 static int xec_config_pin(uint32_t portpin, uint32_t conf, uint32_t altf)
 {
-	struct gpio_regs * const regs = (struct gpio_regs * const)DT_INST_REG_ADDR(0);
+	struct gpio_regs *const regs = (struct gpio_regs *const)DT_INST_REG_ADDR(0);
 	uint32_t port = MCHP_XEC_PINMUX_PORT(portpin);
 	uint32_t pin = (uint32_t)MCHP_XEC_PINMUX_PIN(portpin);
 	uint32_t idx = 0u, pcr1 = 0u;
@@ -163,8 +163,7 @@ static int xec_config_pin(uint32_t portpin, uint32_t conf, uint32_t altf)
 	return 0;
 }
 
-int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
-			   uintptr_t reg)
+int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintptr_t reg)
 {
 	uint32_t portpin, pinmux, func;
 	int ret;

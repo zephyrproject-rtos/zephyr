@@ -28,14 +28,14 @@
  * Select Oversample = 12.
  * These setting results UART data rate = 1,389 MHz / 12 = 115750 bps.
  */
-#define UART_PSOC6_CONFIG_OVERSAMPLE      (12UL)
-#define UART_PSOC6_CONFIG_BREAKWIDTH      (11UL)
-#define UART_PSOC6_CONFIG_DATAWIDTH       (8UL)
+#define UART_PSOC6_CONFIG_OVERSAMPLE (12UL)
+#define UART_PSOC6_CONFIG_BREAKWIDTH (11UL)
+#define UART_PSOC6_CONFIG_DATAWIDTH  (8UL)
 
 /* Assign divider type and number for UART */
-#define UART_PSOC6_UART_CLK_DIV_TYPE     (CY_SYSCLK_DIV_8_BIT)
-#define UART_PSOC6_UART_CLK_DIV_NUMBER   (PERI_DIV_8_NR - 1u)
-#define UART_PSOC6_UART_CLK_DIV_VAL      (35UL)
+#define UART_PSOC6_UART_CLK_DIV_TYPE   (CY_SYSCLK_DIV_8_BIT)
+#define UART_PSOC6_UART_CLK_DIV_NUMBER (PERI_DIV_8_NR - 1u)
+#define UART_PSOC6_UART_CLK_DIV_VAL    (35UL)
 
 /*
  * Verify Kconfig configuration
@@ -45,50 +45,50 @@ struct cypress_psoc6_config {
 	CySCB_Type *base;
 	uint32_t periph_id;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	uart_irq_config_func_t	irq_config_func;
+	uart_irq_config_func_t irq_config_func;
 #endif
 	const struct pinctrl_dev_config *pcfg;
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 struct cypress_psoc6_data {
-	uart_irq_callback_user_data_t irq_cb;	/* Interrupt Callback */
-	void *irq_cb_data;			/* Interrupt Callback Arg */
+	uart_irq_callback_user_data_t irq_cb; /* Interrupt Callback */
+	void *irq_cb_data;                    /* Interrupt Callback Arg */
 };
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 /* Populate configuration structure */
 static const cy_stc_scb_uart_config_t uartConfig = {
-	.uartMode                   = CY_SCB_UART_STANDARD,
-	.enableMutliProcessorMode   = false,
-	.smartCardRetryOnNack       = false,
-	.irdaInvertRx               = false,
+	.uartMode = CY_SCB_UART_STANDARD,
+	.enableMutliProcessorMode = false,
+	.smartCardRetryOnNack = false,
+	.irdaInvertRx = false,
 	.irdaEnableLowPowerReceiver = false,
 
-	.oversample                 = UART_PSOC6_CONFIG_OVERSAMPLE,
+	.oversample = UART_PSOC6_CONFIG_OVERSAMPLE,
 
-	.enableMsbFirst             = false,
-	.dataWidth                  = UART_PSOC6_CONFIG_DATAWIDTH,
-	.parity                     = CY_SCB_UART_PARITY_NONE,
-	.stopBits                   = CY_SCB_UART_STOP_BITS_1,
-	.enableInputFilter          = false,
-	.breakWidth                 = UART_PSOC6_CONFIG_BREAKWIDTH,
-	.dropOnFrameError           = false,
-	.dropOnParityError          = false,
+	.enableMsbFirst = false,
+	.dataWidth = UART_PSOC6_CONFIG_DATAWIDTH,
+	.parity = CY_SCB_UART_PARITY_NONE,
+	.stopBits = CY_SCB_UART_STOP_BITS_1,
+	.enableInputFilter = false,
+	.breakWidth = UART_PSOC6_CONFIG_BREAKWIDTH,
+	.dropOnFrameError = false,
+	.dropOnParityError = false,
 
-	.receiverAddress            = 0UL,
-	.receiverAddressMask        = 0UL,
-	.acceptAddrInFifo           = false,
+	.receiverAddress = 0UL,
+	.receiverAddressMask = 0UL,
+	.acceptAddrInFifo = false,
 
-	.enableCts                  = false,
-	.ctsPolarity                = CY_SCB_UART_ACTIVE_LOW,
-	.rtsRxFifoLevel             = 0UL,
-	.rtsPolarity                = CY_SCB_UART_ACTIVE_LOW,
+	.enableCts = false,
+	.ctsPolarity = CY_SCB_UART_ACTIVE_LOW,
+	.rtsRxFifoLevel = 0UL,
+	.rtsPolarity = CY_SCB_UART_ACTIVE_LOW,
 
-	.rxFifoTriggerLevel  = 0UL,
+	.rxFifoTriggerLevel = 0UL,
 	.rxFifoIntEnableMask = 0UL,
-	.txFifoTriggerLevel  = 0UL,
+	.txFifoTriggerLevel = 0UL,
 	.txFifoIntEnableMask = 0UL,
 };
 
@@ -110,18 +110,15 @@ static int uart_psoc6_init(const struct device *dev)
 	}
 
 	/* Connect assigned divider to be a clock source for UART */
-	Cy_SysClk_PeriphAssignDivider(config->periph_id,
-		UART_PSOC6_UART_CLK_DIV_TYPE,
-		UART_PSOC6_UART_CLK_DIV_NUMBER);
+	Cy_SysClk_PeriphAssignDivider(config->periph_id, UART_PSOC6_UART_CLK_DIV_TYPE,
+				      UART_PSOC6_UART_CLK_DIV_NUMBER);
 
-	Cy_SysClk_PeriphSetDivider(UART_PSOC6_UART_CLK_DIV_TYPE,
-		UART_PSOC6_UART_CLK_DIV_NUMBER,
-		UART_PSOC6_UART_CLK_DIV_VAL);
-	Cy_SysClk_PeriphEnableDivider(UART_PSOC6_UART_CLK_DIV_TYPE,
-		UART_PSOC6_UART_CLK_DIV_NUMBER);
+	Cy_SysClk_PeriphSetDivider(UART_PSOC6_UART_CLK_DIV_TYPE, UART_PSOC6_UART_CLK_DIV_NUMBER,
+				   UART_PSOC6_UART_CLK_DIV_VAL);
+	Cy_SysClk_PeriphEnableDivider(UART_PSOC6_UART_CLK_DIV_TYPE, UART_PSOC6_UART_CLK_DIV_NUMBER);
 
 	/* Configure UART to operate */
-	(void) Cy_SCB_UART_Init(config->base, &uartConfig, NULL);
+	(void)Cy_SCB_UART_Init(config->base, &uartConfig, NULL);
 	Cy_SCB_UART_Enable(config->base);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -173,18 +170,14 @@ static int uart_psoc6_err_check(const struct device *dev)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-static int uart_psoc6_fifo_fill(const struct device *dev,
-				const uint8_t *tx_data,
-				int size)
+static int uart_psoc6_fifo_fill(const struct device *dev, const uint8_t *tx_data, int size)
 {
 	const struct cypress_psoc6_config *config = dev->config;
 
-	return Cy_SCB_UART_PutArray(config->base, (uint8_t *) tx_data, size);
+	return Cy_SCB_UART_PutArray(config->base, (uint8_t *)tx_data, size);
 }
 
-static int uart_psoc6_fifo_read(const struct device *dev,
-				uint8_t *rx_data,
-				const int size)
+static int uart_psoc6_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
 {
 	const struct cypress_psoc6_config *config = dev->config;
 
@@ -252,8 +245,7 @@ static int uart_psoc6_irq_rx_ready(const struct device *dev)
 static void uart_psoc6_irq_err_enable(const struct device *dev)
 {
 	const struct cypress_psoc6_config *config = dev->config;
-	uint32_t intmask = Cy_SCB_GetRxInterruptMask(config->base) |
-			   CY_SCB_UART_RECEIVE_ERR;
+	uint32_t intmask = Cy_SCB_GetRxInterruptMask(config->base) | CY_SCB_UART_RECEIVE_ERR;
 
 	Cy_SCB_SetRxInterruptMask(config->base, intmask);
 }
@@ -261,8 +253,7 @@ static void uart_psoc6_irq_err_enable(const struct device *dev)
 static void uart_psoc6_irq_err_disable(const struct device *dev)
 {
 	const struct cypress_psoc6_config *config = dev->config;
-	uint32_t intmask = Cy_SCB_GetRxInterruptMask(config->base) &
-			    ~(CY_SCB_UART_RECEIVE_ERR);
+	uint32_t intmask = Cy_SCB_GetRxInterruptMask(config->base) & ~(CY_SCB_UART_RECEIVE_ERR);
 
 	Cy_SCB_SetRxInterruptMask(config->base, intmask);
 }
@@ -282,8 +273,7 @@ static int uart_psoc6_irq_update(const struct device *dev)
 	return 1;
 }
 
-static void uart_psoc6_irq_callback_set(const struct device *dev,
-					uart_irq_callback_user_data_t cb,
+static void uart_psoc6_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
 					void *cb_data)
 {
 	struct cypress_psoc6_data *const dev_data = dev->data;
@@ -322,20 +312,17 @@ static const struct uart_driver_api uart_psoc6_driver_api = {
 	.irq_is_pending = uart_psoc6_irq_is_pending,
 	.irq_update = uart_psoc6_irq_update,
 	.irq_callback_set = uart_psoc6_irq_callback_set,
-#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define CY_PSOC6_UART_IRQ_FUNC(n)						\
-	static void cy_psoc6_uart##n##_irq_config(const struct device *port)	\
-	{									\
-		CY_PSOC6_DT_INST_NVIC_INSTALL(n,				\
-					      uart_psoc6_isr);			\
+#define CY_PSOC6_UART_IRQ_FUNC(n)                                                                  \
+	static void cy_psoc6_uart##n##_irq_config(const struct device *port)                       \
+	{                                                                                          \
+		CY_PSOC6_DT_INST_NVIC_INSTALL(n, uart_psoc6_isr);                                  \
 	};
-#define CY_PSOC6_UART_IRQ_SET_FUNC(n)						\
-	.irq_config_func = cy_psoc6_uart##n##_irq_config
-#define CY_PSOC6_UART_DECL_DATA(n)						\
-	static struct cypress_psoc6_data cy_psoc6_uart##n##_data = { 0 };
+#define CY_PSOC6_UART_IRQ_SET_FUNC(n)  .irq_config_func = cy_psoc6_uart##n##_irq_config
+#define CY_PSOC6_UART_DECL_DATA(n)     static struct cypress_psoc6_data cy_psoc6_uart##n##_data = {0};
 #define CY_PSOC6_UART_DECL_DATA_PTR(n) &cy_psoc6_uart##n##_data
 #else
 #define CY_PSOC6_UART_IRQ_FUNC(n)
@@ -344,21 +331,18 @@ static const struct uart_driver_api uart_psoc6_driver_api = {
 #define CY_PSOC6_UART_DECL_DATA_PTR(n) NULL
 #endif
 
-#define CY_PSOC6_UART_INIT(n)							\
-	PINCTRL_DT_INST_DEFINE(n);					        \
-	CY_PSOC6_UART_DECL_DATA(n)						\
-	CY_PSOC6_UART_IRQ_FUNC(n)						\
-	static const struct cypress_psoc6_config cy_psoc6_uart##n##_config = {	\
-		.base = (CySCB_Type *)DT_INST_REG_ADDR(n),			\
-		.periph_id = DT_INST_PROP(n, peripheral_id),			\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
-										\
-		CY_PSOC6_UART_IRQ_SET_FUNC(n)					\
-	};									\
-	DEVICE_DT_INST_DEFINE(n, &uart_psoc6_init, NULL,			\
-			      CY_PSOC6_UART_DECL_DATA_PTR(n),			\
-			      &cy_psoc6_uart##n##_config, PRE_KERNEL_1,		\
-			      CONFIG_SERIAL_INIT_PRIORITY,			\
-			      &uart_psoc6_driver_api);
+#define CY_PSOC6_UART_INIT(n)                                                                      \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	CY_PSOC6_UART_DECL_DATA(n)                                                                 \
+	CY_PSOC6_UART_IRQ_FUNC(n)                                                                  \
+	static const struct cypress_psoc6_config cy_psoc6_uart##n##_config = {                     \
+		.base = (CySCB_Type *)DT_INST_REG_ADDR(n),                                         \
+		.periph_id = DT_INST_PROP(n, peripheral_id),                                       \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+                                                                                                   \
+		CY_PSOC6_UART_IRQ_SET_FUNC(n)};                                                    \
+	DEVICE_DT_INST_DEFINE(n, &uart_psoc6_init, NULL, CY_PSOC6_UART_DECL_DATA_PTR(n),           \
+			      &cy_psoc6_uart##n##_config, PRE_KERNEL_1,                            \
+			      CONFIG_SERIAL_INIT_PRIORITY, &uart_psoc6_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CY_PSOC6_UART_INIT)

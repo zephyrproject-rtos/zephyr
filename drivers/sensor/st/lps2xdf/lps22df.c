@@ -78,8 +78,7 @@ static void lps22df_handle_interrupt(const struct device *dev)
 	}
 
 exit:
-	ret = gpio_pin_interrupt_configure_dt(&cfg->gpio_int,
-					      GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
 		LOG_ERR("%s: Not able to configure pin_int", dev->name);
 	}
@@ -90,7 +89,7 @@ exit:
  */
 static int lps22df_enable_int(const struct device *dev, int enable)
 {
-	const struct lps2xdf_config * const cfg = dev->config;
+	const struct lps2xdf_config *const cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	lps22df_pin_int_route_t int_route;
 
@@ -103,12 +102,11 @@ static int lps22df_enable_int(const struct device *dev, int enable)
 /**
  * lps22df_trigger_set - link external trigger to event data ready
  */
-static int lps22df_trigger_set(const struct device *dev,
-			  const struct sensor_trigger *trig,
-			  sensor_trigger_handler_t handler)
+static int lps22df_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
+			       sensor_trigger_handler_t handler)
 {
 	struct lps2xdf_data *lps22df = dev->data;
-	const struct lps2xdf_config * const cfg = dev->config;
+	const struct lps2xdf_config *const cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	lps22df_data_t raw_data;
 

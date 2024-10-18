@@ -19,16 +19,16 @@
 
 LOG_MODULE_REGISTER(counter_timer, CONFIG_COUNTER_LOG_LEVEL);
 
-#define LP_CLK_OSC_RC32K	0
-#define LP_CLK_OSC_RCX		1
-#define LP_CLK_OSC_XTAL32K	2
+#define LP_CLK_OSC_RC32K   0
+#define LP_CLK_OSC_RCX     1
+#define LP_CLK_OSC_XTAL32K 2
 
-#define TIMER_TOP_VALUE		0xFFFFFF
+#define TIMER_TOP_VALUE 0xFFFFFF
 
 #define COUNTER_DT_DEVICE(_idx) DEVICE_DT_GET_OR_NULL(DT_NODELABEL(timer##_idx))
 
-#define PDC_XTAL_EN (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(xtal32m)) ? \
-					MCU_PDC_EN_XTAL : MCU_PDC_EN_NONE)
+#define PDC_XTAL_EN                                                                                \
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(xtal32m)) ? MCU_PDC_EN_XTAL : MCU_PDC_EN_NONE)
 
 struct counter_smartbond_data {
 	counter_alarm_callback_t callback;
@@ -84,8 +84,8 @@ static inline bool counter_smartbond_is_sleep_allowed(const struct device *dev)
 {
 	const struct counter_smartbond_config *config = dev->config;
 
-	return (((dev == COUNTER_DT_DEVICE(1)) ||
-			 (dev == COUNTER_DT_DEVICE(2))) && !config->clock_src_divn);
+	return (((dev == COUNTER_DT_DEVICE(1)) || (dev == COUNTER_DT_DEVICE(2))) &&
+		!config->clock_src_divn);
 }
 
 /* Get the PDC trigger associated with the requested counter device */
@@ -150,9 +150,9 @@ static int counter_smartbond_start(const struct device *dev)
 #endif
 
 	/* Enable counter in free running mode */
-	timer->TIMER2_CTRL_REG |= (TIMER2_TIMER2_CTRL_REG_TIM_CLK_EN_Msk |
-				  TIMER2_TIMER2_CTRL_REG_TIM_EN_Msk |
-				  TIMER2_TIMER2_CTRL_REG_TIM_FREE_RUN_MODE_EN_Msk);
+	timer->TIMER2_CTRL_REG |=
+		(TIMER2_TIMER2_CTRL_REG_TIM_CLK_EN_Msk | TIMER2_TIMER2_CTRL_REG_TIM_EN_Msk |
+		 TIMER2_TIMER2_CTRL_REG_TIM_FREE_RUN_MODE_EN_Msk);
 
 	return 0;
 }
@@ -164,9 +164,9 @@ static int counter_smartbond_stop(const struct device *dev)
 	TIMER2_Type *timer = config->timer;
 
 	/* disable counter */
-	timer->TIMER2_CTRL_REG &= ~(TIMER2_TIMER2_CTRL_REG_TIM_EN_Msk |
-				    TIMER2_TIMER2_CTRL_REG_TIM_IRQ_EN_Msk |
-					TIMER2_TIMER2_CTRL_REG_TIM_CLK_EN_Msk);
+	timer->TIMER2_CTRL_REG &=
+		~(TIMER2_TIMER2_CTRL_REG_TIM_EN_Msk | TIMER2_TIMER2_CTRL_REG_TIM_IRQ_EN_Msk |
+		  TIMER2_TIMER2_CTRL_REG_TIM_CLK_EN_Msk);
 	data->callback = NULL;
 
 #if defined(CONFIG_PM_DEVICE)
@@ -208,9 +208,9 @@ static int counter_smartbond_set_alarm(const struct device *dev, uint8_t chan,
 	const struct counter_smartbond_config *config = dev->config;
 	struct counter_smartbond_data *data = dev->data;
 	TIMER2_Type *timer = config->timer;
-	volatile uint32_t *timer_clear_irq_reg = ((TIMER_Type *)timer) == TIMER ?
-					&((TIMER_Type *)timer)->TIMER_CLEAR_IRQ_REG :
-					&timer->TIMER2_CLEAR_IRQ_REG;
+	volatile uint32_t *timer_clear_irq_reg =
+		((TIMER_Type *)timer) == TIMER ? &((TIMER_Type *)timer)->TIMER_CLEAR_IRQ_REG
+					       : &timer->TIMER2_CLEAR_IRQ_REG;
 	bool absolute = alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE;
 	uint32_t flags = alarm_cfg->flags;
 	uint32_t val = alarm_cfg->ticks;
@@ -336,13 +336,13 @@ static int counter_smartbond_init_timer(const struct device *dev)
 	if (cfg->clock_src_divn) {
 		/* Timer clock source is DIVn 32MHz */
 		timer->TIMER2_CTRL_REG = TIMER2_TIMER2_CTRL_REG_TIM_SYS_CLK_EN_Msk;
-		data->freq = DT_PROP(DT_NODELABEL(divn_clk), clock_frequency) /
-			     (cfg->prescaler + 1);
+		data->freq =
+			DT_PROP(DT_NODELABEL(divn_clk), clock_frequency) / (cfg->prescaler + 1);
 	} else {
 		osc_dev = DEVICE_DT_GET(DT_NODELABEL(osc));
 		timer->TIMER2_CTRL_REG = 0;
 		switch ((CRG_TOP->CLK_CTRL_REG & CRG_TOP_CLK_CTRL_REG_LP_CLK_SEL_Msk) >>
-			 CRG_TOP_CLK_CTRL_REG_LP_CLK_SEL_Pos) {
+			CRG_TOP_CLK_CTRL_REG_LP_CLK_SEL_Pos) {
 		case LP_CLK_OSC_RC32K:
 			osc = SMARTBOND_CLK_RC32K;
 			break;
@@ -472,63 +472,56 @@ void counter_smartbond_irq_handler(const struct device *dev)
 	counter_alarm_callback_t alarm_callback = data->callback;
 	TIMER2_Type *timer = cfg->timer;
 	/* Timer0 has interrupt clear register in other offset */
-	__IOM uint32_t *timer_clear_irq_reg = ((TIMER_Type *)timer) == TIMER ?
-					      &((TIMER_Type *)timer)->TIMER_CLEAR_IRQ_REG :
-					      &timer->TIMER2_CLEAR_IRQ_REG;
+	__IOM uint32_t *timer_clear_irq_reg = ((TIMER_Type *)timer) == TIMER
+						      ? &((TIMER_Type *)timer)->TIMER_CLEAR_IRQ_REG
+						      : &timer->TIMER2_CLEAR_IRQ_REG;
 
 	timer->TIMER2_CTRL_REG &= ~TIMER2_TIMER2_CTRL_REG_TIM_IRQ_EN_Msk;
 	*timer_clear_irq_reg = 1;
 
 	if (alarm_callback != NULL) {
 		data->callback = NULL;
-		alarm_callback(dev, 0, timer->TIMER2_TIMER_VAL_REG,
-			       data->user_data);
+		alarm_callback(dev, 0, timer->TIMER2_TIMER_VAL_REG, data->user_data);
 	}
 }
 
-#define TIMERN(idx)              DT_DRV_INST(idx)
+#define TIMERN(idx) DT_DRV_INST(idx)
 
 /** TIMERn instance from DT */
 #define TIM(idx) ((TIMER2_Type *)DT_REG_ADDR(TIMERN(idx)))
 
-#define COUNTER_DEVICE_INIT(idx)						\
-	BUILD_ASSERT(DT_PROP(TIMERN(idx), prescaler) <= 32 &&			\
-		     DT_PROP(TIMERN(idx), prescaler) > 0,			\
-		     "TIMER prescaler out of range (1..32)");			\
-										\
-	static struct counter_smartbond_data counter##idx##_data;		\
-										\
-	static void counter##idx##_smartbond_irq_config(const struct device *dev)\
-	{									\
-		IRQ_CONNECT(DT_IRQN(TIMERN(idx)),				\
-			    DT_IRQ(TIMERN(idx), priority),			\
-			    counter_smartbond_irq_handler,			\
-			    DEVICE_DT_INST_GET(idx),				\
-			    0);							\
-		irq_enable(DT_IRQN(TIMERN(idx)));				\
-	}									\
-										\
-	static const struct counter_smartbond_config counter##idx##_config = {	\
-		.info = {							\
-			.max_top_value = 0x00FFFFFF,				\
-			.flags = COUNTER_CONFIG_INFO_COUNT_UP,			\
-			.channels = 1,						\
-		},								\
-		.timer = TIM(idx),						\
-		.prescaler = DT_PROP(TIMERN(idx), prescaler) - 1,		\
-		.clock_src_divn = DT_SAME_NODE(DT_PROP(TIMERN(idx), clock_src), \
-					       DT_NODELABEL(divn_clk)) ? 1 : 0,	\
-		.irq_config_func = counter##idx##_smartbond_irq_config,		\
-		.irqn = DT_IRQN(TIMERN(idx)),					\
-	};									\
-										\
-	PM_DEVICE_DT_INST_DEFINE(idx, counter_smartbond_pm_action);	\
-	DEVICE_DT_INST_DEFINE(idx,						\
-			      counter_smartbond_init_timer,			\
-			      PM_DEVICE_DT_INST_GET(idx),	\
-			      &counter##idx##_data,				\
-			      &counter##idx##_config,				\
-			      PRE_KERNEL_1, CONFIG_COUNTER_INIT_PRIORITY,	\
-			      &counter_smartbond_driver_api);
+#define COUNTER_DEVICE_INIT(idx)                                                                   \
+	BUILD_ASSERT(DT_PROP(TIMERN(idx), prescaler) <= 32 && DT_PROP(TIMERN(idx), prescaler) > 0, \
+		     "TIMER prescaler out of range (1..32)");                                      \
+                                                                                                   \
+	static struct counter_smartbond_data counter##idx##_data;                                  \
+                                                                                                   \
+	static void counter##idx##_smartbond_irq_config(const struct device *dev)                  \
+	{                                                                                          \
+		IRQ_CONNECT(DT_IRQN(TIMERN(idx)), DT_IRQ(TIMERN(idx), priority),                   \
+			    counter_smartbond_irq_handler, DEVICE_DT_INST_GET(idx), 0);            \
+		irq_enable(DT_IRQN(TIMERN(idx)));                                                  \
+	}                                                                                          \
+                                                                                                   \
+	static const struct counter_smartbond_config counter##idx##_config = {                     \
+		.info =                                                                            \
+			{                                                                          \
+				.max_top_value = 0x00FFFFFF,                                       \
+				.flags = COUNTER_CONFIG_INFO_COUNT_UP,                             \
+				.channels = 1,                                                     \
+			},                                                                         \
+		.timer = TIM(idx),                                                                 \
+		.prescaler = DT_PROP(TIMERN(idx), prescaler) - 1,                                  \
+		.clock_src_divn =                                                                  \
+			DT_SAME_NODE(DT_PROP(TIMERN(idx), clock_src), DT_NODELABEL(divn_clk)) ? 1  \
+											      : 0, \
+		.irq_config_func = counter##idx##_smartbond_irq_config,                            \
+		.irqn = DT_IRQN(TIMERN(idx)),                                                      \
+	};                                                                                         \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(idx, counter_smartbond_pm_action);                                \
+	DEVICE_DT_INST_DEFINE(idx, counter_smartbond_init_timer, PM_DEVICE_DT_INST_GET(idx),       \
+			      &counter##idx##_data, &counter##idx##_config, PRE_KERNEL_1,          \
+			      CONFIG_COUNTER_INIT_PRIORITY, &counter_smartbond_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_DEVICE_INIT)

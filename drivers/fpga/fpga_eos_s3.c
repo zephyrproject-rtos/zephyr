@@ -117,10 +117,8 @@ static int eos_s3_fpga_load(const struct device *dev, uint32_t *image_ptr, uint3
 	PMU->FB_ISOLATION = FB_ISOLATION_DISABLE;
 
 	/* disable software resets */
-	CRU->FB_SW_RESET &= ~(FB_C21_DOMAIN_SW_RESET
-			    | FB_C16_DOMAIN_SW_RESET
-			    | FB_C02_DOMAIN_SW_RESET
-			    | FB_C09_DOMAIN_SW_RESET);
+	CRU->FB_SW_RESET &= ~(FB_C21_DOMAIN_SW_RESET | FB_C16_DOMAIN_SW_RESET |
+			      FB_C02_DOMAIN_SW_RESET | FB_C09_DOMAIN_SW_RESET);
 
 	return 0;
 }
@@ -140,14 +138,12 @@ static int eos_s3_fpga_init(const struct device *dev)
 
 static struct quickfeather_fpga_data fpga_data;
 
-static const struct fpga_driver_api eos_s3_api = {
-	.reset = eos_s3_fpga_reset,
-	.load = eos_s3_fpga_load,
-	.get_status = eos_s3_fpga_get_status,
-	.on = eos_s3_fpga_on,
-	.off = eos_s3_fpga_off,
-	.get_info = eos_s3_fpga_get_info
-};
+static const struct fpga_driver_api eos_s3_api = {.reset = eos_s3_fpga_reset,
+						  .load = eos_s3_fpga_load,
+						  .get_status = eos_s3_fpga_get_status,
+						  .on = eos_s3_fpga_on,
+						  .off = eos_s3_fpga_off,
+						  .get_info = eos_s3_fpga_get_info};
 
 DEVICE_DT_DEFINE(DT_NODELABEL(fpga0), &eos_s3_fpga_init, NULL, &fpga_data, NULL, POST_KERNEL,
-	      CONFIG_FPGA_INIT_PRIORITY, &eos_s3_api);
+		 CONFIG_FPGA_INIT_PRIORITY, &eos_s3_api);

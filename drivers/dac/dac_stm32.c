@@ -24,15 +24,15 @@ LOG_MODULE_REGISTER(dac_stm32);
 
 /* some low-end MCUs have DAC with only one channel */
 #ifdef LL_DAC_CHANNEL_2
-#define STM32_CHANNEL_COUNT		2
+#define STM32_CHANNEL_COUNT 2
 #else
-#define STM32_CHANNEL_COUNT		1
+#define STM32_CHANNEL_COUNT 1
 #endif
 
 /* first channel always named 1 */
-#define STM32_FIRST_CHANNEL		1
+#define STM32_FIRST_CHANNEL 1
 
-#define CHAN(n)		LL_DAC_CHANNEL_##n
+#define CHAN(n) LL_DAC_CHANNEL_##n
 static const uint32_t table_channels[] = {
 	CHAN(1),
 #ifdef LL_DAC_CHANNEL_2
@@ -56,14 +56,12 @@ struct dac_stm32_data {
 	uint8_t resolution;
 };
 
-static int dac_stm32_write_value(const struct device *dev,
-					uint8_t channel, uint32_t value)
+static int dac_stm32_write_value(const struct device *dev, uint8_t channel, uint32_t value)
 {
 	struct dac_stm32_data *data = dev->data;
 	const struct dac_stm32_cfg *cfg = dev->config;
 
-	if (channel - STM32_FIRST_CHANNEL >= data->channel_count ||
-					channel < STM32_FIRST_CHANNEL) {
+	if (channel - STM32_FIRST_CHANNEL >= data->channel_count || channel < STM32_FIRST_CHANNEL) {
 		LOG_ERR("Channel %d is not valid", channel);
 		return -EINVAL;
 	}
@@ -74,11 +72,11 @@ static int dac_stm32_write_value(const struct device *dev,
 	}
 
 	if (data->resolution == 8) {
-		LL_DAC_ConvertData8RightAligned(cfg->base,
-			table_channels[channel - STM32_FIRST_CHANNEL], value);
+		LL_DAC_ConvertData8RightAligned(
+			cfg->base, table_channels[channel - STM32_FIRST_CHANNEL], value);
 	} else if (data->resolution == 12) {
-		LL_DAC_ConvertData12RightAligned(cfg->base,
-			table_channels[channel - STM32_FIRST_CHANNEL], value);
+		LL_DAC_ConvertData12RightAligned(
+			cfg->base, table_channels[channel - STM32_FIRST_CHANNEL], value);
 	}
 
 	return 0;
@@ -91,15 +89,13 @@ static int dac_stm32_channel_setup(const struct device *dev,
 	const struct dac_stm32_cfg *cfg = dev->config;
 	uint32_t cfg_setting, channel;
 
-	if ((channel_cfg->channel_id - STM32_FIRST_CHANNEL >=
-			data->channel_count) ||
-			(channel_cfg->channel_id < STM32_FIRST_CHANNEL)) {
+	if ((channel_cfg->channel_id - STM32_FIRST_CHANNEL >= data->channel_count) ||
+	    (channel_cfg->channel_id < STM32_FIRST_CHANNEL)) {
 		LOG_ERR("Channel %d is not valid", channel_cfg->channel_id);
 		return -EINVAL;
 	}
 
-	if ((channel_cfg->resolution == 8) ||
-			(channel_cfg->resolution == 12)) {
+	if ((channel_cfg->resolution == 8) || (channel_cfg->resolution == 12)) {
 		data->resolution = channel_cfg->resolution;
 	} else {
 		LOG_ERR("Resolution not supported");
@@ -152,8 +148,7 @@ static int dac_stm32_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (clock_control_on(clk,
-			     (clock_control_subsys_t) &cfg->pclken) != 0) {
+	if (clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken) != 0) {
 		return -EIO;
 	}
 
@@ -167,33 +162,28 @@ static int dac_stm32_init(const struct device *dev)
 	return 0;
 }
 
-static const struct dac_driver_api api_stm32_driver_api = {
-	.channel_setup = dac_stm32_channel_setup,
-	.write_value = dac_stm32_write_value
-};
+static const struct dac_driver_api api_stm32_driver_api = {.channel_setup = dac_stm32_channel_setup,
+							   .write_value = dac_stm32_write_value};
 
-
-#define STM32_DAC_INIT(index)						\
-									\
-PINCTRL_DT_INST_DEFINE(index);						\
-									\
-static const struct dac_stm32_cfg dac_stm32_cfg_##index = {		\
-	.base = (DAC_TypeDef *)DT_INST_REG_ADDR(index),			\
-	.pclken = {							\
-		.enr = DT_INST_CLOCKS_CELL(index, bits),		\
-		.bus = DT_INST_CLOCKS_CELL(index, bus),			\
-	},								\
-	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
-};									\
-									\
-static struct dac_stm32_data dac_stm32_data_##index = {			\
-	.channel_count = STM32_CHANNEL_COUNT				\
-};									\
-									\
-DEVICE_DT_INST_DEFINE(index, &dac_stm32_init, NULL,			\
-		    &dac_stm32_data_##index,				\
-		    &dac_stm32_cfg_##index, POST_KERNEL,		\
-		    CONFIG_DAC_INIT_PRIORITY,				\
-		    &api_stm32_driver_api);
+#define STM32_DAC_INIT(index)                                                                      \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(index);                                                             \
+                                                                                                   \
+	static const struct dac_stm32_cfg dac_stm32_cfg_##index = {                                \
+		.base = (DAC_TypeDef *)DT_INST_REG_ADDR(index),                                    \
+		.pclken =                                                                          \
+			{                                                                          \
+				.enr = DT_INST_CLOCKS_CELL(index, bits),                           \
+				.bus = DT_INST_CLOCKS_CELL(index, bus),                            \
+			},                                                                         \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
+	};                                                                                         \
+                                                                                                   \
+	static struct dac_stm32_data dac_stm32_data_##index = {.channel_count =                    \
+								       STM32_CHANNEL_COUNT};       \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(index, &dac_stm32_init, NULL, &dac_stm32_data_##index,               \
+			      &dac_stm32_cfg_##index, POST_KERNEL, CONFIG_DAC_INIT_PRIORITY,       \
+			      &api_stm32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_DAC_INIT)

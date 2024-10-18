@@ -50,7 +50,7 @@ unlock:
 }
 
 static int esp32_temp_channel_get(const struct device *dev, enum sensor_channel chan,
-					struct sensor_value *val)
+				  struct sensor_value *val)
 {
 	struct esp32_temp_data *data = dev->data;
 
@@ -76,24 +76,23 @@ static int esp32_temp_init(const struct device *dev)
 	data->temp_sensor.dac_offset = conf->range;
 	temp_sensor_set_config(data->temp_sensor);
 	temp_sensor_start();
-	LOG_DBG("Temperature sensor started. Offset %d, clk_div %d",
-		data->temp_sensor.dac_offset, data->temp_sensor.clk_div);
+	LOG_DBG("Temperature sensor started. Offset %d, clk_div %d", data->temp_sensor.dac_offset,
+		data->temp_sensor.clk_div);
 
 	return 0;
 }
 
-#define ESP32_TEMP_DEFINE(inst)									\
-	static struct esp32_temp_data esp32_temp_dev_data_##inst = {				\
-		.temp_sensor = TSENS_CONFIG_DEFAULT(),						\
-	};											\
-												\
-	static const struct esp32_temp_config esp32_temp_dev_config_##inst = {			\
-		.range = (temp_sensor_dac_offset_t) DT_INST_PROP(inst, range),			\
-	};											\
-												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, esp32_temp_init, NULL,				\
-			      &esp32_temp_dev_data_##inst, &esp32_temp_dev_config_##inst,	\
-			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,				\
-			      &esp32_temp_driver_api);						\
+#define ESP32_TEMP_DEFINE(inst)                                                                    \
+	static struct esp32_temp_data esp32_temp_dev_data_##inst = {                               \
+		.temp_sensor = TSENS_CONFIG_DEFAULT(),                                             \
+	};                                                                                         \
+                                                                                                   \
+	static const struct esp32_temp_config esp32_temp_dev_config_##inst = {                     \
+		.range = (temp_sensor_dac_offset_t)DT_INST_PROP(inst, range),                      \
+	};                                                                                         \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, esp32_temp_init, NULL, &esp32_temp_dev_data_##inst,     \
+				     &esp32_temp_dev_config_##inst, POST_KERNEL,                   \
+				     CONFIG_SENSOR_INIT_PRIORITY, &esp32_temp_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_TEMP_DEFINE)

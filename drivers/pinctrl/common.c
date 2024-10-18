@@ -22,8 +22,7 @@ int pinctrl_lookup_state(const struct pinctrl_dev_config *config, uint8_t id,
 }
 
 #ifdef CONFIG_PINCTRL_DYNAMIC
-int pinctrl_update_states(struct pinctrl_dev_config *config,
-			  const struct pinctrl_state *states,
+int pinctrl_update_states(struct pinctrl_dev_config *config, const struct pinctrl_state *states,
 			  uint8_t state_cnt)
 {
 	uint8_t equal = 0U;

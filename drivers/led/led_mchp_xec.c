@@ -27,55 +27,55 @@ LOG_MODULE_REGISTER(led_xec, CONFIG_LED_LOG_LEVEL);
 /* Same BBLED hardware block in MEC15xx and MEC172x families
  * Config register
  */
-#define XEC_BBLED_CFG_MSK		0x1ffffu
-#define XEC_BBLED_CFG_MODE_POS		0
-#define XEC_BBLED_CFG_MODE_MSK		0x3u
-#define XEC_BBLED_CFG_MODE_OFF		0
-#define XEC_BBLED_CFG_MODE_BREATHING	0x1u
-#define XEC_BBLED_CFG_MODE_PWM		0x2u
-#define XEC_BBLED_CFG_MODE_ALWAYS_ON	0x3u
-#define XEC_BBLED_CFG_CLK_SRC_48M_POS	2
-#define XEC_BBLED_CFG_EN_UPDATE_POS	6
-#define XEC_BBLED_CFG_RST_PWM_POS	7
-#define XEC_BBLED_CFG_WDT_RLD_POS	8
-#define XEC_BBLED_CFG_WDT_RLD_MSK0	0xffu
-#define XEC_BBLED_CFG_WDT_RLD_MSK	0xff00u
-#define XEC_BBLED_CFG_WDT_RLD_DFLT	0x1400u
+#define XEC_BBLED_CFG_MSK             0x1ffffu
+#define XEC_BBLED_CFG_MODE_POS        0
+#define XEC_BBLED_CFG_MODE_MSK        0x3u
+#define XEC_BBLED_CFG_MODE_OFF        0
+#define XEC_BBLED_CFG_MODE_BREATHING  0x1u
+#define XEC_BBLED_CFG_MODE_PWM        0x2u
+#define XEC_BBLED_CFG_MODE_ALWAYS_ON  0x3u
+#define XEC_BBLED_CFG_CLK_SRC_48M_POS 2
+#define XEC_BBLED_CFG_EN_UPDATE_POS   6
+#define XEC_BBLED_CFG_RST_PWM_POS     7
+#define XEC_BBLED_CFG_WDT_RLD_POS     8
+#define XEC_BBLED_CFG_WDT_RLD_MSK0    0xffu
+#define XEC_BBLED_CFG_WDT_RLD_MSK     0xff00u
+#define XEC_BBLED_CFG_WDT_RLD_DFLT    0x1400u
 
 /* Limits register */
-#define XEC_BBLED_LIM_MSK		0xffffu
-#define XEC_BBLED_LIM_MIN_POS		0
-#define XEC_BBLED_LIM_MIN_MSK		0xffu
-#define XEC_BBLED_LIM_MAX_POS		8
-#define XEC_BBLED_LIM_MAX_MSK		0xff00u
+#define XEC_BBLED_LIM_MSK     0xffffu
+#define XEC_BBLED_LIM_MIN_POS 0
+#define XEC_BBLED_LIM_MIN_MSK 0xffu
+#define XEC_BBLED_LIM_MAX_POS 8
+#define XEC_BBLED_LIM_MAX_MSK 0xff00u
 
 /* Delay register */
-#define XEC_BBLED_DLY_MSK		0xffffffu
-#define XEC_BBLED_DLY_LO_POS		0
-#define XEC_BBLED_DLY_LO_MSK		0xfffu
-#define XEC_BBLED_DLY_HI_POS		12
-#define XEC_BBLED_DLY_HI_MSK		0xfff000u
+#define XEC_BBLED_DLY_MSK    0xffffffu
+#define XEC_BBLED_DLY_LO_POS 0
+#define XEC_BBLED_DLY_LO_MSK 0xfffu
+#define XEC_BBLED_DLY_HI_POS 12
+#define XEC_BBLED_DLY_HI_MSK 0xfff000u
 
 /* Update step size and update interval registers implement
  * eight 4-bit fields numbered 0 to 7
  */
-#define XEC_BBLED_UPD_SSI_POS(n)	((uint32_t)(n) * 4u)
-#define XEC_BBLED_UPD_SSI0_MSK(n)	((uint32_t)0xfu << XEC_BBLED_UPD_SSI_POS(n))
+#define XEC_BBLED_UPD_SSI_POS(n)  ((uint32_t)(n) * 4u)
+#define XEC_BBLED_UPD_SSI0_MSK(n) ((uint32_t)0xfu << XEC_BBLED_UPD_SSI_POS(n))
 
 /* Output delay register: b[7:0] is delay in clock source units */
-#define XEC_BBLED_OUT_DLY_MSK		0xffu
+#define XEC_BBLED_OUT_DLY_MSK 0xffu
 
 /* Delay.Lo register field */
-#define XEC_BBLED_MAX_PRESCALER		4095u
+#define XEC_BBLED_MAX_PRESCALER       4095u
 /* Blink mode source frequency is 32768 Hz */
-#define XEC_BBLED_BLINK_CLK_SRC_HZ	32768u
+#define XEC_BBLED_BLINK_CLK_SRC_HZ    32768u
 /* Fblink = 32768 / (256 * (prescaler+1))
  * prescaler is 12 bit.
  * Maximum Fblink = 128 Hz or 7.8125 ms
  * Minimum Fblink = 32.25 mHz or 32000 ms
  */
-#define XEC_BBLED_BLINK_PERIOD_MAX_MS	32000u
-#define XEC_BBLED_BLINK_PERIOD_MIN_MS	8u
+#define XEC_BBLED_BLINK_PERIOD_MAX_MS 32000u
+#define XEC_BBLED_BLINK_PERIOD_MIN_MS 8u
 
 struct xec_bbled_regs {
 	volatile uint32_t config;
@@ -87,7 +87,7 @@ struct xec_bbled_regs {
 };
 
 struct xec_bbled_config {
-	struct xec_bbled_regs * const regs;
+	struct xec_bbled_regs *const regs;
 	const struct pinctrl_dev_config *pcfg;
 	uint8_t pcr_id;
 	uint8_t pcr_pos;
@@ -140,11 +140,11 @@ static uint32_t calc_blink_duty_cycle(uint32_t delay_on, uint32_t delay_off)
  * prescale is delay register low delay field, bits[11:0]
  * duty_cycle is limits register minimum field, bits[7:0]
  */
-static int xec_bbled_blink(const struct device *dev, uint32_t led,
-			    uint32_t delay_on, uint32_t delay_off)
+static int xec_bbled_blink(const struct device *dev, uint32_t led, uint32_t delay_on,
+			   uint32_t delay_off)
 {
-	const struct xec_bbled_config * const config = dev->config;
-	struct xec_bbled_regs * const regs = config->regs;
+	const struct xec_bbled_config *const config = dev->config;
+	struct xec_bbled_regs *const regs = config->regs;
 	uint32_t period, prescaler, dcs;
 
 	if (led) {
@@ -152,28 +152,23 @@ static int xec_bbled_blink(const struct device *dev, uint32_t led,
 	}
 
 	/* insure period will not overflow uin32_t */
-	if ((delay_on > XEC_BBLED_BLINK_PERIOD_MAX_MS)
-	    || (delay_off > XEC_BBLED_BLINK_PERIOD_MAX_MS)) {
+	if ((delay_on > XEC_BBLED_BLINK_PERIOD_MAX_MS) ||
+	    (delay_off > XEC_BBLED_BLINK_PERIOD_MAX_MS)) {
 		return -EINVAL;
 	}
 
 	period = delay_on + delay_off;
-	if ((period < XEC_BBLED_BLINK_PERIOD_MIN_MS)
-	    || (period > XEC_BBLED_BLINK_PERIOD_MAX_MS)) {
+	if ((period < XEC_BBLED_BLINK_PERIOD_MIN_MS) || (period > XEC_BBLED_BLINK_PERIOD_MAX_MS)) {
 		return -EINVAL;
 	}
 
 	prescaler = calc_blink_32k_prescaler(delay_on, delay_off);
 	dcs = calc_blink_duty_cycle(delay_on, delay_off);
 
-	regs->config = (regs->config & ~(XEC_BBLED_CFG_MODE_MSK))
-		       | XEC_BBLED_CFG_MODE_OFF;
-	regs->delay = (regs->delay & ~(XEC_BBLED_DLY_LO_MSK))
-		      | (prescaler & XEC_BBLED_DLY_LO_MSK);
-	regs->limits = (regs->limits & ~(XEC_BBLED_LIM_MIN_MSK))
-		       | (dcs & XEC_BBLED_LIM_MIN_MSK);
-	regs->config = (regs->config & ~(XEC_BBLED_CFG_MODE_MSK))
-		       | XEC_BBLED_CFG_MODE_PWM;
+	regs->config = (regs->config & ~(XEC_BBLED_CFG_MODE_MSK)) | XEC_BBLED_CFG_MODE_OFF;
+	regs->delay = (regs->delay & ~(XEC_BBLED_DLY_LO_MSK)) | (prescaler & XEC_BBLED_DLY_LO_MSK);
+	regs->limits = (regs->limits & ~(XEC_BBLED_LIM_MIN_MSK)) | (dcs & XEC_BBLED_LIM_MIN_MSK);
+	regs->config = (regs->config & ~(XEC_BBLED_CFG_MODE_MSK)) | XEC_BBLED_CFG_MODE_PWM;
 	regs->config |= BIT(XEC_BBLED_CFG_EN_UPDATE_POS);
 
 	return 0;
@@ -181,36 +176,34 @@ static int xec_bbled_blink(const struct device *dev, uint32_t led,
 
 static int xec_bbled_on(const struct device *dev, uint32_t led)
 {
-	const struct xec_bbled_config * const config = dev->config;
-	struct xec_bbled_regs * const regs = config->regs;
+	const struct xec_bbled_config *const config = dev->config;
+	struct xec_bbled_regs *const regs = config->regs;
 
 	if (led) {
 		return -EINVAL;
 	}
 
-	regs->config = (regs->config & ~(XEC_BBLED_CFG_MODE_MSK))
-			| XEC_BBLED_CFG_MODE_ALWAYS_ON;
+	regs->config = (regs->config & ~(XEC_BBLED_CFG_MODE_MSK)) | XEC_BBLED_CFG_MODE_ALWAYS_ON;
 	return 0;
 }
 
 static int xec_bbled_off(const struct device *dev, uint32_t led)
 {
-	const struct xec_bbled_config * const config = dev->config;
-	struct xec_bbled_regs * const regs = config->regs;
+	const struct xec_bbled_config *const config = dev->config;
+	struct xec_bbled_regs *const regs = config->regs;
 
 	if (led) {
 		return -EINVAL;
 	}
 
-	regs->config = (regs->config & ~(XEC_BBLED_CFG_MODE_MSK))
-			| XEC_BBLED_CFG_MODE_OFF;
+	regs->config = (regs->config & ~(XEC_BBLED_CFG_MODE_MSK)) | XEC_BBLED_CFG_MODE_OFF;
 	return 0;
 }
 
 #ifdef CONFIG_SOC_SERIES_MEC15XX
 static inline void xec_bbled_slp_en_clr(const struct device *dev)
 {
-	const struct xec_bbled_config * const cfg = dev->config;
+	const struct xec_bbled_config *const cfg = dev->config;
 	enum pcr_id pcr_val = PCR_MAX_ID;
 
 	switch (cfg->pcr_pos) {
@@ -232,7 +225,7 @@ static inline void xec_bbled_slp_en_clr(const struct device *dev)
 #else
 static inline void xec_bbled_slp_en_clr(const struct device *dev)
 {
-	const struct xec_bbled_config * const cfg = dev->config;
+	const struct xec_bbled_config *const cfg = dev->config;
 
 	z_mchp_xec_pcr_periph_sleep(cfg->pcr_id, cfg->pcr_pos, 0);
 }
@@ -240,8 +233,8 @@ static inline void xec_bbled_slp_en_clr(const struct device *dev)
 
 static int xec_bbled_init(const struct device *dev)
 {
-	const struct xec_bbled_config * const config = dev->config;
-	struct xec_bbled_regs * const regs = config->regs;
+	const struct xec_bbled_config *const config = dev->config;
+	struct xec_bbled_regs *const regs = config->regs;
 	int ret;
 
 	xec_bbled_slp_en_clr(dev);
@@ -259,30 +252,28 @@ static int xec_bbled_init(const struct device *dev)
 }
 
 static const struct led_driver_api xec_bbled_api = {
-	.on		= xec_bbled_on,
-	.off		= xec_bbled_off,
-	.blink		= xec_bbled_blink,
+	.on = xec_bbled_on,
+	.off = xec_bbled_off,
+	.blink = xec_bbled_blink,
 };
 
 #define XEC_BBLED_PINCTRL_DEF(i) PINCTRL_DT_INST_DEFINE(i)
 
-#define XEC_BBLED_CONFIG(i)						\
-static struct xec_bbled_config xec_bbled_config_##i = {			\
-	.regs = (struct xec_bbled_regs * const)DT_INST_REG_ADDR(i),	\
-	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(i),			\
-	.pcr_id = (uint8_t)DT_INST_PROP_BY_IDX(i, pcrs, 0),		\
-	.pcr_pos = (uint8_t)DT_INST_PROP_BY_IDX(i, pcrs, 1),		\
-}
+#define XEC_BBLED_CONFIG(i)                                                                        \
+	static struct xec_bbled_config xec_bbled_config_##i = {                                    \
+		.regs = (struct xec_bbled_regs *const)DT_INST_REG_ADDR(i),                         \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(i),                                         \
+		.pcr_id = (uint8_t)DT_INST_PROP_BY_IDX(i, pcrs, 0),                                \
+		.pcr_pos = (uint8_t)DT_INST_PROP_BY_IDX(i, pcrs, 1),                               \
+	}
 
-#define XEC_BBLED_DEVICE(i)						\
-									\
-XEC_BBLED_PINCTRL_DEF(i);						\
-									\
-XEC_BBLED_CONFIG(i);							\
-									\
-DEVICE_DT_INST_DEFINE(i, &xec_bbled_init, NULL,				\
-		      NULL, &xec_bbled_config_##i,			\
-		      POST_KERNEL, CONFIG_LED_INIT_PRIORITY,		\
-		      &xec_bbled_api);
+#define XEC_BBLED_DEVICE(i)                                                                        \
+                                                                                                   \
+	XEC_BBLED_PINCTRL_DEF(i);                                                                  \
+                                                                                                   \
+	XEC_BBLED_CONFIG(i);                                                                       \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(i, &xec_bbled_init, NULL, NULL, &xec_bbled_config_##i, POST_KERNEL,  \
+			      CONFIG_LED_INIT_PRIORITY, &xec_bbled_api);
 
 DT_INST_FOREACH_STATUS_OKAY(XEC_BBLED_DEVICE)

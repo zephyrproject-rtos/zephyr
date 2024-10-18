@@ -21,16 +21,16 @@ LOG_MODULE_REGISTER(SHTCX, CONFIG_SENSOR_LOG_LEVEL);
 
 /* all cmds read temp first: cmd[MEASURE_MODE][Clock_stretching_enabled] */
 static const uint16_t measure_cmd[2][2] = {
-	{ 0x7866, 0x7CA2 },
-	{ 0x609C, 0x6458 },
+	{0x7866, 0x7CA2},
+	{0x609C, 0x6458},
 };
 
 /* measure_wait_us[shtcx_chip][MEASURE_MODE] */
 static const uint16_t measure_wait_us[2][2] = {
 	/* shtc1: 14.4ms, 0.94ms */
-	{ 14400, 940 }, /* shtc1 */
+	{14400, 940}, /* shtc1 */
 	/* shtc3: 12.1ms, 0.8ms */
-	{ 12100, 800 }, /* shtc3 */
+	{12100, 800}, /* shtc3 */
 };
 
 /*
@@ -77,7 +77,7 @@ static int shtcx_write_command(const struct device *dev, uint16_t cmd)
 }
 
 static int shtcx_read_words(const struct device *dev, uint16_t cmd, uint16_t *data,
-		     uint16_t num_words, uint16_t max_duration_us)
+			    uint16_t num_words, uint16_t max_duration_us)
 {
 	const struct shtcx_config *cfg = dev->config;
 	int status = 0;
@@ -104,7 +104,7 @@ static int shtcx_read_words(const struct device *dev, uint16_t cmd, uint16_t *da
 
 	for (int i = 0; i < raw_len; i += (SHTCX_WORD_LEN + SHTCX_CRC8_LEN)) {
 		temp16 = sys_get_be16(&rx_buf[i]);
-		if (shtcx_compute_crc(temp16) != rx_buf[i+2]) {
+		if (shtcx_compute_crc(temp16) != rx_buf[i + 2]) {
 			LOG_DBG("invalid received invalid crc");
 			return -EIO;
 		}
@@ -134,8 +134,7 @@ static int shtcx_wakeup(const struct device *dev)
 	return 0;
 }
 
-static int shtcx_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
+static int shtcx_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct shtcx_data *data = dev->data;
 	const struct shtcx_config *cfg = dev->config;
@@ -148,8 +147,7 @@ static int shtcx_sample_fetch(const struct device *dev,
 		}
 	}
 
-	if (shtcx_read_words(dev,
-			     measure_cmd[cfg->measure_mode][cfg->clock_stretching],
+	if (shtcx_read_words(dev, measure_cmd[cfg->measure_mode][cfg->clock_stretching],
 			     (uint16_t *)&data->sample, 2,
 			     measure_wait_us[cfg->chip][cfg->measure_mode]) < 0) {
 		LOG_DBG("Failed read measurements!");
@@ -166,9 +164,8 @@ static int shtcx_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static int shtcx_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
-			      struct sensor_value *val)
+static int shtcx_channel_get(const struct device *dev, enum sensor_channel chan,
+			     struct sensor_value *val)
 {
 	const struct shtcx_data *data = dev->data;
 
@@ -237,28 +234,19 @@ static int shtcx_init(const struct device *dev)
 	return 0;
 }
 
-#define SHTCX_CHIP(inst) \
-	(DT_INST_NODE_HAS_COMPAT(inst, sensirion_shtc1) ? CHIP_SHTC1 : CHIP_SHTC3)
+#define SHTCX_CHIP(inst) (DT_INST_NODE_HAS_COMPAT(inst, sensirion_shtc1) ? CHIP_SHTC1 : CHIP_SHTC3)
 
-#define SHTCX_CONFIG(inst)						       \
-	{								       \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),			       \
-		.chip = SHTCX_CHIP(inst),				       \
-		.measure_mode = DT_INST_ENUM_IDX(inst, measure_mode),	       \
-		.clock_stretching = DT_INST_PROP(inst, clock_stretching)       \
-	}
+#define SHTCX_CONFIG(inst)                                                                         \
+	{.i2c = I2C_DT_SPEC_INST_GET(inst),                                                        \
+	 .chip = SHTCX_CHIP(inst),                                                                 \
+	 .measure_mode = DT_INST_ENUM_IDX(inst, measure_mode),                                     \
+	 .clock_stretching = DT_INST_PROP(inst, clock_stretching)}
 
-#define SHTCX_DEFINE(inst)						\
-	static struct shtcx_data shtcx_data_##inst;			\
-	static struct shtcx_config shtcx_config_##inst =		\
-		SHTCX_CONFIG(inst);					\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
-			      shtcx_init,				\
-			      NULL,					\
-			      &shtcx_data_##inst,			\
-			      &shtcx_config_##inst,			\
-			      POST_KERNEL,				\
-			      CONFIG_SENSOR_INIT_PRIORITY,		\
-			      &shtcx_driver_api);
+#define SHTCX_DEFINE(inst)                                                                         \
+	static struct shtcx_data shtcx_data_##inst;                                                \
+	static struct shtcx_config shtcx_config_##inst = SHTCX_CONFIG(inst);                       \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, shtcx_init, NULL, &shtcx_data_##inst,                   \
+				     &shtcx_config_##inst, POST_KERNEL,                            \
+				     CONFIG_SENSOR_INIT_PRIORITY, &shtcx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SHTCX_DEFINE)

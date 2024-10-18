@@ -12,7 +12,7 @@
 LOG_MODULE_REGISTER(scmi_core);
 
 #define SCMI_CHAN_LOCK_TIMEOUT_USEC 500
-#define SCMI_CHAN_SEM_TIMEOUT_USEC 500
+#define SCMI_CHAN_SEM_TIMEOUT_USEC  500
 
 int scmi_status_to_errno(int scmi_status)
 {
@@ -49,8 +49,7 @@ static void scmi_core_reply_cb(struct scmi_channel *chan)
 	}
 }
 
-static int scmi_core_setup_chan(const struct device *transport,
-				struct scmi_channel *chan, bool tx)
+static int scmi_core_setup_chan(const struct device *transport, struct scmi_channel *chan, bool tx)
 {
 	int ret;
 
@@ -87,8 +86,7 @@ static int scmi_core_setup_chan(const struct device *transport,
 	return 0;
 }
 
-static int scmi_send_message_pre_kernel(struct scmi_protocol *proto,
-					struct scmi_message *msg,
+static int scmi_send_message_pre_kernel(struct scmi_protocol *proto, struct scmi_message *msg,
 					struct scmi_message *reply)
 {
 	int ret;
@@ -116,8 +114,7 @@ static int scmi_send_message_pre_kernel(struct scmi_protocol *proto,
 	return ret;
 }
 
-static int scmi_send_message_post_kernel(struct scmi_protocol *proto,
-					 struct scmi_message *msg,
+static int scmi_send_message_post_kernel(struct scmi_protocol *proto, struct scmi_message *msg,
 					 struct scmi_message *reply)
 {
 	int ret = 0;

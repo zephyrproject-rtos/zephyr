@@ -19,8 +19,7 @@
 
 LOG_MODULE_REGISTER(ISL29035, CONFIG_SENSOR_LOG_LEVEL);
 
-static int isl29035_sample_fetch(const struct device *dev,
-				 enum sensor_channel chan)
+static int isl29035_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct isl29035_driver_data *drv_data = dev->data;
 	const struct isl29035_config *config = dev->config;
@@ -28,13 +27,11 @@ static int isl29035_sample_fetch(const struct device *dev,
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-	if (i2c_reg_read_byte_dt(&config->i2c,
-				 ISL29035_DATA_MSB_REG, &msb) < 0) {
+	if (i2c_reg_read_byte_dt(&config->i2c, ISL29035_DATA_MSB_REG, &msb) < 0) {
 		return -EIO;
 	}
 
-	if (i2c_reg_read_byte_dt(&config->i2c, ISL29035_DATA_LSB_REG,
-				 &lsb) < 0) {
+	if (i2c_reg_read_byte_dt(&config->i2c, ISL29035_DATA_LSB_REG, &lsb) < 0) {
 		return -EIO;
 	}
 
@@ -43,8 +40,7 @@ static int isl29035_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static int isl29035_channel_get(const struct device *dev,
-				enum sensor_channel chan,
+static int isl29035_channel_get(const struct device *dev, enum sensor_channel chan,
 				struct sensor_value *val)
 {
 	struct isl29035_driver_data *drv_data = dev->data;
@@ -87,47 +83,38 @@ static int isl29035_init(const struct device *dev)
 	drv_data->data_sample = 0U;
 
 	/* clear blownout status bit */
-	if (i2c_reg_update_byte_dt(&config->i2c, ISL29035_ID_REG,
-				   ISL29035_BOUT_MASK, 0) < 0) {
+	if (i2c_reg_update_byte_dt(&config->i2c, ISL29035_ID_REG, ISL29035_BOUT_MASK, 0) < 0) {
 		LOG_DBG("Failed to clear blownout status bit.");
 		return -EIO;
 	}
 
 	/* set command registers to set default attributes */
-	if (i2c_reg_write_byte_dt(&config->i2c,
-				  ISL29035_COMMAND_I_REG, 0) < 0) {
+	if (i2c_reg_write_byte_dt(&config->i2c, ISL29035_COMMAND_I_REG, 0) < 0) {
 		LOG_DBG("Failed to clear COMMAND-I.");
 		return -EIO;
 	}
 
-	if (i2c_reg_write_byte_dt(&config->i2c,
-				  ISL29035_COMMAND_II_REG, 0) < 0) {
+	if (i2c_reg_write_byte_dt(&config->i2c, ISL29035_COMMAND_II_REG, 0) < 0) {
 		LOG_DBG("Failed to clear COMMAND-II.");
 		return -EIO;
 	}
 
 	/* set operation mode */
-	if (i2c_reg_update_byte_dt(&config->i2c,
-				   ISL29035_COMMAND_I_REG,
-				   ISL29035_OPMODE_MASK,
+	if (i2c_reg_update_byte_dt(&config->i2c, ISL29035_COMMAND_I_REG, ISL29035_OPMODE_MASK,
 				   ISL29035_ACTIVE_OPMODE_BITS) < 0) {
 		LOG_DBG("Failed to set opmode.");
 		return -EIO;
 	}
 
 	/* set lux range */
-	if (i2c_reg_update_byte_dt(&config->i2c,
-				   ISL29035_COMMAND_II_REG,
-				   ISL29035_LUX_RANGE_MASK,
+	if (i2c_reg_update_byte_dt(&config->i2c, ISL29035_COMMAND_II_REG, ISL29035_LUX_RANGE_MASK,
 				   ISL29035_LUX_RANGE_BITS) < 0) {
 		LOG_DBG("Failed to set lux range.");
 		return -EIO;
 	}
 
 	/* set ADC resolution */
-	if (i2c_reg_update_byte_dt(&config->i2c,
-				   ISL29035_COMMAND_II_REG,
-				   ISL29035_ADC_RES_MASK,
+	if (i2c_reg_update_byte_dt(&config->i2c, ISL29035_COMMAND_II_REG, ISL29035_ADC_RES_MASK,
 				   ISL29035_ADC_RES_BITS) < 0) {
 		LOG_DBG("Failed to set ADC resolution.");
 		return -EIO;
@@ -145,17 +132,16 @@ static int isl29035_init(const struct device *dev)
 	return 0;
 }
 
-#define ISL29035_DEFINE(inst)									\
-	static struct isl29035_driver_data isl29035_data_##inst;				\
-												\
-	static const struct isl29035_config isl29035_config_##inst = {				\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
+#define ISL29035_DEFINE(inst)                                                                      \
+	static struct isl29035_driver_data isl29035_data_##inst;                                   \
+                                                                                                   \
+	static const struct isl29035_config isl29035_config_##inst = {                             \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		IF_ENABLED(CONFIG_ISL29035_TRIGGER,						\
-			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))	\
-	};											\
-												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &isl29035_init, NULL,				\
-			      &isl29035_data_##inst, &isl29035_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &isl29035_api);			\
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),)) };           \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, &isl29035_init, NULL, &isl29035_data_##inst,            \
+				     &isl29035_config_##inst, POST_KERNEL,                         \
+				     CONFIG_SENSOR_INIT_PRIORITY, &isl29035_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ISL29035_DEFINE)

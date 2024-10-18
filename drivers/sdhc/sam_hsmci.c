@@ -30,32 +30,25 @@ LOG_MODULE_REGISTER(hsmci, CONFIG_SDHC_LOG_LEVEL);
 #endif
 #endif
 
-#define _HSMCI_DEFAULT_TIMEOUT	5000
-#define _HSMCI_MAX_FREQ			(SOC_ATMEL_SAM_MCK_FREQ_HZ >> 1)
-#define _HSMCI_MIN_FREQ			(_HSMCI_MAX_FREQ / 0x200)
-#define _MSMCI_MAX_DIVISOR		0x1FF
-#define _HSMCI_SR_ERR			 (HSMCI_SR_RINDE \
-								| HSMCI_SR_RDIRE \
-								| HSMCI_SR_RCRCE \
-								| HSMCI_SR_RENDE \
-								| HSMCI_SR_RTOE \
-								| HSMCI_SR_DCRCE \
-								| HSMCI_SR_DTOE \
-								| HSMCI_SR_CSTOE \
-								| HSMCI_SR_OVRE \
-								| HSMCI_SR_UNRE)
+#define _HSMCI_DEFAULT_TIMEOUT 5000
+#define _HSMCI_MAX_FREQ        (SOC_ATMEL_SAM_MCK_FREQ_HZ >> 1)
+#define _HSMCI_MIN_FREQ        (_HSMCI_MAX_FREQ / 0x200)
+#define _MSMCI_MAX_DIVISOR     0x1FF
+#define _HSMCI_SR_ERR                                                                              \
+	(HSMCI_SR_RINDE | HSMCI_SR_RDIRE | HSMCI_SR_RCRCE | HSMCI_SR_RENDE | HSMCI_SR_RTOE |       \
+	 HSMCI_SR_DCRCE | HSMCI_SR_DTOE | HSMCI_SR_CSTOE | HSMCI_SR_OVRE | HSMCI_SR_UNRE)
 
 static const uint8_t _resp2size[] = {
 	[SD_RSP_TYPE_NONE] = HSMCI_CMDR_RSPTYP_NORESP,
-	[SD_RSP_TYPE_R1]   = HSMCI_CMDR_RSPTYP_48_BIT,
-	[SD_RSP_TYPE_R1b]  = HSMCI_CMDR_RSPTYP_R1B,
-	[SD_RSP_TYPE_R2]   = HSMCI_CMDR_RSPTYP_136_BIT,
-	[SD_RSP_TYPE_R3]   = HSMCI_CMDR_RSPTYP_48_BIT,
-	[SD_RSP_TYPE_R4]   = HSMCI_CMDR_RSPTYP_48_BIT,
-	[SD_RSP_TYPE_R5]   = 0 /* SDIO not supported */,
-	[SD_RSP_TYPE_R5b]  = 0 /* SDIO not supported */,
-	[SD_RSP_TYPE_R6]   = HSMCI_CMDR_RSPTYP_48_BIT,
-	[SD_RSP_TYPE_R7]   = HSMCI_CMDR_RSPTYP_48_BIT,
+	[SD_RSP_TYPE_R1] = HSMCI_CMDR_RSPTYP_48_BIT,
+	[SD_RSP_TYPE_R1b] = HSMCI_CMDR_RSPTYP_R1B,
+	[SD_RSP_TYPE_R2] = HSMCI_CMDR_RSPTYP_136_BIT,
+	[SD_RSP_TYPE_R3] = HSMCI_CMDR_RSPTYP_48_BIT,
+	[SD_RSP_TYPE_R4] = HSMCI_CMDR_RSPTYP_48_BIT,
+	[SD_RSP_TYPE_R5] = 0 /* SDIO not supported */,
+	[SD_RSP_TYPE_R5b] = 0 /* SDIO not supported */,
+	[SD_RSP_TYPE_R6] = HSMCI_CMDR_RSPTYP_48_BIT,
+	[SD_RSP_TYPE_R7] = HSMCI_CMDR_RSPTYP_48_BIT,
 };
 
 /* timeout multiplier shift (actual value is 1 << _mul_shift[*]) */
@@ -155,7 +148,7 @@ static int sam_hsmci_set_io(const struct device *dev, struct sdhc_io *ios)
 			((div_val & 1) ? HSMCI_MR_CLKODD : 0) | HSMCI_MR_CLKDIV(div_val >> 1);
 	}
 
-	if (ios->bus_width)	{
+	if (ios->bus_width) {
 		hsmci->HSMCI_SDCR &= ~HSMCI_SDCR_SDCBUS_Msk;
 
 		switch (ios->bus_width) {

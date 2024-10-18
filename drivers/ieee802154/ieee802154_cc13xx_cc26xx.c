@@ -40,9 +40,7 @@ static uint32_t overrides[] = {
 	/* DC/DC regulator: In Tx, use DCDCCTL5[3:0]=0x3 (DITHER_EN=0 and IPEAK=3). */
 	0x00F388D3,
 	/* Rx: Set LNA bias current offset to +15 to saturate trim to max (default: 0) */
-	0x000F8883,
-	0xFFFFFFFF
-};
+	0x000F8883, 0xFFFFFFFF};
 
 /* 2.4 GHz power table */
 static const RF_TxPowerTable_Entry txPowerTable_2_4[] = {
@@ -59,8 +57,7 @@ static const RF_TxPowerTable_Entry txPowerTable_2_4[] = {
 	RF_TxPowerTable_TERMINATION_ENTRY,
 };
 
-static void ieee802154_cc13xx_cc26xx_rx_done(
-	struct ieee802154_cc13xx_cc26xx_data *drv_data);
+static void ieee802154_cc13xx_cc26xx_rx_done(struct ieee802154_cc13xx_cc26xx_data *drv_data);
 static int ieee802154_cc13xx_cc26xx_stop(const struct device *dev);
 
 /* TODO remove when rf driver bugfix is pulled in */
@@ -77,7 +74,7 @@ static void cmd_ieee_csma_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
 	const struct device *const dev = DEVICE_DT_INST_GET(0);
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
 
-	update_saved_cmdhandle(ch, (RF_CmdHandle *) &drv_data->saved_cmdhandle);
+	update_saved_cmdhandle(ch, (RF_CmdHandle *)&drv_data->saved_cmdhandle);
 
 	LOG_DBG("e: 0x%" PRIx64, e);
 
@@ -93,7 +90,7 @@ static void cmd_ieee_rx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
 	const struct device *const dev = DEVICE_DT_INST_GET(0);
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
 
-	update_saved_cmdhandle(ch, (RF_CmdHandle *) &drv_data->saved_cmdhandle);
+	update_saved_cmdhandle(ch, (RF_CmdHandle *)&drv_data->saved_cmdhandle);
 
 	LOG_DBG("e: 0x%" PRIx64, e);
 
@@ -123,12 +120,10 @@ static void client_event_callback(RF_Handle h, RF_ClientEvent event, void *arg)
 	LOG_DBG("event: %d arg: %p", event, arg);
 }
 
-static enum ieee802154_hw_caps
-ieee802154_cc13xx_cc26xx_get_capabilities(const struct device *dev)
+static enum ieee802154_hw_caps ieee802154_cc13xx_cc26xx_get_capabilities(const struct device *dev)
 {
-	return IEEE802154_HW_FCS | IEEE802154_HW_FILTER |
-	       IEEE802154_HW_RX_TX_ACK | IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_CSMA |
-	       IEEE802154_HW_RETRANSMISSION;
+	return IEEE802154_HW_FCS | IEEE802154_HW_FILTER | IEEE802154_HW_RX_TX_ACK |
+	       IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_CSMA | IEEE802154_HW_RETRANSMISSION;
 }
 
 static int ieee802154_cc13xx_cc26xx_cca(const struct device *dev)
@@ -136,8 +131,7 @@ static int ieee802154_cc13xx_cc26xx_cca(const struct device *dev)
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
 	RF_Stat status;
 
-	status = RF_runImmediateCmd(drv_data->rf_handle,
-		(uint32_t *)&drv_data->cmd_ieee_cca_req);
+	status = RF_runImmediateCmd(drv_data->rf_handle, (uint32_t *)&drv_data->cmd_ieee_cca_req);
 	if (status != RF_StatSuccess) {
 		LOG_ERR("Failed to request CCA (0x%x)", status);
 		return -EIO;
@@ -153,8 +147,9 @@ static int ieee802154_cc13xx_cc26xx_cca(const struct device *dev)
 	}
 }
 
-static inline int ieee802154_cc13xx_cc26xx_channel_to_frequency(
-	uint16_t channel, uint16_t *frequency, uint16_t *fractFreq)
+static inline int ieee802154_cc13xx_cc26xx_channel_to_frequency(uint16_t channel,
+								uint16_t *frequency,
+								uint16_t *fractFreq)
 {
 	__ASSERT_NO_MSG(frequency != NULL);
 	__ASSERT_NO_MSG(fractFreq != NULL);
@@ -172,8 +167,7 @@ static inline int ieee802154_cc13xx_cc26xx_channel_to_frequency(
 	}
 }
 
-static int ieee802154_cc13xx_cc26xx_set_channel(const struct device *dev,
-						uint16_t channel)
+static int ieee802154_cc13xx_cc26xx_set_channel(const struct device *dev, uint16_t channel)
 {
 	int ret;
 	RF_CmdHandle cmd_handle;
@@ -199,8 +193,8 @@ static int ieee802154_cc13xx_cc26xx_set_channel(const struct device *dev,
 	drv_data->cmd_fs.status = IDLE;
 	drv_data->cmd_fs.frequency = freq;
 	drv_data->cmd_fs.fractFreq = fract;
-	reason = RF_runCmd(drv_data->rf_handle, (RF_Op *)&drv_data->cmd_fs,
-			   RF_PriorityNormal, NULL, 0);
+	reason = RF_runCmd(drv_data->rf_handle, (RF_Op *)&drv_data->cmd_fs, RF_PriorityNormal, NULL,
+			   0);
 	if (reason != RF_EventLastCmdDone) {
 		LOG_ERR("Failed to set frequency: 0x%" PRIx64, reason);
 		ret = -EIO;
@@ -210,9 +204,8 @@ static int ieee802154_cc13xx_cc26xx_set_channel(const struct device *dev,
 	/* Run BG receive process on requested channel */
 	drv_data->cmd_ieee_rx.status = IDLE;
 	drv_data->cmd_ieee_rx.channel = channel;
-	cmd_handle = RF_postCmd(drv_data->rf_handle,
-		(RF_Op *)&drv_data->cmd_ieee_rx, RF_PriorityNormal,
-		cmd_ieee_rx_callback, RF_EventRxEntryDone);
+	cmd_handle = RF_postCmd(drv_data->rf_handle, (RF_Op *)&drv_data->cmd_ieee_rx,
+				RF_PriorityNormal, cmd_ieee_rx_callback, RF_EventRxEntryDone);
 	if (cmd_handle < 0) {
 		LOG_ERR("Failed to post RX command (%d)", cmd_handle);
 		ret = -EIO;
@@ -227,8 +220,7 @@ out:
 }
 
 /* TODO remove when rf driver bugfix is pulled in */
-static int ieee802154_cc13xx_cc26xx_reset_channel(
-	const struct device *dev)
+static int ieee802154_cc13xx_cc26xx_reset_channel(const struct device *dev)
 {
 	uint8_t channel;
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
@@ -243,10 +235,9 @@ static int ieee802154_cc13xx_cc26xx_reset_channel(
 	return ieee802154_cc13xx_cc26xx_set_channel(dev, channel);
 }
 
-static int
-ieee802154_cc13xx_cc26xx_filter(const struct device *dev, bool set,
-				enum ieee802154_filter_type type,
-				const struct ieee802154_filter *filter)
+static int ieee802154_cc13xx_cc26xx_filter(const struct device *dev, bool set,
+					   enum ieee802154_filter_type type,
+					   const struct ieee802154_filter *filter)
 {
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
 
@@ -255,8 +246,7 @@ ieee802154_cc13xx_cc26xx_filter(const struct device *dev, bool set,
 	}
 
 	if (type == IEEE802154_FILTER_TYPE_IEEE_ADDR) {
-		memcpy((uint8_t *)&drv_data->cmd_ieee_rx.localExtAddr,
-		       filter->ieee_addr,
+		memcpy((uint8_t *)&drv_data->cmd_ieee_rx.localExtAddr, filter->ieee_addr,
 		       sizeof(drv_data->cmd_ieee_rx.localExtAddr));
 	} else if (type == IEEE802154_FILTER_TYPE_SHORT_ADDR) {
 		drv_data->cmd_ieee_rx.localShortAddr = filter->short_addr;
@@ -269,8 +259,7 @@ ieee802154_cc13xx_cc26xx_filter(const struct device *dev, bool set,
 	return 0;
 }
 
-static int ieee802154_cc13xx_cc26xx_set_txpower(const struct device *dev,
-						int16_t dbm)
+static int ieee802154_cc13xx_cc26xx_set_txpower(const struct device *dev, int16_t dbm)
 {
 	RF_Stat status;
 	const RF_TxPowerTable_Entry *table;
@@ -279,8 +268,8 @@ static int ieee802154_cc13xx_cc26xx_set_txpower(const struct device *dev,
 	/* TODO Support sub-GHz for CC13xx */
 	table = txPowerTable_2_4;
 
-	RF_TxPowerTable_Value power_table_value = RF_TxPowerTable_findValue(
-		(RF_TxPowerTable_Entry *)table, dbm);
+	RF_TxPowerTable_Value power_table_value =
+		RF_TxPowerTable_findValue((RF_TxPowerTable_Entry *)table, dbm);
 	if (power_table_value.rawValue == RF_TxPowerTable_INVALID_VALUE) {
 		LOG_ERR("RF_TxPowerTable_findValue() failed");
 		return -EINVAL;
@@ -296,10 +285,8 @@ static int ieee802154_cc13xx_cc26xx_set_txpower(const struct device *dev,
 }
 
 /* See IEEE 802.15.4 section 6.2.5.1 and TRM section 25.5.4.3 */
-static int ieee802154_cc13xx_cc26xx_tx(const struct device *dev,
-				       enum ieee802154_tx_mode mode,
-				       struct net_pkt *pkt,
-				       struct net_buf *frag)
+static int ieee802154_cc13xx_cc26xx_tx(const struct device *dev, enum ieee802154_tx_mode mode,
+				       struct net_pkt *pkt, struct net_buf *frag)
 {
 	int r;
 	RF_EventMask reason;
@@ -339,22 +326,18 @@ static int ieee802154_cc13xx_cc26xx_tx(const struct device *dev,
 		drv_data->cmd_ieee_tx.status = IDLE;
 		drv_data->cmd_ieee_tx.payloadLen = frag->len;
 		drv_data->cmd_ieee_tx.pPayload = frag->data;
-		drv_data->cmd_ieee_tx.condition.rule =
-			ack ? COND_STOP_ON_FALSE : COND_NEVER;
+		drv_data->cmd_ieee_tx.condition.rule = ack ? COND_STOP_ON_FALSE : COND_NEVER;
 
 		if (ack) {
 			drv_data->cmd_ieee_rx_ack.status = IDLE;
 			drv_data->cmd_ieee_rx_ack.seqNo = frag->data[2];
 		}
 
-		reason = RF_runScheduleCmd(drv_data->rf_handle,
-			(RF_Op *)&drv_data->cmd_ieee_csma, &sched_params,
-			cmd_ieee_csma_callback,
-			RF_EventLastFGCmdDone | RF_EventLastCmdDone);
-		if ((reason & (RF_EventLastFGCmdDone | RF_EventLastCmdDone))
-			== 0) {
-			LOG_DBG("Failed to run command (0x%" PRIx64 ")",
-				reason);
+		reason = RF_runScheduleCmd(drv_data->rf_handle, (RF_Op *)&drv_data->cmd_ieee_csma,
+					   &sched_params, cmd_ieee_csma_callback,
+					   RF_EventLastFGCmdDone | RF_EventLastCmdDone);
+		if ((reason & (RF_EventLastFGCmdDone | RF_EventLastCmdDone)) == 0) {
+			LOG_DBG("Failed to run command (0x%" PRIx64 ")", reason);
 			continue;
 		}
 
@@ -363,8 +346,7 @@ static int ieee802154_cc13xx_cc26xx_tx(const struct device *dev,
 			 *       fails TX immediately and should not trigger
 			 *       attempt (which is reserved for ACK timeouts).
 			 */
-			LOG_DBG("Channel access failure (0x%x)",
-				drv_data->cmd_ieee_csma.status);
+			LOG_DBG("Channel access failure (0x%x)", drv_data->cmd_ieee_csma.status);
 			continue;
 		}
 
@@ -373,8 +355,7 @@ static int ieee802154_cc13xx_cc26xx_tx(const struct device *dev,
 			 *       fails TX immediately and should not trigger
 			 *       attempt (which is reserved for ACK timeouts).
 			 */
-			LOG_DBG("Transmit failed (0x%x)",
-				drv_data->cmd_ieee_tx.status);
+			LOG_DBG("Transmit failed (0x%x)", drv_data->cmd_ieee_tx.status);
 			continue;
 		}
 
@@ -384,8 +365,7 @@ static int ieee802154_cc13xx_cc26xx_tx(const struct device *dev,
 			goto out;
 		}
 
-		LOG_DBG("No acknowledgment (0x%x)",
-			drv_data->cmd_ieee_rx_ack.status);
+		LOG_DBG("No acknowledgment (0x%x)", drv_data->cmd_ieee_rx_ack.status);
 	} while (retry-- > 0);
 
 	LOG_DBG("Failed to TX");
@@ -396,8 +376,7 @@ out:
 	return r;
 }
 
-static void ieee802154_cc13xx_cc26xx_rx_done(
-	struct ieee802154_cc13xx_cc26xx_data *drv_data)
+static void ieee802154_cc13xx_cc26xx_rx_done(struct ieee802154_cc13xx_cc26xx_data *drv_data)
 {
 	struct net_pkt *pkt;
 	uint8_t len, seq, corr, lqi;
@@ -423,11 +402,11 @@ static void ieee802154_cc13xx_cc26xx_rx_done(
 			/* scale 6-bit corr to 8-bit lqi */
 			lqi = corr << 2;
 
-			LOG_DBG("Received: len = %u, seq = %u, rssi = %d, lqi = %u",
-				len, seq, rssi, lqi);
+			LOG_DBG("Received: len = %u, seq = %u, rssi = %d, lqi = %u", len, seq, rssi,
+				lqi);
 
-			pkt = net_pkt_rx_alloc_with_buffer(
-				drv_data->iface, len, AF_UNSPEC, 0, K_NO_WAIT);
+			pkt = net_pkt_rx_alloc_with_buffer(drv_data->iface, len, AF_UNSPEC, 0,
+							   K_NO_WAIT);
 			if (!pkt) {
 				LOG_WRN("Cannot allocate packet");
 				continue;
@@ -452,8 +431,7 @@ static void ieee802154_cc13xx_cc26xx_rx_done(
 				net_pkt_unref(pkt);
 			}
 
-		} else if (drv_data->rx_entry[i].status ==
-			   DATA_ENTRY_UNFINISHED) {
+		} else if (drv_data->rx_entry[i].status == DATA_ENTRY_UNFINISHED) {
 			LOG_WRN("Frame not finished");
 			drv_data->rx_entry[i].status = DATA_ENTRY_PENDING;
 		}
@@ -474,10 +452,8 @@ static int ieee802154_cc13xx_cc26xx_stop(const struct device *dev)
 	RF_Stat status;
 
 	status = RF_flushCmd(drv_data->rf_handle, RF_CMDHANDLE_FLUSH_ALL, 0);
-	if (!(status == RF_StatCmdDoneSuccess
-		|| status == RF_StatSuccess
-		|| status == RF_StatRadioInactiveError
-		|| status == RF_StatInvalidParamsError)) {
+	if (!(status == RF_StatCmdDoneSuccess || status == RF_StatSuccess ||
+	      status == RF_StatRadioInactiveError || status == RF_StatInvalidParamsError)) {
 		LOG_DBG("Failed to abort radio operations (%d)", status);
 		return -EIO;
 	}
@@ -504,10 +480,9 @@ static int ieee802154_cc13xx_cc26xx_stop_if(const struct device *dev)
 	return 0;
 }
 
-static int
-ieee802154_cc13xx_cc26xx_configure(const struct device *dev,
-				   enum ieee802154_config_type type,
-				   const struct ieee802154_config *config)
+static int ieee802154_cc13xx_cc26xx_configure(const struct device *dev,
+					      enum ieee802154_config_type type,
+					      const struct ieee802154_config *config)
 {
 	return -ENOTSUP;
 }
@@ -566,8 +541,7 @@ static void ieee802154_cc13xx_cc26xx_iface_init(struct net_if *iface)
 	const struct device *dev = net_if_get_device(iface);
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = dev->data;
 
-	net_if_set_link_addr(iface, drv_data->mac, sizeof(drv_data->mac),
-			     NET_LINK_IEEE802154);
+	net_if_set_link_addr(iface, drv_data->mac, sizeof(drv_data->mac), NET_LINK_IEEE802154);
 
 	drv_data->iface = iface;
 
@@ -591,7 +565,7 @@ static const struct ieee802154_radio_api ieee802154_cc13xx_cc26xx_radio_api = {
 
 /** RF patches to use (note: RF core keeps a pointer to this, so no stack). */
 static RF_Mode rf_mode = {
-	.rfMode      = RF_MODE_MULTIPLE,
+	.rfMode = RF_MODE_MULTIPLE,
 	.cpePatchFxn = &rf_patch_cpe_multi_protocol,
 };
 
@@ -609,9 +583,8 @@ static int ieee802154_cc13xx_cc26xx_init(const struct device *dev)
 	rf_params.pErrCb = client_error_callback;
 	rf_params.pClientEventCb = client_event_callback;
 
-	drv_data->rf_handle = RF_open(&drv_data->rf_object,
-		&rf_mode, (RF_RadioSetup *)&drv_data->cmd_radio_setup,
-		&rf_params);
+	drv_data->rf_handle = RF_open(&drv_data->rf_object, &rf_mode,
+				      (RF_RadioSetup *)&drv_data->cmd_radio_setup, &rf_params);
 	if (drv_data->rf_handle == NULL) {
 		LOG_ERR("RF_open() failed");
 		return -EIO;
@@ -629,8 +602,8 @@ static int ieee802154_cc13xx_cc26xx_init(const struct device *dev)
 	drv_data->cmd_fs.frequency = 0;
 	drv_data->cmd_fs.fractFreq = 0;
 
-	reason = RF_runCmd(drv_data->rf_handle, (RF_Op *)&drv_data->cmd_fs,
-		RF_PriorityNormal, NULL, 0);
+	reason = RF_runCmd(drv_data->rf_handle, (RF_Op *)&drv_data->cmd_fs, RF_PriorityNormal, NULL,
+			   0);
 	if (reason != RF_EventLastCmdDone) {
 		LOG_ERR("Failed to set frequency: 0x%" PRIx64, reason);
 		return -EIO;
@@ -640,190 +613,187 @@ static int ieee802154_cc13xx_cc26xx_init(const struct device *dev)
 }
 
 static struct ieee802154_cc13xx_cc26xx_data ieee802154_cc13xx_cc26xx_data = {
-	.cmd_fs = {
-		.commandNo = CMD_FS,
-	},
+	.cmd_fs =
+		{
+			.commandNo = CMD_FS,
+		},
 
-	.cmd_ieee_cca_req = {
-		.commandNo = CMD_IEEE_CCA_REQ,
-	},
+	.cmd_ieee_cca_req =
+		{
+			.commandNo = CMD_IEEE_CCA_REQ,
+		},
 
-	.cmd_ieee_rx = {
-		.commandNo = CMD_IEEE_RX,
-		.status = IDLE,
-		.pNextOp = NULL,
-		.startTrigger.triggerType = TRIG_NOW,
-		.condition.rule = COND_NEVER,
-		.channel = 0,
-		.rxConfig = {
-			.bAutoFlushCrc = 1,
-			.bAutoFlushIgn = 1,
-			.bIncludePhyHdr = 0,
-			.bIncludeCrc = 1,
-			.bAppendRssi = 1,
-			.bAppendCorrCrc = 1,
-			.bAppendSrcInd = 0,
-			.bAppendTimestamp = 0
-		},
-		.pRxQ = &ieee802154_cc13xx_cc26xx_data.rx_queue,
-		.pOutput = NULL,
-		.frameFiltOpt = {
-			.frameFiltEn = 1,
-			.frameFiltStop = 0,
-			.autoAckEn = 1,
-			.slottedAckEn = 0,
-			.autoPendEn = 0,
-			.defaultPend = 0,
-			.bPendDataReqOnly = 0,
-			.bPanCoord = 0,
-			.maxFrameVersion = 3,
-			.fcfReservedMask = 0,
-			.modifyFtFilter = 0,
-			.bStrictLenFilter = 1
-		},
-		.frameTypes = {
-			.bAcceptFt0Beacon = 0,
-			.bAcceptFt1Data = 1,
-			.bAcceptFt2Ack = 0,
-			.bAcceptFt3MacCmd = 1,
-			.bAcceptFt4Reserved = 0,
-			.bAcceptFt5Reserved = 0,
-			.bAcceptFt6Reserved = 0,
-			.bAcceptFt7Reserved = 0
-		},
-		.ccaOpt = {
+	.cmd_ieee_rx = {.commandNo = CMD_IEEE_RX,
+			.status = IDLE,
+			.pNextOp = NULL,
+			.startTrigger.triggerType = TRIG_NOW,
+			.condition.rule = COND_NEVER,
+			.channel = 0,
+			.rxConfig = {.bAutoFlushCrc = 1,
+				     .bAutoFlushIgn = 1,
+				     .bIncludePhyHdr = 0,
+				     .bIncludeCrc = 1,
+				     .bAppendRssi = 1,
+				     .bAppendCorrCrc = 1,
+				     .bAppendSrcInd = 0,
+				     .bAppendTimestamp = 0},
+			.pRxQ = &ieee802154_cc13xx_cc26xx_data.rx_queue,
+			.pOutput = NULL,
+			.frameFiltOpt = {.frameFiltEn = 1,
+					 .frameFiltStop = 0,
+					 .autoAckEn = 1,
+					 .slottedAckEn = 0,
+					 .autoPendEn = 0,
+					 .defaultPend = 0,
+					 .bPendDataReqOnly = 0,
+					 .bPanCoord = 0,
+					 .maxFrameVersion = 3,
+					 .fcfReservedMask = 0,
+					 .modifyFtFilter = 0,
+					 .bStrictLenFilter = 1},
+			.frameTypes = {.bAcceptFt0Beacon = 0,
+				       .bAcceptFt1Data = 1,
+				       .bAcceptFt2Ack = 0,
+				       .bAcceptFt3MacCmd = 1,
+				       .bAcceptFt4Reserved = 0,
+				       .bAcceptFt5Reserved = 0,
+				       .bAcceptFt6Reserved = 0,
+				       .bAcceptFt7Reserved = 0},
+			.ccaOpt =
+				{
 #if IEEE802154_PHY_CCA_MODE == 1
-			.ccaEnEnergy = 1,
-			.ccaEnCorr = 0,
+					.ccaEnEnergy = 1,
+					.ccaEnCorr = 0,
 #elif IEEE802154_PHY_CCA_MODE == 2
-			.ccaEnEnergy = 0,
-			.ccaEnCorr = 1,
+					.ccaEnEnergy = 0,
+					.ccaEnCorr = 1,
 #elif IEEE802154_PHY_CCA_MODE == 3
-			.ccaEnEnergy = 1,
-			.ccaEnCorr = 1,
+					.ccaEnEnergy = 1,
+					.ccaEnCorr = 1,
 #else
 #error "Invalid CCA mode"
 #endif
-			.ccaEnSync = 1,
-			.ccaSyncOp = 0,
-			.ccaCorrOp = 0,
-			.ccaCorrThr = 3,
-		},
-		/* See IEEE 802.15.4-2006 6.9.9*/
-		.ccaRssiThr = CC13XX_CC26XX_RECEIVER_SENSITIVITY + 10,
-		.numExtEntries = 0x00,
-		.numShortEntries = 0x00,
-		.pExtEntryList = NULL,
-		.pShortEntryList = NULL,
-		.localExtAddr = 0x0000000000000000,
-		.localShortAddr = 0x0000,
-		.localPanID = 0x0000,
-		.endTrigger.triggerType = TRIG_NEVER
-	},
+					.ccaEnSync = 1,
+					.ccaSyncOp = 0,
+					.ccaCorrOp = 0,
+					.ccaCorrThr = 3,
+				},
+			/* See IEEE 802.15.4-2006 6.9.9*/
+			.ccaRssiThr = CC13XX_CC26XX_RECEIVER_SENSITIVITY + 10,
+			.numExtEntries = 0x00,
+			.numShortEntries = 0x00,
+			.pExtEntryList = NULL,
+			.pShortEntryList = NULL,
+			.localExtAddr = 0x0000000000000000,
+			.localShortAddr = 0x0000,
+			.localPanID = 0x0000,
+			.endTrigger.triggerType = TRIG_NEVER},
 
-	.cmd_ieee_csma = {
-		.commandNo = CMD_IEEE_CSMA,
-		.status = IDLE,
-		.pNextOp = (rfc_radioOp_t *)&ieee802154_cc13xx_cc26xx_data.cmd_ieee_tx,
-		.startTrigger.triggerType = TRIG_NOW,
-		.condition.rule = COND_STOP_ON_FALSE,
-		.randomState = 0,
-		.macMaxBE =
-			CONFIG_IEEE802154_CC13XX_CC26XX_RADIO_CSMA_CA_MAX_BE,
-		.macMaxCSMABackoffs =
-			CONFIG_IEEE802154_CC13XX_CC26XX_RADIO_CSMA_CA_MAX_BO,
-		.csmaConfig = {
-			/* Initial value of CW for unslotted CSMA */
-			.initCW = 1,
-			/* Unslotted CSMA for non-beacon enabled PAN */
-			.bSlotted = 0,
-			/* RX stays on during CSMA backoffs */
-			.rxOffMode = 0,
+	.cmd_ieee_csma =
+		{
+			.commandNo = CMD_IEEE_CSMA,
+			.status = IDLE,
+			.pNextOp = (rfc_radioOp_t *)&ieee802154_cc13xx_cc26xx_data.cmd_ieee_tx,
+			.startTrigger.triggerType = TRIG_NOW,
+			.condition.rule = COND_STOP_ON_FALSE,
+			.randomState = 0,
+			.macMaxBE = CONFIG_IEEE802154_CC13XX_CC26XX_RADIO_CSMA_CA_MAX_BE,
+			.macMaxCSMABackoffs = CONFIG_IEEE802154_CC13XX_CC26XX_RADIO_CSMA_CA_MAX_BO,
+			.csmaConfig =
+				{
+					/* Initial value of CW for unslotted CSMA */
+					.initCW = 1,
+					/* Unslotted CSMA for non-beacon enabled PAN */
+					.bSlotted = 0,
+					/* RX stays on during CSMA backoffs */
+					.rxOffMode = 0,
+				},
+			.NB = 0,
+			.BE = CONFIG_IEEE802154_CC13XX_CC26XX_RADIO_CSMA_CA_MIN_BE,
+			.remainingPeriods = 0,
+			.endTrigger.triggerType = TRIG_NEVER,
 		},
-		.NB = 0,
-		.BE = CONFIG_IEEE802154_CC13XX_CC26XX_RADIO_CSMA_CA_MIN_BE,
-		.remainingPeriods = 0,
-		.endTrigger.triggerType = TRIG_NEVER,
-	},
 
-	.cmd_ieee_tx = {
-		.commandNo = CMD_IEEE_TX,
-		.status = IDLE,
-		.pNextOp =  (rfc_radioOp_t *)&ieee802154_cc13xx_cc26xx_data.cmd_ieee_rx_ack,
-		.startTrigger.triggerType = TRIG_NOW,
-		.condition.rule = COND_NEVER,
-		.txOpt = {
-			/* Automatically insert PHY header */
-			.bIncludePhyHdr = 0x0,
-			/* Automatically append CRC */
-			.bIncludeCrc = 0x0,
-			/* Disable long frame testing */
-			.payloadLenMsb = 0x0,
+	.cmd_ieee_tx =
+		{
+			.commandNo = CMD_IEEE_TX,
+			.status = IDLE,
+			.pNextOp = (rfc_radioOp_t *)&ieee802154_cc13xx_cc26xx_data.cmd_ieee_rx_ack,
+			.startTrigger.triggerType = TRIG_NOW,
+			.condition.rule = COND_NEVER,
+			.txOpt =
+				{
+					/* Automatically insert PHY header */
+					.bIncludePhyHdr = 0x0,
+					/* Automatically append CRC */
+					.bIncludeCrc = 0x0,
+					/* Disable long frame testing */
+					.payloadLenMsb = 0x0,
+				},
+			.payloadLen = 0x0,
+			.pPayload = NULL,
 		},
-		.payloadLen = 0x0,
-		.pPayload = NULL,
-	},
 
-	.cmd_ieee_rx_ack = {
-		.commandNo = CMD_IEEE_RX_ACK,
-		.status = IDLE,
-		.pNextOp = NULL,
-		.startTrigger.triggerType = TRIG_NOW,
-		.condition.rule = COND_NEVER,
-		.seqNo = 0,
-		.endTrigger = {
-			.triggerType = TRIG_REL_START,
-			.pastTrig = 1,
+	.cmd_ieee_rx_ack =
+		{
+			.commandNo = CMD_IEEE_RX_ACK,
+			.status = IDLE,
+			.pNextOp = NULL,
+			.startTrigger.triggerType = TRIG_NOW,
+			.condition.rule = COND_NEVER,
+			.seqNo = 0,
+			.endTrigger =
+				{
+					.triggerType = TRIG_REL_START,
+					.pastTrig = 1,
+				},
+			.endTime = IEEE802154_MAC_ACK_WAIT_DURATION *
+				   CC13XX_CC26XX_RAT_CYCLES_PER_SECOND /
+				   IEEE802154_2450MHZ_OQPSK_SYMBOLS_PER_SECOND,
 		},
-		.endTime = IEEE802154_MAC_ACK_WAIT_DURATION *
-			   CC13XX_CC26XX_RAT_CYCLES_PER_SECOND /
-			   IEEE802154_2450MHZ_OQPSK_SYMBOLS_PER_SECOND,
-	},
 
-	.cmd_radio_setup = {
-#if defined(CONFIG_SOC_CC1352R) || defined(CONFIG_SOC_CC2652R) || \
-	defined(CONFIG_SOC_CC1352R7) || defined(CONFIG_SOC_CC2652R7)
-		.commandNo = CMD_RADIO_SETUP,
-#elif defined(CONFIG_SOC_CC1352P) || defined(CONFIG_SOC_CC2652P) || \
+	.cmd_radio_setup =
+		{
+#if defined(CONFIG_SOC_CC1352R) || defined(CONFIG_SOC_CC2652R) || defined(CONFIG_SOC_CC1352R7) ||  \
+	defined(CONFIG_SOC_CC2652R7)
+			.commandNo = CMD_RADIO_SETUP,
+#elif defined(CONFIG_SOC_CC1352P) || defined(CONFIG_SOC_CC2652P) ||                                \
 	defined(CONFIG_SOC_CC1352P7) || defined(CONFIG_SOC_CC2652P7)
-		.commandNo = CMD_RADIO_SETUP_PA,
+			.commandNo = CMD_RADIO_SETUP_PA,
 #endif /* CONFIG_SOC_CCxx52x */
-		.status = IDLE,
-		.pNextOp = NULL,
-		.startTrigger.triggerType = TRIG_NOW,
-		.condition.rule = COND_NEVER,
-		.mode = 0x01, /* IEEE 802.15.4 */
-		.loDivider = 0x00,
-		.config = {
-			.frontEndMode = 0x0,
-			.biasMode = 0x0,
-			.analogCfgMode = 0x0,
-			.bNoFsPowerUp = 0x0,
-		},
-		.txPower = 0x2853, /* 0 dBm */
-		.pRegOverride = overrides
-	},
+			.status = IDLE,
+			.pNextOp = NULL,
+			.startTrigger.triggerType = TRIG_NOW,
+			.condition.rule = COND_NEVER,
+			.mode = 0x01, /* IEEE 802.15.4 */
+			.loDivider = 0x00,
+			.config =
+				{
+					.frontEndMode = 0x0,
+					.biasMode = 0x0,
+					.analogCfgMode = 0x0,
+					.bNoFsPowerUp = 0x0,
+				},
+			.txPower = 0x2853, /* 0 dBm */
+			.pRegOverride = overrides},
 };
 
 #if defined(CONFIG_NET_L2_IEEE802154)
-#define L2 IEEE802154_L2
+#define L2          IEEE802154_L2
 #define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(IEEE802154_L2)
-#define MTU IEEE802154_MTU
+#define MTU         IEEE802154_MTU
 #elif defined(CONFIG_NET_L2_OPENTHREAD)
-#define L2 OPENTHREAD_L2
+#define L2          OPENTHREAD_L2
 #define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(OPENTHREAD_L2)
-#define MTU 1280
+#define MTU         1280
 #endif
 
 #if defined(CONFIG_NET_L2_IEEE802154) || defined(CONFIG_NET_L2_PHY_IEEE802154)
-NET_DEVICE_DT_INST_DEFINE(0, ieee802154_cc13xx_cc26xx_init, NULL,
-			  &ieee802154_cc13xx_cc26xx_data, NULL,
-			  CONFIG_IEEE802154_CC13XX_CC26XX_INIT_PRIO,
-			  &ieee802154_cc13xx_cc26xx_radio_api, L2,
-			  L2_CTX_TYPE, MTU);
+NET_DEVICE_DT_INST_DEFINE(0, ieee802154_cc13xx_cc26xx_init, NULL, &ieee802154_cc13xx_cc26xx_data,
+			  NULL, CONFIG_IEEE802154_CC13XX_CC26XX_INIT_PRIO,
+			  &ieee802154_cc13xx_cc26xx_radio_api, L2, L2_CTX_TYPE, MTU);
 #else
-DEVICE_DT_INST_DEFINE(0, ieee802154_cc13xx_cc26xx_init, NULL,
-		      &ieee802154_cc13xx_cc26xx_data, NULL, POST_KERNEL,
-		      CONFIG_IEEE802154_CC13XX_CC26XX_INIT_PRIO,
+DEVICE_DT_INST_DEFINE(0, ieee802154_cc13xx_cc26xx_init, NULL, &ieee802154_cc13xx_cc26xx_data, NULL,
+		      POST_KERNEL, CONFIG_IEEE802154_CC13XX_CC26XX_INIT_PRIO,
 		      &ieee802154_cc13xx_cc26xx_radio_api);
 #endif

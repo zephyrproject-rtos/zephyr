@@ -19,19 +19,19 @@
 
 LOG_MODULE_REGISTER(pwm_nrf_sw, CONFIG_PWM_LOG_LEVEL);
 
-#define GENERATOR_NODE	DT_INST_PHANDLE(0, generator)
-#define GENERATOR_CC_NUM	DT_PROP(GENERATOR_NODE, cc_num)
+#define GENERATOR_NODE   DT_INST_PHANDLE(0, generator)
+#define GENERATOR_CC_NUM DT_PROP(GENERATOR_NODE, cc_num)
 
 #if DT_NODE_HAS_COMPAT(GENERATOR_NODE, nordic_nrf_rtc)
-#define USE_RTC		1
-#define GENERATOR_ADDR	((NRF_RTC_Type *) DT_REG_ADDR(GENERATOR_NODE))
-#define GENERATOR_BITS	24
+#define USE_RTC        1
+#define GENERATOR_ADDR ((NRF_RTC_Type *)DT_REG_ADDR(GENERATOR_NODE))
+#define GENERATOR_BITS 24
 BUILD_ASSERT(DT_INST_PROP(0, clock_prescaler) == 0,
 	     "Only clock-prescaler = <0> is supported when used with RTC");
 #else
-#define USE_RTC		0
-#define GENERATOR_ADDR	((NRF_TIMER_Type *) DT_REG_ADDR(GENERATOR_NODE))
-#define GENERATOR_BITS	DT_PROP(GENERATOR_NODE, max_bit_width)
+#define USE_RTC        0
+#define GENERATOR_ADDR ((NRF_TIMER_Type *)DT_REG_ADDR(GENERATOR_NODE))
+#define GENERATOR_BITS DT_PROP(GENERATOR_NODE, max_bit_width)
 #endif
 
 #define PWM_0_MAP_SIZE DT_INST_PROP_LEN(0, channel_gpios)
@@ -94,9 +94,8 @@ static inline NRF_TIMER_Type *pwm_config_timer(const struct pwm_config *config)
 #endif
 }
 
-static uint32_t pwm_period_check(struct pwm_data *data, uint8_t map_size,
-				 uint32_t channel, uint32_t period_cycles,
-				 uint32_t pulse_cycles)
+static uint32_t pwm_period_check(struct pwm_data *data, uint8_t map_size, uint32_t channel,
+				 uint32_t period_cycles, uint32_t pulse_cycles)
 {
 	uint8_t i;
 
@@ -107,8 +106,7 @@ static uint32_t pwm_period_check(struct pwm_data *data, uint8_t map_size,
 
 	/* fail if requested period does not match already running period */
 	for (i = 0U; i < map_size; i++) {
-		if ((i != channel) &&
-		    (data->pulse_cycles[i] != 0U) &&
+		if ((i != channel) && (data->pulse_cycles[i] != 0U) &&
 		    (period_cycles != data->period_cycles)) {
 			return -EINVAL;
 		}
@@ -117,9 +115,8 @@ static uint32_t pwm_period_check(struct pwm_data *data, uint8_t map_size,
 	return 0;
 }
 
-static int pwm_nrf_sw_set_cycles(const struct device *dev, uint32_t channel,
-				 uint32_t period_cycles, uint32_t pulse_cycles,
-				 pwm_flags_t flags)
+static int pwm_nrf_sw_set_cycles(const struct device *dev, uint32_t channel, uint32_t period_cycles,
+				 uint32_t pulse_cycles, pwm_flags_t flags)
 {
 	const struct pwm_config *config = dev->config;
 	NRF_TIMER_Type *timer = pwm_config_timer(config);
@@ -141,8 +138,7 @@ static int pwm_nrf_sw_set_cycles(const struct device *dev, uint32_t channel,
 	/* check if requested period is allowed while other channels are
 	 * active.
 	 */
-	ret = pwm_period_check(data, config->map_size, channel, period_cycles,
-			       pulse_cycles);
+	ret = pwm_period_check(data, config->map_size, channel, period_cycles, pulse_cycles);
 	if (ret) {
 		LOG_ERR("Incompatible period");
 		return ret;
@@ -155,10 +151,8 @@ static int pwm_nrf_sw_set_cycles(const struct device *dev, uint32_t channel,
 			return -EINVAL;
 		}
 	} else {
-		if (GENERATOR_BITS < 32 &&
-		    period_cycles > BIT_MASK(GENERATOR_BITS)) {
-			LOG_ERR("Too long period (%u), adjust PWM prescaler!",
-				period_cycles);
+		if (GENERATOR_BITS < 32 && period_cycles > BIT_MASK(GENERATOR_BITS)) {
+			LOG_ERR("Too long period (%u), adjust PWM prescaler!", period_cycles);
 			return -EINVAL;
 		}
 	}
@@ -168,12 +162,10 @@ static int pwm_nrf_sw_set_cycles(const struct device *dev, uint32_t channel,
 	gpiote_ch = data->gpiote_ch[channel];
 	ppi_chs = data->ppi_ch[channel];
 
-	LOG_DBG("channel %u, period %u, pulse %u",
-		channel, period_cycles, pulse_cycles);
+	LOG_DBG("channel %u, period %u, pulse %u", channel, period_cycles, pulse_cycles);
 
 	/* clear PPI used */
-	ppi_mask = BIT(ppi_chs[0]) | BIT(ppi_chs[1]) |
-		   (PPI_PER_CH > 2 ? BIT(ppi_chs[2]) : 0);
+	ppi_mask = BIT(ppi_chs[0]) | BIT(ppi_chs[1]) | (PPI_PER_CH > 2 ? BIT(ppi_chs[2]) : 0);
 	nrfx_gppi_channels_disable(ppi_mask);
 
 	active_level = (flags & PWM_POLARITY_INVERTED) ? 0 : 1;
@@ -184,9 +176,7 @@ static int pwm_nrf_sw_set_cycles(const struct device *dev, uint32_t channel,
 	 * state, respectively.
 	 */
 	if (pulse_cycles == 0 || pulse_cycles == period_cycles) {
-		nrf_gpio_pin_write(psel_ch,
-			pulse_cycles == 0 ? !active_level
-					  :  active_level);
+		nrf_gpio_pin_write(psel_ch, pulse_cycles == 0 ? !active_level : active_level);
 
 		/* clear GPIOTE config */
 		nrf_gpiote_te_default(gpiote, gpiote_ch);
@@ -213,10 +203,8 @@ static int pwm_nrf_sw_set_cycles(const struct device *dev, uint32_t channel,
 
 	/* configure RTC / TIMER */
 	if (USE_RTC) {
-		nrf_rtc_event_clear(rtc,
-			nrf_rtc_compare_event_get(1 + channel));
-		nrf_rtc_event_clear(rtc,
-			nrf_rtc_compare_event_get(0));
+		nrf_rtc_event_clear(rtc, nrf_rtc_compare_event_get(1 + channel));
+		nrf_rtc_event_clear(rtc, nrf_rtc_compare_event_get(0));
 
 		/*
 		 * '- 1' adjusts pulse and period cycles to the fact that CLEAR
@@ -227,10 +215,8 @@ static int pwm_nrf_sw_set_cycles(const struct device *dev, uint32_t channel,
 		nrf_rtc_cc_set(rtc, 0, period_cycles - 1);
 		nrf_rtc_task_trigger(rtc, NRF_RTC_TASK_CLEAR);
 	} else {
-		nrf_timer_event_clear(timer,
-			nrf_timer_compare_event_get(1 + channel));
-		nrf_timer_event_clear(timer,
-			nrf_timer_compare_event_get(0));
+		nrf_timer_event_clear(timer, nrf_timer_compare_event_get(1 + channel));
+		nrf_timer_event_clear(timer, nrf_timer_compare_event_get(0));
 
 		nrf_timer_cc_set(timer, 1 + channel, pulse_cycles);
 		nrf_timer_cc_set(timer, 0, period_cycles);
@@ -238,64 +224,52 @@ static int pwm_nrf_sw_set_cycles(const struct device *dev, uint32_t channel,
 	}
 
 	/* Configure GPIOTE - toggle task with proper initial output value. */
-	gpiote->CONFIG[gpiote_ch] =
-		(GPIOTE_CONFIG_MODE_Task << GPIOTE_CONFIG_MODE_Pos) |
-		((uint32_t)psel_ch << 8) |
-		(GPIOTE_CONFIG_POLARITY_Toggle << GPIOTE_CONFIG_POLARITY_Pos) |
-		((uint32_t)active_level << GPIOTE_CONFIG_OUTINIT_Pos);
+	gpiote->CONFIG[gpiote_ch] = (GPIOTE_CONFIG_MODE_Task << GPIOTE_CONFIG_MODE_Pos) |
+				    ((uint32_t)psel_ch << 8) |
+				    (GPIOTE_CONFIG_POLARITY_Toggle << GPIOTE_CONFIG_POLARITY_Pos) |
+				    ((uint32_t)active_level << GPIOTE_CONFIG_OUTINIT_Pos);
 
 	/* setup PPI */
 	uint32_t pulse_end_event_address, period_end_event_address;
 	nrf_gpiote_task_t pulse_end_task, period_end_task;
 #if defined(GPIOTE_FEATURE_SET_PRESENT) && defined(GPIOTE_FEATURE_CLR_PRESENT)
 	if (active_level == 0) {
-		pulse_end_task  = nrf_gpiote_set_task_get(gpiote_ch);
+		pulse_end_task = nrf_gpiote_set_task_get(gpiote_ch);
 		period_end_task = nrf_gpiote_clr_task_get(gpiote_ch);
 	} else {
-		pulse_end_task  = nrf_gpiote_clr_task_get(gpiote_ch);
+		pulse_end_task = nrf_gpiote_clr_task_get(gpiote_ch);
 		period_end_task = nrf_gpiote_set_task_get(gpiote_ch);
 	}
 #else
 	pulse_end_task = period_end_task = nrf_gpiote_out_task_get(gpiote_ch);
 #endif
-	uint32_t pulse_end_task_address =
-		nrf_gpiote_task_address_get(gpiote, pulse_end_task);
-	uint32_t period_end_task_address =
-		nrf_gpiote_task_address_get(gpiote, period_end_task);
+	uint32_t pulse_end_task_address = nrf_gpiote_task_address_get(gpiote, pulse_end_task);
+	uint32_t period_end_task_address = nrf_gpiote_task_address_get(gpiote, period_end_task);
 
 	if (USE_RTC) {
-		uint32_t clear_task_address =
-			nrf_rtc_event_address_get(rtc, NRF_RTC_TASK_CLEAR);
+		uint32_t clear_task_address = nrf_rtc_event_address_get(rtc, NRF_RTC_TASK_CLEAR);
 
 		pulse_end_event_address =
-			nrf_rtc_event_address_get(rtc,
-				nrf_rtc_compare_event_get(1 + channel));
+			nrf_rtc_event_address_get(rtc, nrf_rtc_compare_event_get(1 + channel));
 		period_end_event_address =
-			nrf_rtc_event_address_get(rtc,
-				nrf_rtc_compare_event_get(0));
+			nrf_rtc_event_address_get(rtc, nrf_rtc_compare_event_get(0));
 
 #if PPI_FORK_AVAILABLE
-		nrfx_gppi_fork_endpoint_setup(ppi_chs[1],
-					      clear_task_address);
+		nrfx_gppi_fork_endpoint_setup(ppi_chs[1], clear_task_address);
 #else
-		nrfx_gppi_channel_endpoints_setup(ppi_chs[2],
-						  period_end_event_address,
+		nrfx_gppi_channel_endpoints_setup(ppi_chs[2], period_end_event_address,
 						  clear_task_address);
 #endif
 	} else {
-		pulse_end_event_address =
-			nrf_timer_event_address_get(timer,
-				nrf_timer_compare_event_get(1 + channel));
+		pulse_end_event_address = nrf_timer_event_address_get(
+			timer, nrf_timer_compare_event_get(1 + channel));
 		period_end_event_address =
-			nrf_timer_event_address_get(timer,
-				nrf_timer_compare_event_get(0));
+			nrf_timer_event_address_get(timer, nrf_timer_compare_event_get(0));
 	}
 
-	nrfx_gppi_channel_endpoints_setup(ppi_chs[0],
-					  pulse_end_event_address,
+	nrfx_gppi_channel_endpoints_setup(ppi_chs[0], pulse_end_event_address,
 					  pulse_end_task_address);
-	nrfx_gppi_channel_endpoints_setup(ppi_chs[1],
-					  period_end_event_address,
+	nrfx_gppi_channel_endpoints_setup(ppi_chs[1], period_end_event_address,
 					  period_end_task_address);
 	nrfx_gppi_channels_enable(ppi_mask);
 
@@ -313,8 +287,8 @@ static int pwm_nrf_sw_set_cycles(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
-static int pwm_nrf_sw_get_cycles_per_sec(const struct device *dev,
-					 uint32_t channel, uint64_t *cycles)
+static int pwm_nrf_sw_get_cycles_per_sec(const struct device *dev, uint32_t channel,
+					 uint64_t *cycles)
 {
 	const struct pwm_config *config = dev->config;
 
@@ -362,8 +336,7 @@ static int pwm_nrf_sw_init(const struct device *dev)
 			}
 		}
 
-		err = nrfx_gpiote_channel_alloc(&config->gpiote[i],
-						&data->gpiote_ch[i]);
+		err = nrfx_gpiote_channel_alloc(&config->gpiote[i], &data->gpiote_ch[i]);
 		if (err != NRFX_SUCCESS) {
 			/* Do not free allocated resource. It is a fatal condition,
 			 * system requires reconfiguration.
@@ -374,62 +347,46 @@ static int pwm_nrf_sw_init(const struct device *dev)
 
 		/* Set initial state of the output pins. */
 		nrf_gpio_pin_write(config->psel_ch[i],
-			(config->initially_inverted & BIT(i)) ? 1 : 0);
+				   (config->initially_inverted & BIT(i)) ? 1 : 0);
 		nrf_gpio_cfg_output(config->psel_ch[i]);
 	}
 
 	if (USE_RTC) {
 		/* setup RTC */
 		nrf_rtc_prescaler_set(rtc, 0);
-		nrf_rtc_event_enable(rtc, NRF_RTC_INT_COMPARE0_MASK |
-					  NRF_RTC_INT_COMPARE1_MASK |
-					  NRF_RTC_INT_COMPARE2_MASK |
-					  NRF_RTC_INT_COMPARE3_MASK);
+		nrf_rtc_event_enable(rtc, NRF_RTC_INT_COMPARE0_MASK | NRF_RTC_INT_COMPARE1_MASK |
+						  NRF_RTC_INT_COMPARE2_MASK |
+						  NRF_RTC_INT_COMPARE3_MASK);
 	} else {
 		/* setup HF timer */
 		nrf_timer_mode_set(timer, NRF_TIMER_MODE_TIMER);
 		nrf_timer_prescaler_set(timer, config->prescaler);
-		nrf_timer_bit_width_set(timer,
-			GENERATOR_BITS == 32 ? NRF_TIMER_BIT_WIDTH_32
-					     : NRF_TIMER_BIT_WIDTH_16);
-		nrf_timer_shorts_enable(timer,
-			NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK);
+		nrf_timer_bit_width_set(timer, GENERATOR_BITS == 32 ? NRF_TIMER_BIT_WIDTH_32
+								    : NRF_TIMER_BIT_WIDTH_16);
+		nrf_timer_shorts_enable(timer, NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK);
 	}
 
 	return 0;
 }
 
-#define PSEL_AND_COMMA(_node_id, _prop, _idx) \
-	NRF_DT_GPIOS_TO_PSEL_BY_IDX(_node_id, _prop, _idx),
+#define PSEL_AND_COMMA(_node_id, _prop, _idx) NRF_DT_GPIOS_TO_PSEL_BY_IDX(_node_id, _prop, _idx),
 
-#define ACTIVE_LOW_BITS(_node_id, _prop, _idx) \
-	((DT_GPIO_FLAGS_BY_IDX(_node_id, _prop, _idx) & GPIO_ACTIVE_LOW) \
-	 ? BIT(_idx) : 0) |
+#define ACTIVE_LOW_BITS(_node_id, _prop, _idx)                                                     \
+	((DT_GPIO_FLAGS_BY_IDX(_node_id, _prop, _idx) & GPIO_ACTIVE_LOW) ? BIT(_idx) : 0) |
 
-#define GPIOTE_AND_COMMA(_node_id, _prop, _idx) \
+#define GPIOTE_AND_COMMA(_node_id, _prop, _idx)                                                    \
 	NRFX_GPIOTE_INSTANCE(NRF_DT_GPIOTE_INST_BY_IDX(_node_id, _prop, _idx)),
 
 static const struct pwm_config pwm_nrf_sw_0_config = {
 	COND_CODE_1(USE_RTC, (.rtc), (.timer)) = GENERATOR_ADDR,
-	.gpiote = {
-		DT_INST_FOREACH_PROP_ELEM(0, channel_gpios, GPIOTE_AND_COMMA)
-	},
-	.psel_ch = {
-		DT_INST_FOREACH_PROP_ELEM(0, channel_gpios, PSEL_AND_COMMA)
-	},
-	.initially_inverted =
-		DT_INST_FOREACH_PROP_ELEM(0, channel_gpios, ACTIVE_LOW_BITS) 0,
-	.map_size = PWM_0_MAP_SIZE,
-	.prescaler = DT_INST_PROP(0, clock_prescaler),
+		     .gpiote = {DT_INST_FOREACH_PROP_ELEM(0, channel_gpios, GPIOTE_AND_COMMA)},
+		     .psel_ch = {DT_INST_FOREACH_PROP_ELEM(0, channel_gpios, PSEL_AND_COMMA)},
+		     .initially_inverted =
+			     DT_INST_FOREACH_PROP_ELEM(0, channel_gpios, ACTIVE_LOW_BITS) 0,
+		     .map_size = PWM_0_MAP_SIZE, .prescaler = DT_INST_PROP(0, clock_prescaler),
 };
 
 static struct pwm_data pwm_nrf_sw_0_data;
 
-DEVICE_DT_INST_DEFINE(0,
-		    pwm_nrf_sw_init,
-		    NULL,
-		    &pwm_nrf_sw_0_data,
-		    &pwm_nrf_sw_0_config,
-		    POST_KERNEL,
-		    CONFIG_PWM_INIT_PRIORITY,
-		    &pwm_nrf_sw_drv_api_funcs);
+DEVICE_DT_INST_DEFINE(0, pwm_nrf_sw_init, NULL, &pwm_nrf_sw_0_data, &pwm_nrf_sw_0_config,
+		      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, &pwm_nrf_sw_drv_api_funcs);

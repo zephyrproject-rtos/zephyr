@@ -199,7 +199,7 @@ static int adc_keys_init(const struct device *dev)
 	}
 
 #define ADC_KEYS_CODE_CFG(node_id)                                                                 \
-	DT_FOREACH_PROP_ELEM_SEP(node_id, press_thresholds_mv, ADC_KEYS_CODE_CFG_ITEM, (,))
+	DT_FOREACH_PROP_ELEM_SEP(node_id, press_thresholds_mv, ADC_KEYS_CODE_CFG_ITEM, (, ))
 
 #define ADC_KEYS_KEY_CODE(node_id) DT_PROP(node_id, zephyr_code)
 
@@ -207,10 +207,10 @@ static int adc_keys_init(const struct device *dev)
 	static struct adc_keys_data adc_keys_data_##n;                                             \
                                                                                                    \
 	static const struct adc_keys_code_config adc_keys_code_cfg_##n[] = {                       \
-		DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(n, ADC_KEYS_CODE_CFG, (,))};                 \
+		DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(n, ADC_KEYS_CODE_CFG, (, ))};                \
                                                                                                    \
 	static const uint16_t adc_keys_key_code_##n[] = {                                          \
-		DT_INST_FOREACH_CHILD_SEP(n, ADC_KEYS_KEY_CODE, (,))};                             \
+		DT_INST_FOREACH_CHILD_SEP(n, ADC_KEYS_KEY_CODE, (, ))};                            \
                                                                                                    \
 	static struct adc_keys_key_state                                                           \
 		adc_keys_key_state_##n[ARRAY_SIZE(adc_keys_key_code_##n)];                         \

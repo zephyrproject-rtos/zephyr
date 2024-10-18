@@ -19,17 +19,15 @@
 
 LOG_MODULE_REGISTER(a01nyub_sensor, CONFIG_SENSOR_LOG_LEVEL);
 
-#define A01NYUB_BUF_LEN 4
+#define A01NYUB_BUF_LEN      4
 #define A01NYUB_CHECKSUM_IDX 3
-#define A01NYUB_HEADER 0xff
+#define A01NYUB_HEADER       0xff
 
-const struct uart_config uart_cfg_a01nyub = {
-	.baudrate = 9600,
-	.parity = UART_CFG_PARITY_NONE,
-	.stop_bits = UART_CFG_STOP_BITS_1,
-	.data_bits = UART_CFG_DATA_BITS_8,
-	.flow_ctrl = UART_CFG_FLOW_CTRL_NONE
-};
+const struct uart_config uart_cfg_a01nyub = {.baudrate = 9600,
+					     .parity = UART_CFG_PARITY_NONE,
+					     .stop_bits = UART_CFG_STOP_BITS_1,
+					     .data_bits = UART_CFG_DATA_BITS_8,
+					     .flow_ctrl = UART_CFG_FLOW_CTRL_NONE};
 
 struct a01nyub_data {
 	/* Max data length is 16 bits */
@@ -60,7 +58,7 @@ static uint8_t a01nyub_checksum(const uint8_t *data)
 		cs += data[i];
 	}
 
-	return (uint8_t) (cs & 0x00FF);
+	return (uint8_t)(cs & 0x00FF);
 }
 
 static inline int a01nyub_poll_data(const struct device *dev)
@@ -70,25 +68,21 @@ static inline int a01nyub_poll_data(const struct device *dev)
 
 	checksum = a01nyub_checksum(data->rd_data);
 	if (checksum != data->rd_data[A01NYUB_CHECKSUM_IDX]) {
-		LOG_DBG("Checksum mismatch: calculated 0x%x != data checksum 0x%x",
-			checksum,
+		LOG_DBG("Checksum mismatch: calculated 0x%x != data checksum 0x%x", checksum,
 			data->rd_data[A01NYUB_CHECKSUM_IDX]);
-		LOG_DBG("Data bytes: (%x,%x,%x,%x)",
-						data->rd_data[0],
-						data->rd_data[1],
-						data->rd_data[2],
-						data->rd_data[3]);
+		LOG_DBG("Data bytes: (%x,%x,%x,%x)", data->rd_data[0], data->rd_data[1],
+			data->rd_data[2], data->rd_data[3]);
 
 		return -EBADMSG;
 	}
 
-	data->data = (data->rd_data[1]<<8) + data->rd_data[2];
+	data->data = (data->rd_data[1] << 8) + data->rd_data[2];
 
 	return 0;
 }
 
 static int a01nyub_channel_get(const struct device *dev, enum sensor_channel chan,
-			      struct sensor_value *val)
+			       struct sensor_value *val)
 {
 	struct a01nyub_data *data = dev->data;
 
@@ -98,8 +92,8 @@ static int a01nyub_channel_get(const struct device *dev, enum sensor_channel cha
 	/* val1 is meters, val2 is microns. Both are int32_t
 	 * data->data is in mm and units of uint16_t
 	 */
-	val->val1 = (uint32_t) (data->data / (uint16_t) 1000);
-	val->val2 = (uint32_t) ((data->data % 1000) * 1000);
+	val->val1 = (uint32_t)(data->data / (uint16_t)1000);
+	val->val2 = (uint32_t)((data->data % 1000) * 1000);
 	return 0;
 }
 
@@ -148,11 +142,8 @@ static void a01nyub_uart_isr(const struct device *uart_dev, void *user_data)
 		}
 
 		if (data->xfer_bytes == A01NYUB_BUF_LEN) {
-			LOG_DBG("Read (0x%x,0x%x,0x%x,0x%x)",
-				data->rd_data[0],
-				data->rd_data[1],
-				data->rd_data[2],
-				data->rd_data[3]);
+			LOG_DBG("Read (0x%x,0x%x,0x%x,0x%x)", data->rd_data[0], data->rd_data[1],
+				data->rd_data[2], data->rd_data[3]);
 			a01nyub_uart_flush(uart_dev);
 			data->xfer_bytes = 0;
 		}
@@ -195,17 +186,17 @@ static int a01nyub_init(const struct device *dev)
 	return ret;
 }
 
-#define A01NYUB_INIT(inst)							\
-										\
-	static struct a01nyub_data a01nyub_data_##inst;				\
-										\
-	static const struct a01nyub_cfg a01nyub_cfg_##inst = {			\
-		.uart_dev = DEVICE_DT_GET(DT_INST_BUS(inst)),			\
-		.cb = a01nyub_uart_isr,						\
-	};									\
-										\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, a01nyub_init, NULL,			\
-		&a01nyub_data_##inst, &a01nyub_cfg_##inst,			\
-		POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &a01nyub_api_funcs);
+#define A01NYUB_INIT(inst)                                                                         \
+                                                                                                   \
+	static struct a01nyub_data a01nyub_data_##inst;                                            \
+                                                                                                   \
+	static const struct a01nyub_cfg a01nyub_cfg_##inst = {                                     \
+		.uart_dev = DEVICE_DT_GET(DT_INST_BUS(inst)),                                      \
+		.cb = a01nyub_uart_isr,                                                            \
+	};                                                                                         \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, a01nyub_init, NULL, &a01nyub_data_##inst,               \
+				     &a01nyub_cfg_##inst, POST_KERNEL,                             \
+				     CONFIG_SENSOR_INIT_PRIORITY, &a01nyub_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(A01NYUB_INIT)

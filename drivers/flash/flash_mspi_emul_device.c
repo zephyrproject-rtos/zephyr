@@ -24,30 +24,30 @@ typedef enum mspi_timing_param mspi_timing_param;
 #endif
 
 struct flash_mspi_emul_device_config {
-	uint32_t                            size;
-	struct flash_parameters             flash_param;
-	struct flash_pages_layout           page_layout;
+	uint32_t size;
+	struct flash_parameters flash_param;
+	struct flash_pages_layout page_layout;
 
-	struct mspi_dev_id                  dev_id;
-	struct mspi_dev_cfg                 tar_dev_cfg;
-	struct mspi_xip_cfg                 tar_xip_cfg;
-	struct mspi_scramble_cfg            tar_scramble_cfg;
+	struct mspi_dev_id dev_id;
+	struct mspi_dev_cfg tar_dev_cfg;
+	struct mspi_xip_cfg tar_xip_cfg;
+	struct mspi_scramble_cfg tar_scramble_cfg;
 
-	bool                                sw_multi_periph;
+	bool sw_multi_periph;
 };
 
 struct flash_mspi_emul_device_data {
-	const struct device                 *bus;
-	struct mspi_dev_cfg                 dev_cfg;
-	struct mspi_xip_cfg                 xip_cfg;
-	struct mspi_scramble_cfg            scramble_cfg;
-	mspi_timing_cfg                     timing_cfg;
+	const struct device *bus;
+	struct mspi_dev_cfg dev_cfg;
+	struct mspi_xip_cfg xip_cfg;
+	struct mspi_scramble_cfg scramble_cfg;
+	mspi_timing_cfg timing_cfg;
 
-	struct mspi_xfer                    xfer;
-	struct mspi_xfer_packet             packet;
+	struct mspi_xfer xfer;
+	struct mspi_xfer_packet packet;
 
-	struct k_sem                        lock;
-	uint8_t                             *mem;
+	struct k_sem lock;
+	uint8_t *mem;
 };
 
 /**
@@ -62,13 +62,12 @@ static void acquire(const struct device *flash)
 
 	k_sem_take(&data->lock, K_FOREVER);
 	if (cfg->sw_multi_periph) {
-		while (mspi_dev_config(data->bus, &cfg->dev_id,
-				       MSPI_DEVICE_CONFIG_ALL, &data->dev_cfg)) {
+		while (mspi_dev_config(data->bus, &cfg->dev_id, MSPI_DEVICE_CONFIG_ALL,
+				       &data->dev_cfg)) {
 			;
 		}
 	} else {
-		while (mspi_dev_config(data->bus, &cfg->dev_id,
-				       MSPI_DEVICE_CONFIG_NONE, NULL)) {
+		while (mspi_dev_config(data->bus, &cfg->dev_id, MSPI_DEVICE_CONFIG_NONE, NULL)) {
 			;
 		}
 	}
@@ -84,7 +83,6 @@ static void release(const struct device *flash)
 	struct flash_mspi_emul_device_data *data = flash->data;
 
 	while (mspi_get_channel_status(data->bus, 0)) {
-
 	}
 
 	k_sem_give(&data->lock);
@@ -102,10 +100,8 @@ static void release(const struct device *flash)
  * @retval -Error transfer failed.
  */
 static int emul_mspi_device_transceive(const struct emul *target,
-				       const struct mspi_xfer_packet *packets,
-				       uint32_t num_packet,
-				       bool async,
-				       uint32_t timeout)
+				       const struct mspi_xfer_packet *packets, uint32_t num_packet,
+				       bool async, uint32_t timeout)
 {
 	ARG_UNUSED(timeout);
 	const struct flash_mspi_emul_device_config *cfg = target->dev->config;
@@ -124,11 +120,9 @@ static int emul_mspi_device_transceive(const struct emul *target,
 		}
 
 		if (packet->dir == MSPI_RX) {
-			memcpy(packet->data_buf, data->mem + packet->address,
-			       packet->num_bytes);
+			memcpy(packet->data_buf, data->mem + packet->address, packet->num_bytes);
 		} else if (packet->dir == MSPI_TX) {
-			memcpy(data->mem + packet->address, packet->data_buf,
-			       packet->num_bytes);
+			memcpy(data->mem + packet->address, packet->data_buf, packet->num_bytes);
 		}
 
 		if (async) {
@@ -197,8 +191,8 @@ static int flash_mspi_emul_erase(const struct device *flash, off_t offset, size_
  * @retval 0 if successful.
  * @retval -Error flash read fail.
  */
-static int flash_mspi_emul_write(const struct device *flash, off_t offset,
-				 const void *wdata, size_t len)
+static int flash_mspi_emul_write(const struct device *flash, off_t offset, const void *wdata,
+				 size_t len)
 {
 	const struct flash_mspi_emul_device_config *cfg = flash->config;
 	struct flash_mspi_emul_device_data *data = flash->data;
@@ -209,16 +203,16 @@ static int flash_mspi_emul_write(const struct device *flash, off_t offset,
 
 	acquire(flash);
 
-	data->xfer.async               = false;
-	data->xfer.xfer_mode           = MSPI_DMA;
-	data->xfer.tx_dummy            = data->dev_cfg.tx_dummy;
-	data->xfer.cmd_length          = data->dev_cfg.cmd_length;
-	data->xfer.addr_length         = data->dev_cfg.addr_length;
-	data->xfer.hold_ce             = false;
-	data->xfer.priority            = 1;
-	data->xfer.packets             = &data->packet;
-	data->xfer.num_packet          = 1;
-	data->xfer.timeout             = CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE;
+	data->xfer.async = false;
+	data->xfer.xfer_mode = MSPI_DMA;
+	data->xfer.tx_dummy = data->dev_cfg.tx_dummy;
+	data->xfer.cmd_length = data->dev_cfg.cmd_length;
+	data->xfer.addr_length = data->dev_cfg.addr_length;
+	data->xfer.hold_ce = false;
+	data->xfer.priority = 1;
+	data->xfer.packets = &data->packet;
+	data->xfer.num_packet = 1;
+	data->xfer.timeout = CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE;
 
 	while (len) {
 		/* If the offset isn't a multiple of the NOR page size, we first need
@@ -227,11 +221,11 @@ static int flash_mspi_emul_write(const struct device *flash, off_t offset,
 		 */
 		i = MIN(SPI_NOR_PAGE_SIZE - (offset % SPI_NOR_PAGE_SIZE), len);
 
-		data->packet.dir               = MSPI_TX;
-		data->packet.cmd               = data->dev_cfg.write_cmd;
-		data->packet.address           = offset;
-		data->packet.data_buf          = src;
-		data->packet.num_bytes         = i;
+		data->packet.dir = MSPI_TX;
+		data->packet.cmd = data->dev_cfg.write_cmd;
+		data->packet.address = offset;
+		data->packet.data_buf = src;
+		data->packet.num_bytes = i;
 
 		LOG_DBG("Write %d bytes to 0x%08zx", i, (ssize_t)offset);
 
@@ -266,8 +260,7 @@ static int flash_mspi_emul_write(const struct device *flash, off_t offset,
  * @retval 0 if successful.
  * @retval -Error flash read fail.
  */
-static int flash_mspi_emul_read(const struct device *flash, off_t offset,
-				void *rdata, size_t len)
+static int flash_mspi_emul_read(const struct device *flash, off_t offset, void *rdata, size_t len)
 {
 	const struct flash_mspi_emul_device_config *cfg = flash->config;
 	struct flash_mspi_emul_device_data *data = flash->data;
@@ -276,22 +269,22 @@ static int flash_mspi_emul_read(const struct device *flash, off_t offset,
 
 	acquire(flash);
 
-	data->packet.dir               = MSPI_RX;
-	data->packet.cmd               = data->dev_cfg.read_cmd;
-	data->packet.address           = offset;
-	data->packet.data_buf          = rdata;
-	data->packet.num_bytes         = len;
+	data->packet.dir = MSPI_RX;
+	data->packet.cmd = data->dev_cfg.read_cmd;
+	data->packet.address = offset;
+	data->packet.data_buf = rdata;
+	data->packet.num_bytes = len;
 
-	data->xfer.async               = false;
-	data->xfer.xfer_mode           = MSPI_DMA;
-	data->xfer.rx_dummy            = data->dev_cfg.rx_dummy;
-	data->xfer.cmd_length          = data->dev_cfg.cmd_length;
-	data->xfer.addr_length         = data->dev_cfg.addr_length;
-	data->xfer.hold_ce             = false;
-	data->xfer.priority            = 1;
-	data->xfer.packets             = &data->packet;
-	data->xfer.num_packet          = 1;
-	data->xfer.timeout             = CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE;
+	data->xfer.async = false;
+	data->xfer.xfer_mode = MSPI_DMA;
+	data->xfer.rx_dummy = data->dev_cfg.rx_dummy;
+	data->xfer.cmd_length = data->dev_cfg.cmd_length;
+	data->xfer.addr_length = data->dev_cfg.addr_length;
+	data->xfer.hold_ce = false;
+	data->xfer.priority = 1;
+	data->xfer.packets = &data->packet;
+	data->xfer.num_packet = 1;
+	data->xfer.timeout = CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE;
 
 	LOG_DBG("Read %d bytes from 0x%08zx", len, (ssize_t)offset);
 
@@ -367,8 +360,7 @@ static int emul_mspi_device_init(const struct emul *emul_flash, const struct dev
 
 	data->bus = bus;
 
-	if (mspi_dev_config(data->bus, &cfg->dev_id, MSPI_DEVICE_CONFIG_ALL,
-			    &cfg->tar_dev_cfg)) {
+	if (mspi_dev_config(data->bus, &cfg->dev_id, MSPI_DEVICE_CONFIG_ALL, &cfg->tar_dev_cfg)) {
 		LOG_ERR("%u, Failed to config mspi controller", __LINE__);
 		return -EIO;
 	}
@@ -395,8 +387,8 @@ static int emul_mspi_device_init(const struct emul *emul_flash, const struct dev
 #endif
 
 #if CONFIG_MSPI_TIMING
-	if (mspi_timing_config(data->bus, &cfg->dev_id,
-			       MSPI_TIMING_PARAM_DUMMY, &data->timing_cfg)) {
+	if (mspi_timing_config(data->bus, &cfg->dev_id, MSPI_TIMING_PARAM_DUMMY,
+			       &data->timing_cfg)) {
 		LOG_ERR("%u, Failed to configure timing.", __LINE__);
 		return -EIO;
 	}
@@ -413,46 +405,36 @@ static int flash_mspi_emul_device_init_stub(const struct device *dev)
 	return 0;
 }
 
-#define FLASH_MSPI_EMUL_DEVICE(n)                                                                 \
-	static uint8_t flash_mspi_emul_device_mem##n[DT_INST_PROP(n, size) / 8];                  \
-	static const struct flash_mspi_emul_device_config flash_mspi_emul_device_config_##n = {   \
-		.size                     = DT_INST_PROP(n, size) / 8,                            \
-		.flash_param =                                                                    \
-			{                                                                         \
-				.write_block_size = 1,                                            \
-				.erase_value      = 0xff,                                         \
-			},                                                                        \
-		.page_layout =                                                                    \
-			{                                                                         \
-				.pages_count      = DT_INST_PROP(n, size) / 8 / SPI_NOR_PAGE_SIZE,\
-				.pages_size       = SPI_NOR_PAGE_SIZE,                            \
-			},                                                                        \
-		.dev_id                   = MSPI_DEVICE_ID_DT_INST(n),                            \
-		.tar_dev_cfg              = MSPI_DEVICE_CONFIG_DT_INST(n),                        \
-		.tar_xip_cfg              = MSPI_XIP_CONFIG_DT_INST(n),                           \
-		.tar_scramble_cfg         = MSPI_SCRAMBLE_CONFIG_DT_INST(n),                      \
-		.sw_multi_periph          = DT_PROP(DT_INST_BUS(n), software_multiperipheral)     \
-	};                                                                                        \
-	static struct flash_mspi_emul_device_data flash_mspi_emul_device_data_##n = {             \
-		.lock = Z_SEM_INITIALIZER(flash_mspi_emul_device_data_##n.lock, 0, 1),            \
-		.mem  = (uint8_t *)flash_mspi_emul_device_mem##n,                                 \
-	};                                                                                        \
-	DEVICE_DT_INST_DEFINE(n,                                                                  \
-			      flash_mspi_emul_device_init_stub,                                   \
-			      NULL,                                                               \
-			      &flash_mspi_emul_device_data_##n,                                   \
-			      &flash_mspi_emul_device_config_##n,                                 \
-			      POST_KERNEL,                                                        \
-			      CONFIG_FLASH_INIT_PRIORITY,                                         \
-			      &flash_mspi_emul_device_api);
+#define FLASH_MSPI_EMUL_DEVICE(n)                                                                  \
+	static uint8_t flash_mspi_emul_device_mem##n[DT_INST_PROP(n, size) / 8];                   \
+	static const struct flash_mspi_emul_device_config flash_mspi_emul_device_config_##n = {    \
+		.size = DT_INST_PROP(n, size) / 8,                                                 \
+		.flash_param =                                                                     \
+			{                                                                          \
+				.write_block_size = 1,                                             \
+				.erase_value = 0xff,                                               \
+			},                                                                         \
+		.page_layout =                                                                     \
+			{                                                                          \
+				.pages_count = DT_INST_PROP(n, size) / 8 / SPI_NOR_PAGE_SIZE,      \
+				.pages_size = SPI_NOR_PAGE_SIZE,                                   \
+			},                                                                         \
+		.dev_id = MSPI_DEVICE_ID_DT_INST(n),                                               \
+		.tar_dev_cfg = MSPI_DEVICE_CONFIG_DT_INST(n),                                      \
+		.tar_xip_cfg = MSPI_XIP_CONFIG_DT_INST(n),                                         \
+		.tar_scramble_cfg = MSPI_SCRAMBLE_CONFIG_DT_INST(n),                               \
+		.sw_multi_periph = DT_PROP(DT_INST_BUS(n), software_multiperipheral)};             \
+	static struct flash_mspi_emul_device_data flash_mspi_emul_device_data_##n = {              \
+		.lock = Z_SEM_INITIALIZER(flash_mspi_emul_device_data_##n.lock, 0, 1),             \
+		.mem = (uint8_t *)flash_mspi_emul_device_mem##n,                                   \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(n, flash_mspi_emul_device_init_stub, NULL,                           \
+			      &flash_mspi_emul_device_data_##n,                                    \
+			      &flash_mspi_emul_device_config_##n, POST_KERNEL,                     \
+			      CONFIG_FLASH_INIT_PRIORITY, &flash_mspi_emul_device_api);
 
-#define EMUL_TEST(n)                                                                              \
-	EMUL_DT_INST_DEFINE(n,                                                                    \
-			    emul_mspi_device_init,                                                \
-			    NULL,                                                                 \
-			    NULL,                                                                 \
-			    &emul_mspi_dev_api,                                                   \
-			    NULL);
+#define EMUL_TEST(n)                                                                               \
+	EMUL_DT_INST_DEFINE(n, emul_mspi_device_init, NULL, NULL, &emul_mspi_dev_api, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(EMUL_TEST);
 

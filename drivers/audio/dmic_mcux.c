@@ -61,8 +61,7 @@ static int dmic_mcux_get_osr(uint32_t pcm_rate, uint32_t bit_clk, bool use_2fs)
 }
 
 /* Gets hardware channel index from logical channel */
-static uint8_t dmic_mcux_hw_chan(struct mcux_dmic_drv_data *drv_data,
-				 uint8_t log_chan)
+static uint8_t dmic_mcux_hw_chan(struct mcux_dmic_drv_data *drv_data, uint8_t log_chan)
 {
 	enum pdm_lr lr;
 	uint8_t hw_chan;
@@ -71,9 +70,8 @@ static uint8_t dmic_mcux_hw_chan(struct mcux_dmic_drv_data *drv_data,
 	 * and hardware channel "n+1" to the right channel. This choice is
 	 * arbitrary, but must be followed throughout the driver.
 	 */
-	dmic_parse_channel_map(drv_data->chan_map_lo,
-			       drv_data->chan_map_hi,
-			       log_chan, &hw_chan, &lr);
+	dmic_parse_channel_map(drv_data->chan_map_lo, drv_data->chan_map_hi, log_chan, &hw_chan,
+			       &lr);
 	if (lr == PDM_CHAN_LEFT) {
 		return hw_chan * 2;
 	} else {
@@ -81,8 +79,7 @@ static uint8_t dmic_mcux_hw_chan(struct mcux_dmic_drv_data *drv_data,
 	}
 }
 
-static void dmic_mcux_activate_channels(struct mcux_dmic_drv_data *drv_data,
-					bool enable)
+static void dmic_mcux_activate_channels(struct mcux_dmic_drv_data *drv_data, bool enable)
 {
 
 	/* PDM channel 0 must always be enabled, as the RM states:
@@ -119,8 +116,7 @@ static int dmic_mcux_enable_dma(struct mcux_dmic_drv_data *drv_data, bool enable
 		if (enable) {
 			ret = dma_start(pdm_channel->dma, pdm_channel->dma_chan);
 			if (ret < 0) {
-				LOG_ERR("Could not start DMA for HW channel %d",
-					hw_chan);
+				LOG_ERR("Could not start DMA for HW channel %d", hw_chan);
 				return ret;
 			}
 		} else {
@@ -128,16 +124,14 @@ static int dmic_mcux_enable_dma(struct mcux_dmic_drv_data *drv_data, bool enable
 				ret = -EIO;
 			}
 		}
-		DMIC_EnableChannelDma(drv_data->base_address,
-				      (dmic_channel_t)hw_chan, enable);
+		DMIC_EnableChannelDma(drv_data->base_address, (dmic_channel_t)hw_chan, enable);
 	}
 
 	return ret;
 }
 
 /* Helper to reload DMA engine for all active channels with new buffer */
-static void dmic_mcux_reload_dma(struct mcux_dmic_drv_data *drv_data,
-				 void *buffer)
+static void dmic_mcux_reload_dma(struct mcux_dmic_drv_data *drv_data, void *buffer)
 {
 	int ret;
 	uint8_t hw_chan;
@@ -156,8 +150,7 @@ static void dmic_mcux_reload_dma(struct mcux_dmic_drv_data *drv_data,
 		pdm_channel = drv_data->pdm_channels[hw_chan];
 		src = DMIC_FifoGetAddress(drv_data->base_address, hw_chan);
 		dst = (uint32_t)(((uint16_t *)buffer) + chan);
-		ret = dma_reload(pdm_channel->dma, pdm_channel->dma_chan,
-				 src, dst, dma_buf_size);
+		ret = dma_reload(pdm_channel->dma, pdm_channel->dma_chan, src, dst, dma_buf_size);
 		if (ret < 0) {
 			LOG_ERR("Could not reload DMIC HW channel %d", hw_chan);
 			return;
@@ -194,8 +187,8 @@ static int dmic_mcux_stop(struct mcux_dmic_drv_data *drv_data)
 	return 0;
 }
 
-static void dmic_mcux_dma_cb(const struct device *dev, void *user_data,
-			     uint32_t channel, int status)
+static void dmic_mcux_dma_cb(const struct device *dev, void *user_data, uint32_t channel,
+			     int status)
 {
 
 	struct mcux_dmic_drv_data *drv_data = (struct mcux_dmic_drv_data *)user_data;
@@ -232,8 +225,7 @@ static void dmic_mcux_dma_cb(const struct device *dev, void *user_data,
 		/* Reload DMA */
 		dmic_mcux_reload_dma(drv_data, done_buffer);
 		/* Advance active buffer index */
-		drv_data->active_buf_idx =
-			dmic_mcux_next_buf_idx(drv_data->active_buf_idx);
+		drv_data->active_buf_idx = dmic_mcux_next_buf_idx(drv_data->active_buf_idx);
 		return;
 	}
 
@@ -255,8 +247,7 @@ static void dmic_mcux_dma_cb(const struct device *dev, void *user_data,
 		/* Reload DMA */
 		dmic_mcux_reload_dma(drv_data, done_buffer);
 		/* Advance active buffer index */
-		drv_data->active_buf_idx =
-			dmic_mcux_next_buf_idx(drv_data->active_buf_idx);
+		drv_data->active_buf_idx = dmic_mcux_next_buf_idx(drv_data->active_buf_idx);
 		return;
 	}
 
@@ -282,7 +273,6 @@ static int dmic_mcux_setup_dma(const struct device *dev)
 	void *dma_buf = drv_data->dma_bufs[dma_buf_idx];
 	uint8_t hw_chan;
 	int ret = 0;
-
 
 	/* Setup DMA configuration common between all channels */
 	dma_cfg.user_data = drv_data;
@@ -315,10 +305,8 @@ static int dmic_mcux_setup_dma(const struct device *dev)
 			 *  pdm0_l_s1, pdm0_r_s1, pdm1_r_s1, pdm1_l_s1, ...]
 			 * Each sample is 16 bits wide.
 			 */
-			blk_cfg[blk].dest_address =
-				(uint32_t)(((uint16_t *)dma_buf) + chan);
-			blk_cfg[blk].dest_scatter_interval =
-				num_chan * sizeof(uint16_t);
+			blk_cfg[blk].dest_address = (uint32_t)(((uint16_t *)dma_buf) + chan);
+			blk_cfg[blk].dest_scatter_interval = num_chan * sizeof(uint16_t);
 			blk_cfg[blk].dest_scatter_en = 1;
 			blk_cfg[blk].source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 			blk_cfg[blk].dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
@@ -356,8 +344,8 @@ static int dmic_mcux_setup_dma(const struct device *dev)
 }
 
 /* Initializes a DMIC hardware channel */
-static int dmic_mcux_init_channel(const struct device *dev, uint32_t osr,
-				  uint8_t chan, enum pdm_lr lr)
+static int dmic_mcux_init_channel(const struct device *dev, uint32_t osr, uint8_t chan,
+				  enum pdm_lr lr)
 {
 	struct mcux_dmic_drv_data *drv_data = dev->data;
 
@@ -400,8 +388,7 @@ static int mcux_dmic_init(const struct device *dev)
 	return 0;
 }
 
-static int dmic_mcux_configure(const struct device *dev,
-			       struct dmic_cfg *config)
+static int dmic_mcux_configure(const struct device *dev, struct dmic_cfg *config)
 {
 
 	const struct mcux_dmic_cfg *drv_config = dev->config;
@@ -461,8 +448,7 @@ static int dmic_mcux_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	ret = clock_control_get_rate(drv_config->clock_dev,
-				     drv_config->clock_name, &bit_clk_rate);
+	ret = clock_control_get_rate(drv_config->clock_dev, drv_config->clock_name, &bit_clk_rate);
 	if (ret < 0) {
 		return ret;
 	}
@@ -487,24 +473,19 @@ static int dmic_mcux_configure(const struct device *dev,
 	drv_data->chan_map_hi = channel->req_chan_map_hi;
 	for (uint8_t chan = 0; chan < channel->req_num_chan; chan += 2) {
 		/* Get the channel map data for channel pair */
-		dmic_parse_channel_map(channel->req_chan_map_lo,
-				       channel->req_chan_map_hi,
-				       chan, &hw_chan_0, &lr_0);
+		dmic_parse_channel_map(channel->req_chan_map_lo, channel->req_chan_map_hi, chan,
+				       &hw_chan_0, &lr_0);
 		if ((chan + 1) < channel->req_num_chan) {
 			/* Paired channel is enabled */
-			dmic_parse_channel_map(channel->req_chan_map_lo,
-					       channel->req_chan_map_hi,
+			dmic_parse_channel_map(channel->req_chan_map_lo, channel->req_chan_map_hi,
 					       chan + 1, &hw_chan_1, &lr_1);
 			/* Verify that paired channels use same hardware index */
-			if ((lr_0 == lr_1) ||
-			    (hw_chan_0 != hw_chan_1)) {
+			if ((lr_0 == lr_1) || (hw_chan_0 != hw_chan_1)) {
 				return -EINVAL;
 			}
 		}
 		/* Configure selected channels in DMIC */
-		ret = dmic_mcux_init_channel(dev, osr,
-					     dmic_mcux_hw_chan(drv_data, chan),
-					     lr_0);
+		ret = dmic_mcux_init_channel(dev, osr, dmic_mcux_hw_chan(drv_data, chan), lr_0);
 		if (ret < 0) {
 			return ret;
 		}
@@ -512,9 +493,7 @@ static int dmic_mcux_configure(const struct device *dev,
 		if ((chan + 1) < channel->req_num_chan) {
 			/* Paired channel is enabled */
 			ret = dmic_mcux_init_channel(dev, osr,
-						     dmic_mcux_hw_chan(drv_data,
-								       chan + 1),
-						     lr_1);
+						     dmic_mcux_hw_chan(drv_data, chan + 1), lr_1);
 			if (ret < 0) {
 				return ret;
 			}
@@ -525,8 +504,8 @@ static int dmic_mcux_configure(const struct device *dev,
 	channel->act_chan_map_lo = channel->req_chan_map_lo;
 	channel->act_chan_map_hi = channel->req_chan_map_hi;
 
-	drv_data->mem_slab   = stream->mem_slab;
-	drv_data->block_size   = stream->block_size;
+	drv_data->mem_slab = stream->mem_slab;
+	drv_data->block_size = stream->block_size;
 	drv_data->act_num_chan = channel->act_num_chan;
 	drv_data->dmic_state = DMIC_STATE_CONFIGURED;
 
@@ -548,8 +527,7 @@ static int dmic_mcux_start(const struct device *dev)
 
 	for (uint32_t i = 0; i < CONFIG_DMIC_MCUX_DMA_BUFFERS; i++) {
 		/* Allocate buffers for DMA */
-		ret = k_mem_slab_alloc(drv_data->mem_slab,
-				       &drv_data->dma_bufs[i], K_NO_WAIT);
+		ret = k_mem_slab_alloc(drv_data->mem_slab, &drv_data->dma_bufs[i], K_NO_WAIT);
 		if (ret < 0) {
 			LOG_ERR("failed to allocate buffer");
 			return -ENOBUFS;
@@ -570,8 +548,7 @@ static int dmic_mcux_start(const struct device *dev)
 	return 0;
 }
 
-static int dmic_mcux_trigger(const struct device *dev,
-				 enum dmic_trigger cmd)
+static int dmic_mcux_trigger(const struct device *dev, enum dmic_trigger cmd)
 {
 	struct mcux_dmic_drv_data *drv_data = dev->data;
 
@@ -621,9 +598,8 @@ static int dmic_mcux_trigger(const struct device *dev,
 	return 0;
 }
 
-static int dmic_mcux_read(const struct device *dev,
-			      uint8_t stream,
-			      void **buffer, size_t *size, int32_t timeout)
+static int dmic_mcux_read(const struct device *dev, uint8_t stream, void **buffer, size_t *size,
+			  int32_t timeout)
 {
 	struct mcux_dmic_drv_data *drv_data = dev->data;
 	int ret;
@@ -659,69 +635,60 @@ static const struct _dmic_ops dmic_ops = {
 };
 
 /* Converts integer gainshift into 5 bit 2's complement value for GAINSHIFT reg */
-#define PDM_DMIC_GAINSHIFT(val)							\
-	(val >= 0) ? (val & 0xF) : (BIT(4) | (0x10 - (val & 0xF)))
+#define PDM_DMIC_GAINSHIFT(val) (val >= 0) ? (val & 0xF) : (BIT(4) | (0x10 - (val & 0xF)))
 
 /* Defines structure for a given PDM channel node */
-#define PDM_DMIC_CHAN_DEFINE(pdm_node)						\
-	static struct mcux_dmic_pdm_chan					\
-		pdm_channel_##pdm_node = {					\
-		.dma = DEVICE_DT_GET(DT_DMAS_CTLR(pdm_node)),			\
-		.dma_chan = DT_DMAS_CELL_BY_IDX(pdm_node, 0, channel),		\
-		.dmic_channel_cfg = {						\
-			.gainshft = PDM_DMIC_GAINSHIFT(DT_PROP(pdm_node,	\
-							       gainshift)),	\
-			.preac2coef = DT_ENUM_IDX(pdm_node, compensation_2fs),	\
-			.preac4coef = DT_ENUM_IDX(pdm_node, compensation_4fs),	\
-			.dc_cut_level = DT_ENUM_IDX(pdm_node, dc_cutoff),	\
-			.post_dc_gain_reduce = DT_PROP(pdm_node, dc_gain),	\
-			.sample_rate = kDMIC_PhyFullSpeed,			\
-			.saturate16bit = 1U,					\
-		},								\
+#define PDM_DMIC_CHAN_DEFINE(pdm_node)                                                             \
+	static struct mcux_dmic_pdm_chan pdm_channel_##pdm_node = {                                \
+		.dma = DEVICE_DT_GET(DT_DMAS_CTLR(pdm_node)),                                      \
+		.dma_chan = DT_DMAS_CELL_BY_IDX(pdm_node, 0, channel),                             \
+		.dmic_channel_cfg =                                                                \
+			{                                                                          \
+				.gainshft = PDM_DMIC_GAINSHIFT(DT_PROP(pdm_node, gainshift)),      \
+				.preac2coef = DT_ENUM_IDX(pdm_node, compensation_2fs),             \
+				.preac4coef = DT_ENUM_IDX(pdm_node, compensation_4fs),             \
+				.dc_cut_level = DT_ENUM_IDX(pdm_node, dc_cutoff),                  \
+				.post_dc_gain_reduce = DT_PROP(pdm_node, dc_gain),                 \
+				.sample_rate = kDMIC_PhyFullSpeed,                                 \
+				.saturate16bit = 1U,                                               \
+			},                                                                         \
 	};
 
 /* Defines structures for all enabled PDM channels */
-#define PDM_DMIC_CHANNELS_DEFINE(idx)						\
-	DT_INST_FOREACH_CHILD_STATUS_OKAY(idx, PDM_DMIC_CHAN_DEFINE)
+#define PDM_DMIC_CHANNELS_DEFINE(idx) DT_INST_FOREACH_CHILD_STATUS_OKAY(idx, PDM_DMIC_CHAN_DEFINE)
 
 /* Gets pointer for a given PDM channel node */
-#define PDM_DMIC_CHAN_GET(pdm_node)						\
+#define PDM_DMIC_CHAN_GET(pdm_node)                                                                \
 	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(pdm_node),				\
 		    (&pdm_channel_##pdm_node), (NULL)),
 
 /* Gets array of pointers to PDM channels */
-#define PDM_DMIC_CHANNELS_GET(idx)						\
-	DT_INST_FOREACH_CHILD(idx, PDM_DMIC_CHAN_GET)
+#define PDM_DMIC_CHANNELS_GET(idx) DT_INST_FOREACH_CHILD(idx, PDM_DMIC_CHAN_GET)
 
-#define MCUX_DMIC_DEVICE(idx)							\
-	PDM_DMIC_CHANNELS_DEFINE(idx);						\
-	static struct mcux_dmic_pdm_chan					\
-		*pdm_channels##idx[FSL_FEATURE_DMIC_CHANNEL_NUM] = {		\
-			PDM_DMIC_CHANNELS_GET(idx)				\
-	};									\
-	K_MSGQ_DEFINE(dmic_msgq##idx, sizeof(void *),				\
-		      CONFIG_DMIC_MCUX_QUEUE_SIZE, 1);				\
-	static struct mcux_dmic_drv_data mcux_dmic_data##idx = {		\
-		.pdm_channels = pdm_channels##idx,				\
-		.base_address = (DMIC_Type *) DT_INST_REG_ADDR(idx),		\
-		.dmic_state = DMIC_STATE_UNINIT,				\
-		.rx_queue = &dmic_msgq##idx,					\
-		.active_buf_idx = 0U,						\
-	};									\
-										\
-	PINCTRL_DT_INST_DEFINE(idx);						\
-	static struct mcux_dmic_cfg mcux_dmic_cfg##idx = {			\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),			\
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),		\
-		.clock_name = (clock_control_subsys_t)				\
-				DT_INST_CLOCKS_CELL(idx, name),			\
-		.use2fs = DT_INST_PROP(idx, use2fs),				\
-	};									\
-										\
-	DEVICE_DT_INST_DEFINE(idx, mcux_dmic_init, NULL,			\
-			&mcux_dmic_data##idx, &mcux_dmic_cfg##idx,		\
-			POST_KERNEL, CONFIG_AUDIO_DMIC_INIT_PRIORITY,		\
-			&dmic_ops);
+#define MCUX_DMIC_DEVICE(idx)                                                                      \
+	PDM_DMIC_CHANNELS_DEFINE(idx);                                                             \
+	static struct mcux_dmic_pdm_chan *pdm_channels##idx[FSL_FEATURE_DMIC_CHANNEL_NUM] = {      \
+		PDM_DMIC_CHANNELS_GET(idx)};                                                       \
+	K_MSGQ_DEFINE(dmic_msgq##idx, sizeof(void *), CONFIG_DMIC_MCUX_QUEUE_SIZE, 1);             \
+	static struct mcux_dmic_drv_data mcux_dmic_data##idx = {                                   \
+		.pdm_channels = pdm_channels##idx,                                                 \
+		.base_address = (DMIC_Type *)DT_INST_REG_ADDR(idx),                                \
+		.dmic_state = DMIC_STATE_UNINIT,                                                   \
+		.rx_queue = &dmic_msgq##idx,                                                       \
+		.active_buf_idx = 0U,                                                              \
+	};                                                                                         \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(idx);                                                               \
+	static struct mcux_dmic_cfg mcux_dmic_cfg##idx = {                                         \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                       \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                              \
+		.clock_name = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, name),              \
+		.use2fs = DT_INST_PROP(idx, use2fs),                                               \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(idx, mcux_dmic_init, NULL, &mcux_dmic_data##idx,                     \
+			      &mcux_dmic_cfg##idx, POST_KERNEL, CONFIG_AUDIO_DMIC_INIT_PRIORITY,   \
+			      &dmic_ops);
 
 /* Existing SoCs only have one PDM instance. */
 DT_INST_FOREACH_STATUS_OKAY(MCUX_DMIC_DEVICE)

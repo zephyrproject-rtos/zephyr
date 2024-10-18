@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(can_sja1000, CONFIG_CAN_LOG_LEVEL);
 /* Timeout for entering/leaving reset mode */
 #define CAN_SJA1000_RESET_MODE_TIMEOUT_USEC 1000
 #define CAN_SJA1000_RESET_MODE_RETRIES      100
-#define CAN_SJA1000_RESET_MODE_DELAY	    \
+#define CAN_SJA1000_RESET_MODE_DELAY                                                               \
 	K_USEC(CAN_SJA1000_RESET_MODE_TIMEOUT_USEC / CAN_SJA1000_RESET_MODE_RETRIES)
 
 static inline void can_sja1000_write_reg(const struct device *dev, uint8_t reg, uint8_t val)
@@ -138,8 +138,8 @@ int can_sja1000_get_capabilities(const struct device *dev, can_mode_t *cap)
 {
 	ARG_UNUSED(dev);
 
-	*cap = CAN_MODE_NORMAL | CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY |
-	       CAN_MODE_ONE_SHOT | CAN_MODE_3_SAMPLES;
+	*cap = CAN_MODE_NORMAL | CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_ONE_SHOT |
+	       CAN_MODE_3_SAMPLES;
 
 	if (IS_ENABLED(CONFIG_CAN_MANUAL_RECOVERY_MODE)) {
 		*cap |= CAN_MODE_MANUAL_RECOVERY;
@@ -217,8 +217,8 @@ int can_sja1000_stop(const struct device *dev)
 
 int can_sja1000_set_mode(const struct device *dev, can_mode_t mode)
 {
-	can_mode_t supported = CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_ONE_SHOT |
-		CAN_MODE_3_SAMPLES;
+	can_mode_t supported =
+		CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_ONE_SHOT | CAN_MODE_3_SAMPLES;
 	struct can_sja1000_data *data = dev->data;
 	uint8_t btr1;
 	uint8_t mod;
@@ -293,31 +293,31 @@ static void can_sja1000_read_frame(const struct device *dev, struct can_frame *f
 	if ((info & CAN_SJA1000_FRAME_INFO_FF) != 0) {
 		frame->flags |= CAN_FRAME_IDE;
 
-		frame->id = FIELD_PREP(GENMASK(28, 21),
-				can_sja1000_read_reg(dev, CAN_SJA1000_XFF_ID1));
-		frame->id |= FIELD_PREP(GENMASK(20, 13),
-				can_sja1000_read_reg(dev, CAN_SJA1000_XFF_ID2));
-		frame->id |= FIELD_PREP(GENMASK(12, 5),
-				can_sja1000_read_reg(dev, CAN_SJA1000_EFF_ID3));
+		frame->id =
+			FIELD_PREP(GENMASK(28, 21), can_sja1000_read_reg(dev, CAN_SJA1000_XFF_ID1));
+		frame->id |=
+			FIELD_PREP(GENMASK(20, 13), can_sja1000_read_reg(dev, CAN_SJA1000_XFF_ID2));
+		frame->id |=
+			FIELD_PREP(GENMASK(12, 5), can_sja1000_read_reg(dev, CAN_SJA1000_EFF_ID3));
 		frame->id |= FIELD_PREP(GENMASK(4, 0),
-				can_sja1000_read_reg(dev, CAN_SJA1000_EFF_ID4) >> 3);
+					can_sja1000_read_reg(dev, CAN_SJA1000_EFF_ID4) >> 3);
 
 		if ((frame->flags & CAN_FRAME_RTR) == 0U) {
 			for (i = 0; i < frame->dlc; i++) {
-				frame->data[i] = can_sja1000_read_reg(dev, CAN_SJA1000_EFF_DATA +
-								      i);
+				frame->data[i] =
+					can_sja1000_read_reg(dev, CAN_SJA1000_EFF_DATA + i);
 			}
 		}
 	} else {
-		frame->id = FIELD_PREP(GENMASK(10, 3),
-				can_sja1000_read_reg(dev, CAN_SJA1000_XFF_ID1));
+		frame->id =
+			FIELD_PREP(GENMASK(10, 3), can_sja1000_read_reg(dev, CAN_SJA1000_XFF_ID1));
 		frame->id |= FIELD_PREP(GENMASK(2, 0),
-				can_sja1000_read_reg(dev, CAN_SJA1000_XFF_ID2) >> 5);
+					can_sja1000_read_reg(dev, CAN_SJA1000_XFF_ID2) >> 5);
 
 		if ((frame->flags & CAN_FRAME_RTR) == 0U) {
 			for (i = 0; i < frame->dlc; i++) {
-				frame->data[i] = can_sja1000_read_reg(dev, CAN_SJA1000_SFF_DATA +
-								      i);
+				frame->data[i] =
+					can_sja1000_read_reg(dev, CAN_SJA1000_SFF_DATA + i);
 			}
 		}
 	}
@@ -342,13 +342,13 @@ void can_sja1000_write_frame(const struct device *dev, const struct can_frame *f
 
 	if ((frame->flags & CAN_FRAME_IDE) != 0) {
 		can_sja1000_write_reg(dev, CAN_SJA1000_XFF_ID1,
-				FIELD_GET(GENMASK(28, 21), frame->id));
+				      FIELD_GET(GENMASK(28, 21), frame->id));
 		can_sja1000_write_reg(dev, CAN_SJA1000_XFF_ID2,
-				FIELD_GET(GENMASK(20, 13), frame->id));
+				      FIELD_GET(GENMASK(20, 13), frame->id));
 		can_sja1000_write_reg(dev, CAN_SJA1000_EFF_ID3,
-				FIELD_GET(GENMASK(12, 5), frame->id));
+				      FIELD_GET(GENMASK(12, 5), frame->id));
 		can_sja1000_write_reg(dev, CAN_SJA1000_EFF_ID4,
-				FIELD_GET(GENMASK(4, 0), frame->id) << 3);
+				      FIELD_GET(GENMASK(4, 0), frame->id) << 3);
 
 		if ((frame->flags & CAN_FRAME_RTR) == 0U) {
 			for (i = 0; i < frame->dlc; i++) {
@@ -358,9 +358,9 @@ void can_sja1000_write_frame(const struct device *dev, const struct can_frame *f
 		}
 	} else {
 		can_sja1000_write_reg(dev, CAN_SJA1000_XFF_ID1,
-				FIELD_GET(GENMASK(10, 3), frame->id));
+				      FIELD_GET(GENMASK(10, 3), frame->id));
 		can_sja1000_write_reg(dev, CAN_SJA1000_XFF_ID2,
-				FIELD_GET(GENMASK(2, 0), frame->id) << 5);
+				      FIELD_GET(GENMASK(2, 0), frame->id) << 5);
 
 		if ((frame->flags & CAN_FRAME_RTR) == 0U) {
 			for (i = 0; i < frame->dlc; i++) {
@@ -627,14 +627,14 @@ static void can_sja1000_handle_bus_error_irq(const struct device *dev)
 	ecc = can_sja1000_read_reg(dev, CAN_SJA1000_ECC);
 
 	if (ecc == (CAN_SJA1000_ECC_ERRC_OTHER_ERROR | CAN_SJA1000_ECC_DIR_TX |
-		CAN_SJA1000_ECC_SEG_ACK_SLOT)) {
+		    CAN_SJA1000_ECC_SEG_ACK_SLOT)) {
 		/* Missing ACK is reported as a TX "other" error in the ACK slot */
 		CAN_STATS_ACK_ERROR_INC(dev);
 		return;
 	}
 
 	if (ecc == (CAN_SJA1000_ECC_ERRC_FORM_ERROR | CAN_SJA1000_ECC_DIR_RX |
-		CAN_SJA1000_ECC_SEG_ACK_DELIM)) {
+		    CAN_SJA1000_ECC_SEG_ACK_DELIM)) {
 		/* CRC error is reported as a RX "form" error in the ACK delimiter */
 		CAN_STATS_CRC_ERROR_INC(dev);
 		return;
@@ -671,8 +671,7 @@ static void can_sja1000_handle_error_warning_irq(const struct device *dev)
 		data->state = CAN_STATE_BUS_OFF;
 		can_sja1000_tx_done(dev, -ENETUNREACH);
 
-		if (data->common.started &&
-			(data->common.mode & CAN_MODE_MANUAL_RECOVERY) == 0U) {
+		if (data->common.started && (data->common.mode & CAN_MODE_MANUAL_RECOVERY) == 0U) {
 			can_sja1000_leave_reset_mode_nowait(dev);
 		}
 	} else if ((sr & CAN_SJA1000_SR_ES) != 0) {
@@ -741,7 +740,7 @@ int can_sja1000_init(const struct device *dev)
 {
 	const struct can_sja1000_config *config = dev->config;
 	struct can_sja1000_data *data = dev->data;
-	struct can_timing timing = { 0 };
+	struct can_timing timing = {0};
 	int err;
 
 	__ASSERT_NO_MSG(config->read_reg != NULL);
@@ -781,8 +780,7 @@ int can_sja1000_init(const struct device *dev)
 	can_sja1000_write_reg(dev, CAN_SJA1000_AMR2, 0xFF);
 	can_sja1000_write_reg(dev, CAN_SJA1000_AMR3, 0xFF);
 
-	err = can_calc_timing(dev, &timing, config->common.bitrate,
-			      config->common.sample_point);
+	err = can_calc_timing(dev, &timing, config->common.bitrate, config->common.sample_point);
 	if (err == -EINVAL) {
 		LOG_ERR("bitrate/sample point cannot be met (err %d)", err);
 		return err;
@@ -818,8 +816,8 @@ int can_sja1000_init(const struct device *dev)
 #ifdef CONFIG_CAN_STATS
 			      CAN_SJA1000_IER_BEIE | CAN_SJA1000_IER_DOIE |
 #endif /* CONFIG_CAN_STATS */
-			      CAN_SJA1000_IER_RIE | CAN_SJA1000_IER_TIE |
-			      CAN_SJA1000_IER_EIE | CAN_SJA1000_IER_EPIE);
+				      CAN_SJA1000_IER_RIE | CAN_SJA1000_IER_TIE |
+				      CAN_SJA1000_IER_EIE | CAN_SJA1000_IER_EPIE);
 
 	return 0;
 }

@@ -14,7 +14,7 @@
  * 3. Full duplex mode is not supported.
  */
 
-#define DT_DRV_COMPAT   altr_uart
+#define DT_DRV_COMPAT altr_uart
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/uart.h>
@@ -22,50 +22,50 @@
 #include <zephyr/drivers/serial/uart_altera.h>
 
 #ifdef CONFIG_UART_LINE_CTRL
-	#ifndef CONFIG_UART_INTERRUPT_DRIVEN
-		/* CTS and RTS is purely software controlled. */
-		#error "uart_altera.c: Must enable UART_INTERRUPT_DRIVEN for line control!"
-	#endif
+#ifndef CONFIG_UART_INTERRUPT_DRIVEN
+/* CTS and RTS is purely software controlled. */
+#error "uart_altera.c: Must enable UART_INTERRUPT_DRIVEN for line control!"
+#endif
 #endif
 
 /* register offsets */
-#define ALTERA_AVALON_UART_OFFSET  (0x4)
+#define ALTERA_AVALON_UART_OFFSET (0x4)
 
-#define ALTERA_AVALON_UART_RXDATA_REG_OFFSET    (0 * ALTERA_AVALON_UART_OFFSET)
-#define ALTERA_AVALON_UART_TXDATA_REG_OFFSET    (1 * ALTERA_AVALON_UART_OFFSET)
-#define ALTERA_AVALON_UART_STATUS_REG_OFFSET    (2 * ALTERA_AVALON_UART_OFFSET)
-#define ALTERA_AVALON_UART_CONTROL_REG_OFFSET   (3 * ALTERA_AVALON_UART_OFFSET)
-#define ALTERA_AVALON_UART_DIVISOR_REG_OFFSET   (4 * ALTERA_AVALON_UART_OFFSET)
-#define ALTERA_AVALON_UART_EOP_REG_OFFSET       (5 * ALTERA_AVALON_UART_OFFSET)
+#define ALTERA_AVALON_UART_RXDATA_REG_OFFSET  (0 * ALTERA_AVALON_UART_OFFSET)
+#define ALTERA_AVALON_UART_TXDATA_REG_OFFSET  (1 * ALTERA_AVALON_UART_OFFSET)
+#define ALTERA_AVALON_UART_STATUS_REG_OFFSET  (2 * ALTERA_AVALON_UART_OFFSET)
+#define ALTERA_AVALON_UART_CONTROL_REG_OFFSET (3 * ALTERA_AVALON_UART_OFFSET)
+#define ALTERA_AVALON_UART_DIVISOR_REG_OFFSET (4 * ALTERA_AVALON_UART_OFFSET)
+#define ALTERA_AVALON_UART_EOP_REG_OFFSET     (5 * ALTERA_AVALON_UART_OFFSET)
 
 /*status register mask */
-#define ALTERA_AVALON_UART_STATUS_PE_MSK              (0x1)
-#define ALTERA_AVALON_UART_STATUS_FE_MSK              (0x2)
-#define ALTERA_AVALON_UART_STATUS_BRK_MSK             (0x4)
-#define ALTERA_AVALON_UART_STATUS_ROE_MSK             (0x8)
-#define ALTERA_AVALON_UART_STATUS_TMT_MSK             (0x20)
-#define ALTERA_AVALON_UART_STATUS_TRDY_MSK            (0x40)
-#define ALTERA_AVALON_UART_STATUS_RRDY_MSK            (0x80)
-#define ALTERA_AVALON_UART_STATUS_DCTS_MSK            (0x400)
-#define ALTERA_AVALON_UART_STATUS_CTS_MSK             (0x800)
-#define ALTERA_AVALON_UART_STATUS_E_MSK               (0x100)
-#define ALTERA_AVALON_UART_STATUS_EOP_MSK             (0x1000)
+#define ALTERA_AVALON_UART_STATUS_PE_MSK   (0x1)
+#define ALTERA_AVALON_UART_STATUS_FE_MSK   (0x2)
+#define ALTERA_AVALON_UART_STATUS_BRK_MSK  (0x4)
+#define ALTERA_AVALON_UART_STATUS_ROE_MSK  (0x8)
+#define ALTERA_AVALON_UART_STATUS_TMT_MSK  (0x20)
+#define ALTERA_AVALON_UART_STATUS_TRDY_MSK (0x40)
+#define ALTERA_AVALON_UART_STATUS_RRDY_MSK (0x80)
+#define ALTERA_AVALON_UART_STATUS_DCTS_MSK (0x400)
+#define ALTERA_AVALON_UART_STATUS_CTS_MSK  (0x800)
+#define ALTERA_AVALON_UART_STATUS_E_MSK    (0x100)
+#define ALTERA_AVALON_UART_STATUS_EOP_MSK  (0x1000)
 
 /* control register mask */
-#define ALTERA_AVALON_UART_CONTROL_TMT_MSK             (0x20)
-#define ALTERA_AVALON_UART_CONTROL_TRDY_MSK            (0x40)
-#define ALTERA_AVALON_UART_CONTROL_RRDY_MSK            (0x80)
-#define ALTERA_AVALON_UART_CONTROL_E_MSK               (0x100)
-#define ALTERA_AVALON_UART_CONTROL_DCTS_MSK            (0x400)
-#define ALTERA_AVALON_UART_CONTROL_RTS_MSK             (0x800)
-#define ALTERA_AVALON_UART_CONTROL_EOP_MSK            (0x1000)
+#define ALTERA_AVALON_UART_CONTROL_TMT_MSK  (0x20)
+#define ALTERA_AVALON_UART_CONTROL_TRDY_MSK (0x40)
+#define ALTERA_AVALON_UART_CONTROL_RRDY_MSK (0x80)
+#define ALTERA_AVALON_UART_CONTROL_E_MSK    (0x100)
+#define ALTERA_AVALON_UART_CONTROL_DCTS_MSK (0x400)
+#define ALTERA_AVALON_UART_CONTROL_RTS_MSK  (0x800)
+#define ALTERA_AVALON_UART_CONTROL_EOP_MSK  (0x1000)
 
 /* defined values */
-#define UART_ALTERA_NO_ERROR (0u)
+#define UART_ALTERA_NO_ERROR                (0u)
 #define ALTERA_AVALON_UART_CLEAR_STATUS_VAL (0u)
-#define ALTERA_AVALON_UART_PENDING_MASK  (ALTERA_AVALON_UART_STATUS_RRDY_MSK | \
-			  ALTERA_AVALON_UART_STATUS_TRDY_MSK | ALTERA_AVALON_UART_STATUS_E_MSK | \
-			  ALTERA_AVALON_UART_STATUS_EOP_MSK)
+#define ALTERA_AVALON_UART_PENDING_MASK                                                            \
+	(ALTERA_AVALON_UART_STATUS_RRDY_MSK | ALTERA_AVALON_UART_STATUS_TRDY_MSK |                 \
+	 ALTERA_AVALON_UART_STATUS_E_MSK | ALTERA_AVALON_UART_STATUS_EOP_MSK)
 
 /***********************/
 /* configuration flags */
@@ -92,18 +92,18 @@ struct uart_altera_device_data {
 	struct k_spinlock lock;
 	uint32_t status_act; /* stores value of status register. */
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	uart_irq_callback_user_data_t cb;  /**< Callback function pointer */
-	void *cb_data;  /**< Callback function arg */
+	uart_irq_callback_user_data_t cb; /**< Callback function pointer */
+	void *cb_data;                    /**< Callback function arg */
 #ifdef CONFIG_UART_ALTERA_EOP
 	uint8_t set_eop_cb;
-	uart_irq_callback_user_data_t cb_eop;  /**< Callback function pointer */
-	void *cb_data_eop;  /**< Callback function arg */
-#endif /* CONFIG_UART_ALTERA_EOP */
+	uart_irq_callback_user_data_t cb_eop; /**< Callback function pointer */
+	void *cb_data_eop;                    /**< Callback function arg */
+#endif                                        /* CONFIG_UART_ALTERA_EOP */
 #ifdef CONFIG_UART_ALTERA_LINE_CTRL_WORKAROUND
 	uint8_t dcts_rising;
-#endif /*CONFIG_UART_ALTERA_LINE_CTRL_WORKAROUND*/
+#endif                        /*CONFIG_UART_ALTERA_LINE_CTRL_WORKAROUND*/
 	uint32_t control_val; /* stores value to set control register. */
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+#endif                        /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
 /*
@@ -112,9 +112,9 @@ struct uart_altera_device_data {
  */
 struct uart_altera_device_config {
 	mm_reg_t base;
-	uint32_t flags;              /* refer to configuration flags */
+	uint32_t flags; /* refer to configuration flags */
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	uart_irq_config_func_t  irq_config_func;
+	uart_irq_config_func_t irq_config_func;
 	unsigned int irq_num;
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
@@ -211,8 +211,8 @@ static int uart_altera_init(const struct device *dev)
 	struct uart_altera_device_data *data = dev->data;
 	const struct uart_altera_device_config *config = dev->config;
 	/* clear status to ensure, that interrupts are not triggered due to old status. */
-	sys_write32(ALTERA_AVALON_UART_CLEAR_STATUS_VAL, config->base
-				+ ALTERA_AVALON_UART_STATUS_REG_OFFSET);
+	sys_write32(ALTERA_AVALON_UART_CLEAR_STATUS_VAL,
+		    config->base + ALTERA_AVALON_UART_STATUS_REG_OFFSET);
 
 	/*
 	 * Enable hardware interrupt.
@@ -277,8 +277,8 @@ static int uart_altera_err_check(const struct device *dev)
 
 #ifndef CONFIG_UART_INTERRUPT_DRIVEN
 	/* clear status */
-	sys_write32(ALTERA_AVALON_UART_CLEAR_STATUS_VAL, config->base
-	+ ALTERA_AVALON_UART_STATUS_REG_OFFSET);
+	sys_write32(ALTERA_AVALON_UART_CLEAR_STATUS_VAL,
+		    config->base + ALTERA_AVALON_UART_STATUS_REG_OFFSET);
 	k_spin_unlock(&data->lock, key);
 #endif
 
@@ -293,14 +293,14 @@ static int uart_altera_err_check(const struct device *dev)
  * @return true if only baudrate is changed. otherwise false.
  */
 static bool uart_altera_check_configuration(const struct uart_config *cfg_stored,
-				   const struct uart_config *cfg_in)
+					    const struct uart_config *cfg_in)
 {
 	bool ret_val = false;
 
-	if ((cfg_stored->parity       == cfg_in->parity)
-		&& (cfg_stored->stop_bits == cfg_in->stop_bits)
-		&& (cfg_stored->data_bits == cfg_in->data_bits)
-		&& (cfg_stored->flow_ctrl == cfg_in->flow_ctrl)) {
+	if ((cfg_stored->parity == cfg_in->parity) &&
+	    (cfg_stored->stop_bits == cfg_in->stop_bits) &&
+	    (cfg_stored->data_bits == cfg_in->data_bits) &&
+	    (cfg_stored->flow_ctrl == cfg_in->flow_ctrl)) {
 		ret_val = true;
 	}
 
@@ -316,12 +316,11 @@ static bool uart_altera_check_configuration(const struct uart_config *cfg_stored
  * @return 0 if success, -ENOTSUP, if input from cfg_in is not configurable.
  * -EINVAL if cfg_in is null pointer
  */
-static int uart_altera_configure(const struct device *dev,
-				   const struct uart_config *cfg_in)
+static int uart_altera_configure(const struct device *dev, const struct uart_config *cfg_in)
 {
 	const struct uart_altera_device_config *config = dev->config;
-	struct uart_altera_device_data * const data = dev->data;
-	struct uart_config * const cfg_stored = &data->uart_cfg;
+	struct uart_altera_device_data *const data = dev->data;
+	struct uart_config *const cfg_stored = &data->uart_cfg;
 	uint32_t divisor_val;
 	int ret_val;
 
@@ -334,10 +333,10 @@ static int uart_altera_configure(const struct device *dev,
 	}
 
 	/* check if configuration is supported. */
-	if (uart_altera_check_configuration(cfg_stored, cfg_in)
-		&& !(config->flags & ALT_AVALON_UART_FB)) {
+	if (uart_altera_check_configuration(cfg_stored, cfg_in) &&
+	    !(config->flags & ALT_AVALON_UART_FB)) {
 		/* calculate and set baudrate. */
-		divisor_val = (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC/cfg_in->baudrate) - 1;
+		divisor_val = (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / cfg_in->baudrate) - 1;
 		sys_write32(divisor_val, config->base + ALTERA_AVALON_UART_DIVISOR_REG_OFFSET);
 
 		/* update stored data. */
@@ -360,8 +359,7 @@ static int uart_altera_configure(const struct device *dev,
  * @return 0 if success.
  * -EINVAL if cfg_out is null pointer
  */
-static int uart_altera_config_get(const struct device *dev,
-				struct uart_config *cfg_out)
+static int uart_altera_config_get(const struct device *dev, struct uart_config *cfg_out)
 {
 	const struct uart_altera_device_data *data = dev->data;
 
@@ -391,9 +389,7 @@ static int uart_altera_config_get(const struct device *dev,
  *
  * @return Number of bytes sent
  */
-static int uart_altera_fifo_fill(const struct device *dev,
-				  const uint8_t *tx_data,
-				  int size)
+static int uart_altera_fifo_fill(const struct device *dev, const uint8_t *tx_data, int size)
 {
 	ARG_UNUSED(size);
 
@@ -442,8 +438,7 @@ static int uart_altera_fifo_fill(const struct device *dev,
  *
  * @return Number of bytes read
  */
-static int uart_altera_fifo_read(const struct device *dev, uint8_t *rx_data,
-				  const int size)
+static int uart_altera_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
 {
 	ARG_UNUSED(size);
 
@@ -474,11 +469,11 @@ static int uart_altera_fifo_read(const struct device *dev, uint8_t *rx_data,
 #ifdef CONFIG_UART_ALTERA_LINE_CTRL_WORKAROUND
 	/* assert RTS as soon as rx data is read, as IP has no fifo. */
 	data->status_act = sys_read32(config->base + ALTERA_AVALON_UART_STATUS_REG_OFFSET);
-	if (((data->status_act & ALTERA_AVALON_UART_STATUS_RRDY_MSK) == 0)
-	  && (data->status_act & ALTERA_AVALON_UART_STATUS_CTS_MSK)) {
+	if (((data->status_act & ALTERA_AVALON_UART_STATUS_RRDY_MSK) == 0) &&
+	    (data->status_act & ALTERA_AVALON_UART_STATUS_CTS_MSK)) {
 		data->control_val |= ALTERA_AVALON_UART_CONTROL_RTS_MSK;
-		sys_write32(data->control_val, config->base
-					+ ALTERA_AVALON_UART_CONTROL_REG_OFFSET);
+		sys_write32(data->control_val,
+			    config->base + ALTERA_AVALON_UART_CONTROL_REG_OFFSET);
 	}
 #endif /* CONFIG_UART_ALTERA_LINE_CTRL_WORKAROUND */
 
@@ -713,9 +708,8 @@ static int uart_altera_irq_is_pending(const struct device *dev)
  * @param cb Callback function pointer.
  * @param cb_data Data to pass to callback function.
  */
-static void uart_altera_irq_callback_set(const struct device *dev,
-					  uart_irq_callback_user_data_t cb,
-					  void *cb_data)
+static void uart_altera_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
+					 void *cb_data)
 {
 	struct uart_altera_device_data *data = dev->data;
 
@@ -766,16 +760,16 @@ static void uart_altera_dcts_isr(const struct device *dev)
 		if ((data->status_act & ALTERA_AVALON_UART_STATUS_RRDY_MSK) == 0) {
 			/* Assert RTS to inform other UART. */
 			data->control_val |= ALTERA_AVALON_UART_CONTROL_RTS_MSK;
-			sys_write32(data->control_val, config->base
-						+ ALTERA_AVALON_UART_CONTROL_REG_OFFSET);
+			sys_write32(data->control_val,
+				    config->base + ALTERA_AVALON_UART_CONTROL_REG_OFFSET);
 		}
 	} else {
 		/* other UART deasserts RTS */
 		if (data->status_act & ALTERA_AVALON_UART_STATUS_TMT_MSK) {
 			/* only deasserts if not transmitting. */
 			data->control_val &= ~ALTERA_AVALON_UART_CONTROL_RTS_MSK;
-			sys_write32(data->control_val, config->base
-						+ ALTERA_AVALON_UART_CONTROL_REG_OFFSET);
+			sys_write32(data->control_val,
+				    config->base + ALTERA_AVALON_UART_CONTROL_REG_OFFSET);
 		}
 	}
 
@@ -804,8 +798,8 @@ static void uart_altera_isr(const struct device *dev)
 	data->status_act = sys_read32(config->base + ALTERA_AVALON_UART_STATUS_REG_OFFSET);
 	if (data->status_act & ALTERA_AVALON_UART_STATUS_RRDY_MSK) {
 		data->control_val &= ~ALTERA_AVALON_UART_CONTROL_RTS_MSK;
-		sys_write32(data->control_val, config->base
-					+ ALTERA_AVALON_UART_CONTROL_REG_OFFSET);
+		sys_write32(data->control_val,
+			    config->base + ALTERA_AVALON_UART_CONTROL_REG_OFFSET);
 	}
 #endif /* CONFIG_UART_ALTERA_LINE_CTRL_WORKAROUND */
 
@@ -833,8 +827,8 @@ static void uart_altera_isr(const struct device *dev)
 #endif
 
 	/* clear status after all interrupts are handled. */
-	sys_write32(ALTERA_AVALON_UART_CLEAR_STATUS_VAL, config->base
-				+ ALTERA_AVALON_UART_STATUS_REG_OFFSET);
+	sys_write32(ALTERA_AVALON_UART_CLEAR_STATUS_VAL,
+		    config->base + ALTERA_AVALON_UART_STATUS_REG_OFFSET);
 }
 
 #ifdef CONFIG_UART_DRV_CMD
@@ -847,8 +841,7 @@ static void uart_altera_isr(const struct device *dev)
  *
  * @return 0 if successful, failed otherwise
  */
-static int uart_altera_drv_cmd(const struct device *dev, uint32_t cmd,
-				uint32_t p)
+static int uart_altera_drv_cmd(const struct device *dev, uint32_t cmd, uint32_t p)
 {
 	struct uart_altera_device_data *data = dev->data;
 #if CONFIG_UART_ALTERA_EOP
@@ -862,11 +855,11 @@ static int uart_altera_drv_cmd(const struct device *dev, uint32_t cmd,
 	case CMD_ENABLE_EOP:
 		/* enable EOP interrupt */
 		data->control_val |= ALTERA_AVALON_UART_CONTROL_EOP_MSK;
-		sys_write32(data->control_val, config->base
-					+ ALTERA_AVALON_UART_CONTROL_REG_OFFSET);
+		sys_write32(data->control_val,
+			    config->base + ALTERA_AVALON_UART_CONTROL_REG_OFFSET);
 
 		/* set EOP character */
-		sys_write32((uint8_t) p, config->base + ALTERA_AVALON_UART_EOP_REG_OFFSET);
+		sys_write32((uint8_t)p, config->base + ALTERA_AVALON_UART_EOP_REG_OFFSET);
 
 		/* after this, user needs to call uart_irq_callback_set
 		 * to set data->cb_eop and data->cb_data_eop!
@@ -878,8 +871,8 @@ static int uart_altera_drv_cmd(const struct device *dev, uint32_t cmd,
 	case CMD_DISABLE_EOP:
 		/* Disable EOP interrupt */
 		data->control_val &= ~ALTERA_AVALON_UART_CONTROL_EOP_MSK;
-		sys_write32(data->control_val, config->base
-					+ ALTERA_AVALON_UART_CONTROL_REG_OFFSET);
+		sys_write32(data->control_val,
+			    config->base + ALTERA_AVALON_UART_CONTROL_REG_OFFSET);
 
 		/* clear call back */
 		data->cb_eop = NULL;
@@ -932,20 +925,17 @@ static const struct uart_driver_api uart_altera_driver_api = {
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-#define UART_ALTERA_IRQ_CONFIG_FUNC(n)                                    \
-	static void uart_altera_irq_config_func_##n(const struct device *dev) \
-	{                                                                     \
-		IRQ_CONNECT(DT_INST_IRQN(n),                                      \
-				DT_INST_IRQ(n, priority),                                 \
-				uart_altera_isr,                                          \
-				DEVICE_DT_INST_GET(n), 0);		                          \
-		                                                                  \
-		irq_enable(DT_INST_IRQN(n));                                      \
+#define UART_ALTERA_IRQ_CONFIG_FUNC(n)                                                             \
+	static void uart_altera_irq_config_func_##n(const struct device *dev)                      \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_altera_isr,            \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+                                                                                                   \
+		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
 
-#define UART_ALTERA_IRQ_CONFIG_INIT(n)                                    \
-	.irq_config_func = uart_altera_irq_config_func_##n,                   \
-	.irq_num = DT_INST_IRQN(n),
+#define UART_ALTERA_IRQ_CONFIG_INIT(n)                                                             \
+	.irq_config_func = uart_altera_irq_config_func_##n, .irq_num = DT_INST_IRQN(n),
 
 #else
 
@@ -954,38 +944,31 @@ static const struct uart_driver_api uart_altera_driver_api = {
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-#define UART_ALTERA_DEVICE_INIT(n)                                        \
-UART_ALTERA_IRQ_CONFIG_FUNC(n)                                            \
-static struct uart_altera_device_data uart_altera_dev_data_##n = {        \
-	.uart_cfg =                                                           \
-	{                                                                     \
-			.baudrate = DT_INST_PROP(n, current_speed),                   \
-			.parity = DT_INST_ENUM_IDX_OR(n, parity,                      \
-						 UART_CFG_PARITY_NONE),                           \
-			.stop_bits = DT_INST_ENUM_IDX_OR(n, stop_bits,                \
-						 UART_CFG_STOP_BITS_1),                           \
-			.data_bits = DT_INST_ENUM_IDX_OR(n, data_bits,                \
-						 UART_CFG_DATA_BITS_8),                           \
-			.flow_ctrl = DT_INST_PROP(n, hw_flow_control) ?               \
-				UART_CFG_FLOW_CTRL_RTS_CTS :                              \
-				UART_CFG_FLOW_CTRL_NONE,                                  \
-	},                                                                    \
-};                                                                        \
-	                                                                      \
-static const struct uart_altera_device_config uart_altera_dev_cfg_##n = { \
-	.base = DT_INST_REG_ADDR(n),                                          \
-	.flags = ((DT_INST_PROP(n, fixed_baudrate)?ALT_AVALON_UART_FB:0)      \
-			  |(DT_INST_PROP(n, hw_flow_control)?ALT_AVALON_UART_FC:0)),  \
-	UART_ALTERA_IRQ_CONFIG_INIT(n)                                        \
-};                                                                        \
-	                                                                      \
-DEVICE_DT_INST_DEFINE(n,                                                  \
-			  uart_altera_init,                                           \
-			  NULL,                                                       \
-			  &uart_altera_dev_data_##n,                                  \
-			  &uart_altera_dev_cfg_##n,                                   \
-			  PRE_KERNEL_1,                                               \
-			  CONFIG_SERIAL_INIT_PRIORITY,                                \
-			  &uart_altera_driver_api);
+#define UART_ALTERA_DEVICE_INIT(n)                                                                 \
+	UART_ALTERA_IRQ_CONFIG_FUNC(n)                                                             \
+	static struct uart_altera_device_data uart_altera_dev_data_##n = {                         \
+		.uart_cfg =                                                                        \
+			{                                                                          \
+				.baudrate = DT_INST_PROP(n, current_speed),                        \
+				.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),    \
+				.stop_bits =                                                       \
+					DT_INST_ENUM_IDX_OR(n, stop_bits, UART_CFG_STOP_BITS_1),   \
+				.data_bits =                                                       \
+					DT_INST_ENUM_IDX_OR(n, data_bits, UART_CFG_DATA_BITS_8),   \
+				.flow_ctrl = DT_INST_PROP(n, hw_flow_control)                      \
+						     ? UART_CFG_FLOW_CTRL_RTS_CTS                  \
+						     : UART_CFG_FLOW_CTRL_NONE,                    \
+			},                                                                         \
+	};                                                                                         \
+                                                                                                   \
+	static const struct uart_altera_device_config uart_altera_dev_cfg_##n = {                  \
+		.base = DT_INST_REG_ADDR(n),                                                       \
+		.flags = ((DT_INST_PROP(n, fixed_baudrate) ? ALT_AVALON_UART_FB : 0) |             \
+			  (DT_INST_PROP(n, hw_flow_control) ? ALT_AVALON_UART_FC : 0)),            \
+		UART_ALTERA_IRQ_CONFIG_INIT(n)};                                                   \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, uart_altera_init, NULL, &uart_altera_dev_data_##n,                \
+			      &uart_altera_dev_cfg_##n, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, \
+			      &uart_altera_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_ALTERA_DEVICE_INIT)

@@ -47,8 +47,7 @@ static int nsos_adapt_nfds;
 #endif
 
 #ifndef CONTAINER_OF
-#define CONTAINER_OF(ptr, type, field)                               \
-		((type *)(((char *)(ptr)) - offsetof(type, field)))
+#define CONTAINER_OF(ptr, type, field) ((type *)(((char *)(ptr)) - offsetof(type, field)))
 #endif
 
 int nsos_adapt_get_errno(void)
@@ -210,14 +209,10 @@ static int socket_flags_from_nsos_mid(int flags_mid)
 {
 	int flags = 0;
 
-	nsos_socket_flag_convert(&flags_mid, NSOS_MID_MSG_PEEK,
-				 &flags, MSG_PEEK);
-	nsos_socket_flag_convert(&flags_mid, NSOS_MID_MSG_TRUNC,
-				 &flags, MSG_TRUNC);
-	nsos_socket_flag_convert(&flags_mid, NSOS_MID_MSG_DONTWAIT,
-				 &flags, MSG_DONTWAIT);
-	nsos_socket_flag_convert(&flags_mid, NSOS_MID_MSG_WAITALL,
-				 &flags, MSG_WAITALL);
+	nsos_socket_flag_convert(&flags_mid, NSOS_MID_MSG_PEEK, &flags, MSG_PEEK);
+	nsos_socket_flag_convert(&flags_mid, NSOS_MID_MSG_TRUNC, &flags, MSG_TRUNC);
+	nsos_socket_flag_convert(&flags_mid, NSOS_MID_MSG_DONTWAIT, &flags, MSG_DONTWAIT);
+	nsos_socket_flag_convert(&flags_mid, NSOS_MID_MSG_WAITALL, &flags, MSG_WAITALL);
 
 	if (flags_mid != 0) {
 		return -NSOS_MID_EINVAL;
@@ -312,8 +307,7 @@ static int sockaddr_to_nsos_mid(const struct sockaddr *addr, socklen_t addrlen,
 
 	switch (addr->sa_family) {
 	case AF_INET: {
-		struct nsos_mid_sockaddr_in *addr_in_mid =
-			(struct nsos_mid_sockaddr_in *)addr_mid;
+		struct nsos_mid_sockaddr_in *addr_in_mid = (struct nsos_mid_sockaddr_in *)addr_mid;
 		const struct sockaddr_in *addr_in = (const struct sockaddr_in *)addr;
 
 		if (addr_in_mid) {
@@ -441,9 +435,7 @@ int nsos_adapt_sendto(int fd, const void *buf, size_t len, int flags,
 		return ret;
 	}
 
-	ret = sendto(fd, buf, len,
-		     socket_flags_from_nsos_mid(flags) | MSG_NOSIGNAL,
-		     addr, addrlen);
+	ret = sendto(fd, buf, len, socket_flags_from_nsos_mid(flags) | MSG_NOSIGNAL, addr, addrlen);
 	if (ret < 0) {
 		return -errno_to_nsos_mid(errno);
 	}
@@ -503,8 +495,7 @@ int nsos_adapt_recvfrom(int fd, void *buf, size_t len, int flags,
 	int ret;
 	int err;
 
-	ret = recvfrom(fd, buf, len, socket_flags_from_nsos_mid(flags),
-		       addr, &addrlen);
+	ret = recvfrom(fd, buf, len, socket_flags_from_nsos_mid(flags), addr, &addrlen);
 	if (ret < 0) {
 		return -errno_to_nsos_mid(errno);
 	}
@@ -517,8 +508,8 @@ int nsos_adapt_recvfrom(int fd, void *buf, size_t len, int flags,
 	return ret;
 }
 
-static int nsos_adapt_getsockopt_int(int fd, int level, int optname,
-				     void *optval, size_t *nsos_mid_optlen)
+static int nsos_adapt_getsockopt_int(int fd, int level, int optname, void *optval,
+				     size_t *nsos_mid_optlen)
 {
 	socklen_t optlen = *nsos_mid_optlen;
 	int ret;
@@ -533,8 +524,8 @@ static int nsos_adapt_getsockopt_int(int fd, int level, int optname,
 	return 0;
 }
 
-int nsos_adapt_getsockopt(int fd, int nsos_mid_level, int nsos_mid_optname,
-			  void *nsos_mid_optval, size_t *nsos_mid_optlen)
+int nsos_adapt_getsockopt(int fd, int nsos_mid_level, int nsos_mid_optname, void *nsos_mid_optval,
+			  size_t *nsos_mid_optlen)
 {
 	switch (nsos_mid_level) {
 	case NSOS_MID_SOL_SOCKET:
@@ -608,11 +599,11 @@ int nsos_adapt_getsockopt(int fd, int nsos_mid_level, int nsos_mid_optname,
 			return 0;
 		}
 		case NSOS_MID_SO_RCVBUF:
-			return nsos_adapt_getsockopt_int(fd, SOL_SOCKET, SO_RCVBUF,
-							 nsos_mid_optval, nsos_mid_optlen);
+			return nsos_adapt_getsockopt_int(fd, SOL_SOCKET, SO_RCVBUF, nsos_mid_optval,
+							 nsos_mid_optlen);
 		case NSOS_MID_SO_SNDBUF:
-			return nsos_adapt_getsockopt_int(fd, SOL_SOCKET, SO_SNDBUF,
-							 nsos_mid_optval, nsos_mid_optlen);
+			return nsos_adapt_getsockopt_int(fd, SOL_SOCKET, SO_SNDBUF, nsos_mid_optval,
+							 nsos_mid_optlen);
 		case NSOS_MID_SO_REUSEADDR:
 			return nsos_adapt_getsockopt_int(fd, SOL_SOCKET, SO_REUSEADDR,
 							 nsos_mid_optval, nsos_mid_optlen);
@@ -620,8 +611,8 @@ int nsos_adapt_getsockopt(int fd, int nsos_mid_level, int nsos_mid_optname,
 			return nsos_adapt_getsockopt_int(fd, SOL_SOCKET, SO_REUSEPORT,
 							 nsos_mid_optval, nsos_mid_optlen);
 		case NSOS_MID_SO_LINGER:
-			return nsos_adapt_getsockopt_int(fd, SOL_SOCKET, SO_LINGER,
-							 nsos_mid_optval, nsos_mid_optlen);
+			return nsos_adapt_getsockopt_int(fd, SOL_SOCKET, SO_LINGER, nsos_mid_optval,
+							 nsos_mid_optlen);
 		case NSOS_MID_SO_KEEPALIVE:
 			return nsos_adapt_getsockopt_int(fd, SOL_SOCKET, SO_KEEPALIVE,
 							 nsos_mid_optval, nsos_mid_optlen);
@@ -657,8 +648,8 @@ int nsos_adapt_getsockopt(int fd, int nsos_mid_level, int nsos_mid_optname,
 	return -NSOS_MID_EOPNOTSUPP;
 }
 
-static int nsos_adapt_setsockopt_int(int fd, int level, int optname,
-				     const void *optval, size_t optlen)
+static int nsos_adapt_setsockopt_int(int fd, int level, int optname, const void *optval,
+				     size_t optlen)
 {
 	int ret;
 
@@ -688,8 +679,7 @@ int nsos_adapt_setsockopt(int fd, int nsos_mid_level, int nsos_mid_optname,
 			};
 			int ret;
 
-			ret = setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO,
-					 &tv, sizeof(tv));
+			ret = setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 			if (ret < 0) {
 				return -errno_to_nsos_mid(errno);
 			}
@@ -704,8 +694,7 @@ int nsos_adapt_setsockopt(int fd, int nsos_mid_level, int nsos_mid_optname,
 			};
 			int ret;
 
-			ret = setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO,
-					 &tv, sizeof(tv));
+			ret = setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
 			if (ret < 0) {
 				return -errno_to_nsos_mid(errno);
 			}
@@ -713,11 +702,11 @@ int nsos_adapt_setsockopt(int fd, int nsos_mid_level, int nsos_mid_optname,
 			return 0;
 		}
 		case NSOS_MID_SO_RCVBUF:
-			return nsos_adapt_setsockopt_int(fd, SOL_SOCKET, SO_RCVBUF,
-							 nsos_mid_optval, nsos_mid_optlen);
+			return nsos_adapt_setsockopt_int(fd, SOL_SOCKET, SO_RCVBUF, nsos_mid_optval,
+							 nsos_mid_optlen);
 		case NSOS_MID_SO_SNDBUF:
-			return nsos_adapt_setsockopt_int(fd, SOL_SOCKET, SO_SNDBUF,
-							 nsos_mid_optval, nsos_mid_optlen);
+			return nsos_adapt_setsockopt_int(fd, SOL_SOCKET, SO_SNDBUF, nsos_mid_optval,
+							 nsos_mid_optlen);
 		case NSOS_MID_SO_REUSEADDR:
 			return nsos_adapt_setsockopt_int(fd, SOL_SOCKET, SO_REUSEADDR,
 							 nsos_mid_optval, nsos_mid_optlen);
@@ -725,8 +714,8 @@ int nsos_adapt_setsockopt(int fd, int nsos_mid_level, int nsos_mid_optname,
 			return nsos_adapt_setsockopt_int(fd, SOL_SOCKET, SO_REUSEPORT,
 							 nsos_mid_optval, nsos_mid_optlen);
 		case NSOS_MID_SO_LINGER:
-			return nsos_adapt_setsockopt_int(fd, SOL_SOCKET, SO_LINGER,
-							 nsos_mid_optval, nsos_mid_optlen);
+			return nsos_adapt_setsockopt_int(fd, SOL_SOCKET, SO_LINGER, nsos_mid_optval,
+							 nsos_mid_optlen);
 		case NSOS_MID_SO_KEEPALIVE:
 			return nsos_adapt_setsockopt_int(fd, SOL_SOCKET, SO_KEEPALIVE,
 							 nsos_mid_optval, nsos_mid_optlen);
@@ -762,10 +751,10 @@ int nsos_adapt_setsockopt(int fd, int nsos_mid_level, int nsos_mid_optname,
 	return -NSOS_MID_EOPNOTSUPP;
 }
 
-#define MAP_POLL_EPOLL(_event_from, _event_to)	\
-	if (events_from & (_event_from)) {	\
-		events_from &= ~(_event_from);	\
-		events_to |= _event_to;		\
+#define MAP_POLL_EPOLL(_event_from, _event_to)                                                     \
+	if (events_from & (_event_from)) {                                                         \
+		events_from &= ~(_event_from);                                                     \
+		events_to |= _event_to;                                                            \
 	}
 
 static int nsos_poll_to_epoll_events(int events_from)
@@ -854,8 +843,7 @@ struct nsos_addrinfo_wrap {
 	struct addrinfo *addrinfo;
 };
 
-static int addrinfo_to_nsos_mid(struct addrinfo *res,
-				struct nsos_mid_addrinfo **mid_res)
+static int addrinfo_to_nsos_mid(struct addrinfo *res, struct nsos_mid_addrinfo **mid_res)
 {
 	struct nsos_addrinfo_wrap *nsos_res_wraps;
 	size_t idx_res = 0;
@@ -897,8 +885,7 @@ static int addrinfo_to_nsos_mid(struct addrinfo *res,
 			goto free_wraps;
 		}
 
-		wrap->addrinfo_mid.ai_addr =
-			(struct nsos_mid_sockaddr *)&wrap->addr_storage;
+		wrap->addrinfo_mid.ai_addr = (struct nsos_mid_sockaddr *)&wrap->addr_storage;
 		wrap->addrinfo_mid.ai_addrlen = sizeof(wrap->addr_storage);
 
 		ret = sockaddr_to_nsos_mid(res_p->ai_addr, res_p->ai_addrlen,
@@ -920,8 +907,7 @@ static int addrinfo_to_nsos_mid(struct addrinfo *res,
 	return 0;
 
 free_wraps:
-	for (struct nsos_mid_addrinfo *res_p = &nsos_res_wraps[0].addrinfo_mid;
-	     res_p;
+	for (struct nsos_mid_addrinfo *res_p = &nsos_res_wraps[0].addrinfo_mid; res_p;
 	     res_p = res_p->ai_next) {
 		free(res_p->ai_canonname);
 	}
@@ -933,8 +919,7 @@ free_wraps:
 
 int nsos_adapt_getaddrinfo(const char *node, const char *service,
 			   const struct nsos_mid_addrinfo *hints_mid,
-			   struct nsos_mid_addrinfo **res_mid,
-			   int *system_errno)
+			   struct nsos_mid_addrinfo **res_mid, int *system_errno)
 {
 	struct addrinfo hints;
 	struct addrinfo *res = NULL;
@@ -962,9 +947,7 @@ int nsos_adapt_getaddrinfo(const char *node, const char *service,
 		}
 	}
 
-	ret = getaddrinfo(node, service,
-			  hints_mid ? &hints : NULL,
-			  &res);
+	ret = getaddrinfo(node, service, hints_mid ? &hints : NULL, &res);
 	if (ret < 0) {
 		return ret;
 	}

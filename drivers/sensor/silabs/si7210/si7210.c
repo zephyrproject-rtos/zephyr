@@ -17,73 +17,73 @@
 LOG_MODULE_REGISTER(SI7210, CONFIG_SENSOR_LOG_LEVEL);
 
 /* Register addresses */
-#define SI7210_REG_CHIPID		0xC0
-#define SI7210_REG_DSPSIGM		0xC1
-#define SI7210_REG_DSPSIGL		0xC2
-#define SI7210_REG_DSPSIGSEL		0xC3
-#define SI7210_REG_POWER_CTRL		0xC4
-#define SI7210_REG_ARAUTOINC		0xC5
-#define SI7210_REG_CTRL1		0xC6
-#define SI7210_REG_CTRL2		0xC7
-#define SI7210_REG_SLTIME		0xC8
-#define SI7210_REG_CTRL3		0xC9
-#define SI7210_REG_A0			0xCA
-#define SI7210_REG_A1			0xCB
-#define SI7210_REG_A2			0xCC
-#define SI7210_REG_CTRL4		0xCD
-#define SI7210_REG_A3			0xCE
-#define SI7210_REG_A4			0xCF
-#define SI7210_REG_A5			0xD0
-#define SI7210_REG_OTP_ADDR		0xE1
-#define SI7210_REG_OTP_DATA		0xE2
-#define SI7210_REG_OTP_CTRL		0xE3
-#define SI7210_REG_TM_FG		0xE4
+#define SI7210_REG_CHIPID     0xC0
+#define SI7210_REG_DSPSIGM    0xC1
+#define SI7210_REG_DSPSIGL    0xC2
+#define SI7210_REG_DSPSIGSEL  0xC3
+#define SI7210_REG_POWER_CTRL 0xC4
+#define SI7210_REG_ARAUTOINC  0xC5
+#define SI7210_REG_CTRL1      0xC6
+#define SI7210_REG_CTRL2      0xC7
+#define SI7210_REG_SLTIME     0xC8
+#define SI7210_REG_CTRL3      0xC9
+#define SI7210_REG_A0         0xCA
+#define SI7210_REG_A1         0xCB
+#define SI7210_REG_A2         0xCC
+#define SI7210_REG_CTRL4      0xCD
+#define SI7210_REG_A3         0xCE
+#define SI7210_REG_A4         0xCF
+#define SI7210_REG_A5         0xD0
+#define SI7210_REG_OTP_ADDR   0xE1
+#define SI7210_REG_OTP_DATA   0xE2
+#define SI7210_REG_OTP_CTRL   0xE3
+#define SI7210_REG_TM_FG      0xE4
 
 /* Registers bits */
-#define SI7210_BIT_DSPSIGSEL_MAG	0x00
-#define SI7210_BIT_DSPSIGSEL_TEMP	0x01
-#define SI7210_BIT_POWER_CTRL_MEAS	0x80
-#define SI7210_BIT_POWER_CTRL_USESTORE	0x08
-#define SI7210_BIT_POWER_CTRL_ONEBURST	0x04
-#define SI7210_BIT_POWER_CTRL_STOP	0x02
-#define SI7210_BIT_POWER_CTRL_SLEEP	0x01
-#define SI7210_BIT_CTRL3_SLTIMEENA	0x01
-#define SI7210_BIT_CTRL3_SLTFAST	0x02
-#define SI7210_BIT_OTP_CTRL_READEN	0x02
-#define SI7210_BIT_OTP_CTRL_BUSY	0x01
+#define SI7210_BIT_DSPSIGSEL_MAG       0x00
+#define SI7210_BIT_DSPSIGSEL_TEMP      0x01
+#define SI7210_BIT_POWER_CTRL_MEAS     0x80
+#define SI7210_BIT_POWER_CTRL_USESTORE 0x08
+#define SI7210_BIT_POWER_CTRL_ONEBURST 0x04
+#define SI7210_BIT_POWER_CTRL_STOP     0x02
+#define SI7210_BIT_POWER_CTRL_SLEEP    0x01
+#define SI7210_BIT_CTRL3_SLTIMEENA     0x01
+#define SI7210_BIT_CTRL3_SLTFAST       0x02
+#define SI7210_BIT_OTP_CTRL_READEN     0x02
+#define SI7210_BIT_OTP_CTRL_BUSY       0x01
 
 /* OT registers */
-#define SI7210_OTPREG_DEF_CTRL1		0x04
-#define SI7210_OTPREG_DEF_CTRL2		0x05
-#define SI7210_OTPREG_DEF_SLTIME	0x06
-#define SI7210_OTPREG_DEF_CTRL3		0x08
-#define SI7210_OTPREG_DEF_A0		0x09
-#define SI7210_OTPREG_DEF_A1		0x0A
-#define SI7210_OTPREG_DEF_A2		0x0B
-#define SI7210_OTPREG_DEF_CTRL4		0x0C
-#define SI7210_OTPREG_DEF_A3		0x0D
-#define SI7210_OTPREG_DEF_A4		0x0E
-#define SI7210_OTPREG_DEF_A5		0x0F
-#define SI7210_OTPREG_PART_BASE		0x14
-#define SI7210_OTPREG_PART_VARIANT	0x15
-#define SI7210_OTPREG_SN1		0x18
-#define SI7210_OTPREG_SN2		0x19
-#define SI7210_OTPREG_SN3		0x1A
-#define SI7210_OTPREG_SN4		0x1B
-#define SI7210_OTPREG_TEMP_OFFSET	0x1D
-#define SI7210_OTPREG_TEMP_GAIN		0x1E
-#define SI7210_OTPREG_200G_SCALE_A0	0x21
-#define SI7210_OTPREG_200G_SCALE_A1	0x22
-#define SI7210_OTPREG_200G_SCALE_A2	0x23
-#define SI7210_OTPREG_200G_SCALE_A3	0x24
-#define SI7210_OTPREG_200G_SCALE_A4	0x25
-#define SI7210_OTPREG_200G_SCALE_A5	0x26
-#define SI7210_OTPREG_2000G_SCALE_A0	0x27
-#define SI7210_OTPREG_2000G_SCALE_A1	0x28
-#define SI7210_OTPREG_2000G_SCALE_A2	0x29
-#define SI7210_OTPREG_2000G_SCALE_A3	0x30
-#define SI7210_OTPREG_2000G_SCALE_A4	0x31
-#define SI7210_OTPREG_2000G_SCALE_A5	0x32
+#define SI7210_OTPREG_DEF_CTRL1      0x04
+#define SI7210_OTPREG_DEF_CTRL2      0x05
+#define SI7210_OTPREG_DEF_SLTIME     0x06
+#define SI7210_OTPREG_DEF_CTRL3      0x08
+#define SI7210_OTPREG_DEF_A0         0x09
+#define SI7210_OTPREG_DEF_A1         0x0A
+#define SI7210_OTPREG_DEF_A2         0x0B
+#define SI7210_OTPREG_DEF_CTRL4      0x0C
+#define SI7210_OTPREG_DEF_A3         0x0D
+#define SI7210_OTPREG_DEF_A4         0x0E
+#define SI7210_OTPREG_DEF_A5         0x0F
+#define SI7210_OTPREG_PART_BASE      0x14
+#define SI7210_OTPREG_PART_VARIANT   0x15
+#define SI7210_OTPREG_SN1            0x18
+#define SI7210_OTPREG_SN2            0x19
+#define SI7210_OTPREG_SN3            0x1A
+#define SI7210_OTPREG_SN4            0x1B
+#define SI7210_OTPREG_TEMP_OFFSET    0x1D
+#define SI7210_OTPREG_TEMP_GAIN      0x1E
+#define SI7210_OTPREG_200G_SCALE_A0  0x21
+#define SI7210_OTPREG_200G_SCALE_A1  0x22
+#define SI7210_OTPREG_200G_SCALE_A2  0x23
+#define SI7210_OTPREG_200G_SCALE_A3  0x24
+#define SI7210_OTPREG_200G_SCALE_A4  0x25
+#define SI7210_OTPREG_200G_SCALE_A5  0x26
+#define SI7210_OTPREG_2000G_SCALE_A0 0x27
+#define SI7210_OTPREG_2000G_SCALE_A1 0x28
+#define SI7210_OTPREG_2000G_SCALE_A2 0x29
+#define SI7210_OTPREG_2000G_SCALE_A3 0x30
+#define SI7210_OTPREG_2000G_SCALE_A4 0x31
+#define SI7210_OTPREG_2000G_SCALE_A5 0x32
 
 enum si7210_scale {
 	si7210_scale_200G,
@@ -178,8 +178,7 @@ static int si7210_reset(const struct device *dev)
 	return rc;
 }
 
-static int si7210_otp_reg_read_byte(const struct device *dev,
-				    uint8_t otp_reg_addr, uint8_t *value)
+static int si7210_otp_reg_read_byte(const struct device *dev, uint8_t otp_reg_addr, uint8_t *value)
 {
 	const struct si7210_config *config = dev->config;
 	int rc;
@@ -324,8 +323,7 @@ static int si7210_sample_fetch(const struct device *dev, enum sensor_channel cha
 	uint16_t dspsig;
 	int rc;
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL ||
-			chan == SENSOR_CHAN_AMBIENT_TEMP ||
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_AMBIENT_TEMP ||
 			chan == SENSOR_CHAN_MAGN_Z);
 
 #ifdef CONFIG_PM_DEVICE
@@ -347,7 +345,6 @@ static int si7210_sample_fetch(const struct device *dev, enum sensor_channel cha
 		}
 
 		data->temp_sample = dspsig >> 3;
-
 	}
 
 	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_MAGN_Z) {
@@ -364,9 +361,7 @@ static int si7210_sample_fetch(const struct device *dev, enum sensor_channel cha
 	return 0;
 }
 
-
-static int si7210_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
+static int si7210_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	struct si7210_data *data = dev->data;
@@ -427,8 +422,7 @@ static const struct sensor_driver_api si7210_api_funcs = {
 };
 
 #ifdef CONFIG_PM_DEVICE
-static int si7210_pm_action(const struct device *dev,
-			    enum pm_device_action action)
+static int si7210_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	int rc;
 
@@ -506,12 +500,12 @@ static int si7210_init(const struct device *dev)
 		return rc;
 	}
 
-	LOG_INF("Found Si72%02d-%c-%02d S/N %08x, at I2C address 0x%x",
-		part_base, rev, part_variant, sn, config->bus.addr);
+	LOG_INF("Found Si72%02d-%c-%02d S/N %08x, at I2C address 0x%x", part_base, rev,
+		part_variant, sn, config->bus.addr);
 
 	/* Set default scale depending on the part variant */
-	data->scale = (part_variant == 5 || part_variant == 15) ?
-		      si7210_scale_2000G : si7210_scale_200G;
+	data->scale =
+		(part_variant == 5 || part_variant == 15) ? si7210_scale_2000G : si7210_scale_200G;
 
 	/* Read temperature adjustment values */
 	rc = si7210_otp_reg_read_byte(dev, SI7210_OTPREG_TEMP_OFFSET, &data->otp_temp_offset);
@@ -534,14 +528,14 @@ static int si7210_init(const struct device *dev)
 }
 
 /* Main instantiation macro */
-#define DEFINE_SI7210(inst) \
-	static struct si7210_data si7210_data_##inst; \
-	static const struct si7210_config si7210_config_##inst = { \
-		.bus = I2C_DT_SPEC_INST_GET(inst), \
-	}; \
-	PM_DEVICE_DT_INST_DEFINE(inst, si7210_pm_action); \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, si7210_init, PM_DEVICE_DT_INST_GET(inst), \
-		&si7210_data_##inst, &si7210_config_##inst, POST_KERNEL, \
-		CONFIG_SENSOR_INIT_PRIORITY, &si7210_api_funcs);
+#define DEFINE_SI7210(inst)                                                                        \
+	static struct si7210_data si7210_data_##inst;                                              \
+	static const struct si7210_config si7210_config_##inst = {                                 \
+		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
+	};                                                                                         \
+	PM_DEVICE_DT_INST_DEFINE(inst, si7210_pm_action);                                          \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, si7210_init, PM_DEVICE_DT_INST_GET(inst),               \
+				     &si7210_data_##inst, &si7210_config_##inst, POST_KERNEL,      \
+				     CONFIG_SENSOR_INIT_PRIORITY, &si7210_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_SI7210)

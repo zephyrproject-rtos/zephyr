@@ -53,10 +53,8 @@ static int sgp40_start_measurement(const struct device *dev)
 	return i2c_write_dt(&cfg->bus, tx_buf, sizeof(tx_buf));
 }
 
-static int sgp40_attr_set(const struct device *dev,
-				enum sensor_channel chan,
-				enum sensor_attribute attr,
-				const struct sensor_value *val)
+static int sgp40_attr_set(const struct device *dev, enum sensor_channel chan,
+			  enum sensor_attribute attr, const struct sensor_value *val)
 {
 	struct sgp40_data *data = dev->data;
 
@@ -66,8 +64,7 @@ static int sgp40_attr_set(const struct device *dev,
 	 */
 
 	switch ((enum sensor_attribute_sgp40)attr) {
-	case SENSOR_ATTR_SGP40_TEMPERATURE:
-	{
+	case SENSOR_ATTR_SGP40_TEMPERATURE: {
 		uint16_t t_ticks;
 		int16_t tmp;
 
@@ -76,10 +73,8 @@ static int sgp40_attr_set(const struct device *dev,
 		t_ticks = (uint16_t)((((tmp + 45) * 65535) + 87) / 175);
 		sys_put_be16(t_ticks, data->t_param);
 		data->t_param[2] = sgp40_compute_crc(t_ticks);
-	}
-		break;
-	case SENSOR_ATTR_SGP40_HUMIDITY:
-	{
+	} break;
+	case SENSOR_ATTR_SGP40_HUMIDITY: {
 		uint16_t rh_ticks;
 		uint8_t tmp;
 
@@ -88,8 +83,7 @@ static int sgp40_attr_set(const struct device *dev,
 		rh_ticks = (uint16_t)(((tmp * 65535U) + 50U) / 100U);
 		sys_put_be16(rh_ticks, data->rh_param);
 		data->rh_param[2] = sgp40_compute_crc(rh_ticks);
-	}
-		break;
+	} break;
 	default:
 		return -ENOTSUP;
 	}
@@ -131,8 +125,7 @@ static int sgp40_selftest(const struct device *dev)
 	return 0;
 }
 
-static int sgp40_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
+static int sgp40_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct sgp40_data *data = dev->data;
 	const struct sgp40_config *cfg = dev->config;
@@ -169,9 +162,8 @@ static int sgp40_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static int sgp40_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
-			      struct sensor_value *val)
+static int sgp40_channel_get(const struct device *dev, enum sensor_channel chan,
+			     struct sensor_value *val)
 {
 	const struct sgp40_data *data = dev->data;
 
@@ -185,10 +177,8 @@ static int sgp40_channel_get(const struct device *dev,
 	return 0;
 }
 
-
 #ifdef CONFIG_PM_DEVICE
-static int sgp40_pm_action(const struct device *dev,
-			   enum pm_device_action action)
+static int sgp40_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	uint16_t cmd;
 
@@ -229,14 +219,10 @@ static int sgp40_init(const struct device *dev)
 	}
 
 	comp_data.val1 = SGP40_COMP_DEFAULT_T;
-	sensor_attr_set(dev,
-			SENSOR_CHAN_GAS_RES,
-			(enum sensor_attribute) SENSOR_ATTR_SGP40_TEMPERATURE,
-			&comp_data);
+	sensor_attr_set(dev, SENSOR_CHAN_GAS_RES,
+			(enum sensor_attribute)SENSOR_ATTR_SGP40_TEMPERATURE, &comp_data);
 	comp_data.val1 = SGP40_COMP_DEFAULT_RH;
-	sensor_attr_set(dev,
-			SENSOR_CHAN_GAS_RES,
-			(enum sensor_attribute) SENSOR_ATTR_SGP40_HUMIDITY,
+	sensor_attr_set(dev, SENSOR_CHAN_GAS_RES, (enum sensor_attribute)SENSOR_ATTR_SGP40_HUMIDITY,
 			&comp_data);
 
 	return 0;
@@ -248,23 +234,18 @@ static const struct sensor_driver_api sgp40_api = {
 	.attr_set = sgp40_attr_set,
 };
 
-#define SGP40_INIT(n)						\
-	static struct sgp40_data sgp40_data_##n;		\
-								\
-	static const struct sgp40_config sgp40_config_##n = {	\
-		.bus = I2C_DT_SPEC_INST_GET(n),			\
-		.selftest = DT_INST_PROP(n, enable_selftest),	\
-	};							\
-								\
-	PM_DEVICE_DT_INST_DEFINE(n, sgp40_pm_action);		\
-								\
-	SENSOR_DEVICE_DT_INST_DEFINE(n,				\
-			      sgp40_init,			\
-			      PM_DEVICE_DT_INST_GET(n),	\
-			      &sgp40_data_##n,			\
-			      &sgp40_config_##n,		\
-			      POST_KERNEL,			\
-			      CONFIG_SENSOR_INIT_PRIORITY,	\
-			      &sgp40_api);
+#define SGP40_INIT(n)                                                                              \
+	static struct sgp40_data sgp40_data_##n;                                                   \
+                                                                                                   \
+	static const struct sgp40_config sgp40_config_##n = {                                      \
+		.bus = I2C_DT_SPEC_INST_GET(n),                                                    \
+		.selftest = DT_INST_PROP(n, enable_selftest),                                      \
+	};                                                                                         \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(n, sgp40_pm_action);                                              \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, sgp40_init, PM_DEVICE_DT_INST_GET(n), &sgp40_data_##n,     \
+				     &sgp40_config_##n, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,  \
+				     &sgp40_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SGP40_INIT)

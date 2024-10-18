@@ -86,9 +86,8 @@ static inline void i2c_smartbond_pm_policy_state_lock_put(const struct device *d
 static inline bool i2c_smartbond_is_idle(const struct device *dev)
 {
 	const struct i2c_smartbond_cfg *config = dev->config;
-	uint32_t mask = I2C_I2C_STATUS_REG_I2C_ACTIVITY_Msk |
-					I2C_I2C_STATUS_REG_RFNE_Msk |
-					I2C_I2C_STATUS_REG_TFE_Msk;
+	uint32_t mask = I2C_I2C_STATUS_REG_I2C_ACTIVITY_Msk | I2C_I2C_STATUS_REG_RFNE_Msk |
+			I2C_I2C_STATUS_REG_TFE_Msk;
 
 	return ((config->regs->I2C_STATUS_REG & mask) == I2C_I2C_STATUS_REG_TFE_Msk);
 }
@@ -578,8 +577,8 @@ static int i2c_smartbond_resume(const struct device *dev)
 		return err;
 	}
 
-	return i2c_smartbond_apply_configure(dev,
-				       I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(config->bitrate));
+	return i2c_smartbond_apply_configure(dev, I2C_MODE_CONTROLLER |
+							  i2c_map_dt_bitrate(config->bitrate));
 }
 
 #if defined(CONFIG_PM_DEVICE)
@@ -601,8 +600,7 @@ static int i2c_smartbond_suspend(const struct device *dev)
 	return ret;
 }
 
-static int i2c_smartbond_pm_action(const struct device *dev,
-	enum pm_device_action action)
+static int i2c_smartbond_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	int ret = 0;
 
@@ -637,7 +635,6 @@ static int i2c_smartbond_pm_action(const struct device *dev,
 }
 #endif
 
-
 static int i2c_smartbond_init(const struct device *dev)
 {
 	int ret;
@@ -656,7 +653,7 @@ static int i2c_smartbond_init(const struct device *dev)
 }
 
 #define I2C_SMARTBOND_DEVICE(id)                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(id, i2c_smartbond_pm_action);	\
+	PM_DEVICE_DT_INST_DEFINE(id, i2c_smartbond_pm_action);                                     \
 	PINCTRL_DT_INST_DEFINE(id);                                                                \
 	static const struct i2c_smartbond_cfg i2c_smartbond_##id##_cfg = {                         \
 		.regs = (I2C_Type *)DT_INST_REG_ADDR(id),                                          \
@@ -670,9 +667,9 @@ static int i2c_smartbond_init(const struct device *dev)
 		I2C_SMARTBOND_CONFIGURE(id);                                                       \
 		return ret;                                                                        \
 	}                                                                                          \
-	I2C_DEVICE_DT_INST_DEFINE(id, i2c_smartbond_##id##_init, PM_DEVICE_DT_INST_GET(id), \
-				&i2c_smartbond_##id##_data, \
-				&i2c_smartbond_##id##_cfg, POST_KERNEL,                          \
-				CONFIG_I2C_INIT_PRIORITY, &i2c_smartbond_driver_api);
+	I2C_DEVICE_DT_INST_DEFINE(id, i2c_smartbond_##id##_init, PM_DEVICE_DT_INST_GET(id),        \
+				  &i2c_smartbond_##id##_data, &i2c_smartbond_##id##_cfg,           \
+				  POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,                           \
+				  &i2c_smartbond_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_SMARTBOND_DEVICE)

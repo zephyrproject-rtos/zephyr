@@ -9,7 +9,6 @@
 #include <zephyr/types.h>
 #include <zephyr/drivers/w1.h>
 
-
 int z_impl_w1_read_block(const struct device *dev, uint8_t *buffer, size_t len)
 {
 	const struct w1_driver_api *api = dev->api;
@@ -29,8 +28,7 @@ int z_impl_w1_read_block(const struct device *dev, uint8_t *buffer, size_t len)
 	return 0;
 }
 
-int z_impl_w1_write_block(const struct device *dev, const uint8_t *buffer,
-			  size_t len)
+int z_impl_w1_write_block(const struct device *dev, const uint8_t *buffer, size_t len)
 {
 	const struct w1_driver_api *api = dev->api;
 	int ret;

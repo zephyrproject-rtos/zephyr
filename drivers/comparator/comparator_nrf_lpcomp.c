@@ -14,19 +14,17 @@
 
 #define DT_DRV_COMPAT nordic_nrf_lpcomp
 
-#define SHIM_NRF_LPCOMP_DT_INST_REFSEL(inst) \
+#define SHIM_NRF_LPCOMP_DT_INST_REFSEL(inst)                                                       \
 	_CONCAT(COMP_NRF_LPCOMP_REFSEL_, DT_INST_STRING_TOKEN(inst, refsel))
 
-#define SHIM_NRF_LPCOMP_DT_INST_REFSEL_IS_AREF(inst) \
-	DT_INST_ENUM_HAS_VALUE(inst, refsel, AREF)
+#define SHIM_NRF_LPCOMP_DT_INST_REFSEL_IS_AREF(inst) DT_INST_ENUM_HAS_VALUE(inst, refsel, AREF)
 
-#define SHIM_NRF_LPCOMP_DT_INST_EXTREFSEL(inst) \
+#define SHIM_NRF_LPCOMP_DT_INST_EXTREFSEL(inst)                                                    \
 	_CONCAT(COMP_NRF_LPCOMP_EXTREFSEL_, DT_INST_STRING_TOKEN(inst, extrefsel))
 
-#define SHIM_NRF_LPCOMP_DT_INST_ENABLE_HYST(inst) \
-	DT_INST_PROP(inst, enable_hyst)
+#define SHIM_NRF_LPCOMP_DT_INST_ENABLE_HYST(inst) DT_INST_PROP(inst, enable_hyst)
 
-#define SHIM_NRF_LPCOMP_DT_INST_PSEL(inst) \
+#define SHIM_NRF_LPCOMP_DT_INST_PSEL(inst)                                                         \
 	_CONCAT(COMP_NRF_LPCOMP_PSEL_, DT_INST_STRING_TOKEN(inst, psel))
 
 struct shim_nrf_lpcomp_data {
@@ -41,23 +39,15 @@ struct shim_nrf_lpcomp_data {
 #if (NRF_LPCOMP_HAS_AIN_AS_PIN)
 static const uint32_t shim_nrf_lpcomp_ain_map[] = {
 #if defined(CONFIG_SOC_NRF54H20) || defined(CONFIG_SOC_NRF9280)
-	NRF_PIN_PORT_TO_PIN_NUMBER(0U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(1U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(2U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(3U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(4U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(5U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(6U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(7U, 1),
+	NRF_PIN_PORT_TO_PIN_NUMBER(0U, 1), NRF_PIN_PORT_TO_PIN_NUMBER(1U, 1),
+	NRF_PIN_PORT_TO_PIN_NUMBER(2U, 1), NRF_PIN_PORT_TO_PIN_NUMBER(3U, 1),
+	NRF_PIN_PORT_TO_PIN_NUMBER(4U, 1), NRF_PIN_PORT_TO_PIN_NUMBER(5U, 1),
+	NRF_PIN_PORT_TO_PIN_NUMBER(6U, 1), NRF_PIN_PORT_TO_PIN_NUMBER(7U, 1),
 #elif defined(CONFIG_SOC_NRF54L15)
-	NRF_PIN_PORT_TO_PIN_NUMBER(4U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(5U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(6U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(7U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(11U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(12U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(13U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(14U, 1),
+	NRF_PIN_PORT_TO_PIN_NUMBER(4U, 1),  NRF_PIN_PORT_TO_PIN_NUMBER(5U, 1),
+	NRF_PIN_PORT_TO_PIN_NUMBER(6U, 1),  NRF_PIN_PORT_TO_PIN_NUMBER(7U, 1),
+	NRF_PIN_PORT_TO_PIN_NUMBER(11U, 1), NRF_PIN_PORT_TO_PIN_NUMBER(12U, 1),
+	NRF_PIN_PORT_TO_PIN_NUMBER(13U, 1), NRF_PIN_PORT_TO_PIN_NUMBER(14U, 1),
 #endif
 };
 #endif
@@ -149,8 +139,7 @@ static int shim_nrf_lpcomp_pm_callback(const struct device *dev, enum pm_device_
 }
 
 #if (NRF_LPCOMP_HAS_AIN_AS_PIN)
-static int shim_nrf_lpcomp_psel_to_nrf(enum comp_nrf_lpcomp_psel shim,
-				       nrf_lpcomp_input_t *nrf)
+static int shim_nrf_lpcomp_psel_to_nrf(enum comp_nrf_lpcomp_psel shim, nrf_lpcomp_input_t *nrf)
 {
 	if (shim >= ARRAY_SIZE(shim_nrf_lpcomp_ain_map)) {
 		return -EINVAL;
@@ -160,8 +149,7 @@ static int shim_nrf_lpcomp_psel_to_nrf(enum comp_nrf_lpcomp_psel shim,
 	return 0;
 }
 #else
-static int shim_nrf_lpcomp_psel_to_nrf(enum comp_nrf_lpcomp_psel shim,
-				       nrf_lpcomp_input_t *nrf)
+static int shim_nrf_lpcomp_psel_to_nrf(enum comp_nrf_lpcomp_psel shim, nrf_lpcomp_input_t *nrf)
 {
 	switch (shim) {
 	case COMP_NRF_LPCOMP_PSEL_AIN0:
@@ -236,8 +224,7 @@ static int shim_nrf_lpcomp_extrefsel_to_nrf(enum comp_nrf_lpcomp_extrefsel shim,
 }
 #endif
 
-static int shim_nrf_lpcomp_refsel_to_nrf(enum comp_nrf_lpcomp_refsel shim,
-					 nrf_lpcomp_ref_t *nrf)
+static int shim_nrf_lpcomp_refsel_to_nrf(enum comp_nrf_lpcomp_refsel shim, nrf_lpcomp_ref_t *nrf)
 {
 	switch (shim) {
 	case COMP_NRF_LPCOMP_REFSEL_VDD_1_8:
@@ -355,8 +342,7 @@ static int shim_nrf_lpcomp_get_output(const struct device *dev)
 	return nrfx_lpcomp_sample();
 }
 
-static int shim_nrf_lpcomp_set_trigger(const struct device *dev,
-				       enum comparator_trigger trigger)
+static int shim_nrf_lpcomp_set_trigger(const struct device *dev, enum comparator_trigger trigger)
 {
 	shim_nrf_lpcomp_stop();
 
@@ -392,8 +378,7 @@ static int shim_nrf_lpcomp_set_trigger(const struct device *dev,
 }
 
 static int shim_nrf_lpcomp_set_trigger_callback(const struct device *dev,
-						comparator_callback_t callback,
-						void *user_data)
+						comparator_callback_t callback, void *user_data)
 {
 	shim_nrf_lpcomp_stop();
 
@@ -425,8 +410,7 @@ static const struct comparator_driver_api shim_nrf_lpcomp_api = {
 	.trigger_is_pending = shim_nrf_lpcomp_trigger_is_pending,
 };
 
-int comp_nrf_lpcomp_configure(const struct device *dev,
-			      const struct comp_nrf_lpcomp_config *config)
+int comp_nrf_lpcomp_configure(const struct device *dev, const struct comp_nrf_lpcomp_config *config)
 {
 	nrfx_lpcomp_config_t nrf = {};
 
@@ -460,10 +444,7 @@ static void shim_nrf_lpcomp_event_handler(nrf_lpcomp_event_t event)
 
 static int shim_nrf_lpcomp_init(const struct device *dev)
 {
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    nrfx_isr,
-		    nrfx_lpcomp_irq_handler,
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), nrfx_isr, nrfx_lpcomp_irq_handler,
 		    0);
 
 	irq_enable(DT_INST_IRQN(0));
@@ -471,8 +452,8 @@ static int shim_nrf_lpcomp_init(const struct device *dev)
 	(void)shim_nrf_lpcomp_config_to_nrf(&shim_nrf_lpcomp_config0,
 					    &shim_nrf_lpcomp_data0.config);
 
-	if (nrfx_lpcomp_init(&shim_nrf_lpcomp_data0.config,
-			     shim_nrf_lpcomp_event_handler) != NRFX_SUCCESS) {
+	if (nrfx_lpcomp_init(&shim_nrf_lpcomp_data0.config, shim_nrf_lpcomp_event_handler) !=
+	    NRFX_SUCCESS) {
 		return -ENODEV;
 	}
 
@@ -481,11 +462,5 @@ static int shim_nrf_lpcomp_init(const struct device *dev)
 
 PM_DEVICE_DT_INST_DEFINE(0, shim_nrf_lpcomp_pm_callback);
 
-DEVICE_DT_INST_DEFINE(0,
-		      shim_nrf_lpcomp_init,
-		      PM_DEVICE_DT_INST_GET(0),
-		      NULL,
-		      NULL,
-		      POST_KERNEL,
-		      CONFIG_COMPARATOR_INIT_PRIORITY,
-		      &shim_nrf_lpcomp_api);
+DEVICE_DT_INST_DEFINE(0, shim_nrf_lpcomp_init, PM_DEVICE_DT_INST_GET(0), NULL, NULL, POST_KERNEL,
+		      CONFIG_COMPARATOR_INIT_PRIORITY, &shim_nrf_lpcomp_api);

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- /* Based on dsi_mcux.c, which is (c) 2022 NXP */
+/* Based on dsi_mcux.c, which is (c) 2022 NXP */
 
 #define DT_DRV_COMPAT nxp_mipi_dsi_2l
 
@@ -56,16 +56,14 @@ struct mcux_mipi_dsi_data {
 #endif
 };
 
-
 /* MAX DSI TX payload */
 #define DSI_TX_MAX_PAYLOAD_BYTE (64U * 4U)
-
 
 #ifdef CONFIG_MIPI_DSI_MCUX_2L_SMARTDMA
 
 /* Callback for DSI DMA transfer completion, called in ISR context */
-static void dsi_mcux_dma_cb(const struct device *dma_dev,
-				void *user_data, uint32_t channel, int status)
+static void dsi_mcux_dma_cb(const struct device *dma_dev, void *user_data, uint32_t channel,
+			    int status)
 {
 	const struct device *dev = user_data;
 	const struct mcux_mipi_dsi_config *config = dev->config;
@@ -76,16 +74,16 @@ static void dsi_mcux_dma_cb(const struct device *dma_dev,
 		LOG_ERR("SMARTDMA transfer failed");
 	} else {
 		/* Disable DSI interrupts at transfer completion */
-		DSI_DisableInterrupts(config->base, kDSI_InterruptGroup1ApbTxDone |
-						kDSI_InterruptGroup1HtxTo, 0U);
+		DSI_DisableInterrupts(config->base,
+				      kDSI_InterruptGroup1ApbTxDone | kDSI_InterruptGroup1HtxTo,
+				      0U);
 		DSI_GetAndClearInterruptStatus(config->base, &int_flags1, &int_flags2);
 		k_sem_give(&data->transfer_sem);
 	}
 }
 
 /* Helper function to transfer DSI color (DMA based implementation) */
-static int dsi_mcux_tx_color(const struct device *dev, uint8_t channel,
-			     struct mipi_dsi_msg *msg)
+static int dsi_mcux_tx_color(const struct device *dev, uint8_t channel, struct mipi_dsi_msg *msg)
 {
 	/*
 	 * Color streams are a special case for this DSI peripheral, because
@@ -127,8 +125,8 @@ static int dsi_mcux_tx_color(const struct device *dev, uint8_t channel,
 	 * Note that if the MIPI IRQ is enabled in
 	 * the NVIC, it will fire on every SMARTDMA transfer
 	 */
-	DSI_EnableInterrupts(config->base, kDSI_InterruptGroup1ApbTxDone |
-					kDSI_InterruptGroup1HtxTo, 0U);
+	DSI_EnableInterrupts(config->base,
+			     kDSI_InterruptGroup1ApbTxDone | kDSI_InterruptGroup1HtxTo, 0U);
 	/* Trigger DMA engine */
 	ret = dma_start(config->smart_dma, 0);
 	if (ret < 0) {
@@ -143,18 +141,16 @@ static int dsi_mcux_tx_color(const struct device *dev, uint8_t channel,
 #else /* CONFIG_MIPI_DSI_MCUX_2L_SMARTDMA is not set */
 
 /* Callback for DSI transfer completion, called in ISR context */
-static void dsi_transfer_complete(MIPI_DSI_HOST_Type *base,
-	dsi_handle_t *handle, status_t status, void *userData)
+static void dsi_transfer_complete(MIPI_DSI_HOST_Type *base, dsi_handle_t *handle, status_t status,
+				  void *userData)
 {
 	struct mcux_mipi_dsi_data *data = userData;
 
 	k_sem_give(&data->transfer_sem);
 }
 
-
 /* Helper function to transfer DSI color (Interrupt based implementation) */
-static int dsi_mcux_tx_color(const struct device *dev, uint8_t channel,
-			     struct mipi_dsi_msg *msg)
+static int dsi_mcux_tx_color(const struct device *dev, uint8_t channel, struct mipi_dsi_msg *msg)
 {
 	const struct mcux_mipi_dsi_config *config = dev->config;
 	struct mcux_mipi_dsi_data *data = dev->data;
@@ -191,8 +187,7 @@ static int dsi_mcux_tx_color(const struct device *dev, uint8_t channel,
 		}
 	}
 	/* Send TX data using non-blocking DSI API */
-	status = DSI_TransferNonBlocking(config->base,
-					&data->mipi_handle, &xfer);
+	status = DSI_TransferNonBlocking(config->base, &data->mipi_handle, &xfer);
 	/* Wait for transfer completion */
 	k_sem_take(&data->transfer_sem, K_FOREVER);
 	if (status != kStatus_Success) {
@@ -214,8 +209,7 @@ static int mipi_dsi_isr(const struct device *dev)
 
 #endif
 
-static int dsi_mcux_attach(const struct device *dev,
-			   uint8_t channel,
+static int dsi_mcux_attach(const struct device *dev, uint8_t channel,
 			   const struct mipi_dsi_device *mdev)
 {
 	const struct mcux_mipi_dsi_config *config = dev->config;
@@ -266,42 +260,37 @@ static int dsi_mcux_attach(const struct device *dev,
 		}
 		break;
 	default:
-		LOG_ERR("SMARTDMA does not support pixel_format %u",
-			mdev->pixfmt);
+		LOG_ERR("SMARTDMA does not support pixel_format %u", mdev->pixfmt);
 		return -ENODEV;
 	}
 
 	data->smartdma_params.smartdma_stack = data->smartdma_stack;
 
-	dma_smartdma_install_fw(config->smart_dma,
-				(uint8_t *)s_smartdmaDisplayFirmware,
+	dma_smartdma_install_fw(config->smart_dma, (uint8_t *)s_smartdmaDisplayFirmware,
 				s_smartdmaDisplayFirmwareSize);
 #else
 	struct mcux_mipi_dsi_data *data = dev->data;
 
 	/* Create transfer handle */
-	if (DSI_TransferCreateHandle(config->base, &data->mipi_handle,
-				dsi_transfer_complete, data) != kStatus_Success) {
+	if (DSI_TransferCreateHandle(config->base, &data->mipi_handle, dsi_transfer_complete,
+				     data) != kStatus_Success) {
 		return -ENODEV;
 	}
 #endif
 
 	/* Get the DPHY bit clock frequency */
-	if (clock_control_get_rate(config->bit_clk_dev,
-				config->bit_clk_subsys,
-				&dphy_bit_clk_freq)) {
+	if (clock_control_get_rate(config->bit_clk_dev, config->bit_clk_subsys,
+				   &dphy_bit_clk_freq)) {
 		return -EINVAL;
 	};
 	/* Get the DPHY ESC clock frequency */
-	if (clock_control_get_rate(config->esc_clk_dev,
-				config->esc_clk_subsys,
-				&dphy_esc_clk_freq)) {
+	if (clock_control_get_rate(config->esc_clk_dev, config->esc_clk_subsys,
+				   &dphy_esc_clk_freq)) {
 		return -EINVAL;
 	}
 	/* Get the Pixel clock frequency */
-	if (clock_control_get_rate(config->pixel_clk_dev,
-				config->pixel_clk_subsys,
-				&dsi_pixel_clk_freq)) {
+	if (clock_control_get_rate(config->pixel_clk_dev, config->pixel_clk_subsys,
+				   &dsi_pixel_clk_freq)) {
 		return -EINVAL;
 	}
 
@@ -334,8 +323,7 @@ static int dsi_mcux_attach(const struct device *dev,
 	DSI_GetDphyDefaultConfig(&dphy_config, dphy_bit_clk_freq, dphy_esc_clk_freq);
 
 	if (config->dphy_ref_freq != 0) {
-		dphy_bit_clk_freq = DSI_InitDphy(config->base,
-					&dphy_config, config->dphy_ref_freq);
+		dphy_bit_clk_freq = DSI_InitDphy(config->base, &dphy_config, config->dphy_ref_freq);
 	} else {
 		/* DPHY PLL is not present, ref clock is unused */
 		DSI_InitDphy(config->base, &dphy_config, 0);
@@ -350,7 +338,7 @@ static int dsi_mcux_attach(const struct device *dev,
 	if (mdev->mode_flags & MIPI_DSI_MODE_VIDEO) {
 		/* Init DPI interface. */
 		DSI_SetDpiConfig(config->base, &config->dpi_config, mdev->data_lanes,
-						dsi_pixel_clk_freq, dphy_bit_clk_freq);
+				 dsi_pixel_clk_freq, dphy_bit_clk_freq);
 	}
 
 	imxrt_post_init_display_interface();
@@ -373,8 +361,6 @@ static int dsi_mcux_detach(const struct device *dev, uint8_t channel,
 	imxrt_deinit_display_interface();
 	return 0;
 }
-
-
 
 static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 				 struct mipi_dsi_msg *msg)
@@ -461,7 +447,6 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 
 	/* Return tx_len on a write */
 	return msg->tx_len;
-
 }
 
 static struct mipi_dsi_driver_api dsi_mcux_api = {
@@ -482,15 +467,14 @@ static int mcux_mipi_dsi_init(const struct device *dev)
 
 	k_sem_init(&data->transfer_sem, 0, 1);
 
-	if (!device_is_ready(config->bit_clk_dev) ||
-			!device_is_ready(config->esc_clk_dev) ||
-			!device_is_ready(config->pixel_clk_dev)) {
+	if (!device_is_ready(config->bit_clk_dev) || !device_is_ready(config->esc_clk_dev) ||
+	    !device_is_ready(config->pixel_clk_dev)) {
 		return -ENODEV;
 	}
 	return 0;
 }
 
-#define MCUX_DSI_DPI_CONFIG(id)									\
+#define MCUX_DSI_DPI_CONFIG(id)                                                                    \
 	IF_ENABLED(DT_NODE_HAS_PROP(DT_DRV_INST(id), nxp_lcdif),				\
 	(.dpi_config = {									\
 		.dpiColorCoding = DT_INST_ENUM_IDX(id, dpi_color_coding),			\
@@ -519,43 +503,37 @@ static int mcux_mipi_dsi_init(const struct device *dev)
 					display_timings),  vback_porch),			\
 	},))
 
-#define MCUX_MIPI_DSI_DEVICE(id)								\
+#define MCUX_MIPI_DSI_DEVICE(id)                                                                   \
 	COND_CODE_1(CONFIG_MIPI_DSI_MCUX_2L_SMARTDMA,						\
 	(), (static void mipi_dsi_##n##_irq_config_func(const struct device *dev)		\
 	{											\
 		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority),			\
 			mipi_dsi_isr, DEVICE_DT_INST_GET(id), 0);				\
 			irq_enable(DT_INST_IRQN(id));						\
-	}))											\
-												\
-	static const struct mcux_mipi_dsi_config mipi_dsi_config_##id = {			\
-		MCUX_DSI_DPI_CONFIG(id)								\
-		COND_CODE_1(CONFIG_MIPI_DSI_MCUX_2L_SMARTDMA,					\
+	}))                                       \
+                                                                                                   \
+	static const struct mcux_mipi_dsi_config mipi_dsi_config_##id = {                          \
+		MCUX_DSI_DPI_CONFIG(id) COND_CODE_1(CONFIG_MIPI_DSI_MCUX_2L_SMARTDMA,					\
 		(.smart_dma = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, smartdma)),),		\
-		(.irq_config_func = mipi_dsi_##n##_irq_config_func,))				\
-		.base = (MIPI_DSI_HOST_Type *)DT_INST_REG_ADDR(id),				\
-		.auto_insert_eotp = DT_INST_PROP(id, autoinsert_eotp),				\
-		.noncontinuous_hs_clk = DT_INST_PROP(id, noncontinuous_hs_clk),			\
-		.dphy_ref_freq = DT_INST_PROP_OR(id, dphy_ref_frequency, 0),			\
-		.bit_clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(id, dphy)),		\
-		.bit_clk_subsys =								\
-			(clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(id, dphy, name),	\
-		.esc_clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(id, esc)),		\
-		.esc_clk_subsys =								\
-			(clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(id, esc, name),	\
-		.pixel_clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(id, pixel)),		\
-		.pixel_clk_subsys =								\
-			(clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(id, pixel, name),	\
-	};											\
-												\
-	static struct mcux_mipi_dsi_data mipi_dsi_data_##id;					\
-	DEVICE_DT_INST_DEFINE(id,								\
-			    &mcux_mipi_dsi_init,						\
-			    NULL,								\
-			    &mipi_dsi_data_##id,						\
-			    &mipi_dsi_config_##id,						\
-			    POST_KERNEL,							\
-			    CONFIG_MIPI_DSI_INIT_PRIORITY,					\
-			    &dsi_mcux_api);
+		(.irq_config_func = mipi_dsi_##n##_irq_config_func,)) .base =               \
+				  (MIPI_DSI_HOST_Type *)DT_INST_REG_ADDR(id),                      \
+			 .auto_insert_eotp = DT_INST_PROP(id, autoinsert_eotp),                    \
+			 .noncontinuous_hs_clk = DT_INST_PROP(id, noncontinuous_hs_clk),           \
+			 .dphy_ref_freq = DT_INST_PROP_OR(id, dphy_ref_frequency, 0),              \
+			 .bit_clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(id, dphy)),      \
+			 .bit_clk_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(    \
+				 id, dphy, name),                                                  \
+			 .esc_clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(id, esc)),       \
+			 .esc_clk_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(    \
+				 id, esc, name),                                                   \
+			 .pixel_clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(id, pixel)),   \
+			 .pixel_clk_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(  \
+				 id, pixel, name),                                                 \
+	};                                                                                         \
+                                                                                                   \
+	static struct mcux_mipi_dsi_data mipi_dsi_data_##id;                                       \
+	DEVICE_DT_INST_DEFINE(id, &mcux_mipi_dsi_init, NULL, &mipi_dsi_data_##id,                  \
+			      &mipi_dsi_config_##id, POST_KERNEL, CONFIG_MIPI_DSI_INIT_PRIORITY,   \
+			      &dsi_mcux_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_MIPI_DSI_DEVICE)

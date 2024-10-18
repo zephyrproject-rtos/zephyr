@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT ite_it8xxx2_flash_controller
+#define DT_DRV_COMPAT     ite_it8xxx2_flash_controller
 #define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
 
 #define FLASH_WRITE_BLK_SZ DT_PROP(SOC_NV_FLASH_NODE, write_block_size)
@@ -25,8 +25,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_ite_it8xxx2);
 
-#define FLASH_IT8XXX2_REG_BASE \
-		((struct smfi_it8xxx2_regs *)DT_INST_REG_ADDR(0))
+#define FLASH_IT8XXX2_REG_BASE ((struct smfi_it8xxx2_regs *)DT_INST_REG_ADDR(0))
 
 struct flash_it8xxx2_dev_data {
 	struct k_sem sem;
@@ -67,9 +66,9 @@ struct flash_it8xxx2_dev_data {
 #define FLASH_CMD_RS           0x05
 
 /* Set FSCE# as high level by writing 0 to address xfff_fe00h */
-#define FLASH_FSCE_HIGH_ADDRESS        0x0FFFFE00
+#define FLASH_FSCE_HIGH_ADDRESS 0x0FFFFE00
 /* Set FSCE# as low level by writing data to address xfff_fd00h */
-#define FLASH_FSCE_LOW_ADDRESS         0x0FFFFD00
+#define FLASH_FSCE_LOW_ADDRESS  0x0FFFFD00
 
 enum flash_status_mask {
 	FLASH_SR_NO_BUSY = 0,
@@ -98,10 +97,10 @@ void __soc_ram_code ramcode_reset_i_cache(void)
 	/* I-Cache tag sram reset */
 	gctrl_regs->GCTRL_MCCR |= IT8XXX2_GCTRL_ICACHE_RESET;
 	/* Make sure the I-Cache is reset */
-	__asm__ volatile ("fence.i" ::: "memory");
+	__asm__ volatile("fence.i" ::: "memory");
 
 	gctrl_regs->GCTRL_MCCR &= ~IT8XXX2_GCTRL_ICACHE_RESET;
-	__asm__ volatile ("fence.i" ::: "memory");
+	__asm__ volatile("fence.i" ::: "memory");
 }
 
 void __soc_ram_code ramcode_flash_follow_mode(void)
@@ -114,7 +113,7 @@ void __soc_ram_code ramcode_flash_follow_mode(void)
 	 * and set high nibble as 0x4 to select internal flash.
 	 */
 	flash_regs->SMFI_ECINDAR3 = (EC_INDIRECT_READ_INTERNAL_FLASH |
-		((FLASH_FSCE_HIGH_ADDRESS >> 24) & GENMASK(3, 0)));
+				     ((FLASH_FSCE_HIGH_ADDRESS >> 24) & GENMASK(3, 0)));
 
 	/* Set FSCE# as high level by writing 0 to address xfff_fe00h */
 	flash_regs->SMFI_ECINDAR2 = (FLASH_FSCE_HIGH_ADDRESS >> 16) & GENMASK(7, 0);
@@ -269,8 +268,8 @@ int __soc_ram_code ramcode_flash_verify(int addr, int size, const char *data)
 void __soc_ram_code ramcode_flash_cmd_write(int addr, int wlen, uint8_t *wbuf)
 {
 	int i;
-	uint8_t flash_write[] = {FLASH_CMD_WRITE, ((addr >> 16) & 0xFF),
-		((addr >> 8) & 0xFF), (addr & 0xFF)};
+	uint8_t flash_write[] = {FLASH_CMD_WRITE, ((addr >> 16) & 0xFF), ((addr >> 8) & 0xFF),
+				 (addr & 0xFF)};
 
 	/* enter EC-indirect follow mode */
 	ramcode_flash_follow_mode();
@@ -299,8 +298,8 @@ void __soc_ram_code ramcode_flash_cmd_write(int addr, int wlen, uint8_t *wbuf)
 			flash_write[1] = (addr >> 16) & GENMASK(7, 0);
 			flash_write[2] = (addr >> 8) & GENMASK(7, 0);
 			flash_write[3] = addr & GENMASK(7, 0);
-			ramcode_flash_transaction(sizeof(flash_write), flash_write,
-				0, NULL, CMD_CONTINUE);
+			ramcode_flash_transaction(sizeof(flash_write), flash_write, 0, NULL,
+						  CMD_CONTINUE);
 		}
 	}
 	ramcode_flash_fsce_high();
@@ -319,8 +318,7 @@ void __soc_ram_code ramcode_flash_write(int addr, int wlen, const char *wbuf)
 
 void __soc_ram_code ramcode_flash_cmd_erase(int addr, int cmd)
 {
-	uint8_t cmd_erase[] = {cmd, ((addr >> 16) & 0xFF),
-		((addr >> 8) & 0xFF), (addr & 0xFF)};
+	uint8_t cmd_erase[] = {cmd, ((addr >> 16) & 0xFF), ((addr >> 8) & 0xFF), (addr & 0xFF)};
 
 	/* enter EC-indirect follow mode */
 	ramcode_flash_follow_mode();
@@ -454,8 +452,7 @@ static int __soc_ram_code flash_it8xxx2_erase(const struct device *dev, off_t of
 	return ret;
 }
 
-static const struct flash_parameters *
-flash_it8xxx2_get_parameters(const struct device *dev)
+static const struct flash_parameters *flash_it8xxx2_get_parameters(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -485,8 +482,8 @@ static int flash_it8xxx2_init(const struct device *dev)
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 static const struct flash_pages_layout dev_layout = {
-	.pages_count = DT_REG_SIZE(SOC_NV_FLASH_NODE) /
-			DT_PROP(SOC_NV_FLASH_NODE, erase_block_size),
+	.pages_count =
+		DT_REG_SIZE(SOC_NV_FLASH_NODE) / DT_PROP(SOC_NV_FLASH_NODE, erase_block_size),
 	.pages_size = DT_PROP(SOC_NV_FLASH_NODE, erase_block_size),
 };
 
@@ -511,8 +508,5 @@ static const struct flash_driver_api flash_it8xxx2_api = {
 
 static struct flash_it8xxx2_dev_data flash_it8xxx2_data;
 
-DEVICE_DT_INST_DEFINE(0, flash_it8xxx2_init, NULL,
-		      &flash_it8xxx2_data, NULL,
-		      PRE_KERNEL_1,
-		      CONFIG_FLASH_INIT_PRIORITY,
-		      &flash_it8xxx2_api);
+DEVICE_DT_INST_DEFINE(0, flash_it8xxx2_init, NULL, &flash_it8xxx2_data, NULL, PRE_KERNEL_1,
+		      CONFIG_FLASH_INIT_PRIORITY, &flash_it8xxx2_api);

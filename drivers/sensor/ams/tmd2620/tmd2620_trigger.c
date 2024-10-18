@@ -46,7 +46,7 @@ int tmd2620_attr_set(const struct device *dev, enum sensor_channel chan, enum se
 
 	if (attr == SENSOR_ATTR_UPPER_THRESH) {
 		ret = i2c_reg_write_byte_dt(&config->i2c, TMD2620_PIHT_REG,
-						(255 - (uint8_t)val->val1));
+					    (255 - (uint8_t)val->val1));
 		if (ret < 0) {
 			return ret;
 		}
@@ -80,8 +80,8 @@ int tmd2620_trigger_set(const struct device *dev, const struct sensor_trigger *t
 
 	data->p_th_trigger = trigg;
 	data->p_th_handler = handler;
-	ret = i2c_reg_update_byte_dt(&config->i2c, TMD2620_INTENAB_REG,
-				TMD2620_INTENAB_PIEN, TMD2620_INTENAB_PIEN);
+	ret = i2c_reg_update_byte_dt(&config->i2c, TMD2620_INTENAB_REG, TMD2620_INTENAB_PIEN,
+				     TMD2620_INTENAB_PIEN);
 	if (ret < 0) {
 		return ret;
 	}

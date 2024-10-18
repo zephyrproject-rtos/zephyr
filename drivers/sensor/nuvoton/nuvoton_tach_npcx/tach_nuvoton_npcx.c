@@ -81,12 +81,12 @@ struct tach_npcx_data {
 /* Maximum count of prescaler */
 #define NPCX_TACHO_PRSC_MAX 0xff
 /* Maximum count of counter */
-#define NPCX_TACHO_CNT_MAX 0xffff
+#define NPCX_TACHO_CNT_MAX  0xffff
 /* Operation mode used for tachometer */
-#define NPCX_TACH_MDSEL 4
+#define NPCX_TACH_MDSEL     4
 /* Clock selection for tachometer */
-#define NPCX_CLKSEL_APBCLK 1
-#define NPCX_CLKSEL_LFCLK 4
+#define NPCX_CLKSEL_APBCLK  1
+#define NPCX_CLKSEL_LFCLK   4
 
 /* TACH inline local functions */
 static inline void tach_npcx_start_port_a(const struct device *dev)
@@ -96,7 +96,7 @@ static inline void tach_npcx_start_port_a(const struct device *dev)
 
 	/* Set the default value of counter and capture register of timer 1. */
 	inst->TCNT1 = NPCX_TACHO_CNT_MAX;
-	inst->TCRA  = NPCX_TACHO_CNT_MAX;
+	inst->TCRA = NPCX_TACHO_CNT_MAX;
 
 	/*
 	 * Set the edge detection polarity of port A to falling (high-to-low
@@ -109,8 +109,8 @@ static inline void tach_npcx_start_port_a(const struct device *dev)
 	inst->TCFG |= BIT(NPCX_TCFG_TADBEN);
 
 	/* Select clock source of timer 1 from no clock and start to count. */
-	SET_FIELD(inst->TCKC, NPCX_TCKC_C1CSEL_FIELD, data->input_clk == LFCLK
-		  ? NPCX_CLKSEL_LFCLK : NPCX_CLKSEL_APBCLK);
+	SET_FIELD(inst->TCKC, NPCX_TCKC_C1CSEL_FIELD,
+		  data->input_clk == LFCLK ? NPCX_CLKSEL_LFCLK : NPCX_CLKSEL_APBCLK);
 }
 
 static inline void tach_npcx_start_port_b(const struct device *dev)
@@ -120,7 +120,7 @@ static inline void tach_npcx_start_port_b(const struct device *dev)
 
 	/* Set the default value of counter and capture register of timer 2. */
 	inst->TCNT2 = NPCX_TACHO_CNT_MAX;
-	inst->TCRB  = NPCX_TACHO_CNT_MAX;
+	inst->TCRB = NPCX_TACHO_CNT_MAX;
 
 	/*
 	 * Set the edge detection polarity of port B to falling (high-to-low
@@ -133,8 +133,8 @@ static inline void tach_npcx_start_port_b(const struct device *dev)
 	inst->TCFG |= BIT(NPCX_TCFG_TBDBEN);
 
 	/* Select clock source of timer 2 from no clock and start to count. */
-	SET_FIELD(inst->TCKC, NPCX_TCKC_C2CSEL_FIELD, data->input_clk == LFCLK
-		  ? NPCX_CLKSEL_LFCLK : NPCX_CLKSEL_APBCLK);
+	SET_FIELD(inst->TCKC, NPCX_TCKC_C2CSEL_FIELD,
+		  data->input_clk == LFCLK ? NPCX_CLKSEL_LFCLK : NPCX_CLKSEL_APBCLK);
 }
 
 static inline bool tach_npcx_is_underflow(const struct device *dev)
@@ -230,8 +230,8 @@ static int tach_npcx_configure(const struct device *dev)
 		/* Enable low power mode */
 		inst->TCKC |= BIT(NPCX_TCKC_LOW_PWR);
 		if (config->sample_clk != data->input_clk) {
-			LOG_ERR("%s operate freq is %d not fixed to 32kHz",
-				dev->name, data->input_clk);
+			LOG_ERR("%s operate freq is %d not fixed to 32kHz", dev->name,
+				data->input_clk);
 			return -EINVAL;
 		}
 	} else {
@@ -239,8 +239,7 @@ static int tach_npcx_configure(const struct device *dev)
 		uint16_t prescaler = data->input_clk / config->sample_clk;
 
 		if (data->input_clk > config->sample_clk) {
-			LOG_ERR("%s operate freq exceeds APB1 clock",
-				dev->name);
+			LOG_ERR("%s operate freq exceeds APB1 clock", dev->name);
 			return -EINVAL;
 		}
 		inst->TPRSC = MIN(NPCX_TACHO_PRSC_MAX, MAX(prescaler, 1));
@@ -271,16 +270,14 @@ int tach_npcx_sample_fetch(const struct device *dev, enum sensor_channel chan)
 		/* Clear pending flags */
 		tach_npcx_clear_captured_flag(dev);
 		/* Save captured count */
-		data->capture = NPCX_TACHO_CNT_MAX -
-					tach_npcx_get_captured_count(dev);
+		data->capture = NPCX_TACHO_CNT_MAX - tach_npcx_get_captured_count(dev);
 	}
 
 	return 0;
 }
 
-static int tach_npcx_channel_get(const struct device *dev,
-				enum sensor_channel chan,
-				struct sensor_value *val)
+static int tach_npcx_channel_get(const struct device *dev, enum sensor_channel chan,
+				 struct sensor_value *val)
 {
 	const struct tach_npcx_config *const config = dev->config;
 	struct tach_npcx_data *const data = dev->data;
@@ -296,8 +293,7 @@ static int tach_npcx_channel_get(const struct device *dev,
 		 *   f = Tachometer operation frequency (Hz)
 		 *   TACH = Captured counts of tachometer
 		 */
-		val->val1 = (config->sample_clk * 60) /
-			(config->pulses_per_round * data->capture);
+		val->val1 = (config->sample_clk * 60) / (config->pulses_per_round * data->capture);
 	} else {
 		val->val1 = 0U;
 	}
@@ -306,7 +302,6 @@ static int tach_npcx_channel_get(const struct device *dev,
 
 	return 0;
 }
-
 
 /* TACH driver registration */
 static int tach_npcx_init(const struct device *dev)
@@ -322,15 +317,14 @@ static int tach_npcx_init(const struct device *dev)
 	}
 
 	/* Turn on device clock first and get source clock freq. */
-	ret = clock_control_on(clk_dev, (clock_control_subsys_t)
-							&config->clk_cfg);
+	ret = clock_control_on(clk_dev, (clock_control_subsys_t)&config->clk_cfg);
 	if (ret < 0) {
 		LOG_ERR("Turn on tachometer clock fail %d", ret);
 		return ret;
 	}
 
-	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)
-					&config->clk_cfg, &data->input_clk);
+	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)&config->clk_cfg,
+				     &data->input_clk);
 	if (ret < 0) {
 		LOG_ERR("Get tachometer clock rate error %d", ret);
 		return ret;
@@ -342,7 +336,6 @@ static int tach_npcx_init(const struct device *dev)
 		LOG_ERR("Tacho pinctrl setup failed (%d)", ret);
 		return ret;
 	}
-
 
 	/* Configure tachometer and its operate freq. */
 	ret = tach_npcx_configure(dev);
@@ -368,27 +361,22 @@ static const struct sensor_driver_api tach_npcx_driver_api = {
 	.channel_get = tach_npcx_channel_get,
 };
 
-#define NPCX_TACH_INIT(inst)                                                   \
-	PINCTRL_DT_INST_DEFINE(inst);					       \
-									       \
-	static const struct tach_npcx_config tach_cfg_##inst = {               \
-		.base = DT_INST_REG_ADDR(inst),                                \
-		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(inst),                         \
-		.sample_clk = DT_INST_PROP(inst, sample_clk),                  \
-		.port = DT_INST_PROP(inst, port),                              \
-		.pulses_per_round = DT_INST_PROP(inst, pulses_per_round),      \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                  \
-	};                                                                     \
-									       \
-	static struct tach_npcx_data tach_data_##inst;                         \
-									       \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,                                     \
-			      tach_npcx_init,                                  \
-			      NULL,                                            \
-			      &tach_data_##inst,                               \
-			      &tach_cfg_##inst,                                \
-			      POST_KERNEL,                                     \
-			      CONFIG_SENSOR_INIT_PRIORITY,                     \
-			      &tach_npcx_driver_api);
+#define NPCX_TACH_INIT(inst)                                                                       \
+	PINCTRL_DT_INST_DEFINE(inst);                                                              \
+                                                                                                   \
+	static const struct tach_npcx_config tach_cfg_##inst = {                                   \
+		.base = DT_INST_REG_ADDR(inst),                                                    \
+		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(inst),                                             \
+		.sample_clk = DT_INST_PROP(inst, sample_clk),                                      \
+		.port = DT_INST_PROP(inst, port),                                                  \
+		.pulses_per_round = DT_INST_PROP(inst, pulses_per_round),                          \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
+	};                                                                                         \
+                                                                                                   \
+	static struct tach_npcx_data tach_data_##inst;                                             \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, tach_npcx_init, NULL, &tach_data_##inst,                \
+				     &tach_cfg_##inst, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,   \
+				     &tach_npcx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NPCX_TACH_INIT)

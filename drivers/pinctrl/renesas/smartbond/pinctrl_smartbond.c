@@ -8,9 +8,8 @@
 #include <DA1469xAB.h>
 
 /** Utility macro to retrieve starting mode register and pin count for GPIO port from DT */
-#define GPIO_PORT_ENTRY(nodelabel)							\
-		{ DT_REG_ADDR_BY_IDX(DT_NODELABEL(nodelabel), 1),			\
-		  DT_PROP(DT_NODELABEL(nodelabel), ngpios) }
+#define GPIO_PORT_ENTRY(nodelabel)                                                                 \
+	{DT_REG_ADDR_BY_IDX(DT_NODELABEL(nodelabel), 1), DT_PROP(DT_NODELABEL(nodelabel), ngpios)}
 
 struct gpio_port {
 	uint32_t p0_mode_addr;
@@ -45,8 +44,7 @@ static void pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 	*reg = reg_val;
 }
 
-int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
-			   uintptr_t reg)
+int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintptr_t reg)
 {
 	ARG_UNUSED(reg);
 

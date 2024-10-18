@@ -120,8 +120,7 @@ static void xec_kbd_set_detect_mode(const struct device *dev, bool enabled)
 
 	if (enabled) {
 		if (data->pm_lock_taken) {
-			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE,
-						 PM_ALL_SUBSTATES);
+			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 		}
 
 		regs->KSI_STS = MCHP_KSCAN_KSO_SEL_REG_MASK;
@@ -130,8 +129,7 @@ static void xec_kbd_set_detect_mode(const struct device *dev, bool enabled)
 		NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
 		irq_enable(DT_INST_IRQN(0));
 	} else {
-		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE,
-					 PM_ALL_SUBSTATES);
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 		data->pm_lock_taken = true;
 	}
 }
@@ -205,8 +203,8 @@ static int xec_kbd_init(const struct device *dev)
 	regs->KSI_IEN = MCHP_KSCAN_KSI_IEN_REG_MASK;
 
 	/* Interrupts are enabled in the thread function */
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
-		    xec_kbd_isr, DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), xec_kbd_isr, DEVICE_DT_INST_GET(0),
+		    0);
 
 	xec_kbd_clear_girq_status(dev);
 	xec_kbd_configure_girq(dev);
@@ -239,13 +237,11 @@ static struct xec_kbd_config xec_kbd_cfg_0 = {
 	.pcr_pos = DT_INST_PROP_BY_IDX(0, pcrs, 1),
 #endif
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
-	.wakeup_source = DT_INST_PROP(0, wakeup_source)
-};
+	.wakeup_source = DT_INST_PROP(0, wakeup_source)};
 
 static struct xec_kbd_data kbd_data_0;
 
-DEVICE_DT_INST_DEFINE(0, xec_kbd_init,
-		      PM_DEVICE_DT_INST_GET(0), &kbd_data_0, &xec_kbd_cfg_0,
+DEVICE_DT_INST_DEFINE(0, xec_kbd_init, PM_DEVICE_DT_INST_GET(0), &kbd_data_0, &xec_kbd_cfg_0,
 		      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,

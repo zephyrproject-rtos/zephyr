@@ -18,22 +18,21 @@ LOG_MODULE_REGISTER(spi_oc_simple);
 #include "spi_oc_simple.h"
 
 /* Bit 5:4 == ESPR, Bit 1:0 == SPR */
-uint8_t DIVIDERS[] = { 0x00,       /*   2  */
-		    0x01,       /*   4  */
-		    0x10,       /*   8  */
-		    0x02,       /*  16  */
-		    0x03,       /*  32  */
-		    0x11,       /*  64  */
-		    0x12,       /* 128  */
-		    0x13,       /* 256  */
-		    0x20,       /* 512  */
-		    0x21,       /* 1024 */
-		    0x22,       /* 2048 */
-		    0x23 };     /* 4096 */
+uint8_t DIVIDERS[] = {0x00,  /*   2  */
+		      0x01,  /*   4  */
+		      0x10,  /*   8  */
+		      0x02,  /*  16  */
+		      0x03,  /*  32  */
+		      0x11,  /*  64  */
+		      0x12,  /* 128  */
+		      0x13,  /* 256  */
+		      0x20,  /* 512  */
+		      0x21,  /* 1024 */
+		      0x22,  /* 2048 */
+		      0x23}; /* 4096 */
 
 static int spi_oc_simple_configure(const struct spi_oc_simple_cfg *info,
-				struct spi_oc_simple_data *spi,
-				const struct spi_config *config)
+				   struct spi_oc_simple_data *spi, const struct spi_config *config)
 {
 	uint8_t spcr = 0U;
 	int i;
@@ -56,8 +55,7 @@ static int spi_oc_simple_configure(const struct spi_oc_simple_cfg *info,
 
 	if ((config->operation & (SPI_MODE_LOOP | SPI_TRANSFER_LSB)) ||
 	    (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
-	     (config->operation &
-	      (SPI_LINES_DUAL | SPI_LINES_QUAD | SPI_LINES_OCTAL)))) {
+	     (config->operation & (SPI_LINES_DUAL | SPI_LINES_QUAD | SPI_LINES_OCTAL)))) {
 		LOG_ERR("Unsupported configuration");
 		return -EINVAL;
 	}
@@ -73,8 +71,7 @@ static int spi_oc_simple_configure(const struct spi_oc_simple_cfg *info,
 
 	/* Set clock divider */
 	for (i = 0; i < 12; i++) {
-		if ((config->frequency << (i + 1)) >
-		    CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) {
+		if ((config->frequency << (i + 1)) > CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) {
 			break;
 		}
 	}
@@ -90,10 +87,8 @@ static int spi_oc_simple_configure(const struct spi_oc_simple_cfg *info,
 	return 0;
 }
 
-int spi_oc_simple_transceive(const struct device *dev,
-			     const struct spi_config *config,
-			     const struct spi_buf_set *tx_bufs,
-			     const struct spi_buf_set *rx_bufs)
+int spi_oc_simple_transceive(const struct device *dev, const struct spi_config *config,
+			     const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs)
 {
 	const struct spi_oc_simple_cfg *info = dev->config;
 	struct spi_oc_simple_data *spi = SPI_OC_SIMPLE_DATA(dev);
@@ -125,8 +120,7 @@ int spi_oc_simple_transceive(const struct device *dev,
 
 			/* Write byte */
 			if (spi_context_tx_buf_on(ctx)) {
-				sys_write8(*ctx->tx_buf,
-					   SPI_OC_SIMPLE_SPDR(info));
+				sys_write8(*ctx->tx_buf, SPI_OC_SIMPLE_SPDR(info));
 				spi_context_update_tx(ctx, 1, 1);
 			} else {
 				sys_write8(0, SPI_OC_SIMPLE_SPDR(info));
@@ -163,8 +157,7 @@ int spi_oc_simple_transceive(const struct device *dev,
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int spi_oc_simple_transceive_async(const struct device *dev,
-					  const struct spi_config *config,
+static int spi_oc_simple_transceive_async(const struct device *dev, const struct spi_config *config,
 					  const struct spi_buf_set *tx_bufs,
 					  const struct spi_buf_set *rx_bufs,
 					  struct k_poll_signal *async)
@@ -173,8 +166,7 @@ static int spi_oc_simple_transceive_async(const struct device *dev,
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-int spi_oc_simple_release(const struct device *dev,
-			  const struct spi_config *config)
+int spi_oc_simple_release(const struct device *dev, const struct spi_config *config)
 {
 	spi_context_unlock_unconditionally(&SPI_OC_SIMPLE_DATA(dev)->ctx);
 	return 0;
@@ -220,24 +212,18 @@ int spi_oc_simple_init(const struct device *dev)
 	return 0;
 }
 
-#define SPI_OC_INIT(inst)						\
-	static struct spi_oc_simple_cfg spi_oc_simple_cfg_##inst = {	\
-		.base = DT_INST_REG_ADDR_BY_NAME(inst, control),	\
-	};								\
-									\
-	static struct spi_oc_simple_data spi_oc_simple_data_##inst = {	\
-		SPI_CONTEXT_INIT_LOCK(spi_oc_simple_data_##inst, ctx),	\
-		SPI_CONTEXT_INIT_SYNC(spi_oc_simple_data_##inst, ctx),	\
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx) \
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(inst,					\
-			    spi_oc_simple_init,				\
-			    NULL,					\
-			    &spi_oc_simple_data_##inst,			\
-			    &spi_oc_simple_cfg_##inst,			\
-			    POST_KERNEL,				\
-			    CONFIG_SPI_INIT_PRIORITY,			\
-			    &spi_oc_simple_api);
+#define SPI_OC_INIT(inst)                                                                          \
+	static struct spi_oc_simple_cfg spi_oc_simple_cfg_##inst = {                               \
+		.base = DT_INST_REG_ADDR_BY_NAME(inst, control),                                   \
+	};                                                                                         \
+                                                                                                   \
+	static struct spi_oc_simple_data spi_oc_simple_data_##inst = {                             \
+		SPI_CONTEXT_INIT_LOCK(spi_oc_simple_data_##inst, ctx),                             \
+		SPI_CONTEXT_INIT_SYNC(spi_oc_simple_data_##inst, ctx),                             \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx)};                          \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, spi_oc_simple_init, NULL, &spi_oc_simple_data_##inst,          \
+			      &spi_oc_simple_cfg_##inst, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,    \
+			      &spi_oc_simple_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_OC_INIT)

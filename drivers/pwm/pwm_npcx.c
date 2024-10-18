@@ -18,20 +18,20 @@
 LOG_MODULE_REGISTER(pwm_npcx, LOG_LEVEL_ERR);
 
 /* 16-bit period cycles/prescaler in NPCX PWM modules */
-#define NPCX_PWM_MAX_PRESCALER      (1UL << (16))
-#define NPCX_PWM_MAX_PERIOD_CYCLES  (1UL << (16))
+#define NPCX_PWM_MAX_PRESCALER     (1UL << (16))
+#define NPCX_PWM_MAX_PERIOD_CYCLES (1UL << (16))
 
 /* PWM clock sources */
-#define NPCX_PWM_CLOCK_APB2_LFCLK   0
-#define NPCX_PWM_CLOCK_FX           1
-#define NPCX_PWM_CLOCK_FR           2
-#define NPCX_PWM_CLOCK_RESERVED     3
+#define NPCX_PWM_CLOCK_APB2_LFCLK 0
+#define NPCX_PWM_CLOCK_FX         1
+#define NPCX_PWM_CLOCK_FR         2
+#define NPCX_PWM_CLOCK_RESERVED   3
 
 /* PWM heart-beat mode selection */
-#define NPCX_PWM_HBM_NORMAL         0
-#define NPCX_PWM_HBM_25             1
-#define NPCX_PWM_HBM_50             2
-#define NPCX_PWM_HBM_100            3
+#define NPCX_PWM_HBM_NORMAL 0
+#define NPCX_PWM_HBM_25     1
+#define NPCX_PWM_HBM_50     2
+#define NPCX_PWM_HBM_100    3
 
 /* Device config */
 struct pwm_npcx_config {
@@ -62,12 +62,10 @@ static void pwm_npcx_configure(const struct device *dev, int clk_bus)
 	inst->PWMCTL &= ~BIT(NPCX_PWMCTL_INVP);
 
 	/* Turn off PWM heart-beat mode */
-	SET_FIELD(inst->PWMCTL, NPCX_PWMCTL_HB_DC_CTL_FIELD,
-			NPCX_PWM_HBM_NORMAL);
+	SET_FIELD(inst->PWMCTL, NPCX_PWMCTL_HB_DC_CTL_FIELD, NPCX_PWM_HBM_NORMAL);
 
 	/* Select APB CLK/LFCLK clock sources to PWM module by default */
-	SET_FIELD(inst->PWMCTLEX, NPCX_PWMCTLEX_FCK_SEL_FIELD,
-			NPCX_PWM_CLOCK_APB2_LFCLK);
+	SET_FIELD(inst->PWMCTLEX, NPCX_PWMCTLEX_FCK_SEL_FIELD, NPCX_PWM_CLOCK_APB2_LFCLK);
 
 	/* Select clock source to LFCLK by flag, otherwise APB clock source */
 	if (clk_bus == NPCX_CLOCK_BUS_LFCLK) {
@@ -78,9 +76,8 @@ static void pwm_npcx_configure(const struct device *dev, int clk_bus)
 }
 
 /* PWM api functions */
-static int pwm_npcx_set_cycles(const struct device *dev, uint32_t channel,
-			       uint32_t period_cycles, uint32_t pulse_cycles,
-			       pwm_flags_t flags)
+static int pwm_npcx_set_cycles(const struct device *dev, uint32_t channel, uint32_t period_cycles,
+			       uint32_t pulse_cycles, pwm_flags_t flags)
 {
 	/* Single channel for each pwm device */
 	ARG_UNUSED(channel);
@@ -128,8 +125,8 @@ static int pwm_npcx_set_cycles(const struct device *dev, uint32_t channel,
 	/* Set PWM pulse cycles. */
 	dcr = (pulse_cycles / prescaler) - 1;
 
-	LOG_DBG("freq %d, pre %d, period %d, pulse %d",
-		data->cycles_per_sec / period_cycles, prsc, ctr, dcr);
+	LOG_DBG("freq %d, pre %d, period %d, pulse %d", data->cycles_per_sec / period_cycles, prsc,
+		ctr, dcr);
 
 	/* Reconfigure only if necessary. */
 	if (inst->PWMCTL != ctl || inst->PRSC != prsc || inst->CTR != ctr) {
@@ -151,8 +148,7 @@ static int pwm_npcx_set_cycles(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
-static int pwm_npcx_get_cycles_per_sec(const struct device *dev,
-				       uint32_t channel, uint64_t *cycles)
+static int pwm_npcx_get_cycles_per_sec(const struct device *dev, uint32_t channel, uint64_t *cycles)
 {
 	/* Single channel for each pwm device */
 	ARG_UNUSED(channel);
@@ -164,9 +160,7 @@ static int pwm_npcx_get_cycles_per_sec(const struct device *dev,
 
 /* PWM driver registration */
 static const struct pwm_driver_api pwm_npcx_driver_api = {
-	.set_cycles = pwm_npcx_set_cycles,
-	.get_cycles_per_sec = pwm_npcx_get_cycles_per_sec
-};
+	.set_cycles = pwm_npcx_set_cycles, .get_cycles_per_sec = pwm_npcx_get_cycles_per_sec};
 
 static int pwm_npcx_init(const struct device *dev)
 {
@@ -183,22 +177,20 @@ static int pwm_npcx_init(const struct device *dev)
 	 */
 	NPCX_REG_WORD_ACCESS_CHECK(inst->PRSC, 0xA55A);
 
-
 	if (!device_is_ready(clk_dev)) {
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
 	}
 
 	/* Turn on device clock first and get source clock freq. */
-	ret = clock_control_on(clk_dev, (clock_control_subsys_t)
-							&config->clk_cfg);
+	ret = clock_control_on(clk_dev, (clock_control_subsys_t)&config->clk_cfg);
 	if (ret < 0) {
 		LOG_ERR("Turn on PWM clock fail %d", ret);
 		return ret;
 	}
 
-	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)
-			&config->clk_cfg, &data->cycles_per_sec);
+	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)&config->clk_cfg,
+				     &data->cycles_per_sec);
 	if (ret < 0) {
 		LOG_ERR("Get PWM clock rate error %d", ret);
 		return ret;
@@ -217,21 +209,19 @@ static int pwm_npcx_init(const struct device *dev)
 	return 0;
 }
 
-#define NPCX_PWM_INIT(inst)                                                    \
-	PINCTRL_DT_INST_DEFINE(inst);					       \
-									       \
-	static const struct pwm_npcx_config pwm_npcx_cfg_##inst = {            \
-		.base = (struct pwm_reg *)DT_INST_REG_ADDR(inst),              \
-		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(inst),                         \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                  \
-	};                                                                     \
-									       \
-	static struct pwm_npcx_data pwm_npcx_data_##inst;                      \
-									       \
-	DEVICE_DT_INST_DEFINE(inst,					       \
-			    &pwm_npcx_init, NULL,			       \
-			    &pwm_npcx_data_##inst, &pwm_npcx_cfg_##inst,       \
-			    PRE_KERNEL_1, CONFIG_PWM_INIT_PRIORITY,	       \
-			    &pwm_npcx_driver_api);
+#define NPCX_PWM_INIT(inst)                                                                        \
+	PINCTRL_DT_INST_DEFINE(inst);                                                              \
+                                                                                                   \
+	static const struct pwm_npcx_config pwm_npcx_cfg_##inst = {                                \
+		.base = (struct pwm_reg *)DT_INST_REG_ADDR(inst),                                  \
+		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(inst),                                             \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
+	};                                                                                         \
+                                                                                                   \
+	static struct pwm_npcx_data pwm_npcx_data_##inst;                                          \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &pwm_npcx_init, NULL, &pwm_npcx_data_##inst,                   \
+			      &pwm_npcx_cfg_##inst, PRE_KERNEL_1, CONFIG_PWM_INIT_PRIORITY,        \
+			      &pwm_npcx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NPCX_PWM_INIT)

@@ -41,18 +41,18 @@ static struct k_thread rx_thread_data;
 
 static struct {
 	struct net_buf *buf;
-	struct k_fifo   fifo;
+	struct k_fifo fifo;
 
-	uint16_t    remaining;
-	uint16_t    discard;
+	uint16_t remaining;
+	uint16_t discard;
 
-	bool     have_hdr;
-	bool     discardable;
-	bool     deferred;
+	bool have_hdr;
+	bool discardable;
+	bool deferred;
 
-	uint8_t     hdr_len;
+	uint8_t hdr_len;
 
-	uint8_t     type;
+	uint8_t type;
 	union {
 		struct bt_hci_evt_hdr evt;
 		struct bt_hci_acl_hdr acl;
@@ -160,7 +160,6 @@ static inline void get_evt_hdr(void)
 		rx.have_hdr = true;
 	}
 }
-
 
 static inline void copy_hdr(struct net_buf *buf)
 {
@@ -433,19 +432,15 @@ static int bt_da1469x_open(const struct device *dev, bt_hci_recv_t recv)
 	k_tid_t tid;
 
 	tid = k_thread_create(&rx_thread_data, rx_thread_stack,
-			      K_KERNEL_STACK_SIZEOF(rx_thread_stack),
-			      rx_thread, (void *)dev, NULL, NULL,
-			      K_PRIO_COOP(CONFIG_BT_RX_PRIO),
-			      0, K_NO_WAIT);
+			      K_KERNEL_STACK_SIZEOF(rx_thread_stack), rx_thread, (void *)dev, NULL,
+			      NULL, K_PRIO_COOP(CONFIG_BT_RX_PRIO), 0, K_NO_WAIT);
 	k_thread_name_set(tid, "bt_rx_thread");
 
 	k_sem_init(&rng_sem, 0, 1);
 
 	tid = k_thread_create(&rng_thread_data, rng_thread_stack,
-			      K_KERNEL_STACK_SIZEOF(rng_thread_stack),
-			      rng_thread, NULL, NULL, NULL,
-			      K_PRIO_COOP(CONFIG_BT_RX_PRIO),
-			      0, K_NO_WAIT);
+			      K_KERNEL_STACK_SIZEOF(rng_thread_stack), rng_thread, NULL, NULL, NULL,
+			      K_PRIO_COOP(CONFIG_BT_RX_PRIO), 0, K_NO_WAIT);
 	k_thread_name_set(tid, "bt_rng_thread");
 
 	hci->recv = recv;
@@ -496,9 +491,9 @@ static int bt_da1469x_send(const struct device *dev, struct net_buf *buf)
 }
 
 static const struct bt_hci_driver_api drv = {
-	.open           = bt_da1469x_open,
-	.close          = bt_da1469x_close,
-	.send           = bt_da1469x_send,
+	.open = bt_da1469x_open,
+	.close = bt_da1469x_close,
+	.send = bt_da1469x_send,
 };
 
 static int bt_da1469x_init(const struct device *dev)
@@ -515,11 +510,10 @@ static int bt_da1469x_init(const struct device *dev)
 	return 0;
 }
 
-#define HCI_DEVICE_INIT(inst) \
-	static struct hci_data hci_data_##inst = { \
-	}; \
-	DEVICE_DT_INST_DEFINE(inst, bt_da1469x_init, NULL, &hci_data_##inst, NULL, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
+#define HCI_DEVICE_INIT(inst)                                                                      \
+	static struct hci_data hci_data_##inst = {};                                               \
+	DEVICE_DT_INST_DEFINE(inst, bt_da1469x_init, NULL, &hci_data_##inst, NULL, POST_KERNEL,    \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
 /* Only one instance supported right now */
 HCI_DEVICE_INIT(0)

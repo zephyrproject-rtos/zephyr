@@ -15,11 +15,10 @@
 
 LOG_MODULE_DECLARE(LIS2DS12, CONFIG_SENSOR_LOG_LEVEL);
 
-static void lis2ds12_gpio_callback(const struct device *dev,
-				   struct gpio_callback *cb, uint32_t pins)
+static void lis2ds12_gpio_callback(const struct device *dev, struct gpio_callback *cb,
+				   uint32_t pins)
 {
-	struct lis2ds12_data *data =
-		CONTAINER_OF(cb, struct lis2ds12_data, gpio_cb);
+	struct lis2ds12_data *data = CONTAINER_OF(cb, struct lis2ds12_data, gpio_cb);
 	const struct lis2ds12_config *cfg = data->dev->config;
 	int ret;
 
@@ -59,8 +58,7 @@ static void lis2ds12_handle_int(const struct device *dev)
 		lis2ds12_handle_drdy_int(dev);
 	}
 
-	ret = gpio_pin_interrupt_configure_dt(&cfg->gpio_int,
-					      GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
 		LOG_ERR("%s: Not able to configure pin_int", dev->name);
 	}
@@ -84,8 +82,7 @@ static void lis2ds12_thread(void *p1, void *p2, void *p3)
 #ifdef CONFIG_LIS2DS12_TRIGGER_GLOBAL_THREAD
 static void lis2ds12_work_cb(struct k_work *work)
 {
-	struct lis2ds12_data *data =
-		CONTAINER_OF(work, struct lis2ds12_data, work);
+	struct lis2ds12_data *data = CONTAINER_OF(work, struct lis2ds12_data, work);
 
 	lis2ds12_handle_int(data->dev);
 }
@@ -129,8 +126,7 @@ int lis2ds12_trigger_init(const struct device *dev)
 	/* setup data ready gpio interrupt (INT1 or INT2) */
 	if (!gpio_is_ready_dt(&cfg->gpio_int)) {
 		if (cfg->gpio_int.port) {
-			LOG_ERR("%s: device %s is not ready", dev->name,
-						cfg->gpio_int.port->name);
+			LOG_ERR("%s: device %s is not ready", dev->name, cfg->gpio_int.port->name);
 			return -ENODEV;
 		}
 
@@ -146,12 +142,9 @@ int lis2ds12_trigger_init(const struct device *dev)
 		return ret;
 	}
 
-	LOG_INF("%s: int on %s.%02u", dev->name, cfg->gpio_int.port->name,
-				      cfg->gpio_int.pin);
+	LOG_INF("%s: int on %s.%02u", dev->name, cfg->gpio_int.port->name, cfg->gpio_int.pin);
 
-	gpio_init_callback(&data->gpio_cb,
-			   lis2ds12_gpio_callback,
-			   BIT(cfg->gpio_int.pin));
+	gpio_init_callback(&data->gpio_cb, lis2ds12_gpio_callback, BIT(cfg->gpio_int.pin));
 
 	ret = gpio_add_callback(cfg->gpio_int.port, &data->gpio_cb);
 	if (ret < 0) {
@@ -162,22 +155,17 @@ int lis2ds12_trigger_init(const struct device *dev)
 #if defined(CONFIG_LIS2DS12_TRIGGER_OWN_THREAD)
 	k_sem_init(&data->trig_sem, 0, K_SEM_MAX_LIMIT);
 
-	k_thread_create(&data->thread, data->thread_stack,
-			CONFIG_LIS2DS12_THREAD_STACK_SIZE,
-			lis2ds12_thread,
-			data, NULL, NULL,
-			K_PRIO_COOP(CONFIG_LIS2DS12_THREAD_PRIORITY),
-			0, K_NO_WAIT);
+	k_thread_create(&data->thread, data->thread_stack, CONFIG_LIS2DS12_THREAD_STACK_SIZE,
+			lis2ds12_thread, data, NULL, NULL,
+			K_PRIO_COOP(CONFIG_LIS2DS12_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_LIS2DS12_TRIGGER_GLOBAL_THREAD)
 	data->work.handler = lis2ds12_work_cb;
 #endif
 
-	return gpio_pin_interrupt_configure_dt(&cfg->gpio_int,
-					       GPIO_INT_EDGE_TO_ACTIVE);
+	return gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
-int lis2ds12_trigger_set(const struct device *dev,
-			 const struct sensor_trigger *trig,
+int lis2ds12_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			 sensor_trigger_handler_t handler)
 {
 	struct lis2ds12_data *data = dev->data;
@@ -211,6 +199,5 @@ int lis2ds12_trigger_set(const struct device *dev,
 	data->data_ready_trigger = trig;
 
 	lis2ds12_init_interrupt(dev);
-	return gpio_pin_interrupt_configure_dt(&cfg->gpio_int,
-					       GPIO_INT_EDGE_TO_ACTIVE);
+	return gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
 }

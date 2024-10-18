@@ -16,8 +16,7 @@ LOG_MODULE_REGISTER(iproc_pcie);
 
 #define DT_DRV_COMPAT brcm_iproc_pcie_ep
 
-static int iproc_pcie_conf_read(const struct device *dev, uint32_t offset,
-				uint32_t *data)
+static int iproc_pcie_conf_read(const struct device *dev, uint32_t offset, uint32_t *data)
 {
 	const struct iproc_pcie_ep_config *cfg = dev->config;
 
@@ -30,8 +29,7 @@ static int iproc_pcie_conf_read(const struct device *dev, uint32_t offset,
 	return 0;
 }
 
-static void iproc_pcie_conf_write(const struct device *dev, uint32_t offset,
-				  uint32_t data)
+static void iproc_pcie_conf_write(const struct device *dev, uint32_t offset, uint32_t data)
 {
 	const struct iproc_pcie_ep_config *cfg = dev->config;
 
@@ -42,9 +40,8 @@ static void iproc_pcie_conf_write(const struct device *dev, uint32_t offset,
 	pcie_write32(data, &cfg->base->paxb_config_ind_data);
 }
 
-static int iproc_pcie_map_addr(const struct device *dev, uint64_t pcie_addr,
-			       uint64_t *mapped_addr, uint32_t size,
-			       enum pcie_ob_mem_type ob_mem_type)
+static int iproc_pcie_map_addr(const struct device *dev, uint64_t pcie_addr, uint64_t *mapped_addr,
+			       uint32_t size, enum pcie_ob_mem_type ob_mem_type)
 {
 	const struct iproc_pcie_ep_config *cfg = dev->config;
 	struct iproc_pcie_ep_ctx *ctx = dev->data;
@@ -59,13 +56,13 @@ static int iproc_pcie_map_addr(const struct device *dev, uint64_t pcie_addr,
 	/* We support 2 outbound windows,
 	 * one in highmem region and another in lowmem region
 	 */
-	if ((ob_mem_type == PCIE_OB_HIGHMEM ||
-	     ob_mem_type == PCIE_OB_ANYMEM) && !ctx->highmem_in_use) {
+	if ((ob_mem_type == PCIE_OB_HIGHMEM || ob_mem_type == PCIE_OB_ANYMEM) &&
+	    !ctx->highmem_in_use) {
 		idx = PCIE_MAP_HIGHMEM_IDX;
 		pcie_ob_base = cfg->map_high_base;
 		pcie_ob_size = cfg->map_high_size;
-	} else if ((ob_mem_type == PCIE_OB_LOWMEM ||
-		    ob_mem_type == PCIE_OB_ANYMEM) && !ctx->lowmem_in_use) {
+	} else if ((ob_mem_type == PCIE_OB_LOWMEM || ob_mem_type == PCIE_OB_ANYMEM) &&
+		   !ctx->lowmem_in_use) {
 		idx = PCIE_MAP_LOWMEM_IDX;
 		pcie_ob_base = cfg->map_low_base;
 		pcie_ob_size = cfg->map_low_size;
@@ -89,10 +86,8 @@ static int iproc_pcie_map_addr(const struct device *dev, uint64_t pcie_addr,
 	pcie_write32(pcie_ob_base >> 32, &cfg->base->paxb_oarr[idx].upper);
 
 	/* Program OMAP with Host PCIe address */
-	pcie_write32((uint32_t)pcie_addr_start,
-		     &cfg->base->paxb_omap[idx].lower);
-	pcie_write32((uint32_t)(pcie_addr_start >> 32),
-		     &cfg->base->paxb_omap[idx].upper);
+	pcie_write32((uint32_t)pcie_addr_start, &cfg->base->paxb_omap[idx].lower);
+	pcie_write32((uint32_t)(pcie_addr_start >> 32), &cfg->base->paxb_omap[idx].upper);
 
 	/* Mark usage of outbound window */
 	if (idx == PCIE_MAP_HIGHMEM_IDX) {
@@ -112,8 +107,7 @@ out:
 	return ret;
 }
 
-static void iproc_pcie_unmap_addr(const struct device *dev,
-				  uint64_t mapped_addr)
+static void iproc_pcie_unmap_addr(const struct device *dev, uint64_t mapped_addr)
 {
 	struct iproc_pcie_ep_ctx *ctx = dev->data;
 	k_spinlock_key_t key;
@@ -129,8 +123,7 @@ static void iproc_pcie_unmap_addr(const struct device *dev,
 	k_spin_unlock(&ctx->ob_map_lock, key);
 }
 
-static int iproc_pcie_raise_irq(const struct device *dev,
-				enum pci_ep_irq_type irq_type,
+static int iproc_pcie_raise_irq(const struct device *dev, enum pci_ep_irq_type irq_type,
 				uint32_t irq_num)
 {
 	struct iproc_pcie_ep_ctx *ctx = dev->data;
@@ -158,8 +151,7 @@ static int iproc_pcie_raise_irq(const struct device *dev,
 	return ret;
 }
 
-static int iproc_pcie_register_reset_cb(const struct device *dev,
-					enum pcie_reset reset,
+static int iproc_pcie_register_reset_cb(const struct device *dev, enum pcie_reset reset,
 					pcie_ep_reset_callback_t cb, void *arg)
 {
 	struct iproc_pcie_ep_ctx *ctx = dev->data;
@@ -176,14 +168,13 @@ static int iproc_pcie_register_reset_cb(const struct device *dev,
 }
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(dmas)
-static int iproc_pcie_pl330_dma_xfer(const struct device *dev,
-				     uint64_t mapped_addr,
+static int iproc_pcie_pl330_dma_xfer(const struct device *dev, uint64_t mapped_addr,
 				     uintptr_t local_addr, uint32_t size,
 				     const enum xfer_direction dir)
 {
 	const struct iproc_pcie_ep_config *cfg = dev->config;
-	struct dma_config dma_cfg = { 0 };
-	struct dma_block_config dma_block_cfg = { 0 };
+	struct dma_config dma_cfg = {0};
+	struct dma_block_config dma_block_cfg = {0};
 	uint32_t chan_id;
 	int ret = -EINVAL;
 
@@ -209,7 +200,7 @@ static int iproc_pcie_pl330_dma_xfer(const struct device *dev,
 		chan_id = cfg->pl330_rx_chan_id;
 	}
 
-	ret = dma_config(cfg->pl330_dev, chan_id,  &dma_cfg);
+	ret = dma_config(cfg->pl330_dev, chan_id, &dma_cfg);
 	if (ret) {
 		LOG_ERR("DMA config failed\n");
 		goto out;
@@ -320,8 +311,7 @@ static void iproc_pcie_reset_config(const struct device *dev)
 	data &= ~PCIE0_PERST_INTR;
 	sys_write32(data, CRMU_MCU_EXTRA_EVENT_MASK);
 
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, perst, irq),
-		    DT_INST_IRQ_BY_NAME(0, perst, priority),
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, perst, irq), DT_INST_IRQ_BY_NAME(0, perst, priority),
 		    iproc_pcie_perst, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQ_BY_NAME(0, perst, irq));
 #endif
@@ -340,8 +330,8 @@ static void iproc_pcie_reset_config(const struct device *dev)
 	sys_write32(data, CRMU_MCU_EXTRA_EVENT_MASK);
 
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, perst_inband, irq),
-		    DT_INST_IRQ_BY_NAME(0, perst_inband, priority),
-		    iproc_pcie_hot_reset, DEVICE_DT_INST_GET(0), 0);
+		    DT_INST_IRQ_BY_NAME(0, perst_inband, priority), iproc_pcie_hot_reset,
+		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQ_BY_NAME(0, perst_inband, irq));
 #endif
 
@@ -359,8 +349,7 @@ static void iproc_pcie_reset_config(const struct device *dev)
 	data |= PCIE0_FLR_INTR;
 	pcie_write32(data, &cfg->base->paxb_paxb_intr_en);
 
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, flr, irq),
-		    DT_INST_IRQ_BY_NAME(0, flr, priority),
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, flr, irq), DT_INST_IRQ_BY_NAME(0, flr, priority),
 		    iproc_pcie_flr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQ_BY_NAME(0, flr, irq));
 #endif
@@ -385,8 +374,8 @@ static void iproc_pcie_msix_pvm_config(const struct device *dev)
 	pcie_write32(data, &base->paxb_pcie_cfg_intr_mask);
 
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, snoop_irq1, irq),
-		    DT_INST_IRQ_BY_NAME(0, snoop_irq1, priority),
-		    iproc_pcie_func_mask_isr, DEVICE_DT_INST_GET(0), 0);
+		    DT_INST_IRQ_BY_NAME(0, snoop_irq1, priority), iproc_pcie_func_mask_isr,
+		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQ_BY_NAME(0, snoop_irq1, irq));
 
 	LOG_DBG("snoop interrupt configured\n");
@@ -407,8 +396,8 @@ static void iproc_pcie_msix_pvm_config(const struct device *dev)
 	memset((void *)PBA_TABLE_BASE, 0, PBA_TABLE_SIZE);
 
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, pcie_pmon_lite, irq),
-		    DT_INST_IRQ_BY_NAME(0, pcie_pmon_lite, priority),
-		    iproc_pcie_vector_mask_isr, DEVICE_DT_INST_GET(0), 0);
+		    DT_INST_IRQ_BY_NAME(0, pcie_pmon_lite, priority), iproc_pcie_vector_mask_isr,
+		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQ_BY_NAME(0, pcie_pmon_lite, irq));
 
 	LOG_DBG("pcie pmon lite interrupt configured\n");
@@ -444,10 +433,8 @@ static int iproc_pcie_ep_init(const struct device *dev)
 	}
 
 	iproc_pcie_conf_read(dev, PCIE_LINK_STATUS_CONTROL, &data);
-	LOG_INF("PCIe linkup speed 0x%x\n", ((data >>
-				PCIE_LINKSPEED_SHIFT) & PCIE_LINKSPEED_MASK));
-	LOG_INF("PCIe linkup width 0x%x\n", ((data >>
-				PCIE_LINKWIDTH_SHIFT) & PCIE_LINKWIDTH_MASK));
+	LOG_INF("PCIe linkup speed 0x%x\n", ((data >> PCIE_LINKSPEED_SHIFT) & PCIE_LINKSPEED_MASK));
+	LOG_INF("PCIe linkup width 0x%x\n", ((data >> PCIE_LINKWIDTH_SHIFT) & PCIE_LINKWIDTH_MASK));
 
 #ifdef PCIE_EP_IPROC_INIT_CFG
 	iproc_pcie_msi_config(dev);
@@ -498,8 +485,5 @@ static const struct pcie_ep_driver_api iproc_pcie_ep_api = {
 #endif
 };
 
-DEVICE_DT_INST_DEFINE(0, &iproc_pcie_ep_init, NULL,
-		    &iproc_pcie_ep_ctx_0,
-		    &iproc_pcie_ep_config_0,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &iproc_pcie_ep_api);
+DEVICE_DT_INST_DEFINE(0, &iproc_pcie_ep_init, NULL, &iproc_pcie_ep_ctx_0, &iproc_pcie_ep_config_0,
+		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &iproc_pcie_ep_api);

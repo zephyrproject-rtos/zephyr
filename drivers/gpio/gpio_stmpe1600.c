@@ -26,23 +26,22 @@
 LOG_MODULE_REGISTER(stmpe1600);
 
 /* Register definitions */
-#define REG_CHIP_ID_LSB 0x00    /* const 0x00 */
-#define REG_CHIP_ID_MSB 0x01    /* const 0x16 */
-#define REG_VERSION_ID  0x02    /* Revision number (const 0x01) */
-#define REG_SYS_CTRL    0x03    /* Reset and interrupt control */
-#define REG_IEGPIOR_LSB 0x08    /* GPIO interrupt enable register */
+#define REG_CHIP_ID_LSB 0x00 /* const 0x00 */
+#define REG_CHIP_ID_MSB 0x01 /* const 0x16 */
+#define REG_VERSION_ID  0x02 /* Revision number (const 0x01) */
+#define REG_SYS_CTRL    0x03 /* Reset and interrupt control */
+#define REG_IEGPIOR_LSB 0x08 /* GPIO interrupt enable register */
 #define REG_IEGPIOR_MSB 0x09
-#define REG_ISGPIOR_LSB 0x0A    /* GPIO interrupt status register */
+#define REG_ISGPIOR_LSB 0x0A /* GPIO interrupt status register */
 #define REG_ISGPIOR_MSB 0x0B
-#define REG_GPMR_LSB    0x10    /* GPIO monitor pin state register */
+#define REG_GPMR_LSB    0x10 /* GPIO monitor pin state register */
 #define REG_GPMR_MSB    0x11
-#define REG_GPSR_LSB    0x12    /* GPIO set pin state register */
+#define REG_GPSR_LSB    0x12 /* GPIO set pin state register */
 #define REG_GPSR_MSB    0x13
-#define REG_GPDR_LSB    0x14    /* GPIO set pin direction register */
+#define REG_GPDR_LSB    0x14 /* GPIO set pin direction register */
 #define REG_GPDR_MSB    0x15
-#define REG_GPPIR_LSB   0x16    /* GPIO polarity inversion register */
+#define REG_GPPIR_LSB   0x16 /* GPIO polarity inversion register */
 #define REG_GPPIR_MSB   0x17
-
 
 /** Configuration data */
 struct stmpe1600_config {
@@ -66,13 +65,13 @@ struct stmpe1600_drvdata {
 	uint16_t GPDR;
 };
 
-static int write_reg16(const struct stmpe1600_config * const config, uint8_t reg, uint16_t value)
+static int write_reg16(const struct stmpe1600_config *const config, uint8_t reg, uint16_t value)
 {
 	uint8_t buf[3];
 	int ret;
 
-	LOG_DBG("STMPE1600[0x%02X]: write REG[0x%02X..0x%02X] = %04x",
-		config->i2c.addr, reg, reg + 1, value);
+	LOG_DBG("STMPE1600[0x%02X]: write REG[0x%02X..0x%02X] = %04x", config->i2c.addr, reg,
+		reg + 1, value);
 
 	buf[0] = reg;
 	sys_put_le16(value, &buf[1]);
@@ -80,37 +79,36 @@ static int write_reg16(const struct stmpe1600_config * const config, uint8_t reg
 	ret = i2c_write_dt(&config->i2c, buf, sizeof(buf));
 
 	if (ret != 0) {
-		LOG_ERR("STMPE1600[0x%02X]: write error REG[0x%02X..0x%02X]: %d",
-			config->i2c.addr, reg, reg + 1, ret);
+		LOG_ERR("STMPE1600[0x%02X]: write error REG[0x%02X..0x%02X]: %d", config->i2c.addr,
+			reg, reg + 1, ret);
 	}
 	return ret;
 }
 
-static int read_reg16(const struct stmpe1600_config * const config, uint8_t reg, uint16_t *value)
+static int read_reg16(const struct stmpe1600_config *const config, uint8_t reg, uint16_t *value)
 {
 	uint16_t transfer_data;
 	int ret;
 
-	LOG_DBG("STMPE1600[0x%02X]: read REG[0x%02X..0x%02X]",
-		  config->i2c.addr, reg, reg + 1);
+	LOG_DBG("STMPE1600[0x%02X]: read REG[0x%02X..0x%02X]", config->i2c.addr, reg, reg + 1);
 
 	ret = i2c_burst_read_dt(&config->i2c, reg, (uint8_t *)&transfer_data,
 				sizeof(transfer_data));
 
 	if (ret != 0) {
-		LOG_ERR("STMPE1600[0x%02X]: read error REG[0x%02X..0x%02X]: %d",
-			config->i2c.addr, reg, reg + 1, ret);
+		LOG_ERR("STMPE1600[0x%02X]: read error REG[0x%02X..0x%02X]: %d", config->i2c.addr,
+			reg, reg + 1, ret);
 	} else {
 		*value = sys_le16_to_cpu(transfer_data);
-		LOG_DBG("STMPE1600[0x%02X]: read REG[0x%02X..0x%02X] => %04x",
-			config->i2c.addr, reg, reg + 1, *value);
+		LOG_DBG("STMPE1600[0x%02X]: read REG[0x%02X..0x%02X] => %04x", config->i2c.addr,
+			reg, reg + 1, *value);
 	}
 	return ret;
 }
 
 static int set_pin_dir(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
-	struct stmpe1600_drvdata *const drvdata = (struct stmpe1600_drvdata *const) dev->data;
+	struct stmpe1600_drvdata *const drvdata = (struct stmpe1600_drvdata *const)dev->data;
 	bool set_state = false;
 	uint16_t GPDR = drvdata->GPDR;
 	uint16_t GPSR = drvdata->GPSR;
@@ -144,11 +142,10 @@ static int set_pin_dir(const struct device *dev, gpio_pin_t pin, gpio_flags_t fl
 	return ret;
 }
 
-static int stmpe1600_configure(const struct device *dev,
-			       gpio_pin_t pin, gpio_flags_t flags)
+static int stmpe1600_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct stmpe1600_config *const config = dev->config;
-	struct stmpe1600_drvdata *const drvdata = (struct stmpe1600_drvdata *const) dev->data;
+	struct stmpe1600_drvdata *const drvdata = (struct stmpe1600_drvdata *const)dev->data;
 	int ret;
 
 	/* No support for disconnected pin */
@@ -169,8 +166,7 @@ static int stmpe1600_configure(const struct device *dev,
 
 	ret = set_pin_dir(dev, pin, flags);
 	if (ret != 0) {
-		LOG_ERR("STMPE1600[0x%X]: error setting pin direction (%d)",
-			config->i2c.addr, ret);
+		LOG_ERR("STMPE1600[0x%X]: error setting pin direction (%d)", config->i2c.addr, ret);
 	}
 
 	k_sem_give(&drvdata->lock);
@@ -179,7 +175,7 @@ static int stmpe1600_configure(const struct device *dev,
 
 static int stmpe1600_port_get_raw(const struct device *dev, uint32_t *value)
 {
-	struct stmpe1600_drvdata *const drvdata = (struct stmpe1600_drvdata *const) dev->data;
+	struct stmpe1600_drvdata *const drvdata = (struct stmpe1600_drvdata *const)dev->data;
 	uint16_t reg_value;
 	int ret;
 
@@ -198,8 +194,7 @@ static int stmpe1600_port_get_raw(const struct device *dev, uint32_t *value)
 	return ret;
 }
 
-static int stmpe1600_port_set_masked_raw(const struct device *dev,
-					 uint32_t mask, uint32_t value)
+static int stmpe1600_port_set_masked_raw(const struct device *dev, uint32_t mask, uint32_t value)
 {
 	struct stmpe1600_drvdata *const drvdata = dev->data;
 	uint16_t GPSR;
@@ -252,7 +247,7 @@ static int stmpe1600_port_toggle_bits(const struct device *dev, uint32_t mask)
 static int stmpe1600_init(const struct device *dev)
 {
 	const struct stmpe1600_config *const config = dev->config;
-	struct stmpe1600_drvdata *const drvdata = (struct stmpe1600_drvdata *const) dev->data;
+	struct stmpe1600_drvdata *const drvdata = (struct stmpe1600_drvdata *const)dev->data;
 	uint16_t chip_id;
 	int ret;
 
@@ -294,19 +289,16 @@ static const struct gpio_driver_api stmpe1600_drv_api = {
 	.port_toggle_bits = stmpe1600_port_toggle_bits,
 };
 
-#define STMPE1600_INIT(inst)					     \
-	static struct stmpe1600_config stmpe1600_##inst##_config = { \
-		.common = { .port_pin_mask = 0xffff },		     \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),		     \
-	};							     \
-								     \
-	static struct stmpe1600_drvdata stmpe1600_##inst##_drvdata;  \
-								     \
-	DEVICE_DT_INST_DEFINE(inst, stmpe1600_init, NULL,	     \
-			      &stmpe1600_##inst##_drvdata,	     \
-			      &stmpe1600_##inst##_config,	     \
-			      POST_KERNEL,			     \
-			      CONFIG_GPIO_STMPE1600_INIT_PRIORITY,   \
-			      &stmpe1600_drv_api);
+#define STMPE1600_INIT(inst)                                                                       \
+	static struct stmpe1600_config stmpe1600_##inst##_config = {                               \
+		.common = {.port_pin_mask = 0xffff},                                               \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+	};                                                                                         \
+                                                                                                   \
+	static struct stmpe1600_drvdata stmpe1600_##inst##_drvdata;                                \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, stmpe1600_init, NULL, &stmpe1600_##inst##_drvdata,             \
+			      &stmpe1600_##inst##_config, POST_KERNEL,                             \
+			      CONFIG_GPIO_STMPE1600_INIT_PRIORITY, &stmpe1600_drv_api);
 
 DT_INST_FOREACH_STATUS_OKAY(STMPE1600_INIT)

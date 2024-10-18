@@ -12,23 +12,23 @@
 
 LOG_MODULE_REGISTER(dac_dacx0508, CONFIG_DAC_LOG_LEVEL);
 
-#define DACX0508_REG_DEVICE_ID   0x01U
-#define DACX0508_REG_CONFIG      0x03U
-#define DACX0508_REG_GAIN        0x04U
-#define DACX0508_REG_TRIGGER     0x05U
-#define DACX0508_REG_STATUS      0x07U
-#define DACX0508_REG_DAC0        0x08U
+#define DACX0508_REG_DEVICE_ID 0x01U
+#define DACX0508_REG_CONFIG    0x03U
+#define DACX0508_REG_GAIN      0x04U
+#define DACX0508_REG_TRIGGER   0x05U
+#define DACX0508_REG_STATUS    0x07U
+#define DACX0508_REG_DAC0      0x08U
 
-#define DACX0508_MASK_DEVICE_ID_8CH          BIT(11)
-#define DACX0508_MASK_CONFIG_REF_PWDWN       BIT(8)
-#define DACX0508_MASK_GAIN_BUFF_GAIN(x)      BIT(x)
-#define DACX0508_MASK_GAIN_REFDIV_EN         BIT(8)
-#define DACX0508_MASK_TRIGGER_SOFT_RESET     (BIT(1) | BIT(3))
-#define DACX0508_MASK_STATUS_REF_ALM         BIT(0)
+#define DACX0508_MASK_DEVICE_ID_8CH      BIT(11)
+#define DACX0508_MASK_CONFIG_REF_PWDWN   BIT(8)
+#define DACX0508_MASK_GAIN_BUFF_GAIN(x)  BIT(x)
+#define DACX0508_MASK_GAIN_REFDIV_EN     BIT(8)
+#define DACX0508_MASK_TRIGGER_SOFT_RESET (BIT(1) | BIT(3))
+#define DACX0508_MASK_STATUS_REF_ALM     BIT(0)
 
-#define DACX0508_READ_CMD       0x80
-#define DACX0508_POR_DELAY      250
-#define DACX0508_MAX_CHANNEL    8
+#define DACX0508_READ_CMD    0x80
+#define DACX0508_POR_DELAY   250
+#define DACX0508_MAX_CHANNEL 8
 
 struct dacx0508_config {
 	struct spi_dt_spec bus;
@@ -41,28 +41,16 @@ struct dacx0508_data {
 	uint8_t configured;
 };
 
-static int dacx0508_reg_read(const struct device *dev, uint8_t addr,
-			     uint8_t *data)
+static int dacx0508_reg_read(const struct device *dev, uint8_t addr, uint8_t *data)
 {
 	const struct dacx0508_config *config = dev->config;
-	const struct spi_buf buf[2] = {
-		{
-			.buf = &addr,
-			.len = sizeof(addr)
-		},
-		{
-			.buf = data,
-			.len = 2
-		}
-	};
+	const struct spi_buf buf[2] = {{.buf = &addr, .len = sizeof(addr)},
+				       {.buf = data, .len = 2}};
 	struct spi_buf_set tx = {
 		.buffers = buf,
 		.count = ARRAY_SIZE(buf),
 	};
-	struct spi_buf_set rx = {
-		.buffers = buf,
-		.count = ARRAY_SIZE(buf)
-	};
+	struct spi_buf_set rx = {.buffers = buf, .count = ARRAY_SIZE(buf)};
 	uint8_t tmp;
 	int ret;
 
@@ -90,20 +78,11 @@ static int dacx0508_reg_read(const struct device *dev, uint8_t addr,
 	return 0;
 }
 
-static int dacx0508_reg_write(const struct device *dev, uint8_t addr,
-			      	uint8_t *data)
+static int dacx0508_reg_write(const struct device *dev, uint8_t addr, uint8_t *data)
 {
 	const struct dacx0508_config *config = dev->config;
-	const struct spi_buf buf[2] = {
-		{
-			.buf = &addr,
-			.len = sizeof(addr)
-		},
-		{
-			.buf = data,
-			.len = 2
-		}
-	};
+	const struct spi_buf buf[2] = {{.buf = &addr, .len = sizeof(addr)},
+				       {.buf = data, .len = 2}};
 	struct spi_buf_set tx = {
 		.buffers = buf,
 		.count = ARRAY_SIZE(buf),
@@ -117,10 +96,11 @@ static int dacx0508_reg_write(const struct device *dev, uint8_t addr,
 	return spi_write_dt(&config->bus, &tx);
 }
 
-int dacx0508_reg_update(const struct device *dev, uint8_t addr,
-			 uint16_t mask, bool setting)
+int dacx0508_reg_update(const struct device *dev, uint8_t addr, uint16_t mask, bool setting)
 {
-	uint8_t regval[2] = {0, };
+	uint8_t regval[2] = {
+		0,
+	};
 	uint16_t tmp;
 	int ret;
 
@@ -148,7 +128,7 @@ int dacx0508_reg_update(const struct device *dev, uint8_t addr,
 }
 
 static int dacx0508_channel_setup(const struct device *dev,
-				   const struct dac_channel_cfg *channel_cfg)
+				  const struct dac_channel_cfg *channel_cfg)
 {
 	const struct dacx0508_config *config = dev->config;
 	struct dacx0508_data *data = dev->data;
@@ -173,8 +153,7 @@ static int dacx0508_channel_setup(const struct device *dev,
 	return 0;
 }
 
-static int dacx0508_write_value(const struct device *dev, uint8_t channel,
-				uint32_t value)
+static int dacx0508_write_value(const struct device *dev, uint8_t channel, uint32_t value)
 {
 	const struct dacx0508_config *config = dev->config;
 	struct dacx0508_data *data = dev->data;
@@ -225,7 +204,9 @@ static int dacx0508_soft_reset(const struct device *dev)
 static int dacx0508_device_id_check(const struct device *dev)
 {
 	const struct dacx0508_config *config = dev->config;
-	uint8_t regval[2] = {0, };
+	uint8_t regval[2] = {
+		0,
+	};
 	uint8_t resolution;
 	uint16_t dev_id;
 	int ret;
@@ -243,8 +224,7 @@ static int dacx0508_device_id_check(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if ((dev_id & DACX0508_MASK_DEVICE_ID_8CH) !=
-				DACX0508_MASK_DEVICE_ID_8CH) {
+	if ((dev_id & DACX0508_MASK_DEVICE_ID_8CH) != DACX0508_MASK_DEVICE_ID_8CH) {
 		LOG_ERR("Support channels mismatch");
 		return -EINVAL;
 	}
@@ -255,7 +235,11 @@ static int dacx0508_device_id_check(const struct device *dev)
 static int dacx0508_setup(const struct device *dev)
 {
 	const struct dacx0508_config *config = dev->config;
-	uint8_t regval[2] = {0, }, tmp = 0;
+	uint8_t regval[2] =
+		{
+			0,
+		},
+		tmp = 0;
 	bool ref_pwdwn, refdiv_en;
 	int ret;
 
@@ -277,25 +261,22 @@ static int dacx0508_setup(const struct device *dev)
 		refdiv_en = true;
 		break;
 	default:
-		LOG_ERR("unsupported channel reference type '%d'",
-			config->reference);
+		LOG_ERR("unsupported channel reference type '%d'", config->reference);
 		return -ENOTSUP;
 	}
 
-	ret = dacx0508_reg_update(dev, DACX0508_REG_CONFIG,
-				  DACX0508_MASK_CONFIG_REF_PWDWN, ref_pwdwn);
+	ret = dacx0508_reg_update(dev, DACX0508_REG_CONFIG, DACX0508_MASK_CONFIG_REF_PWDWN,
+				  ref_pwdwn);
 	if (ret) {
 		LOG_ERR("GAIN Register update failed");
 		return -EIO;
 	}
 
-	ret = dacx0508_reg_update(dev, DACX0508_REG_GAIN,
-				  DACX0508_MASK_GAIN_REFDIV_EN, refdiv_en);
+	ret = dacx0508_reg_update(dev, DACX0508_REG_GAIN, DACX0508_MASK_GAIN_REFDIV_EN, refdiv_en);
 	if (ret) {
 		LOG_ERR("GAIN Register update failed");
 		return -EIO;
 	}
-
 
 	for (int i = 0; i < 8; i++) {
 		tmp |= config->gain[i] << i;
@@ -319,8 +300,7 @@ static int dacx0508_setup(const struct device *dev)
 		LOG_ERR("Unable to read STATUS Register");
 		return -EIO;
 	}
-	if ((regval[1] & DACX0508_MASK_STATUS_REF_ALM) ==
-				DACX0508_MASK_STATUS_REF_ALM) {
+	if ((regval[1] & DACX0508_MASK_STATUS_REF_ALM) == DACX0508_MASK_STATUS_REF_ALM) {
 		LOG_ERR("Difference between VREF/DIV and VDD is "
 			"below the required minimum analog threshold");
 		return -EIO;
@@ -368,30 +348,27 @@ static const struct dac_driver_api dacx0508_driver_api = {
 
 #define INST_DT_DACX0508(inst, t) DT_INST(inst, ti_dac##t)
 
-#define DACX0508_DEVICE(t, n, res) \
-	static struct dacx0508_data dac##t##_data_##n; \
-	static const struct dacx0508_config dac##t##_config_##n = { \
-		.bus = SPI_DT_SPEC_GET(INST_DT_DACX0508(n, t), \
-			SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | \
-			SPI_WORD_SET(8) | SPI_MODE_CPHA, 0), \
-		.resolution = res, \
-		.reference = DT_PROP(INST_DT_DACX0508(n, t), \
-					     voltage_reference), \
-		.gain[0] = DT_PROP(INST_DT_DACX0508(n, t), channel0_gain), \
-		.gain[1] = DT_PROP(INST_DT_DACX0508(n, t), channel1_gain), \
-		.gain[2] = DT_PROP(INST_DT_DACX0508(n, t), channel2_gain), \
-		.gain[3] = DT_PROP(INST_DT_DACX0508(n, t), channel3_gain), \
-		.gain[4] = DT_PROP(INST_DT_DACX0508(n, t), channel4_gain), \
-		.gain[5] = DT_PROP(INST_DT_DACX0508(n, t), channel5_gain), \
-		.gain[6] = DT_PROP(INST_DT_DACX0508(n, t), channel6_gain), \
-		.gain[7] = DT_PROP(INST_DT_DACX0508(n, t), channel7_gain), \
-	}; \
-	DEVICE_DT_DEFINE(INST_DT_DACX0508(n, t), \
-			    &dacx0508_init, NULL, \
-			    &dac##t##_data_##n, \
-			    &dac##t##_config_##n, POST_KERNEL, \
-			    CONFIG_DAC_DACX0508_INIT_PRIORITY, \
-			    &dacx0508_driver_api);
+#define DACX0508_DEVICE(t, n, res)                                                                 \
+	static struct dacx0508_data dac##t##_data_##n;                                             \
+	static const struct dacx0508_config dac##t##_config_##n = {                                \
+		.bus = SPI_DT_SPEC_GET(INST_DT_DACX0508(n, t),                                     \
+				       SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) |   \
+					       SPI_MODE_CPHA,                                      \
+				       0),                                                         \
+		.resolution = res,                                                                 \
+		.reference = DT_PROP(INST_DT_DACX0508(n, t), voltage_reference),                   \
+		.gain[0] = DT_PROP(INST_DT_DACX0508(n, t), channel0_gain),                         \
+		.gain[1] = DT_PROP(INST_DT_DACX0508(n, t), channel1_gain),                         \
+		.gain[2] = DT_PROP(INST_DT_DACX0508(n, t), channel2_gain),                         \
+		.gain[3] = DT_PROP(INST_DT_DACX0508(n, t), channel3_gain),                         \
+		.gain[4] = DT_PROP(INST_DT_DACX0508(n, t), channel4_gain),                         \
+		.gain[5] = DT_PROP(INST_DT_DACX0508(n, t), channel5_gain),                         \
+		.gain[6] = DT_PROP(INST_DT_DACX0508(n, t), channel6_gain),                         \
+		.gain[7] = DT_PROP(INST_DT_DACX0508(n, t), channel7_gain),                         \
+	};                                                                                         \
+	DEVICE_DT_DEFINE(INST_DT_DACX0508(n, t), &dacx0508_init, NULL, &dac##t##_data_##n,         \
+			 &dac##t##_config_##n, POST_KERNEL, CONFIG_DAC_DACX0508_INIT_PRIORITY,     \
+			 &dacx0508_driver_api);
 
 /*
  * DAC60508: 12-bit
@@ -410,7 +387,7 @@ static const struct dac_driver_api dacx0508_driver_api = {
 
 #define CALL_WITH_ARG(arg, expr) expr(arg)
 
-#define INST_DT_DACX0508_FOREACH(t, inst_expr) \
+#define INST_DT_DACX0508_FOREACH(t, inst_expr)                                                     \
 	LISTIFY(DT_NUM_INST_STATUS_OKAY(ti_dac##t), \
 		     CALL_WITH_ARG, (), inst_expr)
 

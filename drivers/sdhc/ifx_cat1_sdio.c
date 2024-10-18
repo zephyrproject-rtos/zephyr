@@ -235,8 +235,8 @@ static int ifx_cat1_sdio_enable_interrupt(const struct device *dev, sdhc_interru
 	data->sdio_cb_user_data = user_data;
 
 	/* Enable CARD INTERRUPT event */
-	cyhal_sdio_enable_event(&data->sdio_obj, CYHAL_SDIO_CARD_INTERRUPT,
-				cfg->irq_priority, true);
+	cyhal_sdio_enable_event(&data->sdio_obj, CYHAL_SDIO_CARD_INTERRUPT, cfg->irq_priority,
+				true);
 
 	return 0;
 }
@@ -254,8 +254,8 @@ static int ifx_cat1_sdio_disable_interrupt(const struct device *dev, int sources
 	data->sdio_cb_user_data = NULL;
 
 	/* Disable CARD INTERRUPT event */
-	cyhal_sdio_enable_event(&data->sdio_obj, CYHAL_SDIO_CARD_INTERRUPT,
-				cfg->irq_priority, false);
+	cyhal_sdio_enable_event(&data->sdio_obj, CYHAL_SDIO_CARD_INTERRUPT, cfg->irq_priority,
+				false);
 
 	return 0;
 }

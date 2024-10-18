@@ -28,7 +28,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mcux_lpi2c);
 
-
 #include "i2c-priv.h"
 /* Wait for the duration of 12 bits to detect a NAK after a bus
  * address scan.  (10 appears sufficient, 20% safety factor.)
@@ -36,8 +35,7 @@ LOG_MODULE_REGISTER(mcux_lpi2c);
 #define SCAN_DELAY_US(baudrate) (12 * USEC_PER_SEC / baudrate)
 
 /* Required by DEVICE_MMIO_NAMED_* macros */
-#define DEV_CFG(_dev) \
-	((const struct mcux_lpi2c_config *)(_dev)->config)
+#define DEV_CFG(_dev)  ((const struct mcux_lpi2c_config *)(_dev)->config)
 #define DEV_DATA(_dev) ((struct mcux_lpi2c_data *)(_dev)->data)
 
 struct mcux_lpi2c_config {
@@ -73,8 +71,7 @@ struct mcux_lpi2c_data {
 #endif
 };
 
-static int mcux_lpi2c_configure(const struct device *dev,
-				uint32_t dev_config_raw)
+static int mcux_lpi2c_configure(const struct device *dev, uint32_t dev_config_raw)
 {
 	const struct mcux_lpi2c_config *config = dev->config;
 	struct mcux_lpi2c_data *data = dev->data;
@@ -105,8 +102,7 @@ static int mcux_lpi2c_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
-				   &clock_freq)) {
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_freq)) {
 		return -EINVAL;
 	}
 
@@ -121,8 +117,7 @@ static int mcux_lpi2c_configure(const struct device *dev,
 	return 0;
 }
 
-static void mcux_lpi2c_master_transfer_callback(LPI2C_Type *base,
-						lpi2c_master_handle_t *handle,
+static void mcux_lpi2c_master_transfer_callback(LPI2C_Type *base, lpi2c_master_handle_t *handle,
 						status_t status, void *userData)
 {
 	struct mcux_lpi2c_data *data = userData;
@@ -149,8 +144,8 @@ static uint32_t mcux_lpi2c_convert_flags(int msg_flags)
 	return flags;
 }
 
-static int mcux_lpi2c_transfer(const struct device *dev, struct i2c_msg *msgs,
-				   uint8_t num_msgs, uint16_t addr)
+static int mcux_lpi2c_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
+			       uint16_t addr)
 {
 	const struct mcux_lpi2c_config *config = dev->config;
 	struct mcux_lpi2c_data *data = dev->data;
@@ -182,16 +177,14 @@ static int mcux_lpi2c_transfer(const struct device *dev, struct i2c_msg *msgs,
 		}
 
 		transfer.slaveAddress = addr;
-		transfer.direction = (msgs->flags & I2C_MSG_READ)
-			? kLPI2C_Read : kLPI2C_Write;
+		transfer.direction = (msgs->flags & I2C_MSG_READ) ? kLPI2C_Read : kLPI2C_Write;
 		transfer.subaddress = 0;
 		transfer.subaddressSize = 0;
 		transfer.data = msgs->buf;
 		transfer.dataSize = msgs->len;
 
 		/* Start the transfer */
-		status = LPI2C_MasterTransferNonBlocking(base,
-				&data->handle, &transfer);
+		status = LPI2C_MasterTransferNonBlocking(base, &data->handle, &transfer);
 
 		/* Return an error if the transfer didn't start successfully
 		 * e.g., if the bus was busy
@@ -355,8 +348,7 @@ static void mcux_lpi2c_slave_irq_handler(const struct device *dev)
 			}
 		}
 		if (target_cb->write_received) {
-			ret = target_cb->write_received(data->target_cfg,
-							i2c_data);
+			ret = target_cb->write_received(data->target_cfg, i2c_data);
 			if (ret < 0) {
 				/* NAK further bytes */
 				data->send_ack = false;
@@ -370,8 +362,7 @@ static void mcux_lpi2c_slave_irq_handler(const struct device *dev)
 			data->read_active = true;
 			data->first_tx = false;
 			if (target_cb->read_requested) {
-				ret = target_cb->read_requested(data->target_cfg,
-								&i2c_data);
+				ret = target_cb->read_requested(data->target_cfg, &i2c_data);
 				if (ret < 0) {
 					/* Disable TX */
 					data->read_active = false;
@@ -382,8 +373,7 @@ static void mcux_lpi2c_slave_irq_handler(const struct device *dev)
 			}
 		} else if (data->read_active) {
 			if (target_cb->read_processed) {
-				ret = target_cb->read_processed(data->target_cfg,
-								&i2c_data);
+				ret = target_cb->read_processed(data->target_cfg, &i2c_data);
 				if (ret < 0) {
 					/* Disable TX */
 					data->read_active = false;
@@ -408,7 +398,7 @@ static void mcux_lpi2c_slave_irq_handler(const struct device *dev)
 }
 
 static int mcux_lpi2c_target_register(const struct device *dev,
-					  struct i2c_target_config *target_config)
+				      struct i2c_target_config *target_config)
 {
 	const struct mcux_lpi2c_config *config = dev->config;
 	struct mcux_lpi2c_data *data = dev->data;
@@ -419,8 +409,7 @@ static int mcux_lpi2c_target_register(const struct device *dev,
 	LPI2C_MasterDeinit(base);
 
 	/* Get the clock frequency */
-	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
-				   &clock_freq)) {
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_freq)) {
 		return -EINVAL;
 	}
 
@@ -448,11 +437,9 @@ static int mcux_lpi2c_target_register(const struct device *dev,
 	LPI2C_SlaveClearStatusFlags(base, (uint32_t)kLPI2C_SlaveClearFlags);
 	/* Enable interrupt */
 	LPI2C_SlaveEnableInterrupts(base,
-					(kLPI2C_SlaveTxReadyFlag |
-					kLPI2C_SlaveRxReadyFlag |
-					kLPI2C_SlaveStopDetectFlag |
-					kLPI2C_SlaveAddressValidFlag |
-					kLPI2C_SlaveTransmitAckFlag));
+				    (kLPI2C_SlaveTxReadyFlag | kLPI2C_SlaveRxReadyFlag |
+				     kLPI2C_SlaveStopDetectFlag | kLPI2C_SlaveAddressValidFlag |
+				     kLPI2C_SlaveTransmitAckFlag));
 	return 0;
 }
 
@@ -480,7 +467,7 @@ static void mcux_lpi2c_isr(const struct device *dev)
 	struct mcux_lpi2c_data *data = dev->data;
 	LPI2C_Type *base = (LPI2C_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 
- #ifdef CONFIG_I2C_TARGET
+#ifdef CONFIG_I2C_TARGET
 	if (data->target_attached) {
 		mcux_lpi2c_slave_irq_handler(dev);
 	}
@@ -518,16 +505,14 @@ static int mcux_lpi2c_init(const struct device *dev)
 		return error;
 	}
 
-	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
-				   &clock_freq)) {
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_freq)) {
 		return -EINVAL;
 	}
 
 	LPI2C_MasterGetDefaultConfig(&master_config);
 	master_config.busIdleTimeout_ns = config->bus_idle_timeout_ns;
 	LPI2C_MasterInit(base, &master_config, clock_freq);
-	LPI2C_MasterTransferCreateHandle(base, &data->handle,
-					 mcux_lpi2c_master_transfer_callback,
+	LPI2C_MasterTransferCreateHandle(base, &data->handle, mcux_lpi2c_master_transfer_callback,
 					 data);
 
 	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
@@ -540,8 +525,8 @@ static int mcux_lpi2c_init(const struct device *dev)
 	/* When using LP Flexcomm driver, register the interrupt handler
 	 * so we receive notification from the LP Flexcomm interrupt handler.
 	 */
-	nxp_lp_flexcomm_setirqhandler(config->parent_dev, dev,
-				      LP_FLEXCOMM_PERIPH_LPI2C, mcux_lpi2c_isr);
+	nxp_lp_flexcomm_setirqhandler(config->parent_dev, dev, LP_FLEXCOMM_PERIPH_LPI2C,
+				      mcux_lpi2c_isr);
 #else
 	/* Interrupt is managed by this driver */
 	config->irq_config_func(dev);
@@ -570,58 +555,49 @@ static const struct i2c_driver_api mcux_lpi2c_driver_api = {
 #define I2C_MCUX_LPI2C_SDA_INIT(n)
 #endif /* CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY */
 
-#define I2C_MCUX_LPI2C_MODULE_IRQ_CONNECT(n)				\
-	do {								\
-		IRQ_CONNECT(DT_INST_IRQN(n),				\
-			DT_INST_IRQ(n, priority),			\
-			mcux_lpi2c_isr,					\
-			DEVICE_DT_INST_GET(n), 0);			\
-		irq_enable(DT_INST_IRQN(n));				\
+#define I2C_MCUX_LPI2C_MODULE_IRQ_CONNECT(n)                                                       \
+	do {                                                                                       \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_lpi2c_isr,             \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
 	} while (false)
 
-#define I2C_MCUX_LPI2C_MODULE_IRQ(n)					\
+#define I2C_MCUX_LPI2C_MODULE_IRQ(n)                                                               \
 	IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0),				\
 		(I2C_MCUX_LPI2C_MODULE_IRQ_CONNECT(n)))
 
 #ifdef CONFIG_NXP_LP_FLEXCOMM
-#define PARENT_DEV(n)							\
-	.parent_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),
+#define PARENT_DEV(n) .parent_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),
 #else
 #define PARENT_DEV(n)
 #endif /* CONFIG_NXP_LP_FLEXCOMM */
 
-#define I2C_MCUX_LPI2C_INIT(n)						\
-	PINCTRL_DT_INST_DEFINE(n);					\
-									\
-	static void mcux_lpi2c_config_func_##n(const struct device *dev); \
-									\
-	static const struct mcux_lpi2c_config mcux_lpi2c_config_##n = {	\
-		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),	\
-		PARENT_DEV(n)						\
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
-		.clock_subsys =						\
-			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
-		.irq_config_func = mcux_lpi2c_config_func_##n,		\
-		.bitrate = DT_INST_PROP(n, clock_frequency),		\
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
-		I2C_MCUX_LPI2C_SCL_INIT(n)				\
-		I2C_MCUX_LPI2C_SDA_INIT(n)				\
-		.bus_idle_timeout_ns =					\
-			UTIL_AND(DT_INST_NODE_HAS_PROP(n, bus_idle_timeout),\
-				 DT_INST_PROP(n, bus_idle_timeout)),	\
-	};								\
-									\
-	static struct mcux_lpi2c_data mcux_lpi2c_data_##n;		\
-									\
-	I2C_DEVICE_DT_INST_DEFINE(n, mcux_lpi2c_init, NULL,		\
-				&mcux_lpi2c_data_##n,			\
-				&mcux_lpi2c_config_##n, POST_KERNEL,	\
-				CONFIG_I2C_INIT_PRIORITY,			\
-				&mcux_lpi2c_driver_api);			\
-									\
-	static void mcux_lpi2c_config_func_##n(const struct device *dev) \
-	{								\
-		I2C_MCUX_LPI2C_MODULE_IRQ(n);				\
+#define I2C_MCUX_LPI2C_INIT(n)                                                                     \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+                                                                                                   \
+	static void mcux_lpi2c_config_func_##n(const struct device *dev);                          \
+                                                                                                   \
+	static const struct mcux_lpi2c_config mcux_lpi2c_config_##n = {                            \
+		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),                              \
+		PARENT_DEV(n).clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                   \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
+		.irq_config_func = mcux_lpi2c_config_func_##n,                                     \
+		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+		I2C_MCUX_LPI2C_SCL_INIT(n) I2C_MCUX_LPI2C_SDA_INIT(n).bus_idle_timeout_ns =        \
+			UTIL_AND(DT_INST_NODE_HAS_PROP(n, bus_idle_timeout),                       \
+				 DT_INST_PROP(n, bus_idle_timeout)),                               \
+	};                                                                                         \
+                                                                                                   \
+	static struct mcux_lpi2c_data mcux_lpi2c_data_##n;                                         \
+                                                                                                   \
+	I2C_DEVICE_DT_INST_DEFINE(n, mcux_lpi2c_init, NULL, &mcux_lpi2c_data_##n,                  \
+				  &mcux_lpi2c_config_##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,   \
+				  &mcux_lpi2c_driver_api);                                         \
+                                                                                                   \
+	static void mcux_lpi2c_config_func_##n(const struct device *dev)                           \
+	{                                                                                          \
+		I2C_MCUX_LPI2C_MODULE_IRQ(n);                                                      \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_MCUX_LPI2C_INIT)

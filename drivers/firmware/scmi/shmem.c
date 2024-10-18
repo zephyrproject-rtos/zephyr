@@ -83,22 +83,20 @@ int scmi_shmem_read_message(const struct device *shmem, struct scmi_message *msg
 
 	/* mismatch between expected reply size and actual size? */
 	if (msg->len != (layout->len - sizeof(layout->msg_hdr))) {
-		LOG_ERR("bad message len. Expected 0x%x, got 0x%x",
-			msg->len,
+		LOG_ERR("bad message len. Expected 0x%x, got 0x%x", msg->len,
 			(uint32_t)(layout->len - sizeof(layout->msg_hdr)));
 		return -EINVAL;
 	}
 
 	/* header match? */
 	if (layout->msg_hdr != msg->hdr) {
-		LOG_ERR("bad message header. Expected 0x%x, got 0x%x",
-			msg->hdr, layout->msg_hdr);
+		LOG_ERR("bad message header. Expected 0x%x, got 0x%x", msg->hdr, layout->msg_hdr);
 		return -EINVAL;
 	}
 
 	if (msg->content) {
-		scmi_shmem_memcpy(POINTER_TO_UINT(msg->content),
-				  data->regmap + sizeof(*layout), msg->len);
+		scmi_shmem_memcpy(POINTER_TO_UINT(msg->content), data->regmap + sizeof(*layout),
+				  msg->len);
 	}
 
 	return 0;
@@ -135,8 +133,8 @@ int scmi_shmem_write_message(const struct device *shmem, struct scmi_message *ms
 	layout->msg_hdr = msg->hdr;
 
 	if (msg->content) {
-		scmi_shmem_memcpy(data->regmap + sizeof(*layout),
-				  POINTER_TO_UINT(msg->content), msg->len);
+		scmi_shmem_memcpy(data->regmap + sizeof(*layout), POINTER_TO_UINT(msg->content),
+				  msg->len);
 	}
 
 	/* done, mark channel as busy and proceed */
@@ -184,18 +182,15 @@ static int scmi_shmem_init(const struct device *dev)
 	return 0;
 }
 
-#define SCMI_SHMEM_INIT(inst)					\
-static const struct scmi_shmem_config config_##inst = {		\
-	.phys_addr = DT_INST_REG_ADDR(inst),			\
-	.size = DT_INST_REG_SIZE(inst),				\
-};								\
-								\
-static struct scmi_shmem_data data_##inst;			\
-								\
-DEVICE_DT_INST_DEFINE(inst, &scmi_shmem_init, NULL,		\
-		      &data_##inst, &config_##inst,		\
-		      PRE_KERNEL_1,				\
-		      CONFIG_ARM_SCMI_SHMEM_INIT_PRIORITY,	\
-		      NULL);
+#define SCMI_SHMEM_INIT(inst)                                                                      \
+	static const struct scmi_shmem_config config_##inst = {                                    \
+		.phys_addr = DT_INST_REG_ADDR(inst),                                               \
+		.size = DT_INST_REG_SIZE(inst),                                                    \
+	};                                                                                         \
+                                                                                                   \
+	static struct scmi_shmem_data data_##inst;                                                 \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &scmi_shmem_init, NULL, &data_##inst, &config_##inst,          \
+			      PRE_KERNEL_1, CONFIG_ARM_SCMI_SHMEM_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(SCMI_SHMEM_INIT);

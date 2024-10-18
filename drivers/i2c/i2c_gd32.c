@@ -68,15 +68,13 @@ static inline void i2c_gd32_disable_interrupts(const struct i2c_gd32_config *cfg
 	I2C_CTL1(cfg->reg) &= ~I2C_CTL1_BUFIE;
 }
 
-static inline void i2c_gd32_xfer_read(struct i2c_gd32_data *data,
-				      const struct i2c_gd32_config *cfg)
+static inline void i2c_gd32_xfer_read(struct i2c_gd32_data *data, const struct i2c_gd32_config *cfg)
 {
 	data->current->len--;
 	*data->current->buf = I2C_DATA(cfg->reg);
 	data->current->buf++;
 
-	if ((data->xfer_len > 0U) &&
-	    (data->current->len == 0U)) {
+	if ((data->xfer_len > 0U) && (data->current->len == 0U)) {
 		data->current++;
 	}
 }
@@ -88,8 +86,7 @@ static inline void i2c_gd32_xfer_write(struct i2c_gd32_data *data,
 	I2C_DATA(cfg->reg) = *data->current->buf;
 	data->current->buf++;
 
-	if ((data->xfer_len > 0U) &&
-	    (data->current->len == 0U)) {
+	if ((data->xfer_len > 0U) && (data->current->len == 0U)) {
 		data->current++;
 	}
 }
@@ -132,7 +129,6 @@ static void i2c_gd32_handle_rbne(const struct device *dev)
 		i2c_gd32_xfer_read(data, cfg);
 		break;
 	}
-
 }
 
 static void i2c_gd32_handle_tbe(const struct device *dev)
@@ -244,10 +240,10 @@ static void i2c_gd32_event_isr(const struct device *dev)
 		I2C_DATA(cfg->reg) = data->addr2;
 	} else if (stat & I2C_STAT0_ADDSEND) {
 		i2c_gd32_handle_addsend(dev);
-	/*
-	 * Must handle BTC first.
-	 * For I2C_STAT0, BTC is the superset of RBNE and TBE.
-	 */
+		/*
+		 * Must handle BTC first.
+		 * For I2C_STAT0, BTC is the superset of RBNE and TBE.
+		 */
 	} else if (stat & I2C_STAT0_BTC) {
 		i2c_gd32_handle_btc(dev);
 	} else if (stat & I2C_STAT0_RBNE) {
@@ -397,9 +393,7 @@ static int i2c_gd32_msg_write(const struct device *dev)
 	return i2c_gd32_xfer_end(dev);
 }
 
-static int i2c_gd32_transfer(const struct device *dev,
-			     struct i2c_msg *msgs,
-			     uint8_t num_msgs,
+static int i2c_gd32_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
 			     uint16_t addr)
 {
 	struct i2c_gd32_data *data = dev->data;
@@ -422,8 +416,7 @@ static int i2c_gd32_transfer(const struct device *dev,
 			 * If there have a R/W transfer state change between messages,
 			 * An explicit I2C_MSG_RESTART flag is needed for the second message.
 			 */
-			if ((current->flags & I2C_MSG_RW_MASK) !=
-			(next->flags & I2C_MSG_RW_MASK)) {
+			if ((current->flags & I2C_MSG_RW_MASK) != (next->flags & I2C_MSG_RW_MASK)) {
 				if ((next->flags & I2C_MSG_RESTART) == 0U) {
 					return -EINVAL;
 				}
@@ -435,8 +428,7 @@ static int i2c_gd32_transfer(const struct device *dev,
 			}
 		}
 
-		if ((current->buf == NULL) ||
-		    (current->len == 0U)) {
+		if ((current->buf == NULL) || (current->len == 0U)) {
 			return -EINVAL;
 		}
 
@@ -487,8 +479,7 @@ static int i2c_gd32_transfer(const struct device *dev,
 	return err;
 }
 
-static int i2c_gd32_configure(const struct device *dev,
-			      uint32_t dev_config)
+static int i2c_gd32_configure(const struct device *dev, uint32_t dev_config)
 {
 	struct i2c_gd32_data *data = dev->data;
 	const struct i2c_gd32_config *cfg = dev->config;
@@ -500,15 +491,13 @@ static int i2c_gd32_configure(const struct device *dev,
 	/* Disable I2C device */
 	I2C_CTL0(cfg->reg) &= ~I2C_CTL0_I2CEN;
 
-	(void)clock_control_get_rate(GD32_CLOCK_CONTROLLER,
-				     (clock_control_subsys_t)&cfg->clkid,
+	(void)clock_control_get_rate(GD32_CLOCK_CONTROLLER, (clock_control_subsys_t)&cfg->clkid,
 				     &pclk1);
 
 	/* i2c clock frequency, us */
 	freq = pclk1 / 1000000U;
 	if (freq > I2CCLK_MAX) {
-		LOG_ERR("I2C max clock freq %u, current is %u\n",
-			I2CCLK_MAX, freq);
+		LOG_ERR("I2C max clock freq %u, current is %u\n", I2CCLK_MAX, freq);
 		err = -ENOTSUP;
 		goto error;
 	}
@@ -545,8 +534,8 @@ static int i2c_gd32_configure(const struct device *dev,
 	switch (I2C_SPEED_GET(dev_config)) {
 	case I2C_SPEED_STANDARD:
 		if (freq < I2CCLK_MIN) {
-			LOG_ERR("I2C standard-mode min clock freq %u, current is %u\n",
-				I2CCLK_MIN, freq);
+			LOG_ERR("I2C standard-mode min clock freq %u, current is %u\n", I2CCLK_MIN,
+				freq);
 			err = -ENOTSUP;
 			goto error;
 		}
@@ -571,8 +560,8 @@ static int i2c_gd32_configure(const struct device *dev,
 		break;
 	case I2C_SPEED_FAST:
 		if (freq < I2CCLK_FM_MIN) {
-			LOG_ERR("I2C fast-mode min clock freq %u, current is %u\n",
-				I2CCLK_FM_MIN, freq);
+			LOG_ERR("I2C fast-mode min clock freq %u, current is %u\n", I2CCLK_FM_MIN,
+				freq);
 			err = -ENOTSUP;
 			goto error;
 		}
@@ -667,8 +656,7 @@ static int i2c_gd32_init(const struct device *dev)
 	/* Sync semaphore to sync i2c state between isr and transfer api. */
 	k_sem_init(&data->sync_sem, 0, K_SEM_MAX_LIMIT);
 
-	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
-			       (clock_control_subsys_t)&cfg->clkid);
+	(void)clock_control_on(GD32_CLOCK_CONTROLLER, (clock_control_subsys_t)&cfg->clkid);
 
 	(void)reset_line_toggle_dt(&cfg->reset);
 
@@ -681,37 +669,31 @@ static int i2c_gd32_init(const struct device *dev)
 	return 0;
 }
 
-#define I2C_GD32_INIT(inst)							\
-	PINCTRL_DT_INST_DEFINE(inst);						\
-	static void i2c_gd32_irq_cfg_func_##inst(void)				\
-	{									\
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, event, irq),		\
-			    DT_INST_IRQ_BY_NAME(inst, event, priority),		\
-			    i2c_gd32_event_isr,					\
-			    DEVICE_DT_INST_GET(inst),				\
-			    0);							\
-		irq_enable(DT_INST_IRQ_BY_NAME(inst, event, irq));		\
-										\
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, error, irq),		\
-			    DT_INST_IRQ_BY_NAME(inst, error, priority),		\
-			    i2c_gd32_error_isr,					\
-			    DEVICE_DT_INST_GET(inst),				\
-			    0);							\
-		irq_enable(DT_INST_IRQ_BY_NAME(inst, error, irq));		\
-	}									\
-	static struct i2c_gd32_data i2c_gd32_data_##inst;			\
-	const static struct i2c_gd32_config i2c_gd32_cfg_##inst = {		\
-		.reg = DT_INST_REG_ADDR(inst),					\
-		.bitrate = DT_INST_PROP(inst, clock_frequency),			\
-		.clkid = DT_INST_CLOCKS_CELL(inst, id),				\
-		.reset = RESET_DT_SPEC_INST_GET(inst),				\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),			\
-		.irq_cfg_func = i2c_gd32_irq_cfg_func_##inst,			\
-	};									\
-	I2C_DEVICE_DT_INST_DEFINE(inst,						\
-				  i2c_gd32_init, NULL,				\
-				  &i2c_gd32_data_##inst, &i2c_gd32_cfg_##inst,	\
-				  POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,	\
-				  &i2c_gd32_driver_api);			\
+#define I2C_GD32_INIT(inst)                                                                        \
+	PINCTRL_DT_INST_DEFINE(inst);                                                              \
+	static void i2c_gd32_irq_cfg_func_##inst(void)                                             \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, event, irq),                                 \
+			    DT_INST_IRQ_BY_NAME(inst, event, priority), i2c_gd32_event_isr,        \
+			    DEVICE_DT_INST_GET(inst), 0);                                          \
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, event, irq));                                 \
+                                                                                                   \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, error, irq),                                 \
+			    DT_INST_IRQ_BY_NAME(inst, error, priority), i2c_gd32_error_isr,        \
+			    DEVICE_DT_INST_GET(inst), 0);                                          \
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, error, irq));                                 \
+	}                                                                                          \
+	static struct i2c_gd32_data i2c_gd32_data_##inst;                                          \
+	const static struct i2c_gd32_config i2c_gd32_cfg_##inst = {                                \
+		.reg = DT_INST_REG_ADDR(inst),                                                     \
+		.bitrate = DT_INST_PROP(inst, clock_frequency),                                    \
+		.clkid = DT_INST_CLOCKS_CELL(inst, id),                                            \
+		.reset = RESET_DT_SPEC_INST_GET(inst),                                             \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
+		.irq_cfg_func = i2c_gd32_irq_cfg_func_##inst,                                      \
+	};                                                                                         \
+	I2C_DEVICE_DT_INST_DEFINE(inst, i2c_gd32_init, NULL, &i2c_gd32_data_##inst,                \
+				  &i2c_gd32_cfg_##inst, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,     \
+				  &i2c_gd32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_GD32_INIT)

@@ -403,8 +403,8 @@ static const struct gpio_driver_api rzt2m_gpio_driver_api = {
 	.pin_interrupt_configure = rzt2m_gpio_pin_interrupt_configure,
 	.manage_callback = rzt2m_gpio_manage_callback};
 
-#define RZT2M_INIT_IRQ(irq_n)                                                              \
-	IRQ_CONNECT(DT_IRQ_BY_IDX(DT_INST(0, renesas_rzt2m_gpio_common), irq_n, irq),          \
+#define RZT2M_INIT_IRQ(irq_n)                                                                      \
+	IRQ_CONNECT(DT_IRQ_BY_IDX(DT_INST(0, renesas_rzt2m_gpio_common), irq_n, irq),              \
 		    DT_IRQ_BY_IDX(DT_INST(0, renesas_rzt2m_gpio_common), irq_n, priority),         \
 		    rzt2m_gpio_isr, &n[irq_n],                                                     \
 		    DT_IRQ_BY_IDX(DT_INST(0, renesas_rzt2m_gpio_common), irq_n, flags))            \
@@ -421,17 +421,14 @@ static int rzt2m_gpio_common_init(const struct device *dev)
 		data->irq_registered_ports[i].dev = NULL;
 	}
 
-	FOR_EACH(RZT2M_INIT_IRQ, (), LISTIFY(NS_IRQ_COUNT, RZT2M_GPIO_VALUE_IDENTITY, (,)))
+	FOR_EACH(RZT2M_INIT_IRQ, (), LISTIFY(NS_IRQ_COUNT, RZT2M_GPIO_VALUE_IDENTITY, (,))) {
 
-	return 0;
+		return 0;
+	}
 }
 
-DEVICE_DT_DEFINE(DT_INST(0, renesas_rzt2m_gpio_common),
-		    rzt2m_gpio_common_init,
-		    NULL,
-		    &rzt2m_gpio_common_data_inst, NULL,
-		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
-		    NULL);
+DEVICE_DT_DEFINE(DT_INST(0, renesas_rzt2m_gpio_common), rzt2m_gpio_common_init, NULL,
+		 &rzt2m_gpio_common_data_inst, NULL, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, NULL);
 
 #define VALUE_2X(i, _) UTIL_X2(i)
 
@@ -453,7 +450,7 @@ DEVICE_DT_DEFINE(DT_INST(0, renesas_rzt2m_gpio_common),
 		.port = DT_INST_REG_ADDR(inst),                                                    \
 		.pin_irqs = {PORT_IRQS_INITIALIZER(inst)},                                         \
 		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst)}};               \
-	DEVICE_DT_INST_DEFINE(inst, rzt2m_gpio_init, NULL, &rzt2m_gpio_data##inst,          \
+	DEVICE_DT_INST_DEFINE(inst, rzt2m_gpio_init, NULL, &rzt2m_gpio_data##inst,                 \
 			      &rzt2m_gpio_config##inst, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,   \
 			      &rzt2m_gpio_driver_api);
 

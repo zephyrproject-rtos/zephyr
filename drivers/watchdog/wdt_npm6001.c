@@ -14,16 +14,16 @@
 #include <zephyr/toolchain.h>
 
 /* nPM6001 Watchdog related registers */
-#define NPM6001_WDARMEDVALUE	0x54U
-#define NPM6001_WDARMEDSTROBE	0x55U
+#define NPM6001_WDARMEDVALUE    0x54U
+#define NPM6001_WDARMEDSTROBE   0x55U
 #define NPM6001_WDTRIGGERVALUE0 0x56U
 #define NPM6001_WDTRIGGERVALUE1 0x57U
 #define NPM6001_WDTRIGGERVALUE2 0x58U
-#define NPM6001_WDDATASTROBE	0x5DU
-#define NPM6001_WDPWRUPVALUE	0x5EU
-#define NPM6001_WDPWRUPSTROBE	0x5FU
-#define NPM6001_WDKICK		0x60U
-#define NPM6001_WDREQPOWERDOWN	0x62U
+#define NPM6001_WDDATASTROBE    0x5DU
+#define NPM6001_WDPWRUPVALUE    0x5EU
+#define NPM6001_WDPWRUPSTROBE   0x5FU
+#define NPM6001_WDKICK          0x60U
+#define NPM6001_WDREQPOWERDOWN  0x62U
 
 /* nPM6001 WDTRIGGERVALUEx ms/LSB, min/max values */
 #define NPM6001_WDTRIGGERVALUE_MS_LSB 4000U
@@ -31,9 +31,9 @@
 #define NPM6001_WDTRIGGERVALUE_MAX    0xFFFFFFU
 
 /* nPM6001 WDPWRUPVALUE fields */
-#define NPM6001_WDPWRUPVALUE_OSC_ENABLE	    BIT(0)
+#define NPM6001_WDPWRUPVALUE_OSC_ENABLE     BIT(0)
 #define NPM6001_WDPWRUPVALUE_COUNTER_ENABLE BIT(1)
-#define NPM6001_WDPWRUPVALUE_LS_ENABLE	    BIT(2)
+#define NPM6001_WDPWRUPVALUE_LS_ENABLE      BIT(2)
 
 struct wdt_npm6001_config {
 	struct i2c_dt_spec bus;
@@ -71,15 +71,13 @@ static int wdt_npm6001_install_timeout(const struct device *dev,
 	window = (((timeout->window.max + NPM6001_WDTRIGGERVALUE_MS_LSB - 1U) /
 		   NPM6001_WDTRIGGERVALUE_MS_LSB) +
 		  1U);
-	if ((window < NPM6001_WDTRIGGERVALUE_MIN) ||
-	    (window > NPM6001_WDTRIGGERVALUE_MAX)) {
+	if ((window < NPM6001_WDTRIGGERVALUE_MIN) || (window > NPM6001_WDTRIGGERVALUE_MAX)) {
 		return -EINVAL;
 	}
 
 	/* enable OSC/COUNTER/LS */
 	buf[0] = NPM6001_WDPWRUPVALUE;
-	buf[1] = NPM6001_WDPWRUPVALUE_OSC_ENABLE |
-		 NPM6001_WDPWRUPVALUE_COUNTER_ENABLE |
+	buf[1] = NPM6001_WDPWRUPVALUE_OSC_ENABLE | NPM6001_WDPWRUPVALUE_COUNTER_ENABLE |
 		 NPM6001_WDPWRUPVALUE_LS_ENABLE;
 	ret = i2c_write_dt(&config->bus, buf, sizeof(buf));
 	if (ret < 0) {
@@ -175,14 +173,12 @@ static int wdt_npm6001_init(const struct device *dev)
 	return 0;
 }
 
-#define WDT_NPM6001_DEFINE(n)                                                  \
-	static const struct wdt_npm6001_config wdt_npm6001_config##n = {       \
-		.bus = I2C_DT_SPEC_GET(DT_INST_PARENT(n)),                     \
-	};                                                                     \
-                                                                               \
-	DEVICE_DT_INST_DEFINE(n, &wdt_npm6001_init, NULL, NULL,                \
-			      &wdt_npm6001_config##n, POST_KERNEL,             \
-			      CONFIG_WDT_NPM6001_INIT_PRIORITY,                \
-			      &wdt_npm6001_api);
+#define WDT_NPM6001_DEFINE(n)                                                                      \
+	static const struct wdt_npm6001_config wdt_npm6001_config##n = {                           \
+		.bus = I2C_DT_SPEC_GET(DT_INST_PARENT(n)),                                         \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &wdt_npm6001_init, NULL, NULL, &wdt_npm6001_config##n,            \
+			      POST_KERNEL, CONFIG_WDT_NPM6001_INIT_PRIORITY, &wdt_npm6001_api);
 
 DT_INST_FOREACH_STATUS_OKAY(WDT_NPM6001_DEFINE)

@@ -49,8 +49,7 @@ static void uart_nxp_s32_poll_out(const struct device *dev, unsigned char c)
 	/* Save enabled Linflexd's interrupts */
 	linflexd_ier = sys_read32(POINTER_TO_UINT(&config->base->LINIER));
 
-	Linflexd_Uart_Ip_SyncSend(config->instance, &c, 1,
-				  CONFIG_UART_NXP_S32_POLL_OUT_TIMEOUT);
+	Linflexd_Uart_Ip_SyncSend(config->instance, &c, 1, CONFIG_UART_NXP_S32_POLL_OUT_TIMEOUT);
 
 	/* Restore Linflexd's interrupts */
 	sys_write32(linflexd_ier, POINTER_TO_UINT(&config->base->LINIER));
@@ -90,8 +89,7 @@ static int uart_nxp_s32_poll_in(const struct device *dev, unsigned char *c)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-static int uart_nxp_s32_fifo_fill(const struct device *dev, const uint8_t *tx_data,
-				  int size)
+static int uart_nxp_s32_fifo_fill(const struct device *dev, const uint8_t *tx_data, int size)
 {
 	const struct uart_nxp_s32_config *config = dev->config;
 	struct uart_nxp_s32_data *data = dev->data;
@@ -108,8 +106,7 @@ static int uart_nxp_s32_fifo_fill(const struct device *dev, const uint8_t *tx_da
 	return 1;
 }
 
-static int uart_nxp_s32_fifo_read(const struct device *dev, uint8_t *rx_data,
-				  const int size)
+static int uart_nxp_s32_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
 {
 	const struct uart_nxp_s32_config *config = dev->config;
 	struct uart_nxp_s32_data *data = dev->data;
@@ -156,7 +153,7 @@ static void uart_nxp_s32_irq_tx_disable(const struct device *dev)
 	struct uart_nxp_s32_int *int_data = &(data->int_data);
 
 	int_data->irq_tx_enable = false;
-	int_data->tx_fifo_busy  = false;
+	int_data->tx_fifo_busy = false;
 
 	Linflexd_Uart_Ip_AbortSendingData(config->instance);
 }
@@ -237,8 +234,7 @@ static int uart_nxp_s32_irq_update(const struct device *dev)
 }
 
 static void uart_nxp_s32_irq_callback_set(const struct device *dev,
-				      uart_irq_callback_user_data_t cb,
-				      void *cb_data)
+					  uart_irq_callback_user_data_t cb, void *cb_data)
 {
 	struct uart_nxp_s32_data *data = dev->data;
 
@@ -253,8 +249,7 @@ void uart_nxp_s32_isr(const struct device *dev)
 	Linflexd_Uart_Ip_IRQHandler(config->instance);
 }
 
-static void uart_nxp_s32_event_handler(const uint8 instance,
-				       Linflexd_Uart_Ip_EventType event,
+static void uart_nxp_s32_event_handler(const uint8 instance, Linflexd_Uart_Ip_EventType event,
 				       const void *user_data)
 {
 	const struct device *dev = (const struct device *)user_data;
@@ -307,85 +302,78 @@ static int uart_nxp_s32_init(const struct device *dev)
 }
 
 static const struct uart_driver_api uart_nxp_s32_driver_api = {
-	.poll_in	  = uart_nxp_s32_poll_in,
-	.poll_out	  = uart_nxp_s32_poll_out,
-	.err_check	  = uart_nxp_s32_err_check,
+	.poll_in = uart_nxp_s32_poll_in,
+	.poll_out = uart_nxp_s32_poll_out,
+	.err_check = uart_nxp_s32_err_check,
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.fifo_fill	  = uart_nxp_s32_fifo_fill,
-	.fifo_read	  = uart_nxp_s32_fifo_read,
-	.irq_tx_enable	  = uart_nxp_s32_irq_tx_enable,
-	.irq_tx_disable   = uart_nxp_s32_irq_tx_disable,
-	.irq_tx_ready	  = uart_nxp_s32_irq_tx_ready,
-	.irq_rx_enable	  = uart_nxp_s32_irq_rx_enable,
-	.irq_rx_disable   = uart_nxp_s32_irq_rx_disable,
-	.irq_rx_ready	  = uart_nxp_s32_irq_rx_ready,
-	.irq_err_enable   = uart_nxp_s32_irq_err_enable,
-	.irq_err_disable  = uart_nxp_s32_irq_err_disable,
-	.irq_is_pending   = uart_nxp_s32_irq_is_pending,
-	.irq_update	  = uart_nxp_s32_irq_update,
+	.fifo_fill = uart_nxp_s32_fifo_fill,
+	.fifo_read = uart_nxp_s32_fifo_read,
+	.irq_tx_enable = uart_nxp_s32_irq_tx_enable,
+	.irq_tx_disable = uart_nxp_s32_irq_tx_disable,
+	.irq_tx_ready = uart_nxp_s32_irq_tx_ready,
+	.irq_rx_enable = uart_nxp_s32_irq_rx_enable,
+	.irq_rx_disable = uart_nxp_s32_irq_rx_disable,
+	.irq_rx_ready = uart_nxp_s32_irq_rx_ready,
+	.irq_err_enable = uart_nxp_s32_irq_err_enable,
+	.irq_err_disable = uart_nxp_s32_irq_err_disable,
+	.irq_is_pending = uart_nxp_s32_irq_is_pending,
+	.irq_update = uart_nxp_s32_irq_update,
 	.irq_callback_set = uart_nxp_s32_irq_callback_set,
-#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 };
 
-#define UART_NXP_S32_HW_INSTANCE_CHECK(i, n) \
+#define UART_NXP_S32_HW_INSTANCE_CHECK(i, n)                                                       \
 	((DT_INST_REG_ADDR(n) == IP_LINFLEX_##i##_BASE) ? i : 0)
 
-#define UART_NXP_S32_HW_INSTANCE(n) \
+#define UART_NXP_S32_HW_INSTANCE(n)                                                                \
 	LISTIFY(__DEBRACKET LINFLEXD_INSTANCE_COUNT, UART_NXP_S32_HW_INSTANCE_CHECK, (|), n)
 
-#define UART_NXP_S32_INTERRUPT_DEFINE(n)					\
-	do {									\
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),		\
-			uart_nxp_s32_isr, DEVICE_DT_INST_GET(n),		\
-			DT_INST_IRQ(n, flags));					\
-		irq_enable(DT_INST_IRQN(n));					\
+#define UART_NXP_S32_INTERRUPT_DEFINE(n)                                                           \
+	do {                                                                                       \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_nxp_s32_isr,           \
+			    DEVICE_DT_INST_GET(n), DT_INST_IRQ(n, flags));                         \
+		irq_enable(DT_INST_IRQN(n));                                                       \
 	} while (0)
 
-#define UART_NXP_S32_HW_CONFIG(n)						\
-	{									\
-		.BaudRate = 115200,						\
-		.BaudRateMantissa = 26U,					\
-		.BaudRateDivisor = 16U,						\
-		.BaudRateFractionalDivisor = 1U,				\
-		.ParityCheck = false,						\
-		.ParityType = LINFLEXD_UART_IP_PARITY_EVEN,			\
-		.StopBitsCount = LINFLEXD_UART_IP_ONE_STOP_BIT,			\
-		.WordLength = LINFLEXD_UART_IP_8_BITS,				\
-		.TransferType = LINFLEXD_UART_IP_USING_INTERRUPTS,		\
-		.StateStruct = &Linflexd_Uart_Ip_apStateStructure[n],		\
-		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (			\
+#define UART_NXP_S32_HW_CONFIG(n)                                                                  \
+	{.BaudRate = 115200,                                                                       \
+	 .BaudRateMantissa = 26U,                                                                  \
+	 .BaudRateDivisor = 16U,                                                                   \
+	 .BaudRateFractionalDivisor = 1U,                                                          \
+	 .ParityCheck = false,                                                                     \
+	 .ParityType = LINFLEXD_UART_IP_PARITY_EVEN,                                               \
+	 .StopBitsCount = LINFLEXD_UART_IP_ONE_STOP_BIT,                                           \
+	 .WordLength = LINFLEXD_UART_IP_8_BITS,                                                    \
+	 .TransferType = LINFLEXD_UART_IP_USING_INTERRUPTS,                                        \
+	 .StateStruct = &Linflexd_Uart_Ip_apStateStructure[n],                                     \
+	 IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (			\
 			.Callback = uart_nxp_s32_event_handler,			\
 			.CallbackParam = (void *)DEVICE_DT_INST_GET(n),		\
-		))								\
-	}
+		)) }
 
-#define UART_NXP_S32_INIT_DEVICE(n)						\
-	PINCTRL_DT_INST_DEFINE(n);						\
+#define UART_NXP_S32_INIT_DEVICE(n)                                                                \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,				\
-		(static struct uart_nxp_s32_data uart_nxp_s32_data_##n;))	\
-	static const struct uart_nxp_s32_config uart_nxp_s32_config_##n = {	\
-		.instance = UART_NXP_S32_HW_INSTANCE(n),			\
-		.base = (LINFLEXD_Type *)DT_INST_REG_ADDR(n),			\
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
-		.hw_cfg = UART_NXP_S32_HW_CONFIG(n),				\
-	};									\
-	static int uart_nxp_s32_init_##n(const struct device *dev)		\
-	{									\
+		(static struct uart_nxp_s32_data uart_nxp_s32_data_##n;))                                              \
+	static const struct uart_nxp_s32_config uart_nxp_s32_config_##n = {                        \
+		.instance = UART_NXP_S32_HW_INSTANCE(n),                                           \
+		.base = (LINFLEXD_Type *)DT_INST_REG_ADDR(n),                                      \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+		.hw_cfg = UART_NXP_S32_HW_CONFIG(n),                                               \
+	};                                                                                         \
+	static int uart_nxp_s32_init_##n(const struct device *dev)                                 \
+	{                                                                                          \
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,			\
-			(UART_NXP_S32_INTERRUPT_DEFINE(n);))			\
-										\
-		return uart_nxp_s32_init(dev);					\
-	}									\
-	DEVICE_DT_INST_DEFINE(n,						\
-			uart_nxp_s32_init_##n,					\
-			NULL,							\
-			COND_CODE_1(CONFIG_UART_INTERRUPT_DRIVEN,		\
-				   (&uart_nxp_s32_data_##n), (NULL)),		\
-			&uart_nxp_s32_config_##n,				\
-			PRE_KERNEL_1,						\
-			CONFIG_SERIAL_INIT_PRIORITY,				\
-			&uart_nxp_s32_driver_api);
+			(UART_NXP_S32_INTERRUPT_DEFINE(n);))                                       \
+                                                                                                   \
+		return uart_nxp_s32_init(dev);                                                     \
+	}                                                                                          \
+	DEVICE_DT_INST_DEFINE(n, uart_nxp_s32_init_##n, NULL,                                      \
+			      COND_CODE_1(CONFIG_UART_INTERRUPT_DRIVEN,		\
+				   (&uart_nxp_s32_data_##n), (NULL)),                        \
+					   &uart_nxp_s32_config_##n, PRE_KERNEL_1,                 \
+					   CONFIG_SERIAL_INIT_PRIORITY, &uart_nxp_s32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_NXP_S32_INIT_DEVICE)

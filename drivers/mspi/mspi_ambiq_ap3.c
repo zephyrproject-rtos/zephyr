@@ -20,57 +20,57 @@ LOG_MODULE_REGISTER(mspi_ambiq_ap3);
 
 #include "mspi_ambiq.h"
 
-#define MSPI_MAX_FREQ        48000000
-#define MSPI_MAX_DEVICE      2
-#define MSPI_TIMEOUT_US      1000000
-#define PWRCTRL_MAX_WAIT_US  5
-#define MSPI_BUSY            BIT(2)
+#define MSPI_MAX_FREQ       48000000
+#define MSPI_MAX_DEVICE     2
+#define MSPI_TIMEOUT_US     1000000
+#define PWRCTRL_MAX_WAIT_US 5
+#define MSPI_BUSY           BIT(2)
 
 typedef int (*mspi_ambiq_pwr_func_t)(void);
 typedef void (*irq_config_func_t)(void);
 
 struct mspi_context {
-	const struct mspi_dev_id      *owner;
+	const struct mspi_dev_id *owner;
 
-	struct mspi_xfer              xfer;
+	struct mspi_xfer xfer;
 
-	int                           packets_left;
-	int                           packets_done;
+	int packets_left;
+	int packets_done;
 
-	mspi_callback_handler_t       callback;
-	struct mspi_callback_context  *callback_ctx;
+	mspi_callback_handler_t callback;
+	struct mspi_callback_context *callback_ctx;
 	bool asynchronous;
 
 	struct k_sem lock;
 };
 
 struct mspi_ambiq_config {
-	uint32_t                        reg_base;
-	uint32_t                        reg_size;
+	uint32_t reg_base;
+	uint32_t reg_size;
 
-	struct mspi_cfg                 mspicfg;
+	struct mspi_cfg mspicfg;
 
 	const struct pinctrl_dev_config *pcfg;
-	irq_config_func_t               irq_cfg_func;
+	irq_config_func_t irq_cfg_func;
 
 	LOG_INSTANCE_PTR_DECLARE(log);
 };
 
 struct mspi_ambiq_data {
-	void                            *mspiHandle;
-	am_hal_mspi_dev_config_t        hal_dev_cfg;
+	void *mspiHandle;
+	am_hal_mspi_dev_config_t hal_dev_cfg;
 
-	struct mspi_dev_id              *dev_id;
-	struct k_mutex                  lock;
+	struct mspi_dev_id *dev_id;
+	struct k_mutex lock;
 
-	struct mspi_dev_cfg             dev_cfg;
-	struct mspi_xip_cfg             xip_cfg;
-	struct mspi_scramble_cfg        scramble_cfg;
+	struct mspi_dev_cfg dev_cfg;
+	struct mspi_xip_cfg xip_cfg;
+	struct mspi_scramble_cfg scramble_cfg;
 
-	mspi_callback_handler_t         cbs[MSPI_BUS_EVENT_MAX];
-	struct mspi_callback_context    *cb_ctxs[MSPI_BUS_EVENT_MAX];
+	mspi_callback_handler_t cbs[MSPI_BUS_EVENT_MAX];
+	struct mspi_callback_context *cb_ctxs[MSPI_BUS_EVENT_MAX];
 
-	struct mspi_context             ctx;
+	struct mspi_context ctx;
 };
 
 static int mspi_set_freq(const struct mspi_ambiq_config *cfg, uint32_t freq)
@@ -97,8 +97,7 @@ static int mspi_set_freq(const struct mspi_ambiq_config *cfg, uint32_t freq)
 }
 
 static am_hal_mspi_device_e mspi_set_line(const struct mspi_ambiq_config *cfg,
-					  enum mspi_io_mode io_mode,
-					  enum mspi_data_rate data_rate,
+					  enum mspi_io_mode io_mode, enum mspi_data_rate data_rate,
 					  uint8_t ce_num)
 {
 	if (data_rate != MSPI_DATA_RATE_SINGLE) {
@@ -186,8 +185,7 @@ static am_hal_mspi_dma_boundary_e mspi_set_mem_boundary(uint32_t mem_boundary)
 static inline void mspi_context_ce_control(struct mspi_context *ctx, bool on)
 {
 	if (ctx->owner) {
-		if (ctx->xfer.hold_ce &&
-		    ctx->xfer.ce_sw_ctrl.gpio.port != NULL) {
+		if (ctx->xfer.hold_ce && ctx->xfer.ce_sw_ctrl.gpio.port != NULL) {
 			if (on) {
 				gpio_pin_set_dt(&ctx->xfer.ce_sw_ctrl.gpio, 1);
 				k_busy_wait(ctx->xfer.ce_sw_ctrl.delay);
@@ -215,17 +213,13 @@ static inline void mspi_context_unlock_unconditionally(struct mspi_context *ctx)
 	}
 }
 
-static inline int mspi_context_lock(struct mspi_context *ctx,
-				    const struct mspi_dev_id *req,
-				    const struct mspi_xfer *xfer,
-				    mspi_callback_handler_t callback,
-				    struct mspi_callback_context *callback_ctx,
-				    bool lockon)
+static inline int mspi_context_lock(struct mspi_context *ctx, const struct mspi_dev_id *req,
+				    const struct mspi_xfer *xfer, mspi_callback_handler_t callback,
+				    struct mspi_callback_context *callback_ctx, bool lockon)
 {
 	int ret = 1;
 
-	if ((k_sem_count_get(&ctx->lock) == 0) && !lockon &&
-	    (ctx->owner == req)) {
+	if ((k_sem_count_get(&ctx->lock) == 0) && !lockon && (ctx->owner == req)) {
 		return 0;
 	}
 
@@ -253,12 +247,12 @@ static inline int mspi_context_lock(struct mspi_context *ctx,
 			return -EIO;
 		}
 	}
-	ctx->owner           = req;
-	ctx->xfer            = *xfer;
-	ctx->packets_done    = 0;
-	ctx->packets_left    = ctx->xfer.num_packet;
-	ctx->callback        = callback;
-	ctx->callback_ctx    = callback_ctx;
+	ctx->owner = req;
+	ctx->xfer = *xfer;
+	ctx->packets_done = 0;
+	ctx->packets_left = ctx->xfer.num_packet;
+	ctx->callback = callback;
+	ctx->callback_ctx = callback_ctx;
 	return ret;
 }
 
@@ -284,8 +278,7 @@ static inline int mspi_verify_device(const struct device *controller,
 		}
 	}
 
-	if (device_index >= cfg->mspicfg.num_periph ||
-	    device_index != dev_id->dev_idx) {
+	if (device_index >= cfg->mspicfg.num_periph || device_index != dev_id->dev_idx) {
 		LOG_INST_ERR(cfg->log, "%u, invalid device ID.", __LINE__);
 		return -ENODEV;
 	}
@@ -311,32 +304,28 @@ static int mspi_ambiq_deinit(const struct device *controller)
 
 	ret = am_hal_mspi_interrupt_disable(data->mspiHandle, 0xFFFFFFFF);
 	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u, fail to disable interrupt, code:%d.",
-			     __LINE__, ret);
+		LOG_INST_ERR(cfg->log, "%u, fail to disable interrupt, code:%d.", __LINE__, ret);
 		ret = -EHOSTDOWN;
 		goto e_deinit_return;
 	}
 
 	ret = am_hal_mspi_interrupt_clear(data->mspiHandle, 0xFFFFFFFF);
 	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u, fail to clear interrupt, code:%d.",
-			     __LINE__, ret);
+		LOG_INST_ERR(cfg->log, "%u, fail to clear interrupt, code:%d.", __LINE__, ret);
 		ret = -EHOSTDOWN;
 		goto e_deinit_return;
 	}
 
 	ret = am_hal_mspi_disable(data->mspiHandle);
 	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u, fail to disable MSPI, code:%d.",
-			     __LINE__, ret);
+		LOG_INST_ERR(cfg->log, "%u, fail to disable MSPI, code:%d.", __LINE__, ret);
 		ret = -EHOSTDOWN;
 		goto e_deinit_return;
 	}
 
 	ret = am_hal_mspi_power_control(data->mspiHandle, AM_HAL_SYSCTRL_DEEPSLEEP, false);
 	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u, fail to power off MSPI, code:%d.",
-			     __LINE__, ret);
+		LOG_INST_ERR(cfg->log, "%u, fail to power off MSPI, code:%d.", __LINE__, ret);
 		ret = -EHOSTDOWN;
 		goto e_deinit_return;
 	}
@@ -355,8 +344,7 @@ e_deinit_return:
 }
 
 /** DMA specific config */
-static int mspi_xfer_config(const struct device *controller,
-			    const struct mspi_xfer *xfer)
+static int mspi_xfer_config(const struct device *controller, const struct mspi_xfer *xfer)
 {
 	const struct mspi_ambiq_config *cfg = controller->config;
 	struct mspi_ambiq_data *data = controller->data;
@@ -372,15 +360,14 @@ static int mspi_xfer_config(const struct device *controller,
 
 	ret = am_hal_mspi_disable(data->mspiHandle);
 	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u, fail to disable MSPI, code:%d.",
-			     __LINE__, ret);
+		LOG_INST_ERR(cfg->log, "%u, fail to disable MSPI, code:%d.", __LINE__, ret);
 		return -EHOSTDOWN;
 	}
 
 	ret = am_hal_mspi_control(data->mspiHandle, eRequest, NULL);
 	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u,Unable to complete scramble config:%d.",
-			     __LINE__, data->scramble_cfg.enable);
+		LOG_INST_ERR(cfg->log, "%u,Unable to complete scramble config:%d.", __LINE__,
+			     data->scramble_cfg.enable);
 		return -EHOSTDOWN;
 	}
 
@@ -392,7 +379,7 @@ static int mspi_xfer_config(const struct device *controller,
 		hal_dev_cfg.bSendInstr = false;
 	} else {
 		hal_dev_cfg.bSendInstr = true;
-		hal_dev_cfg.eInstrCfg  = xfer->cmd_length - 1;
+		hal_dev_cfg.eInstrCfg = xfer->cmd_length - 1;
 	}
 
 	if (xfer->addr_length > AM_HAL_MSPI_ADDR_4_BYTE + 1) {
@@ -403,25 +390,23 @@ static int mspi_xfer_config(const struct device *controller,
 		hal_dev_cfg.bSendAddr = false;
 	} else {
 		hal_dev_cfg.bSendAddr = true;
-		hal_dev_cfg.eAddrCfg  = xfer->addr_length - 1;
+		hal_dev_cfg.eAddrCfg = xfer->addr_length - 1;
 	}
 
-	hal_dev_cfg.bTurnaround     = (xfer->rx_dummy != 0);
-	hal_dev_cfg.ui8TurnAround   = (uint8_t)xfer->rx_dummy;
+	hal_dev_cfg.bTurnaround = (xfer->rx_dummy != 0);
+	hal_dev_cfg.ui8TurnAround = (uint8_t)xfer->rx_dummy;
 	hal_dev_cfg.bEnWriteLatency = (xfer->tx_dummy != 0);
 	hal_dev_cfg.ui8WriteLatency = (uint8_t)xfer->tx_dummy;
 
 	ret = am_hal_mspi_device_configure(data->mspiHandle, &hal_dev_cfg);
 	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u, fail to configure MSPI, code:%d.",
-			     __LINE__, ret);
+		LOG_INST_ERR(cfg->log, "%u, fail to configure MSPI, code:%d.", __LINE__, ret);
 		return -EHOSTDOWN;
 	}
 
 	ret = am_hal_mspi_enable(data->mspiHandle);
 	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u, fail to enable MSPI, code:%d.",
-			     __LINE__, ret);
+		LOG_INST_ERR(cfg->log, "%u, fail to enable MSPI, code:%d.", __LINE__, ret);
 		return -EHOSTDOWN;
 	}
 
@@ -466,22 +451,19 @@ static int mspi_ambiq_config(const struct mspi_dt_spec *spec)
 
 	ret = am_hal_mspi_initialize(config->channel_num, &data->mspiHandle);
 	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u, fail to initialize MSPI, code:%d.",
-			     __LINE__, ret);
+		LOG_INST_ERR(cfg->log, "%u, fail to initialize MSPI, code:%d.", __LINE__, ret);
 		return -EPERM;
 	}
 
 	ret = am_hal_mspi_power_control(data->mspiHandle, AM_HAL_SYSCTRL_WAKE, false);
 	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u, fail to power on MSPI, code:%d.",
-			     __LINE__, ret);
+		LOG_INST_ERR(cfg->log, "%u, fail to power on MSPI, code:%d.", __LINE__, ret);
 		return -EHOSTDOWN;
 	}
 
 	ret = am_hal_mspi_enable(data->mspiHandle);
 	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u, fail to Enable MSPI, code:%d.",
-			     __LINE__, ret);
+		LOG_INST_ERR(cfg->log, "%u, fail to Enable MSPI, code:%d.", __LINE__, ret);
 		return -EHOSTDOWN;
 	}
 
@@ -490,19 +472,17 @@ static int mspi_ambiq_config(const struct mspi_dt_spec *spec)
 		return ret;
 	}
 
-	ret = am_hal_mspi_interrupt_clear(data->mspiHandle, AM_HAL_MSPI_INT_CQUPD |
-							    AM_HAL_MSPI_INT_ERR);
+	ret = am_hal_mspi_interrupt_clear(data->mspiHandle,
+					  AM_HAL_MSPI_INT_CQUPD | AM_HAL_MSPI_INT_ERR);
 	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u, fail to clear interrupt, code:%d.",
-			__LINE__, ret);
+		LOG_INST_ERR(cfg->log, "%u, fail to clear interrupt, code:%d.", __LINE__, ret);
 		return -EHOSTDOWN;
 	}
 
-	ret = am_hal_mspi_interrupt_enable(data->mspiHandle, AM_HAL_MSPI_INT_CQUPD |
-							     AM_HAL_MSPI_INT_ERR);
+	ret = am_hal_mspi_interrupt_enable(data->mspiHandle,
+					   AM_HAL_MSPI_INT_CQUPD | AM_HAL_MSPI_INT_ERR);
 	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u, fail to turn on interrupt, code:%d.",
-			     __LINE__, ret);
+		LOG_INST_ERR(cfg->log, "%u, fail to turn on interrupt, code:%d.", __LINE__, ret);
 		return -EHOSTDOWN;
 	}
 
@@ -517,8 +497,7 @@ static int mspi_ambiq_config(const struct mspi_dt_spec *spec)
 	return ret;
 }
 
-static int mspi_ambiq_dev_config(const struct device *controller,
-				 const struct mspi_dev_id *dev_id,
+static int mspi_ambiq_dev_config(const struct device *controller, const struct mspi_dev_id *dev_id,
 				 const enum mspi_dev_cfg_mask param_mask,
 				 const struct mspi_dev_cfg *dev_cfg)
 {
@@ -544,8 +523,7 @@ static int mspi_ambiq_dev_config(const struct device *controller,
 		goto e_return;
 	}
 
-	if (param_mask == MSPI_DEVICE_CONFIG_NONE &&
-	    !cfg->mspicfg.sw_multi_periph) {
+	if (param_mask == MSPI_DEVICE_CONFIG_NONE && !cfg->mspicfg.sw_multi_periph) {
 		/* Do nothing except obtaining the controller lock */
 		data->dev_id = (struct mspi_dev_id *)dev_id;
 		return ret;
@@ -558,12 +536,9 @@ static int mspi_ambiq_dev_config(const struct device *controller,
 			goto e_return;
 		}
 
-		if ((param_mask & (~(MSPI_DEVICE_CONFIG_FREQUENCY |
-				     MSPI_DEVICE_CONFIG_IO_MODE |
-				     MSPI_DEVICE_CONFIG_CE_NUM |
-				     MSPI_DEVICE_CONFIG_DATA_RATE |
-				     MSPI_DEVICE_CONFIG_CMD_LEN |
-				     MSPI_DEVICE_CONFIG_ADDR_LEN)))) {
+		if ((param_mask & (~(MSPI_DEVICE_CONFIG_FREQUENCY | MSPI_DEVICE_CONFIG_IO_MODE |
+				     MSPI_DEVICE_CONFIG_CE_NUM | MSPI_DEVICE_CONFIG_DATA_RATE |
+				     MSPI_DEVICE_CONFIG_CMD_LEN | MSPI_DEVICE_CONFIG_ADDR_LEN)))) {
 			LOG_INST_ERR(cfg->log, "%u, config type not supported.", __LINE__);
 			ret = -ENOTSUP;
 			goto e_return;
@@ -575,8 +550,7 @@ static int mspi_ambiq_dev_config(const struct device *controller,
 				ret = -ENOTSUP;
 				goto e_return;
 			}
-			ret = am_hal_mspi_control(data->mspiHandle,
-						  AM_HAL_MSPI_REQ_CLOCK_CONFIG,
+			ret = am_hal_mspi_control(data->mspiHandle, AM_HAL_MSPI_REQ_CLOCK_CONFIG,
 						  &hal_dev_cfg.eClockFreq);
 			if (ret) {
 				LOG_INST_ERR(cfg->log, "%u, failed to configure eClockFreq.",
@@ -590,24 +564,22 @@ static int mspi_ambiq_dev_config(const struct device *controller,
 		if ((param_mask & MSPI_DEVICE_CONFIG_IO_MODE) ||
 		    (param_mask & MSPI_DEVICE_CONFIG_CE_NUM) ||
 		    (param_mask & MSPI_DEVICE_CONFIG_DATA_RATE)) {
-			hal_dev_cfg.eDeviceConfig = mspi_set_line(cfg, dev_cfg->io_mode,
-								  dev_cfg->data_rate,
-								  dev_cfg->ce_num);
+			hal_dev_cfg.eDeviceConfig = mspi_set_line(
+				cfg, dev_cfg->io_mode, dev_cfg->data_rate, dev_cfg->ce_num);
 			if (hal_dev_cfg.eDeviceConfig == AM_HAL_MSPI_FLASH_MAX) {
 				ret = -ENOTSUP;
 				goto e_return;
 			}
-			ret = am_hal_mspi_control(data->mspiHandle,
-						  AM_HAL_MSPI_REQ_DEVICE_CONFIG,
+			ret = am_hal_mspi_control(data->mspiHandle, AM_HAL_MSPI_REQ_DEVICE_CONFIG,
 						  &hal_dev_cfg.eDeviceConfig);
 			if (ret) {
 				LOG_INST_ERR(cfg->log, "%u, failed to configure device.", __LINE__);
 				ret = -EHOSTDOWN;
 				goto e_return;
 			}
-			data->dev_cfg.freq      = dev_cfg->io_mode;
+			data->dev_cfg.freq = dev_cfg->io_mode;
 			data->dev_cfg.data_rate = dev_cfg->data_rate;
-			data->dev_cfg.ce_num    = dev_cfg->ce_num;
+			data->dev_cfg.ce_num = dev_cfg->ce_num;
 		}
 
 		if (param_mask & MSPI_DEVICE_CONFIG_CMD_LEN) {
@@ -618,8 +590,7 @@ static int mspi_ambiq_dev_config(const struct device *controller,
 				goto e_return;
 			}
 			hal_dev_cfg.eInstrCfg = dev_cfg->cmd_length - 1;
-			ret = am_hal_mspi_control(data->mspiHandle,
-						  AM_HAL_MSPI_REQ_ISIZE_SET,
+			ret = am_hal_mspi_control(data->mspiHandle, AM_HAL_MSPI_REQ_ISIZE_SET,
 						  &hal_dev_cfg.eInstrCfg);
 			if (ret) {
 				LOG_INST_ERR(cfg->log, "%u, failed to configure cmd_length.",
@@ -638,8 +609,7 @@ static int mspi_ambiq_dev_config(const struct device *controller,
 				goto e_return;
 			}
 			hal_dev_cfg.eAddrCfg = dev_cfg->addr_length - 1;
-			ret = am_hal_mspi_control(data->mspiHandle,
-						  AM_HAL_MSPI_REQ_ASIZE_SET,
+			ret = am_hal_mspi_control(data->mspiHandle, AM_HAL_MSPI_REQ_ASIZE_SET,
 						  &hal_dev_cfg.eAddrCfg);
 			if (ret) {
 				LOG_INST_ERR(cfg->log, "%u, failed to configure addr_length.",
@@ -678,11 +648,11 @@ static int mspi_ambiq_dev_config(const struct device *controller,
 			goto e_return;
 		}
 
-		hal_dev_cfg.eSpiMode           = dev_cfg->cpp;
-		hal_dev_cfg.bEnWriteLatency    = (dev_cfg->tx_dummy != 0);
-		hal_dev_cfg.ui8WriteLatency    = dev_cfg->tx_dummy;
-		hal_dev_cfg.bTurnaround        = (dev_cfg->rx_dummy != 0);
-		hal_dev_cfg.ui8TurnAround      = dev_cfg->rx_dummy;
+		hal_dev_cfg.eSpiMode = dev_cfg->cpp;
+		hal_dev_cfg.bEnWriteLatency = (dev_cfg->tx_dummy != 0);
+		hal_dev_cfg.ui8WriteLatency = dev_cfg->tx_dummy;
+		hal_dev_cfg.bTurnaround = (dev_cfg->rx_dummy != 0);
+		hal_dev_cfg.ui8TurnAround = dev_cfg->rx_dummy;
 
 		hal_dev_cfg.eClockFreq = mspi_set_freq(cfg, dev_cfg->freq);
 		if (hal_dev_cfg.eClockFreq == 0) {
@@ -690,8 +660,8 @@ static int mspi_ambiq_dev_config(const struct device *controller,
 			goto e_return;
 		}
 
-		hal_dev_cfg.eDeviceConfig = mspi_set_line(cfg, dev_cfg->io_mode, dev_cfg->data_rate,
-							  dev_cfg->ce_num);
+		hal_dev_cfg.eDeviceConfig =
+			mspi_set_line(cfg, dev_cfg->io_mode, dev_cfg->data_rate, dev_cfg->ce_num);
 		if (hal_dev_cfg.eDeviceConfig == AM_HAL_MSPI_FLASH_MAX) {
 			ret = -ENOTSUP;
 			goto e_return;
@@ -706,7 +676,7 @@ static int mspi_ambiq_dev_config(const struct device *controller,
 			hal_dev_cfg.bSendInstr = false;
 		} else {
 			hal_dev_cfg.bSendInstr = true;
-			hal_dev_cfg.eInstrCfg  = dev_cfg->cmd_length - 1;
+			hal_dev_cfg.eInstrCfg = dev_cfg->cmd_length - 1;
 		}
 
 		if (dev_cfg->addr_length > AM_HAL_MSPI_ADDR_4_BYTE + 1) {
@@ -718,10 +688,10 @@ static int mspi_ambiq_dev_config(const struct device *controller,
 			hal_dev_cfg.bSendAddr = false;
 		} else {
 			hal_dev_cfg.bSendAddr = true;
-			hal_dev_cfg.eAddrCfg  = dev_cfg->addr_length - 1;
+			hal_dev_cfg.eAddrCfg = dev_cfg->addr_length - 1;
 		}
 
-		hal_dev_cfg.ui8ReadInstr  = (uint8_t)dev_cfg->read_cmd;
+		hal_dev_cfg.ui8ReadInstr = (uint8_t)dev_cfg->read_cmd;
 		hal_dev_cfg.ui8WriteInstr = (uint8_t)dev_cfg->write_cmd;
 
 		hal_dev_cfg.eDMABoundary = mspi_set_mem_boundary(dev_cfg->mem_boundary);
@@ -767,8 +737,7 @@ e_return:
 	return ret;
 }
 
-static int mspi_ambiq_xip_config(const struct device *controller,
-				 const struct mspi_dev_id *dev_id,
+static int mspi_ambiq_xip_config(const struct device *controller, const struct mspi_dev_id *dev_id,
 				 const struct mspi_xip_cfg *xip_cfg)
 {
 	const struct mspi_ambiq_config *cfg = controller->config;
@@ -837,7 +806,7 @@ static int mspi_ambiq_scramble_config(const struct device *controller,
 	}
 
 	hal_dev_cfg.scramblingStartAddr = 0 + scramble_cfg->address_offset;
-	hal_dev_cfg.scramblingEndAddr   = hal_dev_cfg.scramblingStartAddr + scramble_cfg->size;
+	hal_dev_cfg.scramblingEndAddr = hal_dev_cfg.scramblingStartAddr + scramble_cfg->size;
 
 	ret = am_hal_mspi_device_configure(data->mspiHandle, &hal_dev_cfg);
 	if (ret) {
@@ -852,13 +821,12 @@ static int mspi_ambiq_scramble_config(const struct device *controller,
 	}
 
 	data->scramble_cfg = *scramble_cfg;
-	data->hal_dev_cfg  = hal_dev_cfg;
+	data->hal_dev_cfg = hal_dev_cfg;
 	return ret;
 }
 
 static int mspi_ambiq_timing_config(const struct device *controller,
-				    const struct mspi_dev_id *dev_id,
-				    const uint32_t param_mask,
+				    const struct mspi_dev_id *dev_id, const uint32_t param_mask,
 				    void *timing_cfg)
 {
 	const struct mspi_ambiq_config *cfg = controller->config;
@@ -900,7 +868,7 @@ static int mspi_ambiq_timing_config(const struct device *controller,
 		hal_dev_cfg.ui8TurnAround = time_cfg->ui8TurnAround;
 	}
 
-	timing.ui8Turnaround   = hal_dev_cfg.ui8TurnAround;
+	timing.ui8Turnaround = hal_dev_cfg.ui8TurnAround;
 	timing.ui8WriteLatency = hal_dev_cfg.ui8WriteLatency;
 
 	ret = am_hal_mspi_control(data->mspiHandle, AM_HAL_MSPI_REQ_TIMING_SCAN, &timing);
@@ -954,22 +922,21 @@ static void hal_mspi_callback(void *pCallbackCtxt, uint32_t status)
 	data->ctx.packets_done++;
 }
 
-static int mspi_pio_prepare(const struct device *controller,
-			    am_hal_mspi_pio_transfer_t *trans)
+static int mspi_pio_prepare(const struct device *controller, am_hal_mspi_pio_transfer_t *trans)
 {
 	const struct mspi_ambiq_config *cfg = controller->config;
 	struct mspi_ambiq_data *data = controller->data;
 	const struct mspi_xfer *xfer = &data->ctx.xfer;
 	int ret = 0;
 
-	trans->bScrambling    = false;
-	trans->bSendAddr      = (xfer->addr_length != 0);
-	trans->bSendInstr     = (xfer->cmd_length != 0);
-	trans->bTurnaround    = (xfer->rx_dummy != 0);
-	trans->bEnWRLatency   = (xfer->tx_dummy != 0);
-	trans->bDCX           = false;
-	trans->bQuadCmd       = false;
-	trans->bContinue      = false;
+	trans->bScrambling = false;
+	trans->bSendAddr = (xfer->addr_length != 0);
+	trans->bSendInstr = (xfer->cmd_length != 0);
+	trans->bTurnaround = (xfer->rx_dummy != 0);
+	trans->bEnWRLatency = (xfer->tx_dummy != 0);
+	trans->bDCX = false;
+	trans->bQuadCmd = false;
+	trans->bContinue = false;
 
 	if (xfer->cmd_length > AM_HAL_MSPI_INSTR_2_BYTE + 1) {
 		LOG_INST_ERR(cfg->log, "%u, invalid cmd_length.", __LINE__);
@@ -980,8 +947,7 @@ static int mspi_pio_prepare(const struct device *controller,
 
 		ret = am_hal_mspi_control(data->mspiHandle, AM_HAL_MSPI_REQ_ISIZE_SET, &eInstrCfg);
 		if (ret) {
-			LOG_INST_ERR(cfg->log, "%u, failed to configure cmd_length.",
-				     __LINE__);
+			LOG_INST_ERR(cfg->log, "%u, failed to configure cmd_length.", __LINE__);
 			return -EHOSTDOWN;
 		}
 		data->hal_dev_cfg.eInstrCfg = eInstrCfg;
@@ -1007,10 +973,8 @@ static int mspi_pio_prepare(const struct device *controller,
 	return ret;
 }
 
-static int mspi_pio_transceive(const struct device *controller,
-			       const struct mspi_xfer *xfer,
-			       mspi_callback_handler_t cb,
-			       struct mspi_callback_context *cb_ctx)
+static int mspi_pio_transceive(const struct device *controller, const struct mspi_xfer *xfer,
+			       mspi_callback_handler_t cb, struct mspi_callback_context *cb_ctx)
 {
 	const struct mspi_ambiq_config *cfg = controller->config;
 	struct mspi_ambiq_data *data = controller->data;
@@ -1021,8 +985,7 @@ static int mspi_pio_transceive(const struct device *controller,
 	int ret = 0;
 	int cfg_flag = 0;
 
-	if (xfer->num_packet == 0 ||
-	    !xfer->packets ||
+	if (xfer->num_packet == 0 || !xfer->packets ||
 	    xfer->timeout > CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE) {
 		return -EFAULT;
 	}
@@ -1046,13 +1009,13 @@ static int mspi_pio_transceive(const struct device *controller,
 	if (!ctx->xfer.async) {
 
 		while (ctx->packets_left > 0) {
-			packet_idx               = ctx->xfer.num_packet - ctx->packets_left;
-			packet                   = &ctx->xfer.packets[packet_idx];
-			trans.eDirection         = packet->dir;
-			trans.ui16DeviceInstr    = (uint16_t)packet->cmd;
-			trans.ui32DeviceAddr     = packet->address;
-			trans.ui32NumBytes       = packet->num_bytes;
-			trans.pui32Buffer        = (uint32_t *)packet->data_buf;
+			packet_idx = ctx->xfer.num_packet - ctx->packets_left;
+			packet = &ctx->xfer.packets[packet_idx];
+			trans.eDirection = packet->dir;
+			trans.ui16DeviceInstr = (uint16_t)packet->cmd;
+			trans.ui32DeviceAddr = packet->address;
+			trans.ui32NumBytes = packet->num_bytes;
+			trans.pui32Buffer = (uint32_t *)packet->data_buf;
 
 			ret = am_hal_mspi_blocking_transfer(data->mspiHandle, &trans,
 							    MSPI_TIMEOUT_US);
@@ -1073,13 +1036,13 @@ static int mspi_pio_transceive(const struct device *controller,
 		}
 
 		while (ctx->packets_left > 0) {
-			packet_idx               = ctx->xfer.num_packet - ctx->packets_left;
-			packet                   = &ctx->xfer.packets[packet_idx];
-			trans.eDirection         = packet->dir;
-			trans.ui16DeviceInstr    = (uint16_t)packet->cmd;
-			trans.ui32DeviceAddr     = packet->address;
-			trans.ui32NumBytes       = packet->num_bytes;
-			trans.pui32Buffer        = (uint32_t *)packet->data_buf;
+			packet_idx = ctx->xfer.num_packet - ctx->packets_left;
+			packet = &ctx->xfer.packets[packet_idx];
+			trans.eDirection = packet->dir;
+			trans.ui16DeviceInstr = (uint16_t)packet->cmd;
+			trans.ui32DeviceAddr = packet->address;
+			trans.ui32NumBytes = packet->num_bytes;
+			trans.pui32Buffer = (uint32_t *)packet->data_buf;
 
 			if (ctx->callback && packet->cb_mask == MSPI_BUS_XFER_COMPLETE_CB) {
 				ctx->callback_ctx->mspi_evt.evt_type = MSPI_BUS_XFER_COMPLETE;
@@ -1115,10 +1078,8 @@ pio_err:
 	return ret;
 }
 
-static int mspi_dma_transceive(const struct device *controller,
-			       const struct mspi_xfer *xfer,
-			       mspi_callback_handler_t cb,
-			       struct mspi_callback_context *cb_ctx)
+static int mspi_dma_transceive(const struct device *controller, const struct mspi_xfer *xfer,
+			       mspi_callback_handler_t cb, struct mspi_callback_context *cb_ctx)
 {
 	const struct mspi_ambiq_config *cfg = controller->config;
 	struct mspi_ambiq_data *data = controller->data;
@@ -1127,8 +1088,7 @@ static int mspi_dma_transceive(const struct device *controller,
 	int ret = 0;
 	int cfg_flag = 0;
 
-	if (xfer->num_packet == 0 ||
-	    !xfer->packets ||
+	if (xfer->num_packet == 0 || !xfer->packets ||
 	    xfer->timeout > CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE) {
 		return -EFAULT;
 	}
@@ -1160,14 +1120,14 @@ static int mspi_dma_transceive(const struct device *controller,
 		uint32_t packet_idx = ctx->xfer.num_packet - ctx->packets_left;
 		const struct mspi_xfer_packet *packet;
 
-		packet                     = &ctx->xfer.packets[packet_idx];
-		trans.ui8Priority          = ctx->xfer.priority;
-		trans.eDirection           = packet->dir;
-		trans.ui32TransferCount    = packet->num_bytes;
-		trans.ui32DeviceAddress    = packet->address;
-		trans.ui32SRAMAddress      = (uint32_t)packet->data_buf;
-		trans.ui32PauseCondition   = 0;
-		trans.ui32StatusSetClr     = 0;
+		packet = &ctx->xfer.packets[packet_idx];
+		trans.ui8Priority = ctx->xfer.priority;
+		trans.eDirection = packet->dir;
+		trans.ui32TransferCount = packet->num_bytes;
+		trans.ui32DeviceAddress = packet->address;
+		trans.ui32SRAMAddress = (uint32_t)packet->data_buf;
+		trans.ui32PauseCondition = 0;
+		trans.ui32StatusSetClr = 0;
 
 		if (ctx->xfer.async) {
 
@@ -1215,8 +1175,7 @@ dma_err:
 	return ret;
 }
 
-static int mspi_ambiq_transceive(const struct device *controller,
-				 const struct mspi_dev_id *dev_id,
+static int mspi_ambiq_transceive(const struct device *controller, const struct mspi_dev_id *dev_id,
 				 const struct mspi_xfer *xfer)
 {
 	const struct mspi_ambiq_config *cfg = controller->config;
@@ -1321,17 +1280,17 @@ static int mspi_ambiq_init(const struct device *controller)
 }
 
 static struct mspi_driver_api mspi_ambiq_driver_api = {
-	.config                = mspi_ambiq_config,
-	.dev_config            = mspi_ambiq_dev_config,
-	.xip_config            = mspi_ambiq_xip_config,
-	.scramble_config       = mspi_ambiq_scramble_config,
-	.timing_config         = mspi_ambiq_timing_config,
-	.get_channel_status    = mspi_ambiq_get_channel_status,
-	.register_callback     = mspi_ambiq_register_callback,
-	.transceive            = mspi_ambiq_transceive,
+	.config = mspi_ambiq_config,
+	.dev_config = mspi_ambiq_dev_config,
+	.xip_config = mspi_ambiq_xip_config,
+	.scramble_config = mspi_ambiq_scramble_config,
+	.timing_config = mspi_ambiq_timing_config,
+	.get_channel_status = mspi_ambiq_get_channel_status,
+	.register_callback = mspi_ambiq_register_callback,
+	.transceive = mspi_ambiq_transceive,
 };
 
-#define MSPI_PINCTRL_STATE_INIT(state_idx, node_id)                                              \
+#define MSPI_PINCTRL_STATE_INIT(state_idx, node_id)                                                \
 	COND_CODE_1(Z_PINCTRL_SKIP_STATE(state_idx, node_id), (),                                \
 		({                                                                               \
 			.id = state_idx,                                                         \
@@ -1339,105 +1298,93 @@ static struct mspi_driver_api mspi_ambiq_driver_api = {
 			.pin_cnt = ARRAY_SIZE(Z_PINCTRL_STATE_PINS_NAME(state_idx, node_id))     \
 		}))
 
-#define MSPI_PINCTRL_STATES_DEFINE(node_id)                                                      \
-	static const struct pinctrl_state                                                        \
-	Z_PINCTRL_STATES_NAME(node_id)[] = {                                                     \
+#define MSPI_PINCTRL_STATES_DEFINE(node_id)                                                        \
+	static const struct pinctrl_state Z_PINCTRL_STATES_NAME(node_id)[] = {                     \
 		LISTIFY(DT_NUM_PINCTRL_STATES(node_id),                                          \
-			MSPI_PINCTRL_STATE_INIT, (,), node_id)                                   \
-	};
+			MSPI_PINCTRL_STATE_INIT, (,), node_id) };
 
-#define MSPI_PINCTRL_DT_DEFINE(node_id)                                                          \
-		LISTIFY(DT_NUM_PINCTRL_STATES(node_id),                                          \
-			Z_PINCTRL_STATE_PINS_DEFINE, (;), node_id);                              \
-		MSPI_PINCTRL_STATES_DEFINE(node_id)                                              \
-		Z_PINCTRL_DEV_CONFIG_STATIC Z_PINCTRL_DEV_CONFIG_CONST                           \
-			struct pinctrl_dev_config Z_PINCTRL_DEV_CONFIG_NAME(node_id) =           \
-				Z_PINCTRL_DEV_CONFIG_INIT(node_id)
+#define MSPI_PINCTRL_DT_DEFINE(node_id)                                                            \
+	LISTIFY(DT_NUM_PINCTRL_STATES(node_id),                                          \
+			Z_PINCTRL_STATE_PINS_DEFINE, (;), node_id);           \
+	MSPI_PINCTRL_STATES_DEFINE(node_id)                                                        \
+	Z_PINCTRL_DEV_CONFIG_STATIC Z_PINCTRL_DEV_CONFIG_CONST struct pinctrl_dev_config           \
+	Z_PINCTRL_DEV_CONFIG_NAME(node_id) = Z_PINCTRL_DEV_CONFIG_INIT(node_id)
 
-#define MSPI_CONFIG(n)                                                                           \
-	{                                                                                        \
-		.channel_num           = (DT_INST_REG_ADDR(n) - MSPI0_BASE) /                    \
-					 (DT_INST_REG_SIZE(n) * 4),                              \
-		.op_mode               = MSPI_OP_MODE_CONTROLLER,                                \
-		.duplex                = MSPI_HALF_DUPLEX,                                       \
-		.max_freq              = MSPI_MAX_FREQ,                                          \
-		.dqs_support           = false,                                                  \
-		.num_periph            = DT_INST_CHILD_NUM(n),                                   \
-		.sw_multi_periph       = DT_INST_PROP(n, software_multiperipheral),              \
+#define MSPI_CONFIG(n)                                                                             \
+	{                                                                                          \
+		.channel_num = (DT_INST_REG_ADDR(n) - MSPI0_BASE) / (DT_INST_REG_SIZE(n) * 4),     \
+		.op_mode = MSPI_OP_MODE_CONTROLLER,                                                \
+		.duplex = MSPI_HALF_DUPLEX,                                                        \
+		.max_freq = MSPI_MAX_FREQ,                                                         \
+		.dqs_support = false,                                                              \
+		.num_periph = DT_INST_CHILD_NUM(n),                                                \
+		.sw_multi_periph = DT_INST_PROP(n, software_multiperipheral),                      \
 	}
 
-#define MSPI_HAL_DEVICE_CONFIG(n, cmdq, cmdq_size)                                               \
-	{                                                                                        \
-		.ui8WriteLatency       = 0,                                                      \
-		.ui8TurnAround         = 0,                                                      \
-		.eAddrCfg              = 0,                                                      \
-		.eInstrCfg             = 0,                                                      \
-		.ui8ReadInstr          = 0,                                                      \
-		.ui8WriteInstr         = 0,                                                      \
-		.eDeviceConfig         = AM_HAL_MSPI_FLASH_SERIAL_CE0,                           \
-		.eSpiMode              = AM_HAL_MSPI_SPI_MODE_0,                                 \
-		.eClockFreq            = MSPI_MAX_FREQ / DT_INST_PROP_OR(n,                      \
-									 clock_frequency,        \
-									 MSPI_MAX_FREQ),         \
-		.bEnWriteLatency       = false,                                                  \
-		.bSendAddr             = false,                                                  \
-		.bSendInstr            = false,                                                  \
-		.bTurnaround           = false,                                                  \
-		.bEmulateDDR           = false,                                                  \
-		.ui16DMATimeLimit      = 0,                                                      \
-		.eDMABoundary          = AM_HAL_MSPI_BOUNDARY_NONE,                              \
-		.ui32TCBSize           = cmdq_size,                                              \
-		.pTCB                  = cmdq,                                                   \
-		.scramblingStartAddr   = 0,                                                      \
-		.scramblingEndAddr     = 0,                                                      \
+#define MSPI_HAL_DEVICE_CONFIG(n, cmdq, cmdq_size)                                                 \
+	{                                                                                          \
+		.ui8WriteLatency = 0,                                                              \
+		.ui8TurnAround = 0,                                                                \
+		.eAddrCfg = 0,                                                                     \
+		.eInstrCfg = 0,                                                                    \
+		.ui8ReadInstr = 0,                                                                 \
+		.ui8WriteInstr = 0,                                                                \
+		.eDeviceConfig = AM_HAL_MSPI_FLASH_SERIAL_CE0,                                     \
+		.eSpiMode = AM_HAL_MSPI_SPI_MODE_0,                                                \
+		.eClockFreq = MSPI_MAX_FREQ / DT_INST_PROP_OR(n, clock_frequency, MSPI_MAX_FREQ),  \
+		.bEnWriteLatency = false,                                                          \
+		.bSendAddr = false,                                                                \
+		.bSendInstr = false,                                                               \
+		.bTurnaround = false,                                                              \
+		.bEmulateDDR = false,                                                              \
+		.ui16DMATimeLimit = 0,                                                             \
+		.eDMABoundary = AM_HAL_MSPI_BOUNDARY_NONE,                                         \
+		.ui32TCBSize = cmdq_size,                                                          \
+		.pTCB = cmdq,                                                                      \
+		.scramblingStartAddr = 0,                                                          \
+		.scramblingEndAddr = 0,                                                            \
 	}
 
-#define AMBIQ_MSPI_DEFINE(n)                                                                     \
-	LOG_INSTANCE_REGISTER(DT_DRV_INST(n), mspi##n, CONFIG_MSPI_LOG_LEVEL);                   \
-	MSPI_PINCTRL_DT_DEFINE(DT_DRV_INST(n));                                                  \
-	static void mspi_ambiq_irq_cfg_func_##n(void)                                            \
-	{                                                                                        \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),                           \
-		mspi_ambiq_isr, DEVICE_DT_INST_GET(n), 0);                                       \
-		irq_enable(DT_INST_IRQN(n));                                                     \
-	}                                                                                        \
-	static uint32_t mspi_ambiq_cmdq##n[DT_INST_PROP_OR(n, cmdq_buffer_size, 1024) / 4]       \
-	__attribute__((section(DT_INST_PROP_OR(n, cmdq_buffer_location, ".mspi_buff"))));        \
-	static struct gpio_dt_spec ce_gpios##n[] = MSPI_CE_GPIOS_DT_SPEC_INST_GET(n);            \
-	static struct mspi_ambiq_data mspi_ambiq_data##n = {                                     \
-		.mspiHandle            = NULL,                                                   \
-		.hal_dev_cfg           = MSPI_HAL_DEVICE_CONFIG(n, mspi_ambiq_cmdq##n,           \
-					 DT_INST_PROP_OR(n, cmdq_buffer_size, 1024)),            \
-		.dev_id                = 0,                                                      \
-		.lock                  = Z_MUTEX_INITIALIZER(mspi_ambiq_data##n.lock),           \
-		.dev_cfg               = {0},                                                    \
-		.xip_cfg               = {0},                                                    \
-		.scramble_cfg          = {0},                                                    \
-		.cbs                   = {0},                                                    \
-		.cb_ctxs               = {0},                                                    \
-		.ctx.lock              = Z_SEM_INITIALIZER(mspi_ambiq_data##n.ctx.lock, 0, 1),   \
-		.ctx.callback          = 0,                                                      \
-		.ctx.callback_ctx      = 0,                                                      \
-	};                                                                                       \
-	static const struct mspi_ambiq_config mspi_ambiq_config##n = {                           \
-		.reg_base              = DT_INST_REG_ADDR(n),                                    \
-		.reg_size              = DT_INST_REG_SIZE(n),                                    \
-		.mspicfg               = MSPI_CONFIG(n),                                         \
-		.mspicfg.ce_group      = (struct gpio_dt_spec *)ce_gpios##n,                     \
-		.mspicfg.num_ce_gpios  = ARRAY_SIZE(ce_gpios##n),                                \
-		.mspicfg.re_init       = false,                                                  \
-		.pcfg                  = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                      \
-		.irq_cfg_func          = mspi_ambiq_irq_cfg_func_##n,                            \
-		LOG_INSTANCE_PTR_INIT(log, DT_DRV_INST(n), mspi##n)                              \
-	};                                                                                       \
-	PM_DEVICE_DT_INST_DEFINE(n, mspi_ambiq_pm_action);                                       \
-	DEVICE_DT_INST_DEFINE(n,                                                                 \
-			      mspi_ambiq_init,                                                   \
-			      PM_DEVICE_DT_INST_GET(n),                                          \
-			      &mspi_ambiq_data##n,                                               \
-			      &mspi_ambiq_config##n,                                             \
-			      POST_KERNEL,                                                       \
-			      CONFIG_MSPI_INIT_PRIORITY,                                         \
+#define AMBIQ_MSPI_DEFINE(n)                                                                       \
+	LOG_INSTANCE_REGISTER(DT_DRV_INST(n), mspi##n, CONFIG_MSPI_LOG_LEVEL);                     \
+	MSPI_PINCTRL_DT_DEFINE(DT_DRV_INST(n));                                                    \
+	static void mspi_ambiq_irq_cfg_func_##n(void)                                              \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mspi_ambiq_isr,             \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+	}                                                                                          \
+	static uint32_t mspi_ambiq_cmdq##n[DT_INST_PROP_OR(n, cmdq_buffer_size, 1024) / 4]         \
+		__attribute__((section(DT_INST_PROP_OR(n, cmdq_buffer_location, ".mspi_buff"))));  \
+	static struct gpio_dt_spec ce_gpios##n[] = MSPI_CE_GPIOS_DT_SPEC_INST_GET(n);              \
+	static struct mspi_ambiq_data mspi_ambiq_data##n = {                                       \
+		.mspiHandle = NULL,                                                                \
+		.hal_dev_cfg = MSPI_HAL_DEVICE_CONFIG(n, mspi_ambiq_cmdq##n,                       \
+						      DT_INST_PROP_OR(n, cmdq_buffer_size, 1024)), \
+		.dev_id = 0,                                                                       \
+		.lock = Z_MUTEX_INITIALIZER(mspi_ambiq_data##n.lock),                              \
+		.dev_cfg = {0},                                                                    \
+		.xip_cfg = {0},                                                                    \
+		.scramble_cfg = {0},                                                               \
+		.cbs = {0},                                                                        \
+		.cb_ctxs = {0},                                                                    \
+		.ctx.lock = Z_SEM_INITIALIZER(mspi_ambiq_data##n.ctx.lock, 0, 1),                  \
+		.ctx.callback = 0,                                                                 \
+		.ctx.callback_ctx = 0,                                                             \
+	};                                                                                         \
+	static const struct mspi_ambiq_config mspi_ambiq_config##n = {                             \
+		.reg_base = DT_INST_REG_ADDR(n),                                                   \
+		.reg_size = DT_INST_REG_SIZE(n),                                                   \
+		.mspicfg = MSPI_CONFIG(n),                                                         \
+		.mspicfg.ce_group = (struct gpio_dt_spec *)ce_gpios##n,                            \
+		.mspicfg.num_ce_gpios = ARRAY_SIZE(ce_gpios##n),                                   \
+		.mspicfg.re_init = false,                                                          \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+		.irq_cfg_func = mspi_ambiq_irq_cfg_func_##n,                                       \
+		LOG_INSTANCE_PTR_INIT(log, DT_DRV_INST(n), mspi##n)};                              \
+	PM_DEVICE_DT_INST_DEFINE(n, mspi_ambiq_pm_action);                                         \
+	DEVICE_DT_INST_DEFINE(n, mspi_ambiq_init, PM_DEVICE_DT_INST_GET(n), &mspi_ambiq_data##n,   \
+			      &mspi_ambiq_config##n, POST_KERNEL, CONFIG_MSPI_INIT_PRIORITY,       \
 			      &mspi_ambiq_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AMBIQ_MSPI_DEFINE)

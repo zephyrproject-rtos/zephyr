@@ -7,13 +7,10 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 
-static MCI_IO_MUX_Type *mci_iomux =
-	(MCI_IO_MUX_Type *)DT_REG_ADDR(DT_NODELABEL(pinctrl));
+static MCI_IO_MUX_Type *mci_iomux = (MCI_IO_MUX_Type *)DT_REG_ADDR(DT_NODELABEL(pinctrl));
 
-static SOCCIU_Type *soc_ctrl =
-	(SOCCIU_Type *)DT_REG_ADDR(DT_NODELABEL(soc_ctrl));
-static AON_SOC_CIU_Type *aon_soc_ciu =
-	(AON_SOC_CIU_Type *)DT_REG_ADDR(DT_NODELABEL(aon_soc_ctrl));
+static SOCCIU_Type *soc_ctrl = (SOCCIU_Type *)DT_REG_ADDR(DT_NODELABEL(soc_ctrl));
+static AON_SOC_CIU_Type *aon_soc_ciu = (AON_SOC_CIU_Type *)DT_REG_ADDR(DT_NODELABEL(aon_soc_ctrl));
 
 /*
  * GPIO mux option definitions. Stored as a static array, because
@@ -80,15 +77,12 @@ static void select_gpio_mode(uint8_t gpio_idx)
 	mci_iomux->FSEL &= ~IOMUX_GET_FSEL_CLR_MASK(gpio_setting);
 	/* Clear CTimer in/out, if required */
 	if (IOMUX_GET_SCTIMER_IN_CLR_ENABLE(gpio_setting)) {
-		mci_iomux->C_TIMER_IN &=
-			~(0x1 << IOMUX_GET_CTIMER_CLR_OFFSET(gpio_setting));
-		mci_iomux->C_TIMER_OUT &=
-			~(0x1 << IOMUX_GET_CTIMER_CLR_OFFSET(gpio_setting));
+		mci_iomux->C_TIMER_IN &= ~(0x1 << IOMUX_GET_CTIMER_CLR_OFFSET(gpio_setting));
+		mci_iomux->C_TIMER_OUT &= ~(0x1 << IOMUX_GET_CTIMER_CLR_OFFSET(gpio_setting));
 	}
 	/* Clear SCTimer in/out, if required */
 	if (IOMUX_GET_SCTIMER_IN_CLR_ENABLE(gpio_setting)) {
-		mci_iomux->SC_TIMER &=
-			~(0x1 << IOMUX_GET_SCTIMER_IN_CLR_OFFSET(gpio_setting));
+		mci_iomux->SC_TIMER &= ~(0x1 << IOMUX_GET_SCTIMER_IN_CLR_OFFSET(gpio_setting));
 	}
 	if (IOMUX_GET_SCTIMER_OUT_CLR_ENABLE(gpio_setting)) {
 		mci_iomux->SC_TIMER &=
@@ -98,9 +92,7 @@ static void select_gpio_mode(uint8_t gpio_idx)
 	mci_iomux->S_GPIO &= ~(0x1 << (gpio_idx - 32));
 }
 
-
-int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
-			   uintptr_t reg)
+int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintptr_t reg)
 {
 	volatile uint32_t *flexcomm_reg;
 	volatile uint32_t *iomux_en_reg;
@@ -121,28 +113,22 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 		switch (type) {
 		case IOMUX_FLEXCOMM:
 			flexcomm_reg += IOMUX_GET_FLEXCOMM_IDX(pin_mux);
-			*flexcomm_reg |=
-				(0x1 << IOMUX_GET_FLEXCOMM_BIT(pin_mux));
+			*flexcomm_reg |= (0x1 << IOMUX_GET_FLEXCOMM_BIT(pin_mux));
 			break;
 		case IOMUX_FSEL:
-			mci_iomux->FSEL |=
-				(0x1 << IOMUX_GET_FSEL_BIT(pin_mux));
+			mci_iomux->FSEL |= (0x1 << IOMUX_GET_FSEL_BIT(pin_mux));
 			break;
 		case IOMUX_CTIMER_IN:
-			mci_iomux->C_TIMER_IN |=
-				(0x1 << IOMUX_GET_CTIMER_BIT(pin_mux));
+			mci_iomux->C_TIMER_IN |= (0x1 << IOMUX_GET_CTIMER_BIT(pin_mux));
 			break;
 		case IOMUX_CTIMER_OUT:
-			mci_iomux->C_TIMER_OUT |=
-				(0x1 << IOMUX_GET_CTIMER_BIT(pin_mux));
+			mci_iomux->C_TIMER_OUT |= (0x1 << IOMUX_GET_CTIMER_BIT(pin_mux));
 			break;
 		case IOMUX_SCTIMER_IN:
-			mci_iomux->SC_TIMER |=
-				(0x1 << IOMUX_GET_SCTIMER_BIT(pin_mux));
+			mci_iomux->SC_TIMER |= (0x1 << IOMUX_GET_SCTIMER_BIT(pin_mux));
 			break;
 		case IOMUX_SCTIMER_OUT:
-			mci_iomux->SC_TIMER |=
-				(0x1 << (IOMUX_GET_SCTIMER_BIT(pin_mux) + 16));
+			mci_iomux->SC_TIMER |= (0x1 << (IOMUX_GET_SCTIMER_BIT(pin_mux) + 16));
 			break;
 		case IOMUX_SGPIO:
 			mci_iomux->S_GPIO |= (0x1 << (gpio_idx - 32));

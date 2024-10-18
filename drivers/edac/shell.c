@@ -40,19 +40,15 @@ static void decode_ecc_error(const struct shell *sh, uint64_t ecc_error)
 	uint64_t erradd = ECC_ERROR_ERRADD(ecc_error);
 	unsigned long errsynd = ECC_ERROR_ERRSYND(ecc_error);
 
-	shell_fprintf(sh, SHELL_NORMAL,
-		      "CMI Error address: 0x%llx\n", erradd);
-	shell_fprintf(sh, SHELL_NORMAL,
-		      "Error Syndrome: 0x%lx\n", errsynd);
+	shell_fprintf(sh, SHELL_NORMAL, "CMI Error address: 0x%llx\n", erradd);
+	shell_fprintf(sh, SHELL_NORMAL, "Error Syndrome: 0x%lx\n", errsynd);
 
 	if (ecc_error & ECC_ERROR_MERRSTS) {
-		shell_fprintf(sh, SHELL_NORMAL,
-			      "Uncorrectable Error (UE)\n");
+		shell_fprintf(sh, SHELL_NORMAL, "Uncorrectable Error (UE)\n");
 	}
 
 	if (ecc_error & ECC_ERROR_CERRSTS) {
-		shell_fprintf(sh, SHELL_NORMAL,
-			      "Correctable Error (CE)\n");
+		shell_fprintf(sh, SHELL_NORMAL, "Correctable Error (CE)\n");
 	}
 }
 
@@ -115,8 +111,7 @@ static int cmd_edac_info(const struct shell *sh, size_t argc, char **argv)
 		return err;
 	}
 
-	shell_fprintf(sh, SHELL_NORMAL,
-		      "Errors correctable: %d Errors uncorrectable %d\n",
+	shell_fprintf(sh, SHELL_NORMAL, "Errors correctable: %d Errors uncorrectable %d\n",
 		      edac_errors_cor_get(dev), edac_errors_uc_get(dev));
 
 	return err;
@@ -136,8 +131,7 @@ static int cmd_inject_addr(const struct shell *sh, size_t argc, char **argv)
 
 	if (argc > 2) {
 		/* Usage */
-		shell_fprintf(sh, SHELL_NORMAL,
-			      "Usage: edac inject %s [addr]\n", argv[0]);
+		shell_fprintf(sh, SHELL_NORMAL, "Usage: edac inject %s [addr]\n", argv[0]);
 		return -ENOTSUP;
 	}
 
@@ -146,23 +140,19 @@ static int cmd_inject_addr(const struct shell *sh, size_t argc, char **argv)
 
 		err = edac_inject_get_param1(dev, &addr);
 		if (err != 0) {
-			shell_error(sh, "Error getting address (err %d)",
-				    err);
+			shell_error(sh, "Error getting address (err %d)", err);
 			return err;
 		}
 
-		shell_fprintf(sh, SHELL_NORMAL,
-			      "Injection address base: 0x%llx\n", addr);
+		shell_fprintf(sh, SHELL_NORMAL, "Injection address base: 0x%llx\n", addr);
 	} else {
 		unsigned long value = strtoul(argv[1], NULL, 16);
 
-		shell_fprintf(sh, SHELL_NORMAL,
-			      "Set injection address base to: %s\n", argv[1]);
+		shell_fprintf(sh, SHELL_NORMAL, "Set injection address base to: %s\n", argv[1]);
 
 		err = edac_inject_set_param1(dev, value);
 		if (err != 0) {
-			shell_error(sh, "Error setting address (err %d)",
-				    err);
+			shell_error(sh, "Error setting address (err %d)", err);
 			return err;
 		}
 	}
@@ -183,8 +173,7 @@ static int cmd_inject_mask(const struct shell *sh, size_t argc, char **argv)
 
 	if (argc > 2) {
 		/* Usage */
-		shell_fprintf(sh, SHELL_NORMAL,
-			      "Usage: edac inject %s [mask]\n", argv[0]);
+		shell_fprintf(sh, SHELL_NORMAL, "Usage: edac inject %s [mask]\n", argv[0]);
 		return -ENOTSUP;
 	}
 
@@ -197,13 +186,11 @@ static int cmd_inject_mask(const struct shell *sh, size_t argc, char **argv)
 			return err;
 		}
 
-		shell_fprintf(sh, SHELL_NORMAL,
-			      "Injection address mask: 0x%llx\n", mask);
+		shell_fprintf(sh, SHELL_NORMAL, "Injection address mask: 0x%llx\n", mask);
 	} else {
 		uint64_t value = strtoul(argv[1], NULL, 16);
 
-		shell_fprintf(sh, SHELL_NORMAL,
-			      "Set injection address mask to %llx\n", value);
+		shell_fprintf(sh, SHELL_NORMAL, "Set injection address mask to %llx\n", value);
 
 		err = edac_inject_set_param2(dev, value);
 		if (err != 0) {
@@ -215,8 +202,7 @@ static int cmd_inject_mask(const struct shell *sh, size_t argc, char **argv)
 	return err;
 }
 
-static int cmd_inject_trigger(const struct shell *sh, size_t argc,
-			      char **argv)
+static int cmd_inject_trigger(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 
@@ -233,16 +219,14 @@ static int cmd_inject_trigger(const struct shell *sh, size_t argc,
 	return 0;
 }
 
-static int cmd_inject_disable_nmi(const struct shell *sh, size_t argc,
-				  char **argv)
+static int cmd_inject_disable_nmi(const struct shell *sh, size_t argc, char **argv)
 {
 	sys_out8((sys_in8(0x70) | 0x80), 0x70);
 
 	return 0;
 }
 
-static int cmd_inject_enable_nmi(const struct shell *sh, size_t argc,
-				 char **argv)
+static int cmd_inject_enable_nmi(const struct shell *sh, size_t argc, char **argv)
 {
 	sys_out8((sys_in8(0x70) & 0x7F), 0x70);
 
@@ -261,8 +245,7 @@ static const char *get_error_type(uint32_t type)
 	}
 }
 
-static int cmd_inject_error_type_show(const struct shell *sh, size_t argc,
-				      char **argv)
+static int cmd_inject_error_type_show(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	uint32_t error_type;
@@ -280,8 +263,7 @@ static int cmd_inject_error_type_show(const struct shell *sh, size_t argc,
 		return err;
 	}
 
-	shell_fprintf(sh, SHELL_NORMAL, "Injection error type: %s\n",
-		      get_error_type(error_type));
+	shell_fprintf(sh, SHELL_NORMAL, "Injection error type: %s\n", get_error_type(error_type));
 
 	return err;
 }
@@ -302,14 +284,12 @@ static int set_error_type(const struct shell *sh, uint32_t error_type)
 	return edac_inject_set_error_type(dev, error_type);
 }
 
-static int cmd_inject_error_type_cor(const struct shell *sh, size_t argc,
-				     char **argv)
+static int cmd_inject_error_type_cor(const struct shell *sh, size_t argc, char **argv)
 {
 	return set_error_type(sh, EDAC_ERROR_TYPE_DRAM_COR);
 }
 
-static int cmd_inject_error_type_uc(const struct shell *sh, size_t argc,
-				    char **argv)
+static int cmd_inject_error_type_uc(const struct shell *sh, size_t argc, char **argv)
 {
 	return set_error_type(sh, EDAC_ERROR_TYPE_DRAM_UC);
 }
@@ -332,33 +312,29 @@ static int cmd_inject_test(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_inject_error_type_cmds,
-	SHELL_CMD(correctable, NULL, "Set correctable error type",
-		  cmd_inject_error_type_cor),
-	SHELL_CMD(uncorrectable, NULL, "Set uncorrectable error type",
-		  cmd_inject_error_type_uc),
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_inject_error_type_cmds,
+	SHELL_CMD(correctable, NULL, "Set correctable error type", cmd_inject_error_type_cor),
+	SHELL_CMD(uncorrectable, NULL, "Set uncorrectable error type", cmd_inject_error_type_uc),
 	SHELL_SUBCMD_SET_END /* Array terminated */
 );
 
 /* EDAC Error Injection shell commands */
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_inject_cmds,
-	SHELL_CMD(addr, NULL, "Get / Set physical address", cmd_inject_addr),
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_inject_cmds, SHELL_CMD(addr, NULL, "Get / Set physical address", cmd_inject_addr),
 	SHELL_CMD(mask, NULL, "Get / Set address mask", cmd_inject_mask),
-	SHELL_CMD_ARG(trigger, NULL, "Trigger injection", cmd_inject_trigger,
-		      1, 0),
-	SHELL_CMD(error_type, &sub_inject_error_type_cmds,
-		  "Get / Set injection error type",
+	SHELL_CMD_ARG(trigger, NULL, "Trigger injection", cmd_inject_trigger, 1, 0),
+	SHELL_CMD(error_type, &sub_inject_error_type_cmds, "Get / Set injection error type",
 		  cmd_inject_error_type_show),
 	SHELL_CMD(disable_nmi, NULL, "Disable NMI", cmd_inject_disable_nmi),
 	SHELL_CMD(enable_nmi, NULL, "Enable NMI", cmd_inject_enable_nmi),
-	SHELL_CMD_ARG(test_default, NULL, "Test default injection parameters",
-		      cmd_inject_test, 1, 0),
+	SHELL_CMD_ARG(test_default, NULL, "Test default injection parameters", cmd_inject_test, 1,
+		      0),
 	SHELL_SUBCMD_SET_END /* Array terminated */
 );
 #endif /* CONFIG_EDAC_ERROR_INJECT */
 
-static int cmd_ecc_error_show(const struct shell *sh, size_t argc,
-			      char **argv)
+static int cmd_ecc_error_show(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 
@@ -371,8 +347,7 @@ static int cmd_ecc_error_show(const struct shell *sh, size_t argc,
 	return ecc_error_show(sh, dev);
 }
 
-static int cmd_ecc_error_clear(const struct shell *sh, size_t argc,
-			       char **argv)
+static int cmd_ecc_error_clear(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	int err;
@@ -385,8 +360,7 @@ static int cmd_ecc_error_clear(const struct shell *sh, size_t argc,
 
 	err = edac_ecc_error_log_clear(dev);
 	if (err != 0) {
-		shell_error(sh, "Error clear ecc error log (err %d)",
-			    err);
+		shell_error(sh, "Error clear ecc error log (err %d)", err);
 		return err;
 	}
 
@@ -396,13 +370,12 @@ static int cmd_ecc_error_clear(const struct shell *sh, size_t argc,
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_ecc_error_cmds,
-	SHELL_CMD(show, NULL, "Show ECC errors", cmd_ecc_error_show),
-	SHELL_CMD(clear, NULL, "Clear ECC errors", cmd_ecc_error_clear),
-	SHELL_SUBCMD_SET_END /* Array terminated */
+			       SHELL_CMD(show, NULL, "Show ECC errors", cmd_ecc_error_show),
+			       SHELL_CMD(clear, NULL, "Clear ECC errors", cmd_ecc_error_clear),
+			       SHELL_SUBCMD_SET_END /* Array terminated */
 );
 
-static int cmd_parity_error_show(const struct shell *sh, size_t argc,
-				 char **argv)
+static int cmd_parity_error_show(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 
@@ -415,8 +388,7 @@ static int cmd_parity_error_show(const struct shell *sh, size_t argc,
 	return parity_error_show(sh, dev);
 }
 
-static int cmd_parity_error_clear(const struct shell *sh, size_t argc,
-				  char **argv)
+static int cmd_parity_error_clear(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	int err;
@@ -429,8 +401,7 @@ static int cmd_parity_error_clear(const struct shell *sh, size_t argc,
 
 	err = edac_parity_error_log_clear(dev);
 	if (err != 0) {
-		shell_error(sh, "Error clear parity error log (err %d)",
-			    err);
+		shell_error(sh, "Error clear parity error log (err %d)", err);
 		return err;
 	}
 
@@ -440,31 +411,35 @@ static int cmd_parity_error_clear(const struct shell *sh, size_t argc,
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_parity_error_cmds,
-	SHELL_CMD(show, NULL, "Show Parity errors", cmd_parity_error_show),
-	SHELL_CMD(clear, NULL, "Clear Parity errors", cmd_parity_error_clear),
-	SHELL_SUBCMD_SET_END /* Array terminated */
+			       SHELL_CMD(show, NULL, "Show Parity errors", cmd_parity_error_show),
+			       SHELL_CMD(clear, NULL, "Clear Parity errors",
+					 cmd_parity_error_clear),
+			       SHELL_SUBCMD_SET_END /* Array terminated */
 );
 
 /* EDAC Info shell commands */
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_info_cmds,
-	SHELL_CMD(ecc_error, &sub_ecc_error_cmds,
-		  "ECC Error Show / Clear commands", cmd_ecc_error_show),
-	SHELL_CMD(parity_error, &sub_parity_error_cmds,
-		  "Parity Error Show / Clear commands", cmd_parity_error_show),
-	SHELL_SUBCMD_SET_END /* Array terminated */
+			       SHELL_CMD(ecc_error, &sub_ecc_error_cmds,
+					 "ECC Error Show / Clear commands", cmd_ecc_error_show),
+			       SHELL_CMD(parity_error, &sub_parity_error_cmds,
+					 "Parity Error Show / Clear commands",
+					 cmd_parity_error_show),
+			       SHELL_SUBCMD_SET_END /* Array terminated */
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_edac_cmds,
-	SHELL_CMD(info, &sub_info_cmds,
-		  "Show EDAC information\n"
-		  "edac info <subcommands>", cmd_edac_info),
+			       SHELL_CMD(info, &sub_info_cmds,
+					 "Show EDAC information\n"
+					 "edac info <subcommands>",
+					 cmd_edac_info),
 #if defined(CONFIG_EDAC_ERROR_INJECT)
-	/* This does not work with SHELL_COND_CMD */
-	SHELL_CMD(inject, &sub_inject_cmds,
-		  "Inject ECC error commands\n"
-		  "edac inject <subcommands>", NULL),
+			       /* This does not work with SHELL_COND_CMD */
+			       SHELL_CMD(inject, &sub_inject_cmds,
+					 "Inject ECC error commands\n"
+					 "edac inject <subcommands>",
+					 NULL),
 #endif
-	SHELL_SUBCMD_SET_END /* Array terminated. */
+			       SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
 SHELL_CMD_REGISTER(edac, &sub_edac_cmds, "EDAC information", cmd_edac_info);

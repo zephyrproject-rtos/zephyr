@@ -62,10 +62,10 @@ struct spi_pico_pio_data {
 #define SPI_MODE_0_0_CYCLES      4
 
 RPI_PICO_PIO_DEFINE_PROGRAM(spi_mode_0_0, SPI_MODE_0_0_WRAP_TARGET, SPI_MODE_0_0_WRAP,
-		/*     .wrap_target */
-	0x6101, /*  0: out    pins, 1         side 0 [1] */
-	0x5101, /*  1: in     pins, 1         side 1 [1] */
-		/*     .wrap */
+			    /*     .wrap_target */
+			    0x6101, /*  0: out    pins, 1         side 0 [1] */
+			    0x5101, /*  1: in     pins, 1         side 1 [1] */
+				    /*     .wrap */
 );
 
 /* ------------ */
@@ -77,11 +77,11 @@ RPI_PICO_PIO_DEFINE_PROGRAM(spi_mode_0_0, SPI_MODE_0_0_WRAP_TARGET, SPI_MODE_0_0
 #define SPI_MODE_1_1_CYCLES      4
 
 RPI_PICO_PIO_DEFINE_PROGRAM(spi_mode_1_1, SPI_MODE_1_1_WRAP_TARGET, SPI_MODE_1_1_WRAP,
-		/*     .wrap_target */
-	0x7021, /*  0: out    x, 1            side 1 */
-	0xa101, /*  1: mov    pins, x         side 0 [1] */
-	0x5001, /*  2: in     pins, 1         side 1 */
-		/*     .wrap */
+			    /*     .wrap_target */
+			    0x7021, /*  0: out    x, 1            side 1 */
+			    0xa101, /*  1: mov    pins, x         side 0 [1] */
+			    0x5001, /*  2: in     pins, 1         side 1 */
+				    /*     .wrap */
 );
 
 #if SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED
@@ -95,11 +95,11 @@ RPI_PICO_PIO_DEFINE_PROGRAM(spi_mode_1_1, SPI_MODE_1_1_WRAP_TARGET, SPI_MODE_1_1
 
 RPI_PICO_PIO_DEFINE_PROGRAM(spi_sio_mode_0_0_tx, SPI_SIO_MODE_0_0_TX_WRAP_TARGET,
 			    SPI_SIO_MODE_0_0_TX_WRAP,
-		/*     .wrap_target */
-	0x80a0, /*  0: pull   block           side 0 */
-	0x6001, /*  1: out    pins, 1         side 0 */
-	0x10e1, /*  2: jmp    !osre, 1        side 1 */
-		/*     .wrap */
+			    /*     .wrap_target */
+			    0x80a0, /*  0: pull   block           side 0 */
+			    0x6001, /*  1: out    pins, 1         side 0 */
+			    0x10e1, /*  2: jmp    !osre, 1        side 1 */
+				    /*     .wrap */
 );
 
 /* ------------------------- */
@@ -112,15 +112,15 @@ RPI_PICO_PIO_DEFINE_PROGRAM(spi_sio_mode_0_0_tx, SPI_SIO_MODE_0_0_TX_WRAP_TARGET
 
 RPI_PICO_PIO_DEFINE_PROGRAM(spi_sio_mode_0_0_8_bit_rx, SPI_SIO_MODE_0_0_8_BIT_RX_WRAP_TARGET,
 			    SPI_SIO_MODE_0_0_8_BIT_RX_WRAP,
-		/*     .wrap_target */
-	0x80a0, /*  0: pull   block           side 0 */
-	0x6020, /*  1: out    x, 32           side 0 */
-	0xe047, /*  2: set    y, 7            side 0 */
-	0x5001, /*  3: in     pins, 1         side 1 */
-	0x0083, /*  4: jmp    y--, 3          side 0 */
-	0x8020, /*  5: push   block           side 0 */
-	0x0042, /*  6: jmp    x--, 2          side 0 */
-		/*     .wrap */
+			    /*     .wrap_target */
+			    0x80a0, /*  0: pull   block           side 0 */
+			    0x6020, /*  1: out    x, 32           side 0 */
+			    0xe047, /*  2: set    y, 7            side 0 */
+			    0x5001, /*  3: in     pins, 1         side 1 */
+			    0x0083, /*  4: jmp    y--, 3          side 0 */
+			    0x8020, /*  5: push   block           side 0 */
+			    0x0042, /*  6: jmp    x--, 2          side 0 */
+				    /*     .wrap */
 );
 
 /* -------------------------- */
@@ -133,15 +133,15 @@ RPI_PICO_PIO_DEFINE_PROGRAM(spi_sio_mode_0_0_8_bit_rx, SPI_SIO_MODE_0_0_8_BIT_RX
 
 RPI_PICO_PIO_DEFINE_PROGRAM(spi_sio_mode_0_0_16_bit_rx, SPI_SIO_MODE_0_0_16_BIT_RX_WRAP_TARGET,
 			    SPI_SIO_MODE_0_0_16_BIT_RX_WRAP,
-		/*     .wrap_target */
-	0x80a0, /*  0: pull   block           side 0 */
-	0x6020, /*  1: out    x, 32           side 0 */
-	0xe04f, /*  2: set    y, 15           side 0 */
-	0x5001, /*  3: in     pins, 1         side 1 */
-	0x0083, /*  4: jmp    y--, 3          side 0 */
-	0x8020, /*  5: push   block           side 0 */
-	0x0042, /*  6: jmp    x--, 2          side 0 */
-		/*     .wrap */
+			    /*     .wrap_target */
+			    0x80a0, /*  0: pull   block           side 0 */
+			    0x6020, /*  1: out    x, 32           side 0 */
+			    0xe04f, /*  2: set    y, 15           side 0 */
+			    0x5001, /*  3: in     pins, 1         side 1 */
+			    0x0083, /*  4: jmp    y--, 3          side 0 */
+			    0x8020, /*  5: push   block           side 0 */
+			    0x0042, /*  6: jmp    x--, 2          side 0 */
+				    /*     .wrap */
 );
 
 /* -------------------------- */
@@ -154,15 +154,15 @@ RPI_PICO_PIO_DEFINE_PROGRAM(spi_sio_mode_0_0_16_bit_rx, SPI_SIO_MODE_0_0_16_BIT_
 
 RPI_PICO_PIO_DEFINE_PROGRAM(spi_sio_mode_0_0_32_bit_rx, SPI_SIO_MODE_0_0_32_BIT_RX_WRAP_TARGET,
 			    SPI_SIO_MODE_0_0_32_BIT_RX_WRAP,
-		/*     .wrap_target */
-	0x80a0, /*  0: pull   block           side 0 */
-	0x6020, /*  1: out    x, 32           side 0 */
-	0xe05f, /*  2: set    y, 31           side 0 */
-	0x5001, /*  3: in     pins, 1         side 1 */
-	0x0083, /*  4: jmp    y--, 3          side 0 */
-	0x8020, /*  5: push   block           side 0 */
-	0x0042, /*  6: jmp    x--, 2          side 0 */
-		/*     .wrap */
+			    /*     .wrap_target */
+			    0x80a0, /*  0: pull   block           side 0 */
+			    0x6020, /*  1: out    x, 32           side 0 */
+			    0xe05f, /*  2: set    y, 31           side 0 */
+			    0x5001, /*  3: in     pins, 1         side 1 */
+			    0x0083, /*  4: jmp    y--, 3          side 0 */
+			    0x8020, /*  5: push   block           side 0 */
+			    0x0042, /*  6: jmp    x--, 2          side 0 */
+				    /*     .wrap */
 );
 #endif /* SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED */
 
@@ -846,12 +846,12 @@ int spi_pico_pio_init(const struct device *dev)
 			      &spi_pico_pio_config_##inst, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,  \
 			      &spi_pico_pio_api);                                                  \
 	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(inst, clk_gpios), "Missing clock GPIO");                \
-	BUILD_ASSERT(((DT_INST_NODE_HAS_PROP(inst, mosi_gpios)                                     \
-				|| DT_INST_NODE_HAS_PROP(inst, miso_gpios))                        \
-					&& (!DT_INST_NODE_HAS_PROP(inst, sio_gpios)))              \
-			|| (DT_INST_NODE_HAS_PROP(inst, sio_gpios)                                 \
-				&& !(DT_INST_NODE_HAS_PROP(inst, mosi_gpios)                       \
-					|| DT_INST_NODE_HAS_PROP(inst, miso_gpios))),              \
-			"Invalid GPIO Configuration");
+	BUILD_ASSERT(((DT_INST_NODE_HAS_PROP(inst, mosi_gpios) ||                                  \
+		       DT_INST_NODE_HAS_PROP(inst, miso_gpios)) &&                                 \
+		      (!DT_INST_NODE_HAS_PROP(inst, sio_gpios))) ||                                \
+			     (DT_INST_NODE_HAS_PROP(inst, sio_gpios) &&                            \
+			      !(DT_INST_NODE_HAS_PROP(inst, mosi_gpios) ||                         \
+				DT_INST_NODE_HAS_PROP(inst, miso_gpios))),                         \
+		     "Invalid GPIO Configuration");
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_PICO_PIO_INIT)

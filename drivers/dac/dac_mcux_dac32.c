@@ -56,16 +56,14 @@ static int mcux_dac32_channel_setup(const struct device *dev,
 	DAC32_Init(config->base, &dac32_config);
 	DAC32_EnableBufferOutput(config->base, config->buffered);
 
-	DAC32_EnableTestOutput(config->base,
-			       IS_ENABLED(CONFIG_DAC_MCUX_DAC32_TESTOUT));
+	DAC32_EnableTestOutput(config->base, IS_ENABLED(CONFIG_DAC_MCUX_DAC32_TESTOUT));
 
 	data->configured = true;
 
 	return 0;
 }
 
-static int mcux_dac32_write_value(const struct device *dev, uint8_t channel,
-				  uint32_t value)
+static int mcux_dac32_write_value(const struct device *dev, uint8_t channel, uint32_t value)
 {
 	const struct mcux_dac32_config *config = dev->config;
 	struct mcux_dac32_data *data = dev->data;
@@ -106,27 +104,23 @@ static const struct dac_driver_api mcux_dac32_driver_api = {
 	.write_value = mcux_dac32_write_value,
 };
 
-#define TO_DAC32_VREF_SRC(val) \
-	_DO_CONCAT(kDAC32_ReferenceVoltageSourceVref, val)
+#define TO_DAC32_VREF_SRC(val) _DO_CONCAT(kDAC32_ReferenceVoltageSourceVref, val)
 
-#define MCUX_DAC32_INIT(n) \
-	static struct mcux_dac32_data mcux_dac32_data_##n;		\
-									\
-	PINCTRL_DT_INST_DEFINE(n);					\
-									\
-	static const struct mcux_dac32_config mcux_dac32_config_##n = {	\
-		.base = (DAC_Type *)DT_INST_REG_ADDR(n),		\
-		.reference =						\
-		TO_DAC32_VREF_SRC(DT_INST_PROP(n, voltage_reference)),	\
-		.buffered = DT_INST_PROP(n, buffered),			\
-		.low_power = DT_INST_PROP(n, low_power_mode),		\
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(n, mcux_dac32_init, NULL,			\
-			&mcux_dac32_data_##n,				\
-			&mcux_dac32_config_##n,				\
-			POST_KERNEL, CONFIG_DAC_INIT_PRIORITY,		\
-			&mcux_dac32_driver_api);
+#define MCUX_DAC32_INIT(n)                                                                         \
+	static struct mcux_dac32_data mcux_dac32_data_##n;                                         \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+                                                                                                   \
+	static const struct mcux_dac32_config mcux_dac32_config_##n = {                            \
+		.base = (DAC_Type *)DT_INST_REG_ADDR(n),                                           \
+		.reference = TO_DAC32_VREF_SRC(DT_INST_PROP(n, voltage_reference)),                \
+		.buffered = DT_INST_PROP(n, buffered),                                             \
+		.low_power = DT_INST_PROP(n, low_power_mode),                                      \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, mcux_dac32_init, NULL, &mcux_dac32_data_##n,                      \
+			      &mcux_dac32_config_##n, POST_KERNEL, CONFIG_DAC_INIT_PRIORITY,       \
+			      &mcux_dac32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_DAC32_INIT)

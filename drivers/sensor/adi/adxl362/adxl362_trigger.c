@@ -41,18 +41,15 @@ static void adxl362_thread_cb(const struct device *dev)
 		}
 	}
 
-	if (drv_data->drdy_handler != NULL &&
-	    ADXL362_STATUS_CHECK_DATA_READY(status_buf)) {
+	if (drv_data->drdy_handler != NULL && ADXL362_STATUS_CHECK_DATA_READY(status_buf)) {
 		drv_data->drdy_handler(dev, drv_data->drdy_trigger);
 	}
 	k_mutex_unlock(&drv_data->trigger_mutex);
 }
 
-static void adxl362_gpio_callback(const struct device *dev,
-				  struct gpio_callback *cb, uint32_t pins)
+static void adxl362_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	struct adxl362_data *drv_data =
-		CONTAINER_OF(cb, struct adxl362_data, gpio_cb);
+	struct adxl362_data *drv_data = CONTAINER_OF(cb, struct adxl362_data, gpio_cb);
 
 #if defined(CONFIG_ADXL362_TRIGGER_OWN_THREAD)
 	k_sem_give(&drv_data->gpio_sem);
@@ -77,15 +74,13 @@ static void adxl362_thread(void *p1, void *p2, void *p3)
 #elif defined(CONFIG_ADXL362_TRIGGER_GLOBAL_THREAD)
 static void adxl362_work_cb(struct k_work *work)
 {
-	struct adxl362_data *drv_data =
-		CONTAINER_OF(work, struct adxl362_data, work);
+	struct adxl362_data *drv_data = CONTAINER_OF(work, struct adxl362_data, work);
 
 	adxl362_thread_cb(drv_data->dev);
 }
 #endif
 
-int adxl362_trigger_set(const struct device *dev,
-			const struct sensor_trigger *trig,
+int adxl362_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
 	struct adxl362_data *drv_data = dev->data;
@@ -160,9 +155,7 @@ int adxl362_init_interrupt(const struct device *dev)
 		return ret;
 	}
 
-	gpio_init_callback(&drv_data->gpio_cb,
-			   adxl362_gpio_callback,
-			   BIT(cfg->interrupt.pin));
+	gpio_init_callback(&drv_data->gpio_cb, adxl362_gpio_callback, BIT(cfg->interrupt.pin));
 
 	ret = gpio_add_callback(cfg->interrupt.port, &drv_data->gpio_cb);
 	if (ret < 0) {
@@ -174,17 +167,14 @@ int adxl362_init_interrupt(const struct device *dev)
 #if defined(CONFIG_ADXL362_TRIGGER_OWN_THREAD)
 	k_sem_init(&drv_data->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
-	k_thread_create(&drv_data->thread, drv_data->thread_stack,
-			CONFIG_ADXL362_THREAD_STACK_SIZE,
-			adxl362_thread, drv_data,
-			NULL, NULL, K_PRIO_COOP(CONFIG_ADXL362_THREAD_PRIORITY),
-			0, K_NO_WAIT);
+	k_thread_create(&drv_data->thread, drv_data->thread_stack, CONFIG_ADXL362_THREAD_STACK_SIZE,
+			adxl362_thread, drv_data, NULL, NULL,
+			K_PRIO_COOP(CONFIG_ADXL362_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_ADXL362_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = adxl362_work_cb;
 #endif
 
-	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
-					      GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
 		return ret;
 	}

@@ -56,8 +56,7 @@
  * are implemented with dummy PCIe read, phew!
  */
 
-static int pcie_ep_mapped_copy(uint64_t mapped_addr, uintptr_t local_addr,
-			       const uint32_t size,
+static int pcie_ep_mapped_copy(uint64_t mapped_addr, uintptr_t local_addr, const uint32_t size,
 			       const enum xfer_direction dir)
 {
 	/*
@@ -69,11 +68,9 @@ static int pcie_ep_mapped_copy(uint64_t mapped_addr, uintptr_t local_addr,
 	}
 
 	if (dir == DEVICE_TO_HOST) {
-		memcpy(UINT_TO_POINTER(mapped_addr),
-		       UINT_TO_POINTER(local_addr), size);
+		memcpy(UINT_TO_POINTER(mapped_addr), UINT_TO_POINTER(local_addr), size);
 	} else {
-		memcpy(UINT_TO_POINTER(local_addr),
-		       UINT_TO_POINTER(mapped_addr), size);
+		memcpy(UINT_TO_POINTER(local_addr), UINT_TO_POINTER(mapped_addr), size);
 	}
 
 	return 0;
@@ -83,9 +80,8 @@ static int pcie_ep_mapped_copy(uint64_t mapped_addr, uintptr_t local_addr,
  * Helper API to achieve data transfer with memcpy operation
  * through PCIe outbound memory
  */
-int pcie_ep_xfer_data_memcpy(const struct device *dev, uint64_t pcie_addr,
-			     uintptr_t *local_addr, uint32_t size,
-			     enum pcie_ob_mem_type ob_mem_type,
+int pcie_ep_xfer_data_memcpy(const struct device *dev, uint64_t pcie_addr, uintptr_t *local_addr,
+			     uint32_t size, enum pcie_ob_mem_type ob_mem_type,
 			     enum xfer_direction dir)
 {
 	uint64_t mapped_addr;
@@ -93,15 +89,13 @@ int pcie_ep_xfer_data_memcpy(const struct device *dev, uint64_t pcie_addr,
 	uint32_t xfer_size, unmapped_size;
 
 	/* Map pcie_addr to outbound memory */
-	mapped_size = pcie_ep_map_addr(dev, pcie_addr, &mapped_addr,
-				       size, ob_mem_type);
+	mapped_size = pcie_ep_map_addr(dev, pcie_addr, &mapped_addr, size, ob_mem_type);
 	/* Check if outbound memory mapping succeeded */
 	if (mapped_size < 0) {
 		return mapped_size;
 	}
 
-	ret = pcie_ep_mapped_copy(mapped_addr, (uintptr_t)local_addr,
-				  mapped_size, dir);
+	ret = pcie_ep_mapped_copy(mapped_addr, (uintptr_t)local_addr, mapped_size, dir);
 
 	/* Check if mapped_copy succeeded */
 	if (ret < 0) {
@@ -130,11 +124,10 @@ int pcie_ep_xfer_data_memcpy(const struct device *dev, uint64_t pcie_addr,
 	 */
 
 	pcie_ep_unmap_addr(dev, mapped_addr); /* unmap previous Host buffer */
-	xfer_size = mapped_size; /* save already transferred data size */
+	xfer_size = mapped_size;              /* save already transferred data size */
 
 	unmapped_size = size - mapped_size;
-	mapped_size = pcie_ep_map_addr(dev, pcie_addr + xfer_size,
-				       &mapped_addr, unmapped_size,
+	mapped_size = pcie_ep_map_addr(dev, pcie_addr + xfer_size, &mapped_addr, unmapped_size,
 				       ob_mem_type);
 	/* Check if outbound memory mapping succeeded */
 	if (mapped_size < 0) {
@@ -150,9 +143,8 @@ int pcie_ep_xfer_data_memcpy(const struct device *dev, uint64_t pcie_addr,
 		goto out_unmap;
 	}
 
-	ret = pcie_ep_mapped_copy(mapped_addr,
-				  ((uintptr_t)local_addr) + xfer_size,
-				  mapped_size, dir);
+	ret = pcie_ep_mapped_copy(mapped_addr, ((uintptr_t)local_addr) + xfer_size, mapped_size,
+				  dir);
 	/* Flush the PCIe writes upon successful memcpy */
 	if (!ret && (dir == DEVICE_TO_HOST)) {
 		sys_read8(mapped_addr);
@@ -167,26 +159,22 @@ out_unmap:
  * PCIe outbound memory, this API is based off pcie_ep_xfer_data_memcpy,
  * here we use "system dma" instead of memcpy
  */
-int pcie_ep_xfer_data_dma(const struct device *dev, uint64_t pcie_addr,
-			  uintptr_t *local_addr, uint32_t size,
-			  enum pcie_ob_mem_type ob_mem_type,
-			  enum xfer_direction dir)
+int pcie_ep_xfer_data_dma(const struct device *dev, uint64_t pcie_addr, uintptr_t *local_addr,
+			  uint32_t size, enum pcie_ob_mem_type ob_mem_type, enum xfer_direction dir)
 {
 	uint64_t mapped_addr;
 	int mapped_size, ret;
 	uint32_t xfer_size, unmapped_size;
-	uint32_t dummy_data;	/* For explicit dummy PCIe read */
+	uint32_t dummy_data; /* For explicit dummy PCIe read */
 
 	/* Map pcie_addr to outbound memory */
-	mapped_size = pcie_ep_map_addr(dev, pcie_addr, &mapped_addr,
-				       size, ob_mem_type);
+	mapped_size = pcie_ep_map_addr(dev, pcie_addr, &mapped_addr, size, ob_mem_type);
 	/* Check if outbound memory mapping succeeded */
 	if (mapped_size < 0) {
 		return mapped_size;
 	}
 
-	ret = pcie_ep_dma_xfer(dev, mapped_addr, (uintptr_t)local_addr,
-			       mapped_size, dir);
+	ret = pcie_ep_dma_xfer(dev, mapped_addr, (uintptr_t)local_addr, mapped_size, dir);
 	/* Check if dma succeeded */
 	if (ret < 0) {
 		goto out_unmap;
@@ -205,12 +193,9 @@ int pcie_ep_xfer_data_dma(const struct device *dev, uint64_t pcie_addr,
 	 * Explicit PCIe read to flush PCIe writes for 32-bit system
 	 * using high outbound memory for DMA operation
 	 */
-	if (dir == DEVICE_TO_HOST && (!IS_ENABLED(CONFIG_64BIT)) &&
-	    (mapped_addr >> 32)) {
-		ret = pcie_ep_xfer_data_memcpy(dev, pcie_addr,
-					       (uintptr_t *)&dummy_data,
-					       sizeof(dummy_data),
-					       PCIE_OB_LOWMEM, HOST_TO_DEVICE);
+	if (dir == DEVICE_TO_HOST && (!IS_ENABLED(CONFIG_64BIT)) && (mapped_addr >> 32)) {
+		ret = pcie_ep_xfer_data_memcpy(dev, pcie_addr, (uintptr_t *)&dummy_data,
+					       sizeof(dummy_data), PCIE_OB_LOWMEM, HOST_TO_DEVICE);
 		if (ret < 0) {
 			return ret;
 		}
@@ -226,8 +211,7 @@ int pcie_ep_xfer_data_dma(const struct device *dev, uint64_t pcie_addr,
 	xfer_size = mapped_size; /* save already transferred data size */
 
 	unmapped_size = size - mapped_size;
-	mapped_size = pcie_ep_map_addr(dev, pcie_addr + xfer_size,
-				       &mapped_addr, unmapped_size,
+	mapped_size = pcie_ep_map_addr(dev, pcie_addr + xfer_size, &mapped_addr, unmapped_size,
 				       ob_mem_type);
 	/* Check if outbound memory mapping succeeded */
 	if (mapped_size < 0) {
@@ -243,9 +227,8 @@ int pcie_ep_xfer_data_dma(const struct device *dev, uint64_t pcie_addr,
 		goto out_unmap;
 	}
 
-	ret = pcie_ep_dma_xfer(dev, mapped_addr,
-			       ((uintptr_t)local_addr) + xfer_size,
-			       mapped_size, dir);
+	ret = pcie_ep_dma_xfer(dev, mapped_addr, ((uintptr_t)local_addr) + xfer_size, mapped_size,
+			       dir);
 	/* Check if dma copy succeeded */
 	if (ret < 0) {
 		goto out_unmap;
@@ -264,12 +247,9 @@ int pcie_ep_xfer_data_dma(const struct device *dev, uint64_t pcie_addr,
 	 * Explicit PCIe read to flush PCIe writes for 32-bit system
 	 * using high outbound memory for DMA operation
 	 */
-	if (dir == DEVICE_TO_HOST && (!IS_ENABLED(CONFIG_64BIT)) &&
-	    (mapped_addr >> 32)) {
-		ret = pcie_ep_xfer_data_memcpy(dev, pcie_addr,
-					       (uintptr_t *)&dummy_data,
-					       sizeof(dummy_data),
-					       PCIE_OB_LOWMEM, HOST_TO_DEVICE);
+	if (dir == DEVICE_TO_HOST && (!IS_ENABLED(CONFIG_64BIT)) && (mapped_addr >> 32)) {
+		ret = pcie_ep_xfer_data_memcpy(dev, pcie_addr, (uintptr_t *)&dummy_data,
+					       sizeof(dummy_data), PCIE_OB_LOWMEM, HOST_TO_DEVICE);
 	}
 
 	return ret;

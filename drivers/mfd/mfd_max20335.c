@@ -39,13 +39,12 @@ static int mfd_max20335_init(const struct device *dev)
 	return 0;
 }
 
-#define MFD_MA20335_DEFINE(inst)					\
-	static const struct mfd_max20335_config mfd_max20335_config##inst = { \
-		.bus = I2C_DT_SPEC_INST_GET(inst),			\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(inst, mfd_max20335_init, NULL, NULL,	\
-			      &mfd_max20335_config##inst, POST_KERNEL,	\
-			      CONFIG_MFD_INIT_PRIORITY, NULL);
+#define MFD_MA20335_DEFINE(inst)                                                                   \
+	static const struct mfd_max20335_config mfd_max20335_config##inst = {                      \
+		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, mfd_max20335_init, NULL, NULL, &mfd_max20335_config##inst,     \
+			      POST_KERNEL, CONFIG_MFD_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MFD_MA20335_DEFINE)

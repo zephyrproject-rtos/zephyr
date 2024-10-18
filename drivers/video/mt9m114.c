@@ -166,10 +166,13 @@ static struct mt9m114_resolution_config resolutionConfigs[] = {
 };
 
 #define MT9M114_VIDEO_FORMAT_CAP(width, height, format)                                            \
-	{                                                                                          \
-		.pixelformat = (format), .width_min = (width), .width_max = (width),               \
-		.height_min = (height), .height_max = (height), .width_step = 0, .height_step = 0  \
-	}
+	{.pixelformat = (format),                                                                  \
+	 .width_min = (width),                                                                     \
+	 .width_max = (width),                                                                     \
+	 .height_min = (height),                                                                   \
+	 .height_max = (height),                                                                   \
+	 .width_step = 0,                                                                          \
+	 .height_step = 0}
 
 static const struct video_format_cap fmts[] = {
 	MT9M114_VIDEO_FORMAT_CAP(480, 272, VIDEO_PIX_FMT_RGB565),

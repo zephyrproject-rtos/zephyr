@@ -41,35 +41,35 @@
 LOG_MODULE_REGISTER(uart_xec, CONFIG_UART_LOG_LEVEL);
 
 /* Clock source is 1.8432 MHz derived from PLL 48 MHz */
-#define XEC_UART_CLK_SRC_1P8M		0
+#define XEC_UART_CLK_SRC_1P8M    0
 /* Clock source is PLL 48 MHz output */
-#define XEC_UART_CLK_SRC_48M		1
+#define XEC_UART_CLK_SRC_48M     1
 /* Clock source is the UART_CLK alternate pin function. */
-#define XEC_UART_CLK_SRC_EXT_PIN	2
+#define XEC_UART_CLK_SRC_EXT_PIN 2
 
 /* register definitions */
 
-#define REG_THR 0x00  /* Transmitter holding reg.       */
-#define REG_RDR 0x00  /* Receiver data reg.             */
-#define REG_BRDL 0x00 /* Baud rate divisor (LSB)        */
-#define REG_BRDH 0x01 /* Baud rate divisor (MSB)        */
-#define REG_IER 0x01  /* Interrupt enable reg.          */
-#define REG_IIR 0x02  /* Interrupt ID reg.              */
-#define REG_FCR 0x02  /* FIFO control reg.              */
-#define REG_LCR 0x03  /* Line control reg.              */
-#define REG_MDC 0x04  /* Modem control reg.             */
-#define REG_LSR 0x05  /* Line status reg.               */
-#define REG_MSR 0x06  /* Modem status reg.              */
-#define REG_SCR 0x07  /* scratch register               */
+#define REG_THR     0x00  /* Transmitter holding reg.       */
+#define REG_RDR     0x00  /* Receiver data reg.             */
+#define REG_BRDL    0x00  /* Baud rate divisor (LSB)        */
+#define REG_BRDH    0x01  /* Baud rate divisor (MSB)        */
+#define REG_IER     0x01  /* Interrupt enable reg.          */
+#define REG_IIR     0x02  /* Interrupt ID reg.              */
+#define REG_FCR     0x02  /* FIFO control reg.              */
+#define REG_LCR     0x03  /* Line control reg.              */
+#define REG_MDC     0x04  /* Modem control reg.             */
+#define REG_LSR     0x05  /* Line status reg.               */
+#define REG_MSR     0x06  /* Modem status reg.              */
+#define REG_SCR     0x07  /* scratch register               */
 #define REG_LD_ACTV 0x330 /* Logical Device activate    */
-#define REG_LD_CFG 0x3f0 /* Logical Device configuration */
+#define REG_LD_CFG  0x3f0 /* Logical Device configuration */
 
 /* equates for interrupt enable register */
 
 #define IER_RXRDY 0x01 /* receiver data ready */
-#define IER_TBE 0x02   /* transmit bit enable */
-#define IER_LSR 0x04   /* line status interrupts */
-#define IER_MSI 0x08   /* modem status interrupts */
+#define IER_TBE   0x02 /* transmit bit enable */
+#define IER_LSR   0x04 /* line status interrupts */
+#define IER_MSI   0x08 /* modem status interrupts */
 
 /* equates for interrupt identification register */
 
@@ -83,7 +83,7 @@ LOG_MODULE_REGISTER(uart_xec, CONFIG_UART_LOG_LEVEL);
 
 /* equates for FIFO control register */
 
-#define FCR_FIFO 0x01    /* enable XMIT and RCVR FIFO */
+#define FCR_FIFO    0x01 /* enable XMIT and RCVR FIFO */
 #define FCR_RCVRCLR 0x02 /* clear RCVR FIFO */
 #define FCR_XMITCLR 0x04 /* clear XMIT FIFO */
 
@@ -119,30 +119,30 @@ LOG_MODULE_REGISTER(uart_xec, CONFIG_UART_LOG_LEVEL);
 #define FCR_MODE1 0x08 /* set receiver in mode 1 */
 
 /* RCVR FIFO interrupt levels: trigger interrupt with this bytes in FIFO */
-#define FCR_FIFO_1 0x00  /* 1 byte in RCVR FIFO */
-#define FCR_FIFO_4 0x40  /* 4 bytes in RCVR FIFO */
-#define FCR_FIFO_8 0x80  /* 8 bytes in RCVR FIFO */
+#define FCR_FIFO_1  0x00 /* 1 byte in RCVR FIFO */
+#define FCR_FIFO_4  0x40 /* 4 bytes in RCVR FIFO */
+#define FCR_FIFO_8  0x80 /* 8 bytes in RCVR FIFO */
 #define FCR_FIFO_14 0xC0 /* 14 bytes in RCVR FIFO */
 
 /* constants for line control register */
 
-#define LCR_CS5 0x00   /* 5 bits data size */
-#define LCR_CS6 0x01   /* 6 bits data size */
-#define LCR_CS7 0x02   /* 7 bits data size */
-#define LCR_CS8 0x03   /* 8 bits data size */
+#define LCR_CS5   0x00 /* 5 bits data size */
+#define LCR_CS6   0x01 /* 6 bits data size */
+#define LCR_CS7   0x02 /* 7 bits data size */
+#define LCR_CS8   0x03 /* 8 bits data size */
 #define LCR_2_STB 0x04 /* 2 stop bits */
 #define LCR_1_STB 0x00 /* 1 stop bit */
-#define LCR_PEN 0x08   /* parity enable */
-#define LCR_PDIS 0x00  /* parity disable */
-#define LCR_EPS 0x10   /* even parity select */
-#define LCR_SP 0x20    /* stick parity select */
-#define LCR_SBRK 0x40  /* break control bit */
-#define LCR_DLAB 0x80  /* divisor latch access enable */
+#define LCR_PEN   0x08 /* parity enable */
+#define LCR_PDIS  0x00 /* parity disable */
+#define LCR_EPS   0x10 /* even parity select */
+#define LCR_SP    0x20 /* stick parity select */
+#define LCR_SBRK  0x40 /* break control bit */
+#define LCR_DLAB  0x80 /* divisor latch access enable */
 
 /* constants for the modem control register */
 
-#define MCR_DTR 0x01  /* dtr output */
-#define MCR_RTS 0x02  /* rts output */
+#define MCR_DTR  0x01 /* dtr output */
+#define MCR_RTS  0x02 /* rts output */
 #define MCR_OUT1 0x04 /* output #1 */
 #define MCR_OUT2 0x08 /* output #2 */
 #define MCR_LOOP 0x10 /* loop back */
@@ -150,25 +150,25 @@ LOG_MODULE_REGISTER(uart_xec, CONFIG_UART_LOG_LEVEL);
 
 /* constants for line status register */
 
-#define LSR_RXRDY 0x01 /* receiver data available */
-#define LSR_OE 0x02    /* overrun error */
-#define LSR_PE 0x04    /* parity error */
-#define LSR_FE 0x08    /* framing error */
-#define LSR_BI 0x10    /* break interrupt */
+#define LSR_RXRDY    0x01 /* receiver data available */
+#define LSR_OE       0x02 /* overrun error */
+#define LSR_PE       0x04 /* parity error */
+#define LSR_FE       0x08 /* framing error */
+#define LSR_BI       0x10 /* break interrupt */
 #define LSR_EOB_MASK 0x1E /* Error or Break mask */
-#define LSR_THRE 0x20  /* transmit holding register empty */
-#define LSR_TEMT 0x40  /* transmitter empty */
+#define LSR_THRE     0x20 /* transmit holding register empty */
+#define LSR_TEMT     0x40 /* transmitter empty */
 
 /* constants for modem status register */
 
 #define MSR_DCTS 0x01 /* cts change */
 #define MSR_DDSR 0x02 /* dsr change */
-#define MSR_DRI 0x04  /* ring change */
+#define MSR_DRI  0x04 /* ring change */
 #define MSR_DDCD 0x08 /* data carrier change */
-#define MSR_CTS 0x10  /* complement of cts */
-#define MSR_DSR 0x20  /* complement of dsr */
-#define MSR_RI 0x40   /* complement of ring signal */
-#define MSR_DCD 0x80  /* complement of dcd */
+#define MSR_CTS  0x10 /* complement of cts */
+#define MSR_DSR  0x20 /* complement of dsr */
+#define MSR_RI   0x40 /* complement of ring signal */
+#define MSR_DCD  0x80 /* complement of dcd */
 
 #define IIRC(dev) (((struct uart_xec_dev_data *)(dev)->data)->iir_cache)
 
@@ -188,7 +188,7 @@ struct uart_xec_device_config {
 	uint8_t pcr_bitpos;
 	const struct pinctrl_dev_config *pcfg;
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
-	uart_irq_config_func_t	irq_config_func;
+	uart_irq_config_func_t irq_config_func;
 #endif
 #ifdef CONFIG_PM_DEVICE
 	struct gpio_dt_spec wakerx_gpio;
@@ -201,20 +201,20 @@ struct uart_xec_dev_data {
 	struct uart_config uart_config;
 	struct k_spinlock lock;
 
-	uint8_t fcr_cache;	/**< cache of FCR write only register */
-	uint8_t iir_cache;	/**< cache of IIR since it clears when read */
+	uint8_t fcr_cache; /**< cache of FCR write only register */
+	uint8_t iir_cache; /**< cache of IIR since it clears when read */
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	uart_irq_callback_user_data_t cb;  /**< Callback function pointer */
-	void *cb_data;	/**< Callback function arg */
+	uart_irq_callback_user_data_t cb; /**< Callback function pointer */
+	void *cb_data;                    /**< Callback function arg */
 #endif
 };
 
 #ifdef CONFIG_PM_DEVICE
-	ATOMIC_DEFINE(pm_policy_state_flag, UART_XEC_PM_POLICY_STATE_FLAG_COUNT);
+ATOMIC_DEFINE(pm_policy_state_flag, UART_XEC_PM_POLICY_STATE_FLAG_COUNT);
 #endif
 
 #if defined(CONFIG_PM_DEVICE) && defined(CONFIG_UART_CONSOLE_INPUT_EXPIRED)
-	struct k_work_delayable rx_refresh_timeout_work;
+struct k_work_delayable rx_refresh_timeout_work;
 #endif
 
 static const struct uart_driver_api uart_xec_driver_api;
@@ -287,8 +287,8 @@ static inline void uart_xec_girq_en(uint8_t girq_idx, uint8_t girq_posn)
 
 static void set_baud_rate(const struct device *dev, uint32_t baud_rate)
 {
-	const struct uart_xec_device_config * const dev_cfg = dev->config;
-	struct uart_xec_dev_data * const dev_data = dev->data;
+	const struct uart_xec_device_config *const dev_cfg = dev->config;
+	struct uart_xec_dev_data *const dev_data = dev->data;
 	struct uart_regs *regs = dev_cfg->regs;
 	uint32_t divisor; /* baud rate divisor */
 	uint8_t lcr_cache;
@@ -298,8 +298,7 @@ static void set_baud_rate(const struct device *dev, uint32_t baud_rate)
 		 * calculate baud rate divisor. a variant of
 		 * (uint32_t)(dev_cfg->sys_clk_freq / (16.0 * baud_rate) + 0.5)
 		 */
-		divisor = ((dev_cfg->sys_clk_freq + (baud_rate << 3))
-					/ baud_rate) >> 4;
+		divisor = ((dev_cfg->sys_clk_freq + (baud_rate << 3)) / baud_rate) >> 4;
 
 		/* set the DLAB to access the baud rate divisor registers */
 		lcr_cache = regs->LCR;
@@ -321,11 +320,10 @@ static void set_baud_rate(const struct device *dev, uint32_t baud_rate)
  * We must change the UART reset signal to XEC VTR_PWRGD. Make sure UART
  * clock source is an internal clock and UART pins are not inverted.
  */
-static int uart_xec_configure(const struct device *dev,
-			      const struct uart_config *cfg)
+static int uart_xec_configure(const struct device *dev, const struct uart_config *cfg)
 {
-	struct uart_xec_dev_data * const dev_data = dev->data;
-	const struct uart_xec_device_config * const dev_cfg = dev->config;
+	struct uart_xec_dev_data *const dev_data = dev->data;
+	const struct uart_xec_device_config *const dev_cfg = dev->config;
 	struct uart_regs *regs = dev_cfg->regs;
 	uint8_t lcr_cache;
 
@@ -340,8 +338,8 @@ static int uart_xec_configure(const struct device *dev,
 	dev_data->iir_cache = 0U;
 
 	/* XEC UART specific configuration and enable */
-	regs->CFG_SEL &= ~(MCHP_UART_LD_CFG_RESET_VCC |
-			   MCHP_UART_LD_CFG_EXTCLK | MCHP_UART_LD_CFG_INVERT);
+	regs->CFG_SEL &=
+		~(MCHP_UART_LD_CFG_RESET_VCC | MCHP_UART_LD_CFG_EXTCLK | MCHP_UART_LD_CFG_INVERT);
 	/* set activate to enable clocks */
 	regs->ACTV |= MCHP_UART_LD_ACTIVATE;
 
@@ -404,8 +402,7 @@ static int uart_xec_configure(const struct device *dev,
 	 * generate the interrupt at 8th byte
 	 * Clear TX and RX FIFO
 	 */
-	dev_data->fcr_cache = FCR_FIFO | FCR_MODE0 | FCR_FIFO_8 | FCR_RCVRCLR |
-			      FCR_XMITCLR;
+	dev_data->fcr_cache = FCR_FIFO | FCR_MODE0 | FCR_FIFO_8 | FCR_RCVRCLR | FCR_XMITCLR;
 	regs->IIR_FCR = dev_data->fcr_cache;
 
 	/* clear the port */
@@ -423,8 +420,7 @@ out:
 };
 
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
-static int uart_xec_config_get(const struct device *dev,
-			       struct uart_config *cfg)
+static int uart_xec_config_get(const struct device *dev, struct uart_config *cfg)
 {
 	struct uart_xec_dev_data *data = dev->data;
 
@@ -441,11 +437,10 @@ static int uart_xec_config_get(const struct device *dev,
 #ifdef CONFIG_PM_DEVICE
 
 static void uart_xec_wake_handler(const struct device *gpio, struct gpio_callback *cb,
-		   uint32_t pins)
+				  uint32_t pins)
 {
 	/* Disable interrupts on UART RX pin to avoid repeated interrupts. */
-	(void)gpio_pin_interrupt_configure(gpio, (find_msb_set(pins) - 1),
-					   GPIO_INT_DISABLE);
+	(void)gpio_pin_interrupt_configure(gpio, (find_msb_set(pins) - 1), GPIO_INT_DISABLE);
 	/* Refresh console expired time */
 #ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
 	k_timeout_t delay = K_MSEC(CONFIG_UART_CONSOLE_INPUT_EXPIRED_TIMEOUT);
@@ -455,10 +450,9 @@ static void uart_xec_wake_handler(const struct device *gpio, struct gpio_callbac
 #endif
 }
 
-static int uart_xec_pm_action(const struct device *dev,
-					 enum pm_device_action action)
+static int uart_xec_pm_action(const struct device *dev, enum pm_device_action action)
 {
-	const struct uart_xec_device_config * const dev_cfg = dev->config;
+	const struct uart_xec_device_config *const dev_cfg = dev->config;
 	struct uart_regs *regs = dev_cfg->regs;
 	int ret = 0;
 
@@ -470,8 +464,8 @@ static int uart_xec_pm_action(const struct device *dev,
 		/* Enable UART wake interrupt */
 		regs->ACTV = 0;
 		if ((dev_cfg->wakeup_source) && (dev_cfg->wakerx_gpio.port != NULL)) {
-			ret = gpio_pin_interrupt_configure_dt(&dev_cfg->wakerx_gpio,
-						  GPIO_INT_MODE_EDGE | GPIO_INT_TRIG_LOW);
+			ret = gpio_pin_interrupt_configure_dt(
+				&dev_cfg->wakerx_gpio, GPIO_INT_MODE_EDGE | GPIO_INT_TRIG_LOW);
 			if (ret < 0) {
 				LOG_ERR("Failed to configure UART wake interrupt (ret %d)", ret);
 				return ret;
@@ -506,7 +500,7 @@ static void uart_xec_rx_refresh_timeout(struct k_work *work)
  */
 static int uart_xec_init(const struct device *dev)
 {
-	const struct uart_xec_device_config * const dev_cfg = dev->config;
+	const struct uart_xec_device_config *const dev_cfg = dev->config;
 	struct uart_xec_dev_data *dev_data = dev->data;
 	int ret;
 
@@ -528,7 +522,7 @@ static int uart_xec_init(const struct device *dev)
 
 #ifdef CONFIG_PM_DEVICE
 #ifdef CONFIG_UART_CONSOLE_INPUT_EXPIRED
-		k_work_init_delayable(&rx_refresh_timeout_work, uart_xec_rx_refresh_timeout);
+	k_work_init_delayable(&rx_refresh_timeout_work, uart_xec_rx_refresh_timeout);
 #endif
 	if ((dev_cfg->wakeup_source) && (dev_cfg->wakerx_gpio.port != NULL)) {
 		static struct gpio_callback uart_xec_wake_cb;
@@ -557,7 +551,7 @@ static int uart_xec_init(const struct device *dev)
  */
 static int uart_xec_poll_in(const struct device *dev, unsigned char *c)
 {
-	const struct uart_xec_device_config * const dev_cfg = dev->config;
+	const struct uart_xec_device_config *const dev_cfg = dev->config;
 	struct uart_xec_dev_data *dev_data = dev->data;
 	struct uart_regs *regs = dev_cfg->regs;
 	int ret = -1;
@@ -588,7 +582,7 @@ static int uart_xec_poll_in(const struct device *dev, unsigned char *c)
  */
 static void uart_xec_poll_out(const struct device *dev, unsigned char c)
 {
-	const struct uart_xec_device_config * const dev_cfg = dev->config;
+	const struct uart_xec_device_config *const dev_cfg = dev->config;
 	struct uart_xec_dev_data *dev_data = dev->data;
 	struct uart_regs *regs = dev_cfg->regs;
 	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
@@ -612,7 +606,7 @@ static void uart_xec_poll_out(const struct device *dev, unsigned char c)
  */
 static int uart_xec_err_check(const struct device *dev)
 {
-	const struct uart_xec_device_config * const dev_cfg = dev->config;
+	const struct uart_xec_device_config *const dev_cfg = dev->config;
 	struct uart_xec_dev_data *dev_data = dev->data;
 	struct uart_regs *regs = dev_cfg->regs;
 	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
@@ -634,10 +628,9 @@ static int uart_xec_err_check(const struct device *dev)
  *
  * @return Number of bytes sent
  */
-static int uart_xec_fifo_fill(const struct device *dev, const uint8_t *tx_data,
-			      int size)
+static int uart_xec_fifo_fill(const struct device *dev, const uint8_t *tx_data, int size)
 {
-	const struct uart_xec_device_config * const dev_cfg = dev->config;
+	const struct uart_xec_device_config *const dev_cfg = dev->config;
 	struct uart_xec_dev_data *dev_data = dev->data;
 	struct uart_regs *regs = dev_cfg->regs;
 	int i;
@@ -664,10 +657,9 @@ static int uart_xec_fifo_fill(const struct device *dev, const uint8_t *tx_data,
  *
  * @return Number of bytes read
  */
-static int uart_xec_fifo_read(const struct device *dev, uint8_t *rx_data,
-			      const int size)
+static int uart_xec_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
 {
-	const struct uart_xec_device_config * const dev_cfg = dev->config;
+	const struct uart_xec_device_config *const dev_cfg = dev->config;
 	struct uart_xec_dev_data *dev_data = dev->data;
 	struct uart_regs *regs = dev_cfg->regs;
 	int i;
@@ -689,7 +681,7 @@ static int uart_xec_fifo_read(const struct device *dev, uint8_t *rx_data,
  */
 static void uart_xec_irq_tx_enable(const struct device *dev)
 {
-	const struct uart_xec_device_config * const dev_cfg = dev->config;
+	const struct uart_xec_device_config *const dev_cfg = dev->config;
 	struct uart_xec_dev_data *dev_data = dev->data;
 	struct uart_regs *regs = dev_cfg->regs;
 	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
@@ -706,7 +698,7 @@ static void uart_xec_irq_tx_enable(const struct device *dev)
  */
 static void uart_xec_irq_tx_disable(const struct device *dev)
 {
-	const struct uart_xec_device_config * const dev_cfg = dev->config;
+	const struct uart_xec_device_config *const dev_cfg = dev->config;
 	struct uart_xec_dev_data *dev_data = dev->data;
 	struct uart_regs *regs = dev_cfg->regs;
 	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
@@ -744,13 +736,12 @@ static int uart_xec_irq_tx_ready(const struct device *dev)
  */
 static int uart_xec_irq_tx_complete(const struct device *dev)
 {
-	const struct uart_xec_device_config * const dev_cfg = dev->config;
+	const struct uart_xec_device_config *const dev_cfg = dev->config;
 	struct uart_xec_dev_data *dev_data = dev->data;
 	struct uart_regs *regs = dev_cfg->regs;
 	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
 
-	int ret = ((regs->LSR & (LSR_TEMT | LSR_THRE))
-				== (LSR_TEMT | LSR_THRE)) ? 1 : 0;
+	int ret = ((regs->LSR & (LSR_TEMT | LSR_THRE)) == (LSR_TEMT | LSR_THRE)) ? 1 : 0;
 
 	k_spin_unlock(&dev_data->lock, key);
 
@@ -764,7 +755,7 @@ static int uart_xec_irq_tx_complete(const struct device *dev)
  */
 static void uart_xec_irq_rx_enable(const struct device *dev)
 {
-	const struct uart_xec_device_config * const dev_cfg = dev->config;
+	const struct uart_xec_device_config *const dev_cfg = dev->config;
 	struct uart_xec_dev_data *dev_data = dev->data;
 	struct uart_regs *regs = dev_cfg->regs;
 	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
@@ -781,7 +772,7 @@ static void uart_xec_irq_rx_enable(const struct device *dev)
  */
 static void uart_xec_irq_rx_disable(const struct device *dev)
 {
-	const struct uart_xec_device_config * const dev_cfg = dev->config;
+	const struct uart_xec_device_config *const dev_cfg = dev->config;
 	struct uart_xec_dev_data *dev_data = dev->data;
 	struct uart_regs *regs = dev_cfg->regs;
 	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
@@ -817,7 +808,7 @@ static int uart_xec_irq_rx_ready(const struct device *dev)
  */
 static void uart_xec_irq_err_enable(const struct device *dev)
 {
-	const struct uart_xec_device_config * const dev_cfg = dev->config;
+	const struct uart_xec_device_config *const dev_cfg = dev->config;
 	struct uart_xec_dev_data *dev_data = dev->data;
 	struct uart_regs *regs = dev_cfg->regs;
 	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
@@ -836,7 +827,7 @@ static void uart_xec_irq_err_enable(const struct device *dev)
  */
 static void uart_xec_irq_err_disable(const struct device *dev)
 {
-	const struct uart_xec_device_config * const dev_cfg = dev->config;
+	const struct uart_xec_device_config *const dev_cfg = dev->config;
 	struct uart_xec_dev_data *dev_data = dev->data;
 	struct uart_regs *regs = dev_cfg->regs;
 	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
@@ -874,7 +865,7 @@ static int uart_xec_irq_is_pending(const struct device *dev)
  */
 static int uart_xec_irq_update(const struct device *dev)
 {
-	const struct uart_xec_device_config * const dev_cfg = dev->config;
+	const struct uart_xec_device_config *const dev_cfg = dev->config;
 	struct uart_xec_dev_data *dev_data = dev->data;
 	struct uart_regs *regs = dev_cfg->regs;
 	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
@@ -892,11 +883,10 @@ static int uart_xec_irq_update(const struct device *dev)
  * @param dev UART device struct
  * @param cb Callback function pointer.
  */
-static void uart_xec_irq_callback_set(const struct device *dev,
-				      uart_irq_callback_user_data_t cb,
+static void uart_xec_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
 				      void *cb_data)
 {
-	struct uart_xec_dev_data * const dev_data = dev->data;
+	struct uart_xec_dev_data *const dev_data = dev->data;
 	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
 
 	dev_data->cb = cb;
@@ -914,9 +904,9 @@ static void uart_xec_irq_callback_set(const struct device *dev,
  */
 static void uart_xec_isr(const struct device *dev)
 {
-	struct uart_xec_dev_data * const dev_data = dev->data;
+	struct uart_xec_dev_data *const dev_data = dev->data;
 #if defined(CONFIG_PM_DEVICE) && defined(CONFIG_UART_CONSOLE_INPUT_EXPIRED)
-	const struct uart_xec_device_config * const dev_cfg = dev->config;
+	const struct uart_xec_device_config *const dev_cfg = dev->config;
 	struct uart_regs *regs = dev_cfg->regs;
 	int rx_ready = 0;
 
@@ -956,10 +946,9 @@ static void uart_xec_isr(const struct device *dev)
  *
  * @return 0 if successful, failed otherwise
  */
-static int uart_xec_line_ctrl_set(const struct device *dev,
-				  uint32_t ctrl, uint32_t val)
+static int uart_xec_line_ctrl_set(const struct device *dev, uint32_t ctrl, uint32_t val)
 {
-	const struct uart_xec_device_config * const dev_cfg = dev->config;
+	const struct uart_xec_device_config *const dev_cfg = dev->config;
 	struct uart_xec_dev_data *dev_data = dev->data;
 	struct uart_regs *regs = dev_cfg->regs;
 	uint32_t mdc, chg;
@@ -1028,24 +1017,20 @@ static const struct uart_driver_api uart_xec_driver_api = {
 #endif
 };
 
-#define DEV_CONFIG_REG_INIT(n)						\
-	.regs = (struct uart_regs *)(DT_INST_REG_ADDR(n)),
+#define DEV_CONFIG_REG_INIT(n) .regs = (struct uart_regs *)(DT_INST_REG_ADDR(n)),
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define DEV_CONFIG_IRQ_FUNC_INIT(n) \
-	.irq_config_func = irq_config_func##n,
-#define UART_XEC_IRQ_FUNC_DECLARE(n) \
-	static void irq_config_func##n(const struct device *dev);
-#define UART_XEC_IRQ_FUNC_DEFINE(n)					\
-	static void irq_config_func##n(const struct device *dev)	\
-	{								\
-		ARG_UNUSED(dev);					\
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
-			    uart_xec_isr, DEVICE_DT_INST_GET(n),	\
-			    0);						\
-		irq_enable(DT_INST_IRQN(n));				\
-		uart_xec_girq_en(DT_INST_PROP_BY_IDX(n, girqs, 0), \
-					  DT_INST_PROP_BY_IDX(n, girqs, 1)); \
+#define DEV_CONFIG_IRQ_FUNC_INIT(n)  .irq_config_func = irq_config_func##n,
+#define UART_XEC_IRQ_FUNC_DECLARE(n) static void irq_config_func##n(const struct device *dev);
+#define UART_XEC_IRQ_FUNC_DEFINE(n)                                                                \
+	static void irq_config_func##n(const struct device *dev)                                   \
+	{                                                                                          \
+		ARG_UNUSED(dev);                                                                   \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_xec_isr,               \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+		uart_xec_girq_en(DT_INST_PROP_BY_IDX(n, girqs, 0),                                 \
+				 DT_INST_PROP_BY_IDX(n, girqs, 1));                                \
 	}
 #else
 /* !CONFIG_UART_INTERRUPT_DRIVEN */
@@ -1054,8 +1039,7 @@ static const struct uart_driver_api uart_xec_driver_api = {
 #define UART_XEC_IRQ_FUNC_DEFINE(n)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-#define DEV_DATA_FLOW_CTRL(n)						\
-	DT_INST_PROP_OR(n, hw_flow_control, UART_CFG_FLOW_CTRL_NONE)
+#define DEV_DATA_FLOW_CTRL(n) DT_INST_PROP_OR(n, hw_flow_control, UART_CFG_FLOW_CTRL_NONE)
 
 /* To enable wakeup on the UART, the DTS needs to have two entries defined
  * in the corresponding UART node in the DTS specifying it as a wake source
@@ -1065,45 +1049,38 @@ static const struct uart_driver_api uart_xec_driver_api = {
  *	wakeup-source;
  */
 #ifdef CONFIG_PM_DEVICE
-#define XEC_UART_PM_WAKEUP(n)						\
-		.wakeup_source = (uint8_t)DT_INST_PROP_OR(n, wakeup_source, 0),	\
-		.wakerx_gpio = GPIO_DT_SPEC_INST_GET_OR(n, wakerx_gpios, {0}),
+#define XEC_UART_PM_WAKEUP(n)                                                                      \
+	.wakeup_source = (uint8_t)DT_INST_PROP_OR(n, wakeup_source, 0),                            \
+	.wakerx_gpio = GPIO_DT_SPEC_INST_GET_OR(n, wakerx_gpios, {0}),
 #else
 #define XEC_UART_PM_WAKEUP(index) /* Not used */
 #endif
 
-#define UART_XEC_DEVICE_INIT(n)						\
-									\
-	PINCTRL_DT_INST_DEFINE(n);					\
-									\
-	UART_XEC_IRQ_FUNC_DECLARE(n);					\
-									\
-	static const struct uart_xec_device_config uart_xec_dev_cfg_##n = { \
-		DEV_CONFIG_REG_INIT(n)					\
-		.sys_clk_freq = DT_INST_PROP(n, clock_frequency),	\
-		.girq_id = DT_INST_PROP_BY_IDX(n, girqs, 0),		\
-		.girq_pos = DT_INST_PROP_BY_IDX(n, girqs, 1),		\
-		.pcr_idx = DT_INST_PROP_BY_IDX(n, pcrs, 0),		\
-		.pcr_bitpos = DT_INST_PROP_BY_IDX(n, pcrs, 1),		\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
-		XEC_UART_PM_WAKEUP(n)	\
-		DEV_CONFIG_IRQ_FUNC_INIT(n)				\
-	};								\
-	static struct uart_xec_dev_data uart_xec_dev_data_##n = {	\
-		.uart_config.baudrate = DT_INST_PROP_OR(n, current_speed, 0), \
-		.uart_config.parity = UART_CFG_PARITY_NONE,		\
-		.uart_config.stop_bits = UART_CFG_STOP_BITS_1,		\
-		.uart_config.data_bits = UART_CFG_DATA_BITS_8,		\
-		.uart_config.flow_ctrl = DEV_DATA_FLOW_CTRL(n),		\
-	};								\
-	PM_DEVICE_DT_INST_DEFINE(n, uart_xec_pm_action);		\
-	DEVICE_DT_INST_DEFINE(n, uart_xec_init,				\
-			      PM_DEVICE_DT_INST_GET(n),			\
-			      &uart_xec_dev_data_##n,			\
-			      &uart_xec_dev_cfg_##n,			\
-			      PRE_KERNEL_1,				\
-			      CONFIG_SERIAL_INIT_PRIORITY,		\
-			      &uart_xec_driver_api);			\
+#define UART_XEC_DEVICE_INIT(n)                                                                    \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+                                                                                                   \
+	UART_XEC_IRQ_FUNC_DECLARE(n);                                                              \
+                                                                                                   \
+	static const struct uart_xec_device_config uart_xec_dev_cfg_##n = {                        \
+		DEV_CONFIG_REG_INIT(n).sys_clk_freq = DT_INST_PROP(n, clock_frequency),            \
+		.girq_id = DT_INST_PROP_BY_IDX(n, girqs, 0),                                       \
+		.girq_pos = DT_INST_PROP_BY_IDX(n, girqs, 1),                                      \
+		.pcr_idx = DT_INST_PROP_BY_IDX(n, pcrs, 0),                                        \
+		.pcr_bitpos = DT_INST_PROP_BY_IDX(n, pcrs, 1),                                     \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+		XEC_UART_PM_WAKEUP(n) DEV_CONFIG_IRQ_FUNC_INIT(n)};                                \
+	static struct uart_xec_dev_data uart_xec_dev_data_##n = {                                  \
+		.uart_config.baudrate = DT_INST_PROP_OR(n, current_speed, 0),                      \
+		.uart_config.parity = UART_CFG_PARITY_NONE,                                        \
+		.uart_config.stop_bits = UART_CFG_STOP_BITS_1,                                     \
+		.uart_config.data_bits = UART_CFG_DATA_BITS_8,                                     \
+		.uart_config.flow_ctrl = DEV_DATA_FLOW_CTRL(n),                                    \
+	};                                                                                         \
+	PM_DEVICE_DT_INST_DEFINE(n, uart_xec_pm_action);                                           \
+	DEVICE_DT_INST_DEFINE(n, uart_xec_init, PM_DEVICE_DT_INST_GET(n), &uart_xec_dev_data_##n,  \
+			      &uart_xec_dev_cfg_##n, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,    \
+			      &uart_xec_driver_api);                                               \
 	UART_XEC_IRQ_FUNC_DEFINE(n)
 
 DT_INST_FOREACH_STATUS_OKAY(UART_XEC_DEVICE_INIT)

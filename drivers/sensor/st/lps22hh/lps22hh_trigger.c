@@ -24,7 +24,7 @@ LOG_MODULE_DECLARE(LPS22HH, CONFIG_SENSOR_LOG_LEVEL);
  */
 static int lps22hh_enable_int(const struct device *dev, int enable)
 {
-	const struct lps22hh_config * const cfg = dev->config;
+	const struct lps22hh_config *const cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	lps22hh_pin_int_route_t int_route;
 
@@ -37,12 +37,11 @@ static int lps22hh_enable_int(const struct device *dev, int enable)
 /**
  * lps22hh_trigger_set - link external trigger to event data ready
  */
-int lps22hh_trigger_set(const struct device *dev,
-			  const struct sensor_trigger *trig,
-			  sensor_trigger_handler_t handler)
+int lps22hh_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
+			sensor_trigger_handler_t handler)
 {
 	struct lps22hh_data *lps22hh = dev->data;
-	const struct lps22hh_config * const cfg = dev->config;
+	const struct lps22hh_config *const cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	uint32_t raw_press;
 
@@ -88,8 +87,7 @@ static void lps22hh_handle_interrupt(const struct device *dev)
 	}
 #endif
 
-	ret = gpio_pin_interrupt_configure_dt(&cfg->gpio_int,
-					      GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
 		LOG_ERR("%s: Not able to configure pin_int", dev->name);
 	}
@@ -104,11 +102,9 @@ static void lps22hh_intr_callback(struct lps22hh_data *lps22hh)
 #endif /* CONFIG_LPS22HH_TRIGGER_OWN_THREAD */
 }
 
-static void lps22hh_gpio_callback(const struct device *dev,
-				  struct gpio_callback *cb, uint32_t pins)
+static void lps22hh_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	struct lps22hh_data *lps22hh =
-		CONTAINER_OF(cb, struct lps22hh_data, gpio_cb);
+	struct lps22hh_data *lps22hh = CONTAINER_OF(cb, struct lps22hh_data, gpio_cb);
 
 	ARG_UNUSED(pins);
 	const struct lps22hh_config *cfg = lps22hh->dev->config;
@@ -140,16 +136,14 @@ static void lps22hh_thread(void *p1, void *p2, void *p3)
 #ifdef CONFIG_LPS22HH_TRIGGER_GLOBAL_THREAD
 static void lps22hh_work_cb(struct k_work *work)
 {
-	struct lps22hh_data *lps22hh =
-		CONTAINER_OF(work, struct lps22hh_data, work);
+	struct lps22hh_data *lps22hh = CONTAINER_OF(work, struct lps22hh_data, work);
 
 	lps22hh_handle_interrupt(lps22hh->dev);
 }
 #endif /* CONFIG_LPS22HH_TRIGGER_GLOBAL_THREAD */
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
-static int lps22hh_ibi_cb(struct i3c_device_desc *target,
-			  struct i3c_ibi_payload *payload)
+static int lps22hh_ibi_cb(struct i3c_device_desc *target, struct i3c_ibi_payload *payload)
 {
 	const struct device *dev = target->dev;
 	struct lps22hh_data *lps22hh = dev->data;
@@ -174,10 +168,9 @@ int lps22hh_init_interrupt(const struct device *dev)
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 	    && (cfg->i3c.bus == NULL)
 #endif
-	   ) {
+	) {
 		if (cfg->gpio_int.port) {
-			LOG_ERR("%s: device %s is not ready", dev->name,
-						cfg->gpio_int.port->name);
+			LOG_ERR("%s: device %s is not ready", dev->name, cfg->gpio_int.port->name);
 			return -ENODEV;
 		}
 
@@ -190,11 +183,9 @@ int lps22hh_init_interrupt(const struct device *dev)
 #if defined(CONFIG_LPS22HH_TRIGGER_OWN_THREAD)
 	k_sem_init(&lps22hh->intr_sem, 0, K_SEM_MAX_LIMIT);
 
-	k_thread_create(&lps22hh->thread, lps22hh->thread_stack,
-		       CONFIG_LPS22HH_THREAD_STACK_SIZE,
-		       lps22hh_thread, lps22hh,
-		       NULL, NULL, K_PRIO_COOP(CONFIG_LPS22HH_THREAD_PRIORITY),
-		       0, K_NO_WAIT);
+	k_thread_create(&lps22hh->thread, lps22hh->thread_stack, CONFIG_LPS22HH_THREAD_STACK_SIZE,
+			lps22hh_thread, lps22hh, NULL, NULL,
+			K_PRIO_COOP(CONFIG_LPS22HH_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_LPS22HH_TRIGGER_GLOBAL_THREAD)
 	lps22hh->work.handler = lps22hh_work_cb;
 #endif /* CONFIG_LPS22HH_TRIGGER_OWN_THREAD */
@@ -210,10 +201,9 @@ int lps22hh_init_interrupt(const struct device *dev)
 		}
 
 		LOG_INF("%s: int on %s.%02u", dev->name, cfg->gpio_int.port->name,
-					      cfg->gpio_int.pin);
+			cfg->gpio_int.pin);
 
-		gpio_init_callback(&lps22hh->gpio_cb,
-				   lps22hh_gpio_callback,
+		gpio_init_callback(&lps22hh->gpio_cb, lps22hh_gpio_callback,
 				   BIT(cfg->gpio_int.pin));
 
 		ret = gpio_add_callback(cfg->gpio_int.port, &lps22hh->gpio_cb);
@@ -242,6 +232,5 @@ int lps22hh_init_interrupt(const struct device *dev)
 	}
 #endif
 
-	return gpio_pin_interrupt_configure_dt(&cfg->gpio_int,
-					       GPIO_INT_EDGE_TO_ACTIVE);
+	return gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
 }

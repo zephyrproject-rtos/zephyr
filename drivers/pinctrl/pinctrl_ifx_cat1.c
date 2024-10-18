@@ -12,7 +12,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <cy_gpio.h>
 
-#define GPIO_PORT_OR_NULL(node_id) \
+#define GPIO_PORT_OR_NULL(node_id)                                                                 \
 	COND_CODE_1(DT_NODE_EXISTS(node_id), ((GPIO_PRT_Type *)DT_REG_ADDR(node_id)), (NULL))
 
 /* @brief Array containing pointers to each GPIO port.
@@ -20,22 +20,14 @@
  * Entries will be NULL if the GPIO port is not enabled.
  */
 static GPIO_PRT_Type *const gpio_ports[] = {
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt0)),
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt1)),
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt2)),
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt3)),
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt4)),
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt5)),
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt6)),
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt7)),
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt8)),
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt9)),
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt10)),
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt11)),
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt12)),
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt13)),
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt14))
-};
+	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt0)),  GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt1)),
+	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt2)),  GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt3)),
+	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt4)),  GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt5)),
+	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt6)),  GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt7)),
+	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt8)),  GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt9)),
+	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt10)), GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt11)),
+	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt12)), GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt13)),
+	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt14))};
 
 /* @brief This function returns gpio drive mode, according to.
  * bias and drive mode params defined in pinctrl node.

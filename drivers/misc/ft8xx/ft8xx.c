@@ -41,9 +41,9 @@ struct ft8xx_config {
 	uint16_t hsync0;
 	uint16_t hsync1;
 	uint8_t pclk;
-	uint8_t pclk_pol :1;
-	uint8_t cspread  :1;
-	uint8_t swizzle  :4;
+	uint8_t pclk_pol: 1;
+	uint8_t cspread: 1;
+	uint8_t swizzle: 4;
 };
 
 struct ft8xx_data {
@@ -52,20 +52,20 @@ struct ft8xx_data {
 };
 
 const static struct ft8xx_config ft8xx_config = {
-	.pclk     = DT_INST_PROP(0, pclk),
+	.pclk = DT_INST_PROP(0, pclk),
 	.pclk_pol = DT_INST_PROP(0, pclk_pol),
-	.cspread  = DT_INST_PROP(0, cspread),
-	.swizzle  = DT_INST_PROP(0, swizzle),
-	.vsize    = DT_INST_PROP(0, vsize),
-	.voffset  = DT_INST_PROP(0, voffset),
-	.vcycle   = DT_INST_PROP(0, vcycle),
-	.vsync0   = DT_INST_PROP(0, vsync0),
-	.vsync1   = DT_INST_PROP(0, vsync1),
-	.hsize    = DT_INST_PROP(0, hsize),
-	.hoffset  = DT_INST_PROP(0, hoffset),
-	.hcycle   = DT_INST_PROP(0, hcycle),
-	.hsync0   = DT_INST_PROP(0, hsync0),
-	.hsync1   = DT_INST_PROP(0, hsync1),
+	.cspread = DT_INST_PROP(0, cspread),
+	.swizzle = DT_INST_PROP(0, swizzle),
+	.vsize = DT_INST_PROP(0, vsize),
+	.voffset = DT_INST_PROP(0, voffset),
+	.vcycle = DT_INST_PROP(0, vcycle),
+	.vsync0 = DT_INST_PROP(0, vsync0),
+	.vsync1 = DT_INST_PROP(0, vsync1),
+	.hsize = DT_INST_PROP(0, hsize),
+	.hoffset = DT_INST_PROP(0, hoffset),
+	.hcycle = DT_INST_PROP(0, hcycle),
+	.hsync0 = DT_INST_PROP(0, hsync0),
+	.hsync1 = DT_INST_PROP(0, hsync1),
 };
 
 static struct ft8xx_data ft8xx_data = {
@@ -167,8 +167,8 @@ static int ft8xx_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, ft8xx_init, NULL, &ft8xx_data, &ft8xx_config,
-		      POST_KERNEL, CONFIG_FT800_INIT_PRIORITY, NULL);
+DEVICE_DT_INST_DEFINE(0, ft8xx_init, NULL, &ft8xx_data, &ft8xx_config, POST_KERNEL,
+		      CONFIG_FT800_INIT_PRIORITY, NULL);
 
 int ft8xx_get_touch_tag(void)
 {
@@ -178,8 +178,7 @@ int ft8xx_get_touch_tag(void)
 	return (int)ft8xx_rd8(FT800_REG_TOUCH_TAG);
 }
 
-void ft8xx_drv_irq_triggered(const struct device *dev, struct gpio_callback *cb,
-			      uint32_t pins)
+void ft8xx_drv_irq_triggered(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
 	if (ft8xx_data.irq_callback != NULL) {
 		ft8xx_data.irq_callback();

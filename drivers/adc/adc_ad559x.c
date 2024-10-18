@@ -21,11 +21,11 @@ LOG_MODULE_REGISTER(adc_ad559x, CONFIG_ADC_LOG_LEVEL);
 #define AD559X_ADC_RD_POINTER      0x40
 
 #define AD559X_ADC_RESOLUTION 12U
-#define AD559X_ADC_VREF_MV 2500U
+#define AD559X_ADC_VREF_MV    2500U
 
-#define AD559X_ADC_RES_IND_BIT BIT(15)
+#define AD559X_ADC_RES_IND_BIT   BIT(15)
 #define AD559X_ADC_RES_CHAN_MASK GENMASK(14, 12)
-#define AD559X_ADC_RES_VAL_MASK GENMASK(11, 0)
+#define AD559X_ADC_RES_VAL_MASK  GENMASK(11, 0)
 
 struct adc_ad559x_config {
 	const struct device *mfd_dev;
@@ -255,10 +255,9 @@ static int adc_ad559x_init(const struct device *dev)
 	k_sem_init(&data->sem, 0, 1);
 	adc_context_init(&data->ctx);
 
-	tid = k_thread_create(&data->thread, data->stack,
-			K_KERNEL_STACK_SIZEOF(data->stack),
-			(k_thread_entry_t)adc_ad559x_acquisition_thread, data, NULL, NULL,
-			CONFIG_ADC_AD559X_ACQUISITION_THREAD_PRIO, 0, K_NO_WAIT);
+	tid = k_thread_create(&data->thread, data->stack, K_KERNEL_STACK_SIZEOF(data->stack),
+			      (k_thread_entry_t)adc_ad559x_acquisition_thread, data, NULL, NULL,
+			      CONFIG_ADC_AD559X_ACQUISITION_THREAD_PRIO, 0, K_NO_WAIT);
 
 	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
 		ret = k_thread_name_set(tid, "adc_ad559x");

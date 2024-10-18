@@ -449,11 +449,12 @@ static void uart_emul_async_rx_timeout_handler(struct k_work *_work)
 
 	struct uart_event rx_rdy_event = {
 		.type = UART_RX_RDY,
-		.data.rx = {
-			.buf = rx_buf,
-			.offset = rx_buf_offset,
-			.len = rx_buf_data_len,
-		},
+		.data.rx =
+			{
+				.buf = rx_buf,
+				.offset = rx_buf_offset,
+				.len = rx_buf_data_len,
+			},
 	};
 
 	uart_emul_post_event(dev, &rx_rdy_event);
@@ -557,11 +558,12 @@ static void uart_emul_async_rx_handler(struct k_work *work)
 		if (rx_rdy) {
 			struct uart_event rx_rdy_event = {
 				.type = UART_RX_RDY,
-				.data.rx = {
-					.buf = rx_buf,
-					.offset = offset,
-					.len = data_len,
-				},
+				.data.rx =
+					{
+						.buf = rx_buf,
+						.offset = offset,
+						.len = data_len,
+					},
 			};
 
 			uart_emul_post_event(dev, &rx_rdy_event);
@@ -656,10 +658,11 @@ static void uart_emul_async_tx_handler(struct k_work *work)
 
 	struct uart_event tx_done_event = {
 		.type = UART_TX_DONE,
-		.data.tx = {
-			.buf = tx_buf,
-			.len = tx_buf_len,
-		},
+		.data.tx =
+			{
+				.buf = tx_buf,
+				.len = tx_buf_len,
+			},
 	};
 
 	uart_emul_post_event(dev, &tx_done_event);
@@ -698,11 +701,12 @@ static void uart_emul_rx_stop(const struct device *dev, struct uart_emul_data *d
 	if (rx_buf_data_len > 0) {
 		struct uart_event rx_rdy_event = {
 			.type = UART_RX_RDY,
-			.data.rx = {
-				.buf = rx_buf,
-				.offset = rx_buf_offset,
-				.len = rx_buf_data_len,
-			},
+			.data.rx =
+				{
+					.buf = rx_buf,
+					.offset = rx_buf_offset,
+					.len = rx_buf_data_len,
+				},
 		};
 
 		uart_emul_post_event(dev, &rx_rdy_event);
@@ -780,10 +784,11 @@ static int uart_emul_tx_abort(const struct device *dev)
 
 	struct uart_event tx_aborted_event = {
 		.type = UART_TX_ABORTED,
-		.data.tx = {
-			.buf = tx_buf,
-			.len = tx_buf_sent,
-		},
+		.data.tx =
+			{
+				.buf = tx_buf,
+				.len = tx_buf_sent,
+			},
 	};
 
 	uart_emul_post_event(dev, &tx_aborted_event);
@@ -931,13 +936,11 @@ uint32_t uart_emul_put_rx_data(const struct device *dev, const uint8_t *data, si
 	}
 
 	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (
-		if (count > 0 && irq_en && !empty) {
-			(void)k_work_submit_to_queue(&uart_emul_work_q, &drv_data->irq_work);
+		if (count > 0 && irq_en && !empty) { (void)k_work_submit_to_queue(&uart_emul_work_q, &drv_data->irq_work);
 		}
 	))
 	IF_ENABLED(CONFIG_UART_ASYNC_API, (
-		if (count > 0 && rx_en && !empty) {
-			(void)k_work_submit_to_queue(&uart_emul_work_q, &drv_data->rx_work);
+		if (count > 0 && rx_en && !empty) { (void)k_work_submit_to_queue(&uart_emul_work_q, &drv_data->rx_work);
 		}
 	))
 
@@ -1013,44 +1016,44 @@ int uart_emul_register(const struct device *dev, struct uart_emul *emul)
 		.dev = DEVICE_DT_GET(node_id),                                                     \
 	},
 
-#define DEFINE_UART_EMUL(inst)                                                                     \
-	static const struct emul_link_for_bus emuls_##inst[] = {                                   \
-		DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(inst), EMUL_LINK_AND_COMMA)};             \
-                                                                                                   \
-	RING_BUF_DECLARE(uart_emul_##inst##_rx_rb, UART_EMUL_RX_FIFO_SIZE(inst));                  \
-	RING_BUF_DECLARE(uart_emul_##inst##_tx_rb, UART_EMUL_TX_FIFO_SIZE(inst));                  \
-                                                                                                   \
-	static const struct uart_emul_config uart_emul_cfg_##inst = {                              \
-		.loopback = DT_INST_PROP(inst, loopback),                                          \
-		.latch_buffer_size = DT_INST_PROP(inst, latch_buffer_size),                        \
-		.emul_list = {                                                                     \
-			.children = emuls_##inst,                                                  \
-			.num_children = ARRAY_SIZE(emuls_##inst),                                  \
-		},                                                                                 \
-	};                                                                                         \
-	static struct uart_emul_data uart_emul_data_##inst = {                                     \
-		.emuls = SYS_SLIST_STATIC_INIT(&_CONCAT(uart_emul_data_, inst).emuls),             \
-		.dev = DEVICE_DT_INST_GET(inst),                                                   \
-		.rx_rb = &uart_emul_##inst##_rx_rb,                                                \
-		.tx_rb = &uart_emul_##inst##_tx_rb,                                                \
+#define DEFINE_UART_EMUL(inst)                                                                                      \
+	static const struct emul_link_for_bus emuls_##inst[] = {                                                    \
+		DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(inst), EMUL_LINK_AND_COMMA)};                              \
+                                                                                                                    \
+	RING_BUF_DECLARE(uart_emul_##inst##_rx_rb, UART_EMUL_RX_FIFO_SIZE(inst));                                   \
+	RING_BUF_DECLARE(uart_emul_##inst##_tx_rb, UART_EMUL_TX_FIFO_SIZE(inst));                                   \
+                                                                                                                    \
+	static const struct uart_emul_config uart_emul_cfg_##inst = {                                               \
+		.loopback = DT_INST_PROP(inst, loopback),                                                           \
+		.latch_buffer_size = DT_INST_PROP(inst, latch_buffer_size),                                         \
+		.emul_list =                                                                                        \
+			{                                                                                           \
+				.children = emuls_##inst,                                                           \
+				.num_children = ARRAY_SIZE(emuls_##inst),                                           \
+			},                                                                                          \
+	};                                                                                                          \
+	static struct uart_emul_data uart_emul_data_##inst = {                                                      \
+		.emuls = SYS_SLIST_STATIC_INIT(&_CONCAT(uart_emul_data_, inst).emuls),                              \
+		.dev = DEVICE_DT_INST_GET(inst),                                                                    \
+		.rx_rb = &uart_emul_##inst##_rx_rb,                                                                 \
+		.tx_rb = &uart_emul_##inst##_tx_rb,                                                                 \
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,                                           \
-			   (.irq_work = Z_WORK_INITIALIZER(uart_emul_irq_handler),))               \
-		IF_ENABLED(CONFIG_UART_ASYNC_API,                                                  \
+			   (.irq_work = Z_WORK_INITIALIZER(uart_emul_irq_handler),))                \
+				 IF_ENABLED(CONFIG_UART_ASYNC_API,                                                  \
 				(.tx_work = Z_WORK_INITIALIZER(uart_emul_async_tx_handler),        \
 				.rx_timeout_work = Z_WORK_DELAYABLE_INITIALIZER(                   \
 					uart_emul_async_rx_timeout_handler),                       \
 				.rx_work = Z_WORK_INITIALIZER(uart_emul_async_rx_handler),         \
 				.rx_disable_work = Z_WORK_INITIALIZER(                             \
-					uart_emul_async_rx_disable_handler),))                     \
-	};                                                                                         \
-                                                                                                   \
-	static int uart_emul_post_init_##inst(void)                                                \
-	{                                                                                          \
-		return emul_init_for_bus(DEVICE_DT_INST_GET(inst));                                \
-	}                                                                                          \
-	SYS_INIT(uart_emul_post_init_##inst, POST_KERNEL, CONFIG_UART_EMUL_DEVICE_INIT_PRIORITY);  \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &uart_emul_data_##inst, &uart_emul_cfg_##inst,     \
+					uart_emul_async_rx_disable_handler),)) }; \
+                                                                                                                    \
+	static int uart_emul_post_init_##inst(void)                                                                 \
+	{                                                                                                           \
+		return emul_init_for_bus(DEVICE_DT_INST_GET(inst));                                                 \
+	}                                                                                                           \
+	SYS_INIT(uart_emul_post_init_##inst, POST_KERNEL, CONFIG_UART_EMUL_DEVICE_INIT_PRIORITY);                   \
+                                                                                                                    \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &uart_emul_data_##inst, &uart_emul_cfg_##inst,                      \
 			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, &uart_emul_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_UART_EMUL)

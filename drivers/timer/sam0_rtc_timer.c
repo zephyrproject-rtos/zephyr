@@ -26,7 +26,7 @@
 #include <zephyr/sys/util.h>
 
 /* RTC registers. */
-#define RTC0 ((RtcMode0 *) DT_INST_REG_ADDR(0))
+#define RTC0 ((RtcMode0 *)DT_INST_REG_ADDR(0))
 
 #ifdef MCLK
 #define RTC_CLOCK_HW_CYCLES_PER_SEC SOC_ATMEL_SAM0_OSC32K_FREQ_HZ
@@ -35,8 +35,7 @@
 #endif
 
 /* Number of sys timer cycles per on tick. */
-#define CYCLES_PER_TICK (RTC_CLOCK_HW_CYCLES_PER_SEC \
-			 / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define CYCLES_PER_TICK (RTC_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
 /* Maximum number of ticks. */
 #define MAX_TICKS (UINT32_MAX / CYCLES_PER_TICK - 2)
@@ -61,13 +60,12 @@ BUILD_ASSERT(CYCLES_PER_TICK > TICK_THRESHOLD,
  * MATCHCLR == 1 and PRESCALER == 0. So we need to check that CYCLES_PER_TICK
  * is more than one.
  */
-BUILD_ASSERT(CYCLES_PER_TICK > 1,
-	     "CYCLES_PER_TICK must be greater than 1 for ticking mode");
+BUILD_ASSERT(CYCLES_PER_TICK > 1, "CYCLES_PER_TICK must be greater than 1 for ticking mode");
 
 #endif /* CONFIG_TICKLESS_KERNEL */
 
 /* Helper macro to get the correct GCLK GEN based on configuration. */
-#define GCLK_GEN(n) GCLK_EVAL(n)
+#define GCLK_GEN(n)  GCLK_EVAL(n)
 #define GCLK_EVAL(n) GCLK_CLKCTRL_GEN_GCLK##n
 
 /* Tick/cycle count of the last announce call. */
@@ -189,7 +187,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 #ifdef CONFIG_TICKLESS_KERNEL
 
 	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
-	ticks = CLAMP(ticks - 1, 0, (int32_t) MAX_TICKS);
+	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
 
 	/* Compute number of RTC cycles until the next timeout. */
 	uint32_t count = rtc_count();
@@ -249,15 +247,14 @@ static int sys_clock_driver_init(void)
 {
 	int retval;
 
-
 #ifdef MCLK
 	MCLK->APBAMASK.reg |= MCLK_APBAMASK_RTC;
 	OSC32KCTRL->RTCCTRL.reg = OSC32KCTRL_RTCCTRL_RTCSEL_ULP32K;
 #else
 	/* Set up bus clock and GCLK generator. */
 	PM->APBAMASK.reg |= PM_APBAMASK_RTC;
-	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID(RTC_GCLK_ID) | GCLK_CLKCTRL_CLKEN
-			    | GCLK_GEN(DT_INST_PROP(0, clock_generator));
+	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID(RTC_GCLK_ID) | GCLK_CLKCTRL_CLKEN |
+			    GCLK_GEN(DT_INST_PROP(0, clock_generator));
 
 	/* Synchronize GCLK. */
 	while (GCLK->STATUS.bit.SYNCBUSY) {
@@ -321,12 +318,10 @@ static int sys_clock_driver_init(void)
 
 	/* Enable RTC interrupt. */
 	NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority), rtc_isr, 0, 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), rtc_isr, 0, 0);
 	irq_enable(DT_INST_IRQN(0));
 
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

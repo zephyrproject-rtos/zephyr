@@ -320,7 +320,7 @@ static int gpio_stepper_motor_controller_init(const struct device *dev)
 
 #define GPIO_STEPPER_DEVICE_CONFIG_DEFINE(child)                                                   \
 	static const struct gpio_dt_spec gpio_stepper_motor_control_pins_##child[] = {             \
-		DT_FOREACH_PROP_ELEM_SEP(child, gpios, GPIO_DT_SPEC_GET_BY_IDX, (,)),              \
+		DT_FOREACH_PROP_ELEM_SEP(child, gpios, GPIO_DT_SPEC_GET_BY_IDX, (, )),             \
 	};                                                                                         \
 	BUILD_ASSERT(                                                                              \
 		ARRAY_SIZE(gpio_stepper_motor_control_pins_##child) == 4,                          \
@@ -340,7 +340,8 @@ static int gpio_stepper_motor_controller_init(const struct device *dev)
 		.enable_constant_velocity_mode = gpio_stepper_enable_constant_velocity_mode,       \
 		.set_micro_step_res = gpio_stepper_set_micro_step_res,                             \
 		.get_micro_step_res = gpio_stepper_get_micro_step_res,                             \
-		.set_event_callback = gpio_stepper_set_event_callback, };
+		.set_event_callback = gpio_stepper_set_event_callback,                             \
+	};
 
 #define GPIO_STEPPER_DEVICE_DEFINE(child)                                                          \
 	DEVICE_DT_DEFINE(child, gpio_stepper_motor_controller_init, NULL,                          \

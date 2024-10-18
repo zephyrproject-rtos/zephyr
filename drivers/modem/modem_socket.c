@@ -173,10 +173,10 @@ int modem_socket_get(struct modem_socket_config *cfg, int family, int type, int 
 	cfg->sockets[i].family = family;
 	cfg->sockets[i].type = type;
 	cfg->sockets[i].ip_proto = proto;
-	cfg->sockets[i].id = (cfg->assign_id) ? (i + cfg->base_socket_id) :
-		(cfg->base_socket_id + cfg->sockets_len);
+	cfg->sockets[i].id = (cfg->assign_id) ? (i + cfg->base_socket_id)
+					      : (cfg->base_socket_id + cfg->sockets_len);
 	zvfs_finalize_typed_fd(cfg->sockets[i].sock_fd, &cfg->sockets[i],
-			    (const struct fd_op_vtable *)cfg->vtable, ZVFS_MODE_IFSOCK);
+			       (const struct fd_op_vtable *)cfg->vtable, ZVFS_MODE_IFSOCK);
 
 	k_sem_give(&cfg->sem_lock);
 	return cfg->sockets[i].sock_fd;
@@ -458,14 +458,13 @@ bool modem_socket_id_is_assigned(const struct modem_socket_config *cfg,
 {
 	/* Verify socket is assigned to a valid value */
 	if ((cfg->base_socket_id <= sock->id) &&
-		(sock->id < (cfg->base_socket_id + cfg->sockets_len))) {
+	    (sock->id < (cfg->base_socket_id + cfg->sockets_len))) {
 		return true;
 	}
 	return false;
 }
 
-int modem_socket_id_assign(const struct modem_socket_config *cfg,
-			   struct modem_socket *sock, int id)
+int modem_socket_id_assign(const struct modem_socket_config *cfg, struct modem_socket *sock, int id)
 {
 	/* Verify dynamically assigning id is disabled */
 	if (cfg->assign_id) {

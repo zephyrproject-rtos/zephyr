@@ -45,8 +45,8 @@ struct mcux_flexio_lcdif_data {
 	uint8_t data_bus_width;
 };
 
-static void flexio_lcdif_dma_callback(const struct device *dev, void *arg,
-				      uint32_t channel, int status)
+static void flexio_lcdif_dma_callback(const struct device *dev, void *arg, uint32_t channel,
+				      int status)
 {
 	const struct device *flexio_dev = (struct device *)arg;
 	struct mcux_flexio_lcdif_data *lcdif_data = flexio_dev->data;
@@ -66,7 +66,6 @@ static void flexio_lcdif_dma_callback(const struct device *dev, void *arg,
 
 	k_sem_give(&lcdif_data->transfer_done);
 }
-
 
 static void flexio_lcdif_set_cs(bool set, void *param)
 {
@@ -117,9 +116,7 @@ static edma_modulo_t flexio_lcdif_get_edma_modulo(uint8_t shifterNum)
 	return ret;
 }
 
-static void flexio_lcdif_write_data_array(FLEXIO_MCULCD_Type *base,
-					  const void *data,
-					  size_t size)
+static void flexio_lcdif_write_data_array(FLEXIO_MCULCD_Type *base, const void *data, size_t size)
 {
 	assert(size > 0U);
 
@@ -205,8 +202,7 @@ static int mipi_dbi_flexio_lcdif_configure(const struct device *dev,
 	}
 
 	FLEXIO_MCULCD_GetDefaultConfig(&flexioMcuLcdConfig);
-	flexioMcuLcdConfig.baudRate_Bps = dbi_config->config.frequency *
-					  lcdif_data->data_bus_width;
+	flexioMcuLcdConfig.baudRate_Bps = dbi_config->config.frequency * lcdif_data->data_bus_width;
 
 	if (nxp_flexio_get_rate(config->flexio_dev, &clock_freq)) {
 		return -EINVAL;
@@ -304,8 +300,7 @@ static int mipi_dbi_flexio_ldcif_write_display(const struct device *dev,
 
 static int mipi_dbi_flexio_lcdif_command_write(const struct device *dev,
 					       const struct mipi_dbi_config *dbi_config,
-					       uint8_t cmd, const uint8_t *data_buf,
-					       size_t len)
+					       uint8_t cmd, const uint8_t *data_buf, size_t len)
 {
 	const struct mcux_flexio_lcdif_config *config = dev->config;
 	FLEXIO_MCULCD_Type *flexio_lcd = config->flexio_lcd_dev;
@@ -333,7 +328,6 @@ static int mipi_dbi_flexio_lcdif_command_write(const struct device *dev,
 	FLEXIO_MCULCD_StopTransfer(flexio_lcd);
 
 	return kStatus_Success;
-
 }
 
 static int mipi_dbi_flexio_lcdif_reset(const struct device *dev, k_timeout_t delay)
@@ -409,7 +403,6 @@ static int flexio_lcdif_init(const struct device *dev)
 	 */
 	config->flexio_lcd_dev->userData = (void *)dev;
 
-
 	k_sem_init(&lcdif_data->transfer_done, 0, 1);
 
 	LOG_DBG("%s device init complete", dev->name);
@@ -423,63 +416,53 @@ static struct mipi_dbi_driver_api mipi_dbi_lcdif_driver_api = {
 	.write_display = mipi_dbi_flexio_ldcif_write_display,
 };
 
-#define MCUX_FLEXIO_LCDIF_DEVICE_INIT(n)						\
-	PINCTRL_DT_INST_DEFINE(n);							\
-											\
-	static FLEXIO_MCULCD_Type flexio_mculcd_##n = {					\
-		.flexioBase = (FLEXIO_Type *)DT_REG_ADDR(DT_INST_PARENT(n)),		\
-		.dataPinStartIndex = DT_INST_PROP(n, data_pin_start),			\
-		.ENWRPinIndex = DT_INST_PROP(n, enwr_pin),				\
-		.RDPinIndex = DT_INST_PROP_OR(n, rd_pin, 0),				\
-		.setCSPin = flexio_lcdif_set_cs,					\
-		.setRSPin = flexio_lcdif_set_rs,					\
-		.setRDWRPin = flexio_lcdif_set_rd_wr,					\
-	};										\
-											\
-	static uint8_t mcux_flexio_lcdif_shifters_##n[DT_INST_PROP(n, shifters_count)];	\
-	static uint8_t mcux_flexio_lcdif_timers_##n[DT_INST_PROP(n, timers_count)];	\
-											\
-	static const struct nxp_flexio_child lcdif_child_##n = {			\
-		.isr = NULL,								\
-		.user_data = (void *)DEVICE_DT_INST_GET(n),				\
-		.res = {								\
-			.shifter_index = mcux_flexio_lcdif_shifters_##n,		\
-			.shifter_count = ARRAY_SIZE(mcux_flexio_lcdif_shifters_##n),	\
-			.timer_index = mcux_flexio_lcdif_timers_##n,			\
-			.timer_count = ARRAY_SIZE(mcux_flexio_lcdif_timers_##n),	\
-		}									\
-	};										\
-											\
-	struct mcux_flexio_lcdif_config mcux_flexio_lcdif_config_##n = {		\
-		.flexio_lcd_dev = &flexio_mculcd_##n,					\
-		.flexio_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),				\
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
-		.child = &lcdif_child_##n,						\
-		.reset = GPIO_DT_SPEC_INST_GET(n, reset_gpios),				\
-		.cs_gpio = GPIO_DT_SPEC_INST_GET(n, cs_gpios),				\
-		.rs_gpio = GPIO_DT_SPEC_INST_GET(n, rs_gpios),				\
-		.rdwr_gpio = GPIO_DT_SPEC_INST_GET_OR(n, rdwr_gpios, {0}),		\
-	};										\
-	struct mcux_flexio_lcdif_data mcux_flexio_lcdif_data_##n = {			\
-		.dma_tx = {								\
-			.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, tx)),	\
-			.channel = DT_INST_DMAS_CELL_BY_NAME(n, tx, mux),		\
-			.dma_cfg = {							\
-				.channel_direction = MEMORY_TO_MEMORY,			\
-				.dma_callback = flexio_lcdif_dma_callback,		\
-				.dest_data_size = 4,					\
-				.block_count = 1,					\
-				.dma_slot = DT_INST_DMAS_CELL_BY_NAME(n, tx, source)	\
-			}								\
-		},									\
-	};										\
-	DEVICE_DT_INST_DEFINE(n,							\
-		&flexio_lcdif_init,							\
-		NULL,									\
-		&mcux_flexio_lcdif_data_##n,						\
-		&mcux_flexio_lcdif_config_##n,						\
-		POST_KERNEL,								\
-		CONFIG_MIPI_DBI_INIT_PRIORITY,						\
-		&mipi_dbi_lcdif_driver_api);
+#define MCUX_FLEXIO_LCDIF_DEVICE_INIT(n)                                                           \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+                                                                                                   \
+	static FLEXIO_MCULCD_Type flexio_mculcd_##n = {                                            \
+		.flexioBase = (FLEXIO_Type *)DT_REG_ADDR(DT_INST_PARENT(n)),                       \
+		.dataPinStartIndex = DT_INST_PROP(n, data_pin_start),                              \
+		.ENWRPinIndex = DT_INST_PROP(n, enwr_pin),                                         \
+		.RDPinIndex = DT_INST_PROP_OR(n, rd_pin, 0),                                       \
+		.setCSPin = flexio_lcdif_set_cs,                                                   \
+		.setRSPin = flexio_lcdif_set_rs,                                                   \
+		.setRDWRPin = flexio_lcdif_set_rd_wr,                                              \
+	};                                                                                         \
+                                                                                                   \
+	static uint8_t mcux_flexio_lcdif_shifters_##n[DT_INST_PROP(n, shifters_count)];            \
+	static uint8_t mcux_flexio_lcdif_timers_##n[DT_INST_PROP(n, timers_count)];                \
+                                                                                                   \
+	static const struct nxp_flexio_child lcdif_child_##n = {                                   \
+		.isr = NULL,                                                                       \
+		.user_data = (void *)DEVICE_DT_INST_GET(n),                                        \
+		.res = {                                                                           \
+			.shifter_index = mcux_flexio_lcdif_shifters_##n,                           \
+			.shifter_count = ARRAY_SIZE(mcux_flexio_lcdif_shifters_##n),               \
+			.timer_index = mcux_flexio_lcdif_timers_##n,                               \
+			.timer_count = ARRAY_SIZE(mcux_flexio_lcdif_timers_##n),                   \
+		}};                                                                                \
+                                                                                                   \
+	struct mcux_flexio_lcdif_config mcux_flexio_lcdif_config_##n = {                           \
+		.flexio_lcd_dev = &flexio_mculcd_##n,                                              \
+		.flexio_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                    \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+		.child = &lcdif_child_##n,                                                         \
+		.reset = GPIO_DT_SPEC_INST_GET(n, reset_gpios),                                    \
+		.cs_gpio = GPIO_DT_SPEC_INST_GET(n, cs_gpios),                                     \
+		.rs_gpio = GPIO_DT_SPEC_INST_GET(n, rs_gpios),                                     \
+		.rdwr_gpio = GPIO_DT_SPEC_INST_GET_OR(n, rdwr_gpios, {0}),                         \
+	};                                                                                         \
+	struct mcux_flexio_lcdif_data mcux_flexio_lcdif_data_##n = {                               \
+		.dma_tx = {.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, tx)),             \
+			   .channel = DT_INST_DMAS_CELL_BY_NAME(n, tx, mux),                       \
+			   .dma_cfg = {.channel_direction = MEMORY_TO_MEMORY,                      \
+				       .dma_callback = flexio_lcdif_dma_callback,                  \
+				       .dest_data_size = 4,                                        \
+				       .block_count = 1,                                           \
+				       .dma_slot = DT_INST_DMAS_CELL_BY_NAME(n, tx, source)}},     \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(n, &flexio_lcdif_init, NULL, &mcux_flexio_lcdif_data_##n,            \
+			      &mcux_flexio_lcdif_config_##n, POST_KERNEL,                          \
+			      CONFIG_MIPI_DBI_INIT_PRIORITY, &mipi_dbi_lcdif_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_FLEXIO_LCDIF_DEVICE_INIT)

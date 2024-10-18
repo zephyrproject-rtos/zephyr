@@ -15,13 +15,13 @@ LOG_MODULE_DECLARE(mpxxdtyy);
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2s)
 
-#define NUM_RX_BLOCKS			4
-#define PDM_BLOCK_MAX_SIZE_BYTES	512
+#define NUM_RX_BLOCKS            4
+#define PDM_BLOCK_MAX_SIZE_BYTES 512
 
 K_MEM_SLAB_DEFINE(rx_pdm_i2s_mslab, PDM_BLOCK_MAX_SIZE_BYTES, NUM_RX_BLOCKS, 1);
 
-int mpxxdtyy_i2s_read(const struct device *dev, uint8_t stream, void **buffer,
-		      size_t *size, int32_t timeout)
+int mpxxdtyy_i2s_read(const struct device *dev, uint8_t stream, void **buffer, size_t *size,
+		      int32_t timeout)
 {
 	int ret;
 	const struct mpxxdtyy_config *config = dev->config;
@@ -36,14 +36,12 @@ int mpxxdtyy_i2s_read(const struct device *dev, uint8_t stream, void **buffer,
 		return ret;
 	}
 
-	ret = k_mem_slab_alloc(data->pcm_mem_slab,
-			       &pcm_block, K_NO_WAIT);
+	ret = k_mem_slab_alloc(data->pcm_mem_slab, &pcm_block, K_NO_WAIT);
 	if (ret < 0) {
 		return ret;
 	}
 
-	sw_filter_lib_run(pdm_filter, pdm_block, pcm_block, pdm_size,
-			  data->pcm_mem_size);
+	sw_filter_lib_run(pdm_filter, pdm_block, pcm_block, pdm_size, data->pcm_mem_size);
 	k_mem_slab_free(&rx_pdm_i2s_mslab, pdm_block);
 
 	*buffer = pcm_block;
@@ -126,8 +124,7 @@ int mpxxdtyy_i2s_configure(const struct device *dev, struct dmic_cfg *cfg)
 
 	i2s_cfg.word_size = chan_size;
 	i2s_cfg.channels = cfg->channel.req_num_chan;
-	i2s_cfg.format = I2S_FMT_DATA_FORMAT_LEFT_JUSTIFIED |
-			 I2S_FMT_BIT_CLK_INV;
+	i2s_cfg.format = I2S_FMT_DATA_FORMAT_LEFT_JUSTIFIED | I2S_FMT_BIT_CLK_INV;
 	i2s_cfg.options = I2S_OPT_FRAME_CLK_MASTER | I2S_OPT_BIT_CLK_MASTER;
 	i2s_cfg.frame_clk_freq = audio_freq * factor / chan_size;
 	i2s_cfg.block_size = data->pcm_mem_size * (factor / chan_size);

@@ -33,8 +33,8 @@ static int mcp23sxx_read_port_regs(const struct device *dev, uint8_t reg, uint16
 	uint8_t nread = (config->ngpios == 8) ? 1 : 2;
 
 	uint8_t addr = MCP23SXX_ADDR | MCP23SXX_READBIT;
-	uint8_t buffer_tx[4] = { addr, reg, 0, 0 };
-	uint8_t buffer_rx[4] = { 0 };
+	uint8_t buffer_tx[4] = {addr, reg, 0, 0};
+	uint8_t buffer_rx[4] = {0};
 
 	const struct spi_buf tx_buf = {
 		.buf = buffer_tx,
@@ -79,14 +79,12 @@ static int mcp23sxx_write_port_regs(const struct device *dev, uint8_t reg, uint1
 	port_data = sys_cpu_to_le16(value);
 
 	uint8_t addr = MCP23SXX_ADDR;
-	uint8_t buffer_tx[4] = { addr, reg, port_a_data, port_b_data };
+	uint8_t buffer_tx[4] = {addr, reg, port_a_data, port_b_data};
 
-	const struct spi_buf tx_buf[1] = {
-		{
-			.buf = buffer_tx,
-			.len = nwrite + 2,
-		}
-	};
+	const struct spi_buf tx_buf[1] = {{
+		.buf = buffer_tx,
+		.len = nwrite + 2,
+	}};
 	const struct spi_buf_set tx = {
 		.buffers = tx_buf,
 		.count = ARRAY_SIZE(tx_buf),
@@ -113,35 +111,33 @@ static int mcp23sxx_bus_is_ready(const struct device *dev)
 	return 0;
 }
 
-#define GPIO_MCP23SXX_DEVICE(inst, num_gpios, open_drain)                                     \
-	static struct mcp23xxx_drv_data mcp23sxx_##inst##_drvdata = {                         \
-		/* Default for registers according to datasheet */                            \
-		.reg_cache.iodir = 0xFFFF, .reg_cache.ipol = 0x0,   .reg_cache.gpinten = 0x0, \
-		.reg_cache.defval = 0x0,   .reg_cache.intcon = 0x0, .reg_cache.iocon = 0x0,   \
-		.reg_cache.gppu = 0x0,	   .reg_cache.intf = 0x0,   .reg_cache.intcap = 0x0,  \
-		.reg_cache.gpio = 0x0,	   .reg_cache.olat = 0x0,                             \
-	};                                                                                    \
-	static struct mcp23xxx_config mcp23sxx_##inst##_config = {                            \
-		.config = {					                              \
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),                  \
-		},						                              \
-		.bus = {                                                                      \
-			.spi = SPI_DT_SPEC_INST_GET(inst,                                        \
-				SPI_OP_MODE_MASTER | SPI_MODE_CPOL |                          \
-				SPI_MODE_CPHA | SPI_WORD_SET(8), 0)                           \
-		},                                                                            \
-		.gpio_int = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),                   \
-		.gpio_reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),               \
-		.ngpios =  num_gpios,				                              \
-		.is_open_drain = open_drain,                                                  \
-		.read_fn = mcp23sxx_read_port_regs,                                           \
-		.write_fn = mcp23sxx_write_port_regs,                                         \
-		.bus_fn = mcp23sxx_bus_is_ready                                               \
-	};                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, gpio_mcp23xxx_init, NULL, &mcp23sxx_##inst##_drvdata,        \
-			      &mcp23sxx_##inst##_config, POST_KERNEL,                         \
+#define GPIO_MCP23SXX_DEVICE(inst, num_gpios, open_drain)                                          \
+	static struct mcp23xxx_drv_data mcp23sxx_##inst##_drvdata = {                              \
+		/* Default for registers according to datasheet */                                 \
+		.reg_cache.iodir = 0xFFFF, .reg_cache.ipol = 0x0,   .reg_cache.gpinten = 0x0,      \
+		.reg_cache.defval = 0x0,   .reg_cache.intcon = 0x0, .reg_cache.iocon = 0x0,        \
+		.reg_cache.gppu = 0x0,     .reg_cache.intf = 0x0,   .reg_cache.intcap = 0x0,       \
+		.reg_cache.gpio = 0x0,     .reg_cache.olat = 0x0,                                  \
+	};                                                                                         \
+	static struct mcp23xxx_config mcp23sxx_##inst##_config = {                                 \
+		.config =                                                                          \
+			{                                                                          \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),            \
+			},                                                                         \
+		.bus = {.spi = SPI_DT_SPEC_INST_GET(inst,                                          \
+						    SPI_OP_MODE_MASTER | SPI_MODE_CPOL |           \
+							    SPI_MODE_CPHA | SPI_WORD_SET(8),       \
+						    0)},                                           \
+		.gpio_int = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),                        \
+		.gpio_reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),                    \
+		.ngpios = num_gpios,                                                               \
+		.is_open_drain = open_drain,                                                       \
+		.read_fn = mcp23sxx_read_port_regs,                                                \
+		.write_fn = mcp23sxx_write_port_regs,                                              \
+		.bus_fn = mcp23sxx_bus_is_ready};                                                  \
+	DEVICE_DT_INST_DEFINE(inst, gpio_mcp23xxx_init, NULL, &mcp23sxx_##inst##_drvdata,          \
+			      &mcp23sxx_##inst##_config, POST_KERNEL,                              \
 			      CONFIG_GPIO_MCP23SXX_INIT_PRIORITY, &gpio_mcp23xxx_api_table);
-
 
 #define DT_DRV_COMPAT microchip_mcp23s08
 DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_MCP23SXX_DEVICE, 8, false)

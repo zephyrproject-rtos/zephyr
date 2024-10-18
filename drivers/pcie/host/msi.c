@@ -40,8 +40,7 @@ static uint32_t pcie_msi_base(pcie_bdf_t bdf, bool *msi)
 
 #include <zephyr/kernel/mm.h>
 
-__weak uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority,
-					      msi_vector_t *vectors,
+__weak uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority, msi_vector_t *vectors,
 					      uint8_t n_vector)
 {
 	ARG_UNUSED(priority);
@@ -51,11 +50,9 @@ __weak uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority,
 	return 0;
 }
 
-
 __weak bool arch_pcie_msi_vector_connect(msi_vector_t *vector,
 					 void (*routine)(const void *parameter),
-					 const void *parameter,
-					 uint32_t flags)
+					 const void *parameter, uint32_t flags)
 {
 	ARG_UNUSED(vector);
 	ARG_UNUSED(routine);
@@ -67,8 +64,7 @@ __weak bool arch_pcie_msi_vector_connect(msi_vector_t *vector,
 
 #ifdef CONFIG_PCIE_MSI_X
 
-static uint32_t get_msix_table_size(pcie_bdf_t bdf,
-				    uint32_t base)
+static uint32_t get_msix_table_size(pcie_bdf_t bdf, uint32_t base)
 {
 	uint32_t mcr;
 
@@ -77,9 +73,7 @@ static uint32_t get_msix_table_size(pcie_bdf_t bdf,
 	return ((mcr & PCIE_MSIX_MCR_TSIZE) >> PCIE_MSIX_MCR_TSIZE_SHIFT) + 1;
 }
 
-static bool map_msix_table_entries(pcie_bdf_t bdf,
-				   uint32_t base,
-				   msi_vector_t *vectors,
+static bool map_msix_table_entries(pcie_bdf_t bdf, uint32_t base, msi_vector_t *vectors,
 				   uint8_t n_vector)
 {
 	uint32_t table_offset;
@@ -96,21 +90,18 @@ static bool map_msix_table_entries(pcie_bdf_t bdf,
 		return false;
 	}
 
-	k_mem_map_phys_bare((uint8_t **)&mapped_table,
-			    bar.phys_addr + table_offset,
+	k_mem_map_phys_bare((uint8_t **)&mapped_table, bar.phys_addr + table_offset,
 			    n_vector * PCIE_MSIR_TABLE_ENTRY_SIZE, K_MEM_PERM_RW);
 
 	for (i = 0; i < n_vector; i++) {
-		vectors[i].msix_vector = (struct msix_vector *)
-			(mapped_table + (i * PCIE_MSIR_TABLE_ENTRY_SIZE));
+		vectors[i].msix_vector =
+			(struct msix_vector *)(mapped_table + (i * PCIE_MSIR_TABLE_ENTRY_SIZE));
 	}
 
 	return true;
 }
 
-static void set_msix(msi_vector_t *vectors,
-		     uint8_t n_vector,
-		     bool msix)
+static void set_msix(msi_vector_t *vectors, uint8_t n_vector, bool msix)
 {
 	int i;
 
@@ -120,13 +111,12 @@ static void set_msix(msi_vector_t *vectors,
 }
 
 #else
-#define get_msix_table_size(...) 0
+#define get_msix_table_size(...)    0
 #define map_msix_table_entries(...) true
 #define set_msix(...)
 #endif /* CONFIG_PCIE_MSI_X */
 
-static uint32_t get_msi_mmc(pcie_bdf_t bdf,
-			    uint32_t base)
+static uint32_t get_msi_mmc(pcie_bdf_t bdf, uint32_t base)
 {
 	uint32_t mcr;
 
@@ -136,9 +126,7 @@ static uint32_t get_msi_mmc(pcie_bdf_t bdf,
 	return 1 << ((mcr & PCIE_MSI_MCR_MMC) >> PCIE_MSI_MCR_MMC_SHIFT);
 }
 
-uint8_t pcie_msi_vectors_allocate(pcie_bdf_t bdf,
-				  unsigned int priority,
-				  msi_vector_t *vectors,
+uint8_t pcie_msi_vectors_allocate(pcie_bdf_t bdf, unsigned int priority, msi_vector_t *vectors,
 				  uint8_t n_vector)
 {
 	uint32_t req_vectors;
@@ -152,8 +140,7 @@ uint8_t pcie_msi_vectors_allocate(pcie_bdf_t bdf,
 
 		if (!msi) {
 			req_vectors = get_msix_table_size(bdf, base);
-			if (!map_msix_table_entries(bdf, base,
-						    vectors, n_vector)) {
+			if (!map_msix_table_entries(bdf, base, vectors, n_vector)) {
 				return 0;
 			}
 		}
@@ -174,10 +161,8 @@ uint8_t pcie_msi_vectors_allocate(pcie_bdf_t bdf,
 	return arch_pcie_msi_vectors_allocate(priority, vectors, n_vector);
 }
 
-bool pcie_msi_vector_connect(pcie_bdf_t bdf,
-			     msi_vector_t *vector,
-			     void (*routine)(const void *parameter),
-			     const void *parameter,
+bool pcie_msi_vector_connect(pcie_bdf_t bdf, msi_vector_t *vector,
+			     void (*routine)(const void *parameter), const void *parameter,
 			     uint32_t flags)
 {
 	uint32_t base;
@@ -194,10 +179,7 @@ bool pcie_msi_vector_connect(pcie_bdf_t bdf,
 
 #ifdef CONFIG_PCIE_MSI_X
 
-static void enable_msix(pcie_bdf_t bdf,
-			msi_vector_t *vectors,
-			uint8_t n_vector,
-			uint32_t base,
+static void enable_msix(pcie_bdf_t bdf, msi_vector_t *vectors, uint8_t n_vector, uint32_t base,
 			unsigned int irq)
 {
 	uint32_t mcr;
@@ -207,10 +189,10 @@ static void enable_msix(pcie_bdf_t bdf,
 		uint32_t map = pcie_msi_map(irq, &vectors[i], 1);
 		uint32_t mdr = pcie_msi_mdr(irq, &vectors[i]);
 
-		sys_write32(map, (mm_reg_t) &vectors[i].msix_vector->msg_addr);
-		sys_write32(0, (mm_reg_t) &vectors[i].msix_vector->msg_up_addr);
-		sys_write32(mdr, (mm_reg_t) &vectors[i].msix_vector->msg_data);
-		sys_write32(0, (mm_reg_t) &vectors[i].msix_vector->vector_ctrl);
+		sys_write32(map, (mm_reg_t)&vectors[i].msix_vector->msg_addr);
+		sys_write32(0, (mm_reg_t)&vectors[i].msix_vector->msg_up_addr);
+		sys_write32(mdr, (mm_reg_t)&vectors[i].msix_vector->msg_data);
+		sys_write32(0, (mm_reg_t)&vectors[i].msix_vector->vector_ctrl);
 	}
 
 	mcr = pcie_conf_read(bdf, base + PCIE_MSIX_MCR);
@@ -222,8 +204,7 @@ static void enable_msix(pcie_bdf_t bdf,
 #define enable_msix(...)
 #endif /* CONFIG_PCIE_MSI_X */
 
-static void disable_msi(pcie_bdf_t bdf,
-			uint32_t base)
+static void disable_msi(pcie_bdf_t bdf, uint32_t base)
 {
 	uint32_t mcr;
 
@@ -232,10 +213,7 @@ static void disable_msi(pcie_bdf_t bdf,
 	pcie_conf_write(bdf, base + PCIE_MSI_MCR, mcr);
 }
 
-static void enable_msi(pcie_bdf_t bdf,
-		       msi_vector_t *vectors,
-		       uint8_t n_vector,
-		       uint32_t base,
+static void enable_msi(pcie_bdf_t bdf, msi_vector_t *vectors, uint8_t n_vector, uint32_t base,
 		       unsigned int irq)
 {
 	uint32_t mcr;
@@ -266,10 +244,7 @@ static void enable_msi(pcie_bdf_t bdf,
 	pcie_conf_write(bdf, base + PCIE_MSI_MCR, mcr);
 }
 
-bool pcie_msi_enable(pcie_bdf_t bdf,
-		     msi_vector_t *vectors,
-		     uint8_t n_vector,
-		     unsigned int irq)
+bool pcie_msi_enable(pcie_bdf_t bdf, msi_vector_t *vectors, uint8_t n_vector, unsigned int irq)
 {
 	uint32_t base;
 	bool msi;

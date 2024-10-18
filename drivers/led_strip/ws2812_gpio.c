@@ -48,38 +48,33 @@ struct ws2812_gpio_cfg {
  * constraint in the below assembly.
  */
 #define SET_HIGH "str %[p], [%[r], #0]\n" /* OUTSET = BIT(LED_PIN) */
-#define SET_LOW "str %[p], [%[r], #4]\n"  /* OUTCLR = BIT(LED_PIN) */
+#define SET_LOW  "str %[p], [%[r], #4]\n" /* OUTCLR = BIT(LED_PIN) */
 
-#define NOPS(i, _) "nop\n"
+#define NOPS(i, _)     "nop\n"
 #define NOP_N_TIMES(n) LISTIFY(n, NOPS, ())
 
 /* Send out a 1 bit's pulse */
-#define ONE_BIT(base, pin) do {					\
-	__asm volatile (SET_HIGH				\
-			NOP_N_TIMES(CONFIG_DELAY_T1H)		\
-			SET_LOW					\
-			NOP_N_TIMES(CONFIG_DELAY_T1L)		\
-			::					\
-			[r] "l" (base),				\
-			[p] "l" (pin)); } while (false)
+#define ONE_BIT(base, pin)                                                                         \
+	do {                                                                                       \
+		__asm volatile(SET_HIGH NOP_N_TIMES(CONFIG_DELAY_T1H)                              \
+				       SET_LOW NOP_N_TIMES(CONFIG_DELAY_T1L)::[r] "l"(base),       \
+			       [p] "l"(pin));                                                      \
+	} while (false)
 
 /* Send out a 0 bit's pulse */
-#define ZERO_BIT(base, pin) do {				\
-	__asm volatile (SET_HIGH				\
-			NOP_N_TIMES(CONFIG_DELAY_T0H)		\
-			SET_LOW					\
-			NOP_N_TIMES(CONFIG_DELAY_T0L)		\
-			::					\
-			[r] "l" (base),				\
-			[p] "l" (pin)); } while (false)
+#define ZERO_BIT(base, pin)                                                                        \
+	do {                                                                                       \
+		__asm volatile(SET_HIGH NOP_N_TIMES(CONFIG_DELAY_T0H)                              \
+				       SET_LOW NOP_N_TIMES(CONFIG_DELAY_T0L)::[r] "l"(base),       \
+			       [p] "l"(pin));                                                      \
+	} while (false)
 
 static int send_buf(const struct device *dev, uint8_t *buf, size_t len)
 {
 	const struct ws2812_gpio_cfg *config = dev->config;
 	volatile uint32_t *base = (uint32_t *)&NRF_GPIO->OUTSET;
 	const uint32_t val = BIT(config->gpio.pin);
-	struct onoff_manager *mgr =
-		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
+	struct onoff_manager *mgr = z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
 	struct onoff_client cli;
 	unsigned int key;
 	int rc;
@@ -129,8 +124,7 @@ static int send_buf(const struct device *dev, uint8_t *buf, size_t len)
 	return rc;
 }
 
-static int ws2812_gpio_update_rgb(const struct device *dev,
-				  struct led_rgb *pixels,
+static int ws2812_gpio_update_rgb(const struct device *dev, struct led_rgb *pixels,
 				  size_t num_pixels)
 {
 	const struct ws2812_gpio_cfg *config = dev->config;
@@ -181,9 +175,8 @@ static const struct led_strip_driver_api ws2812_gpio_api = {
  * Retrieve the channel to color mapping (e.g. RGB, BGR, GRB, ...) from the
  * "color-mapping" DT property.
  */
-#define WS2812_COLOR_MAPPING(idx)					\
-static const uint8_t ws2812_gpio_##idx##_color_mapping[] =		\
-	DT_INST_PROP(idx, color_mapping)
+#define WS2812_COLOR_MAPPING(idx)                                                                  \
+	static const uint8_t ws2812_gpio_##idx##_color_mapping[] = DT_INST_PROP(idx, color_mapping)
 
 #define WS2812_NUM_COLORS(idx) (DT_INST_PROP_LEN(idx, color_mapping))
 
@@ -194,51 +187,46 @@ static const uint8_t ws2812_gpio_##idx##_color_mapping[] =		\
  * TODO: try to make this portable, or at least port to more devices.
  */
 
-#define WS2812_GPIO_DEVICE(idx)					\
-									\
-	static int ws2812_gpio_##idx##_init(const struct device *dev)	\
-	{								\
-		const struct ws2812_gpio_cfg *cfg = dev->config;	\
-		uint8_t i;						\
-									\
-		if (!gpio_is_ready_dt(&cfg->gpio)) {			\
-			LOG_ERR("GPIO device not ready");		\
-			return -ENODEV;					\
-		}							\
-									\
-		for (i = 0; i < cfg->num_colors; i++) {			\
-			switch (cfg->color_mapping[i]) {		\
-			case LED_COLOR_ID_WHITE:			\
-			case LED_COLOR_ID_RED:				\
-			case LED_COLOR_ID_GREEN:			\
-			case LED_COLOR_ID_BLUE:				\
-				break;					\
-			default:					\
-				LOG_ERR("%s: invalid channel to color mapping." \
-					" Check the color-mapping DT property",	\
-					dev->name);			\
-				return -EINVAL;				\
-			}						\
-		}							\
-									\
-		return gpio_pin_configure_dt(&cfg->gpio, GPIO_OUTPUT);	\
-	}								\
-									\
-	WS2812_COLOR_MAPPING(idx);					\
-									\
-	static const struct ws2812_gpio_cfg ws2812_gpio_##idx##_cfg = { \
-		.gpio = GPIO_DT_SPEC_INST_GET(idx, gpios),		\
-		.num_colors = WS2812_NUM_COLORS(idx),			\
-		.color_mapping = ws2812_gpio_##idx##_color_mapping,	\
-		.length = DT_INST_PROP(idx, chain_length),		\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(idx,					\
-			    ws2812_gpio_##idx##_init,			\
-			    NULL,					\
-			    NULL,					\
-			    &ws2812_gpio_##idx##_cfg, POST_KERNEL,	\
-			    CONFIG_LED_STRIP_INIT_PRIORITY,		\
-			    &ws2812_gpio_api);
+#define WS2812_GPIO_DEVICE(idx)                                                                    \
+                                                                                                   \
+	static int ws2812_gpio_##idx##_init(const struct device *dev)                              \
+	{                                                                                          \
+		const struct ws2812_gpio_cfg *cfg = dev->config;                                   \
+		uint8_t i;                                                                         \
+                                                                                                   \
+		if (!gpio_is_ready_dt(&cfg->gpio)) {                                               \
+			LOG_ERR("GPIO device not ready");                                          \
+			return -ENODEV;                                                            \
+		}                                                                                  \
+                                                                                                   \
+		for (i = 0; i < cfg->num_colors; i++) {                                            \
+			switch (cfg->color_mapping[i]) {                                           \
+			case LED_COLOR_ID_WHITE:                                                   \
+			case LED_COLOR_ID_RED:                                                     \
+			case LED_COLOR_ID_GREEN:                                                   \
+			case LED_COLOR_ID_BLUE:                                                    \
+				break;                                                             \
+			default:                                                                   \
+				LOG_ERR("%s: invalid channel to color mapping."                    \
+					" Check the color-mapping DT property",                    \
+					dev->name);                                                \
+				return -EINVAL;                                                    \
+			}                                                                          \
+		}                                                                                  \
+                                                                                                   \
+		return gpio_pin_configure_dt(&cfg->gpio, GPIO_OUTPUT);                             \
+	}                                                                                          \
+                                                                                                   \
+	WS2812_COLOR_MAPPING(idx);                                                                 \
+                                                                                                   \
+	static const struct ws2812_gpio_cfg ws2812_gpio_##idx##_cfg = {                            \
+		.gpio = GPIO_DT_SPEC_INST_GET(idx, gpios),                                         \
+		.num_colors = WS2812_NUM_COLORS(idx),                                              \
+		.color_mapping = ws2812_gpio_##idx##_color_mapping,                                \
+		.length = DT_INST_PROP(idx, chain_length),                                         \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(idx, ws2812_gpio_##idx##_init, NULL, NULL, &ws2812_gpio_##idx##_cfg, \
+			      POST_KERNEL, CONFIG_LED_STRIP_INIT_PRIORITY, &ws2812_gpio_api);
 
 DT_INST_FOREACH_STATUS_OKAY(WS2812_GPIO_DEVICE)

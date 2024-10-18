@@ -815,7 +815,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 			CONFIG_SPI_MCUX_RTIO_SQ_SIZE)
 
 #ifdef CONFIG_SPI_MCUX_LPSPI_DMA
-#define SPI_DMA_CHANNELS(n)                                                                        \
+#define SPI_DMA_CHANNELS(n)                                                                          \
 	IF_ENABLED(                                                                                \
 		DT_INST_DMAS_HAS_NAME(n, tx),                                                      \
 		(.dma_tx = {.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, tx)),            \
@@ -825,7 +825,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 					.source_data_size = 1,                                     \
 					.dest_data_size = 1,                                       \
 					.block_count = 1,                                          \
-					.dma_slot = DT_INST_DMAS_CELL_BY_NAME(n, tx, source)}},))  \
+					.dma_slot = DT_INST_DMAS_CELL_BY_NAME(n, tx, source)}},)) \
 	IF_ENABLED(                                                                                \
 		DT_INST_DMAS_HAS_NAME(n, rx),                                                      \
 		(.dma_rx = {.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, rx)),            \
@@ -858,7 +858,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 
 #define SPI_MCUX_LPSPI_INIT(n)                                                                     \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	COND_CODE_1(CONFIG_SPI_RTIO, (SPI_MCUX_RTIO_DEFINE(n)), ());                               \
+	COND_CODE_1(CONFIG_SPI_RTIO, (SPI_MCUX_RTIO_DEFINE(n)), ());                                 \
                                                                                                    \
 	static void spi_mcux_config_func_##n(const struct device *dev);                            \
                                                                                                    \
@@ -881,7 +881,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 		SPI_CONTEXT_INIT_LOCK(spi_mcux_data_##n, ctx),                                     \
 		SPI_CONTEXT_INIT_SYNC(spi_mcux_data_##n, ctx),                                     \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx) SPI_DMA_CHANNELS(n)           \
-			IF_ENABLED(CONFIG_SPI_RTIO, (.rtio_ctx = &spi_mcux_rtio_##n,))             \
+			IF_ENABLED(CONFIG_SPI_RTIO, (.rtio_ctx = &spi_mcux_rtio_##n,))                                                                 \
                                                                                                    \
 	};                                                                                         \
                                                                                                    \

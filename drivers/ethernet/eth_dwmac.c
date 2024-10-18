@@ -6,9 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #define LOG_MODULE_NAME dwmac_core
-#define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
+#define LOG_LEVEL       CONFIG_ETHERNET_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
@@ -21,7 +20,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "eth_dwmac_priv.h"
 #include "eth.h"
-
 
 /*
  * This driver references network data fragments with a zero-copy approach.
@@ -145,8 +143,7 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 	d_idx = p->tx_desc_head;
 	frag = pkt->buffer;
 	do {
-		LOG_DBG("desc sem/head/tail=%d/%d/%d",
-			k_sem_count_get(&p->free_tx_descs),
+		LOG_DBG("desc sem/head/tail=%d/%d/%d", k_sem_count_get(&p->free_tx_descs),
 			p->tx_desc_head, p->tx_desc_tail);
 
 		/* reserve a free descriptor for this fragment */
@@ -164,8 +161,8 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 		}
 		sys_cache_data_flush_range(pinned->data, pinned->len);
 		p->tx_frags[d_idx] = pinned;
-		LOG_DBG("d[%d]: frag %p pinned %p len %d", d_idx,
-			frag->data, pinned->data, pinned->len);
+		LOG_DBG("d[%d]: frag %p pinned %p len %d", d_idx, frag->data, pinned->data,
+			pinned->len);
 
 		/* if no more fragments after this one: */
 		if (!frag->frags) {
@@ -217,12 +214,10 @@ static void dwmac_tx_release(struct dwmac_priv *p)
 	struct net_buf *frag;
 	uint32_t des3_val;
 
-	for (d_idx = p->tx_desc_tail;
-	     d_idx != p->tx_desc_head;
+	for (d_idx = p->tx_desc_tail; d_idx != p->tx_desc_head;
 	     INC_WRAP(d_idx, NB_TX_DESCS), k_sem_give(&p->free_tx_descs)) {
 
-		LOG_DBG("desc sem/tail/head=%d/%d/%d",
-			k_sem_count_get(&p->free_tx_descs),
+		LOG_DBG("desc sem/tail/head=%d/%d/%d", k_sem_count_get(&p->free_tx_descs),
 			p->tx_desc_tail, p->tx_desc_head);
 
 		d = &p->tx_descs[d_idx];
@@ -258,13 +253,11 @@ static void dwmac_receive(struct dwmac_priv *p)
 	unsigned int d_idx, bytes_so_far;
 	uint32_t des3_val;
 
-	for (d_idx = p->rx_desc_tail;
-	     d_idx != p->rx_desc_head;
+	for (d_idx = p->rx_desc_tail; d_idx != p->rx_desc_head;
 	     INC_WRAP(d_idx, NB_RX_DESCS), k_sem_give(&p->free_rx_descs)) {
 
-		LOG_DBG("desc sem/tail/head=%d/%d/%d",
-			k_sem_count_get(&p->free_rx_descs),
-			d_idx, p->rx_desc_head);
+		LOG_DBG("desc sem/tail/head=%d/%d/%d", k_sem_count_get(&p->free_rx_descs), d_idx,
+			p->rx_desc_head);
 
 		d = &p->rx_descs[d_idx];
 		des3_val = d->des3;
@@ -312,8 +305,7 @@ static void dwmac_receive(struct dwmac_priv *p)
 		if (des3_val & RDES3_LD) {
 			/* submit packet if no errors */
 			if (!(des3_val & RDES3_ES)) {
-				LOG_DBG("pkt len/frags=%zd/%d",
-					net_pkt_get_len(p->rx_pkt),
+				LOG_DBG("pkt len/frags=%zd/%d", net_pkt_get_len(p->rx_pkt),
 					net_pkt_get_nbfrags(p->rx_pkt));
 				net_recv_data(p->iface, p->rx_pkt);
 			} else {
@@ -339,8 +331,7 @@ static void dwmac_rx_refill_thread(void *arg1, void *unused1, void *unused2)
 
 	d_idx = p->rx_desc_head;
 	for (;;) {
-		LOG_DBG("desc sem/head/tail=%d/%d/%d",
-			k_sem_count_get(&p->free_rx_descs),
+		LOG_DBG("desc sem/head/tail=%d/%d/%d", k_sem_count_get(&p->free_rx_descs),
 			p->rx_desc_head, p->rx_desc_tail);
 
 		/* wait for an empty descriptor */
@@ -352,9 +343,8 @@ static void dwmac_rx_refill_thread(void *arg1, void *unused1, void *unused2)
 		d = &p->rx_descs[d_idx];
 
 		__ASSERT(!(d->des3 & RDES3_OWN),
-			 "desc[%d]=0x%x: still hw owned! (sem/head/tail=%d/%d/%d)",
-			 d_idx, d->des3, k_sem_count_get(&p->free_rx_descs),
-			 p->rx_desc_head, p->rx_desc_tail);
+			 "desc[%d]=0x%x: still hw owned! (sem/head/tail=%d/%d/%d)", d_idx, d->des3,
+			 k_sem_count_get(&p->free_rx_descs), p->rx_desc_head, p->rx_desc_tail);
 
 		frag = p->rx_frags[d_idx];
 
@@ -466,35 +456,29 @@ static void dwmac_set_mac_addr(struct dwmac_priv *p, uint8_t *addr, int n)
 	REG_WRITE(MAC_ADDRESS_LOW(n), reg_val);
 }
 
-static int dwmac_set_config(const struct device *dev,
-			    enum ethernet_config_type type,
+static int dwmac_set_config(const struct device *dev, enum ethernet_config_type type,
 			    const struct ethernet_config *config)
 {
 	struct dwmac_priv *p = dev->data;
 	uint32_t reg_val;
 	int ret = 0;
 
-	(void) reg_val; /* silence the "unused variable" warning */
+	(void)reg_val; /* silence the "unused variable" warning */
 
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 		memcpy(p->mac_addr, config->mac_address.addr, sizeof(p->mac_addr));
 		dwmac_set_mac_addr(p, p->mac_addr, 0);
-		net_if_set_link_addr(p->iface, p->mac_addr,
-				     sizeof(p->mac_addr), NET_LINK_ETHERNET);
+		net_if_set_link_addr(p->iface, p->mac_addr, sizeof(p->mac_addr), NET_LINK_ETHERNET);
 		break;
 
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
 		reg_val = REG_READ(MAC_PKT_FILTER);
-		if (config->promisc_mode &&
-		    !(reg_val & MAC_PKT_FILTER_PR)) {
-			REG_WRITE(MAC_PKT_FILTER,
-				  reg_val | MAC_PKT_FILTER_PR);
-		} else if (!config->promisc_mode &&
-			   (reg_val & MAC_PKT_FILTER_PR)) {
-			REG_WRITE(MAC_PKT_FILTER,
-				  reg_val & ~MAC_PKT_FILTER_PR);
+		if (config->promisc_mode && !(reg_val & MAC_PKT_FILTER_PR)) {
+			REG_WRITE(MAC_PKT_FILTER, reg_val | MAC_PKT_FILTER_PR);
+		} else if (!config->promisc_mode && (reg_val & MAC_PKT_FILTER_PR)) {
+			REG_WRITE(MAC_PKT_FILTER, reg_val & ~MAC_PKT_FILTER_PR);
 		} else {
 			ret = -EALREADY;
 		}
@@ -519,8 +503,7 @@ static void dwmac_iface_init(struct net_if *iface)
 
 	ethernet_init(iface);
 
-	net_if_set_link_addr(iface, p->mac_addr, sizeof(p->mac_addr),
-			     NET_LINK_ETHERNET);
+	net_if_set_link_addr(iface, p->mac_addr, sizeof(p->mac_addr), NET_LINK_ETHERNET);
 	dwmac_set_mac_addr(p, p->mac_addr, 0);
 
 	/*
@@ -535,9 +518,8 @@ static void dwmac_iface_init(struct net_if *iface)
 
 	/* set up RX buffer refill thread */
 	k_thread_create(&p->rx_refill_thread, p->rx_refill_thread_stack,
-			K_KERNEL_STACK_SIZEOF(p->rx_refill_thread_stack),
-			dwmac_rx_refill_thread, p, NULL, NULL,
-			0, K_PRIO_PREEMPT(0), K_NO_WAIT);
+			K_KERNEL_STACK_SIZEOF(p->rx_refill_thread_stack), dwmac_rx_refill_thread, p,
+			NULL, NULL, 0, K_PRIO_PREEMPT(0), K_NO_WAIT);
 	k_thread_name_set(&p->rx_refill_thread, "dwmac_rx_refill");
 
 	/* start up TX/RX */
@@ -550,13 +532,9 @@ static void dwmac_iface_init(struct net_if *iface)
 	REG_WRITE(MAC_CONF, reg_val);
 
 	/* unmask IRQs */
-	REG_WRITE(DMA_CHn_IRQ_ENABLE(0),
-		  DMA_CHn_IRQ_ENABLE_TIE |
-		  DMA_CHn_IRQ_ENABLE_RIE |
-		  DMA_CHn_IRQ_ENABLE_NIE |
-		  DMA_CHn_IRQ_ENABLE_FBEE |
-		  DMA_CHn_IRQ_ENABLE_CDEE |
-		  DMA_CHn_IRQ_ENABLE_AIE);
+	REG_WRITE(DMA_CHn_IRQ_ENABLE(0), DMA_CHn_IRQ_ENABLE_TIE | DMA_CHn_IRQ_ENABLE_RIE |
+						 DMA_CHn_IRQ_ENABLE_NIE | DMA_CHn_IRQ_ENABLE_FBEE |
+						 DMA_CHn_IRQ_ENABLE_CDEE | DMA_CHn_IRQ_ENABLE_AIE);
 
 	LOG_DBG("done");
 }
@@ -593,8 +571,8 @@ int dwmac_probe(const struct device *dev)
 	p->feature1 = REG_READ(MAC_HW_FEATURE1);
 	p->feature2 = REG_READ(MAC_HW_FEATURE2);
 	p->feature3 = REG_READ(MAC_HW_FEATURE3);
-	LOG_DBG("hw_feature: 0x%08x 0x%08x 0x%08x 0x%08x",
-		p->feature0, p->feature1, p->feature2, p->feature3);
+	LOG_DBG("hw_feature: 0x%08x 0x%08x 0x%08x 0x%08x", p->feature0, p->feature1, p->feature2,
+		p->feature3);
 
 	dwmac_platform_init(p);
 
@@ -603,9 +581,8 @@ int dwmac_probe(const struct device *dev)
 
 	/* set up DMA */
 	REG_WRITE(DMA_CHn_TX_CTRL(0), 0);
-	REG_WRITE(DMA_CHn_RX_CTRL(0),
-		  FIELD_PREP(DMA_CHn_RX_CTRL_PBL, 32) |
-		  FIELD_PREP(DMA_CHn_RX_CTRL_RBSZ, RX_FRAG_SIZE));
+	REG_WRITE(DMA_CHn_RX_CTRL(0), FIELD_PREP(DMA_CHn_RX_CTRL_PBL, 32) |
+					      FIELD_PREP(DMA_CHn_RX_CTRL_RBSZ, RX_FRAG_SIZE));
 	REG_WRITE(DMA_CHn_TXDESC_LIST_HADDR(0), TXDESC_PHYS_H(0));
 	REG_WRITE(DMA_CHn_TXDESC_LIST_ADDR(0), TXDESC_PHYS_L(0));
 	REG_WRITE(DMA_CHn_RXDESC_LIST_HADDR(0), RXDESC_PHYS_H(0));
@@ -617,8 +594,8 @@ int dwmac_probe(const struct device *dev)
 }
 
 const struct ethernet_api dwmac_api = {
-	.iface_api.init		= dwmac_iface_init,
-	.get_capabilities	= dwmac_caps,
-	.set_config		= dwmac_set_config,
-	.send			= dwmac_send,
+	.iface_api.init = dwmac_iface_init,
+	.get_capabilities = dwmac_caps,
+	.set_config = dwmac_set_config,
+	.send = dwmac_send,
 };

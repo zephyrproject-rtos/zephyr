@@ -13,16 +13,14 @@
 #if ICM42670_BUS_SPI
 static inline int spi_write_register(const union icm42670_bus *bus, uint8_t reg, uint8_t data)
 {
-	const struct spi_buf buf[2] = {
-		{
-			.buf = &reg,
-			.len = 1,
-		},
-		{
-			.buf = &data,
-			.len = 1,
-		}
-	};
+	const struct spi_buf buf[2] = {{
+					       .buf = &reg,
+					       .len = 1,
+				       },
+				       {
+					       .buf = &data,
+					       .len = 1,
+				       }};
 
 	const struct spi_buf_set tx = {
 		.buffers = buf,
@@ -47,16 +45,14 @@ static inline int spi_read_register(const union icm42670_bus *bus, uint8_t reg, 
 		.count = 1,
 	};
 
-	struct spi_buf rx_buf[2] = {
-		{
-			.buf = NULL,
-			.len = 1,
-		},
-		{
-			.buf = data,
-			.len = len,
-		}
-	};
+	struct spi_buf rx_buf[2] = {{
+					    .buf = NULL,
+					    .len = 1,
+				    },
+				    {
+					    .buf = data,
+					    .len = len,
+				    }};
 
 	const struct spi_buf_set rx = {
 		.buffers = rx_buf,

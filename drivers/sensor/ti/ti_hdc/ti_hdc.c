@@ -19,11 +19,9 @@
 
 LOG_MODULE_REGISTER(TI_HDC, CONFIG_SENSOR_LOG_LEVEL);
 
-static void ti_hdc_gpio_callback(const struct device *dev,
-				  struct gpio_callback *cb, uint32_t pins)
+static void ti_hdc_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	struct ti_hdc_data *drv_data =
-		CONTAINER_OF(cb, struct ti_hdc_data, gpio_cb);
+	struct ti_hdc_data *drv_data = CONTAINER_OF(cb, struct ti_hdc_data, gpio_cb);
 	const struct ti_hdc_config *cfg = drv_data->dev->config;
 
 	ARG_UNUSED(pins);
@@ -32,8 +30,7 @@ static void ti_hdc_gpio_callback(const struct device *dev,
 	k_sem_give(&drv_data->data_sem);
 }
 
-static int ti_hdc_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
+static int ti_hdc_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct ti_hdc_data *drv_data = dev->data;
 	const struct ti_hdc_config *cfg = dev->config;
@@ -69,9 +66,7 @@ static int ti_hdc_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-
-static int ti_hdc_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
+static int ti_hdc_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	struct ti_hdc_data *drv_data = dev->data;
@@ -143,16 +138,13 @@ static int ti_hdc_init(const struct device *dev)
 
 		/* setup data ready gpio interrupt */
 		if (!gpio_is_ready_dt(&cfg->drdy)) {
-			LOG_ERR("%s: device %s is not ready", dev->name,
-					cfg->drdy.port->name);
+			LOG_ERR("%s: device %s is not ready", dev->name, cfg->drdy.port->name);
 			return -ENODEV;
 		}
 
 		gpio_pin_configure_dt(&cfg->drdy, GPIO_INPUT);
 
-		gpio_init_callback(&drv_data->gpio_cb,
-				ti_hdc_gpio_callback,
-				BIT(cfg->drdy.pin));
+		gpio_init_callback(&drv_data->gpio_cb, ti_hdc_gpio_callback, BIT(cfg->drdy.pin));
 
 		if (gpio_add_callback(cfg->drdy.port, &drv_data->gpio_cb) < 0) {
 			LOG_DBG("Failed to set GPIO callback");
@@ -167,16 +159,16 @@ static int ti_hdc_init(const struct device *dev)
 	return 0;
 }
 
-#define TI_HDC_DEFINE(inst)								\
-	static struct ti_hdc_data ti_hdc_data_##inst;					\
-											\
-	static const struct ti_hdc_config ti_hdc_config_##inst = {			\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
-		.drdy = GPIO_DT_SPEC_INST_GET_OR(inst, drdy_gpios, { 0 }),		\
-	};										\
-											\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, ti_hdc_init, NULL,				\
-			      &ti_hdc_data_##inst, &ti_hdc_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &ti_hdc_driver_api);		\
+#define TI_HDC_DEFINE(inst)                                                                        \
+	static struct ti_hdc_data ti_hdc_data_##inst;                                              \
+                                                                                                   \
+	static const struct ti_hdc_config ti_hdc_config_##inst = {                                 \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+		.drdy = GPIO_DT_SPEC_INST_GET_OR(inst, drdy_gpios, {0}),                           \
+	};                                                                                         \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, ti_hdc_init, NULL, &ti_hdc_data_##inst,                 \
+				     &ti_hdc_config_##inst, POST_KERNEL,                           \
+				     CONFIG_SENSOR_INIT_PRIORITY, &ti_hdc_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TI_HDC_DEFINE)

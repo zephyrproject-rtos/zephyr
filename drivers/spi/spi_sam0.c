@@ -68,8 +68,7 @@ static void wait_synchronization(SercomSpi *regs)
 #endif
 }
 
-static int spi_sam0_configure(const struct device *dev,
-			      const struct spi_config *config)
+static int spi_sam0_configure(const struct device *dev, const struct spi_config *config)
 {
 	const struct spi_sam0_config *cfg = dev->config;
 	struct spi_sam0_data *data = dev->data;
@@ -129,8 +128,7 @@ static int spi_sam0_configure(const struct device *dev,
 	div = CLAMP(div, 0, UINT8_MAX);
 
 	/* Update the configuration only if it has changed */
-	if (regs->CTRLA.reg != ctrla.reg || regs->CTRLB.reg != ctrlb.reg ||
-	    regs->BAUD.reg != div) {
+	if (regs->CTRLA.reg != ctrla.reg || regs->CTRLB.reg != ctrlb.reg || regs->BAUD.reg != div) {
 		regs->CTRLA.bit.ENABLE = 0;
 		wait_synchronization(regs);
 
@@ -235,8 +233,7 @@ static void spi_sam0_fast_rx(SercomSpi *regs, const struct spi_buf *rx_buf)
 }
 
 /* Fast path that writes and reads bufs of the same length */
-static void spi_sam0_fast_txrx(SercomSpi *regs,
-			       const struct spi_buf *tx_buf,
+static void spi_sam0_fast_txrx(SercomSpi *regs, const struct spi_buf *tx_buf,
 			       const struct spi_buf *rx_buf)
 {
 	const uint8_t *tx = tx_buf->buf;
@@ -262,8 +259,7 @@ static void spi_sam0_fast_txrx(SercomSpi *regs,
 }
 
 /* Fast path where every overlapping tx and rx buffer is the same length */
-static void spi_sam0_fast_transceive(const struct device *dev,
-				     const struct spi_config *config,
+static void spi_sam0_fast_transceive(const struct device *dev, const struct spi_config *config,
 				     const struct spi_buf_set *tx_bufs,
 				     const struct spi_buf_set *rx_bufs)
 {
@@ -349,10 +345,8 @@ static bool spi_sam0_is_regular(const struct spi_buf_set *tx_bufs,
 	return true;
 }
 
-static int spi_sam0_transceive(const struct device *dev,
-			       const struct spi_config *config,
-			       const struct spi_buf_set *tx_bufs,
-			       const struct spi_buf_set *rx_bufs)
+static int spi_sam0_transceive(const struct device *dev, const struct spi_config *config,
+			       const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs)
 {
 	const struct spi_sam0_config *cfg = dev->config;
 	struct spi_sam0_data *data = dev->data;
@@ -390,8 +384,7 @@ done:
 	return err;
 }
 
-static int spi_sam0_transceive_sync(const struct device *dev,
-				    const struct spi_config *config,
+static int spi_sam0_transceive_sync(const struct device *dev, const struct spi_config *config,
 				    const struct spi_buf_set *tx_bufs,
 				    const struct spi_buf_set *rx_bufs)
 {
@@ -400,17 +393,16 @@ static int spi_sam0_transceive_sync(const struct device *dev,
 
 #ifdef CONFIG_SPI_ASYNC
 
-static void spi_sam0_dma_rx_done(const struct device *dma_dev, void *arg,
-				 uint32_t id, int error_code);
+static void spi_sam0_dma_rx_done(const struct device *dma_dev, void *arg, uint32_t id,
+				 int error_code);
 
-static int spi_sam0_dma_rx_load(const struct device *dev, uint8_t *buf,
-				size_t len)
+static int spi_sam0_dma_rx_load(const struct device *dev, uint8_t *buf, size_t len)
 {
 	const struct spi_sam0_config *cfg = dev->config;
 	struct spi_sam0_data *data = dev->data;
 	SercomSpi *regs = cfg->regs;
-	struct dma_config dma_cfg = { 0 };
-	struct dma_block_config dma_blk = { 0 };
+	struct dma_config dma_cfg = {0};
+	struct dma_block_config dma_blk = {0};
 	int retval;
 
 	dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
@@ -436,8 +428,7 @@ static int spi_sam0_dma_rx_load(const struct device *dev, uint8_t *buf,
 	dma_blk.source_address = (uint32_t)(&(regs->DATA.reg));
 	dma_blk.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 
-	retval = dma_config(cfg->dma_dev, cfg->rx_dma_channel,
-			    &dma_cfg);
+	retval = dma_config(cfg->dma_dev, cfg->rx_dma_channel, &dma_cfg);
 	if (retval != 0) {
 		return retval;
 	}
@@ -445,13 +436,12 @@ static int spi_sam0_dma_rx_load(const struct device *dev, uint8_t *buf,
 	return dma_start(cfg->dma_dev, cfg->rx_dma_channel);
 }
 
-static int spi_sam0_dma_tx_load(const struct device *dev, const uint8_t *buf,
-				size_t len)
+static int spi_sam0_dma_tx_load(const struct device *dev, const uint8_t *buf, size_t len)
 {
 	const struct spi_sam0_config *cfg = dev->config;
 	SercomSpi *regs = cfg->regs;
-	struct dma_config dma_cfg = { 0 };
-	struct dma_block_config dma_blk = { 0 };
+	struct dma_config dma_cfg = {0};
+	struct dma_block_config dma_blk = {0};
 	int retval;
 
 	dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
@@ -475,8 +465,7 @@ static int spi_sam0_dma_tx_load(const struct device *dev, const uint8_t *buf,
 	dma_blk.dest_address = (uint32_t)(&(regs->DATA.reg));
 	dma_blk.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 
-	retval = dma_config(cfg->dma_dev, cfg->tx_dma_channel,
-			    &dma_cfg);
+	retval = dma_config(cfg->dma_dev, cfg->tx_dma_channel, &dma_cfg);
 
 	if (retval != 0) {
 		return retval;
@@ -521,8 +510,7 @@ static int spi_sam0_dma_advance_buffers(const struct device *dev)
 
 	/* Load receive first, so it can accept transmit data */
 	if (data->ctx.rx_len) {
-		retval = spi_sam0_dma_rx_load(dev, data->ctx.rx_buf,
-					      data->dma_segment_len);
+		retval = spi_sam0_dma_rx_load(dev, data->ctx.rx_buf, data->dma_segment_len);
 	} else {
 		retval = spi_sam0_dma_rx_load(dev, NULL, data->dma_segment_len);
 	}
@@ -533,8 +521,7 @@ static int spi_sam0_dma_advance_buffers(const struct device *dev)
 
 	/* Now load the transmit, which starts the actual bus clocking */
 	if (data->ctx.tx_len) {
-		retval = spi_sam0_dma_tx_load(dev, data->ctx.tx_buf,
-					      data->dma_segment_len);
+		retval = spi_sam0_dma_tx_load(dev, data->ctx.tx_buf, data->dma_segment_len);
 	} else {
 		retval = spi_sam0_dma_tx_load(dev, NULL, data->dma_segment_len);
 	}
@@ -546,8 +533,8 @@ static int spi_sam0_dma_advance_buffers(const struct device *dev)
 	return 0;
 }
 
-static void spi_sam0_dma_rx_done(const struct device *dma_dev, void *arg,
-				 uint32_t id, int error_code)
+static void spi_sam0_dma_rx_done(const struct device *dma_dev, void *arg, uint32_t id,
+				 int error_code)
 {
 	struct spi_sam0_data *data = arg;
 	const struct device *dev = data->dev;
@@ -577,12 +564,9 @@ static void spi_sam0_dma_rx_done(const struct device *dma_dev, void *arg,
 	}
 }
 
-
-static int spi_sam0_transceive_async(const struct device *dev,
-				     const struct spi_config *config,
+static int spi_sam0_transceive_async(const struct device *dev, const struct spi_config *config,
 				     const struct spi_buf_set *tx_bufs,
-				     const struct spi_buf_set *rx_bufs,
-				     spi_callback_t cb,
+				     const struct spi_buf_set *rx_bufs, spi_callback_t cb,
 				     void *userdata)
 {
 	const struct spi_sam0_config *cfg = dev->config;
@@ -628,8 +612,7 @@ err_unlock:
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static int spi_sam0_release(const struct device *dev,
-			    const struct spi_config *config)
+static int spi_sam0_release(const struct device *dev, const struct spi_config *config)
 {
 	struct spi_sam0_data *data = dev->data;
 
@@ -647,15 +630,13 @@ static int spi_sam0_init(const struct device *dev)
 
 #ifdef MCLK
 	/* Enable the GCLK */
-	GCLK->PCHCTRL[cfg->gclk_core_id].reg = GCLK_PCHCTRL_GEN_GCLK0 |
-					       GCLK_PCHCTRL_CHEN;
+	GCLK->PCHCTRL[cfg->gclk_core_id].reg = GCLK_PCHCTRL_GEN_GCLK0 | GCLK_PCHCTRL_CHEN;
 
 	/* Enable the MCLK */
 	*cfg->mclk |= cfg->mclk_mask;
 #else
 	/* Enable the GCLK */
-	GCLK->CLKCTRL.reg = cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK0 |
-			    GCLK_CLKCTRL_CLKEN;
+	GCLK->CLKCTRL.reg = cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_CLKEN;
 
 	/* Enable SERCOM clock in PM */
 	PM->APBCMASK.reg |= cfg->pm_apbcmask;
@@ -703,55 +684,49 @@ static const struct spi_driver_api spi_sam0_driver_api = {
 };
 
 #if CONFIG_SPI_ASYNC
-#define SPI_SAM0_DMA_CHANNELS(n)					\
-	.dma_dev = DEVICE_DT_GET(ATMEL_SAM0_DT_INST_DMA_CTLR(n, tx)),	\
-	.tx_dma_request = ATMEL_SAM0_DT_INST_DMA_TRIGSRC(n, tx),	\
-	.tx_dma_channel = ATMEL_SAM0_DT_INST_DMA_CHANNEL(n, tx),	\
-	.rx_dma_request = ATMEL_SAM0_DT_INST_DMA_TRIGSRC(n, rx),	\
+#define SPI_SAM0_DMA_CHANNELS(n)                                                                   \
+	.dma_dev = DEVICE_DT_GET(ATMEL_SAM0_DT_INST_DMA_CTLR(n, tx)),                              \
+	.tx_dma_request = ATMEL_SAM0_DT_INST_DMA_TRIGSRC(n, tx),                                   \
+	.tx_dma_channel = ATMEL_SAM0_DT_INST_DMA_CHANNEL(n, tx),                                   \
+	.rx_dma_request = ATMEL_SAM0_DT_INST_DMA_TRIGSRC(n, rx),                                   \
 	.rx_dma_channel = ATMEL_SAM0_DT_INST_DMA_CHANNEL(n, rx),
 #else
 #define SPI_SAM0_DMA_CHANNELS(n)
 #endif
 
-#define SPI_SAM0_SERCOM_PADS(n) \
-	SERCOM_SPI_CTRLA_DIPO(DT_INST_PROP(n, dipo)) | \
-	SERCOM_SPI_CTRLA_DOPO(DT_INST_PROP(n, dopo))
+#define SPI_SAM0_SERCOM_PADS(n)                                                                    \
+	SERCOM_SPI_CTRLA_DIPO(DT_INST_PROP(n, dipo)) | SERCOM_SPI_CTRLA_DOPO(DT_INST_PROP(n, dopo))
 
 #ifdef MCLK
-#define SPI_SAM0_DEFINE_CONFIG(n)					\
-static const struct spi_sam0_config spi_sam0_config_##n = {		\
-	.regs = (SercomSpi *)DT_INST_REG_ADDR(n),			\
-	.mclk = (volatile uint32_t *)MCLK_MASK_DT_INT_REG_ADDR(n),	\
-	.mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, bit)),	\
-	.gclk_core_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch),\
-	.pads = SPI_SAM0_SERCOM_PADS(n),				\
-	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
-	SPI_SAM0_DMA_CHANNELS(n)					\
-}
+#define SPI_SAM0_DEFINE_CONFIG(n)                                                                  \
+	static const struct spi_sam0_config spi_sam0_config_##n = {                                \
+		.regs = (SercomSpi *)DT_INST_REG_ADDR(n),                                          \
+		.mclk = (volatile uint32_t *)MCLK_MASK_DT_INT_REG_ADDR(n),                         \
+		.mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, bit)),                       \
+		.gclk_core_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch),                   \
+		.pads = SPI_SAM0_SERCOM_PADS(n),                                                   \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+		SPI_SAM0_DMA_CHANNELS(n)}
 #else
-#define SPI_SAM0_DEFINE_CONFIG(n)					\
-static const struct spi_sam0_config spi_sam0_config_##n = {		\
-	.regs = (SercomSpi *)DT_INST_REG_ADDR(n),			\
-	.pm_apbcmask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, pm, bit)),	\
-	.gclk_clkctrl_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, clkctrl_id),\
-	.pads = SPI_SAM0_SERCOM_PADS(n),				\
-	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
-	SPI_SAM0_DMA_CHANNELS(n)					\
-}
+#define SPI_SAM0_DEFINE_CONFIG(n)                                                                  \
+	static const struct spi_sam0_config spi_sam0_config_##n = {                                \
+		.regs = (SercomSpi *)DT_INST_REG_ADDR(n),                                          \
+		.pm_apbcmask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, pm, bit)),                       \
+		.gclk_clkctrl_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, clkctrl_id),               \
+		.pads = SPI_SAM0_SERCOM_PADS(n),                                                   \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+		SPI_SAM0_DMA_CHANNELS(n)}
 #endif /* MCLK */
 
-#define SPI_SAM0_DEVICE_INIT(n)						\
-	PINCTRL_DT_INST_DEFINE(n);					\
-	SPI_SAM0_DEFINE_CONFIG(n);					\
-	static struct spi_sam0_data spi_sam0_dev_data_##n = {		\
-		SPI_CONTEXT_INIT_LOCK(spi_sam0_dev_data_##n, ctx),	\
-		SPI_CONTEXT_INIT_SYNC(spi_sam0_dev_data_##n, ctx),	\
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
-	};								\
-	DEVICE_DT_INST_DEFINE(n, spi_sam0_init, NULL,			\
-			    &spi_sam0_dev_data_##n,			\
-			    &spi_sam0_config_##n, POST_KERNEL,		\
-			    CONFIG_SPI_INIT_PRIORITY,			\
-			    &spi_sam0_driver_api);
+#define SPI_SAM0_DEVICE_INIT(n)                                                                    \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	SPI_SAM0_DEFINE_CONFIG(n);                                                                 \
+	static struct spi_sam0_data spi_sam0_dev_data_##n = {                                      \
+		SPI_CONTEXT_INIT_LOCK(spi_sam0_dev_data_##n, ctx),                                 \
+		SPI_CONTEXT_INIT_SYNC(spi_sam0_dev_data_##n, ctx),                                 \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                             \
+	DEVICE_DT_INST_DEFINE(n, spi_sam0_init, NULL, &spi_sam0_dev_data_##n,                      \
+			      &spi_sam0_config_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,         \
+			      &spi_sam0_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_SAM0_DEVICE_INIT)

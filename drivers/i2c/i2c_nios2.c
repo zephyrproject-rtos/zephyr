@@ -19,7 +19,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_nios2);
 
-#define NIOS2_I2C_TIMEOUT_USEC		1000
+#define NIOS2_I2C_TIMEOUT_USEC 1000
 
 struct i2c_nios2_data {
 	ALT_AVALON_I2C_DEV_t i2c_dev;
@@ -27,8 +27,7 @@ struct i2c_nios2_data {
 	struct k_sem sem_lock;
 };
 
-static int
-i2c_nios2_configure(const struct device *dev, uint32_t dev_config)
+static int i2c_nios2_configure(const struct device *dev, uint32_t dev_config)
 {
 	struct i2c_nios2_data *data = (struct i2c_nios2_data *)dev->data;
 
@@ -60,8 +59,8 @@ i2c_cfg_err:
 	return rc;
 }
 
-static int i2c_nios2_transfer(const struct device *dev, struct i2c_msg *msgs,
-			      uint8_t num_msgs, uint16_t addr)
+static int i2c_nios2_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
+			      uint16_t addr)
 {
 	struct i2c_nios2_data *data = (struct i2c_nios2_data *)dev->data;
 	ALT_AVALON_I2C_STATUS_CODE status;
@@ -70,8 +69,7 @@ static int i2c_nios2_transfer(const struct device *dev, struct i2c_msg *msgs,
 
 	k_sem_take(&data->sem_lock, K_FOREVER);
 	/* register the optional interrupt callback */
-	alt_avalon_i2c_register_optional_irq_handler(
-			&data->i2c_dev, &data->irq_data);
+	alt_avalon_i2c_register_optional_irq_handler(&data->i2c_dev, &data->irq_data);
 
 	/* Iterate over all the messages */
 	for (i = 0; i < num_msgs; i++) {
@@ -96,14 +94,10 @@ static int i2c_nios2_transfer(const struct device *dev, struct i2c_msg *msgs,
 		/* Start the transfer */
 		if (msgs->flags & I2C_MSG_READ) {
 			status = alt_avalon_i2c_master_receive_using_interrupts(
-							&data->i2c_dev,
-							msgs->buf, msgs->len,
-							restart, stop);
+				&data->i2c_dev, msgs->buf, msgs->len, restart, stop);
 		} else {
-			status = alt_avalon_i2c_master_transmit_using_interrupts
-							(&data->i2c_dev,
-							msgs->buf, msgs->len,
-							restart, stop);
+			status = alt_avalon_i2c_master_transmit_using_interrupts(
+				&data->i2c_dev, msgs->buf, msgs->len, restart, stop);
 		}
 
 		/* Return an error if the transfer didn't
@@ -118,8 +112,7 @@ static int i2c_nios2_transfer(const struct device *dev, struct i2c_msg *msgs,
 		timeout = NIOS2_I2C_TIMEOUT_USEC;
 		while (timeout) {
 			k_busy_wait(1);
-			status = alt_avalon_i2c_interrupt_transaction_status(
-							&data->i2c_dev);
+			status = alt_avalon_i2c_interrupt_transaction_status(&data->i2c_dev);
 			if (status == ALT_AVALON_I2C_SUCCESS) {
 				break;
 			}
@@ -161,12 +154,13 @@ static const struct i2c_driver_api i2c_nios2_driver_api = {
 };
 
 static struct i2c_nios2_data i2c_nios2_dev_data = {
-	.i2c_dev = {
-		.i2c_base = (alt_u32 *)DT_INST_REG_ADDR(0),
-		.irq_controller_ID = I2C_0_IRQ_INTERRUPT_CONTROLLER_ID,
-		.irq_ID = DT_INST_IRQN(0),
-		.ip_freq_in_hz = DT_INST_PROP(0, clock_frequency),
-	},
+	.i2c_dev =
+		{
+			.i2c_base = (alt_u32 *)DT_INST_REG_ADDR(0),
+			.irq_controller_ID = I2C_0_IRQ_INTERRUPT_CONTROLLER_ID,
+			.irq_ID = DT_INST_IRQN(0),
+			.ip_freq_in_hz = DT_INST_PROP(0, clock_frequency),
+		},
 };
 
 static int i2c_nios2_init(const struct device *dev)
@@ -177,24 +171,19 @@ static int i2c_nios2_init(const struct device *dev)
 	/* initialize semaphore */
 	k_sem_init(&data->sem_lock, 1, 1);
 
-	rc = i2c_nios2_configure(dev,
-			I2C_MODE_CONTROLLER |
-			I2C_SPEED_SET(I2C_SPEED_STANDARD));
+	rc = i2c_nios2_configure(dev, I2C_MODE_CONTROLLER | I2C_SPEED_SET(I2C_SPEED_STANDARD));
 	if (rc) {
 		LOG_ERR("i2c configure failed %d\n", rc);
 		return rc;
 	}
 
 	/* clear ISR register content */
-	alt_avalon_i2c_int_clear(&data->i2c_dev,
-			ALT_AVALON_I2C_ISR_ALL_CLEARABLE_INTS_MSK);
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
-			i2c_nios2_isr, DEVICE_DT_INST_GET(0), 0);
+	alt_avalon_i2c_int_clear(&data->i2c_dev, ALT_AVALON_I2C_ISR_ALL_CLEARABLE_INTS_MSK);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), i2c_nios2_isr, DEVICE_DT_INST_GET(0),
+		    0);
 	irq_enable(DT_INST_IRQN(0));
 	return 0;
 }
 
-I2C_DEVICE_DT_INST_DEFINE(0, i2c_nios2_init, NULL,
-		    &i2c_nios2_dev_data, NULL,
-		    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
-		    &i2c_nios2_driver_api);
+I2C_DEVICE_DT_INST_DEFINE(0, i2c_nios2_init, NULL, &i2c_nios2_dev_data, NULL, POST_KERNEL,
+			  CONFIG_I2C_INIT_PRIORITY, &i2c_nios2_driver_api);

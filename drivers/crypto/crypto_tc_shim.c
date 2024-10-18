@@ -25,15 +25,11 @@ LOG_MODULE_REGISTER(tinycrypt);
 
 static struct tc_shim_drv_state tc_driver_state[CRYPTO_MAX_SESSION];
 
-static int do_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
-			  uint8_t *iv)
+static int do_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *op, uint8_t *iv)
 {
-	struct tc_shim_drv_state *data =  ctx->drv_sessn_state;
+	struct tc_shim_drv_state *data = ctx->drv_sessn_state;
 
-	if (tc_cbc_mode_encrypt(op->out_buf,
-				op->out_buf_max,
-				op->in_buf, op->in_len,
-				iv,
+	if (tc_cbc_mode_encrypt(op->out_buf, op->out_buf_max, op->in_buf, op->in_len, iv,
 				&data->session_key) == TC_CRYPTO_FAIL) {
 		LOG_ERR("TC internal error during CBC encryption");
 		return -EIO;
@@ -45,10 +41,9 @@ static int do_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
 	return 0;
 }
 
-static int do_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
-			  uint8_t *iv)
+static int do_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *op, uint8_t *iv)
 {
-	struct tc_shim_drv_state *data =  ctx->drv_sessn_state;
+	struct tc_shim_drv_state *data = ctx->drv_sessn_state;
 
 	/* TinyCrypt expects the IV and cipher text to be in a contiguous
 	 * buffer for efficiency
@@ -58,11 +53,9 @@ static int do_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
 		return -EIO;
 	}
 
-	if (tc_cbc_mode_decrypt(op->out_buf,
-			op->out_buf_max,
-			op->in_buf + TC_AES_BLOCK_SIZE,
-			op->in_len - TC_AES_BLOCK_SIZE,
-			op->in_buf, &data->session_key) == TC_CRYPTO_FAIL) {
+	if (tc_cbc_mode_decrypt(op->out_buf, op->out_buf_max, op->in_buf + TC_AES_BLOCK_SIZE,
+				op->in_len - TC_AES_BLOCK_SIZE, op->in_buf,
+				&data->session_key) == TC_CRYPTO_FAIL) {
 		LOG_ERR("Func TC internal error during CBC decryption");
 		return -EIO;
 	}
@@ -73,11 +66,10 @@ static int do_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
 	return 0;
 }
 
-static int do_ctr_op(struct cipher_ctx *ctx, struct cipher_pkt *op,
-		     uint8_t *iv)
+static int do_ctr_op(struct cipher_ctx *ctx, struct cipher_pkt *op, uint8_t *iv)
 {
-	struct tc_shim_drv_state *data =  ctx->drv_sessn_state;
-	uint8_t ctr[16] = {0};	/* CTR mode Counter =  iv:ctr */
+	struct tc_shim_drv_state *data = ctx->drv_sessn_state;
+	uint8_t ctr[16] = {0}; /* CTR mode Counter =  iv:ctr */
 	int ivlen = ctx->keylen - (ctx->mode_params.ctr_info.ctr_len >> 3);
 
 	/* Tinycrypt takes the last 4 bytes of the counter parameter as the
@@ -85,8 +77,7 @@ static int do_ctr_op(struct cipher_ctx *ctx, struct cipher_pkt *op,
 	 */
 	memcpy(ctr, iv, ivlen);
 
-	if (tc_ctr_mode(op->out_buf, op->out_buf_max, op->in_buf,
-			op->in_len, ctr,
+	if (tc_ctr_mode(op->out_buf, op->out_buf_max, op->in_buf, op->in_len, ctr,
 			&data->session_key) == TC_CRYPTO_FAIL) {
 		LOG_ERR("TC internal error during CTR OP");
 		return -EIO;
@@ -98,24 +89,22 @@ static int do_ctr_op(struct cipher_ctx *ctx, struct cipher_pkt *op,
 	return 0;
 }
 
-static int do_ccm_encrypt_mac(struct cipher_ctx *ctx,
-			     struct cipher_aead_pkt *aead_op, uint8_t *nonce)
+static int do_ccm_encrypt_mac(struct cipher_ctx *ctx, struct cipher_aead_pkt *aead_op,
+			      uint8_t *nonce)
 {
 	struct tc_ccm_mode_struct ccm;
-	struct tc_shim_drv_state *data =  ctx->drv_sessn_state;
+	struct tc_shim_drv_state *data = ctx->drv_sessn_state;
 	struct ccm_params *ccm_param = &ctx->mode_params.ccm_info;
 	struct cipher_pkt *op = aead_op->pkt;
 
-	if (tc_ccm_config(&ccm, &data->session_key, nonce,
-			ccm_param->nonce_len,
-			ccm_param->tag_len) == TC_CRYPTO_FAIL) {
+	if (tc_ccm_config(&ccm, &data->session_key, nonce, ccm_param->nonce_len,
+			  ccm_param->tag_len) == TC_CRYPTO_FAIL) {
 		LOG_ERR("TC internal error during CCM encryption config");
 		return -EIO;
 	}
 
-	if (tc_ccm_generation_encryption(op->out_buf, op->out_buf_max,
-					 aead_op->ad, aead_op->ad_len, op->in_buf,
-					 op->in_len, &ccm) == TC_CRYPTO_FAIL) {
+	if (tc_ccm_generation_encryption(op->out_buf, op->out_buf_max, aead_op->ad, aead_op->ad_len,
+					 op->in_buf, op->in_len, &ccm) == TC_CRYPTO_FAIL) {
 		LOG_ERR("TC internal error during CCM Encryption OP");
 		return -EIO;
 	}
@@ -138,16 +127,15 @@ static int do_ccm_encrypt_mac(struct cipher_ctx *ctx,
 	return 0;
 }
 
-static int do_ccm_decrypt_auth(struct cipher_ctx *ctx,
-			       struct cipher_aead_pkt *aead_op, uint8_t *nonce)
+static int do_ccm_decrypt_auth(struct cipher_ctx *ctx, struct cipher_aead_pkt *aead_op,
+			       uint8_t *nonce)
 {
 	struct tc_ccm_mode_struct ccm;
-	struct tc_shim_drv_state *data =  ctx->drv_sessn_state;
+	struct tc_shim_drv_state *data = ctx->drv_sessn_state;
 	struct ccm_params *ccm_param = &ctx->mode_params.ccm_info;
 	struct cipher_pkt *op = aead_op->pkt;
 
-	if (tc_ccm_config(&ccm, &data->session_key, nonce,
-			  ccm_param->nonce_len,
+	if (tc_ccm_config(&ccm, &data->session_key, nonce, ccm_param->nonce_len,
 			  ccm_param->tag_len) == TC_CRYPTO_FAIL) {
 		LOG_ERR("TC internal error during CCM decryption config");
 		return -EIO;
@@ -162,11 +150,9 @@ static int do_ccm_decrypt_auth(struct cipher_ctx *ctx,
 		return -EIO;
 	}
 
-	if (tc_ccm_decryption_verification(op->out_buf, op->out_buf_max,
-					   aead_op->ad, aead_op->ad_len,
-					   op->in_buf,
-					   op->in_len + ccm_param->tag_len,
-					   &ccm) == TC_CRYPTO_FAIL) {
+	if (tc_ccm_decryption_verification(
+		    op->out_buf, op->out_buf_max, aead_op->ad, aead_op->ad_len, op->in_buf,
+		    op->in_len + ccm_param->tag_len, &ccm) == TC_CRYPTO_FAIL) {
 		LOG_ERR("TC internal error during CCM decryption OP");
 		return -EIO;
 	}
@@ -190,9 +176,8 @@ static int get_unused_session(void)
 	return i;
 }
 
-static int tc_session_setup(const struct device *dev, struct cipher_ctx *ctx,
-			    enum cipher_algo algo, enum cipher_mode mode,
-			    enum cipher_op op_type)
+static int tc_session_setup(const struct device *dev, struct cipher_ctx *ctx, enum cipher_algo algo,
+			    enum cipher_mode mode, enum cipher_op op_type)
 {
 	struct tc_shim_drv_state *data;
 	int idx;
@@ -227,7 +212,7 @@ static int tc_session_setup(const struct device *dev, struct cipher_ctx *ctx,
 		case CRYPTO_CIPHER_MODE_CTR:
 			if (ctx->mode_params.ctr_info.ctr_len != 32U) {
 				LOG_ERR("Tinycrypt supports only 32 bit "
-					    "counter");
+					"counter");
 				return -EINVAL;
 			}
 			ctx->ops.ctr_crypt_hndlr = do_ctr_op;
@@ -248,7 +233,7 @@ static int tc_session_setup(const struct device *dev, struct cipher_ctx *ctx,
 			/* Maybe validate CTR length */
 			if (ctx->mode_params.ctr_info.ctr_len != 32U) {
 				LOG_ERR("Tinycrypt supports only 32 bit "
-					    "counter");
+					"counter");
 				return -EINVAL;
 			}
 			ctx->ops.ctr_crypt_hndlr = do_ctr_op;
@@ -260,7 +245,6 @@ static int tc_session_setup(const struct device *dev, struct cipher_ctx *ctx,
 			LOG_ERR("TC Shim Unsupported mode");
 			return -EINVAL;
 		}
-
 	}
 
 	ctx->ops.cipher_mode = mode;
@@ -273,8 +257,7 @@ static int tc_session_setup(const struct device *dev, struct cipher_ctx *ctx,
 
 	data = &tc_driver_state[idx];
 
-	if (tc_aes128_set_encrypt_key(&data->session_key, ctx->key.bit_stream)
-			 == TC_CRYPTO_FAIL) {
+	if (tc_aes128_set_encrypt_key(&data->session_key, ctx->key.bit_stream) == TC_CRYPTO_FAIL) {
 		LOG_ERR("TC internal error in setting key");
 		tc_driver_state[idx].in_use = 0;
 
@@ -293,7 +276,7 @@ static int tc_query_caps(const struct device *dev)
 
 static int tc_session_free(const struct device *dev, struct cipher_ctx *sessn)
 {
-	struct tc_shim_drv_state *data =  sessn->drv_sessn_state;
+	struct tc_shim_drv_state *data = sessn->drv_sessn_state;
 
 	ARG_UNUSED(dev);
 	(void)memset(data, 0, sizeof(struct tc_shim_drv_state));
@@ -321,7 +304,5 @@ static struct crypto_driver_api crypto_enc_funcs = {
 	.query_hw_caps = tc_query_caps,
 };
 
-DEVICE_DEFINE(crypto_tinycrypt, CONFIG_CRYPTO_TINYCRYPT_SHIM_DRV_NAME,
-		    &tc_shim_init, NULL, NULL, NULL,
-		    POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY,
-		    (void *)&crypto_enc_funcs);
+DEVICE_DEFINE(crypto_tinycrypt, CONFIG_CRYPTO_TINYCRYPT_SHIM_DRV_NAME, &tc_shim_init, NULL, NULL,
+	      NULL, POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY, (void *)&crypto_enc_funcs);

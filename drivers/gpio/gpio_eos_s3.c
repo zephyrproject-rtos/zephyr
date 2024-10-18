@@ -16,9 +16,9 @@
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
-#define MAX_GPIOS		8U
-#define GPIOS_MASK		(BIT(MAX_GPIOS) - 1)
-#define DISABLED_GPIO_IRQ	0xFFU
+#define MAX_GPIOS         8U
+#define GPIOS_MASK        (BIT(MAX_GPIOS) - 1)
+#define DISABLED_GPIO_IRQ 0xFFU
 
 struct gpio_eos_s3_config {
 	/* gpio_driver_config needs to be first */
@@ -70,8 +70,7 @@ static const PadConfig pad_configs[] = {
 	{.ucPin = PAD_45, .ucFunc = PAD45_FUNC_SEL_GPIO_7},
 };
 
-static PadConfig gpio_eos_s3_pad_select(const struct device *dev,
-					 uint8_t gpio_num)
+static PadConfig gpio_eos_s3_pad_select(const struct device *dev, uint8_t gpio_num)
 {
 	const struct gpio_eos_s3_config *config = dev->config;
 	uint8_t is_secondary = (config->pin_secondary_config >> gpio_num) & 1;
@@ -140,9 +139,7 @@ static int gpio_eos_s3_get_irq_num(uint8_t pad)
 	return gpio_irq_num;
 }
 
-static int gpio_eos_s3_configure(const struct device *dev,
-				 gpio_pin_t gpio_num,
-				 gpio_flags_t flags)
+static int gpio_eos_s3_configure(const struct device *dev, gpio_pin_t gpio_num, gpio_flags_t flags)
 {
 	uint32_t *io_mux = (uint32_t *)IO_MUX;
 	GPIOCfgTypeDef gpio_cfg;
@@ -197,8 +194,7 @@ static int gpio_eos_s3_configure(const struct device *dev,
 	return 0;
 }
 
-static int gpio_eos_s3_port_get_raw(const struct device *dev,
-				    uint32_t *value)
+static int gpio_eos_s3_port_get_raw(const struct device *dev, uint32_t *value)
 {
 	ARG_UNUSED(dev);
 
@@ -207,9 +203,7 @@ static int gpio_eos_s3_port_get_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_eos_s3_port_set_masked_raw(const struct device *dev,
-					   uint32_t mask,
-					   uint32_t value)
+static int gpio_eos_s3_port_set_masked_raw(const struct device *dev, uint32_t mask, uint32_t value)
 {
 	ARG_UNUSED(dev);
 	uint32_t target_value;
@@ -221,8 +215,7 @@ static int gpio_eos_s3_port_set_masked_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_eos_s3_port_set_bits_raw(const struct device *dev,
-					 uint32_t mask)
+static int gpio_eos_s3_port_set_bits_raw(const struct device *dev, uint32_t mask)
 {
 	ARG_UNUSED(dev);
 
@@ -231,8 +224,7 @@ static int gpio_eos_s3_port_set_bits_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_eos_s3_port_clear_bits_raw(const struct device *dev,
-					   uint32_t mask)
+static int gpio_eos_s3_port_clear_bits_raw(const struct device *dev, uint32_t mask)
 {
 	ARG_UNUSED(dev);
 
@@ -241,8 +233,7 @@ static int gpio_eos_s3_port_clear_bits_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_eos_s3_port_toggle_bits(const struct device *dev,
-					uint32_t mask)
+static int gpio_eos_s3_port_toggle_bits(const struct device *dev, uint32_t mask)
 {
 	ARG_UNUSED(dev);
 	uint32_t target_value;
@@ -254,18 +245,16 @@ static int gpio_eos_s3_port_toggle_bits(const struct device *dev,
 	return 0;
 }
 
-static int gpio_eos_s3_manage_callback(const struct device *dev,
-				       struct gpio_callback *callback, bool set)
+static int gpio_eos_s3_manage_callback(const struct device *dev, struct gpio_callback *callback,
+				       bool set)
 {
 	struct gpio_eos_s3_data *data = dev->data;
 
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
-static int gpio_eos_s3_pin_interrupt_configure(const struct device *dev,
-					       gpio_pin_t gpio_num,
-					       enum gpio_int_mode mode,
-					       enum gpio_int_trig trig)
+static int gpio_eos_s3_pin_interrupt_configure(const struct device *dev, gpio_pin_t gpio_num,
+					       enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	struct gpio_eos_s3_data *data = dev->data;
 	GPIOCfgTypeDef gpio_cfg;
@@ -327,7 +316,7 @@ static int gpio_eos_s3_pin_interrupt_configure(const struct device *dev,
 		data->gpio_irqs[irq_num] = gpio_num;
 
 		/* Clear pending GPIO interrupts */
-		INTR_CTRL->GPIO_INTR |=  BIT((uint32_t)irq_num);
+		INTR_CTRL->GPIO_INTR |= BIT((uint32_t)irq_num);
 
 		/* Enable IRQ */
 		INTR_CTRL->GPIO_INTR_EN_M4 |= BIT((uint32_t)irq_num);
@@ -350,8 +339,7 @@ static void gpio_eos_s3_isr(const struct device *dev)
 	/* Fire callbacks */
 	for (int irq_num = 0; irq_num < MAX_GPIOS; irq_num++) {
 		if (data->gpio_irqs[irq_num] != DISABLED_GPIO_IRQ) {
-			gpio_fire_callbacks(&data->callbacks,
-					    dev, BIT(data->gpio_irqs[irq_num]));
+			gpio_fire_callbacks(&data->callbacks, dev, BIT(data->gpio_irqs[irq_num]));
 		}
 	}
 }
@@ -411,11 +399,8 @@ static const struct gpio_driver_api gpio_eos_s3_driver_api = {
 static int gpio_eos_s3_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    gpio_eos_s3_isr,
-		    DEVICE_DT_INST_GET(0),
-		    0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), gpio_eos_s3_isr,
+		    DEVICE_DT_INST_GET(0), 0);
 
 	irq_enable(DT_INST_IRQN(0));
 
@@ -423,30 +408,17 @@ static int gpio_eos_s3_init(const struct device *dev)
 }
 
 const struct gpio_eos_s3_config gpio_eos_s3_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
-	},
+	.common =
+		{
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
+		},
 	.pin_secondary_config = DT_INST_PROP(0, pin_secondary_config),
 };
 
 static struct gpio_eos_s3_data gpio_eos_s3_data = {
-	.gpio_irqs = {
-		DISABLED_GPIO_IRQ,
-		DISABLED_GPIO_IRQ,
-		DISABLED_GPIO_IRQ,
-		DISABLED_GPIO_IRQ,
-		DISABLED_GPIO_IRQ,
-		DISABLED_GPIO_IRQ,
-		DISABLED_GPIO_IRQ,
-		DISABLED_GPIO_IRQ
-	},
+	.gpio_irqs = {DISABLED_GPIO_IRQ, DISABLED_GPIO_IRQ, DISABLED_GPIO_IRQ, DISABLED_GPIO_IRQ,
+		      DISABLED_GPIO_IRQ, DISABLED_GPIO_IRQ, DISABLED_GPIO_IRQ, DISABLED_GPIO_IRQ},
 };
 
-DEVICE_DT_INST_DEFINE(0,
-		    gpio_eos_s3_init,
-		    NULL,
-		    &gpio_eos_s3_data,
-		    &gpio_eos_s3_config,
-		    PRE_KERNEL_1,
-		    CONFIG_GPIO_INIT_PRIORITY,
-		    &gpio_eos_s3_driver_api);
+DEVICE_DT_INST_DEFINE(0, gpio_eos_s3_init, NULL, &gpio_eos_s3_data, &gpio_eos_s3_config,
+		      PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, &gpio_eos_s3_driver_api);

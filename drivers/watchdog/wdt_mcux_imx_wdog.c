@@ -16,7 +16,7 @@
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(wdt_mcux_wdog);
 
-#define WDOG_TMOUT_SEC(x)  (((x * 2) / MSEC_PER_SEC) - 1)
+#define WDOG_TMOUT_SEC(x) (((x * 2) / MSEC_PER_SEC) - 1)
 
 struct mcux_wdog_config {
 	WDOG_Type *base;
@@ -41,11 +41,9 @@ static int mcux_wdog_setup(const struct device *dev, uint8_t options)
 		return -EINVAL;
 	}
 
-	data->wdog_config.workMode.enableStop =
-		(options & WDT_OPT_PAUSE_IN_SLEEP) == 0U;
+	data->wdog_config.workMode.enableStop = (options & WDT_OPT_PAUSE_IN_SLEEP) == 0U;
 
-	data->wdog_config.workMode.enableDebug =
-		(options & WDT_OPT_PAUSE_HALTED_BY_DBG) == 0U;
+	data->wdog_config.workMode.enableDebug = (options & WDT_OPT_PAUSE_HALTED_BY_DBG) == 0U;
 
 	WDOG_Init(base, &data->wdog_config);
 	LOG_DBG("Setup the watchdog");
@@ -66,8 +64,7 @@ static int mcux_wdog_disable(const struct device *dev)
 	return 0;
 }
 
-static int mcux_wdog_install_timeout(const struct device *dev,
-				     const struct wdt_timeout_cfg *cfg)
+static int mcux_wdog_install_timeout(const struct device *dev, const struct wdt_timeout_cfg *cfg)
 {
 	struct mcux_wdog_data *data = dev->data;
 
@@ -84,8 +81,7 @@ static int mcux_wdog_install_timeout(const struct device *dev,
 		return -EINVAL;
 	}
 
-	data->wdog_config.timeoutValue =
-		  WDOG_TMOUT_SEC(cfg->window.max);
+	data->wdog_config.timeoutValue = WDOG_TMOUT_SEC(cfg->window.max);
 
 	if (cfg->window.min) {
 		LOG_ERR("Invalid window.min, Do not support window model");
@@ -161,25 +157,20 @@ static void mcux_wdog_config_func(const struct device *dev);
 PINCTRL_DT_INST_DEFINE(0);
 
 static const struct mcux_wdog_config mcux_wdog_config = {
-	.base = (WDOG_Type *) DT_INST_REG_ADDR(0),
+	.base = (WDOG_Type *)DT_INST_REG_ADDR(0),
 	.irq_config_func = mcux_wdog_config_func,
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
 static struct mcux_wdog_data mcux_wdog_data;
 
-DEVICE_DT_INST_DEFINE(0,
-		    &mcux_wdog_init,
-		    NULL,
-		    &mcux_wdog_data, &mcux_wdog_config,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &mcux_wdog_api);
+DEVICE_DT_INST_DEFINE(0, &mcux_wdog_init, NULL, &mcux_wdog_data, &mcux_wdog_config, POST_KERNEL,
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &mcux_wdog_api);
 
 static void mcux_wdog_config_func(const struct device *dev)
 {
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    mcux_wdog_isr, DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), mcux_wdog_isr, DEVICE_DT_INST_GET(0),
+		    0);
 
 	irq_enable(DT_INST_IRQN(0));
 }

@@ -23,8 +23,7 @@
 
 LOG_MODULE_REGISTER(ISM330DHCX, CONFIG_SENSOR_LOG_LEVEL);
 
-static const uint16_t ism330dhcx_odr_map[] = {0, 12, 26, 52, 104, 208, 416, 833,
-					1660, 3330, 6660};
+static const uint16_t ism330dhcx_odr_map[] = {0, 12, 26, 52, 104, 208, 416, 833, 1660, 3330, 6660};
 
 static int ism330dhcx_freq_to_odr_val(uint16_t freq)
 {
@@ -80,16 +79,9 @@ static int ism330dhcx_accel_range_to_fs_val(int32_t range)
  *   ISM330DHCX_4000dps = 1,
  * } ism330dhcx_fs_g_t;
  */
-static const uint16_t ism330dhcx_gyro_fs_map[] = {
-				250, 4000, 125, 0, 500,
-				0, 0, 0, 1000,
-				0, 0, 0, 2000
-				};
-static const uint16_t ism330dhcx_gyro_fs_sens[] = {
-				2, 32, 1, 0, 4,
-				0, 0, 0, 8,
-				0, 0, 0, 16
-				};
+static const uint16_t ism330dhcx_gyro_fs_map[] = {250, 4000, 125, 0, 500, 0,   0,
+						  0,   1000, 0,   0, 0,   2000};
+static const uint16_t ism330dhcx_gyro_fs_sens[] = {2, 32, 1, 0, 4, 0, 0, 0, 8, 0, 0, 0, 16};
 
 static int ism330dhcx_gyro_range_to_fs_val(int32_t range)
 {
@@ -202,10 +194,8 @@ static int ism330dhcx_accel_range_set(const struct device *dev, int32_t range)
 	return 0;
 }
 
-static int ism330dhcx_accel_config(const struct device *dev,
-				   enum sensor_channel chan,
-				   enum sensor_attribute attr,
-				   const struct sensor_value *val)
+static int ism330dhcx_accel_config(const struct device *dev, enum sensor_channel chan,
+				   enum sensor_attribute attr, const struct sensor_value *val)
 {
 	switch (attr) {
 	case SENSOR_ATTR_FULL_SCALE:
@@ -256,10 +246,8 @@ static int ism330dhcx_gyro_range_set(const struct device *dev, int32_t range)
 	return 0;
 }
 
-static int ism330dhcx_gyro_config(const struct device *dev,
-				  enum sensor_channel chan,
-				  enum sensor_attribute attr,
-				  const struct sensor_value *val)
+static int ism330dhcx_gyro_config(const struct device *dev, enum sensor_channel chan,
+				  enum sensor_attribute attr, const struct sensor_value *val)
 {
 	switch (attr) {
 	case SENSOR_ATTR_FULL_SCALE:
@@ -274,10 +262,8 @@ static int ism330dhcx_gyro_config(const struct device *dev,
 	return 0;
 }
 
-static int ism330dhcx_attr_set(const struct device *dev,
-			       enum sensor_channel chan,
-			       enum sensor_attribute attr,
-			       const struct sensor_value *val)
+static int ism330dhcx_attr_set(const struct device *dev, enum sensor_channel chan,
+			       enum sensor_attribute attr, const struct sensor_value *val)
 {
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
@@ -361,8 +347,7 @@ static int ism330dhcx_sample_fetch_shub(const struct device *dev)
 }
 #endif /* CONFIG_ISM330DHCX_SENSORHUB */
 
-static int ism330dhcx_sample_fetch(const struct device *dev,
-				   enum sensor_channel chan)
+static int ism330dhcx_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
@@ -403,9 +388,8 @@ static inline void ism330dhcx_accel_convert(struct sensor_value *val, int raw_va
 
 	/* Sensitivity is exposed in ug/LSB */
 	/* Convert to m/s^2 */
-	dval = (int64_t)(raw_val) * sensitivity;
+	dval = (int64_t)(raw_val)*sensitivity;
 	sensor_ug_to_ms2(dval, val);
-
 }
 
 static inline int ism330dhcx_accel_get_channel(const struct device *dev, enum sensor_channel chan,
@@ -451,7 +435,7 @@ static inline void ism330dhcx_gyro_convert(struct sensor_value *val, int raw_val
 
 	/* Sensitivity is exposed in udps/LSB */
 	/* So, calculate value in 10 udps unit and then to rad/s */
-	dval = (int64_t)(raw_val) * sensitivity / 10;
+	dval = (int64_t)(raw_val)*sensitivity / 10;
 	sensor_10udegrees_to_rad(dval, val);
 }
 
@@ -492,8 +476,7 @@ static int ism330dhcx_gyro_channel_get(const struct device *dev, enum sensor_cha
 }
 
 #if defined(CONFIG_ISM330DHCX_ENABLE_TEMP)
-static void ism330dhcx_gyro_channel_get_temp(const struct device *dev,
-					     struct sensor_value *val)
+static void ism330dhcx_gyro_channel_get_temp(const struct device *dev, struct sensor_value *val)
 {
 	struct ism330dhcx_data *data = dev->data;
 
@@ -528,13 +511,9 @@ static inline int ism330dhcx_magn_get_channel(const struct device *dev, enum sen
 		return -ENOTSUP;
 	}
 
-
-	sample[0] = (int16_t)(data->ext_data[idx][0] |
-			    (data->ext_data[idx][1] << 8));
-	sample[1] = (int16_t)(data->ext_data[idx][2] |
-			    (data->ext_data[idx][3] << 8));
-	sample[2] = (int16_t)(data->ext_data[idx][4] |
-			    (data->ext_data[idx][5] << 8));
+	sample[0] = (int16_t)(data->ext_data[idx][0] | (data->ext_data[idx][1] << 8));
+	sample[1] = (int16_t)(data->ext_data[idx][2] | (data->ext_data[idx][3] << 8));
+	sample[2] = (int16_t)(data->ext_data[idx][4] | (data->ext_data[idx][5] << 8));
 
 	switch (chan) {
 	case SENSOR_CHAN_MAGN_X:
@@ -572,8 +551,7 @@ static inline void ism330dhcx_hum_convert(const struct device *dev, struct senso
 		return;
 	}
 
-	raw_val = ((int16_t)(data->ext_data[idx][0] |
-			   (data->ext_data[idx][1] << 8)));
+	raw_val = ((int16_t)(data->ext_data[idx][0] | (data->ext_data[idx][1] << 8)));
 
 	/* find relative humidty by linear interpolation */
 	rh = (ht->y1 - ht->y0) * raw_val + ht->x1 * ht->y0 - ht->x0 * ht->y1;
@@ -596,15 +574,14 @@ static inline void ism330dhcx_press_convert(const struct device *dev, struct sen
 		return;
 	}
 
-	raw_val = (int32_t)(data->ext_data[idx][0] |
-			  (data->ext_data[idx][1] << 8) |
-			  (data->ext_data[idx][2] << 16));
+	raw_val = (int32_t)(data->ext_data[idx][0] | (data->ext_data[idx][1] << 8) |
+			    (data->ext_data[idx][2] << 16));
 
 	/* Pressure sensitivity is 4096 LSB/hPa */
 	/* Convert raw_val to val in kPa */
 	val->val1 = (raw_val >> 12) / 10;
-	val->val2 = (raw_val >> 12) % 10 * 100000 +
-		(((int32_t)((raw_val) & 0x0FFF) * 100000L) >> 12);
+	val->val2 =
+		(raw_val >> 12) % 10 * 100000 + (((int32_t)((raw_val) & 0x0FFF) * 100000L) >> 12);
 }
 
 static inline void ism330dhcx_temp_convert(const struct device *dev, struct sensor_value *val)
@@ -619,8 +596,7 @@ static inline void ism330dhcx_temp_convert(const struct device *dev, struct sens
 		return;
 	}
 
-	raw_val = (int16_t)(data->ext_data[idx][3] |
-			  (data->ext_data[idx][4] << 8));
+	raw_val = (int16_t)(data->ext_data[idx][3] | (data->ext_data[idx][4] << 8));
 
 	/* Temperature sensitivity is 100 LSB/deg C */
 	val->val1 = raw_val / 100;
@@ -628,8 +604,7 @@ static inline void ism330dhcx_temp_convert(const struct device *dev, struct sens
 }
 #endif
 
-static int ism330dhcx_channel_get(const struct device *dev,
-				  enum sensor_channel chan,
+static int ism330dhcx_channel_get(const struct device *dev, enum sensor_channel chan,
 				  struct sensor_value *val)
 {
 	switch (chan) {
@@ -688,7 +663,7 @@ static const struct sensor_driver_api ism330dhcx_api_funcs = {
 
 static int ism330dhcx_init_chip(const struct device *dev)
 {
-	const struct ism330dhcx_config * const cfg = dev->config;
+	const struct ism330dhcx_config *const cfg = dev->config;
 	struct ism330dhcx_data *ism330dhcx = dev->data;
 	uint8_t chip_id;
 
@@ -754,7 +729,7 @@ static int ism330dhcx_init_chip(const struct device *dev)
 
 static int ism330dhcx_init(const struct device *dev)
 {
-	const struct ism330dhcx_config * const config = dev->config;
+	const struct ism330dhcx_config *const config = dev->config;
 
 	config->bus_init(dev);
 
@@ -782,31 +757,29 @@ static int ism330dhcx_init(const struct device *dev)
 	return 0;
 }
 
-#define ISM330DHCX_DEFINE(inst)									\
-	static struct ism330dhcx_data ism330dhcx_data_##inst;					\
-												\
-	static const struct ism330dhcx_config ism330dhcx_config_##inst = {			\
-		.accel_odr = DT_INST_PROP(inst, accel_odr),					\
-		.accel_range = DT_INST_PROP(inst, accel_range),					\
-		.gyro_odr = DT_INST_PROP(inst, gyro_odr),					\
-		.gyro_range = DT_INST_PROP(inst, gyro_range),					\
+#define ISM330DHCX_DEFINE(inst)                                                                    \
+	static struct ism330dhcx_data ism330dhcx_data_##inst;                                      \
+                                                                                                   \
+	static const struct ism330dhcx_config ism330dhcx_config_##inst = {                         \
+		.accel_odr = DT_INST_PROP(inst, accel_odr),                                        \
+		.accel_range = DT_INST_PROP(inst, accel_range),                                    \
+		.gyro_odr = DT_INST_PROP(inst, gyro_odr),                                          \
+		.gyro_range = DT_INST_PROP(inst, gyro_range),                                      \
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi),						\
 			    (.bus_init = ism330dhcx_spi_init,					\
 			     .spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER |		\
 							 SPI_MODE_CPOL | SPI_MODE_CPHA |	\
 							 SPI_WORD_SET(8), 0),),			\
-			    ())									\
-		COND_CODE_1(DT_INST_ON_BUS(inst, i2c),						\
+			    ())                                      \
+					 COND_CODE_1(DT_INST_ON_BUS(inst, i2c),						\
 			    (.bus_init = ism330dhcx_i2c_init,					\
 			     .i2c = I2C_DT_SPEC_INST_GET(inst),),				\
-			    ())									\
-		IF_ENABLED(CONFIG_ISM330DHCX_TRIGGER,						\
+			    ()) IF_ENABLED(CONFIG_ISM330DHCX_TRIGGER,						\
 			   (.drdy_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, drdy_gpios, { 0 }),	\
-			    .int_pin = DT_INST_PROP_OR(inst, int_pin, 0),))			\
-	};											\
-												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, ism330dhcx_init, NULL,				\
-			      &ism330dhcx_data_##inst, &ism330dhcx_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &ism330dhcx_api_funcs);		\
+			    .int_pin = DT_INST_PROP_OR(inst, int_pin, 0),)) }; \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, ism330dhcx_init, NULL, &ism330dhcx_data_##inst,         \
+				     &ism330dhcx_config_##inst, POST_KERNEL,                       \
+				     CONFIG_SENSOR_INIT_PRIORITY, &ism330dhcx_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(ISM330DHCX_DEFINE)

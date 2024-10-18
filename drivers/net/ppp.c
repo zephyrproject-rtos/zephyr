@@ -38,7 +38,7 @@ LOG_MODULE_REGISTER(net_ppp, LOG_LEVEL);
 #include "../../subsys/net/ip/net_stats.h"
 #include "../../subsys/net/ip/net_private.h"
 
-#define UART_BUF_LEN CONFIG_NET_PPP_UART_BUF_LEN
+#define UART_BUF_LEN    CONFIG_NET_PPP_UART_BUF_LEN
 #define UART_TX_BUF_LEN CONFIG_NET_PPP_ASYNC_UART_TX_BUF_LEN
 
 enum ppp_driver_state {
@@ -47,7 +47,7 @@ enum ppp_driver_state {
 	STATE_HDLC_FRAME_DATA,
 };
 
-#define PPP_WORKQ_PRIORITY CONFIG_NET_PPP_RX_PRIORITY
+#define PPP_WORKQ_PRIORITY   CONFIG_NET_PPP_RX_PRIORITY
 #define PPP_WORKQ_STACK_SIZE CONFIG_NET_PPP_RX_STACK_SIZE
 
 K_KERNEL_STACK_DEFINE(ppp_workq, PPP_WORKQ_STACK_SIZE);
@@ -118,8 +118,8 @@ struct ppp_driver_context {
 	uint8_t client_index;
 #endif
 
-	uint8_t init_done : 1;
-	uint8_t next_escaped : 1;
+	uint8_t init_done: 1;
+	uint8_t next_escaped: 1;
 };
 
 static struct ppp_driver_context ppp_driver_context_data;
@@ -131,9 +131,7 @@ static uint8_t *next_buf;
 
 static K_SEM_DEFINE(uarte_tx_finished, 0, 1);
 
-static void uart_callback(const struct device *dev,
-			  struct uart_event *evt,
-			  void *user_data)
+static void uart_callback(const struct device *dev, struct uart_event *evt, void *user_data)
 {
 	struct ppp_driver_context *context = user_data;
 	uint8_t *p;
@@ -145,8 +143,7 @@ static void uart_callback(const struct device *dev,
 		k_sem_give(&uarte_tx_finished);
 		break;
 
-	case UART_TX_ABORTED:
-	{
+	case UART_TX_ABORTED: {
 		k_sem_give(&uarte_tx_finished);
 		if (CONFIG_NET_PPP_ASYNC_UART_TX_TIMEOUT == 0) {
 			LOG_WRN("UART TX aborted.");
@@ -157,15 +154,17 @@ static void uart_callback(const struct device *dev,
 		err = uart_config_get(dev, &uart_conf);
 		if (err) {
 			LOG_ERR("uart_config_get() err: %d", err);
-		} else if (uart_conf.baudrate / 10 * CONFIG_NET_PPP_ASYNC_UART_TX_TIMEOUT
-			  / MSEC_PER_SEC > evt->data.tx.len * 2) {
+		} else if (uart_conf.baudrate / 10 * CONFIG_NET_PPP_ASYNC_UART_TX_TIMEOUT /
+				   MSEC_PER_SEC >
+			   evt->data.tx.len * 2) {
 			/* The abort likely did not happen because of missing bandwidth. */
 			LOG_DBG("UART_TX_ABORTED");
 		} else {
 			LOG_WRN("UART TX aborted: Only %zu bytes were sent. You may want"
 				" to change either CONFIG_NET_PPP_ASYNC_UART_TX_TIMEOUT"
-				" (%d ms) or the UART baud rate (%u).", evt->data.tx.len,
-				CONFIG_NET_PPP_ASYNC_UART_TX_TIMEOUT, uart_conf.baudrate);
+				" (%d ms) or the UART baud rate (%u).",
+				evt->data.tx.len, CONFIG_NET_PPP_ASYNC_UART_TX_TIMEOUT,
+				uart_conf.baudrate);
 		}
 		break;
 	}
@@ -209,8 +208,7 @@ static void uart_callback(const struct device *dev,
 		k_work_submit_to_queue(&context->cb_workq, &context->cb_work);
 		break;
 
-	case UART_RX_BUF_REQUEST:
-	{
+	case UART_RX_BUF_REQUEST: {
 		LOG_DBG("UART_RX_BUF_REQUEST: buf %p", (void *)next_buf);
 
 		if (next_buf) {
@@ -299,10 +297,8 @@ static int ppp_save_byte(struct ppp_driver_context *ppp, uint8_t byte)
 	int ret;
 
 	if (!ppp->pkt) {
-		ppp->pkt = net_pkt_rx_alloc_with_buffer(
-			ppp->iface,
-			CONFIG_NET_BUF_DATA_SIZE,
-			AF_UNSPEC, 0, K_NO_WAIT);
+		ppp->pkt = net_pkt_rx_alloc_with_buffer(ppp->iface, CONFIG_NET_BUF_DATA_SIZE,
+							AF_UNSPEC, 0, K_NO_WAIT);
 		if (!ppp->pkt) {
 			LOG_ERR("[%p] cannot allocate pkt", ppp);
 			return -ENOMEM;
@@ -324,8 +320,7 @@ static int ppp_save_byte(struct ppp_driver_context *ppp, uint8_t byte)
 	 * before we write a byte to last available cursor position.
 	 */
 	if (ppp->available == 1) {
-		ret = net_pkt_alloc_buffer(ppp->pkt,
-					   CONFIG_NET_BUF_DATA_SIZE + ppp->available,
+		ret = net_pkt_alloc_buffer(ppp->pkt, CONFIG_NET_BUF_DATA_SIZE + ppp->available,
 					   AF_UNSPEC, K_NO_WAIT);
 		if (ret < 0) {
 			LOG_ERR("[%p] cannot allocate new data buffer", ppp);
@@ -338,8 +333,7 @@ static int ppp_save_byte(struct ppp_driver_context *ppp, uint8_t byte)
 	if (ppp->available) {
 		ret = net_pkt_write_u8(ppp->pkt, byte);
 		if (ret < 0) {
-			LOG_ERR("[%p] Cannot write to pkt %p (%d)",
-				ppp, ppp->pkt, ret);
+			LOG_ERR("[%p] Cannot write to pkt %p (%d)", ppp, ppp->pkt, ret);
 			goto out_of_mem;
 		}
 
@@ -372,8 +366,7 @@ static const char *ppp_driver_state_str(enum ppp_driver_state state)
 	return "";
 }
 
-static void ppp_change_state(struct ppp_driver_context *ctx,
-			     enum ppp_driver_state new_state)
+static void ppp_change_state(struct ppp_driver_context *ctx, enum ppp_driver_state new_state)
 {
 	NET_ASSERT(ctx);
 
@@ -381,11 +374,9 @@ static void ppp_change_state(struct ppp_driver_context *ctx,
 		return;
 	}
 
-	NET_ASSERT(new_state >= STATE_HDLC_FRAME_START &&
-		   new_state <= STATE_HDLC_FRAME_DATA);
+	NET_ASSERT(new_state >= STATE_HDLC_FRAME_START && new_state <= STATE_HDLC_FRAME_DATA);
 
-	NET_DBG("[%p] state %s (%d) => %s (%d)",
-		ctx, ppp_driver_state_str(ctx->state), ctx->state,
+	NET_DBG("[%p] state %s (%d) => %s (%d)", ctx, ppp_driver_state_str(ctx->state), ctx->state,
 		ppp_driver_state_str(new_state), new_state);
 
 	ctx->state = new_state;
@@ -398,8 +389,7 @@ static int ppp_send_flush(struct ppp_driver_context *ppp, int off)
 	}
 	uint8_t *buf = ppp->send_buf;
 
-	if (IS_ENABLED(CONFIG_NET_PPP_CAPTURE) &&
-	    net_capture_is_enabled(NULL) && ppp_capture_ctx) {
+	if (IS_ENABLED(CONFIG_NET_PPP_CAPTURE) && net_capture_is_enabled(NULL) && ppp_capture_ctx) {
 		size_t len = off;
 		uint8_t *start = &buf[0];
 
@@ -414,17 +404,15 @@ static int ppp_send_flush(struct ppp_driver_context *ppp, int off)
 			len--;
 		}
 
-		net_capture_data(&ppp_capture_ctx->cooked,
-				 start, len,
-				 NET_CAPTURE_OUTGOING,
+		net_capture_data(&ppp_capture_ctx->cooked, start, len, NET_CAPTURE_OUTGOING,
 				 NET_ETH_PTYPE_HDLC);
 	}
 
 #if defined(CONFIG_NET_PPP_ASYNC_UART)
 	int ret;
 	const int32_t timeout = CONFIG_NET_PPP_ASYNC_UART_TX_TIMEOUT
-				? CONFIG_NET_PPP_ASYNC_UART_TX_TIMEOUT * USEC_PER_MSEC
-				: SYS_FOREVER_US;
+					? CONFIG_NET_PPP_ASYNC_UART_TX_TIMEOUT * USEC_PER_MSEC
+					: SYS_FOREVER_US;
 
 	k_sem_take(&uarte_tx_finished, K_FOREVER);
 
@@ -442,8 +430,7 @@ static int ppp_send_flush(struct ppp_driver_context *ppp, int off)
 	return 0;
 }
 
-static int ppp_send_bytes(struct ppp_driver_context *ppp,
-			  const uint8_t *data, int len, int off)
+static int ppp_send_bytes(struct ppp_driver_context *ppp, const uint8_t *data, int len, int off)
 {
 	int i;
 
@@ -460,7 +447,7 @@ static int ppp_send_bytes(struct ppp_driver_context *ppp,
 
 #if defined(CONFIG_PPP_CLIENT_CLIENTSERVER)
 
-#define CLIENT "CLIENT"
+#define CLIENT       "CLIENT"
 #define CLIENTSERVER "CLIENTSERVER"
 
 static void ppp_handle_client(struct ppp_driver_context *ppp, uint8_t byte)
@@ -483,12 +470,10 @@ static void ppp_handle_client(struct ppp_driver_context *ppp, uint8_t byte)
 	++ppp->client_index;
 	if (ppp->client_index >= (sizeof(CLIENT) - 1)) {
 		LOG_DBG("Received complete CLIENT string");
-		offset = ppp_send_bytes(ppp, clientserver,
-					sizeof(CLIENTSERVER) - 1, 0);
+		offset = ppp_send_bytes(ppp, clientserver, sizeof(CLIENTSERVER) - 1, 0);
 		(void)ppp_send_flush(ppp, offset);
 		ppp->client_index = 0;
 	}
-
 }
 #endif
 
@@ -519,8 +504,7 @@ static int ppp_input_byte(struct ppp_driver_context *ppp, uint8_t byte)
 				return -EAGAIN;
 			}
 
-			LOG_DBG("Invalid (0x%02x) byte, expecting Address",
-				byte);
+			LOG_DBG("Invalid (0x%02x) byte, expecting Address", byte);
 
 			/* If address is != 0xff, then ignore this
 			 * frame. RFC 1662 ch 3.1
@@ -633,8 +617,8 @@ static void ppp_process_msg(struct ppp_driver_context *ppp)
 		 * invalid frames, the if-block would need to be moved before
 		 * fcs check above.
 		 */
-		if (IS_ENABLED(CONFIG_NET_PPP_CAPTURE) &&
-		    net_capture_is_enabled(NULL) && ppp_capture_ctx) {
+		if (IS_ENABLED(CONFIG_NET_PPP_CAPTURE) && net_capture_is_enabled(NULL) &&
+		    ppp_capture_ctx) {
 			size_t copied;
 
 			/* Linearize the packet data. We cannot use the
@@ -644,15 +628,10 @@ static void ppp_process_msg(struct ppp_driver_context *ppp)
 			 */
 			copied = net_buf_linearize(ppp_capture_ctx->capture_buf,
 						   sizeof(ppp_capture_ctx->capture_buf),
-						   ppp->pkt->buffer,
-						   0U,
-						   net_pkt_get_len(ppp->pkt));
+						   ppp->pkt->buffer, 0U, net_pkt_get_len(ppp->pkt));
 
-			net_capture_data(&ppp_capture_ctx->cooked,
-					 ppp_capture_ctx->capture_buf,
-					 copied,
-					 NET_CAPTURE_HOST,
-					 NET_ETH_PTYPE_HDLC);
+			net_capture_data(&ppp_capture_ctx->cooked, ppp_capture_ctx->capture_buf,
+					 copied, NET_CAPTURE_HOST, NET_ETH_PTYPE_HDLC);
 		}
 
 		/* Remove the Address (0xff), Control (0x03) and
@@ -692,8 +671,7 @@ static void ppp_process_msg(struct ppp_driver_context *ppp)
 #if defined(CONFIG_NET_TEST)
 static uint8_t *ppp_recv_cb(uint8_t *buf, size_t *off)
 {
-	struct ppp_driver_context *ppp =
-		CONTAINER_OF(buf, struct ppp_driver_context, buf[0]);
+	struct ppp_driver_context *ppp = CONTAINER_OF(buf, struct ppp_driver_context, buf[0]);
 	size_t i, len = *off;
 
 	for (i = 0; i < *off; i++) {
@@ -775,8 +753,7 @@ static bool calc_fcs(struct net_pkt *pkt, uint16_t *fcs, uint16_t protocol)
 	crc = crc16_ccitt(0xffff, (const uint8_t *)&c, sizeof(c));
 
 	if (protocol > 0) {
-		crc = crc16_ccitt(crc, (const uint8_t *)&protocol,
-				  sizeof(protocol));
+		crc = crc16_ccitt(crc, (const uint8_t *)&protocol, sizeof(protocol));
 	}
 
 	while (buf) {
@@ -831,7 +808,7 @@ static int ppp_send(const struct device *dev, struct net_pkt *pkt)
 			protocol = htons(PPP_IP);
 		} else if (net_pkt_family(pkt) == AF_INET6) {
 			protocol = htons(PPP_IPV6);
-		}  else {
+		} else {
 			return -EPROTONOSUPPORT;
 		}
 	}
@@ -841,21 +818,18 @@ static int ppp_send(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	/* Sync, Address & Control fields */
-	sync_addr_ctrl = sys_cpu_to_be32(0x7e << 24 | 0xff << 16 |
-					 0x7d << 8 | 0x23);
-	send_off = ppp_send_bytes(ppp, (const uint8_t *)&sync_addr_ctrl,
-				  sizeof(sync_addr_ctrl), send_off);
+	sync_addr_ctrl = sys_cpu_to_be32(0x7e << 24 | 0xff << 16 | 0x7d << 8 | 0x23);
+	send_off = ppp_send_bytes(ppp, (const uint8_t *)&sync_addr_ctrl, sizeof(sync_addr_ctrl),
+				  send_off);
 
 	if (protocol > 0) {
 		escaped = htons(ppp_escape_byte(protocol, &offset));
-		send_off = ppp_send_bytes(ppp, (uint8_t *)&escaped + offset,
-					  offset ? 1 : 2,
-					  send_off);
+		send_off =
+			ppp_send_bytes(ppp, (uint8_t *)&escaped + offset, offset ? 1 : 2, send_off);
 
 		escaped = htons(ppp_escape_byte(protocol >> 8, &offset));
-		send_off = ppp_send_bytes(ppp, (uint8_t *)&escaped + offset,
-					  offset ? 1 : 2,
-					  send_off);
+		send_off =
+			ppp_send_bytes(ppp, (uint8_t *)&escaped + offset, offset ? 1 : 2, send_off);
 	}
 
 	/* Note that we do not print the first four bytes and FCS bytes at the
@@ -870,9 +844,7 @@ static int ppp_send(const struct device *dev, struct net_pkt *pkt)
 		for (i = 0; i < buf->len; i++) {
 			/* Escape illegal bytes */
 			escaped = htons(ppp_escape_byte(buf->data[i], &offset));
-			send_off = ppp_send_bytes(ppp,
-						  (uint8_t *)&escaped + offset,
-						  offset ? 1 : 2,
+			send_off = ppp_send_bytes(ppp, (uint8_t *)&escaped + offset, offset ? 1 : 2,
 						  send_off);
 		}
 
@@ -880,14 +852,10 @@ static int ppp_send(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	escaped = htons(ppp_escape_byte(fcs, &offset));
-	send_off = ppp_send_bytes(ppp, (uint8_t *)&escaped + offset,
-				  offset ? 1 : 2,
-				  send_off);
+	send_off = ppp_send_bytes(ppp, (uint8_t *)&escaped + offset, offset ? 1 : 2, send_off);
 
 	escaped = htons(ppp_escape_byte(fcs >> 8, &offset));
-	send_off = ppp_send_bytes(ppp, (uint8_t *)&escaped + offset,
-				  offset ? 1 : 2,
-				  send_off);
+	send_off = ppp_send_bytes(ppp, (uint8_t *)&escaped + offset, offset ? 1 : 2, send_off);
 
 	byte = 0x7e;
 	send_off = ppp_send_bytes(ppp, &byte, 1, send_off);
@@ -904,8 +872,7 @@ static int ppp_consume_ringbuf(struct ppp_driver_context *ppp)
 	size_t len, tmp;
 	int ret;
 
-	len = ring_buf_get_claim(&ppp->rx_ringbuf, &data,
-				 CONFIG_NET_PPP_RINGBUF_SIZE);
+	len = ring_buf_get_claim(&ppp->rx_ringbuf, &data, CONFIG_NET_PPP_RINGBUF_SIZE);
 	if (len == 0) {
 		LOG_DBG("Ringbuf %p is empty!", &ppp->rx_ringbuf);
 		return 0;
@@ -937,8 +904,7 @@ static int ppp_consume_ringbuf(struct ppp_driver_context *ppp)
 
 static void ppp_isr_cb_work(struct k_work *work)
 {
-	struct ppp_driver_context *ppp =
-		CONTAINER_OF(work, struct ppp_driver_context, cb_work);
+	struct ppp_driver_context *ppp = CONTAINER_OF(work, struct ppp_driver_context, cb_work);
 	int ret = -EAGAIN;
 
 	while (ret == -EAGAIN) {
@@ -957,8 +923,7 @@ static int ppp_driver_init(const struct device *dev)
 	ring_buf_init(&ppp->rx_ringbuf, sizeof(ppp->rx_buf), ppp->rx_buf);
 	k_work_init(&ppp->cb_work, ppp_isr_cb_work);
 
-	k_work_queue_start(&ppp->cb_workq, ppp_workq,
-			   K_KERNEL_STACK_SIZEOF(ppp_workq),
+	k_work_queue_start(&ppp->cb_workq, ppp_workq, K_KERNEL_STACK_SIZEOF(ppp_workq),
 			   K_PRIO_COOP(PPP_WORKQ_PRIORITY), NULL);
 	k_thread_name_set(&ppp->cb_workq.thread, "ppp_workq");
 #if defined(CONFIG_NET_PPP_ASYNC_UART)
@@ -1004,8 +969,8 @@ static void ppp_iface_init(struct net_if *iface)
 	ll_addr = ppp_get_mac(ppp);
 
 	if (CONFIG_PPP_MAC_ADDR[0] != 0) {
-		if (net_bytes_from_str(ppp->mac_addr, sizeof(ppp->mac_addr),
-				       CONFIG_PPP_MAC_ADDR) < 0) {
+		if (net_bytes_from_str(ppp->mac_addr, sizeof(ppp->mac_addr), CONFIG_PPP_MAC_ADDR) <
+		    0) {
 			goto use_random_mac;
 		}
 	} else {
@@ -1019,8 +984,7 @@ use_random_mac:
 		ppp->mac_addr[5] = sys_rand8_get();
 	}
 
-	net_if_set_link_addr(iface, ll_addr->addr, ll_addr->len,
-			     NET_LINK_ETHERNET);
+	net_if_set_link_addr(iface, ll_addr->addr, ll_addr->len, NET_LINK_ETHERNET);
 
 	if (IS_ENABLED(CONFIG_NET_PPP_CAPTURE)) {
 		static bool capture_setup_done;
@@ -1028,10 +992,8 @@ use_random_mac:
 		if (!capture_setup_done) {
 			int ret;
 
-			ret = net_capture_cooked_setup(&ppp_capture_ctx->cooked,
-						       ARPHRD_PPP,
-						       sizeof(ppp->mac_addr),
-						       ppp->mac_addr);
+			ret = net_capture_cooked_setup(&ppp_capture_ctx->cooked, ARPHRD_PPP,
+						       sizeof(ppp->mac_addr), ppp->mac_addr);
 			if (ret < 0) {
 				LOG_DBG("Cannot setup capture (%d)", ret);
 			} else {
@@ -1117,8 +1079,7 @@ static int ppp_start(const struct device *dev)
 		uart_irq_rx_disable(context->dev);
 		uart_irq_tx_disable(context->dev);
 		ppp_uart_flush(context->dev);
-		uart_irq_callback_user_data_set(context->dev, ppp_uart_isr,
-						context);
+		uart_irq_callback_user_data_set(context->dev, ppp_uart_isr, context);
 		uart_irq_rx_enable(context->dev);
 #endif
 	}
@@ -1151,7 +1112,6 @@ static const struct ppp_api ppp_if_api = {
 #endif
 };
 
-NET_DEVICE_INIT(ppp, CONFIG_NET_PPP_DRV_NAME, ppp_driver_init,
-		NULL, &ppp_driver_context_data, NULL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &ppp_if_api,
-		PPP_L2, NET_L2_GET_CTX_TYPE(PPP_L2), PPP_MTU);
+NET_DEVICE_INIT(ppp, CONFIG_NET_PPP_DRV_NAME, ppp_driver_init, NULL, &ppp_driver_context_data, NULL,
+		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &ppp_if_api, PPP_L2,
+		NET_L2_GET_CTX_TYPE(PPP_L2), PPP_MTU);

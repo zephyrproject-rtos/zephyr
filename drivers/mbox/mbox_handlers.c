@@ -7,8 +7,7 @@
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/drivers/mbox.h>
 
-static inline int z_vrfy_mbox_send(const struct device *dev,
-				   mbox_channel_id_t channel_id,
+static inline int z_vrfy_mbox_send(const struct device *dev, mbox_channel_id_t channel_id,
 				   const struct mbox_msg *msg)
 {
 	K_OOPS(K_SYSCALL_DRIVER_MBOX(dev, send));
@@ -35,8 +34,7 @@ static inline uint32_t z_vrfy_mbox_max_channels_get(const struct device *dev)
 }
 #include <zephyr/syscalls/mbox_max_channels_get_mrsh.c>
 
-static inline int z_vrfy_mbox_set_enabled(const struct device *dev,
-					  mbox_channel_id_t channel_id,
+static inline int z_vrfy_mbox_set_enabled(const struct device *dev, mbox_channel_id_t channel_id,
 					  bool enabled)
 {
 	K_OOPS(K_SYSCALL_DRIVER_MBOX(dev, set_enabled));

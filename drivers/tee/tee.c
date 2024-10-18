@@ -6,8 +6,8 @@
 
 #include <zephyr/drivers/tee.h>
 
-int tee_add_shm(const struct device *dev, void *addr, size_t align, size_t size,
-		uint32_t flags, struct tee_shm **shmp)
+int tee_add_shm(const struct device *dev, void *addr, size_t align, size_t size, uint32_t flags,
+		struct tee_shm **shmp)
 {
 	int rc;
 	void *p = addr;

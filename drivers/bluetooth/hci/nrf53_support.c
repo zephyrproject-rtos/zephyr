@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(bt_hci_nrf53_support);
 int bt_hci_transport_teardown(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-    /* Put the Network MCU in Forced-OFF mode. */
+	/* Put the Network MCU in Forced-OFF mode. */
 	nrf53_cpunet_enable(false);
 	LOG_DBG("Network MCU placed in Forced-OFF mode");
 

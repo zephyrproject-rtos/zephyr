@@ -73,8 +73,7 @@ static void vl53l1x_worker(struct k_work *work)
 	vl53l1x_read_sensor(drv_data);
 }
 
-static void vl53l1x_gpio_callback(const struct device *dev,
-		struct gpio_callback *cb, uint32_t pins)
+static void vl53l1x_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
 	struct vl53l1x_data *drv_data = CONTAINER_OF(cb, struct vl53l1x_data, gpio_cb);
 
@@ -100,9 +99,7 @@ static int vl53l1x_init_interrupt(const struct device *dev)
 		return -EIO;
 	}
 
-	gpio_init_callback(&drv_data->gpio_cb,
-					vl53l1x_gpio_callback,
-					BIT(config->gpio1.pin));
+	gpio_init_callback(&drv_data->gpio_cb, vl53l1x_gpio_callback, BIT(config->gpio1.pin));
 
 	ret = gpio_add_callback(config->gpio1.port, &drv_data->gpio_cb);
 	if (ret < 0) {
@@ -192,8 +189,7 @@ static int vl53l1x_initialize(const struct device *dev)
  * medium   | 290           | 76
  * long     | 360           | 73
  */
-static int vl53l1x_set_mode(const struct device *dev,
-		const struct sensor_value *val)
+static int vl53l1x_set_mode(const struct device *dev, const struct sensor_value *val)
 {
 	struct vl53l1x_data *drv_data = dev->data;
 	VL53L1_Error ret;
@@ -228,16 +224,12 @@ static int vl53l1x_set_mode(const struct device *dev,
  * The default ROI is val1 = 240, val2 = 15 (the full grid).
  * See UM2356 User Manual (VL531X API doc).
  */
-static int vl53l1x_set_roi(const struct device *dev,
-		const struct sensor_value *val)
+static int vl53l1x_set_roi(const struct device *dev, const struct sensor_value *val)
 {
 	struct vl53l1x_data *drv_data = dev->data;
 	VL53L1_Error ret;
 
-	if ((val->val1 < 0) ||
-	    (val->val2 < 0) ||
-	    (val->val1 > 255) ||
-	    (val->val2 > 255) ||
+	if ((val->val1 < 0) || (val->val2 < 0) || (val->val1 > 255) || (val->val2 > 255) ||
 	    (val->val2 >= val->val1)) {
 		return -EINVAL;
 	}
@@ -259,8 +251,7 @@ static int vl53l1x_set_roi(const struct device *dev,
 	return 0;
 }
 
-static int vl53l1x_get_mode(const struct device *dev,
-		struct sensor_value *val)
+static int vl53l1x_get_mode(const struct device *dev, struct sensor_value *val)
 {
 	struct vl53l1x_data *drv_data = dev->data;
 	VL53L1_DistanceModes mode;
@@ -278,8 +269,7 @@ static int vl53l1x_get_mode(const struct device *dev,
 	return 0;
 }
 
-static int vl53l1x_get_roi(const struct device *dev,
-		struct sensor_value *val)
+static int vl53l1x_get_roi(const struct device *dev, struct sensor_value *val)
 {
 	struct vl53l1x_data *drv_data = dev->data;
 	VL53L1_Error ret;
@@ -297,14 +287,12 @@ static int vl53l1x_get_roi(const struct device *dev,
 	return 0;
 }
 
-static int vl53l1x_sample_fetch(const struct device *dev,
-		enum sensor_channel chan)
+static int vl53l1x_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct vl53l1x_data *drv_data = dev->data;
 	VL53L1_Error ret;
 
-	__ASSERT_NO_MSG((chan == SENSOR_CHAN_ALL)
-			|| (chan == SENSOR_CHAN_DISTANCE));
+	__ASSERT_NO_MSG((chan == SENSOR_CHAN_ALL) || (chan == SENSOR_CHAN_DISTANCE));
 
 	/* Will immediately stop current measurement */
 	ret = VL53L1_StopMeasurement(&drv_data->vl53l1x);
@@ -332,9 +320,8 @@ static int vl53l1x_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static int vl53l1x_channel_get(const struct device *dev,
-		enum sensor_channel chan,
-		struct sensor_value *val)
+static int vl53l1x_channel_get(const struct device *dev, enum sensor_channel chan,
+			       struct sensor_value *val)
 {
 	struct vl53l1x_data *drv_data = dev->data;
 	VL53L1_Error ret;
@@ -368,10 +355,8 @@ static int vl53l1x_channel_get(const struct device *dev,
 	return 0;
 }
 
-static int vl53l1x_attr_get(const struct device *dev,
-		enum sensor_channel chan,
-		enum sensor_attribute attr,
-		struct sensor_value *val)
+static int vl53l1x_attr_get(const struct device *dev, enum sensor_channel chan,
+			    enum sensor_attribute attr, struct sensor_value *val)
 {
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_DISTANCE);
 
@@ -388,10 +373,8 @@ static int vl53l1x_attr_get(const struct device *dev,
 	return ret;
 }
 
-static int vl53l1x_attr_set(const struct device *dev,
-		enum sensor_channel chan,
-		enum sensor_attribute attr,
-		const struct sensor_value *val)
+static int vl53l1x_attr_set(const struct device *dev, enum sensor_channel chan,
+			    enum sensor_attribute attr, const struct sensor_value *val)
 {
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_DISTANCE);
 
@@ -433,23 +416,23 @@ static int vl53l1x_init(const struct device *dev)
 	 * allow deepest sleep mode
 	 */
 #ifdef CONFIG_VL53L1X_XSHUT
-		if (config->xshut.port) {
-			ret = gpio_pin_configure_dt(&config->xshut, GPIO_OUTPUT);
-			if (ret < 0) {
-				LOG_ERR("[%s] Unable to configure GPIO as output", dev->name);
-				return -EIO;
-			}
+	if (config->xshut.port) {
+		ret = gpio_pin_configure_dt(&config->xshut, GPIO_OUTPUT);
+		if (ret < 0) {
+			LOG_ERR("[%s] Unable to configure GPIO as output", dev->name);
+			return -EIO;
 		}
+	}
 #endif
 
 #ifdef CONFIG_VL53L1X_INTERRUPT_MODE
-		if (config->gpio1.port) {
-			ret = vl53l1x_init_interrupt(dev);
-			if (ret < 0) {
-				LOG_ERR("Failed to initialize interrupt!");
-				return -EIO;
-			}
+	if (config->gpio1.port) {
+		ret = vl53l1x_init_interrupt(dev);
+		if (ret < 0) {
+			LOG_ERR("Failed to initialize interrupt!");
+			return -EIO;
 		}
+	}
 #endif
 
 	ret = vl53l1x_initialize(dev);
@@ -461,24 +444,18 @@ static int vl53l1x_init(const struct device *dev)
 	return 0;
 }
 
-#define VL53L1X_INIT(i) \
-	static const struct vl53l1x_config vl53l1x_config_##i = { \
-		.i2c = I2C_DT_SPEC_INST_GET(i), \
+#define VL53L1X_INIT(i)                                                                            \
+	static const struct vl53l1x_config vl53l1x_config_##i = {                                  \
+		.i2c = I2C_DT_SPEC_INST_GET(i),                                                    \
 		IF_ENABLED(CONFIG_VL53L1X_XSHUT, ( \
-		.xshut = GPIO_DT_SPEC_INST_GET_OR(i, xshut_gpios, { 0 }),)) \
-		IF_ENABLED(CONFIG_VL53L1X_INTERRUPT_MODE, ( \
-		.gpio1 = GPIO_DT_SPEC_INST_GET_OR(i, int_gpios, { 0 }),)) \
-	}; \
-	\
-	static struct vl53l1x_data vl53l1x_data_##i; \
-	\
-	SENSOR_DEVICE_DT_INST_DEFINE(i, \
-				     vl53l1x_init, \
-				     NULL, \
-				     &vl53l1x_data_##i, \
-				     &vl53l1x_config_##i, \
-				     POST_KERNEL, \
-				     CONFIG_SENSOR_INIT_PRIORITY, \
-				     &vl53l1x_api_funcs);
+		.xshut = GPIO_DT_SPEC_INST_GET_OR(i, xshut_gpios, { 0 }),))                                               \
+				    IF_ENABLED(CONFIG_VL53L1X_INTERRUPT_MODE, ( \
+		.gpio1 = GPIO_DT_SPEC_INST_GET_OR(i, int_gpios, { 0 }),)) };         \
+                                                                                                   \
+	static struct vl53l1x_data vl53l1x_data_##i;                                               \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(i, vl53l1x_init, NULL, &vl53l1x_data_##i,                     \
+				     &vl53l1x_config_##i, POST_KERNEL,                             \
+				     CONFIG_SENSOR_INIT_PRIORITY, &vl53l1x_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(VL53L1X_INIT)

@@ -16,24 +16,21 @@
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_COUNTER_LOG_LEVEL);
 
 /* Device holds a pointer to pointer to data */
-#define PIT_CHANNEL_DATA(dev)					\
-	(*(struct nxp_pit_channel_data *const *const)dev->data)
+#define PIT_CHANNEL_DATA(dev) (*(struct nxp_pit_channel_data *const *const)dev->data)
 
 /* Device config->data is an array of data pointers ordered by channel number,
  * dev->data is a pointer to one of these pointers in that array,
  * so the value of the dev->data - dev->config->data is the channel index
  */
-#define PIT_CHANNEL_ID(dev)					\
-	(((struct nxp_pit_channel_data *const *)dev->data) -	\
-	((const struct nxp_pit_config *)dev->config)->data)
-
+#define PIT_CHANNEL_ID(dev)                                                                        \
+	(((struct nxp_pit_channel_data *const *)dev->data) -                                       \
+	 ((const struct nxp_pit_config *)dev->config)->data)
 
 struct nxp_pit_channel_data {
 	uint32_t top;
 	counter_top_callback_t top_callback;
 	void *top_user_data;
 };
-
 
 struct nxp_pit_config {
 	struct counter_config_info info;
@@ -72,8 +69,7 @@ static int nxp_pit_start(const struct device *dev)
 	int channel_id = PIT_CHANNEL_ID(dev);
 
 	LOG_DBG("period is %d", nxp_pit_get_top_value(dev));
-	PIT_EnableInterrupts(config->base, channel_id,
-			     kPIT_TimerInterruptEnable);
+	PIT_EnableInterrupts(config->base, channel_id, kPIT_TimerInterruptEnable);
 	PIT_StartTimer(config->base, channel_id);
 	return 0;
 }
@@ -83,8 +79,7 @@ static int nxp_pit_stop(const struct device *dev)
 	const struct nxp_pit_config *config = dev->config;
 	int channel_id = PIT_CHANNEL_ID(dev);
 
-	PIT_DisableInterrupts(config->base, channel_id,
-			      kPIT_TimerInterruptEnable);
+	PIT_DisableInterrupts(config->base, channel_id, kPIT_TimerInterruptEnable);
 	PIT_StopTimer(config->base, channel_id);
 
 	return 0;
@@ -100,8 +95,7 @@ static int nxp_pit_get_value(const struct device *dev, uint32_t *ticks)
 	return 0;
 }
 
-static int nxp_pit_set_top_value(const struct device *dev,
-				  const struct counter_top_cfg *cfg)
+static int nxp_pit_set_top_value(const struct device *dev, const struct counter_top_cfg *cfg)
 {
 	const struct nxp_pit_config *config = dev->config;
 	struct nxp_pit_channel_data *data = PIT_CHANNEL_DATA(dev);
@@ -162,9 +156,7 @@ static void nxp_pit_isr(const struct device *dev)
 
 	LOG_DBG("pit counter isr");
 
-	for (int channel_index = 0;
-			channel_index < config->num_channels;
-			channel_index++) {
+	for (int channel_index = 0; channel_index < config->num_channels; channel_index++) {
 		flags = PIT_GetStatusFlags(config->base, channel_index);
 		if (flags) {
 			struct nxp_pit_channel_data *data =
@@ -214,20 +206,16 @@ static int nxp_pit_init(const struct device *dev)
 
 #if DT_NODE_HAS_PROP(DT_COMPAT_GET_ANY_STATUS_OKAY(nxp_pit), interrupts)
 	config->irq_config_func(dev);
-	for (int channel_index = 0;
-		channel_index < config->num_channels;
-		channel_index++) {
+	for (int channel_index = 0; channel_index < config->num_channels; channel_index++) {
 		PIT_SetTimerPeriod(config->base, channel_index,
-			USEC_TO_COUNT(config->info.max_top_value, clock_rate));
+				   USEC_TO_COUNT(config->info.max_top_value, clock_rate));
 	}
 #else
-	for (int channel_index = 0;
-		channel_index < config->num_channels;
-		channel_index++) {
+	for (int channel_index = 0; channel_index < config->num_channels; channel_index++) {
 		if (config->irq_config_func[channel_index]) {
 			config->irq_config_func[channel_index](dev);
 			PIT_SetTimerPeriod(config->base, channel_index,
-				USEC_TO_COUNT(config->info.max_top_value, clock_rate));
+					   USEC_TO_COUNT(config->info.max_top_value, clock_rate));
 		}
 	}
 #endif /* DT_NODE_HAS_PROP(DT_COMPAT_GET_ANY_STATUS_OKAY(nxp_pit), interrupts) */
@@ -244,131 +232,102 @@ static const struct counter_driver_api nxp_pit_driver_api = {
 	.get_freq = nxp_pit_get_frequency,
 };
 
-
 /* Creates a device for a channel (needed for counter API) */
-#define NXP_PIT_CHANNEL_DEV_INIT(node, pit_inst)						\
-	DEVICE_DT_DEFINE(node, NULL, NULL,							\
-		(void *)									\
-		&nxp_pit_##pit_inst##_channel_datas[DT_REG_ADDR(node)],				\
-		&nxp_pit_##pit_inst##_config,							\
-		POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,					\
-		&nxp_pit_driver_api);
+#define NXP_PIT_CHANNEL_DEV_INIT(node, pit_inst)                                                   \
+	DEVICE_DT_DEFINE(node, NULL, NULL,                                                         \
+			 (void *)&nxp_pit_##pit_inst##_channel_datas[DT_REG_ADDR(node)],           \
+			 &nxp_pit_##pit_inst##_config, POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,  \
+			 &nxp_pit_driver_api);
 
 /* Creates a decleration for each pit channel */
-#define NXP_PIT_CHANNEL_DECLARATIONS(node)  static struct nxp_pit_channel_data			\
-	nxp_pit_channel_data_##node;
+#define NXP_PIT_CHANNEL_DECLARATIONS(node)                                                         \
+	static struct nxp_pit_channel_data nxp_pit_channel_data_##node;
 
 /* Initializes an element of the channel data pointer array */
-#define NXP_PIT_INSERT_CHANNEL_INTO_ARRAY(node)							\
-	[DT_REG_ADDR(node)] =									\
-		&nxp_pit_channel_data_##node,
+#define NXP_PIT_INSERT_CHANNEL_INTO_ARRAY(node) [DT_REG_ADDR(node)] = &nxp_pit_channel_data_##node,
 
-#define NXP_PIT_INSERT_CHANNEL_DEVICE_INTO_ARRAY(node)						\
-	[DT_REG_ADDR(node)] = DEVICE_DT_GET(node),
-
+#define NXP_PIT_INSERT_CHANNEL_DEVICE_INTO_ARRAY(node) [DT_REG_ADDR(node)] = DEVICE_DT_GET(node),
 
 #if DT_NODE_HAS_PROP(DT_COMPAT_GET_ANY_STATUS_OKAY(nxp_pit), interrupts)
-#define NXP_PIT_IRQ_CONFIG_DECLARATIONS(n)							\
-	static void nxp_pit_irq_config_func_##n(const struct device *dev)			\
-	{											\
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 0, irq),					\
-			DT_INST_IRQ_BY_IDX(n, 0, priority),					\
-			nxp_pit_isr,								\
-			DEVICE_DT_INST_GET(n), 0);						\
-		irq_enable(DT_INST_IRQN(n));							\
+#define NXP_PIT_IRQ_CONFIG_DECLARATIONS(n)                                                         \
+	static void nxp_pit_irq_config_func_##n(const struct device *dev)                          \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 0, irq), DT_INST_IRQ_BY_IDX(n, 0, priority),     \
+			    nxp_pit_isr, DEVICE_DT_INST_GET(n), 0);                                \
+		irq_enable(DT_INST_IRQN(n));                                                       \
 	};
 
 #define NXP_PIT_SETUP_IRQ_CONFIG(n) NXP_PIT_IRQ_CONFIG_DECLARATIONS(n);
 #define NXP_PIT_SETUP_IRQ_ARRAY(ignored)
 
 #else
-#define NXP_PIT_IRQ_CONFIG_DECLARATIONS(n)							\
-	static void nxp_pit_irq_config_func_##n(const struct device *dev)			\
-	{											\
-		IRQ_CONNECT(DT_IRQN(n),								\
-			DT_IRQ(n, priority),							\
-			nxp_pit_isr,								\
-			DEVICE_DT_GET(n), 0);							\
-		irq_enable(DT_IRQN(n));								\
+#define NXP_PIT_IRQ_CONFIG_DECLARATIONS(n)                                                         \
+	static void nxp_pit_irq_config_func_##n(const struct device *dev)                          \
+	{                                                                                          \
+		IRQ_CONNECT(DT_IRQN(n), DT_IRQ(n, priority), nxp_pit_isr, DEVICE_DT_GET(n), 0);    \
+		irq_enable(DT_IRQN(n));                                                            \
 	};
 
-#define NXP_PIT_SETUP_IRQ_CONFIG(n)								\
+#define NXP_PIT_SETUP_IRQ_CONFIG(n)                                                                \
 	DT_INST_FOREACH_CHILD_STATUS_OKAY(n, NXP_PIT_IRQ_CONFIG_DECLARATIONS);
 
-#define NXP_PIT_INSERT_IRQ_CONFIG_INTO_ARRAY(n)							\
-	[DT_REG_ADDR(n)] = &nxp_pit_irq_config_func_##n,
+#define NXP_PIT_INSERT_IRQ_CONFIG_INTO_ARRAY(n) [DT_REG_ADDR(n)] = &nxp_pit_irq_config_func_##n,
 
-#define NXP_PIT_SETUP_IRQ_ARRAY(n)								\
-	/* Create Array of IRQs -> 1 irq func per channel */					\
-	void (*nxp_pit_irq_config_array[DT_INST_FOREACH_CHILD_SEP_VARGS(n,			\
-					DT_NODE_HAS_COMPAT, (+), nxp_pit_channel)])		\
-				(const struct device *dev) = {					\
-					DT_INST_FOREACH_CHILD_STATUS_OKAY(n,			\
-					NXP_PIT_INSERT_IRQ_CONFIG_INTO_ARRAY)			\
-	};
+#define NXP_PIT_SETUP_IRQ_ARRAY(n)                                                                 \
+	/* Create Array of IRQs -> 1 irq func per channel */                                       \
+	void (*nxp_pit_irq_config_array[DT_INST_FOREACH_CHILD_SEP_VARGS(                           \
+		n, DT_NODE_HAS_COMPAT, (+), nxp_pit_channel)])(const struct device *dev) = {       \
+		DT_INST_FOREACH_CHILD_STATUS_OKAY(n, NXP_PIT_INSERT_IRQ_CONFIG_INTO_ARRAY)};
 #endif
 
-#define COUNTER_NXP_PIT_DEVICE_INIT(n)								\
-												\
-	/* Setup the IRQ either for parent irq or per channel irq */				\
-	NXP_PIT_SETUP_IRQ_CONFIG(n)								\
-												\
-	/* Create channel declarations */							\
-	DT_INST_FOREACH_CHILD_STATUS_OKAY(n,							\
-		NXP_PIT_CHANNEL_DECLARATIONS)							\
-												\
-	/* Array of channel devices */								\
-	static struct nxp_pit_channel_data *const						\
-		nxp_pit_##n##_channel_datas							\
-			[DT_INST_FOREACH_CHILD_SEP_VARGS(					\
-				n, DT_NODE_HAS_COMPAT, (+), nxp_pit_channel)] = {		\
-				DT_INST_FOREACH_CHILD_STATUS_OKAY(n,				\
-					NXP_PIT_INSERT_CHANNEL_INTO_ARRAY)			\
-	};											\
-												\
-	/* forward declaration */								\
-	static const struct nxp_pit_config nxp_pit_##n##_config;				\
-												\
-	/* Create all the channel/counter devices */						\
-	DT_INST_FOREACH_CHILD_STATUS_OKAY_VARGS(n,						\
-		NXP_PIT_CHANNEL_DEV_INIT, n)							\
-												\
-	/* This channel device array is needed by the module device ISR */			\
-	const struct device *const nxp_pit_##n##_channels					\
-				[DT_INST_FOREACH_CHILD_SEP_VARGS(				\
-					n, DT_NODE_HAS_COMPAT, (+), nxp_pit_channel)] = {	\
-				DT_INST_FOREACH_CHILD_STATUS_OKAY(n,				\
-				NXP_PIT_INSERT_CHANNEL_DEVICE_INTO_ARRAY)			\
-	};											\
-												\
-												\
-	NXP_PIT_SETUP_IRQ_ARRAY(n)								\
-												\
-	/* This config struct is shared by all the channels and parent device */		\
-	static const struct nxp_pit_config nxp_pit_##n##_config = {				\
-		.info = {									\
-			.max_top_value =							\
-				DT_INST_PROP(n, max_load_value),				\
-			.channels = 0,								\
-		},										\
-		.base = (PIT_Type *)DT_INST_REG_ADDR(n),					\
+#define COUNTER_NXP_PIT_DEVICE_INIT(n)                                                             \
+                                                                                                   \
+	/* Setup the IRQ either for parent irq or per channel irq */                               \
+	NXP_PIT_SETUP_IRQ_CONFIG(n)                                                                \
+                                                                                                   \
+	/* Create channel declarations */                                                          \
+	DT_INST_FOREACH_CHILD_STATUS_OKAY(n, NXP_PIT_CHANNEL_DECLARATIONS)                         \
+                                                                                                   \
+	/* Array of channel devices */                                                             \
+	static struct nxp_pit_channel_data                                                         \
+		*const nxp_pit_##n##_channel_datas[DT_INST_FOREACH_CHILD_SEP_VARGS(                \
+			n, DT_NODE_HAS_COMPAT, (+), nxp_pit_channel)] = {                          \
+			DT_INST_FOREACH_CHILD_STATUS_OKAY(n, NXP_PIT_INSERT_CHANNEL_INTO_ARRAY)};  \
+                                                                                                   \
+	/* forward declaration */                                                                  \
+	static const struct nxp_pit_config nxp_pit_##n##_config;                                   \
+                                                                                                   \
+	/* Create all the channel/counter devices */                                               \
+	DT_INST_FOREACH_CHILD_STATUS_OKAY_VARGS(n, NXP_PIT_CHANNEL_DEV_INIT, n)                    \
+                                                                                                   \
+	/* This channel device array is needed by the module device ISR */                         \
+	const struct device *const nxp_pit_##n##_channels[DT_INST_FOREACH_CHILD_SEP_VARGS(         \
+		n, DT_NODE_HAS_COMPAT, (+), nxp_pit_channel)] = {                                  \
+		DT_INST_FOREACH_CHILD_STATUS_OKAY(n, NXP_PIT_INSERT_CHANNEL_DEVICE_INTO_ARRAY)};   \
+                                                                                                   \
+	NXP_PIT_SETUP_IRQ_ARRAY(n)                                                                 \
+                                                                                                   \
+	/* This config struct is shared by all the channels and parent device */                   \
+	static const struct nxp_pit_config nxp_pit_##n##_config = {                                \
+		.info =                                                                            \
+			{                                                                          \
+				.max_top_value = DT_INST_PROP(n, max_load_value),                  \
+				.channels = 0,                                                     \
+			},                                                                         \
+		.base = (PIT_Type *)DT_INST_REG_ADDR(n),                                           \
 		.irq_config_func = COND_CODE_1(DT_NODE_HAS_PROP(				\
 					DT_COMPAT_GET_ANY_STATUS_OKAY(nxp_pit), interrupts),	\
 					(nxp_pit_irq_config_func_##n),				\
-					(&nxp_pit_irq_config_array[0])),			\
-		.num_channels = DT_INST_FOREACH_CHILD_SEP_VARGS(				\
-			n, DT_NODE_HAS_COMPAT, (+), nxp_pit_channel),				\
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),				\
-		.clock_subsys = (clock_control_subsys_t)					\
-				DT_INST_CLOCKS_CELL(n, name),					\
-		.data = nxp_pit_##n##_channel_datas,						\
-		.channels = nxp_pit_##n##_channels,						\
-	};											\
-												\
-	/* Init parent device in order to handle ISR and init. */				\
-	DEVICE_DT_INST_DEFINE(n, &nxp_pit_init, NULL,						\
-			NULL, &nxp_pit_##n##_config, POST_KERNEL,				\
-			CONFIG_COUNTER_INIT_PRIORITY, NULL);
-
+					(&nxp_pit_irq_config_array[0])),                                          \
+			  .num_channels = DT_INST_FOREACH_CHILD_SEP_VARGS(n, DT_NODE_HAS_COMPAT,   \
+									  (+), nxp_pit_channel),   \
+			  .clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                      \
+			  .clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),    \
+			  .data = nxp_pit_##n##_channel_datas, .channels = nxp_pit_##n##_channels, \
+	};                                                                                         \
+                                                                                                   \
+	/* Init parent device in order to handle ISR and init. */                                  \
+	DEVICE_DT_INST_DEFINE(n, &nxp_pit_init, NULL, NULL, &nxp_pit_##n##_config, POST_KERNEL,    \
+			      CONFIG_COUNTER_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_NXP_PIT_DEVICE_INIT)

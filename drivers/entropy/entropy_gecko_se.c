@@ -6,16 +6,13 @@
 
 #define DT_DRV_COMPAT silabs_gecko_semailbox
 
- #include <zephyr/drivers/entropy.h>
- #include <soc.h>
- #include "em_cmu.h"
- #include "sl_se_manager.h"
- #include "sl_se_manager_entropy.h"
+#include <zephyr/drivers/entropy.h>
+#include <soc.h>
+#include "em_cmu.h"
+#include "sl_se_manager.h"
+#include "sl_se_manager_entropy.h"
 
-
-static int entropy_gecko_se_get_entropy(const struct device *dev,
-					uint8_t *buffer,
-					uint16_t length)
+static int entropy_gecko_se_get_entropy(const struct device *dev, uint8_t *buffer, uint16_t length)
 {
 	ARG_UNUSED(dev);
 
@@ -53,11 +50,8 @@ static const struct entropy_driver_api entropy_gecko_se_api_funcs = {
 	.get_entropy = entropy_gecko_se_get_entropy,
 };
 
-#define GECKO_SE_INIT(n) \
-	DEVICE_DT_INST_DEFINE(n, \
-			      entropy_gecko_se_init, NULL, \
-			      NULL, NULL, \
-			      PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY, \
-			      &entropy_gecko_se_api_funcs); \
+#define GECKO_SE_INIT(n)                                                                           \
+	DEVICE_DT_INST_DEFINE(n, entropy_gecko_se_init, NULL, NULL, NULL, PRE_KERNEL_1,            \
+			      CONFIG_ENTROPY_INIT_PRIORITY, &entropy_gecko_se_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(GECKO_SE_INIT)

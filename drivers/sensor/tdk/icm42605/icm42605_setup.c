@@ -54,8 +54,7 @@ int icm42605_set_odr(const struct device *dev, uint16_t a_rate, uint16_t g_rate)
 	uint8_t databuf;
 	int result;
 
-	if (a_rate > 8000 || g_rate > 8000 ||
-	    a_rate < 1 || g_rate < 12) {
+	if (a_rate > 8000 || g_rate > 8000 || a_rate < 1 || g_rate < 12) {
 		LOG_ERR("Not supported frequency");
 		return -ENOTSUP;
 	}
@@ -186,9 +185,7 @@ int icm42605_sensor_init(const struct device *dev)
 		return result;
 	}
 
-	v = BIT_EN_DREG_FIFO_D2A |
-	    BIT_TMST_TO_REGS_EN |
-	    BIT_TMST_EN;
+	v = BIT_EN_DREG_FIFO_D2A | BIT_TMST_TO_REGS_EN | BIT_TMST_EN;
 
 	result = inv_spi_single_write(&cfg->spi, REG_TMST_CONFIG, &v);
 
@@ -392,7 +389,6 @@ int icm42605_turn_on_sensor(const struct device *dev)
 	const struct icm42605_config *cfg = dev->config;
 	uint8_t v = 0;
 	int result = 0;
-
 
 	if (drv_data->sensor_started) {
 		LOG_ERR("Sensor already started");

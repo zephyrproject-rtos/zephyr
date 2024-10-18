@@ -7,15 +7,7 @@
 #include "gnss_u_blox_protocol.h"
 
 const uint32_t ubx_baudrate[UBX_BAUDRATE_COUNT] = {
-	4800,
-	9600,
-	19200,
-	38400,
-	57600,
-	115200,
-	230400,
-	460800,
-	921600,
+	4800, 9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600,
 };
 
 static inline int ubx_validate_payload_size_ack(uint8_t msg_id, uint16_t payload_size)
@@ -37,14 +29,19 @@ static inline int ubx_validate_payload_size_cfg(uint8_t msg_id, uint16_t payload
 		return payload_size == UBX_CFG_RATE_PAYLOAD_SZ ? 0 : -1;
 	case UBX_CFG_PRT:
 		return (payload_size == UBX_CFG_PRT_POLL_PAYLOAD_SZ ||
-		       payload_size == UBX_CFG_PRT_SET_PAYLOAD_SZ) ? 0 : -1;
+			payload_size == UBX_CFG_PRT_SET_PAYLOAD_SZ)
+			       ? 0
+			       : -1;
 	case UBX_CFG_RST:
 		return payload_size == UBX_CFG_RST_PAYLOAD_SZ ? 0 : -1;
 	case UBX_CFG_NAV5:
 		return payload_size == UBX_CFG_NAV5_PAYLOAD_SZ ? 0 : -1;
 	case UBX_CFG_GNSS:
 		return ((payload_size - UBX_CFG_GNSS_PAYLOAD_INIT_SZ) %
-		       UBX_CFG_GNSS_PAYLOAD_CFG_BLK_SZ == 0) ? 0 : -1;
+				UBX_CFG_GNSS_PAYLOAD_CFG_BLK_SZ ==
+			0)
+			       ? 0
+			       : -1;
 	case UBX_CFG_MSG:
 		return payload_size == UBX_CFG_MSG_PAYLOAD_SZ ? 0 : -1;
 	default:
@@ -109,8 +106,8 @@ void ubx_cfg_prt_set_payload_default(struct ubx_cfg_prt_set_payload *payload)
 	payload->port_mode = UBX_CFG_PRT_PORT_MODE_CHAR_LEN_8 | UBX_CFG_PRT_PORT_MODE_PARITY_NONE |
 			     UBX_CFG_PRT_PORT_MODE_STOP_BITS_1;
 	payload->baudrate = ubx_baudrate[3];
-	payload->in_proto_mask = UBX_CFG_PRT_IN_PROTO_UBX | UBX_CFG_PRT_IN_PROTO_NMEA |
-				 UBX_CFG_PRT_IN_PROTO_RTCM;
+	payload->in_proto_mask =
+		UBX_CFG_PRT_IN_PROTO_UBX | UBX_CFG_PRT_IN_PROTO_NMEA | UBX_CFG_PRT_IN_PROTO_RTCM;
 	payload->out_proto_mask = UBX_CFG_PRT_OUT_PROTO_UBX | UBX_CFG_PRT_OUT_PROTO_NMEA |
 				  UBX_CFG_PRT_OUT_PROTO_RTCM3;
 	payload->flags = UBX_CFG_PRT_FLAGS_DEFAULT;

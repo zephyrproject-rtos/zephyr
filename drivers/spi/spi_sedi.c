@@ -18,7 +18,6 @@ LOG_MODULE_REGISTER(spi_sedi);
 #include "sedi_driver_spi.h"
 #include "spi_context.h"
 
-
 struct spi_sedi_config {
 	DEVICE_MMIO_ROM;
 	sedi_spi_t spi_device;
@@ -34,8 +33,7 @@ struct spi_sedi_data {
 	uint32_t rx_dummy_len;
 };
 
-static int spi_sedi_configure(const struct device *dev,
-			      const struct spi_config *config)
+static int spi_sedi_configure(const struct device *dev, const struct spi_config *config)
 {
 	struct spi_sedi_data *data = dev->data;
 	const struct spi_sedi_config *info = dev->config;
@@ -46,25 +44,20 @@ static int spi_sedi_configure(const struct device *dev,
 	}
 
 	word_size = SPI_WORD_SIZE_GET(config->operation);
-	sedi_spi_control(info->spi_device, SEDI_SPI_IOCTL_DATA_WIDTH,
-			 word_size);
+	sedi_spi_control(info->spi_device, SEDI_SPI_IOCTL_DATA_WIDTH, word_size);
 
 	/* CPOL and CPHA */
 	cpol = SPI_MODE_GET(config->operation) & SPI_MODE_CPOL;
 	cpha = SPI_MODE_GET(config->operation) & SPI_MODE_CPHA;
 
 	if ((cpol == 0) && (cpha == 0)) {
-		sedi_spi_control(info->spi_device, SEDI_SPI_IOCTL_CPOL0_CPHA0,
-				 0);
+		sedi_spi_control(info->spi_device, SEDI_SPI_IOCTL_CPOL0_CPHA0, 0);
 	} else if ((cpol == 0) && (cpha == 1U)) {
-		sedi_spi_control(info->spi_device, SEDI_SPI_IOCTL_CPOL0_CPHA1,
-				 0);
+		sedi_spi_control(info->spi_device, SEDI_SPI_IOCTL_CPOL0_CPHA1, 0);
 	} else if ((cpol == 1) && (cpha == 0U)) {
-		sedi_spi_control(info->spi_device, SEDI_SPI_IOCTL_CPOL1_CPHA0,
-				 0);
+		sedi_spi_control(info->spi_device, SEDI_SPI_IOCTL_CPOL1_CPHA0, 0);
 	} else {
-		sedi_spi_control(info->spi_device, SEDI_SPI_IOCTL_CPOL1_CPHA1,
-				 0);
+		sedi_spi_control(info->spi_device, SEDI_SPI_IOCTL_CPOL1_CPHA1, 0);
 	}
 
 	/* MSB and LSB */
@@ -77,8 +70,7 @@ static int spi_sedi_configure(const struct device *dev,
 	sedi_spi_control(info->spi_device, SEDI_SPI_IOCTL_LOOPBACK, loopback);
 
 	/* Set baudrate */
-	sedi_spi_control(info->spi_device, SEDI_SPI_IOCTL_SPEED_SET,
-			 config->frequency);
+	sedi_spi_control(info->spi_device, SEDI_SPI_IOCTL_SPEED_SET, config->frequency);
 
 	sedi_spi_control(info->spi_device, SEDI_SPI_IOCTL_CS_HW, config->slave);
 
@@ -89,10 +81,8 @@ static int spi_sedi_configure(const struct device *dev,
 }
 
 static int transceive(const struct device *dev, const struct spi_config *config,
-		      const struct spi_buf_set *tx_bufs,
-		      const struct spi_buf_set *rx_bufs, bool asynchronous,
-		      spi_callback_t cb,
-		      void *userdata)
+		      const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs,
+		      bool asynchronous, spi_callback_t cb, void *userdata)
 {
 	const struct spi_sedi_config *info = dev->config;
 	struct spi_sedi_data *spi = dev->data;
@@ -192,8 +182,7 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 
 	spi_context_cs_control(&spi->ctx, false);
 
-	ret = sedi_spi_transfer(info->spi_device, data_out, data_in,
-				transfer_bytes);
+	ret = sedi_spi_transfer(info->spi_device, data_out, data_in, transfer_bytes);
 
 	if (ret != SEDI_DRIVER_OK) {
 		goto out;
@@ -217,28 +206,23 @@ out:
 	return ret;
 }
 
-static int spi_sedi_transceive(const struct device *dev,
-			       const struct spi_config *config,
-			       const struct spi_buf_set *tx_bufs,
-			       const struct spi_buf_set *rx_bufs)
+static int spi_sedi_transceive(const struct device *dev, const struct spi_config *config,
+			       const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs)
 {
 	return transceive(dev, config, tx_bufs, rx_bufs, false, NULL, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int spi_sedi_transceive_async(const struct device *dev,
-				     const struct spi_config *config,
+static int spi_sedi_transceive_async(const struct device *dev, const struct spi_config *config,
 				     const struct spi_buf_set *tx_bufs,
-				     const struct spi_buf_set *rx_bufs,
-				     spi_callback_t cb,
+				     const struct spi_buf_set *rx_bufs, spi_callback_t cb,
 				     void *userdata)
 {
 	return transceive(dev, config, tx_bufs, rx_bufs, true, cb, userdata);
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static int spi_sedi_release(const struct device *dev,
-			    const struct spi_config *config)
+static int spi_sedi_release(const struct device *dev, const struct spi_config *config)
 {
 	struct spi_sedi_data *spi = dev->data;
 
@@ -267,32 +251,26 @@ void spi_sedi_callback(uint32_t event, void *param)
 		error = 0;
 	}
 
-	if ((event == SEDI_SPI_EVENT_COMPLETE) ||
-	    (event == SEDI_SPI_EVENT_DATA_LOST)) {
+	if ((event == SEDI_SPI_EVENT_COMPLETE) || (event == SEDI_SPI_EVENT_DATA_LOST)) {
 		spi_context_cs_control(&spi->ctx, true);
 		spi_context_complete(&spi->ctx, dev, error);
 	} else if (event == SEDI_SPI_EVENT_TX_FINISHED) {
 		spi_context_update_tx(ctx, 1, ctx->tx_len);
 		if (ctx->tx_len != 0) {
-			sedi_spi_update_tx_buf(info->spi_device, ctx->tx_buf,
-					       ctx->tx_len);
-			if ((ctx->rx_len == 0) &&
-			    (spi->rx_data_updated == false)) {
+			sedi_spi_update_tx_buf(info->spi_device, ctx->tx_buf, ctx->tx_len);
+			if ((ctx->rx_len == 0) && (spi->rx_data_updated == false)) {
 				/* Update rx length if always no rx */
-				sedi_spi_update_rx_buf(info->spi_device, NULL,
-						       spi->rx_dummy_len);
+				sedi_spi_update_rx_buf(info->spi_device, NULL, spi->rx_dummy_len);
 				spi->rx_data_updated = true;
 			}
 		} else if (spi->tx_data_updated == false) {
-			sedi_spi_update_tx_buf(info->spi_device, NULL,
-					       spi->tx_dummy_len);
+			sedi_spi_update_tx_buf(info->spi_device, NULL, spi->tx_dummy_len);
 			spi->tx_data_updated = true;
 		}
 	} else if (event == SEDI_SPI_EVENT_RX_FINISHED) {
 		spi_context_update_rx(ctx, 1, ctx->rx_len);
 		if (ctx->rx_len != 0) {
-			sedi_spi_update_rx_buf(info->spi_device, ctx->rx_buf,
-					       ctx->rx_len);
+			sedi_spi_update_rx_buf(info->spi_device, ctx->rx_buf, ctx->rx_len);
 		}
 	}
 }
@@ -301,7 +279,7 @@ static const struct spi_driver_api sedi_spi_api = {
 	.transceive = spi_sedi_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_sedi_transceive_async,
-#endif  /* CONFIG_SPI_ASYNC */
+#endif /* CONFIG_SPI_ASYNC */
 #ifdef CONFIG_SPI_RTIO
 	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
@@ -316,8 +294,7 @@ static int spi_sedi_init(const struct device *dev)
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 
-	ret = sedi_spi_init(info->spi_device, spi_sedi_callback, (void *)dev,
-			DEVICE_MMIO_GET(dev));
+	ret = sedi_spi_init(info->spi_device, spi_sedi_callback, (void *)dev, DEVICE_MMIO_GET(dev));
 	if (ret != SEDI_DRIVER_OK) {
 		return -ENODEV;
 	}
@@ -364,8 +341,7 @@ static int spi_resume_device_from_suspend(const struct device *dev)
 	return 0;
 }
 
-static int spi_sedi_device_ctrl(const struct device *dev,
-				enum pm_device_action action)
+static int spi_sedi_device_ctrl(const struct device *dev, enum pm_device_action action)
 {
 	int ret = 0;
 
@@ -387,33 +363,27 @@ static int spi_sedi_device_ctrl(const struct device *dev,
 
 #define SPI_SEDI_IRQ_FLAGS_SENSE0(n) 0
 #define SPI_SEDI_IRQ_FLAGS_SENSE1(n) DT_INST_IRQ(n, sense)
-#define SPI_SEDI_IRQ_FLAGS(n) \
-	_CONCAT(SPI_SEDI_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, sense))(n)
+#define SPI_SEDI_IRQ_FLAGS(n)        _CONCAT(SPI_SEDI_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, sense))(n)
 
-#define CREATE_SEDI_SPI_INSTANCE(num)					       \
-	static void spi_##num##_irq_init(void)			               \
-	{								       \
-		IRQ_CONNECT(DT_INST_IRQN(num),				       \
-			    DT_INST_IRQ(num, priority),			       \
-			    spi_isr, num, SPI_SEDI_IRQ_FLAGS(num));	       \
-		irq_enable(DT_INST_IRQN(num));				       \
-	}								       \
-	static struct spi_sedi_data spi_##num##_data = {		       \
-		SPI_CONTEXT_INIT_LOCK(spi_##num##_data, ctx),	               \
-		SPI_CONTEXT_INIT_SYNC(spi_##num##_data, ctx),	               \
-	};								       \
-	const static struct spi_sedi_config spi_##num##_config = {	       \
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(num)),                        \
-		.spi_device = num, .irq_config = spi_##num##_irq_init,         \
-	};								       \
-	PM_DEVICE_DEFINE(spi_##num, spi_sedi_device_ctrl);		       \
-	DEVICE_DT_INST_DEFINE(num,					       \
-			      spi_sedi_init,				       \
-			      PM_DEVICE_GET(spi_##num),		               \
-			      &spi_##num##_data,			       \
-			      &spi_##num##_config,			       \
-			      POST_KERNEL,				       \
-			      CONFIG_SPI_INIT_PRIORITY,			       \
+#define CREATE_SEDI_SPI_INSTANCE(num)                                                              \
+	static void spi_##num##_irq_init(void)                                                     \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(num), DT_INST_IRQ(num, priority), spi_isr, num,           \
+			    SPI_SEDI_IRQ_FLAGS(num));                                              \
+		irq_enable(DT_INST_IRQN(num));                                                     \
+	}                                                                                          \
+	static struct spi_sedi_data spi_##num##_data = {                                           \
+		SPI_CONTEXT_INIT_LOCK(spi_##num##_data, ctx),                                      \
+		SPI_CONTEXT_INIT_SYNC(spi_##num##_data, ctx),                                      \
+	};                                                                                         \
+	const static struct spi_sedi_config spi_##num##_config = {                                 \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(num)),                                            \
+		.spi_device = num,                                                                 \
+		.irq_config = spi_##num##_irq_init,                                                \
+	};                                                                                         \
+	PM_DEVICE_DEFINE(spi_##num, spi_sedi_device_ctrl);                                         \
+	DEVICE_DT_INST_DEFINE(num, spi_sedi_init, PM_DEVICE_GET(spi_##num), &spi_##num##_data,     \
+			      &spi_##num##_config, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,          \
 			      &sedi_spi_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CREATE_SEDI_SPI_INSTANCE)

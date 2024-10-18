@@ -85,8 +85,7 @@ static int usart_gd32_init(const struct device *dev)
 		return -ENOTSUP;
 	}
 
-	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
-			       (clock_control_subsys_t)&cfg->clkid);
+	(void)clock_control_on(GD32_CLOCK_CONTROLLER, (clock_control_subsys_t)&cfg->clkid);
 
 	(void)reset_line_toggle_dt(&cfg->reset);
 
@@ -163,28 +162,24 @@ static int usart_gd32_err_check(const struct device *dev)
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-int usart_gd32_fifo_fill(const struct device *dev, const uint8_t *tx_data,
-			 int len)
+int usart_gd32_fifo_fill(const struct device *dev, const uint8_t *tx_data, int len)
 {
 	const struct gd32_usart_config *const cfg = dev->config;
 	uint8_t num_tx = 0U;
 
-	while ((len - num_tx > 0) &&
-	       usart_flag_get(cfg->reg, USART_FLAG_TBE)) {
+	while ((len - num_tx > 0) && usart_flag_get(cfg->reg, USART_FLAG_TBE)) {
 		usart_data_transmit(cfg->reg, tx_data[num_tx++]);
 	}
 
 	return num_tx;
 }
 
-int usart_gd32_fifo_read(const struct device *dev, uint8_t *rx_data,
-			 const int size)
+int usart_gd32_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
 {
 	const struct gd32_usart_config *const cfg = dev->config;
 	uint8_t num_rx = 0U;
 
-	while ((size - num_rx > 0) &&
-	       usart_flag_get(cfg->reg, USART_FLAG_RBNE)) {
+	while ((size - num_rx > 0) && usart_flag_get(cfg->reg, USART_FLAG_RBNE)) {
 		rx_data[num_rx++] = usart_data_receive(cfg->reg);
 	}
 
@@ -267,8 +262,7 @@ int usart_gd32_irq_is_pending(const struct device *dev)
 		 usart_interrupt_flag_get(cfg->reg, USART_INT_FLAG_TC)));
 }
 
-void usart_gd32_irq_callback_set(const struct device *dev,
-				 uart_irq_callback_user_data_t cb,
+void usart_gd32_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
 				 void *user_data)
 {
 	struct gd32_usart_data *const data = dev->data;
@@ -300,42 +294,34 @@ static const struct uart_driver_api usart_gd32_driver_api = {
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define GD32_USART_IRQ_HANDLER(n)						\
-	static void usart_gd32_config_func_##n(const struct device *dev)	\
-	{									\
-		IRQ_CONNECT(DT_INST_IRQN(n),					\
-			    DT_INST_IRQ(n, priority),				\
-			    usart_gd32_isr,					\
-			    DEVICE_DT_INST_GET(n),				\
-			    0);							\
-		irq_enable(DT_INST_IRQN(n));					\
+#define GD32_USART_IRQ_HANDLER(n)                                                                  \
+	static void usart_gd32_config_func_##n(const struct device *dev)                           \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), usart_gd32_isr,             \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
-#define GD32_USART_IRQ_HANDLER_FUNC_INIT(n)					\
-	.irq_config_func = usart_gd32_config_func_##n
+#define GD32_USART_IRQ_HANDLER_FUNC_INIT(n) .irq_config_func = usart_gd32_config_func_##n
 #else /* CONFIG_UART_INTERRUPT_DRIVEN */
 #define GD32_USART_IRQ_HANDLER(n)
 #define GD32_USART_IRQ_HANDLER_FUNC_INIT(n)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-#define GD32_USART_INIT(n)							\
-	PINCTRL_DT_INST_DEFINE(n);						\
-	GD32_USART_IRQ_HANDLER(n)						\
-	static struct gd32_usart_data usart_gd32_data_##n = {			\
-		.baud_rate = DT_INST_PROP(n, current_speed),			\
-	};									\
-	static const struct gd32_usart_config usart_gd32_config_##n = {		\
-		.reg = DT_INST_REG_ADDR(n),					\
-		.clkid = DT_INST_CLOCKS_CELL(n, id),				\
-		.reset = RESET_DT_SPEC_INST_GET(n),				\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
-		.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),	\
-		 GD32_USART_IRQ_HANDLER_FUNC_INIT(n)				\
-	};									\
-	DEVICE_DT_INST_DEFINE(n, usart_gd32_init,				\
-			      NULL,						\
-			      &usart_gd32_data_##n,				\
-			      &usart_gd32_config_##n, PRE_KERNEL_1,		\
-			      CONFIG_SERIAL_INIT_PRIORITY,			\
+#define GD32_USART_INIT(n)                                                                         \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	GD32_USART_IRQ_HANDLER(n)                                                                  \
+	static struct gd32_usart_data usart_gd32_data_##n = {                                      \
+		.baud_rate = DT_INST_PROP(n, current_speed),                                       \
+	};                                                                                         \
+	static const struct gd32_usart_config usart_gd32_config_##n = {                            \
+		.reg = DT_INST_REG_ADDR(n),                                                        \
+		.clkid = DT_INST_CLOCKS_CELL(n, id),                                               \
+		.reset = RESET_DT_SPEC_INST_GET(n),                                                \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+		.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),                    \
+		GD32_USART_IRQ_HANDLER_FUNC_INIT(n)};                                              \
+	DEVICE_DT_INST_DEFINE(n, usart_gd32_init, NULL, &usart_gd32_data_##n,                      \
+			      &usart_gd32_config_##n, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,   \
 			      &usart_gd32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GD32_USART_INIT)

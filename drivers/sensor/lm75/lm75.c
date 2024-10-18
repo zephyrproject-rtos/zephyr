@@ -23,14 +23,13 @@ LOG_MODULE_REGISTER(LM75, CONFIG_SENSOR_LOG_LEVEL);
  * Only compile in trigger support if enabled in Kconfig and at least one
  * enabled lm75 devicetree node has the int-gpios property.
  */
-#define LM75_TRIGGER_SUPPORT \
-	(CONFIG_LM75_TRIGGER && DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios))
+#define LM75_TRIGGER_SUPPORT (CONFIG_LM75_TRIGGER && DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios))
 
 /* LM75 registers */
-#define LM75_REG_TEMP	0x00
+#define LM75_REG_TEMP   0x00
 #define LM75_REG_CONFIG 0x01
 #define LM75_REG_T_HYST 0x02
-#define LM75_REG_T_OS	0x03
+#define LM75_REG_T_OS   0x03
 
 struct lm75_data {
 	int16_t temp;
@@ -353,7 +352,7 @@ int lm75_init(const struct device *dev)
 
 		data->dev = dev;
 		k_work_queue_start(&data->workq, data->stack, K_THREAD_STACK_SIZEOF(data->stack),
-				CONFIG_LM75_TRIGGER_THREAD_PRIO, NULL);
+				   CONFIG_LM75_TRIGGER_THREAD_PRIO, NULL);
 		k_thread_name_set(&data->workq.thread, "lm75_trigger");
 		k_work_init(&data->work, lm75_trigger_work_handler);
 
@@ -402,27 +401,27 @@ static int lm75_pm_action(const struct device *dev, enum pm_device_action action
 #endif
 
 #if LM75_TRIGGER_SUPPORT
-#define LM75_INT_GPIO_INIT(n) .int_gpio = GPIO_DT_SPEC_INST_GET_OR(n, int_gpios, { 0 })
+#define LM75_INT_GPIO_INIT(n) .int_gpio = GPIO_DT_SPEC_INST_GET_OR(n, int_gpios, {0})
 #else /* LM75_TRIGGER_SUPPORT */
 #define LM75_INT_GPIO_INIT(n)
 #endif /* ! LM75_TRIGGER_SUPPORT */
 
-#define LM75_INST(inst)                                             \
-static struct lm75_data lm75_data_##inst;                           \
-static const struct lm75_config lm75_config_##inst = {              \
-	.i2c = I2C_DT_SPEC_INST_GET(inst),                          \
-	.config_dt = {						\
-		.shutdown = 0,					\
-		.int_mode = DT_INST_NODE_HAS_PROP(inst, int_gpios), \
-		.int_pol = DT_INST_PROP(inst, int_inverted),	\
-		.fault_queue = 0, \
-		.reserved = 0,					\
-	},							\
-	LM75_INT_GPIO_INIT(inst)					\
-};                                                                  \
-PM_DEVICE_DT_INST_DEFINE(inst, lm75_pm_action);						\
-SENSOR_DEVICE_DT_INST_DEFINE(inst, lm75_init, PM_DEVICE_DT_INST_GET(inst), &lm75_data_##inst,	\
-		      &lm75_config_##inst, POST_KERNEL,             \
-		      CONFIG_SENSOR_INIT_PRIORITY, &lm75_driver_api);
+#define LM75_INST(inst)                                                                            \
+	static struct lm75_data lm75_data_##inst;                                                  \
+	static const struct lm75_config lm75_config_##inst = {                                     \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+		.config_dt =                                                                       \
+			{                                                                          \
+				.shutdown = 0,                                                     \
+				.int_mode = DT_INST_NODE_HAS_PROP(inst, int_gpios),                \
+				.int_pol = DT_INST_PROP(inst, int_inverted),                       \
+				.fault_queue = 0,                                                  \
+				.reserved = 0,                                                     \
+			},                                                                         \
+		LM75_INT_GPIO_INIT(inst)};                                                         \
+	PM_DEVICE_DT_INST_DEFINE(inst, lm75_pm_action);                                            \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, lm75_init, PM_DEVICE_DT_INST_GET(inst),                 \
+				     &lm75_data_##inst, &lm75_config_##inst, POST_KERNEL,          \
+				     CONFIG_SENSOR_INIT_PRIORITY, &lm75_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LM75_INST)

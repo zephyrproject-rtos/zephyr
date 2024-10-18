@@ -54,11 +54,9 @@ struct uhc_vrt_event {
 	struct uvb_packet *pkt;
 };
 
-K_MEM_SLAB_DEFINE(uhc_vrt_slab, sizeof(struct uhc_vrt_event),
-		  16, sizeof(void *));
+K_MEM_SLAB_DEFINE(uhc_vrt_slab, sizeof(struct uhc_vrt_event), 16, sizeof(void *));
 
-static void vrt_event_submit(const struct device *dev,
-			     const enum uhc_vrt_event_type type,
+static void vrt_event_submit(const struct device *dev, const enum uhc_vrt_event_type type,
 			     const void *data)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
@@ -74,8 +72,7 @@ static void vrt_event_submit(const struct device *dev,
 	k_work_submit(&priv->work);
 }
 
-static int vrt_xfer_control(const struct device *dev,
-			    struct uhc_transfer *const xfer)
+static int vrt_xfer_control(const struct device *dev, struct uhc_transfer *const xfer)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
 	struct net_buf *buf = xfer->buf;
@@ -85,8 +82,7 @@ static int vrt_xfer_control(const struct device *dev,
 
 	if (xfer->stage == UHC_CONTROL_STAGE_SETUP) {
 		LOG_DBG("Handle SETUP stage");
-		uvb_pkt = uvb_alloc_pkt(UVB_REQUEST_SETUP,
-					xfer->addr, USB_CONTROL_EP_OUT,
+		uvb_pkt = uvb_alloc_pkt(UVB_REQUEST_SETUP, xfer->addr, USB_CONTROL_EP_OUT,
 					xfer->setup_pkt, sizeof(xfer->setup_pkt));
 		if (uvb_pkt == NULL) {
 			LOG_ERR("Failed to allocate UVB packet");
@@ -109,9 +105,7 @@ static int vrt_xfer_control(const struct device *dev,
 		}
 
 		LOG_DBG("Handle DATA stage");
-		uvb_pkt = uvb_alloc_pkt(UVB_REQUEST_DATA,
-					xfer->addr, xfer->ep,
-					data, length);
+		uvb_pkt = uvb_alloc_pkt(UVB_REQUEST_DATA, xfer->addr, xfer->ep, data, length);
 		if (uvb_pkt == NULL) {
 			LOG_ERR("Failed to allocate UVB packet");
 			return -ENOMEM;
@@ -133,9 +127,7 @@ static int vrt_xfer_control(const struct device *dev,
 			ep = USB_CONTROL_EP_IN;
 		}
 
-		uvb_pkt = uvb_alloc_pkt(UVB_REQUEST_DATA,
-					xfer->addr, ep,
-					NULL, 0);
+		uvb_pkt = uvb_alloc_pkt(UVB_REQUEST_DATA, xfer->addr, ep, NULL, 0);
 		if (uvb_pkt == NULL) {
 			LOG_ERR("Failed to allocate UVB packet");
 			return -ENOMEM;
@@ -150,8 +142,7 @@ static int vrt_xfer_control(const struct device *dev,
 	return -EINVAL;
 }
 
-static int vrt_xfer_bulk(const struct device *dev,
-			 struct uhc_transfer *const xfer)
+static int vrt_xfer_bulk(const struct device *dev, struct uhc_transfer *const xfer)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
 	struct net_buf *buf = xfer->buf;
@@ -167,8 +158,7 @@ static int vrt_xfer_bulk(const struct device *dev,
 		data = buf->data;
 	}
 
-	uvb_pkt = uvb_alloc_pkt(UVB_REQUEST_DATA, xfer->addr, xfer->ep,
-				data, length);
+	uvb_pkt = uvb_alloc_pkt(UVB_REQUEST_DATA, xfer->addr, xfer->ep, data, length);
 	if (uvb_pkt == NULL) {
 		LOG_ERR("Failed to allocate UVB packet");
 		return -ENOMEM;
@@ -199,8 +189,7 @@ static int vrt_schedule_xfer(const struct device *dev)
 	return vrt_xfer_bulk(dev, priv->last_xfer);
 }
 
-static void vrt_hrslt_success(const struct device *dev,
-			      struct uvb_packet *const pkt)
+static void vrt_hrslt_success(const struct device *dev, struct uvb_packet *const pkt)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
 	struct uhc_transfer *const xfer = priv->last_xfer;
@@ -239,8 +228,7 @@ static void vrt_hrslt_success(const struct device *dev,
 			length = MIN(net_buf_tailroom(buf), pkt->length);
 			net_buf_add(buf, length);
 			if (pkt->length > xfer->mps) {
-				LOG_ERR("Ambiguous packet with the length %zu",
-					pkt->length);
+				LOG_ERR("Ambiguous packet with the length %zu", pkt->length);
 			}
 
 			LOG_DBG("IN chunk %zu out of %zu", length, net_buf_tailroom(buf));
@@ -272,8 +260,7 @@ static void vrt_xfer_drop_active(const struct device *dev, int err)
 	}
 }
 
-static int vrt_handle_reply(const struct device *dev,
-			    struct uvb_packet *const pkt)
+static int vrt_handle_reply(const struct device *dev, struct uvb_packet *const pkt)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
 	struct uhc_transfer *const xfer = priv->last_xfer;
@@ -364,8 +351,7 @@ static void sof_timer_handler(struct k_timer *timer)
 	vrt_event_submit(priv->dev, UHC_VRT_EVT_SOF, NULL);
 }
 
-static void vrt_device_act(const struct device *dev,
-			   const enum uvb_device_act act)
+static void vrt_device_act(const struct device *dev, const enum uvb_device_act act)
 {
 	enum uhc_event_type type;
 
@@ -389,8 +375,7 @@ static void vrt_device_act(const struct device *dev,
 	uhc_submit_event(dev, type, 0);
 }
 
-static void uhc_vrt_uvb_cb(const void *const vrt_priv,
-			   const enum uvb_event_type type,
+static void uhc_vrt_uvb_cb(const void *const vrt_priv, const enum uvb_event_type type,
 			   const void *data)
 {
 	const struct device *dev = vrt_priv;
@@ -439,8 +424,7 @@ static int uhc_vrt_bus_resume(const struct device *dev)
 	return uvb_advert(priv->host_node, UVB_EVT_RESUME, NULL);
 }
 
-static int uhc_vrt_enqueue(const struct device *dev,
-			   struct uhc_transfer *const xfer)
+static int uhc_vrt_enqueue(const struct device *dev, struct uhc_transfer *const xfer)
 {
 	uhc_xfer_append(dev, xfer);
 	vrt_event_submit(dev, UHC_VRT_EVT_XFER, NULL);
@@ -448,8 +432,7 @@ static int uhc_vrt_enqueue(const struct device *dev,
 	return 0;
 }
 
-static int uhc_vrt_dequeue(const struct device *dev,
-			    struct uhc_transfer *const xfer)
+static int uhc_vrt_dequeue(const struct device *dev, struct uhc_transfer *const xfer)
 {
 	/* TODO */
 	return 0;
@@ -517,7 +500,7 @@ static const struct uhc_api uhc_vrt_api = {
 	.shutdown = uhc_vrt_shutdown,
 
 	.bus_reset = uhc_vrt_bus_reset,
-	.sof_enable  = uhc_vrt_sof_enable,
+	.sof_enable = uhc_vrt_sof_enable,
 	.bus_suspend = uhc_vrt_bus_suspend,
 	.bus_resume = uhc_vrt_bus_resume,
 
@@ -527,25 +510,20 @@ static const struct uhc_api uhc_vrt_api = {
 
 #define DT_DRV_COMPAT zephyr_uhc_virtual
 
-#define UHC_VRT_DEVICE_DEFINE(n)						\
-	UVB_HOST_NODE_DEFINE(uhc_bc_##n,					\
-			     DT_NODE_FULL_NAME(DT_DRV_INST(n)),			\
-			     uhc_vrt_uvb_cb);					\
-										\
-	static const struct uhc_vrt_config uhc_vrt_config_##n = {		\
-	};									\
-										\
-	static struct uhc_vrt_data uhc_priv_##n = {				\
-		.host_node = &uhc_bc_##n,					\
-	};									\
-										\
-	static struct uhc_data uhc_data_##n = {					\
-		.priv = &uhc_priv_##n,						\
-	};									\
-										\
-	DEVICE_DT_INST_DEFINE(n, uhc_vrt_driver_preinit, NULL,			\
-			      &uhc_data_##n, &uhc_vrt_config_##n,		\
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
-			      &uhc_vrt_api);
+#define UHC_VRT_DEVICE_DEFINE(n)                                                                   \
+	UVB_HOST_NODE_DEFINE(uhc_bc_##n, DT_NODE_FULL_NAME(DT_DRV_INST(n)), uhc_vrt_uvb_cb);       \
+                                                                                                   \
+	static const struct uhc_vrt_config uhc_vrt_config_##n = {};                                \
+                                                                                                   \
+	static struct uhc_vrt_data uhc_priv_##n = {                                                \
+		.host_node = &uhc_bc_##n,                                                          \
+	};                                                                                         \
+                                                                                                   \
+	static struct uhc_data uhc_data_##n = {                                                    \
+		.priv = &uhc_priv_##n,                                                             \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, uhc_vrt_driver_preinit, NULL, &uhc_data_##n, &uhc_vrt_config_##n, \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &uhc_vrt_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UHC_VRT_DEVICE_DEFINE)

@@ -27,15 +27,14 @@ static int fdc2x1x_init_config(const struct device *dev);
  * @param ch - Channel to convert the data from.
  * @param freq - Calculated frequency value .
  */
-static void fdc2x1x_raw_to_freq(const struct device *dev,
-				uint8_t ch, double *freq)
+static void fdc2x1x_raw_to_freq(const struct device *dev, uint8_t ch, double *freq)
 {
 	struct fdc2x1x_data *data = dev->data;
 	const struct fdc2x1x_config *cfg = dev->config;
 
 	if (data->fdc221x) {
-		*freq = (cfg->ch_cfg->fin_sel * (cfg->fref / 1000.0) *
-			 data->channel_buf[ch]) / pow(2, 28);
+		*freq = (cfg->ch_cfg->fin_sel * (cfg->fref / 1000.0) * data->channel_buf[ch]) /
+			pow(2, 28);
 	} else {
 		*freq = cfg->ch_cfg->fin_sel * (cfg->fref / 1000.0) *
 			((data->channel_buf[ch] / pow(2, 12 + cfg->output_gain)) +
@@ -51,13 +50,12 @@ static void fdc2x1x_raw_to_freq(const struct device *dev,
  * @param freq - Frequency value
  * @param capacitance - Calculated capacitance value
  */
-static void fdc2x1x_raw_to_capacitance(const struct device *dev,
-				       uint8_t ch, double freq, double *capacitance)
+static void fdc2x1x_raw_to_capacitance(const struct device *dev, uint8_t ch, double freq,
+				       double *capacitance)
 {
 	const struct fdc2x1x_config *cfg = dev->config;
 
-	*capacitance = 1 / ((cfg->ch_cfg->inductance / 1000000.0) *
-			    pow((2 * PI * freq), 2));
+	*capacitance = 1 / ((cfg->ch_cfg->inductance / 1000000.0) * pow((2 * PI * freq), 2));
 }
 
 /**
@@ -69,8 +67,7 @@ static void fdc2x1x_raw_to_capacitance(const struct device *dev,
  * @param length - Number of bytes being read
  * @return 0 in case of success, negative error code otherwise.
  */
-static int fdc2x1x_bus_access(const struct device *dev, uint8_t reg,
-			      uint8_t *data, size_t length)
+static int fdc2x1x_bus_access(const struct device *dev, uint8_t reg, uint8_t *data, size_t length)
 {
 	const struct fdc2x1x_config *cfg = dev->config;
 
@@ -97,9 +94,7 @@ static int fdc2x1x_bus_access(const struct device *dev, uint8_t reg,
  * @param reg_data - The register data.
  * @return 0 in case of success, negative error code otherwise.
  */
-static int fdc2x1x_reg_read(const struct device *dev,
-			    uint8_t reg_addr,
-			    uint16_t *reg_data)
+static int fdc2x1x_reg_read(const struct device *dev, uint8_t reg_addr, uint16_t *reg_data)
 {
 	uint8_t buf[2];
 	int ret;
@@ -117,9 +112,7 @@ static int fdc2x1x_reg_read(const struct device *dev,
  * @param reg_data - The register data.
  * @return 0 in case of success, negative error code otherwise.
  */
-static int fdc2x1x_reg_write(const struct device *dev,
-			     uint8_t reg_addr,
-			     uint16_t reg_data)
+static int fdc2x1x_reg_write(const struct device *dev, uint8_t reg_addr, uint16_t reg_data)
 {
 	LOG_DBG("[0x%x] = 0x%x", reg_addr, reg_data);
 
@@ -139,10 +132,7 @@ static int fdc2x1x_reg_write(const struct device *dev,
  * @param data - The register data.
  * @return 0 in case of success, negative error code otherwise.
  */
-int fdc2x1x_reg_write_mask(const struct device *dev,
-			   uint8_t reg_addr,
-			   uint16_t mask,
-			   uint16_t data)
+int fdc2x1x_reg_write_mask(const struct device *dev, uint8_t reg_addr, uint16_t mask, uint16_t data)
 {
 	int ret;
 	uint16_t tmp;
@@ -167,11 +157,9 @@ int fdc2x1x_reg_write_mask(const struct device *dev,
  * @param fin_sel - Frequency selection value.
  * @return 0 in case of success, negative error code otherwise.
  */
-static int fdc2x1x_set_fin_sel(const struct device *dev, uint8_t chx,
-			       uint8_t fin_sel)
+static int fdc2x1x_set_fin_sel(const struct device *dev, uint8_t chx, uint8_t fin_sel)
 {
-	return fdc2x1x_reg_write_mask(dev,
-				      FDC2X1X_CLOCK_DIVIDERS_CH0 + chx,
+	return fdc2x1x_reg_write_mask(dev, FDC2X1X_CLOCK_DIVIDERS_CH0 + chx,
 				      FDC2X1X_CLK_DIV_CHX_FIN_SEL_MSK,
 				      FDC2X1X_CLK_DIV_CHX_FIN_SEL_SET(fin_sel));
 }
@@ -183,11 +171,9 @@ static int fdc2x1x_set_fin_sel(const struct device *dev, uint8_t chx,
  * @param fref_div - Reference divider value.
  * @return 0 in case of success, negative error code otherwise.
  */
-static int fdc2x1x_set_fref_divider(const struct device *dev, uint8_t chx,
-				    uint16_t fref_div)
+static int fdc2x1x_set_fref_divider(const struct device *dev, uint8_t chx, uint16_t fref_div)
 {
-	return fdc2x1x_reg_write_mask(dev,
-				      FDC2X1X_CLOCK_DIVIDERS_CH0 + chx,
+	return fdc2x1x_reg_write_mask(dev, FDC2X1X_CLOCK_DIVIDERS_CH0 + chx,
 				      FDC2X1X_CLK_DIV_CHX_FREF_DIV_MSK,
 				      FDC2X1X_CLK_DIV_CHX_FREF_DIV_SET(fref_div));
 }
@@ -199,11 +185,9 @@ static int fdc2x1x_set_fref_divider(const struct device *dev, uint8_t chx,
  * @param idrv - Sensor driver current.
  * @return 0 in case of success, negative error code otherwise.
  */
-static int fdc2x1x_set_idrive(const struct device *dev, uint8_t chx,
-			      uint8_t idrv)
+static int fdc2x1x_set_idrive(const struct device *dev, uint8_t chx, uint8_t idrv)
 {
-	return fdc2x1x_reg_write_mask(dev,
-				      FDC2X1X_DRIVE_CURRENT_CH0 + chx,
+	return fdc2x1x_reg_write_mask(dev, FDC2X1X_DRIVE_CURRENT_CH0 + chx,
 				      FDC2X1X_DRV_CURRENT_CHX_IDRIVE_MSK,
 				      FDC2X1X_DRV_CURRENT_CHX_IDRIVE_SET(idrv));
 }
@@ -215,11 +199,9 @@ static int fdc2x1x_set_idrive(const struct device *dev, uint8_t chx,
  * @param settle_count - Settling time value.
  * @return 0 in case of success, negative error code otherwise.
  */
-static int fdc2x1x_set_settle_count(const struct device *dev, uint8_t chx,
-				    uint16_t settle_count)
+static int fdc2x1x_set_settle_count(const struct device *dev, uint8_t chx, uint16_t settle_count)
 {
-	return fdc2x1x_reg_write(dev,
-				 FDC2X1X_SETTLECOUNT_CH0 + chx, settle_count);
+	return fdc2x1x_reg_write(dev, FDC2X1X_SETTLECOUNT_CH0 + chx, settle_count);
 }
 
 /**
@@ -229,12 +211,10 @@ static int fdc2x1x_set_settle_count(const struct device *dev, uint8_t chx,
  * @param rcount - Reference count value.
  * @return 0 in case of success, negative error code otherwise.
  */
-static int fdc2x1x_set_rcount(const struct device *dev,
-			      uint8_t chx, uint16_t rcount)
+static int fdc2x1x_set_rcount(const struct device *dev, uint8_t chx, uint16_t rcount)
 {
 	return fdc2x1x_reg_write(dev, FDC2X1X_RCOUNT_CH0 + chx, rcount);
 }
-
 
 /**
  * Set the Offset value of a specific channel.
@@ -243,8 +223,7 @@ static int fdc2x1x_set_rcount(const struct device *dev,
  * @param offset - Offset value.
  * @return 0 in case of success, negative error code otherwise.
  */
-static int fdc2x1x_set_offset(const struct device *dev,
-			      uint8_t chx, uint16_t offset)
+static int fdc2x1x_set_offset(const struct device *dev, uint8_t chx, uint16_t offset)
 {
 	return fdc2x1x_reg_write(dev, FDC2X1X_OFFSET_CH0 + chx, offset);
 }
@@ -257,9 +236,7 @@ static int fdc2x1x_set_offset(const struct device *dev,
  */
 static int fdc2x1x_set_autoscan_mode(const struct device *dev, bool en)
 {
-	return fdc2x1x_reg_write_mask(dev,
-				      FDC2X1X_MUX_CONFIG,
-				      FDC2X1X_MUX_CFG_AUTOSCAN_EN_MSK,
+	return fdc2x1x_reg_write_mask(dev, FDC2X1X_MUX_CONFIG, FDC2X1X_MUX_CFG_AUTOSCAN_EN_MSK,
 				      FDC2X1X_MUX_CFG_AUTOSCAN_EN_SET(en));
 }
 
@@ -271,9 +248,7 @@ static int fdc2x1x_set_autoscan_mode(const struct device *dev, bool en)
  */
 static int fdc2x1x_set_rr_sequence(const struct device *dev, uint8_t rr_seq)
 {
-	return fdc2x1x_reg_write_mask(dev,
-				      FDC2X1X_MUX_CONFIG,
-				      FDC2X1X_MUX_CFG_RR_SEQUENCE_MSK,
+	return fdc2x1x_reg_write_mask(dev, FDC2X1X_MUX_CONFIG, FDC2X1X_MUX_CFG_RR_SEQUENCE_MSK,
 				      FDC2X1X_MUX_CFG_RR_SEQUENCE_SET(rr_seq));
 }
 
@@ -285,9 +260,7 @@ static int fdc2x1x_set_rr_sequence(const struct device *dev, uint8_t rr_seq)
  */
 static int fdc2x1x_set_deglitch(const struct device *dev, uint8_t deglitch)
 {
-	return fdc2x1x_reg_write_mask(dev,
-				      FDC2X1X_MUX_CONFIG,
-				      FDC2X1X_MUX_CFG_DEGLITCH_MSK,
+	return fdc2x1x_reg_write_mask(dev, FDC2X1X_MUX_CONFIG, FDC2X1X_MUX_CFG_DEGLITCH_MSK,
 				      FDC2X1X_MUX_CFG_DEGLITCH_SET(deglitch));
 }
 
@@ -299,9 +272,7 @@ static int fdc2x1x_set_deglitch(const struct device *dev, uint8_t deglitch)
  */
 static int fdc2x1x_set_output_gain(const struct device *dev, uint8_t gain)
 {
-	return fdc2x1x_reg_write_mask(dev,
-				      FDC2X1X_RESET_DEV,
-				      FDC2X1X_RESET_DEV_OUTPUT_GAIN_MSK,
+	return fdc2x1x_reg_write_mask(dev, FDC2X1X_RESET_DEV, FDC2X1X_RESET_DEV_OUTPUT_GAIN_MSK,
 				      FDC2X1X_RESET_DEV_OUTPUT_GAIN_SET(gain));
 }
 
@@ -314,9 +285,7 @@ static int fdc2x1x_set_output_gain(const struct device *dev, uint8_t gain)
  */
 static int fdc2x1x_set_active_channel(const struct device *dev, uint8_t ch)
 {
-	return fdc2x1x_reg_write_mask(dev,
-				      FDC2X1X_CONFIG,
-				      FDC2X1X_CFG_ACTIVE_CHAN_MSK,
+	return fdc2x1x_reg_write_mask(dev, FDC2X1X_CONFIG, FDC2X1X_CFG_ACTIVE_CHAN_MSK,
 				      FDC2X1X_CFG_ACTIVE_CHAN_SET(ch));
 }
 
@@ -326,12 +295,9 @@ static int fdc2x1x_set_active_channel(const struct device *dev, uint8_t ch)
  * @param act_sel - Sensor Activation Mode Selection.
  * @return 0 in case of success, negative error code otherwise.
  */
-static int fdc2x1x_set_sensor_activate_sel(const struct device *dev,
-					   uint8_t act_sel)
+static int fdc2x1x_set_sensor_activate_sel(const struct device *dev, uint8_t act_sel)
 {
-	return fdc2x1x_reg_write_mask(dev,
-				      FDC2X1X_CONFIG,
-				      FDC2X1X_CFG_SENSOR_ACTIVATE_SEL_MSK,
+	return fdc2x1x_reg_write_mask(dev, FDC2X1X_CONFIG, FDC2X1X_CFG_SENSOR_ACTIVATE_SEL_MSK,
 				      FDC2X1X_CFG_SENSOR_ACTIVATE_SEL_SET(act_sel));
 }
 
@@ -343,9 +309,7 @@ static int fdc2x1x_set_sensor_activate_sel(const struct device *dev,
  */
 static int fdc2x1x_set_ref_clk_src(const struct device *dev, uint8_t clk_src)
 {
-	return fdc2x1x_reg_write_mask(dev,
-				      FDC2X1X_CONFIG,
-				      FDC2X1X_CFG_REF_CLK_SRC_MSK,
+	return fdc2x1x_reg_write_mask(dev, FDC2X1X_CONFIG, FDC2X1X_CFG_REF_CLK_SRC_MSK,
 				      FDC2X1X_CFG_REF_CLK_SRC_SET(clk_src));
 }
 
@@ -357,9 +321,7 @@ static int fdc2x1x_set_ref_clk_src(const struct device *dev, uint8_t clk_src)
  */
 static int fdc2x1x_set_current_drv(const struct device *dev, uint8_t cur_drv)
 {
-	return fdc2x1x_reg_write_mask(dev,
-				      FDC2X1X_CONFIG,
-				      FDC2X1X_CFG_HIGH_CURRENT_DRV_MSK,
+	return fdc2x1x_reg_write_mask(dev, FDC2X1X_CONFIG, FDC2X1X_CFG_HIGH_CURRENT_DRV_MSK,
 				      FDC2X1X_CFG_HIGH_CURRENT_DRV_SET(cur_drv));
 }
 
@@ -371,9 +333,7 @@ static int fdc2x1x_set_current_drv(const struct device *dev, uint8_t cur_drv)
  */
 int fdc2x1x_set_interrupt_pin(const struct device *dev, bool enable)
 {
-	return fdc2x1x_reg_write_mask(dev,
-				      FDC2X1X_CONFIG,
-				      FDC2X1X_CFG_INTB_DIS_MSK,
+	return fdc2x1x_reg_write_mask(dev, FDC2X1X_CONFIG, FDC2X1X_CFG_INTB_DIS_MSK,
 				      FDC2X1X_CFG_INTB_DIS_SET(!enable));
 }
 
@@ -383,12 +343,9 @@ int fdc2x1x_set_interrupt_pin(const struct device *dev, bool enable)
  * @param op_mode - Operation mode
  * @return 0 in case of success, negative error code otherwise.
  */
-int fdc2x1x_set_op_mode(const struct device *dev,
-			enum fdc2x1x_op_mode op_mode)
+int fdc2x1x_set_op_mode(const struct device *dev, enum fdc2x1x_op_mode op_mode)
 {
-	return fdc2x1x_reg_write_mask(dev,
-				      FDC2X1X_CONFIG,
-				      FDC2X1X_CFG_SLEEP_SET_EN_MSK,
+	return fdc2x1x_reg_write_mask(dev, FDC2X1X_CONFIG, FDC2X1X_CFG_SLEEP_SET_EN_MSK,
 				      FDC2X1X_CFG_SLEEP_SET_EN_SET(op_mode));
 }
 
@@ -412,9 +369,7 @@ static int fdc2x1x_reset(const struct device *dev)
 {
 	int ret;
 
-	ret = fdc2x1x_reg_write_mask(dev,
-				     FDC2X1X_RESET_DEV,
-				     FDC2X1X_RESET_DEV_MSK,
+	ret = fdc2x1x_reg_write_mask(dev, FDC2X1X_RESET_DEV, FDC2X1X_RESET_DEV_MSK,
 				     FDC2X1X_RESET_DEV_SET(1));
 
 	return ret;
@@ -441,8 +396,7 @@ static int fdc2x1x_restart(const struct device *dev)
 #ifdef CONFIG_FDC2X1X_TRIGGER
 	struct fdc2x1x_data *data = dev->data;
 
-	ret = fdc2x1x_reg_write_mask(dev, FDC2X1X_ERROR_CONFIG,
-				     data->int_config, data->int_config);
+	ret = fdc2x1x_reg_write_mask(dev, FDC2X1X_ERROR_CONFIG, data->int_config, data->int_config);
 	if (ret) {
 		LOG_ERR("Reinitializing trigger failed");
 		return ret;
@@ -478,8 +432,7 @@ static int fdc2x1x_set_shutdown(const struct device *dev, bool enable)
  * @param pm_state - power management state
  * @return 0 in case of success, negative error code otherwise.
  */
-static int fdc2x1x_device_pm_action(const struct device *dev,
-				    enum pm_device_action action)
+static int fdc2x1x_device_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	int ret;
 	const struct fdc2x1x_config *cfg = dev->config;
@@ -539,10 +492,8 @@ static int fdc2x1x_device_pm_action(const struct device *dev,
  * @param value - The sensor attribute value.
  * @return 0 in case of success, negative error code otherwise.
  */
-static int fdc2x1x_attr_set(const struct device *dev,
-			    enum sensor_channel chan,
-			    enum sensor_attribute attr,
-			    const struct sensor_value *val)
+static int fdc2x1x_attr_set(const struct device *dev, enum sensor_channel chan,
+			    enum sensor_attribute attr, const struct sensor_value *val)
 {
 	return -ENOTSUP;
 }
@@ -605,8 +556,7 @@ static int fdc2x1x_get_cap_data(const struct device *dev)
  * @param chan - The sensor channel type.
  * @return 0 in case of success, negative error code otherwise.
  */
-static int fdc2x1x_sample_fetch(const struct device *dev,
-				enum sensor_channel chan)
+static int fdc2x1x_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 #ifdef CONFIG_PM_DEVICE
 	enum pm_device_state state;
@@ -628,8 +578,7 @@ static int fdc2x1x_sample_fetch(const struct device *dev,
  * @param val - The sensor channel value.
  * @return 0 in case of success, negative error code otherwise.
  */
-static int fdc2x1x_channel_get(const struct device *dev,
-			       enum sensor_channel chan,
+static int fdc2x1x_channel_get(const struct device *dev, enum sensor_channel chan,
 			       struct sensor_value *val)
 {
 	const struct fdc2x1x_config *cfg = dev->config;
@@ -741,8 +690,7 @@ static int fdc2x1x_init_config(const struct device *dev)
 			return ret;
 		}
 
-		ret = fdc2x1x_set_fref_divider(dev, ch,
-					       cfg->ch_cfg[ch].fref_divider);
+		ret = fdc2x1x_set_fref_divider(dev, ch, cfg->ch_cfg[ch].fref_divider);
 		if (ret) {
 			return ret;
 		}
@@ -752,8 +700,7 @@ static int fdc2x1x_init_config(const struct device *dev)
 			return ret;
 		}
 
-		ret = fdc2x1x_set_settle_count(dev, ch,
-					       cfg->ch_cfg[ch].settle_count);
+		ret = fdc2x1x_set_settle_count(dev, ch, cfg->ch_cfg[ch].settle_count);
 		if (ret) {
 			return ret;
 		}
@@ -764,8 +711,7 @@ static int fdc2x1x_init_config(const struct device *dev)
 		}
 
 		if (!data->fdc221x) {
-			ret = fdc2x1x_set_offset(dev, ch,
-						 cfg->ch_cfg[ch].offset);
+			ret = fdc2x1x_set_offset(dev, ch, cfg->ch_cfg[ch].offset);
 			if (ret) {
 				return ret;
 			}
@@ -811,8 +757,7 @@ static int fdc2x1x_init_config(const struct device *dev)
 
 #ifdef CONFIG_FDC2X1X_TRIGGER_NONE
 	/* Enable Data Ready Flag to poll for new measurement */
-	ret = fdc2x1x_reg_write_mask(dev, FDC2X1X_ERROR_CONFIG,
-				     FDC2X1X_ERROR_CONFIG_DRDY_2INT_MSK,
+	ret = fdc2x1x_reg_write_mask(dev, FDC2X1X_ERROR_CONFIG, FDC2X1X_ERROR_CONFIG_DRDY_2INT_MSK,
 				     FDC2X1X_ERROR_CONFIG_DRDY_2INT_SET(1));
 	if (ret) {
 		return ret;
@@ -847,7 +792,6 @@ static int fdc2x1x_probe(const struct device *dev)
 		LOG_ERR("Failed to read device id");
 		return -EIO;
 	}
-
 
 	if (dev_id == FDC2X1X_DEVICE_ID_VAL_28BIT) {
 		data->fdc221x = true;
@@ -957,74 +901,60 @@ static int fdc2x1x_init(const struct device *dev)
 	return 0;
 }
 
-#define FDC2X1X_SD_PROPS(n)						  \
-	.sd_gpio = GPIO_DT_SPEC_INST_GET(n, sd_gpios),			  \
+#define FDC2X1X_SD_PROPS(n) .sd_gpio = GPIO_DT_SPEC_INST_GET(n, sd_gpios),
 
-#define FDC2X1X_SD(n)				       \
-	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, sd_gpios), \
+#define FDC2X1X_SD(n) IF_ENABLED(DT_INST_NODE_HAS_PROP(n, sd_gpios), \
 		   (FDC2X1X_SD_PROPS(n)))
 
-#define FDC2X1X_INTB_PROPS(n)						      \
-	.intb_gpio = GPIO_DT_SPEC_INST_GET(n, intb_gpios),		      \
+#define FDC2X1X_INTB_PROPS(n) .intb_gpio = GPIO_DT_SPEC_INST_GET(n, intb_gpios),
 
-#define FDC2X1X_INTB(n)			   \
-	IF_ENABLED(CONFIG_FDC2X1X_TRIGGER, \
+#define FDC2X1X_INTB(n) IF_ENABLED(CONFIG_FDC2X1X_TRIGGER, \
 		   (FDC2X1X_INTB_PROPS(n)))
 
-#define FDC2X1X_CH_CFG_INIT(ch)				   \
-	{						   \
-		.rcount = DT_PROP(ch, rcount),		   \
-		.offset = DT_PROP(ch, offset),		   \
-		.settle_count = DT_PROP(ch, settlecount),  \
-		.fref_divider = DT_PROP(ch, fref_divider), \
-		.idrive = DT_PROP(ch, idrive),		   \
-		.fin_sel = DT_PROP(ch, fin_sel),	   \
-		.inductance = DT_PROP(ch, inductance),	   \
+#define FDC2X1X_CH_CFG_INIT(ch)                                                                    \
+	{                                                                                          \
+		.rcount = DT_PROP(ch, rcount),                                                     \
+		.offset = DT_PROP(ch, offset),                                                     \
+		.settle_count = DT_PROP(ch, settlecount),                                          \
+		.fref_divider = DT_PROP(ch, fref_divider),                                         \
+		.idrive = DT_PROP(ch, idrive),                                                     \
+		.fin_sel = DT_PROP(ch, fin_sel),                                                   \
+		.inductance = DT_PROP(ch, inductance),                                             \
 	},
 
-#define FDC2X1X_CHANNEL_BUF_INIT(ch)          0,
+#define FDC2X1X_CHANNEL_BUF_INIT(ch) 0,
 
-#define FDC2X1X_INIT(n)							   \
-	static uint32_t fdc2x1x_sample_buf_##n[] = {			   \
-		DT_INST_FOREACH_CHILD(n, FDC2X1X_CHANNEL_BUF_INIT)	   \
-	};								   \
-									   \
-	static struct fdc2x1x_data fdc2x1x_data_##n = {			   \
-		.channel_buf = fdc2x1x_sample_buf_##n,			   \
-	};								   \
-									   \
-	const struct fdc2x1x_chx_config ch_cfg_##n[] = {		   \
-		DT_INST_FOREACH_CHILD(n, FDC2X1X_CH_CFG_INIT)		   \
-	};								   \
-									   \
-	static const struct fdc2x1x_config fdc2x1x_config_##n = {	   \
-		.i2c = I2C_DT_SPEC_INST_GET(n),				   \
-		.fdc2x14 = DT_INST_PROP(n, fdc2x14),			   \
-		.autoscan_en = DT_INST_PROP(n, autoscan),		   \
-		.rr_sequence = DT_INST_PROP(n, rr_sequence),		   \
-		.active_channel = DT_INST_PROP(n, active_channel),	   \
-		.deglitch = DT_INST_PROP(n, deglitch),			   \
-		.sensor_activate_sel =					   \
-			DT_INST_ENUM_IDX(n, sensor_activate_sel),	   \
-		.clk_src = DT_INST_ENUM_IDX(n, ref_clk_src),		   \
-		.current_drv = DT_INST_ENUM_IDX(n, current_drive),	   \
-		.output_gain = DT_INST_PROP(n, output_gain),		   \
-		.ch_cfg =       ch_cfg_##n,				   \
-		.num_channels = ARRAY_SIZE(fdc2x1x_sample_buf_##n),	   \
-		.fref = DT_INST_PROP(n, fref),				   \
-		FDC2X1X_SD(n)						   \
-		FDC2X1X_INTB(n)						   \
-	};								   \
-									   \
-	PM_DEVICE_DT_INST_DEFINE(n, fdc2x1x_device_pm_action);		   \
-									   \
-	SENSOR_DEVICE_DT_INST_DEFINE(n,					   \
-			      fdc2x1x_init,				   \
-			      PM_DEVICE_DT_INST_GET(n),			   \
-			      &fdc2x1x_data_##n,			   \
-			      &fdc2x1x_config_##n,			   \
-			      POST_KERNEL,				   \
-			      CONFIG_SENSOR_INIT_PRIORITY,		   \
-			      &fdc2x1x_api_funcs);
+#define FDC2X1X_INIT(n)                                                                            \
+	static uint32_t fdc2x1x_sample_buf_##n[] = {                                               \
+		DT_INST_FOREACH_CHILD(n, FDC2X1X_CHANNEL_BUF_INIT)};                               \
+                                                                                                   \
+	static struct fdc2x1x_data fdc2x1x_data_##n = {                                            \
+		.channel_buf = fdc2x1x_sample_buf_##n,                                             \
+	};                                                                                         \
+                                                                                                   \
+	const struct fdc2x1x_chx_config ch_cfg_##n[] = {                                           \
+		DT_INST_FOREACH_CHILD(n, FDC2X1X_CH_CFG_INIT)};                                    \
+                                                                                                   \
+	static const struct fdc2x1x_config fdc2x1x_config_##n = {                                  \
+		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
+		.fdc2x14 = DT_INST_PROP(n, fdc2x14),                                               \
+		.autoscan_en = DT_INST_PROP(n, autoscan),                                          \
+		.rr_sequence = DT_INST_PROP(n, rr_sequence),                                       \
+		.active_channel = DT_INST_PROP(n, active_channel),                                 \
+		.deglitch = DT_INST_PROP(n, deglitch),                                             \
+		.sensor_activate_sel = DT_INST_ENUM_IDX(n, sensor_activate_sel),                   \
+		.clk_src = DT_INST_ENUM_IDX(n, ref_clk_src),                                       \
+		.current_drv = DT_INST_ENUM_IDX(n, current_drive),                                 \
+		.output_gain = DT_INST_PROP(n, output_gain),                                       \
+		.ch_cfg = ch_cfg_##n,                                                              \
+		.num_channels = ARRAY_SIZE(fdc2x1x_sample_buf_##n),                                \
+		.fref = DT_INST_PROP(n, fref),                                                     \
+		FDC2X1X_SD(n) FDC2X1X_INTB(n)};                                                    \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(n, fdc2x1x_device_pm_action);                                     \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, fdc2x1x_init, PM_DEVICE_DT_INST_GET(n), &fdc2x1x_data_##n, \
+				     &fdc2x1x_config_##n, POST_KERNEL,                             \
+				     CONFIG_SENSOR_INIT_PRIORITY, &fdc2x1x_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(FDC2X1X_INIT)

@@ -18,50 +18,43 @@ int ili9488_regs_init(const struct device *dev)
 	int r;
 
 	LOG_HEXDUMP_DBG(regs->frmctr1, ILI9488_FRMCTR1_LEN, "FRMCTR1");
-	r = ili9xxx_transmit(dev, ILI9488_FRMCTR1, regs->frmctr1,
-			     ILI9488_FRMCTR1_LEN);
+	r = ili9xxx_transmit(dev, ILI9488_FRMCTR1, regs->frmctr1, ILI9488_FRMCTR1_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(regs->disctrl, ILI9488_DISCTRL_LEN, "DISCTRL");
-	r = ili9xxx_transmit(dev, ILI9488_DISCTRL, regs->disctrl,
-			     ILI9488_DISCTRL_LEN);
+	r = ili9xxx_transmit(dev, ILI9488_DISCTRL, regs->disctrl, ILI9488_DISCTRL_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(regs->pwctrl1, ILI9488_PWCTRL1_LEN, "PWCTRL1");
-	r = ili9xxx_transmit(dev, ILI9488_PWCTRL1, regs->pwctrl1,
-			     ILI9488_PWCTRL1_LEN);
+	r = ili9xxx_transmit(dev, ILI9488_PWCTRL1, regs->pwctrl1, ILI9488_PWCTRL1_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(regs->pwctrl2, ILI9488_PWCTRL2_LEN, "PWCTRL2");
-	r = ili9xxx_transmit(dev, ILI9488_PWCTRL2, regs->pwctrl2,
-			     ILI9488_PWCTRL2_LEN);
+	r = ili9xxx_transmit(dev, ILI9488_PWCTRL2, regs->pwctrl2, ILI9488_PWCTRL2_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(regs->vmctrl, ILI9488_VMCTRL_LEN, "VMCTRL");
-	r = ili9xxx_transmit(dev, ILI9488_VMCTRL, regs->vmctrl,
-			     ILI9488_VMCTRL_LEN);
+	r = ili9xxx_transmit(dev, ILI9488_VMCTRL, regs->vmctrl, ILI9488_VMCTRL_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(regs->pgamctrl, ILI9488_PGAMCTRL_LEN, "PGAMCTRL");
-	r = ili9xxx_transmit(dev, ILI9488_PGAMCTRL, regs->pgamctrl,
-			     ILI9488_PGAMCTRL_LEN);
+	r = ili9xxx_transmit(dev, ILI9488_PGAMCTRL, regs->pgamctrl, ILI9488_PGAMCTRL_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(regs->ngamctrl, ILI9488_NGAMCTRL_LEN, "NGAMCTRL");
-	r = ili9xxx_transmit(dev, ILI9488_NGAMCTRL, regs->ngamctrl,
-			     ILI9488_NGAMCTRL_LEN);
+	r = ili9xxx_transmit(dev, ILI9488_NGAMCTRL, regs->ngamctrl, ILI9488_NGAMCTRL_LEN);
 	if (r < 0) {
 		return r;
 	}

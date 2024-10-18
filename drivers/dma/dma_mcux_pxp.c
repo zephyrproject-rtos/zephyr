@@ -90,8 +90,8 @@ static int dma_mcux_pxp_configure(const struct device *dev, uint32_t channel,
 		bytes_per_pixel = 2;
 		break;
 	case DMA_MCUX_PXP_FMT_RGB888:
-#if (!(defined(FSL_FEATURE_PXP_HAS_NO_EXTEND_PIXEL_FORMAT) && \
-	FSL_FEATURE_PXP_HAS_NO_EXTEND_PIXEL_FORMAT)) && \
+#if (!(defined(FSL_FEATURE_PXP_HAS_NO_EXTEND_PIXEL_FORMAT) &&                                      \
+       FSL_FEATURE_PXP_HAS_NO_EXTEND_PIXEL_FORMAT)) &&                                             \
 	(!(defined(FSL_FEATURE_PXP_V3) && FSL_FEATURE_PXP_V3))
 		ps_buffer_cfg.pixelFormat = kPXP_PsPixelFormatARGB8888;
 #else
@@ -202,23 +202,23 @@ static int dma_mcux_pxp_init(const struct device *dev)
 	return 0;
 }
 
-#define DMA_INIT(n)                                                                                \
-	static void dma_pxp_config_func##n(const struct device *dev)                               \
-	{                                                                                          \
+#define DMA_INIT(n)                                                                                  \
+	static void dma_pxp_config_func##n(const struct device *dev)                                 \
+	{                                                                                            \
 		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0),                                              \
 			   (IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),                 \
 					dma_mcux_pxp_irq_handler, DEVICE_DT_INST_GET(n), 0);       \
-			    irq_enable(DT_INST_IRQ(n, irq));))                                     \
-	}                                                                                          \
-                                                                                                   \
-	static const struct dma_mcux_pxp_config dma_config_##n = {                                 \
-		.base = (PXP_Type *)DT_INST_REG_ADDR(n),                                           \
-		.irq_config_func = dma_pxp_config_func##n,                                         \
-	};                                                                                         \
-                                                                                                   \
-	static struct dma_mcux_pxp_data dma_data_##n;                                              \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &dma_mcux_pxp_init, NULL, &dma_data_##n, &dma_config_##n,         \
+			    irq_enable(DT_INST_IRQ(n, irq));)) \
+	}                                                                                            \
+                                                                                                     \
+	static const struct dma_mcux_pxp_config dma_config_##n = {                                   \
+		.base = (PXP_Type *)DT_INST_REG_ADDR(n),                                             \
+		.irq_config_func = dma_pxp_config_func##n,                                           \
+	};                                                                                           \
+                                                                                                     \
+	static struct dma_mcux_pxp_data dma_data_##n;                                                \
+                                                                                                     \
+	DEVICE_DT_INST_DEFINE(n, &dma_mcux_pxp_init, NULL, &dma_data_##n, &dma_config_##n,           \
 			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY, &dma_mcux_pxp_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DMA_INIT)

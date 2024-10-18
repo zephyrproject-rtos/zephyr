@@ -15,8 +15,7 @@ LOG_MODULE_DECLARE(i3c, CONFIG_I3C_LOG_LEVEL);
 /* Statically allocated array of IBI work item nodes */
 static struct i3c_ibi_work i3c_ibi_work_nodes[CONFIG_I3C_IBI_WORKQUEUE_LENGTH];
 
-static K_KERNEL_STACK_DEFINE(i3c_ibi_work_q_stack,
-			     CONFIG_I3C_IBI_WORKQUEUE_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(i3c_ibi_work_q_stack, CONFIG_I3C_IBI_WORKQUEUE_STACK_SIZE);
 
 /* IBI workqueue */
 static struct k_work_q i3c_ibi_work_q;
@@ -53,8 +52,8 @@ out:
 	return ret;
 }
 
-int i3c_ibi_work_enqueue_target_irq(struct i3c_device_desc *target,
-				    uint8_t *payload, size_t payload_len)
+int i3c_ibi_work_enqueue_target_irq(struct i3c_device_desc *target, uint8_t *payload,
+				    size_t payload_len)
 {
 	sys_snode_t *node;
 	struct i3c_ibi_work *ibi_node;
@@ -73,8 +72,7 @@ int i3c_ibi_work_enqueue_target_irq(struct i3c_device_desc *target,
 	ibi_node->payload.payload_len = payload_len;
 
 	if ((payload != NULL) && (payload_len > 0U)) {
-		(void)memcpy(&ibi_node->payload.payload[0],
-			     payload, payload_len);
+		(void)memcpy(&ibi_node->payload.payload[0], payload, payload_len);
 	}
 
 	ret = ibi_work_submit(ibi_node);
@@ -113,8 +111,7 @@ out:
 	return ret;
 }
 
-int i3c_ibi_work_enqueue_cb(const struct device *dev,
-			    k_work_handler_t work_cb)
+int i3c_ibi_work_enqueue_cb(const struct device *dev, k_work_handler_t work_cb)
 {
 	sys_snode_t *node;
 	struct i3c_ibi_work *ibi_node;
@@ -149,8 +146,7 @@ static void i3c_ibi_work_handler(struct k_work *work)
 
 	if (IS_ENABLED(CONFIG_I3C_IBI_WORKQUEUE_VERBOSE_DEBUG) &&
 	    ((uint32_t)ibi_node->type <= I3C_IBI_TYPE_MAX)) {
-		LOG_DBG("Processing IBI work %p (type %d, len %u)",
-			ibi_node, (int)ibi_node->type,
+		LOG_DBG("Processing IBI work %p (type %d, len %u)", ibi_node, (int)ibi_node->type,
 			ibi_node->payload.payload_len);
 
 		if (ibi_node->payload.payload_len > 0U) {
@@ -227,8 +223,7 @@ static int i3c_ibi_work_q_init(void)
 	for (int i = 0; i < ARRAY_SIZE(i3c_ibi_work_nodes); i++) {
 		i3c_ibi_work_nodes[i].work.handler = i3c_ibi_work_handler;
 
-		sys_slist_append(&i3c_ibi_work_nodes_free,
-				 (sys_snode_t *)&i3c_ibi_work_nodes[i]);
+		sys_slist_append(&i3c_ibi_work_nodes_free, (sys_snode_t *)&i3c_ibi_work_nodes[i]);
 	}
 
 	/* Start the workqueue */

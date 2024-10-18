@@ -14,7 +14,6 @@
 #include "rpu_hw_if.h"
 #include "ficr_prog.h"
 
-
 LOG_MODULE_DECLARE(otp_prog, CONFIG_WIFI_NRF70_BUS_LOG_LEVEL);
 
 static void write_word(unsigned int addr, unsigned int data)
@@ -28,27 +27,21 @@ static void read_word(unsigned int addr, unsigned int *data)
 }
 
 unsigned int check_protection(unsigned int *buff, unsigned int off1, unsigned int off2,
-		    unsigned int off3, unsigned int off4)
+			      unsigned int off3, unsigned int off4)
 {
-	if ((buff[off1] == OTP_PROGRAMMED) &&
-		(buff[off2] == OTP_PROGRAMMED)  &&
-		(buff[off3] == OTP_PROGRAMMED) &&
-		(buff[off4] == OTP_PROGRAMMED))
+	if ((buff[off1] == OTP_PROGRAMMED) && (buff[off2] == OTP_PROGRAMMED) &&
+	    (buff[off3] == OTP_PROGRAMMED) && (buff[off4] == OTP_PROGRAMMED)) {
 		return OTP_PROGRAMMED;
-	else if ((buff[off1] == OTP_FRESH_FROM_FAB) &&
-		(buff[off2] == OTP_FRESH_FROM_FAB) &&
-		(buff[off3] == OTP_FRESH_FROM_FAB) &&
-		(buff[off4] == OTP_FRESH_FROM_FAB))
+	} else if ((buff[off1] == OTP_FRESH_FROM_FAB) && (buff[off2] == OTP_FRESH_FROM_FAB) &&
+		   (buff[off3] == OTP_FRESH_FROM_FAB) && (buff[off4] == OTP_FRESH_FROM_FAB)) {
 		return OTP_FRESH_FROM_FAB;
-	else if ((buff[off1] == OTP_ENABLE_PATTERN) &&
-		(buff[off2] == OTP_ENABLE_PATTERN) &&
-		(buff[off3] == OTP_ENABLE_PATTERN) &&
-		(buff[off4] == OTP_ENABLE_PATTERN))
+	} else if ((buff[off1] == OTP_ENABLE_PATTERN) && (buff[off2] == OTP_ENABLE_PATTERN) &&
+		   (buff[off3] == OTP_ENABLE_PATTERN) && (buff[off4] == OTP_ENABLE_PATTERN)) {
 		return OTP_ENABLE_PATTERN;
-	else
+	} else {
 		return OTP_INVALID;
+	}
 }
-
 
 static void set_otp_timing_reg_40mhz(void)
 {
@@ -73,13 +66,11 @@ static int poll_otp_ready(void)
 	return -ENOEXEC;
 }
 
-
 static int req_otp_standby_mode(void)
 {
 	write_word(OTP_RWSBMODE_ADDR, 0x0);
 	return poll_otp_ready();
 }
-
 
 static int otp_wr_voltage_2V5(void)
 {
@@ -135,7 +126,6 @@ static int req_otp_read_mode(void)
 	return poll_otp_ready();
 }
 
-
 static int req_otp_byte_write_mode(void)
 {
 	write_word(OTP_RWSBMODE_ADDR, OTP_BYTE_WRITE_MODE);
@@ -146,7 +136,7 @@ static unsigned int read_otp_location(unsigned int offset, unsigned int *read_va
 {
 	int err;
 
-	write_word(OTP_RDENABLE_ADDR,  offset);
+	write_word(OTP_RDENABLE_ADDR, offset);
 	err = poll_otp_read_valid();
 	if (err) {
 		LOG_ERR("OTP read failed");
@@ -157,14 +147,13 @@ static unsigned int read_otp_location(unsigned int offset, unsigned int *read_va
 	return 0;
 }
 
-static int  write_otp_location(unsigned int otp_location_offset, unsigned int otp_data)
+static int write_otp_location(unsigned int otp_location_offset, unsigned int otp_data)
 {
-	write_word(OTP_WRENABLE_ADDR,  otp_location_offset);
-	write_word(OTP_WRITEREG_ADDR,  otp_data);
+	write_word(OTP_WRENABLE_ADDR, otp_location_offset);
+	write_word(OTP_WRITEREG_ADDR, otp_data);
 
 	return poll_otp_wrdone();
 }
-
 
 static int otp_rd_voltage_1V8(void)
 {
@@ -190,8 +179,8 @@ static int update_mac_addr(unsigned int index, unsigned int *write_val)
 			LOG_ERR("FICR: Failed to update MAC ADDR%d", index);
 			break;
 		}
-		LOG_INF("mac addr %d : Reg%d (0x%x) = 0x%04x",
-					index, (i+1), (MAC0_ADDR + i) << 2, write_val[i]);
+		LOG_INF("mac addr %d : Reg%d (0x%x) = 0x%04x", index, (i + 1), (MAC0_ADDR + i) << 2,
+			write_val[i]);
 	}
 	return ret;
 }
@@ -199,7 +188,7 @@ static int update_mac_addr(unsigned int index, unsigned int *write_val)
 int write_otp_memory(unsigned int otp_addr, unsigned int *write_val)
 {
 	int err = 0;
-	int	mask_val;
+	int mask_val;
 	int ret = 0;
 	int retrim_loc = 0;
 
@@ -226,18 +215,18 @@ int write_otp_memory(unsigned int otp_addr, unsigned int *write_val)
 	switch (otp_addr) {
 	case REGION_PROTECT:
 		write_otp_location(REGION_PROTECT, write_val[0]);
-		write_otp_location(REGION_PROTECT+1, write_val[0]);
-		write_otp_location(REGION_PROTECT+2, write_val[0]);
-		write_otp_location(REGION_PROTECT+3, write_val[0]);
+		write_otp_location(REGION_PROTECT + 1, write_val[0]);
+		write_otp_location(REGION_PROTECT + 2, write_val[0]);
+		write_otp_location(REGION_PROTECT + 3, write_val[0]);
 
-		LOG_INF("Written REGION_PROTECT0 (0x%x) : 0x%04x",
-						(REGION_PROTECT << 2), write_val[0]);
-		LOG_INF("Written REGION_PROTECT1 (0x%x) : 0x%04x",
-						(REGION_PROTECT+1) << 2, write_val[0]);
-		LOG_INF("Written REGION_PROTECT2 (0x%x) : 0x%04x",
-						(REGION_PROTECT+2) << 2, write_val[0]);
-		LOG_INF("Written REGION_PROTECT3 (0x%x) : 0x%04x",
-						(REGION_PROTECT+3) << 2, write_val[0]);
+		LOG_INF("Written REGION_PROTECT0 (0x%x) : 0x%04x", (REGION_PROTECT << 2),
+			write_val[0]);
+		LOG_INF("Written REGION_PROTECT1 (0x%x) : 0x%04x", (REGION_PROTECT + 1) << 2,
+			write_val[0]);
+		LOG_INF("Written REGION_PROTECT2 (0x%x) : 0x%04x", (REGION_PROTECT + 2) << 2,
+			write_val[0]);
+		LOG_INF("Written REGION_PROTECT3 (0x%x) : 0x%04x", (REGION_PROTECT + 3) << 2,
+			write_val[0]);
 		break;
 	case QSPI_KEY:
 		mask_val = QSPI_KEY_FLAG_MASK;
@@ -247,12 +236,12 @@ int write_otp_memory(unsigned int otp_addr, unsigned int *write_val)
 				LOG_ERR("FICR: Failed to write QSPI key offset-%d", QSPI_KEY + i);
 				goto _exit_otp_write;
 			}
-			LOG_INF("Written QSPI_KEY0 (0x%x) : 0x%04x",
-						(QSPI_KEY + i) << 2, write_val[i]);
+			LOG_INF("Written QSPI_KEY0 (0x%x) : 0x%04x", (QSPI_KEY + i) << 2,
+				write_val[i]);
 		}
 		write_otp_location(REGION_DEFAULTS, mask_val);
-		LOG_INF("Written REGION_DEFAULTS (0x%x) : 0x%04x",
-						(REGION_DEFAULTS) << 2, mask_val);
+		LOG_INF("Written REGION_DEFAULTS (0x%x) : 0x%04x", (REGION_DEFAULTS) << 2,
+			mask_val);
 		break;
 	case MAC0_ADDR:
 		mask_val = MAC0_ADDR_FLAG_MASK;
@@ -263,8 +252,8 @@ int write_otp_memory(unsigned int otp_addr, unsigned int *write_val)
 
 		write_otp_location(REGION_DEFAULTS, mask_val);
 		LOG_INF("Written MAC address 0");
-		LOG_INF("Written REGION_DEFAULTS (0x%x) : 0x%04x",
-						(REGION_DEFAULTS) << 2, mask_val);
+		LOG_INF("Written REGION_DEFAULTS (0x%x) : 0x%04x", (REGION_DEFAULTS) << 2,
+			mask_val);
 		break;
 	case MAC1_ADDR:
 		mask_val = MAC1_ADDR_FLAG_MASK;
@@ -274,8 +263,8 @@ int write_otp_memory(unsigned int otp_addr, unsigned int *write_val)
 		}
 		write_otp_location(REGION_DEFAULTS, mask_val);
 		LOG_INF("Written MAC address 1");
-		LOG_INF("Written REGION_DEFAULTS (0x%x) : 0x%04x",
-						(REGION_DEFAULTS) << 2, mask_val);
+		LOG_INF("Written REGION_DEFAULTS (0x%x) : 0x%04x", (REGION_DEFAULTS) << 2,
+			mask_val);
 		break;
 	case CALIB_XO:
 		mask_val = CALIB_XO_FLAG_MASK;
@@ -287,10 +276,9 @@ int write_otp_memory(unsigned int otp_addr, unsigned int *write_val)
 		} else {
 			write_otp_location(REGION_DEFAULTS, mask_val);
 
-			LOG_INF("Written CALIB_XO (0x%x) to 0x%04x",
-						CALIB_XO << 2, write_val[0]);
-			LOG_INF("Written REGION_DEFAULTS (0x%x) : 0x%04x",
-						(REGION_DEFAULTS) << 2, mask_val);
+			LOG_INF("Written CALIB_XO (0x%x) to 0x%04x", CALIB_XO << 2, write_val[0]);
+			LOG_INF("Written REGION_DEFAULTS (0x%x) : 0x%04x", (REGION_DEFAULTS) << 2,
+				mask_val);
 		}
 		break;
 	case PRODRETEST_PROGVERSION:
@@ -325,31 +313,29 @@ int write_otp_memory(unsigned int otp_addr, unsigned int *write_val)
 			LOG_ERR("PRODRETEST.TRIM_Update Exception");
 			goto _exit_otp_write;
 		} else {
-			LOG_INF("Written PRODRETEST.TRIM%d 0x%04x",
-						retrim_loc, *write_val);
+			LOG_INF("Written PRODRETEST.TRIM%d 0x%04x", retrim_loc, *write_val);
 		}
 		break;
 	case REGION_DEFAULTS:
 		write_otp_location(REGION_DEFAULTS, write_val[0]);
 
-		LOG_INF("Written REGION_DEFAULTS (0x%x) to 0x%04x",
-						REGION_DEFAULTS << 2, write_val[0]);
+		LOG_INF("Written REGION_DEFAULTS (0x%x) to 0x%04x", REGION_DEFAULTS << 2,
+			write_val[0]);
 		break;
 	default:
 		LOG_ERR("unknown field received: %d", otp_addr);
-
 	}
 	return ret;
 
 _exit_otp_write:
-	err  = req_otp_standby_mode();
+	err = req_otp_standby_mode();
 	err |= otp_rd_voltage_1V8();
 	return err;
 }
 
 int read_otp_memory(unsigned int otp_addr, unsigned int *read_val, int len)
 {
-	int	err;
+	int err;
 
 	err = poll_otp_ready();
 	if (err) {

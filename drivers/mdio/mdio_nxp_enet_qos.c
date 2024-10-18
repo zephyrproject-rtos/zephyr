@@ -77,7 +77,6 @@ static int do_transaction(struct mdio_transaction *mdio)
 		/* Start the transaction */
 		ENET_QOS_REG_PREP(MAC_MDIO_ADDRESS, GB, 0b1);
 
-
 	ret = -ETIMEDOUT;
 	for (int i = CONFIG_MDIO_NXP_ENET_QOS_RECHECK_COUNT; i > 0; i--) {
 		if (!check_busy(base)) {
@@ -106,8 +105,7 @@ done:
 	return ret;
 }
 
-static int nxp_enet_qos_mdio_read(const struct device *dev,
-				  uint8_t portaddr, uint8_t regaddr,
+static int nxp_enet_qos_mdio_read(const struct device *dev, uint8_t portaddr, uint8_t regaddr,
 				  uint16_t *read_data)
 {
 	const struct nxp_enet_qos_mdio_config *config = dev->config;
@@ -125,8 +123,7 @@ static int nxp_enet_qos_mdio_read(const struct device *dev,
 	return do_transaction(&mdio_read);
 }
 
-static int nxp_enet_qos_mdio_write(const struct device *dev,
-				   uint8_t portaddr, uint8_t regaddr,
+static int nxp_enet_qos_mdio_write(const struct device *dev, uint8_t portaddr, uint8_t regaddr,
 				   uint16_t write_data)
 {
 	const struct nxp_enet_qos_mdio_config *config = dev->config;
@@ -191,19 +188,16 @@ static int nxp_enet_qos_mdio_init(const struct device *dev)
 	return 0;
 }
 
-#define NXP_ENET_QOS_MDIO_INIT(inst)						\
-										\
-	static const struct nxp_enet_qos_mdio_config				\
-	nxp_enet_qos_mdio_cfg_##inst = {					\
-		.enet_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),		\
-	};									\
-										\
-	static struct nxp_enet_qos_mdio_data nxp_enet_qos_mdio_data_##inst;	\
-										\
-	DEVICE_DT_INST_DEFINE(inst, &nxp_enet_qos_mdio_init, NULL,		\
-			      &nxp_enet_qos_mdio_data_##inst,			\
-			      &nxp_enet_qos_mdio_cfg_##inst,			\
-			      POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY,		\
-			      &nxp_enet_qos_mdio_api);				\
+#define NXP_ENET_QOS_MDIO_INIT(inst)                                                               \
+                                                                                                   \
+	static const struct nxp_enet_qos_mdio_config nxp_enet_qos_mdio_cfg_##inst = {              \
+		.enet_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                   \
+	};                                                                                         \
+                                                                                                   \
+	static struct nxp_enet_qos_mdio_data nxp_enet_qos_mdio_data_##inst;                        \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &nxp_enet_qos_mdio_init, NULL, &nxp_enet_qos_mdio_data_##inst, \
+			      &nxp_enet_qos_mdio_cfg_##inst, POST_KERNEL,                          \
+			      CONFIG_MDIO_INIT_PRIORITY, &nxp_enet_qos_mdio_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_ENET_QOS_MDIO_INIT)

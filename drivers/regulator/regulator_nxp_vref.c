@@ -74,25 +74,17 @@ static int regulator_nxp_vref_set_mode(const struct device *dev, regulator_mode_
 	uint32_t csr = base->CSR;
 
 	if (mode == NXP_VREF_MODE_STANDBY) {
-		csr &= ~VREF_CSR_REGEN_MASK &
-			~VREF_CSR_CHOPEN_MASK &
-			~VREF_CSR_HI_PWR_LV_MASK &
-			~VREF_CSR_BUF21EN_MASK;
+		csr &= ~VREF_CSR_REGEN_MASK & ~VREF_CSR_CHOPEN_MASK & ~VREF_CSR_HI_PWR_LV_MASK &
+		       ~VREF_CSR_BUF21EN_MASK;
 	} else if (mode == NXP_VREF_MODE_LOW_POWER) {
-		csr &= ~VREF_CSR_REGEN_MASK &
-			~VREF_CSR_CHOPEN_MASK &
-			~VREF_CSR_HI_PWR_LV_MASK;
+		csr &= ~VREF_CSR_REGEN_MASK & ~VREF_CSR_CHOPEN_MASK & ~VREF_CSR_HI_PWR_LV_MASK;
 		csr |= VREF_CSR_BUF21EN_MASK;
 	} else if (mode == NXP_VREF_MODE_HIGH_POWER) {
-		csr &= ~VREF_CSR_REGEN_MASK &
-			~VREF_CSR_CHOPEN_MASK;
-		csr |= VREF_CSR_HI_PWR_LV_MASK &
-			VREF_CSR_BUF21EN_MASK;
+		csr &= ~VREF_CSR_REGEN_MASK & ~VREF_CSR_CHOPEN_MASK;
+		csr |= VREF_CSR_HI_PWR_LV_MASK & VREF_CSR_BUF21EN_MASK;
 	} else if (mode == NXP_VREF_MODE_INTERNAL_REGULATOR) {
-		csr |= VREF_CSR_REGEN_MASK &
-			VREF_CSR_CHOPEN_MASK &
-			VREF_CSR_HI_PWR_LV_MASK &
-			VREF_CSR_BUF21EN_MASK;
+		csr |= VREF_CSR_REGEN_MASK & VREF_CSR_CHOPEN_MASK & VREF_CSR_HI_PWR_LV_MASK &
+		       VREF_CSR_BUF21EN_MASK;
 	} else {
 		return -EINVAL;
 	}
@@ -129,14 +121,13 @@ static inline unsigned int regulator_nxp_vref_count_voltages(const struct device
 	return linear_range_values_count(&utrim_range);
 }
 
-static int regulator_nxp_vref_list_voltage(const struct device *dev,
-						unsigned int idx, int32_t *volt_uv)
+static int regulator_nxp_vref_list_voltage(const struct device *dev, unsigned int idx,
+					   int32_t *volt_uv)
 {
 	return linear_range_get_value(&utrim_range, idx, volt_uv);
 }
 
-static int regulator_nxp_vref_set_voltage(const struct device *dev,
-					int32_t min_uv, int32_t max_uv)
+static int regulator_nxp_vref_set_voltage(const struct device *dev, int32_t min_uv, int32_t max_uv)
 {
 	const struct regulator_nxp_vref_config *config = dev->config;
 	VREF_Type *const base = config->base;
@@ -154,8 +145,7 @@ static int regulator_nxp_vref_set_voltage(const struct device *dev,
 	return 0;
 }
 
-static int regulator_nxp_vref_get_voltage(const struct device *dev,
-						int32_t *volt_uv)
+static int regulator_nxp_vref_get_voltage(const struct device *dev, int32_t *volt_uv)
 {
 	const struct regulator_nxp_vref_config *config = dev->config;
 	VREF_Type *const base = config->base;
@@ -195,20 +185,17 @@ static int regulator_nxp_vref_init(const struct device *dev)
 	return regulator_common_init(dev, false);
 }
 
-#define REGULATOR_NXP_VREF_DEFINE(inst)						\
-	static struct regulator_nxp_vref_data data_##inst;			\
-										\
-	static const struct regulator_nxp_vref_config config_##inst = {		\
-		.common = REGULATOR_DT_INST_COMMON_CONFIG_INIT(inst),		\
-		.base = (VREF_Type *) DT_INST_REG_ADDR(inst),			\
-		.buf_start_delay = DT_INST_PROP(inst,				\
-				nxp_buffer_startup_delay_us),			\
-		.bg_start_time = DT_INST_PROP(inst,				\
-				nxp_bandgap_startup_time_us),			\
-	};									\
-										\
-	DEVICE_DT_INST_DEFINE(inst, regulator_nxp_vref_init, NULL, &data_##inst,\
-				&config_##inst, POST_KERNEL,			\
-				CONFIG_REGULATOR_NXP_VREF_INIT_PRIORITY, &api);	\
+#define REGULATOR_NXP_VREF_DEFINE(inst)                                                            \
+	static struct regulator_nxp_vref_data data_##inst;                                         \
+                                                                                                   \
+	static const struct regulator_nxp_vref_config config_##inst = {                            \
+		.common = REGULATOR_DT_INST_COMMON_CONFIG_INIT(inst),                              \
+		.base = (VREF_Type *)DT_INST_REG_ADDR(inst),                                       \
+		.buf_start_delay = DT_INST_PROP(inst, nxp_buffer_startup_delay_us),                \
+		.bg_start_time = DT_INST_PROP(inst, nxp_bandgap_startup_time_us),                  \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, regulator_nxp_vref_init, NULL, &data_##inst, &config_##inst,   \
+			      POST_KERNEL, CONFIG_REGULATOR_NXP_VREF_INIT_PRIORITY, &api);
 
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_NXP_VREF_DEFINE)

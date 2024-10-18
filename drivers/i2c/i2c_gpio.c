@@ -46,7 +46,7 @@ struct i2c_gpio_config {
 
 /* Driver instance data */
 struct i2c_gpio_context {
-	struct i2c_bitbang bitbang;	/* Bit-bang library data */
+	struct i2c_bitbang bitbang; /* Bit-bang library data */
 	struct k_mutex mutex;
 };
 
@@ -110,16 +110,15 @@ static int i2c_gpio_get_config(const struct device *dev, uint32_t *config)
 	return rc;
 }
 
-static int i2c_gpio_transfer(const struct device *dev, struct i2c_msg *msgs,
-				uint8_t num_msgs, uint16_t slave_address)
+static int i2c_gpio_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
+			     uint16_t slave_address)
 {
 	struct i2c_gpio_context *context = dev->data;
 	int rc;
 
 	k_mutex_lock(&context->mutex, K_FOREVER);
 
-	rc = i2c_bitbang_transfer(&context->bitbang, msgs, num_msgs,
-				    slave_address);
+	rc = i2c_bitbang_transfer(&context->bitbang, msgs, num_msgs, slave_address);
 
 	k_mutex_unlock(&context->mutex);
 
@@ -173,11 +172,9 @@ static int i2c_gpio_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	err = gpio_pin_configure_dt(&config->sda_gpio,
-				    GPIO_INPUT | GPIO_OUTPUT_HIGH);
+	err = gpio_pin_configure_dt(&config->sda_gpio, GPIO_INPUT | GPIO_OUTPUT_HIGH);
 	if (err == -ENOTSUP) {
-		err = gpio_pin_configure_dt(&config->sda_gpio,
-					    GPIO_OUTPUT_HIGH);
+		err = gpio_pin_configure_dt(&config->sda_gpio, GPIO_OUTPUT_HIGH);
 	}
 	if (err) {
 		LOG_ERR("failed to configure SDA GPIO pin (err %d)", err);
@@ -187,8 +184,7 @@ static int i2c_gpio_init(const struct device *dev)
 	i2c_bitbang_init(&context->bitbang, &io_fns, (void *)config);
 
 	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
-	err = i2c_bitbang_configure(&context->bitbang,
-				    I2C_MODE_CONTROLLER | bitrate_cfg);
+	err = i2c_bitbang_configure(&context->bitbang, I2C_MODE_CONTROLLER | bitrate_cfg);
 	if (err) {
 		LOG_ERR("failed to configure I2C bitbang (err %d)", err);
 		return err;
@@ -203,21 +199,18 @@ static int i2c_gpio_init(const struct device *dev)
 	return 0;
 }
 
-#define	DEFINE_I2C_GPIO(_num)						\
-									\
-static struct i2c_gpio_context i2c_gpio_dev_data_##_num;		\
-									\
-static const struct i2c_gpio_config i2c_gpio_dev_cfg_##_num = {		\
-	.scl_gpio	= GPIO_DT_SPEC_INST_GET(_num, scl_gpios),	\
-	.sda_gpio	= GPIO_DT_SPEC_INST_GET(_num, sda_gpios),	\
-	.bitrate	= DT_INST_PROP(_num, clock_frequency),		\
-};									\
-									\
-I2C_DEVICE_DT_INST_DEFINE(_num,						\
-	    i2c_gpio_init,						\
-	    NULL,							\
-	    &i2c_gpio_dev_data_##_num,					\
-	    &i2c_gpio_dev_cfg_##_num,					\
-	    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &api);
+#define DEFINE_I2C_GPIO(_num)                                                                      \
+                                                                                                   \
+	static struct i2c_gpio_context i2c_gpio_dev_data_##_num;                                   \
+                                                                                                   \
+	static const struct i2c_gpio_config i2c_gpio_dev_cfg_##_num = {                            \
+		.scl_gpio = GPIO_DT_SPEC_INST_GET(_num, scl_gpios),                                \
+		.sda_gpio = GPIO_DT_SPEC_INST_GET(_num, sda_gpios),                                \
+		.bitrate = DT_INST_PROP(_num, clock_frequency),                                    \
+	};                                                                                         \
+                                                                                                   \
+	I2C_DEVICE_DT_INST_DEFINE(_num, i2c_gpio_init, NULL, &i2c_gpio_dev_data_##_num,            \
+				  &i2c_gpio_dev_cfg_##_num, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, \
+				  &api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_I2C_GPIO)

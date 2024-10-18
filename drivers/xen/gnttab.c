@@ -39,9 +39,8 @@ LOG_MODULE_REGISTER(xen_gnttab);
 BUILD_ASSERT(!(GNTTAB_SIZE % XEN_PAGE_SIZE), "Size of gnttab have to be aligned on XEN_PAGE_SIZE");
 
 /* NR_GRANT_FRAMES must be less than or equal to that configured in Xen */
-#define NR_GRANT_FRAMES (GNTTAB_SIZE / XEN_PAGE_SIZE)
-#define NR_GRANT_ENTRIES \
-	(NR_GRANT_FRAMES * XEN_PAGE_SIZE / sizeof(grant_entry_v1_t))
+#define NR_GRANT_FRAMES  (GNTTAB_SIZE / XEN_PAGE_SIZE)
+#define NR_GRANT_ENTRIES (NR_GRANT_FRAMES * XEN_PAGE_SIZE / sizeof(grant_entry_v1_t))
 
 BUILD_ASSERT(GNTTAB_SIZE <= CONFIG_KERNEL_VM_SIZE);
 DEVICE_MMIO_TOPLEVEL_STATIC(grant_tables, DT_INST(0, xen_xen));
@@ -61,8 +60,8 @@ static grant_ref_t get_free_entry(void)
 
 	flags = irq_lock();
 	gref = gnttab.gref_list[0];
-	__ASSERT((gref >= GNTTAB_NR_RESERVED_ENTRIES &&
-		gref < NR_GRANT_ENTRIES), "Invalid gref = %d", gref);
+	__ASSERT((gref >= GNTTAB_NR_RESERVED_ENTRIES && gref < NR_GRANT_ENTRIES),
+		 "Invalid gref = %d", gref);
 	gnttab.gref_list[0] = gnttab.gref_list[gref];
 	irq_unlock(flags);
 
@@ -82,8 +81,8 @@ static void put_free_entry(grant_ref_t gref)
 	k_sem_give(&gnttab.sem);
 }
 
-static void gnttab_grant_permit_access(grant_ref_t gref, domid_t domid,
-		unsigned long gfn, bool readonly)
+static void gnttab_grant_permit_access(grant_ref_t gref, domid_t domid, unsigned long gfn,
+				       bool readonly)
 {
 	uint16_t flags = GTF_permit_access;
 
@@ -99,8 +98,7 @@ static void gnttab_grant_permit_access(grant_ref_t gref, domid_t domid,
 	gnttab.table[gref].flags = flags;
 }
 
-grant_ref_t gnttab_grant_access(domid_t domid, unsigned long gfn,
-		bool readonly)
+grant_ref_t gnttab_grant_access(domid_t domid, unsigned long gfn, bool readonly)
 {
 	grant_ref_t gref = get_free_entry();
 
@@ -121,8 +119,7 @@ static int gnttab_reset_flags(grant_ref_t gref)
 	do {
 		flags = nflags;
 		if (flags & (GTF_reading | GTF_writing)) {
-			LOG_WRN("gref = %u still in use! (0x%x)\n",
-				gref, flags);
+			LOG_WRN("gref = %u still in use! (0x%x)\n", gref, flags);
 			return 1;
 		}
 		nflags = synch_cmpxchg(pflags, flags, 0);
@@ -135,8 +132,8 @@ int gnttab_end_access(grant_ref_t gref)
 {
 	int rc;
 
-	__ASSERT((gref >= GNTTAB_NR_RESERVED_ENTRIES &&
-		gref < NR_GRANT_ENTRIES), "Invalid gref = %d", gref);
+	__ASSERT((gref >= GNTTAB_NR_RESERVED_ENTRIES && gref < NR_GRANT_ENTRIES),
+		 "Invalid gref = %d", gref);
 
 	rc = gnttab_reset_flags(gref);
 	if (!rc) {
@@ -238,8 +235,7 @@ void gnttab_put_page(void *page_addr)
 
 	ret = HYPERVISOR_memory_op(XENMEM_populate_physmap, &reservation);
 	if (ret != nr_extents) {
-		LOG_WRN("failed to populate physmap on gfn = 0x%llx, ret = %d\n",
-			page, ret);
+		LOG_WRN("failed to populate physmap on gfn = 0x%llx, ret = %d\n", page, ret);
 		return;
 	}
 
@@ -282,13 +278,12 @@ int gnttab_unmap_refs(struct gnttab_map_grant_ref *unmap_ops, unsigned int count
 	return HYPERVISOR_grant_table_op(GNTTABOP_unmap_grant_ref, unmap_ops, count);
 }
 
-
-static const char * const gnttab_error_msgs[] = GNTTABOP_error_msgs;
+static const char *const gnttab_error_msgs[] = GNTTABOP_error_msgs;
 
 const char *gnttabop_error(int16_t status)
 {
 	status = -status;
-	if (status < 0 || (uint16_t) status >= ARRAY_SIZE(gnttab_error_msgs)) {
+	if (status < 0 || (uint16_t)status >= ARRAY_SIZE(gnttab_error_msgs)) {
 		return "bad status";
 	} else {
 		return gnttab_error_msgs[status];
@@ -306,11 +301,7 @@ static int gnttab_init(void)
 	/* Will be taken/given during gnt_refs allocation/release */
 	k_sem_init(&gnttab.sem, 0, NR_GRANT_ENTRIES - GNTTAB_NR_RESERVED_ENTRIES);
 
-	for (
-		gref = GNTTAB_NR_RESERVED_ENTRIES;
-		gref < NR_GRANT_ENTRIES;
-		gref++
-	    ) {
+	for (gref = GNTTAB_NR_RESERVED_ENTRIES; gref < NR_GRANT_ENTRIES; gref++) {
 		put_free_entry(gref);
 	}
 
@@ -329,7 +320,7 @@ static int gnttab_init(void)
 	set_xen_guest_handle(setup.frame_list, frames);
 	rc = HYPERVISOR_grant_table_op(GNTTABOP_setup_table, &setup, 1);
 	__ASSERT((!rc) && (!setup.status), "Table setup failed; status = %s\n",
-		gnttabop_error(setup.status));
+		 gnttabop_error(setup.status));
 
 	DEVICE_MMIO_TOPLEVEL_MAP(grant_tables, K_MEM_CACHE_WB | K_MEM_PERM_RW);
 	gnttab.table = (grant_entry_v1_t *)DEVICE_MMIO_TOPLEVEL_GET(grant_tables);

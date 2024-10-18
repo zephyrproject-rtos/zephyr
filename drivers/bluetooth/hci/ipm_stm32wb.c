@@ -27,19 +27,20 @@ struct hci_data {
 
 static const struct stm32_pclken clk_cfg[] = STM32_DT_CLOCKS(DT_DRV_INST(0));
 
-#define POOL_SIZE (CFG_TLBLE_EVT_QUEUE_LENGTH * 4 * \
-		DIVC((sizeof(TL_PacketHeader_t) + TL_BLE_EVENT_FRAME_SIZE), 4))
+#define POOL_SIZE                                                                                  \
+	(CFG_TLBLE_EVT_QUEUE_LENGTH * 4 *                                                          \
+	 DIVC((sizeof(TL_PacketHeader_t) + TL_BLE_EVENT_FRAME_SIZE), 4))
 
 /* Private variables ---------------------------------------------------------*/
 PLACE_IN_SECTION("MB_MEM1") ALIGN(4) static TL_CmdPacket_t BleCmdBuffer;
 PLACE_IN_SECTION("MB_MEM2") ALIGN(4) static uint8_t EvtPool[POOL_SIZE];
 PLACE_IN_SECTION("MB_MEM2") ALIGN(4) static TL_CmdPacket_t SystemCmdBuffer;
-PLACE_IN_SECTION("MB_MEM2") ALIGN(4) static uint8_t
-	SystemSpareEvtBuffer[sizeof(TL_PacketHeader_t) + TL_EVT_HDR_SIZE + 255];
-PLACE_IN_SECTION("MB_MEM2") ALIGN(4) static uint8_t
-	BleSpareEvtBuffer[sizeof(TL_PacketHeader_t) + TL_EVT_HDR_SIZE + 255];
-PLACE_IN_SECTION("MB_MEM2") ALIGN(4) static uint8_t
-	HciAclDataBuffer[sizeof(TL_PacketHeader_t) + 5 + 251];
+PLACE_IN_SECTION("MB_MEM2")
+ALIGN(4) static uint8_t SystemSpareEvtBuffer[sizeof(TL_PacketHeader_t) + TL_EVT_HDR_SIZE + 255];
+PLACE_IN_SECTION("MB_MEM2")
+ALIGN(4) static uint8_t BleSpareEvtBuffer[sizeof(TL_PacketHeader_t) + TL_EVT_HDR_SIZE + 255];
+PLACE_IN_SECTION("MB_MEM2")
+ALIGN(4) static uint8_t HciAclDataBuffer[sizeof(TL_PacketHeader_t) + 5 + 251];
 
 static void syscmd_status_not(SHCI_TL_CmdStatus_t status);
 static void sysevt_received(void *pdata);
@@ -69,11 +70,11 @@ struct aci_set_ble_addr {
 } __packed;
 
 #ifdef CONFIG_BT_HCI_HOST
-#define ACI_WRITE_SET_TX_POWER_LEVEL       BT_OP(BT_OGF_VS, 0xFC0F)
-#define ACI_HAL_WRITE_CONFIG_DATA	   BT_OP(BT_OGF_VS, 0xFC0C)
-#define ACI_HAL_STACK_RESET		   BT_OP(BT_OGF_VS, 0xFC3B)
+#define ACI_WRITE_SET_TX_POWER_LEVEL BT_OP(BT_OGF_VS, 0xFC0F)
+#define ACI_HAL_WRITE_CONFIG_DATA    BT_OP(BT_OGF_VS, 0xFC0C)
+#define ACI_HAL_STACK_RESET          BT_OP(BT_OGF_VS, 0xFC3B)
 
-#define HCI_CONFIG_DATA_PUBADDR_OFFSET		0
+#define HCI_CONFIG_DATA_PUBADDR_OFFSET 0
 static bt_addr_t bd_addr_udn;
 #endif /* CONFIG_BT_HCI_HOST */
 
@@ -87,26 +88,15 @@ static bool c2_started_flag;
 static void stm32wb_start_ble(uint32_t rf_clock)
 {
 	SHCI_C2_Ble_Init_Cmd_Packet_t ble_init_cmd_packet = {
-	  { { 0, 0, 0 } },                     /**< Header unused */
-	  { 0,                                 /** pBleBufferAddress not used */
-	    0,                                 /** BleBufferSize not used */
-	    CFG_BLE_NUM_GATT_ATTRIBUTES,
-	    CFG_BLE_NUM_GATT_SERVICES,
-	    CFG_BLE_ATT_VALUE_ARRAY_SIZE,
-	    CFG_BLE_NUM_LINK,
-	    CFG_BLE_DATA_LENGTH_EXTENSION,
-	    CFG_BLE_PREPARE_WRITE_LIST_SIZE,
-	    CFG_BLE_MBLOCK_COUNT,
-	    CFG_BLE_MAX_ATT_MTU,
-	    CFG_BLE_PERIPHERAL_SCA,
-	    CFG_BLE_CENTRAL_SCA,
-	    (rf_clock == STM32_SRC_LSE) ? CFG_BLE_LS_SOURCE : 0,
-	    CFG_BLE_MAX_CONN_EVENT_LENGTH,
-	    CFG_BLE_HSE_STARTUP_TIME,
-	    CFG_BLE_VITERBI_MODE,
-	    CFG_BLE_OPTIONS,
-	    0 }
-	};
+		{{0, 0, 0}}, /**< Header unused */
+		{0,          /** pBleBufferAddress not used */
+		 0,          /** BleBufferSize not used */
+		 CFG_BLE_NUM_GATT_ATTRIBUTES, CFG_BLE_NUM_GATT_SERVICES,
+		 CFG_BLE_ATT_VALUE_ARRAY_SIZE, CFG_BLE_NUM_LINK, CFG_BLE_DATA_LENGTH_EXTENSION,
+		 CFG_BLE_PREPARE_WRITE_LIST_SIZE, CFG_BLE_MBLOCK_COUNT, CFG_BLE_MAX_ATT_MTU,
+		 CFG_BLE_PERIPHERAL_SCA, CFG_BLE_CENTRAL_SCA,
+		 (rf_clock == STM32_SRC_LSE) ? CFG_BLE_LS_SOURCE : 0, CFG_BLE_MAX_CONN_EVENT_LENGTH,
+		 CFG_BLE_HSE_STARTUP_TIME, CFG_BLE_VITERBI_MODE, CFG_BLE_OPTIONS, 0}};
 
 	/**
 	 * Starts the BLE Stack on CPU2
@@ -143,8 +133,7 @@ static void tryfix_event(TL_Evt_t *tev)
 		return;
 	}
 
-	struct bt_hci_evt_le_enh_conn_complete *evt =
-			(void *)((uint8_t *)mev + (sizeof(*mev)));
+	struct bt_hci_evt_le_enh_conn_complete *evt = (void *)((uint8_t *)mev + (sizeof(*mev)));
 
 	if (bt_addr_eq(&evt->peer_addr.a, BT_ADDR_NONE)) {
 		LOG_WRN("Invalid peer addr %s", bt_addr_le_str(&evt->peer_addr));
@@ -200,9 +189,8 @@ static void bt_ipm_rx_thread(void *p1, void *p2, void *p3)
 					timeout = K_NO_WAIT;
 				}
 
-				buf = bt_buf_get_evt(
-					hcievt->evtserial.evt.evtcode,
-					discardable, timeout);
+				buf = bt_buf_get_evt(hcievt->evtserial.evt.evtcode, discardable,
+						     timeout);
 				if (!buf) {
 					LOG_DBG("Discard adv report due to insufficient buf");
 					goto end_loop;
@@ -220,8 +208,7 @@ static void bt_ipm_rx_thread(void *p1, void *p2, void *p3)
 				goto end_loop;
 			}
 
-			net_buf_add_mem(buf, &hcievt->evtserial.evt,
-					buf_add_len);
+			net_buf_add_mem(buf, &hcievt->evtserial.evt, buf_add_len);
 			break;
 		case BT_HCI_H4_ACL:
 			acl = &(((TL_AclDataPacket_t *)hcievt)->AclDataSerial);
@@ -240,8 +227,7 @@ static void bt_ipm_rx_thread(void *p1, void *p2, void *p3)
 				goto end_loop;
 			}
 
-			net_buf_add_mem(buf, (uint8_t *)&acl->acl_data,
-					buf_add_len);
+			net_buf_add_mem(buf, (uint8_t *)&acl->acl_data, buf_add_len);
 			break;
 		default:
 			LOG_ERR("Unknown BT buf type %d", hcievt->evtserial.type);
@@ -255,7 +241,6 @@ static void bt_ipm_rx_thread(void *p1, void *p2, void *p3)
 end_loop:
 		k_sem_give(&ipm_busy);
 	}
-
 }
 
 static void TM_AclDataAck(void)
@@ -280,35 +265,29 @@ void shci_cmd_resp_wait(uint32_t timeout)
 
 void ipcc_reset(void)
 {
-	LL_C1_IPCC_ClearFlag_CHx(
-		IPCC,
-		LL_IPCC_CHANNEL_1 | LL_IPCC_CHANNEL_2 | LL_IPCC_CHANNEL_3 |
-		LL_IPCC_CHANNEL_4 | LL_IPCC_CHANNEL_5 | LL_IPCC_CHANNEL_6);
+	LL_C1_IPCC_ClearFlag_CHx(IPCC, LL_IPCC_CHANNEL_1 | LL_IPCC_CHANNEL_2 | LL_IPCC_CHANNEL_3 |
+					       LL_IPCC_CHANNEL_4 | LL_IPCC_CHANNEL_5 |
+					       LL_IPCC_CHANNEL_6);
 
-	LL_C2_IPCC_ClearFlag_CHx(
-		IPCC,
-		LL_IPCC_CHANNEL_1 | LL_IPCC_CHANNEL_2 | LL_IPCC_CHANNEL_3 |
-		LL_IPCC_CHANNEL_4 | LL_IPCC_CHANNEL_5 | LL_IPCC_CHANNEL_6);
+	LL_C2_IPCC_ClearFlag_CHx(IPCC, LL_IPCC_CHANNEL_1 | LL_IPCC_CHANNEL_2 | LL_IPCC_CHANNEL_3 |
+					       LL_IPCC_CHANNEL_4 | LL_IPCC_CHANNEL_5 |
+					       LL_IPCC_CHANNEL_6);
 
-	LL_C1_IPCC_DisableTransmitChannel(
-		IPCC,
-		LL_IPCC_CHANNEL_1 | LL_IPCC_CHANNEL_2 | LL_IPCC_CHANNEL_3 |
-		LL_IPCC_CHANNEL_4 | LL_IPCC_CHANNEL_5 | LL_IPCC_CHANNEL_6);
+	LL_C1_IPCC_DisableTransmitChannel(IPCC, LL_IPCC_CHANNEL_1 | LL_IPCC_CHANNEL_2 |
+							LL_IPCC_CHANNEL_3 | LL_IPCC_CHANNEL_4 |
+							LL_IPCC_CHANNEL_5 | LL_IPCC_CHANNEL_6);
 
-	LL_C2_IPCC_DisableTransmitChannel(
-		IPCC,
-		LL_IPCC_CHANNEL_1 | LL_IPCC_CHANNEL_2 | LL_IPCC_CHANNEL_3 |
-		LL_IPCC_CHANNEL_4 | LL_IPCC_CHANNEL_5 | LL_IPCC_CHANNEL_6);
+	LL_C2_IPCC_DisableTransmitChannel(IPCC, LL_IPCC_CHANNEL_1 | LL_IPCC_CHANNEL_2 |
+							LL_IPCC_CHANNEL_3 | LL_IPCC_CHANNEL_4 |
+							LL_IPCC_CHANNEL_5 | LL_IPCC_CHANNEL_6);
 
-	LL_C1_IPCC_DisableReceiveChannel(
-		IPCC,
-		LL_IPCC_CHANNEL_1 | LL_IPCC_CHANNEL_2 | LL_IPCC_CHANNEL_3 |
-		LL_IPCC_CHANNEL_4 | LL_IPCC_CHANNEL_5 | LL_IPCC_CHANNEL_6);
+	LL_C1_IPCC_DisableReceiveChannel(IPCC, LL_IPCC_CHANNEL_1 | LL_IPCC_CHANNEL_2 |
+						       LL_IPCC_CHANNEL_3 | LL_IPCC_CHANNEL_4 |
+						       LL_IPCC_CHANNEL_5 | LL_IPCC_CHANNEL_6);
 
-	LL_C2_IPCC_DisableReceiveChannel(
-		IPCC,
-		LL_IPCC_CHANNEL_1 | LL_IPCC_CHANNEL_2 | LL_IPCC_CHANNEL_3 |
-		LL_IPCC_CHANNEL_4 | LL_IPCC_CHANNEL_5 | LL_IPCC_CHANNEL_6);
+	LL_C2_IPCC_DisableReceiveChannel(IPCC, LL_IPCC_CHANNEL_1 | LL_IPCC_CHANNEL_2 |
+						       LL_IPCC_CHANNEL_3 | LL_IPCC_CHANNEL_4 |
+						       LL_IPCC_CHANNEL_5 | LL_IPCC_CHANNEL_6);
 
 	/* Set IPCC default IRQ handlers */
 	IRQ_CONNECT(IPCC_C1_RX_IRQn, 0, HW_IPCC_Rx_Handler, NULL, 0);
@@ -334,7 +313,7 @@ void transport_init(void)
 	/**< System channel initialization */
 	shci_init_config.p_cmdbuffer = (uint8_t *)&SystemCmdBuffer;
 	shci_init_config.StatusNotCallBack = syscmd_status_not;
-	shci_init(sysevt_received, (void *) &shci_init_config);
+	shci_init(sysevt_received, (void *)&shci_init_config);
 
 	/**< Memory Manager channel initialization */
 	tl_mm_config.p_BleSpareEvtBuffer = BleSpareEvtBuffer;
@@ -366,17 +345,15 @@ static int bt_ipm_send(const struct device *dev, struct net_buf *buf)
 		LOG_DBG("ACL: buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
 		k_sem_take(&acl_data_ack, K_FOREVER);
 		net_buf_push_u8(buf, BT_HCI_H4_ACL);
-		memcpy((void *)
-		       &((TL_AclDataPacket_t *)HciAclDataBuffer)->AclDataSerial,
-		       buf->data, buf->len);
+		memcpy((void *)&((TL_AclDataPacket_t *)HciAclDataBuffer)->AclDataSerial, buf->data,
+		       buf->len);
 		TL_BLE_SendAclData(NULL, 0);
 		break;
 	case BT_BUF_CMD:
 		LOG_DBG("CMD: buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
 		ble_cmd_buff->cmdserial.type = BT_HCI_H4_CMD;
 		ble_cmd_buff->cmdserial.cmd.plen = buf->len;
-		memcpy((void *)&ble_cmd_buff->cmdserial.cmd, buf->data,
-		       buf->len);
+		memcpy((void *)&ble_cmd_buff->cmdserial.cmd, buf->data, buf->len);
 		TL_BLE_SendCmd(NULL, 0);
 		break;
 	default:
@@ -499,8 +476,7 @@ static int c2_reset(void)
 		return -ENODEV;
 	}
 
-	err = clock_control_configure(clk, (clock_control_subsys_t) &clk_cfg[1],
-					NULL);
+	err = clock_control_configure(clk, (clock_control_subsys_t)&clk_cfg[1], NULL);
 	if (err < 0) {
 		LOG_ERR("Could not configure RF Wake up clock");
 		return err;
@@ -517,7 +493,7 @@ static int c2_reset(void)
 
 #endif /* !STM32_HSI48_ENABLED */
 
-	err = clock_control_on(clk, (clock_control_subsys_t) &clk_cfg[0]);
+	err = clock_control_on(clk, (clock_control_subsys_t)&clk_cfg[0]);
 	if (err < 0) {
 		LOG_ERR("Could not enable IPCC clock");
 		return err;
@@ -559,11 +535,9 @@ static int bt_ipm_open(const struct device *dev, bt_hci_recv_t recv)
 	}
 
 	/* Start RX thread */
-	k_thread_create(&ipm_rx_thread_data, ipm_rx_stack,
-			K_KERNEL_STACK_SIZEOF(ipm_rx_stack),
+	k_thread_create(&ipm_rx_thread_data, ipm_rx_stack, K_KERNEL_STACK_SIZEOF(ipm_rx_stack),
 			bt_ipm_rx_thread, (void *)dev, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO),
-			0, K_NO_WAIT);
+			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO), 0, K_NO_WAIT);
 
 	hci->recv = recv;
 
@@ -619,12 +593,12 @@ static int bt_ipm_close(const struct device *dev)
 #endif /* CONFIG_BT_HCI_HOST */
 
 static const struct bt_hci_driver_api drv = {
-	.open           = bt_ipm_open,
+	.open = bt_ipm_open,
 #ifdef CONFIG_BT_HCI_HOST
-	.close          = bt_ipm_close,
+	.close = bt_ipm_close,
 #endif
-	.send           = bt_ipm_send,
-	.setup          = bt_ipm_setup,
+	.send = bt_ipm_send,
+	.setup = bt_ipm_setup,
 };
 
 static int _bt_ipm_init(const struct device *dev)
@@ -641,11 +615,10 @@ static int _bt_ipm_init(const struct device *dev)
 	return 0;
 }
 
-#define HCI_DEVICE_INIT(inst) \
-	static struct hci_data hci_data_##inst = { \
-	}; \
-	DEVICE_DT_INST_DEFINE(inst, _bt_ipm_init, NULL, &hci_data_##inst, NULL, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
+#define HCI_DEVICE_INIT(inst)                                                                      \
+	static struct hci_data hci_data_##inst = {};                                               \
+	DEVICE_DT_INST_DEFINE(inst, _bt_ipm_init, NULL, &hci_data_##inst, NULL, POST_KERNEL,       \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
 /* Only one instance supported right now */
 HCI_DEVICE_INIT(0)

@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(optee);
 /*
  * OP-TEE specific capabilities
  */
-#define TEE_OPTEE_CAP_TZ  BIT(0)
+#define TEE_OPTEE_CAP_TZ BIT(0)
 
 struct optee_rpc_param {
 	uint32_t a0;
@@ -130,7 +130,7 @@ static int param_to_msg_param(const struct tee_param *param, unsigned int num_pa
 		case TEE_PARAM_ATTR_TYPE_VALUE_OUTPUT:
 		case TEE_PARAM_ATTR_TYPE_VALUE_INOUT:
 			mtp->attr = OPTEE_MSG_ATTR_TYPE_VALUE_INPUT + tp->attr -
-				TEE_PARAM_ATTR_TYPE_VALUE_INPUT;
+				    TEE_PARAM_ATTR_TYPE_VALUE_INPUT;
 			mtp->u.value.a = tp->a;
 			mtp->u.value.b = tp->b;
 			mtp->u.value.c = tp->c;
@@ -139,7 +139,7 @@ static int param_to_msg_param(const struct tee_param *param, unsigned int num_pa
 		case TEE_PARAM_ATTR_TYPE_MEMREF_OUTPUT:
 		case TEE_PARAM_ATTR_TYPE_MEMREF_INOUT:
 			mtp->attr = OPTEE_MSG_ATTR_TYPE_RMEM_INPUT + tp->attr -
-				TEE_PARAM_ATTR_TYPE_MEMREF_INPUT;
+				    TEE_PARAM_ATTR_TYPE_MEMREF_INPUT;
 			mtp->u.rmem.shm_ref = tp->c;
 			mtp->u.rmem.size = tp->b;
 			mtp->u.rmem.offs = tp->a;
@@ -198,7 +198,7 @@ static int msg_param_to_param(struct tee_param *param, unsigned int num_param,
 		case OPTEE_MSG_ATTR_TYPE_VALUE_OUTPUT:
 		case OPTEE_MSG_ATTR_TYPE_VALUE_INOUT:
 			tp->attr = TEE_PARAM_ATTR_TYPE_VALUE_INPUT + attr -
-				OPTEE_MSG_ATTR_TYPE_VALUE_INPUT;
+				   OPTEE_MSG_ATTR_TYPE_VALUE_INPUT;
 			tp->a = mtp->u.value.a;
 			tp->b = mtp->u.value.b;
 			tp->c = mtp->u.value.c;
@@ -207,7 +207,7 @@ static int msg_param_to_param(struct tee_param *param, unsigned int num_param,
 		case OPTEE_MSG_ATTR_TYPE_RMEM_OUTPUT:
 		case OPTEE_MSG_ATTR_TYPE_RMEM_INOUT:
 			tp->attr = TEE_PARAM_ATTR_TYPE_MEMREF_INPUT + attr -
-				OPTEE_MSG_ATTR_TYPE_RMEM_INPUT;
+				   OPTEE_MSG_ATTR_TYPE_RMEM_INPUT;
 			tp->b = mtp->u.rmem.size;
 
 			if (!mtp->u.rmem.shm_ref) {
@@ -245,8 +245,7 @@ static void u64_to_regs(uint64_t val, uint32_t *reg0, uint32_t *reg1)
 
 static inline bool check_param_input(struct optee_msg_arg *arg)
 {
-	return arg->num_params == 1 &&
-		 arg->params[0].attr == OPTEE_MSG_ATTR_TYPE_VALUE_INPUT;
+	return arg->num_params == 1 && arg->params[0].attr == OPTEE_MSG_ATTR_TYPE_VALUE_INPUT;
 }
 
 static void *optee_construct_page_list(void *buf, uint32_t len, uint64_t *phys_buf);
@@ -325,8 +324,7 @@ static void cmd_free_suppl(const struct device *dev, struct tee_shm *shm)
 	tee_rm_shm(dev, shm);
 }
 
-static void handle_cmd_alloc(const struct device *dev, struct optee_msg_arg *arg,
-			     void **pages)
+static void handle_cmd_alloc(const struct device *dev, struct optee_msg_arg *arg, void **pages)
 {
 	int rc;
 	struct tee_shm *shm = NULL;
@@ -415,8 +413,7 @@ static void handle_cmd_get_time(const struct device *dev, struct optee_msg_arg *
 	int64_t up_nsecs;
 
 	if (arg->num_params != 1 ||
-	    (arg->params[0].attr & OPTEE_MSG_ATTR_TYPE_MASK)
-	    != OPTEE_MSG_ATTR_TYPE_VALUE_OUTPUT) {
+	    (arg->params[0].attr & OPTEE_MSG_ATTR_TYPE_MASK) != OPTEE_MSG_ATTR_TYPE_VALUE_OUTPUT) {
 		arg->ret = TEEC_ERROR_BAD_PARAMETERS;
 		return;
 	}
@@ -605,8 +602,7 @@ out:
 	k_free(params);
 }
 
-static uint32_t handle_func_rpc_call(const struct device *dev, struct tee_shm *shm,
-				     void **pages)
+static uint32_t handle_func_rpc_call(const struct device *dev, struct tee_shm *shm, void **pages)
 {
 	struct optee_msg_arg *arg = shm->addr;
 
@@ -638,17 +634,15 @@ static uint32_t handle_func_rpc_call(const struct device *dev, struct tee_shm *s
 	return OPTEE_SMC_CALL_RETURN_FROM_RPC;
 }
 
-static void handle_rpc_call(const struct device *dev, struct optee_rpc_param *param,
-			    void **pages)
+static void handle_rpc_call(const struct device *dev, struct optee_rpc_param *param, void **pages)
 {
 	struct tee_shm *shm = NULL;
 	uint32_t res = OPTEE_SMC_CALL_RETURN_FROM_RPC;
 
 	switch (OPTEE_SMC_RETURN_GET_RPC_FUNC(param->a0)) {
 	case OPTEE_SMC_RPC_FUNC_ALLOC:
-		if (!tee_add_shm(dev, NULL, OPTEE_MSG_NONCONTIG_PAGE_SIZE,
-				 param->a1,
-				 TEE_SHM_ALLOC, &shm)) {
+		if (!tee_add_shm(dev, NULL, OPTEE_MSG_NONCONTIG_PAGE_SIZE, param->a1, TEE_SHM_ALLOC,
+				 &shm)) {
 			u64_to_regs((uint64_t)k_mem_phys_addr(shm->addr), &param->a1, &param->a2);
 			u64_to_regs((uint64_t)shm, &param->a4, &param->a5);
 		} else {
@@ -679,9 +673,7 @@ static void handle_rpc_call(const struct device *dev, struct optee_rpc_param *pa
 static int optee_call(const struct device *dev, struct optee_msg_arg *arg)
 {
 	struct optee_driver_data *data = (struct optee_driver_data *)dev->data;
-	struct optee_rpc_param param = {
-		.a0 = OPTEE_SMC_CALL_WITH_ARG
-	};
+	struct optee_rpc_param param = {.a0 = OPTEE_SMC_CALL_WITH_ARG};
 	void *pages = NULL;
 
 	u64_to_regs((uint64_t)k_mem_phys_addr(arg), &param.a1, &param.a2);
@@ -690,8 +682,8 @@ static int optee_call(const struct device *dev, struct optee_msg_arg *arg)
 	while (true) {
 		struct arm_smccc_res res;
 
-		data->smc_call(param.a0, param.a1, param.a2, param.a3,
-			       param.a4, param.a5, param.a6, param.a7, &res);
+		data->smc_call(param.a0, param.a1, param.a2, param.a3, param.a4, param.a5, param.a6,
+			       param.a7, &res);
 
 		if (OPTEE_SMC_RETURN_IS_RPC(res.a0)) {
 			param.a0 = res.a0;
@@ -702,8 +694,8 @@ static int optee_call(const struct device *dev, struct optee_msg_arg *arg)
 		} else {
 			free_shm_pages(&pages);
 			k_sem_give(&data->call_sem);
-			return res.a0 == OPTEE_SMC_RETURN_OK ? TEEC_SUCCESS :
-				TEEC_ERROR_BAD_PARAMETERS;
+			return res.a0 == OPTEE_SMC_RETURN_OK ? TEEC_SUCCESS
+							     : TEEC_ERROR_BAD_PARAMETERS;
 		}
 	}
 }
@@ -732,8 +724,7 @@ static int optee_close_session(const struct device *dev, uint32_t session_id)
 	struct tee_shm *shm;
 	struct optee_msg_arg *marg;
 
-	rc = tee_add_shm(dev, NULL, OPTEE_MSG_NONCONTIG_PAGE_SIZE,
-			 OPTEE_MSG_GET_ARG_SIZE(0),
+	rc = tee_add_shm(dev, NULL, OPTEE_MSG_NONCONTIG_PAGE_SIZE, OPTEE_MSG_GET_ARG_SIZE(0),
 			 TEE_SHM_ALLOC, &shm);
 	if (rc) {
 		LOG_ERR("Unable to get shared memory, rc = %d", rc);
@@ -755,8 +746,7 @@ static int optee_close_session(const struct device *dev, uint32_t session_id)
 }
 
 static int optee_open_session(const struct device *dev, struct tee_open_session_arg *arg,
-			      unsigned int num_param, struct tee_param *param,
-			      uint32_t *session_id)
+			      unsigned int num_param, struct tee_param *param, uint32_t *session_id)
 {
 	int rc, ret;
 	struct tee_shm *shm;
@@ -767,8 +757,7 @@ static int optee_open_session(const struct device *dev, struct tee_open_session_
 	}
 
 	rc = tee_add_shm(dev, NULL, OPTEE_MSG_NONCONTIG_PAGE_SIZE,
-			 OPTEE_MSG_GET_ARG_SIZE(num_param + 2),
-			 TEE_SHM_ALLOC, &shm);
+			 OPTEE_MSG_GET_ARG_SIZE(num_param + 2), TEE_SHM_ALLOC, &shm);
 	if (rc) {
 		LOG_ERR("Unable to get shared memory, rc = %d", rc);
 		return rc;
@@ -832,8 +821,7 @@ static int optee_cancel(const struct device *dev, uint32_t session_id, uint32_t 
 	struct tee_shm *shm;
 	struct optee_msg_arg *marg;
 
-	rc = tee_add_shm(dev, NULL, OPTEE_MSG_NONCONTIG_PAGE_SIZE,
-			 OPTEE_MSG_GET_ARG_SIZE(0),
+	rc = tee_add_shm(dev, NULL, OPTEE_MSG_NONCONTIG_PAGE_SIZE, OPTEE_MSG_GET_ARG_SIZE(0),
 			 TEE_SHM_ALLOC, &shm);
 	if (rc) {
 		LOG_ERR("Unable to get shared memory, rc = %d", rc);
@@ -867,8 +855,7 @@ static int optee_invoke_func(const struct device *dev, struct tee_invoke_func_ar
 	}
 
 	rc = tee_add_shm(dev, NULL, OPTEE_MSG_NONCONTIG_PAGE_SIZE,
-			 OPTEE_MSG_GET_ARG_SIZE(num_param),
-			 TEE_SHM_ALLOC, &shm);
+			 OPTEE_MSG_GET_ARG_SIZE(num_param), TEE_SHM_ALLOC, &shm);
 	if (rc) {
 		LOG_ERR("Unable to get shared memory, rc = %d", rc);
 		return rc;
@@ -1159,8 +1146,8 @@ static bool optee_check_uid(const struct device *dev)
 
 	data->smc_call(OPTEE_SMC_CALLS_UID, 0, 0, 0, 0, 0, 0, 0, &res);
 
-	if (res.a0 == OPTEE_MSG_UID_0 && res.a1 == OPTEE_MSG_UID_1 &&
-	    res.a2 == OPTEE_MSG_UID_2 && res.a3 == OPTEE_MSG_UID_3) {
+	if (res.a0 == OPTEE_MSG_UID_0 && res.a1 == OPTEE_MSG_UID_1 && res.a2 == OPTEE_MSG_UID_2 &&
+	    res.a3 == OPTEE_MSG_UID_3) {
 		return true;
 	}
 
@@ -1170,13 +1157,12 @@ static bool optee_check_uid(const struct device *dev)
 static void optee_get_revision(const struct device *dev)
 {
 	struct optee_driver_data *data = (struct optee_driver_data *)dev->data;
-	struct arm_smccc_res res = { 0 };
+	struct arm_smccc_res res = {0};
 
 	data->smc_call(OPTEE_SMC_CALL_GET_OS_REVISION, 0, 0, 0, 0, 0, 0, 0, &res);
 
 	if (res.a2) {
-		LOG_INF("OPTEE revision %lu.%lu (%08lx)", res.a0,
-			res.a1, res.a2);
+		LOG_INF("OPTEE revision %lu.%lu (%08lx)", res.a0, res.a1, res.a2);
 	} else {
 		LOG_INF("OPTEE revision %lu.%lu", res.a0, res.a1);
 	}
@@ -1185,7 +1171,7 @@ static void optee_get_revision(const struct device *dev)
 static bool optee_exchange_caps(const struct device *dev, unsigned long *sec_caps)
 {
 	struct optee_driver_data *data = (struct optee_driver_data *)dev->data;
-	struct arm_smccc_res res = { 0 };
+	struct arm_smccc_res res = {0};
 	unsigned long a1 = 0;
 
 	if (!IS_ENABLED(CONFIG_SMP) || arch_num_cpus() == 1) {
@@ -1205,7 +1191,7 @@ static bool optee_exchange_caps(const struct device *dev, unsigned long *sec_cap
 static unsigned long optee_get_thread_count(const struct device *dev, unsigned long *thread_count)
 {
 	struct optee_driver_data *data = (struct optee_driver_data *)dev->data;
-	struct arm_smccc_res res = { 0 };
+	struct arm_smccc_res res = {0};
 	unsigned long a1 = 0;
 
 	data->smc_call(OPTEE_SMC_GET_THREAD_COUNT, a1, 0, 0, 0, 0, 0, 0, &res);
@@ -1277,20 +1263,16 @@ static const struct tee_driver_api optee_driver_api = {
  * was received before WAIT command from OP-TEE. In this case WAIT will not create
  * locks.
  */
-#define OPTEE_DT_DEVICE_INIT(inst)					\
-	SYS_BITARRAY_DEFINE_STATIC(notif_bitmap_##inst, CONFIG_OPTEE_MAX_NOTIF); \
-									\
-	static struct optee_driver_config optee_config_##inst = {	\
-		.method = DT_INST_PROP(inst, method)			\
-	};								\
-									\
-	static struct optee_driver_data optee_data_##inst = {		\
-		.notif_bitmap = &notif_bitmap_##inst			\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(inst, optee_init, NULL, &optee_data_##inst, \
-			      &optee_config_##inst, POST_KERNEL,	\
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
-			      &optee_driver_api);			\
+#define OPTEE_DT_DEVICE_INIT(inst)                                                                 \
+	SYS_BITARRAY_DEFINE_STATIC(notif_bitmap_##inst, CONFIG_OPTEE_MAX_NOTIF);                   \
+                                                                                                   \
+	static struct optee_driver_config optee_config_##inst = {                                  \
+		.method = DT_INST_PROP(inst, method)};                                             \
+                                                                                                   \
+	static struct optee_driver_data optee_data_##inst = {.notif_bitmap =                       \
+								     &notif_bitmap_##inst};        \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, optee_init, NULL, &optee_data_##inst, &optee_config_##inst,    \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &optee_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(OPTEE_DT_DEVICE_INIT)

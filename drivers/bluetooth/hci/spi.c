@@ -22,27 +22,27 @@
 LOG_MODULE_REGISTER(bt_driver);
 
 /* Special Values */
-#define SPI_WRITE		0x0A
-#define SPI_READ		0x0B
-#define READY_NOW		0x02
+#define SPI_WRITE 0x0A
+#define SPI_READ  0x0B
+#define READY_NOW 0x02
 
-#define EVT_BLUE_INITIALIZED	0x01
+#define EVT_BLUE_INITIALIZED 0x01
 
 /* Offsets */
-#define STATUS_HEADER_READY	0
-#define STATUS_HEADER_TOREAD	3
-#define STATUS_HEADER_TOWRITE	1
+#define STATUS_HEADER_READY   0
+#define STATUS_HEADER_TOREAD  3
+#define STATUS_HEADER_TOWRITE 1
 
-#define PACKET_TYPE		0
-#define EVT_HEADER_TYPE		0
-#define EVT_HEADER_EVENT	1
-#define EVT_HEADER_SIZE		2
-#define EVT_LE_META_SUBEVENT	3
-#define EVT_VENDOR_CODE_LSB	3
-#define EVT_VENDOR_CODE_MSB	4
+#define PACKET_TYPE          0
+#define EVT_HEADER_TYPE      0
+#define EVT_HEADER_EVENT     1
+#define EVT_HEADER_SIZE      2
+#define EVT_LE_META_SUBEVENT 3
+#define EVT_VENDOR_CODE_LSB  3
+#define EVT_VENDOR_CODE_MSB  4
 
-#define CMD_OGF			1
-#define CMD_OCF			2
+#define CMD_OGF 1
+#define CMD_OCF 2
 
 /* Max SPI buffer length for transceive operations.
  *
@@ -51,7 +51,7 @@ LOG_MODULE_REGISTER(bt_driver);
  * to be the same length. Size also needs to be compatible with the
  * slave device used (e.g. nRF5X max buffer length for SPIS is 255).
  */
-#define SPI_MAX_MSG_LEN		255 /* As defined by X-NUCLEO-IDB04A1 BSP */
+#define SPI_MAX_MSG_LEN 255 /* As defined by X-NUCLEO-IDB04A1 BSP */
 
 #define DATA_DELAY_US DT_INST_PROP(0, controller_data_delay_us)
 
@@ -76,7 +76,7 @@ static uint8_t __noinit txmsg[SPI_MAX_MSG_LEN];
 static const struct gpio_dt_spec irq_gpio = GPIO_DT_SPEC_INST_GET(0, irq_gpios);
 static const struct gpio_dt_spec rst_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios);
 
-static struct gpio_callback	gpio_cb;
+static struct gpio_callback gpio_cb;
 
 static K_SEM_DEFINE(sem_initialised, 0, 1);
 static K_SEM_DEFINE(sem_request, 0, 1);
@@ -85,22 +85,15 @@ static K_SEM_DEFINE(sem_busy, 1, 1);
 static K_KERNEL_STACK_DEFINE(spi_rx_stack, CONFIG_BT_DRV_RX_STACK_SIZE);
 static struct k_thread spi_rx_thread_data;
 
-static const struct spi_dt_spec bus = SPI_DT_SPEC_INST_GET(
-	0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 0);
+static const struct spi_dt_spec bus =
+	SPI_DT_SPEC_INST_GET(0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 0);
 
 static struct spi_buf spi_tx_buf;
 static struct spi_buf spi_rx_buf;
-static const struct spi_buf_set spi_tx = {
-	.buffers = &spi_tx_buf,
-	.count = 1
-};
-static const struct spi_buf_set spi_rx = {
-	.buffers = &spi_rx_buf,
-	.count = 1
-};
+static const struct spi_buf_set spi_tx = {.buffers = &spi_tx_buf, .count = 1};
+static const struct spi_buf_set spi_rx = {.buffers = &spi_rx_buf, .count = 1};
 
-static inline int bt_spi_transceive(void *tx, uint32_t tx_len,
-				    void *rx, uint32_t rx_len)
+static inline int bt_spi_transceive(void *tx, uint32_t tx_len, void *rx, uint32_t rx_len)
 {
 	spi_tx_buf.buf = tx;
 	spi_tx_buf.len = (size_t)tx_len;
@@ -119,8 +112,7 @@ static inline uint16_t bt_spi_get_evt(uint8_t *msg)
 	return (msg[EVT_VENDOR_CODE_MSB] << 8) | msg[EVT_VENDOR_CODE_LSB];
 }
 
-static void bt_spi_isr(const struct device *unused1,
-		       struct gpio_callback *unused2,
+static void bt_spi_isr(const struct device *unused1, struct gpio_callback *unused2,
 		       uint32_t unused3)
 {
 	LOG_DBG("");
@@ -170,7 +162,7 @@ static int bt_spi_get_header(uint8_t op, uint16_t *size)
 		} else {
 			/* When writing, keep looping if all bytes are zero */
 			loop_cond = ((header_slave[1] | header_slave[2] | header_slave[3] |
-					header_slave[4]) == 0U);
+				      header_slave[4]) == 0U);
 		}
 	} while ((header_slave[STATUS_HEADER_READY] != READY_NOW) || loop_cond);
 
@@ -203,8 +195,7 @@ static struct net_buf *bt_spi_rx_buf_construct(uint8_t *msg)
 				discardable = true;
 				timeout = K_NO_WAIT;
 			}
-			buf = bt_buf_get_evt(msg[EVT_HEADER_EVENT],
-					     discardable, timeout);
+			buf = bt_buf_get_evt(msg[EVT_HEADER_EVENT], discardable, timeout);
 			if (!buf) {
 				LOG_DBG("Discard adv report due to insufficient buf");
 				return NULL;
@@ -267,14 +258,14 @@ static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 		/* Read data */
 		if (ret == 0 && size != 0) {
 			do {
-				ret = bt_spi_transceive(&txmsg, size,
-							&rxmsg, size);
+				ret = bt_spi_transceive(&txmsg, size, &rxmsg, size);
 				if (rxmsg[0] == 0U) {
 					/* Consider increasing controller-data-delay-us
 					 * if this message is extremely common.
 					 */
 					LOG_DBG("Controller not ready for SPI transaction "
-						"of %d bytes", size);
+						"of %d bytes",
+						size);
 				}
 			} while (rxmsg[0] == 0U && ret == 0);
 		}
@@ -345,8 +336,7 @@ static int bt_spi_send(const struct device *dev, struct net_buf *buf)
 		k_sleep(K_USEC(DATA_DELAY_US));
 		/* Transmit the message */
 		while (true) {
-			ret = bt_spi_transceive(buf->data, size,
-						rx_first, 1);
+			ret = bt_spi_transceive(buf->data, size, rx_first, 1);
 			if (rx_first[0] != 0U || ret) {
 				break;
 			}
@@ -408,11 +398,9 @@ static int bt_spi_open(const struct device *dev, bt_hci_recv_t recv)
 	gpio_pin_set_dt(&rst_gpio, 0);
 
 	/* Start RX thread */
-	k_thread_create(&spi_rx_thread_data, spi_rx_stack,
-			K_KERNEL_STACK_SIZEOF(spi_rx_stack),
+	k_thread_create(&spi_rx_thread_data, spi_rx_stack, K_KERNEL_STACK_SIZEOF(spi_rx_stack),
 			bt_spi_rx_thread, (void *)dev, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO),
-			0, K_NO_WAIT);
+			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO), 0, K_NO_WAIT);
 
 	/* Device will let us know when it's ready */
 	k_sem_take(&sem_initialised, K_FOREVER);
@@ -421,8 +409,8 @@ static int bt_spi_open(const struct device *dev, bt_hci_recv_t recv)
 }
 
 static const struct bt_hci_driver_api drv = {
-	.open		= bt_spi_open,
-	.send		= bt_spi_send,
+	.open = bt_spi_open,
+	.send = bt_spi_send,
 };
 
 static int bt_spi_init(const struct device *dev)
@@ -449,11 +437,10 @@ static int bt_spi_init(const struct device *dev)
 	return 0;
 }
 
-#define HCI_DEVICE_INIT(inst) \
-	static struct bt_spi_data hci_data_##inst = { \
-	}; \
-	DEVICE_DT_INST_DEFINE(inst, bt_spi_init, NULL, &hci_data_##inst, NULL, \
-			      POST_KERNEL, CONFIG_BT_SPI_INIT_PRIORITY, &drv)
+#define HCI_DEVICE_INIT(inst)                                                                      \
+	static struct bt_spi_data hci_data_##inst = {};                                            \
+	DEVICE_DT_INST_DEFINE(inst, bt_spi_init, NULL, &hci_data_##inst, NULL, POST_KERNEL,        \
+			      CONFIG_BT_SPI_INIT_PRIORITY, &drv)
 
 /* Only one instance supported right now */
 HCI_DEVICE_INIT(0)

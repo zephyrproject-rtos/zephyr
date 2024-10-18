@@ -412,10 +412,9 @@ static int vcnl36825t_init_registers(const struct device *dev)
 	/* calculate measurement timeout
 	 *  Note: always add 1 to prevent corner case losses due to precision.
 	 */
-	data->meas_timeout_us =
-		(data->meas_timeout_us * VCNL36825T_FORCED_FACTOR_SUM) /
-			(VCNL36825T_FORCED_FACTOR_SCALE) +
-		1;
+	data->meas_timeout_us = (data->meas_timeout_us * VCNL36825T_FORCED_FACTOR_SUM) /
+					(VCNL36825T_FORCED_FACTOR_SCALE) +
+				1;
 
 	return 0;
 }
@@ -490,11 +489,12 @@ static const struct sensor_driver_api vcnl36825t_driver_api = {
 		.high_dynamic_output = DT_INST_PROP(inst, high_dynamic_output),                    \
 		.sunlight_cancellation = DT_INST_PROP(inst, sunlight_cancellation),                \
 	};                                                                                         \
-	IF_ENABLED(CONFIG_PM_DEVICE, (PM_DEVICE_DT_INST_DEFINE(inst, vcnl36825t_pm_action)));      \
+	IF_ENABLED(CONFIG_PM_DEVICE, (PM_DEVICE_DT_INST_DEFINE(inst, vcnl36825t_pm_action)));        \
 	SENSOR_DEVICE_DT_INST_DEFINE(                                                              \
 		inst, vcnl36825t_init,                                                             \
-		COND_CODE_1(CONFIG_PM_DEVICE, (PM_DEVICE_DT_INST_GET(inst)), (NULL)),              \
-		&vcnl36825t_data_##inst, &vcnl36825t_config_##inst, POST_KERNEL,                   \
-		CONFIG_SENSOR_INIT_PRIORITY, &vcnl36825t_driver_api);
+		COND_CODE_1(CONFIG_PM_DEVICE, (PM_DEVICE_DT_INST_GET(inst)), (NULL)),                \
+					      &vcnl36825t_data_##inst, &vcnl36825t_config_##inst,  \
+					      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,            \
+					      &vcnl36825t_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VCNL36825T_DEFINE)

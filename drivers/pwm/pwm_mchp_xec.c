@@ -29,29 +29,27 @@ LOG_MODULE_REGISTER(pwm_mchp_xec, CONFIG_PWM_LOG_LEVEL);
  * 0 cannot be set (used for full low/high output) so a
  * combination of on_off of 2 is not possible.
  */
-#define XEC_PWM_LOWEST_ON_OFF	4U
+#define XEC_PWM_LOWEST_ON_OFF  4U
 /* Maximal on/off are UINT16_T, both are incremented.
  * Multiplied by the highest divider: 16
  */
-#define XEC_PWM_HIGHEST_ON_OFF	(2U * (UINT16_MAX + 1U) * 16U)
+#define XEC_PWM_HIGHEST_ON_OFF (2U * (UINT16_MAX + 1U) * 16U)
 
-#define XEC_PWM_MIN_HIGH_CLK_FREQ			\
-	(MCHP_PWM_INPUT_FREQ_HI / XEC_PWM_HIGHEST_ON_OFF)
-#define XEC_PWM_MAX_LOW_CLK_FREQ			\
-	(MCHP_PWM_INPUT_FREQ_LO / XEC_PWM_LOWEST_ON_OFF)
+#define XEC_PWM_MIN_HIGH_CLK_FREQ (MCHP_PWM_INPUT_FREQ_HI / XEC_PWM_HIGHEST_ON_OFF)
+#define XEC_PWM_MAX_LOW_CLK_FREQ  (MCHP_PWM_INPUT_FREQ_LO / XEC_PWM_LOWEST_ON_OFF)
 /* Precision factor for frequency calculation
  * To mitigate frequency comparision up to the first digit after 0.
  */
-#define XEC_PWM_FREQ_PF		10U
+#define XEC_PWM_FREQ_PF           10U
 /* Precision factor for DC calculation
  * To avoid losing some digits after 0.
  */
-#define XEC_PWM_DC_PF		100000U
+#define XEC_PWM_DC_PF             100000U
 /* Lowest reachable frequency */
-#define XEC_PWM_FREQ_LIMIT	1 /* 0.1hz * XEC_PWM_FREQ_PF */
+#define XEC_PWM_FREQ_LIMIT        1 /* 0.1hz * XEC_PWM_FREQ_PF */
 
 struct pwm_xec_config {
-	struct pwm_regs * const regs;
+	struct pwm_regs *const regs;
 	uint8_t pcr_idx;
 	uint8_t pcr_pos;
 	const struct pinctrl_dev_config *pcfg;
@@ -67,49 +65,21 @@ struct pwm_xec_data {
 	uint32_t config;
 };
 
-#define NUM_DIV_ELEMS		16
+#define NUM_DIV_ELEMS 16
 
 static const uint32_t max_freq_high_on_div[NUM_DIV_ELEMS] = {
-	48000000,
-	24000000,
-	16000000,
-	12000000,
-	9600000,
-	8000000,
-	6857142,
-	6000000,
-	5333333,
-	4800000,
-	4363636,
-	4000000,
-	3692307,
-	3428571,
-	3200000,
-	3000000,
+	48000000, 24000000, 16000000, 12000000, 9600000, 8000000, 6857142, 6000000,
+	5333333,  4800000,  4363636,  4000000,  3692307, 3428571, 3200000, 3000000,
 };
 
 static const uint32_t max_freq_low_on_div[NUM_DIV_ELEMS] = {
-	100000,
-	50000,
-	33333,
-	25000,
-	20000,
-	16666,
-	14285,
-	12500,
-	11111,
-	10000,
-	9090,
-	8333,
-	7692,
-	7142,
-	6666,
-	6250,
+	100000, 50000, 33333, 25000, 20000, 16666, 14285, 12500,
+	11111,  10000, 9090,  8333,  7692,  7142,  6666,  6250,
 };
 
 static uint32_t xec_compute_frequency(uint32_t clk, uint32_t on, uint32_t off)
 {
-	return ((clk * XEC_PWM_FREQ_PF)/((on + 1) + (off + 1)));
+	return ((clk * XEC_PWM_FREQ_PF) / ((on + 1) + (off + 1)));
 }
 
 static uint16_t xec_select_div(uint32_t freq, const uint32_t max_freq[16])
@@ -131,8 +101,8 @@ static uint16_t xec_select_div(uint32_t freq, const uint32_t max_freq[16])
 	return i;
 }
 
-static void xec_compute_on_off(uint32_t freq, uint32_t dc, uint32_t clk,
-			       uint32_t *on, uint32_t *off)
+static void xec_compute_on_off(uint32_t freq, uint32_t dc, uint32_t clk, uint32_t *on,
+			       uint32_t *off)
 {
 	uint64_t on_off;
 
@@ -153,19 +123,16 @@ static uint32_t xec_compute_dc(uint32_t on, uint32_t off)
 }
 
 static uint16_t xec_compare_div_on_off(uint32_t target_freq, uint32_t dc,
-				       const uint32_t max_freq[16],
-				       uint8_t div_a, uint8_t div_b,
+				       const uint32_t max_freq[16], uint8_t div_a, uint8_t div_b,
 				       uint32_t *on_a, uint32_t *off_a)
 {
 	uint32_t freq_a, freq_b, on_b, off_b;
 
-	xec_compute_on_off(target_freq, dc, max_freq[div_a],
-			   on_a, off_a);
+	xec_compute_on_off(target_freq, dc, max_freq[div_a], on_a, off_a);
 
 	freq_a = xec_compute_frequency(max_freq[div_a], *on_a, *off_a);
 
-	xec_compute_on_off(target_freq, dc, max_freq[div_b],
-			   &on_b, &off_b);
+	xec_compute_on_off(target_freq, dc, max_freq[div_b], &on_b, &off_b);
 
 	freq_b = xec_compute_frequency(max_freq[div_b], on_b, off_b);
 
@@ -186,8 +153,7 @@ static uint16_t xec_compare_div_on_off(uint32_t target_freq, uint32_t dc,
 }
 
 static uint8_t xec_select_best_div_on_off(uint32_t target_freq, uint32_t dc,
-					  const uint32_t max_freq[16],
-					  uint32_t *on, uint32_t *off)
+					  const uint32_t max_freq[16], uint32_t *on, uint32_t *off)
 {
 	int div_comp;
 	uint8_t div;
@@ -195,15 +161,13 @@ static uint8_t xec_select_best_div_on_off(uint32_t target_freq, uint32_t dc,
 	div = xec_select_div(target_freq, max_freq);
 
 	for (div_comp = (int)div - 1; div_comp >= 0; div_comp--) {
-		div = xec_compare_div_on_off(target_freq, dc, max_freq,
-					     div, div_comp, on, off);
+		div = xec_compare_div_on_off(target_freq, dc, max_freq, div, div_comp, on, off);
 	}
 
 	return div;
 }
 
-static struct xec_params *xec_compare_params(uint32_t target_freq,
-					     struct xec_params *hc_params,
+static struct xec_params *xec_compare_params(uint32_t target_freq, struct xec_params *hc_params,
 					     struct xec_params *lc_params)
 {
 	struct xec_params *params;
@@ -211,40 +175,33 @@ static struct xec_params *xec_compare_params(uint32_t target_freq,
 	uint32_t freq_l = 0;
 
 	if (hc_params->div < NUM_DIV_ELEMS) {
-		freq_h = xec_compute_frequency(
-				max_freq_high_on_div[hc_params->div],
-				hc_params->on,
-				hc_params->off);
+		freq_h = xec_compute_frequency(max_freq_high_on_div[hc_params->div], hc_params->on,
+					       hc_params->off);
 	}
 
 	if (lc_params->div < NUM_DIV_ELEMS) {
-		freq_l = xec_compute_frequency(
-				max_freq_low_on_div[lc_params->div],
-				lc_params->on,
-				lc_params->off);
+		freq_l = xec_compute_frequency(max_freq_low_on_div[lc_params->div], lc_params->on,
+					       lc_params->off);
 	}
 
-	if (abs((int)target_freq - (int)freq_h) <
-	    abs((int)target_freq - (int)freq_l)) {
+	if (abs((int)target_freq - (int)freq_h) < abs((int)target_freq - (int)freq_l)) {
 		params = hc_params;
 	} else {
 		params = lc_params;
 	}
 
 	LOG_DBG("\tFrequency (x%u): %u", XEC_PWM_FREQ_PF, freq_h);
-	LOG_DBG("\tOn %s clock, ON %u OFF %u DIV %u",
-		params == hc_params ? "High" : "Low",
+	LOG_DBG("\tOn %s clock, ON %u OFF %u DIV %u", params == hc_params ? "High" : "Low",
 		params->on, params->off, params->div);
 
 	return params;
 }
 
-static void xec_compute_and_set_parameters(const struct device *dev,
-					   uint32_t target_freq,
+static void xec_compute_and_set_parameters(const struct device *dev, uint32_t target_freq,
 					   uint32_t on, uint32_t off)
 {
-	const struct pwm_xec_config * const cfg = dev->config;
-	struct pwm_regs * const regs = cfg->regs;
+	const struct pwm_xec_config *const cfg = dev->config;
+	struct pwm_regs *const regs = cfg->regs;
 	bool compute_high, compute_low;
 	struct xec_params hc_params;
 	struct xec_params lc_params;
@@ -256,13 +213,11 @@ static void xec_compute_and_set_parameters(const struct device *dev,
 	compute_high = (target_freq >= XEC_PWM_MIN_HIGH_CLK_FREQ);
 	compute_low = (target_freq <= XEC_PWM_MAX_LOW_CLK_FREQ);
 
-	LOG_DBG("Target freq (x%u): %u and DC %u per-cent",
-		XEC_PWM_FREQ_PF, target_freq, (dc / 1000));
+	LOG_DBG("Target freq (x%u): %u and DC %u per-cent", XEC_PWM_FREQ_PF, target_freq,
+		(dc / 1000));
 
 	if (compute_high) {
-		if (!compute_low
-		    && (on <= UINT16_MAX)
-		    && (off <= UINT16_MAX)) {
+		if (!compute_low && (on <= UINT16_MAX) && (off <= UINT16_MAX)) {
 			hc_params.on = on;
 			hc_params.off = off;
 			hc_params.div = 0;
@@ -271,25 +226,19 @@ static void xec_compute_and_set_parameters(const struct device *dev,
 			goto done;
 		}
 
-		hc_params.div = xec_select_best_div_on_off(
-					target_freq, dc,
-					max_freq_high_on_div,
-					&hc_params.on,
-					&hc_params.off);
-		LOG_DBG("Best div high: %u (on/off: %u/%u)",
-			hc_params.div, hc_params.on, hc_params.off);
+		hc_params.div = xec_select_best_div_on_off(target_freq, dc, max_freq_high_on_div,
+							   &hc_params.on, &hc_params.off);
+		LOG_DBG("Best div high: %u (on/off: %u/%u)", hc_params.div, hc_params.on,
+			hc_params.off);
 	} else {
 		hc_params.div = UINT8_MAX;
 	}
 
 	if (compute_low) {
-		lc_params.div = xec_select_best_div_on_off(
-					target_freq, dc,
-					max_freq_low_on_div,
-					&lc_params.on,
-					&lc_params.off);
-		LOG_DBG("Best div low: %u (on/off: %u/%u)",
-			lc_params.div, lc_params.on, lc_params.off);
+		lc_params.div = xec_select_best_div_on_off(target_freq, dc, max_freq_low_on_div,
+							   &lc_params.on, &lc_params.off);
+		LOG_DBG("Best div low: %u (on/off: %u/%u)", lc_params.div, lc_params.on,
+			lc_params.off);
 	} else {
 		lc_params.div = UINT8_MAX;
 	}
@@ -314,12 +263,11 @@ done:
 	regs->CONFIG = cfgval;
 }
 
-static int pwm_xec_set_cycles(const struct device *dev, uint32_t channel,
-			      uint32_t period_cycles, uint32_t pulse_cycles,
-			      pwm_flags_t flags)
+static int pwm_xec_set_cycles(const struct device *dev, uint32_t channel, uint32_t period_cycles,
+			      uint32_t pulse_cycles, pwm_flags_t flags)
 {
-	const struct pwm_xec_config * const cfg = dev->config;
-	struct pwm_regs * const regs = cfg->regs;
+	const struct pwm_xec_config *const cfg = dev->config;
+	struct pwm_regs *const regs = cfg->regs;
 	uint32_t target_freq;
 	uint32_t on, off;
 
@@ -355,8 +303,7 @@ static int pwm_xec_set_cycles(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
-static int pwm_xec_get_cycles_per_sec(const struct device *dev,
-				      uint32_t channel, uint64_t *cycles)
+static int pwm_xec_get_cycles_per_sec(const struct device *dev, uint32_t channel, uint64_t *cycles)
 {
 	ARG_UNUSED(dev);
 
@@ -378,8 +325,8 @@ static int pwm_xec_get_cycles_per_sec(const struct device *dev,
 static int pwm_xec_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct pwm_xec_config *const devcfg = dev->config;
-	struct pwm_regs * const regs = devcfg->regs;
-	struct pwm_xec_data * const data = dev->data;
+	struct pwm_regs *const regs = devcfg->regs;
+	struct pwm_xec_data *const data = dev->data;
 	int ret = 0;
 
 	switch (action) {
@@ -396,7 +343,7 @@ static int pwm_xec_pm_action(const struct device *dev, enum pm_device_action act
 
 			data->config &= (~MCHP_PWM_CFG_ENABLE);
 		}
-	break;
+		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		if ((regs->CONFIG & MCHP_PWM_CFG_ENABLE) == MCHP_PWM_CFG_ENABLE) {
 			/* Do copy first, then clear mode. */
@@ -410,7 +357,7 @@ static int pwm_xec_pm_action(const struct device *dev, enum pm_device_action act
 		if (ret == -ENOENT) {
 			ret = 0;
 		}
-	break;
+		break;
 	default:
 		ret = -ENOTSUP;
 	}
@@ -425,7 +372,7 @@ static const struct pwm_driver_api pwm_xec_driver_api = {
 
 static int pwm_xec_init(const struct device *dev)
 {
-	const struct pwm_xec_config * const cfg = dev->config;
+	const struct pwm_xec_config *const cfg = dev->config;
 	int ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 
 	if (ret != 0) {
@@ -436,29 +383,26 @@ static int pwm_xec_init(const struct device *dev)
 	return 0;
 }
 
-#define XEC_PWM_CONFIG(inst)							\
-	static struct pwm_xec_config pwm_xec_config_##inst = {			\
-		.regs = (struct pwm_regs * const)DT_INST_REG_ADDR(inst),	\
-		.pcr_idx = (uint8_t)DT_INST_PROP_BY_IDX(inst, pcrs, 0),		\
-		.pcr_pos = (uint8_t)DT_INST_PROP_BY_IDX(inst, pcrs, 1),		\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),			\
+#define XEC_PWM_CONFIG(inst)                                                                       \
+	static struct pwm_xec_config pwm_xec_config_##inst = {                                     \
+		.regs = (struct pwm_regs *const)DT_INST_REG_ADDR(inst),                            \
+		.pcr_idx = (uint8_t)DT_INST_PROP_BY_IDX(inst, pcrs, 0),                            \
+		.pcr_pos = (uint8_t)DT_INST_PROP_BY_IDX(inst, pcrs, 1),                            \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
 	};
 
-#define XEC_PWM_DEVICE_INIT(index)					\
-									\
-	static struct pwm_xec_data pwm_xec_data_##index;		\
-									\
-	PINCTRL_DT_INST_DEFINE(index);					\
-									\
-	XEC_PWM_CONFIG(index);						\
-									\
-	PM_DEVICE_DT_INST_DEFINE(index, pwm_xec_pm_action);		\
-									\
-	DEVICE_DT_INST_DEFINE(index, &pwm_xec_init,			\
-			      PM_DEVICE_DT_INST_GET(index),		\
-			      &pwm_xec_data_##index,			\
-			      &pwm_xec_config_##index, POST_KERNEL,	\
-			      CONFIG_PWM_INIT_PRIORITY,			\
-			      &pwm_xec_driver_api);
+#define XEC_PWM_DEVICE_INIT(index)                                                                 \
+                                                                                                   \
+	static struct pwm_xec_data pwm_xec_data_##index;                                           \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(index);                                                             \
+                                                                                                   \
+	XEC_PWM_CONFIG(index);                                                                     \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(index, pwm_xec_pm_action);                                        \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(index, &pwm_xec_init, PM_DEVICE_DT_INST_GET(index),                  \
+			      &pwm_xec_data_##index, &pwm_xec_config_##index, POST_KERNEL,         \
+			      CONFIG_PWM_INIT_PRIORITY, &pwm_xec_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(XEC_PWM_DEVICE_INIT)

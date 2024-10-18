@@ -47,8 +47,7 @@ static void modem_iface_uart_flush(struct modem_iface *iface)
  *
  * @retval None.
  */
-static void modem_iface_uart_isr(const struct device *uart_dev,
-				 void *user_data)
+static void modem_iface_uart_isr(const struct device *uart_dev, void *user_data)
 {
 	struct modem_context *ctx;
 	struct modem_iface_uart_data *data;
@@ -67,11 +66,9 @@ static void modem_iface_uart_isr(const struct device *uart_dev,
 
 	data = (struct modem_iface_uart_data *)(ctx->iface.iface_data);
 	/* get all of the data off UART as fast as we can */
-	while (uart_irq_update(ctx->iface.dev) &&
-	       uart_irq_rx_ready(ctx->iface.dev)) {
+	while (uart_irq_update(ctx->iface.dev) && uart_irq_rx_ready(ctx->iface.dev)) {
 		if (!partial_size) {
-			partial_size = ring_buf_put_claim(&data->rx_rb, &dst,
-							  UINT32_MAX);
+			partial_size = ring_buf_put_claim(&data->rx_rb, &dst, UINT32_MAX);
 		}
 		if (!partial_size) {
 			if (data->hw_flow_control) {
@@ -101,8 +98,8 @@ static void modem_iface_uart_isr(const struct device *uart_dev,
 	}
 }
 
-static int modem_iface_uart_read(struct modem_iface *iface,
-				 uint8_t *buf, size_t size, size_t *bytes_read)
+static int modem_iface_uart_read(struct modem_iface *iface, uint8_t *buf, size_t size,
+				 size_t *bytes_read)
 {
 	struct modem_iface_uart_data *data;
 
@@ -125,8 +122,7 @@ static int modem_iface_uart_read(struct modem_iface *iface,
 	return 0;
 }
 
-static int modem_iface_uart_write(struct modem_iface *iface,
-				  const uint8_t *buf, size_t size)
+static int modem_iface_uart_write(struct modem_iface *iface, const uint8_t *buf, size_t size)
 {
 	if (!iface || !iface->iface_data) {
 		return -EINVAL;
@@ -143,8 +139,7 @@ static int modem_iface_uart_write(struct modem_iface *iface,
 	return 0;
 }
 
-int modem_iface_uart_init_dev(struct modem_iface *iface,
-			      const struct device *dev)
+int modem_iface_uart_init_dev(struct modem_iface *iface, const struct device *dev)
 {
 	/* get UART device */
 	const struct device *prev = iface->dev;

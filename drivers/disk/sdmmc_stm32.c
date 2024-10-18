@@ -48,12 +48,8 @@ typedef void (*irq_config_func_t)(const struct device *dev);
 
 #if STM32_SDMMC_USE_DMA
 
-static const uint32_t table_priority[] = {
-	DMA_PRIORITY_LOW,
-	DMA_PRIORITY_MEDIUM,
-	DMA_PRIORITY_HIGH,
-	DMA_PRIORITY_VERY_HIGH
-};
+static const uint32_t table_priority[] = {DMA_PRIORITY_LOW, DMA_PRIORITY_MEDIUM, DMA_PRIORITY_HIGH,
+					  DMA_PRIORITY_VERY_HIGH};
 
 struct sdmmc_dma_stream {
 	const struct device *dev;
@@ -115,7 +111,7 @@ static void stm32_sdmmc_isr(const struct device *dev)
 }
 
 #define DEFINE_HAL_CALLBACK(name)                                                                  \
-	void name(HandleTypeDef *hsd)                                                           \
+	void name(HandleTypeDef *hsd)                                                              \
 	{                                                                                          \
 		struct stm32_sdmmc_priv *priv = CONTAINER_OF(hsd, struct stm32_sdmmc_priv, hsd);   \
                                                                                                    \
@@ -142,8 +138,7 @@ static int stm32_sdmmc_clock_enable(struct stm32_sdmmc_priv *priv)
 	clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	if (DT_INST_NUM_CLOCKS(0) > 1) {
-		if (clock_control_configure(clock,
-					    (clock_control_subsys_t)&priv->pclken[1],
+		if (clock_control_configure(clock, (clock_control_subsys_t)&priv->pclken[1],
 					    NULL) != 0) {
 			LOG_ERR("Failed to enable SDMMC domain clock");
 			return -EIO;
@@ -153,8 +148,7 @@ static int stm32_sdmmc_clock_enable(struct stm32_sdmmc_priv *priv)
 	if (IS_ENABLED(CONFIG_SDMMC_STM32_CLOCK_CHECK)) {
 		uint32_t sdmmc_clock_rate;
 
-		if (clock_control_get_rate(clock,
-					   (clock_control_subsys_t)&priv->pclken[1],
+		if (clock_control_get_rate(clock, (clock_control_subsys_t)&priv->pclken[1],
 					   &sdmmc_clock_rate) != 0) {
 			LOG_ERR("Failed to get SDMMC domain clock rate");
 			return -EIO;
@@ -177,21 +171,18 @@ static int stm32_sdmmc_clock_disable(struct stm32_sdmmc_priv *priv)
 
 	clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
-	return clock_control_off(clock,
-				 (clock_control_subsys_t)&priv->pclken);
+	return clock_control_off(clock, (clock_control_subsys_t)&priv->pclken);
 }
 #endif
 
 #if STM32_SDMMC_USE_DMA
 
-static void stm32_sdmmc_dma_cb(const struct device *dev, void *arg,
-			 uint32_t channel, int status)
+static void stm32_sdmmc_dma_cb(const struct device *dev, void *arg, uint32_t channel, int status)
 {
 	DMA_HandleTypeDef *hdma = arg;
 
 	if (status != 0) {
 		LOG_ERR("DMA callback error with channel %d.", channel);
-
 	}
 
 	HAL_DMA_IRQHandler(hdma);
@@ -214,18 +205,18 @@ static int stm32_sdmmc_configure_dma(DMA_HandleTypeDef *handle, struct sdmmc_dma
 		return ret;
 	}
 
-	handle->Instance                 = __LL_DMA_GET_STREAM_INSTANCE(dma->reg, dma->channel_nb);
-	handle->Init.Channel             = dma->cfg.dma_slot * DMA_CHANNEL_1;
-	handle->Init.PeriphInc           = DMA_PINC_DISABLE;
-	handle->Init.MemInc              = DMA_MINC_ENABLE;
+	handle->Instance = __LL_DMA_GET_STREAM_INSTANCE(dma->reg, dma->channel_nb);
+	handle->Init.Channel = dma->cfg.dma_slot * DMA_CHANNEL_1;
+	handle->Init.PeriphInc = DMA_PINC_DISABLE;
+	handle->Init.MemInc = DMA_MINC_ENABLE;
 	handle->Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
-	handle->Init.MemDataAlignment    = DMA_MDATAALIGN_WORD;
-	handle->Init.Mode                = DMA_PFCTRL;
-	handle->Init.Priority            = table_priority[dma->cfg.channel_priority],
-	handle->Init.FIFOMode            = DMA_FIFOMODE_ENABLE;
-	handle->Init.FIFOThreshold       = DMA_FIFO_THRESHOLD_FULL;
-	handle->Init.MemBurst            = DMA_MBURST_INC4;
-	handle->Init.PeriphBurst         = DMA_PBURST_INC4;
+	handle->Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
+	handle->Init.Mode = DMA_PFCTRL;
+	handle->Init.Priority = table_priority[dma->cfg.channel_priority],
+	handle->Init.FIFOMode = DMA_FIFOMODE_ENABLE;
+	handle->Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+	handle->Init.MemBurst = DMA_MBURST_INC4;
+	handle->Init.PeriphBurst = DMA_PBURST_INC4;
 
 	return ret;
 }
@@ -370,8 +361,8 @@ static int stm32_sdmmc_is_card_in_transfer(HandleTypeDef *hsd)
 #endif
 }
 
-static int stm32_sdmmc_read_blocks(HandleTypeDef *hsd, uint8_t *data_buf,
-				   uint32_t start_sector, uint32_t num_sector)
+static int stm32_sdmmc_read_blocks(HandleTypeDef *hsd, uint8_t *data_buf, uint32_t start_sector,
+				   uint32_t num_sector)
 {
 #if STM32_SDMMC_USE_DMA || IS_ENABLED(DT_PROP(DT_DRV_INST(0), idma))
 
@@ -392,8 +383,8 @@ static int stm32_sdmmc_read_blocks(HandleTypeDef *hsd, uint8_t *data_buf,
 #endif
 }
 
-static int stm32_sdmmc_access_read(struct disk_info *disk, uint8_t *data_buf,
-				   uint32_t start_sector, uint32_t num_sector)
+static int stm32_sdmmc_access_read(struct disk_info *disk, uint8_t *data_buf, uint32_t start_sector,
+				   uint32_t num_sector)
 {
 	const struct device *dev = disk->dev;
 	struct stm32_sdmmc_priv *priv = dev->data;
@@ -424,9 +415,8 @@ end:
 	return err;
 }
 
-static int stm32_sdmmc_write_blocks(HandleTypeDef *hsd,
-				    uint8_t *data_buf,
-				    uint32_t start_sector, uint32_t num_sector)
+static int stm32_sdmmc_write_blocks(HandleTypeDef *hsd, uint8_t *data_buf, uint32_t start_sector,
+				    uint32_t num_sector)
 {
 #if STM32_SDMMC_USE_DMA || IS_ENABLED(DT_PROP(DT_DRV_INST(0), idma))
 
@@ -447,8 +437,7 @@ static int stm32_sdmmc_write_blocks(HandleTypeDef *hsd,
 #endif
 }
 
-static int stm32_sdmmc_access_write(struct disk_info *disk,
-				    const uint8_t *data_buf,
+static int stm32_sdmmc_access_write(struct disk_info *disk, const uint8_t *data_buf,
 				    uint32_t start_sector, uint32_t num_sector)
 {
 	const struct device *dev = disk->dev;
@@ -489,8 +478,7 @@ static int stm32_sdmmc_get_card_info(HandleTypeDef *hsd, CardInfoTypeDef *info)
 #endif
 }
 
-static int stm32_sdmmc_access_ioctl(struct disk_info *disk, uint8_t cmd,
-				    void *buff)
+static int stm32_sdmmc_access_ioctl(struct disk_info *disk, uint8_t cmd, void *buff)
 {
 	const struct device *dev = disk->dev;
 	struct stm32_sdmmc_priv *priv = dev->data;
@@ -541,13 +529,12 @@ static struct disk_info stm32_sdmmc_info = {
 	.ops = &stm32_sdmmc_ops,
 };
 
-
 #ifdef CONFIG_SDMMC_STM32_EMMC
 static bool stm32_sdmmc_card_present(struct stm32_sdmmc_priv *priv)
 {
 	return true;
 }
-#else /* CONFIG_SDMMC_STM32_EMMC */
+#else  /* CONFIG_SDMMC_STM32_EMMC */
 /*
  * Check if the card is present or not. If no card detect gpio is set, assume
  * the card is present. If reading the gpio fails for some reason, assume the
@@ -571,9 +558,7 @@ static bool stm32_sdmmc_card_present(struct stm32_sdmmc_priv *priv)
 
 static void stm32_sdmmc_cd_handler(struct k_work *item)
 {
-	struct stm32_sdmmc_priv *priv = CONTAINER_OF(item,
-						     struct stm32_sdmmc_priv,
-						     work);
+	struct stm32_sdmmc_priv *priv = CONTAINER_OF(item, struct stm32_sdmmc_priv, work);
 
 	if (stm32_sdmmc_card_present(priv)) {
 		LOG_DBG("card inserted");
@@ -585,13 +570,10 @@ static void stm32_sdmmc_cd_handler(struct k_work *item)
 	}
 }
 
-static void stm32_sdmmc_cd_callback(const struct device *gpiodev,
-				    struct gpio_callback *cb,
+static void stm32_sdmmc_cd_callback(const struct device *gpiodev, struct gpio_callback *cb,
 				    uint32_t pin)
 {
-	struct stm32_sdmmc_priv *priv = CONTAINER_OF(cb,
-						     struct stm32_sdmmc_priv,
-						     cd_cb);
+	struct stm32_sdmmc_priv *priv = CONTAINER_OF(cb, struct stm32_sdmmc_priv, cd_cb);
 
 	k_work_submit(&priv->work);
 }
@@ -608,8 +590,7 @@ static int stm32_sdmmc_card_detect_init(struct stm32_sdmmc_priv *priv)
 		return -ENODEV;
 	}
 
-	gpio_init_callback(&priv->cd_cb, stm32_sdmmc_cd_callback,
-			   1 << priv->cd.pin);
+	gpio_init_callback(&priv->cd_cb, stm32_sdmmc_cd_callback, 1 << priv->cd.pin);
 
 	err = gpio_add_callback(priv->cd.port, &priv->cd_cb);
 	if (err) {
@@ -747,28 +728,22 @@ err_card_detect:
 
 #if STM32_SDMMC_USE_DMA
 
-#define SDMMC_DMA_CHANNEL_INIT(dir, dir_cap)				\
-	.dev = DEVICE_DT_GET(STM32_DMA_CTLR(0, dir)),			\
-	.channel = DT_INST_DMAS_CELL_BY_NAME(0, dir, channel),		\
-	.channel_nb = DT_DMAS_CELL_BY_NAME(				\
-			DT_DRV_INST(0), dir, channel),			\
-	.reg = (DMA_TypeDef *)DT_REG_ADDR(				\
-			DT_PHANDLE_BY_NAME(DT_DRV_INST(0), dmas, dir)),	\
-	.cfg = {							\
-		.dma_slot = STM32_DMA_SLOT(0, dir, slot),		\
-		.channel_priority = STM32_DMA_CONFIG_PRIORITY(		\
-				STM32_DMA_CHANNEL_CONFIG(0, dir)),	\
-		.dma_callback = stm32_sdmmc_dma_cb,			\
-		.linked_channel = STM32_DMA_HAL_OVERRIDE,		\
-	},								\
-
-
-#define SDMMC_DMA_CHANNEL(dir, DIR)					\
-.dma_##dir = {								\
-	COND_CODE_1(DT_INST_DMAS_HAS_NAME(0, dir),			\
-		 (SDMMC_DMA_CHANNEL_INIT(dir, DIR)),			\
-		 (NULL))						\
+#define SDMMC_DMA_CHANNEL_INIT(dir, dir_cap)                                                       \
+	.dev = DEVICE_DT_GET(STM32_DMA_CTLR(0, dir)),                                              \
+	.channel = DT_INST_DMAS_CELL_BY_NAME(0, dir, channel),                                     \
+	.channel_nb = DT_DMAS_CELL_BY_NAME(DT_DRV_INST(0), dir, channel),                          \
+	.reg = (DMA_TypeDef *)DT_REG_ADDR(DT_PHANDLE_BY_NAME(DT_DRV_INST(0), dmas, dir)),          \
+	.cfg = {                                                                                   \
+		.dma_slot = STM32_DMA_SLOT(0, dir, slot),                                          \
+		.channel_priority = STM32_DMA_CONFIG_PRIORITY(STM32_DMA_CHANNEL_CONFIG(0, dir)),   \
+		.dma_callback = stm32_sdmmc_dma_cb,                                                \
+		.linked_channel = STM32_DMA_HAL_OVERRIDE,                                          \
 	},
+
+#define SDMMC_DMA_CHANNEL(dir, DIR)                                                                \
+	.dma_##dir = {COND_CODE_1(DT_INST_DMAS_HAS_NAME(0, dir),			\
+		 (SDMMC_DMA_CHANNEL_INIT(dir, DIR)),			\
+		 (NULL)) },
 
 #else
 #define SDMMC_DMA_CHANNEL(dir, DIR)
@@ -778,10 +753,8 @@ PINCTRL_DT_INST_DEFINE(0);
 
 static void stm32_sdmmc_irq_config_func(const struct device *dev)
 {
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		DT_INST_IRQ(0, priority),
-		stm32_sdmmc_isr, DEVICE_DT_INST_GET(0),
-		0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), stm32_sdmmc_isr,
+		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
 }
 
@@ -797,13 +770,14 @@ static struct stm32_pclken pclken_sdmmc[] = STM32_DT_INST_CLOCKS(0);
 
 static struct stm32_sdmmc_priv stm32_sdmmc_priv_1 = {
 	.irq_config = stm32_sdmmc_irq_config_func,
-	.hsd = {
-		.Instance = (MMC_TypeDef *)DT_INST_REG_ADDR(0),
-		.Init.BusWide = SDMMC_BUS_WIDTH,
+	.hsd =
+		{
+			.Instance = (MMC_TypeDef *)DT_INST_REG_ADDR(0),
+			.Init.BusWide = SDMMC_BUS_WIDTH,
 #if DT_INST_NODE_HAS_PROP(0, clk_div)
-		.Init.ClockDiv = DT_INST_PROP(0, clk_div),
+			.Init.ClockDiv = DT_INST_PROP(0, clk_div),
 #endif
-	},
+		},
 #if DT_INST_NODE_HAS_PROP(0, cd_gpios)
 	.cd = GPIO_DT_SPEC_INST_GET(0, cd_gpios),
 #endif
@@ -813,12 +787,8 @@ static struct stm32_sdmmc_priv stm32_sdmmc_priv_1 = {
 	.pclken = pclken_sdmmc,
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.reset = RESET_DT_SPEC_INST_GET(0),
-	SDMMC_DMA_CHANNEL(rx, RX)
-	SDMMC_DMA_CHANNEL(tx, TX)
-};
+	SDMMC_DMA_CHANNEL(rx, RX) SDMMC_DMA_CHANNEL(tx, TX)};
 
-DEVICE_DT_INST_DEFINE(0, disk_stm32_sdmmc_init, NULL,
-		    &stm32_sdmmc_priv_1, NULL, POST_KERNEL,
-		    CONFIG_SD_INIT_PRIORITY,
-		    NULL);
+DEVICE_DT_INST_DEFINE(0, disk_stm32_sdmmc_init, NULL, &stm32_sdmmc_priv_1, NULL, POST_KERNEL,
+		      CONFIG_SD_INIT_PRIORITY, NULL);
 #endif

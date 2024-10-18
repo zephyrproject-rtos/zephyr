@@ -28,11 +28,10 @@
 #endif
 
 static const uint64_t cpu_mpid_list[] = {
-	DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_PATH(cpus), DT_REG_ADDR, (,))
-};
+	DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_PATH(cpus), DT_REG_ADDR, (, ))};
 
 BUILD_ASSERT(ARRAY_SIZE(cpu_mpid_list) >= CONFIG_MP_MAX_NUM_CPUS,
-		"The count of CPU Cores nodes in dts is less than CONFIG_MP_MAX_NUM_CPUS\n");
+	     "The count of CPU Cores nodes in dts is less than CONFIG_MP_MAX_NUM_CPUS\n");
 
 void arm_gic_irq_enable(unsigned int irq)
 {
@@ -100,8 +99,7 @@ void arm_gic_irq_clear_pending(unsigned int irq)
 	sys_write32((1 << int_off), (GICD_ICPENDRn + int_grp * 4));
 }
 
-void arm_gic_irq_set_priority(
-	unsigned int irq, unsigned int prio, uint32_t flags)
+void arm_gic_irq_set_priority(unsigned int irq, unsigned int prio, uint32_t flags)
 {
 	int int_grp, int_off;
 	uint32_t val;
@@ -157,16 +155,14 @@ void arm_gic_eoi(unsigned int irq)
 	sys_write32(irq, GICC_EOIR);
 }
 
-void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
-		uint16_t target_list)
+void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff, uint16_t target_list)
 {
 	uint32_t sgi_val;
 
 	ARG_UNUSED(target_aff);
 
 	sgi_val = GICD_SGIR_TGTFILT_CPULIST |
-		GICD_SGIR_CPULIST(target_list & GICD_SGIR_CPULIST_MASK) |
-		sgi_id;
+		  GICD_SGIR_CPULIST(target_list & GICD_SGIR_CPULIST_MASK) | sgi_id;
 
 	barrier_dsync_fence_full();
 	sys_write32(sgi_val, GICD_SGIR);
@@ -200,8 +196,7 @@ static void gic_dist_init(void)
 	for (i = 0; i < num_cpus; i++) {
 		cpu_mask |= BIT(cpu_mpid_list[i]);
 	}
-	reg_val = cpu_mask | (cpu_mask << 8) | (cpu_mask << 16)
-		| (cpu_mask << 24);
+	reg_val = cpu_mask | (cpu_mask << 8) | (cpu_mask << 16) | (cpu_mask << 24);
 	for (i = GIC_SPI_INT_BASE; i < gic_irqs; i += 4) {
 		sys_write32(reg_val, GICD_ITARGETSRn + i);
 	}
@@ -276,8 +271,8 @@ static void gic_cpu_init(void)
 	sys_write32(val, GICC_CTLR);
 }
 
-#define GIC_PARENT_IRQ 0
-#define GIC_PARENT_IRQ_PRI 0
+#define GIC_PARENT_IRQ       0
+#define GIC_PARENT_IRQ_PRI   0
 #define GIC_PARENT_IRQ_FLAGS 0
 
 /**
@@ -294,8 +289,8 @@ int arm_gic_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, arm_gic_init, NULL, NULL, NULL,
-		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
+DEVICE_DT_INST_DEFINE(0, arm_gic_init, NULL, NULL, NULL, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
+		      NULL);
 
 #ifdef CONFIG_SMP
 void arm_gic_secondary_init(void)

@@ -61,8 +61,8 @@ static int ina237_channel_get(const struct device *dev, enum sensor_channel chan
 
 	case SENSOR_CHAN_POWER:
 		/* power in uW is power_reg * current_lsb * 0.2 */
-		micro_u64_to_sensor_value(val,
-			INA237_POWER_TO_uW((uint64_t)data->power * config->current_lsb));
+		micro_u64_to_sensor_value(
+			val, INA237_POWER_TO_uW((uint64_t)data->power * config->current_lsb));
 		break;
 
 #ifdef CONFIG_INA237_VSHUNT
@@ -201,11 +201,11 @@ static int ina237_sample_fetch(const struct device *dev, enum sensor_channel cha
 	struct ina237_data *data = dev->data;
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_VOLTAGE && chan != SENSOR_CHAN_CURRENT &&
-		chan != SENSOR_CHAN_POWER &&
+	    chan != SENSOR_CHAN_POWER &&
 #ifdef CONFIG_INA237_VSHUNT
-		chan != SENSOR_CHAN_VSHUNT &&
+	    chan != SENSOR_CHAN_VSHUNT &&
 #endif /* CONFIG_INA237_VSHUNT */
-		chan != SENSOR_CHAN_DIE_TEMP) {
+	    chan != SENSOR_CHAN_DIE_TEMP) {
 		return -ENOTSUP;
 	}
 
@@ -397,8 +397,7 @@ static const struct sensor_driver_api ina237_driver_api = {
 };
 
 /* Shunt calibration must be muliplied by 4 if high-prevision mode is selected */
-#define CAL_PRECISION_MULTIPLIER(config) \
-	(((config & INA237_CFG_HIGH_PRECISION) >> 4) * 3 + 1)
+#define CAL_PRECISION_MULTIPLIER(config) (((config & INA237_CFG_HIGH_PRECISION) >> 4) * 3 + 1)
 
 #define INA237_DRIVER_INIT(inst)                                                                   \
 	static struct ina237_data ina237_data_##inst;                                              \
@@ -406,20 +405,20 @@ static const struct sensor_driver_api ina237_driver_api = {
 		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.config = DT_INST_PROP(inst, config),                                              \
 		.adc_config = DT_INST_PROP(inst, adc_config) |                                     \
-			(DT_INST_ENUM_IDX(inst, adc_mode) << 12) |                             \
-			(DT_INST_ENUM_IDX(inst, vbus_conversion_time_us) << 9) |                 \
-			(DT_INST_ENUM_IDX(inst, vshunt_conversion_time_us) << 6) |               \
-			(DT_INST_ENUM_IDX(inst, temp_conversion_time_us) << 3) |                 \
-			DT_INST_ENUM_IDX(inst, avg_count),                                        \
+			      (DT_INST_ENUM_IDX(inst, adc_mode) << 12) |                           \
+			      (DT_INST_ENUM_IDX(inst, vbus_conversion_time_us) << 9) |             \
+			      (DT_INST_ENUM_IDX(inst, vshunt_conversion_time_us) << 6) |           \
+			      (DT_INST_ENUM_IDX(inst, temp_conversion_time_us) << 3) |             \
+			      DT_INST_ENUM_IDX(inst, avg_count),                                   \
 		.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),                          \
-		.cal = CAL_PRECISION_MULTIPLIER(DT_INST_PROP(inst, config)) *                      \
-			INA237_CAL_SCALING * DT_INST_PROP(inst, current_lsb_microamps) *       \
-			DT_INST_PROP(inst, rshunt_micro_ohms) / 10000000ULL,                   \
+		.cal = CAL_PRECISION_MULTIPLIER(DT_INST_PROP(inst, config)) * INA237_CAL_SCALING * \
+		       DT_INST_PROP(inst, current_lsb_microamps) *                                 \
+		       DT_INST_PROP(inst, rshunt_micro_ohms) / 10000000ULL,                        \
 		.alert_config = DT_INST_PROP_OR(inst, alert_config, 0x01),                         \
 		.alert_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, alert_gpios, {0}),                    \
 	};                                                                                         \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, &ina237_init, NULL, &ina237_data_##inst,                \
 				     &ina237_config_##inst, POST_KERNEL,                           \
-				     CONFIG_SENSOR_INIT_PRIORITY, &ina237_driver_api);             \
+				     CONFIG_SENSOR_INIT_PRIORITY, &ina237_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INA237_DRIVER_INIT)

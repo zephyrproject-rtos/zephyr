@@ -20,8 +20,8 @@ struct apa102_config {
 static int apa102_update(const struct device *dev, void *buf, size_t size)
 {
 	const struct apa102_config *config = dev->config;
-	static const uint8_t zeros[] = { 0, 0, 0, 0 };
-	static const uint8_t ones[] = { 0xFF, 0xFF, 0xFF, 0xFF };
+	static const uint8_t zeros[] = {0, 0, 0, 0};
+	static const uint8_t ones[] = {0xFF, 0xFF, 0xFF, 0xFF};
 	const struct spi_buf tx_bufs[] = {
 		{
 			/* Start frame: at least 32 zeros */
@@ -42,16 +42,12 @@ static int apa102_update(const struct device *dev, void *buf, size_t size)
 			.len = sizeof(ones),
 		},
 	};
-	const struct spi_buf_set tx = {
-		.buffers = tx_bufs,
-		.count = ARRAY_SIZE(tx_bufs)
-	};
+	const struct spi_buf_set tx = {.buffers = tx_bufs, .count = ARRAY_SIZE(tx_bufs)};
 
 	return spi_write_dt(&config->bus, &tx);
 }
 
-static int apa102_update_rgb(const struct device *dev, struct led_rgb *pixels,
-			     size_t count)
+static int apa102_update_rgb(const struct device *dev, struct led_rgb *pixels, size_t count)
 {
 	uint8_t *p = (uint8_t *)pixels;
 	size_t i;
@@ -97,22 +93,14 @@ static const struct led_strip_driver_api apa102_api = {
 	.length = apa102_length,
 };
 
-#define APA102_DEVICE(idx)						 \
-	static const struct apa102_config apa102_##idx##_config = {	 \
-		.bus = SPI_DT_SPEC_INST_GET(				 \
-			idx,						 \
-			SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), \
-			0),						 \
-		.length = DT_INST_PROP(idx, chain_length),		 \
-	};								 \
-									 \
-	DEVICE_DT_INST_DEFINE(idx,					 \
-			      apa102_init,				 \
-			      NULL,					 \
-			      NULL,					 \
-			      &apa102_##idx##_config,			 \
-			      POST_KERNEL,				 \
-			      CONFIG_LED_STRIP_INIT_PRIORITY,		 \
-			      &apa102_api);
+#define APA102_DEVICE(idx)                                                                         \
+	static const struct apa102_config apa102_##idx##_config = {                                \
+		.bus = SPI_DT_SPEC_INST_GET(                                                       \
+			idx, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 0),          \
+		.length = DT_INST_PROP(idx, chain_length),                                         \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(idx, apa102_init, NULL, NULL, &apa102_##idx##_config, POST_KERNEL,   \
+			      CONFIG_LED_STRIP_INIT_PRIORITY, &apa102_api);
 
 DT_INST_FOREACH_STATUS_OKAY(APA102_DEVICE)

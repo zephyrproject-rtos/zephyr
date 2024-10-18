@@ -134,8 +134,7 @@ void uart_async_rx_reset(struct uart_async_rx *rx_data)
 	}
 }
 
-int uart_async_rx_init(struct uart_async_rx *rx_data,
-		       const struct uart_async_rx_config *config)
+int uart_async_rx_init(struct uart_async_rx *rx_data, const struct uart_async_rx_config *config)
 {
 	__ASSERT_NO_MSG(config->buf_cnt > 0);
 	__ASSERT_NO_MSG(config->length / config->buf_cnt <= UINT8_MAX);

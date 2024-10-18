@@ -180,12 +180,8 @@ static int wm8904_audio_fmt_config(const struct device *dev, audio_dai_cfg_t *cf
 	return 0;
 }
 
-static int wm8904_out_update(
-	const struct device *dev,
-	audio_channel_t channel,
-	uint16_t val,
-	uint16_t mask
-)
+static int wm8904_out_update(const struct device *dev, audio_channel_t channel, uint16_t val,
+			     uint16_t mask)
 {
 	switch (channel) {
 	case AUDIO_CHANNEL_FRONT_LEFT:
@@ -220,9 +216,8 @@ static int wm8904_out_volume_config(const struct device *dev, audio_channel_t ch
 {
 	/* Set volume values with VU = 0 */
 	const uint16_t val = WM8904_REGVAL_OUT_VOL(0, 0, 1, volume);
-	const uint16_t mask = WM8904_REGMASK_OUT_VU
-		| WM8904_REGMASK_OUT_ZC
-		| WM8904_REGMASK_OUT_VOL;
+	const uint16_t mask =
+		WM8904_REGMASK_OUT_VU | WM8904_REGMASK_OUT_ZC | WM8904_REGMASK_OUT_VOL;
 
 	return wm8904_out_update(dev, channel, val, mask);
 }
@@ -235,12 +230,8 @@ static int wm8904_out_mute_config(const struct device *dev, audio_channel_t chan
 	return wm8904_out_update(dev, channel, val, mask);
 }
 
-static int wm8904_in_update(
-	const struct device *dev,
-	audio_channel_t channel,
-	uint16_t mask,
-	uint16_t val
-)
+static int wm8904_in_update(const struct device *dev, audio_channel_t channel, uint16_t mask,
+			    uint16_t val)
 {
 	switch (channel) {
 	case AUDIO_CHANNEL_FRONT_LEFT:
@@ -284,10 +275,8 @@ static int wm8904_route_input(const struct device *dev, audio_channel_t channel,
 	}
 
 	uint8_t val = WM8904_REGVAL_INSEL(0, input - 1, input - 1, 0);
-	uint8_t mask = WM8904_REGMASK_INSEL_CMENA
-		| WM8904_REGMASK_INSEL_IP_SEL_P
-		| WM8904_REGMASK_INSEL_IP_SEL_N
-		| WM8904_REGMASK_INSEL_MODE;
+	uint8_t mask = WM8904_REGMASK_INSEL_CMENA | WM8904_REGMASK_INSEL_IP_SEL_P |
+		       WM8904_REGMASK_INSEL_IP_SEL_N | WM8904_REGMASK_INSEL_MODE;
 	uint8_t reg;
 
 	switch (channel) {
@@ -567,17 +556,10 @@ static int wm8904_apply_properties(const struct device *dev)
 	 * Set VU = 1 for all output channels, VU takes effect for the whole
 	 * channel pair.
 	 */
-	wm8904_update_reg(
-		dev,
-		WM8904_REG_ANALOG_OUT1_LEFT,
-		WM8904_REGVAL_OUT_VOL(0, 1, 0, 0),
-		WM8904_REGMASK_OUT_MUTE
-	);
-	wm8904_update_reg(dev,
-		WM8904_REG_ANALOG_OUT2_LEFT,
-		WM8904_REGVAL_OUT_VOL(0, 1, 0, 0),
-		WM8904_REGMASK_OUT_MUTE
-	);
+	wm8904_update_reg(dev, WM8904_REG_ANALOG_OUT1_LEFT, WM8904_REGVAL_OUT_VOL(0, 1, 0, 0),
+			  WM8904_REGMASK_OUT_MUTE);
+	wm8904_update_reg(dev, WM8904_REG_ANALOG_OUT2_LEFT, WM8904_REGVAL_OUT_VOL(0, 1, 0, 0),
+			  WM8904_REGMASK_OUT_MUTE);
 
 	return 0;
 }
@@ -659,14 +641,13 @@ static void wm8904_configure_input(const struct device *dev)
 	wm8904_in_mute_config(dev, AUDIO_CHANNEL_ALL, false);
 }
 
-static const struct audio_codec_api wm8904_driver_api = {
-	.configure = wm8904_configure,
-	.start_output = wm8904_start_output,
-	.stop_output = wm8904_stop_output,
-	.set_property = wm8904_set_property,
-	.apply_properties = wm8904_apply_properties,
-	.route_input = wm8904_route_input
-};
+static const struct audio_codec_api wm8904_driver_api = {.configure = wm8904_configure,
+							 .start_output = wm8904_start_output,
+							 .stop_output = wm8904_stop_output,
+							 .set_property = wm8904_set_property,
+							 .apply_properties =
+								 wm8904_apply_properties,
+							 .route_input = wm8904_route_input};
 
 #define WM8904_INIT(n)                                                                             \
 	static const struct wm8904_driver_config wm8904_device_config_##n = {                      \
@@ -675,7 +656,7 @@ static const struct audio_codec_api wm8904_driver_api = {
 		.mclk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(n, mclk)),                   \
 		.mclk_name = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, name)};  \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, &wm8904_device_config_##n,        \
-			      POST_KERNEL, CONFIG_AUDIO_CODEC_INIT_PRIORITY, &wm8904_driver_api);
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, &wm8904_device_config_##n, POST_KERNEL,         \
+			      CONFIG_AUDIO_CODEC_INIT_PRIORITY, &wm8904_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(WM8904_INIT)

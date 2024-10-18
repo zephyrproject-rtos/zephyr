@@ -12,12 +12,10 @@
 
 LOG_MODULE_DECLARE(FXOS8700, CONFIG_SENSOR_LOG_LEVEL);
 
-static void fxos8700_gpio_callback(const struct device *dev,
-				   struct gpio_callback *cb,
+static void fxos8700_gpio_callback(const struct device *dev, struct gpio_callback *cb,
 				   uint32_t pin_mask)
 {
-	struct fxos8700_data *data =
-		CONTAINER_OF(cb, struct fxos8700_data, gpio_cb);
+	struct fxos8700_data *data = CONTAINER_OF(cb, struct fxos8700_data, gpio_cb);
 	const struct fxos8700_config *config = data->dev->config;
 
 	if ((pin_mask & BIT(config->int_gpio.pin)) == 0U) {
@@ -55,8 +53,7 @@ static int fxos8700_handle_pulse_int(const struct device *dev)
 
 	k_sem_take(&data->sem, K_FOREVER);
 
-	if (config->ops->byte_read(dev, FXOS8700_REG_PULSE_SRC,
-				   &pulse_source)) {
+	if (config->ops->byte_read(dev, FXOS8700_REG_PULSE_SRC, &pulse_source)) {
 		LOG_ERR("Could not read pulse source");
 	}
 
@@ -88,8 +85,7 @@ static int fxos8700_handle_motion_int(const struct device *dev)
 
 	k_sem_take(&data->sem, K_FOREVER);
 
-	if (config->ops->byte_read(dev, FXOS8700_REG_FF_MT_SRC,
-				   &motion_source)) {
+	if (config->ops->byte_read(dev, FXOS8700_REG_FF_MT_SRC, &motion_source)) {
 		LOG_ERR("Could not read pulse source");
 	}
 
@@ -126,8 +122,7 @@ static void fxos8700_handle_int(const struct device *dev)
 	/* Interrupt status register */
 	k_sem_take(&data->sem, K_FOREVER);
 
-	if (config->ops->byte_read(dev, FXOS8700_REG_INT_SOURCE,
-				   &int_source)) {
+	if (config->ops->byte_read(dev, FXOS8700_REG_INT_SOURCE, &int_source)) {
 		LOG_ERR("Could not read interrupt source");
 		int_source = 0U;
 	}
@@ -151,8 +146,7 @@ static void fxos8700_handle_int(const struct device *dev)
 	/* Magnetometer interrupt source register */
 	k_sem_take(&data->sem, K_FOREVER);
 
-	if (config->ops->byte_read(dev, FXOS8700_REG_M_INT_SRC,
-				   &int_source)) {
+	if (config->ops->byte_read(dev, FXOS8700_REG_M_INT_SRC, &int_source)) {
 		LOG_ERR("Could not read magnetometer interrupt source");
 		int_source = 0U;
 	}
@@ -185,15 +179,13 @@ static void fxos8700_thread_main(void *p1, void *p2, void *p3)
 #ifdef CONFIG_FXOS8700_TRIGGER_GLOBAL_THREAD
 static void fxos8700_work_handler(struct k_work *work)
 {
-	struct fxos8700_data *data =
-		CONTAINER_OF(work, struct fxos8700_data, work);
+	struct fxos8700_data *data = CONTAINER_OF(work, struct fxos8700_data, work);
 
 	fxos8700_handle_int(data->dev);
 }
 #endif
 
-int fxos8700_trigger_set(const struct device *dev,
-			 const struct sensor_trigger *trig,
+int fxos8700_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			 sensor_trigger_handler_t handler)
 {
 	const struct fxos8700_config *config = dev->config;
@@ -260,8 +252,7 @@ int fxos8700_trigger_set(const struct device *dev,
 	}
 
 	/* Configure the sensor interrupt */
-	if (config->ops->reg_field_update(dev, FXOS8700_REG_CTRLREG4, mask,
-					  handler ? mask : 0)) {
+	if (config->ops->reg_field_update(dev, FXOS8700_REG_CTRLREG4, mask, handler ? mask : 0)) {
 		LOG_ERR("Could not configure interrupt");
 		ret = -EIO;
 		goto exit;
@@ -285,38 +276,31 @@ static int fxos8700_pulse_init(const struct device *dev)
 {
 	const struct fxos8700_config *config = dev->config;
 
-	if (config->ops->byte_write(dev, FXOS8700_REG_PULSE_CFG,
-				    config->pulse_cfg)) {
+	if (config->ops->byte_write(dev, FXOS8700_REG_PULSE_CFG, config->pulse_cfg)) {
 		return -EIO;
 	}
 
-	if (config->ops->byte_write(dev, FXOS8700_REG_PULSE_THSX,
-				    config->pulse_ths[0])) {
+	if (config->ops->byte_write(dev, FXOS8700_REG_PULSE_THSX, config->pulse_ths[0])) {
 		return -EIO;
 	}
 
-	if (config->ops->byte_write(dev, FXOS8700_REG_PULSE_THSY,
-				    config->pulse_ths[1])) {
+	if (config->ops->byte_write(dev, FXOS8700_REG_PULSE_THSY, config->pulse_ths[1])) {
 		return -EIO;
 	}
 
-	if (config->ops->byte_write(dev, FXOS8700_REG_PULSE_THSZ,
-				    config->pulse_ths[2])) {
+	if (config->ops->byte_write(dev, FXOS8700_REG_PULSE_THSZ, config->pulse_ths[2])) {
 		return -EIO;
 	}
 
-	if (config->ops->byte_write(dev, FXOS8700_REG_PULSE_TMLT,
-				    config->pulse_tmlt)) {
+	if (config->ops->byte_write(dev, FXOS8700_REG_PULSE_TMLT, config->pulse_tmlt)) {
 		return -EIO;
 	}
 
-	if (config->ops->byte_write(dev, FXOS8700_REG_PULSE_LTCY,
-				    config->pulse_ltcy)) {
+	if (config->ops->byte_write(dev, FXOS8700_REG_PULSE_LTCY, config->pulse_ltcy)) {
 		return -EIO;
 	}
 
-	if (config->ops->byte_write(dev, FXOS8700_REG_PULSE_WIND,
-				    config->pulse_wind)) {
+	if (config->ops->byte_write(dev, FXOS8700_REG_PULSE_WIND, config->pulse_wind)) {
 		return -EIO;
 	}
 
@@ -330,19 +314,15 @@ static int fxos8700_motion_init(const struct device *dev)
 	const struct fxos8700_config *config = dev->config;
 
 	/* Set Mode 4, Motion detection with ELE = 1, OAE = 1 */
-	if (config->ops->byte_write(dev,
-				    FXOS8700_REG_FF_MT_CFG,
-				    FXOS8700_FF_MT_CFG_ELE |
-				    FXOS8700_FF_MT_CFG_OAE |
-				    FXOS8700_FF_MT_CFG_ZEFE |
-				    FXOS8700_FF_MT_CFG_YEFE |
-				    FXOS8700_FF_MT_CFG_XEFE)) {
+	if (config->ops->byte_write(dev, FXOS8700_REG_FF_MT_CFG,
+				    FXOS8700_FF_MT_CFG_ELE | FXOS8700_FF_MT_CFG_OAE |
+					    FXOS8700_FF_MT_CFG_ZEFE | FXOS8700_FF_MT_CFG_YEFE |
+					    FXOS8700_FF_MT_CFG_XEFE)) {
 		return -EIO;
 	}
 
 	/* Set motion threshold to maximimum */
-	if (config->ops->byte_write(dev, FXOS8700_REG_FF_MT_THS,
-				    FXOS8700_REG_FF_MT_THS)) {
+	if (config->ops->byte_write(dev, FXOS8700_REG_FF_MT_THS, FXOS8700_REG_FF_MT_THS)) {
 		return -EIO;
 	}
 
@@ -362,8 +342,7 @@ static int fxos8700_m_vecm_init(const struct device *dev)
 #endif
 
 	/* Set magnetic vector-magnitude function */
-	if (config->ops->byte_write(dev, FXOS8700_REG_M_VECM_CFG,
-				    m_vecm_cfg)) {
+	if (config->ops->byte_write(dev, FXOS8700_REG_M_VECM_CFG, m_vecm_cfg)) {
 		LOG_ERR("Could not set magnetic vector-magnitude function");
 		return -EIO;
 	}
@@ -371,14 +350,12 @@ static int fxos8700_m_vecm_init(const struct device *dev)
 	/* Set magnetic vector-magnitude function threshold values:
 	 * handle both MSB and LSB registers
 	 */
-	if (config->ops->byte_write(dev, FXOS8700_REG_M_VECM_THS_MSB,
-				    config->mag_vecm_ths[0])) {
+	if (config->ops->byte_write(dev, FXOS8700_REG_M_VECM_THS_MSB, config->mag_vecm_ths[0])) {
 		LOG_ERR("Could not set magnetic vector-magnitude function threshold MSB value");
 		return -EIO;
 	}
 
-	if (config->ops->byte_write(dev, FXOS8700_REG_M_VECM_THS_LSB,
-				    config->mag_vecm_ths[1])) {
+	if (config->ops->byte_write(dev, FXOS8700_REG_M_VECM_THS_LSB, config->mag_vecm_ths[1])) {
 		LOG_ERR("Could not set magnetic vector-magnitude function threshold LSB value");
 		return -EIO;
 	}
@@ -398,12 +375,9 @@ int fxos8700_trigger_init(const struct device *dev)
 
 #if defined(CONFIG_FXOS8700_TRIGGER_OWN_THREAD)
 	k_sem_init(&data->trig_sem, 0, K_SEM_MAX_LIMIT);
-	k_thread_create(&data->thread, data->thread_stack,
-			CONFIG_FXOS8700_THREAD_STACK_SIZE,
-			fxos8700_thread_main,
-			data, NULL, NULL,
-			K_PRIO_COOP(CONFIG_FXOS8700_THREAD_PRIORITY),
-			0, K_NO_WAIT);
+	k_thread_create(&data->thread, data->thread_stack, CONFIG_FXOS8700_THREAD_STACK_SIZE,
+			fxos8700_thread_main, data, NULL, NULL,
+			K_PRIO_COOP(CONFIG_FXOS8700_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_FXOS8700_TRIGGER_GLOBAL_THREAD)
 	data->work.handler = fxos8700_work_handler;
 #endif
@@ -420,8 +394,7 @@ int fxos8700_trigger_init(const struct device *dev)
 	ctrl_reg5 |= FXOS8700_MOTION_MASK;
 #endif
 
-	if (config->ops->byte_write(dev, FXOS8700_REG_CTRLREG5,
-				    ctrl_reg5)) {
+	if (config->ops->byte_write(dev, FXOS8700_REG_CTRLREG5, ctrl_reg5)) {
 		LOG_ERR("Could not configure interrupt pin routing");
 		return -EIO;
 	}
@@ -455,8 +428,7 @@ int fxos8700_trigger_init(const struct device *dev)
 		return ret;
 	}
 
-	gpio_init_callback(&data->gpio_cb, fxos8700_gpio_callback,
-			   BIT(config->int_gpio.pin));
+	gpio_init_callback(&data->gpio_cb, fxos8700_gpio_callback, BIT(config->int_gpio.pin));
 
 	ret = gpio_add_callback(config->int_gpio.port, &data->gpio_cb);
 	if (ret < 0) {

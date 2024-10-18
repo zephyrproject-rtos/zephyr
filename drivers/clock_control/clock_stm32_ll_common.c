@@ -21,41 +21,41 @@
 #include "stm32_hsem.h"
 
 /* Macros to fill up prescaler values */
-#define z_hsi_divider(v) LL_RCC_HSI_DIV_ ## v
-#define hsi_divider(v) z_hsi_divider(v)
+#define z_hsi_divider(v) LL_RCC_HSI_DIV_##v
+#define hsi_divider(v)   z_hsi_divider(v)
 
 #if defined(LL_RCC_HCLK_DIV_1)
-#define fn_ahb_prescaler(v) LL_RCC_HCLK_DIV_ ## v
-#define ahb_prescaler(v) fn_ahb_prescaler(v)
+#define fn_ahb_prescaler(v) LL_RCC_HCLK_DIV_##v
+#define ahb_prescaler(v)    fn_ahb_prescaler(v)
 #else
-#define fn_ahb_prescaler(v) LL_RCC_SYSCLK_DIV_ ## v
-#define ahb_prescaler(v) fn_ahb_prescaler(v)
+#define fn_ahb_prescaler(v) LL_RCC_SYSCLK_DIV_##v
+#define ahb_prescaler(v)    fn_ahb_prescaler(v)
 #endif
 
-#define fn_apb1_prescaler(v) LL_RCC_APB1_DIV_ ## v
-#define apb1_prescaler(v) fn_apb1_prescaler(v)
+#define fn_apb1_prescaler(v) LL_RCC_APB1_DIV_##v
+#define apb1_prescaler(v)    fn_apb1_prescaler(v)
 
 #if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), apb2_prescaler)
-#define fn_apb2_prescaler(v) LL_RCC_APB2_DIV_ ## v
-#define apb2_prescaler(v) fn_apb2_prescaler(v)
+#define fn_apb2_prescaler(v) LL_RCC_APB2_DIV_##v
+#define apb2_prescaler(v)    fn_apb2_prescaler(v)
 #endif
 
 #if defined(RCC_CFGR_ADCPRE)
-#define z_adc12_prescaler(v) LL_RCC_ADC_CLKSRC_PCLK2_DIV_ ## v
-#define adc12_prescaler(v) z_adc12_prescaler(v)
+#define z_adc12_prescaler(v) LL_RCC_ADC_CLKSRC_PCLK2_DIV_##v
+#define adc12_prescaler(v)   z_adc12_prescaler(v)
 #elif defined(RCC_CFGR2_ADC1PRES)
-#define z_adc12_prescaler(v) \
+#define z_adc12_prescaler(v)                                                                       \
 	COND_CODE_1(IS_EQ(v, 0), \
 		    LL_RCC_ADC1_CLKSRC_HCLK, \
 		    LL_RCC_ADC1_CLKSRC_PLL_DIV_ ## v)
 #define adc12_prescaler(v) z_adc12_prescaler(v)
 #else
-#define z_adc12_prescaler(v) \
+#define z_adc12_prescaler(v)                                                                       \
 	COND_CODE_1(IS_EQ(v, 0), \
 		    (LL_RCC_ADC12_CLKSRC_HCLK), \
 		    (LL_RCC_ADC12_CLKSRC_PLL_DIV_ ## v))
 #define adc12_prescaler(v) z_adc12_prescaler(v)
-#define z_adc34_prescaler(v) \
+#define z_adc34_prescaler(v)                                                                       \
 	COND_CODE_1(IS_EQ(v, 0), \
 		    (LL_RCC_ADC34_CLKSRC_HCLK), \
 		    (LL_RCC_ADC34_CLKSRC_PLL_DIV_ ## v))
@@ -63,13 +63,13 @@
 #endif
 
 #if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), ahb4_prescaler)
-#define RCC_CALC_FLASH_FREQ __LL_RCC_CALC_HCLK4_FREQ
+#define RCC_CALC_FLASH_FREQ         __LL_RCC_CALC_HCLK4_FREQ
 #define GET_CURRENT_FLASH_PRESCALER LL_RCC_GetAHB4Prescaler
 #elif DT_NODE_HAS_PROP(DT_NODELABEL(rcc), ahb3_prescaler)
-#define RCC_CALC_FLASH_FREQ __LL_RCC_CALC_HCLK3_FREQ
+#define RCC_CALC_FLASH_FREQ         __LL_RCC_CALC_HCLK3_FREQ
 #define GET_CURRENT_FLASH_PRESCALER LL_RCC_GetAHB3Prescaler
 #else
-#define RCC_CALC_FLASH_FREQ __LL_RCC_CALC_HCLK_FREQ
+#define RCC_CALC_FLASH_FREQ         __LL_RCC_CALC_HCLK_FREQ
 #define GET_CURRENT_FLASH_PRESCALER LL_RCC_GetAHBPrescaler
 #endif
 
@@ -87,11 +87,8 @@
 /**
  * @brief Return frequency for pll with 2 dividers and a multiplier
  */
-__unused
-static uint32_t get_pll_div_frequency(uint32_t pllsrc_freq,
-				      int pllm_div,
-				      int plln_mul,
-				      int pllout_div)
+__unused static uint32_t get_pll_div_frequency(uint32_t pllsrc_freq, int pllm_div, int plln_mul,
+					       int pllout_div)
 {
 	__ASSERT_NO_MSG(pllm_div && pllout_div);
 
@@ -103,15 +100,13 @@ static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
 	return clock / prescaler;
 }
 
-__unused
-static uint32_t get_msi_frequency(void)
+__unused static uint32_t get_msi_frequency(void)
 {
 #if defined(STM32_MSI_ENABLED)
 #if !defined(LL_RCC_MSIRANGESEL_RUN)
 	return __LL_RCC_CALC_MSI_FREQ(LL_RCC_MSI_GetRange());
 #else
-	return __LL_RCC_CALC_MSI_FREQ(LL_RCC_MSIRANGESEL_RUN,
-				      LL_RCC_MSI_GetRange());
+	return __LL_RCC_CALC_MSI_FREQ(LL_RCC_MSIRANGESEL_RUN, LL_RCC_MSI_GetRange());
 #endif
 #endif
 	return 0;
@@ -256,8 +251,7 @@ static inline int stm32_clock_control_on(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus,
-		     pclken->enr);
+	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus, pclken->enr);
 	/* Delay after enabling the clock, to allow it to become active.
 	 * See (for example) RM0440 7.2.17
 	 */
@@ -279,15 +273,13 @@ static inline int stm32_clock_control_off(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	sys_clear_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus,
-		       pclken->enr);
+	sys_clear_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus, pclken->enr);
 
 	return 0;
 }
 
 static inline int stm32_clock_control_configure(const struct device *dev,
-						clock_control_subsys_t sub_system,
-						void *data)
+						clock_control_subsys_t sub_system, void *data)
 {
 #if defined(STM32_SRC_SYSCLK)
 	/* At least one alt src clock available */
@@ -321,8 +313,7 @@ static inline int stm32_clock_control_configure(const struct device *dev,
 }
 
 static int stm32_clock_control_get_subsys_rate(const struct device *clock,
-						clock_control_subsys_t sub_system,
-						uint32_t *rate)
+					       clock_control_subsys_t sub_system, uint32_t *rate)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
 	/*
@@ -340,8 +331,7 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 	uint32_t apb2_clock = apb1_clock;
 #endif
 #if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), ahb3_prescaler)
-	uint32_t ahb3_clock = get_bus_clock(ahb_clock * STM32_CPU1_PRESCALER,
-					    STM32_AHB3_PRESCALER);
+	uint32_t ahb3_clock = get_bus_clock(ahb_clock * STM32_CPU1_PRESCALER, STM32_AHB3_PRESCALER);
 #elif defined(STM32_CLOCK_BUS_AHB3)
 	/* AHB3 bus exists, but w/o dedicated prescaler */
 	uint32_t ahb3_clock = ahb_clock;
@@ -404,34 +394,26 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 #endif
 #if defined(STM32_SRC_PLL_P) & STM32_PLL_P_ENABLED
 	case STM32_SRC_PLL_P:
-		*rate = get_pll_div_frequency(get_pllsrc_frequency(),
-					      STM32_PLL_M_DIVISOR,
-					      STM32_PLL_N_MULTIPLIER,
-					      STM32_PLL_P_DIVISOR);
+		*rate = get_pll_div_frequency(get_pllsrc_frequency(), STM32_PLL_M_DIVISOR,
+					      STM32_PLL_N_MULTIPLIER, STM32_PLL_P_DIVISOR);
 		break;
 #endif
 #if defined(STM32_SRC_PLL_Q) & STM32_PLL_Q_ENABLED
 	case STM32_SRC_PLL_Q:
-		*rate = get_pll_div_frequency(get_pllsrc_frequency(),
-					      STM32_PLL_M_DIVISOR,
-					      STM32_PLL_N_MULTIPLIER,
-					      STM32_PLL_Q_DIVISOR);
+		*rate = get_pll_div_frequency(get_pllsrc_frequency(), STM32_PLL_M_DIVISOR,
+					      STM32_PLL_N_MULTIPLIER, STM32_PLL_Q_DIVISOR);
 		break;
 #endif
 #if defined(STM32_SRC_PLL_R) & STM32_PLL_R_ENABLED
 	case STM32_SRC_PLL_R:
-		*rate = get_pll_div_frequency(get_pllsrc_frequency(),
-					      STM32_PLL_M_DIVISOR,
-					      STM32_PLL_N_MULTIPLIER,
-					      STM32_PLL_R_DIVISOR);
+		*rate = get_pll_div_frequency(get_pllsrc_frequency(), STM32_PLL_M_DIVISOR,
+					      STM32_PLL_N_MULTIPLIER, STM32_PLL_R_DIVISOR);
 		break;
 #endif
 #if defined(STM32_SRC_PLLI2S_R) & STM32_PLLI2S_ENABLED
 	case STM32_SRC_PLLI2S_R:
-		*rate = get_pll_div_frequency(get_pllsrc_frequency(),
-					      STM32_PLLI2S_M_DIVISOR,
-					      STM32_PLLI2S_N_MULTIPLIER,
-					      STM32_PLLI2S_R_DIVISOR);
+		*rate = get_pll_div_frequency(get_pllsrc_frequency(), STM32_PLLI2S_M_DIVISOR,
+					      STM32_PLLI2S_N_MULTIPLIER, STM32_PLLI2S_R_DIVISOR);
 		break;
 #endif /* STM32_SRC_PLLI2S_R */
 /* PLLSAI1x not supported yet */
@@ -482,8 +464,8 @@ static enum clock_control_status stm32_clock_control_get_status(const struct dev
 
 	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == true) {
 		/* Gated clocks */
-		if ((sys_read32(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus) & pclken->enr)
-		    == pclken->enr) {
+		if ((sys_read32(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus) & pclken->enr) ==
+		    pclken->enr) {
 			return CLOCK_CONTROL_STATUS_ON;
 		} else {
 			return CLOCK_CONTROL_STATUS_OFF;
@@ -509,15 +491,14 @@ static const struct clock_control_driver_api stm32_clock_control_api = {
 /*
  * Unconditionally switch the system clock source to HSI.
  */
-__unused
-static void stm32_clock_switch_to_hsi(void)
+__unused static void stm32_clock_switch_to_hsi(void)
 {
 	/* Enable HSI if not enabled */
 	if (LL_RCC_HSI_IsReady() != 1) {
 		/* Enable HSI */
 		LL_RCC_HSI_Enable();
 		while (LL_RCC_HSI_IsReady() != 1) {
-		/* Wait for HSI ready */
+			/* Wait for HSI ready */
 		}
 	}
 
@@ -527,8 +508,7 @@ static void stm32_clock_switch_to_hsi(void)
 	}
 }
 
-__unused
-static void set_up_plls(void)
+__unused static void set_up_plls(void)
 {
 #if defined(STM32_PLL_ENABLED)
 
@@ -561,7 +541,7 @@ static void set_up_plls(void)
 	/* Enable PLL2 */
 	LL_RCC_PLL2_Enable();
 	while (LL_RCC_PLL2_IsReady() != 1U) {
-	/* Wait for PLL2 ready */
+		/* Wait for PLL2 ready */
 	}
 #endif /* STM32_PLL2_ENABLED */
 
@@ -581,7 +561,7 @@ static void set_up_plls(void)
 	/* Enable PLL */
 	LL_RCC_PLL_Enable();
 	while (LL_RCC_PLL_IsReady() != 1U) {
-	/* Wait for PLL ready */
+		/* Wait for PLL ready */
 	}
 
 #endif /* STM32_PLL_ENABLED */
@@ -618,7 +598,7 @@ static void set_up_fixed_clock_sources(void)
 		/* Enable HSE */
 		LL_RCC_HSE_Enable();
 		while (LL_RCC_HSE_IsReady() != 1) {
-		/* Wait for HSE ready */
+			/* Wait for HSE ready */
 		}
 		/* Check if we need to enable HSE clock security system or not */
 #if STM32_HSE_CSS
@@ -633,7 +613,7 @@ static void set_up_fixed_clock_sources(void)
 			/* Enable HSI */
 			LL_RCC_HSI_Enable();
 			while (LL_RCC_HSI_IsReady() != 1) {
-			/* Wait for HSI ready */
+				/* Wait for HSI ready */
 			}
 		}
 #if STM32_HSI_DIV_ENABLED
@@ -786,11 +766,11 @@ int stm32_clock_control_init(const struct device *dev)
 	uint32_t old_flash_freq;
 	uint32_t new_flash_freq;
 
-	old_flash_freq = RCC_CALC_FLASH_FREQ(HAL_RCC_GetSysClockFreq(),
-					       GET_CURRENT_FLASH_PRESCALER());
+	old_flash_freq =
+		RCC_CALC_FLASH_FREQ(HAL_RCC_GetSysClockFreq(), GET_CURRENT_FLASH_PRESCALER());
 
-	new_flash_freq = RCC_CALC_FLASH_FREQ(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
-				      STM32_FLASH_PRESCALER);
+	new_flash_freq =
+		RCC_CALC_FLASH_FREQ(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC, STM32_FLASH_PRESCALER);
 
 	/* If HCLK increases, set flash latency before any clock setting */
 	if (old_flash_freq < new_flash_freq) {
@@ -805,8 +785,8 @@ int stm32_clock_control_init(const struct device *dev)
 	set_up_plls();
 
 	if (DT_PROP(DT_NODELABEL(rcc), undershoot_prevention) &&
-		(ahb_prescaler(STM32_CORE_PRESCALER) == ahb_prescaler(1)) &&
-		(MHZ(80) < CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC)) {
+	    (ahb_prescaler(STM32_CORE_PRESCALER) == ahb_prescaler(1)) &&
+	    (MHZ(80) < CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC)) {
 		LL_RCC_SetAHBPrescaler(ahb_prescaler(2));
 	} else {
 		LL_RCC_SetAHBPrescaler(ahb_prescaler(STM32_CORE_PRESCALER));
@@ -832,8 +812,8 @@ int stm32_clock_control_init(const struct device *dev)
 #endif /* STM32_SYSCLK_SRC_... */
 
 	if (DT_PROP(DT_NODELABEL(rcc), undershoot_prevention) &&
-		(ahb_prescaler(STM32_CORE_PRESCALER) == ahb_prescaler(1)) &&
-		(MHZ(80) < CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC)) {
+	    (ahb_prescaler(STM32_CORE_PRESCALER) == ahb_prescaler(1)) &&
+	    (MHZ(80) < CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC)) {
 		LL_RCC_SetAHBPrescaler(ahb_prescaler(STM32_CORE_PRESCALER));
 	}
 
@@ -877,7 +857,9 @@ int stm32_clock_control_init(const struct device *dev)
 }
 
 #if defined(STM32_HSE_CSS)
-void __weak stm32_hse_css_callback(void) {}
+void __weak stm32_hse_css_callback(void)
+{
+}
 
 /* Called by the HAL in response to an HSE CSS interrupt */
 void HAL_RCC_CSSCallback(void)
@@ -886,15 +868,12 @@ void HAL_RCC_CSSCallback(void)
 }
 #endif
 
-void __weak config_regulator_voltage(uint32_t hclk_freq) {}
+void __weak config_regulator_voltage(uint32_t hclk_freq)
+{
+}
 /**
  * @brief RCC device, note that priority is intentionally set to 1 so
  * that the device init runs just after SOC init
  */
-DEVICE_DT_DEFINE(DT_NODELABEL(rcc),
-		    stm32_clock_control_init,
-		    NULL,
-		    NULL, NULL,
-		    PRE_KERNEL_1,
-		    CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
-		    &stm32_clock_control_api);
+DEVICE_DT_DEFINE(DT_NODELABEL(rcc), stm32_clock_control_init, NULL, NULL, NULL, PRE_KERNEL_1,
+		 CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &stm32_clock_control_api);

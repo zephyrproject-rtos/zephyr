@@ -15,25 +15,17 @@ LOG_MODULE_REGISTER(BMM150, CONFIG_SENSOR_LOG_LEVEL);
 static const struct {
 	int freq;
 	uint8_t reg_val;
-} bmm150_samp_freq_table[] = { { 2, 0x01 },
-			       { 6, 0x02 },
-			       { 8, 0x03 },
-			       { 10, 0x00 },
-			       { 15, 0x04 },
-			       { 20, 0x05 },
-			       { 25, 0x06 },
-			       { 30, 0x07 } };
+} bmm150_samp_freq_table[] = {{2, 0x01},  {6, 0x02},  {8, 0x03},  {10, 0x00},
+			      {15, 0x04}, {20, 0x05}, {25, 0x06}, {30, 0x07}};
 
 static const struct bmm150_preset {
 	uint8_t rep_xy;
 	uint8_t rep_z;
 	uint8_t odr;
-} bmm150_presets_table[] = {
-	[BMM150_LOW_POWER_PRESET] = { 3, 3, 10 },
-	[BMM150_REGULAR_PRESET] = { 9, 15, 10 },
-	[BMM150_ENHANCED_REGULAR_PRESET] = { 15, 27, 10 },
-	[BMM150_HIGH_ACCURACY_PRESET] = { 47, 83, 20 }
-};
+} bmm150_presets_table[] = {[BMM150_LOW_POWER_PRESET] = {3, 3, 10},
+			    [BMM150_REGULAR_PRESET] = {9, 15, 10},
+			    [BMM150_ENHANCED_REGULAR_PRESET] = {15, 27, 10},
+			    [BMM150_HIGH_ACCURACY_PRESET] = {47, 83, 20}};
 
 static inline int bmm150_bus_check(const struct device *dev)
 {
@@ -42,24 +34,21 @@ static inline int bmm150_bus_check(const struct device *dev)
 	return cfg->bus_io->check(&cfg->bus);
 }
 
-static inline int bmm150_reg_read(const struct device *dev,
-				  uint8_t start, uint8_t *buf, int size)
+static inline int bmm150_reg_read(const struct device *dev, uint8_t start, uint8_t *buf, int size)
 {
 	const struct bmm150_config *cfg = dev->config;
 
 	return cfg->bus_io->read(&cfg->bus, start, buf, size);
 }
 
-static inline int bmm150_reg_write(const struct device *dev, uint8_t reg,
-				   uint8_t val)
+static inline int bmm150_reg_write(const struct device *dev, uint8_t reg, uint8_t val)
 {
 	const struct bmm150_config *cfg = dev->config;
 
 	return cfg->bus_io->write(&cfg->bus, reg, val);
 }
 
-int bmm150_reg_update_byte(const struct device *dev, uint8_t reg,
-				  uint8_t mask, uint8_t value)
+int bmm150_reg_update_byte(const struct device *dev, uint8_t reg, uint8_t mask, uint8_t value)
 {
 	int ret = 0;
 	uint8_t old_value, new_value;
@@ -84,18 +73,15 @@ failed:
 /* Power control = 'bit' */
 static int bmm150_power_control(const struct device *dev, uint8_t bit)
 {
-	return bmm150_reg_update_byte(dev, BMM150_REG_POWER,
-				      BMM150_MASK_POWER_CTL, bit);
+	return bmm150_reg_update_byte(dev, BMM150_REG_POWER, BMM150_MASK_POWER_CTL, bit);
 }
 
 /* OpMode = 'mode' */
 static int bmm150_opmode(const struct device *dev, uint8_t mode)
 {
-	return bmm150_reg_update_byte(dev, BMM150_REG_OPMODE_ODR,
-				      BMM150_MASK_OPMODE,
+	return bmm150_reg_update_byte(dev, BMM150_REG_OPMODE_ODR, BMM150_MASK_OPMODE,
 				      mode << BMM150_SHIFT_OPMODE);
 }
-
 
 static int bmm150_set_odr(const struct device *dev, uint8_t val)
 {
@@ -103,11 +89,9 @@ static int bmm150_set_odr(const struct device *dev, uint8_t val)
 
 	for (i = 0U; i < ARRAY_SIZE(bmm150_samp_freq_table); ++i) {
 		if (val <= bmm150_samp_freq_table[i].freq) {
-			return bmm150_reg_update_byte(dev,
-						      BMM150_REG_OPMODE_ODR,
-						      BMM150_MASK_ODR,
-						      (bmm150_samp_freq_table[i].reg_val <<
-						      BMM150_SHIFT_ODR));
+			return bmm150_reg_update_byte(
+				dev, BMM150_REG_OPMODE_ODR, BMM150_MASK_ODR,
+				(bmm150_samp_freq_table[i].reg_val << BMM150_SHIFT_ODR));
 		}
 	}
 	return -ENOTSUP;
@@ -144,8 +128,7 @@ static int bmm150_read_rep_z(const struct device *dev)
 	return 0;
 }
 
-static int bmm150_compute_max_odr(const struct device *dev, int rep_xy,
-				  int rep_z, int *max_odr)
+static int bmm150_compute_max_odr(const struct device *dev, int rep_xy, int rep_z, int *max_odr)
 {
 	struct bmm150_data *data = dev->data;
 
@@ -204,9 +187,7 @@ static int bmm150_write_rep_xy(const struct device *dev, int val)
 	struct bmm150_data *data = dev->data;
 	const struct bmm150_config *config = dev->config;
 
-	if (bmm150_reg_update_byte(dev,
-				   BMM150_REG_REP_XY,
-				   BMM150_REG_REP_DATAMASK,
+	if (bmm150_reg_update_byte(dev, BMM150_REG_REP_XY, BMM150_REG_REP_DATAMASK,
 				   BMM150_REPXY_TO_REGVAL(val)) < 0) {
 		return -EIO;
 	}
@@ -223,9 +204,7 @@ static int bmm150_write_rep_z(const struct device *dev, int val)
 	struct bmm150_data *data = dev->data;
 	const struct bmm150_config *config = dev->config;
 
-	if (bmm150_reg_update_byte(dev,
-				   BMM150_REG_REP_Z,
-				   BMM150_REG_REP_DATAMASK,
+	if (bmm150_reg_update_byte(dev, BMM150_REG_REP_Z, BMM150_REG_REP_DATAMASK,
 				   BMM150_REPZ_TO_REGVAL(val)) < 0) {
 		return -EIO;
 	}
@@ -237,8 +216,8 @@ static int bmm150_write_rep_z(const struct device *dev, int val)
 #endif
 
 /* Reference Datasheet 4.3.2 */
-static int32_t bmm150_compensate_xy(struct bmm150_trim_regs *tregs,
-				  int16_t xy, uint16_t rhall, bool is_x)
+static int32_t bmm150_compensate_xy(struct bmm150_trim_regs *tregs, int16_t xy, uint16_t rhall,
+				    bool is_x)
 {
 	int8_t txy1, txy2;
 	int16_t val;
@@ -269,17 +248,16 @@ static int32_t bmm150_compensate_xy(struct bmm150_trim_regs *tregs,
 
 	temp2 = ((int32_t)val) * ((int32_t)(((int16_t)tregs->xy1) << 7));
 
-	temp3 = (((((temp1 + temp2) >> 9) +
-		((int32_t)0x100000)) * ((int32_t)(((int16_t)txy2) +
-		((int16_t)0xA0)))) >> 12);
+	temp3 = (((((temp1 + temp2) >> 9) + ((int32_t)0x100000)) *
+		  ((int32_t)(((int16_t)txy2) + ((int16_t)0xA0)))) >>
+		 12);
 
 	val = ((int16_t)((((int32_t)xy) * temp3) >> 13)) + (((int16_t)txy1) << 3);
 
 	return (int32_t)val;
 }
 
-static int32_t bmm150_compensate_z(struct bmm150_trim_regs *tregs,
-				 int16_t z, uint16_t rhall)
+static int32_t bmm150_compensate_z(struct bmm150_trim_regs *tregs, int16_t z, uint16_t rhall)
 {
 	int32_t val, temp1, temp2;
 	int16_t temp3;
@@ -290,19 +268,17 @@ static int32_t bmm150_compensate_z(struct bmm150_trim_regs *tregs,
 
 	temp1 = (((int32_t)(z - tregs->z4)) << 15);
 
-	temp2 = ((((int32_t)tregs->z3) *
-		((int32_t)(((int16_t)rhall) - ((int16_t)tregs->xyz1)))) >> 2);
+	temp2 = ((((int32_t)tregs->z3) * ((int32_t)(((int16_t)rhall) - ((int16_t)tregs->xyz1)))) >>
+		 2);
 
-	temp3 = ((int16_t)(((((int32_t)tregs->z1) *
-		((((int16_t)rhall) << 1))) + (1 << 15)) >> 16));
+	temp3 = ((int16_t)(((((int32_t)tregs->z1) * ((((int16_t)rhall) << 1))) + (1 << 15)) >> 16));
 
 	val = ((temp1 - temp2) / (tregs->z2 + temp3));
 
 	return val;
 }
 
-static int bmm150_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
+static int bmm150_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 
 	struct bmm150_data *drv_data = dev->data;
@@ -310,30 +286,22 @@ static int bmm150_sample_fetch(const struct device *dev,
 	int16_t raw_x, raw_y, raw_z;
 	uint16_t rhall;
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL ||
-			chan == SENSOR_CHAN_MAGN_XYZ);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_MAGN_XYZ);
 
 	if (bmm150_reg_read(dev, BMM150_REG_X_L, (uint8_t *)values, sizeof(values)) < 0) {
 		LOG_ERR("failed to read sample");
 		return -EIO;
 	}
 
-	raw_x = (int16_t)sys_le16_to_cpu(values[BMM150_AXIS_X]) >>
-		BMM150_SHIFT_XY_L;
-	raw_y = (int16_t)sys_le16_to_cpu(values[BMM150_AXIS_Y]) >>
-		BMM150_SHIFT_XY_L;
-	raw_z = (int16_t)sys_le16_to_cpu(values[BMM150_AXIS_Z]) >>
-		BMM150_SHIFT_Z_L;
+	raw_x = (int16_t)sys_le16_to_cpu(values[BMM150_AXIS_X]) >> BMM150_SHIFT_XY_L;
+	raw_y = (int16_t)sys_le16_to_cpu(values[BMM150_AXIS_Y]) >> BMM150_SHIFT_XY_L;
+	raw_z = (int16_t)sys_le16_to_cpu(values[BMM150_AXIS_Z]) >> BMM150_SHIFT_Z_L;
 
-	rhall = sys_le16_to_cpu(values[BMM150_RHALL]) >>
-		BMM150_SHIFT_RHALL_L;
+	rhall = sys_le16_to_cpu(values[BMM150_RHALL]) >> BMM150_SHIFT_RHALL_L;
 
-	drv_data->sample_x = bmm150_compensate_xy(&drv_data->tregs,
-							raw_x, rhall, true);
-	drv_data->sample_y = bmm150_compensate_xy(&drv_data->tregs,
-							raw_y, rhall, false);
-	drv_data->sample_z = bmm150_compensate_z(&drv_data->tregs,
-							raw_z, rhall);
+	drv_data->sample_x = bmm150_compensate_xy(&drv_data->tregs, raw_x, rhall, true);
+	drv_data->sample_y = bmm150_compensate_xy(&drv_data->tregs, raw_y, rhall, false);
+	drv_data->sample_z = bmm150_compensate_z(&drv_data->tregs, raw_z, rhall);
 
 	return 0;
 }
@@ -349,8 +317,7 @@ static void bmm150_convert(struct sensor_value *val, int raw_val)
 	val->val2 = ((int32_t)raw_val * (1000000 / 1600)) % 1000000;
 }
 
-static int bmm150_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
+static int bmm150_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	struct bmm150_data *drv_data = dev->data;
@@ -378,8 +345,7 @@ static int bmm150_channel_get(const struct device *dev,
 }
 
 #if defined(BMM150_SET_ATTR_REP)
-static inline int bmm150_attr_set_rep(const struct device *dev,
-				      enum sensor_channel chan,
+static inline int bmm150_attr_set_rep(const struct device *dev, enum sensor_channel chan,
 				      const struct sensor_value *val)
 {
 	struct bmm150_data *data = dev->data;
@@ -393,8 +359,7 @@ static inline int bmm150_attr_set_rep(const struct device *dev,
 			return -EINVAL;
 		}
 
-		if (bmm150_compute_max_odr(dev, val->val1, 0,
-					   &max_odr) < 0) {
+		if (bmm150_compute_max_odr(dev, val->val1, 0, &max_odr) < 0) {
 			return -EIO;
 		}
 
@@ -420,8 +385,7 @@ static inline int bmm150_attr_set_rep(const struct device *dev,
 			return -EINVAL;
 		}
 
-		if (bmm150_compute_max_odr(dev, 0, val->val1,
-					   &max_odr) < 0) {
+		if (bmm150_compute_max_odr(dev, 0, val->val1, &max_odr) < 0) {
 			return -EIO;
 		}
 
@@ -449,10 +413,8 @@ static inline int bmm150_attr_set_rep(const struct device *dev,
 #endif
 
 #if defined(BMM150_SET_ATTR_REP)
-static int bmm150_attr_set(const struct device *dev,
-			   enum sensor_channel chan,
-			   enum sensor_attribute attr,
-			   const struct sensor_value *val)
+static int bmm150_attr_set(const struct device *dev, enum sensor_channel chan,
+			   enum sensor_attribute attr, const struct sensor_value *val)
 {
 	struct bmm150_magn_data *data = dev->data;
 
@@ -460,8 +422,7 @@ static int bmm150_attr_set(const struct device *dev,
 #if defined(CONFIG_BMM150_SAMPLING_RATE_RUNTIME)
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		if (data->max_odr <= 0) {
-			if (bmm150_compute_max_odr(dev, 0, 0,
-						   &data->max_odr) < 0) {
+			if (bmm150_compute_max_odr(dev, 0, 0, &data->max_odr) < 0) {
 				return -EIO;
 			}
 		}
@@ -515,8 +476,7 @@ static int bmm150_full_por(const struct device *dev)
 	k_sleep(BMM150_START_UP_TIME);
 
 	/* Soft reset always brings the device into sleep mode */
-	ret = bmm150_reg_update_byte(dev, BMM150_REG_POWER,
-				     BMM150_MASK_SOFT_RESET,
+	ret = bmm150_reg_update_byte(dev, BMM150_REG_POWER, BMM150_MASK_SOFT_RESET,
 				     BMM150_SOFT_RESET);
 	if (ret != 0) {
 		LOG_ERR("failed soft reset: %d", ret);
@@ -571,21 +531,17 @@ static int bmm150_init_chip(const struct device *dev)
 	/* Setting preset mode */
 	preset = bmm150_presets_table[BMM150_DEFAULT_PRESET];
 	if (bmm150_set_odr(dev, preset.odr) < 0) {
-		LOG_ERR("failed to set ODR to %d",
-			    preset.odr);
+		LOG_ERR("failed to set ODR to %d", preset.odr);
 		goto err_poweroff;
 	}
 
-	if (bmm150_reg_write(dev, BMM150_REG_REP_XY, BMM150_REPXY_TO_REGVAL(preset.rep_xy))
-	    < 0) {
-		LOG_ERR("failed to set REP XY to %d",
-			    preset.rep_xy);
+	if (bmm150_reg_write(dev, BMM150_REG_REP_XY, BMM150_REPXY_TO_REGVAL(preset.rep_xy)) < 0) {
+		LOG_ERR("failed to set REP XY to %d", preset.rep_xy);
 		goto err_poweroff;
 	}
 
 	if (bmm150_reg_write(dev, BMM150_REG_REP_Z, BMM150_REPZ_TO_REGVAL(preset.rep_z)) < 0) {
-		LOG_ERR("failed to set REP Z to %d",
-			    preset.rep_z);
+		LOG_ERR("failed to set REP Z to %d", preset.rep_z);
 		goto err_poweroff;
 	}
 
@@ -596,7 +552,7 @@ static int bmm150_init_chip(const struct device *dev)
 
 	/* Reads the trim registers of the sensor */
 	if (bmm150_reg_read(dev, BMM150_REG_TRIM_START, (uint8_t *)&data->tregs,
-			      sizeof(data->tregs)) < 0) {
+			    sizeof(data->tregs)) < 0) {
 		LOG_ERR("failed to read trim regs");
 		goto err_poweroff;
 	}
@@ -683,23 +639,20 @@ static int bmm150_init(const struct device *dev)
 }
 
 /* Initializes a struct bmm150_config for an instance on a SPI bus. */
-#define BMM150_CONFIG_SPI(inst)						\
-	.bus.spi = SPI_DT_SPEC_INST_GET(inst, BMM150_SPI_OPERATION, 0),	\
+#define BMM150_CONFIG_SPI(inst)                                                                    \
+	.bus.spi = SPI_DT_SPEC_INST_GET(inst, BMM150_SPI_OPERATION, 0),                            \
 	.bus_io = &bmm150_bus_io_spi,
 
 /* Initializes a struct bmm150_config for an instance on an I2C bus. */
-#define BMM150_CONFIG_I2C(inst)			       \
-	.bus.i2c = I2C_DT_SPEC_INST_GET(inst),	       \
-	.bus_io = &bmm150_bus_io_i2c,
+#define BMM150_CONFIG_I2C(inst) .bus.i2c = I2C_DT_SPEC_INST_GET(inst), .bus_io = &bmm150_bus_io_i2c,
 
-#define BMM150_BUS_CFG(inst)			\
+#define BMM150_BUS_CFG(inst)                                                                       \
 	COND_CODE_1(DT_INST_ON_BUS(inst, i2c),	\
 		    (BMM150_CONFIG_I2C(inst)),	\
 		    (BMM150_CONFIG_SPI(inst)))
 
 #if defined(CONFIG_BMM150_TRIGGER)
-#define BMM150_INT_CFG(inst)					\
-	.drdy_int = GPIO_DT_SPEC_INST_GET(inst, drdy_gpios),
+#define BMM150_INT_CFG(inst) .drdy_int = GPIO_DT_SPEC_INST_GET(inst, drdy_gpios),
 #else
 #define BMM150_INT_CFG(inst)
 #endif
@@ -708,23 +661,16 @@ static int bmm150_init(const struct device *dev)
  * Main instantiation macro, which selects the correct bus-specific
  * instantiation macros for the instance.
  */
-#define BMM150_DEFINE(inst)						\
-	static struct bmm150_data bmm150_data_##inst;			\
-	static const struct bmm150_config bmm150_config_##inst = {	\
-		BMM150_BUS_CFG(inst)					\
-		BMM150_INT_CFG(inst)					\
-	};								\
-									\
-	PM_DEVICE_DT_INST_DEFINE(inst, pm_action);			\
-									\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
-				     bmm150_init,			\
-				     PM_DEVICE_DT_INST_GET(inst),	\
-				     &bmm150_data_##inst,		\
-				     &bmm150_config_##inst,		\
-				     POST_KERNEL,			\
-				     CONFIG_SENSOR_INIT_PRIORITY,	\
-				     &bmm150_api_funcs);
+#define BMM150_DEFINE(inst)                                                                        \
+	static struct bmm150_data bmm150_data_##inst;                                              \
+	static const struct bmm150_config bmm150_config_##inst = {BMM150_BUS_CFG(inst)             \
+									  BMM150_INT_CFG(inst)};   \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(inst, pm_action);                                                 \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmm150_init, PM_DEVICE_DT_INST_GET(inst),               \
+				     &bmm150_data_##inst, &bmm150_config_##inst, POST_KERNEL,      \
+				     CONFIG_SENSOR_INIT_PRIORITY, &bmm150_api_funcs);
 
 /* Create the struct device for every status "okay" node in the devicetree. */
 DT_INST_FOREACH_STATUS_OKAY(BMM150_DEFINE)

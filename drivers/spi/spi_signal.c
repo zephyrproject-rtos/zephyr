@@ -14,9 +14,7 @@
 
 #ifdef CONFIG_POLL
 
-void z_spi_transfer_signal_cb(const struct device *dev,
-			      int result,
-			      void *userdata)
+void z_spi_transfer_signal_cb(const struct device *dev, int result, void *userdata)
 {
 	ARG_UNUSED(dev);
 

@@ -16,8 +16,7 @@
 static uint32_t cyc_per_tick;
 #define CYC_PER_TICK cyc_per_tick
 #else
-#define CYC_PER_TICK (uint32_t)(sys_clock_hw_cycles_per_sec() \
-				/ CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define CYC_PER_TICK (uint32_t)(sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 #endif
 
 #if defined(CONFIG_GDBSTUB)
@@ -48,11 +47,11 @@ static uint32_t cyc_per_tick;
  * consecutive set bits coming from the original max values to produce a
  * nicer literal for assembly generation.
  */
-#define CYCLES_MAX_1	((uint64_t)INT32_MAX * (uint64_t)CYC_PER_TICK)
-#define CYCLES_MAX_2	((uint64_t)CYCLE_DIFF_MAX)
-#define CYCLES_MAX_3	MIN(CYCLES_MAX_1, CYCLES_MAX_2)
-#define CYCLES_MAX_4	(CYCLES_MAX_3 / 2 + CYCLES_MAX_3 / 4)
-#define CYCLES_MAX_5	(CYCLES_MAX_4 + LSB_GET(CYCLES_MAX_4))
+#define CYCLES_MAX_1 ((uint64_t)INT32_MAX * (uint64_t)CYC_PER_TICK)
+#define CYCLES_MAX_2 ((uint64_t)CYCLE_DIFF_MAX)
+#define CYCLES_MAX_3 MIN(CYCLES_MAX_1, CYCLES_MAX_2)
+#define CYCLES_MAX_4 (CYCLES_MAX_3 / 2 + CYCLES_MAX_3 / 4)
+#define CYCLES_MAX_5 (CYCLES_MAX_4 + LSB_GET(CYCLES_MAX_4))
 
 #ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 /* precompute CYCLES_MAX at driver init to avoid runtime double divisions */
@@ -229,8 +228,8 @@ void smp_timer_init(void)
 static int sys_clock_driver_init(void)
 {
 
-	IRQ_CONNECT(ARM_ARCH_TIMER_IRQ, ARM_ARCH_TIMER_PRIO,
-		    arm_arch_timer_compare_isr, NULL, ARM_ARCH_TIMER_FLAGS);
+	IRQ_CONNECT(ARM_ARCH_TIMER_IRQ, ARM_ARCH_TIMER_PRIO, arm_arch_timer_compare_isr, NULL,
+		    ARM_ARCH_TIMER_FLAGS);
 	arm_arch_timer_init();
 #ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	cyc_per_tick = sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
@@ -246,5 +245,4 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

@@ -147,11 +147,11 @@ enum {
 
 static const int clock_freqs[] = {
 	COND_CODE_1(IS_CLKSRC_ENABLED(hoco), (CLKSRC_FREQ(hoco)), (0)),
-	COND_CODE_1(IS_CLKSRC_ENABLED(moco), (CLKSRC_FREQ(moco)), (0)),
-	COND_CODE_1(IS_CLKSRC_ENABLED(loco), (CLKSRC_FREQ(loco)), (0)),
-	COND_CODE_1(IS_CLKSRC_ENABLED(mosc), (CLKSRC_FREQ(mosc)), (0)),
-	COND_CODE_1(IS_CLKSRC_ENABLED(sosc), (CLKSRC_FREQ(sosc)), (0)),
-	COND_CODE_1(IS_CLKSRC_ENABLED(pll),
+		 COND_CODE_1(IS_CLKSRC_ENABLED(moco), (CLKSRC_FREQ(moco)), (0)),
+			  COND_CODE_1(IS_CLKSRC_ENABLED(loco), (CLKSRC_FREQ(loco)), (0)),
+				   COND_CODE_1(IS_CLKSRC_ENABLED(mosc), (CLKSRC_FREQ(mosc)), (0)),
+					    COND_CODE_1(IS_CLKSRC_ENABLED(sosc), (CLKSRC_FREQ(sosc)), (0)),
+						     COND_CODE_1(IS_CLKSRC_ENABLED(pll),
 		    (DT_PROP(DT_PHANDLE_BY_IDX(DT_PATH(clocks, pll), clocks, 0), clock_frequency) *
 		     DT_PROP(DT_PATH(clocks, pll), clock_mult) /
 		     DT_PROP(DT_PATH(clocks, pll), clock_div)),

@@ -50,16 +50,15 @@ struct pwm_gd32_config {
 /** Obtain channel enable bit for the given channel */
 #define TIMER_CHCTL2_CHXEN(ch) BIT(4U * (ch))
 /** Obtain polarity bit for the given channel */
-#define TIMER_CHCTL2_CHXP(ch) BIT(1U + (4U * (ch)))
+#define TIMER_CHCTL2_CHXP(ch)  BIT(1U + (4U * (ch)))
 /** Obtain CHCTL0/1 mask for the given channel (0 or 1) */
-#define TIMER_CHCTLX_MSK(ch) (0xFU << (8U * (ch)))
+#define TIMER_CHCTLX_MSK(ch)   (0xFU << (8U * (ch)))
 
 /** Obtain RCU register offset from RCU clock value */
 #define RCU_CLOCK_OFFSET(rcu_clock) ((rcu_clock) >> 6U)
 
-static int pwm_gd32_set_cycles(const struct device *dev, uint32_t channel,
-			      uint32_t period_cycles, uint32_t pulse_cycles,
-			      pwm_flags_t flags)
+static int pwm_gd32_set_cycles(const struct device *dev, uint32_t channel, uint32_t period_cycles,
+			       uint32_t pulse_cycles, pwm_flags_t flags)
 {
 	const struct pwm_gd32_config *config = dev->config;
 
@@ -119,8 +118,7 @@ static int pwm_gd32_set_cycles(const struct device *dev, uint32_t channel,
 		}
 
 		*chctl &= ~TIMER_CHCTLX_MSK(channel);
-		*chctl |= (TIMER_OC_MODE_PWM1 | TIMER_OC_SHADOW_ENABLE) <<
-			  (8U * (channel % 2U));
+		*chctl |= (TIMER_OC_MODE_PWM1 | TIMER_OC_SHADOW_ENABLE) << (8U * (channel % 2U));
 
 		/* enable channel output */
 		TIMER_CHCTL2(config->reg) |= TIMER_CHCTL2_CHXEN(channel);
@@ -132,8 +130,7 @@ static int pwm_gd32_set_cycles(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
-static int pwm_gd32_get_cycles_per_sec(const struct device *dev,
-				       uint32_t channel, uint64_t *cycles)
+static int pwm_gd32_get_cycles_per_sec(const struct device *dev, uint32_t channel, uint64_t *cycles)
 {
 	struct pwm_gd32_data *data = dev->data;
 	const struct pwm_gd32_config *config = dev->config;
@@ -154,8 +151,7 @@ static int pwm_gd32_init(const struct device *dev)
 	struct pwm_gd32_data *data = dev->data;
 	int ret;
 
-	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
-			       (clock_control_subsys_t)&config->clkid);
+	(void)clock_control_on(GD32_CLOCK_CONTROLLER, (clock_control_subsys_t)&config->clkid);
 
 	(void)reset_line_toggle_dt(&config->reset);
 
@@ -166,13 +162,12 @@ static int pwm_gd32_init(const struct device *dev)
 	}
 
 	/* cache timer clock value */
-	(void)clock_control_get_rate(GD32_CLOCK_CONTROLLER,
-				     (clock_control_subsys_t)&config->clkid,
+	(void)clock_control_get_rate(GD32_CLOCK_CONTROLLER, (clock_control_subsys_t)&config->clkid,
 				     &data->tim_clk);
 
 	/* basic timer operation: edge aligned, up counting, shadowed CAR */
-	TIMER_CTL0(config->reg) = TIMER_CKDIV_DIV1 | TIMER_COUNTER_EDGE |
-				  TIMER_COUNTER_UP | TIMER_CTL0_ARSE;
+	TIMER_CTL0(config->reg) =
+		TIMER_CKDIV_DIV1 | TIMER_COUNTER_EDGE | TIMER_COUNTER_UP | TIMER_CTL0_ARSE;
 	TIMER_PSC(config->reg) = config->prescaler;
 
 	/* enable primary output for advanced timers */
@@ -186,25 +181,23 @@ static int pwm_gd32_init(const struct device *dev)
 	return 0;
 }
 
-#define PWM_GD32_DEFINE(i)						       \
-	static struct pwm_gd32_data pwm_gd32_data_##i;			       \
-									       \
-	PINCTRL_DT_INST_DEFINE(i);					       \
-									       \
-	static const struct pwm_gd32_config pwm_gd32_config_##i = {	       \
-		.reg = DT_REG_ADDR(DT_INST_PARENT(i)),			       \
-		.clkid = DT_CLOCKS_CELL(DT_INST_PARENT(i), id),		       \
-		.reset = RESET_DT_SPEC_GET(DT_INST_PARENT(i)),		       \
-		.prescaler = DT_PROP(DT_INST_PARENT(i), prescaler),	       \
-		.channels = DT_PROP(DT_INST_PARENT(i), channels),	       \
-		.is_32bit = DT_PROP(DT_INST_PARENT(i), is_32bit),	       \
-		.is_advanced = DT_PROP(DT_INST_PARENT(i), is_advanced),	       \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(i),		       \
-	};								       \
-									       \
-	DEVICE_DT_INST_DEFINE(i, &pwm_gd32_init, NULL, &pwm_gd32_data_##i,     \
-			      &pwm_gd32_config_##i, POST_KERNEL,	       \
-			      CONFIG_PWM_INIT_PRIORITY,			       \
-			      &pwm_gd32_driver_api);
+#define PWM_GD32_DEFINE(i)                                                                         \
+	static struct pwm_gd32_data pwm_gd32_data_##i;                                             \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(i);                                                                 \
+                                                                                                   \
+	static const struct pwm_gd32_config pwm_gd32_config_##i = {                                \
+		.reg = DT_REG_ADDR(DT_INST_PARENT(i)),                                             \
+		.clkid = DT_CLOCKS_CELL(DT_INST_PARENT(i), id),                                    \
+		.reset = RESET_DT_SPEC_GET(DT_INST_PARENT(i)),                                     \
+		.prescaler = DT_PROP(DT_INST_PARENT(i), prescaler),                                \
+		.channels = DT_PROP(DT_INST_PARENT(i), channels),                                  \
+		.is_32bit = DT_PROP(DT_INST_PARENT(i), is_32bit),                                  \
+		.is_advanced = DT_PROP(DT_INST_PARENT(i), is_advanced),                            \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(i),                                         \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(i, &pwm_gd32_init, NULL, &pwm_gd32_data_##i, &pwm_gd32_config_##i,   \
+			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, &pwm_gd32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_GD32_DEFINE)

@@ -31,18 +31,15 @@ LOG_MODULE_REGISTER(flash_andes, CONFIG_FLASH_LOG_LEVEL);
  */
 #define ANDES_ACCESS_WRITE BIT(7)
 
-#define flash_andes_qspi_cmd_read(dev, opcode, dest, length)                   \
+#define flash_andes_qspi_cmd_read(dev, opcode, dest, length)                                       \
 	flash_andes_qspi_access(dev, opcode, 0, 0, dest, length)
-#define flash_andes_qspi_cmd_addr_read(dev, opcode, addr, dest, length)        \
-	flash_andes_qspi_access(dev, opcode, ANDES_ACCESS_ADDRESSED, addr,     \
-				dest, length)
-#define flash_andes_qspi_cmd_write(dev, opcode)                                \
+#define flash_andes_qspi_cmd_addr_read(dev, opcode, addr, dest, length)                            \
+	flash_andes_qspi_access(dev, opcode, ANDES_ACCESS_ADDRESSED, addr, dest, length)
+#define flash_andes_qspi_cmd_write(dev, opcode)                                                    \
 	flash_andes_qspi_access(dev, opcode, ANDES_ACCESS_WRITE, 0, NULL, 0)
-#define flash_andes_qspi_cmd_addr_write(dev, opcode, addr, src, length)        \
-	flash_andes_qspi_access(dev, opcode,                                   \
-				ANDES_ACCESS_WRITE | ANDES_ACCESS_ADDRESSED,   \
-				addr, (void *)src, length)
-
+#define flash_andes_qspi_cmd_addr_write(dev, opcode, addr, src, length)                            \
+	flash_andes_qspi_access(dev, opcode, ANDES_ACCESS_WRITE | ANDES_ACCESS_ADDRESSED, addr,    \
+				(void *)src, length)
 
 typedef void (*flash_andes_qspi_config_func_t)(void);
 struct flash_andes_qspi_config {
@@ -83,12 +80,10 @@ struct flash_andes_qspi_data {
 #endif
 };
 
-static int flash_andes_qspi_write_protection_set(const struct device *dev,
-						 bool write_protect);
+static int flash_andes_qspi_write_protection_set(const struct device *dev, bool write_protect);
 
 /* Get pointer to array of supported erase types. */
-static inline const struct jesd216_erase_type *
-dev_erase_types(const struct device *dev)
+static inline const struct jesd216_erase_type *dev_erase_types(const struct device *dev)
 {
 	const struct flash_andes_qspi_data *dev_data = dev->data;
 
@@ -102,7 +97,7 @@ static inline uint32_t dev_flash_size(const struct device *dev)
 	const struct flash_andes_qspi_data *dev_data = dev->data;
 
 	return dev_data->flash_size;
-#else /* CONFIG_FLASH_ANDES_QSPI_SFDP_RUNTIME */
+#else  /* CONFIG_FLASH_ANDES_QSPI_SFDP_RUNTIME */
 	const struct flash_andes_qspi_config *config = dev->config;
 
 	return config->flash_size;
@@ -128,9 +123,8 @@ static inline uint16_t dev_page_size(const struct device *dev)
  * @param length The size of the buffer
  * @return 0 on success
  */
-static int flash_andes_qspi_access(const struct device *const dev,
-				   uint8_t opcode, uint8_t access, off_t addr,
-				   void *data, size_t length)
+static int flash_andes_qspi_access(const struct device *const dev, uint8_t opcode, uint8_t access,
+				   off_t addr, void *data, size_t length)
 {
 	struct flash_andes_qspi_data *dev_data = dev->data;
 	const struct flash_andes_qspi_config *config = dev->config;
@@ -146,16 +140,15 @@ static int flash_andes_qspi_access(const struct device *const dev,
 	tctrl = TCTRL_CMD_EN_MSK;
 	if (is_addressed) {
 		/* Enable and set ADDR len */
-		sys_write32((sys_read32(QSPI_TFMAT(base)) |
-			    (0x2 << TFMAT_ADDR_LEN_OFFSET)), QSPI_TFMAT(base));
+		sys_write32((sys_read32(QSPI_TFMAT(base)) | (0x2 << TFMAT_ADDR_LEN_OFFSET)),
+			    QSPI_TFMAT(base));
 		sys_write32(addr, QSPI_ADDR(base));
 		/* Address phase enable */
 		tctrl |= TCTRL_ADDR_EN_MSK;
 	}
 
 	if (length == 0) {
-		if ((opcode == FLASH_ANDES_CMD_4PP) ||
-		    (opcode == FLASH_ANDES_CMD_4READ)) {
+		if ((opcode == FLASH_ANDES_CMD_4PP) || (opcode == FLASH_ANDES_CMD_4READ)) {
 			goto exit;
 		}
 		tctrl |= TRNS_MODE_NONE_DATA;
@@ -165,38 +158,27 @@ static int flash_andes_qspi_access(const struct device *const dev,
 		dev_data->tx_buf = (uint8_t *)data;
 		dev_data->tx_len = length;
 
-		tctrl |= (TRNS_MODE_WRITE_ONLY |
-			 ((length - 1) << TCTRL_WR_TCNT_OFFSET));
+		tctrl |= (TRNS_MODE_WRITE_ONLY | ((length - 1) << TCTRL_WR_TCNT_OFFSET));
 		int_msk = IEN_TX_FIFO_MSK | IEN_END_MSK;
 	} else {
 		dev_data->rx_ptr = 0;
 		dev_data->rx_buf = (uint8_t *)data;
 
-		tctrl |= (TRNS_MODE_READ_ONLY |
-			 ((length - 1) << TCTRL_RD_TCNT_OFFSET));
+		tctrl |= (TRNS_MODE_READ_ONLY | ((length - 1) << TCTRL_RD_TCNT_OFFSET));
 		int_msk = IEN_RX_FIFO_MSK | IEN_END_MSK;
 	}
 
 	switch (opcode) {
 	case FLASH_ANDES_CMD_4PP:
-		tctrl = ((tctrl & ~TCTRL_TRNS_MODE_MSK)	|
-			DUAL_IO_MODE			|
-			TCTRL_ADDR_FMT_MSK		|
-			TCTRL_ADDR_EN_MSK		|
-			TRNS_MODE_WRITE_ONLY);
+		tctrl = ((tctrl & ~TCTRL_TRNS_MODE_MSK) | DUAL_IO_MODE | TCTRL_ADDR_FMT_MSK |
+			 TCTRL_ADDR_EN_MSK | TRNS_MODE_WRITE_ONLY);
 		break;
 	case FLASH_ANDES_CMD_4READ:
-		tctrl = ((tctrl & ~TCTRL_TRNS_MODE_MSK)	|
-			DUAL_IO_MODE			|
-			TCTRL_ADDR_FMT_MSK		|
-			TCTRL_ADDR_EN_MSK		|
-			TRNS_MODE_DUMMY_READ		|
-			DUMMY_CNT_3);
+		tctrl = ((tctrl & ~TCTRL_TRNS_MODE_MSK) | DUAL_IO_MODE | TCTRL_ADDR_FMT_MSK |
+			 TCTRL_ADDR_EN_MSK | TRNS_MODE_DUMMY_READ | DUMMY_CNT_3);
 		break;
 	case JESD216_CMD_READ_SFDP:
-		tctrl = ((tctrl & ~TCTRL_TRNS_MODE_MSK)	|
-			TCTRL_ADDR_EN_MSK		|
-			TRNS_MODE_DUMMY_READ);
+		tctrl = ((tctrl & ~TCTRL_TRNS_MODE_MSK) | TCTRL_ADDR_EN_MSK | TRNS_MODE_DUMMY_READ);
 		break;
 	default:
 		break;
@@ -240,15 +222,13 @@ static int flash_andes_qspi_wait_until_ready(const struct device *dev)
 	uint8_t reg;
 
 	do {
-		ret = flash_andes_qspi_cmd_read(dev,
-		FLASH_ANDES_CMD_RDSR, &reg, 1);
+		ret = flash_andes_qspi_cmd_read(dev, FLASH_ANDES_CMD_RDSR, &reg, 1);
 	} while (!ret && (reg & FLASH_ANDES_WIP_BIT));
 
 	return ret;
 }
 
-#if defined(CONFIG_FLASH_ANDES_QSPI_SFDP_RUNTIME) || \
-	defined(CONFIG_FLASH_JESD216_API)
+#if defined(CONFIG_FLASH_ANDES_QSPI_SFDP_RUNTIME) || defined(CONFIG_FLASH_JESD216_API)
 /*
  * @brief Read content from the SFDP hierarchy
  *
@@ -261,16 +241,14 @@ static int flash_andes_qspi_wait_until_ready(const struct device *dev)
  * @param length The size of the buffer
  * @return 0 on success, negative errno code otherwise
  */
-static int read_sfdp(const struct device *const dev,
-		     off_t addr, void *data, size_t length)
+static int read_sfdp(const struct device *const dev, off_t addr, void *data, size_t length)
 {
 	/* READ_SFDP requires a 24-bit address followed by a single
 	 * byte for a wait state.  This is effected by using 32-bit
 	 * address by shifting the 24-bit address up 8 bits.
 	 */
-	return flash_andes_qspi_access(dev, JESD216_CMD_READ_SFDP,
-				       ANDES_ACCESS_ADDRESSED,
-				       addr, data, length);
+	return flash_andes_qspi_access(dev, JESD216_CMD_READ_SFDP, ANDES_ACCESS_ADDRESSED, addr,
+				       data, length);
 }
 #endif /* CONFIG_FLASH_ANDES_QSPI_SFDP_RUNTIME */
 
@@ -285,14 +263,12 @@ static int read_sfdp(const struct device *const dev,
  *
  * @return 0 on success or a negative error code.
  */
-static int flash_andes_qspi_wrsr(const struct device *dev,
-				 uint8_t sr)
+static int flash_andes_qspi_wrsr(const struct device *dev, uint8_t sr)
 {
 	int ret = flash_andes_qspi_cmd_write(dev, FLASH_ANDES_CMD_WREN);
 
 	if (ret == 0) {
-		ret = flash_andes_qspi_access(dev, FLASH_ANDES_CMD_WRSR,
-					      ANDES_ACCESS_WRITE, 0, &sr,
+		ret = flash_andes_qspi_access(dev, FLASH_ANDES_CMD_WRSR, ANDES_ACCESS_WRITE, 0, &sr,
 					      sizeof(sr));
 		flash_andes_qspi_wait_until_ready(dev);
 	}
@@ -300,8 +276,7 @@ static int flash_andes_qspi_wrsr(const struct device *dev,
 	return ret;
 }
 
-static int flash_andes_qspi_read(const struct device *dev,
-				 off_t addr, void *dest, size_t size)
+static int flash_andes_qspi_read(const struct device *dev, off_t addr, void *dest, size_t size)
 {
 	const size_t flash_size = dev_flash_size(dev);
 	int ret;
@@ -317,15 +292,14 @@ static int flash_andes_qspi_read(const struct device *dev,
 
 	acquire_device(dev);
 
-	ret = flash_andes_qspi_cmd_addr_read(dev,
-		FLASH_ANDES_CMD_4READ, addr, dest, size);
+	ret = flash_andes_qspi_cmd_addr_read(dev, FLASH_ANDES_CMD_4READ, addr, dest, size);
 
 	release_device(dev);
 	return ret;
 }
 
-static int flash_andes_qspi_write(const struct device *dev, off_t addr,
-				  const void *src, size_t size)
+static int flash_andes_qspi_write(const struct device *dev, off_t addr, const void *src,
+				  size_t size)
 {
 	const size_t flash_size = dev_flash_size(dev);
 	const uint16_t page_size = dev_page_size(dev);
@@ -353,8 +327,8 @@ static int flash_andes_qspi_write(const struct device *dev, off_t addr,
 		/* Get the adequate size to send*/
 		to_write = MIN(page_size - (addr % page_size), size);
 
-		ret = flash_andes_qspi_cmd_addr_write(dev,
-			FLASH_ANDES_CMD_4PP, addr, src, to_write);
+		ret = flash_andes_qspi_cmd_addr_write(dev, FLASH_ANDES_CMD_4PP, addr, src,
+						      to_write);
 
 		if (ret != 0) {
 			break;
@@ -367,7 +341,6 @@ static int flash_andes_qspi_write(const struct device *dev, off_t addr,
 		flash_andes_qspi_wait_until_ready(dev);
 	} while (size > 0);
 
-
 	int ret2 = flash_andes_qspi_write_protection_set(dev, true);
 
 	if (!ret) {
@@ -379,8 +352,7 @@ out:
 	return ret;
 }
 
-static int flash_andes_qspi_erase(const struct device *dev,
-				  off_t addr, size_t size)
+static int flash_andes_qspi_erase(const struct device *dev, off_t addr, size_t size)
 {
 	const size_t flash_size = dev_flash_size(dev);
 	int ret = 0;
@@ -420,30 +392,25 @@ static int flash_andes_qspi_erase(const struct device *dev,
 	}
 
 	while (size > 0) {
-		const struct jesd216_erase_type *erase_types =
-						dev_erase_types(dev);
+		const struct jesd216_erase_type *erase_types = dev_erase_types(dev);
 		const struct jesd216_erase_type *bet = NULL;
 
 		for (uint8_t ei = 0; ei < JESD216_NUM_ERASE_TYPES; ++ei) {
-			const struct jesd216_erase_type *etp =
-						&erase_types[ei];
+			const struct jesd216_erase_type *etp = &erase_types[ei];
 
-			if ((etp->exp != 0) &&
-				SPI_NOR_IS_ALIGNED(addr, etp->exp) &&
-				SPI_NOR_IS_ALIGNED(size, etp->exp) &&
-				((bet == NULL) || (etp->exp > bet->exp))) {
+			if ((etp->exp != 0) && SPI_NOR_IS_ALIGNED(addr, etp->exp) &&
+			    SPI_NOR_IS_ALIGNED(size, etp->exp) &&
+			    ((bet == NULL) || (etp->exp > bet->exp))) {
 				bet = etp;
 			}
 		}
 
 		if (bet != NULL) {
-			flash_andes_qspi_cmd_addr_write(dev, bet->cmd,
-							addr, NULL, 0);
+			flash_andes_qspi_cmd_addr_write(dev, bet->cmd, addr, NULL, 0);
 			addr += BIT(bet->exp);
 			size -= BIT(bet->exp);
 		} else {
-			LOG_DBG("Can't erase %zu at 0x%lx",
-				size, (long)addr);
+			LOG_DBG("Can't erase %zu at 0x%lx", size, (long)addr);
 			ret = -EINVAL;
 			break;
 		}
@@ -463,17 +430,15 @@ out:
 	return ret;
 }
 
-static int flash_andes_qspi_write_protection_set(const struct device *dev,
-						 bool write_protect)
+static int flash_andes_qspi_write_protection_set(const struct device *dev, bool write_protect)
 {
-	return flash_andes_qspi_cmd_write(dev, (write_protect) ?
-				FLASH_ANDES_CMD_WRDI : FLASH_ANDES_CMD_WREN);
+	return flash_andes_qspi_cmd_write(dev, (write_protect) ? FLASH_ANDES_CMD_WRDI
+							       : FLASH_ANDES_CMD_WREN);
 }
 
 #if defined(CONFIG_FLASH_JESD216_API)
 
-static int flash_andes_qspi_sfdp_read(const struct device *dev, off_t addr,
-				      void *dest, size_t size)
+static int flash_andes_qspi_sfdp_read(const struct device *dev, off_t addr, void *dest, size_t size)
 {
 	acquire_device(dev);
 
@@ -486,8 +451,7 @@ static int flash_andes_qspi_sfdp_read(const struct device *dev, off_t addr,
 
 #endif /* CONFIG_FLASH_JESD216_API */
 
-static int flash_andes_qspi_read_jedec_id(const struct device *dev,
-					  uint8_t *id)
+static int flash_andes_qspi_read_jedec_id(const struct device *dev, uint8_t *id)
 {
 	if (id == NULL) {
 		return -EINVAL;
@@ -502,8 +466,7 @@ static int flash_andes_qspi_read_jedec_id(const struct device *dev,
 	return ret;
 }
 
-static int spi_nor_process_bfp(const struct device *dev,
-			       const struct jesd216_param_header *php,
+static int spi_nor_process_bfp(const struct device *dev, const struct jesd216_param_header *php,
 			       const struct jesd216_bfp *bfp)
 {
 	struct flash_andes_qspi_data *dev_data = dev->data;
@@ -518,8 +481,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 	memset(dev_data->erase_types, 0, sizeof(dev_data->erase_types));
 	for (uint8_t ti = 1; ti <= ARRAY_SIZE(dev_data->erase_types); ++ti) {
 		if (jesd216_bfp_erase(bfp, ti, etp) == 0) {
-			LOG_DBG("Erase %u with %02x",
-				(uint32_t)BIT(etp->exp), etp->cmd);
+			LOG_DBG("Erase %u with %02x", (uint32_t)BIT(etp->exp), etp->cmd);
 		}
 		++etp;
 	}
@@ -527,7 +489,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 	dev_data->page_size = jesd216_bfp_page_size(php, bfp);
 #ifdef CONFIG_FLASH_ANDES_QSPI_SFDP_RUNTIME
 	dev_data->flash_size = flash_size;
-#else /* CONFIG_FLASH_ANDES_QSPI_SFDP_RUNTIME */
+#else  /* CONFIG_FLASH_ANDES_QSPI_SFDP_RUNTIME */
 	if (flash_size != dev_flash_size(dev)) {
 		LOG_ERR("BFP flash size mismatch with devicetree");
 		return -EINVAL;
@@ -564,19 +526,17 @@ static int spi_nor_process_sfdp(const struct device *dev)
 		return -EINVAL;
 	}
 
-	LOG_DBG("%s: SFDP v %u.%u AP %x with %u PH", dev->name,
-		hp->rev_major, hp->rev_minor, hp->access, 1 + hp->nph);
+	LOG_DBG("%s: SFDP v %u.%u AP %x with %u PH", dev->name, hp->rev_major, hp->rev_minor,
+		hp->access, 1 + hp->nph);
 
 	const struct jesd216_param_header *php = hp->phdr;
-	const struct jesd216_param_header *phpe =
-		php + MIN(decl_nph, 1 + hp->nph);
+	const struct jesd216_param_header *phpe = php + MIN(decl_nph, 1 + hp->nph);
 
 	while (php != phpe) {
 		uint16_t id = jesd216_param_id(php);
 
-		LOG_DBG("PH%zu: %04x rev %u.%u: %u DW @ %x",
-			(php - hp->phdr), id, php->rev_major, php->rev_minor,
-			php->len_dw, jesd216_param_addr(php));
+		LOG_DBG("PH%zu: %04x rev %u.%u: %u DW @ %x", (php - hp->phdr), id, php->rev_major,
+			php->rev_minor, php->len_dw, jesd216_param_addr(php));
 
 		if (id == JESD216_SFDP_PARAM_ID_BFP) {
 			union {
@@ -585,8 +545,8 @@ static int spi_nor_process_sfdp(const struct device *dev)
 			} u_param;
 			const struct jesd216_bfp *bfp = &u_param.bfp;
 
-			ret = read_sfdp(dev,
-				jesd216_param_addr(php), u_param.dw, sizeof(u_param.dw));
+			ret = read_sfdp(dev, jesd216_param_addr(php), u_param.dw,
+					sizeof(u_param.dw));
 
 			if (ret != 0) {
 				break;
@@ -625,17 +585,14 @@ static int setup_pages_layout(const struct device *dev)
 
 	struct flash_andes_qspi_data *dev_data = dev->data;
 	const size_t flash_size = dev_flash_size(dev);
-	const uint32_t layout_page_size =
-		CONFIG_FLASH_ANDES_QSPI_LAYOUT_PAGE_SIZE;
+	const uint32_t layout_page_size = CONFIG_FLASH_ANDES_QSPI_LAYOUT_PAGE_SIZE;
 	uint8_t exponent = 0;
 
 	/* Find the smallest erase size. */
 	for (size_t i = 0; i < ARRAY_SIZE(dev_data->erase_types); ++i) {
-		const struct jesd216_erase_type *etp =
-				&dev_data->erase_types[i];
+		const struct jesd216_erase_type *etp = &dev_data->erase_types[i];
 
-		if ((etp->cmd != 0) &&
-		   ((exponent == 0) || (etp->exp < exponent))) {
+		if ((etp->cmd != 0) && ((exponent == 0) || (etp->exp < exponent))) {
 			exponent = etp->exp;
 		}
 	}
@@ -650,8 +607,8 @@ static int setup_pages_layout(const struct device *dev)
 	 * erase size.
 	 */
 	if ((layout_page_size % erase_size) != 0) {
-		LOG_ERR("layout page %u not compatible with erase size %u",
-			layout_page_size, erase_size);
+		LOG_ERR("layout page %u not compatible with erase size %u", layout_page_size,
+			erase_size);
 		return -EINVAL;
 	}
 
@@ -659,8 +616,8 @@ static int setup_pages_layout(const struct device *dev)
 	 * space.
 	 */
 	if ((flash_size % layout_page_size) != 0) {
-		LOG_WRN("layout page %u wastes space with device size %zu",
-			layout_page_size, flash_size);
+		LOG_WRN("layout page %u wastes space with device size %zu", layout_page_size,
+			flash_size);
 	}
 
 	dev_data->layout.pages_size = layout_page_size;
@@ -681,8 +638,8 @@ static int setup_pages_layout(const struct device *dev)
 	}
 
 	if (flash_size != layout_size) {
-		LOG_ERR("device size %zu mismatch %zu * %zu By pages",
-			flash_size, layout->pages_count, layout->pages_size);
+		LOG_ERR("device size %zu mismatch %zu * %zu By pages", flash_size,
+			layout->pages_count, layout->pages_size);
 		return -EINVAL;
 	}
 #else /* CONFIG_FLASH_ANDES_QSPI_SFDP_RUNTIME */
@@ -734,8 +691,7 @@ static void qspi_andes_irq_handler(const struct device *dev)
 
 	intr_status = sys_read32(QSPI_INTST(base));
 
-	if ((intr_status & INTST_TX_FIFO_INT_MSK) &&
-	    !(intr_status & INTST_END_INT_MSK)) {
+	if ((intr_status & INTST_TX_FIFO_INT_MSK) && !(intr_status & INTST_END_INT_MSK)) {
 
 		spi_status = sys_read32(QSPI_STAT(base));
 		cur_tx_fifo_num = GET_TX_NUM(base);
@@ -827,8 +783,9 @@ static int flash_andes_qspi_init(const struct device *dev)
 
 	if (memcmp(jedec_id, config->jedec_id, sizeof(jedec_id)) != 0) {
 		LOG_ERR("Device id %02x %02x %02x does not match config"
-			"%02x %02x %02x", jedec_id[0], jedec_id[1], jedec_id[2],
-			config->jedec_id[0], config->jedec_id[1], config->jedec_id[2]);
+			"%02x %02x %02x",
+			jedec_id[0], jedec_id[1], jedec_id[2], config->jedec_id[0],
+			config->jedec_id[1], config->jedec_id[2]);
 		return -EINVAL;
 	}
 #endif
@@ -855,14 +812,14 @@ static int flash_andes_qspi_init(const struct device *dev)
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 static void flash_andes_qspi_pages_layout(const struct device *dev,
-				     const struct flash_pages_layout **layout,
-				     size_t *layout_size)
+					  const struct flash_pages_layout **layout,
+					  size_t *layout_size)
 {
 #ifdef CONFIG_FLASH_ANDES_QSPI_SFDP_RUNTIME
 	const struct flash_andes_qspi_data *dev_data = dev->data;
 
 	*layout = &dev_data->layout;
-#else /* CONFIG_FLASH_ANDES_QSPI_SFDP_RUNTIME */
+#else  /* CONFIG_FLASH_ANDES_QSPI_SFDP_RUNTIME */
 	const struct flash_andes_qspi_config *config = dev->config;
 
 	*layout = &config->layout;
@@ -871,9 +828,7 @@ static void flash_andes_qspi_pages_layout(const struct device *dev,
 }
 #endif
 
-
-static const struct flash_parameters *
-flash_andes_qspi_get_parameters(const struct device *dev)
+static const struct flash_parameters *flash_andes_qspi_get_parameters(const struct device *dev)
 {
 	const struct flash_andes_qspi_config *config = dev->config;
 
@@ -900,7 +855,7 @@ static const struct flash_driver_api flash_andes_qspi_api = {
 #define QSPI_ROM_CFG_XIP(node_id) false
 #endif
 
-#define LAYOUT_PAGES_PROP(n)						\
+#define LAYOUT_PAGES_PROP(n)                                                                       \
 	IF_ENABLED(CONFIG_FLASH_PAGE_LAYOUT,				\
 		(.layout = {						\
 			.pages_count = ((DT_INST_PROP(n, size) / 8) /	\
@@ -910,14 +865,14 @@ static const struct flash_driver_api flash_andes_qspi_api = {
 		},							\
 		))
 
-#define ANDES_QSPI_SFDP_DEVICETREE_CONFIG(n)				\
+#define ANDES_QSPI_SFDP_DEVICETREE_CONFIG(n)                                                       \
 	IF_ENABLED(CONFIG_FLASH_ANDES_QSPI_SFDP_DEVICETREE,		\
 		(							\
 		static const __aligned(4) uint8_t bfp_data_##n[] =	\
 			DT_INST_PROP(n, sfdp_bfp);			\
 		))
 
-#define ANDES_QSPI_SFDP_DEVICETREE_PROP(n)				\
+#define ANDES_QSPI_SFDP_DEVICETREE_PROP(n)                                                         \
 	IF_ENABLED(CONFIG_FLASH_ANDES_QSPI_SFDP_DEVICETREE,		\
 		(.jedec_id = DT_INST_PROP(n, jedec_id),			\
 		.flash_size = DT_INST_PROP(n, size) / 8,		\
@@ -926,40 +881,27 @@ static const struct flash_driver_api flash_andes_qspi_api = {
 		LAYOUT_PAGES_PROP(n)					\
 		))
 
-#define FLASH_ANDES_QSPI_INIT(n)					\
-	static struct flash_andes_qspi_data flash_andes_qspi_data_##n;	\
-	ANDES_QSPI_SFDP_DEVICETREE_CONFIG(n)				\
-									\
-	static void flash_andes_qspi_configure_##n(void);		\
-	static const struct flash_andes_qspi_config			\
-		flash_andes_qspi_config_##n = {				\
-			.cfg_func = flash_andes_qspi_configure_##n,	\
-			.base = DT_REG_ADDR(DT_INST_BUS(n)),		\
-			.irq_num = DT_IRQN(DT_INST_BUS(n)),		\
-			.parameters = {					\
-				.write_block_size = 1,			\
-				.erase_value = 0xff			\
-			},						\
-			.xip = QSPI_ROM_CFG_XIP(DT_DRV_INST(n)),	\
-			ANDES_QSPI_SFDP_DEVICETREE_PROP(n)		\
-		};							\
-									\
-	DEVICE_DT_INST_DEFINE(n,					\
-			&flash_andes_qspi_init,				\
-			NULL,						\
-			&flash_andes_qspi_data_##n,			\
-			&flash_andes_qspi_config_##n,			\
-			POST_KERNEL,					\
-			CONFIG_FLASH_ANDES_QSPI_INIT_PRIORITY,		\
-			&flash_andes_qspi_api);				\
-									\
-	static void flash_andes_qspi_configure_##n(void)		\
-	{								\
-		IRQ_CONNECT(DT_IRQN(DT_INST_BUS(n)),			\
-			DT_IRQ(DT_INST_BUS(n), priority),		\
-			qspi_andes_irq_handler,				\
-			DEVICE_DT_INST_GET(n),				\
-			0);						\
-	}								\
+#define FLASH_ANDES_QSPI_INIT(n)                                                                   \
+	static struct flash_andes_qspi_data flash_andes_qspi_data_##n;                             \
+	ANDES_QSPI_SFDP_DEVICETREE_CONFIG(n)                                                       \
+                                                                                                   \
+	static void flash_andes_qspi_configure_##n(void);                                          \
+	static const struct flash_andes_qspi_config flash_andes_qspi_config_##n = {                \
+		.cfg_func = flash_andes_qspi_configure_##n,                                        \
+		.base = DT_REG_ADDR(DT_INST_BUS(n)),                                               \
+		.irq_num = DT_IRQN(DT_INST_BUS(n)),                                                \
+		.parameters = {.write_block_size = 1, .erase_value = 0xff},                        \
+		.xip = QSPI_ROM_CFG_XIP(DT_DRV_INST(n)),                                           \
+		ANDES_QSPI_SFDP_DEVICETREE_PROP(n)};                                               \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &flash_andes_qspi_init, NULL, &flash_andes_qspi_data_##n,         \
+			      &flash_andes_qspi_config_##n, POST_KERNEL,                           \
+			      CONFIG_FLASH_ANDES_QSPI_INIT_PRIORITY, &flash_andes_qspi_api);       \
+                                                                                                   \
+	static void flash_andes_qspi_configure_##n(void)                                           \
+	{                                                                                          \
+		IRQ_CONNECT(DT_IRQN(DT_INST_BUS(n)), DT_IRQ(DT_INST_BUS(n), priority),             \
+			    qspi_andes_irq_handler, DEVICE_DT_INST_GET(n), 0);                     \
+	}
 
 DT_INST_FOREACH_STATUS_OKAY(FLASH_ANDES_QSPI_INIT)

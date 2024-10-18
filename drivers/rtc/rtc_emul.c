@@ -51,13 +51,10 @@ struct rtc_emul_data {
 #endif /* CONFIG_RTC_CALIBRATION */
 };
 
-static const uint8_t rtc_emul_days_in_month[12] = {
-	31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
-};
+static const uint8_t rtc_emul_days_in_month[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
-static const uint8_t rtc_emul_days_in_month_with_leap[12] = {
-	31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
-};
+static const uint8_t rtc_emul_days_in_month_with_leap[12] = {31, 29, 31, 30, 31, 30,
+							     31, 31, 30, 31, 30, 31};
 
 static bool rtc_emul_is_leap_year(struct rtc_time *datetime)
 {
@@ -71,9 +68,9 @@ static bool rtc_emul_is_leap_year(struct rtc_time *datetime)
 
 static int rtc_emul_get_days_in_month(struct rtc_time *datetime)
 {
-	const uint8_t *dim = (rtc_emul_is_leap_year(datetime) == true) ?
-			     (rtc_emul_days_in_month_with_leap) :
-			     (rtc_emul_days_in_month);
+	const uint8_t *dim = (rtc_emul_is_leap_year(datetime) == true)
+				     ? (rtc_emul_days_in_month_with_leap)
+				     : (rtc_emul_days_in_month);
 
 	return dim[datetime->tm_mon];
 }
@@ -240,8 +237,7 @@ static int rtc_emul_set_time(const struct device *dev, const struct rtc_time *ti
 		return -EINVAL;
 	}
 
-	K_SPINLOCK(&data->lock)
-	{
+	K_SPINLOCK(&data->lock) {
 		data->datetime = *timeptr;
 		data->datetime.tm_isdst = -1;
 		data->datetime.tm_nsec = 0;
@@ -262,8 +258,7 @@ static int rtc_emul_get_time(const struct device *dev, struct rtc_time *timeptr)
 		return -EINVAL;
 	}
 
-	K_SPINLOCK(&data->lock)
-	{
+	K_SPINLOCK(&data->lock) {
 		/* Validate RTC time is set */
 		if (data->datetime_set == false) {
 			ret = -ENODATA;
@@ -278,8 +273,8 @@ static int rtc_emul_get_time(const struct device *dev, struct rtc_time *timeptr)
 }
 
 #ifdef CONFIG_RTC_ALARM
-static int  rtc_emul_alarm_get_supported_fields(const struct device *dev, uint16_t id,
-						uint16_t *mask)
+static int rtc_emul_alarm_get_supported_fields(const struct device *dev, uint16_t id,
+					       uint16_t *mask)
 {
 	struct rtc_emul_data *data = (struct rtc_emul_data *)dev->data;
 
@@ -287,12 +282,9 @@ static int  rtc_emul_alarm_get_supported_fields(const struct device *dev, uint16
 		return -EINVAL;
 	}
 
-	*mask = (RTC_ALARM_TIME_MASK_SECOND
-		 | RTC_ALARM_TIME_MASK_MINUTE
-		 | RTC_ALARM_TIME_MASK_HOUR
-		 | RTC_ALARM_TIME_MASK_MONTHDAY
-		 | RTC_ALARM_TIME_MASK_MONTH
-		 | RTC_ALARM_TIME_MASK_WEEKDAY);
+	*mask = (RTC_ALARM_TIME_MASK_SECOND | RTC_ALARM_TIME_MASK_MINUTE |
+		 RTC_ALARM_TIME_MASK_HOUR | RTC_ALARM_TIME_MASK_MONTHDAY |
+		 RTC_ALARM_TIME_MASK_MONTH | RTC_ALARM_TIME_MASK_WEEKDAY);
 
 	return 0;
 }
@@ -316,8 +308,7 @@ static int rtc_emul_alarm_set_time(const struct device *dev, uint16_t id, uint16
 		}
 	}
 
-	K_SPINLOCK(&data->lock)
-	{
+	K_SPINLOCK(&data->lock) {
 		data->alarms[id].mask = mask;
 
 		if (timeptr != NULL) {
@@ -337,8 +328,7 @@ static int rtc_emul_alarm_get_time(const struct device *dev, uint16_t id, uint16
 		return -EINVAL;
 	}
 
-	K_SPINLOCK(&data->lock)
-	{
+	K_SPINLOCK(&data->lock) {
 		*timeptr = data->alarms[id].datetime;
 		*mask = data->alarms[id].mask;
 	}
@@ -355,8 +345,7 @@ static int rtc_emul_alarm_is_pending(const struct device *dev, uint16_t id)
 		return -EINVAL;
 	}
 
-	K_SPINLOCK(&data->lock)
-	{
+	K_SPINLOCK(&data->lock) {
 		ret = (data->alarms[id].pending == true) ? 1 : 0;
 
 		data->alarms[id].pending = false;
@@ -374,8 +363,7 @@ static int rtc_emul_alarm_set_callback(const struct device *dev, uint16_t id,
 		return -EINVAL;
 	}
 
-	K_SPINLOCK(&data->lock)
-	{
+	K_SPINLOCK(&data->lock) {
 		data->alarms[id].callback = callback;
 		data->alarms[id].user_data = user_data;
 	}
@@ -385,13 +373,12 @@ static int rtc_emul_alarm_set_callback(const struct device *dev, uint16_t id,
 #endif /* CONFIG_RTC_ALARM */
 
 #ifdef CONFIG_RTC_UPDATE
-static int rtc_emul_update_set_callback(const struct device *dev,
-					    rtc_update_callback callback, void *user_data)
+static int rtc_emul_update_set_callback(const struct device *dev, rtc_update_callback callback,
+					void *user_data)
 {
 	struct rtc_emul_data *data = (struct rtc_emul_data *)dev->data;
 
-	K_SPINLOCK(&data->lock)
-	{
+	K_SPINLOCK(&data->lock) {
 		data->update_callback = callback;
 		data->update_callback_user_data = user_data;
 	}
@@ -405,8 +392,7 @@ static int rtc_emul_set_calibration(const struct device *dev, int32_t calibratio
 {
 	struct rtc_emul_data *data = (struct rtc_emul_data *)dev->data;
 
-	K_SPINLOCK(&data->lock)
-	{
+	K_SPINLOCK(&data->lock) {
 		data->calibration = calibration;
 	}
 
@@ -417,8 +403,7 @@ static int rtc_emul_get_calibration(const struct device *dev, int32_t *calibrati
 {
 	struct rtc_emul_data *data = (struct rtc_emul_data *)dev->data;
 
-	K_SPINLOCK(&data->lock)
-	{
+	K_SPINLOCK(&data->lock) {
 		*calibration = data->calibration;
 	}
 
@@ -458,22 +443,21 @@ int rtc_emul_init(const struct device *dev)
 }
 
 #ifdef CONFIG_RTC_ALARM
-#define RTC_EMUL_DEVICE_DATA(id)								\
-	static struct rtc_emul_alarm rtc_emul_alarms_##id[DT_INST_PROP(id, alarms_count)];	\
-												\
-	struct rtc_emul_data rtc_emul_data_##id = {						\
-		.alarms = rtc_emul_alarms_##id,							\
-		.alarms_count = ARRAY_SIZE(rtc_emul_alarms_##id),				\
+#define RTC_EMUL_DEVICE_DATA(id)                                                                   \
+	static struct rtc_emul_alarm rtc_emul_alarms_##id[DT_INST_PROP(id, alarms_count)];         \
+                                                                                                   \
+	struct rtc_emul_data rtc_emul_data_##id = {                                                \
+		.alarms = rtc_emul_alarms_##id,                                                    \
+		.alarms_count = ARRAY_SIZE(rtc_emul_alarms_##id),                                  \
 	};
 #else
-#define RTC_EMUL_DEVICE_DATA(id)								\
-	struct rtc_emul_data rtc_emul_data_##id;
+#define RTC_EMUL_DEVICE_DATA(id) struct rtc_emul_data rtc_emul_data_##id;
 #endif /* CONFIG_RTC_ALARM */
 
-#define RTC_EMUL_DEVICE(id)									\
-	RTC_EMUL_DEVICE_DATA(id)								\
-												\
-	DEVICE_DT_INST_DEFINE(id, rtc_emul_init, NULL, &rtc_emul_data_##id, NULL, POST_KERNEL,	\
+#define RTC_EMUL_DEVICE(id)                                                                        \
+	RTC_EMUL_DEVICE_DATA(id)                                                                   \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(id, rtc_emul_init, NULL, &rtc_emul_data_##id, NULL, POST_KERNEL,     \
 			      CONFIG_RTC_INIT_PRIORITY, &rtc_emul_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RTC_EMUL_DEVICE);

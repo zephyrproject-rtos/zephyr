@@ -37,8 +37,8 @@ static int memc_stm32_sdram_init(const struct device *dev)
 {
 	const struct memc_stm32_sdram_config *config = dev->config;
 
-	SDRAM_HandleTypeDef sdram = { 0 };
-	FMC_SDRAM_CommandTypeDef sdram_cmd = { 0 };
+	SDRAM_HandleTypeDef sdram = {0};
+	FMC_SDRAM_CommandTypeDef sdram_cmd = {0};
 
 	sdram.Instance = config->sdram;
 
@@ -46,9 +46,7 @@ static int memc_stm32_sdram_init(const struct device *dev)
 		sdram.State = HAL_SDRAM_STATE_RESET;
 		memcpy(&sdram.Init, &config->banks[i].init, sizeof(sdram.Init));
 
-		(void)HAL_SDRAM_Init(
-			&sdram,
-			(FMC_SDRAM_TimingTypeDef *)&config->banks[i].timing);
+		(void)HAL_SDRAM_Init(&sdram, (FMC_SDRAM_TimingTypeDef *)&config->banks[i].timing);
 	}
 
 	/* SDRAM initialization sequence */
@@ -88,40 +86,37 @@ static int memc_stm32_sdram_init(const struct device *dev)
 }
 
 /** SDRAM bank/s configuration initialization macro. */
-#define BANK_CONFIG(node_id)                                                   \
-	{ .init = {                                                            \
-	    .SDBank = DT_REG_ADDR(node_id),                                    \
-	    .ColumnBitsNumber = DT_PROP_BY_IDX(node_id, st_sdram_control, 0),  \
-	    .RowBitsNumber = DT_PROP_BY_IDX(node_id, st_sdram_control, 1),     \
-	    .MemoryDataWidth = DT_PROP_BY_IDX(node_id, st_sdram_control, 2),   \
-	    .InternalBankNumber = DT_PROP_BY_IDX(node_id, st_sdram_control, 3),\
-	    .CASLatency = DT_PROP_BY_IDX(node_id, st_sdram_control, 4),        \
-	    .WriteProtection = FMC_SDRAM_WRITE_PROTECTION_DISABLE,             \
-	    .SDClockPeriod = DT_PROP_BY_IDX(node_id, st_sdram_control, 5),     \
-	    .ReadBurst = DT_PROP_BY_IDX(node_id, st_sdram_control, 6),         \
-	    .ReadPipeDelay = DT_PROP_BY_IDX(node_id, st_sdram_control, 7),     \
-	  },                                                                   \
-	  .timing = {                                                          \
-	    .LoadToActiveDelay = DT_PROP_BY_IDX(node_id, st_sdram_timing, 0),  \
-	    .ExitSelfRefreshDelay =                                            \
-		DT_PROP_BY_IDX(node_id, st_sdram_timing, 1),                   \
-	    .SelfRefreshTime = DT_PROP_BY_IDX(node_id, st_sdram_timing, 2),    \
-	    .RowCycleDelay = DT_PROP_BY_IDX(node_id, st_sdram_timing, 3),      \
-	    .WriteRecoveryTime = DT_PROP_BY_IDX(node_id, st_sdram_timing, 4),  \
-	    .RPDelay = DT_PROP_BY_IDX(node_id, st_sdram_timing, 5),            \
-	    .RCDDelay = DT_PROP_BY_IDX(node_id, st_sdram_timing, 6),           \
-	  }                                                                    \
-	},
+#define BANK_CONFIG(node_id)                                                                       \
+	{.init =                                                                                   \
+		 {                                                                                 \
+			 .SDBank = DT_REG_ADDR(node_id),                                           \
+			 .ColumnBitsNumber = DT_PROP_BY_IDX(node_id, st_sdram_control, 0),         \
+			 .RowBitsNumber = DT_PROP_BY_IDX(node_id, st_sdram_control, 1),            \
+			 .MemoryDataWidth = DT_PROP_BY_IDX(node_id, st_sdram_control, 2),          \
+			 .InternalBankNumber = DT_PROP_BY_IDX(node_id, st_sdram_control, 3),       \
+			 .CASLatency = DT_PROP_BY_IDX(node_id, st_sdram_control, 4),               \
+			 .WriteProtection = FMC_SDRAM_WRITE_PROTECTION_DISABLE,                    \
+			 .SDClockPeriod = DT_PROP_BY_IDX(node_id, st_sdram_control, 5),            \
+			 .ReadBurst = DT_PROP_BY_IDX(node_id, st_sdram_control, 6),                \
+			 .ReadPipeDelay = DT_PROP_BY_IDX(node_id, st_sdram_control, 7),            \
+		 },                                                                                \
+	 .timing = {                                                                               \
+		 .LoadToActiveDelay = DT_PROP_BY_IDX(node_id, st_sdram_timing, 0),                 \
+		 .ExitSelfRefreshDelay = DT_PROP_BY_IDX(node_id, st_sdram_timing, 1),              \
+		 .SelfRefreshTime = DT_PROP_BY_IDX(node_id, st_sdram_timing, 2),                   \
+		 .RowCycleDelay = DT_PROP_BY_IDX(node_id, st_sdram_timing, 3),                     \
+		 .WriteRecoveryTime = DT_PROP_BY_IDX(node_id, st_sdram_timing, 4),                 \
+		 .RPDelay = DT_PROP_BY_IDX(node_id, st_sdram_timing, 5),                           \
+		 .RCDDelay = DT_PROP_BY_IDX(node_id, st_sdram_timing, 6),                          \
+	 }},
 
 /** SDRAM bank/s configuration. */
 static const struct memc_stm32_sdram_bank_config bank_config[] = {
-	DT_INST_FOREACH_CHILD(0, BANK_CONFIG)
-};
+	DT_INST_FOREACH_CHILD(0, BANK_CONFIG)};
 
 /** SDRAM configuration. */
 static const struct memc_stm32_sdram_config config = {
-	.sdram = (FMC_SDRAM_TypeDef *)(DT_REG_ADDR(DT_INST_PARENT(0)) +
-				       SDRAM_OFFSET),
+	.sdram = (FMC_SDRAM_TypeDef *)(DT_REG_ADDR(DT_INST_PARENT(0)) + SDRAM_OFFSET),
 	.power_up_delay = DT_INST_PROP(0, power_up_delay),
 	.num_auto_refresh = DT_INST_PROP(0, num_auto_refresh),
 	.mode_register = DT_INST_PROP(0, mode_register),
@@ -130,5 +125,5 @@ static const struct memc_stm32_sdram_config config = {
 	.banks_len = ARRAY_SIZE(bank_config),
 };
 
-DEVICE_DT_INST_DEFINE(0, memc_stm32_sdram_init, NULL,
-	      NULL, &config, POST_KERNEL, CONFIG_MEMC_INIT_PRIORITY, NULL);
+DEVICE_DT_INST_DEFINE(0, memc_stm32_sdram_init, NULL, NULL, &config, POST_KERNEL,
+		      CONFIG_MEMC_INIT_PRIORITY, NULL);

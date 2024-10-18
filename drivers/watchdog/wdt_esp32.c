@@ -35,8 +35,8 @@ LOG_MODULE_REGISTER(wdt_esp32, CONFIG_WDT_LOG_LEVEL);
 #define ISR_HANDLER intr_handler_t
 #endif
 
-#define MWDT_TICK_PRESCALER		40000
-#define MWDT_TICKS_PER_US		500
+#define MWDT_TICK_PRESCALER 40000
+#define MWDT_TICKS_PER_US   500
 
 struct wdt_esp32_data {
 	wdt_hal_context_t hal;
@@ -76,7 +76,6 @@ static void wdt_esp32_enable(const struct device *dev)
 	wdt_esp32_unseal(dev);
 	wdt_hal_enable(&data->hal);
 	wdt_esp32_seal(dev);
-
 }
 
 static int wdt_esp32_disable(const struct device *dev)
@@ -117,8 +116,7 @@ static int wdt_esp32_set_config(const struct device *dev, uint8_t options)
 	return 0;
 }
 
-static int wdt_esp32_install_timeout(const struct device *dev,
-				     const struct wdt_timeout_cfg *cfg)
+static int wdt_esp32_install_timeout(const struct device *dev, const struct wdt_timeout_cfg *cfg)
 {
 	struct wdt_esp32_data *data = dev->data;
 
@@ -169,11 +167,9 @@ static int wdt_esp32_init(const struct device *dev)
 	wdt_hal_init(&data->hal, config->wdt_inst, MWDT_TICK_PRESCALER, true);
 
 	int ret = esp_intr_alloc(config->irq_source,
-				ESP_PRIO_TO_FLAGS(config->irq_priority) |
-				ESP_INT_FLAGS_CHECK(config->irq_flags),
-				(ISR_HANDLER)wdt_esp32_isr,
-				(void *)dev,
-				NULL);
+				 ESP_PRIO_TO_FLAGS(config->irq_priority) |
+					 ESP_INT_FLAGS_CHECK(config->irq_flags),
+				 (ISR_HANDLER)wdt_esp32_isr, (void *)dev, NULL);
 
 	if (ret != 0) {
 		LOG_ERR("could not allocate interrupt (err %d)", ret);
@@ -187,31 +183,24 @@ static int wdt_esp32_init(const struct device *dev)
 	return 0;
 }
 
-static const struct wdt_driver_api wdt_api = {
-	.setup = wdt_esp32_set_config,
-	.disable = wdt_esp32_disable,
-	.install_timeout = wdt_esp32_install_timeout,
-	.feed = wdt_esp32_feed
-};
+static const struct wdt_driver_api wdt_api = {.setup = wdt_esp32_set_config,
+					      .disable = wdt_esp32_disable,
+					      .install_timeout = wdt_esp32_install_timeout,
+					      .feed = wdt_esp32_feed};
 
-#define ESP32_WDT_INIT(idx)							   \
-	static struct wdt_esp32_data wdt##idx##_data;				   \
-	static struct wdt_esp32_config wdt_esp32_config##idx = {		   \
-		.wdt_inst = WDT_MWDT##idx,	\
-		.irq_source = DT_IRQ_BY_IDX(DT_NODELABEL(wdt##idx), 0, irq),	\
-		.irq_priority = DT_IRQ_BY_IDX(DT_NODELABEL(wdt##idx), 0, priority),	\
-		.irq_flags = DT_IRQ_BY_IDX(DT_NODELABEL(wdt##idx), 0, flags),	\
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)), \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset), \
-	};									   \
-										   \
-	DEVICE_DT_INST_DEFINE(idx,						   \
-			      wdt_esp32_init,					   \
-			      NULL,						   \
-			      &wdt##idx##_data,					   \
-			      &wdt_esp32_config##idx,				   \
-			      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	   \
-			      &wdt_api)
+#define ESP32_WDT_INIT(idx)                                                                        \
+	static struct wdt_esp32_data wdt##idx##_data;                                              \
+	static struct wdt_esp32_config wdt_esp32_config##idx = {                                   \
+		.wdt_inst = WDT_MWDT##idx,                                                         \
+		.irq_source = DT_IRQ_BY_IDX(DT_NODELABEL(wdt##idx), 0, irq),                       \
+		.irq_priority = DT_IRQ_BY_IDX(DT_NODELABEL(wdt##idx), 0, priority),                \
+		.irq_flags = DT_IRQ_BY_IDX(DT_NODELABEL(wdt##idx), 0, flags),                      \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                              \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset),          \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(idx, wdt_esp32_init, NULL, &wdt##idx##_data, &wdt_esp32_config##idx, \
+			      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wdt_api)
 
 static void wdt_esp32_isr(void *arg)
 {
@@ -224,7 +213,6 @@ static void wdt_esp32_isr(void *arg)
 
 	wdt_hal_handle_intr(&data->hal);
 }
-
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wdt0))
 ESP32_WDT_INIT(0);

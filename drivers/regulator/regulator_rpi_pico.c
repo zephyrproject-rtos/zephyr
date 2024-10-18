@@ -22,7 +22,7 @@ static const size_t num_core_ranges = ARRAY_SIZE(core_ranges);
 
 struct regulator_rpi_pico_config {
 	struct regulator_common_config common;
-	vreg_and_chip_reset_hw_t * const reg;
+	vreg_and_chip_reset_hw_t *const reg;
 	const bool brown_out_detection;
 	const uint32_t brown_out_threshold;
 };
@@ -147,7 +147,7 @@ static const struct regulator_driver_api api = {
                                                                                                    \
 	static const struct regulator_rpi_pico_config config_##inst = {                            \
 		.common = REGULATOR_DT_COMMON_CONFIG_INIT(inst),                                   \
-		.reg = (vreg_and_chip_reset_hw_t * const)DT_INST_REG_ADDR(inst),                   \
+		.reg = (vreg_and_chip_reset_hw_t *const)DT_INST_REG_ADDR(inst),                    \
 		.brown_out_detection = DT_INST_PROP(inst, raspberrypi_brown_out_detection),        \
 		.brown_out_threshold = DT_INST_ENUM_IDX(inst, raspberrypi_brown_out_threshold),    \
 	};                                                                                         \

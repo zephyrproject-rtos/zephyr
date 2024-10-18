@@ -15,12 +15,11 @@
 LOG_MODULE_REGISTER(modem_iface_uart_async, CONFIG_MODEM_LOG_LEVEL);
 
 #define RX_BUFFER_SIZE CONFIG_MODEM_IFACE_UART_ASYNC_RX_BUFFER_SIZE
-#define RX_BUFFER_NUM CONFIG_MODEM_IFACE_UART_ASYNC_RX_NUM_BUFFERS
+#define RX_BUFFER_NUM  CONFIG_MODEM_IFACE_UART_ASYNC_RX_NUM_BUFFERS
 
 K_MEM_SLAB_DEFINE(uart_modem_async_rx_slab, RX_BUFFER_SIZE, RX_BUFFER_NUM, 1);
 
-static void iface_uart_async_callback(const struct device *dev,
-				      struct uart_event *evt,
+static void iface_uart_async_callback(const struct device *dev, struct uart_event *evt,
 				      void *user_data)
 {
 	struct modem_iface *iface = user_data;
@@ -52,8 +51,7 @@ static void iface_uart_async_callback(const struct device *dev,
 		break;
 	case UART_RX_RDY:
 		/* Place received data on the ring buffer */
-		written = ring_buf_put(&data->rx_rb,
-				       evt->data.rx.buf + evt->data.rx.offset,
+		written = ring_buf_put(&data->rx_rb, evt->data.rx.buf + evt->data.rx.offset,
 				       evt->data.rx.len);
 		if (written != evt->data.rx.len) {
 			LOG_WRN("Received bytes dropped from ring buf");
@@ -81,8 +79,8 @@ static void iface_uart_async_callback(const struct device *dev,
 	}
 }
 
-static int modem_iface_uart_async_read(struct modem_iface *iface,
-				       uint8_t *buf, size_t size, size_t *bytes_read)
+static int modem_iface_uart_async_read(struct modem_iface *iface, uint8_t *buf, size_t size,
+				       size_t *bytes_read)
 {
 	struct modem_iface_uart_data *data;
 
@@ -101,8 +99,7 @@ static int modem_iface_uart_async_read(struct modem_iface *iface,
 	return 0;
 }
 
-static int modem_iface_uart_async_write(struct modem_iface *iface,
-					const uint8_t *buf, size_t size)
+static int modem_iface_uart_async_write(struct modem_iface *iface, const uint8_t *buf, size_t size)
 {
 	struct modem_iface_uart_data *data;
 	int rc;
@@ -125,8 +122,7 @@ static int modem_iface_uart_async_write(struct modem_iface *iface,
 	return rc;
 }
 
-int modem_iface_uart_init_dev(struct modem_iface *iface,
-			      const struct device *dev)
+int modem_iface_uart_init_dev(struct modem_iface *iface, const struct device *dev)
 {
 	struct modem_iface_uart_data *data;
 	void *buf;

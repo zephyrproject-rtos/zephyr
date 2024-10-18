@@ -560,8 +560,8 @@ static void get_and_refill_desc_buffs(struct xgmac_dma_rx_desc *rx_desc, uint16_
 {
 	struct net_buf *new_buff;
 
-	*buff1 = (struct net_buf *)((mem_addr_t)*(rx_buffs + (desc_id * RX_FRAGS_PER_DESC)));
-	*buff2 = (struct net_buf *)((mem_addr_t)*(rx_buffs + (desc_id * RX_FRAGS_PER_DESC) + 1u));
+	*buff1 = (struct net_buf *)((mem_addr_t) * (rx_buffs + (desc_id * RX_FRAGS_PER_DESC)));
+	*buff2 = (struct net_buf *)((mem_addr_t) * (rx_buffs + (desc_id * RX_FRAGS_PER_DESC) + 1u));
 	/* Reserve a free buffer in netwrok RX buffers pool */
 	new_buff = net_pkt_get_reserve_rx_data(CONFIG_NET_BUF_DATA_SIZE, K_FOREVER);
 	if (!new_buff) {

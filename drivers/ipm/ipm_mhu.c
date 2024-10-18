@@ -12,9 +12,9 @@
 #include <zephyr/irq.h>
 #include "ipm_mhu.h"
 
-#define IPM_MHU_REGS(dev) \
-	((volatile struct ipm_mhu_reg_map_t *) \
-	 (((const struct ipm_mhu_device_config * const)(dev)->config)->base))
+#define IPM_MHU_REGS(dev)                                                                          \
+	((volatile struct ipm_mhu_reg_map_t                                                        \
+		  *)(((const struct ipm_mhu_device_config *const)(dev)->config)->base))
 
 static enum ipm_mhu_cpu_id_t ipm_mhu_get_cpu_id(const struct device *d)
 {
@@ -23,16 +23,14 @@ static enum ipm_mhu_cpu_id_t ipm_mhu_get_cpu_id(const struct device *d)
 
 	p_mhu_dev_base = (volatile uint32_t *)IPM_MHU_REGS(d);
 
-	p_cpu_id = (volatile uint32_t *)(((uint32_t)p_mhu_dev_base &
-						SSE_200_DEVICE_BASE_REG_MSK) +
-						SSE_200_CPU_ID_UNIT_OFFSET);
+	p_cpu_id = (volatile uint32_t *)(((uint32_t)p_mhu_dev_base & SSE_200_DEVICE_BASE_REG_MSK) +
+					 SSE_200_CPU_ID_UNIT_OFFSET);
 
-	return (enum ipm_mhu_cpu_id_t)*p_cpu_id;
+	return (enum ipm_mhu_cpu_id_t) * p_cpu_id;
 }
 
-static uint32_t ipm_mhu_get_status(const struct device *d,
-						enum ipm_mhu_cpu_id_t cpu_id,
-						uint32_t *status)
+static uint32_t ipm_mhu_get_status(const struct device *d, enum ipm_mhu_cpu_id_t cpu_id,
+				   uint32_t *status)
 {
 	struct ipm_mhu_reg_map_t *p_mhu_dev;
 
@@ -55,8 +53,8 @@ static uint32_t ipm_mhu_get_status(const struct device *d,
 	return IPM_MHU_ERR_NONE;
 }
 
-static int ipm_mhu_send(const struct device *d, int wait, uint32_t cpu_id,
-			  const void *data, int size)
+static int ipm_mhu_send(const struct device *d, int wait, uint32_t cpu_id, const void *data,
+			int size)
 {
 	ARG_UNUSED(wait);
 	ARG_UNUSED(data);
@@ -87,9 +85,8 @@ static int ipm_mhu_send(const struct device *d, int wait, uint32_t cpu_id,
 	return 0;
 }
 
-static void ipm_mhu_clear_val(const struct device *d,
-						enum ipm_mhu_cpu_id_t cpu_id,
-						uint32_t clear_val)
+static void ipm_mhu_clear_val(const struct device *d, enum ipm_mhu_cpu_id_t cpu_id,
+			      uint32_t clear_val)
 {
 	struct ipm_mhu_reg_map_t *p_mhu_dev;
 
@@ -134,8 +131,7 @@ static void ipm_mhu_isr(const struct device *d)
 	ipm_mhu_clear_val(d, cpu_id, ipm_mhu_status);
 
 	if (driver_data->callback) {
-		driver_data->callback(d, driver_data->user_data, cpu_id,
-				      &ipm_mhu_status);
+		driver_data->callback(d, driver_data->user_data, cpu_id, &ipm_mhu_status);
 	}
 }
 
@@ -153,9 +149,7 @@ static int ipm_mhu_max_data_size_get(const struct device *d)
 	return IPM_MHU_MAX_DATA_SIZE;
 }
 
-static void ipm_mhu_register_cb(const struct device *d,
-				ipm_callback_t cb,
-				void *user_data)
+static void ipm_mhu_register_cb(const struct device *d, ipm_callback_t cb, void *user_data)
 {
 	struct ipm_mhu_data *driver_data = d->data;
 
@@ -183,22 +177,14 @@ static struct ipm_mhu_data ipm_mhu_data_0 = {
 	.user_data = NULL,
 };
 
-DEVICE_DT_INST_DEFINE(0,
-			&ipm_mhu_init,
-			NULL,
-			&ipm_mhu_data_0,
-			&ipm_mhu_cfg_0, PRE_KERNEL_1,
-			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-			&ipm_mhu_driver_api);
+DEVICE_DT_INST_DEFINE(0, &ipm_mhu_init, NULL, &ipm_mhu_data_0, &ipm_mhu_cfg_0, PRE_KERNEL_1,
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &ipm_mhu_driver_api);
 
 static void ipm_mhu_irq_config_func_0(const struct device *d)
 {
 	ARG_UNUSED(d);
-	IRQ_CONNECT(DT_INST_IRQN(0),
-			DT_INST_IRQ(0, priority),
-			ipm_mhu_isr,
-			DEVICE_DT_INST_GET(0),
-			0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), ipm_mhu_isr, DEVICE_DT_INST_GET(0),
+		    0);
 	irq_enable(DT_INST_IRQN(0));
 }
 
@@ -214,21 +200,13 @@ static struct ipm_mhu_data ipm_mhu_data_1 = {
 	.user_data = NULL,
 };
 
-DEVICE_DT_INST_DEFINE(1,
-			&ipm_mhu_init,
-			NULL,
-			&ipm_mhu_data_1,
-			&ipm_mhu_cfg_1, PRE_KERNEL_1,
-			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-			&ipm_mhu_driver_api);
+DEVICE_DT_INST_DEFINE(1, &ipm_mhu_init, NULL, &ipm_mhu_data_1, &ipm_mhu_cfg_1, PRE_KERNEL_1,
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &ipm_mhu_driver_api);
 
 static void ipm_mhu_irq_config_func_1(const struct device *d)
 {
 	ARG_UNUSED(d);
-	IRQ_CONNECT(DT_INST_IRQN(1),
-			DT_INST_IRQ(1, priority),
-			ipm_mhu_isr,
-			DEVICE_DT_INST_GET(1),
-			0);
+	IRQ_CONNECT(DT_INST_IRQN(1), DT_INST_IRQ(1, priority), ipm_mhu_isr, DEVICE_DT_INST_GET(1),
+		    0);
 	irq_enable(DT_INST_IRQN(1));
 }

@@ -8,7 +8,7 @@
 #define DT_DRV_COMPAT ti_stellaris_ethernet
 
 #define LOG_MODULE_NAME eth_stellaris
-#define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
+#define LOG_LEVEL       CONFIG_ETHERNET_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
@@ -119,8 +119,7 @@ static void eth_stellaris_rx_error(struct net_if *iface)
 	sys_write32(val, REG_MACRCTL);
 }
 
-static struct net_pkt *eth_stellaris_rx_pkt(const struct device *dev,
-					    struct net_if *iface)
+static struct net_pkt *eth_stellaris_rx_pkt(const struct device *dev, struct net_if *iface)
 {
 	int frame_len, bytes_left;
 	struct net_pkt *pkt;
@@ -145,8 +144,7 @@ static struct net_pkt *eth_stellaris_rx_pkt(const struct device *dev,
 	reg_val = sys_read32(REG_MACDATA);
 	frame_len = reg_val & 0x0000ffff;
 
-	pkt = net_pkt_rx_alloc_with_buffer(iface, frame_len,
-					   AF_UNSPEC, 0, K_NO_WAIT);
+	pkt = net_pkt_rx_alloc_with_buffer(iface, frame_len, AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		return NULL;
 	}
@@ -290,8 +288,7 @@ static void eth_stellaris_init(struct net_if *iface)
 	dev_data->iface = iface;
 
 	/* Assign link local address. */
-	net_if_set_link_addr(iface,
-			     dev_data->mac_addr, 6, NET_LINK_ETHERNET);
+	net_if_set_link_addr(iface, dev_data->mac_addr, 6, NET_LINK_ETHERNET);
 
 	ethernet_init(iface);
 
@@ -323,8 +320,7 @@ static int eth_stellaris_dev_init(const struct device *dev)
 	sys_write32(value, REG_MACRCTL);
 
 	/* Enable transmitter */
-	value = BIT_MACTCTL_DUPLEX | BIT_MACTCTL_CRC |
-		BIT_MACTCTL_PADEN | BIT_MACTCTL_TXEN;
+	value = BIT_MACTCTL_DUPLEX | BIT_MACTCTL_CRC | BIT_MACTCTL_PADEN | BIT_MACTCTL_TXEN;
 	sys_write32(value, REG_MACTCTL);
 
 	/* Enable Receiver */
@@ -337,9 +333,8 @@ static int eth_stellaris_dev_init(const struct device *dev)
 static void eth_stellaris_irq_config(const struct device *dev)
 {
 	/* Enable Interrupt. */
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    eth_stellaris_isr, DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), eth_stellaris_isr,
+		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
 }
 
@@ -356,15 +351,13 @@ struct eth_stellaris_runtime eth_data = {
 };
 
 static const struct ethernet_api eth_stellaris_apis = {
-	.iface_api.init	= eth_stellaris_init,
-	.send =  eth_stellaris_send,
+	.iface_api.init = eth_stellaris_init,
+	.send = eth_stellaris_send,
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	.get_stats = eth_stellaris_stats,
 #endif
 };
 
-NET_DEVICE_DT_INST_DEFINE(0,
-		eth_stellaris_dev_init, NULL,
-		&eth_data, &eth_cfg, CONFIG_ETH_INIT_PRIORITY,
-		&eth_stellaris_apis, ETHERNET_L2,
-		NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
+NET_DEVICE_DT_INST_DEFINE(0, eth_stellaris_dev_init, NULL, &eth_data, &eth_cfg,
+			  CONFIG_ETH_INIT_PRIORITY, &eth_stellaris_apis, ETHERNET_L2,
+			  NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);

@@ -98,8 +98,7 @@ static inline int wdt_t0out_reload(const struct device *dev)
 	uint64_t st;
 
 	/* Reload and restart T0 timer */
-	inst->T0CSR = (inst->T0CSR & ~BIT(NPCX_T0CSR_WDRST_STS)) |
-		      BIT(NPCX_T0CSR_RST);
+	inst->T0CSR = (inst->T0CSR & ~BIT(NPCX_T0CSR_WDRST_STS)) | BIT(NPCX_T0CSR_RST);
 	/* Wait for timer is loaded and restart */
 	st = k_uptime_get();
 	while (IS_BIT_SET(inst->T0CSR, NPCX_T0CSR_RST)) {
@@ -155,21 +154,18 @@ static void wdt_config_t0out_interrupt(const struct device *dev)
 	const struct wdt_npcx_config *const config = dev->config;
 
 	/* Initialize a miwu device input and its callback function */
-	npcx_miwu_init_dev_callback(&miwu_cb, &config->t0out, wdt_t0out_isr,
-			dev);
+	npcx_miwu_init_dev_callback(&miwu_cb, &config->t0out, wdt_t0out_isr, dev);
 	npcx_miwu_manage_callback(&miwu_cb, true);
 
 	/*
 	 * Configure the T0 wake-up event triggered from a rising edge
 	 * on T0OUT signal.
 	 */
-	npcx_miwu_interrupt_configure(&config->t0out,
-			NPCX_MIWU_MODE_EDGE, NPCX_MIWU_TRIG_HIGH);
+	npcx_miwu_interrupt_configure(&config->t0out, NPCX_MIWU_MODE_EDGE, NPCX_MIWU_TRIG_HIGH);
 }
 
 /* WDT api functions */
-static int wdt_npcx_install_timeout(const struct device *dev,
-				   const struct wdt_timeout_cfg *cfg)
+static int wdt_npcx_install_timeout(const struct device *dev, const struct wdt_timeout_cfg *cfg)
 {
 	struct wdt_npcx_data *const data = dev->data;
 	struct twd_reg *const inst = HAL_INSTANCE(dev);
@@ -245,8 +241,7 @@ static int wdt_npcx_setup(const struct device *dev, uint8_t options)
 	 * One clock period of T0 timer is 32/32.768 KHz = 0.976 ms.
 	 * Then the counter value is timeout/0.976 - 1.
 	 */
-	inst->TWDT0 = MAX(DIV_ROUND_UP(data->timeout * NPCX_WDT_CLK,
-				32 * 1000) - 1, 1);
+	inst->TWDT0 = MAX(DIV_ROUND_UP(data->timeout * NPCX_WDT_CLK, 32 * 1000) - 1, 1);
 
 	/* Configure 8-bit watchdog counter
 	 * Change the prescaler of watchdog clock for larger timeout
@@ -356,8 +351,7 @@ static int wdt_npcx_init(const struct device *dev)
 	inst->TWCFG = BIT(NPCX_TWCFG_WDSDME) | BIT(NPCX_TWCFG_WDCT0I);
 
 	/* Disable early touch functionality */
-	inst->T0CSR = (inst->T0CSR & ~BIT(NPCX_T0CSR_WDRST_STS)) |
-		      BIT(NPCX_T0CSR_TESDIS);
+	inst->T0CSR = (inst->T0CSR & ~BIT(NPCX_T0CSR_WDRST_STS)) | BIT(NPCX_T0CSR_TESDIS);
 	/*
 	 * Plan clock frequency of T0 timer and watchdog timer as below:
 	 * - T0 Timer freq is LFCLK/32 Hz
@@ -369,15 +363,10 @@ static int wdt_npcx_init(const struct device *dev)
 	return 0;
 }
 
-static const struct wdt_npcx_config wdt_npcx_cfg_0 = {
-	.base = DT_INST_REG_ADDR(0),
-	.t0out = NPCX_DT_WUI_ITEM_BY_NAME(0, t0_out)
-};
+static const struct wdt_npcx_config wdt_npcx_cfg_0 = {.base = DT_INST_REG_ADDR(0),
+						      .t0out = NPCX_DT_WUI_ITEM_BY_NAME(0, t0_out)};
 
 static struct wdt_npcx_data wdt_npcx_data_0;
 
-DEVICE_DT_INST_DEFINE(0, wdt_npcx_init, NULL,
-			&wdt_npcx_data_0, &wdt_npcx_cfg_0,
-			PRE_KERNEL_1,
-			CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-			&wdt_npcx_driver_api);
+DEVICE_DT_INST_DEFINE(0, wdt_npcx_init, NULL, &wdt_npcx_data_0, &wdt_npcx_cfg_0, PRE_KERNEL_1,
+		      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &wdt_npcx_driver_api);

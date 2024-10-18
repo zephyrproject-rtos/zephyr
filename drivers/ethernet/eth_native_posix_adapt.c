@@ -71,8 +71,7 @@ int eth_iface_remove(int fd)
 	return close(fd);
 }
 
-static int ssystem(const char *fmt, ...)
-	__attribute__((__format__(__printf__, 1, 2)));
+static int ssystem(const char *fmt, ...) __attribute__((__format__(__printf__, 1, 2)));
 
 static int ssystem(const char *fmt, ...)
 {
@@ -134,6 +133,5 @@ int eth_clock_gettime(uint64_t *second, uint32_t *nanosecond)
 
 int eth_promisc_mode(const char *if_name, bool enable)
 {
-	return ssystem("ip link set dev %s promisc %s",
-		       if_name, enable ? "on" : "off");
+	return ssystem("ip link set dev %s promisc %s", if_name, enable ? "on" : "off");
 }

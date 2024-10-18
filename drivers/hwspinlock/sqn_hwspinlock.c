@@ -137,18 +137,14 @@ static int sqn_hwspinlock_init(const struct device *dev)
 	return 0;
 }
 
-#define SQN_HWSPINLOCK_INIT(idx)                                                \
-	static struct sqn_hwspinlock_data sqn_hwspinlock##idx##_data;           \
-	static const struct sqn_hwspinlock_config sqn_hwspinlock##idx##_config = {    \
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(idx)),                         \
-		.num_locks = DT_INST_PROP(idx, num_locks),                      \
-	};                                                                      \
-	DEVICE_DT_INST_DEFINE(idx,                                              \
-			      sqn_hwspinlock_init,                              \
-			      NULL,                                             \
-			      &sqn_hwspinlock##idx##_data,                      \
-			      &sqn_hwspinlock##idx##_config,                    \
-			      PRE_KERNEL_1, CONFIG_HWSPINLOCK_INIT_PRIORITY,    \
-			      &hwspinlock_api)
+#define SQN_HWSPINLOCK_INIT(idx)                                                                   \
+	static struct sqn_hwspinlock_data sqn_hwspinlock##idx##_data;                              \
+	static const struct sqn_hwspinlock_config sqn_hwspinlock##idx##_config = {                 \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(idx)),                                            \
+		.num_locks = DT_INST_PROP(idx, num_locks),                                         \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(idx, sqn_hwspinlock_init, NULL, &sqn_hwspinlock##idx##_data,         \
+			      &sqn_hwspinlock##idx##_config, PRE_KERNEL_1,                         \
+			      CONFIG_HWSPINLOCK_INIT_PRIORITY, &hwspinlock_api)
 
 DT_INST_FOREACH_STATUS_OKAY(SQN_HWSPINLOCK_INIT);

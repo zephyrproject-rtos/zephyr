@@ -153,9 +153,7 @@ static uint32_t dsi_mcux_best_clock(uint32_t ref_clk, uint32_t target_freq)
 	return best_pll_freq;
 }
 
-
-static int dsi_mcux_attach(const struct device *dev,
-			   uint8_t channel,
+static int dsi_mcux_attach(const struct device *dev, uint8_t channel,
 			   const struct mipi_dsi_device *mdev)
 {
 	const struct display_mcux_mipi_dsi_config *config = dev->config;
@@ -195,8 +193,8 @@ static int dsi_mcux_attach(const struct device *dev,
 
 	DSI_GetDphyDefaultConfig(&dphy_config, mipi_dsi_dphy_bit_clk_hz, mipi_dsi_tx_esc_clk_hz);
 
-	mipi_dsi_dphy_bit_clk_hz = DSI_InitDphy((MIPI_DSI_Type *)&config->base,
-						&dphy_config, mipi_dsi_dphy_ref_clk_hz);
+	mipi_dsi_dphy_bit_clk_hz = DSI_InitDphy((MIPI_DSI_Type *)&config->base, &dphy_config,
+						mipi_dsi_dphy_ref_clk_hz);
 
 	LOG_DBG("DPHY clock set to %u", mipi_dsi_dphy_bit_clk_hz);
 	/*
@@ -207,9 +205,8 @@ static int dsi_mcux_attach(const struct device *dev,
 	 */
 	if (mdev->mode_flags & MIPI_DSI_MODE_VIDEO) {
 		/* Init DPI interface. */
-		DSI_SetDpiConfig((MIPI_DSI_Type *)&config->base,
-				&config->dpi_config, mdev->data_lanes,
-				mipi_dsi_dpi_clk_hz, mipi_dsi_dphy_bit_clk_hz);
+		DSI_SetDpiConfig((MIPI_DSI_Type *)&config->base, &config->dpi_config,
+				 mdev->data_lanes, mipi_dsi_dpi_clk_hz, mipi_dsi_dphy_bit_clk_hz);
 	}
 
 	imxrt_post_init_display_interface();
@@ -256,8 +253,7 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 		 * transfers are still aligned on a pixel boundary
 		 * (two or three byte pixel sizes are supported).
 		 */
-		dsi_xfer.txDataSize = MIN(dsi_xfer.txDataSize,
-					(DSI_TX_MAX_PAYLOAD_BYTE - 6));
+		dsi_xfer.txDataSize = MIN(dsi_xfer.txDataSize, (DSI_TX_MAX_PAYLOAD_BYTE - 6));
 		break;
 	case MIPI_DSI_GENERIC_SHORT_WRITE_0_PARAM:
 		dsi_xfer.txDataType = kDSI_TxDataGenShortWrNoParam;
@@ -297,7 +293,6 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 
 	/* Return tx_len on a write */
 	return dsi_xfer.txDataSize;
-
 }
 
 static struct mipi_dsi_driver_api dsi_mcux_api = {
@@ -312,7 +307,7 @@ static int display_mcux_mipi_dsi_init(const struct device *dev)
 	return 0;
 }
 
-#define MCUX_DSI_DPI_CONFIG(id)									\
+#define MCUX_DSI_DPI_CONFIG(id)                                                                    \
 	IF_ENABLED(DT_NODE_HAS_PROP(DT_DRV_INST(id), nxp_lcdif),				\
 	(.dpi_config = {									\
 		.dpiColorCoding = DT_INST_ENUM_IDX(id, dpi_color_coding),			\
@@ -339,27 +334,23 @@ static int display_mcux_mipi_dsi_init(const struct device *dev)
 						display_timings), vback_porch),			\
 	},))
 
-#define MCUX_MIPI_DSI_DEVICE(id)								\
-	static const struct display_mcux_mipi_dsi_config display_mcux_mipi_dsi_config_##id = {	\
-		.base = {									\
-			.host = (DSI_HOST_Type *)DT_INST_REG_ADDR_BY_IDX(id, 0),		\
-			.dpi = (DSI_HOST_DPI_INTFC_Type *)DT_INST_REG_ADDR_BY_IDX(id, 1),	\
-			.apb = (DSI_HOST_APB_PKT_IF_Type *)DT_INST_REG_ADDR_BY_IDX(id, 2),	\
-			.dphy = (DSI_HOST_NXP_FDSOI28_DPHY_INTFC_Type *)			\
-				DT_INST_REG_ADDR_BY_IDX(id, 3),					\
-		},										\
-		MCUX_DSI_DPI_CONFIG(id)								\
-		.auto_insert_eotp = DT_INST_PROP(id, autoinsert_eotp),				\
-		.phy_clock = DT_INST_PROP(id, phy_clock),					\
-	};											\
-	static struct display_mcux_mipi_dsi_data display_mcux_mipi_dsi_data_##id;		\
-	DEVICE_DT_INST_DEFINE(id,								\
-			    &display_mcux_mipi_dsi_init,					\
-			    NULL,								\
-			    &display_mcux_mipi_dsi_data_##id,					\
-			    &display_mcux_mipi_dsi_config_##id,					\
-			    POST_KERNEL,							\
-			    CONFIG_MIPI_DSI_INIT_PRIORITY,					\
-			    &dsi_mcux_api);
+#define MCUX_MIPI_DSI_DEVICE(id)                                                                   \
+	static const struct display_mcux_mipi_dsi_config display_mcux_mipi_dsi_config_##id = {     \
+		.base =                                                                            \
+			{                                                                          \
+				.host = (DSI_HOST_Type *)DT_INST_REG_ADDR_BY_IDX(id, 0),           \
+				.dpi = (DSI_HOST_DPI_INTFC_Type *)DT_INST_REG_ADDR_BY_IDX(id, 1),  \
+				.apb = (DSI_HOST_APB_PKT_IF_Type *)DT_INST_REG_ADDR_BY_IDX(id, 2), \
+				.dphy = (DSI_HOST_NXP_FDSOI28_DPHY_INTFC_Type *)                   \
+					DT_INST_REG_ADDR_BY_IDX(id, 3),                            \
+			},                                                                         \
+		MCUX_DSI_DPI_CONFIG(id).auto_insert_eotp = DT_INST_PROP(id, autoinsert_eotp),      \
+		.phy_clock = DT_INST_PROP(id, phy_clock),                                          \
+	};                                                                                         \
+	static struct display_mcux_mipi_dsi_data display_mcux_mipi_dsi_data_##id;                  \
+	DEVICE_DT_INST_DEFINE(id, &display_mcux_mipi_dsi_init, NULL,                               \
+			      &display_mcux_mipi_dsi_data_##id,                                    \
+			      &display_mcux_mipi_dsi_config_##id, POST_KERNEL,                     \
+			      CONFIG_MIPI_DSI_INIT_PRIORITY, &dsi_mcux_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_MIPI_DSI_DEVICE)

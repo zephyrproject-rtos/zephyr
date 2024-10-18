@@ -17,8 +17,7 @@
 
 LOG_MODULE_DECLARE(HMC5883L, CONFIG_SENSOR_LOG_LEVEL);
 
-int hmc5883l_trigger_set(const struct device *dev,
-			 const struct sensor_trigger *trig,
+int hmc5883l_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			 sensor_trigger_handler_t handler)
 {
 	struct hmc5883l_data *drv_data = dev->data;
@@ -39,17 +38,15 @@ int hmc5883l_trigger_set(const struct device *dev,
 
 	drv_data->data_ready_trigger = trig;
 
-	gpio_pin_interrupt_configure_dt(&config->int_gpio,
-					GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 
 	return 0;
 }
 
-static void hmc5883l_gpio_callback(const struct device *dev,
-				   struct gpio_callback *cb, uint32_t pins)
+static void hmc5883l_gpio_callback(const struct device *dev, struct gpio_callback *cb,
+				   uint32_t pins)
 {
-	struct hmc5883l_data *drv_data =
-		CONTAINER_OF(cb, struct hmc5883l_data, gpio_cb);
+	struct hmc5883l_data *drv_data = CONTAINER_OF(cb, struct hmc5883l_data, gpio_cb);
 	const struct hmc5883l_config *config = drv_data->dev->config;
 
 	ARG_UNUSED(pins);
@@ -69,12 +66,10 @@ static void hmc5883l_thread_cb(const struct device *dev)
 	const struct hmc5883l_config *config = dev->config;
 
 	if (drv_data->data_ready_handler != NULL) {
-		drv_data->data_ready_handler(dev,
-					     drv_data->data_ready_trigger);
+		drv_data->data_ready_handler(dev, drv_data->data_ready_trigger);
 	}
 
-	gpio_pin_interrupt_configure_dt(&config->int_gpio,
-					GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
 #ifdef CONFIG_HMC5883L_TRIGGER_OWN_THREAD
@@ -95,8 +90,7 @@ static void hmc5883l_thread(void *p1, void *p2, void *p3)
 #ifdef CONFIG_HMC5883L_TRIGGER_GLOBAL_THREAD
 static void hmc5883l_work_cb(struct k_work *work)
 {
-	struct hmc5883l_data *drv_data =
-		CONTAINER_OF(work, struct hmc5883l_data, work);
+	struct hmc5883l_data *drv_data = CONTAINER_OF(work, struct hmc5883l_data, work);
 
 	hmc5883l_thread_cb(drv_data->dev);
 }
@@ -114,8 +108,7 @@ int hmc5883l_init_interrupt(const struct device *dev)
 
 	gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 
-	gpio_init_callback(&drv_data->gpio_cb, hmc5883l_gpio_callback,
-			   BIT(config->int_gpio.pin));
+	gpio_init_callback(&drv_data->gpio_cb, hmc5883l_gpio_callback, BIT(config->int_gpio.pin));
 
 	if (gpio_add_callback(config->int_gpio.port, &drv_data->gpio_cb) < 0) {
 		LOG_ERR("Failed to set gpio callback.");
@@ -128,17 +121,13 @@ int hmc5883l_init_interrupt(const struct device *dev)
 	k_sem_init(&drv_data->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
-			CONFIG_HMC5883L_THREAD_STACK_SIZE,
-			hmc5883l_thread,
-			drv_data, NULL, NULL,
-			K_PRIO_COOP(CONFIG_HMC5883L_THREAD_PRIORITY),
-			0, K_NO_WAIT);
+			CONFIG_HMC5883L_THREAD_STACK_SIZE, hmc5883l_thread, drv_data, NULL, NULL,
+			K_PRIO_COOP(CONFIG_HMC5883L_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_HMC5883L_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = hmc5883l_work_cb;
 #endif
 
-	gpio_pin_interrupt_configure_dt(&config->int_gpio,
-					GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 
 	return 0;
 }

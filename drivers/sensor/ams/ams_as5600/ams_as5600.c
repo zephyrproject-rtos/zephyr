@@ -17,9 +17,9 @@
 LOG_MODULE_REGISTER(ams_as5600, CONFIG_SENSOR_LOG_LEVEL);
 
 #define AS5600_ANGLE_REGISTER_H 0x0E
-#define AS5600_FULL_ANGLE		360
-#define AS5600_PULSES_PER_REV	4096
-#define AS5600_MILLION_UNIT	1000000
+#define AS5600_FULL_ANGLE       360
+#define AS5600_PULSES_PER_REV   4096
+#define AS5600_MILLION_UNIT     1000000
 
 struct as5600_dev_cfg {
 	struct i2c_dt_spec i2c_port;
@@ -38,11 +38,8 @@ static int as5600_fetch(const struct device *dev, enum sensor_channel chan)
 	uint8_t read_data[2] = {0, 0};
 	uint8_t angle_reg = AS5600_ANGLE_REGISTER_H;
 
-	int err = i2c_write_read_dt(&dev_cfg->i2c_port,
-						&angle_reg,
-						1,
-						&read_data,
-						sizeof(read_data));
+	int err =
+		i2c_write_read_dt(&dev_cfg->i2c_port, &angle_reg, 1, &read_data, sizeof(read_data));
 
 	/* invalid readings preserves the last good value */
 	if (!err) {
@@ -52,17 +49,17 @@ static int as5600_fetch(const struct device *dev, enum sensor_channel chan)
 	return err;
 }
 
-static int as5600_get(const struct device *dev, enum sensor_channel chan,
-			struct sensor_value *val)
+static int as5600_get(const struct device *dev, enum sensor_channel chan, struct sensor_value *val)
 {
 	struct as5600_dev_data *dev_data = dev->data;
 
 	if (chan == SENSOR_CHAN_ROTATION) {
-		val->val1 = ((int32_t)dev_data->position * AS5600_FULL_ANGLE) /
-							AS5600_PULSES_PER_REV;
+		val->val1 =
+			((int32_t)dev_data->position * AS5600_FULL_ANGLE) / AS5600_PULSES_PER_REV;
 
 		val->val2 = (((int32_t)dev_data->position * AS5600_FULL_ANGLE) %
-			     AS5600_PULSES_PER_REV) * (AS5600_MILLION_UNIT / AS5600_PULSES_PER_REV);
+			     AS5600_PULSES_PER_REV) *
+			    (AS5600_MILLION_UNIT / AS5600_PULSES_PER_REV);
 	} else {
 		return -ENOTSUP;
 	}
@@ -86,15 +83,12 @@ static const struct sensor_driver_api as5600_driver_api = {
 	.channel_get = as5600_get,
 };
 
-#define AS5600_INIT(n)						\
-	static struct as5600_dev_data as5600_data##n;		\
-	static const struct as5600_dev_cfg as5600_cfg##n = {\
-		.i2c_port = I2C_DT_SPEC_INST_GET(n)	\
-	};	\
-									\
-	SENSOR_DEVICE_DT_INST_DEFINE(n, as5600_initialize, NULL,	\
-			    &as5600_data##n, &as5600_cfg##n, \
-			    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,	\
-			    &as5600_driver_api);
+#define AS5600_INIT(n)                                                                             \
+	static struct as5600_dev_data as5600_data##n;                                              \
+	static const struct as5600_dev_cfg as5600_cfg##n = {.i2c_port = I2C_DT_SPEC_INST_GET(n)};  \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, as5600_initialize, NULL, &as5600_data##n, &as5600_cfg##n,  \
+				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,                     \
+				     &as5600_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AS5600_INIT)

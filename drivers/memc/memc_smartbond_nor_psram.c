@@ -17,35 +17,30 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(smartbond_nor_psram, CONFIG_MEMC_LOG_LEVEL);
 
-#define CLK_AMBA_REG_SET_FIELD(_field, _var, _val)	\
-	((_var)) =	\
-	((_var) & ~(CRG_TOP_CLK_AMBA_REG_ ## _field ## _Msk)) |	\
-	(((_val) << CRG_TOP_CLK_AMBA_REG_ ## _field ## _Pos) &	\
-	CRG_TOP_CLK_AMBA_REG_ ## _field ## _Msk)
+#define CLK_AMBA_REG_SET_FIELD(_field, _var, _val)                                                 \
+	((_var)) = ((_var) & ~(CRG_TOP_CLK_AMBA_REG_##_field##_Msk)) |                             \
+		   (((_val) << CRG_TOP_CLK_AMBA_REG_##_field##_Pos) &                              \
+		    CRG_TOP_CLK_AMBA_REG_##_field##_Msk)
 
-#define QSPIC2_CTRLMODE_REG_SET_FIELD(_field, _var, _val)	\
-	((_var)) = \
-	((_var) & ~(QSPIC2_QSPIC2_CTRLMODE_REG_ ## _field ## _Msk)) |	\
-	(((_val) << QSPIC2_QSPIC2_CTRLMODE_REG_ ## _field ## _Pos) &	\
-	QSPIC2_QSPIC2_CTRLMODE_REG_ ## _field ## _Msk)
+#define QSPIC2_CTRLMODE_REG_SET_FIELD(_field, _var, _val)                                          \
+	((_var)) = ((_var) & ~(QSPIC2_QSPIC2_CTRLMODE_REG_##_field##_Msk)) |                       \
+		   (((_val) << QSPIC2_QSPIC2_CTRLMODE_REG_##_field##_Pos) &                        \
+		    QSPIC2_QSPIC2_CTRLMODE_REG_##_field##_Msk)
 
-#define QSPIC2_BURSTCMDA_REG_SET_FIELD(_field, _var, _val)	\
-	((_var)) =	\
-	((_var) & ~(QSPIC2_QSPIC2_BURSTCMDA_REG_ ## _field ## _Msk)) |	\
-	(((_val) << QSPIC2_QSPIC2_BURSTCMDA_REG_ ## _field ## _Pos) &	\
-	QSPIC2_QSPIC2_BURSTCMDA_REG_ ## _field ## _Msk)
+#define QSPIC2_BURSTCMDA_REG_SET_FIELD(_field, _var, _val)                                         \
+	((_var)) = ((_var) & ~(QSPIC2_QSPIC2_BURSTCMDA_REG_##_field##_Msk)) |                      \
+		   (((_val) << QSPIC2_QSPIC2_BURSTCMDA_REG_##_field##_Pos) &                       \
+		    QSPIC2_QSPIC2_BURSTCMDA_REG_##_field##_Msk)
 
-#define QSPIC2_BURSTCMDB_REG_SET_FIELD(_field, _var, _val)	\
-	((_var)) = \
-	((_var) & ~(QSPIC2_QSPIC2_BURSTCMDB_REG_ ## _field ## _Msk)) |	\
-	(((_val) << QSPIC2_QSPIC2_BURSTCMDB_REG_ ## _field ## _Pos) &	\
-	QSPIC2_QSPIC2_BURSTCMDB_REG_ ## _field ## _Msk)
+#define QSPIC2_BURSTCMDB_REG_SET_FIELD(_field, _var, _val)                                         \
+	((_var)) = ((_var) & ~(QSPIC2_QSPIC2_BURSTCMDB_REG_##_field##_Msk)) |                      \
+		   (((_val) << QSPIC2_QSPIC2_BURSTCMDB_REG_##_field##_Pos) &                       \
+		    QSPIC2_QSPIC2_BURSTCMDB_REG_##_field##_Msk)
 
-#define QSPIC2_AWRITECMD_REG_SET_FIELD(_field, _var, _val)	\
-	((_var)) = \
-	((_var) & ~(QSPIC2_QSPIC2_AWRITECMD_REG_ ## _field ## _Msk)) |	\
-	(((_val) << QSPIC2_QSPIC2_AWRITECMD_REG_ ## _field ## _Pos) &	\
-	QSPIC2_QSPIC2_AWRITECMD_REG_ ## _field ## _Msk)
+#define QSPIC2_AWRITECMD_REG_SET_FIELD(_field, _var, _val)                                         \
+	((_var)) = ((_var) & ~(QSPIC2_QSPIC2_AWRITECMD_REG_##_field##_Msk)) |                      \
+		   (((_val) << QSPIC2_QSPIC2_AWRITECMD_REG_##_field##_Pos) &                       \
+		    QSPIC2_QSPIC2_AWRITECMD_REG_##_field##_Msk)
 
 static void memc_set_status(bool status, int clk_div)
 {
@@ -72,53 +67,37 @@ static void memc_automode_configure(void)
 	uint32_t reg;
 
 	reg = QSPIC2->QSPIC2_CTRLMODE_REG;
-	QSPIC2_CTRLMODE_REG_SET_FIELD(QSPIC_SRAM_EN, reg,
-						DT_INST_PROP(0, is_ram));
-	QSPIC2_CTRLMODE_REG_SET_FIELD(QSPIC_USE_32BA, reg,
-						DT_INST_ENUM_IDX(0, addr_range));
-	QSPIC2_CTRLMODE_REG_SET_FIELD(QSPIC_CLK_MD, reg,
-						DT_INST_ENUM_IDX(0, clock_mode));
+	QSPIC2_CTRLMODE_REG_SET_FIELD(QSPIC_SRAM_EN, reg, DT_INST_PROP(0, is_ram));
+	QSPIC2_CTRLMODE_REG_SET_FIELD(QSPIC_USE_32BA, reg, DT_INST_ENUM_IDX(0, addr_range));
+	QSPIC2_CTRLMODE_REG_SET_FIELD(QSPIC_CLK_MD, reg, DT_INST_ENUM_IDX(0, clock_mode));
 	QSPIC2_CTRLMODE_REG_SET_FIELD(QSPIC_AUTO_MD, reg, 1);
 	QSPIC2->QSPIC2_CTRLMODE_REG = reg;
 
 	reg = QSPIC2->QSPIC2_BURSTCMDA_REG;
-	QSPIC2_BURSTCMDA_REG_SET_FIELD(QSPIC_DMY_TX_MD, reg,
-						DT_INST_ENUM_IDX(0, rx_dummy_mode));
-	QSPIC2_BURSTCMDA_REG_SET_FIELD(QSPIC_ADR_TX_MD, reg,
-						DT_INST_ENUM_IDX(0, rx_addr_mode));
-	QSPIC2_BURSTCMDA_REG_SET_FIELD(QSPIC_INST_TX_MD, reg,
-						DT_INST_ENUM_IDX(0, rx_inst_mode));
-	#if DT_INST_PROP(0, extra_byte_enable)
-	QSPIC2_BURSTCMDA_REG_SET_FIELD(QSPIC_EXT_TX_MD, reg,
-						DT_INST_ENUM_IDX(0, rx_extra_mode));
-	#endif
-	QSPIC2_BURSTCMDA_REG_SET_FIELD(QSPIC_INST, reg,
-						DT_INST_PROP(0, read_cmd));
-	#if DT_INST_PROP(0, extra_byte_enable)
-	QSPIC2_BURSTCMDA_REG_SET_FIELD(QSPIC_EXT_BYTE, reg,
-						DT_INST_PROP(0, extra_byte));
-	#endif
+	QSPIC2_BURSTCMDA_REG_SET_FIELD(QSPIC_DMY_TX_MD, reg, DT_INST_ENUM_IDX(0, rx_dummy_mode));
+	QSPIC2_BURSTCMDA_REG_SET_FIELD(QSPIC_ADR_TX_MD, reg, DT_INST_ENUM_IDX(0, rx_addr_mode));
+	QSPIC2_BURSTCMDA_REG_SET_FIELD(QSPIC_INST_TX_MD, reg, DT_INST_ENUM_IDX(0, rx_inst_mode));
+#if DT_INST_PROP(0, extra_byte_enable)
+	QSPIC2_BURSTCMDA_REG_SET_FIELD(QSPIC_EXT_TX_MD, reg, DT_INST_ENUM_IDX(0, rx_extra_mode));
+#endif
+	QSPIC2_BURSTCMDA_REG_SET_FIELD(QSPIC_INST, reg, DT_INST_PROP(0, read_cmd));
+#if DT_INST_PROP(0, extra_byte_enable)
+	QSPIC2_BURSTCMDA_REG_SET_FIELD(QSPIC_EXT_BYTE, reg, DT_INST_PROP(0, extra_byte));
+#endif
 	QSPIC2->QSPIC2_BURSTCMDA_REG = reg;
 
 	reg = QSPIC2->QSPIC2_BURSTCMDB_REG;
-	QSPIC2_BURSTCMDB_REG_SET_FIELD(QSPIC_DMY_NUM, reg,
-						DT_INST_ENUM_IDX(0, dummy_bytes_count));
-	QSPIC2_BURSTCMDB_REG_SET_FIELD(QSPIC_DAT_RX_MD, reg,
-						DT_INST_ENUM_IDX(0, rx_data_mode));
+	QSPIC2_BURSTCMDB_REG_SET_FIELD(QSPIC_DMY_NUM, reg, DT_INST_ENUM_IDX(0, dummy_bytes_count));
+	QSPIC2_BURSTCMDB_REG_SET_FIELD(QSPIC_DAT_RX_MD, reg, DT_INST_ENUM_IDX(0, rx_data_mode));
 	QSPIC2_BURSTCMDB_REG_SET_FIELD(QSPIC_INST_MD, reg, 0);
-	QSPIC2_BURSTCMDB_REG_SET_FIELD(QSPIC_EXT_BYTE_EN, reg,
-						DT_INST_PROP(0, extra_byte_enable));
+	QSPIC2_BURSTCMDB_REG_SET_FIELD(QSPIC_EXT_BYTE_EN, reg, DT_INST_PROP(0, extra_byte_enable));
 	QSPIC2->QSPIC2_BURSTCMDB_REG = reg;
 
 	reg = QSPIC2->QSPIC2_AWRITECMD_REG;
-	QSPIC2_AWRITECMD_REG_SET_FIELD(QSPIC_WR_DAT_TX_MD, reg,
-						DT_INST_ENUM_IDX(0, tx_data_mode));
-	QSPIC2_AWRITECMD_REG_SET_FIELD(QSPIC_WR_ADR_TX_MD, reg,
-						DT_INST_ENUM_IDX(0, tx_addr_mode));
-	QSPIC2_AWRITECMD_REG_SET_FIELD(QSPIC_WR_INST_TX_MD, reg,
-						DT_INST_ENUM_IDX(0, tx_inst_mode));
-	QSPIC2_AWRITECMD_REG_SET_FIELD(QSPIC_WR_INST, reg,
-						DT_INST_PROP(0, write_cmd));
+	QSPIC2_AWRITECMD_REG_SET_FIELD(QSPIC_WR_DAT_TX_MD, reg, DT_INST_ENUM_IDX(0, tx_data_mode));
+	QSPIC2_AWRITECMD_REG_SET_FIELD(QSPIC_WR_ADR_TX_MD, reg, DT_INST_ENUM_IDX(0, tx_addr_mode));
+	QSPIC2_AWRITECMD_REG_SET_FIELD(QSPIC_WR_INST_TX_MD, reg, DT_INST_ENUM_IDX(0, tx_inst_mode));
+	QSPIC2_AWRITECMD_REG_SET_FIELD(QSPIC_WR_INST, reg, DT_INST_PROP(0, write_cmd));
 	QSPIC2->QSPIC2_AWRITECMD_REG = reg;
 }
 
@@ -149,7 +128,7 @@ static int memc_smartbond_init(const struct device *dev)
 	/* Apply the min. required settings before performing any transaction in manual mode. */
 	qspic_ctrlmode_reg = QSPIC2->QSPIC2_CTRLMODE_REG;
 	QSPIC2_CTRLMODE_REG_SET_FIELD(QSPIC_CLK_MD, qspic_ctrlmode_reg,
-			DT_INST_ENUM_IDX(0, clock_mode));
+				      DT_INST_ENUM_IDX(0, clock_mode));
 	QSPIC2_CTRLMODE_REG_SET_FIELD(QSPIC_AUTO_MD, qspic_ctrlmode_reg, 0);
 	QSPIC2->QSPIC2_CTRLMODE_REG = qspic_ctrlmode_reg;
 
@@ -228,15 +207,14 @@ static int memc_smartbond_pm_action(const struct device *dev, enum pm_device_act
 }
 #endif
 
-#define SMARTBOND_MEMC_INIT(inst)	\
-	BUILD_ASSERT(inst == 0, "multiple instances are not permitted");	\
-	BUILD_ASSERT(DT_INST_PROP(inst, is_ram),	\
-	"current driver version suports only PSRAM devices");	\
-			\
-	PM_DEVICE_DT_INST_DEFINE(inst, memc_smartbond_pm_action);	\
-			\
-	DEVICE_DT_INST_DEFINE(inst, memc_smartbond_init, PM_DEVICE_DT_INST_GET(inst),	\
-	NULL, NULL,	\
-	POST_KERNEL, CONFIG_MEMC_INIT_PRIORITY, NULL);
+#define SMARTBOND_MEMC_INIT(inst)                                                                  \
+	BUILD_ASSERT(inst == 0, "multiple instances are not permitted");                           \
+	BUILD_ASSERT(DT_INST_PROP(inst, is_ram),                                                   \
+		     "current driver version suports only PSRAM devices");                         \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(inst, memc_smartbond_pm_action);                                  \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, memc_smartbond_init, PM_DEVICE_DT_INST_GET(inst), NULL, NULL,  \
+			      POST_KERNEL, CONFIG_MEMC_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(SMARTBOND_MEMC_INIT)

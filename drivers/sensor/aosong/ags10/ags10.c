@@ -16,7 +16,7 @@
 
 LOG_MODULE_REGISTER(AGS10, CONFIG_SENSOR_LOG_LEVEL);
 
-#define AGS10_MAX_PAYLOAD_SIZE 5U	/* Payload will be max 4 bytes + CRC (datasheet 3.1) */
+#define AGS10_MAX_PAYLOAD_SIZE 5U /* Payload will be max 4 bytes + CRC (datasheet 3.1) */
 
 static int ags10_read(const struct device *dev, uint8_t cmd, uint8_t *data, uint8_t rx_bytes)
 {

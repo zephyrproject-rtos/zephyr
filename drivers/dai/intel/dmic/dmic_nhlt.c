@@ -23,8 +23,7 @@ extern struct dai_dmic_global_shared dai_dmic_global;
 /* Base addresses (in PDM scope) of 2ch PDM controllers and coefficient RAM. */
 static const uint32_t dmic_base[4] = {PDM0, PDM1, PDM2, PDM3};
 
-static inline void dai_dmic_write(const struct dai_intel_dmic *dmic,
-				  uint32_t reg, uint32_t val)
+static inline void dai_dmic_write(const struct dai_intel_dmic *dmic, uint32_t reg, uint32_t val)
 {
 	sys_write32(val, dmic->reg_base + reg);
 }
@@ -69,9 +68,8 @@ static void dai_dmic_write_coeff(const struct dai_intel_dmic *dmic, uint32_t bas
 		coeff_in_bytes = (const uint8_t *)coeff;
 
 		while (length--) {
-			coeff_val = coeff_in_bytes[0] +
-				(coeff_in_bytes[1] << 8) +
-				(coeff_in_bytes[2] << 16);
+			coeff_val = coeff_in_bytes[0] + (coeff_in_bytes[1] << 8) +
+				    (coeff_in_bytes[2] << 16);
 
 			dai_dmic_write(dmic, base, coeff_val);
 			base += sizeof(uint32_t);
@@ -87,9 +85,8 @@ static void dai_dmic_write_coeff(const struct dai_intel_dmic *dmic, uint32_t bas
  * @return Returns pointer right after coefficients data
  */
 static const uint32_t *dai_dmic_configure_coeff(const struct dai_intel_dmic *dmic,
-						const struct nhlt_pdm_ctrl_cfg * const pdm_cfg,
-						const uint32_t pdm_base,
-						const uint32_t *coeffs)
+						const struct nhlt_pdm_ctrl_cfg *const pdm_cfg,
+						const uint32_t pdm_base, const uint32_t *coeffs)
 {
 	int fir_length_a, fir_length_b;
 	bool packed = false;
@@ -137,8 +134,9 @@ static int dai_nhlt_get_clock_div(const struct dai_intel_dmic *dmic, const int p
 	val = dai_dmic_read(dmic, dmic_base[pdm] + MIC_CONTROL);
 	p_clkdiv = FIELD_GET(MIC_CONTROL_PDM_CLKDIV, val) + 2;
 
-	val = dai_dmic_read(dmic, dmic_base[pdm] +
-			    FIR_CHANNEL_REGS_SIZE * dmic->dai_config_params.dai_index + FIR_CONFIG);
+	val = dai_dmic_read(
+		dmic, dmic_base[pdm] + FIR_CHANNEL_REGS_SIZE * dmic->dai_config_params.dai_index +
+			      FIR_CONFIG);
 	LOG_INF("pdm = %d, FIR_CONFIG = 0x%08X", pdm, val);
 
 	p_mfir = FIELD_GET(FIR_CONFIG_FIR_DECIMATION, val) + 1;
@@ -164,21 +162,18 @@ static int dai_nhlt_update_rate(struct dai_intel_dmic *dmic, const int clock_sou
 		return rate_div;
 	}
 
-	dmic->dai_config_params.rate = adsp_clock_source_frequency(clock_source) /
-		rate_div;
+	dmic->dai_config_params.rate = adsp_clock_source_frequency(clock_source) / rate_div;
 
-	LOG_INF("rate = %d, channels = %d, format = %d",
-		dmic->dai_config_params.rate, dmic->dai_config_params.channels,
-		dmic->dai_config_params.format);
+	LOG_INF("rate = %d, channels = %d, format = %d", dmic->dai_config_params.rate,
+		dmic->dai_config_params.channels, dmic->dai_config_params.format);
 
 	LOG_INF("io_clk %u, rate_div %d", adsp_clock_source_frequency(clock_source), rate_div);
 	return 0;
 }
 
 #ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
-static int dai_ipm_source_to_enable(struct dai_intel_dmic *dmic,
-				    int *count, int pdm_count, int stereo,
-				    int source_pdm)
+static int dai_ipm_source_to_enable(struct dai_intel_dmic *dmic, int *count, int pdm_count,
+				    int stereo, int source_pdm)
 {
 	int mic_swap;
 
@@ -188,8 +183,8 @@ static int dai_ipm_source_to_enable(struct dai_intel_dmic *dmic,
 
 	if (*count < pdm_count) {
 		(*count)++;
-		mic_swap = FIELD_GET(MIC_CONTROL_CLK_EDGE, dai_dmic_read(
-						dmic, dmic_base[source_pdm] + MIC_CONTROL));
+		mic_swap = FIELD_GET(MIC_CONTROL_CLK_EDGE,
+				     dai_dmic_read(dmic, dmic_base[source_pdm] + MIC_CONTROL));
 		if (stereo) {
 			dmic->enable[source_pdm] = 0x3; /* PDMi MIC A and B */
 		} else {
@@ -208,8 +203,8 @@ static int dai_nhlt_dmic_dai_params_get(struct dai_intel_dmic *dmic, const int c
 	int num_pdm;
 	int ret;
 	int n;
-	uint32_t outcontrol_val = dai_dmic_read(dmic, dmic->dai_config_params.dai_index *
-						PDM_CHANNEL_REGS_SIZE + OUTCONTROL);
+	uint32_t outcontrol_val = dai_dmic_read(
+		dmic, dmic->dai_config_params.dai_index * PDM_CHANNEL_REGS_SIZE + OUTCONTROL);
 
 	switch (FIELD_GET(OUTCONTROL_OF, outcontrol_val)) {
 	case 0:
@@ -272,7 +267,6 @@ static int dai_nhlt_dmic_dai_params_get(struct dai_intel_dmic *dmic, const int c
 
 	return dai_nhlt_update_rate(dmic, clock_source, first_pdm);
 }
-
 
 /*
  * @brief Set clock source used by device
@@ -345,7 +339,7 @@ static int dai_nhlt_dmic_dai_params_get(struct dai_intel_dmic *dmic)
 	int mic_swap;
 
 	outcontrol = dai_dmic_read(dmic, dmic->dai_config_params.dai_index * PDM_CHANNEL_REGS_SIZE +
-				   OUTCONTROL);
+						 OUTCONTROL);
 
 	switch (FIELD_GET(OUTCONTROL_OF, outcontrol)) {
 	case 0:
@@ -360,13 +354,13 @@ static int dai_nhlt_dmic_dai_params_get(struct dai_intel_dmic *dmic)
 		return -EINVAL;
 	}
 
-	fir_control[0] = dai_dmic_read(dmic, dmic_base[0] +
-				       dmic->dai_config_params.dai_index * FIR_CHANNEL_REGS_SIZE +
-				       FIR_CONTROL);
+	fir_control[0] = dai_dmic_read(
+		dmic, dmic_base[0] + dmic->dai_config_params.dai_index * FIR_CHANNEL_REGS_SIZE +
+			      FIR_CONTROL);
 
-	fir_control[1] = dai_dmic_read(dmic, dmic_base[1] +
-				       dmic->dai_config_params.dai_index * FIR_CHANNEL_REGS_SIZE +
-				       FIR_CONTROL);
+	fir_control[1] = dai_dmic_read(
+		dmic, dmic_base[1] + dmic->dai_config_params.dai_index * FIR_CHANNEL_REGS_SIZE +
+			      FIR_CONTROL);
 
 	mic_control[0] = dai_dmic_read(dmic, dmic_base[0] + MIC_CONTROL);
 	mic_control[1] = dai_dmic_read(dmic, dmic_base[1] + MIC_CONTROL);
@@ -377,13 +371,13 @@ static int dai_nhlt_dmic_dai_params_get(struct dai_intel_dmic *dmic)
 		if (fir_stereo[0]) {
 			dmic->dai_config_params.channels = 2;
 			dmic->enable[0] = 0x3; /* PDM0 MIC A and B */
-			dmic->enable[1] = 0x0;	/* PDM1 none */
+			dmic->enable[1] = 0x0; /* PDM1 none */
 
 		} else {
 			dmic->dai_config_params.channels = 1;
 			mic_swap = FIELD_GET(MIC_CONTROL_CLK_EDGE, mic_control[0]);
 			dmic->enable[0] = mic_swap ? 0x2 : 0x1; /* PDM0 MIC B or MIC A */
-			dmic->enable[1] = 0x0;	/* PDM1 */
+			dmic->enable[1] = 0x0;                  /* PDM1 */
 		}
 		break;
 	case 1:
@@ -391,7 +385,7 @@ static int dai_nhlt_dmic_dai_params_get(struct dai_intel_dmic *dmic)
 		if (fir_stereo[1]) {
 			dmic->dai_config_params.channels = 2;
 			dmic->enable[0] = 0x0; /* PDM0 none */
-			dmic->enable[1] = 0x3;	/* PDM1 MIC A and B */
+			dmic->enable[1] = 0x3; /* PDM1 MIC A and B */
 		} else {
 			dmic->dai_config_params.channels = 1;
 			dmic->enable[0] = 0x0; /* PDM0 none */
@@ -405,7 +399,7 @@ static int dai_nhlt_dmic_dai_params_get(struct dai_intel_dmic *dmic)
 		if (fir_stereo[0] == fir_stereo[1]) {
 			dmic->dai_config_params.channels = 4;
 			dmic->enable[0] = 0x3; /* PDM0 MIC A and B */
-			dmic->enable[1] = 0x3;	/* PDM1 MIC A and B */
+			dmic->enable[1] = 0x3; /* PDM1 MIC A and B */
 			LOG_INF("set 4ch pdm0 and pdm1");
 		} else {
 			LOG_ERR("Illegal 4ch configuration");
@@ -459,18 +453,18 @@ static int print_outcontrol(uint32_t val)
 	LOG_INF("  ipms1=%d, ipms2=%d, ipms3=%d, ipms4=%d", bf9, bf10, bf11, bf12);
 	LOG_INF("  ipms_mode=%d", bf13);
 	ref = FIELD_PREP(OUTCONTROL_TIE, bf1) | FIELD_PREP(OUTCONTROL_SIP, bf2) |
-		FIELD_PREP(OUTCONTROL_FINIT, bf3) | FIELD_PREP(OUTCONTROL_FCI, bf4) |
-		FIELD_PREP(OUTCONTROL_BFTH, bf5) | FIELD_PREP(OUTCONTROL_OF, bf6) |
-		FIELD_PREP(OUTCONTROL_IPM, bf7) | FIELD_PREP(OUTCONTROL_IPM_SOURCE_1, bf9) |
-		FIELD_PREP(OUTCONTROL_IPM_SOURCE_2, bf10) |
-		FIELD_PREP(OUTCONTROL_IPM_SOURCE_3, bf11) |
-		FIELD_PREP(OUTCONTROL_IPM_SOURCE_4, bf12) | FIELD_PREP(OUTCONTROL_TH, bf8) |
-		FIELD_PREP(OUTCONTROL_IPM_SOURCE_MODE, bf13);
+	      FIELD_PREP(OUTCONTROL_FINIT, bf3) | FIELD_PREP(OUTCONTROL_FCI, bf4) |
+	      FIELD_PREP(OUTCONTROL_BFTH, bf5) | FIELD_PREP(OUTCONTROL_OF, bf6) |
+	      FIELD_PREP(OUTCONTROL_IPM, bf7) | FIELD_PREP(OUTCONTROL_IPM_SOURCE_1, bf9) |
+	      FIELD_PREP(OUTCONTROL_IPM_SOURCE_2, bf10) |
+	      FIELD_PREP(OUTCONTROL_IPM_SOURCE_3, bf11) |
+	      FIELD_PREP(OUTCONTROL_IPM_SOURCE_4, bf12) | FIELD_PREP(OUTCONTROL_TH, bf8) |
+	      FIELD_PREP(OUTCONTROL_IPM_SOURCE_MODE, bf13);
 #else
 	ref = FIELD_PREP(OUTCONTROL_TIE, bf1) | FIELD_PREP(OUTCONTROL_SIP, bf2) |
-		FIELD_PREP(OUTCONTROL_FINIT, bf3) | FIELD_PREP(OUTCONTROL_FCI, bf4) |
-		FIELD_PREP(OUTCONTROL_BFTH, bf5) | FIELD_PREP(OUTCONTROL_OF, bf6) |
-		FIELD_PREP(OUTCONTROL_IPM, bf7) | FIELD_PREP(OUTCONTROL_TH, bf8);
+	      FIELD_PREP(OUTCONTROL_FINIT, bf3) | FIELD_PREP(OUTCONTROL_FCI, bf4) |
+	      FIELD_PREP(OUTCONTROL_BFTH, bf5) | FIELD_PREP(OUTCONTROL_OF, bf6) |
+	      FIELD_PREP(OUTCONTROL_IPM, bf7) | FIELD_PREP(OUTCONTROL_TH, bf8);
 #endif
 	if (ref != val) {
 		LOG_WRN("Some reserved bits are set in OUTCONTROL = 0x%08x", val);
@@ -496,18 +490,14 @@ static void print_cic_control(uint32_t val)
 	bf7 = -1;
 #endif
 	LOG_DBG("CIC_CONTROL = %08x", val);
-	LOG_DBG("  soft_reset=%d, cic_start_b=%d, cic_start_a=%d",
-		bf1, bf2, bf3);
-	LOG_DBG("  mic_b_polarity=%d, mic_a_polarity=%d, mic_mute=%d",
-		bf4, bf5, bf6);
-	ref = FIELD_PREP(CIC_CONTROL_SOFT_RESET, bf1) |
-		FIELD_PREP(CIC_CONTROL_CIC_START_B, bf2) |
-		FIELD_PREP(CIC_CONTROL_CIC_START_A, bf3) |
-		FIELD_PREP(CIC_CONTROL_MIC_B_POLARITY, bf4) |
-		FIELD_PREP(CIC_CONTROL_MIC_A_POLARITY, bf5) |
-		FIELD_PREP(CIC_CONTROL_MIC_MUTE, bf6)
+	LOG_DBG("  soft_reset=%d, cic_start_b=%d, cic_start_a=%d", bf1, bf2, bf3);
+	LOG_DBG("  mic_b_polarity=%d, mic_a_polarity=%d, mic_mute=%d", bf4, bf5, bf6);
+	ref = FIELD_PREP(CIC_CONTROL_SOFT_RESET, bf1) | FIELD_PREP(CIC_CONTROL_CIC_START_B, bf2) |
+	      FIELD_PREP(CIC_CONTROL_CIC_START_A, bf3) |
+	      FIELD_PREP(CIC_CONTROL_MIC_B_POLARITY, bf4) |
+	      FIELD_PREP(CIC_CONTROL_MIC_A_POLARITY, bf5) | FIELD_PREP(CIC_CONTROL_MIC_MUTE, bf6)
 #ifndef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
-		| FIELD_PREP(CIC_CONTROL_STEREO_MODE, bf7)
+	      | FIELD_PREP(CIC_CONTROL_STEREO_MODE, bf7)
 #endif
 		;
 	LOG_DBG("  stereo_mode=%d", bf7);
@@ -532,17 +522,14 @@ static void print_fir_control(uint32_t val)
 	bf5 = FIELD_GET(FIR_CONTROL_MUTE, val);
 	bf6 = FIELD_GET(FIR_CONTROL_STEREO, val);
 	LOG_DBG("FIR_CONTROL = %08x", val);
-	LOG_DBG("  start=%d, array_start_en=%d, periodic_start_en=%d",
-		bf1, bf2, bf3);
+	LOG_DBG("  start=%d, array_start_en=%d, periodic_start_en=%d", bf1, bf2, bf3);
 	LOG_DBG("  dccomp=%d, mute=%d, stereo=%d", bf4, bf5, bf6);
-	ref = FIELD_PREP(FIR_CONTROL_START, bf1) |
-		FIELD_PREP(FIR_CONTROL_ARRAY_START_EN, bf2) |
+	ref = FIELD_PREP(FIR_CONTROL_START, bf1) | FIELD_PREP(FIR_CONTROL_ARRAY_START_EN, bf2) |
 #ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
-		FIELD_PREP(FIR_CONTROL_PERIODIC_START_EN, bf3) |
+	      FIELD_PREP(FIR_CONTROL_PERIODIC_START_EN, bf3) |
 #endif
-		FIELD_PREP(FIR_CONTROL_DCCOMP, bf4) |
-		FIELD_PREP(FIR_CONTROL_MUTE, bf5) |
-		FIELD_PREP(FIR_CONTROL_STEREO, bf6);
+	      FIELD_PREP(FIR_CONTROL_DCCOMP, bf4) | FIELD_PREP(FIR_CONTROL_MUTE, bf5) |
+	      FIELD_PREP(FIR_CONTROL_STEREO, bf6);
 
 	if (ref != val) {
 		LOG_WRN("Some reserved bits are set in FIR_CONTROL = 0x%08x", val);
@@ -588,8 +575,8 @@ static void print_fir_config(const struct nhlt_pdm_ctrl_fir_cfg *fir_cfg)
 	fir_decimation = FIELD_GET(FIR_CONFIG_FIR_DECIMATION, val);
 	fir_shift = FIELD_GET(FIR_CONFIG_FIR_SHIFT, val);
 	LOG_DBG("FIR_CONFIG = %08x", val);
-	LOG_DBG("  fir_decimation=%d, fir_shift=%d, fir_length=%d",
-		fir_decimation, fir_shift, fir_length);
+	LOG_DBG("  fir_decimation=%d, fir_shift=%d, fir_length=%d", fir_decimation, fir_shift,
+		fir_length);
 
 	print_fir_control(fir_cfg->fir_control);
 
@@ -649,11 +636,11 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 	const uint32_t *fir_coeffs;
 
 	/* Array of pointers to pdm coefficient data. Used to reuse coefficient from another pdm. */
-	const uint32_t *pdm_coeff_ptr[DMIC_HW_CONTROLLERS_MAX] = { 0 };
+	const uint32_t *pdm_coeff_ptr[DMIC_HW_CONTROLLERS_MAX] = {0};
 
 	if (dmic->dai_config_params.dai_index >= DMIC_HW_FIFOS_MAX) {
 		LOG_ERR("dmic_set_config_nhlt(): illegal DAI index %d",
-			 dmic->dai_config_params.dai_index);
+			dmic->dai_config_params.dai_index);
 		return -EINVAL;
 	}
 
@@ -698,10 +685,12 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 			 */
 			/* Clear TIE, SIP, FCI, set FINIT, the rest of bits as such */
 			outcontrol = (val & ~(OUTCONTROL_TIE | OUTCONTROL_SIP | OUTCONTROL_FCI)) |
-				OUTCONTROL_FINIT;
+				     OUTCONTROL_FINIT;
 
-			dai_dmic_write(dmic, dmic->dai_config_params.dai_index *
-				       PDM_CHANNEL_REGS_SIZE + OUTCONTROL, outcontrol);
+			dai_dmic_write(dmic,
+				       dmic->dai_config_params.dai_index * PDM_CHANNEL_REGS_SIZE +
+					       OUTCONTROL,
+				       outcontrol);
 
 			LOG_INF("OUTCONTROL%d = %08x", dmic->dai_config_params.dai_index,
 				outcontrol);
@@ -762,10 +751,9 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 			LOG_DBG("dmic_set_config_nhlt(): MIC_CONTROL = %08x", val);
 		}
 
-		configure_fir(dmic, pdm_base +
-			      FIR_CHANNEL_REGS_SIZE * dmic->dai_config_params.dai_index,
+		configure_fir(dmic,
+			      pdm_base + FIR_CHANNEL_REGS_SIZE * dmic->dai_config_params.dai_index,
 			      &pdm_cfg->fir_config[dmic->dai_config_params.dai_index]);
-
 
 		/* Configure fir coefficients */
 
@@ -811,7 +799,6 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 		return ret;
 	}
 
-	LOG_INF("dmic_set_config_nhlt(): enable0 %u, enable1 %u",
-		dmic->enable[0], dmic->enable[1]);
+	LOG_INF("dmic_set_config_nhlt(): enable0 %u, enable1 %u", dmic->enable[0], dmic->enable[1]);
 	return 0;
 }

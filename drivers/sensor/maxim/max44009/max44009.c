@@ -16,8 +16,7 @@
 
 LOG_MODULE_REGISTER(MAX44009, CONFIG_SENSOR_LOG_LEVEL);
 
-static int max44009_reg_read(const struct device *dev, uint8_t reg,
-			     uint8_t *val, bool send_stop)
+static int max44009_reg_read(const struct device *dev, uint8_t reg, uint8_t *val, bool send_stop)
 {
 	const struct max44009_config *config = dev->config;
 	struct i2c_msg msgs[2] = {
@@ -44,8 +43,7 @@ static int max44009_reg_read(const struct device *dev, uint8_t reg,
 	return 0;
 }
 
-static int max44009_reg_write(const struct device *dev, uint8_t reg,
-			      uint8_t val)
+static int max44009_reg_write(const struct device *dev, uint8_t reg, uint8_t val)
 {
 	const struct max44009_config *config = dev->config;
 	uint8_t tx_buf[2] = {reg, val};
@@ -53,8 +51,7 @@ static int max44009_reg_write(const struct device *dev, uint8_t reg,
 	return i2c_write_dt(&config->i2c, tx_buf, sizeof(tx_buf));
 }
 
-static int max44009_reg_update(const struct device *dev, uint8_t reg,
-			       uint8_t mask, uint8_t val)
+static int max44009_reg_update(const struct device *dev, uint8_t reg, uint8_t mask, uint8_t val)
 {
 	uint8_t old_val = 0U;
 	uint8_t new_val = 0U;
@@ -69,10 +66,8 @@ static int max44009_reg_update(const struct device *dev, uint8_t reg,
 	return max44009_reg_write(dev, reg, new_val);
 }
 
-static int max44009_attr_set(const struct device *dev,
-			     enum sensor_channel chan,
-			     enum sensor_attribute attr,
-			     const struct sensor_value *val)
+static int max44009_attr_set(const struct device *dev, enum sensor_channel chan,
+			     enum sensor_attribute attr, const struct sensor_value *val)
 {
 	uint8_t value;
 	uint32_t cr;
@@ -95,8 +90,7 @@ static int max44009_attr_set(const struct device *dev,
 			value = MAX44009_CONTINUOUS_SAMPLING;
 		}
 
-		if (max44009_reg_update(dev, MAX44009_REG_CONFIG,
-					MAX44009_SAMPLING_CONTROL_BIT,
+		if (max44009_reg_update(dev, MAX44009_REG_CONFIG, MAX44009_SAMPLING_CONTROL_BIT,
 					value) != 0) {
 			LOG_DBG("Failed to set attribute!");
 			return -EIO;
@@ -111,8 +105,7 @@ static int max44009_attr_set(const struct device *dev,
 	return 0;
 }
 
-static int max44009_sample_fetch(const struct device *dev,
-				 enum sensor_channel chan)
+static int max44009_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct max44009_data *drv_data = dev->data;
 	uint8_t val_h, val_l;
@@ -121,13 +114,11 @@ static int max44009_sample_fetch(const struct device *dev,
 
 	drv_data->sample = 0U;
 
-	if (max44009_reg_read(dev, MAX44009_REG_LUX_HIGH_BYTE, &val_h,
-			      false) != 0) {
+	if (max44009_reg_read(dev, MAX44009_REG_LUX_HIGH_BYTE, &val_h, false) != 0) {
 		return -EIO;
 	}
 
-	if (max44009_reg_read(dev, MAX44009_REG_LUX_LOW_BYTE, &val_l,
-			      true) != 0) {
+	if (max44009_reg_read(dev, MAX44009_REG_LUX_LOW_BYTE, &val_l, true) != 0) {
 		return -EIO;
 	}
 
@@ -137,8 +128,7 @@ static int max44009_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static int max44009_channel_get(const struct device *dev,
-				enum sensor_channel chan,
+static int max44009_channel_get(const struct device *dev, enum sensor_channel chan,
 				struct sensor_value *val)
 {
 	struct max44009_data *drv_data = dev->data;
@@ -183,15 +173,15 @@ int max44009_init(const struct device *dev)
 	return 0;
 }
 
-#define MAX44009_DEFINE(inst)									\
-	static struct max44009_data max44009_data_##inst;					\
-												\
-	static const struct max44009_config max44009_config_##inst = {				\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
-	};											\
-												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, max44009_init, NULL,					\
-			      &max44009_data_##inst, &max44009_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &max44009_driver_api);		\
+#define MAX44009_DEFINE(inst)                                                                      \
+	static struct max44009_data max44009_data_##inst;                                          \
+                                                                                                   \
+	static const struct max44009_config max44009_config_##inst = {                             \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+	};                                                                                         \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, max44009_init, NULL, &max44009_data_##inst,             \
+				     &max44009_config_##inst, POST_KERNEL,                         \
+				     CONFIG_SENSOR_INIT_PRIORITY, &max44009_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX44009_DEFINE)

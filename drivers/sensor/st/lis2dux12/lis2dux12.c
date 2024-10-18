@@ -41,7 +41,7 @@ static int lis2dux12_set_range(const struct device *dev, uint8_t range)
 	struct lis2dux12_data *data = dev->data;
 	const struct lis2dux12_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
-	lis2dux12_md_t val = { .odr = data->odr, .fs = range };
+	lis2dux12_md_t val = {.odr = data->odr, .fs = range};
 
 	err = lis2dux12_mode_set(ctx, &val);
 
@@ -71,18 +71,18 @@ static int lis2dux12_set_range(const struct device *dev, uint8_t range)
 	return 0;
 }
 
-#define FOREACH_ODR_ENUM(ODR_VAL)			\
-	ODR_VAL(LIS2DUX12_DT_ODR_OFF, 0.0f)		\
-	ODR_VAL(LIS2DUX12_DT_ODR_1Hz_ULP, 1.0f)		\
-	ODR_VAL(LIS2DUX12_DT_ODR_3Hz_ULP, 3.0f)		\
-	ODR_VAL(LIS2DUX12_DT_ODR_25Hz_ULP, 25.0f)	\
-	ODR_VAL(LIS2DUX12_DT_ODR_6Hz, 6.0f)		\
-	ODR_VAL(LIS2DUX12_DT_ODR_12Hz5, 12.50f)		\
-	ODR_VAL(LIS2DUX12_DT_ODR_25Hz, 25.0f)		\
-	ODR_VAL(LIS2DUX12_DT_ODR_50Hz, 50.0f)		\
-	ODR_VAL(LIS2DUX12_DT_ODR_100Hz, 100.0f)		\
-	ODR_VAL(LIS2DUX12_DT_ODR_200Hz, 200.0f)		\
-	ODR_VAL(LIS2DUX12_DT_ODR_400Hz, 400.0f)		\
+#define FOREACH_ODR_ENUM(ODR_VAL)                                                                  \
+	ODR_VAL(LIS2DUX12_DT_ODR_OFF, 0.0f)                                                        \
+	ODR_VAL(LIS2DUX12_DT_ODR_1Hz_ULP, 1.0f)                                                    \
+	ODR_VAL(LIS2DUX12_DT_ODR_3Hz_ULP, 3.0f)                                                    \
+	ODR_VAL(LIS2DUX12_DT_ODR_25Hz_ULP, 25.0f)                                                  \
+	ODR_VAL(LIS2DUX12_DT_ODR_6Hz, 6.0f)                                                        \
+	ODR_VAL(LIS2DUX12_DT_ODR_12Hz5, 12.50f)                                                    \
+	ODR_VAL(LIS2DUX12_DT_ODR_25Hz, 25.0f)                                                      \
+	ODR_VAL(LIS2DUX12_DT_ODR_50Hz, 50.0f)                                                      \
+	ODR_VAL(LIS2DUX12_DT_ODR_100Hz, 100.0f)                                                    \
+	ODR_VAL(LIS2DUX12_DT_ODR_200Hz, 200.0f)                                                    \
+	ODR_VAL(LIS2DUX12_DT_ODR_400Hz, 400.0f)                                                    \
 	ODR_VAL(LIS2DUX12_DT_ODR_800Hz, 800.0f)
 
 #define GENERATE_VAL(ENUM, VAL) VAL,
@@ -378,9 +378,9 @@ static int lis2dux12_init(const struct device *dev)
  * LIS2DUX12_DEFINE_I2C().
  */
 
-#define LIS2DUX12_DEVICE_INIT(inst)								\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, lis2dux12_init, NULL, &lis2dux12_data_##inst,	\
-				     &lis2dux12_config_##inst, POST_KERNEL,			\
+#define LIS2DUX12_DEVICE_INIT(inst)                                                                \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, lis2dux12_init, NULL, &lis2dux12_data_##inst,           \
+				     &lis2dux12_config_##inst, POST_KERNEL,                        \
 				     CONFIG_SENSOR_INIT_PRIORITY, &lis2dux12_driver_api);
 
 /*
@@ -389,59 +389,55 @@ static int lis2dux12_init(const struct device *dev)
 
 #ifdef CONFIG_LIS2DUX12_TRIGGER
 #define LIS2DUX12_CFG_IRQ(inst)                                                                    \
-	.trig_enabled = true,                                                                      \
-	.int1_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, {0}),                              \
+	.trig_enabled = true, .int1_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, {0}),        \
 	.int2_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int2_gpios, {0}),                              \
 	.drdy_pin = DT_INST_PROP(inst, drdy_pin),
 #else
 #define LIS2DUX12_CFG_IRQ(inst)
 #endif /* CONFIG_LIS2DUX12_TRIGGER */
 
-#define LIS2DUX12_SPI_OPERATION								\
+#define LIS2DUX12_SPI_OPERATION                                                                    \
 	(SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA)
 
-#define LIS2DUX12_CONFIG_SPI(inst)							\
-	{										\
-		STMEMSC_CTX_SPI(&lis2dux12_config_##inst.stmemsc_cfg),			\
-		.stmemsc_cfg = {							\
-			.spi = SPI_DT_SPEC_INST_GET(inst, LIS2DUX12_SPI_OPERATION, 0),	\
-		},									\
-		.range = DT_INST_PROP(inst, range),					\
-		.pm = DT_INST_PROP(inst, power_mode),					\
-		.odr = DT_INST_PROP(inst, odr),						\
-		IF_ENABLED(UTIL_OR(DT_INST_NODE_HAS_PROP(inst, int1_gpios),		\
+#define LIS2DUX12_CONFIG_SPI(inst)                                                                 \
+	{STMEMSC_CTX_SPI(&lis2dux12_config_##inst.stmemsc_cfg),                                    \
+	 .stmemsc_cfg =                                                                            \
+		 {                                                                                 \
+			 .spi = SPI_DT_SPEC_INST_GET(inst, LIS2DUX12_SPI_OPERATION, 0),            \
+		 },                                                                                \
+	 .range = DT_INST_PROP(inst, range),                                                       \
+	 .pm = DT_INST_PROP(inst, power_mode),                                                     \
+	 .odr = DT_INST_PROP(inst, odr),                                                           \
+	 IF_ENABLED(UTIL_OR(DT_INST_NODE_HAS_PROP(inst, int1_gpios),		\
 				   DT_INST_NODE_HAS_PROP(inst, int2_gpios)),		\
-			   (LIS2DUX12_CFG_IRQ(inst)))					\
-	}
+			   (LIS2DUX12_CFG_IRQ(inst))) }
 
 /*
  * Instantiation macros used when a device is on an I2C bus.
  */
 
-#define LIS2DUX12_CONFIG_I2C(inst)							\
-	{										\
-		STMEMSC_CTX_I2C(&lis2dux12_config_##inst.stmemsc_cfg),			\
-		.stmemsc_cfg = {							\
-			.i2c = I2C_DT_SPEC_INST_GET(inst),				\
-		},									\
-		.range = DT_INST_PROP(inst, range),					\
-		.pm = DT_INST_PROP(inst, power_mode),					\
-		.odr = DT_INST_PROP(inst, odr),						\
-		IF_ENABLED(UTIL_OR(DT_INST_NODE_HAS_PROP(inst, int1_gpios),		\
+#define LIS2DUX12_CONFIG_I2C(inst)                                                                 \
+	{STMEMSC_CTX_I2C(&lis2dux12_config_##inst.stmemsc_cfg),                                    \
+	 .stmemsc_cfg =                                                                            \
+		 {                                                                                 \
+			 .i2c = I2C_DT_SPEC_INST_GET(inst),                                        \
+		 },                                                                                \
+	 .range = DT_INST_PROP(inst, range),                                                       \
+	 .pm = DT_INST_PROP(inst, power_mode),                                                     \
+	 .odr = DT_INST_PROP(inst, odr),                                                           \
+	 IF_ENABLED(UTIL_OR(DT_INST_NODE_HAS_PROP(inst, int1_gpios),		\
 				   DT_INST_NODE_HAS_PROP(inst, int2_gpios)),		\
-			   (LIS2DUX12_CFG_IRQ(inst)))					\
-	}
+			   (LIS2DUX12_CFG_IRQ(inst))) }
 
 /*
  * Main instantiation macro. Use of COND_CODE_1() selects the right
  * bus-specific macro at preprocessor time.
  */
 
-#define LIS2DUX12_DEFINE(inst)								\
-	static struct lis2dux12_data lis2dux12_data_##inst;				\
-	static const struct lis2dux12_config lis2dux12_config_##inst =			\
-		COND_CODE_1(DT_INST_ON_BUS(inst, spi), (LIS2DUX12_CONFIG_SPI(inst)),	\
-			    (LIS2DUX12_CONFIG_I2C(inst)));				\
+#define LIS2DUX12_DEFINE(inst)                                                                     \
+	static struct lis2dux12_data lis2dux12_data_##inst;                                        \
+	static const struct lis2dux12_config lis2dux12_config_##inst = COND_CODE_1(DT_INST_ON_BUS(inst, spi), (LIS2DUX12_CONFIG_SPI(inst)),	\
+			    (LIS2DUX12_CONFIG_I2C(inst)));              \
 	LIS2DUX12_DEVICE_INIT(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(LIS2DUX12_DEFINE)

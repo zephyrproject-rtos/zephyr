@@ -28,10 +28,10 @@ struct nxp_video_sdma_config {
 };
 
 /* Firmware reads 30 lines of data per video buffer */
-#define SDMA_LINE_COUNT 30
+#define SDMA_LINE_COUNT  30
 /* Firmware only supports 320x240 */
 #define SDMA_VBUF_HEIGHT 240
-#define SDMA_VBUF_WIDTH 320
+#define SDMA_VBUF_WIDTH  320
 
 struct nxp_video_sdma_data {
 	/* Must be aligned on 4 byte boundary, as lower 2 bits of ARM2SDMA register
@@ -51,8 +51,8 @@ struct nxp_video_sdma_data {
 };
 
 /* Executed in interrupt context */
-static void nxp_video_sdma_callback(const struct device *dev, void *user_data,
-				uint32_t channel, int status)
+static void nxp_video_sdma_callback(const struct device *dev, void *user_data, uint32_t channel,
+				    int status)
 {
 	struct nxp_video_sdma_data *data = user_data;
 
@@ -87,7 +87,6 @@ static void nxp_video_sdma_callback(const struct device *dev, void *user_data,
 		data->active_buf->line_offset = (data->frame_idx / 2) * SDMA_LINE_COUNT;
 		data->active_buf->timestamp = k_uptime_get_32();
 		k_fifo_put(&data->fifo_out, data->active_buf);
-
 	}
 	/* Toggle buffer reload flag*/
 	data->buf_reload_flag = !data->buf_reload_flag;
@@ -150,8 +149,7 @@ static int nxp_video_sdma_stream_stop(const struct device *dev)
 	return dma_stop(config->dma_dev, 0);
 }
 
-static int nxp_video_sdma_enqueue(const struct device *dev,
-				  enum video_endpoint_id ep,
+static int nxp_video_sdma_enqueue(const struct device *dev, enum video_endpoint_id ep,
 				  struct video_buffer *vbuf)
 {
 	struct nxp_video_sdma_data *data = dev->data;
@@ -175,10 +173,8 @@ static int nxp_video_sdma_enqueue(const struct device *dev,
 	return 0;
 }
 
-static int nxp_video_sdma_dequeue(const struct device *dev,
-				  enum video_endpoint_id ep,
-				  struct video_buffer **vbuf,
-				  k_timeout_t timeout)
+static int nxp_video_sdma_dequeue(const struct device *dev, enum video_endpoint_id ep,
+				  struct video_buffer **vbuf, k_timeout_t timeout)
 {
 	struct nxp_video_sdma_data *data = dev->data;
 
@@ -194,9 +190,7 @@ static int nxp_video_sdma_dequeue(const struct device *dev,
 	return 0;
 }
 
-static int nxp_video_sdma_flush(const struct device *dev,
-				enum video_endpoint_id ep,
-				bool cancel)
+static int nxp_video_sdma_flush(const struct device *dev, enum video_endpoint_id ep, bool cancel)
 {
 	const struct nxp_video_sdma_config *config = dev->config;
 	struct nxp_video_sdma_data *data = dev->data;
@@ -227,16 +221,15 @@ static const struct video_format_cap fmts[] = {
 		.width_step = 0,
 		.height_step = 0,
 	},
-	{ 0 },
+	{0},
 };
 
-static int nxp_video_sdma_set_format(const struct device *dev,
-				     enum video_endpoint_id ep,
+static int nxp_video_sdma_set_format(const struct device *dev, enum video_endpoint_id ep,
 				     struct video_format *fmt)
 {
 	const struct nxp_video_sdma_config *config = dev->config;
 
-	if (fmt == NULL || ep != VIDEO_EP_OUT)  {
+	if (fmt == NULL || ep != VIDEO_EP_OUT) {
 		return -EINVAL;
 	}
 
@@ -245,10 +238,8 @@ static int nxp_video_sdma_set_format(const struct device *dev,
 		return -ENODEV;
 	}
 
-	if ((fmt->pixelformat != fmts[0].pixelformat) ||
-	    (fmt->width != fmts[0].width_min) ||
-	    (fmt->height != fmts[0].height_min) ||
-	    (fmt->pitch != fmts[0].width_min * 2)) {
+	if ((fmt->pixelformat != fmts[0].pixelformat) || (fmt->width != fmts[0].width_min) ||
+	    (fmt->height != fmts[0].height_min) || (fmt->pitch != fmts[0].width_min * 2)) {
 		LOG_ERR("Unsupported format");
 		return -ENOTSUP;
 	}
@@ -257,14 +248,13 @@ static int nxp_video_sdma_set_format(const struct device *dev,
 	return video_set_format(config->sensor_dev, ep, fmt);
 }
 
-static int nxp_video_sdma_get_format(const struct device *dev,
-				     enum video_endpoint_id ep,
+static int nxp_video_sdma_get_format(const struct device *dev, enum video_endpoint_id ep,
 				     struct video_format *fmt)
 {
 	const struct nxp_video_sdma_config *config = dev->config;
 	int ret;
 
-	if (fmt == NULL || ep != VIDEO_EP_OUT)  {
+	if (fmt == NULL || ep != VIDEO_EP_OUT) {
 		return -EINVAL;
 	}
 
@@ -284,10 +274,8 @@ static int nxp_video_sdma_get_format(const struct device *dev,
 	}
 
 	/* Verify that format is RGB565 */
-	if ((fmt->pixelformat != fmts[0].pixelformat) ||
-	    (fmt->width != fmts[0].width_min) ||
-	    (fmt->height != fmts[0].height_min) ||
-	    (fmt->pitch != fmts[0].width_min * 2)) {
+	if ((fmt->pixelformat != fmts[0].pixelformat) || (fmt->width != fmts[0].width_min) ||
+	    (fmt->height != fmts[0].height_min) || (fmt->pitch != fmts[0].width_min * 2)) {
 		/* Update format of sensor */
 		fmt->pixelformat = fmts[0].pixelformat;
 		fmt->width = fmts[0].width_min;
@@ -303,8 +291,7 @@ static int nxp_video_sdma_get_format(const struct device *dev,
 	return 0;
 }
 
-static int nxp_video_sdma_get_caps(const struct device *dev,
-				   enum video_endpoint_id ep,
+static int nxp_video_sdma_get_caps(const struct device *dev, enum video_endpoint_id ep,
 				   struct video_caps *caps)
 {
 	if (ep != VIDEO_EP_OUT) {
@@ -365,27 +352,24 @@ static const struct video_driver_api nxp_video_sdma_api = {
 	.stream_stop = nxp_video_sdma_stream_stop,
 	.enqueue = nxp_video_sdma_enqueue,
 	.dequeue = nxp_video_sdma_dequeue,
-	.flush = nxp_video_sdma_flush
-};
+	.flush = nxp_video_sdma_flush};
 
-#define NXP_VIDEO_SDMA_INIT(inst)						\
-	PINCTRL_DT_INST_DEFINE(inst);						\
-	const struct nxp_video_sdma_config sdma_config_##inst = {		\
-		.dma_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),			\
-		.sensor_dev = DEVICE_DT_GET(DT_INST_PHANDLE(inst, sensor)),	\
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),			\
-		.vsync_pin = DT_INST_PROP(inst, vsync_pin),			\
-		.hsync_pin = DT_INST_PROP(inst, hsync_pin),			\
-		.pclk_pin = DT_INST_PROP(inst, pclk_pin),			\
-	};									\
-	struct nxp_video_sdma_data sdma_data_##inst = {				\
-		.config = &sdma_config_##inst,					\
-	};									\
-										\
-	DEVICE_DT_INST_DEFINE(inst, nxp_video_sdma_init, NULL,			\
-				&sdma_data_##inst, &sdma_config_##inst,		\
-				POST_KERNEL,					\
-				CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-				&nxp_video_sdma_api);
+#define NXP_VIDEO_SDMA_INIT(inst)                                                                  \
+	PINCTRL_DT_INST_DEFINE(inst);                                                              \
+	const struct nxp_video_sdma_config sdma_config_##inst = {                                  \
+		.dma_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                    \
+		.sensor_dev = DEVICE_DT_GET(DT_INST_PHANDLE(inst, sensor)),                        \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                    \
+		.vsync_pin = DT_INST_PROP(inst, vsync_pin),                                        \
+		.hsync_pin = DT_INST_PROP(inst, hsync_pin),                                        \
+		.pclk_pin = DT_INST_PROP(inst, pclk_pin),                                          \
+	};                                                                                         \
+	struct nxp_video_sdma_data sdma_data_##inst = {                                            \
+		.config = &sdma_config_##inst,                                                     \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, nxp_video_sdma_init, NULL, &sdma_data_##inst,                  \
+			      &sdma_config_##inst, POST_KERNEL,                                    \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &nxp_video_sdma_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_VIDEO_SDMA_INIT)

@@ -13,7 +13,6 @@
 LOG_MODULE_REGISTER(spi_spimctrl);
 #include "spi_context.h"
 
-
 struct spimctrl_regs {
 	uint32_t conf;
 	uint32_t ctrl;
@@ -22,17 +21,17 @@ struct spimctrl_regs {
 	uint32_t tx;
 };
 
-#define CONF_READCMD    0x0000007f
-#define CTRL_RST        0x00000010
-#define CTRL_CSN        0x00000008
-#define CTRL_EAS        0x00000004
-#define CTRL_IEN        0x00000002
-#define CTRL_USRC       0x00000001
-#define STAT_INIT       0x00000004
-#define STAT_BUSY       0x00000002
-#define STAT_DONE       0x00000001
+#define CONF_READCMD 0x0000007f
+#define CTRL_RST     0x00000010
+#define CTRL_CSN     0x00000008
+#define CTRL_EAS     0x00000004
+#define CTRL_IEN     0x00000002
+#define CTRL_USRC    0x00000001
+#define STAT_INIT    0x00000004
+#define STAT_BUSY    0x00000002
+#define STAT_DONE    0x00000001
 
-#define SPI_DATA(dev) ((struct data *) ((dev)->data))
+#define SPI_DATA(dev) ((struct data *)((dev)->data))
 
 struct cfg {
 	volatile struct spimctrl_regs *regs;
@@ -95,10 +94,8 @@ static int spi_config(struct spi_context *ctx, const struct spi_config *config)
 	return 0;
 }
 
-static int transceive(const struct device *dev,
-		      const struct spi_config *config,
-		      const struct spi_buf_set *tx_bufs,
-		      const struct spi_buf_set *rx_bufs)
+static int transceive(const struct device *dev, const struct spi_config *config,
+		      const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs)
 {
 	const struct cfg *const cfg = dev->config;
 	volatile struct spimctrl_regs *const regs = cfg->regs;
@@ -139,10 +136,8 @@ static int transceive(const struct device *dev,
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int transceive_async(const struct device *dev,
-			    const struct spi_config *config,
-			    const struct spi_buf_set *tx_bufs,
-			    const struct spi_buf_set *rx_bufs,
+static int transceive_async(const struct device *dev, const struct spi_config *config,
+			    const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs,
 			    struct k_poll_signal *async)
 {
 	return -ENOTSUP;
@@ -201,13 +196,7 @@ static int init(const struct device *dev)
 	}
 	regs->stat = STAT_DONE;
 
-	irq_connect_dynamic(
-		cfg->interrupt,
-		0,
-		(void (*)(const void *)) spim_isr,
-		dev,
-		0
-	);
+	irq_connect_dynamic(cfg->interrupt, 0, (void (*)(const void *))spim_isr, dev, 0);
 	irq_enable(cfg->interrupt);
 
 	spi_context_unlock_unconditionally(&SPI_DATA(dev)->ctx);
@@ -216,33 +205,26 @@ static int init(const struct device *dev)
 }
 
 static struct spi_driver_api api = {
-	.transceive             = transceive,
+	.transceive = transceive,
 #ifdef CONFIG_SPI_ASYNC
-	.transceive_async       = transceive_async,
+	.transceive_async = transceive_async,
 #endif /* CONFIG_SPI_ASYNC */
 #ifdef CONFIG_SPI_RTIO
 	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
-	.release                = release,
+	.release = release,
 };
 
-#define SPI_INIT(n)	                                                \
-	static const struct cfg cfg_##n = {                             \
-		.regs           = (struct spimctrl_regs *)              \
-				  DT_INST_REG_ADDR(n),                  \
-		.interrupt      = DT_INST_IRQN(n),                      \
-	};                                                              \
-	static struct data data_##n = {                                 \
-		SPI_CONTEXT_INIT_LOCK(data_##n, ctx),                   \
-		SPI_CONTEXT_INIT_SYNC(data_##n, ctx),                   \
-	};                                                              \
-	DEVICE_DT_INST_DEFINE(n,                                        \
-			init,                                           \
-			NULL,                                           \
-			&data_##n,                                      \
-			&cfg_##n,                                       \
-			POST_KERNEL,                                    \
-			CONFIG_SPI_INIT_PRIORITY,                       \
-			&api);
+#define SPI_INIT(n)                                                                                \
+	static const struct cfg cfg_##n = {                                                        \
+		.regs = (struct spimctrl_regs *)DT_INST_REG_ADDR(n),                               \
+		.interrupt = DT_INST_IRQN(n),                                                      \
+	};                                                                                         \
+	static struct data data_##n = {                                                            \
+		SPI_CONTEXT_INIT_LOCK(data_##n, ctx),                                              \
+		SPI_CONTEXT_INIT_SYNC(data_##n, ctx),                                              \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(n, init, NULL, &data_##n, &cfg_##n, POST_KERNEL,                     \
+			      CONFIG_SPI_INIT_PRIORITY, &api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_INIT)

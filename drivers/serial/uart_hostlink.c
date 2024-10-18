@@ -15,25 +15,25 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_QEMU_TARGET));
 /* Only supported by ARC targets */
 BUILD_ASSERT(IS_ENABLED(CONFIG_ARC));
 
-#define HL_SYSCALL_OPEN		0
-#define HL_SYSCALL_CLOSE	1
-#define HL_SYSCALL_READ		2
-#define HL_SYSCALL_WRITE	3
-#define HL_SYSCALL_LSEEK	4
-#define HL_SYSCALL_UNLINK	5
-#define HL_SYSCALL_ISATTY	6
-#define HL_SYSCALL_TMPNAM	7
-#define HL_SYSCALL_GETENV	8
-#define HL_SYSCALL_CLOCK	9
-#define HL_SYSCALL_TIME		10
-#define HL_SYSCALL_RENAME	11
-#define HL_SYSCALL_ARGC		12
-#define HL_SYSCALL_ARGV		13
-#define HL_SYSCALL_RETCODE	14
-#define HL_SYSCALL_ACCESS	15
-#define HL_SYSCALL_GETPID	16
-#define HL_SYSCALL_GETCWD	17
-#define HL_SYSCALL_USER		18
+#define HL_SYSCALL_OPEN    0
+#define HL_SYSCALL_CLOSE   1
+#define HL_SYSCALL_READ    2
+#define HL_SYSCALL_WRITE   3
+#define HL_SYSCALL_LSEEK   4
+#define HL_SYSCALL_UNLINK  5
+#define HL_SYSCALL_ISATTY  6
+#define HL_SYSCALL_TMPNAM  7
+#define HL_SYSCALL_GETENV  8
+#define HL_SYSCALL_CLOCK   9
+#define HL_SYSCALL_TIME    10
+#define HL_SYSCALL_RENAME  11
+#define HL_SYSCALL_ARGC    12
+#define HL_SYSCALL_ARGV    13
+#define HL_SYSCALL_RETCODE 14
+#define HL_SYSCALL_ACCESS  15
+#define HL_SYSCALL_GETPID  16
+#define HL_SYSCALL_GETCWD  17
+#define HL_SYSCALL_USER    18
 
 #ifndef __noinline
 #define __noinline __attribute__((noinline))
@@ -51,22 +51,22 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_ARC));
 
 /* Hostlink gateway structure.  */
 struct hl_hdr {
-	uint32_t version;		/* Current version is 1.  */
-	uint32_t target2host_addr;	/* Packet address from target to host.  */
-	uint32_t host2target_addr;	/* Packet address from host to target.  */
-	uint32_t buf_addr;		/* Address for host to write answer.  */
-	uint32_t payload_size;		/* Buffer size without packet header.  */
-	uint32_t options;		/* For future use.  */
-	uint32_t break_to_mon_addr;	/* For future use.  */
+	uint32_t version;           /* Current version is 1.  */
+	uint32_t target2host_addr;  /* Packet address from target to host.  */
+	uint32_t host2target_addr;  /* Packet address from host to target.  */
+	uint32_t buf_addr;          /* Address for host to write answer.  */
+	uint32_t payload_size;      /* Buffer size without packet header.  */
+	uint32_t options;           /* For future use.  */
+	uint32_t break_to_mon_addr; /* For future use.  */
 } __packed;
 
 /* Hostlink packet header.  */
 struct hl_pkt_hdr {
-	uint32_t packet_id;	/* Packet id.  Always set to 1 here.  */
-	uint32_t total_size;	/* Size of packet including header.  */
-	uint32_t priority;	/* For future use.  */
-	uint32_t type;		/* For future use.  */
-	uint32_t checksum;	/* For future use.  */
+	uint32_t packet_id;  /* Packet id.  Always set to 1 here.  */
+	uint32_t total_size; /* Size of packet including header.  */
+	uint32_t priority;   /* For future use.  */
+	uint32_t type;       /* For future use.  */
+	uint32_t checksum;   /* For future use.  */
 } __packed;
 
 struct hl_packed_int {
@@ -95,7 +95,7 @@ struct hl_pkt_write_char_get {
 	struct hl_packed_int host_errno;
 } __packed;
 
-#define MAX_PKT_SZ MAX(sizeof(struct hl_pkt_write_char_put), sizeof(struct hl_pkt_write_char_get))
+#define MAX_PKT_SZ    MAX(sizeof(struct hl_pkt_write_char_put), sizeof(struct hl_pkt_write_char_get))
 #define HL_HEADERS_SZ (sizeof(struct hl_hdr) + sizeof(struct hl_pkt_hdr))
 BUILD_ASSERT(HL_HEADERS_SZ + MAX_PKT_SZ < HL_MAX_DCACHE_LINE);
 
@@ -131,11 +131,7 @@ BUILD_ASSERT(sizeof(struct hl) == HL_MAX_DCACHE_LINE);
  * regular cached access in it).
  */
 volatile struct hl __HOSTLINK__ = {
-	.hdr = {
-		.version = HL_VERSION,
-		.target2host_addr = HL_NOADDRESS
-	}
-};
+	.hdr = {.version = HL_VERSION, .target2host_addr = HL_NOADDRESS}};
 
 BUILD_ASSERT(sizeof(__HOSTLINK__) % HL_MAX_DCACHE_LINE == 0);
 
@@ -180,24 +176,24 @@ static inline uint16_t hl_read16(volatile void *addr)
 #else
 static inline void hl_write32(volatile void *addr, uint32_t val)
 {
-	__asm__ __volatile__("st.di %0, [%1]" :: "r" (val), "r" (addr) : "memory");
+	__asm__ __volatile__("st.di %0, [%1]" ::"r"(val), "r"(addr) : "memory");
 }
 
 static inline void hl_write16(volatile void *addr, uint16_t val)
 {
-	__asm__ __volatile__("stb.di %0, [%1]" :: "r" (val), "r" (addr) : "memory");
+	__asm__ __volatile__("stb.di %0, [%1]" ::"r"(val), "r"(addr) : "memory");
 }
 
 static inline void hl_write8(volatile void *addr, uint8_t val)
 {
-	__asm__ __volatile__("sth.di %0, [%1]" :: "r" (val), "r" (addr) : "memory");
+	__asm__ __volatile__("sth.di %0, [%1]" ::"r"(val), "r"(addr) : "memory");
 }
 
 static inline uint32_t hl_read32(volatile void *addr)
 {
 	uint32_t w;
 
-	__asm__ __volatile__("ld.di %0, [%1]" : "=r" (w) : "r" (addr) : "memory");
+	__asm__ __volatile__("ld.di %0, [%1]" : "=r"(w) : "r"(addr) : "memory");
 
 	return w;
 }
@@ -206,7 +202,7 @@ static inline uint16_t hl_read16(volatile void *addr)
 {
 	uint16_t w;
 
-	__asm__ __volatile__("ld.di %0, [%1]" : "=r" (w) : "r" (addr) : "memory");
+	__asm__ __volatile__("ld.di %0, [%1]" : "=r"(w) : "r"(addr) : "memory");
 
 	return w;
 }
@@ -286,12 +282,12 @@ static void hl_delete(void)
 }
 
 /* Parameter types.  */
-#define PAT_CHAR	1
-#define PAT_SHORT	2
-#define PAT_INT		3
-#define PAT_STRING	4
+#define PAT_CHAR   1
+#define PAT_SHORT  2
+#define PAT_INT    3
+#define PAT_STRING 4
 /* For future use.  */
-#define PAT_INT64	5
+#define PAT_INT64  5
 
 static void hl_static_pack_int(volatile struct hl_packed_int *pack, int32_t value)
 {
@@ -316,7 +312,7 @@ static int hl_static_unpack_int(volatile struct hl_packed_int *pack, int32_t *va
 		return -1;
 	}
 
-	if (size != 4)  {
+	if (size != 4) {
 		return -1;
 	}
 

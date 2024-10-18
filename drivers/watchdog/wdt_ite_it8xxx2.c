@@ -14,8 +14,8 @@
 #define LOG_LEVEL CONFIG_WDT_LOG_LEVEL
 LOG_MODULE_REGISTER(wdt_ite_it8xxx2);
 
-#define IT8XXX2_WATCHDOG_MAGIC_BYTE			0x5c
-#define WARNING_TIMER_PERIOD_MS_TO_1024HZ_COUNT(ms)	((ms) * 1024 / 1000)
+#define IT8XXX2_WATCHDOG_MAGIC_BYTE                 0x5c
+#define WARNING_TIMER_PERIOD_MS_TO_1024HZ_COUNT(ms) ((ms) * 1024 / 1000)
 
 /* enter critical period or not */
 static int wdt_warning_fired;
@@ -37,7 +37,7 @@ struct wdt_it8xxx2_data {
 };
 
 static int wdt_it8xxx2_install_timeout(const struct device *dev,
-					  const struct wdt_timeout_cfg *config)
+				       const struct wdt_timeout_cfg *config)
 {
 	const struct wdt_it8xxx2_config *const wdt_config = dev->config;
 	struct wdt_it8xxx2_data *data = dev->data;
@@ -75,8 +75,8 @@ static int wdt_it8xxx2_setup(const struct device *dev, uint8_t options)
 	struct wdt_it8xxx2_data *data = dev->data;
 	struct wdt_it8xxx2_regs *const inst = wdt_config->base;
 	uint16_t cnt0 = WARNING_TIMER_PERIOD_MS_TO_1024HZ_COUNT(data->timeout);
-	uint16_t cnt1 = WARNING_TIMER_PERIOD_MS_TO_1024HZ_COUNT((data->timeout
-			+ CONFIG_WDT_ITE_WARNING_LEADING_TIME_MS));
+	uint16_t cnt1 = WARNING_TIMER_PERIOD_MS_TO_1024HZ_COUNT(
+		(data->timeout + CONFIG_WDT_ITE_WARNING_LEADING_TIME_MS));
 
 	/* disable pre-warning timer1 interrupt */
 	irq_disable(DT_INST_IRQN(0));
@@ -122,9 +122,7 @@ static int wdt_it8xxx2_setup(const struct device *dev, uint8_t options)
 	 * bit3 = 1: lock watchdog count register (also mark as watchdog running)
 	 * bit1 = 1: lock timer1 prescaler register
 	 */
-	inst->ETWCFG = (IT8XXX2_WDT_EWDKEYEN |
-			IT8XXX2_WDT_EWDSRC |
-			IT8XXX2_WDT_LEWDCNTL |
+	inst->ETWCFG = (IT8XXX2_WDT_EWDKEYEN | IT8XXX2_WDT_EWDSRC | IT8XXX2_WDT_LEWDCNTL |
 			IT8XXX2_WDT_LET1PS);
 
 	LOG_DBG("WDT Setup and enabled");
@@ -259,8 +257,7 @@ static int wdt_it8xxx2_init(const struct device *dev)
 	inst->ET1PSR = IT8XXX2_WDT_ETPS_1P024_KHZ;
 
 	/* set WDT key match enabled and WDT clock to use ET1PSR */
-	inst->ETWCFG = (IT8XXX2_WDT_EWDKEYEN |
-			IT8XXX2_WDT_EWDSRC);
+	inst->ETWCFG = (IT8XXX2_WDT_EWDKEYEN | IT8XXX2_WDT_EWDSRC);
 
 	/*
 	 * select the mode that watchdog can be stopped, this is needed for
@@ -268,8 +265,7 @@ static int wdt_it8xxx2_init(const struct device *dev)
 	 */
 	inst->ETWCTRL |= IT8XXX2_WDT_EWDSCMS;
 
-	IRQ_CONNECT(DT_INST_IRQN(0), 0, wdt_it8xxx2_isr,
-		    DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), 0, wdt_it8xxx2_isr, DEVICE_DT_INST_GET(0), 0);
 	return 0;
 }
 
@@ -279,7 +275,5 @@ static const struct wdt_it8xxx2_config wdt_it8xxx2_cfg_0 = {
 
 static struct wdt_it8xxx2_data wdt_it8xxx2_dev_data;
 
-DEVICE_DT_INST_DEFINE(0, wdt_it8xxx2_init, NULL,
-			&wdt_it8xxx2_dev_data, &wdt_it8xxx2_cfg_0,
-			PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-			&wdt_it8xxx2_api);
+DEVICE_DT_INST_DEFINE(0, wdt_it8xxx2_init, NULL, &wdt_it8xxx2_dev_data, &wdt_it8xxx2_cfg_0,
+		      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &wdt_it8xxx2_api);

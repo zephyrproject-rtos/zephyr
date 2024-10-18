@@ -31,8 +31,7 @@ struct lis2mdl_data lis2mdl_data;
 LOG_MODULE_REGISTER(LIS2MDL, CONFIG_SENSOR_LOG_LEVEL);
 
 #ifdef CONFIG_LIS2MDL_MAG_ODR_RUNTIME
-static int lis2mdl_set_odr(const struct device *dev,
-			   const struct sensor_value *val)
+static int lis2mdl_set_odr(const struct device *dev, const struct sensor_value *val)
 {
 	const struct lis2mdl_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
@@ -63,9 +62,8 @@ static int lis2mdl_set_odr(const struct device *dev,
 }
 #endif /* CONFIG_LIS2MDL_MAG_ODR_RUNTIME */
 
-static int lis2mdl_set_hard_iron(const struct device *dev,
-				   enum sensor_channel chan,
-				   const struct sensor_value *val)
+static int lis2mdl_set_hard_iron(const struct device *dev, enum sensor_channel chan,
+				 const struct sensor_value *val)
 {
 	const struct lis2mdl_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
@@ -80,9 +78,8 @@ static int lis2mdl_set_hard_iron(const struct device *dev,
 	return lis2mdl_mag_user_offset_set(ctx, offset);
 }
 
-static void lis2mdl_channel_get_mag(const struct device *dev,
-				      enum sensor_channel chan,
-				      struct sensor_value *val)
+static void lis2mdl_channel_get_mag(const struct device *dev, enum sensor_channel chan,
+				    struct sensor_value *val)
 {
 	int32_t cval;
 	int i;
@@ -101,7 +98,8 @@ static void lis2mdl_channel_get_mag(const struct device *dev,
 		ofs_start = ofs_stop = 2U;
 		break;
 	default:
-		ofs_start = 0U; ofs_stop = 2U;
+		ofs_start = 0U;
+		ofs_stop = 2U;
 		break;
 	}
 
@@ -114,19 +112,17 @@ static void lis2mdl_channel_get_mag(const struct device *dev,
 }
 
 /* read internal temperature */
-static void lis2mdl_channel_get_temp(const struct device *dev,
-				       struct sensor_value *val)
+static void lis2mdl_channel_get_temp(const struct device *dev, struct sensor_value *val)
 {
 	struct lis2mdl_data *drv_data = dev->data;
 
 	/* formula is temp = 25 + (temp / 8) C */
-	val->val1 = 25  + drv_data->temp_sample / 8;
+	val->val1 = 25 + drv_data->temp_sample / 8;
 	val->val2 = (drv_data->temp_sample % 8) * 1000000 / 8;
 }
 
-static int lis2mdl_channel_get(const struct device *dev,
-				 enum sensor_channel chan,
-				 struct sensor_value *val)
+static int lis2mdl_channel_get(const struct device *dev, enum sensor_channel chan,
+			       struct sensor_value *val)
 {
 	switch (chan) {
 	case SENSOR_CHAN_MAGN_X:
@@ -147,8 +143,7 @@ static int lis2mdl_channel_get(const struct device *dev,
 }
 
 static int lis2mdl_config(const struct device *dev, enum sensor_channel chan,
-			    enum sensor_attribute attr,
-			    const struct sensor_value *val)
+			  enum sensor_attribute attr, const struct sensor_value *val)
 {
 	switch (attr) {
 #ifdef CONFIG_LIS2MDL_MAG_ODR_RUNTIME
@@ -165,10 +160,8 @@ static int lis2mdl_config(const struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static int lis2mdl_attr_set(const struct device *dev,
-			      enum sensor_channel chan,
-			      enum sensor_attribute attr,
-			      const struct sensor_value *val)
+static int lis2mdl_attr_set(const struct device *dev, enum sensor_channel chan,
+			    enum sensor_attribute attr, const struct sensor_value *val)
 {
 	switch (chan) {
 	case SENSOR_CHAN_ALL:
@@ -185,8 +178,7 @@ static int lis2mdl_attr_set(const struct device *dev,
 	return 0;
 }
 
-static int get_single_mode_raw_data(const struct device *dev,
-				    int16_t *raw_mag)
+static int get_single_mode_raw_data(const struct device *dev, int16_t *raw_mag)
 {
 	struct lis2mdl_data *lis2mdl = dev->data;
 	const struct lis2mdl_config *cfg = dev->config;
@@ -200,8 +192,7 @@ static int get_single_mode_raw_data(const struct device *dev,
 	}
 
 	if (k_sem_take(&lis2mdl->fetch_sem, K_MSEC(SAMPLE_FETCH_TIMEOUT_MS))) {
-		LOG_ERR("Magnetometer data not ready within %d ms",
-			SAMPLE_FETCH_TIMEOUT_MS);
+		LOG_ERR("Magnetometer data not ready within %d ms", SAMPLE_FETCH_TIMEOUT_MS);
 		return -EIO;
 	}
 
@@ -286,8 +277,7 @@ static int lis2mdl_sample_fetch_temp(const struct device *dev)
 	return 0;
 }
 
-static int lis2mdl_sample_fetch(const struct device *dev,
-				enum sensor_channel chan)
+static int lis2mdl_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	switch (chan) {
 	case SENSOR_CHAN_MAGN_X:
@@ -377,8 +367,7 @@ static int lis2mdl_init(const struct device *dev)
 		/* Set offset cancellation, common for both single and
 		 * and continuous mode.
 		 */
-		if (lis2mdl_set_rst_mode_set(ctx,
-					LIS2MDL_SENS_OFF_CANC_EVERY_ODR)) {
+		if (lis2mdl_set_rst_mode_set(ctx, LIS2MDL_SENS_OFF_CANC_EVERY_ODR)) {
 			LOG_ERR("reset sensor mode failed");
 			return -EIO;
 		}
@@ -394,8 +383,7 @@ static int lis2mdl_init(const struct device *dev)
 		/* Set OFF_CANC_ONE_SHOT bit. This setting is only needed in
 		 * the single-mode when offset cancellation is enabled.
 		 */
-		rc = lis2mdl_set_rst_sensor_single_set(ctx,
-							PROPERTY_ENABLE);
+		rc = lis2mdl_set_rst_sensor_single_set(ctx, PROPERTY_ENABLE);
 		if (rc) {
 			LOG_ERR("Set offset cancellation failed");
 			return rc;
@@ -421,8 +409,7 @@ static int lis2mdl_init(const struct device *dev)
 
 	} else {
 		/* Set device in continuous mode */
-		rc = lis2mdl_operating_mode_set(ctx,
-						LIS2MDL_CONTINUOUS_MODE);
+		rc = lis2mdl_operating_mode_set(ctx, LIS2MDL_CONTINUOUS_MODE);
 		if (rc) {
 			LOG_ERR("set continuous mode failed");
 			return rc;
@@ -442,8 +429,7 @@ static int lis2mdl_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int lis2mdl_pm_action(const struct device *dev,
-			     enum pm_device_action action)
+static int lis2mdl_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct lis2mdl_config *config = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&config->ctx;
@@ -452,11 +438,9 @@ static int lis2mdl_pm_action(const struct device *dev,
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
 		if (config->single_mode) {
-			status = lis2mdl_operating_mode_set(ctx,
-						LIS2MDL_SINGLE_TRIGGER);
+			status = lis2mdl_operating_mode_set(ctx, LIS2MDL_SINGLE_TRIGGER);
 		} else {
-			status = lis2mdl_operating_mode_set(ctx,
-						LIS2MDL_CONTINUOUS_MODE);
+			status = lis2mdl_operating_mode_set(ctx, LIS2MDL_CONTINUOUS_MODE);
 		}
 		if (status) {
 			LOG_ERR("Power up failed");
@@ -487,78 +471,62 @@ static int lis2mdl_pm_action(const struct device *dev,
  * LIS2MDL_DEFINE_I2C().
  */
 
-#define LIS2MDL_DEVICE_INIT(inst)					\
-	PM_DEVICE_DT_INST_DEFINE(inst, lis2mdl_pm_action);		\
-									\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
-			    lis2mdl_init,				\
-			    PM_DEVICE_DT_INST_GET(inst),		\
-			    &lis2mdl_data_##inst,			\
-			    &lis2mdl_config_##inst,			\
-			    POST_KERNEL,				\
-			    CONFIG_SENSOR_INIT_PRIORITY,		\
-			    &lis2mdl_driver_api);
+#define LIS2MDL_DEVICE_INIT(inst)                                                                  \
+	PM_DEVICE_DT_INST_DEFINE(inst, lis2mdl_pm_action);                                         \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, lis2mdl_init, PM_DEVICE_DT_INST_GET(inst),              \
+				     &lis2mdl_data_##inst, &lis2mdl_config_##inst, POST_KERNEL,    \
+				     CONFIG_SENSOR_INIT_PRIORITY, &lis2mdl_driver_api);
 
 /*
  * Instantiation macros used when a device is on a SPI bus.
  */
 
 #ifdef CONFIG_LIS2MDL_TRIGGER
-#define LIS2MDL_CFG_IRQ(inst) \
-	.trig_enabled = true,						\
-	.gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, irq_gpios)
+#define LIS2MDL_CFG_IRQ(inst)                                                                      \
+	.trig_enabled = true, .gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, irq_gpios)
 #else
 #define LIS2MDL_CFG_IRQ(inst)
 #endif /* CONFIG_LIS2MDL_TRIGGER */
 
-#define LIS2MDL_CONFIG_COMMON(inst)					\
-	.cancel_offset = DT_INST_PROP(inst, cancel_offset),		\
-	.single_mode = DT_INST_PROP(inst, single_mode),			\
+#define LIS2MDL_CONFIG_COMMON(inst)                                                                \
+	.cancel_offset = DT_INST_PROP(inst, cancel_offset),                                        \
+	.single_mode = DT_INST_PROP(inst, single_mode),                                            \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),		\
 			(LIS2MDL_CFG_IRQ(inst)), ())
 
-#define LIS2MDL_SPI_OPERATION (SPI_WORD_SET(8) |			\
-				SPI_OP_MODE_MASTER |			\
-				SPI_MODE_CPOL |				\
-				SPI_MODE_CPHA)				\
+#define LIS2MDL_SPI_OPERATION (SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA)
 
-#define LIS2MDL_CONFIG_SPI(inst)					\
-	{								\
-		STMEMSC_CTX_SPI(&lis2mdl_config_##inst.stmemsc_cfg),	\
-		.stmemsc_cfg = {					\
-			.spi = SPI_DT_SPEC_INST_GET(inst,		\
-						LIS2MDL_SPI_OPERATION,	\
-						0),			\
-		},							\
-		.spi_4wires = DT_INST_PROP(inst, duplex) ==		\
-						SPI_FULL_DUPLEX,	\
-		LIS2MDL_CONFIG_COMMON(inst)				\
-	}
+#define LIS2MDL_CONFIG_SPI(inst)                                                                   \
+	{STMEMSC_CTX_SPI(&lis2mdl_config_##inst.stmemsc_cfg),                                      \
+	 .stmemsc_cfg =                                                                            \
+		 {                                                                                 \
+			 .spi = SPI_DT_SPEC_INST_GET(inst, LIS2MDL_SPI_OPERATION, 0),              \
+		 },                                                                                \
+	 .spi_4wires = DT_INST_PROP(inst, duplex) == SPI_FULL_DUPLEX, LIS2MDL_CONFIG_COMMON(inst)}
 
 /*
  * Instantiation macros used when a device is on an I2C bus.
  */
 
-#define LIS2MDL_CONFIG_I2C(inst)					\
-	{								\
-		STMEMSC_CTX_I2C(&lis2mdl_config_##inst.stmemsc_cfg),	\
-		.stmemsc_cfg = {					\
-			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
-		},							\
-		LIS2MDL_CONFIG_COMMON(inst)				\
-	}
+#define LIS2MDL_CONFIG_I2C(inst)                                                                   \
+	{STMEMSC_CTX_I2C(&lis2mdl_config_##inst.stmemsc_cfg),                                      \
+	 .stmemsc_cfg =                                                                            \
+		 {                                                                                 \
+			 .i2c = I2C_DT_SPEC_INST_GET(inst),                                        \
+		 },                                                                                \
+	 LIS2MDL_CONFIG_COMMON(inst)}
 
 /*
  * Main instantiation macro. Use of COND_CODE_1() selects the right
  * bus-specific macro at preprocessor time.
  */
 
-#define LIS2MDL_DEFINE(inst)						\
-	static struct lis2mdl_data lis2mdl_data_##inst;		\
-	static const struct lis2mdl_config lis2mdl_config_##inst =	\
-	COND_CODE_1(DT_INST_ON_BUS(inst, spi),				\
+#define LIS2MDL_DEFINE(inst)                                                                       \
+	static struct lis2mdl_data lis2mdl_data_##inst;                                            \
+	static const struct lis2mdl_config lis2mdl_config_##inst = COND_CODE_1(DT_INST_ON_BUS(inst, spi),				\
 		    (LIS2MDL_CONFIG_SPI(inst)),			\
-		    (LIS2MDL_CONFIG_I2C(inst)));			\
+		    (LIS2MDL_CONFIG_I2C(inst)));                  \
 	LIS2MDL_DEVICE_INIT(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(LIS2MDL_DEFINE)

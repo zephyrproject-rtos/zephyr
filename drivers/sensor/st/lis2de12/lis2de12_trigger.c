@@ -51,8 +51,7 @@ static int lis2de12_enable_xl_int(const struct device *dev, int enable)
 /**
  * lis2de12_trigger_set - link external trigger to event data ready
  */
-int lis2de12_trigger_set(const struct device *dev,
-			 const struct sensor_trigger *trig,
+int lis2de12_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			 sensor_trigger_handler_t handler)
 {
 	const struct lis2de12_config *cfg = dev->config;
@@ -76,7 +75,6 @@ int lis2de12_trigger_set(const struct device *dev,
 	default:
 		return -ENOTSUP;
 	}
-
 }
 
 /**
@@ -106,15 +104,13 @@ static void lis2de12_handle_interrupt(const struct device *dev)
 		}
 	}
 
-	gpio_pin_interrupt_configure_dt(lis2de12->drdy_gpio,
-					GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(lis2de12->drdy_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
-static void lis2de12_gpio_callback(const struct device *dev,
-				   struct gpio_callback *cb, uint32_t pins)
+static void lis2de12_gpio_callback(const struct device *dev, struct gpio_callback *cb,
+				   uint32_t pins)
 {
-	struct lis2de12_data *lis2de12 =
-		CONTAINER_OF(cb, struct lis2de12_data, gpio_cb);
+	struct lis2de12_data *lis2de12 = CONTAINER_OF(cb, struct lis2de12_data, gpio_cb);
 
 	ARG_UNUSED(pins);
 
@@ -140,8 +136,7 @@ static void lis2de12_thread(struct lis2de12_data *lis2de12)
 #ifdef CONFIG_LIS2DE12_TRIGGER_GLOBAL_THREAD
 static void lis2de12_work_cb(struct k_work *work)
 {
-	struct lis2de12_data *lis2de12 =
-		CONTAINER_OF(work, struct lis2de12_data, work);
+	struct lis2de12_data *lis2de12 = CONTAINER_OF(work, struct lis2de12_data, work);
 
 	lis2de12_handle_interrupt(lis2de12->dev);
 }
@@ -157,8 +152,7 @@ int lis2de12_init_interrupt(const struct device *dev)
 
 	/* setup data ready gpio interrupt */
 	if (!gpio_is_ready_dt(lis2de12->drdy_gpio)) {
-		LOG_ERR("Cannot get pointer to drdy_gpio device (%p)",
-			lis2de12->drdy_gpio);
+		LOG_ERR("Cannot get pointer to drdy_gpio device (%p)", lis2de12->drdy_gpio);
 		return -EINVAL;
 	}
 
@@ -166,10 +160,9 @@ int lis2de12_init_interrupt(const struct device *dev)
 	k_sem_init(&lis2de12->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
 	k_thread_create(&lis2de12->thread, lis2de12->thread_stack,
-			CONFIG_LIS2DE12_THREAD_STACK_SIZE,
-			(k_thread_entry_t)lis2de12_thread, lis2de12,
-			NULL, NULL, K_PRIO_COOP(CONFIG_LIS2DE12_THREAD_PRIORITY),
-			0, K_NO_WAIT);
+			CONFIG_LIS2DE12_THREAD_STACK_SIZE, (k_thread_entry_t)lis2de12_thread,
+			lis2de12, NULL, NULL, K_PRIO_COOP(CONFIG_LIS2DE12_THREAD_PRIORITY), 0,
+			K_NO_WAIT);
 	k_thread_name_set(&lis2de12->thread, dev->name);
 #elif defined(CONFIG_LIS2DE12_TRIGGER_GLOBAL_THREAD)
 	lis2de12->work.handler = lis2de12_work_cb;
@@ -181,8 +174,7 @@ int lis2de12_init_interrupt(const struct device *dev)
 		return ret;
 	}
 
-	gpio_init_callback(&lis2de12->gpio_cb,
-			   lis2de12_gpio_callback,
+	gpio_init_callback(&lis2de12->gpio_cb, lis2de12_gpio_callback,
 			   BIT(lis2de12->drdy_gpio->pin));
 
 	if (gpio_add_callback(lis2de12->drdy_gpio->port, &lis2de12->gpio_cb) < 0) {
@@ -190,6 +182,5 @@ int lis2de12_init_interrupt(const struct device *dev)
 		return -EIO;
 	}
 
-	return gpio_pin_interrupt_configure_dt(lis2de12->drdy_gpio,
-					       GPIO_INT_EDGE_TO_ACTIVE);
+	return gpio_pin_interrupt_configure_dt(lis2de12->drdy_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 }

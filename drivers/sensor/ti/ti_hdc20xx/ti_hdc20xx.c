@@ -15,33 +15,33 @@
 LOG_MODULE_REGISTER(TI_HDC20XX, CONFIG_SENSOR_LOG_LEVEL);
 
 /* Register addresses */
-#define TI_HDC20XX_REG_TEMP		0x00
-#define TI_HDC20XX_REG_HUMIDITY		0x02
-#define TI_HDC20XX_REG_INT_EN		0x07
-#define TI_HDC20XX_REG_CONFIG		0x0E
-#define TI_HDC20XX_REG_MEAS_CFG		0x0F
-#define TI_HDC20XX_REG_MANUFACTURER_ID	0xFC
-#define TI_HDC20XX_REG_DEVICE_ID	0xFE
+#define TI_HDC20XX_REG_TEMP            0x00
+#define TI_HDC20XX_REG_HUMIDITY        0x02
+#define TI_HDC20XX_REG_INT_EN          0x07
+#define TI_HDC20XX_REG_CONFIG          0x0E
+#define TI_HDC20XX_REG_MEAS_CFG        0x0F
+#define TI_HDC20XX_REG_MANUFACTURER_ID 0xFC
+#define TI_HDC20XX_REG_DEVICE_ID       0xFE
 
 /* Register values */
-#define TI_HDC20XX_MANUFACTURER_ID	0x5449
-#define TI_HDC20XX_DEVICE_ID		0x07D0
+#define TI_HDC20XX_MANUFACTURER_ID 0x5449
+#define TI_HDC20XX_DEVICE_ID       0x07D0
 
 /* Register bits */
-#define TI_HDC20XX_BIT_INT_EN_DRDY_EN		0x80
-#define TI_HDC20XX_BIT_CONFIG_SOFT_RES		0x80
-#define TI_HDC20XX_BIT_CONFIG_DRDY_INT_EN	0x04
+#define TI_HDC20XX_BIT_INT_EN_DRDY_EN     0x80
+#define TI_HDC20XX_BIT_CONFIG_SOFT_RES    0x80
+#define TI_HDC20XX_BIT_CONFIG_DRDY_INT_EN 0x04
 
 /* Reset time: not in the datasheet, but found by trial and error */
-#define TI_HDC20XX_RESET_TIME		K_MSEC(1)
+#define TI_HDC20XX_RESET_TIME K_MSEC(1)
 
 /* Conversion time for 14-bit resolution. Temperature needs 660us and humidity 610us */
-#define TI_HDC20XX_CONVERSION_TIME      K_MSEC(2)
+#define TI_HDC20XX_CONVERSION_TIME K_MSEC(2)
 
 /* Temperature and humidity scale and factors from the datasheet ("Register Maps" section) */
-#define TI_HDC20XX_RH_SCALE		100U
-#define TI_HDC20XX_TEMP_OFFSET		-2654208	/* = -40.5 * 2^16 */
-#define TI_HDC20XX_TEMP_SCALE		165U
+#define TI_HDC20XX_RH_SCALE    100U
+#define TI_HDC20XX_TEMP_OFFSET -2654208 /* = -40.5 * 2^16 */
+#define TI_HDC20XX_TEMP_SCALE  165U
 
 struct ti_hdc20xx_config {
 	struct i2c_dt_spec bus;
@@ -56,8 +56,8 @@ struct ti_hdc20xx_data {
 	uint16_t rh_sample;
 };
 
-static void ti_hdc20xx_int_callback(const struct device *dev,
-				    struct gpio_callback *cb, uint32_t pins)
+static void ti_hdc20xx_int_callback(const struct device *dev, struct gpio_callback *cb,
+				    uint32_t pins)
 {
 	struct ti_hdc20xx_data *data = CONTAINER_OF(cb, struct ti_hdc20xx_data, cb_int);
 
@@ -66,8 +66,7 @@ static void ti_hdc20xx_int_callback(const struct device *dev,
 	k_sem_give(&data->sem_int);
 }
 
-static int ti_hdc20xx_sample_fetch(const struct device *dev,
-				   enum sensor_channel chan)
+static int ti_hdc20xx_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	const struct ti_hdc20xx_config *config = dev->config;
 	struct ti_hdc20xx_data *data = dev->data;
@@ -103,9 +102,7 @@ static int ti_hdc20xx_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-
-static int ti_hdc20xx_channel_get(const struct device *dev,
-				  enum sensor_channel chan,
+static int ti_hdc20xx_channel_get(const struct device *dev, enum sensor_channel chan,
 				  struct sensor_value *val)
 {
 	struct ti_hdc20xx_data *data = dev->data;
@@ -168,8 +165,8 @@ static int ti_hdc20xx_init(const struct device *dev)
 	}
 
 	/* manufacturer and device ID registers are consecutive, read them in the same burst */
-	rc = i2c_burst_read_dt(&config->bus, TI_HDC20XX_REG_MANUFACTURER_ID,
-			       (uint8_t *)buf, sizeof(buf));
+	rc = i2c_burst_read_dt(&config->bus, TI_HDC20XX_REG_MANUFACTURER_ID, (uint8_t *)buf,
+			       sizeof(buf));
 	if (rc < 0) {
 		LOG_ERR("Failed to read manufacturer and device IDs");
 		return rc;
@@ -242,23 +239,18 @@ static int ti_hdc20xx_init(const struct device *dev)
 }
 
 /* Main instantiation macro */
-#define TI_HDC20XX_DEFINE(inst, compat)							\
-	static struct ti_hdc20xx_data ti_hdc20xx_data_##compat##inst;			\
-	static const struct ti_hdc20xx_config ti_hdc20xx_config_##compat##inst = {	\
-		.bus = I2C_DT_SPEC_GET(DT_INST(inst, compat)),				\
-		.gpio_int = GPIO_DT_SPEC_GET_OR(DT_INST(inst, compat), int_gpios, {0}),	\
-	};										\
-	DEVICE_DT_DEFINE(DT_INST(inst, compat),						\
-			ti_hdc20xx_init,						\
-			NULL,								\
-			&ti_hdc20xx_data_##compat##inst,				\
-			&ti_hdc20xx_config_##compat##inst,				\
-			POST_KERNEL,							\
-			CONFIG_SENSOR_INIT_PRIORITY,					\
-			&ti_hdc20xx_api_funcs);
+#define TI_HDC20XX_DEFINE(inst, compat)                                                            \
+	static struct ti_hdc20xx_data ti_hdc20xx_data_##compat##inst;                              \
+	static const struct ti_hdc20xx_config ti_hdc20xx_config_##compat##inst = {                 \
+		.bus = I2C_DT_SPEC_GET(DT_INST(inst, compat)),                                     \
+		.gpio_int = GPIO_DT_SPEC_GET_OR(DT_INST(inst, compat), int_gpios, {0}),            \
+	};                                                                                         \
+	DEVICE_DT_DEFINE(DT_INST(inst, compat), ti_hdc20xx_init, NULL,                             \
+			 &ti_hdc20xx_data_##compat##inst, &ti_hdc20xx_config_##compat##inst,       \
+			 POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &ti_hdc20xx_api_funcs);
 
 /* Create the struct device for every status "okay" node in the devicetree. */
-#define TI_HDC20XX_FOREACH_STATUS_OKAY(compat, fn)	\
+#define TI_HDC20XX_FOREACH_STATUS_OKAY(compat, fn)                                                 \
 	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(compat),	\
 		    (UTIL_CAT(DT_FOREACH_OKAY_INST_,	\
 			      compat)(fn)),		\

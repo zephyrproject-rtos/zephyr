@@ -16,14 +16,14 @@
 #include <zephyr/dt-bindings/gpio/numicro-gpio.h>
 #include <NuMicro.h>
 
-#define MODE_PIN_SHIFT(pin)	((pin) * 2)
-#define MODE_MASK(pin)		(3 << MODE_PIN_SHIFT(pin))
-#define DINOFF_PIN_SHIFT(pin)	((pin) + 16)
-#define DINOFF_MASK(pin)	(1 << DINOFF_PIN_SHIFT(pin))
-#define PUSEL_PIN_SHIFT(pin)	((pin) * 2)
-#define PUSEL_MASK(pin)		(3 << PUSEL_PIN_SHIFT(pin))
+#define MODE_PIN_SHIFT(pin)   ((pin) * 2)
+#define MODE_MASK(pin)        (3 << MODE_PIN_SHIFT(pin))
+#define DINOFF_PIN_SHIFT(pin) ((pin) + 16)
+#define DINOFF_MASK(pin)      (1 << DINOFF_PIN_SHIFT(pin))
+#define PUSEL_PIN_SHIFT(pin)  ((pin) * 2)
+#define PUSEL_MASK(pin)       (3 << PUSEL_PIN_SHIFT(pin))
 
-#define PORT_PIN_MASK		0xFFFF
+#define PORT_PIN_MASK 0xFFFF
 
 struct gpio_numicro_config {
 	/* gpio_driver_config needs to be first */
@@ -46,11 +46,10 @@ struct gpio_numicro_data {
 #endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
 };
 
-static int gpio_numicro_configure(const struct device *dev,
-			       gpio_pin_t pin, gpio_flags_t flags)
+static int gpio_numicro_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_numicro_config *cfg = dev->config;
-	GPIO_T * const regs = cfg->regs;
+	GPIO_T *const regs = cfg->regs;
 
 	uint32_t mode;
 	uint32_t debounce_enable = 0;
@@ -100,14 +99,12 @@ static int gpio_numicro_configure(const struct device *dev,
 		}
 	}
 
-	regs->MODE = (regs->MODE & ~MODE_MASK(pin)) |
-		     (mode << MODE_PIN_SHIFT(pin));
+	regs->MODE = (regs->MODE & ~MODE_MASK(pin)) | (mode << MODE_PIN_SHIFT(pin));
 	regs->DBEN = (regs->DBEN & ~BIT(pin)) | (debounce_enable << pin);
 	regs->SMTEN = (regs->SMTEN & ~BIT(pin)) | (schmitt_enable << pin);
-	regs->DINOFF = (regs->DINOFF & ~DINOFF_MASK(pin)) |
-		       (disable_input_path << DINOFF_PIN_SHIFT(pin));
-	regs->PUSEL = (regs->PUSEL & ~PUSEL_MASK(pin)) |
-		      (bias << PUSEL_PIN_SHIFT(pin));
+	regs->DINOFF =
+		(regs->DINOFF & ~DINOFF_MASK(pin)) | (disable_input_path << DINOFF_PIN_SHIFT(pin));
+	regs->PUSEL = (regs->PUSEL & ~PUSEL_MASK(pin)) | (bias << PUSEL_PIN_SHIFT(pin));
 
 	return 0;
 }
@@ -121,9 +118,7 @@ static int gpio_numicro_port_get_raw(const struct device *dev, uint32_t *value)
 	return 0;
 }
 
-static int gpio_numicro_port_set_masked_raw(const struct device *dev,
-					 uint32_t mask,
-					 uint32_t value)
+static int gpio_numicro_port_set_masked_raw(const struct device *dev, uint32_t mask, uint32_t value)
 {
 	const struct gpio_numicro_config *cfg = dev->config;
 
@@ -133,8 +128,7 @@ static int gpio_numicro_port_set_masked_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_numicro_port_set_bits_raw(const struct device *dev,
-				       uint32_t mask)
+static int gpio_numicro_port_set_bits_raw(const struct device *dev, uint32_t mask)
 {
 	const struct gpio_numicro_config *cfg = dev->config;
 
@@ -144,8 +138,7 @@ static int gpio_numicro_port_set_bits_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_numicro_port_clear_bits_raw(const struct device *dev,
-					 uint32_t mask)
+static int gpio_numicro_port_clear_bits_raw(const struct device *dev, uint32_t mask)
 {
 	const struct gpio_numicro_config *cfg = dev->config;
 
@@ -165,9 +158,8 @@ static int gpio_numicro_port_toggle_bits(const struct device *dev, uint32_t mask
 	return 0;
 }
 
-static int gpio_numicro_pin_interrupt_configure(const struct device *dev,
-					     gpio_pin_t pin, enum gpio_int_mode mode,
-					     enum gpio_int_trig trig)
+static int gpio_numicro_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
+						enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	const struct gpio_numicro_config *cfg = dev->config;
 #ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
@@ -214,8 +206,7 @@ static int gpio_numicro_pin_interrupt_configure(const struct device *dev,
 	return 0;
 }
 
-static int gpio_numicro_manage_callback(const struct device *dev,
-					struct gpio_callback *callback,
+static int gpio_numicro_manage_callback(const struct device *dev, struct gpio_callback *callback,
 					bool set)
 {
 	struct gpio_numicro_data *data = dev->data;
@@ -248,33 +239,27 @@ static const struct gpio_driver_api gpio_numicro_driver_api = {
 	.manage_callback = gpio_numicro_manage_callback,
 };
 
-#define GPIO_NUMICRO_INIT(n)						\
-	static int gpio_numicro_port##n##_init(const struct device *dev)\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n),				\
-			    DT_INST_IRQ(n, priority),			\
-			    gpio_numicro_isr,				\
-			    DEVICE_DT_INST_GET(n), 0);			\
-		irq_enable(DT_INST_IRQN(n));				\
-		return 0;						\
-	}								\
-									\
-	static struct gpio_numicro_data gpio_numicro_port##n##_data;	\
-									\
-	static const struct gpio_numicro_config gpio_numicro_port##n##_config = {\
-		.common = {						\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),\
-		},							\
-		.regs = (GPIO_T *)DT_INST_REG_ADDR(n),			\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(n,					\
-			      gpio_numicro_port##n##_init,		\
-			      NULL,					\
-			      &gpio_numicro_port##n##_data,		\
-			      &gpio_numicro_port##n##_config,		\
-			      PRE_KERNEL_1,				\
-			      CONFIG_GPIO_INIT_PRIORITY,		\
-			      &gpio_numicro_driver_api);
+#define GPIO_NUMICRO_INIT(n)                                                                       \
+	static int gpio_numicro_port##n##_init(const struct device *dev)                           \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_numicro_isr,           \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+		return 0;                                                                          \
+	}                                                                                          \
+                                                                                                   \
+	static struct gpio_numicro_data gpio_numicro_port##n##_data;                               \
+                                                                                                   \
+	static const struct gpio_numicro_config gpio_numicro_port##n##_config = {                  \
+		.common =                                                                          \
+			{                                                                          \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
+			},                                                                         \
+		.regs = (GPIO_T *)DT_INST_REG_ADDR(n),                                             \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, gpio_numicro_port##n##_init, NULL, &gpio_numicro_port##n##_data,  \
+			      &gpio_numicro_port##n##_config, PRE_KERNEL_1,                        \
+			      CONFIG_GPIO_INIT_PRIORITY, &gpio_numicro_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_NUMICRO_INIT)

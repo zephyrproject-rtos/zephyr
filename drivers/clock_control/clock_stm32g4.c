@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <soc.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>
@@ -21,8 +20,7 @@
 /**
  * @brief Return PLL source
  */
-__unused
-static uint32_t get_pll_source(void)
+__unused static uint32_t get_pll_source(void)
 {
 	/* Configure PLL source */
 	if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
@@ -38,8 +36,7 @@ static uint32_t get_pll_source(void)
 /**
  * @brief get the pll source frequency
  */
-__unused
-uint32_t get_pllsrc_frequency(void)
+__unused uint32_t get_pllsrc_frequency(void)
 {
 	if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
 		return STM32_HSI_FREQ;
@@ -54,18 +51,15 @@ uint32_t get_pllsrc_frequency(void)
 /**
  * @brief Set up pll configuration
  */
-__unused
-void config_pll_sysclock(void)
+__unused void config_pll_sysclock(void)
 {
 	/* set power boost mode for sys clock greater than 150MHz */
 	if (sys_clock_hw_cycles_per_sec() >= MHZ(150)) {
 		LL_PWR_EnableRange1BoostMode();
 	}
 
-	LL_RCC_PLL_ConfigDomain_SYS(get_pll_source(),
-				    pllm(STM32_PLL_M_DIVISOR),
-				    STM32_PLL_N_MULTIPLIER,
-				    pllr(STM32_PLL_R_DIVISOR));
+	LL_RCC_PLL_ConfigDomain_SYS(get_pll_source(), pllm(STM32_PLL_M_DIVISOR),
+				    STM32_PLL_N_MULTIPLIER, pllr(STM32_PLL_R_DIVISOR));
 
 	LL_RCC_PLL_EnableDomain_SYS();
 }

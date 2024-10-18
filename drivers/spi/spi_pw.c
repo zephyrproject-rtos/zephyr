@@ -27,9 +27,7 @@ static uint32_t spi_pw_reg_read(const struct device *dev, uint32_t offset)
 	return sys_read32(DEVICE_MMIO_GET(dev) + offset);
 }
 
-static void spi_pw_reg_write(const struct device *dev,
-			     uint32_t offset,
-			     uint32_t val)
+static void spi_pw_reg_write(const struct device *dev, uint32_t offset, uint32_t val)
 {
 	sys_write32(val, DEVICE_MMIO_GET(dev) + offset);
 }
@@ -107,7 +105,6 @@ static void spi_pw_ssp_enable(const struct device *dev)
 	ctrlr0 = spi_pw_reg_read(dev, PW_SPI_REG_CTRLR0);
 	ctrlr0 |= PW_SPI_CTRLR0_SSE_BIT;
 	spi_pw_reg_write(dev, PW_SPI_REG_CTRLR0, ctrlr0);
-
 }
 
 static void spi_pw_ssp_disable(const struct device *dev)
@@ -202,14 +199,13 @@ static void spi_pw_tx_thld_set(const struct device *dev)
 	spi_pw_reg_write(dev, PW_SPI_REG_SITF, reg_data);
 }
 
-static void spi_pw_rx_thld_set(const struct device *dev,
-			       struct spi_pw_data *spi)
+static void spi_pw_rx_thld_set(const struct device *dev, struct spi_pw_data *spi)
 {
 	uint32_t reg_data;
 
 	/* Rx threshold */
 	reg_data = spi_pw_reg_read(dev, PW_SPI_REG_SIRF);
-	reg_data &= (uint32_t) ~(PW_SPI_WM_MASK);
+	reg_data &= (uint32_t)~(PW_SPI_WM_MASK);
 	reg_data |= PW_SPI_SIRF_WM_DFLT;
 	if (spi->ctx.rx_len && spi->ctx.rx_len < spi->fifo_depth) {
 		reg_data = spi->ctx.rx_len - 1;
@@ -217,8 +213,7 @@ static void spi_pw_rx_thld_set(const struct device *dev,
 	spi_pw_reg_write(dev, PW_SPI_REG_SIRF, reg_data);
 }
 
-static int spi_pw_set_data_size(const struct device *dev,
-				const struct spi_config *config)
+static int spi_pw_set_data_size(const struct device *dev, const struct spi_config *config)
 {
 	uint32_t ctrlr0;
 
@@ -249,8 +244,7 @@ static int spi_pw_set_data_size(const struct device *dev,
 	return 0;
 }
 
-static void spi_pw_config_phase_polarity(const struct device *dev,
-					 const struct spi_config *config)
+static void spi_pw_config_phase_polarity(const struct device *dev, const struct spi_config *config)
 {
 	uint8_t mode;
 	uint32_t ctrlr1;
@@ -295,13 +289,11 @@ static void spi_pw_enable_clk(const struct device *dev)
 	clks = spi_pw_reg_read(dev, PW_SPI_REG_CLKS);
 	clks &= ~(PW_SPI_CLKS_MVAL_MASK);
 	clks &= ~(PW_SPI_CLKS_NVAL_MASK);
-	clks |= (PW_SPI_CLKS_MVAL | PW_SPI_CLKS_NVAL |
-		 PW_SPI_CLKS_EN_BIT | PW_SPI_CLKS_UPDATE_BIT);
+	clks |= (PW_SPI_CLKS_MVAL | PW_SPI_CLKS_NVAL | PW_SPI_CLKS_EN_BIT | PW_SPI_CLKS_UPDATE_BIT);
 	spi_pw_reg_write(dev, PW_SPI_REG_CLKS, clks);
 }
 
-static void spi_pw_config_clk(const struct device *dev,
-			      const struct spi_pw_config *info,
+static void spi_pw_config_clk(const struct device *dev, const struct spi_pw_config *info,
 			      const struct spi_config *config)
 {
 	uint32_t ctrlr0, scr;
@@ -325,8 +317,7 @@ static void spi_pw_completed(const struct device *dev, int err)
 {
 	struct spi_pw_data *spi = dev->data;
 
-	if (!err && (spi_context_tx_on(&spi->ctx) ||
-		     spi_context_rx_on(&spi->ctx))) {
+	if (!err && (spi_context_tx_on(&spi->ctx) || spi_context_rx_on(&spi->ctx))) {
 		return;
 	}
 
@@ -346,8 +337,7 @@ static void spi_pw_completed(const struct device *dev, int err)
 
 	spi_pw_cs_ctrl_enable(dev, false);
 
-	LOG_DBG("SPI transaction completed %s error\n",
-		err ? "with" : "without");
+	LOG_DBG("SPI transaction completed %s error\n", err ? "with" : "without");
 
 	spi_context_complete(&spi->ctx, dev, err);
 }
@@ -367,8 +357,7 @@ static int spi_pw_get_tx_fifo_level(const struct device *dev)
 
 	tx_fifo_level = spi_pw_reg_read(dev, PW_SPI_REG_SITF);
 
-	tx_fifo_level = ((tx_fifo_level & PW_SPI_SITF_SITFL_MASK) >>
-			 PW_SPI_SITF_SITFL_SHIFT);
+	tx_fifo_level = ((tx_fifo_level & PW_SPI_SITF_SITFL_MASK) >> PW_SPI_SITF_SITFL_SHIFT);
 
 	return tx_fifo_level;
 }
@@ -378,8 +367,7 @@ static int spi_pw_get_rx_fifo_level(const struct device *dev)
 	uint32_t rx_fifo_level;
 
 	rx_fifo_level = spi_pw_reg_read(dev, PW_SPI_REG_SIRF);
-	rx_fifo_level = ((rx_fifo_level & PW_SPI_SIRF_SIRFL_MASK) >>
-			 PW_SPI_SIRF_SIRFL_SHIFT);
+	rx_fifo_level = ((rx_fifo_level & PW_SPI_SIRF_SIRFL_MASK) >> PW_SPI_SIRF_SIRFL_SHIFT);
 
 	return rx_fifo_level;
 }
@@ -391,11 +379,9 @@ static void spi_pw_reset_tx_fifo_level(const struct device *dev)
 	tx_fifo_level = spi_pw_reg_read(dev, PW_SPI_REG_SITF);
 	tx_fifo_level &= ~(PW_SPI_SITF_SITFL_MASK);
 	spi_pw_reg_write(dev, PW_SPI_REG_SITF, tx_fifo_level);
-
 }
 
-static void spi_pw_update_rx_fifo_level(uint32_t len,
-					const struct device *dev)
+static void spi_pw_update_rx_fifo_level(uint32_t len, const struct device *dev)
 {
 	uint32_t rx_fifo_level;
 
@@ -412,8 +398,7 @@ static void spi_pw_tx_data(const struct device *dev)
 	int32_t fifo_len;
 
 	if (spi_context_rx_on(&spi->ctx)) {
-		fifo_len = spi->fifo_depth -
-			   spi_pw_get_tx_fifo_level(dev) -
+		fifo_len = spi->fifo_depth - spi_pw_get_tx_fifo_level(dev) -
 			   spi_pw_get_rx_fifo_level(dev);
 		if (fifo_len < 0) {
 			fifo_len = 0U;
@@ -426,16 +411,13 @@ static void spi_pw_tx_data(const struct device *dev)
 		if (spi_context_tx_buf_on(&spi->ctx)) {
 			switch (spi->dfs) {
 			case 1:
-				data = UNALIGNED_GET((uint8_t *)
-						     (spi->ctx.tx_buf));
+				data = UNALIGNED_GET((uint8_t *)(spi->ctx.tx_buf));
 				break;
 			case 2:
-				data = UNALIGNED_GET((uint16_t *)
-						     (spi->ctx.tx_buf));
+				data = UNALIGNED_GET((uint16_t *)(spi->ctx.tx_buf));
 				break;
 			case 4:
-				data = UNALIGNED_GET((uint32_t *)
-						     (spi->ctx.tx_buf));
+				data = UNALIGNED_GET((uint32_t *)(spi->ctx.tx_buf));
 				break;
 			}
 		} else if (spi_context_rx_on(&spi->ctx)) {
@@ -472,16 +454,13 @@ static void spi_pw_rx_data(const struct device *dev)
 		if (spi_context_rx_buf_on(&spi->ctx)) {
 			switch (spi->dfs) {
 			case 1:
-				UNALIGNED_PUT(data,
-					      (uint8_t *)spi->ctx.rx_buf);
+				UNALIGNED_PUT(data, (uint8_t *)spi->ctx.rx_buf);
 				break;
 			case 2:
-				UNALIGNED_PUT(data,
-					      (uint16_t *)spi->ctx.rx_buf);
+				UNALIGNED_PUT(data, (uint16_t *)spi->ctx.rx_buf);
 				break;
 			case 4:
-				UNALIGNED_PUT(data,
-					      (uint32_t *)spi->ctx.rx_buf);
+				UNALIGNED_PUT(data, (uint32_t *)spi->ctx.rx_buf);
 				break;
 			}
 		}
@@ -540,10 +519,8 @@ out:
 	return err;
 }
 
-static int spi_pw_configure(const struct device *dev,
-			    const struct spi_pw_config *info,
-			    struct spi_pw_data *spi,
-			    const struct spi_config *config)
+static int spi_pw_configure(const struct device *dev, const struct spi_pw_config *info,
+			    struct spi_pw_data *spi, const struct spi_config *config)
 {
 	int err;
 
@@ -571,9 +548,7 @@ static int spi_pw_configure(const struct device *dev,
 
 	if ((config->operation & SPI_TRANSFER_LSB) ||
 	    (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
-	     (config->operation & (SPI_LINES_DUAL |
-				   SPI_LINES_QUAD |
-				   SPI_LINES_OCTAL)))) {
+	     (config->operation & (SPI_LINES_DUAL | SPI_LINES_QUAD | SPI_LINES_OCTAL)))) {
 		LOG_ERR("Extended mode Unsupported configuration");
 		return -EINVAL;
 	}
@@ -608,13 +583,9 @@ static int spi_pw_configure(const struct device *dev,
 	return 0;
 }
 
-static int transceive(const struct device *dev,
-		      const struct spi_config *config,
-		      const struct spi_buf_set *tx_bufs,
-		      const struct spi_buf_set *rx_bufs,
-		      bool asynchronous,
-		      spi_callback_t cb,
-		      void *userdata)
+static int transceive(const struct device *dev, const struct spi_config *config,
+		      const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs,
+		      bool asynchronous, spi_callback_t cb, void *userdata)
 {
 	const struct spi_pw_config *info = dev->config;
 	struct spi_pw_data *spi = dev->data;
@@ -641,8 +612,7 @@ static int transceive(const struct device *dev,
 
 	/* Frame size in number of data bytes */
 	spi->dfs = spi_pw_get_frame_size(config);
-	spi_context_buffers_setup(&spi->ctx, tx_bufs, rx_bufs,
-				  spi->dfs);
+	spi_context_buffers_setup(&spi->ctx, tx_bufs, rx_bufs, spi->dfs);
 
 	spi->fifo_diff = 0U;
 
@@ -683,34 +653,26 @@ out:
 	return err;
 }
 
-static int spi_pw_transceive(const struct device *dev,
-			     const struct spi_config *config,
-			     const struct spi_buf_set *tx_bufs,
-			     const struct spi_buf_set *rx_bufs)
+static int spi_pw_transceive(const struct device *dev, const struct spi_config *config,
+			     const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs)
 {
 	LOG_DBG("%p, %p, %p\n", dev, tx_bufs, rx_bufs);
-	return transceive(dev, config, tx_bufs, rx_bufs,
-			  false, NULL, NULL);
+	return transceive(dev, config, tx_bufs, rx_bufs, false, NULL, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int spi_pw_transceive_async(const struct device *dev,
-				   const struct spi_config *config,
+static int spi_pw_transceive_async(const struct device *dev, const struct spi_config *config,
 				   const struct spi_buf_set *tx_bufs,
-				   const struct spi_buf_set *rx_bufs,
-				   spi_callback_t cb,
+				   const struct spi_buf_set *rx_bufs, spi_callback_t cb,
 				   void *userdata)
 {
-	LOG_DBG("%p, %p, %p, %p, %p\n", dev, tx_bufs, rx_bufs,
-					cb, userdata);
+	LOG_DBG("%p, %p, %p, %p, %p\n", dev, tx_bufs, rx_bufs, cb, userdata);
 
-	return transceive(dev, config, tx_bufs, rx_bufs, true,
-			  cb, userdata);
+	return transceive(dev, config, tx_bufs, rx_bufs, true, cb, userdata);
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static int spi_pw_release(const struct device *dev,
-			  const struct spi_config *config)
+static int spi_pw_release(const struct device *dev, const struct spi_config *config)
 {
 	struct spi_pw_data *spi = dev->data;
 
@@ -739,7 +701,7 @@ static const struct spi_driver_api pw_spi_api = {
 	.release = spi_pw_release,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_pw_transceive_async,
-#endif  /* CONFIG_SPI_ASYNC */
+#endif /* CONFIG_SPI_ASYNC */
 #ifdef CONFIG_SPI_RTIO
 	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
@@ -765,15 +727,11 @@ static int spi_pw_init(const struct device *dev)
 			return -EINVAL;
 		}
 
-		pcie_set_cmd(info->pcie->bdf, PCIE_CONF_CMDSTAT_MEM,
-			     true);
+		pcie_set_cmd(info->pcie->bdf, PCIE_CONF_CMDSTAT_MEM, true);
 
-		device_map(DEVICE_MMIO_RAM_PTR(dev), mbar.phys_addr,
-			   mbar.size, K_MEM_CACHE_NONE);
+		device_map(DEVICE_MMIO_RAM_PTR(dev), mbar.phys_addr, mbar.size, K_MEM_CACHE_NONE);
 
-		pcie_set_cmd(info->pcie->bdf,
-			     PCIE_CONF_CMDSTAT_MASTER,
-			     true);
+		pcie_set_cmd(info->pcie->bdf, PCIE_CONF_CMDSTAT_MASTER, true);
 
 	} else {
 		DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
@@ -816,85 +774,74 @@ static int spi_pw_init(const struct device *dev)
 
 #define INIT_PCIE0(n)
 #define INIT_PCIE1(n) DEVICE_PCIE_INST_INIT(n, pcie),
-#define INIT_PCIE(n) _CONCAT(INIT_PCIE, DT_INST_ON_BUS(n, pcie))(n)
+#define INIT_PCIE(n)  _CONCAT(INIT_PCIE, DT_INST_ON_BUS(n, pcie))(n)
 
 #define DEFINE_PCIE0(n)
-#define DEFINE_PCIE1(n) DEVICE_PCIE_INST_DECLARE(n)
+#define DEFINE_PCIE1(n)    DEVICE_PCIE_INST_DECLARE(n)
 #define SPI_PCIE_DEFINE(n) _CONCAT(DEFINE_PCIE, DT_INST_ON_BUS(n, pcie))(n)
 
 #ifdef CONFIG_SPI_PW_INTERRUPT
 
 #define SPI_INTEL_IRQ_FLAGS_SENSE0(n) 0
 #define SPI_INTEL_IRQ_FLAGS_SENSE1(n) DT_INST_IRQ(n, sense)
-#define SPI_INTEL_IRQ_FLAGS(n) \
-	_CONCAT(SPI_INTEL_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, sense))(n)
+#define SPI_INTEL_IRQ_FLAGS(n)        _CONCAT(SPI_INTEL_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, sense))(n)
 
-#define SPI_INTEL_IRQ_INIT(n)						     \
-	BUILD_ASSERT(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),		     \
-		     "SPI PCIe requires dynamic interrupts");		     \
-	static void spi_##n##_irq_init(const struct device *dev)	     \
-	{								     \
-		const struct spi_pw_config *info = dev->config;		     \
-		unsigned int irq;					     \
-		if (DT_INST_IRQN(n) == PCIE_IRQ_DETECT) {		     \
-			irq = pcie_alloc_irq(info->pcie->bdf);		     \
-			if (irq == PCIE_CONF_INTR_IRQ_NONE) {		     \
-				return;					     \
-			}						     \
-		} else {						     \
-			irq = DT_INST_IRQN(n);				     \
-			pcie_conf_write(info->pcie->bdf,		     \
-					PCIE_CONF_INTR, irq);		     \
-		}							     \
-		pcie_connect_dynamic_irq(info->pcie->bdf, irq,		     \
-					 DT_INST_IRQ(n, priority),	     \
-					 (void (*)(const void *))spi_pw_isr, \
-					 DEVICE_DT_INST_GET(n),		     \
-					 SPI_INTEL_IRQ_FLAGS(n));	     \
-		pcie_irq_enable(info->pcie->bdf, irq);			     \
-		LOG_DBG("lpass spi Configure irq %d", irq);		     \
+#define SPI_INTEL_IRQ_INIT(n)                                                                      \
+	BUILD_ASSERT(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),                                        \
+		     "SPI PCIe requires dynamic interrupts");                                      \
+	static void spi_##n##_irq_init(const struct device *dev)                                   \
+	{                                                                                          \
+		const struct spi_pw_config *info = dev->config;                                    \
+		unsigned int irq;                                                                  \
+		if (DT_INST_IRQN(n) == PCIE_IRQ_DETECT) {                                          \
+			irq = pcie_alloc_irq(info->pcie->bdf);                                     \
+			if (irq == PCIE_CONF_INTR_IRQ_NONE) {                                      \
+				return;                                                            \
+			}                                                                          \
+		} else {                                                                           \
+			irq = DT_INST_IRQN(n);                                                     \
+			pcie_conf_write(info->pcie->bdf, PCIE_CONF_INTR, irq);                     \
+		}                                                                                  \
+		pcie_connect_dynamic_irq(info->pcie->bdf, irq, DT_INST_IRQ(n, priority),           \
+					 (void (*)(const void *))spi_pw_isr,                       \
+					 DEVICE_DT_INST_GET(n), SPI_INTEL_IRQ_FLAGS(n));           \
+		pcie_irq_enable(info->pcie->bdf, irq);                                             \
+		LOG_DBG("lpass spi Configure irq %d", irq);                                        \
 	}
 
-#define SPI_PW_DEV_INIT(n)					     \
-	static struct spi_pw_data spi_##n##_data = {		     \
-		SPI_CONTEXT_INIT_LOCK(spi_##n##_data, ctx),	     \
-		SPI_CONTEXT_INIT_SYNC(spi_##n##_data, ctx),	     \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx) \
-		.cs_mode = DT_INST_PROP(n, pw_cs_mode),		     \
-		.cs_output = DT_INST_PROP(n, pw_cs_output),	     \
-		.fifo_depth = DT_INST_PROP(n, pw_fifo_depth),	     \
-	};							     \
-	SPI_PCIE_DEFINE(n);					     \
-	SPI_INTEL_IRQ_INIT(n)					     \
-	static const struct spi_pw_config spi_##n##_config = {	     \
-		.irq_config = spi_##n##_irq_init,		     \
-		.clock_freq = DT_INST_PROP(n, clock_frequency),	     \
-		INIT_PCIE(n)					     \
-	};							     \
-	DEVICE_DT_INST_DEFINE(n, spi_pw_init, NULL,		     \
-			      &spi_##n##_data, &spi_##n##_config,    \
-			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, \
-			      &pw_spi_api);
+#define SPI_PW_DEV_INIT(n)                                                                         \
+	static struct spi_pw_data spi_##n##_data = {                                               \
+		SPI_CONTEXT_INIT_LOCK(spi_##n##_data, ctx),                                        \
+		SPI_CONTEXT_INIT_SYNC(spi_##n##_data, ctx),                                        \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx).cs_mode =                     \
+			DT_INST_PROP(n, pw_cs_mode),                                               \
+		.cs_output = DT_INST_PROP(n, pw_cs_output),                                        \
+		.fifo_depth = DT_INST_PROP(n, pw_fifo_depth),                                      \
+	};                                                                                         \
+	SPI_PCIE_DEFINE(n);                                                                        \
+	SPI_INTEL_IRQ_INIT(n)                                                                      \
+	static const struct spi_pw_config spi_##n##_config = {                                     \
+		.irq_config = spi_##n##_irq_init,                                                  \
+		.clock_freq = DT_INST_PROP(n, clock_frequency),                                    \
+		INIT_PCIE(n)};                                                                     \
+	DEVICE_DT_INST_DEFINE(n, spi_pw_init, NULL, &spi_##n##_data, &spi_##n##_config,            \
+			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &pw_spi_api);
 #else
 
-#define SPI_PW_DEV_INIT(n)					     \
-	static struct spi_pw_data spi_##n##_data = {		     \
-		SPI_CONTEXT_INIT_LOCK(spi_##n##_data, ctx),	     \
-		SPI_CONTEXT_INIT_SYNC(spi_##n##_data, ctx),	     \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx) \
-		.cs_mode = DT_INST_PROP(n, pw_cs_mode),		     \
-		.cs_output = DT_INST_PROP(n, pw_cs_output),	     \
-		.fifo_depth = DT_INST_PROP(n, pw_fifo_depth),	     \
-	};							     \
-	SPI_PCIE_DEFINE(n);					     \
-	static const struct spi_pw_config spi_##n##_config = {	     \
-		.clock_freq = DT_INST_PROP(n, clock_frequency),	     \
-		INIT_PCIE(n)					     \
-	};							     \
-	DEVICE_DT_INST_DEFINE(n, spi_pw_init, NULL,		     \
-			      &spi_##n##_data, &spi_##n##_config,    \
-			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, \
-			      &pw_spi_api);
+#define SPI_PW_DEV_INIT(n)                                                                         \
+	static struct spi_pw_data spi_##n##_data = {                                               \
+		SPI_CONTEXT_INIT_LOCK(spi_##n##_data, ctx),                                        \
+		SPI_CONTEXT_INIT_SYNC(spi_##n##_data, ctx),                                        \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx).cs_mode =                     \
+			DT_INST_PROP(n, pw_cs_mode),                                               \
+		.cs_output = DT_INST_PROP(n, pw_cs_output),                                        \
+		.fifo_depth = DT_INST_PROP(n, pw_fifo_depth),                                      \
+	};                                                                                         \
+	SPI_PCIE_DEFINE(n);                                                                        \
+	static const struct spi_pw_config spi_##n##_config = {                                     \
+		.clock_freq = DT_INST_PROP(n, clock_frequency), INIT_PCIE(n)};                     \
+	DEVICE_DT_INST_DEFINE(n, spi_pw_init, NULL, &spi_##n##_data, &spi_##n##_config,            \
+			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &pw_spi_api);
 
 #endif
 

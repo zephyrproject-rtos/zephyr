@@ -236,7 +236,8 @@ static void gpio_numaker_isr(const struct device *dev)
 
 #define GPIO_NUMAKER_DEFINE(n)                                                                     \
 	static const struct gpio_numaker_config gpio_numaker_config##n = {                         \
-		.common = {                                                                        \
+		.common =                                                                          \
+			{                                                                          \
 				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
 			},                                                                         \
 		.reg = DT_INST_REG_ADDR(n),                                                        \
@@ -257,9 +258,9 @@ static void gpio_numaker_isr(const struct device *dev)
 		memset(&scc_subsys, 0x00, sizeof(scc_subsys));                                     \
 		scc_subsys.subsys_id = NUMAKER_SCC_SUBSYS_ID_PCC;                                  \
 		scc_subsys.pcc.clk_modidx = config->clk_modidx;                                    \
-		err = clock_control_on(config->clk_dev, (clock_control_subsys_t)&scc_subsys);      \
+		err = clock_control_on(config->clk_dev, (clock_control_subsys_t) & scc_subsys);    \
 		if (err == 0) {                                                                    \
-			IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0), (GPIO_NUMAKER_IRQ_INIT(n);))         \
+			IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0), (GPIO_NUMAKER_IRQ_INIT(n);))                                                                 \
 		}                                                                                  \
                                                                                                    \
 		SYS_LockReg();                                                                     \

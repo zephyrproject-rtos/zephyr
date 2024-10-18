@@ -22,8 +22,7 @@
 
 LOG_MODULE_REGISTER(LSM6DSO16IS, CONFIG_SENSOR_LOG_LEVEL);
 
-static const uint16_t lsm6dso16is_odr_map[] = {0, 12, 26, 52, 104, 208, 416, 833,
-					1667, 3333, 6667};
+static const uint16_t lsm6dso16is_odr_map[] = {0, 12, 26, 52, 104, 208, 416, 833, 1667, 3333, 6667};
 
 static int lsm6dso16is_freq_to_odr_val(uint16_t freq)
 {
@@ -185,10 +184,8 @@ static int lsm6dso16is_accel_range_set(const struct device *dev, int32_t range)
 	return 0;
 }
 
-static int lsm6dso16is_accel_config(const struct device *dev,
-				enum sensor_channel chan,
-				enum sensor_attribute attr,
-				const struct sensor_value *val)
+static int lsm6dso16is_accel_config(const struct device *dev, enum sensor_channel chan,
+				    enum sensor_attribute attr, const struct sensor_value *val)
 {
 	const struct lsm6dso16is_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
@@ -256,10 +253,8 @@ static int lsm6dso16is_gyro_range_set(const struct device *dev, int32_t range)
 	return 0;
 }
 
-static int lsm6dso16is_gyro_config(const struct device *dev,
-			       enum sensor_channel chan,
-			       enum sensor_attribute attr,
-			       const struct sensor_value *val)
+static int lsm6dso16is_gyro_config(const struct device *dev, enum sensor_channel chan,
+				   enum sensor_attribute attr, const struct sensor_value *val)
 {
 	const struct lsm6dso16is_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
@@ -291,10 +286,8 @@ static int lsm6dso16is_gyro_config(const struct device *dev,
 	return 0;
 }
 
-static int lsm6dso16is_attr_set(const struct device *dev,
-			    enum sensor_channel chan,
-			    enum sensor_attribute attr,
-			    const struct sensor_value *val)
+static int lsm6dso16is_attr_set(const struct device *dev, enum sensor_channel chan,
+				enum sensor_attribute attr, const struct sensor_value *val)
 {
 #if defined(CONFIG_LSM6DSO16IS_SENSORHUB)
 	struct lsm6dso16is_data *data = dev->data;
@@ -380,8 +373,7 @@ static int lsm6dso16is_sample_fetch_shub(const struct device *dev)
 }
 #endif /* CONFIG_LSM6DSO16IS_SENSORHUB */
 
-static int lsm6dso16is_sample_fetch(const struct device *dev,
-				enum sensor_channel chan)
+static int lsm6dso16is_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 #if defined(CONFIG_LSM6DSO16IS_SENSORHUB)
 	struct lsm6dso16is_data *data = dev->data;
@@ -419,21 +411,18 @@ static int lsm6dso16is_sample_fetch(const struct device *dev,
 }
 
 static inline void lsm6dso16is_accel_convert(struct sensor_value *val, int raw_val,
-					 uint32_t sensitivity)
+					     uint32_t sensitivity)
 {
 	int64_t dval;
 
 	/* Sensitivity is exposed in ug/LSB */
 	/* Convert to m/s^2 */
-	dval = (int64_t)(raw_val) * sensitivity;
+	dval = (int64_t)(raw_val)*sensitivity;
 	sensor_ug_to_ms2(dval, val);
-
 }
 
-static inline int lsm6dso16is_accel_get_channel(enum sensor_channel chan,
-					    struct sensor_value *val,
-					    struct lsm6dso16is_data *data,
-					    uint32_t sensitivity)
+static inline int lsm6dso16is_accel_get_channel(enum sensor_channel chan, struct sensor_value *val,
+						struct lsm6dso16is_data *data, uint32_t sensitivity)
 {
 	uint8_t i;
 
@@ -459,28 +448,25 @@ static inline int lsm6dso16is_accel_get_channel(enum sensor_channel chan,
 	return 0;
 }
 
-static int lsm6dso16is_accel_channel_get(enum sensor_channel chan,
-				     struct sensor_value *val,
-				     struct lsm6dso16is_data *data)
+static int lsm6dso16is_accel_channel_get(enum sensor_channel chan, struct sensor_value *val,
+					 struct lsm6dso16is_data *data)
 {
 	return lsm6dso16is_accel_get_channel(chan, val, data, data->acc_gain);
 }
 
 static inline void lsm6dso16is_gyro_convert(struct sensor_value *val, int raw_val,
-					uint32_t sensitivity)
+					    uint32_t sensitivity)
 {
 	int64_t dval;
 
 	/* Sensitivity is exposed in udps/LSB */
 	/* So, calculate value in 10 udps unit and then to rad/s */
-	dval = (int64_t)(raw_val) * sensitivity / 10;
+	dval = (int64_t)(raw_val)*sensitivity / 10;
 	sensor_10udegrees_to_rad(dval, val);
 }
 
-static inline int lsm6dso16is_gyro_get_channel(enum sensor_channel chan,
-					   struct sensor_value *val,
-					   struct lsm6dso16is_data *data,
-					   uint32_t sensitivity)
+static inline int lsm6dso16is_gyro_get_channel(enum sensor_channel chan, struct sensor_value *val,
+					       struct lsm6dso16is_data *data, uint32_t sensitivity)
 {
 	uint8_t i;
 
@@ -506,16 +492,15 @@ static inline int lsm6dso16is_gyro_get_channel(enum sensor_channel chan,
 	return 0;
 }
 
-static int lsm6dso16is_gyro_channel_get(enum sensor_channel chan,
-				    struct sensor_value *val,
-				    struct lsm6dso16is_data *data)
+static int lsm6dso16is_gyro_channel_get(enum sensor_channel chan, struct sensor_value *val,
+					struct lsm6dso16is_data *data)
 {
 	return lsm6dso16is_gyro_get_channel(chan, val, data, data->gyro_gain);
 }
 
 #if defined(CONFIG_LSM6DSO16IS_ENABLE_TEMP)
 static void lsm6dso16is_gyro_channel_get_temp(struct sensor_value *val,
-					  struct lsm6dso16is_data *data)
+					      struct lsm6dso16is_data *data)
 {
 	int32_t micro_c;
 
@@ -531,7 +516,7 @@ static void lsm6dso16is_gyro_channel_get_temp(struct sensor_value *val,
 
 #if defined(CONFIG_LSM6DSO16IS_SENSORHUB)
 static inline void lsm6dso16is_magn_convert(struct sensor_value *val, int raw_val,
-					uint16_t sensitivity)
+					    uint16_t sensitivity)
 {
 	double dval;
 
@@ -541,9 +526,8 @@ static inline void lsm6dso16is_magn_convert(struct sensor_value *val, int raw_va
 	val->val2 = (int32_t)dval % 1000000;
 }
 
-static inline int lsm6dso16is_magn_get_channel(enum sensor_channel chan,
-					   struct sensor_value *val,
-					   struct lsm6dso16is_data *data)
+static inline int lsm6dso16is_magn_get_channel(enum sensor_channel chan, struct sensor_value *val,
+					       struct lsm6dso16is_data *data)
 {
 	int16_t sample[3];
 	int idx;
@@ -554,13 +538,9 @@ static inline int lsm6dso16is_magn_get_channel(enum sensor_channel chan,
 		return -ENOTSUP;
 	}
 
-
-	sample[0] = (int16_t)(data->ext_data[idx][0] |
-			     (data->ext_data[idx][1] << 8));
-	sample[1] = (int16_t)(data->ext_data[idx][2] |
-			     (data->ext_data[idx][3] << 8));
-	sample[2] = (int16_t)(data->ext_data[idx][4] |
-			     (data->ext_data[idx][5] << 8));
+	sample[0] = (int16_t)(data->ext_data[idx][0] | (data->ext_data[idx][1] << 8));
+	sample[1] = (int16_t)(data->ext_data[idx][2] | (data->ext_data[idx][3] << 8));
+	sample[2] = (int16_t)(data->ext_data[idx][4] | (data->ext_data[idx][5] << 8));
 
 	switch (chan) {
 	case SENSOR_CHAN_MAGN_X:
@@ -584,8 +564,7 @@ static inline int lsm6dso16is_magn_get_channel(enum sensor_channel chan,
 	return 0;
 }
 
-static inline void lsm6dso16is_hum_convert(struct sensor_value *val,
-				       struct lsm6dso16is_data *data)
+static inline void lsm6dso16is_hum_convert(struct sensor_value *val, struct lsm6dso16is_data *data)
 {
 	float rh;
 	int16_t raw_val;
@@ -598,8 +577,7 @@ static inline void lsm6dso16is_hum_convert(struct sensor_value *val,
 		return;
 	}
 
-	raw_val = (int16_t)(data->ext_data[idx][0] |
-			   (data->ext_data[idx][1] << 8));
+	raw_val = (int16_t)(data->ext_data[idx][0] | (data->ext_data[idx][1] << 8));
 
 	/* find relative humidty by linear interpolation */
 	rh = (ht->y1 - ht->y0) * raw_val + ht->x1 * ht->y0 - ht->x0 * ht->y1;
@@ -611,7 +589,7 @@ static inline void lsm6dso16is_hum_convert(struct sensor_value *val,
 }
 
 static inline void lsm6dso16is_press_convert(struct sensor_value *val,
-					 struct lsm6dso16is_data *data)
+					     struct lsm6dso16is_data *data)
 {
 	int32_t raw_val;
 	int idx;
@@ -622,19 +600,17 @@ static inline void lsm6dso16is_press_convert(struct sensor_value *val,
 		return;
 	}
 
-	raw_val = (int32_t)(data->ext_data[idx][0] |
-			   (data->ext_data[idx][1] << 8) |
-			   (data->ext_data[idx][2] << 16));
+	raw_val = (int32_t)(data->ext_data[idx][0] | (data->ext_data[idx][1] << 8) |
+			    (data->ext_data[idx][2] << 16));
 
 	/* Pressure sensitivity is 4096 LSB/hPa */
 	/* Convert raw_val to val in kPa */
 	val->val1 = (raw_val >> 12) / 10;
-	val->val2 = (raw_val >> 12) % 10 * 100000 +
-		(((int32_t)((raw_val) & 0x0FFF) * 100000L) >> 12);
+	val->val2 =
+		(raw_val >> 12) % 10 * 100000 + (((int32_t)((raw_val) & 0x0FFF) * 100000L) >> 12);
 }
 
-static inline void lsm6dso16is_temp_convert(struct sensor_value *val,
-					struct lsm6dso16is_data *data)
+static inline void lsm6dso16is_temp_convert(struct sensor_value *val, struct lsm6dso16is_data *data)
 {
 	int16_t raw_val;
 	int idx;
@@ -645,8 +621,7 @@ static inline void lsm6dso16is_temp_convert(struct sensor_value *val,
 		return;
 	}
 
-	raw_val = (int16_t)(data->ext_data[idx][3] |
-			   (data->ext_data[idx][4] << 8));
+	raw_val = (int16_t)(data->ext_data[idx][3] | (data->ext_data[idx][4] << 8));
 
 	/* Temperature sensitivity is 100 LSB/deg C */
 	val->val1 = raw_val / 100;
@@ -654,9 +629,8 @@ static inline void lsm6dso16is_temp_convert(struct sensor_value *val,
 }
 #endif
 
-static int lsm6dso16is_channel_get(const struct device *dev,
-			       enum sensor_channel chan,
-			       struct sensor_value *val)
+static int lsm6dso16is_channel_get(const struct device *dev, enum sensor_channel chan,
+				   struct sensor_value *val)
 {
 	struct lsm6dso16is_data *data = dev->data;
 
@@ -852,79 +826,64 @@ static int lsm6dso16is_init(const struct device *dev)
  * LSM6DSO16IS_DEFINE_I2C().
  */
 
-#define LSM6DSO16IS_DEVICE_INIT(inst)					\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
-			    lsm6dso16is_init,				\
-			    NULL,					\
-			    &lsm6dso16is_data_##inst,			\
-			    &lsm6dso16is_config_##inst,			\
-			    POST_KERNEL,				\
-			    CONFIG_SENSOR_INIT_PRIORITY,		\
-			    &lsm6dso16is_driver_api);
+#define LSM6DSO16IS_DEVICE_INIT(inst)                                                              \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, lsm6dso16is_init, NULL, &lsm6dso16is_data_##inst,       \
+				     &lsm6dso16is_config_##inst, POST_KERNEL,                      \
+				     CONFIG_SENSOR_INIT_PRIORITY, &lsm6dso16is_driver_api);
 
 /*
  * Instantiation macros used when a device is on a SPI bus.
  */
 
 #ifdef CONFIG_LSM6DSO16IS_TRIGGER
-#define LSM6DSO16IS_CFG_IRQ(inst)						\
-	.trig_enabled = true,						\
-	.gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, irq_gpios),		\
+#define LSM6DSO16IS_CFG_IRQ(inst)                                                                  \
+	.trig_enabled = true, .gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, irq_gpios),                 \
 	.drdy_pin = DT_INST_PROP(inst, drdy_pin)
 #else
 #define LSM6DSO16IS_CFG_IRQ(inst)
 #endif /* CONFIG_LSM6DSO16IS_TRIGGER */
 
-#define LSM6DSO16IS_SPI_OP  (SPI_WORD_SET(8) |				\
-			 SPI_OP_MODE_MASTER |				\
-			 SPI_MODE_CPOL |				\
-			 SPI_MODE_CPHA)					\
+#define LSM6DSO16IS_SPI_OP (SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA)
 
-#define LSM6DSO16IS_CONFIG_COMMON(inst)					\
-	.accel_odr = DT_INST_PROP(inst, accel_odr),			\
-	.accel_range = DT_INST_PROP(inst, accel_range),			\
-	.gyro_odr = DT_INST_PROP(inst, gyro_odr),			\
-	.gyro_range = DT_INST_PROP(inst, gyro_range),			\
-	.drdy_pulsed = DT_INST_PROP(inst, drdy_pulsed),                 \
+#define LSM6DSO16IS_CONFIG_COMMON(inst)                                                            \
+	.accel_odr = DT_INST_PROP(inst, accel_odr),                                                \
+	.accel_range = DT_INST_PROP(inst, accel_range), .gyro_odr = DT_INST_PROP(inst, gyro_odr),  \
+	.gyro_range = DT_INST_PROP(inst, gyro_range),                                              \
+	.drdy_pulsed = DT_INST_PROP(inst, drdy_pulsed),                                            \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),		\
 		(LSM6DSO16IS_CFG_IRQ(inst)), ())
 
-
-#define LSM6DSO16IS_CONFIG_SPI(inst)						\
-	{									\
-		STMEMSC_CTX_SPI(&lsm6dso16is_config_##inst.stmemsc_cfg),	\
-		.stmemsc_cfg = {						\
-			.spi = SPI_DT_SPEC_INST_GET(inst,			\
-					   LSM6DSO16IS_SPI_OP,			\
-					   0),					\
-		},								\
-		LSM6DSO16IS_CONFIG_COMMON(inst)					\
-	}
+#define LSM6DSO16IS_CONFIG_SPI(inst)                                                               \
+	{STMEMSC_CTX_SPI(&lsm6dso16is_config_##inst.stmemsc_cfg),                                  \
+	 .stmemsc_cfg =                                                                            \
+		 {                                                                                 \
+			 .spi = SPI_DT_SPEC_INST_GET(inst, LSM6DSO16IS_SPI_OP, 0),                 \
+		 },                                                                                \
+	 LSM6DSO16IS_CONFIG_COMMON(inst)}
 
 /*
  * Instantiation macros used when a device is on an I2C bus.
  */
 
-#define LSM6DSO16IS_CONFIG_I2C(inst)						\
-	{									\
-		STMEMSC_CTX_I2C(&lsm6dso16is_config_##inst.stmemsc_cfg),	\
-		.stmemsc_cfg = {						\
-			.i2c = I2C_DT_SPEC_INST_GET(inst),			\
-		},								\
-		LSM6DSO16IS_CONFIG_COMMON(inst)					\
-	}
+#define LSM6DSO16IS_CONFIG_I2C(inst)                                                               \
+	{STMEMSC_CTX_I2C(&lsm6dso16is_config_##inst.stmemsc_cfg),                                  \
+	 .stmemsc_cfg =                                                                            \
+		 {                                                                                 \
+			 .i2c = I2C_DT_SPEC_INST_GET(inst),                                        \
+		 },                                                                                \
+	 LSM6DSO16IS_CONFIG_COMMON(inst)}
 
 /*
  * Main instantiation macro. Use of COND_CODE_1() selects the right
  * bus-specific macro at preprocessor time.
  */
 
-#define LSM6DSO16IS_DEFINE(inst)						\
-	static struct lsm6dso16is_data lsm6dso16is_data_##inst;			\
-	static const struct lsm6dso16is_config lsm6dso16is_config_##inst =	\
+#define LSM6DSO16IS_DEFINE(inst)                                                                   \
+	static struct lsm6dso16is_data lsm6dso16is_data_##inst;                                    \
+	static const struct lsm6dso16is_config lsm6dso16is_config_##inst =                         \
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
 			(LSM6DSO16IS_CONFIG_SPI(inst)),			\
-			(LSM6DSO16IS_CONFIG_I2C(inst)));			\
+			(LSM6DSO16IS_CONFIG_I2C(inst)));  \
 	LSM6DSO16IS_DEVICE_INIT(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(LSM6DSO16IS_DEFINE)

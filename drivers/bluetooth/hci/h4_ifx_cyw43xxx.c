@@ -28,33 +28,33 @@ LOG_MODULE_REGISTER(cyw43xxx_driver);
 #define DT_DRV_COMPAT infineon_cyw43xxx_bt_hci
 
 BUILD_ASSERT(DT_PROP(DT_INST_GPARENT(0), hw_flow_control) == 1,
-		"hw_flow_control must be enabled for HCI H4 UART");
+	     "hw_flow_control must be enabled for HCI H4 UART");
 
 /* BT settling time after power on */
-#define BT_POWER_ON_SETTLING_TIME_MS      (500u)
-#define BT_POWER_CBUCK_DISCHARGE_TIME_MS  (300u)
+#define BT_POWER_ON_SETTLING_TIME_MS     (500u)
+#define BT_POWER_CBUCK_DISCHARGE_TIME_MS (300u)
 
 /* Stabilization delay after FW loading */
-#define BT_STABILIZATION_DELAY_MS         (250u)
+#define BT_STABILIZATION_DELAY_MS (250u)
 
 /* HCI Command packet from Host to Controller */
-#define HCI_COMMAND_PACKET                (0x01)
+#define HCI_COMMAND_PACKET (0x01)
 
 /* Length of UPDATE BAUD RATE command */
-#define HCI_VSC_UPDATE_BAUD_RATE_LENGTH   (6u)
+#define HCI_VSC_UPDATE_BAUD_RATE_LENGTH (6u)
 
 /* Default BAUDRATE */
-#define HCI_UART_DEFAULT_BAUDRATE         (115200)
+#define HCI_UART_DEFAULT_BAUDRATE (115200)
 
 /* Externs for CY43xxx controller FW */
 extern const uint8_t brcm_patchram_buf[];
 extern const int brcm_patch_ram_length;
 
 enum {
-	BT_HCI_VND_OP_DOWNLOAD_MINIDRIVER       = 0xFC2E,
-	BT_HCI_VND_OP_WRITE_RAM                 = 0xFC4C,
-	BT_HCI_VND_OP_LAUNCH_RAM                = 0xFC4E,
-	BT_HCI_VND_OP_UPDATE_BAUDRATE           = 0xFC18,
+	BT_HCI_VND_OP_DOWNLOAD_MINIDRIVER = 0xFC2E,
+	BT_HCI_VND_OP_WRITE_RAM = 0xFC4C,
+	BT_HCI_VND_OP_LAUNCH_RAM = 0xFC4E,
+	BT_HCI_VND_OP_UPDATE_BAUDRATE = 0xFC18,
 };
 
 /*  bt_h4_vnd_setup function.
@@ -121,8 +121,7 @@ static int bt_update_controller_baudrate(const struct device *bt_uart_dev, uint3
 	/* Allocate buffer for update uart baudrate command.
 	 * It will be BT_HCI_OP_RESET with extra parameters.
 	 */
-	buf = bt_hci_cmd_create(BT_HCI_VND_OP_UPDATE_BAUDRATE,
-				HCI_VSC_UPDATE_BAUD_RATE_LENGTH);
+	buf = bt_hci_cmd_create(BT_HCI_VND_OP_UPDATE_BAUDRATE, HCI_VSC_UPDATE_BAUD_RATE_LENGTH);
 	if (buf == NULL) {
 		LOG_ERR("Unable to allocate command buffer");
 		return -ENOMEM;
@@ -225,16 +224,16 @@ int bt_h4_vnd_setup(const struct device *dev)
 
 	/* Check BT REG_ON gpio instance */
 	if (!gpio_is_ready_dt(&bt_reg_on)) {
-		LOG_ERR("Error: failed to configure bt_reg_on %s pin %d",
-			bt_reg_on.port->name, bt_reg_on.pin);
+		LOG_ERR("Error: failed to configure bt_reg_on %s pin %d", bt_reg_on.port->name,
+			bt_reg_on.pin);
 		return -EIO;
 	}
 
 	/* Configure bt_reg_on as output  */
 	err = gpio_pin_configure_dt(&bt_reg_on, GPIO_OUTPUT_LOW);
 	if (err) {
-		LOG_ERR("Error %d: failed to configure bt_reg_on %s pin %d",
-			err, bt_reg_on.port->name, bt_reg_on.pin);
+		LOG_ERR("Error %d: failed to configure bt_reg_on %s pin %d", err,
+			bt_reg_on.port->name, bt_reg_on.pin);
 		return err;
 	}
 
@@ -265,7 +264,7 @@ int bt_h4_vnd_setup(const struct device *dev)
 	}
 
 	/* BT firmware download */
-	err = bt_firmware_download(brcm_patchram_buf, (uint32_t) brcm_patch_ram_length);
+	err = bt_firmware_download(brcm_patchram_buf, (uint32_t)brcm_patch_ram_length);
 	if (err) {
 		return err;
 	}

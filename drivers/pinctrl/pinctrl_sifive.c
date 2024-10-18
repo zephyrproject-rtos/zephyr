@@ -13,10 +13,10 @@
 
 #include <soc.h>
 
-#define MAX_PIN_NUM		DT_PROP(DT_INST_PARENT(0), ngpios)
-#define PINCTRL_BASE_ADDR	DT_INST_REG_ADDR(0)
-#define PINCTRL_IOF_EN		(PINCTRL_BASE_ADDR + 0x0)
-#define PINCTRL_IOF_SEL		(PINCTRL_BASE_ADDR + 0x4)
+#define MAX_PIN_NUM       DT_PROP(DT_INST_PARENT(0), ngpios)
+#define PINCTRL_BASE_ADDR DT_INST_REG_ADDR(0)
+#define PINCTRL_IOF_EN    (PINCTRL_BASE_ADDR + 0x0)
+#define PINCTRL_IOF_SEL   (PINCTRL_BASE_ADDR + 0x4)
 
 static int pinctrl_sifive_set(uint32_t pin, uint32_t func)
 {
@@ -41,7 +41,6 @@ static int pinctrl_sifive_set(uint32_t pin, uint32_t func)
 
 	return 0;
 }
-
 
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintptr_t reg)
 {

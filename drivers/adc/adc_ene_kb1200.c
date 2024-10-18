@@ -199,7 +199,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 
 	data->repeat_buffer = data->buffer;
 	config->adc->ADCCFG = (config->adc->ADCCFG & ~ADC_CHANNEL_BIT_MASK) |
-		      (ctx->sequence.channels << ADC_CHANNEL_BIT_POS);
+			      (ctx->sequence.channels << ADC_CHANNEL_BIT_POS);
 	config->adc->ADCCFG |= ADC_FUNCTION_ENABLE;
 }
 

@@ -13,8 +13,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
-#define LM35_GAIN       ADC_GAIN_1
-#define LM35_REF        ADC_REF_INTERNAL
+#define LM35_GAIN ADC_GAIN_1
+#define LM35_REF  ADC_REF_INTERNAL
 
 LOG_MODULE_REGISTER(LM35, CONFIG_SENSOR_LOG_LEVEL);
 

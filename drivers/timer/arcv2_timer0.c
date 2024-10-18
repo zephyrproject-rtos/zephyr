@@ -24,10 +24,10 @@
 #undef _ARC_V2_TMR0_CONTROL
 #undef _ARC_V2_TMR0_LIMIT
 
-#define _ARC_V2_TMR0_COUNT _ARC_V2_S_TMR0_COUNT
+#define _ARC_V2_TMR0_COUNT   _ARC_V2_S_TMR0_COUNT
 #define _ARC_V2_TMR0_CONTROL _ARC_V2_S_TMR0_CONTROL
-#define _ARC_V2_TMR0_LIMIT _ARC_V2_S_TMR0_LIMIT
-#define IRQ_TIMER0 DT_IRQN(DT_NODELABEL(sectimer0))
+#define _ARC_V2_TMR0_LIMIT   _ARC_V2_S_TMR0_LIMIT
+#define IRQ_TIMER0           DT_IRQN(DT_NODELABEL(sectimer0))
 
 #else
 #define IRQ_TIMER0 DT_IRQN(DT_NODELABEL(timer0))
@@ -39,16 +39,15 @@
 #define _ARC_V2_TMR_CTRL_IP 0x8 /* interrupt pending flag */
 
 /* Minimum cycles in the future to try to program. */
-#define MIN_DELAY 1024
+#define MIN_DELAY     1024
 /* arc timer has 32 bit, here use 31 bit to avoid the possible
  * overflow,e.g, 0xffffffff + any value will cause overflow
  */
-#define COUNTER_MAX 0x7fffffff
+#define COUNTER_MAX   0x7fffffff
 #define TIMER_STOPPED 0x0
-#define CYC_PER_TICK (sys_clock_hw_cycles_per_sec()	\
-		      / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define CYC_PER_TICK  (sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
-#define MAX_TICKS ((COUNTER_MAX / CYC_PER_TICK) - 1)
+#define MAX_TICKS  ((COUNTER_MAX / CYC_PER_TICK) - 1)
 #define MAX_CYCLES (MAX_TICKS * CYC_PER_TICK)
 
 #define TICKLESS (IS_ENABLED(CONFIG_TICKLESS_KERNEL))
@@ -60,14 +59,12 @@ const int32_t z_sys_timer_irq_for_test = IRQ_TIMER0;
 #endif
 static struct k_spinlock lock;
 
-
 #if SMP_TIMER_DRIVER
 volatile static uint64_t last_time;
 volatile static uint64_t start_time;
 
 #else
 static uint32_t last_load;
-
 
 /*
  * This local variable holds the amount of timer cycles elapsed
@@ -86,7 +83,6 @@ static uint32_t cycle_count;
  * that have been announced to the kernel.
  */
 static uint32_t announced_cycles;
-
 
 /*
  * This local variable holds the amount of elapsed HW cycles due to
@@ -177,23 +173,21 @@ static uint32_t elapsed(void)
 	uint32_t val, ctrl;
 
 	do {
-		val =  timer0_count_register_get();
+		val = timer0_count_register_get();
 		ctrl = timer0_control_register_get();
 	} while (timer0_count_register_get() < val);
 
 	if (ctrl & _ARC_V2_TMR_CTRL_IP) {
 		overflow_cycles += last_load;
 		/* clear the IP bit of the control register */
-		timer0_control_register_set(_ARC_V2_TMR_CTRL_NH |
-					    _ARC_V2_TMR_CTRL_IE);
+		timer0_control_register_set(_ARC_V2_TMR_CTRL_NH | _ARC_V2_TMR_CTRL_IE);
 		/* use sw triggered irq to remember the timer irq request
 		 * which may be cleared by the above operation. when elapsed ()
 		 * is called in timer_int_handler, no need to do this.
 		 */
 		if (!z_arc_v2_irq_unit_is_in_isr() ||
 		    z_arc_v2_aux_reg_read(_ARC_V2_ICAUSE) != IRQ_TIMER0) {
-			z_arc_v2_aux_reg_write(_ARC_V2_AUX_IRQ_HINT,
-					       IRQ_TIMER0);
+			z_arc_v2_aux_reg_write(_ARC_V2_AUX_IRQ_HINT, IRQ_TIMER0);
 		}
 	}
 
@@ -218,8 +212,7 @@ static void timer_int_handler(const void *unused)
 	k_spinlock_key_t key;
 
 	/* clear the IP bit of the control register */
-	timer0_control_register_set(_ARC_V2_TMR_CTRL_NH |
-				    _ARC_V2_TMR_CTRL_IE);
+	timer0_control_register_set(_ARC_V2_TMR_CTRL_NH | _ARC_V2_TMR_CTRL_IE);
 	key = k_spin_lock(&lock);
 	/* gfrc is the wall clock */
 	curr_time = z_arc_connect_gfrc_read();
@@ -253,7 +246,6 @@ static void timer_int_handler(const void *unused)
 	announced_cycles += dticks * CYC_PER_TICK;
 	sys_clock_announce(TICKLESS ? dticks : 1);
 #endif
-
 }
 
 void sys_clock_set_timeout(int32_t ticks, bool idle)
@@ -292,8 +284,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 	timer0_limit_register_set(delay - 1);
 	timer0_count_register_set(0);
-	timer0_control_register_set(_ARC_V2_TMR_CTRL_NH |
-						_ARC_V2_TMR_CTRL_IE);
+	timer0_control_register_set(_ARC_V2_TMR_CTRL_NH | _ARC_V2_TMR_CTRL_IE);
 
 	arch_irq_unlock(key);
 #endif
@@ -314,7 +305,6 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-
 	cycle_count += elapsed();
 	/* clear counter early to avoid cycle loss as few as possible,
 	 * between cycle_count and clearing 0, few cycles are possible
@@ -322,7 +312,6 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	 */
 	timer0_count_register_set(0);
 	overflow_cycles = 0U;
-
 
 	/* normal case */
 	unannounced = cycle_count - announced_cycles;
@@ -369,7 +358,7 @@ uint32_t sys_clock_elapsed(void)
 #if SMP_TIMER_DRIVER
 	cyc = (z_arc_connect_gfrc_read() - last_time);
 #else
-	cyc =  elapsed() + cycle_count - announced_cycles;
+	cyc = elapsed() + cycle_count - announced_cycles;
 #endif
 
 	k_spin_unlock(&lock, key);
@@ -420,8 +409,7 @@ static int sys_clock_driver_init(void)
 	timer0_control_register_set(0);
 
 #if SMP_TIMER_DRIVER
-	IRQ_CONNECT(IRQ_TIMER0, CONFIG_ARCV2_TIMER_IRQ_PRIORITY,
-		    timer_int_handler, NULL, 0);
+	IRQ_CONNECT(IRQ_TIMER0, CONFIG_ARCV2_TIMER_IRQ_PRIORITY, timer_int_handler, NULL, 0);
 
 	timer0_limit_register_set(CYC_PER_TICK - 1);
 	last_time = z_arc_connect_gfrc_read();
@@ -431,8 +419,7 @@ static int sys_clock_driver_init(void)
 	overflow_cycles = 0;
 	announced_cycles = 0;
 
-	IRQ_CONNECT(IRQ_TIMER0, CONFIG_ARCV2_TIMER_IRQ_PRIORITY,
-		    timer_int_handler, NULL, 0);
+	IRQ_CONNECT(IRQ_TIMER0, CONFIG_ARCV2_TIMER_IRQ_PRIORITY, timer_int_handler, NULL, 0);
 
 	timer0_limit_register_set(last_load - 1);
 #endif
@@ -446,5 +433,4 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

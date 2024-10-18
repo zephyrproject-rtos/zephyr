@@ -21,8 +21,7 @@ static int console_out(int c)
 	register unsigned long x0 __asm__("x0") = 8;
 	register unsigned long x1 __asm__("x1") = c;
 
-	__asm__ volatile ("hvc #0x4a48\r\n"
-			  : "+r" (x0), "+r" (x1) : : );
+	__asm__ volatile("hvc #0x4a48\r\n" : "+r"(x0), "+r"(x1) : :);
 	return c;
 }
 #endif
@@ -42,6 +41,4 @@ static int jailhouse_console_init(void)
 	return 0;
 }
 
-SYS_INIT(jailhouse_console_init,
-	 PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(jailhouse_console_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

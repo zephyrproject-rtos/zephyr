@@ -48,11 +48,8 @@ static const clock_ip_name_t uart_clocks[] = {
 
 #ifdef CONFIG_SOC_MIMX8QM6_ADSP
 static const clock_ip_name_t lpuart_clocks[] = {
-	kCLOCK_DMA_Lpuart0,
-	kCLOCK_DMA_Lpuart1,
-	kCLOCK_DMA_Lpuart2,
-	kCLOCK_DMA_Lpuart3,
-	kCLOCK_DMA_Lpuart4,
+	kCLOCK_DMA_Lpuart0, kCLOCK_DMA_Lpuart1, kCLOCK_DMA_Lpuart2,
+	kCLOCK_DMA_Lpuart3, kCLOCK_DMA_Lpuart4,
 };
 
 static const uint32_t lpuart_rate = MHZ(80);
@@ -71,9 +68,7 @@ static const uint32_t lpuart_rate = MHZ(80);
 
 #endif /* CONFIG_UART_MCUX_LPUART */
 
-
-static int mcux_ccm_on(const struct device *dev,
-			      clock_control_subsys_t sub_system)
+static int mcux_ccm_on(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	uint32_t clock_name = (uintptr_t)sub_system;
 	uint32_t instance = clock_name & IMX_CCM_INSTANCE_MASK;
@@ -109,9 +104,9 @@ static int mcux_ccm_on(const struct device *dev,
 
 #if defined(CONFIG_ETH_NXP_ENET)
 #ifdef CONFIG_SOC_SERIES_IMX8M
-#define ENET_CLOCK	kCLOCK_Enet1
+#define ENET_CLOCK kCLOCK_Enet1
 #else
-#define ENET_CLOCK	kCLOCK_Enet
+#define ENET_CLOCK kCLOCK_Enet
 #endif
 	case IMX_CCM_ENET_CLK:
 		CLOCK_EnableClock(ENET_CLOCK);
@@ -123,8 +118,7 @@ static int mcux_ccm_on(const struct device *dev,
 	}
 }
 
-static int mcux_ccm_off(const struct device *dev,
-			       clock_control_subsys_t sub_system)
+static int mcux_ccm_off(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	uint32_t clock_name = (uintptr_t)sub_system;
 	uint32_t instance = clock_name & IMX_CCM_INSTANCE_MASK;
@@ -144,8 +138,7 @@ static int mcux_ccm_off(const struct device *dev,
 	}
 }
 
-static int mcux_ccm_get_subsys_rate(const struct device *dev,
-				    clock_control_subsys_t sub_system,
+static int mcux_ccm_get_subsys_rate(const struct device *dev, clock_control_subsys_t sub_system,
 				    uint32_t *rate)
 {
 	uint32_t clock_name = (uintptr_t)sub_system;
@@ -155,24 +148,21 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #ifdef CONFIG_I2C_MCUX_LPI2C
 	case IMX_CCM_LPI2C_CLK:
 		if (CLOCK_GetMux(kCLOCK_Lpi2cMux) == 0) {
-			*rate = CLOCK_GetPllFreq(kCLOCK_PllUsb1) / 8
-				/ (CLOCK_GetDiv(kCLOCK_Lpi2cDiv) + 1);
+			*rate = CLOCK_GetPllFreq(kCLOCK_PllUsb1) / 8 /
+				(CLOCK_GetDiv(kCLOCK_Lpi2cDiv) + 1);
 		} else {
-			*rate = CLOCK_GetOscFreq()
-				/ (CLOCK_GetDiv(kCLOCK_Lpi2cDiv) + 1);
+			*rate = CLOCK_GetOscFreq() / (CLOCK_GetDiv(kCLOCK_Lpi2cDiv) + 1);
 		}
 
 		break;
 #endif
 
 #ifdef CONFIG_SPI_MCUX_LPSPI
-	case IMX_CCM_LPSPI_CLK:
-	{
+	case IMX_CCM_LPSPI_CLK: {
 		uint32_t lpspi_mux = CLOCK_GetMux(kCLOCK_LpspiMux);
 		clock_name_t lpspi_clock = lpspi_clocks[lpspi_mux];
 
-		*rate = CLOCK_GetFreq(lpspi_clock)
-			/ (CLOCK_GetDiv(kCLOCK_LpspiDiv) + 1);
+		*rate = CLOCK_GetFreq(lpspi_clock) / (CLOCK_GetDiv(kCLOCK_LpspiDiv) + 1);
 		break;
 	}
 #endif
@@ -205,11 +195,10 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #else
 	case IMX_CCM_LPUART_CLK:
 		if (CLOCK_GetMux(kCLOCK_UartMux) == 0) {
-			*rate = CLOCK_GetPllFreq(kCLOCK_PllUsb1) / 6
-				/ (CLOCK_GetDiv(kCLOCK_UartDiv) + 1);
+			*rate = CLOCK_GetPllFreq(kCLOCK_PllUsb1) / 6 /
+				(CLOCK_GetDiv(kCLOCK_UartDiv) + 1);
 		} else {
-			*rate = CLOCK_GetOscFreq()
-				/ (CLOCK_GetDiv(kCLOCK_UartDiv) + 1);
+			*rate = CLOCK_GetOscFreq() / (CLOCK_GetDiv(kCLOCK_UartDiv) + 1);
 		}
 
 		break;
@@ -218,15 +207,13 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc1)) && CONFIG_IMX_USDHC
 	case IMX_CCM_USDHC1_CLK:
-		*rate = CLOCK_GetSysPfdFreq(kCLOCK_Pfd0) /
-				(CLOCK_GetDiv(kCLOCK_Usdhc1Div) + 1U);
+		*rate = CLOCK_GetSysPfdFreq(kCLOCK_Pfd0) / (CLOCK_GetDiv(kCLOCK_Usdhc1Div) + 1U);
 		break;
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc2)) && CONFIG_IMX_USDHC
 	case IMX_CCM_USDHC2_CLK:
-		*rate = CLOCK_GetSysPfdFreq(kCLOCK_Pfd0) /
-				(CLOCK_GetDiv(kCLOCK_Usdhc2Div) + 1U);
+		*rate = CLOCK_GetSysPfdFreq(kCLOCK_Pfd0) / (CLOCK_GetDiv(kCLOCK_Usdhc2Div) + 1U);
 		break;
 #endif
 
@@ -262,8 +249,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 	case IMX_CCM_UART1_CLK:
 	case IMX_CCM_UART2_CLK:
 	case IMX_CCM_UART3_CLK:
-	case IMX_CCM_UART4_CLK:
-	{
+	case IMX_CCM_UART4_CLK: {
 		uint32_t instance = clock_name & IMX_CCM_INSTANCE_MASK;
 		clock_root_control_t clk_root = uart_clk_root[instance];
 		uint32_t uart_mux = CLOCK_GetRootMux(clk_root);
@@ -273,27 +259,24 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		} else if (uart_mux == 1) {
 			*rate = CLOCK_GetPllFreq(kCLOCK_SystemPll1Ctrl) /
 				(CLOCK_GetRootPreDivider(clk_root)) /
-				(CLOCK_GetRootPostDivider(clk_root)) /
-				10;
+				(CLOCK_GetRootPostDivider(clk_root)) / 10;
 		}
 
 	} break;
 #endif
 
 #ifdef CONFIG_CAN_MCUX_FLEXCAN
-	case IMX_CCM_CAN_CLK:
-	{
+	case IMX_CCM_CAN_CLK: {
 		uint32_t can_mux = CLOCK_GetMux(kCLOCK_CanMux);
 
 		if (can_mux == 0) {
-			*rate = CLOCK_GetPllFreq(kCLOCK_PllUsb1) / 8
-				/ (CLOCK_GetDiv(kCLOCK_CanDiv) + 1);
-		} else if  (can_mux == 1) {
-			*rate = CLOCK_GetOscFreq()
-				/ (CLOCK_GetDiv(kCLOCK_CanDiv) + 1);
+			*rate = CLOCK_GetPllFreq(kCLOCK_PllUsb1) / 8 /
+				(CLOCK_GetDiv(kCLOCK_CanDiv) + 1);
+		} else if (can_mux == 1) {
+			*rate = CLOCK_GetOscFreq() / (CLOCK_GetDiv(kCLOCK_CanDiv) + 1);
 		} else {
-			*rate = CLOCK_GetPllFreq(kCLOCK_PllUsb1) / 6
-				/ (CLOCK_GetDiv(kCLOCK_CanDiv) + 1);
+			*rate = CLOCK_GetPllFreq(kCLOCK_PllUsb1) / 6 /
+				(CLOCK_GetDiv(kCLOCK_CanDiv) + 1);
 		}
 	} break;
 #endif
@@ -303,8 +286,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		*rate = CLOCK_GetFreq(kCLOCK_PerClk);
 		break;
 #ifdef CONFIG_SOC_SERIES_IMX8M
-	case IMX_CCM_GPT_IPG_CLK:
-	{
+	case IMX_CCM_GPT_IPG_CLK: {
 		uint32_t mux = CLOCK_GetRootMux(kCLOCK_RootGpt1);
 
 		if (mux == 0) {
@@ -324,19 +306,16 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 
 #ifdef CONFIG_I2S_MCUX_SAI
 	case IMX_CCM_SAI1_CLK:
-		*rate = CLOCK_GetFreq(kCLOCK_AudioPllClk)
-				/ (CLOCK_GetDiv(kCLOCK_Sai1PreDiv) + 1)
-				/ (CLOCK_GetDiv(kCLOCK_Sai1Div) + 1);
+		*rate = CLOCK_GetFreq(kCLOCK_AudioPllClk) / (CLOCK_GetDiv(kCLOCK_Sai1PreDiv) + 1) /
+			(CLOCK_GetDiv(kCLOCK_Sai1Div) + 1);
 		break;
 	case IMX_CCM_SAI2_CLK:
-		*rate = CLOCK_GetFreq(kCLOCK_AudioPllClk)
-				/ (CLOCK_GetDiv(kCLOCK_Sai2PreDiv) + 1)
-				/ (CLOCK_GetDiv(kCLOCK_Sai2Div) + 1);
+		*rate = CLOCK_GetFreq(kCLOCK_AudioPllClk) / (CLOCK_GetDiv(kCLOCK_Sai2PreDiv) + 1) /
+			(CLOCK_GetDiv(kCLOCK_Sai2Div) + 1);
 		break;
 	case IMX_CCM_SAI3_CLK:
-		*rate = CLOCK_GetFreq(kCLOCK_AudioPllClk)
-				/ (CLOCK_GetDiv(kCLOCK_Sai3PreDiv) + 1)
-				/ (CLOCK_GetDiv(kCLOCK_Sai3Div) + 1);
+		*rate = CLOCK_GetFreq(kCLOCK_AudioPllClk) / (CLOCK_GetDiv(kCLOCK_Sai3PreDiv) + 1) /
+			(CLOCK_GetDiv(kCLOCK_Sai3Div) + 1);
 		break;
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexspi))
@@ -355,8 +334,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		break;
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio1)) && CONFIG_MCUX_FLEXIO
-	case IMX_CCM_FLEXIO1_CLK:
-	{
+	case IMX_CCM_FLEXIO1_CLK: {
 		uint32_t flexio_mux = CLOCK_GetMux(kCLOCK_Flexio1Mux);
 		uint32_t source_clk_freq = 0;
 
@@ -364,22 +342,22 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 			source_clk_freq = CLOCK_GetPllFreq(kCLOCK_PllAudio);
 		} else if (flexio_mux == 1) {
 			source_clk_freq = CLOCK_GetUsb1PfdFreq(kCLOCK_Pfd2);
-	#ifdef PLL_VIDEO_OFFSET /* fsl_clock.h */
+#ifdef PLL_VIDEO_OFFSET /* fsl_clock.h */
 		} else if (flexio_mux == 2) {
 			source_clk_freq = CLOCK_GetPllFreq(kCLOCK_PllVideo);
-	#endif
+#endif
 		} else {
 			source_clk_freq = CLOCK_GetPllFreq(kCLOCK_PllUsb1);
 		}
 
-		*rate = source_clk_freq / (CLOCK_GetDiv(kCLOCK_Flexio1PreDiv) + 1)
-					/ (CLOCK_GetDiv(kCLOCK_Flexio1Div) + 1);
+		*rate = source_clk_freq / (CLOCK_GetDiv(kCLOCK_Flexio1PreDiv) + 1) /
+			(CLOCK_GetDiv(kCLOCK_Flexio1Div) + 1);
 	} break;
 #endif
-#if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio2)) \
-		 || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio3))) && CONFIG_MCUX_FLEXIO
-	case IMX_CCM_FLEXIO2_3_CLK:
-	{
+#if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio2)) ||                                             \
+     DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio3))) &&                                            \
+	CONFIG_MCUX_FLEXIO
+	case IMX_CCM_FLEXIO2_3_CLK: {
 		uint32_t flexio_mux = CLOCK_GetMux(kCLOCK_Flexio2Mux);
 		uint32_t source_clk_freq = 0;
 
@@ -387,16 +365,16 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 			source_clk_freq = CLOCK_GetPllFreq(kCLOCK_PllAudio);
 		} else if (flexio_mux == 1) {
 			source_clk_freq = CLOCK_GetUsb1PfdFreq(kCLOCK_Pfd2);
-	#ifdef PLL_VIDEO_OFFSET /* fsl_clock.h */
+#ifdef PLL_VIDEO_OFFSET /* fsl_clock.h */
 		} else if (flexio_mux == 2) {
 			source_clk_freq = CLOCK_GetPllFreq(kCLOCK_PllVideo);
-	#endif
+#endif
 		} else {
 			source_clk_freq = CLOCK_GetPllFreq(kCLOCK_PllUsb1);
 		}
 
-		*rate = source_clk_freq / (CLOCK_GetDiv(kCLOCK_Flexio2PreDiv) + 1)
-					/ (CLOCK_GetDiv(kCLOCK_Flexio2Div) + 1);
+		*rate = source_clk_freq / (CLOCK_GetDiv(kCLOCK_Flexio2PreDiv) + 1) /
+			(CLOCK_GetDiv(kCLOCK_Flexio2Div) + 1);
 	} break;
 #endif
 
@@ -433,8 +411,8 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #endif
 
 static int CCM_SET_FUNC_ATTR mcux_ccm_set_subsys_rate(const struct device *dev,
-			clock_control_subsys_t subsys,
-			clock_control_subsys_rate_t rate)
+						      clock_control_subsys_t subsys,
+						      clock_control_subsys_rate_t rate)
 {
 	uint32_t clock_name = (uintptr_t)subsys;
 	uint32_t clock_rate = (uintptr_t)rate;
@@ -456,8 +434,6 @@ static int CCM_SET_FUNC_ATTR mcux_ccm_set_subsys_rate(const struct device *dev,
 		return -ENOTSUP;
 	}
 }
-
-
 
 static const struct clock_control_driver_api mcux_ccm_driver_api = {
 	.on = mcux_ccm_on,
@@ -482,6 +458,5 @@ static int mcux_ccm_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, mcux_ccm_init, NULL, NULL, NULL,
-		      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
-		      &mcux_ccm_driver_api);
+DEVICE_DT_INST_DEFINE(0, mcux_ccm_init, NULL, NULL, NULL, PRE_KERNEL_1,
+		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &mcux_ccm_driver_api);

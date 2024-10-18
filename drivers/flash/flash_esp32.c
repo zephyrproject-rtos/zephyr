@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT espressif_esp32_flash_controller
+#define DT_DRV_COMPAT     espressif_esp32_flash_controller
 #define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
 
 #define FLASH_WRITE_BLK_SZ DT_PROP(SOC_NV_FLASH_NODE, write_block_size)
@@ -64,8 +64,12 @@ static inline void flash_esp32_sem_give(const struct device *dev)
 }
 #else
 
-#define flash_esp32_sem_take(dev) do {} while (0)
-#define flash_esp32_sem_give(dev) do {} while (0)
+#define flash_esp32_sem_take(dev)                                                                  \
+	do {                                                                                       \
+	} while (0)
+#define flash_esp32_sem_give(dev)                                                                  \
+	do {                                                                                       \
+	} while (0)
 
 #endif /* CONFIG_MULTITHREADING */
 
@@ -87,9 +91,7 @@ static int flash_esp32_read(const struct device *dev, off_t address, void *buffe
 	return 0;
 }
 
-static int flash_esp32_write(const struct device *dev,
-			     off_t address,
-			     const void *buffer,
+static int flash_esp32_write(const struct device *dev, off_t address, const void *buffer,
 			     size_t length)
 {
 	int ret = 0;
@@ -127,8 +129,7 @@ static const struct flash_pages_layout flash_esp32_pages_layout = {
 	.pages_size = DT_PROP(SOC_NV_FLASH_NODE, erase_block_size),
 };
 
-void flash_esp32_page_layout(const struct device *dev,
-			     const struct flash_pages_layout **layout,
+void flash_esp32_page_layout(const struct device *dev, const struct flash_pages_layout **layout,
 			     size_t *layout_size)
 {
 	*layout = &flash_esp32_pages_layout;
@@ -136,8 +137,7 @@ void flash_esp32_page_layout(const struct device *dev,
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-static const struct flash_parameters *
-flash_esp32_get_parameters(const struct device *dev)
+static const struct flash_parameters *flash_esp32_get_parameters(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -174,11 +174,8 @@ static const struct flash_driver_api flash_esp32_driver_api = {
 static struct flash_esp32_dev_data flash_esp32_data;
 
 static const struct flash_esp32_dev_config flash_esp32_config = {
-	.controller = (spi_dev_t *) DT_INST_REG_ADDR(0),
+	.controller = (spi_dev_t *)DT_INST_REG_ADDR(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, flash_esp32_init,
-		      NULL,
-		      &flash_esp32_data, &flash_esp32_config,
-		      POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,
-		      &flash_esp32_driver_api);
+DEVICE_DT_INST_DEFINE(0, flash_esp32_init, NULL, &flash_esp32_data, &flash_esp32_config,
+		      POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY, &flash_esp32_driver_api);

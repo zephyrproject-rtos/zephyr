@@ -222,8 +222,7 @@ static int gc9x01x_transmit(const struct device *dev, uint8_t cmd, const void *t
 {
 	const struct gc9x01x_config *config = dev->config;
 
-	return mipi_dbi_command_write(config->mipi_dev, &config->dbi_config,
-				      cmd, tx_data, tx_len);
+	return mipi_dbi_command_write(config->mipi_dev, &config->dbi_config, cmd, tx_data, tx_len);
 }
 
 static int gc9x01x_regs_init(const struct device *dev)
@@ -548,11 +547,8 @@ static int gc9x01x_write(const struct device *dev, const uint16_t x, const uint1
 	}
 
 	for (write_cnt = 0U; write_cnt < nbr_of_writes; ++write_cnt) {
-		ret = mipi_dbi_write_display(config->mipi_dev,
-					     &config->dbi_config,
-					     write_data_start,
-					     &mipi_desc,
-					     data->pixel_format);
+		ret = mipi_dbi_write_display(config->mipi_dev, &config->dbi_config,
+					     write_data_start, &mipi_desc, data->pixel_format);
 		if (ret < 0) {
 			return ret;
 		}
@@ -621,12 +617,12 @@ static const struct display_driver_api gc9x01x_api = {
 	GC9X01X_REGS_INIT(inst);                                                                   \
 	static const struct gc9x01x_config gc9x01x_config_##inst = {                               \
 		.mipi_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                   \
-		.dbi_config = {                                                                    \
-			.mode = MIPI_DBI_MODE_SPI_4WIRE,                                           \
-			.config = MIPI_DBI_SPI_CONFIG_DT_INST(inst,                                \
-							      SPI_OP_MODE_MASTER |                 \
-							      SPI_WORD_SET(8), 0),                 \
-		},                                                                                 \
+		.dbi_config =                                                                      \
+			{                                                                          \
+				.mode = MIPI_DBI_MODE_SPI_4WIRE,                                   \
+				.config = MIPI_DBI_SPI_CONFIG_DT_INST(                             \
+					inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),            \
+			},                                                                         \
 		.pixel_format = DT_INST_PROP(inst, pixel_format),                                  \
 		.orientation = DT_INST_ENUM_IDX(inst, orientation),                                \
 		.x_resolution = DT_INST_PROP(inst, width),                                         \

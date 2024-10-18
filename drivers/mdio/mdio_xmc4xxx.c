@@ -32,9 +32,8 @@ struct mdio_xmc4xxx_clock_divider {
 };
 
 static const struct mdio_xmc4xxx_clock_divider mdio_clock_divider[] = {
-	{.divider = 8, .reg_val = 2},  {.divider = 13, .reg_val = 3},
-	{.divider = 21, .reg_val = 0}, {.divider = 31, .reg_val = 1},
-	{.divider = 51, .reg_val = 4}, {.divider = 62, .reg_val = 5},
+	{.divider = 8, .reg_val = 2},  {.divider = 13, .reg_val = 3}, {.divider = 21, .reg_val = 0},
+	{.divider = 31, .reg_val = 1}, {.divider = 51, .reg_val = 4}, {.divider = 62, .reg_val = 5},
 };
 
 struct mdio_xmc4xxx_dev_data {
@@ -49,7 +48,7 @@ struct mdio_xmc4xxx_dev_config {
 };
 
 static int mdio_xmc4xxx_transfer(const struct device *dev, uint8_t phy_addr, uint8_t reg_addr,
-			 uint8_t is_write, uint16_t data_write, uint16_t *data_read)
+				 uint8_t is_write, uint16_t data_write, uint16_t *data_read)
 {
 	const struct mdio_xmc4xxx_dev_config *const dev_cfg = dev->config;
 	ETH_GLOBAL_TypeDef *const regs = dev_cfg->regs;
@@ -74,8 +73,8 @@ static int mdio_xmc4xxx_transfer(const struct device *dev, uint8_t phy_addr, uin
 			     FIELD_PREP(ETH_GMII_ADDRESS_PA_Msk, phy_addr) |
 			     FIELD_PREP(ETH_GMII_ADDRESS_MR_Msk, reg_addr);
 
-	if (!WAIT_FOR((regs->GMII_ADDRESS & ETH_GMII_ADDRESS_MB_Msk) == 0,
-		      MDIO_TRANSFER_TIMEOUT_US, k_msleep(5))) {
+	if (!WAIT_FOR((regs->GMII_ADDRESS & ETH_GMII_ADDRESS_MB_Msk) == 0, MDIO_TRANSFER_TIMEOUT_US,
+		      k_msleep(5))) {
 		LOG_WRN("mdio transfer timedout");
 		ret = -ETIMEDOUT;
 		goto finish;
@@ -92,13 +91,13 @@ finish:
 }
 
 static int mdio_xmc4xxx_read(const struct device *dev, uint8_t phy_addr, uint8_t reg_addr,
-			 uint16_t *data)
+			     uint16_t *data)
 {
 	return mdio_xmc4xxx_transfer(dev, phy_addr, reg_addr, 0, 0, data);
 }
 
-static int mdio_xmc4xxx_write(const struct device *dev, uint8_t phy_addr,
-			  uint8_t reg_addr, uint16_t data)
+static int mdio_xmc4xxx_write(const struct device *dev, uint8_t phy_addr, uint8_t reg_addr,
+			      uint16_t data)
 {
 	return mdio_xmc4xxx_transfer(dev, phy_addr, reg_addr, 1, data, NULL);
 }
@@ -181,5 +180,5 @@ static const struct mdio_xmc4xxx_dev_config mdio_xmc4xxx_dev_config_0 = {
 static struct mdio_xmc4xxx_dev_data mdio_xmc4xxx_dev_data_0;
 
 DEVICE_DT_INST_DEFINE(0, &mdio_xmc4xxx_initialize, NULL, &mdio_xmc4xxx_dev_data_0,
-		      &mdio_xmc4xxx_dev_config_0, POST_KERNEL,
-		      CONFIG_MDIO_INIT_PRIORITY, &mdio_xmc4xxx_driver_api);
+		      &mdio_xmc4xxx_dev_config_0, POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY,
+		      &mdio_xmc4xxx_driver_api);

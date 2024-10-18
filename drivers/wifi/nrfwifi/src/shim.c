@@ -54,9 +54,7 @@ static void *zep_shim_mem_set(void *start, int val, size_t size)
 	return memset(start, val, size);
 }
 
-static int zep_shim_mem_cmp(const void *addr1,
-			    const void *addr2,
-			    size_t size)
+static int zep_shim_mem_cmp(const void *addr1, const void *addr2, size_t size)
 {
 	return memcmp(addr1, addr2, size);
 }
@@ -379,14 +377,12 @@ out:
 }
 
 #if defined(CONFIG_NRF70_RAW_DATA_RX) || defined(CONFIG_NRF70_PROMISC_DATA_RX)
-void *net_raw_pkt_from_nbuf(void *iface, void *frm,
-			    unsigned short raw_hdr_len,
-			    void *raw_rx_hdr,
+void *net_raw_pkt_from_nbuf(void *iface, void *frm, unsigned short raw_hdr_len, void *raw_rx_hdr,
 			    bool pkt_free)
 {
 	struct net_pkt *pkt = NULL;
 	unsigned char *nwb_data;
-	unsigned char *data =  NULL;
+	unsigned char *data = NULL;
 	unsigned int nwb_len;
 	unsigned int total_len;
 	struct nwb *nwb = frm;
@@ -413,7 +409,7 @@ void *net_raw_pkt_from_nbuf(void *iface, void *frm,
 	}
 
 	memcpy(data, raw_rx_hdr, raw_hdr_len);
-	memcpy((data+raw_hdr_len), nwb_data, nwb_len);
+	memcpy((data + raw_hdr_len), nwb_data, nwb_len);
 
 	if (net_pkt_write(pkt, data, total_len)) {
 		net_pkt_unref(pkt);
@@ -588,8 +584,7 @@ static void zep_shim_work_free(void *item)
 	work_free(item);
 }
 
-static void zep_shim_work_init(void *item, void (*callback)(unsigned long data),
-				  unsigned long data)
+static void zep_shim_work_init(void *item, void (*callback)(unsigned long data), unsigned long data)
 {
 	work_init(item, callback, data);
 }
@@ -740,7 +735,6 @@ static void irq_work_handler(struct k_work *work)
 	}
 }
 
-
 extern struct k_work_q zep_wifi_intr_q;
 
 static void zep_shim_irq_handler(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
@@ -848,22 +842,22 @@ static void zep_shim_assert(int test_val, int val, enum nrf_wifi_assert_op_type 
 	switch (op) {
 	case NRF_WIFI_ASSERT_EQUAL_TO:
 		NET_ASSERT(test_val == val, "%s", msg);
-	break;
+		break;
 	case NRF_WIFI_ASSERT_NOT_EQUAL_TO:
 		NET_ASSERT(test_val != val, "%s", msg);
-	break;
+		break;
 	case NRF_WIFI_ASSERT_LESS_THAN:
 		NET_ASSERT(test_val < val, "%s", msg);
-	break;
+		break;
 	case NRF_WIFI_ASSERT_LESS_THAN_EQUAL_TO:
 		NET_ASSERT(test_val <= val, "%s", msg);
-	break;
+		break;
 	case NRF_WIFI_ASSERT_GREATER_THAN:
 		NET_ASSERT(test_val > val, "%s", msg);
-	break;
+		break;
 	case NRF_WIFI_ASSERT_GREATER_THAN_EQUAL_TO:
 		NET_ASSERT(test_val >= val, "%s", msg);
-	break;
+		break;
 	default:
 		LOG_ERR("%s: Invalid assertion operation", __func__);
 	}

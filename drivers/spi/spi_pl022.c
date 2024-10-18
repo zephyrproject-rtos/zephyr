@@ -36,16 +36,16 @@ LOG_MODULE_REGISTER(spi_pl022);
 /*
  * Macros to access SSP Registers with their offsets
  */
-#define SSP_CR0(r)      (r + 0x000)
-#define SSP_CR1(r)      (r + 0x004)
-#define SSP_DR(r)       (r + 0x008)
-#define SSP_SR(r)       (r + 0x00C)
-#define SSP_CPSR(r)     (r + 0x010)
-#define SSP_IMSC(r)     (r + 0x014)
-#define SSP_RIS(r)      (r + 0x018)
-#define SSP_MIS(r)      (r + 0x01C)
-#define SSP_ICR(r)      (r + 0x020)
-#define SSP_DMACR(r)    (r + 0x024)
+#define SSP_CR0(r)   (r + 0x000)
+#define SSP_CR1(r)   (r + 0x004)
+#define SSP_DR(r)    (r + 0x008)
+#define SSP_SR(r)    (r + 0x00C)
+#define SSP_CPSR(r)  (r + 0x010)
+#define SSP_IMSC(r)  (r + 0x014)
+#define SSP_RIS(r)   (r + 0x018)
+#define SSP_MIS(r)   (r + 0x01C)
+#define SSP_ICR(r)   (r + 0x020)
+#define SSP_DMACR(r) (r + 0x024)
 
 /*
  * Control Register 0
@@ -77,8 +77,8 @@ LOG_MODULE_REGISTER(spi_pl022);
  */
 #define SSP_CR1_SOD_MSB 3
 #define SSP_CR1_SOD_LSB 3
-#define SSP_CR1_MS_MSB 2
-#define SSP_CR1_MS_LSB 2
+#define SSP_CR1_MS_MSB  2
+#define SSP_CR1_MS_LSB  2
 #define SSP_CR1_SSE_MSB 1
 #define SSP_CR1_SSE_LSB 1
 #define SSP_CR1_LBM_MSB 0
@@ -89,7 +89,7 @@ LOG_MODULE_REGISTER(spi_pl022);
 /* Port Enable */
 #define SSP_CR1_MASK_SSE SSP_MASK(CR1, SSE)
 /* Controller/Peripheral (Master/Slave) select */
-#define SSP_CR1_MASK_MS SSP_MASK(CR1, MS)
+#define SSP_CR1_MASK_MS  SSP_MASK(CR1, MS)
 /* Peripheral (Slave) mode output disabled */
 #define SSP_CR1_MASK_SOD SSP_MASK(CR1, SOD)
 
@@ -121,86 +121,86 @@ LOG_MODULE_REGISTER(spi_pl022);
 /*
  * Clock Prescale Register
  */
-#define SSP_CPSR_CPSDVSR_MSB 7
-#define SSP_CPSR_CPSDVSR_LSB 0
+#define SSP_CPSR_CPSDVSR_MSB  7
+#define SSP_CPSR_CPSDVSR_LSB  0
 /* Clock prescale divider */
 #define SSP_CPSR_MASK_CPSDVSR SSP_MASK(CPSR, CPSDVSR)
 
 /*
  * Interrupt Mask Set/Clear Register
  */
-#define SSP_IMSC_TXIM_MSB 3
-#define SSP_IMSC_TXIM_LSB 3
-#define SSP_IMSC_RXIM_MSB 2
-#define SSP_IMSC_RXIM_LSB 2
-#define SSP_IMSC_RTIM_MSB 1
-#define SSP_IMSC_RTIM_LSB 1
+#define SSP_IMSC_TXIM_MSB  3
+#define SSP_IMSC_TXIM_LSB  3
+#define SSP_IMSC_RXIM_MSB  2
+#define SSP_IMSC_RXIM_LSB  2
+#define SSP_IMSC_RTIM_MSB  1
+#define SSP_IMSC_RTIM_LSB  1
 #define SSP_IMSC_RORIM_MSB 0
 #define SSP_IMSC_RORIM_LSB 0
 
 /* Receive Overrun Interrupt mask */
 #define SSP_IMSC_MASK_RORIM SSP_MASK(IMSC, RORIM)
 /* Receive timeout Interrupt mask */
-#define SSP_IMSC_MASK_RTIM SSP_MASK(IMSC, RTIM)
+#define SSP_IMSC_MASK_RTIM  SSP_MASK(IMSC, RTIM)
 /* Receive FIFO Interrupt mask */
-#define SSP_IMSC_MASK_RXIM SSP_MASK(IMSC, RXIM)
+#define SSP_IMSC_MASK_RXIM  SSP_MASK(IMSC, RXIM)
 /* Transmit FIFO Interrupt mask */
-#define SSP_IMSC_MASK_TXIM SSP_MASK(IMSC, TXIM)
+#define SSP_IMSC_MASK_TXIM  SSP_MASK(IMSC, TXIM)
 
 /*
  * Raw Interrupt Status Register
  */
-#define SSP_RIS_TXRIS_MSB 3
-#define SSP_RIS_TXRIS_LSB 3
-#define SSP_RIS_RXRIS_MSB 2
-#define SSP_RIS_RXRIS_LSB 2
-#define SSP_RIS_RTRIS_MSB 1
-#define SSP_RIS_RTRIS_LSB 1
+#define SSP_RIS_TXRIS_MSB  3
+#define SSP_RIS_TXRIS_LSB  3
+#define SSP_RIS_RXRIS_MSB  2
+#define SSP_RIS_RXRIS_LSB  2
+#define SSP_RIS_RTRIS_MSB  1
+#define SSP_RIS_RTRIS_LSB  1
 #define SSP_RIS_RORRIS_MSB 0
 #define SSP_RIS_RORRIS_LSB 0
 
 /* Receive Overrun Raw Interrupt status */
 #define SSP_RIS_MASK_RORRIS SSP_MASK(RIS, RORRIS)
 /* Receive Timeout Raw Interrupt status */
-#define SSP_RIS_MASK_RTRIS SSP_MASK(RIS, RTRIS)
+#define SSP_RIS_MASK_RTRIS  SSP_MASK(RIS, RTRIS)
 /* Receive FIFO Raw Interrupt status */
-#define SSP_RIS_MASK_RXRIS SSP_MASK(RIS, RXRIS)
+#define SSP_RIS_MASK_RXRIS  SSP_MASK(RIS, RXRIS)
 /* Transmit FIFO Raw Interrupt status */
-#define SSP_RIS_MASK_TXRIS SSP_MASK(RIS, TXRIS)
+#define SSP_RIS_MASK_TXRIS  SSP_MASK(RIS, TXRIS)
 
 /*
  * Masked Interrupt Status Register
  */
-#define SSP_MIS_TXMIS_MSB 3
-#define SSP_MIS_TXMIS_LSB 3
-#define SSP_MIS_RXMIS_MSB 2
-#define SSP_MIS_RXMIS_LSB 2
-#define SSP_MIS_RTMIS_MSB 1
-#define SSP_MIS_RTMIS_LSB 1
+#define SSP_MIS_TXMIS_MSB  3
+#define SSP_MIS_TXMIS_LSB  3
+#define SSP_MIS_RXMIS_MSB  2
+#define SSP_MIS_RXMIS_LSB  2
+#define SSP_MIS_RTMIS_MSB  1
+#define SSP_MIS_RTMIS_LSB  1
 #define SSP_MIS_RORMIS_MSB 0
 #define SSP_MIS_RORMIS_LSB 0
 
 /* Receive Overrun Masked Interrupt status */
 #define SSP_MIS_MASK_RORMIS SSP_MASK(MIS, RORMIS)
 /* Receive Timeout Masked Interrupt status */
-#define SSP_MIS_MASK_RTMIS SSP_MASK(MIS, RTMIS)
+#define SSP_MIS_MASK_RTMIS  SSP_MASK(MIS, RTMIS)
 /* Receive FIFO Masked Interrupt status */
-#define SSP_MIS_MASK_RXMIS SSP_MASK(MIS, RXMIS)
+#define SSP_MIS_MASK_RXMIS  SSP_MASK(MIS, RXMIS)
 /* Transmit FIFO Masked Interrupt status */
-#define SSP_MIS_MASK_TXMIS SSP_MASK(MIS, TXMIS)
+#define SSP_MIS_MASK_TXMIS  SSP_MASK(MIS, TXMIS)
 
 /*
  * Interrupt Clear Register
  */
-#define SSP_ICR_RTIC_MSB 1
-#define SSP_ICR_RTIC_LSB 1
+#define SSP_ICR_RTIC_MSB  1
+#define SSP_ICR_RTIC_LSB  1
 #define SSP_ICR_RORIC_MSB 0
 #define SSP_ICR_RORIC_LSB 0
 
 /* Receive Overrun Raw Clear Interrupt bit */
 #define SSP_ICR_MASK_RORIC SSP_MASK(ICR, RORIC)
 /* Receive Timeout Clear Interrupt bit */
-#define SSP_ICR_MASK_RTIC SSP_MASK(ICR, RTIC)
+#define SSP_ICR_MASK_RTIC  SSP_MASK(ICR, RTIC)
 
 /*
  * DMA Control Register
@@ -232,17 +232,17 @@ LOG_MODULE_REGISTER(spi_pl022);
 /*
  * Register READ/WRITE macros
  */
-#define SSP_READ_REG(reg) (*((volatile uint32_t *)reg))
+#define SSP_READ_REG(reg)       (*((volatile uint32_t *)reg))
 #define SSP_WRITE_REG(reg, val) (*((volatile uint32_t *)reg) = val)
 #define SSP_CLEAR_REG(reg, val) (*((volatile uint32_t *)reg) &= ~(val))
 
 /*
  * Status check macros
  */
-#define SSP_BUSY(reg) (SSP_READ_REG(SSP_SR(reg)) & SSP_SR_MASK_BSY)
+#define SSP_BUSY(reg)              (SSP_READ_REG(SSP_SR(reg)) & SSP_SR_MASK_BSY)
 #define SSP_RX_FIFO_NOT_EMPTY(reg) (SSP_READ_REG(SSP_SR(reg)) & SSP_SR_MASK_RNE)
-#define SSP_TX_FIFO_EMPTY(reg) (SSP_READ_REG(SSP_SR(reg)) & SSP_SR_MASK_TFE)
-#define SSP_TX_FIFO_NOT_FULL(reg) (SSP_READ_REG(SSP_SR(reg)) & SSP_SR_MASK_TNF)
+#define SSP_TX_FIFO_EMPTY(reg)     (SSP_READ_REG(SSP_SR(reg)) & SSP_SR_MASK_TFE)
+#define SSP_TX_FIFO_NOT_FULL(reg)  (SSP_READ_REG(SSP_SR(reg)) & SSP_SR_MASK_TNF)
 
 #if defined(CONFIG_SPI_PL022_DMA)
 enum spi_pl022_dma_direction {
@@ -325,8 +325,8 @@ static inline uint32_t spi_pl022_calc_prescale(const uint32_t pclk, const uint32
 	return prescale;
 }
 
-static inline uint32_t spi_pl022_calc_postdiv(const uint32_t pclk,
-					      const uint32_t baud, const uint32_t prescale)
+static inline uint32_t spi_pl022_calc_postdiv(const uint32_t pclk, const uint32_t baud,
+					      const uint32_t prescale)
 {
 	uint32_t postdiv;
 
@@ -338,8 +338,7 @@ static inline uint32_t spi_pl022_calc_postdiv(const uint32_t pclk,
 	return postdiv - 1;
 }
 
-static int spi_pl022_configure(const struct device *dev,
-			       const struct spi_config *spicfg)
+static int spi_pl022_configure(const struct device *dev, const struct spi_config *spicfg)
 {
 	const struct spi_pl022_cfg *cfg = dev->config;
 	struct spi_pl022_data *data = dev->data;
@@ -785,11 +784,9 @@ static void spi_pl022_xfer(const struct device *dev)
 
 #endif
 
-static int spi_pl022_transceive_impl(const struct device *dev,
-				     const struct spi_config *config,
+static int spi_pl022_transceive_impl(const struct device *dev, const struct spi_config *config,
 				     const struct spi_buf_set *tx_bufs,
-				     const struct spi_buf_set *rx_bufs,
-				     spi_callback_t cb,
+				     const struct spi_buf_set *rx_bufs, spi_callback_t cb,
 				     void *userdata)
 {
 	const struct spi_pl022_cfg *cfg = dev->config;
@@ -816,8 +813,7 @@ static int spi_pl022_transceive_impl(const struct device *dev,
 			dma_stop(cfg->dma[i].dev, cfg->dma[i].channel);
 
 			while (stat.busy) {
-				dma_get_status(cfg->dma[i].dev,
-					       cfg->dma[i].channel, &stat);
+				dma_get_status(cfg->dma[i].dev, cfg->dma[i].channel, &stat);
 			}
 
 			data->dma[i].count = 0;
@@ -860,8 +856,7 @@ error:
 
 /* API Functions */
 
-static int spi_pl022_transceive(const struct device *dev,
-				const struct spi_config *config,
+static int spi_pl022_transceive(const struct device *dev, const struct spi_config *config,
 				const struct spi_buf_set *tx_bufs,
 				const struct spi_buf_set *rx_bufs)
 {
@@ -870,11 +865,9 @@ static int spi_pl022_transceive(const struct device *dev,
 
 #if defined(CONFIG_SPI_ASYNC)
 
-static int spi_pl022_transceive_async(const struct device *dev,
-				      const struct spi_config *config,
+static int spi_pl022_transceive_async(const struct device *dev, const struct spi_config *config,
 				      const struct spi_buf_set *tx_bufs,
-				      const struct spi_buf_set *rx_bufs,
-				      spi_callback_t cb,
+				      const struct spi_buf_set *rx_bufs, spi_callback_t cb,
 				      void *userdata)
 {
 	return spi_pl022_transceive_impl(dev, config, tx_bufs, rx_bufs, cb, userdata);
@@ -882,8 +875,7 @@ static int spi_pl022_transceive_async(const struct device *dev,
 
 #endif
 
-static int spi_pl022_release(const struct device *dev,
-			     const struct spi_config *config)
+static int spi_pl022_release(const struct device *dev, const struct spi_config *config)
 {
 	struct spi_pl022_data *data = dev->data;
 
@@ -892,16 +884,14 @@ static int spi_pl022_release(const struct device *dev,
 	return 0;
 }
 
-static const struct spi_driver_api spi_pl022_api = {
-	.transceive = spi_pl022_transceive,
+static const struct spi_driver_api spi_pl022_api = {.transceive = spi_pl022_transceive,
 #if defined(CONFIG_SPI_ASYNC)
-	.transceive_async = spi_pl022_transceive_async,
+						    .transceive_async = spi_pl022_transceive_async,
 #endif
 #ifdef CONFIG_SPI_RTIO
-	.iodev_submit = spi_rtio_iodev_default_submit,
+						    .iodev_submit = spi_rtio_iodev_default_submit,
 #endif
-	.release = spi_pl022_release
-};
+						    .release = spi_pl022_release};
 
 static int spi_pl022_init(const struct device *dev)
 {
@@ -993,46 +983,47 @@ static int spi_pl022_init(const struct device *dev)
 
 #define DMAS_DECL(idx)                                                                             \
 	{                                                                                          \
-		COND_CODE_1(DT_INST_DMAS_HAS_NAME(idx, tx), (DMA_INITIALIZER(idx, tx)), ({0})),    \
-		COND_CODE_1(DT_INST_DMAS_HAS_NAME(idx, rx), (DMA_INITIALIZER(idx, rx)), ({0})),    \
-	}
+		COND_CODE_1(DT_INST_DMAS_HAS_NAME(idx, tx), (DMA_INITIALIZER(idx, tx)), ({0})),                                          \
+			 COND_CODE_1(DT_INST_DMAS_HAS_NAME(idx, rx), (DMA_INITIALIZER(idx, rx)), ({0})),       \
+			 }
 
 #define DMAS_ENABLED(idx) (DT_INST_DMAS_HAS_NAME(idx, tx) && DT_INST_DMAS_HAS_NAME(idx, rx))
 
 #define CLOCK_ID_DECL(idx)                                                                         \
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(0, clocks),                                               \
 	(static const clock_control_subsys_t pl022_clk_id##idx =                                   \
-		(clock_control_subsys_t)DT_INST_PHA_BY_IDX(idx, clocks, 0, clk_id);))              \
+		(clock_control_subsys_t)DT_INST_PHA_BY_IDX(idx, clocks, 0, clk_id);))
 
-#define SPI_PL022_INIT(idx)                                                                        \
-	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_INST_DEFINE(idx);))                                 \
+#define SPI_PL022_INIT(idx)                                                                                                                                         \
+	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_INST_DEFINE(idx);))                                                                                                                                                  \
 	IF_ENABLED(CONFIG_SPI_PL022_INTERRUPT,                                                     \
 		   (static void spi_pl022_irq_config_##idx(const struct device *dev)               \
 		    {                                                                              \
 			   IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority),              \
 				       spi_pl022_isr, DEVICE_DT_INST_GET(idx), 0);                 \
 			   irq_enable(DT_INST_IRQN(idx));                                          \
-		    }))                                                                            \
-	IF_ENABLED(CONFIG_CLOCK_CONTROL, (CLOCK_ID_DECL(idx)))                                     \
-	static struct spi_pl022_data spi_pl022_data_##idx = {                                      \
-		SPI_CONTEXT_INIT_LOCK(spi_pl022_data_##idx, ctx),                                  \
-		SPI_CONTEXT_INIT_SYNC(spi_pl022_data_##idx, ctx),                                  \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(idx), ctx)};                           \
-	static struct spi_pl022_cfg spi_pl022_cfg_##idx = {                                        \
-		.reg = DT_INST_REG_ADDR(idx),                                                      \
+		    }))                                                                \
+	IF_ENABLED(CONFIG_CLOCK_CONTROL, (CLOCK_ID_DECL(idx)))                                                                                                                                                  \
+	static struct spi_pl022_data spi_pl022_data_##idx = {                                                                                                       \
+		SPI_CONTEXT_INIT_LOCK(spi_pl022_data_##idx, ctx),                                                                                                   \
+		SPI_CONTEXT_INIT_SYNC(spi_pl022_data_##idx, ctx),                                                                                                   \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(idx), ctx)};                                                                                            \
+	static struct spi_pl022_cfg spi_pl022_cfg_##idx = {                                                                                                         \
+		.reg = DT_INST_REG_ADDR(idx),                                                                                                                       \
 		IF_ENABLED(CONFIG_CLOCK_CONTROL, (IF_ENABLED(DT_INST_NODE_HAS_PROP(0, clocks),     \
 			(.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                       \
-			 .clk_id = pl022_clk_id##idx,))))                                          \
-		IF_ENABLED(CONFIG_RESET, (IF_ENABLED(DT_INST_NODE_HAS_PROP(0, resets),             \
-			   (.reset = RESET_DT_SPEC_INST_GET(idx),))))                              \
-		IF_ENABLED(CONFIG_PINCTRL, (.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),))       \
-		IF_ENABLED(CONFIG_SPI_PL022_DMA, (.dma = DMAS_DECL(idx),)) COND_CODE_1(            \
+			 .clk_id = pl022_clk_id##idx,))))                                                                \
+					IF_ENABLED(CONFIG_RESET, (IF_ENABLED(DT_INST_NODE_HAS_PROP(0, resets),             \
+			   (.reset = RESET_DT_SPEC_INST_GET(idx),))))                                        \
+								IF_ENABLED(CONFIG_PINCTRL, (.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),))                                                                                          \
+										 IF_ENABLED(CONFIG_SPI_PL022_DMA, (.dma = DMAS_DECL(idx),))                                                                         \
+												  COND_CODE_1(            \
 				CONFIG_SPI_PL022_DMA, (.dma_enabled = DMAS_ENABLED(idx),),         \
-				(.dma_enabled = false,))                                           \
-		IF_ENABLED(CONFIG_SPI_PL022_INTERRUPT,                                             \
-					   (.irq_config = spi_pl022_irq_config_##idx,))};          \
-	DEVICE_DT_INST_DEFINE(idx, spi_pl022_init, NULL, &spi_pl022_data_##idx,                    \
-			      &spi_pl022_cfg_##idx, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,         \
+				(.dma_enabled = false,))                                         \
+														   IF_ENABLED(CONFIG_SPI_PL022_INTERRUPT,                                             \
+					   (.irq_config = spi_pl022_irq_config_##idx,))}; \
+	DEVICE_DT_INST_DEFINE(idx, spi_pl022_init, NULL, &spi_pl022_data_##idx,                                                                                     \
+			      &spi_pl022_cfg_##idx, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,                                                                          \
 			      &spi_pl022_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_PL022_INIT)

@@ -12,9 +12,7 @@ LOG_MODULE_DECLARE(tsl2540, CONFIG_SENSOR_LOG_LEVEL);
 static void tsl2540_setup_int(const struct device *dev, bool enable)
 {
 	const struct tsl2540_config *config = dev->config;
-	gpio_flags_t flags = enable
-		? GPIO_INT_EDGE_TO_ACTIVE
-		: GPIO_INT_DISABLE;
+	gpio_flags_t flags = enable ? GPIO_INT_EDGE_TO_ACTIVE : GPIO_INT_DISABLE;
 
 	gpio_pin_interrupt_configure_dt(&config->int_gpio, flags);
 }
@@ -50,8 +48,7 @@ static void tsl2540_process_int(const struct device *dev)
 	int ret = i2c_reg_read_byte_dt(&config->i2c_spec, TSL2540_REG_STATUS, &status);
 
 	if (ret) {
-		LOG_ERR("Could not read status register (%#x), errno: %d", TSL2540_REG_STATUS,
-			ret);
+		LOG_ERR("Could not read status register (%#x), errno: %d", TSL2540_REG_STATUS, ret);
 		return;
 	}
 
@@ -121,18 +118,17 @@ int tsl2540_trigger_set(const struct device *dev, const struct sensor_trigger *t
 		return -ENOTSUP;
 	}
 
-
 	const struct i2c_dt_spec *i2c_spec = &config->i2c_spec;
 
-	ret = i2c_reg_update_byte_dt(i2c_spec, TSL2540_INTENAB_ADDR,
-					TSL2540_INTENAB_MASK, TSL2540_INTENAB_CONF);
+	ret = i2c_reg_update_byte_dt(i2c_spec, TSL2540_INTENAB_ADDR, TSL2540_INTENAB_MASK,
+				     TSL2540_INTENAB_CONF);
 	if (ret) {
 		LOG_ERR("%#x: I/O error: %d", TSL2540_INTENAB_ADDR, ret);
 		return -EIO;
 	}
 
-	ret = i2c_reg_update_byte_dt(i2c_spec, TSL2540_CFG3_ADDR,
-					TSL2540_CFG3_MASK, TSL2540_CFG3_CONF);
+	ret = i2c_reg_update_byte_dt(i2c_spec, TSL2540_CFG3_ADDR, TSL2540_CFG3_MASK,
+				     TSL2540_CFG3_CONF);
 	if (ret) {
 		LOG_ERR("%#x: I/O error: %d", TSL2540_CFG3_ADDR, ret);
 		return -EIO;

@@ -116,20 +116,16 @@ static const struct retained_mem_driver_api zephyr_retained_mem_reg_api = {
 	.clear = zephyr_retained_mem_reg_clear,
 };
 
-#define ZEPHYR_RETAINED_MEM_REG_DEVICE(inst)							\
-	static struct zephyr_retained_mem_reg_data zephyr_retained_mem_reg_data_##inst;		\
-	static const struct zephyr_retained_mem_reg_config					\
-			zephyr_retained_mem_reg_config_##inst = {				\
-		.address = (uint8_t *)DT_INST_REG_ADDR(inst),					\
-		.size = DT_INST_REG_SIZE(inst),							\
-	};											\
-	DEVICE_DT_INST_DEFINE(inst,								\
-			      &zephyr_retained_mem_reg_init,					\
-			      NULL,								\
-			      &zephyr_retained_mem_reg_data_##inst,				\
-			      &zephyr_retained_mem_reg_config_##inst,				\
-			      POST_KERNEL,							\
-			      CONFIG_RETAINED_MEM_INIT_PRIORITY,				\
-			      &zephyr_retained_mem_reg_api);
+#define ZEPHYR_RETAINED_MEM_REG_DEVICE(inst)                                                       \
+	static struct zephyr_retained_mem_reg_data zephyr_retained_mem_reg_data_##inst;            \
+	static const struct zephyr_retained_mem_reg_config zephyr_retained_mem_reg_config_##inst = \
+		{                                                                                  \
+			.address = (uint8_t *)DT_INST_REG_ADDR(inst),                              \
+			.size = DT_INST_REG_SIZE(inst),                                            \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(inst, &zephyr_retained_mem_reg_init, NULL,                           \
+			      &zephyr_retained_mem_reg_data_##inst,                                \
+			      &zephyr_retained_mem_reg_config_##inst, POST_KERNEL,                 \
+			      CONFIG_RETAINED_MEM_INIT_PRIORITY, &zephyr_retained_mem_reg_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ZEPHYR_RETAINED_MEM_REG_DEVICE)

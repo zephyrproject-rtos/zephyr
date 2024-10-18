@@ -30,9 +30,7 @@ LOG_MODULE_REGISTER(lpd880x);
  * - mode 0 (the default), 8 bit, MSB first, one-line SPI
  * - no shenanigans (no CS hold, release device lock, not an EEPROM)
  */
-#define LPD880X_SPI_OPERATION (SPI_OP_MODE_MASTER | \
-			       SPI_TRANSFER_MSB |   \
-			       SPI_WORD_SET(8))
+#define LPD880X_SPI_OPERATION (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8))
 
 struct lpd880x_config {
 	struct spi_dt_spec bus;
@@ -50,28 +48,18 @@ static int lpd880x_update(const struct device *dev, void *data, size_t size)
 	uint8_t reset_size = DIV_ROUND_UP(DIV_ROUND_UP(size, 3), 32);
 	uint8_t reset_buf[reset_size];
 	uint8_t last = 0x00;
-	const struct spi_buf bufs[3] = {
-		{
-			/* Prepares the strip to shift in new data values. */
-			.buf = reset_buf,
-			.len = reset_size
-		},
-		{
-			/* Displays the serialized pixel data. */
-			.buf = data,
-			.len = size
-		},
-		{
-			/* Ensures the last byte of pixel data is displayed. */
-			.buf = &last,
-			.len = sizeof(last)
-		}
+	const struct spi_buf bufs[3] = {{/* Prepares the strip to shift in new data values. */
+					 .buf = reset_buf,
+					 .len = reset_size},
+					{/* Displays the serialized pixel data. */
+					 .buf = data,
+					 .len = size},
+					{/* Ensures the last byte of pixel data is displayed. */
+					 .buf = &last,
+					 .len = sizeof(last)}
 
 	};
-	const struct spi_buf_set tx = {
-		.buffers = bufs,
-		.count = 3
-	};
+	const struct spi_buf_set tx = {.buffers = bufs, .count = 3};
 	size_t rc;
 
 	(void)memset(reset_buf, 0x00, reset_size);
@@ -84,8 +72,7 @@ static int lpd880x_update(const struct device *dev, void *data, size_t size)
 	return rc;
 }
 
-static int lpd880x_strip_update_rgb(const struct device *dev,
-				    struct led_rgb *pixels,
+static int lpd880x_strip_update_rgb(const struct device *dev, struct led_rgb *pixels,
 				    size_t num_pixels)
 {
 	uint8_t *px = (uint8_t *)pixels;
@@ -113,8 +100,7 @@ static int lpd880x_strip_update_rgb(const struct device *dev,
 	return lpd880x_update(dev, pixels, 3 * num_pixels);
 }
 
-static int lpd880x_strip_update_channels(const struct device *dev,
-					 uint8_t *channels,
+static int lpd880x_strip_update_channels(const struct device *dev, uint8_t *channels,
 					 size_t num_channels)
 {
 	size_t i;
@@ -156,7 +142,5 @@ static const struct led_strip_driver_api lpd880x_strip_api = {
 	.length = lpd880x_strip_length,
 };
 
-DEVICE_DT_INST_DEFINE(0, lpd880x_strip_init, NULL,
-		      NULL, &lpd880x_config,
-		      POST_KERNEL, CONFIG_LED_STRIP_INIT_PRIORITY,
-		      &lpd880x_strip_api);
+DEVICE_DT_INST_DEFINE(0, lpd880x_strip_init, NULL, NULL, &lpd880x_config, POST_KERNEL,
+		      CONFIG_LED_STRIP_INIT_PRIORITY, &lpd880x_strip_api);

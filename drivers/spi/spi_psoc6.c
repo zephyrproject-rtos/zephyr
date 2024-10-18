@@ -25,9 +25,9 @@ LOG_MODULE_REGISTER(spi_psoc6);
 #include "cy_scb_spi.h"
 #include "cy_sysint.h"
 
-#define SPI_CHIP_SELECT_COUNT		4
-#define SPI_MAX_DATA_WIDTH		16
-#define SPI_PSOC6_CLK_DIV_NUMBER	1
+#define SPI_CHIP_SELECT_COUNT    4
+#define SPI_MAX_DATA_WIDTH       16
+#define SPI_PSOC6_CLK_DIV_NUMBER 1
 
 struct spi_psoc6_config {
 	CySCB_Type *base;
@@ -74,12 +74,12 @@ static void spi_psoc6_transfer_next_packet(const struct device *dev)
 		xfer->dataSize = ctx->rx_len;
 	} else if (ctx->rx_len == 0U) {
 		/* tx only, nothing to rx */
-		xfer->txData = (uint8_t *) ctx->tx_buf;
+		xfer->txData = (uint8_t *)ctx->tx_buf;
 		xfer->rxData = NULL;
 		xfer->dataSize = ctx->tx_len;
 	} else if (ctx->tx_len == ctx->rx_len) {
 		/* rx and tx are the same length */
-		xfer->txData = (uint8_t *) ctx->tx_buf;
+		xfer->txData = (uint8_t *)ctx->tx_buf;
 		xfer->rxData = ctx->rx_buf;
 		xfer->dataSize = ctx->tx_len;
 	} else if (ctx->tx_len > ctx->rx_len) {
@@ -87,7 +87,7 @@ static void spi_psoc6_transfer_next_packet(const struct device *dev)
 		 * rx into a longer intermediate buffer. Leave chip select
 		 * active between transfers.
 		 */
-		xfer->txData = (uint8_t *) ctx->tx_buf;
+		xfer->txData = (uint8_t *)ctx->tx_buf;
 		xfer->rxData = ctx->rx_buf;
 		xfer->dataSize = ctx->rx_len;
 	} else {
@@ -95,14 +95,14 @@ static void spi_psoc6_transfer_next_packet(const struct device *dev)
 		 * tx from a longer intermediate buffer. Leave chip select
 		 * active between transfers.
 		 */
-		xfer->txData = (uint8_t *) ctx->tx_buf;
+		xfer->txData = (uint8_t *)ctx->tx_buf;
 		xfer->rxData = ctx->rx_buf;
 		xfer->dataSize = ctx->tx_len;
 	}
 
 	if (xfer->txData != NULL) {
-		if (Cy_SCB_SPI_WriteArray(config->base, xfer->txData,
-					  xfer->dataSize) != xfer->dataSize) {
+		if (Cy_SCB_SPI_WriteArray(config->base, xfer->txData, xfer->dataSize) !=
+		    xfer->dataSize) {
 			goto err;
 		}
 	} else {
@@ -133,14 +133,11 @@ static void spi_psoc6_isr(const struct device *dev)
 	const struct spi_psoc6_config *config = dev->config;
 	struct spi_psoc6_data *data = dev->data;
 
-	Cy_SCB_ClearMasterInterrupt(config->base,
-				    CY_SCB_MASTER_INTR_SPI_DONE);
+	Cy_SCB_ClearMasterInterrupt(config->base, CY_SCB_MASTER_INTR_SPI_DONE);
 
 	/* extract data from RX FIFO */
 	if (data->xfer.rxData != NULL) {
-		Cy_SCB_SPI_ReadArray(config->base,
-				     data->xfer.rxData,
-				     data->xfer.dataSize);
+		Cy_SCB_SPI_ReadArray(config->base, data->xfer.rxData, data->xfer.dataSize);
 	} else {
 		Cy_SCB_ClearRxFifo(config->base);
 	}
@@ -159,8 +156,7 @@ static void spi_psoc6_isr(const struct device *dev)
 	spi_psoc6_transfer_next_packet(dev);
 
 	if (data->xfer.dataSize > 0U) {
-		Cy_SCB_SetMasterInterruptMask(config->base,
-					      CY_SCB_MASTER_INTR_SPI_DONE);
+		Cy_SCB_SetMasterInterruptMask(config->base, CY_SCB_MASTER_INTR_SPI_DONE);
 	}
 }
 
@@ -206,8 +202,7 @@ static void spi_psoc6_master_get_defaults(struct cy_stc_scb_spi_config *cfg)
 	cfg->masterSlaveIntEnableMask = 0U;
 }
 
-static int spi_psoc6_configure(const struct device *dev,
-			       const struct spi_config *spi_cfg)
+static int spi_psoc6_configure(const struct device *dev, const struct spi_config *spi_cfg)
 {
 	struct spi_psoc6_data *data = dev->data;
 	uint32_t word_size;
@@ -224,8 +219,7 @@ static int spi_psoc6_configure(const struct device *dev,
 
 	word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
 	if (word_size > SPI_MAX_DATA_WIDTH) {
-		LOG_ERR("Word size %d is greater than %d",
-			word_size, SPI_MAX_DATA_WIDTH);
+		LOG_ERR("Word size %d is greater than %d", word_size, SPI_MAX_DATA_WIDTH);
 		return -EINVAL;
 	}
 
@@ -233,8 +227,8 @@ static int spi_psoc6_configure(const struct device *dev,
 		spi_psoc6_master_get_defaults(&data->cfg);
 
 		if (spi_cfg->slave > SPI_CHIP_SELECT_COUNT) {
-			LOG_ERR("Slave %d is greater than %d",
-				spi_cfg->slave, SPI_CHIP_SELECT_COUNT);
+			LOG_ERR("Slave %d is greater than %d", spi_cfg->slave,
+				SPI_CHIP_SELECT_COUNT);
 			return -EINVAL;
 		}
 
@@ -254,8 +248,7 @@ static int spi_psoc6_configure(const struct device *dev,
 			}
 		}
 
-		data->cfg.enableMsbFirst = !!!(spi_cfg->operation &
-					       SPI_TRANSFER_LSB);
+		data->cfg.enableMsbFirst = !!!(spi_cfg->operation & SPI_TRANSFER_LSB);
 		data->cfg.oversample = spi_psoc6_get_freqdiv(spi_cfg->frequency);
 
 		data->ctx.config = spi_cfg;
@@ -278,9 +271,7 @@ static void spi_psoc6_transceive_sync_loop(const struct device *dev)
 		}
 
 		if (data->xfer.rxData != NULL) {
-			Cy_SCB_SPI_ReadArray(config->base,
-					     data->xfer.rxData,
-					     data->xfer.dataSize);
+			Cy_SCB_SPI_ReadArray(config->base, data->xfer.rxData, data->xfer.dataSize);
 		} else {
 			Cy_SCB_ClearRxFifo(config->base);
 		}
@@ -292,13 +283,10 @@ static void spi_psoc6_transceive_sync_loop(const struct device *dev)
 	}
 }
 
-static int spi_psoc6_transceive(const struct device *dev,
-				const struct spi_config *spi_cfg,
+static int spi_psoc6_transceive(const struct device *dev, const struct spi_config *spi_cfg,
 				const struct spi_buf_set *tx_bufs,
-				const struct spi_buf_set *rx_bufs,
-				bool asynchronous,
-				spi_callback_t cb,
-				void *userdata)
+				const struct spi_buf_set *rx_bufs, bool asynchronous,
+				spi_callback_t cb, void *userdata)
 {
 	const struct spi_psoc6_config *config = dev->config;
 	struct spi_psoc6_data *data = dev->data;
@@ -324,8 +312,7 @@ static int spi_psoc6_transceive(const struct device *dev,
 	spi_psoc6_transfer_next_packet(dev);
 
 	if (asynchronous) {
-		Cy_SCB_SetMasterInterruptMask(config->base,
-					      CY_SCB_MASTER_INTR_SPI_DONE);
+		Cy_SCB_SetMasterInterruptMask(config->base, CY_SCB_MASTER_INTR_SPI_DONE);
 	} else {
 		spi_psoc6_transceive_sync_loop(dev);
 	}
@@ -340,30 +327,24 @@ out:
 	return ret;
 }
 
-static int spi_psoc6_transceive_sync(const struct device *dev,
-				     const struct spi_config *spi_cfg,
+static int spi_psoc6_transceive_sync(const struct device *dev, const struct spi_config *spi_cfg,
 				     const struct spi_buf_set *tx_bufs,
 				     const struct spi_buf_set *rx_bufs)
 {
-	return spi_psoc6_transceive(dev, spi_cfg, tx_bufs,
-				    rx_bufs, false, NULL, NULL);
+	return spi_psoc6_transceive(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int spi_psoc6_transceive_async(const struct device *dev,
-				      const struct spi_config *spi_cfg,
+static int spi_psoc6_transceive_async(const struct device *dev, const struct spi_config *spi_cfg,
 				      const struct spi_buf_set *tx_bufs,
-				      const struct spi_buf_set *rx_bufs,
-				      spi_callback_t cb,
+				      const struct spi_buf_set *rx_bufs, spi_callback_t cb,
 				      void *userdata)
 {
-	return spi_psoc6_transceive(dev, spi_cfg, tx_bufs,
-				    rx_bufs, true, cb, userdata);
+	return spi_psoc6_transceive(dev, spi_cfg, tx_bufs, rx_bufs, true, cb, userdata);
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static int spi_psoc6_release(const struct device *dev,
-			     const struct spi_config *config)
+static int spi_psoc6_release(const struct device *dev, const struct spi_config *config)
 {
 	struct spi_psoc6_data *data = dev->data;
 
@@ -378,20 +359,16 @@ static int spi_psoc6_init(const struct device *dev)
 	const struct spi_psoc6_config *config = dev->config;
 	struct spi_psoc6_data *data = dev->data;
 
-
 	/* Configure dt provided device signals when available */
 	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
 		return err;
 	}
 
-	Cy_SysClk_PeriphAssignDivider(config->periph_id,
-				      CY_SYSCLK_DIV_8_BIT,
+	Cy_SysClk_PeriphAssignDivider(config->periph_id, CY_SYSCLK_DIV_8_BIT,
 				      SPI_PSOC6_CLK_DIV_NUMBER);
-	Cy_SysClk_PeriphSetDivider(CY_SYSCLK_DIV_8_BIT,
-				   SPI_PSOC6_CLK_DIV_NUMBER, 0U);
-	Cy_SysClk_PeriphEnableDivider(CY_SYSCLK_DIV_8_BIT,
-				      SPI_PSOC6_CLK_DIV_NUMBER);
+	Cy_SysClk_PeriphSetDivider(CY_SYSCLK_DIV_8_BIT, SPI_PSOC6_CLK_DIV_NUMBER, 0U);
+	Cy_SysClk_PeriphEnableDivider(CY_SYSCLK_DIV_8_BIT, SPI_PSOC6_CLK_DIV_NUMBER);
 
 #ifdef CONFIG_SPI_ASYNC
 	config->irq_config_func(dev);
@@ -416,29 +393,25 @@ static const struct spi_driver_api spi_psoc6_driver_api = {
 	.release = spi_psoc6_release,
 };
 
-#define SPI_PSOC6_DEVICE_INIT(n)					\
-	PINCTRL_DT_INST_DEFINE(n);					\
-	static void spi_psoc6_spi##n##_irq_cfg(const struct device *port); \
-	static const struct spi_psoc6_config spi_psoc6_config_##n = {	\
-		.base = (CySCB_Type *)DT_INST_REG_ADDR(n),		\
-		.periph_id = DT_INST_PROP(n, peripheral_id),		\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
-		.irq_config_func = spi_psoc6_spi##n##_irq_cfg,		\
-	};								\
-	static struct spi_psoc6_data spi_psoc6_dev_data_##n = {		\
-		SPI_CONTEXT_INIT_LOCK(spi_psoc6_dev_data_##n, ctx),	\
-		SPI_CONTEXT_INIT_SYNC(spi_psoc6_dev_data_##n, ctx),	\
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
-	};								\
-	DEVICE_DT_INST_DEFINE(n, spi_psoc6_init, NULL,			\
-			      &spi_psoc6_dev_data_##n,			\
-			      &spi_psoc6_config_##n, POST_KERNEL,	\
-			      CONFIG_SPI_INIT_PRIORITY,			\
-			      &spi_psoc6_driver_api);			\
-	static void spi_psoc6_spi##n##_irq_cfg(const struct device *port) \
-	{								\
-		CY_PSOC6_DT_INST_NVIC_INSTALL(n,			\
-					      spi_psoc6_isr);		\
+#define SPI_PSOC6_DEVICE_INIT(n)                                                                   \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	static void spi_psoc6_spi##n##_irq_cfg(const struct device *port);                         \
+	static const struct spi_psoc6_config spi_psoc6_config_##n = {                              \
+		.base = (CySCB_Type *)DT_INST_REG_ADDR(n),                                         \
+		.periph_id = DT_INST_PROP(n, peripheral_id),                                       \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+		.irq_config_func = spi_psoc6_spi##n##_irq_cfg,                                     \
+	};                                                                                         \
+	static struct spi_psoc6_data spi_psoc6_dev_data_##n = {                                    \
+		SPI_CONTEXT_INIT_LOCK(spi_psoc6_dev_data_##n, ctx),                                \
+		SPI_CONTEXT_INIT_SYNC(spi_psoc6_dev_data_##n, ctx),                                \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                             \
+	DEVICE_DT_INST_DEFINE(n, spi_psoc6_init, NULL, &spi_psoc6_dev_data_##n,                    \
+			      &spi_psoc6_config_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,        \
+			      &spi_psoc6_driver_api);                                              \
+	static void spi_psoc6_spi##n##_irq_cfg(const struct device *port)                          \
+	{                                                                                          \
+		CY_PSOC6_DT_INST_NVIC_INSTALL(n, spi_psoc6_isr);                                   \
 	};
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_PSOC6_DEVICE_INIT)

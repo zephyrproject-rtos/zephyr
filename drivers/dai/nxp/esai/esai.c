@@ -29,9 +29,8 @@
  *		referred to as BCLK.
  */
 
-static int esai_get_clock_rate_config(uint32_t extal_rate, uint32_t hclk_rate,
-				      uint32_t bclk_rate, bool variable_hclk,
-				      bool allow_bclk_configuration,
+static int esai_get_clock_rate_config(uint32_t extal_rate, uint32_t hclk_rate, uint32_t bclk_rate,
+				      bool variable_hclk, bool allow_bclk_configuration,
 				      struct esai_transceiver_config *cfg)
 {
 	uint32_t hclk_div_ratio, bclk_div_ratio;
@@ -58,8 +57,8 @@ static int esai_get_clock_rate_config(uint32_t extal_rate, uint32_t hclk_rate,
 	}
 
 	if (DIV_ROUND_UP(extal_rate, bclk_rate) > 2 * 8 * 256 * 16) {
-		LOG_ERR("BCLK rate %u cannot be obtained from EXTAL rate %u",
-			bclk_rate, extal_rate);
+		LOG_ERR("BCLK rate %u cannot be obtained from EXTAL rate %u", bclk_rate,
+			extal_rate);
 		return -EINVAL;
 	}
 
@@ -153,8 +152,8 @@ static int esai_get_clock_rate_config(uint32_t extal_rate, uint32_t hclk_rate,
 		}
 
 		/* no valid configuration found */
-		LOG_ERR("no valid configuration for BCLK rate %u and EXTAL rate %u",
-			bclk_rate, extal_rate);
+		LOG_ERR("no valid configuration for BCLK rate %u and EXTAL rate %u", bclk_rate,
+			extal_rate);
 		return -EINVAL;
 	}
 
@@ -162,8 +161,7 @@ static int esai_get_clock_rate_config(uint32_t extal_rate, uint32_t hclk_rate,
 	bclk_div_ratio = DIV_ROUND_UP(extal_rate, bclk_rate);
 
 	if (bclk_div_ratio > 16) {
-		LOG_ERR("cannot obtain BCLK rate %d from EXTAL rate %d",
-			bclk_rate, extal_rate);
+		LOG_ERR("cannot obtain BCLK rate %d from EXTAL rate %d", bclk_rate, extal_rate);
 		return -EINVAL;
 	}
 
@@ -233,8 +231,7 @@ static int esai_get_proto_config(const struct dai_config *cfg,
 		xceiver_cfg->fsync_is_bit_wide = true;
 		break;
 	default:
-		LOG_ERR("invalid DAI protocol: %d",
-			cfg->format & DAI_FORMAT_PROTOCOL_MASK);
+		LOG_ERR("invalid DAI protocol: %d", cfg->format & DAI_FORMAT_PROTOCOL_MASK);
 		return -EINVAL;
 	}
 	return 0;
@@ -245,8 +242,7 @@ static int esai_get_slot_format(uint32_t slot_width, uint32_t word_width,
 {
 	/* sanity check */
 	if (!ESAI_SLOT_WORD_WIDTH_IS_VALID(slot_width, word_width)) {
-		LOG_ERR("invalid slot %d word %d width configuration",
-			slot_width, word_width);
+		LOG_ERR("invalid slot %d word %d width configuration", slot_width, word_width);
 		return -EINVAL;
 	}
 
@@ -283,96 +279,74 @@ static void esai_get_xceiver_default_config(struct esai_transceiver_config *cfg)
 	cfg->data_left_aligned = true;
 }
 
-static void esai_commit_config(ESAI_Type *base,
-			       enum dai_dir dir,
+static void esai_commit_config(ESAI_Type *base, enum dai_dir dir,
 			       struct esai_transceiver_config *cfg)
 {
 	if (dir == DAI_DIR_TX) {
-		base->TCCR &= ~(ESAI_TCCR_THCKD_MASK | ESAI_TCCR_TFSD_MASK |
-				ESAI_TCCR_TCKD_MASK | ESAI_TCCR_THCKP_MASK |
-				ESAI_TCCR_TFSP_MASK | ESAI_TCCR_TCKP_MASK |
-				ESAI_TCCR_TFP_MASK | ESAI_TCCR_TDC_MASK |
-				ESAI_TCCR_TPSR_MASK | ESAI_TCCR_TPM_MASK);
+		base->TCCR &= ~(ESAI_TCCR_THCKD_MASK | ESAI_TCCR_TFSD_MASK | ESAI_TCCR_TCKD_MASK |
+				ESAI_TCCR_THCKP_MASK | ESAI_TCCR_TFSP_MASK | ESAI_TCCR_TCKP_MASK |
+				ESAI_TCCR_TFP_MASK | ESAI_TCCR_TDC_MASK | ESAI_TCCR_TPSR_MASK |
+				ESAI_TCCR_TPM_MASK);
 
-		base->TCCR |= ESAI_TCCR_THCKD(cfg->hclk_dir) |
-			ESAI_TCCR_TFSD(cfg->fsync_dir) |
-			ESAI_TCCR_TCKD(cfg->bclk_dir) |
-			ESAI_TCCR_THCKP(cfg->hclk_polarity) |
-			ESAI_TCCR_TFSP(cfg->fsync_polarity) |
-			ESAI_TCCR_TCKP(cfg->bclk_polarity) |
-			ESAI_TCCR_TFP(cfg->bclk_div_ratio - 1) |
-			ESAI_TCCR_TDC(cfg->fsync_div - 1) |
+		base->TCCR |=
+			ESAI_TCCR_THCKD(cfg->hclk_dir) | ESAI_TCCR_TFSD(cfg->fsync_dir) |
+			ESAI_TCCR_TCKD(cfg->bclk_dir) | ESAI_TCCR_THCKP(cfg->hclk_polarity) |
+			ESAI_TCCR_TFSP(cfg->fsync_polarity) | ESAI_TCCR_TCKP(cfg->bclk_polarity) |
+			ESAI_TCCR_TFP(cfg->bclk_div_ratio - 1) | ESAI_TCCR_TDC(cfg->fsync_div - 1) |
 			ESAI_TCCR_TPSR(!cfg->hclk_prescaler_en) |
 			ESAI_TCCR_TPM(cfg->hclk_div_ratio - 1);
 
-		base->TCR &= ~(ESAI_TCR_PADC_MASK | ESAI_TCR_TFSR_MASK |
-			       ESAI_TCR_TFSL_MASK | ESAI_TCR_TMOD_MASK |
-			       ESAI_TCR_TWA_MASK | ESAI_TCR_TSHFD_MASK);
+		base->TCR &= ~(ESAI_TCR_PADC_MASK | ESAI_TCR_TFSR_MASK | ESAI_TCR_TFSL_MASK |
+			       ESAI_TCR_TMOD_MASK | ESAI_TCR_TWA_MASK | ESAI_TCR_TSHFD_MASK);
 
-		base->TCR |= ESAI_TCR_PADC(cfg->zero_pad_en) |
-			ESAI_TCR_TFSR(cfg->fsync_early) |
-			ESAI_TCR_TFSL(cfg->fsync_is_bit_wide) |
-			ESAI_TCR_TSWS(cfg->slot_format) |
-			ESAI_TCR_TMOD(cfg->mode) |
-			ESAI_TCR_TWA(!cfg->data_left_aligned) |
-			ESAI_TCR_TSHFD(cfg->data_order);
+		base->TCR |= ESAI_TCR_PADC(cfg->zero_pad_en) | ESAI_TCR_TFSR(cfg->fsync_early) |
+			     ESAI_TCR_TFSL(cfg->fsync_is_bit_wide) |
+			     ESAI_TCR_TSWS(cfg->slot_format) | ESAI_TCR_TMOD(cfg->mode) |
+			     ESAI_TCR_TWA(!cfg->data_left_aligned) |
+			     ESAI_TCR_TSHFD(cfg->data_order);
 
-		base->ECR &= ~(ESAI_ECR_ETI_MASK |
-			       ESAI_ECR_ETO_MASK);
+		base->ECR &= ~(ESAI_ECR_ETI_MASK | ESAI_ECR_ETO_MASK);
 
-		base->ECR |= ESAI_ECR_ETI(cfg->hclk_src) |
-			ESAI_ECR_ETO(cfg->hclk_bypass);
+		base->ECR |= ESAI_ECR_ETI(cfg->hclk_src) | ESAI_ECR_ETO(cfg->hclk_bypass);
 
 		base->TFCR &= ~(ESAI_TFCR_TFWM_MASK | ESAI_TFCR_TWA_MASK);
-		base->TFCR |= ESAI_TFCR_TFWM(cfg->watermark) |
-			ESAI_TFCR_TWA(cfg->word_alignment);
+		base->TFCR |= ESAI_TFCR_TFWM(cfg->watermark) | ESAI_TFCR_TWA(cfg->word_alignment);
 
 		ESAI_TxSetSlotMask(base, cfg->slot_mask);
 	} else {
-		base->RCCR &= ~(ESAI_RCCR_RHCKD_MASK | ESAI_RCCR_RFSD_MASK |
-				ESAI_RCCR_RCKD_MASK | ESAI_RCCR_RHCKP_MASK |
-				ESAI_RCCR_RFSP_MASK | ESAI_RCCR_RCKP_MASK |
-				ESAI_RCCR_RFP_MASK | ESAI_RCCR_RDC_MASK |
-				ESAI_RCCR_RPSR_MASK | ESAI_RCCR_RPM_MASK);
+		base->RCCR &= ~(ESAI_RCCR_RHCKD_MASK | ESAI_RCCR_RFSD_MASK | ESAI_RCCR_RCKD_MASK |
+				ESAI_RCCR_RHCKP_MASK | ESAI_RCCR_RFSP_MASK | ESAI_RCCR_RCKP_MASK |
+				ESAI_RCCR_RFP_MASK | ESAI_RCCR_RDC_MASK | ESAI_RCCR_RPSR_MASK |
+				ESAI_RCCR_RPM_MASK);
 
-		base->RCCR |= ESAI_RCCR_RHCKD(cfg->hclk_dir) |
-			ESAI_RCCR_RFSD(cfg->fsync_dir) |
-			ESAI_RCCR_RCKD(cfg->bclk_dir) |
-			ESAI_RCCR_RHCKP(cfg->hclk_polarity) |
-			ESAI_RCCR_RFSP(cfg->fsync_polarity) |
-			ESAI_RCCR_RCKP(cfg->bclk_polarity) |
-			ESAI_RCCR_RFP(cfg->bclk_div_ratio - 1) |
-			ESAI_RCCR_RDC(cfg->fsync_div - 1) |
+		base->RCCR |=
+			ESAI_RCCR_RHCKD(cfg->hclk_dir) | ESAI_RCCR_RFSD(cfg->fsync_dir) |
+			ESAI_RCCR_RCKD(cfg->bclk_dir) | ESAI_RCCR_RHCKP(cfg->hclk_polarity) |
+			ESAI_RCCR_RFSP(cfg->fsync_polarity) | ESAI_RCCR_RCKP(cfg->bclk_polarity) |
+			ESAI_RCCR_RFP(cfg->bclk_div_ratio - 1) | ESAI_RCCR_RDC(cfg->fsync_div - 1) |
 			ESAI_RCCR_RPSR(!cfg->hclk_prescaler_en) |
 			ESAI_RCCR_RPM(cfg->hclk_div_ratio - 1);
 
-		base->RCR &= ~(ESAI_RCR_RFSR_MASK | ESAI_RCR_RFSL_MASK |
-			       ESAI_RCR_RMOD_MASK | ESAI_RCR_RWA_MASK |
-			       ESAI_RCR_RSHFD_MASK);
+		base->RCR &= ~(ESAI_RCR_RFSR_MASK | ESAI_RCR_RFSL_MASK | ESAI_RCR_RMOD_MASK |
+			       ESAI_RCR_RWA_MASK | ESAI_RCR_RSHFD_MASK);
 
-		base->RCR |= ESAI_RCR_RFSR(cfg->fsync_early) |
-			ESAI_RCR_RFSL(cfg->fsync_is_bit_wide) |
-			ESAI_RCR_RSWS(cfg->slot_format) |
-			ESAI_RCR_RMOD(cfg->mode) |
-			ESAI_RCR_RWA(!cfg->data_left_aligned) |
-			ESAI_RCR_RSHFD(cfg->data_order);
+		base->RCR |=
+			ESAI_RCR_RFSR(cfg->fsync_early) | ESAI_RCR_RFSL(cfg->fsync_is_bit_wide) |
+			ESAI_RCR_RSWS(cfg->slot_format) | ESAI_RCR_RMOD(cfg->mode) |
+			ESAI_RCR_RWA(!cfg->data_left_aligned) | ESAI_RCR_RSHFD(cfg->data_order);
 
-		base->ECR &= ~(ESAI_ECR_ERI_MASK |
-			       ESAI_ECR_ERO_MASK);
+		base->ECR &= ~(ESAI_ECR_ERI_MASK | ESAI_ECR_ERO_MASK);
 
-		base->ECR |= ESAI_ECR_ERI(cfg->hclk_src) |
-			ESAI_ECR_ERO(cfg->hclk_bypass);
+		base->ECR |= ESAI_ECR_ERI(cfg->hclk_src) | ESAI_ECR_ERO(cfg->hclk_bypass);
 
 		base->RFCR &= ~(ESAI_RFCR_RFWM_MASK | ESAI_RFCR_RWA_MASK);
-		base->RFCR |= ESAI_RFCR_RFWM(cfg->watermark) |
-			ESAI_RFCR_RWA(cfg->word_alignment);
+		base->RFCR |= ESAI_RFCR_RFWM(cfg->watermark) | ESAI_RFCR_RWA(cfg->word_alignment);
 
 		EASI_RxSetSlotMask(base, cfg->slot_mask);
 	}
 }
 
-static int esai_config_set(const struct device *dev,
-			   const struct dai_config *cfg,
+static int esai_config_set(const struct device *dev, const struct dai_config *cfg,
 			   const void *bespoke_data)
 {
 	const struct esai_bespoke_config *bespoke;
@@ -447,8 +421,7 @@ static int esai_config_set(const struct device *dev,
 		return ret;
 	}
 
-	ret = esai_get_slot_format(bespoke->tdm_slot_width,
-				   esai_cfg->word_width, &tx_config);
+	ret = esai_get_slot_format(bespoke->tdm_slot_width, esai_cfg->word_width, &tx_config);
 	if (ret < 0) {
 		return ret;
 	}
@@ -467,25 +440,20 @@ static int esai_config_set(const struct device *dev,
 	}
 
 	/* compute TX clock configuration */
-	ret = esai_get_clock_rate_config(bespoke->mclk_rate, bespoke->mclk_rate,
-					 bespoke->bclk_rate,
-					 !ESAI_PIN_IS_USED(data, ESAI_PIN_HCKT),
-					 tx_config.bclk_dir,
+	ret = esai_get_clock_rate_config(bespoke->mclk_rate, bespoke->mclk_rate, bespoke->bclk_rate,
+					 !ESAI_PIN_IS_USED(data, ESAI_PIN_HCKT), tx_config.bclk_dir,
 					 &tx_config);
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* compute RX clock configuration */
-	ret = esai_get_clock_rate_config(bespoke->mclk_rate, bespoke->mclk_rate,
-					 bespoke->bclk_rate,
-					 !ESAI_PIN_IS_USED(data, ESAI_PIN_HCKR),
-					 rx_config.bclk_dir,
+	ret = esai_get_clock_rate_config(bespoke->mclk_rate, bespoke->mclk_rate, bespoke->bclk_rate,
+					 !ESAI_PIN_IS_USED(data, ESAI_PIN_HCKR), rx_config.bclk_dir,
 					 &rx_config);
 	if (ret < 0) {
 		return ret;
 	}
-
 
 	tx_config.watermark = esai_cfg->tx_fifo_watermark;
 	rx_config.watermark = esai_cfg->rx_fifo_watermark;
@@ -529,9 +497,7 @@ static int esai_config_set(const struct device *dev,
 	return 0;
 }
 
-static int esai_config_get(const struct device *dev,
-			   struct dai_config *cfg,
-			   enum dai_dir dir)
+static int esai_config_get(const struct device *dev, struct dai_config *cfg, enum dai_dir dir)
 {
 	struct esai_data *data = dev->data;
 
@@ -608,9 +574,7 @@ static int esai_trigger_stop(const struct device *dev, enum dai_dir dir)
 	return 0;
 }
 
-static int esai_trigger(const struct device *dev,
-			enum dai_dir dir,
-			enum dai_trigger_cmd cmd)
+static int esai_trigger(const struct device *dev, enum dai_dir dir, enum dai_trigger_cmd cmd)
 {
 	/* TX/RX should be triggered individually */
 	if (dir != DAI_DIR_RX && dir != DAI_DIR_TX) {
@@ -636,8 +600,8 @@ static int esai_trigger(const struct device *dev,
 	return 0;
 }
 
-static const struct dai_properties
-	*esai_get_properties(const struct device *dev, enum dai_dir dir, int stream_id)
+static const struct dai_properties *esai_get_properties(const struct device *dev, enum dai_dir dir,
+							int stream_id)
 {
 	const struct esai_config *cfg = dev->config;
 
@@ -692,73 +656,65 @@ static int esai_init(const struct device *dev)
 	return 0;
 }
 
-#define ESAI_INIT(inst)							\
-									\
-BUILD_ASSERT(ESAI_TX_FIFO_WATERMARK(inst) >= 1 &&			\
-	     ESAI_TX_FIFO_WATERMARK(inst) <= _ESAI_FIFO_DEPTH(inst),	\
-	     "invalid TX watermark value");				\
-									\
-BUILD_ASSERT(ESAI_RX_FIFO_WATERMARK(inst) >= 1 &&			\
-	     ESAI_RX_FIFO_WATERMARK(inst) <= _ESAI_FIFO_DEPTH(inst),	\
-	     "invalid RX watermark value");				\
-									\
-BUILD_ASSERT(ESAI_FIFO_DEPTH(inst) >= 1 &&				\
-	     ESAI_FIFO_DEPTH(inst) <= _ESAI_FIFO_DEPTH(inst),		\
-	     "invalid FIFO depth value");				\
-									\
-BUILD_ASSERT(ESAI_WORD_WIDTH(inst) == 8 ||				\
-	     ESAI_WORD_WIDTH(inst) == 12 ||				\
-	     ESAI_WORD_WIDTH(inst) == 16 ||				\
-	     ESAI_WORD_WIDTH(inst) == 20 ||				\
-	     ESAI_WORD_WIDTH(inst) == 24,				\
-	     "invalid word width value");				\
-									\
-static const struct dai_properties esai_tx_props_##inst = {		\
-	.fifo_address = ESAI_TX_FIFO_BASE(inst),			\
-	.fifo_depth = ESAI_FIFO_DEPTH(inst) * 4,			\
-	.dma_hs_id = ESAI_TX_RX_DMA_HANDSHAKE(inst, tx),		\
-};									\
-									\
-static const struct dai_properties esai_rx_props_##inst = {		\
-	.fifo_address = ESAI_RX_FIFO_BASE(inst),			\
-	.fifo_depth = ESAI_FIFO_DEPTH(inst) * 4,			\
-	.dma_hs_id = ESAI_TX_RX_DMA_HANDSHAKE(inst, rx),		\
-};									\
-									\
-static uint32_t	pinmodes_##inst[] =					\
-	DT_INST_PROP_OR(inst, esai_pin_modes, {});			\
-									\
-BUILD_ASSERT(ARRAY_SIZE(pinmodes_##inst) % 2 == 0,			\
-	     "bad pinmask array size");					\
-									\
-static uint32_t clock_cfg_##inst[] =					\
-	DT_INST_PROP_OR(inst, esai_clock_configuration, {});		\
-									\
-BUILD_ASSERT(ARRAY_SIZE(clock_cfg_##inst) % 2 == 0,			\
-	     "bad clock configuration array size");			\
-									\
-static struct esai_config esai_config_##inst = {			\
-	.regmap_phys = DT_INST_REG_ADDR(inst),				\
-	.regmap_size = DT_INST_REG_SIZE(inst),				\
-	.tx_props = &esai_tx_props_##inst,				\
-	.rx_props = &esai_rx_props_##inst,				\
-	.tx_fifo_watermark = ESAI_TX_FIFO_WATERMARK(inst),		\
-	.rx_fifo_watermark = ESAI_RX_FIFO_WATERMARK(inst),		\
-	.word_width = ESAI_WORD_WIDTH(inst),				\
-	.pinmodes = pinmodes_##inst,					\
-	.pinmodes_size = ARRAY_SIZE(pinmodes_##inst),			\
-	.clock_cfg = clock_cfg_##inst,					\
-	.clock_cfg_size = ARRAY_SIZE(clock_cfg_##inst),			\
-};									\
-									\
-static struct esai_data esai_data_##inst = {				\
-	.cfg.type = DAI_IMX_ESAI,					\
-	.cfg.dai_index = DT_INST_PROP_OR(inst, dai_index, 0),		\
-};									\
-									\
-DEVICE_DT_INST_DEFINE(inst, &esai_init, NULL,				\
-		      &esai_data_##inst, &esai_config_##inst,		\
-		      POST_KERNEL, CONFIG_DAI_INIT_PRIORITY,		\
-		      &esai_api);					\
+#define ESAI_INIT(inst)                                                                            \
+                                                                                                   \
+	BUILD_ASSERT(ESAI_TX_FIFO_WATERMARK(inst) >= 1 &&                                          \
+			     ESAI_TX_FIFO_WATERMARK(inst) <= _ESAI_FIFO_DEPTH(inst),               \
+		     "invalid TX watermark value");                                                \
+                                                                                                   \
+	BUILD_ASSERT(ESAI_RX_FIFO_WATERMARK(inst) >= 1 &&                                          \
+			     ESAI_RX_FIFO_WATERMARK(inst) <= _ESAI_FIFO_DEPTH(inst),               \
+		     "invalid RX watermark value");                                                \
+                                                                                                   \
+	BUILD_ASSERT(ESAI_FIFO_DEPTH(inst) >= 1 &&                                                 \
+			     ESAI_FIFO_DEPTH(inst) <= _ESAI_FIFO_DEPTH(inst),                      \
+		     "invalid FIFO depth value");                                                  \
+                                                                                                   \
+	BUILD_ASSERT(ESAI_WORD_WIDTH(inst) == 8 || ESAI_WORD_WIDTH(inst) == 12 ||                  \
+			     ESAI_WORD_WIDTH(inst) == 16 || ESAI_WORD_WIDTH(inst) == 20 ||         \
+			     ESAI_WORD_WIDTH(inst) == 24,                                          \
+		     "invalid word width value");                                                  \
+                                                                                                   \
+	static const struct dai_properties esai_tx_props_##inst = {                                \
+		.fifo_address = ESAI_TX_FIFO_BASE(inst),                                           \
+		.fifo_depth = ESAI_FIFO_DEPTH(inst) * 4,                                           \
+		.dma_hs_id = ESAI_TX_RX_DMA_HANDSHAKE(inst, tx),                                   \
+	};                                                                                         \
+                                                                                                   \
+	static const struct dai_properties esai_rx_props_##inst = {                                \
+		.fifo_address = ESAI_RX_FIFO_BASE(inst),                                           \
+		.fifo_depth = ESAI_FIFO_DEPTH(inst) * 4,                                           \
+		.dma_hs_id = ESAI_TX_RX_DMA_HANDSHAKE(inst, rx),                                   \
+	};                                                                                         \
+                                                                                                   \
+	static uint32_t pinmodes_##inst[] = DT_INST_PROP_OR(inst, esai_pin_modes, {});             \
+                                                                                                   \
+	BUILD_ASSERT(ARRAY_SIZE(pinmodes_##inst) % 2 == 0, "bad pinmask array size");              \
+                                                                                                   \
+	static uint32_t clock_cfg_##inst[] = DT_INST_PROP_OR(inst, esai_clock_configuration, {});  \
+                                                                                                   \
+	BUILD_ASSERT(ARRAY_SIZE(clock_cfg_##inst) % 2 == 0, "bad clock configuration array size"); \
+                                                                                                   \
+	static struct esai_config esai_config_##inst = {                                           \
+		.regmap_phys = DT_INST_REG_ADDR(inst),                                             \
+		.regmap_size = DT_INST_REG_SIZE(inst),                                             \
+		.tx_props = &esai_tx_props_##inst,                                                 \
+		.rx_props = &esai_rx_props_##inst,                                                 \
+		.tx_fifo_watermark = ESAI_TX_FIFO_WATERMARK(inst),                                 \
+		.rx_fifo_watermark = ESAI_RX_FIFO_WATERMARK(inst),                                 \
+		.word_width = ESAI_WORD_WIDTH(inst),                                               \
+		.pinmodes = pinmodes_##inst,                                                       \
+		.pinmodes_size = ARRAY_SIZE(pinmodes_##inst),                                      \
+		.clock_cfg = clock_cfg_##inst,                                                     \
+		.clock_cfg_size = ARRAY_SIZE(clock_cfg_##inst),                                    \
+	};                                                                                         \
+                                                                                                   \
+	static struct esai_data esai_data_##inst = {                                               \
+		.cfg.type = DAI_IMX_ESAI,                                                          \
+		.cfg.dai_index = DT_INST_PROP_OR(inst, dai_index, 0),                              \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &esai_init, NULL, &esai_data_##inst, &esai_config_##inst,      \
+			      POST_KERNEL, CONFIG_DAI_INIT_PRIORITY, &esai_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESAI_INIT);

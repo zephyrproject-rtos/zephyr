@@ -22,9 +22,9 @@
 LOG_MODULE_REGISTER(ifx_cat1_adc, CONFIG_ADC_LOG_LEVEL);
 
 #if defined(PASS_SARMUX_PADS0_PORT)
-	#define _ADCSAR_PORT PASS_SARMUX_PADS0_PORT
+#define _ADCSAR_PORT PASS_SARMUX_PADS0_PORT
 #else
-	#error The selected device does not supported ADC
+#error The selected device does not supported ADC
 #endif
 
 #define ADC_CAT1_EVENTS_MASK (CYHAL_ADC_EOS | CYHAL_ADC_ASYNC_READ_COMPLETE)
@@ -50,7 +50,7 @@ struct ifx_cat1_adc_config {
 
 static void _cyhal_adc_event_callback(void *callback_arg, cyhal_adc_event_t event)
 {
-	const struct device *dev = (const struct device *) callback_arg;
+	const struct device *dev = (const struct device *)callback_arg;
 	struct ifx_cat1_adc_data *data = dev->data;
 	uint32_t channels = data->channels;
 	int32_t result;
@@ -83,8 +83,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	Cy_SAR_StartConvert(data->adc_obj.base, CY_SAR_START_CONVERT_SINGLE_SHOT);
 }
 
-static void adc_context_update_buffer_pointer(struct adc_context *ctx,
-					      bool repeat_sampling)
+static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat_sampling)
 {
 	struct ifx_cat1_adc_data *data = CONTAINER_OF(ctx, struct ifx_cat1_adc_data, ctx);
 
@@ -100,9 +99,9 @@ static int ifx_cat1_adc_channel_setup(const struct device *dev,
 	cy_rslt_t result;
 
 	cyhal_gpio_t vplus = CYHAL_GET_GPIO(_ADCSAR_PORT, channel_cfg->input_positive);
-	cyhal_gpio_t vminus = channel_cfg->differential ?
-			      CYHAL_GET_GPIO(_ADCSAR_PORT, channel_cfg->input_negative) :
-			      CYHAL_ADC_VNEG;
+	cyhal_gpio_t vminus = channel_cfg->differential
+				      ? CYHAL_GET_GPIO(_ADCSAR_PORT, channel_cfg->input_negative)
+				      : CYHAL_ADC_VNEG;
 	uint32_t acquisition_ns = ADC_CAT1_DEFAULT_ACQUISITION_NS;
 
 	if (channel_cfg->reference != ADC_REF_INTERNAL) {
@@ -136,8 +135,7 @@ static int ifx_cat1_adc_channel_setup(const struct device *dev,
 		/* Minimum acquisition time set to 1us */
 		.min_acquisition_ns = acquisition_ns,
 		/* Sample channel when ADC performs a scan */
-		.enabled = true
-	};
+		.enabled = true};
 
 	/* Initialize a channel and configure it to scan the input pin(s). */
 	cyhal_adc_channel_free(&data->adc_chan_obj[channel_cfg->channel_id]);
@@ -177,8 +175,7 @@ static int validate_buffer_size(const struct adc_sequence *sequence)
 	return 0;
 }
 
-static int start_read(const struct device *dev,
-		      const struct adc_sequence *sequence)
+static int start_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	struct ifx_cat1_adc_data *data = dev->data;
 	uint32_t channels = sequence->channels;
@@ -213,8 +210,7 @@ static int start_read(const struct device *dev,
 	return adc_context_wait_for_completion(&data->ctx);
 }
 
-static int ifx_cat1_adc_read(const struct device *dev,
-			     const struct adc_sequence *sequence)
+static int ifx_cat1_adc_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	int ret;
 	struct ifx_cat1_adc_data *data = dev->data;
@@ -226,8 +222,7 @@ static int ifx_cat1_adc_read(const struct device *dev,
 }
 
 #ifdef CONFIG_ADC_ASYNC
-static int ifx_cat1_adc_read_async(const struct device *dev,
-				   const struct adc_sequence *sequence,
+static int ifx_cat1_adc_read_async(const struct device *dev, const struct adc_sequence *sequence,
 				   struct k_poll_signal *async)
 {
 	int ret;
@@ -259,38 +254,35 @@ static int ifx_cat1_adc_init(const struct device *dev)
 	/* Enable ADC Interrupt */
 	cyhal_adc_enable_event(&data->adc_obj, (cyhal_adc_event_t)ADC_CAT1_EVENTS_MASK,
 			       config->irq_priority, true);
-	cyhal_adc_register_callback(&data->adc_obj, _cyhal_adc_event_callback, (void *) dev);
+	cyhal_adc_register_callback(&data->adc_obj, _cyhal_adc_event_callback, (void *)dev);
 
 	adc_context_unlock_unconditionally(&data->ctx);
 
 	return 0;
 }
 
-static const struct adc_driver_api adc_cat1_driver_api = {
-	.channel_setup = ifx_cat1_adc_channel_setup,
-	.read = ifx_cat1_adc_read,
-	#ifdef CONFIG_ADC_ASYNC
-	.read_async = ifx_cat1_adc_read_async,
-	#endif
-	.ref_internal = ADC_CAT1_REF_INTERNAL_MV
-};
+static const struct adc_driver_api adc_cat1_driver_api = {.channel_setup =
+								  ifx_cat1_adc_channel_setup,
+							  .read = ifx_cat1_adc_read,
+#ifdef CONFIG_ADC_ASYNC
+							  .read_async = ifx_cat1_adc_read_async,
+#endif
+							  .ref_internal = ADC_CAT1_REF_INTERNAL_MV};
 
 /* Macros for ADC instance declaration */
-#define INFINEON_CAT1_ADC_INIT(n)					       \
-	static struct ifx_cat1_adc_data ifx_cat1_adc_data##n = {	       \
-		ADC_CONTEXT_INIT_TIMER(ifx_cat1_adc_data##n, ctx),	       \
-		ADC_CONTEXT_INIT_LOCK(ifx_cat1_adc_data##n, ctx),	       \
-		ADC_CONTEXT_INIT_SYNC(ifx_cat1_adc_data##n, ctx),	       \
-	};								       \
-									       \
-	static const struct ifx_cat1_adc_config adc_cat1_cfg_##n = {	       \
-		.irq_priority = DT_INST_IRQ(n, priority),		       \
-	};								       \
-									       \
-	DEVICE_DT_INST_DEFINE(n, ifx_cat1_adc_init,			       \
-			      NULL, &ifx_cat1_adc_data##n,		       \
-			      &adc_cat1_cfg_##n,			       \
-			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,	       \
+#define INFINEON_CAT1_ADC_INIT(n)                                                                  \
+	static struct ifx_cat1_adc_data ifx_cat1_adc_data##n = {                                   \
+		ADC_CONTEXT_INIT_TIMER(ifx_cat1_adc_data##n, ctx),                                 \
+		ADC_CONTEXT_INIT_LOCK(ifx_cat1_adc_data##n, ctx),                                  \
+		ADC_CONTEXT_INIT_SYNC(ifx_cat1_adc_data##n, ctx),                                  \
+	};                                                                                         \
+                                                                                                   \
+	static const struct ifx_cat1_adc_config adc_cat1_cfg_##n = {                               \
+		.irq_priority = DT_INST_IRQ(n, priority),                                          \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, ifx_cat1_adc_init, NULL, &ifx_cat1_adc_data##n,                   \
+			      &adc_cat1_cfg_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,            \
 			      &adc_cat1_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_CAT1_ADC_INIT)

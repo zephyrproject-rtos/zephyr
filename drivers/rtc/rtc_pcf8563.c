@@ -32,10 +32,10 @@ LOG_MODULE_REGISTER(pcf8563);
 #endif
 
 /* The device registers */
-#define PCF8563_TIME_DATE_REGISTER	0x02
-#define PCF8563_ALARM_REGISTER		0x09
-#define PCF8563_CONTROL1_REGISTER	0x00
-#define PCF8563_CONTROL2_REGISTER	0x01
+#define PCF8563_TIME_DATE_REGISTER       0x02
+#define PCF8563_ALARM_REGISTER           0x09
+#define PCF8563_CONTROL1_REGISTER        0x00
+#define PCF8563_CONTROL2_REGISTER        0x01
 #define PCF8563_CONTROL2_REGISTER_TIE_EN (1 << 0)
 #define PCF8563_CONTROL2_REGISTER_AIE_EN (1 << 1)
 
@@ -64,11 +64,10 @@ LOG_MODULE_REGISTER(pcf8563);
 
 struct pcf8563_config {
 	const struct i2c_dt_spec i2c;
-	#ifdef PCF8563_INT1_GPIOS_IN_USE
+#ifdef PCF8563_INT1_GPIOS_IN_USE
 	const struct gpio_dt_spec int1;
-	#endif
+#endif
 };
-
 
 #ifdef PCF8563_INT1_GPIOS_IN_USE
 /* This work will run the user callback function */
@@ -136,8 +135,8 @@ int pcf8563_set_time(const struct device *dev, const struct rtc_time *timeptr)
 	raw_time[6] = bin2bcd(timeptr->tm_year);
 
 	/* Write to device */
-	ret = i2c_burst_write_dt(&config->i2c, PCF8563_TIME_DATE_REGISTER,
-				 raw_time, sizeof(raw_time));
+	ret = i2c_burst_write_dt(&config->i2c, PCF8563_TIME_DATE_REGISTER, raw_time,
+				 sizeof(raw_time));
 	if (ret) {
 		LOG_ERR("Error when setting time: %i", ret);
 		return ret;
@@ -152,8 +151,8 @@ int pcf8563_get_time(const struct device *dev, struct rtc_time *timeptr)
 	int ret;
 	uint8_t raw_time[7];
 
-	ret = i2c_burst_read_dt(&config->i2c, PCF8563_TIME_DATE_REGISTER,
-				raw_time, sizeof(raw_time));
+	ret = i2c_burst_read_dt(&config->i2c, PCF8563_TIME_DATE_REGISTER, raw_time,
+				sizeof(raw_time));
 	if (ret) {
 		LOG_ERR("Unable to get time. Err: %i", ret);
 		return ret;
@@ -198,12 +197,9 @@ int pcf8563_get_time(const struct device *dev, struct rtc_time *timeptr)
 	return 0;
 }
 
-
-
 #ifdef CONFIG_RTC_ALARM
 
-static int pcf8563_alarm_get_supported_fields(const struct device *dev, uint16_t id,
-					      uint16_t *mask)
+static int pcf8563_alarm_get_supported_fields(const struct device *dev, uint16_t id, uint16_t *mask)
 {
 	ARG_UNUSED(dev);
 
@@ -276,11 +272,8 @@ static int pcf8563_alarm_set_time(const struct device *dev, uint16_t id, uint16_
 	}
 
 	/* Dont forget to enable interrupts */
-	i2c_reg_write_byte_dt(
-		&config->i2c,
-		PCF8563_CONTROL2_REGISTER,
-		PCF8563_CONTROL2_REGISTER_TIE_EN | PCF8563_CONTROL2_REGISTER_AIE_EN
-	);
+	i2c_reg_write_byte_dt(&config->i2c, PCF8563_CONTROL2_REGISTER,
+			      PCF8563_CONTROL2_REGISTER_TIE_EN | PCF8563_CONTROL2_REGISTER_AIE_EN);
 
 	return 0;
 }
@@ -383,17 +376,14 @@ void callback_work_handler(struct k_work *work)
 	}
 }
 
-
 /* The function called when the clock alarm activates the interrupt*/
-void gpio_callback_function(const struct device *dev, struct gpio_callback *cb,
-		    uint32_t pins)
+void gpio_callback_function(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
 	struct pcf8563_data *data = CONTAINER_OF(cb, struct pcf8563_data, int1_callback);
 
 	LOG_DBG("PCF8563 interrupt detected");
 	/* By using a work we are able to run "heavier" code */
 	k_work_submit(&(data->callback_work));
-
 }
 
 #endif
@@ -429,18 +419,17 @@ static int pcf8563_alarm_set_callback(const struct device *dev, uint16_t id,
 	/* The PCF8563 int pin requires a pull up to work */
 	ret = gpio_pin_configure_dt(&config->int1, GPIO_INPUT | GPIO_PULL_UP);
 	if (ret < 0) {
-		LOG_ERR("Error %d: failed to configure %s pin %d",
-		       ret, config->int1.port->name, config->int1.pin);
+		LOG_ERR("Error %d: failed to configure %s pin %d", ret, config->int1.port->name,
+			config->int1.pin);
 		return ret;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&config->int1, GPIO_INT_EDGE_FALLING);
 	if (ret < 0) {
-		LOG_ERR("Error %d: failed to configure interrupt on %s pin %d",
-			ret, config->int1.port->name, config->int1.pin);
+		LOG_ERR("Error %d: failed to configure interrupt on %s pin %d", ret,
+			config->int1.port->name, config->int1.pin);
 		return ret;
 	}
-
 
 	gpio_init_callback(&data->int1_callback, gpio_callback_function, BIT(config->int1.pin));
 	gpio_add_callback(config->int1.port, &data->int1_callback);
@@ -461,17 +450,16 @@ static const struct rtc_driver_api pcf8563_driver_api = {
 #endif
 };
 
-
 int pcf8563_init(const struct device *dev)
 {
 	const struct pcf8563_config *config = dev->config;
 	int ret;
 	uint8_t reg;
-	#ifdef PCF8563_INT1_GPIOS_IN_USE
+#ifdef PCF8563_INT1_GPIOS_IN_USE
 	struct pcf8563_data *data = dev->data;
 
 	data->callback_work = callback_work;
-	#endif
+#endif
 
 	if (!device_is_ready(config->i2c.bus)) {
 		LOG_ERR("Failed to get pointer to %s device!", config->i2c.bus->name);
@@ -494,13 +482,12 @@ int pcf8563_init(const struct device *dev)
 	static const struct pcf8563_config pcf8563_config_##inst = {                               \
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		IF_ENABLED(PCF8563_INT1_GPIOS_IN_USE,                                              \
-		(.int1 = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, {0})))                         \
-		};                                                                                 \
+		(.int1 = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, {0}))) };               \
                                                                                                    \
 	static struct pcf8563_data pcf8563_data_##inst;                                            \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, &pcf8563_init, NULL,                                           \
-			      &pcf8563_data_##inst, &pcf8563_config_##inst, POST_KERNEL,           \
-			      CONFIG_RTC_INIT_PRIORITY, &pcf8563_driver_api);
+	DEVICE_DT_INST_DEFINE(inst, &pcf8563_init, NULL, &pcf8563_data_##inst,                     \
+			      &pcf8563_config_##inst, POST_KERNEL, CONFIG_RTC_INIT_PRIORITY,       \
+			      &pcf8563_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PCF8563_INIT)

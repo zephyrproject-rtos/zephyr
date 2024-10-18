@@ -15,9 +15,9 @@
 #include <inc/hw_memmap.h>
 
 #ifdef CONFIG_HWINFO_CC13XX_CC26XX_USE_BLE_MAC
-#define CC13XX_CC26XX_DEVID_SIZE	6
+#define CC13XX_CC26XX_DEVID_SIZE 6
 #else
-#define CC13XX_CC26XX_DEVID_SIZE	8
+#define CC13XX_CC26XX_DEVID_SIZE 8
 #endif
 
 ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
@@ -88,11 +88,7 @@ int z_impl_hwinfo_clear_reset_cause(void)
 
 int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 {
-	*supported = (RESET_PIN
-		      | RESET_SOFTWARE
-		      | RESET_BROWNOUT
-		      | RESET_POR
-		      | RESET_CLOCK);
+	*supported = (RESET_PIN | RESET_SOFTWARE | RESET_BROWNOUT | RESET_POR | RESET_CLOCK);
 
 	return 0;
 }

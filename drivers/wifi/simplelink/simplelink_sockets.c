@@ -30,11 +30,10 @@ LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 /* Increment by 1 to make sure we do not store the value of 0, which has
  * a special meaning in the fdtable subsys.
  */
-#define SD_TO_OBJ(sd) ((void *)(sd + 1))
+#define SD_TO_OBJ(sd)  ((void *)(sd + 1))
 #define OBJ_TO_SD(obj) (((int)obj) - 1)
 
-static int simplelink_socket_accept(void *obj, struct sockaddr *addr,
-			     socklen_t *addrlen);
+static int simplelink_socket_accept(void *obj, struct sockaddr *addr, socklen_t *addrlen);
 
 /*
  * Convert SL error codes into BSD errno values
@@ -58,7 +57,7 @@ static int getErrno(_i32 error)
 		error = EBADF;
 		break;
 #endif
-#if ENSOCK !=  SL_ERROR_BSD_ENSOCK
+#if ENSOCK != SL_ERROR_BSD_ENSOCK
 	case SL_ERROR_BSD_ENSOCK:
 		/* The limit on total # of open sockets has been reached */
 		error = ENSOCK;
@@ -175,11 +174,11 @@ static int getErrno(_i32 error)
 		error = EINVAL;
 		break;
 	default:
-	/* Do nothing ..
-	 * If no case is true, that means that the BSD error
-	 * code and the code returned by the NWP are either identical,
-	 * or no proprietary error has occurred.
-	 */
+		/* Do nothing ..
+		 * If no case is true, that means that the BSD error
+		 * code and the code returned by the NWP are either identical,
+		 * or no proprietary error has occurred.
+		 */
 		break;
 	}
 
@@ -278,14 +277,11 @@ static int simplelink_socket(int family, int type, int proto)
 
 	sd = sl_Socket(family, type, sl_proto);
 	if (sd >= 0) {
-		if (IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
-		    && sl_proto == SL_SEC_SOCKET) {
+		if (IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS) && sl_proto == SL_SEC_SOCKET) {
 			/* Now, set specific TLS version via setsockopt(): */
-			sec_method = (proto - IPPROTO_TLS_1_0) +
-				SL_SO_SEC_METHOD_TLSV1;
-			retval = sl_SetSockOpt(sd, SL_SOL_SOCKET,
-				SL_SO_SECMETHOD,
-				&sec_method, sizeof(sec_method));
+			sec_method = (proto - IPPROTO_TLS_1_0) + SL_SO_SEC_METHOD_TLSV1;
+			retval = sl_SetSockOpt(sd, SL_SOL_SOCKET, SL_SO_SECMETHOD, &sec_method,
+					       sizeof(sec_method));
 			if (retval < 0) {
 				retval = slcb_SetErrno(EPROTONOSUPPORT);
 				(void)sl_Close(sd);
@@ -318,8 +314,7 @@ static int simplelink_close(void *obj)
 	return retval;
 }
 
-static SlSockAddr_t *translate_z_to_sl_addrlen(socklen_t addrlen,
-					       SlSockAddrIn_t *sl_addr_in,
+static SlSockAddr_t *translate_z_to_sl_addrlen(socklen_t addrlen, SlSockAddrIn_t *sl_addr_in,
 					       SlSockAddrIn6_t *sl_addr_in6,
 					       SlSocklen_t *sl_addrlen)
 {
@@ -336,11 +331,9 @@ static SlSockAddr_t *translate_z_to_sl_addrlen(socklen_t addrlen,
 	return sl_addr;
 }
 
-static SlSockAddr_t *translate_z_to_sl_addrs(const struct sockaddr *addr,
-					     socklen_t addrlen,
+static SlSockAddr_t *translate_z_to_sl_addrs(const struct sockaddr *addr, socklen_t addrlen,
 					     SlSockAddrIn_t *sl_addr_in,
-					     SlSockAddrIn6_t *sl_addr_in6,
-					     SlSocklen_t *sl_addrlen)
+					     SlSockAddrIn6_t *sl_addr_in6, SlSocklen_t *sl_addrlen)
 {
 	SlSockAddr_t *sl_addr = NULL;
 
@@ -350,19 +343,16 @@ static SlSockAddr_t *translate_z_to_sl_addrs(const struct sockaddr *addr,
 		*sl_addrlen = sizeof(SlSockAddrIn_t);
 		sl_addr_in->sin_family = SL_AF_INET;
 		sl_addr_in->sin_port = z_sockaddr_in->sin_port;
-		sl_addr_in->sin_addr.s_addr =
-			z_sockaddr_in->sin_addr.s_addr;
+		sl_addr_in->sin_addr.s_addr = z_sockaddr_in->sin_addr.s_addr;
 
 		sl_addr = (SlSockAddr_t *)sl_addr_in;
 	} else if (addrlen == sizeof(struct sockaddr_in6)) {
-		struct sockaddr_in6 *z_sockaddr_in6 =
-			(struct sockaddr_in6 *)addr;
+		struct sockaddr_in6 *z_sockaddr_in6 = (struct sockaddr_in6 *)addr;
 
 		*sl_addrlen = sizeof(SlSockAddrIn6_t);
 		sl_addr_in6->sin6_family = SL_AF_INET6;
 		sl_addr_in6->sin6_port = z_sockaddr_in6->sin6_port;
-		memcpy(sl_addr_in6->sin6_addr._S6_un._S6_u32,
-		       z_sockaddr_in6->sin6_addr.s6_addr,
+		memcpy(sl_addr_in6->sin6_addr._S6_un._S6_u32, z_sockaddr_in6->sin6_addr.s6_addr,
 		       sizeof(sl_addr_in6->sin6_addr._S6_un._S6_u32));
 
 		sl_addr = (SlSockAddr_t *)sl_addr_in6;
@@ -371,38 +361,32 @@ static SlSockAddr_t *translate_z_to_sl_addrs(const struct sockaddr *addr,
 	return sl_addr;
 }
 
-static void translate_sl_to_z_addr(SlSockAddr_t *sl_addr,
-				   SlSocklen_t sl_addrlen,
-				   struct sockaddr *addr,
-				   socklen_t *addrlen)
+static void translate_sl_to_z_addr(SlSockAddr_t *sl_addr, SlSocklen_t sl_addrlen,
+				   struct sockaddr *addr, socklen_t *addrlen)
 {
 	SlSockAddrIn_t *sl_addr_in;
 	SlSockAddrIn6_t *sl_addr_in6;
 
 	if (sl_addr->sa_family == SL_AF_INET) {
 		if (sl_addrlen == (SlSocklen_t)sizeof(SlSockAddrIn_t)) {
-			struct sockaddr_in *z_sockaddr_in =
-				(struct sockaddr_in *)addr;
+			struct sockaddr_in *z_sockaddr_in = (struct sockaddr_in *)addr;
 
 			sl_addr_in = (SlSockAddrIn_t *)sl_addr;
 			z_sockaddr_in->sin_family = AF_INET;
 			z_sockaddr_in->sin_port = sl_addr_in->sin_port;
-			z_sockaddr_in->sin_addr.s_addr =
-				sl_addr_in->sin_addr.s_addr;
+			z_sockaddr_in->sin_addr.s_addr = sl_addr_in->sin_addr.s_addr;
 			*addrlen = sizeof(struct sockaddr_in);
 		} else {
 			*addrlen = sl_addrlen;
 		}
 	} else if (sl_addr->sa_family == SL_AF_INET6) {
 		if (sl_addrlen == sizeof(SlSockAddrIn6_t)) {
-			struct sockaddr_in6 *z_sockaddr_in6 =
-				(struct sockaddr_in6 *)addr;
+			struct sockaddr_in6 *z_sockaddr_in6 = (struct sockaddr_in6 *)addr;
 			sl_addr_in6 = (SlSockAddrIn6_t *)sl_addr;
 
 			z_sockaddr_in6->sin6_family = AF_INET6;
 			z_sockaddr_in6->sin6_port = sl_addr_in6->sin6_port;
-			z_sockaddr_in6->sin6_scope_id =
-				(uint8_t)sl_addr_in6->sin6_scope_id;
+			z_sockaddr_in6->sin6_scope_id = (uint8_t)sl_addr_in6->sin6_scope_id;
 			memcpy(z_sockaddr_in6->sin6_addr.s6_addr,
 			       sl_addr_in6->sin6_addr._S6_un._S6_u32,
 			       sizeof(z_sockaddr_in6->sin6_addr.s6_addr));
@@ -413,8 +397,7 @@ static void translate_sl_to_z_addr(SlSockAddr_t *sl_addr,
 	}
 }
 
-static int simplelink_accept(void *obj, struct sockaddr *addr,
-			     socklen_t *addrlen)
+static int simplelink_accept(void *obj, struct sockaddr *addr, socklen_t *addrlen)
 {
 	int sd = OBJ_TO_SD(obj);
 	int retval;
@@ -429,8 +412,7 @@ static int simplelink_accept(void *obj, struct sockaddr *addr,
 	}
 
 	/* Translate between Zephyr's and SimpleLink's sockaddr's: */
-	sl_addr = translate_z_to_sl_addrlen(*addrlen, &sl_addr_in, &sl_addr_in6,
-				  &sl_addrlen);
+	sl_addr = translate_z_to_sl_addrlen(*addrlen, &sl_addr_in, &sl_addr_in6, &sl_addrlen);
 	if (sl_addr == NULL) {
 		retval = SL_RET_CODE_INVALID_INPUT;
 		goto exit;
@@ -452,8 +434,7 @@ exit:
 	return retval;
 }
 
-static int simplelink_bind(void *obj, const struct sockaddr *addr,
-			   socklen_t addrlen)
+static int simplelink_bind(void *obj, const struct sockaddr *addr, socklen_t addrlen)
 {
 	int sd = OBJ_TO_SD(obj);
 	int retval;
@@ -468,8 +449,7 @@ static int simplelink_bind(void *obj, const struct sockaddr *addr,
 	}
 
 	/* Translate to sl_Bind() parameters: */
-	sl_addr = translate_z_to_sl_addrs(addr, addrlen, &sl_addr_in,
-					  &sl_addr_in6, &sl_addrlen);
+	sl_addr = translate_z_to_sl_addrs(addr, addrlen, &sl_addr_in, &sl_addr_in6, &sl_addrlen);
 
 	if (sl_addr == NULL) {
 		retval = SL_RET_CODE_INVALID_INPUT;
@@ -500,8 +480,7 @@ static int simplelink_listen(void *obj, int backlog)
 	return retval;
 }
 
-static int simplelink_connect(void *obj, const struct sockaddr *addr,
-			      socklen_t addrlen)
+static int simplelink_connect(void *obj, const struct sockaddr *addr, socklen_t addrlen)
 {
 	int sd = OBJ_TO_SD(obj);
 	int retval;
@@ -513,8 +492,7 @@ static int simplelink_connect(void *obj, const struct sockaddr *addr,
 	__ASSERT_NO_MSG(addr);
 
 	/* Translate to sl_Connect() parameters: */
-	sl_addr = translate_z_to_sl_addrs(addr, addrlen, &sl_addr_in,
-					  &sl_addr_in6, &sl_addrlen);
+	sl_addr = translate_z_to_sl_addrs(addr, addrlen, &sl_addr_in, &sl_addr_in6, &sl_addrlen);
 
 	if (sl_addr == NULL) {
 		retval = SL_RET_CODE_INVALID_INPUT;
@@ -560,8 +538,8 @@ static int simplelink_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 {
 	int max_sd = 0;
 	struct SlTimeval_t tv, *ptv;
-	SlFdSet_t rfds;	 /* Set of read file descriptors */
-	SlFdSet_t wfds;	 /* Set of write file descriptors */
+	SlFdSet_t rfds; /* Set of read file descriptors */
+	SlFdSet_t wfds; /* Set of write file descriptors */
 	int i, retval, sd;
 	void *obj;
 
@@ -588,10 +566,10 @@ static int simplelink_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 		if (fds[i].fd < 0) {
 			continue;
 		} else {
-			obj = zvfs_get_fd_obj(fds[i].fd,
-					   (const struct fd_op_vtable *)
-						&simplelink_socket_fd_op_vtable,
-					   ENOTSUP);
+			obj = zvfs_get_fd_obj(
+				fds[i].fd,
+				(const struct fd_op_vtable *)&simplelink_socket_fd_op_vtable,
+				ENOTSUP);
 			if (obj != NULL) {
 				/* Offloaded socket found. */
 				sd = OBJ_TO_SD(obj);
@@ -617,11 +595,10 @@ static int simplelink_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 	if (retval > 0) {
 		for (i = 0; i < nfds; i++) {
 			if (fds[i].fd >= 0) {
-				obj = zvfs_get_fd_obj(
-					fds[i].fd,
-					(const struct fd_op_vtable *)
-						&simplelink_socket_fd_op_vtable,
-					ENOTSUP);
+				obj = zvfs_get_fd_obj(fds[i].fd,
+						      (const struct fd_op_vtable
+							       *)&simplelink_socket_fd_op_vtable,
+						      ENOTSUP);
 				sd = OBJ_TO_SD(obj);
 				if (SL_SOCKET_FD_ISSET(sd, &rfds)) {
 					fds[i].revents |= ZSOCK_POLLIN;
@@ -688,8 +665,7 @@ static int map_credentials(int sd, const void *optval, socklen_t optlen)
 				retval = EINVAL;
 				goto exit;
 			}
-			retval = sl_SetSockOpt(sd, SL_SOL_SOCKET, opt,
-					       cert->buf,
+			retval = sl_SetSockOpt(sd, SL_SOL_SOCKET, opt, cert->buf,
 					       (SlSocklen_t)cert->len);
 			if (retval < 0) {
 				retval = getErrno(retval);
@@ -707,13 +683,13 @@ static int map_credentials(int sd, const void *optval, socklen_t optlen)
 {
 	return 0;
 }
-#endif  /* CONFIG_NET_SOCKETS_SOCKOPT_TLS */
+#endif /* CONFIG_NET_SOCKETS_SOCKOPT_TLS */
 
 /* Needed to keep line lengths < 80: */
 #define _SEC_DOMAIN_VERIF SL_SO_SECURE_DOMAIN_NAME_VERIFICATION
 
-static int simplelink_setsockopt(void *obj, int level, int optname,
-				 const void *optval, socklen_t optlen)
+static int simplelink_setsockopt(void *obj, int level, int optname, const void *optval,
+				 socklen_t optlen)
 {
 	int sd = OBJ_TO_SD(obj);
 	int retval;
@@ -730,8 +706,7 @@ static int simplelink_setsockopt(void *obj, int level, int optname,
 			}
 			break;
 		case TLS_HOSTNAME:
-			retval = sl_SetSockOpt(sd, SL_SOL_SOCKET,
-					       _SEC_DOMAIN_VERIF,
+			retval = sl_SetSockOpt(sd, SL_SOL_SOCKET, _SEC_DOMAIN_VERIF,
 					       (const char *)optval, optlen);
 			break;
 		case TLS_PEER_VERIFY:
@@ -794,8 +769,7 @@ static int simplelink_setsockopt(void *obj, int level, int optname,
 		default:
 			break;
 		}
-		retval = sl_SetSockOpt(sd, SL_SOL_SOCKET, optname, optval,
-				       (SlSocklen_t)optlen);
+		retval = sl_SetSockOpt(sd, SL_SOL_SOCKET, optname, optval, (SlSocklen_t)optlen);
 	}
 
 	if (retval < 0) {
@@ -806,8 +780,7 @@ exit:
 	return retval;
 }
 
-static int simplelink_getsockopt(void *obj, int level, int optname,
-				 void *optval, socklen_t *optlen)
+static int simplelink_getsockopt(void *obj, int level, int optname, void *optval, socklen_t *optlen)
 {
 	int sd = OBJ_TO_SD(obj);
 	int retval;
@@ -850,8 +823,7 @@ static int simplelink_getsockopt(void *obj, int level, int optname,
 		default:
 			break;
 		}
-		retval = sl_GetSockOpt(sd, SL_SOL_SOCKET, optname, optval,
-				       (SlSocklen_t *)optlen);
+		retval = sl_GetSockOpt(sd, SL_SOL_SOCKET, optname, optval, (SlSocklen_t *)optlen);
 	}
 
 	if (retval < 0) {
@@ -878,23 +850,20 @@ static int handle_recv_flags(int sd, int flags, bool set, int *nb_enabled)
 	} else if (flags & ZSOCK_MSG_DONTWAIT) {
 		if (set) {
 			/* Get previous state, to restore later: */
-			sl_GetSockOpt(sd, SL_SOL_SOCKET, SL_SO_NONBLOCKING,
-				      (_u8 *)&enableOption, &optlen);
+			sl_GetSockOpt(sd, SL_SOL_SOCKET, SL_SO_NONBLOCKING, (_u8 *)&enableOption,
+				      &optlen);
 			*nb_enabled = enableOption.NonBlockingEnabled;
 
 			/* Now, set to non_blocking if not already set: */
 			if (!*nb_enabled) {
 				enableOption.NonBlockingEnabled = 1;
-				sl_SetSockOpt(sd, SL_SOL_SOCKET,
-					      SL_SO_NONBLOCKING,
-					      (_u8 *)&enableOption,
-					      sizeof(enableOption));
+				sl_SetSockOpt(sd, SL_SOL_SOCKET, SL_SO_NONBLOCKING,
+					      (_u8 *)&enableOption, sizeof(enableOption));
 			}
 		} else {
 			/* Restore socket to previous state: */
 			enableOption.NonBlockingEnabled = *nb_enabled;
-			sl_SetSockOpt(sd, SL_SOL_SOCKET, SL_SO_NONBLOCKING,
-				      (_u8 *)&enableOption,
+			sl_SetSockOpt(sd, SL_SOL_SOCKET, SL_SO_NONBLOCKING, (_u8 *)&enableOption,
 				      sizeof(enableOption));
 		}
 	}
@@ -918,12 +887,9 @@ static ssize_t simplelink_recvfrom(void *obj, void *buf, size_t len, int flags,
 	if (!retval) {
 		/* Translate to sl_RecvFrom() parameters: */
 		if (fromlen != NULL) {
-			sl_addr = translate_z_to_sl_addrlen(*fromlen,
-							    &sl_addr_in,
-							    &sl_addr_in6,
+			sl_addr = translate_z_to_sl_addrlen(*fromlen, &sl_addr_in, &sl_addr_in6,
 							    &sl_addrlen);
-			retval = (ssize_t)sl_RecvFrom(sd, buf, len, 0, sl_addr,
-						      &sl_addrlen);
+			retval = (ssize_t)sl_RecvFrom(sd, buf, len, 0, sl_addr, &sl_addrlen);
 		} else {
 			retval = (ssize_t)sl_Recv(sd, buf, len, 0);
 		}
@@ -935,8 +901,7 @@ static ssize_t simplelink_recvfrom(void *obj, void *buf, size_t len, int flags,
 				 * Translate sl_addr into *addr and set
 				 * *addrlen
 				 */
-				translate_sl_to_z_addr(sl_addr, sl_addrlen,
-						       from, fromlen);
+				translate_sl_to_z_addr(sl_addr, sl_addrlen, from, fromlen);
 			}
 		} else {
 			retval = slcb_SetErrno(getErrno(retval));
@@ -948,9 +913,8 @@ static ssize_t simplelink_recvfrom(void *obj, void *buf, size_t len, int flags,
 	return retval;
 }
 
-static ssize_t simplelink_sendto(void *obj, const void *buf, size_t len,
-				 int flags, const struct sockaddr *to,
-				 socklen_t tolen)
+static ssize_t simplelink_sendto(void *obj, const void *buf, size_t len, int flags,
+				 const struct sockaddr *to, socklen_t tolen)
 {
 	int sd = OBJ_TO_SD(obj);
 	ssize_t retval;
@@ -961,16 +925,15 @@ static ssize_t simplelink_sendto(void *obj, const void *buf, size_t len,
 
 	if (to != NULL) {
 		/* Translate to sl_SendTo() parameters: */
-		sl_addr = translate_z_to_sl_addrs(to, tolen, &sl_addr_in,
-						  &sl_addr_in6, &sl_addrlen);
+		sl_addr =
+			translate_z_to_sl_addrs(to, tolen, &sl_addr_in, &sl_addr_in6, &sl_addrlen);
 
 		if (sl_addr == NULL) {
 			retval = SL_RET_CODE_INVALID_INPUT;
 			goto exit;
 		}
 
-		retval = sl_SendTo(sd, buf, (uint16_t)len, flags,
-				   sl_addr, sl_addrlen);
+		retval = sl_SendTo(sd, buf, (uint16_t)len, flags, sl_addr, sl_addrlen);
 	} else {
 		retval = (ssize_t)sl_Send(sd, buf, len, flags);
 	}
@@ -983,16 +946,14 @@ exit:
 	return retval;
 }
 
-static ssize_t simplelink_sendmsg(void *obj, const struct msghdr *msg,
-				  int flags)
+static ssize_t simplelink_sendmsg(void *obj, const struct msghdr *msg, int flags)
 {
 	errno = -ENOTSUP;
 	return -1;
 }
 
 /* Adds address info entry to a list */
-static int set_addr_info(const struct SlNetUtil_addrInfo_t *sl_ai,
-			 struct zsock_addrinfo **res)
+static int set_addr_info(const struct SlNetUtil_addrInfo_t *sl_ai, struct zsock_addrinfo **res)
 {
 	struct zsock_addrinfo *ai;
 	struct sockaddr *ai_addr;
@@ -1014,33 +975,25 @@ static int set_addr_info(const struct SlNetUtil_addrInfo_t *sl_ai,
 
 	/* Now, fill in the fields of res (addrinfo struct): */
 	ai->ai_family = (sl_ai->ai_family == SL_AF_INET6 ? AF_INET6 : AF_INET);
-	ai->ai_socktype = (sl_ai->ai_socktype == SLNETSOCK_SOCK_DGRAM ?
-		SOCK_DGRAM : SOCK_STREAM);
-	ai->ai_protocol = (sl_ai->ai_protocol == SLNETSOCK_PROTO_UDP ?
-		IPPROTO_UDP : IPPROTO_TCP);
+	ai->ai_socktype = (sl_ai->ai_socktype == SLNETSOCK_SOCK_DGRAM ? SOCK_DGRAM : SOCK_STREAM);
+	ai->ai_protocol = (sl_ai->ai_protocol == SLNETSOCK_PROTO_UDP ? IPPROTO_UDP : IPPROTO_TCP);
 
 	/* Fill sockaddr struct fields based on family: */
 	if (ai->ai_family == AF_INET) {
-		SlNetSock_AddrIn_t *sl_addr =
-			(SlNetSock_AddrIn_t *)sl_ai->ai_addr;
+		SlNetSock_AddrIn_t *sl_addr = (SlNetSock_AddrIn_t *)sl_ai->ai_addr;
 
 		net_sin(ai_addr)->sin_family = ai->ai_family;
 		net_sin(ai_addr)->sin_addr.s_addr = sl_addr->sin_addr.s_addr;
 		net_sin(ai_addr)->sin_port = sl_addr->sin_port;
 		ai->ai_addrlen = sizeof(struct sockaddr_in);
 	} else {
-		SlNetSock_AddrIn6_t *sl_addr =
-			(SlNetSock_AddrIn6_t *)sl_ai->ai_addr;
+		SlNetSock_AddrIn6_t *sl_addr = (SlNetSock_AddrIn6_t *)sl_ai->ai_addr;
 
 		net_sin6(ai_addr)->sin6_family = ai->ai_family;
-		net_sin6(ai_addr)->sin6_addr.s6_addr32[0] =
-			sl_addr->sin6_addr._S6_un._S6_u32[0];
-		net_sin6(ai_addr)->sin6_addr.s6_addr32[1] =
-			sl_addr->sin6_addr._S6_un._S6_u32[1];
-		net_sin6(ai_addr)->sin6_addr.s6_addr32[2] =
-			sl_addr->sin6_addr._S6_un._S6_u32[2];
-		net_sin6(ai_addr)->sin6_addr.s6_addr32[3] =
-			sl_addr->sin6_addr._S6_un._S6_u32[3];
+		net_sin6(ai_addr)->sin6_addr.s6_addr32[0] = sl_addr->sin6_addr._S6_un._S6_u32[0];
+		net_sin6(ai_addr)->sin6_addr.s6_addr32[1] = sl_addr->sin6_addr._S6_un._S6_u32[1];
+		net_sin6(ai_addr)->sin6_addr.s6_addr32[2] = sl_addr->sin6_addr._S6_un._S6_u32[2];
+		net_sin6(ai_addr)->sin6_addr.s6_addr32[3] = sl_addr->sin6_addr._S6_un._S6_u32[3];
 		net_sin6(ai_addr)->sin6_port = sl_addr->sin6_port;
 		ai->ai_addrlen = sizeof(struct sockaddr_in6);
 	}
@@ -1053,8 +1006,7 @@ exit:
 }
 
 static int simplelink_getaddrinfo(const char *node, const char *service,
-				  const struct zsock_addrinfo *hints,
-				  struct zsock_addrinfo **res)
+				  const struct zsock_addrinfo *hints, struct zsock_addrinfo **res)
 {
 	int32_t retval;
 	struct SlNetUtil_addrInfo_t sl_hints;
@@ -1074,40 +1026,36 @@ static int simplelink_getaddrinfo(const char *node, const char *service,
 		 * SlNetUtil only supports AI_NUMERICHOST and AI_PASSIVE, so
 		 * the rest are ignored.
 		 */
-		sl_hints.ai_flags |= ((hints->ai_flags & AI_PASSIVE) ?
-			SLNETUTIL_AI_PASSIVE : 0);
-		sl_hints.ai_flags |= ((hints->ai_flags & AI_NUMERICHOST) ?
-			SLNETUTIL_AI_NUMERICHOST : 0);
+		sl_hints.ai_flags |= ((hints->ai_flags & AI_PASSIVE) ? SLNETUTIL_AI_PASSIVE : 0);
+		sl_hints.ai_flags |=
+			((hints->ai_flags & AI_NUMERICHOST) ? SLNETUTIL_AI_NUMERICHOST : 0);
 		if (hints->ai_family == AF_UNSPEC) {
 			sl_hints.ai_family = SLNETSOCK_AF_UNSPEC;
 		} else {
-			sl_hints.ai_family = (hints->ai_family == AF_INET6 ?
-				SLNETSOCK_AF_INET6 : SLNETSOCK_AF_INET);
+			sl_hints.ai_family = (hints->ai_family == AF_INET6 ? SLNETSOCK_AF_INET6
+									   : SLNETSOCK_AF_INET);
 		}
 		if (hints->ai_socktype == 0) {
 			sl_hints.ai_socktype = 0;
 		} else {
 			sl_hints.ai_socktype =
-				(hints->ai_socktype == SOCK_DGRAM ?
-				SLNETSOCK_SOCK_DGRAM : SLNETSOCK_SOCK_STREAM);
+				(hints->ai_socktype == SOCK_DGRAM ? SLNETSOCK_SOCK_DGRAM
+								  : SLNETSOCK_SOCK_STREAM);
 		}
 		if (hints->ai_protocol == 0) {
 			sl_hints.ai_protocol = 0;
 		} else {
 			sl_hints.ai_protocol =
-				(hints->ai_protocol == IPPROTO_UDP ?
-				SLNETSOCK_PROTO_UDP : SLNETSOCK_PROTO_TCP);
+				(hints->ai_protocol == IPPROTO_UDP ? SLNETSOCK_PROTO_UDP
+								   : SLNETSOCK_PROTO_TCP);
 		}
-
 	}
 
 	/* Now, try to resolve host name: */
-	retval = SlNetUtil_getAddrInfo(SLNETIF_ID_1, node,
-		service, &sl_hints, &sl_res);
+	retval = SlNetUtil_getAddrInfo(SLNETIF_ID_1, node, service, &sl_hints, &sl_res);
 
 	if (retval < 0) {
-		LOG_ERR("Could not resolve name: %s, retval: %d",
-			    node, retval);
+		LOG_ERR("Could not resolve name: %s, retval: %d", node, retval);
 		retval = DNS_EAI_NONAME;
 		goto exit;
 	}
@@ -1117,8 +1065,7 @@ static int simplelink_getaddrinfo(const char *node, const char *service,
 	while (sl_ai != NULL) {
 		retval = set_addr_info(sl_ai, res);
 		if (retval < 0) {
-			LOG_ERR("Unable to set address info, retval: %d",
-				retval);
+			LOG_ERR("Unable to set address info, retval: %d", retval);
 			goto exit;
 		}
 		sl_ai = sl_ai->ai_next;
@@ -1144,8 +1091,8 @@ static int simplelink_fcntl(int sd, int cmd, va_list args)
 
 	switch (cmd) {
 	case F_GETFL:
-		retval = sl_GetSockOpt(sd, SL_SOL_SOCKET, SL_SO_NONBLOCKING,
-			(_u8 *)&enableOption, &optlen);
+		retval = sl_GetSockOpt(sd, SL_SOL_SOCKET, SL_SO_NONBLOCKING, (_u8 *)&enableOption,
+				       &optlen);
 		if (retval == 0) {
 			if (enableOption.NonBlockingEnabled) {
 				retval |= O_NONBLOCK;
@@ -1158,8 +1105,7 @@ static int simplelink_fcntl(int sd, int cmd, va_list args)
 		} else {
 			enableOption.NonBlockingEnabled = 0;
 		}
-		retval = sl_SetSockOpt(sd, SL_SOL_SOCKET, SL_SO_NONBLOCKING,
-			&enableOption, optlen);
+		retval = sl_SetSockOpt(sd, SL_SOL_SOCKET, SL_SO_NONBLOCKING, &enableOption, optlen);
 		break;
 	default:
 		LOG_ERR("Invalid command: %d", cmd);
@@ -1211,19 +1157,19 @@ static ssize_t simplelink_read(void *obj, void *buffer, size_t count)
 	return simplelink_recvfrom(obj, buffer, count, 0, NULL, 0);
 }
 
-static ssize_t simplelink_write(void *obj, const void *buffer,
-					  size_t count)
+static ssize_t simplelink_write(void *obj, const void *buffer, size_t count)
 {
 	return simplelink_sendto(obj, buffer, count, 0, NULL, 0);
 }
 
 static const struct socket_op_vtable simplelink_socket_fd_op_vtable = {
-	.fd_vtable = {
-		.read = simplelink_read,
-		.write = simplelink_write,
-		.close = simplelink_close,
-		.ioctl = simplelink_ioctl,
-	},
+	.fd_vtable =
+		{
+			.read = simplelink_read,
+			.write = simplelink_write,
+			.close = simplelink_close,
+			.ioctl = simplelink_ioctl,
+		},
 	.bind = simplelink_bind,
 	.connect = simplelink_connect,
 	.listen = simplelink_listen,
@@ -1274,14 +1220,13 @@ int simplelink_socket_create(int family, int type, int proto)
 	}
 
 	zvfs_finalize_typed_fd(fd, SD_TO_OBJ(sock),
-			    (const struct fd_op_vtable *)&simplelink_socket_fd_op_vtable,
-			    ZVFS_MODE_IFSOCK);
+			       (const struct fd_op_vtable *)&simplelink_socket_fd_op_vtable,
+			       ZVFS_MODE_IFSOCK);
 
 	return fd;
 }
 
-static int simplelink_socket_accept(void *obj, struct sockaddr *addr,
-			     socklen_t *addrlen)
+static int simplelink_socket_accept(void *obj, struct sockaddr *addr, socklen_t *addrlen)
 {
 	int fd = zvfs_reserve_fd();
 	int sock;
@@ -1297,8 +1242,8 @@ static int simplelink_socket_accept(void *obj, struct sockaddr *addr,
 	}
 
 	zvfs_finalize_typed_fd(fd, SD_TO_OBJ(sock),
-			    (const struct fd_op_vtable *)&simplelink_socket_fd_op_vtable,
-			    ZVFS_MODE_IFSOCK);
+			       (const struct fd_op_vtable *)&simplelink_socket_fd_op_vtable,
+			       ZVFS_MODE_IFSOCK);
 
 	return fd;
 }

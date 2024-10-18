@@ -35,9 +35,7 @@ static void ivshmem_ipm_event_loop_thread(void *arg, void *p2, void *p3)
 	int ivshmem_vector_rx;
 	struct k_poll_signal sig;
 	struct k_poll_event events[] = {
-		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
-					 K_POLL_MODE_NOTIFY_ONLY,
-					 &sig),
+		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &sig),
 	};
 
 	const struct device *dev = (const struct device *)arg;
@@ -66,8 +64,8 @@ static void ivshmem_ipm_event_loop_thread(void *arg, void *p2, void *p3)
 	}
 }
 
-static int ivshmem_ipm_send(const struct device *dev, int wait, uint32_t id,
-			 const void *data, int size)
+static int ivshmem_ipm_send(const struct device *dev, int wait, uint32_t id, const void *data,
+			    int size)
 {
 	ARG_UNUSED(wait);
 	ARG_UNUSED(data);
@@ -79,9 +77,8 @@ static int ivshmem_ipm_send(const struct device *dev, int wait, uint32_t id,
 	return ivshmem_int_peer(dev_cfg->ivshmem_dev, id, 0);
 }
 
-static void ivshmem_ipm_register_callback(const struct device *dev,
-					ipm_callback_t cb,
-					void *user_data)
+static void ivshmem_ipm_register_callback(const struct device *dev, ipm_callback_t cb,
+					  void *user_data)
 {
 	struct ivshmem_ipm_data *dev_data = (struct ivshmem_ipm_data *)dev->data;
 
@@ -100,13 +97,9 @@ static int ivshmem_ipm_set_enabled(const struct device *dev, int enable)
 
 static int ivshmem_ipm_init(const struct device *dev)
 {
-	k_thread_create(&ivshmem_ev_loop_thread,
-		ivshmem_ev_loop_stack,
-		CONFIG_IPM_IVSHMEM_EVENT_LOOP_STACK_SIZE,
-		ivshmem_ipm_event_loop_thread,
-		(void *)dev, NULL, NULL,
-		CONFIG_IPM_IVSHMEM_EVENT_LOOP_PRIO,
-		0, K_NO_WAIT);
+	k_thread_create(&ivshmem_ev_loop_thread, ivshmem_ev_loop_stack,
+			CONFIG_IPM_IVSHMEM_EVENT_LOOP_STACK_SIZE, ivshmem_ipm_event_loop_thread,
+			(void *)dev, NULL, NULL, CONFIG_IPM_IVSHMEM_EVENT_LOOP_PRIO, 0, K_NO_WAIT);
 
 	return 0;
 }
@@ -114,23 +107,17 @@ static int ivshmem_ipm_init(const struct device *dev)
 static const struct ipm_driver_api ivshmem_ipm_driver_api = {
 	.send = ivshmem_ipm_send,
 	.register_callback = ivshmem_ipm_register_callback,
-	.set_enabled = ivshmem_ipm_set_enabled
-};
+	.set_enabled = ivshmem_ipm_set_enabled};
 
-#define IPM_IVSHMEM_INIT(inst)								    \
-	static const struct ivshmem_ipm_config ivshmem_ipm_cfg_##inst = {	\
-		.ivshmem_dev =	\
-			DEVICE_DT_GET(DT_INST_PHANDLE(inst, ivshmem))\
-	};	\
-	static struct ivshmem_ipm_data ivshmem_ipm_data_##inst = {	\
-		.cb = NULL,	\
-		.user_data = NULL,	\
-	};	\
-	DEVICE_DT_INST_DEFINE(inst,	\
-				ivshmem_ipm_init,	\
-				NULL,	\
-				&ivshmem_ipm_data_##inst, &ivshmem_ipm_cfg_##inst,  \
-				POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,      \
-				&ivshmem_ipm_driver_api);                           \
+#define IPM_IVSHMEM_INIT(inst)                                                                     \
+	static const struct ivshmem_ipm_config ivshmem_ipm_cfg_##inst = {                          \
+		.ivshmem_dev = DEVICE_DT_GET(DT_INST_PHANDLE(inst, ivshmem))};                     \
+	static struct ivshmem_ipm_data ivshmem_ipm_data_##inst = {                                 \
+		.cb = NULL,                                                                        \
+		.user_data = NULL,                                                                 \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(inst, ivshmem_ipm_init, NULL, &ivshmem_ipm_data_##inst,              \
+			      &ivshmem_ipm_cfg_##inst, POST_KERNEL,                                \
+			      CONFIG_APPLICATION_INIT_PRIORITY, &ivshmem_ipm_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IPM_IVSHMEM_INIT);

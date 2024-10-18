@@ -40,46 +40,45 @@
  */
 
 /* General Configuration register */
-#define GCONF_ENABLE			BIT(0)
-#define GCONF_LR			BIT(1) /* legacy interrupt routing, */
-					       /* disables PIT              */
+#define GCONF_ENABLE BIT(0)
+#define GCONF_LR     BIT(1) /* legacy interrupt routing, */
+			    /* disables PIT              */
 
 /* General Interrupt Status register */
-#define TIMER0_INT_STS			BIT(0)
+#define TIMER0_INT_STS BIT(0)
 
 /* Timer Configuration and Capabilities register */
-#define TIMER_CONF_INT_LEVEL		BIT(1)
-#define TIMER_CONF_INT_ENABLE		BIT(2)
-#define TIMER_CONF_PERIODIC		BIT(3)
-#define TIMER_CONF_VAL_SET		BIT(6)
-#define TIMER_CONF_MODE32		BIT(8)
-#define TIMER_CONF_FSB_EN		BIT(14) /* FSB interrupt delivery   */
-						/* enable                   */
+#define TIMER_CONF_INT_LEVEL  BIT(1)
+#define TIMER_CONF_INT_ENABLE BIT(2)
+#define TIMER_CONF_PERIODIC   BIT(3)
+#define TIMER_CONF_VAL_SET    BIT(6)
+#define TIMER_CONF_MODE32     BIT(8)
+#define TIMER_CONF_FSB_EN     BIT(14) /* FSB interrupt delivery   */
+				      /* enable                   */
 
 DEVICE_MMIO_TOPLEVEL_STATIC(hpet_regs, DT_DRV_INST(0));
 
-#define HPET_REG_ADDR(off)			\
-	((mm_reg_t)(DEVICE_MMIO_TOPLEVEL_GET(hpet_regs) + (off)))
+#define HPET_REG_ADDR(off) ((mm_reg_t)(DEVICE_MMIO_TOPLEVEL_GET(hpet_regs) + (off)))
 
 /* High dword of General Capabilities and ID register */
-#define CLK_PERIOD_REG			HPET_REG_ADDR(0x04)
+#define CLK_PERIOD_REG HPET_REG_ADDR(0x04)
 
 /* General Configuration register */
-#define GCONF_REG			HPET_REG_ADDR(0x10)
+#define GCONF_REG HPET_REG_ADDR(0x10)
 
 /* General Interrupt Status register */
-#define INTR_STATUS_REG			HPET_REG_ADDR(0x20)
+#define INTR_STATUS_REG HPET_REG_ADDR(0x20)
 
 /* Main Counter Register */
-#define MAIN_COUNTER_LOW_REG		HPET_REG_ADDR(0xf0)
-#define MAIN_COUNTER_HIGH_REG		HPET_REG_ADDR(0xf4)
+#define MAIN_COUNTER_LOW_REG  HPET_REG_ADDR(0xf0)
+#define MAIN_COUNTER_HIGH_REG HPET_REG_ADDR(0xf4)
 
 /* Timer 0 Configuration and Capabilities register */
-#define TIMER0_CONF_REG			HPET_REG_ADDR(0x100)
+#define TIMER0_CONF_REG HPET_REG_ADDR(0x100)
 
 /* Timer 0 Comparator Register */
-#define TIMER0_COMPARATOR_LOW_REG	HPET_REG_ADDR(0x108)
-#define TIMER0_COMPARATOR_HIGH_REG	HPET_REG_ADDR(0x10c)
+#define TIMER0_COMPARATOR_LOW_REG  HPET_REG_ADDR(0x108)
+#define TIMER0_COMPARATOR_HIGH_REG HPET_REG_ADDR(0x10c)
 
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = DT_IRQN(DT_INST(0, intel_hpet));
@@ -207,7 +206,7 @@ static inline void hpet_timer_comparator_set(uint64_t val)
 
 #ifndef HPET_COUNTER_CLK_PERIOD
 /* COUNTER_CLK_PERIOD (CLK_PERIOD_REG) is in femtoseconds (1e-15 sec) */
-#define HPET_COUNTER_CLK_PERIOD		(1000000000000000ULL)
+#define HPET_COUNTER_CLK_PERIOD (1000000000000000ULL)
 #endif
 
 /*
@@ -233,8 +232,7 @@ static __pinned_bss uint32_t last_elapsed;
 #ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 static __pinned_bss unsigned int cyc_per_tick;
 #else
-#define cyc_per_tick			\
-	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define cyc_per_tick (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 #endif /* CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME */
 
 #define HPET_MAX_TICKS ((int32_t)0x7fffffff)
@@ -272,8 +270,7 @@ static inline void hpet_timer_comparator_set_safe(uint64_t next)
 	}
 }
 
-__isr
-static void hpet_isr(const void *arg)
+__isr static void hpet_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
@@ -290,8 +287,7 @@ static void hpet_isr(const void *arg)
 	hpet_int_sts_set(TIMER0_INT_STS);
 #endif
 
-	if (IS_ENABLED(CONFIG_SMP) &&
-	    IS_ENABLED(CONFIG_QEMU_TARGET)) {
+	if (IS_ENABLED(CONFIG_SMP) && IS_ENABLED(CONFIG_QEMU_TARGET)) {
 		/* Qemu in SMP mode has observed the clock going
 		 * "backwards" relative to interrupts already received
 		 * on the other CPU, despite the HPET being
@@ -319,8 +315,7 @@ static void hpet_isr(const void *arg)
 	sys_clock_announce(dticks);
 }
 
-__pinned_func
-static void config_timer0(unsigned int irq)
+__pinned_func static void config_timer0(unsigned int irq)
 {
 	uint32_t val = hpet_timer_conf_get();
 
@@ -332,15 +327,13 @@ static void config_timer0(unsigned int irq)
 	val |= TIMER_CONF_INT_LEVEL;
 #endif
 
-	val &=  ~((uint32_t)(TIMER_CONF_MODE32 | TIMER_CONF_PERIODIC |
-			TIMER_CONF_FSB_EN));
+	val &= ~((uint32_t)(TIMER_CONF_MODE32 | TIMER_CONF_PERIODIC | TIMER_CONF_FSB_EN));
 	val |= TIMER_CONF_INT_ENABLE;
 
 	hpet_timer_conf_set(val);
 }
 
-__boot_func
-void smp_timer_init(void)
+__boot_func void smp_timer_init(void)
 {
 	/* Noop, the HPET is a single system-wide device and it's
 	 * configured to deliver interrupts to every CPU, so there's
@@ -348,8 +341,7 @@ void smp_timer_init(void)
 	 */
 }
 
-__pinned_func
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+__pinned_func void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -364,7 +356,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	}
 
 	ticks = ticks == K_TICKS_FOREVER ? HPET_MAX_TICKS : ticks;
-	ticks = CLAMP(ticks, 0, HPET_MAX_TICKS/2);
+	ticks = CLAMP(ticks, 0, HPET_MAX_TICKS / 2);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint64_t cyc = (last_tick + last_elapsed + ticks) * cyc_per_tick;
@@ -374,8 +366,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 #endif
 }
 
-__pinned_func
-uint32_t sys_clock_elapsed(void)
+__pinned_func uint32_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
@@ -390,20 +381,17 @@ uint32_t sys_clock_elapsed(void)
 	return ret;
 }
 
-__pinned_func
-uint32_t sys_clock_cycle_get_32(void)
+__pinned_func uint32_t sys_clock_cycle_get_32(void)
 {
 	return (uint32_t)hpet_counter_get();
 }
 
-__pinned_func
-uint64_t sys_clock_cycle_get_64(void)
+__pinned_func uint64_t sys_clock_cycle_get_64(void)
 {
 	return hpet_counter_get();
 }
 
-__pinned_func
-void sys_clock_idle_exit(void)
+__pinned_func void sys_clock_idle_exit(void)
 {
 	uint32_t reg;
 
@@ -412,8 +400,7 @@ void sys_clock_idle_exit(void)
 	hpet_gconf_set(reg);
 }
 
-__boot_func
-static int sys_clock_driver_init(void)
+__boot_func static int sys_clock_driver_init(void)
 {
 	extern int z_clock_hw_cycles_per_sec;
 	uint32_t hz, reg;
@@ -424,13 +411,9 @@ static int sys_clock_driver_init(void)
 	DEVICE_MMIO_TOPLEVEL_MAP(hpet_regs, K_MEM_CACHE_NONE);
 
 #if DT_INST_IRQ_HAS_CELL(0, sense)
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    hpet_isr, 0, DT_INST_IRQ(0, sense));
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), hpet_isr, 0, DT_INST_IRQ(0, sense));
 #else
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    hpet_isr, 0, 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), hpet_isr, 0, 0);
 #endif
 	config_timer0(DT_INST_IRQN(0));
 	irq_enable(DT_INST_IRQN(0));
@@ -463,5 +446,4 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

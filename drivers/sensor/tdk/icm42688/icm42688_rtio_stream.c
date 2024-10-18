@@ -109,12 +109,13 @@ static void icm42688_fifo_count_cb(struct rtio *r, const struct rtio_sqe *sqe, v
 	 * already
 	 */
 	struct icm42688_fifo_data hdr = {
-		.header = {
-			.is_fifo = true,
-			.gyro_fs = drv_data->cfg.gyro_fs,
-			.accel_fs = drv_data->cfg.accel_fs,
-			.timestamp = drv_data->timestamp,
-		},
+		.header =
+			{
+				.is_fifo = true,
+				.gyro_fs = drv_data->cfg.gyro_fs,
+				.accel_fs = drv_data->cfg.accel_fs,
+				.timestamp = drv_data->timestamp,
+			},
 		.int_status = drv_data->int_status,
 		.gyro_odr = drv_data->cfg.gyro_odr,
 		.accel_odr = drv_data->cfg.accel_odr,

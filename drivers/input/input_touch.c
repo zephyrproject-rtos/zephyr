@@ -5,9 +5,8 @@
  */
 #include <zephyr/input/input_touch.h>
 
-void input_touchscreen_report_pos(const struct device *dev,
-		uint32_t x, uint32_t y,
-		k_timeout_t timeout)
+void input_touchscreen_report_pos(const struct device *dev, uint32_t x, uint32_t y,
+				  k_timeout_t timeout)
 {
 	const struct input_touchscreen_common_config *cfg = dev->config;
 	const uint32_t reported_x_code = cfg->swapped_x_y ? INPUT_ABS_Y : INPUT_ABS_X;

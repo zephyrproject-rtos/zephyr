@@ -21,8 +21,7 @@ void eswifi_shell_register(struct eswifi_dev *dev)
 	eswifi = dev;
 }
 
-static int eswifi_shell_atcmd(const struct shell *sh, size_t argc,
-			      char **argv)
+static int eswifi_shell_atcmd(const struct shell *sh, size_t argc, char **argv)
 {
 	int i;
 	size_t len = 0;
@@ -61,9 +60,8 @@ static int eswifi_shell_atcmd(const struct shell *sh, size_t argc,
 	return 0;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(eswifi_shell,
-	SHELL_CMD(atcmd, NULL, "<atcmd>", eswifi_shell_atcmd),
-	SHELL_SUBCMD_SET_END /* Array terminated. */
+SHELL_STATIC_SUBCMD_SET_CREATE(eswifi_shell, SHELL_CMD(atcmd, NULL, "<atcmd>", eswifi_shell_atcmd),
+			       SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
 SHELL_CMD_REGISTER(eswifi, &eswifi_shell, "esWiFi debug shell", NULL);

@@ -16,11 +16,10 @@ LOG_MODULE_DECLARE(i2c_nrfx_twi);
 int i2c_nrfx_twi_init(const struct device *dev)
 {
 	const struct i2c_nrfx_twi_config *config = dev->config;
-	nrfx_err_t result = nrfx_twi_init(&config->twi, &config->config,
-					  config->event_handler, (void *)dev);
+	nrfx_err_t result =
+		nrfx_twi_init(&config->twi, &config->config, config->event_handler, (void *)dev);
 	if (result != NRFX_SUCCESS) {
-		LOG_ERR("Failed to initialize device: %s",
-			    dev->name);
+		LOG_ERR("Failed to initialize device: %s", dev->name);
 		return -EBUSY;
 	}
 
@@ -67,8 +66,7 @@ int i2c_nrfx_twi_recover_bus(const struct device *dev)
 	return (err == NRFX_SUCCESS ? 0 : -EBUSY);
 }
 
-int i2c_nrfx_twi_msg_transfer(const struct device *dev, uint8_t flags,
-			      uint8_t *buf, size_t buf_len,
+int i2c_nrfx_twi_msg_transfer(const struct device *dev, uint8_t flags, uint8_t *buf, size_t buf_len,
 			      uint16_t i2c_addr, bool more_msgs)
 {
 	const struct i2c_nrfx_twi_config *config = dev->config;
@@ -79,8 +77,7 @@ int i2c_nrfx_twi_msg_transfer(const struct device *dev, uint8_t flags,
 		.p_primary_buf = buf,
 		.primary_length = buf_len,
 		.address = i2c_addr,
-		.type = (flags & I2C_MSG_READ) ?
-			 NRFX_TWI_XFER_RX : NRFX_TWI_XFER_TX,
+		.type = (flags & I2C_MSG_READ) ? NRFX_TWI_XFER_RX : NRFX_TWI_XFER_TX,
 	};
 
 	if (flags & I2C_MSG_ADDR_10_BITS) {
@@ -97,11 +94,11 @@ int i2c_nrfx_twi_msg_transfer(const struct device *dev, uint8_t flags,
 		 */
 		if (more_msgs) {
 			xfer_flags |= NRFX_TWI_FLAG_SUSPEND;
-		/* - otherwise, just finish the transfer without
-		 *   generating the STOP condition, unless the current
-		 *   message is an RX request, for which such feature
-		 *   is not supported
-		 */
+			/* - otherwise, just finish the transfer without
+			 *   generating the STOP condition, unless the current
+			 *   message is an RX request, for which such feature
+			 *   is not supported
+			 */
 		} else if (flags & I2C_MSG_READ) {
 			ret = -ENOTSUP;
 		} else {

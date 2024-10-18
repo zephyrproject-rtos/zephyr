@@ -21,9 +21,9 @@ LOG_MODULE_REGISTER(adc_b91, CONFIG_ADC_LOG_LEVEL);
 #include <adc.h>
 
 /* ADC B91 defines */
-#define SIGN_BIT_POSITION          (13)
-#define AREG_ADC_DATA_STATUS       (0xf6)
-#define ADC_DATA_READY             BIT(0)
+#define SIGN_BIT_POSITION    (13)
+#define AREG_ADC_DATA_STATUS (0xf6)
+#define ADC_DATA_READY       BIT(0)
 
 /* B91 ADC driver data */
 struct b91_adc_data {
@@ -142,7 +142,8 @@ static signed short adc_b91_get_code(void)
 	adc_code = analog_read_reg16(areg_adc_misc_l);
 
 	analog_write_reg8(areg_adc_data_sample_control,
-		analog_read_reg8(areg_adc_data_sample_control) & (~FLD_NOT_SAMPLE_ADC_DATA));
+			  analog_read_reg8(areg_adc_data_sample_control) &
+				  (~FLD_NOT_SAMPLE_ADC_DATA));
 
 	return adc_code;
 }
@@ -150,8 +151,7 @@ static signed short adc_b91_get_code(void)
 /* ADC Context API implementation: start sampling */
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
-	struct b91_adc_data *data =
-		CONTAINER_OF(ctx, struct b91_adc_data, ctx);
+	struct b91_adc_data *data = CONTAINER_OF(ctx, struct b91_adc_data, ctx);
 
 	data->repeat_buffer = data->buffer;
 
@@ -163,8 +163,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 /* ADC Context API implementation: buffer pointer */
 static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat_sampling)
 {
-	struct b91_adc_data *data =
-		CONTAINER_OF(ctx, struct b91_adc_data, ctx);
+	struct b91_adc_data *data = CONTAINER_OF(ctx, struct b91_adc_data, ctx);
 
 	if (repeat_sampling) {
 		data->buffer = data->repeat_buffer;
@@ -230,8 +229,8 @@ static void adc_b91_acquisition_thread(void *p1, void *p2, void *p3)
 		k_sem_take(&data->acq_sem, K_FOREVER);
 
 		/* Wait for ADC data ready */
-		while ((analog_read_reg8(AREG_ADC_DATA_STATUS) & ADC_DATA_READY)
-				!= ADC_DATA_READY) {
+		while ((analog_read_reg8(AREG_ADC_DATA_STATUS) & ADC_DATA_READY) !=
+		       ADC_DATA_READY) {
 		}
 
 		/* Perform read */
@@ -262,12 +261,9 @@ static int adc_b91_init(const struct device *dev)
 
 	k_sem_init(&data->acq_sem, 0, 1);
 
-	k_thread_create(&data->thread, data->stack,
-			CONFIG_ADC_B91_ACQUISITION_THREAD_STACK_SIZE,
-			adc_b91_acquisition_thread,
-			(void *)dev, NULL, NULL,
-			CONFIG_ADC_B91_ACQUISITION_THREAD_PRIO,
-			0, K_NO_WAIT);
+	k_thread_create(&data->thread, data->stack, CONFIG_ADC_B91_ACQUISITION_THREAD_STACK_SIZE,
+			adc_b91_acquisition_thread, (void *)dev, NULL, NULL,
+			CONFIG_ADC_B91_ACQUISITION_THREAD_PRIO, 0, K_NO_WAIT);
 
 	adc_context_unlock_unconditionally(&data->ctx);
 
@@ -378,7 +374,7 @@ static int adc_b91_channel_setup(const struct device *dev,
 	input_positive = adc_b91_get_pin(channel_cfg->input_positive);
 	input_negative = adc_b91_get_pin(channel_cfg->input_negative);
 	if ((input_positive == (uint8_t)ADC_VBAT || input_negative == (uint8_t)ADC_VBAT) &&
-		channel_cfg->differential) {
+	    channel_cfg->differential) {
 		LOG_ERR("VBAT pin is not available for differential mode.");
 		return -EINVAL;
 	} else if (channel_cfg->differential && (input_negative == (uint8_t)NOINPUTN)) {
@@ -411,8 +407,7 @@ static int adc_b91_channel_setup(const struct device *dev,
 }
 
 /* API implementation: read */
-static int adc_b91_read(const struct device *dev,
-			const struct adc_sequence *sequence)
+static int adc_b91_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	int status;
 	struct b91_adc_data *data = dev->data;
@@ -426,8 +421,7 @@ static int adc_b91_read(const struct device *dev,
 
 #ifdef CONFIG_ADC_ASYNC
 /* API implementation: read_async */
-static int adc_b91_read_async(const struct device *dev,
-			      const struct adc_sequence *sequence,
+static int adc_b91_read_async(const struct device *dev, const struct adc_sequence *sequence,
 			      struct k_poll_signal *async)
 {
 	int status;
@@ -461,8 +455,5 @@ static const struct adc_driver_api adc_b91_driver_api = {
 	.ref_internal = cfg_0.vref_internal_mv,
 };
 
-DEVICE_DT_INST_DEFINE(0, adc_b91_init, NULL,
-		      &data_0,  &cfg_0,
-		      POST_KERNEL,
-		      CONFIG_ADC_INIT_PRIORITY,
+DEVICE_DT_INST_DEFINE(0, adc_b91_init, NULL, &data_0, &cfg_0, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,
 		      &adc_b91_driver_api);

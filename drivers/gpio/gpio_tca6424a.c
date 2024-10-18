@@ -14,10 +14,10 @@
 LOG_MODULE_REGISTER(gpio_tca6424a, CONFIG_GPIO_LOG_LEVEL);
 
 /* TCA6424A auto increment register addresses */
-#define TCA6424A_REG_INPUT			0x80
-#define TCA6424A_REG_OUTPUT			0x84
-#define TCA6424A_REG_POLARITY_INVERSION		0x88
-#define TCA6424A_REG_CONFIGURATION		0x8C
+#define TCA6424A_REG_INPUT              0x80
+#define TCA6424A_REG_OUTPUT             0x84
+#define TCA6424A_REG_POLARITY_INVERSION 0x88
+#define TCA6424A_REG_CONFIGURATION      0x8C
 
 /** Cache of the output configuration and data of the pins. */
 struct tca6424a_pins_state {
@@ -75,8 +75,7 @@ static int read_port_regs(const struct device *dev, uint8_t reg, uint32_t *buf)
 
 	ret = i2c_burst_read_dt(&config->i2c_spec, reg, (uint8_t *)&port_data, 3);
 	if (ret != 0) {
-		LOG_ERR("%s: error reading register 0x%X (%d)", dev->name,
-			reg, ret);
+		LOG_ERR("%s: error reading register 0x%X (%d)", dev->name, reg, ret);
 		return ret;
 	}
 
@@ -84,8 +83,8 @@ static int read_port_regs(const struct device *dev, uint8_t reg, uint32_t *buf)
 	*buf = value;
 	LOG_DBG("%s: Read: REG[0x%X] = 0x%X, REG[0x%X] = 0x%X, "
 		"REG[0x%X] = 0x%X",
-		dev->name, reg, (*buf & 0xFF), (reg + 1), ((*buf >> 8) & 0xFF),
-		(reg + 2), ((*buf >> 16) & 0xFF));
+		dev->name, reg, (*buf & 0xFF), (reg + 1), ((*buf >> 8) & 0xFF), (reg + 2),
+		((*buf >> 16) & 0xFF));
 
 	return 0;
 }
@@ -110,8 +109,8 @@ static int write_port_regs(const struct device *dev, uint8_t reg, uint32_t value
 
 	LOG_DBG("%s: Write: REG[0x%X] = 0x%X, REG[0x%X] = 0x%X, "
 		"REG[0x%X] = 0x%X",
-		dev->name, reg, (value & 0xFF), (reg + 1), ((value >> 8) & 0xFF),
-		(reg + 2), ((value >> 16) & 0xFF));
+		dev->name, reg, (value & 0xFF), (reg + 1), ((value >> 8) & 0xFF), (reg + 2),
+		((value >> 16) & 0xFF));
 
 	buf[0] = reg;
 	sys_put_le24(value, &buf[1]);
@@ -522,7 +521,8 @@ static int tca6424a_init(const struct device *dev)
 	if (drv_cfg->int_gpio.port) {
 		if (!gpio_is_ready_dt(&drv_cfg->int_gpio)) {
 			LOG_ERR("Cannot get pointer to gpio interrupt device "
-				"%s init failed", dev->name);
+				"%s init failed",
+				dev->name);
 			return -EINVAL;
 		}
 
@@ -558,9 +558,10 @@ static int tca6424a_init(const struct device *dev)
 
 #define TCA6424A_INST(idx)                                                                         \
 	static const struct tca6424a_drv_cfg tca6424a_cfg##idx = {                                 \
-		.common = {                                                                        \
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),                     \
-		},                                                                                 \
+		.common =                                                                          \
+			{                                                                          \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),             \
+			},                                                                         \
 		.i2c_spec = I2C_DT_SPEC_INST_GET(idx),                                             \
 		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(idx, int_gpios, {0}),                         \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(idx, reset_gpios, {0}),                     \

@@ -24,7 +24,7 @@ enum mcux_sdif_callback_status {
 	TRANSFER_DATA_FAILED = BIT(3),
 };
 
-#define TRANSFER_CMD_FLAGS (TRANSFER_CMD_COMPLETE | TRANSFER_CMD_FAILED)
+#define TRANSFER_CMD_FLAGS  (TRANSFER_CMD_COMPLETE | TRANSFER_CMD_FAILED)
 #define TRANSFER_DATA_FLAGS (TRANSFER_DATA_COMPLETE | TRANSFER_DATA_FAILED)
 
 #define MCUX_SDIF_RESET_TIMEOUT_VALUE (1000000U)
@@ -55,9 +55,8 @@ struct mcux_sdif_data {
 #endif /* CONFIG_MCUX_SDIF_DMA_SUPPORT */
 };
 
-
-static void mcux_sdif_transfer_complete(SDIF_Type *base, void *handle,
-	status_t status, void *user_data)
+static void mcux_sdif_transfer_complete(SDIF_Type *base, void *handle, status_t status,
+					void *user_data)
 {
 	const struct device *dev = (const struct device *)user_data;
 	struct mcux_sdif_data *data = dev->data;
@@ -75,7 +74,6 @@ static void mcux_sdif_transfer_complete(SDIF_Type *base, void *handle,
 	}
 	k_sem_give(&data->transfer_sem);
 }
-
 
 /* SDIF IRQ handler not exposed in SDK header, so declare it here */
 extern void SDIO_DriverIRQHandler(void);
@@ -108,8 +106,7 @@ static int mcux_sdif_reset(const struct device *dev)
 	return 0;
 }
 
-static int mcux_sdif_get_host_props(const struct device *dev,
-	struct sdhc_host_props *props)
+static int mcux_sdif_get_host_props(const struct device *dev, struct sdhc_host_props *props)
 {
 	memset(props, 0, sizeof(*props));
 	props->f_max = MCUX_SDIF_F_MAX;
@@ -128,16 +125,12 @@ static int mcux_sdif_set_io(const struct device *dev, struct sdhc_io *ios)
 	const struct mcux_sdif_config *config = dev->config;
 	uint32_t src_clk_hz, bus_clk_hz;
 
-	if (clock_control_get_rate(config->clock_dev,
-				config->clock_subsys,
-				&src_clk_hz)) {
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &src_clk_hz)) {
 		return -EINVAL;
 	}
 
 	/* If clock is set to zero, we should gate clock */
-	if (ios->clock != 0 &&
-			(ios->clock <= MCUX_SDIF_F_MAX) &&
-			(ios->clock >= MCUX_SDIF_F_MIN)) {
+	if (ios->clock != 0 && (ios->clock <= MCUX_SDIF_F_MAX) && (ios->clock >= MCUX_SDIF_F_MIN)) {
 		bus_clk_hz = SDIF_SetCardClock(config->base, src_clk_hz, ios->clock);
 		if (bus_clk_hz == 0) {
 			return -ENOTSUP;
@@ -197,8 +190,7 @@ static int mcux_sdif_init(const struct device *dev)
 	host_config.dataTimeout = config->data_timeout;
 	SDIF_Init(config->base, &host_config);
 
-	SDIF_TransferCreateHandle(config->base, &data->transfer_handle,
-		&sdif_cb, (void *)dev);
+	SDIF_TransferCreateHandle(config->base, &data->transfer_handle, &sdif_cb, (void *)dev);
 	config->irq_config_func(dev);
 
 	k_mutex_init(&data->access_mutex);
@@ -213,10 +205,8 @@ static int mcux_sdif_get_card_present(const struct device *dev)
 	return SDIF_DetectCardInsert(config->base, false);
 }
 
-
-static int mcux_sdif_transfer(const struct device *dev,
-			struct sdhc_command *cmd,
-			struct sdhc_data *data)
+static int mcux_sdif_transfer(const struct device *dev, struct sdhc_command *cmd,
+			      struct sdhc_data *data)
 {
 	const struct mcux_sdif_config *config = dev->config;
 	struct mcux_sdif_data *dev_data = dev->data;
@@ -226,13 +216,11 @@ static int mcux_sdif_transfer(const struct device *dev,
 	sdif_data_t sdif_data;
 
 #ifdef CONFIG_MCUX_SDIF_DMA_SUPPORT
-	sdif_dma_config_t dma_config = {
-		.enableFixBurstLen = false,
-		.mode = kSDIF_DualDMAMode,
-		.dmaDesBufferStartAddr = dev_data->sdif_dma_descriptor,
-		.dmaDesBufferLen = (CONFIG_MCUX_SDIF_DMA_BUFFER_SIZE / 4),
-		.dmaDesSkipLen = 0
-	};
+	sdif_dma_config_t dma_config = {.enableFixBurstLen = false,
+					.mode = kSDIF_DualDMAMode,
+					.dmaDesBufferStartAddr = dev_data->sdif_dma_descriptor,
+					.dmaDesBufferLen = (CONFIG_MCUX_SDIF_DMA_BUFFER_SIZE / 4),
+					.dmaDesSkipLen = 0};
 #endif /* CONFIG_MCUX_SDIF_DMA_SUPPORT */
 
 	if (cmd->opcode == SD_GO_IDLE_STATE) {
@@ -289,11 +277,11 @@ static int mcux_sdif_transfer(const struct device *dev,
 	k_sem_reset(&dev_data->transfer_sem);
 	do {
 #ifdef CONFIG_MCUX_SDIF_DMA_SUPPORT
-		error = SDIF_TransferNonBlocking(config->base,
-			&dev_data->transfer_handle, &dma_config, &transfer);
+		error = SDIF_TransferNonBlocking(config->base, &dev_data->transfer_handle,
+						 &dma_config, &transfer);
 #else
-		error = SDIF_TransferNonBlocking(config->base,
-			&dev_data->transfer_handle, NULL, &transfer);
+		error = SDIF_TransferNonBlocking(config->base, &dev_data->transfer_handle, NULL,
+						 &transfer);
 #endif /* CONFIG_MCUX_SDIF_DMA_SUPPORT */
 	} while (error == kStatus_SDIF_SyncCmdTimeout && cmd->timeout_ms--);
 
@@ -334,8 +322,7 @@ static int mcux_sdif_card_busy(const struct device *dev)
 {
 	const struct mcux_sdif_config *config = dev->config;
 
-	return (SDIF_GetControllerStatus(config->base) & SDIF_STATUS_DATA_BUSY_MASK) ?
-		1 : 0;
+	return (SDIF_GetControllerStatus(config->base) & SDIF_STATUS_DATA_BUSY_MASK) ? 1 : 0;
 }
 
 /* Stops transmission of data using CMD12, after failed command */
@@ -360,13 +347,11 @@ static void mcux_sdif_stop_transmission(const struct device *dev)
 	SDIF_ClearInterruptStatus(config->base, kSDIF_AllInterruptStatus);
 
 	LOG_WRN("Transfer failed, sending CMD12");
-	SDIF_TransferNonBlocking(config->base, &data->transfer_handle, NULL,
-		&transfer);
+	SDIF_TransferNonBlocking(config->base, &data->transfer_handle, NULL, &transfer);
 }
 
-static int mcux_sdif_request(const struct device *dev,
-			struct sdhc_command *cmd,
-			struct sdhc_data *data)
+static int mcux_sdif_request(const struct device *dev, struct sdhc_command *cmd,
+			     struct sdhc_data *data)
 {
 	int ret;
 	int busy_timeout = MCUX_SDIF_DEFAULT_TIMEOUT;
@@ -411,52 +396,41 @@ static const struct sdhc_driver_api sdif_api = {
 };
 
 #ifdef CONFIG_MCUX_SDIF_DMA_SUPPORT
-#define MCUX_SDIF_DMA_DESCRIPTOR_DEFINE(n)					\
-	static uint32_t	mcux_sdif_dma_descriptor_##n				\
-		[CONFIG_MCUX_SDIF_DMA_BUFFER_SIZE / 4] __aligned(4);
-#define MCUX_SDIF_DMA_DESCRIPTOR_INIT(n)					\
-	.sdif_dma_descriptor = mcux_sdif_dma_descriptor_##n,
+#define MCUX_SDIF_DMA_DESCRIPTOR_DEFINE(n)                                                         \
+	static uint32_t mcux_sdif_dma_descriptor_##n[CONFIG_MCUX_SDIF_DMA_BUFFER_SIZE / 4]         \
+		__aligned(4);
+#define MCUX_SDIF_DMA_DESCRIPTOR_INIT(n) .sdif_dma_descriptor = mcux_sdif_dma_descriptor_##n,
 #else
 #define MCUX_SDIF_DMA_DESCRIPTOR_DEFINE(n)
 #define MCUX_SDIF_DMA_DESCRIPTOR_INIT(n)
 #endif /* CONFIG_MCUX_SDIF_DMA_SUPPORT */
 
-
-#define MCUX_SDIF_INIT(n)							\
-	static void sdif_##n##_irq_config_func(const struct device *dev)	\
-	{									\
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),		\
-			mcux_sdif_isr, DEVICE_DT_INST_GET(n), 0);		\
-		irq_enable(DT_INST_IRQN(n));					\
-	}									\
-										\
-	PINCTRL_DT_INST_DEFINE(n);						\
-										\
-	static const struct mcux_sdif_config sdif_##n##_config = {		\
-		.base = (SDIF_Type *) DT_INST_REG_ADDR(n),			\
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
-		.response_timeout = DT_INST_PROP(n, response_timeout),		\
-		.cd_debounce_clocks = DT_INST_PROP(n, cd_debounce_clocks),	\
-		.data_timeout = DT_INST_PROP(n, data_timeout),			\
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
-		.clock_subsys =							\
-			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
-		.irq_config_func = sdif_##n##_irq_config_func,			\
-	};									\
-										\
-	MCUX_SDIF_DMA_DESCRIPTOR_DEFINE(n);					\
-										\
-	static struct mcux_sdif_data sdif_##n##_data = {			\
-		MCUX_SDIF_DMA_DESCRIPTOR_INIT(n)				\
-	};									\
-										\
-	DEVICE_DT_INST_DEFINE(n,						\
-		&mcux_sdif_init,						\
-		NULL,								\
-		&sdif_##n##_data,						\
-		&sdif_##n##_config,						\
-		POST_KERNEL,							\
-		CONFIG_SDHC_INIT_PRIORITY,					\
-		&sdif_api);
+#define MCUX_SDIF_INIT(n)                                                                          \
+	static void sdif_##n##_irq_config_func(const struct device *dev)                           \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_sdif_isr,              \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+	}                                                                                          \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+                                                                                                   \
+	static const struct mcux_sdif_config sdif_##n##_config = {                                 \
+		.base = (SDIF_Type *)DT_INST_REG_ADDR(n),                                          \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+		.response_timeout = DT_INST_PROP(n, response_timeout),                             \
+		.cd_debounce_clocks = DT_INST_PROP(n, cd_debounce_clocks),                         \
+		.data_timeout = DT_INST_PROP(n, data_timeout),                                     \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
+		.irq_config_func = sdif_##n##_irq_config_func,                                     \
+	};                                                                                         \
+                                                                                                   \
+	MCUX_SDIF_DMA_DESCRIPTOR_DEFINE(n);                                                        \
+                                                                                                   \
+	static struct mcux_sdif_data sdif_##n##_data = {MCUX_SDIF_DMA_DESCRIPTOR_INIT(n)};         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &mcux_sdif_init, NULL, &sdif_##n##_data, &sdif_##n##_config,      \
+			      POST_KERNEL, CONFIG_SDHC_INIT_PRIORITY, &sdif_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_SDIF_INIT)

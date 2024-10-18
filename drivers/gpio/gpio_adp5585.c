@@ -107,7 +107,7 @@ static int gpio_adp5585_config(const struct device *dev, gpio_pin_t pin, gpio_fl
 		reg_value = adp5585_pin_drive_pp << bank_pin;
 	}
 	ret = i2c_reg_update_byte_dt(&parent_cfg->i2c_bus, ADP5585_GPO_OUT_MODE_A + bank,
-				BIT(bank_pin), reg_value);
+				     BIT(bank_pin), reg_value);
 	if (ret != 0) {
 		goto out;
 	}
@@ -127,8 +127,7 @@ static int gpio_adp5585_config(const struct device *dev, gpio_pin_t pin, gpio_fl
 		reg_value = adp5585_pull_disable << shift;
 	}
 
-	ret = i2c_reg_update_byte_dt(&parent_cfg->i2c_bus, regaddr,
-			0b11U << shift, reg_value);
+	ret = i2c_reg_update_byte_dt(&parent_cfg->i2c_bus, regaddr, 0b11U << shift, reg_value);
 	if (ret != 0) {
 		goto out;
 	}
@@ -149,9 +148,8 @@ static int gpio_adp5585_config(const struct device *dev, gpio_pin_t pin, gpio_fl
 			/* reg_value for ADP5585_GPO_OUT_MODE */
 			reg_value = (uint8_t)(data->output >> 8);
 		}
-		ret = i2c_reg_write_byte_dt(&parent_cfg->i2c_bus,
-					ADP5585_GPO_OUT_MODE_A + bank,
-					reg_value);
+		ret = i2c_reg_write_byte_dt(&parent_cfg->i2c_bus, ADP5585_GPO_OUT_MODE_A + bank,
+					    reg_value);
 		if (ret != 0) {
 			goto out;
 		}
@@ -162,9 +160,8 @@ static int gpio_adp5585_config(const struct device *dev, gpio_pin_t pin, gpio_fl
 		reg_value = adp5585_pin_output << bank_pin;
 	}
 
-	ret = i2c_reg_update_byte_dt(&parent_cfg->i2c_bus,
-				ADP5585_GPIO_DIRECTION_A + bank,
-				BIT(bank_pin), reg_value);
+	ret = i2c_reg_update_byte_dt(&parent_cfg->i2c_bus, ADP5585_GPIO_DIRECTION_A + bank,
+				     BIT(bank_pin), reg_value);
 
 out:
 	k_sem_give(&parent_data->lock);
@@ -197,8 +194,7 @@ static int gpio_adp5585_port_read(const struct device *dev, gpio_port_value_t *v
 	uint8_t gpi_status_reg;
 	uint8_t gpi_status_buf[2];
 
-	ret = i2c_write_read_dt(&parent_cfg->i2c_bus, &gpi_status_reg, 1U,
-			gpi_status_buf, 2U);
+	ret = i2c_write_read_dt(&parent_cfg->i2c_bus, &gpi_status_reg, 1U, gpi_status_buf, 2U);
 	if (ret) {
 		goto out;
 	}
@@ -236,8 +232,7 @@ static int gpio_adp5585_port_write(const struct device *dev, gpio_port_pins_t ma
 	out = ((orig_out & ~mask) | (value & mask)) ^ toggle;
 
 	reg_value = (uint8_t)out;
-	uint8_t gpo_data_out_buf[] = { ADP5585_GPO_DATA_OUT_A,
-			(uint8_t)out, (uint8_t)(out >> 8) };
+	uint8_t gpo_data_out_buf[] = {ADP5585_GPO_DATA_OUT_A, (uint8_t)out, (uint8_t)(out >> 8)};
 
 	ret = i2c_write_dt(&parent_cfg->i2c_bus, gpo_data_out_buf, sizeof(gpo_data_out_buf));
 	if (ret) {
@@ -313,21 +308,21 @@ static int gpio_adp5585_pin_interrupt_configure(const struct device *dev, gpio_p
 					     (adp5585_int_disable << bank_pin));
 	} else if ((trig & GPIO_INT_TRIG_BOTH) != 0) {
 		if (trig == GPIO_INT_TRIG_LOW) {
-			ret = i2c_reg_update_byte_dt(
-				&parent_cfg->i2c_bus, ADP5585_GPI_INT_LEVEL_A + bank,
-				BIT(bank_pin), (adp5585_int_active_low << bank_pin));
+			ret = i2c_reg_update_byte_dt(&parent_cfg->i2c_bus,
+						     ADP5585_GPI_INT_LEVEL_A + bank, BIT(bank_pin),
+						     (adp5585_int_active_low << bank_pin));
 		} else {
-			ret = i2c_reg_update_byte_dt(
-				&parent_cfg->i2c_bus, ADP5585_GPI_INT_LEVEL_A + bank,
-				BIT(bank_pin), (adp5585_int_active_high << bank_pin));
+			ret = i2c_reg_update_byte_dt(&parent_cfg->i2c_bus,
+						     ADP5585_GPI_INT_LEVEL_A + bank, BIT(bank_pin),
+						     (adp5585_int_active_high << bank_pin));
 		}
 
 		/* make sure GPI_n_EVENT_EN is disabled, otherwise it will generate FIFO event */
+		ret = i2c_reg_update_byte_dt(&parent_cfg->i2c_bus, ADP5585_GPI_EVENT_EN_A + bank,
+					     BIT(bank_pin), 0U);
 		ret = i2c_reg_update_byte_dt(&parent_cfg->i2c_bus,
-				ADP5585_GPI_EVENT_EN_A + bank, BIT(bank_pin), 0U);
-		ret = i2c_reg_update_byte_dt(&parent_cfg->i2c_bus,
-				ADP5585_GPI_INTERRUPT_EN_A + bank,
-				BIT(bank_pin), (adp5585_int_enable << bank_pin));
+					     ADP5585_GPI_INTERRUPT_EN_A + bank, BIT(bank_pin),
+					     (adp5585_int_enable << bank_pin));
 	}
 
 	k_sem_give(&parent_data->lock);
@@ -404,19 +399,17 @@ static int gpio_adp5585_init(const struct device *dev)
 	k_sem_take(&parent_data->lock, K_FOREVER);
 
 	/** Read output register */
-	uint8_t gpo_data_out_buf[] = { ADP5585_GPO_DATA_OUT_A,
-			0x00, 0x00 };
+	uint8_t gpo_data_out_buf[] = {ADP5585_GPO_DATA_OUT_A, 0x00, 0x00};
 
-	ret = i2c_write_read_dt(&parent_cfg->i2c_bus, gpo_data_out_buf, 1U,
-			gpo_data_out_buf + 1, 2U);
+	ret = i2c_write_read_dt(&parent_cfg->i2c_bus, gpo_data_out_buf, 1U, gpo_data_out_buf + 1,
+				2U);
 	if (ret) {
 		goto out;
 	}
 	data->output = sys_le16_to_cpu(*((uint16_t *)(gpo_data_out_buf + 1)));
 
 	/** Set RPULL to high-z by default */
-	uint8_t rpull_config_buf[] = { ADP5585_RPULL_CONFIG_A,
-			0xffU, 0x03U, 0xffU, 0x03U };
+	uint8_t rpull_config_buf[] = {ADP5585_RPULL_CONFIG_A, 0xffU, 0x03U, 0xffU, 0x03U};
 
 	ret = i2c_write_dt(&parent_cfg->i2c_bus, rpull_config_buf, sizeof(rpull_config_buf));
 	if (ret) {
@@ -452,18 +445,15 @@ static const struct gpio_driver_api api_table = {
 	.manage_callback = gpio_adp5585_manage_callback,
 };
 
-#define GPIO_ADP5585_INIT(inst)                                               \
-	static const struct adp5585_gpio_config adp5585_gpio_cfg_##inst = {       \
-		.common = {                                                           \
-			.port_pin_mask = GPIO_DT_INST_PORT_PIN_MASK_NGPIOS_EXC(           \
-					inst, DT_INST_PROP(inst, ngpios))                         \
-		},                                                                    \
-		.mfd_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                       \
-	};                                                                        \
-	static struct adp5585_gpio_data adp5585_gpio_drvdata_##inst;              \
-	DEVICE_DT_INST_DEFINE(inst, gpio_adp5585_init, NULL,                      \
-				&adp5585_gpio_drvdata_##inst,                                 \
-				&adp5585_gpio_cfg_##inst, POST_KERNEL,                        \
-			    CONFIG_GPIO_ADP5585_INIT_PRIORITY, &api_table);
+#define GPIO_ADP5585_INIT(inst)                                                                    \
+	static const struct adp5585_gpio_config adp5585_gpio_cfg_##inst = {                        \
+		.common = {.port_pin_mask = GPIO_DT_INST_PORT_PIN_MASK_NGPIOS_EXC(                 \
+				   inst, DT_INST_PROP(inst, ngpios))},                             \
+		.mfd_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                    \
+	};                                                                                         \
+	static struct adp5585_gpio_data adp5585_gpio_drvdata_##inst;                               \
+	DEVICE_DT_INST_DEFINE(inst, gpio_adp5585_init, NULL, &adp5585_gpio_drvdata_##inst,         \
+			      &adp5585_gpio_cfg_##inst, POST_KERNEL,                               \
+			      CONFIG_GPIO_ADP5585_INIT_PRIORITY, &api_table);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_ADP5585_INIT)

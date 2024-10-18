@@ -7,7 +7,7 @@
  */
 
 #define LOG_DOMAIN flash_stm32g0
-#define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
+#define LOG_LEVEL  CONFIG_FLASH_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
@@ -20,7 +20,6 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #include "flash_stm32.h"
 
-
 /* FLASH_DBANK_SUPPORT is defined in the HAL for all G0Bx and G0C1 SoCs,
  * while only those with 256KiB and 512KiB Flash have two banks.
  */
@@ -29,16 +28,15 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #endif
 
 #if defined(STM32G0_DBANK_SUPPORT)
-#define STM32G0_BANK_COUNT		2
-#define STM32G0_BANK2_START_PAGE_NR	256
+#define STM32G0_BANK_COUNT          2
+#define STM32G0_BANK2_START_PAGE_NR 256
 #else
-#define STM32G0_BANK_COUNT		1
+#define STM32G0_BANK_COUNT 1
 #endif
 
-#define STM32G0_FLASH_SIZE		(FLASH_SIZE)
-#define STM32G0_FLASH_PAGE_SIZE		(FLASH_PAGE_SIZE)
-#define STM32G0_PAGES_PER_BANK		\
-	((STM32G0_FLASH_SIZE / STM32G0_FLASH_PAGE_SIZE) / STM32G0_BANK_COUNT)
+#define STM32G0_FLASH_SIZE      (FLASH_SIZE)
+#define STM32G0_FLASH_PAGE_SIZE (FLASH_PAGE_SIZE)
+#define STM32G0_PAGES_PER_BANK  ((STM32G0_FLASH_SIZE / STM32G0_FLASH_PAGE_SIZE) / STM32G0_BANK_COUNT)
 
 static inline void flush_cache(FLASH_TypeDef *regs)
 {
@@ -77,8 +75,7 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 	 * It is allowed to write only zeros over an already written dword
 	 * See 3.3.8 in reference manual.
 	 */
-	if ((flash[0] != 0xFFFFFFFFUL ||
-	     flash[1] != 0xFFFFFFFFUL) && val != 0UL) {
+	if ((flash[0] != 0xFFFFFFFFUL || flash[1] != 0xFFFFFFFFUL) && val != 0UL) {
 		LOG_ERR("Word at offs %ld not erased", (long)offset);
 		return -EIO;
 	}
@@ -162,14 +159,12 @@ static int erase_page(const struct device *dev, unsigned int offset)
 	return rc;
 }
 
-int flash_stm32_block_erase_loop(const struct device *dev,
-				 unsigned int offset,
-				 unsigned int len)
+int flash_stm32_block_erase_loop(const struct device *dev, unsigned int offset, unsigned int len)
 {
 	unsigned int addr = offset;
 	int rc = 0;
 
-	for (; addr <= offset + len - 1 ; addr += STM32G0_FLASH_PAGE_SIZE) {
+	for (; addr <= offset + len - 1; addr += STM32G0_FLASH_PAGE_SIZE) {
 		rc = erase_page(dev, addr);
 		if (rc < 0) {
 			break;
@@ -179,14 +174,13 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 	return rc;
 }
 
-int flash_stm32_write_range(const struct device *dev, unsigned int offset,
-			    const void *data, unsigned int len)
+int flash_stm32_write_range(const struct device *dev, unsigned int offset, const void *data,
+			    unsigned int len)
 {
 	int i, rc = 0;
 
 	for (i = 0; i < len; i += 8, offset += 8) {
-		rc = write_dword(dev, offset,
-				UNALIGNED_GET((const uint64_t *) data + (i >> 3)));
+		rc = write_dword(dev, offset, UNALIGNED_GET((const uint64_t *)data + (i >> 3)));
 		if (rc < 0) {
 			return rc;
 		}
@@ -205,8 +199,7 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
  * "physical" pages are numbered starting with 0 on bank1 and 256 on bank2.
  * As a result only a single homogeneous flash page layout needs to be defined.
  */
-void flash_stm32_page_layout(const struct device *dev,
-			     const struct flash_pages_layout **layout,
+void flash_stm32_page_layout(const struct device *dev, const struct flash_pages_layout **layout,
 			     size_t *layout_size)
 {
 	static struct flash_pages_layout stm32g0_flash_layout = {
@@ -217,8 +210,7 @@ void flash_stm32_page_layout(const struct device *dev,
 	ARG_UNUSED(dev);
 
 	if (stm32g0_flash_layout.pages_count == 0) {
-		stm32g0_flash_layout.pages_count =
-				STM32G0_FLASH_SIZE / STM32G0_FLASH_PAGE_SIZE;
+		stm32g0_flash_layout.pages_count = STM32G0_FLASH_SIZE / STM32G0_FLASH_PAGE_SIZE;
 		stm32g0_flash_layout.pages_size = STM32G0_FLASH_PAGE_SIZE;
 	}
 
@@ -227,7 +219,7 @@ void flash_stm32_page_layout(const struct device *dev,
 }
 
 /* Override weak function */
-int  flash_stm32_check_configuration(void)
+int flash_stm32_check_configuration(void)
 {
 #if defined(STM32G0_DBANK_SUPPORT) && (CONFIG_FLASH_SIZE == 256)
 	/* Single bank mode not supported on dual bank SoCs with 256kiB flash */

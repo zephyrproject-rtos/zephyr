@@ -20,11 +20,11 @@ LOG_MODULE_REGISTER(dac_dacx3608, CONFIG_DAC_LOG_LEVEL);
 #define DACX3608_REG_BRDCAST        0x03U
 #define DACX3608_REG_DACA_DATA      0x08U
 
-#define DAC43608_DEVICE_ID      0x500	/* STATUS_TRIGGER[DEVICE_ID] */
-#define DAC53608_DEVICE_ID      0x300	/* STATUS_TRIGGER[DEVICE_ID] */
-#define DACX3608_SW_RST         0x0A	/* STATUS_TRIGGER[SW_RST] */
-#define DACX3608_POR_DELAY      5
-#define DACX3608_MAX_CHANNEL    8
+#define DAC43608_DEVICE_ID   0x500 /* STATUS_TRIGGER[DEVICE_ID] */
+#define DAC53608_DEVICE_ID   0x300 /* STATUS_TRIGGER[DEVICE_ID] */
+#define DACX3608_SW_RST      0x0A  /* STATUS_TRIGGER[SW_RST] */
+#define DACX3608_POR_DELAY   5
+#define DACX3608_MAX_CHANNEL 8
 
 struct dacx3608_config {
 	struct i2c_dt_spec bus;
@@ -35,12 +35,11 @@ struct dacx3608_data {
 	uint8_t configured;
 };
 
-static int dacx3608_reg_read(const struct device *dev, uint8_t reg,
-			      uint16_t *val)
+static int dacx3608_reg_read(const struct device *dev, uint8_t reg, uint16_t *val)
 {
 	const struct dacx3608_config *cfg = dev->config;
 
-	if (i2c_burst_read_dt(&cfg->bus, reg, (uint8_t *) val, 2) < 0) {
+	if (i2c_burst_read_dt(&cfg->bus, reg, (uint8_t *)val, 2) < 0) {
 		LOG_ERR("I2C read failed");
 		return -EIO;
 	}
@@ -50,8 +49,7 @@ static int dacx3608_reg_read(const struct device *dev, uint8_t reg,
 	return 0;
 }
 
-static int dacx3608_reg_write(const struct device *dev, uint8_t reg,
-			       uint16_t val)
+static int dacx3608_reg_write(const struct device *dev, uint8_t reg, uint16_t val)
 {
 	const struct dacx3608_config *cfg = dev->config;
 	uint8_t buf[3] = {reg, val >> 8, val & 0xFF};
@@ -59,8 +57,7 @@ static int dacx3608_reg_write(const struct device *dev, uint8_t reg,
 	return i2c_write_dt(&cfg->bus, buf, sizeof(buf));
 }
 
-int dacx3608_reg_update(const struct device *dev, uint8_t reg,
-			 uint16_t mask, bool setting)
+int dacx3608_reg_update(const struct device *dev, uint8_t reg, uint16_t mask, bool setting)
 {
 	uint16_t regval;
 	int ret;
@@ -85,7 +82,7 @@ int dacx3608_reg_update(const struct device *dev, uint8_t reg,
 }
 
 static int dacx3608_channel_setup(const struct device *dev,
-				   const struct dac_channel_cfg *channel_cfg)
+				  const struct dac_channel_cfg *channel_cfg)
 {
 	const struct dacx3608_config *config = dev->config;
 	struct dacx3608_data *data = dev->data;
@@ -113,8 +110,8 @@ static int dacx3608_channel_setup(const struct device *dev,
 	}
 
 	/* Clear PDNn bit */
-	ret = dacx3608_reg_update(dev, DACX3608_REG_DEVICE_CONFIG,
-				BIT(channel_cfg->channel_id), setting);
+	ret = dacx3608_reg_update(dev, DACX3608_REG_DEVICE_CONFIG, BIT(channel_cfg->channel_id),
+				  setting);
 	if (ret) {
 		LOG_ERR("Unable to update DEVICE_CONFIG register");
 		return -EIO;
@@ -127,8 +124,7 @@ static int dacx3608_channel_setup(const struct device *dev,
 	return 0;
 }
 
-static int dacx3608_write_value(const struct device *dev, uint8_t channel,
-				uint32_t value)
+static int dacx3608_write_value(const struct device *dev, uint8_t channel, uint32_t value)
 {
 	const struct dacx3608_config *config = dev->config;
 	struct dacx3608_data *data = dev->data;
@@ -245,18 +241,15 @@ static const struct dac_driver_api dacx3608_driver_api = {
 
 #define INST_DT_DACX3608(inst, t) DT_INST(inst, ti_dac##t)
 
-#define DACX3608_DEVICE(t, n, res) \
-	static struct dacx3608_data dac##t##_data_##n; \
-	static const struct dacx3608_config dac##t##_config_##n = { \
-		.bus = I2C_DT_SPEC_GET(INST_DT_DACX3608(n, t)), \
-		.resolution = res, \
-	}; \
-	DEVICE_DT_DEFINE(INST_DT_DACX3608(n, t), \
-				&dacx3608_init, NULL, \
-				&dac##t##_data_##n, \
-				&dac##t##_config_##n, POST_KERNEL, \
-				CONFIG_DAC_DACX3608_INIT_PRIORITY, \
-				&dacx3608_driver_api)
+#define DACX3608_DEVICE(t, n, res)                                                                 \
+	static struct dacx3608_data dac##t##_data_##n;                                             \
+	static const struct dacx3608_config dac##t##_config_##n = {                                \
+		.bus = I2C_DT_SPEC_GET(INST_DT_DACX3608(n, t)),                                    \
+		.resolution = res,                                                                 \
+	};                                                                                         \
+	DEVICE_DT_DEFINE(INST_DT_DACX3608(n, t), &dacx3608_init, NULL, &dac##t##_data_##n,         \
+			 &dac##t##_config_##n, POST_KERNEL, CONFIG_DAC_DACX3608_INIT_PRIORITY,     \
+			 &dacx3608_driver_api)
 
 /*
  * DAC43608: 8-bit
@@ -270,7 +263,7 @@ static const struct dac_driver_api dacx3608_driver_api = {
 
 #define CALL_WITH_ARG(arg, expr) expr(arg)
 
-#define INST_DT_DACX3608_FOREACH(t, inst_expr) \
+#define INST_DT_DACX3608_FOREACH(t, inst_expr)                                                     \
 	LISTIFY(DT_NUM_INST_STATUS_OKAY(ti_dac##t), \
 		     CALL_WITH_ARG, (), inst_expr)
 

@@ -22,8 +22,7 @@ LOG_MODULE_DECLARE(IIS2DH, CONFIG_SENSOR_LOG_LEVEL);
 /**
  * iis2dh_enable_int - enable selected int pin to generate interrupt
  */
-static int iis2dh_enable_drdy(const struct device *dev,
-			      enum sensor_trigger_type type, int enable)
+static int iis2dh_enable_drdy(const struct device *dev, enum sensor_trigger_type type, int enable)
 {
 	struct iis2dh_data *iis2dh = dev->data;
 	iis2dh_ctrl_reg3_t reg3;
@@ -39,8 +38,7 @@ static int iis2dh_enable_drdy(const struct device *dev,
 /**
  * iis2dh_trigger_set - link external trigger to event data ready
  */
-int iis2dh_trigger_set(const struct device *dev,
-		       const struct sensor_trigger *trig,
+int iis2dh_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler)
 {
 	struct iis2dh_data *iis2dh = dev->data;
@@ -91,11 +89,9 @@ static void iis2dh_handle_interrupt(const struct device *dev)
 	gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
-static void iis2dh_gpio_callback(const struct device *dev,
-				 struct gpio_callback *cb, uint32_t pins)
+static void iis2dh_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	struct iis2dh_data *iis2dh =
-		CONTAINER_OF(cb, struct iis2dh_data, gpio_cb);
+	struct iis2dh_data *iis2dh = CONTAINER_OF(cb, struct iis2dh_data, gpio_cb);
 	const struct iis2dh_device_config *cfg = iis2dh->dev->config;
 
 	if ((pins & BIT(cfg->int_gpio.pin)) == 0U) {
@@ -129,8 +125,7 @@ static void iis2dh_thread(void *p1, void *p2, void *p3)
 #ifdef CONFIG_IIS2DH_TRIGGER_GLOBAL_THREAD
 static void iis2dh_work_cb(struct k_work *work)
 {
-	struct iis2dh_data *iis2dh =
-		CONTAINER_OF(work, struct iis2dh_data, work);
+	struct iis2dh_data *iis2dh = CONTAINER_OF(work, struct iis2dh_data, work);
 
 	iis2dh_handle_interrupt(iis2dh->dev);
 }
@@ -152,11 +147,9 @@ int iis2dh_init_interrupt(const struct device *dev)
 #if defined(CONFIG_IIS2DH_TRIGGER_OWN_THREAD)
 	k_sem_init(&iis2dh->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
-	k_thread_create(&iis2dh->thread, iis2dh->thread_stack,
-		       CONFIG_IIS2DH_THREAD_STACK_SIZE,
-		       iis2dh_thread, iis2dh,
-		       0, NULL, K_PRIO_COOP(CONFIG_IIS2DH_THREAD_PRIORITY),
-		       0, K_NO_WAIT);
+	k_thread_create(&iis2dh->thread, iis2dh->thread_stack, CONFIG_IIS2DH_THREAD_STACK_SIZE,
+			iis2dh_thread, iis2dh, 0, NULL, K_PRIO_COOP(CONFIG_IIS2DH_THREAD_PRIORITY),
+			0, K_NO_WAIT);
 #elif defined(CONFIG_IIS2DH_TRIGGER_GLOBAL_THREAD)
 	iis2dh->work.handler = iis2dh_work_cb;
 #endif /* CONFIG_IIS2DH_TRIGGER_OWN_THREAD */
@@ -167,9 +160,7 @@ int iis2dh_init_interrupt(const struct device *dev)
 		return ret;
 	}
 
-	gpio_init_callback(&iis2dh->gpio_cb,
-			   iis2dh_gpio_callback,
-			   BIT(cfg->int_gpio.pin));
+	gpio_init_callback(&iis2dh->gpio_cb, iis2dh_gpio_callback, BIT(cfg->int_gpio.pin));
 
 	if (gpio_add_callback(cfg->int_gpio.port, &iis2dh->gpio_cb) < 0) {
 		LOG_DBG("Could not set gpio callback");

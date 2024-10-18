@@ -27,12 +27,12 @@ LOG_MODULE_REGISTER(nxp_s32_eth);
 #include "eth_nxp_s32_netc_priv.h"
 
 /* Global MAC filter hash table required for the baremetal driver */
-Netc_Eth_Ip_MACFilterHashTableEntryType * MACFilterHashTableAddrs[FEATURE_NETC_ETH_NUMBER_OF_CTRLS];
+Netc_Eth_Ip_MACFilterHashTableEntryType *MACFilterHashTableAddrs[FEATURE_NETC_ETH_NUMBER_OF_CTRLS];
 
 static void nxp_s32_eth_rx_thread(void *arg1, void *unused1, void *unused2);
 
-static void nxp_s32_eth_msix_wrapper(const struct device *dev, uint32_t channel,
-				     void *user_data, struct mbox_msg *msg)
+static void nxp_s32_eth_msix_wrapper(const struct device *dev, uint32_t channel, void *user_data,
+				     struct mbox_msg *msg)
 {
 	const struct nxp_s32_eth_msix *msix = (const struct nxp_s32_eth_msix *)user_data;
 
@@ -69,8 +69,7 @@ int nxp_s32_eth_initialize_common(const struct device *dev)
 	for (int i = 0; i < NETC_MSIX_EVENTS_COUNT; i++) {
 		msix = &cfg->msix[i];
 		if (mbox_is_ready_dt(&msix->mbox_spec)) {
-			err = mbox_register_callback_dt(&msix->mbox_spec,
-							nxp_s32_eth_msix_wrapper,
+			err = mbox_register_callback_dt(&msix->mbox_spec, nxp_s32_eth_msix_wrapper,
 							(void *)msix);
 			if (err != 0) {
 				LOG_ERR("Failed to register MRU callback on channel %u",
@@ -84,10 +83,9 @@ int nxp_s32_eth_initialize_common(const struct device *dev)
 	k_sem_init(&ctx->rx_sem, 0, 1);
 
 	k_thread_create(&ctx->rx_thread, ctx->rx_thread_stack,
-			K_KERNEL_STACK_SIZEOF(ctx->rx_thread_stack),
-			nxp_s32_eth_rx_thread, (void *)dev, NULL, NULL,
-			K_PRIO_COOP(CONFIG_ETH_NXP_S32_RX_THREAD_PRIO),
-			0, K_NO_WAIT);
+			K_KERNEL_STACK_SIZEOF(ctx->rx_thread_stack), nxp_s32_eth_rx_thread,
+			(void *)dev, NULL, NULL, K_PRIO_COOP(CONFIG_ETH_NXP_S32_RX_THREAD_PRIO), 0,
+			K_NO_WAIT);
 	k_thread_name_set(&ctx->rx_thread, "nxp_s32_eth_rx");
 
 	status = Netc_Eth_Ip_EnableController(cfg->si_idx);
@@ -171,16 +169,14 @@ error:
 	return res;
 }
 
-static struct net_pkt *nxp_s32_eth_get_pkt(const struct device *dev,
-					   Netc_Eth_Ip_BufferType *buf)
+static struct net_pkt *nxp_s32_eth_get_pkt(const struct device *dev, Netc_Eth_Ip_BufferType *buf)
 {
 	struct nxp_s32_eth_data *ctx = dev->data;
 	struct net_pkt *pkt = NULL;
 	int res = 0;
 
 	/* Use root iface, it will be updated later in net_recv_data() */
-	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, buf->length,
-					   AF_UNSPEC, 0, NETC_TIMEOUT);
+	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, buf->length, AF_UNSPEC, 0, NETC_TIMEOUT);
 	if (!pkt) {
 		goto exit;
 	}
@@ -267,11 +263,8 @@ enum ethernet_hw_caps nxp_s32_eth_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return (ETHERNET_LINK_10BASE_T
-		| ETHERNET_LINK_100BASE_T
-		| ETHERNET_LINK_1000BASE_T
-		| ETHERNET_HW_RX_CHKSUM_OFFLOAD
-		| ETHERNET_HW_FILTERING
+	return (ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T | ETHERNET_LINK_1000BASE_T |
+		ETHERNET_HW_RX_CHKSUM_OFFLOAD | ETHERNET_HW_FILTERING
 #if defined(CONFIG_NET_VLAN)
 		| ETHERNET_HW_VLAN
 #endif
@@ -296,8 +289,8 @@ int nxp_s32_eth_set_config(const struct device *dev, enum ethernet_config_type t
 		net_if_set_link_addr(ctx->iface, ctx->mac_addr, sizeof(ctx->mac_addr),
 				     NET_LINK_ETHERNET);
 		LOG_INF("SI%d MAC set to: %02x:%02x:%02x:%02x:%02x:%02x", cfg->si_idx,
-			ctx->mac_addr[0], ctx->mac_addr[1], ctx->mac_addr[2],
-			ctx->mac_addr[3], ctx->mac_addr[4], ctx->mac_addr[5]);
+			ctx->mac_addr[0], ctx->mac_addr[1], ctx->mac_addr[2], ctx->mac_addr[3],
+			ctx->mac_addr[4], ctx->mac_addr[5]);
 		break;
 	case ETHERNET_CONFIG_TYPE_FILTER:
 		nxp_s32_eth_mcast_filter(dev, &config->filter);
@@ -310,10 +303,8 @@ int nxp_s32_eth_set_config(const struct device *dev, enum ethernet_config_type t
 	return res;
 }
 
-BUILD_ASSERT((CONFIG_ETH_NXP_S32_RX_RING_LEN % 8) == 0,
-	     "Rx ring length must be multiple of 8");
-BUILD_ASSERT((CONFIG_ETH_NXP_S32_TX_RING_LEN % 8) == 0,
-	     "Tx ring length must be multiple of 8");
+BUILD_ASSERT((CONFIG_ETH_NXP_S32_RX_RING_LEN % 8) == 0, "Rx ring length must be multiple of 8");
+BUILD_ASSERT((CONFIG_ETH_NXP_S32_TX_RING_LEN % 8) == 0, "Tx ring length must be multiple of 8");
 BUILD_ASSERT((CONFIG_ETH_NXP_S32_RX_RING_BUF_SIZE % 8) == 0,
 	     "Rx ring data buffer size must be multiple of 8");
 BUILD_ASSERT((CONFIG_ETH_NXP_S32_TX_RING_BUF_SIZE % 8) == 0,

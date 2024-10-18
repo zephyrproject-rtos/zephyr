@@ -6,10 +6,10 @@
 
 #define DT_DRV_COMPAT silabs_gecko_trng
 
- #include <zephyr/drivers/entropy.h>
- #include <string.h>
- #include "soc.h"
- #include "em_cmu.h"
+#include <zephyr/drivers/entropy.h>
+#include <string.h>
+#include "soc.h"
+#include "em_cmu.h"
 
 #if defined(CONFIG_CRYPTO_ACC_GECKO_TRNG)
 
@@ -31,24 +31,24 @@
 /**
  * Series 2 SoCs have different TRNG register definitions
  */
-#if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_2)	/* xG22 */
-#define S2_FIFO_LEVEL	(CRYPTOACC_RNGCTRL->FIFOLEVEL)
-#define S2_CTRL		(CRYPTOACC_RNGCTRL->RNGCTRL)
-#define S2_CTRL_ENABLE	(CRYPTOACC_RNGCTRL_ENABLE)
-#elif defined(_SILICON_LABS_32B_SERIES_2_CONFIG_7)	/* xG27 */
-#define S2_FIFO_LEVEL	(CRYPTOACC->NDRNG_FIFOLEVEL)
-#define S2_CTRL		(CRYPTOACC->NDRNG_CONTROL)
-#define S2_CTRL_ENABLE	(CRYPTOACC_NDRNG_CONTROL_ENABLE)
-#else	/* _SILICON_LABS_32B_SERIES_2_CONFIG_* */
+#if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_2) /* xG22 */
+#define S2_FIFO_LEVEL  (CRYPTOACC_RNGCTRL->FIFOLEVEL)
+#define S2_CTRL        (CRYPTOACC_RNGCTRL->RNGCTRL)
+#define S2_CTRL_ENABLE (CRYPTOACC_RNGCTRL_ENABLE)
+#elif defined(_SILICON_LABS_32B_SERIES_2_CONFIG_7) /* xG27 */
+#define S2_FIFO_LEVEL  (CRYPTOACC->NDRNG_FIFOLEVEL)
+#define S2_CTRL        (CRYPTOACC->NDRNG_CONTROL)
+#define S2_CTRL_ENABLE (CRYPTOACC_NDRNG_CONTROL_ENABLE)
+#else /* _SILICON_LABS_32B_SERIES_2_CONFIG_* */
 #error "Building for unsupported Series 2 SoC"
-#endif	/* _SILICON_LABS_32B_SERIES_2_CONFIG_* */
-#endif	/* CONFIG_CRYPTO_ACC_GECKO_TRNG */
+#endif /* _SILICON_LABS_32B_SERIES_2_CONFIG_* */
+#endif /* CONFIG_CRYPTO_ACC_GECKO_TRNG */
 
 static void entropy_gecko_trng_read(uint8_t *output, size_t len)
 {
 #ifndef CONFIG_CRYPTO_ACC_GECKO_TRNG
 	uint32_t tmp;
-	uint32_t *data = (uint32_t *) output;
+	uint32_t *data = (uint32_t *)output;
 
 	/* Read known good available data. */
 	while (len >= 4) {
@@ -60,15 +60,14 @@ static void entropy_gecko_trng_read(uint8_t *output, size_t len)
 		 * and FIFO data is available.
 		 */
 		tmp = TRNG0->FIFO;
-		memcpy(data, (const uint8_t *) &tmp, len);
+		memcpy(data, (const uint8_t *)&tmp, len);
 	}
 #else
-	memcpy(output, ((const uint8_t *) S2_FIFO_BASE), len);
+	memcpy(output, ((const uint8_t *)S2_FIFO_BASE), len);
 #endif
 }
 
-static int entropy_gecko_trng_get_entropy(const struct device *dev,
-					  uint8_t *buffer,
+static int entropy_gecko_trng_get_entropy(const struct device *dev, uint8_t *buffer,
 					  uint16_t length)
 {
 	size_t count = 0;
@@ -95,9 +94,8 @@ static int entropy_gecko_trng_get_entropy(const struct device *dev,
 	return 0;
 }
 
-static int entropy_gecko_trng_get_entropy_isr(const struct device *dev,
-					      uint8_t *buf,
-					      uint16_t len, uint32_t flags)
+static int entropy_gecko_trng_get_entropy_isr(const struct device *dev, uint8_t *buf, uint16_t len,
+					      uint32_t flags)
 {
 
 	if ((flags & ENTROPY_BUSYWAIT) == 0U) {
@@ -150,11 +148,7 @@ static int entropy_gecko_trng_init(const struct device *dev)
 
 static struct entropy_driver_api entropy_gecko_trng_api_funcs = {
 	.get_entropy = entropy_gecko_trng_get_entropy,
-	.get_entropy_isr = entropy_gecko_trng_get_entropy_isr
-};
+	.get_entropy_isr = entropy_gecko_trng_get_entropy_isr};
 
-DEVICE_DT_INST_DEFINE(0,
-			entropy_gecko_trng_init, NULL,
-			NULL, NULL,
-			PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
-			&entropy_gecko_trng_api_funcs);
+DEVICE_DT_INST_DEFINE(0, entropy_gecko_trng_init, NULL, NULL, NULL, PRE_KERNEL_1,
+		      CONFIG_ENTROPY_INIT_PRIORITY, &entropy_gecko_trng_api_funcs);

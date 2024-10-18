@@ -26,8 +26,8 @@ void entropy_native_seed(unsigned int seed, bool seed_random)
 		int err = getrandom(&buf, sizeof(buf), 0);
 
 		if (err != sizeof(buf)) {
-			nsi_print_error_and_exit("Could not get random number (%i, %s)\n",
-						 err, strerror(errno));
+			nsi_print_error_and_exit("Could not get random number (%i, %s)\n", err,
+						 strerror(errno));
 		}
 		srandom(buf);
 

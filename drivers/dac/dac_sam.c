@@ -25,11 +25,10 @@
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(dac_sam, CONFIG_DAC_LOG_LEVEL);
 
-BUILD_ASSERT(IS_ENABLED(CONFIG_SOC_SERIES_SAME70) ||
-	     IS_ENABLED(CONFIG_SOC_SERIES_SAMV71),
+BUILD_ASSERT(IS_ENABLED(CONFIG_SOC_SERIES_SAME70) || IS_ENABLED(CONFIG_SOC_SERIES_SAMV71),
 	     "Only SAME70, SAMV71 series devices are currently supported.");
 
-#define DAC_CHANNEL_NO  2
+#define DAC_CHANNEL_NO 2
 
 /* Device constant configuration parameters */
 struct dac_sam_dev_cfg {
@@ -95,8 +94,7 @@ static int dac_sam_channel_setup(const struct device *dev,
 	return 0;
 }
 
-static int dac_sam_write_value(const struct device *dev, uint8_t channel,
-			       uint32_t value)
+static int dac_sam_write_value(const struct device *dev, uint8_t channel, uint32_t value)
 {
 	struct dac_sam_dev_data *const dev_data = dev->data;
 	const struct dac_sam_dev_cfg *const dev_cfg = dev->config;
@@ -143,8 +141,7 @@ static int dac_sam_init(const struct device *dev)
 	}
 
 	/* Enable DAC clock in PMC */
-	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
-			       (clock_control_subsys_t)&dev_cfg->clock_cfg);
+	(void)clock_control_on(SAM_DT_PMC_CONTROLLER, (clock_control_subsys_t)&dev_cfg->clock_cfg);
 
 	retval = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (retval < 0) {
@@ -171,8 +168,8 @@ static const struct dac_driver_api dac_sam_driver_api = {
 
 static void dacc_irq_config(void)
 {
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), dac_sam_isr,
-		    DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), dac_sam_isr, DEVICE_DT_INST_GET(0),
+		    0);
 }
 
 PINCTRL_DT_INST_DEFINE(0);
@@ -188,6 +185,5 @@ static const struct dac_sam_dev_cfg dacc_sam_config = {
 
 static struct dac_sam_dev_data dacc_sam_data;
 
-DEVICE_DT_INST_DEFINE(0, dac_sam_init, NULL, &dacc_sam_data, &dacc_sam_config,
-		      POST_KERNEL, CONFIG_DAC_INIT_PRIORITY,
-		      &dac_sam_driver_api);
+DEVICE_DT_INST_DEFINE(0, dac_sam_init, NULL, &dacc_sam_data, &dacc_sam_config, POST_KERNEL,
+		      CONFIG_DAC_INIT_PRIORITY, &dac_sam_driver_api);

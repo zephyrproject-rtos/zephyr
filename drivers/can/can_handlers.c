@@ -23,8 +23,7 @@ static int z_vrfy_can_calc_timing(const struct device *dev, struct can_timing *r
 }
 #include <zephyr/syscalls/can_calc_timing_mrsh.c>
 
-static inline int z_vrfy_can_set_timing(const struct device *dev,
-					const struct can_timing *timing)
+static inline int z_vrfy_can_set_timing(const struct device *dev, const struct can_timing *timing)
 {
 	struct can_timing timing_copy;
 
@@ -35,8 +34,7 @@ static inline int z_vrfy_can_set_timing(const struct device *dev,
 }
 #include <zephyr/syscalls/can_set_timing_mrsh.c>
 
-static inline int z_vrfy_can_get_core_clock(const struct device *dev,
-					    uint32_t *rate)
+static inline int z_vrfy_can_get_core_clock(const struct device *dev, uint32_t *rate)
 {
 	K_OOPS(K_SYSCALL_DRIVER_CAN(dev, get_core_clock));
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(rate, sizeof(*rate)));
@@ -123,8 +121,7 @@ static inline int z_vrfy_can_set_timing_data(const struct device *dev,
 }
 #include <zephyr/syscalls/can_set_timing_data_mrsh.c>
 
-static inline int z_vrfy_can_set_bitrate_data(const struct device *dev,
-					      uint32_t bitrate_data)
+static inline int z_vrfy_can_set_bitrate_data(const struct device *dev, uint32_t bitrate_data)
 {
 	K_OOPS(K_SYSCALL_DRIVER_CAN(dev, set_timing_data));
 
@@ -200,11 +197,8 @@ static inline int z_vrfy_can_set_bitrate(const struct device *dev, uint32_t bitr
 }
 #include <zephyr/syscalls/can_set_bitrate_mrsh.c>
 
-static inline int z_vrfy_can_send(const struct device *dev,
-				  const struct can_frame *frame,
-				  k_timeout_t timeout,
-				  can_tx_callback_t callback,
-				  void *user_data)
+static inline int z_vrfy_can_send(const struct device *dev, const struct can_frame *frame,
+				  k_timeout_t timeout, can_tx_callback_t callback, void *user_data)
 {
 	struct can_frame frame_copy;
 
@@ -216,8 +210,7 @@ static inline int z_vrfy_can_send(const struct device *dev,
 }
 #include <zephyr/syscalls/can_send_mrsh.c>
 
-static inline int z_vrfy_can_add_rx_filter_msgq(const struct device *dev,
-						struct k_msgq *msgq,
+static inline int z_vrfy_can_add_rx_filter_msgq(const struct device *dev, struct k_msgq *msgq,
 						const struct can_filter *filter)
 {
 	struct can_filter filter_copy;

@@ -33,8 +33,7 @@ struct gpio_lmp90xxx_data {
 	struct gpio_driver_data common;
 };
 
-static int gpio_lmp90xxx_config(const struct device *dev,
-				gpio_pin_t pin, gpio_flags_t flags)
+static int gpio_lmp90xxx_config(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_lmp90xxx_config *config = dev->config;
 	int err = 0;
@@ -62,11 +61,9 @@ static int gpio_lmp90xxx_config(const struct device *dev,
 		break;
 	case GPIO_OUTPUT:
 		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
-			err = lmp90xxx_gpio_set_pin_value(config->parent, pin,
-							  true);
+			err = lmp90xxx_gpio_set_pin_value(config->parent, pin, true);
 		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
-			err = lmp90xxx_gpio_set_pin_value(config->parent, pin,
-							  false);
+			err = lmp90xxx_gpio_set_pin_value(config->parent, pin, false);
 		}
 
 		if (err) {
@@ -81,16 +78,14 @@ static int gpio_lmp90xxx_config(const struct device *dev,
 	return err;
 }
 
-static int gpio_lmp90xxx_port_get_raw(const struct device *dev,
-				      gpio_port_value_t *value)
+static int gpio_lmp90xxx_port_get_raw(const struct device *dev, gpio_port_value_t *value)
 {
 	const struct gpio_lmp90xxx_config *config = dev->config;
 
 	return lmp90xxx_gpio_port_get_raw(config->parent, value);
 }
 
-static int gpio_lmp90xxx_port_set_masked_raw(const struct device *dev,
-					     gpio_port_pins_t mask,
+static int gpio_lmp90xxx_port_set_masked_raw(const struct device *dev, gpio_port_pins_t mask,
 					     gpio_port_value_t value)
 {
 	const struct gpio_lmp90xxx_config *config = dev->config;
@@ -98,24 +93,21 @@ static int gpio_lmp90xxx_port_set_masked_raw(const struct device *dev,
 	return lmp90xxx_gpio_port_set_masked_raw(config->parent, mask, value);
 }
 
-static int gpio_lmp90xxx_port_set_bits_raw(const struct device *dev,
-					   gpio_port_pins_t pins)
+static int gpio_lmp90xxx_port_set_bits_raw(const struct device *dev, gpio_port_pins_t pins)
 {
 	const struct gpio_lmp90xxx_config *config = dev->config;
 
 	return lmp90xxx_gpio_port_set_bits_raw(config->parent, pins);
 }
 
-static int gpio_lmp90xxx_port_clear_bits_raw(const struct device *dev,
-					     gpio_port_pins_t pins)
+static int gpio_lmp90xxx_port_clear_bits_raw(const struct device *dev, gpio_port_pins_t pins)
 {
 	const struct gpio_lmp90xxx_config *config = dev->config;
 
 	return lmp90xxx_gpio_port_clear_bits_raw(config->parent, pins);
 }
 
-static int gpio_lmp90xxx_port_toggle_bits(const struct device *dev,
-					  gpio_port_pins_t pins)
+static int gpio_lmp90xxx_port_toggle_bits(const struct device *dev, gpio_port_pins_t pins)
 {
 	const struct gpio_lmp90xxx_config *config = dev->config;
 
@@ -127,8 +119,7 @@ static int gpio_lmp90xxx_init(const struct device *dev)
 	const struct gpio_lmp90xxx_config *config = dev->config;
 
 	if (!device_is_ready(config->parent)) {
-		LOG_ERR("parent LMP90xxx device '%s' not ready",
-			config->parent->name);
+		LOG_ERR("parent LMP90xxx device '%s' not ready", config->parent->name);
 		return -EINVAL;
 	}
 
@@ -144,28 +135,20 @@ static const struct gpio_driver_api gpio_lmp90xxx_api = {
 	.port_get_raw = gpio_lmp90xxx_port_get_raw,
 };
 
-BUILD_ASSERT(CONFIG_GPIO_LMP90XXX_INIT_PRIORITY >
-	     CONFIG_ADC_INIT_PRIORITY,
+BUILD_ASSERT(CONFIG_GPIO_LMP90XXX_INIT_PRIORITY > CONFIG_ADC_INIT_PRIORITY,
 	     "LMP90xxx GPIO driver must be initialized after LMP90xxx ADC "
 	     "driver");
 
-#define GPIO_LMP90XXX_DEVICE(id)					\
-	static const struct gpio_lmp90xxx_config gpio_lmp90xxx_##id##_cfg = {\
-		.common = {                                             \
-			.port_pin_mask =                                \
-				 GPIO_PORT_PIN_MASK_FROM_DT_INST(id)	\
-		},                                                      \
-		.parent = DEVICE_DT_GET(DT_INST_BUS(id)),		\
-	};								\
-									\
-	static struct gpio_lmp90xxx_data gpio_lmp90xxx_##id##_data;	\
-									\
-	DEVICE_DT_INST_DEFINE(id,					\
-			    gpio_lmp90xxx_init,				\
-			    NULL,					\
-			    &gpio_lmp90xxx_##id##_data,			\
-			    &gpio_lmp90xxx_##id##_cfg, POST_KERNEL,	\
-			    CONFIG_GPIO_LMP90XXX_INIT_PRIORITY,		\
-			    &gpio_lmp90xxx_api);
+#define GPIO_LMP90XXX_DEVICE(id)                                                                   \
+	static const struct gpio_lmp90xxx_config gpio_lmp90xxx_##id##_cfg = {                      \
+		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(id)},                  \
+		.parent = DEVICE_DT_GET(DT_INST_BUS(id)),                                          \
+	};                                                                                         \
+                                                                                                   \
+	static struct gpio_lmp90xxx_data gpio_lmp90xxx_##id##_data;                                \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(id, gpio_lmp90xxx_init, NULL, &gpio_lmp90xxx_##id##_data,            \
+			      &gpio_lmp90xxx_##id##_cfg, POST_KERNEL,                              \
+			      CONFIG_GPIO_LMP90XXX_INIT_PRIORITY, &gpio_lmp90xxx_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_LMP90XXX_DEVICE)

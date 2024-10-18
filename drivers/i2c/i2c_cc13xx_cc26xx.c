@@ -40,9 +40,8 @@ struct i2c_cc13xx_cc26xx_config {
 	const struct pinctrl_dev_config *pcfg;
 };
 
-static int i2c_cc13xx_cc26xx_transmit(const struct device *dev,
-				      const uint8_t *buf,
-				      uint32_t len, uint16_t addr)
+static int i2c_cc13xx_cc26xx_transmit(const struct device *dev, const uint8_t *buf, uint32_t len,
+				      uint16_t addr)
 {
 	const struct i2c_cc13xx_cc26xx_config *config = dev->config;
 	const uint32_t base = config->base;
@@ -110,8 +109,7 @@ send_error_stop:
 	return -EIO;
 }
 
-static int i2c_cc13xx_cc26xx_receive(const struct device *dev, uint8_t *buf,
-				     uint32_t len,
+static int i2c_cc13xx_cc26xx_receive(const struct device *dev, uint8_t *buf, uint32_t len,
 				     uint16_t addr)
 {
 	const struct i2c_cc13xx_cc26xx_config *config = dev->config;
@@ -184,8 +182,7 @@ recv_error_stop:
 	return -EIO;
 }
 
-static int i2c_cc13xx_cc26xx_transfer(const struct device *dev,
-				      struct i2c_msg *msgs,
+static int i2c_cc13xx_cc26xx_transfer(const struct device *dev, struct i2c_msg *msgs,
 				      uint8_t num_msgs, uint16_t addr)
 {
 	struct i2c_cc13xx_cc26xx_data *data = dev->data;
@@ -207,11 +204,9 @@ static int i2c_cc13xx_cc26xx_transfer(const struct device *dev,
 		}
 
 		if ((msgs[i].flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
-			ret = i2c_cc13xx_cc26xx_transmit(dev, msgs[i].buf,
-							 msgs[i].len, addr);
+			ret = i2c_cc13xx_cc26xx_transmit(dev, msgs[i].buf, msgs[i].len, addr);
 		} else {
-			ret = i2c_cc13xx_cc26xx_receive(dev, msgs[i].buf,
-							msgs[i].len, addr);
+			ret = i2c_cc13xx_cc26xx_receive(dev, msgs[i].buf, msgs[i].len, addr);
 		}
 
 		if (ret) {
@@ -227,8 +222,7 @@ static int i2c_cc13xx_cc26xx_transfer(const struct device *dev,
 }
 
 #define CPU_FREQ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
-static int i2c_cc13xx_cc26xx_configure(const struct device *dev,
-				       uint32_t dev_config)
+static int i2c_cc13xx_cc26xx_configure(const struct device *dev, uint32_t dev_config)
 {
 	const struct i2c_cc13xx_cc26xx_config *config = dev->config;
 	bool fast;
@@ -291,8 +285,7 @@ static void i2c_cc13xx_cc26xx_isr(const struct device *dev)
  *  to be reconfigured afterwards, unless Zephyr's device PM turned it off, in
  *  which case it'd be responsible for turning it back on and reconfigure it.
  */
-static int postNotifyFxn(unsigned int eventType, uintptr_t eventArg,
-	uintptr_t clientArg)
+static int postNotifyFxn(unsigned int eventType, uintptr_t eventArg, uintptr_t clientArg)
 {
 	const struct device *dev = (const struct device *)clientArg;
 	const struct i2c_cc13xx_cc26xx_config *config = dev->config;
@@ -306,8 +299,7 @@ static int postNotifyFxn(unsigned int eventType, uintptr_t eventArg,
 
 		if (Power_getDependencyCount(res_id) != 0) {
 			/* Reconfigure and enable I2C only if powered */
-			if (i2c_cc13xx_cc26xx_configure(dev,
-				data->dev_config) != 0) {
+			if (i2c_cc13xx_cc26xx_configure(dev, data->dev_config) != 0) {
 				ret = Power_NOTIFYERROR;
 			}
 
@@ -320,8 +312,7 @@ static int postNotifyFxn(unsigned int eventType, uintptr_t eventArg,
 #endif
 
 #ifdef CONFIG_PM_DEVICE
-static int i2c_cc13xx_cc26xx_pm_action(const struct device *dev,
-				       enum pm_device_action action)
+static int i2c_cc13xx_cc26xx_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct i2c_cc13xx_cc26xx_config *config = dev->config;
 	struct i2c_cc13xx_cc26xx_data *data = dev->data;
@@ -370,9 +361,8 @@ static int i2c_cc13xx_cc26xx_init(const struct device *dev)
 	Power_setDependency(PowerCC26XX_PERIPH_I2C0);
 
 	/* Register notification function */
-	Power_registerNotify(&data->postNotify,
-		PowerCC26XX_AWAKE_STANDBY,
-		postNotifyFxn, (uintptr_t)dev);
+	Power_registerNotify(&data->postNotify, PowerCC26XX_AWAKE_STANDBY, postNotifyFxn,
+			     (uintptr_t)dev);
 #else
 	/* Enable I2C power domain */
 	PRCMPowerDomainOn(PRCM_DOMAIN_SERIAL);
@@ -390,15 +380,13 @@ static int i2c_cc13xx_cc26xx_init(const struct device *dev)
 	}
 
 	/* I2C should not be accessed until power domain is on. */
-	while (PRCMPowerDomainsAllOn(PRCM_DOMAIN_SERIAL) !=
-	       PRCM_DOMAIN_POWER_ON) {
+	while (PRCMPowerDomainsAllOn(PRCM_DOMAIN_SERIAL) != PRCM_DOMAIN_POWER_ON) {
 		continue;
 	}
 #endif
 
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    i2c_cc13xx_cc26xx_isr, DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), i2c_cc13xx_cc26xx_isr,
+		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
 
 	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
@@ -437,14 +425,10 @@ static const struct i2c_cc13xx_cc26xx_config i2c_cc13xx_cc26xx_config = {
 static struct i2c_cc13xx_cc26xx_data i2c_cc13xx_cc26xx_data = {
 	.lock = Z_SEM_INITIALIZER(i2c_cc13xx_cc26xx_data.lock, 1, 1),
 	.complete = Z_SEM_INITIALIZER(i2c_cc13xx_cc26xx_data.complete, 0, 1),
-	.error = I2C_MASTER_ERR_NONE
-};
+	.error = I2C_MASTER_ERR_NONE};
 
 PM_DEVICE_DT_INST_DEFINE(0, i2c_cc13xx_cc26xx_pm_action);
 
-I2C_DEVICE_DT_INST_DEFINE(0,
-		i2c_cc13xx_cc26xx_init,
-		PM_DEVICE_DT_INST_GET(0),
-		&i2c_cc13xx_cc26xx_data, &i2c_cc13xx_cc26xx_config,
-		POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
-		&i2c_cc13xx_cc26xx_driver_api);
+I2C_DEVICE_DT_INST_DEFINE(0, i2c_cc13xx_cc26xx_init, PM_DEVICE_DT_INST_GET(0),
+			  &i2c_cc13xx_cc26xx_data, &i2c_cc13xx_cc26xx_config, POST_KERNEL,
+			  CONFIG_I2C_INIT_PRIORITY, &i2c_cc13xx_cc26xx_driver_api);

@@ -42,15 +42,11 @@ uint32_t sys_mm_drv_bank_page_unmapped(struct sys_mm_drv_bank *bank)
 	return bank->unmapped_pages;
 }
 
-void sys_mm_drv_bank_stats_get(struct sys_mm_drv_bank *bank,
-			       struct sys_memory_stats *stats)
+void sys_mm_drv_bank_stats_get(struct sys_mm_drv_bank *bank, struct sys_memory_stats *stats)
 {
-	stats->free_bytes          = bank->unmapped_pages *
-				     CONFIG_MM_DRV_PAGE_SIZE;
-	stats->allocated_bytes     = bank->mapped_pages *
-				     CONFIG_MM_DRV_PAGE_SIZE;
-	stats->max_allocated_bytes = bank->max_mapped_pages *
-				     CONFIG_MM_DRV_PAGE_SIZE;
+	stats->free_bytes = bank->unmapped_pages * CONFIG_MM_DRV_PAGE_SIZE;
+	stats->allocated_bytes = bank->mapped_pages * CONFIG_MM_DRV_PAGE_SIZE;
+	stats->max_allocated_bytes = bank->max_mapped_pages * CONFIG_MM_DRV_PAGE_SIZE;
 }
 
 void sys_mm_drv_bank_stats_reset_max(struct sys_mm_drv_bank *bank)

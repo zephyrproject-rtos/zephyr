@@ -89,7 +89,6 @@ static int can_mcan_exit_sleep_mode(const struct device *dev)
 		}
 	}
 
-
 unlock:
 	k_mutex_unlock(&data->lock);
 
@@ -278,7 +277,7 @@ int can_mcan_get_capabilities(const struct device *dev, can_mode_t *cap)
 	*cap = CAN_MODE_NORMAL | CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY;
 
 	if (IS_ENABLED(CONFIG_CAN_MANUAL_RECOVERY_MODE)) {
-		*cap |=  CAN_MODE_MANUAL_RECOVERY;
+		*cap |= CAN_MODE_MANUAL_RECOVERY;
 	}
 
 	if (IS_ENABLED(CONFIG_CAN_FD_MODE)) {
@@ -533,9 +532,8 @@ static void can_mcan_tx_event_handler(const struct device *dev)
 		event_idx = FIELD_GET(CAN_MCAN_TXEFS_EFGI, txefs);
 		err = can_mcan_read_mram(dev,
 					 config->mram_offsets[CAN_MCAN_MRAM_CFG_TX_EVENT_FIFO] +
-					 event_idx * sizeof(struct can_mcan_tx_event_fifo),
-					 &tx_event,
-					 sizeof(struct can_mcan_tx_event_fifo));
+						 event_idx * sizeof(struct can_mcan_tx_event_fifo),
+					 &tx_event, sizeof(struct can_mcan_tx_event_fifo));
 		if (err != 0) {
 			LOG_ERR("failed to read tx event fifo (err %d)", err);
 			return;
@@ -701,9 +699,9 @@ static void can_mcan_get_message(const struct device *dev, uint16_t fifo_offset,
 	while (FIELD_GET(CAN_MCAN_RXF0S_F0FL, fifo_status) != 0U) {
 		get_idx = FIELD_GET(CAN_MCAN_RXF0S_F0GI, fifo_status);
 
-		err = can_mcan_read_mram(dev, fifo_offset + get_idx *
-					 sizeof(struct can_mcan_rx_fifo) +
-					 offsetof(struct can_mcan_rx_fifo, hdr),
+		err = can_mcan_read_mram(dev,
+					 fifo_offset + get_idx * sizeof(struct can_mcan_rx_fifo) +
+						 offsetof(struct can_mcan_rx_fifo, hdr),
 					 &hdr, sizeof(struct can_mcan_rx_fifo_hdr));
 		if (err != 0) {
 			LOG_ERR("failed to read Rx FIFO header (err %d)", err);
@@ -744,11 +742,11 @@ static void can_mcan_get_message(const struct device *dev, uint16_t fifo_offset,
 		data_length = can_dlc_to_bytes(frame.dlc);
 		if (data_length <= sizeof(frame.data)) {
 			if ((frame.flags & CAN_FRAME_RTR) == 0U && data_length != 0U) {
-				err = can_mcan_read_mram(dev, fifo_offset + get_idx *
-							 sizeof(struct can_mcan_rx_fifo) +
-							 offsetof(struct can_mcan_rx_fifo, data_32),
-							 &frame.data_32,
-							 ROUND_UP(data_length, sizeof(uint32_t)));
+				err = can_mcan_read_mram(
+					dev,
+					fifo_offset + get_idx * sizeof(struct can_mcan_rx_fifo) +
+						offsetof(struct can_mcan_rx_fifo, data_32),
+					&frame.data_32, ROUND_UP(data_length, sizeof(uint32_t)));
 				if (err != 0) {
 					LOG_ERR("failed to read Rx FIFO data (err %d)", err);
 					return;
@@ -756,8 +754,8 @@ static void can_mcan_get_message(const struct device *dev, uint16_t fifo_offset,
 			}
 
 			if ((frame.flags & CAN_FRAME_IDE) != 0) {
-				LOG_DBG("Frame on filter %d, ID: 0x%x",
-					filt_idx + cbs->num_std, frame.id);
+				LOG_DBG("Frame on filter %d, ID: 0x%x", filt_idx + cbs->num_std,
+					frame.id);
 				__ASSERT_NO_MSG(filt_idx < cbs->num_ext);
 				cb = cbs->ext[filt_idx].function;
 				user_data = cbs->ext[filt_idx].user_data;
@@ -1005,9 +1003,10 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_tim
 		tx_hdr.std_id = frame->id & CAN_STD_ID_MASK;
 	}
 
-	err = can_mcan_write_mram(dev, config->mram_offsets[CAN_MCAN_MRAM_CFG_TX_BUFFER] + put_idx *
-				  sizeof(struct can_mcan_tx_buffer) +
-				  offsetof(struct can_mcan_tx_buffer, hdr),
+	err = can_mcan_write_mram(dev,
+				  config->mram_offsets[CAN_MCAN_MRAM_CFG_TX_BUFFER] +
+					  put_idx * sizeof(struct can_mcan_tx_buffer) +
+					  offsetof(struct can_mcan_tx_buffer, hdr),
 				  &tx_hdr, sizeof(struct can_mcan_tx_buffer_hdr));
 	if (err != 0) {
 		LOG_ERR("failed to write Tx Buffer header (err %d)", err);
@@ -1015,10 +1014,11 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_tim
 	}
 
 	if ((frame->flags & CAN_FRAME_RTR) == 0U && data_length != 0U) {
-		err = can_mcan_write_mram(dev, config->mram_offsets[CAN_MCAN_MRAM_CFG_TX_BUFFER] +
-					put_idx * sizeof(struct can_mcan_tx_buffer) +
-					offsetof(struct can_mcan_tx_buffer, data_32),
-					&frame->data_32, ROUND_UP(data_length, sizeof(uint32_t)));
+		err = can_mcan_write_mram(dev,
+					  config->mram_offsets[CAN_MCAN_MRAM_CFG_TX_BUFFER] +
+						  put_idx * sizeof(struct can_mcan_tx_buffer) +
+						  offsetof(struct can_mcan_tx_buffer, data_32),
+					  &frame->data_32, ROUND_UP(data_length, sizeof(uint32_t)));
 		if (err != 0) {
 			LOG_ERR("failed to write Tx Buffer data (err %d)", err);
 			goto err_unlock;
@@ -1069,10 +1069,7 @@ int can_mcan_add_rx_filter_std(const struct device *dev, can_rx_callback_t callb
 	const struct can_mcan_callbacks *cbs = config->callbacks;
 	struct can_mcan_data *data = dev->data;
 	struct can_mcan_std_filter filter_element = {
-		.sfid1 = filter->id,
-		.sfid2 = filter->mask,
-		.sft = CAN_MCAN_SFT_CLASSIC
-	};
+		.sfid1 = filter->id, .sfid2 = filter->mask, .sft = CAN_MCAN_SFT_CLASSIC};
 	int filter_id = -ENOSPC;
 	int err;
 	int i;
@@ -1095,8 +1092,9 @@ int can_mcan_add_rx_filter_std(const struct device *dev, can_rx_callback_t callb
 	/* TODO proper fifo balancing */
 	filter_element.sfec = filter_id & 0x01 ? CAN_MCAN_XFEC_FIFO1 : CAN_MCAN_XFEC_FIFO0;
 
-	err = can_mcan_write_mram(dev, config->mram_offsets[CAN_MCAN_MRAM_CFG_STD_FILTER] +
-				  filter_id * sizeof(struct can_mcan_std_filter),
+	err = can_mcan_write_mram(dev,
+				  config->mram_offsets[CAN_MCAN_MRAM_CFG_STD_FILTER] +
+					  filter_id * sizeof(struct can_mcan_std_filter),
 				  &filter_element, sizeof(filter_element));
 	if (err != 0) {
 		LOG_ERR("failed to write std filter element (err %d)", err);
@@ -1121,10 +1119,7 @@ static int can_mcan_add_rx_filter_ext(const struct device *dev, can_rx_callback_
 	const struct can_mcan_callbacks *cbs = config->callbacks;
 	struct can_mcan_data *data = dev->data;
 	struct can_mcan_ext_filter filter_element = {
-		.efid2 = filter->mask,
-		.efid1 = filter->id,
-		.eft = CAN_MCAN_EFT_CLASSIC
-	};
+		.efid2 = filter->mask, .efid1 = filter->id, .eft = CAN_MCAN_EFT_CLASSIC};
 	int filter_id = -ENOSPC;
 	int err;
 	int i;
@@ -1147,8 +1142,9 @@ static int can_mcan_add_rx_filter_ext(const struct device *dev, can_rx_callback_
 	/* TODO proper fifo balancing */
 	filter_element.efec = filter_id & 0x01 ? CAN_MCAN_XFEC_FIFO1 : CAN_MCAN_XFEC_FIFO0;
 
-	err = can_mcan_write_mram(dev, config->mram_offsets[CAN_MCAN_MRAM_CFG_EXT_FILTER] +
-				  filter_id * sizeof(struct can_mcan_ext_filter),
+	err = can_mcan_write_mram(dev,
+				  config->mram_offsets[CAN_MCAN_MRAM_CFG_EXT_FILTER] +
+					  filter_id * sizeof(struct can_mcan_ext_filter),
 				  &filter_element, sizeof(filter_element));
 	if (err != 0) {
 		LOG_ERR("failed to write std filter element (err %d)", err);
@@ -1215,9 +1211,10 @@ void can_mcan_remove_rx_filter(const struct device *dev, int filter_id)
 		cbs->ext[filter_id].function = NULL;
 		cbs->ext[filter_id].user_data = NULL;
 
-		err = can_mcan_clear_mram(dev, config->mram_offsets[CAN_MCAN_MRAM_CFG_EXT_FILTER] +
-					filter_id * sizeof(struct can_mcan_ext_filter),
-					sizeof(struct can_mcan_ext_filter));
+		err = can_mcan_clear_mram(dev,
+					  config->mram_offsets[CAN_MCAN_MRAM_CFG_EXT_FILTER] +
+						  filter_id * sizeof(struct can_mcan_ext_filter),
+					  sizeof(struct can_mcan_ext_filter));
 		if (err != 0) {
 			LOG_ERR("failed to clear ext filter element (err %d)", err);
 		}
@@ -1225,9 +1222,10 @@ void can_mcan_remove_rx_filter(const struct device *dev, int filter_id)
 		cbs->std[filter_id].function = NULL;
 		cbs->std[filter_id].user_data = NULL;
 
-		err = can_mcan_clear_mram(dev, config->mram_offsets[CAN_MCAN_MRAM_CFG_STD_FILTER] +
-					filter_id * sizeof(struct can_mcan_std_filter),
-					sizeof(struct can_mcan_std_filter));
+		err = can_mcan_clear_mram(dev,
+					  config->mram_offsets[CAN_MCAN_MRAM_CFG_STD_FILTER] +
+						  filter_id * sizeof(struct can_mcan_std_filter),
+					  sizeof(struct can_mcan_std_filter));
 		if (err != 0) {
 			LOG_ERR("failed to clear std filter element (err %d)", err);
 		}
@@ -1295,32 +1293,32 @@ int can_mcan_configure_mram(const struct device *dev, uintptr_t mrba, uintptr_t 
 	can_mcan_enable_configuration_change(dev);
 
 	addr = mram - mrba + config->mram_offsets[CAN_MCAN_MRAM_CFG_STD_FILTER];
-	reg = (addr & CAN_MCAN_SIDFC_FLSSA) | FIELD_PREP(CAN_MCAN_SIDFC_LSS,
-		config->mram_elements[CAN_MCAN_MRAM_CFG_STD_FILTER]);
+	reg = (addr & CAN_MCAN_SIDFC_FLSSA) |
+	      FIELD_PREP(CAN_MCAN_SIDFC_LSS, config->mram_elements[CAN_MCAN_MRAM_CFG_STD_FILTER]);
 	err = can_mcan_write_reg(dev, CAN_MCAN_SIDFC, reg);
 	if (err != 0) {
 		return err;
 	}
 
 	addr = mram - mrba + config->mram_offsets[CAN_MCAN_MRAM_CFG_EXT_FILTER];
-	reg = (addr & CAN_MCAN_XIDFC_FLESA) | FIELD_PREP(CAN_MCAN_XIDFC_LSS,
-		config->mram_elements[CAN_MCAN_MRAM_CFG_EXT_FILTER]);
+	reg = (addr & CAN_MCAN_XIDFC_FLESA) |
+	      FIELD_PREP(CAN_MCAN_XIDFC_LSS, config->mram_elements[CAN_MCAN_MRAM_CFG_EXT_FILTER]);
 	err = can_mcan_write_reg(dev, CAN_MCAN_XIDFC, reg);
 	if (err != 0) {
 		return err;
 	}
 
 	addr = mram - mrba + config->mram_offsets[CAN_MCAN_MRAM_CFG_RX_FIFO0];
-	reg = (addr & CAN_MCAN_RXF0C_F0SA) | FIELD_PREP(CAN_MCAN_RXF0C_F0S,
-		config->mram_elements[CAN_MCAN_MRAM_CFG_RX_FIFO0]);
+	reg = (addr & CAN_MCAN_RXF0C_F0SA) |
+	      FIELD_PREP(CAN_MCAN_RXF0C_F0S, config->mram_elements[CAN_MCAN_MRAM_CFG_RX_FIFO0]);
 	err = can_mcan_write_reg(dev, CAN_MCAN_RXF0C, reg);
 	if (err != 0) {
 		return err;
 	}
 
 	addr = mram - mrba + config->mram_offsets[CAN_MCAN_MRAM_CFG_RX_FIFO1];
-	reg = (addr & CAN_MCAN_RXF1C_F1SA) | FIELD_PREP(CAN_MCAN_RXF1C_F1S,
-		config->mram_elements[CAN_MCAN_MRAM_CFG_RX_FIFO1]);
+	reg = (addr & CAN_MCAN_RXF1C_F1SA) |
+	      FIELD_PREP(CAN_MCAN_RXF1C_F1S, config->mram_elements[CAN_MCAN_MRAM_CFG_RX_FIFO1]);
 	err = can_mcan_write_reg(dev, CAN_MCAN_RXF1C, reg);
 	if (err != 0) {
 		return err;
@@ -1334,16 +1332,18 @@ int can_mcan_configure_mram(const struct device *dev, uintptr_t mrba, uintptr_t 
 	}
 
 	addr = mram - mrba + config->mram_offsets[CAN_MCAN_MRAM_CFG_TX_EVENT_FIFO];
-	reg = (addr & CAN_MCAN_TXEFC_EFSA) | FIELD_PREP(CAN_MCAN_TXEFC_EFS,
-		config->mram_elements[CAN_MCAN_MRAM_CFG_TX_EVENT_FIFO]);
+	reg = (addr & CAN_MCAN_TXEFC_EFSA) |
+	      FIELD_PREP(CAN_MCAN_TXEFC_EFS,
+			 config->mram_elements[CAN_MCAN_MRAM_CFG_TX_EVENT_FIFO]);
 	err = can_mcan_write_reg(dev, CAN_MCAN_TXEFC, reg);
 	if (err != 0) {
 		return err;
 	}
 
 	addr = mram - mrba + config->mram_offsets[CAN_MCAN_MRAM_CFG_TX_BUFFER];
-	reg = (addr & CAN_MCAN_TXBC_TBSA) | FIELD_PREP(CAN_MCAN_TXBC_TFQS,
-		config->mram_elements[CAN_MCAN_MRAM_CFG_TX_BUFFER]) | CAN_MCAN_TXBC_TFQM;
+	reg = (addr & CAN_MCAN_TXBC_TBSA) |
+	      FIELD_PREP(CAN_MCAN_TXBC_TFQS, config->mram_elements[CAN_MCAN_MRAM_CFG_TX_BUFFER]) |
+	      CAN_MCAN_TXBC_TFQM;
 	err = can_mcan_write_reg(dev, CAN_MCAN_TXBC, reg);
 	if (err != 0) {
 		return err;
@@ -1371,9 +1371,9 @@ int can_mcan_init(const struct device *dev)
 	const struct can_mcan_config *config = dev->config;
 	const struct can_mcan_callbacks *cbs = config->callbacks;
 	struct can_mcan_data *data = dev->data;
-	struct can_timing timing = { 0 };
+	struct can_timing timing = {0};
 #ifdef CONFIG_CAN_FD_MODE
-	struct can_timing timing_data = { 0 };
+	struct can_timing timing_data = {0};
 #endif /* CONFIG_CAN_FD_MODE */
 	uint32_t reg;
 	int err;
@@ -1466,8 +1466,7 @@ int can_mcan_init(const struct device *dev)
 		return err;
 	}
 
-	err = can_calc_timing(dev, &timing, config->common.bitrate,
-			      config->common.sample_point);
+	err = can_calc_timing(dev, &timing, config->common.bitrate, config->common.sample_point);
 	if (err == -EINVAL) {
 		LOG_ERR("Can't find timing for given param");
 		return -EIO;

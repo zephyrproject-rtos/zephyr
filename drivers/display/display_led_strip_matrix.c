@@ -248,9 +248,9 @@ static int led_strip_matrix_init(const struct device *dev)
 		0);
 
 #define LED_STRIP_MATRIX_DEFINE(inst)                                                              \
-	LISTIFY(DT_INST_PROP_LEN(inst, led_strips), DECLARE_PIXELS, (;), inst);                    \
+	LISTIFY(DT_INST_PROP_LEN(inst, led_strips), DECLARE_PIXELS, (;), inst);                        \
 	static const struct led_strip_buffer strip_buffer##inst[] = {                              \
-		LISTIFY(DT_INST_PROP_LEN(inst, led_strips), STRIP_BUFFER_INITIALIZER, (,), inst),  \
+		LISTIFY(DT_INST_PROP_LEN(inst, led_strips), STRIP_BUFFER_INITIALIZER, (,), inst),      \
 	};                                                                                         \
 	static const struct led_strip_matrix_config dd_config_##inst = {                           \
 		.num_of_strips = DT_INST_PROP_LEN(inst, led_strips),                               \
@@ -274,7 +274,7 @@ static int led_strip_matrix_init(const struct device *dev)
 		     AMOUNT_OF_LEDS(inst));                                                        \
 	BUILD_ASSERT((DT_INST_PROP(inst, width) % DT_INST_PROP(inst, horizontal_modules)) == 0);   \
 	BUILD_ASSERT((DT_INST_PROP(inst, height) % DT_INST_PROP(inst, vertical_modules)) == 0);    \
-	LISTIFY(DT_INST_PROP_LEN(inst, led_strips), VALIDATE_CHAIN_LENGTH, (;), inst);             \
+	LISTIFY(DT_INST_PROP_LEN(inst, led_strips), VALIDATE_CHAIN_LENGTH, (;), inst);                 \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, led_strip_matrix_init, NULL, NULL, &dd_config_##inst,          \
 			      POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,                       \

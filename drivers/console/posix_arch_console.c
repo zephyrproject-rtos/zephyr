@@ -61,5 +61,4 @@ static int posix_arch_console_init(void)
 	return 0;
 }
 
-SYS_INIT(posix_arch_console_init, PRE_KERNEL_1,
-	CONFIG_POSIX_ARCH_CONSOLE_INIT_PRIORITY);
+SYS_INIT(posix_arch_console_init, PRE_KERNEL_1, CONFIG_POSIX_ARCH_CONSOLE_INIT_PRIORITY);

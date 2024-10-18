@@ -15,7 +15,7 @@
 #include "gpio_xlnx_ps_bank.h"
 
 #define LOG_MODULE_NAME gpio_xlnx_ps_bank
-#define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
+#define LOG_LEVEL       CONFIG_GPIO_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
@@ -43,9 +43,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
  *         -ENOTSUP if the pin configuration data contains a flag
  *         that is not supported by the controller.
  */
-static int gpio_xlnx_ps_pin_configure(const struct device *dev,
-				      gpio_pin_t pin,
-				      gpio_flags_t flags)
+static int gpio_xlnx_ps_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_xlnx_ps_bank_dev_cfg *dev_conf = dev->config;
 	uint32_t pin_mask = BIT(pin);
@@ -124,8 +122,7 @@ static int gpio_xlnx_ps_pin_configure(const struct device *dev,
  * @retval 0 if the read operation completed successfully,
  *         -EINVAL if the pointer to the output variable is NULL.
  */
-static int gpio_xlnx_ps_bank_get(const struct device *dev,
-				 gpio_port_value_t *value)
+static int gpio_xlnx_ps_bank_get(const struct device *dev, gpio_port_value_t *value)
 {
 	const struct gpio_xlnx_ps_bank_dev_cfg *dev_conf = dev->config;
 
@@ -155,8 +152,7 @@ static int gpio_xlnx_ps_bank_get(const struct device *dev,
  *
  * @retval Always 0.
  */
-static int gpio_xlnx_ps_bank_set_masked(const struct device *dev,
-					gpio_port_pins_t mask,
+static int gpio_xlnx_ps_bank_set_masked(const struct device *dev, gpio_port_pins_t mask,
 					gpio_port_value_t value)
 {
 	const struct gpio_xlnx_ps_bank_dev_cfg *dev_conf = dev->config;
@@ -184,8 +180,7 @@ static int gpio_xlnx_ps_bank_set_masked(const struct device *dev,
  *
  * @retval Always 0.
  */
-static int gpio_xlnx_ps_bank_set_bits(const struct device *dev,
-				      gpio_port_pins_t pins)
+static int gpio_xlnx_ps_bank_set_bits(const struct device *dev, gpio_port_pins_t pins)
 {
 	const struct gpio_xlnx_ps_bank_dev_cfg *dev_conf = dev->config;
 	uint32_t bank_data;
@@ -212,8 +207,7 @@ static int gpio_xlnx_ps_bank_set_bits(const struct device *dev,
  *
  * @retval Always 0.
  */
-static int gpio_xlnx_ps_bank_clear_bits(const struct device *dev,
-					gpio_port_pins_t pins)
+static int gpio_xlnx_ps_bank_clear_bits(const struct device *dev, gpio_port_pins_t pins)
 {
 	const struct gpio_xlnx_ps_bank_dev_cfg *dev_conf = dev->config;
 	uint32_t bank_data;
@@ -240,8 +234,7 @@ static int gpio_xlnx_ps_bank_clear_bits(const struct device *dev,
  *
  * @retval Always 0.
  */
-static int gpio_xlnx_ps_bank_toggle_bits(const struct device *dev,
-					 gpio_port_pins_t pins)
+static int gpio_xlnx_ps_bank_toggle_bits(const struct device *dev, gpio_port_pins_t pins)
 {
 	const struct gpio_xlnx_ps_bank_dev_cfg *dev_conf = dev->config;
 	uint32_t bank_data;
@@ -277,10 +270,8 @@ static int gpio_xlnx_ps_bank_toggle_bits(const struct device *dev,
  *         -ENOTSUP if the interrupt configuration data contains an
  *         invalid combination of configuration flags.
  */
-static int gpio_xlnx_ps_bank_pin_irq_configure(const struct device *dev,
-					       gpio_pin_t pin,
-					       enum gpio_int_mode mode,
-					       enum gpio_int_trig trig)
+static int gpio_xlnx_ps_bank_pin_irq_configure(const struct device *dev, gpio_pin_t pin,
+					       enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	const struct gpio_xlnx_ps_bank_dev_cfg *dev_conf = dev->config;
 	uint32_t pin_mask = BIT(pin);
@@ -384,8 +375,7 @@ static uint32_t gpio_xlnx_ps_bank_get_int_status(const struct device *dev)
  *         an interrupt is pending.
  */
 static int gpio_xlnx_ps_bank_manage_callback(const struct device *dev,
-					     struct gpio_callback *callback,
-					     bool set)
+					     struct gpio_callback *callback, bool set)
 {
 	struct gpio_xlnx_ps_bank_dev_data *dev_data = dev->data;
 
@@ -402,8 +392,7 @@ static const struct gpio_driver_api gpio_xlnx_ps_bank_apis = {
 	.port_toggle_bits = gpio_xlnx_ps_bank_toggle_bits,
 	.pin_interrupt_configure = gpio_xlnx_ps_bank_pin_irq_configure,
 	.manage_callback = gpio_xlnx_ps_bank_manage_callback,
-	.get_pending_int = gpio_xlnx_ps_bank_get_int_status
-};
+	.get_pending_int = gpio_xlnx_ps_bank_get_int_status};
 
 /**
  * @brief Initialize a MIO / EMIO GPIO bank sub-device
@@ -431,18 +420,19 @@ static int gpio_xlnx_ps_bank_init(const struct device *dev)
 }
 
 /* MIO / EMIO bank device definition macros */
-#define GPIO_XLNX_PS_BANK_INIT(idx)\
-static const struct gpio_xlnx_ps_bank_dev_cfg gpio_xlnx_ps_bank##idx##_cfg = {\
-	.common = {\
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),\
-	},\
-	.base_addr = DT_REG_ADDR(DT_PARENT(DT_INST(idx, DT_DRV_COMPAT))),\
-	.bank_index = idx,\
-};\
-static struct gpio_xlnx_ps_bank_dev_data gpio_xlnx_ps_bank##idx##_data;\
-DEVICE_DT_INST_DEFINE(idx, gpio_xlnx_ps_bank_init, NULL,\
-	&gpio_xlnx_ps_bank##idx##_data, &gpio_xlnx_ps_bank##idx##_cfg,\
-	PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, &gpio_xlnx_ps_bank_apis);
+#define GPIO_XLNX_PS_BANK_INIT(idx)                                                                \
+	static const struct gpio_xlnx_ps_bank_dev_cfg gpio_xlnx_ps_bank##idx##_cfg = {             \
+		.common =                                                                          \
+			{                                                                          \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),             \
+			},                                                                         \
+		.base_addr = DT_REG_ADDR(DT_PARENT(DT_INST(idx, DT_DRV_COMPAT))),                  \
+		.bank_index = idx,                                                                 \
+	};                                                                                         \
+	static struct gpio_xlnx_ps_bank_dev_data gpio_xlnx_ps_bank##idx##_data;                    \
+	DEVICE_DT_INST_DEFINE(idx, gpio_xlnx_ps_bank_init, NULL, &gpio_xlnx_ps_bank##idx##_data,   \
+			      &gpio_xlnx_ps_bank##idx##_cfg, PRE_KERNEL_1,                         \
+			      CONFIG_GPIO_INIT_PRIORITY, &gpio_xlnx_ps_bank_apis);
 
 /* Register & initialize all MIO / EMIO GPIO banks specified in the device tree. */
 DT_INST_FOREACH_STATUS_OKAY(GPIO_XLNX_PS_BANK_INIT);

@@ -113,15 +113,13 @@ static int unmap_locked(void *virt, size_t size, bool is_reset)
 	return ret;
 }
 
-int sys_mm_drv_simple_map_region(void *virt, uintptr_t phys,
-				 size_t size, uint32_t flags)
+int sys_mm_drv_simple_map_region(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
 	k_spinlock_key_t key;
 	int ret = 0;
 	size_t offset;
 
-	CHECKIF(!sys_mm_drv_is_addr_aligned(phys) ||
-		!sys_mm_drv_is_virt_addr_aligned(virt) ||
+	CHECKIF(!sys_mm_drv_is_addr_aligned(phys) || !sys_mm_drv_is_virt_addr_aligned(virt) ||
 		!sys_mm_drv_is_size_aligned(size)) {
 		ret = -EINVAL;
 		goto out;
@@ -155,11 +153,9 @@ out:
 	return ret;
 }
 
-__weak FUNC_ALIAS(sys_mm_drv_simple_map_region,
-		  sys_mm_drv_map_region, int);
+__weak FUNC_ALIAS(sys_mm_drv_simple_map_region, sys_mm_drv_map_region, int);
 
-int sys_mm_drv_simple_map_array(void *virt, uintptr_t *phys,
-				size_t cnt, uint32_t flags)
+int sys_mm_drv_simple_map_array(void *virt, uintptr_t *phys, size_t cnt, uint32_t flags)
 {
 	k_spinlock_key_t key;
 	int ret = 0;
@@ -210,8 +206,7 @@ int sys_mm_drv_simple_unmap_region(void *virt, size_t size)
 	k_spinlock_key_t key;
 	int ret = 0;
 
-	CHECKIF(!sys_mm_drv_is_virt_addr_aligned(virt) ||
-		!sys_mm_drv_is_size_aligned(size)) {
+	CHECKIF(!sys_mm_drv_is_virt_addr_aligned(virt) || !sys_mm_drv_is_size_aligned(size)) {
 		ret = -EINVAL;
 		goto out;
 	}
@@ -226,19 +221,16 @@ out:
 	return ret;
 }
 
-__weak FUNC_ALIAS(sys_mm_drv_simple_unmap_region,
-		  sys_mm_drv_unmap_region, int);
+__weak FUNC_ALIAS(sys_mm_drv_simple_unmap_region, sys_mm_drv_unmap_region, int);
 
-int sys_mm_drv_simple_remap_region(void *virt_old, size_t size,
-				   void *virt_new)
+int sys_mm_drv_simple_remap_region(void *virt_old, size_t size, void *virt_new)
 {
 	k_spinlock_key_t key;
 	size_t offset;
 	int ret = 0;
 
 	CHECKIF(!sys_mm_drv_is_virt_addr_aligned(virt_old) ||
-		!sys_mm_drv_is_virt_addr_aligned(virt_new) ||
-		!sys_mm_drv_is_size_aligned(size)) {
+		!sys_mm_drv_is_virt_addr_aligned(virt_new) || !sys_mm_drv_is_size_aligned(size)) {
 		ret = -EINVAL;
 		goto out;
 	}
@@ -323,11 +315,9 @@ out:
 	return ret;
 }
 
-__weak FUNC_ALIAS(sys_mm_drv_simple_remap_region,
-		  sys_mm_drv_remap_region, int);
+__weak FUNC_ALIAS(sys_mm_drv_simple_remap_region, sys_mm_drv_remap_region, int);
 
-int sys_mm_drv_simple_move_region(void *virt_old, size_t size,
-				  void *virt_new, uintptr_t phys_new)
+int sys_mm_drv_simple_move_region(void *virt_old, size_t size, void *virt_new, uintptr_t phys_new)
 {
 	k_spinlock_key_t key;
 	size_t offset;
@@ -335,8 +325,7 @@ int sys_mm_drv_simple_move_region(void *virt_old, size_t size,
 
 	CHECKIF(!sys_mm_drv_is_addr_aligned(phys_new) ||
 		!sys_mm_drv_is_virt_addr_aligned(virt_old) ||
-		!sys_mm_drv_is_virt_addr_aligned(virt_new) ||
-		!sys_mm_drv_is_size_aligned(size)) {
+		!sys_mm_drv_is_virt_addr_aligned(virt_new) || !sys_mm_drv_is_size_aligned(size)) {
 		ret = -EINVAL;
 		goto out;
 	}
@@ -407,12 +396,10 @@ out:
 	return ret;
 }
 
-__weak FUNC_ALIAS(sys_mm_drv_simple_move_region,
-		  sys_mm_drv_move_region, int);
+__weak FUNC_ALIAS(sys_mm_drv_simple_move_region, sys_mm_drv_move_region, int);
 
-int sys_mm_drv_simple_move_array(void *virt_old, size_t size,
-				 void *virt_new,
-				 uintptr_t *phys_new, size_t phys_cnt)
+int sys_mm_drv_simple_move_array(void *virt_old, size_t size, void *virt_new, uintptr_t *phys_new,
+				 size_t phys_cnt)
 {
 	k_spinlock_key_t key;
 	size_t idx, offset;
@@ -420,8 +407,7 @@ int sys_mm_drv_simple_move_array(void *virt_old, size_t size,
 
 	CHECKIF(!sys_mm_drv_is_addr_array_aligned(phys_new, phys_cnt) ||
 		!sys_mm_drv_is_virt_addr_aligned(virt_old) ||
-		!sys_mm_drv_is_virt_addr_aligned(virt_new) ||
-		!sys_mm_drv_is_size_aligned(size)) {
+		!sys_mm_drv_is_virt_addr_aligned(virt_new) || !sys_mm_drv_is_size_aligned(size)) {
 		ret = -EINVAL;
 		goto out;
 	}
@@ -468,8 +454,7 @@ int sys_mm_drv_simple_move_array(void *virt_old, size_t size,
 		 */
 		ret = sys_mm_drv_map_page(va_new, phys_new[idx], flags);
 		if (ret != 0) {
-			__ASSERT(false, "cannot map 0x%lx to %p\n",
-				 phys_new[idx], va_new);
+			__ASSERT(false, "cannot map 0x%lx to %p\n", phys_new[idx], va_new);
 
 			/*
 			 * Reset the already mapped virtual addresses.
@@ -498,8 +483,7 @@ out:
 	return ret;
 }
 
-__weak FUNC_ALIAS(sys_mm_drv_simple_move_array,
-		  sys_mm_drv_move_array, int);
+__weak FUNC_ALIAS(sys_mm_drv_simple_move_array, sys_mm_drv_move_array, int);
 
 int sys_mm_drv_simple_update_region_flags(void *virt, size_t size, uint32_t flags)
 {
@@ -507,8 +491,7 @@ int sys_mm_drv_simple_update_region_flags(void *virt, size_t size, uint32_t flag
 	int ret = 0;
 	size_t offset;
 
-	CHECKIF(!sys_mm_drv_is_virt_addr_aligned(virt) ||
-		!sys_mm_drv_is_size_aligned(size)) {
+	CHECKIF(!sys_mm_drv_is_virt_addr_aligned(virt) || !sys_mm_drv_is_size_aligned(size)) {
 		ret = -EINVAL;
 		goto out;
 	}
@@ -533,20 +516,16 @@ out:
 	return ret;
 }
 
-__weak FUNC_ALIAS(sys_mm_drv_simple_update_region_flags,
-		  sys_mm_drv_update_region_flags, int);
+__weak FUNC_ALIAS(sys_mm_drv_simple_update_region_flags, sys_mm_drv_update_region_flags, int);
 
 const struct sys_mm_drv_region *sys_mm_drv_simple_query_memory_regions(void)
 {
-	const static struct sys_mm_drv_region empty[] = {
-		{ }
-	};
+	const static struct sys_mm_drv_region empty[] = {{}};
 
 	return empty;
 }
 
-__weak FUNC_ALIAS(sys_mm_drv_simple_query_memory_regions,
-		  sys_mm_drv_query_memory_regions,
+__weak FUNC_ALIAS(sys_mm_drv_simple_query_memory_regions, sys_mm_drv_query_memory_regions,
 		  const struct sys_mm_drv_region *);
 
 void sys_mm_drv_simple_query_memory_regions_free(const struct sys_mm_drv_region *regions)
@@ -554,5 +533,5 @@ void sys_mm_drv_simple_query_memory_regions_free(const struct sys_mm_drv_region 
 	ARG_UNUSED(regions);
 }
 
-__weak FUNC_ALIAS(sys_mm_drv_simple_query_memory_regions_free,
-		  sys_mm_drv_query_memory_regions_free, void);
+__weak FUNC_ALIAS(sys_mm_drv_simple_query_memory_regions_free, sys_mm_drv_query_memory_regions_free,
+		  void);

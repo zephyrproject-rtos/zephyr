@@ -19,68 +19,68 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dma_mchp_xec, CONFIG_DMA_LOG_LEVEL);
 
-#define XEC_DMA_DEBUG				1
+#define XEC_DMA_DEBUG 1
 #ifdef XEC_DMA_DEBUG
 #include <string.h>
 #endif
 
-#define XEC_DMA_ABORT_WAIT_LOOPS		32
+#define XEC_DMA_ABORT_WAIT_LOOPS 32
 
-#define XEC_DMA_MAIN_REGS_SIZE			0x40
-#define XEC_DMA_CHAN_REGS_SIZE			0x40
+#define XEC_DMA_MAIN_REGS_SIZE 0x40
+#define XEC_DMA_CHAN_REGS_SIZE 0x40
 
-#define XEC_DMA_CHAN_REGS_ADDR(base, channel)	\
-	(((uintptr_t)(base) + (XEC_DMA_MAIN_REGS_SIZE)) + \
+#define XEC_DMA_CHAN_REGS_ADDR(base, channel)                                                      \
+	(((uintptr_t)(base) + (XEC_DMA_MAIN_REGS_SIZE)) +                                          \
 	 ((uintptr_t)(channel) * XEC_DMA_CHAN_REGS_SIZE))
 
 /* main control */
-#define XEC_DMA_MAIN_CTRL_REG_MSK		0x3u
-#define XEC_DMA_MAIN_CTRL_EN_POS		0
-#define XEC_DMA_MAIN_CTRL_SRST_POS		1
+#define XEC_DMA_MAIN_CTRL_REG_MSK  0x3u
+#define XEC_DMA_MAIN_CTRL_EN_POS   0
+#define XEC_DMA_MAIN_CTRL_SRST_POS 1
 
 /* channel activate register */
-#define XEC_DMA_CHAN_ACTV_EN_POS		0
+#define XEC_DMA_CHAN_ACTV_EN_POS              0
 /* channel control register */
-#define XEC_DMA_CHAN_CTRL_REG_MSK		0x037fff27u
-#define XEC_DMA_CHAN_CTRL_HWFL_RUN_POS		0
-#define XEC_DMA_CHAN_CTRL_REQ_POS		1
-#define XEC_DMA_CHAN_CTRL_DONE_POS		2
-#define XEC_DMA_CHAN_CTRL_BUSY_POS		5
-#define XEC_DMA_CHAN_CTRL_M2D_POS		8
-#define XEC_DMA_CHAN_CTRL_HWFL_DEV_POS		9
-#define XEC_DMA_CHAN_CTRL_HWFL_DEV_MSK		0xfe00u
-#define XEC_DMA_CHAN_CTRL_HWFL_DEV_MSK0		0x7fu
-#define XEC_DMA_CHAN_CTRL_INCR_MEM_POS		16
-#define XEC_DMA_CHAN_CTRL_INCR_DEV_POS		17
-#define XEC_DMA_CHAN_CTRL_LOCK_ARB_POS		18
-#define XEC_DMA_CHAN_CTRL_DIS_HWFL_POS		19
-#define XEC_DMA_CHAN_CTRL_XFR_UNIT_POS		20
-#define XEC_DMA_CHAN_CTRL_XFR_UNIT_MSK		0x700000u
-#define XEC_DMA_CHAN_CTRL_XFR_UNIT_MSK0		0x7u
-#define XEC_DMA_CHAN_CTRL_SWFL_GO_POS		24
-#define XEC_DMA_CHAN_CTRL_ABORT_POS		25
+#define XEC_DMA_CHAN_CTRL_REG_MSK             0x037fff27u
+#define XEC_DMA_CHAN_CTRL_HWFL_RUN_POS        0
+#define XEC_DMA_CHAN_CTRL_REQ_POS             1
+#define XEC_DMA_CHAN_CTRL_DONE_POS            2
+#define XEC_DMA_CHAN_CTRL_BUSY_POS            5
+#define XEC_DMA_CHAN_CTRL_M2D_POS             8
+#define XEC_DMA_CHAN_CTRL_HWFL_DEV_POS        9
+#define XEC_DMA_CHAN_CTRL_HWFL_DEV_MSK        0xfe00u
+#define XEC_DMA_CHAN_CTRL_HWFL_DEV_MSK0       0x7fu
+#define XEC_DMA_CHAN_CTRL_INCR_MEM_POS        16
+#define XEC_DMA_CHAN_CTRL_INCR_DEV_POS        17
+#define XEC_DMA_CHAN_CTRL_LOCK_ARB_POS        18
+#define XEC_DMA_CHAN_CTRL_DIS_HWFL_POS        19
+#define XEC_DMA_CHAN_CTRL_XFR_UNIT_POS        20
+#define XEC_DMA_CHAN_CTRL_XFR_UNIT_MSK        0x700000u
+#define XEC_DMA_CHAN_CTRL_XFR_UNIT_MSK0       0x7u
+#define XEC_DMA_CHAN_CTRL_SWFL_GO_POS         24
+#define XEC_DMA_CHAN_CTRL_ABORT_POS           25
 /* channel interrupt status and enable registers */
-#define XEC_DMA_CHAN_IES_REG_MSK		0xfu
-#define XEC_DMA_CHAN_IES_BERR_POS		0
-#define XEC_DMA_CHAN_IES_OVFL_ERR_POS		1
-#define XEC_DMA_CHAN_IES_DONE_POS		2
-#define XEC_DMA_CHAN_IES_DEV_TERM_POS		3
+#define XEC_DMA_CHAN_IES_REG_MSK              0xfu
+#define XEC_DMA_CHAN_IES_BERR_POS             0
+#define XEC_DMA_CHAN_IES_OVFL_ERR_POS         1
+#define XEC_DMA_CHAN_IES_DONE_POS             2
+#define XEC_DMA_CHAN_IES_DEV_TERM_POS         3
 /* channel fsm (RO) */
-#define XEC_DMA_CHAN_FSM_REG_MSK		0xffffu
-#define XEC_DMA_CHAN_FSM_ARB_STATE_POS		0
-#define XEC_DMA_CHAN_FSM_ARB_STATE_MSK		0xffu
-#define XEC_DMA_CHAN_FSM_CTRL_STATE_POS		8
-#define XEC_DMA_CHAN_FSM_CTRL_STATE_MSK		0xff00u
-#define XEC_DMA_CHAN_FSM_CTRL_STATE_IDLE	0
-#define XEC_DMA_CHAN_FSM_CTRL_STATE_ARB_REQ	0x100u
-#define XEC_DMA_CHAN_FSM_CTRL_STATE_RD_ACT	0x200u
-#define XEC_DMA_CHAN_FSM_CTRL_STATE_WR_ACT	0x300u
-#define XEC_DMA_CHAN_FSM_CTRL_STATE_WAIT_DONE	0x400u
+#define XEC_DMA_CHAN_FSM_REG_MSK              0xffffu
+#define XEC_DMA_CHAN_FSM_ARB_STATE_POS        0
+#define XEC_DMA_CHAN_FSM_ARB_STATE_MSK        0xffu
+#define XEC_DMA_CHAN_FSM_CTRL_STATE_POS       8
+#define XEC_DMA_CHAN_FSM_CTRL_STATE_MSK       0xff00u
+#define XEC_DMA_CHAN_FSM_CTRL_STATE_IDLE      0
+#define XEC_DMA_CHAN_FSM_CTRL_STATE_ARB_REQ   0x100u
+#define XEC_DMA_CHAN_FSM_CTRL_STATE_RD_ACT    0x200u
+#define XEC_DMA_CHAN_FSM_CTRL_STATE_WR_ACT    0x300u
+#define XEC_DMA_CHAN_FSM_CTRL_STATE_WAIT_DONE 0x400u
 
-#define XEC_DMA_HWFL_DEV_VAL(d)			\
+#define XEC_DMA_HWFL_DEV_VAL(d)                                                                    \
 	(((uint32_t)(d) & XEC_DMA_CHAN_CTRL_HWFL_DEV_MSK0) << XEC_DMA_CHAN_CTRL_HWFL_DEV_POS)
 
-#define XEC_DMA_CHAN_CTRL_UNIT_VAL(u)		\
+#define XEC_DMA_CHAN_CTRL_UNIT_VAL(u)                                                              \
 	(((uint32_t)(u) & XEC_DMA_CHAN_CTRL_XFR_UNIT_MSK0) << XEC_DMA_CHAN_CTRL_XFR_UNIT_POS)
 
 struct dma_xec_chan_regs {
@@ -102,10 +102,10 @@ struct dma_xec_regs {
 };
 
 struct dma_xec_irq_info {
-	uint8_t gid;	/* GIRQ id [8, 26] */
-	uint8_t gpos;	/* bit position in GIRQ [0, 31] */
-	uint8_t anid;	/* aggregated external NVIC input */
-	uint8_t dnid;	/* direct NVIC input */
+	uint8_t gid;  /* GIRQ id [8, 26] */
+	uint8_t gpos; /* bit position in GIRQ [0, 31] */
+	uint8_t anid; /* aggregated external NVIC input */
+	uint8_t dnid; /* direct NVIC input */
 };
 
 struct dma_xec_config {
@@ -138,8 +138,8 @@ struct dma_xec_channel {
 	uint32_t total_curr_xfr_len;
 };
 
-#define DMA_XEC_CHAN_FLAGS_CB_EOB_POS		0
-#define DMA_XEC_CHAN_FLAGS_CB_ERR_DIS_POS	1
+#define DMA_XEC_CHAN_FLAGS_CB_EOB_POS     0
+#define DMA_XEC_CHAN_FLAGS_CB_ERR_DIS_POS 1
 
 struct dma_xec_data {
 	struct dma_context ctx;
@@ -159,9 +159,8 @@ static inline struct dma_xec_chan_regs *xec_chan_regs(struct dma_xec_regs *regs,
 	return (struct dma_xec_chan_regs *)pregs;
 }
 
-static inline
-struct dma_xec_irq_info const *xec_chan_irq_info(const struct dma_xec_config *devcfg,
-						 uint32_t channel)
+static inline struct dma_xec_irq_info const *xec_chan_irq_info(const struct dma_xec_config *devcfg,
+							       uint32_t channel)
 {
 	return &devcfg->irq_info_list[channel];
 }
@@ -191,7 +190,7 @@ static int is_data_aligned(uint32_t src, uint32_t dest, uint32_t unitsz)
 	return 1;
 }
 
-static void xec_dma_chan_clr(struct dma_xec_chan_regs * const chregs,
+static void xec_dma_chan_clr(struct dma_xec_chan_regs *const chregs,
 			     const struct dma_xec_irq_info *info)
 {
 	chregs->actv = 0;
@@ -207,7 +206,7 @@ static void xec_dma_chan_clr(struct dma_xec_chan_regs * const chregs,
 
 static int is_dma_config_valid(const struct device *dev, struct dma_config *config)
 {
-	const struct dma_xec_config * const devcfg = dev->config;
+	const struct dma_xec_config *const devcfg = dev->config;
 
 	if (config->dma_slot >= (uint32_t)devcfg->dma_requests) {
 		LOG_ERR("XEC DMA config dma slot > exceeds number of request lines");
@@ -332,12 +331,11 @@ static int check_blocks(struct dma_xec_channel *chdata, struct dma_block_config 
  *	chan mem_addr_end = chan mem_addr + block_size
  *	chan dev_addr = source_address
  */
-static int dma_xec_configure(const struct device *dev, uint32_t channel,
-			     struct dma_config *config)
+static int dma_xec_configure(const struct device *dev, uint32_t channel, struct dma_config *config)
 {
-	const struct dma_xec_config * const devcfg = dev->config;
-	struct dma_xec_regs * const regs = devcfg->regs;
-	struct dma_xec_data * const data = dev->data;
+	const struct dma_xec_config *const devcfg = dev->config;
+	struct dma_xec_regs *const regs = devcfg->regs;
+	struct dma_xec_data *const data = dev->data;
 	uint32_t ctrl, mstart, mend, dstart, unit_size;
 	int ret;
 
@@ -350,7 +348,7 @@ static int dma_xec_configure(const struct device *dev, uint32_t channel,
 #endif
 
 	const struct dma_xec_irq_info *info = xec_chan_irq_info(devcfg, channel);
-	struct dma_xec_chan_regs * const chregs = xec_chan_regs(regs, channel);
+	struct dma_xec_chan_regs *const chregs = xec_chan_regs(regs, channel);
 	struct dma_xec_channel *chdata = &data->channels[channel];
 
 	chdata->total_req_xfr_len = 0;
@@ -448,12 +446,12 @@ static int dma_xec_configure(const struct device *dev, uint32_t channel,
  * We assume the caller will pass src, dst, and size that matches
  * the unit size from the previous configure call.
  */
-static int dma_xec_reload(const struct device *dev, uint32_t channel,
-			  uint32_t src, uint32_t dst, size_t size)
+static int dma_xec_reload(const struct device *dev, uint32_t channel, uint32_t src, uint32_t dst,
+			  size_t size)
 {
-	const struct dma_xec_config * const devcfg = dev->config;
-	struct dma_xec_data * const data = dev->data;
-	struct dma_xec_regs * const regs = devcfg->regs;
+	const struct dma_xec_config *const devcfg = dev->config;
+	struct dma_xec_data *const data = dev->data;
+	struct dma_xec_regs *const regs = devcfg->regs;
 	uint32_t ctrl;
 
 	if (channel >= (uint32_t)devcfg->dma_channels) {
@@ -467,8 +465,8 @@ static int dma_xec_reload(const struct device *dev, uint32_t channel,
 		return -EBUSY;
 	}
 
-	ctrl = chregs->control & ~(BIT(XEC_DMA_CHAN_CTRL_HWFL_RUN_POS)
-				   | BIT(XEC_DMA_CHAN_CTRL_SWFL_GO_POS));
+	ctrl = chregs->control &
+	       ~(BIT(XEC_DMA_CHAN_CTRL_HWFL_RUN_POS) | BIT(XEC_DMA_CHAN_CTRL_SWFL_GO_POS));
 	chregs->ienable = 0;
 	chregs->control = 0;
 	chregs->istatus = 0xffu;
@@ -495,8 +493,8 @@ static int dma_xec_reload(const struct device *dev, uint32_t channel,
 
 static int dma_xec_start(const struct device *dev, uint32_t channel)
 {
-	const struct dma_xec_config * const devcfg = dev->config;
-	struct dma_xec_regs * const regs = devcfg->regs;
+	const struct dma_xec_config *const devcfg = dev->config;
+	struct dma_xec_regs *const regs = devcfg->regs;
 	uint32_t chan_ctrl = 0U;
 
 	if (channel >= (uint32_t)devcfg->dma_channels) {
@@ -528,8 +526,8 @@ static int dma_xec_start(const struct device *dev, uint32_t channel)
 
 static int dma_xec_stop(const struct device *dev, uint32_t channel)
 {
-	const struct dma_xec_config * const devcfg = dev->config;
-	struct dma_xec_regs * const regs = devcfg->regs;
+	const struct dma_xec_config *const devcfg = dev->config;
+	struct dma_xec_regs *const regs = devcfg->regs;
 	int wait_loops = XEC_DMA_ABORT_WAIT_LOOPS;
 
 	if (channel >= (uint32_t)devcfg->dma_channels) {
@@ -576,12 +574,11 @@ static int dma_xec_stop(const struct device *dev, uint32_t channel)
  * read_position                - read position in a circular dma buffer
  *
  */
-static int dma_xec_get_status(const struct device *dev, uint32_t channel,
-			      struct dma_status *status)
+static int dma_xec_get_status(const struct device *dev, uint32_t channel, struct dma_status *status)
 {
-	const struct dma_xec_config * const devcfg = dev->config;
-	struct dma_xec_data * const data = dev->data;
-	struct dma_xec_regs * const regs = devcfg->regs;
+	const struct dma_xec_config *const devcfg = dev->config;
+	struct dma_xec_data *const data = dev->data;
+	struct dma_xec_regs *const regs = devcfg->regs;
 	uint32_t chan_ctrl = 0U;
 
 	if ((channel >= (uint32_t)devcfg->dma_channels) || (!status)) {
@@ -597,11 +594,11 @@ static int dma_xec_get_status(const struct device *dev, uint32_t channel,
 	if (chan_ctrl & BIT(XEC_DMA_CHAN_CTRL_BUSY_POS)) {
 		status->busy = true;
 		/* number of bytes remaining in channel */
-		status->pending_length = chan_data->total_req_xfr_len -
-						(chregs->mem_addr_end - chregs->mem_addr);
+		status->pending_length =
+			chan_data->total_req_xfr_len - (chregs->mem_addr_end - chregs->mem_addr);
 	} else {
-		status->pending_length = chan_data->total_req_xfr_len -
-						chan_data->total_curr_xfr_len;
+		status->pending_length =
+			chan_data->total_req_xfr_len - chan_data->total_curr_xfr_len;
 		status->busy = false;
 	}
 
@@ -631,11 +628,11 @@ int xec_dma_get_attribute(const struct device *dev, uint32_t type, uint32_t *val
 /* returns true if filter matched otherwise returns false */
 static bool dma_xec_chan_filter(const struct device *dev, int ch, void *filter_param)
 {
-	const struct dma_xec_config * const devcfg = dev->config;
+	const struct dma_xec_config *const devcfg = dev->config;
 	uint32_t filter = 0u;
 
 	if (!filter_param && devcfg->dma_channels) {
-		filter = GENMASK(devcfg->dma_channels-1u, 0);
+		filter = GENMASK(devcfg->dma_channels - 1u, 0);
 	} else {
 		filter = *((uint32_t *)filter_param);
 	}
@@ -661,11 +658,10 @@ static const struct dma_driver_api dma_xec_api = {
  * Clearing the DMA Main activate will kill DMA transactions resulting
  * possible data corruption and HW flow control device malfunctions.
  */
-static int dmac_xec_pm_action(const struct device *dev,
-			      enum pm_device_action action)
+static int dmac_xec_pm_action(const struct device *dev, enum pm_device_action action)
 {
-	const struct dma_xec_config * const devcfg = dev->config;
-	struct dma_xec_regs * const regs = devcfg->regs;
+	const struct dma_xec_config *const devcfg = dev->config;
+	struct dma_xec_regs *const regs = devcfg->regs;
 	int ret = 0;
 
 	switch (action) {
@@ -710,11 +706,11 @@ static void xec_dma_debug_clean(void)
 
 static void dma_xec_irq_handler(const struct device *dev, uint32_t channel)
 {
-	const struct dma_xec_config * const devcfg = dev->config;
+	const struct dma_xec_config *const devcfg = dev->config;
 	const struct dma_xec_irq_info *info = devcfg->irq_info_list;
-	struct dma_xec_data * const data = dev->data;
+	struct dma_xec_data *const data = dev->data;
 	struct dma_xec_channel *chan_data = &data->channels[channel];
-	struct dma_xec_chan_regs * const regs = xec_chan_regs(devcfg->regs, channel);
+	struct dma_xec_chan_regs *const regs = xec_chan_regs(devcfg->regs, channel);
 	uint32_t sts = regs->istatus;
 	int cb_status = 0;
 
@@ -737,7 +733,7 @@ static void dma_xec_irq_handler(const struct device *dev, uint32_t channel)
 	chan_data->isr_hw_status = sts;
 	chan_data->total_curr_xfr_len += (regs->mem_addr - chan_data->mstart);
 
-	if (sts & BIT(XEC_DMA_CHAN_IES_BERR_POS)) {/* Bus Error? */
+	if (sts & BIT(XEC_DMA_CHAN_IES_BERR_POS)) { /* Bus Error? */
 		if (!(chan_data->flags & BIT(DMA_XEC_CHAN_FLAGS_CB_ERR_DIS_POS))) {
 			cb_status = -EIO;
 		}
@@ -750,8 +746,8 @@ static void dma_xec_irq_handler(const struct device *dev, uint32_t channel)
 
 static int dma_xec_init(const struct device *dev)
 {
-	const struct dma_xec_config * const devcfg = dev->config;
-	struct dma_xec_regs * const regs = devcfg->regs;
+	const struct dma_xec_config *const devcfg = dev->config;
+	struct dma_xec_regs *const regs = devcfg->regs;
 
 	LOG_DBG("driver init");
 
@@ -768,75 +764,69 @@ static int dma_xec_init(const struct device *dev)
 }
 
 /* n = node-id, p = property, i = index */
-#define DMA_XEC_GID(n, p, i) MCHP_XEC_ECIA_GIRQ(DT_PROP_BY_IDX(n, p, i))
+#define DMA_XEC_GID(n, p, i)  MCHP_XEC_ECIA_GIRQ(DT_PROP_BY_IDX(n, p, i))
 #define DMA_XEC_GPOS(n, p, i) MCHP_XEC_ECIA_GIRQ_POS(DT_PROP_BY_IDX(n, p, i))
 
-#define DMA_XEC_GIRQ_INFO(n, p, i)						\
-	{									\
-		.gid = DMA_XEC_GID(n, p, i),					\
-		.gpos = DMA_XEC_GPOS(n, p, i),					\
-		.anid = MCHP_XEC_ECIA_NVIC_AGGR(DT_PROP_BY_IDX(n, p, i)),	\
-		.dnid = MCHP_XEC_ECIA_NVIC_DIRECT(DT_PROP_BY_IDX(n, p, i)),	\
+#define DMA_XEC_GIRQ_INFO(n, p, i)                                                                 \
+	{                                                                                          \
+		.gid = DMA_XEC_GID(n, p, i),                                                       \
+		.gpos = DMA_XEC_GPOS(n, p, i),                                                     \
+		.anid = MCHP_XEC_ECIA_NVIC_AGGR(DT_PROP_BY_IDX(n, p, i)),                          \
+		.dnid = MCHP_XEC_ECIA_NVIC_DIRECT(DT_PROP_BY_IDX(n, p, i)),                        \
 	},
 
 /* n = node-id, p = property, i = index(channel?) */
-#define DMA_XEC_IRQ_DECLARE(node_id, p, i)					\
-	static void dma_xec_chan_##i##_isr(const struct device *dev)		\
-	{									\
-		dma_xec_irq_handler(dev, i);					\
-	}									\
+#define DMA_XEC_IRQ_DECLARE(node_id, p, i)                                                         \
+	static void dma_xec_chan_##i##_isr(const struct device *dev)                               \
+	{                                                                                          \
+		dma_xec_irq_handler(dev, i);                                                       \
+	}
 
-#define DMA_XEC_IRQ_CONNECT_SUB(node_id, p, i)					\
-	IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, i, irq),				\
-		    DT_IRQ_BY_IDX(node_id, i, priority),			\
-		    dma_xec_chan_##i##_isr,					\
-		    DEVICE_DT_GET(node_id), 0);					\
-	irq_enable(DT_IRQ_BY_IDX(node_id, i, irq));				\
+#define DMA_XEC_IRQ_CONNECT_SUB(node_id, p, i)                                                     \
+	IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, i, irq), DT_IRQ_BY_IDX(node_id, i, priority),           \
+		    dma_xec_chan_##i##_isr, DEVICE_DT_GET(node_id), 0);                            \
+	irq_enable(DT_IRQ_BY_IDX(node_id, i, irq));                                                \
 	mchp_xec_ecia_enable(DMA_XEC_GID(node_id, p, i), DMA_XEC_GPOS(node_id, p, i));
 
 /* i = instance number of DMA controller */
-#define DMA_XEC_IRQ_CONNECT(inst)							\
-	DT_INST_FOREACH_PROP_ELEM(inst, girqs, DMA_XEC_IRQ_DECLARE)			\
-	void dma_xec_irq_connect##inst(void)						\
-	{										\
-		DT_INST_FOREACH_PROP_ELEM(inst, girqs, DMA_XEC_IRQ_CONNECT_SUB)		\
+#define DMA_XEC_IRQ_CONNECT(inst)                                                                  \
+	DT_INST_FOREACH_PROP_ELEM(inst, girqs, DMA_XEC_IRQ_DECLARE)                                \
+	void dma_xec_irq_connect##inst(void)                                                       \
+	{                                                                                          \
+		DT_INST_FOREACH_PROP_ELEM(inst, girqs, DMA_XEC_IRQ_CONNECT_SUB)                    \
 	}
 
-#define DMA_XEC_DEVICE(i)								\
-	BUILD_ASSERT(DT_INST_PROP(i, dma_channels) <= 16, "XEC DMA dma-channels > 16");	\
-	BUILD_ASSERT(DT_INST_PROP(i, dma_requests) <= 16, "XEC DMA dma-requests > 16");	\
-											\
-	static struct dma_xec_channel							\
-		dma_xec_ctrl##i##_chans[DT_INST_PROP(i, dma_channels)];			\
-	ATOMIC_DEFINE(dma_xec_atomic##i, DT_INST_PROP(i, dma_channels));		\
-											\
-	static struct dma_xec_data dma_xec_data##i = {					\
-		.ctx.magic = DMA_MAGIC,							\
-		.ctx.dma_channels = DT_INST_PROP(i, dma_channels),			\
-		.ctx.atomic = dma_xec_atomic##i,					\
-		.channels = dma_xec_ctrl##i##_chans,					\
-	};										\
-											\
-	DMA_XEC_IRQ_CONNECT(i)								\
-											\
-	static const struct dma_xec_irq_info dma_xec_irqi##i[] = {			\
-		DT_INST_FOREACH_PROP_ELEM(i, girqs, DMA_XEC_GIRQ_INFO)			\
-	};										\
-	static const struct dma_xec_config dma_xec_cfg##i = {				\
-		.regs = (struct dma_xec_regs *)DT_INST_REG_ADDR(i),			\
-		.dma_channels = DT_INST_PROP(i, dma_channels),				\
-		.dma_requests = DT_INST_PROP(i, dma_requests),				\
-		.pcr_idx = DT_INST_PROP_BY_IDX(i, pcrs, 0),				\
-		.pcr_pos = DT_INST_PROP_BY_IDX(i, pcrs, 1),				\
-		.irq_info_size = ARRAY_SIZE(dma_xec_irqi##i),				\
-		.irq_info_list = dma_xec_irqi##i,					\
-		.irq_connect = dma_xec_irq_connect##i,					\
-	};										\
-	PM_DEVICE_DT_DEFINE(i, dmac_xec_pm_action);					\
-	DEVICE_DT_INST_DEFINE(i, &dma_xec_init,						\
-		PM_DEVICE_DT_GET(i),							\
-		&dma_xec_data##i, &dma_xec_cfg##i,					\
-		PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,					\
-		&dma_xec_api);
+#define DMA_XEC_DEVICE(i)                                                                          \
+	BUILD_ASSERT(DT_INST_PROP(i, dma_channels) <= 16, "XEC DMA dma-channels > 16");            \
+	BUILD_ASSERT(DT_INST_PROP(i, dma_requests) <= 16, "XEC DMA dma-requests > 16");            \
+                                                                                                   \
+	static struct dma_xec_channel dma_xec_ctrl##i##_chans[DT_INST_PROP(i, dma_channels)];      \
+	ATOMIC_DEFINE(dma_xec_atomic##i, DT_INST_PROP(i, dma_channels));                           \
+                                                                                                   \
+	static struct dma_xec_data dma_xec_data##i = {                                             \
+		.ctx.magic = DMA_MAGIC,                                                            \
+		.ctx.dma_channels = DT_INST_PROP(i, dma_channels),                                 \
+		.ctx.atomic = dma_xec_atomic##i,                                                   \
+		.channels = dma_xec_ctrl##i##_chans,                                               \
+	};                                                                                         \
+                                                                                                   \
+	DMA_XEC_IRQ_CONNECT(i)                                                                     \
+                                                                                                   \
+	static const struct dma_xec_irq_info dma_xec_irqi##i[] = {                                 \
+		DT_INST_FOREACH_PROP_ELEM(i, girqs, DMA_XEC_GIRQ_INFO)};                           \
+	static const struct dma_xec_config dma_xec_cfg##i = {                                      \
+		.regs = (struct dma_xec_regs *)DT_INST_REG_ADDR(i),                                \
+		.dma_channels = DT_INST_PROP(i, dma_channels),                                     \
+		.dma_requests = DT_INST_PROP(i, dma_requests),                                     \
+		.pcr_idx = DT_INST_PROP_BY_IDX(i, pcrs, 0),                                        \
+		.pcr_pos = DT_INST_PROP_BY_IDX(i, pcrs, 1),                                        \
+		.irq_info_size = ARRAY_SIZE(dma_xec_irqi##i),                                      \
+		.irq_info_list = dma_xec_irqi##i,                                                  \
+		.irq_connect = dma_xec_irq_connect##i,                                             \
+	};                                                                                         \
+	PM_DEVICE_DT_DEFINE(i, dmac_xec_pm_action);                                                \
+	DEVICE_DT_INST_DEFINE(i, &dma_xec_init, PM_DEVICE_DT_GET(i), &dma_xec_data##i,             \
+			      &dma_xec_cfg##i, PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,             \
+			      &dma_xec_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DMA_XEC_DEVICE)

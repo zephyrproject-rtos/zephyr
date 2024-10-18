@@ -7,20 +7,16 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/internal/syscall_handler.h>
 
-static inline int z_vrfy_gpio_pin_configure(const struct device *port,
-					    gpio_pin_t pin,
+static inline int z_vrfy_gpio_pin_configure(const struct device *port, gpio_pin_t pin,
 					    gpio_flags_t flags)
 {
 	K_OOPS(K_SYSCALL_DRIVER_GPIO(port, pin_configure));
-	return z_impl_gpio_pin_configure((const struct device *)port,
-					  pin,
-					  flags);
+	return z_impl_gpio_pin_configure((const struct device *)port, pin, flags);
 }
 #include <zephyr/syscalls/gpio_pin_configure_mrsh.c>
 
 #ifdef CONFIG_GPIO_GET_CONFIG
-static inline int z_vrfy_gpio_pin_get_config(const struct device *port,
-					     gpio_pin_t pin,
+static inline int z_vrfy_gpio_pin_get_config(const struct device *port, gpio_pin_t pin,
 					     gpio_flags_t *flags)
 {
 	K_OOPS(K_SYSCALL_DRIVER_GPIO(port, pin_get_config));
@@ -31,61 +27,48 @@ static inline int z_vrfy_gpio_pin_get_config(const struct device *port,
 #include <zephyr/syscalls/gpio_pin_get_config_mrsh.c>
 #endif
 
-static inline int z_vrfy_gpio_port_get_raw(const struct device *port,
-					   gpio_port_value_t *value)
+static inline int z_vrfy_gpio_port_get_raw(const struct device *port, gpio_port_value_t *value)
 {
 	K_OOPS(K_SYSCALL_DRIVER_GPIO(port, port_get_raw));
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(value, sizeof(gpio_port_value_t)));
-	return z_impl_gpio_port_get_raw((const struct device *)port,
-					(gpio_port_value_t *)value);
+	return z_impl_gpio_port_get_raw((const struct device *)port, (gpio_port_value_t *)value);
 }
 #include <zephyr/syscalls/gpio_port_get_raw_mrsh.c>
 
-static inline int z_vrfy_gpio_port_set_masked_raw(const struct device *port,
-						  gpio_port_pins_t mask,
+static inline int z_vrfy_gpio_port_set_masked_raw(const struct device *port, gpio_port_pins_t mask,
 						  gpio_port_value_t value)
 {
 	K_OOPS(K_SYSCALL_DRIVER_GPIO(port, port_set_masked_raw));
-	return z_impl_gpio_port_set_masked_raw((const struct device *)port,
-						mask,
-						value);
+	return z_impl_gpio_port_set_masked_raw((const struct device *)port, mask, value);
 }
 #include <zephyr/syscalls/gpio_port_set_masked_raw_mrsh.c>
 
-static inline int z_vrfy_gpio_port_set_bits_raw(const struct device *port,
-						gpio_port_pins_t pins)
+static inline int z_vrfy_gpio_port_set_bits_raw(const struct device *port, gpio_port_pins_t pins)
 {
 	K_OOPS(K_SYSCALL_DRIVER_GPIO(port, port_set_bits_raw));
-	return z_impl_gpio_port_set_bits_raw((const struct device *)port,
-					     pins);
+	return z_impl_gpio_port_set_bits_raw((const struct device *)port, pins);
 }
 #include <zephyr/syscalls/gpio_port_set_bits_raw_mrsh.c>
 
-static inline int z_vrfy_gpio_port_clear_bits_raw(const struct device *port,
-						  gpio_port_pins_t pins)
+static inline int z_vrfy_gpio_port_clear_bits_raw(const struct device *port, gpio_port_pins_t pins)
 {
 	K_OOPS(K_SYSCALL_DRIVER_GPIO(port, port_clear_bits_raw));
-	return z_impl_gpio_port_clear_bits_raw((const struct device *)port,
-					       pins);
+	return z_impl_gpio_port_clear_bits_raw((const struct device *)port, pins);
 }
 #include <zephyr/syscalls/gpio_port_clear_bits_raw_mrsh.c>
 
-static inline int z_vrfy_gpio_port_toggle_bits(const struct device *port,
-					       gpio_port_pins_t pins)
+static inline int z_vrfy_gpio_port_toggle_bits(const struct device *port, gpio_port_pins_t pins)
 {
 	K_OOPS(K_SYSCALL_DRIVER_GPIO(port, port_toggle_bits));
 	return z_impl_gpio_port_toggle_bits((const struct device *)port, pins);
 }
 #include <zephyr/syscalls/gpio_port_toggle_bits_mrsh.c>
 
-static inline int z_vrfy_gpio_pin_interrupt_configure(const struct device *port,
-						      gpio_pin_t pin,
+static inline int z_vrfy_gpio_pin_interrupt_configure(const struct device *port, gpio_pin_t pin,
 						      gpio_flags_t flags)
 {
 	K_OOPS(K_SYSCALL_DRIVER_GPIO(port, pin_interrupt_configure));
-	return z_impl_gpio_pin_interrupt_configure((const struct device *)port,
-						   pin,
-						   flags);
+	return z_impl_gpio_pin_interrupt_configure((const struct device *)port, pin, flags);
 }
 #include <zephyr/syscalls/gpio_pin_interrupt_configure_mrsh.c>
 

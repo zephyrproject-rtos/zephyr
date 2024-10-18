@@ -33,17 +33,17 @@ LOG_MODULE_REGISTER(i2c_sam_twim);
 #include "i2c-priv.h"
 
 /** I2C bus speed [Hz] in Standard Mode   */
-#define BUS_SPEED_STANDARD_HZ         100000U
+#define BUS_SPEED_STANDARD_HZ 100000U
 /** I2C bus speed [Hz] in Fast Mode       */
-#define BUS_SPEED_FAST_HZ             400000U
+#define BUS_SPEED_FAST_HZ     400000U
 /** I2C bus speed [Hz] in Fast Plus Mode  */
-#define BUS_SPEED_PLUS_HZ            1000000U
+#define BUS_SPEED_PLUS_HZ     1000000U
 /** I2C bus speed [Hz] in High Speed Mode */
-#define BUS_SPEED_HIGH_HZ            3400000U
+#define BUS_SPEED_HIGH_HZ     3400000U
 /* Maximum value of Clock Divider (CKDIV) */
-#define CKDIV_MAX                          7
+#define CKDIV_MAX             7
 /* Maximum Frequency prescaled            */
-#define F_PRESCALED_MAX                  255
+#define F_PRESCALED_MAX       255
 
 /** Status Clear Register Mask for No Acknowledgements     */
 #define TWIM_SCR_NAK_MASK (TWIM_SCR_ANAK | TWIM_SCR_DNAK)
@@ -57,10 +57,9 @@ LOG_MODULE_REGISTER(i2c_sam_twim);
 #define TWIM_SR_STD_MASK  (TWIM_SR_ANAK | TWIM_SR_ARBLST)
 
 /** \internal Max value of NBYTES per transfer by hardware */
-#define TWIM_MAX_NBYTES_PER_XFER \
-	(TWIM_CMDR_NBYTES_Msk >> TWIM_CMDR_NBYTES_Pos)
+#define TWIM_MAX_NBYTES_PER_XFER (TWIM_CMDR_NBYTES_Msk >> TWIM_CMDR_NBYTES_Pos)
 
-#define TWIM_NCMDR_FREE_WAIT            2000
+#define TWIM_NCMDR_FREE_WAIT 2000
 
 /* Device constant configuration parameters */
 struct i2c_sam_twim_dev_cfg {
@@ -127,10 +126,8 @@ static int i2c_clk_set(const struct device *dev, uint32_t speed)
 	}
 
 	cwgr_reg_val = TWIM_HSCWGR_LOW(f_prescaled / 2) |
-		       TWIM_HSCWGR_HIGH(f_prescaled -
-					(f_prescaled / 2)) |
-		       TWIM_HSCWGR_EXP(cwgr_exp) |
-		       TWIM_HSCWGR_DATA(0) |
+		       TWIM_HSCWGR_HIGH(f_prescaled - (f_prescaled / 2)) |
+		       TWIM_HSCWGR_EXP(cwgr_exp) | TWIM_HSCWGR_DATA(0) |
 		       TWIM_HSCWGR_STASTO(f_prescaled);
 
 	/* This configuration should be applied after a TWIM_CR_SWRST
@@ -143,19 +140,17 @@ static int i2c_clk_set(const struct device *dev, uint32_t speed)
 	}
 
 	LOG_DBG("per_clk: %d, f_prescaled: %d, cwgr_exp: 0x%02x,"
-		"cwgr_reg_val: 0x%08x", per_clk, f_prescaled,
-		cwgr_exp, cwgr_reg_val);
+		"cwgr_reg_val: 0x%08x",
+		per_clk, f_prescaled, cwgr_exp, cwgr_reg_val);
 
 	/* Set clock and data slew rate */
-	twim->SRR = ((speed == BUS_SPEED_PLUS_HZ) ? TWIM_SRR_FILTER(2) :
-						    TWIM_SRR_FILTER(3)) |
-		     TWIM_SRR_CLSLEW(cfg->std_clk_slew_lim) |
-		     TWIM_SRR_CLDRIVEL(cfg->std_clk_strength_low) |
-		     TWIM_SRR_DASLEW(cfg->std_data_slew_lim) |
-		     TWIM_SRR_DADRIVEL(cfg->std_data_strength_low);
+	twim->SRR = ((speed == BUS_SPEED_PLUS_HZ) ? TWIM_SRR_FILTER(2) : TWIM_SRR_FILTER(3)) |
+		    TWIM_SRR_CLSLEW(cfg->std_clk_slew_lim) |
+		    TWIM_SRR_CLDRIVEL(cfg->std_clk_strength_low) |
+		    TWIM_SRR_DASLEW(cfg->std_data_slew_lim) |
+		    TWIM_SRR_DADRIVEL(cfg->std_data_strength_low);
 
-	twim->HSSRR = TWIM_HSSRR_FILTER(1) |
-		      TWIM_HSSRR_CLSLEW(cfg->hs_clk_slew_lim) |
+	twim->HSSRR = TWIM_HSSRR_FILTER(1) | TWIM_HSSRR_CLSLEW(cfg->hs_clk_slew_lim) |
 		      TWIM_HSSRR_CLDRIVEH(cfg->hs_clk_strength_high) |
 		      TWIM_HSSRR_CLDRIVEL(cfg->hs_clk_strength_low) |
 		      TWIM_HSSRR_DASLEW(cfg->hs_data_slew_lim) |
@@ -235,21 +230,16 @@ static void i2c_prepare_xfer_data(struct i2c_sam_twim_dev_data *data)
 	}
 }
 
-static uint32_t i2c_prepare_xfer_cmd(struct i2c_sam_twim_dev_data *data,
-				     uint32_t *cmdr_reg,
+static uint32_t i2c_prepare_xfer_cmd(struct i2c_sam_twim_dev_data *data, uint32_t *cmdr_reg,
 				     uint32_t next_msg_idx)
 {
 	struct i2c_msg *next_msg = &data->msgs[next_msg_idx];
 	bool next_msg_is_read;
 	uint32_t next_nb_remaining;
 
-	*cmdr_reg &= ~(TWIM_CMDR_NBYTES_Msk |
-		       TWIM_CMDR_ACKLAST |
-		       TWIM_CMDR_START |
-		       TWIM_CMDR_READ);
+	*cmdr_reg &= ~(TWIM_CMDR_NBYTES_Msk | TWIM_CMDR_ACKLAST | TWIM_CMDR_START | TWIM_CMDR_READ);
 
-	next_msg_is_read = ((next_msg->flags & I2C_MSG_RW_MASK) ==
-			    I2C_MSG_READ);
+	next_msg_is_read = ((next_msg->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ);
 
 	if (next_msg_is_read) {
 		*cmdr_reg |= TWIM_CMDR_READ;
@@ -294,8 +284,8 @@ static void i2c_start_xfer(const struct device *dev, uint16_t daddr)
 	twim->CR = TWIM_CR_MEN;
 	twim->CR = TWIM_CR_SWRST;
 	twim->CR = TWIM_CR_MDIS;
-	twim->IDR = ~0UL;		/* Clear the interrupt flags */
-	twim->SCR = ~0UL;		/* Clear the status flags */
+	twim->IDR = ~0UL; /* Clear the interrupt flags */
+	twim->SCR = ~0UL; /* Clear the status flags */
 
 	/* Reset indexes */
 	data->msg_cur_idx = 0;
@@ -310,20 +300,17 @@ static void i2c_start_xfer(const struct device *dev, uint16_t daddr)
 
 	LOG_DBG("Config first/next Transfer: msgs: %d", data->msg_max_idx);
 
-	cmdr_reg = TWIM_CMDR_SADR(daddr) |
-		   TWIM_CMDR_VALID;
+	cmdr_reg = TWIM_CMDR_SADR(daddr) | TWIM_CMDR_VALID;
 
 	if (I2C_SPEED_GET(msg->flags) >= I2C_SPEED_HIGH) {
-		cmdr_reg |= TWIM_CMDR_HS |
-			    TWIM_CMDR_HSMCODE(cfg->hs_master_code);
+		cmdr_reg |= TWIM_CMDR_HS | TWIM_CMDR_HSMCODE(cfg->hs_master_code);
 	}
 
 	if (msg->flags & I2C_MSG_ADDR_10_BITS) {
 		cmdr_reg |= TWIM_CMDR_TENBIT;
 	}
 
-	if ((msg->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ &&
-	    (msg->flags & I2C_MSG_ADDR_10_BITS)) {
+	if ((msg->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ && (msg->flags & I2C_MSG_ADDR_10_BITS)) {
 
 		/* Fill transfer command (empty)
 		 * It must be a write xfer with NBYTES = 0
@@ -354,15 +341,13 @@ static void i2c_start_xfer(const struct device *dev, uint16_t daddr)
 
 		/* Fill next transfer command */
 		if (data->next_is_valid) {
-			data_size = i2c_prepare_xfer_cmd(data, &cmdr_reg,
-							 data->msg_next_idx);
+			data_size = i2c_prepare_xfer_cmd(data, &cmdr_reg, data->msg_next_idx);
 			cmdr_reg |= TWIM_CMDR_NBYTES(data_size);
 			twim->NCMDR = cmdr_reg;
 		}
 	}
 
-	LOG_DBG("Start Transfer: CMDR: 0x%08x, NCMDR: 0x%08x",
-		twim->CMDR, twim->NCMDR);
+	LOG_DBG("Start Transfer: CMDR: 0x%08x, NCMDR: 0x%08x", twim->CMDR, twim->NCMDR);
 
 	/* Extract Read/Write start operation */
 	cmdr_reg = twim->CMDR;
@@ -371,13 +356,11 @@ static void i2c_start_xfer(const struct device *dev, uint16_t daddr)
 	/* Enable master transfer */
 	twim->CR = TWIM_CR_MEN;
 
-	twim->IER = TWIM_IER_STD_MASK |
-		    (cur_is_read ? TWIM_IER_RXRDY : TWIM_IER_TXRDY) |
-		    TWIM_IER_IDLE;
+	twim->IER =
+		TWIM_IER_STD_MASK | (cur_is_read ? TWIM_IER_RXRDY : TWIM_IER_TXRDY) | TWIM_IER_IDLE;
 }
 
-static void i2c_prepare_next(struct i2c_sam_twim_dev_data *data,
-			     Twim *const twim)
+static void i2c_prepare_next(struct i2c_sam_twim_dev_data *data, Twim *const twim)
 {
 	struct i2c_msg *msg = &data->msgs[data->msg_cur_idx];
 	volatile uint32_t ncmdr_wait;
@@ -499,9 +482,8 @@ xfer_comp:
 	k_sem_give(&data->sem);
 }
 
-static int i2c_sam_twim_transfer(const struct device *dev,
-				 struct i2c_msg *msgs,
-				 uint8_t num_msgs, uint16_t addr)
+static int i2c_sam_twim_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
+				 uint16_t addr)
 {
 	struct i2c_sam_twim_dev_data *data = dev->data;
 	int ret = 0;
@@ -521,10 +503,8 @@ static int i2c_sam_twim_transfer(const struct device *dev,
 	if (data->cur_sr & TWIM_SR_STD_MASK) {
 		ret = -EIO;
 
-		LOG_INF("MSG: %d, ANAK: %d, ARBLST: %d",
-			data->msg_cur_idx,
-			(data->cur_sr & TWIM_SR_ANAK) > 0,
-			(data->cur_sr & TWIM_SR_ARBLST) > 0);
+		LOG_INF("MSG: %d, ANAK: %d, ARBLST: %d", data->msg_cur_idx,
+			(data->cur_sr & TWIM_SR_ANAK) > 0, (data->cur_sr & TWIM_SR_ARBLST) > 0);
 	}
 
 	k_mutex_unlock(&data->bus_mutex);
@@ -560,8 +540,7 @@ static int i2c_sam_twim_initialize(const struct device *dev)
 	}
 
 	/* Enable TWIM clock in PM */
-	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
-			       (clock_control_subsys_t)&cfg->clock_cfg);
+	(void)clock_control_on(SAM_DT_PMC_CONTROLLER, (clock_control_subsys_t)&cfg->clock_cfg);
 
 	/* Enable the module*/
 	twim->CR = TWIM_CR_MEN;
@@ -596,43 +575,40 @@ static const struct i2c_driver_api i2c_sam_twim_driver_api = {
 #endif
 };
 
-#define I2C_TWIM_SAM_SLEW_REGS(n)					\
-	.std_clk_slew_lim = DT_INST_ENUM_IDX(n, std_clk_slew_lim),	\
-	.std_clk_strength_low = DT_INST_ENUM_IDX(n, std_clk_strength_low),\
-	.std_data_slew_lim = DT_INST_ENUM_IDX(n, std_data_slew_lim),	\
-	.std_data_strength_low = DT_INST_ENUM_IDX(n, std_data_strength_low),\
-	.hs_clk_slew_lim = DT_INST_ENUM_IDX(n, hs_clk_slew_lim),	\
-	.hs_clk_strength_high = DT_INST_ENUM_IDX(n, hs_clk_strength_high),\
-	.hs_clk_strength_low = DT_INST_ENUM_IDX(n, hs_clk_strength_low),\
-	.hs_data_slew_lim = DT_INST_ENUM_IDX(n, hs_data_slew_lim),	\
+#define I2C_TWIM_SAM_SLEW_REGS(n)                                                                  \
+	.std_clk_slew_lim = DT_INST_ENUM_IDX(n, std_clk_slew_lim),                                 \
+	.std_clk_strength_low = DT_INST_ENUM_IDX(n, std_clk_strength_low),                         \
+	.std_data_slew_lim = DT_INST_ENUM_IDX(n, std_data_slew_lim),                               \
+	.std_data_strength_low = DT_INST_ENUM_IDX(n, std_data_strength_low),                       \
+	.hs_clk_slew_lim = DT_INST_ENUM_IDX(n, hs_clk_slew_lim),                                   \
+	.hs_clk_strength_high = DT_INST_ENUM_IDX(n, hs_clk_strength_high),                         \
+	.hs_clk_strength_low = DT_INST_ENUM_IDX(n, hs_clk_strength_low),                           \
+	.hs_data_slew_lim = DT_INST_ENUM_IDX(n, hs_data_slew_lim),                                 \
 	.hs_data_strength_low = DT_INST_ENUM_IDX(n, hs_data_strength_low)
 
-#define I2C_TWIM_SAM_INIT(n)						\
-	PINCTRL_DT_INST_DEFINE(n);					\
-	static void i2c##n##_sam_irq_config(void)			\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
-			    i2c_sam_twim_isr,				\
-			    DEVICE_DT_INST_GET(n), 0);			\
-	}								\
-									\
-	static const struct i2c_sam_twim_dev_cfg i2c##n##_sam_config = {\
-		.regs = (Twim *)DT_INST_REG_ADDR(n),			\
-		.irq_config = i2c##n##_sam_irq_config,			\
-		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),		\
-		.irq_id = DT_INST_IRQN(n),				\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
-		.bitrate = DT_INST_PROP(n, clock_frequency),		\
-		.hs_master_code = DT_INST_ENUM_IDX(n, hs_master_code),	\
-		I2C_TWIM_SAM_SLEW_REGS(n),				\
-	};								\
-									\
-	static struct i2c_sam_twim_dev_data i2c##n##_sam_data;		\
-									\
-	I2C_DEVICE_DT_INST_DEFINE(n, i2c_sam_twim_initialize,		\
-			    NULL,					\
-			    &i2c##n##_sam_data, &i2c##n##_sam_config,	\
-			    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,	\
-			    &i2c_sam_twim_driver_api)
+#define I2C_TWIM_SAM_INIT(n)                                                                       \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	static void i2c##n##_sam_irq_config(void)                                                  \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), i2c_sam_twim_isr,           \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+	}                                                                                          \
+                                                                                                   \
+	static const struct i2c_sam_twim_dev_cfg i2c##n##_sam_config = {                           \
+		.regs = (Twim *)DT_INST_REG_ADDR(n),                                               \
+		.irq_config = i2c##n##_sam_irq_config,                                             \
+		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),                                         \
+		.irq_id = DT_INST_IRQN(n),                                                         \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
+		.hs_master_code = DT_INST_ENUM_IDX(n, hs_master_code),                             \
+		I2C_TWIM_SAM_SLEW_REGS(n),                                                         \
+	};                                                                                         \
+                                                                                                   \
+	static struct i2c_sam_twim_dev_data i2c##n##_sam_data;                                     \
+                                                                                                   \
+	I2C_DEVICE_DT_INST_DEFINE(n, i2c_sam_twim_initialize, NULL, &i2c##n##_sam_data,            \
+				  &i2c##n##_sam_config, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,     \
+				  &i2c_sam_twim_driver_api)
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_TWIM_SAM_INIT);

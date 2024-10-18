@@ -22,21 +22,21 @@ BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 32768,
 	     "ITE RTOS timer HW frequency is fixed at 32768Hz");
 
 /* Event timer configurations */
-#define EVENT_TIMER		EXT_TIMER_3
-#define EVENT_TIMER_IRQ		DT_INST_IRQ_BY_IDX(0, 0, irq)
-#define EVENT_TIMER_FLAG	DT_INST_IRQ_BY_IDX(0, 0, flags)
+#define EVENT_TIMER         EXT_TIMER_3
+#define EVENT_TIMER_IRQ     DT_INST_IRQ_BY_IDX(0, 0, irq)
+#define EVENT_TIMER_FLAG    DT_INST_IRQ_BY_IDX(0, 0, flags)
 /* Event timer max count is 512 sec (base on clock source 32768Hz) */
-#define EVENT_TIMER_MAX_CNT	0x00FFFFFFUL
+#define EVENT_TIMER_MAX_CNT 0x00FFFFFFUL
 
 /* Busy wait low timer configurations */
-#define BUSY_WAIT_L_TIMER	EXT_TIMER_5
-#define BUSY_WAIT_L_TIMER_IRQ	DT_INST_IRQ_BY_IDX(0, 2, irq)
-#define BUSY_WAIT_L_TIMER_FLAG	DT_INST_IRQ_BY_IDX(0, 2, flags)
+#define BUSY_WAIT_L_TIMER      EXT_TIMER_5
+#define BUSY_WAIT_L_TIMER_IRQ  DT_INST_IRQ_BY_IDX(0, 2, irq)
+#define BUSY_WAIT_L_TIMER_FLAG DT_INST_IRQ_BY_IDX(0, 2, flags)
 
 /* Busy wait high timer configurations */
-#define BUSY_WAIT_H_TIMER	EXT_TIMER_6
-#define BUSY_WAIT_H_TIMER_IRQ	DT_INST_IRQ_BY_IDX(0, 3, irq)
-#define BUSY_WAIT_H_TIMER_FLAG	DT_INST_IRQ_BY_IDX(0, 3, flags)
+#define BUSY_WAIT_H_TIMER         EXT_TIMER_6
+#define BUSY_WAIT_H_TIMER_IRQ     DT_INST_IRQ_BY_IDX(0, 3, irq)
+#define BUSY_WAIT_H_TIMER_FLAG    DT_INST_IRQ_BY_IDX(0, 3, flags)
 /* Busy wait high timer max count is 71.58min (base on clock source 1MHz) */
 #define BUSY_WAIT_TIMER_H_MAX_CNT 0xFFFFFFFFUL
 
@@ -52,13 +52,13 @@ const int32_t z_sys_timer_irq_for_test = DT_IRQ_BY_IDX(DT_NODELABEL(timer), 5, i
  *       timer1 is used for printing watchdog warning message. So now we use
  *       timer2 only one shot to wake up chip and change pll.
  */
-#define WDT_BASE		DT_REG_ADDR(DT_NODELABEL(twd0))
-#define WDT_REG			(struct wdt_it8xxx2_regs *)(WDT_BASE)
-#define ONE_SHOT_TIMER_IRQ	DT_IRQ_BY_IDX(DT_NODELABEL(twd0), 1, irq)
-#define ONE_SHOT_TIMER_FLAG	DT_IRQ_BY_IDX(DT_NODELABEL(twd0), 1, flags)
+#define WDT_BASE            DT_REG_ADDR(DT_NODELABEL(twd0))
+#define WDT_REG             (struct wdt_it8xxx2_regs *)(WDT_BASE)
+#define ONE_SHOT_TIMER_IRQ  DT_IRQ_BY_IDX(DT_NODELABEL(twd0), 1, irq)
+#define ONE_SHOT_TIMER_FLAG DT_IRQ_BY_IDX(DT_NODELABEL(twd0), 1, flags)
 #endif
 
-#define MS_TO_COUNT(hz, ms)	((hz) * (ms) / 1000)
+#define MS_TO_COUNT(hz, ms)         ((hz) * (ms) / 1000)
 /*
  * One system (kernel) tick is as how much HW timer counts
  *
@@ -67,11 +67,9 @@ const int32_t z_sys_timer_irq_for_test = DT_IRQ_BY_IDX(DT_NODELABEL(timer), 5, i
  *       unit between HW count and system tick. If clock source frequency is
  *       different, then we should define another to transform.
  */
-#define HW_CNT_PER_SYS_TICK	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC \
-				 / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define HW_CNT_PER_SYS_TICK         (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 /* Event timer max count is as how much system (kernel) tick */
-#define EVEN_TIMER_MAX_CNT_SYS_TICK	(EVENT_TIMER_MAX_CNT \
-					/ HW_CNT_PER_SYS_TICK)
+#define EVEN_TIMER_MAX_CNT_SYS_TICK (EVENT_TIMER_MAX_CNT / HW_CNT_PER_SYS_TICK)
 
 static struct k_spinlock lock;
 /* Last HW count that we called sys_clock_announce() */
@@ -122,8 +120,7 @@ void timer_5ms_one_shot(void)
 	uint32_t hw_cnt;
 
 	/* Initialize interrupt handler of one shot timer */
-	IRQ_CONNECT(ONE_SHOT_TIMER_IRQ, 0, timer_5ms_one_shot_isr, NULL,
-			ONE_SHOT_TIMER_FLAG);
+	IRQ_CONNECT(ONE_SHOT_TIMER_IRQ, 0, timer_5ms_one_shot_isr, NULL, ONE_SHOT_TIMER_FLAG);
 
 	/* Set rising edge triggered of one shot timer */
 	ite_intc_irq_polarity_set(ONE_SHOT_TIMER_IRQ, ONE_SHOT_TIMER_FLAG);
@@ -138,7 +135,7 @@ void timer_5ms_one_shot(void)
 	 * Set count of one shot timer,
 	 * and after write ET2CNTLLR timer will start
 	 */
-	hw_cnt = MS_TO_COUNT(32768, 5/*ms*/);
+	hw_cnt = MS_TO_COUNT(32768, 5 /*ms*/);
 	timer2_reg->ET2CNTLH2R = (uint8_t)((hw_cnt >> 16) & 0xff);
 	timer2_reg->ET2CNTLHR = (uint8_t)((hw_cnt >> 8) & 0xff);
 	timer2_reg->ET2CNTLLR = (uint8_t)(hw_cnt & 0xff);
@@ -176,8 +173,7 @@ void arch_busy_wait(uint32_t usec_to_wait)
 static void evt_timer_enable(void)
 {
 	/* Enable and re-start event timer */
-	IT8XXX2_EXT_CTRLX(EVENT_TIMER) |= (IT8XXX2_EXT_ETXEN |
-					   IT8XXX2_EXT_ETXRST);
+	IT8XXX2_EXT_CTRLX(EVENT_TIMER) |= (IT8XXX2_EXT_ETXEN | IT8XXX2_EXT_ETXRST);
 }
 
 static void evt_timer_isr(const void *unused)
@@ -194,8 +190,8 @@ static void evt_timer_isr(const void *unused)
 		 * Get free run observer count from last time announced and
 		 * transform unit to system tick
 		 */
-		uint32_t dticks = (~(IT8XXX2_EXT_CNTOX(FREE_RUN_TIMER)) -
-				   last_announced_hw_cnt) / HW_CNT_PER_SYS_TICK;
+		uint32_t dticks = (~(IT8XXX2_EXT_CNTOX(FREE_RUN_TIMER))-last_announced_hw_cnt) /
+				  HW_CNT_PER_SYS_TICK;
 		last_announced_hw_cnt += (dticks * HW_CNT_PER_SYS_TICK);
 		last_ticks += dticks;
 		last_elapsed = 0;
@@ -300,8 +296,8 @@ uint32_t sys_clock_elapsed(void)
 	 * Get free run observer count from last time announced and transform
 	 * unit to system tick
 	 */
-	uint32_t dticks = (~(IT8XXX2_EXT_CNTOX(FREE_RUN_TIMER)) -
-				last_announced_hw_cnt) / HW_CNT_PER_SYS_TICK;
+	uint32_t dticks =
+		(~(IT8XXX2_EXT_CNTOX(FREE_RUN_TIMER))-last_announced_hw_cnt) / HW_CNT_PER_SYS_TICK;
 	last_elapsed = dticks;
 
 	k_spin_unlock(&lock, key);
@@ -325,15 +321,10 @@ uint32_t sys_clock_cycle_get_32(void)
 	return dticks;
 }
 
-static int timer_init(enum ext_timer_idx ext_timer,
-			enum ext_clk_src_sel clock_source_sel,
-			enum ext_timer_raw_cnt raw,
-			uint32_t ms,
-			enum ext_timer_init first_time_enable,
-			uint32_t irq_num,
-			uint32_t irq_flag,
-			enum ext_timer_int with_int,
-			enum ext_timer_start start)
+static int timer_init(enum ext_timer_idx ext_timer, enum ext_clk_src_sel clock_source_sel,
+		      enum ext_timer_raw_cnt raw, uint32_t ms,
+		      enum ext_timer_init first_time_enable, uint32_t irq_num, uint32_t irq_flag,
+		      enum ext_timer_int with_int, enum ext_timer_start start)
 {
 	uint32_t hw_cnt;
 
@@ -361,8 +352,7 @@ static int timer_init(enum ext_timer_idx ext_timer,
 
 	if (first_time_enable == EXT_FIRST_TIME_ENABLE) {
 		/* Enable and re-start external timer x */
-		IT8XXX2_EXT_CTRLX(ext_timer) |= (IT8XXX2_EXT_ETXEN |
-						 IT8XXX2_EXT_ETXRST);
+		IT8XXX2_EXT_CTRLX(ext_timer) |= (IT8XXX2_EXT_ETXEN | IT8XXX2_EXT_ETXRST);
 		/* Disable external timer x */
 		IT8XXX2_EXT_CTRLX(ext_timer) &= ~IT8XXX2_EXT_ETXEN;
 	}
@@ -383,8 +373,7 @@ static int timer_init(enum ext_timer_idx ext_timer,
 	IT8XXX2_EXT_CTRLX(ext_timer) &= ~IT8XXX2_EXT_ETXEN;
 	if (start == EXT_START_TIMER) {
 		/* Enable and re-start external timer x */
-		IT8XXX2_EXT_CTRLX(ext_timer) |= (IT8XXX2_EXT_ETXEN |
-						 IT8XXX2_EXT_ETXRST);
+		IT8XXX2_EXT_CTRLX(ext_timer) |= (IT8XXX2_EXT_ETXEN | IT8XXX2_EXT_ETXRST);
 	}
 
 	if (with_int == EXT_WITH_TIMER_INT) {
@@ -400,14 +389,11 @@ static int sys_clock_driver_init(void)
 {
 	int ret;
 
-
 	/* Enable 32-bit free run timer overflow interrupt */
-	IRQ_CONNECT(FREE_RUN_TIMER_IRQ, 0, free_run_timer_overflow_isr, NULL,
-		    FREE_RUN_TIMER_FLAG);
+	IRQ_CONNECT(FREE_RUN_TIMER_IRQ, 0, free_run_timer_overflow_isr, NULL, FREE_RUN_TIMER_FLAG);
 	/* Set 32-bit timer4 for free run*/
-	ret = timer_init(FREE_RUN_TIMER, EXT_PSR_32P768K, EXT_RAW_CNT,
-			 FREE_RUN_TIMER_MAX_CNT, EXT_FIRST_TIME_ENABLE,
-			 FREE_RUN_TIMER_IRQ, FREE_RUN_TIMER_FLAG,
+	ret = timer_init(FREE_RUN_TIMER, EXT_PSR_32P768K, EXT_RAW_CNT, FREE_RUN_TIMER_MAX_CNT,
+			 EXT_FIRST_TIME_ENABLE, FREE_RUN_TIMER_IRQ, FREE_RUN_TIMER_FLAG,
 			 EXT_WITH_TIMER_INT, EXT_START_TIMER);
 	if (ret < 0) {
 		LOG_ERR("Init free run timer failed");
@@ -417,16 +403,14 @@ static int sys_clock_driver_init(void)
 	/* Set 24-bit timer3 for timeout event */
 	IRQ_CONNECT(EVENT_TIMER_IRQ, 0, evt_timer_isr, NULL, EVENT_TIMER_FLAG);
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		ret = timer_init(EVENT_TIMER, EXT_PSR_32P768K, EXT_RAW_CNT,
-				 EVENT_TIMER_MAX_CNT, EXT_FIRST_TIME_ENABLE,
-				 EVENT_TIMER_IRQ, EVENT_TIMER_FLAG,
+		ret = timer_init(EVENT_TIMER, EXT_PSR_32P768K, EXT_RAW_CNT, EVENT_TIMER_MAX_CNT,
+				 EXT_FIRST_TIME_ENABLE, EVENT_TIMER_IRQ, EVENT_TIMER_FLAG,
 				 EXT_WITH_TIMER_INT, EXT_NOT_START_TIMER);
 	} else {
 		/* Start a event timer in one system tick */
 		ret = timer_init(EVENT_TIMER, EXT_PSR_32P768K, EXT_RAW_CNT,
-				 MAX((1 * HW_CNT_PER_SYS_TICK), 1),
-				 EXT_FIRST_TIME_ENABLE, EVENT_TIMER_IRQ,
-				 EVENT_TIMER_FLAG, EXT_WITH_TIMER_INT,
+				 MAX((1 * HW_CNT_PER_SYS_TICK), 1), EXT_FIRST_TIME_ENABLE,
+				 EVENT_TIMER_IRQ, EVENT_TIMER_FLAG, EXT_WITH_TIMER_INT,
 				 EXT_START_TIMER);
 	}
 	if (ret < 0) {
@@ -457,10 +441,9 @@ static int sys_clock_driver_init(void)
 		 *       time period from COUNT_1US to overflow is
 		 *       (1 / EC_FREQ) * (EC_FREQ / USEC_PER_SEC) = 1us.
 		 */
-		ret = timer_init(BUSY_WAIT_L_TIMER, EXT_PSR_EC_CLK, EXT_RAW_CNT,
-				 COUNT_1US, EXT_FIRST_TIME_ENABLE,
-				 BUSY_WAIT_L_TIMER_IRQ, BUSY_WAIT_L_TIMER_FLAG,
-				 EXT_WITHOUT_TIMER_INT, EXT_START_TIMER);
+		ret = timer_init(BUSY_WAIT_L_TIMER, EXT_PSR_EC_CLK, EXT_RAW_CNT, COUNT_1US,
+				 EXT_FIRST_TIME_ENABLE, BUSY_WAIT_L_TIMER_IRQ,
+				 BUSY_WAIT_L_TIMER_FLAG, EXT_WITHOUT_TIMER_INT, EXT_START_TIMER);
 		if (ret < 0) {
 			LOG_ERR("Init busy wait low timer failed");
 			return ret;
@@ -470,5 +453,4 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

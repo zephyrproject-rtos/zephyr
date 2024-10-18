@@ -34,10 +34,10 @@ static int fl_to_nsos_mid_(int flags, bool strict)
 {
 	int flags_mid = 0;
 
-#define TO_NSOS_MID(_flag)				\
-	if (flags & (_flag)) {				\
-		flags &= ~(_flag);			\
-		flags_mid |= NSOS_MID_ ## _flag;	\
+#define TO_NSOS_MID(_flag)                                                                         \
+	if (flags & (_flag)) {                                                                     \
+		flags &= ~(_flag);                                                                 \
+		flags_mid |= NSOS_MID_##_flag;                                                     \
 	}
 
 	TO_NSOS_MID(O_RDONLY);
@@ -71,10 +71,10 @@ int fl_from_nsos_mid(int flags_mid)
 {
 	int flags = 0;
 
-#define FROM_NSOS_MID(_flag)				\
-	if (flags_mid & NSOS_MID_ ## _flag) {		\
-		flags_mid &= ~NSOS_MID_ ## _flag;	\
-		flags |= _flag;				\
+#define FROM_NSOS_MID(_flag)                                                                       \
+	if (flags_mid & NSOS_MID_##_flag) {                                                        \
+		flags_mid &= ~NSOS_MID_##_flag;                                                    \
+		flags |= _flag;                                                                    \
 	}
 
 	FROM_NSOS_MID(O_RDONLY);

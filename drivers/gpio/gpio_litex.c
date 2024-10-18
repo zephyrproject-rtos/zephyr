@@ -20,12 +20,12 @@
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
-#define SUPPORTED_FLAGS (GPIO_INPUT | GPIO_OUTPUT | \
-			GPIO_OUTPUT_INIT_LOW | GPIO_OUTPUT_INIT_HIGH | \
-			GPIO_ACTIVE_LOW | GPIO_ACTIVE_HIGH)
+#define SUPPORTED_FLAGS                                                                            \
+	(GPIO_INPUT | GPIO_OUTPUT | GPIO_OUTPUT_INIT_LOW | GPIO_OUTPUT_INIT_HIGH |                 \
+	 GPIO_ACTIVE_LOW | GPIO_ACTIVE_HIGH)
 
-#define GPIO_LOW        0
-#define GPIO_HIGH       1
+#define GPIO_LOW  0
+#define GPIO_HIGH 1
 
 #define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
 LOG_MODULE_REGISTER(gpio_litex);
@@ -54,13 +54,11 @@ struct gpio_litex_data {
 
 /* Helper macros for GPIO */
 
-#define DEV_GPIO_CFG(dev)						\
-	((const struct gpio_litex_cfg *)(dev)->config)
+#define DEV_GPIO_CFG(dev) ((const struct gpio_litex_cfg *)(dev)->config)
 
 /* Helper functions for bit / port access */
 
-static inline void set_bit(const struct gpio_litex_cfg *config,
-			   uint32_t bit, bool val)
+static inline void set_bit(const struct gpio_litex_cfg *config, uint32_t bit, bool val)
 {
 	int regv, new_regv;
 
@@ -90,8 +88,7 @@ static inline uint32_t get_port(const struct gpio_litex_cfg *config)
 
 /* Driver functions */
 
-static int gpio_litex_configure(const struct device *dev,
-				gpio_pin_t pin, gpio_flags_t flags)
+static int gpio_litex_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_litex_cfg *gpio_config = DEV_GPIO_CFG(dev);
 
@@ -128,8 +125,7 @@ static int gpio_litex_configure(const struct device *dev,
 	return 0;
 }
 
-static int gpio_litex_port_get_raw(const struct device *dev,
-				   gpio_port_value_t *value)
+static int gpio_litex_port_get_raw(const struct device *dev, gpio_port_value_t *value)
 {
 	const struct gpio_litex_cfg *gpio_config = DEV_GPIO_CFG(dev);
 
@@ -137,8 +133,7 @@ static int gpio_litex_port_get_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_litex_port_set_masked_raw(const struct device *dev,
-					  gpio_port_pins_t mask,
+static int gpio_litex_port_set_masked_raw(const struct device *dev, gpio_port_pins_t mask,
 					  gpio_port_value_t value)
 {
 	const struct gpio_litex_cfg *gpio_config = DEV_GPIO_CFG(dev);
@@ -151,8 +146,7 @@ static int gpio_litex_port_set_masked_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_litex_port_set_bits_raw(const struct device *dev,
-					gpio_port_pins_t pins)
+static int gpio_litex_port_set_bits_raw(const struct device *dev, gpio_port_pins_t pins)
 {
 	const struct gpio_litex_cfg *gpio_config = DEV_GPIO_CFG(dev);
 	uint32_t port_val;
@@ -164,8 +158,7 @@ static int gpio_litex_port_set_bits_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_litex_port_clear_bits_raw(const struct device *dev,
-					  gpio_port_pins_t pins)
+static int gpio_litex_port_clear_bits_raw(const struct device *dev, gpio_port_pins_t pins)
 {
 	const struct gpio_litex_cfg *gpio_config = DEV_GPIO_CFG(dev);
 	uint32_t port_val;
@@ -177,8 +170,7 @@ static int gpio_litex_port_clear_bits_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_litex_port_toggle_bits(const struct device *dev,
-				       gpio_port_pins_t pins)
+static int gpio_litex_port_toggle_bits(const struct device *dev, gpio_port_pins_t pins)
 {
 	const struct gpio_litex_cfg *gpio_config = DEV_GPIO_CFG(dev);
 	uint32_t port_val;
@@ -195,30 +187,25 @@ static void gpio_litex_irq_handler(const struct device *dev)
 	const struct gpio_litex_cfg *gpio_config = DEV_GPIO_CFG(dev);
 	struct gpio_litex_data *data = dev->data;
 
-	uint8_t int_status =
-		litex_read(gpio_config->ev_pending_addr, gpio_config->reg_size);
-	uint8_t ev_enabled =
-		litex_read(gpio_config->ev_enable_addr, gpio_config->reg_size);
+	uint8_t int_status = litex_read(gpio_config->ev_pending_addr, gpio_config->reg_size);
+	uint8_t ev_enabled = litex_read(gpio_config->ev_enable_addr, gpio_config->reg_size);
 
 	/* clear events */
-	litex_write(gpio_config->ev_pending_addr, gpio_config->reg_size,
-			int_status);
+	litex_write(gpio_config->ev_pending_addr, gpio_config->reg_size, int_status);
 
 	gpio_fire_callbacks(&data->cb, dev, int_status & ev_enabled);
 }
 
-static int gpio_litex_manage_callback(const struct device *dev,
-				      struct gpio_callback *callback, bool set)
+static int gpio_litex_manage_callback(const struct device *dev, struct gpio_callback *callback,
+				      bool set)
 {
 	struct gpio_litex_data *data = dev->data;
 
 	return gpio_manage_callback(&data->cb, callback, set);
 }
 
-static int gpio_litex_pin_interrupt_configure(const struct device *dev,
-					      gpio_pin_t pin,
-					      enum gpio_int_mode mode,
-					      enum gpio_int_trig trig)
+static int gpio_litex_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
+					      enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	const struct gpio_litex_cfg *gpio_config = DEV_GPIO_CFG(dev);
 
@@ -227,12 +214,9 @@ static int gpio_litex_pin_interrupt_configure(const struct device *dev,
 	}
 
 	if (mode == GPIO_INT_MODE_EDGE) {
-		uint8_t ev_enabled = litex_read(gpio_config->ev_enable_addr,
-				gpio_config->reg_size);
-		uint8_t ev_mode = litex_read(gpio_config->ev_mode_addr,
-				gpio_config->reg_size);
-		uint8_t ev_edge = litex_read(gpio_config->ev_edge_addr,
-				gpio_config->reg_size);
+		uint8_t ev_enabled = litex_read(gpio_config->ev_enable_addr, gpio_config->reg_size);
+		uint8_t ev_mode = litex_read(gpio_config->ev_mode_addr, gpio_config->reg_size);
+		uint8_t ev_edge = litex_read(gpio_config->ev_edge_addr, gpio_config->reg_size);
 
 		litex_write(gpio_config->ev_enable_addr, gpio_config->reg_size,
 			    ev_enabled | BIT(pin));
@@ -240,26 +224,25 @@ static int gpio_litex_pin_interrupt_configure(const struct device *dev,
 		if (trig == GPIO_INT_TRIG_HIGH) {
 			/* Change mode to 'edge' and edge to 'rising' */
 			litex_write(gpio_config->ev_mode_addr, gpio_config->reg_size,
-			    ev_mode & ~BIT(pin));
+				    ev_mode & ~BIT(pin));
 			litex_write(gpio_config->ev_edge_addr, gpio_config->reg_size,
-			    ev_edge & ~BIT(pin));
+				    ev_edge & ~BIT(pin));
 		} else if (trig == GPIO_INT_TRIG_LOW) {
 			/* Change mode to 'edge' and edge to 'falling' */
 			litex_write(gpio_config->ev_mode_addr, gpio_config->reg_size,
-			    ev_mode & ~BIT(pin));
+				    ev_mode & ~BIT(pin));
 			litex_write(gpio_config->ev_edge_addr, gpio_config->reg_size,
-			    ev_edge | BIT(pin));
+				    ev_edge | BIT(pin));
 		} else if (trig == GPIO_INT_TRIG_BOTH) {
 			/* Change mode to 'change' */
 			litex_write(gpio_config->ev_mode_addr, gpio_config->reg_size,
-			    ev_mode | BIT(pin));
+				    ev_mode | BIT(pin));
 		}
 		return 0;
 	}
 
 	if (mode == GPIO_INT_DISABLE) {
-		uint8_t ev_enabled = litex_read(gpio_config->ev_enable_addr,
-				gpio_config->reg_size);
+		uint8_t ev_enabled = litex_read(gpio_config->ev_enable_addr, gpio_config->reg_size);
 		litex_write(gpio_config->ev_enable_addr, gpio_config->reg_size,
 			    ev_enabled & ~BIT(pin));
 		return 0;
@@ -303,58 +286,51 @@ static const struct gpio_driver_api gpio_litex_driver_api = {
 };
 
 /* Device Instantiation */
-#define GPIO_LITEX_IRQ_INIT(n) \
-	do { \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), \
-			    gpio_litex_irq_handler, \
-			    DEVICE_DT_INST_GET(n), 0); \
-\
-		irq_enable(DT_INST_IRQN(n)); \
+#define GPIO_LITEX_IRQ_INIT(n)                                                                     \
+	do {                                                                                       \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_litex_irq_handler,     \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+                                                                                                   \
+		irq_enable(DT_INST_IRQN(n));                                                       \
 	} while (false)
 
-#define GPIO_LITEX_INIT(n) \
-	static int gpio_litex_port_init_##n(const struct device *dev); \
-\
-	static const struct gpio_litex_cfg gpio_litex_cfg_##n = { \
-		.reg_addr = DT_INST_REG_ADDR(n), \
-		.reg_size = DT_INST_REG_SIZE(n), \
-		.nr_gpios = DT_INST_PROP(n, ngpios), \
+#define GPIO_LITEX_INIT(n)                                                                         \
+	static int gpio_litex_port_init_##n(const struct device *dev);                             \
+                                                                                                   \
+	static const struct gpio_litex_cfg gpio_litex_cfg_##n = {                                  \
+		.reg_addr = DT_INST_REG_ADDR(n),                                                   \
+		.reg_size = DT_INST_REG_SIZE(n),                                                   \
+		.nr_gpios = DT_INST_PROP(n, ngpios),                                               \
 		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0), ( \
 			.ev_mode_addr    = DT_INST_REG_ADDR_BY_NAME(n, irq_mode), \
 			.ev_edge_addr    = DT_INST_REG_ADDR_BY_NAME(n, irq_edge), \
 			.ev_pending_addr = DT_INST_REG_ADDR_BY_NAME(n, irq_pend), \
 			.ev_enable_addr  = DT_INST_REG_ADDR_BY_NAME(n, irq_en), \
-		)) \
-		.port_is_output = DT_INST_PROP(n, port_is_output), \
-	}; \
-	static struct gpio_litex_data gpio_litex_data_##n; \
-\
-	DEVICE_DT_INST_DEFINE(n, \
-			    gpio_litex_port_init_##n, \
-			    NULL, \
-			    &gpio_litex_data_##n, \
-			    &gpio_litex_cfg_##n, \
-			    POST_KERNEL, \
-			    CONFIG_GPIO_INIT_PRIORITY, \
-			    &gpio_litex_driver_api \
-			   ); \
-\
-	static int gpio_litex_port_init_##n(const struct device *dev) \
-	{ \
-		const struct gpio_litex_cfg *gpio_config = DEV_GPIO_CFG(dev); \
-\
-		/* Check if gpios fit in declared register space */ \
-		/* Number of subregisters times size in bits */ \
-		const int max_gpios_can_fit = DT_INST_REG_SIZE(n) / 4 \
-					* CONFIG_LITEX_CSR_DATA_WIDTH; \
-		if (gpio_config->nr_gpios > max_gpios_can_fit) { \
-			LOG_ERR("%s", LITEX_LOG_REG_SIZE_NGPIOS_MISMATCH); \
-			return -EINVAL; \
-		} \
-\
+		)) .port_is_output =            \
+							 DT_INST_PROP(n, port_is_output),          \
+	};                                                                                         \
+	static struct gpio_litex_data gpio_litex_data_##n;                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, gpio_litex_port_init_##n, NULL, &gpio_litex_data_##n,             \
+			      &gpio_litex_cfg_##n, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,         \
+			      &gpio_litex_driver_api);                                             \
+                                                                                                   \
+	static int gpio_litex_port_init_##n(const struct device *dev)                              \
+	{                                                                                          \
+		const struct gpio_litex_cfg *gpio_config = DEV_GPIO_CFG(dev);                      \
+                                                                                                   \
+		/* Check if gpios fit in declared register space */                                \
+		/* Number of subregisters times size in bits */                                    \
+		const int max_gpios_can_fit =                                                      \
+			DT_INST_REG_SIZE(n) / 4 * CONFIG_LITEX_CSR_DATA_WIDTH;                     \
+		if (gpio_config->nr_gpios > max_gpios_can_fit) {                                   \
+			LOG_ERR("%s", LITEX_LOG_REG_SIZE_NGPIOS_MISMATCH);                         \
+			return -EINVAL;                                                            \
+		}                                                                                  \
+                                                                                                   \
 		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0), \
-			   (GPIO_LITEX_IRQ_INIT(n);)) \
-		return 0; \
+			   (GPIO_LITEX_IRQ_INIT(n);))                                            \
+		return 0;                                                                          \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_LITEX_INIT)

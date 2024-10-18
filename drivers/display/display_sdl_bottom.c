@@ -15,9 +15,9 @@ int sdl_display_init_bottom(uint16_t height, uint16_t width, uint16_t zoom_pct,
 			    bool use_accelerator, void **window, void **renderer, void **mutex,
 			    void **texture, void **read_texture)
 {
-	*window = SDL_CreateWindow("Zephyr Display", SDL_WINDOWPOS_UNDEFINED,
-				   SDL_WINDOWPOS_UNDEFINED, width * zoom_pct / 100,
-				   height * zoom_pct / 100, SDL_WINDOW_SHOWN);
+	*window =
+		SDL_CreateWindow("Zephyr Display", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+				 width * zoom_pct / 100, height * zoom_pct / 100, SDL_WINDOW_SHOWN);
 	if (*window == NULL) {
 		nsi_print_warning("Failed to create SDL window: %s", SDL_GetError());
 		return -1;
@@ -30,8 +30,7 @@ int sdl_display_init_bottom(uint16_t height, uint16_t width, uint16_t zoom_pct,
 	}
 
 	if (*renderer == NULL) {
-		nsi_print_warning("Failed to create SDL renderer: %s",
-				SDL_GetError());
+		nsi_print_warning("Failed to create SDL renderer: %s", SDL_GetError());
 		return -1;
 	}
 
@@ -43,8 +42,8 @@ int sdl_display_init_bottom(uint16_t height, uint16_t width, uint16_t zoom_pct,
 
 	SDL_RenderSetLogicalSize(*renderer, width, height);
 
-	*texture = SDL_CreateTexture(*renderer, SDL_PIXELFORMAT_ARGB8888,
-				     SDL_TEXTUREACCESS_STATIC, width, height);
+	*texture = SDL_CreateTexture(*renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC,
+				     width, height);
 	if (*texture == NULL) {
 		nsi_print_warning("Failed to create SDL texture: %s", SDL_GetError());
 		return -1;
@@ -64,9 +63,8 @@ int sdl_display_init_bottom(uint16_t height, uint16_t width, uint16_t zoom_pct,
 	return 0;
 }
 
-void sdl_display_write_bottom(const uint16_t height, const uint16_t width,
-			      const uint16_t x, const uint16_t y,
-			      void *renderer, void *mutex, void *texture,
+void sdl_display_write_bottom(const uint16_t height, const uint16_t width, const uint16_t x,
+			      const uint16_t y, void *renderer, void *mutex, void *texture,
 			      uint8_t *buf, bool display_on)
 {
 	SDL_Rect rect;
@@ -94,9 +92,8 @@ void sdl_display_write_bottom(const uint16_t height, const uint16_t width,
 	SDL_UnlockMutex(mutex);
 }
 
-int sdl_display_read_bottom(const uint16_t height, const uint16_t width,
-			    const uint16_t x, const uint16_t y,
-			    void *renderer, void *buf, uint16_t pitch,
+int sdl_display_read_bottom(const uint16_t height, const uint16_t width, const uint16_t x,
+			    const uint16_t y, void *renderer, void *buf, uint16_t pitch,
 			    void *mutex, void *texture, void *read_texture)
 {
 	SDL_Rect rect;

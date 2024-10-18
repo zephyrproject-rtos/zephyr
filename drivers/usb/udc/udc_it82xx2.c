@@ -91,8 +91,8 @@ struct it82xx2_ep_event {
 	enum it82xx2_event_type event;
 };
 
-K_MSGQ_DEFINE(evt_msgq, sizeof(struct it82xx2_ep_event),
-	      CONFIG_UDC_IT82xx2_EVENT_COUNT, sizeof(uint32_t));
+K_MSGQ_DEFINE(evt_msgq, sizeof(struct it82xx2_ep_event), CONFIG_UDC_IT82xx2_EVENT_COUNT,
+	      sizeof(uint32_t));
 
 struct usb_it8xxx2_wuc {
 	/* WUC control device structure */

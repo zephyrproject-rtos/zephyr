@@ -17,14 +17,12 @@
 #ifdef __ZEPHYR__
 
 #include <zephyr/net/socket.h>
-#define ERR(_name)				\
-	{ DNS_ ## _name, NSOS_MID_ ## _name }
+#define ERR(_name) {DNS_##_name, NSOS_MID_##_name}
 
 #else
 
 #include <netdb.h>
-#define ERR(_name)				\
-	{ _name, NSOS_MID_ ## _name }
+#define ERR(_name) {_name, NSOS_MID_##_name}
 
 #endif
 
@@ -38,16 +36,8 @@ struct nsos_eai_map {
 };
 
 static const struct nsos_eai_map map[] = {
-	ERR(EAI_BADFLAGS),
-	ERR(EAI_NONAME),
-	ERR(EAI_AGAIN),
-	ERR(EAI_FAIL),
-	ERR(EAI_FAMILY),
-	ERR(EAI_SOCKTYPE),
-	ERR(EAI_SERVICE),
-	ERR(EAI_MEMORY),
-	ERR(EAI_SYSTEM),
-	ERR(EAI_OVERFLOW),
+	ERR(EAI_BADFLAGS), ERR(EAI_NONAME),  ERR(EAI_AGAIN),  ERR(EAI_FAIL),   ERR(EAI_FAMILY),
+	ERR(EAI_SOCKTYPE), ERR(EAI_SERVICE), ERR(EAI_MEMORY), ERR(EAI_SYSTEM), ERR(EAI_OVERFLOW),
 };
 
 int eai_to_nsos_mid(int err)

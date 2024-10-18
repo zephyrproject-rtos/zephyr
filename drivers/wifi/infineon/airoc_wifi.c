@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(infineon_airoc_wifi, CONFIG_WIFI_LOG_LEVEL);
 #endif
 
 #ifndef AIROC_WIFI_PACKET_POOL_SIZE
-#define AIROC_WIFI_PACKET_POOL_SIZE     (1600)
+#define AIROC_WIFI_PACKET_POOL_SIZE (1600)
 #endif
 
 #define AIROC_WIFI_PACKET_POOL_COUNT                                                               \
@@ -50,8 +50,8 @@ int airoc_wifi_init_primary(const struct device *dev, whd_interface_t *interface
 			    whd_netif_funcs_t *netif_funcs, whd_buffer_funcs_t *buffer_if);
 
 /* Allocate network pool */
-NET_BUF_POOL_FIXED_DEFINE(airoc_pool, AIROC_WIFI_PACKET_POOL_COUNT,
-				AIROC_WIFI_PACKET_POOL_SIZE, 0, NULL);
+NET_BUF_POOL_FIXED_DEFINE(airoc_pool, AIROC_WIFI_PACKET_POOL_COUNT, AIROC_WIFI_PACKET_POOL_SIZE, 0,
+			  NULL);
 
 /* AIROC globals */
 static uint16_t ap_event_handler_index = 0xFF;
@@ -225,7 +225,7 @@ static whd_result_t airoc_wifi_host_buffer_get(whd_buffer_t *buffer, whd_buffer_
 	*buffer = buf;
 
 	/* Set buffer size */
-	(void) airoc_wifi_buffer_set_size(*buffer, size);
+	(void)airoc_wifi_buffer_set_size(*buffer, size);
 
 	return WHD_SUCCESS;
 }
@@ -291,7 +291,7 @@ static int airoc_mgmt_send(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	/* Allocate Network Buffer from pool with Packet Length + Data Header */
-	ret = airoc_wifi_host_buffer_get((whd_buffer_t *) &buf, WHD_NETWORK_TX,
+	ret = airoc_wifi_host_buffer_get((whd_buffer_t *)&buf, WHD_NETWORK_TX,
 					 pkt_len + sizeof(data_header_t), 0);
 	if ((ret != WHD_SUCCESS) || (buf == NULL)) {
 		return -EIO;
@@ -370,8 +370,7 @@ static enum ethernet_hw_caps airoc_get_capabilities(const struct device *dev)
 	return ETHERNET_HW_FILTERING;
 }
 
-static int airoc_set_config(const struct device *dev,
-			    enum ethernet_config_type type,
+static int airoc_set_config(const struct device *dev, enum ethernet_config_type type,
 			    const struct ethernet_config *config)
 {
 	ARG_UNUSED(dev);
@@ -591,10 +590,8 @@ static void *airoc_wifi_ap_link_events_handler(whd_interface_t ifp,
 					       const whd_event_header_t *event_header,
 					       const uint8_t *event_data, void *handler_user_data)
 {
-	struct airoc_wifi_event_t airoc_event = {
-		.is_ap_event = 1,
-		.event_type = event_header->event_type
-	};
+	struct airoc_wifi_event_t airoc_event = {.is_ap_event = 1,
+						 .event_type = event_header->event_type};
 
 	k_msgq_put(&airoc_wifi_msgq, &airoc_event, K_FOREVER);
 
@@ -647,8 +644,7 @@ static int airoc_mgmt_ap_enable(const struct device *dev, struct wifi_connect_re
 		channel = params->channel;
 	} else {
 		channel = 1;
-		LOG_WRN("Discard of setting unsupported channel: %u (will set 1)",
-			params->channel);
+		LOG_WRN("Discard of setting unsupported channel: %u (will set 1)", params->channel);
 	}
 
 	switch (params->security) {
@@ -774,8 +770,8 @@ static int airoc_init(const struct device *dev)
 	}
 	airoc_if = airoc_sta_if;
 
-	whd_ret = whd_management_set_event_handler(airoc_sta_if, sta_link_events,
-				link_events_handler, NULL, &sta_event_handler_index);
+	whd_ret = whd_management_set_event_handler(
+		airoc_sta_if, sta_link_events, link_events_handler, NULL, &sta_event_handler_index);
 	if (whd_ret != CY_RSLT_SUCCESS) {
 		LOG_ERR("whd_management_set_event_handler failed ret = %d \r\n", whd_ret);
 		return -EAGAIN;

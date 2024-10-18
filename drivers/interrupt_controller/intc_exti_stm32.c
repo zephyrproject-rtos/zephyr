@@ -57,8 +57,7 @@ struct stm32_exti_data {
  */
 static inline uint32_t stm32_exti_linenum_to_src_cfg_line(gpio_pin_t linenum)
 {
-#if defined(CONFIG_SOC_SERIES_STM32L0X) || \
-	defined(CONFIG_SOC_SERIES_STM32F0X)
+#if defined(CONFIG_SOC_SERIES_STM32L0X) || defined(CONFIG_SOC_SERIES_STM32F0X)
 	return ((linenum % 4 * 4) << 16) | (linenum / 4);
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
 	return ((linenum & 0x3) << (16 + 3)) | (linenum >> 2);
@@ -78,8 +77,7 @@ static inline uint32_t stm32_exti_linenum_to_src_cfg_line(gpio_pin_t linenum)
 static inline int stm32_exti_is_pending(stm32_gpio_irq_line_t line)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
-	return (LL_EXTI_IsActiveRisingFlag_0_31(line) ||
-		LL_EXTI_IsActiveFallingFlag_0_31(line));
+	return (LL_EXTI_IsActiveRisingFlag_0_31(line) || LL_EXTI_IsActiveFallingFlag_0_31(line));
 #elif defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
 	return LL_C2_EXTI_IsActiveFlag_0_31(line);
 #else
@@ -161,30 +159,23 @@ static int stm32_exti_enable_registers(void)
 {
 	/* Initialize to 0 for series where there is nothing to do. */
 	int ret = 0;
-#if defined(CONFIG_SOC_SERIES_STM32F2X) ||     \
-	defined(CONFIG_SOC_SERIES_STM32F3X) || \
-	defined(CONFIG_SOC_SERIES_STM32F4X) || \
-	defined(CONFIG_SOC_SERIES_STM32F7X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7RSX) || \
-	defined(CONFIG_SOC_SERIES_STM32L1X) || \
-	defined(CONFIG_SOC_SERIES_STM32L4X) || \
+#if defined(CONFIG_SOC_SERIES_STM32F2X) || defined(CONFIG_SOC_SERIES_STM32F3X) ||                  \
+	defined(CONFIG_SOC_SERIES_STM32F4X) || defined(CONFIG_SOC_SERIES_STM32F7X) ||              \
+	defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H7RSX) ||            \
+	defined(CONFIG_SOC_SERIES_STM32L1X) || defined(CONFIG_SOC_SERIES_STM32L4X) ||              \
 	defined(CONFIG_SOC_SERIES_STM32G4X)
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	struct stm32_pclken pclken = {
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
-		.bus = STM32_CLOCK_BUS_APB4,
-		.enr = LL_APB4_GRP1_PERIPH_SYSCFG
+		.bus = STM32_CLOCK_BUS_APB4, .enr = LL_APB4_GRP1_PERIPH_SYSCFG
 #elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
-		.bus = STM32_CLOCK_BUS_APB4,
-		.enr = LL_APB4_GRP1_PERIPH_SBS
+		.bus = STM32_CLOCK_BUS_APB4, .enr = LL_APB4_GRP1_PERIPH_SBS
 #else
-		.bus = STM32_CLOCK_BUS_APB2,
-		.enr = LL_APB2_GRP1_PERIPH_SYSCFG
+		.bus = STM32_CLOCK_BUS_APB2, .enr = LL_APB2_GRP1_PERIPH_SYSCFG
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 	};
 
-	ret = clock_control_on(clk, (clock_control_subsys_t) &pclken);
+	ret = clock_control_on(clk, (clock_control_subsys_t)&pclken);
 #endif
 	return ret;
 }
@@ -201,17 +192,14 @@ static void stm32_fill_irq_table(int8_t start, int8_t len, int32_t irqn)
  * - fill exti_irq_table through stm32_fill_irq_table()
  * - calls IRQ_CONNECT for each interrupt and matching line_range
  */
-#define STM32_EXTI_INIT_LINE_RANGE(node_id, interrupts, idx)			\
-	static const struct stm32_exti_range line_range_##idx = {		\
-		DT_PROP_BY_IDX(node_id, line_ranges, UTIL_X2(idx)),		\
-		DT_PROP_BY_IDX(node_id, line_ranges, UTIL_INC(UTIL_X2(idx)))	\
-	};									\
-	stm32_fill_irq_table(line_range_##idx.start,				\
-			     line_range_##idx.len,				\
-			     DT_IRQ_BY_IDX(node_id, idx, irq));			\
-	IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq),				\
-		DT_IRQ_BY_IDX(node_id, idx, priority),				\
-		stm32_exti_isr, &line_range_##idx, 0);
+#define STM32_EXTI_INIT_LINE_RANGE(node_id, interrupts, idx)                                       \
+	static const struct stm32_exti_range line_range_##idx = {                                  \
+		DT_PROP_BY_IDX(node_id, line_ranges, UTIL_X2(idx)),                                \
+		DT_PROP_BY_IDX(node_id, line_ranges, UTIL_INC(UTIL_X2(idx)))};                     \
+	stm32_fill_irq_table(line_range_##idx.start, line_range_##idx.len,                         \
+			     DT_IRQ_BY_IDX(node_id, idx, irq));                                    \
+	IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq), DT_IRQ_BY_IDX(node_id, idx, priority),       \
+		    stm32_exti_isr, &line_range_##idx, 0);
 
 /**
  * @brief Initializes the EXTI GPIO interrupt controller driver
@@ -220,19 +208,14 @@ static int stm32_exti_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	DT_FOREACH_PROP_ELEM(DT_NODELABEL(exti),
-			     interrupt_names,
-			     STM32_EXTI_INIT_LINE_RANGE);
+	DT_FOREACH_PROP_ELEM(DT_NODELABEL(exti), interrupt_names, STM32_EXTI_INIT_LINE_RANGE);
 
 	return stm32_exti_enable_registers();
 }
 
 static struct stm32_exti_data exti_data;
-DEVICE_DT_DEFINE(EXTI_NODE, &stm32_exti_init,
-		 NULL,
-		 &exti_data, NULL,
-		 PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
-		 NULL);
+DEVICE_DT_DEFINE(EXTI_NODE, &stm32_exti_init, NULL, &exti_data, NULL, PRE_KERNEL_1,
+		 CONFIG_INTC_INIT_PRIORITY, NULL);
 
 /**
  * @brief EXTI GPIO interrupt controller API implementation

@@ -68,10 +68,10 @@ static void it8xxx2_kbd_drive_column(const struct device *dev, int col)
 	/* Tri-state all outputs */
 	if (col == INPUT_KBD_MATRIX_COLUMN_DRIVE_NONE) {
 		kso_val = kso_mask;
-	/* Assert all outputs */
+		/* Assert all outputs */
 	} else if (col == INPUT_KBD_MATRIX_COLUMN_DRIVE_ALL) {
 		kso_val = 0;
-	/* Assert a single output */
+		/* Assert a single output */
 	} else {
 		kso_val = kso_mask ^ BIT(col);
 	}
@@ -114,8 +114,7 @@ static void it8xxx2_kbd_isr(const struct device *dev)
 	 * NOTE: We want to clear the status as soon as possible,
 	 *       so clear KSI[7:0] pins at a time.
 	 */
-	it8xxx2_wuc_clear_status(config->wuc_map_list[0].wucs,
-				 data->ksi_pin_mask);
+	it8xxx2_wuc_clear_status(config->wuc_map_list[0].wucs, data->ksi_pin_mask);
 
 	/* W/C interrupt status of KSI[7:0] pins */
 	ite_intc_isr_clear(config->irq);
@@ -135,8 +134,7 @@ static void it8xxx2_kbd_set_detect_mode(const struct device *dev, bool enable)
 		 * NOTE: We want to clear the status as soon as possible,
 		 *       so clear KSI[7:0] pins at a time.
 		 */
-		it8xxx2_wuc_clear_status(config->wuc_map_list[0].wucs,
-					 data->ksi_pin_mask);
+		it8xxx2_wuc_clear_status(config->wuc_map_list[0].wucs, data->ksi_pin_mask);
 
 		/* W/C interrupt status of KSI[7:0] pins */
 		ite_intc_isr_clear(config->irq);
@@ -197,15 +195,13 @@ static int it8xxx2_kbd_init(const struct device *dev)
 
 	for (int i = 0; i < KEYBOARD_KSI_PIN_COUNT; i++) {
 		/* Select wakeup interrupt falling-edge triggered of KSI[7:0] pins */
-		it8xxx2_wuc_set_polarity(config->wuc_map_list[i].wucs,
-					 config->wuc_map_list[i].mask,
+		it8xxx2_wuc_set_polarity(config->wuc_map_list[i].wucs, config->wuc_map_list[i].mask,
 					 WUC_TYPE_EDGE_FALLING);
 		/* W/C wakeup interrupt status of KSI[7:0] pins */
 		it8xxx2_wuc_clear_status(config->wuc_map_list[i].wucs,
 					 config->wuc_map_list[i].mask);
 		/* Enable wakeup interrupt of KSI[7:0] pins */
-		it8xxx2_wuc_enable(config->wuc_map_list[i].wucs,
-				   config->wuc_map_list[i].mask);
+		it8xxx2_wuc_enable(config->wuc_map_list[i].wucs, config->wuc_map_list[i].mask);
 
 		/*
 		 * We want to clear KSI[7:0] pins status at a time when wakeup
@@ -220,15 +216,14 @@ static int it8xxx2_kbd_init(const struct device *dev)
 	/* W/C interrupt status of KSI[7:0] pins */
 	ite_intc_isr_clear(config->irq);
 
-	irq_connect_dynamic(DT_INST_IRQN(0), 0,
-			    (void (*)(const void *))it8xxx2_kbd_isr,
+	irq_connect_dynamic(DT_INST_IRQN(0), 0, (void (*)(const void *))it8xxx2_kbd_isr,
 			    (const void *)dev, 0);
 
 	return input_kbd_matrix_common_init(dev);
 }
 
-static const struct it8xxx2_kbd_wuc_map_cfg
-	it8xxx2_kbd_wuc[IT8XXX2_DT_INST_WUCCTRL_LEN(0)] = IT8XXX2_DT_WUC_ITEMS_LIST(0);
+static const struct it8xxx2_kbd_wuc_map_cfg it8xxx2_kbd_wuc[IT8XXX2_DT_INST_WUCCTRL_LEN(0)] =
+	IT8XXX2_DT_WUC_ITEMS_LIST(0);
 
 PINCTRL_DT_INST_DEFINE(0);
 
@@ -254,12 +249,10 @@ static struct it8xxx2_kbd_data it8xxx2_kbd_data_0;
 
 PM_DEVICE_DT_INST_DEFINE(0, input_kbd_matrix_pm_action);
 
-DEVICE_DT_INST_DEFINE(0, &it8xxx2_kbd_init, PM_DEVICE_DT_INST_GET(0),
-		      &it8xxx2_kbd_data_0, &it8xxx2_kbd_cfg_0,
-		      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
+DEVICE_DT_INST_DEFINE(0, &it8xxx2_kbd_init, PM_DEVICE_DT_INST_GET(0), &it8xxx2_kbd_data_0,
+		      &it8xxx2_kbd_cfg_0, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
 
-BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED) ||
-	     IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME),
+BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED) || IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME),
 	     "CONFIG_PM_DEVICE_RUNTIME must be enabled when using CONFIG_PM_DEVICE_SYSTEM_MANAGED");
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,

@@ -22,12 +22,10 @@ static void vcnl4040_handle_cb(struct vcnl4040_data *data)
 #endif
 }
 
-static void vcnl4040_gpio_callback(const struct device *dev,
-				   struct gpio_callback *cb,
+static void vcnl4040_gpio_callback(const struct device *dev, struct gpio_callback *cb,
 				   uint32_t pin_mask)
 {
-	struct vcnl4040_data *data =
-		CONTAINER_OF(cb, struct vcnl4040_data, gpio_cb);
+	struct vcnl4040_data *data = CONTAINER_OF(cb, struct vcnl4040_data, gpio_cb);
 	const struct vcnl4040_config *config = data->dev->config;
 
 	if ((pin_mask & BIT(config->int_gpio.pin)) == 0U) {
@@ -103,17 +101,14 @@ static void vcnl4040_thread_main(void *p1, void *p2, void *p3)
 #ifdef CONFIG_VCNL4040_TRIGGER_GLOBAL_THREAD
 static void vcnl4040_work_handler(struct k_work *work)
 {
-	struct vcnl4040_data *data =
-		CONTAINER_OF(work, struct vcnl4040_data, work);
+	struct vcnl4040_data *data = CONTAINER_OF(work, struct vcnl4040_data, work);
 
 	vcnl4040_handle_int(data->dev);
 }
 #endif
 
-int vcnl4040_attr_set(const struct device *dev,
-		      enum sensor_channel chan,
-		      enum sensor_attribute attr,
-		      const struct sensor_value *val)
+int vcnl4040_attr_set(const struct device *dev, enum sensor_channel chan,
+		      enum sensor_attribute attr, const struct sensor_value *val)
 {
 	struct vcnl4040_data *data = dev->data;
 	const struct vcnl4040_config *config = dev->config;
@@ -127,8 +122,7 @@ int vcnl4040_attr_set(const struct device *dev,
 
 	if (chan == SENSOR_CHAN_PROX) {
 		if (attr == SENSOR_ATTR_UPPER_THRESH) {
-			if (vcnl4040_write(dev, VCNL4040_REG_PS_THDH,
-					   (uint16_t)val->val1)) {
+			if (vcnl4040_write(dev, VCNL4040_REG_PS_THDH, (uint16_t)val->val1)) {
 				ret = -EIO;
 				goto exit;
 			}
@@ -137,8 +131,7 @@ int vcnl4040_attr_set(const struct device *dev,
 			goto exit;
 		}
 		if (attr == SENSOR_ATTR_LOWER_THRESH) {
-			if (vcnl4040_write(dev, VCNL4040_REG_PS_THDL,
-					   (uint16_t)val->val1)) {
+			if (vcnl4040_write(dev, VCNL4040_REG_PS_THDL, (uint16_t)val->val1)) {
 				ret = -EIO;
 				goto exit;
 			}
@@ -150,8 +143,7 @@ int vcnl4040_attr_set(const struct device *dev,
 #ifdef CONFIG_VCNL4040_ENABLE_ALS
 	if (chan == SENSOR_CHAN_LIGHT) {
 		if (attr == SENSOR_ATTR_UPPER_THRESH) {
-			if (vcnl4040_write(dev, VCNL4040_REG_ALS_THDH,
-					   (uint16_t)val->val1)) {
+			if (vcnl4040_write(dev, VCNL4040_REG_ALS_THDH, (uint16_t)val->val1)) {
 				ret = -EIO;
 				goto exit;
 			}
@@ -160,8 +152,7 @@ int vcnl4040_attr_set(const struct device *dev,
 			goto exit;
 		}
 		if (attr == SENSOR_ATTR_LOWER_THRESH) {
-			if (vcnl4040_write(dev, VCNL4040_REG_ALS_THDL,
-					   (uint16_t)val->val1)) {
+			if (vcnl4040_write(dev, VCNL4040_REG_ALS_THDL, (uint16_t)val->val1)) {
 				ret = -EIO;
 				goto exit;
 			}
@@ -178,8 +169,7 @@ exit:
 	return ret;
 }
 
-int vcnl4040_trigger_set(const struct device *dev,
-			 const struct sensor_trigger *trig,
+int vcnl4040_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			 sensor_trigger_handler_t handler)
 {
 	const struct vcnl4040_config *config = dev->config;
@@ -262,19 +252,15 @@ int vcnl4040_trigger_init(const struct device *dev)
 
 	/* Get the GPIO device */
 	if (!gpio_is_ready_dt(&config->int_gpio)) {
-		LOG_ERR("%s: device %s is not ready", dev->name,
-				config->int_gpio.port->name);
+		LOG_ERR("%s: device %s is not ready", dev->name, config->int_gpio.port->name);
 		return -ENODEV;
 	}
 
 #if defined(CONFIG_VCNL4040_TRIGGER_OWN_THREAD)
 	k_sem_init(&data->trig_sem, 0, K_SEM_MAX_LIMIT);
-	k_thread_create(&data->thread, data->thread_stack,
-			CONFIG_VCNL4040_THREAD_STACK_SIZE,
-			vcnl4040_thread_main,
-			data, NULL, NULL,
-			K_PRIO_COOP(CONFIG_VCNL4040_THREAD_PRIORITY),
-			0, K_NO_WAIT);
+	k_thread_create(&data->thread, data->thread_stack, CONFIG_VCNL4040_THREAD_STACK_SIZE,
+			vcnl4040_thread_main, data, NULL, NULL,
+			K_PRIO_COOP(CONFIG_VCNL4040_THREAD_PRIORITY), 0, K_NO_WAIT);
 	k_thread_name_set(&data->thread, "VCNL4040 trigger");
 #elif defined(CONFIG_VCNL4040_TRIGGER_GLOBAL_THREAD)
 	data->work.handler = vcnl4040_work_handler;
@@ -282,8 +268,7 @@ int vcnl4040_trigger_init(const struct device *dev)
 
 	gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 
-	gpio_init_callback(&data->gpio_cb, vcnl4040_gpio_callback,
-			   BIT(config->int_gpio.pin));
+	gpio_init_callback(&data->gpio_cb, vcnl4040_gpio_callback, BIT(config->int_gpio.pin));
 
 	if (gpio_add_callback(config->int_gpio.port, &data->gpio_cb) < 0) {
 		LOG_ERR("Failed to set gpio callback");

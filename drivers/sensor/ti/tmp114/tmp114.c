@@ -16,18 +16,18 @@
 
 LOG_MODULE_REGISTER(TMP114, CONFIG_SENSOR_LOG_LEVEL);
 
-#define TMP114_REG_TEMP		0x0
-#define TMP114_REG_ALERT	0x2
-#define TMP114_REG_CFGR		0x3
-#define TMP114_REG_DEVICE_ID	0xb
+#define TMP114_REG_TEMP      0x0
+#define TMP114_REG_ALERT     0x2
+#define TMP114_REG_CFGR      0x3
+#define TMP114_REG_DEVICE_ID 0xb
 
-#define TMP114_RESOLUTION	78125       /* in tens of uCelsius*/
-#define TMP114_RESOLUTION_DIV	10000000
+#define TMP114_RESOLUTION     78125 /* in tens of uCelsius*/
+#define TMP114_RESOLUTION_DIV 10000000
 
-#define TMP114_DEVICE_ID	0x1114
+#define TMP114_DEVICE_ID 0x1114
 
-#define TMP114_ALERT_DATA_READY  BIT(0)
-#define TMP114_AVG_MASK          BIT(7)
+#define TMP114_ALERT_DATA_READY BIT(0)
+#define TMP114_AVG_MASK         BIT(7)
 
 struct tmp114_data {
 	uint16_t sample;
@@ -38,13 +38,11 @@ struct tmp114_dev_config {
 	struct i2c_dt_spec bus;
 };
 
-static int tmp114_reg_read(const struct device *dev, uint8_t reg,
-			   uint16_t *val)
+static int tmp114_reg_read(const struct device *dev, uint8_t reg, uint16_t *val)
 {
 	const struct tmp114_dev_config *cfg = dev->config;
 
-	if (i2c_burst_read_dt(&cfg->bus, reg, (uint8_t *)val, 2)
-	    < 0) {
+	if (i2c_burst_read_dt(&cfg->bus, reg, (uint8_t *)val, 2) < 0) {
 		return -EIO;
 	}
 
@@ -53,8 +51,7 @@ static int tmp114_reg_read(const struct device *dev, uint8_t reg,
 	return 0;
 }
 
-static int tmp114_reg_write(const struct device *dev, uint8_t reg,
-			    uint16_t val)
+static int tmp114_reg_write(const struct device *dev, uint8_t reg, uint16_t val)
 {
 	const struct tmp114_dev_config *cfg = dev->config;
 	uint8_t tx_buf[3] = {reg, val >> 8, val & 0xFF};
@@ -77,16 +74,14 @@ static inline int tmp114_device_id_check(const struct device *dev, uint16_t *id)
 	return 0;
 }
 
-static int tmp114_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
+static int tmp114_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct tmp114_data *drv_data = dev->data;
 	uint16_t value;
 	uint16_t cfg_reg = 0;
 	int rc;
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL ||
-			chan == SENSOR_CHAN_AMBIENT_TEMP);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_AMBIENT_TEMP);
 
 	/* clear sensor values */
 	drv_data->sample = 0U;
@@ -116,8 +111,7 @@ static int tmp114_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static int tmp114_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
+static int tmp114_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	struct tmp114_data *drv_data = dev->data;
@@ -165,10 +159,8 @@ static int tmp114_attr_get(const struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static int tmp114_attr_set(const struct device *dev,
-			   enum sensor_channel chan,
-			   enum sensor_attribute attr,
-			   const struct sensor_value *val)
+static int tmp114_attr_set(const struct device *dev, enum sensor_channel chan,
+			   enum sensor_attribute attr, const struct sensor_value *val)
 {
 	int16_t value;
 	int rc;
@@ -197,12 +189,10 @@ static int tmp114_attr_set(const struct device *dev,
 	}
 }
 
-static const struct sensor_driver_api tmp114_driver_api = {
-	.attr_get = tmp114_attr_get,
-	.attr_set = tmp114_attr_set,
-	.sample_fetch = tmp114_sample_fetch,
-	.channel_get = tmp114_channel_get
-};
+static const struct sensor_driver_api tmp114_driver_api = {.attr_get = tmp114_attr_get,
+							   .attr_set = tmp114_attr_set,
+							   .sample_fetch = tmp114_sample_fetch,
+							   .channel_get = tmp114_channel_get};
 
 static int tmp114_init(const struct device *dev)
 {
@@ -227,13 +217,12 @@ static int tmp114_init(const struct device *dev)
 	return 0;
 }
 
-#define DEFINE_TMP114(_num) \
-	static struct tmp114_data tmp114_data_##_num; \
-	static const struct tmp114_dev_config tmp114_config_##_num = { \
-		.bus = I2C_DT_SPEC_INST_GET(_num) \
-	}; \
-	SENSOR_DEVICE_DT_INST_DEFINE(_num, tmp114_init, NULL, \
-		&tmp114_data_##_num, &tmp114_config_##_num, POST_KERNEL, \
-		CONFIG_SENSOR_INIT_PRIORITY, &tmp114_driver_api);
+#define DEFINE_TMP114(_num)                                                                        \
+	static struct tmp114_data tmp114_data_##_num;                                              \
+	static const struct tmp114_dev_config tmp114_config_##_num = {                             \
+		.bus = I2C_DT_SPEC_INST_GET(_num)};                                                \
+	SENSOR_DEVICE_DT_INST_DEFINE(_num, tmp114_init, NULL, &tmp114_data_##_num,                 \
+				     &tmp114_config_##_num, POST_KERNEL,                           \
+				     CONFIG_SENSOR_INIT_PRIORITY, &tmp114_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_TMP114)

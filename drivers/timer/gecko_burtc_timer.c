@@ -30,9 +30,7 @@
 #include "em_cmu.h"
 #include "em_burtc.h"
 
-
 LOG_MODULE_REGISTER(gecko_burtc_timer);
-
 
 /* Maximum time interval between timer interrupts (in hw_cycles) */
 #define MAX_TIMEOUT_CYC (UINT32_MAX >> 1)
@@ -205,15 +203,14 @@ static int burtc_init(void)
 	z_clock_hw_cycles_per_sec = hw_clock_freq;
 
 	BUILD_ASSERT(CONFIG_SYS_CLOCK_TICKS_PER_SEC > 0,
-			"Invalid CONFIG_SYS_CLOCK_TICKS_PER_SEC value");
+		     "Invalid CONFIG_SYS_CLOCK_TICKS_PER_SEC value");
 	g_cyc_per_tick = hw_clock_freq / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 
 	__ASSERT(g_cyc_per_tick >= MIN_DELAY_CYC,
-		"%u cycle-long tick is too short to be scheduled "
-		"(min is %u). Config: SYS_CLOCK_TICKS_PER_SEC is "
-		"%d and timer frequency is %u",
-		g_cyc_per_tick, MIN_DELAY_CYC, CONFIG_SYS_CLOCK_TICKS_PER_SEC,
-		hw_clock_freq);
+		 "%u cycle-long tick is too short to be scheduled "
+		 "(min is %u). Config: SYS_CLOCK_TICKS_PER_SEC is "
+		 "%d and timer frequency is %u",
+		 g_cyc_per_tick, MIN_DELAY_CYC, CONFIG_SYS_CLOCK_TICKS_PER_SEC, hw_clock_freq);
 
 	g_max_timeout_ticks = MAX_TIMEOUT_CYC / g_cyc_per_tick;
 
@@ -240,5 +237,4 @@ static int burtc_init(void)
 	return 0;
 }
 
-SYS_INIT(burtc_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(burtc_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

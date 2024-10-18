@@ -25,13 +25,11 @@ struct sbus_input_channel {
 	uint32_t zephyr_code;
 };
 
-const struct uart_config uart_cfg_sbus = {
-	.baudrate = 100000,
-	.parity = UART_CFG_PARITY_EVEN,
-	.stop_bits = UART_CFG_STOP_BITS_2,
-	.data_bits = UART_CFG_DATA_BITS_8,
-	.flow_ctrl = UART_CFG_FLOW_CTRL_NONE
-};
+const struct uart_config uart_cfg_sbus = {.baudrate = 100000,
+					  .parity = UART_CFG_PARITY_EVEN,
+					  .stop_bits = UART_CFG_STOP_BITS_2,
+					  .data_bits = UART_CFG_DATA_BITS_8,
+					  .flow_ctrl = UART_CFG_FLOW_CTRL_NONE};
 
 struct input_sbus_config {
 	uint8_t num_channels;
@@ -259,8 +257,8 @@ static void sbus_uart_isr(const struct device *uart_dev, void *user_data)
 		}
 	}
 
-	if (data->in_sync && (k_uptime_get_32() - data->last_rx_time >
-	    SBUS_INTERFRAME_SPACING_MS)) {
+	if (data->in_sync &&
+	    (k_uptime_get_32() - data->last_rx_time > SBUS_INTERFRAME_SPACING_MS)) {
 		data->partial_sync = false;
 		data->in_sync = false;
 		data->xfer_bytes = 0;
@@ -356,8 +354,7 @@ static int input_sbus_init(const struct device *dev)
 #define INPUT_SBUS_INIT(n)                                                                         \
                                                                                                    \
 	static const struct sbus_input_channel input_##n[] = {                                     \
-		DT_INST_FOREACH_CHILD(n, SBUS_INPUT_CHANNEL_INITIALIZER)                           \
-	};                                                                                         \
+		DT_INST_FOREACH_CHILD(n, SBUS_INPUT_CHANNEL_INITIALIZER)};                         \
 	DT_INST_FOREACH_CHILD(n, INPUT_CHANNEL_CHECK)                                              \
                                                                                                    \
 	static struct input_sbus_data sbus_data_##n;                                               \

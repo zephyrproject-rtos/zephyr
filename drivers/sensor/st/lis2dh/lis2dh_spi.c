@@ -18,39 +18,28 @@
 
 LOG_MODULE_DECLARE(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
 
+#define LIS2DH_SPI_READ_BIT  BIT(7)
+#define LIS2DH_SPI_AUTOINC   BIT(6)
+#define LIS2DH_SPI_ADDR_MASK BIT_MASK(6)
 
-#define LIS2DH_SPI_READ_BIT		BIT(7)
-#define LIS2DH_SPI_AUTOINC		BIT(6)
-#define LIS2DH_SPI_ADDR_MASK		BIT_MASK(6)
-
-static int lis2dh_raw_read(const struct device *dev, uint8_t reg_addr,
-			    uint8_t *value, uint8_t len)
+static int lis2dh_raw_read(const struct device *dev, uint8_t reg_addr, uint8_t *value, uint8_t len)
 {
 	const struct lis2dh_config *cfg = dev->config;
-	uint8_t buffer_tx[2] = { reg_addr | LIS2DH_SPI_READ_BIT, 0 };
+	uint8_t buffer_tx[2] = {reg_addr | LIS2DH_SPI_READ_BIT, 0};
 	const struct spi_buf tx_buf = {
-			.buf = buffer_tx,
-			.len = 2,
+		.buf = buffer_tx,
+		.len = 2,
 	};
-	const struct spi_buf_set tx = {
-		.buffers = &tx_buf,
-		.count = 1
-	};
-	const struct spi_buf rx_buf[2] = {
-		{
-			.buf = NULL,
-			.len = 1,
-		},
-		{
-			.buf = value,
-			.len = len,
-		}
-	};
-	const struct spi_buf_set rx = {
-		.buffers = rx_buf,
-		.count = 2
-	};
-
+	const struct spi_buf_set tx = {.buffers = &tx_buf, .count = 1};
+	const struct spi_buf rx_buf[2] = {{
+						  .buf = NULL,
+						  .len = 1,
+					  },
+					  {
+						  .buf = value,
+						  .len = len,
+					  }};
+	const struct spi_buf_set rx = {.buffers = rx_buf, .count = 2};
 
 	if (len > 64) {
 		return -EIO;
@@ -67,26 +56,19 @@ static int lis2dh_raw_read(const struct device *dev, uint8_t reg_addr,
 	return 0;
 }
 
-static int lis2dh_raw_write(const struct device *dev, uint8_t reg_addr,
-			     uint8_t *value, uint8_t len)
+static int lis2dh_raw_write(const struct device *dev, uint8_t reg_addr, uint8_t *value, uint8_t len)
 {
 	const struct lis2dh_config *cfg = dev->config;
-	uint8_t buffer_tx[1] = { reg_addr & ~LIS2DH_SPI_READ_BIT };
-	const struct spi_buf tx_buf[2] = {
-		{
-			.buf = buffer_tx,
-			.len = 1,
-		},
-		{
-			.buf = value,
-			.len = len,
-		}
-	};
-	const struct spi_buf_set tx = {
-		.buffers = tx_buf,
-		.count = 2
-	};
-
+	uint8_t buffer_tx[1] = {reg_addr & ~LIS2DH_SPI_READ_BIT};
+	const struct spi_buf tx_buf[2] = {{
+						  .buf = buffer_tx,
+						  .len = 1,
+					  },
+					  {
+						  .buf = value,
+						  .len = len,
+					  }};
+	const struct spi_buf_set tx = {.buffers = tx_buf, .count = 2};
 
 	if (len > 64) {
 		return -EIO;
@@ -103,34 +85,32 @@ static int lis2dh_raw_write(const struct device *dev, uint8_t reg_addr,
 	return 0;
 }
 
-static int lis2dh_spi_read_data(const struct device *dev, uint8_t reg_addr,
-				 uint8_t *value, uint8_t len)
+static int lis2dh_spi_read_data(const struct device *dev, uint8_t reg_addr, uint8_t *value,
+				uint8_t len)
 {
 	return lis2dh_raw_read(dev, reg_addr, value, len);
 }
 
-static int lis2dh_spi_write_data(const struct device *dev, uint8_t reg_addr,
-				  uint8_t *value, uint8_t len)
+static int lis2dh_spi_write_data(const struct device *dev, uint8_t reg_addr, uint8_t *value,
+				 uint8_t len)
 {
 	return lis2dh_raw_write(dev, reg_addr, value, len);
 }
 
-static int lis2dh_spi_read_reg(const struct device *dev, uint8_t reg_addr,
-				uint8_t *value)
+static int lis2dh_spi_read_reg(const struct device *dev, uint8_t reg_addr, uint8_t *value)
 {
 	return lis2dh_raw_read(dev, reg_addr, value, 1);
 }
 
-static int lis2dh_spi_write_reg(const struct device *dev, uint8_t reg_addr,
-				uint8_t value)
+static int lis2dh_spi_write_reg(const struct device *dev, uint8_t reg_addr, uint8_t value)
 {
 	uint8_t tmp_val = value;
 
 	return lis2dh_raw_write(dev, reg_addr, &tmp_val, 1);
 }
 
-static int lis2dh_spi_update_reg(const struct device *dev, uint8_t reg_addr,
-				  uint8_t mask, uint8_t value)
+static int lis2dh_spi_update_reg(const struct device *dev, uint8_t reg_addr, uint8_t mask,
+				 uint8_t value)
 {
 	uint8_t tmp_val;
 
@@ -143,8 +123,8 @@ static int lis2dh_spi_update_reg(const struct device *dev, uint8_t reg_addr,
 static const struct lis2dh_transfer_function lis2dh_spi_transfer_fn = {
 	.read_data = lis2dh_spi_read_data,
 	.write_data = lis2dh_spi_write_data,
-	.read_reg  = lis2dh_spi_read_reg,
-	.write_reg  = lis2dh_spi_write_reg,
+	.read_reg = lis2dh_spi_read_reg,
+	.write_reg = lis2dh_spi_write_reg,
 	.update_reg = lis2dh_spi_update_reg,
 };
 

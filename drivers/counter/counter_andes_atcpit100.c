@@ -31,18 +31,18 @@
 #define REG_RELD3 0x54 /* Channel 3 Reload Reg.  */
 #define REG_CNTR3 0x58 /* Channel 3 Counter Reg. */
 
-#define PIT_BASE (((const struct atcpit100_config *)(dev)->config)->base)
-#define PIT_INTE(dev) (PIT_BASE + REG_INTE)
-#define PIT_ISTA(dev) (PIT_BASE + REG_ISTA)
-#define PIT_CHEN(dev) (PIT_BASE + REG_CHEN)
+#define PIT_BASE             (((const struct atcpit100_config *)(dev)->config)->base)
+#define PIT_INTE(dev)        (PIT_BASE + REG_INTE)
+#define PIT_ISTA(dev)        (PIT_BASE + REG_ISTA)
+#define PIT_CHEN(dev)        (PIT_BASE + REG_CHEN)
 #define PIT_CH_CTRL(dev, ch) (PIT_BASE + REG_CTRL0 + (ch << 4))
 #define PIT_CH_RELD(dev, ch) (PIT_BASE + REG_RELD0 + (ch << 4))
 #define PIT_CH_CNTR(dev, ch) (PIT_BASE + REG_CNTR0 + (ch << 4))
 
-#define CTRL_CH_SRC_PCLK BIT(3)
+#define CTRL_CH_SRC_PCLK   BIT(3)
 #define CTRL_CH_MODE_32BIT BIT(0)
 
-#define CHANNEL_NUM (4)
+#define CHANNEL_NUM        (4)
 #define CH_NUM_PER_COUNTER (CHANNEL_NUM - 1)
 #define TIMER0_CHANNEL(ch) BIT(((ch) * CHANNEL_NUM))
 
@@ -341,8 +341,7 @@ static int atcpit100_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	return 0;
 }
 
-static int atcpit100_set_top_value(const struct device *dev,
-				   const struct counter_top_cfg *cfg)
+static int atcpit100_set_top_value(const struct device *dev, const struct counter_top_cfg *cfg)
 {
 	const struct atcpit100_config *config = dev->config;
 	struct atcpit100_data *data = dev->data;
@@ -424,8 +423,7 @@ static uint32_t atcpit100_get_pending_int(const struct device *dev)
 {
 	uint32_t reg = sys_read32(PIT_ISTA(dev));
 
-	reg &= (TIMER0_CHANNEL(0) | TIMER0_CHANNEL(1) |
-		TIMER0_CHANNEL(2) | TIMER0_CHANNEL(3));
+	reg &= (TIMER0_CHANNEL(0) | TIMER0_CHANNEL(1) | TIMER0_CHANNEL(2) | TIMER0_CHANNEL(3));
 
 	return !(!reg);
 }
@@ -438,16 +436,14 @@ static uint32_t atcpit100_get_top_value(const struct device *dev)
 	return (top / config->divider);
 }
 
-static uint32_t atcpit100_get_guard_period(const struct device *dev,
-					   uint32_t flags)
+static uint32_t atcpit100_get_guard_period(const struct device *dev, uint32_t flags)
 {
 	struct atcpit100_data *data = dev->data;
 
 	return data->guard_period;
 }
 
-static int atcpit100_set_guard_period(const struct device *dev,
-				      uint32_t ticks, uint32_t flags)
+static int atcpit100_set_guard_period(const struct device *dev, uint32_t ticks, uint32_t flags)
 {
 	const struct atcpit100_config *config = dev->config;
 	struct atcpit100_data *data = dev->data;
@@ -475,41 +471,33 @@ static const struct counter_driver_api atcpit100_driver_api = {
 	.set_guard_period = atcpit100_set_guard_period,
 };
 
-#define COUNTER_ATCPIT100_INIT(n)					\
-	static void counter_atcpit100_cfg_##n(void);			\
-	static struct atcpit100_data atcpit100_data_##n;		\
-									\
-	static const struct atcpit100_config atcpit100_config_##n = {	\
-		.info = {						\
-			.max_top_value =				\
-				(UINT32_MAX/DT_INST_PROP(n, prescaler)),\
-			.freq = (DT_INST_PROP(n, clock_frequency) /	\
-				DT_INST_PROP(n, prescaler)),		\
-			.flags = COUNTER_CONFIG_INFO_COUNT_UP,		\
-			.channels = CH_NUM_PER_COUNTER,			\
-		},							\
-		.base = DT_INST_REG_ADDR(n),				\
-		.divider = DT_INST_PROP(n, prescaler),			\
-		.irq_num = DT_INST_IRQN(n),				\
-		.cfg_func = counter_atcpit100_cfg_##n,			\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(n,					\
-		counter_atcpit100_init,					\
-		NULL,							\
-		&atcpit100_data_##n,					\
-		&atcpit100_config_##n,					\
-		PRE_KERNEL_1,						\
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,			\
-		&atcpit100_driver_api);					\
-									\
-	static void counter_atcpit100_cfg_##n(void)			\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n),				\
-			    DT_INST_IRQ(n, priority),			\
-			    atcpit100_irq_handler,			\
-			    DEVICE_DT_INST_GET(n),			\
-			    0);						\
+#define COUNTER_ATCPIT100_INIT(n)                                                                  \
+	static void counter_atcpit100_cfg_##n(void);                                               \
+	static struct atcpit100_data atcpit100_data_##n;                                           \
+                                                                                                   \
+	static const struct atcpit100_config atcpit100_config_##n = {                              \
+		.info =                                                                            \
+			{                                                                          \
+				.max_top_value = (UINT32_MAX / DT_INST_PROP(n, prescaler)),        \
+				.freq = (DT_INST_PROP(n, clock_frequency) /                        \
+					 DT_INST_PROP(n, prescaler)),                              \
+				.flags = COUNTER_CONFIG_INFO_COUNT_UP,                             \
+				.channels = CH_NUM_PER_COUNTER,                                    \
+			},                                                                         \
+		.base = DT_INST_REG_ADDR(n),                                                       \
+		.divider = DT_INST_PROP(n, prescaler),                                             \
+		.irq_num = DT_INST_IRQN(n),                                                        \
+		.cfg_func = counter_atcpit100_cfg_##n,                                             \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, counter_atcpit100_init, NULL, &atcpit100_data_##n,                \
+			      &atcpit100_config_##n, PRE_KERNEL_1,                                 \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &atcpit100_driver_api);         \
+                                                                                                   \
+	static void counter_atcpit100_cfg_##n(void)                                                \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), atcpit100_irq_handler,      \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_ATCPIT100_INIT)

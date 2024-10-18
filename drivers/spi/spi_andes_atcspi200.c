@@ -14,11 +14,10 @@ typedef void (*atcspi200_cfg_func_t)(void);
 
 #ifdef CONFIG_ANDES_SPI_DMA_MODE
 
-#define ANDES_SPI_DMA_ERROR_FLAG 0x01
+#define ANDES_SPI_DMA_ERROR_FLAG   0x01
 #define ANDES_SPI_DMA_RX_DONE_FLAG 0x02
 #define ANDES_SPI_DMA_TX_DONE_FLAG 0x04
-#define ANDES_SPI_DMA_DONE_FLAG	\
-	(ANDES_SPI_DMA_RX_DONE_FLAG | ANDES_SPI_DMA_TX_DONE_FLAG)
+#define ANDES_SPI_DMA_DONE_FLAG    (ANDES_SPI_DMA_RX_DONE_FLAG | ANDES_SPI_DMA_TX_DONE_FLAG)
 
 struct stream {
 	const struct device *dma_dev;
@@ -55,10 +54,9 @@ struct spi_atcspi200_cfg {
 };
 
 /* API Functions */
-static int spi_config(const struct device *dev,
-		      const struct spi_config *config)
+static int spi_config(const struct device *dev, const struct spi_config *config)
 {
-	const struct spi_atcspi200_cfg * const cfg = dev->config;
+	const struct spi_atcspi200_cfg *const cfg = dev->config;
 	uint32_t sclk_div, data_len;
 
 	/* Set the divisor for SPI interface sclk */
@@ -109,8 +107,8 @@ static int spi_config(const struct device *dev,
 
 static int spi_transfer(const struct device *dev)
 {
-	struct spi_atcspi200_data * const data = dev->data;
-	const struct spi_atcspi200_cfg * const cfg = dev->config;
+	struct spi_atcspi200_data *const data = dev->data;
+	const struct spi_atcspi200_cfg *const cfg = dev->config;
 	struct spi_context *ctx = &data->ctx;
 	uint32_t data_len, tctrl, int_msk;
 
@@ -136,11 +134,8 @@ static int spi_transfer(const struct device *dev)
 		int_msk = IEN_RX_FIFO_MSK | IEN_END_MSK;
 	} else {
 		tctrl = (TRNS_MODE_WRITE_READ << TCTRL_TRNS_MODE_OFFSET) |
-			(data_len << TCTRL_WR_TCNT_OFFSET) |
-			(data_len << TCTRL_RD_TCNT_OFFSET);
-		int_msk = IEN_TX_FIFO_MSK |
-			  IEN_RX_FIFO_MSK |
-			  IEN_END_MSK;
+			(data_len << TCTRL_WR_TCNT_OFFSET) | (data_len << TCTRL_RD_TCNT_OFFSET);
+		int_msk = IEN_TX_FIFO_MSK | IEN_RX_FIFO_MSK | IEN_END_MSK;
 	}
 
 	sys_write32(tctrl, SPI_TCTRL(cfg->base));
@@ -154,11 +149,9 @@ static int spi_transfer(const struct device *dev)
 	return 0;
 }
 
-
-static int configure(const struct device *dev,
-		     const struct spi_config *config)
+static int configure(const struct device *dev, const struct spi_config *config)
 {
-	struct spi_atcspi200_data * const data = dev->data;
+	struct spi_atcspi200_data *const data = dev->data;
 	struct spi_context *ctx = &(data->ctx);
 
 	if (spi_context_configured(ctx, config)) {
@@ -167,8 +160,7 @@ static int configure(const struct device *dev,
 	}
 
 	if (SPI_OP_MODE_GET(config->operation) != SPI_OP_MODE_MASTER) {
-		LOG_ERR("Slave mode is not supported on %s",
-			    dev->name);
+		LOG_ERR("Slave mode is not supported on %s", dev->name);
 		return -EINVAL;
 	}
 
@@ -190,7 +182,6 @@ static int configure(const struct device *dev,
 	return 0;
 }
 
-
 #ifdef CONFIG_ANDES_SPI_DMA_MODE
 
 static int spi_dma_tx_load(const struct device *dev);
@@ -198,28 +189,28 @@ static int spi_dma_rx_load(const struct device *dev);
 
 static inline void spi_tx_dma_enable(const struct device *dev)
 {
-	const struct spi_atcspi200_cfg * const cfg = dev->config;
+	const struct spi_atcspi200_cfg *const cfg = dev->config;
 	/* Enable TX DMA */
 	sys_set_bits(SPI_CTRL(cfg->base), CTRL_TX_DMA_EN_MSK);
 }
 
 static inline void spi_tx_dma_disable(const struct device *dev)
 {
-	const struct spi_atcspi200_cfg * const cfg = dev->config;
+	const struct spi_atcspi200_cfg *const cfg = dev->config;
 	/* Disable TX DMA */
 	sys_clear_bits(SPI_CTRL(cfg->base), CTRL_TX_DMA_EN_MSK);
 }
 
 static inline void spi_rx_dma_enable(const struct device *dev)
 {
-	const struct spi_atcspi200_cfg * const cfg = dev->config;
+	const struct spi_atcspi200_cfg *const cfg = dev->config;
 	/* Enable RX DMA */
 	sys_set_bits(SPI_CTRL(cfg->base), CTRL_RX_DMA_EN_MSK);
 }
 
 static inline void spi_rx_dma_disable(const struct device *dev)
 {
-	const struct spi_atcspi200_cfg * const cfg = dev->config;
+	const struct spi_atcspi200_cfg *const cfg = dev->config;
 	/* Disable RX DMA */
 	sys_clear_bits(SPI_CTRL(cfg->base), CTRL_RX_DMA_EN_MSK);
 }
@@ -250,8 +241,8 @@ static int spi_dma_move_buffers(const struct device *dev)
 	return 0;
 }
 
-static inline void dma_rx_callback(const struct device *dev, void *user_data,
-				uint32_t channel, int status)
+static inline void dma_rx_callback(const struct device *dev, void *user_data, uint32_t channel,
+				   int status)
 {
 	const struct device *spi_dev = (struct device *)user_data;
 	struct spi_atcspi200_data *data = spi_dev->data;
@@ -271,8 +262,8 @@ static inline void dma_rx_callback(const struct device *dev, void *user_data,
 	}
 }
 
-static inline void dma_tx_callback(const struct device *dev, void *user_data,
-				uint32_t channel, int status)
+static inline void dma_tx_callback(const struct device *dev, void *user_data, uint32_t channel,
+				   int status)
 {
 	const struct device *spi_dev = (struct device *)user_data;
 	struct spi_atcspi200_data *data = spi_dev->data;
@@ -300,7 +291,7 @@ uint32_t dummy_rx_tx_buffer;
 
 static int spi_dma_tx_load(const struct device *dev)
 {
-	const struct spi_atcspi200_cfg * const cfg = dev->config;
+	const struct spi_atcspi200_cfg *const cfg = dev->config;
 	struct spi_atcspi200_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	int remain_len, ret, dfs;
@@ -309,11 +300,11 @@ static int spi_dma_tx_load(const struct device *dev)
 	memset(&data->dma_tx.dma_blk_cfg, 0, sizeof(struct dma_block_config));
 
 	if (ctx->current_tx->len > data->chunk_len) {
-		data->dma_tx.dma_blk_cfg.block_size = data->chunk_len /
-					data->dma_tx.dma_cfg.dest_data_size;
+		data->dma_tx.dma_blk_cfg.block_size =
+			data->chunk_len / data->dma_tx.dma_cfg.dest_data_size;
 	} else {
-		data->dma_tx.dma_blk_cfg.block_size = ctx->current_tx->len /
-					data->dma_tx.dma_cfg.dest_data_size;
+		data->dma_tx.dma_blk_cfg.block_size =
+			ctx->current_tx->len / data->dma_tx.dma_cfg.dest_data_size;
 	}
 
 	/* tx direction has memory as source and periph as dest. */
@@ -365,8 +356,8 @@ static int spi_dma_tx_load(const struct device *dev)
 			blk_cfg->next_block = next_blk_cfg;
 			current_tx = ctx->current_tx;
 
-			next_blk_cfg->block_size = current_tx->len /
-						data->dma_tx.dma_cfg.dest_data_size;
+			next_blk_cfg->block_size =
+				current_tx->len / data->dma_tx.dma_cfg.dest_data_size;
 
 			/* tx direction has memory as source and periph as dest. */
 			if (current_tx->buf == NULL) {
@@ -404,8 +395,7 @@ static int spi_dma_tx_load(const struct device *dev)
 	}
 
 	/* pass our client origin to the dma: data->dma_tx.dma_channel */
-	ret = dma_config(data->dma_tx.dma_dev, data->dma_tx.channel,
-			&data->dma_tx.dma_cfg);
+	ret = dma_config(data->dma_tx.dma_dev, data->dma_tx.channel, &data->dma_tx.dma_cfg);
 	/* the channel is the actual stream from 0 */
 	if (ret != 0) {
 		data->dma_tx.block_idx = 0;
@@ -418,7 +408,7 @@ static int spi_dma_tx_load(const struct device *dev)
 
 static int spi_dma_rx_load(const struct device *dev)
 {
-	const struct spi_atcspi200_cfg * const cfg = dev->config;
+	const struct spi_atcspi200_cfg *const cfg = dev->config;
 	struct spi_atcspi200_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	int remain_len, ret, dfs;
@@ -427,11 +417,11 @@ static int spi_dma_rx_load(const struct device *dev)
 	memset(&data->dma_rx.dma_blk_cfg, 0, sizeof(struct dma_block_config));
 
 	if (ctx->current_rx->len > data->chunk_len) {
-		data->dma_rx.dma_blk_cfg.block_size = data->chunk_len /
-					data->dma_rx.dma_cfg.dest_data_size;
+		data->dma_rx.dma_blk_cfg.block_size =
+			data->chunk_len / data->dma_rx.dma_cfg.dest_data_size;
 	} else {
-		data->dma_rx.dma_blk_cfg.block_size = ctx->current_rx->len /
-					data->dma_rx.dma_cfg.dest_data_size;
+		data->dma_rx.dma_blk_cfg.block_size =
+			ctx->current_rx->len / data->dma_rx.dma_cfg.dest_data_size;
 	}
 
 	/* rx direction has periph as source and mem as dest. */
@@ -480,8 +470,8 @@ static int spi_dma_rx_load(const struct device *dev)
 			blk_cfg->next_block = next_blk_cfg;
 			current_rx = ctx->current_rx;
 
-			next_blk_cfg->block_size = current_rx->len /
-						data->dma_rx.dma_cfg.dest_data_size;
+			next_blk_cfg->block_size =
+				current_rx->len / data->dma_rx.dma_cfg.dest_data_size;
 
 			/* rx direction has periph as source and mem as dest. */
 			if (current_rx->buf == NULL) {
@@ -517,8 +507,7 @@ static int spi_dma_rx_load(const struct device *dev)
 	}
 
 	/* pass our client origin to the dma: data->dma_rx.channel */
-	ret = dma_config(data->dma_rx.dma_dev, data->dma_rx.channel,
-			&data->dma_rx.dma_cfg);
+	ret = dma_config(data->dma_rx.dma_dev, data->dma_rx.channel, &data->dma_rx.dma_cfg);
 	/* the channel is the actual stream from 0 */
 	if (ret != 0) {
 		data->dma_rx.block_idx = 0;
@@ -531,8 +520,8 @@ static int spi_dma_rx_load(const struct device *dev)
 
 static int spi_transfer_dma(const struct device *dev)
 {
-	const struct spi_atcspi200_cfg * const cfg = dev->config;
-	struct spi_atcspi200_data * const data = dev->data;
+	const struct spi_atcspi200_cfg *const cfg = dev->config;
+	struct spi_atcspi200_data *const data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	uint32_t data_len, tctrl, dma_rx_enable, dma_tx_enable;
 	int error = 0;
@@ -554,8 +543,7 @@ static int spi_transfer_dma(const struct device *dev)
 		dma_tx_enable = 0;
 	} else {
 		tctrl = (TRNS_MODE_WRITE_READ << TCTRL_TRNS_MODE_OFFSET) |
-			(data_len << TCTRL_WR_TCNT_OFFSET) |
-			(data_len << TCTRL_RD_TCNT_OFFSET);
+			(data_len << TCTRL_WR_TCNT_OFFSET) | (data_len << TCTRL_RD_TCNT_OFFSET);
 		dma_rx_enable = 1;
 		dma_tx_enable = 1;
 	}
@@ -596,16 +584,12 @@ static int spi_transfer_dma(const struct device *dev)
 }
 #endif
 
-static int transceive(const struct device *dev,
-			  const struct spi_config *config,
-			  const struct spi_buf_set *tx_bufs,
-			  const struct spi_buf_set *rx_bufs,
-			  bool asynchronous,
-			  spi_callback_t cb,
-			  void *userdata)
+static int transceive(const struct device *dev, const struct spi_config *config,
+		      const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs,
+		      bool asynchronous, spi_callback_t cb, void *userdata)
 {
-	const struct spi_atcspi200_cfg * const cfg = dev->config;
-	struct spi_atcspi200_data * const data = dev->data;
+	const struct spi_atcspi200_cfg *const cfg = dev->config;
+	struct spi_atcspi200_data *const data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	int error, dfs;
 	size_t chunk_len;
@@ -663,31 +647,26 @@ out:
 	return error;
 }
 
-int spi_atcspi200_transceive(const struct device *dev,
-			const struct spi_config *config,
-			const struct spi_buf_set *tx_bufs,
-			const struct spi_buf_set *rx_bufs)
+int spi_atcspi200_transceive(const struct device *dev, const struct spi_config *config,
+			     const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs)
 {
 	return transceive(dev, config, tx_bufs, rx_bufs, false, NULL, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
-int spi_atcspi200_transceive_async(const struct device *dev,
-				const struct spi_config *config,
-				const struct spi_buf_set *tx_bufs,
-				const struct spi_buf_set *rx_bufs,
-				spi_callback_t cb,
-				void *userdata)
+int spi_atcspi200_transceive_async(const struct device *dev, const struct spi_config *config,
+				   const struct spi_buf_set *tx_bufs,
+				   const struct spi_buf_set *rx_bufs, spi_callback_t cb,
+				   void *userdata)
 {
 	return transceive(dev, config, tx_bufs, rx_bufs, true, cb, userdata);
 }
 #endif
 
-int spi_atcspi200_release(const struct device *dev,
-			  const struct spi_config *config)
+int spi_atcspi200_release(const struct device *dev, const struct spi_config *config)
 {
 
-	struct spi_atcspi200_data * const data = dev->data;
+	struct spi_atcspi200_data *const data = dev->data;
 
 	if (data->busy) {
 		return -EBUSY;
@@ -700,8 +679,8 @@ int spi_atcspi200_release(const struct device *dev,
 
 int spi_atcspi200_init(const struct device *dev)
 {
-	const struct spi_atcspi200_cfg * const cfg = dev->config;
-	struct spi_atcspi200_data * const data = dev->data;
+	const struct spi_atcspi200_cfg *const cfg = dev->config;
+	struct spi_atcspi200_data *const data = dev->data;
 	int err = 0;
 
 	/* we should not configure the device we are running on */
@@ -747,14 +726,13 @@ static const struct spi_driver_api spi_atcspi200_api = {
 #ifdef CONFIG_SPI_RTIO
 	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
-	.release = spi_atcspi200_release
-};
+	.release = spi_atcspi200_release};
 
 static void spi_atcspi200_irq_handler(void *arg)
 {
-	const struct device * const dev = (const struct device *) arg;
-	const struct spi_atcspi200_cfg * const cfg = dev->config;
-	struct spi_atcspi200_data * const data = dev->data;
+	const struct device *const dev = (const struct device *)arg;
+	const struct spi_atcspi200_cfg *const cfg = dev->config;
+	struct spi_atcspi200_data *const data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	uint32_t rx_data, cur_tx_fifo_num, cur_rx_fifo_num;
 	uint32_t i, dfs, intr_status, spi_status;
@@ -764,8 +742,7 @@ static void spi_atcspi200_irq_handler(void *arg)
 	intr_status = sys_read32(SPI_INTST(cfg->base));
 	dfs = SPI_WORD_SIZE_GET(ctx->config->operation) >> 3;
 
-	if ((intr_status & INTST_TX_FIFO_INT_MSK) &&
-	    !(intr_status & INTST_END_INT_MSK)) {
+	if ((intr_status & INTST_TX_FIFO_INT_MSK) && !(intr_status & INTST_END_INT_MSK)) {
 
 		spi_status = sys_read32(SPI_STAT(cfg->base));
 		cur_tx_fifo_num = GET_TX_NUM(cfg->base);
@@ -807,7 +784,6 @@ static void spi_atcspi200_irq_handler(void *arg)
 			data->tx_cnt++;
 		}
 		sys_write32(INTST_TX_FIFO_INT_MSK, SPI_INTST(cfg->base));
-
 	}
 
 	if (intr_status & INTST_RX_FIFO_INT_MSK) {
@@ -866,66 +842,52 @@ static void spi_atcspi200_irq_handler(void *arg)
 		data->busy = false;
 
 		spi_context_complete(ctx, dev, error);
-
 	}
 }
 
 #if CONFIG_ANDES_SPI_DMA_MODE
 
-#define ANDES_DMA_CONFIG_DIRECTION(config)		(FIELD_GET(GENMASK(1, 0), config))
-#define ANDES_DMA_CONFIG_PERIPHERAL_ADDR_INC(config)	(FIELD_GET(BIT(2), config))
-#define ANDES_DMA_CONFIG_MEMORY_ADDR_INC(config)	(FIELD_GET(BIT(3), config))
-#define ANDES_DMA_CONFIG_PERIPHERAL_DATA_SIZE(config)	(1 << (FIELD_GET(GENMASK(6, 4), config)))
-#define ANDES_DMA_CONFIG_MEMORY_DATA_SIZE(config)	(1 << (FIELD_GET(GENMASK(9, 7), config)))
-#define ANDES_DMA_CONFIG_PRIORITY(config)		(FIELD_GET(BIT(10), config))
+#define ANDES_DMA_CONFIG_DIRECTION(config)            (FIELD_GET(GENMASK(1, 0), config))
+#define ANDES_DMA_CONFIG_PERIPHERAL_ADDR_INC(config)  (FIELD_GET(BIT(2), config))
+#define ANDES_DMA_CONFIG_MEMORY_ADDR_INC(config)      (FIELD_GET(BIT(3), config))
+#define ANDES_DMA_CONFIG_PERIPHERAL_DATA_SIZE(config) (1 << (FIELD_GET(GENMASK(6, 4), config)))
+#define ANDES_DMA_CONFIG_MEMORY_DATA_SIZE(config)     (1 << (FIELD_GET(GENMASK(9, 7), config)))
+#define ANDES_DMA_CONFIG_PRIORITY(config)             (FIELD_GET(BIT(10), config))
 
-#define DMA_CHANNEL_CONFIG(id, dir)						\
-		DT_INST_DMAS_CELL_BY_NAME(id, dir, channel_config)
+#define DMA_CHANNEL_CONFIG(id, dir) DT_INST_DMAS_CELL_BY_NAME(id, dir, channel_config)
 
-#define SPI_DMA_CHANNEL_INIT(index, dir, dir_cap, src_dev, dest_dev)		\
-	.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(index, dir)),	\
-	.channel =								\
-		DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),			\
-	.dma_cfg = {								\
-		.dma_slot =							\
-		   DT_INST_DMAS_CELL_BY_NAME(index, dir, slot),			\
-		.channel_direction = ANDES_DMA_CONFIG_DIRECTION(		\
-				     DMA_CHANNEL_CONFIG(index, dir)),		\
-		.complete_callback_en = 0,					\
-		.error_callback_dis = 0,					\
-		.source_data_size =						\
-			ANDES_DMA_CONFIG_##src_dev##_DATA_SIZE(			\
-					DMA_CHANNEL_CONFIG(index, dir)		\
-					),					\
-		.dest_data_size =						\
-			ANDES_DMA_CONFIG_##dest_dev##_DATA_SIZE(		\
-					DMA_CHANNEL_CONFIG(index, dir)		\
-					),					\
-		.source_burst_length = 1, /* SINGLE transfer */			\
-		.dest_burst_length = 1, /* SINGLE transfer */			\
-		.channel_priority = ANDES_DMA_CONFIG_PRIORITY(			\
-					DMA_CHANNEL_CONFIG(index, dir)		\
-					),					\
-		.source_chaining_en = DT_PROP(DT_INST_DMAS_CTLR_BY_NAME(	\
-					index, dir), chain_transfer),		\
-		.dest_chaining_en = DT_PROP(DT_INST_DMAS_CTLR_BY_NAME(		\
-					index, dir), chain_transfer),		\
-	},									\
-	.src_addr_increment =							\
-			ANDES_DMA_CONFIG_##src_dev##_ADDR_INC(			\
-					DMA_CHANNEL_CONFIG(index, dir)		\
-					),					\
-	.dst_addr_increment =							\
-			ANDES_DMA_CONFIG_##dest_dev##_ADDR_INC(			\
-					DMA_CHANNEL_CONFIG(index, dir)		\
-					)
+#define SPI_DMA_CHANNEL_INIT(index, dir, dir_cap, src_dev, dest_dev)                               \
+	.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(index, dir)),                           \
+	.channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),                                 \
+	.dma_cfg =                                                                                 \
+		{                                                                                  \
+			.dma_slot = DT_INST_DMAS_CELL_BY_NAME(index, dir, slot),                   \
+			.channel_direction =                                                       \
+				ANDES_DMA_CONFIG_DIRECTION(DMA_CHANNEL_CONFIG(index, dir)),        \
+			.complete_callback_en = 0,                                                 \
+			.error_callback_dis = 0,                                                   \
+			.source_data_size = ANDES_DMA_CONFIG_##src_dev##_DATA_SIZE(                \
+				DMA_CHANNEL_CONFIG(index, dir)),                                   \
+			.dest_data_size = ANDES_DMA_CONFIG_##dest_dev##_DATA_SIZE(                 \
+				DMA_CHANNEL_CONFIG(index, dir)),                                   \
+			.source_burst_length = 1, /* SINGLE transfer */                            \
+			.dest_burst_length = 1,   /* SINGLE transfer */                            \
+			.channel_priority =                                                        \
+				ANDES_DMA_CONFIG_PRIORITY(DMA_CHANNEL_CONFIG(index, dir)),         \
+			.source_chaining_en =                                                      \
+				DT_PROP(DT_INST_DMAS_CTLR_BY_NAME(index, dir), chain_transfer),    \
+			.dest_chaining_en =                                                        \
+				DT_PROP(DT_INST_DMAS_CTLR_BY_NAME(index, dir), chain_transfer),    \
+	},                                                                                         \
+	.src_addr_increment =                                                                      \
+		ANDES_DMA_CONFIG_##src_dev##_ADDR_INC(DMA_CHANNEL_CONFIG(index, dir)),             \
+	.dst_addr_increment =                                                                      \
+		ANDES_DMA_CONFIG_##dest_dev##_ADDR_INC(DMA_CHANNEL_CONFIG(index, dir))
 
-#define SPI_DMA_CHANNEL(id, dir, DIR, src, dest)				\
-	.dma_##dir = {								\
-		COND_CODE_1(DT_INST_DMAS_HAS_NAME(id, dir),			\
+#define SPI_DMA_CHANNEL(id, dir, DIR, src, dest)                                                   \
+	.dma_##dir = {COND_CODE_1(DT_INST_DMAS_HAS_NAME(id, dir),			\
 			(SPI_DMA_CHANNEL_INIT(id, dir, DIR, src, dest)),	\
-			(NULL))							\
-		},
+			(NULL)) },
 
 #else
 #define SPI_DMA_CHANNEL(id, dir, DIR, src, dest)
@@ -939,40 +901,30 @@ static void spi_atcspi200_irq_handler(void *arg)
 #define SPI_ROM_CFG_XIP(node_id) false
 #endif
 
-#define SPI_INIT(n)							\
-	static struct spi_atcspi200_data spi_atcspi200_dev_data_##n = { \
-		SPI_CONTEXT_INIT_LOCK(spi_atcspi200_dev_data_##n, ctx),	\
-		SPI_CONTEXT_INIT_SYNC(spi_atcspi200_dev_data_##n, ctx),	\
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
-		SPI_BUSY_INIT						\
-		SPI_DMA_CHANNEL(n, rx, RX, PERIPHERAL, MEMORY)		\
-		SPI_DMA_CHANNEL(n, tx, TX, MEMORY, PERIPHERAL)		\
-	};								\
-	static void spi_atcspi200_cfg_##n(void);			\
-	static struct spi_atcspi200_cfg spi_atcspi200_dev_cfg_##n = {	\
-		.cfg_func = spi_atcspi200_cfg_##n,			\
-		.base = DT_INST_REG_ADDR(n),				\
-		.irq_num = DT_INST_IRQN(n),				\
-		.f_sys = DT_INST_PROP(n, clock_frequency),		\
-		.xip = SPI_ROM_CFG_XIP(DT_DRV_INST(n)),			\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(n,					\
-		spi_atcspi200_init,					\
-		NULL,							\
-		&spi_atcspi200_dev_data_##n,				\
-		&spi_atcspi200_dev_cfg_##n,				\
-		POST_KERNEL,						\
-		CONFIG_SPI_INIT_PRIORITY,				\
-		&spi_atcspi200_api);					\
-									\
-	static void spi_atcspi200_cfg_##n(void)				\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n),				\
-				DT_INST_IRQ(n, priority),		\
-				spi_atcspi200_irq_handler,		\
-				DEVICE_DT_INST_GET(n),			\
-				0);					\
+#define SPI_INIT(n)                                                                                \
+	static struct spi_atcspi200_data spi_atcspi200_dev_data_##n = {                            \
+		SPI_CONTEXT_INIT_LOCK(spi_atcspi200_dev_data_##n, ctx),                            \
+		SPI_CONTEXT_INIT_SYNC(spi_atcspi200_dev_data_##n, ctx),                            \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)                               \
+			SPI_BUSY_INIT SPI_DMA_CHANNEL(n, rx, RX, PERIPHERAL, MEMORY)               \
+				SPI_DMA_CHANNEL(n, tx, TX, MEMORY, PERIPHERAL)};                   \
+	static void spi_atcspi200_cfg_##n(void);                                                   \
+	static struct spi_atcspi200_cfg spi_atcspi200_dev_cfg_##n = {                              \
+		.cfg_func = spi_atcspi200_cfg_##n,                                                 \
+		.base = DT_INST_REG_ADDR(n),                                                       \
+		.irq_num = DT_INST_IRQN(n),                                                        \
+		.f_sys = DT_INST_PROP(n, clock_frequency),                                         \
+		.xip = SPI_ROM_CFG_XIP(DT_DRV_INST(n)),                                            \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, spi_atcspi200_init, NULL, &spi_atcspi200_dev_data_##n,            \
+			      &spi_atcspi200_dev_cfg_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,   \
+			      &spi_atcspi200_api);                                                 \
+                                                                                                   \
+	static void spi_atcspi200_cfg_##n(void)                                                    \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), spi_atcspi200_irq_handler,  \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
 	};
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_INIT)

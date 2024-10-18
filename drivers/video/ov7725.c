@@ -16,7 +16,7 @@
 
 LOG_MODULE_REGISTER(video_ov7725, CONFIG_VIDEO_LOG_LEVEL);
 
-#define OV7725_REVISION  0x7721U
+#define OV7725_REVISION 0x7721U
 
 #define OV7725_GAIN       0x00U
 #define OV7725_BLUE       0x01U
@@ -203,119 +203,103 @@ struct ov7725_reg {
 };
 
 static const struct ov7725_clock ov7725_clock_configs[] = {
-	{ .input_clk = 24000000, .framerate = 30,
-		.clkrc = 0x01, .com4 = 0x41, .dm_lnl = 0x00 },
-	{ .input_clk = 24000000, .framerate = 15,
-		.clkrc = 0x03, .com4 = 0x41, .dm_lnl = 0x00 },
-	{ .input_clk = 24000000, .framerate = 25,
-		.clkrc = 0x01, .com4 = 0x41, .dm_lnl = 0x66 },
-	{ .input_clk = 24000000, .framerate = 14,
-		.clkrc = 0x03, .com4 = 0x41, .dm_lnl = 0x1a },
-	{ .input_clk = 26000000, .framerate = 30,
-		.clkrc = 0x01, .com4 = 0x41, .dm_lnl = 0x2b },
-	{ .input_clk = 26000000, .framerate = 15,
-		.clkrc = 0x03, .com4 = 0x41, .dm_lnl = 0x2b },
-	{ .input_clk = 26000000, .framerate = 25,
-		.clkrc = 0x01, .com4 = 0x41, .dm_lnl = 0x99 },
-	{ .input_clk = 26000000, .framerate = 14,
-		.clkrc = 0x03, .com4 = 0x41, .dm_lnl = 0x46 },
-	{ .input_clk = 13000000, .framerate = 30,
-		.clkrc = 0x00, .com4 = 0x41, .dm_lnl = 0x2b },
-	{ .input_clk = 13000000, .framerate = 15,
-		.clkrc = 0x01, .com4 = 0x41, .dm_lnl = 0x2b },
-	{ .input_clk = 13000000, .framerate = 25,
-		.clkrc = 0x00, .com4 = 0x41, .dm_lnl = 0x99 },
-	{ .input_clk = 13000000, .framerate = 14,
-		.clkrc = 0x01, .com4 = 0x41, .dm_lnl = 0x46 },
+	{.input_clk = 24000000, .framerate = 30, .clkrc = 0x01, .com4 = 0x41, .dm_lnl = 0x00},
+	{.input_clk = 24000000, .framerate = 15, .clkrc = 0x03, .com4 = 0x41, .dm_lnl = 0x00},
+	{.input_clk = 24000000, .framerate = 25, .clkrc = 0x01, .com4 = 0x41, .dm_lnl = 0x66},
+	{.input_clk = 24000000, .framerate = 14, .clkrc = 0x03, .com4 = 0x41, .dm_lnl = 0x1a},
+	{.input_clk = 26000000, .framerate = 30, .clkrc = 0x01, .com4 = 0x41, .dm_lnl = 0x2b},
+	{.input_clk = 26000000, .framerate = 15, .clkrc = 0x03, .com4 = 0x41, .dm_lnl = 0x2b},
+	{.input_clk = 26000000, .framerate = 25, .clkrc = 0x01, .com4 = 0x41, .dm_lnl = 0x99},
+	{.input_clk = 26000000, .framerate = 14, .clkrc = 0x03, .com4 = 0x41, .dm_lnl = 0x46},
+	{.input_clk = 13000000, .framerate = 30, .clkrc = 0x00, .com4 = 0x41, .dm_lnl = 0x2b},
+	{.input_clk = 13000000, .framerate = 15, .clkrc = 0x01, .com4 = 0x41, .dm_lnl = 0x2b},
+	{.input_clk = 13000000, .framerate = 25, .clkrc = 0x00, .com4 = 0x41, .dm_lnl = 0x99},
+	{.input_clk = 13000000, .framerate = 14, .clkrc = 0x01, .com4 = 0x41, .dm_lnl = 0x46},
 };
-
 
 static const struct ov7725_pixel_format ov7725_pf_configs[] = {
-	{ .pixel_format = VIDEO_PIX_FMT_RGB565, .com7 = (1 << 2) | (2) }
-};
+	{.pixel_format = VIDEO_PIX_FMT_RGB565, .com7 = (1 << 2) | (2)}};
 
 static const struct ov7725_reg ov7725_init_reg_tb[] = {
 	/*Output config*/
-	{ OV7725_CLKRC,          0x00 },
-	{ OV7725_COM7,           0x06 },
-	{ OV7725_HSTART,         0x3f },
-	{ OV7725_HSIZE,          0x50 },
-	{ OV7725_VSTART,         0x03 },
-	{ OV7725_VSIZE,          0x78 },
-	{ OV7725_HREF,           0x00 },
-	{ OV7725_HOUTSIZE,       0x50 },
-	{ OV7725_VOUTSIZE,       0x78 },
+	{OV7725_CLKRC, 0x00},
+	{OV7725_COM7, 0x06},
+	{OV7725_HSTART, 0x3f},
+	{OV7725_HSIZE, 0x50},
+	{OV7725_VSTART, 0x03},
+	{OV7725_VSIZE, 0x78},
+	{OV7725_HREF, 0x00},
+	{OV7725_HOUTSIZE, 0x50},
+	{OV7725_VOUTSIZE, 0x78},
 
 	/*DSP control*/
-	{ OV7725_TGT_B,          0x7f },
-	{ OV7725_FIXGAIN,        0x09 },
-	{ OV7725_AWB_CTRL0,      0xe0 },
-	{ OV7725_DSP_CTRL1,      0xff },
-	{ OV7725_DSP_CTRL2,      0x00 },
-	{ OV7725_DSP_CTRL3,      0x00 },
-	{ OV7725_DSP_CTRL4,      0x00 },
+	{OV7725_TGT_B, 0x7f},
+	{OV7725_FIXGAIN, 0x09},
+	{OV7725_AWB_CTRL0, 0xe0},
+	{OV7725_DSP_CTRL1, 0xff},
+	{OV7725_DSP_CTRL2, 0x00},
+	{OV7725_DSP_CTRL3, 0x00},
+	{OV7725_DSP_CTRL4, 0x00},
 
 	/*AGC AEC AWB*/
-	{ OV7725_COM8,           0xf0 },
-	{ OV7725_COM4,           0x81 },
-	{ OV7725_COM6,           0xc5 },
-	{ OV7725_COM9,           0x11 },
-	{ OV7725_BDBASE,         0x7F },
-	{ OV7725_BDMSTEP,        0x03 },
-	{ OV7725_AEW,            0x40 },
-	{ OV7725_AEB,            0x30 },
-	{ OV7725_VPT,            0xa1 },
-	{ OV7725_EXHCL,          0x9e },
-	{ OV7725_AWB_CTRL3,      0xaa },
-	{ OV7725_COM8,           0xff },
+	{OV7725_COM8, 0xf0},
+	{OV7725_COM4, 0x81},
+	{OV7725_COM6, 0xc5},
+	{OV7725_COM9, 0x11},
+	{OV7725_BDBASE, 0x7F},
+	{OV7725_BDMSTEP, 0x03},
+	{OV7725_AEW, 0x40},
+	{OV7725_AEB, 0x30},
+	{OV7725_VPT, 0xa1},
+	{OV7725_EXHCL, 0x9e},
+	{OV7725_AWB_CTRL3, 0xaa},
+	{OV7725_COM8, 0xff},
 
 	/*matrix sharpness brightness contrast*/
-	{ OV7725_EDGE1,          0x08 },
-	{ OV7725_DNSOFF,         0x01 },
-	{ OV7725_EDGE2,          0x03 },
-	{ OV7725_EDGE3,          0x00 },
-	{ OV7725_MTX1,           0xb0 },
-	{ OV7725_MTX2,           0x9d },
-	{ OV7725_MTX3,           0x13 },
-	{ OV7725_MTX4,           0x16 },
-	{ OV7725_MTX5,           0x7b },
-	{ OV7725_MTX6,           0x91 },
-	{ OV7725_MTX_CTRL,       0x1e },
-	{ OV7725_BRIGHT,         0x08 },
-	{ OV7725_CNST,           0x20 },
-	{ OV7725_UVADJ0,         0x81 },
-	{ OV7725_SDE,            0X06 },
-	{ OV7725_USAT,           0x65 },
-	{ OV7725_VSAT,           0x65 },
-	{ OV7725_HUECOS,         0X80 },
-	{ OV7725_HUESIN,         0X80 },
+	{OV7725_EDGE1, 0x08},
+	{OV7725_DNSOFF, 0x01},
+	{OV7725_EDGE2, 0x03},
+	{OV7725_EDGE3, 0x00},
+	{OV7725_MTX1, 0xb0},
+	{OV7725_MTX2, 0x9d},
+	{OV7725_MTX3, 0x13},
+	{OV7725_MTX4, 0x16},
+	{OV7725_MTX5, 0x7b},
+	{OV7725_MTX6, 0x91},
+	{OV7725_MTX_CTRL, 0x1e},
+	{OV7725_BRIGHT, 0x08},
+	{OV7725_CNST, 0x20},
+	{OV7725_UVADJ0, 0x81},
+	{OV7725_SDE, 0X06},
+	{OV7725_USAT, 0x65},
+	{OV7725_VSAT, 0x65},
+	{OV7725_HUECOS, 0X80},
+	{OV7725_HUESIN, 0X80},
 
 	/*GAMMA config*/
-	{ OV7725_GAM1,           0x0c },
-	{ OV7725_GAM2,           0x16 },
-	{ OV7725_GAM3,           0x2a },
-	{ OV7725_GAM4,           0x4e },
-	{ OV7725_GAM5,           0x61 },
-	{ OV7725_GAM6,           0x6f },
-	{ OV7725_GAM7,           0x7b },
-	{ OV7725_GAM8,           0x86 },
-	{ OV7725_GAM9,           0x8e },
-	{ OV7725_GAM10,          0x97 },
-	{ OV7725_GAM11,          0xa4 },
-	{ OV7725_GAM12,          0xaf },
-	{ OV7725_GAM13,          0xc5 },
-	{ OV7725_GAM14,          0xd7 },
-	{ OV7725_GAM15,          0xe8 },
-	{ OV7725_SLOP,           0x20 },
+	{OV7725_GAM1, 0x0c},
+	{OV7725_GAM2, 0x16},
+	{OV7725_GAM3, 0x2a},
+	{OV7725_GAM4, 0x4e},
+	{OV7725_GAM5, 0x61},
+	{OV7725_GAM6, 0x6f},
+	{OV7725_GAM7, 0x7b},
+	{OV7725_GAM8, 0x86},
+	{OV7725_GAM9, 0x8e},
+	{OV7725_GAM10, 0x97},
+	{OV7725_GAM11, 0xa4},
+	{OV7725_GAM12, 0xaf},
+	{OV7725_GAM13, 0xc5},
+	{OV7725_GAM14, 0xd7},
+	{OV7725_GAM15, 0xe8},
+	{OV7725_SLOP, 0x20},
 
-	{ OV7725_COM3,           0x40 },
-	{ OV7725_COM5,           0xf5 },
-	{ OV7725_COM10,          0x02 },
-	{ OV7725_COM2,           0x01 }
-};
+	{OV7725_COM3, 0x40},
+	{OV7725_COM5, 0xf5},
+	{OV7725_COM10, 0x02},
+	{OV7725_COM2, 0x01}};
 
-static int ov7725_write_reg(const struct i2c_dt_spec *spec, uint8_t reg_addr,
-			    uint8_t value)
+static int ov7725_write_reg(const struct i2c_dt_spec *spec, uint8_t reg_addr, uint8_t value)
 {
 	struct i2c_msg msgs[2];
 
@@ -330,8 +314,7 @@ static int ov7725_write_reg(const struct i2c_dt_spec *spec, uint8_t reg_addr,
 	return i2c_transfer_dt(spec, msgs, 2);
 }
 
-static int ov7725_read_reg(const struct i2c_dt_spec *spec, uint8_t reg_addr,
-			   uint8_t *value)
+static int ov7725_read_reg(const struct i2c_dt_spec *spec, uint8_t reg_addr, uint8_t *value)
 {
 	struct i2c_msg msgs[2];
 
@@ -350,9 +333,7 @@ static int ov7725_read_reg(const struct i2c_dt_spec *spec, uint8_t reg_addr,
 	return i2c_transfer_dt(spec, msgs, 2);
 }
 
-int ov7725_modify_reg(const struct i2c_dt_spec *spec,
-		      uint8_t reg_addr,
-		      uint8_t clear_mask,
+int ov7725_modify_reg(const struct i2c_dt_spec *spec, uint8_t reg_addr, uint8_t clear_mask,
 		      uint8_t value)
 {
 	int ret;
@@ -361,17 +342,14 @@ int ov7725_modify_reg(const struct i2c_dt_spec *spec,
 	ret = ov7725_read_reg(spec, reg_addr, &set_value);
 
 	if (ret == 0) {
-		set_value = (set_value & (~clear_mask)) |
-				(set_value & clear_mask);
+		set_value = (set_value & (~clear_mask)) | (set_value & clear_mask);
 		ret = ov7725_write_reg(spec, reg_addr, set_value);
 	}
-
 
 	return ret;
 }
 
-static int ov7725_write_all(const struct device *dev,
-			    const struct ov7725_reg *regs,
+static int ov7725_write_all(const struct device *dev, const struct ov7725_reg *regs,
 			    uint16_t reg_num)
 {
 	uint16_t i = 0;
@@ -389,22 +367,19 @@ static int ov7725_write_all(const struct device *dev,
 	return 0;
 }
 
-static int ov7725_set_clock(const struct device *dev,
-				unsigned int framerate,
-				unsigned int input_clk)
+static int ov7725_set_clock(const struct device *dev, unsigned int framerate,
+			    unsigned int input_clk)
 {
 	const struct ov7725_config *cfg = dev->config;
 
 	for (unsigned int i = 0; i < ARRAY_SIZE(ov7725_clock_configs); i++) {
 		if ((ov7725_clock_configs[i].framerate == framerate) &&
-			(ov7725_clock_configs[i].input_clk == input_clk)) {
-			ov7725_write_reg(&cfg->i2c, OV7725_CLKRC,
-						ov7725_clock_configs[i].clkrc);
+		    (ov7725_clock_configs[i].input_clk == input_clk)) {
+			ov7725_write_reg(&cfg->i2c, OV7725_CLKRC, ov7725_clock_configs[i].clkrc);
 			ov7725_modify_reg(&cfg->i2c, OV7725_COM4, 0xc0,
-						ov7725_clock_configs[i].com4);
+					  ov7725_clock_configs[i].com4);
 			ov7725_write_reg(&cfg->i2c, OV7725_EXHCL, 0x00);
-			ov7725_write_reg(&cfg->i2c, OV7725_DM_LNL,
-						ov7725_clock_configs[i].dm_lnl);
+			ov7725_write_reg(&cfg->i2c, OV7725_DM_LNL, ov7725_clock_configs[i].dm_lnl);
 			ov7725_write_reg(&cfg->i2c, OV7725_DM_LNH, 0x00);
 			ov7725_write_reg(&cfg->i2c, OV7725_ADVFL, 0x00);
 			ov7725_write_reg(&cfg->i2c, OV7725_ADVFH, 0x00);
@@ -415,8 +390,7 @@ static int ov7725_set_clock(const struct device *dev,
 	return -1;
 }
 
-static int ov7725_set_fmt(const struct device *dev,
-			  enum video_endpoint_id ep,
+static int ov7725_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 			  struct video_format *fmt)
 {
 	struct ov7725_data *drv_data = dev->data;
@@ -427,8 +401,7 @@ static int ov7725_set_fmt(const struct device *dev,
 	int ret;
 
 	/* we only support one format for now (VGA RGB565) */
-	if (fmt->pixelformat != VIDEO_PIX_FMT_RGB565 || fmt->height != 480 ||
-	    fmt->width != 640) {
+	if (fmt->pixelformat != VIDEO_PIX_FMT_RGB565 || fmt->height != 480 || fmt->width != 640) {
 		return -ENOTSUP;
 	}
 
@@ -443,8 +416,7 @@ static int ov7725_set_fmt(const struct device *dev,
 	drv_data->fmt = *fmt;
 
 	/* Configure Sensor */
-	ret = ov7725_write_all(dev, ov7725_init_reg_tb,
-				ARRAY_SIZE(ov7725_init_reg_tb));
+	ret = ov7725_write_all(dev, ov7725_init_reg_tb, ARRAY_SIZE(ov7725_init_reg_tb));
 	if (ret) {
 		LOG_ERR("Unable to write ov7725 config");
 		return ret;
@@ -456,9 +428,7 @@ static int ov7725_set_fmt(const struct device *dev,
 	/* Set output format */
 	for (uint8_t i = 0; i < ARRAY_SIZE(ov7725_pf_configs); i++) {
 		if (ov7725_pf_configs[i].pixel_format == fmt->pixelformat) {
-			ret =  ov7725_modify_reg(&cfg->i2c,
-						OV7725_COM7,
-						0x1FU,
+			ret = ov7725_modify_reg(&cfg->i2c, OV7725_COM7, 0x1FU,
 						ov7725_pf_configs[i].com7);
 			if (ret) {
 				LOG_ERR("Unable to write ov7725 pixel format");
@@ -497,17 +467,13 @@ static int ov7725_set_fmt(const struct device *dev,
 	ov7725_write_reg(&cfg->i2c, OV7725_HOUTSIZE, width >> 2U);
 	ov7725_write_reg(&cfg->i2c, OV7725_VOUTSIZE, height >> 1U);
 	ov7725_write_reg(&cfg->i2c, OV7725_HREF,
-			 ((vstart & 1U) << 6U) |
-			 ((hstart & 3U) << 4U) |
-			 ((height & 1U) << 2U) |
-			 ((hsize & 3U) << 0U));
+			 ((vstart & 1U) << 6U) | ((hstart & 3U) << 4U) | ((height & 1U) << 2U) |
+				 ((hsize & 3U) << 0U));
 	return ov7725_write_reg(&cfg->i2c, OV7725_EXHCH,
-					((height & 1U) << 2U) |
-					((width & 3U) << 0U));
+				((height & 1U) << 2U) | ((width & 3U) << 0U));
 }
 
-static int ov7725_get_fmt(const struct device *dev,
-			  enum video_endpoint_id ep,
+static int ov7725_get_fmt(const struct device *dev, enum video_endpoint_id ep,
 			  struct video_format *fmt)
 {
 	struct ov7725_data *drv_data = dev->data;
@@ -527,21 +493,18 @@ static int ov7725_stream_stop(const struct device *dev)
 	return 0;
 }
 
-static const struct video_format_cap fmts[] = {
-	{
-		.pixelformat = VIDEO_PIX_FMT_RGB565,
-		.width_min = 640,
-		.width_max = 640,
-		.height_min = 480,
-		.height_max = 480,
-		.width_step = 0,
-		.height_step = 0,
-	},
-	{ 0 }
-};
+static const struct video_format_cap fmts[] = {{
+						       .pixelformat = VIDEO_PIX_FMT_RGB565,
+						       .width_min = 640,
+						       .width_max = 640,
+						       .height_min = 480,
+						       .height_max = 480,
+						       .width_step = 0,
+						       .height_step = 0,
+					       },
+					       {0}};
 
-static int ov7725_get_caps(const struct device *dev,
-			   enum video_endpoint_id ep,
+static int ov7725_get_caps(const struct device *dev, enum video_endpoint_id ep,
 			   struct video_caps *caps)
 {
 	caps->format_caps = fmts;
@@ -632,8 +595,7 @@ static int ov7725_init_0(const struct device *dev)
 
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	if (!gpio_is_ready_dt(&cfg->reset_gpio)) {
-		LOG_ERR("%s: device %s is not ready", dev->name,
-				cfg->reset_gpio.port->name);
+		LOG_ERR("%s: device %s is not ready", dev->name, cfg->reset_gpio.port->name);
 		return -ENODEV;
 	}
 #endif
@@ -641,7 +603,5 @@ static int ov7725_init_0(const struct device *dev)
 	return ov7725_init(dev);
 }
 
-DEVICE_DT_INST_DEFINE(0, &ov7725_init_0, NULL,
-		    &ov7725_data_0, &ov7725_cfg_0,
-		    POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,
-		    &ov7725_driver_api);
+DEVICE_DT_INST_DEFINE(0, &ov7725_init_0, NULL, &ov7725_data_0, &ov7725_cfg_0, POST_KERNEL,
+		      CONFIG_VIDEO_INIT_PRIORITY, &ov7725_driver_api);

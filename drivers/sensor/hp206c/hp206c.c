@@ -31,8 +31,7 @@ static inline int hp206c_bus_config(const struct device *dev)
 	return i2c_configure(cfg->i2c.bus, i2c_cfg);
 }
 
-static int hp206c_read(const struct device *dev, uint8_t cmd, uint8_t *data,
-		       uint8_t len)
+static int hp206c_read(const struct device *dev, uint8_t cmd, uint8_t *data, uint8_t len)
 {
 	const struct hp206c_device_config *cfg = dev->config;
 
@@ -45,16 +44,14 @@ static int hp206c_read(const struct device *dev, uint8_t cmd, uint8_t *data,
 	return 0;
 }
 
-static int hp206c_read_reg(const struct device *dev, uint8_t reg_addr,
-			   uint8_t *reg_val)
+static int hp206c_read_reg(const struct device *dev, uint8_t reg_addr, uint8_t *reg_val)
 {
 	uint8_t cmd = HP206C_CMD_READ_REG | (reg_addr & HP206C_REG_ADDR_MASK);
 
 	return hp206c_read(dev, cmd, reg_val, 1);
 }
 
-static int hp206c_write(const struct device *dev, uint8_t cmd, uint8_t *data,
-			uint8_t len)
+static int hp206c_write(const struct device *dev, uint8_t cmd, uint8_t *data, uint8_t len)
 {
 	const struct hp206c_device_config *cfg = dev->config;
 
@@ -67,8 +64,7 @@ static int hp206c_write(const struct device *dev, uint8_t cmd, uint8_t *data,
 	return 0;
 }
 
-static int hp206c_write_reg(const struct device *dev, uint8_t reg_addr,
-			    uint8_t reg_val)
+static int hp206c_write_reg(const struct device *dev, uint8_t reg_addr, uint8_t reg_val)
 {
 	uint8_t cmd = HP206C_CMD_WRITE_REG | (reg_addr & HP206C_REG_ADDR_MASK);
 
@@ -92,13 +88,13 @@ static int hp206c_cmd_send(const struct device *dev, uint8_t cmd)
  * precision computation takes 131.1ms.
  */
 static uint8_t hp206c_adc_time_ms[] = {
-/*	conversion time(ms),   OSR  */
-	132,		    /* 4096 */
-	66,		    /* 2048 */
-	34,		    /* 1024 */
-	17,		    /* 512  */
-	9,		    /* 256  */
-	5,		    /* 128  */
+	/*	conversion time(ms),   OSR  */
+	132, /* 4096 */
+	66,  /* 2048 */
+	34,  /* 1024 */
+	17,  /* 512  */
+	9,   /* 256  */
+	5,   /* 128  */
 };
 
 static int hp206c_osr_set(const struct device *dev, uint16_t osr)
@@ -139,8 +135,7 @@ static int hp206c_altitude_offs_set(const struct device *dev, int16_t offs)
 }
 
 static int hp206c_attr_set(const struct device *dev, enum sensor_channel chan,
-			   enum sensor_attribute attr,
-			   const struct sensor_value *val)
+			   enum sensor_attribute attr, const struct sensor_value *val)
 {
 #ifdef CONFIG_HP206C_OSR_RUNTIME
 	if (attr == SENSOR_ATTR_OVERSAMPLING) {
@@ -160,8 +155,7 @@ static int hp206c_attr_set(const struct device *dev, enum sensor_channel chan,
 	return -ENOTSUP;
 }
 
-static int hp206c_wait_dev_ready(const struct device *dev,
-				 uint32_t timeout_ms)
+static int hp206c_wait_dev_ready(const struct device *dev, uint32_t timeout_ms)
 {
 	struct hp206c_device_data *hp206c = dev->data;
 	uint8_t int_src;
@@ -180,8 +174,7 @@ static int hp206c_wait_dev_ready(const struct device *dev,
 	return -EBUSY;
 }
 
-static int hp206c_adc_acquire(const struct device *dev,
-			      enum sensor_channel chan)
+static int hp206c_adc_acquire(const struct device *dev, enum sensor_channel chan)
 {
 	struct hp206c_device_data *hp206c = dev->data;
 
@@ -205,8 +198,7 @@ static int32_t hp206c_buf_convert(uint8_t *buf, bool signed_val)
 	return tmp;
 }
 
-static int hp206c_val_get(const struct device *dev,
-			  uint8_t cmd, struct sensor_value *val)
+static int hp206c_val_get(const struct device *dev, uint8_t cmd, struct sensor_value *val)
 {
 	uint8_t buf[3];
 	int32_t temp = 0;
@@ -236,26 +228,22 @@ static int hp206c_val_get(const struct device *dev,
 	return 0;
 }
 
-static inline int hp206c_pressure_get(const struct device *dev,
-				      struct sensor_value *val)
+static inline int hp206c_pressure_get(const struct device *dev, struct sensor_value *val)
 {
 	return hp206c_val_get(dev, HP206C_CMD_READ_P, val);
 }
 
-static inline int hp206c_altitude_get(const struct device *dev,
-				      struct sensor_value *val)
+static inline int hp206c_altitude_get(const struct device *dev, struct sensor_value *val)
 {
 	return hp206c_val_get(dev, HP206C_CMD_READ_A, val);
 }
 
-static inline int hp206c_temperature_get(const struct device *dev,
-					 struct sensor_value *val)
+static inline int hp206c_temperature_get(const struct device *dev, struct sensor_value *val)
 {
 	return hp206c_val_get(dev, HP206C_CMD_READ_T, val);
 }
 
-static int hp206c_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
+static int hp206c_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	switch (chan) {
@@ -313,15 +301,15 @@ static int hp206c_init(const struct device *dev)
 	return 0;
 }
 
-#define HP206C_DEFINE(inst)								\
-	static struct hp206c_device_data hp206c_data_##inst;				\
-											\
-	static const struct hp206c_device_config hp206c_config_##inst = {		\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
-	};										\
-											\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, hp206c_init, NULL,				\
-			      &hp206c_data_##inst, &hp206c_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &hp206c_api);		\
+#define HP206C_DEFINE(inst)                                                                        \
+	static struct hp206c_device_data hp206c_data_##inst;                                       \
+                                                                                                   \
+	static const struct hp206c_device_config hp206c_config_##inst = {                          \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+	};                                                                                         \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, hp206c_init, NULL, &hp206c_data_##inst,                 \
+				     &hp206c_config_##inst, POST_KERNEL,                           \
+				     CONFIG_SENSOR_INIT_PRIORITY, &hp206c_api);
 
 DT_INST_FOREACH_STATUS_OKAY(HP206C_DEFINE)

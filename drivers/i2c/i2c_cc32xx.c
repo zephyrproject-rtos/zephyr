@@ -28,21 +28,16 @@ LOG_MODULE_REGISTER(i2c_cc32xx);
 
 #include "i2c-priv.h"
 
-#define I2C_MASTER_CMD_BURST_RECEIVE_START_NACK	 I2C_MASTER_CMD_BURST_SEND_START
-#define I2C_MASTER_CMD_BURST_RECEIVE_STOP \
-	I2C_MASTER_CMD_BURST_RECEIVE_ERROR_STOP
-#define I2C_MASTER_CMD_BURST_RECEIVE_CONT_NACK	 I2C_MASTER_CMD_BURST_SEND_CONT
+#define I2C_MASTER_CMD_BURST_RECEIVE_START_NACK I2C_MASTER_CMD_BURST_SEND_START
+#define I2C_MASTER_CMD_BURST_RECEIVE_STOP       I2C_MASTER_CMD_BURST_RECEIVE_ERROR_STOP
+#define I2C_MASTER_CMD_BURST_RECEIVE_CONT_NACK  I2C_MASTER_CMD_BURST_SEND_CONT
 
-#define I2C_SEM_MASK \
-	COMMON_REG_I2C_Properties_Register_I2C_Properties_Register_M
-#define I2C_SEM_TAKE \
-	COMMON_REG_I2C_Properties_Register_I2C_Properties_Register_S
+#define I2C_SEM_MASK COMMON_REG_I2C_Properties_Register_I2C_Properties_Register_M
+#define I2C_SEM_TAKE COMMON_REG_I2C_Properties_Register_I2C_Properties_Register_S
 
 #define IS_I2C_MSG_WRITE(flags) ((flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE)
 
-#define DEV_BASE(dev) \
-	(((const struct i2c_cc32xx_config *const)(dev)->config)->base)
-
+#define DEV_BASE(dev) (((const struct i2c_cc32xx_config *const)(dev)->config)->base)
 
 /* Since this driver does not explicitly enable the TX/RX FIFOs, there
  * are no interrupts received which can distinguish between read and write
@@ -74,15 +69,14 @@ struct i2c_cc32xx_data {
 
 	volatile enum i2c_cc32xx_state state;
 
-	struct i2c_msg msg; /* Cache msg for transfer state machine */
-	uint16_t  slave_addr; /* Cache slave address for ISR use */
+	struct i2c_msg msg;  /* Cache msg for transfer state machine */
+	uint16_t slave_addr; /* Cache slave address for ISR use */
 };
 
 static void configure_i2c_irq(const struct i2c_cc32xx_config *config);
 
 #define I2C_CLK_FREQ(n) DT_PROP(DT_INST_PHANDLE(n, clocks), clock_frequency)
-static int i2c_cc32xx_configure(const struct device *dev,
-				uint32_t dev_config_raw)
+static int i2c_cc32xx_configure(const struct device *dev, uint32_t dev_config_raw)
 {
 	uint32_t base = DEV_BASE(dev);
 	uint32_t bitrate_id;
@@ -111,9 +105,7 @@ static int i2c_cc32xx_configure(const struct device *dev,
 	return 0;
 }
 
-static void i2c_cc32xx_prime_transfer(const struct device *dev,
-				      struct i2c_msg *msg,
-				      uint16_t addr)
+static void i2c_cc32xx_prime_transfer(const struct device *dev, struct i2c_msg *msg, uint16_t addr)
 {
 	struct i2c_cc32xx_data *data = dev->data;
 	uint32_t base = DEV_BASE(dev);
@@ -147,18 +139,16 @@ static void i2c_cc32xx_prime_transfer(const struct device *dev,
 
 		if (data->msg.len < 2) {
 			/* Start the I2C transfer in master receive mode */
-			MAP_I2CMasterControl(base,
-				       I2C_MASTER_CMD_BURST_RECEIVE_START_NACK);
+			MAP_I2CMasterControl(base, I2C_MASTER_CMD_BURST_RECEIVE_START_NACK);
 		} else {
 			/* Start the I2C transfer in burst receive mode */
-			MAP_I2CMasterControl(base,
-					    I2C_MASTER_CMD_BURST_RECEIVE_START);
+			MAP_I2CMasterControl(base, I2C_MASTER_CMD_BURST_RECEIVE_START);
 		}
 	}
 }
 
-static int i2c_cc32xx_transfer(const struct device *dev, struct i2c_msg *msgs,
-			       uint8_t num_msgs, uint16_t addr)
+static int i2c_cc32xx_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
+			       uint16_t addr)
 {
 	struct i2c_cc32xx_data *data = dev->data;
 	int retval = 0;
@@ -191,8 +181,7 @@ static int i2c_cc32xx_transfer(const struct device *dev, struct i2c_msg *msgs,
 	return retval;
 }
 
-static void i2c_cc32xx_isr_handle_write(uint32_t base,
-					 struct i2c_cc32xx_data *data)
+static void i2c_cc32xx_isr_handle_write(uint32_t base, struct i2c_cc32xx_data *data)
 {
 	/* Decrement write Counter */
 	data->msg.len--;
@@ -207,29 +196,24 @@ static void i2c_cc32xx_isr_handle_write(uint32_t base,
 		if (data->msg.len < 2) {
 			/* Everything has been sent, nothing to receive */
 			/* Send last byte with STOP bit */
-			MAP_I2CMasterControl(base,
-					     I2C_MASTER_CMD_BURST_SEND_FINISH);
+			MAP_I2CMasterControl(base, I2C_MASTER_CMD_BURST_SEND_FINISH);
 		} else {
 			/*
 			 * Either there is more data to be transmitted or some
 			 * data needs to be received next
 			 */
-			MAP_I2CMasterControl(base,
-					     I2C_MASTER_CMD_BURST_SEND_CONT);
-
+			MAP_I2CMasterControl(base, I2C_MASTER_CMD_BURST_SEND_CONT);
 		}
 	} else {
 		/*
 		 * No more data needs to be sent, so follow up with
 		 * a STOP bit.
 		 */
-		MAP_I2CMasterControl(base,
-				     I2C_MASTER_CMD_BURST_RECEIVE_STOP);
+		MAP_I2CMasterControl(base, I2C_MASTER_CMD_BURST_RECEIVE_STOP);
 	}
 }
 
-static void i2c_cc32xx_isr_handle_read(uint32_t base,
-					struct i2c_cc32xx_data *data)
+static void i2c_cc32xx_isr_handle_read(uint32_t base, struct i2c_cc32xx_data *data)
 {
 
 	/* Save the received data */
@@ -241,22 +225,19 @@ static void i2c_cc32xx_isr_handle_read(uint32_t base,
 	if (data->msg.len) {
 		if (data->msg.len > 1) {
 			/* More data to be received */
-			MAP_I2CMasterControl(base,
-					     I2C_MASTER_CMD_BURST_RECEIVE_CONT);
+			MAP_I2CMasterControl(base, I2C_MASTER_CMD_BURST_RECEIVE_CONT);
 		} else {
 			/*
 			 * Send NACK because it's the last byte to be received
 			 */
-			MAP_I2CMasterControl(base,
-				       I2C_MASTER_CMD_BURST_RECEIVE_CONT_NACK);
+			MAP_I2CMasterControl(base, I2C_MASTER_CMD_BURST_RECEIVE_CONT_NACK);
 		}
 	} else {
 		/*
 		 * No more data needs to be received, so follow up with a
 		 * STOP bit
 		 */
-		MAP_I2CMasterControl(base,
-				     I2C_MASTER_CMD_BURST_RECEIVE_STOP);
+		MAP_I2CMasterControl(base, I2C_MASTER_CMD_BURST_RECEIVE_STOP);
 	}
 }
 
@@ -276,37 +257,34 @@ static void i2c_cc32xx_isr(const struct device *dev)
 	/* Clear interrupt source to avoid additional interrupts */
 	MAP_I2CMasterIntClearEx(base, int_status);
 
-	LOG_DBG("primed state: %d; err_status: 0x%x; int_status: 0x%x",
-		    data->state, err_status, int_status);
+	LOG_DBG("primed state: %d; err_status: 0x%x; int_status: 0x%x", data->state, err_status,
+		int_status);
 
 	/* Handle errors: */
 	if ((err_status != I2C_MASTER_ERR_NONE) ||
-	    (int_status &
-	     (I2C_MASTER_INT_ARB_LOST | I2C_MASTER_INT_TIMEOUT))) {
+	    (int_status & (I2C_MASTER_INT_ARB_LOST | I2C_MASTER_INT_TIMEOUT))) {
 
 		/* Set so API can report I/O error: */
 		data->state = I2C_CC32XX_ERROR;
 
-		if (!(err_status & (I2C_MASTER_ERR_ARB_LOST |
-				    I2C_MASTER_ERR_ADDR_ACK))) {
+		if (!(err_status & (I2C_MASTER_ERR_ARB_LOST | I2C_MASTER_ERR_ADDR_ACK))) {
 			/* Send a STOP bit to end I2C communications */
 			/*
 			 * I2C_MASTER_CMD_BURST_SEND_ERROR_STOP -and-
 			 * I2C_MASTER_CMD_BURST_RECEIVE_ERROR_STOP
 			 * have the same values
 			 */
-			MAP_I2CMasterControl(base,
-					  I2C_MASTER_CMD_BURST_SEND_ERROR_STOP);
+			MAP_I2CMasterControl(base, I2C_MASTER_CMD_BURST_SEND_ERROR_STOP);
 		}
 		/* Indicate transfer complete */
 		k_sem_give(&data->transfer_complete);
 
-	/* Handle Stop: */
+		/* Handle Stop: */
 	} else if (int_status & I2C_MASTER_INT_STOP) {
 		/* Indicate transfer complete */
 		k_sem_give(&data->transfer_complete);
 
-	/* Handle (read or write) transmit complete: */
+		/* Handle (read or write) transmit complete: */
 	} else if (int_status & (I2C_MASTER_INT_DATA | I2C_MASTER_INT_START)) {
 		if (data->state == I2C_CC32XX_WRITE_MODE) {
 			i2c_cc32xx_isr_handle_write(base, data);
@@ -314,7 +292,7 @@ static void i2c_cc32xx_isr(const struct device *dev)
 		if (data->state == I2C_CC32XX_READ_MODE) {
 			i2c_cc32xx_isr_handle_read(base, data);
 		}
-	/* Some unanticipated H/W state: */
+		/* Some unanticipated H/W state: */
 	} else {
 		__ASSERT(1, "Unanticipated I2C Interrupt!");
 		data->state = I2C_CC32XX_ERROR;
@@ -332,9 +310,7 @@ static int i2c_cc32xx_init(const struct device *dev)
 	uint32_t regval;
 
 	/* Enable the I2C module clocks and wait for completion:*/
-	MAP_PRCMPeripheralClkEnable(PRCM_I2CA0,
-					PRCM_RUN_MODE_CLK |
-					PRCM_SLP_MODE_CLK);
+	MAP_PRCMPeripheralClkEnable(PRCM_I2CA0, PRCM_RUN_MODE_CLK | PRCM_SLP_MODE_CLK);
 	while (!MAP_PRCMPeripheralStatusGet(PRCM_I2CA0)) {
 	}
 
@@ -398,16 +374,13 @@ static const struct i2c_cc32xx_config i2c_cc32xx_config = {
 
 static struct i2c_cc32xx_data i2c_cc32xx_data;
 
-I2C_DEVICE_DT_INST_DEFINE(0, i2c_cc32xx_init, NULL,
-		    &i2c_cc32xx_data, &i2c_cc32xx_config,
-		    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
-		    &i2c_cc32xx_driver_api);
+I2C_DEVICE_DT_INST_DEFINE(0, i2c_cc32xx_init, NULL, &i2c_cc32xx_data, &i2c_cc32xx_config,
+			  POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &i2c_cc32xx_driver_api);
 
 static void configure_i2c_irq(const struct i2c_cc32xx_config *config)
 {
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    i2c_cc32xx_isr, DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), i2c_cc32xx_isr,
+		    DEVICE_DT_INST_GET(0), 0);
 
 	irq_enable(config->irq_no);
 }

@@ -111,7 +111,6 @@ static void update_part_name(const struct device *dev)
 	} else {
 		snprintf(data->FPGA_info, sizeof(data->FPGA_info), "Part name: ZU%d", zu_number);
 	}
-
 }
 
 /*
@@ -121,8 +120,7 @@ static void update_part_name(const struct device *dev)
  * Each section has the following structure:
  * [key][length of data][data]
  */
-static uint32_t *parse_header(const struct device *dev, uint32_t *image_ptr,
-		       uint32_t *img_size)
+static uint32_t *parse_header(const struct device *dev, uint32_t *image_ptr, uint32_t *img_size)
 {
 	unsigned char *header = (unsigned char *)image_ptr;
 
@@ -191,9 +189,8 @@ static uint32_t *parse_header(const struct device *dev, uint32_t *image_ptr,
 	 * The last section is the raw bitstream.
 	 * It is preceded by its size, which is needed for DMA transfer.
 	 */
-	*img_size =
-		((uint32_t)*header << 24) | ((uint32_t) *(header + 1) << 16) |
-		((uint32_t) *(header + 2) << 8) | ((uint32_t) *(header + 3));
+	*img_size = ((uint32_t)*header << 24) | ((uint32_t)*(header + 1) << 16) |
+		    ((uint32_t)*(header + 2) << 8) | ((uint32_t)*(header + 3));
 
 	return (uint32_t *)header;
 }
@@ -282,8 +279,7 @@ static int init_pcap(const struct device *dev)
 	return 0;
 }
 
-static int zynqmp_fpga_load(const struct device *dev, uint32_t *image_ptr,
-			    uint32_t img_size)
+static int zynqmp_fpga_load(const struct device *dev, uint32_t *image_ptr, uint32_t img_size)
 {
 	uint32_t *addr = parse_header(dev, image_ptr, &img_size);
 
@@ -315,12 +311,10 @@ static int zynqmp_fpga_init(const struct device *dev)
 
 static struct zynqmp_fpga_data fpga_data;
 
-static const struct fpga_driver_api zynqmp_api = {
-	.reset = zynqmp_fpga_reset,
-	.load = zynqmp_fpga_load,
-	.get_status = zynqmp_fpga_get_status,
-	.get_info = zynqmp_fpga_get_info
-};
+static const struct fpga_driver_api zynqmp_api = {.reset = zynqmp_fpga_reset,
+						  .load = zynqmp_fpga_load,
+						  .get_status = zynqmp_fpga_get_status,
+						  .get_info = zynqmp_fpga_get_info};
 
-DEVICE_DT_INST_DEFINE(0, &zynqmp_fpga_init, NULL, &fpga_data, NULL,
-	      POST_KERNEL, CONFIG_FPGA_INIT_PRIORITY, &zynqmp_api);
+DEVICE_DT_INST_DEFINE(0, &zynqmp_fpga_init, NULL, &fpga_data, NULL, POST_KERNEL,
+		      CONFIG_FPGA_INIT_PRIORITY, &zynqmp_api);

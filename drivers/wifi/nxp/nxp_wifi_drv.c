@@ -101,8 +101,8 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 	struct in_addr base_addr;
 	struct in_addr netmask_addr;
 #endif
-	struct wifi_iface_status status = { 0 };
-	struct wifi_ap_sta_info ap_sta_info = { 0 };
+	struct wifi_iface_status status = {0};
+	struct wifi_ap_sta_info ap_sta_info = {0};
 
 	LOG_DBG("WLAN: received event %d", reason);
 
@@ -276,23 +276,23 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 	case WLAN_REASON_UAP_CLIENT_CONN:
 		wlan_get_current_uap_network(&nxp_wlan_network);
 #ifdef CONFIG_NXP_WIFI_11AX
-			if (nxp_wlan_network.dot11ax) {
-				ap_sta_info.link_mode = WIFI_6;
-			}
+		if (nxp_wlan_network.dot11ax) {
+			ap_sta_info.link_mode = WIFI_6;
+		}
 #endif
 #ifdef CONFIG_NXP_WIFI_11AC
-			else if (nxp_wlan_network.dot11ac) {
-				ap_sta_info.link_mode = WIFI_5;
-			}
+		else if (nxp_wlan_network.dot11ac) {
+			ap_sta_info.link_mode = WIFI_5;
+		}
 #endif
-			else if (nxp_wlan_network.dot11n) {
-				ap_sta_info.link_mode = WIFI_4;
-			} else {
-				ap_sta_info.link_mode = WIFI_3;
-			}
+		else if (nxp_wlan_network.dot11n) {
+			ap_sta_info.link_mode = WIFI_4;
+		} else {
+			ap_sta_info.link_mode = WIFI_3;
+		}
 
 		memcpy(ap_sta_info.mac, data, WIFI_MAC_ADDR_LEN);
-		ap_sta_info.mac_length  = WIFI_MAC_ADDR_LEN;
+		ap_sta_info.mac_length = WIFI_MAC_ADDR_LEN;
 		ap_sta_info.twt_capable = status.twt_capable;
 
 		wifi_mgmt_raise_ap_sta_connected_event(g_uap.netif, &ap_sta_info);
@@ -1011,8 +1011,10 @@ static int nxp_wifi_uap_status(const struct device *dev, struct wifi_iface_statu
 			status->band = nxp_wlan_network.channel > 14 ? WIFI_FREQ_BAND_5_GHZ
 								     : WIFI_FREQ_BAND_2_4_GHZ;
 			status->security = nxp_wifi_security_type(nxp_wlan_network.security.type);
-			status->mfp = nxp_wlan_network.security.mfpr ? WIFI_MFP_REQUIRED :
-				(nxp_wlan_network.security.mfpc ? WIFI_MFP_OPTIONAL : 0);
+			status->mfp =
+				nxp_wlan_network.security.mfpr
+					? WIFI_MFP_REQUIRED
+					: (nxp_wlan_network.security.mfpc ? WIFI_MFP_OPTIONAL : 0);
 		}
 	}
 
@@ -1087,8 +1089,10 @@ static int nxp_wifi_status(const struct device *dev, struct wifi_iface_status *s
 			status->band = nxp_wlan_network.channel > 14 ? WIFI_FREQ_BAND_5_GHZ
 								     : WIFI_FREQ_BAND_2_4_GHZ;
 			status->security = nxp_wifi_security_type(nxp_wlan_network.security.type);
-			status->mfp = nxp_wlan_network.security.mfpr ? WIFI_MFP_REQUIRED :
-				(nxp_wlan_network.security.mfpc ? WIFI_MFP_OPTIONAL : 0);
+			status->mfp =
+				nxp_wlan_network.security.mfpr
+					? WIFI_MFP_REQUIRED
+					: (nxp_wlan_network.security.mfpc ? WIFI_MFP_OPTIONAL : 0);
 		}
 	}
 
@@ -1377,8 +1381,8 @@ static int nxp_wifi_reg_domain(const struct device *dev, struct wifi_reg_domain 
 	int nxp_wifi_cfp_no = 0;
 
 	if (reg_domain->oper == WIFI_MGMT_GET) {
-		nxp_wifi_chan_freq_power = (chan_freq_power_t *)wlan_get_regulatory_domain(0,
-				&nxp_wifi_cfp_no);
+		nxp_wifi_chan_freq_power =
+			(chan_freq_power_t *)wlan_get_regulatory_domain(0, &nxp_wifi_cfp_no);
 		if (nxp_wifi_chan_freq_power != NULL) {
 			for (int i = 0; i < nxp_wifi_cfp_no; i++) {
 				reg_domain->chan_info[i].center_frequency =
@@ -1394,8 +1398,8 @@ static int nxp_wifi_reg_domain(const struct device *dev, struct wifi_reg_domain 
 			index = nxp_wifi_cfp_no;
 		}
 
-		nxp_wifi_chan_freq_power = (chan_freq_power_t *)wlan_get_regulatory_domain(1,
-				&nxp_wifi_cfp_no);
+		nxp_wifi_chan_freq_power =
+			(chan_freq_power_t *)wlan_get_regulatory_domain(1, &nxp_wifi_cfp_no);
 		if (nxp_wifi_chan_freq_power != NULL) {
 			for (int i = 0; i < nxp_wifi_cfp_no; i++) {
 				reg_domain->chan_info[index + i].center_frequency =
@@ -1490,8 +1494,8 @@ static void nxp_wifi_sta_init(struct net_if *iface)
 	eth_ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
 	intf->netif = iface;
 #ifdef CONFIG_WIFI_NM
-	wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("wifi_supplicant"),
-			WIFI_TYPE_STA, iface);
+	wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("wifi_supplicant"), WIFI_TYPE_STA,
+					iface);
 #endif
 	g_mlan.state.interface = WLAN_BSS_TYPE_STA;
 
@@ -1526,8 +1530,7 @@ static void nxp_wifi_uap_init(struct net_if *iface)
 	eth_ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
 	intf->netif = iface;
 #ifdef CONFIG_WIFI_NM
-	wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("hostapd"),
-			WIFI_TYPE_SAP, iface);
+	wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("hostapd"), WIFI_TYPE_SAP, iface);
 #endif
 	g_uap.state.interface = WLAN_BSS_TYPE_UAP;
 
@@ -1773,36 +1776,36 @@ static const struct wifi_mgmt_ops nxp_wifi_sta_mgmt = {
 #if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT)
 static const struct zep_wpa_supp_dev_ops nxp_wifi_drv_ops = {
 	.init = wifi_nxp_wpa_supp_dev_init,
-	.deinit                   = wifi_nxp_wpa_supp_dev_deinit,
-	.scan2                    = wifi_nxp_wpa_supp_scan2,
-	.scan_abort               = wifi_nxp_wpa_supp_scan_abort,
-	.get_scan_results2        = wifi_nxp_wpa_supp_scan_results_get,
-	.deauthenticate           = wifi_nxp_wpa_supp_deauthenticate,
-	.authenticate             = wifi_nxp_wpa_supp_authenticate,
-	.associate                = wifi_nxp_wpa_supp_associate,
-	.set_key                  = wifi_nxp_wpa_supp_set_key,
-	.set_supp_port            = wifi_nxp_wpa_supp_set_supp_port,
-	.signal_poll              = wifi_nxp_wpa_supp_signal_poll,
-	.send_mlme                = wifi_nxp_wpa_supp_send_mlme,
-	.get_wiphy                = wifi_nxp_wpa_supp_get_wiphy,
-	.get_capa                 = wifi_nxp_wpa_supp_get_capa,
-	.get_conn_info            = wifi_nxp_wpa_supp_get_conn_info,
-	.set_country              = wifi_nxp_wpa_supp_set_country,
-	.get_country              = wifi_nxp_wpa_supp_get_country,
+	.deinit = wifi_nxp_wpa_supp_dev_deinit,
+	.scan2 = wifi_nxp_wpa_supp_scan2,
+	.scan_abort = wifi_nxp_wpa_supp_scan_abort,
+	.get_scan_results2 = wifi_nxp_wpa_supp_scan_results_get,
+	.deauthenticate = wifi_nxp_wpa_supp_deauthenticate,
+	.authenticate = wifi_nxp_wpa_supp_authenticate,
+	.associate = wifi_nxp_wpa_supp_associate,
+	.set_key = wifi_nxp_wpa_supp_set_key,
+	.set_supp_port = wifi_nxp_wpa_supp_set_supp_port,
+	.signal_poll = wifi_nxp_wpa_supp_signal_poll,
+	.send_mlme = wifi_nxp_wpa_supp_send_mlme,
+	.get_wiphy = wifi_nxp_wpa_supp_get_wiphy,
+	.get_capa = wifi_nxp_wpa_supp_get_capa,
+	.get_conn_info = wifi_nxp_wpa_supp_get_conn_info,
+	.set_country = wifi_nxp_wpa_supp_set_country,
+	.get_country = wifi_nxp_wpa_supp_get_country,
 #ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
-	.hapd_init                = wifi_nxp_hostapd_dev_init,
-	.hapd_deinit              = wifi_nxp_hostapd_dev_deinit,
+	.hapd_init = wifi_nxp_hostapd_dev_init,
+	.hapd_deinit = wifi_nxp_hostapd_dev_deinit,
 #endif
-	.init_ap                  = wifi_nxp_wpa_supp_init_ap,
-	.set_ap                   = wifi_nxp_hostapd_set_ap,
-	.stop_ap                  = wifi_nxp_hostapd_stop_ap,
-	.sta_remove               = wifi_nxp_hostapd_sta_remove,
-	.sta_add                  = wifi_nxp_hostapd_sta_add,
-	.do_acs                   = wifi_nxp_hostapd_do_acs,
+	.init_ap = wifi_nxp_wpa_supp_init_ap,
+	.set_ap = wifi_nxp_hostapd_set_ap,
+	.stop_ap = wifi_nxp_hostapd_stop_ap,
+	.sta_remove = wifi_nxp_hostapd_sta_remove,
+	.sta_add = wifi_nxp_hostapd_sta_add,
+	.do_acs = wifi_nxp_hostapd_do_acs,
 #endif
-	.dpp_listen               = wifi_nxp_wpa_dpp_listen,
-	.remain_on_channel        = wifi_nxp_wpa_supp_remain_on_channel,
+	.dpp_listen = wifi_nxp_wpa_dpp_listen,
+	.remain_on_channel = wifi_nxp_wpa_supp_remain_on_channel,
 	.cancel_remain_on_channel = wifi_nxp_wpa_supp_cancel_remain_on_channel,
 };
 #endif

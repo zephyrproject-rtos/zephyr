@@ -22,9 +22,7 @@ static inline void setup_int(const struct device *dev, bool enable)
 {
 	const struct isl29035_config *config = dev->config;
 
-	unsigned int flags = enable
-		? GPIO_INT_EDGE_TO_ACTIVE
-		: GPIO_INT_DISABLE;
+	unsigned int flags = enable ? GPIO_INT_EDGE_TO_ACTIVE : GPIO_INT_DISABLE;
 
 	gpio_pin_interrupt_configure_dt(&config->int_gpio, flags);
 }
@@ -53,10 +51,8 @@ static uint16_t isl29035_lux_processed_to_raw(struct sensor_value const *val)
 	return raw_val / ISL29035_LUX_RANGE;
 }
 
-int isl29035_attr_set(const struct device *dev,
-		      enum sensor_channel chan,
-		      enum sensor_attribute attr,
-		      const struct sensor_value *val)
+int isl29035_attr_set(const struct device *dev, enum sensor_channel chan,
+		      enum sensor_attribute attr, const struct sensor_value *val)
 {
 	const struct isl29035_config *config = dev->config;
 	uint8_t lsb_reg, msb_reg;
@@ -78,10 +74,8 @@ int isl29035_attr_set(const struct device *dev,
 
 	raw_val = isl29035_lux_processed_to_raw(val);
 
-	if (i2c_reg_write_byte_dt(&config->i2c,
-				  lsb_reg, raw_val & 0xFF) < 0 ||
-	    i2c_reg_write_byte_dt(&config->i2c,
-				  msb_reg, raw_val >> 8) < 0) {
+	if (i2c_reg_write_byte_dt(&config->i2c, lsb_reg, raw_val & 0xFF) < 0 ||
+	    i2c_reg_write_byte_dt(&config->i2c, msb_reg, raw_val >> 8) < 0) {
 		LOG_DBG("Failed to set attribute.");
 		return -EIO;
 	}
@@ -89,12 +83,11 @@ int isl29035_attr_set(const struct device *dev,
 	return 0;
 }
 
-static void isl29035_gpio_callback(const struct device *dev,
-				   struct gpio_callback *cb, uint32_t pins)
+static void isl29035_gpio_callback(const struct device *dev, struct gpio_callback *cb,
+				   uint32_t pins)
 {
 	struct isl29035_driver_data *drv_data =
 		CONTAINER_OF(cb, struct isl29035_driver_data, gpio_cb);
-
 
 	ARG_UNUSED(pins);
 	handle_int(drv_data->dev);
@@ -107,8 +100,7 @@ static void isl29035_thread_cb(const struct device *dev)
 	uint8_t val;
 
 	/* clear interrupt */
-	if (i2c_reg_read_byte_dt(&config->i2c,
-				 ISL29035_COMMAND_I_REG, &val) < 0) {
+	if (i2c_reg_read_byte_dt(&config->i2c, ISL29035_COMMAND_I_REG, &val) < 0) {
 		LOG_ERR("isl29035: Error reading command register");
 		return;
 	}
@@ -146,8 +138,7 @@ static void isl29035_work_cb(struct k_work *work)
 }
 #endif
 
-int isl29035_trigger_set(const struct device *dev,
-			 const struct sensor_trigger *trig,
+int isl29035_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			 sensor_trigger_handler_t handler)
 {
 	struct isl29035_driver_data *drv_data = dev->data;
@@ -178,9 +169,7 @@ int isl29035_init_interrupt(const struct device *dev)
 	const struct isl29035_config *config = dev->config;
 
 	/* set interrupt persistence */
-	if (i2c_reg_update_byte_dt(&config->i2c,
-				   ISL29035_COMMAND_I_REG,
-				   ISL29035_INT_PRST_MASK,
+	if (i2c_reg_update_byte_dt(&config->i2c, ISL29035_COMMAND_I_REG, ISL29035_INT_PRST_MASK,
 				   ISL29035_INT_PRST_BITS) < 0) {
 		LOG_DBG("Failed to set interrupt persistence cycles.");
 		return -EIO;
@@ -193,9 +182,7 @@ int isl29035_init_interrupt(const struct device *dev)
 
 	gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 
-	gpio_init_callback(&drv_data->gpio_cb,
-			   isl29035_gpio_callback,
-			   BIT(config->int_gpio.pin));
+	gpio_init_callback(&drv_data->gpio_cb, isl29035_gpio_callback, BIT(config->int_gpio.pin));
 
 	if (gpio_add_callback(config->int_gpio.port, &drv_data->gpio_cb) < 0) {
 		LOG_DBG("Failed to set gpio callback.");
@@ -208,11 +195,8 @@ int isl29035_init_interrupt(const struct device *dev)
 	k_sem_init(&drv_data->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
-			CONFIG_ISL29035_THREAD_STACK_SIZE,
-			isl29035_thread,
-			(void *)dev, NULL, NULL,
-			K_PRIO_COOP(CONFIG_ISL29035_THREAD_PRIORITY),
-			0, K_NO_WAIT);
+			CONFIG_ISL29035_THREAD_STACK_SIZE, isl29035_thread, (void *)dev, NULL, NULL,
+			K_PRIO_COOP(CONFIG_ISL29035_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_ISL29035_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = isl29035_work_cb;
 #endif

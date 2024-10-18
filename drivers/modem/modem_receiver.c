@@ -22,8 +22,8 @@ LOG_MODULE_REGISTER(mdm_receiver, CONFIG_MODEM_LOG_LEVEL);
 
 #include "modem_receiver.h"
 
-#define MAX_MDM_CTX	CONFIG_MODEM_RECEIVER_MAX_CONTEXTS
-#define MAX_READ_SIZE	128
+#define MAX_MDM_CTX   CONFIG_MODEM_RECEIVER_MAX_CONTEXTS
+#define MAX_READ_SIZE 128
 
 static struct mdm_receiver_context *contexts[MAX_MDM_CTX];
 
@@ -117,15 +117,14 @@ static void mdm_receiver_isr(const struct device *uart_dev, void *user_data)
 	}
 
 	/* get all of the data off UART as fast as we can */
-	while (uart_irq_update(ctx->uart_dev) &&
-	       uart_irq_rx_ready(ctx->uart_dev)) {
+	while (uart_irq_update(ctx->uart_dev) && uart_irq_rx_ready(ctx->uart_dev)) {
 		rx = uart_fifo_read(ctx->uart_dev, read_buf, sizeof(read_buf));
 		if (rx > 0) {
 			ret = ring_buf_put(&ctx->rx_rb, read_buf, rx);
 			if (ret != rx) {
 				LOG_ERR("Rx buffer doesn't have enough space. "
-						"Bytes pending: %d, written: %d",
-						rx, ret);
+					"Bytes pending: %d, written: %d",
+					rx, ret);
 				mdm_receiver_flush(ctx);
 				k_sem_give(&ctx->rx_sem);
 				break;
@@ -162,8 +161,8 @@ struct mdm_receiver_context *mdm_receiver_context_from_id(int id)
 	}
 }
 
-int mdm_receiver_recv(struct mdm_receiver_context *ctx,
-		      uint8_t *buf, size_t size, size_t *bytes_read)
+int mdm_receiver_recv(struct mdm_receiver_context *ctx, uint8_t *buf, size_t size,
+		      size_t *bytes_read)
 {
 	if (!ctx) {
 		return -EINVAL;
@@ -178,8 +177,7 @@ int mdm_receiver_recv(struct mdm_receiver_context *ctx,
 	return 0;
 }
 
-int mdm_receiver_send(struct mdm_receiver_context *ctx,
-		      const uint8_t *buf, size_t size)
+int mdm_receiver_send(struct mdm_receiver_context *ctx, const uint8_t *buf, size_t size)
 {
 	if (!ctx) {
 		return -EINVAL;
@@ -215,8 +213,7 @@ int mdm_receiver_wake(struct mdm_receiver_context *ctx)
 	return 0;
 }
 
-int mdm_receiver_register(struct mdm_receiver_context *ctx,
-			  const struct device *uart_dev,
+int mdm_receiver_register(struct mdm_receiver_context *ctx, const struct device *uart_dev,
 			  uint8_t *buf, size_t size)
 {
 	int ret;
@@ -226,8 +223,7 @@ int mdm_receiver_register(struct mdm_receiver_context *ctx,
 	}
 
 	if (!device_is_ready(uart_dev)) {
-		LOG_ERR("Device is not ready: %s",
-			uart_dev ? uart_dev->name : "<null>");
+		LOG_ERR("Device is not ready: %s", uart_dev ? uart_dev->name : "<null>");
 		return -ENODEV;
 	}
 

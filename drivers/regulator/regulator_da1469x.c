@@ -17,36 +17,28 @@
 
 LOG_MODULE_REGISTER(regulator_da1469x, CONFIG_REGULATOR_LOG_LEVEL);
 
-#define DCDC_REQUESTED (DCDC_DCDC_VDD_REG_DCDC_VDD_ENABLE_HV_Msk |\
-			DCDC_DCDC_VDD_REG_DCDC_VDD_ENABLE_LV_Msk)
+#define DCDC_REQUESTED                                                                             \
+	(DCDC_DCDC_VDD_REG_DCDC_VDD_ENABLE_HV_Msk | DCDC_DCDC_VDD_REG_DCDC_VDD_ENABLE_LV_Msk)
 
-#define DA1469X_LDO_3V0_MODE_VBAT				BIT(8)
-#define DA1469X_LDO_3V0_MODE_VBUS				BIT(9)
+#define DA1469X_LDO_3V0_MODE_VBAT BIT(8)
+#define DA1469X_LDO_3V0_MODE_VBUS BIT(9)
 
-#define PLL_FREQ	DT_PROP(DT_NODELABEL(pll), clock_frequency)
-#define PLL_VDD_UV	1200000
+#define PLL_FREQ   DT_PROP(DT_NODELABEL(pll), clock_frequency)
+#define PLL_VDD_UV 1200000
 
 static const struct linear_range curren_ranges[] = {
 	LINEAR_RANGE_INIT(30000, 30000, 0, 31),
 };
 
 static const struct linear_range vdd_clamp_ranges[] = {
-	LINEAR_RANGE_INIT(706000, 0, 15, 15),
-	LINEAR_RANGE_INIT(798000, 0, 14, 14),
-	LINEAR_RANGE_INIT(828000, 0, 13, 13),
-	LINEAR_RANGE_INIT(861000, 0, 11, 11),
-	LINEAR_RANGE_INIT(862000, 0, 12, 12),
-	LINEAR_RANGE_INIT(889000, 0, 10, 10),
-	LINEAR_RANGE_INIT(918000, 0, 9, 9),
-	LINEAR_RANGE_INIT(946000, 0, 3, 3),
-	LINEAR_RANGE_INIT(952000, 0, 8, 8),
-	LINEAR_RANGE_INIT(978000, 0, 2, 2),
-	LINEAR_RANGE_INIT(1005000, 0, 1, 1),
-	LINEAR_RANGE_INIT(1030000, 0, 7, 7),
-	LINEAR_RANGE_INIT(1037000, 0, 0, 0),
-	LINEAR_RANGE_INIT(1058000, 0, 6, 6),
-	LINEAR_RANGE_INIT(1089000, 0, 5, 5),
-	LINEAR_RANGE_INIT(1120000, 0, 4, 4),
+	LINEAR_RANGE_INIT(706000, 0, 15, 15), LINEAR_RANGE_INIT(798000, 0, 14, 14),
+	LINEAR_RANGE_INIT(828000, 0, 13, 13), LINEAR_RANGE_INIT(861000, 0, 11, 11),
+	LINEAR_RANGE_INIT(862000, 0, 12, 12), LINEAR_RANGE_INIT(889000, 0, 10, 10),
+	LINEAR_RANGE_INIT(918000, 0, 9, 9),   LINEAR_RANGE_INIT(946000, 0, 3, 3),
+	LINEAR_RANGE_INIT(952000, 0, 8, 8),   LINEAR_RANGE_INIT(978000, 0, 2, 2),
+	LINEAR_RANGE_INIT(1005000, 0, 1, 1),  LINEAR_RANGE_INIT(1030000, 0, 7, 7),
+	LINEAR_RANGE_INIT(1037000, 0, 0, 0),  LINEAR_RANGE_INIT(1058000, 0, 6, 6),
+	LINEAR_RANGE_INIT(1089000, 0, 5, 5),  LINEAR_RANGE_INIT(1120000, 0, 4, 4),
 };
 
 static const struct linear_range vdd_ranges[] = {
@@ -168,13 +160,13 @@ static const struct regulator_da1469x_desc v30_desc = {
 	.voltage_idx_mask = CRG_TOP_POWER_CTRL_REG_V30_LEVEL_Msk,
 };
 
-#define DA1469X_LDO_VDD_CLAMP_RET	0
-#define DA1469X_LDO_VDD_SLEEP_RET	0
-#define DA1469X_LDO_VDD_RET		CRG_TOP_POWER_CTRL_REG_LDO_CORE_RET_ENABLE_SLEEP_Msk
-#define DA1469X_LDO_V14_RET		0
-#define DA1469X_LDO_V18_RET		CRG_TOP_POWER_CTRL_REG_LDO_1V8_RET_ENABLE_SLEEP_Msk
-#define DA1469X_LDO_V18P_RET		CRG_TOP_POWER_CTRL_REG_LDO_1V8P_RET_ENABLE_SLEEP_Msk
-#define DA1469X_LDO_V30_RET		CRG_TOP_POWER_CTRL_REG_LDO_3V0_RET_ENABLE_SLEEP_Msk
+#define DA1469X_LDO_VDD_CLAMP_RET 0
+#define DA1469X_LDO_VDD_SLEEP_RET 0
+#define DA1469X_LDO_VDD_RET       CRG_TOP_POWER_CTRL_REG_LDO_CORE_RET_ENABLE_SLEEP_Msk
+#define DA1469X_LDO_V14_RET       0
+#define DA1469X_LDO_V18_RET       CRG_TOP_POWER_CTRL_REG_LDO_1V8_RET_ENABLE_SLEEP_Msk
+#define DA1469X_LDO_V18P_RET      CRG_TOP_POWER_CTRL_REG_LDO_1V8P_RET_ENABLE_SLEEP_Msk
+#define DA1469X_LDO_V30_RET       CRG_TOP_POWER_CTRL_REG_LDO_3V0_RET_ENABLE_SLEEP_Msk
 
 struct regulator_da1469x_config {
 	struct regulator_common_config common;
@@ -200,9 +192,9 @@ static int regulator_da1469x_enable(const struct device *dev)
 	}
 
 	if (config->desc->dcdc_register) {
-		reg_val = *config->desc->dcdc_register &
-			  ~(DCDC_DCDC_V14_REG_DCDC_V14_ENABLE_HV_Msk |
-			    DCDC_DCDC_V14_REG_DCDC_V14_ENABLE_LV_Msk);
+		reg_val =
+			*config->desc->dcdc_register & ~(DCDC_DCDC_V14_REG_DCDC_V14_ENABLE_HV_Msk |
+							 DCDC_DCDC_V14_REG_DCDC_V14_ENABLE_LV_Msk);
 		reg_val |= config->dcdc_bits;
 		*config->desc->dcdc_register_shadow = reg_val;
 		*config->desc->dcdc_register = reg_val;
@@ -230,13 +222,12 @@ static int regulator_da1469x_disable(const struct device *dev)
 	uint32_t reg_val;
 
 	if (config->desc->enable_mask & config->power_bits) {
-		CRG_TOP->POWER_CTRL_REG &= ~(config->desc->enable_mask &
-					     config->power_bits);
+		CRG_TOP->POWER_CTRL_REG &= ~(config->desc->enable_mask & config->power_bits);
 	}
 	if (config->desc->dcdc_register) {
-		reg_val = *config->desc->dcdc_register &
-			  ~(DCDC_DCDC_V14_REG_DCDC_V14_ENABLE_HV_Msk |
-			    DCDC_DCDC_V14_REG_DCDC_V14_ENABLE_LV_Msk);
+		reg_val =
+			*config->desc->dcdc_register & ~(DCDC_DCDC_V14_REG_DCDC_V14_ENABLE_HV_Msk |
+							 DCDC_DCDC_V14_REG_DCDC_V14_ENABLE_LV_Msk);
 		*config->desc->dcdc_register_shadow = reg_val;
 		*config->desc->dcdc_register = reg_val;
 	}
@@ -262,23 +253,21 @@ static unsigned int regulator_da1469x_count_voltages(const struct device *dev)
 					       config->desc->voltage_range_count);
 }
 
-static int regulator_da1469x_list_voltage(const struct device *dev,
-					  unsigned int idx,
+static int regulator_da1469x_list_voltage(const struct device *dev, unsigned int idx,
 					  int32_t *volt_uv)
 {
 	const struct regulator_da1469x_config *config = dev->config;
 
 	if (config->desc->voltage_ranges) {
 		return linear_range_group_get_value(config->desc->voltage_ranges,
-						    config->desc->voltage_range_count,
-						    idx, volt_uv);
+						    config->desc->voltage_range_count, idx,
+						    volt_uv);
 	}
 
 	return -ENOTSUP;
 }
 
-static int regulator_da1469x_set_voltage(const struct device *dev, int32_t min_uv,
-					 int32_t max_uv)
+static int regulator_da1469x_set_voltage(const struct device *dev, int32_t min_uv, int32_t max_uv)
 {
 	int ret;
 	const struct regulator_da1469x_config *config = dev->config;
@@ -300,8 +289,8 @@ static int regulator_da1469x_set_voltage(const struct device *dev, int32_t min_u
 	}
 
 	ret = linear_range_group_get_win_index(config->desc->voltage_ranges,
-					       config->desc->voltage_range_count,
-					       min_uv, max_uv, &idx);
+					       config->desc->voltage_range_count, min_uv, max_uv,
+					       &idx);
 
 	if (ret == 0) {
 		mask = config->desc->voltage_idx_mask;
@@ -310,16 +299,15 @@ static int regulator_da1469x_set_voltage(const struct device *dev, int32_t min_u
 		 * Setting value 1.8V is accepted since range is valid and already checked.
 		 */
 		if (mask) {
-			CRG_TOP->POWER_CTRL_REG = (CRG_TOP->POWER_CTRL_REG & ~mask) |
-						  FIELD_PREP(mask, idx);
+			CRG_TOP->POWER_CTRL_REG =
+				(CRG_TOP->POWER_CTRL_REG & ~mask) | FIELD_PREP(mask, idx);
 		}
 	}
 
 	return ret;
 }
 
-static int regulator_da1469x_get_voltage(const struct device *dev,
-					 int32_t *volt_uv)
+static int regulator_da1469x_get_voltage(const struct device *dev, int32_t *volt_uv)
 {
 	const struct regulator_da1469x_config *config = dev->config;
 	uint16_t idx;
@@ -334,8 +322,8 @@ static int regulator_da1469x_get_voltage(const struct device *dev,
 					    config->desc->voltage_range_count, idx, volt_uv);
 }
 
-static int regulator_da1469x_set_current_limit(const struct device *dev,
-					       int32_t min_ua, int32_t max_ua)
+static int regulator_da1469x_set_current_limit(const struct device *dev, int32_t min_ua,
+					       int32_t max_ua)
 {
 	const struct regulator_da1469x_config *config = dev->config;
 	int ret;
@@ -346,9 +334,8 @@ static int regulator_da1469x_set_current_limit(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	ret = linear_range_group_get_win_index(config->desc->current_ranges,
-					       1,
-					       min_ua, max_ua, &idx);
+	ret = linear_range_group_get_win_index(config->desc->current_ranges, 1, min_ua, max_ua,
+					       &idx);
 	if (ret) {
 		return ret;
 	}
@@ -366,8 +353,7 @@ static int regulator_da1469x_set_current_limit(const struct device *dev,
 	return ret;
 }
 
-static int regulator_da1469x_get_current_limit(const struct device *dev,
-					       int32_t *curr_ua)
+static int regulator_da1469x_get_current_limit(const struct device *dev, int32_t *curr_ua)
 {
 	const struct regulator_da1469x_config *config = dev->config;
 	int ret;
@@ -409,8 +395,7 @@ static int regulator_da1469x_init(const struct device *dev)
 }
 
 #if defined(CONFIG_PM_DEVICE)
-static int regulator_da1469x_pm_action(const struct device *dev,
-				       enum pm_device_action action)
+static int regulator_da1469x_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct regulator_da1469x_config *config = dev->config;
 	int ret = 0;
@@ -439,51 +424,45 @@ static int regulator_da1469x_pm_action(const struct device *dev,
 }
 #endif
 
-#define REGULATOR_DA1469X_DEFINE(node, id, rail_id)                            \
-	static struct regulator_da1469x_data data_##id;                        \
-                                                                               \
-	static const struct regulator_da1469x_config config_##id = {           \
-		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node),               \
-		.desc = &id ## _desc,                                          \
-		.power_bits =                                                  \
-			(DT_PROP(node, renesas_regulator_v30_clamp) *          \
-			CRG_TOP_POWER_CTRL_REG_CLAMP_3V0_VBAT_ENABLE_Msk) |    \
-			(DT_PROP(node, renesas_regulator_v30_vbus) *           \
-			DA1469X_LDO_3V0_MODE_VBAT) |                           \
-			(DT_PROP(node, renesas_regulator_v30_vbat) *           \
-			DA1469X_LDO_3V0_MODE_VBUS) |                           \
-			(DT_PROP(node, renesas_regulator_sleep_ldo) *          \
-			(DA1469X_LDO_ ## rail_id ##_RET)) |                    \
-			(DT_PROP(node, renesas_regulator_v30_ref_bandgap) *    \
-			CRG_TOP_POWER_CTRL_REG_LDO_3V0_REF_Msk),               \
-		.dcdc_bits =                                                   \
-			(DT_PROP(node, renesas_regulator_dcdc_vbat_high) *     \
-			DCDC_DCDC_VDD_REG_DCDC_VDD_ENABLE_HV_Msk) |            \
-			(DT_PROP(node, renesas_regulator_dcdc_vbat_low) *      \
-			DCDC_DCDC_VDD_REG_DCDC_VDD_ENABLE_LV_Msk),             \
-		.rail = rail_id,	\
-	};                                                                     \
-	PM_DEVICE_DT_DEFINE(node, regulator_da1469x_pm_action);                \
-	DEVICE_DT_DEFINE(node, regulator_da1469x_init,                         \
-			 PM_DEVICE_DT_GET(node),                               \
-			 &data_##id,                                           \
-			 &config_##id, PRE_KERNEL_1,                           \
-			 CONFIG_REGULATOR_DA1469X_INIT_PRIORITY,               \
+#define REGULATOR_DA1469X_DEFINE(node, id, rail_id)                                                \
+	static struct regulator_da1469x_data data_##id;                                            \
+                                                                                                   \
+	static const struct regulator_da1469x_config config_##id = {                               \
+		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node),                                   \
+		.desc = &id##_desc,                                                                \
+		.power_bits =                                                                      \
+			(DT_PROP(node, renesas_regulator_v30_clamp) *                              \
+			 CRG_TOP_POWER_CTRL_REG_CLAMP_3V0_VBAT_ENABLE_Msk) |                       \
+			(DT_PROP(node, renesas_regulator_v30_vbus) * DA1469X_LDO_3V0_MODE_VBAT) |  \
+			(DT_PROP(node, renesas_regulator_v30_vbat) * DA1469X_LDO_3V0_MODE_VBUS) |  \
+			(DT_PROP(node, renesas_regulator_sleep_ldo) *                              \
+			 (DA1469X_LDO_##rail_id##_RET)) |                                          \
+			(DT_PROP(node, renesas_regulator_v30_ref_bandgap) *                        \
+			 CRG_TOP_POWER_CTRL_REG_LDO_3V0_REF_Msk),                                  \
+		.dcdc_bits = (DT_PROP(node, renesas_regulator_dcdc_vbat_high) *                    \
+			      DCDC_DCDC_VDD_REG_DCDC_VDD_ENABLE_HV_Msk) |                          \
+			     (DT_PROP(node, renesas_regulator_dcdc_vbat_low) *                     \
+			      DCDC_DCDC_VDD_REG_DCDC_VDD_ENABLE_LV_Msk),                           \
+		.rail = rail_id,                                                                   \
+	};                                                                                         \
+	PM_DEVICE_DT_DEFINE(node, regulator_da1469x_pm_action);                                    \
+	DEVICE_DT_DEFINE(node, regulator_da1469x_init, PM_DEVICE_DT_GET(node), &data_##id,         \
+			 &config_##id, PRE_KERNEL_1, CONFIG_REGULATOR_DA1469X_INIT_PRIORITY,       \
 			 &regulator_da1469x_api);
 
-#define REGULATOR_DA1469X_DEFINE_COND(inst, child, source)                     \
+#define REGULATOR_DA1469X_DEFINE_COND(inst, child, source)                                         \
 	COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(inst, child)),                \
 		    (REGULATOR_DA1469X_DEFINE(                                 \
 			DT_INST_CHILD(inst, child), child, source)),           \
 		    ())
 
-#define REGULATOR_DA1469X_DEFINE_ALL(inst)                                     \
-	REGULATOR_DA1469X_DEFINE_COND(inst, vdd_clamp, VDD_CLAMP)              \
-	REGULATOR_DA1469X_DEFINE_COND(inst, vdd_sleep, VDD_SLEEP)              \
-	REGULATOR_DA1469X_DEFINE_COND(inst, vdd, VDD)                          \
-	REGULATOR_DA1469X_DEFINE_COND(inst, v14, V14)                          \
-	REGULATOR_DA1469X_DEFINE_COND(inst, v18, V18)                          \
-	REGULATOR_DA1469X_DEFINE_COND(inst, v18p, V18P)                        \
-	REGULATOR_DA1469X_DEFINE_COND(inst, v30, V30)                          \
+#define REGULATOR_DA1469X_DEFINE_ALL(inst)                                                         \
+	REGULATOR_DA1469X_DEFINE_COND(inst, vdd_clamp, VDD_CLAMP)                                  \
+	REGULATOR_DA1469X_DEFINE_COND(inst, vdd_sleep, VDD_SLEEP)                                  \
+	REGULATOR_DA1469X_DEFINE_COND(inst, vdd, VDD)                                              \
+	REGULATOR_DA1469X_DEFINE_COND(inst, v14, V14)                                              \
+	REGULATOR_DA1469X_DEFINE_COND(inst, v18, V18)                                              \
+	REGULATOR_DA1469X_DEFINE_COND(inst, v18p, V18P)                                            \
+	REGULATOR_DA1469X_DEFINE_COND(inst, v30, V30)
 
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_DA1469X_DEFINE_ALL)

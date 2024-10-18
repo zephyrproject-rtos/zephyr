@@ -23,40 +23,40 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mb_disp, CONFIG_DISPLAY_LOG_LEVEL);
 
-#define MODE_MASK    BIT_MASK(16)
+#define MODE_MASK BIT_MASK(16)
 
-#define SCROLL_OFF   0
-#define SCROLL_START 1
+#define SCROLL_OFF                 0
+#define SCROLL_START               1
 #define SCROLL_DEFAULT_DURATION_MS 80
 
 #define MB_DISP_XRES 5
 #define MB_DISP_YRES 5
 
 struct mb_display {
-	const struct device *lm_dev;   /* LED matrix display device */
+	const struct device *lm_dev; /* LED matrix display device */
 
 	struct k_work_delayable dwork; /* Delayable work item */
 
-	uint8_t         img_count;     /* Image count */
+	uint8_t img_count; /* Image count */
 
-	uint8_t         cur_img;       /* Current image or character to show */
+	uint8_t cur_img; /* Current image or character to show */
 
-	uint8_t         scroll:3,      /* Scroll shift */
-			first:1,       /* First frame of a scroll sequence */
-			loop:1,        /* Loop to beginning */
-			text:1,        /* We're showing a string (not image) */
-			img_sep:1,     /* One column image separation */
-			msb:1;         /* MSB represents the first pixel */
+	uint8_t scroll: 3,  /* Scroll shift */
+		first: 1,   /* First frame of a scroll sequence */
+		loop: 1,    /* Loop to beginning */
+		text: 1,    /* We're showing a string (not image) */
+		img_sep: 1, /* One column image separation */
+		msb: 1;     /* MSB represents the first pixel */
 
-	int32_t         duration;      /* Duration for each shown image */
+	int32_t duration; /* Duration for each shown image */
 
 	union {
 		const struct mb_image *img; /* Array of images to show */
-		const char            *str; /* String to be shown */
+		const char *str;            /* String to be shown */
 	};
 
 	/* Buffer for printed strings */
-	char            str_buf[CONFIG_MICROBIT_DISPLAY_STR_MAX];
+	char str_buf[CONFIG_MICROBIT_DISPLAY_STR_MAX];
 };
 
 static inline const struct mb_image *get_font(char ch)
@@ -81,9 +81,9 @@ static int update_content(struct mb_display *disp, const struct mb_image *img)
 {
 	const struct display_buffer_descriptor buf_desc = {
 		.buf_size = sizeof(struct mb_image),
-		.width    = MB_DISP_XRES,
-		.height   = MB_DISP_YRES,
-		.pitch    = 8,
+		.width = MB_DISP_XRES,
+		.height = MB_DISP_YRES,
+		.pitch = 8,
 	};
 	struct mb_image tmp_img;
 	int ret;
@@ -200,8 +200,7 @@ static int update_scroll(struct mb_display *disp)
 			const struct mb_image *i2 = next_img(disp);
 
 			img.row[i] = ((i1->row[i] >> disp->scroll) |
-				      (i2->row[i] << (scroll_steps(disp) -
-						      disp->scroll)));
+				      (i2->row[i] << (scroll_steps(disp) - disp->scroll)));
 		}
 
 		disp->scroll++;
@@ -325,8 +324,8 @@ void mb_display_image(struct mb_display *disp, uint32_t mode, int32_t duration,
 	}
 }
 
-void mb_display_print(struct mb_display *disp, uint32_t mode,
-		      int32_t duration, const char *fmt, ...)
+void mb_display_print(struct mb_display *disp, uint32_t mode, int32_t duration, const char *fmt,
+		      ...)
 {
 	va_list ap;
 	int ret;
@@ -368,8 +367,7 @@ static int mb_display_init(struct mb_display *disp)
 	int ret;
 
 	display_get_capabilities(disp->lm_dev, &caps);
-	if (caps.x_resolution != MB_DISP_XRES ||
-	    caps.y_resolution != MB_DISP_YRES) {
+	if (caps.x_resolution != MB_DISP_XRES || caps.y_resolution != MB_DISP_YRES) {
 		LOG_ERR("Not supported display resolution");
 		return -ENOTSUP;
 	}

@@ -19,21 +19,21 @@
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(wdt_sifive);
 
-#define WDOGCFG_SCALE_MAX     0xf
-#define WDOGCFG_SCALE_SHIFT   0
-#define WDOGCFG_SCALE_MASK    (WDOGCFG_SCALE_MAX << WDOGCFG_SCALE_SHIFT)
-#define WDOGCFG_RSTEN         BIT(8)
-#define WDOGCFG_ZEROCMP       BIT(9)
-#define WDOGCFG_ENALWAYS      BIT(12)
-#define WDOGCFG_COREAWAKE     BIT(13)
-#define WDOGCFG_IP0           BIT(28)
+#define WDOGCFG_SCALE_MAX   0xf
+#define WDOGCFG_SCALE_SHIFT 0
+#define WDOGCFG_SCALE_MASK  (WDOGCFG_SCALE_MAX << WDOGCFG_SCALE_SHIFT)
+#define WDOGCFG_RSTEN       BIT(8)
+#define WDOGCFG_ZEROCMP     BIT(9)
+#define WDOGCFG_ENALWAYS    BIT(12)
+#define WDOGCFG_COREAWAKE   BIT(13)
+#define WDOGCFG_IP0         BIT(28)
 
-#define WDOGCMP_MAX        0xffff
+#define WDOGCMP_MAX 0xffff
 
-#define WDOG_KEY           0x51f15e
-#define WDOG_FEED          0xd09f00d
+#define WDOG_KEY  0x51f15e
+#define WDOG_FEED 0xd09f00d
 
-#define WDOG_CLK           32768
+#define WDOG_CLK 32768
 
 struct wdt_sifive_reg {
 	/* offset: 0x000 */
@@ -60,9 +60,9 @@ struct wdt_sifive_dev_data {
 	bool timeout_valid;
 };
 
-#define DEV_REG(dev) \
-	((struct wdt_sifive_reg *) \
-	 ((const struct wdt_sifive_device_config *const)(dev)->config)->regs)
+#define DEV_REG(dev)                                                                               \
+	((struct wdt_sifive_reg *)((const struct wdt_sifive_device_config *const)(dev)->config)    \
+		 ->regs)
 
 /**
  * @brief Set maximum length of timeout to watchdog
@@ -126,12 +126,10 @@ static int wdt_sifive_setup(const struct device *dev, uint8_t options)
 	}
 
 	mode = WDOGCFG_ENALWAYS;
-	if ((options & WDT_OPT_PAUSE_IN_SLEEP) ==
-	    WDT_OPT_PAUSE_IN_SLEEP) {
+	if ((options & WDT_OPT_PAUSE_IN_SLEEP) == WDT_OPT_PAUSE_IN_SLEEP) {
 		mode = WDOGCFG_COREAWAKE;
 	}
-	if ((options & WDT_OPT_PAUSE_HALTED_BY_DBG) ==
-	    WDT_OPT_PAUSE_HALTED_BY_DBG) {
+	if ((options & WDT_OPT_PAUSE_HALTED_BY_DBG) == WDT_OPT_PAUSE_HALTED_BY_DBG) {
 		mode = WDOGCFG_COREAWAKE;
 	}
 
@@ -182,8 +180,7 @@ static int wdt_sifive_convtime(uint32_t timeout, int clk, int *scaler)
 	return cnt;
 }
 
-static int wdt_sifive_install_timeout(const struct device *dev,
-				      const struct wdt_timeout_cfg *cfg)
+static int wdt_sifive_install_timeout(const struct device *dev, const struct wdt_timeout_cfg *cfg)
 {
 	volatile struct wdt_sifive_reg *wdt = DEV_REG(dev);
 	struct wdt_sifive_dev_data *data = dev->data;
@@ -260,8 +257,7 @@ static const struct wdt_driver_api wdt_sifive_api = {
 
 static void wdt_sifive_irq_config(void)
 {
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority), wdt_sifive_isr,
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), wdt_sifive_isr,
 		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
 }
@@ -282,6 +278,5 @@ static const struct wdt_sifive_device_config wdt_sifive_cfg = {
 	.regs = DT_INST_REG_ADDR(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, wdt_sifive_init, NULL,
-		      &wdt_sifive_data, &wdt_sifive_cfg, PRE_KERNEL_1,
+DEVICE_DT_INST_DEFINE(0, wdt_sifive_init, NULL, &wdt_sifive_data, &wdt_sifive_cfg, PRE_KERNEL_1,
 		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wdt_sifive_api);

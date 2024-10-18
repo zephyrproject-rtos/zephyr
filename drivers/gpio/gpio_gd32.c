@@ -21,24 +21,24 @@
 #define SYSCFG_NODE DT_NODELABEL(syscfg)
 #else
 /** AFIO DT node */
-#define AFIO_NODE DT_NODELABEL(afio)
+#define AFIO_NODE          DT_NODELABEL(afio)
 
 /** GPIO mode: analog (CTL bits) */
-#define CTL_MODE_ANALOG 0x0U
+#define CTL_MODE_ANALOG    0x0U
 /** GPIO mode: input floating (CTL bits) */
 #define CTL_MODE_INP_FLOAT 0x4U
 /** GPIO mode: input with pull-up/down (CTL bits) */
-#define CTL_MODE_INP_PUPD 0x8U
+#define CTL_MODE_INP_PUPD  0x8U
 /** GPIO mode: output push-pull @ 2MHz (CTL bits) */
-#define CTL_MODE_OUT_PP 0x2U
+#define CTL_MODE_OUT_PP    0x2U
 /** GPIO mode: output open-drain @ 2MHz (CTL bits) */
-#define CTL_MODE_OUT_OD 0x6U
+#define CTL_MODE_OUT_OD    0x6U
 #endif /* CONFIG_GD32_HAS_AF_PINMUX */
 
 /** EXTISS mask */
-#define EXTISS_MSK 0xFU
+#define EXTISS_MSK             0xFU
 /** EXTISS line step size */
-#define EXTISS_STEP 4U
+#define EXTISS_STEP            4U
 /** EXTISS line shift */
 #define EXTISS_LINE_SHIFT(pin) (EXTISS_STEP * ((pin) % EXTISS_STEP))
 
@@ -78,8 +78,7 @@ static void gpio_gd32_isr(uint8_t line, void *arg)
  * @retval 0 on success.
  * @retval -EINVAL if pin is not valid.
  */
-static int gpio_gd32_configure_extiss(const struct device *port,
-				      gpio_pin_t pin)
+static int gpio_gd32_configure_extiss(const struct device *port, gpio_pin_t pin)
 {
 	const struct gpio_gd32_config *config = port->config;
 	uint8_t port_index, shift;
@@ -126,8 +125,7 @@ static int gpio_gd32_configure_extiss(const struct device *port,
 	return 0;
 }
 
-static inline int gpio_gd32_configure(const struct device *port, gpio_pin_t pin,
-				      gpio_flags_t flags)
+static inline int gpio_gd32_configure(const struct device *port, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_gd32_config *config = port->config;
 
@@ -235,20 +233,17 @@ static int gpio_gd32_port_get_raw(const struct device *port, uint32_t *value)
 	return 0;
 }
 
-static int gpio_gd32_port_set_masked_raw(const struct device *port,
-					 gpio_port_pins_t mask,
+static int gpio_gd32_port_set_masked_raw(const struct device *port, gpio_port_pins_t mask,
 					 gpio_port_value_t value)
 {
 	const struct gpio_gd32_config *config = port->config;
 
-	GPIO_OCTL(config->reg) =
-		(GPIO_OCTL(config->reg) & ~mask) | (value & mask);
+	GPIO_OCTL(config->reg) = (GPIO_OCTL(config->reg) & ~mask) | (value & mask);
 
 	return 0;
 }
 
-static int gpio_gd32_port_set_bits_raw(const struct device *port,
-				       gpio_port_pins_t pins)
+static int gpio_gd32_port_set_bits_raw(const struct device *port, gpio_port_pins_t pins)
 {
 	const struct gpio_gd32_config *config = port->config;
 
@@ -257,8 +252,7 @@ static int gpio_gd32_port_set_bits_raw(const struct device *port,
 	return 0;
 }
 
-static int gpio_gd32_port_clear_bits_raw(const struct device *port,
-					 gpio_port_pins_t pins)
+static int gpio_gd32_port_clear_bits_raw(const struct device *port, gpio_port_pins_t pins)
 {
 	const struct gpio_gd32_config *config = port->config;
 
@@ -267,8 +261,7 @@ static int gpio_gd32_port_clear_bits_raw(const struct device *port,
 	return 0;
 }
 
-static int gpio_gd32_port_toggle_bits(const struct device *port,
-				      gpio_port_pins_t pins)
+static int gpio_gd32_port_toggle_bits(const struct device *port, gpio_port_pins_t pins)
 {
 	const struct gpio_gd32_config *config = port->config;
 
@@ -281,10 +274,8 @@ static int gpio_gd32_port_toggle_bits(const struct device *port,
 	return 0;
 }
 
-static int gpio_gd32_pin_interrupt_configure(const struct device *port,
-					     gpio_pin_t pin,
-					     enum gpio_int_mode mode,
-					     enum gpio_int_trig trig)
+static int gpio_gd32_pin_interrupt_configure(const struct device *port, gpio_pin_t pin,
+					     enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	if (mode == GPIO_INT_MODE_DISABLED) {
 		gd32_exti_disable(pin);
@@ -325,8 +316,8 @@ static int gpio_gd32_pin_interrupt_configure(const struct device *port,
 	return 0;
 }
 
-static int gpio_gd32_manage_callback(const struct device *dev,
-				     struct gpio_callback *callback, bool set)
+static int gpio_gd32_manage_callback(const struct device *dev, struct gpio_callback *callback,
+				     bool set)
 {
 	struct gpio_gd32_data *data = dev->data;
 
@@ -348,33 +339,31 @@ static int gpio_gd32_init(const struct device *port)
 {
 	const struct gpio_gd32_config *config = port->config;
 
-	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
-			       (clock_control_subsys_t)&config->clkid);
-	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
-			       (clock_control_subsys_t)&config->clkid_exti);
+	(void)clock_control_on(GD32_CLOCK_CONTROLLER, (clock_control_subsys_t)&config->clkid);
+	(void)clock_control_on(GD32_CLOCK_CONTROLLER, (clock_control_subsys_t)&config->clkid_exti);
 
 	(void)reset_line_toggle_dt(&config->reset);
 
 	return 0;
 }
 
-#define GPIO_GD32_DEFINE(n)						       \
-	static const struct gpio_gd32_config gpio_gd32_config##n = {	       \
-		.common = {						       \
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),   \
-		},							       \
-		.reg = DT_INST_REG_ADDR(n),				       \
-		.clkid = DT_INST_CLOCKS_CELL(n, id),			       \
+#define GPIO_GD32_DEFINE(n)                                                                        \
+	static const struct gpio_gd32_config gpio_gd32_config##n = {                               \
+		.common =                                                                          \
+			{                                                                          \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
+			},                                                                         \
+		.reg = DT_INST_REG_ADDR(n),                                                        \
+		.clkid = DT_INST_CLOCKS_CELL(n, id),                                               \
 		COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(SYSCFG_NODE),	       \
 			    (.clkid_exti = DT_CLOCKS_CELL(SYSCFG_NODE, id),),  \
-			    (.clkid_exti = DT_CLOCKS_CELL(AFIO_NODE, id),))    \
-		.reset = RESET_DT_SPEC_INST_GET(n),			       \
-	};								       \
-									       \
-	static struct gpio_gd32_data gpio_gd32_data##n;			       \
-									       \
-	DEVICE_DT_INST_DEFINE(n, gpio_gd32_init, NULL, &gpio_gd32_data##n,     \
-			      &gpio_gd32_config##n, PRE_KERNEL_1,	       \
-			      CONFIG_GPIO_INIT_PRIORITY, &gpio_gd32_api);
+			    (.clkid_exti = DT_CLOCKS_CELL(AFIO_NODE, id),)) .reset =        \
+					       RESET_DT_SPEC_INST_GET(n),                          \
+	};                                                                                         \
+                                                                                                   \
+	static struct gpio_gd32_data gpio_gd32_data##n;                                            \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, gpio_gd32_init, NULL, &gpio_gd32_data##n, &gpio_gd32_config##n,   \
+			      PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, &gpio_gd32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_GD32_DEFINE)

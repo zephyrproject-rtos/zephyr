@@ -24,14 +24,14 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(wdt_wwdg_stm32);
 
-#define WWDG_INTERNAL_DIVIDER   4096U
-#define WWDG_RESET_LIMIT    WWDG_COUNTER_MIN
-#define WWDG_COUNTER_MIN    0x40
-#define WWDG_COUNTER_MAX    0x7f
+#define WWDG_INTERNAL_DIVIDER 4096U
+#define WWDG_RESET_LIMIT      WWDG_COUNTER_MIN
+#define WWDG_COUNTER_MIN      0x40
+#define WWDG_COUNTER_MAX      0x7f
 
 #if defined WWDG_CFR_WDGTB_Pos
-#define WWDG_PRESCALER_POS   WWDG_CFR_WDGTB_Pos
-#define WWDG_PRESCALER_MASK  WWDG_CFR_WDGTB_Msk
+#define WWDG_PRESCALER_POS  WWDG_CFR_WDGTB_Pos
+#define WWDG_PRESCALER_MASK WWDG_CFR_WDGTB_Msk
 #else
 #error "WWDG CFR WDGTB position not defined for soc"
 #endif
@@ -79,11 +79,10 @@ LOG_MODULE_REGISTER(wdt_wwdg_stm32);
  *             = 1048.576 ms
  */
 
-#define ABS_DIFF_UINT(a, b)  ((a) > (b) ? (a) - (b) : (b) - (a))
-#define WWDG_TIMEOUT_ERROR_MARGIN(__TIMEOUT__)   (__TIMEOUT__ / 10)
-#define IS_WWDG_TIMEOUT(__TIMEOUT_GOLDEN__, __TIMEOUT__)  \
-	(__TIMEOUT__ - __TIMEOUT_GOLDEN__) < \
-	WWDG_TIMEOUT_ERROR_MARGIN(__TIMEOUT_GOLDEN__)
+#define ABS_DIFF_UINT(a, b)                    ((a) > (b) ? (a) - (b) : (b) - (a))
+#define WWDG_TIMEOUT_ERROR_MARGIN(__TIMEOUT__) (__TIMEOUT__ / 10)
+#define IS_WWDG_TIMEOUT(__TIMEOUT_GOLDEN__, __TIMEOUT__)                                           \
+	(__TIMEOUT__ - __TIMEOUT_GOLDEN__) < WWDG_TIMEOUT_ERROR_MARGIN(__TIMEOUT_GOLDEN__)
 
 static void wwdg_stm32_irq_config(const struct device *dev);
 
@@ -93,8 +92,7 @@ static uint32_t wwdg_stm32_get_pclk(const struct device *dev)
 	const struct wwdg_stm32_config *cfg = WWDG_STM32_CFG(dev);
 	uint32_t pclk_rate;
 
-	if (clock_control_get_rate(clk, (clock_control_subsys_t) &cfg->pclken,
-			       &pclk_rate) < 0) {
+	if (clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken, &pclk_rate) < 0) {
 		LOG_ERR("Failed call clock_control_get_rate");
 		return -EIO;
 	}
@@ -110,8 +108,7 @@ static uint32_t wwdg_stm32_get_pclk(const struct device *dev)
  * @param counter The counter value.
  * @return The timeout calculated in microseconds.
  */
-static uint32_t wwdg_stm32_get_timeout(const struct device *dev,
-				       uint32_t prescaler_exp,
+static uint32_t wwdg_stm32_get_timeout(const struct device *dev, uint32_t prescaler_exp,
 				       uint32_t counter)
 {
 	uint32_t divider = WWDG_INTERNAL_DIVIDER * (1 << prescaler_exp);
@@ -128,10 +125,8 @@ static uint32_t wwdg_stm32_get_timeout(const struct device *dev,
  * @param prescaler_exp Pointer to prescaler exponent value(Base 2).
  * @param counter Pointer to counter value.
  */
-static void wwdg_stm32_convert_timeout(const struct device *dev,
-				       uint32_t timeout,
-				       uint32_t *prescaler_exp,
-				       uint32_t *counter)
+static void wwdg_stm32_convert_timeout(const struct device *dev, uint32_t timeout,
+				       uint32_t *prescaler_exp, uint32_t *counter)
 {
 	uint32_t clock_freq = wwdg_stm32_get_pclk(dev);
 
@@ -144,8 +139,7 @@ static void wwdg_stm32_convert_timeout(const struct device *dev,
 
 	for (*prescaler_exp = 0; *prescaler_exp <= WWDG_PRESCALER_EXPONENT_MAX;
 	     (*prescaler_exp)++) {
-		wwdg_freq = ((float)clock_freq) / WWDG_INTERNAL_DIVIDER
-			     / (1 << *prescaler_exp);
+		wwdg_freq = ((float)clock_freq) / WWDG_INTERNAL_DIVIDER / (1 << *prescaler_exp);
 		/* +1 to ceil the result, which may lose from truncation */
 		*counter = (uint32_t)(timeout_s * wwdg_freq + 1) - 1;
 		*counter += WWDG_RESET_LIMIT;
@@ -224,8 +218,7 @@ static int wwdg_stm32_install_timeout(const struct device *dev,
 	LOG_DBG("Desired WDT: %d us", timeout);
 	LOG_DBG("Set WDT:     %d us", calculated_timeout);
 
-	if (!(IS_WWDG_COUNTER(counter) &&
-	      IS_WWDG_TIMEOUT(timeout, calculated_timeout))) {
+	if (!(IS_WWDG_COUNTER(counter) && IS_WWDG_TIMEOUT(timeout, calculated_timeout))) {
 		/* One of the parameters provided is invalid */
 		return -EINVAL;
 	}
@@ -234,8 +227,7 @@ static int wwdg_stm32_install_timeout(const struct device *dev,
 
 	/* Configure WWDG */
 	/* Set the programmable prescaler */
-	LL_WWDG_SetPrescaler(wwdg,
-		(prescaler_exp << WWDG_PRESCALER_POS) & WWDG_PRESCALER_MASK);
+	LL_WWDG_SetPrescaler(wwdg, (prescaler_exp << WWDG_PRESCALER_POS) & WWDG_PRESCALER_MASK);
 
 	/* Set window the same as the counter to be able to feed the WWDG almost
 	 * immediately
@@ -289,34 +281,25 @@ static int wwdg_stm32_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	return clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken);
+	return clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken);
 }
 
-static struct wwdg_stm32_data wwdg_stm32_dev_data = {
-	.counter = WWDG_RESET_LIMIT,
-	.callback = NULL
-};
+static struct wwdg_stm32_data wwdg_stm32_dev_data = {.counter = WWDG_RESET_LIMIT, .callback = NULL};
 
 static struct wwdg_stm32_config wwdg_stm32_dev_config = {
-	.pclken = {
-		.enr = DT_INST_CLOCKS_CELL(0, bits),
-		.bus = DT_INST_CLOCKS_CELL(0, bus)
-	},
+	.pclken = {.enr = DT_INST_CLOCKS_CELL(0, bits), .bus = DT_INST_CLOCKS_CELL(0, bus)},
 	.Instance = (WWDG_TypeDef *)DT_INST_REG_ADDR(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, wwdg_stm32_init, NULL,
-		    &wwdg_stm32_dev_data, &wwdg_stm32_dev_config,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &wwdg_stm32_api);
+DEVICE_DT_INST_DEFINE(0, wwdg_stm32_init, NULL, &wwdg_stm32_dev_data, &wwdg_stm32_dev_config,
+		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wwdg_stm32_api);
 
 static void wwdg_stm32_irq_config(const struct device *dev)
 {
 	WWDG_TypeDef *wwdg = WWDG_STM32_STRUCT(dev);
 
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    wwdg_stm32_isr, DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), wwdg_stm32_isr,
+		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
 	LL_WWDG_EnableIT_EWKUP(wwdg);
 }

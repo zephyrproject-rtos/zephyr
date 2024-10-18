@@ -15,45 +15,45 @@
 LOG_MODULE_REGISTER(cache_andes, CONFIG_CACHE_LOG_LEVEL);
 
 /* L1 CCTL Command */
-#define CCTL_L1D_VA_INVAL	0
-#define CCTL_L1D_VA_WB		1
-#define CCTL_L1D_VA_WBINVAL	2
-#define CCTL_L1D_WBINVAL_ALL	6
-#define CCTL_L1D_WB_ALL		7
-#define CCTL_L1I_VA_INVAL	8
-#define CCTL_L1D_INVAL_ALL	23
-#define CCTL_L1I_IX_INVAL	24
+#define CCTL_L1D_VA_INVAL    0
+#define CCTL_L1D_VA_WB       1
+#define CCTL_L1D_VA_WBINVAL  2
+#define CCTL_L1D_WBINVAL_ALL 6
+#define CCTL_L1D_WB_ALL      7
+#define CCTL_L1I_VA_INVAL    8
+#define CCTL_L1D_INVAL_ALL   23
+#define CCTL_L1I_IX_INVAL    24
 
 /* mcache_ctl bitfield */
-#define MCACHE_CTL_IC_EN	BIT(0)
-#define MCACHE_CTL_DC_EN	BIT(1)
-#define MCACHE_CTL_CCTL_SUEN	BIT(8)
-#define MCACHE_CTL_DC_COHEN	BIT(19)
-#define MCACHE_CTL_DC_COHSTA	BIT(20)
+#define MCACHE_CTL_IC_EN     BIT(0)
+#define MCACHE_CTL_DC_EN     BIT(1)
+#define MCACHE_CTL_CCTL_SUEN BIT(8)
+#define MCACHE_CTL_DC_COHEN  BIT(19)
+#define MCACHE_CTL_DC_COHSTA BIT(20)
 
 /* micm_cfg bitfield */
-#define MICM_CFG_ISET		BIT_MASK(3)
-#define MICM_CFG_IWAY_SHIFT	3
-#define MICM_CFG_ISZ_SHIFT	6
+#define MICM_CFG_ISET       BIT_MASK(3)
+#define MICM_CFG_IWAY_SHIFT 3
+#define MICM_CFG_ISZ_SHIFT  6
 
 /* mdcm_cfg bitfield */
-#define MDCM_CFG_DSZ_SHIFT	6
+#define MDCM_CFG_DSZ_SHIFT 6
 
 /* mmsc_cfg bitfield */
-#define MMSC_CFG_CCTLCSR	BIT(16)
-#define MMSC_CFG_VCCTL_2	BIT(19)
-#define MMSC_CFG_MSC_EXT	BIT(31)
-#define MMSC_CFG_RVARCH		BIT64(52)
+#define MMSC_CFG_CCTLCSR BIT(16)
+#define MMSC_CFG_VCCTL_2 BIT(19)
+#define MMSC_CFG_MSC_EXT BIT(31)
+#define MMSC_CFG_RVARCH  BIT64(52)
 
 /* mmsc_cfg2 bitfield */
-#define MMSC_CFG2_RVARCH	BIT(20)
+#define MMSC_CFG2_RVARCH BIT(20)
 
 /* mrvarch_cfg bitfield */
-#define MRVARCH_CFG_SMEPMP	BIT(4)
+#define MRVARCH_CFG_SMEPMP BIT(4)
 
-#define K_CACHE_WB		BIT(0)
-#define K_CACHE_INVD		BIT(1)
-#define K_CACHE_WB_INVD		(K_CACHE_WB | K_CACHE_INVD)
+#define K_CACHE_WB      BIT(0)
+#define K_CACHE_INVD    BIT(1)
+#define K_CACHE_WB_INVD (K_CACHE_WB | K_CACHE_INVD)
 
 struct cache_config {
 	uint32_t instr_line_size;
@@ -68,12 +68,28 @@ static struct k_spinlock lock;
 #if DT_NODE_HAS_COMPAT_STATUS(DT_INST(0, andestech_l2c), andestech_l2c, okay)
 #include "cache_andes_l2.h"
 #else
-static ALWAYS_INLINE void nds_l2_cache_enable(void) { }
-static ALWAYS_INLINE void nds_l2_cache_disable(void) { }
-static ALWAYS_INLINE int nds_l2_cache_range(void *addr, size_t size, int op) { return 0; }
-static ALWAYS_INLINE int nds_l2_cache_all(int op) { return 0; }
-static ALWAYS_INLINE int nds_l2_cache_is_inclusive(void) { return 0; }
-static ALWAYS_INLINE int nds_l2_cache_init(void) { return 0; }
+static ALWAYS_INLINE void nds_l2_cache_enable(void)
+{
+}
+static ALWAYS_INLINE void nds_l2_cache_disable(void)
+{
+}
+static ALWAYS_INLINE int nds_l2_cache_range(void *addr, size_t size, int op)
+{
+	return 0;
+}
+static ALWAYS_INLINE int nds_l2_cache_all(int op)
+{
+	return 0;
+}
+static ALWAYS_INLINE int nds_l2_cache_is_inclusive(void)
+{
+	return 0;
+}
+static ALWAYS_INLINE int nds_l2_cache_init(void)
+{
+	return 0;
+}
 #endif /* DT_NODE_HAS_COMPAT_STATUS(DT_INST(0, andestech_l2c), andestech_l2c, okay) */
 
 static ALWAYS_INLINE int nds_cctl_range_operations(void *addr, size_t size, int line_size, int cmd)
@@ -334,7 +350,7 @@ int cache_instr_invd_all(void)
 			}
 		} else {
 			if ((csr_read(NDS_MMSC_CFG) & MMSC_CFG_MSC_EXT) &&
-				(csr_read(NDS_MMSC_CFG2) & MMSC_CFG2_RVARCH)) {
+			    (csr_read(NDS_MMSC_CFG2) & MMSC_CFG2_RVARCH)) {
 				if (csr_read(NDS_MRVARCH_CFG) & MRVARCH_CFG_SMEPMP) {
 					return -ENOTSUP;
 				}
@@ -502,8 +518,7 @@ static int andes_cache_init(void)
 #elif (CONFIG_ICACHE_LINE_SIZE != 0)
 		cache_cfg.instr_line_size = CONFIG_ICACHE_LINE_SIZE;
 #elif DT_NODE_HAS_PROP(DT_PATH(cpus, cpu_0), i_cache_line_size)
-		cache_cfg.instr_line_size =
-			DT_PROP(DT_PATH(cpus, cpu_0), "i_cache_line_size");
+		cache_cfg.instr_line_size = DT_PROP(DT_PATH(cpus, cpu_0), "i_cache_line_size");
 #else
 		LOG_ERR("Please specific the i-cache-line-size "
 			"CPU0 property of the DT");
@@ -526,8 +541,7 @@ static int andes_cache_init(void)
 #elif (CONFIG_DCACHE_LINE_SIZE != 0)
 		cache_cfg.data_line_size = CONFIG_DCACHE_LINE_SIZE;
 #elif DT_NODE_HAS_PROP(DT_PATH(cpus, cpu_0), d_cache_line_size)
-		cache_cfg.data_line_size =
-			DT_PROP(DT_PATH(cpus, cpu_0), "d_cache_line_size");
+		cache_cfg.data_line_size = DT_PROP(DT_PATH(cpus, cpu_0), "d_cache_line_size");
 #else
 		LOG_ERR("Please specific the d-cache-line-size "
 			"CPU0 property of the DT");

@@ -26,8 +26,8 @@ LOG_MODULE_REGISTER(nxp_s32_eth, CONFIG_ETHERNET_LOG_LEVEL);
 
 #include "eth.h"
 
-#define ETH_NXP_S32_BUF_TIMEOUT		K_MSEC(20)
-#define ETH_NXP_S32_DMA_TX_TIMEOUT	K_MSEC(20)
+#define ETH_NXP_S32_BUF_TIMEOUT    K_MSEC(20)
+#define ETH_NXP_S32_DMA_TX_TIMEOUT K_MSEC(20)
 
 #define ETH_NXP_S32_MAC_ADDR_LEN 6U
 
@@ -52,7 +52,7 @@ struct eth_nxp_s32_config {
 struct eth_nxp_s32_data {
 	struct net_if *iface;
 	uint8_t mac_addr[ETH_NXP_S32_MAC_ADDR_LEN];
-	uint8_t	if_suspended;
+	uint8_t if_suspended;
 	struct k_mutex tx_mutex;
 	struct k_sem rx_sem;
 	struct k_sem tx_sem;
@@ -100,8 +100,7 @@ static void convert_phy_to_mac_config(Gmac_Ip_ConfigType *gmac_cfg, enum phy_lin
 	}
 }
 
-static void phy_link_state_changed(const struct device *pdev,
-				   struct phy_link_state *state,
+static void phy_link_state_changed(const struct device *pdev, struct phy_link_state *state,
 				   void *user_data)
 {
 	const struct device *dev = (struct device *)user_data;
@@ -214,10 +213,9 @@ static int eth_nxp_s32_init(const struct device *dev)
 	k_sem_init(&ctx->tx_sem, 0, 1);
 
 	k_thread_create(&ctx->rx_thread, ctx->rx_thread_stack,
-			K_KERNEL_STACK_SIZEOF(ctx->rx_thread_stack),
-			eth_nxp_s32_rx_thread, (void *)dev, NULL, NULL,
-			K_PRIO_COOP(CONFIG_ETH_NXP_S32_RX_THREAD_PRIO),
-			0, K_NO_WAIT);
+			K_KERNEL_STACK_SIZEOF(ctx->rx_thread_stack), eth_nxp_s32_rx_thread,
+			(void *)dev, NULL, NULL, K_PRIO_COOP(CONFIG_ETH_NXP_S32_RX_THREAD_PRIO), 0,
+			K_NO_WAIT);
 	k_thread_name_set(&ctx->rx_thread, "eth_nxp_s32_rx");
 
 	if (cfg->do_config != NULL) {
@@ -304,9 +302,9 @@ static void eth_nxp_s32_iface_init(struct net_if *iface)
 
 	net_if_set_link_addr(iface, ctx->mac_addr, sizeof(ctx->mac_addr), NET_LINK_ETHERNET);
 
-	LOG_INF("GMAC%d MAC address %02x:%02x:%02x:%02x:%02x:%02x", cfg->instance,
-		ctx->mac_addr[0], ctx->mac_addr[1], ctx->mac_addr[2],
-		ctx->mac_addr[3], ctx->mac_addr[4], ctx->mac_addr[5]);
+	LOG_INF("GMAC%d MAC address %02x:%02x:%02x:%02x:%02x:%02x", cfg->instance, ctx->mac_addr[0],
+		ctx->mac_addr[1], ctx->mac_addr[2], ctx->mac_addr[3], ctx->mac_addr[4],
+		ctx->mac_addr[5]);
 
 	/* Make sure that the net iface state is not suspended unless
 	 * upper layers explicitly stop the iface
@@ -325,8 +323,7 @@ static void eth_nxp_s32_iface_init(struct net_if *iface)
 	 * immediately after setting it.
 	 */
 	if (!device_is_ready(cfg->phy_dev)) {
-		LOG_ERR("PHY device (%p) is not ready, cannot init iface",
-			cfg->phy_dev);
+		LOG_ERR("PHY device (%p) is not ready, cannot init iface", cfg->phy_dev);
 		return;
 	}
 
@@ -342,11 +339,9 @@ static int eth_nxp_s32_tx(const struct device *dev, struct net_pkt *pkt)
 	Gmac_Ip_BufferType buf;
 	Gmac_Ip_TxInfoType tx_info;
 	Gmac_Ip_StatusType status;
-	Gmac_Ip_TxOptionsType tx_options = {
-		.NoInt = FALSE,
-		.CrcPadIns = GMAC_CRC_AND_PAD_INSERTION,
-		.ChecksumIns = GMAC_CHECKSUM_INSERTION_PROTO_PSEUDOH
-	};
+	Gmac_Ip_TxOptionsType tx_options = {.NoInt = FALSE,
+					    .CrcPadIns = GMAC_CRC_AND_PAD_INSERTION,
+					    .ChecksumIns = GMAC_CHECKSUM_INSERTION_PROTO_PSEUDOH};
 
 	__ASSERT(pkt, "Packet pointer is NULL");
 
@@ -404,17 +399,16 @@ error:
 	return res;
 }
 
-static struct net_pkt *eth_nxp_s32_get_pkt(const struct device *dev,
-					Gmac_Ip_BufferType *buf,
-					Gmac_Ip_RxInfoType *rx_info)
+static struct net_pkt *eth_nxp_s32_get_pkt(const struct device *dev, Gmac_Ip_BufferType *buf,
+					   Gmac_Ip_RxInfoType *rx_info)
 {
 	struct eth_nxp_s32_data *ctx = dev->data;
 	struct net_pkt *pkt = NULL;
 	int res = 0;
 
 	/* Using root iface, it will be updated in net_recv_data() */
-	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, rx_info->PktLen,
-					   AF_UNSPEC, 0, ETH_NXP_S32_BUF_TIMEOUT);
+	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, rx_info->PktLen, AF_UNSPEC, 0,
+					   ETH_NXP_S32_BUF_TIMEOUT);
 	if (!pkt) {
 		LOG_ERR("Failed to allocate rx buffer of length %u", rx_info->PktLen);
 		goto exit;
@@ -501,8 +495,7 @@ static void eth_nxp_s32_rx_thread(void *arg1, void *unused1, void *unused2)
 	}
 }
 
-static int eth_nxp_s32_set_config(const struct device *dev,
-				  enum ethernet_config_type type,
+static int eth_nxp_s32_set_config(const struct device *dev, enum ethernet_config_type type,
 				  const struct ethernet_config *config)
 {
 	struct eth_nxp_s32_data *ctx = dev->data;
@@ -520,9 +513,9 @@ static int eth_nxp_s32_set_config(const struct device *dev,
 		Gmac_Ip_SetMacAddr(cfg->instance, (const uint8_t *)ctx->mac_addr);
 		net_if_set_link_addr(ctx->iface, ctx->mac_addr, sizeof(ctx->mac_addr),
 				     NET_LINK_ETHERNET);
-		LOG_INF("MAC set to: %02x:%02x:%02x:%02x:%02x:%02x",
-			ctx->mac_addr[0], ctx->mac_addr[1], ctx->mac_addr[2],
-			ctx->mac_addr[3], ctx->mac_addr[4], ctx->mac_addr[5]);
+		LOG_INF("MAC set to: %02x:%02x:%02x:%02x:%02x:%02x", ctx->mac_addr[0],
+			ctx->mac_addr[1], ctx->mac_addr[2], ctx->mac_addr[3], ctx->mac_addr[4],
+			ctx->mac_addr[5]);
 		break;
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
@@ -559,14 +552,12 @@ static enum ethernet_hw_caps eth_nxp_s32_get_capabilities(const struct device *d
 {
 	ARG_UNUSED(dev);
 
-	return (ETHERNET_LINK_10BASE_T
-		| ETHERNET_LINK_100BASE_T
+	return (ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T
 #if (FEATURE_GMAC_RGMII_EN == 1U)
 		| ETHERNET_LINK_1000BASE_T
 #endif
-		| ETHERNET_DUPLEX_SET
-		| ETHERNET_HW_TX_CHKSUM_OFFLOAD
-		| ETHERNET_HW_RX_CHKSUM_OFFLOAD
+		| ETHERNET_DUPLEX_SET | ETHERNET_HW_TX_CHKSUM_OFFLOAD |
+		ETHERNET_HW_RX_CHKSUM_OFFLOAD
 #if defined(CONFIG_NET_VLAN)
 		| ETHERNET_HW_VLAN
 #endif
@@ -603,224 +594,208 @@ static const struct ethernet_api eth_api = {
 	.set_config = eth_nxp_s32_set_config,
 };
 
-
-BUILD_ASSERT(((CONFIG_ETH_NXP_S32_RX_RING_BUF_SIZE * CONFIG_ETH_NXP_S32_RX_RING_LEN)
-		% FEATURE_GMAC_MTL_RX_FIFO_BLOCK_SIZE) == 0,
-		"CONFIG_ETH_NXP_S32_RX_RING_BUF_SIZE * CONFIG_ETH_NXP_S32_RX_RING_LEN "
-		"must be multiple of RX FIFO block size");
-BUILD_ASSERT(((CONFIG_ETH_NXP_S32_TX_RING_BUF_SIZE * CONFIG_ETH_NXP_S32_TX_RING_LEN)
-		% FEATURE_GMAC_MTL_TX_FIFO_BLOCK_SIZE) == 0,
-		"CONFIG_ETH_NXP_S32_TX_RING_BUF_SIZE * CONFIG_ETH_NXP_S32_TX_RING_LEN "
-		"must be multiple of TX FIFO block size");
+BUILD_ASSERT(((CONFIG_ETH_NXP_S32_RX_RING_BUF_SIZE * CONFIG_ETH_NXP_S32_RX_RING_LEN) %
+	      FEATURE_GMAC_MTL_RX_FIFO_BLOCK_SIZE) == 0,
+	     "CONFIG_ETH_NXP_S32_RX_RING_BUF_SIZE * CONFIG_ETH_NXP_S32_RX_RING_LEN "
+	     "must be multiple of RX FIFO block size");
+BUILD_ASSERT(((CONFIG_ETH_NXP_S32_TX_RING_BUF_SIZE * CONFIG_ETH_NXP_S32_TX_RING_LEN) %
+	      FEATURE_GMAC_MTL_TX_FIFO_BLOCK_SIZE) == 0,
+	     "CONFIG_ETH_NXP_S32_TX_RING_BUF_SIZE * CONFIG_ETH_NXP_S32_TX_RING_LEN "
+	     "must be multiple of TX FIFO block size");
 BUILD_ASSERT((CONFIG_ETH_NXP_S32_RX_RING_BUF_SIZE % FEATURE_GMAC_DATA_BUS_WIDTH_BYTES) == 0,
-		"CONFIG_ETH_NXP_S32_RX_RING_BUF_SIZE must be multiple of the data bus width");
+	     "CONFIG_ETH_NXP_S32_RX_RING_BUF_SIZE must be multiple of the data bus width");
 BUILD_ASSERT((CONFIG_ETH_NXP_S32_TX_RING_BUF_SIZE % FEATURE_GMAC_DATA_BUS_WIDTH_BYTES) == 0,
-		"CONFIG_ETH_NXP_S32_TX_RING_BUF_SIZE must be multiple of the data bus width");
+	     "CONFIG_ETH_NXP_S32_TX_RING_BUF_SIZE must be multiple of the data bus width");
 
-#define ETH_NXP_S32_MAC_MII(n)								\
+#define ETH_NXP_S32_MAC_MII(n)                                                                     \
 	_CONCAT(_CONCAT(GMAC_, DT_INST_STRING_UPPER_TOKEN(n, phy_connection_type)), _MODE)
 
-#define ETH_NXP_S32_IRQ_INIT(n, name)							\
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, name, irq),					\
-		DT_INST_IRQ_BY_NAME(n, name, priority),					\
-		eth_nxp_s32_##name##_irq,						\
-		DEVICE_DT_INST_GET(n),							\
-		COND_CODE_1(DT_INST_IRQ_HAS_CELL(n, flags),				\
+#define ETH_NXP_S32_IRQ_INIT(n, name)                                                              \
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, name, irq), DT_INST_IRQ_BY_NAME(n, name, priority),     \
+		    eth_nxp_s32_##name##_irq, DEVICE_DT_INST_GET(n),                               \
+		    COND_CODE_1(DT_INST_IRQ_HAS_CELL(n, flags),				\
 			(DT_INST_IRQ_BY_NAME(n, name, flags)), (0)));
 
-#define ETH_NXP_S32_INIT_CONFIG(n)							\
-	static void eth_nxp_s32_init_config_##n(void)					\
-	{										\
-		const struct device *dev = DEVICE_DT_INST_GET(n);			\
-		struct eth_nxp_s32_data *ctx = dev->data;				\
-		const struct eth_nxp_s32_config *cfg = dev->config;			\
-											\
-		ETH_NXP_S32_IRQ_INIT(n, tx);						\
-		ETH_NXP_S32_IRQ_INIT(n, rx);						\
-											\
+#define ETH_NXP_S32_INIT_CONFIG(n)                                                                 \
+	static void eth_nxp_s32_init_config_##n(void)                                              \
+	{                                                                                          \
+		const struct device *dev = DEVICE_DT_INST_GET(n);                                  \
+		struct eth_nxp_s32_data *ctx = dev->data;                                          \
+		const struct eth_nxp_s32_config *cfg = dev->config;                                \
+                                                                                                   \
+		ETH_NXP_S32_IRQ_INIT(n, tx);                                                       \
+		ETH_NXP_S32_IRQ_INIT(n, rx);                                                       \
+                                                                                                   \
 		COND_CODE_1(DT_INST_PROP(n, zephyr_random_mac_address), (		\
 			gen_random_mac(ctx->mac_addr, FREESCALE_OUI_B0,			\
 					FREESCALE_OUI_B1, FREESCALE_OUI_B2);		\
 			Gmac_Ip_SetMacAddr(cfg->instance, ctx->mac_addr);		\
 		), (									\
 			Gmac_Ip_GetMacAddr(cfg->instance, ctx->mac_addr);		\
-		))									\
+		))                       \
 	}
 
-#define ETH_NXP_S32_RX_CALLBACK(n)							\
-	static void eth_nxp_s32_rx_callback_##n(uint8_t inst, uint8_t chan)		\
-	{										\
-		const struct device *dev = DEVICE_DT_INST_GET(n);			\
-		struct eth_nxp_s32_data *ctx = dev->data;				\
-		const struct eth_nxp_s32_config *cfg = dev->config;			\
-											\
-		ARG_UNUSED(inst);							\
-		ARG_UNUSED(chan);							\
-											\
-		/* Rx irq will be re-enabled from Rx thread */				\
-		irq_disable(cfg->rx_irq);						\
-		k_sem_give(&ctx->rx_sem);						\
+#define ETH_NXP_S32_RX_CALLBACK(n)                                                                 \
+	static void eth_nxp_s32_rx_callback_##n(uint8_t inst, uint8_t chan)                        \
+	{                                                                                          \
+		const struct device *dev = DEVICE_DT_INST_GET(n);                                  \
+		struct eth_nxp_s32_data *ctx = dev->data;                                          \
+		const struct eth_nxp_s32_config *cfg = dev->config;                                \
+                                                                                                   \
+		ARG_UNUSED(inst);                                                                  \
+		ARG_UNUSED(chan);                                                                  \
+                                                                                                   \
+		/* Rx irq will be re-enabled from Rx thread */                                     \
+		irq_disable(cfg->rx_irq);                                                          \
+		k_sem_give(&ctx->rx_sem);                                                          \
 	}
 
-#define ETH_NXP_S32_TX_CALLBACK(n)							\
-	static void eth_nxp_s32_tx_callback_##n(uint8_t inst, uint8_t chan)		\
-	{										\
-		const struct device *dev = DEVICE_DT_INST_GET(n);			\
-		struct eth_nxp_s32_data *ctx = dev->data;				\
-											\
-		ARG_UNUSED(inst);							\
-		ARG_UNUSED(chan);							\
-											\
-		k_sem_give(&ctx->tx_sem);						\
+#define ETH_NXP_S32_TX_CALLBACK(n)                                                                 \
+	static void eth_nxp_s32_tx_callback_##n(uint8_t inst, uint8_t chan)                        \
+	{                                                                                          \
+		const struct device *dev = DEVICE_DT_INST_GET(n);                                  \
+		struct eth_nxp_s32_data *ctx = dev->data;                                          \
+                                                                                                   \
+		ARG_UNUSED(inst);                                                                  \
+		ARG_UNUSED(chan);                                                                  \
+                                                                                                   \
+		k_sem_give(&ctx->tx_sem);                                                          \
 	}
 
-#define _ETH_NXP_S32_RING(n, name, len, buf_size)					\
-	static Gmac_Ip_BufferDescriptorType eth_nxp_s32_##name##ring_desc_##n[len]	\
-		__nocache __aligned(FEATURE_GMAC_BUFFDESCR_ALIGNMENT_BYTES);		\
-	static uint8_t eth_nxp_s32_##name##ring_buf_##n[len * buf_size]			\
-		__nocache __aligned(FEATURE_GMAC_BUFF_ALIGNMENT_BYTES)
+#define _ETH_NXP_S32_RING(n, name, len, buf_size)                                                  \
+	static Gmac_Ip_BufferDescriptorType eth_nxp_s32_##name##ring_desc_##n[len] __nocache       \
+		__aligned(FEATURE_GMAC_BUFFDESCR_ALIGNMENT_BYTES);                                 \
+	static uint8_t eth_nxp_s32_##name##ring_buf_##n[len * buf_size] __nocache                  \
+		__aligned(FEATURE_GMAC_BUFF_ALIGNMENT_BYTES)
 
-#define ETH_NXP_S32_RX_RING(n)								\
-	_ETH_NXP_S32_RING(n, rx,							\
-			  CONFIG_ETH_NXP_S32_RX_RING_LEN,				\
+#define ETH_NXP_S32_RX_RING(n)                                                                     \
+	_ETH_NXP_S32_RING(n, rx, CONFIG_ETH_NXP_S32_RX_RING_LEN,                                   \
 			  CONFIG_ETH_NXP_S32_RX_RING_BUF_SIZE)
 
-#define ETH_NXP_S32_TX_RING(n)								\
-	_ETH_NXP_S32_RING(n, tx,							\
-			  CONFIG_ETH_NXP_S32_TX_RING_LEN,				\
+#define ETH_NXP_S32_TX_RING(n)                                                                     \
+	_ETH_NXP_S32_RING(n, tx, CONFIG_ETH_NXP_S32_TX_RING_LEN,                                   \
 			  CONFIG_ETH_NXP_S32_TX_RING_BUF_SIZE)
 
-#define ETH_NXP_S32_MAC_TXTIMESHAPER_CONFIG(n)						\
-	static const Gmac_Ip_TxTimeAwareShaper eth_nxp_s32_mac_txtimeshaper_config_##n = {\
-		.GateControlList = NULL,						\
+#define ETH_NXP_S32_MAC_TXTIMESHAPER_CONFIG(n)                                                     \
+	static const Gmac_Ip_TxTimeAwareShaper eth_nxp_s32_mac_txtimeshaper_config_##n = {         \
+		.GateControlList = NULL,                                                           \
 	}
 
-#define ETH_NXP_S32_MAC_RXRING_CONFIG(n)						\
-	static const Gmac_Ip_RxRingConfigType eth_nxp_s32_mac_rxring_config_##n = {	\
-		.RingDesc = eth_nxp_s32_rxring_desc_##n,				\
-		.Callback = eth_nxp_s32_rx_callback_##n,				\
-		.Buffer = eth_nxp_s32_rxring_buf_##n,					\
-		.Interrupts = (uint32_t)GMAC_CH_INTERRUPT_RI,				\
-		.BufferLen = CONFIG_ETH_NXP_S32_RX_RING_BUF_SIZE,			\
-		.RingSize = CONFIG_ETH_NXP_S32_RX_RING_LEN,				\
-		.PriorityMask = 0U,							\
-		.DmaBurstLength = 32U,							\
+#define ETH_NXP_S32_MAC_RXRING_CONFIG(n)                                                           \
+	static const Gmac_Ip_RxRingConfigType eth_nxp_s32_mac_rxring_config_##n = {                \
+		.RingDesc = eth_nxp_s32_rxring_desc_##n,                                           \
+		.Callback = eth_nxp_s32_rx_callback_##n,                                           \
+		.Buffer = eth_nxp_s32_rxring_buf_##n,                                              \
+		.Interrupts = (uint32_t)GMAC_CH_INTERRUPT_RI,                                      \
+		.BufferLen = CONFIG_ETH_NXP_S32_RX_RING_BUF_SIZE,                                  \
+		.RingSize = CONFIG_ETH_NXP_S32_RX_RING_LEN,                                        \
+		.PriorityMask = 0U,                                                                \
+		.DmaBurstLength = 32U,                                                             \
 	}
 
-#define ETH_NXP_S32_MAC_TXRING_CONFIG(n)						\
-	static const Gmac_Ip_TxRingConfigType eth_nxp_s32_mac_txring_config_##n = {	\
-		.Weight = 0U,								\
-		.IdleSlopeCredit = 0U,							\
-		.SendSlopeCredit = 0U,							\
-		.HiCredit = 0U,								\
-		.LoCredit = 0,								\
-		.RingDesc = eth_nxp_s32_txring_desc_##n,				\
-		.Callback = eth_nxp_s32_tx_callback_##n,				\
-		.Buffer = eth_nxp_s32_txring_buf_##n,					\
-		.Interrupts = (uint32_t)GMAC_CH_INTERRUPT_TI,				\
-		.BufferLen = CONFIG_ETH_NXP_S32_TX_RING_BUF_SIZE,			\
-		.RingSize = CONFIG_ETH_NXP_S32_TX_RING_LEN,				\
-		.PriorityMask = 0U,							\
-		.DmaBurstLength = 32U,							\
-		.QueueOpMode = GMAC_OP_MODE_DCB_GEN,					\
+#define ETH_NXP_S32_MAC_TXRING_CONFIG(n)                                                           \
+	static const Gmac_Ip_TxRingConfigType eth_nxp_s32_mac_txring_config_##n = {                \
+		.Weight = 0U,                                                                      \
+		.IdleSlopeCredit = 0U,                                                             \
+		.SendSlopeCredit = 0U,                                                             \
+		.HiCredit = 0U,                                                                    \
+		.LoCredit = 0,                                                                     \
+		.RingDesc = eth_nxp_s32_txring_desc_##n,                                           \
+		.Callback = eth_nxp_s32_tx_callback_##n,                                           \
+		.Buffer = eth_nxp_s32_txring_buf_##n,                                              \
+		.Interrupts = (uint32_t)GMAC_CH_INTERRUPT_TI,                                      \
+		.BufferLen = CONFIG_ETH_NXP_S32_TX_RING_BUF_SIZE,                                  \
+		.RingSize = CONFIG_ETH_NXP_S32_TX_RING_LEN,                                        \
+		.PriorityMask = 0U,                                                                \
+		.DmaBurstLength = 32U,                                                             \
+		.QueueOpMode = GMAC_OP_MODE_DCB_GEN,                                               \
 	}
 
-#define ETH_NXP_S32_MAC_PKT_FILTER(n)							\
-	((uint32_t)(0U									\
-	COND_CODE_1(CONFIG_ETH_NXP_S32_MULTICAST_FILTER,				\
+#define ETH_NXP_S32_MAC_PKT_FILTER(n)                                                              \
+	((uint32_t)(0U COND_CODE_1(CONFIG_ETH_NXP_S32_MULTICAST_FILTER,				\
 		(|GMAC_PKT_FILTER_HASH_MULTICAST),					\
-		(|GMAC_PKT_FILTER_PASS_ALL_MULTICAST))					\
-	))
+		(|GMAC_PKT_FILTER_PASS_ALL_MULTICAST)) ))
 
-#define ETH_NXP_S32_MAC_CONF(n)								\
-	((uint32_t)(GMAC_MAC_CONFIG_CRC_STRIPPING					\
-		| GMAC_MAC_CONFIG_AUTO_PAD						\
-		| GMAC_MAC_CONFIG_CHECKSUM_OFFLOAD					\
-	IF_ENABLED(CONFIG_ETH_NXP_S32_LOOPBACK,						\
-		(|GMAC_MAC_CONFIG_LOOPBACK))						\
-	))
+#define ETH_NXP_S32_MAC_CONF(n)                                                                    \
+	((uint32_t)(GMAC_MAC_CONFIG_CRC_STRIPPING | GMAC_MAC_CONFIG_AUTO_PAD |                     \
+		    GMAC_MAC_CONFIG_CHECKSUM_OFFLOAD IF_ENABLED(CONFIG_ETH_NXP_S32_LOOPBACK,						\
+		(|GMAC_MAC_CONFIG_LOOPBACK)) ))
 
-#define ETH_NXP_S32_MAC_CONFIG(n)							\
-	static const Gmac_Ip_ConfigType eth_nxp_s32_mac_config_##n = {			\
-		.RxRingCount = 1U,							\
-		.TxRingCount = 1U,							\
-		.Interrupts = 0U,							\
-		.Callback = NULL,							\
-		.TxSchedAlgo = GMAC_SCHED_ALGO_SP,					\
-		.MiiMode = ETH_NXP_S32_MAC_MII(n),					\
-		.Speed = GMAC_SPEED_100M,						\
-		.Duplex = GMAC_FULL_DUPLEX,						\
-		.MacConfig = ETH_NXP_S32_MAC_CONF(n),					\
-		.MacPktFilterConfig = ETH_NXP_S32_MAC_PKT_FILTER(n),			\
-		.EnableCtrl = false,							\
+#define ETH_NXP_S32_MAC_CONFIG(n)                                                                  \
+	static const Gmac_Ip_ConfigType eth_nxp_s32_mac_config_##n = {                             \
+		.RxRingCount = 1U,                                                                 \
+		.TxRingCount = 1U,                                                                 \
+		.Interrupts = 0U,                                                                  \
+		.Callback = NULL,                                                                  \
+		.TxSchedAlgo = GMAC_SCHED_ALGO_SP,                                                 \
+		.MiiMode = ETH_NXP_S32_MAC_MII(n),                                                 \
+		.Speed = GMAC_SPEED_100M,                                                          \
+		.Duplex = GMAC_FULL_DUPLEX,                                                        \
+		.MacConfig = ETH_NXP_S32_MAC_CONF(n),                                              \
+		.MacPktFilterConfig = ETH_NXP_S32_MAC_PKT_FILTER(n),                               \
+		.EnableCtrl = false,                                                               \
 	}
 
-#define ETH_NXP_S32_MAC_ADDR(n)								\
-	BUILD_ASSERT(DT_INST_PROP(n, zephyr_random_mac_address) ||			\
-		NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(n)),				\
-		"eth_nxp_s32_gmac requires either a fixed or random MAC address");	\
-	static const uint8_t eth_nxp_s32_mac_addr_##n[ETH_NXP_S32_MAC_ADDR_LEN] =	\
+#define ETH_NXP_S32_MAC_ADDR(n)                                                                    \
+	BUILD_ASSERT(DT_INST_PROP(n, zephyr_random_mac_address) ||                                 \
+			     NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(n)),                              \
+		     "eth_nxp_s32_gmac requires either a fixed or random MAC address");            \
+	static const uint8_t eth_nxp_s32_mac_addr_##n[ETH_NXP_S32_MAC_ADDR_LEN] =                  \
 		DT_INST_PROP_OR(n, local_mac_address, {0U})
 
 #define ETH_NXP_S32_MAC_STATE(n) Gmac_Ip_StateType eth_nxp_s32_mac_state_##n
 
-#define ETH_NXP_S32_CTRL_CONFIG(n)							\
-	{										\
-		.Gmac_pCtrlState = &eth_nxp_s32_mac_state_##n,				\
-		.Gmac_pCtrlConfig = &eth_nxp_s32_mac_config_##n,			\
-		.Gmac_paCtrlRxRingConfig = &eth_nxp_s32_mac_rxring_config_##n,		\
-		.Gmac_paCtrlTxRingConfig = &eth_nxp_s32_mac_txring_config_##n,		\
-		.Gmac_pau8CtrlPhysAddr = &eth_nxp_s32_mac_addr_##n[0],			\
-		.Gmac_pCtrlTxTimeAwareShaper = &eth_nxp_s32_mac_txtimeshaper_config_##n,\
+#define ETH_NXP_S32_CTRL_CONFIG(n)                                                                 \
+	{                                                                                          \
+		.Gmac_pCtrlState = &eth_nxp_s32_mac_state_##n,                                     \
+		.Gmac_pCtrlConfig = &eth_nxp_s32_mac_config_##n,                                   \
+		.Gmac_paCtrlRxRingConfig = &eth_nxp_s32_mac_rxring_config_##n,                     \
+		.Gmac_paCtrlTxRingConfig = &eth_nxp_s32_mac_txring_config_##n,                     \
+		.Gmac_pau8CtrlPhysAddr = &eth_nxp_s32_mac_addr_##n[0],                             \
+		.Gmac_pCtrlTxTimeAwareShaper = &eth_nxp_s32_mac_txtimeshaper_config_##n,           \
 	}
 
-#define ETH_NXP_S32_HW_INSTANCE_CHECK(i, n)						\
-	((DT_INST_REG_ADDR(n) == IP_GMAC_##i##_BASE) ? i : 0)
+#define ETH_NXP_S32_HW_INSTANCE_CHECK(i, n) ((DT_INST_REG_ADDR(n) == IP_GMAC_##i##_BASE) ? i : 0)
 
-#define ETH_NXP_S32_HW_INSTANCE(n)							\
+#define ETH_NXP_S32_HW_INSTANCE(n)                                                                 \
 	LISTIFY(__DEBRACKET FEATURE_GMAC_NUM_INSTANCES,					\
 		ETH_NXP_S32_HW_INSTANCE_CHECK, (|), n)
 
-#define ETH_NXP_S32_PHY_DEV(n)								\
+#define ETH_NXP_S32_PHY_DEV(n)                                                                     \
 	(COND_CODE_1(DT_INST_NODE_HAS_PROP(n, phy_handle),				\
 		(DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle))), NULL))
 
-#define ETH_NXP_S32_DEVICE(n)								\
-	ETH_NXP_S32_TX_CALLBACK(n)							\
-	ETH_NXP_S32_RX_CALLBACK(n)							\
-	ETH_NXP_S32_INIT_CONFIG(n)							\
-	ETH_NXP_S32_RX_RING(n);								\
-	ETH_NXP_S32_TX_RING(n);								\
-	ETH_NXP_S32_MAC_STATE(n);							\
-	ETH_NXP_S32_MAC_TXTIMESHAPER_CONFIG(n);						\
-	ETH_NXP_S32_MAC_RXRING_CONFIG(n);						\
-	ETH_NXP_S32_MAC_TXRING_CONFIG(n);						\
-	ETH_NXP_S32_MAC_CONFIG(n);							\
-	ETH_NXP_S32_MAC_ADDR(n);							\
-	PINCTRL_DT_INST_DEFINE(n);							\
-											\
-	static const struct eth_nxp_s32_config eth_nxp_s32_config_##n = {		\
-		.instance = ETH_NXP_S32_HW_INSTANCE(n),					\
-		.base = (GMAC_Type *)DT_INST_REG_ADDR(n),				\
-		.ctrl_cfg = ETH_NXP_S32_CTRL_CONFIG(n),					\
-		.do_config = eth_nxp_s32_init_config_##n,				\
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
-		.phy_dev = ETH_NXP_S32_PHY_DEV(n),					\
-		.rx_irq = DT_INST_IRQ_BY_NAME(n, rx, irq),				\
-		.tx_irq = DT_INST_IRQ_BY_NAME(n, tx, irq),				\
-		.tx_ring_idx = 0U,							\
-		.rx_ring_idx = 0U,							\
-	};										\
-											\
-	static struct eth_nxp_s32_data eth_nxp_s32_data_##n;				\
-											\
-	ETH_NET_DEVICE_DT_INST_DEFINE(n,						\
-				eth_nxp_s32_init,					\
-				NULL,							\
-				&eth_nxp_s32_data_##n,					\
-				&eth_nxp_s32_config_##n,				\
-				CONFIG_ETH_INIT_PRIORITY,				\
-				&eth_api,						\
-				NET_ETH_MTU);
+#define ETH_NXP_S32_DEVICE(n)                                                                      \
+	ETH_NXP_S32_TX_CALLBACK(n)                                                                 \
+	ETH_NXP_S32_RX_CALLBACK(n)                                                                 \
+	ETH_NXP_S32_INIT_CONFIG(n)                                                                 \
+	ETH_NXP_S32_RX_RING(n);                                                                    \
+	ETH_NXP_S32_TX_RING(n);                                                                    \
+	ETH_NXP_S32_MAC_STATE(n);                                                                  \
+	ETH_NXP_S32_MAC_TXTIMESHAPER_CONFIG(n);                                                    \
+	ETH_NXP_S32_MAC_RXRING_CONFIG(n);                                                          \
+	ETH_NXP_S32_MAC_TXRING_CONFIG(n);                                                          \
+	ETH_NXP_S32_MAC_CONFIG(n);                                                                 \
+	ETH_NXP_S32_MAC_ADDR(n);                                                                   \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+                                                                                                   \
+	static const struct eth_nxp_s32_config eth_nxp_s32_config_##n = {                          \
+		.instance = ETH_NXP_S32_HW_INSTANCE(n),                                            \
+		.base = (GMAC_Type *)DT_INST_REG_ADDR(n),                                          \
+		.ctrl_cfg = ETH_NXP_S32_CTRL_CONFIG(n),                                            \
+		.do_config = eth_nxp_s32_init_config_##n,                                          \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+		.phy_dev = ETH_NXP_S32_PHY_DEV(n),                                                 \
+		.rx_irq = DT_INST_IRQ_BY_NAME(n, rx, irq),                                         \
+		.tx_irq = DT_INST_IRQ_BY_NAME(n, tx, irq),                                         \
+		.tx_ring_idx = 0U,                                                                 \
+		.rx_ring_idx = 0U,                                                                 \
+	};                                                                                         \
+                                                                                                   \
+	static struct eth_nxp_s32_data eth_nxp_s32_data_##n;                                       \
+                                                                                                   \
+	ETH_NET_DEVICE_DT_INST_DEFINE(n, eth_nxp_s32_init, NULL, &eth_nxp_s32_data_##n,            \
+				      &eth_nxp_s32_config_##n, CONFIG_ETH_INIT_PRIORITY, &eth_api, \
+				      NET_ETH_MTU);
 
 DT_INST_FOREACH_STATUS_OKAY(ETH_NXP_S32_DEVICE)

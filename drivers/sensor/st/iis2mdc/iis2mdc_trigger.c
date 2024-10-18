@@ -27,9 +27,8 @@ static int iis2mdc_enable_int(const struct device *dev, int enable)
 }
 
 /* link external trigger to event data ready */
-int iis2mdc_trigger_set(const struct device *dev,
-			  const struct sensor_trigger *trig,
-			  sensor_trigger_handler_t handler)
+int iis2mdc_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
+			sensor_trigger_handler_t handler)
 {
 	struct iis2mdc_data *iis2mdc = dev->data;
 	int16_t raw[3];
@@ -60,15 +59,12 @@ static void iis2mdc_handle_interrupt(const struct device *dev)
 		iis2mdc->handler_drdy(dev, iis2mdc->trig_drdy);
 	}
 
-	gpio_pin_interrupt_configure_dt(&config->gpio_drdy,
-					GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&config->gpio_drdy, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
-static void iis2mdc_gpio_callback(const struct device *dev,
-				    struct gpio_callback *cb, uint32_t pins)
+static void iis2mdc_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	struct iis2mdc_data *iis2mdc =
-		CONTAINER_OF(cb, struct iis2mdc_data, gpio_cb);
+	struct iis2mdc_data *iis2mdc = CONTAINER_OF(cb, struct iis2mdc_data, gpio_cb);
 	const struct iis2mdc_dev_config *const config = iis2mdc->dev->config;
 
 	ARG_UNUSED(pins);
@@ -100,8 +96,7 @@ static void iis2mdc_thread(void *p1, void *p2, void *p3)
 #ifdef CONFIG_IIS2MDC_TRIGGER_GLOBAL_THREAD
 static void iis2mdc_work_cb(struct k_work *work)
 {
-	struct iis2mdc_data *iis2mdc =
-		CONTAINER_OF(work, struct iis2mdc_data, work);
+	struct iis2mdc_data *iis2mdc = CONTAINER_OF(work, struct iis2mdc_data, work);
 
 	iis2mdc_handle_interrupt(iis2mdc->dev);
 }
@@ -121,11 +116,9 @@ int iis2mdc_init_interrupt(const struct device *dev)
 
 #if defined(CONFIG_IIS2MDC_TRIGGER_OWN_THREAD)
 	k_sem_init(&iis2mdc->gpio_sem, 0, K_SEM_MAX_LIMIT);
-	k_thread_create(&iis2mdc->thread, iis2mdc->thread_stack,
-			CONFIG_IIS2MDC_THREAD_STACK_SIZE,
-			iis2mdc_thread, iis2mdc,
-			NULL, NULL, K_PRIO_COOP(CONFIG_IIS2MDC_THREAD_PRIORITY),
-			0, K_NO_WAIT);
+	k_thread_create(&iis2mdc->thread, iis2mdc->thread_stack, CONFIG_IIS2MDC_THREAD_STACK_SIZE,
+			iis2mdc_thread, iis2mdc, NULL, NULL,
+			K_PRIO_COOP(CONFIG_IIS2MDC_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_IIS2MDC_TRIGGER_GLOBAL_THREAD)
 	iis2mdc->work.handler = iis2mdc_work_cb;
 #endif
@@ -136,15 +129,12 @@ int iis2mdc_init_interrupt(const struct device *dev)
 		return ret;
 	}
 
-	gpio_init_callback(&iis2mdc->gpio_cb,
-			   iis2mdc_gpio_callback,
-			   BIT(config->gpio_drdy.pin));
+	gpio_init_callback(&iis2mdc->gpio_cb, iis2mdc_gpio_callback, BIT(config->gpio_drdy.pin));
 
 	if (gpio_add_callback(config->gpio_drdy.port, &iis2mdc->gpio_cb) < 0) {
 		LOG_DBG("Could not set gpio callback");
 		return -EIO;
 	}
 
-	return gpio_pin_interrupt_configure_dt(&config->gpio_drdy,
-					       GPIO_INT_EDGE_TO_ACTIVE);
+	return gpio_pin_interrupt_configure_dt(&config->gpio_drdy, GPIO_INT_EDGE_TO_ACTIVE);
 }

@@ -36,9 +36,7 @@ typedef uint8_t flash_prg_t;
 #error Write block size must be a power of 2, from 1 to 8
 #endif
 
-bool flash_stm32_valid_range(const struct device *dev, off_t offset,
-			     uint32_t len,
-			     bool write)
+bool flash_stm32_valid_range(const struct device *dev, off_t offset, uint32_t len, bool write)
 {
 	ARG_UNUSED(write);
 
@@ -184,9 +182,7 @@ static int erase_sector(const struct device *dev, uint32_t sector)
 	return rc;
 }
 
-int flash_stm32_block_erase_loop(const struct device *dev,
-				 unsigned int offset,
-				 unsigned int len)
+int flash_stm32_block_erase_loop(const struct device *dev, unsigned int offset, unsigned int len)
 {
 	struct flash_pages_info info;
 	uint32_t start_sector, end_sector;
@@ -214,8 +210,8 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 	return rc;
 }
 
-int flash_stm32_write_range(const struct device *dev, unsigned int offset,
-			    const void *data, unsigned int len)
+int flash_stm32_write_range(const struct device *dev, unsigned int offset, const void *data,
+			    unsigned int len)
 {
 	int i, rc = 0;
 	flash_prg_t value;
@@ -231,8 +227,7 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 	return rc;
 }
 
-static __unused int write_optb(const struct device *dev, uint32_t mask,
-			       uint32_t value)
+static __unused int write_optb(const struct device *dev, uint32_t mask, uint32_t value)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	int rc;
@@ -265,8 +260,7 @@ static __unused int write_optb(const struct device *dev, uint32_t mask,
 }
 
 #if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
-int flash_stm32_update_wp_sectors(const struct device *dev,
-				  uint32_t changed_sectors,
+int flash_stm32_update_wp_sectors(const struct device *dev, uint32_t changed_sectors,
 				  uint32_t protected_sectors)
 {
 	changed_sectors <<= FLASH_OPTCR_nWRP_Pos;
@@ -282,13 +276,11 @@ int flash_stm32_update_wp_sectors(const struct device *dev,
 	return write_optb(dev, changed_sectors, protected_sectors);
 }
 
-int flash_stm32_get_wp_sectors(const struct device *dev,
-			       uint32_t *protected_sectors)
+int flash_stm32_get_wp_sectors(const struct device *dev, uint32_t *protected_sectors)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 
-	*protected_sectors =
-		(~regs->OPTCR & FLASH_OPTCR_nWRP_Msk) >> FLASH_OPTCR_nWRP_Pos;
+	*protected_sectors = (~regs->OPTCR & FLASH_OPTCR_nWRP_Msk) >> FLASH_OPTCR_nWRP_Pos;
 
 	return 0;
 }
@@ -304,8 +296,7 @@ uint8_t flash_stm32_get_rdp_level(const struct device *dev)
 
 void flash_stm32_set_rdp_level(const struct device *dev, uint8_t level)
 {
-	write_optb(dev, FLASH_OPTCR_RDP_Msk,
-		(uint32_t)level << FLASH_OPTCR_RDP_Pos);
+	write_optb(dev, FLASH_OPTCR_RDP_Msk, (uint32_t)level << FLASH_OPTCR_RDP_Pos);
 }
 #endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
 
@@ -323,7 +314,7 @@ void flash_stm32_set_rdp_level(const struct device *dev, uint8_t level)
  */
 #ifndef FLASH_SECTOR_TOTAL
 #error "Unknown flash layout"
-#else  /* defined(FLASH_SECTOR_TOTAL) */
+#else /* defined(FLASH_SECTOR_TOTAL) */
 #if FLASH_SECTOR_TOTAL == 5
 static const struct flash_pages_layout stm32f4_flash_layout[] = {
 	/* RM0401, table 5: STM32F410Tx, STM32F410Cx, STM32F410Rx */
@@ -371,20 +362,16 @@ static const struct flash_pages_layout stm32f4_flash_layout[] = {
 	 * RM0090, table 6: STM32F427xx, STM32F437xx, STM32F429xx, STM32F439xx
 	 * RM0386, table 4: STM32F469xx, STM32F479xx
 	 */
-	{.pages_count = 4, .pages_size = KB(16)},
-	{.pages_count = 1, .pages_size = KB(64)},
-	{.pages_count = 7, .pages_size = KB(128)},
-	{.pages_count = 4, .pages_size = KB(16)},
-	{.pages_count = 1, .pages_size = KB(64)},
-	{.pages_count = 7, .pages_size = KB(128)},
+	{.pages_count = 4, .pages_size = KB(16)},  {.pages_count = 1, .pages_size = KB(64)},
+	{.pages_count = 7, .pages_size = KB(128)}, {.pages_count = 4, .pages_size = KB(16)},
+	{.pages_count = 1, .pages_size = KB(64)},  {.pages_count = 7, .pages_size = KB(128)},
 };
 #else
 #error "Unknown flash layout"
 #endif /* FLASH_SECTOR_TOTAL == 5 */
-#endif/* !defined(FLASH_SECTOR_TOTAL) */
+#endif /* !defined(FLASH_SECTOR_TOTAL) */
 
-void flash_stm32_page_layout(const struct device *dev,
-			     const struct flash_pages_layout **layout,
+void flash_stm32_page_layout(const struct device *dev, const struct flash_pages_layout **layout,
 			     size_t *layout_size)
 {
 	ARG_UNUSED(dev);

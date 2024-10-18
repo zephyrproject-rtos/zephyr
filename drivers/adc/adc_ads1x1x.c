@@ -21,24 +21,24 @@
 
 LOG_MODULE_REGISTER(ADS1X1X, CONFIG_ADC_LOG_LEVEL);
 
-#if DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ti_ads1115, alert_rdy_gpios) || \
-	DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ti_ads1114, alert_rdy_gpios) || \
-	DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ti_ads1015, alert_rdy_gpios) || \
+#if DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ti_ads1115, alert_rdy_gpios) ||                             \
+	DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ti_ads1114, alert_rdy_gpios) ||                         \
+	DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ti_ads1015, alert_rdy_gpios) ||                         \
 	DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ti_ads1014, alert_rdy_gpios)
 
 #define ADC_ADS1X1X_TRIGGER
 
 #endif
 
-#define ADS1X1X_CONFIG_OS BIT(15)
-#define ADS1X1X_CONFIG_MUX(x) ((x) << 12)
-#define ADS1X1X_CONFIG_PGA(x) ((x) << 9)
-#define ADS1X1X_CONFIG_MODE BIT(8)
-#define ADS1X1X_CONFIG_DR(x) ((x) << 5)
-#define ADS1X1X_CONFIG_COMP_MODE BIT(4)
-#define ADS1X1X_CONFIG_COMP_POL BIT(3)
-#define ADS1X1X_CONFIG_COMP_LAT BIT(2)
-#define ADS1X1X_CONFIG_COMP_QUE(x) (x)
+#define ADS1X1X_CONFIG_OS             BIT(15)
+#define ADS1X1X_CONFIG_MUX(x)         ((x) << 12)
+#define ADS1X1X_CONFIG_PGA(x)         ((x) << 9)
+#define ADS1X1X_CONFIG_MODE           BIT(8)
+#define ADS1X1X_CONFIG_DR(x)          ((x) << 5)
+#define ADS1X1X_CONFIG_COMP_MODE      BIT(4)
+#define ADS1X1X_CONFIG_COMP_POL       BIT(3)
+#define ADS1X1X_CONFIG_COMP_LAT       BIT(2)
+#define ADS1X1X_CONFIG_COMP_QUE(x)    (x)
 #define ADS1X1X_THRES_POLARITY_ACTIVE BIT(15)
 
 enum ads1x1x_reg {
@@ -152,7 +152,7 @@ struct ads1x1x_data {
 	int16_t *buffer;
 	int16_t *repeat_buffer;
 	struct k_thread thread;
-	k_tid_t	tid;
+	k_tid_t tid;
 	bool differential;
 #ifdef ADC_ADS1X1X_TRIGGER
 	struct gpio_callback gpio_cb;
@@ -167,9 +167,7 @@ static inline int ads1x1x_setup_rdy_pin(const struct device *dev, bool enable)
 {
 	int ret;
 	const struct ads1x1x_config *config = dev->config;
-	gpio_flags_t flags = enable
-		? GPIO_INPUT | config->alert_rdy.dt_flags
-		: GPIO_DISCONNECTED;
+	gpio_flags_t flags = enable ? GPIO_INPUT | config->alert_rdy.dt_flags : GPIO_DISCONNECTED;
 
 	ret = gpio_pin_configure_dt(&config->alert_rdy, flags);
 	if (ret < 0) {
@@ -181,9 +179,7 @@ static inline int ads1x1x_setup_rdy_pin(const struct device *dev, bool enable)
 static inline int ads1x1x_setup_rdy_interrupt(const struct device *dev, bool enable)
 {
 	const struct ads1x1x_config *config = dev->config;
-	gpio_flags_t flags = enable
-		? GPIO_INT_EDGE_FALLING
-		: GPIO_INT_DISABLE;
+	gpio_flags_t flags = enable ? GPIO_INT_EDGE_FALLING : GPIO_INT_DISABLE;
 	int32_t ret;
 
 	ret = gpio_pin_interrupt_configure_dt(&config->alert_rdy, flags);
@@ -678,9 +674,8 @@ static void ads1x1x_work_fn(struct k_work *work)
 	ads1x1x_adc_perform_read(dev);
 }
 
-static void ads1x1x_conv_ready_cb(const struct device *gpio_dev,
-				      struct gpio_callback *cb,
-				      uint32_t pins)
+static void ads1x1x_conv_ready_cb(const struct device *gpio_dev, struct gpio_callback *cb,
+				  uint32_t pins)
 {
 	struct ads1x1x_data *data;
 	const struct device *dev;
@@ -725,8 +720,7 @@ static int ads1x1x_init_interrupt(const struct device *dev)
 		LOG_ERR("Could disable the alert/rdy interrupts.");
 		return rc;
 	}
-	gpio_init_callback(&data->gpio_cb, ads1x1x_conv_ready_cb,
-			   BIT(config->alert_rdy.pin));
+	gpio_init_callback(&data->gpio_cb, ads1x1x_conv_ready_cb, BIT(config->alert_rdy.pin));
 	rc = gpio_add_callback(config->alert_rdy.port, &data->gpio_cb);
 	if (rc) {
 		LOG_ERR("Could not set gpio callback.");
@@ -771,13 +765,10 @@ static int ads1x1x_init(const struct device *dev)
 	{
 		LOG_DBG("Using acquisition thread");
 
-		data->tid =
-			k_thread_create(&data->thread, data->stack,
-					K_THREAD_STACK_SIZEOF(data->stack),
-					(k_thread_entry_t)ads1x1x_acquisition_thread,
-					(void *)dev, NULL, NULL,
-					CONFIG_ADC_ADS1X1X_ACQUISITION_THREAD_PRIO,
-					0, K_NO_WAIT);
+		data->tid = k_thread_create(
+			&data->thread, data->stack, K_THREAD_STACK_SIZEOF(data->stack),
+			(k_thread_entry_t)ads1x1x_acquisition_thread, (void *)dev, NULL, NULL,
+			CONFIG_ADC_ADS1X1X_ACQUISITION_THREAD_PRIO, 0, K_NO_WAIT);
 		k_thread_name_set(data->tid, "adc_ads1x1x");
 	}
 
@@ -797,8 +788,7 @@ static const struct adc_driver_api ads1x1x_api = {
 
 #define DT_INST_ADS1X1X(inst, t) DT_INST(inst, ti_ads##t)
 
-#define ADS1X1X_RDY_PROPS(n)                                                                       \
-	.alert_rdy = GPIO_DT_SPEC_INST_GET_OR(n, alert_rdy_gpios, {0}),                            \
+#define ADS1X1X_RDY_PROPS(n) .alert_rdy = GPIO_DT_SPEC_INST_GET_OR(n, alert_rdy_gpios, {0}),
 
 #define ADS1X1X_RDY(t, n)                                                                          \
 	IF_ENABLED(DT_NODE_HAS_PROP(DT_INST_ADS1X1X(n, t), alert_rdy_gpios),                       \
@@ -811,8 +801,7 @@ static const struct adc_driver_api ads1x1x_api = {
 		.resolution = res,                                                                 \
 		.multiplexer = mux,                                                                \
 		.pga = pgab,                                                                       \
-		IF_ENABLED(ADC_ADS1X1X_TRIGGER, (ADS1X1X_RDY(t, n)))                               \
-	};                                                                                         \
+		IF_ENABLED(ADC_ADS1X1X_TRIGGER, (ADS1X1X_RDY(t, n))) };                              \
 	static struct ads1x1x_data ads##t##_data_##n = {                                           \
 		ADC_CONTEXT_INIT_LOCK(ads##t##_data_##n, ctx),                                     \
 		ADC_CONTEXT_INIT_TIMER(ads##t##_data_##n, ctx),                                    \
@@ -835,10 +824,7 @@ static const struct adc_driver_api ads1x1x_api = {
  * used for the initial delay when polling for data ready.
  * {8 SPS, 16 SPS, 32 SPS, 64 SPS, 128 SPS (default), 250 SPS, 475 SPS, 860 SPS}
  */
-#define ADS111X_ODR_DELAY_US                                                                       \
-	{                                                                                          \
-		125000, 62500, 31250, 15625, 7813, 4000, 2105, 1163                                \
-	}
+#define ADS111X_ODR_DELAY_US {125000, 62500, 31250, 15625, 7813, 4000, 2105, 1163}
 
 /*
  * ADS1115: 16 bit, multiplexer, programmable gain amplifier
@@ -878,10 +864,7 @@ DT_INST_FOREACH_STATUS_OKAY(ADS1113_INIT)
  * used for the initial delay when polling for data ready.
  * {128 SPS, 250 SPS, 490 SPS, 920 SPS, 1600 SPS (default), 2400 SPS, 3300 SPS, 3300 SPS}
  */
-#define ADS101X_ODR_DELAY_US                                                                       \
-	{                                                                                          \
-		7813, 4000, 2041, 1087, 625, 417, 303, 303                                         \
-	}
+#define ADS101X_ODR_DELAY_US {7813, 4000, 2041, 1087, 625, 417, 303, 303}
 
 /*
  * ADS1015: 12 bit, multiplexer, programmable gain amplifier

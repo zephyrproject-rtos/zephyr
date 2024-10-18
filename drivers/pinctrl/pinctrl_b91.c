@@ -21,8 +21,8 @@
  *      gpio_en + 4*8:    PORT_E[0-7]
  *      gpio_en + 5*8:    PORT_F[0-7]
  */
-#define reg_gpio_en(pin) (*(volatile uint8_t *)((uint32_t)DT_INST_REG_ADDR_BY_NAME(0, gpio_en) + \
-						((pin >> 8) * 8)))
+#define reg_gpio_en(pin)                                                                           \
+	(*(volatile uint8_t *)((uint32_t)DT_INST_REG_ADDR_BY_NAME(0, gpio_en) + ((pin >> 8) * 8)))
 
 /**
  *      Function Multiplexer Register
@@ -40,11 +40,11 @@
  *      pin_mux + 0x26:   PORT_F[0-3]
  *      pin_mux + 0x27:   PORT_F[4-7]
  */
-#define reg_pin_mux(pin) (*(volatile uint8_t *)((uint32_t)DT_INST_REG_ADDR_BY_NAME(0, pin_mux) + \
-						(((pin >> 8) < 4)  ? ((pin >> 8) * 2) : 0) +	 \
-						(((pin >> 8) == 4) ? 0x20          : 0) +	 \
-						(((pin >> 8) == 5) ? 0x26          : 0) +	 \
-						((pin & 0x0f0)     ? 1             : 0)))
+#define reg_pin_mux(pin)                                                                           \
+	(*(volatile uint8_t *)((uint32_t)DT_INST_REG_ADDR_BY_NAME(0, pin_mux) +                    \
+			       (((pin >> 8) < 4) ? ((pin >> 8) * 2) : 0) +                         \
+			       (((pin >> 8) == 4) ? 0x20 : 0) + (((pin >> 8) == 5) ? 0x26 : 0) +   \
+			       ((pin & 0x0f0) ? 1 : 0)))
 
 /**
  *      Pull Up resistors enable
@@ -62,9 +62,9 @@
  *      pull_up_en + 10:    PORT_F[0-3]
  *      pull_up_en + 11:    PORT_F[4-7]
  */
-#define reg_pull_up_en(pin) ((uint8_t)(DT_INST_REG_ADDR_BY_NAME(0, pull_up_en) + \
-				       ((pin >> 8) * 2) +			 \
-				       ((pin & 0xf0) ? 1 : 0)))
+#define reg_pull_up_en(pin)                                                                        \
+	((uint8_t)(DT_INST_REG_ADDR_BY_NAME(0, pull_up_en) + ((pin >> 8) * 2) +                    \
+		   ((pin & 0xf0) ? 1 : 0)))
 
 /* Pinctrl driver initialization */
 static int pinctrl_b91_init(void)
@@ -138,7 +138,7 @@ static int pinctrl_configure_pin(const pinctrl_soc_pin_t *pinctrl)
 	if (status != 0) {
 		return status;
 	}
-	mask = (uint8_t) ~(BIT(offset) | BIT(offset + 1));
+	mask = (uint8_t)~(BIT(offset) | BIT(offset + 1));
 
 	/* disable GPIO function (can be enabled back by GPIO init using GPIO driver) */
 	pinctrl_b91_gpio_function_disable(pin);

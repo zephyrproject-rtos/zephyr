@@ -23,8 +23,7 @@
 #define TIMER_IRQ_PRIO  DT_INST_IRQ(0, priority)
 #define TIMER_IRQ_FLAGS DT_INST_IRQ(0, flags)
 
-#define CYC_PER_TICK ((uint32_t)(sys_clock_hw_cycles_per_sec() \
-				/ CONFIG_SYS_CLOCK_TICKS_PER_SEC))
+#define CYC_PER_TICK ((uint32_t)(sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC))
 
 #define MAX_TICKS ((k_ticks_t)(UINT32_MAX / CYC_PER_TICK) - 1)
 
@@ -32,15 +31,13 @@ static struct k_spinlock lock;
 
 static uint32_t last_cycle;
 
-#define TI_DM_TIMER_READ(reg) sys_read32(TIMER_BASE_ADDR + TI_DM_TIMER_ ## reg)
+#define TI_DM_TIMER_READ(reg) sys_read32(TIMER_BASE_ADDR + TI_DM_TIMER_##reg)
 
-#define TI_DM_TIMER_MASK(reg) TI_DM_TIMER_ ## reg ## _MASK
-#define TI_DM_TIMER_SHIFT(reg) TI_DM_TIMER_ ## reg ## _SHIFT
-#define TI_DM_TIMER_WRITE(data, reg, bits) \
-	ti_dm_timer_write_masks(data, \
-		TIMER_BASE_ADDR + TI_DM_TIMER_ ## reg, \
-		TI_DM_TIMER_MASK(reg ## _ ## bits), \
-		TI_DM_TIMER_SHIFT(reg ## _ ## bits))
+#define TI_DM_TIMER_MASK(reg)  TI_DM_TIMER_##reg##_MASK
+#define TI_DM_TIMER_SHIFT(reg) TI_DM_TIMER_##reg##_SHIFT
+#define TI_DM_TIMER_WRITE(data, reg, bits)                                                         \
+	ti_dm_timer_write_masks(data, TIMER_BASE_ADDR + TI_DM_TIMER_##reg,                         \
+				TI_DM_TIMER_MASK(reg##_##bits), TI_DM_TIMER_SHIFT(reg##_##bits))
 
 static void ti_dm_timer_write_masks(uint32_t data, uint32_t reg, uint32_t mask, uint32_t shift)
 {
@@ -164,5 +161,4 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

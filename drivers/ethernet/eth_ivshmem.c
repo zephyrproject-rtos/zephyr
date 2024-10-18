@@ -16,17 +16,15 @@
 
 LOG_MODULE_REGISTER(eth_ivshmem, CONFIG_ETHERNET_LOG_LEVEL);
 
-#define ETH_IVSHMEM_STATE_RESET		0
-#define ETH_IVSHMEM_STATE_INIT		1
-#define ETH_IVSHMEM_STATE_READY		2
-#define ETH_IVSHMEM_STATE_RUN		3
+#define ETH_IVSHMEM_STATE_RESET 0
+#define ETH_IVSHMEM_STATE_INIT  1
+#define ETH_IVSHMEM_STATE_READY 2
+#define ETH_IVSHMEM_STATE_RUN   3
 
-static const char * const eth_ivshmem_state_names[] = {
-	[ETH_IVSHMEM_STATE_RESET] = "RESET",
-	[ETH_IVSHMEM_STATE_INIT] = "INIT",
-	[ETH_IVSHMEM_STATE_READY] = "READY",
-	[ETH_IVSHMEM_STATE_RUN] = "RUN"
-};
+static const char *const eth_ivshmem_state_names[] = {[ETH_IVSHMEM_STATE_RESET] = "RESET",
+						      [ETH_IVSHMEM_STATE_INIT] = "INIT",
+						      [ETH_IVSHMEM_STATE_READY] = "READY",
+						      [ETH_IVSHMEM_STATE_RUN] = "RUN"};
 
 struct eth_ivshmem_dev_data {
 	struct net_if *iface;
@@ -138,8 +136,8 @@ static struct net_pkt *eth_ivshmem_rx(const struct device *dev)
 		return NULL;
 	}
 
-	struct net_pkt *pkt = net_pkt_rx_alloc_with_buffer(
-		dev_data->iface, rx_len, AF_UNSPEC, 0, K_MSEC(100));
+	struct net_pkt *pkt =
+		net_pkt_rx_alloc_with_buffer(dev_data->iface, rx_len, AF_UNSPEC, 0, K_MSEC(100));
 	if (pkt == NULL) {
 		LOG_ERR("Failed to allocate rx buffer");
 		eth_stats_update_errors_rx(dev_data->iface);
@@ -166,8 +164,7 @@ static void eth_ivshmem_set_state(const struct device *dev, uint32_t state)
 	struct eth_ivshmem_dev_data *dev_data = dev->data;
 	const struct eth_ivshmem_cfg_data *cfg_data = dev->config;
 
-	LOG_DBG("State update: %s -> %s",
-		eth_ivshmem_state_names[dev_data->state],
+	LOG_DBG("State update: %s -> %s", eth_ivshmem_state_names[dev_data->state],
 		eth_ivshmem_state_names[state]);
 	dev_data->state = state;
 	ivshmem_set_state(cfg_data->ivshmem, state);
@@ -231,9 +228,7 @@ FUNC_NORETURN static void eth_ivshmem_thread(void *arg1, void *arg2, void *arg3)
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
 
-	k_poll_event_init(&poll_event,
-			  K_POLL_TYPE_SIGNAL,
-			  K_POLL_MODE_NOTIFY_ONLY,
+	k_poll_event_init(&poll_event, K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
 			  &dev_data->poll_signal);
 
 	while (true) {
@@ -298,21 +293,18 @@ int eth_ivshmem_initialize(const struct device *dev)
 	dev_data->peer_id = (id == 0) ? 1 : 0;
 
 	uintptr_t output_sections[2];
-	size_t output_section_size = ivshmem_get_output_mem_section(
-		cfg_data->ivshmem, 0, &output_sections[0]);
-	ivshmem_get_output_mem_section(
-		cfg_data->ivshmem, 1, &output_sections[1]);
+	size_t output_section_size =
+		ivshmem_get_output_mem_section(cfg_data->ivshmem, 0, &output_sections[0]);
+	ivshmem_get_output_mem_section(cfg_data->ivshmem, 1, &output_sections[1]);
 
-	res = eth_ivshmem_queue_init(
-		&dev_data->ivshmem_queue, output_sections[id],
-		output_sections[dev_data->peer_id], output_section_size);
+	res = eth_ivshmem_queue_init(&dev_data->ivshmem_queue, output_sections[id],
+				     output_sections[dev_data->peer_id], output_section_size);
 	if (res != 0) {
 		LOG_ERR("Failed to init ivshmem queue");
 		return res;
 	}
 	LOG_INF("shmem queue: desc len 0x%hX, header size 0x%X, data size 0x%X",
-		dev_data->ivshmem_queue.desc_max_len,
-		dev_data->ivshmem_queue.vring_header_size,
+		dev_data->ivshmem_queue.desc_max_len, dev_data->ivshmem_queue.vring_header_size,
 		dev_data->ivshmem_queue.vring_data_max_len);
 
 	uint16_t n_vectors = ivshmem_get_vectors(cfg_data->ivshmem);
@@ -331,18 +323,14 @@ int eth_ivshmem_initialize(const struct device *dev)
 	ivshmem_set_state(cfg_data->ivshmem, ETH_IVSHMEM_STATE_RESET);
 
 	cfg_data->generate_mac_addr(dev_data->mac_addr);
-	LOG_INF("MAC Address %02X:%02X:%02X:%02X:%02X:%02X",
-		dev_data->mac_addr[0], dev_data->mac_addr[1],
-		dev_data->mac_addr[2], dev_data->mac_addr[3],
+	LOG_INF("MAC Address %02X:%02X:%02X:%02X:%02X:%02X", dev_data->mac_addr[0],
+		dev_data->mac_addr[1], dev_data->mac_addr[2], dev_data->mac_addr[3],
 		dev_data->mac_addr[4], dev_data->mac_addr[5]);
 
-	k_tid_t tid = k_thread_create(
-		&dev_data->thread, dev_data->thread_stack,
-		K_KERNEL_STACK_SIZEOF(dev_data->thread_stack),
-		eth_ivshmem_thread,
-		(void *) dev, NULL, NULL,
-		CONFIG_ETH_IVSHMEM_THREAD_PRIORITY,
-		K_ESSENTIAL, K_NO_WAIT);
+	k_tid_t tid = k_thread_create(&dev_data->thread, dev_data->thread_stack,
+				      K_KERNEL_STACK_SIZEOF(dev_data->thread_stack),
+				      eth_ivshmem_thread, (void *)dev, NULL, NULL,
+				      CONFIG_ETH_IVSHMEM_THREAD_PRIORITY, K_ESSENTIAL, K_NO_WAIT);
 	k_thread_name_set(tid, cfg_data->name);
 
 	ivshmem_enable_interrupts(cfg_data->ivshmem, true);
@@ -362,10 +350,8 @@ static void eth_ivshmem_iface_init(struct net_if *iface)
 		dev_data->iface = iface;
 	}
 
-	net_if_set_link_addr(
-		iface, dev_data->mac_addr,
-		sizeof(dev_data->mac_addr),
-		NET_LINK_ETHERNET);
+	net_if_set_link_addr(iface, dev_data->mac_addr, sizeof(dev_data->mac_addr),
+			     NET_LINK_ETHERNET);
 
 	ethernet_init(iface);
 
@@ -377,55 +363,50 @@ static void eth_ivshmem_iface_init(struct net_if *iface)
 }
 
 static const struct ethernet_api eth_ivshmem_api = {
-	.iface_api.init		= eth_ivshmem_iface_init,
+	.iface_api.init = eth_ivshmem_iface_init,
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-	.get_stats		= eth_ivshmem_get_stats,
+	.get_stats = eth_ivshmem_get_stats,
 #endif
-	.start			= eth_ivshmem_start,
-	.stop			= eth_ivshmem_stop,
-	.get_capabilities	= eth_ivshmem_caps,
-	.send			= eth_ivshmem_send,
+	.start = eth_ivshmem_start,
+	.stop = eth_ivshmem_stop,
+	.get_capabilities = eth_ivshmem_caps,
+	.send = eth_ivshmem_send,
 };
 
-#define ETH_IVSHMEM_RANDOM_MAC_ADDR(inst)						\
-	static void generate_mac_addr_##inst(uint8_t mac_addr[6])			\
-	{										\
-		sys_rand_get(mac_addr, 3U);						\
-		/* Clear multicast bit */						\
-		mac_addr[0] &= 0xFE;							\
-		gen_random_mac(mac_addr, mac_addr[0], mac_addr[1], mac_addr[2]);	\
+#define ETH_IVSHMEM_RANDOM_MAC_ADDR(inst)                                                          \
+	static void generate_mac_addr_##inst(uint8_t mac_addr[6])                                  \
+	{                                                                                          \
+		sys_rand_get(mac_addr, 3U);                                                        \
+		/* Clear multicast bit */                                                          \
+		mac_addr[0] &= 0xFE;                                                               \
+		gen_random_mac(mac_addr, mac_addr[0], mac_addr[1], mac_addr[2]);                   \
 	}
 
-#define ETH_IVSHMEM_LOCAL_MAC_ADDR(inst)						\
-	static void generate_mac_addr_##inst(uint8_t mac_addr[6])			\
-	{										\
-		const uint8_t addr[6] = DT_INST_PROP(0, local_mac_address);		\
-		memcpy(mac_addr, addr, sizeof(addr));					\
+#define ETH_IVSHMEM_LOCAL_MAC_ADDR(inst)                                                           \
+	static void generate_mac_addr_##inst(uint8_t mac_addr[6])                                  \
+	{                                                                                          \
+		const uint8_t addr[6] = DT_INST_PROP(0, local_mac_address);                        \
+		memcpy(mac_addr, addr, sizeof(addr));                                              \
 	}
 
-#define ETH_IVSHMEM_GENERATE_MAC_ADDR(inst)						\
-	BUILD_ASSERT(DT_INST_PROP(inst, zephyr_random_mac_address) ||			\
-		NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(inst)),				\
-		"eth_ivshmem requires either a fixed or random mac address");		\
+#define ETH_IVSHMEM_GENERATE_MAC_ADDR(inst)                                                        \
+	BUILD_ASSERT(DT_INST_PROP(inst, zephyr_random_mac_address) ||                              \
+			     NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(inst)),                           \
+		     "eth_ivshmem requires either a fixed or random mac address");                 \
 	COND_CODE_1(DT_INST_PROP(inst, zephyr_random_mac_address),			\
 			(ETH_IVSHMEM_RANDOM_MAC_ADDR(inst)),				\
 			(ETH_IVSHMEM_LOCAL_MAC_ADDR(inst)))
 
-#define ETH_IVSHMEM_INIT(inst)								\
-	ETH_IVSHMEM_GENERATE_MAC_ADDR(inst);						\
-	static struct eth_ivshmem_dev_data eth_ivshmem_dev_##inst = {};			\
-	static const struct eth_ivshmem_cfg_data eth_ivshmem_cfg_##inst = {		\
-		.ivshmem = DEVICE_DT_GET(DT_INST_PHANDLE(inst, ivshmem_v2)),		\
-		.name = "ivshmem_eth" STRINGIFY(inst),					\
-		.generate_mac_addr = generate_mac_addr_##inst,				\
-	};										\
-	ETH_NET_DEVICE_DT_INST_DEFINE(inst,						\
-				      eth_ivshmem_initialize,				\
-				      NULL,						\
-				      &eth_ivshmem_dev_##inst,				\
-				      &eth_ivshmem_cfg_##inst,				\
-				      CONFIG_ETH_INIT_PRIORITY,				\
-				      &eth_ivshmem_api,					\
-				      NET_ETH_MTU);
+#define ETH_IVSHMEM_INIT(inst)                                                                     \
+	ETH_IVSHMEM_GENERATE_MAC_ADDR(inst);                                                       \
+	static struct eth_ivshmem_dev_data eth_ivshmem_dev_##inst = {};                            \
+	static const struct eth_ivshmem_cfg_data eth_ivshmem_cfg_##inst = {                        \
+		.ivshmem = DEVICE_DT_GET(DT_INST_PHANDLE(inst, ivshmem_v2)),                       \
+		.name = "ivshmem_eth" STRINGIFY(inst),                                             \
+						.generate_mac_addr = generate_mac_addr_##inst,     \
+	};                                                                                         \
+	ETH_NET_DEVICE_DT_INST_DEFINE(inst, eth_ivshmem_initialize, NULL, &eth_ivshmem_dev_##inst, \
+				      &eth_ivshmem_cfg_##inst, CONFIG_ETH_INIT_PRIORITY,           \
+				      &eth_ivshmem_api, NET_ETH_MTU);
 
 DT_INST_FOREACH_STATUS_OKAY(ETH_IVSHMEM_INIT);

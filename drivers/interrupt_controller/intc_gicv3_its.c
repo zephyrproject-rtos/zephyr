@@ -15,29 +15,29 @@ LOG_MODULE_REGISTER(intc_gicv3_its, LOG_LEVEL_ERR);
 #include "intc_gic_common_priv.h"
 #include "intc_gicv3_priv.h"
 
-#define DT_DRV_COMPAT   arm_gic_v3_its
+#define DT_DRV_COMPAT arm_gic_v3_its
 
 /*
  * Current ITS implementation only handle GICv3 ITS physical interruption generation
  * Implementation is designed for the PCIe MSI/MSI-X use-case in mind.
  */
 
-#define GITS_BASER_NR_REGS              8
+#define GITS_BASER_NR_REGS 8
 
 /* convenient access to all redistributors base address */
 extern mem_addr_t gic_rdists[CONFIG_MP_MAX_NUM_CPUS];
 
-#define SIZE_256                        256
-#define SIZE_4K                         KB(4)
-#define SIZE_16K                        KB(16)
-#define SIZE_64K                        KB(64)
+#define SIZE_256 256
+#define SIZE_4K  KB(4)
+#define SIZE_16K KB(16)
+#define SIZE_64K KB(64)
 
 struct its_cmd_block {
 	uint64_t raw_cmd[4];
 };
 
-#define ITS_CMD_QUEUE_SIZE              SIZE_64K
-#define ITS_CMD_QUEUE_NR_ENTRIES        (ITS_CMD_QUEUE_SIZE / sizeof(struct its_cmd_block))
+#define ITS_CMD_QUEUE_SIZE       SIZE_64K
+#define ITS_CMD_QUEUE_NR_ENTRIES (ITS_CMD_QUEUE_SIZE / sizeof(struct its_cmd_block))
 
 struct gicv3_its_data {
 	mm_reg_t base;
@@ -199,8 +199,8 @@ static int its_alloc_tables(struct gicv3_its_data *data)
 			page_cnt = ROUND_UP(entry_size << device_ids, page_size) / page_size;
 			break;
 		case GITS_BASER_TYPE_COLLECTION:
-			page_cnt =
-				ROUND_UP(entry_size * CONFIG_MP_MAX_NUM_CPUS, page_size)/page_size;
+			page_cnt = ROUND_UP(entry_size * CONFIG_MP_MAX_NUM_CPUS, page_size) /
+				   page_size;
 			break;
 		default:
 			continue;
@@ -268,7 +268,7 @@ static bool its_queue_full(struct gicv3_its_data *data)
 static struct its_cmd_block *its_allocate_entry(struct gicv3_its_data *data)
 {
 	struct its_cmd_block *cmd;
-	unsigned int count = 1000000;   /* 1s! */
+	unsigned int count = 1000000; /* 1s! */
 
 	while (its_queue_full(data)) {
 		count--;
@@ -298,7 +298,7 @@ static struct its_cmd_block *its_allocate_entry(struct gicv3_its_data *data)
 static int its_post_command(struct gicv3_its_data *data, struct its_cmd_block *cmd)
 {
 	uint64_t wr_idx, rd_idx, idx;
-	unsigned int count = 1000000;   /* 1s! */
+	unsigned int count = 1000000; /* 1s! */
 
 	wr_idx = (data->cmd_write - data->cmd_base) * sizeof(*cmd);
 	rd_idx = sys_read32(data->base + GITS_CREADR);
@@ -316,8 +316,8 @@ static int its_post_command(struct gicv3_its_data *data, struct its_cmd_block *c
 
 		count--;
 		if (!count) {
-			LOG_ERR("ITS queue timeout (rd %lld => %lld => wr %lld)",
-				rd_idx, idx, wr_idx);
+			LOG_ERR("ITS queue timeout (rd %lld => %lld => wr %lld)", rd_idx, idx,
+				wr_idx);
 			return -ETIMEDOUT;
 		}
 		k_usleep(1);
@@ -340,8 +340,8 @@ static int its_send_sync_cmd(struct gicv3_its_data *data, uintptr_t rd_addr)
 	return its_post_command(data, cmd);
 }
 
-static int its_send_mapc_cmd(struct gicv3_its_data *data, uint32_t icid,
-			     uintptr_t rd_addr, bool valid)
+static int its_send_mapc_cmd(struct gicv3_its_data *data, uint32_t icid, uintptr_t rd_addr,
+			     bool valid)
 {
 	struct its_cmd_block *cmd = its_allocate_entry(data);
 
@@ -357,8 +357,8 @@ static int its_send_mapc_cmd(struct gicv3_its_data *data, uint32_t icid,
 	return its_post_command(data, cmd);
 }
 
-static int its_send_mapd_cmd(struct gicv3_its_data *data, uint32_t device_id,
-			     uint32_t size, uintptr_t itt_addr, bool valid)
+static int its_send_mapd_cmd(struct gicv3_its_data *data, uint32_t device_id, uint32_t size,
+			     uintptr_t itt_addr, bool valid)
 {
 	struct its_cmd_block *cmd = its_allocate_entry(data);
 
@@ -366,8 +366,8 @@ static int its_send_mapd_cmd(struct gicv3_its_data *data, uint32_t device_id,
 		return -EBUSY;
 	}
 
-	cmd->raw_cmd[0] = MASK_SET(GITS_CMD_ID_MAPD, GITS_CMD_ID) |
-			  MASK_SET(device_id, GITS_CMD_DEVICEID);
+	cmd->raw_cmd[0] =
+		MASK_SET(GITS_CMD_ID_MAPD, GITS_CMD_ID) | MASK_SET(device_id, GITS_CMD_DEVICEID);
 	cmd->raw_cmd[1] = MASK_SET(size, GITS_CMD_SIZE);
 	cmd->raw_cmd[2] = MASK_SET(itt_addr >> GITS_CMD_ITTADDR_ALIGN, GITS_CMD_ITTADDR) |
 			  MASK_SET(valid ? 1 : 0, GITS_CMD_VALID);
@@ -375,8 +375,8 @@ static int its_send_mapd_cmd(struct gicv3_its_data *data, uint32_t device_id,
 	return its_post_command(data, cmd);
 }
 
-static int its_send_mapti_cmd(struct gicv3_its_data *data, uint32_t device_id,
-			      uint32_t event_id, uint32_t intid, uint32_t icid)
+static int its_send_mapti_cmd(struct gicv3_its_data *data, uint32_t device_id, uint32_t event_id,
+			      uint32_t intid, uint32_t icid)
 {
 	struct its_cmd_block *cmd = its_allocate_entry(data);
 
@@ -384,17 +384,15 @@ static int its_send_mapti_cmd(struct gicv3_its_data *data, uint32_t device_id,
 		return -EBUSY;
 	}
 
-	cmd->raw_cmd[0] = MASK_SET(GITS_CMD_ID_MAPTI, GITS_CMD_ID) |
-			  MASK_SET(device_id, GITS_CMD_DEVICEID);
-	cmd->raw_cmd[1] = MASK_SET(event_id, GITS_CMD_EVENTID) |
-			  MASK_SET(intid, GITS_CMD_PINTID);
+	cmd->raw_cmd[0] =
+		MASK_SET(GITS_CMD_ID_MAPTI, GITS_CMD_ID) | MASK_SET(device_id, GITS_CMD_DEVICEID);
+	cmd->raw_cmd[1] = MASK_SET(event_id, GITS_CMD_EVENTID) | MASK_SET(intid, GITS_CMD_PINTID);
 	cmd->raw_cmd[2] = MASK_SET(icid, GITS_CMD_ICID);
 
 	return its_post_command(data, cmd);
 }
 
-static int its_send_int_cmd(struct gicv3_its_data *data, uint32_t device_id,
-			    uint32_t event_id)
+static int its_send_int_cmd(struct gicv3_its_data *data, uint32_t device_id, uint32_t event_id)
 {
 	struct its_cmd_block *cmd = its_allocate_entry(data);
 
@@ -402,8 +400,8 @@ static int its_send_int_cmd(struct gicv3_its_data *data, uint32_t device_id,
 		return -EBUSY;
 	}
 
-	cmd->raw_cmd[0] = MASK_SET(GITS_CMD_ID_INT, GITS_CMD_ID) |
-			  MASK_SET(device_id, GITS_CMD_DEVICEID);
+	cmd->raw_cmd[0] =
+		MASK_SET(GITS_CMD_ID_INT, GITS_CMD_ID) | MASK_SET(device_id, GITS_CMD_DEVICEID);
 	cmd->raw_cmd[1] = MASK_SET(event_id, GITS_CMD_EVENTID);
 
 	return its_post_command(data, cmd);
@@ -485,8 +483,8 @@ static int gicv3_its_map_intid(const struct device *dev, uint32_t device_id, uin
 	/* The CPU id directly maps as ICID for the current CPU redistributor */
 	ret = its_send_mapti_cmd(data, device_id, event_id, intid, arch_curr_cpu()->id);
 	if (ret) {
-		LOG_ERR("Failed to map eventid %d to intid %d for deviceid %x",
-			event_id, intid, device_id);
+		LOG_ERR("Failed to map eventid %d to intid %d for deviceid %x", event_id, intid,
+			device_id);
 		return ret;
 	}
 
@@ -529,8 +527,8 @@ static int gicv3_its_init_device_id(const struct device *dev, uint32_t device_id
 
 			memset(alloc_addr, 0, data->indirect_dev_page_size);
 
-			data->indirect_dev_lvl1_table[offset] = (uintptr_t)alloc_addr |
-								MASK_SET(1, GITS_BASER_VALID);
+			data->indirect_dev_lvl1_table[offset] =
+				(uintptr_t)alloc_addr | MASK_SET(1, GITS_BASER_VALID);
 
 			barrier_dsync_fence_full();
 		}
@@ -540,8 +538,8 @@ static int gicv3_its_init_device_id(const struct device *dev, uint32_t device_id
 	nr_ites = MAX(2, nites);
 	alloc_size = ROUND_UP(nr_ites * entry_size, 256);
 
-	LOG_INF("Allocating ITT for DeviceID %x and %d vectors (%ld bytes entry)",
-		device_id, nr_ites, entry_size);
+	LOG_INF("Allocating ITT for DeviceID %x and %d vectors (%ld bytes entry)", device_id,
+		nr_ites, entry_size);
 
 	itt = k_aligned_alloc(256, alloc_size);
 	if (!itt) {
@@ -570,22 +568,21 @@ static uint32_t gicv3_its_get_msi_addr(const struct device *dev)
 	return cfg->base_addr + GITS_TRANSLATER;
 }
 
-#define ITS_RDIST_MAP(n)									  \
-	{											  \
-		const struct device *const dev = DEVICE_DT_INST_GET(n);				  \
-		struct gicv3_its_data *data;							  \
-		int ret;									  \
-												  \
-		if (dev) {									  \
-			data = (struct gicv3_its_data *) dev->data;				  \
-			ret = its_send_mapc_cmd(data, arch_curr_cpu()->id,			  \
-						gicv3_rdist_get_rdbase(dev, arch_curr_cpu()->id), \
-						true);						  \
-			if (ret) {								  \
-				LOG_ERR("Failed to map CPU%d redistributor",			  \
-					arch_curr_cpu()->id);					  \
-			}									  \
-		}										  \
+#define ITS_RDIST_MAP(n)                                                                           \
+	{                                                                                          \
+		const struct device *const dev = DEVICE_DT_INST_GET(n);                            \
+		struct gicv3_its_data *data;                                                       \
+		int ret;                                                                           \
+                                                                                                   \
+		if (dev) {                                                                         \
+			data = (struct gicv3_its_data *)dev->data;                                 \
+			ret = its_send_mapc_cmd(data, arch_curr_cpu()->id,                         \
+						gicv3_rdist_get_rdbase(dev, arch_curr_cpu()->id),  \
+						true);                                             \
+			if (ret) {                                                                 \
+				LOG_ERR("Failed to map CPU%d redistributor", arch_curr_cpu()->id); \
+			}                                                                          \
+		}                                                                                  \
 	}
 
 void its_rdist_map(void)
@@ -593,23 +590,22 @@ void its_rdist_map(void)
 	DT_INST_FOREACH_STATUS_OKAY(ITS_RDIST_MAP)
 }
 
-#define ITS_RDIST_INVALL(n)									\
-	{											\
-		const struct device *const dev = DEVICE_DT_INST_GET(n);				\
-		struct gicv3_its_data *data;							\
-		int ret;									\
-												\
-		if (dev) {									\
-			data = (struct gicv3_its_data *) dev->data;				\
-			ret = its_send_invall_cmd(data, arch_curr_cpu()->id);			\
-			if (ret) {								\
-				LOG_ERR("Failed to sync RDIST LPI cache for CPU%d",		\
-					arch_curr_cpu()->id);					\
-			}									\
-												\
-			its_send_sync_cmd(data,							\
-					  gicv3_rdist_get_rdbase(dev, arch_curr_cpu()->id));	\
-		}										\
+#define ITS_RDIST_INVALL(n)                                                                        \
+	{                                                                                          \
+		const struct device *const dev = DEVICE_DT_INST_GET(n);                            \
+		struct gicv3_its_data *data;                                                       \
+		int ret;                                                                           \
+                                                                                                   \
+		if (dev) {                                                                         \
+			data = (struct gicv3_its_data *)dev->data;                                 \
+			ret = its_send_invall_cmd(data, arch_curr_cpu()->id);                      \
+			if (ret) {                                                                 \
+				LOG_ERR("Failed to sync RDIST LPI cache for CPU%d",                \
+					arch_curr_cpu()->id);                                      \
+			}                                                                          \
+                                                                                                   \
+			its_send_sync_cmd(data, gicv3_rdist_get_rdbase(dev, arch_curr_cpu()->id)); \
+		}                                                                                  \
 	}
 
 void its_rdist_invall(void)
@@ -663,21 +659,17 @@ struct its_driver_api gicv3_its_api = {
 	.get_msi_addr = gicv3_its_get_msi_addr,
 };
 
-#define GICV3_ITS_INIT(n)						       \
-	static struct its_cmd_block gicv3_its_cmd##n[ITS_CMD_QUEUE_NR_ENTRIES] \
-	__aligned(ITS_CMD_QUEUE_SIZE);					       \
-	static struct gicv3_its_data gicv3_its_data##n;			       \
-	static const struct gicv3_its_config gicv3_its_config##n = {	       \
-		.base_addr = DT_INST_REG_ADDR(n),			       \
-		.base_size = DT_INST_REG_SIZE(n),			       \
-		.cmd_queue = gicv3_its_cmd##n,				       \
-		.cmd_queue_size = sizeof(gicv3_its_cmd##n),		       \
-	};								       \
-	DEVICE_DT_INST_DEFINE(n, &gicv3_its_init, NULL,			       \
-			      &gicv3_its_data##n,			       \
-			      &gicv3_its_config##n,			       \
-			      PRE_KERNEL_1,				       \
-			      CONFIG_INTC_INIT_PRIORITY,		       \
-			      &gicv3_its_api);
+#define GICV3_ITS_INIT(n)                                                                          \
+	static struct its_cmd_block gicv3_its_cmd##n[ITS_CMD_QUEUE_NR_ENTRIES]                     \
+		__aligned(ITS_CMD_QUEUE_SIZE);                                                     \
+	static struct gicv3_its_data gicv3_its_data##n;                                            \
+	static const struct gicv3_its_config gicv3_its_config##n = {                               \
+		.base_addr = DT_INST_REG_ADDR(n),                                                  \
+		.base_size = DT_INST_REG_SIZE(n),                                                  \
+		.cmd_queue = gicv3_its_cmd##n,                                                     \
+		.cmd_queue_size = sizeof(gicv3_its_cmd##n),                                        \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(n, &gicv3_its_init, NULL, &gicv3_its_data##n, &gicv3_its_config##n,  \
+			      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, &gicv3_its_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GICV3_ITS_INIT)

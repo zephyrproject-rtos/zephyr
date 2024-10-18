@@ -37,15 +37,15 @@ LOG_MODULE_REGISTER(adc_gd32, CONFIG_ADC_LOG_LEVEL);
  * @note Sorry for the restriction, But new added gd32 adc node-label must be 'adc0',
  * 'adc1' and 'adc2'.
  */
-#define ADC0_NODE		DT_NODELABEL(adc0)
-#define ADC1_NODE		DT_NODELABEL(adc1)
-#define ADC2_NODE		DT_NODELABEL(adc2)
+#define ADC0_NODE DT_NODELABEL(adc0)
+#define ADC1_NODE DT_NODELABEL(adc1)
+#define ADC2_NODE DT_NODELABEL(adc2)
 
-#define ADC0_ENABLE		DT_NODE_HAS_STATUS_OKAY(ADC0_NODE)
-#define ADC1_ENABLE		DT_NODE_HAS_STATUS_OKAY(ADC1_NODE)
-#define ADC2_ENABLE		DT_NODE_HAS_STATUS_OKAY(ADC2_NODE)
+#define ADC0_ENABLE DT_NODE_HAS_STATUS_OKAY(ADC0_NODE)
+#define ADC1_ENABLE DT_NODE_HAS_STATUS_OKAY(ADC1_NODE)
+#define ADC2_ENABLE DT_NODE_HAS_STATUS_OKAY(ADC2_NODE)
 
-#ifndef	ADC0
+#ifndef ADC0
 /**
  * @brief The name of gd32 ADC HAL are different between single and multi ADC SoCs.
  * This adjust the single ADC SoC HAL, so we can call gd32 ADC HAL in a common way.
@@ -58,74 +58,46 @@ LOG_MODULE_REGISTER(adc_gd32, CONFIG_ADC_LOG_LEVEL);
 #undef ADC_RSQ2
 #undef ADC_RDATA
 
-#define ADC_STAT(adc0)		REG32((adc0) + 0x00000000U)
-#define ADC_CTL0(adc0)		REG32((adc0) + 0x00000004U)
-#define ADC_CTL1(adc0)		REG32((adc0) + 0x00000008U)
-#define ADC_SAMPT0(adc0)	REG32((adc0) + 0x0000000CU)
-#define ADC_SAMPT1(adc0)	REG32((adc0) + 0x00000010U)
-#define ADC_RSQ2(adc0)		REG32((adc0) + 0x00000034U)
-#define ADC_RDATA(adc0)		REG32((adc0) + 0x0000004CU)
+#define ADC_STAT(adc0)   REG32((adc0) + 0x00000000U)
+#define ADC_CTL0(adc0)   REG32((adc0) + 0x00000004U)
+#define ADC_CTL1(adc0)   REG32((adc0) + 0x00000008U)
+#define ADC_SAMPT0(adc0) REG32((adc0) + 0x0000000CU)
+#define ADC_SAMPT1(adc0) REG32((adc0) + 0x00000010U)
+#define ADC_RSQ2(adc0)   REG32((adc0) + 0x00000034U)
+#define ADC_RDATA(adc0)  REG32((adc0) + 0x0000004CU)
 #endif
 
-#define SPT_WIDTH	3U
-#define SAMPT1_SIZE	10U
+#define SPT_WIDTH   3U
+#define SAMPT1_SIZE 10U
 
 #if defined(CONFIG_SOC_SERIES_GD32F4XX)
-#define SMP_TIME(x)	ADC_SAMPLETIME_##x
+#define SMP_TIME(x) ADC_SAMPLETIME_##x
 
 static const uint16_t acq_time_tbl[8] = {3, 15, 28, 56, 84, 112, 144, 480};
-static const uint32_t table_samp_time[] = {
-	SMP_TIME(3),
-	SMP_TIME(15),
-	SMP_TIME(28),
-	SMP_TIME(56),
-	SMP_TIME(84),
-	SMP_TIME(112),
-	SMP_TIME(144),
-	SMP_TIME(480)
-};
+static const uint32_t table_samp_time[] = {SMP_TIME(3),   SMP_TIME(15), SMP_TIME(28),
+					   SMP_TIME(56),  SMP_TIME(84), SMP_TIME(112),
+					   SMP_TIME(144), SMP_TIME(480)};
 #elif defined(CONFIG_SOC_SERIES_GD32L23X)
-#define SMP_TIME(x)	ADC_SAMPLETIME_##x##POINT5
+#define SMP_TIME(x) ADC_SAMPLETIME_##x##POINT5
 
 static const uint16_t acq_time_tbl[8] = {3, 8, 14, 29, 42, 56, 72, 240};
 static const uint32_t table_samp_time[] = {
-	SMP_TIME(2),
-	SMP_TIME(7),
-	SMP_TIME(13),
-	SMP_TIME(28),
-	SMP_TIME(41),
-	SMP_TIME(55),
-	SMP_TIME(71),
-	SMP_TIME(239),
+	SMP_TIME(2),  SMP_TIME(7),  SMP_TIME(13), SMP_TIME(28),
+	SMP_TIME(41), SMP_TIME(55), SMP_TIME(71), SMP_TIME(239),
 };
 #elif defined(CONFIG_SOC_SERIES_GD32A50X)
-#define SMP_TIME(x)	ADC_SAMPLETIME_##x##POINT5
+#define SMP_TIME(x) ADC_SAMPLETIME_##x##POINT5
 
 static const uint16_t acq_time_tbl[8] = {3, 15, 28, 56, 84, 112, 144, 480};
-static const uint32_t table_samp_time[] = {
-	SMP_TIME(2),
-	SMP_TIME(14),
-	SMP_TIME(27),
-	SMP_TIME(55),
-	SMP_TIME(83),
-	SMP_TIME(111),
-	SMP_TIME(143),
-	SMP_TIME(479)
-};
+static const uint32_t table_samp_time[] = {SMP_TIME(2),   SMP_TIME(14), SMP_TIME(27),
+					   SMP_TIME(55),  SMP_TIME(83), SMP_TIME(111),
+					   SMP_TIME(143), SMP_TIME(479)};
 #else
-#define SMP_TIME(x)	ADC_SAMPLETIME_##x##POINT5
+#define SMP_TIME(x) ADC_SAMPLETIME_##x##POINT5
 
 static const uint16_t acq_time_tbl[8] = {2, 8, 14, 29, 42, 56, 72, 240};
-static const uint32_t table_samp_time[] = {
-	SMP_TIME(1),
-	SMP_TIME(7),
-	SMP_TIME(13),
-	SMP_TIME(28),
-	SMP_TIME(41),
-	SMP_TIME(55),
-	SMP_TIME(71),
-	SMP_TIME(239)
-};
+static const uint32_t table_samp_time[] = {SMP_TIME(1),  SMP_TIME(7),  SMP_TIME(13), SMP_TIME(28),
+					   SMP_TIME(41), SMP_TIME(55), SMP_TIME(71), SMP_TIME(239)};
 #endif
 
 struct adc_gd32_config {
@@ -180,8 +152,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	ADC_CTL1(cfg->reg) |= ADC_CTL1_SWRCST;
 }
 
-static void adc_context_update_buffer_pointer(struct adc_context *ctx,
-					      bool repeat_sampling)
+static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat_sampling)
 {
 	struct adc_gd32_data *data = CONTAINER_OF(ctx, struct adc_gd32_data, ctx);
 
@@ -203,8 +174,8 @@ static inline void adc_gd32_calibration(const struct adc_gd32_config *cfg)
 	}
 }
 
-static int adc_gd32_configure_sampt(const struct adc_gd32_config *cfg,
-				    uint8_t channel, uint16_t acq_time)
+static int adc_gd32_configure_sampt(const struct adc_gd32_config *cfg, uint8_t channel,
+				    uint16_t acq_time)
 {
 	uint8_t index = 0, offset;
 
@@ -214,7 +185,7 @@ static int adc_gd32_configure_sampt(const struct adc_gd32_config *cfg,
 			return -EINVAL;
 		}
 
-		for ( ; index < ARRAY_SIZE(acq_time_tbl); index++) {
+		for (; index < ARRAY_SIZE(acq_time_tbl); index++) {
 			if (ADC_ACQ_TIME_VALUE(acq_time) <= acq_time_tbl[index]) {
 				break;
 			}
@@ -238,8 +209,7 @@ static int adc_gd32_configure_sampt(const struct adc_gd32_config *cfg,
 	return 0;
 }
 
-static int adc_gd32_channel_setup(const struct device *dev,
-				  const struct adc_channel_cfg *chan_cfg)
+static int adc_gd32_channel_setup(const struct device *dev, const struct adc_channel_cfg *chan_cfg)
 {
 	const struct adc_gd32_config *cfg = dev->config;
 
@@ -263,12 +233,10 @@ static int adc_gd32_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	return adc_gd32_configure_sampt(cfg, chan_cfg->channel_id,
-					chan_cfg->acquisition_time);
+	return adc_gd32_configure_sampt(cfg, chan_cfg->channel_id, chan_cfg->acquisition_time);
 }
 
-static int adc_gd32_start_read(const struct device *dev,
-			       const struct adc_sequence *sequence)
+static int adc_gd32_start_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	struct adc_gd32_data *data = dev->data;
 	const struct adc_gd32_config *cfg = dev->config;
@@ -298,13 +266,11 @@ static int adc_gd32_start_read(const struct device *dev,
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_SOC_SERIES_GD32F4XX) || \
-	defined(CONFIG_SOC_SERIES_GD32F3X0) || \
+#if defined(CONFIG_SOC_SERIES_GD32F4XX) || defined(CONFIG_SOC_SERIES_GD32F3X0) ||                  \
 	defined(CONFIG_SOC_SERIES_GD32L23X)
 	ADC_CTL0(cfg->reg) &= ~ADC_CTL0_DRES;
 	ADC_CTL0(cfg->reg) |= CTL0_DRES(resolution_id);
-#elif defined(CONFIG_SOC_SERIES_GD32F403) || \
-	defined(CONFIG_SOC_SERIES_GD32A50X)
+#elif defined(CONFIG_SOC_SERIES_GD32F403) || defined(CONFIG_SOC_SERIES_GD32A50X)
 	ADC_OVSAMPCTL(cfg->reg) &= ~ADC_OVSAMPCTL_DRES;
 	ADC_OVSAMPCTL(cfg->reg) |= OVSAMPCTL_DRES(resolution_id);
 #elif defined(CONFIG_SOC_SERIES_GD32VF103)
@@ -327,8 +293,7 @@ static int adc_gd32_start_read(const struct device *dev,
 	return adc_context_wait_for_completion(&data->ctx);
 }
 
-static int adc_gd32_read(const struct device *dev,
-			 const struct adc_sequence *sequence)
+static int adc_gd32_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	struct adc_gd32_data *data = dev->data;
 	int error;
@@ -341,8 +306,7 @@ static int adc_gd32_read(const struct device *dev,
 }
 
 #ifdef CONFIG_ADC_ASYNC
-static int adc_gd32_read_async(const struct device *dev,
-			       const struct adc_sequence *sequence,
+static int adc_gd32_read_async(const struct device *dev, const struct adc_sequence *sequence,
 			       struct k_poll_signal *async)
 {
 	struct adc_gd32_data *data = dev->data;
@@ -382,15 +346,12 @@ static int adc_gd32_init(const struct device *dev)
 	rcu_adc_clock_config(cfg->rcu_clock_source);
 #endif
 
-	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
-			       (clock_control_subsys_t)&cfg->clkid);
+	(void)clock_control_on(GD32_CLOCK_CONTROLLER, (clock_control_subsys_t)&cfg->clkid);
 
 	(void)reset_line_toggle_dt(&cfg->reset);
 
-#if defined(CONFIG_SOC_SERIES_GD32F403) || \
-	defined(CONFIG_SOC_SERIES_GD32VF103) || \
-	defined(CONFIG_SOC_SERIES_GD32F3X0) || \
-	defined(CONFIG_SOC_SERIES_GD32L23X)
+#if defined(CONFIG_SOC_SERIES_GD32F403) || defined(CONFIG_SOC_SERIES_GD32VF103) ||                 \
+	defined(CONFIG_SOC_SERIES_GD32F3X0) || defined(CONFIG_SOC_SERIES_GD32L23X)
 	/* Set SWRCST as the regular channel external trigger. */
 	ADC_CTL1(cfg->reg) &= ~ADC_CTL1_ETSRC;
 	ADC_CTL1(cfg->reg) |= CTL1_ETSRC(7);
@@ -416,13 +377,12 @@ static int adc_gd32_init(const struct device *dev)
 	return 0;
 }
 
-#define HANDLE_SHARED_IRQ(n, active_irq)							\
-	static const struct device *const dev_##n = DEVICE_DT_INST_GET(n);			\
-	const struct adc_gd32_config *cfg_##n = dev_##n->config;				\
-												\
-	if ((cfg_##n->irq_num == active_irq) &&							\
-		(ADC_CTL0(cfg_##n->reg) & ADC_CTL0_EOCIE)) {					\
-		adc_gd32_isr(dev_##n);								\
+#define HANDLE_SHARED_IRQ(n, active_irq)                                                           \
+	static const struct device *const dev_##n = DEVICE_DT_INST_GET(n);                         \
+	const struct adc_gd32_config *cfg_##n = dev_##n->config;                                   \
+                                                                                                   \
+	if ((cfg_##n->irq_num == active_irq) && (ADC_CTL0(cfg_##n->reg) & ADC_CTL0_EOCIE)) {       \
+		adc_gd32_isr(dev_##n);                                                             \
 	}
 
 static void adc_gd32_global_irq_handler(const struct device *dev)
@@ -446,62 +406,47 @@ static void adc_gd32_global_irq_cfg(void)
 
 #if ADC0_ENABLE
 	/* Shared irq config default to adc0. */
-	IRQ_CONNECT(DT_IRQN(ADC0_NODE),
-		DT_IRQ(ADC0_NODE, priority),
-		adc_gd32_global_irq_handler,
-		DEVICE_DT_GET(ADC0_NODE),
-		0);
+	IRQ_CONNECT(DT_IRQN(ADC0_NODE), DT_IRQ(ADC0_NODE, priority), adc_gd32_global_irq_handler,
+		    DEVICE_DT_GET(ADC0_NODE), 0);
 	irq_enable(DT_IRQN(ADC0_NODE));
 #elif ADC1_ENABLE
-	IRQ_CONNECT(DT_IRQN(ADC1_NODE),
-		DT_IRQ(ADC1_NODE, priority),
-		adc_gd32_global_irq_handler,
-		DEVICE_DT_GET(ADC1_NODE),
-		0);
+	IRQ_CONNECT(DT_IRQN(ADC1_NODE), DT_IRQ(ADC1_NODE, priority), adc_gd32_global_irq_handler,
+		    DEVICE_DT_GET(ADC1_NODE), 0);
 	irq_enable(DT_IRQN(ADC1_NODE));
 #endif
 
-#if (ADC0_ENABLE || ADC1_ENABLE) && \
-	defined(CONFIG_SOC_SERIES_GD32F4XX)
+#if (ADC0_ENABLE || ADC1_ENABLE) && defined(CONFIG_SOC_SERIES_GD32F4XX)
 	/* gd32f4xx adc2 share the same irq number with adc0 and adc1. */
 #elif ADC2_ENABLE
-	IRQ_CONNECT(DT_IRQN(ADC2_NODE),
-		DT_IRQ(ADC2_NODE, priority),
-		adc_gd32_global_irq_handler,
-		DEVICE_DT_GET(ADC2_NODE),
-		0);
+	IRQ_CONNECT(DT_IRQN(ADC2_NODE), DT_IRQ(ADC2_NODE, priority), adc_gd32_global_irq_handler,
+		    DEVICE_DT_GET(ADC2_NODE), 0);
 	irq_enable(DT_IRQN(ADC2_NODE));
 #endif
 }
 
 #ifdef CONFIG_SOC_SERIES_GD32F3X0
-#define ADC_CLOCK_SOURCE(n)									\
-	.rcu_clock_source = DT_INST_PROP(n, rcu_clock_source)
+#define ADC_CLOCK_SOURCE(n) .rcu_clock_source = DT_INST_PROP(n, rcu_clock_source)
 #else
 #define ADC_CLOCK_SOURCE(n)
 #endif
 
-#define ADC_GD32_INIT(n)									\
-	PINCTRL_DT_INST_DEFINE(n);								\
-	static struct adc_gd32_data adc_gd32_data_##n = {					\
-		ADC_CONTEXT_INIT_TIMER(adc_gd32_data_##n, ctx),					\
-		ADC_CONTEXT_INIT_LOCK(adc_gd32_data_##n, ctx),					\
-		ADC_CONTEXT_INIT_SYNC(adc_gd32_data_##n, ctx),					\
-	};											\
-	const static struct adc_gd32_config adc_gd32_config_##n = {				\
-		.reg = DT_INST_REG_ADDR(n),							\
-		.clkid = DT_INST_CLOCKS_CELL(n, id),						\
-		.reset = RESET_DT_SPEC_INST_GET(n),						\
-		.channels = DT_INST_PROP(n, channels),						\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),					\
-		.irq_num = DT_INST_IRQN(n),							\
-		.irq_config_func = adc_gd32_global_irq_cfg,					\
-		ADC_CLOCK_SOURCE(n)								\
-	};											\
-	DEVICE_DT_INST_DEFINE(n,								\
-			      &adc_gd32_init, NULL,						\
-			      &adc_gd32_data_##n, &adc_gd32_config_##n,				\
-			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,				\
-			      &adc_gd32_driver_api);						\
+#define ADC_GD32_INIT(n)                                                                           \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	static struct adc_gd32_data adc_gd32_data_##n = {                                          \
+		ADC_CONTEXT_INIT_TIMER(adc_gd32_data_##n, ctx),                                    \
+		ADC_CONTEXT_INIT_LOCK(adc_gd32_data_##n, ctx),                                     \
+		ADC_CONTEXT_INIT_SYNC(adc_gd32_data_##n, ctx),                                     \
+	};                                                                                         \
+	const static struct adc_gd32_config adc_gd32_config_##n = {                                \
+		.reg = DT_INST_REG_ADDR(n),                                                        \
+		.clkid = DT_INST_CLOCKS_CELL(n, id),                                               \
+		.reset = RESET_DT_SPEC_INST_GET(n),                                                \
+		.channels = DT_INST_PROP(n, channels),                                             \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+		.irq_num = DT_INST_IRQN(n),                                                        \
+		.irq_config_func = adc_gd32_global_irq_cfg,                                        \
+		ADC_CLOCK_SOURCE(n)};                                                              \
+	DEVICE_DT_INST_DEFINE(n, &adc_gd32_init, NULL, &adc_gd32_data_##n, &adc_gd32_config_##n,   \
+			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, &adc_gd32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_GD32_INIT)

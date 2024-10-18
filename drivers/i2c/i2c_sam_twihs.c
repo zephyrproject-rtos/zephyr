@@ -13,7 +13,6 @@
  * Only I2C Master Mode with 7 bit addressing is currently supported.
  */
 
-
 #include <errno.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/kernel.h>
@@ -32,13 +31,13 @@ LOG_MODULE_REGISTER(i2c_sam_twihs);
 #include "i2c-priv.h"
 
 /** I2C bus speed [Hz] in Standard Mode */
-#define BUS_SPEED_STANDARD_HZ         100000U
+#define BUS_SPEED_STANDARD_HZ 100000U
 /** I2C bus speed [Hz] in Fast Mode */
-#define BUS_SPEED_FAST_HZ             400000U
+#define BUS_SPEED_FAST_HZ     400000U
 /** I2C bus speed [Hz] in High Speed Mode */
-#define BUS_SPEED_HIGH_HZ            3400000U
+#define BUS_SPEED_HIGH_HZ     3400000U
 /* Maximum value of Clock Divider (CKDIV) */
-#define CKDIV_MAX                          7
+#define CKDIV_MAX             7
 
 /* Device constant configuration parameters */
 struct i2c_sam_twihs_dev_cfg {
@@ -79,8 +78,7 @@ static int i2c_clk_set(Twihs *const twihs, uint32_t speed)
 	 *  T_low = ( ( CLDIV × 2^CKDIV ) + 3 ) × T_MCK
 	 */
 	while (!div_completed) {
-		cl_div =   ((SOC_ATMEL_SAM_MCK_FREQ_HZ / (speed * 2U)) - 3)
-			 / (1 << ck_div);
+		cl_div = ((SOC_ATMEL_SAM_MCK_FREQ_HZ / (speed * 2U)) - 3) / (1 << ck_div);
 
 		if (cl_div <= 255U) {
 			div_completed = true;
@@ -95,8 +93,8 @@ static int i2c_clk_set(Twihs *const twihs, uint32_t speed)
 	}
 
 	/* Set I2C bus clock duty cycle to 50% */
-	twihs->TWIHS_CWGR = TWIHS_CWGR_CLDIV(cl_div) | TWIHS_CWGR_CHDIV(cl_div)
-			    | TWIHS_CWGR_CKDIV(ck_div);
+	twihs->TWIHS_CWGR =
+		TWIHS_CWGR_CLDIV(cl_div) | TWIHS_CWGR_CHDIV(cl_div) | TWIHS_CWGR_CKDIV(ck_div);
 
 	return 0;
 }
@@ -147,8 +145,7 @@ static int i2c_sam_twihs_configure(const struct device *dev, uint32_t config)
 	return 0;
 }
 
-static void write_msg_start(Twihs *const twihs, struct twihs_msg *msg,
-			    uint8_t daddr)
+static void write_msg_start(Twihs *const twihs, struct twihs_msg *msg, uint8_t daddr)
 {
 	/* Set slave address. */
 	twihs->TWIHS_MMR = TWIHS_MMR_DADR(daddr);
@@ -160,8 +157,7 @@ static void write_msg_start(Twihs *const twihs, struct twihs_msg *msg,
 	twihs->TWIHS_IER = TWIHS_IER_TXRDY | TWIHS_IER_TXCOMP | TWIHS_IER_NACK;
 }
 
-static void read_msg_start(Twihs *const twihs, struct twihs_msg *msg,
-			   uint8_t daddr)
+static void read_msg_start(Twihs *const twihs, struct twihs_msg *msg, uint8_t daddr)
 {
 	uint32_t twihs_cr_stop;
 
@@ -177,9 +173,8 @@ static void read_msg_start(Twihs *const twihs, struct twihs_msg *msg,
 	twihs->TWIHS_CR = TWIHS_CR_START | twihs_cr_stop;
 }
 
-static int i2c_sam_twihs_transfer(const struct device *dev,
-				  struct i2c_msg *msgs,
-				  uint8_t num_msgs, uint16_t addr)
+static int i2c_sam_twihs_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
+				  uint16_t addr)
 {
 	const struct i2c_sam_twihs_dev_cfg *const dev_cfg = dev->config;
 	struct i2c_sam_twihs_dev_data *const dev_data = dev->data;
@@ -299,8 +294,7 @@ static int i2c_sam_twihs_initialize(const struct device *dev)
 	}
 
 	/* Enable TWIHS clock in PMC */
-	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
-			       (clock_control_subsys_t)&dev_cfg->clock_cfg);
+	(void)clock_control_on(SAM_DT_PMC_CONTROLLER, (clock_control_subsys_t)&dev_cfg->clock_cfg);
 
 	/* Reset the module */
 	twihs->TWIHS_CR = TWIHS_CR_SWRST;
@@ -326,30 +320,27 @@ static const struct i2c_driver_api i2c_sam_twihs_driver_api = {
 	.transfer = i2c_sam_twihs_transfer,
 };
 
-#define I2C_TWIHS_SAM_INIT(n)						\
-	PINCTRL_DT_INST_DEFINE(n);					\
-	static void i2c##n##_sam_irq_config(void)			\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
-			    i2c_sam_twihs_isr,				\
-			    DEVICE_DT_INST_GET(n), 0);			\
-	}								\
-									\
-	static const struct i2c_sam_twihs_dev_cfg i2c##n##_sam_config = {\
-		.regs = (Twihs *)DT_INST_REG_ADDR(n),			\
-		.irq_config = i2c##n##_sam_irq_config,			\
-		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),		\
-		.irq_id = DT_INST_IRQN(n),				\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
-		.bitrate = DT_INST_PROP(n, clock_frequency),		\
-	};								\
-									\
-	static struct i2c_sam_twihs_dev_data i2c##n##_sam_data;		\
-									\
-	I2C_DEVICE_DT_INST_DEFINE(n, i2c_sam_twihs_initialize,	\
-			    NULL,					\
-			    &i2c##n##_sam_data, &i2c##n##_sam_config,	\
-			    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,	\
-			    &i2c_sam_twihs_driver_api);
+#define I2C_TWIHS_SAM_INIT(n)                                                                      \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	static void i2c##n##_sam_irq_config(void)                                                  \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), i2c_sam_twihs_isr,          \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+	}                                                                                          \
+                                                                                                   \
+	static const struct i2c_sam_twihs_dev_cfg i2c##n##_sam_config = {                          \
+		.regs = (Twihs *)DT_INST_REG_ADDR(n),                                              \
+		.irq_config = i2c##n##_sam_irq_config,                                             \
+		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),                                         \
+		.irq_id = DT_INST_IRQN(n),                                                         \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
+	};                                                                                         \
+                                                                                                   \
+	static struct i2c_sam_twihs_dev_data i2c##n##_sam_data;                                    \
+                                                                                                   \
+	I2C_DEVICE_DT_INST_DEFINE(n, i2c_sam_twihs_initialize, NULL, &i2c##n##_sam_data,           \
+				  &i2c##n##_sam_config, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,     \
+				  &i2c_sam_twihs_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_TWIHS_SAM_INIT)

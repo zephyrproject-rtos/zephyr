@@ -44,20 +44,13 @@ struct ksz8xxx_data {
 
 #define PRV_DATA(ctx) ((struct ksz8xxx_data *const)(ctx)->prv_data)
 
-static void dsa_ksz8xxx_write_reg(const struct ksz8xxx_data *pdev,
-				  uint16_t reg_addr, uint8_t value)
+static void dsa_ksz8xxx_write_reg(const struct ksz8xxx_data *pdev, uint16_t reg_addr, uint8_t value)
 {
 #if defined(CONFIG_DSA_SPI)
 	uint8_t buf[3];
 
-	const struct spi_buf tx_buf = {
-		.buf = buf,
-		.len = 3
-	};
-	const struct spi_buf_set tx = {
-		.buffers = &tx_buf,
-		.count = 1
-	};
+	const struct spi_buf tx_buf = {.buf = buf, .len = 3};
+	const struct spi_buf_set tx = {.buffers = &tx_buf, .count = 1};
 
 	buf[0] = KSZ8XXX_SPI_CMD_WR | ((reg_addr >> 7) & 0x1F);
 	buf[1] = (reg_addr << 1) & 0xFE;
@@ -67,29 +60,16 @@ static void dsa_ksz8xxx_write_reg(const struct ksz8xxx_data *pdev,
 #endif
 }
 
-static void dsa_ksz8xxx_read_reg(const struct ksz8xxx_data *pdev,
-				 uint16_t reg_addr, uint8_t *value)
+static void dsa_ksz8xxx_read_reg(const struct ksz8xxx_data *pdev, uint16_t reg_addr, uint8_t *value)
 {
 #if defined(CONFIG_DSA_SPI)
 	uint8_t buf[3];
 
-	const struct spi_buf tx_buf = {
-		.buf = buf,
-		.len = 3
-	};
-	const struct spi_buf_set tx = {
-		.buffers = &tx_buf,
-		.count = 1
-	};
-	struct spi_buf rx_buf = {
-		.buf = buf,
-		.len = 3
-	};
+	const struct spi_buf tx_buf = {.buf = buf, .len = 3};
+	const struct spi_buf_set tx = {.buffers = &tx_buf, .count = 1};
+	struct spi_buf rx_buf = {.buf = buf, .len = 3};
 
-	const struct spi_buf_set rx = {
-		.buffers = &rx_buf,
-		.count = 1
-	};
+	const struct spi_buf_set rx = {.buffers = &rx_buf, .count = 1};
 
 	buf[0] = KSZ8XXX_SPI_CMD_RD | ((reg_addr >> 7) & 0x1F);
 	buf[1] = (reg_addr << 1) & 0xFE;
@@ -104,13 +84,11 @@ static void dsa_ksz8xxx_read_reg(const struct ksz8xxx_data *pdev,
 #endif
 }
 
-static bool dsa_ksz8xxx_port_link_status(struct ksz8xxx_data *pdev,
-					 uint8_t port)
+static bool dsa_ksz8xxx_port_link_status(struct ksz8xxx_data *pdev, uint8_t port)
 {
 	uint8_t tmp;
 
-	if (port < KSZ8XXX_FIRST_PORT || port > KSZ8XXX_LAST_PORT ||
-		port == KSZ8XXX_CPU_PORT) {
+	if (port < KSZ8XXX_FIRST_PORT || port > KSZ8XXX_LAST_PORT || port == KSZ8XXX_CPU_PORT) {
 		return false;
 	}
 
@@ -123,8 +101,7 @@ static bool dsa_ksz8xxx_port_link_status(struct ksz8xxx_data *pdev,
 static void dsa_ksz8xxx_soft_reset(struct ksz8xxx_data *pdev)
 {
 	/* reset switch */
-	dsa_ksz8xxx_write_reg(pdev, KSZ8XXX_RESET_REG,
-			      KSZ8XXX_RESET_SET);
+	dsa_ksz8xxx_write_reg(pdev, KSZ8XXX_RESET_REG, KSZ8XXX_RESET_SET);
 	k_busy_wait(KSZ8XXX_SOFT_RESET_DURATION);
 	dsa_ksz8xxx_write_reg(pdev, KSZ8XXX_RESET_REG, KSZ8XXX_RESET_CLEAR);
 }
@@ -138,8 +115,7 @@ static int dsa_ksz8xxx_probe(struct ksz8xxx_data *pdev)
 	/*
 	 * Wait for SPI of KSZ8794 being fully operational - up to 10 ms
 	 */
-	for (timeout = 100, tmp = 0;
-	     tmp != KSZ8XXX_CHIP_ID0_ID_DEFAULT && timeout > 0; timeout--) {
+	for (timeout = 100, tmp = 0; tmp != KSZ8XXX_CHIP_ID0_ID_DEFAULT && timeout > 0; timeout--) {
 		dsa_ksz8xxx_read_reg(pdev, KSZ8XXX_CHIP_ID0, &tmp);
 		k_busy_wait(100);
 	}
@@ -152,25 +128,20 @@ static int dsa_ksz8xxx_probe(struct ksz8xxx_data *pdev)
 	dsa_ksz8xxx_read_reg(pdev, KSZ8XXX_CHIP_ID0, &val[0]);
 	dsa_ksz8xxx_read_reg(pdev, KSZ8XXX_CHIP_ID1, &val[1]);
 
-	if (val[0] != KSZ8XXX_CHIP_ID0_ID_DEFAULT ||
-	    val[1] != KSZ8XXX_CHIP_ID1_ID_DEFAULT) {
+	if (val[0] != KSZ8XXX_CHIP_ID0_ID_DEFAULT || val[1] != KSZ8XXX_CHIP_ID1_ID_DEFAULT) {
 		LOG_ERR("Chip ID mismatch. "
 			"Expected %02x%02x but found %02x%02x",
-			KSZ8XXX_CHIP_ID0_ID_DEFAULT,
-			KSZ8XXX_CHIP_ID1_ID_DEFAULT,
-			val[0],
-			val[1]);
+			KSZ8XXX_CHIP_ID0_ID_DEFAULT, KSZ8XXX_CHIP_ID1_ID_DEFAULT, val[0], val[1]);
 		return -ENODEV;
 	}
 
-	LOG_DBG("KSZ8794: ID0: 0x%x ID1: 0x%x timeout: %d", val[1], val[0],
-		timeout);
+	LOG_DBG("KSZ8794: ID0: 0x%x ID1: 0x%x timeout: %d", val[1], val[0], timeout);
 
 	return 0;
 }
 
-static int dsa_ksz8xxx_write_static_mac_table(struct ksz8xxx_data *pdev,
-					      uint16_t entry_addr, uint8_t *p)
+static int dsa_ksz8xxx_write_static_mac_table(struct ksz8xxx_data *pdev, uint16_t entry_addr,
+					      uint8_t *p)
 {
 	/*
 	 * According to KSZ8794 manual - write to static mac address table
@@ -199,9 +170,8 @@ static int dsa_ksz8xxx_write_static_mac_table(struct ksz8xxx_data *pdev,
 	return 0;
 }
 
-static int dsa_ksz8xxx_set_static_mac_table(struct ksz8xxx_data *pdev,
-					    const uint8_t *mac, uint8_t fw_port,
-					    uint16_t entry_idx)
+static int dsa_ksz8xxx_set_static_mac_table(struct ksz8xxx_data *pdev, const uint8_t *mac,
+					    uint8_t fw_port, uint16_t entry_idx)
 {
 	/*
 	 * The data in uint8_t buf[] buffer is stored in the little endian
@@ -227,8 +197,8 @@ static int dsa_ksz8xxx_set_static_mac_table(struct ksz8xxx_data *pdev,
 	return 0;
 }
 
-static int dsa_ksz8xxx_read_static_mac_table(struct ksz8xxx_data *pdev,
-					      uint16_t entry_addr, uint8_t *p)
+static int dsa_ksz8xxx_read_static_mac_table(struct ksz8xxx_data *pdev, uint16_t entry_addr,
+					     uint8_t *p)
 {
 	/*
 	 * According to KSZ8794 manual - read from static mac address table
@@ -587,8 +557,7 @@ static int dsa_ksz8794_apply_workarounds(struct ksz8xxx_data *pdev)
 #if DT_INST_NODE_HAS_PROP(0, mii_lowspeed_drivestrength)
 static int dsa_ksz8794_set_lowspeed_drivestrength(struct ksz8xxx_data *pdev)
 {
-	int mii_lowspeed_drivestrength =
-		DT_INST_PROP(0, mii_lowspeed_drivestrength);
+	int mii_lowspeed_drivestrength = DT_INST_PROP(0, mii_lowspeed_drivestrength);
 
 	uint8_t tmp, val;
 	int ret = 0;
@@ -620,8 +589,7 @@ static int dsa_ksz8794_set_lowspeed_drivestrength(struct ksz8xxx_data *pdev)
 		break;
 	default:
 		ret = -1;
-		LOG_ERR("KSZ8794: unsupported drive strength %dmA",
-			mii_lowspeed_drivestrength);
+		LOG_ERR("KSZ8794: unsupported drive strength %dmA", mii_lowspeed_drivestrength);
 		break;
 	}
 
@@ -632,8 +600,7 @@ static int dsa_ksz8794_set_lowspeed_drivestrength(struct ksz8xxx_data *pdev)
 		tmp |= val;
 		dsa_ksz8xxx_write_reg(pdev, KSZ8794_GLOBAL_CTRL20, tmp);
 		dsa_ksz8xxx_read_reg(pdev, KSZ8794_GLOBAL_CTRL20, &tmp);
-		LOG_INF("KSZ8794: set drive strength %dmA",
-			mii_lowspeed_drivestrength);
+		LOG_INF("KSZ8794: set drive strength %dmA", mii_lowspeed_drivestrength);
 	}
 	return ret;
 }
@@ -677,8 +644,7 @@ int dsa_hw_init(struct ksz8xxx_data *pdev)
 
 #if defined(CONFIG_DSA_SPI)
 	if (!spi_is_ready_dt(&pdev->spi)) {
-		LOG_ERR("SPI bus %s is not ready",
-			pdev->spi.bus->name);
+		LOG_ERR("SPI bus %s is not ready", pdev->spi.bus->name);
 		return -ENODEV;
 	}
 #endif
@@ -714,8 +680,7 @@ int dsa_hw_init(struct ksz8xxx_data *pdev)
 static void dsa_delayed_work(struct k_work *item)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
-	struct dsa_context *context =
-		CONTAINER_OF(dwork, struct dsa_context, dsa_work);
+	struct dsa_context *context = CONTAINER_OF(dwork, struct dsa_context, dsa_work);
 	struct ksz8xxx_data *pdev = PRV_DATA(context);
 	bool link_state;
 	uint8_t i;
@@ -750,8 +715,7 @@ int dsa_port_init(const struct device *dev)
 }
 
 /* Generic implementation of writing value to DSA register */
-static int dsa_ksz8xxx_sw_write_reg(const struct device *dev, uint16_t reg_addr,
-				    uint8_t value)
+static int dsa_ksz8xxx_sw_write_reg(const struct device *dev, uint16_t reg_addr, uint8_t value)
 {
 	struct dsa_context *data = dev->data;
 	struct ksz8xxx_data *pdev = PRV_DATA(data);
@@ -761,8 +725,7 @@ static int dsa_ksz8xxx_sw_write_reg(const struct device *dev, uint16_t reg_addr,
 }
 
 /* Generic implementation of reading value from DSA register */
-static int dsa_ksz8xxx_sw_read_reg(const struct device *dev, uint16_t reg_addr,
-				   uint8_t *value)
+static int dsa_ksz8xxx_sw_read_reg(const struct device *dev, uint16_t reg_addr, uint8_t *value)
 {
 	struct dsa_context *data = dev->data;
 	struct ksz8xxx_data *pdev = PRV_DATA(data);
@@ -782,11 +745,8 @@ static int dsa_ksz8xxx_sw_read_reg(const struct device *dev, uint16_t reg_addr,
  *
  * @return 0 if ok, < 0 if error
  */
-static int dsa_ksz8xxx_set_mac_table_entry(const struct device *dev,
-						const uint8_t *mac,
-						uint8_t fw_port,
-						uint16_t tbl_entry_idx,
-						uint16_t flags)
+static int dsa_ksz8xxx_set_mac_table_entry(const struct device *dev, const uint8_t *mac,
+					   uint8_t fw_port, uint16_t tbl_entry_idx, uint16_t flags)
 {
 	struct dsa_context *data = dev->data;
 	struct ksz8xxx_data *pdev = PRV_DATA(data);
@@ -795,8 +755,7 @@ static int dsa_ksz8xxx_set_mac_table_entry(const struct device *dev,
 		return -EINVAL;
 	}
 
-	dsa_ksz8xxx_set_static_mac_table(pdev, mac, fw_port,
-						tbl_entry_idx);
+	dsa_ksz8xxx_set_static_mac_table(pdev, mac, fw_port, tbl_entry_idx);
 
 	return 0;
 }
@@ -810,9 +769,8 @@ static int dsa_ksz8xxx_set_mac_table_entry(const struct device *dev,
  *
  * @return 0 if ok, < 0 if error
  */
-static int dsa_ksz8xxx_get_mac_table_entry(const struct device *dev,
-						uint8_t *buf,
-						uint16_t tbl_entry_idx)
+static int dsa_ksz8xxx_get_mac_table_entry(const struct device *dev, uint8_t *buf,
+					   uint16_t tbl_entry_idx)
 {
 	struct dsa_context *data = dev->data;
 	struct ksz8xxx_data *pdev = PRV_DATA(data);
@@ -823,14 +781,14 @@ static int dsa_ksz8xxx_get_mac_table_entry(const struct device *dev,
 }
 
 #if defined(CONFIG_DSA_KSZ_TAIL_TAGGING)
-#define DSA_KSZ8795_TAIL_TAG_OVRD	BIT(6)
-#define DSA_KSZ8795_TAIL_TAG_LOOKUP	BIT(7)
+#define DSA_KSZ8795_TAIL_TAG_OVRD   BIT(6)
+#define DSA_KSZ8795_TAIL_TAG_LOOKUP BIT(7)
 
-#define DSA_KSZ8794_EGRESS_TAG_LEN 1
+#define DSA_KSZ8794_EGRESS_TAG_LEN  1
 #define DSA_KSZ8794_INGRESS_TAG_LEN 1
 
 #define DSA_MIN_L2_FRAME_SIZE 64
-#define DSA_L2_FCS_SIZE 4
+#define DSA_L2_FCS_SIZE       4
 
 struct net_pkt *dsa_ksz8xxx_xmit_pkt(struct net_if *iface, struct net_pkt *pkt)
 {
@@ -885,9 +843,9 @@ struct net_pkt *dsa_ksz8xxx_xmit_pkt(struct net_if *iface, struct net_pkt *pkt)
 		port_idx = (1 << (ctx->dsa_port_idx));
 	}
 
-	NET_DBG("TT - port: 0x%x[%p] LEN: %d 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x",
-		port_idx, iface, len, lladst.addr[0], lladst.addr[1],
-		lladst.addr[2], lladst.addr[3], lladst.addr[4], lladst.addr[5]);
+	NET_DBG("TT - port: 0x%x[%p] LEN: %d 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x", port_idx, iface, len,
+		lladst.addr[0], lladst.addr[1], lladst.addr[2], lladst.addr[3], lladst.addr[4],
+		lladst.addr[5]);
 
 	/* The tail tag shall be placed after the padding (if present) */
 	dbuf[pad] = port_idx;
@@ -913,8 +871,7 @@ struct net_pkt *dsa_ksz8xxx_xmit_pkt(struct net_if *iface, struct net_pkt *pkt)
  * Returns:
  *  - Pointer to struct net_if
  */
-static struct net_if *dsa_ksz8xxx_get_iface(struct net_if *iface,
-					    struct net_pkt *pkt)
+static struct net_if *dsa_ksz8xxx_get_iface(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct ethernet_context *ctx;
 	struct net_if *iface_sw;
@@ -949,8 +906,8 @@ static struct net_if *dsa_ksz8xxx_get_iface(struct net_if *iface,
 
 	ctx = net_if_l2_data(iface);
 	NET_DBG("TT - plen: %d pnum: %d pos: 0x%p dsa_port_idx: %d",
-		plen - DSA_KSZ8794_EGRESS_TAG_LEN, pnum,
-		net_pkt_cursor_get_pos(pkt), ctx->dsa_port_idx);
+		plen - DSA_KSZ8794_EGRESS_TAG_LEN, pnum, net_pkt_cursor_get_pos(pkt),
+		ctx->dsa_port_idx);
 
 	return iface_sw;
 }
@@ -958,8 +915,7 @@ static struct net_if *dsa_ksz8xxx_get_iface(struct net_if *iface,
 
 static void dsa_iface_init(struct net_if *iface)
 {
-	struct dsa_slave_config *cfg = (struct dsa_slave_config *)
-		net_if_get_device(iface)->config;
+	struct dsa_slave_config *cfg = (struct dsa_slave_config *)net_if_get_device(iface)->config;
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	const struct device *dm, *dev = net_if_get_device(iface);
 	struct dsa_context *context = dev->data;
@@ -986,8 +942,7 @@ static void dsa_iface_init(struct net_if *iface)
 
 	if (context->iface_slave[i] == NULL) {
 		context->iface_slave[i] = iface;
-		net_if_set_link_addr(iface, cfg->mac_addr,
-				     sizeof(cfg->mac_addr),
+		net_if_set_link_addr(iface, cfg->mac_addr, sizeof(cfg->mac_addr),
 				     NET_LINK_ETHERNET);
 		ctx->dsa_port_idx = i;
 		ctx->dsa_ctx = context;
@@ -1017,14 +972,13 @@ static enum ethernet_hw_caps dsa_port_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_DSA_SLAVE_PORT | ETHERNET_LINK_10BASE_T |
-		ETHERNET_LINK_100BASE_T;
+	return ETHERNET_DSA_SLAVE_PORT | ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T;
 }
 
 const struct ethernet_api dsa_eth_api_funcs = {
-	.iface_api.init		= dsa_iface_init,
-	.get_capabilities	= dsa_port_get_capabilities,
-	.send                   = dsa_tx,
+	.iface_api.init = dsa_iface_init,
+	.get_capabilities = dsa_port_get_capabilities,
+	.send = dsa_tx,
 };
 
 static struct dsa_api dsa_api_f = {
@@ -1062,55 +1016,39 @@ static struct dsa_api dsa_api_f = {
  * For simple cases it is just good enough.
  */
 
-#define NET_SLAVE_DEVICE_INIT_INSTANCE(slave, n)                           \
-	const struct dsa_slave_config dsa_0_slave_##slave##_config = {     \
-		.mac_addr = DT_PROP_OR(slave, local_mac_address, {0})      \
-	};                                                                 \
-	NET_DEVICE_INIT_INSTANCE(CONCAT(dsa_slave_port_, slave),           \
-	"lan" STRINGIFY(n),                                                \
-	n,                                                                 \
-	dsa_port_init,                                                     \
-	NULL,                                                              \
-	&dsa_context_##n,                                                  \
-	&dsa_0_slave_##slave##_config,                                     \
-	CONFIG_ETH_INIT_PRIORITY,                                          \
-	&dsa_eth_api_funcs,                                                \
-	ETHERNET_L2,                                                       \
-	NET_L2_GET_CTX_TYPE(ETHERNET_L2),                                  \
-	NET_ETH_MTU);
+#define NET_SLAVE_DEVICE_INIT_INSTANCE(slave, n)                                                   \
+	const struct dsa_slave_config dsa_0_slave_##slave##_config = {                             \
+		.mac_addr = DT_PROP_OR(slave, local_mac_address, {0})};                            \
+	NET_DEVICE_INIT_INSTANCE(CONCAT(dsa_slave_port_, slave),                                   \
+				 "lan" STRINGIFY(n), n, dsa_port_init, NULL, &dsa_context_##n,     \
+						 &dsa_0_slave_##slave##_config,                    \
+						 CONFIG_ETH_INIT_PRIORITY, &dsa_eth_api_funcs,     \
+						 ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2),    \
+						 NET_ETH_MTU);
 
-#define NET_SLAVE_DEVICE_0_INIT_INSTANCE(slave)				\
-		NET_SLAVE_DEVICE_INIT_INSTANCE(slave, 0)
-#define NET_SLAVE_DEVICE_1_INIT_INSTANCE(slave)				\
-		NET_SLAVE_DEVICE_INIT_INSTANCE(slave, 1)
-#define NET_SLAVE_DEVICE_2_INIT_INSTANCE(slave)				\
-		NET_SLAVE_DEVICE_INIT_INSTANCE(slave, 2)
-#define NET_SLAVE_DEVICE_3_INIT_INSTANCE(slave)				\
-		NET_SLAVE_DEVICE_INIT_INSTANCE(slave, 3)
-#define NET_SLAVE_DEVICE_4_INIT_INSTANCE(slave)				\
-		NET_SLAVE_DEVICE_INIT_INSTANCE(slave, 4)
+#define NET_SLAVE_DEVICE_0_INIT_INSTANCE(slave) NET_SLAVE_DEVICE_INIT_INSTANCE(slave, 0)
+#define NET_SLAVE_DEVICE_1_INIT_INSTANCE(slave) NET_SLAVE_DEVICE_INIT_INSTANCE(slave, 1)
+#define NET_SLAVE_DEVICE_2_INIT_INSTANCE(slave) NET_SLAVE_DEVICE_INIT_INSTANCE(slave, 2)
+#define NET_SLAVE_DEVICE_3_INIT_INSTANCE(slave) NET_SLAVE_DEVICE_INIT_INSTANCE(slave, 3)
+#define NET_SLAVE_DEVICE_4_INIT_INSTANCE(slave) NET_SLAVE_DEVICE_INIT_INSTANCE(slave, 4)
 
 #if defined(CONFIG_DSA_SPI)
-#define DSA_SPI_BUS_CONFIGURATION(n)					\
-	.spi = SPI_DT_SPEC_INST_GET(n,					\
-			SPI_WORD_SET(8),				\
-			0U)
+#define DSA_SPI_BUS_CONFIGURATION(n) .spi = SPI_DT_SPEC_INST_GET(n, SPI_WORD_SET(8), 0U)
 #else
 #define DSA_SPI_BUS_CONFIGURATION(n)
 #endif
 
-#define DSA_DEVICE(n)							\
-	static struct ksz8xxx_data dsa_device_prv_data_##n = {		\
-		.iface_init_count = 0,					\
-		.is_init = false,					\
-		DSA_SPI_BUS_CONFIGURATION(n),				\
-	};								\
-	static struct dsa_context dsa_context_##n = {			\
-		.num_slave_ports = DT_INST_PROP(0, dsa_slave_ports),	\
-		.dapi = &dsa_api_f,					\
-		.prv_data = (void *)&dsa_device_prv_data_##n,		\
-	};								\
+#define DSA_DEVICE(n)                                                                              \
+	static struct ksz8xxx_data dsa_device_prv_data_##n = {                                     \
+		.iface_init_count = 0,                                                             \
+		.is_init = false,                                                                  \
+		DSA_SPI_BUS_CONFIGURATION(n),                                                      \
+	};                                                                                         \
+	static struct dsa_context dsa_context_##n = {                                              \
+		.num_slave_ports = DT_INST_PROP(0, dsa_slave_ports),                               \
+		.dapi = &dsa_api_f,                                                                \
+		.prv_data = (void *)&dsa_device_prv_data_##n,                                      \
+	};                                                                                         \
 	DT_INST_FOREACH_CHILD_VARGS(n, NET_SLAVE_DEVICE_INIT_INSTANCE, n);
-
 
 DT_INST_FOREACH_STATUS_OKAY(DSA_DEVICE);

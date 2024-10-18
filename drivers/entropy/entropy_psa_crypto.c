@@ -25,8 +25,8 @@ static int entropy_psa_crypto_rng_init(const struct device *dev)
 }
 
 /* API implementation: get_entropy */
-static int entropy_psa_crypto_rng_get_entropy(const struct device *dev,
-					      uint8_t *buffer, uint16_t length)
+static int entropy_psa_crypto_rng_get_entropy(const struct device *dev, uint8_t *buffer,
+					      uint16_t length)
 {
 	psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
 
@@ -46,6 +46,5 @@ static const struct entropy_driver_api entropy_psa_crypto_rng_api = {
 };
 
 /* Entropy driver registration */
-DEVICE_DT_INST_DEFINE(0, entropy_psa_crypto_rng_init, NULL, NULL, NULL,
-		      PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
-		      &entropy_psa_crypto_rng_api);
+DEVICE_DT_INST_DEFINE(0, entropy_psa_crypto_rng_init, NULL, NULL, NULL, PRE_KERNEL_1,
+		      CONFIG_ENTROPY_INIT_PRIORITY, &entropy_psa_crypto_rng_api);

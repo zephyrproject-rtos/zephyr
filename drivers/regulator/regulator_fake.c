@@ -24,28 +24,20 @@ struct regulator_fake_data {
 
 DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_enable, const struct device *);
 DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_disable, const struct device *);
-DEFINE_FAKE_VALUE_FUNC(unsigned int, regulator_fake_count_voltages,
-		       const struct device *);
-DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_list_voltage, const struct device *,
-		       unsigned int, int32_t *);
-DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_set_voltage, const struct device *,
-		       int32_t, int32_t);
-DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_get_voltage, const struct device *,
+DEFINE_FAKE_VALUE_FUNC(unsigned int, regulator_fake_count_voltages, const struct device *);
+DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_list_voltage, const struct device *, unsigned int,
 		       int32_t *);
-DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_set_current_limit,
-		       const struct device *, int32_t, int32_t);
-DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_get_current_limit,
-		       const struct device *, int32_t *);
-DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_set_mode, const struct device *,
-		       regulator_mode_t);
-DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_get_mode, const struct device *,
-		       regulator_mode_t *);
-DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_set_active_discharge, const struct device *,
-		       bool);
-DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_get_active_discharge, const struct device *,
-		       bool *);
-DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_get_error_flags,
-		       const struct device *, regulator_error_flags_t *);
+DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_set_voltage, const struct device *, int32_t, int32_t);
+DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_get_voltage, const struct device *, int32_t *);
+DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_set_current_limit, const struct device *, int32_t,
+		       int32_t);
+DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_get_current_limit, const struct device *, int32_t *);
+DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_set_mode, const struct device *, regulator_mode_t);
+DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_get_mode, const struct device *, regulator_mode_t *);
+DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_set_active_discharge, const struct device *, bool);
+DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_get_active_discharge, const struct device *, bool *);
+DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_get_error_flags, const struct device *,
+		       regulator_error_flags_t *);
 
 static struct regulator_driver_api api = {
 	.enable = regulator_fake_enable,
@@ -74,11 +66,10 @@ static int regulator_fake_init(const struct device *dev)
 
 /* parent regulator */
 
-DEFINE_FAKE_VALUE_FUNC(int, regulator_parent_fake_dvs_state_set,
-		       const struct device *, regulator_dvs_state_t);
+DEFINE_FAKE_VALUE_FUNC(int, regulator_parent_fake_dvs_state_set, const struct device *,
+		       regulator_dvs_state_t);
 
-DEFINE_FAKE_VALUE_FUNC(int, regulator_parent_fake_ship_mode,
-		       const struct device *);
+DEFINE_FAKE_VALUE_FUNC(int, regulator_parent_fake_ship_mode, const struct device *);
 
 static struct regulator_parent_driver_api parent_api = {
 	.dvs_state_set = regulator_parent_fake_dvs_state_set,
@@ -88,24 +79,22 @@ static struct regulator_parent_driver_api parent_api = {
 #define FAKE_DATA_NAME(node_id) _CONCAT(data_, DT_DEP_ORD(node_id))
 #define FAKE_CONF_NAME(node_id) _CONCAT(config_, DT_DEP_ORD(node_id))
 
-#define REGULATOR_FAKE_DEFINE(node_id)                                         \
-	static struct regulator_fake_data FAKE_DATA_NAME(node_id);             \
-                                                                               \
-	static const struct regulator_fake_config FAKE_CONF_NAME(node_id) = {  \
-		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node_id),            \
-		.is_enabled = DT_PROP(node_id, fake_is_enabled_in_hardware),   \
-	};                                                                     \
-                                                                               \
-	DEVICE_DT_DEFINE(node_id, regulator_fake_init, NULL,                   \
-			 &FAKE_DATA_NAME(node_id), &FAKE_CONF_NAME(node_id),   \
-			 POST_KERNEL, CONFIG_REGULATOR_FAKE_INIT_PRIORITY,     \
-			 &api);
+#define REGULATOR_FAKE_DEFINE(node_id)                                                             \
+	static struct regulator_fake_data FAKE_DATA_NAME(node_id);                                 \
+                                                                                                   \
+	static const struct regulator_fake_config FAKE_CONF_NAME(node_id) = {                      \
+		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node_id),                                \
+		.is_enabled = DT_PROP(node_id, fake_is_enabled_in_hardware),                       \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_DEFINE(node_id, regulator_fake_init, NULL, &FAKE_DATA_NAME(node_id),             \
+			 &FAKE_CONF_NAME(node_id), POST_KERNEL,                                    \
+			 CONFIG_REGULATOR_FAKE_INIT_PRIORITY, &api);
 
-#define REGULATOR_FAKE_DEFINE_ALL(inst)                                        \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, NULL, POST_KERNEL,       \
-			      CONFIG_REGULATOR_FAKE_COMMON_INIT_PRIORITY,      \
-			      &parent_api);                                    \
-                                                                               \
+#define REGULATOR_FAKE_DEFINE_ALL(inst)                                                            \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, NULL, POST_KERNEL,                           \
+			      CONFIG_REGULATOR_FAKE_COMMON_INIT_PRIORITY, &parent_api);            \
+                                                                                                   \
 	DT_INST_FOREACH_CHILD(inst, REGULATOR_FAKE_DEFINE)
 
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_FAKE_DEFINE_ALL)

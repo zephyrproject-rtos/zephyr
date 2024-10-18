@@ -29,10 +29,10 @@ LOG_MODULE_REGISTER(i2c_ite_it8xxx2, CONFIG_I2C_LOG_LEVEL);
 
 #define I2C_LINE_SCL_HIGH BIT(0)
 #define I2C_LINE_SDA_HIGH BIT(1)
-#define I2C_LINE_IDLE (I2C_LINE_SCL_HIGH | I2C_LINE_SDA_HIGH)
+#define I2C_LINE_IDLE     (I2C_LINE_SCL_HIGH | I2C_LINE_SDA_HIGH)
 
 #ifdef CONFIG_I2C_IT8XXX2_FIFO_MODE
-#define I2C_FIFO_MODE_MAX_SIZE 32
+#define I2C_FIFO_MODE_MAX_SIZE  32
 #define I2C_FIFO_MODE_TOTAL_LEN 255
 #define I2C_MSG_BURST_READ_MASK (I2C_MSG_RESTART | I2C_MSG_STOP | I2C_MSG_READ)
 #endif
@@ -116,8 +116,7 @@ enum i2c_host_status {
 	/* Byte done status */
 	HOSTA_BDS = 0x80,
 	/* Error bit is set */
-	HOSTA_ANY_ERROR = (HOSTA_DVER | HOSTA_BSER | HOSTA_FAIL |
-			   HOSTA_NACK | HOSTA_TMOE),
+	HOSTA_ANY_ERROR = (HOSTA_DVER | HOSTA_BSER | HOSTA_FAIL | HOSTA_NACK | HOSTA_TMOE),
 	/* W/C for next byte */
 	HOSTA_NEXT_BYTE = HOSTA_BDS,
 	/* W/C host status register */
@@ -140,11 +139,11 @@ static int i2c_parsing_return_value(const struct device *dev)
 
 	if (data->err == ETIMEDOUT) {
 		/* Connection timed out */
-		LOG_ERR("I2C ch%d Address:0x%X Transaction time out.",
-			config->port, data->addr_16bit);
+		LOG_ERR("I2C ch%d Address:0x%X Transaction time out.", config->port,
+			data->addr_16bit);
 	} else {
-		LOG_DBG("I2C ch%d Address:0x%X Host error bits message:",
-			config->port, data->addr_16bit);
+		LOG_DBG("I2C ch%d Address:0x%X Host error bits message:", config->port,
+			data->addr_16bit);
 		/* Host error bits message*/
 		if (data->err & HOSTA_TMOE) {
 			LOG_ERR("Time-out error: hardware time-out error.");
@@ -168,8 +167,7 @@ static int i2c_get_line_levels(const struct device *dev)
 	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 
-	return (IT8XXX2_SMB_SMBPCTL(base) &
-		(IT8XXX2_SMB_SMBDCS | IT8XXX2_SMB_SMBCS));
+	return (IT8XXX2_SMB_SMBPCTL(base) & (IT8XXX2_SMB_SMBDCS | IT8XXX2_SMB_SMBCS));
 }
 
 static int i2c_is_busy(const struct device *dev)
@@ -177,14 +175,12 @@ static int i2c_is_busy(const struct device *dev)
 	const struct i2c_it8xxx2_config *config = dev->config;
 	uint8_t *base = config->base;
 
-	return (IT8XXX2_SMB_HOSTA(base) &
-		(HOSTA_HOBY | HOSTA_ALL_WC_BIT));
+	return (IT8XXX2_SMB_HOSTA(base) & (HOSTA_HOBY | HOSTA_ALL_WC_BIT));
 }
 
 static int i2c_bus_not_available(const struct device *dev)
 {
-	if (i2c_is_busy(dev) ||
-		(i2c_get_line_levels(dev) != I2C_LINE_IDLE)) {
+	if (i2c_is_busy(dev) || (i2c_get_line_levels(dev) != I2C_LINE_IDLE)) {
 		return -EIO;
 	}
 
@@ -232,8 +228,7 @@ static void i2c_standard_port_timing_regs_400khz(uint8_t port)
 }
 
 /* Set clock frequency for i2c port A, B , or C */
-static void i2c_standard_port_set_frequency(const struct device *dev,
-					    int freq_hz, int freq_set)
+static void i2c_standard_port_set_frequency(const struct device *dev, int freq_hz, int freq_set)
 {
 	const struct i2c_it8xxx2_config *config = dev->config;
 
@@ -252,8 +247,7 @@ static void i2c_standard_port_set_frequency(const struct device *dev,
 	IT8XXX2_SMB_25MS = I2C_CLK_LOW_TIMEOUT;
 }
 
-static int i2c_it8xxx2_configure(const struct device *dev,
-				 uint32_t dev_config_raw)
+static int i2c_it8xxx2_configure(const struct device *dev, uint32_t dev_config_raw)
 {
 	const struct i2c_it8xxx2_config *config = dev->config;
 	struct i2c_it8xxx2_data *const data = dev->data;
@@ -291,8 +285,7 @@ static int i2c_it8xxx2_configure(const struct device *dev,
 	return 0;
 }
 
-static int i2c_it8xxx2_get_config(const struct device *dev,
-				  uint32_t *dev_config)
+static int i2c_it8xxx2_get_config(const struct device *dev, uint32_t *dev_config)
 {
 	struct i2c_it8xxx2_data *const data = dev->data;
 	uint32_t speed;
@@ -328,8 +321,7 @@ void __soc_ram_code i2c_r_last_byte(const struct device *dev)
 	 * bit5, The firmware shall write 1 to this bit
 	 * when the next byte will be the last byte for i2c read.
 	 */
-	if ((data->active_msg->flags & I2C_MSG_STOP) &&
-	    (data->ridx == data->active_msg->len - 1)) {
+	if ((data->active_msg->flags & I2C_MSG_STOP) && (data->ridx == data->active_msg->len - 1)) {
 		IT8XXX2_SMB_HOCTL(base) |= IT8XXX2_SMB_LABY;
 	}
 }
@@ -348,8 +340,7 @@ void __soc_ram_code i2c_w2r_change_direction(const struct device *dev)
 		 * bit2, I2C switch direction wait.
 		 * bit3, I2C switch direction enable.
 		 */
-		IT8XXX2_SMB_HOCTL2(base) |= IT8XXX2_SMB_I2C_SW_EN |
-					    IT8XXX2_SMB_I2C_SW_WAIT;
+		IT8XXX2_SMB_HOCTL2(base) |= IT8XXX2_SMB_I2C_SW_EN | IT8XXX2_SMB_I2C_SW_WAIT;
 		IT8XXX2_SMB_HOSTA(base) = HOSTA_NEXT_BYTE;
 		i2c_r_last_byte(dev);
 		IT8XXX2_SMB_HOCTL2(base) &= ~IT8XXX2_SMB_I2C_SW_WAIT;
@@ -364,25 +355,19 @@ void __soc_ram_code i2c_fifo_en_w2r(const struct device *dev, bool enable)
 
 	if (enable) {
 		if (config->port == SMB_CHANNEL_A) {
-			IT8XXX2_SMB_I2CW2RF |= IT8XXX2_SMB_MAIF |
-					       IT8XXX2_SMB_MAIFI;
+			IT8XXX2_SMB_I2CW2RF |= IT8XXX2_SMB_MAIF | IT8XXX2_SMB_MAIFI;
 		} else if (config->port == SMB_CHANNEL_B) {
-			IT8XXX2_SMB_I2CW2RF |= IT8XXX2_SMB_MBCIF |
-					       IT8XXX2_SMB_MBIFI;
+			IT8XXX2_SMB_I2CW2RF |= IT8XXX2_SMB_MBCIF | IT8XXX2_SMB_MBIFI;
 		} else if (config->port == SMB_CHANNEL_C) {
-			IT8XXX2_SMB_I2CW2RF |= IT8XXX2_SMB_MBCIF |
-					       IT8XXX2_SMB_MCIFI;
+			IT8XXX2_SMB_I2CW2RF |= IT8XXX2_SMB_MBCIF | IT8XXX2_SMB_MCIFI;
 		}
 	} else {
 		if (config->port == SMB_CHANNEL_A) {
-			IT8XXX2_SMB_I2CW2RF &= ~(IT8XXX2_SMB_MAIF |
-						 IT8XXX2_SMB_MAIFI);
+			IT8XXX2_SMB_I2CW2RF &= ~(IT8XXX2_SMB_MAIF | IT8XXX2_SMB_MAIFI);
 		} else if (config->port == SMB_CHANNEL_B) {
-			IT8XXX2_SMB_I2CW2RF &= ~(IT8XXX2_SMB_MBCIF |
-						 IT8XXX2_SMB_MBIFI);
+			IT8XXX2_SMB_I2CW2RF &= ~(IT8XXX2_SMB_MBCIF | IT8XXX2_SMB_MBIFI);
 		} else if (config->port == SMB_CHANNEL_C) {
-			IT8XXX2_SMB_I2CW2RF &= ~(IT8XXX2_SMB_MBCIF |
-						 IT8XXX2_SMB_MCIFI);
+			IT8XXX2_SMB_I2CW2RF &= ~(IT8XXX2_SMB_MBCIF | IT8XXX2_SMB_MCIFI);
 		}
 	}
 
@@ -402,9 +387,7 @@ void __soc_ram_code i2c_tran_fifo_write_start(const struct device *dev)
 	/* Enable SMB channel in FIFO mode. */
 	*reg_mstfctrl |= IT8XXX2_SMB_FFEN;
 	/* I2C enable. */
-	IT8XXX2_SMB_HOCTL2(base) = IT8XXX2_SMB_SMD_TO_EN |
-				   IT8XXX2_SMB_I2C_EN |
-				   IT8XXX2_SMB_SMHEN;
+	IT8XXX2_SMB_HOCTL2(base) = IT8XXX2_SMB_SMD_TO_EN | IT8XXX2_SMB_I2C_EN | IT8XXX2_SMB_SMHEN;
 	/* Set write byte counts. */
 	IT8XXX2_SMB_D0REG(base) = data->active_msg->len;
 	/*
@@ -426,9 +409,7 @@ void __soc_ram_code i2c_tran_fifo_write_start(const struct device *dev)
 	 * bit[4:2] = 111b: Extend command.
 	 * bit[0] = 1b: Host interrupt enable.
 	 */
-	IT8XXX2_SMB_HOCTL(base) = IT8XXX2_SMB_SRT |
-				  IT8XXX2_SMB_SMCD_EXTND |
-				  IT8XXX2_SMB_INTREN;
+	IT8XXX2_SMB_HOCTL(base) = IT8XXX2_SMB_SRT | IT8XXX2_SMB_SMCD_EXTND | IT8XXX2_SMB_INTREN;
 }
 
 void __soc_ram_code i2c_tran_fifo_write_next_block(const struct device *dev)
@@ -482,8 +463,7 @@ int __soc_ram_code i2c_tran_fifo_w2r_change_direction(const struct device *dev)
 		return 0;
 	}
 	/* Set I2C_SW_EN = 1 */
-	IT8XXX2_SMB_HOCTL2(base) |= IT8XXX2_SMB_I2C_SW_EN |
-				    IT8XXX2_SMB_I2C_SW_WAIT;
+	IT8XXX2_SMB_HOCTL2(base) |= IT8XXX2_SMB_I2C_SW_EN | IT8XXX2_SMB_I2C_SW_WAIT;
 	IT8XXX2_SMB_HOCTL2(base) &= ~IT8XXX2_SMB_I2C_SW_WAIT;
 	/* Point to the next msg for the read location. */
 	data->active_msg = &data->msgs_list[data->active_msg_index];
@@ -508,17 +488,14 @@ void __soc_ram_code i2c_tran_fifo_read_start(const struct device *dev)
 	/* Enable SMB channel in FIFO mode. */
 	*reg_mstfctrl |= IT8XXX2_SMB_FFEN;
 	/* I2C enable. */
-	IT8XXX2_SMB_HOCTL2(base) = IT8XXX2_SMB_SMD_TO_EN |
-				   IT8XXX2_SMB_I2C_EN |
-				   IT8XXX2_SMB_SMHEN;
+	IT8XXX2_SMB_HOCTL2(base) = IT8XXX2_SMB_SMD_TO_EN | IT8XXX2_SMB_I2C_EN | IT8XXX2_SMB_SMHEN;
 	/* Set read byte counts. */
 	IT8XXX2_SMB_D0REG(base) = data->active_msg->len;
 	/*
 	 * bit[7:1]: Address of the target.
 	 * bit[0]: Direction of the host transfer.
 	 */
-	IT8XXX2_SMB_TRASLA(base) = (uint8_t)(data->addr_16bit << 1) |
-				   IT8XXX2_SMB_DIR;
+	IT8XXX2_SMB_TRASLA(base) = (uint8_t)(data->addr_16bit << 1) | IT8XXX2_SMB_DIR;
 
 	data->bytecnt = data->active_msg->len;
 	/*
@@ -526,9 +503,7 @@ void __soc_ram_code i2c_tran_fifo_read_start(const struct device *dev)
 	 * bit[4:2] = 111b: Extend command.
 	 * bit[0] = 1b: Host interrupt enable.
 	 */
-	IT8XXX2_SMB_HOCTL(base) = IT8XXX2_SMB_SRT |
-				  IT8XXX2_SMB_SMCD_EXTND |
-				  IT8XXX2_SMB_INTREN;
+	IT8XXX2_SMB_HOCTL(base) = IT8XXX2_SMB_SRT | IT8XXX2_SMB_SMCD_EXTND | IT8XXX2_SMB_INTREN;
 }
 
 void __soc_ram_code i2c_tran_fifo_read_next_block(const struct device *dev)
@@ -566,7 +541,6 @@ void __soc_ram_code i2c_tran_fifo_read_finish(const struct device *dev)
 	IT8XXX2_SMB_HOSTA(base) = HOSTA_ALL_WC_BIT;
 	/* Disable the SMBus host interface. */
 	IT8XXX2_SMB_HOCTL2(base) = 0x00;
-
 }
 
 int __soc_ram_code i2c_tran_fifo_write_to_read(const struct device *dev)
@@ -687,8 +661,7 @@ int __soc_ram_code i2c_fifo_transaction(const struct device *dev)
 	return 0;
 }
 
-bool __soc_ram_code fifo_mode_allowed(const struct device *dev,
-				      struct i2c_msg *msgs)
+bool __soc_ram_code fifo_mode_allowed(const struct device *dev, struct i2c_msg *msgs)
 {
 	struct i2c_it8xxx2_data *data = dev->data;
 	const struct i2c_it8xxx2_config *config = dev->config;
@@ -756,15 +729,13 @@ int __soc_ram_code i2c_tran_read(const struct device *dev)
 
 	if (data->active_msg->flags & I2C_MSG_START) {
 		/* i2c enable */
-		IT8XXX2_SMB_HOCTL2(base) = IT8XXX2_SMB_SMD_TO_EN |
-					   IT8XXX2_SMB_I2C_EN |
-					   IT8XXX2_SMB_SMHEN;
+		IT8XXX2_SMB_HOCTL2(base) =
+			IT8XXX2_SMB_SMD_TO_EN | IT8XXX2_SMB_I2C_EN | IT8XXX2_SMB_SMHEN;
 		/*
 		 * bit0, Direction of the host transfer.
 		 * bit[1:7}, Address of the targeted slave.
 		 */
-		IT8XXX2_SMB_TRASLA(base) = (uint8_t)(data->addr_16bit << 1) |
-					   IT8XXX2_SMB_DIR;
+		IT8XXX2_SMB_TRASLA(base) = (uint8_t)(data->addr_16bit << 1) | IT8XXX2_SMB_DIR;
 		/* clear start flag */
 		data->active_msg->flags &= ~I2C_MSG_START;
 		/*
@@ -774,20 +745,15 @@ int __soc_ram_code i2c_tran_read(const struct device *dev)
 		 *       when the next byte will be the last byte.
 		 * bit6, start.
 		 */
-		if ((data->active_msg->len == 1) &&
-		    (data->active_msg->flags & I2C_MSG_STOP)) {
-			IT8XXX2_SMB_HOCTL(base) = IT8XXX2_SMB_SRT |
-						  IT8XXX2_SMB_LABY |
-						  IT8XXX2_SMB_SMCD_EXTND |
-						  IT8XXX2_SMB_INTREN;
+		if ((data->active_msg->len == 1) && (data->active_msg->flags & I2C_MSG_STOP)) {
+			IT8XXX2_SMB_HOCTL(base) = IT8XXX2_SMB_SRT | IT8XXX2_SMB_LABY |
+						  IT8XXX2_SMB_SMCD_EXTND | IT8XXX2_SMB_INTREN;
 		} else {
-			IT8XXX2_SMB_HOCTL(base) = IT8XXX2_SMB_SRT |
-						  IT8XXX2_SMB_SMCD_EXTND |
-						  IT8XXX2_SMB_INTREN;
+			IT8XXX2_SMB_HOCTL(base) =
+				IT8XXX2_SMB_SRT | IT8XXX2_SMB_SMCD_EXTND | IT8XXX2_SMB_INTREN;
 		}
 	} else {
-		if ((data->i2ccs == I2C_CH_REPEAT_START) ||
-		    (data->i2ccs == I2C_CH_WAIT_READ)) {
+		if ((data->i2ccs == I2C_CH_REPEAT_START) || (data->i2ccs == I2C_CH_WAIT_READ)) {
 			if (data->i2ccs == I2C_CH_REPEAT_START) {
 				/* write to read */
 				i2c_w2r_change_direction(dev);
@@ -810,8 +776,7 @@ int __soc_ram_code i2c_tran_read(const struct device *dev)
 					data->active_msg->len = 0;
 					if (data->active_msg->flags & I2C_MSG_STOP) {
 						/* W/C for finish */
-						IT8XXX2_SMB_HOSTA(base) =
-						HOSTA_NEXT_BYTE;
+						IT8XXX2_SMB_HOSTA(base) = HOSTA_NEXT_BYTE;
 
 						data->stop = 1;
 					} else {
@@ -820,14 +785,12 @@ int __soc_ram_code i2c_tran_read(const struct device *dev)
 					}
 				} else {
 					/* W/C for next byte */
-					IT8XXX2_SMB_HOSTA(base) =
-							HOSTA_NEXT_BYTE;
+					IT8XXX2_SMB_HOSTA(base) = HOSTA_NEXT_BYTE;
 				}
 			}
 		}
 	}
 	return 1;
-
 }
 
 int __soc_ram_code i2c_tran_write(const struct device *dev)
@@ -838,9 +801,8 @@ int __soc_ram_code i2c_tran_write(const struct device *dev)
 
 	if (data->active_msg->flags & I2C_MSG_START) {
 		/* i2c enable */
-		IT8XXX2_SMB_HOCTL2(base) = IT8XXX2_SMB_SMD_TO_EN |
-					   IT8XXX2_SMB_I2C_EN |
-					   IT8XXX2_SMB_SMHEN;
+		IT8XXX2_SMB_HOCTL2(base) =
+			IT8XXX2_SMB_SMD_TO_EN | IT8XXX2_SMB_I2C_EN | IT8XXX2_SMB_SMHEN;
 		/*
 		 * bit0, Direction of the host transfer.
 		 * bit[1:7}, Address of the targeted slave.
@@ -857,9 +819,8 @@ int __soc_ram_code i2c_tran_write(const struct device *dev)
 		 * bit[2:4}, Extend command.
 		 * bit6, start.
 		 */
-		IT8XXX2_SMB_HOCTL(base) = IT8XXX2_SMB_SRT |
-					  IT8XXX2_SMB_SMCD_EXTND |
-					  IT8XXX2_SMB_INTREN;
+		IT8XXX2_SMB_HOCTL(base) =
+			IT8XXX2_SMB_SRT | IT8XXX2_SMB_SMCD_EXTND | IT8XXX2_SMB_INTREN;
 	} else {
 		/* Host has completed the transmission of a byte */
 		if (IT8XXX2_SMB_HOSTA(base) & HOSTA_BDS) {
@@ -879,8 +840,8 @@ int __soc_ram_code i2c_tran_write(const struct device *dev)
 				data->active_msg->len = 0;
 				if (data->active_msg->flags & I2C_MSG_STOP) {
 					/* set I2C_EN = 0 */
-					IT8XXX2_SMB_HOCTL2(base) = IT8XXX2_SMB_SMD_TO_EN |
-								   IT8XXX2_SMB_SMHEN;
+					IT8XXX2_SMB_HOCTL2(base) =
+						IT8XXX2_SMB_SMD_TO_EN | IT8XXX2_SMB_SMHEN;
 					/* W/C byte done for finish */
 					IT8XXX2_SMB_HOSTA(base) = HOSTA_NEXT_BYTE;
 
@@ -893,7 +854,6 @@ int __soc_ram_code i2c_tran_write(const struct device *dev)
 		}
 	}
 	return 1;
-
 }
 
 int __soc_ram_code i2c_pio_transaction(const struct device *dev)
@@ -934,8 +894,8 @@ int __soc_ram_code i2c_pio_transaction(const struct device *dev)
 	return 0;
 }
 
-static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
-				uint8_t num_msgs, uint16_t addr)
+static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
+				uint16_t addr)
 {
 	struct i2c_it8xxx2_data *data = dev->data;
 	const struct i2c_it8xxx2_config *config = dev->config;
@@ -1029,8 +989,8 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 			data->err = ETIMEDOUT;
 			/* reset i2c port */
 			i2c_reset(dev);
-			LOG_ERR("I2C ch%d:0x%X reset cause %d",
-				config->port, data->addr_16bit, I2C_RC_TIMEOUT);
+			LOG_ERR("I2C ch%d:0x%X reset cause %d", config->port, data->addr_16bit,
+				I2C_RC_TIMEOUT);
 			/* If this message is sent fail, drop the transaction. */
 			break;
 		}
@@ -1108,8 +1068,8 @@ static int i2c_it8xxx2_init(const struct device *dev)
 	k_sem_init(&data->device_sync_sem, 0, K_SEM_MAX_LIMIT);
 
 	/* Enable clock to specified peripheral */
-	volatile uint8_t *reg = (volatile uint8_t *)
-		(IT8XXX2_ECPM_BASE + (config->clock_gate_offset >> 8));
+	volatile uint8_t *reg =
+		(volatile uint8_t *)(IT8XXX2_ECPM_BASE + (config->clock_gate_offset >> 8));
 	uint8_t reg_mask = config->clock_gate_offset & 0xff;
 	*reg &= ~reg_mask;
 
@@ -1148,20 +1108,19 @@ static int i2c_it8xxx2_init(const struct device *dev)
 
 	/* ChannelA-C switch selection of I2C pin */
 	if (config->port == SMB_CHANNEL_A) {
-		IT8XXX2_SMB_SMB01CHS = (IT8XXX2_SMB_SMB01CHS &= ~GENMASK(2, 0)) |
-			config->channel_switch_sel;
+		IT8XXX2_SMB_SMB01CHS =
+			(IT8XXX2_SMB_SMB01CHS &= ~GENMASK(2, 0)) | config->channel_switch_sel;
 	} else if (config->port == SMB_CHANNEL_B) {
 		IT8XXX2_SMB_SMB01CHS = (config->channel_switch_sel << 4) |
-			(IT8XXX2_SMB_SMB01CHS &= ~GENMASK(6, 4));
+				       (IT8XXX2_SMB_SMB01CHS &= ~GENMASK(6, 4));
 	} else if (config->port == SMB_CHANNEL_C) {
-		IT8XXX2_SMB_SMB23CHS = (IT8XXX2_SMB_SMB23CHS &= ~GENMASK(2, 0)) |
-			config->channel_switch_sel;
+		IT8XXX2_SMB_SMB23CHS =
+			(IT8XXX2_SMB_SMB23CHS &= ~GENMASK(2, 0)) | config->channel_switch_sel;
 	}
 
 	/* Set clock frequency for I2C ports */
-	if (config->bitrate == I2C_BITRATE_STANDARD ||
-		config->bitrate == I2C_BITRATE_FAST ||
-		config->bitrate == I2C_BITRATE_FAST_PLUS) {
+	if (config->bitrate == I2C_BITRATE_STANDARD || config->bitrate == I2C_BITRATE_FAST ||
+	    config->bitrate == I2C_BITRATE_FAST_PLUS) {
 		bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
 	} else {
 		/* Device tree specified speed */
@@ -1244,8 +1203,7 @@ static int i2c_it8xxx2_recover_bus(const struct device *dev)
 
 	/* reset i2c port */
 	i2c_reset(dev);
-	LOG_ERR("I2C ch%d reset cause %d", config->port,
-		I2C_RC_NO_IDLE_FOR_START);
+	LOG_ERR("I2C ch%d reset cause %d", config->port, I2C_RC_NO_IDLE_FOR_START);
 
 	return 0;
 }
@@ -1276,58 +1234,48 @@ BUILD_ASSERT((DT_PROP(DT_NODELABEL(i2c2), fifo_enable) == false),
 #endif
 
 #ifdef CONFIG_SOC_IT8XXX2_EC_BUS_24MHZ
-#define I2C_IT8XXX2_CHECK_SUPPORTED_CLOCK(inst)                                 \
-	BUILD_ASSERT((DT_INST_PROP(inst, clock_frequency) ==                    \
-		     I2C_BITRATE_FAST), "Only supports 400 KHz");
+#define I2C_IT8XXX2_CHECK_SUPPORTED_CLOCK(inst)                                                    \
+	BUILD_ASSERT((DT_INST_PROP(inst, clock_frequency) == I2C_BITRATE_FAST),                    \
+		     "Only supports 400 KHz");
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_IT8XXX2_CHECK_SUPPORTED_CLOCK)
 #endif
 
-#define I2C_ITE_IT8XXX2_INIT(inst)                                              \
-	PINCTRL_DT_INST_DEFINE(inst);                                           \
-	BUILD_ASSERT((DT_INST_PROP(inst, clock_frequency) ==                    \
-		     50000) ||                                                  \
-		     (DT_INST_PROP(inst, clock_frequency) ==                    \
-		     I2C_BITRATE_STANDARD) ||                                   \
-		     (DT_INST_PROP(inst, clock_frequency) ==                    \
-		     I2C_BITRATE_FAST) ||                                       \
-		     (DT_INST_PROP(inst, clock_frequency) ==                    \
-		     I2C_BITRATE_FAST_PLUS), "Not support I2C bit rate value"); \
-	static void i2c_it8xxx2_config_func_##inst(void);                       \
-										\
-	static const struct i2c_it8xxx2_config i2c_it8xxx2_cfg_##inst = {       \
-		.base = (uint8_t *)(DT_INST_REG_ADDR_BY_IDX(inst, 0)),          \
-		.reg_mstfctrl = (uint8_t *)(DT_INST_REG_ADDR_BY_IDX(inst, 1)),  \
-		.irq_config_func = i2c_it8xxx2_config_func_##inst,              \
-		.bitrate = DT_INST_PROP(inst, clock_frequency),                 \
-		.i2c_irq_base = DT_INST_IRQN(inst),                             \
-		.port = DT_INST_PROP(inst, port_num),                           \
-		.channel_switch_sel = DT_INST_PROP(inst, channel_switch_sel),   \
-		.scl_gpios = GPIO_DT_SPEC_INST_GET(inst, scl_gpios),            \
-		.sda_gpios = GPIO_DT_SPEC_INST_GET(inst, sda_gpios),            \
-		.clock_gate_offset = DT_INST_PROP(inst, clock_gate_offset),     \
-		.transfer_timeout_ms = DT_INST_PROP(inst, transfer_timeout_ms), \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                   \
-		.fifo_enable = DT_INST_PROP(inst, fifo_enable),                 \
-		.push_pull_recovery = DT_INST_PROP(inst, push_pull_recovery),   \
-	};                                                                      \
-										\
-	static struct i2c_it8xxx2_data i2c_it8xxx2_data_##inst;                 \
-										\
-	I2C_DEVICE_DT_INST_DEFINE(inst, i2c_it8xxx2_init,                       \
-				  NULL,                                         \
-				  &i2c_it8xxx2_data_##inst,                     \
-				  &i2c_it8xxx2_cfg_##inst,                      \
-				  POST_KERNEL,                                  \
-				  CONFIG_I2C_INIT_PRIORITY,                     \
-				  &i2c_it8xxx2_driver_api);                     \
-										\
-	static void i2c_it8xxx2_config_func_##inst(void)                        \
-	{                                                                       \
-		IRQ_CONNECT(DT_INST_IRQN(inst),                                 \
-			0,                                                      \
-			i2c_it8xxx2_isr,                                        \
-			DEVICE_DT_INST_GET(inst), 0);                           \
+#define I2C_ITE_IT8XXX2_INIT(inst)                                                                 \
+	PINCTRL_DT_INST_DEFINE(inst);                                                              \
+	BUILD_ASSERT((DT_INST_PROP(inst, clock_frequency) == 50000) ||                             \
+			     (DT_INST_PROP(inst, clock_frequency) == I2C_BITRATE_STANDARD) ||      \
+			     (DT_INST_PROP(inst, clock_frequency) == I2C_BITRATE_FAST) ||          \
+			     (DT_INST_PROP(inst, clock_frequency) == I2C_BITRATE_FAST_PLUS),       \
+		     "Not support I2C bit rate value");                                            \
+	static void i2c_it8xxx2_config_func_##inst(void);                                          \
+                                                                                                   \
+	static const struct i2c_it8xxx2_config i2c_it8xxx2_cfg_##inst = {                          \
+		.base = (uint8_t *)(DT_INST_REG_ADDR_BY_IDX(inst, 0)),                             \
+		.reg_mstfctrl = (uint8_t *)(DT_INST_REG_ADDR_BY_IDX(inst, 1)),                     \
+		.irq_config_func = i2c_it8xxx2_config_func_##inst,                                 \
+		.bitrate = DT_INST_PROP(inst, clock_frequency),                                    \
+		.i2c_irq_base = DT_INST_IRQN(inst),                                                \
+		.port = DT_INST_PROP(inst, port_num),                                              \
+		.channel_switch_sel = DT_INST_PROP(inst, channel_switch_sel),                      \
+		.scl_gpios = GPIO_DT_SPEC_INST_GET(inst, scl_gpios),                               \
+		.sda_gpios = GPIO_DT_SPEC_INST_GET(inst, sda_gpios),                               \
+		.clock_gate_offset = DT_INST_PROP(inst, clock_gate_offset),                        \
+		.transfer_timeout_ms = DT_INST_PROP(inst, transfer_timeout_ms),                    \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
+		.fifo_enable = DT_INST_PROP(inst, fifo_enable),                                    \
+		.push_pull_recovery = DT_INST_PROP(inst, push_pull_recovery),                      \
+	};                                                                                         \
+                                                                                                   \
+	static struct i2c_it8xxx2_data i2c_it8xxx2_data_##inst;                                    \
+                                                                                                   \
+	I2C_DEVICE_DT_INST_DEFINE(inst, i2c_it8xxx2_init, NULL, &i2c_it8xxx2_data_##inst,          \
+				  &i2c_it8xxx2_cfg_##inst, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,  \
+				  &i2c_it8xxx2_driver_api);                                        \
+                                                                                                   \
+	static void i2c_it8xxx2_config_func_##inst(void)                                           \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(inst), 0, i2c_it8xxx2_isr, DEVICE_DT_INST_GET(inst), 0);  \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_ITE_IT8XXX2_INIT)

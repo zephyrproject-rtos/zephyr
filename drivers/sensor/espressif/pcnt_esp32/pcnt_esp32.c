@@ -25,15 +25,15 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pcnt_esp32, CONFIG_SENSOR_LOG_LEVEL);
 
-#define PCNT_INTR_UNIT_0  BIT(0)
-#define PCNT_INTR_UNIT_1  BIT(1)
-#define PCNT_INTR_UNIT_2  BIT(2)
-#define PCNT_INTR_UNIT_3  BIT(3)
+#define PCNT_INTR_UNIT_0 BIT(0)
+#define PCNT_INTR_UNIT_1 BIT(1)
+#define PCNT_INTR_UNIT_2 BIT(2)
+#define PCNT_INTR_UNIT_3 BIT(3)
 #ifdef CONFIG_SOC_SERIES_ESP32
-#define PCNT_INTR_UNIT_4  BIT(4)
-#define PCNT_INTR_UNIT_5  BIT(5)
-#define PCNT_INTR_UNIT_6  BIT(6)
-#define PCNT_INTR_UNIT_7  BIT(7)
+#define PCNT_INTR_UNIT_4 BIT(4)
+#define PCNT_INTR_UNIT_5 BIT(5)
+#define PCNT_INTR_UNIT_6 BIT(6)
+#define PCNT_INTR_UNIT_7 BIT(7)
 #endif /* CONFIG_SOC_SERIES_ESP32 */
 
 #ifdef CONFIG_PCNT_ESP32_TRIGGER
@@ -342,9 +342,9 @@ static int pcnt_esp32_trigger_set(const struct device *dev, const struct sensor_
 	data->trigger = trig;
 
 	ret = esp_intr_alloc(config->irq_source,
-			ESP_PRIO_TO_FLAGS(config->irq_priority) |
-			ESP_INT_FLAGS_CHECK(config->irq_flags) | ESP_INTR_FLAG_IRAM,
-			(intr_handler_t)pcnt_esp32_isr, (void *)dev, NULL);
+			     ESP_PRIO_TO_FLAGS(config->irq_priority) |
+				     ESP_INT_FLAGS_CHECK(config->irq_flags) | ESP_INTR_FLAG_IRAM,
+			     (intr_handler_t)pcnt_esp32_isr, (void *)dev, NULL);
 
 	if (ret != 0) {
 		LOG_ERR("pcnt isr registration failed (%d)", ret);
@@ -412,18 +412,15 @@ static struct pcnt_esp32_config pcnt_esp32_config = {
 };
 
 static struct pcnt_esp32_data pcnt_esp32_data = {
-	.hal = {
-		.dev = (pcnt_dev_t *)DT_INST_REG_ADDR(0),
-	},
+	.hal =
+		{
+			.dev = (pcnt_dev_t *)DT_INST_REG_ADDR(0),
+		},
 	.cmd_mux = Z_MUTEX_INITIALIZER(pcnt_esp32_data.cmd_mux),
 #ifdef CONFIG_PCNT_ESP32_TRIGGER
 	.trigger_handler = NULL,
 #endif /* CONFIG_PCNT_ESP32_TRIGGER */
 };
 
-SENSOR_DEVICE_DT_INST_DEFINE(0, &pcnt_esp32_init, NULL,
-			&pcnt_esp32_data,
-			&pcnt_esp32_config,
-			POST_KERNEL,
-			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-			&pcnt_esp32_api);
+SENSOR_DEVICE_DT_INST_DEFINE(0, &pcnt_esp32_init, NULL, &pcnt_esp32_data, &pcnt_esp32_config,
+			     POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &pcnt_esp32_api);

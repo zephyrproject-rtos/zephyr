@@ -18,9 +18,9 @@ LOG_MODULE_REGISTER(mcux_dcp, CONFIG_CRYPTO_LOG_LEVEL);
 
 #include <fsl_dcp.h>
 
-#define CRYPTO_DCP_CIPHER_CAPS		(CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS |\
-					CAP_SYNC_OPS | CAP_NO_IV_PREFIX)
-#define CRYPTO_DCP_HASH_CAPS		(CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS)
+#define CRYPTO_DCP_CIPHER_CAPS                                                                     \
+	(CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | CAP_NO_IV_PREFIX)
+#define CRYPTO_DCP_HASH_CAPS (CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS)
 
 struct crypto_dcp_session {
 	dcp_handle_t handle;
@@ -339,13 +339,13 @@ static const struct crypto_driver_api crypto_dcp_api = {
 	.hash_free_session = crypto_dcp_hash_free_session,
 };
 
-#define CRYPTO_DCP_DEFINE(inst)									\
-	static const struct crypto_dcp_config crypto_dcp_config_##inst = {			\
-		.base = (DCP_Type *)DT_INST_REG_ADDR(inst),					\
-	};											\
-	static struct crypto_dcp_data crypto_dcp_data_##inst;					\
-	DEVICE_DT_INST_DEFINE(inst, crypto_dcp_init, NULL,					\
-			      &crypto_dcp_data_##inst, &crypto_dcp_config_##inst,		\
-			      POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY, &crypto_dcp_api);
+#define CRYPTO_DCP_DEFINE(inst)                                                                    \
+	static const struct crypto_dcp_config crypto_dcp_config_##inst = {                         \
+		.base = (DCP_Type *)DT_INST_REG_ADDR(inst),                                        \
+	};                                                                                         \
+	static struct crypto_dcp_data crypto_dcp_data_##inst;                                      \
+	DEVICE_DT_INST_DEFINE(inst, crypto_dcp_init, NULL, &crypto_dcp_data_##inst,                \
+			      &crypto_dcp_config_##inst, POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY, \
+			      &crypto_dcp_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CRYPTO_DCP_DEFINE)

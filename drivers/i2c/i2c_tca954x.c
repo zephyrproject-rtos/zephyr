@@ -30,8 +30,7 @@ struct tca954x_channel_config {
 	uint8_t chan_mask;
 };
 
-static inline struct tca954x_root_data *
-get_root_data_from_channel(const struct device *dev)
+static inline struct tca954x_root_data *get_root_data_from_channel(const struct device *dev)
 {
 	const struct tca954x_channel_config *channel_config = dev->config;
 
@@ -48,8 +47,7 @@ get_root_config_from_channel(const struct device *dev)
 
 static int tca954x_configure(const struct device *dev, uint32_t dev_config)
 {
-	const struct tca954x_root_config *cfg =
-			get_root_config_from_channel(dev);
+	const struct tca954x_root_config *cfg = get_root_config_from_channel(dev);
 
 	return i2c_configure(cfg->i2c.bus, dev_config);
 }
@@ -72,14 +70,11 @@ static int tca954x_set_channel(const struct device *dev, uint8_t select_mask)
 	return res;
 }
 
-static int tca954x_transfer(const struct device *dev,
-			     struct i2c_msg *msgs,
-			     uint8_t num_msgs,
-			     uint16_t addr)
+static int tca954x_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
+			    uint16_t addr)
 {
 	struct tca954x_root_data *data = get_root_data_from_channel(dev);
-	const struct tca954x_root_config *config =
-			get_root_config_from_channel(dev);
+	const struct tca954x_root_config *config = get_root_config_from_channel(dev);
 	const struct tca954x_channel_config *down_cfg = dev->config;
 	int res;
 
@@ -113,8 +108,7 @@ static int tca954x_root_init(const struct device *dev)
 	/* If the RESET line is available, configure it. */
 	if (config->reset_gpios.port) {
 		if (!gpio_is_ready_dt(&config->reset_gpios)) {
-			LOG_ERR("%s is not ready",
-				config->reset_gpios.port->name);
+			LOG_ERR("%s is not ready", config->reset_gpios.port->name);
 			return -ENODEV;
 		}
 
@@ -135,8 +129,7 @@ static int tca954x_root_init(const struct device *dev)
 static int tca954x_channel_init(const struct device *dev)
 {
 	const struct tca954x_channel_config *chan_cfg = dev->config;
-	const struct tca954x_root_config *root_cfg =
-			get_root_config_from_channel(dev);
+	const struct tca954x_root_config *root_cfg = get_root_config_from_channel(dev);
 
 	if (!device_is_ready(chan_cfg->root)) {
 		LOG_ERR("I2C mux root %s not ready", chan_cfg->root->name);
@@ -162,35 +155,27 @@ static const struct i2c_driver_api tca954x_api_funcs = {
 BUILD_ASSERT(CONFIG_I2C_TCA954X_CHANNEL_INIT_PRIO > CONFIG_I2C_TCA954X_ROOT_INIT_PRIO,
 	     "I2C multiplexer channels must be initialized after their root");
 
-#define TCA954x_CHILD_DEFINE(node_id, n)				    \
-	static const struct tca954x_channel_config			    \
-		tca##n##a_down_config_##node_id = {			    \
-		.chan_mask = BIT(DT_REG_ADDR(node_id)),			    \
-		.root = DEVICE_DT_GET(DT_PARENT(node_id)),		    \
-	};								    \
-	DEVICE_DT_DEFINE(node_id,					    \
-			 tca954x_channel_init,				    \
-			 NULL,						    \
-			 NULL,						    \
-			 &tca##n##a_down_config_##node_id,		    \
-			 POST_KERNEL, CONFIG_I2C_TCA954X_CHANNEL_INIT_PRIO, \
-			 &tca954x_api_funcs);
+#define TCA954x_CHILD_DEFINE(node_id, n)                                                           \
+	static const struct tca954x_channel_config tca##n##a_down_config_##node_id = {             \
+		.chan_mask = BIT(DT_REG_ADDR(node_id)),                                            \
+		.root = DEVICE_DT_GET(DT_PARENT(node_id)),                                         \
+	};                                                                                         \
+	DEVICE_DT_DEFINE(node_id, tca954x_channel_init, NULL, NULL,                                \
+			 &tca##n##a_down_config_##node_id, POST_KERNEL,                            \
+			 CONFIG_I2C_TCA954X_CHANNEL_INIT_PRIO, &tca954x_api_funcs);
 
-#define TCA954x_ROOT_DEFINE(n, inst, ch)				          \
-	static const struct tca954x_root_config tca##n##a_cfg_##inst = {          \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),				  \
-		.nchans = ch,							  \
-		.reset_gpios = GPIO_DT_SPEC_GET_OR(			          \
-				DT_INST(inst, ti_tca##n##a), reset_gpios, {0}),	  \
-	};								          \
-	static struct tca954x_root_data tca##n##a_data_##inst = {		  \
-		.lock = Z_MUTEX_INITIALIZER(tca##n##a_data_##inst.lock),	  \
-	};									  \
-	I2C_DEVICE_DT_DEFINE(DT_INST(inst, ti_tca##n##a),			  \
-			      tca954x_root_init, NULL,				  \
-			      &tca##n##a_data_##inst, &tca##n##a_cfg_##inst,	  \
-			      POST_KERNEL, CONFIG_I2C_TCA954X_ROOT_INIT_PRIO,	  \
-			      NULL);						  \
+#define TCA954x_ROOT_DEFINE(n, inst, ch)                                                           \
+	static const struct tca954x_root_config tca##n##a_cfg_##inst = {                           \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+		.nchans = ch,                                                                      \
+		.reset_gpios = GPIO_DT_SPEC_GET_OR(DT_INST(inst, ti_tca##n##a), reset_gpios, {0}), \
+	};                                                                                         \
+	static struct tca954x_root_data tca##n##a_data_##inst = {                                  \
+		.lock = Z_MUTEX_INITIALIZER(tca##n##a_data_##inst.lock),                           \
+	};                                                                                         \
+	I2C_DEVICE_DT_DEFINE(DT_INST(inst, ti_tca##n##a), tca954x_root_init, NULL,                 \
+			     &tca##n##a_data_##inst, &tca##n##a_cfg_##inst, POST_KERNEL,           \
+			     CONFIG_I2C_TCA954X_ROOT_INIT_PRIO, NULL);                             \
 	DT_FOREACH_CHILD_VARGS(DT_INST(inst, ti_tca##n##a), TCA954x_CHILD_DEFINE, n);
 
 /*

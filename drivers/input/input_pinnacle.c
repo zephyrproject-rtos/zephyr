@@ -260,7 +260,7 @@ static int pinnacle_era_wait_for_completion(const struct device *dev)
 	uint8_t value;
 
 	ret = WAIT_FOR(pinnacle_read(dev, PINNACLE_REG_ERA_CTRL, &value) == 0 &&
-		       value == PINNACLE_ERA_CTRL_COMPLETE,
+			       value == PINNACLE_ERA_CTRL_COMPLETE,
 		       PINNACLE_ERA_AWAIT_RETRY_COUNT * PINNACLE_ERA_AWAIT_DELAY_POLL_US,
 		       k_sleep(K_USEC(PINNACLE_ERA_AWAIT_DELAY_POLL_US)));
 	if (!ret) {
@@ -763,9 +763,9 @@ static int pinnacle_init(const struct device *dev)
 
 	/* Wait until the calibration is completed (SW_CC is asserted) */
 	ret = WAIT_FOR(pinnacle_read(dev, PINNACLE_REG_STATUS1, &value) == 0 &&
-		       (value & PINNACLE_STATUS1_SW_CC) == PINNACLE_STATUS1_SW_CC,
+			       (value & PINNACLE_STATUS1_SW_CC) == PINNACLE_STATUS1_SW_CC,
 		       PINNACLE_CALIBRATION_AWAIT_RETRY_COUNT *
-		       PINNACLE_CALIBRATION_AWAIT_DELAY_POLL_US,
+			       PINNACLE_CALIBRATION_AWAIT_DELAY_POLL_US,
 		       k_sleep(K_USEC(PINNACLE_CALIBRATION_AWAIT_DELAY_POLL_US)));
 	if (!ret) {
 		LOG_ERR("Failed to wait for calibration complition");
@@ -871,24 +871,31 @@ static int pinnacle_init(const struct device *dev)
 
 #define PINNACLE_DEFINE(inst)                                                                      \
 	static const struct pinnacle_config pinnacle_config_##inst = {                             \
-		COND_CODE_1(DT_INST_ON_BUS(inst, i2c), (PINNACLE_CONFIG_BUS_I2C(inst),), ())       \
-		COND_CODE_1(DT_INST_ON_BUS(inst, spi), (PINNACLE_CONFIG_BUS_SPI(inst),), ())       \
-		.dr_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, data_ready_gpios, {}),                   \
-		.relative_mode = DT_INST_ENUM_IDX(inst, data_mode),                                \
-		.sensitivity = DT_INST_ENUM_IDX(inst, sensitivity),                                \
-		.idle_packets_count = DT_INST_PROP(inst, idle_packets_count),                      \
-		.clipping_enabled = DT_INST_PROP(inst, clipping_enable),                           \
-		.active_range_x_min = DT_INST_PROP(inst, active_range_x_min),                      \
-		.active_range_x_max = DT_INST_PROP(inst, active_range_x_max),                      \
-		.active_range_y_min = DT_INST_PROP(inst, active_range_y_min),                      \
-		.active_range_y_max = DT_INST_PROP(inst, active_range_y_max),                      \
-		.scaling_enabled = DT_INST_PROP(inst, scaling_enable),                             \
-		.resolution_x = DT_INST_PROP(inst, scaling_x_resolution),                          \
-		.resolution_y = DT_INST_PROP(inst, scaling_y_resolution),                          \
-		.invert_x = DT_INST_PROP(inst, invert_x),                                          \
-		.invert_y = DT_INST_PROP(inst, invert_y),                                          \
-		.primary_tap_enabled = DT_INST_PROP(inst, primary_tap_enable),                     \
-		.swap_xy = DT_INST_PROP(inst, swap_xy),                                            \
+		COND_CODE_1(DT_INST_ON_BUS(inst, i2c), (PINNACLE_CONFIG_BUS_I2C(inst),), ())                                                                        \
+				COND_CODE_1(DT_INST_ON_BUS(inst, spi), (PINNACLE_CONFIG_BUS_SPI(inst),), ()) .dr_gpio =                                            \
+						  GPIO_DT_SPEC_INST_GET_OR(inst, data_ready_gpios, \
+									   {}),                    \
+					 .relative_mode = DT_INST_ENUM_IDX(inst, data_mode),       \
+					 .sensitivity = DT_INST_ENUM_IDX(inst, sensitivity),       \
+					 .idle_packets_count =                                     \
+						 DT_INST_PROP(inst, idle_packets_count),           \
+					 .clipping_enabled = DT_INST_PROP(inst, clipping_enable),  \
+					 .active_range_x_min =                                     \
+						 DT_INST_PROP(inst, active_range_x_min),           \
+					 .active_range_x_max =                                     \
+						 DT_INST_PROP(inst, active_range_x_max),           \
+					 .active_range_y_min =                                     \
+						 DT_INST_PROP(inst, active_range_y_min),           \
+					 .active_range_y_max =                                     \
+						 DT_INST_PROP(inst, active_range_y_max),           \
+					 .scaling_enabled = DT_INST_PROP(inst, scaling_enable),    \
+					 .resolution_x = DT_INST_PROP(inst, scaling_x_resolution), \
+					 .resolution_y = DT_INST_PROP(inst, scaling_y_resolution), \
+					 .invert_x = DT_INST_PROP(inst, invert_x),                 \
+					 .invert_y = DT_INST_PROP(inst, invert_y),                 \
+					 .primary_tap_enabled =                                    \
+						 DT_INST_PROP(inst, primary_tap_enable),           \
+					 .swap_xy = DT_INST_PROP(inst, swap_xy),                   \
 	};                                                                                         \
 	static struct pinnacle_data pinnacle_data_##inst;                                          \
 	DEVICE_DT_INST_DEFINE(inst, pinnacle_init, NULL, &pinnacle_data_##inst,                    \

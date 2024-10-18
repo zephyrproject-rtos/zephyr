@@ -322,23 +322,21 @@ static int max7219_init(const struct device *dev)
 	return 0;
 }
 
-#define DISPLAY_MAX7219_INIT(n)                                                \
-	static uint8_t max7219_digit_data_##n[DT_INST_PROP(n, num_cascading) * \
-					      MAX7219_DIGITS_PER_DEVICE];      \
-	static uint8_t max7219_tx_buf##n[DT_INST_PROP(n, num_cascading) * 2];  \
-	static struct max7219_data max7219_data_##n = {                        \
-		.digit_buf = max7219_digit_data_##n,                           \
-		.tx_buf = max7219_tx_buf##n,                                   \
-	};                                                                     \
-	static const struct max7219_config max7219_config_##n = {              \
-		.spi = SPI_DT_SPEC_INST_GET(                                   \
-			n, SPI_OP_MODE_MASTER | SPI_WORD_SET(8U), 0U),         \
-		.num_cascading = DT_INST_PROP(n, num_cascading),               \
-		.intensity = DT_INST_PROP(n, intensity),                       \
-		.scan_limit = DT_INST_PROP(n, scan_limit),                     \
-	};                                                                     \
-	DEVICE_DT_INST_DEFINE(n, max7219_init, NULL, &max7219_data_##n,        \
-			      &max7219_config_##n, POST_KERNEL,                \
-			      CONFIG_DISPLAY_INIT_PRIORITY, &max7219_api);
+#define DISPLAY_MAX7219_INIT(n)                                                                    \
+	static uint8_t max7219_digit_data_##n[DT_INST_PROP(n, num_cascading) *                     \
+					      MAX7219_DIGITS_PER_DEVICE];                          \
+	static uint8_t max7219_tx_buf##n[DT_INST_PROP(n, num_cascading) * 2];                      \
+	static struct max7219_data max7219_data_##n = {                                            \
+		.digit_buf = max7219_digit_data_##n,                                               \
+		.tx_buf = max7219_tx_buf##n,                                                       \
+	};                                                                                         \
+	static const struct max7219_config max7219_config_##n = {                                  \
+		.spi = SPI_DT_SPEC_INST_GET(n, SPI_OP_MODE_MASTER | SPI_WORD_SET(8U), 0U),         \
+		.num_cascading = DT_INST_PROP(n, num_cascading),                                   \
+		.intensity = DT_INST_PROP(n, intensity),                                           \
+		.scan_limit = DT_INST_PROP(n, scan_limit),                                         \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(n, max7219_init, NULL, &max7219_data_##n, &max7219_config_##n,       \
+			      POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY, &max7219_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DISPLAY_MAX7219_INIT)

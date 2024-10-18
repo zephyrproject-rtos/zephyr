@@ -35,7 +35,7 @@ static struct address_trans_params translate_config;
  */
 
 static void address_trans_set_region(struct address_trans_params *addr_translate_config,
-			uint16_t region_num, uint32_t enable)
+				     uint16_t region_num, uint32_t enable)
 {
 	uint32_t rat_base_addr = addr_translate_config->rat_base_addr;
 	uint64_t system_addr = addr_translate_config->region_config[region_num].system_addr;
@@ -100,7 +100,7 @@ int sys_mm_drv_page_phys_get(void *virt, uintptr_t *phys)
 	if (virt == NULL) {
 		return -EINVAL;
 	}
-	uintptr_t pa = (uintptr_t) virt;
+	uintptr_t pa = (uintptr_t)virt;
 	uintptr_t *va = phys;
 
 	uint32_t found, regionId;
@@ -128,8 +128,7 @@ int sys_mm_drv_page_phys_get(void *virt, uintptr_t *phys)
 	}
 	if (found) {
 		/* translate input address to output address */
-		uint32_t offset =
-			pa - translate_config.region_config[regionId].system_addr;
+		uint32_t offset = pa - translate_config.region_config[regionId].system_addr;
 
 		*va = (translate_config.region_config[regionId].local_addr + offset);
 	} else {

@@ -23,28 +23,28 @@
 LOG_MODULE_REGISTER(peci_mchp_xec, CONFIG_PECI_LOG_LEVEL);
 
 /* Maximum PECI core clock is the main clock 48Mhz */
-#define MAX_PECI_CORE_CLOCK 48000u
+#define MAX_PECI_CORE_CLOCK         48000u
 /* 1 ms */
-#define PECI_RESET_DELAY    1000u
-#define PECI_RESET_DELAY_MS 1u
+#define PECI_RESET_DELAY            1000u
+#define PECI_RESET_DELAY_MS         1u
 /* 100 us */
-#define PECI_IDLE_DELAY     100u
+#define PECI_IDLE_DELAY             100u
 /* 5 ms */
-#define PECI_IDLE_TIMEOUT   50u
+#define PECI_IDLE_TIMEOUT           50u
 /* Maximum retries */
-#define PECI_TIMEOUT_RETRIES 3u
+#define PECI_TIMEOUT_RETRIES        3u
 /* Maximum read buffer fill wait retries */
 #define PECI_RX_BUF_FILL_WAIT_RETRY 100u
 
 /* 10 us */
-#define PECI_IO_DELAY       10
+#define PECI_IO_DELAY 10
 
 #define OPT_BIT_TIME_MSB_OFS 8u
 
-#define PECI_FCS_LEN         2
+#define PECI_FCS_LEN 2
 
 struct peci_xec_config {
-	struct peci_regs * const regs;
+	struct peci_regs *const regs;
 	uint8_t irq_num;
 	uint8_t girq;
 	uint8_t girq_pos;
@@ -60,8 +60,8 @@ enum peci_pm_policy_state_flag {
 
 struct peci_xec_data {
 	struct k_sem tx_lock;
-	uint32_t  bitrate;
-	int    timeout_retries;
+	uint32_t bitrate;
+	int timeout_retries;
 #ifdef CONFIG_PM_DEVICE
 	ATOMIC_DEFINE(pm_policy_state_flag, PECI_PM_POLICY_FLAG_COUNT);
 #endif
@@ -69,7 +69,7 @@ struct peci_xec_data {
 
 #ifdef CONFIG_PM_DEVICE
 static void peci_xec_pm_policy_state_lock_get(struct peci_xec_data *data,
-					       enum peci_pm_policy_state_flag flag)
+					      enum peci_pm_policy_state_flag flag)
 {
 	if (atomic_test_and_set_bit(data->pm_policy_state_flag, flag) == 0) {
 		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
@@ -77,7 +77,7 @@ static void peci_xec_pm_policy_state_lock_get(struct peci_xec_data *data,
 }
 
 static void peci_xec_pm_policy_state_lock_put(struct peci_xec_data *data,
-					    enum peci_pm_policy_state_flag flag)
+					      enum peci_pm_policy_state_flag flag)
 {
 	if (atomic_test_and_clear_bit(data->pm_policy_state_flag, flag) == 1) {
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
@@ -88,35 +88,35 @@ static void peci_xec_pm_policy_state_lock_put(struct peci_xec_data *data,
 #ifdef CONFIG_SOC_SERIES_MEC172X
 static inline void peci_girq_enable(const struct device *dev)
 {
-	const struct peci_xec_config * const cfg = dev->config;
+	const struct peci_xec_config *const cfg = dev->config;
 
 	mchp_xec_ecia_girq_src_en(cfg->girq, cfg->girq_pos);
 }
 
 static inline void peci_girq_status_clear(const struct device *dev)
 {
-	const struct peci_xec_config * const cfg = dev->config;
+	const struct peci_xec_config *const cfg = dev->config;
 
 	mchp_soc_ecia_girq_src_clr(cfg->girq, cfg->girq_pos);
 }
 
 static inline void peci_clr_slp_en(const struct device *dev)
 {
-	const struct peci_xec_config * const cfg = dev->config;
+	const struct peci_xec_config *const cfg = dev->config;
 
 	z_mchp_xec_pcr_periph_sleep(cfg->pcr_idx, cfg->pcr_pos, 0);
 }
 #else
 static inline void peci_girq_enable(const struct device *dev)
 {
-	const struct peci_xec_config * const cfg = dev->config;
+	const struct peci_xec_config *const cfg = dev->config;
 
 	MCHP_GIRQ_ENSET(cfg->girq) = BIT(cfg->girq_pos);
 }
 
 static inline void peci_girq_status_clear(const struct device *dev)
 {
-	const struct peci_xec_config * const cfg = dev->config;
+	const struct peci_xec_config *const cfg = dev->config;
 
 	MCHP_GIRQ_SRC(cfg->girq) = BIT(cfg->girq_pos);
 }
@@ -129,7 +129,7 @@ static inline void peci_clr_slp_en(const struct device *dev)
 }
 #endif
 
-static int check_bus_idle(struct peci_regs * const regs)
+static int check_bus_idle(struct peci_regs *const regs)
 {
 	uint8_t delay_cnt = PECI_IDLE_TIMEOUT;
 
@@ -151,9 +151,9 @@ static int check_bus_idle(struct peci_regs * const regs)
 
 static int peci_xec_configure(const struct device *dev, uint32_t bitrate)
 {
-	const struct peci_xec_config * const cfg = dev->config;
-	struct peci_xec_data * const data = dev->data;
-	struct peci_regs * const regs = cfg->regs;
+	const struct peci_xec_config *const cfg = dev->config;
+	struct peci_xec_data *const data = dev->data;
+	struct peci_regs *const regs = cfg->regs;
 	uint16_t value;
 
 	data->bitrate = bitrate;
@@ -164,8 +164,7 @@ static int peci_xec_configure(const struct device *dev, uint32_t bitrate)
 	/* Adjust bitrate */
 	value = MAX_PECI_CORE_CLOCK / bitrate;
 	regs->OPT_BIT_TIME_LSB = value & MCHP_PECI_OPT_BT_LSB_MASK;
-	regs->OPT_BIT_TIME_MSB = ((value >> OPT_BIT_TIME_MSB_OFS) &
-				  MCHP_PECI_OPT_BT_MSB_MASK);
+	regs->OPT_BIT_TIME_MSB = ((value >> OPT_BIT_TIME_MSB_OFS) & MCHP_PECI_OPT_BT_MSB_MASK);
 
 	/* Power up PECI interface */
 	regs->CONTROL &= ~MCHP_PECI_CTRL_PD;
@@ -175,8 +174,8 @@ static int peci_xec_configure(const struct device *dev, uint32_t bitrate)
 
 static int peci_xec_disable(const struct device *dev)
 {
-	const struct peci_xec_config * const cfg = dev->config;
-	struct peci_regs * const regs = cfg->regs;
+	const struct peci_xec_config *const cfg = dev->config;
+	struct peci_regs *const regs = cfg->regs;
 	int ret;
 
 	/* Make sure no transaction is interrupted before disabling the HW */
@@ -197,8 +196,8 @@ static int peci_xec_disable(const struct device *dev)
 
 static int peci_xec_enable(const struct device *dev)
 {
-	const struct peci_xec_config * const cfg = dev->config;
-	struct peci_regs * const regs = cfg->regs;
+	const struct peci_xec_config *const cfg = dev->config;
+	struct peci_regs *const regs = cfg->regs;
 
 	regs->CONTROL &= ~MCHP_PECI_CTRL_PD;
 
@@ -212,9 +211,9 @@ static int peci_xec_enable(const struct device *dev)
 
 static void peci_xec_bus_recovery(const struct device *dev, bool full_reset)
 {
-	const struct peci_xec_config * const cfg = dev->config;
-	struct peci_xec_data * const data = dev->data;
-	struct peci_regs * const regs = cfg->regs;
+	const struct peci_xec_config *const cfg = dev->config;
+	struct peci_xec_data *const data = dev->data;
+	struct peci_regs *const regs = cfg->regs;
 
 	LOG_WRN("%s full_reset:%d", __func__, full_reset);
 	if (full_reset) {
@@ -237,9 +236,9 @@ static void peci_xec_bus_recovery(const struct device *dev, bool full_reset)
 
 static int peci_xec_write(const struct device *dev, struct peci_msg *msg)
 {
-	const struct peci_xec_config * const cfg = dev->config;
-	struct peci_xec_data * const data = dev->data;
-	struct peci_regs * const regs = cfg->regs;
+	const struct peci_xec_config *const cfg = dev->config;
+	struct peci_xec_data *const data = dev->data;
+	struct peci_regs *const regs = cfg->regs;
 	int i;
 	int ret;
 
@@ -311,8 +310,8 @@ static int peci_xec_write(const struct device *dev, struct peci_msg *msg)
 
 static int peci_xec_read(const struct device *dev, struct peci_msg *msg)
 {
-	const struct peci_xec_config * const cfg = dev->config;
-	struct peci_regs * const regs = cfg->regs;
+	const struct peci_xec_config *const cfg = dev->config;
+	struct peci_regs *const regs = cfg->regs;
 	int i;
 	int ret;
 	uint8_t tx_fcs;
@@ -347,10 +346,10 @@ static int peci_xec_read(const struct device *dev, struct peci_msg *msg)
 			}
 		} else if (i == (rx_buf->len + 1)) {
 			/* Get read block FCS, but don't count it */
-			rx_buf->buf[i-1] = regs->RD_DATA;
+			rx_buf->buf[i - 1] = regs->RD_DATA;
 		} else {
 			/* Get response */
-			rx_buf->buf[i-1] = regs->RD_DATA;
+			rx_buf->buf[i - 1] = regs->RD_DATA;
 			bytes_rcvd++;
 		}
 	}
@@ -373,8 +372,8 @@ static int peci_xec_read(const struct device *dev, struct peci_msg *msg)
 
 static int peci_xec_transfer(const struct device *dev, struct peci_msg *msg)
 {
-	const struct peci_xec_config * const cfg = dev->config;
-	struct peci_regs * const regs = cfg->regs;
+	const struct peci_xec_config *const cfg = dev->config;
+	struct peci_regs *const regs = cfg->regs;
 	int ret = 0;
 	uint8_t err_val = 0;
 #ifdef CONFIG_PM_DEVICE
@@ -445,8 +444,8 @@ static int peci_xec_transfer(const struct device *dev, struct peci_msg *msg)
 static int peci_xec_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct peci_xec_config *const devcfg = dev->config;
-	struct peci_regs * const regs = devcfg->regs;
-	struct ecs_regs * const ecs_regs = (struct ecs_regs *)(DT_REG_ADDR(DT_NODELABEL(ecs)));
+	struct peci_regs *const regs = devcfg->regs;
+	struct ecs_regs *const ecs_regs = (struct ecs_regs *)(DT_REG_ADDR(DT_NODELABEL(ecs)));
 	int ret;
 
 	switch (action) {
@@ -485,9 +484,9 @@ static int peci_xec_pm_action(const struct device *dev, enum pm_device_action ac
 static void peci_xec_isr(const void *arg)
 {
 	const struct device *dev = arg;
-	struct peci_xec_config * const cfg = dev->config;
-	struct peci_xec_data * const data = dev->data;
-	struct peci_regs * const regs = cfg->regs;
+	struct peci_xec_config *const cfg = dev->config;
+	struct peci_xec_data *const data = dev->data;
+	struct peci_regs *const regs = cfg->regs;
 	uint8_t peci_error = regs->ERROR;
 	uint8_t peci_status2 = regs->STATUS2;
 
@@ -517,9 +516,9 @@ static const struct peci_driver_api peci_xec_driver_api = {
 
 static int peci_xec_init(const struct device *dev)
 {
-	const struct peci_xec_config * const cfg = dev->config;
-	struct peci_regs * const regs = cfg->regs;
-	struct ecs_regs * const ecs_regs = (struct ecs_regs *)(DT_REG_ADDR(DT_NODELABEL(ecs)));
+	const struct peci_xec_config *const cfg = dev->config;
+	struct peci_regs *const regs = cfg->regs;
+	struct ecs_regs *const ecs_regs = (struct ecs_regs *)(DT_REG_ADDR(DT_NODELABEL(ecs)));
 
 	int ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 
@@ -553,9 +552,7 @@ static int peci_xec_init(const struct device *dev)
 	regs->CONTROL |= MCHP_PECI_CTRL_MIEN;
 
 	/* Direct NVIC */
-	IRQ_CONNECT(cfg->irq_num,
-		    DT_INST_IRQ(0, priority),
-		    peci_xec_isr, NULL, 0);
+	IRQ_CONNECT(cfg->irq_num, DT_INST_IRQ(0, priority), peci_xec_isr, NULL, 0);
 #endif
 	return 0;
 }
@@ -565,7 +562,7 @@ static struct peci_xec_data peci_data;
 PINCTRL_DT_INST_DEFINE(0);
 
 static const struct peci_xec_config peci_xec_config = {
-	.regs = (struct peci_regs * const)(DT_INST_REG_ADDR(0)),
+	.regs = (struct peci_regs *const)(DT_INST_REG_ADDR(0)),
 	.irq_num = DT_INST_IRQN(0),
 	.girq = DT_INST_PROP_BY_IDX(0, girqs, 0),
 	.girq_pos = DT_INST_PROP_BY_IDX(0, girqs, 1),
@@ -576,9 +573,5 @@ static const struct peci_xec_config peci_xec_config = {
 
 PM_DEVICE_DT_INST_DEFINE(0, peci_xec_pm_action);
 
-DEVICE_DT_INST_DEFINE(0,
-		    &peci_xec_init,
-		    PM_DEVICE_DT_INST_GET(0),
-		    &peci_data, &peci_xec_config,
-		    POST_KERNEL, CONFIG_PECI_INIT_PRIORITY,
-		    &peci_xec_driver_api);
+DEVICE_DT_INST_DEFINE(0, &peci_xec_init, PM_DEVICE_DT_INST_GET(0), &peci_data, &peci_xec_config,
+		      POST_KERNEL, CONFIG_PECI_INIT_PRIORITY, &peci_xec_driver_api);

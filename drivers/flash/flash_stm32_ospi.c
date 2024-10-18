@@ -31,13 +31,12 @@ LOG_MODULE_REGISTER(flash_stm32_ospi, CONFIG_FLASH_LOG_LEVEL);
 
 #define STM32_OSPI_NODE DT_INST_PARENT(0)
 
-#define DT_OSPI_IO_PORT_PROP_OR(prop, default_value)					\
+#define DT_OSPI_IO_PORT_PROP_OR(prop, default_value)                                               \
 	COND_CODE_1(DT_NODE_HAS_PROP(STM32_OSPI_NODE, prop),				\
 		    (_CONCAT(HAL_OSPIM_, DT_STRING_TOKEN(STM32_OSPI_NODE, prop))),	\
 		    ((default_value)))
 
-#define DT_OSPI_PROP_OR(prop, default_value) \
-	DT_PROP_OR(STM32_OSPI_NODE, prop, default_value)
+#define DT_OSPI_PROP_OR(prop, default_value) DT_PROP_OR(STM32_OSPI_NODE, prop, default_value)
 
 /* Get the base address of the flash from the DTS node */
 #define STM32_OSPI_BASE_ADDRESS DT_INST_REG_ADDR(0)
@@ -54,26 +53,26 @@ LOG_MODULE_REGISTER(flash_stm32_ospi, CONFIG_FLASH_LOG_LEVEL);
 #include <stm32_ll_dma.h>
 #endif /* STM32_OSPI_USE_DMA */
 
-#define STM32_OSPI_FIFO_THRESHOLD         4
+#define STM32_OSPI_FIFO_THRESHOLD 4
 
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
 /* Valid range is [0, 255] */
-#define STM32_OSPI_CLOCK_PRESCALER_MIN  0U
-#define STM32_OSPI_CLOCK_PRESCALER_MAX  255U
+#define STM32_OSPI_CLOCK_PRESCALER_MIN                0U
+#define STM32_OSPI_CLOCK_PRESCALER_MAX                255U
 #define STM32_OSPI_CLOCK_COMPUTE(bus_freq, prescaler) ((bus_freq) / ((prescaler) + 1U))
 #else
 /* Valid range is [1, 256] */
-#define STM32_OSPI_CLOCK_PRESCALER_MIN  1U
-#define STM32_OSPI_CLOCK_PRESCALER_MAX  256U
+#define STM32_OSPI_CLOCK_PRESCALER_MIN                1U
+#define STM32_OSPI_CLOCK_PRESCALER_MAX                256U
 #define STM32_OSPI_CLOCK_COMPUTE(bus_freq, prescaler) ((bus_freq) / (prescaler))
 #endif
 
 /* Max Time value during reset or erase operation */
-#define STM32_OSPI_RESET_MAX_TIME               100U
-#define STM32_OSPI_BULK_ERASE_MAX_TIME          460000U
-#define STM32_OSPI_SECTOR_ERASE_MAX_TIME        1000U
-#define STM32_OSPI_SUBSECTOR_4K_ERASE_MAX_TIME  400U
-#define STM32_OSPI_WRITE_REG_MAX_TIME           40U
+#define STM32_OSPI_RESET_MAX_TIME              100U
+#define STM32_OSPI_BULK_ERASE_MAX_TIME         460000U
+#define STM32_OSPI_SECTOR_ERASE_MAX_TIME       1000U
+#define STM32_OSPI_SUBSECTOR_4K_ERASE_MAX_TIME 400U
+#define STM32_OSPI_WRITE_REG_MAX_TIME          40U
 
 /* used as default value for DTS writeoc */
 #define SPI_NOR_WRITEOC_NONE 0xFF
@@ -216,8 +215,8 @@ static int ospi_send_cmd(const struct device *dev, OSPI_RegularCmdTypeDef *cmd)
 	return dev_data->cmd_status;
 }
 
-static int ospi_read_access(const struct device *dev, OSPI_RegularCmdTypeDef *cmd,
-			    uint8_t *data, size_t size)
+static int ospi_read_access(const struct device *dev, OSPI_RegularCmdTypeDef *cmd, uint8_t *data,
+			    size_t size)
 {
 	struct flash_stm32_ospi_data *dev_data = dev->data;
 	HAL_StatusTypeDef hal_ret;
@@ -264,7 +263,7 @@ static int ospi_write_access(const struct device *dev, OSPI_RegularCmdTypeDef *c
 
 	/* in OPI/STR the 3-byte AddressSize is not supported by the NOR flash */
 	if ((dev_cfg->data_mode == OSPI_OPI_MODE) &&
-		(cmd->AddressSize != HAL_OSPI_ADDRESS_32_BITS)) {
+	    (cmd->AddressSize != HAL_OSPI_ADDRESS_32_BITS)) {
 		LOG_ERR("OSPI wr in OPI/STR mode is for 32bit address only");
 		return -EIO;
 	}
@@ -300,24 +299,21 @@ static OSPI_RegularCmdTypeDef ospi_prepare_cmd(uint8_t transfer_mode, uint8_t tr
 	OSPI_RegularCmdTypeDef cmd_tmp = {
 		.OperationType = HAL_OSPI_OPTYPE_COMMON_CFG,
 		.FlashId = HAL_OSPI_FLASH_ID_1,
-		.InstructionSize = ((transfer_mode == OSPI_OPI_MODE)
-				? HAL_OSPI_INSTRUCTION_16_BITS
-				: HAL_OSPI_INSTRUCTION_8_BITS),
-		.InstructionDtrMode = ((transfer_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_INSTRUCTION_DTR_ENABLE
-				: HAL_OSPI_INSTRUCTION_DTR_DISABLE),
-		.AddressDtrMode = ((transfer_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_ADDRESS_DTR_ENABLE
-				: HAL_OSPI_ADDRESS_DTR_DISABLE),
+		.InstructionSize = ((transfer_mode == OSPI_OPI_MODE) ? HAL_OSPI_INSTRUCTION_16_BITS
+								     : HAL_OSPI_INSTRUCTION_8_BITS),
+		.InstructionDtrMode =
+			((transfer_rate == OSPI_DTR_TRANSFER) ? HAL_OSPI_INSTRUCTION_DTR_ENABLE
+							      : HAL_OSPI_INSTRUCTION_DTR_DISABLE),
+		.AddressDtrMode =
+			((transfer_rate == OSPI_DTR_TRANSFER) ? HAL_OSPI_ADDRESS_DTR_ENABLE
+							      : HAL_OSPI_ADDRESS_DTR_DISABLE),
 		/* AddressSize must be set to 32bits for init and mem config phase */
 		.AddressSize = HAL_OSPI_ADDRESS_32_BITS,
 		.AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_NONE,
-		.DataDtrMode = ((transfer_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_DATA_DTR_ENABLE
-				: HAL_OSPI_DATA_DTR_DISABLE),
-		.DQSMode = (transfer_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_DQS_ENABLE
-				: HAL_OSPI_DQS_DISABLE,
+		.DataDtrMode = ((transfer_rate == OSPI_DTR_TRANSFER) ? HAL_OSPI_DATA_DTR_ENABLE
+								     : HAL_OSPI_DATA_DTR_DISABLE),
+		.DQSMode = (transfer_rate == OSPI_DTR_TRANSFER) ? HAL_OSPI_DQS_ENABLE
+								: HAL_OSPI_DQS_DISABLE,
 		.SIOOMode = HAL_OSPI_SIOO_INST_EVERY_CMD,
 	};
 
@@ -390,8 +386,7 @@ static int stm32_ospi_read_jedec_id(const struct device *dev)
 
 	HAL_StatusTypeDef hal_ret;
 
-	hal_ret = HAL_OSPI_Command(&dev_data->hospi, &cmd,
-				   HAL_OSPI_TIMEOUT_DEFAULT_VALUE);
+	hal_ret = HAL_OSPI_Command(&dev_data->hospi, &cmd, HAL_OSPI_TIMEOUT_DEFAULT_VALUE);
 
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("%d: Failed to send OSPI instruction", hal_ret);
@@ -406,8 +401,8 @@ static int stm32_ospi_read_jedec_id(const struct device *dev)
 		return -EIO;
 	}
 #endif /* jedec_id */
-	LOG_DBG("Jedec ID = [%02x %02x %02x]",
-		dev_data->jedec_id[0], dev_data->jedec_id[1], dev_data->jedec_id[2]);
+	LOG_DBG("Jedec ID = [%02x %02x %02x]", dev_data->jedec_id[0], dev_data->jedec_id[1],
+		dev_data->jedec_id[2]);
 
 	dev_data->cmd_status = 0;
 
@@ -418,15 +413,15 @@ static int stm32_ospi_read_jedec_id(const struct device *dev)
  * Read Serial Flash ID :
  * just gives the values received by the octoFlash or from the DTS
  */
-static int ospi_read_jedec_id(const struct device *dev,  uint8_t *id)
+static int ospi_read_jedec_id(const struct device *dev, uint8_t *id)
 {
 	struct flash_stm32_ospi_data *dev_data = dev->data;
 
 	/* Take jedec Id values from the table (issued from the octoFlash) */
 	memcpy(id, dev_data->jedec_id, JESD216_READ_ID_LEN);
 
-	LOG_INF("Manuf ID = %02x   Memory Type = %02x   Memory Density = %02x",
-		id[0], id[1], id[2]);
+	LOG_INF("Manuf ID = %02x   Memory Type = %02x   Memory Density = %02x", id[0], id[1],
+		id[2]);
 
 	return 0;
 }
@@ -437,15 +432,12 @@ static int ospi_read_jedec_id(const struct device *dev,  uint8_t *id)
  * Read Serial Flash Discovery Parameter from the octoFlash at init :
  * perform a read access over SPI bus for SDFP (DataMode is already set)
  */
-static int stm32_ospi_read_sfdp(const struct device *dev, off_t addr,
-				void *data,
-				size_t size)
+static int stm32_ospi_read_sfdp(const struct device *dev, off_t addr, void *data, size_t size)
 {
 	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
 	struct flash_stm32_ospi_data *dev_data = dev->data;
 
-	OSPI_RegularCmdTypeDef cmd = ospi_prepare_cmd(dev_cfg->data_mode,
-						      dev_cfg->data_rate);
+	OSPI_RegularCmdTypeDef cmd = ospi_prepare_cmd(dev_cfg->data_mode, dev_cfg->data_rate);
 	if (dev_cfg->data_mode == OSPI_OPI_MODE) {
 		cmd.Instruction = JESD216_OCMD_READ_SFDP;
 		cmd.DummyCycles = 20U;
@@ -469,8 +461,8 @@ static int stm32_ospi_read_sfdp(const struct device *dev, off_t addr,
 		return -EIO;
 	}
 
-	hal_ret = HAL_OSPI_Receive(&dev_data->hospi, (uint8_t *)data,
-				   HAL_OSPI_TIMEOUT_DEFAULT_VALUE);
+	hal_ret =
+		HAL_OSPI_Receive(&dev_data->hospi, (uint8_t *)data, HAL_OSPI_TIMEOUT_DEFAULT_VALUE);
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("%d: Failed to read data", hal_ret);
 		return -EIO;
@@ -487,8 +479,7 @@ static int stm32_ospi_read_sfdp(const struct device *dev, off_t addr,
  * perform a read access over SPI bus for SDFP (DataMode is already set)
  * or get it from the sdfp table (in the DTS)
  */
-static int ospi_read_sfdp(const struct device *dev, off_t addr, void *data,
-			  size_t size)
+static int ospi_read_sfdp(const struct device *dev, off_t addr, void *data, size_t size)
 {
 #if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_ospi_nor), sfdp_bfp)
 	/* There is a sfdp-bfp property in the deviceTree : do not read the flash */
@@ -516,8 +507,7 @@ static int ospi_read_sfdp(const struct device *dev, off_t addr, void *data,
 #endif /* sfdp_bfp */
 }
 
-static bool ospi_address_is_valid(const struct device *dev, off_t addr,
-				  size_t size)
+static bool ospi_address_is_valid(const struct device *dev, off_t addr, size_t size)
 {
 	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
 	size_t flash_size = dev_cfg->flash_size;
@@ -526,7 +516,7 @@ static bool ospi_address_is_valid(const struct device *dev, off_t addr,
 }
 
 static int stm32_ospi_wait_auto_polling(struct flash_stm32_ospi_data *dev_data,
-		OSPI_AutoPollingTypeDef *s_config, uint32_t timeout_ms)
+					OSPI_AutoPollingTypeDef *s_config, uint32_t timeout_ms)
 {
 	dev_data->cmd_status = 0;
 	if (HAL_OSPI_AutoPolling_IT(&dev_data->hospi, s_config) != HAL_OK) {
@@ -567,8 +557,8 @@ static int stm32_ospi_mem_erased(const struct device *dev)
 	if (nor_mode == OSPI_OPI_MODE) {
 		s_command.Instruction = SPI_NOR_OCMD_RDSR;
 		s_command.DummyCycles = (nor_rate == OSPI_DTR_TRANSFER)
-					? SPI_NOR_DUMMY_REG_OCTAL_DTR
-					: SPI_NOR_DUMMY_REG_OCTAL;
+						? SPI_NOR_DUMMY_REG_OCTAL_DTR
+						: SPI_NOR_DUMMY_REG_OCTAL;
 	} else {
 		s_command.Instruction = SPI_NOR_CMD_RDSR;
 		/* force 1-line InstructionMode for any non-OSPI transfer */
@@ -583,12 +573,12 @@ static int stm32_ospi_mem_erased(const struct device *dev)
 
 	/* Set the mask to  0x02 to mask all Status REG bits except WEL */
 	/* Set the match to 0x00 to check if the WEL bit is Reset */
-	s_config.Match              = SPI_NOR_WEL_MATCH;
-	s_config.Mask               = SPI_NOR_WEL_MASK; /* Write Enable Latch */
+	s_config.Match = SPI_NOR_WEL_MATCH;
+	s_config.Mask = SPI_NOR_WEL_MASK; /* Write Enable Latch */
 
-	s_config.MatchMode          = HAL_OSPI_MATCH_MODE_AND;
-	s_config.Interval           = SPI_NOR_AUTO_POLLING_INTERVAL;
-	s_config.AutomaticStop      = HAL_OSPI_AUTOMATIC_STOP_ENABLE;
+	s_config.MatchMode = HAL_OSPI_MATCH_MODE_AND;
+	s_config.Interval = SPI_NOR_AUTO_POLLING_INTERVAL;
+	s_config.AutomaticStop = HAL_OSPI_AUTOMATIC_STOP_ENABLE;
 
 	if (HAL_OSPI_Command(hospi, &s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
 		LOG_ERR("OSPI AutoPoll command (WEL) failed");
@@ -596,8 +586,7 @@ static int stm32_ospi_mem_erased(const struct device *dev)
 	}
 
 	/* Start Automatic-Polling mode to wait until the memory is totally erased */
-	return stm32_ospi_wait_auto_polling(dev_data,
-			&s_config, STM32_OSPI_BULK_ERASE_MAX_TIME);
+	return stm32_ospi_wait_auto_polling(dev_data, &s_config, STM32_OSPI_BULK_ERASE_MAX_TIME);
 }
 
 /*
@@ -606,7 +595,7 @@ static int stm32_ospi_mem_erased(const struct device *dev)
  * and nor_rate transfer STR/DTR OSPI_STR_TRANSFER or OSPI_DTR_TRANSFER
  */
 static int stm32_ospi_mem_ready(struct flash_stm32_ospi_data *dev_data, uint8_t nor_mode,
-		uint8_t nor_rate)
+				uint8_t nor_rate)
 {
 	OSPI_HandleTypeDef *hospi = &dev_data->hospi;
 	OSPI_AutoPollingTypeDef s_config = {0};
@@ -616,8 +605,8 @@ static int stm32_ospi_mem_ready(struct flash_stm32_ospi_data *dev_data, uint8_t 
 	if (nor_mode == OSPI_OPI_MODE) {
 		s_command.Instruction = SPI_NOR_OCMD_RDSR;
 		s_command.DummyCycles = (nor_rate == OSPI_DTR_TRANSFER)
-					? SPI_NOR_DUMMY_REG_OCTAL_DTR
-					: SPI_NOR_DUMMY_REG_OCTAL;
+						? SPI_NOR_DUMMY_REG_OCTAL_DTR
+						: SPI_NOR_DUMMY_REG_OCTAL;
 	} else {
 		s_command.Instruction = SPI_NOR_CMD_RDSR;
 		/* force 1-line InstructionMode for any non-OSPI transfer */
@@ -632,11 +621,11 @@ static int stm32_ospi_mem_ready(struct flash_stm32_ospi_data *dev_data, uint8_t 
 
 	/* Set the mask to  0x01 to mask all Status REG bits except WIP */
 	/* Set the match to 0x00 to check if the WIP bit is Reset */
-	s_config.Match              = SPI_NOR_MEM_RDY_MATCH;
-	s_config.Mask               = SPI_NOR_MEM_RDY_MASK; /* Write in progress */
-	s_config.MatchMode          = HAL_OSPI_MATCH_MODE_AND;
-	s_config.Interval           = SPI_NOR_AUTO_POLLING_INTERVAL;
-	s_config.AutomaticStop      = HAL_OSPI_AUTOMATIC_STOP_ENABLE;
+	s_config.Match = SPI_NOR_MEM_RDY_MATCH;
+	s_config.Mask = SPI_NOR_MEM_RDY_MASK; /* Write in progress */
+	s_config.MatchMode = HAL_OSPI_MATCH_MODE_AND;
+	s_config.Interval = SPI_NOR_AUTO_POLLING_INTERVAL;
+	s_config.AutomaticStop = HAL_OSPI_AUTOMATIC_STOP_ENABLE;
 
 	if (HAL_OSPI_Command(hospi, &s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
 		LOG_ERR("OSPI AutoPoll command failed");
@@ -648,8 +637,8 @@ static int stm32_ospi_mem_ready(struct flash_stm32_ospi_data *dev_data, uint8_t 
 }
 
 /* Enables writing to the memory sending a Write Enable and wait it is effective */
-static int stm32_ospi_write_enable(struct flash_stm32_ospi_data *dev_data,
-		uint8_t nor_mode, uint8_t nor_rate)
+static int stm32_ospi_write_enable(struct flash_stm32_ospi_data *dev_data, uint8_t nor_mode,
+				   uint8_t nor_rate)
 {
 	OSPI_HandleTypeDef *hospi = &dev_data->hospi;
 	OSPI_AutoPollingTypeDef s_config = {0};
@@ -664,7 +653,7 @@ static int stm32_ospi_write_enable(struct flash_stm32_ospi_data *dev_data,
 		s_command.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
 	}
 	s_command.AddressMode = HAL_OSPI_ADDRESS_NONE;
-	s_command.DataMode    = HAL_OSPI_DATA_NONE;
+	s_command.DataMode = HAL_OSPI_DATA_NONE;
 	s_command.DummyCycles = 0U;
 
 	if (HAL_OSPI_Command(hospi, &s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
@@ -678,7 +667,7 @@ static int stm32_ospi_write_enable(struct flash_stm32_ospi_data *dev_data,
 		s_command.AddressMode = HAL_OSPI_ADDRESS_8_LINES;
 		s_command.DataMode = HAL_OSPI_DATA_8_LINES;
 		s_command.DummyCycles = (nor_rate == OSPI_DTR_TRANSFER)
-				? SPI_NOR_DUMMY_REG_OCTAL_DTR
+						? SPI_NOR_DUMMY_REG_OCTAL_DTR
 						: SPI_NOR_DUMMY_REG_OCTAL;
 	} else {
 		s_command.Instruction = SPI_NOR_CMD_RDSR;
@@ -698,39 +687,36 @@ static int stm32_ospi_write_enable(struct flash_stm32_ospi_data *dev_data,
 		return -EIO;
 	}
 
-	s_config.Match           = SPI_NOR_WREN_MATCH;
-	s_config.Mask            = SPI_NOR_WREN_MASK;
-	s_config.MatchMode       = HAL_OSPI_MATCH_MODE_AND;
-	s_config.Interval        = SPI_NOR_AUTO_POLLING_INTERVAL;
-	s_config.AutomaticStop   = HAL_OSPI_AUTOMATIC_STOP_ENABLE;
+	s_config.Match = SPI_NOR_WREN_MATCH;
+	s_config.Mask = SPI_NOR_WREN_MASK;
+	s_config.MatchMode = HAL_OSPI_MATCH_MODE_AND;
+	s_config.Interval = SPI_NOR_AUTO_POLLING_INTERVAL;
+	s_config.AutomaticStop = HAL_OSPI_AUTOMATIC_STOP_ENABLE;
 
 	return stm32_ospi_wait_auto_polling(dev_data, &s_config, HAL_OSPI_TIMEOUT_DEFAULT_VALUE);
 }
 
 /* Write Flash configuration register 2 with new dummy cycles */
-static int stm32_ospi_write_cfg2reg_dummy(OSPI_HandleTypeDef *hospi,
-					uint8_t nor_mode, uint8_t nor_rate)
+static int stm32_ospi_write_cfg2reg_dummy(OSPI_HandleTypeDef *hospi, uint8_t nor_mode,
+					  uint8_t nor_rate)
 {
 	uint8_t transmit_data = SPI_NOR_CR2_DUMMY_CYCLES_66MHZ;
 	OSPI_RegularCmdTypeDef s_command = ospi_prepare_cmd(nor_mode, nor_rate);
 
 	/* Initialize the writing of configuration register 2 */
-	s_command.Instruction = (nor_mode == OSPI_SPI_MODE)
-				? SPI_NOR_CMD_WR_CFGREG2
-				: SPI_NOR_OCMD_WR_CFGREG2;
+	s_command.Instruction =
+		(nor_mode == OSPI_SPI_MODE) ? SPI_NOR_CMD_WR_CFGREG2 : SPI_NOR_OCMD_WR_CFGREG2;
 	s_command.Address = SPI_NOR_REG2_ADDR3;
 	s_command.DummyCycles = 0U;
-	s_command.NbData = (nor_mode == OSPI_SPI_MODE) ? 1U
-			: ((nor_rate == OSPI_DTR_TRANSFER) ? 2U : 1U);
+	s_command.NbData =
+		(nor_mode == OSPI_SPI_MODE) ? 1U : ((nor_rate == OSPI_DTR_TRANSFER) ? 2U : 1U);
 
-	if (HAL_OSPI_Command(hospi, &s_command,
-		HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+	if (HAL_OSPI_Command(hospi, &s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
 		LOG_ERR("OSPI transmit ");
 		return -EIO;
 	}
 
-	if (HAL_OSPI_Transmit(hospi, &transmit_data,
-		HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+	if (HAL_OSPI_Transmit(hospi, &transmit_data, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
 		LOG_ERR("OSPI transmit ");
 		return -EIO;
 	}
@@ -739,28 +725,25 @@ static int stm32_ospi_write_cfg2reg_dummy(OSPI_HandleTypeDef *hospi,
 }
 
 /* Write Flash configuration register 2 with new single or octal SPI protocol */
-static int stm32_ospi_write_cfg2reg_io(OSPI_HandleTypeDef *hospi,
-				       uint8_t nor_mode, uint8_t nor_rate, uint8_t op_enable)
+static int stm32_ospi_write_cfg2reg_io(OSPI_HandleTypeDef *hospi, uint8_t nor_mode,
+				       uint8_t nor_rate, uint8_t op_enable)
 {
 	OSPI_RegularCmdTypeDef s_command = ospi_prepare_cmd(nor_mode, nor_rate);
 
 	/* Initialize the writing of configuration register 2 */
-	s_command.Instruction = (nor_mode == OSPI_SPI_MODE)
-				? SPI_NOR_CMD_WR_CFGREG2
-				: SPI_NOR_OCMD_WR_CFGREG2;
+	s_command.Instruction =
+		(nor_mode == OSPI_SPI_MODE) ? SPI_NOR_CMD_WR_CFGREG2 : SPI_NOR_OCMD_WR_CFGREG2;
 	s_command.Address = SPI_NOR_REG2_ADDR1;
 	s_command.DummyCycles = 0U;
-	s_command.NbData = (nor_mode == OSPI_SPI_MODE) ? 1U
-			: ((nor_rate == OSPI_DTR_TRANSFER) ? 2U : 1U);
+	s_command.NbData =
+		(nor_mode == OSPI_SPI_MODE) ? 1U : ((nor_rate == OSPI_DTR_TRANSFER) ? 2U : 1U);
 
-	if (HAL_OSPI_Command(hospi, &s_command,
-		HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+	if (HAL_OSPI_Command(hospi, &s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
 		LOG_ERR("Write Flash configuration reg2 failed");
 		return -EIO;
 	}
 
-	if (HAL_OSPI_Transmit(hospi, &op_enable,
-		HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+	if (HAL_OSPI_Transmit(hospi, &op_enable, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
 		LOG_ERR("Write Flash configuration reg2 failed");
 		return -EIO;
 	}
@@ -769,21 +752,19 @@ static int stm32_ospi_write_cfg2reg_io(OSPI_HandleTypeDef *hospi,
 }
 
 /* Read Flash configuration register 2 with new single or octal SPI protocol */
-static int stm32_ospi_read_cfg2reg(OSPI_HandleTypeDef *hospi,
-				   uint8_t nor_mode, uint8_t nor_rate, uint8_t *value)
+static int stm32_ospi_read_cfg2reg(OSPI_HandleTypeDef *hospi, uint8_t nor_mode, uint8_t nor_rate,
+				   uint8_t *value)
 {
 	OSPI_RegularCmdTypeDef s_command = ospi_prepare_cmd(nor_mode, nor_rate);
 
 	/* Initialize the writing of configuration register 2 */
-	s_command.Instruction = (nor_mode == OSPI_SPI_MODE)
-				? SPI_NOR_CMD_RD_CFGREG2
-				: SPI_NOR_OCMD_RD_CFGREG2;
+	s_command.Instruction =
+		(nor_mode == OSPI_SPI_MODE) ? SPI_NOR_CMD_RD_CFGREG2 : SPI_NOR_OCMD_RD_CFGREG2;
 	s_command.Address = SPI_NOR_REG2_ADDR1;
-	s_command.DummyCycles = (nor_mode == OSPI_SPI_MODE)
-				? 0U
-				: ((nor_rate == OSPI_DTR_TRANSFER)
-					? SPI_NOR_DUMMY_REG_OCTAL_DTR
-					: SPI_NOR_DUMMY_REG_OCTAL);
+	s_command.DummyCycles = (nor_mode == OSPI_SPI_MODE) ? 0U
+							    : ((nor_rate == OSPI_DTR_TRANSFER)
+								       ? SPI_NOR_DUMMY_REG_OCTAL_DTR
+								       : SPI_NOR_DUMMY_REG_OCTAL);
 	s_command.NbData = (nor_rate == OSPI_DTR_TRANSFER) ? 2U : 1U;
 
 	if (HAL_OSPI_Command(hospi, &s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
@@ -807,8 +788,7 @@ static int stm32_ospi_config_mem(const struct device *dev)
 	uint8_t reg[2];
 
 	/* Going to set the SPI mode and STR transfer rate : done */
-	if ((dev_cfg->data_mode != OSPI_OPI_MODE)
-		&& (dev_cfg->data_rate == OSPI_STR_TRANSFER)) {
+	if ((dev_cfg->data_mode != OSPI_OPI_MODE) && (dev_cfg->data_rate == OSPI_STR_TRANSFER)) {
 		LOG_INF("OSPI flash config is SPI|DUAL|QUAD / STR");
 		return 0;
 	}
@@ -816,35 +796,31 @@ static int stm32_ospi_config_mem(const struct device *dev)
 	/* Going to set the OPI mode (STR or DTR transfer rate) */
 	LOG_DBG("OSPI configuring OctoSPI mode");
 
-	if (stm32_ospi_write_enable(dev_data,
-		OSPI_SPI_MODE, OSPI_STR_TRANSFER) != 0) {
+	if (stm32_ospi_write_enable(dev_data, OSPI_SPI_MODE, OSPI_STR_TRANSFER) != 0) {
 		LOG_ERR("OSPI write Enable failed");
 		return -EIO;
 	}
 
 	/* Write Configuration register 2 (with new dummy cycles) */
-	if (stm32_ospi_write_cfg2reg_dummy(&dev_data->hospi,
-		OSPI_SPI_MODE, OSPI_STR_TRANSFER) != 0) {
+	if (stm32_ospi_write_cfg2reg_dummy(&dev_data->hospi, OSPI_SPI_MODE, OSPI_STR_TRANSFER) !=
+	    0) {
 		LOG_ERR("OSPI write CFGR2 failed");
 		return -EIO;
 	}
-	if (stm32_ospi_mem_ready(dev_data,
-		OSPI_SPI_MODE, OSPI_STR_TRANSFER) != 0) {
+	if (stm32_ospi_mem_ready(dev_data, OSPI_SPI_MODE, OSPI_STR_TRANSFER) != 0) {
 		LOG_ERR("OSPI autopolling failed");
 		return -EIO;
 	}
-	if (stm32_ospi_write_enable(dev_data,
-		OSPI_SPI_MODE, OSPI_STR_TRANSFER) != 0) {
+	if (stm32_ospi_write_enable(dev_data, OSPI_SPI_MODE, OSPI_STR_TRANSFER) != 0) {
 		LOG_ERR("OSPI write Enable 2 failed");
 		return -EIO;
 	}
 
 	/* Write Configuration register 2 (with Octal I/O SPI protocol : choose STR or DTR) */
-	uint8_t mode_enable = ((dev_cfg->data_rate == OSPI_DTR_TRANSFER)
-				? SPI_NOR_CR2_DTR_OPI_EN
-				: SPI_NOR_CR2_STR_OPI_EN);
-	if (stm32_ospi_write_cfg2reg_io(&dev_data->hospi,
-		OSPI_SPI_MODE, OSPI_STR_TRANSFER, mode_enable) != 0) {
+	uint8_t mode_enable = ((dev_cfg->data_rate == OSPI_DTR_TRANSFER) ? SPI_NOR_CR2_DTR_OPI_EN
+									 : SPI_NOR_CR2_STR_OPI_EN);
+	if (stm32_ospi_write_cfg2reg_io(&dev_data->hospi, OSPI_SPI_MODE, OSPI_STR_TRANSFER,
+					mode_enable) != 0) {
 		LOG_ERR("OSPI write CFGR2 failed");
 		return -EIO;
 	}
@@ -853,7 +829,7 @@ static int stm32_ospi_config_mem(const struct device *dev)
 	k_busy_wait(STM32_OSPI_WRITE_REG_MAX_TIME * USEC_PER_MSEC);
 
 	/* Reconfigure the memory type of the peripheral */
-	dev_data->hospi.Init.MemoryType            = HAL_OSPI_MEMTYPE_MACRONIX;
+	dev_data->hospi.Init.MemoryType = HAL_OSPI_MEMTYPE_MACRONIX;
 	dev_data->hospi.Init.DelayHoldQuarterCycle = HAL_OSPI_DHQC_ENABLE;
 	if (HAL_OSPI_Init(&dev_data->hospi) != HAL_OK) {
 		LOG_ERR("OSPI mem type MACRONIX failed");
@@ -861,15 +837,14 @@ static int stm32_ospi_config_mem(const struct device *dev)
 	}
 
 	if (dev_cfg->data_rate == OSPI_STR_TRANSFER) {
-		if (stm32_ospi_mem_ready(dev_data,
-			OSPI_OPI_MODE, OSPI_STR_TRANSFER) != 0) {
+		if (stm32_ospi_mem_ready(dev_data, OSPI_OPI_MODE, OSPI_STR_TRANSFER) != 0) {
 			/* Check Flash busy ? */
 			LOG_ERR("OSPI flash busy failed");
 			return -EIO;
 		}
 
-		if (stm32_ospi_read_cfg2reg(&dev_data->hospi,
-			OSPI_OPI_MODE, OSPI_STR_TRANSFER, reg) != 0) {
+		if (stm32_ospi_read_cfg2reg(&dev_data->hospi, OSPI_OPI_MODE, OSPI_STR_TRANSFER,
+					    reg) != 0) {
 			/* Check the configuration has been correctly done on SPI_NOR_REG2_ADDR1 */
 			LOG_ERR("OSPI flash config read failed");
 			return -EIO;
@@ -879,8 +854,7 @@ static int stm32_ospi_config_mem(const struct device *dev)
 	}
 
 	if (dev_cfg->data_rate == OSPI_DTR_TRANSFER) {
-		if (stm32_ospi_mem_ready(dev_data,
-			OSPI_OPI_MODE, OSPI_DTR_TRANSFER) != 0) {
+		if (stm32_ospi_mem_ready(dev_data, OSPI_OPI_MODE, OSPI_DTR_TRANSFER) != 0) {
 			/* Check Flash busy ? */
 			LOG_ERR("OSPI flash busy failed");
 			return -EIO;
@@ -923,35 +897,35 @@ static int stm32_ospi_mem_reset(const struct device *dev)
 	};
 
 	/* Reset enable in SPI mode and STR transfer mode */
-	if (HAL_OSPI_Command(&dev_data->hospi,
-		&s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+	if (HAL_OSPI_Command(&dev_data->hospi, &s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) !=
+	    HAL_OK) {
 		LOG_ERR("OSPI reset enable (SPI/STR) failed");
 		return -EIO;
 	}
 
 	/* Reset memory in SPI mode and STR transfer mode */
 	s_command.Instruction = SPI_NOR_CMD_RESET_MEM;
-	if (HAL_OSPI_Command(&dev_data->hospi,
-		&s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+	if (HAL_OSPI_Command(&dev_data->hospi, &s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) !=
+	    HAL_OK) {
 		LOG_ERR("OSPI reset memory (SPI/STR) failed");
 		return -EIO;
 	}
 
 	/* Reset enable in OPI mode and STR transfer mode */
-	s_command.InstructionMode    = HAL_OSPI_INSTRUCTION_8_LINES;
+	s_command.InstructionMode = HAL_OSPI_INSTRUCTION_8_LINES;
 	s_command.InstructionDtrMode = HAL_OSPI_INSTRUCTION_DTR_DISABLE;
 	s_command.Instruction = SPI_NOR_OCMD_RESET_EN;
 	s_command.InstructionSize = HAL_OSPI_INSTRUCTION_16_BITS;
-	if (HAL_OSPI_Command(&dev_data->hospi,
-		&s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+	if (HAL_OSPI_Command(&dev_data->hospi, &s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) !=
+	    HAL_OK) {
 		LOG_ERR("OSPI reset enable (OPI/STR) failed");
 		return -EIO;
 	}
 
 	/* Reset memory in OPI mode and STR transfer mode */
 	s_command.Instruction = SPI_NOR_OCMD_RESET_MEM;
-	if (HAL_OSPI_Command(&dev_data->hospi,
-		&s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+	if (HAL_OSPI_Command(&dev_data->hospi, &s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) !=
+	    HAL_OK) {
 		LOG_ERR("OSPI reset memory (OPI/STR) failed");
 		return -EIO;
 	}
@@ -959,16 +933,16 @@ static int stm32_ospi_mem_reset(const struct device *dev)
 	/* Reset enable in OPI mode and DTR transfer mode */
 	s_command.InstructionDtrMode = HAL_OSPI_INSTRUCTION_DTR_ENABLE;
 	s_command.Instruction = SPI_NOR_OCMD_RESET_EN;
-	if (HAL_OSPI_Command(&dev_data->hospi,
-		&s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+	if (HAL_OSPI_Command(&dev_data->hospi, &s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) !=
+	    HAL_OK) {
 		LOG_ERR("OSPI reset enable (OPI/DTR) failed");
 		return -EIO;
 	}
 
 	/* Reset memory in OPI mode and DTR transfer mode */
 	s_command.Instruction = SPI_NOR_OCMD_RESET_MEM;
-	if (HAL_OSPI_Command(&dev_data->hospi,
-		&s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+	if (HAL_OSPI_Command(&dev_data->hospi, &s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) !=
+	    HAL_OK) {
 		LOG_ERR("OSPI reset memory (OPI/DTR) failed");
 		return -EIO;
 	}
@@ -992,7 +966,7 @@ static int stm32_ospi_set_memorymap(const struct device *dev)
 
 	/* Configure octoflash in MemoryMapped mode */
 	if ((dev_cfg->data_mode == OSPI_SPI_MODE) &&
-		(stm32_ospi_hal_address_size(dev) == HAL_OSPI_ADDRESS_24_BITS)) {
+	    (stm32_ospi_hal_address_size(dev) == HAL_OSPI_ADDRESS_24_BITS)) {
 		/* OPI mode and 3-bytes address size not supported by memory */
 		LOG_ERR("OSPI_SPI_MODE in 3Bytes addressing is not supported");
 		return -ENOTSUP;
@@ -1001,8 +975,8 @@ static int stm32_ospi_set_memorymap(const struct device *dev)
 	/* Initialize the read command */
 	s_command.OperationType = HAL_OSPI_OPTYPE_READ_CFG;
 	s_command.AddressSize = (dev_cfg->data_rate == OSPI_STR_TRANSFER)
-				? stm32_ospi_hal_address_size(dev)
-				: HAL_OSPI_ADDRESS_32_BITS;
+					? stm32_ospi_hal_address_size(dev)
+					: HAL_OSPI_ADDRESS_32_BITS;
 	/* Adapt lines based on read_mode */
 	if (dev_cfg->data_mode != OSPI_OPI_MODE) {
 		switch (dev_data->read_mode) {
@@ -1118,9 +1092,9 @@ static bool stm32_ospi_is_memorymap(const struct device *dev)
 {
 	struct flash_stm32_ospi_data *dev_data = dev->data;
 
-	return ((READ_BIT(dev_data->hospi.Instance->CR,
-			  OCTOSPI_CR_FMODE) == OCTOSPI_CR_FMODE) ?
-			  true : false);
+	return ((READ_BIT(dev_data->hospi.Instance->CR, OCTOSPI_CR_FMODE) == OCTOSPI_CR_FMODE)
+			? true
+			: false);
 }
 
 static int stm32_ospi_abort(const struct device *dev)
@@ -1145,8 +1119,7 @@ static int stm32_ospi_abort(const struct device *dev)
  *   set addr = 0
  * NOTE: cannot erase in MemoryMapped mode
  */
-static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
-				  size_t size)
+static int flash_stm32_ospi_erase(const struct device *dev, off_t addr, size_t size)
 {
 	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
 	struct flash_stm32_ospi_data *dev_data = dev->data;
@@ -1164,7 +1137,8 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 
 	if (!ospi_address_is_valid(dev, addr, size)) {
 		LOG_ERR("Error: address or size exceeds expected values: "
-			"addr 0x%lx, size %zu", (long)addr, size);
+			"addr 0x%lx, size %zu",
+			(long)addr, size);
 		return -EINVAL;
 	}
 
@@ -1197,27 +1171,25 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 		.SIOOMode = HAL_OSPI_SIOO_INST_EVERY_CMD,
 	};
 
-	if (stm32_ospi_mem_ready(dev_data,
-		dev_cfg->data_mode, dev_cfg->data_rate) != 0) {
+	if (stm32_ospi_mem_ready(dev_data, dev_cfg->data_mode, dev_cfg->data_rate) != 0) {
 		LOG_ERR("Erase failed : flash busy");
 		ret = -EBUSY;
 		goto end_erase;
 	}
 
-	cmd_erase.InstructionMode    = (dev_cfg->data_mode == OSPI_OPI_MODE)
-					? HAL_OSPI_INSTRUCTION_8_LINES
-					: HAL_OSPI_INSTRUCTION_1_LINE;
+	cmd_erase.InstructionMode = (dev_cfg->data_mode == OSPI_OPI_MODE)
+					    ? HAL_OSPI_INSTRUCTION_8_LINES
+					    : HAL_OSPI_INSTRUCTION_1_LINE;
 	cmd_erase.InstructionDtrMode = (dev_cfg->data_rate == OSPI_DTR_TRANSFER)
-					? HAL_OSPI_INSTRUCTION_DTR_ENABLE
-					: HAL_OSPI_INSTRUCTION_DTR_DISABLE;
-	cmd_erase.InstructionSize    = (dev_cfg->data_mode == OSPI_OPI_MODE)
-					? HAL_OSPI_INSTRUCTION_16_BITS
-					: HAL_OSPI_INSTRUCTION_8_BITS;
+					       ? HAL_OSPI_INSTRUCTION_DTR_ENABLE
+					       : HAL_OSPI_INSTRUCTION_DTR_DISABLE;
+	cmd_erase.InstructionSize = (dev_cfg->data_mode == OSPI_OPI_MODE)
+					    ? HAL_OSPI_INSTRUCTION_16_BITS
+					    : HAL_OSPI_INSTRUCTION_8_BITS;
 
 	while ((size > 0) && (ret == 0)) {
 
-		ret = stm32_ospi_write_enable(dev_data,
-			dev_cfg->data_mode, dev_cfg->data_rate);
+		ret = stm32_ospi_write_enable(dev_data, dev_cfg->data_mode, dev_cfg->data_rate);
 		if (ret != 0) {
 			LOG_ERR("Erase failed : write enable");
 			break;
@@ -1229,8 +1201,8 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 
 			cmd_erase.Address = 0;
 			cmd_erase.Instruction = (dev_cfg->data_mode == OSPI_OPI_MODE)
-					? SPI_NOR_OCMD_BULKE
-					: SPI_NOR_CMD_BULKE;
+							? SPI_NOR_OCMD_BULKE
+							: SPI_NOR_CMD_BULKE;
 			cmd_erase.AddressMode = HAL_OSPI_ADDRESS_NONE;
 			/* Full chip erase (Bulk) command */
 			ospi_send_cmd(dev, &cmd_erase);
@@ -1246,31 +1218,24 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 			/* Sector or Block erase depending on the size */
 			LOG_DBG("Sector/Block Erase");
 
-			cmd_erase.AddressMode =
-				(dev_cfg->data_mode == OSPI_OPI_MODE)
-				? HAL_OSPI_ADDRESS_8_LINES
-				: HAL_OSPI_ADDRESS_1_LINE;
-			cmd_erase.AddressDtrMode =
-				(dev_cfg->data_rate == OSPI_DTR_TRANSFER)
-				? HAL_OSPI_ADDRESS_DTR_ENABLE
-				: HAL_OSPI_ADDRESS_DTR_DISABLE;
+			cmd_erase.AddressMode = (dev_cfg->data_mode == OSPI_OPI_MODE)
+							? HAL_OSPI_ADDRESS_8_LINES
+							: HAL_OSPI_ADDRESS_1_LINE;
+			cmd_erase.AddressDtrMode = (dev_cfg->data_rate == OSPI_DTR_TRANSFER)
+							   ? HAL_OSPI_ADDRESS_DTR_ENABLE
+							   : HAL_OSPI_ADDRESS_DTR_DISABLE;
 			cmd_erase.AddressSize = stm32_ospi_hal_address_size(dev);
 			cmd_erase.Address = addr;
 
-			const struct jesd216_erase_type *erase_types =
-							dev_data->erase_types;
+			const struct jesd216_erase_type *erase_types = dev_data->erase_types;
 			const struct jesd216_erase_type *bet = NULL;
 
-			for (uint8_t ei = 0;
-				ei < JESD216_NUM_ERASE_TYPES; ++ei) {
-				const struct jesd216_erase_type *etp =
-							&erase_types[ei];
+			for (uint8_t ei = 0; ei < JESD216_NUM_ERASE_TYPES; ++ei) {
+				const struct jesd216_erase_type *etp = &erase_types[ei];
 
-				if ((etp->exp != 0)
-				    && SPI_NOR_IS_ALIGNED(addr, etp->exp)
-				    && (size >= BIT(etp->exp))
-				    && ((bet == NULL)
-					|| (etp->exp > bet->exp))) {
+				if ((etp->exp != 0) && SPI_NOR_IS_ALIGNED(addr, etp->exp) &&
+				    (size >= BIT(etp->exp)) &&
+				    ((bet == NULL) || (etp->exp > bet->exp))) {
 					bet = etp;
 					cmd_erase.Instruction = bet->cmd;
 				} else if (bet == NULL) {
@@ -1280,9 +1245,9 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 					} else {
 						cmd_erase.Instruction =
 							(stm32_ospi_hal_address_size(dev) ==
-							HAL_OSPI_ADDRESS_32_BITS)
-							? SPI_NOR_CMD_SE_4B
-							: SPI_NOR_CMD_SE;
+							 HAL_OSPI_ADDRESS_32_BITS)
+								? SPI_NOR_CMD_SE_4B
+								: SPI_NOR_CMD_SE;
 					}
 				}
 				/* Avoid using wrong erase type,
@@ -1291,8 +1256,8 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 				bet = NULL;
 			}
 			LOG_DBG("Sector/Block Erase addr 0x%x, asize 0x%x amode 0x%x  instr 0x%x",
-				cmd_erase.Address, cmd_erase.AddressSize,
-				cmd_erase.AddressMode, cmd_erase.Instruction);
+				cmd_erase.Address, cmd_erase.AddressSize, cmd_erase.AddressMode,
+				cmd_erase.Instruction);
 
 			ospi_send_cmd(dev, &cmd_erase);
 
@@ -1305,7 +1270,7 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 			}
 
 			ret = stm32_ospi_mem_ready(dev_data, dev_cfg->data_mode,
-						dev_cfg->data_rate);
+						   dev_cfg->data_rate);
 		}
 	}
 	goto end_erase;
@@ -1317,14 +1282,14 @@ end_erase:
 }
 
 /* Function to read the flash with possible OSPI/SPI and STR/DTR */
-static int flash_stm32_ospi_read(const struct device *dev, off_t addr,
-				 void *data, size_t size)
+static int flash_stm32_ospi_read(const struct device *dev, off_t addr, void *data, size_t size)
 {
 	int ret = 0;
 
 	if (!ospi_address_is_valid(dev, addr, size)) {
 		LOG_ERR("Error: address or size exceeds expected values: "
-			"addr 0x%lx, size %zu", (long)addr, size);
+			"addr 0x%lx, size %zu",
+			(long)addr, size);
 		return -EINVAL;
 	}
 
@@ -1342,15 +1307,13 @@ static int flash_stm32_ospi_read(const struct device *dev, off_t addr,
 		}
 	}
 	/* Now in MemMapped mode : read with memcopy */
-	LOG_DBG("MemoryMapped Read offset: 0x%lx, len: %zu",
-		(long)(STM32_OSPI_BASE_ADDRESS + addr),
+	LOG_DBG("MemoryMapped Read offset: 0x%lx, len: %zu", (long)(STM32_OSPI_BASE_ADDRESS + addr),
 		size);
 	memcpy(data, (uint8_t *)STM32_OSPI_BASE_ADDRESS + addr, size);
 
 #else /* CONFIG_STM32_MEMMAP */
 	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
 	struct flash_stm32_ospi_data *dev_data = dev->data;
-
 
 	OSPI_RegularCmdTypeDef cmd = ospi_prepare_cmd(dev_cfg->data_mode, dev_cfg->data_rate);
 
@@ -1425,8 +1388,8 @@ static int flash_stm32_ospi_read(const struct device *dev, off_t addr,
  * Function to write the flash (page program) : with possible OSPI/SPI and STR/DTR
  * NOTE: writing  in MemoryMapped mode is not guaranted
  */
-static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
-				  const void *data, size_t size)
+static int flash_stm32_ospi_write(const struct device *dev, off_t addr, const void *data,
+				  size_t size)
 {
 	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
 	struct flash_stm32_ospi_data *dev_data = dev->data;
@@ -1435,7 +1398,8 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 
 	if (!ospi_address_is_valid(dev, addr, size)) {
 		LOG_ERR("Error: address or size exceeds expected values: "
-			"addr 0x%lx, size %zu", (long)addr, size);
+			"addr 0x%lx, size %zu",
+			(long)addr, size);
 		return -EINVAL;
 	}
 
@@ -1502,8 +1466,7 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 
 	LOG_DBG("OSPI: write %zu data", size);
 
-	ret = stm32_ospi_mem_ready(dev_data,
-				   dev_cfg->data_mode, dev_cfg->data_rate);
+	ret = stm32_ospi_mem_ready(dev_data, dev_cfg->data_mode, dev_cfg->data_rate);
 	if (ret != 0) {
 		ospi_unlock_thread(dev);
 		LOG_ERR("OSPI: write not ready");
@@ -1512,8 +1475,7 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 
 	while ((size > 0) && (ret == 0)) {
 		to_write = size;
-		ret = stm32_ospi_write_enable(dev_data,
-						    dev_cfg->data_mode, dev_cfg->data_rate);
+		ret = stm32_ospi_write_enable(dev_data, dev_cfg->data_mode, dev_cfg->data_rate);
 		if (ret != 0) {
 			LOG_ERR("OSPI: write not enabled");
 			break;
@@ -1524,10 +1486,8 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 		}
 
 		/* Don't write across a page boundary */
-		if (((addr + to_write - 1U) / SPI_NOR_PAGE_SIZE)
-		    != (addr / SPI_NOR_PAGE_SIZE)) {
-			to_write = SPI_NOR_PAGE_SIZE -
-						(addr % SPI_NOR_PAGE_SIZE);
+		if (((addr + to_write - 1U) / SPI_NOR_PAGE_SIZE) != (addr / SPI_NOR_PAGE_SIZE)) {
+			to_write = SPI_NOR_PAGE_SIZE - (addr % SPI_NOR_PAGE_SIZE);
 		}
 		cmd_pp.Address = addr;
 
@@ -1542,8 +1502,7 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 		addr += to_write;
 
 		/* Configure automatic polling mode to wait for end of program */
-		ret = stm32_ospi_mem_ready(dev_data,
-						 dev_cfg->data_mode, dev_cfg->data_rate);
+		ret = stm32_ospi_mem_ready(dev_data, dev_cfg->data_mode, dev_cfg->data_rate);
 		if (ret != 0) {
 			LOG_ERR("OSPI: write PP not ready");
 			break;
@@ -1557,13 +1516,10 @@ end_write:
 	return ret;
 }
 
-static const struct flash_parameters flash_stm32_ospi_parameters = {
-	.write_block_size = 1,
-	.erase_value = 0xff
-};
+static const struct flash_parameters flash_stm32_ospi_parameters = {.write_block_size = 1,
+								    .erase_value = 0xff};
 
-static const struct flash_parameters *
-flash_stm32_ospi_get_parameters(const struct device *dev)
+static const struct flash_parameters *flash_stm32_ospi_get_parameters(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -1593,8 +1549,7 @@ __weak HAL_StatusTypeDef HAL_DMA_Abort(DMA_HandleTypeDef *hdma)
 
 /* This function is executed in the interrupt context */
 #if STM32_OSPI_USE_DMA
-static void ospi_dma_callback(const struct device *dev, void *arg,
-			 uint32_t channel, int status)
+static void ospi_dma_callback(const struct device *dev, void *arg, uint32_t channel, int status)
 {
 	DMA_HandleTypeDef *hdma = arg;
 
@@ -1692,8 +1647,8 @@ void HAL_OSPI_TimeOutCallback(OSPI_HandleTypeDef *hospi)
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 static void flash_stm32_ospi_pages_layout(const struct device *dev,
-				const struct flash_pages_layout **layout,
-				size_t *layout_size)
+					  const struct flash_pages_layout **layout,
+					  size_t *layout_size)
 {
 	struct flash_stm32_ospi_data *dev_data = dev->data;
 
@@ -1730,8 +1685,7 @@ static int setup_pages_layout(const struct device *dev)
 	for (size_t i = 0; i < ARRAY_SIZE(data->erase_types); ++i) {
 		const struct jesd216_erase_type *etp = &data->erase_types[i];
 
-		if ((etp->cmd != 0)
-		    && ((value == 0) || (etp->exp < value))) {
+		if ((etp->cmd != 0) && ((value == 0) || (etp->exp < value))) {
 			value = etp->exp;
 		}
 	}
@@ -1744,8 +1698,8 @@ static int setup_pages_layout(const struct device *dev)
 
 	/* We need layout page size to be compatible with erase size */
 	if ((layout_page_size % erase_size) != 0) {
-		LOG_DBG("layout page %u not compatible with erase size %u",
-			layout_page_size, erase_size);
+		LOG_DBG("layout page %u not compatible with erase size %u", layout_page_size,
+			erase_size);
 		LOG_DBG("erase size will be used as layout page size");
 		layout_page_size = erase_size;
 	}
@@ -1754,14 +1708,13 @@ static int setup_pages_layout(const struct device *dev)
 	 * space.
 	 */
 	if ((flash_size % layout_page_size) != 0) {
-		LOG_DBG("layout page %u wastes space with device size %zu",
-			layout_page_size, flash_size);
+		LOG_DBG("layout page %u wastes space with device size %zu", layout_page_size,
+			flash_size);
 	}
 
 	data->layout.pages_size = layout_page_size;
 	data->layout.pages_count = flash_size / layout_page_size;
-	LOG_DBG("layout %u x %u By pages", data->layout.pages_count,
-					   data->layout.pages_size);
+	LOG_DBG("layout %u x %u By pages", data->layout.pages_count, data->layout.pages_size);
 
 	return rv;
 }
@@ -1794,13 +1747,11 @@ static int stm32_ospi_read_status_register(const struct device *dev, uint8_t reg
 static int stm32_ospi_write_status_register(const struct device *dev, uint8_t reg_num, uint8_t reg)
 {
 	struct flash_stm32_ospi_data *data = dev->data;
-	OSPI_RegularCmdTypeDef s_command = {
-		.Instruction = SPI_NOR_CMD_WRSR,
-		.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE,
-		.DataMode = HAL_OSPI_DATA_1_LINE
-	};
+	OSPI_RegularCmdTypeDef s_command = {.Instruction = SPI_NOR_CMD_WRSR,
+					    .InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE,
+					    .DataMode = HAL_OSPI_DATA_1_LINE};
 	size_t size;
-	uint8_t regs[4] = { 0 };
+	uint8_t regs[4] = {0};
 	uint8_t *regs_p;
 	int ret;
 
@@ -1967,21 +1918,19 @@ static inline uint8_t spi_nor_convert_write_to_4b(const uint8_t opcode)
 	}
 }
 
-static int spi_nor_process_bfp(const struct device *dev,
-			       const struct jesd216_param_header *php,
+static int spi_nor_process_bfp(const struct device *dev, const struct jesd216_param_header *php,
 			       const struct jesd216_bfp *bfp)
 {
 	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
 	struct flash_stm32_ospi_data *data = dev->data;
 	/* must be kept in data mode order, ignore 1-1-1 (always supported) */
-	const enum jesd216_mode_type supported_read_modes[] = { JESD216_MODE_112, JESD216_MODE_122,
-								JESD216_MODE_114,
-								JESD216_MODE_144 };
+	const enum jesd216_mode_type supported_read_modes[] = {JESD216_MODE_112, JESD216_MODE_122,
+							       JESD216_MODE_114, JESD216_MODE_144};
 	size_t supported_read_modes_max_idx;
 	struct jesd216_erase_type *etp = data->erase_types;
 	size_t idx;
 	const size_t flash_size = jesd216_bfp_density(bfp) / 8U;
-	struct jesd216_instr read_instr = { 0 };
+	struct jesd216_instr read_instr = {0};
 	struct jesd216_bfp_dw15 dw15;
 
 	if (flash_size != dev_cfg->flash_size) {
@@ -1996,8 +1945,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 	memset(data->erase_types, 0, sizeof(data->erase_types));
 	for (idx = 1U; idx <= ARRAY_SIZE(data->erase_types); ++idx) {
 		if (jesd216_bfp_erase(bfp, idx, etp) == 0) {
-			LOG_DBG("Erase %u with %02x",
-					(uint32_t)BIT(etp->exp), etp->cmd);
+			LOG_DBG("Erase %u with %02x", (uint32_t)BIT(etp->exp), etp->cmd);
 		}
 		++etp;
 	}
@@ -2088,8 +2036,8 @@ static int spi_nor_process_bfp(const struct device *dev,
 
 	LOG_DBG("Page size %u bytes", data->page_size);
 	LOG_DBG("Flash size %zu bytes", flash_size);
-	LOG_DBG("Using read mode: %d, instr: 0x%X, dummy cycles: %u",
-		data->read_mode, data->read_opcode, data->read_dummy);
+	LOG_DBG("Using read mode: %d, instr: 0x%X, dummy cycles: %u", data->read_mode,
+		data->read_opcode, data->read_dummy);
 	LOG_DBG("Using write instr: 0x%X", data->write_opcode);
 
 	return 0;
@@ -2104,8 +2052,7 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	int ret;
 
 	/* The SPI/DTR is not a valid config of data_mode/data_rate according to the DTS */
-	if ((dev_cfg->data_mode != OSPI_OPI_MODE)
-		&& (dev_cfg->data_rate == OSPI_DTR_TRANSFER)) {
+	if ((dev_cfg->data_mode != OSPI_OPI_MODE) && (dev_cfg->data_rate == OSPI_DTR_TRANSFER)) {
 		/* already the right config, continue */
 		LOG_ERR("OSPI mode SPI|DUAL|QUAD/DTR is not valid");
 		return -ENOTSUP;
@@ -2155,8 +2102,8 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	/* HACK: This field is used to inform driver that it is overridden */
 	dma_cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
 	/* Because of the STREAM OFFSET, the DMA channel given here is from 1 - 8 */
-	ret = dma_config(dev_data->dma.dev,
-			 (dev_data->dma.channel + STM32_DMA_STREAM_OFFSET), &dma_cfg);
+	ret = dma_config(dev_data->dma.dev, (dev_data->dma.channel + STM32_DMA_STREAM_OFFSET),
+			 &dma_cfg);
 	if (ret != 0) {
 		LOG_ERR("Failed to configure DMA channel %d",
 			dev_data->dma.channel + STM32_DMA_STREAM_OFFSET);
@@ -2194,23 +2141,19 @@ static int flash_stm32_ospi_init(const struct device *dev)
 #ifdef CONFIG_DMA_STM32_V1
 	/* TODO: Not tested in this configuration */
 	hdma.Init.Channel = dma_cfg.dma_slot;
-	hdma.Instance = __LL_DMA_GET_STREAM_INSTANCE(dev_data->dma.reg,
-						     dev_data->dma.channel);
+	hdma.Instance = __LL_DMA_GET_STREAM_INSTANCE(dev_data->dma.reg, dev_data->dma.channel);
 #else
 	hdma.Init.Request = dma_cfg.dma_slot;
 #if CONFIG_DMA_STM32U5
-	hdma.Instance = LL_DMA_GET_CHANNEL_INSTANCE(dev_data->dma.reg,
-						      dev_data->dma.channel);
+	hdma.Instance = LL_DMA_GET_CHANNEL_INSTANCE(dev_data->dma.reg, dev_data->dma.channel);
 #elif defined(CONFIG_DMAMUX_STM32)
 	/*
 	 * HAL expects a valid DMA channel (not DMAMUX).
 	 * The channel is from 0 to 7 because of the STM32_DMA_STREAM_OFFSET in the dma_stm32 driver
 	 */
-	hdma.Instance = __LL_DMA_GET_CHANNEL_INSTANCE(dev_data->dma.reg,
-						      dev_data->dma.channel);
+	hdma.Instance = __LL_DMA_GET_CHANNEL_INSTANCE(dev_data->dma.reg, dev_data->dma.channel);
 #else
-	hdma.Instance = __LL_DMA_GET_CHANNEL_INSTANCE(dev_data->dma.reg,
-						      dev_data->dma.channel-1);
+	hdma.Instance = __LL_DMA_GET_CHANNEL_INSTANCE(dev_data->dma.reg, dev_data->dma.channel - 1);
 #endif /* CONFIG_DMA_STM32U5 */
 #endif /* CONFIG_DMA_STM32_V1 */
 
@@ -2226,35 +2169,33 @@ static int flash_stm32_ospi_init(const struct device *dev)
 
 	/* Clock configuration */
 	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-			     (clock_control_subsys_t) &dev_cfg->pclken) != 0) {
+			     (clock_control_subsys_t)&dev_cfg->pclken) != 0) {
 		LOG_ERR("Could not enable OSPI clock");
 		return -EIO;
 	}
 	/* Alternate clock config for peripheral if any */
 #if DT_CLOCKS_HAS_NAME(STM32_OSPI_NODE, ospi_ker)
 	if (clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-				(clock_control_subsys_t) &dev_cfg->pclken_ker,
-				NULL) != 0) {
+				    (clock_control_subsys_t)&dev_cfg->pclken_ker, NULL) != 0) {
 		LOG_ERR("Could not select OSPI domain clock");
 		return -EIO;
 	}
 	if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					(clock_control_subsys_t) &dev_cfg->pclken_ker,
-					&ahb_clock_freq) < 0) {
+				   (clock_control_subsys_t)&dev_cfg->pclken_ker,
+				   &ahb_clock_freq) < 0) {
 		LOG_ERR("Failed call clock_control_get_rate(pclken_ker)");
 		return -EIO;
 	}
 #else
 	if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					(clock_control_subsys_t) &dev_cfg->pclken,
-					&ahb_clock_freq) < 0) {
+				   (clock_control_subsys_t)&dev_cfg->pclken, &ahb_clock_freq) < 0) {
 		LOG_ERR("Failed call clock_control_get_rate(pclken)");
 		return -EIO;
 	}
 #endif
 #if DT_CLOCKS_HAS_NAME(STM32_OSPI_NODE, ospi_mgr)
 	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-			     (clock_control_subsys_t) &dev_cfg->pclken_mgr) != 0) {
+			     (clock_control_subsys_t)&dev_cfg->pclken_mgr) != 0) {
 		LOG_ERR("Could not enable OSPI Manager clock");
 		return -EIO;
 	}
@@ -2320,24 +2261,24 @@ static int flash_stm32_ospi_init(const struct device *dev)
 		ospi_mgr_cfg.ClkPort = DT_OSPI_PROP_OR(clk_port, 1);
 		ospi_mgr_cfg.DQSPort = DT_OSPI_PROP_OR(dqs_port, 1);
 		ospi_mgr_cfg.NCSPort = DT_OSPI_PROP_OR(ncs_port, 1);
-		ospi_mgr_cfg.IOLowPort = DT_OSPI_IO_PORT_PROP_OR(io_low_port,
-								 HAL_OSPIM_IOPORT_1_LOW);
-		ospi_mgr_cfg.IOHighPort = DT_OSPI_IO_PORT_PROP_OR(io_high_port,
-								  HAL_OSPIM_IOPORT_1_HIGH);
+		ospi_mgr_cfg.IOLowPort =
+			DT_OSPI_IO_PORT_PROP_OR(io_low_port, HAL_OSPIM_IOPORT_1_LOW);
+		ospi_mgr_cfg.IOHighPort =
+			DT_OSPI_IO_PORT_PROP_OR(io_high_port, HAL_OSPIM_IOPORT_1_HIGH);
 	} else if (dev_data->hospi.Instance == OCTOSPI2) {
 		ospi_mgr_cfg.ClkPort = DT_OSPI_PROP_OR(clk_port, 2);
 		ospi_mgr_cfg.DQSPort = DT_OSPI_PROP_OR(dqs_port, 2);
 		ospi_mgr_cfg.NCSPort = DT_OSPI_PROP_OR(ncs_port, 2);
-		ospi_mgr_cfg.IOLowPort = DT_OSPI_IO_PORT_PROP_OR(io_low_port,
-								 HAL_OSPIM_IOPORT_2_LOW);
-		ospi_mgr_cfg.IOHighPort = DT_OSPI_IO_PORT_PROP_OR(io_high_port,
-								  HAL_OSPIM_IOPORT_2_HIGH);
+		ospi_mgr_cfg.IOLowPort =
+			DT_OSPI_IO_PORT_PROP_OR(io_low_port, HAL_OSPIM_IOPORT_2_LOW);
+		ospi_mgr_cfg.IOHighPort =
+			DT_OSPI_IO_PORT_PROP_OR(io_high_port, HAL_OSPIM_IOPORT_2_HIGH);
 	}
 #if defined(OCTOSPIM_CR_MUXEN)
 	ospi_mgr_cfg.Req2AckTime = 1;
 #endif /* OCTOSPIM_CR_MUXEN */
-	if (HAL_OSPIM_Config(&dev_data->hospi, &ospi_mgr_cfg,
-		HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+	if (HAL_OSPIM_Config(&dev_data->hospi, &ospi_mgr_cfg, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) !=
+	    HAL_OK) {
 		LOG_ERR("OSPI M config failed");
 		return -EIO;
 	}
@@ -2388,8 +2329,7 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	LOG_DBG("Reset Mem (SPI/STR)");
 
 	/* Check if memory is ready in the SPI/STR mode */
-	if (stm32_ospi_mem_ready(dev_data,
-		OSPI_SPI_MODE, OSPI_STR_TRANSFER) != 0) {
+	if (stm32_ospi_mem_ready(dev_data, OSPI_SPI_MODE, OSPI_STR_TRANSFER) != 0) {
 		LOG_ERR("OSPI memory not ready");
 		return -EIO;
 	}
@@ -2406,12 +2346,10 @@ static int flash_stm32_ospi_init(const struct device *dev)
 #endif /* CONFIG_FLASH_JESD216_API */
 
 	if (stm32_ospi_config_mem(dev) != 0) {
-		LOG_ERR("OSPI mode not config'd (%u rate %u)",
-			dev_cfg->data_mode, dev_cfg->data_rate);
+		LOG_ERR("OSPI mode not config'd (%u rate %u)", dev_cfg->data_mode,
+			dev_cfg->data_rate);
 		return -EIO;
 	}
-
-
 
 	/* Send the instruction to read the SFDP  */
 	const uint8_t decl_nph = 2;
@@ -2435,19 +2373,17 @@ static int flash_stm32_ospi_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	LOG_DBG("%s: SFDP v %u.%u AP %x with %u PH", dev->name,
-		hp->rev_major, hp->rev_minor, hp->access, 1 + hp->nph);
+	LOG_DBG("%s: SFDP v %u.%u AP %x with %u PH", dev->name, hp->rev_major, hp->rev_minor,
+		hp->access, 1 + hp->nph);
 
 	const struct jesd216_param_header *php = hp->phdr;
-	const struct jesd216_param_header *phpe = php +
-						     MIN(decl_nph, 1 + hp->nph);
+	const struct jesd216_param_header *phpe = php + MIN(decl_nph, 1 + hp->nph);
 
 	while (php != phpe) {
 		uint16_t id = jesd216_param_id(php);
 
-		LOG_DBG("PH%u: %04x rev %u.%u: %u DW @ %x",
-			(php - hp->phdr), id, php->rev_major, php->rev_minor,
-			php->len_dw, jesd216_param_addr(php));
+		LOG_DBG("PH%u: %04x rev %u.%u: %u DW @ %x", (php - hp->phdr), id, php->rev_major,
+			php->rev_minor, php->len_dw, jesd216_param_addr(php));
 
 		if (id == JESD216_SFDP_PARAM_ID_BFP) {
 			union {
@@ -2456,8 +2392,7 @@ static int flash_stm32_ospi_init(const struct device *dev)
 			} u2;
 			const struct jesd216_bfp *bfp = &u2.bfp;
 
-			ret = ospi_read_sfdp(dev, jesd216_param_addr(php),
-					     (uint8_t *)u2.dw,
+			ret = ospi_read_sfdp(dev, jesd216_param_addr(php), (uint8_t *)u2.dw,
 					     MIN(sizeof(uint32_t) * php->len_dw, sizeof(u2.dw)));
 			if (ret == 0) {
 				ret = spi_nor_process_bfp(dev, php, bfp);
@@ -2482,9 +2417,9 @@ static int flash_stm32_ospi_init(const struct device *dev)
 						uint8_t type[4];
 					} types;
 				} u2;
-				ret = ospi_read_sfdp(dev, jesd216_param_addr(php),
-					     (uint8_t *)u2.dw,
-					     MIN(sizeof(uint32_t) * php->len_dw, sizeof(u2.dw)));
+				ret = ospi_read_sfdp(
+					dev, jesd216_param_addr(php), (uint8_t *)u2.dw,
+					MIN(sizeof(uint32_t) * php->len_dw, sizeof(u2.dw)));
 				if (ret != 0) {
 					break;
 				}
@@ -2520,11 +2455,9 @@ static int flash_stm32_ospi_init(const struct device *dev)
 		return -EINVAL;
 	}
 	LOG_DBG("NOR octo-flash in MemoryMapped mode at 0x%lx (0x%x bytes)",
-		(long)(STM32_OSPI_BASE_ADDRESS),
-		dev_cfg->flash_size);
+		(long)(STM32_OSPI_BASE_ADDRESS), dev_cfg->flash_size);
 #else
-	LOG_DBG("NOR octo-flash at 0x%lx (0x%x bytes)",
-		(long)(STM32_OSPI_BASE_ADDRESS),
+	LOG_DBG("NOR octo-flash at 0x%lx (0x%x bytes)", (long)(STM32_OSPI_BASE_ADDRESS),
 		dev_cfg->flash_size);
 #endif /* CONFIG_STM32_MEMMAP */
 
@@ -2532,45 +2465,39 @@ static int flash_stm32_ospi_init(const struct device *dev)
 }
 
 #if STM32_OSPI_USE_DMA
-#define DMA_CHANNEL_CONFIG(node, dir)					\
-		DT_DMAS_CELL_BY_NAME(node, dir, channel_config)
+#define DMA_CHANNEL_CONFIG(node, dir) DT_DMAS_CELL_BY_NAME(node, dir, channel_config)
 
-#define OSPI_DMA_CHANNEL_INIT(node, dir)				\
-	.dev = DEVICE_DT_GET(DT_DMAS_CTLR(node)),			\
-	.channel = DT_DMAS_CELL_BY_NAME(node, dir, channel),		\
-	.reg = (DMA_TypeDef *)DT_REG_ADDR(				\
-				   DT_PHANDLE_BY_NAME(node, dmas, dir)),\
-	.cfg = {							\
-		.dma_slot = DT_DMAS_CELL_BY_NAME(node, dir, slot),	\
-		.source_data_size = STM32_DMA_CONFIG_PERIPHERAL_DATA_SIZE( \
-					DMA_CHANNEL_CONFIG(node, dir)), \
-		.dest_data_size = STM32_DMA_CONFIG_MEMORY_DATA_SIZE(    \
-					DMA_CHANNEL_CONFIG(node, dir)), \
-		.channel_priority = STM32_DMA_CONFIG_PRIORITY(		\
-					DMA_CHANNEL_CONFIG(node, dir)), \
-		.dma_callback = ospi_dma_callback,			\
-	},								\
+#define OSPI_DMA_CHANNEL_INIT(node, dir)                                                           \
+	.dev = DEVICE_DT_GET(DT_DMAS_CTLR(node)),                                                  \
+	.channel = DT_DMAS_CELL_BY_NAME(node, dir, channel),                                       \
+	.reg = (DMA_TypeDef *)DT_REG_ADDR(DT_PHANDLE_BY_NAME(node, dmas, dir)),                    \
+	.cfg = {                                                                                   \
+		.dma_slot = DT_DMAS_CELL_BY_NAME(node, dir, slot),                                 \
+		.source_data_size =                                                                \
+			STM32_DMA_CONFIG_PERIPHERAL_DATA_SIZE(DMA_CHANNEL_CONFIG(node, dir)),      \
+		.dest_data_size =                                                                  \
+			STM32_DMA_CONFIG_MEMORY_DATA_SIZE(DMA_CHANNEL_CONFIG(node, dir)),          \
+		.channel_priority = STM32_DMA_CONFIG_PRIORITY(DMA_CHANNEL_CONFIG(node, dir)),      \
+		.dma_callback = ospi_dma_callback,                                                 \
+	},
 
-#define OSPI_DMA_CHANNEL(node, dir)					\
-	.dma = {							\
-		COND_CODE_1(DT_DMAS_HAS_NAME(node, dir),		\
+#define OSPI_DMA_CHANNEL(node, dir)                                                                \
+	.dma = {COND_CODE_1(DT_DMAS_HAS_NAME(node, dir),		\
 			(OSPI_DMA_CHANNEL_INIT(node, dir)),		\
-			(NULL))						\
-		},
+			(NULL)) },
 
 #else
 #define OSPI_DMA_CHANNEL(node, dir)
 #endif /* CONFIG_USE_STM32_HAL_DMA */
 
-#define OSPI_FLASH_MODULE(drv_id, flash_id)				\
-		(DT_DRV_INST(drv_id), ospi_nor_flash_##flash_id)
+#define OSPI_FLASH_MODULE(drv_id, flash_id) (DT_DRV_INST(drv_id), ospi_nor_flash_##flash_id)
 
-#define DT_WRITEOC_PROP_OR(inst, default_value)							\
+#define DT_WRITEOC_PROP_OR(inst, default_value)                                                    \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, writeoc),					\
 		    (_CONCAT(SPI_NOR_CMD_, DT_STRING_TOKEN(DT_DRV_INST(inst), writeoc))),	\
 		    ((default_value)))
 
-#define DT_QER_PROP_OR(inst, default_value)							\
+#define DT_QER_PROP_OR(inst, default_value)                                                        \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, quad_enable_requirements),			\
 		    (_CONCAT(JESD216_DW15_QER_VAL_,						\
 			     DT_STRING_TOKEN(DT_DRV_INST(inst), quad_enable_requirements))),	\
@@ -2596,7 +2523,7 @@ static const struct flash_stm32_ospi_config flash_stm32_ospi_cfg = {
 	.flash_size = DT_INST_REG_ADDR_BY_IDX(0, 1),
 	.max_frequency = DT_INST_PROP(0, ospi_max_frequency),
 	.data_mode = DT_INST_PROP(0, spi_bus_width), /* SPI or OPI */
-	.data_rate = DT_INST_PROP(0, data_rate), /* DTR or STR */
+	.data_rate = DT_INST_PROP(0, data_rate),     /* DTR or STR */
 	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(STM32_OSPI_NODE),
 #if STM32_OSPI_RESET_GPIO
 	.reset = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
@@ -2607,29 +2534,30 @@ static const struct flash_stm32_ospi_config flash_stm32_ospi_cfg = {
 };
 
 static struct flash_stm32_ospi_data flash_stm32_ospi_dev_data = {
-	.hospi = {
-		.Instance = (OCTOSPI_TypeDef *)DT_REG_ADDR(STM32_OSPI_NODE),
-		.Init = {
-			.FifoThreshold = STM32_OSPI_FIFO_THRESHOLD,
-			.SampleShifting = (DT_PROP(STM32_OSPI_NODE, ssht_enable)
-					? HAL_OSPI_SAMPLE_SHIFTING_HALFCYCLE
-					: HAL_OSPI_SAMPLE_SHIFTING_NONE),
-			.ChipSelectHighTime = 1,
-			.ClockMode = HAL_OSPI_CLOCK_MODE_0,
-			},
-	},
+	.hospi =
+		{
+			.Instance = (OCTOSPI_TypeDef *)DT_REG_ADDR(STM32_OSPI_NODE),
+			.Init =
+				{
+					.FifoThreshold = STM32_OSPI_FIFO_THRESHOLD,
+					.SampleShifting =
+						(DT_PROP(STM32_OSPI_NODE, ssht_enable)
+							 ? HAL_OSPI_SAMPLE_SHIFTING_HALFCYCLE
+							 : HAL_OSPI_SAMPLE_SHIFTING_NONE),
+					.ChipSelectHighTime = 1,
+					.ClockMode = HAL_OSPI_CLOCK_MODE_0,
+				},
+		},
 	.qer_type = DT_QER_PROP_OR(0, JESD216_DW15_QER_VAL_S1B6),
 	.write_opcode = DT_WRITEOC_PROP_OR(0, SPI_NOR_WRITEOC_NONE),
 	.page_size = SPI_NOR_PAGE_SIZE, /* by default, to be updated by sfdp */
 #if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_ospi_nor), jedec_id)
 	.jedec_id = DT_INST_PROP(0, jedec_id),
 #endif /* jedec_id */
-	OSPI_DMA_CHANNEL(STM32_OSPI_NODE, tx_rx)
-};
+	OSPI_DMA_CHANNEL(STM32_OSPI_NODE, tx_rx)};
 
-DEVICE_DT_INST_DEFINE(0, &flash_stm32_ospi_init, NULL,
-		      &flash_stm32_ospi_dev_data, &flash_stm32_ospi_cfg,
-		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+DEVICE_DT_INST_DEFINE(0, &flash_stm32_ospi_init, NULL, &flash_stm32_ospi_dev_data,
+		      &flash_stm32_ospi_cfg, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		      &flash_stm32_ospi_driver_api);
 
 static void flash_stm32_ospi_irq_config_func(const struct device *dev)

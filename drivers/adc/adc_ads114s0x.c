@@ -1486,23 +1486,23 @@ BUILD_ASSERT(CONFIG_ADC_INIT_PRIORITY > CONFIG_SPI_INIT_PRIORITY,
 
 #define DT_DRV_COMPAT ti_ads114s08
 
-#define ADC_ADS114S0X_INST_DEFINE(n)                                                               \
+#define ADC_ADS114S0X_INST_DEFINE(n)                                                                 \
 	IF_ENABLED(                                                                                \
 		CONFIG_ADC_ASYNC,                                                                  \
 		(static K_KERNEL_STACK_DEFINE(                                                     \
-			 thread_stack_##n, CONFIG_ADC_ADS114S0X_ACQUISITION_THREAD_STACK_SIZE);))  \
-	static const struct ads114s0x_config config_##n = {                                        \
-		.bus = SPI_DT_SPEC_INST_GET(                                                       \
-			n, SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(8), 0),               \
-		IF_ENABLED(CONFIG_ADC_ASYNC, (.stack = thread_stack_##n,))                         \
-		.gpio_reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                       \
-		.gpio_data_ready = GPIO_DT_SPEC_INST_GET(n, drdy_gpios),                           \
-		.gpio_start_sync = GPIO_DT_SPEC_INST_GET_OR(n, start_sync_gpios, {0}),             \
-		.idac_current = DT_INST_PROP(n, idac_current),                                     \
-		.vbias_level = DT_INST_PROP(n, vbias_level),                                       \
-	};                                                                                         \
-	static struct ads114s0x_data data_##n;                                                     \
-	DEVICE_DT_INST_DEFINE(n, ads114s0x_init, NULL, &data_##n, &config_##n, POST_KERNEL,        \
+			 thread_stack_##n, CONFIG_ADC_ADS114S0X_ACQUISITION_THREAD_STACK_SIZE);)) \
+	static const struct ads114s0x_config config_##n = {                                          \
+		.bus = SPI_DT_SPEC_INST_GET(                                                         \
+			n, SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(8), 0),                 \
+		IF_ENABLED(CONFIG_ADC_ASYNC, (.stack = thread_stack_##n,)) .gpio_reset =                                 \
+				    GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                   \
+			   .gpio_data_ready = GPIO_DT_SPEC_INST_GET(n, drdy_gpios),                  \
+			   .gpio_start_sync = GPIO_DT_SPEC_INST_GET_OR(n, start_sync_gpios, {0}),    \
+			   .idac_current = DT_INST_PROP(n, idac_current),                            \
+			   .vbias_level = DT_INST_PROP(n, vbias_level),                              \
+	};                                                                                           \
+	static struct ads114s0x_data data_##n;                                                       \
+	DEVICE_DT_INST_DEFINE(n, ads114s0x_init, NULL, &data_##n, &config_##n, POST_KERNEL,          \
 			      CONFIG_ADC_INIT_PRIORITY, &api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_ADS114S0X_INST_DEFINE);

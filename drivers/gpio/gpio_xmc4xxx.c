@@ -15,7 +15,7 @@
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
-#define PORT_TO_PORT_ID(port)      ((int)(port) >> 8 & 0xf)
+#define PORT_TO_PORT_ID(port) ((int)(port) >> 8 & 0xf)
 
 struct gpio_xmc4xxx_config {
 	/* gpio_driver_config needs to be first, required by Zephyr */
@@ -33,7 +33,7 @@ struct gpio_xmc4xxx_data {
 
 static int gpio_xmc4xxx_convert_flags(XMC_GPIO_CONFIG_t *pin_config, gpio_flags_t flags)
 {
-	bool is_input  = flags & GPIO_INPUT;
+	bool is_input = flags & GPIO_INPUT;
 	bool is_output = flags & GPIO_OUTPUT;
 	int ds;
 
@@ -199,7 +199,10 @@ static int gpio_xmc4xxx_toggle_bits(const struct device *dev, gpio_port_pins_t p
 	return 0;
 }
 
-static int gpio_xmc4xxx_init(const struct device *dev) { return 0; }
+static int gpio_xmc4xxx_init(const struct device *dev)
+{
+	return 0;
+}
 
 static const struct gpio_driver_api gpio_xmc4xxx_driver_api = {
 	.pin_configure = gpio_xmc4xxx_pin_configure,

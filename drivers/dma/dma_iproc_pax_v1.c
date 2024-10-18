@@ -55,8 +55,7 @@ static inline uint32_t curr_toggle_val(struct dma_iproc_pax_ring_data *ring)
 /**
  * @brief Populate header descriptor
  */
-static inline void rm_write_header_desc(void *desc, uint32_t toggle,
-			     uint32_t opq, uint32_t bdcount)
+static inline void rm_write_header_desc(void *desc, uint32_t toggle, uint32_t opq, uint32_t bdcount)
 {
 	struct rm_header *r = (struct rm_header *)desc;
 
@@ -76,8 +75,7 @@ static inline void rm_write_header_desc(void *desc, uint32_t toggle,
  * @brief Fill RM header descriptor for next transfer
  *        with invalid toggle
  */
-static inline void rm_write_header_next_desc(void *desc,
-					     struct dma_iproc_pax_ring_data *r,
+static inline void rm_write_header_next_desc(void *desc, struct dma_iproc_pax_ring_data *r,
 					     uint32_t opq, uint32_t bdcount)
 {
 	/* Toggle bit is invalid until next payload configured */
@@ -102,8 +100,7 @@ static inline void rm_header_set_toggle(void *desc, uint32_t toggle)
 /**
  * @brief Populate dma header descriptor
  */
-static inline void rm_write_dma_header_desc(void *desc,
-					    struct dma_iproc_pax_payload *pl)
+static inline void rm_write_dma_header_desc(void *desc, struct dma_iproc_pax_payload *pl)
 {
 	struct dma_header_desc *hdr = (struct dma_header_desc *)desc;
 
@@ -116,21 +113,18 @@ static inline void rm_write_dma_header_desc(void *desc,
 /**
  * @brief Populate axi address descriptor
  */
-static inline void rm_write_axi_addr_desc(void *desc,
-					  struct dma_iproc_pax_payload *pl)
+static inline void rm_write_axi_addr_desc(void *desc, struct dma_iproc_pax_payload *pl)
 {
 	struct axi_addr_desc *axi = (struct axi_addr_desc *)desc;
 
 	axi->axi_addr = pl->axi_addr;
 	axi->type = PAX_DMA_TYPE_DMA_DESC;
-
 }
 
 /**
  * @brief Populate pci address descriptor
  */
-static inline void rm_write_pci_addr_desc(void *desc,
-					  struct dma_iproc_pax_payload *pl)
+static inline void rm_write_pci_addr_desc(void *desc, struct dma_iproc_pax_payload *pl)
 {
 	struct pci_addr_desc *pci = (struct pci_addr_desc *)desc;
 
@@ -151,17 +145,16 @@ static void *next_desc_addr(struct dma_iproc_pax_ring_data *ring)
 	/* if hit next table ptr, skip to next location, flip toggle */
 	nxt = (struct next_ptr_desc *)curr;
 	if (nxt->type == PAX_DMA_TYPE_NEXT_PTR) {
-		LOG_DBG("hit next_ptr@0x%lx:T%d, next_table@0x%lx\n",
-			curr, nxt->toggle, (uintptr_t)nxt->addr);
-		uintptr_t last = (uintptr_t)ring->bd +
-			     PAX_DMA_RM_DESC_RING_SIZE * PAX_DMA_NUM_BD_BUFFS;
+		LOG_DBG("hit next_ptr@0x%lx:T%d, next_table@0x%lx\n", curr, nxt->toggle,
+			(uintptr_t)nxt->addr);
+		uintptr_t last =
+			(uintptr_t)ring->bd + PAX_DMA_RM_DESC_RING_SIZE * PAX_DMA_NUM_BD_BUFFS;
 		ring->curr.toggle = (ring->curr.toggle == 0) ? 1 : 0;
 		/* move to next addr, wrap around if hits end */
 		curr += PAX_DMA_RM_DESC_BDWIDTH;
 		if (curr == last) {
 			curr = (uintptr_t)ring->bd;
-			LOG_DBG("hit end of desc:0x%lx, wrap to 0x%lx\n",
-				last, curr);
+			LOG_DBG("hit end of desc:0x%lx, wrap to 0x%lx\n", last, curr);
 		}
 	}
 	ring->curr.write_ptr = (void *)curr;
@@ -171,8 +164,7 @@ static void *next_desc_addr(struct dma_iproc_pax_ring_data *ring)
 /**
  * @brief Populate next ptr descriptor
  */
-static void rm_write_next_table_desc(void *desc, void *next_ptr,
-				     uint32_t toggle)
+static void rm_write_next_table_desc(void *desc, void *next_ptr, uint32_t toggle)
 {
 	struct next_ptr_desc *nxt = (struct next_ptr_desc *)desc;
 
@@ -184,7 +176,7 @@ static void rm_write_next_table_desc(void *desc, void *next_ptr,
 static void prepare_ring(struct dma_iproc_pax_ring_data *ring)
 {
 	uintptr_t curr, next, last;
-	uint32_t  toggle;
+	uint32_t toggle;
 	int buff_count = PAX_DMA_NUM_BD_BUFFS;
 
 	/* zero out descriptor area */
@@ -192,8 +184,7 @@ static void prepare_ring(struct dma_iproc_pax_ring_data *ring)
 	memset(ring->cmpl, 0x0, PAX_DMA_RM_CMPL_RING_SIZE);
 
 	/* opaque/packet id value */
-	rm_write_header_desc(ring->bd, 0x0, reset_pkt_id(ring),
-			     PAX_DMA_RM_DESC_BDCOUNT);
+	rm_write_header_desc(ring->bd, 0x0, reset_pkt_id(ring), PAX_DMA_RM_DESC_BDCOUNT);
 	/* start with first buffer, valid toggle is 0x1 */
 	toggle = 0x1;
 	curr = (uintptr_t)ring->bd;
@@ -201,8 +192,7 @@ static void prepare_ring(struct dma_iproc_pax_ring_data *ring)
 	last = curr + PAX_DMA_RM_DESC_RING_SIZE * PAX_DMA_NUM_BD_BUFFS;
 	do {
 		/* Place next_table desc as last BD entry on each buffer */
-		rm_write_next_table_desc(PAX_DMA_NEXT_TBL_ADDR((void *)curr),
-					 (void *)next, toggle);
+		rm_write_next_table_desc(PAX_DMA_NEXT_TBL_ADDR((void *)curr), (void *)next, toggle);
 
 		/* valid toggle flips for each buffer */
 		toggle = toggle ? 0x0 : 0x1;
@@ -242,7 +232,7 @@ static int init_rm(struct dma_iproc_pax_data *pd)
 	do {
 		LOG_DBG("Waiting for RM HW init\n");
 		if ((sys_read32(RM_COMM_REG(pd, RM_COMM_MAIN_HW_INIT_DONE)) &
-		    RM_COMM_MAIN_HW_INIT_DONE_MASK)) {
+		     RM_COMM_MAIN_HW_INIT_DONE_MASK)) {
 			ret = 0;
 			break;
 		}
@@ -275,16 +265,14 @@ static void rm_cfg_start(struct dma_iproc_pax_data *pd)
 	sys_write32(val, RM_COMM_REG(pd, RM_COMM_CONTROL));
 
 	/* Disable MSI */
-	sys_write32(RM_COMM_MSI_DISABLE_VAL,
-		    RM_COMM_REG(pd, RM_COMM_MSI_DISABLE));
+	sys_write32(RM_COMM_MSI_DISABLE_VAL, RM_COMM_REG(pd, RM_COMM_MSI_DISABLE));
 	/* Enable Line interrupt */
 	val = sys_read32(RM_COMM_REG(pd, RM_COMM_CONTROL));
 	val |= RM_COMM_CONTROL_LINE_INTR_EN;
 	sys_write32(val, RM_COMM_REG(pd, RM_COMM_CONTROL));
 
 	/* Enable AE_TIMEOUT */
-	sys_write32(RM_COMM_AE_TIMEOUT_VAL, RM_COMM_REG(pd,
-							RM_COMM_AE_TIMEOUT));
+	sys_write32(RM_COMM_AE_TIMEOUT_VAL, RM_COMM_REG(pd, RM_COMM_AE_TIMEOUT));
 	val = sys_read32(RM_COMM_REG(pd, RM_COMM_CONTROL));
 	val |= RM_COMM_CONTROL_AE_TIMEOUT_EN;
 	sys_write32(val, RM_COMM_REG(pd, RM_COMM_CONTROL));
@@ -302,12 +290,9 @@ static void rm_cfg_start(struct dma_iproc_pax_data *pd)
 	sys_write32(val, RM_COMM_REG(pd, RM_COMM_AXI_CONTROL));
 
 	/* Tune RM control programming for 4 rings */
-	sys_write32(RM_COMM_TIMER_CONTROL0_VAL,
-		    RM_COMM_REG(pd, RM_COMM_TIMER_CONTROL_0));
-	sys_write32(RM_COMM_TIMER_CONTROL1_VAL,
-		    RM_COMM_REG(pd, RM_COMM_TIMER_CONTROL_1));
-	sys_write32(RM_COMM_RM_BURST_LENGTH,
-		    RM_COMM_REG(pd, RM_COMM_RM_BURST_LENGTH));
+	sys_write32(RM_COMM_TIMER_CONTROL0_VAL, RM_COMM_REG(pd, RM_COMM_TIMER_CONTROL_0));
+	sys_write32(RM_COMM_TIMER_CONTROL1_VAL, RM_COMM_REG(pd, RM_COMM_TIMER_CONTROL_1));
+	sys_write32(RM_COMM_RM_BURST_LENGTH, RM_COMM_REG(pd, RM_COMM_RM_BURST_LENGTH));
 
 	/* Set Sequence max count to the max supported value */
 	val = sys_read32(RM_COMM_REG(pd, RM_COMM_MASK_SEQUENCE_MAX_COUNT));
@@ -317,8 +302,7 @@ static void rm_cfg_start(struct dma_iproc_pax_data *pd)
 	k_mutex_unlock(&pd->dma_lock);
 }
 
-static void rm_ring_clear_stats(struct dma_iproc_pax_data *pd,
-				enum ring_idx idx)
+static void rm_ring_clear_stats(struct dma_iproc_pax_data *pd, enum ring_idx idx)
 {
 	/* Read ring Tx, Rx, and Outstanding counts to clear */
 	sys_read32(RM_RING_REG(pd, idx, RING_NUM_REQ_RECV_LS));
@@ -337,15 +321,13 @@ static void rm_cfg_finish(struct dma_iproc_pax_data *pd)
 	/* set Ring config done */
 	val = sys_read32(RM_COMM_REG(pd, RM_COMM_CONTROL));
 	val |= RM_COMM_CONTROL_CONFIG_DONE;
-	sys_write32(val,  RM_COMM_REG(pd, RM_COMM_CONTROL));
+	sys_write32(val, RM_COMM_REG(pd, RM_COMM_CONTROL));
 
 	k_mutex_unlock(&pd->dma_lock);
 }
 
 /* Activate/Deactivate rings */
-static inline void set_ring_active(struct dma_iproc_pax_data *pd,
-				   enum ring_idx idx,
-				   bool active)
+static inline void set_ring_active(struct dma_iproc_pax_data *pd, enum ring_idx idx, bool active)
 {
 	uint32_t val;
 
@@ -376,8 +358,7 @@ static int init_ring(struct dma_iproc_pax_data *pd, enum ring_idx idx)
 	/* Flush ring before loading new descriptor */
 	sys_write32(RING_CONTROL_FLUSH, RM_RING_REG(pd, idx, RING_CONTROL));
 	do {
-		if (sys_read32(RM_RING_REG(pd, idx, RING_FLUSH_DONE)) &
-		    RING_FLUSH_DONE_MASK) {
+		if (sys_read32(RM_RING_REG(pd, idx, RING_FLUSH_DONE)) & RING_FLUSH_DONE_MASK) {
 			break;
 		}
 		k_busy_wait(1);
@@ -399,8 +380,7 @@ static int init_ring(struct dma_iproc_pax_data *pd, enum ring_idx idx)
 
 	/* DDR update control, set timeout value */
 	val = RING_DDR_CONTROL_COUNT(RING_DDR_CONTROL_COUNT_VAL) |
-	      RING_DDR_CONTROL_TIMER(RING_DDR_CONTROL_TIMER_VAL) |
-	      RING_DDR_CONTROL_ENABLE;
+	      RING_DDR_CONTROL_TIMER(RING_DDR_CONTROL_TIMER_VAL) | RING_DDR_CONTROL_ENABLE;
 
 	sys_write32(val, RM_RING_REG(pd, idx, RING_CMPL_WR_PTR_DDR_CONTROL));
 
@@ -419,8 +399,7 @@ err:
 	return ret;
 }
 
-static int poll_on_write_sync(const struct device *dev,
-			      struct dma_iproc_pax_ring_data *ring)
+static int poll_on_write_sync(const struct device *dev, struct dma_iproc_pax_ring_data *ring)
 {
 	const struct dma_iproc_pax_cfg *cfg = dev->config;
 	struct dma_iproc_pax_write_sync_data sync_rd, *recv, *sent;
@@ -438,15 +417,13 @@ static int poll_on_write_sync(const struct device *dev,
 	axi32 = (uint32_t *)&sync_rd;
 
 	do {
-		ret = pcie_ep_xfer_data_memcpy(cfg->pcie_dev, pci_addr,
-					       (uintptr_t *)axi32, 4,
+		ret = pcie_ep_xfer_data_memcpy(cfg->pcie_dev, pci_addr, (uintptr_t *)axi32, 4,
 					       PCIE_OB_LOWMEM, HOST_TO_DEVICE);
 
 		if (memcmp((void *)recv, (void *)sent, 4) == 0) {
 			/* clear the sync word */
 			ret = pcie_ep_xfer_data_memcpy(cfg->pcie_dev, pci_addr,
-						       (uintptr_t *)&zero_init,
-						       4, PCIE_OB_LOWMEM,
+						       (uintptr_t *)&zero_init, 4, PCIE_OB_LOWMEM,
 						       DEVICE_TO_HOST);
 			dma_mb();
 			ret = 0;
@@ -463,8 +440,7 @@ static int poll_on_write_sync(const struct device *dev,
 	return ret;
 }
 
-static int process_cmpl_event(const struct device *dev,
-			      enum ring_idx idx, uint32_t pl_len)
+static int process_cmpl_event(const struct device *dev, enum ring_idx idx, uint32_t pl_len)
 {
 	struct dma_iproc_pax_data *pd = dev->data;
 	uint32_t wr_offs, rd_offs, ret = DMA_STATUS_COMPLETE;
@@ -475,8 +451,7 @@ static int process_cmpl_event(const struct device *dev,
 	/* cmpl read offset, unprocessed cmpl location */
 	rd_offs = ring->curr.cmpl_rd_offs;
 
-	wr_offs = sys_read32(RM_RING_REG(pd, idx,
-					 RING_CMPL_WRITE_PTR));
+	wr_offs = sys_read32(RM_RING_REG(pd, idx, RING_CMPL_WRITE_PTR));
 
 	/* Update read ptr to "processed" */
 	ring->curr.cmpl_rd_offs = wr_offs;
@@ -493,22 +468,20 @@ static int process_cmpl_event(const struct device *dev,
 
 	/* Decode cmpl pkt id to verify */
 	c = (struct cmpl_pkt *)((uintptr_t)ring->cmpl +
-	    PAX_DMA_CMPL_DESC_SIZE * PAX_DMA_CURR_CMPL_IDX(wr_offs));
+				PAX_DMA_CMPL_DESC_SIZE * PAX_DMA_CURR_CMPL_IDX(wr_offs));
 
-	LOG_DBG("RING%d WR_PTR:%d opq:%d, rm_status:%x dma_status:%x\n",
-		idx, wr_offs, c->opq, c->rm_status, c->dma_status);
+	LOG_DBG("RING%d WR_PTR:%d opq:%d, rm_status:%x dma_status:%x\n", idx, wr_offs, c->opq,
+		c->rm_status, c->dma_status);
 
-	is_outstanding = sys_read32(RM_RING_REG(pd, idx,
-						RING_NUM_REQ_OUTSTAND));
+	is_outstanding = sys_read32(RM_RING_REG(pd, idx, RING_NUM_REQ_OUTSTAND));
 	if ((ring->curr.opq != c->opq) && (is_outstanding != 0)) {
-		LOG_ERR("RING%d: pkt id should be %d, rcvd %d outst=%d\n",
-			idx, ring->curr.opq, c->opq, is_outstanding);
+		LOG_ERR("RING%d: pkt id should be %d, rcvd %d outst=%d\n", idx, ring->curr.opq,
+			c->opq, is_outstanding);
 		ret = -EIO;
 	}
 	/* check for completion AE timeout */
 	if (c->rm_status == RM_COMPLETION_AE_TIMEOUT) {
-		LOG_ERR("RING%d WR_PTR:%d rm_status:%x AE Timeout!\n",
-			idx, wr_offs, c->rm_status);
+		LOG_ERR("RING%d WR_PTR:%d rm_status:%x AE Timeout!\n", idx, wr_offs, c->rm_status);
 		/* TBD: Issue full card reset to restore operations */
 		LOG_ERR("Needs Card Reset to recover!\n");
 		ret = -ETIMEDOUT;
@@ -522,8 +495,7 @@ static int process_cmpl_event(const struct device *dev,
 }
 
 #ifdef CONFIG_DMA_IPROC_PAX_POLL_MODE
-static int peek_ring_cmpl(const struct device *dev,
-			  enum ring_idx idx, uint32_t pl_len)
+static int peek_ring_cmpl(const struct device *dev, enum ring_idx idx, uint32_t pl_len)
 {
 	struct dma_iproc_pax_data *pd = dev->data;
 	uint32_t wr_offs, rd_offs, timeout = PAX_DMA_MAX_POLL_WAIT;
@@ -534,8 +506,7 @@ static int peek_ring_cmpl(const struct device *dev,
 
 	/* poll write_ptr until cmpl received for all buffers */
 	do {
-		wr_offs = sys_read32(RM_RING_REG(pd, idx,
-						 RING_CMPL_WRITE_PTR));
+		wr_offs = sys_read32(RM_RING_REG(pd, idx, RING_CMPL_WRITE_PTR));
 		if (PAX_DMA_GET_CMPL_COUNT(wr_offs, rd_offs) >= pl_len) {
 			break;
 		}
@@ -543,11 +514,11 @@ static int peek_ring_cmpl(const struct device *dev,
 	} while (--timeout);
 
 	if (timeout == 0) {
-		LOG_ERR("RING%d timeout, rcvd %d, expected %d!\n",
-			idx, PAX_DMA_GET_CMPL_COUNT(wr_offs, rd_offs), pl_len);
+		LOG_ERR("RING%d timeout, rcvd %d, expected %d!\n", idx,
+			PAX_DMA_GET_CMPL_COUNT(wr_offs, rd_offs), pl_len);
 		/* More debug info on current dma instance */
 		LOG_ERR("WR_PTR:%x RD_PTR%x\n", wr_offs, rd_offs);
-		return  -ETIMEDOUT;
+		return -ETIMEDOUT;
 	}
 
 	return process_cmpl_event(dev, idx, pl_len);
@@ -560,20 +531,13 @@ static void rm_isr(const struct device *dev)
 
 	/* read and clear interrupt status */
 	status = sys_read32(RM_COMM_REG(pd, RM_COMM_MSI_INTR_INTERRUPT_STATUS));
-	sys_write32(status, RM_COMM_REG(pd,
-					RM_COMM_MSI_INTERRUPT_STATUS_CLEAR));
+	sys_write32(status, RM_COMM_REG(pd, RM_COMM_MSI_INTERRUPT_STATUS_CLEAR));
 
 	/* read and clear DME/AE error interrupts */
-	err_stat = sys_read32(RM_COMM_REG(pd,
-					  RM_COMM_DME_INTERRUPT_STATUS_MASK));
-	sys_write32(err_stat,
-		    RM_COMM_REG(pd, RM_COMM_DME_INTERRUPT_STATUS_CLEAR));
-	err_stat =
-	sys_read32(RM_COMM_REG(pd,
-			       RM_COMM_AE_INTERFACE_GROUP_0_INTERRUPT_MASK));
-	sys_write32(err_stat,
-		    RM_COMM_REG(pd,
-				RM_COMM_AE_INTERFACE_GROUP_0_INTERRUPT_CLEAR));
+	err_stat = sys_read32(RM_COMM_REG(pd, RM_COMM_DME_INTERRUPT_STATUS_MASK));
+	sys_write32(err_stat, RM_COMM_REG(pd, RM_COMM_DME_INTERRUPT_STATUS_CLEAR));
+	err_stat = sys_read32(RM_COMM_REG(pd, RM_COMM_AE_INTERFACE_GROUP_0_INTERRUPT_MASK));
+	sys_write32(err_stat, RM_COMM_REG(pd, RM_COMM_AE_INTERFACE_GROUP_0_INTERRUPT_CLEAR));
 
 	/* alert waiting thread to process, for each completed ring */
 	for (idx = PAX_DMA_RING0; idx < PAX_DMA_RINGS_MAX; idx++) {
@@ -598,11 +562,10 @@ static int dma_iproc_pax_init(const struct device *dev)
 
 	pd->dma_base = cfg->dma_base;
 	pd->rm_comm_base = cfg->rm_comm_base;
-	pd->used_rings = (cfg->use_rings < PAX_DMA_RINGS_MAX) ?
-			 cfg->use_rings : PAX_DMA_RINGS_MAX;
+	pd->used_rings = (cfg->use_rings < PAX_DMA_RINGS_MAX) ? cfg->use_rings : PAX_DMA_RINGS_MAX;
 
-	LOG_DBG("dma base:0x%x, rm comm base:0x%x, needed rings %d\n",
-		pd->dma_base, pd->rm_comm_base, pd->used_rings);
+	LOG_DBG("dma base:0x%x, rm comm base:0x%x, needed rings %d\n", pd->dma_base,
+		pd->rm_comm_base, pd->used_rings);
 
 	/* dma/rm access lock */
 	k_mutex_init(&pd->dma_lock);
@@ -623,40 +586,30 @@ static int dma_iproc_pax_init(const struct device *dev)
 		k_sem_init(&pd->ring[r].alert, 0, 1);
 
 		pd->ring[r].idx = r;
-		pd->ring[r].ring_base = cfg->rm_base +
-					PAX_DMA_RING_ADDR_OFFSET(r);
+		pd->ring[r].ring_base = cfg->rm_base + PAX_DMA_RING_ADDR_OFFSET(r);
 		LOG_DBG("RING%d,VERSION:0x%x\n", pd->ring[r].idx,
 			sys_read32(RM_RING_REG(pd, r, RING_VER)));
 
 		/* Allocate for 2 BD buffers + cmpl buffer + payload struct */
-		pd->ring[r].ring_mem = (void *)((uintptr_t)cfg->bd_memory_base +
-						r *
-						PAX_DMA_PER_RING_ALLOC_SIZE);
+		pd->ring[r].ring_mem =
+			(void *)((uintptr_t)cfg->bd_memory_base + r * PAX_DMA_PER_RING_ALLOC_SIZE);
 		if (!pd->ring[r].ring_mem) {
 			LOG_ERR("RING%d failed to alloc desc memory!\n", r);
 			return -ENOMEM;
 		}
 		/* Find 8K aligned address within allocated region */
-		mem_aligned = ((uintptr_t)pd->ring[r].ring_mem +
-			       PAX_DMA_RING_ALIGN - 1) &
-			       ~(PAX_DMA_RING_ALIGN - 1);
+		mem_aligned = ((uintptr_t)pd->ring[r].ring_mem + PAX_DMA_RING_ALIGN - 1) &
+			      ~(PAX_DMA_RING_ALIGN - 1);
 
 		pd->ring[r].cmpl = (void *)mem_aligned;
-		pd->ring[r].bd = (void *)(mem_aligned +
-					  PAX_DMA_RM_CMPL_RING_SIZE);
+		pd->ring[r].bd = (void *)(mem_aligned + PAX_DMA_RM_CMPL_RING_SIZE);
 		pd->ring[r].payload = (void *)((uintptr_t)pd->ring[r].bd +
-				      PAX_DMA_RM_DESC_RING_SIZE *
-				      PAX_DMA_NUM_BD_BUFFS);
+					       PAX_DMA_RM_DESC_RING_SIZE * PAX_DMA_NUM_BD_BUFFS);
 
-		LOG_DBG("Ring%d,allocated Mem:0x%p Size %d\n",
-			pd->ring[r].idx,
-			pd->ring[r].ring_mem,
-			PAX_DMA_PER_RING_ALLOC_SIZE);
-		LOG_DBG("Ring%d,BD:0x%p, CMPL:0x%p, PL:0x%p\n",
-			pd->ring[r].idx,
-			pd->ring[r].bd,
-			pd->ring[r].cmpl,
-			pd->ring[r].payload);
+		LOG_DBG("Ring%d,allocated Mem:0x%p Size %d\n", pd->ring[r].idx,
+			pd->ring[r].ring_mem, PAX_DMA_PER_RING_ALLOC_SIZE);
+		LOG_DBG("Ring%d,BD:0x%p, CMPL:0x%p, PL:0x%p\n", pd->ring[r].idx, pd->ring[r].bd,
+			pd->ring[r].cmpl, pd->ring[r].payload);
 
 		/* Prepare ring desc table */
 		prepare_ring(&(pd->ring[r]));
@@ -670,11 +623,7 @@ static int dma_iproc_pax_init(const struct device *dev)
 
 #ifndef CONFIG_DMA_IPROC_PAX_POLL_MODE
 	/* Register and enable RM interrupt */
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    rm_isr,
-		    DEVICE_DT_INST_GET(0),
-		    0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), rm_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
 #else
 	LOG_INF("%s PAX DMA rings in poll mode!\n", dev->name);
@@ -685,40 +634,30 @@ static int dma_iproc_pax_init(const struct device *dev)
 }
 
 #ifdef CONFIG_DMA_IPROC_PAX_POLL_MODE
-static void set_pkt_count(const struct device *dev,
-			  enum ring_idx idx,
-			  uint32_t pl_len)
+static void set_pkt_count(const struct device *dev, enum ring_idx idx, uint32_t pl_len)
 {
 	/* Nothing needs to be programmed here in poll mode */
 }
 
-static int wait_for_pkt_completion(const struct device *dev,
-				   enum ring_idx idx,
-				   uint32_t pl_len)
+static int wait_for_pkt_completion(const struct device *dev, enum ring_idx idx, uint32_t pl_len)
 {
 	/* poll for completion */
 	return peek_ring_cmpl(dev, idx, pl_len + 1);
 }
 #else
-static void set_pkt_count(const struct device *dev,
-			  enum ring_idx idx,
-			  uint32_t pl_len)
+static void set_pkt_count(const struct device *dev, enum ring_idx idx, uint32_t pl_len)
 {
 	struct dma_iproc_pax_data *pd = dev->data;
 	uint32_t val;
 
 	/* program packet count for interrupt assertion */
-	val = sys_read32(RM_RING_REG(pd, idx,
-				     RING_CMPL_WR_PTR_DDR_CONTROL));
+	val = sys_read32(RM_RING_REG(pd, idx, RING_CMPL_WR_PTR_DDR_CONTROL));
 	val &= ~RING_DDR_CONTROL_COUNT_MASK;
 	val |= RING_DDR_CONTROL_COUNT(pl_len);
-	sys_write32(val, RM_RING_REG(pd, idx,
-				     RING_CMPL_WR_PTR_DDR_CONTROL));
+	sys_write32(val, RM_RING_REG(pd, idx, RING_CMPL_WR_PTR_DDR_CONTROL));
 }
 
-static int wait_for_pkt_completion(const struct device *dev,
-				   enum ring_idx idx,
-				   uint32_t pl_len)
+static int wait_for_pkt_completion(const struct device *dev, enum ring_idx idx, uint32_t pl_len)
 {
 	struct dma_iproc_pax_data *pd = dev->data;
 	struct dma_iproc_pax_ring_data *ring;
@@ -735,10 +674,8 @@ static int wait_for_pkt_completion(const struct device *dev,
 }
 #endif
 
-static int dma_iproc_pax_do_xfer(const struct device *dev,
-				 enum ring_idx idx,
-				 struct dma_iproc_pax_payload *pl,
-				 uint32_t pl_len)
+static int dma_iproc_pax_do_xfer(const struct device *dev, enum ring_idx idx,
+				 struct dma_iproc_pax_payload *pl, uint32_t pl_len)
 {
 	struct dma_iproc_pax_data *pd = dev->data;
 	const struct dma_iproc_pax_cfg *cfg = dev->config;
@@ -757,28 +694,23 @@ static int dma_iproc_pax_do_xfer(const struct device *dev,
 	 * Read the host address location once at first DMA write
 	 * on that ring.
 	 */
-	if ((ring->sync_pci.addr_lo == 0x0) &&
-	    (ring->sync_pci.addr_hi == 0x0)) {
+	if ((ring->sync_pci.addr_lo == 0x0) && (ring->sync_pci.addr_hi == 0x0)) {
 		/* populate sync data location */
 		LOG_DBG("sync addr loc 0x%x\n", cfg->scr_addr_loc);
 
-		sync.addr_lo = sys_read32(cfg->scr_addr_loc
-					  + 4);
+		sync.addr_lo = sys_read32(cfg->scr_addr_loc + 4);
 		sync.addr_hi = sys_read32(cfg->scr_addr_loc);
 		ring->sync_pci.addr_lo = sync.addr_lo + idx * 4;
 		ring->sync_pci.addr_hi = sync.addr_hi;
-		LOG_DBG("ring:%d,sync addr:0x%x.0x%x\n", idx,
-			ring->sync_pci.addr_hi,
+		LOG_DBG("ring:%d,sync addr:0x%x.0x%x\n", idx, ring->sync_pci.addr_hi,
 			ring->sync_pci.addr_lo);
 	}
 
 	/* account extra sync packet */
 	ring->curr.sync_data.opaque = ring->curr.opq;
 	ring->curr.sync_data.total_pkts = pl_len;
-	memcpy((void *)&ring->sync_loc,
-	       (void *)&(ring->curr.sync_data), 4);
-	sync_pl.pci_addr = ring->sync_pci.addr_lo |
-			   (uint64_t)ring->sync_pci.addr_hi << 32;
+	memcpy((void *)&ring->sync_loc, (void *)&(ring->curr.sync_data), 4);
+	sync_pl.pci_addr = ring->sync_pci.addr_lo | (uint64_t)ring->sync_pci.addr_hi << 32;
 	sync_pl.axi_addr = (uintptr_t)&ring->sync_loc;
 
 	sync_pl.xfer_sz = 4; /* 4-bytes */
@@ -800,9 +732,7 @@ static int dma_iproc_pax_do_xfer(const struct device *dev,
 		rm_write_axi_addr_desc(next_desc_addr(ring), pl + cnt);
 		rm_write_pci_addr_desc(next_desc_addr(ring), pl + cnt);
 		/* Toggle may flip, program updated toggle value */
-		rm_write_header_desc(next_desc_addr(ring),
-				     curr_toggle_val(ring),
-				     curr_pkt_id(ring),
+		rm_write_header_desc(next_desc_addr(ring), curr_toggle_val(ring), curr_pkt_id(ring),
 				     PAX_DMA_RM_DESC_BDCOUNT);
 	}
 
@@ -813,7 +743,7 @@ static int dma_iproc_pax_do_xfer(const struct device *dev,
 
 	/* RM header for next transfer, RM wait on (invalid) toggle bit */
 	rm_write_header_next_desc(next_desc_addr(ring), ring, alloc_pkt_id(ring),
-		       PAX_DMA_RM_DESC_BDCOUNT);
+				  PAX_DMA_RM_DESC_BDCOUNT);
 
 	set_pkt_count(dev, idx, pl_len + 1);
 
@@ -916,16 +846,14 @@ static int dma_iproc_pax_configure(const struct device *dev, uint32_t channel,
 	}
 
 	if (pci_addr32[0] % PAX_DMA_ADDR_ALIGN) {
-		LOG_ERR("Unaligned Host addr: 0x%x.0x%x\n",
-			pci_addr32[1], pci_addr32[0]);
+		LOG_ERR("Unaligned Host addr: 0x%x.0x%x\n", pci_addr32[1], pci_addr32[0]);
 		ring->ring_active = 0;
 		ret = -EINVAL;
 		goto err;
 	}
 
 	if (axi_addr32[0] % PAX_DMA_ADDR_ALIGN) {
-		LOG_ERR("Unaligned Card addr: 0x%x.0x%x\n",
-			axi_addr32[1], axi_addr32[0]);
+		LOG_ERR("Unaligned Card addr: 0x%x.0x%x\n", axi_addr32[1], axi_addr32[0]);
 		ring->ring_active = 0;
 		ret = -EINVAL;
 		goto err;
@@ -941,8 +869,7 @@ err:
 	return ret;
 }
 
-static int dma_iproc_pax_transfer_start(const struct device *dev,
-					uint32_t channel)
+static int dma_iproc_pax_transfer_start(const struct device *dev, uint32_t channel)
 {
 	int ret = 0;
 	struct dma_iproc_pax_data *pd = dev->data;
@@ -959,8 +886,7 @@ static int dma_iproc_pax_transfer_start(const struct device *dev,
 	return ret;
 }
 
-static int dma_iproc_pax_transfer_stop(const struct device *dev,
-				       uint32_t channel)
+static int dma_iproc_pax_transfer_stop(const struct device *dev, uint32_t channel)
 {
 	return 0;
 }
@@ -981,11 +907,5 @@ static const struct dma_iproc_pax_cfg pax_dma_cfg = {
 	.pcie_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, pcie_ep)),
 };
 
-DEVICE_DT_INST_DEFINE(0,
-		    &dma_iproc_pax_init,
-		    NULL,
-		    &pax_dma_data,
-		    &pax_dma_cfg,
-		    POST_KERNEL,
-		    CONFIG_DMA_INIT_PRIORITY,
-		    &pax_dma_driver_api);
+DEVICE_DT_INST_DEFINE(0, &dma_iproc_pax_init, NULL, &pax_dma_data, &pax_dma_cfg, POST_KERNEL,
+		      CONFIG_DMA_INIT_PRIORITY, &pax_dma_driver_api);

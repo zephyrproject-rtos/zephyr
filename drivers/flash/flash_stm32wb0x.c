@@ -29,17 +29,15 @@ LOG_MODULE_REGISTER(flash_stm32wb0x, CONFIG_FLASH_LOG_LEVEL);
 /**
  * Driver private definitions & assertions
  */
-#define SYSTEM_FLASH_SIZE	_MEMORY_FLASH_SIZE_
-#define PAGES_IN_FLASH		(SYSTEM_FLASH_SIZE / FLASH_PAGE_SIZE)
+#define SYSTEM_FLASH_SIZE _MEMORY_FLASH_SIZE_
+#define PAGES_IN_FLASH    (SYSTEM_FLASH_SIZE / FLASH_PAGE_SIZE)
 
-#define WRITE_BLOCK_SIZE \
-	DT_PROP(DT_INST(0, soc_nv_flash), write_block_size)
+#define WRITE_BLOCK_SIZE DT_PROP(DT_INST(0, soc_nv_flash), write_block_size)
 
 /* Size of flash words, in bytes (equal to write block size) */
-#define WORD_SIZE	WRITE_BLOCK_SIZE
+#define WORD_SIZE WRITE_BLOCK_SIZE
 
-#define ERASE_BLOCK_SIZE \
-	DT_PROP(DT_INST(0, soc_nv_flash), erase_block_size)
+#define ERASE_BLOCK_SIZE DT_PROP(DT_INST(0, soc_nv_flash), erase_block_size)
 
 /**
  * Driver private structures
@@ -72,8 +70,7 @@ static inline size_t get_flash_size_in_bytes(void)
 	 * on this MCU, which is also the number of words in flash
 	 * minus one.
 	 */
-	const uint32_t words_in_flash =
-		READ_BIT(FLASH->SIZE, FLASH_FLASH_SIZE_FLASH_SIZE) + 1;
+	const uint32_t words_in_flash = READ_BIT(FLASH->SIZE, FLASH_FLASH_SIZE_FLASH_SIZE) + 1;
 
 	return words_in_flash * WORD_SIZE;
 }
@@ -105,41 +102,36 @@ static int error_from_irq_flags(uint32_t flags)
 	return -EDOM;
 }
 
-static bool is_valid_flash_range(const struct device *dev,
-				off_t offset, uint32_t len)
+static bool is_valid_flash_range(const struct device *dev, off_t offset, uint32_t len)
 {
 	const struct flash_wb0x_data *data = dev->data;
 	uint32_t offset_plus_len;
 
-		/* (offset + len) must not overflow */
+	/* (offset + len) must not overflow */
 	return !u32_add_overflow(offset, len, &offset_plus_len)
-		/* offset must be a valid offset in flash */
-		&& IN_RANGE(offset, 0, data->flash_size - 1)
-		/* (offset + len) must be in [0; flash size]
-		 * because it is equal to the last accessed
-		 * byte in flash plus one (an access of `len`
-		 * bytes starting at `offset` touches bytes
-		 * `offset` to `offset + len` EXCLUDED)
-		 */
-		&& IN_RANGE(offset_plus_len, 0, data->flash_size);
+	       /* offset must be a valid offset in flash */
+	       && IN_RANGE(offset, 0, data->flash_size - 1)
+	       /* (offset + len) must be in [0; flash size]
+		* because it is equal to the last accessed
+		* byte in flash plus one (an access of `len`
+		* bytes starting at `offset` touches bytes
+		* `offset` to `offset + len` EXCLUDED)
+		*/
+	       && IN_RANGE(offset_plus_len, 0, data->flash_size);
 }
 
-static bool is_writeable_flash_range(const struct device *dev,
-				off_t offset, uint32_t len)
+static bool is_writeable_flash_range(const struct device *dev, off_t offset, uint32_t len)
 {
-	if ((offset % WRITE_BLOCK_SIZE) != 0
-		|| (len % WRITE_BLOCK_SIZE) != 0) {
+	if ((offset % WRITE_BLOCK_SIZE) != 0 || (len % WRITE_BLOCK_SIZE) != 0) {
 		return false;
 	}
 
 	return is_valid_flash_range(dev, offset, len);
 }
 
-static bool is_erasable_flash_range(const struct device *dev,
-				off_t offset, uint32_t len)
+static bool is_erasable_flash_range(const struct device *dev, off_t offset, uint32_t len)
 {
-	if ((offset % ERASE_BLOCK_SIZE) != 0
-		|| (len % ERASE_BLOCK_SIZE) != 0) {
+	if ((offset % ERASE_BLOCK_SIZE) != 0 || (len % ERASE_BLOCK_SIZE) != 0) {
 		return false;
 	}
 
@@ -206,9 +198,7 @@ int erase_page_range(uint32_t start_page, uint32_t page_count)
 	__ASSERT_NO_MSG(start_page < PAGES_IN_FLASH);
 	__ASSERT_NO_MSG((start_page + page_count - 1) < PAGES_IN_FLASH);
 
-	for (uint32_t i = start_page;
-		i < (start_page + page_count);
-		i++) {
+	for (uint32_t i = start_page; i < (start_page + page_count); i++) {
 		/* ADDRESS[16:9] = XADR[10:3] (address of page to erase)
 		 * ADDRESS[8:0]  = 0 (row & word address, must be 0)
 		 */
@@ -297,13 +287,9 @@ int write_word_range(const void *buf, uint32_t start_word, uint32_t num_words)
 		FLASH->ADDRESS = dst_addr;
 		FLASH->DATA0 = read_mem_u32(src_ptr + 0);
 
-		FLASH->DATA1 = (remaining >= 2)
-			? read_mem_u32(src_ptr + 1)
-			: BURST_IGNORE_VALUE;
+		FLASH->DATA1 = (remaining >= 2) ? read_mem_u32(src_ptr + 1) : BURST_IGNORE_VALUE;
 
-		FLASH->DATA2 = (remaining == 3)
-			? read_mem_u32(src_ptr + 2)
-			: BURST_IGNORE_VALUE;
+		FLASH->DATA2 = (remaining == 3) ? read_mem_u32(src_ptr + 2) : BURST_IGNORE_VALUE;
 
 		FLASH->DATA3 = BURST_IGNORE_VALUE;
 
@@ -318,8 +304,7 @@ int write_word_range(const void *buf, uint32_t start_word, uint32_t num_words)
 /**
  * Driver subsystem API implementation
  */
-int flash_wb0x_read(const struct device *dev, off_t offset,
-			void *buffer, size_t len)
+int flash_wb0x_read(const struct device *dev, off_t offset, void *buffer, size_t len)
 {
 	if (!len) {
 		return 0;
@@ -336,8 +321,7 @@ int flash_wb0x_read(const struct device *dev, off_t offset,
 	return 0;
 }
 
-int flash_wb0x_write(const struct device *dev, off_t offset,
-			const void *buffer, size_t len)
+int flash_wb0x_write(const struct device *dev, off_t offset, const void *buffer, size_t len)
 {
 	struct flash_wb0x_data *data = dev->data;
 	int res;
@@ -397,8 +381,7 @@ int flash_wb0x_erase(const struct device *dev, off_t offset, size_t size)
 	return res;
 }
 
-const struct flash_parameters *flash_wb0x_get_parameters(
-					const struct device *dev)
+const struct flash_parameters *flash_wb0x_get_parameters(const struct device *dev)
 {
 	static const struct flash_parameters fp = {
 		.write_block_size = WRITE_BLOCK_SIZE,
@@ -409,18 +392,15 @@ const struct flash_parameters *flash_wb0x_get_parameters(
 }
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
-void flash_wb0x_pages_layout(const struct device *dev,
-				const struct flash_pages_layout **layout,
-				size_t *layout_size)
+void flash_wb0x_pages_layout(const struct device *dev, const struct flash_pages_layout **layout,
+			     size_t *layout_size)
 {
 	/**
 	 * STM32WB0 flash: single bank, 2KiB pages
 	 * (the number of pages depends on MCU)
 	 */
-	static const struct flash_pages_layout fpl[] = {{
-		.pages_count = PAGES_IN_FLASH,
-		.pages_size = FLASH_PAGE_SIZE
-	}};
+	static const struct flash_pages_layout fpl[] = {
+		{.pages_count = PAGES_IN_FLASH, .pages_size = FLASH_PAGE_SIZE}};
 
 	*layout = fpl;
 	*layout_size = ARRAY_SIZE(fpl);
@@ -454,6 +434,5 @@ int stm32wb0x_flash_init(const struct device *dev)
  */
 static struct flash_wb0x_data wb0x_flash_drv_data;
 
-DEVICE_DT_INST_DEFINE(0, stm32wb0x_flash_init, NULL,
-		    &wb0x_flash_drv_data, NULL, POST_KERNEL,
-		    CONFIG_FLASH_INIT_PRIORITY, &flash_wb0x_api);
+DEVICE_DT_INST_DEFINE(0, stm32wb0x_flash_init, NULL, &wb0x_flash_drv_data, NULL, POST_KERNEL,
+		      CONFIG_FLASH_INIT_PRIORITY, &flash_wb0x_api);

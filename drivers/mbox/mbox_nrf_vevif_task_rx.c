@@ -39,8 +39,7 @@ static struct mbox_vevif_task_rx_cbs cbs;
 #define VEVIF_IRQN(idx, _) DT_INST_IRQ_BY_IDX(0, idx, irq)
 
 static const uint8_t vevif_irqs[VEVIF_TASKS_NUM] = {
-	LISTIFY(DT_NUM_IRQS(DT_DRV_INST(0)), VEVIF_IRQN, (,))
-};
+	LISTIFY(DT_NUM_IRQS(DT_DRV_INST(0)), VEVIF_IRQN, (,)) };
 
 static void vevif_task_rx_isr(const void *parameter)
 {
@@ -122,18 +121,18 @@ static const struct mbox_driver_api vevif_task_rx_driver_api = {
 		    vevif_task_rx_isr, &vevif_irqs[idx], 0)
 #else
 
-#define VEVIF_IRQ_FUN(idx, _)                 \
-ISR_DIRECT_DECLARE(vevif_task_##idx##_rx_isr) \
-{                                             \
-	vevif_task_rx_isr(&vevif_irqs[idx]);  \
-	return 1;                             \
-}
+#define VEVIF_IRQ_FUN(idx, _)                                                                      \
+	ISR_DIRECT_DECLARE(vevif_task_##idx##_rx_isr)                                              \
+	{                                                                                          \
+		vevif_task_rx_isr(&vevif_irqs[idx]);                                               \
+		return 1;                                                                          \
+	}
 
 LISTIFY(DT_NUM_IRQS(DT_DRV_INST(0)), VEVIF_IRQ_FUN, ())
 
-#define VEVIF_IRQ_CONNECT(idx, _)                                                                 \
-	IRQ_DIRECT_CONNECT(DT_INST_IRQ_BY_IDX(0, idx, irq), DT_INST_IRQ_BY_IDX(0, idx, priority), \
-		    vevif_task_##idx##_rx_isr, 0)
+#define VEVIF_IRQ_CONNECT(idx, _)                                                                  \
+	IRQ_DIRECT_CONNECT(DT_INST_IRQ_BY_IDX(0, idx, irq), DT_INST_IRQ_BY_IDX(0, idx, priority),  \
+			   vevif_task_##idx##_rx_isr, 0)
 #endif
 
 static int vevif_task_rx_init(const struct device *dev)

@@ -18,27 +18,27 @@
 #define NPM_GPIO_BASE 0x06U
 
 /* nPM1300 GPIO registers offsets */
-#define NPM_GPIO_OFFSET_MODE	  0x00U
-#define NPM_GPIO_OFFSET_DRIVE	  0x05U
-#define NPM_GPIO_OFFSET_PULLUP	  0x0AU
+#define NPM_GPIO_OFFSET_MODE      0x00U
+#define NPM_GPIO_OFFSET_DRIVE     0x05U
+#define NPM_GPIO_OFFSET_PULLUP    0x0AU
 #define NPM_GPIO_OFFSET_PULLDOWN  0x0FU
 #define NPM_GPIO_OFFSET_OPENDRAIN 0x14U
 #define NPM_GPIO_OFFSET_DEBOUNCE  0x19U
-#define NPM_GPIO_OFFSET_STATUS	  0x1EU
+#define NPM_GPIO_OFFSET_STATUS    0x1EU
 
 /* nPM1300 Channel counts */
 #define NPM1300_GPIO_PINS 5U
 
-#define NPM1300_GPIO_GPIINPUT	    0
-#define NPM1300_GPIO_GPILOGIC1	    1
-#define NPM1300_GPIO_GPILOGIC0	    2
+#define NPM1300_GPIO_GPIINPUT       0
+#define NPM1300_GPIO_GPILOGIC1      1
+#define NPM1300_GPIO_GPILOGIC0      2
 #define NPM1300_GPIO_GPIEVENTRISE   3
 #define NPM1300_GPIO_GPIEVENTFALL   4
-#define NPM1300_GPIO_GPOIRQ	    5
-#define NPM1300_GPIO_GPORESET	    6
+#define NPM1300_GPIO_GPOIRQ         5
+#define NPM1300_GPIO_GPORESET       6
 #define NPM1300_GPIO_GPOPWRLOSSWARN 7
-#define NPM1300_GPIO_GPOLOGIC1	    8
-#define NPM1300_GPIO_GPOLOGIC0	    9
+#define NPM1300_GPIO_GPOLOGIC1      8
+#define NPM1300_GPIO_GPOLOGIC0      9
 
 struct gpio_npm1300_config {
 	struct gpio_driver_config common;
@@ -220,7 +220,7 @@ static int gpio_npm1300_init(const struct device *dev)
 			},                                                                         \
 		.mfd = DEVICE_DT_GET(DT_INST_PARENT(n))};                                          \
                                                                                                    \
-		static struct gpio_npm1300_data gpio_npm1300_data##n;                              \
+	static struct gpio_npm1300_data gpio_npm1300_data##n;                                      \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, gpio_npm1300_init, NULL, &gpio_npm1300_data##n,                   \
 			      &gpio_npm1300_config##n, POST_KERNEL,                                \

@@ -19,16 +19,16 @@
 #include <zephyr/drivers/gpio.h>
 
 #define LOG_MODULE_NAME phy_mc_ksz8081
-#define LOG_LEVEL CONFIG_PHY_LOG_LEVEL
+#define LOG_LEVEL       CONFIG_PHY_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#define PHY_MC_KSZ8081_OMSO_REG			0x16
-#define PHY_MC_KSZ8081_OMSO_FACTORY_MODE_MASK	BIT(15)
-#define PHY_MC_KSZ8081_OMSO_NAND_TREE_MASK	BIT(5)
+#define PHY_MC_KSZ8081_OMSO_REG               0x16
+#define PHY_MC_KSZ8081_OMSO_FACTORY_MODE_MASK BIT(15)
+#define PHY_MC_KSZ8081_OMSO_NAND_TREE_MASK    BIT(5)
 
-#define PHY_MC_KSZ8081_CTRL2_REG		0x1F
-#define PHY_MC_KSZ8081_CTRL2_REF_CLK_SEL	BIT(7)
+#define PHY_MC_KSZ8081_CTRL2_REG         0x1F
+#define PHY_MC_KSZ8081_CTRL2_REF_CLK_SEL BIT(7)
 
 #define PHY_MC_KSZ8081_RESET_HOLD_TIME
 
@@ -59,8 +59,7 @@ struct mc_ksz8081_data {
 	struct k_work_delayable phy_monitor_work;
 };
 
-static int phy_mc_ksz8081_read(const struct device *dev,
-				uint16_t reg_addr, uint32_t *data)
+static int phy_mc_ksz8081_read(const struct device *dev, uint16_t reg_addr, uint32_t *data)
 {
 	const struct mc_ksz8081_config *config = dev->config;
 	int ret;
@@ -76,8 +75,7 @@ static int phy_mc_ksz8081_read(const struct device *dev,
 	return 0;
 }
 
-static int phy_mc_ksz8081_write(const struct device *dev,
-				uint16_t reg_addr, uint32_t data)
+static int phy_mc_ksz8081_write(const struct device *dev, uint16_t reg_addr, uint32_t data)
 {
 	const struct mc_ksz8081_config *config = dev->config;
 	int ret;
@@ -139,8 +137,7 @@ static int phy_mc_ksz8081_autonegotiate(const struct device *dev)
 	return 0;
 }
 
-static int phy_mc_ksz8081_get_link(const struct device *dev,
-					struct phy_link_state *state)
+static int phy_mc_ksz8081_get_link(const struct device *dev, struct phy_link_state *state)
 {
 	const struct mc_ksz8081_config *config = dev->config;
 	struct mc_ksz8081_data *data = dev->data;
@@ -235,8 +232,7 @@ static int phy_mc_ksz8081_static_cfg(const struct device *dev)
 		return ret;
 	}
 
-	omso &= ~PHY_MC_KSZ8081_OMSO_FACTORY_MODE_MASK &
-		~PHY_MC_KSZ8081_OMSO_NAND_TREE_MASK;
+	omso &= ~PHY_MC_KSZ8081_OMSO_FACTORY_MODE_MASK & ~PHY_MC_KSZ8081_OMSO_NAND_TREE_MASK;
 
 	ret = phy_mc_ksz8081_write(dev, PHY_MC_KSZ8081_OMSO_REG, (uint32_t)omso);
 	if (ret) {
@@ -310,8 +306,7 @@ done:
 	return ret;
 }
 
-static int phy_mc_ksz8081_cfg_link(const struct device *dev,
-					enum phy_link_speed speeds)
+static int phy_mc_ksz8081_cfg_link(const struct device *dev, enum phy_link_speed speeds)
 {
 	const struct mc_ksz8081_config *config = dev->config;
 	struct mc_ksz8081_data *data = dev->data;
@@ -401,14 +396,12 @@ done:
 	k_mutex_unlock(&data->mutex);
 
 	/* Start monitoring */
-	k_work_reschedule(&data->phy_monitor_work,
-				K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
+	k_work_reschedule(&data->phy_monitor_work, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
 
 	return ret;
 }
 
-static int phy_mc_ksz8081_link_cb_set(const struct device *dev,
-					phy_callback_t cb, void *user_data)
+static int phy_mc_ksz8081_link_cb_set(const struct device *dev, phy_callback_t cb, void *user_data)
 {
 	struct mc_ksz8081_data *data = dev->data;
 
@@ -488,8 +481,7 @@ skip_int_gpio:
 		return ret;
 	}
 
-	k_work_init_delayable(&data->phy_monitor_work,
-				phy_mc_ksz8081_monitor_work_handler);
+	k_work_init_delayable(&data->phy_monitor_work, phy_mc_ksz8081_monitor_work_handler);
 
 	return 0;
 }
@@ -503,33 +495,28 @@ static const struct ethphy_driver_api mc_ksz8081_phy_api = {
 };
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
-#define RESET_GPIO(n) \
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),
+#define RESET_GPIO(n) .reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),
 #else
 #define RESET_GPIO(n)
 #endif /* reset gpio */
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
-#define INTERRUPT_GPIO(n) \
-		.interrupt_gpio = GPIO_DT_SPEC_INST_GET_OR(n, int_gpios, {0}),
+#define INTERRUPT_GPIO(n) .interrupt_gpio = GPIO_DT_SPEC_INST_GET_OR(n, int_gpios, {0}),
 #else
 #define INTERRUPT_GPIO(n)
 #endif /* interrupt gpio */
 
-#define MICROCHIP_KSZ8081_INIT(n)						\
-	static const struct mc_ksz8081_config mc_ksz8081_##n##_config = {	\
-		.addr = DT_INST_REG_ADDR(n),					\
-		.mdio_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),			\
-		.phy_iface = DT_INST_ENUM_IDX(n, microchip_interface_type),	\
-		RESET_GPIO(n)							\
-		INTERRUPT_GPIO(n)						\
-	};									\
-										\
-	static struct mc_ksz8081_data mc_ksz8081_##n##_data;			\
-										\
-	DEVICE_DT_INST_DEFINE(n, &phy_mc_ksz8081_init, NULL,			\
-			&mc_ksz8081_##n##_data, &mc_ksz8081_##n##_config,	\
-			POST_KERNEL, CONFIG_PHY_INIT_PRIORITY,			\
-			&mc_ksz8081_phy_api);
+#define MICROCHIP_KSZ8081_INIT(n)                                                                  \
+	static const struct mc_ksz8081_config mc_ksz8081_##n##_config = {                          \
+		.addr = DT_INST_REG_ADDR(n),                                                       \
+		.mdio_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                      \
+		.phy_iface = DT_INST_ENUM_IDX(n, microchip_interface_type),                        \
+		RESET_GPIO(n) INTERRUPT_GPIO(n)};                                                  \
+                                                                                                   \
+	static struct mc_ksz8081_data mc_ksz8081_##n##_data;                                       \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &phy_mc_ksz8081_init, NULL, &mc_ksz8081_##n##_data,               \
+			      &mc_ksz8081_##n##_config, POST_KERNEL, CONFIG_PHY_INIT_PRIORITY,     \
+			      &mc_ksz8081_phy_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MICROCHIP_KSZ8081_INIT)

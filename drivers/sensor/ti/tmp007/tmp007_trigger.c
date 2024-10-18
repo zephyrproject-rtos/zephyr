@@ -19,20 +19,15 @@ extern struct tmp007_data tmp007_driver;
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(TMP007, CONFIG_SENSOR_LOG_LEVEL);
 
-static inline void setup_int(const struct device *dev,
-			     bool enable)
+static inline void setup_int(const struct device *dev, bool enable)
 {
 	const struct tmp007_config *cfg = dev->config;
 
 	gpio_pin_interrupt_configure_dt(&cfg->int_gpio,
-				     enable
-				     ? GPIO_INT_LEVEL_ACTIVE
-				     : GPIO_INT_DISABLE);
+					enable ? GPIO_INT_LEVEL_ACTIVE : GPIO_INT_DISABLE);
 }
 
-int tmp007_attr_set(const struct device *dev,
-		    enum sensor_channel chan,
-		    enum sensor_attribute attr,
+int tmp007_attr_set(const struct device *dev, enum sensor_channel chan, enum sensor_attribute attr,
 		    const struct sensor_value *val)
 {
 	const struct tmp007_config *cfg = dev->config;
@@ -66,11 +61,9 @@ int tmp007_attr_set(const struct device *dev,
 	return 0;
 }
 
-static void tmp007_gpio_callback(const struct device *dev,
-				 struct gpio_callback *cb, uint32_t pins)
+static void tmp007_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	struct tmp007_data *drv_data =
-		CONTAINER_OF(cb, struct tmp007_data, gpio_cb);
+	struct tmp007_data *drv_data = CONTAINER_OF(cb, struct tmp007_data, gpio_cb);
 
 	setup_int(drv_data->dev, false);
 
@@ -91,13 +84,11 @@ static void tmp007_thread_cb(const struct device *dev)
 		return;
 	}
 
-	if (status & TMP007_DATA_READY_INT_BIT &&
-	    drv_data->drdy_handler != NULL) {
+	if (status & TMP007_DATA_READY_INT_BIT && drv_data->drdy_handler != NULL) {
 		drv_data->drdy_handler(dev, drv_data->drdy_trigger);
 	}
 
-	if (status & TMP007_TOBJ_TH_INT_BITS &&
-	    drv_data->th_handler != NULL) {
+	if (status & TMP007_TOBJ_TH_INT_BITS && drv_data->th_handler != NULL) {
 		drv_data->th_handler(dev, drv_data->th_trigger);
 	}
 
@@ -122,15 +113,13 @@ static void tmp007_thread(void *p1, void *p2, void *p3)
 #ifdef CONFIG_TMP007_TRIGGER_GLOBAL_THREAD
 static void tmp007_work_cb(struct k_work *work)
 {
-	struct tmp007_data *drv_data =
-		CONTAINER_OF(work, struct tmp007_data, work);
+	struct tmp007_data *drv_data = CONTAINER_OF(work, struct tmp007_data, work);
 
 	tmp007_thread_cb(drv_data->dev);
 }
 #endif
 
-int tmp007_trigger_set(const struct device *dev,
-		       const struct sensor_trigger *trig,
+int tmp007_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler)
 {
 	struct tmp007_data *drv_data = dev->data;
@@ -160,8 +149,8 @@ int tmp007_init_interrupt(const struct device *dev)
 	struct tmp007_data *drv_data = dev->data;
 	const struct tmp007_config *cfg = dev->config;
 
-	if (tmp007_reg_update(&cfg->i2c, TMP007_REG_CONFIG,
-			      TMP007_ALERT_EN_BIT, TMP007_ALERT_EN_BIT) < 0) {
+	if (tmp007_reg_update(&cfg->i2c, TMP007_REG_CONFIG, TMP007_ALERT_EN_BIT,
+			      TMP007_ALERT_EN_BIT) < 0) {
 		LOG_DBG("Failed to enable interrupt pin!");
 		return -EIO;
 	}
@@ -169,16 +158,13 @@ int tmp007_init_interrupt(const struct device *dev)
 	drv_data->dev = dev;
 
 	if (!gpio_is_ready_dt(&cfg->int_gpio)) {
-		LOG_ERR("%s: device %s is not ready", dev->name,
-				cfg->int_gpio.port->name);
+		LOG_ERR("%s: device %s is not ready", dev->name, cfg->int_gpio.port->name);
 		return -ENODEV;
 	}
 
 	gpio_pin_configure_dt(&cfg->int_gpio, GPIO_INT_LEVEL_ACTIVE);
 
-	gpio_init_callback(&drv_data->gpio_cb,
-			   tmp007_gpio_callback,
-			   BIT(cfg->int_gpio.pin));
+	gpio_init_callback(&drv_data->gpio_cb, tmp007_gpio_callback, BIT(cfg->int_gpio.pin));
 
 	if (gpio_add_callback(cfg->int_gpio.port, &drv_data->gpio_cb) < 0) {
 		LOG_DBG("Failed to set gpio callback!");
@@ -188,11 +174,9 @@ int tmp007_init_interrupt(const struct device *dev)
 #if defined(CONFIG_TMP007_TRIGGER_OWN_THREAD)
 	k_sem_init(&drv_data->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
-	k_thread_create(&drv_data->thread, drv_data->thread_stack,
-			CONFIG_TMP007_THREAD_STACK_SIZE,
-			tmp007_thread, drv_data,
-			NULL, NULL, K_PRIO_COOP(CONFIG_TMP007_THREAD_PRIORITY),
-			0, K_NO_WAIT);
+	k_thread_create(&drv_data->thread, drv_data->thread_stack, CONFIG_TMP007_THREAD_STACK_SIZE,
+			tmp007_thread, drv_data, NULL, NULL,
+			K_PRIO_COOP(CONFIG_TMP007_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_TMP007_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = tmp007_work_cb;
 #endif

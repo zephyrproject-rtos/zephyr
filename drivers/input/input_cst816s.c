@@ -296,8 +296,7 @@ static int cst816s_init(const struct device *dev)
 	static const struct cst816s_config cst816s_config_##index = {                              \
 		.i2c = I2C_DT_SPEC_INST_GET(index),                                                \
 		COND_CODE_1(CONFIG_INPUT_CST816S_INTERRUPT,                                        \
-			    (.int_gpio = GPIO_DT_SPEC_INST_GET(index, irq_gpios),), ())           \
-			.rst_gpio = GPIO_DT_SPEC_INST_GET_OR(index, rst_gpios, {}),                \
+			    (.int_gpio = GPIO_DT_SPEC_INST_GET(index, irq_gpios),), ()) .rst_gpio = GPIO_DT_SPEC_INST_GET_OR(index, rst_gpios, {}),       \
 	};                                                                                         \
 	static struct cst816s_data cst816s_data_##index;                                           \
 	DEVICE_DT_INST_DEFINE(index, cst816s_init, NULL, &cst816s_data_##index,                    \

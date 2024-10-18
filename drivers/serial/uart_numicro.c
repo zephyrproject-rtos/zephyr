@@ -97,8 +97,7 @@ static inline uint32_t uart_numicro_convert_parity(enum uart_config_parity parit
 }
 
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
-static int uart_numicro_configure(const struct device *dev,
-				  const struct uart_config *cfg)
+static int uart_numicro_configure(const struct device *dev, const struct uart_config *cfg)
 {
 	const struct uart_numicro_config *config = dev->config;
 	struct uart_numicro_data *ddata = dev->data;
@@ -125,16 +124,14 @@ static int uart_numicro_configure(const struct device *dev,
 
 	parity = uart_numicro_convert_parity(cfg->parity);
 
-	UART_SetLineConfig(config->uart, cfg->baudrate, databits, parity,
-			   stopbits);
+	UART_SetLineConfig(config->uart, cfg->baudrate, databits, parity, stopbits);
 
 	memcpy(&ddata->ucfg, cfg, sizeof(*cfg));
 
 	return 0;
 }
 
-static int uart_numicro_config_get(const struct device *dev,
-				   struct uart_config *cfg)
+static int uart_numicro_config_get(const struct device *dev, struct uart_config *cfg)
 {
 	struct uart_numicro_data *ddata = dev->data;
 
@@ -158,8 +155,7 @@ static int uart_numicro_init(const struct device *dev)
 	CLK_EnableModuleClock(config->id_clk);
 
 	/* Select UART0 clock source is PLL */
-	CLK_SetModuleClock(config->id_clk, CLK_CLKSEL1_UART0SEL_PLL,
-			   CLK_CLKDIV0_UART0(0));
+	CLK_SetModuleClock(config->id_clk, CLK_CLKSEL1_UART0SEL_PLL, CLK_CLKDIV0_UART0(0));
 
 	SYS_LockReg();
 
@@ -174,37 +170,34 @@ static int uart_numicro_init(const struct device *dev)
 }
 
 static const struct uart_driver_api uart_numicro_driver_api = {
-	.poll_in          = uart_numicro_poll_in,
-	.poll_out         = uart_numicro_poll_out,
-	.err_check        = uart_numicro_err_check,
+	.poll_in = uart_numicro_poll_in,
+	.poll_out = uart_numicro_poll_out,
+	.err_check = uart_numicro_err_check,
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
-	.configure        = uart_numicro_configure,
-	.config_get       = uart_numicro_config_get,
+	.configure = uart_numicro_configure,
+	.config_get = uart_numicro_config_get,
 #endif
 };
 
-#define NUMICRO_INIT(index)						\
-PINCTRL_DT_INST_DEFINE(index);						\
-									\
-static const struct uart_numicro_config uart_numicro_cfg_##index = {	\
-	.uart = (UART_T *)DT_INST_REG_ADDR(index),			\
-	.id_rst = UART##index##_RST,					\
-	.id_clk = UART##index##_MODULE,					\
-	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),		\
-};									\
-									\
-static struct uart_numicro_data uart_numicro_data_##index = {		\
-	.ucfg = {							\
-		.baudrate = DT_INST_PROP(index, current_speed),		\
-	},								\
-};									\
-									\
-DEVICE_DT_INST_DEFINE(index,						\
-		    uart_numicro_init,					\
-		    NULL,						\
-		    &uart_numicro_data_##index,				\
-		    &uart_numicro_cfg_##index,				\
-		    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,		\
-		    &uart_numicro_driver_api);
+#define NUMICRO_INIT(index)                                                                        \
+	PINCTRL_DT_INST_DEFINE(index);                                                             \
+                                                                                                   \
+	static const struct uart_numicro_config uart_numicro_cfg_##index = {                       \
+		.uart = (UART_T *)DT_INST_REG_ADDR(index),                                         \
+		.id_rst = UART##index##_RST,                                                       \
+		.id_clk = UART##index##_MODULE,                                                    \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                   \
+	};                                                                                         \
+                                                                                                   \
+	static struct uart_numicro_data uart_numicro_data_##index = {                              \
+		.ucfg =                                                                            \
+			{                                                                          \
+				.baudrate = DT_INST_PROP(index, current_speed),                    \
+			},                                                                         \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(index, uart_numicro_init, NULL, &uart_numicro_data_##index,          \
+			      &uart_numicro_cfg_##index, PRE_KERNEL_1,                             \
+			      CONFIG_SERIAL_INIT_PRIORITY, &uart_numicro_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NUMICRO_INIT)

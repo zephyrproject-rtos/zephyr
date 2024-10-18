@@ -30,16 +30,15 @@
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_COUNTER_LOG_LEVEL);
 
 /* Device holds a pointer to pointer to data */
-#define MRT_CHANNEL_DATA(dev)	\
-	(*(struct nxp_mrt_channel_data *const *const)dev->data)
+#define MRT_CHANNEL_DATA(dev) (*(struct nxp_mrt_channel_data *const *const)dev->data)
 
 /* Device config->data is an array of data pointers ordered by channel number,
  * dev->data is a pointer to one of these pointers in that array,
  * so the value of the dev->data - dev->config->data is the channel index
  */
-#define MRT_CHANNEL_ID(dev)	\
-	(((struct nxp_mrt_channel_data *const *)dev->data) - \
-	((const struct nxp_mrt_config *)dev->config)->data)
+#define MRT_CHANNEL_ID(dev)                                                                        \
+	(((struct nxp_mrt_channel_data *const *)dev->data) -                                       \
+	 ((const struct nxp_mrt_config *)dev->config)->data)
 
 /* Specific for each channel */
 struct nxp_mrt_channel_data {
@@ -84,8 +83,8 @@ static int nxp_mrt_start(const struct device *dev)
 
 	if (data->top <= 1) {
 		/* Zephyr API says default should be max top value */
-		LOG_INF("\"Started\" MRT@%p channel %d with default value %d",
-				base, channel_id, config->info.max_top_value);
+		LOG_INF("\"Started\" MRT@%p channel %d with default value %d", base, channel_id,
+			config->info.max_top_value);
 		data->top = config->info.max_top_value;
 	}
 
@@ -108,7 +107,6 @@ static int nxp_mrt_get_value(const struct device *dev, uint32_t *ticks)
 	return 0;
 }
 
-
 static int nxp_mrt_set_top_value(const struct device *dev, const struct counter_top_cfg *cfg)
 {
 	const struct nxp_mrt_config *config = dev->config;
@@ -127,7 +125,6 @@ static int nxp_mrt_set_top_value(const struct device *dev, const struct counter_
 	/* Used by ISR */
 	data->cb = cfg->callback;
 	data->user_data = cfg->user_data;
-
 
 	/* If not yet started, wait for counter_start because setting reg value starts timer */
 	if (!active) {
@@ -149,12 +146,11 @@ static int nxp_mrt_set_top_value(const struct device *dev, const struct counter_
 	}
 
 	/* Sets the top value. If we need to reset, LOAD bit does this */
-	base->CHANNEL[channel_id].INTVAL = MRT_CHANNEL_INTVAL_IVALUE(cfg->ticks) |
-					   MRT_CHANNEL_INTVAL_LOAD(reset ? 1 : 0);
+	base->CHANNEL[channel_id].INTVAL =
+		MRT_CHANNEL_INTVAL_IVALUE(cfg->ticks) | MRT_CHANNEL_INTVAL_LOAD(reset ? 1 : 0);
 
-	LOG_DBG("Changed MRT@%p channel %d top value while active to %d",
-			base, channel_id,
-			base->CHANNEL[channel_id].INTVAL & MRT_CHANNEL_INTVAL_IVALUE_MASK);
+	LOG_DBG("Changed MRT@%p channel %d top value while active to %d", base, channel_id,
+		base->CHANNEL[channel_id].INTVAL & MRT_CHANNEL_INTVAL_IVALUE_MASK);
 
 	return ret;
 }
@@ -177,9 +173,8 @@ static uint32_t nxp_mrt_get_pending_int(const struct device *dev)
 	return base->CHANNEL[channel_id].STAT & MRT_CHANNEL_STAT_INTFLAG_MASK;
 }
 
-static inline int nxp_mrt_set_alarm(const struct device *dev,
-				uint8_t chan_id,
-				const struct counter_alarm_cfg *alarm_cfg)
+static inline int nxp_mrt_set_alarm(const struct device *dev, uint8_t chan_id,
+				    const struct counter_alarm_cfg *alarm_cfg)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(chan_id);
@@ -277,81 +272,67 @@ struct counter_driver_api nxp_mrt_api = {
 };
 
 /* Creates a device for a channel (needed for counter API) */
-#define NXP_MRT_CHANNEL_DEV_INIT(node, mrt_inst)				\
-	DEVICE_DT_DEFINE(node, NULL, NULL,					\
-			(void *)						\
-			&nxp_mrt_##mrt_inst##_channel_datas[DT_REG_ADDR(node)],	\
-			&nxp_mrt_##mrt_inst##_config,				\
-			POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,		\
-			&nxp_mrt_api);						\
+#define NXP_MRT_CHANNEL_DEV_INIT(node, mrt_inst)                                                   \
+	DEVICE_DT_DEFINE(node, NULL, NULL,                                                         \
+			 (void *)&nxp_mrt_##mrt_inst##_channel_datas[DT_REG_ADDR(node)],           \
+			 &nxp_mrt_##mrt_inst##_config, POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,  \
+			 &nxp_mrt_api);
 
 /* Creates a data struct for a channel device */
-#define NXP_MRT_CHANNEL_DATA_INIT(node)						\
-	static struct nxp_mrt_channel_data					\
-		nxp_mrt_channel_data_##node;					\
+#define NXP_MRT_CHANNEL_DATA_INIT(node)                                                            \
+	static struct nxp_mrt_channel_data nxp_mrt_channel_data_##node;
 
 /* Initializes an element of the channel data pointer array */
-#define NXP_MRT_CHANNEL_DATA_ARRAY_INIT(node)					\
-	[DT_REG_ADDR(node)] =							\
-		&nxp_mrt_channel_data_##node,
+#define NXP_MRT_CHANNEL_DATA_ARRAY_INIT(node) [DT_REG_ADDR(node)] = &nxp_mrt_channel_data_##node,
 
 /* Initializes an element of the channel device pointer array */
-#define NXP_MRT_CHANNEL_DEV_ARRAY_INIT(node)					\
-	[DT_REG_ADDR(node)] = DEVICE_DT_GET(node),
+#define NXP_MRT_CHANNEL_DEV_ARRAY_INIT(node) [DT_REG_ADDR(node)] = DEVICE_DT_GET(node),
 
-#define NXP_MRT_INIT(n)								\
-	/* ISR is shared between all channels */				\
-	static void nxp_mrt_##n##_irq_config_func(const struct device *dev)	\
-	{									\
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),		\
-				nxp_mrt_isr, DEVICE_DT_INST_GET(n), 0);		\
-		irq_enable(DT_INST_IRQN(n));					\
-	}									\
-										\
-	/* Initialize all the data structs for active channels */		\
-	DT_INST_FOREACH_CHILD_STATUS_OKAY(n, NXP_MRT_CHANNEL_DATA_INIT)		\
-										\
-	/* Create an array of const pointers to the data structs */		\
-	static struct nxp_mrt_channel_data *const nxp_mrt_##n##_channel_datas	\
-			[DT_INST_PROP(n, num_channels)] = {			\
-			DT_INST_FOREACH_CHILD_STATUS_OKAY(n,			\
-				NXP_MRT_CHANNEL_DATA_ARRAY_INIT)		\
-	};									\
-										\
-	/* Forward declaration */						\
-	const static struct nxp_mrt_config nxp_mrt_##n##_config;		\
-										\
-	/* Create all the channel/counter devices */				\
-	DT_INST_FOREACH_CHILD_STATUS_OKAY_VARGS(n, NXP_MRT_CHANNEL_DEV_INIT, n)	\
-										\
-	/* This channel device array is needed by the module device ISR */	\
-	const struct device *const nxp_mrt_##n##_channels			\
-				[DT_INST_PROP(n, num_channels)] = {		\
-			DT_INST_FOREACH_CHILD_STATUS_OKAY(n,			\
-				NXP_MRT_CHANNEL_DEV_ARRAY_INIT)			\
-	};									\
-										\
-	/* This config struct is shared by all the channels and parent device */\
-	const static struct nxp_mrt_config nxp_mrt_##n##_config = {		\
-		.info =	{							\
-			.max_top_value =					\
-			GENMASK(DT_INST_PROP(n, num_bits) - 1, 0),		\
-			.channels = 0,						\
-		},								\
-		.base = (MRT_Type *)DT_INST_REG_ADDR(n),			\
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
-		.clock_subsys = (clock_control_subsys_t)			\
-				DT_INST_CLOCKS_CELL(n, name),			\
-		.irq_config_func = nxp_mrt_##n##_irq_config_func,		\
-		.data = nxp_mrt_##n##_channel_datas,				\
-		.channels = nxp_mrt_##n##_channels,				\
-		.reset = RESET_DT_SPEC_INST_GET(n),				\
-	};									\
-										\
-	/* Init parent device in order to handle ISR and init. */		\
-	DEVICE_DT_INST_DEFINE(n, &nxp_mrt_init, NULL, NULL,			\
-				&nxp_mrt_##n##_config,				\
-				POST_KERNEL,					\
-				CONFIG_COUNTER_INIT_PRIORITY, NULL);
+#define NXP_MRT_INIT(n)                                                                            \
+	/* ISR is shared between all channels */                                                   \
+	static void nxp_mrt_##n##_irq_config_func(const struct device *dev)                        \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), nxp_mrt_isr,                \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+	}                                                                                          \
+                                                                                                   \
+	/* Initialize all the data structs for active channels */                                  \
+	DT_INST_FOREACH_CHILD_STATUS_OKAY(n, NXP_MRT_CHANNEL_DATA_INIT)                            \
+                                                                                                   \
+	/* Create an array of const pointers to the data structs */                                \
+	static struct nxp_mrt_channel_data                                                         \
+		*const nxp_mrt_##n##_channel_datas[DT_INST_PROP(n, num_channels)] = {              \
+			DT_INST_FOREACH_CHILD_STATUS_OKAY(n, NXP_MRT_CHANNEL_DATA_ARRAY_INIT)};    \
+                                                                                                   \
+	/* Forward declaration */                                                                  \
+	const static struct nxp_mrt_config nxp_mrt_##n##_config;                                   \
+                                                                                                   \
+	/* Create all the channel/counter devices */                                               \
+	DT_INST_FOREACH_CHILD_STATUS_OKAY_VARGS(n, NXP_MRT_CHANNEL_DEV_INIT, n)                    \
+                                                                                                   \
+	/* This channel device array is needed by the module device ISR */                         \
+	const struct device *const nxp_mrt_##n##_channels[DT_INST_PROP(n, num_channels)] = {       \
+		DT_INST_FOREACH_CHILD_STATUS_OKAY(n, NXP_MRT_CHANNEL_DEV_ARRAY_INIT)};             \
+                                                                                                   \
+	/* This config struct is shared by all the channels and parent device */                   \
+	const static struct nxp_mrt_config nxp_mrt_##n##_config = {                                \
+		.info =                                                                            \
+			{                                                                          \
+				.max_top_value = GENMASK(DT_INST_PROP(n, num_bits) - 1, 0),        \
+				.channels = 0,                                                     \
+			},                                                                         \
+		.base = (MRT_Type *)DT_INST_REG_ADDR(n),                                           \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
+		.irq_config_func = nxp_mrt_##n##_irq_config_func,                                  \
+		.data = nxp_mrt_##n##_channel_datas,                                               \
+		.channels = nxp_mrt_##n##_channels,                                                \
+		.reset = RESET_DT_SPEC_INST_GET(n),                                                \
+	};                                                                                         \
+                                                                                                   \
+	/* Init parent device in order to handle ISR and init. */                                  \
+	DEVICE_DT_INST_DEFINE(n, &nxp_mrt_init, NULL, NULL, &nxp_mrt_##n##_config, POST_KERNEL,    \
+			      CONFIG_COUNTER_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_MRT_INIT)

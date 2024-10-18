@@ -64,21 +64,20 @@ static bool nct38xx_alert_is_active(struct nct38xx_mfd *mfd)
 	k_sem_take(mfd->lock, K_FOREVER);
 
 	/* Clear alert */
-	ret = i2c_burst_read_dt(mfd->i2c_dev, NCT38XX_REG_ALERT, (uint8_t *)&alert,
-				sizeof(alert));
+	ret = i2c_burst_read_dt(mfd->i2c_dev, NCT38XX_REG_ALERT, (uint8_t *)&alert, sizeof(alert));
 	if (ret < 0) {
 		goto release_lock;
 	}
-	ret = i2c_burst_read_dt(mfd->i2c_dev, NCT38XX_REG_ALERT_MASK,
-				(uint8_t *)&mask, sizeof(mask));
+	ret = i2c_burst_read_dt(mfd->i2c_dev, NCT38XX_REG_ALERT_MASK, (uint8_t *)&mask,
+				sizeof(mask));
 	if (ret < 0) {
 		goto release_lock;
 	}
 
 	alert &= mask;
 	if (alert) {
-		ret = i2c_burst_write_dt(mfd->i2c_dev, NCT38XX_REG_ALERT,
-						(uint8_t *)&alert, sizeof(alert));
+		ret = i2c_burst_write_dt(mfd->i2c_dev, NCT38XX_REG_ALERT, (uint8_t *)&alert,
+					 sizeof(alert));
 	}
 
 release_lock:

@@ -27,34 +27,34 @@ LOG_MODULE_REGISTER(DT_DRV_COMPAT, CONFIG_PHY_LOG_LEVEL);
 #include <zephyr/drivers/mdio.h>
 
 /* PHYs out of reset check retry delay */
-#define ADIN2111_PHY_AWAIT_DELAY_POLL_US			15U
+#define ADIN2111_PHY_AWAIT_DELAY_POLL_US 15U
 /*
  * Number of retries for PHYs out of reset check,
  * rmii variants as ADIN11XX need 70ms maximum after hw reset to be up,
  * so the increasing the count for that, as default 25ms (sw reset) + 45.
  */
-#define ADIN2111_PHY_AWAIT_RETRY_COUNT				3000U
+#define ADIN2111_PHY_AWAIT_RETRY_COUNT   3000U
 
 /* PHY's software powerdown check retry delay */
-#define ADIN2111_PHY_SFT_PD_DELAY_POLL_US			15U
+#define ADIN2111_PHY_SFT_PD_DELAY_POLL_US 15U
 /* Number of retries for PHY's software powerdown check */
-#define ADIN2111_PHY_SFT_PD_RETRY_COUNT				200U
+#define ADIN2111_PHY_SFT_PD_RETRY_COUNT   200U
 
 /* Software reset, CLK_25 disabled time*/
-#define ADIN1100_PHY_SFT_RESET_MS				25U
+#define ADIN1100_PHY_SFT_RESET_MS 25U
 
 /* PHYs autonegotiation complete timeout */
-#define ADIN2111_AN_COMPLETE_AWAIT_TIMEOUT_MS			3000U
+#define ADIN2111_AN_COMPLETE_AWAIT_TIMEOUT_MS 3000U
 
 /* ADIN2111 PHY identifier */
-#define ADIN2111_PHY_ID						0x0283BCA1U
-#define ADIN1110_PHY_ID						0x0283BC91U
-#define ADIN1100_PHY_ID						0x0283BC81U
+#define ADIN2111_PHY_ID 0x0283BCA1U
+#define ADIN1110_PHY_ID 0x0283BC91U
+#define ADIN1100_PHY_ID 0x0283BC81U
 
 /* System Interrupt Mask Register */
-#define ADIN2111_PHY_CRSM_IRQ_MASK				0x0020U
+#define ADIN2111_PHY_CRSM_IRQ_MASK             0x0020U
 /* System Interrupt Status Register */
-#define ADIN2111_PHY_CRSM_IRQ_STATUS				0x0010U
+#define ADIN2111_PHY_CRSM_IRQ_STATUS           0x0010U
 /**
  * Mask of reserved interrupts that indicates a fatal error in the system.
  *
@@ -67,32 +67,32 @@ LOG_MODULE_REGISTER(DT_DRV_COMPAT, CONFIG_PHY_LOG_LEVEL);
  *
  * Here the value from ADI driver example is used instead of RM.
  */
-#define ADIN2111_PHY_CRSM_IRQ_STATUS_FATAL_ERR			0x2BFFU
+#define ADIN2111_PHY_CRSM_IRQ_STATUS_FATAL_ERR 0x2BFFU
 
 /* PHY Subsystem Interrupt Mask Register */
-#define ADIN2111_PHY_SUBSYS_IRQ_MASK				0x0021U
+#define ADIN2111_PHY_SUBSYS_IRQ_MASK                     0x0021U
 /* PHY Subsystem Interrupt Status Register */
-#define ADIN2111_PHY_SUBSYS_IRQ_STATUS				0x0011U
+#define ADIN2111_PHY_SUBSYS_IRQ_STATUS                   0x0011U
 /* Link Status Change */
-#define ADIN2111_PHY_SUBSYS_IRQ_STATUS_LINK_STAT_CHNG_LH	BIT(1)
+#define ADIN2111_PHY_SUBSYS_IRQ_STATUS_LINK_STAT_CHNG_LH BIT(1)
 
 /* Software Power-down Control Register */
-#define ADIN2111_PHY_CRSM_SFT_PD_CNTRL				0x8812U
+#define ADIN2111_PHY_CRSM_SFT_PD_CNTRL     0x8812U
 /* System Status Register */
-#define ADIN2111_PHY_CRSM_STAT					0x8818U
+#define ADIN2111_PHY_CRSM_STAT             0x8818U
 /* Software Power-down Status */
-#define ADIN2111_CRSM_STAT_CRSM_SFT_PD_RDY			BIT(1)
+#define ADIN2111_CRSM_STAT_CRSM_SFT_PD_RDY BIT(1)
 
 /* LED Control Register */
-#define ADIN2111_PHY_LED_CNTRL					0x8C82U
+#define ADIN2111_PHY_LED_CNTRL         0x8C82U
 /* LED 1 Enable */
-#define ADIN2111_PHY_LED_CNTRL_LED1_EN				BIT(15)
+#define ADIN2111_PHY_LED_CNTRL_LED1_EN BIT(15)
 /* LED 0 Enable */
-#define ADIN2111_PHY_LED_CNTRL_LED0_EN				BIT(7)
+#define ADIN2111_PHY_LED_CNTRL_LED0_EN BIT(7)
 
 /* MMD bridge regs */
-#define ADIN1100_MMD_ACCESS_CNTRL				0x0DU
-#define ADIN1100_MMD_ACCESS					0x0EU
+#define ADIN1100_MMD_ACCESS_CNTRL 0x0DU
+#define ADIN1100_MMD_ACCESS       0x0EU
 
 struct phy_adin2111_config {
 	const struct device *mdio;
@@ -112,24 +112,21 @@ struct phy_adin2111_data {
 	void *cb_data;
 };
 
-static inline int phy_adin2111_c22_read(const struct device *dev, uint16_t reg,
-					uint16_t *val)
+static inline int phy_adin2111_c22_read(const struct device *dev, uint16_t reg, uint16_t *val)
 {
 	const struct phy_adin2111_config *const cfg = dev->config;
 
 	return mdio_read(cfg->mdio, cfg->phy_addr, reg, val);
 }
 
-static inline int phy_adin2111_c22_write(const struct device *dev, uint16_t reg,
-					 uint16_t val)
+static inline int phy_adin2111_c22_write(const struct device *dev, uint16_t reg, uint16_t val)
 {
 	const struct phy_adin2111_config *const cfg = dev->config;
 
 	return mdio_write(cfg->mdio, cfg->phy_addr, reg, val);
 }
 
-static int phy_adin2111_c45_setup_dev_reg(const struct device *dev, uint16_t devad,
-					  uint16_t reg)
+static int phy_adin2111_c45_setup_dev_reg(const struct device *dev, uint16_t devad, uint16_t reg)
 {
 	const struct phy_adin2111_config *cfg = dev->config;
 	int rval;
@@ -146,8 +143,8 @@ static int phy_adin2111_c45_setup_dev_reg(const struct device *dev, uint16_t dev
 	return mdio_write(cfg->mdio, cfg->phy_addr, ADIN1100_MMD_ACCESS_CNTRL, devad | BIT(14));
 }
 
-static int phy_adin2111_c45_read(const struct device *dev, uint16_t devad,
-				 uint16_t reg, uint16_t *val)
+static int phy_adin2111_c45_read(const struct device *dev, uint16_t devad, uint16_t reg,
+				 uint16_t *val)
 {
 	const struct phy_adin2111_config *cfg = dev->config;
 	int rval;
@@ -165,8 +162,8 @@ static int phy_adin2111_c45_read(const struct device *dev, uint16_t devad,
 	return mdio_read_c45(cfg->mdio, cfg->phy_addr, devad, reg, val);
 }
 
-static int phy_adin2111_c45_write(const struct device *dev, uint16_t devad,
-				  uint16_t reg, uint16_t val)
+static int phy_adin2111_c45_write(const struct device *dev, uint16_t devad, uint16_t reg,
+				  uint16_t val)
 {
 	const struct phy_adin2111_config *cfg = dev->config;
 	int rval;
@@ -184,30 +181,28 @@ static int phy_adin2111_c45_write(const struct device *dev, uint16_t devad,
 	return mdio_write_c45(cfg->mdio, cfg->phy_addr, devad, reg, val);
 }
 
-static int phy_adin2111_reg_read(const struct device *dev, uint16_t reg_addr,
-				 uint32_t *data)
+static int phy_adin2111_reg_read(const struct device *dev, uint16_t reg_addr, uint32_t *data)
 {
 	const struct phy_adin2111_config *cfg = dev->config;
 	int ret;
 
 	mdio_bus_enable(cfg->mdio);
 
-	ret = phy_adin2111_c22_read(dev, reg_addr, (uint16_t *) data);
+	ret = phy_adin2111_c22_read(dev, reg_addr, (uint16_t *)data);
 
 	mdio_bus_disable(cfg->mdio);
 
 	return ret;
 }
 
-static int phy_adin2111_reg_write(const struct device *dev, uint16_t reg_addr,
-				  uint32_t data)
+static int phy_adin2111_reg_write(const struct device *dev, uint16_t reg_addr, uint32_t data)
 {
 	const struct phy_adin2111_config *cfg = dev->config;
 	int ret;
 
 	mdio_bus_enable(cfg->mdio);
 
-	ret = phy_adin2111_c22_write(dev, reg_addr, (uint16_t) data);
+	ret = phy_adin2111_c22_write(dev, reg_addr, (uint16_t)data);
 
 	mdio_bus_disable(cfg->mdio);
 
@@ -262,15 +257,13 @@ static int phy_adin2111_an_state_read(const struct device *dev)
 	return 0;
 }
 
-int phy_adin2111_handle_phy_irq(const struct device *dev,
-				struct phy_link_state *state)
+int phy_adin2111_handle_phy_irq(const struct device *dev, struct phy_link_state *state)
 {
 	struct phy_adin2111_data *const data = dev->data;
 	uint16_t subsys_status;
 	int ret;
 
-	ret = phy_adin2111_c45_read(dev, MDIO_MMD_VENDOR_SPECIFIC2,
-				    ADIN2111_PHY_SUBSYS_IRQ_STATUS,
+	ret = phy_adin2111_c45_read(dev, MDIO_MMD_VENDOR_SPECIFIC2, ADIN2111_PHY_SUBSYS_IRQ_STATUS,
 				    &subsys_status);
 	if (ret < 0) {
 		return ret;
@@ -299,16 +292,15 @@ static int phy_adin2111_sft_pd(const struct device *dev, bool enter)
 	const uint16_t expected = enter ? ADIN2111_CRSM_STAT_CRSM_SFT_PD_RDY : 0U;
 	uint16_t val;
 
-	ret = phy_adin2111_c45_write(dev, MDIO_MMD_VENDOR_SPECIFIC1,
-				     ADIN2111_PHY_CRSM_SFT_PD_CNTRL,
+	ret = phy_adin2111_c45_write(dev, MDIO_MMD_VENDOR_SPECIFIC1, ADIN2111_PHY_CRSM_SFT_PD_CNTRL,
 				     enter ? 1U : 0U);
 	if (ret < 0) {
 		return ret;
 	}
 
 	for (count = 0U; count < ADIN2111_PHY_SFT_PD_RETRY_COUNT; ++count) {
-		ret = phy_adin2111_c45_read(dev, MDIO_MMD_VENDOR_SPECIFIC1,
-					    ADIN2111_PHY_CRSM_STAT, &val);
+		ret = phy_adin2111_c45_read(dev, MDIO_MMD_VENDOR_SPECIFIC1, ADIN2111_PHY_CRSM_STAT,
+					    &val);
 		if (ret >= 0) {
 			if ((val & ADIN2111_CRSM_STAT_CRSM_SFT_PD_RDY) == expected) {
 				break;
@@ -340,8 +332,7 @@ static int phy_adin2111_id(const struct device *dev, uint32_t *phy_id)
 	return 0;
 }
 
-static int phy_adin2111_get_link_state(const struct device *dev,
-				       struct phy_link_state *state)
+static int phy_adin2111_get_link_state(const struct device *dev, struct phy_link_state *state)
 {
 	struct phy_adin2111_data *const data = dev->data;
 
@@ -354,8 +345,7 @@ static int phy_adin2111_get_link_state(const struct device *dev,
 	return 0;
 }
 
-static int phy_adin2111_cfg_link(const struct device *dev,
-				 enum phy_link_speed adv_speeds)
+static int phy_adin2111_cfg_link(const struct device *dev, enum phy_link_speed adv_speeds)
 {
 	ARG_UNUSED(dev);
 
@@ -470,15 +460,13 @@ static int phy_adin2111_init(const struct device *dev)
 
 	ret = phy_adin2111_await_phy(dev);
 	if (ret < 0) {
-		LOG_ERR("PHY %u didn't come out of reset, %d",
-			cfg->phy_addr, ret);
+		LOG_ERR("PHY %u didn't come out of reset, %d", cfg->phy_addr, ret);
 		return -ENODEV;
 	}
 
 	ret = phy_adin2111_id(dev, &phy_id);
 	if (ret < 0) {
-		LOG_ERR("Failed to read PHY %u ID, %d",
-			cfg->phy_addr, ret);
+		LOG_ERR("Failed to read PHY %u ID, %d", cfg->phy_addr, ret);
 		return -ENODEV;
 	}
 
@@ -496,23 +484,22 @@ static int phy_adin2111_init(const struct device *dev)
 	}
 
 	/* disable interrupts */
-	ret = phy_adin2111_c45_write(dev, MDIO_MMD_VENDOR_SPECIFIC1,
-				     ADIN2111_PHY_CRSM_IRQ_MASK, 0U);
+	ret = phy_adin2111_c45_write(dev, MDIO_MMD_VENDOR_SPECIFIC1, ADIN2111_PHY_CRSM_IRQ_MASK,
+				     0U);
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* enable link status change irq */
-	ret = phy_adin2111_c45_write(dev, MDIO_MMD_VENDOR_SPECIFIC2,
-				     ADIN2111_PHY_SUBSYS_IRQ_MASK,
+	ret = phy_adin2111_c45_write(dev, MDIO_MMD_VENDOR_SPECIFIC2, ADIN2111_PHY_SUBSYS_IRQ_MASK,
 				     ADIN2111_PHY_SUBSYS_IRQ_STATUS_LINK_STAT_CHNG_LH);
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* clear PHY IRQ status before enabling ADIN IRQs */
-	ret = phy_adin2111_c45_read(dev, MDIO_MMD_VENDOR_SPECIFIC1,
-				    ADIN2111_PHY_CRSM_IRQ_STATUS, &val);
+	ret = phy_adin2111_c45_read(dev, MDIO_MMD_VENDOR_SPECIFIC1, ADIN2111_PHY_CRSM_IRQ_STATUS,
+				    &val);
 	if (ret < 0) {
 		return ret;
 	}
@@ -522,15 +509,15 @@ static int phy_adin2111_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = phy_adin2111_c45_read(dev, MDIO_MMD_VENDOR_SPECIFIC2,
-				    ADIN2111_PHY_SUBSYS_IRQ_STATUS, &val);
+	ret = phy_adin2111_c45_read(dev, MDIO_MMD_VENDOR_SPECIFIC2, ADIN2111_PHY_SUBSYS_IRQ_STATUS,
+				    &val);
 	if (ret < 0) {
 		return ret;
 	}
 
 	if (!cfg->led0_en || !cfg->led1_en) {
-		ret = phy_adin2111_c45_read(dev, MDIO_MMD_VENDOR_SPECIFIC1,
-					    ADIN2111_PHY_LED_CNTRL, &val);
+		ret = phy_adin2111_c45_read(dev, MDIO_MMD_VENDOR_SPECIFIC1, ADIN2111_PHY_LED_CNTRL,
+					    &val);
 		if (ret < 0) {
 			return ret;
 		}
@@ -540,8 +527,8 @@ static int phy_adin2111_init(const struct device *dev)
 		if (!cfg->led1_en) {
 			val &= ~(ADIN2111_PHY_LED_CNTRL_LED1_EN);
 		}
-		ret = phy_adin2111_c45_write(dev, MDIO_MMD_VENDOR_SPECIFIC1,
-					     ADIN2111_PHY_LED_CNTRL, val);
+		ret = phy_adin2111_c45_write(dev, MDIO_MMD_VENDOR_SPECIFIC1, ADIN2111_PHY_LED_CNTRL,
+					     val);
 		if (ret < 0) {
 			return ret;
 		}
@@ -559,8 +546,7 @@ static int phy_adin2111_init(const struct device *dev)
 		tx_24v_supported ? "supported" : "not supported");
 
 	if (!cfg->tx_24v & tx_24v_supported) {
-		LOG_ERR("PHY %u 2.4V mode supported, but not enabled",
-			cfg->phy_addr);
+		LOG_ERR("PHY %u 2.4V mode supported, but not enabled", cfg->phy_addr);
 	}
 
 	/* config 2.4V auto-negotiation */
@@ -577,8 +563,7 @@ static int phy_adin2111_init(const struct device *dev)
 
 	if (cfg->tx_24v) {
 		if (!tx_24v_supported) {
-			LOG_ERR("PHY %u 2.4V mode enabled, but not supported",
-				cfg->phy_addr);
+			LOG_ERR("PHY %u 2.4V mode enabled, but not supported", cfg->phy_addr);
 			return -EINVAL;
 		}
 
@@ -593,8 +578,7 @@ static int phy_adin2111_init(const struct device *dev)
 	}
 
 	/* enable auto-negotiation */
-	ret = phy_adin2111_c45_write(dev, MDIO_MMD_AN, MDIO_AN_T1_CTRL,
-				     MDIO_AN_T1_CTRL_EN);
+	ret = phy_adin2111_c45_write(dev, MDIO_MMD_AN, MDIO_AN_T1_CTRL, MDIO_AN_T1_CTRL_EN);
 	if (ret < 0) {
 		return ret;
 	}
@@ -612,8 +596,7 @@ static int phy_adin2111_init(const struct device *dev)
 	return phy_adin2111_sft_pd(dev, false);
 }
 
-static int phy_adin2111_link_cb_set(const struct device *dev, phy_callback_t cb,
-				    void *user_data)
+static int phy_adin2111_link_cb_set(const struct device *dev, phy_callback_t cb, void *user_data)
 {
 	struct phy_adin2111_data *const data = dev->data;
 
@@ -636,22 +619,20 @@ static const struct ethphy_driver_api phy_adin2111_api = {
 	.write = phy_adin2111_reg_write,
 };
 
-#define ADIN2111_PHY_INITIALIZE(n)						\
-	static const struct phy_adin2111_config phy_adin2111_config_##n = {	\
-		.mdio = DEVICE_DT_GET(DT_INST_BUS(n)),				\
-		.phy_addr = DT_INST_REG_ADDR(n),				\
-		.led0_en = DT_INST_PROP(n, led0_en),				\
-		.led1_en = DT_INST_PROP(n, led1_en),				\
-		.tx_24v = !(DT_INST_PROP(n, disable_tx_mode_24v)),		\
+#define ADIN2111_PHY_INITIALIZE(n)                                                                 \
+	static const struct phy_adin2111_config phy_adin2111_config_##n = {                        \
+		.mdio = DEVICE_DT_GET(DT_INST_BUS(n)),                                             \
+		.phy_addr = DT_INST_REG_ADDR(n),                                                   \
+		.led0_en = DT_INST_PROP(n, led0_en),                                               \
+		.led1_en = DT_INST_PROP(n, led1_en),                                               \
+		.tx_24v = !(DT_INST_PROP(n, disable_tx_mode_24v)),                                 \
 		IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(adi_adin1100_phy),		\
-		(.mii = 1))						\
-	};									\
-	static struct phy_adin2111_data phy_adin2111_data_##n = {		\
-		.sem = Z_SEM_INITIALIZER(phy_adin2111_data_##n.sem, 1, 1),	\
-	};									\
-	DEVICE_DT_INST_DEFINE(n, &phy_adin2111_init, NULL,			\
-			      &phy_adin2111_data_##n, &phy_adin2111_config_##n, \
-			      POST_KERNEL, CONFIG_PHY_INIT_PRIORITY,		\
+		(.mii = 1)) };                \
+	static struct phy_adin2111_data phy_adin2111_data_##n = {                                  \
+		.sem = Z_SEM_INITIALIZER(phy_adin2111_data_##n.sem, 1, 1),                         \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(n, &phy_adin2111_init, NULL, &phy_adin2111_data_##n,                 \
+			      &phy_adin2111_config_##n, POST_KERNEL, CONFIG_PHY_INIT_PRIORITY,     \
 			      &phy_adin2111_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADIN2111_PHY_INITIALIZE)

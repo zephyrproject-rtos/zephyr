@@ -38,8 +38,8 @@ static int mpr_read_reg(const struct device *dev)
 	struct mpr_data *data = dev->data;
 	const struct mpr_config *cfg = dev->config;
 
-	uint8_t write_buf[] = { MPR_OUTPUT_MEASUREMENT_COMMAND, 0x00, 0x00 };
-	uint8_t read_buf[4] = { 0x0 };
+	uint8_t write_buf[] = {MPR_OUTPUT_MEASUREMENT_COMMAND, 0x00, 0x00};
+	uint8_t read_buf[4] = {0x0};
 
 	int rc = i2c_write_dt(&cfg->i2c, write_buf, sizeof(write_buf));
 
@@ -57,9 +57,9 @@ static int mpr_read_reg(const struct device *dev)
 			return rc;
 		}
 
-		if (!(*read_buf & MPR_STATUS_MASK_POWER_ON)
-			|| (*read_buf & MPR_STATUS_MASK_INTEGRITY_TEST_FAILED)
-			|| (*read_buf & MPR_STATUS_MASK_MATH_SATURATION)) {
+		if (!(*read_buf & MPR_STATUS_MASK_POWER_ON) ||
+		    (*read_buf & MPR_STATUS_MASK_INTEGRITY_TEST_FAILED) ||
+		    (*read_buf & MPR_STATUS_MASK_MATH_SATURATION)) {
 			return -EIO;
 		}
 
@@ -72,9 +72,7 @@ static int mpr_read_reg(const struct device *dev)
 		return -EIO;
 	}
 
-	data->reg_val = (read_buf[1] << 16)
-			| (read_buf[2] << 8)
-			|  read_buf[3];
+	data->reg_val = (read_buf[1] << 16) | (read_buf[2] << 8) | read_buf[3];
 
 	return 0;
 }
@@ -97,16 +95,14 @@ static inline void mpr_convert_reg(const uint32_t *reg, uint64_t *value)
 	}
 }
 
-static int mpr_sample_fetch(const struct device *dev,
-			    enum sensor_channel chan)
+static int mpr_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_PRESS);
 
 	return mpr_read_reg(dev);
 }
 
-static int mpr_channel_get(const struct device *dev,
-			   enum sensor_channel chan,
+static int mpr_channel_get(const struct device *dev, enum sensor_channel chan,
 			   struct sensor_value *val)
 {
 	const struct mpr_data *data = dev->data;
@@ -132,15 +128,14 @@ static const struct sensor_driver_api mpr_api_funcs = {
 	.channel_get = mpr_channel_get,
 };
 
-#define MPR_DEFINE(inst)								\
-	static struct mpr_data mpr_data_##inst;						\
-											\
-	static const struct mpr_config mpr_config_##inst = {				\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
-	};										\
-											\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, mpr_init, NULL,				\
-			      &mpr_data_##inst, &mpr_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &mpr_api_funcs);		\
+#define MPR_DEFINE(inst)                                                                           \
+	static struct mpr_data mpr_data_##inst;                                                    \
+                                                                                                   \
+	static const struct mpr_config mpr_config_##inst = {                                       \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+	};                                                                                         \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, mpr_init, NULL, &mpr_data_##inst, &mpr_config_##inst,   \
+				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &mpr_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(MPR_DEFINE)

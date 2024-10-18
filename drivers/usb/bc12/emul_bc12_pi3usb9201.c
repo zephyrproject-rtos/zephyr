@@ -23,16 +23,16 @@
 LOG_MODULE_REGISTER(emul_pi3usb9201, LOG_LEVEL_DBG);
 
 #define IS_I2C_MSG_WRITE(flags) ((flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE)
-#define IS_I2C_MSG_READ(flags)	((flags & I2C_MSG_RW_MASK) == I2C_MSG_READ)
+#define IS_I2C_MSG_READ(flags)  ((flags & I2C_MSG_RW_MASK) == I2C_MSG_READ)
 
-#define EMUL_REG_COUNT	       (PI3USB9201_REG_HOST_STS + 1)
+#define EMUL_REG_COUNT         (PI3USB9201_REG_HOST_STS + 1)
 #define EMUL_REG_IS_VALID(reg) (reg >= 0 && reg < EMUL_REG_COUNT)
 
-#define DCP_DETECTED		  BIT(7)
-#define SDP_DETECTED		  BIT(6)
-#define CDP_DETECTED		  BIT(5)
-#define PROPRIETARY_1A_DETECTED	  BIT(3)
-#define PROPRIETARY_2A_DETECTED	  BIT(2)
+#define DCP_DETECTED              BIT(7)
+#define SDP_DETECTED              BIT(6)
+#define CDP_DETECTED              BIT(5)
+#define PROPRIETARY_1A_DETECTED   BIT(3)
+#define PROPRIETARY_2A_DETECTED   BIT(2)
 #define PROPRIETARY_2_4A_DETECTED BIT(1)
 
 /** Run-time data used by the emulator */
@@ -312,15 +312,15 @@ static int pi3usb9201_emul_init(const struct emul *target, const struct device *
 	return 0;
 }
 
-#define PI3USB9201_EMUL(n)							\
-	static struct pi3usb9201_emul_data pi3usb9201_emul_data_##n = {};	\
-	static const struct pi3usb9201_emul_cfg pi3usb9201_emul_cfg_##n = {	\
-		.data = &pi3usb9201_emul_data_##n,				\
-		.addr = DT_INST_REG_ADDR(n),					\
-		.intb_gpio = GPIO_DT_SPEC_INST_GET_OR(n, intb_gpios, {0}),	\
-	};									\
-	EMUL_DT_INST_DEFINE(n, pi3usb9201_emul_init, &pi3usb9201_emul_data_##n,	\
-			    &pi3usb9201_emul_cfg_##n, &pi3usb9201_emul_bus_api,	\
+#define PI3USB9201_EMUL(n)                                                                         \
+	static struct pi3usb9201_emul_data pi3usb9201_emul_data_##n = {};                          \
+	static const struct pi3usb9201_emul_cfg pi3usb9201_emul_cfg_##n = {                        \
+		.data = &pi3usb9201_emul_data_##n,                                                 \
+		.addr = DT_INST_REG_ADDR(n),                                                       \
+		.intb_gpio = GPIO_DT_SPEC_INST_GET_OR(n, intb_gpios, {0}),                         \
+	};                                                                                         \
+	EMUL_DT_INST_DEFINE(n, pi3usb9201_emul_init, &pi3usb9201_emul_data_##n,                    \
+			    &pi3usb9201_emul_cfg_##n, &pi3usb9201_emul_bus_api,                    \
 			    &pi3usb9201_emul_backend_api)
 
 DT_INST_FOREACH_STATUS_OKAY(PI3USB9201_EMUL)

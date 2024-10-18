@@ -31,26 +31,22 @@ static void adxl367_thread_cb(const struct device *dev)
 
 	if (drv_data->th_handler != NULL) {
 		if (((FIELD_GET(ADXL367_STATUS_INACT, status)) != 0) ||
-			(FIELD_GET(ADXL367_STATUS_ACT, status)) != 0) {
+		    (FIELD_GET(ADXL367_STATUS_ACT, status)) != 0) {
 			drv_data->th_handler(dev, drv_data->th_trigger);
 		}
 	}
 
-	if ((drv_data->drdy_handler != NULL) &&
-		(FIELD_GET(ADXL367_STATUS_DATA_RDY, status) != 0)) {
+	if ((drv_data->drdy_handler != NULL) && (FIELD_GET(ADXL367_STATUS_DATA_RDY, status) != 0)) {
 		drv_data->drdy_handler(dev, drv_data->drdy_trigger);
 	}
 
-	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
-					      GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
 	__ASSERT(ret == 0, "Interrupt configuration failed");
 }
 
-static void adxl367_gpio_callback(const struct device *dev,
-				  struct gpio_callback *cb, uint32_t pins)
+static void adxl367_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	struct adxl367_data *drv_data =
-		CONTAINER_OF(cb, struct adxl367_data, gpio_cb);
+	struct adxl367_data *drv_data = CONTAINER_OF(cb, struct adxl367_data, gpio_cb);
 	const struct adxl367_dev_config *cfg = drv_data->dev->config;
 
 	gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_DISABLE);
@@ -74,15 +70,13 @@ static void adxl367_thread(struct adxl367_data *drv_data)
 #elif defined(CONFIG_ADXL367_TRIGGER_GLOBAL_THREAD)
 static void adxl367_work_cb(struct k_work *work)
 {
-	struct adxl367_data *drv_data =
-		CONTAINER_OF(work, struct adxl367_data, work);
+	struct adxl367_data *drv_data = CONTAINER_OF(work, struct adxl367_data, work);
 
 	adxl367_thread_cb(drv_data->dev);
 }
 #endif
 
-int adxl367_trigger_set(const struct device *dev,
-			const struct sensor_trigger *trig,
+int adxl367_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
 	const struct adxl367_dev_config *cfg = dev->config;
@@ -90,8 +84,7 @@ int adxl367_trigger_set(const struct device *dev,
 	uint8_t int_mask, int_en, status;
 	int ret;
 
-	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
-					      GPIO_INT_DISABLE);
+	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_DISABLE);
 	if (ret != 0) {
 		return ret;
 	}
@@ -129,8 +122,7 @@ int adxl367_trigger_set(const struct device *dev,
 		return ret;
 	}
 
-	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
-					      GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret != 0) {
 		return ret;
 	}
@@ -154,9 +146,7 @@ int adxl367_init_interrupt(const struct device *dev)
 		return ret;
 	}
 
-	gpio_init_callback(&drv_data->gpio_cb,
-			   adxl367_gpio_callback,
-			   BIT(cfg->interrupt.pin));
+	gpio_init_callback(&drv_data->gpio_cb, adxl367_gpio_callback, BIT(cfg->interrupt.pin));
 
 	ret = gpio_add_callback(cfg->interrupt.port, &drv_data->gpio_cb);
 	if (ret != 0) {
@@ -169,11 +159,9 @@ int adxl367_init_interrupt(const struct device *dev)
 #if defined(CONFIG_ADXL367_TRIGGER_OWN_THREAD)
 	k_sem_init(&drv_data->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
-	k_thread_create(&drv_data->thread, drv_data->thread_stack,
-			CONFIG_ADXL367_THREAD_STACK_SIZE,
-			(k_thread_entry_t)adxl367_thread, drv_data,
-			NULL, NULL, K_PRIO_COOP(CONFIG_ADXL367_THREAD_PRIORITY),
-			0, K_NO_WAIT);
+	k_thread_create(&drv_data->thread, drv_data->thread_stack, CONFIG_ADXL367_THREAD_STACK_SIZE,
+			(k_thread_entry_t)adxl367_thread, drv_data, NULL, NULL,
+			K_PRIO_COOP(CONFIG_ADXL367_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_ADXL367_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = adxl367_work_cb;
 #endif

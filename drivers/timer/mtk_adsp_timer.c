@@ -6,7 +6,7 @@
 #include <zephyr/drivers/timer/system_timer.h>
 
 #define OSTIMER64_BASE DT_REG_ADDR(DT_NODELABEL(ostimer64))
-#define OSTIMER_BASE DT_REG_ADDR(DT_NODELABEL(ostimer0))
+#define OSTIMER_BASE   DT_REG_ADDR(DT_NODELABEL(ostimer0))
 
 /*
  * This device has a LOT of timer hardware.  There are SIX
@@ -49,7 +49,7 @@ struct mtk_ostimer64 {
 
 #define OSTIMERS ((volatile struct mtk_ostimer *)OSTIMER_BASE)
 
-#define OSTIMER_CON_ENABLE BIT(0)
+#define OSTIMER_CON_ENABLE      BIT(0)
 #define OSTIMER_CON_CLKSRC_MASK 0x30
 #define OSTIMER_CON_CLKSRC_32K  0x00 /*  32768 Hz */
 #define OSTIMER_CON_CLKSRC_26M  0x10 /*  26 MHz */
@@ -59,10 +59,10 @@ struct mtk_ostimer64 {
 #define OSTIMER_IRQ_ACK_ENABLE BIT(4) /*  read = status, write = enable */
 #define OSTIMER_IRQ_ACK_CLEAR  BIT(5)
 
-#define OST64_HZ 13000000U
-#define OST_HZ 26000000U
+#define OST64_HZ       13000000U
+#define OST_HZ         26000000U
 #define OST64_PER_TICK (OST64_HZ / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-#define OST_PER_TICK (OST_HZ / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define OST_PER_TICK   (OST_HZ / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
 #define MAX_TICKS ((0xffffffffU - OST_PER_TICK) / OST_PER_TICK)
 #define CYC64_MAX (0xffffffff - OST64_PER_TICK)
@@ -82,7 +82,7 @@ uint64_t sys_clock_cycle_get_64(void)
 
 	do {
 		h0 = OSTIMER64.cur_h;
-		l  = OSTIMER64.cur_l;
+		l = OSTIMER64.cur_l;
 		h1 = OSTIMER64.cur_h;
 	} while (h0 != h1);
 
@@ -117,8 +117,7 @@ uint32_t sys_clock_elapsed(void)
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint32_t ret;
 
-	ret = (uint32_t)((sys_clock_cycle_get_64() - last_announce)
-			 / OST64_PER_TICK);
+	ret = (uint32_t)((sys_clock_cycle_get_64() - last_announce) / OST64_PER_TICK);
 	k_spin_unlock(&lock, key);
 	return ret;
 }
@@ -139,8 +138,8 @@ static void timer_isr(__maybe_unused void *arg)
 	 * sys_clock_set_timeout() is responsible for turning it back
 	 * on.
 	 */
-	OSTIMERS[0].irq_ack |=  OSTIMER_IRQ_ACK_CLEAR;
-	OSTIMERS[0].con     &= ~OSTIMER_CON_ENABLE;
+	OSTIMERS[0].irq_ack |= OSTIMER_IRQ_ACK_CLEAR;
+	OSTIMERS[0].con &= ~OSTIMER_CON_ENABLE;
 	OSTIMERS[0].irq_ack &= ~OSTIMER_IRQ_ACK_ENABLE;
 
 	last_announce += ticks * OST64_PER_TICK;
@@ -167,8 +166,7 @@ static int mtk_adsp_timer_init(void)
 	 * a built-in divide by two (or it's configurable and I don't
 	 * know the register) and exposes a 13 MHz counter!
 	 */
-	OSTIMERS[0].con = ((OSTIMERS[0].con & ~OSTIMER_CON_CLKSRC_MASK)
-			   | OSTIMER_CON_CLKSRC_26M);
+	OSTIMERS[0].con = ((OSTIMERS[0].con & ~OSTIMER_CON_CLKSRC_MASK) | OSTIMER_CON_CLKSRC_26M);
 	OSTIMERS[0].con |= OSTIMER_CON_ENABLE;
 
 	/* Clock is free running and survives reset, doesn't start at zero */

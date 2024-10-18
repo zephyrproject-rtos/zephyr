@@ -17,23 +17,21 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i3c, CONFIG_I3C_LOG_LEVEL);
 
-void i3c_dump_msgs(const char *name, const struct i3c_msg *msgs,
-		   uint8_t num_msgs, struct i3c_device_desc *target)
+void i3c_dump_msgs(const char *name, const struct i3c_msg *msgs, uint8_t num_msgs,
+		   struct i3c_device_desc *target)
 {
 	LOG_DBG("I3C msg: %s, addr=%x", name, target->dynamic_addr);
 	for (unsigned int i = 0; i < num_msgs; i++) {
 		const struct i3c_msg *msg = &msgs[i];
 
-		LOG_DBG("   %c len=%02x: ",
-			msg->flags & I3C_MSG_READ ? 'R' : 'W', msg->len);
+		LOG_DBG("   %c len=%02x: ", msg->flags & I3C_MSG_READ ? 'R' : 'W', msg->len);
 		if (!(msg->flags & I3C_MSG_READ)) {
 			LOG_HEXDUMP_DBG(msg->buf, msg->len, "contents:");
 		}
 	}
 }
 
-void i3c_addr_slots_set(struct i3c_addr_slots *slots,
-			uint8_t dev_addr,
+void i3c_addr_slots_set(struct i3c_addr_slots *slots, uint8_t dev_addr,
 			enum i3c_addr_slot_status status)
 {
 	int bitpos;
@@ -54,9 +52,7 @@ void i3c_addr_slots_set(struct i3c_addr_slots *slots,
 	slots->slots[idx] |= status << bitpos;
 }
 
-enum i3c_addr_slot_status
-i3c_addr_slots_status(struct i3c_addr_slots *slots,
-		      uint8_t dev_addr)
+enum i3c_addr_slot_status i3c_addr_slots_status(struct i3c_addr_slots *slots, uint8_t dev_addr)
 {
 	unsigned long status;
 	int bitpos;
@@ -82,13 +78,10 @@ i3c_addr_slots_status(struct i3c_addr_slots *slots,
 	return status;
 }
 
-
 int i3c_addr_slots_init(const struct device *dev)
 {
-	struct i3c_driver_data *data =
-		(struct i3c_driver_data *)dev->data;
-	const struct i3c_driver_config *config =
-		(const struct i3c_driver_config *)dev->config;
+	struct i3c_driver_data *data = (struct i3c_driver_data *)dev->data;
+	const struct i3c_driver_config *config = (const struct i3c_driver_config *)dev->config;
 	int i, ret = 0;
 	struct i3c_device_desc *i3c_dev;
 	struct i3c_i2c_device_desc *i2c_dev;
@@ -110,7 +103,6 @@ int i3c_addr_slots_init(const struct device *dev)
 		 */
 		i3c_addr_slots_set(&data->attached_dev.addr_slots, I3C_BROADCAST_ADDR ^ BIT(i),
 				   I3C_ADDR_SLOT_STATUS_RSVD);
-
 	}
 
 	/* The broadcast address is reserved */
@@ -149,8 +141,7 @@ out:
 	return ret;
 }
 
-bool i3c_addr_slots_is_free(struct i3c_addr_slots *slots,
-			    uint8_t dev_addr)
+bool i3c_addr_slots_is_free(struct i3c_addr_slots *slots, uint8_t dev_addr)
 {
 	enum i3c_addr_slot_status status;
 
@@ -198,8 +189,7 @@ struct i3c_device_desc *i3c_dev_list_find(const struct i3c_dev_list *dev_list,
 	return ret;
 }
 
-struct i3c_device_desc *i3c_dev_list_i3c_addr_find(const struct device *dev,
-						   uint8_t addr)
+struct i3c_device_desc *i3c_dev_list_i3c_addr_find(const struct device *dev, uint8_t addr)
 {
 	struct i3c_device_desc *ret = NULL;
 	struct i3c_device_desc *desc;
@@ -216,8 +206,7 @@ struct i3c_device_desc *i3c_dev_list_i3c_addr_find(const struct device *dev,
 	return ret;
 }
 
-struct i3c_i2c_device_desc *i3c_dev_list_i2c_addr_find(const struct device *dev,
-							   uint16_t addr)
+struct i3c_i2c_device_desc *i3c_dev_list_i2c_addr_find(const struct device *dev, uint16_t addr)
 {
 	struct i3c_i2c_device_desc *ret = NULL;
 	struct i3c_i2c_device_desc *desc;
@@ -374,11 +363,8 @@ int i3c_detach_i2c_device(struct i3c_i2c_device_desc *target)
 }
 
 int i3c_dev_list_daa_addr_helper(struct i3c_addr_slots *addr_slots,
-				 const struct i3c_dev_list *dev_list,
-				 uint64_t pid, bool must_match,
-				 bool assigned_okay,
-				 struct i3c_device_desc **target,
-				 uint8_t *addr)
+				 const struct i3c_dev_list *dev_list, uint64_t pid, bool must_match,
+				 bool assigned_okay, struct i3c_device_desc **target, uint8_t *addr)
 {
 	struct i3c_device_desc *desc;
 	const uint16_t vendor_id = (uint16_t)(pid >> 32);
@@ -395,8 +381,7 @@ int i3c_dev_list_daa_addr_helper(struct i3c_addr_slots *addr_slots,
 		 */
 		ret = -ENODEV;
 
-		LOG_DBG("PID 0x%04x%08x is not in registered device list",
-			vendor_id, part_no);
+		LOG_DBG("PID 0x%04x%08x is not in registered device list", vendor_id, part_no);
 
 		goto out;
 	}
@@ -547,8 +532,7 @@ out:
  *
  * @retval 0 if successful.
  */
-static int i3c_bus_setdasa(const struct device *dev,
-			   const struct i3c_dev_list *dev_list,
+static int i3c_bus_setdasa(const struct device *dev, const struct i3c_dev_list *dev_list,
 			   bool *need_daa, bool *need_aasa)
 {
 	int i, ret;
@@ -577,7 +561,7 @@ static int i3c_bus_setdasa(const struct device *dev,
 		 * is not requested
 		 */
 		if ((desc->supports_setaasa) && ((desc->init_dynamic_addr == 0) ||
-					       desc->init_dynamic_addr == desc->static_addr)) {
+						 desc->init_dynamic_addr == desc->static_addr)) {
 			*need_aasa = true;
 			continue;
 		}
@@ -589,9 +573,9 @@ static int i3c_bus_setdasa(const struct device *dev,
 		 * if configured
 		 */
 		if ((desc->init_dynamic_addr != 0) &&
-			(desc->init_dynamic_addr != desc->static_addr)) {
+		    (desc->init_dynamic_addr != desc->static_addr)) {
 			if (!i3c_addr_slots_is_free(&bus_data->attached_dev.addr_slots,
-				desc->init_dynamic_addr)) {
+						    desc->init_dynamic_addr)) {
 				if (i3c_detach_i3c_device(desc) != 0) {
 					LOG_ERR("Failed to detach %s", desc->dev->name);
 				}
@@ -603,8 +587,9 @@ static int i3c_bus_setdasa(const struct device *dev,
 		 * Note that the 7-bit address needs to start at bit 1
 		 * (aka left-justified). So shift left by 1;
 		 */
-		dyn_addr.addr = (desc->init_dynamic_addr ?
-					desc->init_dynamic_addr : desc->static_addr) << 1;
+		dyn_addr.addr =
+			(desc->init_dynamic_addr ? desc->init_dynamic_addr : desc->static_addr)
+			<< 1;
 
 		ret = i3c_ccc_do_setdasa(desc, dyn_addr);
 		if (ret == 0) {
@@ -619,8 +604,7 @@ static int i3c_bus_setdasa(const struct device *dev,
 			if (i3c_detach_i3c_device(desc) != 0) {
 				LOG_ERR("Failed to detach %s (%d)", desc->dev->name, ret);
 			}
-			LOG_ERR("SETDASA error on address 0x%x (%d)",
-				desc->static_addr, ret);
+			LOG_ERR("SETDASA error on address 0x%x (%d)", desc->static_addr, ret);
 		}
 	}
 
@@ -651,9 +635,8 @@ int i3c_bus_deftgts(const struct device *dev)
 	uint8_t n = 0;
 	size_t num_of_targets = sys_slist_len(&data->attached_dev.devices.i3c) +
 				sys_slist_len(&data->attached_dev.devices.i2c);
-	size_t data_len = sizeof(uint8_t) +
-				   sizeof(struct i3c_ccc_deftgts_active_controller) +
-				   (num_of_targets * sizeof(struct i3c_ccc_deftgts_target));
+	size_t data_len = sizeof(uint8_t) + sizeof(struct i3c_ccc_deftgts_active_controller) +
+			  (num_of_targets * sizeof(struct i3c_ccc_deftgts_target));
 
 	/*
 	 * Retrieve the active controller information
@@ -826,13 +809,11 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 
 		ret = i3c_device_basic_info_get(desc);
 		if (ret != 0) {
-			LOG_ERR("Error getting basic device info for 0x%02x",
-				desc->static_addr);
+			LOG_ERR("Error getting basic device info for 0x%02x", desc->static_addr);
 		} else {
 			LOG_DBG("Target 0x%02x, BCR 0x%02x, DCR 0x%02x, MRL %d, MWL %d, IBI %d",
-				desc->dynamic_addr, desc->bcr, desc->dcr,
-				desc->data_length.mrl, desc->data_length.mwl,
-				desc->data_length.max_ibi);
+				desc->dynamic_addr, desc->bcr, desc->dcr, desc->data_length.mrl,
+				desc->data_length.mwl, desc->data_length.max_ibi);
 		}
 	}
 

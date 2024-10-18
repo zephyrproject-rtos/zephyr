@@ -179,8 +179,7 @@ static int ws2812_i2s_init(const struct device *dev)
 	int ret;
 
 	lrck_hz = USEC_PER_SEC / cfg->lrck_period;
-	LOG_DBG("Word clock: freq %u Hz period %u us",
-		lrck_hz, cfg->lrck_period);
+	LOG_DBG("Word clock: freq %u Hz period %u us", lrck_hz, cfg->lrck_period);
 
 	/* 16-bit stereo, 100kHz LCLK */
 	config.word_size = 16;
@@ -226,18 +225,19 @@ static const struct led_strip_driver_api ws2812_i2s_api = {
 
 #define WS2812_I2S_LRCK_PERIOD_US(idx) DT_INST_PROP(idx, lrck_period)
 
-#define WS2812_RESET_DELAY_US(idx)    DT_INST_PROP(idx, reset_delay)
+#define WS2812_RESET_DELAY_US(idx) DT_INST_PROP(idx, reset_delay)
 /* Rounds up to the next 20us. */
-#define WS2812_RESET_DELAY_WORDS(idx) WS2812_ROUNDED_DIVISION(WS2812_RESET_DELAY_US(idx), \
-							      WS2812_I2S_LRCK_PERIOD_US(idx))
+#define WS2812_RESET_DELAY_WORDS(idx)                                                              \
+	WS2812_ROUNDED_DIVISION(WS2812_RESET_DELAY_US(idx), WS2812_I2S_LRCK_PERIOD_US(idx))
 
 #define WS2812_NUM_COLORS(idx) (DT_INST_PROP_LEN(idx, color_mapping))
 
 #define WS2812_I2S_NUM_PIXELS(idx) (DT_INST_PROP(idx, chain_length))
 
 #define WS2812_I2S_BUFSIZE(idx)                                                                    \
-	(((WS2812_NUM_COLORS(idx) * WS2812_I2S_NUM_PIXELS(idx)) +	                           \
-	  WS2812_I2S_PRE_DELAY_WORDS + WS2812_RESET_DELAY_WORDS(idx)) * 4)
+	(((WS2812_NUM_COLORS(idx) * WS2812_I2S_NUM_PIXELS(idx)) + WS2812_I2S_PRE_DELAY_WORDS +     \
+	  WS2812_RESET_DELAY_WORDS(idx)) *                                                         \
+	 4)
 
 #define WS2812_I2S_DEVICE(idx)                                                                     \
                                                                                                    \

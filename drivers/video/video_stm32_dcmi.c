@@ -78,7 +78,7 @@ void HAL_DCMI_ErrorCallback(DCMI_HandleTypeDef *hdcmi)
 void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
 {
 	struct video_stm32_dcmi_data *dev_data =
-			CONTAINER_OF(hdcmi, struct video_stm32_dcmi_data, hdcmi);
+		CONTAINER_OF(hdcmi, struct video_stm32_dcmi_data, hdcmi);
 	struct video_buffer *vbuf;
 
 	HAL_DCMI_Suspend(hdcmi);
@@ -106,8 +106,7 @@ static void stm32_dcmi_isr(const struct device *dev)
 	HAL_DCMI_IRQHandler(&data->hdcmi);
 }
 
-static void dmci_dma_callback(const struct device *dev, void *arg,
-			 uint32_t channel, int status)
+static void dmci_dma_callback(const struct device *dev, void *arg, uint32_t channel, int status)
 {
 	DMA_HandleTypeDef *hdma = arg;
 
@@ -153,8 +152,8 @@ static int stm32_dma_init(const struct device *dev)
 	/* HACK: This field is used to inform driver that it is overridden */
 	dma_cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
 	/* Because of the STREAM OFFSET, the DMA channel given here is from 1 - 8 */
-	ret = dma_config(config->dma.dma_dev,
-			config->dma.channel + STM32_DMA_STREAM_OFFSET, &dma_cfg);
+	ret = dma_config(config->dma.dma_dev, config->dma.channel + STM32_DMA_STREAM_OFFSET,
+			 &dma_cfg);
 	if (ret != 0) {
 		LOG_ERR("Failed to configure DMA channel %d",
 			config->dma.channel + STM32_DMA_STREAM_OFFSET);
@@ -163,18 +162,17 @@ static int stm32_dma_init(const struct device *dev)
 
 	/*** Configure the DMA ***/
 	/* Set the parameters to be configured */
-	hdma.Init.Request		= DMA_REQUEST_DCMI;
-	hdma.Init.Direction		= DMA_PERIPH_TO_MEMORY;
-	hdma.Init.PeriphInc		= DMA_PINC_DISABLE;
-	hdma.Init.MemInc		= DMA_MINC_ENABLE;
-	hdma.Init.PeriphDataAlignment	= DMA_PDATAALIGN_WORD;
-	hdma.Init.MemDataAlignment	= DMA_MDATAALIGN_WORD;
-	hdma.Init.Mode			= DMA_CIRCULAR;
-	hdma.Init.Priority		= DMA_PRIORITY_HIGH;
-	hdma.Init.FIFOMode		= DMA_FIFOMODE_DISABLE;
+	hdma.Init.Request = DMA_REQUEST_DCMI;
+	hdma.Init.Direction = DMA_PERIPH_TO_MEMORY;
+	hdma.Init.PeriphInc = DMA_PINC_DISABLE;
+	hdma.Init.MemInc = DMA_MINC_ENABLE;
+	hdma.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
+	hdma.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
+	hdma.Init.Mode = DMA_CIRCULAR;
+	hdma.Init.Priority = DMA_PRIORITY_HIGH;
+	hdma.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
 
-	hdma.Instance = __LL_DMA_GET_STREAM_INSTANCE(config->dma.reg,
-						config->dma.channel);
+	hdma.Instance = __LL_DMA_GET_STREAM_INSTANCE(config->dma.reg, config->dma.channel);
 
 	/* Initialize DMA HAL */
 	__HAL_LINKDMA(&data->hdcmi, DMA_Handle, hdma);
@@ -199,7 +197,7 @@ static int stm32_dcmi_enable_clock(const struct device *dev)
 	}
 
 	/* Turn on DCMI peripheral clock */
-	err = clock_control_on(dcmi_clock, (clock_control_subsys_t *) &config->pclken);
+	err = clock_control_on(dcmi_clock, (clock_control_subsys_t *)&config->pclken);
 	if (err < 0) {
 		LOG_ERR("Failed to enable DCMI clock. Error %d", err);
 		return err;
@@ -208,9 +206,8 @@ static int stm32_dcmi_enable_clock(const struct device *dev)
 	return 0;
 }
 
-static int video_stm32_dcmi_set_fmt(const struct device *dev,
-				  enum video_endpoint_id ep,
-				  struct video_format *fmt)
+static int video_stm32_dcmi_set_fmt(const struct device *dev, enum video_endpoint_id ep,
+				    struct video_format *fmt)
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
 	struct video_stm32_dcmi_data *data = dev->data;
@@ -232,9 +229,8 @@ static int video_stm32_dcmi_set_fmt(const struct device *dev,
 	return 0;
 }
 
-static int video_stm32_dcmi_get_fmt(const struct device *dev,
-				  enum video_endpoint_id ep,
-				  struct video_format *fmt)
+static int video_stm32_dcmi_get_fmt(const struct device *dev, enum video_endpoint_id ep,
+				    struct video_format *fmt)
 {
 	struct video_stm32_dcmi_data *data = dev->data;
 	const struct video_stm32_dcmi_config *config = dev->config;
@@ -268,8 +264,8 @@ static int video_stm32_dcmi_stream_start(const struct device *dev)
 		return -ENOMEM;
 	}
 
-	int err = HAL_DCMI_Start_DMA(&data->hdcmi, DCMI_MODE_CONTINUOUS,
-			(uint32_t)data->buffer, buffer_size / 4);
+	int err = HAL_DCMI_Start_DMA(&data->hdcmi, DCMI_MODE_CONTINUOUS, (uint32_t)data->buffer,
+				     buffer_size / 4);
 	if (err != HAL_OK) {
 		LOG_ERR("Failed to start DCMI DMA");
 		return -EIO;
@@ -304,9 +300,8 @@ static int video_stm32_dcmi_stream_stop(const struct device *dev)
 	return 0;
 }
 
-static int video_stm32_dcmi_enqueue(const struct device *dev,
-				  enum video_endpoint_id ep,
-				  struct video_buffer *vbuf)
+static int video_stm32_dcmi_enqueue(const struct device *dev, enum video_endpoint_id ep,
+				    struct video_buffer *vbuf)
 {
 	struct video_stm32_dcmi_data *data = dev->data;
 	const uint32_t buffer_size = data->pitch * data->height;
@@ -327,10 +322,8 @@ static int video_stm32_dcmi_enqueue(const struct device *dev,
 	return 0;
 }
 
-static int video_stm32_dcmi_dequeue(const struct device *dev,
-				  enum video_endpoint_id ep,
-				  struct video_buffer **vbuf,
-				  k_timeout_t timeout)
+static int video_stm32_dcmi_dequeue(const struct device *dev, enum video_endpoint_id ep,
+				    struct video_buffer **vbuf, k_timeout_t timeout)
 {
 	struct video_stm32_dcmi_data *data = dev->data;
 
@@ -346,9 +339,8 @@ static int video_stm32_dcmi_dequeue(const struct device *dev,
 	return 0;
 }
 
-static int video_stm32_dcmi_get_caps(const struct device *dev,
-				   enum video_endpoint_id ep,
-				   struct video_caps *caps)
+static int video_stm32_dcmi_get_caps(const struct device *dev, enum video_endpoint_id ep,
+				     struct video_caps *caps)
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
 	int ret = -ENODEV;
@@ -402,87 +394,85 @@ static const struct video_driver_api video_stm32_dcmi_driver_api = {
 
 static void video_stm32_dcmi_irq_config_func(const struct device *dev)
 {
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
-		stm32_dcmi_isr, DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), stm32_dcmi_isr,
+		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
 }
 
-#define DCMI_DMA_CHANNEL_INIT(index, src_dev, dest_dev)					\
-	.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(index, 0)),			\
-	.channel = DT_INST_DMAS_CELL_BY_IDX(index, 0, channel),				\
-	.reg = (DMA_TypeDef *)DT_REG_ADDR(						\
-				DT_PHANDLE_BY_IDX(DT_DRV_INST(0), dmas, 0)),		\
-	.cfg = {									\
-		.dma_slot = STM32_DMA_SLOT_BY_IDX(index, 0, slot),			\
-		.channel_direction = STM32_DMA_CONFIG_DIRECTION(			\
-			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
-		.source_data_size = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(		\
-			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
-		.dest_data_size = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(		\
-			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
-		.source_burst_length = 1,       /* SINGLE transfer */			\
-		.dest_burst_length = 1,         /* SINGLE transfer */			\
-		.channel_priority = STM32_DMA_CONFIG_PRIORITY(				\
-			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
-		.dma_callback = dmci_dma_callback,					\
-	},										\
+#define DCMI_DMA_CHANNEL_INIT(index, src_dev, dest_dev)                                            \
+	.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(index, 0)),                              \
+	.channel = DT_INST_DMAS_CELL_BY_IDX(index, 0, channel),                                    \
+	.reg = (DMA_TypeDef *)DT_REG_ADDR(DT_PHANDLE_BY_IDX(DT_DRV_INST(0), dmas, 0)),             \
+	.cfg = {                                                                                   \
+		.dma_slot = STM32_DMA_SLOT_BY_IDX(index, 0, slot),                                 \
+		.channel_direction =                                                               \
+			STM32_DMA_CONFIG_DIRECTION(STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),     \
+		.source_data_size = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(                        \
+			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),                                \
+		.dest_data_size = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(                         \
+			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),                                \
+		.source_burst_length = 1, /* SINGLE transfer */                                    \
+		.dest_burst_length = 1,   /* SINGLE transfer */                                    \
+		.channel_priority =                                                                \
+			STM32_DMA_CONFIG_PRIORITY(STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),      \
+		.dma_callback = dmci_dma_callback,                                                 \
+	},
 
 PINCTRL_DT_INST_DEFINE(0);
 
-#define STM32_DCMI_GET_CAPTURE_RATE(capture_rate)					\
-	((capture_rate) == 1 ? DCMI_CR_ALL_FRAME :					\
-	(capture_rate) == 2 ? DCMI_CR_ALTERNATE_2_FRAME :				\
-	(capture_rate) == 4 ? DCMI_CR_ALTERNATE_4_FRAME :				\
-	DCMI_CR_ALL_FRAME)
+#define STM32_DCMI_GET_CAPTURE_RATE(capture_rate)                                                  \
+	((capture_rate) == 1   ? DCMI_CR_ALL_FRAME                                                 \
+	 : (capture_rate) == 2 ? DCMI_CR_ALTERNATE_2_FRAME                                         \
+	 : (capture_rate) == 4 ? DCMI_CR_ALTERNATE_4_FRAME                                         \
+			       : DCMI_CR_ALL_FRAME)
 
-#define STM32_DCMI_GET_BUS_WIDTH(bus_width)						\
-	((bus_width) == 8 ? DCMI_EXTEND_DATA_8B :					\
-	(bus_width) == 10 ? DCMI_EXTEND_DATA_10B :					\
-	(bus_width) == 12 ? DCMI_EXTEND_DATA_12B :					\
-	(bus_width) == 14 ? DCMI_EXTEND_DATA_14B :					\
-	DCMI_EXTEND_DATA_8B)
+#define STM32_DCMI_GET_BUS_WIDTH(bus_width)                                                        \
+	((bus_width) == 8    ? DCMI_EXTEND_DATA_8B                                                 \
+	 : (bus_width) == 10 ? DCMI_EXTEND_DATA_10B                                                \
+	 : (bus_width) == 12 ? DCMI_EXTEND_DATA_12B                                                \
+	 : (bus_width) == 14 ? DCMI_EXTEND_DATA_14B                                                \
+			     : DCMI_EXTEND_DATA_8B)
 
-#define DCMI_DMA_CHANNEL(id, src, dest)							\
-	.dma = {									\
-		COND_CODE_1(DT_INST_DMAS_HAS_IDX(id, 0),				\
+#define DCMI_DMA_CHANNEL(id, src, dest)                                                            \
+	.dma = {COND_CODE_1(DT_INST_DMAS_HAS_IDX(id, 0),				\
 			(DCMI_DMA_CHANNEL_INIT(id, src, dest)),				\
-			(NULL))								\
-	},
+			(NULL)) },
 
 static struct video_stm32_dcmi_data video_stm32_dcmi_data_0 = {
-	.hdcmi = {
-		.Instance = (DCMI_TypeDef *) DT_INST_REG_ADDR(0),
-		.Init = {
-				.SynchroMode = DCMI_SYNCHRO_HARDWARE,
-				.PCKPolarity = (DT_INST_PROP(0, pixelclk_active) ?
-						DCMI_PCKPOLARITY_RISING : DCMI_PCKPOLARITY_FALLING),
-				.HSPolarity = (DT_INST_PROP(0, hsync_active) ?
-						DCMI_HSPOLARITY_HIGH : DCMI_HSPOLARITY_LOW),
-				.VSPolarity = (DT_INST_PROP(0, vsync_active) ?
-						DCMI_VSPOLARITY_HIGH : DCMI_VSPOLARITY_LOW),
-				.CaptureRate = STM32_DCMI_GET_CAPTURE_RATE(
-							DT_INST_PROP(0, capture_rate)),
-				.ExtendedDataMode = STM32_DCMI_GET_BUS_WIDTH(
-							DT_INST_PROP(0, bus_width)),
-				.JPEGMode = DCMI_JPEG_DISABLE,
-				.ByteSelectMode = DCMI_BSM_ALL,
-				.ByteSelectStart = DCMI_OEBS_ODD,
-				.LineSelectMode = DCMI_LSM_ALL,
-				.LineSelectStart = DCMI_OELS_ODD,
+	.hdcmi =
+		{
+			.Instance = (DCMI_TypeDef *)DT_INST_REG_ADDR(0),
+			.Init =
+				{
+					.SynchroMode = DCMI_SYNCHRO_HARDWARE,
+					.PCKPolarity = (DT_INST_PROP(0, pixelclk_active)
+								? DCMI_PCKPOLARITY_RISING
+								: DCMI_PCKPOLARITY_FALLING),
+					.HSPolarity = (DT_INST_PROP(0, hsync_active)
+							       ? DCMI_HSPOLARITY_HIGH
+							       : DCMI_HSPOLARITY_LOW),
+					.VSPolarity = (DT_INST_PROP(0, vsync_active)
+							       ? DCMI_VSPOLARITY_HIGH
+							       : DCMI_VSPOLARITY_LOW),
+					.CaptureRate = STM32_DCMI_GET_CAPTURE_RATE(
+						DT_INST_PROP(0, capture_rate)),
+					.ExtendedDataMode = STM32_DCMI_GET_BUS_WIDTH(
+						DT_INST_PROP(0, bus_width)),
+					.JPEGMode = DCMI_JPEG_DISABLE,
+					.ByteSelectMode = DCMI_BSM_ALL,
+					.ByteSelectStart = DCMI_OEBS_ODD,
+					.LineSelectMode = DCMI_LSM_ALL,
+					.LineSelectStart = DCMI_OELS_ODD,
+				},
 		},
-	},
 };
 
 static const struct video_stm32_dcmi_config video_stm32_dcmi_config_0 = {
-	.pclken = {
-		.enr = DT_INST_CLOCKS_CELL(0, bits),
-		.bus = DT_INST_CLOCKS_CELL(0, bus)
-	},
+	.pclken = {.enr = DT_INST_CLOCKS_CELL(0, bits), .bus = DT_INST_CLOCKS_CELL(0, bus)},
 	.irq_config = video_stm32_dcmi_irq_config_func,
 	.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.sensor_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, sensor)),
-	DCMI_DMA_CHANNEL(0, PERIPHERAL, MEMORY)
-};
+	DCMI_DMA_CHANNEL(0, PERIPHERAL, MEMORY)};
 
 static int video_stm32_dcmi_init(const struct device *dev)
 {
@@ -531,8 +521,6 @@ static int video_stm32_dcmi_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, &video_stm32_dcmi_init,
-		    NULL, &video_stm32_dcmi_data_0,
-		    &video_stm32_dcmi_config_0,
-		    POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,
-		    &video_stm32_dcmi_driver_api);
+DEVICE_DT_INST_DEFINE(0, &video_stm32_dcmi_init, NULL, &video_stm32_dcmi_data_0,
+		      &video_stm32_dcmi_config_0, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,
+		      &video_stm32_dcmi_driver_api);

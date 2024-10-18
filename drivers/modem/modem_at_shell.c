@@ -13,7 +13,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(modem_at_shell, CONFIG_MODEM_LOG_LEVEL);
 
-#define AT_SHELL_MODEM_NODE DT_ALIAS(modem)
+#define AT_SHELL_MODEM_NODE    DT_ALIAS(modem)
 #define AT_SHELL_PIPELINK_NAME _CONCAT(user_pipe_, CONFIG_MODEM_AT_SHELL_USER_PIPE)
 
 #define AT_SHELL_STATE_ATTACHED_BIT       0
@@ -65,28 +65,19 @@ static void at_shell_print_match(struct modem_chat *chat, char **argv, uint16_t 
 	shell_print(at_shell_active_shell, "%s", argv[0]);
 }
 
-MODEM_CHAT_MATCHES_DEFINE(
-	at_shell_abort_matches,
-	MODEM_CHAT_MATCH("ERROR", "", at_shell_print_match),
-);
+MODEM_CHAT_MATCHES_DEFINE(at_shell_abort_matches,
+			  MODEM_CHAT_MATCH("ERROR", "", at_shell_print_match), );
 
-static void at_shell_script_callback(struct modem_chat *chat,
-				     enum modem_chat_script_result result,
+static void at_shell_script_callback(struct modem_chat *chat, enum modem_chat_script_result result,
 				     void *user_data)
 {
 	atomic_clear_bit(&at_shell_state, AT_SHELL_STATE_SCRIPT_RUNNING_BIT);
 }
 
-MODEM_CHAT_SCRIPT_DEFINE(
-	at_shell_script,
-	at_shell_script_chat,
-	at_shell_abort_matches,
-	at_shell_script_callback,
-	CONFIG_MODEM_AT_SHELL_RESPONSE_TIMEOUT_S
-);
+MODEM_CHAT_SCRIPT_DEFINE(at_shell_script, at_shell_script_chat, at_shell_abort_matches,
+			 at_shell_script_callback, CONFIG_MODEM_AT_SHELL_RESPONSE_TIMEOUT_S);
 
-static void at_shell_pipe_callback(struct modem_pipe *pipe,
-				   enum modem_pipe_event event,
+static void at_shell_pipe_callback(struct modem_pipe *pipe, enum modem_pipe_event event,
 				   void *user_data)
 {
 	ARG_UNUSED(user_data);
@@ -102,8 +93,7 @@ static void at_shell_pipe_callback(struct modem_pipe *pipe,
 	}
 }
 
-void at_shell_pipelink_callback(struct modem_pipelink *link,
-				enum modem_pipelink_event event,
+void at_shell_pipelink_callback(struct modem_pipelink *link, enum modem_pipelink_event event,
 				void *user_data)
 {
 	ARG_UNUSED(user_data);
@@ -130,9 +120,7 @@ static void at_shell_open_pipe_handler(struct k_work *work)
 
 	LOG_INF("opening pipe");
 
-	modem_pipe_attach(modem_pipelink_get_pipe(at_shell_pipelink),
-			  at_shell_pipe_callback,
-			  NULL);
+	modem_pipe_attach(modem_pipelink_get_pipe(at_shell_pipelink), at_shell_pipe_callback, NULL);
 
 	modem_pipe_open_async(modem_pipelink_get_pipe(at_shell_pipelink));
 }
@@ -267,8 +255,8 @@ static int at_shell_cmd_handler(const struct shell *sh, size_t argc, char **argv
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(modem_sub_cmds,
-	SHELL_CMD_ARG(at, NULL, "at <command> <response>", at_shell_cmd_handler, 1, 2),
-	SHELL_SUBCMD_SET_END
-);
+			       SHELL_CMD_ARG(at, NULL, "at <command> <response>",
+					     at_shell_cmd_handler, 1, 2),
+			       SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(modem, &modem_sub_cmds, "Modem commands", NULL);

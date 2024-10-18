@@ -65,14 +65,12 @@ static int fake_eeprom_init(const struct device *dev)
 	return 0;
 }
 
-#define FAKE_EEPROM_INIT(inst)							\
-	static const struct fake_eeprom_config fake_eeprom_config_##inst = {	\
-		.size = DT_INST_PROP(inst, size),				\
-	};									\
-										\
-	DEVICE_DT_INST_DEFINE(inst, &fake_eeprom_init, NULL, NULL,		\
-			      &fake_eeprom_config_##inst,			\
-			      POST_KERNEL, CONFIG_EEPROM_INIT_PRIORITY,		\
-			      &fake_eeprom_driver_api);
+#define FAKE_EEPROM_INIT(inst)                                                                     \
+	static const struct fake_eeprom_config fake_eeprom_config_##inst = {                       \
+		.size = DT_INST_PROP(inst, size),                                                  \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &fake_eeprom_init, NULL, NULL, &fake_eeprom_config_##inst,     \
+			      POST_KERNEL, CONFIG_EEPROM_INIT_PRIORITY, &fake_eeprom_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(FAKE_EEPROM_INIT)

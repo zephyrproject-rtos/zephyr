@@ -44,11 +44,8 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 
 int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 {
-	*supported = RESET_POR
-		   | RESET_LOW_POWER_WAKE
-		   | RESET_WATCHDOG
-		   | RESET_SOFTWARE
-		   | RESET_USER;
+	*supported =
+		RESET_POR | RESET_LOW_POWER_WAKE | RESET_WATCHDOG | RESET_SOFTWARE | RESET_USER;
 
 	return 0;
 }
@@ -59,10 +56,8 @@ static int hwinfo_rstc_init(void)
 	const struct atmel_sam_pmc_config clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(0);
 	uint32_t mode;
 
-
 	/* Enable RSTC in PMC */
-	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
-			       (clock_control_subsys_t)&clock_cfg);
+	(void)clock_control_on(SAM_DT_PMC_CONTROLLER, (clock_control_subsys_t)&clock_cfg);
 
 	/* Get current Mode Register value */
 	mode = regs->RSTC_MR;

@@ -15,11 +15,11 @@ LOG_MODULE_REGISTER(can_transceiver_gpio, CONFIG_CAN_LOG_LEVEL);
 
 /* Does any devicetree instance have an enable-gpios property? */
 #define INST_HAS_ENABLE_GPIOS_OR(inst) DT_INST_NODE_HAS_PROP(inst, enable_gpios) ||
-#define ANY_INST_HAS_ENABLE_GPIOS DT_INST_FOREACH_STATUS_OKAY(INST_HAS_ENABLE_GPIOS_OR) 0
+#define ANY_INST_HAS_ENABLE_GPIOS      DT_INST_FOREACH_STATUS_OKAY(INST_HAS_ENABLE_GPIOS_OR) 0
 
 /* Does any devicetree instance have a standby-gpios property? */
 #define INST_HAS_STANDBY_GPIOS_OR(inst) DT_INST_NODE_HAS_PROP(inst, standby_gpios) ||
-#define ANY_INST_HAS_STANDBY_GPIOS DT_INST_FOREACH_STATUS_OKAY(INST_HAS_STANDBY_GPIOS_OR) 0
+#define ANY_INST_HAS_STANDBY_GPIOS      DT_INST_FOREACH_STATUS_OKAY(INST_HAS_STANDBY_GPIOS_OR) 0
 
 struct can_transceiver_gpio_config {
 #if ANY_INST_HAS_ENABLE_GPIOS
@@ -115,24 +115,21 @@ static const struct can_transceiver_driver_api can_transceiver_gpio_driver_api =
 	.disable = can_transceiver_gpio_disable,
 };
 
-#define CAN_TRANSCEIVER_GPIO_COND(inst, name)				\
+#define CAN_TRANSCEIVER_GPIO_COND(inst, name)                                                      \
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, name##_gpios),		\
 		   (.name##_gpio = GPIO_DT_SPEC_INST_GET(inst, name##_gpios),))
 
-#define CAN_TRANSCEIVER_GPIO_INIT(inst)					\
-	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(inst, enable_gpios) ||	\
-		     DT_INST_NODE_HAS_PROP(inst, standby_gpios),	\
-		     "Missing GPIO property on "			\
-		     DT_NODE_FULL_NAME(DT_DRV_INST(inst)));		\
-									\
-	static const struct can_transceiver_gpio_config	can_transceiver_gpio_config_##inst = { \
-		CAN_TRANSCEIVER_GPIO_COND(inst, enable)			\
-		CAN_TRANSCEIVER_GPIO_COND(inst, standby)		\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(inst, &can_transceiver_gpio_init,		\
-			NULL, NULL, &can_transceiver_gpio_config_##inst,\
-			POST_KERNEL, CONFIG_CAN_TRANSCEIVER_INIT_PRIORITY, \
-			&can_transceiver_gpio_driver_api);		\
+#define CAN_TRANSCEIVER_GPIO_INIT(inst)                                                            \
+	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(inst, enable_gpios) ||                                  \
+			     DT_INST_NODE_HAS_PROP(inst, standby_gpios),                           \
+		     "Missing GPIO property on " DT_NODE_FULL_NAME(DT_DRV_INST(inst)));            \
+                                                                                                   \
+	static const struct can_transceiver_gpio_config can_transceiver_gpio_config_##inst = {     \
+		CAN_TRANSCEIVER_GPIO_COND(inst, enable) CAN_TRANSCEIVER_GPIO_COND(inst, standby)}; \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &can_transceiver_gpio_init, NULL, NULL,                        \
+			      &can_transceiver_gpio_config_##inst, POST_KERNEL,                    \
+			      CONFIG_CAN_TRANSCEIVER_INIT_PRIORITY,                                \
+			      &can_transceiver_gpio_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_TRANSCEIVER_GPIO_INIT)

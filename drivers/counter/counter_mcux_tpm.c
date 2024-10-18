@@ -15,7 +15,7 @@
 
 LOG_MODULE_REGISTER(mcux_tpm, CONFIG_COUNTER_LOG_LEVEL);
 
-#define DEV_CFG(_dev) ((const struct mcux_tpm_config *)(_dev)->config)
+#define DEV_CFG(_dev)  ((const struct mcux_tpm_config *)(_dev)->config)
 #define DEV_DATA(_dev) ((struct mcux_tpm_data *)(_dev)->data)
 
 struct mcux_tpm_config {
@@ -134,13 +134,12 @@ void mcux_tpm_isr(const struct device *dev)
 	uint32_t current = TPM_GetCurrentTimerCount(base);
 	uint32_t status;
 
-	status =  TPM_GetStatusFlags(base) & (kTPM_Chnl0Flag | kTPM_TimeOverflowFlag);
+	status = TPM_GetStatusFlags(base) & (kTPM_Chnl0Flag | kTPM_TimeOverflowFlag);
 	TPM_ClearStatusFlags(base, status);
 	barrier_dsync_fence_full();
 
 	if ((status & kTPM_Chnl0Flag) && data->alarm_callback) {
-		TPM_DisableInterrupts(base,
-				      kTPM_Chnl0InterruptEnable);
+		TPM_DisableInterrupts(base, kTPM_Chnl0InterruptEnable);
 		counter_alarm_callback_t alarm_cb = data->alarm_callback;
 
 		data->alarm_callback = NULL;
@@ -159,8 +158,7 @@ static uint32_t mcux_tpm_get_pending_int(const struct device *dev)
 	return (TPM_GetStatusFlags(base) & kTPM_Chnl0Flag);
 }
 
-static int mcux_tpm_set_top_value(const struct device *dev,
-				  const struct counter_top_cfg *cfg)
+static int mcux_tpm_set_top_value(const struct device *dev, const struct counter_top_cfg *cfg)
 {
 	const struct mcux_tpm_config *config = dev->config;
 	TPM_Type *base = get_base(dev);
@@ -232,8 +230,7 @@ static int mcux_tpm_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
-				   &input_clock_freq)) {
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &input_clock_freq)) {
 		LOG_ERR("Could not get clock frequency");
 		return -EINVAL;
 	}
@@ -265,41 +262,35 @@ static const struct counter_driver_api mcux_tpm_driver_api = {
 
 #define TO_TPM_PRESCALE_DIVIDE(val) _DO_CONCAT(kTPM_Prescale_Divide_, val)
 
-#define TPM_DEVICE_INIT_MCUX(n)							\
-	static struct mcux_tpm_data mcux_tpm_data_ ## n;			\
-										\
-	static const struct mcux_tpm_config mcux_tpm_config_ ## n = {		\
-		DEVICE_MMIO_NAMED_ROM_INIT(tpm_mmio, DT_DRV_INST(n)),		\
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
-		.clock_subsys =							\
-			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
-		.tpm_clock_source = kTPM_SystemClock,				\
-		.prescale = TO_TPM_PRESCALE_DIVIDE(DT_INST_PROP(n, prescaler)),	\
-		.info = {							\
-			.max_top_value = TPM_MAX_COUNTER_VALUE(TPM(n)),		\
-			.freq = 0,						\
-			.channels = 1,						\
-			.flags = COUNTER_CONFIG_INFO_COUNT_UP,			\
-		},								\
-	};									\
-										\
-	static int mcux_tpm_## n ##_init(const struct device *dev);		\
-	DEVICE_DT_INST_DEFINE(n,						\
-			mcux_tpm_## n ##_init,					\
-			NULL,							\
-			&mcux_tpm_data_ ## n,					\
-			&mcux_tpm_config_ ## n,					\
-			POST_KERNEL,						\
-			CONFIG_COUNTER_INIT_PRIORITY,				\
-			&mcux_tpm_driver_api);					\
-										\
-	static int mcux_tpm_## n ##_init(const struct device *dev)		\
-	{									\
-		IRQ_CONNECT(DT_INST_IRQN(n),					\
-			DT_INST_IRQ(n, priority),				\
-			mcux_tpm_isr, DEVICE_DT_INST_GET(n), 0);		\
-		irq_enable(DT_INST_IRQN(n));					\
-		return mcux_tpm_init(dev);					\
-	}									\
+#define TPM_DEVICE_INIT_MCUX(n)                                                                    \
+	static struct mcux_tpm_data mcux_tpm_data_##n;                                             \
+                                                                                                   \
+	static const struct mcux_tpm_config mcux_tpm_config_##n = {                                \
+		DEVICE_MMIO_NAMED_ROM_INIT(tpm_mmio, DT_DRV_INST(n)),                              \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
+		.tpm_clock_source = kTPM_SystemClock,                                              \
+		.prescale = TO_TPM_PRESCALE_DIVIDE(DT_INST_PROP(n, prescaler)),                    \
+		.info =                                                                            \
+			{                                                                          \
+				.max_top_value = TPM_MAX_COUNTER_VALUE(TPM(n)),                    \
+				.freq = 0,                                                         \
+				.channels = 1,                                                     \
+				.flags = COUNTER_CONFIG_INFO_COUNT_UP,                             \
+			},                                                                         \
+	};                                                                                         \
+                                                                                                   \
+	static int mcux_tpm_##n##_init(const struct device *dev);                                  \
+	DEVICE_DT_INST_DEFINE(n, mcux_tpm_##n##_init, NULL, &mcux_tpm_data_##n,                    \
+			      &mcux_tpm_config_##n, POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,     \
+			      &mcux_tpm_driver_api);                                               \
+                                                                                                   \
+	static int mcux_tpm_##n##_init(const struct device *dev)                                   \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_tpm_isr,               \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+		return mcux_tpm_init(dev);                                                         \
+	}
 
 DT_INST_FOREACH_STATUS_OKAY(TPM_DEVICE_INIT_MCUX)

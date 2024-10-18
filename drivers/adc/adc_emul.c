@@ -99,12 +99,10 @@ struct adc_emul_data {
 	struct k_mutex cfg_mtx;
 
 	/** Stack for acquisition thread */
-	K_KERNEL_STACK_MEMBER(stack,
-			CONFIG_ADC_EMUL_ACQUISITION_THREAD_STACK_SIZE);
+	K_KERNEL_STACK_MEMBER(stack, CONFIG_ADC_EMUL_ACQUISITION_THREAD_STACK_SIZE);
 };
 
-int adc_emul_const_value_set(const struct device *dev, unsigned int chan,
-			     uint32_t value)
+int adc_emul_const_value_set(const struct device *dev, unsigned int chan, uint32_t value)
 {
 	const struct adc_emul_config *config = dev->config;
 	struct adc_emul_data *data = dev->data;
@@ -127,8 +125,8 @@ int adc_emul_const_value_set(const struct device *dev, unsigned int chan,
 	return 0;
 }
 
-int adc_emul_value_func_set(const struct device *dev, unsigned int chan,
-			    adc_emul_value_func func, void *func_data)
+int adc_emul_value_func_set(const struct device *dev, unsigned int chan, adc_emul_value_func func,
+			    void *func_data)
 {
 	const struct adc_emul_config *config = dev->config;
 	struct adc_emul_data *data = dev->data;
@@ -152,8 +150,7 @@ int adc_emul_value_func_set(const struct device *dev, unsigned int chan,
 	return 0;
 }
 
-int adc_emul_ref_voltage_set(const struct device *dev, enum adc_reference ref,
-			     uint16_t value)
+int adc_emul_ref_voltage_set(const struct device *dev, enum adc_reference ref, uint16_t value)
 {
 	struct adc_driver_api *api = (struct adc_driver_api *)dev->api;
 	struct adc_emul_data *data = dev->data;
@@ -193,8 +190,7 @@ int adc_emul_ref_voltage_set(const struct device *dev, enum adc_reference ref,
  * @return Reference voltage in mV
  * @return 0 on error
  */
-static uint16_t adc_emul_get_ref_voltage(struct adc_emul_data *data,
-					 enum adc_reference ref)
+static uint16_t adc_emul_get_ref_voltage(struct adc_emul_data *data, enum adc_reference ref)
 {
 	uint16_t voltage;
 
@@ -244,8 +240,7 @@ static int adc_emul_channel_setup(const struct device *dev,
 	}
 
 	if (adc_emul_get_ref_voltage(data, channel_cfg->reference) == 0) {
-		LOG_ERR("unsupported channel reference '%d'",
-			channel_cfg->reference);
+		LOG_ERR("unsupported channel reference '%d'", channel_cfg->reference);
 		return -ENOTSUP;
 	}
 
@@ -275,8 +270,7 @@ static int adc_emul_channel_setup(const struct device *dev,
  * @return 0 on success
  * @return -ENOMEM if buffer is not big enough
  */
-static int adc_emul_check_buffer_size(const struct device *dev,
-					 const struct adc_sequence *sequence)
+static int adc_emul_check_buffer_size(const struct device *dev, const struct adc_sequence *sequence)
 {
 	const struct adc_emul_config *config = dev->config;
 	uint8_t channels = 0;
@@ -314,22 +308,19 @@ static int adc_emul_check_buffer_size(const struct device *dev,
  *         (see @ref adc_emul_check_buffer_size)
  * @return other error code returned by adc_context_wait_for_completion
  */
-static int adc_emul_start_read(const struct device *dev,
-			       const struct adc_sequence *sequence)
+static int adc_emul_start_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	const struct adc_emul_config *config = dev->config;
 	struct adc_emul_data *data = dev->data;
 	int err;
 
-	if (sequence->resolution > ADC_EMUL_MAX_RESOLUTION ||
-	    sequence->resolution == 0) {
+	if (sequence->resolution > ADC_EMUL_MAX_RESOLUTION || sequence->resolution == 0) {
 		LOG_ERR("unsupported resolution %d", sequence->resolution);
 		return -ENOTSUP;
 	}
 
 	if (find_msb_set(sequence->channels) > config->num_channels) {
-		LOG_ERR("unsupported channels in mask: 0x%08x",
-			sequence->channels);
+		LOG_ERR("unsupported channels in mask: 0x%08x", sequence->channels);
 		return -ENOTSUP;
 	}
 
@@ -346,8 +337,7 @@ static int adc_emul_start_read(const struct device *dev,
 	return adc_context_wait_for_completion(&data->ctx);
 }
 
-static int adc_emul_read_async(const struct device *dev,
-			       const struct adc_sequence *sequence,
+static int adc_emul_read_async(const struct device *dev, const struct adc_sequence *sequence,
 			       struct k_poll_signal *async)
 {
 	struct adc_emul_data *data = dev->data;
@@ -360,16 +350,14 @@ static int adc_emul_read_async(const struct device *dev,
 	return err;
 }
 
-static int adc_emul_read(const struct device *dev,
-			 const struct adc_sequence *sequence)
+static int adc_emul_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	return adc_emul_read_async(dev, sequence, NULL);
 }
 
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
-	struct adc_emul_data *data = CONTAINER_OF(ctx, struct adc_emul_data,
-						  ctx);
+	struct adc_emul_data *data = CONTAINER_OF(ctx, struct adc_emul_data, ctx);
 
 	data->channels = ctx->sequence.channels;
 	data->repeat_buf = data->buf;
@@ -377,11 +365,9 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	k_sem_give(&data->sem);
 }
 
-static void adc_context_update_buffer_pointer(struct adc_context *ctx,
-					      bool repeat_sampling)
+static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat_sampling)
 {
-	struct adc_emul_data *data = CONTAINER_OF(ctx, struct adc_emul_data,
-						  ctx);
+	struct adc_emul_data *data = CONTAINER_OF(ctx, struct adc_emul_data, ctx);
 
 	if (repeat_sampling) {
 		data->buf = data->repeat_buf;
@@ -400,8 +386,7 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
  *         selected
  * @return other error code returned by custom function
  */
-static int adc_emul_get_chan_value(struct adc_emul_data *data,
-				   unsigned int chan,
+static int adc_emul_get_chan_value(struct adc_emul_data *data, unsigned int chan,
 				   adc_emul_res_t *result)
 {
 	struct adc_emul_chan_cfg *chan_cfg = &data->chan_cfg[chan];
@@ -419,11 +404,9 @@ static int adc_emul_get_chan_value(struct adc_emul_data *data,
 		break;
 
 	case ADC_EMUL_CUSTOM_FUNC:
-		err = chan_cfg->func(data->dev, chan, chan_cfg->func_data,
-				     &input_mV);
+		err = chan_cfg->func(data->dev, chan, chan_cfg->func_data, &input_mV);
 		if (err) {
-			LOG_ERR("failed to read channel %d (err %d)",
-				chan, err);
+			LOG_ERR("failed to read channel %d (err %d)", chan, err);
 			goto out;
 		}
 		break;
@@ -535,49 +518,42 @@ static int adc_emul_init(const struct device *dev)
 		chan_cfg->const_value = 0;
 	}
 
-	k_thread_create(&data->thread, data->stack,
-			CONFIG_ADC_EMUL_ACQUISITION_THREAD_STACK_SIZE,
-			adc_emul_acquisition_thread,
-			data, NULL, NULL,
-			CONFIG_ADC_EMUL_ACQUISITION_THREAD_PRIO,
-			0, K_NO_WAIT);
+	k_thread_create(&data->thread, data->stack, CONFIG_ADC_EMUL_ACQUISITION_THREAD_STACK_SIZE,
+			adc_emul_acquisition_thread, data, NULL, NULL,
+			CONFIG_ADC_EMUL_ACQUISITION_THREAD_PRIO, 0, K_NO_WAIT);
 
 	adc_context_unlock_unconditionally(&data->ctx);
 
 	return 0;
 }
 
-#define ADC_EMUL_INIT(_num)						\
-	static struct adc_driver_api adc_emul_api_##_num = {		\
-		.channel_setup = adc_emul_channel_setup,		\
-		.read = adc_emul_read,					\
-		.ref_internal = DT_INST_PROP(_num, ref_internal_mv),	\
+#define ADC_EMUL_INIT(_num)                                                                        \
+	static struct adc_driver_api adc_emul_api_##_num = {                                       \
+		.channel_setup = adc_emul_channel_setup,                                           \
+		.read = adc_emul_read,                                                             \
+		.ref_internal = DT_INST_PROP(_num, ref_internal_mv),                               \
 		IF_ENABLED(CONFIG_ADC_ASYNC,				\
-			(.read_async = adc_emul_read_async,))		\
-	};								\
-									\
-	static struct adc_emul_chan_cfg					\
-		adc_emul_ch_cfg_##_num[DT_INST_PROP(_num, nchannels)];	\
-									\
-	static const struct adc_emul_config adc_emul_config_##_num = {	\
-		.num_channels = DT_INST_PROP(_num, nchannels),		\
-	};								\
-									\
-	static struct adc_emul_data adc_emul_data_##_num = {		\
-		ADC_CONTEXT_INIT_TIMER(adc_emul_data_##_num, ctx),	\
-		ADC_CONTEXT_INIT_LOCK(adc_emul_data_##_num, ctx),	\
-		ADC_CONTEXT_INIT_SYNC(adc_emul_data_##_num, ctx),	\
-		.chan_cfg = adc_emul_ch_cfg_##_num,			\
-		.ref_vdd = DT_INST_PROP(_num, ref_vdd_mv),		\
-		.ref_ext0 = DT_INST_PROP(_num, ref_external0_mv),	\
-		.ref_ext1 = DT_INST_PROP(_num, ref_external1_mv),	\
-		.ref_int = DT_INST_PROP(_num, ref_internal_mv),		\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(_num, adc_emul_init, NULL,		\
-			      &adc_emul_data_##_num,			\
-			      &adc_emul_config_##_num, POST_KERNEL,	\
-			      CONFIG_ADC_INIT_PRIORITY,			\
+			(.read_async = adc_emul_read_async,)) };                 \
+                                                                                                   \
+	static struct adc_emul_chan_cfg adc_emul_ch_cfg_##_num[DT_INST_PROP(_num, nchannels)];     \
+                                                                                                   \
+	static const struct adc_emul_config adc_emul_config_##_num = {                             \
+		.num_channels = DT_INST_PROP(_num, nchannels),                                     \
+	};                                                                                         \
+                                                                                                   \
+	static struct adc_emul_data adc_emul_data_##_num = {                                       \
+		ADC_CONTEXT_INIT_TIMER(adc_emul_data_##_num, ctx),                                 \
+		ADC_CONTEXT_INIT_LOCK(adc_emul_data_##_num, ctx),                                  \
+		ADC_CONTEXT_INIT_SYNC(adc_emul_data_##_num, ctx),                                  \
+		.chan_cfg = adc_emul_ch_cfg_##_num,                                                \
+		.ref_vdd = DT_INST_PROP(_num, ref_vdd_mv),                                         \
+		.ref_ext0 = DT_INST_PROP(_num, ref_external0_mv),                                  \
+		.ref_ext1 = DT_INST_PROP(_num, ref_external1_mv),                                  \
+		.ref_int = DT_INST_PROP(_num, ref_internal_mv),                                    \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(_num, adc_emul_init, NULL, &adc_emul_data_##_num,                    \
+			      &adc_emul_config_##_num, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,      \
 			      &adc_emul_api_##_num);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_EMUL_INIT)

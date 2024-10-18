@@ -12,7 +12,6 @@
 #include <zephyr/sd/sdmmc.h>
 #include <zephyr/drivers/disk.h>
 
-
 enum sd_status {
 	SD_UNINIT,
 	SD_ERROR,
@@ -28,7 +27,6 @@ struct sdmmc_data {
 	enum sd_status status;
 	char *name;
 };
-
 
 static int disk_sdmmc_access_init(struct disk_info *disk)
 {
@@ -66,8 +64,8 @@ static int disk_sdmmc_access_status(struct disk_info *disk)
 	}
 }
 
-static int disk_sdmmc_access_read(struct disk_info *disk, uint8_t *buf,
-				 uint32_t sector, uint32_t count)
+static int disk_sdmmc_access_read(struct disk_info *disk, uint8_t *buf, uint32_t sector,
+				  uint32_t count)
 {
 	const struct device *dev = disk->dev;
 	struct sdmmc_data *data = dev->data;
@@ -75,8 +73,8 @@ static int disk_sdmmc_access_read(struct disk_info *disk, uint8_t *buf,
 	return sdmmc_read_blocks(&data->card, buf, sector, count);
 }
 
-static int disk_sdmmc_access_write(struct disk_info *disk, const uint8_t *buf,
-				 uint32_t sector, uint32_t count)
+static int disk_sdmmc_access_write(struct disk_info *disk, const uint8_t *buf, uint32_t sector,
+				   uint32_t count)
 {
 	const struct device *dev = disk->dev;
 	struct sdmmc_data *data = dev->data;
@@ -126,22 +124,16 @@ static int disk_sdmmc_init(const struct device *dev)
 	return disk_access_register(&sdmmc_disk);
 }
 
-#define DISK_ACCESS_SDMMC_INIT(n)						\
-	static const struct sdmmc_config sdmmc_config_##n = {			\
-		.host_controller = DEVICE_DT_GET(DT_INST_PARENT(n)),		\
-	};									\
-										\
-	static struct sdmmc_data sdmmc_data_##n = {				\
-		.name = CONFIG_SDMMC_VOLUME_NAME,				\
-	};									\
-										\
-	DEVICE_DT_INST_DEFINE(n,						\
-			&disk_sdmmc_init,					\
-			NULL,							\
-			&sdmmc_data_##n,					\
-			&sdmmc_config_##n,					\
-			POST_KERNEL,						\
-			CONFIG_SD_INIT_PRIORITY,				\
-			NULL);
+#define DISK_ACCESS_SDMMC_INIT(n)                                                                  \
+	static const struct sdmmc_config sdmmc_config_##n = {                                      \
+		.host_controller = DEVICE_DT_GET(DT_INST_PARENT(n)),                               \
+	};                                                                                         \
+                                                                                                   \
+	static struct sdmmc_data sdmmc_data_##n = {                                                \
+		.name = CONFIG_SDMMC_VOLUME_NAME,                                                  \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &disk_sdmmc_init, NULL, &sdmmc_data_##n, &sdmmc_config_##n,       \
+			      POST_KERNEL, CONFIG_SD_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(DISK_ACCESS_SDMMC_INIT)

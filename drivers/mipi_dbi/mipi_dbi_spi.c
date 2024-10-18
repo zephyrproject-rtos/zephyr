@@ -47,9 +47,8 @@ uint32_t var = MIPI_DBI_SPI_READ_REQUIRED;
 #define MIPI_DBI_DC_BIT BIT(8)
 
 static int mipi_dbi_spi_write_helper(const struct device *dev,
-				     const struct mipi_dbi_config *dbi_config,
-				     bool cmd_present, uint8_t cmd,
-				     const uint8_t *data_buf, size_t len)
+				     const struct mipi_dbi_config *dbi_config, bool cmd_present,
+				     uint8_t cmd, const uint8_t *data_buf, size_t len)
 {
 	const struct mipi_dbi_spi_config *config = dev->config;
 	struct mipi_dbi_spi_data *data = dev->data;
@@ -65,13 +64,11 @@ static int mipi_dbi_spi_write_helper(const struct device *dev,
 		return ret;
 	}
 
-	if (dbi_config->mode == MIPI_DBI_MODE_SPI_3WIRE &&
-	    IS_ENABLED(CONFIG_MIPI_DBI_SPI_3WIRE)) {
+	if (dbi_config->mode == MIPI_DBI_MODE_SPI_3WIRE && IS_ENABLED(CONFIG_MIPI_DBI_SPI_3WIRE)) {
 		/* 9 bit word mode must be used, as the command/data bit
 		 * is stored before the data word.
 		 */
-		if ((dbi_config->config.operation & SPI_WORD_SIZE_MASK)
-		    != SPI_WORD_SET(9)) {
+		if ((dbi_config->config.operation & SPI_WORD_SIZE_MASK) != SPI_WORD_SET(9)) {
 			return -ENOTSUP;
 		}
 		buffer.buf = &data->spi_byte;
@@ -80,8 +77,7 @@ static int mipi_dbi_spi_write_helper(const struct device *dev,
 		/* Send command */
 		if (cmd_present) {
 			data->spi_byte = cmd;
-			ret = spi_write(config->spi_dev, &dbi_config->config,
-					&buf_set);
+			ret = spi_write(config->spi_dev, &dbi_config->config, &buf_set);
 			if (ret < 0) {
 				goto out;
 			}
@@ -89,8 +85,7 @@ static int mipi_dbi_spi_write_helper(const struct device *dev,
 		/* Write data, byte by byte */
 		for (size_t i = 0; i < len; i++) {
 			data->spi_byte = MIPI_DBI_DC_BIT | data_buf[i];
-			ret = spi_write(config->spi_dev, &dbi_config->config,
-					&buf_set);
+			ret = spi_write(config->spi_dev, &dbi_config->config, &buf_set);
 			if (ret < 0) {
 				goto out;
 			}
@@ -106,8 +101,7 @@ static int mipi_dbi_spi_write_helper(const struct device *dev,
 		if (cmd_present) {
 			/* Set CD pin low for command */
 			gpio_pin_set_dt(&config->cmd_data, 0);
-			ret = spi_write(config->spi_dev, &dbi_config->config,
-					&buf_set);
+			ret = spi_write(config->spi_dev, &dbi_config->config, &buf_set);
 			if (ret < 0) {
 				goto out;
 			}
@@ -119,8 +113,7 @@ static int mipi_dbi_spi_write_helper(const struct device *dev,
 
 			/* Set CD pin high for data */
 			gpio_pin_set_dt(&config->cmd_data, 1);
-			ret = spi_write(config->spi_dev, &dbi_config->config,
-					&buf_set);
+			ret = spi_write(config->spi_dev, &dbi_config->config, &buf_set);
 			if (ret < 0) {
 				goto out;
 			}
@@ -135,12 +128,10 @@ out:
 }
 
 static int mipi_dbi_spi_command_write(const struct device *dev,
-				      const struct mipi_dbi_config *dbi_config,
-				      uint8_t cmd, const uint8_t *data_buf,
-				      size_t len)
+				      const struct mipi_dbi_config *dbi_config, uint8_t cmd,
+				      const uint8_t *data_buf, size_t len)
 {
-	return mipi_dbi_spi_write_helper(dev, dbi_config, true, cmd,
-					 data_buf, len);
+	return mipi_dbi_spi_write_helper(dev, dbi_config, true, cmd, data_buf, len);
 }
 
 static int mipi_dbi_spi_write_display(const struct device *dev,
@@ -151,16 +142,14 @@ static int mipi_dbi_spi_write_display(const struct device *dev,
 {
 	ARG_UNUSED(pixfmt);
 
-	return mipi_dbi_spi_write_helper(dev, dbi_config, false, 0x0,
-					 framebuf, desc->buf_size);
+	return mipi_dbi_spi_write_helper(dev, dbi_config, false, 0x0, framebuf, desc->buf_size);
 }
 
 #if MIPI_DBI_SPI_READ_REQUIRED
 
 static int mipi_dbi_spi_command_read(const struct device *dev,
-				     const struct mipi_dbi_config *dbi_config,
-				     uint8_t *cmds, size_t num_cmds,
-				     uint8_t *response, size_t len)
+				     const struct mipi_dbi_config *dbi_config, uint8_t *cmds,
+				     size_t num_cmds, uint8_t *response, size_t len)
 {
 	const struct mipi_dbi_spi_config *config = dev->config;
 	struct mipi_dbi_spi_data *data = dev->data;
@@ -177,8 +166,7 @@ static int mipi_dbi_spi_command_read(const struct device *dev,
 		return ret;
 	}
 	memcpy(&tmp_config, &dbi_config->config, sizeof(tmp_config));
-	if (dbi_config->mode == MIPI_DBI_MODE_SPI_3WIRE &&
-	    IS_ENABLED(CONFIG_MIPI_DBI_SPI_3WIRE)) {
+	if (dbi_config->mode == MIPI_DBI_MODE_SPI_3WIRE && IS_ENABLED(CONFIG_MIPI_DBI_SPI_3WIRE)) {
 		/* We have to emulate 3 wire mode by packing the data/command
 		 * bit into the upper bit of the SPI transfer.
 		 * switch SPI to 9 bit mode, and write the transfer
@@ -215,8 +203,7 @@ static int mipi_dbi_spi_command_read(const struct device *dev,
 			/* Set CD pin low for command */
 			gpio_pin_set_dt(&config->cmd_data, 0);
 
-			ret = spi_write(config->spi_dev, &tmp_config,
-					&buf_set);
+			ret = spi_write(config->spi_dev, &tmp_config, &buf_set);
 			if (ret < 0) {
 				goto out;
 			}
@@ -228,8 +215,7 @@ static int mipi_dbi_spi_command_read(const struct device *dev,
 
 			buffer.buf = (void *)response;
 			buffer.len = len;
-			ret = spi_read(config->spi_dev, &tmp_config,
-				       &buf_set);
+			ret = spi_read(config->spi_dev, &tmp_config, &buf_set);
 			if (ret < 0) {
 				goto out;
 			}
@@ -268,8 +254,7 @@ static int mipi_dbi_spi_reset(const struct device *dev, k_timeout_t delay)
 	return gpio_pin_set_dt(&config->reset, 0);
 }
 
-static int mipi_dbi_spi_release(const struct device *dev,
-				const struct mipi_dbi_config *dbi_config)
+static int mipi_dbi_spi_release(const struct device *dev, const struct mipi_dbi_config *dbi_config)
 {
 	const struct mipi_dbi_spi_config *config = dev->config;
 
@@ -324,21 +309,16 @@ static const struct mipi_dbi_driver_api mipi_dbi_spi_driver_api = {
 #endif
 };
 
-#define MIPI_DBI_SPI_INIT(n)							\
-	static const struct mipi_dbi_spi_config					\
-	    mipi_dbi_spi_config_##n = {						\
-		    .spi_dev = DEVICE_DT_GET(					\
-				    DT_INST_PHANDLE(n, spi_dev)),		\
-		    .cmd_data = GPIO_DT_SPEC_INST_GET_OR(n, dc_gpios, {}),	\
-		    .reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {}),	\
-	};									\
-	static struct mipi_dbi_spi_data mipi_dbi_spi_data_##n;			\
-										\
-	DEVICE_DT_INST_DEFINE(n, mipi_dbi_spi_init, NULL,			\
-			&mipi_dbi_spi_data_##n,					\
-			&mipi_dbi_spi_config_##n,				\
-			POST_KERNEL,						\
-			CONFIG_MIPI_DBI_INIT_PRIORITY,				\
-			&mipi_dbi_spi_driver_api);
+#define MIPI_DBI_SPI_INIT(n)                                                                       \
+	static const struct mipi_dbi_spi_config mipi_dbi_spi_config_##n = {                        \
+		.spi_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, spi_dev)),                             \
+		.cmd_data = GPIO_DT_SPEC_INST_GET_OR(n, dc_gpios, {}),                             \
+		.reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {}),                             \
+	};                                                                                         \
+	static struct mipi_dbi_spi_data mipi_dbi_spi_data_##n;                                     \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, mipi_dbi_spi_init, NULL, &mipi_dbi_spi_data_##n,                  \
+			      &mipi_dbi_spi_config_##n, POST_KERNEL,                               \
+			      CONFIG_MIPI_DBI_INIT_PRIORITY, &mipi_dbi_spi_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MIPI_DBI_SPI_INIT)

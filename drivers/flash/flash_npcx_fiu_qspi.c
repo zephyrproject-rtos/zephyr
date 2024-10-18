@@ -19,7 +19,7 @@
 LOG_MODULE_REGISTER(npcx_fiu_qspi, LOG_LEVEL_ERR);
 
 /* Driver convenience defines */
-#define HAL_INSTANCE(dev) \
+#define HAL_INSTANCE(dev)                                                                          \
 	((struct fiu_reg *)((const struct npcx_qspi_fiu_config *)(dev)->config)->base)
 
 /* Device config */
@@ -110,8 +110,8 @@ static inline void qspi_npcx_config_dra_4byte_mode(const struct device *dev,
 			inst->SPI1_DEV |= BIT(NPCX_SPI1_DEV_FOUR_BADDR_CS10);
 		}
 	} else {
-		inst->SPI1_DEV &= ~(BIT(NPCX_SPI1_DEV_FOUR_BADDR_CS11) |
-				    BIT(NPCX_SPI1_DEV_FOUR_BADDR_CS10));
+		inst->SPI1_DEV &=
+			~(BIT(NPCX_SPI1_DEV_FOUR_BADDR_CS11) | BIT(NPCX_SPI1_DEV_FOUR_BADDR_CS10));
 	}
 #elif defined(CONFIG_FLASH_NPCX_FIU_DRA_V2)
 	if (qspi_cfg->enter_4ba != 0) {
@@ -155,8 +155,7 @@ static inline void qspi_npcx_fiu_set_operation(const struct device *dev, uint32_
 }
 
 /* NPCX specific QSPI-FIU controller functions */
-int qspi_npcx_fiu_uma_transceive(const struct device *dev, struct npcx_uma_cfg *cfg,
-				     uint32_t flags)
+int qspi_npcx_fiu_uma_transceive(const struct device *dev, struct npcx_uma_cfg *cfg, uint32_t flags)
 {
 	struct npcx_qspi_fiu_data *const data = dev->data;
 
@@ -205,8 +204,7 @@ int qspi_npcx_fiu_uma_transceive(const struct device *dev, struct npcx_uma_cfg *
 	return 0;
 }
 
-void qspi_npcx_fiu_mutex_lock_configure(const struct device *dev,
-					const struct npcx_qspi_cfg *cfg,
+void qspi_npcx_fiu_mutex_lock_configure(const struct device *dev, const struct npcx_qspi_cfg *cfg,
 					const uint32_t operation)
 {
 	struct npcx_qspi_fiu_data *const data = dev->data;
@@ -257,8 +255,7 @@ static int qspi_npcx_fiu_init(const struct device *dev)
 	}
 
 	/* Turn on device clock first and get source clock freq. */
-	ret = clock_control_on(clk_dev,
-			       (clock_control_subsys_t)&config->clk_cfg);
+	ret = clock_control_on(clk_dev, (clock_control_subsys_t)&config->clk_cfg);
 	if (ret < 0) {
 		LOG_ERR("Turn on FIU clock fail %d", ret);
 		return ret;
@@ -279,15 +276,15 @@ static int qspi_npcx_fiu_init(const struct device *dev)
 	return 0;
 }
 
-#define NPCX_SPI_FIU_INIT(n)							\
-static const struct npcx_qspi_fiu_config npcx_qspi_fiu_config_##n = {		\
-	.base = DT_INST_REG_ADDR(n),						\
-	.clk_cfg = NPCX_DT_CLK_CFG_ITEM(n),					\
-	.en_direct_access_2dev = DT_INST_PROP(n, en_direct_access_2dev),	\
-};										\
-static struct npcx_qspi_fiu_data npcx_qspi_fiu_data_##n;			\
-DEVICE_DT_INST_DEFINE(n, qspi_npcx_fiu_init, NULL,				\
-		      &npcx_qspi_fiu_data_##n, &npcx_qspi_fiu_config_##n,	\
-		      PRE_KERNEL_1, CONFIG_FLASH_INIT_PRIORITY, NULL);
+#define NPCX_SPI_FIU_INIT(n)                                                                       \
+	static const struct npcx_qspi_fiu_config npcx_qspi_fiu_config_##n = {                      \
+		.base = DT_INST_REG_ADDR(n),                                                       \
+		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(n),                                                \
+		.en_direct_access_2dev = DT_INST_PROP(n, en_direct_access_2dev),                   \
+	};                                                                                         \
+	static struct npcx_qspi_fiu_data npcx_qspi_fiu_data_##n;                                   \
+	DEVICE_DT_INST_DEFINE(n, qspi_npcx_fiu_init, NULL, &npcx_qspi_fiu_data_##n,                \
+			      &npcx_qspi_fiu_config_##n, PRE_KERNEL_1, CONFIG_FLASH_INIT_PRIORITY, \
+			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(NPCX_SPI_FIU_INIT)

@@ -246,7 +246,7 @@ static int lsm9ds1_accel_odr_set(const struct device *dev, uint16_t freq)
 			return ret;
 		}
 
-	/* The gyroscope is off, we have to change the odr of just the accelerometer */
+		/* The gyroscope is off, we have to change the odr of just the accelerometer */
 	} else {
 
 		odr = lsm9ds1_accel_freq_to_odr_val(freq);
@@ -619,8 +619,7 @@ static int lsm9ds1_init(const struct device *dev)
 }
 
 #define LSM9DS1_CONFIG_COMMON(inst)                                                                \
-	.imu_odr = DT_INST_PROP(inst, imu_odr),							   \
-	.accel_range = DT_INST_PROP(inst, accel_range),						   \
+	.imu_odr = DT_INST_PROP(inst, imu_odr), .accel_range = DT_INST_PROP(inst, accel_range),    \
 	.gyro_range = DT_INST_PROP(inst, gyro_range),
 
 /*
@@ -628,14 +627,12 @@ static int lsm9ds1_init(const struct device *dev)
  */
 
 #define LSM9DS1_CONFIG_I2C(inst)                                                                   \
-	{                                                                                          \
-		STMEMSC_CTX_I2C(&lsm9ds1_config_##inst.stmemsc_cfg),                               \
-		.stmemsc_cfg =                                                                     \
-			{                                                                          \
-				.i2c = I2C_DT_SPEC_INST_GET(inst),                                 \
-			},                                                                         \
-		LSM9DS1_CONFIG_COMMON(inst)                                                        \
-	}
+	{STMEMSC_CTX_I2C(&lsm9ds1_config_##inst.stmemsc_cfg),                                      \
+	 .stmemsc_cfg =                                                                            \
+		 {                                                                                 \
+			 .i2c = I2C_DT_SPEC_INST_GET(inst),                                        \
+		 },                                                                                \
+	 LSM9DS1_CONFIG_COMMON(inst)}
 
 #define LSM9DS1_DEFINE(inst)                                                                       \
 	static struct lsm9ds1_data lsm9ds1_data_##inst = {                                         \

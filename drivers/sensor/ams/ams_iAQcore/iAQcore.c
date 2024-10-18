@@ -19,8 +19,7 @@
 
 LOG_MODULE_REGISTER(IAQ_CORE, CONFIG_SENSOR_LOG_LEVEL);
 
-static int iaqcore_sample_fetch(const struct device *dev,
-				enum sensor_channel chan)
+static int iaqcore_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct iaq_core_data *drv_data = dev->data;
 	const struct iaq_core_config *config = dev->config;
@@ -67,8 +66,7 @@ static int iaqcore_sample_fetch(const struct device *dev,
 	return -EIO;
 }
 
-static int iaqcore_channel_get(const struct device *dev,
-			       enum sensor_channel chan,
+static int iaqcore_channel_get(const struct device *dev, enum sensor_channel chan,
 			       struct sensor_value *val)
 {
 	struct iaq_core_data *drv_data = dev->data;
@@ -110,15 +108,15 @@ static int iaq_core_init(const struct device *dev)
 	return 0;
 }
 
-#define IAQ_CORE_DEFINE(inst)								\
-	static struct iaq_core_data iaq_core_data_##inst;				\
-											\
-	static const struct iaq_core_config iaq_core_config_##inst = {			\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
-	};										\
-											\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, iaq_core_init, NULL, &iaq_core_data_##inst,	\
-			      &iaq_core_config_##inst, POST_KERNEL,			\
-			      CONFIG_SENSOR_INIT_PRIORITY, &iaq_core_driver_api);	\
+#define IAQ_CORE_DEFINE(inst)                                                                      \
+	static struct iaq_core_data iaq_core_data_##inst;                                          \
+                                                                                                   \
+	static const struct iaq_core_config iaq_core_config_##inst = {                             \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+	};                                                                                         \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, iaq_core_init, NULL, &iaq_core_data_##inst,             \
+				     &iaq_core_config_##inst, POST_KERNEL,                         \
+				     CONFIG_SENSOR_INIT_PRIORITY, &iaq_core_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IAQ_CORE_DEFINE)

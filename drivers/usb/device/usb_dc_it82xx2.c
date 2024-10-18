@@ -23,27 +23,27 @@ LOG_MODULE_REGISTER(usb_dc_it82xx2, CONFIG_USB_DRIVER_LOG_LEVEL);
 #define IT8XXX2_IS_EXTEND_ENDPOINT(n) (USB_EP_GET_IDX(n) >= 4)
 
 /* USB Device Controller Registers Bits & Constants */
-#define IT8XXX2_USB_IRQ			DT_INST_IRQ_BY_IDX(0, 0, irq)
-#define IT8XXX2_WU90_IRQ		DT_INST_IRQ_BY_IDX(0, 1, irq)
+#define IT8XXX2_USB_IRQ  DT_INST_IRQ_BY_IDX(0, 0, irq)
+#define IT8XXX2_WU90_IRQ DT_INST_IRQ_BY_IDX(0, 1, irq)
 
-#define FIFO_NUM			3
-#define SETUP_DATA_CNT			8
-#define DC_ADDR_NULL			0x00
-#define DC_ADDR_MASK			0x7F
+#define FIFO_NUM       3
+#define SETUP_DATA_CNT 8
+#define DC_ADDR_NULL   0x00
+#define DC_ADDR_MASK   0x7F
 
 /* The related definitions of the register EP STATUS:
  * 0x41/0x45/0x49/0x4D
  */
-#define EP_STATUS_ERROR			0x0F
+#define EP_STATUS_ERROR 0x0F
 
 /* The related definitions of the register dc_line_status: 0x51 */
-#define RX_LINE_STATE_MASK		(RX_LINE_FULL_SPD | RX_LINE_LOW_SPD)
-#define RX_LINE_LOW_SPD			0x02
-#define RX_LINE_FULL_SPD		0x01
-#define RX_LINE_RESET			0x00
+#define RX_LINE_STATE_MASK (RX_LINE_FULL_SPD | RX_LINE_LOW_SPD)
+#define RX_LINE_LOW_SPD    0x02
+#define RX_LINE_FULL_SPD   0x01
+#define RX_LINE_RESET      0x00
 
 /* EPN Extend Control 2 Register Mask Definition */
-#define COMPLETED_TRANS			0xF0
+#define COMPLETED_TRANS 0xF0
 
 /* Bit [1:0] represents the TRANSACTION_TYPE as follows: */
 enum it82xx2_transaction_types {
@@ -57,28 +57,28 @@ enum it82xx2_transaction_types {
  * EP_RX_FIFO_CONTROL: 0X64/0x84/0xA4/0xC4
  * EP_TX_FIFO_CONTROL: 0X74/0x94/0xB4/0xD4
  */
-#define FIFO_FORCE_EMPTY		BIT(0)
+#define FIFO_FORCE_EMPTY BIT(0)
 
 /* The bit definitions of the register Host/Device Control: 0XE0 */
-#define RESET_CORE			BIT(1)
+#define RESET_CORE BIT(1)
 
 /* ENDPOINT[3..0]_STATUS_REG */
-#define DC_STALL_SENT			BIT(5)
+#define DC_STALL_SENT BIT(5)
 
 /* DC_INTERRUPT_STATUS_REG */
-#define DC_TRANS_DONE			BIT(0)
-#define DC_RESUME_INT			BIT(1)
-#define DC_RESET_EVENT			BIT(2)
-#define DC_SOF_RECEIVED			BIT(3)
-#define DC_NAK_SENT_INT			BIT(4)
+#define DC_TRANS_DONE   BIT(0)
+#define DC_RESUME_INT   BIT(1)
+#define DC_RESET_EVENT  BIT(2)
+#define DC_SOF_RECEIVED BIT(3)
+#define DC_NAK_SENT_INT BIT(4)
 
 /* DC_CONTROL_REG */
-#define DC_GLOBAL_ENABLE		BIT(0)
-#define DC_TX_LINE_STATE_DM		BIT(1)
-#define DC_DIRECT_CONTROL		BIT(3)
-#define DC_FULL_SPEED_LINE_POLARITY	BIT(4)
-#define DC_FULL_SPEED_LINE_RATE		BIT(5)
-#define DC_CONNECT_TO_HOST		BIT(6) /* internal pull-up */
+#define DC_GLOBAL_ENABLE            BIT(0)
+#define DC_TX_LINE_STATE_DM         BIT(1)
+#define DC_DIRECT_CONTROL           BIT(3)
+#define DC_FULL_SPEED_LINE_POLARITY BIT(4)
+#define DC_FULL_SPEED_LINE_RATE     BIT(5)
+#define DC_CONNECT_TO_HOST          BIT(6) /* internal pull-up */
 
 /* ENDPOINT[3..0]_CONTROL_REG */
 #define ENDPOINT_ENABLE_BIT      BIT(0)
@@ -136,15 +136,14 @@ struct usb_it82xx2_config {
 };
 
 static const struct usb_it8xxx2_wuc usb_wuc0[IT8XXX2_DT_INST_WUCCTRL_LEN(0)] =
-		IT8XXX2_DT_WUC_ITEMS_LIST(0);
+	IT8XXX2_DT_WUC_ITEMS_LIST(0);
 
 PINCTRL_DT_INST_DEFINE(0);
 
 static const struct usb_it82xx2_config ucfg0 = {
 	.base = (struct usb_it82xx2_regs *)DT_INST_REG_ADDR(0),
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
-	.wuc_list = usb_wuc0
-};
+	.wuc_list = usb_wuc0};
 
 struct it82xx2_endpoint_data {
 	usb_dc_ep_callback cb_in;
@@ -258,11 +257,9 @@ static void it8xxx2_usb_dc_wuc_init(const struct device *dev)
 	const struct usb_it82xx2_config *cfg = dev->config;
 
 	/* Initializing the WUI */
-	it8xxx2_wuc_set_polarity(cfg->wuc_list[0].wucs,
-				cfg->wuc_list[0].mask,
-				WUC_TYPE_EDGE_FALLING);
-	it8xxx2_wuc_clear_status(cfg->wuc_list[0].wucs,
-				cfg->wuc_list[0].mask);
+	it8xxx2_wuc_set_polarity(cfg->wuc_list[0].wucs, cfg->wuc_list[0].mask,
+				 WUC_TYPE_EDGE_FALLING);
+	it8xxx2_wuc_clear_status(cfg->wuc_list[0].wucs, cfg->wuc_list[0].mask);
 
 	/* Enabling the WUI */
 	it8xxx2_wuc_enable(cfg->wuc_list[0].wucs, cfg->wuc_list[0].mask);
@@ -300,8 +297,7 @@ static int it82xx2_usb_fifo_ctrl(const uint8_t ep, const bool clear)
 			ep_fifo_ctrl[fifon_ctrl] = 0x0;
 			ep_fifo_ctrl[fifon_ctrl + 1] = BIT(ep_idx - 8);
 		}
-	} else if (USB_EP_DIR_IS_OUT(ep) &&
-		   udata0.ep_data[ep_idx].ep_status == EP_CONFIG_OUT) {
+	} else if (USB_EP_DIR_IS_OUT(ep) && udata0.ep_data[ep_idx].ep_status == EP_CONFIG_OUT) {
 		if (ep_idx < 8) {
 			ep_fifo_ctrl[fifon_ctrl] |= BIT(ep_idx);
 		} else {
@@ -582,7 +578,7 @@ static bool it82xx2_check_setup_following_out(void)
 
 	return ((ep_regs[EP0].ep_transtype_sts & DC_ALL_TRANS) == 0 ||
 		(udata0.last_token == IN_TOKEN &&
-		ff_regs[EP0].ep_rx_fifo_dcnt_lsb == SETUP_DATA_CNT));
+		 ff_regs[EP0].ep_rx_fifo_dcnt_lsb == SETUP_DATA_CNT));
 }
 
 static inline void it82xx2_handler_setup(uint8_t fifo_idx)
@@ -653,8 +649,7 @@ static inline void it82xx2_handler_in(const uint8_t ep_idx)
 		udata0.last_token = udata0.now_token;
 		udata0.now_token = IN_TOKEN;
 
-		if (udata0.addr != DC_ADDR_NULL &&
-			udata0.addr != usb_regs->dc_address) {
+		if (udata0.addr != DC_ADDR_NULL && udata0.addr != usb_regs->dc_address) {
 			usb_regs->dc_address = udata0.addr;
 			LOG_DBG("Address Is Set Successfully");
 		}
@@ -663,8 +658,7 @@ static inline void it82xx2_handler_in(const uint8_t ep_idx)
 			/* setup -> out(data) -> in(status) */
 			udata0.st_state = STATUS_ST;
 
-		} else if (udata0.ep_data[ep_idx].remaining == 0 &&
-		udata0.st_state == SETUP_ST) {
+		} else if (udata0.ep_data[ep_idx].remaining == 0 && udata0.st_state == SETUP_ST) {
 			/* setup -> in(status) */
 			udata0.st_state = STATUS_ST;
 		} else {
@@ -882,12 +876,11 @@ static void it82xx2_usb_dc_isr(void)
 	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 
 	uint8_t status = usb_regs->dc_interrupt_status &
-		usb_regs->dc_interrupt_mask; /* mask non enable int */
+			 usb_regs->dc_interrupt_mask; /* mask non enable int */
 
 	/* reset */
 	if (status & DC_RESET_EVENT) {
-		if ((usb_regs->dc_line_status & RX_LINE_STATE_MASK) ==
-			RX_LINE_RESET) {
+		if ((usb_regs->dc_line_status & RX_LINE_STATE_MASK) == RX_LINE_RESET) {
 			usb_dc_reset();
 			usb_regs->dc_interrupt_status = DC_RESET_EVENT;
 			return;
@@ -914,7 +907,6 @@ static void it82xx2_usb_dc_isr(void)
 		it82xx2_usb_dc_trans_done();
 		return;
 	}
-
 }
 
 static void suspended_check_handler(struct k_work *item)
@@ -991,9 +983,8 @@ int usb_dc_attach(void)
 	/* Connect USB interrupt */
 	IRQ_CONNECT(IT8XXX2_USB_IRQ, 0, it82xx2_usb_dc_isr, 0, 0);
 
-	usb_regs->dc_control =
-		DC_GLOBAL_ENABLE | DC_FULL_SPEED_LINE_POLARITY |
-		DC_FULL_SPEED_LINE_RATE | DC_CONNECT_TO_HOST;
+	usb_regs->dc_control = DC_GLOBAL_ENABLE | DC_FULL_SPEED_LINE_POLARITY |
+			       DC_FULL_SPEED_LINE_RATE | DC_CONNECT_TO_HOST;
 
 	/* Enable USB D+ and USB interrupts */
 	it82xx2_enable_wu90_irq(udata0.dev, true);
@@ -1063,7 +1054,7 @@ void usb_dc_set_status_callback(const usb_dc_status_callback cb)
 	udata0.usb_status_cb = cb;
 }
 
-int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
+int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data *const cfg)
 {
 	uint8_t ep_idx = USB_EP_GET_IDX(cfg->ep_addr);
 	bool in = USB_EP_DIR_IS_IN(cfg->ep_addr);
@@ -1121,8 +1112,8 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 	udata0.ep_data[ep_idx].ep_status = EP_CONFIG;
 	udata0.ep_data[ep_idx].mps = cfg->ep_mps;
 
-	LOG_DBG("ep_status: %d, mps: %d",
-		udata0.ep_data[ep_idx].ep_status, udata0.ep_data[ep_idx].mps);
+	LOG_DBG("ep_status: %d, mps: %d", udata0.ep_data[ep_idx].ep_status,
+		udata0.ep_data[ep_idx].mps);
 
 	if (!(ep_idx > EP0)) {
 		return 0;
@@ -1164,8 +1155,7 @@ int usb_dc_ep_set_callback(const uint8_t ep, const usb_dc_ep_callback cb)
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (!udata0.attached || ep_idx >= MAX_NUM_ENDPOINTS) {
-		LOG_ERR("(%d)Not attached / Invalid endpoint: EP 0x%x",
-			__LINE__, ep);
+		LOG_ERR("(%d)Not attached / Invalid endpoint: EP 0x%x", __LINE__, ep);
 		return -EINVAL;
 	}
 
@@ -1223,7 +1213,6 @@ int usb_dc_ep_disable(uint8_t ep)
 	return it82xx2_usb_set_ep_ctrl(ep_idx, EP_ENABLE, false);
 }
 
-
 int usb_dc_ep_set_stall(const uint8_t ep)
 {
 	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
@@ -1243,8 +1232,7 @@ int usb_dc_ep_set_stall(const uint8_t ep)
 
 		it82xx2_usb_set_ep_ctrl(ep_idx, EP_READY_ENABLE, true);
 		/* polling if stall send for 3ms */
-		while (idx < 198 &&
-			!(ep_regs[ep_idx].ep_status & DC_STALL_SENT)) {
+		while (idx < 198 && !(ep_regs[ep_idx].ep_status & DC_STALL_SENT)) {
 			/* wait 15.15us */
 			gctrl_regs->GCTRL_WNCKR = 0;
 			idx++;
@@ -1317,8 +1305,7 @@ int usb_dc_ep_flush(uint8_t ep)
 	return 0;
 }
 
-int usb_dc_ep_write(uint8_t ep, const uint8_t *buf,
-				uint32_t data_len, uint32_t *ret_bytes)
+int usb_dc_ep_write(uint8_t ep, const uint8_t *buf, uint32_t data_len, uint32_t *ret_bytes)
 {
 	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 	struct it82xx2_usb_ep_fifo_regs *ff_regs = usb_regs->fifo_regs;
@@ -1353,11 +1340,9 @@ int usb_dc_ep_write(uint8_t ep, const uint8_t *buf,
 		}
 
 		*ret_bytes = udata0.ep_data[ep_idx].mps;
-		udata0.ep_data[ep_idx].remaining =
-			data_len - udata0.ep_data[ep_idx].mps;
+		udata0.ep_data[ep_idx].remaining = data_len - udata0.ep_data[ep_idx].mps;
 
-		LOG_DBG("data_len: %d, Write Max Packets to TX FIFO(%d)",
-			data_len, ep_idx);
+		LOG_DBG("data_len: %d, Write Max Packets to TX FIFO(%d)", data_len, ep_idx);
 	} else {
 		for (uint32_t idx = 0; idx < data_len; idx++) {
 			ff_regs[ep_fifo].ep_tx_fifo_data = buf[idx];
@@ -1379,8 +1364,7 @@ int usb_dc_ep_write(uint8_t ep, const uint8_t *buf,
 }
 
 /* Read data from an OUT endpoint */
-int usb_dc_ep_read(uint8_t ep, uint8_t *buf, uint32_t max_data_len,
-			uint32_t *read_bytes)
+int usb_dc_ep_read(uint8_t ep, uint8_t *buf, uint32_t max_data_len, uint32_t *read_bytes)
 {
 	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
@@ -1452,11 +1436,9 @@ int usb_dc_ep_read(uint8_t ep, uint8_t *buf, uint32_t max_data_len,
 			buf[idx] = ff_regs[ep_fifo].ep_rx_fifo_data;
 		}
 
-		if (ep_fifo == 0 &&
-			udata0.now_token == SETUP_TOKEN) {
-			LOG_DBG("RX buf: (%x)(%x)(%x)(%x)(%x)(%x)(%x)(%x)",
-			buf[0], buf[1], buf[2], buf[3],
-			buf[4], buf[5], buf[6], buf[7]);
+		if (ep_fifo == 0 && udata0.now_token == SETUP_TOKEN) {
+			LOG_DBG("RX buf: (%x)(%x)(%x)(%x)(%x)(%x)(%x)(%x)", buf[0], buf[1], buf[2],
+				buf[3], buf[4], buf[5], buf[6], buf[7]);
 		}
 
 		if (ep_fifo > EP0) {
@@ -1481,8 +1463,7 @@ int usb_dc_ep_read(uint8_t ep, uint8_t *buf, uint32_t max_data_len,
 	return 0;
 }
 
-int usb_dc_ep_read_wait(uint8_t ep, uint8_t *buf, uint32_t max_data_len,
-			uint32_t *read_bytes)
+int usb_dc_ep_read_wait(uint8_t ep, uint8_t *buf, uint32_t max_data_len, uint32_t *read_bytes)
 {
 	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 	struct it82xx2_usb_ep_regs *ep_regs = usb_regs->usb_ep_regs;
@@ -1507,12 +1488,11 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *buf, uint32_t max_data_len,
 	}
 
 	rx_fifo_len = (uint16_t)ff_regs[ep_fifo].ep_rx_fifo_dcnt_lsb +
-		(((uint16_t)ff_regs[ep_fifo].ep_rx_fifo_dcnt_msb) << 8);
+		      (((uint16_t)ff_regs[ep_fifo].ep_rx_fifo_dcnt_msb) << 8);
 
 	LOG_DBG("ep_read_wait (EP: %d), len: %d", ep_idx, rx_fifo_len);
 
-	*read_bytes = (rx_fifo_len > max_data_len) ?
-		max_data_len : rx_fifo_len;
+	*read_bytes = (rx_fifo_len > max_data_len) ? max_data_len : rx_fifo_len;
 
 	for (uint32_t idx = 0; idx < *read_bytes; idx++) {
 		buf[idx] = ff_regs[ep_fifo].ep_rx_fifo_data;
@@ -1544,7 +1524,6 @@ int usb_dc_ep_read_continue(uint8_t ep)
 	return 0;
 }
 
-
 int usb_dc_ep_mps(const uint8_t ep)
 {
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
@@ -1569,18 +1548,16 @@ int usb_dc_wakeup_request(void)
 
 	if (udata0.suspended) {
 
-		usb_regs->dc_control =
-			DC_GLOBAL_ENABLE | DC_FULL_SPEED_LINE_POLARITY |
-			DC_FULL_SPEED_LINE_RATE | DC_DIRECT_CONTROL |
-			DC_TX_LINE_STATE_DM | DC_CONNECT_TO_HOST;
+		usb_regs->dc_control = DC_GLOBAL_ENABLE | DC_FULL_SPEED_LINE_POLARITY |
+				       DC_FULL_SPEED_LINE_RATE | DC_DIRECT_CONTROL |
+				       DC_TX_LINE_STATE_DM | DC_CONNECT_TO_HOST;
 
 		/* The remote wakeup device must hold the resume signal for */
 		/* at least 1 ms but for no more than 15 ms                 */
 		k_msleep(2);
 
-		usb_regs->dc_control =
-			DC_GLOBAL_ENABLE | DC_FULL_SPEED_LINE_POLARITY |
-			DC_FULL_SPEED_LINE_RATE | DC_CONNECT_TO_HOST;
+		usb_regs->dc_control = DC_GLOBAL_ENABLE | DC_FULL_SPEED_LINE_POLARITY |
+				       DC_FULL_SPEED_LINE_RATE | DC_CONNECT_TO_HOST;
 
 		ret = k_sem_take(&udata0.suspended_sem, K_MSEC(500));
 		if (ret < 0) {
@@ -1609,10 +1586,5 @@ static int it82xx2_usb_dc_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0,
-	&it82xx2_usb_dc_init,
-	NULL,
-	&udata0,
-	&ucfg0,
-	POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-	NULL);
+DEVICE_DT_INST_DEFINE(0, &it82xx2_usb_dc_init, NULL, &udata0, &ucfg0, POST_KERNEL,
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);

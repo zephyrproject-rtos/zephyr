@@ -114,8 +114,7 @@ static int nct38xx_gpio_init(const struct device *dev)
 
 #define GPIO_NCT38XX_DEVICE_INSTANCE(inst)                                                         \
 	static const struct device *sub_gpio_dev_##inst[] = {                                      \
-		DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(inst, DEVICE_DT_GET, (,))                    \
-	};                                                                                         \
+		DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(inst, DEVICE_DT_GET, (, ))};                 \
 	static const struct gpio_nct38xx_config gpio_nct38xx_cfg_##inst = {                        \
 		.mfd = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                        \
 		.sub_gpio_dev = sub_gpio_dev_##inst,                                               \

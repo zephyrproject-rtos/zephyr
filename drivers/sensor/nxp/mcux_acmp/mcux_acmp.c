@@ -18,7 +18,7 @@
 
 LOG_MODULE_REGISTER(mcux_acmp, CONFIG_SENSOR_LOG_LEVEL);
 
-#define MCUX_ACMP_DAC_LEVELS 256
+#define MCUX_ACMP_DAC_LEVELS     256
 #define MCUX_ACMP_INPUT_CHANNELS 8
 
 /*
@@ -45,7 +45,7 @@ BUILD_ASSERT(kACMP_PortInputFromMux == 1);
  * prop New property name
  * depr Deprecated property name
  */
-#define MCUX_ACMP_DT_INST_PROP(inst, prop, depr)						\
+#define MCUX_ACMP_DT_INST_PROP(inst, prop, depr)                                                   \
 	COND_CODE_1(										\
 		DT_INST_NODE_HAS_PROP(inst, prop),						\
 		(DT_INST_PROP(inst, prop)),							\
@@ -56,32 +56,32 @@ BUILD_ASSERT(kACMP_PortInputFromMux == 1);
  * prop New property name
  * depr Deprecated property name
  */
-#define MCUX_ACMP_DT_INST_PROP_OR(inst, prop, depr, default_value)				\
+#define MCUX_ACMP_DT_INST_PROP_OR(inst, prop, depr, default_value)                                 \
 	COND_CODE_1(										\
 		DT_INST_NODE_HAS_PROP(inst, prop) || DT_INST_NODE_HAS_PROP(inst, depr),		\
 		(MCUX_ACMP_DT_INST_PROP(inst, prop, depr)),					\
 		(default_value)									\
 	)
 
-#define MCUX_ACMP_DT_INST_ENABLE_SAMPLE(inst) \
+#define MCUX_ACMP_DT_INST_ENABLE_SAMPLE(inst)                                                      \
 	MCUX_ACMP_DT_INST_PROP(inst, filter_enable_sample, nxp_enable_sample)
 
-#define MCUX_ACMP_DT_INST_FILTER_COUNT(inst) \
+#define MCUX_ACMP_DT_INST_FILTER_COUNT(inst)                                                       \
 	MCUX_ACMP_DT_INST_PROP_OR(inst, filter_count, nxp_filter_count, 0)
 
-#define MCUX_ACMP_DT_INST_FILTER_PERIOD(inst) \
+#define MCUX_ACMP_DT_INST_FILTER_PERIOD(inst)                                                      \
 	MCUX_ACMP_DT_INST_PROP_OR(inst, filter_period, nxp_filter_period, 0)
 
-#define MCUX_ACMP_DT_INST_HIGH_SPEED(inst) \
+#define MCUX_ACMP_DT_INST_HIGH_SPEED(inst)                                                         \
 	MCUX_ACMP_DT_INST_PROP(inst, enable_high_speed_mode, nxp_high_speed_mode)
 
-#define MCUX_ACMP_DT_INST_USE_UNFILTERED_MODE(inst) \
+#define MCUX_ACMP_DT_INST_USE_UNFILTERED_MODE(inst)                                                \
 	MCUX_ACMP_DT_INST_PROP(inst, use_unfiltered_output, nxp_use_unfiltered_output)
 
-#define MCUX_ACMP_DT_INST_USE_ENABLE_PIN_OUT(inst) \
+#define MCUX_ACMP_DT_INST_USE_ENABLE_PIN_OUT(inst)                                                 \
 	MCUX_ACMP_DT_INST_PROP(inst, enable_pin_out, nxp_enable_output_pin)
 
-#define MCUX_ACMP_DT_INST_ENABLE_WINDOW_MODE(inst) \
+#define MCUX_ACMP_DT_INST_ENABLE_WINDOW_MODE(inst)                                                 \
 	MCUX_ACMP_DT_INST_PROP(inst, enable_window_mode, nxp_window_mode)
 
 struct mcux_acmp_config {
@@ -91,10 +91,10 @@ struct mcux_acmp_config {
 #ifdef CONFIG_SENSOR_MCUX_ACMP_TRIGGER
 	void (*irq_config_func)(const struct device *dev);
 #endif /* CONFIG_SENSOR_MCUX_ACMP_TRIGGER */
-	bool high_speed : 1;
-	bool unfiltered : 1;
-	bool output : 1;
-	bool window : 1;
+	bool high_speed: 1;
+	bool unfiltered: 1;
+	bool output: 1;
+	bool window: 1;
 };
 
 struct mcux_acmp_data {
@@ -116,10 +116,8 @@ struct mcux_acmp_data {
 	bool cout;
 };
 
-static int mcux_acmp_attr_set(const struct device *dev,
-			      enum sensor_channel chan,
-			      enum sensor_attribute attr,
-			      const struct sensor_value *val)
+static int mcux_acmp_attr_set(const struct device *dev, enum sensor_channel chan,
+			      enum sensor_attribute attr, const struct sensor_value *val)
 {
 	const struct mcux_acmp_config *config = dev->config;
 	struct mcux_acmp_data *data = dev->data;
@@ -139,8 +137,7 @@ static int mcux_acmp_attr_set(const struct device *dev,
 	switch ((int16_t)attr) {
 #if MCUX_ACMP_HAS_OFFSET
 	case SENSOR_ATTR_MCUX_ACMP_OFFSET_LEVEL:
-		if (val1 >= kACMP_OffsetLevel0 &&
-		    val1 <= kACMP_OffsetLevel1) {
+		if (val1 >= kACMP_OffsetLevel0 && val1 <= kACMP_OffsetLevel1) {
 			LOG_DBG("offset = %d", val1);
 			data->config.offsetMode = val1;
 			ACMP_Init(config->base, &data->config);
@@ -152,8 +149,7 @@ static int mcux_acmp_attr_set(const struct device *dev,
 #endif /* MCUX_ACMP_HAS_OFFSET */
 #if MCUX_ACMP_HAS_HYSTCTR
 	case SENSOR_ATTR_MCUX_ACMP_HYSTERESIS_LEVEL:
-		if (val1 >= kACMP_HysteresisLevel0 &&
-		    val1 <= kACMP_HysteresisLevel3) {
+		if (val1 >= kACMP_HysteresisLevel0 && val1 <= kACMP_HysteresisLevel3) {
 			LOG_DBG("hysteresis = %d", val1);
 			data->config.hysteresisMode = val1;
 			ACMP_Init(config->base, &data->config);
@@ -164,8 +160,7 @@ static int mcux_acmp_attr_set(const struct device *dev,
 		break;
 #endif /* MCUX_ACMP_HAS_HYSTCTR */
 	case SENSOR_ATTR_MCUX_ACMP_DAC_VOLTAGE_REFERENCE:
-		if (val1 >= kACMP_VrefSourceVin1 &&
-		    val1 <= kACMP_VrefSourceVin2) {
+		if (val1 >= kACMP_VrefSourceVin1 && val1 <= kACMP_VrefSourceVin2) {
 			LOG_DBG("vref = %d", val1);
 			data->dac.referenceVoltageSource = val1;
 			ACMP_SetDACConfig(config->base, &data->dac);
@@ -184,8 +179,7 @@ static int mcux_acmp_attr_set(const struct device *dev,
 		break;
 #if MCUX_ACMP_HAS_INPSEL
 	case SENSOR_ATTR_MCUX_ACMP_POSITIVE_PORT_INPUT:
-		if (val1 >= kACMP_PortInputFromDAC &&
-		    val1 <= kACMP_PortInputFromMux) {
+		if (val1 >= kACMP_PortInputFromDAC && val1 <= kACMP_PortInputFromMux) {
 			LOG_DBG("pport = %d", val1);
 			data->channels.positivePortInput = val1;
 			ACMP_SetChannelConfig(config->base, &data->channels);
@@ -205,8 +199,7 @@ static int mcux_acmp_attr_set(const struct device *dev,
 		break;
 #if MCUX_ACMP_HAS_INNSEL
 	case SENSOR_ATTR_MCUX_ACMP_NEGATIVE_PORT_INPUT:
-		if (val1 >= kACMP_PortInputFromDAC &&
-		    val1 <= kACMP_PortInputFromMux) {
+		if (val1 >= kACMP_PortInputFromDAC && val1 <= kACMP_PortInputFromMux) {
 			LOG_DBG("nport = %d", val1);
 			data->channels.negativePortInput = val1;
 			ACMP_SetChannelConfig(config->base, &data->channels);
@@ -297,10 +290,8 @@ static int mcux_acmp_attr_set(const struct device *dev,
 	return 0;
 }
 
-static int mcux_acmp_attr_get(const struct device *dev,
-			      enum sensor_channel chan,
-			      enum sensor_attribute attr,
-			      struct sensor_value *val)
+static int mcux_acmp_attr_get(const struct device *dev, enum sensor_channel chan,
+			      enum sensor_attribute attr, struct sensor_value *val)
 {
 	struct mcux_acmp_data *data = dev->data;
 
@@ -375,8 +366,7 @@ static int mcux_acmp_attr_get(const struct device *dev,
 	return 0;
 }
 
-static int mcux_acmp_sample_fetch(const struct device *dev,
-				     enum sensor_channel chan)
+static int mcux_acmp_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	const struct mcux_acmp_config *config = dev->config;
 	struct mcux_acmp_data *data = dev->data;
@@ -384,8 +374,7 @@ static int mcux_acmp_sample_fetch(const struct device *dev,
 
 	__ASSERT_NO_MSG(val != NULL);
 
-	if (chan != SENSOR_CHAN_ALL &&
-	    (int16_t)chan != SENSOR_CHAN_MCUX_ACMP_OUTPUT) {
+	if (chan != SENSOR_CHAN_ALL && (int16_t)chan != SENSOR_CHAN_MCUX_ACMP_OUTPUT) {
 		return -ENOTSUP;
 	}
 
@@ -395,9 +384,8 @@ static int mcux_acmp_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static int mcux_acmp_channel_get(const struct device *dev,
-				    enum sensor_channel chan,
-				    struct sensor_value *val)
+static int mcux_acmp_channel_get(const struct device *dev, enum sensor_channel chan,
+				 struct sensor_value *val)
 {
 	struct mcux_acmp_data *data = dev->data;
 
@@ -414,8 +402,7 @@ static int mcux_acmp_channel_get(const struct device *dev,
 }
 
 #ifdef CONFIG_SENSOR_MCUX_ACMP_TRIGGER
-static int mcux_acmp_trigger_set(const struct device *dev,
-				 const struct sensor_trigger *trig,
+static int mcux_acmp_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 				 sensor_trigger_handler_t handler)
 {
 	struct mcux_acmp_data *data = dev->data;
@@ -445,8 +432,7 @@ static int mcux_acmp_trigger_set(const struct device *dev,
 static void mcux_acmp_trigger_work_handler(struct k_work *item)
 {
 	const struct sensor_trigger *trigger;
-	struct mcux_acmp_data *data =
-		CONTAINER_OF(item, struct mcux_acmp_data, work);
+	struct mcux_acmp_data *data = CONTAINER_OF(item, struct mcux_acmp_data, work);
 	sensor_trigger_handler_t handler = NULL;
 
 	if (data->status & kACMP_OutputRisingEventFlag) {
@@ -510,9 +496,8 @@ static int mcux_acmp_init(const struct device *dev)
 	k_work_init(&data->work, mcux_acmp_trigger_work_handler);
 
 	config->irq_config_func(dev);
-	ACMP_EnableInterrupts(config->base,
-			      kACMP_OutputRisingInterruptEnable |
-			      kACMP_OutputFallingInterruptEnable);
+	ACMP_EnableInterrupts(config->base, kACMP_OutputRisingInterruptEnable |
+						    kACMP_OutputFallingInterruptEnable);
 #endif /* CONFIG_SENSOR_MCUX_ACMP_TRIGGER */
 
 	ACMP_Enable(config->base, true);
@@ -530,57 +515,49 @@ static const struct sensor_driver_api mcux_acmp_driver_api = {
 	.channel_get = mcux_acmp_channel_get,
 };
 
-#define MCUX_ACMP_DECLARE_CONFIG(n, config_func_init)			\
-static const struct mcux_acmp_config mcux_acmp_config_##n = {		\
-	.base = (CMP_Type *)DT_INST_REG_ADDR(n),			\
-	.filter = {							\
-		.enableSample = MCUX_ACMP_DT_INST_ENABLE_SAMPLE(n),	\
-		.filterCount = MCUX_ACMP_DT_INST_FILTER_COUNT(n),	\
-		.filterPeriod = MCUX_ACMP_DT_INST_FILTER_PERIOD(n),	\
-	},								\
-	.high_speed = MCUX_ACMP_DT_INST_HIGH_SPEED(n),			\
-	.unfiltered = MCUX_ACMP_DT_INST_USE_UNFILTERED_MODE(n),		\
-	.output = MCUX_ACMP_DT_INST_USE_ENABLE_PIN_OUT(n),		\
-	.window = MCUX_ACMP_DT_INST_ENABLE_WINDOW_MODE(n),		\
-	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
-	config_func_init						\
-}
+#define MCUX_ACMP_DECLARE_CONFIG(n, config_func_init)                                              \
+	static const struct mcux_acmp_config mcux_acmp_config_##n = {                              \
+		.base = (CMP_Type *)DT_INST_REG_ADDR(n),                                           \
+		.filter =                                                                          \
+			{                                                                          \
+				.enableSample = MCUX_ACMP_DT_INST_ENABLE_SAMPLE(n),                \
+				.filterCount = MCUX_ACMP_DT_INST_FILTER_COUNT(n),                  \
+				.filterPeriod = MCUX_ACMP_DT_INST_FILTER_PERIOD(n),                \
+			},                                                                         \
+		.high_speed = MCUX_ACMP_DT_INST_HIGH_SPEED(n),                                     \
+		.unfiltered = MCUX_ACMP_DT_INST_USE_UNFILTERED_MODE(n),                            \
+		.output = MCUX_ACMP_DT_INST_USE_ENABLE_PIN_OUT(n),                                 \
+		.window = MCUX_ACMP_DT_INST_ENABLE_WINDOW_MODE(n),                                 \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+		config_func_init}
 
 #ifdef CONFIG_SENSOR_MCUX_ACMP_TRIGGER
-#define MCUX_ACMP_CONFIG_FUNC(n)					\
-	static void mcux_acmp_config_func_##n(const struct device *dev) \
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n),				\
-			    DT_INST_IRQ(n, priority),			\
-			    mcux_acmp_isr,				\
-			    DEVICE_DT_INST_GET(n), 0);			\
-		irq_enable(DT_INST_IRQN(n));				\
+#define MCUX_ACMP_CONFIG_FUNC(n)                                                                   \
+	static void mcux_acmp_config_func_##n(const struct device *dev)                            \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_acmp_isr,              \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
-#define MCUX_ACMP_CONFIG_FUNC_INIT(n)					\
-	.irq_config_func = mcux_acmp_config_func_##n
-#define MCUX_ACMP_INIT_CONFIG(n)					\
-	MCUX_ACMP_DECLARE_CONFIG(n, MCUX_ACMP_CONFIG_FUNC_INIT(n))
+#define MCUX_ACMP_CONFIG_FUNC_INIT(n) .irq_config_func = mcux_acmp_config_func_##n
+#define MCUX_ACMP_INIT_CONFIG(n)      MCUX_ACMP_DECLARE_CONFIG(n, MCUX_ACMP_CONFIG_FUNC_INIT(n))
 #else /* !CONFIG_SENSOR_MCUX_ACMP_TRIGGER */
 #define MCUX_ACMP_CONFIG_FUNC(n)
 #define MCUX_ACMP_CONFIG_FUNC_INIT
-#define MCUX_ACMP_INIT_CONFIG(n)					\
-	MCUX_ACMP_DECLARE_CONFIG(n, MCUX_ACMP_CONFIG_FUNC_INIT)
+#define MCUX_ACMP_INIT_CONFIG(n) MCUX_ACMP_DECLARE_CONFIG(n, MCUX_ACMP_CONFIG_FUNC_INIT)
 #endif /* !CONFIG_SENSOR_MCUX_ACMP_TRIGGER */
 
-#define MCUX_ACMP_INIT(n)						\
-	static struct mcux_acmp_data mcux_acmp_data_##n;		\
-									\
-	static const struct mcux_acmp_config mcux_acmp_config_##n;	\
-									\
-	PINCTRL_DT_INST_DEFINE(n);					\
-									\
-	SENSOR_DEVICE_DT_INST_DEFINE(n, &mcux_acmp_init,		\
-			      NULL,					\
-			      &mcux_acmp_data_##n,			\
-			      &mcux_acmp_config_##n, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY,		\
-			      &mcux_acmp_driver_api);			\
-	MCUX_ACMP_CONFIG_FUNC(n)					\
+#define MCUX_ACMP_INIT(n)                                                                          \
+	static struct mcux_acmp_data mcux_acmp_data_##n;                                           \
+                                                                                                   \
+	static const struct mcux_acmp_config mcux_acmp_config_##n;                                 \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, &mcux_acmp_init, NULL, &mcux_acmp_data_##n,                \
+				     &mcux_acmp_config_##n, POST_KERNEL,                           \
+				     CONFIG_SENSOR_INIT_PRIORITY, &mcux_acmp_driver_api);          \
+	MCUX_ACMP_CONFIG_FUNC(n)                                                                   \
 	MCUX_ACMP_INIT_CONFIG(n);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_ACMP_INIT)

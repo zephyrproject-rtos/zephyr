@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/logging/log.h>
@@ -18,10 +17,8 @@ struct z_pwm_capture_cb_data {
 	int status;
 };
 
-static void z_pwm_capture_cycles_callback(const struct device *dev,
-					  uint32_t channel,
-					  uint32_t period_cycles,
-					  uint32_t pulse_cycles, int status,
+static void z_pwm_capture_cycles_callback(const struct device *dev, uint32_t channel,
+					  uint32_t period_cycles, uint32_t pulse_cycles, int status,
 					  void *user_data)
 {
 	struct z_pwm_capture_cb_data *data = user_data;
@@ -33,9 +30,8 @@ static void z_pwm_capture_cycles_callback(const struct device *dev,
 	k_sem_give(&data->sem);
 }
 
-int z_impl_pwm_capture_cycles(const struct device *dev, uint32_t channel,
-			      pwm_flags_t flags, uint32_t *period,
-			      uint32_t *pulse, k_timeout_t timeout)
+int z_impl_pwm_capture_cycles(const struct device *dev, uint32_t channel, pwm_flags_t flags,
+			      uint32_t *period, uint32_t *pulse, k_timeout_t timeout)
 {
 	struct z_pwm_capture_cb_data data;
 	int err;
@@ -48,8 +44,7 @@ int z_impl_pwm_capture_cycles(const struct device *dev, uint32_t channel,
 	flags |= PWM_CAPTURE_MODE_SINGLE;
 	k_sem_init(&data.sem, 0, 1);
 
-	err = pwm_configure_capture(dev, channel, flags,
-				    z_pwm_capture_cycles_callback, &data);
+	err = pwm_configure_capture(dev, channel, flags, z_pwm_capture_cycles_callback, &data);
 	if (err) {
 		LOG_ERR("failed to configure pwm capture");
 		return err;

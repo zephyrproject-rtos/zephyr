@@ -9,9 +9,8 @@
 
 #include <helpers/nrfx_ram_ctrl.h>
 
-#define _BUILD_MEM_REGION(node_id)		    \
-	{.dt_addr = DT_REG_ADDR(DT_PARENT(node_id)),\
-	 .dt_size = DT_REG_SIZE(DT_PARENT(node_id))}
+#define _BUILD_MEM_REGION(node_id)                                                                 \
+	{.dt_addr = DT_REG_ADDR(DT_PARENT(node_id)), .dt_size = DT_REG_SIZE(DT_PARENT(node_id))}
 
 struct ret_mem_region {
 	uintptr_t dt_addr;
@@ -19,8 +18,7 @@ struct ret_mem_region {
 };
 
 static const struct ret_mem_region ret_mem_regions[] = {
-	DT_FOREACH_STATUS_OKAY(zephyr_retained_ram, _BUILD_MEM_REGION)
-};
+	DT_FOREACH_STATUS_OKAY(zephyr_retained_ram, _BUILD_MEM_REGION)};
 
 static int retained_mem_nrf_init(void)
 {

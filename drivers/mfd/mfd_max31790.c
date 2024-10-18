@@ -13,7 +13,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
-
 LOG_MODULE_REGISTER(max_max31790, CONFIG_MFD_LOG_LEVEL);
 
 struct max31790_config {

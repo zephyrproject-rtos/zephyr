@@ -13,12 +13,9 @@ static const struct device *ivshmem = DEVICE_DT_GET_ONE(qemu_ivshmem);
 #ifdef CONFIG_IVSHMEM_DOORBELL
 
 #define STACK_SIZE 512
-static struct k_poll_signal doorbell_sig =
-	K_POLL_SIGNAL_INITIALIZER(doorbell_sig);
+static struct k_poll_signal doorbell_sig = K_POLL_SIGNAL_INITIALIZER(doorbell_sig);
 static struct k_poll_event doorbell_evt =
-	K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
-				 K_POLL_MODE_NOTIFY_ONLY,
-				 &doorbell_sig);
+	K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &doorbell_sig);
 K_THREAD_STACK_DEFINE(doorbell_stack, STACK_SIZE);
 static bool doorbell_started;
 static struct k_thread doorbell_thread;
@@ -41,8 +38,7 @@ static void doorbell_notification_thread(void *p1, void *p2, void *p3)
 			continue;
 		}
 
-		shell_fprintf(sh, SHELL_NORMAL,
-			      "Received a notification on vector %u\n",
+		shell_fprintf(sh, SHELL_NORMAL, "Received a notification on vector %u\n",
 			      (unsigned int)vector);
 
 		k_poll_signal_init(&doorbell_sig);
@@ -61,8 +57,7 @@ static bool get_ivshmem(const struct shell *sh)
 	return true;
 }
 
-static int cmd_ivshmem_shmem(const struct shell *sh,
-			     size_t argc, char **argv)
+static int cmd_ivshmem_shmem(const struct shell *sh, size_t argc, char **argv)
 {
 	uintptr_t mem;
 	size_t size;
@@ -87,8 +82,7 @@ static int cmd_ivshmem_shmem(const struct shell *sh,
 	return 0;
 }
 
-static int cmd_ivshmem_dump(const struct shell *sh,
-			    size_t argc, char **argv)
+static int cmd_ivshmem_dump(const struct shell *sh, size_t argc, char **argv)
 {
 	uintptr_t dump_pos;
 	size_t dump_size;
@@ -111,14 +105,13 @@ static int cmd_ivshmem_dump(const struct shell *sh,
 	} else if ((mem + dump_pos + dump_size) > (mem + size)) {
 		shell_error(sh, "Position and size overflow");
 	} else {
-		shell_hexdump(sh, (const uint8_t *)mem+dump_pos, dump_size);
+		shell_hexdump(sh, (const uint8_t *)mem + dump_pos, dump_size);
 	}
 
 	return 0;
 }
 
-static int cmd_ivshmem_int(const struct shell *sh,
-			   size_t argc, char **argv)
+static int cmd_ivshmem_int(const struct shell *sh, size_t argc, char **argv)
 {
 	int peer_id;
 	int vector;
@@ -138,21 +131,17 @@ static int cmd_ivshmem_int(const struct shell *sh,
 
 	ret = ivshmem_int_peer(ivshmem, (uint16_t)peer_id, (uint16_t)vector);
 	if (ret != 0) {
-		shell_error(sh,
-			    "Could not notify peer %u on %u. status %d",
-			    peer_id, vector, ret);
+		shell_error(sh, "Could not notify peer %u on %u. status %d", peer_id, vector, ret);
 		return -EIO;
 	}
 
-	shell_fprintf(sh, SHELL_NORMAL,
-		      "Notification sent to peer %u on vector %u\n",
-		      peer_id, vector);
+	shell_fprintf(sh, SHELL_NORMAL, "Notification sent to peer %u on vector %u\n", peer_id,
+		      vector);
 
 	return 0;
 }
 
-static int cmd_ivshmem_get_notified(const struct shell *sh,
-				    size_t argc, char **argv)
+static int cmd_ivshmem_get_notified(const struct shell *sh, size_t argc, char **argv)
 {
 #ifdef CONFIG_IVSHMEM_DOORBELL
 	int vector;
@@ -163,25 +152,19 @@ static int cmd_ivshmem_get_notified(const struct shell *sh,
 
 	vector = strtol(argv[1], NULL, 10);
 
-	if (ivshmem_register_handler(ivshmem, &doorbell_sig,
-				     (uint16_t)vector)) {
-		shell_error(sh, "Could not get notifications on vector %u",
-			    vector);
+	if (ivshmem_register_handler(ivshmem, &doorbell_sig, (uint16_t)vector)) {
+		shell_error(sh, "Could not get notifications on vector %u", vector);
 		return -EIO;
 	}
 
-	shell_fprintf(sh, SHELL_NORMAL,
-		      "Notifications enabled for vector %u\n", vector);
+	shell_fprintf(sh, SHELL_NORMAL, "Notifications enabled for vector %u\n", vector);
 
 	if (!doorbell_started) {
 		k_tid_t tid;
 
-		tid = k_thread_create(
-			&doorbell_thread,
-			doorbell_stack, STACK_SIZE,
-			doorbell_notification_thread,
-			(void *)sh, NULL, NULL,
-			K_PRIO_COOP(2), 0, K_NO_WAIT);
+		tid = k_thread_create(&doorbell_thread, doorbell_stack, STACK_SIZE,
+				      doorbell_notification_thread, (void *)sh, NULL, NULL,
+				      K_PRIO_COOP(2), 0, K_NO_WAIT);
 		if (!tid) {
 			shell_error(sh, "Cannot start notification thread");
 			return -ENOEXEC;
@@ -199,21 +182,12 @@ static int cmd_ivshmem_get_notified(const struct shell *sh,
 	return 0;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_ivshmem_cmds,
-			       SHELL_CMD(shmem, NULL,
-					 "Show shared memory info",
-					 cmd_ivshmem_shmem),
-			       SHELL_CMD_ARG(dump, NULL,
-					     "Dump shared memory content",
-					     cmd_ivshmem_dump, 3, 0),
-			       SHELL_CMD_ARG(int_peer, NULL,
-					     "Notify a vector on a peer",
-					     cmd_ivshmem_int, 3, 0),
-			       SHELL_CMD_ARG(get_notified, NULL,
-					     "Get notification on vector",
-					     cmd_ivshmem_get_notified, 2, 0),
-			       SHELL_SUBCMD_SET_END
-		);
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_ivshmem_cmds, SHELL_CMD(shmem, NULL, "Show shared memory info", cmd_ivshmem_shmem),
+	SHELL_CMD_ARG(dump, NULL, "Dump shared memory content", cmd_ivshmem_dump, 3, 0),
+	SHELL_CMD_ARG(int_peer, NULL, "Notify a vector on a peer", cmd_ivshmem_int, 3, 0),
+	SHELL_CMD_ARG(get_notified, NULL, "Get notification on vector", cmd_ivshmem_get_notified, 2,
+		      0),
+	SHELL_SUBCMD_SET_END);
 
-SHELL_CMD_REGISTER(ivshmem, &sub_ivshmem_cmds,
-		   "IVshmem information", cmd_ivshmem_shmem);
+SHELL_CMD_REGISTER(ivshmem, &sub_ivshmem_cmds, "IVshmem information", cmd_ivshmem_shmem);

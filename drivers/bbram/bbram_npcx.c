@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(npcx_bbram, CONFIG_BBRAM_LOG_LEVEL);
 #define NPCX_STATUS_VSBY BIT(1)
 #define NPCX_STATUS_VCC1 BIT(0)
 
-#define DRV_STATUS(dev)                                                        \
+#define DRV_STATUS(dev)                                                                            \
 	(*((volatile uint8_t *)((const struct bbram_npcx_config *)(dev)->config)->status_reg_addr))
 
 static int get_bit_and_reset(const struct device *dev, int mask)
@@ -63,15 +63,13 @@ static int bbram_npcx_get_size(const struct device *dev, size_t *size)
 	return 0;
 }
 
-static int bbram_npcx_read(const struct device *dev, size_t offset, size_t size,
-			   uint8_t *data)
+static int bbram_npcx_read(const struct device *dev, size_t offset, size_t size, uint8_t *data)
 {
 	const struct bbram_npcx_config *config = dev->config;
 
 	if (size < 1 || offset + size > config->size || bbram_npcx_check_invalid(dev)) {
 		return -EINVAL;
 	}
-
 
 	bytecpy(data, ((uint8_t *)config->base_addr + offset), size);
 	return 0;

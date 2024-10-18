@@ -17,10 +17,10 @@
 #include <zephyr/irq.h>
 
 /* nRF CAN wrapper offsets */
-#define CAN_TASKS_START	  offsetof(NRF_CAN_Type, TASKS_START)
+#define CAN_TASKS_START   offsetof(NRF_CAN_Type, TASKS_START)
 #define CAN_EVENTS_CORE_0 offsetof(NRF_CAN_Type, EVENTS_CORE[0])
 #define CAN_EVENTS_CORE_1 offsetof(NRF_CAN_Type, EVENTS_CORE[1])
-#define CAN_INTEN	  offsetof(NRF_CAN_Type, INTEN)
+#define CAN_INTEN         offsetof(NRF_CAN_Type, INTEN)
 
 struct can_nrf_config {
 	uint32_t wrapper;

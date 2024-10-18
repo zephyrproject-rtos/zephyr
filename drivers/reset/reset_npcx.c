@@ -56,7 +56,7 @@ static int reset_npcx_line_toggle(const struct device *dev, uint32_t id)
 	reg->SWRST_TRG = NPCX_SWRST_TRG_WORD_START;
 
 	if (!WAIT_FOR((reg->SWRST_TRG == NPCX_SWRST_TRG_WORD_DONE), NPCX_SWRST_DONE_TIMEOUT_US,
-		     NULL)) {
+		      NULL)) {
 		LOG_ERR("Reset trig timeout");
 		ret = -EBUSY;
 	}

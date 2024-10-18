@@ -115,25 +115,23 @@ static const struct retained_mem_driver_api zephyr_retained_mem_ram_api = {
 	.clear = zephyr_retained_mem_ram_clear,
 };
 
-#define ZEPHYR_RETAINED_MEM_RAM_DEVICE(inst)							\
+#define ZEPHYR_RETAINED_MEM_RAM_DEVICE(inst)                                                       \
 	IF_ENABLED(CONFIG_RETAINED_MEM_MUTEXES,							\
 		   (static struct zephyr_retained_mem_ram_data					\
 		    zephyr_retained_mem_ram_data_##inst;)					\
-	)											\
-	static const struct zephyr_retained_mem_ram_config					\
-			zephyr_retained_mem_ram_config_##inst = {				\
-		.address = (uint8_t *)DT_REG_ADDR(DT_PARENT(DT_INST(inst, DT_DRV_COMPAT))),	\
-		.size = DT_REG_SIZE(DT_PARENT(DT_INST(inst, DT_DRV_COMPAT))),			\
-	};											\
-	DEVICE_DT_INST_DEFINE(inst,								\
-			      &zephyr_retained_mem_ram_init,					\
-			      NULL,								\
+	)                                            \
+	static const struct zephyr_retained_mem_ram_config zephyr_retained_mem_ram_config_##inst = \
+		{                                                                                  \
+			.address =                                                                 \
+				(uint8_t *)DT_REG_ADDR(DT_PARENT(DT_INST(inst, DT_DRV_COMPAT))),   \
+			.size = DT_REG_SIZE(DT_PARENT(DT_INST(inst, DT_DRV_COMPAT))),              \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(inst, &zephyr_retained_mem_ram_init, NULL,                           \
 			      COND_CODE_1(CONFIG_RETAINED_MEM_MUTEXES,				\
 					  (&zephyr_retained_mem_ram_data_##inst), (NULL)	\
-			      ),								\
-			      &zephyr_retained_mem_ram_config_##inst,				\
-			      POST_KERNEL,							\
-			      CONFIG_RETAINED_MEM_INIT_PRIORITY,				\
-			      &zephyr_retained_mem_ram_api);
+			      ),          \
+					   &zephyr_retained_mem_ram_config_##inst, POST_KERNEL,    \
+					   CONFIG_RETAINED_MEM_INIT_PRIORITY,                      \
+					   &zephyr_retained_mem_ram_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ZEPHYR_RETAINED_MEM_RAM_DEVICE)

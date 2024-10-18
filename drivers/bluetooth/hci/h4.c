@@ -35,17 +35,17 @@ LOG_MODULE_REGISTER(bt_driver);
 struct h4_data {
 	struct {
 		struct net_buf *buf;
-		struct k_fifo   fifo;
+		struct k_fifo fifo;
 
-		uint16_t        remaining;
-		uint16_t        discard;
+		uint16_t remaining;
+		uint16_t discard;
 
-		bool            have_hdr;
-		bool            discardable;
+		bool have_hdr;
+		bool discardable;
 
-		uint8_t         hdr_len;
+		uint8_t hdr_len;
 
-		uint8_t         type;
+		uint8_t type;
 		union {
 			struct bt_hci_evt_hdr evt;
 			struct bt_hci_acl_hdr acl;
@@ -55,9 +55,9 @@ struct h4_data {
 	} rx;
 
 	struct {
-		uint8_t         type;
+		uint8_t type;
 		struct net_buf *buf;
-		struct k_fifo   fifo;
+		struct k_fifo fifo;
 	} tx;
 
 	bt_hci_recv_t recv;
@@ -184,7 +184,6 @@ static inline void get_evt_hdr(const struct device *dev)
 		h4->rx.have_hdr = true;
 	}
 }
-
 
 static inline void copy_hdr(struct h4_data *h4)
 {
@@ -333,8 +332,7 @@ static inline void read_payload(const struct device *dev)
 	h4->rx.remaining -= read;
 
 	LOG_DBG("got %d bytes, remaining %u", read, h4->rx.remaining);
-	LOG_DBG("Payload (len %u): %s", h4->rx.buf->len,
-		bt_hex(h4->rx.buf->data, h4->rx.buf->len));
+	LOG_DBG("Payload (len %u): %s", h4->rx.buf->len, bt_hex(h4->rx.buf->data, h4->rx.buf->len));
 
 	if (h4->rx.remaining) {
 		return;
@@ -458,9 +456,8 @@ static inline void process_rx(const struct device *dev)
 	const struct h4_config *cfg = dev->config;
 	struct h4_data *h4 = dev->data;
 
-	LOG_DBG("remaining %u discard %u have_hdr %u rx.buf %p len %u",
-		h4->rx.remaining, h4->rx.discard, h4->rx.have_hdr, h4->rx.buf,
-		h4->rx.buf ? h4->rx.buf->len : 0);
+	LOG_DBG("remaining %u discard %u have_hdr %u rx.buf %p len %u", h4->rx.remaining,
+		h4->rx.discard, h4->rx.have_hdr, h4->rx.buf, h4->rx.buf ? h4->rx.buf->len : 0);
 
 	if (h4->rx.discard) {
 		h4->rx.discard -= h4_discard(cfg->uart, h4->rx.discard);
@@ -503,11 +500,11 @@ static int h4_send(const struct device *dev, struct net_buf *buf)
 }
 
 /** Setup the HCI transport, which usually means to reset the Bluetooth IC
-  *
-  * @param dev The device structure for the bus connecting to the IC
-  *
-  * @return 0 on success, negative error value on failure
-  */
+ *
+ * @param dev The device structure for the bus connecting to the IC
+ *
+ * @return 0 on success, negative error value on failure
+ */
 int __weak bt_hci_transport_setup(const struct device *uart)
 {
 	h4_discard(uart, 32);
@@ -535,11 +532,9 @@ static int h4_open(const struct device *dev, bt_hci_recv_t recv)
 
 	uart_irq_callback_user_data_set(cfg->uart, bt_uart_isr, (void *)dev);
 
-	tid = k_thread_create(cfg->rx_thread, cfg->rx_thread_stack,
-			      cfg->rx_thread_stack_size,
-			      rx_thread, (void *)dev, NULL, NULL,
-			      K_PRIO_COOP(CONFIG_BT_RX_PRIO),
-			      0, K_NO_WAIT);
+	tid = k_thread_create(cfg->rx_thread, cfg->rx_thread_stack, cfg->rx_thread_stack_size,
+			      rx_thread, (void *)dev, NULL, NULL, K_PRIO_COOP(CONFIG_BT_RX_PRIO), 0,
+			      K_NO_WAIT);
 	k_thread_name_set(tid, "bt_rx_thread");
 
 	return 0;
@@ -572,24 +567,26 @@ static const struct bt_hci_driver_api h4_driver_api = {
 #endif
 };
 
-#define BT_UART_DEVICE_INIT(inst) \
-	static K_KERNEL_STACK_DEFINE(rx_thread_stack_##inst, CONFIG_BT_DRV_RX_STACK_SIZE); \
-	static struct k_thread rx_thread_##inst; \
-	static const struct h4_config h4_config_##inst = { \
-		.uart = DEVICE_DT_GET(DT_INST_PARENT(inst)), \
-		.rx_thread_stack = rx_thread_stack_##inst, \
-		.rx_thread_stack_size = K_KERNEL_STACK_SIZEOF(rx_thread_stack_##inst), \
-		.rx_thread = &rx_thread_##inst, \
-	}; \
-	static struct h4_data h4_data_##inst = { \
-		.rx = { \
-			.fifo = Z_FIFO_INITIALIZER(h4_data_##inst.rx.fifo), \
-		}, \
-		.tx = { \
-			.fifo = Z_FIFO_INITIALIZER(h4_data_##inst.tx.fifo), \
-		}, \
-	}; \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &h4_data_##inst, &h4_config_##inst, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &h4_driver_api)
+#define BT_UART_DEVICE_INIT(inst)                                                                  \
+	static K_KERNEL_STACK_DEFINE(rx_thread_stack_##inst, CONFIG_BT_DRV_RX_STACK_SIZE);         \
+	static struct k_thread rx_thread_##inst;                                                   \
+	static const struct h4_config h4_config_##inst = {                                         \
+		.uart = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                       \
+		.rx_thread_stack = rx_thread_stack_##inst,                                         \
+		.rx_thread_stack_size = K_KERNEL_STACK_SIZEOF(rx_thread_stack_##inst),             \
+		.rx_thread = &rx_thread_##inst,                                                    \
+	};                                                                                         \
+	static struct h4_data h4_data_##inst = {                                                   \
+		.rx =                                                                              \
+			{                                                                          \
+				.fifo = Z_FIFO_INITIALIZER(h4_data_##inst.rx.fifo),                \
+			},                                                                         \
+		.tx =                                                                              \
+			{                                                                          \
+				.fifo = Z_FIFO_INITIALIZER(h4_data_##inst.tx.fifo),                \
+			},                                                                         \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &h4_data_##inst, &h4_config_##inst, POST_KERNEL,   \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &h4_driver_api)
 
 DT_INST_FOREACH_STATUS_OKAY(BT_UART_DEVICE_INIT)

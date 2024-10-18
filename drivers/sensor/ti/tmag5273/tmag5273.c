@@ -1240,7 +1240,7 @@ static const struct sensor_driver_api tmag5273_driver_api = {
 		.low_noise_mode = DT_INST_PROP(inst, low_noise),                                   \
 		.ignore_diag_fail = DT_INST_PROP(inst, ignore_diag_fail),                          \
 		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),                        \
-		IF_ENABLED(CONFIG_CRC, (.crc_enabled = DT_INST_PROP(inst, crc_enabled),))};        \
+		IF_ENABLED(CONFIG_CRC, (.crc_enabled = DT_INST_PROP(inst, crc_enabled),))};            \
 	static struct tmag5273_data tmag5273_driver_data##inst;                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, tmag5273_init, NULL, &tmag5273_driver_data##inst,       \
 				     &tmag5273_driver_cfg##inst, POST_KERNEL,                      \

@@ -20,28 +20,28 @@
 
 LOG_MODULE_REGISTER(sifive_ddr);
 
-#define DRAM_CLASS_OFFSET		8
-#define DRAM_CLASS_DDR4			0xA
-#define OPTIMAL_RMODW_EN		BIT(0)
-#define DISABLE_RD_INTERLEAVE		BIT(16)
-#define OUT_OF_RANGE			BIT(1)
-#define MULTIPLE_OUT_OF_RANGE		BIT(2)
-#define PORT_COMMAND_CHANNEL_ERROR	BIT(7)
-#define MC_INIT_COMPLETE		BIT(8)
-#define LEVELING_OPERATION_COMPLETED	BIT(22)
-#define DFI_PHY_WRLELV_MODE		BIT(24)
-#define DFI_PHY_RDLVL_MODE		BIT(24)
-#define DFI_PHY_RDLVL_GATE_MODE		BIT(0)
-#define VREF_EN				BIT(24)
-#define PORT_ADDR_PROTECTION_EN		BIT(0)
-#define AXI0_ADDRESS_RANGE_ENABLE	BIT(8)
-#define AXI0_RANGE_PROT_BITS_0		(BIT(24) | BIT(25));
-#define RDLVL_EN			BIT(16)
-#define RDLVL_GATE_EN			BIT(24)
-#define WRLVL_EN			BIT(0)
+#define DRAM_CLASS_OFFSET            8
+#define DRAM_CLASS_DDR4              0xA
+#define OPTIMAL_RMODW_EN             BIT(0)
+#define DISABLE_RD_INTERLEAVE        BIT(16)
+#define OUT_OF_RANGE                 BIT(1)
+#define MULTIPLE_OUT_OF_RANGE        BIT(2)
+#define PORT_COMMAND_CHANNEL_ERROR   BIT(7)
+#define MC_INIT_COMPLETE             BIT(8)
+#define LEVELING_OPERATION_COMPLETED BIT(22)
+#define DFI_PHY_WRLELV_MODE          BIT(24)
+#define DFI_PHY_RDLVL_MODE           BIT(24)
+#define DFI_PHY_RDLVL_GATE_MODE      BIT(0)
+#define VREF_EN                      BIT(24)
+#define PORT_ADDR_PROTECTION_EN      BIT(0)
+#define AXI0_ADDRESS_RANGE_ENABLE    BIT(8)
+#define AXI0_RANGE_PROT_BITS_0       (BIT(24) | BIT(25));
+#define RDLVL_EN                     BIT(16)
+#define RDLVL_GATE_EN                BIT(24)
+#define WRLVL_EN                     BIT(0)
 
-#define PHY_RX_CAL_DQ0_0_OFFSET		0
-#define PHY_RX_CAL_DQ1_0_OFFSET		16
+#define PHY_RX_CAL_DQ0_0_OFFSET 0
+#define PHY_RX_CAL_DQ1_0_OFFSET 16
 
 #define DDR_CTL_REG(d, i) (*(d->ddrctl + i))
 #define DDR_PHY_REG(d, i) (*(d->ddrphy + i))
@@ -129,7 +129,7 @@ static inline uint64_t ddr_phy_fixup(struct ddr_ctrl_data *ddr_ctrl)
 	for (uint32_t slice = 0; slice < 8; slice++) {
 		uint32_t regbase = slicebase + 34;
 
-		for (uint32_t reg = 0 ; reg < 4; reg++) {
+		for (uint32_t reg = 0; reg < 4; reg++) {
 			updownreg = DDR_PHY_REG(ddr_ctrl, (regbase + reg));
 			check_errata(regbase, updownreg);
 		}
@@ -148,7 +148,7 @@ static int ddr_init(const struct device *dev)
 	ddr_writeregmap(ddr_ctrl);
 
 	DDR_CTL_REG(ddr_ctrl, 120) |= DISABLE_RD_INTERLEAVE;
-	DDR_CTL_REG(ddr_ctrl, 21)  &= ~OPTIMAL_RMODW_EN;
+	DDR_CTL_REG(ddr_ctrl, 21) &= ~OPTIMAL_RMODW_EN;
 	DDR_CTL_REG(ddr_ctrl, 170) |= WRLVL_EN | DFI_PHY_WRLELV_MODE;
 	DDR_CTL_REG(ddr_ctrl, 181) |= DFI_PHY_RDLVL_MODE;
 	DDR_CTL_REG(ddr_ctrl, 260) |= RDLVL_EN;
@@ -167,7 +167,7 @@ static int ddr_init(const struct device *dev)
 	size_t end_addr_16Kblocks = ((ddr_ctrl->ddr_size >> 14) & 0x7FFFFF) - 1;
 
 	DDR_CTL_REG(ddr_ctrl, 209) = 0x0;
-	DDR_CTL_REG(ddr_ctrl, 210) = ((uint32_t) end_addr_16Kblocks);
+	DDR_CTL_REG(ddr_ctrl, 210) = ((uint32_t)end_addr_16Kblocks);
 	DDR_CTL_REG(ddr_ctrl, 212) = 0x0;
 	DDR_CTL_REG(ddr_ctrl, 214) = 0x0;
 	DDR_CTL_REG(ddr_ctrl, 216) = 0x0;
@@ -209,4 +209,4 @@ static struct ddr_ctrl_data ddrctl_private_data = {
 };
 
 DEVICE_DT_INST_DEFINE(0, ddr_init, NULL, &ddrctl_private_data, NULL, POST_KERNEL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+		      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);

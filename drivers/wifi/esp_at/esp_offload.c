@@ -28,10 +28,9 @@ static int esp_listen(struct net_context *context, int backlog)
 static int _sock_connect(struct esp_data *dev, struct esp_socket *sock)
 {
 	/* Calculate the largest possible AT command length based on both TCP and UDP variants. */
-	char connect_msg[MAX(sizeof("AT+CIPSTART=000,\"TCP\",\"\",65535,7200") +
-				NET_IPV4_ADDR_LEN,
+	char connect_msg[MAX(sizeof("AT+CIPSTART=000,\"TCP\",\"\",65535,7200") + NET_IPV4_ADDR_LEN,
 			     sizeof("AT+CIPSTART=000,\"UDP\",\"\",65535,65535,0,\"\"") +
-				2 * NET_IPV4_ADDR_LEN)];
+				     2 * NET_IPV4_ADDR_LEN)];
 	char dst_addr_str[NET_IPV4_ADDR_LEN];
 	char src_addr_str[NET_IPV4_ADDR_LEN];
 	struct sockaddr src;
@@ -48,46 +47,38 @@ static int _sock_connect(struct esp_data *dev, struct esp_socket *sock)
 	k_mutex_unlock(&sock->lock);
 
 	if (dst.sa_family == AF_INET) {
-		net_addr_ntop(dst.sa_family,
-			      &net_sin(&dst)->sin_addr,
-			      dst_addr_str, sizeof(dst_addr_str));
+		net_addr_ntop(dst.sa_family, &net_sin(&dst)->sin_addr, dst_addr_str,
+			      sizeof(dst_addr_str));
 	} else {
 		strcpy(dst_addr_str, "0.0.0.0");
 	}
 
 	if (esp_socket_ip_proto(sock) == IPPROTO_TCP) {
-		snprintk(connect_msg, sizeof(connect_msg),
-			 "AT+CIPSTART=%d,\"TCP\",\"%s\",%d,7200",
-			 sock->link_id, dst_addr_str,
-			 ntohs(net_sin(&dst)->sin_port));
+		snprintk(connect_msg, sizeof(connect_msg), "AT+CIPSTART=%d,\"TCP\",\"%s\",%d,7200",
+			 sock->link_id, dst_addr_str, ntohs(net_sin(&dst)->sin_port));
 	} else {
 		if (src.sa_family == AF_INET && net_sin(&src)->sin_port != 0) {
-			net_addr_ntop(src.sa_family,
-				      &net_sin(&src)->sin_addr,
-				      src_addr_str, sizeof(src_addr_str));
+			net_addr_ntop(src.sa_family, &net_sin(&src)->sin_addr, src_addr_str,
+				      sizeof(src_addr_str));
 			snprintk(connect_msg, sizeof(connect_msg),
-				 "AT+CIPSTART=%d,\"UDP\",\"%s\",%d,%d,0,\"%s\"",
-				 sock->link_id, dst_addr_str,
-				 ntohs(net_sin(&dst)->sin_port), ntohs(net_sin(&src)->sin_port),
-				 src_addr_str);
+				 "AT+CIPSTART=%d,\"UDP\",\"%s\",%d,%d,0,\"%s\"", sock->link_id,
+				 dst_addr_str, ntohs(net_sin(&dst)->sin_port),
+				 ntohs(net_sin(&src)->sin_port), src_addr_str);
 		} else {
 			snprintk(connect_msg, sizeof(connect_msg),
-				 "AT+CIPSTART=%d,\"UDP\",\"%s\",%d",
-				 sock->link_id, dst_addr_str,
+				 "AT+CIPSTART=%d,\"UDP\",\"%s\",%d", sock->link_id, dst_addr_str,
 				 ntohs(net_sin(&dst)->sin_port));
 		}
 	}
 
 	LOG_DBG("link %d, ip_proto %s, addr %s", sock->link_id,
-		esp_socket_ip_proto(sock) == IPPROTO_TCP ? "TCP" : "UDP",
-		dst_addr_str);
+		esp_socket_ip_proto(sock) == IPPROTO_TCP ? "TCP" : "UDP", dst_addr_str);
 
 	ret = esp_cmd_send(dev, NULL, 0, connect_msg, ESP_CMD_TIMEOUT);
 	if (ret == 0) {
 		esp_socket_flags_set(sock, ESP_SOCK_CONNECTED);
 		if (esp_socket_type(sock) == SOCK_STREAM) {
-			net_context_set_state(sock->context,
-					      NET_CONTEXT_CONNECTED);
+			net_context_set_state(sock->context, NET_CONTEXT_CONNECTED);
 		}
 	} else if (ret == -ETIMEDOUT) {
 		/* FIXME:
@@ -103,8 +94,7 @@ static int _sock_connect(struct esp_data *dev, struct esp_socket *sock)
 
 void esp_connect_work(struct k_work *work)
 {
-	struct esp_socket *sock = CONTAINER_OF(work, struct esp_socket,
-					       connect_work);
+	struct esp_socket *sock = CONTAINER_OF(work, struct esp_socket, connect_work);
 	struct esp_data *dev = esp_socket_to_dev(sock);
 	int ret;
 
@@ -117,8 +107,7 @@ void esp_connect_work(struct k_work *work)
 	k_mutex_unlock(&sock->lock);
 }
 
-static int esp_bind(struct net_context *context, const struct sockaddr *addr,
-		    socklen_t addrlen)
+static int esp_bind(struct net_context *context, const struct sockaddr *addr, socklen_t addrlen)
 {
 	struct esp_socket *sock;
 	struct esp_data *dev;
@@ -147,12 +136,8 @@ static int esp_bind(struct net_context *context, const struct sockaddr *addr,
 	return -EAFNOSUPPORT;
 }
 
-static int esp_connect(struct net_context *context,
-		       const struct sockaddr *addr,
-		       socklen_t addrlen,
-		       net_context_connect_cb_t cb,
-		       int32_t timeout,
-		       void *user_data)
+static int esp_connect(struct net_context *context, const struct sockaddr *addr, socklen_t addrlen,
+		       net_context_connect_cb_t cb, int32_t timeout, void *user_data)
 {
 	struct esp_socket *sock;
 	struct esp_data *dev;
@@ -191,17 +176,15 @@ static int esp_connect(struct net_context *context,
 	return ret;
 }
 
-static int esp_accept(struct net_context *context,
-			     net_tcp_accept_cb_t cb, int32_t timeout,
-			     void *user_data)
+static int esp_accept(struct net_context *context, net_tcp_accept_cb_t cb, int32_t timeout,
+		      void *user_data)
 {
 	return -ENOTSUP;
 }
 
 MODEM_CMD_DIRECT_DEFINE(on_cmd_tx_ready)
 {
-	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
-					    cmd_handler_data);
+	struct esp_data *dev = CONTAINER_OF(data, struct esp_data, cmd_handler_data);
 
 	k_sem_give(&dev->sem_tx_ready);
 	return len;
@@ -209,8 +192,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_tx_ready)
 
 MODEM_CMD_DEFINE(on_cmd_send_ok)
 {
-	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
-					    cmd_handler_data);
+	struct esp_data *dev = CONTAINER_OF(data, struct esp_data, cmd_handler_data);
 
 	modem_cmd_handler_set_error(data, 0);
 	k_sem_give(&dev->sem_response);
@@ -220,8 +202,7 @@ MODEM_CMD_DEFINE(on_cmd_send_ok)
 
 MODEM_CMD_DEFINE(on_cmd_send_fail)
 {
-	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
-					    cmd_handler_data);
+	struct esp_data *dev = CONTAINER_OF(data, struct esp_data, cmd_handler_data);
 
 	modem_cmd_handler_set_error(data, -EIO);
 	k_sem_give(&dev->sem_response);
@@ -233,8 +214,7 @@ static int _sock_send(struct esp_socket *sock, struct net_pkt *pkt)
 {
 	struct esp_data *dev = esp_socket_to_dev(sock);
 	char cmd_buf[sizeof("AT+CIPSEND=0,,\"\",") +
-		     sizeof(STRINGIFY(ESP_MTU)) - 1 +
-		     NET_IPV4_ADDR_LEN + sizeof("65535") - 1];
+		     sizeof(STRINGIFY(ESP_MTU)) - 1 + NET_IPV4_ADDR_LEN + sizeof("65535") - 1];
 	char addr_str[NET_IPV4_ADDR_LEN];
 	int ret, write_len, pkt_len;
 	struct net_buf *frag;
@@ -254,28 +234,22 @@ static int _sock_send(struct esp_socket *sock, struct net_pkt *pkt)
 	LOG_DBG("link %d, len %d", sock->link_id, pkt_len);
 
 	if (esp_socket_ip_proto(sock) == IPPROTO_TCP) {
-		snprintk(cmd_buf, sizeof(cmd_buf),
-			 "AT+CIPSEND=%d,%d", sock->link_id, pkt_len);
+		snprintk(cmd_buf, sizeof(cmd_buf), "AT+CIPSEND=%d,%d", sock->link_id, pkt_len);
 	} else {
 		k_mutex_lock(&sock->lock, K_FOREVER);
 		dst = sock->dst;
 		k_mutex_unlock(&sock->lock);
 
-		net_addr_ntop(dst.sa_family,
-			      &net_sin(&dst)->sin_addr,
-			      addr_str, sizeof(addr_str));
-		snprintk(cmd_buf, sizeof(cmd_buf),
-			 "AT+CIPSEND=%d,%d,\"%s\",%d",
-			 sock->link_id, pkt_len, addr_str,
-			 ntohs(net_sin(&dst)->sin_port));
+		net_addr_ntop(dst.sa_family, &net_sin(&dst)->sin_addr, addr_str, sizeof(addr_str));
+		snprintk(cmd_buf, sizeof(cmd_buf), "AT+CIPSEND=%d,%d,\"%s\",%d", sock->link_id,
+			 pkt_len, addr_str, ntohs(net_sin(&dst)->sin_port));
 	}
 
 	k_sem_take(&dev->cmd_handler_data.sem_tx_lock, K_FOREVER);
 	k_sem_reset(&dev->sem_tx_ready);
 
-	ret = modem_cmd_send_ext(&dev->mctx.iface, &dev->mctx.cmd_handler,
-				 cmds, ARRAY_SIZE(cmds), cmd_buf,
-				 &dev->sem_response, ESP_CMD_TIMEOUT,
+	ret = modem_cmd_send_ext(&dev->mctx.iface, &dev->mctx.cmd_handler, cmds, ARRAY_SIZE(cmds),
+				 cmd_buf, &dev->sem_response, ESP_CMD_TIMEOUT,
 				 MODEM_NO_TX_LOCK | MODEM_NO_UNSET_CMDS);
 	if (ret < 0) {
 		LOG_DBG("Failed to send command");
@@ -313,8 +287,7 @@ static int _sock_send(struct esp_socket *sock, struct net_pkt *pkt)
 	}
 
 out:
-	(void)modem_cmd_handler_update_cmds(&dev->cmd_handler_data,
-					    NULL, 0U, false);
+	(void)modem_cmd_handler_update_cmds(&dev->cmd_handler_data, NULL, 0U, false);
 	k_sem_give(&dev->cmd_handler_data.sem_tx_lock);
 
 	return ret;
@@ -348,8 +321,7 @@ static int esp_socket_send_one_pkt(struct esp_socket *sock)
 
 	ret = _sock_send(sock, pkt);
 	if (ret < 0) {
-		LOG_ERR("Failed to send data: link %d, ret %d",
-			sock->link_id, ret);
+		LOG_ERR("Failed to send data: link %d, ret %d", sock->link_id, ret);
 
 		/*
 		 * If this is stream data, then we should stop pushing anything
@@ -357,8 +329,7 @@ static int esp_socket_send_one_pkt(struct esp_socket *sock)
 		 * stream, which application layer is not expecting.
 		 */
 		if (esp_socket_type(sock) == SOCK_STREAM) {
-			if (!esp_socket_flags_test_and_set(sock,
-						ESP_SOCK_CLOSE_PENDING)) {
+			if (!esp_socket_flags_test_and_set(sock, ESP_SOCK_CLOSE_PENDING)) {
 				esp_socket_work_submit(sock, &sock->close_work);
 			}
 		}
@@ -374,8 +345,7 @@ pkt_unref:
 
 void esp_send_work(struct k_work *work)
 {
-	struct esp_socket *sock = CONTAINER_OF(work, struct esp_socket,
-					       send_work);
+	struct esp_socket *sock = CONTAINER_OF(work, struct esp_socket, send_work);
 	int err;
 
 	do {
@@ -383,12 +353,8 @@ void esp_send_work(struct k_work *work)
 	} while (err != -ENOMSG);
 }
 
-static int esp_sendto(struct net_pkt *pkt,
-		      const struct sockaddr *dst_addr,
-		      socklen_t addrlen,
-		      net_context_send_cb_t cb,
-		      int32_t timeout,
-		      void *user_data)
+static int esp_sendto(struct net_pkt *pkt, const struct sockaddr *dst_addr, socklen_t addrlen,
+		      net_context_send_cb_t cb, int32_t timeout, void *user_data)
 {
 	struct net_context *context;
 	struct esp_socket *sock;
@@ -408,8 +374,7 @@ static int esp_sendto(struct net_pkt *pkt,
 	if (esp_socket_type(sock) == SOCK_STREAM) {
 		atomic_val_t flags = esp_socket_flags(sock);
 
-		if (!(flags & ESP_SOCK_CONNECTED) ||
-		     (flags & ESP_SOCK_CLOSE_PENDING)) {
+		if (!(flags & ESP_SOCK_CONNECTED) || (flags & ESP_SOCK_CLOSE_PENDING)) {
 			return -ENOTCONN;
 		}
 	} else {
@@ -422,8 +387,8 @@ static int esp_sendto(struct net_pkt *pkt,
 			 * timeout parameter might be different. We want to
 			 * have a valid link id before proceeding.
 			 */
-			ret = esp_connect(context, dst_addr, addrlen, NULL,
-					  (5 * MSEC_PER_SEC), NULL);
+			ret = esp_connect(context, dst_addr, addrlen, NULL, (5 * MSEC_PER_SEC),
+					  NULL);
 			if (ret < 0) {
 				return ret;
 			}
@@ -435,10 +400,7 @@ static int esp_sendto(struct net_pkt *pkt,
 	return esp_socket_queue_tx(sock, pkt);
 }
 
-static int esp_send(struct net_pkt *pkt,
-		    net_context_send_cb_t cb,
-		    int32_t timeout,
-		    void *user_data)
+static int esp_send(struct net_pkt *pkt, net_context_send_cb_t cb, int32_t timeout, void *user_data)
 {
 	return esp_sendto(pkt, NULL, 0, cb, timeout, user_data);
 }
@@ -451,10 +413,8 @@ static int esp_send(struct net_pkt *pkt,
 #define CIPRECVDATA_CMD_MAX_LEN (sizeof("+CIPRECVDATA,LLLL:") - 1)
 #endif
 
-static int cmd_ciprecvdata_parse(struct esp_socket *sock,
-				 struct net_buf *buf, uint16_t len,
-				 int *data_offset, int *data_len, char *ip_str,
-				 int *port)
+static int cmd_ciprecvdata_parse(struct esp_socket *sock, struct net_buf *buf, uint16_t len,
+				 int *data_offset, int *data_len, char *ip_str, int *port)
 {
 	char cmd_buf[CIPRECVDATA_CMD_MAX_LEN + 1];
 	char *endptr;
@@ -466,8 +426,8 @@ static int cmd_ciprecvdata_parse(struct esp_socket *sock,
 		return -EAGAIN;
 	}
 
-	match_len = net_buf_linearize(cmd_buf, CIPRECVDATA_CMD_MAX_LEN,
-				      buf, 0, CIPRECVDATA_CMD_MAX_LEN);
+	match_len = net_buf_linearize(cmd_buf, CIPRECVDATA_CMD_MAX_LEN, buf, 0,
+				      CIPRECVDATA_CMD_MAX_LEN);
 	cmd_buf[match_len] = 0;
 
 	*data_len = strtol(&cmd_buf[len], &endptr, 10);
@@ -488,16 +448,14 @@ static int cmd_ciprecvdata_parse(struct esp_socket *sock,
 	ARG_UNUSED(port);
 #endif
 
-	if (endptr == &cmd_buf[len] ||
-	    (*endptr == 0 && match_len >= CIPRECVDATA_CMD_MAX_LEN) ||
+	if (endptr == &cmd_buf[len] || (*endptr == 0 && match_len >= CIPRECVDATA_CMD_MAX_LEN) ||
 	    *data_len > CIPRECVDATA_MAX_LEN) {
 		LOG_ERR("Invalid cmd: %s", cmd_buf);
 		return -EBADMSG;
 	} else if (*endptr == 0) {
 		return -EAGAIN;
 	} else if (*endptr != _CIPRECVDATA_END) {
-		LOG_ERR("Invalid end of cmd: 0x%02x != 0x%02x", *endptr,
-			_CIPRECVDATA_END);
+		LOG_ERR("Invalid end of cmd: 0x%02x != 0x%02x", *endptr, _CIPRECVDATA_END);
 		return -EBADMSG;
 	}
 
@@ -516,8 +474,7 @@ static int cmd_ciprecvdata_parse(struct esp_socket *sock,
 
 MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
 {
-	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
-					    cmd_handler_data);
+	struct esp_data *dev = CONTAINER_OF(data, struct esp_data, cmd_handler_data);
 	struct esp_socket *sock = dev->rx_sock;
 	int data_offset, data_len;
 	int err;
@@ -526,11 +483,10 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
 	char raw_remote_ip[INET_ADDRSTRLEN + 3] = {0};
 	int port = 0;
 
-	err = cmd_ciprecvdata_parse(sock, data->rx_buf, len, &data_offset,
-				    &data_len, raw_remote_ip, &port);
+	err = cmd_ciprecvdata_parse(sock, data->rx_buf, len, &data_offset, &data_len, raw_remote_ip,
+				    &port);
 #else
-	err = cmd_ciprecvdata_parse(sock, data->rx_buf, len, &data_offset,
-				    &data_len, NULL, NULL);
+	err = cmd_ciprecvdata_parse(sock, data->rx_buf, len, &data_offset, &data_len, NULL, NULL);
 #endif
 	if (err) {
 		if (err == -EAGAIN) {
@@ -541,8 +497,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
 	}
 
 #if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE)
-	struct sockaddr_in *recv_addr =
-			(struct sockaddr_in *) &sock->context->remote;
+	struct sockaddr_in *recv_addr = (struct sockaddr_in *)&sock->context->remote;
 
 	recv_addr->sin_port = htons(port);
 	recv_addr->sin_family = AF_INET;
@@ -554,8 +509,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
 	char remote_ip_addr[INET_ADDRSTRLEN];
 	size_t remote_ip_str_len;
 
-	remote_ip_str_len = MIN(sizeof(remote_ip_addr) - 1,
-				strlen(raw_remote_ip) - 2);
+	remote_ip_str_len = MIN(sizeof(remote_ip_addr) - 1, strlen(raw_remote_ip) - 2);
 	strncpy(remote_ip_addr, &raw_remote_ip[1], remote_ip_str_len);
 	remote_ip_addr[remote_ip_str_len] = '\0';
 
@@ -572,10 +526,9 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
 
 void esp_recvdata_work(struct k_work *work)
 {
-	struct esp_socket *sock = CONTAINER_OF(work, struct esp_socket,
-					       recvdata_work);
+	struct esp_socket *sock = CONTAINER_OF(work, struct esp_socket, recvdata_work);
 	struct esp_data *data = esp_socket_to_dev(sock);
-	char cmd[sizeof("AT+CIPRECVDATA=000,"STRINGIFY(CIPRECVDATA_MAX_LEN))];
+	char cmd[sizeof("AT+CIPRECVDATA=000," STRINGIFY(CIPRECVDATA_MAX_LEN))];
 	static const struct modem_cmd cmds[] = {
 		MODEM_CMD_DIRECT(_CIPRECVDATA, on_cmd_ciprecvdata),
 	};
@@ -585,27 +538,22 @@ void esp_recvdata_work(struct k_work *work)
 
 	data->rx_sock = sock;
 
-	snprintk(cmd, sizeof(cmd), "AT+CIPRECVDATA=%d,%d", sock->link_id,
-		 CIPRECVDATA_MAX_LEN);
+	snprintk(cmd, sizeof(cmd), "AT+CIPRECVDATA=%d,%d", sock->link_id, CIPRECVDATA_MAX_LEN);
 
 	ret = esp_cmd_send(data, cmds, ARRAY_SIZE(cmds), cmd, ESP_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("Error during rx: link %d, ret %d", sock->link_id,
-			ret);
+		LOG_ERR("Error during rx: link %d, ret %d", sock->link_id, ret);
 	}
 }
 
 void esp_close_work(struct k_work *work)
 {
-	struct esp_socket *sock = CONTAINER_OF(work, struct esp_socket,
-					       close_work);
+	struct esp_socket *sock = CONTAINER_OF(work, struct esp_socket, close_work);
 	atomic_val_t old_flags;
 
-	old_flags = esp_socket_flags_clear(sock,
-				(ESP_SOCK_CONNECTED | ESP_SOCK_CLOSE_PENDING));
+	old_flags = esp_socket_flags_clear(sock, (ESP_SOCK_CONNECTED | ESP_SOCK_CLOSE_PENDING));
 
-	if ((old_flags & ESP_SOCK_CONNECTED) &&
-	    (old_flags & ESP_SOCK_CLOSE_PENDING)) {
+	if ((old_flags & ESP_SOCK_CONNECTED) && (old_flags & ESP_SOCK_CLOSE_PENDING)) {
 		esp_socket_close(sock);
 	}
 
@@ -613,34 +561,28 @@ void esp_close_work(struct k_work *work)
 	if (old_flags & ESP_SOCK_CLOSE_PENDING) {
 		k_mutex_lock(&sock->lock, K_FOREVER);
 		if (sock->recv_cb) {
-			sock->recv_cb(sock->context, NULL, NULL, NULL, 0,
-				      sock->recv_user_data);
+			sock->recv_cb(sock->context, NULL, NULL, NULL, 0, sock->recv_user_data);
 			k_sem_give(&sock->sem_data_ready);
 		}
 		k_mutex_unlock(&sock->lock);
 	}
 }
 
-static int esp_recv(struct net_context *context,
-		    net_context_recv_cb_t cb,
-		    int32_t timeout,
+static int esp_recv(struct net_context *context, net_context_recv_cb_t cb, int32_t timeout,
 		    void *user_data)
 {
 	struct esp_socket *sock = context->offload_context;
 	struct esp_data *dev = esp_socket_to_dev(sock);
 	int ret;
 
-	LOG_DBG("link_id %d, timeout %d, cb %p, data %p",
-		sock->link_id, timeout, cb, user_data);
+	LOG_DBG("link_id %d, timeout %d, cb %p, data %p", sock->link_id, timeout, cb, user_data);
 
 	/*
 	 * UDP "listening" socket needs to be bound using AT+CIPSTART before any
 	 * traffic can be received.
 	 */
-	if (!esp_socket_connected(sock) &&
-	    esp_socket_ip_proto(sock) == IPPROTO_UDP &&
-	    sock->src.sa_family == AF_INET &&
-	    net_sin(&sock->src)->sin_port != 0) {
+	if (!esp_socket_connected(sock) && esp_socket_ip_proto(sock) == IPPROTO_UDP &&
+	    sock->src.sa_family == AF_INET && net_sin(&sock->src)->sin_port != 0) {
 		_sock_connect(dev, sock);
 	}
 
@@ -699,9 +641,7 @@ static int esp_put(struct net_context *context)
 	return 0;
 }
 
-static int esp_get(sa_family_t family,
-		   enum net_sock_type type,
-		   enum net_ip_protocol ip_proto,
+static int esp_get(sa_family_t family, enum net_sock_type type, enum net_ip_protocol ip_proto,
 		   struct net_context **context)
 {
 	struct esp_socket *sock;
@@ -730,15 +670,15 @@ static int esp_get(sa_family_t family,
 }
 
 static struct net_offload esp_offload = {
-	.get	       = esp_get,
-	.bind	       = esp_bind,
-	.listen	       = esp_listen,
-	.connect       = esp_connect,
-	.accept	       = esp_accept,
-	.send	       = esp_send,
-	.sendto	       = esp_sendto,
-	.recv	       = esp_recv,
-	.put	       = esp_put,
+	.get = esp_get,
+	.bind = esp_bind,
+	.listen = esp_listen,
+	.connect = esp_connect,
+	.accept = esp_accept,
+	.send = esp_send,
+	.sendto = esp_sendto,
+	.recv = esp_recv,
+	.put = esp_put,
 };
 
 int esp_offload_init(struct net_if *iface)

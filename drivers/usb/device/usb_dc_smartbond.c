@@ -36,32 +36,32 @@ LOG_MODULE_REGISTER(usb_dc_smartbond, CONFIG_USB_DRIVER_LOG_LEVEL);
 /* USB device controller access from devicetree */
 #define DT_DRV_COMPAT renesas_smartbond_usbd
 
-#define USB_IRQ                        DT_INST_IRQ_BY_IDX(0, 0, irq)
-#define USB_IRQ_PRI                    DT_INST_IRQ_BY_IDX(0, 0, priority)
-#define VBUS_IRQ                       DT_INST_IRQ_BY_IDX(0, 1, irq)
-#define VBUS_IRQ_PRI                   DT_INST_IRQ_BY_IDX(0, 1, priority)
+#define USB_IRQ      DT_INST_IRQ_BY_IDX(0, 0, irq)
+#define USB_IRQ_PRI  DT_INST_IRQ_BY_IDX(0, 0, priority)
+#define VBUS_IRQ     DT_INST_IRQ_BY_IDX(0, 1, irq)
+#define VBUS_IRQ_PRI DT_INST_IRQ_BY_IDX(0, 1, priority)
 
 /*
  * Minimal transfer size needed to use DMA. For short transfers
  * it may be simpler to just fill hardware FIFO with data instead
  * of programming DMA registers.
  */
-#define DMA_MIN_TRANSFER_SIZE          DT_INST_PROP(0, dma_min_transfer_size)
-#define FIFO_READ_THRESHOLD            DT_INST_PROP(0, fifo_read_threshold)
+#define DMA_MIN_TRANSFER_SIZE DT_INST_PROP(0, dma_min_transfer_size)
+#define FIFO_READ_THRESHOLD   DT_INST_PROP(0, fifo_read_threshold)
 
 /* Size of hardware RX and TX FIFO. */
-#define EP0_FIFO_SIZE                  8
-#define EP_FIFO_SIZE                   64
+#define EP0_FIFO_SIZE 8
+#define EP_FIFO_SIZE  64
 
-#define EP0_OUT_BUF_SIZE               EP0_FIFO_SIZE
-#define EP1_OUT_BUF_SIZE               DT_INST_PROP_BY_IDX(0, ep_out_buf_size, 1)
-#define EP2_OUT_BUF_SIZE               DT_INST_PROP_BY_IDX(0, ep_out_buf_size, 2)
-#define EP3_OUT_BUF_SIZE               DT_INST_PROP_BY_IDX(0, ep_out_buf_size, 3)
+#define EP0_OUT_BUF_SIZE EP0_FIFO_SIZE
+#define EP1_OUT_BUF_SIZE DT_INST_PROP_BY_IDX(0, ep_out_buf_size, 1)
+#define EP2_OUT_BUF_SIZE DT_INST_PROP_BY_IDX(0, ep_out_buf_size, 2)
+#define EP3_OUT_BUF_SIZE DT_INST_PROP_BY_IDX(0, ep_out_buf_size, 3)
 
-#define EP0_IDX                        0
-#define EP0_IN                         USB_CONTROL_EP_IN
-#define EP0_OUT                        USB_CONTROL_EP_OUT
-#define EP_MAX                         4
+#define EP0_IDX 0
+#define EP0_IN  USB_CONTROL_EP_IN
+#define EP0_OUT USB_CONTROL_EP_OUT
+#define EP_MAX  4
 
 /* EP OUT buffers  */
 static uint8_t ep0_out_buf[EP0_OUT_BUF_SIZE];
@@ -70,26 +70,32 @@ static uint8_t ep2_out_buf[EP2_OUT_BUF_SIZE];
 static uint8_t ep3_out_buf[EP3_OUT_BUF_SIZE];
 
 static uint8_t *const ep_out_bufs[4] = {
-	ep0_out_buf, ep1_out_buf, ep2_out_buf, ep3_out_buf,
+	ep0_out_buf,
+	ep1_out_buf,
+	ep2_out_buf,
+	ep3_out_buf,
 };
 
 static const uint16_t ep_out_buf_size[4] = {
-	EP0_OUT_BUF_SIZE, EP1_OUT_BUF_SIZE, EP2_OUT_BUF_SIZE, EP3_OUT_BUF_SIZE,
+	EP0_OUT_BUF_SIZE,
+	EP1_OUT_BUF_SIZE,
+	EP2_OUT_BUF_SIZE,
+	EP3_OUT_BUF_SIZE,
 };
 
 /* Node functional states */
-#define NFSR_NODE_RESET         0
-#define NFSR_NODE_RESUME        1
-#define NFSR_NODE_OPERATIONAL   2
-#define NFSR_NODE_SUSPEND       3
+#define NFSR_NODE_RESET       0
+#define NFSR_NODE_RESUME      1
+#define NFSR_NODE_OPERATIONAL 2
+#define NFSR_NODE_SUSPEND     3
 /*
  * Those two following states are added to allow going out of sleep mode
  * using frame interrupt.  On remove wakeup RESUME state must be kept for
  * at least 1ms. It is accomplished by using FRAME interrupt that goes
  * through those two fake states before entering OPERATIONAL state.
  */
-#define NFSR_NODE_WAKING        (0x10 | (NFSR_NODE_RESUME))
-#define NFSR_NODE_WAKING2       (0x20 | (NFSR_NODE_RESUME))
+#define NFSR_NODE_WAKING      (0x10 | (NFSR_NODE_RESUME))
+#define NFSR_NODE_WAKING2     (0x20 | (NFSR_NODE_RESUME))
 
 struct smartbond_ep_reg_set {
 	volatile uint32_t epc_in;
@@ -112,22 +118,22 @@ static struct smartbond_ep_reg_set *const reg_sets[4] = {
 struct smartbond_ep_state {
 	atomic_t busy;
 	uint8_t *buffer;
-	uint16_t total_len;             /** Total length of current transfer */
-	uint16_t transferred;           /** Bytes transferred so far */
-	uint16_t mps;       /** Endpoint max packet size */
+	uint16_t total_len;   /** Total length of current transfer */
+	uint16_t transferred; /** Bytes transferred so far */
+	uint16_t mps;         /** Endpoint max packet size */
 	/** Packet size sent or received so far. It is used to modify transferred field
 	 * after ACK is received or when filling ISO endpoint with size larger then
 	 * FIFO size.
 	 */
 	uint16_t last_packet_size;
 
-	usb_dc_ep_callback cb;          /** Endpoint callback function */
+	usb_dc_ep_callback cb; /** Endpoint callback function */
 
-	uint8_t data1 : 1;              /** DATA0/1 toggle bit 1 DATA1 is expected or transmitted */
-	uint8_t stall : 1;              /** Endpoint is stalled */
-	uint8_t iso : 1;                /** ISO endpoint */
-	uint8_t enabled : 1;            /** Endpoint is enabled */
-	uint8_t ep_addr;                /** EP address */
+	uint8_t data1: 1;   /** DATA0/1 toggle bit 1 DATA1 is expected or transmitted */
+	uint8_t stall: 1;   /** Endpoint is stalled */
+	uint8_t iso: 1;     /** ISO endpoint */
+	uint8_t enabled: 1; /** Endpoint is enabled */
+	uint8_t ep_addr;    /** EP address */
 	struct smartbond_ep_reg_set *regs;
 };
 
@@ -143,18 +149,12 @@ static struct usb_smartbond_dma_cfg {
 	struct dma_block_config tx_block_cfg;
 	struct dma_block_config rx_block_cfg;
 } usbd_dma_cfg = {
-	.tx_chan =
-		DT_DMAS_CELL_BY_NAME(DT_NODELABEL(usbd), tx, channel),
-	.tx_slot_mux =
-		DT_DMAS_CELL_BY_NAME(DT_NODELABEL(usbd), tx, config),
-	.tx_dev =
-		DEVICE_DT_GET(DT_DMAS_CTLR_BY_NAME(DT_NODELABEL(usbd), tx)),
-	.rx_chan =
-		DT_DMAS_CELL_BY_NAME(DT_NODELABEL(usbd), rx, channel),
-	.rx_slot_mux =
-		DT_DMAS_CELL_BY_NAME(DT_NODELABEL(usbd), rx, config),
-	.rx_dev =
-		DEVICE_DT_GET(DT_DMAS_CTLR_BY_NAME(DT_NODELABEL(usbd), rx)),
+	.tx_chan = DT_DMAS_CELL_BY_NAME(DT_NODELABEL(usbd), tx, channel),
+	.tx_slot_mux = DT_DMAS_CELL_BY_NAME(DT_NODELABEL(usbd), tx, config),
+	.tx_dev = DEVICE_DT_GET(DT_DMAS_CTLR_BY_NAME(DT_NODELABEL(usbd), tx)),
+	.rx_chan = DT_DMAS_CELL_BY_NAME(DT_NODELABEL(usbd), rx, channel),
+	.rx_slot_mux = DT_DMAS_CELL_BY_NAME(DT_NODELABEL(usbd), rx, config),
+	.rx_dev = DEVICE_DT_GET(DT_DMAS_CTLR_BY_NAME(DT_NODELABEL(usbd), rx)),
 };
 
 struct usb_dc_state {
@@ -166,7 +166,7 @@ struct usb_dc_state {
 	struct smartbond_ep_state ep_state[2][4];
 	/** Bitmask of EP OUT endpoints that received data during interrupt */
 	uint8_t ep_out_data;
-	atomic_ptr_t dma_ep[2];         /** DMA used by channel */
+	atomic_ptr_t dma_ep[2]; /** DMA used by channel */
 };
 
 static struct usb_dc_state dev_state;
@@ -175,13 +175,12 @@ static struct usb_dc_state dev_state;
  * DA146xx register fields and bit mask are very long. Filed masks repeat register names.
  * Those convenience macros are a way to reduce complexity of register modification lines.
  */
-#define GET_BIT(val, field) (val & field ## _Msk) >> field ## _Pos
-#define REG_GET_BIT(reg, field) (USB->reg & USB_ ## reg ## _ ## field ## _Msk)
-#define REG_SET_BIT(reg, field) (USB->reg |= USB_ ## reg ## _ ## field ## _Msk)
-#define REG_CLR_BIT(reg, field) (USB->reg &= ~USB_ ## reg ## _ ## field ## _Msk)
-#define REG_SET_VAL(reg, field, val)						\
-	(USB->reg = (USB->reg & ~USB_##reg##_##field##_Msk) |	\
-		   (val << USB_##reg##_##field##_Pos))
+#define GET_BIT(val, field)     (val & field##_Msk) >> field##_Pos
+#define REG_GET_BIT(reg, field) (USB->reg & USB_##reg##_##field##_Msk)
+#define REG_SET_BIT(reg, field) (USB->reg |= USB_##reg##_##field##_Msk)
+#define REG_CLR_BIT(reg, field) (USB->reg &= ~USB_##reg##_##field##_Msk)
+#define REG_SET_VAL(reg, field, val)                                                               \
+	(USB->reg = (USB->reg & ~USB_##reg##_##field##_Msk) | (val << USB_##reg##_##field##_Pos))
 
 static int usb_smartbond_dma_validate(void)
 {
@@ -190,9 +189,8 @@ static int usb_smartbond_dma_validate(void)
 	 * DMA TX should be assigned the right next
 	 * channel (odd number).
 	 */
-	if (!(usbd_dma_cfg.tx_chan & 0x1) ||
-			(usbd_dma_cfg.rx_chan & 0x1) ||
-			(usbd_dma_cfg.tx_chan != (usbd_dma_cfg.rx_chan + 1))) {
+	if (!(usbd_dma_cfg.tx_chan & 0x1) || (usbd_dma_cfg.rx_chan & 0x1) ||
+	    (usbd_dma_cfg.tx_chan != (usbd_dma_cfg.rx_chan + 1))) {
 		LOG_ERR("Invalid RX/TX channel selection");
 		return -EINVAL;
 	}
@@ -202,8 +200,7 @@ static int usb_smartbond_dma_validate(void)
 		return -EINVAL;
 	}
 
-	if (!device_is_ready(usbd_dma_cfg.tx_dev) ||
-		!device_is_ready(usbd_dma_cfg.rx_dev)) {
+	if (!device_is_ready(usbd_dma_cfg.tx_dev) || !device_is_ready(usbd_dma_cfg.rx_dev)) {
 		LOG_ERR("TX/RX DMA device is not ready");
 		return -ENODEV;
 	}
@@ -218,14 +215,12 @@ static int usb_smartbond_dma_config(void)
 	struct dma_block_config *tx_block = &usbd_dma_cfg.tx_block_cfg;
 	struct dma_block_config *rx_block = &usbd_dma_cfg.rx_block_cfg;
 
-	if (dma_request_channel(usbd_dma_cfg.rx_dev,
-				(void *)&usbd_dma_cfg.rx_chan) < 0) {
+	if (dma_request_channel(usbd_dma_cfg.rx_dev, (void *)&usbd_dma_cfg.rx_chan) < 0) {
 		LOG_ERR("RX DMA channel is already occupied");
 		return -EIO;
 	}
 
-	if (dma_request_channel(usbd_dma_cfg.tx_dev,
-				(void *)&usbd_dma_cfg.tx_chan) < 0) {
+	if (dma_request_channel(usbd_dma_cfg.tx_dev, (void *)&usbd_dma_cfg.tx_chan) < 0) {
 		LOG_ERR("TX DMA channel is already occupied");
 		return -EIO;
 	}
@@ -309,7 +304,7 @@ static int usb_smartbond_dma_config(void)
 
 static void usb_smartbond_dma_deconfig(void)
 {
-	dma_stop(usbd_dma_cfg.tx_dev,  usbd_dma_cfg.tx_chan);
+	dma_stop(usbd_dma_cfg.tx_dev, usbd_dma_cfg.tx_chan);
 	dma_stop(usbd_dma_cfg.rx_dev, usbd_dma_cfg.rx_chan);
 
 	dma_release_channel(usbd_dma_cfg.tx_dev, usbd_dma_cfg.tx_chan);
@@ -328,16 +323,14 @@ static struct smartbond_ep_state *usb_dc_get_ep_out_state(uint8_t ep)
 {
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
-	return (ep_idx < EP_MAX && USB_EP_DIR_IS_OUT(ep)) ?
-		&dev_state.ep_state[0][ep_idx] : NULL;
+	return (ep_idx < EP_MAX && USB_EP_DIR_IS_OUT(ep)) ? &dev_state.ep_state[0][ep_idx] : NULL;
 }
 
 static struct smartbond_ep_state *usb_dc_get_ep_in_state(uint8_t ep)
 {
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
-	return ep_idx < EP_MAX || USB_EP_DIR_IS_IN(ep) ?
-	       &dev_state.ep_state[1][ep_idx] : NULL;
+	return ep_idx < EP_MAX || USB_EP_DIR_IS_IN(ep) ? &dev_state.ep_state[1][ep_idx] : NULL;
 }
 
 static inline bool dev_attached(void)
@@ -378,8 +371,7 @@ static void fill_tx_fifo(struct smartbond_ep_state *ep_state)
 	 * Loop checks TCOUNT all the time since this value is saturated to 31
 	 * and can't be read just once before.
 	 */
-	while ((regs->txs & USB_USB_TXS1_REG_USB_TCOUNT_Msk) > 0 &&
-		remaining > 0) {
+	while ((regs->txs & USB_USB_TXS1_REG_USB_TCOUNT_Msk) > 0 && remaining > 0) {
 		regs->txd = *src++;
 		ep_state->last_packet_size++;
 		remaining--;
@@ -430,8 +422,8 @@ static bool try_allocate_dma(struct smartbond_ep_state *ep_state, uint8_t dir)
 
 static void start_rx_dma(volatile void *src, void *dst, uint16_t size)
 {
-	if (dma_reload(usbd_dma_cfg.rx_dev, usbd_dma_cfg.rx_chan,
-		(uint32_t)src, (uint32_t)dst, size) < 0) {
+	if (dma_reload(usbd_dma_cfg.rx_dev, usbd_dma_cfg.rx_chan, (uint32_t)src, (uint32_t)dst,
+		       size) < 0) {
 		LOG_ERR("Failed to reload RX DMA");
 	} else {
 		dma_start(usbd_dma_cfg.rx_dev, usbd_dma_cfg.rx_chan);
@@ -451,9 +443,7 @@ static void start_rx_packet(struct smartbond_ep_state *ep_state)
 
 	if (ep_state->mps > DMA_MIN_TRANSFER_SIZE) {
 		if (try_allocate_dma(ep_state, USB_EP_DIR_OUT)) {
-			start_rx_dma(&regs->rxd,
-				     ep_state->buffer,
-				     ep_state->mps);
+			start_rx_dma(&regs->rxd, ep_state->buffer, ep_state->mps);
 		} else if (ep_state->mps > EP_FIFO_SIZE) {
 			/*
 			 * Other endpoint is using DMA in that direction,
@@ -479,8 +469,8 @@ static void start_rx_packet(struct smartbond_ep_state *ep_state)
 
 static void start_tx_dma(void *src, volatile void *dst, uint16_t size)
 {
-	if (dma_reload(usbd_dma_cfg.tx_dev, usbd_dma_cfg.tx_chan,
-		(uint32_t)src, (uint32_t)dst, size) < 0) {
+	if (dma_reload(usbd_dma_cfg.tx_dev, usbd_dma_cfg.tx_chan, (uint32_t)src, (uint32_t)dst,
+		       size) < 0) {
 		LOG_ERR("Failed to reload TX DMA");
 	} else {
 		dma_start(usbd_dma_cfg.tx_dev, usbd_dma_cfg.tx_chan);
@@ -503,16 +493,14 @@ static void start_tx_packet(struct smartbond_ep_state *ep_state)
 		regs->txc |= USB_USB_TXC1_REG_USB_TOGGLE_TX_Msk;
 	}
 
-	if (ep_state->ep_addr != EP0_IN &&
-	    remaining > DMA_MIN_TRANSFER_SIZE &&
+	if (ep_state->ep_addr != EP0_IN && remaining > DMA_MIN_TRANSFER_SIZE &&
 	    (uint32_t)(ep_state->buffer) >= CONFIG_SRAM_BASE_ADDRESS &&
 	    try_allocate_dma(ep_state, USB_EP_DIR_IN)) {
 		/*
 		 * Whole packet will be put in FIFO by DMA.
 		 * Set LAST bit before start.
 		 */
-		start_tx_dma(ep_state->buffer + ep_state->transferred,
-			     &regs->txd, size);
+		start_tx_dma(ep_state->buffer + ep_state->transferred, &regs->txd, size);
 		regs->txc |= USB_USB_TXC1_REG_USB_LAST_Msk;
 	} else {
 		fill_tx_fifo(ep_state);
@@ -521,8 +509,7 @@ static void start_tx_packet(struct smartbond_ep_state *ep_state)
 	regs->txc |= USB_USB_TXC1_REG_USB_TX_EN_Msk;
 }
 
-static uint16_t read_rx_fifo(struct smartbond_ep_state *ep_state,
-			     uint16_t bytes_in_fifo)
+static uint16_t read_rx_fifo(struct smartbond_ep_state *ep_state, uint16_t bytes_in_fifo)
 {
 	struct smartbond_ep_reg_set *regs = ep_state->regs;
 	uint16_t remaining = ep_state->mps - ep_state->last_packet_size;
@@ -561,19 +548,14 @@ static void handle_ep0_rx(void)
 		ep0_in_state->data1 = 1;
 		REG_SET_BIT(USB_TXC0_REG, USB_TOGGLE_TX0);
 		REG_CLR_BIT(USB_EPC0_REG, USB_STALL);
-		LOG_DBG("Setup %02x %02x %02x %02x %02x %02x %02x %02x",
-			ep0_out_state->buffer[0],
-			ep0_out_state->buffer[1],
-			ep0_out_state->buffer[2],
-			ep0_out_state->buffer[3],
-			ep0_out_state->buffer[4],
-			ep0_out_state->buffer[5],
-			ep0_out_state->buffer[6],
+		LOG_DBG("Setup %02x %02x %02x %02x %02x %02x %02x %02x", ep0_out_state->buffer[0],
+			ep0_out_state->buffer[1], ep0_out_state->buffer[2],
+			ep0_out_state->buffer[3], ep0_out_state->buffer[4],
+			ep0_out_state->buffer[5], ep0_out_state->buffer[6],
 			ep0_out_state->buffer[7]);
 		ep0_out_state->cb(EP0_OUT, USB_DC_EP_SETUP);
 	} else {
-		if (GET_BIT(rxs0, USB_USB_RXS0_REG_USB_TOGGLE_RX0) !=
-			ep0_out_state->data1) {
+		if (GET_BIT(rxs0, USB_USB_RXS0_REG_USB_TOGGLE_RX0) != ep0_out_state->data1) {
 			/* Toggle bit does not match discard packet */
 			REG_SET_BIT(USB_RXC0_REG, USB_FLUSH);
 			ep0_out_state->last_packet_size = 0;
@@ -601,12 +583,10 @@ static void handle_ep0_tx(void)
 	if (GET_BIT(txs0, USB_USB_TXS0_REG_USB_TX_DONE)) {
 		/* ACK received */
 		if (GET_BIT(txs0, USB_USB_TXS0_REG_USB_ACK_STAT)) {
-			ep0_in_state->transferred +=
-				ep0_in_state->last_packet_size;
+			ep0_in_state->transferred += ep0_in_state->last_packet_size;
 			ep0_in_state->last_packet_size = 0;
 			ep0_in_state->data1 ^= 1;
-			REG_SET_VAL(USB_TXC0_REG, USB_TOGGLE_TX0,
-				    ep0_in_state->data1);
+			REG_SET_VAL(USB_TXC0_REG, USB_TOGGLE_TX0, ep0_in_state->data1);
 			if (ep0_in_state->transferred == ep0_in_state->total_len) {
 				/* For control endpoint get ready for ACK stage
 				 * from host.
@@ -671,7 +651,7 @@ static void handle_epx_rx_ev(uint8_t ep_idx)
 			 * transmitted bytes.
 			 */
 			if (ep_state->last_packet_size ==
-				(rx_dma_status.total_copied + rx_dma_status.pending_length)) {
+			    (rx_dma_status.total_copied + rx_dma_status.pending_length)) {
 				ep_state->last_packet_size++;
 			}
 			/* Release DMA to use by other endpoints. */
@@ -689,8 +669,7 @@ static void handle_epx_rx_ev(uint8_t ep_idx)
 
 		if (GET_BIT(rxs, USB_USB_RXS1_REG_USB_RX_LAST)) {
 			if (!ep_state->iso &&
-			    GET_BIT(rxs, USB_USB_RXS1_REG_USB_TOGGLE_RX) !=
-			    ep_state->data1) {
+			    GET_BIT(rxs, USB_USB_RXS1_REG_USB_TOGGLE_RX) != ep_state->data1) {
 				/* Toggle bit does not match discard packet */
 				regs->rxc |= USB_USB_RXC1_REG_USB_FLUSH_Msk;
 				ep_state->last_packet_size = 0;
@@ -796,16 +775,14 @@ static uint32_t check_reset_end(uint32_t alt_ev)
 			 * Keep non-reset bits combined from two previous
 			 * ALTEV read and one from the next line.
 			 */
-			alt_ev = (alt_ev & ~USB_USB_ALTEV_REG_USB_RESET_Msk) |
-				 USB->USB_ALTEV_REG;
+			alt_ev = (alt_ev & ~USB_USB_ALTEV_REG_USB_RESET_Msk) | USB->USB_ALTEV_REG;
 		}
 
 		if (GET_BIT(alt_ev, USB_USB_ALTEV_REG_USB_RESET) == 0) {
-			USB->USB_ALTMSK_REG = USB_USB_ALTMSK_REG_USB_M_RESET_Msk |
-					      USB_USB_ALTEV_REG_USB_SD3_Msk;
+			USB->USB_ALTMSK_REG =
+				USB_USB_ALTMSK_REG_USB_M_RESET_Msk | USB_USB_ALTEV_REG_USB_SD3_Msk;
 			if (dev_state.ep_state[0][0].buffer != NULL) {
-				USB->USB_MAMSK_REG |=
-					USB_USB_MAMSK_REG_USB_M_EP0_RX_Msk;
+				USB->USB_MAMSK_REG |= USB_USB_MAMSK_REG_USB_M_EP0_RX_Msk;
 			}
 			LOG_INF("Set operational %02x", USB->USB_MAMSK_REG);
 			set_nfsr(NFSR_NODE_OPERATIONAL);
@@ -838,10 +815,8 @@ static void handle_bus_reset(void)
 	dev_state.status_cb(USB_DC_RESET, NULL);
 	USB->USB_DMA_CTRL_REG = 0;
 
-	USB->USB_MAMSK_REG = USB_USB_MAMSK_REG_USB_M_INTR_Msk |
-			     USB_USB_MAMSK_REG_USB_M_FRAME_Msk |
-			     USB_USB_MAMSK_REG_USB_M_WARN_Msk |
-			     USB_USB_MAMSK_REG_USB_M_ALT_Msk |
+	USB->USB_MAMSK_REG = USB_USB_MAMSK_REG_USB_M_INTR_Msk | USB_USB_MAMSK_REG_USB_M_FRAME_Msk |
+			     USB_USB_MAMSK_REG_USB_M_WARN_Msk | USB_USB_MAMSK_REG_USB_M_ALT_Msk |
 			     USB_USB_MAMSK_REG_USB_M_EP0_RX_Msk |
 			     USB_USB_MAMSK_REG_USB_M_EP0_TX_Msk;
 	USB->USB_ALTMSK_REG = USB_USB_ALTMSK_REG_USB_M_RESUME_Msk;
@@ -874,15 +849,13 @@ static void handle_alt_ev(void)
 		usb_clock_on();
 	}
 	alt_ev = check_reset_end(alt_ev);
-	if (GET_BIT(alt_ev, USB_USB_ALTEV_REG_USB_RESET) &&
-	    dev_state.nfsr != NFSR_NODE_RESET) {
+	if (GET_BIT(alt_ev, USB_USB_ALTEV_REG_USB_RESET) && dev_state.nfsr != NFSR_NODE_RESET) {
 		handle_bus_reset();
 	} else if (GET_BIT(alt_ev, USB_USB_ALTEV_REG_USB_RESUME)) {
 		if (USB->USB_NFSR_REG == NFSR_NODE_SUSPEND) {
 			set_nfsr(NFSR_NODE_OPERATIONAL);
 			if (dev_state.ep_state[0][0].buffer != NULL) {
-				USB->USB_MAMSK_REG |=
-					USB_USB_MAMSK_REG_USB_M_EP0_RX_Msk;
+				USB->USB_MAMSK_REG |= USB_USB_MAMSK_REG_USB_M_EP0_RX_Msk;
 			}
 			USB->USB_ALTMSK_REG = USB_USB_ALTMSK_REG_USB_M_RESET_Msk |
 					      USB_USB_ALTMSK_REG_USB_M_SD3_Msk;
@@ -898,8 +871,7 @@ static void handle_alt_ev(void)
 	} else if (GET_BIT(alt_ev, USB_USB_ALTEV_REG_USB_SD3)) {
 		set_nfsr(NFSR_NODE_SUSPEND);
 		USB->USB_ALTMSK_REG =
-			USB_USB_ALTMSK_REG_USB_M_RESET_Msk |
-			USB_USB_ALTMSK_REG_USB_M_RESUME_Msk;
+			USB_USB_ALTMSK_REG_USB_M_RESET_Msk | USB_USB_ALTMSK_REG_USB_M_RESUME_Msk;
 		usb_clock_off();
 		dev_state.status_cb(USB_DC_SUSPEND, NULL);
 	}
@@ -1015,8 +987,7 @@ static void usb_dc_smartbond_isr(void)
 		} else if (dev_state.nfsr == NFSR_NODE_WAKING2) {
 			/* No need to call set_nfsr, just set state */
 			dev_state.nfsr = NFSR_NODE_RESUME;
-			LOG_DBG("dev_state.nfsr = NFSR_NODE_RESUME %02x",
-				USB->USB_MAMSK_REG);
+			LOG_DBG("dev_state.nfsr = NFSR_NODE_RESUME %02x", USB->USB_MAMSK_REG);
 		} else if (dev_state.nfsr == NFSR_NODE_RESUME) {
 			set_nfsr(NFSR_NODE_OPERATIONAL);
 			if (dev_state.ep_state[0][0].buffer != NULL) {
@@ -1081,11 +1052,10 @@ static void usb_change_state(bool attached, bool vbus_present)
 		USB->USB_MAMSK_REG = USB_USB_MAMSK_REG_USB_M_INTR_Msk |
 				     USB_USB_MAMSK_REG_USB_M_ALT_Msk |
 				     USB_USB_MAMSK_REG_USB_M_WARN_Msk;
-		USB->USB_ALTMSK_REG = USB_USB_ALTMSK_REG_USB_M_RESET_Msk |
-				      USB_USB_ALTEV_REG_USB_SD3_Msk;
+		USB->USB_ALTMSK_REG =
+			USB_USB_ALTMSK_REG_USB_M_RESET_Msk | USB_USB_ALTEV_REG_USB_SD3_Msk;
 
-		USB->USB_MCTRL_REG = USB_USB_MCTRL_REG_USBEN_Msk |
-				     USB_USB_MCTRL_REG_USB_NAT_Msk;
+		USB->USB_MCTRL_REG = USB_USB_MCTRL_REG_USBEN_Msk | USB_USB_MCTRL_REG_USB_NAT_Msk;
 	} else if (dev_state.attached && dev_state.vbus_present) {
 		/*
 		 * USB was previously in use now either VBUS is gone or application
@@ -1121,9 +1091,8 @@ static void usb_dc_smartbond_vbus_isr(void)
 	LOG_DBG("VBUS_ISR");
 
 	CRG_TOP->VBUS_IRQ_CLEAR_REG = 1;
-	usb_change_state(dev_state.attached,
-			 (CRG_TOP->ANA_STATUS_REG &
-			  CRG_TOP_ANA_STATUS_REG_VBUS_AVAILABLE_Msk) != 0);
+	usb_change_state(dev_state.attached, (CRG_TOP->ANA_STATUS_REG &
+					      CRG_TOP_ANA_STATUS_REG_VBUS_AVAILABLE_Msk) != 0);
 }
 
 static int usb_init(void)
@@ -1179,8 +1148,8 @@ int usb_dc_ep_disable(const uint8_t ep)
 	if (ep_state->ep_addr == EP0_IN) {
 		REG_SET_BIT(USB_TXC0_REG, USB_IGN_IN);
 	} else if (ep_state->ep_addr == EP0_OUT) {
-		USB->USB_RXC0_REG = USB_USB_RXC0_REG_USB_IGN_SETUP_Msk |
-				    USB_USB_RXC0_REG_USB_IGN_OUT_Msk;
+		USB->USB_RXC0_REG =
+			USB_USB_RXC0_REG_USB_IGN_SETUP_Msk | USB_USB_RXC0_REG_USB_IGN_OUT_Msk;
 	} else if (USB_EP_DIR_IS_OUT(ep)) {
 		ep_state->regs->epc_out &= ~USB_USB_EPC2_REG_USB_EP_EN_Msk;
 	} else {
@@ -1223,8 +1192,7 @@ int usb_dc_ep_read_continue(uint8_t ep)
 	return 0;
 }
 
-int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
-			uint32_t *read_bytes)
+int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_t *read_bytes)
 {
 	struct smartbond_ep_state *ep_state = usb_dc_get_ep_out_state(ep);
 	uint16_t read_count;
@@ -1257,8 +1225,8 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 	return 0;
 }
 
-int usb_dc_ep_read(const uint8_t ep, uint8_t *const data,
-		   const uint32_t max_data_len, uint32_t *const read_bytes)
+int usb_dc_ep_read(const uint8_t ep, uint8_t *const data, const uint32_t max_data_len,
+		   uint32_t *const read_bytes)
 {
 	if (usb_dc_ep_read_wait(ep, data, max_data_len, read_bytes) != 0) {
 		return -EINVAL;
@@ -1351,8 +1319,7 @@ int usb_dc_set_address(const uint8_t addr)
 
 	/* Set default address for one ZLP */
 	USB->USB_EPC0_REG = USB_USB_EPC0_REG_USB_DEF_Msk;
-	USB->USB_FAR_REG = (addr & USB_USB_FAR_REG_USB_AD_Msk) |
-			   USB_USB_FAR_REG_USB_AD_EN_Msk;
+	USB->USB_FAR_REG = (addr & USB_USB_FAR_REG_USB_AD_Msk) | USB_USB_FAR_REG_USB_AD_EN_Msk;
 
 	return 0;
 }
@@ -1370,7 +1337,7 @@ int usb_dc_ep_clear_stall(const uint8_t ep)
 		LOG_ERR("Not valid endpoint: %02x", ep);
 		return -EINVAL;
 	}
-	regs =  ep_state->regs;
+	regs = ep_state->regs;
 
 	/* Clear stall is called in response to Clear Feature ENDPOINT_HALT,
 	 * reset toggle

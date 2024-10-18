@@ -59,8 +59,8 @@ static ALWAYS_INLINE void mdio_gpio_read(const struct mdio_gpio_config *dev_cfg,
 	*pdata = data;
 }
 
-static ALWAYS_INLINE void mdio_gpio_write(const struct mdio_gpio_config *dev_cfg,
-					  uint32_t data, uint8_t len)
+static ALWAYS_INLINE void mdio_gpio_write(const struct mdio_gpio_config *dev_cfg, uint32_t data,
+					  uint8_t len)
 {
 	uint32_t v_data = data;
 	uint32_t v_len = len;

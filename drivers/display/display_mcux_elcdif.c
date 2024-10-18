@@ -28,7 +28,7 @@
 LOG_MODULE_REGISTER(display_mcux_elcdif, CONFIG_DISPLAY_LOG_LEVEL);
 
 /* Define the heap size. 512 bytes of padding are included for kernel heap structures */
-K_HEAP_DEFINE(display_heap, CONFIG_MCUX_ELCDIF_FB_NUM * CONFIG_MCUX_ELCDIF_FB_SIZE + 512);
+K_HEAP_DEFINE(display_heap, CONFIG_MCUX_ELCDIF_FB_NUM *CONFIG_MCUX_ELCDIF_FB_SIZE + 512);
 
 static const uint32_t supported_fmts = PIXEL_FORMAT_BGR_565 | PIXEL_FORMAT_ARGB_8888;
 
@@ -405,7 +405,7 @@ static const struct display_driver_api mcux_elcdif_api = {
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),                                      \
 		.backlight_gpio = GPIO_DT_SPEC_INST_GET(id, backlight_gpios),                      \
 		IF_ENABLED(CONFIG_MCUX_ELCDIF_PXP,                                                 \
-			   (.pxp = DEVICE_DT_GET(DT_INST_PHANDLE(id, nxp_pxp)),))};               \
+			   (.pxp = DEVICE_DT_GET(DT_INST_PHANDLE(id, nxp_pxp)),))};                   \
 	static struct mcux_elcdif_data mcux_elcdif_data_##id = {                                   \
 		.next_idx = 0,                                                                     \
 		.pixel_format = DT_INST_PROP(id, pixel_format),                                    \

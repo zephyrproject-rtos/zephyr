@@ -20,7 +20,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_PWM_LOG_LEVEL);
 
-#define DT_DRV_COMPAT	nxp_s32_emios_pwm
+#define DT_DRV_COMPAT nxp_s32_emios_pwm
 
 /*
  * Need to fill to this array at runtime, cannot do at build time like
@@ -77,7 +77,7 @@ struct pwm_nxp_s32_config {
 #endif
 
 #ifdef CONFIG_PWM_CAPTURE
-	eMios_Icu_Ip_ConfigType * icu_cfg;
+	eMios_Icu_Ip_ConfigType *icu_cfg;
 #endif
 };
 
@@ -89,7 +89,7 @@ static int pwm_nxp_s32_set_cycles_internal_timebase(uint8_t instance, uint32_t c
 	bool need_update = false;
 
 	if ((period_cycles > EMIOS_PWM_IP_MAX_CNT_VAL) ||
-		(period_cycles <= EMIOS_PWM_IP_MIN_CNT_VAL)) {
+	    (period_cycles <= EMIOS_PWM_IP_MIN_CNT_VAL)) {
 		LOG_ERR("period_cycles is out of range");
 		return -EINVAL;
 	}
@@ -123,7 +123,7 @@ static int pwm_nxp_s32_set_cycles_external_timebase(uint8_t instance, uint32_t c
 	uint8_t master_channel;
 
 	if ((period_cycles > EMIOS_PWM_IP_MAX_CNT_VAL) ||
-		(period_cycles <= EMIOS_PWM_IP_MIN_CNT_VAL)) {
+	    (period_cycles <= EMIOS_PWM_IP_MIN_CNT_VAL)) {
 		LOG_ERR("period_cycles is out of range");
 		return -EINVAL;
 	}
@@ -153,8 +153,7 @@ static int pwm_nxp_s32_set_cycles_external_timebase(uint8_t instance, uint32_t c
 #endif
 
 static int pwm_nxp_s32_set_cycles(const struct device *dev, uint32_t channel,
-				  uint32_t period_cycles, uint32_t pulse_cycles,
-				  pwm_flags_t flags)
+				  uint32_t period_cycles, uint32_t pulse_cycles, pwm_flags_t flags)
 {
 	const struct pwm_nxp_s32_config *config = dev->config;
 	struct pwm_nxp_s32_data *data = dev->data;
@@ -168,7 +167,7 @@ static int pwm_nxp_s32_set_cycles(const struct device *dev, uint32_t channel,
 	}
 
 	if (eMios_Pwm_Ip_IndexInChState[config->instance][channel] >=
-		EMIOS_PWM_IP_NUM_OF_CHANNELS_USED) {
+	    EMIOS_PWM_IP_NUM_OF_CHANNELS_USED) {
 		LOG_ERR("Channel %d is not configured for PWM", channel);
 		return -EINVAL;
 	}
@@ -196,15 +195,14 @@ static int pwm_nxp_s32_set_cycles(const struct device *dev, uint32_t channel,
 			return -EINVAL;
 		}
 
-		return pwm_nxp_s32_set_cycles_external_timebase(config->instance, channel,
-								(period_cycles + 2) / 2,
-								pulse_cycles);
+		return pwm_nxp_s32_set_cycles_external_timebase(
+			config->instance, channel, (period_cycles + 2) / 2, pulse_cycles);
 #endif
 
 #if defined(EMIOS_PWM_IP_MODE_OPWMB_USED)
 	case EMIOS_PWM_IP_MODE_OPWMB_FLAG:
-		if ((Emios_Pwm_Ip_GetPhaseShift(config->instance, channel) +
-						pulse_cycles) > period_cycles) {
+		if ((Emios_Pwm_Ip_GetPhaseShift(config->instance, channel) + pulse_cycles) >
+		    period_cycles) {
 			LOG_ERR("OPWMB mode: new duty cycle + phase shift must <= new period");
 			return -EINVAL;
 		}
@@ -241,11 +239,11 @@ static ALWAYS_INLINE eMios_Icu_ValueType pwm_nxp_s32_pulse_calc(bool inverted,
 	eMios_Icu_ValueType first_cnt, second_cnt;
 
 	if (input_state ^ inverted) {
-		 /* 3 edges captured is raise, fall, raise */
+		/* 3 edges captured is raise, fall, raise */
 		first_cnt = edge_buff[0];
 		second_cnt = edge_buff[1];
 	} else {
-		 /* 3 edges captured is fall, raise, fall */
+		/* 3 edges captured is fall, raise, fall */
 		first_cnt = edge_buff[1];
 		second_cnt = edge_buff[2];
 	}
@@ -253,11 +251,9 @@ static ALWAYS_INLINE eMios_Icu_ValueType pwm_nxp_s32_pulse_calc(bool inverted,
 	return pwm_nxp_s32_capture_calc(first_cnt, second_cnt);
 }
 
-static int pwm_nxp_s32_capture_configure(const struct device *dev,
-					uint32_t channel,
-					pwm_flags_t flags,
-					pwm_capture_callback_handler_t cb,
-					void *user_data)
+static int pwm_nxp_s32_capture_configure(const struct device *dev, uint32_t channel,
+					 pwm_flags_t flags, pwm_capture_callback_handler_t cb,
+					 void *user_data)
 {
 	const struct pwm_nxp_s32_config *config = dev->config;
 	struct pwm_nxp_s32_data *data = dev->data;
@@ -273,7 +269,7 @@ static int pwm_nxp_s32_capture_configure(const struct device *dev,
 	}
 
 	if (eMios_Icu_Ip_IndexInChState[config->instance][channel] >=
-		EMIOS_ICU_IP_NUM_OF_CHANNELS_USED) {
+	    EMIOS_ICU_IP_NUM_OF_CHANNELS_USED) {
 		LOG_ERR("Channel %d is not configured for PWM", channel);
 		return -EINVAL;
 	}
@@ -308,7 +304,7 @@ static int pwm_nxp_s32_capture_enable(const struct device *dev, uint32_t channel
 	}
 
 	if (eMios_Icu_Ip_IndexInChState[config->instance][channel] >=
-		EMIOS_ICU_IP_NUM_OF_CHANNELS_USED) {
+	    EMIOS_ICU_IP_NUM_OF_CHANNELS_USED) {
 		LOG_ERR("Channel %d is not configured for PWM", channel);
 		return -EINVAL;
 	}
@@ -337,8 +333,7 @@ static int pwm_nxp_s32_capture_enable(const struct device *dev, uint32_t channel
 
 	Emios_Icu_Ip_EnableNotification(config->instance, channel);
 
-	Emios_Icu_Ip_StartTimestamp(config->instance, channel,
-				    data->capture[channel].edge_buff,
+	Emios_Icu_Ip_StartTimestamp(config->instance, channel, data->capture[channel].edge_buff,
 				    MAX_NUM_EDGE, num_edge);
 
 	return 0;
@@ -354,7 +349,7 @@ static int pwm_nxp_s32_capture_disable(const struct device *dev, uint32_t channe
 	}
 
 	if (eMios_Icu_Ip_IndexInChState[config->instance][channel] >=
-		EMIOS_ICU_IP_NUM_OF_CHANNELS_USED) {
+	    EMIOS_ICU_IP_NUM_OF_CHANNELS_USED) {
 		LOG_ERR("Channel %d is not configured for PWM", channel);
 		return -EINVAL;
 	}
@@ -391,8 +386,7 @@ static int pwm_nxp_s32_get_master_bus(const struct device *dev, uint32_t channel
 }
 #endif
 
-static int pwm_nxp_s32_get_cycles_per_sec(const struct device *dev,
-					  uint32_t channel,
+static int pwm_nxp_s32_get_cycles_per_sec(const struct device *dev, uint32_t channel,
 					  uint64_t *cycles)
 {
 	const struct pwm_nxp_s32_config *config = dev->config;
@@ -421,14 +415,14 @@ static int pwm_nxp_s32_get_cycles_per_sec(const struct device *dev,
 	}
 
 	internal_prescaler = (config->base->CH.UC[master_bus].C2 & eMIOS_C2_UCEXTPRE_MASK) >>
-			      eMIOS_C2_UCEXTPRE_SHIFT;
+			     eMIOS_C2_UCEXTPRE_SHIFT;
 
 	/* Clock source for internal prescaler is from either eMIOS or eMIOS / global prescaler */
 	if (config->base->CH.UC[master_bus].C2 & eMIOS_C2_UCPRECLK_MASK) {
 		*cycles = data->emios_clk / (internal_prescaler + 1);
 	} else {
-		global_prescaler = (config->base->MCR & eMIOS_MCR_GPRE_MASK) >>
-				    eMIOS_MCR_GPRE_SHIFT;
+		global_prescaler =
+			(config->base->MCR & eMIOS_MCR_GPRE_MASK) >> eMIOS_MCR_GPRE_SHIFT;
 		*cycles = data->emios_clk / ((internal_prescaler + 1) * (global_prescaler + 1));
 	}
 
@@ -489,13 +483,12 @@ static void pwm_nxp_s32_capture_callback(const struct device *dev, uint32_t chan
 
 	if (data->capture[channel].period_capture && !data->capture[channel].pulse_capture) {
 		period = pwm_nxp_s32_capture_calc(data->capture[channel].edge_buff[0],
-						 data->capture[channel].edge_buff[1]);
+						  data->capture[channel].edge_buff[1]);
 	} else {
 		if (data->capture[channel].pulse_capture) {
-			pulse = pwm_nxp_s32_pulse_calc(data->capture[channel].inverted,
-						       data->capture[channel].edge_buff,
-						       Emios_Icu_Ip_GetInputLevel(config->instance,
-										  channel));
+			pulse = pwm_nxp_s32_pulse_calc(
+				data->capture[channel].inverted, data->capture[channel].edge_buff,
+				Emios_Icu_Ip_GetInputLevel(config->instance, channel));
 		}
 
 		if (data->capture[channel].period_capture) {
@@ -524,8 +517,7 @@ static int pwm_nxp_s32_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
-					&data->emios_clk)) {
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &data->emios_clk)) {
 		return -EINVAL;
 	}
 
@@ -564,153 +556,148 @@ static const struct pwm_driver_api pwm_nxp_s32_driver_api = {
 /*
  * If timebase is configured in MCB up/down count mode: pwm period = (2 * master bus's period - 2)
  */
-#define EMIOS_PWM_PERIOD_TIME_BASE(node_id)							\
+#define EMIOS_PWM_PERIOD_TIME_BASE(node_id)                                                        \
 	COND_CODE_1(DT_ENUM_HAS_VALUE(node_id, mode, MCB_UP_DOWN_COUNTER),			\
 		   (2 * DT_PROP_BY_PHANDLE(node_id, master_bus, period) - 2),			\
 		   (DT_PROP_BY_PHANDLE(node_id, master_bus, period)))
 
-#define EMIOS_PWM_IS_MODE_OPWFMB(node_id)							\
-	DT_ENUM_HAS_VALUE(node_id, pwm_mode, OPWFMB)
+#define EMIOS_PWM_IS_MODE_OPWFMB(node_id) DT_ENUM_HAS_VALUE(node_id, pwm_mode, OPWFMB)
 
-#define EMIOS_PWM_IS_MODE_OPWMCB(node_id)							\
-	UTIL_OR(DT_ENUM_HAS_VALUE(node_id, pwm_mode, OPWMCB_TRAIL_EDGE),			\
-		DT_ENUM_HAS_VALUE(node_id, pwm_mode, OPWMCB_LEAD_EDGE))				\
+#define EMIOS_PWM_IS_MODE_OPWMCB(node_id)                                                          \
+	UTIL_OR(DT_ENUM_HAS_VALUE(node_id, pwm_mode, OPWMCB_TRAIL_EDGE),                           \
+		DT_ENUM_HAS_VALUE(node_id, pwm_mode, OPWMCB_LEAD_EDGE))
 
-#define EMIOS_PWM_IS_MODE_OPWMB(node_id)							\
-	DT_ENUM_HAS_VALUE(node_id, pwm_mode, OPWMB)
+#define EMIOS_PWM_IS_MODE_OPWMB(node_id) DT_ENUM_HAS_VALUE(node_id, pwm_mode, OPWMB)
 
-#define EMIOS_PWM_IS_MODE_SAIC(node_id)								\
-	DT_ENUM_HAS_VALUE(node_id, pwm_mode, SAIC)
+#define EMIOS_PWM_IS_MODE_SAIC(node_id) DT_ENUM_HAS_VALUE(node_id, pwm_mode, SAIC)
 
-#define EMIOS_PWM_IS_CAPTURE_MODE(node_id)							\
-	EMIOS_PWM_IS_MODE_SAIC(node_id)
+#define EMIOS_PWM_IS_CAPTURE_MODE(node_id) EMIOS_PWM_IS_MODE_SAIC(node_id)
 
-#define EMIOS_PWM_LOG(node_id, msg)								\
-	DT_NODE_PATH(node_id) ": " DT_PROP(node_id, pwm_mode) ": " msg				\
+#define EMIOS_PWM_LOG(node_id, msg) DT_NODE_PATH(node_id) ": " DT_PROP(node_id, pwm_mode) ": " msg
 
-#define EMIOS_PWM_VERIFY_MASTER_BUS(node_id)							\
-	BUILD_ASSERT(BIT(DT_PROP(node_id, channel)) &						\
-		     DT_PROP_BY_PHANDLE(node_id, master_bus, channel_mask),			\
+#define EMIOS_PWM_VERIFY_MASTER_BUS(node_id)                                                       \
+	BUILD_ASSERT(BIT(DT_PROP(node_id, channel)) &                                              \
+			     DT_PROP_BY_PHANDLE(node_id, master_bus, channel_mask),                \
 		     EMIOS_PWM_LOG(node_id, "invalid master bus"));
 
-#define EMIOS_PWM_PULSE_GEN_COMMON_VERIFY(node_id)						\
-	BUILD_ASSERT(DT_NODE_HAS_PROP(node_id, duty_cycle),					\
-		     EMIOS_PWM_LOG(node_id, "duty-cycle must be configured"));			\
-	BUILD_ASSERT(DT_NODE_HAS_PROP(node_id, polarity),					\
-		     EMIOS_PWM_LOG(node_id, "polarity must be configured"));			\
-	BUILD_ASSERT(DT_NODE_HAS_PROP(node_id, input_filter),					\
+#define EMIOS_PWM_PULSE_GEN_COMMON_VERIFY(node_id)                                                 \
+	BUILD_ASSERT(DT_NODE_HAS_PROP(node_id, duty_cycle),                                        \
+		     EMIOS_PWM_LOG(node_id, "duty-cycle must be configured"));                     \
+	BUILD_ASSERT(DT_NODE_HAS_PROP(node_id, polarity),                                          \
+		     EMIOS_PWM_LOG(node_id, "polarity must be configured"));                       \
+	BUILD_ASSERT(DT_NODE_HAS_PROP(node_id, input_filter),                                      \
 		     EMIOS_PWM_LOG(node_id, "input-filter is not used"));
 
-#define EMIOS_PWM_VERIFY_MODE_OPWFMB(node_id)							\
-	EMIOS_PWM_PULSE_GEN_COMMON_VERIFY(node_id)						\
-	BUILD_ASSERT(DT_NODE_HAS_PROP(node_id, period),						\
-		     EMIOS_PWM_LOG(node_id, "period must be configured"));			\
-	BUILD_ASSERT(IN_RANGE(DT_PROP(node_id, period), EMIOS_PWM_IP_MIN_CNT_VAL + 1,		\
-			      EMIOS_PWM_IP_MAX_CNT_VAL),					\
-		     EMIOS_PWM_LOG(node_id, "period is out of range"));				\
-	BUILD_ASSERT(DT_PROP(node_id, duty_cycle) <= DT_PROP(node_id, period),			\
-		     EMIOS_PWM_LOG(node_id, "duty-cycle must <= period"));			\
-	BUILD_ASSERT(!DT_NODE_HAS_PROP(node_id, master_bus),					\
-		     EMIOS_PWM_LOG(node_id, "master-bus must not be configured"));		\
-	BUILD_ASSERT(DT_PROP(node_id, dead_time) == 0,						\
-		     EMIOS_PWM_LOG(node_id, "dead-time is not used"));				\
-	BUILD_ASSERT(DT_PROP(node_id, phase_shift) == 0,					\
+#define EMIOS_PWM_VERIFY_MODE_OPWFMB(node_id)                                                      \
+	EMIOS_PWM_PULSE_GEN_COMMON_VERIFY(node_id)                                                 \
+	BUILD_ASSERT(DT_NODE_HAS_PROP(node_id, period),                                            \
+		     EMIOS_PWM_LOG(node_id, "period must be configured"));                         \
+	BUILD_ASSERT(IN_RANGE(DT_PROP(node_id, period), EMIOS_PWM_IP_MIN_CNT_VAL + 1,              \
+			      EMIOS_PWM_IP_MAX_CNT_VAL),                                           \
+		     EMIOS_PWM_LOG(node_id, "period is out of range"));                            \
+	BUILD_ASSERT(DT_PROP(node_id, duty_cycle) <= DT_PROP(node_id, period),                     \
+		     EMIOS_PWM_LOG(node_id, "duty-cycle must <= period"));                         \
+	BUILD_ASSERT(!DT_NODE_HAS_PROP(node_id, master_bus),                                       \
+		     EMIOS_PWM_LOG(node_id, "master-bus must not be configured"));                 \
+	BUILD_ASSERT(DT_PROP(node_id, dead_time) == 0,                                             \
+		     EMIOS_PWM_LOG(node_id, "dead-time is not used"));                             \
+	BUILD_ASSERT(DT_PROP(node_id, phase_shift) == 0,                                           \
 		     EMIOS_PWM_LOG(node_id, "phase-shift is not used"));
 
-#define EMIOS_PWM_VERIFY_MODE_OPWMCB(node_id)							\
-	EMIOS_PWM_PULSE_GEN_COMMON_VERIFY(node_id)						\
-	BUILD_ASSERT(DT_ENUM_HAS_VALUE(DT_PHANDLE(node_id, master_bus),	mode,			\
-		     MCB_UP_DOWN_COUNTER),							\
-		     EMIOS_PWM_LOG(node_id, "master-bus must be configured in MCB up-down"));	\
-	BUILD_ASSERT((DT_PROP(node_id, duty_cycle) + DT_PROP(node_id, dead_time)) <=		\
-		     EMIOS_PWM_PERIOD_TIME_BASE(node_id),					\
-		     EMIOS_PWM_LOG(node_id, "duty-cycle + dead-time must <= period"));		\
-	BUILD_ASSERT(DT_PROP(node_id, dead_time) <= DT_PROP(node_id, duty_cycle),		\
-		     EMIOS_PWM_LOG(node_id, "dead-time must <= duty-cycle"));			\
-	BUILD_ASSERT(DT_PROP(node_id, phase_shift) == 0,					\
-		     EMIOS_PWM_LOG(node_id, "phase-shift is not used"));			\
-	BUILD_ASSERT(!DT_NODE_HAS_PROP(node_id, period),					\
-		     EMIOS_PWM_LOG(node_id, "period is not used,"				\
-		     " driver takes the value from master bus"));				\
-	BUILD_ASSERT(!DT_NODE_HAS_PROP(node_id, prescaler),					\
-		     EMIOS_PWM_LOG(node_id, "prescaler is not used,"				\
-		     " driver takes the value from master bus"));				\
-	BUILD_ASSERT(DT_ENUM_HAS_VALUE(node_id, prescaler_src, PRESCALED_CLOCK),		\
-		     EMIOS_PWM_LOG(node_id, "prescaler-src is not used,"			\
-		     " always use prescalered source"));					\
+#define EMIOS_PWM_VERIFY_MODE_OPWMCB(node_id)                                                      \
+	EMIOS_PWM_PULSE_GEN_COMMON_VERIFY(node_id)                                                 \
+	BUILD_ASSERT(                                                                              \
+		DT_ENUM_HAS_VALUE(DT_PHANDLE(node_id, master_bus), mode, MCB_UP_DOWN_COUNTER),     \
+		EMIOS_PWM_LOG(node_id, "master-bus must be configured in MCB up-down"));           \
+	BUILD_ASSERT((DT_PROP(node_id, duty_cycle) + DT_PROP(node_id, dead_time)) <=               \
+			     EMIOS_PWM_PERIOD_TIME_BASE(node_id),                                  \
+		     EMIOS_PWM_LOG(node_id, "duty-cycle + dead-time must <= period"));             \
+	BUILD_ASSERT(DT_PROP(node_id, dead_time) <= DT_PROP(node_id, duty_cycle),                  \
+		     EMIOS_PWM_LOG(node_id, "dead-time must <= duty-cycle"));                      \
+	BUILD_ASSERT(DT_PROP(node_id, phase_shift) == 0,                                           \
+		     EMIOS_PWM_LOG(node_id, "phase-shift is not used"));                           \
+	BUILD_ASSERT(!DT_NODE_HAS_PROP(node_id, period),                                           \
+		     EMIOS_PWM_LOG(node_id, "period is not used,"                                  \
+					    " driver takes the value from master bus"));           \
+	BUILD_ASSERT(!DT_NODE_HAS_PROP(node_id, prescaler),                                        \
+		     EMIOS_PWM_LOG(node_id, "prescaler is not used,"                               \
+					    " driver takes the value from master bus"));           \
+	BUILD_ASSERT(DT_ENUM_HAS_VALUE(node_id, prescaler_src, PRESCALED_CLOCK),                   \
+		     EMIOS_PWM_LOG(node_id, "prescaler-src is not used,"                           \
+					    " always use prescalered source"));
 
-#define EMIOS_PWM_VERIFY_MODE_OPWMB(node_id)							\
-	EMIOS_PWM_PULSE_GEN_COMMON_VERIFY(node_id)						\
-	BUILD_ASSERT(DT_ENUM_HAS_VALUE(DT_PHANDLE(node_id, master_bus),	mode, MCB_UP_COUNTER),	\
-		     EMIOS_PWM_LOG(node_id, "master-bus must be configured in MCB up"));	\
-	BUILD_ASSERT(!DT_NODE_HAS_PROP(node_id, period),					\
-		     EMIOS_PWM_LOG(node_id, "period is not used,"				\
-		     " driver takes the value from master bus"));				\
-	BUILD_ASSERT((DT_PROP(node_id, duty_cycle) + DT_PROP(node_id, phase_shift)) <=		\
-		     EMIOS_PWM_PERIOD_TIME_BASE(node_id),					\
-		     EMIOS_PWM_LOG(node_id, "duty-cycle + phase-shift must <= period"));	\
-	BUILD_ASSERT(DT_PROP(node_id, dead_time) == 0,						\
-		     EMIOS_PWM_LOG(node_id, "dead-time is not used"));				\
-	BUILD_ASSERT(!DT_NODE_HAS_PROP(node_id, prescaler),					\
-		     EMIOS_PWM_LOG(node_id, "prescaler is not used"));				\
-	BUILD_ASSERT(DT_ENUM_HAS_VALUE(node_id, prescaler_src, PRESCALED_CLOCK),		\
-		     EMIOS_PWM_LOG(node_id, "prescaler-src is not used,"			\
-		     " always use prescalered source"));					\
+#define EMIOS_PWM_VERIFY_MODE_OPWMB(node_id)                                                       \
+	EMIOS_PWM_PULSE_GEN_COMMON_VERIFY(node_id)                                                 \
+	BUILD_ASSERT(DT_ENUM_HAS_VALUE(DT_PHANDLE(node_id, master_bus), mode, MCB_UP_COUNTER),     \
+		     EMIOS_PWM_LOG(node_id, "master-bus must be configured in MCB up"));           \
+	BUILD_ASSERT(!DT_NODE_HAS_PROP(node_id, period),                                           \
+		     EMIOS_PWM_LOG(node_id, "period is not used,"                                  \
+					    " driver takes the value from master bus"));           \
+	BUILD_ASSERT((DT_PROP(node_id, duty_cycle) + DT_PROP(node_id, phase_shift)) <=             \
+			     EMIOS_PWM_PERIOD_TIME_BASE(node_id),                                  \
+		     EMIOS_PWM_LOG(node_id, "duty-cycle + phase-shift must <= period"));           \
+	BUILD_ASSERT(DT_PROP(node_id, dead_time) == 0,                                             \
+		     EMIOS_PWM_LOG(node_id, "dead-time is not used"));                             \
+	BUILD_ASSERT(!DT_NODE_HAS_PROP(node_id, prescaler),                                        \
+		     EMIOS_PWM_LOG(node_id, "prescaler is not used"));                             \
+	BUILD_ASSERT(DT_ENUM_HAS_VALUE(node_id, prescaler_src, PRESCALED_CLOCK),                   \
+		     EMIOS_PWM_LOG(node_id, "prescaler-src is not used,"                           \
+					    " always use prescalered source"));
 
-#define EMIOS_PWM_VERIFY_MODE_SAIC(node_id)							\
+#define EMIOS_PWM_VERIFY_MODE_SAIC(node_id)                                                        \
 	IF_ENABLED(DT_NODE_HAS_PROP(node_id, master_bus),					\
 		  (BUILD_ASSERT(								\
 		   DT_ENUM_HAS_VALUE(DT_PHANDLE(node_id, master_bus), mode, MCB_UP_COUNTER),	\
-		   EMIOS_PWM_LOG(node_id, "master-bus must be configured in MCB up"));))	\
+		   EMIOS_PWM_LOG(node_id, "master-bus must be configured in MCB up"));))                                    \
 	IF_ENABLED(DT_NODE_HAS_PROP(node_id, master_bus),					\
 		  (BUILD_ASSERT(DT_PROP_BY_PHANDLE(node_id, master_bus, period) == 0xFFFF,	\
-		   EMIOS_PWM_LOG(node_id, "master-bus period must be 0xFFFF"));))		\
+		   EMIOS_PWM_LOG(node_id, "master-bus period must be 0xFFFF"));))                                    \
 	IF_ENABLED(UTIL_NOT(DT_NODE_HAS_PROP(node_id, master_bus)),				\
 		   (BUILD_ASSERT(								\
 		    BIT(DT_PROP(node_id, channel)) & DT_PROP(DT_GPARENT(node_id), internal_cnt),\
 		    EMIOS_PWM_LOG(node_id, "master-bus must be chosen,"				\
-		    " channel do not have has counter"))));					\
+		    " channel do not have has counter"))));  \
 	IF_ENABLED(UTIL_NOT(DT_NODE_HAS_PROP(node_id, master_bus)),				\
 		   (BUILD_ASSERT(DT_NODE_HAS_PROP(node_id, prescaler),				\
 		    EMIOS_PWM_LOG(node_id, "if use internal counter, prescaler must"		\
-		    " be configured"))));							\
-	BUILD_ASSERT(!DT_NODE_HAS_PROP(node_id, duty_cycle),					\
-		     EMIOS_PWM_LOG(node_id, "duty-cycle is not used"));				\
-	BUILD_ASSERT(!DT_NODE_HAS_PROP(node_id, polarity),					\
-		     EMIOS_PWM_LOG(node_id, "polarity is not used"));				\
-	BUILD_ASSERT(!DT_NODE_HAS_PROP(node_id, period),					\
-		     EMIOS_PWM_LOG(node_id, "period is not used"));				\
-	BUILD_ASSERT(DT_ENUM_HAS_VALUE(node_id, prescaler_src, PRESCALED_CLOCK),		\
-		     EMIOS_PWM_LOG(node_id, "prescaler-src is not used,"			\
-		     " always use prescalered source"));
+		    " be configured"))));                            \
+	BUILD_ASSERT(!DT_NODE_HAS_PROP(node_id, duty_cycle),                                       \
+		     EMIOS_PWM_LOG(node_id, "duty-cycle is not used"));                            \
+	BUILD_ASSERT(!DT_NODE_HAS_PROP(node_id, polarity),                                         \
+		     EMIOS_PWM_LOG(node_id, "polarity is not used"));                              \
+	BUILD_ASSERT(!DT_NODE_HAS_PROP(node_id, period),                                           \
+		     EMIOS_PWM_LOG(node_id, "period is not used"));                                \
+	BUILD_ASSERT(DT_ENUM_HAS_VALUE(node_id, prescaler_src, PRESCALED_CLOCK),                   \
+		     EMIOS_PWM_LOG(node_id, "prescaler-src is not used,"                           \
+					    " always use prescalered source"));
 
-#define _EMIOS_PWM_VERIFY_CONFIG(node_id)							\
+#define _EMIOS_PWM_VERIFY_CONFIG(node_id)                                                          \
 	IF_ENABLED(DT_NODE_HAS_PROP(node_id, master_bus),					\
-		  (EMIOS_PWM_VERIFY_MASTER_BUS(node_id)))					\
+		  (EMIOS_PWM_VERIFY_MASTER_BUS(node_id)))                                    \
 	IF_ENABLED(EMIOS_PWM_IS_MODE_OPWFMB(node_id),						\
-		  (EMIOS_PWM_VERIFY_MODE_OPWFMB(node_id)))					\
+		  (EMIOS_PWM_VERIFY_MODE_OPWFMB(node_id)))                                       \
 	IF_ENABLED(EMIOS_PWM_IS_MODE_OPWMCB(node_id),						\
-		  (EMIOS_PWM_VERIFY_MODE_OPWMCB(node_id)))					\
+		  (EMIOS_PWM_VERIFY_MODE_OPWMCB(node_id)))                                       \
 	IF_ENABLED(EMIOS_PWM_IS_MODE_OPWMB(node_id),						\
-		  (EMIOS_PWM_VERIFY_MODE_OPWMB(node_id)))					\
+		  (EMIOS_PWM_VERIFY_MODE_OPWMB(node_id)))                                        \
 	IF_ENABLED(EMIOS_PWM_IS_MODE_SAIC(node_id),						\
 		   (EMIOS_PWM_VERIFY_MODE_SAIC(node_id)))
 
 #if EMIOS_PWM_IP_USED
 /* Macros used to glue devicetree with RTD's definition */
-#define EMIOS_PWM_BUS_A			EMIOS_PWM_IP_BUS_A
-#define EMIOS_PWM_BUS_B			EMIOS_PWM_IP_BUS_BCDE
-#define EMIOS_PWM_BUS_C			EMIOS_PWM_IP_BUS_BCDE
-#define EMIOS_PWM_BUS_D			EMIOS_PWM_IP_BUS_BCDE
-#define EMIOS_PWM_BUS_E			EMIOS_PWM_IP_BUS_BCDE
-#define EMIOS_PWM_BUS_F			EMIOS_PWM_IP_BUS_F
+#define EMIOS_PWM_BUS_A EMIOS_PWM_IP_BUS_A
+#define EMIOS_PWM_BUS_B EMIOS_PWM_IP_BUS_BCDE
+#define EMIOS_PWM_BUS_C EMIOS_PWM_IP_BUS_BCDE
+#define EMIOS_PWM_BUS_D EMIOS_PWM_IP_BUS_BCDE
+#define EMIOS_PWM_BUS_E EMIOS_PWM_IP_BUS_BCDE
+#define EMIOS_PWM_BUS_F EMIOS_PWM_IP_BUS_F
 
-#define EMIOS_PWM_BUS(mode)		DT_CAT(EMIOS_PWM_, mode)
-#define EMIOS_PWM_MODE(mode)		DT_CAT3(EMIOS_PWM_IP_MODE_, mode, _FLAG)
-#define EMIOS_PWM_POLARITY(mode)	DT_CAT(EMIOS_PWM_IP_, mode)
-#define EMIOS_PWM_PS_SRC(mode)		DT_CAT(EMIOS_PWM_IP_PS_SRC_, mode)
+#define EMIOS_PWM_BUS(mode)      DT_CAT(EMIOS_PWM_, mode)
+#define EMIOS_PWM_MODE(mode)     DT_CAT3(EMIOS_PWM_IP_MODE_, mode, _FLAG)
+#define EMIOS_PWM_POLARITY(mode) DT_CAT(EMIOS_PWM_IP_, mode)
+#define EMIOS_PWM_PS_SRC(mode)   DT_CAT(EMIOS_PWM_IP_PS_SRC_, mode)
 
-#define _EMIOS_PWM_PULSE_GEN_CONFIG(node_id)							\
+#define _EMIOS_PWM_PULSE_GEN_CONFIG(node_id)                                                       \
 	IF_ENABLED(UTIL_NOT(EMIOS_PWM_IS_CAPTURE_MODE(node_id)),				\
 	({											\
 		.ChannelId = DT_PROP(node_id, channel),						\
@@ -731,16 +718,15 @@ static const struct pwm_driver_api pwm_nxp_s32_driver_api = {
 		.DutyCycle   = DT_PROP(node_id, duty_cycle),					\
 	},))
 
-#define EMIOS_PWM_PULSE_GEN_CONFIG(n)								\
-	const Emios_Pwm_Ip_ChannelConfigType emios_pwm_##n##_init[] = {				\
-		DT_INST_FOREACH_CHILD_STATUS_OKAY(n, _EMIOS_PWM_PULSE_GEN_CONFIG)		\
-	};											\
-	const struct pwm_nxp_s32_pulse_info emios_pwm_##n##_info = {				\
-		.pwm_pulse_channels = ARRAY_SIZE(emios_pwm_##n##_init),				\
-		.pwm_info = (Emios_Pwm_Ip_ChannelConfigType *)emios_pwm_##n##_init,		\
+#define EMIOS_PWM_PULSE_GEN_CONFIG(n)                                                              \
+	const Emios_Pwm_Ip_ChannelConfigType emios_pwm_##n##_init[] = {                            \
+		DT_INST_FOREACH_CHILD_STATUS_OKAY(n, _EMIOS_PWM_PULSE_GEN_CONFIG)};                \
+	const struct pwm_nxp_s32_pulse_info emios_pwm_##n##_info = {                               \
+		.pwm_pulse_channels = ARRAY_SIZE(emios_pwm_##n##_init),                            \
+		.pwm_info = (Emios_Pwm_Ip_ChannelConfigType *)emios_pwm_##n##_init,                \
 	};
 
-#define EMIOS_PWM_PULSE_GEN_GET_CONFIG(n)							\
+#define EMIOS_PWM_PULSE_GEN_GET_CONFIG(n)                                                          \
 	.pulse_info = (struct pwm_nxp_s32_pulse_info *)&emios_pwm_##n##_info,
 #else
 #define EMIOS_PWM_PULSE_GEN_CONFIG(n)
@@ -749,33 +735,32 @@ static const struct pwm_driver_api pwm_nxp_s32_driver_api = {
 
 #ifdef CONFIG_PWM_CAPTURE
 /* Macros used to glue devicetree with RTD's definition */
-#define EMIOS_ICU_BUS_A				EMIOS_ICU_BUS_A
-#define EMIOS_ICU_BUS_B				EMIOS_ICU_BUS_DIVERSE
-#define EMIOS_ICU_BUS_C				EMIOS_ICU_BUS_DIVERSE
-#define EMIOS_ICU_BUS_D				EMIOS_ICU_BUS_DIVERSE
-#define EMIOS_ICU_BUS_E				EMIOS_ICU_BUS_DIVERSE
-#define EMIOS_ICU_BUS_F				EMIOS_ICU_BUS_F
+#define EMIOS_ICU_BUS_A EMIOS_ICU_BUS_A
+#define EMIOS_ICU_BUS_B EMIOS_ICU_BUS_DIVERSE
+#define EMIOS_ICU_BUS_C EMIOS_ICU_BUS_DIVERSE
+#define EMIOS_ICU_BUS_D EMIOS_ICU_BUS_DIVERSE
+#define EMIOS_ICU_BUS_E EMIOS_ICU_BUS_DIVERSE
+#define EMIOS_ICU_BUS_F EMIOS_ICU_BUS_F
 
-#define DIGITAL_FILTER_0			EMIOS_DIGITAL_FILTER_BYPASSED
-#define DIGITAL_FILTER_2			EMIOS_DIGITAL_FILTER_02
-#define DIGITAL_FILTER_4			EMIOS_DIGITAL_FILTER_04
-#define DIGITAL_FILTER_8			EMIOS_DIGITAL_FILTER_08
-#define DIGITAL_FILTER_16			EMIOS_DIGITAL_FILTER_16
+#define DIGITAL_FILTER_0  EMIOS_DIGITAL_FILTER_BYPASSED
+#define DIGITAL_FILTER_2  EMIOS_DIGITAL_FILTER_02
+#define DIGITAL_FILTER_4  EMIOS_DIGITAL_FILTER_04
+#define DIGITAL_FILTER_8  EMIOS_DIGITAL_FILTER_08
+#define DIGITAL_FILTER_16 EMIOS_DIGITAL_FILTER_16
 
-#define EMIOS_PWM_CAPTURE_FILTER(filter)	DT_CAT(DIGITAL_FILTER_, filter)
-#define EMIOS_PWM_CAPTURE_MODE(mode)		DT_CAT(EMIOS_ICU_, mode)
-#define EMIOS_PWM_CAPTURE_BUS(mode)		DT_CAT(EMIOS_ICU_, mode)
+#define EMIOS_PWM_CAPTURE_FILTER(filter) DT_CAT(DIGITAL_FILTER_, filter)
+#define EMIOS_PWM_CAPTURE_MODE(mode)     DT_CAT(EMIOS_ICU_, mode)
+#define EMIOS_PWM_CAPTURE_BUS(mode)      DT_CAT(EMIOS_ICU_, mode)
 
-#define EMIOS_PWM_CAPTURE_CB(n, ch)								\
-	DT_CAT5(pwm_nxp_s32_, n, _channel_, ch, _capture_callback)
+#define EMIOS_PWM_CAPTURE_CB(n, ch) DT_CAT5(pwm_nxp_s32_, n, _channel_, ch, _capture_callback)
 
-#define EMIOS_PWM_CALLBACK_DECLARE(node_id, n)							\
-	void EMIOS_PWM_CAPTURE_CB(n, DT_PROP(node_id, channel))(void)				\
-	{											\
-		pwm_nxp_s32_capture_callback(DEVICE_DT_INST_GET(n), DT_PROP(node_id, channel));	\
-	}											\
+#define EMIOS_PWM_CALLBACK_DECLARE(node_id, n)                                                     \
+	void EMIOS_PWM_CAPTURE_CB(n, DT_PROP(node_id, channel))(void)                              \
+	{                                                                                          \
+		pwm_nxp_s32_capture_callback(DEVICE_DT_INST_GET(n), DT_PROP(node_id, channel));    \
+	}
 
-#define _EMIOS_PWM_PULSE_CAPTURE_CONFIG(node_id, n)						\
+#define _EMIOS_PWM_PULSE_CAPTURE_CONFIG(node_id, n)                                                \
 	IF_ENABLED(EMIOS_PWM_IS_CAPTURE_MODE(node_id),						\
 	({											\
 		.hwChannel = DT_PROP(node_id, channel),						\
@@ -802,54 +787,45 @@ static const struct pwm_driver_api pwm_nxp_s32_driver_api = {
 		.eMiosOverflowNotification = NULL_PTR,						\
 	},))
 
-#define EMIOS_PWM_PULSE_CAPTURE_CONFIG(n)							\
-	DT_INST_FOREACH_CHILD_STATUS_OKAY_VARGS(n, EMIOS_PWM_CALLBACK_DECLARE, n)		\
-	const eMios_Icu_Ip_ChannelConfigType emios_pwm_##n##_capture_init[] = {			\
-		DT_INST_FOREACH_CHILD_STATUS_OKAY_VARGS(n, _EMIOS_PWM_PULSE_CAPTURE_CONFIG, n)	\
-	};											\
-	const eMios_Icu_Ip_ConfigType emios_pwm_##n##_capture_info = {				\
-		.nNumChannels = ARRAY_SIZE(emios_pwm_##n##_capture_init),			\
-		.pChannelsConfig = &emios_pwm_##n##_capture_init,				\
+#define EMIOS_PWM_PULSE_CAPTURE_CONFIG(n)                                                          \
+	DT_INST_FOREACH_CHILD_STATUS_OKAY_VARGS(n, EMIOS_PWM_CALLBACK_DECLARE, n)                  \
+	const eMios_Icu_Ip_ChannelConfigType emios_pwm_##n##_capture_init[] = {                    \
+		DT_INST_FOREACH_CHILD_STATUS_OKAY_VARGS(n, _EMIOS_PWM_PULSE_CAPTURE_CONFIG, n)};   \
+	const eMios_Icu_Ip_ConfigType emios_pwm_##n##_capture_info = {                             \
+		.nNumChannels = ARRAY_SIZE(emios_pwm_##n##_capture_init),                          \
+		.pChannelsConfig = &emios_pwm_##n##_capture_init,                                  \
 	};
 
-#define EMIOS_PWM_PULSE_CAPTURE_GET_CONFIG(n)							\
+#define EMIOS_PWM_PULSE_CAPTURE_GET_CONFIG(n)                                                      \
 	.icu_cfg = (eMios_Icu_Ip_ConfigType *)&emios_pwm_##n##_capture_info,
 #else
 #define EMIOS_PWM_PULSE_CAPTURE_CONFIG(n)
 #define EMIOS_PWM_PULSE_CAPTURE_GET_CONFIG(n)
 #endif
 
-#define EMIOS_PWM_VERIFY_CONFIG(n)								\
-	DT_INST_FOREACH_CHILD_STATUS_OKAY(n, _EMIOS_PWM_VERIFY_CONFIG)
+#define EMIOS_PWM_VERIFY_CONFIG(n) DT_INST_FOREACH_CHILD_STATUS_OKAY(n, _EMIOS_PWM_VERIFY_CONFIG)
 
-#define EMIOS_NXP_S32_INSTANCE_CHECK(idx, node_id)						\
+#define EMIOS_NXP_S32_INSTANCE_CHECK(idx, node_id)                                                 \
 	((DT_REG_ADDR(node_id) == IP_EMIOS_##idx##_BASE) ? idx : 0)
 
-#define EMIOS_NXP_S32_GET_INSTANCE(node_id)							\
+#define EMIOS_NXP_S32_GET_INSTANCE(node_id)                                                        \
 	LISTIFY(__DEBRACKET eMIOS_INSTANCE_COUNT, EMIOS_NXP_S32_INSTANCE_CHECK, (|), node_id)
 
-#define PWM_NXP_S32_INIT_DEVICE(n)								\
-	PINCTRL_DT_INST_DEFINE(n);								\
-	EMIOS_PWM_VERIFY_CONFIG(n)								\
-	EMIOS_PWM_PULSE_GEN_CONFIG(n)								\
-	EMIOS_PWM_PULSE_CAPTURE_CONFIG(n)							\
-	static const struct pwm_nxp_s32_config pwm_nxp_s32_config_##n = {			\
-		.base = (eMIOS_Type *)DT_REG_ADDR(DT_INST_PARENT(n)),				\
-		.instance = EMIOS_NXP_S32_GET_INSTANCE(DT_INST_PARENT(n)),			\
-		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(n))),			\
-		.clock_subsys = (clock_control_subsys_t)DT_CLOCKS_CELL(DT_INST_PARENT(n), name),\
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),					\
-		EMIOS_PWM_PULSE_GEN_GET_CONFIG(n)						\
-		EMIOS_PWM_PULSE_CAPTURE_GET_CONFIG(n)						\
-	};											\
-	static struct pwm_nxp_s32_data pwm_nxp_s32_data_##n;					\
-	DEVICE_DT_INST_DEFINE(n,								\
-			&pwm_nxp_s32_init,							\
-			NULL,									\
-			&pwm_nxp_s32_data_##n,							\
-			&pwm_nxp_s32_config_##n,						\
-			POST_KERNEL,								\
-			CONFIG_PWM_INIT_PRIORITY,						\
-			&pwm_nxp_s32_driver_api);
+#define PWM_NXP_S32_INIT_DEVICE(n)                                                                 \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	EMIOS_PWM_VERIFY_CONFIG(n)                                                                 \
+	EMIOS_PWM_PULSE_GEN_CONFIG(n)                                                              \
+	EMIOS_PWM_PULSE_CAPTURE_CONFIG(n)                                                          \
+	static const struct pwm_nxp_s32_config pwm_nxp_s32_config_##n = {                          \
+		.base = (eMIOS_Type *)DT_REG_ADDR(DT_INST_PARENT(n)),                              \
+		.instance = EMIOS_NXP_S32_GET_INSTANCE(DT_INST_PARENT(n)),                         \
+		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(n))),                     \
+		.clock_subsys = (clock_control_subsys_t)DT_CLOCKS_CELL(DT_INST_PARENT(n), name),   \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+		EMIOS_PWM_PULSE_GEN_GET_CONFIG(n) EMIOS_PWM_PULSE_CAPTURE_GET_CONFIG(n)};          \
+	static struct pwm_nxp_s32_data pwm_nxp_s32_data_##n;                                       \
+	DEVICE_DT_INST_DEFINE(n, &pwm_nxp_s32_init, NULL, &pwm_nxp_s32_data_##n,                   \
+			      &pwm_nxp_s32_config_##n, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,      \
+			      &pwm_nxp_s32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_NXP_S32_INIT_DEVICE)

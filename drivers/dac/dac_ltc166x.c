@@ -13,9 +13,9 @@
 
 LOG_MODULE_REGISTER(dac_ltc166x, CONFIG_DAC_LOG_LEVEL);
 
-#define LTC166X_REG_MASK               GENMASK(15, 12)
-#define LTC166X_DATA8_MASK             GENMASK(11, 4)
-#define LTC166X_DATA10_MASK            GENMASK(12, 2)
+#define LTC166X_REG_MASK    GENMASK(15, 12)
+#define LTC166X_DATA8_MASK  GENMASK(11, 4)
+#define LTC166X_DATA10_MASK GENMASK(12, 2)
 
 struct ltc166x_config {
 	struct spi_dt_spec bus;
@@ -23,8 +23,7 @@ struct ltc166x_config {
 	uint8_t nchannels;
 };
 
-static int ltc166x_reg_write(const struct device *dev, uint8_t addr,
-			uint32_t data)
+static int ltc166x_reg_write(const struct device *dev, uint8_t addr, uint32_t data)
 {
 	const struct ltc166x_config *config = dev->config;
 	uint16_t regval;
@@ -38,8 +37,8 @@ static int ltc166x_reg_write(const struct device *dev, uint8_t addr,
 	}
 
 	const struct spi_buf buf = {
-			.buf = &regval,
-			.len = sizeof(regval),
+		.buf = &regval,
+		.len = sizeof(regval),
 	};
 
 	struct spi_buf_set tx = {
@@ -50,9 +49,8 @@ static int ltc166x_reg_write(const struct device *dev, uint8_t addr,
 	return spi_write_dt(&config->bus, &tx);
 }
 
-
 static int ltc166x_channel_setup(const struct device *dev,
-				   const struct dac_channel_cfg *channel_cfg)
+				 const struct dac_channel_cfg *channel_cfg)
 {
 	const struct ltc166x_config *config = dev->config;
 
@@ -74,8 +72,7 @@ static int ltc166x_channel_setup(const struct device *dev,
 	return 0;
 }
 
-static int ltc166x_write_value(const struct device *dev, uint8_t channel,
-				uint32_t value)
+static int ltc166x_write_value(const struct device *dev, uint8_t channel, uint32_t value)
 {
 	const struct ltc166x_config *config = dev->config;
 
@@ -108,23 +105,17 @@ static const struct dac_driver_api ltc166x_driver_api = {
 	.write_value = ltc166x_write_value,
 };
 
-
 #define INST_DT_LTC166X(inst, t) DT_INST(inst, lltc_ltc##t)
 
-#define LTC166X_DEVICE(t, n, res, nchan) \
-	static const struct ltc166x_config ltc##t##_config_##n = { \
-		.bus = SPI_DT_SPEC_GET(INST_DT_LTC166X(n, t), \
-			SPI_OP_MODE_MASTER | \
-			SPI_WORD_SET(8), 0), \
-		.resolution = res, \
-		.nchannels = nchan, \
-	}; \
-	DEVICE_DT_DEFINE(INST_DT_LTC166X(n, t), \
-			    &ltc166x_init, NULL, \
-			    NULL, \
-			    &ltc##t##_config_##n, POST_KERNEL, \
-			    CONFIG_DAC_LTC166X_INIT_PRIORITY, \
-			    &ltc166x_driver_api)
+#define LTC166X_DEVICE(t, n, res, nchan)                                                           \
+	static const struct ltc166x_config ltc##t##_config_##n = {                                 \
+		.bus = SPI_DT_SPEC_GET(INST_DT_LTC166X(n, t),                                      \
+				       SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),                   \
+		.resolution = res,                                                                 \
+		.nchannels = nchan,                                                                \
+	};                                                                                         \
+	DEVICE_DT_DEFINE(INST_DT_LTC166X(n, t), &ltc166x_init, NULL, NULL, &ltc##t##_config_##n,   \
+			 POST_KERNEL, CONFIG_DAC_LTC166X_INIT_PRIORITY, &ltc166x_driver_api)
 
 /*
  * LTC1660: 10-bit
@@ -138,7 +129,7 @@ static const struct dac_driver_api ltc166x_driver_api = {
 
 #define CALL_WITH_ARG(arg, expr) expr(arg)
 
-#define INST_DT_LTC166X_FOREACH(t, inst_expr) \
+#define INST_DT_LTC166X_FOREACH(t, inst_expr)                                                      \
 	LISTIFY(DT_NUM_INST_STATUS_OKAY(lltc_ltc##t), \
 		     CALL_WITH_ARG, (), inst_expr)
 

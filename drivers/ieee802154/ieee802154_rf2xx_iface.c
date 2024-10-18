@@ -7,7 +7,7 @@
  */
 
 #define LOG_MODULE_NAME ieee802154_rf2xx_iface
-#define LOG_LEVEL CONFIG_IEEE802154_DRIVER_LOG_LEVEL
+#define LOG_LEVEL       CONFIG_IEEE802154_DRIVER_LOG_LEVEL
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
@@ -51,8 +51,7 @@ void rf2xx_iface_phy_tx_start(const struct device *dev)
 	gpio_pin_set_dt(&conf->slptr_gpio, 0);
 }
 
-uint8_t rf2xx_iface_reg_read(const struct device *dev,
-			     uint8_t addr)
+uint8_t rf2xx_iface_reg_read(const struct device *dev, uint8_t addr)
 {
 	const struct rf2xx_config *conf = dev->config;
 	uint8_t status;
@@ -60,85 +59,45 @@ uint8_t rf2xx_iface_reg_read(const struct device *dev,
 
 	addr |= RF2XX_RF_CMD_REG_R;
 
-	const struct spi_buf tx_buf = {
-		.buf = &addr,
-		.len = 1
-	};
-	const struct spi_buf_set tx = {
-		.buffers = &tx_buf,
-		.count = 1
-	};
+	const struct spi_buf tx_buf = {.buf = &addr, .len = 1};
+	const struct spi_buf_set tx = {.buffers = &tx_buf, .count = 1};
 	const struct spi_buf rx_buf[2] = {
-		{
-			.buf = &status,
-			.len = 1
-		},
-		{
-			.buf = &regval,
-			.len = 1
-		},
+		{.buf = &status, .len = 1},
+		{.buf = &regval, .len = 1},
 	};
-	const struct spi_buf_set rx = {
-		.buffers = rx_buf,
-		.count = 2
-	};
+	const struct spi_buf_set rx = {.buffers = rx_buf, .count = 2};
 
 	if (spi_transceive_dt(&conf->spi, &tx, &rx) != 0) {
-		LOG_ERR("Failed to exec rf2xx_reg_read CMD at address %d",
-			addr);
+		LOG_ERR("Failed to exec rf2xx_reg_read CMD at address %d", addr);
 	}
 
-	LOG_DBG("Read Address: %02X, PhyStatus: %02X, RegVal: %02X",
-		(addr & ~(RF2XX_RF_CMD_REG_R)), status, regval);
+	LOG_DBG("Read Address: %02X, PhyStatus: %02X, RegVal: %02X", (addr & ~(RF2XX_RF_CMD_REG_R)),
+		status, regval);
 
 	return regval;
 }
 
-void rf2xx_iface_reg_write(const struct device *dev,
-			   uint8_t addr,
-			   uint8_t data)
+void rf2xx_iface_reg_write(const struct device *dev, uint8_t addr, uint8_t data)
 {
 	const struct rf2xx_config *conf = dev->config;
 	uint8_t status;
 
 	addr |= RF2XX_RF_CMD_REG_W;
 
-	const struct spi_buf tx_buf[2] = {
-		{
-			.buf = &addr,
-			.len = 1
-		},
-		{
-			.buf = &data,
-			.len = 1
-		}
-	};
-	const struct spi_buf_set tx = {
-		.buffers = tx_buf,
-		.count = 2
-	};
-	const struct spi_buf rx_buf = {
-		.buf = &status,
-		.len = 1
-	};
-	const struct spi_buf_set rx = {
-		.buffers = &rx_buf,
-		.count = 1
-	};
+	const struct spi_buf tx_buf[2] = {{.buf = &addr, .len = 1}, {.buf = &data, .len = 1}};
+	const struct spi_buf_set tx = {.buffers = tx_buf, .count = 2};
+	const struct spi_buf rx_buf = {.buf = &status, .len = 1};
+	const struct spi_buf_set rx = {.buffers = &rx_buf, .count = 1};
 
 	if (spi_transceive_dt(&conf->spi, &tx, &rx) != 0) {
-		LOG_ERR("Failed to exec rf2xx_reg_write at address %d",
-			addr);
+		LOG_ERR("Failed to exec rf2xx_reg_write at address %d", addr);
 	}
 
 	LOG_DBG("Write Address: %02X, PhyStatus: %02X, RegVal: %02X",
 		(addr & ~(RF2XX_RF_CMD_REG_W)), status, data);
 }
 
-uint8_t rf2xx_iface_bit_read(const struct device *dev,
-			     uint8_t addr,
-			     uint8_t mask,
-			     uint8_t pos)
+uint8_t rf2xx_iface_bit_read(const struct device *dev, uint8_t addr, uint8_t mask, uint8_t pos)
 {
 	uint8_t ret;
 
@@ -149,10 +108,7 @@ uint8_t rf2xx_iface_bit_read(const struct device *dev,
 	return ret;
 }
 
-void rf2xx_iface_bit_write(const struct device *dev,
-			   uint8_t reg_addr,
-			   uint8_t mask,
-			   uint8_t pos,
+void rf2xx_iface_bit_write(const struct device *dev, uint8_t reg_addr, uint8_t mask, uint8_t pos,
 			   uint8_t new_value)
 {
 	uint8_t current_reg_value;
@@ -165,29 +121,15 @@ void rf2xx_iface_bit_write(const struct device *dev,
 	rf2xx_iface_reg_write(dev, reg_addr, new_value);
 }
 
-void rf2xx_iface_frame_read(const struct device *dev,
-			    uint8_t *data,
-			    uint8_t length)
+void rf2xx_iface_frame_read(const struct device *dev, uint8_t *data, uint8_t length)
 {
 	const struct rf2xx_config *conf = dev->config;
 	uint8_t cmd = RF2XX_RF_CMD_FRAME_R;
 
-	const struct spi_buf tx_buf = {
-		.buf = &cmd,
-		.len = 1
-	};
-	const struct spi_buf_set tx = {
-		.buffers = &tx_buf,
-		.count = 1
-	};
-	const struct spi_buf rx_buf = {
-		.buf = data,
-		.len = length
-	};
-	const struct spi_buf_set rx = {
-		.buffers = &rx_buf,
-		.count = 1
-	};
+	const struct spi_buf tx_buf = {.buf = &cmd, .len = 1};
+	const struct spi_buf_set tx = {.buffers = &tx_buf, .count = 1};
+	const struct spi_buf rx_buf = {.buf = data, .len = length};
+	const struct spi_buf_set rx = {.buffers = &rx_buf, .count = 1};
 
 	if (spi_transceive_dt(&conf->spi, &tx, &rx) != 0) {
 		LOG_ERR("Failed to exec rf2xx_frame_read PHR");
@@ -197,9 +139,7 @@ void rf2xx_iface_frame_read(const struct device *dev,
 	LOG_HEXDUMP_DBG(data + RX2XX_FRAME_HEADER_SIZE, length, "payload");
 }
 
-void rf2xx_iface_frame_write(const struct device *dev,
-			     uint8_t *data,
-			     uint8_t length)
+void rf2xx_iface_frame_write(const struct device *dev, uint8_t *data, uint8_t length)
 {
 	const struct rf2xx_config *conf = dev->config;
 	uint8_t cmd = RF2XX_RF_CMD_FRAME_W;
@@ -214,31 +154,15 @@ void rf2xx_iface_frame_write(const struct device *dev,
 	phr = length + RX2XX_FRAME_FCS_LENGTH;
 
 	const struct spi_buf tx_buf[3] = {
-		{
-			.buf = &cmd,
-			.len = 1
-		},
-		{
-			.buf = &phr,    /* PHR */
-			.len = 1
-		},
-		{
-			.buf = data,    /* PSDU */
-			.len = length
-		},
+		{.buf = &cmd, .len = 1},
+		{.buf = &phr, /* PHR */
+		 .len = 1},
+		{.buf = data, /* PSDU */
+		 .len = length},
 	};
-	const struct spi_buf_set tx = {
-		.buffers = tx_buf,
-		.count = 3
-	};
-	const struct spi_buf rx_buf = {
-		.buf = &status,
-		.len = 1
-	};
-	const struct spi_buf_set rx = {
-		.buffers = &rx_buf,
-		.count = 1
-	};
+	const struct spi_buf_set tx = {.buffers = tx_buf, .count = 3};
+	const struct spi_buf rx_buf = {.buf = &status, .len = 1};
+	const struct spi_buf_set rx = {.buffers = &rx_buf, .count = 1};
 
 	if (spi_transceive_dt(&conf->spi, &tx, &rx) != 0) {
 		LOG_ERR("Failed to exec rf2xx_frame_write");
@@ -248,43 +172,22 @@ void rf2xx_iface_frame_write(const struct device *dev,
 	LOG_HEXDUMP_DBG(data, length, "payload");
 }
 
-void rf2xx_iface_sram_read(const struct device *dev,
-			    uint8_t address,
-			    uint8_t *data,
-			    uint8_t length)
+void rf2xx_iface_sram_read(const struct device *dev, uint8_t address, uint8_t *data, uint8_t length)
 {
 	const struct rf2xx_config *conf = dev->config;
 	uint8_t cmd = RF2XX_RF_CMD_SRAM_R;
 	uint8_t status[2];
 
 	const struct spi_buf tx_buf[2] = {
-		{
-			.buf = &cmd,
-			.len = 1
-		},
-		{
-			.buf = &address,
-			.len = 1
-		},
+		{.buf = &cmd, .len = 1},
+		{.buf = &address, .len = 1},
 	};
-	const struct spi_buf_set tx = {
-		.buffers = tx_buf,
-		.count = 2
-	};
+	const struct spi_buf_set tx = {.buffers = tx_buf, .count = 2};
 	const struct spi_buf rx_buf[2] = {
-		{
-			.buf = status,
-			.len = 2
-		},
-		{
-			.buf = data,
-			.len = length
-		},
+		{.buf = status, .len = 2},
+		{.buf = data, .len = length},
 	};
-	const struct spi_buf_set rx = {
-		.buffers = rx_buf,
-		.count = 2
-	};
+	const struct spi_buf_set rx = {.buffers = rx_buf, .count = 2};
 
 	if (spi_transceive_dt(&conf->spi, &tx, &rx) != 0) {
 		LOG_ERR("Failed to exec rf2xx_sram_read");

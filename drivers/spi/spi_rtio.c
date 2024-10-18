@@ -97,8 +97,7 @@ static void spi_rtio_iodev_default_submit_sync(struct rtio_iodev_sqe *iodev_sqe)
 	}
 }
 
-void spi_rtio_iodev_default_submit(const struct device *dev,
-				   struct rtio_iodev_sqe *iodev_sqe)
+void spi_rtio_iodev_default_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
 	LOG_DBG("Executing fallback for dev: %p, sqe: %p", (void *)dev, (void *)iodev_sqe);
 
@@ -121,11 +120,8 @@ void spi_rtio_iodev_default_submit(const struct device *dev,
  * @retval Number of submission queue entries
  * @retval -ENOMEM out of memory
  */
-int spi_rtio_copy(struct rtio *r,
-		  struct rtio_iodev *iodev,
-		  const struct spi_buf_set *tx_bufs,
-		  const struct spi_buf_set *rx_bufs,
-		  struct rtio_sqe **last_sqe)
+int spi_rtio_copy(struct rtio *r, struct rtio_iodev *iodev, const struct spi_buf_set *tx_bufs,
+		  const struct spi_buf_set *rx_bufs, struct rtio_sqe **last_sqe)
 {
 	int ret = 0;
 	size_t tx_count = tx_bufs ? tx_bufs->count : 0;
@@ -153,7 +149,6 @@ int spi_rtio_copy(struct rtio *r,
 		rx_len = tx_bufs->buffers[tx].len;
 	}
 
-
 	while ((tx < tx_count || rx < rx_count) && (tx_len > 0 || rx_len > 0)) {
 		sqe = rtio_sqe_acquire(r);
 
@@ -168,14 +163,14 @@ int spi_rtio_copy(struct rtio *r,
 		/* If tx/rx len are same, we can do a simple transceive */
 		if (tx_len == rx_len) {
 			if (tx_buf == NULL) {
-				rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_NORM,
-						   rx_buf, rx_len, NULL);
+				rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_NORM, rx_buf, rx_len,
+						   NULL);
 			} else if (rx_buf == NULL) {
-				rtio_sqe_prep_write(sqe, iodev, RTIO_PRIO_NORM,
-						    tx_buf, tx_len, NULL);
+				rtio_sqe_prep_write(sqe, iodev, RTIO_PRIO_NORM, tx_buf, tx_len,
+						    NULL);
 			} else {
-				rtio_sqe_prep_transceive(sqe, iodev, RTIO_PRIO_NORM,
-							 tx_buf, rx_buf, rx_len, NULL);
+				rtio_sqe_prep_transceive(sqe, iodev, RTIO_PRIO_NORM, tx_buf, rx_buf,
+							 rx_len, NULL);
 			}
 			tx++;
 			rx++;
@@ -194,10 +189,8 @@ int spi_rtio_copy(struct rtio *r,
 				tx_len = 0;
 			}
 		} else if (tx_len == 0) {
-			rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_NORM,
-					   (uint8_t *)rx_buf,
-					   (uint32_t)rx_len,
-					   NULL);
+			rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_NORM, (uint8_t *)rx_buf,
+					   (uint32_t)rx_len, NULL);
 			rx++;
 			if (rx < rx_count) {
 				rx_buf = rx_bufs->buffers[rx].buf;
@@ -207,10 +200,8 @@ int spi_rtio_copy(struct rtio *r,
 				rx_len = 0;
 			}
 		} else if (rx_len == 0) {
-			rtio_sqe_prep_write(sqe, iodev, RTIO_PRIO_NORM,
-					    (uint8_t *)tx_buf,
-					    (uint32_t)tx_len,
-					    NULL);
+			rtio_sqe_prep_write(sqe, iodev, RTIO_PRIO_NORM, (uint8_t *)tx_buf,
+					    (uint32_t)tx_len, NULL);
 			tx++;
 			if (tx < tx_count) {
 				tx_buf = rx_bufs->buffers[rx].buf;
@@ -220,11 +211,8 @@ int spi_rtio_copy(struct rtio *r,
 				tx_len = 0;
 			}
 		} else if (tx_len > rx_len) {
-			rtio_sqe_prep_transceive(sqe, iodev, RTIO_PRIO_NORM,
-						 (uint8_t *)tx_buf,
-						 (uint8_t *)rx_buf,
-						 (uint32_t)rx_len,
-						 NULL);
+			rtio_sqe_prep_transceive(sqe, iodev, RTIO_PRIO_NORM, (uint8_t *)tx_buf,
+						 (uint8_t *)rx_buf, (uint32_t)rx_len, NULL);
 			tx_len -= rx_len;
 			tx_buf += rx_len;
 			rx++;
@@ -236,11 +224,8 @@ int spi_rtio_copy(struct rtio *r,
 				rx_len = tx_len;
 			}
 		} else if (rx_len > tx_len) {
-			rtio_sqe_prep_transceive(sqe, iodev, RTIO_PRIO_NORM,
-						 (uint8_t *)tx_buf,
-						 (uint8_t *)rx_buf,
-						 (uint32_t)tx_len,
-						 NULL);
+			rtio_sqe_prep_transceive(sqe, iodev, RTIO_PRIO_NORM, (uint8_t *)tx_buf,
+						 (uint8_t *)rx_buf, (uint32_t)tx_len, NULL);
 			rx_len -= tx_len;
 			rx_buf += tx_len;
 			tx++;
@@ -294,8 +279,7 @@ static inline void spi_spin_unlock(struct spi_rtio *ctx, k_spinlock_key_t key)
 	k_spin_unlock(&ctx->lock, key);
 }
 
-void spi_rtio_init(struct spi_rtio *ctx,
-		   const struct device *dev)
+void spi_rtio_init(struct spi_rtio *ctx, const struct device *dev)
 {
 	mpsc_init(&ctx->io_q);
 	ctx->txn_head = NULL;
@@ -354,18 +338,15 @@ bool spi_rtio_complete(struct spi_rtio *ctx, int status)
 	return result;
 }
 
-bool spi_rtio_submit(struct spi_rtio *ctx,
-		     struct rtio_iodev_sqe *iodev_sqe)
+bool spi_rtio_submit(struct spi_rtio *ctx, struct rtio_iodev_sqe *iodev_sqe)
 {
 	/** Done */
 	mpsc_push(&ctx->io_q, &iodev_sqe->q);
 	return spi_rtio_next(ctx, false);
 }
 
-int spi_rtio_transceive(struct spi_rtio *ctx,
-			const struct spi_config *config,
-			const struct spi_buf_set *tx_bufs,
-			const struct spi_buf_set *rx_bufs)
+int spi_rtio_transceive(struct spi_rtio *ctx, const struct spi_config *config,
+			const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs)
 {
 	struct spi_dt_spec *dt_spec = &ctx->dt_spec;
 	struct rtio_sqe *sqe;

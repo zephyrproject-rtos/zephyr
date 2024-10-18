@@ -52,8 +52,7 @@ static inline void neorv32_gpio_write(const struct device *dev, uint32_t val)
 	sys_write32(val, config->output);
 }
 
-static int neorv32_gpio_pin_configure(const struct device *dev, gpio_pin_t pin,
-				      gpio_flags_t flags)
+static int neorv32_gpio_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct neorv32_gpio_config *config = dev->config;
 	struct neorv32_gpio_data *data = dev->data;
@@ -87,16 +86,14 @@ static int neorv32_gpio_pin_configure(const struct device *dev, gpio_pin_t pin,
 	return 0;
 }
 
-static int neorv32_gpio_port_get_raw(const struct device *dev,
-				      gpio_port_value_t *value)
+static int neorv32_gpio_port_get_raw(const struct device *dev, gpio_port_value_t *value)
 {
 	*value = neorv32_gpio_read(dev);
 	return 0;
 }
 
-static int neorv32_gpio_port_set_masked_raw(const struct device *dev,
-					     gpio_port_pins_t mask,
-					     gpio_port_value_t value)
+static int neorv32_gpio_port_set_masked_raw(const struct device *dev, gpio_port_pins_t mask,
+					    gpio_port_value_t value)
 {
 	struct neorv32_gpio_data *data = dev->data;
 	unsigned int key;
@@ -109,8 +106,7 @@ static int neorv32_gpio_port_set_masked_raw(const struct device *dev,
 	return 0;
 }
 
-static int neorv32_gpio_port_set_bits_raw(const struct device *dev,
-					   gpio_port_pins_t pins)
+static int neorv32_gpio_port_set_bits_raw(const struct device *dev, gpio_port_pins_t pins)
 {
 	struct neorv32_gpio_data *data = dev->data;
 	unsigned int key;
@@ -123,8 +119,7 @@ static int neorv32_gpio_port_set_bits_raw(const struct device *dev,
 	return 0;
 }
 
-static int neorv32_gpio_port_clear_bits_raw(const struct device *dev,
-					     gpio_port_pins_t pins)
+static int neorv32_gpio_port_clear_bits_raw(const struct device *dev, gpio_port_pins_t pins)
 {
 	struct neorv32_gpio_data *data = dev->data;
 	unsigned int key;
@@ -137,8 +132,7 @@ static int neorv32_gpio_port_clear_bits_raw(const struct device *dev,
 	return 0;
 }
 
-static int neorv32_gpio_port_toggle_bits(const struct device *dev,
-					  gpio_port_pins_t pins)
+static int neorv32_gpio_port_toggle_bits(const struct device *dev, gpio_port_pins_t pins)
 {
 	struct neorv32_gpio_data *data = dev->data;
 	unsigned int key;
@@ -151,8 +145,7 @@ static int neorv32_gpio_port_toggle_bits(const struct device *dev,
 	return 0;
 }
 
-static int neorv32_gpio_manage_callback(const struct device *dev,
-					struct gpio_callback *cb,
+static int neorv32_gpio_manage_callback(const struct device *dev, struct gpio_callback *cb,
 					bool set)
 {
 	ARG_UNUSED(dev);
@@ -206,27 +199,20 @@ static const struct gpio_driver_api neorv32_gpio_driver_api = {
 	.get_pending_int = neorv32_gpio_get_pending_int,
 };
 
-#define NEORV32_GPIO_INIT(n)						\
-	static struct neorv32_gpio_data neorv32_gpio_##n##_data = {	\
-		.output = 0,						\
-	};								\
-									\
-	static const struct neorv32_gpio_config neorv32_gpio_##n##_config = { \
-		.common = {						\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n) \
-		},							\
-		.syscon = DEVICE_DT_GET(DT_INST_PHANDLE(n, syscon)),	\
-		.input = DT_INST_REG_ADDR_BY_NAME(n, input),		\
-		.output = DT_INST_REG_ADDR_BY_NAME(n, output),		\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(n,					\
-			neorv32_gpio_init,				\
-			NULL,						\
-			&neorv32_gpio_##n##_data,			\
-			&neorv32_gpio_##n##_config,			\
-			PRE_KERNEL_2,					\
-			CONFIG_GPIO_INIT_PRIORITY,			\
-			&neorv32_gpio_driver_api);
+#define NEORV32_GPIO_INIT(n)                                                                       \
+	static struct neorv32_gpio_data neorv32_gpio_##n##_data = {                                \
+		.output = 0,                                                                       \
+	};                                                                                         \
+                                                                                                   \
+	static const struct neorv32_gpio_config neorv32_gpio_##n##_config = {                      \
+		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n)},                   \
+		.syscon = DEVICE_DT_GET(DT_INST_PHANDLE(n, syscon)),                               \
+		.input = DT_INST_REG_ADDR_BY_NAME(n, input),                                       \
+		.output = DT_INST_REG_ADDR_BY_NAME(n, output),                                     \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, neorv32_gpio_init, NULL, &neorv32_gpio_##n##_data,                \
+			      &neorv32_gpio_##n##_config, PRE_KERNEL_2, CONFIG_GPIO_INIT_PRIORITY, \
+			      &neorv32_gpio_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NEORV32_GPIO_INIT)

@@ -17,37 +17,37 @@
 
 LOG_MODULE_REGISTER(bq25180, CONFIG_CHARGER_LOG_LEVEL);
 
-#define BQ25180_STAT0 0x00
-#define BQ25180_STAT1 0x01
-#define BQ25180_FLAG0 0x02
+#define BQ25180_STAT0     0x00
+#define BQ25180_STAT1     0x01
+#define BQ25180_FLAG0     0x02
 #define BQ25180_VBAT_CTRL 0x03
 #define BQ25180_ICHG_CTRL 0x04
-#define BQ25180_IC_CTRL 0x07
-#define BQ25180_SHIP_RST 0x09
-#define BQ25180_MASK_ID 0x0c
+#define BQ25180_IC_CTRL   0x07
+#define BQ25180_SHIP_RST  0x09
+#define BQ25180_MASK_ID   0x0c
 
-#define BQ25180_STAT0_CHG_STAT_MASK GENMASK(6, 5)
-#define BQ25180_STAT0_CHG_STAT_NOT_CHARGING 0x00
+#define BQ25180_STAT0_CHG_STAT_MASK             GENMASK(6, 5)
+#define BQ25180_STAT0_CHG_STAT_NOT_CHARGING     0x00
 #define BQ25180_STAT0_CHG_STAT_CONSTANT_CURRENT 0x01
 #define BQ25180_STAT0_CHG_STAT_CONSTANT_VOLTAGE 0x02
-#define BQ25180_STAT0_CHG_STAT_DONE 0x03
-#define BQ25180_STAT0_VIN_PGOOD_STAT BIT(0)
+#define BQ25180_STAT0_CHG_STAT_DONE             0x03
+#define BQ25180_STAT0_VIN_PGOOD_STAT            BIT(0)
 #define BQ25180_VBAT_MSK                        GENMASK(6, 0)
-#define BQ25180_ICHG_CHG_DIS BIT(7)
-#define BQ25180_ICHG_MSK GENMASK(6, 0)
+#define BQ25180_ICHG_CHG_DIS                    BIT(7)
+#define BQ25180_ICHG_MSK                        GENMASK(6, 0)
 #define BQ25180_IC_CTRL_VRCH_100                0x00
 #define BQ25180_IC_CTRL_VRCH_200                BIT(5)
 #define BQ25180_IC_CTRL_VRCH_MSK                BIT(5)
 #define BQ25180_VLOWV_SEL_2_8                   BIT(6)
 #define BQ25180_VLOWV_SEL_3_0                   0x00
 #define BQ25180_VLOWV_SEL_MSK                   BIT(6)
-#define BQ25180_WATCHDOG_SEL_1_MSK GENMASK(1, 0)
-#define BQ25180_WATCHDOG_DISABLE 0x03
-#define BQ25180_DEVICE_ID_MSK GENMASK(3, 0)
-#define BQ25180_DEVICE_ID 0x00
-#define BQ25180_SHIP_RST_EN_RST_SHIP_MSK GENMASK(6, 5)
-#define BQ25180_SHIP_RST_EN_RST_SHIP_ADAPTER 0x20
-#define BQ25180_SHIP_RST_EN_RST_SHIP_BUTTON 0x40
+#define BQ25180_WATCHDOG_SEL_1_MSK              GENMASK(1, 0)
+#define BQ25180_WATCHDOG_DISABLE                0x03
+#define BQ25180_DEVICE_ID_MSK                   GENMASK(3, 0)
+#define BQ25180_DEVICE_ID                       0x00
+#define BQ25180_SHIP_RST_EN_RST_SHIP_MSK        GENMASK(6, 5)
+#define BQ25180_SHIP_RST_EN_RST_SHIP_ADAPTER    0x20
+#define BQ25180_SHIP_RST_EN_RST_SHIP_BUTTON     0x40
 
 /* Charging current limits */
 #define BQ25180_CURRENT_MIN_MA 5
@@ -76,7 +76,8 @@ static int bq25180_ma_to_ichg(uint32_t current_ma, uint8_t *ichg)
 {
 	if (!IN_RANGE(current_ma, BQ25180_CURRENT_MIN_MA, BQ25180_CURRENT_MAX_MA)) {
 		LOG_WRN("charging current out of range: %dmA, "
-			"clamping to the nearest limit", current_ma);
+			"clamping to the nearest limit",
+			current_ma);
 	}
 	current_ma = CLAMP(current_ma, BQ25180_CURRENT_MIN_MA, BQ25180_CURRENT_MAX_MA);
 
@@ -129,8 +130,7 @@ static int bq25183_charge_enable(const struct device *dev, const bool enable)
 	uint8_t value = enable ? 0 : BQ25180_ICHG_CHG_DIS;
 	int ret;
 
-	ret = i2c_reg_update_byte_dt(&cfg->i2c, BQ25180_ICHG_CTRL,
-				     BQ25180_ICHG_CHG_DIS, value);
+	ret = i2c_reg_update_byte_dt(&cfg->i2c, BQ25180_ICHG_CTRL, BQ25180_ICHG_CHG_DIS, value);
 	if (ret < 0) {
 		return ret;
 	}
@@ -138,8 +138,7 @@ static int bq25183_charge_enable(const struct device *dev, const bool enable)
 	return 0;
 }
 
-static int bq25180_set_charge_current(const struct device *dev,
-				      uint32_t const_charge_current_ua)
+static int bq25180_set_charge_current(const struct device *dev, uint32_t const_charge_current_ua)
 {
 	const struct bq25180_config *cfg = dev->config;
 	uint8_t val;
@@ -150,8 +149,7 @@ static int bq25180_set_charge_current(const struct device *dev,
 		return ret;
 	}
 
-	ret = i2c_reg_update_byte_dt(&cfg->i2c, BQ25180_ICHG_CTRL,
-				     BQ25180_ICHG_MSK, val);
+	ret = i2c_reg_update_byte_dt(&cfg->i2c, BQ25180_ICHG_CTRL, BQ25180_ICHG_MSK, val);
 	if (ret < 0) {
 		return ret;
 	}
@@ -159,8 +157,7 @@ static int bq25180_set_charge_current(const struct device *dev,
 	return 0;
 }
 
-static int bq25180_get_charge_current(const struct device *dev,
-				      uint32_t *const_charge_current_ua)
+static int bq25180_get_charge_current(const struct device *dev, uint32_t *const_charge_current_ua)
 {
 	const struct bq25180_config *cfg = dev->config;
 	uint8_t val;
@@ -211,8 +208,7 @@ static int bq25180_get_charge_voltage(const struct device *dev, uint32_t *const_
 	return 0;
 }
 
-static int bq25180_get_online(const struct device *dev,
-			      enum charger_online *online)
+static int bq25180_get_online(const struct device *dev, enum charger_online *online)
 {
 	const struct bq25180_config *cfg = dev->config;
 	uint8_t val;
@@ -232,8 +228,7 @@ static int bq25180_get_online(const struct device *dev,
 	return 0;
 }
 
-static int bq25180_get_status(const struct device *dev,
-			      enum charger_status *status)
+static int bq25180_get_status(const struct device *dev, enum charger_status *status)
 {
 	const struct bq25180_config *cfg = dev->config;
 	uint8_t stat0;
@@ -330,8 +325,7 @@ static int bq25180_init(const struct device *dev)
 	}
 
 	/* Disable the watchdog */
-	ret = i2c_reg_update_byte_dt(&cfg->i2c, BQ25180_IC_CTRL,
-				     BQ25180_WATCHDOG_SEL_1_MSK,
+	ret = i2c_reg_update_byte_dt(&cfg->i2c, BQ25180_IC_CTRL, BQ25180_WATCHDOG_SEL_1_MSK,
 				     BQ25180_WATCHDOG_DISABLE);
 	if (ret < 0) {
 		return ret;

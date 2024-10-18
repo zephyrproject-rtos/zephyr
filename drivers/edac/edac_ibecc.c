@@ -28,8 +28,7 @@ struct ibecc_data {
 	unsigned int errors_uc;
 };
 
-static void ibecc_write_reg64(const struct device *dev,
-			      uint16_t reg, uint64_t value)
+static void ibecc_write_reg64(const struct device *dev, uint16_t reg, uint64_t value)
 {
 	struct ibecc_data *data = dev->data;
 	mem_addr_t reg_addr = data->mchbar + reg;
@@ -46,8 +45,7 @@ static uint64_t ibecc_read_reg64(const struct device *dev, uint16_t reg)
 }
 
 #if defined(CONFIG_EDAC_ERROR_INJECT)
-static void ibecc_write_reg32(const struct device *dev,
-			      uint16_t reg, uint32_t value)
+static void ibecc_write_reg32(const struct device *dev, uint16_t reg, uint32_t value)
 {
 	struct ibecc_data *data = dev->data;
 	mem_addr_t reg_addr = data->mchbar + reg;
@@ -148,8 +146,7 @@ static int inject_get_param2(const struct device *dev, uint64_t *value)
 	return 0;
 }
 
-static int inject_set_error_type(const struct device *dev,
-				 uint32_t error_type)
+static int inject_set_error_type(const struct device *dev, uint32_t error_type)
 {
 	struct ibecc_data *data = dev->data;
 
@@ -158,8 +155,7 @@ static int inject_set_error_type(const struct device *dev,
 	return 0;
 }
 
-static int inject_get_error_type(const struct device *dev,
-				      uint32_t *error_type)
+static int inject_get_error_type(const struct device *dev, uint32_t *error_type)
 {
 	struct ibecc_data *data = dev->data;
 
@@ -208,8 +204,7 @@ static int ecc_error_log_get(const struct device *dev, uint64_t *value)
 static int ecc_error_log_clear(const struct device *dev)
 {
 	/* Clear all error bits */
-	ibecc_write_reg64(dev, IBECC_ECC_ERROR_LOG,
-			  ECC_ERROR_MERRSTS | ECC_ERROR_CERRSTS);
+	ibecc_write_reg64(dev, IBECC_ECC_ERROR_LOG, ECC_ERROR_MERRSTS | ECC_ERROR_CERRSTS);
 
 	return 0;
 }
@@ -245,8 +240,7 @@ static int errors_uc_get(const struct device *dev)
 	return data->errors_uc;
 }
 
-static int notify_callback_set(const struct device *dev,
-			       edac_notify_callback_f cb)
+static int notify_callback_set(const struct device *dev, edac_notify_callback_f cb)
 {
 	struct ibecc_data *data = dev->data;
 	unsigned int key = irq_lock();
@@ -347,8 +341,7 @@ static int edac_ibecc_init(const struct device *dev)
 
 static struct ibecc_data ibecc_data;
 
-DEVICE_DT_DEFINE(DEVICE_NODE, &edac_ibecc_init,
-		 NULL, &ibecc_data, NULL, POST_KERNEL,
+DEVICE_DT_DEFINE(DEVICE_NODE, &edac_ibecc_init, NULL, &ibecc_data, NULL, POST_KERNEL,
 		 CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &api);
 
 /**

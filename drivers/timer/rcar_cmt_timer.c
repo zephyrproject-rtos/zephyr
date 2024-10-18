@@ -14,14 +14,14 @@
 
 #define DT_DRV_COMPAT renesas_rcar_cmt
 
-#define TIMER_IRQ              DT_INST_IRQN(0)
-#define TIMER_BASE_ADDR        DT_INST_REG_ADDR(0)
-#define TIMER_CLOCK_FREQUENCY  DT_INST_PROP(0, clock_frequency)
+#define TIMER_IRQ             DT_INST_IRQN(0)
+#define TIMER_BASE_ADDR       DT_INST_REG_ADDR(0)
+#define TIMER_CLOCK_FREQUENCY DT_INST_PROP(0, clock_frequency)
 
-#define CLOCK_SUBSYS           DT_INST_CLOCKS_CELL(0, module)
+#define CLOCK_SUBSYS DT_INST_CLOCKS_CELL(0, module)
 
-#define CYCLES_PER_SEC         TIMER_CLOCK_FREQUENCY
-#define CYCLES_PER_TICK        (CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define CYCLES_PER_SEC  TIMER_CLOCK_FREQUENCY
+#define CYCLES_PER_TICK (CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = DT_IRQN(DT_INST(0, renesas_rcar_cmt));
@@ -31,32 +31,31 @@ static struct rcar_cpg_clk mod_clk = {
 	.domain = DT_INST_CLOCKS_CELL(0, domain),
 };
 
-BUILD_ASSERT(CYCLES_PER_TICK > 1,
-	     "CYCLES_PER_TICK must be greater than 1");
+BUILD_ASSERT(CYCLES_PER_TICK > 1, "CYCLES_PER_TICK must be greater than 1");
 
-#define CMCOR0_OFFSET                   0x018   /* constant register 0 */
-#define CMCNT0_OFFSET                   0x014   /* counter 0 */
-#define CMCSR0_OFFSET                   0x010   /* control/status register 0 */
+#define CMCOR0_OFFSET 0x018 /* constant register 0 */
+#define CMCNT0_OFFSET 0x014 /* counter 0 */
+#define CMCSR0_OFFSET 0x010 /* control/status register 0 */
 
-#define CMCOR1_OFFSET                   0x118   /* constant register 1 */
-#define CMCNT1_OFFSET                   0x114   /* counter 1 */
-#define CMCSR1_OFFSET                   0x110   /* control/status register 1 */
+#define CMCOR1_OFFSET 0x118 /* constant register 1 */
+#define CMCNT1_OFFSET 0x114 /* counter 1 */
+#define CMCSR1_OFFSET 0x110 /* control/status register 1 */
 
-#define CMCLKE                          0xB00   /* CLK enable register */
-#define CLKEN0                          BIT(5)  /* Enable Clock for channel 0 */
-#define CLKEN1                          BIT(6)  /* Enable Clock for channel 1 */
+#define CMCLKE 0xB00  /* CLK enable register */
+#define CLKEN0 BIT(5) /* Enable Clock for channel 0 */
+#define CLKEN1 BIT(6) /* Enable Clock for channel 1 */
 
-#define CMSTR0_OFFSET                   0x000   /* Timer start register 0 */
-#define CMSTR1_OFFSET                   0x100   /* Timer start register 1 */
-#define START_BIT                       BIT(0)
+#define CMSTR0_OFFSET 0x000 /* Timer start register 0 */
+#define CMSTR1_OFFSET 0x100 /* Timer start register 1 */
+#define START_BIT     BIT(0)
 
-#define CSR_CLK_DIV_1                   0x00000007
-#define CSR_ENABLE_COUNTER_IN_DEBUG     BIT(3)
-#define CSR_ENABLE_INTERRUPT            BIT(5)
-#define CSR_FREE_RUN                    BIT(8)
-#define CSR_WRITE_FLAG                  BIT(13)
-#define CSR_OVERFLOW_FLAG               BIT(14)
-#define CSR_MATCH_FLAG                  BIT(15)
+#define CSR_CLK_DIV_1               0x00000007
+#define CSR_ENABLE_COUNTER_IN_DEBUG BIT(3)
+#define CSR_ENABLE_INTERRUPT        BIT(5)
+#define CSR_FREE_RUN                BIT(8)
+#define CSR_WRITE_FLAG              BIT(13)
+#define CSR_OVERFLOW_FLAG           BIT(14)
+#define CSR_MATCH_FLAG              BIT(15)
 
 static void cmt_isr(void *arg)
 {
@@ -122,8 +121,7 @@ static int sys_clock_driver_init(void)
 		    TIMER_BASE_ADDR + CMCSR0_OFFSET);
 
 	/* Do not enable interrupts for the second channel */
-	sys_write32(CSR_FREE_RUN | CSR_CLK_DIV_1,
-		    TIMER_BASE_ADDR + CMCSR1_OFFSET);
+	sys_write32(CSR_FREE_RUN | CSR_CLK_DIV_1, TIMER_BASE_ADDR + CMCSR1_OFFSET);
 
 	/* Set the first channel match to CYCLES Per tick*/
 	sys_write32(CYCLES_PER_TICK, TIMER_BASE_ADDR + CMCOR0_OFFSET);
@@ -143,8 +141,7 @@ static int sys_clock_driver_init(void)
 		}
 	}
 
-	__ASSERT(sys_read32(TIMER_BASE_ADDR + CMCNT0_OFFSET) == 0,
-			"Fail to clear CMCNT0 register");
+	__ASSERT(sys_read32(TIMER_BASE_ADDR + CMCNT0_OFFSET) == 0, "Fail to clear CMCNT0 register");
 
 	/* Connect timer interrupt for channel 0*/
 	IRQ_CONNECT(TIMER_IRQ, 0, cmt_isr, 0, 0);
@@ -157,5 +154,4 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

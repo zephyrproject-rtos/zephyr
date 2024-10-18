@@ -25,19 +25,17 @@ LOG_MODULE_REGISTER(wdt_fwdgt_gd32, CONFIG_WDT_LOG_LEVEL);
 #error IRC frequency was not configured
 #endif
 
-#define IS_VALID_FWDGT_PRESCALER(psc)                                          \
-	(((psc) == FWDGT_PSC_DIV4) || ((psc) == FWDGT_PSC_DIV8) ||             \
-	 ((psc) == FWDGT_PSC_DIV16) || ((psc) == FWDGT_PSC_DIV32) ||           \
-	 ((psc) == FWDGT_PSC_DIV64) || ((psc) == FWDGT_PSC_DIV128) ||          \
-	 ((psc) == FWDGT_PSC_DIV256))
+#define IS_VALID_FWDGT_PRESCALER(psc)                                                              \
+	(((psc) == FWDGT_PSC_DIV4) || ((psc) == FWDGT_PSC_DIV8) || ((psc) == FWDGT_PSC_DIV16) ||   \
+	 ((psc) == FWDGT_PSC_DIV32) || ((psc) == FWDGT_PSC_DIV64) ||                               \
+	 ((psc) == FWDGT_PSC_DIV128) || ((psc) == FWDGT_PSC_DIV256))
 
 #define FWDGT_INITIAL_TIMEOUT DT_INST_PROP(0, initial_timeout_ms)
 
 #if (FWDGT_INITIAL_TIMEOUT <= 0)
 #error Must be initial-timeout > 0
-#elif (FWDGT_INITIAL_TIMEOUT >                                                 \
-	(FWDGT_PRESCALER_MAX * FWDGT_RELOAD_MAX * MSEC_PER_SEC /               \
-	CONFIG_GD32_LOW_SPEED_IRC_FREQUENCY))
+#elif (FWDGT_INITIAL_TIMEOUT > (FWDGT_PRESCALER_MAX * FWDGT_RELOAD_MAX * MSEC_PER_SEC /            \
+				CONFIG_GD32_LOW_SPEED_IRC_FREQUENCY))
 #error Must be initial-timeout <= (256 * 4095 * 1000 / GD32_LOW_SPEED_IRC_FREQUENCY)
 #endif
 
@@ -50,13 +48,11 @@ LOG_MODULE_REGISTER(wdt_fwdgt_gd32, CONFIG_WDT_LOG_LEVEL);
  *
  * @return 0 on success, -EINVAL if the timeout is out of range
  */
-static int gd32_fwdgt_calc_timeout(uint32_t timeout, uint32_t *prescaler,
-				   uint32_t *reload)
+static int gd32_fwdgt_calc_timeout(uint32_t timeout, uint32_t *prescaler, uint32_t *reload)
 {
 	uint16_t divider = 4U;
 	uint8_t shift = 0U;
-	uint32_t ticks = (uint64_t)CONFIG_GD32_LOW_SPEED_IRC_FREQUENCY *
-			 timeout / MSEC_PER_SEC;
+	uint32_t ticks = (uint64_t)CONFIG_GD32_LOW_SPEED_IRC_FREQUENCY * timeout / MSEC_PER_SEC;
 
 	while ((ticks / divider) > FWDGT_RELOAD_MAX) {
 		shift++;
@@ -119,8 +115,7 @@ static int gd32_fwdgt_install_timeout(const struct device *dev,
 	}
 
 	/* Calculate prescaler and reload value from timeout value */
-	if (gd32_fwdgt_calc_timeout(config->window.max, &prescaler,
-				    &reload) != 0) {
+	if (gd32_fwdgt_calc_timeout(config->window.max, &prescaler, &reload) != 0) {
 		LOG_ERR("window max is out of range");
 		return -EINVAL;
 	}
@@ -163,9 +158,7 @@ static int gd32_fwdgt_init(const struct device *dev)
 	}
 
 #if !defined(CONFIG_WDT_DISABLE_AT_BOOT)
-	const struct wdt_timeout_cfg config = {
-		.window.max = FWDGT_INITIAL_TIMEOUT
-	};
+	const struct wdt_timeout_cfg config = {.window.max = FWDGT_INITIAL_TIMEOUT};
 
 	ret = gd32_fwdgt_install_timeout(dev, &config);
 #endif

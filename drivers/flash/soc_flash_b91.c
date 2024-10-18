@@ -5,8 +5,8 @@
  */
 
 #define DT_DRV_COMPAT telink_b91_flash_controller
-#define FLASH_SIZE   DT_REG_SIZE(DT_INST(0, soc_nv_flash))
-#define FLASH_ORIGIN DT_REG_ADDR(DT_INST(0, soc_nv_flash))
+#define FLASH_SIZE    DT_REG_SIZE(DT_INST(0, soc_nv_flash))
+#define FLASH_ORIGIN  DT_REG_ADDR(DT_INST(0, soc_nv_flash))
 
 #include "flash.h"
 #include <string.h>
@@ -15,13 +15,12 @@
 #include <zephyr/kernel.h>
 
 /* driver definitions */
-#define BLOCK_64K_SIZE         (0x10000u)
-#define BLOCK_64K_PAGES        (BLOCK_64K_SIZE / PAGE_SIZE)
-#define BLOCK_32K_SIZE         (0x8000u)
-#define BLOCK_32K_PAGES        (BLOCK_32K_SIZE / PAGE_SIZE)
-#define SECTOR_SIZE            (0x1000u)
-#define SECTOR_PAGES           (SECTOR_SIZE / PAGE_SIZE)
-
+#define BLOCK_64K_SIZE  (0x10000u)
+#define BLOCK_64K_PAGES (BLOCK_64K_SIZE / PAGE_SIZE)
+#define BLOCK_32K_SIZE  (0x8000u)
+#define BLOCK_32K_PAGES (BLOCK_32K_SIZE / PAGE_SIZE)
+#define SECTOR_SIZE     (0x1000u)
+#define SECTOR_PAGES    (SECTOR_SIZE / PAGE_SIZE)
 
 /* driver data structure */
 struct flash_b91_data {
@@ -33,7 +32,6 @@ static const struct flash_parameters flash_b91_parameters = {
 	.write_block_size = DT_PROP(DT_INST(0, soc_nv_flash), write_block_size),
 	.erase_value = 0xff,
 };
-
 
 /* Check for correct offset and length */
 static bool flash_b91_is_range_valid(off_t offset, size_t len)
@@ -119,8 +117,7 @@ static int flash_b91_erase(const struct device *dev, off_t offset, size_t len)
 }
 
 /* API implementation: write */
-static int flash_b91_write(const struct device *dev, off_t offset,
-			   const void *data, size_t len)
+static int flash_b91_write(const struct device *dev, off_t offset, const void *data, size_t len)
 {
 	void *buf = NULL;
 	struct flash_b91_data *dev_data = dev->data;
@@ -141,8 +138,7 @@ static int flash_b91_write(const struct device *dev, off_t offset,
 	}
 
 	/* need to store data in intermediate RAM buffer in case from flash to flash write */
-	if (((uint32_t)data >= FLASH_ORIGIN) &&
-		((uint32_t)data < (FLASH_ORIGIN + FLASH_SIZE))) {
+	if (((uint32_t)data >= FLASH_ORIGIN) && ((uint32_t)data < (FLASH_ORIGIN + FLASH_SIZE))) {
 
 		buf = k_malloc(len);
 		if (buf == NULL) {
@@ -172,8 +168,7 @@ static int flash_b91_write(const struct device *dev, off_t offset,
 }
 
 /* API implementation: read */
-static int flash_b91_read(const struct device *dev, off_t offset,
-			  void *data, size_t len)
+static int flash_b91_read(const struct device *dev, off_t offset, void *data, size_t len)
 {
 	ARG_UNUSED(dev);
 
@@ -194,8 +189,7 @@ static int flash_b91_read(const struct device *dev, off_t offset,
 }
 
 /* API implementation: get_parameters */
-static const struct flash_parameters *
-flash_b91_get_parameters(const struct device *dev)
+static const struct flash_parameters *flash_b91_get_parameters(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -210,8 +204,7 @@ static const struct flash_pages_layout dev_layout = {
 };
 
 static void flash_b91_pages_layout(const struct device *dev,
-				   const struct flash_pages_layout **layout,
-				   size_t *layout_size)
+				   const struct flash_pages_layout **layout, size_t *layout_size)
 {
 	*layout = &dev_layout;
 	*layout_size = 1;
@@ -231,6 +224,5 @@ static const struct flash_driver_api flash_b91_api = {
 };
 
 /* Driver registration */
-DEVICE_DT_INST_DEFINE(0, flash_b91_init,
-		      NULL, &flash_data, NULL, POST_KERNEL,
+DEVICE_DT_INST_DEFINE(0, flash_b91_init, NULL, &flash_data, NULL, POST_KERNEL,
 		      CONFIG_FLASH_INIT_PRIORITY, &flash_b91_api);

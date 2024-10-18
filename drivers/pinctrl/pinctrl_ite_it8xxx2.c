@@ -14,9 +14,8 @@
 
 LOG_MODULE_REGISTER(pinctrl_ite_it8xxx2, LOG_LEVEL_ERR);
 
-#define GPIO_IT8XXX2_REG_BASE \
-	((struct gpio_it8xxx2_regs *)DT_REG_ADDR(DT_NODELABEL(gpiogcr)))
-#define GPIO_GROUP_MEMBERS  8
+#define GPIO_IT8XXX2_REG_BASE ((struct gpio_it8xxx2_regs *)DT_REG_ADDR(DT_NODELABEL(gpiogcr)))
+#define GPIO_GROUP_MEMBERS    8
 
 struct pinctrl_it8xxx2_gpio {
 	/* gpio port control register (byte mapping to pin) */
@@ -83,16 +82,13 @@ static int pinctrl_it8xxx2_set(const pinctrl_soc_pin_t *pins)
 	switch (IT8XXX2_DT_PINCFG_PUPDR(pincfg)) {
 	case IT8XXX2_PULL_PIN_DEFAULT:
 		/* No pull-up or pull-down */
-		*reg_gpcr &= ~(GPCR_PORT_PIN_MODE_PULLUP |
-			       GPCR_PORT_PIN_MODE_PULLDOWN);
+		*reg_gpcr &= ~(GPCR_PORT_PIN_MODE_PULLUP | GPCR_PORT_PIN_MODE_PULLDOWN);
 		break;
 	case IT8XXX2_PULL_UP:
-		*reg_gpcr = (*reg_gpcr | GPCR_PORT_PIN_MODE_PULLUP) &
-			     ~GPCR_PORT_PIN_MODE_PULLDOWN;
+		*reg_gpcr = (*reg_gpcr | GPCR_PORT_PIN_MODE_PULLUP) & ~GPCR_PORT_PIN_MODE_PULLDOWN;
 		break;
 	case IT8XXX2_PULL_DOWN:
-		*reg_gpcr = (*reg_gpcr | GPCR_PORT_PIN_MODE_PULLDOWN) &
-			     ~GPCR_PORT_PIN_MODE_PULLUP;
+		*reg_gpcr = (*reg_gpcr | GPCR_PORT_PIN_MODE_PULLDOWN) & ~GPCR_PORT_PIN_MODE_PULLUP;
 		break;
 	default:
 		LOG_ERR("This pull level is not supported.");
@@ -111,9 +107,8 @@ static int pinctrl_it8xxx2_set(const pinctrl_soc_pin_t *pins)
 			*reg_volt_sel &= ~gpio->volt_sel_mask[pin];
 			break;
 		case IT8XXX2_VOLTAGE_1V8:
-			__ASSERT(!(IT8XXX2_DT_PINCFG_PUPDR(pincfg)
-				   == IT8XXX2_PULL_UP),
-			"Don't enable internal pullup if 1.8V voltage is used");
+			__ASSERT(!(IT8XXX2_DT_PINCFG_PUPDR(pincfg) == IT8XXX2_PULL_UP),
+				 "Don't enable internal pullup if 1.8V voltage is used");
 			/* Input voltage selection 1.8V. */
 			*reg_volt_sel |= gpio->volt_sel_mask[pin];
 			break;
@@ -125,13 +120,11 @@ static int pinctrl_it8xxx2_set(const pinctrl_soc_pin_t *pins)
 
 	/* Setting tri-state mode. */
 	if (IT8XXX2_DT_PINCFG_IMPEDANCE(pincfg)) {
-		*reg_gpcr |= (GPCR_PORT_PIN_MODE_PULLUP |
-			      GPCR_PORT_PIN_MODE_PULLDOWN);
+		*reg_gpcr |= (GPCR_PORT_PIN_MODE_PULLUP | GPCR_PORT_PIN_MODE_PULLDOWN);
 	}
 
 	/* Driving current selection. */
-	if (reg_pdsc != NULL &&
-		IT8XXX2_DT_PINCFG_DRIVE_CURRENT(pincfg) != IT8XXX2_DRIVE_DEFAULT) {
+	if (reg_pdsc != NULL && IT8XXX2_DT_PINCFG_DRIVE_CURRENT(pincfg) != IT8XXX2_DRIVE_DEFAULT) {
 		if (IT8XXX2_DT_PINCFG_DRIVE_CURRENT(pincfg) & IT8XXX2_PDSCX_MASK) {
 			/* Driving current selects low. */
 			*reg_pdsc |= BIT(pin);
@@ -164,8 +157,7 @@ static int pinctrl_gpio_it8xxx2_configure_pins(const pinctrl_soc_pin_t *pins)
 	 * Default input mode prevents leakage during changes to extended
 	 * setting (e.g. enabling i2c functionality on GPIO E1/E2 on IT82002)
 	 */
-	*reg_gpcr = (*reg_gpcr | GPCR_PORT_PIN_MODE_INPUT) &
-		     ~GPCR_PORT_PIN_MODE_OUTPUT;
+	*reg_gpcr = (*reg_gpcr | GPCR_PORT_PIN_MODE_INPUT) & ~GPCR_PORT_PIN_MODE_OUTPUT;
 
 	/*
 	 * If pincfg is input, we don't need to handle
@@ -223,8 +215,7 @@ static int pinctrl_gpio_it8xxx2_configure_pins(const pinctrl_soc_pin_t *pins)
 	}
 
 	/* Common settings for alternate function. */
-	*reg_gpcr &= ~(GPCR_PORT_PIN_MODE_INPUT |
-		       GPCR_PORT_PIN_MODE_OUTPUT);
+	*reg_gpcr &= ~(GPCR_PORT_PIN_MODE_INPUT | GPCR_PORT_PIN_MODE_OUTPUT);
 
 	return 0;
 }
@@ -311,13 +302,11 @@ static int pinctrl_kscan_it8xxx2_configure_pins(const pinctrl_soc_pin_t *pins)
 	switch (pins->alt_func) {
 	case IT8XXX2_ALT_FUNC_1:
 		/* Set a pin of KSI[7:0]/KSO[15:0] to kbs mode */
-		*reg_gctrl &= ~(GPCR_PORT_PIN_MODE_INPUT |
-				GPCR_PORT_PIN_MODE_OUTPUT);
+		*reg_gctrl &= ~(GPCR_PORT_PIN_MODE_INPUT | GPCR_PORT_PIN_MODE_OUTPUT);
 		break;
 	case IT8XXX2_ALT_DEFAULT:
 		/* Set a pin of KSI[7:0]/KSO[15:0] to gpio mode */
-		*reg_gctrl = (*reg_gctrl | GPCR_PORT_PIN_MODE_INPUT) &
-			      ~GPCR_PORT_PIN_MODE_OUTPUT;
+		*reg_gctrl = (*reg_gctrl | GPCR_PORT_PIN_MODE_INPUT) & ~GPCR_PORT_PIN_MODE_OUTPUT;
 		break;
 #endif
 	default:
@@ -328,8 +317,7 @@ static int pinctrl_kscan_it8xxx2_configure_pins(const pinctrl_soc_pin_t *pins)
 	return 0;
 }
 
-int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
-			   uintptr_t reg)
+int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintptr_t reg)
 {
 	ARG_UNUSED(reg);
 	const struct pinctrl_it8xxx2_config *pinctrl_config;
@@ -345,8 +333,8 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 		}
 
 		if (status < 0) {
-			LOG_ERR("%s pin%d configuration is invalid.",
-				pins[i].pinctrls->name, pins[i].pin);
+			LOG_ERR("%s pin%d configuration is invalid.", pins[i].pinctrls->name,
+				pins[i].pin);
 			return status;
 		}
 	}
@@ -385,14 +373,12 @@ static int pinctrl_it8xxx2_init(const struct device *dev)
 	 * and I2C3 SMCLK3/SMDAT3 pins from GPB2/GPB5 to GPH1/GPH2,
 	 * and I2C5 SMCLK5/SMDAT5 pins from GPE1/GPE2 to GPA4/GPA5,
 	 */
-	gpio_base->GPIO_GCR7 &= ~(IT8XXX2_GPIO_SMB2PS |
-				  IT8XXX2_GPIO_SMB3PS |
-				  IT8XXX2_GPIO_SMB5PS);
+	gpio_base->GPIO_GCR7 &= ~(IT8XXX2_GPIO_SMB2PS | IT8XXX2_GPIO_SMB3PS | IT8XXX2_GPIO_SMB5PS);
 #endif
 	return 0;
 }
 
-#define INIT_UNION_CONFIG(inst)                                                        \
+#define INIT_UNION_CONFIG(inst)                                                                    \
 	COND_CODE_1(DT_INST_PROP(inst, gpio_group),                                    \
 		(.gpio = {                                                             \
 			 .reg_gpcr = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 0),      \
@@ -414,19 +400,11 @@ static int pinctrl_it8xxx2_init(const struct device *dev)
 		})                                                                     \
 	)
 
-#define PINCTRL_ITE_INIT(inst)                                                     \
-	static const struct pinctrl_it8xxx2_config pinctrl_it8xxx2_cfg_##inst = {  \
-		.gpio_group = DT_INST_PROP(inst, gpio_group),                      \
-		{                                                                  \
-			INIT_UNION_CONFIG(inst)                                    \
-		}                                                                  \
-	};                                                                         \
-										   \
-	DEVICE_DT_INST_DEFINE(inst, &pinctrl_it8xxx2_init,                         \
-			      NULL,                                                \
-			      NULL,                                                \
-			      &pinctrl_it8xxx2_cfg_##inst,                         \
-			      PRE_KERNEL_1,                                        \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,                 \
-			      NULL);
+#define PINCTRL_ITE_INIT(inst)                                                                     \
+	static const struct pinctrl_it8xxx2_config pinctrl_it8xxx2_cfg_##inst = {                  \
+		.gpio_group = DT_INST_PROP(inst, gpio_group), {INIT_UNION_CONFIG(inst)}};          \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &pinctrl_it8xxx2_init, NULL, NULL,                             \
+			      &pinctrl_it8xxx2_cfg_##inst, PRE_KERNEL_1,                           \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 DT_INST_FOREACH_STATUS_OKAY(PINCTRL_ITE_INIT)

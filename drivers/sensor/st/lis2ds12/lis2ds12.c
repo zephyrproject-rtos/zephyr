@@ -52,32 +52,25 @@ static int lis2ds12_set_odr(const struct device *dev, uint8_t odr)
 		val = LIS2DS12_XL_ODR_1Hz_LP;
 		break;
 	case 2:
-		val = (cfg->pm == 1) ? LIS2DS12_XL_ODR_12Hz5_LP :
-				       LIS2DS12_XL_ODR_12Hz5_HR;
+		val = (cfg->pm == 1) ? LIS2DS12_XL_ODR_12Hz5_LP : LIS2DS12_XL_ODR_12Hz5_HR;
 		break;
 	case 3:
-		val = (cfg->pm == 1) ? LIS2DS12_XL_ODR_25Hz_LP :
-				       LIS2DS12_XL_ODR_25Hz_HR;
+		val = (cfg->pm == 1) ? LIS2DS12_XL_ODR_25Hz_LP : LIS2DS12_XL_ODR_25Hz_HR;
 		break;
 	case 4:
-		val = (cfg->pm == 1) ? LIS2DS12_XL_ODR_50Hz_LP :
-				       LIS2DS12_XL_ODR_50Hz_HR;
+		val = (cfg->pm == 1) ? LIS2DS12_XL_ODR_50Hz_LP : LIS2DS12_XL_ODR_50Hz_HR;
 		break;
 	case 5:
-		val = (cfg->pm == 1) ? LIS2DS12_XL_ODR_100Hz_LP :
-				       LIS2DS12_XL_ODR_100Hz_HR;
+		val = (cfg->pm == 1) ? LIS2DS12_XL_ODR_100Hz_LP : LIS2DS12_XL_ODR_100Hz_HR;
 		break;
 	case 6:
-		val = (cfg->pm == 1) ? LIS2DS12_XL_ODR_200Hz_LP :
-				       LIS2DS12_XL_ODR_200Hz_HR;
+		val = (cfg->pm == 1) ? LIS2DS12_XL_ODR_200Hz_LP : LIS2DS12_XL_ODR_200Hz_HR;
 		break;
 	case 7:
-		val = (cfg->pm == 1) ? LIS2DS12_XL_ODR_400Hz_LP :
-				       LIS2DS12_XL_ODR_400Hz_HR;
+		val = (cfg->pm == 1) ? LIS2DS12_XL_ODR_400Hz_LP : LIS2DS12_XL_ODR_400Hz_HR;
 		break;
 	case 8:
-		val = (cfg->pm == 1) ? LIS2DS12_XL_ODR_800Hz_LP :
-				       LIS2DS12_XL_ODR_800Hz_HR;
+		val = (cfg->pm == 1) ? LIS2DS12_XL_ODR_800Hz_LP : LIS2DS12_XL_ODR_800Hz_HR;
 		break;
 	case 9:
 		val = LIS2DS12_XL_ODR_1k6Hz_HF;
@@ -126,10 +119,8 @@ static int lis2ds12_set_range(const struct device *dev, uint8_t range)
 	return err;
 }
 
-static int lis2ds12_accel_config(const struct device *dev,
-				 enum sensor_channel chan,
-				 enum sensor_attribute attr,
-				 const struct sensor_value *val)
+static int lis2ds12_accel_config(const struct device *dev, enum sensor_channel chan,
+				 enum sensor_attribute attr, const struct sensor_value *val)
 {
 	switch (attr) {
 	case SENSOR_ATTR_FULL_SCALE:
@@ -145,10 +136,8 @@ static int lis2ds12_accel_config(const struct device *dev,
 	return 0;
 }
 
-static int lis2ds12_attr_set(const struct device *dev,
-			     enum sensor_channel chan,
-			     enum sensor_attribute attr,
-			     const struct sensor_value *val)
+static int lis2ds12_attr_set(const struct device *dev, enum sensor_channel chan,
+			     enum sensor_attribute attr, const struct sensor_value *val)
 {
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
@@ -181,8 +170,7 @@ static int lis2ds12_sample_fetch_accel(const struct device *dev)
 	return 0;
 }
 
-static int lis2ds12_sample_fetch(const struct device *dev,
-				 enum sensor_channel chan)
+static int lis2ds12_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
@@ -210,8 +198,7 @@ static int lis2ds12_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static inline void lis2ds12_convert(struct sensor_value *val, int raw_val,
-				    float gain)
+static inline void lis2ds12_convert(struct sensor_value *val, int raw_val, float gain)
 {
 	int64_t dval;
 
@@ -222,10 +209,8 @@ static inline void lis2ds12_convert(struct sensor_value *val, int raw_val,
 	val->val2 = dval % 1000000LL;
 }
 
-static inline int lis2ds12_get_channel(enum sensor_channel chan,
-					     struct sensor_value *val,
-					     struct lis2ds12_data *data,
-					     float gain)
+static inline int lis2ds12_get_channel(enum sensor_channel chan, struct sensor_value *val,
+				       struct lis2ds12_data *data, float gain)
 {
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
@@ -249,8 +234,7 @@ static inline int lis2ds12_get_channel(enum sensor_channel chan,
 	return 0;
 }
 
-static int lis2ds12_channel_get(const struct device *dev,
-				enum sensor_channel chan,
+static int lis2ds12_channel_get(const struct device *dev, enum sensor_channel chan,
 				struct sensor_value *val)
 {
 	struct lis2ds12_data *data = dev->data;
@@ -269,7 +253,7 @@ static const struct sensor_driver_api lis2ds12_driver_api = {
 
 static int lis2ds12_init(const struct device *dev)
 {
-	const struct lis2ds12_config * const cfg = dev->config;
+	const struct lis2ds12_config *const cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	uint8_t chip_id;
 	int ret;
@@ -332,74 +316,60 @@ static int lis2ds12_init(const struct device *dev)
  * LIS2DS12_DEFINE_I2C().
  */
 
-#define LIS2DS12_DEVICE_INIT(inst)					\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
-			    lis2ds12_init,				\
-			    NULL,					\
-			    &lis2ds12_data_##inst,			\
-			    &lis2ds12_config_##inst,			\
-			    POST_KERNEL,				\
-			    CONFIG_SENSOR_INIT_PRIORITY,		\
-			    &lis2ds12_driver_api);
+#define LIS2DS12_DEVICE_INIT(inst)                                                                 \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, lis2ds12_init, NULL, &lis2ds12_data_##inst,             \
+				     &lis2ds12_config_##inst, POST_KERNEL,                         \
+				     CONFIG_SENSOR_INIT_PRIORITY, &lis2ds12_driver_api);
 
 /*
  * Instantiation macros used when a device is on a SPI bus.
  */
 
 #ifdef CONFIG_LIS2DS12_TRIGGER
-#define LIS2DS12_CFG_IRQ(inst) \
-	.gpio_int = GPIO_DT_SPEC_INST_GET(inst, irq_gpios),
+#define LIS2DS12_CFG_IRQ(inst) .gpio_int = GPIO_DT_SPEC_INST_GET(inst, irq_gpios),
 #else
 #define LIS2DS12_CFG_IRQ(inst)
 #endif /* CONFIG_LIS2DS12_TRIGGER */
 
-#define LIS2DS12_CONFIG_COMMON(inst)					\
-	.range = DT_INST_PROP(inst, range),				\
-	.pm = DT_INST_PROP(inst, power_mode),				\
-	.odr = DT_INST_PROP(inst, odr),					\
+#define LIS2DS12_CONFIG_COMMON(inst)                                                               \
+	.range = DT_INST_PROP(inst, range), .pm = DT_INST_PROP(inst, power_mode),                  \
+	.odr = DT_INST_PROP(inst, odr),                                                            \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),		\
 			(LIS2DS12_CFG_IRQ(inst)), ())
 
-#define LIS2DS12_SPI_OPERATION (SPI_WORD_SET(8) |			\
-				SPI_OP_MODE_MASTER |			\
-				SPI_MODE_CPOL |				\
-				SPI_MODE_CPHA)				\
+#define LIS2DS12_SPI_OPERATION                                                                     \
+	(SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA)
 
-#define LIS2DS12_CONFIG_SPI(inst)					\
-	{								\
-		STMEMSC_CTX_SPI(&lis2ds12_config_##inst.stmemsc_cfg),	\
-		.stmemsc_cfg = {					\
-			.spi = SPI_DT_SPEC_INST_GET(inst,		\
-					   LIS2DS12_SPI_OPERATION,	\
-					   0),				\
-		},							\
-		LIS2DS12_CONFIG_COMMON(inst)				\
-	}
+#define LIS2DS12_CONFIG_SPI(inst)                                                                  \
+	{STMEMSC_CTX_SPI(&lis2ds12_config_##inst.stmemsc_cfg),                                     \
+	 .stmemsc_cfg =                                                                            \
+		 {                                                                                 \
+			 .spi = SPI_DT_SPEC_INST_GET(inst, LIS2DS12_SPI_OPERATION, 0),             \
+		 },                                                                                \
+	 LIS2DS12_CONFIG_COMMON(inst)}
 
 /*
  * Instantiation macros used when a device is on an I2C bus.
  */
 
-#define LIS2DS12_CONFIG_I2C(inst)					\
-	{								\
-		STMEMSC_CTX_I2C(&lis2ds12_config_##inst.stmemsc_cfg),	\
-		.stmemsc_cfg = {					\
-			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
-		},							\
-		LIS2DS12_CONFIG_COMMON(inst)				\
-	}
+#define LIS2DS12_CONFIG_I2C(inst)                                                                  \
+	{STMEMSC_CTX_I2C(&lis2ds12_config_##inst.stmemsc_cfg),                                     \
+	 .stmemsc_cfg =                                                                            \
+		 {                                                                                 \
+			 .i2c = I2C_DT_SPEC_INST_GET(inst),                                        \
+		 },                                                                                \
+	 LIS2DS12_CONFIG_COMMON(inst)}
 
 /*
  * Main instantiation macro. Use of COND_CODE_1() selects the right
  * bus-specific macro at preprocessor time.
  */
 
-#define LIS2DS12_DEFINE(inst)						\
-	static struct lis2ds12_data lis2ds12_data_##inst;		\
-	static const struct lis2ds12_config lis2ds12_config_##inst =	\
-	COND_CODE_1(DT_INST_ON_BUS(inst, spi),				\
+#define LIS2DS12_DEFINE(inst)                                                                      \
+	static struct lis2ds12_data lis2ds12_data_##inst;                                          \
+	static const struct lis2ds12_config lis2ds12_config_##inst = COND_CODE_1(DT_INST_ON_BUS(inst, spi),				\
 		    (LIS2DS12_CONFIG_SPI(inst)),			\
-		    (LIS2DS12_CONFIG_I2C(inst)));			\
+		    (LIS2DS12_CONFIG_I2C(inst)));                \
 	LIS2DS12_DEVICE_INIT(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(LIS2DS12_DEFINE)

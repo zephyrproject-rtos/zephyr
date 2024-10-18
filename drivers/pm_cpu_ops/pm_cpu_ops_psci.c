@@ -59,8 +59,7 @@ int pm_cpu_off(void)
 	return psci_to_dev_err(ret);
 }
 
-int pm_cpu_on(unsigned long cpuid,
-	      uintptr_t entry_point)
+int pm_cpu_on(unsigned long cpuid, uintptr_t entry_point)
 {
 	int ret;
 
@@ -69,7 +68,7 @@ int pm_cpu_on(unsigned long cpuid,
 	}
 
 	ret = psci_data.invoke_psci_fn(PSCI_FN_NATIVE(0_2, CPU_ON), cpuid,
-				       (unsigned long) entry_point, 0);
+				       (unsigned long)entry_point, 0);
 
 	return psci_to_dev_err(ret);
 }
@@ -126,13 +125,10 @@ int pm_system_reset(unsigned char reset_type)
 	}
 
 	return psci_to_dev_err(ret);
-
 }
 
-static unsigned long __invoke_psci_fn_hvc(unsigned long function_id,
-					  unsigned long arg0,
-					  unsigned long arg1,
-					  unsigned long arg2)
+static unsigned long __invoke_psci_fn_hvc(unsigned long function_id, unsigned long arg0,
+					  unsigned long arg1, unsigned long arg2)
 {
 	struct arm_smccc_res res;
 
@@ -140,10 +136,8 @@ static unsigned long __invoke_psci_fn_hvc(unsigned long function_id,
 	return res.a0;
 }
 
-static unsigned long __invoke_psci_fn_smc(unsigned long function_id,
-					  unsigned long arg0,
-					  unsigned long arg1,
-					  unsigned long arg2)
+static unsigned long __invoke_psci_fn_smc(unsigned long function_id, unsigned long arg0,
+					  unsigned long arg1, unsigned long arg2)
 {
 	struct arm_smccc_res res;
 
@@ -178,9 +172,7 @@ static int psci_detect(void)
 {
 	uint32_t ver = psci_get_version();
 
-	LOG_DBG("Detected PSCIv%d.%d",
-		PSCI_VERSION_MAJOR(ver),
-		PSCI_VERSION_MINOR(ver));
+	LOG_DBG("Detected PSCIv%d.%d", PSCI_VERSION_MAJOR(ver), PSCI_VERSION_MINOR(ver));
 
 	if (PSCI_VERSION_MAJOR(ver) == 0 && PSCI_VERSION_MINOR(ver) < 2) {
 		LOG_ERR("PSCI unsupported version");
@@ -214,18 +206,11 @@ static int psci_init(const struct device *dev)
  * the below mentioned DT method where we need to #undef the default version arm,psci-0.2
  * and #define the required version like arm,psci-1.0 or arm,psci-1.1.
  */
-#define PSCI_DEFINE(inst, ver)						\
-	static const struct psci_config_t psci_config_##inst##ver = {	\
-		.method = DT_PROP(DT_DRV_INST(inst), method)		\
-	};								\
-	DEVICE_DT_INST_DEFINE(inst,					\
-			&psci_init,					\
-			NULL,						\
-			&psci_data,					\
-			&psci_config_##inst##ver,				\
-			PRE_KERNEL_1,					\
-			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			NULL);
+#define PSCI_DEFINE(inst, ver)                                                                     \
+	static const struct psci_config_t psci_config_##inst##ver = {                              \
+		.method = DT_PROP(DT_DRV_INST(inst), method)};                                     \
+	DEVICE_DT_INST_DEFINE(inst, &psci_init, NULL, &psci_data, &psci_config_##inst##ver,        \
+			      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 
 #define PSCI_0_2_INIT(n) PSCI_DEFINE(n, PSCI_0_2)
 #undef DT_DRV_COMPAT

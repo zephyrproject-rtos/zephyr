@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #define DT_DRV_COMPAT nxp_sctimer_pwm
 
 #include <errno.h>
@@ -39,9 +38,8 @@ struct pwm_mcux_sctimer_data {
 };
 
 /* Helper to setup channel that has not previously been configured for PWM */
-static int mcux_sctimer_new_channel(const struct device *dev,
-				    uint32_t channel, uint32_t period_cycles,
-				    uint32_t duty_cycle)
+static int mcux_sctimer_new_channel(const struct device *dev, uint32_t channel,
+				    uint32_t period_cycles, uint32_t duty_cycle)
 {
 	const struct pwm_mcux_sctimer_config *config = dev->config;
 	struct pwm_mcux_sctimer_data *data = dev->data;
@@ -50,8 +48,7 @@ static int mcux_sctimer_new_channel(const struct device *dev,
 
 	data->match_period = period_cycles;
 
-	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
-				&clock_freq)) {
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_freq)) {
 		return -EINVAL;
 	}
 
@@ -66,9 +63,8 @@ static int mcux_sctimer_new_channel(const struct device *dev,
 
 	LOG_DBG("SETUP dutycycle to %u\n", duty_cycle);
 	data->channel[channel].dutyCyclePercent = duty_cycle;
-	if (SCTIMER_SetupPwm(config->base, &data->channel[channel],
-			     kSCTIMER_EdgeAlignedPwm, pwm_freq,
-			     clock_freq, &data->event_number[channel]) == kStatus_Fail) {
+	if (SCTIMER_SetupPwm(config->base, &data->channel[channel], kSCTIMER_EdgeAlignedPwm,
+			     pwm_freq, clock_freq, &data->event_number[channel]) == kStatus_Fail) {
 		LOG_ERR("Could not set up pwm");
 		return -ENOTSUP;
 	}
@@ -78,9 +74,9 @@ static int mcux_sctimer_new_channel(const struct device *dev,
 	return 0;
 }
 
-static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
-				       uint32_t channel, uint32_t period_cycles,
-				       uint32_t pulse_cycles, pwm_flags_t flags)
+static int mcux_sctimer_pwm_set_cycles(const struct device *dev, uint32_t channel,
+				       uint32_t period_cycles, uint32_t pulse_cycles,
+				       pwm_flags_t flags)
 {
 	const struct pwm_mcux_sctimer_config *config = dev->config;
 	struct pwm_mcux_sctimer_data *data = dev->data;
@@ -136,14 +132,12 @@ static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 	 * This means that when configured, multiple channels must have the
 	 * same PWM period, since they all share the same SCTimer counter.
 	 */
-	if (period_cycles != data->match_period &&
-	    data->event_number[channel] == EVENT_NOT_SET &&
+	if (period_cycles != data->match_period && data->event_number[channel] == EVENT_NOT_SET &&
 	    data->match_period == 0U) {
 		/* No PWM signals have been configured. We can set up the first
 		 * PWM output using the MCUX SDK.
 		 */
-		ret = mcux_sctimer_new_channel(dev, channel, period_cycles,
-					       duty_cycle);
+		ret = mcux_sctimer_new_channel(dev, channel, period_cycles, duty_cycle);
 		if (ret < 0) {
 			return ret;
 		}
@@ -158,8 +152,7 @@ static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 			return -ENOTSUP;
 		}
 		/* Setup PWM output using MCUX SDK */
-		ret = mcux_sctimer_new_channel(dev, channel, period_cycles,
-					       duty_cycle);
+		ret = mcux_sctimer_new_channel(dev, channel, period_cycles, duty_cycle);
 	} else if (period_cycles != data->match_period) {
 		uint32_t period_event = data->event_number[channel];
 		/* We are reconfiguring the period of a configured channel
@@ -190,15 +183,13 @@ static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 	return 0;
 }
 
-static int mcux_sctimer_pwm_get_cycles_per_sec(const struct device *dev,
-					       uint32_t channel,
+static int mcux_sctimer_pwm_get_cycles_per_sec(const struct device *dev, uint32_t channel,
 					       uint64_t *cycles)
 {
 	const struct pwm_mcux_sctimer_config *config = dev->config;
 	uint32_t clock_freq;
 
-	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
-				&clock_freq)) {
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_freq)) {
 		return -EINVAL;
 	}
 
@@ -248,24 +239,20 @@ static const struct pwm_driver_api pwm_mcux_sctimer_driver_api = {
 	.get_cycles_per_sec = mcux_sctimer_pwm_get_cycles_per_sec,
 };
 
-#define PWM_MCUX_SCTIMER_DEVICE_INIT_MCUX(n)						\
-	PINCTRL_DT_INST_DEFINE(n);							\
-	static struct pwm_mcux_sctimer_data pwm_mcux_sctimer_data_##n;			\
-											\
-	static const struct pwm_mcux_sctimer_config pwm_mcux_sctimer_config_##n = {	\
-		.base = (SCT_Type *)DT_INST_REG_ADDR(n),				\
-		.prescale = DT_INST_PROP(n, prescaler),					\
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
-	};										\
-											\
-	DEVICE_DT_INST_DEFINE(n,							\
-			      mcux_sctimer_pwm_init,					\
-			      NULL,							\
-			      &pwm_mcux_sctimer_data_##n,				\
-			      &pwm_mcux_sctimer_config_##n,				\
-			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,			\
+#define PWM_MCUX_SCTIMER_DEVICE_INIT_MCUX(n)                                                       \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	static struct pwm_mcux_sctimer_data pwm_mcux_sctimer_data_##n;                             \
+                                                                                                   \
+	static const struct pwm_mcux_sctimer_config pwm_mcux_sctimer_config_##n = {                \
+		.base = (SCT_Type *)DT_INST_REG_ADDR(n),                                           \
+		.prescale = DT_INST_PROP(n, prescaler),                                            \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, mcux_sctimer_pwm_init, NULL, &pwm_mcux_sctimer_data_##n,          \
+			      &pwm_mcux_sctimer_config_##n, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, \
 			      &pwm_mcux_sctimer_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_MCUX_SCTIMER_DEVICE_INIT_MCUX)

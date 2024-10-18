@@ -23,8 +23,7 @@ static const char *w1_settings_name[W1_SETINGS_TYPE_COUNT] = {
 	[W1_SETTING_STRONG_PULLUP] = "spu",
 };
 
-static int read_io_options(const struct shell *sh, int pos, char **argv,
-			   bool *reset)
+static int read_io_options(const struct shell *sh, int pos, char **argv, bool *reset)
 {
 	char *arg = argv[pos];
 
@@ -329,8 +328,7 @@ static int cmd_w1_configure(const struct shell *sh, size_t argc, char **argv)
 		goto out;
 	}
 
-	shell_info(sh, "Applied config: %s = %u (0x%08x)",
-		   w1_settings_name[type], value, value);
+	shell_info(sh, "Applied config: %s = %u (0x%08x)", w1_settings_name[type], value, value);
 
 out:
 	(void)w1_unlock_bus(dev);
@@ -368,7 +366,8 @@ static int cmd_w1_search(const struct shell *sh, size_t argc, char **argv)
 	return ret;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_w1,
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_w1,
 	SHELL_CMD_ARG(reset, NULL,
 		      "Reset 1-Wire bus.\n"
 		      "Usage: <device>",
@@ -391,13 +390,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_w1,
 		      cmd_w1_write_bit, 3, 0),
 	SHELL_CMD_ARG(write_byte, NULL,
 		      "Write 1-Wire byte.\n"
-		      "Usage: <device> [-r] <byte>\n"
-		      OPTION_HELP_RESET,
+		      "Usage: <device> [-r] <byte>\n" OPTION_HELP_RESET,
 		      cmd_w1_write_byte, 3, 1),
 	SHELL_CMD_ARG(write_block, NULL,
 		      "Write 1-Wire block.\n"
-		      "Usage: <device> [-r] <byte1> [<byte2>, ...]\n"
-		      OPTION_HELP_RESET,
+		      "Usage: <device> [-r] <byte1> [<byte2>, ...]\n" OPTION_HELP_RESET,
 		      cmd_w1_write_block, 3, BUF_SIZE),
 	SHELL_CMD_ARG(config, NULL,
 		      "Configure 1-Wire host.\n"

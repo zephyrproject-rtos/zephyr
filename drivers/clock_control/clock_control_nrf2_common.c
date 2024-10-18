@@ -14,10 +14,8 @@ LOG_MODULE_REGISTER(clock_control_nrf2, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 #define ONOFF_CNT_MAX (FLAGS_COMMON_BITS - 2)
 
-#define CONTAINER_OF_ITEM(ptr, idx, type, array) \
-	(type *)((char *)ptr - \
-		 (idx * sizeof(array[0])) - \
-		 offsetof(type, array[0]))
+#define CONTAINER_OF_ITEM(ptr, idx, type, array)                                                   \
+	(type *)((char *)ptr - (idx * sizeof(array[0])) - offsetof(type, array[0]))
 
 /*
  * Definition of `struct clock_config_generic`.
@@ -44,14 +42,11 @@ static void update_config(struct clock_config_generic *cfg)
 	k_work_submit(&cfg->work);
 }
 
-static void onoff_start_option(struct onoff_manager *mgr,
-			       onoff_notify_fn notify)
+static void onoff_start_option(struct onoff_manager *mgr, onoff_notify_fn notify)
 {
-	struct clock_onoff *onoff =
-		CONTAINER_OF(mgr, struct clock_onoff, mgr);
+	struct clock_onoff *onoff = CONTAINER_OF(mgr, struct clock_onoff, mgr);
 	struct clock_config_generic *cfg =
-		CONTAINER_OF_ITEM(onoff, onoff->idx,
-				  struct clock_config_generic, onoff);
+		CONTAINER_OF_ITEM(onoff, onoff->idx, struct clock_config_generic, onoff);
 
 	onoff->notify = notify;
 
@@ -59,14 +54,11 @@ static void onoff_start_option(struct onoff_manager *mgr,
 	update_config(cfg);
 }
 
-static void onoff_stop_option(struct onoff_manager *mgr,
-			      onoff_notify_fn notify)
+static void onoff_stop_option(struct onoff_manager *mgr, onoff_notify_fn notify)
 {
-	struct clock_onoff *onoff =
-		CONTAINER_OF(mgr, struct clock_onoff, mgr);
+	struct clock_onoff *onoff = CONTAINER_OF(mgr, struct clock_onoff, mgr);
 	struct clock_config_generic *cfg =
-		CONTAINER_OF_ITEM(onoff, onoff->idx,
-				  struct clock_config_generic, onoff);
+		CONTAINER_OF_ITEM(onoff, onoff->idx, struct clock_config_generic, onoff);
 
 	(void)atomic_and(&cfg->flags, ~BIT(onoff->idx));
 	update_config(cfg);
@@ -86,10 +78,8 @@ int clock_config_init(void *clk_cfg, uint8_t onoff_cnt, k_work_handler_t update_
 	__ASSERT_NO_MSG(onoff_cnt <= ONOFF_CNT_MAX);
 
 	for (int i = 0; i < onoff_cnt; ++i) {
-		static const struct onoff_transitions transitions = {
-			.start = onoff_start_option,
-			.stop  = onoff_stop_option
-		};
+		static const struct onoff_transitions transitions = {.start = onoff_start_option,
+								     .stop = onoff_stop_option};
 		int rc;
 
 		rc = onoff_manager_init(&cfg->onoff[i].mgr, &transitions);
@@ -109,8 +99,7 @@ int clock_config_init(void *clk_cfg, uint8_t onoff_cnt, k_work_handler_t update_
 
 uint8_t clock_config_update_begin(struct k_work *work)
 {
-	struct clock_config_generic *cfg =
-		CONTAINER_OF(work, struct clock_config_generic, work);
+	struct clock_config_generic *cfg = CONTAINER_OF(work, struct clock_config_generic, work);
 	uint32_t active_options;
 
 	(void)atomic_or(&cfg->flags, FLAG_UPDATE_IN_PROGRESS);

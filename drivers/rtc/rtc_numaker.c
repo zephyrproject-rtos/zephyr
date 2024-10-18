@@ -23,10 +23,10 @@ LOG_MODULE_REGISTER(rtc_numaker, CONFIG_RTC_LOG_LEVEL);
 #define NVT_RTC_YEAR_MIN 2000U
 #define NVT_RTC_YEAR_MAX 2099U
 /* struct tm start time:   1st, Jan, 1900 */
-#define TM_YEAR_REF 1900U
+#define TM_YEAR_REF      1900U
 
-#define NVT_TIME_SCALE RTC_CLOCK_24
-#define NVT_ALARM_MSK 0x3fU
+#define NVT_TIME_SCALE     RTC_CLOCK_24
+#define NVT_ALARM_MSK      0x3fU
 #define NVT_ALARM_UNIT_MSK 0x03U
 
 struct rtc_numaker_config {
@@ -46,15 +46,15 @@ struct rtc_numaker_data {
 };
 
 struct rtc_numaker_time {
-	uint32_t year;		/* Year value */
-	uint32_t month;		/* Month value */
-	uint32_t day;		/* Day value */
-	uint32_t day_of_week;	/* Day of week value */
-	uint32_t hour;		/* Hour value */
-	uint32_t minute;	/* Minute value */
-	uint32_t second;	/* Second value */
-	uint32_t time_scale;	/* 12-Hour, 24-Hour */
-	uint32_t am_pm;		/* Only Time Scale select 12-hr used */
+	uint32_t year;        /* Year value */
+	uint32_t month;       /* Month value */
+	uint32_t day;         /* Day value */
+	uint32_t day_of_week; /* Day of week value */
+	uint32_t hour;        /* Hour value */
+	uint32_t minute;      /* Minute value */
+	uint32_t second;      /* Second value */
+	uint32_t time_scale;  /* 12-Hour, 24-Hour */
+	uint32_t am_pm;       /* Only Time Scale select 12-hr used */
 };
 
 static int rtc_numaker_set_time(const struct device *dev, const struct rtc_time *timeptr)
@@ -169,12 +169,8 @@ static int rtc_numaker_alarm_get_supported_fields(const struct device *dev, uint
 	ARG_UNUSED(dev);
 	ARG_UNUSED(id);
 
-	*mask =  RTC_ALARM_TIME_MASK_SECOND
-		 | RTC_ALARM_TIME_MASK_MINUTE
-		 | RTC_ALARM_TIME_MASK_HOUR
-		 | RTC_ALARM_TIME_MASK_MONTHDAY
-		 | RTC_ALARM_TIME_MASK_MONTH
-		 | RTC_ALARM_TIME_MASK_YEAR;
+	*mask = RTC_ALARM_TIME_MASK_SECOND | RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR |
+		RTC_ALARM_TIME_MASK_MONTHDAY | RTC_ALARM_TIME_MASK_MONTH | RTC_ALARM_TIME_MASK_YEAR;
 
 	return 0;
 }

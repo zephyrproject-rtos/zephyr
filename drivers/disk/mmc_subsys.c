@@ -12,7 +12,6 @@
 #include <zephyr/sd/mmc.h>
 #include <zephyr/drivers/disk.h>
 
-
 enum sd_status {
 	SD_UNINIT,
 	SD_ERROR,
@@ -29,7 +28,6 @@ struct mmc_data {
 	enum sd_status status;
 	char *name;
 };
-
 
 static int disk_mmc_access_init(struct disk_info *disk)
 {
@@ -59,8 +57,8 @@ static int disk_mmc_access_status(struct disk_info *disk)
 	}
 }
 
-static int disk_mmc_access_read(struct disk_info *disk, uint8_t *buf,
-				 uint32_t sector, uint32_t count)
+static int disk_mmc_access_read(struct disk_info *disk, uint8_t *buf, uint32_t sector,
+				uint32_t count)
 {
 	const struct device *dev = disk->dev;
 	struct mmc_data *data = dev->data;
@@ -68,8 +66,8 @@ static int disk_mmc_access_read(struct disk_info *disk, uint8_t *buf,
 	return mmc_read_blocks(&data->card, buf, sector, count);
 }
 
-static int disk_mmc_access_write(struct disk_info *disk, const uint8_t *buf,
-				 uint32_t sector, uint32_t count)
+static int disk_mmc_access_write(struct disk_info *disk, const uint8_t *buf, uint32_t sector,
+				 uint32_t count)
 {
 	const struct device *dev = disk->dev;
 	struct mmc_data *data = dev->data;
@@ -124,23 +122,17 @@ static int disk_mmc_init(const struct device *dev)
 	return disk_access_register(&mmc_disk);
 }
 
-#define DISK_ACCESS_MMC_INIT(n)						\
-	static const struct mmc_config mmc_config_##n = {			\
-		.host_controller = DEVICE_DT_GET(DT_INST_PARENT(n)),		\
-		.bus_width = DT_INST_PROP(n, bus_width),			\
-	};									\
-										\
-	static struct mmc_data mmc_data_##n = {				\
-		.name = CONFIG_MMC_VOLUME_NAME,				\
-	};									\
-										\
-	DEVICE_DT_INST_DEFINE(n,						\
-			&disk_mmc_init,					\
-			NULL,							\
-			&mmc_data_##n,					\
-			&mmc_config_##n,					\
-			POST_KERNEL,						\
-			CONFIG_SD_INIT_PRIORITY,				\
-			NULL);
+#define DISK_ACCESS_MMC_INIT(n)                                                                    \
+	static const struct mmc_config mmc_config_##n = {                                          \
+		.host_controller = DEVICE_DT_GET(DT_INST_PARENT(n)),                               \
+		.bus_width = DT_INST_PROP(n, bus_width),                                           \
+	};                                                                                         \
+                                                                                                   \
+	static struct mmc_data mmc_data_##n = {                                                    \
+		.name = CONFIG_MMC_VOLUME_NAME,                                                    \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &disk_mmc_init, NULL, &mmc_data_##n, &mmc_config_##n,             \
+			      POST_KERNEL, CONFIG_SD_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(DISK_ACCESS_MMC_INIT)

@@ -39,7 +39,6 @@ struct spi_litex_data {
 	uint8_t dfs; /* dfs in bytes: 1,2 or 4 */
 };
 
-
 static int spi_litex_set_frequency(const struct device *dev, const struct spi_config *config)
 {
 	const struct spi_litex_dev_config *dev_config = dev->config;

@@ -145,8 +145,7 @@ static void veml7700_sleep_by_integration_time(const struct veml7700_data *data)
 	}
 }
 
-static int veml7700_counts_to_lux(const struct veml7700_data *data, uint16_t counts,
-				  uint32_t *lux)
+static int veml7700_counts_to_lux(const struct veml7700_data *data, uint16_t counts, uint32_t *lux)
 {
 	if (!is_veml7700_gain_in_range(data->gain) || !is_veml7700_it_in_range(data->it)) {
 		return -EINVAL;
@@ -155,8 +154,7 @@ static int veml7700_counts_to_lux(const struct veml7700_data *data, uint16_t cou
 	return 0;
 }
 
-static int veml7700_lux_to_counts(const struct veml7700_data *data, uint32_t lux,
-				       uint16_t *counts)
+static int veml7700_lux_to_counts(const struct veml7700_data *data, uint32_t lux, uint16_t *counts)
 {
 	if (!is_veml7700_gain_in_range(data->gain) || !is_veml7700_it_in_range(data->it)) {
 		return -EINVAL;

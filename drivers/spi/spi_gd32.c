@@ -28,9 +28,9 @@ LOG_MODULE_REGISTER(spi_gd32);
 #include "spi_context.h"
 
 /* SPI error status mask. */
-#define SPI_GD32_ERR_MASK	(SPI_STAT_RXORERR | SPI_STAT_CONFERR | SPI_STAT_CRCERR)
+#define SPI_GD32_ERR_MASK (SPI_STAT_RXORERR | SPI_STAT_CONFERR | SPI_STAT_CRCERR)
 
-#define GD32_SPI_PSC_MAX	0x7U
+#define GD32_SPI_PSC_MAX 0x7U
 
 #ifdef CONFIG_SPI_GD32_DMA
 
@@ -104,8 +104,8 @@ static int spi_gd32_get_err(const struct spi_gd32_config *cfg)
 	uint32_t stat = SPI_STAT(cfg->reg);
 
 	if (stat & SPI_GD32_ERR_MASK) {
-		LOG_ERR("spi%u error status detected, err = %u",
-			cfg->reg, stat & (uint32_t)SPI_GD32_ERR_MASK);
+		LOG_ERR("spi%u error status detected, err = %u", cfg->reg,
+			stat & (uint32_t)SPI_GD32_ERR_MASK);
 
 		return -EIO;
 	}
@@ -115,12 +115,10 @@ static int spi_gd32_get_err(const struct spi_gd32_config *cfg)
 
 static bool spi_gd32_transfer_ongoing(struct spi_gd32_data *data)
 {
-	return spi_context_tx_on(&data->ctx) ||
-	       spi_context_rx_on(&data->ctx);
+	return spi_context_tx_on(&data->ctx) || spi_context_rx_on(&data->ctx);
 }
 
-static int spi_gd32_configure(const struct device *dev,
-			      const struct spi_config *config)
+static int spi_gd32_configure(const struct device *dev, const struct spi_config *config)
 {
 	struct spi_gd32_data *data = dev->data;
 	const struct spi_gd32_config *cfg = dev->config;
@@ -173,8 +171,7 @@ static int spi_gd32_configure(const struct device *dev,
 		SPI_CTL0(cfg->reg) |= SPI_CTL0_CKPH;
 	}
 
-	(void)clock_control_get_rate(GD32_CLOCK_CONTROLLER,
-				     (clock_control_subsys_t)&cfg->clkid,
+	(void)clock_control_get_rate(GD32_CLOCK_CONTROLLER, (clock_control_subsys_t)&cfg->clkid,
 				     &bus_freq);
 
 	for (uint8_t i = 0U; i <= GD32_SPI_PSC_MAX; i++) {
@@ -244,8 +241,8 @@ static int spi_gd32_frame_exchange(const struct device *dev)
 }
 
 #ifdef CONFIG_SPI_GD32_DMA
-static void spi_gd32_dma_callback(const struct device *dma_dev, void *arg,
-				  uint32_t channel, int status);
+static void spi_gd32_dma_callback(const struct device *dma_dev, void *arg, uint32_t channel,
+				  int status);
 
 static uint32_t spi_gd32_dma_setup(const struct device *dev, const uint32_t dir)
 {
@@ -266,10 +263,8 @@ static uint32_t spi_gd32_dma_setup(const struct device *dev, const uint32_t dir)
 	dma_cfg->block_count = 1U;
 	dma_cfg->head_block = block_cfg;
 	dma_cfg->dma_slot = cfg->dma[dir].slot;
-	dma_cfg->channel_priority =
-		GD32_DMA_CONFIG_PRIORITY(cfg->dma[dir].config);
-	dma_cfg->channel_direction =
-		dir == TX ? MEMORY_TO_PERIPHERAL : PERIPHERAL_TO_MEMORY;
+	dma_cfg->channel_priority = GD32_DMA_CONFIG_PRIORITY(cfg->dma[dir].config);
+	dma_cfg->channel_direction = dir == TX ? MEMORY_TO_PERIPHERAL : PERIPHERAL_TO_MEMORY;
 
 	if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
 		dma_cfg->source_data_size = 1;
@@ -351,11 +346,9 @@ on_error:
 }
 #endif
 
-static int spi_gd32_transceive_impl(const struct device *dev,
-				    const struct spi_config *config,
+static int spi_gd32_transceive_impl(const struct device *dev, const struct spi_config *config,
 				    const struct spi_buf_set *tx_bufs,
-				    const struct spi_buf_set *rx_bufs,
-				    spi_callback_t cb,
+				    const struct spi_buf_set *rx_bufs, spi_callback_t cb,
 				    void *userdata)
 {
 	struct spi_gd32_data *data = dev->data;
@@ -389,10 +382,8 @@ static int spi_gd32_transceive_impl(const struct device *dev,
 	} else
 #endif
 	{
-		SPI_STAT(cfg->reg) &=
-			~(SPI_STAT_RBNE | SPI_STAT_TBE | SPI_GD32_ERR_MASK);
-		SPI_CTL1(cfg->reg) |=
-			(SPI_CTL1_RBNEIE | SPI_CTL1_TBEIE | SPI_CTL1_ERRIE);
+		SPI_STAT(cfg->reg) &= ~(SPI_STAT_RBNE | SPI_STAT_TBE | SPI_GD32_ERR_MASK);
+		SPI_CTL1(cfg->reg) |= (SPI_CTL1_RBNEIE | SPI_CTL1_TBEIE | SPI_CTL1_ERRIE);
 	}
 	ret = spi_context_wait_for_completion(&data->ctx);
 #else
@@ -408,20 +399,17 @@ static int spi_gd32_transceive_impl(const struct device *dev,
 #endif
 #endif
 
-	while (!(SPI_STAT(cfg->reg) & SPI_STAT_TBE) ||
-		(SPI_STAT(cfg->reg) & SPI_STAT_TRANS)) {
+	while (!(SPI_STAT(cfg->reg) & SPI_STAT_TBE) || (SPI_STAT(cfg->reg) & SPI_STAT_TRANS)) {
 		/* Wait until last frame transfer complete. */
 	}
 
 #ifdef CONFIG_SPI_GD32_DMA
 dma_error:
-	SPI_CTL1(cfg->reg) &=
-		~(SPI_CTL1_DMATEN | SPI_CTL1_DMAREN);
+	SPI_CTL1(cfg->reg) &= ~(SPI_CTL1_DMATEN | SPI_CTL1_DMAREN);
 #endif
 	spi_context_cs_control(&data->ctx, false);
 
-	SPI_CTL0(cfg->reg) &=
-		~(SPI_CTL0_SPIEN);
+	SPI_CTL0(cfg->reg) &= ~(SPI_CTL0_SPIEN);
 
 error:
 	spi_context_release(&data->ctx, ret);
@@ -429,20 +417,16 @@ error:
 	return ret;
 }
 
-static int spi_gd32_transceive(const struct device *dev,
-			       const struct spi_config *config,
-			       const struct spi_buf_set *tx_bufs,
-			       const struct spi_buf_set *rx_bufs)
+static int spi_gd32_transceive(const struct device *dev, const struct spi_config *config,
+			       const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs)
 {
 	return spi_gd32_transceive_impl(dev, config, tx_bufs, rx_bufs, NULL, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int spi_gd32_transceive_async(const struct device *dev,
-				     const struct spi_config *config,
+static int spi_gd32_transceive_async(const struct device *dev, const struct spi_config *config,
 				     const struct spi_buf_set *tx_bufs,
-				     const struct spi_buf_set *rx_bufs,
-				     spi_callback_t cb,
+				     const struct spi_buf_set *rx_bufs, spi_callback_t cb,
 				     void *userdata)
 {
 	return spi_gd32_transceive_impl(dev, config, tx_bufs, rx_bufs, cb, userdata);
@@ -456,8 +440,7 @@ static void spi_gd32_complete(const struct device *dev, int status)
 	struct spi_gd32_data *data = dev->data;
 	const struct spi_gd32_config *cfg = dev->config;
 
-	SPI_CTL1(cfg->reg) &=
-		~(SPI_CTL1_RBNEIE | SPI_CTL1_TBEIE | SPI_CTL1_ERRIE);
+	SPI_CTL1(cfg->reg) &= ~(SPI_CTL1_RBNEIE | SPI_CTL1_TBEIE | SPI_CTL1_ERRIE);
 
 #ifdef CONFIG_SPI_GD32_DMA
 	for (size_t i = 0; i < spi_gd32_dma_enabled_num(dev); i++) {
@@ -502,8 +485,8 @@ static bool spi_gd32_chunk_transfer_finished(const struct device *dev)
 	return (MIN(dma[TX].count, dma[RX].count) >= chunk_len);
 }
 
-static void spi_gd32_dma_callback(const struct device *dma_dev, void *arg,
-				  uint32_t channel, int status)
+static void spi_gd32_dma_callback(const struct device *dma_dev, void *arg, uint32_t channel,
+				  int status)
 {
 	const struct device *dev = (const struct device *)arg;
 	const struct spi_gd32_config *cfg = dev->config;
@@ -512,15 +495,13 @@ static void spi_gd32_dma_callback(const struct device *dma_dev, void *arg,
 	int err = 0;
 
 	if (status < 0) {
-		LOG_ERR("dma:%p ch:%d callback gets error: %d", dma_dev, channel,
-			status);
+		LOG_ERR("dma:%p ch:%d callback gets error: %d", dma_dev, channel, status);
 		spi_gd32_complete(dev, status);
 		return;
 	}
 
 	for (size_t i = 0; i < ARRAY_SIZE(cfg->dma); i++) {
-		if (dma_dev == cfg->dma[i].dev &&
-		    channel == cfg->dma[i].channel) {
+		if (dma_dev == cfg->dma[i].dev && channel == cfg->dma[i].channel) {
 			data->dma[i].count += chunk_len;
 		}
 	}
@@ -560,8 +541,7 @@ static void spi_gd32_dma_callback(const struct device *dma_dev, void *arg,
 
 #endif /* DMA */
 
-static int spi_gd32_release(const struct device *dev,
-			    const struct spi_config *config)
+static int spi_gd32_release(const struct device *dev, const struct spi_config *config)
 {
 	struct spi_gd32_data *data = dev->data;
 
@@ -578,8 +558,7 @@ static const struct spi_driver_api spi_gd32_driver_api = {
 #ifdef CONFIG_SPI_RTIO
 	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
-	.release = spi_gd32_release
-};
+	.release = spi_gd32_release};
 
 int spi_gd32_init(const struct device *dev)
 {
@@ -590,8 +569,7 @@ int spi_gd32_init(const struct device *dev)
 	uint32_t ch_filter;
 #endif
 
-	(void)clock_control_on(GD32_CLOCK_CONTROLLER,
-			       (clock_control_subsys_t)&cfg->clkid);
+	(void)clock_control_on(GD32_CLOCK_CONTROLLER, (clock_control_subsys_t)&cfg->clkid);
 
 	(void)reset_line_toggle_dt(&cfg->reset);
 
@@ -602,8 +580,7 @@ int spi_gd32_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_SPI_GD32_DMA
-	if ((cfg->dma[RX].dev && !cfg->dma[TX].dev) ||
-	    (cfg->dma[TX].dev && !cfg->dma[RX].dev)) {
+	if ((cfg->dma[RX].dev && !cfg->dma[TX].dev) || (cfg->dma[TX].dev && !cfg->dma[RX].dev)) {
 		LOG_ERR("DMA must be enabled for both TX and RX channels");
 		return -ENODEV;
 	}
@@ -637,55 +614,53 @@ int spi_gd32_init(const struct device *dev)
 	return 0;
 }
 
-#define DMA_INITIALIZER(idx, dir)                                              \
-	{                                                                      \
-		.dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(idx, dir)),     \
-		.channel = DT_INST_DMAS_CELL_BY_NAME(idx, dir, channel),       \
+#define DMA_INITIALIZER(idx, dir)                                                                  \
+	{                                                                                          \
+		.dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(idx, dir)),                         \
+		.channel = DT_INST_DMAS_CELL_BY_NAME(idx, dir, channel),                           \
 		.slot = COND_CODE_1(                                           \
 			DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_dma_v1),             \
-			(DT_INST_DMAS_CELL_BY_NAME(idx, dir, slot)), (0)),     \
-		.config = DT_INST_DMAS_CELL_BY_NAME(idx, dir, config),         \
-		.fifo_threshold = COND_CODE_1(                                 \
+			(DT_INST_DMAS_CELL_BY_NAME(idx, dir, slot)), (0)),                            \
+			 .config = DT_INST_DMAS_CELL_BY_NAME(idx, dir, config),                    \
+			 .fifo_threshold = COND_CODE_1(                                 \
 			DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_dma_v1),             \
 			(DT_INST_DMAS_CELL_BY_NAME(idx, dir, fifo_threshold)), \
-			(0)),						  \
-	}
+			(0)),         \
+			 }
 
-#define DMAS_DECL(idx)                                                         \
-	{                                                                      \
+#define DMAS_DECL(idx)                                                                             \
+	{                                                                                          \
 		COND_CODE_1(DT_INST_DMAS_HAS_NAME(idx, rx),                    \
-			    (DMA_INITIALIZER(idx, rx)), ({0})),                \
-		COND_CODE_1(DT_INST_DMAS_HAS_NAME(idx, tx),                    \
-			    (DMA_INITIALIZER(idx, tx)), ({0})),                \
+			    (DMA_INITIALIZER(idx, rx)), ({0})),                                          \
+			 COND_CODE_1(DT_INST_DMAS_HAS_NAME(idx, tx),                    \
+			    (DMA_INITIALIZER(idx, tx)), ({0})),       \
+			 }
+
+#define GD32_IRQ_CONFIGURE(idx)                                                                    \
+	static void spi_gd32_irq_configure_##idx(void)                                             \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority), spi_gd32_isr,           \
+			    DEVICE_DT_INST_GET(idx), 0);                                           \
+		irq_enable(DT_INST_IRQN(idx));                                                     \
 	}
 
-#define GD32_IRQ_CONFIGURE(idx)						   \
-	static void spi_gd32_irq_configure_##idx(void)			   \
-	{								   \
-		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority), \
-			    spi_gd32_isr,				   \
-			    DEVICE_DT_INST_GET(idx), 0);		   \
-		irq_enable(DT_INST_IRQN(idx));				   \
-	}
-
-#define GD32_SPI_INIT(idx)						       \
-	PINCTRL_DT_INST_DEFINE(idx);					       \
-	IF_ENABLED(CONFIG_SPI_GD32_INTERRUPT, (GD32_IRQ_CONFIGURE(idx)));      \
-	static struct spi_gd32_data spi_gd32_data_##idx = {		       \
-		SPI_CONTEXT_INIT_LOCK(spi_gd32_data_##idx, ctx),	       \
-		SPI_CONTEXT_INIT_SYNC(spi_gd32_data_##idx, ctx),	       \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(idx), ctx) };      \
-	static struct spi_gd32_config spi_gd32_config_##idx = {		       \
-		.reg = DT_INST_REG_ADDR(idx),				       \
-		.clkid = DT_INST_CLOCKS_CELL(idx, id),			       \
-		.reset = RESET_DT_SPEC_INST_GET(idx),			       \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),		       \
-		IF_ENABLED(CONFIG_SPI_GD32_DMA, (.dma = DMAS_DECL(idx),))      \
-		IF_ENABLED(CONFIG_SPI_GD32_INTERRUPT,			       \
-			   (.irq_configure = spi_gd32_irq_configure_##idx)) }; \
-	DEVICE_DT_INST_DEFINE(idx, spi_gd32_init, NULL,			       \
-			      &spi_gd32_data_##idx, &spi_gd32_config_##idx,    \
-			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,	       \
+#define GD32_SPI_INIT(idx)                                                                         \
+	PINCTRL_DT_INST_DEFINE(idx);                                                               \
+	IF_ENABLED(CONFIG_SPI_GD32_INTERRUPT, (GD32_IRQ_CONFIGURE(idx)));                           \
+	static struct spi_gd32_data spi_gd32_data_##idx = {                                        \
+		SPI_CONTEXT_INIT_LOCK(spi_gd32_data_##idx, ctx),                                   \
+		SPI_CONTEXT_INIT_SYNC(spi_gd32_data_##idx, ctx),                                   \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(idx), ctx)};                           \
+	static struct spi_gd32_config spi_gd32_config_##idx = {                                    \
+		.reg = DT_INST_REG_ADDR(idx),                                                      \
+		.clkid = DT_INST_CLOCKS_CELL(idx, id),                                             \
+		.reset = RESET_DT_SPEC_INST_GET(idx),                                              \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                       \
+		IF_ENABLED(CONFIG_SPI_GD32_DMA, (.dma = DMAS_DECL(idx),))                                                                         \
+				    IF_ENABLED(CONFIG_SPI_GD32_INTERRUPT,			       \
+			   (.irq_configure = spi_gd32_irq_configure_##idx)) };   \
+	DEVICE_DT_INST_DEFINE(idx, spi_gd32_init, NULL, &spi_gd32_data_##idx,                      \
+			      &spi_gd32_config_##idx, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,       \
 			      &spi_gd32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GD32_SPI_INIT)

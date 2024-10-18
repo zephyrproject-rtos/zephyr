@@ -15,9 +15,7 @@
 LOG_MODULE_REGISTER(i2c);
 
 #if defined(CONFIG_I2C_CALLBACK) && defined(CONFIG_POLL)
-void z_i2c_transfer_signal_cb(const struct device *dev,
-	int result,
-	void *data)
+void z_i2c_transfer_signal_cb(const struct device *dev, int result, void *data)
 {
 	struct k_poll_signal *sig = (struct k_poll_signal *)data;
 

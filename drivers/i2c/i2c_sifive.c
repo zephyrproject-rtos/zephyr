@@ -19,44 +19,44 @@ LOG_MODULE_REGISTER(i2c_sifive);
 
 /* Macros */
 
-#define I2C_REG(config, reg)	((mem_addr_t) ((config)->base + reg))
+#define I2C_REG(config, reg)       ((mem_addr_t)((config)->base + reg))
 #define IS_SET(config, reg, value) (sys_read8(I2C_REG(config, reg)) & (value))
 
 /* Register Offsets */
 
-#define REG_PRESCALE_LOW	0x00
-#define REG_PRESCALE_HIGH	0x04
+#define REG_PRESCALE_LOW  0x00
+#define REG_PRESCALE_HIGH 0x04
 
-#define REG_CONTROL		0x08
+#define REG_CONTROL 0x08
 
 /* Transmit on write, receive on read */
-#define REG_TRANSMIT		0x0c
-#define REG_RECEIVE		0x0c
+#define REG_TRANSMIT 0x0c
+#define REG_RECEIVE  0x0c
 
 /* Command on write, status on read */
-#define REG_COMMAND		0x10
-#define REG_STATUS		0x10
+#define REG_COMMAND 0x10
+#define REG_STATUS  0x10
 
 /* Values */
 
-#define SF_CONTROL_EN	(1 << 7)
-#define SF_CONTROL_IE	(1 << 6)
+#define SF_CONTROL_EN (1 << 7)
+#define SF_CONTROL_IE (1 << 6)
 
-#define SF_TX_WRITE	(0 << 0)
-#define SF_TX_READ	(1 << 0)
+#define SF_TX_WRITE (0 << 0)
+#define SF_TX_READ  (1 << 0)
 
-#define SF_CMD_START	(1 << 7)
-#define SF_CMD_STOP	(1 << 6)
-#define SF_CMD_READ	(1 << 5)
-#define SF_CMD_WRITE	(1 << 4)
-#define SF_CMD_ACK	(1 << 3)
-#define SF_CMD_IACK	(1 << 0)
+#define SF_CMD_START (1 << 7)
+#define SF_CMD_STOP  (1 << 6)
+#define SF_CMD_READ  (1 << 5)
+#define SF_CMD_WRITE (1 << 4)
+#define SF_CMD_ACK   (1 << 3)
+#define SF_CMD_IACK  (1 << 0)
 
-#define SF_STATUS_RXACK	(1 << 7)
-#define SF_STATUS_BUSY	(1 << 6)
-#define SF_STATUS_AL	(1 << 5)
-#define SF_STATUS_TIP	(1 << 1)
-#define SF_STATUS_IP	(1 << 0)
+#define SF_STATUS_RXACK (1 << 7)
+#define SF_STATUS_BUSY  (1 << 6)
+#define SF_STATUS_AL    (1 << 5)
+#define SF_STATUS_TIP   (1 << 1)
+#define SF_STATUS_IP    (1 << 0)
 
 /* Structure declarations */
 
@@ -75,9 +75,7 @@ static inline bool i2c_sifive_busy(const struct device *dev)
 	return IS_SET(config, REG_STATUS, SF_STATUS_TIP);
 }
 
-static int i2c_sifive_send_addr(const struct device *dev,
-				uint16_t addr,
-				uint16_t rw_flag)
+static int i2c_sifive_send_addr(const struct device *dev, uint16_t addr, uint16_t rw_flag)
 {
 	const struct i2c_sifive_cfg *config = dev->config;
 	uint8_t command = 0U;
@@ -106,9 +104,7 @@ static int i2c_sifive_send_addr(const struct device *dev,
 	return 0;
 }
 
-static int i2c_sifive_write_msg(const struct device *dev,
-				struct i2c_msg *msg,
-				uint16_t addr)
+static int i2c_sifive_write_msg(const struct device *dev, struct i2c_msg *msg, uint16_t addr)
 {
 	const struct i2c_sifive_cfg *config = dev->config;
 	int rc = 0;
@@ -155,9 +151,7 @@ static int i2c_sifive_write_msg(const struct device *dev,
 	return 0;
 }
 
-static int i2c_sifive_read_msg(const struct device *dev,
-			       struct i2c_msg *msg,
-			       uint16_t addr)
+static int i2c_sifive_read_msg(const struct device *dev, struct i2c_msg *msg, uint16_t addr)
 {
 	const struct i2c_sifive_cfg *config = dev->config;
 	uint8_t command = 0U;
@@ -238,9 +232,8 @@ static int i2c_sifive_configure(const struct device *dev, uint32_t dev_config)
 	prescale = (config->f_sys / (i2c_speed * 5U)) - 1;
 
 	/* Configure peripheral with calculated prescale */
-	sys_write8((uint8_t) (0xFF & prescale), I2C_REG(config, REG_PRESCALE_LOW));
-	sys_write8((uint8_t) (0xFF & (prescale >> 8)),
-		   I2C_REG(config, REG_PRESCALE_HIGH));
+	sys_write8((uint8_t)(0xFF & prescale), I2C_REG(config, REG_PRESCALE_LOW));
+	sys_write8((uint8_t)(0xFF & (prescale >> 8)), I2C_REG(config, REG_PRESCALE_HIGH));
 
 	/* Support I2C Master mode only */
 	if (!(dev_config & I2C_MODE_CONTROLLER)) {
@@ -263,9 +256,7 @@ static int i2c_sifive_configure(const struct device *dev, uint32_t dev_config)
 	return 0;
 }
 
-static int i2c_sifive_transfer(const struct device *dev,
-			       struct i2c_msg *msgs,
-			       uint8_t num_msgs,
+static int i2c_sifive_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
 			       uint16_t addr)
 {
 	int rc = 0;
@@ -326,19 +317,13 @@ static const struct i2c_driver_api i2c_sifive_api = {
 
 /* Device instantiation */
 
-#define I2C_SIFIVE_INIT(n) \
-	static struct i2c_sifive_cfg i2c_sifive_cfg_##n = { \
-		.base = DT_INST_REG_ADDR(n), \
-		.f_sys = SIFIVE_PERIPHERAL_CLOCK_FREQUENCY, \
-		.f_bus = DT_INST_PROP(n, clock_frequency), \
-	}; \
-	I2C_DEVICE_DT_INST_DEFINE(n, \
-			    i2c_sifive_init, \
-			    NULL, \
-			    NULL, \
-			    &i2c_sifive_cfg_##n, \
-			    POST_KERNEL, \
-			    CONFIG_I2C_INIT_PRIORITY, \
-			    &i2c_sifive_api);
+#define I2C_SIFIVE_INIT(n)                                                                         \
+	static struct i2c_sifive_cfg i2c_sifive_cfg_##n = {                                        \
+		.base = DT_INST_REG_ADDR(n),                                                       \
+		.f_sys = SIFIVE_PERIPHERAL_CLOCK_FREQUENCY,                                        \
+		.f_bus = DT_INST_PROP(n, clock_frequency),                                         \
+	};                                                                                         \
+	I2C_DEVICE_DT_INST_DEFINE(n, i2c_sifive_init, NULL, NULL, &i2c_sifive_cfg_##n,             \
+				  POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &i2c_sifive_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_SIFIVE_INIT)

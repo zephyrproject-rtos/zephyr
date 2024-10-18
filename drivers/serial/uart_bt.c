@@ -117,9 +117,8 @@ static void cb_work_handler(struct k_work *work)
 	struct uart_bt_data *dev_data = CONTAINER_OF(work, struct uart_bt_data, uart.cb_work);
 
 	if (dev_data->uart.callback.cb) {
-		dev_data->uart.callback.cb(
-			dev_data->uart.callback.dev,
-			dev_data->uart.callback.cb_data);
+		dev_data->uart.callback.cb(dev_data->uart.callback.dev,
+					   dev_data->uart.callback.cb_data);
 	}
 }
 
@@ -279,8 +278,7 @@ static int uart_bt_irq_update(const struct device *dev)
 	return 1;
 }
 
-static void uart_bt_irq_callback_set(const struct device *dev,
-				     uart_irq_callback_user_data_t cb,
+static void uart_bt_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
 				     void *cb_data)
 {
 	struct uart_bt_data *dev_data = (struct uart_bt_data *)dev->data;
@@ -342,31 +340,32 @@ static int uart_bt_init(const struct device *dev)
 #define UART_BT_RX_FIFO_SIZE(inst) (DT_INST_PROP(inst, rx_fifo_size))
 #define UART_BT_TX_FIFO_SIZE(inst) (DT_INST_PROP(inst, tx_fifo_size))
 
-#define UART_BT_INIT(n)										   \
-												   \
-	BT_NUS_INST_DEFINE(bt_nus_inst_##n);							   \
-												   \
-	RING_BUF_DECLARE(bt_nus_rx_rb_##n, UART_BT_RX_FIFO_SIZE(n));				   \
-	RING_BUF_DECLARE(bt_nus_tx_rb_##n, UART_BT_TX_FIFO_SIZE(n));				   \
-												   \
-	static struct uart_bt_data uart_bt_data_##n = {						   \
-		.bt = {										   \
-			.inst = &bt_nus_inst_##n,						   \
-			.enabled = ATOMIC_INIT(0),						   \
-			.cb = {									   \
-				.notif_enabled = bt_notif_enabled,				   \
-				.received = bt_received,					   \
-			},									   \
-		},										   \
-		.uart = {									   \
-			.rx_ringbuf = &bt_nus_rx_rb_##n,					   \
-			.tx_ringbuf = &bt_nus_tx_rb_##n,					   \
-		},										   \
-	};											   \
-												   \
-	DEVICE_DT_INST_DEFINE(n, uart_bt_init, NULL, &uart_bt_data_##n,				   \
-			      NULL, PRE_KERNEL_1,						   \
-			      CONFIG_SERIAL_INIT_PRIORITY,					   \
-			      &uart_bt_driver_api);
+#define UART_BT_INIT(n)                                                                            \
+                                                                                                   \
+	BT_NUS_INST_DEFINE(bt_nus_inst_##n);                                                       \
+                                                                                                   \
+	RING_BUF_DECLARE(bt_nus_rx_rb_##n, UART_BT_RX_FIFO_SIZE(n));                               \
+	RING_BUF_DECLARE(bt_nus_tx_rb_##n, UART_BT_TX_FIFO_SIZE(n));                               \
+                                                                                                   \
+	static struct uart_bt_data uart_bt_data_##n = {                                            \
+		.bt =                                                                              \
+			{                                                                          \
+				.inst = &bt_nus_inst_##n,                                          \
+				.enabled = ATOMIC_INIT(0),                                         \
+				.cb =                                                              \
+					{                                                          \
+						.notif_enabled = bt_notif_enabled,                 \
+						.received = bt_received,                           \
+					},                                                         \
+			},                                                                         \
+		.uart =                                                                            \
+			{                                                                          \
+				.rx_ringbuf = &bt_nus_rx_rb_##n,                                   \
+				.tx_ringbuf = &bt_nus_tx_rb_##n,                                   \
+			},                                                                         \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, uart_bt_init, NULL, &uart_bt_data_##n, NULL, PRE_KERNEL_1,        \
+			      CONFIG_SERIAL_INIT_PRIORITY, &uart_bt_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_BT_INIT)

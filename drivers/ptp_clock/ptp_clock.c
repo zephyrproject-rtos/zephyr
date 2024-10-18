@@ -8,8 +8,7 @@
 #include <zephyr/drivers/ptp_clock.h>
 
 #ifdef CONFIG_USERSPACE
-int z_vrfy_ptp_clock_get(const struct device *dev,
-			 struct net_ptp_time *tm)
+int z_vrfy_ptp_clock_get(const struct device *dev, struct net_ptp_time *tm)
 {
 	struct net_ptp_time ptp_time;
 	int ret;

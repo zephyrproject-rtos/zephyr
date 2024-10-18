@@ -22,9 +22,9 @@ LOG_MODULE_REGISTER(ICM42670, CONFIG_SENSOR_LOG_LEVEL);
  * See datasheet section 3.1 for details
  */
 static const uint16_t icm42670_gyro_sensitivity_x10[] = {
-	164, /* BIT_GYRO_UI_FS_2000 */
-	328, /* BIT_GYRO_UI_FS_1000 */
-	655, /* BIT_GYRO_UI_FS_500 */
+	164,  /* BIT_GYRO_UI_FS_2000 */
+	328,  /* BIT_GYRO_UI_FS_1000 */
+	655,  /* BIT_GYRO_UI_FS_500 */
 	1310, /* BIT_GYRO_UI_FS_250 */
 };
 
@@ -51,8 +51,8 @@ static int icm42670_set_accel_fs(const struct device *dev, uint16_t fs)
 
 	data->accel_sensitivity_shift = MIN_ACCEL_SENS_SHIFT + temp;
 
-	return cfg->bus_io->update(&cfg->bus, REG_ACCEL_CONFIG0,
-					    (uint8_t)MASK_ACCEL_UI_FS_SEL, temp);
+	return cfg->bus_io->update(&cfg->bus, REG_ACCEL_CONFIG0, (uint8_t)MASK_ACCEL_UI_FS_SEL,
+				   temp);
 }
 
 static int icm42670_set_gyro_fs(const struct device *dev, uint16_t fs)
@@ -78,8 +78,7 @@ static int icm42670_set_gyro_fs(const struct device *dev, uint16_t fs)
 
 	data->gyro_sensitivity_x10 = icm42670_gyro_sensitivity_x10[temp];
 
-	return cfg->bus_io->update(&cfg->bus, REG_GYRO_CONFIG0,
-					    (uint8_t)MASK_GYRO_UI_FS_SEL, temp);
+	return cfg->bus_io->update(&cfg->bus, REG_GYRO_CONFIG0, (uint8_t)MASK_GYRO_UI_FS_SEL, temp);
 }
 
 static int icm42670_set_accel_odr(const struct device *dev, uint16_t rate)
@@ -116,8 +115,7 @@ static int icm42670_set_accel_odr(const struct device *dev, uint16_t rate)
 		temp = BIT_ACCEL_ODR_1;
 	}
 
-	return cfg->bus_io->update(&cfg->bus, REG_ACCEL_CONFIG0, (uint8_t)MASK_ACCEL_ODR,
-					    temp);
+	return cfg->bus_io->update(&cfg->bus, REG_ACCEL_CONFIG0, (uint8_t)MASK_ACCEL_ODR, temp);
 }
 
 static int icm42670_set_gyro_odr(const struct device *dev, uint16_t rate)
@@ -148,8 +146,7 @@ static int icm42670_set_gyro_odr(const struct device *dev, uint16_t rate)
 		temp = BIT_GYRO_ODR_12;
 	}
 
-	return cfg->bus_io->update(&cfg->bus, REG_GYRO_CONFIG0, (uint8_t)MASK_GYRO_ODR,
-					    temp);
+	return cfg->bus_io->update(&cfg->bus, REG_GYRO_CONFIG0, (uint8_t)MASK_GYRO_ODR, temp);
 }
 
 static int icm42670_enable_mclk(const struct device *dev)
@@ -211,7 +208,7 @@ static int icm42670_sensor_init(const struct device *dev)
 
 	/* always use internal RC oscillator */
 	res = cfg->bus_io->write(&cfg->bus, REG_INTF_CONFIG1,
-					(uint8_t)FIELD_PREP(MASK_CLKSEL, BIT_CLKSEL_INT_RC));
+				 (uint8_t)FIELD_PREP(MASK_CLKSEL, BIT_CLKSEL_INT_RC));
 
 	if (res) {
 		return res;
@@ -263,7 +260,7 @@ static int icm42670_turn_on_sensor(const struct device *dev)
 		FIELD_PREP(MASK_GYRO_MODE, BIT_GYRO_MODE_LNM);
 
 	res = cfg->bus_io->update(&cfg->bus, REG_PWR_MGMT0,
-					   (uint8_t)(MASK_ACCEL_MODE | MASK_GYRO_MODE), value);
+				  (uint8_t)(MASK_ACCEL_MODE | MASK_GYRO_MODE), value);
 
 	if (res) {
 		return res;
@@ -693,13 +690,11 @@ static const struct sensor_driver_api icm42670_driver_api = {
 
 /* Initializes the bus members for an instance on a SPI bus. */
 #define ICM42670_CONFIG_SPI(inst)                                                                  \
-	.bus.spi = SPI_DT_SPEC_INST_GET(inst, ICM42670_SPI_CFG, 0),                                \
-	.bus_io = &icm42670_bus_io_spi,
+	.bus.spi = SPI_DT_SPEC_INST_GET(inst, ICM42670_SPI_CFG, 0), .bus_io = &icm42670_bus_io_spi,
 
 /* Initializes the bus members for an instance on an I2C bus. */
 #define ICM42670_CONFIG_I2C(inst)                                                                  \
-	.bus.i2c = I2C_DT_SPEC_INST_GET(inst),                                                     \
-	.bus_io = &icm42670_bus_io_i2c,
+	.bus.i2c = I2C_DT_SPEC_INST_GET(inst), .bus_io = &icm42670_bus_io_i2c,
 
 #define ICM42670_INIT(inst)                                                                        \
 	static struct icm42670_data icm42670_driver_##inst = {                                     \
@@ -712,12 +707,13 @@ static const struct sensor_driver_api icm42670_driver_api = {
 	static const struct icm42670_config icm42670_cfg_##inst = {                                \
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi),                                             \
 			(ICM42670_CONFIG_SPI(inst)),                                               \
-			(ICM42670_CONFIG_I2C(inst)))                                               \
-		.gpio_int = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),                        \
+			(ICM42670_CONFIG_I2C(inst))) .gpio_int =               \
+						     GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios,     \
+									      {0}),                \
 	};                                                                                         \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, icm42670_init, NULL, &icm42670_driver_##inst,           \
-			      &icm42670_cfg_##inst, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,      \
-			      &icm42670_driver_api);
+				     &icm42670_cfg_##inst, POST_KERNEL,                            \
+				     CONFIG_SENSOR_INIT_PRIORITY, &icm42670_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ICM42670_INIT)

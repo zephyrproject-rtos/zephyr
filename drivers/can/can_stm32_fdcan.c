@@ -306,8 +306,8 @@ static int can_stm32fd_read_reg(const struct device *dev, uint16_t reg, uint32_t
 		break;
 	case CAN_MCAN_GFC:
 		/* Map fields from RXGFC excluding STM32 FDCAN LSS and LSE fields */
-		*val = bits & (CAN_MCAN_GFC_ANFS | CAN_MCAN_GFC_ANFE |
-		       CAN_MCAN_GFC_RRFS | CAN_MCAN_GFC_RRFE);
+		*val = bits & (CAN_MCAN_GFC_ANFS | CAN_MCAN_GFC_ANFE | CAN_MCAN_GFC_RRFS |
+			       CAN_MCAN_GFC_RRFE);
 		break;
 	default:
 		/* No field remap needed */
@@ -364,8 +364,8 @@ static int can_stm32fd_write_reg(const struct device *dev, uint16_t reg, uint32_
 		/* Map fields to RXGFC including STM32 FDCAN LSS and LSE fields */
 		bits |= FIELD_PREP(CAN_STM32FD_RXGFC_LSS, CONFIG_CAN_MAX_STD_ID_FILTER) |
 			FIELD_PREP(CAN_STM32FD_RXGFC_LSE, CONFIG_CAN_MAX_EXT_ID_FILTER);
-		bits |= val & (CAN_MCAN_GFC_ANFS | CAN_MCAN_GFC_ANFE |
-			CAN_MCAN_GFC_RRFS | CAN_MCAN_GFC_RRFE);
+		bits |= val & (CAN_MCAN_GFC_ANFS | CAN_MCAN_GFC_ANFE | CAN_MCAN_GFC_RRFS |
+			       CAN_MCAN_GFC_RRFE);
 		break;
 	default:
 		/* No field remap needed */
@@ -385,7 +385,7 @@ static int can_stm32fd_read_mram(const struct device *dev, uint16_t offset, void
 }
 
 static int can_stm32fd_write_mram(const struct device *dev, uint16_t offset, const void *src,
-				size_t len)
+				  size_t len)
 {
 	const struct can_mcan_config *mcan_config = dev->config;
 	const struct can_stm32fd_config *stm32fd_config = mcan_config->custom;
@@ -433,9 +433,8 @@ static int can_stm32fd_clock_enable(const struct device *dev)
 	}
 
 	if (IS_ENABLED(STM32_CANFD_DOMAIN_CLOCK_SUPPORT) && (stm32fd_cfg->pclk_len > 1)) {
-		ret = clock_control_configure(clk,
-				(clock_control_subsys_t)&stm32fd_cfg->pclken[1],
-				NULL);
+		ret = clock_control_configure(clk, (clock_control_subsys_t)&stm32fd_cfg->pclken[1],
+					      NULL);
 		if (ret < 0) {
 			LOG_ERR("Could not select can_stm32fd domain clock");
 			return ret;
@@ -540,80 +539,73 @@ static const struct can_mcan_ops can_stm32fd_ops = {
 	.clear_mram = can_stm32fd_clear_mram,
 };
 
-#define CAN_STM32FD_BUILD_ASSERT_MRAM_CFG(inst)					\
-	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_STD_FILTER_ELEMENTS(inst) == 28,	\
-		     "Standard filter elements must be 28");			\
-	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_EXT_FILTER_ELEMENTS(inst) == 8,	\
-		     "Extended filter elements must be 8");			\
-	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_RX_FIFO0_ELEMENTS(inst) == 3,	\
-		     "Rx FIFO 0 elements must be 3");				\
-	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_RX_FIFO1_ELEMENTS(inst) == 3,	\
-		     "Rx FIFO 1 elements must be 3");				\
-	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_RX_BUFFER_ELEMENTS(inst) == 0,	\
-		     "Rx Buffer elements must be 0");				\
-	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_TX_EVENT_FIFO_ELEMENTS(inst) == 3,	\
-		     "Tx Event FIFO elements must be 3");			\
-	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_TX_BUFFER_ELEMENTS(inst) == 3,	\
+#define CAN_STM32FD_BUILD_ASSERT_MRAM_CFG(inst)                                                    \
+	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_STD_FILTER_ELEMENTS(inst) == 28,                        \
+		     "Standard filter elements must be 28");                                       \
+	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_EXT_FILTER_ELEMENTS(inst) == 8,                         \
+		     "Extended filter elements must be 8");                                        \
+	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_RX_FIFO0_ELEMENTS(inst) == 3,                           \
+		     "Rx FIFO 0 elements must be 3");                                              \
+	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_RX_FIFO1_ELEMENTS(inst) == 3,                           \
+		     "Rx FIFO 1 elements must be 3");                                              \
+	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_RX_BUFFER_ELEMENTS(inst) == 0,                          \
+		     "Rx Buffer elements must be 0");                                              \
+	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_TX_EVENT_FIFO_ELEMENTS(inst) == 3,                      \
+		     "Tx Event FIFO elements must be 3");                                          \
+	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_TX_BUFFER_ELEMENTS(inst) == 3,                          \
 		     "Tx Buffer elements must be 0");
 
-#define CAN_STM32FD_IRQ_CFG_FUNCTION(inst)                                     \
-static void config_can_##inst##_irq(void)                                      \
-{                                                                              \
-	LOG_DBG("Enable CAN" #inst " IRQ");                                    \
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, int0, irq),                      \
-		    DT_INST_IRQ_BY_NAME(inst, int0, priority),                 \
-		    can_mcan_line_0_isr, DEVICE_DT_INST_GET(inst), 0);         \
-	irq_enable(DT_INST_IRQ_BY_NAME(inst, int0, irq));                      \
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, int1, irq),                      \
-		    DT_INST_IRQ_BY_NAME(inst, int1, priority),                 \
-		    can_mcan_line_1_isr, DEVICE_DT_INST_GET(inst), 0);         \
-	irq_enable(DT_INST_IRQ_BY_NAME(inst, int1, irq));                      \
-}
+#define CAN_STM32FD_IRQ_CFG_FUNCTION(inst)                                                         \
+	static void config_can_##inst##_irq(void)                                                  \
+	{                                                                                          \
+		LOG_DBG("Enable CAN" #inst " IRQ");                                                \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, int0, irq),                                  \
+			    DT_INST_IRQ_BY_NAME(inst, int0, priority), can_mcan_line_0_isr,        \
+			    DEVICE_DT_INST_GET(inst), 0);                                          \
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, int0, irq));                                  \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, int1, irq),                                  \
+			    DT_INST_IRQ_BY_NAME(inst, int1, priority), can_mcan_line_1_isr,        \
+			    DEVICE_DT_INST_GET(inst), 0);                                          \
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, int1, irq));                                  \
+	}
 
-#define CAN_STM32FD_CFG_INST(inst)					\
-	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_ELEMENTS_SIZE(inst) <=	\
-		     CAN_MCAN_DT_INST_MRAM_SIZE(inst),			\
-		     "Insufficient Message RAM size to hold elements");	\
-									\
-	PINCTRL_DT_INST_DEFINE(inst);					\
-	CAN_MCAN_CALLBACKS_DEFINE(can_stm32fd_cbs_##inst,		\
-				  CAN_MCAN_DT_INST_MRAM_TX_BUFFER_ELEMENTS(inst), \
-				  CONFIG_CAN_MAX_STD_ID_FILTER,		\
-				  CONFIG_CAN_MAX_EXT_ID_FILTER);	\
-									\
-	static const struct stm32_pclken can_stm32fd_pclken_##inst[] =	\
-					STM32_DT_INST_CLOCKS(inst);	\
-									\
-	static const struct can_stm32fd_config can_stm32fd_cfg_##inst = { \
-		.base = CAN_MCAN_DT_INST_MCAN_ADDR(inst),		\
-		.mram = CAN_MCAN_DT_INST_MRAM_ADDR(inst),		\
-		.pclken = can_stm32fd_pclken_##inst,			\
-		.pclk_len = DT_INST_NUM_CLOCKS(inst),			\
-		.config_irq = config_can_##inst##_irq,			\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		\
-		.clock_divider = DT_INST_PROP_OR(inst, clk_divider, 0)  \
-	};								\
-									\
-	static const struct can_mcan_config can_mcan_cfg_##inst =	\
-		CAN_MCAN_DT_CONFIG_INST_GET(inst, &can_stm32fd_cfg_##inst, \
-					    &can_stm32fd_ops,		\
-					    &can_stm32fd_cbs_##inst);
+#define CAN_STM32FD_CFG_INST(inst)                                                                 \
+	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_ELEMENTS_SIZE(inst) <=                                  \
+			     CAN_MCAN_DT_INST_MRAM_SIZE(inst),                                     \
+		     "Insufficient Message RAM size to hold elements");                            \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(inst);                                                              \
+	CAN_MCAN_CALLBACKS_DEFINE(can_stm32fd_cbs_##inst,                                          \
+				  CAN_MCAN_DT_INST_MRAM_TX_BUFFER_ELEMENTS(inst),                  \
+				  CONFIG_CAN_MAX_STD_ID_FILTER, CONFIG_CAN_MAX_EXT_ID_FILTER);     \
+                                                                                                   \
+	static const struct stm32_pclken can_stm32fd_pclken_##inst[] = STM32_DT_INST_CLOCKS(inst); \
+                                                                                                   \
+	static const struct can_stm32fd_config can_stm32fd_cfg_##inst = {                          \
+		.base = CAN_MCAN_DT_INST_MCAN_ADDR(inst),                                          \
+		.mram = CAN_MCAN_DT_INST_MRAM_ADDR(inst),                                          \
+		.pclken = can_stm32fd_pclken_##inst,                                               \
+		.pclk_len = DT_INST_NUM_CLOCKS(inst),                                              \
+		.config_irq = config_can_##inst##_irq,                                             \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
+		.clock_divider = DT_INST_PROP_OR(inst, clk_divider, 0)};                           \
+                                                                                                   \
+	static const struct can_mcan_config can_mcan_cfg_##inst = CAN_MCAN_DT_CONFIG_INST_GET(     \
+		inst, &can_stm32fd_cfg_##inst, &can_stm32fd_ops, &can_stm32fd_cbs_##inst);
 
-#define CAN_STM32FD_DATA_INST(inst)					\
-	static struct can_mcan_data can_mcan_data_##inst =		\
-		CAN_MCAN_DATA_INITIALIZER(NULL);
+#define CAN_STM32FD_DATA_INST(inst)                                                                \
+	static struct can_mcan_data can_mcan_data_##inst = CAN_MCAN_DATA_INITIALIZER(NULL);
 
-#define CAN_STM32FD_DEVICE_INST(inst)						\
-	CAN_DEVICE_DT_INST_DEFINE(inst, can_stm32fd_init, NULL,			\
-				  &can_mcan_data_##inst, &can_mcan_cfg_##inst,	\
-				  POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,	\
+#define CAN_STM32FD_DEVICE_INST(inst)                                                              \
+	CAN_DEVICE_DT_INST_DEFINE(inst, can_stm32fd_init, NULL, &can_mcan_data_##inst,             \
+				  &can_mcan_cfg_##inst, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,     \
 				  &can_stm32fd_driver_api);
 
-#define CAN_STM32FD_INST(inst)          \
-CAN_STM32FD_BUILD_ASSERT_MRAM_CFG(inst) \
-CAN_STM32FD_IRQ_CFG_FUNCTION(inst)      \
-CAN_STM32FD_CFG_INST(inst)              \
-CAN_STM32FD_DATA_INST(inst)             \
-CAN_STM32FD_DEVICE_INST(inst)
+#define CAN_STM32FD_INST(inst)                                                                     \
+	CAN_STM32FD_BUILD_ASSERT_MRAM_CFG(inst)                                                    \
+	CAN_STM32FD_IRQ_CFG_FUNCTION(inst)                                                         \
+	CAN_STM32FD_CFG_INST(inst)                                                                 \
+	CAN_STM32FD_DATA_INST(inst)                                                                \
+	CAN_STM32FD_DEVICE_INST(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_STM32FD_INST)

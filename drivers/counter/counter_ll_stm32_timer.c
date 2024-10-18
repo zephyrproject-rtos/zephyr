@@ -27,63 +27,80 @@ LOG_MODULE_REGISTER(counter_timer_stm32, CONFIG_COUNTER_LOG_LEVEL);
 #define TIMER_MAX_CH 4U
 
 /** Number of channels for timer by index. */
-#define NUM_CH(timx)					    \
-	(IS_TIM_CCX_INSTANCE(timx, TIM_CHANNEL_4) ? 4U :    \
-	 (IS_TIM_CCX_INSTANCE(timx, TIM_CHANNEL_3) ? 3U :   \
-	  (IS_TIM_CCX_INSTANCE(timx, TIM_CHANNEL_2) ? 2U :  \
-	   (IS_TIM_CCX_INSTANCE(timx, TIM_CHANNEL_1) ? 1U : \
-	    0))))
+#define NUM_CH(timx)                                                                               \
+	(IS_TIM_CCX_INSTANCE(timx, TIM_CHANNEL_4)                                                  \
+		 ? 4U                                                                              \
+		 : (IS_TIM_CCX_INSTANCE(timx, TIM_CHANNEL_3)                                       \
+			    ? 3U                                                                   \
+			    : (IS_TIM_CCX_INSTANCE(timx, TIM_CHANNEL_2)                            \
+				       ? 2U                                                        \
+				       : (IS_TIM_CCX_INSTANCE(timx, TIM_CHANNEL_1) ? 1U : 0))))
 
 /** Channel to compare set function mapping. */
-static void(*const set_timer_compare[TIMER_MAX_CH])(TIM_TypeDef *,
-						    uint32_t) = {
-	LL_TIM_OC_SetCompareCH1, LL_TIM_OC_SetCompareCH2,
-	LL_TIM_OC_SetCompareCH3, LL_TIM_OC_SetCompareCH4,
+static void (*const set_timer_compare[TIMER_MAX_CH])(TIM_TypeDef *, uint32_t) = {
+	LL_TIM_OC_SetCompareCH1,
+	LL_TIM_OC_SetCompareCH2,
+	LL_TIM_OC_SetCompareCH3,
+	LL_TIM_OC_SetCompareCH4,
 };
 
 /** Channel to compare get function mapping. */
 #if !defined(CONFIG_SOC_SERIES_STM32MP1X)
-static uint32_t(*const get_timer_compare[TIMER_MAX_CH])(const TIM_TypeDef *) = {
-	LL_TIM_OC_GetCompareCH1, LL_TIM_OC_GetCompareCH2,
-	LL_TIM_OC_GetCompareCH3, LL_TIM_OC_GetCompareCH4,
+static uint32_t (*const get_timer_compare[TIMER_MAX_CH])(const TIM_TypeDef *) = {
+	LL_TIM_OC_GetCompareCH1,
+	LL_TIM_OC_GetCompareCH2,
+	LL_TIM_OC_GetCompareCH3,
+	LL_TIM_OC_GetCompareCH4,
 };
 #else
-static uint32_t(*const get_timer_compare[TIMER_MAX_CH])(TIM_TypeDef *) = {
-	LL_TIM_OC_GetCompareCH1, LL_TIM_OC_GetCompareCH2,
-	LL_TIM_OC_GetCompareCH3, LL_TIM_OC_GetCompareCH4,
+static uint32_t (*const get_timer_compare[TIMER_MAX_CH])(TIM_TypeDef *) = {
+	LL_TIM_OC_GetCompareCH1,
+	LL_TIM_OC_GetCompareCH2,
+	LL_TIM_OC_GetCompareCH3,
+	LL_TIM_OC_GetCompareCH4,
 };
 #endif
 /** Channel to interrupt enable function mapping. */
-static void(*const enable_it[TIMER_MAX_CH])(TIM_TypeDef *) = {
-	LL_TIM_EnableIT_CC1, LL_TIM_EnableIT_CC2,
-	LL_TIM_EnableIT_CC3, LL_TIM_EnableIT_CC4,
+static void (*const enable_it[TIMER_MAX_CH])(TIM_TypeDef *) = {
+	LL_TIM_EnableIT_CC1,
+	LL_TIM_EnableIT_CC2,
+	LL_TIM_EnableIT_CC3,
+	LL_TIM_EnableIT_CC4,
 };
 
 /** Channel to interrupt enable function mapping. */
-static void(*const disable_it[TIMER_MAX_CH])(TIM_TypeDef *) = {
-	LL_TIM_DisableIT_CC1, LL_TIM_DisableIT_CC2,
-	LL_TIM_DisableIT_CC3, LL_TIM_DisableIT_CC4,
+static void (*const disable_it[TIMER_MAX_CH])(TIM_TypeDef *) = {
+	LL_TIM_DisableIT_CC1,
+	LL_TIM_DisableIT_CC2,
+	LL_TIM_DisableIT_CC3,
+	LL_TIM_DisableIT_CC4,
 };
 
 #ifdef CONFIG_ASSERT
 /** Channel to interrupt enable check function mapping. */
 #if !defined(CONFIG_SOC_SERIES_STM32MP1X)
-static uint32_t(*const check_it_enabled[TIMER_MAX_CH])(const TIM_TypeDef *) = {
-	LL_TIM_IsEnabledIT_CC1, LL_TIM_IsEnabledIT_CC2,
-	LL_TIM_IsEnabledIT_CC3, LL_TIM_IsEnabledIT_CC4,
+static uint32_t (*const check_it_enabled[TIMER_MAX_CH])(const TIM_TypeDef *) = {
+	LL_TIM_IsEnabledIT_CC1,
+	LL_TIM_IsEnabledIT_CC2,
+	LL_TIM_IsEnabledIT_CC3,
+	LL_TIM_IsEnabledIT_CC4,
 };
 #else
-static uint32_t(*const check_it_enabled[TIMER_MAX_CH])(TIM_TypeDef *) = {
-	LL_TIM_IsEnabledIT_CC1, LL_TIM_IsEnabledIT_CC2,
-	LL_TIM_IsEnabledIT_CC3, LL_TIM_IsEnabledIT_CC4,
+static uint32_t (*const check_it_enabled[TIMER_MAX_CH])(TIM_TypeDef *) = {
+	LL_TIM_IsEnabledIT_CC1,
+	LL_TIM_IsEnabledIT_CC2,
+	LL_TIM_IsEnabledIT_CC3,
+	LL_TIM_IsEnabledIT_CC4,
 };
 #endif
 #endif
 
 /** Channel to interrupt flag clear function mapping. */
-static void(*const clear_it_flag[TIMER_MAX_CH])(TIM_TypeDef *) = {
-	LL_TIM_ClearFlag_CC1, LL_TIM_ClearFlag_CC2,
-	LL_TIM_ClearFlag_CC3, LL_TIM_ClearFlag_CC4,
+static void (*const clear_it_flag[TIMER_MAX_CH])(TIM_TypeDef *) = {
+	LL_TIM_ClearFlag_CC1,
+	LL_TIM_ClearFlag_CC2,
+	LL_TIM_ClearFlag_CC3,
+	LL_TIM_ClearFlag_CC4,
 };
 
 struct counter_stm32_data {
@@ -206,8 +223,7 @@ static int counter_stm32_set_cc(const struct device *dev, uint8_t id,
 	uint32_t diff;
 	uint32_t max_rel_val;
 
-	__ASSERT(!check_it_enabled[id](timer),
-		 "Expected that CC interrupt is disabled.");
+	__ASSERT(!check_it_enabled[id](timer), "Expected that CC interrupt is disabled.");
 
 	/* First take care of a risk of an event coming from CC being set to
 	 * next tick. Reconfigure CC to future (now tick is the furthest
@@ -269,7 +285,7 @@ static int counter_stm32_set_alarm(const struct device *dev, uint8_t chan,
 	const struct counter_stm32_config *config = dev->config;
 	struct counter_stm32_ch_data *chdata = &config->ch_data[chan];
 
-	if (alarm_cfg->ticks >  counter_stm32_get_top_value(dev)) {
+	if (alarm_cfg->ticks > counter_stm32_get_top_value(dev)) {
 		return -EINVAL;
 	}
 
@@ -293,8 +309,7 @@ static int counter_stm32_cancel_alarm(const struct device *dev, uint8_t chan)
 	return 0;
 }
 
-static int counter_stm32_set_top_value(const struct device *dev,
-				       const struct counter_top_cfg *cfg)
+static int counter_stm32_set_top_value(const struct device *dev, const struct counter_top_cfg *cfg)
 {
 	const struct counter_stm32_config *config = dev->config;
 	TIM_TypeDef *timer = config->timer;
@@ -377,8 +392,7 @@ static int counter_stm32_get_tim_clk(const struct stm32_pclken *pclken, uint32_t
 		return -ENODEV;
 	}
 
-	r = clock_control_get_rate(clk, (clock_control_subsys_t)pclken,
-				   &bus_clk);
+	r = clock_control_get_rate(clk, (clock_control_subsys_t)pclken, &bus_clk);
 	if (r < 0) {
 		return r;
 	}
@@ -408,8 +422,7 @@ static int counter_stm32_get_tim_clk(const struct stm32_pclken *pclken, uint32_t
 #endif /* ! st_stm32f0_rcc */
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 
-#if defined(RCC_DCKCFGR_TIMPRE) || defined(RCC_DCKCFGR1_TIMPRE) || \
-	defined(RCC_CFGR_TIMPRE)
+#if defined(RCC_DCKCFGR_TIMPRE) || defined(RCC_DCKCFGR1_TIMPRE) || defined(RCC_CFGR_TIMPRE)
 	/*
 	 * There are certain series (some F4, F7 and H7) that have the TIMPRE
 	 * bit to control the clock frequency of all the timers connected to
@@ -518,8 +531,7 @@ static uint32_t counter_stm32_get_guard_period(const struct device *dev, uint32_
 	return data->guard_period;
 }
 
-static int counter_stm32_set_guard_period(const struct device *dev, uint32_t guard,
-					  uint32_t flags)
+static int counter_stm32_set_guard_period(const struct device *dev, uint32_t guard, uint32_t flags)
 {
 	struct counter_stm32_data *data = dev->data;
 
@@ -584,16 +596,16 @@ static const struct counter_driver_api counter_stm32_driver_api = {
 	.get_freq = counter_stm32_get_freq,
 };
 
-#define TIM_IRQ_HANDLE_CC(timx, cc)						\
-	do {									\
-		bool hw_irq = LL_TIM_IsActiveFlag_CC##cc(timer) &&		\
-			      LL_TIM_IsEnabledIT_CC##cc(timer);			\
-		if (hw_irq || (data->cc_int_pending & BIT(cc - 1U))) {		\
-			if (hw_irq) {						\
-				LL_TIM_ClearFlag_CC##cc(timer);			\
-			}							\
-			counter_stm32_alarm_irq_handle(dev, cc - 1U);		\
-		}								\
+#define TIM_IRQ_HANDLE_CC(timx, cc)                                                                \
+	do {                                                                                       \
+		bool hw_irq =                                                                      \
+			LL_TIM_IsActiveFlag_CC##cc(timer) && LL_TIM_IsEnabledIT_CC##cc(timer);     \
+		if (hw_irq || (data->cc_int_pending & BIT(cc - 1U))) {                             \
+			if (hw_irq) {                                                              \
+				LL_TIM_ClearFlag_CC##cc(timer);                                    \
+			}                                                                          \
+			counter_stm32_alarm_irq_handle(dev, cc - 1U);                              \
+		}                                                                                  \
 	} while (0)
 
 void counter_stm32_irq_handler(const struct device *dev)
@@ -624,56 +636,46 @@ void counter_stm32_irq_handler(const struct device *dev)
 	}
 }
 
-#define TIMER(idx)              DT_INST_PARENT(idx)
+#define TIMER(idx) DT_INST_PARENT(idx)
 
 /** TIMx instance from DT */
 #define TIM(idx) ((TIM_TypeDef *)DT_REG_ADDR(TIMER(idx)))
 
-#define COUNTER_DEVICE_INIT(idx)						  \
-	BUILD_ASSERT(DT_PROP(TIMER(idx), st_prescaler) <= 0xFFFF,		  \
-		     "TIMER prescaler out of range");				  \
-	BUILD_ASSERT(NUM_CH(TIM(idx)) <= TIMER_MAX_CH,				  \
-		     "TIMER too many channels");				  \
-										  \
-	static struct counter_stm32_data counter##idx##_data;			  \
-	static struct counter_stm32_ch_data counter##idx##_ch_data[TIMER_MAX_CH]; \
-										  \
-	static void counter_##idx##_stm32_irq_config(const struct device *dev)	  \
-	{									  \
-		IRQ_CONNECT(DT_IRQN(TIMER(idx)),				  \
-			    DT_IRQ(TIMER(idx), priority),			  \
-			    counter_stm32_irq_handler,				  \
-			    DEVICE_DT_INST_GET(idx),				  \
-			    0);							  \
-		irq_enable(DT_IRQN(TIMER(idx)));				  \
-	}									  \
-										  \
-	static const struct counter_stm32_config counter##idx##_config = {	  \
-		.info = {							  \
-			.max_top_value =					  \
-				IS_TIM_32B_COUNTER_INSTANCE(TIM(idx)) ?		  \
-				0xFFFFFFFF : 0x0000FFFF,			  \
-			.flags = COUNTER_CONFIG_INFO_COUNT_UP,			  \
-			.channels = NUM_CH(TIM(idx)),				  \
-		},								  \
-		.ch_data = counter##idx##_ch_data,				  \
-		.timer = TIM(idx),						  \
-		.prescaler = DT_PROP(TIMER(idx), st_prescaler),			  \
-		.pclken = {							  \
-			.bus = DT_CLOCKS_CELL(TIMER(idx), bus),			  \
-			.enr = DT_CLOCKS_CELL(TIMER(idx), bits)			  \
-		},								  \
-		.irq_config_func = counter_##idx##_stm32_irq_config,		  \
-		.irqn = DT_IRQN(TIMER(idx)),					  \
-		.reset = RESET_DT_SPEC_GET(TIMER(idx)),				  \
-	};									  \
-										  \
-	DEVICE_DT_INST_DEFINE(idx,						  \
-			      counter_stm32_init_timer,				  \
-			      NULL,						  \
-			      &counter##idx##_data,				  \
-			      &counter##idx##_config,				  \
-			      PRE_KERNEL_1, CONFIG_COUNTER_INIT_PRIORITY,	  \
+#define COUNTER_DEVICE_INIT(idx)                                                                   \
+	BUILD_ASSERT(DT_PROP(TIMER(idx), st_prescaler) <= 0xFFFF, "TIMER prescaler out of range"); \
+	BUILD_ASSERT(NUM_CH(TIM(idx)) <= TIMER_MAX_CH, "TIMER too many channels");                 \
+                                                                                                   \
+	static struct counter_stm32_data counter##idx##_data;                                      \
+	static struct counter_stm32_ch_data counter##idx##_ch_data[TIMER_MAX_CH];                  \
+                                                                                                   \
+	static void counter_##idx##_stm32_irq_config(const struct device *dev)                     \
+	{                                                                                          \
+		IRQ_CONNECT(DT_IRQN(TIMER(idx)), DT_IRQ(TIMER(idx), priority),                     \
+			    counter_stm32_irq_handler, DEVICE_DT_INST_GET(idx), 0);                \
+		irq_enable(DT_IRQN(TIMER(idx)));                                                   \
+	}                                                                                          \
+                                                                                                   \
+	static const struct counter_stm32_config counter##idx##_config = {                         \
+		.info =                                                                            \
+			{                                                                          \
+				.max_top_value = IS_TIM_32B_COUNTER_INSTANCE(TIM(idx))             \
+							 ? 0xFFFFFFFF                              \
+							 : 0x0000FFFF,                             \
+				.flags = COUNTER_CONFIG_INFO_COUNT_UP,                             \
+				.channels = NUM_CH(TIM(idx)),                                      \
+			},                                                                         \
+		.ch_data = counter##idx##_ch_data,                                                 \
+		.timer = TIM(idx),                                                                 \
+		.prescaler = DT_PROP(TIMER(idx), st_prescaler),                                    \
+		.pclken = {.bus = DT_CLOCKS_CELL(TIMER(idx), bus),                                 \
+			   .enr = DT_CLOCKS_CELL(TIMER(idx), bits)},                               \
+		.irq_config_func = counter_##idx##_stm32_irq_config,                               \
+		.irqn = DT_IRQN(TIMER(idx)),                                                       \
+		.reset = RESET_DT_SPEC_GET(TIMER(idx)),                                            \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(idx, counter_stm32_init_timer, NULL, &counter##idx##_data,           \
+			      &counter##idx##_config, PRE_KERNEL_1, CONFIG_COUNTER_INIT_PRIORITY,  \
 			      &counter_stm32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_DEVICE_INIT)

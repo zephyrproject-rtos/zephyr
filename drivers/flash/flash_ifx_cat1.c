@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT	  infineon_cat1_flash_controller
+#define DT_DRV_COMPAT     infineon_cat1_flash_controller
 #define SOC_NV_FLASH_NODE DT_PARENT(DT_INST(0, fixed_partitions))
 
 #define PAGE_LEN DT_PROP(SOC_NV_FLASH_NODE, erase_block_size)

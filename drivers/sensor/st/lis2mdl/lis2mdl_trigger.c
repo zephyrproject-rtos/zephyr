@@ -29,9 +29,8 @@ static int lis2mdl_enable_int(const struct device *dev, int enable)
 }
 
 /* link external trigger to event data ready */
-int lis2mdl_trigger_set(const struct device *dev,
-			  const struct sensor_trigger *trig,
-			  sensor_trigger_handler_t handler)
+int lis2mdl_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
+			sensor_trigger_handler_t handler)
 {
 	const struct lis2mdl_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
@@ -73,15 +72,12 @@ static void lis2mdl_handle_interrupt(const struct device *dev)
 		k_sem_give(&lis2mdl->fetch_sem);
 	}
 
-	gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy,
-					GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
-static void lis2mdl_gpio_callback(const struct device *dev,
-				    struct gpio_callback *cb, uint32_t pins)
+static void lis2mdl_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	struct lis2mdl_data *lis2mdl =
-		CONTAINER_OF(cb, struct lis2mdl_data, gpio_cb);
+	struct lis2mdl_data *lis2mdl = CONTAINER_OF(cb, struct lis2mdl_data, gpio_cb);
 	const struct lis2mdl_config *const cfg = lis2mdl->dev->config;
 
 	ARG_UNUSED(pins);
@@ -113,8 +109,7 @@ static void lis2mdl_thread(void *p1, void *p2, void *p3)
 #ifdef CONFIG_LIS2MDL_TRIGGER_GLOBAL_THREAD
 static void lis2mdl_work_cb(struct k_work *work)
 {
-	struct lis2mdl_data *lis2mdl =
-		CONTAINER_OF(work, struct lis2mdl_data, work);
+	struct lis2mdl_data *lis2mdl = CONTAINER_OF(work, struct lis2mdl_data, work);
 
 	lis2mdl_handle_interrupt(lis2mdl->dev);
 }
@@ -134,11 +129,9 @@ int lis2mdl_init_interrupt(const struct device *dev)
 
 #if defined(CONFIG_LIS2MDL_TRIGGER_OWN_THREAD)
 	k_sem_init(&lis2mdl->gpio_sem, 0, K_SEM_MAX_LIMIT);
-	k_thread_create(&lis2mdl->thread, lis2mdl->thread_stack,
-			CONFIG_LIS2MDL_THREAD_STACK_SIZE,
-			lis2mdl_thread, lis2mdl,
-			NULL, NULL, K_PRIO_COOP(CONFIG_LIS2MDL_THREAD_PRIORITY),
-			0, K_NO_WAIT);
+	k_thread_create(&lis2mdl->thread, lis2mdl->thread_stack, CONFIG_LIS2MDL_THREAD_STACK_SIZE,
+			lis2mdl_thread, lis2mdl, NULL, NULL,
+			K_PRIO_COOP(CONFIG_LIS2MDL_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_LIS2MDL_TRIGGER_GLOBAL_THREAD)
 	lis2mdl->work.handler = lis2mdl_work_cb;
 #endif
@@ -149,15 +142,12 @@ int lis2mdl_init_interrupt(const struct device *dev)
 		return ret;
 	}
 
-	gpio_init_callback(&lis2mdl->gpio_cb,
-			   lis2mdl_gpio_callback,
-			   BIT(cfg->gpio_drdy.pin));
+	gpio_init_callback(&lis2mdl->gpio_cb, lis2mdl_gpio_callback, BIT(cfg->gpio_drdy.pin));
 
 	if (gpio_add_callback(cfg->gpio_drdy.port, &lis2mdl->gpio_cb) < 0) {
 		LOG_ERR("Could not set gpio callback");
 		return -EIO;
 	}
 
-	return gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy,
-					       GPIO_INT_EDGE_TO_ACTIVE);
+	return gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy, GPIO_INT_EDGE_TO_ACTIVE);
 }

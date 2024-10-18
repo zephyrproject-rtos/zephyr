@@ -28,48 +28,46 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PECI_INTERRUPT_DRIVEN),
  * This driver is single-instance. If the devicetree contains multiple
  * instances, this will fail and the driver needs to be revisited.
  */
-BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
-	     "Unsupported PECI Instance");
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1, "Unsupported PECI Instance");
 
 /* The following constants describes the bitrate of it8xxx2 PECI,
  * for the frequency are 2000KHz, 1000KHz, and 1600KHz. (Unit: KHz)
  */
-#define	PECI_IT8XXX2_BITRATE_2MHZ		2000
-#define	PECI_IT8XXX2_BITRATE_1MHZ		1000
-#define	PECI_IT8XXX2_BITRATE_1P6MHZ		1600
+#define PECI_IT8XXX2_BITRATE_2MHZ   2000
+#define PECI_IT8XXX2_BITRATE_1MHZ   1000
+#define PECI_IT8XXX2_BITRATE_1P6MHZ 1600
 
 /* The following masks are designed for the PECI bitrate settings,
  * for the bits[7:3] are not related to this features.
  */
-#define	PECI_IT8XXX2_BITRATE_BITS_MASK		0x07
-#define	PECI_IT8XXX2_BITRATE_2MHZ_BITS		0x00
-#define	PECI_IT8XXX2_BITRATE_1MHZ_BITS		0x01
-#define	PECI_IT8XXX2_BITRATE_1P6MHZ_BITS	0x04
+#define PECI_IT8XXX2_BITRATE_BITS_MASK   0x07
+#define PECI_IT8XXX2_BITRATE_2MHZ_BITS   0x00
+#define PECI_IT8XXX2_BITRATE_1MHZ_BITS   0x01
+#define PECI_IT8XXX2_BITRATE_1P6MHZ_BITS 0x04
 
 /* The Transaction Timeout */
-#define PECI_TIMEOUT_MS		30
+#define PECI_TIMEOUT_MS 30
 
 /* PECI interface 0 */
-#define PECI0			0
+#define PECI0 0
 
 /* HOSTAR (F02C00h) */
-#define HOBY			BIT(0)
-#define FINISH			BIT(1)
-#define RD_FCS_ERR		BIT(2)
-#define WR_FCS_ERR		BIT(3)
-#define EXTERR			BIT(5)
-#define BUS_ER			BIT(6)
-#define TEMPERR			BIT(7)
-#define HOSTAR_RST_ANYBIT \
-		(TEMPERR|BUS_ER|EXTERR|WR_FCS_ERR|RD_FCS_ERR|FINISH)
+#define HOBY              BIT(0)
+#define FINISH            BIT(1)
+#define RD_FCS_ERR        BIT(2)
+#define WR_FCS_ERR        BIT(3)
+#define EXTERR            BIT(5)
+#define BUS_ER            BIT(6)
+#define TEMPERR           BIT(7)
+#define HOSTAR_RST_ANYBIT (TEMPERR | BUS_ER | EXTERR | WR_FCS_ERR | RD_FCS_ERR | FINISH)
 
 /* HOCTLR (F02C01h) */
-#define START			BIT(0)
-#define AWFCS_EN		BIT(1)
-#define CONTROL			BIT(2)
-#define PECIHEN			BIT(3)
-#define FCSERR_ABT		BIT(4)
-#define FIFOCLR			BIT(5)
+#define START      BIT(0)
+#define AWFCS_EN   BIT(1)
+#define CONTROL    BIT(2)
+#define PECIHEN    BIT(3)
+#define FCSERR_ABT BIT(4)
+#define FIFOCLR    BIT(5)
 
 /*
  * TODO: The Voltage Configuration
@@ -77,7 +75,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
  *       in the future.
  */
 /* PADCTLR (F02C0Eh) */
-#define PECI_DVIE		0x04
+#define PECI_DVIE 0x04
 
 enum peci_vtts {
 	HOVTTS0P85V = 0x00,
@@ -115,8 +113,7 @@ static struct peci_it8xxx2_data peci_it8xxx2_data0;
 
 /* ITE IT8XXX2 PECI Functions */
 
-static void peci_it8xxx2_init_vtts(struct peci_it8xxx2_regs *reg_base,
-					enum peci_vtts vol_opt)
+static void peci_it8xxx2_init_vtts(struct peci_it8xxx2_regs *reg_base, enum peci_vtts vol_opt)
 {
 	reg_base->PADCTLR = (reg_base->PADCTLR & PECI_DVIE) | vol_opt;
 }
@@ -135,8 +132,7 @@ static int peci_it8xxx2_check_host_finish(const struct device *dev)
 {
 	struct peci_it8xxx2_data *data = dev->data;
 	const struct peci_it8xxx2_config *config = dev->config;
-	struct peci_it8xxx2_regs *const peci_regs =
-		(struct peci_it8xxx2_regs *)config->base_addr;
+	struct peci_it8xxx2_regs *const peci_regs = (struct peci_it8xxx2_regs *)config->base_addr;
 
 	int ret = k_sem_take(&data->device_sync_sem, K_MSEC(PECI_TIMEOUT_MS));
 
@@ -147,7 +143,7 @@ static int peci_it8xxx2_check_host_finish(const struct device *dev)
 
 	if (peci_regs->HOSTAR != FINISH) {
 		LOG_ERR("[PECI] Error: HOSTAR=0x%02X\r\n", peci_regs->HOSTAR);
-			return -EIO;
+		return -EIO;
 	}
 
 	return 0;
@@ -157,15 +153,13 @@ static int peci_it8xxx2_configure(const struct device *dev, uint32_t bitrate)
 {
 	struct peci_it8xxx2_data *data = dev->data;
 	const struct peci_it8xxx2_config *config = dev->config;
-	struct peci_it8xxx2_regs *const peci_regs =
-		(struct peci_it8xxx2_regs *)config->base_addr;
+	struct peci_it8xxx2_regs *const peci_regs = (struct peci_it8xxx2_regs *)config->base_addr;
 
 	uint8_t hoctl2r_to_write;
 
-	data->bitrate =  bitrate;
+	data->bitrate = bitrate;
 
-	hoctl2r_to_write =
-		(peci_regs->HOCTL2R) & (~(PECI_IT8XXX2_BITRATE_BITS_MASK));
+	hoctl2r_to_write = (peci_regs->HOCTL2R) & (~(PECI_IT8XXX2_BITRATE_BITS_MASK));
 
 	switch (bitrate) {
 	case PECI_IT8XXX2_BITRATE_2MHZ:
@@ -182,7 +176,7 @@ static int peci_it8xxx2_configure(const struct device *dev, uint32_t bitrate)
 	default:
 		LOG_ERR("[PECI] Error: Specified Bitrate Not Supported\r\n");
 		hoctl2r_to_write |= PECI_IT8XXX2_BITRATE_1MHZ_BITS;
-		data->bitrate =  PECI_IT8XXX2_BITRATE_1MHZ;
+		data->bitrate = PECI_IT8XXX2_BITRATE_1MHZ;
 		peci_regs->HOCTL2R = hoctl2r_to_write;
 		return -ENOTSUP;
 	}
@@ -195,10 +189,9 @@ static int peci_it8xxx2_configure(const struct device *dev, uint32_t bitrate)
 static int peci_it8xxx2_enable(const struct device *dev)
 {
 	const struct peci_it8xxx2_config *config = dev->config;
-	struct peci_it8xxx2_regs *const peci_regs =
-		(struct peci_it8xxx2_regs *)config->base_addr;
+	struct peci_it8xxx2_regs *const peci_regs = (struct peci_it8xxx2_regs *)config->base_addr;
 
-	peci_regs->HOCTLR |= (FIFOCLR|FCSERR_ABT|PECIHEN|CONTROL);
+	peci_regs->HOCTLR |= (FIFOCLR | FCSERR_ABT | PECIHEN | CONTROL);
 
 	return 0;
 }
@@ -206,8 +199,7 @@ static int peci_it8xxx2_enable(const struct device *dev)
 static int peci_it8xxx2_disable(const struct device *dev)
 {
 	const struct peci_it8xxx2_config *config = dev->config;
-	struct peci_it8xxx2_regs *const peci_regs =
-		(struct peci_it8xxx2_regs *)config->base_addr;
+	struct peci_it8xxx2_regs *const peci_regs = (struct peci_it8xxx2_regs *)config->base_addr;
 
 	peci_regs->HOCTLR &= ~(PECIHEN);
 	return 0;
@@ -216,8 +208,7 @@ static int peci_it8xxx2_disable(const struct device *dev)
 static void peci_it8xxx2_rst_module(const struct device *dev)
 {
 	const struct peci_it8xxx2_config *config = dev->config;
-	struct peci_it8xxx2_regs *const peci_regs =
-		(struct peci_it8xxx2_regs *)config->base_addr;
+	struct peci_it8xxx2_regs *const peci_regs = (struct peci_it8xxx2_regs *)config->base_addr;
 	struct gctrl_it8xxx2_regs *const gctrl_regs = GCTRL_IT8XXX2_REGS_BASE;
 
 	LOG_ERR("[PECI] Module Reset for Status Error.\r\n");
@@ -240,8 +231,7 @@ static void peci_it8xxx2_rst_module(const struct device *dev)
 static int peci_it8xxx2_transfer(const struct device *dev, struct peci_msg *msg)
 {
 	const struct peci_it8xxx2_config *config = dev->config;
-	struct peci_it8xxx2_regs *const peci_regs =
-		(struct peci_it8xxx2_regs *)config->base_addr;
+	struct peci_it8xxx2_regs *const peci_regs = (struct peci_it8xxx2_regs *)config->base_addr;
 
 	struct peci_buf *peci_rx_buf = &msg->rx_buffer;
 	struct peci_buf *peci_tx_buf = &msg->tx_buffer;
@@ -312,8 +302,7 @@ static int peci_it8xxx2_init(const struct device *dev)
 {
 	struct peci_it8xxx2_data *data = dev->data;
 	const struct peci_it8xxx2_config *config = dev->config;
-	struct peci_it8xxx2_regs *const peci_regs =
-		(struct peci_it8xxx2_regs *)config->base_addr;
+	struct peci_it8xxx2_regs *const peci_regs = (struct peci_it8xxx2_regs *)config->base_addr;
 	int status;
 
 	/* Initialize Semaphore */
@@ -331,19 +320,10 @@ static int peci_it8xxx2_init(const struct device *dev)
 	peci_it8xxx2_configure(dev, PECI_IT8XXX2_BITRATE_1MHZ);
 
 	/* Interrupt Assignment */
-	IRQ_CONNECT(DT_INST_IRQN(0),
-	0,
-	peci_it8xxx2_isr,
-	DEVICE_DT_INST_GET(0),
-	0);
+	IRQ_CONNECT(DT_INST_IRQN(0), 0, peci_it8xxx2_isr, DEVICE_DT_INST_GET(0), 0);
 
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0,
-	&peci_it8xxx2_init,
-	NULL,
-	&peci_it8xxx2_data0,
-	&peci_it8xxx2_config0,
-	POST_KERNEL, CONFIG_PECI_INIT_PRIORITY,
-	&peci_it8xxx2_driver_api);
+DEVICE_DT_INST_DEFINE(0, &peci_it8xxx2_init, NULL, &peci_it8xxx2_data0, &peci_it8xxx2_config0,
+		      POST_KERNEL, CONFIG_PECI_INIT_PRIORITY, &peci_it8xxx2_driver_api);

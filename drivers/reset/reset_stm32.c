@@ -13,19 +13,18 @@
 
 #define STM32_RESET_CLR_OFFSET(id) (((id) >> 17U) & 0xFFFU)
 #define STM32_RESET_SET_OFFSET(id) (((id) >> 5U) & 0xFFFU)
-#define STM32_RESET_REG_BIT(id)	   ((id)&0x1FU)
+#define STM32_RESET_REG_BIT(id)    ((id) & 0x1FU)
 
 struct reset_stm32_config {
 	uintptr_t base;
 };
 
-static int reset_stm32_status(const struct device *dev, uint32_t id,
-			      uint8_t *status)
+static int reset_stm32_status(const struct device *dev, uint32_t id, uint8_t *status)
 {
 	const struct reset_stm32_config *config = dev->config;
 
-	*status = !!sys_test_bit(config->base + STM32_RESET_SET_OFFSET(id),
-				 STM32_RESET_REG_BIT(id));
+	*status =
+		!!sys_test_bit(config->base + STM32_RESET_SET_OFFSET(id), STM32_RESET_REG_BIT(id));
 
 	return 0;
 }
@@ -34,8 +33,7 @@ static int reset_stm32_line_assert(const struct device *dev, uint32_t id)
 {
 	const struct reset_stm32_config *config = dev->config;
 
-	sys_set_bit(config->base + STM32_RESET_SET_OFFSET(id),
-		    STM32_RESET_REG_BIT(id));
+	sys_set_bit(config->base + STM32_RESET_SET_OFFSET(id), STM32_RESET_REG_BIT(id));
 
 	return 0;
 }
@@ -45,11 +43,9 @@ static int reset_stm32_line_deassert(const struct device *dev, uint32_t id)
 	const struct reset_stm32_config *config = dev->config;
 
 #if DT_INST_PROP(0, set_bit_to_deassert)
-	sys_set_bit(config->base + STM32_RESET_CLR_OFFSET(id),
-		    STM32_RESET_REG_BIT(id));
+	sys_set_bit(config->base + STM32_RESET_CLR_OFFSET(id), STM32_RESET_REG_BIT(id));
 #else
-	sys_clear_bit(config->base + STM32_RESET_SET_OFFSET(id),
-		      STM32_RESET_REG_BIT(id));
+	sys_clear_bit(config->base + STM32_RESET_SET_OFFSET(id), STM32_RESET_REG_BIT(id));
 #endif
 
 	return 0;

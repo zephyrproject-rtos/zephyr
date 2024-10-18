@@ -12,12 +12,10 @@
 
 LOG_MODULE_DECLARE(FXAS21002, CONFIG_SENSOR_LOG_LEVEL);
 
-static void fxas21002_gpio_callback(const struct device *dev,
-				    struct gpio_callback *cb,
+static void fxas21002_gpio_callback(const struct device *dev, struct gpio_callback *cb,
 				    uint32_t pin_mask)
 {
-	struct fxas21002_data *data =
-		CONTAINER_OF(cb, struct fxas21002_data, gpio_cb);
+	struct fxas21002_data *data = CONTAINER_OF(cb, struct fxas21002_data, gpio_cb);
 	const struct fxas21002_config *config = data->dev->config;
 
 	if ((pin_mask & BIT(config->int_gpio.pin)) == 0U) {
@@ -52,8 +50,7 @@ static void fxas21002_handle_int(const struct device *dev)
 
 	k_sem_take(&data->sem, K_FOREVER);
 
-	if (config->ops->byte_read(dev, FXAS21002_REG_INT_SOURCE,
-				   &int_source)) {
+	if (config->ops->byte_read(dev, FXAS21002_REG_INT_SOURCE, &int_source)) {
 		LOG_ERR("Could not read interrupt source");
 		int_source = 0U;
 	}
@@ -85,15 +82,13 @@ static void fxas21002_thread_main(void *p1, void *p2, void *p3)
 #ifdef CONFIG_FXAS21002_TRIGGER_GLOBAL_THREAD
 static void fxas21002_work_handler(struct k_work *work)
 {
-	struct fxas21002_data *data =
-		CONTAINER_OF(work, struct fxas21002_data, work);
+	struct fxas21002_data *data = CONTAINER_OF(work, struct fxas21002_data, work);
 
 	fxas21002_handle_int(data->dev);
 }
 #endif
 
-int fxas21002_trigger_set(const struct device *dev,
-			  const struct sensor_trigger *trig,
+int fxas21002_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			  sensor_trigger_handler_t handler)
 {
 	const struct fxas21002_config *config = dev->config;
@@ -139,8 +134,7 @@ int fxas21002_trigger_set(const struct device *dev,
 	}
 
 	/* Configure the sensor interrupt */
-	if (config->ops->reg_field_update(dev, FXAS21002_REG_CTRLREG2, mask,
-					  handler ? mask : 0)) {
+	if (config->ops->reg_field_update(dev, FXAS21002_REG_CTRLREG2, mask, handler ? mask : 0)) {
 		LOG_ERR("Could not configure interrupt");
 		ret = -EIO;
 		goto exit;
@@ -154,9 +148,7 @@ int fxas21002_trigger_set(const struct device *dev,
 	}
 
 	/* Wait the transition time from ready mode */
-	transition_time = fxas21002_get_transition_time(FXAS21002_POWER_READY,
-							power,
-							config->dr);
+	transition_time = fxas21002_get_transition_time(FXAS21002_POWER_READY, power, config->dr);
 	k_busy_wait(transition_time);
 
 exit:
@@ -176,11 +168,9 @@ int fxas21002_trigger_init(const struct device *dev)
 
 #if defined(CONFIG_FXAS21002_TRIGGER_OWN_THREAD)
 	k_sem_init(&data->trig_sem, 0, K_SEM_MAX_LIMIT);
-	k_thread_create(&data->thread, data->thread_stack,
-			CONFIG_FXAS21002_THREAD_STACK_SIZE,
+	k_thread_create(&data->thread, data->thread_stack, CONFIG_FXAS21002_THREAD_STACK_SIZE,
 			fxas21002_thread_main, data, 0, NULL,
-			K_PRIO_COOP(CONFIG_FXAS21002_THREAD_PRIORITY),
-			0, K_NO_WAIT);
+			K_PRIO_COOP(CONFIG_FXAS21002_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_FXAS21002_TRIGGER_GLOBAL_THREAD)
 	data->work.handler = fxas21002_work_handler;
 #endif
@@ -191,8 +181,7 @@ int fxas21002_trigger_init(const struct device *dev)
 	ctrl_reg2 |= FXAS21002_CTRLREG2_CFG_DRDY_MASK;
 #endif
 
-	if (config->ops->byte_write(dev, FXAS21002_REG_CTRLREG2,
-				    ctrl_reg2)) {
+	if (config->ops->byte_write(dev, FXAS21002_REG_CTRLREG2, ctrl_reg2)) {
 		LOG_ERR("Could not configure interrupt pin routing");
 		return -EIO;
 	}
@@ -207,8 +196,7 @@ int fxas21002_trigger_init(const struct device *dev)
 		return ret;
 	}
 
-	gpio_init_callback(&data->gpio_cb, fxas21002_gpio_callback,
-			   BIT(config->int_gpio.pin));
+	gpio_init_callback(&data->gpio_cb, fxas21002_gpio_callback, BIT(config->int_gpio.pin));
 
 	ret = gpio_add_callback(config->int_gpio.port, &data->gpio_cb);
 	if (ret < 0) {

@@ -11,22 +11,22 @@ LOG_MODULE_REGISTER(UART_ASYNC_TO_IRQ_LOG_NAME, CONFIG_UART_LOG_LEVEL);
 /* Internal state flags. */
 
 /* RX interrupt enabled. */
-#define A2I_RX_IRQ_ENABLED	BIT(0)
+#define A2I_RX_IRQ_ENABLED BIT(0)
 
 /* TX interrupt enabled. */
-#define A2I_TX_IRQ_ENABLED	BIT(1)
+#define A2I_TX_IRQ_ENABLED BIT(1)
 
 /* Error interrupt enabled. */
-#define A2I_ERR_IRQ_ENABLED	BIT(2)
+#define A2I_ERR_IRQ_ENABLED BIT(2)
 
 /* Receiver to be kept enabled. */
-#define A2I_RX_ENABLE		BIT(3)
+#define A2I_RX_ENABLE BIT(3)
 
 /* TX busy. */
-#define A2I_TX_BUSY		BIT(4)
+#define A2I_TX_BUSY BIT(4)
 
 /* Error pending. */
-#define A2I_ERR_PENDING		BIT(5)
+#define A2I_ERR_PENDING BIT(5)
 
 static struct uart_async_to_irq_data *get_data(const struct device *dev)
 {
@@ -37,7 +37,7 @@ static struct uart_async_to_irq_data *get_data(const struct device *dev)
 
 static const struct uart_async_to_irq_config *get_config(const struct device *dev)
 {
-	const struct uart_async_to_irq_config * const *config = dev->config;
+	const struct uart_async_to_irq_config *const *config = dev->config;
 
 	return *config;
 }
@@ -45,7 +45,7 @@ static const struct uart_async_to_irq_config *get_config(const struct device *de
 /* Function calculates RX timeout based on baudrate. */
 static uint32_t get_rx_timeout(const struct device *dev)
 {
-	struct uart_config cfg = { 0 };
+	struct uart_config cfg = {0};
 	int err;
 	uint32_t baudrate;
 
@@ -61,9 +61,7 @@ static uint32_t get_rx_timeout(const struct device *dev)
 	return us;
 }
 
-static int rx_enable(const struct device *dev,
-		     struct uart_async_to_irq_data *data,
-		     uint8_t *buf,
+static int rx_enable(const struct device *dev, struct uart_async_to_irq_data *data, uint8_t *buf,
 		     size_t len)
 {
 	int err;
@@ -86,8 +84,7 @@ static int try_rx_enable(const struct device *dev, struct uart_async_to_irq_data
 	return rx_enable(dev, data, buf, len);
 }
 
-static void on_rx_buf_req(const struct device *dev,
-			  const struct uart_async_to_irq_config *config,
+static void on_rx_buf_req(const struct device *dev, const struct uart_async_to_irq_config *config,
 			  struct uart_async_to_irq_data *data)
 {
 	struct uart_async_rx *async_rx = &data->rx.async_rx;
@@ -127,9 +124,8 @@ static void on_rx_dis(const struct device *dev, struct uart_async_to_irq_data *d
 	k_sem_give(&data->rx.sem);
 }
 
-static void uart_async_to_irq_callback(const struct device *dev,
-					struct uart_event *evt,
-					void *user_data)
+static void uart_async_to_irq_callback(const struct device *dev, struct uart_event *evt,
+				       void *user_data)
 {
 	struct uart_async_to_irq_data *data = (struct uart_async_to_irq_data *)user_data;
 	const struct uart_async_to_irq_config *config = get_config(dev);
@@ -190,9 +186,7 @@ int z_uart_async_to_irq_fifo_fill(const struct device *dev, const uint8_t *buf, 
 }
 
 /** Interrupt driven FIFO read function */
-int z_uart_async_to_irq_fifo_read(const struct device *dev,
-				uint8_t *buf,
-				const int len)
+int z_uart_async_to_irq_fifo_read(const struct device *dev, uint8_t *buf, const int len)
 {
 	struct uart_async_to_irq_data *data = get_data(dev);
 	const struct uart_async_to_irq_config *config = get_config(dev);
@@ -326,8 +320,7 @@ int z_uart_async_to_irq_irq_update(const struct device *dev)
 
 /** Set the irq callback function */
 void z_uart_async_to_irq_irq_callback_set(const struct device *dev,
-			 uart_irq_callback_user_data_t cb,
-			 void *user_data)
+					  uart_irq_callback_user_data_t cb, void *user_data)
 {
 	struct uart_async_to_irq_data *data = get_data(dev);
 

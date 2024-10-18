@@ -38,8 +38,7 @@ static void lan865x_iface_init(struct net_if *iface)
 	const struct device *dev = net_if_get_device(iface);
 	struct lan865x_data *ctx = dev->data;
 
-	net_if_set_link_addr(iface, ctx->mac_address, sizeof(ctx->mac_address),
-			     NET_LINK_ETHERNET);
+	net_if_set_link_addr(iface, ctx->mac_address, sizeof(ctx->mac_address), NET_LINK_ETHERNET);
 
 	if (ctx->iface == NULL) {
 		ctx->iface = iface;
@@ -67,19 +66,16 @@ static int lan865x_set_config(const struct device *dev, enum ethernet_config_typ
 	int ret = -ENOTSUP;
 
 	if (type == ETHERNET_CONFIG_TYPE_PROMISC_MODE) {
-		return oa_tc6_reg_write(ctx->tc6, LAN865x_MAC_NCFGR,
-				       LAN865x_MAC_NCFGR_CAF);
+		return oa_tc6_reg_write(ctx->tc6, LAN865x_MAC_NCFGR, LAN865x_MAC_NCFGR_CAF);
 	}
 
 	if (type == ETHERNET_CONFIG_TYPE_MAC_ADDRESS) {
-		memcpy(ctx->mac_address, config->mac_address.addr,
-		       sizeof(ctx->mac_address));
+		memcpy(ctx->mac_address, config->mac_address.addr, sizeof(ctx->mac_address));
 
 		lan865x_write_macaddress(dev);
 
-		return net_if_set_link_addr(ctx->iface, ctx->mac_address,
-				     sizeof(ctx->mac_address),
-				     NET_LINK_ETHERNET);
+		return net_if_set_link_addr(ctx->iface, ctx->mac_address, sizeof(ctx->mac_address),
+					    NET_LINK_ETHERNET);
 	}
 
 	if (type == ETHERNET_CONFIG_TYPE_T1S_PARAM) {
@@ -165,8 +161,7 @@ static int lan865x_check_spi(const struct device *dev)
 }
 
 /* Implementation of pseudo code from AN1760 */
-static uint8_t lan865x_read_indirect_reg(const struct device *dev, uint8_t addr,
-					 uint8_t mask)
+static uint8_t lan865x_read_indirect_reg(const struct device *dev, uint8_t addr, uint8_t mask)
 {
 	struct lan865x_data *ctx = dev->data;
 	uint32_t val;
@@ -176,7 +171,7 @@ static uint8_t lan865x_read_indirect_reg(const struct device *dev, uint8_t addr,
 
 	oa_tc6_reg_read(ctx->tc6, 0x000400D9, &val);
 
-	return (uint8_t) val & mask;
+	return (uint8_t)val & mask;
 }
 
 static int lan865x_init_chip(const struct device *dev, uint8_t silicon_rev)
@@ -233,18 +228,18 @@ static int lan865x_init_chip(const struct device *dev, uint8_t silicon_rev)
 	cfgparam4 = (value6 & 0xC0C0) | (((9 + offset1) << 8) | (14 + offset1));
 	cfgparam5 = (value7 & 0xC0C0) | (((17 + offset1) << 8) | (22 + offset1));
 
-	oa_tc6_reg_write(ctx->tc6, 0x00040084, (uint32_t) cfgparam1);
-	oa_tc6_reg_write(ctx->tc6, 0x0004008A, (uint32_t) cfgparam2);
-	oa_tc6_reg_write(ctx->tc6, 0x000400AD, (uint32_t) cfgparam3);
-	oa_tc6_reg_write(ctx->tc6, 0x000400AE, (uint32_t) cfgparam4);
-	oa_tc6_reg_write(ctx->tc6, 0x000400AF, (uint32_t) cfgparam5);
+	oa_tc6_reg_write(ctx->tc6, 0x00040084, (uint32_t)cfgparam1);
+	oa_tc6_reg_write(ctx->tc6, 0x0004008A, (uint32_t)cfgparam2);
+	oa_tc6_reg_write(ctx->tc6, 0x000400AD, (uint32_t)cfgparam3);
+	oa_tc6_reg_write(ctx->tc6, 0x000400AE, (uint32_t)cfgparam4);
+	oa_tc6_reg_write(ctx->tc6, 0x000400AF, (uint32_t)cfgparam5);
 
 	return 0;
 }
 /* Implementation of pseudo code from AN1760 - END */
 
-static int lan865x_config_plca(const struct device *dev, uint8_t node_id,
-			       uint8_t node_cnt, uint8_t burst_cnt, uint8_t burst_timer)
+static int lan865x_config_plca(const struct device *dev, uint8_t node_id, uint8_t node_cnt,
+			       uint8_t burst_cnt, uint8_t burst_timer)
 {
 	struct lan865x_data *ctx = dev->data;
 	uint32_t val;
@@ -306,45 +301,44 @@ static int lan865x_set_specific_multicast_addr(const struct device *dev)
 		return ret;
 	}
 
-	return oa_tc6_reg_write(ctx->tc6, LAN865x_MAC_NCFGR,
-				LAN865x_MAC_NCFGR_MTIHEN);
+	return oa_tc6_reg_write(ctx->tc6, LAN865x_MAC_NCFGR, LAN865x_MAC_NCFGR_MTIHEN);
 }
 
 static int lan865x_default_config(const struct device *dev, uint8_t silicon_rev)
 {
 	/* Values in the below table are the same for LAN865x rev. B0 and B1 */
 	static const oa_mem_map_t lan865x_conf[] = {
-		{ .address = 0x00010000, .value = 0x00000000 },
-		{ .address = 0x00040091, .value = 0x00009660 },
-		{ .address = 0x00040081, .value = 0x00000080 },
-		{ .address = 0x00010077, .value = 0x00000028 },
-		{ .address = 0x00040043, .value = 0x000000FF },
-		{ .address = 0x00040044, .value = 0x0000FFFF },
-		{ .address = 0x00040045, .value = 0x00000000 },
-		{ .address = 0x00040053, .value = 0x000000FF },
-		{ .address = 0x00040054, .value = 0x0000FFFF },
-		{ .address = 0x00040055, .value = 0x00000000 },
-		{ .address = 0x00040040, .value = 0x00000002 },
-		{ .address = 0x00040050, .value = 0x00000002 },
-		{ .address = 0x000400E9, .value = 0x00009E50 },
-		{ .address = 0x000400F5, .value = 0x00001CF8 },
-		{ .address = 0x000400F4, .value = 0x0000C020 },
-		{ .address = 0x000400F8, .value = 0x00009B00 },
-		{ .address = 0x000400F9, .value = 0x00004E53 },
-		{ .address = 0x000400B0, .value = 0x00000103 },
-		{ .address = 0x000400B1, .value = 0x00000910 },
-		{ .address = 0x000400B2, .value = 0x00001D26 },
-		{ .address = 0x000400B3, .value = 0x0000002A },
-		{ .address = 0x000400B4, .value = 0x00000103 },
-		{ .address = 0x000400B5, .value = 0x0000070D },
-		{ .address = 0x000400B6, .value = 0x00001720 },
-		{ .address = 0x000400B7, .value = 0x00000027 },
-		{ .address = 0x000400B8, .value = 0x00000509 },
-		{ .address = 0x000400B9, .value = 0x00000E13 },
-		{ .address = 0x000400BA, .value = 0x00001C25 },
-		{ .address = 0x000400BB, .value = 0x0000002B },
-		{ .address = 0x0000000C, .value = 0x00000100 },
-		{ .address = 0x00040081, .value = 0x000000E0 },
+		{.address = 0x00010000, .value = 0x00000000},
+		{.address = 0x00040091, .value = 0x00009660},
+		{.address = 0x00040081, .value = 0x00000080},
+		{.address = 0x00010077, .value = 0x00000028},
+		{.address = 0x00040043, .value = 0x000000FF},
+		{.address = 0x00040044, .value = 0x0000FFFF},
+		{.address = 0x00040045, .value = 0x00000000},
+		{.address = 0x00040053, .value = 0x000000FF},
+		{.address = 0x00040054, .value = 0x0000FFFF},
+		{.address = 0x00040055, .value = 0x00000000},
+		{.address = 0x00040040, .value = 0x00000002},
+		{.address = 0x00040050, .value = 0x00000002},
+		{.address = 0x000400E9, .value = 0x00009E50},
+		{.address = 0x000400F5, .value = 0x00001CF8},
+		{.address = 0x000400F4, .value = 0x0000C020},
+		{.address = 0x000400F8, .value = 0x00009B00},
+		{.address = 0x000400F9, .value = 0x00004E53},
+		{.address = 0x000400B0, .value = 0x00000103},
+		{.address = 0x000400B1, .value = 0x00000910},
+		{.address = 0x000400B2, .value = 0x00001D26},
+		{.address = 0x000400B3, .value = 0x0000002A},
+		{.address = 0x000400B4, .value = 0x00000103},
+		{.address = 0x000400B5, .value = 0x0000070D},
+		{.address = 0x000400B6, .value = 0x00001720},
+		{.address = 0x000400B7, .value = 0x00000027},
+		{.address = 0x000400B8, .value = 0x00000509},
+		{.address = 0x000400B9, .value = 0x00000E13},
+		{.address = 0x000400BA, .value = 0x00001C25},
+		{.address = 0x000400BB, .value = 0x0000002B},
+		{.address = 0x0000000C, .value = 0x00000100},
+		{.address = 0x00040081, .value = 0x000000E0},
 	};
 	const struct lan865x_config *cfg = dev->config;
 	uint8_t i, size = ARRAY_SIZE(lan865x_conf);
@@ -355,8 +349,7 @@ static int lan865x_default_config(const struct device *dev, uint8_t silicon_rev)
 	oa_tc6_set_protected_ctrl(ctx->tc6, true);
 
 	for (i = 0; i < size; i++) {
-		oa_tc6_reg_write(ctx->tc6, lan865x_conf[i].address,
-				 lan865x_conf[i].value);
+		oa_tc6_reg_write(ctx->tc6, lan865x_conf[i].address, lan865x_conf[i].value);
 	}
 
 	if (silicon_rev == 1) {
@@ -373,10 +366,8 @@ static int lan865x_default_config(const struct device *dev, uint8_t silicon_rev)
 	}
 
 	if (cfg->plca->enable) {
-		ret = lan865x_config_plca(dev, cfg->plca->node_id,
-					  cfg->plca->node_count,
-					  cfg->plca->burst_count,
-					  cfg->plca->burst_timer);
+		ret = lan865x_config_plca(dev, cfg->plca->node_id, cfg->plca->node_count,
+					  cfg->plca->burst_count, cfg->plca->burst_timer);
 		if (ret < 0) {
 			return ret;
 		}
@@ -384,15 +375,12 @@ static int lan865x_default_config(const struct device *dev, uint8_t silicon_rev)
 	return 0;
 }
 
-static void lan865x_int_callback(const struct device *dev,
-				  struct gpio_callback *cb,
-				  uint32_t pins)
+static void lan865x_int_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(pins);
 
-	struct lan865x_data *ctx =
-		CONTAINER_OF(cb, struct lan865x_data, gpio_int_callback);
+	struct lan865x_data *ctx = CONTAINER_OF(cb, struct lan865x_data, gpio_int_callback);
 
 	k_sem_give(&ctx->int_sem);
 }
@@ -491,8 +479,7 @@ static int lan865x_init(const struct device *dev)
 	}
 
 	if (!gpio_is_ready_dt(&cfg->interrupt)) {
-		LOG_ERR("Interrupt GPIO device %s is not ready",
-			cfg->interrupt.port->name);
+		LOG_ERR("Interrupt GPIO device %s is not ready", cfg->interrupt.port->name);
 		return -ENODEV;
 	}
 
@@ -524,19 +511,15 @@ static int lan865x_init(const struct device *dev)
 	gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
 
 	/* Start interruption-poll thread */
-	ctx->tid_int =
-		k_thread_create(&ctx->thread, ctx->thread_stack,
-				CONFIG_ETH_LAN865X_IRQ_THREAD_STACK_SIZE,
-				(k_thread_entry_t)lan865x_int_thread,
-				(void *)dev, NULL, NULL,
-				K_PRIO_COOP(CONFIG_ETH_LAN865X_IRQ_THREAD_PRIO),
-				0, K_NO_WAIT);
+	ctx->tid_int = k_thread_create(
+		&ctx->thread, ctx->thread_stack, CONFIG_ETH_LAN865X_IRQ_THREAD_STACK_SIZE,
+		(k_thread_entry_t)lan865x_int_thread, (void *)dev, NULL, NULL,
+		K_PRIO_COOP(CONFIG_ETH_LAN865X_IRQ_THREAD_PRIO), 0, K_NO_WAIT);
 	k_thread_name_set(ctx->tid_int, "lan865x_interrupt");
 
 	/* Perform HW reset - 'rst-gpios' required property set in DT */
 	if (!gpio_is_ready_dt(&cfg->reset)) {
-		LOG_ERR("Reset GPIO device %s is not ready",
-			cfg->reset.port->name);
+		LOG_ERR("Reset GPIO device %s is not ready", cfg->reset.port->name);
 		return -ENODEV;
 	}
 
@@ -589,7 +572,7 @@ static const struct ethernet_api lan865x_api_func = {
 		.to_timer = DT_INST_PROP(inst, plca_to_timer),                                     \
 		.enable = DT_INST_PROP(inst, plca_enable),                                         \
 	};                                                                                         \
-												   \
+                                                                                                   \
 	static const struct lan865x_config lan865x_config_##inst = {                               \
 		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0),                             \
 		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                               \
@@ -597,20 +580,15 @@ static const struct ethernet_api lan865x_api_func = {
 		.timeout = CONFIG_ETH_LAN865X_TIMEOUT,                                             \
 		.plca = &lan865x_config_plca_##inst,                                               \
 	};                                                                                         \
-												   \
+                                                                                                   \
 	struct oa_tc6 oa_tc6_##inst = {                                                            \
-		.cps = 64,                                                                         \
-		.protected = 0,                                                                    \
-		.spi = &lan865x_config_##inst.spi                                                  \
-	};                                                                                         \
+		.cps = 64, .protected = 0, .spi = &lan865x_config_##inst.spi};                     \
 	static struct lan865x_data lan865x_data_##inst = {                                         \
 		.mac_address = DT_INST_PROP(inst, local_mac_address),                              \
-		.tx_rx_sem =                                                                       \
-			Z_SEM_INITIALIZER((lan865x_data_##inst).tx_rx_sem, 1, 1),                  \
+		.tx_rx_sem = Z_SEM_INITIALIZER((lan865x_data_##inst).tx_rx_sem, 1, 1),             \
 		.int_sem = Z_SEM_INITIALIZER((lan865x_data_##inst).int_sem, 0, 1),                 \
-		.tc6 = &oa_tc6_##inst                                                              \
-	};                                                                                         \
-												   \
+		.tc6 = &oa_tc6_##inst};                                                            \
+                                                                                                   \
 	ETH_NET_DEVICE_DT_INST_DEFINE(inst, lan865x_init, NULL, &lan865x_data_##inst,              \
 				      &lan865x_config_##inst, CONFIG_ETH_INIT_PRIORITY,            \
 				      &lan865x_api_func, NET_ETH_MTU);

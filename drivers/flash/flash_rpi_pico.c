@@ -27,11 +27,11 @@ LOG_MODULE_REGISTER(flash_rpi_pico, CONFIG_FLASH_LOG_LEVEL);
 
 #define DT_DRV_COMPAT raspberrypi_pico_flash_controller
 
-#define PAGE_SIZE 256
-#define SECTOR_SIZE DT_PROP(DT_CHOSEN(zephyr_flash), erase_block_size)
-#define ERASE_VALUE 0xff
-#define FLASH_SIZE KB(CONFIG_FLASH_SIZE)
-#define FLASH_BASE CONFIG_FLASH_BASE_ADDRESS
+#define PAGE_SIZE        256
+#define SECTOR_SIZE      DT_PROP(DT_CHOSEN(zephyr_flash), erase_block_size)
+#define ERASE_VALUE      0xff
+#define FLASH_SIZE       KB(CONFIG_FLASH_SIZE)
+#define FLASH_BASE       CONFIG_FLASH_BASE_ADDRESS
 #define SSI_BASE_ADDRESS DT_REG_ADDR(DT_CHOSEN(zephyr_flash_controller))
 
 static const struct flash_parameters flash_rpi_parameters = {
@@ -47,9 +47,9 @@ static const struct flash_parameters flash_rpi_parameters = {
  */
 
 #define FLASHCMD_PAGE_PROGRAM 0x02
-#define FLASHCMD_READ_STATUS 0x05
+#define FLASHCMD_READ_STATUS  0x05
 #define FLASHCMD_WRITE_ENABLE 0x06
-#define BOOT2_SIZE_WORDS 64
+#define BOOT2_SIZE_WORDS      64
 
 enum outover {
 	OUTOVER_NORMAL = 0,
@@ -77,25 +77,25 @@ static void __no_inline_not_in_flash_func(flash_init_boot2_copyout)(void)
 
 static void __no_inline_not_in_flash_func(flash_enable_xip_via_boot2)(void)
 {
-	((void (*)(void))((uint32_t)boot2_copyout+1))();
+	((void (*)(void))((uint32_t)boot2_copyout + 1))();
 }
 
 void __no_inline_not_in_flash_func(flash_cs_force)(enum outover over)
 {
-	io_rw_32 *reg = (io_rw_32 *) (IO_QSPI_BASE + IO_QSPI_GPIO_QSPI_SS_CTRL_OFFSET);
-	*reg = (*reg & ~IO_QSPI_GPIO_QSPI_SS_CTRL_OUTOVER_BITS)
-		| (over << IO_QSPI_GPIO_QSPI_SS_CTRL_OUTOVER_LSB);
-	(void) *reg;
+	io_rw_32 *reg = (io_rw_32 *)(IO_QSPI_BASE + IO_QSPI_GPIO_QSPI_SS_CTRL_OFFSET);
+	*reg = (*reg & ~IO_QSPI_GPIO_QSPI_SS_CTRL_OUTOVER_BITS) |
+	       (over << IO_QSPI_GPIO_QSPI_SS_CTRL_OUTOVER_LSB);
+	(void)*reg;
 }
 
 int __no_inline_not_in_flash_func(flash_was_aborted)()
 {
-	return *(io_rw_32 *) (IO_QSPI_BASE + IO_QSPI_GPIO_QSPI_SD1_CTRL_OFFSET)
-		   & IO_QSPI_GPIO_QSPI_SD1_CTRL_INOVER_BITS;
+	return *(io_rw_32 *)(IO_QSPI_BASE + IO_QSPI_GPIO_QSPI_SD1_CTRL_OFFSET) &
+	       IO_QSPI_GPIO_QSPI_SD1_CTRL_INOVER_BITS;
 }
 
 void __no_inline_not_in_flash_func(flash_put_get)(const uint8_t *tx, uint8_t *rx, size_t count,
-						size_t rx_skip)
+						  size_t rx_skip)
 {
 	const uint max_in_flight = 16 - 2;
 	size_t tx_count = count;
@@ -110,7 +110,7 @@ void __no_inline_not_in_flash_func(flash_put_get)(const uint8_t *tx, uint8_t *rx
 		rx_level = ssi_hw->rxflr;
 		did_something = false;
 		if (tx_count && tx_level + rx_level < max_in_flight) {
-			ssi->dr0 = (uint32_t) (tx ? *tx++ : 0);
+			ssi->dr0 = (uint32_t)(tx ? *tx++ : 0);
 			--tx_count;
 			did_something = true;
 		}
@@ -135,7 +135,7 @@ void __no_inline_not_in_flash_func(flash_put_get)(const uint8_t *tx, uint8_t *rx
 }
 
 void __no_inline_not_in_flash_func(flash_put_get_wrapper)(uint8_t cmd, const uint8_t *tx,
-					uint8_t *rx, size_t count)
+							  uint8_t *rx, size_t count)
 {
 	flash_cs_force(OUTOVER_LOW);
 	ssi->dr0 = cmd;
@@ -153,7 +153,7 @@ static ALWAYS_INLINE void flash_put_cmd_addr(uint8_t cmd, uint32_t addr)
 }
 
 void __no_inline_not_in_flash_func(flash_write_partial_internal)(uint32_t addr, const uint8_t *data,
-					size_t size)
+								 size_t size)
 {
 	uint8_t status_reg;
 
@@ -169,12 +169,13 @@ void __no_inline_not_in_flash_func(flash_write_partial_internal)(uint32_t addr, 
 void __no_inline_not_in_flash_func(flash_write_partial)(uint32_t flash_offs, const uint8_t *data,
 							size_t count)
 {
-	rom_connect_internal_flash_fn connect_internal_flash = (rom_connect_internal_flash_fn)
-					rom_func_lookup_inline(ROM_FUNC_CONNECT_INTERNAL_FLASH);
-	rom_flash_exit_xip_fn exit_xip = (rom_flash_exit_xip_fn)
-						rom_func_lookup_inline(ROM_FUNC_FLASH_EXIT_XIP);
-	rom_flash_flush_cache_fn flush_cache = (rom_flash_flush_cache_fn)
-						rom_func_lookup_inline(ROM_FUNC_FLASH_FLUSH_CACHE);
+	rom_connect_internal_flash_fn connect_internal_flash =
+		(rom_connect_internal_flash_fn)rom_func_lookup_inline(
+			ROM_FUNC_CONNECT_INTERNAL_FLASH);
+	rom_flash_exit_xip_fn exit_xip =
+		(rom_flash_exit_xip_fn)rom_func_lookup_inline(ROM_FUNC_FLASH_EXIT_XIP);
+	rom_flash_flush_cache_fn flush_cache =
+		(rom_flash_flush_cache_fn)rom_func_lookup_inline(ROM_FUNC_FLASH_FLUSH_CACHE);
 
 	flash_init_boot2_copyout();
 
@@ -219,8 +220,8 @@ static int flash_rpi_write(const struct device *dev, off_t offset, const void *d
 	}
 
 	if (!is_valid_range(offset, size)) {
-		LOG_ERR("Write range exceeds the flash boundaries. Offset=%#lx, Size=%u",
-				offset, size);
+		LOG_ERR("Write range exceeds the flash boundaries. Offset=%#lx, Size=%u", offset,
+			size);
 		return -EINVAL;
 	}
 
@@ -263,14 +264,14 @@ static int flash_rpi_erase(const struct device *dev, off_t offset, size_t size)
 	}
 
 	if (!is_valid_range(offset, size)) {
-		LOG_ERR("Erase range exceeds the flash boundaries. Offset=%#lx, Size=%u",
-				offset, size);
+		LOG_ERR("Erase range exceeds the flash boundaries. Offset=%#lx, Size=%u", offset,
+			size);
 		return -EINVAL;
 	}
 
 	if ((offset % SECTOR_SIZE) || (size % SECTOR_SIZE)) {
 		LOG_ERR("Erase range is not a multiple of the sector size. Offset=%#lx, Size=%u",
-				offset, size);
+			offset, size);
 		return -EINVAL;
 	}
 
@@ -298,7 +299,7 @@ static const struct flash_pages_layout flash_rpi_pages_layout = {
 };
 
 void flash_rpi_page_layout(const struct device *dev, const struct flash_pages_layout **layout,
-				size_t *layout_size)
+			   size_t *layout_size)
 {
 	*layout = &flash_rpi_pages_layout;
 	*layout_size = 1;
@@ -316,5 +317,5 @@ static const struct flash_driver_api flash_rpi_driver_api = {
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, POST_KERNEL,
-		      CONFIG_FLASH_INIT_PRIORITY, &flash_rpi_driver_api);
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,
+		      &flash_rpi_driver_api);

@@ -421,35 +421,35 @@ static const struct uart_driver_api uart_max32_driver_api = {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-#define MAX32_UART_INIT(_num)                                                                      \
-	PINCTRL_DT_INST_DEFINE(_num);                                                              \
+#define MAX32_UART_INIT(_num)                                                                        \
+	PINCTRL_DT_INST_DEFINE(_num);                                                                \
 	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,                                                   \
 		   (static void uart_max32_irq_init_##_num(const struct device *dev) \
 		   {             \
 			   IRQ_CONNECT(DT_INST_IRQN(_num), DT_INST_IRQ(_num, priority),            \
 				       uart_max32_isr, DEVICE_DT_INST_GET(_num), 0);               \
 			   irq_enable(DT_INST_IRQN(_num));                                         \
-		   }));                                                                            \
-	static const struct max32_uart_config max32_uart_config_##_num = {                         \
-		.regs = (mxc_uart_regs_t *)DT_INST_REG_ADDR(_num),                                 \
-		.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(_num),                                     \
-		.clock = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(_num)),                                 \
-		.perclk.bus = DT_INST_CLOCKS_CELL(_num, offset),                                   \
-		.perclk.bit = DT_INST_CLOCKS_CELL(_num, bit),                                      \
-		.perclk.clk_src =                                                                  \
-			DT_INST_PROP_OR(_num, clock_source, ADI_MAX32_PRPH_CLK_SRC_PCLK),          \
-		.uart_conf.baudrate = DT_INST_PROP_OR(_num, current_speed, 115200),                \
-		.uart_conf.parity = DT_INST_ENUM_IDX_OR(_num, parity, UART_CFG_PARITY_NONE),       \
-		.uart_conf.data_bits = DT_INST_ENUM_IDX_OR(_num, data_bits, UART_CFG_DATA_BITS_8), \
-		.uart_conf.stop_bits = DT_INST_ENUM_IDX_OR(_num, stop_bits, UART_CFG_STOP_BITS_1), \
-		.uart_conf.flow_ctrl =                                                             \
-			DT_INST_PROP_OR(_num, hw_flow_control, UART_CFG_FLOW_CTRL_NONE),           \
+		   })); \
+	static const struct max32_uart_config max32_uart_config_##_num = {                           \
+		.regs = (mxc_uart_regs_t *)DT_INST_REG_ADDR(_num),                                   \
+		.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(_num),                                       \
+		.clock = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(_num)),                                   \
+		.perclk.bus = DT_INST_CLOCKS_CELL(_num, offset),                                     \
+		.perclk.bit = DT_INST_CLOCKS_CELL(_num, bit),                                        \
+		.perclk.clk_src =                                                                    \
+			DT_INST_PROP_OR(_num, clock_source, ADI_MAX32_PRPH_CLK_SRC_PCLK),            \
+		.uart_conf.baudrate = DT_INST_PROP_OR(_num, current_speed, 115200),                  \
+		.uart_conf.parity = DT_INST_ENUM_IDX_OR(_num, parity, UART_CFG_PARITY_NONE),         \
+		.uart_conf.data_bits = DT_INST_ENUM_IDX_OR(_num, data_bits, UART_CFG_DATA_BITS_8),   \
+		.uart_conf.stop_bits = DT_INST_ENUM_IDX_OR(_num, stop_bits, UART_CFG_STOP_BITS_1),   \
+		.uart_conf.flow_ctrl =                                                               \
+			DT_INST_PROP_OR(_num, hw_flow_control, UART_CFG_FLOW_CTRL_NONE),             \
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,                                           \
-			   (.irq_config_func = uart_max32_irq_init_##_num,))};                     \
-	static struct max32_uart_data max32_uart_data##_num = {                                    \
-		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (.cb = NULL,))};                          \
-	DEVICE_DT_INST_DEFINE(_num, uart_max32_init, NULL, &max32_uart_data##_num,                 \
-			      &max32_uart_config_##_num, PRE_KERNEL_1,                             \
+			   (.irq_config_func = uart_max32_irq_init_##_num,))};                         \
+	static struct max32_uart_data max32_uart_data##_num = {                                      \
+		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (.cb = NULL,))};                               \
+	DEVICE_DT_INST_DEFINE(_num, uart_max32_init, NULL, &max32_uart_data##_num,                   \
+			      &max32_uart_config_##_num, PRE_KERNEL_1,                               \
 			      CONFIG_SERIAL_INIT_PRIORITY, (void *)&uart_max32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX32_UART_INIT)

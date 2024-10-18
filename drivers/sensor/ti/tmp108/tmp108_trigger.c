@@ -17,9 +17,8 @@ LOG_MODULE_DECLARE(TMP108, CONFIG_SENSOR_LOG_LEVEL);
 void tmp108_trigger_handle_one_shot(struct k_work *work)
 {
 	struct k_work_delayable *delayable_work = k_work_delayable_from_work(work);
-	struct tmp108_data *drv_data = CONTAINER_OF(delayable_work,
-						    struct tmp108_data,
-						    scheduled_work);
+	struct tmp108_data *drv_data =
+		CONTAINER_OF(delayable_work, struct tmp108_data, scheduled_work);
 
 	uint16_t config = 0;
 	bool shutdown_mode = false;
@@ -45,29 +44,23 @@ void tmp108_trigger_handle_one_shot(struct k_work *work)
 
 	/* Successful read, call set callbacks */
 	if (drv_data->data_ready_handler) {
-		drv_data->data_ready_handler(drv_data->tmp108_dev,
-					     drv_data->data_ready_trigger);
+		drv_data->data_ready_handler(drv_data->tmp108_dev, drv_data->data_ready_trigger);
 	}
 }
 
-void tmp108_trigger_handle_alert(const struct device *gpio,
-				 struct gpio_callback *cb,
+void tmp108_trigger_handle_alert(const struct device *gpio, struct gpio_callback *cb,
 				 gpio_port_pins_t pins)
 {
 
-	struct tmp108_data *drv_data = CONTAINER_OF(cb,
-						    struct tmp108_data,
-						    temp_alert_gpio_cb);
+	struct tmp108_data *drv_data = CONTAINER_OF(cb, struct tmp108_data, temp_alert_gpio_cb);
 
 	/* Successful read, call set callbacks */
 	if (drv_data->temp_alert_handler) {
-		drv_data->temp_alert_handler(drv_data->tmp108_dev,
-					     drv_data->temp_alert_trigger);
+		drv_data->temp_alert_handler(drv_data->tmp108_dev, drv_data->temp_alert_trigger);
 	}
 }
 
-int tmp_108_trigger_set(const struct device *dev,
-			const struct sensor_trigger *trig,
+int tmp_108_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
 	struct tmp108_data *drv_data = dev->data;

@@ -17,8 +17,7 @@ struct rv32m1_entropy_config {
 	TRNG_Type *base;
 };
 
-static int entropy_rv32m1_trng_get_entropy(const struct device *dev,
-					   uint8_t *buffer,
+static int entropy_rv32m1_trng_get_entropy(const struct device *dev, uint8_t *buffer,
 					   uint16_t length)
 {
 	const struct rv32m1_entropy_config *config = dev->config;
@@ -33,20 +32,15 @@ static int entropy_rv32m1_trng_get_entropy(const struct device *dev,
 }
 
 static const struct entropy_driver_api entropy_rv32m1_trng_api_funcs = {
-	.get_entropy = entropy_rv32m1_trng_get_entropy
-};
+	.get_entropy = entropy_rv32m1_trng_get_entropy};
 
 static struct rv32m1_entropy_config entropy_rv32m1_config = {
-	.base = (TRNG_Type *)DT_INST_REG_ADDR(0)
-};
+	.base = (TRNG_Type *)DT_INST_REG_ADDR(0)};
 
 static int entropy_rv32m1_trng_init(const struct device *);
 
-DEVICE_DT_INST_DEFINE(0,
-		    entropy_rv32m1_trng_init, NULL,
-		    NULL, &entropy_rv32m1_config,
-		    PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
-		    &entropy_rv32m1_trng_api_funcs);
+DEVICE_DT_INST_DEFINE(0, entropy_rv32m1_trng_init, NULL, NULL, &entropy_rv32m1_config, PRE_KERNEL_1,
+		      CONFIG_ENTROPY_INIT_PRIORITY, &entropy_rv32m1_trng_api_funcs);
 
 static int entropy_rv32m1_trng_init(const struct device *dev)
 {

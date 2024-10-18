@@ -26,8 +26,7 @@ int linux_evdev_read(int fd, uint16_t *type, uint16_t *code, int32_t *value)
 		nsi_print_warning("Read error: %s", strerror(errno));
 		return -EIO;
 	} else if (ret < sizeof(ev)) {
-		nsi_print_warning("Unexpected read size: %d, expecting %d",
-				  ret, sizeof(ev));
+		nsi_print_warning("Unexpected read size: %d, expecting %d", ret, sizeof(ev));
 		return -EIO;
 	}
 
@@ -44,9 +43,8 @@ int linux_evdev_open(const char *path)
 
 	fd = open(path, O_RDONLY | O_NONBLOCK);
 	if (fd < 0) {
-		nsi_print_error_and_exit(
-				"Failed to open the evdev device %s: %s\n",
-				path, strerror(errno));
+		nsi_print_error_and_exit("Failed to open the evdev device %s: %s\n", path,
+					 strerror(errno));
 	}
 
 	return fd;

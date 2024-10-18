@@ -48,8 +48,7 @@ static void gpio_sam0_isr(uint32_t pins, void *arg)
 }
 #endif
 
-static int gpio_sam0_config(const struct device *dev, gpio_pin_t pin,
-			    gpio_flags_t flags)
+static int gpio_sam0_config(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_sam0_config *config = dev->config;
 	struct gpio_sam0_data *data = dev->data;
@@ -95,8 +94,7 @@ static int gpio_sam0_config(const struct device *dev, gpio_pin_t pin,
 
 	/* Preserve debounce flag for interrupt configuration. */
 	WRITE_BIT(data->debounce, pin,
-		  ((flags & SAM0_GPIO_DEBOUNCE) != 0)
-		  && (pincfg.bit.INEN != 0));
+		  ((flags & SAM0_GPIO_DEBOUNCE) != 0) && (pincfg.bit.INEN != 0));
 
 	/* Write the now-built pin configuration */
 	regs->PINCFG[pin] = pincfg;
@@ -104,8 +102,7 @@ static int gpio_sam0_config(const struct device *dev, gpio_pin_t pin,
 	return 0;
 }
 
-static int gpio_sam0_port_get_raw(const struct device *dev,
-				  gpio_port_value_t *value)
+static int gpio_sam0_port_get_raw(const struct device *dev, gpio_port_value_t *value)
 {
 	const struct gpio_sam0_config *config = dev->config;
 
@@ -114,8 +111,7 @@ static int gpio_sam0_port_get_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_sam0_port_set_masked_raw(const struct device *dev,
-					 gpio_port_pins_t mask,
+static int gpio_sam0_port_set_masked_raw(const struct device *dev, gpio_port_pins_t mask,
 					 gpio_port_value_t value)
 {
 	const struct gpio_sam0_config *config = dev->config;
@@ -126,8 +122,7 @@ static int gpio_sam0_port_set_masked_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_sam0_port_set_bits_raw(const struct device *dev,
-				       gpio_port_pins_t pins)
+static int gpio_sam0_port_set_bits_raw(const struct device *dev, gpio_port_pins_t pins)
 {
 	const struct gpio_sam0_config *config = dev->config;
 
@@ -136,8 +131,7 @@ static int gpio_sam0_port_set_bits_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_sam0_port_clear_bits_raw(const struct device *dev,
-					 gpio_port_pins_t pins)
+static int gpio_sam0_port_clear_bits_raw(const struct device *dev, gpio_port_pins_t pins)
 {
 	const struct gpio_sam0_config *config = dev->config;
 
@@ -146,8 +140,7 @@ static int gpio_sam0_port_clear_bits_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_sam0_port_toggle_bits(const struct device *dev,
-				      gpio_port_pins_t pins)
+static int gpio_sam0_port_toggle_bits(const struct device *dev, gpio_port_pins_t pins)
 {
 	const struct gpio_sam0_config *config = dev->config;
 
@@ -158,10 +151,8 @@ static int gpio_sam0_port_toggle_bits(const struct device *dev,
 
 #ifdef CONFIG_SAM0_EIC
 
-static int gpio_sam0_pin_interrupt_configure(const struct device *dev,
-					     gpio_pin_t pin,
-					     enum gpio_int_mode mode,
-					     enum gpio_int_trig trig)
+static int gpio_sam0_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
+					     enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	const struct gpio_sam0_config *config = dev->config;
 	struct gpio_sam0_data *const data = dev->data;
@@ -195,8 +186,7 @@ static int gpio_sam0_pin_interrupt_configure(const struct device *dev,
 		 * as an output, so interrupts are only supported if
 		 * the pin is configured as input-only.
 		 */
-		if ((pincfg.bit.INEN == 0)
-		    || ((regs->DIR.reg & BIT(pin)) != 0)) {
+		if ((pincfg.bit.INEN == 0) || ((regs->DIR.reg & BIT(pin)) != 0)) {
 			rc = -ENOTSUP;
 			break;
 		}
@@ -211,14 +201,10 @@ static int gpio_sam0_pin_interrupt_configure(const struct device *dev,
 
 		switch (trig) {
 		case GPIO_INT_TRIG_LOW:
-			trigger = (mode == GPIO_INT_MODE_LEVEL)
-				? SAM0_EIC_LOW
-				: SAM0_EIC_FALLING;
+			trigger = (mode == GPIO_INT_MODE_LEVEL) ? SAM0_EIC_LOW : SAM0_EIC_FALLING;
 			break;
 		case GPIO_INT_TRIG_HIGH:
-			trigger = (mode == GPIO_INT_MODE_LEVEL)
-				? SAM0_EIC_HIGH
-				: SAM0_EIC_RISING;
+			trigger = (mode == GPIO_INT_MODE_LEVEL) ? SAM0_EIC_HIGH : SAM0_EIC_RISING;
 			break;
 		case GPIO_INT_TRIG_BOTH:
 			trigger = SAM0_EIC_BOTH;
@@ -230,8 +216,8 @@ static int gpio_sam0_pin_interrupt_configure(const struct device *dev,
 
 		if (rc == 0) {
 			rc = sam0_eic_acquire(config->id, pin, trigger,
-					      (data->debounce & BIT(pin)) != 0,
-					      gpio_sam0_isr, data);
+					      (data->debounce & BIT(pin)) != 0, gpio_sam0_isr,
+					      data);
 		}
 		if (rc == 0) {
 			rc = sam0_eic_enable_interrupt(config->id, pin);
@@ -251,9 +237,8 @@ static int gpio_sam0_pin_interrupt_configure(const struct device *dev,
 	return rc;
 }
 
-
-static int gpio_sam0_manage_callback(const struct device *dev,
-				     struct gpio_callback *callback, bool set)
+static int gpio_sam0_manage_callback(const struct device *dev, struct gpio_callback *callback,
+				     bool set)
 {
 	struct gpio_sam0_data *const data = dev->data;
 
@@ -283,15 +268,19 @@ static const struct gpio_driver_api gpio_sam0_api = {
 #endif
 };
 
-static int gpio_sam0_init(const struct device *dev) { return 0; }
+static int gpio_sam0_init(const struct device *dev)
+{
+	return 0;
+}
 
 /* Port A */
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(porta))
 
 static const struct gpio_sam0_config gpio_sam0_config_0 = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
-	},
+	.common =
+		{
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
+		},
 	.regs = (PortGroup *)DT_REG_ADDR(DT_NODELABEL(porta)),
 #ifdef CONFIG_SAM0_EIC
 	.id = 0,
@@ -300,20 +289,18 @@ static const struct gpio_sam0_config gpio_sam0_config_0 = {
 
 static struct gpio_sam0_data gpio_sam0_data_0;
 
-DEVICE_DT_DEFINE(DT_NODELABEL(porta),
-		    gpio_sam0_init, NULL,
-		    &gpio_sam0_data_0, &gpio_sam0_config_0,
-		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
-		    &gpio_sam0_api);
+DEVICE_DT_DEFINE(DT_NODELABEL(porta), gpio_sam0_init, NULL, &gpio_sam0_data_0, &gpio_sam0_config_0,
+		 PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, &gpio_sam0_api);
 #endif
 
 /* Port B */
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(portb))
 
 static const struct gpio_sam0_config gpio_sam0_config_1 = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(1),
-	},
+	.common =
+		{
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(1),
+		},
 	.regs = (PortGroup *)DT_REG_ADDR(DT_NODELABEL(portb)),
 #ifdef CONFIG_SAM0_EIC
 	.id = 1,
@@ -322,20 +309,18 @@ static const struct gpio_sam0_config gpio_sam0_config_1 = {
 
 static struct gpio_sam0_data gpio_sam0_data_1;
 
-DEVICE_DT_DEFINE(DT_NODELABEL(portb),
-		    gpio_sam0_init, NULL,
-		    &gpio_sam0_data_1, &gpio_sam0_config_1,
-		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
-		    &gpio_sam0_api);
+DEVICE_DT_DEFINE(DT_NODELABEL(portb), gpio_sam0_init, NULL, &gpio_sam0_data_1, &gpio_sam0_config_1,
+		 PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, &gpio_sam0_api);
 #endif
 
 /* Port C */
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(portc))
 
 static const struct gpio_sam0_config gpio_sam0_config_2 = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(2),
-	},
+	.common =
+		{
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(2),
+		},
 	.regs = (PortGroup *)DT_REG_ADDR(DT_NODELABEL(portc)),
 #ifdef CONFIG_SAM0_EIC
 	.id = 2,
@@ -344,20 +329,18 @@ static const struct gpio_sam0_config gpio_sam0_config_2 = {
 
 static struct gpio_sam0_data gpio_sam0_data_2;
 
-DEVICE_DT_DEFINE(DT_NODELABEL(portc),
-		    gpio_sam0_init, NULL,
-		    &gpio_sam0_data_2, &gpio_sam0_config_2,
-		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
-		    &gpio_sam0_api);
+DEVICE_DT_DEFINE(DT_NODELABEL(portc), gpio_sam0_init, NULL, &gpio_sam0_data_2, &gpio_sam0_config_2,
+		 PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, &gpio_sam0_api);
 #endif
 
 /* Port D */
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(portd))
 
 static const struct gpio_sam0_config gpio_sam0_config_3 = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(3),
-	},
+	.common =
+		{
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(3),
+		},
 	.regs = (PortGroup *)DT_REG_ADDR(DT_NODELABEL(portd)),
 #ifdef CONFIG_SAM0_EIC
 	.id = 3,
@@ -366,9 +349,6 @@ static const struct gpio_sam0_config gpio_sam0_config_3 = {
 
 static struct gpio_sam0_data gpio_sam0_data_3;
 
-DEVICE_DT_DEFINE(DT_NODELABEL(portd),
-		    gpio_sam0_init, NULL,
-		    &gpio_sam0_data_3, &gpio_sam0_config_3,
-		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
-		    &gpio_sam0_api);
+DEVICE_DT_DEFINE(DT_NODELABEL(portd), gpio_sam0_init, NULL, &gpio_sam0_data_3, &gpio_sam0_config_3,
+		 PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, &gpio_sam0_api);
 #endif

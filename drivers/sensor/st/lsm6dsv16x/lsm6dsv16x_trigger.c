@@ -114,9 +114,8 @@ static int lsm6dsv16x_enable_g_int(const struct device *dev, int enable)
 /**
  * lsm6dsv16x_trigger_set - link external trigger to event data ready
  */
-int lsm6dsv16x_trigger_set(const struct device *dev,
-			  const struct sensor_trigger *trig,
-			  sensor_trigger_handler_t handler)
+int lsm6dsv16x_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
+			   sensor_trigger_handler_t handler)
 {
 	const struct lsm6dsv16x_config *cfg = dev->config;
 	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
@@ -175,18 +174,15 @@ static void lsm6dsv16x_handle_interrupt(const struct device *dev)
 		if ((status.drdy_gy) && (lsm6dsv16x->handler_drdy_gyr != NULL)) {
 			lsm6dsv16x->handler_drdy_gyr(dev, lsm6dsv16x->trig_drdy_gyr);
 		}
-
 	}
 
-	gpio_pin_interrupt_configure_dt(lsm6dsv16x->drdy_gpio,
-					GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(lsm6dsv16x->drdy_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
-static void lsm6dsv16x_gpio_callback(const struct device *dev,
-				    struct gpio_callback *cb, uint32_t pins)
+static void lsm6dsv16x_gpio_callback(const struct device *dev, struct gpio_callback *cb,
+				     uint32_t pins)
 {
-	struct lsm6dsv16x_data *lsm6dsv16x =
-		CONTAINER_OF(cb, struct lsm6dsv16x_data, gpio_cb);
+	struct lsm6dsv16x_data *lsm6dsv16x = CONTAINER_OF(cb, struct lsm6dsv16x_data, gpio_cb);
 
 	ARG_UNUSED(pins);
 
@@ -217,8 +213,7 @@ static void lsm6dsv16x_thread(void *p1, void *p2, void *p3)
 #ifdef CONFIG_LSM6DSV16X_TRIGGER_GLOBAL_THREAD
 static void lsm6dsv16x_work_cb(struct k_work *work)
 {
-	struct lsm6dsv16x_data *lsm6dsv16x =
-		CONTAINER_OF(work, struct lsm6dsv16x_data, work);
+	struct lsm6dsv16x_data *lsm6dsv16x = CONTAINER_OF(work, struct lsm6dsv16x_data, work);
 
 	lsm6dsv16x_handle_interrupt(lsm6dsv16x->dev);
 }
@@ -231,9 +226,8 @@ int lsm6dsv16x_init_interrupt(const struct device *dev)
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	int ret;
 
-	lsm6dsv16x->drdy_gpio = (cfg->drdy_pin == 1) ?
-			(struct gpio_dt_spec *)&cfg->int1_gpio :
-			(struct gpio_dt_spec *)&cfg->int2_gpio;
+	lsm6dsv16x->drdy_gpio = (cfg->drdy_pin == 1) ? (struct gpio_dt_spec *)&cfg->int1_gpio
+						     : (struct gpio_dt_spec *)&cfg->int2_gpio;
 
 	/* setup data ready gpio interrupt (INT1 or INT2) */
 	if (!gpio_is_ready_dt(lsm6dsv16x->drdy_gpio)) {
@@ -245,10 +239,8 @@ int lsm6dsv16x_init_interrupt(const struct device *dev)
 	k_sem_init(&lsm6dsv16x->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
 	k_thread_create(&lsm6dsv16x->thread, lsm6dsv16x->thread_stack,
-			CONFIG_LSM6DSV16X_THREAD_STACK_SIZE,
-			lsm6dsv16x_thread, lsm6dsv16x,
-			NULL, NULL, K_PRIO_COOP(CONFIG_LSM6DSV16X_THREAD_PRIORITY),
-			0, K_NO_WAIT);
+			CONFIG_LSM6DSV16X_THREAD_STACK_SIZE, lsm6dsv16x_thread, lsm6dsv16x, NULL,
+			NULL, K_PRIO_COOP(CONFIG_LSM6DSV16X_THREAD_PRIORITY), 0, K_NO_WAIT);
 	k_thread_name_set(&lsm6dsv16x->thread, "lsm6dsv16x");
 #elif defined(CONFIG_LSM6DSV16X_TRIGGER_GLOBAL_THREAD)
 	lsm6dsv16x->work.handler = lsm6dsv16x_work_cb;
@@ -260,8 +252,7 @@ int lsm6dsv16x_init_interrupt(const struct device *dev)
 		return ret;
 	}
 
-	gpio_init_callback(&lsm6dsv16x->gpio_cb,
-			   lsm6dsv16x_gpio_callback,
+	gpio_init_callback(&lsm6dsv16x->gpio_cb, lsm6dsv16x_gpio_callback,
 			   BIT(lsm6dsv16x->drdy_gpio->pin));
 
 	if (gpio_add_callback(lsm6dsv16x->drdy_gpio->port, &lsm6dsv16x->gpio_cb) < 0) {
@@ -269,11 +260,10 @@ int lsm6dsv16x_init_interrupt(const struct device *dev)
 		return -EIO;
 	}
 
-
 	/* set data ready mode on int1/int2 */
 	LOG_DBG("drdy_pulsed is %d", (int)cfg->drdy_pulsed);
-	lsm6dsv16x_data_ready_mode_t mode = cfg->drdy_pulsed ? LSM6DSV16X_DRDY_PULSED :
-							     LSM6DSV16X_DRDY_LATCHED;
+	lsm6dsv16x_data_ready_mode_t mode =
+		cfg->drdy_pulsed ? LSM6DSV16X_DRDY_PULSED : LSM6DSV16X_DRDY_LATCHED;
 
 	ret = lsm6dsv16x_data_ready_mode_set(ctx, mode);
 	if (ret < 0) {
@@ -281,6 +271,5 @@ int lsm6dsv16x_init_interrupt(const struct device *dev)
 		return ret;
 	}
 
-	return gpio_pin_interrupt_configure_dt(lsm6dsv16x->drdy_gpio,
-					       GPIO_INT_EDGE_TO_ACTIVE);
+	return gpio_pin_interrupt_configure_dt(lsm6dsv16x->drdy_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 }

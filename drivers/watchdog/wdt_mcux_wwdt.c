@@ -68,11 +68,9 @@ static int mcux_wwdt_disable(const struct device *dev)
  * LPC55xxx WWDT has a fixed divide-by-4 clock prescaler.
  * This prescaler is different from the clock divider specified in Device Tree.
  */
-#define MSEC_TO_WWDT_TICKS(clock_freq, msec) \
-	((uint32_t)((clock_freq / MSEC_PER_SEC) * msec) / 4)
+#define MSEC_TO_WWDT_TICKS(clock_freq, msec) ((uint32_t)((clock_freq / MSEC_PER_SEC) * msec) / 4)
 
-static int mcux_wwdt_install_timeout(const struct device *dev,
-				     const struct wdt_timeout_cfg *cfg)
+static int mcux_wwdt_install_timeout(const struct device *dev, const struct wdt_timeout_cfg *cfg)
 {
 	struct mcux_wwdt_data *data = dev->data;
 	uint32_t clock_freq;
@@ -82,8 +80,8 @@ static int mcux_wwdt_install_timeout(const struct device *dev,
 		return -ENOMEM;
 	}
 
-#if defined(CONFIG_SOC_MIMXRT685S_CM33) || defined(CONFIG_SOC_MIMXRT595S_CM33) \
-	|| defined(CONFIG_SOC_SERIES_MCXN)
+#if defined(CONFIG_SOC_MIMXRT685S_CM33) || defined(CONFIG_SOC_MIMXRT595S_CM33) ||                  \
+	defined(CONFIG_SOC_SERIES_MCXN)
 	clock_freq = CLOCK_GetWdtClkFreq(0);
 #elif defined(CONFIG_SOC_SERIES_RW6XX)
 	clock_freq = CLOCK_GetWdtClkFreq();
@@ -98,18 +96,15 @@ static int mcux_wwdt_install_timeout(const struct device *dev,
 
 	data->wwdt_config.clockFreq_Hz = clock_freq;
 
-	data->wwdt_config.timeoutValue =
-		MSEC_TO_WWDT_TICKS(clock_freq, cfg->window.max);
+	data->wwdt_config.timeoutValue = MSEC_TO_WWDT_TICKS(clock_freq, cfg->window.max);
 
 	if (cfg->window.min) {
-		data->wwdt_config.windowValue =
-			MSEC_TO_WWDT_TICKS(clock_freq, cfg->window.min);
+		data->wwdt_config.windowValue = MSEC_TO_WWDT_TICKS(clock_freq, cfg->window.min);
 	}
 
 	if ((data->wwdt_config.timeoutValue < MIN_TIMEOUT) ||
 	    ((data->wwdt_config.windowValue != 0xFFFFFFU) &&
-	     (data->wwdt_config.timeoutValue <
-	      data->wwdt_config.windowValue))) {
+	     (data->wwdt_config.timeoutValue < data->wwdt_config.windowValue))) {
 		return -EINVAL;
 	}
 
@@ -125,10 +120,8 @@ static int mcux_wwdt_install_timeout(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-
 	data->timeout_valid = true;
-	LOG_DBG("Installed timeout (timeoutValue = %d)",
-		data->wwdt_config.timeoutValue);
+	LOG_DBG("Installed timeout (timeoutValue = %d)", data->wwdt_config.timeoutValue);
 
 	return 0;
 }
@@ -183,25 +176,20 @@ static const struct wdt_driver_api mcux_wwdt_api = {
 static void mcux_wwdt_config_func_0(const struct device *dev);
 
 static const struct mcux_wwdt_config mcux_wwdt_config_0 = {
-	.base = (WWDT_Type *) DT_INST_REG_ADDR(0),
-	.clk_divider =
-		DT_INST_PROP(0, clk_divider),
+	.base = (WWDT_Type *)DT_INST_REG_ADDR(0),
+	.clk_divider = DT_INST_PROP(0, clk_divider),
 	.irq_config_func = mcux_wwdt_config_func_0,
 };
 
 static struct mcux_wwdt_data mcux_wwdt_data_0;
 
-DEVICE_DT_INST_DEFINE(0, &mcux_wwdt_init,
-		    NULL, &mcux_wwdt_data_0,
-		    &mcux_wwdt_config_0, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &mcux_wwdt_api);
+DEVICE_DT_INST_DEFINE(0, &mcux_wwdt_init, NULL, &mcux_wwdt_data_0, &mcux_wwdt_config_0, POST_KERNEL,
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &mcux_wwdt_api);
 
 static void mcux_wwdt_config_func_0(const struct device *dev)
 {
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    mcux_wwdt_isr, DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), mcux_wwdt_isr, DEVICE_DT_INST_GET(0),
+		    0);
 
 	irq_enable(DT_INST_IRQN(0));
 }

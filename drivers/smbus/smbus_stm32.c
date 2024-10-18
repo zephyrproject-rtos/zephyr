@@ -204,7 +204,7 @@ static int smbus_stm32_word_data_read(const struct device *dev, uint16_t periph_
 	int result;
 
 	result = i2c_write_read(config->i2c_dev, periph_addr, &command, sizeof(command), word,
-			      sizeof(*word));
+				sizeof(*word));
 	*word = sys_le16_to_cpu(*word);
 
 	return result;
@@ -221,7 +221,7 @@ static int smbus_stm32_pcall(const struct device *dev, uint16_t periph_addr, uin
 	sys_put_le16(send_word, buffer + 1);
 
 	result = i2c_write_read(config->i2c_dev, periph_addr, buffer, ARRAY_SIZE(buffer), recv_word,
-			      sizeof(*recv_word));
+				sizeof(*recv_word));
 	*recv_word = sys_le16_to_cpu(*recv_word);
 
 	return result;

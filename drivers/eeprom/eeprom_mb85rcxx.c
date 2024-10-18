@@ -218,13 +218,12 @@ static const struct eeprom_driver_api mb85rcxx_driver_api = {
 	static const struct mb85rcxx_config mb85rcxx_config_##inst = {                             \
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, wp_gpios),                                  \
-			   (.wp_gpio = GPIO_DT_SPEC_INST_GET(inst, wp_gpios),))                    \
-			.size = DT_INST_PROP(inst, size),                                          \
-		.pagesize =                                                                        \
-			COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, pagesize),                         \
-				    (DT_INST_PROP(inst, pagesize)), (DT_INST_PROP(inst, size))),   \
-		.addr_width = DT_INST_PROP(inst, address_width),                                   \
-		.readonly = DT_INST_PROP(inst, read_only)};                                        \
+			   (.wp_gpio = GPIO_DT_SPEC_INST_GET(inst, wp_gpios),)) .size =                  \
+				 DT_INST_PROP(inst, size),                                         \
+			 .pagesize = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, pagesize),                         \
+				    (DT_INST_PROP(inst, pagesize)), (DT_INST_PROP(inst, size))),         \
+				  .addr_width = DT_INST_PROP(inst, address_width),                 \
+				  .readonly = DT_INST_PROP(inst, read_only)};                      \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, mb85rcxx_init, NULL, &mb85rcxx_data_##inst,                    \
 			      &mb85rcxx_config_##inst, POST_KERNEL, CONFIG_EEPROM_INIT_PRIORITY,   \

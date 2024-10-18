@@ -19,11 +19,10 @@ LOG_MODULE_REGISTER(vcnl4040, CONFIG_SENSOR_LOG_LEVEL);
 int vcnl4040_read(const struct device *dev, uint8_t reg, uint16_t *out)
 {
 	const struct vcnl4040_config *config = dev->config;
-	uint8_t buff[2] = { 0 };
+	uint8_t buff[2] = {0};
 	int ret = 0;
 
-	ret = i2c_write_read_dt(&config->i2c,
-			     &reg, sizeof(reg), buff, sizeof(buff));
+	ret = i2c_write_read_dt(&config->i2c, &reg, sizeof(reg), buff, sizeof(buff));
 
 	if (ret == 0) {
 		*out = sys_get_le16(buff);
@@ -50,15 +49,13 @@ int vcnl4040_write(const struct device *dev, uint8_t reg, uint16_t value)
 	return 0;
 }
 
-static int vcnl4040_sample_fetch(const struct device *dev,
-				 enum sensor_channel chan)
+static int vcnl4040_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct vcnl4040_data *data = dev->data;
 	int ret = 0;
 
 #ifdef CONFIG_VCNL4040_ENABLE_ALS
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL ||
-			chan == SENSOR_CHAN_PROX ||
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_PROX ||
 			chan == SENSOR_CHAN_LIGHT);
 #else
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_PROX);
@@ -66,8 +63,7 @@ static int vcnl4040_sample_fetch(const struct device *dev,
 	k_mutex_lock(&data->mutex, K_FOREVER);
 
 	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_PROX) {
-		ret = vcnl4040_read(dev, VCNL4040_REG_PS_DATA,
-				    &data->proximity);
+		ret = vcnl4040_read(dev, VCNL4040_REG_PS_DATA, &data->proximity);
 		if (ret < 0) {
 			LOG_ERR("Could not fetch proximity");
 			goto exit;
@@ -75,8 +71,7 @@ static int vcnl4040_sample_fetch(const struct device *dev,
 	}
 #ifdef CONFIG_VCNL4040_ENABLE_ALS
 	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_LIGHT) {
-		ret = vcnl4040_read(dev, VCNL4040_REG_ALS_DATA,
-				    &data->light);
+		ret = vcnl4040_read(dev, VCNL4040_REG_ALS_DATA, &data->light);
 		if (ret < 0) {
 			LOG_ERR("Could not fetch ambient light");
 		}
@@ -88,8 +83,7 @@ exit:
 	return ret;
 }
 
-static int vcnl4040_channel_get(const struct device *dev,
-				enum sensor_channel chan,
+static int vcnl4040_channel_get(const struct device *dev, enum sensor_channel chan,
 				struct sensor_value *val)
 {
 	struct vcnl4040_data *data = dev->data;
@@ -122,7 +116,7 @@ static int vcnl4040_channel_get(const struct device *dev,
 static int vcnl4040_reg_setup(const struct device *dev)
 {
 	const struct vcnl4040_config *config = dev->config;
-	uint16_t value[VCNL4040_RW_REG_COUNT] = { 0 };
+	uint16_t value[VCNL4040_RW_REG_COUNT] = {0};
 	uint8_t reg;
 	int ret = 0;
 
@@ -154,8 +148,7 @@ static int vcnl4040_reg_setup(const struct device *dev)
 		break;
 	default:
 		data->sensitivity = 1.0;
-		LOG_WRN("Cannot set ALS sensitivity from ALS_IT=%d",
-			config->als_it);
+		LOG_WRN("Cannot set ALS sensitivity from ALS_IT=%d", config->als_it);
 		break;
 	}
 #else
@@ -182,8 +175,7 @@ static int vcnl4040_reg_setup(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int vcnl4040_pm_action(const struct device *dev,
-			      enum pm_device_action action)
+static int vcnl4040_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	int ret = 0;
 	uint16_t ps_conf;
@@ -205,8 +197,7 @@ static int vcnl4040_pm_action(const struct device *dev,
 		/* Clear proximity shutdown */
 		ps_conf &= ~VCNL4040_PS_SD_MASK;
 
-		ret = vcnl4040_write(dev, VCNL4040_REG_PS_CONF,
-					ps_conf);
+		ret = vcnl4040_write(dev, VCNL4040_REG_PS_CONF, ps_conf);
 		if (ret < 0) {
 			return ret;
 		}
@@ -214,8 +205,7 @@ static int vcnl4040_pm_action(const struct device *dev,
 		/* Clear als shutdown */
 		als_conf &= ~VCNL4040_ALS_SD_MASK;
 
-		ret = vcnl4040_write(dev, VCNL4040_REG_ALS_CONF,
-					als_conf);
+		ret = vcnl4040_write(dev, VCNL4040_REG_ALS_CONF, als_conf);
 		if (ret < 0) {
 			return ret;
 		}
@@ -225,8 +215,7 @@ static int vcnl4040_pm_action(const struct device *dev,
 		/* Set proximity shutdown bit 0 */
 		ps_conf |= VCNL4040_PS_SD_MASK;
 
-		ret = vcnl4040_write(dev, VCNL4040_REG_PS_CONF,
-					ps_conf);
+		ret = vcnl4040_write(dev, VCNL4040_REG_PS_CONF, ps_conf);
 		if (ret < 0) {
 			return ret;
 		}
@@ -234,8 +223,7 @@ static int vcnl4040_pm_action(const struct device *dev,
 		/* Clear als shutdown bit 0 */
 		als_conf |= VCNL4040_ALS_SD_MASK;
 
-		ret = vcnl4040_write(dev, VCNL4040_REG_ALS_CONF,
-					als_conf);
+		ret = vcnl4040_write(dev, VCNL4040_REG_ALS_CONF, als_conf);
 		if (ret < 0) {
 			return ret;
 		}
@@ -300,24 +288,24 @@ static const struct sensor_driver_api vcnl4040_driver_api = {
 #endif
 };
 
-#define VCNL4040_DEFINE(inst)									\
-	static struct vcnl4040_data vcnl4040_data_##inst;					\
-												\
-	static const struct vcnl4040_config vcnl4040_config_##inst = {				\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
+#define VCNL4040_DEFINE(inst)                                                                      \
+	static struct vcnl4040_data vcnl4040_data_##inst;                                          \
+                                                                                                   \
+	static const struct vcnl4040_config vcnl4040_config_##inst = {                             \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		IF_ENABLED(CONFIG_VCNL4040_TRIGGER,						\
-			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))	\
-		.led_i = DT_INST_ENUM_IDX(inst, led_current),					\
-		.led_dc = DT_INST_ENUM_IDX(inst, led_duty_cycle),				\
-		.als_it = DT_INST_ENUM_IDX(inst, als_it),					\
-		.proxy_it = DT_INST_ENUM_IDX(inst, proximity_it),				\
-		.proxy_type = DT_INST_ENUM_IDX(inst, proximity_trigger),			\
-	};											\
-												\
-	PM_DEVICE_DT_INST_DEFINE(inst, vcnl4040_pm_action);					\
-												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, vcnl4040_init, PM_DEVICE_DT_INST_GET(inst),		\
-			      &vcnl4040_data_##inst, &vcnl4040_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &vcnl4040_driver_api);		\
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),)) .led_i =                                \
+					    DT_INST_ENUM_IDX(inst, led_current),                   \
+			    .led_dc = DT_INST_ENUM_IDX(inst, led_duty_cycle),                      \
+			    .als_it = DT_INST_ENUM_IDX(inst, als_it),                              \
+			    .proxy_it = DT_INST_ENUM_IDX(inst, proximity_it),                      \
+			    .proxy_type = DT_INST_ENUM_IDX(inst, proximity_trigger),               \
+	};                                                                                         \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(inst, vcnl4040_pm_action);                                        \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, vcnl4040_init, PM_DEVICE_DT_INST_GET(inst),             \
+				     &vcnl4040_data_##inst, &vcnl4040_config_##inst, POST_KERNEL,  \
+				     CONFIG_SENSOR_INIT_PRIORITY, &vcnl4040_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VCNL4040_DEFINE)

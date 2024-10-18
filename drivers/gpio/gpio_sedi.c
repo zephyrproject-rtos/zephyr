@@ -65,8 +65,7 @@ static int gpio_sedi_resume_device_from_suspend(const struct device *dev)
 	return 0;
 }
 
-static int gpio_sedi_pm_action(const struct device *dev,
-			      enum pm_device_action action)
+static int gpio_sedi_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	int ret = 0;
 
@@ -86,22 +85,17 @@ static int gpio_sedi_pm_action(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE */
 
-static void gpio_sedi_callback(const uint32_t pin_mask,
-			       const sedi_gpio_port_t port,
-			       void *param)
+static void gpio_sedi_callback(const uint32_t pin_mask, const sedi_gpio_port_t port, void *param)
 {
 	ARG_UNUSED(port);
 	struct device *dev = (struct device *)param;
-	struct gpio_sedi_data *data =
-		(struct gpio_sedi_data *)(dev->data);
+	struct gpio_sedi_data *data = (struct gpio_sedi_data *)(dev->data);
 
 	/* call the callbacks */
 	gpio_fire_callbacks(&data->callbacks, dev, pin_mask);
 }
 
-static void gpio_sedi_write_raw(const struct device *dev,
-				uint32_t pins,
-				bool is_clear)
+static void gpio_sedi_write_raw(const struct device *dev, uint32_t pins, bool is_clear)
 {
 	uint8_t i;
 	const struct gpio_sedi_config *config = dev->config;
@@ -125,12 +119,11 @@ static void gpio_sedi_write_raw(const struct device *dev,
 	}
 }
 
-static int gpio_sedi_configure(const struct device *dev, gpio_pin_t pin,
-			       gpio_flags_t flags)
+static int gpio_sedi_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_sedi_config *config = dev->config;
 	sedi_gpio_t gpio_dev = config->device;
-	sedi_gpio_pin_config_t pin_config = { 0 };
+	sedi_gpio_pin_config_t pin_config = {0};
 
 	if ((flags & GPIO_OUTPUT) && (flags & GPIO_INPUT)) {
 		/* Pin cannot be configured as input and output */
@@ -169,9 +162,7 @@ static int gpio_sedi_get_raw(const struct device *dev, uint32_t *value)
 	return 0;
 }
 
-static int gpio_sedi_set_masked_raw(const struct device *dev,
-				    uint32_t mask,
-				    uint32_t value)
+static int gpio_sedi_set_masked_raw(const struct device *dev, uint32_t mask, uint32_t value)
 {
 	gpio_sedi_write_raw(dev, (mask & value), false);
 
@@ -211,14 +202,12 @@ static int gpio_sedi_toggle_bits(const struct device *dev, uint32_t pins)
 	return 0;
 }
 
-static int gpio_sedi_interrupt_configure(const struct device *dev,
-					 gpio_pin_t pin,
-					 enum gpio_int_mode mode,
-					 enum gpio_int_trig trig)
+static int gpio_sedi_interrupt_configure(const struct device *dev, gpio_pin_t pin,
+					 enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	const struct gpio_sedi_config *config = dev->config;
 	sedi_gpio_t gpio_dev = config->device;
-	sedi_gpio_pin_config_t pin_config = { 0 };
+	sedi_gpio_pin_config_t pin_config = {0};
 
 	/* Not support level trigger */
 	if (mode == GPIO_INT_MODE_LEVEL) {
@@ -233,16 +222,13 @@ static int gpio_sedi_interrupt_configure(const struct device *dev,
 		pin_config.enable_interrupt = true;
 		switch (trig) {
 		case GPIO_INT_TRIG_LOW:
-			pin_config.interrupt_mode =
-				SEDI_GPIO_INT_MODE_FALLING_EDGE;
+			pin_config.interrupt_mode = SEDI_GPIO_INT_MODE_FALLING_EDGE;
 			break;
 		case GPIO_INT_TRIG_HIGH:
-			pin_config.interrupt_mode =
-				SEDI_GPIO_INT_MODE_RISING_EDGE;
+			pin_config.interrupt_mode = SEDI_GPIO_INT_MODE_RISING_EDGE;
 			break;
 		case GPIO_INT_TRIG_BOTH:
-			pin_config.interrupt_mode =
-				SEDI_GPIO_INT_MODE_BOTH_EDGE;
+			pin_config.interrupt_mode = SEDI_GPIO_INT_MODE_BOTH_EDGE;
 			break;
 		default:
 			return -EINVAL;
@@ -254,8 +240,7 @@ static int gpio_sedi_interrupt_configure(const struct device *dev,
 	return 0;
 }
 
-static int gpio_sedi_manage_callback(const struct device *dev,
-				     struct gpio_callback *callback,
+static int gpio_sedi_manage_callback(const struct device *dev, struct gpio_callback *callback,
 				     bool set)
 {
 	struct gpio_sedi_data *data = dev->data;
@@ -282,8 +267,7 @@ static const struct gpio_driver_api gpio_sedi_driver_api = {
 	.port_toggle_bits = gpio_sedi_toggle_bits,
 	.pin_interrupt_configure = gpio_sedi_interrupt_configure,
 	.manage_callback = gpio_sedi_manage_callback,
-	.get_pending_int = gpio_sedi_get_pending
-};
+	.get_pending_int = gpio_sedi_get_pending};
 
 extern void gpio_isr(IN sedi_gpio_t gpio_device);
 
@@ -310,33 +294,24 @@ static int gpio_sedi_init(const struct device *dev)
 
 #define GPIO_SEDI_IRQ_FLAGS_SENSE0(n) 0
 #define GPIO_SEDI_IRQ_FLAGS_SENSE1(n) DT_INST_IRQ(n, sense)
-#define GPIO_SEDI_IRQ_FLAGS(n) \
-	_CONCAT(GPIO_SEDI_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, sense))(n)
+#define GPIO_SEDI_IRQ_FLAGS(n)        _CONCAT(GPIO_SEDI_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, sense))(n)
 
-#define GPIO_DEVICE_INIT_SEDI(n)				       \
-	static struct gpio_sedi_data gpio##n##_data;	               \
-	static void gpio_sedi_irq_config_##n(void)		       \
-	{							       \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), \
-			    gpio_isr, n,			       \
-			    GPIO_SEDI_IRQ_FLAGS(n));		       \
-		irq_enable(DT_INST_IRQN(n));			       \
-	};							       \
-	static const struct gpio_sedi_config gpio##n##_config = {      \
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                  \
-		.common = { 0xFFFFFFFF },			       \
-		.device = DT_INST_PROP(n, peripheral_id),              \
-		.pin_nums = DT_INST_PROP(n, ngpios),                   \
-		.irq_config = gpio_sedi_irq_config_##n,	               \
-	};							       \
-	PM_DEVICE_DEFINE(gpio_##n, gpio_sedi_pm_action);               \
-	DEVICE_DT_INST_DEFINE(n,				       \
-		      gpio_sedi_init,				       \
-		      PM_DEVICE_GET(gpio_##n),		               \
-		      &gpio##n##_data,			               \
-		      &gpio##n##_config,			       \
-		      POST_KERNEL,				       \
-		      CONFIG_GPIO_INIT_PRIORITY,	               \
-		      &gpio_sedi_driver_api);
+#define GPIO_DEVICE_INIT_SEDI(n)                                                                   \
+	static struct gpio_sedi_data gpio##n##_data;                                               \
+	static void gpio_sedi_irq_config_##n(void)                                                 \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_isr, n,                \
+			    GPIO_SEDI_IRQ_FLAGS(n));                                               \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+	};                                                                                         \
+	static const struct gpio_sedi_config gpio##n##_config = {                                  \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),     .common = {0xFFFFFFFF},                  \
+		.device = DT_INST_PROP(n, peripheral_id), .pin_nums = DT_INST_PROP(n, ngpios),     \
+		.irq_config = gpio_sedi_irq_config_##n,                                            \
+	};                                                                                         \
+	PM_DEVICE_DEFINE(gpio_##n, gpio_sedi_pm_action);                                           \
+	DEVICE_DT_INST_DEFINE(n, gpio_sedi_init, PM_DEVICE_GET(gpio_##n), &gpio##n##_data,         \
+			      &gpio##n##_config, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,           \
+			      &gpio_sedi_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_DEVICE_INIT_SEDI)

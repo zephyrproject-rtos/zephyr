@@ -7,8 +7,8 @@
 #define DT_DRV_COMPAT telink_b91_spi
 
 /*  Redefine 'spi_read' and 'spi_write' functions names from HAL */
-#define spi_read    hal_spi_read
-#define spi_write   hal_spi_write
+#define spi_read  hal_spi_read
+#define spi_write hal_spi_write
 #include "spi.c"
 #undef spi_read
 #undef spi_write
@@ -23,11 +23,9 @@ LOG_MODULE_REGISTER(spi_telink);
 #include "spi_context.h"
 #include <zephyr/drivers/pinctrl.h>
 
-
-#define CHIP_SELECT_COUNT               3u
-#define SPI_WORD_SIZE                   8u
-#define SPI_WR_RD_CHUNK_SIZE_MAX        16u
-
+#define CHIP_SELECT_COUNT        3u
+#define SPI_WORD_SIZE            8u
+#define SPI_WR_RD_CHUNK_SIZE_MAX 16u
 
 /* SPI configuration structure */
 struct spi_b91_cfg {
@@ -35,14 +33,13 @@ struct spi_b91_cfg {
 	gpio_pin_e cs_pin[CHIP_SELECT_COUNT];
 	const struct pinctrl_dev_config *pcfg;
 };
-#define SPI_CFG(dev)                    ((struct spi_b91_cfg *) ((dev)->config))
+#define SPI_CFG(dev) ((struct spi_b91_cfg *)((dev)->config))
 
 /* SPI data structure */
 struct spi_b91_data {
 	struct spi_context ctx;
 };
-#define SPI_DATA(dev)                   ((struct spi_b91_data *) ((dev)->data))
-
+#define SPI_DATA(dev) ((struct spi_b91_data *)((dev)->data))
 
 /* disable hardware cs flow control */
 static void spi_b91_hw_cs_disable(const struct spi_b91_cfg *config)
@@ -68,8 +65,7 @@ static void spi_b91_hw_cs_disable(const struct spi_b91_cfg *config)
 }
 
 /* config cs flow control: hardware or software */
-static bool spi_b91_config_cs(const struct device *dev,
-			      const struct spi_config *config)
+static bool spi_b91_config_cs(const struct device *dev, const struct spi_config *config)
 {
 	pspi_csn_pin_def_e cs_pin = 0;
 	const struct spi_b91_cfg *b91_config = SPI_CFG(dev);
@@ -149,8 +145,8 @@ static uint32_t spi_b91_get_txrx_len(const struct spi_buf_set *tx_bufs,
 }
 
 /* process tx data */
-_attribute_ram_code_sec_
-static void spi_b91_tx(uint8_t peripheral_id, struct spi_context *ctx, uint8_t len)
+_attribute_ram_code_sec_ static void spi_b91_tx(uint8_t peripheral_id, struct spi_context *ctx,
+						uint8_t len)
 {
 	uint8_t tx;
 
@@ -168,8 +164,8 @@ static void spi_b91_tx(uint8_t peripheral_id, struct spi_context *ctx, uint8_t l
 }
 
 /* process rx data */
-_attribute_ram_code_sec_
-static void spi_b91_rx(uint8_t peripheral_id, struct spi_context *ctx, uint8_t len)
+_attribute_ram_code_sec_ static void spi_b91_rx(uint8_t peripheral_id, struct spi_context *ctx,
+						uint8_t len)
 {
 	uint8_t rx = 0;
 
@@ -186,8 +182,7 @@ static void spi_b91_rx(uint8_t peripheral_id, struct spi_context *ctx, uint8_t l
 }
 
 /* SPI transceive internal */
-_attribute_ram_code_sec_
-static void spi_b91_txrx(const struct device *dev, uint32_t len)
+_attribute_ram_code_sec_ static void spi_b91_txrx(const struct device *dev, uint32_t len)
 {
 	unsigned int chunk_size = SPI_WR_RD_CHUNK_SIZE_MAX;
 	struct spi_b91_cfg *cfg = SPI_CFG(dev);
@@ -275,8 +270,7 @@ static bool spi_b91_is_config_supported(const struct spi_config *config,
 		if ((config->operation & SPI_LINES_MASK) == SPI_LINES_OCTAL) {
 			LOG_ERR("SPI lines Octal is not supported");
 			return false;
-		} else if (((config->operation & SPI_LINES_MASK) ==
-			    SPI_LINES_QUAD) &&
+		} else if (((config->operation & SPI_LINES_MASK) == SPI_LINES_QUAD) &&
 			   (b91_config->peripheral_id == PSPI_MODULE)) {
 			LOG_ERR("SPI lines Quad is not supported by PSPI");
 			return false;
@@ -293,8 +287,7 @@ static bool spi_b91_is_config_supported(const struct spi_config *config,
 }
 
 /* SPI configuration */
-static int spi_b91_config(const struct device *dev,
-			  const struct spi_config *config)
+static int spi_b91_config(const struct device *dev, const struct spi_config *config)
 {
 	int status = 0;
 	spi_mode_type_e mode = SPI_MODE0;
@@ -328,8 +321,8 @@ static int spi_b91_config(const struct device *dev,
 	}
 
 	/* init SPI master */
-	spi_master_init(b91_config->peripheral_id,
-			clk_src * 1000000 / (2 * config->frequency) - 1, mode);
+	spi_master_init(b91_config->peripheral_id, clk_src * 1000000 / (2 * config->frequency) - 1,
+			mode);
 	spi_master_config(b91_config->peripheral_id, SPI_NOMAL);
 
 	/* set lines configuration */
@@ -337,14 +330,11 @@ static int spi_b91_config(const struct device *dev,
 		uint32_t lines = config->operation & SPI_LINES_MASK;
 
 		if (lines == SPI_LINES_SINGLE) {
-			spi_set_io_mode(b91_config->peripheral_id,
-					SPI_SINGLE_MODE);
+			spi_set_io_mode(b91_config->peripheral_id, SPI_SINGLE_MODE);
 		} else if (lines == SPI_LINES_DUAL) {
-			spi_set_io_mode(b91_config->peripheral_id,
-					SPI_DUAL_MODE);
+			spi_set_io_mode(b91_config->peripheral_id, SPI_DUAL_MODE);
 		} else if (lines == SPI_LINES_QUAD) {
-			spi_set_io_mode(b91_config->peripheral_id,
-					HSPI_QUAD_MODE);
+			spi_set_io_mode(b91_config->peripheral_id, HSPI_QUAD_MODE);
 		}
 	}
 
@@ -378,10 +368,8 @@ static int spi_b91_init(const struct device *dev)
 }
 
 /* API implementation: transceive */
-static int spi_b91_transceive(const struct device *dev,
-			      const struct spi_config *config,
-			      const struct spi_buf_set *tx_bufs,
-			      const struct spi_buf_set *rx_bufs)
+static int spi_b91_transceive(const struct device *dev, const struct spi_config *config,
+			      const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs)
 {
 	int status = 0;
 	struct spi_b91_data *data = SPI_DATA(dev);
@@ -419,11 +407,9 @@ static int spi_b91_transceive(const struct device *dev,
 
 #ifdef CONFIG_SPI_ASYNC
 /* API implementation: transceive_async */
-static int spi_b91_transceive_async(const struct device *dev,
-				    const struct spi_config *config,
+static int spi_b91_transceive_async(const struct device *dev, const struct spi_config *config,
 				    const struct spi_buf_set *tx_bufs,
-				    const struct spi_buf_set *rx_bufs,
-				    spi_callback_t cb,
+				    const struct spi_buf_set *rx_bufs, spi_callback_t cb,
 				    void *userdata)
 {
 	ARG_UNUSED(dev);
@@ -438,8 +424,7 @@ static int spi_b91_transceive_async(const struct device *dev,
 #endif /* CONFIG_SPI_ASYNC */
 
 /* API implementation: release */
-static int spi_b91_release(const struct device *dev,
-			   const struct spi_config *config)
+static int spi_b91_release(const struct device *dev, const struct spi_config *config)
 {
 	struct spi_b91_data *data = SPI_DATA(dev);
 
@@ -465,30 +450,24 @@ static const struct spi_driver_api spi_b91_api = {
 };
 
 /* SPI driver registration */
-#define SPI_B91_INIT(inst)						  \
-									  \
-	PINCTRL_DT_INST_DEFINE(inst);					  \
-									  \
-	static struct spi_b91_data spi_b91_data_##inst = {		  \
-		SPI_CONTEXT_INIT_LOCK(spi_b91_data_##inst, ctx),	  \
-		SPI_CONTEXT_INIT_SYNC(spi_b91_data_##inst, ctx),	  \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx)	  \
-	};								  \
-									  \
-	static struct spi_b91_cfg spi_b91_cfg_##inst = {		  \
-		.peripheral_id = DT_INST_ENUM_IDX(inst, peripheral_id),	  \
-		.cs_pin[0] = DT_INST_STRING_TOKEN(inst, cs0_pin),	  \
-		.cs_pin[1] = DT_INST_STRING_TOKEN(inst, cs1_pin),	  \
-		.cs_pin[2] = DT_INST_STRING_TOKEN(inst, cs2_pin),	  \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		  \
-	};								  \
-									  \
-	DEVICE_DT_INST_DEFINE(inst, spi_b91_init,			  \
-			      NULL,					  \
-			      &spi_b91_data_##inst,			  \
-			      &spi_b91_cfg_##inst,			  \
-			      POST_KERNEL,				  \
-			      CONFIG_SPI_INIT_PRIORITY,			  \
-			      &spi_b91_api);
+#define SPI_B91_INIT(inst)                                                                         \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(inst);                                                              \
+                                                                                                   \
+	static struct spi_b91_data spi_b91_data_##inst = {                                         \
+		SPI_CONTEXT_INIT_LOCK(spi_b91_data_##inst, ctx),                                   \
+		SPI_CONTEXT_INIT_SYNC(spi_b91_data_##inst, ctx),                                   \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx)};                          \
+                                                                                                   \
+	static struct spi_b91_cfg spi_b91_cfg_##inst = {                                           \
+		.peripheral_id = DT_INST_ENUM_IDX(inst, peripheral_id),                            \
+		.cs_pin[0] = DT_INST_STRING_TOKEN(inst, cs0_pin),                                  \
+		.cs_pin[1] = DT_INST_STRING_TOKEN(inst, cs1_pin),                                  \
+		.cs_pin[2] = DT_INST_STRING_TOKEN(inst, cs2_pin),                                  \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, spi_b91_init, NULL, &spi_b91_data_##inst, &spi_b91_cfg_##inst, \
+			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &spi_b91_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_B91_INIT)

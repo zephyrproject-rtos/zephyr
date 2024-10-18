@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT	nxp_imx_flexspi_nor
+#define DT_DRV_COMPAT nxp_imx_flexspi_nor
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/flash.h>
@@ -19,8 +19,8 @@
 #include <fsl_cache.h>
 #endif
 
-#define NOR_WRITE_SIZE	1
-#define NOR_ERASE_VALUE	0xff
+#define NOR_WRITE_SIZE  1
+#define NOR_ERASE_VALUE 0xff
 
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
 static uint8_t nor_write_buf[SPI_NOR_PAGE_SIZE];
@@ -82,63 +82,71 @@ struct flash_flexspi_nor_data {
 /* Initial LUT table */
 static const uint32_t flash_flexspi_nor_base_lut[][MEMC_FLEXSPI_CMD_PER_SEQ] = {
 	/* 1S-1S-1S flash read command, should be compatible with all SPI nor flashes */
-	[READ] = {
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_READ,
-			kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 24),
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x1,
-			kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0),
-	},
-	[READ_JESD216] = {
-		/* Install read SFDP command */
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, JESD216_CMD_READ_SFDP,
-				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 24),
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DUMMY_SDR, kFLEXSPI_1PAD, 8,
-				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x4),
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0,
-				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0),
-	},
+	[READ] =
+		{
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_READ,
+					kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 24),
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x1,
+					kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0),
+		},
+	[READ_JESD216] =
+		{
+			/* Install read SFDP command */
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, JESD216_CMD_READ_SFDP,
+					kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 24),
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DUMMY_SDR, kFLEXSPI_1PAD, 8,
+					kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x4),
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0,
+					kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0),
+		},
 	/* Standard 1S-1S-1S flash write command, can be switched to 1S-1S-4S when QE is set */
-	[PAGE_PROGRAM] = {
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_PP,
-				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x18),
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x04,
-				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
-	},
+	[PAGE_PROGRAM] =
+		{
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_PP,
+					kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x18),
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x04,
+					kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
+		},
 
-	[WRITE_ENABLE] = {
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_WREN,
-				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
-	},
+	[WRITE_ENABLE] =
+		{
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_WREN,
+					kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
+		},
 
-	[ERASE_SECTOR] = {
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_SE,
-				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x18),
-	},
+	[ERASE_SECTOR] =
+		{
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_SE,
+					kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x18),
+		},
 
-	[ERASE_BLOCK] = {
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_BE,
-				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x18),
-	},
+	[ERASE_BLOCK] =
+		{
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_BE,
+					kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 0x18),
+		},
 
-	[ERASE_CHIP] = {
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_CE,
-				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
-	},
+	[ERASE_CHIP] =
+		{
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_CE,
+					kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0),
+		},
 
-	[READ_ID] = {
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDID,
-				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x01),
-	},
+	[READ_ID] =
+		{
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDID,
+					kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x01),
+		},
 
-	[READ_STATUS_REG] = {
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR,
-				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x01),
-	},
+	[READ_STATUS_REG] =
+		{
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR,
+					kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x01),
+		},
 };
 
 /* Helper so we can read flash ID without flash access for XIP */
-static int flash_flexspi_nor_read_id_helper(struct flash_flexspi_nor_data *data,
-		uint8_t *vendor_id)
+static int flash_flexspi_nor_read_id_helper(struct flash_flexspi_nor_data *data, uint8_t *vendor_id)
 {
 	uint32_t buffer = 0;
 	int ret;
@@ -172,8 +180,7 @@ static int flash_flexspi_nor_read_id(const struct device *dev, uint8_t *vendor_i
 	return flash_flexspi_nor_read_id_helper(data, vendor_id);
 }
 
-static int flash_flexspi_nor_read_status(struct flash_flexspi_nor_data *data,
-		uint32_t *status)
+static int flash_flexspi_nor_read_status(struct flash_flexspi_nor_data *data, uint32_t *status)
 {
 	flexspi_transfer_t transfer = {
 		.deviceAddress = 0,
@@ -207,8 +214,7 @@ static int flash_flexspi_nor_write_enable(struct flash_flexspi_nor_data *data)
 	return memc_flexspi_transfer(&data->controller, &transfer);
 }
 
-static int flash_flexspi_nor_erase_sector(struct flash_flexspi_nor_data *data,
-	off_t offset)
+static int flash_flexspi_nor_erase_sector(struct flash_flexspi_nor_data *data, off_t offset)
 {
 	flexspi_transfer_t transfer = {
 		.deviceAddress = offset,
@@ -220,13 +226,12 @@ static int flash_flexspi_nor_erase_sector(struct flash_flexspi_nor_data *data,
 		.dataSize = 0,
 	};
 
-	LOG_DBG("Erasing sector at 0x%08zx", (ssize_t) offset);
+	LOG_DBG("Erasing sector at 0x%08zx", (ssize_t)offset);
 
 	return memc_flexspi_transfer(&data->controller, &transfer);
 }
 
-static int flash_flexspi_nor_erase_block(struct flash_flexspi_nor_data *data,
-					  off_t offset)
+static int flash_flexspi_nor_erase_block(struct flash_flexspi_nor_data *data, off_t offset)
 {
 	flexspi_transfer_t transfer = {
 		.deviceAddress = offset,
@@ -238,7 +243,7 @@ static int flash_flexspi_nor_erase_block(struct flash_flexspi_nor_data *data,
 		.dataSize = 0,
 	};
 
-	LOG_DBG("Erasing block at 0x%08zx", (ssize_t) offset);
+	LOG_DBG("Erasing block at 0x%08zx", (ssize_t)offset);
 
 	return memc_flexspi_transfer(&data->controller, &transfer);
 }
@@ -260,8 +265,8 @@ static int flash_flexspi_nor_erase_chip(struct flash_flexspi_nor_data *data)
 	return memc_flexspi_transfer(&data->controller, &transfer);
 }
 
-static int flash_flexspi_nor_page_program(struct flash_flexspi_nor_data *data,
-		off_t offset, const void *buffer, size_t len)
+static int flash_flexspi_nor_page_program(struct flash_flexspi_nor_data *data, off_t offset,
+					  const void *buffer, size_t len)
 {
 	flexspi_transfer_t transfer = {
 		.deviceAddress = offset,
@@ -269,11 +274,11 @@ static int flash_flexspi_nor_page_program(struct flash_flexspi_nor_data *data,
 		.cmdType = kFLEXSPI_Write,
 		.SeqNumber = 1,
 		.seqIndex = PAGE_PROGRAM,
-		.data = (uint32_t *) buffer,
+		.data = (uint32_t *)buffer,
 		.dataSize = len,
 	};
 
-	LOG_DBG("Page programming %d bytes to 0x%08zx", len, (ssize_t) offset);
+	LOG_DBG("Page programming %d bytes to 0x%08zx", len, (ssize_t)offset);
 
 	return memc_flexspi_transfer(&data->controller, &transfer);
 }
@@ -305,31 +310,26 @@ static int flash_flexspi_nor_wait_bus_busy(struct flash_flexspi_nor_data *data)
 	return 0;
 }
 
-static int flash_flexspi_nor_read(const struct device *dev, off_t offset,
-		void *buffer, size_t len)
+static int flash_flexspi_nor_read(const struct device *dev, off_t offset, void *buffer, size_t len)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
-	uint8_t *src = memc_flexspi_get_ahb_address(&data->controller,
-						    data->port,
-						    offset);
+	uint8_t *src = memc_flexspi_get_ahb_address(&data->controller, data->port, offset);
 
 	memcpy(buffer, src, len);
 
 	return 0;
 }
 
-static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
-		const void *buffer, size_t len)
+static int flash_flexspi_nor_write(const struct device *dev, off_t offset, const void *buffer,
+				   size_t len)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
 	size_t size = len;
-	uint8_t *src = (uint8_t *) buffer;
+	uint8_t *src = (uint8_t *)buffer;
 	int i;
 	unsigned int key = 0;
 
-	uint8_t *dst = memc_flexspi_get_ahb_address(&data->controller,
-						    data->port,
-						    offset);
+	uint8_t *dst = memc_flexspi_get_ahb_address(&data->controller, data->port, offset);
 
 	if (memc_flexspi_is_running_xip(&data->controller)) {
 		/*
@@ -368,14 +368,13 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 	}
 
 #ifdef CONFIG_HAS_MCUX_CACHE
-	DCACHE_InvalidateByRange((uint32_t) dst, size);
+	DCACHE_InvalidateByRange((uint32_t)dst, size);
 #endif
 
 	return 0;
 }
 
-static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
-		size_t size)
+static int flash_flexspi_nor_erase(const struct device *dev, off_t offset, size_t size)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
 	const size_t num_sectors = size / SPI_NOR_SECTOR_SIZE;
@@ -384,9 +383,7 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 	int i;
 	unsigned int key = 0;
 
-	uint8_t *dst = memc_flexspi_get_ahb_address(&data->controller,
-						    data->port,
-						    offset);
+	uint8_t *dst = memc_flexspi_get_ahb_address(&data->controller, data->port, offset);
 
 	if (offset % SPI_NOR_SECTOR_SIZE) {
 		LOG_ERR("Invalid offset");
@@ -436,14 +433,13 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 	}
 
 #ifdef CONFIG_HAS_MCUX_CACHE
-	DCACHE_InvalidateByRange((uint32_t) dst, size);
+	DCACHE_InvalidateByRange((uint32_t)dst, size);
 #endif
 
 	return 0;
 }
 
-static const struct flash_parameters *flash_flexspi_nor_get_parameters(
-		const struct device *dev)
+static const struct flash_parameters *flash_flexspi_nor_get_parameters(const struct device *dev)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
 
@@ -452,7 +448,8 @@ static const struct flash_parameters *flash_flexspi_nor_get_parameters(
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 static void flash_flexspi_nor_pages_layout(const struct device *dev,
-		const struct flash_pages_layout **layout, size_t *layout_size)
+					   const struct flash_pages_layout **layout,
+					   size_t *layout_size)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
 
@@ -460,7 +457,6 @@ static void flash_flexspi_nor_pages_layout(const struct device *dev,
 	*layout_size = 1;
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
-
 
 /*
  * This function enables quad mode, when supported. Otherwise it
@@ -471,8 +467,8 @@ static void flash_flexspi_nor_pages_layout(const struct device *dev,
  * @return 0 if quad mode was entered, or -ENOTSUP if quad mode is not supported
  */
 static int flash_flexspi_nor_quad_enable(struct flash_flexspi_nor_data *data,
-					uint32_t (*flexspi_lut)[MEMC_FLEXSPI_CMD_PER_SEQ],
-					uint8_t qer)
+					 uint32_t (*flexspi_lut)[MEMC_FLEXSPI_CMD_PER_SEQ],
+					 uint8_t qer)
 {
 	int ret;
 	uint32_t buffer = 0;
@@ -498,12 +494,12 @@ static int flash_flexspi_nor_quad_enable(struct flash_flexspi_nor_data *data,
 	case JESD216_DW15_QER_VAL_S2B1v1:
 	case JESD216_DW15_QER_VAL_S2B1v4:
 		/* Install read and write status command */
-		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR,
-				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x1);
-		flexspi_lut[SCRATCH_CMD2][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_WRSR,
-				kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x1);
+		flexspi_lut[SCRATCH_CMD][0] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR,
+					kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x1);
+		flexspi_lut[SCRATCH_CMD2][0] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_WRSR,
+					kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x1);
 
 		/* Set bit 1 of status register 2 */
 		bit = BIT(9);
@@ -512,12 +508,12 @@ static int flash_flexspi_nor_quad_enable(struct flash_flexspi_nor_data *data,
 		break;
 	case JESD216_DW15_QER_VAL_S1B6:
 		/* Install read and write status command */
-		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR,
-				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x1);
-		flexspi_lut[SCRATCH_CMD2][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_WRSR,
-				kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x1);
+		flexspi_lut[SCRATCH_CMD][0] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR,
+					kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x1);
+		flexspi_lut[SCRATCH_CMD2][0] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_WRSR,
+					kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x1);
 
 		/* Set bit 6 of status register 1 */
 		bit = BIT(6);
@@ -526,12 +522,12 @@ static int flash_flexspi_nor_quad_enable(struct flash_flexspi_nor_data *data,
 		break;
 	case JESD216_DW15_QER_VAL_S2B7:
 		/* Install read and write status command */
-		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x3F,
-				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x1);
-		flexspi_lut[SCRATCH_CMD2][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x3E,
-				kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x1);
+		flexspi_lut[SCRATCH_CMD][0] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x3F,
+					kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x1);
+		flexspi_lut[SCRATCH_CMD2][0] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x3E,
+					kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x1);
 
 		/* Set bit 7 of status register 2 */
 		bit = BIT(7);
@@ -540,12 +536,12 @@ static int flash_flexspi_nor_quad_enable(struct flash_flexspi_nor_data *data,
 		break;
 	case JESD216_DW15_QER_VAL_S2B1v5:
 		/* Install read and write status command */
-		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR2,
-				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x1);
-		flexspi_lut[SCRATCH_CMD2][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_WRSR,
-				kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x1);
+		flexspi_lut[SCRATCH_CMD][0] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR2,
+					kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x1);
+		flexspi_lut[SCRATCH_CMD2][0] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_WRSR,
+					kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x1);
 
 		/* Set bit 1 of status register 2 */
 		bit = BIT(9);
@@ -554,12 +550,12 @@ static int flash_flexspi_nor_quad_enable(struct flash_flexspi_nor_data *data,
 		break;
 	case JESD216_DW15_QER_VAL_S2B1v6:
 		/* Install read and write status command */
-		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR2,
-				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x1);
-		flexspi_lut[SCRATCH_CMD2][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_WRSR2,
-				kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x1);
+		flexspi_lut[SCRATCH_CMD][0] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR2,
+					kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x1);
+		flexspi_lut[SCRATCH_CMD2][0] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_WRSR2,
+					kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x1);
 
 		/* Set bit 7 of status register 2 */
 		bit = BIT(7);
@@ -569,11 +565,9 @@ static int flash_flexspi_nor_quad_enable(struct flash_flexspi_nor_data *data,
 	default:
 		return -ENOTSUP;
 	}
-	ret = memc_flexspi_set_device_config(&data->controller,
-				&config,
-				(uint32_t *)flexspi_lut,
-				FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
-				data->port);
+	ret = memc_flexspi_set_device_config(&data->controller, &config, (uint32_t *)flexspi_lut,
+					     FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
+					     data->port);
 	if (ret < 0) {
 		return ret;
 	}
@@ -601,8 +595,8 @@ static int flash_flexspi_nor_quad_enable(struct flash_flexspi_nor_data *data,
  * @return 0 if 4 byte mode was entered, or -ENOTSUP if 4 byte mode was not supported
  */
 static int flash_flexspi_nor_4byte_enable(struct flash_flexspi_nor_data *data,
-					uint32_t (*flexspi_lut)[MEMC_FLEXSPI_CMD_PER_SEQ],
-					uint32_t en4b)
+					  uint32_t (*flexspi_lut)[MEMC_FLEXSPI_CMD_PER_SEQ],
+					  uint32_t en4b)
 {
 	int ret;
 	uint32_t buffer = 0;
@@ -626,17 +620,15 @@ static int flash_flexspi_nor_4byte_enable(struct flash_flexspi_nor_data *data,
 		return -ENOTSUP;
 	} else if (en4b & BIT(4)) {
 		/* Set bit 0 of 16 bit configuration register */
-		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xB5,
-				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x1);
-		flexspi_lut[SCRATCH_CMD2][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xB1,
-				kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x1);
-		ret = memc_flexspi_set_device_config(&data->controller,
-					&config,
-					(uint32_t *)flexspi_lut,
-					FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
-					data->port);
+		flexspi_lut[SCRATCH_CMD][0] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xB5,
+					kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x1);
+		flexspi_lut[SCRATCH_CMD2][0] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xB1,
+					kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x1);
+		ret = memc_flexspi_set_device_config(
+			&data->controller, &config, (uint32_t *)flexspi_lut,
+			FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ, data->port);
 		if (ret < 0) {
 			return ret;
 		}
@@ -656,14 +648,12 @@ static int flash_flexspi_nor_4byte_enable(struct flash_flexspi_nor_data *data,
 	} else if (en4b & BIT(1)) {
 		/* Issue write enable, then instruction 0xB7 */
 		flash_flexspi_nor_write_enable(data);
-		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xB7,
-				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
-		ret = memc_flexspi_set_device_config(&data->controller,
-					&config,
-					(uint32_t *)flexspi_lut,
-					FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
-					data->port);
+		flexspi_lut[SCRATCH_CMD][0] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xB7,
+					kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
+		ret = memc_flexspi_set_device_config(
+			&data->controller, &config, (uint32_t *)flexspi_lut,
+			FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ, data->port);
 		if (ret < 0) {
 			return ret;
 		}
@@ -673,14 +663,12 @@ static int flash_flexspi_nor_4byte_enable(struct flash_flexspi_nor_data *data,
 		return memc_flexspi_transfer(&data->controller, &transfer);
 	} else if (en4b & BIT(0)) {
 		/* Issue instruction 0xB7 */
-		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xB7,
-				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
-		ret = memc_flexspi_set_device_config(&data->controller,
-					&config,
-					(uint32_t *)flexspi_lut,
-					FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
-					data->port);
+		flexspi_lut[SCRATCH_CMD][0] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xB7,
+					kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
+		ret = memc_flexspi_set_device_config(
+			&data->controller, &config, (uint32_t *)flexspi_lut,
+			FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ, data->port);
 		if (ret < 0) {
 			return ret;
 		}
@@ -703,9 +691,9 @@ static int flash_flexspi_nor_4byte_enable(struct flash_flexspi_nor_data *data,
  * @return 0 on success, or negative value on error
  */
 static int flash_flexspi_nor_config_flash(struct flash_flexspi_nor_data *data,
-			struct jesd216_sfdp_header *header,
-			struct jesd216_bfp *bfp,
-			uint32_t (*flexspi_lut)[MEMC_FLEXSPI_CMD_PER_SEQ])
+					  struct jesd216_sfdp_header *header,
+					  struct jesd216_bfp *bfp,
+					  uint32_t (*flexspi_lut)[MEMC_FLEXSPI_CMD_PER_SEQ])
 {
 	struct jesd216_instr instr;
 	struct jesd216_bfp_dw16 dw16;
@@ -715,34 +703,29 @@ static int flash_flexspi_nor_config_flash(struct flash_flexspi_nor_data *data,
 	uint8_t mode_cmd;
 	int ret;
 
-	addr_width = jesd216_bfp_addrbytes(bfp) ==
-		JESD216_SFDP_BFP_DW1_ADDRBYTES_VAL_4B ? 32 : 24;
+	addr_width = jesd216_bfp_addrbytes(bfp) == JESD216_SFDP_BFP_DW1_ADDRBYTES_VAL_4B ? 32 : 24;
 
 	/* Check to see if we can enable 4 byte addressing */
 	ret = jesd216_bfp_decode_dw16(&header->phdr[0], bfp, &dw16);
 	if (ret == 0) {
 		/* Attempt to enable 4 byte addressing */
-		ret = flash_flexspi_nor_4byte_enable(data, flexspi_lut,
-						     dw16.enter_4ba);
+		ret = flash_flexspi_nor_4byte_enable(data, flexspi_lut, dw16.enter_4ba);
 		if (ret == 0) {
 			/* Use 4 byte address width */
 			addr_width = 32;
 			/* Update LUT for ERASE_SECTOR and ERASE_BLOCK to use 32 bit addr */
 			flexspi_lut[ERASE_SECTOR][0] = FLEXSPI_LUT_SEQ(
-					kFLEXSPI_Command_SDR, kFLEXSPI_1PAD,
-					SPI_NOR_CMD_SE, kFLEXSPI_Command_RADDR_SDR,
-					kFLEXSPI_1PAD, addr_width);
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_SE,
+				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, addr_width);
 			flexspi_lut[ERASE_BLOCK][0] = FLEXSPI_LUT_SEQ(
-					kFLEXSPI_Command_SDR, kFLEXSPI_1PAD,
-					SPI_NOR_CMD_BE, kFLEXSPI_Command_RADDR_SDR,
-					kFLEXSPI_1PAD, addr_width);
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_BE,
+				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, addr_width);
 		}
 	}
 	/* Extract the read command.
 	 * Note- enhanced XIP not currently supported, nor is 4-4-4 mode.
 	 */
-	if (jesd216_bfp_read_support(&header->phdr[0], bfp,
-	    JESD216_MODE_144, &instr) > 0) {
+	if (jesd216_bfp_read_support(&header->phdr[0], bfp, JESD216_MODE_144, &instr) > 0) {
 		LOG_DBG("Enable 144 mode");
 		/* Configure for 144 QUAD read mode */
 		if (instr.mode_clocks == 2) {
@@ -755,36 +738,32 @@ static int flash_flexspi_nor_config_flash(struct flash_flexspi_nor_data *data,
 		} else {
 			return -ENOTSUP;
 		}
-		flexspi_lut[READ][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, instr.instr,
-				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_4PAD, addr_width);
+		flexspi_lut[READ][0] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, instr.instr,
+					kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_4PAD, addr_width);
 		/* Note- we always set mode bits to 0x0 */
-		flexspi_lut[READ][1] = FLEXSPI_LUT_SEQ(
-				mode_cmd, kFLEXSPI_4PAD, 0x00,
-				kFLEXSPI_Command_DUMMY_SDR, kFLEXSPI_4PAD, instr.wait_states);
-		flexspi_lut[READ][2] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_READ_SDR, kFLEXSPI_4PAD, 0x04,
-				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
+		flexspi_lut[READ][1] =
+			FLEXSPI_LUT_SEQ(mode_cmd, kFLEXSPI_4PAD, 0x00, kFLEXSPI_Command_DUMMY_SDR,
+					kFLEXSPI_4PAD, instr.wait_states);
+		flexspi_lut[READ][2] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_SDR, kFLEXSPI_4PAD, 0x04,
+					kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
 		/* Read 1S-4S-4S enable method */
 		ret = jesd216_bfp_decode_dw15(&header->phdr[0], bfp, &dw15);
 		if (ret == 0) {
-			ret = flash_flexspi_nor_quad_enable(data, flexspi_lut,
-							    dw15.qer);
+			ret = flash_flexspi_nor_quad_enable(data, flexspi_lut, dw15.qer);
 			if (ret == 0) {
 				/* Now, install 1S-1S-4S page program command */
 				flexspi_lut[PAGE_PROGRAM][0] = FLEXSPI_LUT_SEQ(
-						kFLEXSPI_Command_SDR, kFLEXSPI_1PAD,
-						SPI_NOR_CMD_PP_1_1_4, kFLEXSPI_Command_RADDR_SDR,
-						kFLEXSPI_1PAD, addr_width);
+					kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_PP_1_1_4,
+					kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, addr_width);
 				flexspi_lut[PAGE_PROGRAM][1] = FLEXSPI_LUT_SEQ(
-						kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_4PAD,
-						0x4, kFLEXSPI_Command_STOP,
-						kFLEXSPI_1PAD, 0x0);
+					kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_4PAD, 0x4,
+					kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
 			}
 		}
 
-	} else if (jesd216_bfp_read_support(&header->phdr[0], bfp,
-	    JESD216_MODE_122, &instr) > 0) {
+	} else if (jesd216_bfp_read_support(&header->phdr[0], bfp, JESD216_MODE_122, &instr) > 0) {
 		LOG_DBG("Enable 122 mode");
 		if (instr.mode_clocks == 4) {
 			mode_cmd = kFLEXSPI_Command_MODE8_SDR;
@@ -798,23 +777,23 @@ static int flash_flexspi_nor_config_flash(struct flash_flexspi_nor_data *data,
 		} else {
 			return -ENOTSUP;
 		}
-		flexspi_lut[READ][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, instr.instr,
-				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_2PAD, addr_width);
+		flexspi_lut[READ][0] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, instr.instr,
+					kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_2PAD, addr_width);
 		/* Note- we always set mode bits to 0x0 */
-		flexspi_lut[READ][1] = FLEXSPI_LUT_SEQ(
-				mode_cmd, kFLEXSPI_2PAD, 0x0,
-				kFLEXSPI_Command_DUMMY_SDR, kFLEXSPI_2PAD, instr.wait_states);
-		flexspi_lut[READ][2] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_READ_SDR, kFLEXSPI_2PAD, 0x02,
-				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
+		flexspi_lut[READ][1] =
+			FLEXSPI_LUT_SEQ(mode_cmd, kFLEXSPI_2PAD, 0x0, kFLEXSPI_Command_DUMMY_SDR,
+					kFLEXSPI_2PAD, instr.wait_states);
+		flexspi_lut[READ][2] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_SDR, kFLEXSPI_2PAD, 0x02,
+					kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
 		/* Now, install 1S-1S-2S page program command */
-		flexspi_lut[PAGE_PROGRAM][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_PP_1_1_2,
-				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, addr_width);
-		flexspi_lut[PAGE_PROGRAM][1] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_2PAD, 0x4,
-				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
+		flexspi_lut[PAGE_PROGRAM][0] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_PP_1_1_2,
+					kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, addr_width);
+		flexspi_lut[PAGE_PROGRAM][1] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_2PAD, 0x4,
+					kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
 	}
 	/* Default to 111 mode if no support exists, leave READ/WRITE untouched */
 
@@ -827,23 +806,23 @@ static int flash_flexspi_nor_config_flash(struct flash_flexspi_nor_data *data,
 	if (dw14.poll_options & BIT(1)) {
 		/* Read instruction used for polling is 0x70 */
 		data->legacy_poll = false;
-		flexspi_lut[READ_STATUS_REG][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x70,
-				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x01);
+		flexspi_lut[READ_STATUS_REG][0] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x70,
+					kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x01);
 	} else {
 		/* Read instruction used for polling is 0x05 */
 		data->legacy_poll = true;
-		flexspi_lut[READ_STATUS_REG][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR,
-				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x01);
+		flexspi_lut[READ_STATUS_REG][0] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR,
+					kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x01);
 	}
 
 	return 0;
 }
 
 /* Helper so we can avoid flash access while performing SFDP probe */
-static int flash_flexspi_nor_sfdp_read_helper(struct flash_flexspi_nor_data *dev_data,
-		off_t offset, void *data, size_t len)
+static int flash_flexspi_nor_sfdp_read_helper(struct flash_flexspi_nor_data *dev_data, off_t offset,
+					      void *data, size_t len)
 {
 	flexspi_transfer_t transfer = {
 		.deviceAddress = offset,
@@ -859,11 +838,10 @@ static int flash_flexspi_nor_sfdp_read_helper(struct flash_flexspi_nor_data *dev
 	return memc_flexspi_transfer(&dev_data->controller, &transfer);
 }
 
-
 #if defined(CONFIG_FLASH_JESD216_API)
 
-static int flash_flexspi_nor_sfdp_read(const struct device *dev,
-		off_t offset, void *data, size_t len)
+static int flash_flexspi_nor_sfdp_read(const struct device *dev, off_t offset, void *data,
+				       size_t len)
 {
 	struct flash_flexspi_nor_data *dev_data = dev->data;
 
@@ -874,7 +852,7 @@ static int flash_flexspi_nor_sfdp_read(const struct device *dev,
 
 /* Checks JEDEC ID of flash. If supported, installs custom LUT table */
 static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
-			uint32_t (*flexspi_lut)[MEMC_FLEXSPI_CMD_PER_SEQ])
+					 uint32_t (*flexspi_lut)[MEMC_FLEXSPI_CMD_PER_SEQ])
 {
 	int ret;
 	uint32_t vendor_id;
@@ -888,32 +866,32 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 	switch (vendor_id & 0xFFFF) {
 	case 0x25C2:
 		/* MX25 flash, use 4 byte read/write */
-		flexspi_lut[READ][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_4READ_4B,
-				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_4PAD, 32);
+		flexspi_lut[READ][0] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_4READ_4B,
+					kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_4PAD, 32);
 		/* Flash needs 10 dummy cycles */
-		flexspi_lut[READ][1] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_DUMMY_SDR, kFLEXSPI_4PAD, 10,
-				kFLEXSPI_Command_READ_SDR, kFLEXSPI_4PAD, 0x04);
+		flexspi_lut[READ][1] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DUMMY_SDR, kFLEXSPI_4PAD, 10,
+					kFLEXSPI_Command_READ_SDR, kFLEXSPI_4PAD, 0x04);
 		/* Only 1S-4S-4S page program supported */
 		flexspi_lut[PAGE_PROGRAM][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_PP_1_4_4_4B,
-				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_4PAD, 32);
-		flexspi_lut[PAGE_PROGRAM][1] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_4PAD, 0x4,
-				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
+			kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_PP_1_4_4_4B,
+			kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_4PAD, 32);
+		flexspi_lut[PAGE_PROGRAM][1] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_4PAD, 0x4,
+					kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
 		/* Update ERASE commands for 4 byte mode */
-		flexspi_lut[ERASE_SECTOR][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_SE_4B,
-				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 32);
-		flexspi_lut[ERASE_BLOCK][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xDC,
-				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 32),
+		flexspi_lut[ERASE_SECTOR][0] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_SE_4B,
+					kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 32);
+		flexspi_lut[ERASE_BLOCK][0] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xDC,
+					kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 32),
 		/* Read instruction used for polling is 0x05 */
-		data->legacy_poll = true;
-		flexspi_lut[READ_STATUS_REG][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR,
-				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x01);
+			data->legacy_poll = true;
+		flexspi_lut[READ_STATUS_REG][0] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR,
+					kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x01);
 		/* Device uses bit 6 of status reg 1 for QE */
 		return flash_flexspi_nor_quad_enable(data, flexspi_lut, JESD216_DW15_QER_VAL_S1B6);
 	default:
@@ -952,8 +930,7 @@ static int flash_flexspi_nor_probe(struct flash_flexspi_nor_data *data)
 	}
 
 	/* SFDP spec requires that we downclock the FlexSPI to 50MHz or less */
-	ret = memc_flexspi_update_clock(&data->controller, &config,
-					data->port, MHZ(50));
+	ret = memc_flexspi_update_clock(&data->controller, &config, data->port, MHZ(50));
 	if (ret < 0) {
 		goto _exit;
 	}
@@ -961,10 +938,9 @@ static int flash_flexspi_nor_probe(struct flash_flexspi_nor_data *data)
 	/* Setup initial LUT table and FlexSPI configuration */
 	memcpy(flexspi_lut, flash_flexspi_nor_base_lut, sizeof(flash_flexspi_nor_base_lut));
 
-	ret = memc_flexspi_set_device_config(&data->controller, &config,
-					(uint32_t *)flexspi_lut,
-					FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
-					data->port);
+	ret = memc_flexspi_set_device_config(&data->controller, &config, (uint32_t *)flexspi_lut,
+					     FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
+					     data->port);
 	if (ret < 0) {
 		goto _exit;
 	}
@@ -998,10 +974,9 @@ static int flash_flexspi_nor_probe(struct flash_flexspi_nor_data *data)
 	}
 
 	/* Read basic flash parameter table */
-	ret = flash_flexspi_nor_sfdp_read_helper(data,
-			jesd216_param_addr(&header->phdr[0]),
-			param_buf,
-			sizeof(uint32_t) * header->phdr[0].len_dw);
+	ret = flash_flexspi_nor_sfdp_read_helper(data, jesd216_param_addr(&header->phdr[0]),
+						 param_buf,
+						 sizeof(uint32_t) * header->phdr[0].len_dw);
 	if (ret < 0) {
 		goto _exit;
 	}
@@ -1017,10 +992,9 @@ _program_lut:
 	 * Update the FlexSPI with the config structure provided
 	 * from devicetree and the configured LUT
 	 */
-	ret = memc_flexspi_set_device_config(&data->controller, &data->config,
-					(uint32_t *)flexspi_lut,
-					FLEXSPI_INSTR_PROG_END * MEMC_FLEXSPI_CMD_PER_SEQ,
-					data->port);
+	ret = memc_flexspi_set_device_config(
+		&data->controller, &data->config, (uint32_t *)flexspi_lut,
+		FLEXSPI_INSTR_PROG_END * MEMC_FLEXSPI_CMD_PER_SEQ, data->port);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1068,12 +1042,11 @@ static int flash_flexspi_nor_init(const struct device *dev)
 	}
 
 	/* Set the FlexSPI to full clock speed */
-	if (memc_flexspi_update_clock(&data->controller, &data->config,
-					data->port, data->config.flexspiRootClk)) {
+	if (memc_flexspi_update_clock(&data->controller, &data->config, data->port,
+				      data->config.flexspiRootClk)) {
 		LOG_ERR("Could not set flexspi clock speed");
 		return -ENOTSUP;
 	}
-
 
 	memc_flexspi_reset(&data->controller);
 
@@ -1100,65 +1073,52 @@ static const struct flash_driver_api flash_flexspi_nor_api = {
 #endif
 };
 
-#define CONCAT3(x, y, z) x ## y ## z
+#define CONCAT3(x, y, z) x##y##z
 
-#define CS_INTERVAL_UNIT(unit)						\
-	CONCAT3(kFLEXSPI_CsIntervalUnit, unit, SckCycle)
+#define CS_INTERVAL_UNIT(unit) CONCAT3(kFLEXSPI_CsIntervalUnit, unit, SckCycle)
 
-#define AHB_WRITE_WAIT_UNIT(unit)					\
-	CONCAT3(kFLEXSPI_AhbWriteWaitUnit, unit, AhbCycle)
+#define AHB_WRITE_WAIT_UNIT(unit) CONCAT3(kFLEXSPI_AhbWriteWaitUnit, unit, AhbCycle)
 
-#define FLASH_FLEXSPI_DEVICE_CONFIG(n)					\
-	{								\
-		.flexspiRootClk = DT_INST_PROP(n, spi_max_frequency),	\
-		.flashSize = DT_INST_PROP(n, size) / 8 / KB(1),		\
-		.CSIntervalUnit =					\
-			CS_INTERVAL_UNIT(				\
-				DT_INST_PROP(n, cs_interval_unit)),	\
-		.CSInterval = DT_INST_PROP(n, cs_interval),		\
-		.CSHoldTime = DT_INST_PROP(n, cs_hold_time),		\
-		.CSSetupTime = DT_INST_PROP(n, cs_setup_time),		\
-		.dataValidTime = DT_INST_PROP(n, data_valid_time),	\
-		.columnspace = DT_INST_PROP(n, column_space),		\
-		.enableWordAddress = DT_INST_PROP(n, word_addressable),	\
-		.AWRSeqIndex = 0,					\
-		.AWRSeqNumber = 0,					\
-		.ARDSeqIndex = READ,					\
-		.ARDSeqNumber = 1,					\
-		.AHBWriteWaitUnit =					\
-			AHB_WRITE_WAIT_UNIT(				\
-				DT_INST_PROP(n, ahb_write_wait_unit)),	\
-		.AHBWriteWaitInterval =					\
-			DT_INST_PROP(n, ahb_write_wait_interval),	\
-	}								\
+#define FLASH_FLEXSPI_DEVICE_CONFIG(n)                                                             \
+	{                                                                                          \
+		.flexspiRootClk = DT_INST_PROP(n, spi_max_frequency),                              \
+		.flashSize = DT_INST_PROP(n, size) / 8 / KB(1),                                    \
+		.CSIntervalUnit = CS_INTERVAL_UNIT(DT_INST_PROP(n, cs_interval_unit)),             \
+		.CSInterval = DT_INST_PROP(n, cs_interval),                                        \
+		.CSHoldTime = DT_INST_PROP(n, cs_hold_time),                                       \
+		.CSSetupTime = DT_INST_PROP(n, cs_setup_time),                                     \
+		.dataValidTime = DT_INST_PROP(n, data_valid_time),                                 \
+		.columnspace = DT_INST_PROP(n, column_space),                                      \
+		.enableWordAddress = DT_INST_PROP(n, word_addressable),                            \
+		.AWRSeqIndex = 0,                                                                  \
+		.AWRSeqNumber = 0,                                                                 \
+		.ARDSeqIndex = READ,                                                               \
+		.ARDSeqNumber = 1,                                                                 \
+		.AHBWriteWaitUnit = AHB_WRITE_WAIT_UNIT(DT_INST_PROP(n, ahb_write_wait_unit)),     \
+		.AHBWriteWaitInterval = DT_INST_PROP(n, ahb_write_wait_interval),                  \
+	}
 
-#define FLASH_FLEXSPI_NOR(n)						\
-	static const struct flash_flexspi_nor_config			\
-		flash_flexspi_nor_config_##n = {			\
-		.controller = DEVICE_DT_GET(DT_INST_BUS(n)),		\
-	};								\
-	static struct flash_flexspi_nor_data				\
-		flash_flexspi_nor_data_##n = {				\
-		.config = FLASH_FLEXSPI_DEVICE_CONFIG(n),		\
-		.port = DT_INST_REG_ADDR(n),				\
-		.layout = {						\
-			.pages_count = DT_INST_PROP(n, size) / 8	\
-				/ SPI_NOR_SECTOR_SIZE,			\
-			.pages_size = SPI_NOR_SECTOR_SIZE,		\
-		},							\
-		.flash_parameters = {					\
-			.write_block_size = NOR_WRITE_SIZE,		\
-			.erase_value = NOR_ERASE_VALUE,			\
-		},							\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(n,					\
-			      flash_flexspi_nor_init,			\
-			      NULL,					\
-			      &flash_flexspi_nor_data_##n,		\
-			      &flash_flexspi_nor_config_##n,		\
-			      POST_KERNEL,				\
-			      CONFIG_FLASH_INIT_PRIORITY,		\
-			      &flash_flexspi_nor_api);
+#define FLASH_FLEXSPI_NOR(n)                                                                       \
+	static const struct flash_flexspi_nor_config flash_flexspi_nor_config_##n = {              \
+		.controller = DEVICE_DT_GET(DT_INST_BUS(n)),                                       \
+	};                                                                                         \
+	static struct flash_flexspi_nor_data flash_flexspi_nor_data_##n = {                        \
+		.config = FLASH_FLEXSPI_DEVICE_CONFIG(n),                                          \
+		.port = DT_INST_REG_ADDR(n),                                                       \
+		.layout =                                                                          \
+			{                                                                          \
+				.pages_count = DT_INST_PROP(n, size) / 8 / SPI_NOR_SECTOR_SIZE,    \
+				.pages_size = SPI_NOR_SECTOR_SIZE,                                 \
+			},                                                                         \
+		.flash_parameters =                                                                \
+			{                                                                          \
+				.write_block_size = NOR_WRITE_SIZE,                                \
+				.erase_value = NOR_ERASE_VALUE,                                    \
+			},                                                                         \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, flash_flexspi_nor_init, NULL, &flash_flexspi_nor_data_##n,        \
+			      &flash_flexspi_nor_config_##n, POST_KERNEL,                          \
+			      CONFIG_FLASH_INIT_PRIORITY, &flash_flexspi_nor_api);
 
 DT_INST_FOREACH_STATUS_OKAY(FLASH_FLEXSPI_NOR)

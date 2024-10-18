@@ -299,30 +299,27 @@ void icm42688_unlock(const struct device *dev)
 	SPI_DT_IODEV_DEFINE(icm42688_spi_iodev_##inst, DT_DRV_INST(inst), ICM42688_SPI_CFG, 0U);   \
 	RTIO_DEFINE(icm42688_rtio_##inst, 8, 4);
 
-#define ICM42688_DT_CONFIG_INIT(inst)					\
-	{								\
-		.accel_pwr_mode = DT_INST_PROP(inst, accel_pwr_mode),	\
-		.accel_fs = DT_INST_PROP(inst, accel_fs),		\
-		.accel_odr = DT_INST_PROP(inst, accel_odr),		\
-		.gyro_pwr_mode = DT_INST_PROP(inst, gyro_pwr_mode),	\
-		.gyro_fs = DT_INST_PROP(inst, gyro_fs),		\
-		.gyro_odr = DT_INST_PROP(inst, gyro_odr),		\
-		.temp_dis = false,					\
-		.fifo_en = IS_ENABLED(CONFIG_ICM42688_STREAM),		\
-		.batch_ticks = 0,					\
-		.fifo_hires = false,					\
-		.interrupt1_drdy = false,				\
-		.interrupt1_fifo_ths = false,				\
-		.interrupt1_fifo_full = false				\
-	}
+#define ICM42688_DT_CONFIG_INIT(inst)                                                              \
+	{.accel_pwr_mode = DT_INST_PROP(inst, accel_pwr_mode),                                     \
+	 .accel_fs = DT_INST_PROP(inst, accel_fs),                                                 \
+	 .accel_odr = DT_INST_PROP(inst, accel_odr),                                               \
+	 .gyro_pwr_mode = DT_INST_PROP(inst, gyro_pwr_mode),                                       \
+	 .gyro_fs = DT_INST_PROP(inst, gyro_fs),                                                   \
+	 .gyro_odr = DT_INST_PROP(inst, gyro_odr),                                                 \
+	 .temp_dis = false,                                                                        \
+	 .fifo_en = IS_ENABLED(CONFIG_ICM42688_STREAM),                                            \
+	 .batch_ticks = 0,                                                                         \
+	 .fifo_hires = false,                                                                      \
+	 .interrupt1_drdy = false,                                                                 \
+	 .interrupt1_fifo_ths = false,                                                             \
+	 .interrupt1_fifo_full = false}
 
 #define ICM42688_DEFINE_DATA(inst)                                                                 \
-	IF_ENABLED(CONFIG_ICM42688_STREAM, (ICM42688_RTIO_DEFINE(inst)));                          \
+	IF_ENABLED(CONFIG_ICM42688_STREAM, (ICM42688_RTIO_DEFINE(inst)));                           \
 	static struct icm42688_dev_data icm42688_driver_##inst = {                                 \
 		.cfg = ICM42688_DT_CONFIG_INIT(inst),                                              \
 		IF_ENABLED(CONFIG_ICM42688_STREAM, (.r = &icm42688_rtio_##inst,                    \
-						    .spi_iodev = &icm42688_spi_iodev_##inst,))     \
-	};
+						    .spi_iodev = &icm42688_spi_iodev_##inst,)) };
 
 #define ICM42688_INIT(inst)                                                                        \
 	ICM42688_DEFINE_DATA(inst);                                                                \

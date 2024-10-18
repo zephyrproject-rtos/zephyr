@@ -22,8 +22,7 @@
 
 LOG_MODULE_REGISTER(IIS2ICLX, CONFIG_SENSOR_LOG_LEVEL);
 
-static const uint16_t iis2iclx_odr_map[] = {0, 12, 26, 52, 104, 208, 416, 833,
-					1660, 3330, 6660};
+static const uint16_t iis2iclx_odr_map[] = {0, 12, 26, 52, 104, 208, 416, 833, 1660, 3330, 6660};
 
 static int iis2iclx_freq_to_odr_val(uint16_t freq)
 {
@@ -143,10 +142,8 @@ static int iis2iclx_accel_range_set(const struct device *dev, int32_t range)
 	return 0;
 }
 
-static int iis2iclx_accel_config(const struct device *dev,
-				   enum sensor_channel chan,
-				   enum sensor_attribute attr,
-				   const struct sensor_value *val)
+static int iis2iclx_accel_config(const struct device *dev, enum sensor_channel chan,
+				 enum sensor_attribute attr, const struct sensor_value *val)
 {
 	switch (attr) {
 	case SENSOR_ATTR_FULL_SCALE:
@@ -161,10 +158,8 @@ static int iis2iclx_accel_config(const struct device *dev,
 	return 0;
 }
 
-static int iis2iclx_attr_set(const struct device *dev,
-			       enum sensor_channel chan,
-			       enum sensor_attribute attr,
-			       const struct sensor_value *val)
+static int iis2iclx_attr_set(const struct device *dev, enum sensor_channel chan,
+			     enum sensor_attribute attr, const struct sensor_value *val)
 {
 #if defined(CONFIG_IIS2ICLX_SENSORHUB)
 	struct iis2iclx_data *data = dev->data;
@@ -239,8 +234,7 @@ static int iis2iclx_sample_fetch_shub(const struct device *dev)
 }
 #endif /* CONFIG_IIS2ICLX_SENSORHUB */
 
-static int iis2iclx_sample_fetch(const struct device *dev,
-				   enum sensor_channel chan)
+static int iis2iclx_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 #if defined(CONFIG_IIS2ICLX_SENSORHUB)
 	struct iis2iclx_data *data = dev->data;
@@ -274,20 +268,18 @@ static int iis2iclx_sample_fetch(const struct device *dev,
 }
 
 static inline void iis2iclx_accel_convert(struct sensor_value *val, int raw_val,
-					    uint32_t sensitivity)
+					  uint32_t sensitivity)
 {
 	int64_t dval;
 
 	/* Sensitivity is exposed in ug/LSB */
 	/* Convert to m/s^2 */
-	dval = (int64_t)(raw_val) * sensitivity;
+	dval = (int64_t)(raw_val)*sensitivity;
 	sensor_ug_to_ms2(dval, val);
 }
 
-static inline int iis2iclx_accel_get_channel(enum sensor_channel chan,
-					       struct sensor_value *val,
-					       struct iis2iclx_data *data,
-					       uint32_t sensitivity)
+static inline int iis2iclx_accel_get_channel(enum sensor_channel chan, struct sensor_value *val,
+					     struct iis2iclx_data *data, uint32_t sensitivity)
 {
 	uint8_t i;
 
@@ -310,16 +302,14 @@ static inline int iis2iclx_accel_get_channel(enum sensor_channel chan,
 	return 0;
 }
 
-static int iis2iclx_accel_channel_get(enum sensor_channel chan,
-					struct sensor_value *val,
-					struct iis2iclx_data *data)
+static int iis2iclx_accel_channel_get(enum sensor_channel chan, struct sensor_value *val,
+				      struct iis2iclx_data *data)
 {
 	return iis2iclx_accel_get_channel(chan, val, data, data->acc_gain);
 }
 
 #if defined(CONFIG_IIS2ICLX_ENABLE_TEMP)
-static void iis2iclx_temp_channel_get(struct sensor_value *val,
-					  struct iis2iclx_data *data)
+static void iis2iclx_temp_channel_get(struct sensor_value *val, struct iis2iclx_data *data)
 {
 	/* val = temp_sample / 256 + 25 */
 	val->val1 = data->temp_sample / 256 + 25;
@@ -329,7 +319,7 @@ static void iis2iclx_temp_channel_get(struct sensor_value *val,
 
 #if defined(CONFIG_IIS2ICLX_SENSORHUB)
 static inline void iis2iclx_magn_convert(struct sensor_value *val, int raw_val,
-					   uint16_t sensitivity)
+					 uint16_t sensitivity)
 {
 	double dval;
 
@@ -339,9 +329,8 @@ static inline void iis2iclx_magn_convert(struct sensor_value *val, int raw_val,
 	val->val2 = (int32_t)dval % 1000000;
 }
 
-static inline int iis2iclx_magn_get_channel(enum sensor_channel chan,
-					      struct sensor_value *val,
-					      struct iis2iclx_data *data)
+static inline int iis2iclx_magn_get_channel(enum sensor_channel chan, struct sensor_value *val,
+					    struct iis2iclx_data *data)
 {
 	int16_t sample[3];
 	int idx;
@@ -352,13 +341,9 @@ static inline int iis2iclx_magn_get_channel(enum sensor_channel chan,
 		return -ENOTSUP;
 	}
 
-
-	sample[0] = (int16_t)(data->ext_data[idx][0] |
-			    (data->ext_data[idx][1] << 8));
-	sample[1] = (int16_t)(data->ext_data[idx][2] |
-			    (data->ext_data[idx][3] << 8));
-	sample[2] = (int16_t)(data->ext_data[idx][4] |
-			    (data->ext_data[idx][5] << 8));
+	sample[0] = (int16_t)(data->ext_data[idx][0] | (data->ext_data[idx][1] << 8));
+	sample[1] = (int16_t)(data->ext_data[idx][2] | (data->ext_data[idx][3] << 8));
+	sample[2] = (int16_t)(data->ext_data[idx][4] | (data->ext_data[idx][5] << 8));
 
 	switch (chan) {
 	case SENSOR_CHAN_MAGN_X:
@@ -382,8 +367,7 @@ static inline int iis2iclx_magn_get_channel(enum sensor_channel chan,
 	return 0;
 }
 
-static inline void iis2iclx_hum_convert(struct sensor_value *val,
-					  struct iis2iclx_data *data)
+static inline void iis2iclx_hum_convert(struct sensor_value *val, struct iis2iclx_data *data)
 {
 	float rh;
 	int16_t raw_val;
@@ -396,8 +380,7 @@ static inline void iis2iclx_hum_convert(struct sensor_value *val,
 		return;
 	}
 
-	raw_val = ((int16_t)(data->ext_data[idx][0] |
-			   (data->ext_data[idx][1] << 8)));
+	raw_val = ((int16_t)(data->ext_data[idx][0] | (data->ext_data[idx][1] << 8)));
 
 	/* find relative humidty by linear interpolation */
 	rh = (ht->y1 - ht->y0) * raw_val + ht->x1 * ht->y0 - ht->x0 * ht->y1;
@@ -408,8 +391,7 @@ static inline void iis2iclx_hum_convert(struct sensor_value *val,
 	val->val2 = rh * 1000000;
 }
 
-static inline void iis2iclx_press_convert(struct sensor_value *val,
-					    struct iis2iclx_data *data)
+static inline void iis2iclx_press_convert(struct sensor_value *val, struct iis2iclx_data *data)
 {
 	int32_t raw_val;
 	int idx;
@@ -420,19 +402,17 @@ static inline void iis2iclx_press_convert(struct sensor_value *val,
 		return;
 	}
 
-	raw_val = (int32_t)(data->ext_data[idx][0] |
-			  (data->ext_data[idx][1] << 8) |
-			  (data->ext_data[idx][2] << 16));
+	raw_val = (int32_t)(data->ext_data[idx][0] | (data->ext_data[idx][1] << 8) |
+			    (data->ext_data[idx][2] << 16));
 
 	/* Pressure sensitivity is 4096 LSB/hPa */
 	/* Convert raw_val to val in kPa */
 	val->val1 = (raw_val >> 12) / 10;
-	val->val2 = (raw_val >> 12) % 10 * 100000 +
-		(((int32_t)((raw_val) & 0x0FFF) * 100000L) >> 12);
+	val->val2 =
+		(raw_val >> 12) % 10 * 100000 + (((int32_t)((raw_val) & 0x0FFF) * 100000L) >> 12);
 }
 
-static inline void iis2iclx_temp_convert(struct sensor_value *val,
-					   struct iis2iclx_data *data)
+static inline void iis2iclx_temp_convert(struct sensor_value *val, struct iis2iclx_data *data)
 {
 	int16_t raw_val;
 	int idx;
@@ -443,8 +423,7 @@ static inline void iis2iclx_temp_convert(struct sensor_value *val,
 		return;
 	}
 
-	raw_val = (int16_t)(data->ext_data[idx][3] |
-			  (data->ext_data[idx][4] << 8));
+	raw_val = (int16_t)(data->ext_data[idx][3] | (data->ext_data[idx][4] << 8));
 
 	/* Temperature sensitivity is 100 LSB/deg C */
 	val->val1 = raw_val / 100;
@@ -452,9 +431,8 @@ static inline void iis2iclx_temp_convert(struct sensor_value *val,
 }
 #endif
 
-static int iis2iclx_channel_get(const struct device *dev,
-				  enum sensor_channel chan,
-				  struct sensor_value *val)
+static int iis2iclx_channel_get(const struct device *dev, enum sensor_channel chan,
+				struct sensor_value *val)
 {
 	struct iis2iclx_data *data = dev->data;
 
@@ -528,7 +506,7 @@ static const struct sensor_driver_api iis2iclx_driver_api = {
 
 static int iis2iclx_init_chip(const struct device *dev)
 {
-	const struct iis2iclx_config * const cfg = dev->config;
+	const struct iis2iclx_config *const cfg = dev->config;
 	struct iis2iclx_data *iis2iclx = dev->data;
 	uint8_t chip_id;
 	uint8_t odr = cfg->odr;
@@ -569,8 +547,7 @@ static int iis2iclx_init_chip(const struct device *dev)
 	}
 
 	/* Set FIFO bypass mode */
-	if (iis2iclx_fifo_mode_set((stmdev_ctx_t *)&cfg->ctx,
-				   IIS2ICLX_BYPASS_MODE) < 0) {
+	if (iis2iclx_fifo_mode_set((stmdev_ctx_t *)&cfg->ctx, IIS2ICLX_BYPASS_MODE) < 0) {
 		LOG_ERR("failed to set FIFO mode");
 		return -EIO;
 	}
@@ -626,75 +603,61 @@ static int iis2iclx_init(const struct device *dev)
  * IIS2ICLX_DEFINE_I2C().
  */
 
-#define IIS2ICLX_DEVICE_INIT(inst)					\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
-			    iis2iclx_init,				\
-			    NULL,					\
-			    &iis2iclx_data_##inst,			\
-			    &iis2iclx_config_##inst,			\
-			    POST_KERNEL,				\
-			    CONFIG_SENSOR_INIT_PRIORITY,		\
-			    &iis2iclx_driver_api);
+#define IIS2ICLX_DEVICE_INIT(inst)                                                                 \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, iis2iclx_init, NULL, &iis2iclx_data_##inst,             \
+				     &iis2iclx_config_##inst, POST_KERNEL,                         \
+				     CONFIG_SENSOR_INIT_PRIORITY, &iis2iclx_driver_api);
 
 /*
  * Instantiation macros used when a device is on a SPI bus.
  */
 
 #ifdef CONFIG_IIS2ICLX_TRIGGER
-#define IIS2ICLX_CFG_IRQ(inst) \
-	.trig_enabled = true,						\
-	.gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, drdy_gpios),		\
+#define IIS2ICLX_CFG_IRQ(inst)                                                                     \
+	.trig_enabled = true, .gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, drdy_gpios),                \
 	.int_pin = DT_INST_PROP(inst, int_pin)
 #else
 #define IIS2ICLX_CFG_IRQ(inst)
 #endif /* CONFIG_IIS2ICLX_TRIGGER */
 
-#define IIS2ICLX_CONFIG_COMMON(inst)					\
-	.odr = DT_INST_PROP(inst, odr),					\
-	.range = DT_INST_PROP(inst, range),				\
+#define IIS2ICLX_CONFIG_COMMON(inst)                                                               \
+	.odr = DT_INST_PROP(inst, odr), .range = DT_INST_PROP(inst, range),                        \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),		\
 		(IIS2ICLX_CFG_IRQ(inst)), ())
 
-#define IIS2ICLX_SPI_OPERATION (SPI_WORD_SET(8) |			\
-				SPI_OP_MODE_MASTER |			\
-				SPI_MODE_CPOL |				\
-				SPI_MODE_CPHA)				\
+#define IIS2ICLX_SPI_OPERATION                                                                     \
+	(SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA)
 
-#define IIS2ICLX_CONFIG_SPI(inst)					\
-	{								\
-		STMEMSC_CTX_SPI(&iis2iclx_config_##inst.stmemsc_cfg),	\
-		.stmemsc_cfg = {					\
-			.spi = SPI_DT_SPEC_INST_GET(inst,		\
-					   IIS2ICLX_SPI_OPERATION,	\
-					   0),				\
-		},							\
-		IIS2ICLX_CONFIG_COMMON(inst)				\
-	}
+#define IIS2ICLX_CONFIG_SPI(inst)                                                                  \
+	{STMEMSC_CTX_SPI(&iis2iclx_config_##inst.stmemsc_cfg),                                     \
+	 .stmemsc_cfg =                                                                            \
+		 {                                                                                 \
+			 .spi = SPI_DT_SPEC_INST_GET(inst, IIS2ICLX_SPI_OPERATION, 0),             \
+		 },                                                                                \
+	 IIS2ICLX_CONFIG_COMMON(inst)}
 
 /*
  * Instantiation macros used when a device is on an I2C bus.
  */
 
-#define IIS2ICLX_CONFIG_I2C(inst)					\
-	{								\
-		STMEMSC_CTX_I2C(&iis2iclx_config_##inst.stmemsc_cfg),	\
-		.stmemsc_cfg = {					\
-			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
-		},							\
-		IIS2ICLX_CONFIG_COMMON(inst)				\
-	}
+#define IIS2ICLX_CONFIG_I2C(inst)                                                                  \
+	{STMEMSC_CTX_I2C(&iis2iclx_config_##inst.stmemsc_cfg),                                     \
+	 .stmemsc_cfg =                                                                            \
+		 {                                                                                 \
+			 .i2c = I2C_DT_SPEC_INST_GET(inst),                                        \
+		 },                                                                                \
+	 IIS2ICLX_CONFIG_COMMON(inst)}
 
 /*
  * Main instantiation macro. Use of COND_CODE_1() selects the right
  * bus-specific macro at preprocessor time.
  */
 
-#define IIS2ICLX_DEFINE(inst)						\
-	static struct iis2iclx_data iis2iclx_data_##inst;		\
-	static const struct iis2iclx_config iis2iclx_config_##inst =	\
-		COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
+#define IIS2ICLX_DEFINE(inst)                                                                      \
+	static struct iis2iclx_data iis2iclx_data_##inst;                                          \
+	static const struct iis2iclx_config iis2iclx_config_##inst = COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
 			(IIS2ICLX_CONFIG_SPI(inst)),			\
-			(IIS2ICLX_CONFIG_I2C(inst)));			\
+			(IIS2ICLX_CONFIG_I2C(inst)));                \
 	IIS2ICLX_DEVICE_INIT(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(IIS2ICLX_DEFINE)

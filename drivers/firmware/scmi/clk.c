@@ -22,8 +22,7 @@ struct scmi_clock_rate_set_reply {
 	uint32_t rate[2];
 };
 
-int scmi_clock_rate_get(struct scmi_protocol *proto,
-			uint32_t clk_id, uint32_t *rate)
+int scmi_clock_rate_get(struct scmi_protocol *proto, uint32_t clk_id, uint32_t *rate)
 {
 	struct scmi_message msg, reply;
 	int ret;
@@ -38,8 +37,7 @@ int scmi_clock_rate_get(struct scmi_protocol *proto,
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_CLK_MSG_CLOCK_RATE_GET,
-					SCMI_COMMAND, proto->id, 0x0);
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_CLK_MSG_CLOCK_RATE_GET, SCMI_COMMAND, proto->id, 0x0);
 	msg.len = sizeof(clk_id);
 	msg.content = &clk_id;
 
@@ -61,8 +59,7 @@ int scmi_clock_rate_get(struct scmi_protocol *proto,
 	return 0;
 }
 
-int scmi_clock_config_set(struct scmi_protocol *proto,
-			  struct scmi_clock_config *cfg)
+int scmi_clock_config_set(struct scmi_protocol *proto, struct scmi_clock_config *cfg)
 {
 	struct scmi_message msg, reply;
 	int status, ret;
@@ -91,8 +88,8 @@ int scmi_clock_config_set(struct scmi_protocol *proto,
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_CLK_MSG_CLOCK_CONFIG_SET,
-					SCMI_COMMAND, proto->id, 0x0);
+	msg.hdr =
+		SCMI_MESSAGE_HDR_MAKE(SCMI_CLK_MSG_CLOCK_CONFIG_SET, SCMI_COMMAND, proto->id, 0x0);
 	msg.len = sizeof(*cfg);
 	msg.content = cfg;
 
@@ -127,8 +124,8 @@ int scmi_clock_protocol_attributes(struct scmi_protocol *proto, uint32_t *attrib
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_CLK_MSG_PROTOCOL_ATTRIBUTES,
-					SCMI_COMMAND, proto->id, 0x0);
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_CLK_MSG_PROTOCOL_ATTRIBUTES, SCMI_COMMAND, proto->id,
+					0x0);
 	/* command has no parameters */
 	msg.len = 0x0;
 	msg.content = NULL;

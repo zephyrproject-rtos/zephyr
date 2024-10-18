@@ -8,16 +8,14 @@
 #include <string.h>
 #include <zephyr/internal/syscall_handler.h>
 
-static inline int z_vrfy_i2c_configure(const struct device *dev,
-				       uint32_t dev_config)
+static inline int z_vrfy_i2c_configure(const struct device *dev, uint32_t dev_config)
 {
 	K_OOPS(K_SYSCALL_DRIVER_I2C(dev, configure));
 	return z_impl_i2c_configure((const struct device *)dev, dev_config);
 }
 #include <zephyr/syscalls/i2c_configure_mrsh.c>
 
-static inline int z_vrfy_i2c_get_config(const struct device *dev,
-					uint32_t *dev_config)
+static inline int z_vrfy_i2c_get_config(const struct device *dev, uint32_t *dev_config)
 {
 	K_OOPS(K_SYSCALL_DRIVER_I2C(dev, get_config));
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(dev_config, sizeof(uint32_t)));
@@ -26,10 +24,8 @@ static inline int z_vrfy_i2c_get_config(const struct device *dev,
 }
 #include <zephyr/syscalls/i2c_get_config_mrsh.c>
 
-static uint32_t copy_msgs_and_transfer(const struct device *dev,
-				       const struct i2c_msg *msgs,
-				       uint8_t num_msgs,
-				       uint16_t addr)
+static uint32_t copy_msgs_and_transfer(const struct device *dev, const struct i2c_msg *msgs,
+				       uint8_t num_msgs, uint16_t addr)
 {
 	struct i2c_msg copy[num_msgs];
 	uint8_t i;
@@ -41,16 +37,14 @@ static uint32_t copy_msgs_and_transfer(const struct device *dev,
 	 * that the target buffer be writable
 	 */
 	for (i = 0U; i < num_msgs; i++) {
-		K_OOPS(K_SYSCALL_MEMORY(copy[i].buf, copy[i].len,
-					copy[i].flags & I2C_MSG_READ));
+		K_OOPS(K_SYSCALL_MEMORY(copy[i].buf, copy[i].len, copy[i].flags & I2C_MSG_READ));
 	}
 
 	return z_impl_i2c_transfer(dev, copy, num_msgs, addr);
 }
 
-static inline int z_vrfy_i2c_transfer(const struct device *dev,
-				      struct i2c_msg *msgs, uint8_t num_msgs,
-				      uint16_t addr)
+static inline int z_vrfy_i2c_transfer(const struct device *dev, struct i2c_msg *msgs,
+				      uint8_t num_msgs, uint16_t addr)
 {
 	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_I2C));
 
@@ -62,11 +56,9 @@ static inline int z_vrfy_i2c_transfer(const struct device *dev,
 	K_OOPS(K_SYSCALL_VERIFY(num_msgs >= 1 && num_msgs < 32));
 
 	/* We need to be able to read the overall array of messages */
-	K_OOPS(K_SYSCALL_MEMORY_ARRAY_READ(msgs, num_msgs,
-					   sizeof(struct i2c_msg)));
+	K_OOPS(K_SYSCALL_MEMORY_ARRAY_READ(msgs, num_msgs, sizeof(struct i2c_msg)));
 
-	return copy_msgs_and_transfer((const struct device *)dev,
-				      (struct i2c_msg *)msgs,
+	return copy_msgs_and_transfer((const struct device *)dev, (struct i2c_msg *)msgs,
 				      (uint8_t)num_msgs, (uint16_t)addr);
 }
 #include <zephyr/syscalls/i2c_transfer_mrsh.c>

@@ -13,8 +13,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(clock_control_nrf2, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
-BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
-	     "multiple instances not supported");
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1, "multiple instances not supported");
 
 #define LFCLK_LFXO_NODE DT_INST_PHANDLE_BY_NAME(0, clocks, lfxo)
 #define LFCLK_HFXO_NODE DT_INST_PHANDLE_BY_NAME(0, clocks, hfxo)
@@ -22,9 +21,9 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 #define LFCLK_HAS_LFXO DT_NODE_HAS_STATUS_OKAY(LFCLK_LFXO_NODE)
 
 #define LFCLK_LFLPRC_ACCURACY DT_INST_PROP(0, lflprc_accuracy_ppm)
-#define LFCLK_LFRC_ACCURACY DT_INST_PROP(0, lfrc_accuracy_ppm)
-#define LFCLK_LFXO_ACCURACY DT_PROP(LFCLK_LFXO_NODE, accuracy_ppm)
-#define LFCLK_HFXO_ACCURACY DT_PROP(LFCLK_HFXO_NODE, accuracy_ppm)
+#define LFCLK_LFRC_ACCURACY   DT_INST_PROP(0, lfrc_accuracy_ppm)
+#define LFCLK_LFXO_ACCURACY   DT_PROP(LFCLK_LFXO_NODE, accuracy_ppm)
+#define LFCLK_HFXO_ACCURACY   DT_PROP(LFCLK_HFXO_NODE, accuracy_ppm)
 
 #if LFCLK_HAS_LFXO
 #define LFCLK_MAX_ACCURACY LFCLK_LFXO_ACCURACY
@@ -36,8 +35,8 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 
 /* Clock options sorted from lowest to highest accuracy/precision */
 static const struct clock_options {
-	uint16_t accuracy : 15;
-	uint16_t precision : 1;
+	uint16_t accuracy: 15;
+	uint16_t precision: 1;
 	nrfs_clock_src_t src;
 } clock_options[] = {
 	{
@@ -115,23 +114,20 @@ static void clock_evt_handler(nrfs_clock_evt_t const *p_evt, void *context)
 
 static void lfclk_update_timeout_handler(struct k_timer *timer)
 {
-	struct lfclk_dev_data *dev_data =
-		CONTAINER_OF(timer, struct lfclk_dev_data, timer);
+	struct lfclk_dev_data *dev_data = CONTAINER_OF(timer, struct lfclk_dev_data, timer);
 
 	clock_config_update_end(&dev_data->clk_cfg, -ETIMEDOUT);
 }
 
 static void lfclk_work_handler(struct k_work *work)
 {
-	struct lfclk_dev_data *dev_data =
-		CONTAINER_OF(work, struct lfclk_dev_data, clk_cfg.work);
+	struct lfclk_dev_data *dev_data = CONTAINER_OF(work, struct lfclk_dev_data, clk_cfg.work);
 	uint8_t to_activate_idx;
 	nrfs_err_t err;
 
 	to_activate_idx = clock_config_update_begin(work);
 
-	err = nrfs_clock_lfclk_src_set(clock_options[to_activate_idx].src,
-				       dev_data);
+	err = nrfs_clock_lfclk_src_set(clock_options[to_activate_idx].src, dev_data);
 	if (err != NRFS_SUCCESS) {
 		clock_config_update_end(&dev_data->clk_cfg, -EIO);
 	} else {
@@ -155,13 +151,11 @@ static struct onoff_manager *lfclk_find_mgr(const struct device *dev,
 		return NULL;
 	}
 
-	accuracy = spec->accuracy == NRF_CLOCK_CONTROL_ACCURACY_MAX
-		 ? LFCLK_MAX_ACCURACY
-		 : spec->accuracy;
+	accuracy = spec->accuracy == NRF_CLOCK_CONTROL_ACCURACY_MAX ? LFCLK_MAX_ACCURACY
+								    : spec->accuracy;
 
 	for (int i = 0; i < ARRAY_SIZE(clock_options); ++i) {
-		if ((accuracy &&
-		     accuracy < clock_options[i].accuracy) ||
+		if ((accuracy && accuracy < clock_options[i].accuracy) ||
 		    spec->precision > clock_options[i].precision) {
 			continue;
 		}
@@ -173,8 +167,7 @@ static struct onoff_manager *lfclk_find_mgr(const struct device *dev,
 	return NULL;
 }
 
-static int api_request_lfclk(const struct device *dev,
-			     const struct nrf_clock_spec *spec,
+static int api_request_lfclk(const struct device *dev, const struct nrf_clock_spec *spec,
 			     struct onoff_client *cli)
 {
 	struct onoff_manager *mgr = lfclk_find_mgr(dev, spec);
@@ -186,8 +179,7 @@ static int api_request_lfclk(const struct device *dev,
 	return -EINVAL;
 }
 
-static int api_release_lfclk(const struct device *dev,
-			     const struct nrf_clock_spec *spec)
+static int api_release_lfclk(const struct device *dev, const struct nrf_clock_spec *spec)
 {
 	struct onoff_manager *mgr = lfclk_find_mgr(dev, spec);
 
@@ -198,8 +190,7 @@ static int api_release_lfclk(const struct device *dev,
 	return -EINVAL;
 }
 
-static int api_cancel_or_release_lfclk(const struct device *dev,
-				       const struct nrf_clock_spec *spec,
+static int api_cancel_or_release_lfclk(const struct device *dev, const struct nrf_clock_spec *spec,
 				       struct onoff_client *cli)
 {
 	struct onoff_manager *mgr = lfclk_find_mgr(dev, spec);
@@ -211,9 +202,7 @@ static int api_cancel_or_release_lfclk(const struct device *dev,
 	return -EINVAL;
 }
 
-static int api_get_rate_lfclk(const struct device *dev,
-			      clock_control_subsys_t sys,
-			      uint32_t *rate)
+static int api_get_rate_lfclk(const struct device *dev, clock_control_subsys_t sys, uint32_t *rate)
 {
 	ARG_UNUSED(sys);
 
@@ -236,17 +225,17 @@ static int lfclk_init(const struct device *dev)
 
 	k_timer_init(&dev_data->timer, lfclk_update_timeout_handler, NULL);
 
-	return clock_config_init(&dev_data->clk_cfg,
-				 ARRAY_SIZE(dev_data->clk_cfg.onoff),
+	return clock_config_init(&dev_data->clk_cfg, ARRAY_SIZE(dev_data->clk_cfg.onoff),
 				 lfclk_work_handler);
 }
 
 static struct nrf_clock_control_driver_api lfclk_drv_api = {
-	.std_api = {
-		.on = api_nosys_on_off,
-		.off = api_nosys_on_off,
-		.get_rate = api_get_rate_lfclk,
-	},
+	.std_api =
+		{
+			.on = api_nosys_on_off,
+			.off = api_nosys_on_off,
+			.get_rate = api_get_rate_lfclk,
+		},
 	.request = api_request_lfclk,
 	.release = api_release_lfclk,
 	.cancel_or_release = api_cancel_or_release_lfclk,
@@ -258,7 +247,5 @@ static const struct lfclk_dev_config lfclk_config = {
 	.fixed_frequency = DT_INST_PROP(0, clock_frequency),
 };
 
-DEVICE_DT_INST_DEFINE(0, lfclk_init, NULL,
-		      &lfclk_data, &lfclk_config,
-		      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
-		      &lfclk_drv_api);
+DEVICE_DT_INST_DEFINE(0, lfclk_init, NULL, &lfclk_data, &lfclk_config, PRE_KERNEL_1,
+		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &lfclk_drv_api);

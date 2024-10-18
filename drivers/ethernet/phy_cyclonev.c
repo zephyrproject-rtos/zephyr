@@ -30,31 +30,31 @@
 #define PHY_SPEED_1000 (0x0040)
 
 #define PHY_CLK_AND_CONTROL_PAD_SKEW_VALUE 0xa0d0
-#define PHY_RX_DATA_PAD_SKEW_VALUE	   0x0000
+#define PHY_RX_DATA_PAD_SKEW_VALUE         0x0000
 
 /* Write/read to/from extended registers */
-#define MII_KSZPHY_EXTREG	0x0b
-#define KSZPHY_EXTREG_WRITE	0x8000
+#define MII_KSZPHY_EXTREG       0x0b
+#define KSZPHY_EXTREG_WRITE     0x8000
 #define MII_KSZPHY_EXTREG_WRITE 0x0c
-#define MII_KSZPHY_EXTREG_READ	0x0d
+#define MII_KSZPHY_EXTREG_READ  0x0d
 
 /* PHY Regs */
 
 /* Basic Control Register */
-#define PHY_BCR			    (0)
-#define PHY_RESET		    BIT(15) /* Do a PHY reset */
-#define PHY_AUTONEGOTIATION	    BIT(12)
+#define PHY_BCR                     (0)
+#define PHY_RESET                   BIT(15) /* Do a PHY reset */
+#define PHY_AUTONEGOTIATION         BIT(12)
 #define PHY_RESTART_AUTONEGOTIATION BIT(9)
 
 /* Basic Status Register */
-#define PHY_BSR		      BIT(0)
-#define PHY_AUTOCAP	      BIT(3) /* Auto-negotiation capability */
+#define PHY_BSR               BIT(0)
+#define PHY_AUTOCAP           BIT(3) /* Auto-negotiation capability */
 #define PHY_LINKED_STATUS     BIT(2)
 #define PHY_AUTONEGO_COMPLETE BIT(5)
 
 /* Auto-Negotiation Advertisement */
-#define PHY_AUTON	   (4)
-#define PHYANA_10BASET	   BIT(5)
+#define PHY_AUTON          (4)
+#define PHYANA_10BASET     BIT(5)
 #define PHYANA_10BASETFD   BIT(6)
 #define PHYANA_100BASETX   BIT(7)
 #define PHYANA_100BASETXFD BIT(8)
@@ -62,38 +62,37 @@
 #define PHYASYMETRIC_PAUSE BIT(11)
 
 /* 1000Base-T Control */
-#define PHY_1GCTL (9)
-#define PHYADVERTISE_1000HALF BIT(8)
-#define PHYADVERTISE_1000FULL BIT(9)
-#define PHYINDICATE_PORTTYPE  BIT(10)
-#define PHYCONFIG_MASTER      BIT(11)
+#define PHY_1GCTL              (9)
+#define PHYADVERTISE_1000HALF  BIT(8)
+#define PHYADVERTISE_1000FULL  BIT(9)
+#define PHYINDICATE_PORTTYPE   BIT(10)
+#define PHYCONFIG_MASTER       BIT(11)
 #define PHYENABLE_MANUALCONFIG BIT(12)
 
 /* PHY Control Register */
-#define PHY_CR		      (31)
-#define PHY_DUPLEX_STATUS     BIT(3)
+#define PHY_CR            (31)
+#define PHY_DUPLEX_STATUS BIT(3)
 
 /* Extended registers */
 #define MII_KSZPHY_CLK_CONTROL_PAD_SKEW 0x104
-#define MII_KSZPHY_RX_DATA_PAD_SKEW	0x105
-#define MII_KSZPHY_TX_DATA_PAD_SKEW	0x106
+#define MII_KSZPHY_RX_DATA_PAD_SKEW     0x105
+#define MII_KSZPHY_TX_DATA_PAD_SKEW     0x106
 
-
-int alt_eth_phy_write_register(uint16_t emac_instance, uint16_t phy_reg,
-		uint16_t phy_value, struct eth_cyclonev_priv *p);
-int alt_eth_phy_read_register(uint16_t emac_instance, uint16_t phy_reg,
-		uint16_t *rdval, struct eth_cyclonev_priv *p);
+int alt_eth_phy_write_register(uint16_t emac_instance, uint16_t phy_reg, uint16_t phy_value,
+			       struct eth_cyclonev_priv *p);
+int alt_eth_phy_read_register(uint16_t emac_instance, uint16_t phy_reg, uint16_t *rdval,
+			      struct eth_cyclonev_priv *p);
 int alt_eth_phy_write_register_extended(uint16_t emac_instance, uint16_t phy_reg,
-		uint16_t phy_value, struct eth_cyclonev_priv *p);
-int alt_eth_phy_read_register_extended(uint16_t emac_instance, uint16_t phy_reg,
-		uint16_t *rdval, struct eth_cyclonev_priv *p);
+					uint16_t phy_value, struct eth_cyclonev_priv *p);
+int alt_eth_phy_read_register_extended(uint16_t emac_instance, uint16_t phy_reg, uint16_t *rdval,
+				       struct eth_cyclonev_priv *p);
 int alt_eth_phy_config(uint16_t instance, struct eth_cyclonev_priv *p);
 int alt_eth_phy_reset(uint16_t instance, struct eth_cyclonev_priv *p);
 int alt_eth_phy_get_duplex_and_speed(uint16_t *phy_duplex_status, uint16_t *phy_speed,
 				     uint16_t instance, struct eth_cyclonev_priv *p);
 
-int alt_eth_phy_write_register(uint16_t emac_instance, uint16_t phy_reg,
-		uint16_t phy_value, struct eth_cyclonev_priv *p)
+int alt_eth_phy_write_register(uint16_t emac_instance, uint16_t phy_reg, uint16_t phy_value,
+			       struct eth_cyclonev_priv *p)
 {
 	uint16_t tmpreg = 0;
 	volatile uint32_t timeout = 0;
@@ -123,7 +122,6 @@ int alt_eth_phy_write_register(uint16_t emac_instance, uint16_t phy_reg,
 	/* Write the result value into the MII Address register */
 	sys_write32(tmpreg & 0xffff, EMAC_GMAC_GMII_ADDR_ADDR(p->base_addr));
 
-
 	/* Check the Busy flag */
 	do {
 		timeout++;
@@ -140,7 +138,7 @@ int alt_eth_phy_write_register(uint16_t emac_instance, uint16_t phy_reg,
 }
 
 int alt_eth_phy_read_register(uint16_t emac_instance, uint16_t phy_reg, uint16_t *rdval,
-		struct eth_cyclonev_priv *p)
+			      struct eth_cyclonev_priv *p)
 {
 	uint16_t tmpreg = 0;
 	volatile uint32_t timeout = 0;
@@ -202,7 +200,7 @@ int alt_eth_phy_write_register_extended(uint16_t emac_instance, uint16_t phy_reg
 }
 
 int alt_eth_phy_read_register_extended(uint16_t emac_instance, uint16_t phy_reg, uint16_t *rdval,
-		struct eth_cyclonev_priv *p)
+				       struct eth_cyclonev_priv *p)
 {
 	int rc;
 
@@ -264,9 +262,10 @@ int alt_eth_phy_config(uint16_t instance, struct eth_cyclonev_priv *p)
 	/* Set Advertise capabilities for 1000 Base-T/1000 Base-T full-duplex */
 
 	rc = alt_eth_phy_write_register(instance, PHY_1GCTL,
-			PHYADVERTISE_1000FULL | PHYADVERTISE_1000HALF |
-			PHYINDICATE_PORTTYPE |  PHYCONFIG_MASTER | PHYENABLE_MANUALCONFIG
-					, p);
+					PHYADVERTISE_1000FULL | PHYADVERTISE_1000HALF |
+						PHYINDICATE_PORTTYPE | PHYCONFIG_MASTER |
+						PHYENABLE_MANUALCONFIG,
+					p);
 	if (rc == -1) {
 		return rc;
 	}

@@ -73,8 +73,7 @@
 
 static inline bool is_dw_irq(uint32_t irq)
 {
-	if (((irq & XTENSA_IRQ_NUM_MASK) == ACE_INTC_IRQ)
-	    && ((irq & ~XTENSA_IRQ_NUM_MASK) != 0)) {
+	if (((irq & XTENSA_IRQ_NUM_MASK) == ACE_INTC_IRQ) && ((irq & ~XTENSA_IRQ_NUM_MASK) != 0)) {
 		return true;
 	}
 
@@ -127,10 +126,9 @@ int dw_ace_irq_is_enabled(const struct device *dev, unsigned int irq)
 }
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
-int dw_ace_irq_connect_dynamic(const struct device *dev, unsigned int irq,
-				   unsigned int priority,
-				   void (*routine)(const void *parameter),
-				   const void *parameter, uint32_t flags)
+int dw_ace_irq_connect_dynamic(const struct device *dev, unsigned int irq, unsigned int priority,
+			       void (*routine)(const void *parameter), const void *parameter,
+			       uint32_t flags)
 {
 	/* Simple architecture means that the Zephyr irq number and
 	 * the index into the ISR table are identical.
@@ -176,9 +174,8 @@ static const struct dw_ace_v1_ictl_driver_api dw_ictl_ace_v1x_apis = {
 #endif
 };
 
-DEVICE_DT_INST_DEFINE(0, dw_ace_init, NULL, NULL, NULL,
-		 PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
-		 &dw_ictl_ace_v1x_apis);
+DEVICE_DT_INST_DEFINE(0, dw_ace_init, NULL, NULL, NULL, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
+		      &dw_ictl_ace_v1x_apis);
 
 IRQ_PARENT_ENTRY_DEFINE(ace_intc, DEVICE_DT_INST_GET(0), DT_INST_IRQN(0),
 			INTC_BASE_ISR_TBL_OFFSET(DT_DRV_INST(0)),

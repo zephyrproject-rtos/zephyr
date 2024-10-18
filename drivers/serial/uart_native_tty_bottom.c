@@ -177,7 +177,7 @@ static inline void native_tty_data_bits_set(struct termios *ter,
 
 int native_tty_poll_bottom(int fd)
 {
-	struct pollfd pfd = { .fd = fd, .events = POLLIN };
+	struct pollfd pfd = {.fd = fd, .events = POLLIN};
 
 	return poll(&pfd, 1, 0);
 }

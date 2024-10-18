@@ -63,12 +63,10 @@ static int counter_esp32_init(const struct device *dev)
 			       (clock_control_subsys_t)ESP32_CLOCK_CONTROL_SUBSYS_RTC_SLOW,
 			       &data->clk_src_freq);
 
-	int ret = esp_intr_alloc(cfg->irq_source,
-				ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
-				ESP_INT_FLAGS_CHECK(cfg->irq_flags),
-				(ESP32_COUNTER_RTC_ISR_HANDLER)counter_esp32_isr,
-				(void *)dev,
-				NULL);
+	int ret = esp_intr_alloc(
+		cfg->irq_source,
+		ESP_PRIO_TO_FLAGS(cfg->irq_priority) | ESP_INT_FLAGS_CHECK(cfg->irq_flags),
+		(ESP32_COUNTER_RTC_ISR_HANDLER)counter_esp32_isr, (void *)dev, NULL);
 
 	if (ret != 0) {
 		LOG_ERR("could not allocate interrupt (err %d)", ret);
@@ -101,7 +99,7 @@ static int counter_esp32_get_value(const struct device *dev, uint32_t *ticks)
 {
 	ARG_UNUSED(dev);
 
-	*ticks = (uint32_t) rtc_cntl_ll_get_rtc_time();
+	*ticks = (uint32_t)rtc_cntl_ll_get_rtc_time();
 
 	return 0;
 }
@@ -114,7 +112,7 @@ static int counter_esp32_set_alarm(const struct device *dev, uint8_t chan_id,
 	uint32_t now;
 	uint32_t ticks = 0;
 
-#if defined(CONFIG_SOC_SERIES_ESP32) || defined(CONFIG_SOC_SERIES_ESP32C2) || \
+#if defined(CONFIG_SOC_SERIES_ESP32) || defined(CONFIG_SOC_SERIES_ESP32C2) ||                      \
 	defined(CONFIG_SOC_SERIES_ESP32C3)
 	/* In ESP32/C3 Series the min possible value is 30 us*/
 	if (counter_ticks_to_us(dev, alarm_cfg->ticks) < 30) {
@@ -157,8 +155,7 @@ static int counter_esp32_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	return 0;
 }
 
-static int counter_esp32_set_top_value(const struct device *dev,
-				       const struct counter_top_cfg *cfg)
+static int counter_esp32_set_top_value(const struct device *dev, const struct counter_top_cfg *cfg)
 {
 	const struct counter_esp32_config *config = dev->config;
 
@@ -200,16 +197,13 @@ static uint32_t counter_esp32_get_freq(const struct device *dev)
 static struct counter_esp32_data counter_data;
 
 static const struct counter_esp32_config counter_config = {
-	.counter_info = {
-		.max_top_value = UINT32_MAX,
-		.flags = COUNTER_CONFIG_INFO_COUNT_UP,
-		.channels = 1
-	},
+	.counter_info = {.max_top_value = UINT32_MAX,
+			 .flags = COUNTER_CONFIG_INFO_COUNT_UP,
+			 .channels = 1},
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
 	.irq_source = DT_INST_IRQ_BY_IDX(0, 0, irq),
 	.irq_priority = DT_INST_IRQ_BY_IDX(0, 0, priority),
-	.irq_flags = DT_INST_IRQ_BY_IDX(0, 0, flags)
-};
+	.irq_flags = DT_INST_IRQ_BY_IDX(0, 0, flags)};
 
 static const struct counter_driver_api rtc_timer_esp32_api = {
 	.start = counter_esp32_start,
@@ -237,11 +231,5 @@ static void counter_esp32_isr(void *arg)
 	}
 }
 
-DEVICE_DT_INST_DEFINE(0,
-		      &counter_esp32_init,
-		      NULL,
-		      &counter_data,
-		      &counter_config,
-		      POST_KERNEL,
-		      CONFIG_COUNTER_INIT_PRIORITY,
-		      &rtc_timer_esp32_api);
+DEVICE_DT_INST_DEFINE(0, &counter_esp32_init, NULL, &counter_data, &counter_config, POST_KERNEL,
+		      CONFIG_COUNTER_INIT_PRIORITY, &rtc_timer_esp32_api);

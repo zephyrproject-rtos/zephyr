@@ -58,11 +58,11 @@ enum pcal6416a_register {
 #if DT_HAS_COMPAT_STATUS_OKAY(nxp_pcal6416a)
 typedef uint16_t pcal64xxa_data_t;
 #define PCAL64XXA_INIT_HIGH UINT16_MAX
-#define PRIpcal_data "04" PRIx16
+#define PRIpcal_data        "04" PRIx16
 #elif DT_HAS_COMPAT_STATUS_OKAY(nxp_pcal6408a)
 typedef uint8_t pcal64xxa_data_t;
 #define PCAL64XXA_INIT_HIGH UINT8_MAX
-#define PRIpcal_data "02" PRIx8
+#define PRIpcal_data        "02" PRIx8
 #else
 #error "Cannot determine the internal data type size"
 #endif
@@ -1017,8 +1017,8 @@ int pcal64xxa_init(const struct device *dev)
 	LOG_DBG("%s: initializing PCAL64XXA", dev->name);
 
 	if (drv_cfg->ngpios != 8U && drv_cfg->ngpios != 16U) {
-		LOG_ERR("%s: Invalid value ngpios=%u. Expected 8 or 16!",
-			dev->name, drv_cfg->ngpios);
+		LOG_ERR("%s: Invalid value ngpios=%u. Expected 8 or 16!", dev->name,
+			drv_cfg->ngpios);
 		return -EINVAL;
 	}
 
@@ -1110,9 +1110,10 @@ int pcal64xxa_init(const struct device *dev)
 		.manage_callback = pcal64xxa_manage_callback,                                      \
 	};                                                                                         \
 	static const struct pcal64xxa_drv_cfg pcal6408a_cfg##idx = {                               \
-		.common = {                                                                        \
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),                     \
-		},                                                                                 \
+		.common =                                                                          \
+			{                                                                          \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),             \
+			},                                                                         \
 		.i2c = I2C_DT_SPEC_INST_GET(idx),                                                  \
 		.ngpios = DT_INST_PROP(idx, ngpios),                                               \
 		.gpio_interrupt = PCAL64XXA_INIT_INT_GPIO_FIELDS(idx),                             \
@@ -1144,9 +1145,10 @@ DT_INST_FOREACH_STATUS_OKAY(GPIO_PCAL6408A_INST)
 		.manage_callback = pcal64xxa_manage_callback,                                      \
 	};                                                                                         \
 	static const struct pcal64xxa_drv_cfg pcal6416a_cfg##idx = {                               \
-		.common = {                                                                        \
-		       .port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),                      \
-		},                                                                                 \
+		.common =                                                                          \
+			{                                                                          \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),             \
+			},                                                                         \
 		.i2c = I2C_DT_SPEC_INST_GET(idx),                                                  \
 		.ngpios = DT_INST_PROP(idx, ngpios),                                               \
 		.gpio_interrupt = PCAL64XXA_INIT_INT_GPIO_FIELDS(idx),                             \

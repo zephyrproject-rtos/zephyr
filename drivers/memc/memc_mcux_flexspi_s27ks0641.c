@@ -4,13 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT   nxp_imx_flexspi_s27ks0641
+#define DT_DRV_COMPAT nxp_imx_flexspi_s27ks0641
 
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 
 #include "memc_mcux_flexspi.h"
-
 
 /*
  * NOTE: If CONFIG_FLASH_MCUX_FLEXSPI_XIP is selected, Any external functions
@@ -44,48 +43,51 @@ struct memc_flexspi_s27ks0641_data {
 
 static const uint32_t memc_flexspi_s27ks0641_lut[][4] = {
 	/* Read Data */
-	[READ_DATA] = {
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR,             kFLEXSPI_8PAD, 0xA0,
-				kFLEXSPI_Command_RADDR_DDR,       kFLEXSPI_8PAD, 0x18),
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_CADDR_DDR,       kFLEXSPI_8PAD, 0x10,
-				kFLEXSPI_Command_DUMMY_RWDS_DDR,  kFLEXSPI_8PAD, 0x06),
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_DDR,        kFLEXSPI_8PAD, 0x04,
-				kFLEXSPI_Command_STOP,            kFLEXSPI_1PAD, 0x00),
-	},
+	[READ_DATA] =
+		{
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0xA0,
+					kFLEXSPI_Command_RADDR_DDR, kFLEXSPI_8PAD, 0x18),
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_CADDR_DDR, kFLEXSPI_8PAD, 0x10,
+					kFLEXSPI_Command_DUMMY_RWDS_DDR, kFLEXSPI_8PAD, 0x06),
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_DDR, kFLEXSPI_8PAD, 0x04,
+					kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x00),
+		},
 
 	/* Write Data */
-	[WRITE_DATA] = {
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR,             kFLEXSPI_8PAD, 0x20,
-				kFLEXSPI_Command_RADDR_DDR,       kFLEXSPI_8PAD, 0x18),
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_CADDR_DDR,       kFLEXSPI_8PAD, 0x10,
-				kFLEXSPI_Command_DUMMY_RWDS_DDR,  kFLEXSPI_8PAD, 0x06),
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_WRITE_DDR,       kFLEXSPI_8PAD, 0x04,
-				kFLEXSPI_Command_STOP,            kFLEXSPI_1PAD, 0x00),
-	},
+	[WRITE_DATA] =
+		{
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x20,
+					kFLEXSPI_Command_RADDR_DDR, kFLEXSPI_8PAD, 0x18),
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_CADDR_DDR, kFLEXSPI_8PAD, 0x10,
+					kFLEXSPI_Command_DUMMY_RWDS_DDR, kFLEXSPI_8PAD, 0x06),
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_WRITE_DDR, kFLEXSPI_8PAD, 0x04,
+					kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x00),
+		},
 
 	/* Read Register */
-	[READ_REG] = {
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR,             kFLEXSPI_8PAD, 0xE0,
-				kFLEXSPI_Command_RADDR_DDR,       kFLEXSPI_8PAD, 0x18),
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_CADDR_DDR,       kFLEXSPI_8PAD, 0x10,
-				kFLEXSPI_Command_DUMMY_RWDS_DDR,  kFLEXSPI_8PAD, 0x06),
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_DDR,        kFLEXSPI_8PAD, 0x04,
-				kFLEXSPI_Command_STOP,            kFLEXSPI_1PAD, 0x00),
-	},
+	[READ_REG] =
+		{
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0xE0,
+					kFLEXSPI_Command_RADDR_DDR, kFLEXSPI_8PAD, 0x18),
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_CADDR_DDR, kFLEXSPI_8PAD, 0x10,
+					kFLEXSPI_Command_DUMMY_RWDS_DDR, kFLEXSPI_8PAD, 0x06),
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_DDR, kFLEXSPI_8PAD, 0x04,
+					kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x00),
+		},
 
 	/* Write Register */
-	[WRITE_REG] = {
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR,             kFLEXSPI_8PAD, 0x60,
-				kFLEXSPI_Command_RADDR_DDR,       kFLEXSPI_8PAD, 0x18),
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_CADDR_DDR,       kFLEXSPI_8PAD, 0x10,
-				kFLEXSPI_Command_DUMMY_RWDS_DDR,  kFLEXSPI_8PAD, 0x06),
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_WRITE_DDR,       kFLEXSPI_8PAD, 0x04,
-				kFLEXSPI_Command_STOP,            kFLEXSPI_1PAD, 0x00),
-	},
+	[WRITE_REG] =
+		{
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR, kFLEXSPI_8PAD, 0x60,
+					kFLEXSPI_Command_RADDR_DDR, kFLEXSPI_8PAD, 0x18),
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_CADDR_DDR, kFLEXSPI_8PAD, 0x10,
+					kFLEXSPI_Command_DUMMY_RWDS_DDR, kFLEXSPI_8PAD, 0x06),
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_WRITE_DDR, kFLEXSPI_8PAD, 0x04,
+					kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x00),
+		},
 };
 
-static int memc_flexspi_s27ks0641_get_vendor_id(const struct device *dev,
-						uint16_t *vendor_id)
+static int memc_flexspi_s27ks0641_get_vendor_id(const struct device *dev, uint16_t *vendor_id)
 {
 	const struct memc_flexspi_s27ks0641_config *config = dev->config;
 	struct memc_flexspi_s27ks0641_data *data = dev->data;
@@ -121,10 +123,9 @@ static int memc_flexspi_s27ks0641_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (memc_flexspi_set_device_config(data->controller, &config->config,
-	    (const uint32_t *) memc_flexspi_s27ks0641_lut,
-	    sizeof(memc_flexspi_s27ks0641_lut) / MEMC_FLEXSPI_CMD_SIZE,
-	    config->port)) {
+	if (memc_flexspi_set_device_config(
+		    data->controller, &config->config, (const uint32_t *)memc_flexspi_s27ks0641_lut,
+		    sizeof(memc_flexspi_s27ks0641_lut) / MEMC_FLEXSPI_CMD_SIZE, config->port)) {
 		LOG_ERR("Could not set device configuration");
 		return -EINVAL;
 	}
@@ -140,59 +141,45 @@ static int memc_flexspi_s27ks0641_init(const struct device *dev)
 	return 0;
 }
 
-#define CONCAT3(x, y, z) x ## y ## z
+#define CONCAT3(x, y, z) x##y##z
 
-#define CS_INTERVAL_UNIT(unit) \
-	CONCAT3(kFLEXSPI_CsIntervalUnit, unit, SckCycle)
+#define CS_INTERVAL_UNIT(unit) CONCAT3(kFLEXSPI_CsIntervalUnit, unit, SckCycle)
 
-#define AHB_WRITE_WAIT_UNIT(unit) \
-	CONCAT3(kFLEXSPI_AhbWriteWaitUnit, unit, AhbCycle)
+#define AHB_WRITE_WAIT_UNIT(unit) CONCAT3(kFLEXSPI_AhbWriteWaitUnit, unit, AhbCycle)
 
-#define MEMC_FLEXSPI_DEVICE_CONFIG(n)					\
-	{								\
-		.flexspiRootClk = MHZ(332),				\
-		.isSck2Enabled = false,					\
-		.flashSize = DT_INST_PROP(n, size) / 8 / KB(1),		\
-		.CSIntervalUnit =					\
-			CS_INTERVAL_UNIT(				\
-				DT_INST_PROP(n, cs_interval_unit)),	\
-		.CSInterval = DT_INST_PROP(n, cs_interval),		\
-		.CSHoldTime = DT_INST_PROP(n, cs_hold_time),		\
-		.CSSetupTime = DT_INST_PROP(n, cs_setup_time),		\
-		.dataValidTime = DT_INST_PROP(n, data_valid_time),	\
-		.columnspace = DT_INST_PROP(n, column_space),		\
-		.enableWordAddress = DT_INST_PROP(n, word_addressable),	\
-		.AWRSeqIndex = WRITE_DATA,				\
-		.AWRSeqNumber = 1,					\
-		.ARDSeqIndex = READ_DATA,				\
-		.ARDSeqNumber = 1,					\
-		.AHBWriteWaitUnit =					\
-			AHB_WRITE_WAIT_UNIT(				\
-				DT_INST_PROP(n, ahb_write_wait_unit)),	\
-		.AHBWriteWaitInterval =					\
-			DT_INST_PROP(n, ahb_write_wait_interval),	\
-		.enableWriteMask = true,				\
-	}								\
+#define MEMC_FLEXSPI_DEVICE_CONFIG(n)                                                              \
+	{                                                                                          \
+		.flexspiRootClk = MHZ(332),                                                        \
+		.isSck2Enabled = false,                                                            \
+		.flashSize = DT_INST_PROP(n, size) / 8 / KB(1),                                    \
+		.CSIntervalUnit = CS_INTERVAL_UNIT(DT_INST_PROP(n, cs_interval_unit)),             \
+		.CSInterval = DT_INST_PROP(n, cs_interval),                                        \
+		.CSHoldTime = DT_INST_PROP(n, cs_hold_time),                                       \
+		.CSSetupTime = DT_INST_PROP(n, cs_setup_time),                                     \
+		.dataValidTime = DT_INST_PROP(n, data_valid_time),                                 \
+		.columnspace = DT_INST_PROP(n, column_space),                                      \
+		.enableWordAddress = DT_INST_PROP(n, word_addressable),                            \
+		.AWRSeqIndex = WRITE_DATA,                                                         \
+		.AWRSeqNumber = 1,                                                                 \
+		.ARDSeqIndex = READ_DATA,                                                          \
+		.ARDSeqNumber = 1,                                                                 \
+		.AHBWriteWaitUnit = AHB_WRITE_WAIT_UNIT(DT_INST_PROP(n, ahb_write_wait_unit)),     \
+		.AHBWriteWaitInterval = DT_INST_PROP(n, ahb_write_wait_interval),                  \
+		.enableWriteMask = true,                                                           \
+	}
 
-#define MEMC_FLEXSPI_S27KS0641(n)				  \
-	static const struct memc_flexspi_s27ks0641_config	  \
-		memc_flexspi_s27ks0641_config_##n = {		  \
-		.port = DT_INST_REG_ADDR(n),			  \
-		.config = MEMC_FLEXSPI_DEVICE_CONFIG(n),	  \
-	};							  \
-								  \
-	static struct memc_flexspi_s27ks0641_data		  \
-		memc_flexspi_s27ks0641_data_##n = {		  \
-		.controller = DEVICE_DT_GET(DT_INST_BUS(n)),	  \
-	};							  \
-								  \
-	DEVICE_DT_INST_DEFINE(n,				  \
-			      memc_flexspi_s27ks0641_init,	  \
-			      NULL,				  \
-			      &memc_flexspi_s27ks0641_data_##n,  \
-			      &memc_flexspi_s27ks0641_config_##n,  \
-			      POST_KERNEL,			  \
-			      CONFIG_MEMC_INIT_PRIORITY, \
-			      NULL);
+#define MEMC_FLEXSPI_S27KS0641(n)                                                                  \
+	static const struct memc_flexspi_s27ks0641_config memc_flexspi_s27ks0641_config_##n = {    \
+		.port = DT_INST_REG_ADDR(n),                                                       \
+		.config = MEMC_FLEXSPI_DEVICE_CONFIG(n),                                           \
+	};                                                                                         \
+                                                                                                   \
+	static struct memc_flexspi_s27ks0641_data memc_flexspi_s27ks0641_data_##n = {              \
+		.controller = DEVICE_DT_GET(DT_INST_BUS(n)),                                       \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(                                                                     \
+		n, memc_flexspi_s27ks0641_init, NULL, &memc_flexspi_s27ks0641_data_##n,            \
+		&memc_flexspi_s27ks0641_config_##n, POST_KERNEL, CONFIG_MEMC_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MEMC_FLEXSPI_S27KS0641)

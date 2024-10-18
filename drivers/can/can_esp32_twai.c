@@ -29,27 +29,27 @@ LOG_MODULE_REGISTER(can_esp32_twai, CONFIG_CAN_LOG_LEVEL);
 #ifndef CONFIG_SOC_SERIES_ESP32
 
 /* TWAI_BUS_TIMING_0_REG is incompatible with CAN_SJA1000_BTR0 */
-#define TWAI_BUS_TIMING_0_REG           (6U)
-#define TWAI_BAUD_PRESC_MASK            GENMASK(12, 0)
-#define TWAI_SYNC_JUMP_WIDTH_MASK       GENMASK(15, 14)
-#define TWAI_BAUD_PRESC_PREP(brp)	FIELD_PREP(TWAI_BAUD_PRESC_MASK, brp)
-#define TWAI_SYNC_JUMP_WIDTH_PREP(sjw)	FIELD_PREP(TWAI_SYNC_JUMP_WIDTH_MASK, sjw)
+#define TWAI_BUS_TIMING_0_REG          (6U)
+#define TWAI_BAUD_PRESC_MASK           GENMASK(12, 0)
+#define TWAI_SYNC_JUMP_WIDTH_MASK      GENMASK(15, 14)
+#define TWAI_BAUD_PRESC_PREP(brp)      FIELD_PREP(TWAI_BAUD_PRESC_MASK, brp)
+#define TWAI_SYNC_JUMP_WIDTH_PREP(sjw) FIELD_PREP(TWAI_SYNC_JUMP_WIDTH_MASK, sjw)
 
 /*
  * TWAI_BUS_TIMING_1_REG is compatible with CAN_SJA1000_BTR1, but needed here for the custom
  * set_timing() function.
  */
-#define TWAI_BUS_TIMING_1_REG           (7U)
-#define TWAI_TIME_SEG1_MASK             GENMASK(3, 0)
-#define TWAI_TIME_SEG2_MASK             GENMASK(6, 4)
-#define TWAI_TIME_SAMP                  BIT(7)
-#define TWAI_TIME_SEG1_PREP(seg1)       FIELD_PREP(TWAI_TIME_SEG1_MASK, seg1)
-#define TWAI_TIME_SEG2_PREP(seg2)       FIELD_PREP(TWAI_TIME_SEG2_MASK, seg2)
+#define TWAI_BUS_TIMING_1_REG     (7U)
+#define TWAI_TIME_SEG1_MASK       GENMASK(3, 0)
+#define TWAI_TIME_SEG2_MASK       GENMASK(6, 4)
+#define TWAI_TIME_SAMP            BIT(7)
+#define TWAI_TIME_SEG1_PREP(seg1) FIELD_PREP(TWAI_TIME_SEG1_MASK, seg1)
+#define TWAI_TIME_SEG2_PREP(seg2) FIELD_PREP(TWAI_TIME_SEG2_MASK, seg2)
 
 /* TWAI_CLOCK_DIVIDER_REG is incompatible with CAN_SJA1000_CDR */
-#define TWAI_CLOCK_DIVIDER_REG          (31U)
-#define TWAI_CD_MASK			GENMASK(7, 0)
-#define TWAI_CLOCK_OFF			BIT(8)
+#define TWAI_CLOCK_DIVIDER_REG (31U)
+#define TWAI_CD_MASK           GENMASK(7, 0)
+#define TWAI_CLOCK_OFF         BIT(8)
 
 /*
  * Further incompatible registers currently not used by the driver:
@@ -60,8 +60,8 @@ LOG_MODULE_REGISTER(can_esp32_twai, CONFIG_CAN_LOG_LEVEL);
 #else
 
 /* Redefinitions of the SJA1000 CDR bits to simplify driver config */
-#define TWAI_CD_MASK			GENMASK(2, 0)
-#define TWAI_CLOCK_OFF			BIT(3)
+#define TWAI_CD_MASK   GENMASK(2, 0)
+#define TWAI_CLOCK_OFF BIT(3)
 
 #endif /* !CONFIG_SOC_SERIES_ESP32 */
 
@@ -205,9 +205,10 @@ static int can_esp32_twai_init(const struct device *dev)
 #endif /* !CONFIG_SOC_SERIES_ESP32 */
 
 	err = esp_intr_alloc(twai_config->irq_source,
-			ESP_PRIO_TO_FLAGS(twai_config->irq_priority) |
-			ESP_INT_FLAGS_CHECK(twai_config->irq_flags) | ESP_INTR_FLAG_IRAM,
-			can_esp32_twai_isr, (void *)dev, NULL);
+			     ESP_PRIO_TO_FLAGS(twai_config->irq_priority) |
+				     ESP_INT_FLAGS_CHECK(twai_config->irq_flags) |
+				     ESP_INTR_FLAG_IRAM,
+			     can_esp32_twai_isr, (void *)dev, NULL);
 
 	if (err != 0) {
 		LOG_ERR("could not allocate interrupt (err %d)", err);
@@ -241,13 +242,14 @@ const struct can_driver_api can_esp32_twai_driver_api = {
 	.timing_max = CAN_SJA1000_TIMING_MAX_INITIALIZER,
 #else
 	/* larger prescaler allowed for newer ESP32-series MCUs */
-	.timing_max = {
-		.sjw = 0x4,
-		.prop_seg = 0x0,
-		.phase_seg1 = 0x10,
-		.phase_seg2 = 0x8,
-		.prescaler = 0x2000,
-	}
+	.timing_max =
+		{
+			.sjw = 0x4,
+			.prop_seg = 0x0,
+			.phase_seg1 = 0x10,
+			.phase_seg2 = 0x8,
+			.prescaler = 0x2000,
+		}
 #endif /* CONFIG_SOC_SERIES_ESP32 */
 };
 
@@ -256,15 +258,15 @@ const struct can_driver_api can_esp32_twai_driver_api = {
 #define TWAI_CDR32_INIT(inst)
 #else
 #define TWAI_CLKOUT_DIVIDER_MAX (490)
-#define TWAI_CDR32_INIT(inst) .cdr32 = CAN_ESP32_TWAI_DT_CDR_INST_GET(inst)
+#define TWAI_CDR32_INIT(inst)   .cdr32 = CAN_ESP32_TWAI_DT_CDR_INST_GET(inst)
 #endif /* CONFIG_SOC_SERIES_ESP32 */
 
 #define CAN_ESP32_TWAI_ASSERT_CLKOUT_DIVIDER(inst)                                                 \
 	BUILD_ASSERT(COND_CODE_0(DT_INST_NODE_HAS_PROP(inst, clkout_divider), (1),                 \
 		(DT_INST_PROP(inst, clkout_divider) == 1 ||                                        \
 		(DT_INST_PROP(inst, clkout_divider) % 2 == 0 &&                                    \
-		DT_INST_PROP(inst, clkout_divider) / 2 <= TWAI_CLKOUT_DIVIDER_MAX))),              \
-		"TWAI clkout-divider from dts invalid")
+		DT_INST_PROP(inst, clkout_divider) / 2 <= TWAI_CLKOUT_DIVIDER_MAX))),           \
+				   "TWAI clkout-divider from dts invalid")
 
 #define CAN_ESP32_TWAI_DT_CDR_INST_GET(inst)                                                       \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clkout_divider),                                   \
@@ -283,15 +285,15 @@ const struct can_driver_api can_esp32_twai_driver_api = {
 		.irq_source = DT_INST_IRQ_BY_IDX(inst, 0, irq),                                    \
 		.irq_priority = DT_INST_IRQ_BY_IDX(inst, 0, priority),                             \
 		.irq_flags = DT_INST_IRQ_BY_IDX(inst, 0, flags),                                   \
-		TWAI_CDR32_INIT(inst)                                                              \
-	};                                                                                         \
+		TWAI_CDR32_INIT(inst)};                                                            \
 	CAN_ESP32_TWAI_ASSERT_CLKOUT_DIVIDER(inst);                                                \
 	static const struct can_sja1000_config can_sja1000_config_##inst =                         \
-		CAN_SJA1000_DT_CONFIG_INST_GET(inst, &can_esp32_twai_config_##inst,                \
-					can_esp32_twai_read_reg, can_esp32_twai_write_reg,         \
-					CAN_SJA1000_OCR_OCMODE_BIPHASE,                            \
-					COND_CODE_0(IS_ENABLED(CONFIG_SOC_SERIES_ESP32), (0),      \
-					(CAN_ESP32_TWAI_DT_CDR_INST_GET(inst))), 25000);           \
+		CAN_SJA1000_DT_CONFIG_INST_GET(                                                    \
+			inst, &can_esp32_twai_config_##inst, can_esp32_twai_read_reg,              \
+			can_esp32_twai_write_reg, CAN_SJA1000_OCR_OCMODE_BIPHASE,                  \
+			COND_CODE_0(IS_ENABLED(CONFIG_SOC_SERIES_ESP32), (0),      \
+					(CAN_ESP32_TWAI_DT_CDR_INST_GET(inst))),        \
+						25000);                                            \
                                                                                                    \
 	static struct can_sja1000_data can_sja1000_data_##inst =                                   \
 		CAN_SJA1000_DATA_INITIALIZER(NULL);                                                \

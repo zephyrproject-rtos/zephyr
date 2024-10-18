@@ -25,10 +25,10 @@ LOG_MODULE_REGISTER(mcpwm_esp32, CONFIG_PWM_LOG_LEVEL);
 
 #define SOC_MCPWM_BASE_CLK_HZ (160000000U)
 #ifdef CONFIG_PWM_CAPTURE
-#define SKIP_IRQ_NUM 4U
-#define MCPWM_INTR_CAP0  BIT(0)
-#define MCPWM_INTR_CAP1  BIT(1)
-#define MCPWM_INTR_CAP2  BIT(2)
+#define SKIP_IRQ_NUM        4U
+#define MCPWM_INTR_CAP0     BIT(0)
+#define MCPWM_INTR_CAP1     BIT(1)
+#define MCPWM_INTR_CAP2     BIT(2)
 #define MCPWM_CHANNEL_NUM   8U
 #define CAPTURE_CHANNEL_IDX 6U
 #else
@@ -99,13 +99,13 @@ static void mcpwm_esp32_duty_set(const struct device *dev,
 	uint32_t set_duty;
 
 	if (channel->inverted) {
-		duty_type = channel->duty == 0 ?
-			MCPWM_HAL_GENERATOR_MODE_FORCE_HIGH : channel->duty == 100 ?
-			MCPWM_HAL_GENERATOR_MODE_FORCE_LOW  : MCPWM_DUTY_MODE_1;
+		duty_type = channel->duty == 0     ? MCPWM_HAL_GENERATOR_MODE_FORCE_HIGH
+			    : channel->duty == 100 ? MCPWM_HAL_GENERATOR_MODE_FORCE_LOW
+						   : MCPWM_DUTY_MODE_1;
 	} else {
-		duty_type = channel->duty == 0 ?
-			MCPWM_HAL_GENERATOR_MODE_FORCE_LOW  : channel->duty == 100 ?
-			MCPWM_HAL_GENERATOR_MODE_FORCE_HIGH : MCPWM_DUTY_MODE_0;
+		duty_type = channel->duty == 0     ? MCPWM_HAL_GENERATOR_MODE_FORCE_LOW
+			    : channel->duty == 100 ? MCPWM_HAL_GENERATOR_MODE_FORCE_HIGH
+						   : MCPWM_DUTY_MODE_0;
 	}
 
 	set_duty = mcpwm_ll_timer_get_peak(data->hal.dev, channel->timer_id, false) *
@@ -490,18 +490,22 @@ static void IRAM_ATTR mcpwm_esp32_isr(const struct device *dev)
 		 * The capture timer is a 32-bit counter incrementing continuously, once enabled.
 		 * On the input it has an APB clock running typically at 80 MHz
 		 */
-		capture->period = channel->inverted ?
-			capture->capture_data[0].edge == MCPWM_NEG_EDGE
-				? (capture->capture_data[2].value - capture->capture_data[0].value)
-				: (capture->capture_data[3].value - capture->capture_data[1].value)
+		capture->period =
+			channel->inverted ? capture->capture_data[0].edge == MCPWM_NEG_EDGE
+						    ? (capture->capture_data[2].value -
+						       capture->capture_data[0].value)
+						    : (capture->capture_data[3].value -
+						       capture->capture_data[1].value)
 			: capture->capture_data[0].edge == MCPWM_POS_EDGE
 				? (capture->capture_data[2].value - capture->capture_data[0].value)
 				: (capture->capture_data[3].value - capture->capture_data[1].value);
 
-		capture->pulse = channel->inverted ?
-			capture->capture_data[0].edge == MCPWM_NEG_EDGE
-				? (capture->capture_data[1].value - capture->capture_data[0].value)
-				: (capture->capture_data[2].value - capture->capture_data[1].value)
+		capture->pulse =
+			channel->inverted ? capture->capture_data[0].edge == MCPWM_NEG_EDGE
+						    ? (capture->capture_data[1].value -
+						       capture->capture_data[0].value)
+						    : (capture->capture_data[2].value -
+						       capture->capture_data[1].value)
 			: capture->capture_data[0].edge == MCPWM_POS_EDGE
 				? (capture->capture_data[1].value - capture->capture_data[0].value)
 				: (capture->capture_data[2].value - capture->capture_data[1].value);
@@ -533,15 +537,16 @@ static const struct pwm_driver_api mcpwm_esp32_api = {
 
 #ifdef CONFIG_PWM_CAPTURE
 #define IRQ_CONFIG_FUNC(idx)                                                                       \
-	static int mcpwm_esp32_irq_config_func_##idx(const struct device *dev)                    \
+	static int mcpwm_esp32_irq_config_func_##idx(const struct device *dev)                     \
 	{                                                                                          \
-		int ret;                                                                   \
-		ret = esp_intr_alloc(DT_INST_IRQ_BY_IDX(idx, 0, irq),                      \
-				ESP_PRIO_TO_FLAGS(DT_INST_IRQ_BY_IDX(idx, 0, priority)) |          \
-				ESP_INT_FLAGS_CHECK(DT_INST_IRQ_BY_IDX(idx, 0, flags)) |          \
-					ESP_INTR_FLAG_IRAM,                                        \
-				(intr_handler_t)mcpwm_esp32_isr, (void *)dev, NULL);               \
-		return ret;                                                                \
+		int ret;                                                                           \
+		ret = esp_intr_alloc(                                                              \
+			DT_INST_IRQ_BY_IDX(idx, 0, irq),                                           \
+			ESP_PRIO_TO_FLAGS(DT_INST_IRQ_BY_IDX(idx, 0, priority)) |                  \
+				ESP_INT_FLAGS_CHECK(DT_INST_IRQ_BY_IDX(idx, 0, flags)) |           \
+				ESP_INTR_FLAG_IRAM,                                                \
+			(intr_handler_t)mcpwm_esp32_isr, (void *)dev, NULL);                       \
+		return ret;                                                                        \
 	}
 #define CAPTURE_INIT(idx) .irq_config_func = mcpwm_esp32_irq_config_func_##idx
 #else

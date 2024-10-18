@@ -14,8 +14,8 @@
 
 LOG_MODULE_REGISTER(dma_designware_axi, CONFIG_DMA_LOG_LEVEL);
 
-#define DEV_CFG(_dev)	((const struct dma_dw_axi_dev_cfg *)(_dev)->config)
-#define DEV_DATA(_dev)		((struct dma_dw_axi_dev_data *const)(_dev)->data)
+#define DEV_CFG(_dev)  ((const struct dma_dw_axi_dev_cfg *)(_dev)->config)
+#define DEV_DATA(_dev) ((struct dma_dw_axi_dev_data *const)(_dev)->data)
 
 /* mask for block transfer size */
 #define BLOCK_TS_MASK GENMASK(21, 0)
@@ -53,7 +53,7 @@ LOG_MODULE_REGISTER(dma_designware_axi, CONFIG_DMA_LOG_LEVEL);
 /* channel resume bit pos */
 #define CH_RESUME(chan)    (BIT64(16 + chan))
 
-#define DMA_DW_AXI_CHAN_OFFSET(chan)             (0x100 * chan)
+#define DMA_DW_AXI_CHAN_OFFSET(chan) (0x100 * chan)
 
 /* source address register for a channel */
 #define DMA_DW_AXI_CH_SAR(chan)                  (0x100 + DMA_DW_AXI_CHAN_OFFSET(chan))
@@ -89,62 +89,62 @@ LOG_MODULE_REGISTER(dma_designware_axi, CONFIG_DMA_LOG_LEVEL);
 #define DMA_DW_AXI_CH_INTCLEARREG(chan)          (0x198 + DMA_DW_AXI_CHAN_OFFSET(chan))
 
 /* bitfield configuration for multi-block transfer */
-#define DMA_DW_AXI_CFG_SRC_MULTBLK_TYPE(x)       FIELD_PREP(GENMASK64(1, 0), x)
-#define DMA_DW_AXI_CFG_DST_MULTBLK_TYPE(x)       FIELD_PREP(GENMASK64(3, 2), x)
+#define DMA_DW_AXI_CFG_SRC_MULTBLK_TYPE(x) FIELD_PREP(GENMASK64(1, 0), x)
+#define DMA_DW_AXI_CFG_DST_MULTBLK_TYPE(x) FIELD_PREP(GENMASK64(3, 2), x)
 
 /* bitfield configuration to assign handshaking interface to source and destination */
-#define DMA_DW_AXI_CFG_SRC_PER(x)                FIELD_PREP(GENMASK64(9, 4), x)
-#define DMA_DW_AXI_CFG_DST_PER(x)                FIELD_PREP(GENMASK64(16, 11), x)
+#define DMA_DW_AXI_CFG_SRC_PER(x) FIELD_PREP(GENMASK64(9, 4), x)
+#define DMA_DW_AXI_CFG_DST_PER(x) FIELD_PREP(GENMASK64(16, 11), x)
 
 /* bitfield configuration for transfer type and flow controller */
-#define DMA_DW_AXI_CFG_TT_FC(x)                  FIELD_PREP(GENMASK64(34, 32), x)
+#define DMA_DW_AXI_CFG_TT_FC(x) FIELD_PREP(GENMASK64(34, 32), x)
 
-#define DMA_DW_AXI_CFG_HW_HS_SRC_BIT_POS         35
-#define DMA_DW_AXI_CFG_HW_HS_DST_BIT_POS         36
+#define DMA_DW_AXI_CFG_HW_HS_SRC_BIT_POS 35
+#define DMA_DW_AXI_CFG_HW_HS_DST_BIT_POS 36
 
-#define DMA_DW_AXI_CFG_PRIORITY(x)               FIELD_PREP(GENMASK64(51, 47), x)
+#define DMA_DW_AXI_CFG_PRIORITY(x) FIELD_PREP(GENMASK64(51, 47), x)
 
 /* descriptor valid or not */
-#define DMA_DW_AXI_CTL_LLI_VALID                 BIT64(63)
+#define DMA_DW_AXI_CTL_LLI_VALID   BIT64(63)
 /* descriptor is last or not in a link */
-#define DMA_DW_AXI_CTL_LLI_LAST                  BIT64(62)
+#define DMA_DW_AXI_CTL_LLI_LAST    BIT64(62)
 /* interrupt on completion of block transfer */
-#define DMA_DW_AXI_CTL_IOC_BLK_TFR               BIT64(58)
+#define DMA_DW_AXI_CTL_IOC_BLK_TFR BIT64(58)
 /* source status enable bit */
-#define DMA_DW_AXI_CTL_SRC_STAT_EN               BIT64(56)
+#define DMA_DW_AXI_CTL_SRC_STAT_EN BIT64(56)
 /* destination status enable bit */
-#define DMA_DW_AXI_CTL_DST_STAT_EN               BIT64(57)
+#define DMA_DW_AXI_CTL_DST_STAT_EN BIT64(57)
 /* source burst length enable */
-#define DMA_DW_AXI_CTL_ARLEN_EN                  BIT64(38)
+#define DMA_DW_AXI_CTL_ARLEN_EN    BIT64(38)
 /* source burst length(considered when corresponding enable bit is set) */
-#define DMA_DW_AXI_CTL_ARLEN(x)                  FIELD_PREP(GENMASK64(46, 39), x)
+#define DMA_DW_AXI_CTL_ARLEN(x)    FIELD_PREP(GENMASK64(46, 39), x)
 /* destination burst length enable */
-#define DMA_DW_AXI_CTL_AWLEN_EN                  BIT64(47)
+#define DMA_DW_AXI_CTL_AWLEN_EN    BIT64(47)
 /* destination burst length(considered when corresponding enable bit is set) */
-#define DMA_DW_AXI_CTL_AWLEN(x)                  FIELD_PREP(GENMASK64(55, 48), x)
+#define DMA_DW_AXI_CTL_AWLEN(x)    FIELD_PREP(GENMASK64(55, 48), x)
 
 /* source burst transaction length */
-#define DMA_DW_AXI_CTL_SRC_MSIZE(x)              FIELD_PREP(GENMASK64(17, 14), x)
+#define DMA_DW_AXI_CTL_SRC_MSIZE(x) FIELD_PREP(GENMASK64(17, 14), x)
 /* destination burst transaction length */
-#define DMA_DW_AXI_CTL_DST_MSIZE(x)              FIELD_PREP(GENMASK64(21, 18), x)
+#define DMA_DW_AXI_CTL_DST_MSIZE(x) FIELD_PREP(GENMASK64(21, 18), x)
 /* source transfer width */
-#define DMA_DW_AXI_CTL_SRC_WIDTH(x)              FIELD_PREP(GENMASK64(10, 8), x)
+#define DMA_DW_AXI_CTL_SRC_WIDTH(x) FIELD_PREP(GENMASK64(10, 8), x)
 /* destination transfer width */
-#define DMA_DW_AXI_CTL_DST_WIDTH(x)              FIELD_PREP(GENMASK64(13, 11), x)
+#define DMA_DW_AXI_CTL_DST_WIDTH(x) FIELD_PREP(GENMASK64(13, 11), x)
 
 /* mask all the interrupts */
-#define DMA_DW_AXI_IRQ_NONE                      0
+#define DMA_DW_AXI_IRQ_NONE      0
 /* enable block completion transfer interrupt */
-#define DMA_DW_AXI_IRQ_BLOCK_TFR                 BIT64(0)
+#define DMA_DW_AXI_IRQ_BLOCK_TFR BIT64(0)
 /* enable transfer completion interrupt */
-#define DMA_DW_AXI_IRQ_DMA_TFR                   BIT64(1)
+#define DMA_DW_AXI_IRQ_DMA_TFR   BIT64(1)
 /* enable interrupts on any dma transfer error */
-#define DMA_DW_AXI_IRQ_ALL_ERR                   (GENMASK64(14, 5) | GENMASK64(21, 16))
+#define DMA_DW_AXI_IRQ_ALL_ERR   (GENMASK64(14, 5) | GENMASK64(21, 16))
 
 /* global enable bit for dma controller */
-#define DMA_DW_AXI_CFG_EN                        BIT64(0)
+#define DMA_DW_AXI_CFG_EN     BIT64(0)
 /* global enable bit for interrupt */
-#define DMA_DW_AXI_CFG_INT_EN                    BIT64(1)
+#define DMA_DW_AXI_CFG_INT_EN BIT64(1)
 
 /* descriptor used by dw axi dma controller*/
 struct dma_lli {
@@ -317,32 +317,31 @@ static void dma_dw_axi_isr(const struct device *dev)
 
 	/* handle dma transfer errors if any */
 	if (ch_status & DMA_DW_AXI_IRQ_ALL_ERR) {
-		sys_write64(DMA_DW_AXI_IRQ_ALL_ERR,
-			reg_base + DMA_DW_AXI_CH_INTCLEARREG(channel));
-		LOG_ERR("DMA Error: Channel:%d Channel interrupt status:0x%llx\n",
-				channel, ch_status);
+		sys_write64(DMA_DW_AXI_IRQ_ALL_ERR, reg_base + DMA_DW_AXI_CH_INTCLEARREG(channel));
+		LOG_ERR("DMA Error: Channel:%d Channel interrupt status:0x%llx\n", channel,
+			ch_status);
 		ret_status = -(ch_status & DMA_DW_AXI_IRQ_ALL_ERR);
 	}
 
 	/* handle block transfer completion */
 	if (ch_status & DMA_DW_AXI_IRQ_BLOCK_TFR) {
 		sys_write64(DMA_DW_AXI_IRQ_ALL_ERR | DMA_DW_AXI_IRQ_BLOCK_TFR,
-				reg_base + DMA_DW_AXI_CH_INTCLEARREG(channel));
+			    reg_base + DMA_DW_AXI_CH_INTCLEARREG(channel));
 
 		if (chan_data->dma_blk_xfer_callback) {
-			chan_data->dma_blk_xfer_callback(dev,
-				chan_data->priv_data_blk_tfr, channel, ret_status);
+			chan_data->dma_blk_xfer_callback(dev, chan_data->priv_data_blk_tfr, channel,
+							 ret_status);
 		}
 	}
 
 	/* handle dma transfer completion */
 	if (ch_status & DMA_DW_AXI_IRQ_DMA_TFR) {
 		sys_write64(DMA_DW_AXI_IRQ_ALL_ERR | DMA_DW_AXI_IRQ_DMA_TFR,
-				reg_base + DMA_DW_AXI_CH_INTCLEARREG(channel));
+			    reg_base + DMA_DW_AXI_CH_INTCLEARREG(channel));
 
 		if (chan_data->dma_xfer_callback) {
-			chan_data->dma_xfer_callback(dev, chan_data->priv_data_xfer,
-						channel, ret_status);
+			chan_data->dma_xfer_callback(dev, chan_data->priv_data_xfer, channel,
+						     ret_status);
 			chan_data->ch_state = dma_dw_axi_get_ch_status(dev, channel);
 		}
 	}
@@ -357,11 +356,11 @@ static void dma_dw_axi_isr(const struct device *dev)
  *
  * @retval 0 on success, -ENOTSUP if the data width is not supported
  */
-static int dma_dw_axi_set_data_width(struct dma_lli *lli_desc,
-				uint32_t src_data_width, uint32_t dest_data_width)
+static int dma_dw_axi_set_data_width(struct dma_lli *lli_desc, uint32_t src_data_width,
+				     uint32_t dest_data_width)
 {
 	if (src_data_width > CONFIG_DMA_DW_AXI_DATA_WIDTH ||
-			dest_data_width > CONFIG_DMA_DW_AXI_DATA_WIDTH) {
+	    dest_data_width > CONFIG_DMA_DW_AXI_DATA_WIDTH) {
 		LOG_ERR("transfer width more than %u not supported", CONFIG_DMA_DW_AXI_DATA_WIDTH);
 		return -ENOTSUP;
 	}
@@ -437,8 +436,7 @@ static int dma_dw_axi_set_data_width(struct dma_lli *lli_desc,
 	return 0;
 }
 
-static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
-						 struct dma_config *cfg)
+static int dma_dw_axi_config(const struct device *dev, uint32_t channel, struct dma_config *cfg)
 {
 	int ret;
 	uint32_t msize_src, msize_dst, i, ch_state;
@@ -474,14 +472,14 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 	/* descriptor should be less than max configured descriptor */
 	if (cfg->block_count > CONFIG_DMA_DW_AXI_MAX_DESC) {
 		LOG_ERR("dma:%s channel %d descriptor block count: %d larger than"
-			" max descriptors in pool: %d", dev->name, channel,
-			cfg->block_count, CONFIG_DMA_DW_AXI_MAX_DESC);
+			" max descriptors in pool: %d",
+			dev->name, channel, cfg->block_count, CONFIG_DMA_DW_AXI_MAX_DESC);
 		return -EINVAL;
 	}
 
 	if (cfg->source_burst_length > CONFIG_DMA_DW_AXI_MAX_BURST_TXN_LEN ||
-			cfg->dest_burst_length > CONFIG_DMA_DW_AXI_MAX_BURST_TXN_LEN ||
-			cfg->source_burst_length == 0 || cfg->dest_burst_length == 0) {
+	    cfg->dest_burst_length > CONFIG_DMA_DW_AXI_MAX_BURST_TXN_LEN ||
+	    cfg->source_burst_length == 0 || cfg->dest_burst_length == 0) {
 		LOG_ERR("dma:%s burst length not supported", dev->name);
 		return -ENOTSUP;
 	}
@@ -505,10 +503,9 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 	chan_data->direction = cfg->channel_direction;
 
 	chan_data->lli_desc_base =
-			&dw_dev_data->dma_desc_pool[channel * CONFIG_DMA_DW_AXI_MAX_DESC];
+		&dw_dev_data->dma_desc_pool[channel * CONFIG_DMA_DW_AXI_MAX_DESC];
 	chan_data->lli_desc_count = cfg->block_count;
-	memset(chan_data->lli_desc_base, 0,
-			sizeof(struct dma_lli) * chan_data->lli_desc_count);
+	memset(chan_data->lli_desc_base, 0, sizeof(struct dma_lli) * chan_data->lli_desc_count);
 
 	lli_desc = chan_data->lli_desc_base;
 	blk_cfg = cfg->head_block;
@@ -522,13 +519,13 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 	for (i = 0; i < cfg->block_count; i++) {
 
 		ret = dma_dw_axi_set_data_width(lli_desc, cfg->source_data_size,
-				cfg->dest_data_size);
+						cfg->dest_data_size);
 		if (ret) {
 			return ret;
 		}
 
-		lli_desc->ctl |= DMA_DW_AXI_CTL_SRC_STAT_EN |
-				DMA_DW_AXI_CTL_DST_STAT_EN | DMA_DW_AXI_CTL_IOC_BLK_TFR;
+		lli_desc->ctl |= DMA_DW_AXI_CTL_SRC_STAT_EN | DMA_DW_AXI_CTL_DST_STAT_EN |
+				 DMA_DW_AXI_CTL_IOC_BLK_TFR;
 
 		lli_desc->sar = blk_cfg->source_address;
 		lli_desc->dar = blk_cfg->dest_address;
@@ -546,13 +543,13 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 			chan_data->cfg |= DMA_DW_AXI_CFG_TT_FC(M2M_DMAC);
 
 			lli_desc->ctl |= DMA_DW_AXI_CTL_SRC_MSIZE(msize_src) |
-					DMA_DW_AXI_CTL_DST_MSIZE(msize_dst);
+					 DMA_DW_AXI_CTL_DST_MSIZE(msize_dst);
 
 		} else if (cfg->channel_direction == MEMORY_TO_PERIPHERAL) {
 
 			chan_data->cfg |= DMA_DW_AXI_CFG_TT_FC(M2P_DMAC);
 			lli_desc->ctl |= DMA_DW_AXI_CTL_SRC_MSIZE(msize_src) |
-					DMA_DW_AXI_CTL_DST_MSIZE(msize_dst);
+					 DMA_DW_AXI_CTL_DST_MSIZE(msize_dst);
 			WRITE_BIT(chan_data->cfg, DMA_DW_AXI_CFG_HW_HS_DST_BIT_POS, 0);
 
 			/* assign a hardware handshake interface */
@@ -560,7 +557,7 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 
 		} else if (cfg->channel_direction == PERIPHERAL_TO_MEMORY) {
 			lli_desc->ctl |= DMA_DW_AXI_CTL_SRC_MSIZE(msize_src) |
-					DMA_DW_AXI_CTL_DST_MSIZE(msize_dst);
+					 DMA_DW_AXI_CTL_DST_MSIZE(msize_dst);
 			chan_data->cfg |= DMA_DW_AXI_CFG_TT_FC(P2M_DMAC);
 			WRITE_BIT(chan_data->cfg, DMA_DW_AXI_CFG_HW_HS_SRC_BIT_POS, 0);
 
@@ -568,8 +565,8 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 			chan_data->cfg |= DMA_DW_AXI_CFG_SRC_PER(cfg->dma_slot);
 
 		} else {
-			LOG_ERR("%s: dma %s channel %d invalid direction %d",
-				__func__, dev->name, channel, cfg->channel_direction);
+			LOG_ERR("%s: dma %s channel %d invalid direction %d", __func__, dev->name,
+				channel, cfg->channel_direction);
 
 			return -EINVAL;
 		}
@@ -580,7 +577,7 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 #if defined(CONFIG_DMA_DW_AXI_LLI_SUPPORT)
 		/* configure multi block transfer size as linked list */
 		chan_data->cfg |= DMA_DW_AXI_CFG_SRC_MULTBLK_TYPE(MULTI_BLK_LLI) |
-				DMA_DW_AXI_CFG_DST_MULTBLK_TYPE(MULTI_BLK_LLI);
+				  DMA_DW_AXI_CFG_DST_MULTBLK_TYPE(MULTI_BLK_LLI);
 
 		lli_desc->ctl |= DMA_DW_AXI_CTL_LLI_VALID;
 		/* last descriptor*/
@@ -591,7 +588,7 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 #else
 		/* configure multi-block transfer as contiguous mode */
 		chan_data->cfg |= DMA_DW_AXI_CFG_SRC_MULTBLK_TYPE(MULTI_BLK_CONTIGUOUS) |
-				DMA_DW_AXI_CFG_DST_MULTBLK_TYPE(MULTI_BLK_CONTIGUOUS);
+				  DMA_DW_AXI_CFG_DST_MULTBLK_TYPE(MULTI_BLK_CONTIGUOUS);
 #endif
 
 		/* next descriptor to configure*/
@@ -668,10 +665,8 @@ static int dma_dw_axi_start(const struct device *dev, uint32_t channel)
 
 	sys_write64(chan_data->cfg, reg_base + DMA_DW_AXI_CH_CFG(channel));
 
-	sys_write64(chan_data->irq_unmask,
-				reg_base + DMA_DW_AXI_CH_INTSTATUS_ENABLEREG(channel));
-	sys_write64(chan_data->irq_unmask,
-				reg_base + DMA_DW_AXI_CH_INTSIGNAL_ENABLEREG(channel));
+	sys_write64(chan_data->irq_unmask, reg_base + DMA_DW_AXI_CH_INTSTATUS_ENABLEREG(channel));
+	sys_write64(chan_data->irq_unmask, reg_base + DMA_DW_AXI_CH_INTSIGNAL_ENABLEREG(channel));
 
 	lli_desc = chan_data->lli_desc_current;
 
@@ -683,7 +678,7 @@ static int dma_dw_axi_start(const struct device *dev, uint32_t channel)
 	sys_write64(lli_desc->dar, reg_base + DMA_DW_AXI_CH_DAR(channel));
 
 	sys_write64(lli_desc->block_ts_lo & BLOCK_TS_MASK,
-			reg_base + DMA_DW_AXI_CH_BLOCK_TS(channel));
+		    reg_base + DMA_DW_AXI_CH_BLOCK_TS(channel));
 
 	/* Program CH.CTL register */
 	sys_write64(lli_desc->ctl, reg_base + DMA_DW_AXI_CH_CTL(channel));
@@ -731,14 +726,14 @@ static int dma_dw_axi_stop(const struct device *dev, uint32_t channel)
 	sys_clear_bit(reg_base + DMA_DW_AXI_CHENREG, channel);
 
 	is_channel_busy = WAIT_FOR((sys_read64(reg_base + DMA_DW_AXI_CHENREG)) & (BIT(channel)),
-						CONFIG_DMA_CHANNEL_STATUS_TIMEOUT, k_busy_wait(10));
+				   CONFIG_DMA_CHANNEL_STATUS_TIMEOUT, k_busy_wait(10));
 	if (is_channel_busy) {
 		LOG_WRN("No response from handshaking interface... Aborting a channel...");
 		sys_write64(CH_ABORT(channel), reg_base + DMA_DW_AXI_CHENREG);
 
-		is_channel_busy = WAIT_FOR((sys_read64(reg_base + DMA_DW_AXI_CHENREG)) &
-				(BIT(channel)), CONFIG_DMA_CHANNEL_STATUS_TIMEOUT,
-				k_busy_wait(10));
+		is_channel_busy =
+			WAIT_FOR((sys_read64(reg_base + DMA_DW_AXI_CHENREG)) & (BIT(channel)),
+				 CONFIG_DMA_CHANNEL_STATUS_TIMEOUT, k_busy_wait(10));
 		if (is_channel_busy) {
 			LOG_ERR("Channel abort failed");
 			return -EBUSY;
@@ -801,9 +796,8 @@ static int dma_dw_axi_suspend(const struct device *dev, uint32_t channel)
 	/* suspend dma transfer */
 	sys_write64(CH_SUSP(channel), reg_base + DMA_DW_AXI_CHENREG);
 
-	ret = WAIT_FOR(dma_dw_axi_get_ch_status(dev, channel) &
-			DMA_DW_AXI_CH_SUSPENDED, CONFIG_DMA_CHANNEL_STATUS_TIMEOUT,
-			k_busy_wait(10));
+	ret = WAIT_FOR(dma_dw_axi_get_ch_status(dev, channel) & DMA_DW_AXI_CH_SUSPENDED,
+		       CONFIG_DMA_CHANNEL_STATUS_TIMEOUT, k_busy_wait(10));
 	if (ret == 0) {
 		LOG_ERR("channel suspend failed");
 		return ret;
@@ -823,7 +817,7 @@ static int dma_dw_axi_init(const struct device *dev)
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets)
 
 	if (dw_dma_config->reset.dev != NULL) {
-	/* check if reset manager is in ready state */
+		/* check if reset manager is in ready state */
 		if (!device_is_ready(dw_dma_config->reset.dev)) {
 			LOG_ERR("reset controller device not found");
 			return -ENODEV;
@@ -860,7 +854,7 @@ static const struct dma_driver_api dma_dw_axi_driver_api = {
 };
 
 /* enable irq lines */
-#define CONFIGURE_DMA_IRQ(idx, inst) \
+#define CONFIGURE_DMA_IRQ(idx, inst)                                                               \
 	IF_ENABLED(DT_INST_IRQ_HAS_IDX(inst, idx), ( \
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, idx, irq), \
 			DT_INST_IRQ_BY_IDX(inst, idx, priority), \
@@ -869,44 +863,38 @@ static const struct dma_driver_api dma_dw_axi_driver_api = {
 			irq_enable(DT_INST_IRQ_BY_IDX(inst, idx, irq)); \
 	))
 
-#define DW_AXI_DMA_RESET_SPEC_INIT(inst) \
-	.reset = RESET_DT_SPEC_INST_GET(inst), \
+#define DW_AXI_DMA_RESET_SPEC_INIT(inst) .reset = RESET_DT_SPEC_INST_GET(inst),
 
-#define DW_AXI_DMAC_INIT(inst)								\
-	static struct dma_dw_axi_ch_data chan_##inst[DT_INST_PROP(inst, dma_channels)];	\
-	static struct dma_lli								\
-		dma_desc_pool_##inst[DT_INST_PROP(inst, dma_channels) *			\
-			CONFIG_DMA_DW_AXI_MAX_DESC];					\
-	ATOMIC_DEFINE(dma_dw_axi_atomic##inst,						\
-		      DT_INST_PROP(inst, dma_channels));				\
-	static struct dma_dw_axi_dev_data dma_dw_axi_data_##inst = {			\
-		.dma_ctx = {								\
-			.magic = DMA_MAGIC,						\
-			.atomic = dma_dw_axi_atomic##inst,				\
-			.dma_channels = DT_INST_PROP(inst, dma_channels),		\
-		},									\
-		.chan = chan_##inst,							\
-		.dma_desc_pool = dma_desc_pool_##inst,					\
-		};									\
-	static void dw_dma_irq_config_##inst(void);					\
-	static const struct dma_dw_axi_dev_cfg dma_dw_axi_config_##inst = {		\
-		DEVICE_MMIO_NAMED_ROM_INIT(dma_mmio, DT_DRV_INST(inst)),		\
+#define DW_AXI_DMAC_INIT(inst)                                                                     \
+	static struct dma_dw_axi_ch_data chan_##inst[DT_INST_PROP(inst, dma_channels)];            \
+	static struct dma_lli dma_desc_pool_##inst[DT_INST_PROP(inst, dma_channels) *              \
+						   CONFIG_DMA_DW_AXI_MAX_DESC];                    \
+	ATOMIC_DEFINE(dma_dw_axi_atomic##inst, DT_INST_PROP(inst, dma_channels));                  \
+	static struct dma_dw_axi_dev_data dma_dw_axi_data_##inst = {                               \
+		.dma_ctx =                                                                         \
+			{                                                                          \
+				.magic = DMA_MAGIC,                                                \
+				.atomic = dma_dw_axi_atomic##inst,                                 \
+				.dma_channels = DT_INST_PROP(inst, dma_channels),                  \
+			},                                                                         \
+		.chan = chan_##inst,                                                               \
+		.dma_desc_pool = dma_desc_pool_##inst,                                             \
+	};                                                                                         \
+	static void dw_dma_irq_config_##inst(void);                                                \
+	static const struct dma_dw_axi_dev_cfg dma_dw_axi_config_##inst = {                        \
+		DEVICE_MMIO_NAMED_ROM_INIT(dma_mmio, DT_DRV_INST(inst)),                           \
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, resets),				\
-			(DW_AXI_DMA_RESET_SPEC_INIT(inst)))				\
-		.irq_config = dw_dma_irq_config_##inst,					\
-	};										\
-											\
-	DEVICE_DT_INST_DEFINE(inst,							\
-				&dma_dw_axi_init,					\
-				NULL,							\
-				&dma_dw_axi_data_##inst,				\
-				&dma_dw_axi_config_##inst, POST_KERNEL,			\
-				CONFIG_DMA_INIT_PRIORITY,				\
-				&dma_dw_axi_driver_api);				\
-											\
-	static void dw_dma_irq_config_##inst(void)					\
-	{										\
-		LISTIFY(DT_NUM_IRQS(DT_DRV_INST(inst)), CONFIGURE_DMA_IRQ, (), inst)	\
+			(DW_AXI_DMA_RESET_SPEC_INIT(inst))) .irq_config = \
+							  dw_dma_irq_config_##inst,                \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &dma_dw_axi_init, NULL, &dma_dw_axi_data_##inst,               \
+			      &dma_dw_axi_config_##inst, POST_KERNEL, CONFIG_DMA_INIT_PRIORITY,    \
+			      &dma_dw_axi_driver_api);                                             \
+                                                                                                   \
+	static void dw_dma_irq_config_##inst(void)                                                 \
+	{                                                                                          \
+		LISTIFY(DT_NUM_IRQS(DT_DRV_INST(inst)), CONFIGURE_DMA_IRQ, (), inst)                                                                            \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(DW_AXI_DMAC_INIT)

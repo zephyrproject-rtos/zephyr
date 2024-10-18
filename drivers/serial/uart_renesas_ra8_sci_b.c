@@ -26,7 +26,7 @@ void sci_b_uart_eri_isr(void);
 #endif
 
 struct uart_ra_sci_b_config {
-	R_SCI_B0_Type * const regs;
+	R_SCI_B0_Type *const regs;
 	const struct pinctrl_dev_config *pcfg;
 };
 
@@ -649,7 +649,7 @@ static inline void disable_tx(const struct device *dev)
 	const struct uart_ra_sci_b_config *cfg = dev->config;
 
 	/* Transmit interrupts must be disabled to start with. */
-	cfg->regs->CCR0 &= (uint32_t) ~(R_SCI_B0_CCR0_TIE_Msk | R_SCI_B0_CCR0_TEIE_Msk);
+	cfg->regs->CCR0 &= (uint32_t)~(R_SCI_B0_CCR0_TIE_Msk | R_SCI_B0_CCR0_TEIE_Msk);
 
 	/*
 	 * Make sure no transmission is in progress. Setting CCR0_b.TE to 0 when CSR_b.TEND
@@ -658,7 +658,7 @@ static inline void disable_tx(const struct device *dev)
 	while (cfg->regs->CSR_b.TEND != 1U) {
 	}
 
-	cfg->regs->CCR0 &= (uint32_t) ~(R_SCI_B0_CCR0_TE_Msk);
+	cfg->regs->CCR0 &= (uint32_t)~(R_SCI_B0_CCR0_TE_Msk);
 	while (cfg->regs->CESR_b.TIST != 0U) {
 	}
 }
@@ -1117,32 +1117,38 @@ static void uart_ra_sci_b_eri_isr(const struct device *dev)
 	};                                                                                         \
                                                                                                    \
 	static struct uart_ra_sci_b_data uart_ra_sci_b_data_##index = {                            \
-		.uart_config =                                                                     \
-			{                                                                          \
-				.baudrate = DT_INST_PROP(index, current_speed),                    \
-				.parity = UART_CFG_PARITY_NONE,                                    \
-				.stop_bits = UART_CFG_STOP_BITS_1,                                 \
-				.data_bits = UART_CFG_DATA_BITS_8,                                 \
-				.flow_ctrl = COND_CODE_1(DT_NODE_HAS_PROP(idx, hw_flow_control),   \
+		.uart_config = {                                                                   \
+			.baudrate = DT_INST_PROP(index, current_speed),                            \
+			.parity = UART_CFG_PARITY_NONE,                                            \
+			.stop_bits = UART_CFG_STOP_BITS_1,                                         \
+			.data_bits = UART_CFG_DATA_BITS_8,                                         \
+			.flow_ctrl = COND_CODE_1(DT_NODE_HAS_PROP(idx, hw_flow_control),   \
 							 (UART_CFG_FLOW_CTRL_RTS_CTS),             \
-							 (UART_CFG_FLOW_CTRL_NONE)),               \
-			},                                                                         \
-		.fsp_config =                                                                      \
-			{                                                                          \
-				.channel = DT_INST_PROP(index, channel),                           \
-				.rxi_ipl = DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, priority),   \
-				.rxi_irq = DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq),        \
-				.txi_ipl = DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, priority),   \
-				.txi_irq = DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq),        \
-				.tei_ipl = DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, priority),   \
-				.tei_irq = DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, irq),        \
-				.eri_ipl = DT_IRQ_BY_NAME(DT_INST_PARENT(index), eri, priority),   \
-				.eri_irq = DT_IRQ_BY_NAME(DT_INST_PARENT(index), eri, irq),        \
-			},                                                                         \
-		.fsp_config_extend = {},                                                           \
-		.fsp_baud_setting = {},                                                            \
-		.dev = DEVICE_DT_GET(DT_DRV_INST(index)),                                          \
-		UART_RA_SCI_B_ASYNC_INIT(index)};                                                  \
+							 (UART_CFG_FLOW_CTRL_NONE)),                      \
+				},                                                                 \
+				.fsp_config =                                                      \
+					{                                                          \
+						.channel = DT_INST_PROP(index, channel),           \
+						.rxi_ipl = DT_IRQ_BY_NAME(DT_INST_PARENT(index),   \
+									  rxi, priority),          \
+						.rxi_irq = DT_IRQ_BY_NAME(DT_INST_PARENT(index),   \
+									  rxi, irq),               \
+						.txi_ipl = DT_IRQ_BY_NAME(DT_INST_PARENT(index),   \
+									  txi, priority),          \
+						.txi_irq = DT_IRQ_BY_NAME(DT_INST_PARENT(index),   \
+									  txi, irq),               \
+						.tei_ipl = DT_IRQ_BY_NAME(DT_INST_PARENT(index),   \
+									  tei, priority),          \
+						.tei_irq = DT_IRQ_BY_NAME(DT_INST_PARENT(index),   \
+									  tei, irq),               \
+						.eri_ipl = DT_IRQ_BY_NAME(DT_INST_PARENT(index),   \
+									  eri, priority),          \
+						.eri_irq = DT_IRQ_BY_NAME(DT_INST_PARENT(index),   \
+									  eri, irq),               \
+					},                                                         \
+				.fsp_config_extend = {}, .fsp_baud_setting = {},                   \
+				.dev = DEVICE_DT_GET(DT_DRV_INST(index)),                          \
+				UART_RA_SCI_B_ASYNC_INIT(index)};                                  \
                                                                                                    \
 	static int uart_ra_sci_b_init_##index(const struct device *dev)                            \
 	{                                                                                          \

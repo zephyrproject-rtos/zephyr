@@ -21,8 +21,7 @@ static void setup_int(const struct device *dev, bool enable)
 {
 	const struct grow_r502a_config *cfg = dev->config;
 
-	gpio_flags_t flags =
-		enable ? GPIO_INT_EDGE_TO_ACTIVE : GPIO_INT_DISABLE;
+	gpio_flags_t flags = enable ? GPIO_INT_EDGE_TO_ACTIVE : GPIO_INT_DISABLE;
 
 	gpio_pin_interrupt_configure_dt(&cfg->int_gpios, flags);
 }
@@ -37,8 +36,7 @@ static void process_int(const struct device *dev)
 	setup_int(dev, true);
 }
 
-int grow_r502a_trigger_set(const struct device *dev,
-			   const struct sensor_trigger *trig,
+int grow_r502a_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			   sensor_trigger_handler_t handler)
 {
 	struct grow_r502a_data *drv_data = dev->data;
@@ -55,11 +53,10 @@ int grow_r502a_trigger_set(const struct device *dev,
 	return 0;
 }
 
-static void grow_r502a_gpio_callback(const struct device *dev,
-				     struct gpio_callback *cb, uint32_t pins)
+static void grow_r502a_gpio_callback(const struct device *dev, struct gpio_callback *cb,
+				     uint32_t pins)
 {
-	struct grow_r502a_data *drv_data =
-		CONTAINER_OF(cb, struct grow_r502a_data, gpio_cb);
+	struct grow_r502a_data *drv_data = CONTAINER_OF(cb, struct grow_r502a_data, gpio_cb);
 
 	setup_int(drv_data->gpio_dev, false);
 
@@ -87,8 +84,7 @@ static void grow_r502a_thread(void *p1, void *p2, void *p3)
 #elif defined(CONFIG_GROW_R502A_TRIGGER_GLOBAL_THREAD)
 static void grow_r502a_work_cb(struct k_work *work)
 {
-	struct grow_r502a_data *drv_data =
-		CONTAINER_OF(work, struct grow_r502a_data, work);
+	struct grow_r502a_data *drv_data = CONTAINER_OF(work, struct grow_r502a_data, work);
 
 	process_int(drv_data->gpio_dev);
 }
@@ -115,16 +111,13 @@ int grow_r502a_init_interrupt(const struct device *dev)
 	k_sem_init(&drv_data->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
-			CONFIG_GROW_R502A_THREAD_STACK_SIZE,
-			grow_r502a_thread, drv_data, NULL,
-			NULL, K_PRIO_COOP(CONFIG_GROW_R502A_THREAD_PRIORITY), 0,
-			K_NO_WAIT);
+			CONFIG_GROW_R502A_THREAD_STACK_SIZE, grow_r502a_thread, drv_data, NULL,
+			NULL, K_PRIO_COOP(CONFIG_GROW_R502A_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_GROW_R502A_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = grow_r502a_work_cb;
 #endif
 
-	gpio_init_callback(&drv_data->gpio_cb, grow_r502a_gpio_callback,
-			   BIT(cfg->int_gpios.pin));
+	gpio_init_callback(&drv_data->gpio_cb, grow_r502a_gpio_callback, BIT(cfg->int_gpios.pin));
 
 	rc = gpio_add_callback(cfg->int_gpios.port, &drv_data->gpio_cb);
 	if (rc < 0) {

@@ -35,8 +35,7 @@ struct gpio_kscan_data {
 	struct gpio_driver_data common;
 };
 
-static int gpio_kscan_it8xxx2_configure(const struct device *dev,
-					gpio_pin_t pin,
+static int gpio_kscan_it8xxx2_configure(const struct device *dev, gpio_pin_t pin,
 					gpio_flags_t flags)
 {
 	const struct gpio_kscan_cfg *const config = dev->config;
@@ -48,8 +47,8 @@ static int gpio_kscan_it8xxx2_configure(const struct device *dev,
 
 	/* KSI[7:0]/KSO[15:8]/KSO[7:0] pins don't support open source, 1.8V and 5.0V mode */
 	if ((((flags & GPIO_SINGLE_ENDED) != 0) && ((flags & GPIO_LINE_OPEN_DRAIN) == 0)) ||
-	     ((flags & IT8XXX2_GPIO_VOLTAGE_MASK) == IT8XXX2_GPIO_VOLTAGE_1P8) ||
-	     ((flags & IT8XXX2_GPIO_VOLTAGE_MASK) == IT8XXX2_GPIO_VOLTAGE_5P0)) {
+	    ((flags & IT8XXX2_GPIO_VOLTAGE_MASK) == IT8XXX2_GPIO_VOLTAGE_1P8) ||
+	    ((flags & IT8XXX2_GPIO_VOLTAGE_MASK) == IT8XXX2_GPIO_VOLTAGE_5P0)) {
 		return -ENOTSUP;
 	}
 
@@ -84,7 +83,7 @@ static int gpio_kscan_it8xxx2_configure(const struct device *dev,
 		*reg_ksi_kso_goen |= mask;
 	} else {
 		/* Set input mode */
-		*reg_ksi_kso_goen  &= ~mask;
+		*reg_ksi_kso_goen &= ~mask;
 
 		if (flags & GPIO_PULL_UP) {
 			/* Enable internal pullup */
@@ -99,8 +98,7 @@ static int gpio_kscan_it8xxx2_configure(const struct device *dev,
 }
 
 #ifdef CONFIG_GPIO_GET_CONFIG
-static int gpio_kscan_it8xxx2_get_config(const struct device *dev,
-					 gpio_pin_t pin,
+static int gpio_kscan_it8xxx2_get_config(const struct device *dev, gpio_pin_t pin,
 					 gpio_flags_t *out_flags)
 {
 	const struct gpio_kscan_cfg *const config = dev->config;
@@ -143,8 +141,7 @@ static int gpio_kscan_it8xxx2_get_config(const struct device *dev,
 }
 #endif
 
-static int gpio_kscan_it8xxx2_port_get_raw(const struct device *dev,
-					   gpio_port_value_t *value)
+static int gpio_kscan_it8xxx2_port_get_raw(const struct device *dev, gpio_port_value_t *value)
 {
 	const struct gpio_kscan_cfg *const config = dev->config;
 	volatile uint8_t *reg_ksi_kso_gdmr = config->reg_ksi_kso_gdmr;
@@ -155,8 +152,7 @@ static int gpio_kscan_it8xxx2_port_get_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_kscan_it8xxx2_port_set_masked_raw(const struct device *dev,
-						  gpio_port_pins_t mask,
+static int gpio_kscan_it8xxx2_port_set_masked_raw(const struct device *dev, gpio_port_pins_t mask,
 						  gpio_port_value_t value)
 {
 	const struct gpio_kscan_cfg *const config = dev->config;
@@ -172,8 +168,7 @@ static int gpio_kscan_it8xxx2_port_set_masked_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_kscan_it8xxx2_port_set_bits_raw(const struct device *dev,
-						gpio_port_pins_t pins)
+static int gpio_kscan_it8xxx2_port_set_bits_raw(const struct device *dev, gpio_port_pins_t pins)
 {
 	const struct gpio_kscan_cfg *const config = dev->config;
 	volatile uint8_t *reg_ksi_kso_gdat = config->reg_ksi_kso_gdat;
@@ -187,8 +182,7 @@ static int gpio_kscan_it8xxx2_port_set_bits_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_kscan_it8xxx2_port_clear_bits_raw(const struct device *dev,
-						  gpio_port_pins_t pins)
+static int gpio_kscan_it8xxx2_port_clear_bits_raw(const struct device *dev, gpio_port_pins_t pins)
 {
 	const struct gpio_kscan_cfg *const config = dev->config;
 	volatile uint8_t *reg_ksi_kso_gdat = config->reg_ksi_kso_gdat;
@@ -202,8 +196,7 @@ static int gpio_kscan_it8xxx2_port_clear_bits_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_kscan_it8xxx2_port_toggle_bits(const struct device *dev,
-					       gpio_port_pins_t pins)
+static int gpio_kscan_it8xxx2_port_toggle_bits(const struct device *dev, gpio_port_pins_t pins)
 {
 	const struct gpio_kscan_cfg *const config = dev->config;
 	volatile uint8_t *reg_ksi_kso_gdat = config->reg_ksi_kso_gdat;
@@ -229,28 +222,21 @@ static const struct gpio_driver_api gpio_kscan_it8xxx2_driver_api = {
 	.port_toggle_bits = gpio_kscan_it8xxx2_port_toggle_bits,
 };
 
-#define GPIO_KSCAN_IT8XXX2_INIT(inst)                                          \
-static const struct gpio_kscan_cfg gpio_kscan_it8xxx2_cfg_##inst = {           \
-	.common = {                                                            \
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(               \
-				 DT_INST_PROP(inst, ngpios))                   \
-	},                                                                     \
-	.reg_ksi_kso_goen = (uint8_t *)DT_INST_REG_ADDR_BY_NAME(inst, goen),   \
-	.reg_ksi_kso_gctrl = (uint8_t *)DT_INST_REG_ADDR_BY_NAME(inst, gctrl), \
-	.reg_ksi_kso_gdat = (uint8_t *)DT_INST_REG_ADDR_BY_NAME(inst, gdat),   \
-	.reg_ksi_kso_gdmr = (uint8_t *)DT_INST_REG_ADDR_BY_NAME(inst, gdmr),   \
-	.reg_ksi_kso_gpod = (uint8_t *)DT_INST_REG_ADDR_BY_NAME(inst, gpod),   \
-};                                                                             \
-									       \
-static struct gpio_kscan_data gpio_kscan_it8xxx2_data_##inst;                  \
-									       \
-DEVICE_DT_INST_DEFINE(inst,                                                    \
-		      NULL,                                                    \
-		      NULL,                                                    \
-		      &gpio_kscan_it8xxx2_data_##inst,                         \
-		      &gpio_kscan_it8xxx2_cfg_##inst,                          \
-		      PRE_KERNEL_1,                                            \
-		      CONFIG_GPIO_INIT_PRIORITY,                               \
-		      &gpio_kscan_it8xxx2_driver_api);
+#define GPIO_KSCAN_IT8XXX2_INIT(inst)                                                              \
+	static const struct gpio_kscan_cfg gpio_kscan_it8xxx2_cfg_##inst = {                       \
+		.common = {.port_pin_mask =                                                        \
+				   GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(inst, ngpios))},    \
+		.reg_ksi_kso_goen = (uint8_t *)DT_INST_REG_ADDR_BY_NAME(inst, goen),               \
+		.reg_ksi_kso_gctrl = (uint8_t *)DT_INST_REG_ADDR_BY_NAME(inst, gctrl),             \
+		.reg_ksi_kso_gdat = (uint8_t *)DT_INST_REG_ADDR_BY_NAME(inst, gdat),               \
+		.reg_ksi_kso_gdmr = (uint8_t *)DT_INST_REG_ADDR_BY_NAME(inst, gdmr),               \
+		.reg_ksi_kso_gpod = (uint8_t *)DT_INST_REG_ADDR_BY_NAME(inst, gpod),               \
+	};                                                                                         \
+                                                                                                   \
+	static struct gpio_kscan_data gpio_kscan_it8xxx2_data_##inst;                              \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &gpio_kscan_it8xxx2_data_##inst,                   \
+			      &gpio_kscan_it8xxx2_cfg_##inst, PRE_KERNEL_1,                        \
+			      CONFIG_GPIO_INIT_PRIORITY, &gpio_kscan_it8xxx2_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_KSCAN_IT8XXX2_INIT)

@@ -42,8 +42,8 @@ LOG_MODULE_REGISTER(phy_qc_ar8031, CONFIG_PHY_LOG_LEVEL);
 #define PHY_DEBUGPORT_DATA_REG 0x1EU
 
 /* PCS Register: smartEEE control 3 Register */
-#define MDIO_PCS_SMARTEEE_CTRL3            0x805DU
-#define MDIO_PCS_SMARTEEE_CTRL3_LPI_EN     (1U << 8)
+#define MDIO_PCS_SMARTEEE_CTRL3        0x805DU
+#define MDIO_PCS_SMARTEEE_CTRL3_LPI_EN (1U << 8)
 
 /* Debug port registers */
 /* Analog Test Control */
@@ -438,7 +438,8 @@ static int qc_ar8031_init(const struct device *dev)
 			return -EIO;
 		}
 		ret = qc_ar8031_mmd_write(dev, MDIO_MMD_AN, MDIO_AN_EEE_ADV,
-			reg_value & (MDIO_AN_EEE_ADV_1000T | MDIO_AN_EEE_ADV_100TX));
+					  reg_value &
+						  (MDIO_AN_EEE_ADV_1000T | MDIO_AN_EEE_ADV_100TX));
 		if (ret) {
 			return -EIO;
 		}

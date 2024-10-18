@@ -20,9 +20,9 @@
 
 LOG_MODULE_REGISTER(pwm_ite_it8xxx2, CONFIG_PWM_LOG_LEVEL);
 
-#define PWM_CTRX_MIN	100
-#define PWM_FREQ	EC_FREQ
-#define PCSSG_MASK	0x3
+#define PWM_CTRX_MIN 100
+#define PWM_FREQ     EC_FREQ
+#define PCSSG_MASK   0x3
 
 struct pwm_it8xxx2_cfg {
 	/* PWM channel duty cycle register */
@@ -64,8 +64,8 @@ static void pwm_enable(const struct device *dev, int enabled)
 	}
 }
 
-static int pwm_it8xxx2_get_cycles_per_sec(const struct device *dev,
-					  uint32_t channel, uint64_t *cycles)
+static int pwm_it8xxx2_get_cycles_per_sec(const struct device *dev, uint32_t channel,
+					  uint64_t *cycles)
 {
 	ARG_UNUSED(channel);
 
@@ -87,14 +87,13 @@ static int pwm_it8xxx2_get_cycles_per_sec(const struct device *dev,
 	 * the prescaler clock source (cycles) from 8MHz to 32.768kHz. In order
 	 * to get the same target_freq in the 3) case, we always return PWM_FREQ.
 	 */
-	*cycles = (uint64_t) PWM_FREQ;
+	*cycles = (uint64_t)PWM_FREQ;
 
 	return 0;
 }
 
-static int pwm_it8xxx2_set_cycles(const struct device *dev,
-				  uint32_t channel, uint32_t period_cycles,
-				  uint32_t pulse_cycles, pwm_flags_t flags)
+static int pwm_it8xxx2_set_cycles(const struct device *dev, uint32_t channel,
+				  uint32_t period_cycles, uint32_t pulse_cycles, pwm_flags_t flags)
 {
 	const struct pwm_it8xxx2_cfg *config = dev->config;
 	struct pwm_it8xxx2_regs *const inst = config->base;
@@ -126,7 +125,7 @@ static int pwm_it8xxx2_set_cycles(const struct device *dev,
 	}
 
 	pwm_it8xxx2_get_cycles_per_sec(dev, channel, &pwm_clk_src);
-	target_freq = ((uint32_t) pwm_clk_src) / period_cycles;
+	target_freq = ((uint32_t)pwm_clk_src) / period_cycles;
 
 	/*
 	 * Support PWM output frequency:
@@ -156,7 +155,7 @@ static int pwm_it8xxx2_set_cycles(const struct device *dev,
 			inst->PCFSR &= ~BIT(prs_sel);
 		}
 
-		pwm_clk_src = (uint64_t) 32768;
+		pwm_clk_src = (uint64_t)32768;
 	}
 
 	/*
@@ -173,13 +172,13 @@ static int pwm_it8xxx2_set_cycles(const struct device *dev,
 		uint32_t ctr, cxcprs;
 
 		for (ctr = 0xFF; ctr >= PWM_CTRX_MIN; ctr--) {
-			cxcprs = (((uint32_t) pwm_clk_src) / (ctr + 1) / target_freq);
+			cxcprs = (((uint32_t)pwm_clk_src) / (ctr + 1) / target_freq);
 			/*
 			 * Make sure cxcprs isn't zero, or we will have
 			 * divide-by-zero on calculating actual_freq.
 			 */
 			if (cxcprs != 0) {
-				actual_freq = ((uint32_t) pwm_clk_src) / (ctr + 1) / cxcprs;
+				actual_freq = ((uint32_t)pwm_clk_src) / (ctr + 1) / cxcprs;
 				if (abs(actual_freq - target_freq) < deviation) {
 					/* CxCPRS[15:0] = cxcprs - 1 */
 					cxcprs--;
@@ -222,8 +221,7 @@ static int pwm_it8xxx2_set_cycles(const struct device *dev,
 	/* Store the frequency to be compared */
 	data->target_freq_prev = target_freq;
 
-	LOG_DBG("clock source freq %d, target freq %d",
-		(uint32_t) pwm_clk_src, target_freq);
+	LOG_DBG("clock source freq %d, target freq %d", (uint32_t)pwm_clk_src, target_freq);
 
 	return 0;
 }
@@ -281,29 +279,24 @@ static const struct pwm_driver_api pwm_it8xxx2_api = {
 };
 
 /* Device Instance */
-#define PWM_IT8XXX2_INIT(inst)								\
-	PINCTRL_DT_INST_DEFINE(inst);							\
-											\
-	static const struct pwm_it8xxx2_cfg pwm_it8xxx2_cfg_##inst = {			\
-		.reg_dcr = DT_INST_REG_ADDR_BY_IDX(inst, 0),				\
-		.reg_pcssg = DT_INST_REG_ADDR_BY_IDX(inst, 1),				\
-		.reg_pcsgr = DT_INST_REG_ADDR_BY_IDX(inst, 2),				\
-		.reg_pwmpol = DT_INST_REG_ADDR_BY_IDX(inst, 3),				\
-		.channel = DT_PROP(DT_INST(inst, ite_it8xxx2_pwm), channel),		\
-		.base = (struct pwm_it8xxx2_regs *) DT_REG_ADDR(DT_NODELABEL(prs)),	\
-		.prs_sel = DT_PROP(DT_INST(inst, ite_it8xxx2_pwm), prescaler_cx),	\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),				\
-	};										\
-											\
-	static struct pwm_it8xxx2_data pwm_it8xxx2_data_##inst;                         \
-											\
-	DEVICE_DT_INST_DEFINE(inst,							\
-			      &pwm_it8xxx2_init,					\
-			      NULL,							\
-			      &pwm_it8xxx2_data_##inst,					\
-			      &pwm_it8xxx2_cfg_##inst,					\
-			      PRE_KERNEL_1,						\
-			      CONFIG_PWM_INIT_PRIORITY,					\
+#define PWM_IT8XXX2_INIT(inst)                                                                     \
+	PINCTRL_DT_INST_DEFINE(inst);                                                              \
+                                                                                                   \
+	static const struct pwm_it8xxx2_cfg pwm_it8xxx2_cfg_##inst = {                             \
+		.reg_dcr = DT_INST_REG_ADDR_BY_IDX(inst, 0),                                       \
+		.reg_pcssg = DT_INST_REG_ADDR_BY_IDX(inst, 1),                                     \
+		.reg_pcsgr = DT_INST_REG_ADDR_BY_IDX(inst, 2),                                     \
+		.reg_pwmpol = DT_INST_REG_ADDR_BY_IDX(inst, 3),                                    \
+		.channel = DT_PROP(DT_INST(inst, ite_it8xxx2_pwm), channel),                       \
+		.base = (struct pwm_it8xxx2_regs *)DT_REG_ADDR(DT_NODELABEL(prs)),                 \
+		.prs_sel = DT_PROP(DT_INST(inst, ite_it8xxx2_pwm), prescaler_cx),                  \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
+	};                                                                                         \
+                                                                                                   \
+	static struct pwm_it8xxx2_data pwm_it8xxx2_data_##inst;                                    \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &pwm_it8xxx2_init, NULL, &pwm_it8xxx2_data_##inst,             \
+			      &pwm_it8xxx2_cfg_##inst, PRE_KERNEL_1, CONFIG_PWM_INIT_PRIORITY,     \
 			      &pwm_it8xxx2_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_IT8XXX2_INIT)

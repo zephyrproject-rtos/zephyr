@@ -5,7 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <soc.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_rcc.h>
@@ -16,9 +15,9 @@
 #include "clock_stm32_ll_common.h"
 
 #if defined(RCC_CFGR_USBPRE)
-#define STM32_USB_PRE_ENABLED	RCC_CFGR_USBPRE
+#define STM32_USB_PRE_ENABLED RCC_CFGR_USBPRE
 #elif defined(RCC_CFGR_OTGFSPRE)
-#define STM32_USB_PRE_ENABLED	RCC_CFGR_OTGFSPRE
+#define STM32_USB_PRE_ENABLED RCC_CFGR_OTGFSPRE
 #endif
 
 #if defined(STM32_PLL_ENABLED)
@@ -41,8 +40,7 @@ uint32_t get_pllout_frequency(void)
 /**
  * @brief Set up pll configuration
  */
-__unused
-void config_pll_sysclock(void)
+__unused void config_pll_sysclock(void)
 {
 	uint32_t pll_source, pll_mul, pll_div;
 
@@ -111,8 +109,7 @@ void config_pll_sysclock(void)
 
 #ifdef STM32_USB_PRE_ENABLED
 	/* Prescaler is enabled: PLL clock is not divided */
-	LL_RCC_SetUSBClockSource(IS_ENABLED(STM32_PLL_USBPRE) ?
-				 STM32_USB_PRE_ENABLED : 0);
+	LL_RCC_SetUSBClockSource(IS_ENABLED(STM32_PLL_USBPRE) ? STM32_USB_PRE_ENABLED : 0);
 #endif
 }
 
@@ -123,8 +120,7 @@ void config_pll_sysclock(void)
 /**
  * @brief Set up pll2 configuration
  */
-__unused
-void config_pll2(void)
+__unused void config_pll2(void)
 {
 	uint32_t pll_mul, pll_div;
 

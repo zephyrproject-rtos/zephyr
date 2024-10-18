@@ -17,8 +17,8 @@ static int icm42670_bus_check_i2c(const union icm42670_bus *bus)
 	return i2c_is_ready_dt(&bus->i2c) ? 0 : -ENODEV;
 }
 
-static int i2c_read_mreg(const union icm42670_bus *bus, uint8_t reg, uint8_t bank,
-				uint8_t *buf, size_t len)
+static int i2c_read_mreg(const union icm42670_bus *bus, uint8_t reg, uint8_t bank, uint8_t *buf,
+			 size_t len)
 {
 	int res = i2c_reg_write_byte_dt(&bus->i2c, REG_BLK_SEL_R, bank);
 
@@ -65,8 +65,7 @@ static int icm42670_reg_read_i2c(const union icm42670_bus *bus, uint16_t reg, ui
 	return res;
 }
 
-static int i2c_write_mreg(const union icm42670_bus *bus, uint16_t reg, uint8_t bank,
-				 uint8_t buf)
+static int i2c_write_mreg(const union icm42670_bus *bus, uint16_t reg, uint8_t bank, uint8_t buf)
 {
 	int res = i2c_reg_write_byte_dt(&bus->i2c, REG_BLK_SEL_W, bank);
 
@@ -91,8 +90,7 @@ static int i2c_write_mreg(const union icm42670_bus *bus, uint16_t reg, uint8_t b
 	return 0;
 }
 
-static int icm42670_reg_write_i2c(const union icm42670_bus *bus,
-				uint16_t reg, uint8_t data)
+static int icm42670_reg_write_i2c(const union icm42670_bus *bus, uint16_t reg, uint8_t data)
 {
 	int res = 0;
 	uint8_t bank = FIELD_GET(REG_BANK_MASK, reg);

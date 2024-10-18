@@ -56,7 +56,6 @@ static void arc_shared_intc_init(void)
 	}
 
 	z_arc_connect_idu_enable();
-
 }
 
 /* Allow to schedule IRQ to all cores after we bring up all secondary cores */
@@ -79,7 +78,6 @@ static int arc_shared_intc_update_post_smp(void)
 
 SYS_INIT(arc_shared_intc_update_post_smp, SMP, 0);
 #endif /* CONFIG_ARC_CONNECT */
-
 
 /* lowest IRQ priority */
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
@@ -151,5 +149,4 @@ static int arc_irq_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, arc_irq_init, NULL,  NULL,  NULL,
-		      PRE_KERNEL_1, 0, NULL);
+DEVICE_DT_INST_DEFINE(0, arc_irq_init, NULL, NULL, NULL, PRE_KERNEL_1, 0, NULL);

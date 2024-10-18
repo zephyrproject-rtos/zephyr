@@ -47,25 +47,22 @@ static inline int z_vrfy_w1_write_byte(const struct device *dev, uint8_t byte)
 }
 #include <zephyr/syscalls/w1_write_byte_mrsh.c>
 
-static inline int z_vrfy_w1_read_block(const struct device *dev,
-				       uint8_t *buffer, size_t len)
+static inline int z_vrfy_w1_read_block(const struct device *dev, uint8_t *buffer, size_t len)
 {
 	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_W1));
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(buffer, len));
 
-	return z_impl_w1_read_block((const struct device *)dev,
-				    (uint8_t *)buffer, (size_t)len);
+	return z_impl_w1_read_block((const struct device *)dev, (uint8_t *)buffer, (size_t)len);
 }
 #include <zephyr/syscalls/w1_read_block_mrsh.c>
 
-static inline int z_vrfy_w1_write_block(const struct device *dev,
-					const uint8_t *buffer, size_t len)
+static inline int z_vrfy_w1_write_block(const struct device *dev, const uint8_t *buffer, size_t len)
 {
 	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_W1));
 	K_OOPS(K_SYSCALL_MEMORY_READ(buffer, len));
 
-	return z_impl_w1_write_block((const struct device *)dev,
-				     (const uint8_t *)buffer, (size_t)len);
+	return z_impl_w1_write_block((const struct device *)dev, (const uint8_t *)buffer,
+				     (size_t)len);
 }
 #include <zephyr/syscalls/w1_write_block_mrsh.c>
 
@@ -77,8 +74,8 @@ static inline int z_vrfy_w1_change_bus_lock(const struct device *dev, bool lock)
 }
 #include <zephyr/syscalls/w1_change_bus_lock_mrsh.c>
 
-static inline int z_vrfy_w1_configure(const struct device *dev,
-				      enum w1_settings_type type, uint32_t value)
+static inline int z_vrfy_w1_configure(const struct device *dev, enum w1_settings_type type,
+				      uint32_t value)
 {
 	K_OOPS(K_SYSCALL_DRIVER_W1(dev, configure));
 
@@ -95,21 +92,16 @@ static inline size_t z_vrfy_w1_get_slave_count(const struct device *dev)
 #include <zephyr/syscalls/w1_get_slave_count_mrsh.c>
 
 #if CONFIG_W1_NET
-static inline int z_vrfy_w1_search_bus(const struct device *dev,
-				       uint8_t command, uint8_t family,
-				       w1_search_callback_t callback,
-				       void *user_data)
+static inline int z_vrfy_w1_search_bus(const struct device *dev, uint8_t command, uint8_t family,
+				       w1_search_callback_t callback, void *user_data)
 {
 	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_W1));
 
-	K_OOPS(K_SYSCALL_VERIFY_MSG(callback == 0,
-				    "callbacks may not be set from user mode"));
+	K_OOPS(K_SYSCALL_VERIFY_MSG(callback == 0, "callbacks may not be set from user mode"));
 	/* user_data is not dereferenced, no need to check parameter */
 
-	return z_impl_w1_search_bus((const struct device *)dev,
-				    (uint8_t)command, (uint8_t)family,
-				    (w1_search_callback_t)callback,
-				    (void *)user_data);
+	return z_impl_w1_search_bus((const struct device *)dev, (uint8_t)command, (uint8_t)family,
+				    (w1_search_callback_t)callback, (void *)user_data);
 }
 
 #include <zephyr/syscalls/w1_search_bus_mrsh.c>

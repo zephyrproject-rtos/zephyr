@@ -17,11 +17,11 @@
 
 LOG_MODULE_REGISTER(bbram_microchip_mcp7940n, CONFIG_BBRAM_LOG_LEVEL);
 
-#define MICROCHIP_MCP7940N_SRAM_OFFSET 0x20
-#define MICROCHIP_MCP7940N_SRAM_SIZE 64
+#define MICROCHIP_MCP7940N_SRAM_OFFSET               0x20
+#define MICROCHIP_MCP7940N_SRAM_SIZE                 64
 #define MICROCHIP_MCP7940N_RTCWKDAY_REGISTER_ADDRESS 0x03
-#define MICROCHIP_MCP7940N_RTCWKDAY_VBATEN_BIT BIT(3)
-#define MICROCHIP_MCP7940N_RTCWKDAY_PWRFAIL_BIT BIT(4)
+#define MICROCHIP_MCP7940N_RTCWKDAY_VBATEN_BIT       BIT(3)
+#define MICROCHIP_MCP7940N_RTCWKDAY_PWRFAIL_BIT      BIT(4)
 
 struct microchip_mcp7940n_bbram_data {
 	struct k_mutex lock;
@@ -45,8 +45,7 @@ static int microchip_mcp7940n_bbram_init(const struct device *dev)
 
 	k_mutex_init(&data->lock);
 
-	rc = i2c_reg_read_byte_dt(&config->i2c,
-				  MICROCHIP_MCP7940N_RTCWKDAY_REGISTER_ADDRESS,
+	rc = i2c_reg_read_byte_dt(&config->i2c, MICROCHIP_MCP7940N_RTCWKDAY_REGISTER_ADDRESS,
 				  &buffer);
 
 	if (rc != 0) {
@@ -73,10 +72,8 @@ static int microchip_mcp7940n_bbram_is_invalid(const struct device *dev)
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
-	rc = i2c_reg_read_byte_dt(&config->i2c,
-				  MICROCHIP_MCP7940N_RTCWKDAY_REGISTER_ADDRESS,
+	rc = i2c_reg_read_byte_dt(&config->i2c, MICROCHIP_MCP7940N_RTCWKDAY_REGISTER_ADDRESS,
 				  &buffer);
-
 
 	if ((buffer & MICROCHIP_MCP7940N_RTCWKDAY_PWRFAIL_BIT)) {
 		data_valid = false;
@@ -84,14 +81,12 @@ static int microchip_mcp7940n_bbram_is_invalid(const struct device *dev)
 		buffer &= (buffer ^ MICROCHIP_MCP7940N_RTCWKDAY_PWRFAIL_BIT);
 
 		rc = i2c_reg_write_byte_dt(&config->i2c,
-					   MICROCHIP_MCP7940N_RTCWKDAY_REGISTER_ADDRESS,
-					   buffer);
+					   MICROCHIP_MCP7940N_RTCWKDAY_REGISTER_ADDRESS, buffer);
 
 		if (rc != 0) {
 			LOG_ERR("Failed to write RTCWKDAY register: %d", rc);
 			goto finish;
 		}
-
 	}
 
 finish:
@@ -114,10 +109,8 @@ static int microchip_mcp7940n_bbram_check_standby_power(const struct device *dev
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
-	rc = i2c_reg_read_byte_dt(&config->i2c,
-				  MICROCHIP_MCP7940N_RTCWKDAY_REGISTER_ADDRESS,
+	rc = i2c_reg_read_byte_dt(&config->i2c, MICROCHIP_MCP7940N_RTCWKDAY_REGISTER_ADDRESS,
 				  &buffer);
-
 
 	if (!(buffer & MICROCHIP_MCP7940N_RTCWKDAY_VBATEN_BIT)) {
 		power_enabled = false;
@@ -125,14 +118,12 @@ static int microchip_mcp7940n_bbram_check_standby_power(const struct device *dev
 		buffer |= MICROCHIP_MCP7940N_RTCWKDAY_VBATEN_BIT;
 
 		rc = i2c_reg_write_byte_dt(&config->i2c,
-					   MICROCHIP_MCP7940N_RTCWKDAY_REGISTER_ADDRESS,
-					   buffer);
+					   MICROCHIP_MCP7940N_RTCWKDAY_REGISTER_ADDRESS, buffer);
 
 		if (rc != 0) {
 			LOG_ERR("Failed to write RTCWKDAY register: %d", rc);
 			goto finish;
 		}
-
 	}
 
 finish:
@@ -161,9 +152,8 @@ static int microchip_mcp7940n_bbram_read(const struct device *dev, size_t offset
 
 	while (i < size) {
 		LOG_DBG("Read from 0x%x", (MICROCHIP_MCP7940N_SRAM_OFFSET + offset + i));
-		rc = i2c_reg_read_byte_dt(&config->i2c,
-					  (MICROCHIP_MCP7940N_SRAM_OFFSET + offset + i),
-					  &buffer[i]);
+		rc = i2c_reg_read_byte_dt(
+			&config->i2c, (MICROCHIP_MCP7940N_SRAM_OFFSET + offset + i), &buffer[i]);
 
 		if (rc != 0) {
 			goto finish;
@@ -195,9 +185,8 @@ static int microchip_mcp7940n_bbram_write(const struct device *dev, size_t offse
 	while (i < size) {
 		LOG_DBG("Write 0x%x to 0x%x", buffer[i],
 			(MICROCHIP_MCP7940N_SRAM_OFFSET + offset + i));
-		rc = i2c_reg_write_byte_dt(&config->i2c,
-					   (MICROCHIP_MCP7940N_SRAM_OFFSET + offset + i),
-					   buffer[i]);
+		rc = i2c_reg_write_byte_dt(
+			&config->i2c, (MICROCHIP_MCP7940N_SRAM_OFFSET + offset + i), buffer[i]);
 
 		if (rc != 0) {
 			goto finish;
@@ -220,19 +209,15 @@ static const struct bbram_driver_api microchip_mcp7940n_bbram_api = {
 	.write = microchip_mcp7940n_bbram_write,
 };
 
-#define MICROCHIP_MCP7940N_BBRAM_DEVICE(inst)							\
-	static struct microchip_mcp7940n_bbram_data microchip_mcp7940n_bbram_data_##inst;	\
-	static const struct microchip_mcp7940n_bbram_config					\
-		microchip_mcp7940n_bbram_config_##inst = {					\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
-	};											\
-	DEVICE_DT_INST_DEFINE(inst,								\
-			      &microchip_mcp7940n_bbram_init,					\
-			      NULL,								\
-			      &microchip_mcp7940n_bbram_data_##inst,				\
-			      &microchip_mcp7940n_bbram_config_##inst,				\
-			      POST_KERNEL,							\
-			      CONFIG_BBRAM_INIT_PRIORITY,					\
-			      &microchip_mcp7940n_bbram_api);
+#define MICROCHIP_MCP7940N_BBRAM_DEVICE(inst)                                                      \
+	static struct microchip_mcp7940n_bbram_data microchip_mcp7940n_bbram_data_##inst;          \
+	static const struct microchip_mcp7940n_bbram_config                                        \
+		microchip_mcp7940n_bbram_config_##inst = {                                         \
+			.i2c = I2C_DT_SPEC_INST_GET(inst),                                         \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(inst, &microchip_mcp7940n_bbram_init, NULL,                          \
+			      &microchip_mcp7940n_bbram_data_##inst,                               \
+			      &microchip_mcp7940n_bbram_config_##inst, POST_KERNEL,                \
+			      CONFIG_BBRAM_INIT_PRIORITY, &microchip_mcp7940n_bbram_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MICROCHIP_MCP7940N_BBRAM_DEVICE)
