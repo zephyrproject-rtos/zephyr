@@ -604,6 +604,8 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		case 'p':
 			params->psk = state->optarg;
 			params->psk_length = strlen(params->psk);
+			params->sae_password = optarg;
+			params->sae_password_length = strlen(params->sae_password);
 			break;
 		case 'c':
 			channel = strtol(state->optarg, &endptr, 10);
@@ -3365,6 +3367,7 @@ SHELL_SUBCMD_ADD((wifi), connect, &wifi_commands,
 		  "[-V, --eap-version]: 0 or 1. Default 1: eap version 1.\n"
 		  "[-I, --eap-id1]: Client Identity. Default no eap identity.\n"
 		  "[-P, --eap-pwd1]: Client Password.\n"
+		  "[-R, --fast-BSS-transition]: Fast BSS Transition used.\n"
 		  "Default no password for eap user.\n"
 		  "[-h, --help]: Print out the help for the connect command.\n",
 		  cmd_wifi_connect,
