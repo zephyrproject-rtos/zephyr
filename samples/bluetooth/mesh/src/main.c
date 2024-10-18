@@ -325,13 +325,9 @@ static int gen_onoff_send(bool val)
 	return bt_mesh_model_send(&models[3], &ctx, &buf, NULL, NULL);
 }
 
-static void button_pressed(struct k_work *work)
+#ifdef CONFIG_BLE_MESH_SAMPLE_ENABLE_SELF_PROVISIONING
+static void self_provision_device(void)
 {
-	if (bt_mesh_is_provisioned()) {
-		(void)gen_onoff_send(!onoff.val);
-		return;
-	}
-
 	/* Self-provision with an arbitrary address.
 	 *
 	 * NOTE: This should never be done in a production environment.
@@ -372,6 +368,25 @@ static void button_pressed(struct k_work *work)
 	models[3].keys[0] = 0;
 
 	printk("Provisioned and configured!\n");
+}
+#endif
+
+static void button_pressed(struct k_work *work)
+{
+	bool is_provisioned = bt_mesh_is_provisioned();
+
+#ifdef CONFIG_BLE_MESH_SAMPLE_ENABLE_SELF_PROVISIONING
+	if (!is_provisioned) {
+		self_provision_device();
+		return;
+	}
+#endif
+
+	if (is_provisioned) {
+		(void)gen_onoff_send(!onoff.val);
+	} else {
+		printk("Must be provisioned before using!\n");
+	}
 }
 
 static void bt_ready(int err)
