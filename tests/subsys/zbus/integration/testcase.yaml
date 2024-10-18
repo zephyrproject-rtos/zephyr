@@ -4,7 +4,7 @@ tests:
       - m2gl025_miv
       - qemu_cortex_a9
       - hifive_unleashed
-      - fvp_base_revc_2xaemv8a//smp/ns
+      - fvp_base_revc_2xaemv8a/fvp_base_revc_2xaemv8a/smp/ns
     tags: zbus
     integration_platforms:
       - native_sim

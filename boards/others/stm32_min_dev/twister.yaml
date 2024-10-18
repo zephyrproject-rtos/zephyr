@@ -1,5 +1,3 @@
-identifier: stm32_min_dev@blue
-name: STM32 Minimum Development Board (blue)
 type: mcu
 arch: arm
 toolchain:
