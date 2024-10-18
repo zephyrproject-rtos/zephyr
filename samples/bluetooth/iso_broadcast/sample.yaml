@@ -20,5 +20,5 @@ tests:
       - nrf52833dk/nrf52833
     integration_platforms:
       - nrf52833dk/nrf52833
-    extra_args: OVERLAY_CONFIG=overlay-bt_ll_sw_split.conf
+    extra_args: EXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf
     tags: bluetooth
