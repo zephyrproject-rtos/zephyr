@@ -32,15 +32,23 @@
 extern "C" {
 #endif
 
+struct net_socket_service_event;
+
+/** @brief The signature for a net socket service handler function.
+ *
+ * The function will be invoked by the socket service.
+ *
+ * @param pev the socket service event that provided the handler.
+ */
+typedef void (*net_socket_service_handler_t)(struct net_socket_service_event *pev);
+
 /**
  * This struct contains information which socket triggered
  * calls to the callback function.
  */
 struct net_socket_service_event {
-	/** k_work that is done when there is desired activity in file descriptor. */
-	struct k_work work;
 	/** Callback to be called for desired socket activity */
-	k_work_handler_t callback;
+	net_socket_service_handler_t callback;
 	/** Socket information that triggered this event. */
 	struct zsock_pollfd event;
 	/** User data */

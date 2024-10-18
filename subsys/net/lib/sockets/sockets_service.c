@@ -124,7 +124,7 @@ void net_socket_service_callback(struct net_socket_service_event *pev)
 	struct net_socket_service_desc *svc = pev->svc;
 	struct net_socket_service_event ev = *pev;
 
-	ev.callback(&ev.work);
+	ev.callback(&ev);
 
 	/* Copy back the socket fd to the global array because we marked
 	 * it as -1 when triggering the work.
