@@ -44,7 +44,7 @@ configuration file prj_shell.conf:
 Running
 *******
 
-See :ref:`quickfeather` on how to load an image to the board.
+See :zephyr:board:`quick_feather` on how to load an image to the board.
 
 Sample output
 =============
