@@ -18,26 +18,24 @@
 
 edf_t task1 = {.id = 1,
 	       .initial_delay_msec = 1000,
-	       .rel_deadline_msec = 30,
-	       .period_msec = 2000,
-	       .wcet_msec = 6};
+	       .rel_deadline_msec = 3000,
+	       .period_msec = 6000,
+	       .wcet_msec = 1000};
 
 edf_t task2 = {.id = 2,
 	       .initial_delay_msec = 1000,
-	       .rel_deadline_msec = 20,
-	       .period_msec = 6000,
-	       .wcet_msec = 10};
+	       .rel_deadline_msec = 6000,
+	       .period_msec = 8000,
+	       .wcet_msec = 2000};
 
 edf_t task3 = {.id = 3,
 	       .initial_delay_msec = 1000,
-	       .rel_deadline_msec = 10,
-	       .period_msec = 12000,
-	       .wcet_msec = 1};
+	       .rel_deadline_msec = 10000,
+	       .period_msec = 10000,
+	       .wcet_msec = 3000};
 
 void trigger(struct k_timer *timer)
 {
-	edf_t *task = (edf_t *)k_timer_user_data_get(timer);
-	const char t = 1;
 	/*
 	 * the message itself is not relevant -
 	 * the *act* of sending the message is.
@@ -51,7 +49,10 @@ void trigger(struct k_timer *timer)
 	 * not trigger a preemption even if it
 	 * happens to be the earliest deadline.
 	 */
+	const char t = 1;
+	edf_t *task = (edf_t *)k_timer_user_data_get(timer);
 	int deadline = MSEC_TO_CYC(task->rel_deadline_msec);
+
 	k_thread_deadline_set(task->thread, deadline);
 	k_msgq_put(&task->queue, &t, K_NO_WAIT);
 }
@@ -60,19 +61,21 @@ void thread_function(void *task_props, void *a2, void *a3)
 {
 	char buffer[10];
 	char message;
-	int counter = 0;
-	uint32_t deadline = 0;
-	uint64_t start = 0;
-	uint64_t end = 0;
-
+	int32_t deadline;
 	edf_t *task = (edf_t *)task_props;
+
 	task->thread = k_current_get();
+
+	/* value passed to k_busy_wait needs to be in usec */
+	uint32_t wcet = MSEC_TO_USEC(task->wcet_msec);
 
 	k_msgq_init(&task->queue, buffer, sizeof(char), 10);
 	k_timer_init(&task->timer, trigger, NULL);
 	k_timer_user_data_set(&task->timer, (void *)task);
 	k_timer_start(&task->timer, K_MSEC(task->initial_delay_msec), K_MSEC(task->period_msec));
-	printf("[ %d ] %d   \tready.\n", task->id, counter);
+
+	/* allow other threads to set up */
+	k_sleep(K_MSEC(1));
 
 	for (;;) {
 		/*
@@ -87,16 +90,11 @@ void thread_function(void *task_props, void *a2, void *a3)
 		 * amount of time ("busy wait") to emulate
 		 * the WCET (worst case execution time). Thus,
 		 * what we want to see with this example is
-		 * if the threads work alright
+		 * just if the edf scheduler works alright
 		 */
 		k_msgq_get(&task->queue, &message, K_FOREVER);
-		start = (uint64_t)clock();
-		counter++;
-		k_busy_wait(MSEC_TO_USEC(task->wcet_msec));
-		deadline = (uint32_t)k_thread_deadline_get(task->thread);
-		end = (uint64_t)clock();
-		printk("[ %d ] %d   \tstart %llu\t end %llu\t dead %u\n", task->id, counter, start,
-		       end, deadline);
+		deadline = k_thread_deadline_get(task->thread);
+		cycle(task->id, wcet, deadline);
 	}
 }
 

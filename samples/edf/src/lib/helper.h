@@ -18,6 +18,7 @@
 #define INACTIVE           -1
 #define MSEC_TO_CYC(msec)  k_ms_to_cyc_near32(msec)
 #define MSEC_TO_USEC(msec) (msec * USEC_PER_MSEC)
+#define CYC_TO_MSEC(cyc)   k_cyc_to_ms_floor32(cyc)
 
 #ifdef CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
 #define clock() k_cycle_get_64()
@@ -35,5 +36,16 @@ typedef struct {
 	struct k_msgq queue;
 	struct k_timer timer;
 } edf_t;
+
+void cycle(int id, uint32_t wcet, int32_t deadline)
+{
+	printf("[%d-%d-", id, CYC_TO_MSEC(deadline));
+	k_busy_wait(wcet / 5);
+	for (int i = 0; i < 4; i++) {
+		printf("%d-", id);
+		k_busy_wait(wcet / 5);
+	}
+	printf("%d]-", id);
+}
 
 #endif
