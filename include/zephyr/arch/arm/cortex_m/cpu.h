@@ -54,16 +54,22 @@ extern "C" {
 struct __cpu_context {
 	/* GPRs are saved onto the stack */
 	uint32_t msp;
-	uint32_t msplim;
 	uint32_t psp;
-	uint32_t psplim;
 	uint32_t apsr;
-	uint32_t ipsr;
-	uint32_t epsr;
 	uint32_t primask;
+	uint32_t control;
+
+#ifdef CONFIG_ARMV7_M_ARMV8_M_MAINLINE
+	/* Registers present on ARMv7-M and ARMv8-M Mainline */
 	uint32_t faultmask;
 	uint32_t basepri;
-	uint32_t control;
+#endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
+
+#if defined(CONFIG_ARMV8_M_BASELINE) || defined(CONFIG_ARMV8_M_MAINLINE)
+	/* Registers present only on ARMv8-M (Baseline / Mainline) */
+	uint32_t msplim;
+	uint32_t psplim;
+#endif /* CONFIG_ARMV8_M_BASELINE || CONFIG_ARMV8_M_MAINLINE */
 };
 
 typedef struct __cpu_context _cpu_context_t;
