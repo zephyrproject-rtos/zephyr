@@ -40,6 +40,19 @@ tests:
     integration_platforms:
       - qemu_x86
       - mimxrt1060_evk/mimxrt1062/qspi
+      - max32655evkit/max32655/m4
+      - max32655fthr/max32655/m4
+      - max32662evkit
+      - max32666evkit/max32666/cpu0
+      - max32666fthr/max32666/cpu0
+      - max32670evkit
+      - max32672evkit
+      - max32672fthr
+      - max32675evkit
+      - max32680evkit/max32680/m4
+      - max32690evkit/max32690/m4
+      - max32690fthr/max32690/m4
+      - max78002evkit/max78002/m4
   drivers.flash.common.no_explicit_erase:
     platform_allow:
       - nrf54l15dk/nrf54l05/cpuapp
