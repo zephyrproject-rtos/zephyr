@@ -97,6 +97,16 @@ config FORCE_COVERAGE
 	  does not guarantee that coverage data will be gathered.
 	  Application may not fit memory or crash at runtime.
 
+config COVERAGE_USE_COMPILER_FLAGS
+	bool "Whether to use instrumentation flags during compilation"
+	depends on COVERAGE
+	default y
+	help
+	  If disabled, then compiler flags for coverage will not be applied,
+	  while all the other instrumentation will still hold. This can be
+	  useful when some of the code is compiled separately and coverage
+	  only needs to be collected for that code only.
+
 config TEST_USERSPACE
 	bool "Indicate that this test exercises user mode"
 	help
