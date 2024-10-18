@@ -33,7 +33,8 @@ extern "C" {
 #define BT_HCI_H4_EVT                   0x04    /* HCI Event packet */
 #define BT_HCI_H4_ISO                   0x05    /* HCI ISO Data packet */
 
-/* Special own address types for LL privacy (used in adv & scan parameters) */
+#define BT_HCI_OWN_ADDR_PUBLIC          0x00
+#define BT_HCI_OWN_ADDR_RANDOM          0x01
 #define BT_HCI_OWN_ADDR_RPA_OR_PUBLIC   0x02
 #define BT_HCI_OWN_ADDR_RPA_OR_RANDOM   0x03
 #define BT_HCI_OWN_ADDR_RPA_MASK        0x02
