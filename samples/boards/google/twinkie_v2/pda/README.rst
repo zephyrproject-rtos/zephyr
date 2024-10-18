@@ -7,7 +7,7 @@
 Overview
 ********
 
-This provides access to :ref:`Twinkie <google_twinkie_v2_board>` so you can try out
+This provides access to :zephyr:board:`google_twinkie_v2` so you can try out
 the supported features.
 
 Building and Running
