@@ -170,3 +170,10 @@ void assert_frame_equal(const struct can_frame *frame1,
  * @param initial_mode Initial CAN controller operational mode.
  */
 void can_common_test_setup(can_mode_t initial_mode);
+
+/**
+ * @brief Before each test, restore default state of CAN controller.
+ *
+ * @param not_used This parameter is not used.
+ */
+void before_test(void *not_used);

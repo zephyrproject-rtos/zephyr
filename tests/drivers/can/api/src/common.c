@@ -244,3 +244,13 @@ void can_common_test_setup(can_mode_t initial_mode)
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
 }
+
+void before_test(void *not_used)
+{
+	ARG_UNUSED(not_used);
+
+	/* If previous test has failed due to assertion then CAN may be left stopped.
+	 * Tests assume that default CAN state is started.
+	 */
+	(void)can_start(can_dev);
+}
