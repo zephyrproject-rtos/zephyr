@@ -106,6 +106,10 @@ The below features are currently supported on Zephyr OS for EK-RA8D1 board:
 +--------------+------------+------------------+
 | PWM          | on-chip    | pwm              |
 +--------------+------------+------------------+
+| ULPT         | on-chip    | timer            |
++--------------+------------+------------------+
+| LPM          | on-chip    | SOC PM           |
++--------------+------------+------------------+
 
 Other hardware features are currently not supported by the port.
 
