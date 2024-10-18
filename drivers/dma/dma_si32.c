@@ -125,20 +125,100 @@ static int dma_si32_init(const struct device *dev)
 	return 0;
 }
 
-static int dma_si32_config(const struct device *dev, uint32_t channel, struct dma_config *cfg)
+static int dma_si32_start(const struct device *dev, const uint32_t channel)
 {
 	ARG_UNUSED(dev);
 
+	struct SI32_DMADESC_A_Struct *channel_desc = &channel_descriptors[channel];
+	struct dma_si32_channel_data *channel_data;
+
+	LOG_INF("Starting channel %" PRIu8, channel);
+
+	if (channel >= CHANNEL_COUNT) {
+		LOG_ERR("Invalid channel (id %" PRIu32 ", have %d)", channel, CHANNEL_COUNT);
+		return -EINVAL;
+	}
+
+	channel_data = &dma_si32_data.channel_data[channel];
+
+	/* All of this should be set by our own, previously running code. During development
+	 * however, it is still useful to double check here.
+	 */
+	__ASSERT(SI32_CLKCTRL_0->AHBCLKG.DMACEN,
+		 "AHB clock to the DMA controller must be enabled.");
+	__ASSERT(SI32_DMACTRL_A_is_enabled(SI32_DMACTRL_0), "DMA controller must be enabled.");
+	__ASSERT(SI32_DMACTRL_0->BASEPTR.U32 == (uintptr_t)channel_descriptors,
+		 "Address location of the channel transfer descriptors (BASEPTR) must be set.");
+	__ASSERT(SI32_DMACTRL_A_is_primary_selected(SI32_DMACTRL_0, channel),
+		 "Primary descriptors must be used for basic and auto-request operations.");
+	__ASSERT(SI32_SCONFIG_0->CONFIG.FDMAEN, "Fast mode is recommened to be enabled.");
+	__ASSERT(SI32_DMACTRL_0->CHSTATUS.U32 & BIT(channel),
+		 "Channel must be waiting for request");
+
+	channel_desc->CONFIG.TMD = channel_data->tmd;
+
+	/* Get rid of potentially lingering bus errors. */
+	SI32_DMACTRL_A_clear_bus_error(SI32_DMACTRL_0);
+
+	/* Enable interrupt for this DMA channels. */
+	irq_enable(DMACH0_IRQn + channel);
+
+	SI32_DMACTRL_A_enable_channel(SI32_DMACTRL_0, channel);
+
+	/* memory-to-memory transfers have to be started by this driver. When peripherals are
+	 * involved, the caller has to enable the peripheral to start the transfer.
+	 */
+	if (dma_si32_data.channel_data[channel].memory_to_memory) {
+		__ASSERT((SI32_DMACTRL_0->CHREQMSET.U32 & BIT(channel)),
+			 "Peripheral data requests for the channel must be disabled");
+		SI32_DMACTRL_A_generate_software_request(SI32_DMACTRL_0, channel);
+	} else {
+		__ASSERT(!(SI32_DMACTRL_0->CHREQMSET.U32 & BIT(channel)),
+			 "Data requests for the channel must be enabled");
+	}
+
+	return 0;
+}
+
+static int dma_si32_stop(const struct device *dev, const uint32_t channel)
+{
+	ARG_UNUSED(dev);
+
+	if (channel >= CHANNEL_COUNT) {
+		LOG_ERR("Invalid channel (id %" PRIu32 ", have %d)", channel, CHANNEL_COUNT);
+		return -EINVAL;
+	}
+
+	irq_disable(DMACH0_IRQn + channel);
+
+	channel_descriptors[channel].CONFIG.TMD = 0; /* Stop the DMA channel. */
+
+	SI32_DMACTRL_A_disable_channel(SI32_DMACTRL_0, channel);
+
+	return 0;
+}
+
+static int dma_si32_config(const struct device *dev, uint32_t channel, struct dma_config *cfg)
+{
 	const struct dma_block_config *block;
 	struct SI32_DMADESC_A_Struct *channel_descriptor;
 	struct dma_si32_channel_data *channel_data;
 	uint32_t ncount;
+	int ret;
 
 	LOG_INF("Configuring channel %" PRIu8, channel);
 
 	if (channel >= CHANNEL_COUNT) {
 		LOG_ERR("Invalid channel (id %" PRIu32 ", have %d)", channel, CHANNEL_COUNT);
 		return -EINVAL;
+	}
+
+	/* Prevent messing up (potentially) ongoing DMA operations and their settings by disabling
+	 * the channel before applying new settings.
+	 */
+	ret = dma_si32_stop(dev, channel);
+	if (ret) {
+		return ret;
 	}
 
 	channel_descriptor = &channel_descriptors[channel];
@@ -332,78 +412,6 @@ static int dma_si32_config(const struct device *dev, uint32_t channel, struct dm
 		LOG_ERR("Unknown dest_addr_adj value");
 		return -EINVAL;
 	}
-
-	SI32_DMACTRL_A_enable_channel(SI32_DMACTRL_0, channel);
-
-	return 0;
-}
-
-static int dma_si32_start(const struct device *dev, const uint32_t channel)
-{
-	ARG_UNUSED(dev);
-
-	struct SI32_DMADESC_A_Struct *channel_desc = &channel_descriptors[channel];
-	struct dma_si32_channel_data *channel_data;
-
-	LOG_INF("Starting channel %" PRIu8, channel);
-
-	if (channel >= CHANNEL_COUNT) {
-		LOG_ERR("Invalid channel (id %" PRIu32 ", have %d)", channel, CHANNEL_COUNT);
-		return -EINVAL;
-	}
-
-	channel_data = &dma_si32_data.channel_data[channel];
-
-	/* All of this should be set by our own, previously running code. During development
-	 * however, it is still useful to double check here.
-	 */
-	__ASSERT(SI32_CLKCTRL_0->AHBCLKG.DMACEN,
-		 "AHB clock to the DMA controller must be enabled.");
-	__ASSERT(SI32_DMACTRL_A_is_enabled(SI32_DMACTRL_0), "DMA controller must be enabled.");
-	__ASSERT(SI32_DMACTRL_0->BASEPTR.U32 == (uintptr_t)channel_descriptors,
-		 "Address location of the channel transfer descriptors (BASEPTR) must be set.");
-	__ASSERT(SI32_DMACTRL_A_is_primary_selected(SI32_DMACTRL_0, channel),
-		 "Primary descriptors must be used for basic and auto-request operations.");
-	__ASSERT(SI32_SCONFIG_0->CONFIG.FDMAEN, "Fast mode is recommened to be enabled.");
-	__ASSERT(SI32_DMACTRL_0->CHENSET.U32 & BIT(channel), "Channel must be enabled.");
-	__ASSERT(SI32_DMACTRL_0->CHSTATUS.U32 & BIT(channel),
-		 "Channel must be waiting for request");
-
-	channel_desc->CONFIG.TMD = channel_data->tmd;
-
-	/* Get rid of potentially lingering bus errors. */
-	SI32_DMACTRL_A_clear_bus_error(SI32_DMACTRL_0);
-
-	/* Enable interrupt for this DMA channels. */
-	irq_enable(DMACH0_IRQn + channel);
-
-	/* memory-to-memory transfers have to be started by this driver. When peripherals are
-	 * involved, the caller has to enable the peripheral to start the transfer.
-	 */
-	if (dma_si32_data.channel_data[channel].memory_to_memory) {
-		__ASSERT((SI32_DMACTRL_0->CHREQMSET.U32 & BIT(channel)),
-			 "Peripheral data requests for the channel must be disabled");
-		SI32_DMACTRL_A_generate_software_request(SI32_DMACTRL_0, channel);
-	} else {
-		__ASSERT(!(SI32_DMACTRL_0->CHREQMSET.U32 & BIT(channel)),
-			 "Data requests for the channel must be enabled");
-	}
-
-	return 0;
-}
-
-static int dma_si32_stop(const struct device *dev, const uint32_t channel)
-{
-	ARG_UNUSED(dev);
-
-	if (channel >= CHANNEL_COUNT) {
-		LOG_ERR("Invalid channel (id %" PRIu32 ", have %d)", channel, CHANNEL_COUNT);
-		return -EINVAL;
-	}
-
-	irq_disable(DMACH0_IRQn + channel);
-
-	channel_descriptors[channel].CONFIG.TMD = 0; /* Stop the DMA channel. */
 
 	return 0;
 }
