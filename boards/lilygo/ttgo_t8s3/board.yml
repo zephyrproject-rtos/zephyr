@@ -1,0 +1,5 @@
+board:
+  name: ttgo_t8s3
+  vendor: lilygo
+  socs:
+  - name: esp32s3
