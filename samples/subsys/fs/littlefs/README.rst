@@ -77,7 +77,7 @@ recreated.
 Block device (e.g. SD card)
 ---------------------------
 
-This example has been devised and initially tested on :ref:`Nucleo H743ZI <nucleo_h743zi_board>`
+This example has been devised and initially tested on :zephyr:board:`nucleo_h743zi`
 board. It can be also run on any other board with SD/MMC card connected to it.
 
 To build the test:

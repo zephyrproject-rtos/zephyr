@@ -1,7 +1,4 @@
-.. _nucleo_wb05kz_board:
-
-ST Nucleo WB05KZ
-################
+.. zephyr:board:: nucleo_wb05kz
 
 Overview
 ********
@@ -10,10 +7,6 @@ The Nucleo WB05KZ board is a Bluetooth |reg| Low Energy wireless and ultra-low-p
 board featuring an ARM Cortex |reg|-M0+ based STM32WB05KZV MCU, embedding a
 powerful and ultra-low-power radio compliant with the Bluetooth® Low Energy
 SIG specification v5.4.
-
-.. image:: img/nucleo_wb05kz.webp
-   :align: center
-   :alt: Nucleo WB05KZ
 
 More information about the board can be found on the `Nucleo WB05KZ webpage`_.
 

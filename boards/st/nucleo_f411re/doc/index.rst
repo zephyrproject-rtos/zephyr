@@ -1,7 +1,4 @@
-.. _nucleo_f411re_board:
-
-ST Nucleo F411RE
-################
+.. zephyr:board:: nucleo_f411re
 
 Overview
 ********
@@ -24,10 +21,6 @@ some highlights of the Nucleo F411RE board:
 
 - Three LEDs: USB communication (LD1), user LED (LD2), power LED (LD3)
 - Two push-buttons: USER and RESET
-
-.. image:: img/nucleo_f411re.jpg
-   :align: center
-   :alt: Nucleo F411RE
 
 More information about the board can be found at the `Nucleo F411RE website`_.
 

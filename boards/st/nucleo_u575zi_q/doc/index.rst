@@ -1,7 +1,4 @@
-.. _nucleo_u575zi_q_board:
-
-ST Nucleo U575ZI Q
-##################
+.. zephyr:board:: nucleo_u575zi_q
 
 Overview
 ********

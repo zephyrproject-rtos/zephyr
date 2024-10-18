@@ -1,7 +1,4 @@
-.. _stm32f072_eval_board:
-
-ST STM32F072 Evaluation
-#######################
+.. zephyr:board:: stm32f072_eval
 
 Overview
 ********
@@ -34,11 +31,6 @@ Here are some highlights of the STM32F072-EVAL board:
 - Two HDMI connectors with DDC and CEC
 - Smart Card slot
 - Motor control connector
-
-
-.. image:: img/stm32f072_eval.jpg
-     :align: center
-     :alt: STM32F072-EVAL
 
 Hardware
 ********

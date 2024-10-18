@@ -1,7 +1,4 @@
-.. _stm32l1_disco_board:
-
-ST STM32L1 Discovery
-####################
+.. zephyr:board:: stm32l1_disco
 
 Overview
 ********
@@ -23,10 +20,6 @@ The STM32LDISCOVERY is no longer sold, but was widely available.
 stm32l1_disco configuration enables support for STM32LDISCOVERY board and
 stm32l152c_disco configuration enables support for STM32L152CDISCOVERY board.
 
-
-.. image:: img/stm32l1_disco.jpg
-     :align: center
-     :alt: STM32LDISCOVERY
 
 More information about the board can be found at the `STM32LDISCOVERY website`_.
 

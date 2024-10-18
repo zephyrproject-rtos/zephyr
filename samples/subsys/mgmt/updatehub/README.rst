@@ -455,7 +455,7 @@ The below list of hardware have been used by UpdateHub team.
 
    :zephyr:board:`frdm_k64f`, "1, 2, 3, 4"
    :ref:`nrf52840dk_nrf52840`, "2, 3, 4, 5, 6"
-   :ref:`nucleo_f767zi_board`, "1, 2, 3, 4"
+   :zephyr:board:`nucleo_f767zi`, "1, 2, 3, 4"
 
 
 .. _updatehub.io: https://updatehub.io

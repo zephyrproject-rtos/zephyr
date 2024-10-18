@@ -1,7 +1,4 @@
-.. _stm32f4_disco_board:
-
-ST STM32F4 Discovery
-####################
+.. zephyr:board:: stm32f4_disco
 
 Overview
 ********
@@ -31,10 +28,6 @@ some highlights of the STM32F4DISCOVERY board:
 - LIS302DL or LIS3DSH ST MEMS 3-axis accelerometer
 - MP45DT02 ST-MEMS audio sensor omni-directional digital microphone
 - CS43L22 audio DAC with integrated class D speaker driver
-
-.. image:: img/stm32f4_disco.jpg
-     :align: center
-     :alt: STM32F4DISCOVERY
 
 More information about the board can be found at the `STM32F4DISCOVERY website`_.
 

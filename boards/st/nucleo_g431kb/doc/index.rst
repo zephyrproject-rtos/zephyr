@@ -1,7 +1,4 @@
-.. _nucleo_g431kb_board:
-
-ST Nucleo G431KB
-################
+.. zephyr:board:: nucleo_g431kb
 
 Overview
 ********
@@ -20,10 +17,6 @@ Here are some highlights of the Nucleo G431KB board:
 
 - Three LEDs: USB communication (LD1), power LED (LD3), user LED (LD2)
 - One push-button for RESET
-
-.. image:: img/nucleo_g431kb.webp
-  :align: center
-  :alt: Nucleo G431kB
 
 More information about the board can be found at the `Nucleo G431KB website`_.
 
