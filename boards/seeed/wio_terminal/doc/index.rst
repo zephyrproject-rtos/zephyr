@@ -1,7 +1,4 @@
-.. _wio_terminal:
-
-Wio Terminal
-############
+.. zephyr:board:: wio_terminal
 
 Overview
 ********
@@ -10,11 +7,6 @@ The Wio Terminal is a small (72 mm x 57 mm x 12 mm) and powerful ARM board with
 wireless connectivity (2.4G/5G dual-band Wi-Fi and BLE 5.0), LCD display,
 USB C port, FPC connector, microSD card slot, Raspberry Pi compatible 40-pins
 header and 2 Grove connectors.
-
-.. image:: img/wio_terminal.png
-     :width: 500px
-     :align: center
-     :alt: Seeed Studio Wio Terminal
 
 Hardware
 ********

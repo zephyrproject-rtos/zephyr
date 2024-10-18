@@ -16,9 +16,10 @@
   data-vendor="{{ board.vendor }}"
   data-socs="{{ board.socs | join(" ") }}"
   tabindex="0">
-  <div class="vendor">{{ catalog.vendors[board.vendor] }}</div>
+  <div class="vendor">{{ vendors[board.vendor] }}</div>
   {% if board.image -%}
-  <img alt="A picture of the {{ board.name }} board" src="{{ board.image }}" class="picture" />
+  <img alt="A picture of the {{ board.full_name }} board"
+    src="../_images/{{ board.image.split('/')[-1] }}" class="picture" />
   {% else -%}
   <div class="no-picture fa fa-microchip picture"></div>
   {% endif -%}
