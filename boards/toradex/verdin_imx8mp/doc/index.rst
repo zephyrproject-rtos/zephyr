@@ -1,7 +1,4 @@
-.. _verdin_imx8mp:
-
-Toradex Verdin iMX8M Plus SoM
-#############################
+.. zephyr:board:: verdin_imx8mp
 
 Overview
 ********
@@ -33,12 +30,6 @@ Quoting NXP:
 
 The Verdin iMX8M Plus integrates a total of 4 Arm Cortex™-A53 CPUs, operating at 1.6 GHz, alongside
 a single Arm Cortex™-M7F microcontroller operating at 800 MHz.
-
-.. figure:: verdin_imx8mp_front.jpg
-   :align: center
-   :alt: Toradex Verdin iMX8M Plus
-
-   Toradex Verdin iMX8M Plus (Credit: Toradex)
 
 Regarding the Cortex-A53 cluster, it employs the ARMv8-A architecture as a mid-range and
 energy-efficient processor. With four cores in this cluster, each core is equipped with its own L1
