@@ -10,5 +10,6 @@ sample:
 tests:
   sample.drivers.ina219:
     build_only: true
-    platform_allow: blackpill_f411ce
+    platform_allow:
+      - blackpill_f411ce
     tags: sensors

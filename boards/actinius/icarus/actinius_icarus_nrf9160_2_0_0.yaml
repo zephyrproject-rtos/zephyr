@@ -20,4 +20,5 @@ supported:
   - feather_spi
   - arduino_i2c
   - arduino_spi
+  - lis2dh
 vendor: actinius
