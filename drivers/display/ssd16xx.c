@@ -60,6 +60,14 @@ struct ssd16xx_quirks {
 	 * SSD16XX_CMD_UPDATE_CTRL2 for a partial refresh.
 	 */
 	uint8_t ctrl2_partial;
+
+	/*
+	 * Device specific flag deciding whether to pass in the byte address or the bit address
+	 * when setting the RAM x position window or counter in SSD16XX_CMD_RAM_XPOS_CTRL or
+	 * SSD16XX_CMD_RAM_XPOS_CNTR.
+	 * Expected to be `true` for the devices that expects the byte address, `false` otherwise.
+	 */
+	bool x_addr_in_bytes;
 };
 
 struct ssd16xx_data {
@@ -105,6 +113,8 @@ struct ssd16xx_config {
 	uint16_t height;
 	uint16_t width;
 	uint8_t tssv;
+	uint8_t gdo_flags;
+	bool scan_y_reverse;
 };
 
 static int ssd16xx_set_profile(const struct device *dev,
@@ -369,33 +379,69 @@ static int ssd16xx_set_window(const struct device *dev,
 		}
 	}
 
-	switch (data->orientation) {
-	case DISPLAY_ORIENTATION_NORMAL:
-		x_start = (panel_h - 1 - y) / SSD16XX_PIXELS_PER_BYTE;
-		x_end = (panel_h - 1 - (y + desc->height - 1)) / SSD16XX_PIXELS_PER_BYTE;
-		y_start = x;
-		y_end = (x + desc->width - 1);
-		break;
-	case DISPLAY_ORIENTATION_ROTATED_90:
-		x_start = (panel_h - 1 - x) / SSD16XX_PIXELS_PER_BYTE;
-		x_end = (panel_h - 1 - (x + desc->width - 1)) / SSD16XX_PIXELS_PER_BYTE;
-		y_start = (config->width - 1 - y);
-		y_end = (config->width - 1 - (y + desc->height - 1));
-		break;
-	case DISPLAY_ORIENTATION_ROTATED_180:
-		x_start = y / SSD16XX_PIXELS_PER_BYTE;
-		x_end = (y + desc->height - 1) / SSD16XX_PIXELS_PER_BYTE;
-		y_start = (x + desc->width - 1);
-		y_end = x;
-		break;
-	case DISPLAY_ORIENTATION_ROTATED_270:
-		x_start = x / SSD16XX_PIXELS_PER_BYTE;
-		x_end = (x + desc->width - 1) / SSD16XX_PIXELS_PER_BYTE;
-		y_start = y;
-		y_end = (y + desc->height - 1);
-		break;
-	default:
-		return -EINVAL;
+	if (config->scan_y_reverse) {
+		switch (data->orientation) {
+		case DISPLAY_ORIENTATION_NORMAL:
+			x_start = (panel_h - 1 - y);
+			x_end = (panel_h - 1 - (y + desc->height - 1));
+			y_start = (config->width - 1 - x);
+			y_end = (config->width - 1 - (x + desc->width - 1));
+			break;
+		case DISPLAY_ORIENTATION_ROTATED_90:
+			x_start = x;
+			x_end = (x + desc->width - 1);
+			y_start = (config->width - 1 - y);
+			y_end = (config->width - 1 - (y + desc->height - 1));
+			break;
+		case DISPLAY_ORIENTATION_ROTATED_180:
+			x_start = y;
+			x_end = (y + desc->height - 1);
+			y_start = x;
+			y_end = (x + desc->width - 1);
+			break;
+		case DISPLAY_ORIENTATION_ROTATED_270:
+			x_start = (panel_h - 1 - x);
+			x_end = (panel_h - 1 - (x + desc->width - 1));
+			y_start = y;
+			y_end = (y + desc->height - 1);
+			break;
+		default:
+			return -EINVAL;
+		}
+	} else {
+		switch (data->orientation) {
+		case DISPLAY_ORIENTATION_NORMAL:
+			x_start = (panel_h - 1 - y);
+			x_end = (panel_h - 1 - (y + desc->height - 1));
+			y_start = x;
+			y_end = (x + desc->width - 1);
+			break;
+		case DISPLAY_ORIENTATION_ROTATED_90:
+			x_start = (panel_h - 1 - x);
+			x_end = (panel_h - 1 - (x + desc->width - 1));
+			y_start = (config->width - 1 - y);
+			y_end = (config->width - 1 - (y + desc->height - 1));
+			break;
+		case DISPLAY_ORIENTATION_ROTATED_180:
+			x_start = y;
+			x_end = (y + desc->height - 1);
+			y_start = (x + desc->width - 1);
+			y_end = x;
+			break;
+		case DISPLAY_ORIENTATION_ROTATED_270:
+			x_start = x;
+			x_end = (x + desc->width - 1);
+			y_start = y;
+			y_end = (y + desc->height - 1);
+			break;
+		default:
+			return -EINVAL;
+		}
+	}
+
+	if (config->quirks->x_addr_in_bytes) {
+		x_start /= SSD16XX_PIXELS_PER_BYTE;
+		x_end /= SSD16XX_PIXELS_PER_BYTE;
 	}
 
 	err = ssd16xx_set_ram_param(dev, x_start, x_end, y_start, y_end);
@@ -588,17 +634,30 @@ static int ssd16xx_set_pixel_format(const struct device *dev,
 static int ssd16xx_set_orientation(const struct device *dev,
 				   const enum display_orientation orientation)
 {
+	const struct ssd16xx_config *config = dev->config;
 	struct ssd16xx_data *data = dev->data;
 	int err;
 
-	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
-		data->scan_mode = SSD16XX_DATA_ENTRY_XDYIY;
-	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_90) {
-		data->scan_mode = SSD16XX_DATA_ENTRY_XDYDX;
-	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_180) {
-		data->scan_mode = SSD16XX_DATA_ENTRY_XIYDY;
-	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_270) {
-		data->scan_mode = SSD16XX_DATA_ENTRY_XIYIX;
+	if (config->scan_y_reverse) {
+		if (orientation == DISPLAY_ORIENTATION_NORMAL) {
+			data->scan_mode = SSD16XX_DATA_ENTRY_XDYDY;
+		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_90) {
+			data->scan_mode = SSD16XX_DATA_ENTRY_XIYDX;
+		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_180) {
+			data->scan_mode = SSD16XX_DATA_ENTRY_XIYIY;
+		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_270) {
+			data->scan_mode = SSD16XX_DATA_ENTRY_XDYIX;
+		}
+	} else {
+		if (orientation == DISPLAY_ORIENTATION_NORMAL) {
+			data->scan_mode = SSD16XX_DATA_ENTRY_XDYIY;
+		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_90) {
+			data->scan_mode = SSD16XX_DATA_ENTRY_XDYDX;
+		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_180) {
+			data->scan_mode = SSD16XX_DATA_ENTRY_XIYDY;
+		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_270) {
+			data->scan_mode = SSD16XX_DATA_ENTRY_XIYIX;
+		}
 	}
 
 	err = ssd16xx_write_uint8(dev, SSD16XX_CMD_ENTRY_MODE, data->scan_mode);
@@ -614,7 +673,7 @@ static int ssd16xx_set_orientation(const struct device *dev,
 static int ssd16xx_clear_cntlr_mem(const struct device *dev, uint8_t ram_cmd)
 {
 	const struct ssd16xx_config *config = dev->config;
-	uint16_t panel_h = config->height / EPD_PANEL_NUMOF_ROWS_PER_PAGE;
+	uint16_t panel_h = config->height;
 	uint16_t last_gate = config->width - 1;
 	uint8_t clear_page[64];
 	int err;
@@ -623,8 +682,9 @@ static int ssd16xx_clear_cntlr_mem(const struct device *dev, uint8_t ram_cmd)
 	 * Clear unusable memory area when the resolution of the panel is not
 	 * multiple of an octet.
 	 */
-	if (config->height % EPD_PANEL_NUMOF_ROWS_PER_PAGE) {
-		panel_h += 1;
+	if (config->quirks->x_addr_in_bytes) {
+		panel_h = (config->height + (EPD_PANEL_NUMOF_ROWS_PER_PAGE - 1)) /
+			  EPD_PANEL_NUMOF_ROWS_PER_PAGE;
 	}
 
 	err = ssd16xx_write_uint8(dev, SSD16XX_CMD_ENTRY_MODE,
@@ -762,7 +822,7 @@ static int ssd16xx_set_profile(const struct device *dev,
 	}
 
 	gdo_len = push_y_param(dev, gdo, last_gate);
-	gdo[gdo_len++] = 0U;
+	gdo[gdo_len++] = config->gdo_flags;
 	err = ssd16xx_write_cmd(dev, SSD16XX_CMD_GDO_CTRL, gdo, gdo_len);
 	if (err < 0) {
 		return err;
@@ -955,6 +1015,7 @@ static struct ssd16xx_quirks quirks_solomon_ssd1608 = {
 	.pp_height_bits = 16,
 	.ctrl2_full = SSD16XX_GEN1_CTRL2_TO_PATTERN,
 	.ctrl2_partial = SSD16XX_GEN1_CTRL2_TO_PATTERN,
+	.x_addr_in_bytes = true,
 };
 #endif
 
@@ -966,6 +1027,7 @@ static struct ssd16xx_quirks quirks_solomon_ssd1673 = {
 	.pp_height_bits = 8,
 	.ctrl2_full = SSD16XX_GEN1_CTRL2_TO_PATTERN,
 	.ctrl2_partial = SSD16XX_GEN1_CTRL2_TO_PATTERN,
+	.x_addr_in_bytes = true,
 };
 #endif
 
@@ -977,6 +1039,19 @@ static struct ssd16xx_quirks quirks_solomon_ssd1675a = {
 	.pp_height_bits = 16,
 	.ctrl2_full = SSD16XX_GEN1_CTRL2_TO_PATTERN,
 	.ctrl2_partial = SSD16XX_GEN1_CTRL2_TO_PATTERN,
+	.x_addr_in_bytes = true,
+};
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(solomon_ssd1677)
+static const struct ssd16xx_quirks quirks_solomon_ssd1677 = {
+	.max_width = 680,
+	.max_height = 960,
+	.pp_width_bits = 16,
+	.pp_height_bits = 16,
+	.ctrl2_full = SSD16XX_GEN2_CTRL2_DISPLAY,
+	.ctrl2_partial = SSD16XX_GEN2_CTRL2_DISPLAY | SSD16XX_GEN2_CTRL2_MODE2,
+	.x_addr_in_bytes = false,
 };
 #endif
 
@@ -988,6 +1063,7 @@ static const struct ssd16xx_quirks quirks_solomon_ssd1680 = {
 	.pp_height_bits = 16,
 	.ctrl2_full = SSD16XX_GEN2_CTRL2_DISPLAY,
 	.ctrl2_partial = SSD16XX_GEN2_CTRL2_DISPLAY | SSD16XX_GEN2_CTRL2_MODE2,
+	.x_addr_in_bytes = true,
 };
 #endif
 
@@ -999,6 +1075,7 @@ static struct ssd16xx_quirks quirks_solomon_ssd1681 = {
 	.pp_height_bits = 16,
 	.ctrl2_full = SSD16XX_GEN2_CTRL2_DISPLAY,
 	.ctrl2_partial = SSD16XX_GEN2_CTRL2_DISPLAY | SSD16XX_GEN2_CTRL2_MODE2,
+	.x_addr_in_bytes = true,
 };
 #endif
 
@@ -1045,51 +1122,47 @@ static struct ssd16xx_quirks quirks_solomon_ssd1681 = {
 		    (_SSD16XX_PROFILE_PTR(n)),				\
 		    NULL)
 
-#define SSD16XX_DEFINE(n, quirks_ptr)					\
-	SSD16XX_MAKE_ARRAY_OPT(n, softstart);				\
-									\
-	DT_FOREACH_CHILD(n, SSD16XX_PROFILE);				\
-									\
-	static const struct ssd16xx_config ssd16xx_cfg_ ## n = {	\
-		.mipi_dev = DEVICE_DT_GET(DT_PARENT(n)),                \
-		.dbi_config = {                                         \
-			.mode = MIPI_DBI_MODE_SPI_4WIRE,                \
-			.config = MIPI_DBI_SPI_CONFIG_DT(n,             \
-				SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |  \
-				SPI_HOLD_ON_CS | SPI_LOCK_ON, 0),       \
-		},                                                      \
-		.busy_gpio = GPIO_DT_SPEC_GET(n, busy_gpios),		\
-		.quirks = quirks_ptr,					\
-		.height = DT_PROP(n, height),				\
-		.width = DT_PROP(n, width),				\
-		.rotation = DT_PROP(n, rotation),			\
-		.tssv = DT_PROP_OR(n, tssv, 0),				\
-		.softstart = SSD16XX_ASSIGN_ARRAY(n, softstart),	\
-		.profiles = {						\
-			[SSD16XX_PROFILE_FULL] =			\
-				SSD16XX_PROFILE_PTR(DT_CHILD(n, full)),	\
-			[SSD16XX_PROFILE_PARTIAL] =			\
-				SSD16XX_PROFILE_PTR(DT_CHILD(n, partial)),\
-		},							\
-	};								\
-									\
-	static struct ssd16xx_data ssd16xx_data_ ## n;			\
-									\
-	DEVICE_DT_DEFINE(n,						\
-			 ssd16xx_init, NULL,				\
-			 &ssd16xx_data_ ## n,				\
-			 &ssd16xx_cfg_ ## n,				\
-			 POST_KERNEL,					\
-			 CONFIG_DISPLAY_INIT_PRIORITY,			\
-			 &ssd16xx_driver_api)
+#define SSD16XX_DEFINE(n, quirks_ptr)                                                              \
+	SSD16XX_MAKE_ARRAY_OPT(n, softstart);                                                      \
+                                                                                                   \
+	DT_FOREACH_CHILD(n, SSD16XX_PROFILE);                                                      \
+                                                                                                   \
+	static const struct ssd16xx_config ssd16xx_cfg_##n = {                                     \
+		.mipi_dev = DEVICE_DT_GET(DT_PARENT(n)),                                           \
+		.dbi_config =                                                                      \
+			{                                                                          \
+				.mode = MIPI_DBI_MODE_SPI_4WIRE,                                   \
+				.config = MIPI_DBI_SPI_CONFIG_DT(                                  \
+					n,                                                         \
+					SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_HOLD_ON_CS |    \
+						SPI_LOCK_ON,                                       \
+					0),                                                        \
+			},                                                                         \
+		.busy_gpio = GPIO_DT_SPEC_GET(n, busy_gpios),                                      \
+		.quirks = quirks_ptr,                                                              \
+		.height = DT_PROP(n, height),                                                      \
+		.width = DT_PROP(n, width),                                                        \
+		.rotation = DT_PROP(n, rotation),                                                  \
+		.scan_y_reverse = DT_PROP(n, scan_y_reverse),                                      \
+		.tssv = DT_PROP_OR(n, tssv, 0),                                                    \
+		.gdo_flags = DT_PROP_OR(n, gdo_flags, 0),                                          \
+		.softstart = SSD16XX_ASSIGN_ARRAY(n, softstart),                                   \
+		.profiles =                                                                        \
+			{                                                                          \
+				[SSD16XX_PROFILE_FULL] = SSD16XX_PROFILE_PTR(DT_CHILD(n, full)),   \
+				[SSD16XX_PROFILE_PARTIAL] =                                        \
+					SSD16XX_PROFILE_PTR(DT_CHILD(n, partial)),                 \
+			},                                                                         \
+	};                                                                                         \
+                                                                                                   \
+	static struct ssd16xx_data ssd16xx_data_##n;                                               \
+                                                                                                   \
+	DEVICE_DT_DEFINE(n, ssd16xx_init, NULL, &ssd16xx_data_##n, &ssd16xx_cfg_##n, POST_KERNEL,  \
+			 CONFIG_DISPLAY_INIT_PRIORITY, &ssd16xx_driver_api)
 
-DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1608, SSD16XX_DEFINE,
-			     &quirks_solomon_ssd1608);
-DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1673, SSD16XX_DEFINE,
-			     &quirks_solomon_ssd1673);
-DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1675a, SSD16XX_DEFINE,
-			     &quirks_solomon_ssd1675a);
-DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1680, SSD16XX_DEFINE,
-			     &quirks_solomon_ssd1680);
-DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1681, SSD16XX_DEFINE,
-			     &quirks_solomon_ssd1681);
+DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1608, SSD16XX_DEFINE, &quirks_solomon_ssd1608);
+DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1673, SSD16XX_DEFINE, &quirks_solomon_ssd1673);
+DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1675a, SSD16XX_DEFINE, &quirks_solomon_ssd1675a);
+DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1677, SSD16XX_DEFINE, &quirks_solomon_ssd1677);
+DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1680, SSD16XX_DEFINE, &quirks_solomon_ssd1680);
+DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1681, SSD16XX_DEFINE, &quirks_solomon_ssd1681);
