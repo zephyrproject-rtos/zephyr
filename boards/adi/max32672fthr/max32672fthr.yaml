@@ -18,5 +18,6 @@ supported:
   - adc
   - counter
   - pwm
+  - flash
 ram: 200
 flash: 1024

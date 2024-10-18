@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FLASH_MAX32
+	bool "ADI MAX32 flash driver"
+	default y
+	depends on DT_HAS_ADI_MAX32_FLASH_CONTROLLER_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
+	select FLASH_HAS_PAGE_LAYOUT
+	help
+	  Enable MAX32 internal flash driver.

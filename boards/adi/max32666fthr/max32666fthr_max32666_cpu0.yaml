@@ -19,5 +19,6 @@ supported:
   - counter
   - pwm
   - w1
+  - flash
 ram: 560
 flash: 1024
