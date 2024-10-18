@@ -73,6 +73,18 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #endif
 #endif /* CONFIG_SOC_SERIES_STM32MP1X */
 
+static inline bool spi_stm32_is_subghzspi(const struct device *dev)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)
+	const struct spi_stm32_config *cfg = dev->config;
+
+	return cfg->use_subghzspi_nss;
+#else
+	ARG_UNUSED(dev);
+	return false;
+#endif /* st_stm32_spi_subghz */
+}
+
 static void spi_stm32_pm_policy_state_lock_get(const struct device *dev)
 {
 	if (IS_ENABLED(CONFIG_PM)) {
@@ -725,6 +737,17 @@ static int spi_stm32_release(const struct device *dev,
 	return 0;
 }
 
+static int spi_stm32_apply_default_pin_state(const struct device *dev)
+{
+	const struct spi_stm32_config *cfg = dev->config;
+
+	if (spi_stm32_is_subghzspi(dev)) {
+		return 0;
+	}
+
+	return pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+}
+
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 static int32_t spi_stm32_count_bufset_frames(const struct spi_config *config,
 					     const struct spi_buf_set *bufs)
@@ -1155,19 +1178,8 @@ static const struct spi_driver_api api_funcs = {
 	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
 	.release = spi_stm32_release,
+	.apply_default_pin_state = spi_stm32_apply_default_pin_state,
 };
-
-static inline bool spi_stm32_is_subghzspi(const struct device *dev)
-{
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)
-	const struct spi_stm32_config *cfg = dev->config;
-
-	return cfg->use_subghzspi_nss;
-#else
-	ARG_UNUSED(dev);
-	return false;
-#endif /* st_stm32_spi_subghz */
-}
 
 static int spi_stm32_init(const struct device *dev)
 {
