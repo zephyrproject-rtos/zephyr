@@ -42,7 +42,7 @@ tests:
     build_only: true
   bluetooth.shell.cdc_acm:
     extra_args:
-      - OVERLAY_CONFIG=cdc_acm.conf
+      - EXTRA_CONF_FILE=cdc_acm.conf
       - DTC_OVERLAY_FILE="usb.overlay"
     depends_on: usb_device
     platform_allow:
