@@ -109,7 +109,7 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 		/* Get identity address */
 		ll_rl_id_addr_get(rl_idx, &peer_addr_type, peer_id_addr);
 		/* Mark it as identity address from RPA (0x02, 0x03) */
-		peer_addr_type += 2;
+		MARK_AS_IDENTITY_ADDR(peer_addr_type);
 	} else {
 #else /* CONFIG_BT_CTLR_PRIVACY */
 	if (1) {
@@ -143,6 +143,11 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 	(void)memcpy(conn->own_id_addr, own_id_addr,
 		     sizeof(conn->own_id_addr));
 #endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
+
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+	/* Set default PAST parameters */
+	conn->past = ull_conn_default_past_param_get();
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 
 	memcpy(&lll->crc_init[0], &pdu_adv->connect_ind.crc_init[0], 3);
 	memcpy(&lll->access_addr[0], &pdu_adv->connect_ind.access_addr[0], 4);

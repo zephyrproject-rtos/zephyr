@@ -822,6 +822,7 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 	 */
 	if (pa_sync != BT_BAP_BASS_PA_REQ_NO_SYNC &&
 	    state->pa_sync_state != BT_BAP_PA_STATE_SYNCED) {
+		const uint8_t pa_sync_state = state->pa_sync_state;
 		const int err = pa_sync_request(conn, state, pa_sync,
 						pa_interval);
 
@@ -834,6 +835,12 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 				err);
 
 			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+		} else if (pa_sync_state != state->pa_sync_state) {
+			/* Temporary work around if the state is changed when pa_sync_request is
+			 * called. See https://github.com/zephyrproject-rtos/zephyr/issues/79308 for
+			 * more information about this issue.
+			 */
+			state_changed = true;
 		}
 	} else if (pa_sync == BT_BAP_BASS_PA_REQ_NO_SYNC &&
 		   (state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ ||

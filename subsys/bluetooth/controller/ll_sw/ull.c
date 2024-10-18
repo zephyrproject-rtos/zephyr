@@ -1267,6 +1267,10 @@ void ll_rx_dequeue(void)
 		/* fall through */
 	case NODE_RX_TYPE_SYNC:
 	case NODE_RX_TYPE_SYNC_LOST:
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+	/* fall through */
+	case NODE_RX_TYPE_SYNC_TRANSFER_RECEIVED:
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
 		/* fall through */
 	case NODE_RX_TYPE_SYNC_ISO:
@@ -1544,6 +1548,9 @@ void ll_rx_mem_release(void **node_rx)
 			break;
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+		case NODE_RX_TYPE_SYNC_TRANSFER_RECEIVED:
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 		case NODE_RX_TYPE_SYNC:
 		{
 			struct node_rx_sync *se =
@@ -1558,21 +1565,15 @@ void ll_rx_mem_release(void **node_rx)
 			    (status == BT_HCI_ERR_UNSUPP_REMOTE_FEATURE) ||
 			    (status == BT_HCI_ERR_CONN_FAIL_TO_ESTAB)) {
 				struct ll_sync_set *sync;
-				struct ll_scan_set *scan;
 
-				/* pick the scan context before node_rx
+				/* pick the sync context before node_rx
 				 * release.
 				 */
-				scan = (void *)rx_free->rx_ftr.param;
+				sync = (void *)rx_free->rx_ftr.param;
 
 				ll_rx_release(rx_free);
 
-				/* pick the sync context before scan context
-				 * is cleanup of sync context association.
-				 */
-				sync = scan->periodic.sync;
-
-				ull_sync_setup_reset(scan);
+				ull_sync_setup_reset(sync);
 
 				if (status != BT_HCI_ERR_SUCCESS) {
 					memq_link_t *link_sync_lost;
@@ -2812,6 +2813,14 @@ static inline void rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 		ull_sync_established_report(link, (struct node_rx_pdu *)rx);
 	}
 	break;
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+	case NODE_RX_TYPE_SYNC_TRANSFER_RECEIVED:
+	{
+		(void)memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
+		ll_rx_put_sched(link, rx);
+	}
+	break;
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
