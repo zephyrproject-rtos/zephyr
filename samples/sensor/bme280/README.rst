@@ -112,7 +112,7 @@ See existing overlays for examples.
 The build system uses these overlays by default when targeting those boards, so
 no ``DTC_OVERLAY_FILE`` setting is needed when building and running.
 
-For example, to build for the :ref:`adafruit_feather_m0_basic_proto` using the
+For example, to build for the :zephyr:board:`adafruit_feather_m0_basic_proto` using the
 :zephyr_file:`samples/sensor/bme280/boards/adafruit_feather_m0_basic_proto.overlay`
 overlay provided with this sample:
 
