@@ -1,7 +1,4 @@
-.. _esp32s2_saola:
-
-ESP32-S2-Saola
-##############
+.. zephyr:board:: esp32s2_saola
 
 Overview
 ********

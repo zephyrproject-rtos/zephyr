@@ -1,7 +1,4 @@
-.. _esp32s2_devkitc:
-
-ESP32-S2-DevKitC
-################
+.. zephyr:board:: esp32s2_devkitc
 
 Overview
 ********

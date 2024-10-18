@@ -1,7 +1,4 @@
-.. _esp32c3_devkitm:
-
-ESP32-C3-DevKitM
-################
+.. zephyr:board:: esp32c3_devkitm
 
 Overview
 ********
