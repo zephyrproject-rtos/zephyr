@@ -20,7 +20,7 @@ Requirements
 Building and Running
 ********************
 
-Host machine with :ref:`ip_k66f` board from Segger.
+Host machine with :zephyr:board:`ip_k66f` board from Segger.
 
 Follow these steps to build the DSA sample application:
 
