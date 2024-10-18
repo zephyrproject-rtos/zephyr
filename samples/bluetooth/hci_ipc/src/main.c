@@ -271,6 +271,14 @@ static void hci_ipc_send(struct net_buf *buf, bool is_fatal_err)
 			if (is_fatal_err) {
 				LOG_ERR("IPC service send error: %d", ret);
 			} else {
+				/* In the POSIX ARCH, code takes zero simulated time to execute,
+				 * so busy wait loops become infinite loops, unless we
+				 * force the loop to take a bit of time.
+				 *
+				 * This delay allows the IPC consumer to execute, thus making
+				 * it possible to send more data over IPC afterwards.
+				 */
+				Z_SPIN_DELAY(500);
 				k_yield();
 			}
 		}
