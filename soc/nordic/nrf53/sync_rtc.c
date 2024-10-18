@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(sync_rtc, CONFIG_SYNC_RTC_LOG_LEVEL);
 
 static uint32_t sync_cc;
 static int32_t nrf53_sync_offset = -EBUSY;
+static nrfx_dppi_t dppi = NRFX_DPPI_INSTANCE(0);
 
 union rtc_sync_channels {
 	uint32_t raw;
@@ -113,7 +114,7 @@ static void free_resources(union rtc_sync_channels channels)
 
 	z_nrf_rtc_timer_chan_free(channels.ch.rtc);
 
-	err = nrfx_dppi_channel_free(channels.ch.ppi);
+	err = nrfx_dppi_channel_free(&dppi, channels.ch.ppi);
 	__ASSERT_NO_MSG(err == NRFX_SUCCESS);
 }
 
@@ -229,7 +230,7 @@ static int sync_rtc_setup(void)
 	int32_t sync_rtc_ch;
 	int rv;
 
-	err = nrfx_dppi_channel_alloc(&channels.ch.ppi);
+	err = nrfx_dppi_channel_alloc(&dppi, &channels.ch.ppi);
 	if (err != NRFX_SUCCESS) {
 		rv = -ENODEV;
 		goto bail;
@@ -237,7 +238,7 @@ static int sync_rtc_setup(void)
 
 	sync_rtc_ch = z_nrf_rtc_timer_chan_alloc();
 	if (sync_rtc_ch < 0) {
-		nrfx_dppi_channel_free(channels.ch.ppi);
+		nrfx_dppi_channel_free(&dppi, channels.ch.ppi);
 		rv = sync_rtc_ch;
 		goto bail;
 	}

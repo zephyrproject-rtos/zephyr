@@ -50,6 +50,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_COUNTER_LOG_LEVEL);
 #define MAYBE_CONST_CONFIG const
 #endif
 
+#if defined(CONFIG_COUNTER_RTC_WITH_PPI_WRAP) && defined(DPPI_PRESENT)
+static nrfx_dppi_t dppi = NRFX_DPPI_INSTANCE(0);
+#endif
+
 struct counter_nrfx_data {
 	counter_top_callback_t top_cb;
 	void *top_user_data;
@@ -387,7 +391,7 @@ static int ppi_setup(const struct device *dev, uint8_t chan)
 
 	nrfy_rtc_event_enable(rtc, NRF_RTC_CHANNEL_INT_MASK(chan));
 #ifdef DPPI_PRESENT
-	result = nrfx_dppi_channel_alloc(&data->ppi_ch);
+	result = nrfx_dppi_channel_alloc(&dppi, &data->ppi_ch);
 	if (result != NRFX_SUCCESS) {
 		ERR("Failed to allocate PPI channel.");
 		return -ENODEV;
@@ -395,7 +399,7 @@ static int ppi_setup(const struct device *dev, uint8_t chan)
 
 	nrfy_rtc_subscribe_set(rtc, NRF_RTC_TASK_CLEAR, data->ppi_ch);
 	nrfy_rtc_publish_set(rtc, evt, data->ppi_ch);
-	(void)nrfx_dppi_channel_enable(data->ppi_ch);
+	(void)nrfx_dppi_channel_enable(&dppi, data->ppi_ch);
 #else /* DPPI_PRESENT */
 	uint32_t evt_addr;
 	uint32_t task_addr;
@@ -430,10 +434,10 @@ static void ppi_free(const struct device *dev, uint8_t chan)
 #ifdef DPPI_PRESENT
 	nrf_rtc_event_t evt = NRF_RTC_CHANNEL_EVENT_ADDR(chan);
 
-	(void)nrfx_dppi_channel_disable(ppi_ch);
+	(void)nrfx_dppi_channel_disable(&dppi, ppi_ch);
 	nrfy_rtc_subscribe_clear(rtc, NRF_RTC_TASK_CLEAR);
 	nrfy_rtc_publish_clear(rtc, evt);
-	(void)nrfx_dppi_channel_free(ppi_ch);
+	(void)nrfx_dppi_channel_free(&dppi, ppi_ch);
 #else /* DPPI_PRESENT */
 	(void)nrfx_ppi_channel_disable(ppi_ch);
 	(void)nrfx_ppi_channel_free(ppi_ch);
