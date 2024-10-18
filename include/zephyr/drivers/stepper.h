@@ -14,8 +14,8 @@
 #define ZEPHYR_INCLUDE_DRIVERS_STEPPER_H_
 
 /**
- * @brief Stepper Motor Controller Interface
- * @defgroup stepper_interface Stepper Motor Controller Interface
+ * @brief Stepper Controller Interface
+ * @defgroup stepper_interface Stepper Controller Interface
  * @ingroup io_interfaces
  * @{
  */

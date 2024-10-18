@@ -1,7 +1,60 @@
 # SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
 # SPDX-License-Identifier: Apache-2.0
 
-description: Analog Devices TMC5041 Stepper Motor Controller
+description: |
+  Analog Devices TMC5041 Stepper Motor Controller
+
+  Example:
+
+    #include <zephyr/dt-bindings/stepper/adi/tmc5041_reg.h>
+
+    &spi0 {
+        /* SPI bus options here, not shown */
+
+        /* Dual controller/driver for up to two 2-phase bipolar stepper motors */
+        tmc5041: tmc5041@0 {
+            compatible = "adi,tmc5041";
+            reg = <0>;
+            spi-max-frequency = <DT_FREQ_M(24)>; /* Maximum SPI bus frequency */
+
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            poscmp_enable; test_mode; lock_gconf; /* ADI TMC Global configuration flags */
+            clock-frequency = <DT_FREQ_M(16)>; /* Internal/External Clock frequency */
+
+            motor: motor@0 {
+                status = "okay";
+                reg = <0>;
+
+                /* common stepper controller settings */
+                invert-direction;
+                micro-step-res = <256>;
+
+                /* ADI TMC stallguard settings specific to TMC5041 */
+                activate-stallguard2;
+                stallguard-velocity-check-interval-ms=<100>;
+                stallguard2-threshold=<9>;
+                stallguard-threshold-velocity=<500000>;
+
+                /* ADI TMC ramp generator as well as current settings */
+                vstart = <10>;
+                a1 = <20>;
+                v1 = <30>;
+                d1 = <40>;
+                vmax = <50>;
+                amax = <60>;
+                dmax = <70>;
+                tzerowait = <80>;
+                vhigh = <90>;
+                vcoolthrs = <100>;
+                ihold = <1>;
+                irun = <2>;
+                iholddelay = <3>;
+            };
+        };
+    };
+
 
 compatible: "adi,tmc5041"
 
