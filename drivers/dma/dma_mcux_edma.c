@@ -673,9 +673,9 @@ static int dma_mcux_edma_init(const struct device *dev)
 		LISTIFY(NUM_IRQS_WITHOUT_ERROR_IRQ(n),				\
 			DMA_MCUX_EDMA_IRQ_CONFIG, (;), n)			\
 										\
-		IF_ENABLED(UTIL_NOT(DT_INST_NODE_HAS_PROP(n, no_error_irq)),	\
-			   (IRQ_CONFIG(n, NUM_IRQS_WITHOUT_ERROR_IRQ(n),	\
-			    dma_mcux_edma_error_irq_handler)))			\
+		COND_CODE_1(DT_INST_PROP(n, no_error_irq), (),			\
+			(IRQ_CONFIG(n, NUM_IRQS_WITHOUT_ERROR_IRQ(n),		\
+			dma_mcux_edma_error_irq_handler)))			\
 										\
 		LOG_DBG("install irq done");					\
 	}
