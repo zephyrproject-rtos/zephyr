@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/display.h>
 #include <lvgl.h>
+#include <lvgl_mem.h>
 #include <lv_demos.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
@@ -39,6 +40,7 @@ int main(void)
 	lv_task_handler();
 	display_blanking_off(display_dev);
 
+	lvgl_print_heap_info(false);
 	while (1) {
 		k_msleep(lv_task_handler());
 	}
