@@ -113,6 +113,14 @@ Bluetooth
     * :c:func:`bt_audio_codec_cap_meta_get_assisted_listening_stream`
     * :c:func:`bt_audio_codec_cap_meta_set_assisted_listening_stream`
 
+  * Added APIs for getting and setting the broadcast name in codec capabilities
+    and codec configuration:
+
+    * :c:func:`bt_audio_codec_cfg_meta_get_broadcast_name`
+    * :c:func:`bt_audio_codec_cfg_meta_set_broadcast_name`
+    * :c:func:`bt_audio_codec_cap_meta_get_broadcast_name`
+    * :c:func:`bt_audio_codec_cap_meta_set_broadcast_name`
+
 * Host
 
   * Added API :c:func:`bt_gatt_get_uatt_mtu` to get current Unenhanced ATT MTU of a given
