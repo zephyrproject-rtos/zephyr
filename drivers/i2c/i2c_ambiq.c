@@ -47,7 +47,34 @@ struct i2c_ambiq_data {
 	void *callback_data;
 	int inst_idx;
 	uint32_t transfer_status;
+	bool pm_policy_state_on;
 };
+
+static void i2c_ambiq_pm_policy_state_lock_get(const struct device *dev)
+{
+	if (IS_ENABLED(CONFIG_PM)) {
+		struct i2c_ambiq_data *data = dev->data;
+
+		if (!data->pm_policy_state_on) {
+			data->pm_policy_state_on = true;
+			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+			pm_device_runtime_get(dev);
+		}
+	}
+}
+
+static void i2c_ambiq_pm_policy_state_lock_put(const struct device *dev)
+{
+	if (IS_ENABLED(CONFIG_PM)) {
+		struct i2c_ambiq_data *data = dev->data;
+
+		if (data->pm_policy_state_on) {
+			data->pm_policy_state_on = false;
+			pm_device_runtime_put(dev);
+			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+		}
+	}
+}
 
 #ifdef CONFIG_I2C_AMBIQ_DMA
 static __aligned(32) struct {
@@ -183,17 +210,13 @@ static int i2c_ambiq_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 			      uint16_t addr)
 {
 	struct i2c_ambiq_data *data = dev->data;
-	int pm_ret, ret = 0;
+	int ret = 0;
 
 	if (!num_msgs) {
 		return 0;
 	}
 
-	pm_ret = pm_device_runtime_get(dev);
-
-	if (pm_ret < 0) {
-		LOG_ERR("pm_device_runtime_get failed: %d", pm_ret);
-	}
+	i2c_ambiq_pm_policy_state_lock_get(dev);
 
 	/* Send out messages */
 	k_sem_take(&data->bus_sem, K_FOREVER);
@@ -213,16 +236,7 @@ static int i2c_ambiq_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 
 	k_sem_give(&data->bus_sem);
 
-	/* Use async put to avoid useless device suspension/resumption
-	 * when doing consecutive transmission.
-	 */
-	if (!pm_ret) {
-		pm_ret = pm_device_runtime_put_async(dev, K_MSEC(2));
-
-		if (pm_ret < 0) {
-			LOG_ERR("pm_device_runtime_put failed: %d", pm_ret);
-		}
-	}
+	i2c_ambiq_pm_policy_state_lock_put(dev);
 
 	return ret;
 }
