@@ -1,20 +1,11 @@
-.. _max32666evkit:
-
-MAX32666EVKIT
-#############
+.. zephyr:board:: max32666evkit
 
 Overview
 ********
 The MAX32666EVKIT provides a platform for evaluating the capabilities of the MAX32665 and MAX32666
 high-efficiency Arm® microcontrollers and audio DSP for wearable and hearable device applications.
 
-
 The Zephyr port is running on the MAX32666 MCU.
-
-.. image:: img/max32666evkit.webp
-   :align: center
-   :alt: MAX32666EVKIT Front
-
 
 Hardware
 ********
