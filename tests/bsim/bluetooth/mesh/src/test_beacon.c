@@ -1945,6 +1945,8 @@ static void test_tx_proxy_adv_multi_subnet_coex(void)
 {
 	tx_proxy_adv_common_init(PROXY_ADV_MULTI_SUBNET_COEX_WAIT_TIME, &tx_cfg);
 
+	k_sleep(K_MSEC(100));
+
 	/* Enable GATT proxy */
 	ASSERT_OK_MSG(bt_mesh_gatt_proxy_set(BT_MESH_GATT_PROXY_ENABLED),
 		      "Failed to Enable gatt proxy");
