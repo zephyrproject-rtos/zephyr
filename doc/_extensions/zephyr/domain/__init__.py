@@ -15,12 +15,14 @@ Directives
 - ``zephyr:code-sample-category::`` - Defines a category for grouping code samples.
 - ``zephyr:code-sample-listing::`` - Shows a listing of code samples found in a given category.
 - ``zephyr:board-catalog::`` - Shows a listing of boards supported by Zephyr.
+- ``zephyr:board::`` - Flags a document as being the documentation page for a board.
 
 Roles
 -----
 
 - ``:zephyr:code-sample:`` - References a code sample.
 - ``:zephyr:code-sample-category:`` - References a code sample category.
+- ``:zephyr:board:`` - References a board.
 
 """
 
@@ -30,7 +32,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterator, List, Tuple, Final
 
 from docutils import nodes
-from docutils.parsers.rst import Directive, directives
+from docutils.parsers.rst import directives
 from docutils.statemachine import StringList
 
 from sphinx import addnodes
@@ -82,6 +84,10 @@ class CodeSampleCategoryNode(nodes.Element):
 
 
 class CodeSampleListingNode(nodes.Element):
+    pass
+
+
+class BoardNode(nodes.Element):
     pass
 
 
@@ -211,6 +217,65 @@ class ConvertCodeSampleCategoryNode(SphinxTransform):
 
         # finally, replace the category node with the section it contains
         node.replace_self(node.children[0])
+
+
+class ConvertBoardNode(SphinxTransform):
+    default_priority = 100
+
+    def apply(self):
+        matcher = NodeMatcher(BoardNode)
+        for node in self.document.traverse(matcher):
+            self.convert_node(node)
+
+    def convert_node(self, node):
+        parent = node.parent
+        siblings_to_move = []
+        if parent is not None:
+            index = parent.index(node)
+            siblings_to_move = parent.children[index + 1 :]
+
+            new_section = nodes.section(ids=[node["id"]])
+            new_section += nodes.title(text=node["full_name"])
+
+            # create a sidebar with all the board details
+            sidebar = nodes.sidebar(classes=["board-overview"])
+            new_section += sidebar
+            sidebar += nodes.title(text="Board Overview")
+
+            if node["image"] is not None:
+                figure = nodes.figure()
+                # set a scale of 100% to indicate we want a link to the full-size image
+                figure += nodes.image(uri=f"/{node['image']}", scale=100)
+                figure += nodes.caption(text=node["full_name"])
+                sidebar += figure
+
+            field_list = nodes.field_list()
+            sidebar += field_list
+
+            details = [
+                ("Vendor", node["vendor"]),
+                ("Architecture", ", ".join(node["archs"])),
+                ("SoC", ", ".join(node["socs"])),
+            ]
+
+            for property_name, value in details:
+                field = nodes.field()
+                field_name = nodes.field_name(text=property_name)
+                field_body = nodes.field_body()
+                field_body += nodes.paragraph(text=value)
+                field += field_name
+                field += field_body
+                field_list += field
+
+            # Move the sibling nodes under the new section
+            new_section.extend(siblings_to_move)
+
+            # Replace the custom node with the new section
+            node.replace_self(new_section)
+
+            # Remove the moved siblings from their original parent
+            for sibling in siblings_to_move:
+                parent.remove(sibling)
 
 
 class CodeSampleCategoriesTocPatching(SphinxPostTransform):
@@ -434,7 +499,7 @@ class ProcessRelatedCodeSamplesNode(SphinxPostTransform):
                 node.replace_self([])
 
 
-class CodeSampleDirective(Directive):
+class CodeSampleDirective(SphinxDirective):
     """
     A directive for creating a code sample node in the Zephyr documentation.
     """
@@ -569,6 +634,45 @@ class CodeSampleListingDirective(SphinxDirective):
         return [code_sample_listing_node]
 
 
+class BoardDirective(SphinxDirective):
+    has_content = False
+    required_arguments = 1
+    optional_arguments = 0
+
+    def run(self):
+        # board_name is passed as the directive argument
+        board_name = self.arguments[0]
+
+        boards = self.env.domaindata["zephyr"]["boards"]
+        vendors = self.env.domaindata["zephyr"]["vendors"]
+
+        if board_name not in boards:
+            logger.warning(
+                f"Board {board_name} does not seem to be a valid board name.",
+                location=(self.env.docname, self.lineno),
+            )
+            return []
+        elif "docname" in boards[board_name]:
+            logger.warning(
+                f"Board {board_name} is already documented in {boards[board_name]['docname']}.",
+                location=(self.env.docname, self.lineno),
+            )
+            return []
+        else:
+            board = boards[board_name]
+            # flag board in the domain data as now having a documentation page so that it can be
+            # cross-referenced etc.
+            board["docname"] = self.env.docname
+
+            board_node = BoardNode(id=board_name)
+            board_node["full_name"] = board["full_name"]
+            board_node["vendor"] = vendors.get(board["vendor"], board["vendor"])
+            board_node["archs"] = board["archs"]
+            board_node["socs"] = board["socs"]
+            board_node["image"] = board["image"]
+            return [board_node]
+
+
 class BoardCatalogDirective(SphinxDirective):
     has_content = False
     required_arguments = 0
@@ -578,13 +682,16 @@ class BoardCatalogDirective(SphinxDirective):
         if self.env.app.builder.format == "html":
             self.env.domaindata["zephyr"]["has_board_catalog"][self.env.docname] = True
 
-            # As it is not expected that more than one board-catalog directive is used across
-            # the documentation, and since the generation is only taking a few seconds,  we don't
-            # store the catalog in the domain data. It might change in the future if the generation
-            # becomes more expensive.
-            board_catalog = get_catalog()
+            domain_data = self.env.domaindata["zephyr"]
             renderer = SphinxRenderer([TEMPLATES_DIR])
-            rendered = renderer.render("board-catalog.html", {"catalog": board_catalog})
+            rendered = renderer.render(
+                "board-catalog.html",
+                {
+                    "boards": domain_data["boards"],
+                    "vendors": domain_data["vendors"],
+                    "socs": domain_data["socs"],
+                },
+            )
             return [nodes.raw("", rendered, format="html")]
         else:
             return [nodes.paragraph(text="Board catalog is only available in HTML.")]
@@ -599,6 +706,7 @@ class ZephyrDomain(Domain):
     roles = {
         "code-sample": XRefRole(innernodeclass=nodes.inline, warn_dangling=True),
         "code-sample-category": XRefRole(innernodeclass=nodes.inline, warn_dangling=True),
+        "board": XRefRole(innernodeclass=nodes.inline, warn_dangling=True),
     }
 
     directives = {
@@ -606,11 +714,13 @@ class ZephyrDomain(Domain):
         "code-sample-listing": CodeSampleListingDirective,
         "code-sample-category": CodeSampleCategoryDirective,
         "board-catalog": BoardCatalogDirective,
+        "board": BoardDirective,
     }
 
     object_types: Dict[str, ObjType] = {
         "code-sample": ObjType("code sample", "code-sample"),
         "code-sample-category": ObjType("code sample category", "code-sample-category"),
+        "board": ObjType("board", "board"),
     }
 
     initial_data: Dict[str, Any] = {
@@ -643,6 +753,12 @@ class ZephyrDomain(Domain):
     def merge_domaindata(self, docnames: List[str], otherdata: Dict) -> None:
         self.data["code-samples"].update(otherdata["code-samples"])
         self.data["code-samples-categories"].update(otherdata["code-samples-categories"])
+
+        # self.data["boards"] contains all the boards right from builder-inited time, but it still # potentially needs merging since a board's docname property is set by BoardDirective to
+        # indicate the board is documented in a specific document.
+        for board_name, board in otherdata["boards"].items():
+            if "docname" in board:
+                self.data["boards"][board_name]["docname"] = board["docname"]
 
         # merge category trees by adding all the categories found in the "other" tree that to
         # self tree
@@ -686,6 +802,18 @@ class ZephyrDomain(Domain):
                 1,
             )
 
+        for _, board in self.data["boards"].items():
+            # only boards that do have a documentation page are to be considered as valid objects
+            if "docname" in board:
+                yield (
+                    board["name"],
+                    board["full_name"],
+                    "board",
+                    board["docname"],
+                    board["name"],
+                    1,
+                )
+
     # used by Sphinx Immaterial theme
     def get_object_synopses(self) -> Iterator[Tuple[Tuple[str, str], str]]:
         for _, code_sample in self.data["code-samples"].items():
@@ -699,18 +827,20 @@ class ZephyrDomain(Domain):
             elem = self.data["code-samples"].get(target)
         elif type == "code-sample-category":
             elem = self.data["code-samples-categories"].get(target)
+        elif type == "board":
+            elem = self.data["boards"].get(target)
         else:
             return
 
         if elem:
             if not node.get("refexplicit"):
-                contnode = [nodes.Text(elem["name"])]
+                contnode = [nodes.Text(elem["name"] if type != "board" else elem["full_name"])]
 
             return make_refnode(
                 builder,
                 fromdocname,
                 elem["docname"],
-                elem["id"],
+                elem["id"] if type != "board" else elem["name"],
                 contnode,
                 elem["description"].astext() if type == "code-sample" else None,
             )
@@ -804,6 +934,13 @@ def install_static_assets_as_needed(
         app.add_js_file("js/board-catalog.js")
 
 
+def load_board_catalog_into_domain(app: Sphinx) -> None:
+    board_catalog = get_catalog()
+    app.env.domaindata["zephyr"]["boards"] = board_catalog["boards"]
+    app.env.domaindata["zephyr"]["vendors"] = board_catalog["vendors"]
+    app.env.domaindata["zephyr"]["socs"] = board_catalog["socs"]
+
+
 def setup(app):
     app.add_config_value("zephyr_breathe_insert_related_samples", False, "env")
 
@@ -811,6 +948,7 @@ def setup(app):
 
     app.add_transform(ConvertCodeSampleNode)
     app.add_transform(ConvertCodeSampleCategoryNode)
+    app.add_transform(ConvertBoardNode)
 
     app.add_post_transform(ProcessCodeSampleListingNode)
     app.add_post_transform(CodeSampleCategoriesTocPatching)
@@ -820,6 +958,8 @@ def setup(app):
         "builder-inited",
         (lambda app: app.config.html_static_path.append(RESOURCES_DIR.as_posix())),
     )
+    app.connect("builder-inited", load_board_catalog_into_domain)
+
     app.connect("html-page-context", install_static_assets_as_needed)
     app.connect("env-updated", compute_sample_categories_hierarchy)
 

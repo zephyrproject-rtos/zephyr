@@ -6,7 +6,6 @@ from collections import namedtuple
 from pathlib import Path
 
 import list_boards, list_hardware
-import pykwalify
 import yaml
 import zephyr_module
 from gen_devicetree_rest import VndLookup
@@ -35,8 +34,8 @@ def guess_image(board_or_shield):
     img_file = guess_file_from_patterns(
         board_or_shield.dir, patterns, board_or_shield.name, img_exts
     )
-    return (Path("../_images") / img_file.name).as_posix() if img_file else ""
 
+    return (img_file.relative_to(ZEPHYR_BASE)).as_posix() if img_file else None
 
 def guess_doc_page(board_or_shield):
     patterns = [
@@ -52,8 +51,6 @@ def guess_doc_page(board_or_shield):
 
 
 def get_catalog():
-    pykwalify.init_logging(1)
-
     vnd_lookup = VndLookup(ZEPHYR_BASE / "dts/bindings/vendor-prefixes.txt", [])
 
     module_settings = {
@@ -106,6 +103,7 @@ def get_catalog():
         doc_page = guess_doc_page(board)
 
         board_catalog[board.name] = {
+            "name": board.name,
             "full_name": full_name,
             "doc_page": doc_page.relative_to(ZEPHYR_BASE).as_posix() if doc_page else None,
             "vendor": vendor,
