@@ -59,6 +59,8 @@ The boards support the following hardware features:
 +-----------+------------+-------------------------------------+
 | LPI2C     | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| QSPI      | on-chip    | flash                               |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by the port.
 
@@ -162,6 +164,12 @@ ADC is provided through ADC SAR controller with 2 instances. Each ADC SAR instan
 
 .. note::
    All channels of an instance only run on 1 group channel at the same time.
+
+External Flash
+==============
+
+The on-board S26HS512T 512M-bit HyperFlash memory is connected to the QSPI controller
+port A1. This board configuration selects it as the default flash controller.
 
 Programming and Debugging
 *************************
