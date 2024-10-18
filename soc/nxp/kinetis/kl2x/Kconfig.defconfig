@@ -8,4 +8,11 @@ if SOC_SERIES_KINETIS_KL2X
 config NUM_IRQS
 	default 32 if SOC_MKL25Z4
 
+# The flash option register (FOPT) boot options
+# 0011 1011 - Boot from Internal Flash.
+#             Set NMI pin/interrupts to disabled.
+config KINETIS_FLASH_CONFIG_FOPT
+	default 0x3B
+	depends on KINETIS_FLASH_CONFIG
+
 endif # SOC_SERIES_KINETIS_KL2X
