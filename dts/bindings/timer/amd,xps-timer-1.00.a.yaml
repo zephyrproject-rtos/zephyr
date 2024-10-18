@@ -1,0 +1,31 @@
+description: AMD AXI Timer IP node
+
+compatible: "amd,xps-timer-1.00.a"
+
+properties:
+  reg:
+    type: array
+    description: register space
+    required: true
+
+  interrupts:
+    type: array
+    description: interrupts for device
+
+  interrupt-names:
+    type: string-array
+    description: name of each interrupt
+
+  clocks:
+    type: phandle-array
+    description: clock gate information
+    required: true
+
+  xlnx,one-timer-only:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+    description:
+      0 if both timers are enabled, 1 if only the first timer is enabled.
