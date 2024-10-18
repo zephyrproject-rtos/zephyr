@@ -38,6 +38,12 @@ family:
     - name: mimxrt685s
       cpuclusters:
       - name: cm33
+  - name: imxrt7xx
+    socs:
+    - name: mimxrt798s
+      cpuclusters:
+      - name: hifi4
+      - name: hifi1
 runners:
   run_once:
     '--erase':
