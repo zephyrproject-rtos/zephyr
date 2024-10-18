@@ -124,6 +124,13 @@ struct zbus_observer_data {
 	/** Subscriber attached thread priority. */
 	int priority;
 #endif /* CONFIG_ZBUS_PRIORITY_BOOST */
+
+#if defined(CONFIG_ZBUS_RUNTIME_OBSERVERS) || defined(__DOXYGEN__)
+	/* Pointer back to parent observer struct */
+	const struct zbus_observer *obs;
+	/* List iteration node */
+	sys_snode_t node;
+#endif /* CONFIG_ZBUS_RUNTIME_OBSERVERS */
 };
 
 /**
@@ -852,15 +859,6 @@ int zbus_chan_add_obs(const struct zbus_channel *chan, const struct zbus_observe
  */
 int zbus_chan_rm_obs(const struct zbus_channel *chan, const struct zbus_observer *obs,
 		     k_timeout_t timeout);
-
-/** @cond INTERNAL_HIDDEN */
-
-struct zbus_observer_node {
-	sys_snode_t node;
-	const struct zbus_observer *obs;
-};
-
-/** @endcond */
 
 #endif /* CONFIG_ZBUS_RUNTIME_OBSERVERS */
 
