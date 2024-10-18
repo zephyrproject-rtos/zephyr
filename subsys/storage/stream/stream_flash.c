@@ -79,6 +79,12 @@ int stream_flash_erase_page(struct stream_flash_ctx *ctx, off_t off)
 #if defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
 	int rc;
 	struct flash_pages_info page;
+
+	if (off < ctx->offset || (off - ctx->offset) >= ctx->available) {
+		LOG_ERR("Offset out of designated range");
+		return -ERANGE;
+	}
+
 #if defined(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE)
 	/* There are both types of devices */
 	const struct flash_parameters *fparams = flash_get_parameters(ctx->fdev);
