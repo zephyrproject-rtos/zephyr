@@ -7,6 +7,7 @@
 #include <zephyr/settings/settings.h>
 
 #include "ll_settings.h"
+#include "../../common/settings.h"
 
 #include <zephyr/logging/log.h>
 
@@ -89,4 +90,4 @@ static int ctlr_set(const char *name, size_t len_rd,
 	return 0;
 }
 
-SETTINGS_STATIC_HANDLER_DEFINE(bt_ctlr, "bt/ctlr", NULL, ctlr_set, NULL, NULL);
+BT_SUBSYS_SETTINGS_DEFINE(BT_SETTINGS_PRIO_BT, ctlr, "ctlr", ctlr_set, NULL);

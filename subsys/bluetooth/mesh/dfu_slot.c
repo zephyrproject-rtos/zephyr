@@ -12,13 +12,15 @@
 #include <zephyr/sys/util.h>
 #include <common/bt_str.h>
 
+#include "../common/settings.h"
+
 #define LOG_LEVEL CONFIG_BT_MESH_DFU_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_mesh_dfu_slot);
 
 #define SLOT_ENTRY_BUFLEN 25
 
-#define DFU_SLOT_SETTINGS_PATH "bt/mesh-dfu/slot"
+#define DFU_SLOT_SETTINGS_PATH "mesh-dfu/slot"
 
 #define HEADER_SIZE offsetof(struct slot, slot.fwid)
 
@@ -39,7 +41,7 @@ static uint32_t slot_index;
 static char *slot_entry_encode(uint16_t idx, char buf[SLOT_ENTRY_BUFLEN],
 			       const char *property)
 {
-	snprintf(buf, SLOT_ENTRY_BUFLEN, DFU_SLOT_SETTINGS_PATH "/%x/%s", idx,
+	snprintf(buf, SLOT_ENTRY_BUFLEN, "bt/"DFU_SLOT_SETTINGS_PATH "/%x/%s", idx,
 		 property);
 
 	return buf;
@@ -398,5 +400,5 @@ static int slot_data_load(const char *key, size_t len_rd,
 	return 0;
 }
 
-SETTINGS_STATIC_HANDLER_DEFINE(bt_mesh_dfu_slots, DFU_SLOT_SETTINGS_PATH, NULL,
-			       slot_data_load, NULL, NULL);
+BT_SUBSYS_SETTINGS_DEFINE(BT_SETTINGS_PRIO_AFT_BT, mesh_dfu_slots, DFU_SLOT_SETTINGS_PATH,
+			  slot_data_load, NULL);

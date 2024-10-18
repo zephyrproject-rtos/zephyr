@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "../common/settings.h"
+
 /* Pending storage actions. */
 enum bt_mesh_settings_flag {
 	BT_MESH_SETTINGS_RPL_PENDING,
@@ -36,8 +38,8 @@ enum bt_mesh_settings_flag {
 		}                                                                                  \
 		return _set(name, len_rd, read_cb, cb_arg);                                        \
 	}                                                                                          \
-	SETTINGS_STATIC_HANDLER_DEFINE(bt_mesh_##_hname, "bt/mesh/" _subtree, NULL, pre_##_set,    \
-				       NULL, NULL)
+	BT_SUBSYS_SETTINGS_DEFINE(BT_SETTINGS_PRIO_AFT_BT, mesh_##_hname, "mesh/" _subtree,	   \
+				  pre_##_set, NULL)
 #else
 /* Declaring non static settings handler helps avoid unnecessary ifdefs
  * as well as unused function warning. Since the declared handler structure is
