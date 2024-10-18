@@ -119,6 +119,8 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetIpSrcDiv(kCLOCK_Lpi2c0, kSCG_SysClkDivBy16);
 	CLOCK_SetIpSrc(kCLOCK_Lpi2c1, kCLOCK_IpSrcFro192M);
 	CLOCK_SetIpSrcDiv(kCLOCK_Lpi2c1, kSCG_SysClkDivBy16);
+	CLOCK_SetIpSrc(kCLOCK_Lpspi0, kCLOCK_IpSrcFro192M);
+	CLOCK_SetIpSrc(kCLOCK_Lpspi1, kCLOCK_IpSrcFro192M);
 
 	/* Ungate clocks if the peripheral is enabled in devicetree */
 	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpuart0), nxp_lpc_lpuart, okay)) {
@@ -143,6 +145,14 @@ static ALWAYS_INLINE void clock_init(void)
 
 	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpi2c1), nxp_imx_lpi2c, okay)) {
 		CLOCK_EnableClock(kCLOCK_Lpi2c1);
+	}
+
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpspi0), nxp_imx_lpspi, okay)) {
+		CLOCK_EnableClock(kCLOCK_Lpspi0);
+	}
+
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpspi1), nxp_imx_lpspi, okay)) {
+		CLOCK_EnableClock(kCLOCK_Lpspi1);
 	}
 }
 
