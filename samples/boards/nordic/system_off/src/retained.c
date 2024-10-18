@@ -16,7 +16,11 @@
 #include <zephyr/sys/crc.h>
 
 #if CONFIG_APP_USE_NRF_RETENTION
+#if CONFIG_SOC_NRF54H20_CPUAPP
+#include <hal/nrf_memconf.h>
+#else
 #include <hal/nrf_power.h>
+#endif
 
 /* nRF52 RAM (really, RAM AHB slaves) are partitioned as:
  * * Up to 8 blocks of two 4 KiBy byte "small" sections
@@ -70,6 +74,10 @@ static int ram_range_retain(const void *ptr,
 			    size_t len,
 			    bool enable)
 {
+#if CONFIG_SOC_NRF54H20_CPUAPP
+	/* Core is using global RAM memory which will be retained. Nothing to be done here. */
+	return 0;
+#else
 	int rc = 0;
 
 #if CONFIG_APP_USE_NRF_RETENTION
@@ -142,6 +150,7 @@ static int ram_range_retain(const void *ptr,
 #endif
 
 	return rc;
+#endif
 }
 
 /* Retained data must be defined in a no-init section to prevent the C

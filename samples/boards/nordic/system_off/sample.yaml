@@ -21,6 +21,13 @@ tests:
       - nrf52dk/nrf52832
     extra_configs:
       - CONFIG_APP_USE_NRF_RETENTION=y
+  sample.boards.nrf.system_off.nrf54h20:
+    build_only: true
+    sysbuild: true
+    platform_allow:
+      - nrf54h20dk/nrf5420/cpuapp
+    extra_configs:
+      - CONFIG_APP_USE_NRF_RETENTION=y
   sample.boards.nrf.system_off.retained_mem:
     extra_args: DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuapp_retained_mem.overlay"
     build_only: true

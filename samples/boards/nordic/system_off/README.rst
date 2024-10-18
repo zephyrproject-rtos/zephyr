@@ -8,7 +8,10 @@ Overview
 ********
 
 This sample can be used for basic power measurement and as an example of
-deep sleep on Nordic platforms.
+deep sleep on Nordic platforms. After pin reset application goes to system off.
+Pressing Button 0 wakes up the system and after printing messages goes again to
+system off. Pressing Button 1 wakes up the system but after printing messages
+system goes to sleep instead of system off.
 
 RAM Retention
 =============
@@ -22,7 +25,7 @@ RAM is configured to keep the containing section powered while in system-off mod
 Requirements
 ************
 
-This application uses nRF51 DK, nRF52 DK or nRF54L15 PDK board for the demo.
+This application uses nRF51 DK, nRF52 DK, nRF54H20 DK or nRF54L15 PDK board for the demo.
 
 Sample Output
 =============
