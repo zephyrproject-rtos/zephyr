@@ -40,6 +40,18 @@
 			reg = <0x20000000 DT_SIZE_K(128)>;
 		};
 
+		ddr_code: code@84000000 {
+			device_type = "memory";
+			compatible = "nxp,imx-code-bus";
+			reg = <0x84000000 DT_SIZE_M(2)>;
+		};
+
+		ddr_sys: memory@84200000 {
+			device_type = "memory";
+			compatible = "nxp,imx-sys-bus";
+			reg = <0x84200000 DT_SIZE_M(2)>;
+		};
+
 		iomuxc: iomuxc@443c0000 {
 			compatible = "nxp,imx-iomuxc";
 			reg = <0x443c0000 DT_SIZE_K(64)>;
