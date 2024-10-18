@@ -722,6 +722,21 @@
 		clocks = <&syscon MCUX_LPADC2_CLK>;
 	};
 
+	lpcmp0: lpcmp@51000 {
+		compatible = "nxp,lpcmp";
+		reg = <0x51000 0x1000>;
+		interrupts = <109 0>;
+		status = "disabled";
+		#io-channel-cells = <2>;
+	};
+
+	lpcmp1: lpcmp@52000 {
+		compatible = "nxp,lpcmp";
+		reg = <0x52000 0x1000>;
+		interrupts = <110 0>;
+		status = "disabled";
+		#io-channel-cells = <2>;
+	};
 };
 
 &systick {

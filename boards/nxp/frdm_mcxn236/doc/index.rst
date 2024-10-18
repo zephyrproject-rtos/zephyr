@@ -72,6 +72,8 @@ The FRDM-MCXN236 board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
+| LPCMP     | on-chip    | sensor(comparator)                  |
++-----------+------------+-------------------------------------+
 
 Targets available
 ==================

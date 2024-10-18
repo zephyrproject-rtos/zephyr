@@ -180,6 +180,12 @@ static int frdm_mcxn236_init(void)
 	CLOCK_AttachClk(kFRO_HF_to_ADC0);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpcmp0))
+	CLOCK_SetClkDiv(kCLOCK_DivCmp0FClk, 1U);
+	CLOCK_AttachClk(kFRO12M_to_CMP0F);
+	SPC_EnableActiveModeAnalogModules(SPC0, (kSPC_controlCmp0 | kSPC_controlCmp0Dac));
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 
