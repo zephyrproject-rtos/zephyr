@@ -49,7 +49,7 @@ LOG_MODULE_REGISTER(net_mdns_responder, CONFIG_MDNS_RESPONDER_LOG_LEVEL);
 #pragma GCC diagnostic ignored "-Wstringop-overread"
 #endif
 
-extern void dns_dispatcher_svc_handler(struct k_work *work);
+extern void dns_dispatcher_svc_handler(struct net_socket_service_event *pev);
 
 #define MDNS_LISTEN_PORT 5353
 

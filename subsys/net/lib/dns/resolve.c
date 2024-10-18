@@ -34,7 +34,7 @@ LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #define DNS_SERVER_COUNT CONFIG_DNS_RESOLVER_MAX_SERVERS
 #define SERVER_COUNT     (DNS_SERVER_COUNT + DNS_MAX_MCAST_SERVERS)
 
-extern void dns_dispatcher_svc_handler(struct k_work *work);
+extern void dns_dispatcher_svc_handler(struct net_socket_service_event *pev);
 
 NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(resolve_svc, dns_dispatcher_svc_handler,
 				      DNS_RESOLVER_MAX_POLL);

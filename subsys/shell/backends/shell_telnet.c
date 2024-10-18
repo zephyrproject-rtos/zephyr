@@ -39,7 +39,7 @@ struct shell_telnet *sh_telnet;
 
 /* Basic TELNET implementation. */
 
-static void telnet_server_cb(struct k_work *work);
+static void telnet_server_cb(struct net_socket_service_event *evt);
 static int telnet_init(struct shell_telnet *ctx);
 
 NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(telnet_server, telnet_server_cb,
@@ -462,10 +462,8 @@ error:
 	}
 }
 
-static void telnet_server_cb(struct k_work *work)
+static void telnet_server_cb(struct net_socket_service_event *evt)
 {
-	struct net_socket_service_event *evt =
-		CONTAINER_OF(work, struct net_socket_service_event, work);
 	int sock_error;
 	socklen_t optlen = sizeof(int);
 
