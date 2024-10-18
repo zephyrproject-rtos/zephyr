@@ -396,6 +396,31 @@ ZTEST_USER(canfd, test_set_timing_data_min)
 }
 
 /**
+ * @brief Test setting a too low data phase bitrate.
+ */
+ZTEST_USER(canfd, test_set_bitrate_data_too_low)
+{
+	uint32_t min = can_get_bitrate_min(can_dev);
+	int err;
+
+	if (min == 0) {
+		ztest_test_skip();
+	}
+
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	err = can_set_bitrate_data(can_dev, min - 1);
+	zassert_equal(err, -ENOTSUP, "too low data phase bitrate accepted");
+
+	err = can_set_bitrate_data(can_dev, CONFIG_CAN_DEFAULT_BITRATE_DATA);
+	zassert_equal(err, 0, "failed to restore default data bitrate");
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+}
+
+/**
  * @brief Test setting a too high data phase bitrate.
  */
 ZTEST_USER(canfd, test_set_bitrate_too_high)
