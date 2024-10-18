@@ -2433,7 +2433,6 @@ int supplicant_ap_bandwidth(const struct device *dev, struct wifi_ap_config_para
 
 	return wifi_mgmt_api->ap_bandwidth(dev, params);
 }
-#endif
 
 int supplicant_ap_status(const struct device *dev, struct wifi_iface_status *status)
 {
@@ -2510,6 +2509,7 @@ out:
 	k_mutex_unlock(&wpa_supplicant_mutex);
 	return ret;
 }
+#endif
 
 int supplicant_ap_enable(const struct device *dev,
 			 struct wifi_connect_req_params *params)
