@@ -128,6 +128,15 @@ tests:
       - nucleo_wl55jc
       - stm32f3_disco
       - stm32h573i_dk
+  drivers.spi.stm32_spi_async_dma.loopback:
+    extra_args: OVERLAY_CONFIG="overlay-stm32-spi-async-dma.conf"
+    filter: CONFIG_SOC_FAMILY_STM32
+    platform_allow:
+      - nucleo_f207zg
+      - nucleo_f429zi
+      - nucleo_f746zg
+      - nucleo_f767zi
+      - stm32h573i_dk
   drivers.spi.gd32_spi_interrupt.loopback:
     extra_args: EXTRA_CONF_FILE="overlay-gd32-spi-interrupt.conf"
     platform_allow:
