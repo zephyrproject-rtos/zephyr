@@ -1,7 +1,4 @@
-.. _xmc47_relax_kit:
-
-INFINEON XMC47-RELAX-KIT
-########################
+.. zephyr:board:: xmc47_relax_kit
 
 Overview
 ********
@@ -9,10 +6,6 @@ Overview
 The XMC4700 Relax Kit is designed to evaluate the capabilities of the XMC4700
 Microcontroller. It is based on High performance ARM Cortex-M4F which can run
 up to 144MHz.
-
-.. image:: xmc47_relax_kit.jpg
-   :align: center
-   :alt: XMC47-RELAX-KIT
 
 Features:
 =========
