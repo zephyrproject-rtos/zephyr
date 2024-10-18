@@ -626,6 +626,7 @@ static void stream_started(struct bt_bap_stream *stream)
 {
 	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
 	struct bt_bap_ep_info info;
+	const uint8_t test_data[5] = { 0x01, 0x02, 0x03, 0x04, 0x05 };
 
 	/* Callback called on transition to Streaming state */
 
@@ -635,6 +636,12 @@ static void stream_started(struct bt_bap_stream *stream)
 
 	(void)bt_bap_ep_get_info(stream->ep, &info);
 	btp_send_ascs_ase_state_changed_ev(stream->conn, u_stream->ase_id, info.state);
+
+	/* Send test data after entering streaming state. For now this seems to
+	 * be required by PTS as there is not Upper Tester action for this in
+	 * Test Specification
+	 */
+	btp_bap_audio_stream_send_data(test_data, sizeof(test_data));
 }
 
 static void stream_connected(struct bt_bap_stream *stream)
