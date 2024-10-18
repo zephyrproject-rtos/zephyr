@@ -227,6 +227,14 @@
 			zephyr,memory-region = "ID_CODE";
 			status = "okay";
 		};
+
+		qspi0: qspi0@64000000 {
+			compatible = "renesas,ra-qspi";
+			#address-cells = <0x1>;
+			#size-cells = <0x1>;
+			reg = <0x64000000 0x808>;
+			status = "disabled";
+		};
 	};
 };
 

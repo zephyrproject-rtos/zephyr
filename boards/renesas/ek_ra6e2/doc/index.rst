@@ -98,6 +98,8 @@ The below features are currently supported on Zephyr OS for EK-RA6E2 board:
 +-----------+------------+----------------------+
 | CLOCK     | on-chip    | clock control        |
 +-----------+------------+----------------------+
+| QSPI      | on-chip    | qspi flash           |
++-----------+------------+----------------------+
 
 Other hardware features are currently not supported by the port.
 

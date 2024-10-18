@@ -13,6 +13,11 @@ enum ra_ex_ops {
 	FLASH_RA_EX_OP_WRITE_PROTECT = FLASH_EX_OP_VENDOR_BASE,
 };
 
+enum qspi_flash_ex_op_types {
+	QSPI_FLASH_EX_OP_RESET = 0,
+	QSPI_FLASH_EX_OP_EXIT_QPI = 1,
+};
+
 typedef struct {
 	union {
 		uint32_t BPS[4];
@@ -142,5 +147,4 @@ typedef struct flash_ra_ex_write_protect_out {
 	flash_ra_cf_block_map protected_premanent;
 } flash_ra_ex_write_protect_out_t;
 #endif /* CONFIG_FLASH_RA_WRITE_PROTECT */
-
 #endif
