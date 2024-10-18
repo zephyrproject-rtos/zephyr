@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_CODEC_CS35L45
+	bool "Cirrus Logic CS35L45 codec support"
+	depends on DT_HAS_CIRRUS_CS35L45_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS35L45),i2c)
+	select GPIO
+	select REGULATOR
+	help
+	  Enable driver for CS35L45 smart amplifier
