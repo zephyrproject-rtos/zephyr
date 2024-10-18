@@ -10,13 +10,15 @@
 #include <zephyr/device.h>
 
 #include <zephyr/drivers/mbox.h>
+#include <zephyr/drivers/remoteproc.h>
+#include <zephyr/drivers/remoteproc/vdev.h>
 
 #include <openamp/virtio.h>
 #include <openamp/remoteproc.h>
 #include <openamp/remoteproc_virtio.h>
 #include <openamp/rpmsg_virtio.h>
 
-#include <resource_table.h>
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(openamp_remoteproc, CONFIG_REMOTEPROC_LOG_LEVEL);
 
@@ -80,14 +82,6 @@ static void vdev_rx_thread(void *dev_ptr, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	static struct rpmsg_endpoint ept_rpc;
-
-	struct rpmsg_device *rpdev = rpmsg_virtio_get_rpmsg_device(&data->rvdev);
-
-	if (!rpdev) {
-		LOG_ERR("rpmsg_virtio_get_rpmsg_device failed\n");
-		return;
-	}
 
 	for (;;) {
 		k_sem_take(&data->sem, data->poll_time);
@@ -97,7 +91,7 @@ static void vdev_rx_thread(void *dev_ptr, void *p2, void *p3)
 
 static void dump_io_region(const char *name, const struct metal_io_region *region)
 {
-	LOG_INF("metal_io %s va=%x pa=%lx size=0x%x %x", name, region->virt,
+	LOG_INF("metal_io %s va=%p pa=%lx size=0x%x %lx", name, region->virt,
 		  *region->physmap,  region->size, region->page_shift);
 }
 
@@ -105,9 +99,9 @@ static int vdev_init(const struct device *dev)
 {
 	const struct vdev_config *config = dev->config;
 	struct vdev_data *data = dev->data;
-	struct fw_rsc_vdev *fw_vdev0 = rsc_table_get_vdev(config->idx);
-	struct fw_rsc_vdev_vring *fw_vring0 = rsc_table_get_vring0(config->idx);
-	struct fw_rsc_vdev_vring *fw_vring1 = rsc_table_get_vring1(config->idx);
+	struct fw_rsc_vdev *fw_vdev0 = remoteproc_get_vdev(config->idx);
+	struct fw_rsc_vdev_vring *fw_vring0 = remoteproc_get_vring0(config->idx);
+	struct fw_rsc_vdev_vring *fw_vring1 = remoteproc_get_vring1(config->idx);
 	const struct fw_rsc_carveout *buffer_carveout;
 	const struct fw_rsc_carveout *vring0_carveout;
 	const struct fw_rsc_carveout *vring1_carveout;
@@ -143,39 +137,39 @@ static int vdev_init(const struct device *dev)
 		return ret;
 	}
 
-	rsc_table_io = rsc_table_get_io_region();
+	rsc_table_io = remoteproc_get_io_region();
 
-	buffer_carveout = rsc_table_get_carveout_by_name(config->buffer_name);
+	buffer_carveout = remoteproc_get_carveout_by_name(config->buffer_name);
 	if (!buffer_carveout) {
 		LOG_ERR("buffer_carveout not found %s", config->buffer_name);
 		return -1;
 	}
 
-	buffer_io = rsc_table_get_carveout_io_region(buffer_carveout);
+	buffer_io = remoteproc_get_carveout_io_region(buffer_carveout);
 	if (!buffer_io) {
 		LOG_ERR("buffer_io not found");
 		return -1;
 	}
 
-	vring0_carveout = rsc_table_get_carveout_by_name(config->vring0_name);
+	vring0_carveout = remoteproc_get_carveout_by_name(config->vring0_name);
 	if (!vring0_carveout) {
 		LOG_ERR("vring0_carveout not found");
 		return -1;
 	}
 
-	vring0_io = rsc_table_get_carveout_io_region(vring0_carveout);
+	vring0_io = remoteproc_get_carveout_io_region(vring0_carveout);
 	if (!vring0_io) {
 		LOG_ERR("vring0_io not found");
 		return -1;
 	}
 
-	vring1_carveout = rsc_table_get_carveout_by_name(config->vring1_name);
+	vring1_carveout = remoteproc_get_carveout_by_name(config->vring1_name);
 	if (!vring1_carveout) {
 		LOG_ERR("vring1_carveout not found");
 		return -1;
 	}
 
-	vring1_io = rsc_table_get_carveout_io_region(vring1_carveout);
+	vring1_io = remoteproc_get_carveout_io_region(vring1_carveout);
 	if (!vring1_io) {
 		LOG_ERR("vring1_io not found");
 		return -1;
@@ -231,14 +225,20 @@ static int vdev_init(const struct device *dev)
 	return 0;
 }
 
+struct rpmsg_device *vdev_get_rpmsg_device(const struct device *dev)
+{
+	struct vdev_data *data = dev->data;
+
+	return rpmsg_virtio_get_rpmsg_device(&data->rvdev);
+}
 
 #define DEFINE_VIRTIO_DEVICE(i)  \
 static const struct vdev_config vdev_config_##i = {  \
 	.mbox_tx = MBOX_DT_SPEC_INST_GET(i, tx),  \
 	.mbox_rx = MBOX_DT_SPEC_INST_GET(i, rx),  \
-	.vring0_name = DT_INST_PROP_BY_PHANDLE(i, vring0_carveout, zephyr_memory_region),  \
-	.vring1_name = DT_INST_PROP_BY_PHANDLE(i, vring1_carveout, zephyr_memory_region),  \
-	.buffer_name = DT_INST_PROP_BY_PHANDLE(i, buffer_carveout, zephyr_memory_region),  \
+	.vring0_name = DT_INST_PROP_BY_PHANDLE(i, vring0_io, zephyr_memory_region),  \
+	.vring1_name = DT_INST_PROP_BY_PHANDLE(i, vring1_io, zephyr_memory_region),  \
+	.buffer_name = DT_INST_PROP_BY_PHANDLE(i, buffer_io, zephyr_memory_region),  \
 	.idx = i,  \
 	};  \
 	static struct vdev_data vdev_data_##i = { };  \

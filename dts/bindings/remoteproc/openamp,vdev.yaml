@@ -4,30 +4,26 @@ description: OpenAMP RemoteProc vdev
 
 compatible: "openamp,vdev"
 
-include: [base.yaml]
+include: base.yaml
 
 bus: rpmsg
 
 properties:
-  "#address-cells":
-    const: 1
-  "#size-cells":
-    const: 0
 
-  vring0-carveout:
+  vring0-io:
     type: phandle
     required: true
-    description: carveout for the shared memory
+    description: I/O region for the vring0, usually a carvout region
 
-  vring1-carveout:
+  vring1-io:
     type: phandle
     required: true
-    description: carveout for the shared memory
+    description: I/O region for the vring1, usually a carvout region
 
-  buffer-carveout:
+  buffer-io:
     type: phandle
     required: true
-    description: carveout for the shared memory
+    description: I/O region for the RPMSG buffer, usually a carvout region
 
   num-tx-buffers:
     type: int

@@ -24,10 +24,13 @@
  *   https://github.com/OpenAMP/open-amp/wiki/OpenAMP-Life-Cycle-Management
  */
 
-#include <resource_table.h>
+#include <zephyr/drivers/remoteproc.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/linker/devicetree_regions.h>
+
+#include <openamp/remoteproc.h>
+#include <openamp/virtio.h>
 
 LOG_MODULE_REGISTER(openamp_remoteproc, CONFIG_REMOTEPROC_LOG_LEVEL);
 
@@ -193,22 +196,22 @@ static struct  {
 #endif
 
 
-struct fw_resource_table *rsc_table_get(void)
+struct fw_resource_table *remoteproc_get_rsc_table(void)
 {
 	return &resource_table;
 }
 
-size_t rsc_table_get_size(void)
+size_t rsc_table_get_rsc_table_size(void)
 {
 	return sizeof(resource_table);
 }
 
-unsigned int rsc_table_get_num_carveouts(void)
+unsigned int remoteproc_get_num_carveouts(void)
 {
 	return NUM_CARVEOUTS;
 }
 
-struct fw_rsc_carveout *rsc_table_get_carveout_by_name(const char *name)
+struct fw_rsc_carveout *remoteproc_get_carveout_by_name(const char *name)
 {
 #if NUM_CARVEOUTS > 0
 	struct fw_resource_table *rsc_table = &resource_table;
@@ -222,7 +225,7 @@ struct fw_rsc_carveout *rsc_table_get_carveout_by_name(const char *name)
 	return NULL;
 }
 
-struct fw_rsc_carveout *rsc_table_get_carveout_by_idx(unsigned int idx)
+struct fw_rsc_carveout *remoteproc_get_carveout_by_idx(unsigned int idx)
 {
 #if NUM_CARVEOUTS > 0
 	struct fw_resource_table *rsc_table = &resource_table;
@@ -237,7 +240,7 @@ struct fw_rsc_carveout *rsc_table_get_carveout_by_idx(unsigned int idx)
 #endif
 }
 
-struct fw_rsc_vdev *rsc_table_get_vdev(unsigned int vdev_idx)
+struct fw_rsc_vdev *remoteproc_get_vdev(unsigned int vdev_idx)
 {
 #if NUM_VDEVS > 0
 	struct fw_resource_table *rsc_table = &resource_table;
@@ -253,7 +256,7 @@ struct fw_rsc_vdev *rsc_table_get_vdev(unsigned int vdev_idx)
 #endif
 }
 
-struct fw_rsc_vdev_vring *rsc_table_get_vring0(unsigned int vdev_idx)
+struct fw_rsc_vdev_vring *remoteproc_get_vring0(unsigned int vdev_idx)
 {
 #if NUM_VDEVS > 0
 	struct fw_resource_table *rsc_table = &resource_table;
@@ -268,7 +271,7 @@ struct fw_rsc_vdev_vring *rsc_table_get_vring0(unsigned int vdev_idx)
 #endif
 }
 
-struct fw_rsc_vdev_vring *rsc_table_get_vring1(unsigned int vdev_idx)
+struct fw_rsc_vdev_vring *remoteproc_get_vring1(unsigned int vdev_idx)
 {
 #if NUM_VDEVS > 0
 	struct fw_resource_table *rsc_table = &resource_table;
@@ -318,7 +321,7 @@ static int metal_init_once(void)
 	return status;
 }
 
-struct metal_io_region *rsc_table_get_io_region(void)
+struct metal_io_region *remoteproc_get_io_region(void)
 {
 	int status = metal_init_once();
 
@@ -329,7 +332,7 @@ struct metal_io_region *rsc_table_get_io_region(void)
 	return &resource_table_region;
 }
 
-struct metal_io_region *rsc_table_get_carveout_io_region(const struct fw_rsc_carveout *carveout)
+struct metal_io_region *remoteproc_get_carveout_io_region(const struct fw_rsc_carveout *carveout)
 {
 	struct metal_io_region *region = NULL;
 

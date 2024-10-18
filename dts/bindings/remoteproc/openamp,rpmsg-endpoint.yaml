@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  This binding is used to describe an OpenAMP RPMSG endpoint
+
+include: base.yaml
+
+on-bus: rpmsg
+
+compatible: "openamp,rpmsg-endpoint"
+
+
+properties:
+  reg:
+    required: true
+    description: endpoint source address
+  dest-addr:
+    type: int
+    default: 0xFFFFFFFF
+    description: endpoint destination address; default is RPMSG_ADDR_ANY
+  id:
+    type: string
+    required: true
+    description: endpoint name 
+      linux will recognize rpmsg-tty and rpmsg-raw
