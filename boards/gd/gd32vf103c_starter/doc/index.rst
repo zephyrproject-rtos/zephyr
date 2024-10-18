@@ -1,7 +1,4 @@
-.. _gd32vf103c_starter:
-
-GigaDevice GD32VF103C-STARTER
-#############################
+.. zephyr:board:: gd32vf103c_starter
 
 Overview
 ********
@@ -12,10 +9,6 @@ on GD32VF103CB RISC-V MCU.
 The GD32VF103CB features a single-core RISC-V 32-bit MCU which can run up
 to 108 MHz with flash accesses zero wait states, 128 KiB of Flash, 32 KiB of
 SRAM and 37 GPIOs.
-
-.. image:: img/gd32vf103c_starter.jpg
-     :align: center
-     :alt: gd32vf103c_starter
 
 Hardware
 ********
