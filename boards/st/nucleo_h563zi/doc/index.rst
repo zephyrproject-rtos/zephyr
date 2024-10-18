@@ -1,7 +1,4 @@
-.. _nucleo_h563zi_board:
-
-ST Nucleo H563ZI
-################
+.. zephyr:board:: nucleo_h563zi
 
 Overview
 ********
@@ -40,10 +37,6 @@ Here are some highlights of the Nucleo H563ZI board:
 - 32.789 kHz crystal oscillator
 
 More information about the board can be found at the `NUCLEO_H563ZI website`_.
-
-.. image:: img/nucleo_h563zi.jpg
-   :align: center
-   :alt: NUCLEO H563ZI
 
 Hardware
 ********

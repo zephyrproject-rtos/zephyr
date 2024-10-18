@@ -1,7 +1,4 @@
-.. _nucleo_u083rc_board:
-
-ST Nucleo U083RC
-################
+.. zephyr:board:: nucleo_u083rc
 
 Overview
 ********
@@ -28,10 +25,6 @@ board:
 - User LED shared with ARDUINO |reg| Uno V3
 - Two push-buttons: USER and RESET
 - USB Type-C |reg| connector for the ST-LINK
-
-.. image:: img/nucleo_u083rc.jpg
-   :align: center
-   :alt: Nucleo U083RC
 
 More information about the board can be found at the `NUCLEO_U083RC website`_.
 

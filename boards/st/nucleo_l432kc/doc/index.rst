@@ -1,7 +1,4 @@
-.. _nucleo_l432kc_board:
-
-ST Nucleo L432KC
-################
+.. zephyr:board:: nucleo_l432kc
 
 Overview
 ********
@@ -20,10 +17,6 @@ some highlights of the Nucleo L432KC board:
 
 - Three LEDs: USB communication (LD1), power LED (LD2), user LED (LD3)
 - One push-button: RESET
-
-.. image:: img/nucleo_l432kc.jpg
-  :align: center
-  :alt: Nucleo L432KC
 
 More information about the board can be found at the `Nucleo L432KC website`_.
 

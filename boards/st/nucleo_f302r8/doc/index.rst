@@ -1,7 +1,4 @@
-.. _nucleo_f302r8_board:
-
-ST Nucleo F302R8
-################
+.. zephyr:board:: nucleo_f302r8
 
 Overview
 ********
@@ -26,10 +23,6 @@ Here are some highlights of the Nucleo F302R8 board:
 
 - One user LED
 - Two push-buttons: USER and RESET
-
-.. image:: img/nucleo_f302r8.jpg
-   :align: center
-   :alt: Nucleo F302R8
 
 More information about the board can be found at the `Nucleo F302R8 website`_,
 and in the `STM32 Nucleo-64 board User Manual`_.

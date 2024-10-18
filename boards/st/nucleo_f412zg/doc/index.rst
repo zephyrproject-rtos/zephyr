@@ -1,7 +1,4 @@
-.. _nucleo_f412zg_board:
-
-ST Nucleo F412ZG
-################
+.. zephyr:board:: nucleo_f412zg
 
 Overview
 ********
@@ -27,10 +24,6 @@ some highlights of the Nucleo F412ZG board:
 
 - Three user LEDs
 - Two push-buttons: USER and RESET
-
-.. image:: img/nucleo_f412zg.jpg
-   :align: center
-   :alt: Nucleo F412ZG
 
 More information about the board can be found at the `Nucleo F412ZG website`_.
 
