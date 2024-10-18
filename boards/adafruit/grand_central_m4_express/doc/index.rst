@@ -1,7 +1,4 @@
-.. _adafruit_grand_central_m4_express:
-
-Adafruit Grand Central M4 Express
-#################################
+.. zephyr:board:: adafruit_grand_central_m4_express
 
 Overview
 ********
@@ -9,13 +6,6 @@ Overview
 The Adafruit Grand Central M4 Express is an ARM development board with the
 form factor of an Arduino Mega.
 It features 70 GPIO pins, a microSDHC slot and 8MiB of QSPI Flash.
-
-.. figure:: img/adafruit_grand_central_m4_express.webp
-   :width: 800px
-   :align: center
-   :alt: Adafruit Grand Central M4 Express
-
-   Adafruit Grand Central M4 Express (Credit: Kattni Rembor / Adafruit)
 
 Hardware
 ********
