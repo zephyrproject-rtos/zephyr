@@ -101,6 +101,9 @@ static uint8_t supported_services(const void *cmd, uint16_t cmd_len,
 #if defined(CONFIG_BT_HAS)
 	tester_set_bit(rp->data, BTP_SERVICE_ID_HAP);
 #endif /* CONFIG_BT_HAS */
+#if defined(CONFIG_BT_BAS)
+	tester_set_bit(rp->data, BTP_SERVICE_ID_BAS);
+#endif /* CONFIG_BT_BAS */
 #if defined(CONFIG_BT_TBS)
 	tester_set_bit(rp->data, BTP_SERVICE_ID_TBS);
 #endif /*CONFIG_BT_TBS */
@@ -195,6 +198,11 @@ static uint8_t register_service(const void *cmd, uint16_t cmd_len,
 		status = tester_init_has();
 		break;
 #endif /* CONFIG_BT_HAS */
+#if defined(CONFIG_BT_BAS)
+	case BTP_SERVICE_ID_BAS:
+		status = tester_init_bas();
+		break;
+#endif /* CONFIG_BT_BAS */
 #if defined(CONFIG_BT_CSIP_SET_MEMBER)
 	case BTP_SERVICE_ID_CSIS:
 		status = tester_init_csis();
@@ -342,6 +350,11 @@ static uint8_t unregister_service(const void *cmd, uint16_t cmd_len,
 		status = tester_unregister_has();
 		break;
 #endif /* CONFIG_BT_HAS */
+#if defined(CONFIG_BT_BAS)
+	case BTP_SERVICE_ID_BAS:
+		status = tester_unregister_bas();
+		break;
+#endif /* CONFIG_BT_BAS */
 #if defined(CONFIG_BT_CSIP_SET_MEMBER)
 	case BTP_SERVICE_ID_CSIS:
 		status = tester_unregister_csis();
