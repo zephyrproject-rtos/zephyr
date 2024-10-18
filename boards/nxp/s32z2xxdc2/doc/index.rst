@@ -61,6 +61,8 @@ The boards support the following hardware features:
 +-----------+------------+-------------------------------------+
 | EDMA      | on-chip    | dma                                 |
 +-----------+------------+-------------------------------------+
+| DSPI      | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by the port.
 

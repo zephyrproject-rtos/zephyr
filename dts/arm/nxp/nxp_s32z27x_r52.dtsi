@@ -560,6 +560,16 @@
 			status = "disabled";
 		};
 
+		dspi0: spi@40340000 {
+			compatible = "nxp,kinetis-dspi";
+			reg = <0x40340000 0x10000>;
+			interrupts = <GIC_SPI 204 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_MSCDSPI_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		mru0: mbox@76070000 {
 			compatible = "nxp,s32-mru";
 			reg = <0x76070000 0x10000>;
