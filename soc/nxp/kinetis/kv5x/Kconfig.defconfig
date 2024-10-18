@@ -13,4 +13,10 @@ config NUM_IRQS
 config GPIO
 	default y
 
+# The flash option register (FOPT) boot options
+# 1111 1011 - Set NMI pin/interrupts to disabled.
+config KINETIS_FLASH_CONFIG_FOPT
+	default 0xFB
+	depends on KINETIS_FLASH_CONFIG
+
 endif # SOC_SERIES_KINETIS_KV5X

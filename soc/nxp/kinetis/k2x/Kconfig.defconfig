@@ -23,4 +23,10 @@ config NUM_IRQS
 config CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
 	default y if SOC_MK22F12
 
+# The flash option register (FOPT) boot options
+# 1111 1001 - Set NMI pin/interrupts and EzPort reset default to disabled
+config KINETIS_FLASH_CONFIG_FOPT
+	default 0xF9
+	depends on KINETIS_FLASH_CONFIG
+
 endif # SOC_SERIES_KINETIS_K2X
