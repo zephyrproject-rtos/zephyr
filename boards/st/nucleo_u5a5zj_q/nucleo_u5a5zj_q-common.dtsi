@@ -55,10 +55,17 @@
 	status = "okay";
 };
 
+/* This board has a 16MHz crystal attached */
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(16)>;
+	status = "okay";
+};
+
 &clk_lse {
 	status = "okay";
 };
 
+/* Note: this is configured as 4MHz source clock */
 &clk_msis {
 	status = "okay";
 	msi-range = <4>;
@@ -66,11 +73,12 @@
 };
 
 &pll1 {
-	div-m = <1>;
-	mul-n = <80>;
-	div-q = <2>;
-	div-r = <2>;
-	clocks = <&clk_msis>;
+	/* HSE 16MHz source, outputting 160MHz to sysclk and apbclk */
+	div-m = <4>; /* input divisor */
+	mul-n = <80>; /* VCO multiplication factor */
+	div-q = <2>; /* system clock divisor */
+	div-r = <2>; /* peripheral clock divisor */
+	clocks = <&clk_hse>;
 	status = "okay";
 };
 
