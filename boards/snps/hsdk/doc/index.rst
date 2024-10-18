@@ -1,7 +1,4 @@
-.. _hsdk:
-
-DesignWare(R) ARC(R) HS Development Kit
-########################################
+.. zephyr:board:: hsdk
 
 Overview
 ********
@@ -13,10 +10,6 @@ range of interfaces including Ethernet, WiFi, Bluetooth, USB, SDIO, I2C, SPI,
 UART, I2S, ADC, PWM and GPIO. A Vivante GPU is also contained in the ARC
 Development System SoC. This allows developers to build and debug complex
 software on a comprehensive hardware platform
-
-.. image:: hsdk.jpg
-   :align: center
-   :alt: DesignWare(R) ARC(R) HS Development Kit (synopsys.com)
 
 For details about the board, see: `ARC HS Development Kit
 (HSDK) <https://www.synopsys.com/dw/ipdir.php?ds=arc-hs-development-kit>`__

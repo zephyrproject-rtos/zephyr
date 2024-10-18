@@ -421,7 +421,7 @@ Boards & SoC Support
   * Added support for :zephyr:board:`ST STM32L152CDISCOVERY board <stm32l1_disco>`: ``stm32l152c_disco``.
   * Added support for :zephyr:board:`ST STEVAL STWINBX1 Development kit <steval_stwinbx1>`: ``steval_stwinbx1``.
   * Added support for NXP boards: ``frdm_mcxn947``, ``ke17z512``, ``rd_rw612_bga``, ``frdm_rw612``, ``frdm_ke15z``, ``frdm_ke17z``
-  * Added support for :ref:`Synopsys ARC-V RMX1xx nSIM-based simulation platform <nsim_arc_v>`: ``nsim_arc_v/rmx100``.
+  * Added support for :zephyr:board:`Synopsys ARC-V RMX1xx nSIM-based simulation platform <nsim_arc_v>`: ``nsim_arc_v/rmx100``.
   * Added support for :zephyr:board:`Analog Devices MAX32690EVKIT <max32690evkit>`: ``max32690evkit``.
   * Added support for :zephyr:board:`Analog Devices MAX32680EVKIT <max32680evkit>`: ``max32680evkit``.
   * Added support for :zephyr:board:`Analog Devices MAX32672EVKIT <max32672evkit>`: ``max32672evkit``.
