@@ -241,13 +241,6 @@ config BT_SHELL
 	  Activate shell module that provides Bluetooth commands to the
 	  console.
 
-config BT_USE_PSA_API
-	bool "Use PSA APIs instead of TinyCrypt for crypto operations"
-	depends on BT_CRYPTO || BT_HOST_CRYPTO || BT_ECC
-	depends on PSA_CRYPTO_CLIENT
-	help
-	  Use PSA APIs instead of TinyCrypt for crypto operations
-
 endif # BT_HCI
 
 config BT_COMPANY_ID

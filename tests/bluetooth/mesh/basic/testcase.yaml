@@ -46,8 +46,6 @@ tests:
   bluetooth.mesh.gatt.psa:
     build_only: true
     extra_args: CONF_FILE=gatt.conf
-    extra_configs:
-      - CONFIG_BT_USE_PSA_API=y
     platform_allow:
       - qemu_x86
       - nrf5340dk/nrf5340/cpuapp/ns
