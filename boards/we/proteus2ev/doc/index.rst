@@ -1,7 +1,4 @@
-.. _we_proteus2ev_nrf52832:
-
-Würth Elektronik Proteus-II-EV
-##############################
+.. zephyr:board:: we_proteus2ev
 
 Overview
 ********
@@ -24,12 +21,6 @@ the following devices:
 * :abbr:`SPI (Serial Peripheral Interface)`
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
-
-.. figure:: img/we_proteus2ev_nrf52832.jpg
-     :align: center
-     :alt: Proteus-II EV
-
-     Proteus-II-EV (Credit: Würth Elektronik)
 
 More information about the radio module can be found the Würth Elektronik web page https://www.we-online.com/katalog/de/PROTEUS-II .
 
