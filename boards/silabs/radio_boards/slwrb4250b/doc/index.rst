@@ -1,7 +1,4 @@
-.. _slwrb4250b:
-
-EFR32FG1 2400/868 MHz 13 dBm Dual Band (SLWRB4250B)
-###################################################
+.. zephyr:board:: slwrb4250b
 
 Overview
 ********
@@ -9,12 +6,6 @@ Overview
 The EFR32FG1 Flex Gecko 2.4 GHz and 868 MHz Radio Board is delivered as part of
 `SLWSTK6061B Proprietary Wireless Starter Kit`_. It contains a EFR32FG1 Wireless
 SoC built on an ARM Cortex®-M4F processor with excellent low power capabilities.
-
-.. figure:: efr32fg1-slwrb4250b.jpg
-   :align: center
-   :alt: SLWRB4250B Flex Gecko 2.4 GHz and 868 MHz Radio Board
-
-   SLWRB4250B (image courtesy of Silicon Labs)
 
 The BRD4250B a.k.a. SLWRB4250B radio board plugs into the Wireless Starter Kit
 Mainboard BRD4001A and is supported as one of :ref:`silabs_radio_boards`.
