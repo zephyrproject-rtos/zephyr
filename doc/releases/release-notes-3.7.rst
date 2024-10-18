@@ -834,15 +834,15 @@ Drivers and Sensors
   * Added support for Ambiq Apollo3 series.
   * Added support for multiple instances of the SPI NOR driver (spi_nor.c).
   * Added preliminary support for non-erase devices with introduction of
-    device capabilities to c:struct:`flash_parameters` and the utility function
-    c:func:`flash_params_get_erase_cap` that allows to obtain the erase type
-    provided by a device; added c:macro:`FLASH_ERASE_C_EXPLICIT`, which is
+    device capabilities to :c:struct:`flash_parameters` and the utility function
+    :c:func:`flash_params_get_erase_cap` that allows to obtain the erase type
+    provided by a device; added :c:macro:`FLASH_ERASE_C_EXPLICIT`, which is
     currently the only supported erase type and is set by all flash devices.
-  * Added the c:func:`flash_flatten` function that can be used on devices,
+  * Added the :c:func:`flash_flatten` function that can be used on devices,
     with or without erase requirement, when erase has been used not for preparing
     a device for a random data write, but rather to remove/scramble data from
     that device.
-  * Added the c:func:`flash_fill` utility function which allows to write
+  * Added the :c:func:`flash_fill` utility function which allows to write
     a single value across a provided range in a selected device.
   * Added support for RRAM on nrf54l15 devices.
   * Added support of non busy wait polling in STM32 OSPI driver.
@@ -868,7 +868,7 @@ Drivers and Sensors
 
   * Added support for Ambiq Apollo3 series.
   * Added Broadcom Set-top box(brcmstb) SoC GPIO driver.
-  * Added c:macro:`STM32_GPIO_WKUP` flag which allows to configure specific pins as wakeup source
+  * Added :c:macro:`STM32_GPIO_WKUP` flag which allows to configure specific pins as wakeup source
     from Power Off state on STM32 L4, U5, WB, & WL SoC series.
   * Added driver for Analog Devices MAX32 SoC series.
   * Added support for Nuvoton Numaker M2L31X series.
@@ -1047,7 +1047,7 @@ Drivers and Sensors
   * Added support for STM32H7R/S series.
   * Added a Add QTMR PWM driver for NXP imxrt11xx
   * Made the NXP MCUX PWM driver thread safe
-  * Fix zephyr:code-sample:`pwm-blinky` code sample to demonstrate PWM support for
+  * Fix :zephyr:code-sample:`pwm-blinky` code sample to demonstrate PWM support for
     :ref:`beagleconnect_freedom`.
   * Added driver for ENE KB1200.
   * Added support for Nordic nRF54H and nRF54L Series SoCs.
@@ -1403,7 +1403,7 @@ Networking
   * Implemented IPv6 Privacy Extensions according to RFC 8981.
   * Added :c:func:`net_ipv6_is_private_addr` API function.
   * Implemented reachability hint for IPv6. Upper layers can use
-    c:func:`net_if_nbr_reachability_hint` to report Neighbor reachability and
+    :c:func:`net_if_nbr_reachability_hint` to report Neighbor reachability and
     avoid unnecessary Neighbor Discovery solicitations.
   * Added :kconfig:option:`CONFIG_NET_IPV6_MTU` allowing to set custom IPv6 MTU.
   * Added :kconfig:option:`CONFIG_NET_MCAST_ROUTE_MAX_IFACES` which allows to set
