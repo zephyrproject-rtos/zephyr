@@ -288,8 +288,7 @@ static bool dma_rpi_pico_api_chan_filter(const struct device *dev, int ch, void 
 	uint32_t filter;
 
 	if (!filter_param) {
-		LOG_ERR("filter_param must not be NULL");
-		return false;
+		return true;
 	}
 
 	filter = *((uint32_t *)filter_param);
