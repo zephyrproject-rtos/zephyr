@@ -104,6 +104,8 @@ The below features are currently supported on Zephyr OS for MCB-RA8T1 board:
 +--------------+------------+----------------------+
 | PWM          | on-chip    | pwm                  |
 +--------------+------------+----------------------+
+| COUNTER      | on-chip    | counter              |
++--------------+------------+----------------------+
 
 Other hardware features are currently not supported by the port.
 
