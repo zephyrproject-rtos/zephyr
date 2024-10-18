@@ -487,6 +487,31 @@ ZTEST_USER(can_classic, test_bitrate_limits)
 }
 
 /**
+ * @brief Test setting a too low bitrate.
+ */
+ZTEST_USER(can_classic, test_set_bitrate_too_low)
+{
+	uint32_t min = can_get_bitrate_min(can_dev);
+	int err;
+
+	if (min == 0) {
+		ztest_test_skip();
+	}
+
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	err = can_set_bitrate(can_dev, min - 1);
+	zassert_equal(err, -ENOTSUP, "too low bitrate accepted");
+
+	err = can_set_bitrate(can_dev, CONFIG_CAN_DEFAULT_BITRATE);
+	zassert_equal(err, 0, "failed to restore default bitrate");
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+}
+
+/**
  * @brief Test setting a too high bitrate.
  */
 ZTEST_USER(can_classic, test_set_bitrate_too_high)
