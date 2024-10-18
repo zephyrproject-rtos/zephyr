@@ -34,7 +34,7 @@ configured using the ``sw0`` :ref:`devicetree <dt-guide>` alias, usually in the 
 Building and Running
 ********************
 
-Example building for :ref:`twr_ke18f`:
+Example building for :zephyr:board:`twr_ke18f`:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/can/babbling

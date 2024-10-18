@@ -8,15 +8,15 @@ Overview
 ********
 
 This sample show how to use the NXP MCUX Analog Comparator (ACMP) driver. The
-sample supports the :ref:`twr_ke18f`, :ref:`mimxrt1170_evk`, :ref:`frdm_ke17z`
-, :ref:`frdm_ke17z512` and :ref:`mimxrt1180_evk`.
+sample supports the :zephyr:board:`twr_ke18f`, :zephyr:board:`mimxrt1170_evk`, :zephyr:board:`frdm_ke17z`
+, :zephyr:board:`frdm_ke17z512` and :zephyr:board:`mimxrt1180_evk`.
 
 The input voltage for the negative input of the analog comparator is
 provided by the ACMP Digital-to-Analog Converter (DAC). The input voltage for
 the positive input can be adjusted by turning the on-board potentiometer for
-:ref:`twr_ke18f` board, for :ref:`mimxrt1170_evk` the voltage signal is
-captured on J25-13, the :ref:`frdm_ke17z` and :ref:`frdm_ke17z512` boards are
-captured in J2-3, the :ref:`mimxrt1180_evk` board are captured in J45-13, need
+:zephyr:board:`twr_ke18f` board, for :zephyr:board:`mimxrt1170_evk` the voltage signal is
+captured on J25-13, the :zephyr:board:`frdm_ke17z` and :zephyr:board:`frdm_ke17z512` boards are
+captured in J2-3, the :zephyr:board:`mimxrt1180_evk` board are captured in J45-13, need
 change the external voltage signal to check the output.
 
 The output value of the analog comparator is reported on the console.
@@ -26,7 +26,7 @@ Building and Running
 
 Building and Running for TWR-KE18F
 ==================================
-Build the application for the :ref:`twr_ke18f` board, and adjust the
+Build the application for the :zephyr:board:`twr_ke18f` board, and adjust the
 ACMP input voltage by turning the on-board potentiometer.
 
 .. zephyr-app-commands::

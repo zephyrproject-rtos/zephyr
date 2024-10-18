@@ -35,7 +35,7 @@ support must be enabled in ethernet drivers.
 
 Boards supported:
 
-- :ref:`frdm_k64f`
+- :zephyr:board:`frdm_k64f`
 - :ref:`nucleo_h743zi_board`
 - :ref:`nucleo_h745zi_q_board`
 - :ref:`nucleo_f767zi_board`

@@ -1,7 +1,4 @@
-.. _twr_kv58f220m:
-
-NXP TWR-KV58F220M
-#################
+.. zephyr:board:: twr_kv58f220m
 
 Overview
 ********
@@ -10,12 +7,6 @@ The TWR-KV58F220M is a development board for NXP Kinetis KV5x 32-bit
 MCU-based platforms. The onboard OpenSDAv2 serial and debug adapter,
 running an open source bootloader, offers options for serial
 communication, flash programming, and run-control debugging.
-
-.. figure:: twr_kv58f220m.jpg
-   :align: center
-   :alt: TWR-KV58F220M
-
-   TWR-KV58F220M (Credit: NXP)
 
 Hardware
 ********

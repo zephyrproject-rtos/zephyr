@@ -14,7 +14,7 @@ The following are some of the boards that can be used with TF-M:
      - ``mps3_an547_ns`` (qemu supported)
    * - :zephyr:board:`bl5340_dvk`
      - ``bl5340_dvk/nrf5340/cpuapp/ns``
-   * - :ref:`lpcxpresso55s69`
+   * - :zephyr:board:`lpcxpresso55s69`
      - ``lpcxpresso55s69_ns``
    * - :ref:`nrf9160dk_nrf9160`
      - ``nrf9160dk/nrf9160/ns``

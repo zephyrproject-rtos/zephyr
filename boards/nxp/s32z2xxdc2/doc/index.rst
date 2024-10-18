@@ -1,7 +1,4 @@
-.. _s32z2xxdc2:
-
-NXP X-S32Z27X-DC (DC2)
-######################
+.. zephyr:board:: s32z2xxdc2
 
 Overview
 ********

@@ -35,7 +35,7 @@ First, ensure the optional CANopenNode module is enabled and available:
 
 Building and Running for TWR-KE18F
 ==================================
-The :ref:`twr_ke18f` board is equipped with an onboard CAN
+The :zephyr:board:`twr_ke18f` board is equipped with an onboard CAN
 transceiver. This board supports CANopen LED indicators (red and green
 LEDs). The sample can be built and executed for the TWR-KE18F as
 follows:
@@ -51,7 +51,7 @@ counter object at index ``0x2102`` in the object dictionary.
 
 Building and Running for FRDM-K64F
 ==================================
-The :ref:`frdm_k64f` board does not come with an onboard CAN
+The :zephyr:board:`frdm_k64f` board does not come with an onboard CAN
 transceiver. In order to use the CAN bus on the FRDM-K64F board, an
 external CAN bus transceiver must be connected to ``PTB18``
 (``CAN0_TX``) and ``PTB19`` (``CAN0_RX``). This board supports CANopen

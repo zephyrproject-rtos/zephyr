@@ -18,7 +18,7 @@ devicetree overlay with such a node added.
 Building and Running
 ********************
 
-To build and flash the sample for the :ref:`frdm_k64f`:
+To build and flash the sample for the :zephyr:board:`frdm_k64f`:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/tmp112
