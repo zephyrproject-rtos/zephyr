@@ -168,22 +168,23 @@ rsource "../audio/Kconfig"
 config BT_HOST_CRYPTO
 	bool "Use crypto functionality implemented in the Bluetooth host"
 	default y if !BT_CTLR_CRYPTO
-	select TINYCRYPT if !BT_USE_PSA_API
-	select TINYCRYPT_AES if !BT_USE_PSA_API
-	select PSA_WANT_KEY_TYPE_AES if BT_USE_PSA_API
+	select MBEDTLS if !BUILD_WITH_TFM
+	select MBEDTLS_PSA_CRYPTO_C if !BUILD_WITH_TFM
+	select PSA_WANT_KEY_TYPE_AES
+	select PSA_WANT_ALG_ECB_NO_PADDING
 	help
-	  The option adds the AES encryption support using TinyCrypt
+	  The option adds the AES encryption support using PSA Crypto API
 	  library if this is not provided by the controller implementation.
 
 config BT_HOST_CRYPTO_PRNG
-	bool "Use Tinycrypt library for random number generation"
+	bool "Use PSA crypto API library for random number generation"
 	default y
-	select TINYCRYPT_SHA256 if !BT_USE_PSA_API
-	select TINYCRYPT_SHA256_HMAC if !BT_USE_PSA_API
-	select TINYCRYPT_SHA256_HMAC_PRNG if !BT_USE_PSA_API
+	select PSA_WANT_ALG_SHA_256
+	select PSA_WANT_KEY_TYPE_HMAC
+	select PSA_WANT_ALG_HMAC
 	depends on BT_HOST_CRYPTO
 	help
-	  When selected, will use tinycrypt library for random number generation.
+	  When selected, will use PSA Crypto API library for random number generation.
 	  This will consume additional ram, but may speed up the generation of random
 	  numbers.
 

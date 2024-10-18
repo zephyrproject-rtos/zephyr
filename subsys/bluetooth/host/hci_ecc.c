@@ -14,14 +14,7 @@
 #include <zephyr/debug/stack.h>
 #include <zephyr/sys/byteorder.h>
 
-#if defined(CONFIG_BT_USE_PSA_API)
 #include <psa/crypto.h>
-#else /* !CONFIG_BT_USE_PSA_API */
-#include <tinycrypt/constants.h>
-#include <tinycrypt/utils.h>
-#include <tinycrypt/ecc.h>
-#include <tinycrypt/ecc_dh.h>
-#endif /* CONFIG_BT_USE_PSA_API*/
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/buf.h>
@@ -109,7 +102,6 @@ static void send_cmd_status(uint16_t opcode, uint8_t status)
 #endif
 }
 
-#if defined(CONFIG_BT_USE_PSA_API)
 static void set_key_attributes(psa_key_attributes_t *attr)
 {
 	psa_set_key_type(attr, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
@@ -156,29 +148,6 @@ static uint8_t generate_keys(void)
 
 	return 0;
 }
-#else
-static uint8_t generate_keys(void)
-{
-	do {
-		int rc;
-
-		rc = uECC_make_key(ecc.public_key_be, ecc.private_key_be,
-				   &curve_secp256r1);
-		if (rc == TC_CRYPTO_FAIL) {
-			LOG_ERR("Failed to create ECC public/private pair");
-			return BT_HCI_ERR_UNSPECIFIED;
-		}
-
-	/* make sure generated key isn't debug key */
-	} while (memcmp(ecc.private_key_be, debug_private_key_be, BT_PRIV_KEY_LEN) == 0);
-
-	if (IS_ENABLED(CONFIG_BT_LOG_SNIFFER_INFO)) {
-		LOG_INF("SC private key 0x%s", bt_hex(ecc.private_key_be, BT_PRIV_KEY_LEN));
-	}
-
-	return 0;
-}
-#endif /* CONFIG_BT_USE_PSA_API */
 
 static void emulate_le_p256_public_key_cmd(void)
 {
@@ -233,7 +202,6 @@ static void emulate_le_generate_dhkey(void)
 	int ret = 0;
 	bool use_debug = atomic_test_bit(flags, USE_DEBUG_KEY);
 
-#if defined(CONFIG_BT_USE_PSA_API)
 	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
 	psa_key_id_t key_id;
 	/* PSA expects secp256r1 public key to start with a predefined 0x04 byte
@@ -264,19 +232,6 @@ static void emulate_le_generate_dhkey(void)
 		LOG_ERR("Failed to destroy the key");
 		ret = -EIO;
 	}
-
-#else /* !CONFIG_BT_USE_PSA_API */
-	ret = uECC_valid_public_key(ecc.public_key_be, &curve_secp256r1);
-	if (ret < 0) {
-		LOG_ERR("public key is not valid (ret %d)", ret);
-		ret = -EIO;
-		goto exit;
-	}
-	ret = uECC_shared_secret(ecc.public_key_be,
-				use_debug ? debug_private_key_be : ecc.private_key_be,
-				ecc.dhkey_be, &curve_secp256r1);
-	ret = (ret == TC_CRYPTO_FAIL) ? -EIO : 0;
-#endif /* CONFIG_BT_USE_PSA_API */
 
 exit:
 	buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
