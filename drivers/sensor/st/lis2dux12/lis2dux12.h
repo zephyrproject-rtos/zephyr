@@ -20,11 +20,17 @@
 #include "lis2dux12_reg.h"
 #endif
 
-#if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lis2dux12, spi)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_lis2duxs12)
+#include "lis2duxs12_reg.h"
+#endif
+
+#if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lis2dux12, spi) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lis2duxs12, spi)
 #include <zephyr/drivers/spi.h>
 #endif
 
-#if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lis2dux12, i2c)
+#if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lis2dux12, i2c) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lis2duxs12, i2c)
 #include <zephyr/drivers/i2c.h>
 #endif
 
@@ -55,10 +61,12 @@ struct lis2dux12_chip_api {
 struct lis2dux12_config {
 	stmdev_ctx_t ctx;
 	union {
-#if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lis2dux12, i2c)
+#if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lis2dux12, i2c) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lis2duxs12, i2c)
 		const struct i2c_dt_spec i2c;
 #endif
-#if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lis2dux12, spi)
+#if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lis2dux12, spi) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lis2duxs12, spi)
 		const struct spi_dt_spec spi;
 #endif
 	} stmemsc_cfg;

@@ -14,11 +14,11 @@
 
 #include <zephyr/drivers/sensor.h>
 
-#ifndef ZEPHYR_DRIVERS_SENSOR_LIS2DUX12_ST_LIS2DUX12_H_
-#define ZEPHYR_DRIVERS_SENSOR_LIS2DUX12_ST_LIS2DUX12_H_
+#ifndef ZEPHYR_DRIVERS_SENSOR_LIS2DUX12_LIS2DUX12_API_H_
+#define ZEPHYR_DRIVERS_SENSOR_LIS2DUX12_LIS2DUX12_API_H_
 
 extern const struct lis2dux12_chip_api st_lis2dux12_chip_api;
 
 int st_lis2dux12_init(const struct device *dev);
 
-#endif /* ZEPHYR_DRIVERS_SENSOR_LIS2DUX12_ST_LIS2DUX12_H_ */
+#endif /* ZEPHYR_DRIVERS_SENSOR_LIS2DUX12_LIS2DUX12_API_H_ */

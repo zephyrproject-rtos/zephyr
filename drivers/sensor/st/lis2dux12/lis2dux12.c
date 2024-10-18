@@ -23,6 +23,10 @@
 #include "lis2dux12_api.h"
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_lis2duxs12)
+#include "lis2duxs12_api.h"
+#endif
+
 LOG_MODULE_REGISTER(LIS2DUX12, CONFIG_SENSOR_LOG_LEVEL);
 
 #define FOREACH_ODR_ENUM(ODR_VAL)			\
@@ -303,5 +307,9 @@ static DEVICE_API(sensor, lis2dux12_driver_api) = {
 
 
 #define DT_DRV_COMPAT st_lis2dux12
+DT_INST_FOREACH_STATUS_OKAY_VARGS(LIS2DUX12_DEFINE, DT_DRV_COMPAT)
+#undef DT_DRV_COMPAT
+
+#define DT_DRV_COMPAT st_lis2duxs12
 DT_INST_FOREACH_STATUS_OKAY_VARGS(LIS2DUX12_DEFINE, DT_DRV_COMPAT)
 #undef DT_DRV_COMPAT
