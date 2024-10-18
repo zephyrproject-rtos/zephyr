@@ -1,7 +1,4 @@
-.. _odroid_go:
-
-ODROID-GO
-#########
+.. zephyr:board:: odroid_go
 
 Overview
 ********
@@ -23,12 +20,6 @@ The features include the following:
 - Input Buttons (Menu, Volume, Select, Start, A, B, Direction Pad)
 - Expansion port (I2C, GPIO, SPI)
 - Cryptographic hardware acceleration (RNG, ECC, RSA, SHA-2, AES)
-
-.. figure:: img/odroid_go.jpg
-        :align: center
-        :alt: ODROID-GO
-
-        ODROID-Go Game Kit
 
 External Connector
 ==================
