@@ -24,12 +24,18 @@ unsigned long long strtoull(const char *nptr, char **endptr, int base);
 long long strtoll(const char *nptr, char **endptr, int base);
 int atoi(const char *s);
 
+void free(void *ptr);
+
+__deallocate_with(free, 1)
 void *malloc(size_t size);
+__deallocate_with(free, 1)
 void *aligned_alloc(size_t alignment, size_t size); /* From C11 */
 
-void free(void *ptr);
+__deallocate_with(free, 1)
 void *calloc(size_t nmemb, size_t size);
+__deallocate_with(free, 1)
 void *realloc(void *ptr, size_t size);
+__deallocate_with(free, 1)
 void *reallocarray(void *ptr, size_t nmemb, size_t size);
 
 void *bsearch(const void *key, const void *array,
