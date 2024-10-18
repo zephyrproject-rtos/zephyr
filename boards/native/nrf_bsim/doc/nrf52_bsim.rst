@@ -1,7 +1,4 @@
-.. _nrf52_bsim:
-
-NRF52 simulated board (BabbleSim)
-#################################
+.. zephyr:board:: nrf52_bsim
 
 .. contents::
    :depth: 1

@@ -1,7 +1,4 @@
-.. _native_posix:
-
-Native POSIX execution (native_posix)
-#######################################
+.. zephyr:board:: native_posix
 
 .. contents::
    :depth: 1

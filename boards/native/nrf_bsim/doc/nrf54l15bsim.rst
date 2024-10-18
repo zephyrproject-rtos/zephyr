@@ -1,7 +1,4 @@
-.. _nrf54l15bsim:
-
-NRF54L15 simulated boards (BabbleSim)
-#####################################
+.. zephyr:board:: nrf54l15bsim
 
 .. contents::
    :depth: 1
