@@ -61,5 +61,6 @@ source "subsys/logging/Kconfig.template.log_config"
 
 source "drivers/mspi/Kconfig.ambiq"
 source "drivers/mspi/Kconfig.mspi_emul"
+source "drivers/mspi/Kconfig.stm32"
 
 endif # MSPI

@@ -261,7 +261,7 @@
 	status = "okay";
 };
 
-&xspi1 {
+&mspi1 {
 	pinctrl-0 = <&octospi1_io0_pb1 &octospi1_io1_pd12
 		     &octospi1_io2_pc2 &octospi1_io3_pd13
 		     &octospi1_io4_ph2 &octospi1_io5_ph3
@@ -273,13 +273,22 @@
 	status = "okay";
 
 	mx25lm51245: ospi-nor-flash@90000000 {
-		compatible = "st,stm32-xspi-nor";
-		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
-		ospi-max-frequency = <DT_FREQ_M(50)>;
-		spi-bus-width = <XSPI_OCTO_MODE>;
-		data-rate = <XSPI_DTR_TRANSFER>;
-		four-byte-opcodes;
+		compatible = "mspi-nor-mx25";
+		reg = <0>; /* To be aligned with data dev_id = 0 of the controller */
+		size = <DT_SIZE_M(64)>; /* in Bytes */
+
 		status = "okay";
+
+		mspi-max-frequency = <DT_FREQ_M(50)>;
+		mspi-io-mode = "MSPI_IO_MODE_SINGLE"; /* as first step */
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE"; /* as first step */
+		mspi-hardware-ce-num = <0>;
+		read-command = <0x13>; /* ReaD 4Bytes */
+		write-command = <0x12>; /* WRite 4Bytes */
+		command-length = "INSTR_1_BYTE";
+		address-length = "ADDR_4_BYTE";
+		rx-dummy = <8>;
+		tx-dummy = <0>;
 
 		partitions {
 			   compatible = "fixed-partitions";

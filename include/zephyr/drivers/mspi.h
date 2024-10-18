@@ -145,6 +145,7 @@ enum mspi_bus_event_cb_mask {
 enum mspi_xfer_mode {
 	MSPI_PIO,
 	MSPI_DMA,
+	MSPI_REG,
 };
 
 /**

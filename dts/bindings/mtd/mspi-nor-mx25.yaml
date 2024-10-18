@@ -1,0 +1,8 @@
+# Copyright (c) 2024, STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: NOR Flash devices MX25xx on MSPI bus supporting the JEDEC CFI interface
+
+compatible: "mspi-nor-mx25"
+
+include: [mspi-device.yaml, "jedec,jesd216.yaml"]
