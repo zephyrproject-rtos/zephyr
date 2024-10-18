@@ -1,7 +1,4 @@
-.. _heltec_wifi_lora32_v2:
-
-Heltec WiFi LoRa 32 (V2)
-########################
+.. zephyr:board:: heltec_wifi_lora32_v2
 
 Overview
 ********
