@@ -48,3 +48,11 @@ config UDC_DWC2_USBHS_VBUS_READY_TIMEOUT
 	  UDC DWC2 USBHS VBUS ready event timeout. If the VBUS is not ready
 	  and the Nordic USBHS controller is used, the udc_enable() is
 	  blocked for this amount of time. Set it to zero to wait forever.
+
+config UDC_DWC2_PREFER_8BIT_UTMI
+	bool "Prefer 8-bit UTMI+ PHY interface width"
+	depends on UDC_DWC2
+	help
+	  UDC DWC2 may support both 8- and 16-bit UTMI+ PHY interface widths.
+	  Enable this config to prefer 8-bit interface. Otherwise 16-bit interface
+	  will be used.
