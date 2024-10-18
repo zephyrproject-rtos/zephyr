@@ -1,7 +1,4 @@
-.. _dragino_lsn50_board:
-
-Dragino LSN50 LoRA Sensor Node
-##############################
+.. zephyr:board:: dragino_lsn50
 
 Overview
 ********
@@ -22,10 +19,6 @@ This kit provides:
 - Li/SOCI2 Unchargable Battery
 - GPIOs exposed via screw terminals on the carrier board
 - Housing
-
-.. image:: img/dragino_lsn50.jpg
-     :align: center
-     :alt: Dragino LSN50
 
 More information about the board can be found at the `Dragino LSN50 website`_.
 
