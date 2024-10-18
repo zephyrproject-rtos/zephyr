@@ -1090,6 +1090,16 @@ int bt_bap_stream_start(struct bt_bap_stream *stream);
  *
  * @param stream Stream object
  *
+ * @retval 0 Success
+ * @retval -EINVAL The @p stream does not have an endpoint or a connection, of the stream's
+ *                 connection's role is not @p BT_HCI_ROLE_CENTRAL
+ * @retval -EBADMSG The state of the @p stream endpoint is not @ref BT_BAP_EP_STATE_DISABLING
+ * @retval -EALREADY The CIS state of the @p is not in a connected state, and thus is already
+ *                   stopping
+ * @retval -EBUSY The @p stream is busy with another operation
+ * @retval -ENOTCONN The @p stream ACL connection is not connected
+ * @retval -ENOMEM No memory to send request
+ * @retval -ENOEXEC The request was rejected by GATT
  * @return 0 in case of success or negative value in case of error.
  */
 int bt_bap_stream_stop(struct bt_bap_stream *stream);

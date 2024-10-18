@@ -34,6 +34,8 @@ void bt_cap_initiator_disabled(struct bt_cap_stream *cap_stream);
 void bt_cap_initiator_stopped(struct bt_cap_stream *cap_stream);
 void bt_cap_initiator_released(struct bt_cap_stream *cap_stream);
 void bt_cap_stream_ops_register_bap(struct bt_cap_stream *cap_stream);
+void bt_cap_initiator_cp_cb(struct bt_cap_stream *cap_stream, enum bt_bap_ascs_rsp_code rsp_code,
+			    enum bt_bap_ascs_reason reason);
 
 enum bt_cap_common_proc_state {
 	BT_CAP_COMMON_PROC_STATE_ACTIVE,
@@ -88,6 +90,7 @@ struct bt_cap_initiator_proc_param {
 			bool release;
 		} stop;
 	};
+	bool in_progress;
 };
 
 #if defined(CONFIG_BT_BAP_BROADCAST_ASSISTANT)
