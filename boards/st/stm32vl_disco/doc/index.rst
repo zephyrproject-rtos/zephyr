@@ -1,7 +1,4 @@
-.. _stm32vl_disco_board:
-
-ST STM32VL Discovery
-####################
+.. zephyr:board:: stm32vl_disco
 
 Overview
 ********
@@ -10,10 +7,6 @@ The STM32 Discovery series comes in many varieties, in this case the "Value
 Line" STM32F100x SoC series is showcased. Like other Discovery board, an
 integrated ST-LINK debugger and programmer is included (V1), but the only
 included I/O devices are two user LEDs and one user button.
-
-.. image:: img/stm32vl_disco.jpg
-     :align: center
-     :alt: STM32VLDISCOVERY
 
 More information about the board can be found at the `STM32VLDISCOVERY website`_.
 

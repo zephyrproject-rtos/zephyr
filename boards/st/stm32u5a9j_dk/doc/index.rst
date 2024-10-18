@@ -1,7 +1,4 @@
-.. _stm32u5a9j_dk_board:
-
-ST STM32U5A9J Discovery Kit
-###########################
+.. zephyr:board:: stm32u5a9j_dk
 
 Overview
 ********

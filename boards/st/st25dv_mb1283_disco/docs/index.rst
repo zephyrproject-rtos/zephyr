@@ -1,7 +1,4 @@
-.. _st25dv_mb1283_disco_board:
-
-ST ST25DV Discovery, MB1283 version
-###################################
+.. zephyr:board:: st25dv_mb1283_disco
 
 Overview
 ********
@@ -15,10 +12,6 @@ The ST25DV-DISCOVERY is a demonstration kit to evaluate the features and capabil
 of the ST25DV series.
 It is based on the NFC ST25DV04K device embedded on a daughter card using a Class 5 antenna
 and a STM32 processor driving a mother board.
-
-.. image:: img/st25dv_mb1283_disco.jpg
-     :align: center
-     :alt: ST25DV_MB1283_DISCO
 
 .. note::
    The ST25DV itself is not implemented yet.

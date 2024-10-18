@@ -1,7 +1,4 @@
-.. _esp32_devkitc_wroom:
-
-ESP32-DevKitC-WROOM
-###################
+.. zephyr:board:: esp32_devkitc_wroom
 
 Overview
 ********
@@ -40,12 +37,6 @@ The features include the following:
 
 - Cryptographic hardware acceleration (RNG, ECC, RSA, SHA-2, AES)
 - 5uA deep sleep current
-
-.. figure:: img/esp32_devkitc_wroom.jpg
-    :align: center
-    :alt: ESP32-DevKitC-WROOM
-
-    ESP32-DevKitC-WROOM-32D DK
 
 For more information, check the datasheet at `ESP32 Datasheet`_ or the technical reference
 manual at `ESP32 Technical Reference Manual`_.

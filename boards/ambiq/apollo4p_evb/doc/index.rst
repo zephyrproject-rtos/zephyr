@@ -1,13 +1,6 @@
-.. _apollo4p_evb:
-
-Ambiq Apollo4P EVB
-##################
+.. zephyr:board:: apollo4p_evb
 
 Apollo4P EVB is a board by Ambiq featuring their ultra-low power Apollo4 Plus SoC.
-
-.. image:: ./apollo4-plus-soc-eval-board.jpg
-   :align: center
-   :alt: Apollo4P EVB
 
 Hardware
 ********

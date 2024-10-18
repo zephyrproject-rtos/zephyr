@@ -1,7 +1,4 @@
-.. _esp8684_devkitm:
-
-ESP8684-DevKitM
-###############
+.. zephyr:board:: esp8684_devkitm
 
 Overview
 ********

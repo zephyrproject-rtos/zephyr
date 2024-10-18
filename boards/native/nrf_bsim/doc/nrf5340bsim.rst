@@ -1,7 +1,4 @@
-.. _nrf5340bsim:
-
-NRF5340 simulated boards (BabbleSim)
-####################################
+.. zephyr:board:: nrf5340bsim
 
 .. contents::
    :depth: 1

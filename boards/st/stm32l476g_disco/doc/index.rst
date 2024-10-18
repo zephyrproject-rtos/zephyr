@@ -1,7 +1,4 @@
-.. _stm32l476g_disco_board:
-
-ST STM32L476G Discovery
-#######################
+.. zephyr:board:: stm32l476g_disco
 
 Overview
 ********
@@ -41,10 +38,6 @@ some highlights of the STM32L476G Discovery board:
     - USB FS connector
     - External 5 V
     - CR2032 battery (not provided)
-
-.. image:: img/stm32l476g_disco.jpg
-     :align: center
-     :alt: STM32L476G Discovery
 
 More information about the board can be found at the `STM32L476G Discovery website`_.
 

@@ -1,19 +1,10 @@
-.. _yd_esp32:
-
-YD-ESP32
-########
+.. zephyr:board:: yd_esp32
 
 Overview
 ********
 
 The YD-ESP32 development board is one of VCC-GND® Studio's official boards.
 This board is based on the ESP32-WROOM-32E module, with the ESP32 as the core.
-
-.. figure:: img/yd_esp32.png
-   :align: center
-   :alt: YD-ESP32
-
-   YD-ESP32 DevKit with ESP32-WROOM-32E Module
 
 ESP32
 =====

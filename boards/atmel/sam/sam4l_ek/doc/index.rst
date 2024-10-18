@@ -1,7 +1,4 @@
-.. _sam4l_ek:
-
-SAM4L-EK
-########
+.. zephyr:board:: sam4l_ek
 
 Overview
 ********
@@ -21,10 +18,6 @@ The SAM4L-EK is a full featured design to develop for Atmel SAM4L SoC series.
 The kit is equipped with a rich set of peripherals that make the ATSAM4L-EK a
 perfect evaluation platform.  Download the `SAM4L-EK Online User Guide`_ for
 more details.
-
-.. image:: img/atmel-sam4l-ek-callouts.jpg
-     :align: center
-     :alt: SAM4L-EK
 
 Hardware
 ********

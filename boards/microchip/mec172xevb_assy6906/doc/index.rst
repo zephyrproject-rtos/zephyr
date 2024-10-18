@@ -1,7 +1,4 @@
-.. _mec172xevb_assy6906:
-
-Microchip MEC172xEVB ASSY6906
-#############################
+.. zephyr:board:: mec172xevb_assy6906
 
 Overview
 ********
@@ -10,10 +7,6 @@ The MEC172xEVB_ASSY6906 kit is a future development platform to evaluate the
 Microchip MEC172X series microcontrollers. This board needs to be mated with
 part number MEC172x 144WFBGA SOLDER DC ASSY 6914 (cpu board) in order to operate.
 MEC172x and MEC152x SPI image formats are not compatible with each other.
-
-.. image:: mec172xevb_assy6906.jpg
-     :align: center
-     :alt: MEC172X EVB ASSY 6906
 
 Hardware
 ********

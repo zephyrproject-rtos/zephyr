@@ -1,7 +1,4 @@
-.. _ip_k66f:
-
-SEGGER IP Switch Board
-######################
+.. zephyr:board:: ip_k66f
 
 Overview
 ********
@@ -12,10 +9,6 @@ Ethernet switch with Gigabit RGMII/MII/RMII interface.
 
 - KSZ8794CNX enables evaluation for switch functions
 - On-board debug probe J-Link-OB for programming
-
-.. image:: ip_k66f.jpg
-   :align: center
-   :alt: IP-K66F
 
 Hardware
 ********

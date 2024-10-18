@@ -1,7 +1,4 @@
-.. _nucleo_h753zi_board:
-
-ST Nucleo H753ZI
-################
+.. zephyr:board:: nucleo_h753zi
 
 Overview
 ********
@@ -43,10 +40,6 @@ Key Features
 - Comprehensive free software libraries and examples available with the
   STM32Cube MCU package.
 - Arm* Mbed Enabled* compliant (only for some Nucleo part numbers)
-
-.. image:: img/nucleo_h753zi.jpg
-   :align: center
-   :alt: Nucleo H753ZI
 
 More information about the board can be found at the `Nucleo H753ZI website`_.
 

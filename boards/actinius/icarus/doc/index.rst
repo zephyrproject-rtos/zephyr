@@ -1,16 +1,7 @@
-.. _actinius_icarus:
-
-Actinius Icarus
-###############
+.. zephyr:board:: actinius_icarus
 
 Overview
 ********
-
-.. figure:: img/Icarus_front.jpg
-     :align: center
-     :alt: Icarus IoT Dev Board
-
-     Icarus IoT Dev Board (nRF9160 Feather)
 
 The Icarus is a cost-effective cellular IoT board in Adafruit's Feather/FeatherWing
 form factor. It is built around Nordic Semi's nRF9160 modem and combines

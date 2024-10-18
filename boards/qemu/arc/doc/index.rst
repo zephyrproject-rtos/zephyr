@@ -1,7 +1,4 @@
-.. _qemu_arc:
-
-ARCv2 & ARCv3 Emulation (QEMU)
-###############################
+.. zephyr:board:: qemu_arc
 
 Overview
 ********

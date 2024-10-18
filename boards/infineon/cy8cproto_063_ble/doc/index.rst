@@ -1,17 +1,10 @@
-.. _cy8cproto_063_ble:
-
-INFINEON CY8CPROTO-063-BLE
-###########################
+.. zephyr:board:: cy8cproto_063_ble
 
 Overview
 ********
 
 The PSoC 6 BLE Proto Kit (CY8CPROTO-063-BLE) is a hardware platform that
 enables design and debug of the Cypress PSoC 63 BLE MCU.
-
-.. image:: img/cy8cproto-063-ble.jpg
-     :align: center
-     :alt: CY8CPROTO-063-BLE
 
 Hardware
 ********

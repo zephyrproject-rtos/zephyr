@@ -1,7 +1,4 @@
-.. _mimxrt1020_evk:
-
-NXP MIMXRT1020-EVK
-##################
+.. zephyr:board:: mimxrt1020_evk
 
 Overview
 ********
@@ -10,10 +7,6 @@ The i.MX RT1020 expands the i.MX RT crossover processor families by providing
 high-performance feature set in low-cost LQFP packages, further simplifying
 board design and layout for customers. The i.MX RT1020 runs on the Arm®
 Cortex®-M7 core at 500 MHz.
-
-.. image:: mimxrt1020_evk.jpg
-   :align: center
-   :alt: MIMXRT1020-EVK
 
 Hardware
 ********

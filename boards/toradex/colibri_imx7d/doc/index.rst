@@ -1,7 +1,4 @@
-.. _colibri_imx7d:
-
-NXP i.MX 7 Computer on Module - Colibri iMX7
-############################################
+.. zephyr:board:: colibri_imx7d
 
 Overview
 ********
@@ -10,11 +7,6 @@ The i.MX7 SoC is a Hybrid multi-core processor composed by Single/Dual Cortex A7
 core and Single Cortex M4 core.
 Zephyr was ported to run on the M4 core. In a later release, it will also
 communicate with the A7 core (running Linux) via RPmsg.
-
-
-.. image:: colibri_imx7d.jpg
-   :align: center
-   :alt: Colibri-iMX7
 
 Hardware
 ********

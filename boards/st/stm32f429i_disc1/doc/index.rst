@@ -1,7 +1,4 @@
-.. _stm32f429i_disc1_board:
-
-ST STM32F429I Discovery
-#######################
+.. zephyr:board:: stm32f429i_disc1
 
 Overview
 ********
@@ -30,10 +27,6 @@ some highlights of the STM32F429I-DISC1 board:
 	- LD2 (red) for 3.3 V power-on
 	- Two user LEDs: LD3 (green), LD4 (red)
 	- Two USB OTG LEDs: LD5 (green) VBUS and LD6 (red) OC (over-current)
-
-.. image:: img/stm32f429i_disc1.jpg
-     :align: center
-     :alt: STM32F429I-DISC1
 
 More information about the board can be found at the `STM32F429I-DISC1 website`_.
 

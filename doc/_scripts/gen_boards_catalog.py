@@ -35,8 +35,8 @@ def guess_image(board_or_shield):
     img_file = guess_file_from_patterns(
         board_or_shield.dir, patterns, board_or_shield.name, img_exts
     )
-    return (Path("../_images") / img_file.name).as_posix() if img_file else ""
 
+    return (img_file.relative_to(ZEPHYR_BASE)).as_posix() if img_file else None
 
 def guess_doc_page(board_or_shield):
     patterns = [
@@ -106,6 +106,7 @@ def get_catalog():
         doc_page = guess_doc_page(board)
 
         board_catalog[board.name] = {
+            "name": board.name,
             "full_name": full_name,
             "doc_page": doc_page.relative_to(ZEPHYR_BASE).as_posix() if doc_page else None,
             "vendor": vendor,

@@ -1,7 +1,4 @@
-.. _xiao_ble:
-
-XIAO BLE (Sense)
-################
+.. zephyr:board:: xiao_ble
 
 Overview
 ********
@@ -9,10 +6,6 @@ Overview
 The Seeed XIAO BLE (Sense) is a tiny (21 mm x 17.5 mm) Nordic Semiconductor
 nRF52840 ARM Cortex-M4F development board with onboard LEDs, USB port, QSPI
 flash, battery charger, and range of I/O broken out into 14 pins.
-
-.. figure:: img/xiao_ble.jpg
-     :align: center
-     :alt: XIAO BLE
 
 Hardware
 ********

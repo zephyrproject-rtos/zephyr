@@ -1,7 +1,4 @@
-.. _sparkfun_pro_micro_rp2040:
-
-SparkFun Pro Micro RP2040
-#########################
+.. zephyr:board:: sparkfun_pro_micro_rp2040
 
 Overview
 ********
@@ -26,13 +23,6 @@ Hardware
 - 8 Programmable I/O (PIO) for custom peripherals
 - On-board RGB LED
 - 1 Watchdog timer peripheral
-
-
-.. figure:: img/sparkfun_pro_micro_rp2040.jpg
-     :align: center
-     :alt: SparkFun Pro Micro RP2040
-
-     SparkFun Pro Micro RP2040 (Image courtesy of SparkFun)
 
 Supported Features
 ==================

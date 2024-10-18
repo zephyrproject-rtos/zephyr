@@ -1,7 +1,4 @@
-.. _nrf52832_mdk:
-
-nRF52832-mdk
-#################
+.. zephyr:board:: nrf52832_mdk
 
 Overview
 ********

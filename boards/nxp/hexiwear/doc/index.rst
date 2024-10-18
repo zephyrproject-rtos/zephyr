@@ -1,7 +1,4 @@
-.. _hexiwear:
-
-Hexiwear
-########
+.. zephyr:board:: hexiwear
 
 Overview
 ********
@@ -21,10 +18,6 @@ capacitive buttons with haptic feedback.
   temperature, pressure, humidity and ambient light.
 - Flexibility to let you add the sensors of your choice nearly 200 additional
   sensors through click boards.
-
-.. image:: hexiwear_k64.jpg
-   :align: center
-   :alt: Hexiwear
 
 Hardware
 ********

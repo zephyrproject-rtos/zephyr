@@ -1,7 +1,4 @@
-.. _bl654_usb:
-
-Ezurio BL654 USB (451-00004)
-############################
+.. zephyr:board:: bl654_usb
 
 Overview
 ********
@@ -22,12 +19,6 @@ This USB adapter has the following features:
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
 * :abbr:`RTC (nRF RTC System Clock)`
-
-.. figure:: img/bl654_usb.jpg
-     :align: center
-     :alt: BL654 USB adapter
-
-     BL654 USB Adapter
 
 .. figure:: img/bl654_usb_pcb.jpg
      :align: center

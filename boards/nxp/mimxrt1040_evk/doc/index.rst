@@ -1,7 +1,4 @@
-.. _mimxrt1040_evk:
-
-NXP MIMXRT1040-EVK
-##################
+.. zephyr:board:: mimxrt1040_evk
 
 Overview
 ********
@@ -11,10 +8,6 @@ extended temperature range up to 125° C. The i.MX RT1040 MCU has a compact
 9x9 mm package, as well as the 11x11 mm package that supports implementing a
 2-layer PCB design. The i.MX RT1040 MCUs run on the Arm® Cortex®-M7 core at
 600 MHz.
-
-.. image:: mimxrt1040_evk.jpg
-   :align: center
-   :alt: MIMXRT1040-EVK
 
 Hardware
 ********

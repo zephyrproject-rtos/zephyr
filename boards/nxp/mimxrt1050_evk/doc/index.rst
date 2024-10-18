@@ -1,7 +1,4 @@
-.. _mimxrt1050_evk:
-
-NXP MIMXRT1050-EVK
-##################
+.. zephyr:board:: mimxrt1050_evk
 
 Overview
 ********
@@ -16,10 +13,6 @@ interfaces for connecting peripherals, such as WLAN, Bluetooth™, GPS, displays
 and camera sensors. As with other i.MX processors, i.MX RT1050 also has rich
 audio and video features, including LCD display, basic 2D graphics, camera
 interface, SPDIF, and I2S audio interface.
-
-.. image:: mimxrt1050_evk.jpg
-   :align: center
-   :alt: MIMXRT1050-EVK
 
 Hardware
 ********

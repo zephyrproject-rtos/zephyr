@@ -1,7 +1,4 @@
-.. _native_sim:
-
-Native simulator - native_sim
-#############################
+.. zephyr:board:: native_sim
 
 .. contents::
    :depth: 1

@@ -1,18 +1,10 @@
-.. _bytesensi_l:
-
-bytesatwork byteSENSI-L
-#######################
+.. zephyr:board:: bytesensi_l
 
 Overview
 ********
 
 The byteSENSI-L is a fun LoRa device based on nRF52 MCU that integrates many
 sensors.
-
-.. image:: img/byteSENSI-L.jpg
-   :width: 800px
-   :align: center
-   :alt: byteSENSI-L
 
 Hardware
 ********

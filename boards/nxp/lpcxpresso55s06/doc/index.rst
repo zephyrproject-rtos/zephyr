@@ -1,7 +1,4 @@
-.. _lpcxpresso55s06:
-
-NXP LPCXpresso55S06
-###################
+.. zephyr:board:: lpcxpresso55s06
 
 Overview
 ********
@@ -12,10 +9,6 @@ architecture. Arduino® UNO compatible shield connectors are included,
 with additional expansion ports around the Arduino footprint, along
 with a PMod/host interface port and MikroElektronika Click module
 site.
-
-.. image:: lpcxpress55s06.jpg
-   :align: center
-   :alt: LPCXpresso55S06
 
 Hardware
 ********

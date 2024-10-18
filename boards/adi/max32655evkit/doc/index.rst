@@ -1,7 +1,4 @@
-.. _max32655_evkit:
-
-MAX32655EVKIT
-#############
+.. zephyr:board:: max32655evkit
 
 Overview
 ********

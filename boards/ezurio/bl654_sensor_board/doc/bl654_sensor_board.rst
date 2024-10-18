@@ -1,7 +1,4 @@
-.. _bl654_sensor_board:
-
-Ezurio BL654 Sensor Board
-#########################
+.. zephyr:board:: bl654_sensor_board
 
 Overview
 ********
@@ -26,12 +23,6 @@ This sensor board has the following features:
 * :abbr:`SPI (Serial Peripheral Interface)`
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
-
-.. figure:: img/bl654_sensor_board.jpg
-     :align: center
-     :alt: BL654 Sensor Board front and back
-
-     BL654 Sensor Board front and back
 
 .. figure:: img/bl654_sensor_board_usb_swd_programmer.jpg
      :align: center
