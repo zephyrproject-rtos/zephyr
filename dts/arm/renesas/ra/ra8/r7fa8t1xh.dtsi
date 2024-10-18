@@ -47,17 +47,33 @@
 		pll: pll {
 			compatible = "renesas,ra-cgc-pll";
 			#clock-cells = <0>;
-
-			/* PLL */
 			clocks = <&xtal>;
 			div = <2>;
 			mul = <80 0>;
-			divp = <2>;
-			freqp = <DT_FREQ_M(480)>;
-			divq = <2>;
-			freqq = <DT_FREQ_M(480)>;
-			divr = <2>;
-			freqr = <DT_FREQ_M(480)>;
+
+			pllp: pllp {
+				compatible = "renesas,ra-cgc-pll-out";
+				div = <2>;
+				freq = <DT_FREQ_M(480)>;
+				status = "disabled";
+				#clock-cells = <0>;
+			};
+
+			pllq: pllq {
+				compatible = "renesas,ra-cgc-pll-out";
+				div = <2>;
+				freq = <DT_FREQ_M(480)>;
+				status = "disabled";
+				#clock-cells = <0>;
+			};
+
+			pllr: pllr {
+				compatible = "renesas,ra-cgc-pll-out";
+				div = <2>;
+				freq = <DT_FREQ_M(480)>;
+				status = "disabled";
+				#clock-cells = <0>;
+			};
 			status = "disabled";
 		};
 
@@ -65,15 +81,32 @@
 			compatible = "renesas,ra-cgc-pll";
 			#clock-cells = <0>;
 
-			/* PLL2 */
 			div = <2>;
 			mul = <96 0>;
-			divp = <2>;
-			freqp = <DT_FREQ_M(0)>;
-			divq = <2>;
-			freqq = <DT_FREQ_M(0)>;
-			divr = <2>;
-			freqr = <DT_FREQ_M(0)>;
+
+			pll2p: pll2p {
+				compatible = "renesas,ra-cgc-pll-out";
+				div = <2>;
+				freq = <DT_FREQ_M(0)>;
+				status = "disabled";
+				#clock-cells = <0>;
+			};
+
+			pll2q: pll2q {
+				compatible = "renesas,ra-cgc-pll-out";
+				div = <2>;
+				freq = <DT_FREQ_M(0)>;
+				status = "disabled";
+				#clock-cells = <0>;
+			};
+
+			pll2r: pll2r {
+				compatible = "renesas,ra-cgc-pll-out";
+				div = <2>;
+				freq = <DT_FREQ_M(0)>;
+				status = "disabled";
+				#clock-cells = <0>;
+			};
 			status = "disabled";
 		};
 
@@ -84,7 +117,7 @@
 			reg-names = "MSTPA", "MSTPB","MSTPC",
 				    "MSTPD", "MSTPE";
 			#clock-cells = <0>;
-			clocks = <&pll>;
+			clocks = <&pllp>;
 			status = "okay";
 
 			cpuclk: cpuclk {
