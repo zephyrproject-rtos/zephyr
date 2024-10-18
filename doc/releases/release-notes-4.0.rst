@@ -286,6 +286,11 @@ Drivers and Sensors
     :dtcompatible:`jedec,jc-42.4-temp` compatible string instead to the ``microchip,mcp9808``
     string.
 
+  * WE
+
+    * Added Würth Elektronik HIDS-2525020210002
+      :dtcompatible:`we,wsen-hids-2525020210002` humidity sensor driver.
+
 * Serial
 
   * LiteX: Renamed the ``compatible`` from ``litex,uart0`` to :dtcompatible:`litex,uart`.
