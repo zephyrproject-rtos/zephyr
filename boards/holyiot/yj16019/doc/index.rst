@@ -1,7 +1,4 @@
-.. _holyiot_yj16019:
-
-Holyiot YJ-16019
-################
+.. zephyr:board:: holyiot_yj16019
 
 Overview
 ********
@@ -19,12 +16,6 @@ Semiconductor nRF52832 ARM Cortex-M4 CPU and the following devices:
 * :abbr:`RTC (nRF RTC System Clock)`
 * Segger RTT (RTT Console)
 * :abbr:`WDT (Watchdog Timer)`
-
-.. figure:: img/holyiot_yj16019_front.jpg
-     :align: center
-     :alt: Holyiot YJ-16019
-
-     Holyiot YJ-16019 (Credit: Holyiot)
 
 The board is equipped with one LED, one push button, and is powered by
 a CR2032 coin cell. The `Nordic Semiconductor Infocenter`_
