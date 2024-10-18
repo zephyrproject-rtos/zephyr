@@ -55,3 +55,22 @@ tests:
       regex:
         - "Quadrature decoder sensor test"
         - "Position = -[45678]\\d degrees"
+
+  sample.sensor.nrf_qdec_sensor.nrf54h20dk_nrf54h20_cpuppr:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuppr
+    harness_config:
+      fixture: gpio_loopback
+      type: multi_line
+      ordered: true
+      regex:
+        - "Quadrature decoder sensor test"
+        - "Position = (.*) degrees"
+    sysbuild: true
+    extra_configs:
+      - vpr_launcher_CONFIG_NRF_REGTOOL_EXTRA_GENERATE_ARGS="-i \
+        ../../../samples/sensor/qdec/boards/nrf54h20dk_nrf54h20_vpr_launcher.toml"
+    extra_args:
+      - vpr_launcher_DTC_OVERLAY_FILE="../../../samples/sensor/qdec/boards/nrf54h20dk_nrf54h20_vpr_launcher.overlay"
+      - SB_CONFIG_VPR_LAUNCHER=y
+      - CONFIG_GPIO=y
