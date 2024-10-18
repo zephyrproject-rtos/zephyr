@@ -431,7 +431,7 @@ Boards & SoC Support
   * Added support for :zephyr:board:`Analog Devices MAX32655FTHR <max32655fthr>`: ``max32655fthr``.
   * Added support for :zephyr:board:`Analog Devices AD-APARD32690-SL <apard32690>`: ``ad_apard32690_sl``.
   * Added support for :zephyr:board:`Infineon Technologies CYW920829M2EVK-02 <cyw920829m2evk_02>`: ``cyw920829m2evk_02``.
-  * Added support for :ref:`Nuvoton Numaker M2L31KI board <nuvoton_m2l31ki>`: ``numaker_m2l31ki``.
+  * Added support for :zephyr:board:`Nuvoton Numaker M2L31KI board <numaker_m2l31ki>`: ``numaker_m2l31ki``.
   * Added support for :zephyr:board:`Espressif ESP32-S2 DevKit-C <esp32s2_devkitc>`: ``esp32s2_devkitc``.
   * Added support for :zephyr:board:`Espressif ESP32-S3 DevKit-C <esp32s3_devkitc>`: ``esp32s3_devkitc``.
   * Added support for :zephyr:board:`Espressif ESP32-C6 DevKit-C <esp32c6_devkitc>`: ``esp32c6_devkitc``.
