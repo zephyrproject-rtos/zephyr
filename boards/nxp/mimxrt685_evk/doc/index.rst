@@ -1,7 +1,4 @@
-.. _mimxrt685_evk:
-
-NXP MIMXRT685-EVK
-##################
+.. zephyr:board:: mimxrt685_evk
 
 Overview
 ********
@@ -16,10 +13,6 @@ processor.
 The i.MX RT600 family provides up to 4.5MB of on-chip SRAM and several
 high-bandwidth interfaces to access off-chip flash, including an Octal/Quad SPI
 interface with an on-the-fly decryption engine.
-
-.. image:: mimxrt685_evk.jpg
-   :align: center
-   :alt: MIMXRT685-EVK
 
 Hardware
 ********
@@ -59,7 +52,7 @@ family of MCUs.  This board is a focus for NXP's Full Platform Support for
 Zephyr, to better enable the entire RT6xx family.  NXP prioritizes enabling
 this board with new support for Zephyr features.  The mimxrt685_evk board
 configuration supports the hardware features below.  Another very similar
-board is the :ref:`mimxrt595_evk`, and that board may have additional features
+board is the :zephyr:board:`mimxrt595_evk`, and that board may have additional features
 already supported, which can also be re-used on this mimxrt685_evk board:
 
 +-----------+------------+-------------------------------------+

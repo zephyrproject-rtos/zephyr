@@ -1,7 +1,4 @@
-.. _frdm_mcxa156:
-
-NXP FRDM-MCXA156
-################
+.. zephyr:board:: frdm_mcxa156
 
 Overview
 ********
@@ -12,10 +9,6 @@ MCUs I/Os, integrated open-standard serial interfaces, external flash memory and
 an on-board MCU-Link debugger. MCX N Series are high-performance, low-power
 microcontrollers with intelligent peripherals and accelerators providing multi-tasking
 capabilities and performance efficiency.
-
-.. image:: frdm_mcxa156.webp
-   :align: center
-   :alt: FRDM-MCXA156
 
 Hardware
 ********
