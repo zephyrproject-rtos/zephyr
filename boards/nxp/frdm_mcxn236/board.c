@@ -180,6 +180,11 @@ static int frdm_mcxn236_init(void)
 	CLOCK_AttachClk(kFRO_HF_to_ADC0);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio0))
+	CLOCK_SetClkDiv(kCLOCK_DivFlexioClk, 1u);
+	CLOCK_AttachClk(kPLL0_to_FLEXIO);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 
