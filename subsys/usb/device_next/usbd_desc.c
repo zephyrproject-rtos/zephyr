@@ -142,6 +142,13 @@ int usbd_add_descriptor(struct usbd_context *const uds_ctx,
 	}
 
 	if (desc_nd->bDescriptorType == USB_DESC_BOS) {
+		if (desc_nd->bos.utype == USBD_DUT_BOS_VREQ) {
+			ret =  usbd_device_register_vreq(uds_ctx, desc_nd->bos.vreq_nd);
+			if (ret) {
+				goto add_descriptor_error;
+			}
+		}
+
 		sys_dlist_append(&uds_ctx->descriptors, &desc_nd->node);
 	}
 
