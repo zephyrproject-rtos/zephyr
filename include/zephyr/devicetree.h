@@ -3792,6 +3792,70 @@
  */
 
 /**
+ * @defgroup devicetree-generic-endpoint Endpoint helpers
+ * @ingroup devicetree
+ * @{
+ */
+
+/**
+ * @brief Get the remote endpoint node connected to a local endpoint.
+ *
+ * Devices can be interconnected through ports and endpoints.
+ *
+ * Example devicetree overlay:
+ *
+ * @code{.dts}
+ *	&source {
+ *		port {
+ *			source_out: endpoint {
+ *				remote-endpoint-label = "sink_in";
+ *				source-property = <1>;
+ *			};
+ *		};
+ *	};
+ *
+ *	&sink {
+ *		port {
+ *			sink_in: endpoint {
+ *				remote-endpoint-label = "source_out";
+ *				sink-property = <2>;
+ *			};
+ *		};
+ *	};
+ * @endcode
+ *
+ * @c DT_REMOTE_ENDPOINT(endpoint_node) permits to access the other endpoint
+ * connected to @c endpoint_node.
+ *
+ * Example usage: starting from the sink, access the source endpoint connected
+ * to the @c sink_in endpoint:
+ *
+ * @code{.c}
+ *	DT_PROP(DT_REMOTE_ENDPOINT(DT_NODELABEL(sink_in)), source_property)
+ * @endcode
+ *
+ * Example usage, starting from the source, to access the sink endpoint
+ * connected to the @c source_out endpoint:
+ *
+ * @code{.c}
+ *	DT_PROP(DT_REMOTE_ENDPOINT(DT_NODELABEL(source_out)), sink_property)
+ * @endcode
+ *
+ * @note Once circular phandle references are supported in Zephyr devicetree,
+ *       @c remote-endpoint-label (string) may be changed into
+ *       @c remote-endpoint (phandle).
+ *
+ * @param node The local endpoint node to use.
+ *
+ * @return The remote endpoint node connected to @p node.
+ */
+#define DT_REMOTE_ENDPOINT(node) DT_NODELABEL(DT_STRING_TOKEN(node, remote_endpoint_label))
+
+/**
+ * @}
+ */
+
+/**
  * @defgroup devicetree-inst Instance-based devicetree APIs
  * @ingroup devicetree
  * @{
