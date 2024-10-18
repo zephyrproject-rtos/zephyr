@@ -18,5 +18,35 @@
 				reg = <0x0 DT_SIZE_M(1)>;
 			};
 		};
+
+		ioport6: gpio@400800c0 {
+			compatible = "renesas,ra-gpio-ioport";
+			reg = <0x400800c0 0x20>;
+			port = <6>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport7: gpio@400800e0 {
+			compatible = "renesas,ra-gpio-ioport";
+			reg = <0x400800e0 0x20>;
+			port = <7>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport8: gpio@40080100 {
+			compatible = "renesas,ra-gpio-ioport";
+			reg = <0x40080100 0x20>;
+			port = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
 	};
 };
