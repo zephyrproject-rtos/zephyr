@@ -479,6 +479,12 @@ Libraries / Subsystems
 
 * SD
 
+* Settings
+
+  * Settings has been extended to allow prioritizing the commit handlers using
+    ``SETTINGS_STATIC_HANDLER_DEFINE_WITH_CPRIO(...)`` for static_handlers and
+    ``settings_register_with_cprio(...)`` for dynamic_handlers.
+
 * Shell:
 
   * Reorganized the ``kernel threads`` and ``kernel stacks`` shell command under the
