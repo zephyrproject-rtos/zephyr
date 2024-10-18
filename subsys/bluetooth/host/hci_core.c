@@ -3203,9 +3203,9 @@ static void read_supported_commands_complete(struct net_buf *buf)
 	       sizeof(bt_dev.supported_commands));
 
 	/* Report additional HCI commands used for ECDH as
-	 * supported if TinyCrypt ECC is used for emulation.
+	 * supported if PSA Crypto API ECC is used for emulation.
 	 */
-	if (IS_ENABLED(CONFIG_BT_TINYCRYPT_ECC)) {
+	if (IS_ENABLED(CONFIG_BT_HCI_ECC)) {
 		bt_hci_ecc_supported_commands(bt_dev.supported_commands);
 	}
 }
@@ -4057,7 +4057,7 @@ int bt_send(struct net_buf *buf)
 
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
 
-	if (IS_ENABLED(CONFIG_BT_TINYCRYPT_ECC)) {
+	if (IS_ENABLED(CONFIG_BT_HCI_ECC)) {
 		return bt_hci_ecc_send(buf);
 	}
 

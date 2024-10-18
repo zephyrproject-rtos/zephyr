@@ -231,8 +231,7 @@ config BT_WAIT_NOP
 
 config BT_RPA
 	bool
-	select TINYCRYPT
-	select TINYCRYPT_AES
+	depends on BT_HOST_CRYPTO || BT_CTLR_CRYPTO
 
 config BT_ASSERT
 	bool "Custom Bluetooth assert implementation"
