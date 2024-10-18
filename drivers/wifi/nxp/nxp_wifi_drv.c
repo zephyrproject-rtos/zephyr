@@ -917,68 +917,6 @@ static inline enum wifi_security_type nxp_wifi_security_type(enum wlan_security_
 	}
 }
 
-#ifndef CONFIG_WIFI_NM_WPA_SUPPLICANT
-static int nxp_wifi_uap_status(const struct device *dev, struct wifi_iface_status *status)
-{
-	enum wlan_connection_state connection_state = WLAN_DISCONNECTED;
-	struct interface *if_handle = (struct interface *)&g_uap;
-
-	wlan_get_uap_connection_state(&connection_state);
-
-	if (connection_state == WLAN_UAP_STARTED) {
-
-		if (!wlan_get_current_uap_network(&nxp_wlan_network)) {
-			strncpy(status->ssid, nxp_wlan_network.ssid, WIFI_SSID_MAX_LEN);
-			status->ssid[WIFI_SSID_MAX_LEN - 1] = 0;
-			status->ssid_len = strlen(status->ssid);
-
-			memcpy(status->bssid, nxp_wlan_network.bssid, WIFI_MAC_ADDR_LEN);
-
-			status->rssi = nxp_wlan_network.rssi;
-
-			status->channel = nxp_wlan_network.channel;
-
-			status->beacon_interval = nxp_wlan_network.beacon_period;
-
-			status->dtim_period = nxp_wlan_network.dtim_period;
-
-			if (if_handle->state.interface == WLAN_BSS_TYPE_STA) {
-				status->iface_mode = WIFI_MODE_INFRA;
-			}
-#ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
-			else if (if_handle->state.interface == WLAN_BSS_TYPE_UAP) {
-				status->iface_mode = WIFI_MODE_AP;
-			}
-#endif
-
-#ifdef CONFIG_NXP_WIFI_11AX
-			if (nxp_wlan_network.dot11ax) {
-				status->link_mode = WIFI_6;
-			}
-#endif
-#ifdef CONFIG_NXP_WIFI_11AC
-			else if (nxp_wlan_network.dot11ac) {
-				status->link_mode = WIFI_5;
-			}
-#endif
-			else if (nxp_wlan_network.dot11n) {
-				status->link_mode = WIFI_4;
-			} else {
-				status->link_mode = WIFI_3;
-			}
-
-			status->band = nxp_wlan_network.channel > 14 ? WIFI_FREQ_BAND_5_GHZ
-								     : WIFI_FREQ_BAND_2_4_GHZ;
-			status->security = nxp_wifi_security_type(nxp_wlan_network.security.type);
-			status->mfp = nxp_wlan_network.security.mfpr ? WIFI_MFP_REQUIRED :
-				(nxp_wlan_network.security.mfpc ? WIFI_MFP_OPTIONAL : 0);
-		}
-	}
-
-	return 0;
-}
-#endif
-
 static int nxp_wifi_status(const struct device *dev, struct wifi_iface_status *status)
 {
 	enum wlan_connection_state connection_state = WLAN_DISCONNECTED;
