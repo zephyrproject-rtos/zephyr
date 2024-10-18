@@ -70,6 +70,8 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_AP_DISABLE,
 	/** Get interface status */
 	NET_REQUEST_WIFI_CMD_IFACE_STATUS,
+	/** Get CONNECTION status */
+	NET_REQUEST_WIFI_CMD_CONNECTION_STATUS,
 	/** Set power save status */
 	NET_REQUEST_WIFI_CMD_PS,
 	/** Setup or teardown TWT flow */
@@ -148,6 +150,11 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_DISABLE);
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_IFACE_STATUS)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_IFACE_STATUS);
+
+/** Request a Wi-Fi network connection status */
+#define NET_REQUEST_WIFI_CONNECTION_STATUS (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_CONNECTION_STATUS)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_CONNECTION_STATUS);
 
 /** Request a Wi-Fi power save */
 #define NET_REQUEST_WIFI_PS					\
@@ -1200,6 +1207,14 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*iface_status)(const struct device *dev, struct wifi_iface_status *status);
+	/** Get connection status
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param status connection status
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*connection_status)(const struct device *dev, int *status);
 #if defined(CONFIG_NET_STATISTICS_WIFI) || defined(__DOXYGEN__)
 	/** Get Wi-Fi statistics
 	 *
