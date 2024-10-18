@@ -1,7 +1,4 @@
-.. _01space_esp32c3_042_oled:
-
-ESP32C3 0.42 OLED
-#################
+.. zephyr:board:: esp32c3_042_oled
 
 Overview
 ********
@@ -10,12 +7,6 @@ ESP32C3 0.42 OLED is a mini development board based on the `Espressif ESP32-C3`_
 RISC-V WiFi/Bluetooth dual-mode chip.
 
 For more details see the `01space ESP32C3 0.42 OLED`_ Github repo.
-
-.. figure:: img/esp32c3_042_oled.webp
-   :align: center
-   :alt: 01space ESP32C3 0.42 OLED
-
-   01space ESP32C3 0.42 OLED
 
 Hardware
 ********
