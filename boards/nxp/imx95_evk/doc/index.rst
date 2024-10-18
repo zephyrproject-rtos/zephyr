@@ -1,7 +1,4 @@
-.. _imx95_evk:
-
-NXP i.MX95 EVK
-##############
+.. zephyr:board:: imx95_evk
 
 Overview
 ********

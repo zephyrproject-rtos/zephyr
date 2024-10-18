@@ -26,7 +26,7 @@ Caveats
 *******
 
 * The Zephyr port of hawkBit is configured to run on a
-  :ref:`Freedom-K64F <frdm_k64f>` MCU by default. The application should
+  :zephyr:board:`Freedom-K64F <frdm_k64f>` MCU by default. The application should
   build and run for other platforms with support internet connection. Some
   platforms need some modification. Overlay files would be needed to support
   BLE 6lowpan, 802.15.4 or OpenThread configurations as well as the
@@ -78,7 +78,7 @@ the server URL, ``<your-ip-address>:8080``, and logging into the server using
 Step 4: Build hawkBit
 =====================
 
-hawkBit can be built for the :ref:`Freedom-K64F <frdm_k64f>` as follows:
+hawkBit can be built for the :zephyr:board:`Freedom-K64F <frdm_k64f>` as follows:
 
 .. zephyr-app-commands::
     :zephyr-app: samples/subsys/mgmt/hawkbit
@@ -260,7 +260,7 @@ Step 9: Build hawkBit HTTPS
 * Convert the server.pem file to self_sign.der and place the der file in
   hawkbit/src directory
 
-``hawkBit https`` can be built for the :ref:`Freedom-K64F <frdm_k64f>` as follows:
+``hawkBit https`` can be built for the :zephyr:board:`Freedom-K64F <frdm_k64f>` as follows:
 
 .. zephyr-app-commands::
     :zephyr-app: samples/subsys/mgmt/hawkbit

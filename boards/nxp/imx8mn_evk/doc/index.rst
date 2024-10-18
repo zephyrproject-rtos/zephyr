@@ -1,7 +1,4 @@
-.. _imx8mn_evk:
-
-NXP i.MX8MN EVK (Cortex-A53)
-############################
+.. zephyr:board:: imx8mn_evk
 
 Overview
 ********

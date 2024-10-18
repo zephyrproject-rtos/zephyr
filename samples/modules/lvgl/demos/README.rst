@@ -31,7 +31,7 @@ Note that other input devices types are not demonstrated in these demos, namely 
 Building and Running
 ********************
 
-Example building for :ref:`mimxrt1060_evk`:
+Example building for :zephyr:board:`mimxrt1060_evk`:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/modules/lvgl/demos

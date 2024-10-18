@@ -1,7 +1,4 @@
-.. _frdm_ke17z512:
-
-NXP  FRDM-KE17Z512
-##################
+.. zephyr:board:: frdm_ke17z512
 
 Overview
 ********
@@ -10,12 +7,6 @@ The FRDM-KE17Z512 is a development board for NXP Kinetis KE1xZ 32-bit
 MCU-based platforms. The onboard OpenSDAv2 serial and debug adapter,
 running an open source bootloader, offers options for serial
 communication, flash programming, and run-control debugging.
-
-.. figure:: frdm_ke17z512.webp
-   :align: center
-   :alt: FRDM-KE17Z512
-
-   FRDM-KE17Z512 (Credit: NXP)
 
 Hardware
 ********

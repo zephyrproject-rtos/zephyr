@@ -31,7 +31,7 @@ Building and Running
 This sample can be run on any board with an IS31FL3733 LED driver connected via
 I2C, and a node with the :dtcompatible:`issi,is31fl3733` compatible present in its devicetree.
 
-This sample provides a DTS overlay for the :ref:`frdm_k22f` board
+This sample provides a DTS overlay for the :zephyr:board:`frdm_k22f` board
 (:file:`boards/frdm_k22f.overlay`). It assumes that the IS31FL3733 LED
 controller is connected to I2C0, at address 0x50. The SDB GPIO should be
 connected to PTC2 (A3 on the arduino header)

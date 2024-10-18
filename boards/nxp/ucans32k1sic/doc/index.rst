@@ -1,7 +1,4 @@
-.. _ucans32k1sic:
-
-NXP UCANS32K1SIC
-################
+.. zephyr:board:: ucans32k1sic
 
 Overview
 ********
@@ -10,10 +7,6 @@ Overview
 board designed for both automotive and industrial applications. The UCANS32K1SIC
 provides two CAN SIC interfaces and is based on the 32-bit Arm Cortex-M4F
 `NXP S32K146`_ microcontroller.
-
-.. image:: img/ucans32k1sic_top.webp
-     :align: center
-     :alt: NXP UCANS32K1SIC (TOP)
 
 Hardware
 ********

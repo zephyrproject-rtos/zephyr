@@ -110,7 +110,7 @@ Next, python-can needs to be configured for the ``can0`` interface. One option i
    fd = True
 
 Once the SocketCAN interface has been brought up and configured the test suite can be launched using
-Twister. Below is an example for running on the :ref:`lpcxpresso55s36`:
+Twister. Below is an example for running on the :zephyr:board:`lpcxpresso55s36`:
 
 .. code-block:: shell
 
