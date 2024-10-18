@@ -6,7 +6,6 @@ from collections import namedtuple
 from pathlib import Path
 
 import list_boards, list_hardware
-import pykwalify
 import yaml
 import zephyr_module
 from gen_devicetree_rest import VndLookup
@@ -52,8 +51,6 @@ def guess_doc_page(board_or_shield):
 
 
 def get_catalog():
-    pykwalify.init_logging(1)
-
     vnd_lookup = VndLookup(ZEPHYR_BASE / "dts/bindings/vendor-prefixes.txt", [])
 
     module_settings = {
