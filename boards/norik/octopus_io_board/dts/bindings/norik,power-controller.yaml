@@ -1,0 +1,39 @@
+# Copyright (c) 2024 Norik Systems
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  This binding is used for controlling battery charger and
+  LDO regulator on the Octopus IO Board.
+
+compatible: "norik,power-controller"
+
+include: base.yaml
+
+properties:
+  debounce-interval-ms:
+    type: int
+    default: 30
+    description: |
+        Debouncing interval time in milliseconds.
+        If not specified defaults to 30.
+
+  polling-mode:
+    type: boolean
+    description: |
+      Do not use interrupts for the key GPIOs, poll the pin periodically at the
+      specified debounce-interval-ms instead.
+
+child-binding:
+  description: Child Node for the power controller
+  properties:
+    gpios:
+      type: phandle-array
+      required: true
+
+    label:
+      type: string
+      description: Descriptive name of the gpio
+
+    zephyr,code:
+      type: int
+      description: Key code to emit.
