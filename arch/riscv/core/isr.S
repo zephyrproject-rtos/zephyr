@@ -188,6 +188,12 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	sr s0, __struct_arch_esf_s0_OFFSET(sp)
 	get_current_cpu s0
 
+#ifdef CONFIG_CLIC_SUPPORT_INTERRUPT_PREEMPTION
+	/* Save mcause register */
+	csrr t0, mcause
+	sr t0, __struct_arch_esf_mcause_OFFSET(sp)
+#endif /* CONFIG_CLIC_SUPPORT_INTERRUPT_PREEMPTION */
+
 	/* Save MEPC register */
 	csrr t0, mepc
 	sr t0, __struct_arch_esf_mepc_OFFSET(sp)
@@ -727,6 +733,13 @@ fp_trap_exit:
 	/* Restore MEPC and MSTATUS registers */
 	lr t0, __struct_arch_esf_mepc_OFFSET(sp)
 	lr t2, __struct_arch_esf_mstatus_OFFSET(sp)
+
+#ifdef CONFIG_CLIC_SUPPORT_INTERRUPT_PREEMPTION
+	/* Restore MCAUSE register for previous interrupt level. */
+	lr t1, __struct_arch_esf_mcause_OFFSET(sp)
+	csrw mcause, t1
+#endif /* CONFIG_CLIC_SUPPORT_INTERRUPT_PREEMPTION */
+
 	csrw mepc, t0
 	csrw mstatus, t2
 
