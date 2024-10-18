@@ -1542,19 +1542,17 @@ TESTDATA_19 = [
     (
         True,
         os.path.join('self', 'dummy_dir', '1'),
-        mock.PropertyMock(return_value=os.path.join('dummy_dir', '1')),
-        os.path.join('dummy_dir', '1')
+        os.path.join('self', 'dummy_dir', '1', 'domain_name')
     ),
     (
         False,
         os.path.join('self', 'dummy_dir', '2'),
-        mock.PropertyMock(return_value=os.path.join('dummy_dir', '2')),
         os.path.join('self', 'dummy_dir', '2')
     ),
 ]
 
 @pytest.mark.parametrize(
-    'self_sysbuild, self_build_dir, build_dir, expected',
+    'self_sysbuild, self_build_dir, expected',
     TESTDATA_19,
     ids=['domains build dir', 'self build dir']
 )
@@ -1562,11 +1560,10 @@ def test_qemuhandler_get_default_domain_build_dir(
     mocked_instance,
     self_sysbuild,
     self_build_dir,
-    build_dir,
     expected
 ):
     get_default_domain_mock = mock.Mock()
-    type(get_default_domain_mock()).build_dir = build_dir
+    type(get_default_domain_mock()).name = 'domain_name'
     domains_mock = mock.Mock(get_default_domain=get_default_domain_mock)
     from_file_mock = mock.Mock(return_value=domains_mock)
 
