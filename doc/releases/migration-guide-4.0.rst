@@ -199,6 +199,13 @@ Clock control
 Controller Area Network (CAN)
 =============================
 
+Crypto
+======
+
+* Following the deprecation of TinyCrypt library (:github:`79566`) the TinyCrypt
+  based shim driver was removed. Thefefore all ``CONFIG_CRYPTO_TINYCRYPT_SHIM.*``
+  Kconfig symbols are no longer available. (:github:`79653`)
+
 Display
 =======
 
@@ -537,6 +544,14 @@ MCUmgr
 Modem
 =====
 
+Random
+======
+
+* Following the deprecation of the TinyCrypt library (:github:`79566`) usage
+  of TinyCrypt in CTR-DRBG random number generator was removed. From now on
+  Mbed TLS is required to enable :kconfig:option:`CONFIG_CTR_DRBG_CSPRNG_GENERATOR`.
+  (:github:`79653`).
+
 Shell
 =====
 
@@ -547,10 +562,17 @@ JWT (JSON Web Token)
 ====================
 
 * By default, the signature is now computed through PSA Crypto API for both RSA and ECDSA.
-  The newly-added :kconfig:option:`CONFIG_JWT_USE_LEGACY` can be used to switch
-  back to previous libraries (TinyCrypt for ECDSA and Mbed TLS for RSA).
-  The conversion to the PSA Crypto API is being done in preparation for the
-  deprecation of TinyCrypt. (:github:`78243` and :github:`43712`)
+  (:github:`78243`). The conversion to the PSA Crypto API is part of the adoption
+  of a standard interface for crypto operations (:github:`43712`). Moreover,
+  following the deprecation of the TinyCrypt library (:github:`79566`) usage
+  of TinyCrypt was removed from the JWT subsystem (:github:`79653`).
+
+* The following new symbols were added to allow specifying both the signature
+  algorithm and crypto library:
+
+  * :kconfig:option:`JWT_SIGN_RSA_PSA` (default) RSA signature using PSA Crypto APIs;
+  * :kconfig:option:`JWT_SIGN_RSA_LEGACY` RSA signature using Mbed TLS;
+  * :kconfig:option:`JWT_SIGN_ECDSA_PSA` ECDSA signature using PSA Crypto APIs.
 
 Architectures
 *************
