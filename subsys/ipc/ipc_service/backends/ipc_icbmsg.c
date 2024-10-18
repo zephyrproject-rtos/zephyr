@@ -1037,6 +1037,7 @@ static int send(const struct device *instance, void *token, const void *msg, siz
 	alloc_size = len;
 	r = alloc_tx_buffer(dev_data, &alloc_size, &buffer, K_NO_WAIT);
 	if (r < 0) {
+		Z_SPIN_DELAY(1);
 		return r;
 	}
 
