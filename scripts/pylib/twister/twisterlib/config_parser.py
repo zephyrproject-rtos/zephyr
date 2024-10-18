@@ -93,7 +93,7 @@ class TwisterConfigParser:
         self.common = {}
 
     def load(self):
-        self.data = scl.yaml_load_verify(self.filename, self.schema)
+        self.data = scl.yaml_load_verify(str(self.filename), self.schema)
 
         if 'tests' in self.data:
             self.scenarios = self.data['tests']

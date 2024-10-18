@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
+import os
 import pytest
 import textwrap
 
@@ -16,7 +17,7 @@ from twisterlib.platform import Platform
 
 @pytest.fixture
 def testinstance() -> TestInstance:
-    testsuite = TestSuite('.', 'samples/hello', 'unit.test')
+    testsuite = TestSuite('.', os.path.join('samples', 'hello'), 'unit.test')
     testsuite.harness_config = {}
     testsuite.ignore_faults = False
     testsuite.sysbuild = False
@@ -40,9 +41,9 @@ def test_pytest_command(testinstance: TestInstance, device_type):
     testinstance.handler.type_str = device_type
     ref_command = [
         'pytest',
-        'samples/hello/pytest',
+        os.path.join('samples', 'hello', 'pytest'),
         f'--build-dir={testinstance.build_dir}',
-        f'--junit-xml={testinstance.build_dir}/report.xml',
+        f'--junit-xml={os.path.join(testinstance.build_dir, "report.xml")}',
         f'--device-type={device_type}',
         '--twister-fixture=fixture1:option1',
         '--twister-fixture=fixture2'
@@ -90,39 +91,52 @@ def test_pytest_command_extra_args_in_options(testinstance: TestInstance):
     ('pytest_root', 'expected'),
     [
         (
-            ['pytest/test_shell_help.py'],
-            ['samples/hello/pytest/test_shell_help.py']
+            [os.path.join('pytest', 'test_shell_help.py')],
+            [os.path.join('samples', 'hello', 'pytest', 'test_shell_help.py')]
         ),
         (
-            ['pytest/test_shell_help.py', 'pytest/test_shell_version.py', 'test_dir'],
-            ['samples/hello/pytest/test_shell_help.py',
-             'samples/hello/pytest/test_shell_version.py',
-             'samples/hello/test_dir']
+            [
+                os.path.join('pytest', 'test_shell_help.py'),
+                os.path.join('pytest', 'test_shell_version.py'),
+                os.path.join('test_dir')
+            ],
+            [
+                os.path.join('samples', 'hello', 'pytest', 'test_shell_help.py'),
+                os.path.join('samples', 'hello', 'pytest', 'test_shell_version.py'),
+                os.path.join('samples', 'hello', 'test_dir')
+            ]
         ),
         (
-            ['../shell/pytest/test_shell.py'],
-            ['samples/shell/pytest/test_shell.py']
+            [os.path.join('..', 'shell', 'pytest', 'test_shell.py')],
+            [os.path.join('samples', 'shell', 'pytest', 'test_shell.py')]
         ),
         (
-            ['/tmp/test_temp.py'],
-            ['/tmp/test_temp.py']
+            [os.path.abspath(os.path.join(os.sep, 'tmp', 'test_temp.py'))],
+            [os.path.abspath(os.path.join(os.sep, 'tmp', 'test_temp.py'))]
         ),
         (
-            ['~/tmp/test_temp.py'],
-            ['/home/joe/tmp/test_temp.py']
+            [os.path.join('~', 'tmp', 'test_temp.py')],
+            [os.path.abspath(os.path.join(os.sep, 'home', 'joe', 'tmp', 'test_temp.py'))]
         ),
         (
-            ['$ZEPHYR_BASE/samples/subsys/testsuite/pytest/shell/pytest'],
-            ['/zephyr_base/samples/subsys/testsuite/pytest/shell/pytest']
+            [os.path.join('$ZEPHYR_BASE', 'samples', 'subsys', 'testsuite',
+                          'pytest', 'shell', 'pytest')],
+            [os.path.abspath(os.path.join(os.sep, 'zephyr_base', 'samples', 'subsys', 'testsuite',
+                          'pytest', 'shell', 'pytest'))]
         ),
         (
-            ['pytest/test_shell_help.py::test_A', 'pytest/test_shell_help.py::test_B'],
-            ['samples/hello/pytest/test_shell_help.py::test_A',
-             'samples/hello/pytest/test_shell_help.py::test_B']
+            [
+                os.path.join('pytest', 'test_shell_help.py::test_A'),
+                os.path.join('pytest', 'test_shell_help.py::test_B')
+            ],
+            [
+                os.path.join('samples', 'hello', 'pytest', 'test_shell_help.py::test_A'),
+                os.path.join('samples', 'hello', 'pytest', 'test_shell_help.py::test_B')
+            ]
         ),
         (
-            ['pytest/test_shell_help.py::test_A[param_a]'],
-            ['samples/hello/pytest/test_shell_help.py::test_A[param_a]']
+            [os.path.join('pytest', 'test_shell_help.py::test_A[param_a]')],
+            [os.path.join('samples', 'hello', 'pytest', 'test_shell_help.py::test_A[param_a]')]
         )
     ],
     ids=[
@@ -137,12 +151,14 @@ def test_pytest_command_extra_args_in_options(testinstance: TestInstance):
     ]
 )
 def test_pytest_handle_source_list(testinstance: TestInstance, monkeypatch, pytest_root, expected):
-    monkeypatch.setenv('ZEPHYR_BASE', '/zephyr_base')
-    monkeypatch.setenv('HOME', '/home/joe')
+    monkeypatch.setenv('ZEPHYR_BASE', os.path.abspath(os.path.join(os.sep, 'zephyr_base')))
+    monkeypatch.setenv('HOME', os.path.abspath(os.path.join(os.sep, 'home', 'joe')))
+    monkeypatch.setenv('USERPROFILE', os.path.abspath(os.path.join(os.sep, 'home', 'joe')))
     testinstance.testsuite.harness_config['pytest_root'] = pytest_root
     pytest_harness = Pytest()
     pytest_harness.configure(testinstance)
     command = pytest_harness.generate_command()
+
     for pytest_src in expected:
         assert pytest_src in command
 
