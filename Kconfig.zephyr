@@ -708,7 +708,7 @@ config CLEANUP_INTERMEDIATE_FILES
 	  (Software Bill of Material generation), and maybe others.
 
 config BUILD_NO_GAP_FILL
-	bool "Don't fill gaps in generated hex/bin/s19 files."
+	bool "Don't fill gaps in generated bin files by the 0xFF pattern."
 
 config BUILD_OUTPUT_HEX
 	bool "Build a binary in HEX format"
