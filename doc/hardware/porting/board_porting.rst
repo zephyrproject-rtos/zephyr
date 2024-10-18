@@ -123,7 +123,7 @@ This section focuses on the terminology used around hardware support, and in
 particular when defining and working with boards and SoCs.
 
 The overall set of terms used around the concept of board in Zephyr is depicted
-in the image below, which uses the :ref:`bl5340_dvk` board as reference.
+in the image below, which uses the :zephyr:board:`bl5340_dvk` board as reference.
 
 .. figure:: board/board-terminology.svg
    :width: 500px
@@ -152,7 +152,7 @@ qualifiers, the board name can be used as a board target. Conversely, if
 board qualifiers are part of the board definition, then the SoC can be omitted
 by leaving it out but including the corresponding forward-slashes: ``//``.
 
-Continuing with the example above, The board :ref:`bl5340_dvk` is a single SoC
+Continuing with the example above, The board :zephyr:board:`bl5340_dvk` is a single SoC
 board where the SoC defines two CPU clusters: ``cpuapp`` and ``cpunet``. One of
 the CPU clusters, ``cpuapp``, additionally defines a non-secure board variant,
 ``ns``.
