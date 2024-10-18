@@ -177,7 +177,7 @@ More implementation details can be found in the :ref:`boards` documentation.
 As a quick reference, see these three board documentation pages:
 
   - :ref:`sam4e_xpro` (ROM bootloader)
-  - :ref:`adafruit_feather_m0_basic_proto` (Adafruit UF2 bootloader)
+  - :zephyr:board:`adafruit_feather_m0_basic_proto` (Adafruit UF2 bootloader)
   - :ref:`arduino_nano_33_iot` (Arduino bootloader)
   - :ref:`arduino_nano_33_ble` (Arduino legacy bootloader)
 
