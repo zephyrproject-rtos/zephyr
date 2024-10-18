@@ -1,13 +1,6 @@
-.. _apollo4p_blue_kxr_evb:
-
-Ambiq Apollo4 Blue Plus KXR EVB
-###############################
+.. zephyr:board:: apollo4p_blue_kxr_evb
 
 Apollo4 Blue Plus KXR EVB is a board by Ambiq featuring their ultra-low power Apollo4 Blue Plus SoC.
-
-.. image:: ./apollo4-blue-plus-kxr-soc-eval-board.jpg
-   :align: center
-   :alt: Apollo4 Blue Plus KXR EVB
 
 Hardware
 ********
