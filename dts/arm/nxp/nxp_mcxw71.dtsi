@@ -130,6 +130,141 @@
 		#clock-cells = <2>;
 	};
 
+	trgmux: syscon@18000 {
+		compatible = "syscon";
+		reg = <0x18000 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		trgmux_out: mux-controller@0 {
+			reg = <0x0>;
+			compatible = "reg-mux";
+			mux-reg-masks = <0x0 0x7f>,
+					<0x0 0x7f00>,
+					<0x0 0x7f0000>,
+					<0x0 0x7f000000>;
+			#mux-control-cells = <1>;
+			#mux-state-cells = <2>;
+		};
+
+		lpit0_mux: mux-controller@4 {
+			reg = <0x4>;
+			compatible = "reg-mux";
+			mux-reg-masks = <0x4 0x7f>,
+					<0x4 0x7f00>,
+					<0x4 0x7f0000>,
+					<0x4 0x7f000000>;
+			#mux-control-cells = <1>;
+			#mux-state-cells = <2>;
+		};
+
+		tpm0_mux: mux-controller@8 {
+			reg = <0x8>;
+			compatible = "reg-mux";
+			mux-reg-masks = <0x8 0x7f>,
+					<0x8 0x7f00>,
+					<0x8 0x7f0000>;
+			#mux-control-cells = <1>;
+			#mux-state-cells = <2>;
+		};
+
+		tpm1_mux: mux-controller@c {
+			reg = <0xc>;
+			compatible = "reg-mux";
+			mux-reg-masks = <0xc 0x7f>,
+					<0xc 0x7f00>,
+					<0xc 0x7f0000>;
+			#mux-control-cells = <1>;
+			#mux-state-cells = <2>;
+		};
+
+		lpi2c0_mux: mux-controller@10 {
+			reg = <0x10>;
+			compatible = "reg-mux";
+			mux-reg-masks = <0x10 0x7f>;
+			#mux-control-cells = <1>;
+			#mux-state-cells = <2>;
+		};
+
+		lpi2c1_mux: mux-controller@14 {
+			reg = <0x14>;
+			compatible = "reg-mux";
+			mux-reg-masks = <0x14 0x7f>;
+			#mux-control-cells = <1>;
+			#mux-state-cells = <2>;
+		};
+
+		lpspi0_mux: mux-controller@18 {
+			reg = <0x18>;
+			compatible = "reg-mux";
+			mux-reg-masks = <0x18 0x7f>;
+			#mux-control-cells = <1>;
+			#mux-state-cells = <2>;
+		};
+
+		lpspi1_mux: mux-controller@1c {
+			reg = <0x1c>;
+			compatible = "reg-mux";
+			mux-reg-masks = <0x1c 0x7f>;
+			#mux-control-cells = <1>;
+			#mux-state-cells = <2>;
+		};
+
+		lpuart0_mux: mux-controller@20 {
+			reg = <0x20>;
+			compatible = "reg-mux";
+			mux-reg-masks = <0x20 0x7f>;
+			#mux-control-cells = <1>;
+			#mux-state-cells = <2>;
+		};
+
+		lpuart1_mux: mux-controller@24 {
+			reg = <0x24>;
+			compatible = "reg-mux";
+			mux-reg-masks = <0x24 0x7f>;
+			#mux-control-cells = <1>;
+			#mux-state-cells = <2>;
+		};
+
+		flexio0_mux: mux-controller@28 {
+			reg = <0x28>;
+			compatible = "reg-mux";
+			mux-reg-masks = <0x28 0x7f>,
+					<0x28 0x7f00>,
+					<0x28 0x7f0000>,
+					<0x28 0x7f000000>;
+			#mux-control-cells = <1>;
+			#mux-state-cells = <2>;
+		};
+
+		adc_gp0_mux: mux-controller@2c {
+			reg = <0x2c>;
+			compatible = "reg-mux";
+			mux-reg-masks = <0x2c 0x7f>,
+					<0x2c 0x7f00>,
+					<0x2c 0x7f0000>,
+					<0x2c 0x7f000000>;
+			#mux-control-cells = <1>;
+			#mux-state-cells = <2>;
+		};
+
+		cmp_gp0_mux: mux-controller@30 {
+			reg = <0x30>;
+			compatible = "reg-mux";
+			mux-reg-masks = <0x30 0x7f>;
+			#mux-control-cells = <1>;
+			#mux-state-cells = <2>;
+		};
+
+		cmp_gp1_mux: mux-controller@34 {
+			reg = <0x34>;
+			compatible = "reg-mux";
+			mux-reg-masks = <0x34 0x7f>;
+			#mux-control-cells = <1>;
+			#mux-state-cells = <2>;
+		};
+	};
+
 	porta: pinctrl@42000 {
 		compatible = "nxp,kinetis-pinmux";
 		reg = <0x42000 0xe0>;
