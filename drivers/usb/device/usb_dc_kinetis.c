@@ -147,8 +147,10 @@ static inline uint8_t get_bdt_idx(uint8_t ep, uint8_t odd)
 
 static int kinetis_usb_init(void)
 {
+#if !DT_INST_PROP(0, no_voltage_regulator)
 	/* enable USB voltage regulator */
 	SIM->SOPT1 |= SIM_SOPT1_USBREGEN_MASK;
+#endif
 
 	USB0->USBTRC0 |= USB_USBTRC0_USBRESET_MASK;
 	k_busy_wait(2000);
