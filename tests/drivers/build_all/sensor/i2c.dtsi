@@ -1096,3 +1096,12 @@ apds_9306: apds9306@92 {
 	resolution = <13>;
 	frequency = <2000>;
 };
+
+test_i2c_tmp435: tmp435@9a {
+	compatible = "ti,tmp435";
+	reg = <0x9a>;
+	external-channel;
+	resistance-correction;
+	beta-compensation = <0x0f>;
+	status = "okay";
+};
