@@ -570,6 +570,42 @@ config NET_TC_TX_COUNT
 
 endif # NETWORKING
 
+choice NRF_WIFI_NET_BUF_DATA_ALLOC_TYPE
+	prompt "Network buffer type"
+	default NRF_WIFI_NET_BUF_VARIABLE_SIZE
+	help
+	  This choice overrides NET_PKT_DATA_ALLOC_TYPE, which is
+	  defined in the network stack.
+
+config NRF_WIFI_NET_BUF_VARIABLE_SIZE
+	bool "Variable Data Size"
+	help
+	  Use variable network buffer sizes for packet buffers.
+
+config NRF_WIFI_NET_BUF_FIXED_SIZE
+	bool "Fixed Data Size"
+	help
+	  Use fixed data sizes for packet buffers.
+
+endchoice
+
+if NRF_WIFI_NET_BUF_VARIABLE_SIZE
+# These numbers were derived from tests using specific configurations for TCP and UDP
+# with variable data sizes. We adjusted pool sizes to match throughput levels from
+# previous fixed data tests.
+
+choice NET_PKT_DATA_ALLOC_TYPE
+	default NET_BUF_VARIABLE_DATA_SIZE
+endchoice
+
+config NET_PKT_BUF_RX_DATA_POOL_SIZE
+	default 32000
+
+config NET_PKT_BUF_TX_DATA_POOL_SIZE
+	default 55000
+
+endif # NRF_WIFI_NET_BUF_VARIABLE_SIZE
+
 config MAIN_STACK_SIZE
 	default 4096
 
