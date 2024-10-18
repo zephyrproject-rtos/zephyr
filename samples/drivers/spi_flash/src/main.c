@@ -26,9 +26,8 @@
 #endif
 #define SPI_FLASH_SECTOR_SIZE        4096
 
-#if defined(CONFIG_FLASH_STM32_OSPI) || \
-	defined(CONFIG_FLASH_STM32_QSPI) || \
-	defined(CONFIG_FLASH_STM32_XSPI)
+#if defined(CONFIG_FLASH_STM32_OSPI) || defined(CONFIG_FLASH_STM32_QSPI) ||                        \
+	defined(CONFIG_FLASH_STM32_XSPI) || defined(CONFIG_FLASH_QSPI_RENESAS_RA)
 #define SPI_FLASH_MULTI_SECTOR_TEST
 #endif
 
@@ -42,6 +41,8 @@
 #define SPI_FLASH_COMPAT st_stm32_xspi_nor
 #elif DT_HAS_COMPAT_STATUS_OKAY(nordic_qspi_nor)
 #define SPI_FLASH_COMPAT nordic_qspi_nor
+#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_ra_qspi_nor)
+#define SPI_FLASH_COMPAT renesas_ra_qspi_nor
 #else
 #define SPI_FLASH_COMPAT invalid
 #endif
