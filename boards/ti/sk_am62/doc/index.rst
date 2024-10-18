@@ -1,7 +1,4 @@
-.. _sk_am62:
-
-SK-AM62 M4F Core
-################
+.. zephyr:board:: sk_am62
 
 Overview
 ********
@@ -16,12 +13,6 @@ Cortex-M4F MCU core and the following features:
 The board configuration also enables support for the semihosting debugging console.
 
 See the `TI AM62X Product Page`_ for details.
-
-.. figure:: img/sk_am62_angled.webp
-   :align: center
-   :alt: TI SK-AM62 EVM
-
-   Texas Instruments SK-AM62 EVM
 
 Hardware
 ********

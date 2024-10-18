@@ -1,7 +1,4 @@
-.. _cc1352p1_launchxl:
-
-CC1352P1 LaunchXL
-#################
+.. zephyr:board:: cc1352p1_launchxl
 
 Overview
 ********
@@ -10,13 +7,6 @@ The Texas Instruments CC1352P LaunchPad |trade| (LAUNCHXL-CC1352P1) is a
 development kit for the SimpleLink |trade| multi-Standard CC1352P wireless MCU.
 
 See the `TI CC1352P LaunchPad Product Page`_ for details.
-
-.. figure:: img/cc1352p1_launchxl.jpg
-   :width: 400px
-   :align: center
-   :alt: TI CC1352P1 LaunchPad
-
-   Texas Instruments CC1352P1 LaunchPad |trade|
 
 Hardware
 ********
