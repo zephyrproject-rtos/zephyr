@@ -440,7 +440,7 @@ static void ip_maddr_event_handler(struct net_if *iface,
 	ret = k_mutex_lock(&vif_ctx_zep->vif_lock, K_FOREVER);
 	if (ret != 0) {
 		LOG_ERR("%s: Failed to lock vif_lock", __func__);
-		goto out;
+		return;
 	}
 
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
@@ -455,7 +455,7 @@ static void ip_maddr_event_handler(struct net_if *iface,
 	if (!mcast_info) {
 		LOG_ERR("%s: Unable to allocate memory of size %d "
 			"for mcast_info", __func__, sizeof(*mcast_info));
-		return;
+		goto unlock;
 	}
 
 	switch (addr->family) {
@@ -492,9 +492,8 @@ static void ip_maddr_event_handler(struct net_if *iface,
 					       sizeof(mac_string_buf)));
 	}
 unlock:
-	k_mutex_unlock(&vif_ctx_zep->vif_lock);
-out:
 	k_free(mcast_info);
+	k_mutex_unlock(&vif_ctx_zep->vif_lock);
 }
 #endif /* CONFIG_NRF70_STA_MODE */
 
