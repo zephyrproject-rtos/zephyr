@@ -206,6 +206,7 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_AP
 	${HOSTAP_SRC_BASE}/ap/mbo_ap.c
 	${HOSTAP_SRC_BASE}/ap/ctrl_iface_ap.c
 	${HOSTAP_SRC_BASE}/utils/crc32.c
+	${HOSTAP_SRC_BASE}/utils/ip_addr.c
 )
 
 zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_AP
@@ -226,7 +227,6 @@ zephyr_include_directories_ifdef(CONFIG_WIFI_NM_HOSTAPD_AP
 
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_HOSTAPD_AP
 	${HOSTAP_SRC_BASE}/ap/acs.c
-	${HOSTAP_SRC_BASE}/utils/ip_addr.c
 	${WIFI_NM_HOSTAPD_BASE}/config_file.c
 	${WIFI_NM_HOSTAPD_BASE}/ctrl_iface.c
 	${WIFI_NM_HOSTAPD_BASE}/ctrl_iface_zephyr.c
@@ -243,6 +243,27 @@ zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_HOSTAPD_AP
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
 	${HOSTAP_SRC_BASE}/crypto/crypto_none.c
 	${HOSTAP_SRC_BASE}/crypto/tls_none.c
+
+	# FIXME: why do we need these when crypto is not selected?
+	${HOSTAP_SRC_BASE}/crypto/aes-wrap.c
+	${HOSTAP_SRC_BASE}/crypto/aes-internal.c
+	${HOSTAP_SRC_BASE}/crypto/aes-internal-enc.c
+	${HOSTAP_SRC_BASE}/crypto/aes-omac1.c
+	${HOSTAP_SRC_BASE}/crypto/md5.c
+	${HOSTAP_SRC_BASE}/crypto/md5-internal.c
+	${HOSTAP_SRC_BASE}/crypto/sha1.c
+	${HOSTAP_SRC_BASE}/crypto/sha1-internal.c
+	${HOSTAP_SRC_BASE}/crypto/sha1-pbkdf2.c
+	${HOSTAP_SRC_BASE}/crypto/sha1-prf.c
+	${HOSTAP_SRC_BASE}/crypto/sha256.c
+	${HOSTAP_SRC_BASE}/crypto/sha256-internal.c
+	${HOSTAP_SRC_BASE}/crypto/sha256-prf.c
+	${HOSTAP_SRC_BASE}/crypto/sha384.c
+	${HOSTAP_SRC_BASE}/crypto/sha384-internal.c
+	${HOSTAP_SRC_BASE}/crypto/sha384-prf.c
+	${HOSTAP_SRC_BASE}/crypto/sha512.c
+	${HOSTAP_SRC_BASE}/crypto/sha512-internal.c
+	${HOSTAP_SRC_BASE}/crypto/rc4.c
 )
 
 zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
@@ -609,6 +630,7 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	${HOSTAP_SRC_BASE}/crypto/ms_funcs.c
 	${HOSTAP_SRC_BASE}/crypto/aes-eax.c
 	${HOSTAP_SRC_BASE}/crypto/md4-internal.c
+	${HOSTAP_SRC_BASE}/crypto/sha1-internal.c
 	${HOSTAP_SRC_BASE}/crypto/fips_prf_internal.c
 	${HOSTAP_SRC_BASE}/crypto/milenage.c
 )
