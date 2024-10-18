@@ -168,8 +168,17 @@ config RISCV_HAS_PLIC
 config RISCV_HAS_CLIC
 	bool
 	depends on RISCV_PRIVILEGED
+	select RISCV_ALWAYS_SWITCH_THROUGH_ECALL if MULTITHREADING
+	select CLIC_SUPPORT_INTERRUPT_PREEMPTION if !NRFX_CLIC
 	help
 	  Does the SOC provide support for a Core-Local Interrupt Controller (CLIC).
+
+config CLIC_SUPPORT_INTERRUPT_PREEMPTION
+	bool
+	depends on RISCV_HAS_CLIC
+	help
+	  This option handles interrupt level in ISR to support interrupt
+	  preemption for nested interrupt.
 
 config RISCV_SOC_EXCEPTION_FROM_IRQ
 	bool
