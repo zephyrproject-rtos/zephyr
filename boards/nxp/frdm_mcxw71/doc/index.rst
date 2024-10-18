@@ -1,7 +1,4 @@
-.. _frdm_mcxw71:
-
-NXP FRDM-MCXW71
-################
+.. zephyr:board:: frdm_mcxw71
 
 Overview
 ********
@@ -18,10 +15,6 @@ multiprotocol radio subsystem supporting Matter, Thread, Zigbee and Bluetooth
 LE. The independent radio subsystem, with a dedicated core and memory, offloads
 the main CPU, preserving it for the primary application and allowing firmware
 updates to support future wireless standards.
-
-.. image:: frdm_mcxw71.webp
-   :align: center
-   :alt: FRDM-MCXW71
 
 Hardware
 ********

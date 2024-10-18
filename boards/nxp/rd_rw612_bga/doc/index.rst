@@ -1,7 +1,4 @@
-.. _rd_rw612_bga:
-
-NXP RD-RW612-BGA
-################
+.. zephyr:board:: rd_rw612_bga
 
 Overview
 ********

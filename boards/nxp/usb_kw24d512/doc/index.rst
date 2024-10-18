@@ -1,7 +1,4 @@
-.. _usb_kw24d512:
-
-NXP USB-KW24D512
-################
+.. zephyr:board:: usb_kw24d512
 
 Overview
 ********

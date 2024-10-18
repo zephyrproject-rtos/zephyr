@@ -97,7 +97,7 @@ The sample can be built and executed for the
 
 Building and Running for NXP TWR-KE18F
 ======================================
-The sample can be built and executed for the :ref:`twr_ke18f` as
+The sample can be built and executed for the :zephyr:board:`twr_ke18f` as
 follows:
 
 .. zephyr-app-commands::
@@ -111,7 +111,7 @@ connector.
 
 Building and Running for NXP FRDM-K64F
 ======================================
-The sample can be built and executed for the :ref:`frdm_k64f` as
+The sample can be built and executed for the :zephyr:board:`frdm_k64f` as
 follows:
 
 .. zephyr-app-commands::
@@ -211,7 +211,7 @@ also can run for the Longan Nano Lite as follows:
 
 Building and Running for NXP LPCXpresso55S36
 ============================================
-The sample can be built and executed for the :ref:`lpcxpresso55s36` as
+The sample can be built and executed for the :zephyr:board:`lpcxpresso55s36` as
 follows:
 
 .. zephyr-app-commands::
