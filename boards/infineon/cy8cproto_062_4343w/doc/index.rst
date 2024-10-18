@@ -1,7 +1,4 @@
-.. _cy8cproto_062_4343w:
-
-INFINEON CY8CPROTO-062-4343W
-############################
+.. zephyr:board:: cy8cproto_062_4343w
 
 Overview
 ********
@@ -15,10 +12,6 @@ card interface, 512-Mb Quad-SPI NOR flash, PDM-PCM microphone, and a thermistor.
 This kit is designed with a snap-away form-factor, allowing the user to separate
 the different components and features that come with this kit and use independently.
 In addition, support for Digilent's Pmod interface is also provided with this kit.
-
-.. image:: img/board.jpg
-     :align: center
-     :alt: CY8CPROTO-062-4343W
 
 Hardware
 ********
