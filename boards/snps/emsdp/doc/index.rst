@@ -1,7 +1,4 @@
-.. _emsdp:
-
-DesignWare(R) ARC(R) EM Software Development Platform
-#####################################################
+.. zephyr:board:: emsdp
 
 Overview
 ********
@@ -11,10 +8,6 @@ for rapid software development on ARC EM processor-based subsystems. It is inten
 to accelerate software development and debug of ARC EM processors and subsystems for
 a wide range of ultra-low power embedded applications such as IoT, sensor fusion,
 and voice applications.
-
-.. image:: emsdp.jpg
-   :align: center
-   :alt: DesignWare(R) ARC(R) EM Software Development Platform (synopsys.com)
 
 For details about the board, see: `DesignWare ARC EM Software Development Platform
 (EM SDP) <https://www.synopsys.com/dw/ipdir.php?ds=arc-em-software-development-platform>`__
