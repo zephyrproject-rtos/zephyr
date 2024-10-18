@@ -1,7 +1,4 @@
-.. _titanium_ti60_f225:
-
-Efinix Titanium Ti60 F225
-#########################
+.. zephyr:board:: titanium_ti60_f225
 
 Overview
 ********
@@ -10,12 +7,6 @@ The Efinix Titanium Ti60 F225 development kit contains a Ti60 FPGA, which is fab
 high performance with the lowest possible power on a small physical size. In addition, Efinix offers Sapphire SoC IP,
 which is a user-configurable RISC-V SoC based on the VexRiscv core with configurable feature set and extension.
 Using the Efinity IP Manager, you can configure the SoC to include only the peripherals that you require.
-
-.. figure:: img/titanium_ti60_f225.jpg
-   :align: center
-   :alt: titanium_ti60_f225_board
-
-Figure is the development board
 
 Board block diagram
 *******************
