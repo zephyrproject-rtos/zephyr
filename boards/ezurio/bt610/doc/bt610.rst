@@ -1,7 +1,4 @@
-.. _bt610:
-
-Ezurio Sentrius BT610 Sensor
-############################
+.. zephyr:board:: bt610
 
 Overview
 ********
@@ -27,12 +24,6 @@ The sensor has the following features:
 * :abbr:`SPI (Serial Peripheral Interface)`
 * :abbr:`UART (Universal Asynchronous Receiver-Transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
-
-.. figure:: img/bt610_front.jpg
-     :align: center
-     :alt: Sentrius BT610 Sensor, front view
-
-     Sentrius BT610 Sensor, front view
 
 .. figure:: img/bt610_back.jpg
      :align: center
