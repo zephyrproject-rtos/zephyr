@@ -1,7 +1,4 @@
-.. _slwrb4180a:
-
-EFR32xG21 2.4 GHz 20 dBm (SLWRB4180A)
-#####################################
+.. zephyr:board:: slwrb4180a
 
 Overview
 ********
@@ -10,12 +7,6 @@ The EFR32MG21 Mighty Gecko Radio Board is one of the two
 radio boards delivered with `EFR32-SLWSTK6006A Website`_. It contains
 a Wireless System-On-Chip from the EFR32MG21 family built on an
 ARM Cortex®-M33F processor with excellent low power capabilities.
-
-.. figure:: efr32mg21-slwrb4180a.jpg
-   :align: center
-   :alt: SLWRB4180A Mighty Gecko Radio Board
-
-   SLWRB4180A (image courtesy of Silicon Labs)
 
 The BRD4180A a.k.a. SLWRB4180A radio board plugs into the Wireless Starter Kit
 Mainboard BRD4001A and is supported as one of :ref:`silabs_radio_boards`.
