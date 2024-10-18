@@ -1421,25 +1421,6 @@ static int nxp_wifi_set_twt(const struct device *dev, struct wifi_twt_params *pa
 	return ret;
 }
 
-static int nxp_wifi_set_btwt(const struct device *dev, struct wifi_twt_params *params)
-{
-	wlan_btwt_config_t btwt_config;
-	int ret = -1;
-
-	btwt_config.action = 1;
-	btwt_config.sub_id = params->btwt.sub_id;
-	btwt_config.nominal_wake = params->btwt.nominal_wake;
-	btwt_config.max_sta_support = params->btwt.max_sta_support;
-	btwt_config.twt_mantissa = params->btwt.twt_interval;
-	btwt_config.twt_offset = params->btwt.twt_offset;
-	btwt_config.twt_exponent = params->btwt.twt_exponent;
-	btwt_config.sp_gap = params->btwt.sp_gap;
-
-	ret = wlan_set_btwt_cfg(&btwt_config);
-
-	return ret;
-}
-
 static void nxp_wifi_sta_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
@@ -1795,7 +1776,6 @@ static const struct wifi_mgmt_ops nxp_wifi_uap_mgmt = {
 #endif
 	.set_power_save = nxp_wifi_power_save,
 	.get_power_save_config = nxp_wifi_get_power_save,
-	.set_btwt = nxp_wifi_set_btwt,
 	.ap_config_params = nxp_wifi_ap_config_params,
 };
 
