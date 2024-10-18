@@ -323,7 +323,7 @@ int bt_send(struct net_buf *buf)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_TINYCRYPT_ECC)) {
+	if (IS_ENABLED(CONFIG_BT_SEND_ECC_EMULATION)) {
 		return bt_hci_ecc_send(buf);
 	}
 
