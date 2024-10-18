@@ -247,6 +247,10 @@ Libraries / Subsystems
 
 * Storage
 
+  * Shell: :kconfig:option:`CONFIG_FILE_SYSTEM_SHELL_MOUNT_COMMAND` was added,
+    allowing the mount subcommand to be optionally disabled. This can reduce
+    flash and RAM usage since it requires the heap to be present.
+
 * Task Watchdog
 
 * POSIX API
