@@ -8,11 +8,6 @@ common:
     - s32z2xxdc2/s32z270/rtu0 # See commit 18a0660
     - s32z2xxdc2/s32z270/rtu1 # See commit 18a0660
     # platforms that are always skipped by the runtime filter
-    - qemu_arc/qemu_arc_em
-    - qemu_arc/qemu_arc_hs
-    - qemu_arc/qemu_arc_hs/xip
-    - qemu_arc/qemu_arc_hs5x
-    - qemu_arc/qemu_arc_hs6x
     - qemu_cortex_m0
     - qemu_xtensa/dc233c/mmu
   integration_platforms:
@@ -34,7 +29,7 @@ tests:
   # Run the suite with all combinations of core Kconfig options for the llext
   # subsystem (storage type, ELF type, MPU/MMU etc)
   llext.simple.readonly:
-    arch_allow: arm riscv # Xtensa needs writable storage
+    arch_allow: arm riscv arc # Xtensa needs writable storage
     filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE
     extra_configs:
       - arch:arm:CONFIG_ARM_MPU=n
@@ -49,12 +44,13 @@ tests:
       - CONFIG_USERSPACE=y
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
   llext.simple.readonly_fs_loader:
-    arch_allow: arm riscv # Xtensa needs writable storage
+    arch_allow: arm riscv arc # Xtensa needs writable storage
     filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE
     extra_configs:
       - arch:arm:CONFIG_ARM_MPU=n
       - arch:arm:CONFIG_ARM_AARCH32_MMU=n
       - arch:riscv:CONFIG_RISCV_PMP=n
+      - arch:arc:CONFIG_ARC_MPU=n
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
   llext.simple.readonly_mmu:
     arch_allow: arm64 arm riscv
@@ -64,7 +60,7 @@ tests:
     extra_configs:
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
   llext.simple.writable:
-    arch_allow: arm xtensa riscv
+    arch_allow: arm xtensa riscv arc
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE
@@ -72,9 +68,10 @@ tests:
       - arch:arm:CONFIG_ARM_MPU=n
       - arch:arm:CONFIG_ARM_AARCH32_MMU=n
       - arch:riscv:CONFIG_RISCV_PMP=n
+      - arch:arc:CONFIG_ARC_MPU=n
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
   llext.simple.writable_relocatable:
-    arch_allow: arm xtensa riscv
+    arch_allow: arm xtensa riscv arc
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU
@@ -82,13 +79,14 @@ tests:
       - arch:arm:CONFIG_ARM_MPU=n
       - arch:arm:CONFIG_ARM_AARCH32_MMU=n
       - arch:riscv:CONFIG_RISCV_PMP=n
+      - arch:arc:CONFIG_ARC_MPU=n
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
       - CONFIG_LLEXT_TYPE_ELF_RELOCATABLE=y
 
   # Test the Symbol Link Identifier (SLID) linking feature on writable
   # storage to cover both ARM and Xtensa architectures on the same test.
   llext.simple.writable_slid_linking:
-    arch_allow: arm xtensa riscv
+    arch_allow: arm xtensa riscv arc
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE
@@ -96,10 +94,11 @@ tests:
       - arch:arm:CONFIG_ARM_MPU=n
       - arch:arm:CONFIG_ARM_AARCH32_MMU=n
       - arch:riscv:CONFIG_RISCV_PMP=n
+      - arch:arc:CONFIG_ARC_MPU=n
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
       - CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID=y
   llext.simple.writable_relocatable_slid_linking:
-    arch_allow: arm xtensa riscv
+    arch_allow: arm xtensa riscv arc
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU
@@ -107,6 +106,7 @@ tests:
       - arch:arm:CONFIG_ARM_MPU=n
       - arch:arm:CONFIG_ARM_AARCH32_MMU=n
       - arch:riscv:CONFIG_RISCV_PMP=n
+      - arch:arc:CONFIG_ARC_MPU=n
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
       - CONFIG_LLEXT_TYPE_ELF_RELOCATABLE=y
       - CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID=y

@@ -435,7 +435,7 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 				 */
 				link_addr = (uintptr_t)llext_loaded_sect_ptr(ldr, ext,
 									     sym.st_shndx)
-					    + sym.st_value;
+					    + sym.st_value + rel.r_addend;
 			} else {
 				LOG_ERR("rela section %d, entry %d: cannot apply relocation: "
 					"target symbol has unexpected section index %d (0x%X)",
