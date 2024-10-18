@@ -20,7 +20,7 @@
 
 	eeprom0_x_nucleo_eeprma2: eeprom@54 {
 		/* M24C02-FMC6TG aka U1 (2 kbit eeprom in DFN8 package) */
-		compatible = "st,m24c02", "st,m24xxx", "atmel,at24";
+		compatible = "st,m24xxx";
 		reg = <0x54>;
 		size = <256>;
 		pagesize = <16>;
@@ -33,7 +33,7 @@
 
 	eeprom1_x_nucleo_eeprma2: eeprom@55 {
 		/* M24256-DFDW6TP aka U2 (256 kbit eeprom in TSSOP package) */
-		compatible = "st,m24256", "st,m24xxx", "atmel,at24";
+		compatible = "st,m24xxx";
 		reg = <0x55>;
 		size = <DT_SIZE_K(32)>;
 		pagesize = <64>;
@@ -46,7 +46,7 @@
 
 	eeprom2_x_nucleo_eeprma2: eeprom@56 {
 		/* M24M01-DFMN6TP aka U3 (1 Mbit eeprom in SO8N package) */
-		compatible = "st,m24m01", "st,m24xxx", "atmel,at24";
+		compatible = "st,m24xxx";
 		reg = <0x56>;
 		size = <DT_SIZE_K(128)>;
 		pagesize = <256>;
