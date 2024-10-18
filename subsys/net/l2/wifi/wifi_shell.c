@@ -1563,14 +1563,14 @@ static int cmd_wifi_btwt_setup(const struct shell *sh, size_t argc, char *argv[]
 	params.btwt.nominal_wake = (uint8_t)strtol(argv[idx++], NULL, 10);
 	params.btwt.max_sta_support = (uint8_t)strtol(argv[idx++], NULL, 10);
 
-	if (!parse_number(sh, &value, argv[idx++], 1, WIFI_MAX_TWT_INTERVAL_US)) {
+	if (!parse_number(sh, &value, argv[idx++], NULL, 1, WIFI_MAX_TWT_INTERVAL_US)) {
 		return -EINVAL;
 	}
 	params.btwt.twt_interval = (uint16_t)value;
 
 	params.btwt.twt_offset = (uint16_t)strtol(argv[idx++], NULL, 10);
 
-	if (!parse_number(sh, &value, argv[idx++], 0, WIFI_MAX_TWT_EXPONENT)) {
+	if (!parse_number(sh, &value, argv[idx++], NULL, 0, WIFI_MAX_TWT_EXPONENT)) {
 		return -EINVAL;
 	}
 	params.btwt.twt_exponent = (uint8_t)value;
