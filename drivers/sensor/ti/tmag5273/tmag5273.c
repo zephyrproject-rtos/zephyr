@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT ti_tmag5273
-
 #include "tmag5273.h"
 
 #include <stdint.h>
@@ -43,9 +41,25 @@ LOG_MODULE_REGISTER(TMAG5273, CONFIG_SENSOR_LOG_LEVEL);
 #define TMAG5273_I2C_BUFFER_SIZE                                                                   \
 	(TMAG5273_REG_RESULT_END - TMAG5273_REG_RESULT_BEGIN + 1 + TMAG5273_CRC_I2C_SIZE)
 
+/**
+ * Max size of the buffer to read out all result data from the sensor in 1-byte
+ * read mode.
+ *
+ * - 1 byte for i2c address (for computing crc, not received from i2c)
+ * - up to 2 bytes for each channel, up to 4 channels (t, x, y, z).
+ * - 1 byte conversion status
+ * - 1 byte optional crc
+ */
+#define TMAG5273_I2C_1BYTE_READ_MODE_BUFFER_SIZE (1 + 2 * 4 + 1 + 1)
+
 /** static configuration data */
 struct tmag5273_config {
 	struct i2c_dt_spec i2c;
+
+	enum {
+		TMAG5273_PART,
+		TMAG3001_PART
+	} part;
 
 	uint8_t mag_channel;
 	uint8_t axis;
@@ -58,6 +72,7 @@ struct tmag5273_config {
 
 	uint8_t operation_mode;
 	uint8_t averaging;
+	uint8_t read_mode;
 
 	bool trigger_conv_via_int;
 	bool low_noise_mode;
@@ -71,8 +86,9 @@ struct tmag5273_config {
 };
 
 struct tmag5273_data {
-	uint8_t version;             /** version as given by the sensor */
-	uint16_t conversion_time_us; /** time for one conversion */
+	enum tmag5273_version version; /** version as given by the sensor */
+	uint16_t conversion_time_us;   /** time for one conversion */
+	uint8_t device_config_reg;     /** device config register value */
 
 	int16_t x_sample;           /** measured B-field @x-axis */
 	int16_t y_sample;           /** measured B-field @y-axis */
@@ -528,7 +544,151 @@ static int tmag5273_attr_get(const struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static int tmag5273_sample_fetch(const struct device *dev, enum sensor_channel chan)
+static int tmag5273_sample_fetch_1byte_read_mode(const struct device *dev, enum sensor_channel chan)
+{
+	const struct tmag5273_config *drv_cfg = dev->config;
+	struct tmag5273_data *drv_data = dev->data;
+	int rv;
+
+	uint8_t i2c_buf[TMAG5273_I2C_1BYTE_READ_MODE_BUFFER_SIZE] = {0};
+	/* Set first byte to command byte for possible CRC check later. */
+	i2c_buf[0] = (drv_cfg->i2c.addr << 1) | 0x1;
+	const uint8_t axis = drv_cfg->axis;
+
+	/* Validate only requesting axis or temperature channels. */
+	switch (chan) {
+	case SENSOR_CHAN_MAGN_X:
+		if (!(axis & TMAG5273_MAG_CH_EN_X)) {
+			LOG_ERR("x-axis measurement deactivated");
+			return -ENOTSUP;
+		}
+		break;
+	case SENSOR_CHAN_MAGN_Y:
+		if (!(axis & TMAG5273_MAG_CH_EN_Y)) {
+			LOG_ERR("y-axis measurement deactivated");
+			return -ENOTSUP;
+		}
+		break;
+	case SENSOR_CHAN_MAGN_Z:
+		if (!(axis & TMAG5273_MAG_CH_EN_Z)) {
+			LOG_ERR("z-axis measurement deactivated");
+			return -ENOTSUP;
+		}
+		break;
+	case SENSOR_CHAN_MAGN_XYZ:
+		if (axis == TMAG5273_MAG_CH_EN_NONE) {
+			LOG_ERR("x/y/z-axis measurement deactivated");
+			return -ENOTSUP;
+		}
+		break;
+	case SENSOR_CHAN_DIE_TEMP:
+		if (!drv_cfg->temperature) {
+			LOG_ERR("temperature measurement deactivated");
+			return -ENOTSUP;
+		} else if (drv_cfg->part == TMAG3001_PART) {
+			LOG_ERR("temperature measurement not supported on TMAG3001");
+			return -ENOTSUP;
+		}
+		break;
+	case SENSOR_CHAN_ALL:
+		break;
+	default:
+		LOG_ERR("Invalid channel for 1byte read mode: %d", chan);
+		return -ENOTSUP;
+	}
+
+	/* Compute how much to actually read. */
+	uint32_t sample_size = drv_cfg->read_mode == TMAG5273_DT_I2C_READ_MODE_16BIT ? 2 : 1;
+	uint32_t num_bytes = 1; /* +1 for conversion status */
+
+	if (drv_cfg->temperature && drv_cfg->part == TMAG5273_PART) {
+		/* TMAG3001 does not return temperature in this read mode. */
+		num_bytes += sample_size;
+	}
+	if (axis & TMAG5273_MAG_CH_EN_X) {
+		num_bytes += sample_size;
+	}
+	if (axis & TMAG5273_MAG_CH_EN_Y) {
+		num_bytes += sample_size;
+	}
+	if (axis & TMAG5273_MAG_CH_EN_Z) {
+		num_bytes += sample_size;
+	}
+#ifdef CONFIG_CRC
+	if (drv_cfg->crc_enabled) {
+		num_bytes += 1;
+	}
+#endif
+	__ASSERT(num_bytes + 1 <= ARRAY_SIZE(i2c_buf), "should not exceed buffer size");
+
+	rv = i2c_read_dt(&drv_cfg->i2c, i2c_buf + 1, num_bytes);
+	if (rv < 0) {
+		LOG_ERR("Failed to read data from sensor: %d", rv);
+		return -EIO;
+	}
+
+	int i = 1;
+
+	switch (drv_cfg->read_mode) {
+	case TMAG5273_DT_I2C_READ_MODE_16BIT:
+		if (drv_cfg->temperature && drv_cfg->part == TMAG5273_PART) {
+			drv_data->temperature_sample = (i2c_buf[i] << 8) | i2c_buf[i + 1];
+			i += 2;
+		}
+		if (axis & TMAG5273_MAG_CH_EN_X) {
+			drv_data->x_sample = (i2c_buf[i] << 8) | i2c_buf[i + 1];
+			i += 2;
+		}
+		if (axis & TMAG5273_MAG_CH_EN_Y) {
+			drv_data->y_sample = (i2c_buf[i] << 8) | i2c_buf[i + 1];
+			i += 2;
+		}
+		if (axis & TMAG5273_MAG_CH_EN_Z) {
+			drv_data->z_sample = (i2c_buf[i] << 8) | i2c_buf[i + 1];
+			i += 2;
+		}
+		break;
+	case TMAG5273_DT_I2C_READ_MODE_8BIT:
+		if (drv_cfg->temperature) {
+			drv_data->temperature_sample = i2c_buf[i++] << 8;
+		}
+		if (axis & TMAG5273_MAG_CH_EN_X) {
+			drv_data->x_sample = i2c_buf[i++] << 8;
+		}
+		if (axis & TMAG5273_MAG_CH_EN_Y) {
+			drv_data->y_sample = i2c_buf[i++] << 8;
+		}
+		if (axis & TMAG5273_MAG_CH_EN_Z) {
+			drv_data->z_sample = i2c_buf[i++] << 8;
+		}
+		break;
+	default:
+		LOG_ERR("Invalid read mode for 1byte read %d", drv_cfg->read_mode);
+		return -EINVAL;
+	}
+
+	uint8_t conv_status = i2c_buf[i++];
+
+	if (!drv_cfg->ignore_diag_fail &&
+	    (conv_status & TMAG5273_DIAG_STATUS_MSK) == TMAG5273_DIAG_FAIL) {
+		LOG_ERR("CONV_STATUS DIAG_FAIL");
+		return -EIO;
+	}
+
+#ifdef CONFIG_CRC
+	if (drv_cfg->crc_enabled) {
+		uint8_t crc = i2c_buf[i];
+
+		if (crc8_ccitt(0xFF, i2c_buf, num_bytes) != crc) {
+			LOG_ERR("CRC mismatch");
+			return -EIO;
+		}
+	}
+#endif
+	return 0;
+}
+
+static int tmag5273_sample_fetch_normal(const struct device *dev, enum sensor_channel chan)
 {
 	const struct tmag5273_config *drv_cfg = dev->config;
 	struct tmag5273_data *drv_data = dev->data;
@@ -746,6 +906,17 @@ static int tmag5273_sample_fetch(const struct device *dev, enum sensor_channel c
 	return 0;
 }
 
+static int tmag5273_sample_fetch(const struct device *dev, enum sensor_channel chan)
+{
+	const struct tmag5273_config *drv_cfg = dev->config;
+
+	if (drv_cfg->read_mode == TMAG5273_DT_I2C_READ_MODE_NORMAL) {
+		return tmag5273_sample_fetch_normal(dev, chan);
+	} else {
+		return tmag5273_sample_fetch_1byte_read_mode(dev, chan);
+	}
+}
+
 /**
  * @brief calculates the b-field value in G based on the sensor value
  *
@@ -961,7 +1132,17 @@ static inline int tmag5273_init_device_config(const struct device *dev)
 	drv_data->conversion_time_us = TMAG5273_T_CONVERSION_US(
 		(FIELD_GET(TMAG5273_CONV_AVB_MSK, regdata)), (nb_captured_channels));
 
-	regdata |= TMAG5273_I2C_READ_MODE_STANDARD;
+	regdata |= drv_cfg->read_mode << TMAG5273_I2C_READ_POS;
+	if (drv_cfg->read_mode != TMAG5273_DT_I2C_READ_MODE_NORMAL &&
+	    drv_cfg->operation_mode != TMAG5273_DT_OPER_MODE_CONTINUOUS) {
+		/* 1byte read mode does not trigger conversion, so it is not supported in
+		 * non-continuous modes.
+		 *
+		 * Using int to trigger conversion might work, but I have not tested it.
+		 */
+		LOG_ERR("1byte read mode only supported in continuous mode");
+		return -ENOTSUP;
+	}
 
 	retval = i2c_reg_write_byte_dt(&drv_cfg->i2c, TMAG5273_REG_DEVICE_CONFIG_1, regdata);
 	if (retval < 0) {
@@ -1152,7 +1333,26 @@ static int tmag5273_init(const struct device *dev)
 		return -EIO;
 	}
 
-	drv_data->version = regdata & TMAG5273_VER_MSK;
+	switch (drv_cfg->part) {
+	case TMAG5273_PART:
+		drv_data->version = regdata & TMAG5273_VER_MSK;
+		break;
+	case TMAG3001_PART:
+		drv_data->version = regdata & TMAG3001_VER_MSK;
+		break;
+	default:
+		__ASSERT(false, "invalid part %d", drv_cfg->part);
+	}
+	switch (drv_data->version) {
+	case TMAG5273_VER_TMAG5273X1:
+	case TMAG5273_VER_TMAG5273X2:
+	case TMAG5273_VER_TMAG3001X1:
+	case TMAG5273_VER_TMAG3001X2:
+		break;
+	default:
+		LOG_ERR("unsupported version %d", drv_data->version);
+		return -EIO;
+	}
 
 	/* magnetic measurement range based on version, apply correct one */
 	if (drv_cfg->meas_range == TMAG5273_DT_AXIS_RANGE_LOW) {
@@ -1217,33 +1417,39 @@ static const struct sensor_driver_api tmag5273_driver_api = {
 		 : 0)
 
 /** Instantiation macro */
-#define TMAG5273_DEFINE(inst)                                                                      \
-	BUILD_ASSERT(IS_ENABLED(CONFIG_CRC) || (DT_INST_PROP(inst, crc_enabled) == 0),             \
+#define TMAG5273_DEFINE(inst, compat, _part)                                                       \
+	BUILD_ASSERT(IS_ENABLED(CONFIG_CRC) || (DT_PROP(DT_INST(inst, compat), crc_enabled) == 0), \
 		     "CRC support necessary");                                                     \
-	BUILD_ASSERT(!DT_INST_PROP(inst, trigger_conversion_via_int) ||                            \
-			     DT_INST_NODE_HAS_PROP(inst, int_gpios),                               \
+	BUILD_ASSERT(!DT_PROP(DT_INST(inst, compat), trigger_conversion_via_int) ||                \
+			     DT_NODE_HAS_PROP(DT_INST(inst, compat), int_gpios),                   \
 		     "trigger-conversion-via-int requires int-gpios to be defined");               \
 	static const struct tmag5273_config tmag5273_driver_cfg##inst = {                          \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.mag_channel = DT_INST_PROP(inst, axis),                                           \
-		.axis = (TMAG5273_DT_X_AXIS_BIT(DT_INST_PROP(inst, axis)) |                        \
-			 TMAG5273_DT_Y_AXIS_BIT(DT_INST_PROP(inst, axis)) |                        \
-			 TMAG5273_DT_Z_AXIS_BIT(DT_INST_PROP(inst, axis))),                        \
-		.temperature = DT_INST_PROP(inst, temperature),                                    \
-		.meas_range = DT_INST_PROP(inst, range),                                           \
-		.temperature_coefficient = DT_INST_PROP(inst, temperature_coefficient),            \
-		.angle_magnitude_axis = DT_INST_PROP(inst, angle_magnitude_axis),                  \
-		.ch_mag_gain_correction = DT_INST_PROP(inst, ch_mag_gain_correction),              \
-		.operation_mode = DT_INST_PROP(inst, operation_mode),                              \
-		.averaging = DT_INST_PROP(inst, average_mode),                                     \
-		.trigger_conv_via_int = DT_INST_PROP(inst, trigger_conversion_via_int),            \
-		.low_noise_mode = DT_INST_PROP(inst, low_noise),                                   \
-		.ignore_diag_fail = DT_INST_PROP(inst, ignore_diag_fail),                          \
-		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),                        \
-		IF_ENABLED(CONFIG_CRC, (.crc_enabled = DT_INST_PROP(inst, crc_enabled),))};        \
+		.i2c = I2C_DT_SPEC_GET(DT_INST(inst, compat)),                                     \
+		.part = _part,                                                                     \
+		.mag_channel = DT_PROP(DT_INST(inst, compat), axis),                               \
+		.axis = (TMAG5273_DT_X_AXIS_BIT(DT_PROP(DT_INST(inst, compat), axis)) |            \
+			 TMAG5273_DT_Y_AXIS_BIT(DT_PROP(DT_INST(inst, compat), axis)) |            \
+			 TMAG5273_DT_Z_AXIS_BIT(DT_PROP(DT_INST(inst, compat), axis))),            \
+		.temperature = DT_PROP(DT_INST(inst, compat), temperature),                        \
+		.meas_range = DT_PROP(DT_INST(inst, compat), range),                               \
+		.temperature_coefficient =                                                         \
+			DT_PROP(DT_INST(inst, compat), temperature_coefficient),                   \
+		.angle_magnitude_axis = DT_PROP(DT_INST(inst, compat), angle_magnitude_axis),      \
+		.ch_mag_gain_correction = DT_PROP(DT_INST(inst, compat), ch_mag_gain_correction),  \
+		.operation_mode = DT_PROP(DT_INST(inst, compat), operation_mode),                  \
+		.averaging = DT_PROP(DT_INST(inst, compat), average_mode),                         \
+		.read_mode = DT_PROP(DT_INST(inst, compat), read_mode),                            \
+		.trigger_conv_via_int =                                                            \
+			DT_PROP(DT_INST(inst, compat), trigger_conversion_via_int),                \
+		.low_noise_mode = DT_PROP(DT_INST(inst, compat), low_noise),                       \
+		.ignore_diag_fail = DT_PROP(DT_INST(inst, compat), ignore_diag_fail),              \
+		.int_gpio = GPIO_DT_SPEC_GET_OR(DT_INST(inst, compat), int_gpios, {0}),            \
+		IF_ENABLED(CONFIG_CRC,                                                             \
+			(.crc_enabled = DT_PROP(DT_INST(inst, compat), crc_enabled),))}; \
 	static struct tmag5273_data tmag5273_driver_data##inst;                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, tmag5273_init, NULL, &tmag5273_driver_data##inst,       \
-				     &tmag5273_driver_cfg##inst, POST_KERNEL,                      \
-				     CONFIG_SENSOR_INIT_PRIORITY, &tmag5273_driver_api);
+	SENSOR_DEVICE_DT_DEFINE(DT_INST(inst, compat), tmag5273_init, NULL,                        \
+				&tmag5273_driver_data##inst, &tmag5273_driver_cfg##inst,           \
+				POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &tmag5273_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(TMAG5273_DEFINE)
+DT_COMPAT_FOREACH_STATUS_OKAY_VARGS(ti_tmag5273, TMAG5273_DEFINE, TMAG5273_PART)
+DT_COMPAT_FOREACH_STATUS_OKAY_VARGS(ti_tmag3001, TMAG5273_DEFINE, TMAG3001_PART)
