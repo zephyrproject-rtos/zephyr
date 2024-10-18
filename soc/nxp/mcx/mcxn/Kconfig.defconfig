@@ -15,6 +15,11 @@ config ROM_START_OFFSET
 config ZTEST_NO_YIELD
 	default y if (PM && ZTEST)
 
+# The existing SAI diver cannot initialize the PLL on the board,
+# so the PLL settings will not be performed in the driver.
+config I2S_HAS_PLL_SETTING
+	default n
+
 config MCUX_LPTMR_TIMER
 	default n if (DT_HAS_NXP_OS_TIMER_ENABLED || DT_HAS_ARM_ARMV8M_SYSTICK_ENABLED)
 
