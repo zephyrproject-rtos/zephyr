@@ -238,6 +238,8 @@ const char *wifi_band_txt(enum wifi_frequency_bands band);
 #define WIFI_ENT_IDENTITY_MAX_LEN 64
 /** Max enterprise password length */
 #define WIFI_ENT_PSWD_MAX_LEN 128
+/** Max enterprise identity users */
+#define WIFI_ENT_IDENTITY_MAX_USERS 8
 
 /** Minimum channel number */
 #define WIFI_CHANNEL_MIN 1
