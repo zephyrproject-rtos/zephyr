@@ -87,3 +87,7 @@
 &mailbox {
 	status = "okay";
 };
+
+&rng {
+	status = "okay";
+};

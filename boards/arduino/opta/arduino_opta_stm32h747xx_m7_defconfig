@@ -31,7 +31,3 @@ CONFIG_UART_LINE_CTRL=y
 
 # Enable USB Stack (needed for the console to work)
 CONFIG_USB_DEVICE_STACK=y
-
-# Enable regulator (needed to enable eth)
-CONFIG_REGULATOR=y
-CONFIG_REGULATOR_FIXED=y
