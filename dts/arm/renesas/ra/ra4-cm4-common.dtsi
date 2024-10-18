@@ -53,7 +53,7 @@
 				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI2_ERI>,
 				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI2_AM>;
 			interrupt-names = "rxi", "txi", "tei", "eri", "am";
-			clocks = <&cgc RA_CLOCK_SCI(2)>;
+			clocks = <&pclka MSTPB 29>;
 			#clock-cells = <1>;
 			status = "disabled";
 			uart {

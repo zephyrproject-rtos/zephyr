@@ -5,6 +5,7 @@ config GPIO_RENESAS_RA
 	bool "Renesas RA Series GPIO driver"
 	default y
 	select GPIO_GET_CONFIG
+	select PINCTRL
 	depends on DT_HAS_RENESAS_RA_GPIO_ENABLED
 	help
 	  Enable Renesas RA series GPIO driver.
