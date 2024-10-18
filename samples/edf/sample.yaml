@@ -1,0 +1,17 @@
+# Copyright (c) 2024 Instituto Superior de Engenharia do Porto (ISEP)
+#
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  description: A basic Earliest Deadline First (EDF) example
+  name: Earliest Deadline First (EDF) sample
+common:
+  tags:
+    - EDF
+  integration_platforms:
+    - native_sim
+  harness: console
+tests:
+  sample.subsys.basic.cbs:
+    tags:
+      - edf
