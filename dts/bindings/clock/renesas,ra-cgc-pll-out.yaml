@@ -1,21 +1,19 @@
 # Copyright (c) 2024 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: Renesas RA Clock Generation Circuit PLL Clock
+description: Renesas RA Clock Generation Circuit PLL Clock out line
 
-compatible: "renesas,ra-cgc-pll"
+compatible: "renesas,ra-cgc-pll-out"
 
 include: [clock-controller.yaml, base.yaml]
 
 properties:
-  clocks:
-    required: true
   div:
     required: true
     type: int
-  mul:
+  freq:
     required: true
-    type: array
+    type: int
 
   "#clock-cells":
     const: 0
