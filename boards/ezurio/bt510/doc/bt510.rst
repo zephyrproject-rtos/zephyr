@@ -1,7 +1,4 @@
-.. _bt510:
-
-Ezurio Sentrius BT510 Sensor
-############################
+.. zephyr:board:: bt510
 
 Overview
 ********
@@ -23,12 +20,6 @@ The sensor has the following features:
 * Segger RTT (RTT Console)
 * :abbr:`UART (Universal Asynchronous Receiver-Transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
-
-.. figure:: img/bt510.jpg
-     :align: center
-     :alt: Sentrius BT510 Sensor, front view
-
-     Sentrius BT510 Sensor, front view
 
 .. figure:: img/bt510_back.jpg
      :align: center
