@@ -1,0 +1,23 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for mux controllers. Based on linux binding:
+# https://www.kernel.org/doc/Documentation/devicetree/bindings/mux/mux-controller.yaml
+
+properties:
+  "mux-control-cells":
+    type: int
+    description: |
+      Number of items to expect in a MUX control specifier
+  "mux-state-cells":
+    type: int
+    description: |
+      Number of items to expect in a MUX state specifer. Always one more than
+      "#mux-control-cells" would be.
+  idle-state:
+    type: int
+    description: State to put the mux in when idle (if there is one mux).
+  idle-states:
+    type: array
+    description: State to put the muxes in when idle (if there are multiple muxes).
+

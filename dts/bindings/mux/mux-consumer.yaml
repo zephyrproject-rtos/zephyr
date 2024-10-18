@@ -1,0 +1,15 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for mux consumers. Based on linux binding:
+# https://www.kernel.org/doc/Documentation/devicetree/bindings/mux/mux-consumer.yaml
+
+properties:
+  mux-controls:
+    type: phandle-array
+  mux-states:
+    type: phandle-array
+  mux-control-names:
+    type: string-array
+  mux-state-names:
+    type: string-array

@@ -1,0 +1,28 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# Binding for a register-based mux controller. Based on linux binding:
+# https://www.kernel.org/doc/Documentation/devicetree/bindings/mux/reg-mux.yaml
+
+include: [base.yaml, mux-controller.yaml]
+
+compatible: "reg-mux"
+
+description: WIP
+
+properties:
+  "mux-control-cells":
+    const: 1
+  "mux-state-cells":
+    const: 2
+  mux-reg-masks:
+    type: array
+    description: Matrix of width 2 listing muxes by register offset and bitfields.
+
+mux-control-cells:
+  - mux
+
+mux-state-cells:
+  - mux
+  - state
+
