@@ -194,12 +194,12 @@ config HWINFO_LITEX
 	  Enable LiteX hwinfo driver
 
 config HWINFO_PSOC6
-	bool "Cypress PSoC-6 unique device ID"
+	bool "Cypress PSOC 6 unique device ID"
 	default y
 	depends on SOC_FAMILY_PSOC6_LEGACY
 	select HWINFO_HAS_DRIVER
 	help
-	  Enable Cypress PSoC-6 hwinfo driver.
+	  Enable Cypress PSOC 6 hwinfo driver.
 
 config HWINFO_GECKO
 	bool "GECKO hwinfo"
