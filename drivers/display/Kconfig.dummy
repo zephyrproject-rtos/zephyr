@@ -5,5 +5,7 @@
 
 config DUMMY_DISPLAY
 	bool "Dummy display driver"
+	default y
+	depends on DT_HAS_ZEPHYR_DUMMY_DC_ENABLED
 	help
 	  Enable dummy display driver compliant with display driver API.
