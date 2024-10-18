@@ -857,6 +857,33 @@ ZTEST(can_classic, test_send_ext_id_out_of_range)
 }
 
 /**
+ * @brief Test sending standard (11-bit ID) CAN frame with too big payload.
+ */
+ZTEST(can_classic, test_send_std_id_dlc_of_range)
+{
+	struct can_frame frame = {
+		.id = TEST_CAN_STD_ID_1,
+		.dlc = CAN_MAX_DLC + 1U,
+	};
+
+	send_invalid_frame(can_dev, &frame);
+}
+
+/**
+ * @brief Test sending extended (29-bit ID) CAN frame with too big payload.
+ */
+ZTEST(can_classic, test_send_ext_id_dlc_of_range)
+{
+	struct can_frame frame = {
+		.flags = CAN_FRAME_IDE,
+		.id = TEST_CAN_EXT_ID_1,
+		.dlc = CAN_MAX_DLC + 1U,
+	};
+
+	send_invalid_frame(can_dev, &frame);
+}
+
+/**
  * @brief Test send/receive with standard (11-bit) CAN IDs.
  */
 ZTEST(can_classic, test_send_receive_std_id)
