@@ -1,7 +1,4 @@
-.. _slwrb4161a:
-
-EFR32MG12 2.4 GHz 19 dBm (SLWRB4161A)
-#####################################
+.. zephyr:board:: slwrb4161a
 
 Overview
 ********
@@ -9,12 +6,6 @@ Overview
 The EFR32MG12 Mighty Gecko Radio Board contains a Wireless System-On-Chip
 from the EFR32MG12 family built on an ARM Cortex®-M4F processor with excellent
 low power capabilities.
-
-.. figure:: efr32mg12-slwrb4161a.jpeg
-   :align: center
-   :alt: SLWRB4161A Mighty Gecko Radio Board
-
-   SLWRB4161A (image courtesy of Silicon Labs)
 
 The BRD4161A a.k.a. SLWRB4161A radio board plugs into the Wireless Starter Kit
 Mainboard BRD4001A and is supported as one of :ref:`silabs_radio_boards`.
