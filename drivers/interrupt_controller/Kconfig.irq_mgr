@@ -1,0 +1,24 @@
+# Copyright (c) 2024 Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IRQ_MANAGER
+	bool "IRQ manager driver"
+	default y
+	depends on DT_HAS_ZEPHYR_IRQ_MANAGER_ENABLED
+	help
+	  Oversee a range of IRQs from a parent interrupt controller, and provide APIs
+	  to allocate and free the interrupt line.
+
+if IRQ_MANAGER
+
+module = IRQ_MANAGER
+module-str = irq-mgr
+source "subsys/logging/Kconfig.template.log_config"
+
+config IRQ_MANAGER_SHELL
+	bool "IRQ manager shell"
+	depends on SHELL
+	help
+	  Shell commands to allocate / free interrupt lines.
+
+endif # IRQ_MANAGER
