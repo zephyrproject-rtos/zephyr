@@ -14,6 +14,7 @@ PyYAML>=6.0
 pykwalify
 
 # used by west_commands
+bflb-mcu-tool
 canopen
 packaging
 progress

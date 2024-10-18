@@ -14,6 +14,7 @@ zephyr_library_sources_ifdef(CONFIG_GPIO_ANDES_ATCGPIO100 gpio_andes_atcgpio100.
 zephyr_library_sources_ifdef(CONFIG_GPIO_AXP192     gpio_axp192.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_BCM2711    gpio_bcm2711.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_BD8LB600FS gpio_bd8lb600fs.c)
+zephyr_library_sources_ifdef(CONFIG_GPIO_BFLB       gpio_bflb.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_BRCMSTB    gpio_brcmstb.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_CC13XX_CC26XX gpio_cc13xx_cc26xx.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_CC32XX     gpio_cc32xx.c)
