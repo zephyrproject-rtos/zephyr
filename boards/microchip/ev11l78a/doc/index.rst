@@ -1,7 +1,4 @@
-.. _ev11l78a:
-
-UPD301C Basic Sink Application Example
-######################################
+.. zephyr:board:: ev11l78a
 
 Overview
 ********
@@ -11,13 +8,6 @@ is a low-cost evaluation platform for Microchip's UPD301C Standalone
 Programmable USB Power Delivery (PD) Controller. This RoHS-compliant
 evaluation platform comes in a small form factor and adheres to the
 USB Type-C™ Connector Specification and USB PD 3.0 specification.
-
-.. figure:: img/ev11l78a.jpg
-    :width: 500px
-    :align: center
-    :alt: EV11L78A
-
-    UPD301C Basic Sink Application Example (Credit: `Microchip Technology`_)
 
 Hardware
 ********
