@@ -45,7 +45,7 @@ for corresponding connectors, for example:
 
 or a board with an integrated display:
 
-- :ref:`esp_wrover_kit`
+- :zephyr:board:`esp_wrover_kit`
 
 or a simulated display environment in a :ref:`native_sim <native_sim>` application:
 

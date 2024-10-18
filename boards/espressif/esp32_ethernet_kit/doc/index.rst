@@ -1,7 +1,4 @@
-.. _esp32_ethernet_kit:
-
-ESP32-Ethernet-Kit
-##################
+.. zephyr:board:: esp32_ethernet_kit
 
 Overview
 ********
@@ -12,13 +9,6 @@ more flexible power supply options, the ESP32-Ethernet-Kit also supports power
 over Ethernet (PoE).
 
 .. _get-started-esp32-ethernet-kit-v1.2-overview:
-
-.. figure:: img/esp32_ethernet_kit.jpg
-    :align: center
-    :alt: ESP32-Ethernet-Kit V1.2
-    :figclass: align-center
-
-    ESP32-Ethernet-Kit V1.2 Overview
 
 ESP32-Ethernet-Kit is an ESP32-WROVER-E based development.
 For more information, check the datasheet at `ESP32-WROVER-E Datasheet`_.

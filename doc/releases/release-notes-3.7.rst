@@ -432,9 +432,9 @@ Boards & SoC Support
   * Added support for :zephyr:board:`Analog Devices AD-APARD32690-SL <apard32690>`: ``ad_apard32690_sl``.
   * Added support for :ref:`Infineon Technologies CYW920829M2EVK-02 <cyw920829m2evk_02>`: ``cyw920829m2evk_02``.
   * Added support for :ref:`Nuvoton Numaker M2L31KI board <nuvoton_m2l31ki>`: ``numaker_m2l31ki``.
-  * Added support for :ref:`Espressif ESP32-S2 DevKit-C <esp32s2_devkitc>`: ``esp32s2_devkitc``.
-  * Added support for :ref:`Espressif ESP32-S3 DevKit-C <esp32s3_devkitc>`: ``esp32s3_devkitc``.
-  * Added support for :ref:`Espressif ESP32-C6 DevKit-C <esp32c6_devkitc>`: ``esp32c6_devkitc``.
+  * Added support for :zephyr:board:`Espressif ESP32-S2 DevKit-C <esp32s2_devkitc>`: ``esp32s2_devkitc``.
+  * Added support for :zephyr:board:`Espressif ESP32-S3 DevKit-C <esp32s3_devkitc>`: ``esp32s3_devkitc``.
+  * Added support for :zephyr:board:`Espressif ESP32-C6 DevKit-C <esp32c6_devkitc>`: ``esp32c6_devkitc``.
   * Added support for :ref:`Waveshare ESP32-S3-Touch-LCD-1.28 <esp32s3_touch_lcd_1_28>`: ``esp32s3_touch_lcd_1_28``.
   * Added support for :ref:`M5Stack ATOM Lite <m5stack_atom_lite>`: ``m5stack_atom_lite``.
   * Added support for :ref:`CTHINGS.CO Connectivity Card nRF52840 <ctcc_nrf52840>`: ``ctcc_nrf52840``.
