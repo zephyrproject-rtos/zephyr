@@ -1,7 +1,4 @@
-.. _pan1770_evb:
-
-PAN1770 Evaluation Board
-########################
+.. zephyr:board:: pan1770_evb
 
 Overview
 ********
@@ -12,10 +9,6 @@ which is based on the nRF52840 chipset from Nordic Semiconductor.
 It is basically a clone of the official nRF52840 development kit (PCA10056)
 from Nordic Semiconductor. Please refer to :ref:`nrf52840dk_nrf52840` for
 further information.
-
-.. figure:: pan1770_evaluation_board.jpg
-     :align: center
-     :alt: PAN1770 Evaluation Board
 
 You can find more information about the PAN1770 module and the PAN1770
 evaluation board on the `product website`_.
