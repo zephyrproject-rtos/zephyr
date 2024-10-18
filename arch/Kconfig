@@ -494,6 +494,15 @@ config GEN_ISR_TABLES
 	  script to generate its interrupt tables. This mechanism will create
 	  an appropriate hardware vector table and/or software IRQ table.
 
+config GEN_ISR_TABLES_SCRIPT
+	string
+	default "${ZEPHYR_BASE}/scripts/build/gen_isr_tables.py"
+	help
+	  Set the path to the 'gen_isr_tables.py' script.
+	  This option allows the use of an alternate implementation of
+	  gen_isr_tables.py if custom support for creating the isr_table
+	  is required.
+
 config GEN_IRQ_VECTOR_TABLE
 	bool "Generate an interrupt vector table"
 	default y
