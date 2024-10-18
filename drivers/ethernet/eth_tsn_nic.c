@@ -49,13 +49,33 @@ LOG_MODULE_REGISTER(eth_tsn_nic, LOG_LEVEL_ERR);
 #define DMA_ENGINE_START 16268831
 #define DMA_ENGINE_STOP  16268830
 
+#define TX_METADATA_SIZE (sizeof(struct tx_metadata))
 #define RX_METADATA_SIZE (sizeof(struct rx_metadata))
 #define CRC_LEN          4
+
+#define ETH_ZLEN 60
+
+#define NS_IN_1S 1000000000
 
 /* Temporary macros: need to be deleted later */
 #define RX_ENGINE_REG_ADDR 0x1b08001000
 #define RX_SGDMA_REG_ADDR  0x1b08005000
 #define RX_REGS_SIZE       0x1000
+
+enum tsn_timestamp_id {
+	TSN_TIMESTAMP_ID_NONE = 0,
+	TSN_TIMESTAMP_ID_GPTP = 1,
+	TSN_TIMESTAMP_ID_NORMAL = 2,
+	TSN_TIMESTAMP_ID_RESERVED1 = 3,
+	TSN_TIMESTAMP_ID_RESERVED2 = 4,
+
+	TSN_TIMESTAMP_ID_MAX,
+};
+
+enum tsn_fail_policy {
+	TSN_FAIL_POLICY_DROP = 0,
+	TSN_FAIL_POLICY_RETRY = 1,
+};
 
 struct dma_tsn_nic_engine_regs {
 	uint32_t identifier;
@@ -115,6 +135,29 @@ struct dma_tsn_nic_result {
 	uint32_t reserved_1[6]; /* padding */
 };
 
+struct tick_count {
+        uint32_t tick:29;
+        uint32_t priority:3;
+} __attribute__((packed, scalar_storage_order("big-endian")));
+
+struct tx_metadata {
+        struct tick_count from;
+        struct tick_count to;
+        struct tick_count delay_from;
+        struct tick_count delay_to;
+        uint16_t frame_length;
+        uint16_t timestamp_id;
+        uint8_t fail_policy;
+        uint8_t reserved0[3];
+        uint32_t reserved1;
+        uint32_t reserved2;
+} __attribute__((packed, scalar_storage_order("big-endian")));
+
+struct tx_buffer {
+        struct tx_metadata metadata;
+        uint8_t data[BUFFER_SIZE];
+} __attribute__((packed, scalar_storage_order("big-endian")));
+
 struct rx_metadata {
 	uint64_t timestamp;
 	uint16_t frame_length;
@@ -136,20 +179,40 @@ struct eth_tsn_nic_data {
 	struct dma_tsn_nic_desc tx_desc;
 	struct dma_tsn_nic_desc rx_desc;
 
-	/* TODO: Maybe this needs to be allocated dynamically */
+	/* TODO: Maybe these need to be allocated dynamically */
+	struct tx_buffer tx_buffer;
 	uint8_t rx_buffer[BUFFER_SIZE];
 
 	struct dma_tsn_nic_result res;
 
+	struct k_work tx_work;
 	struct k_work rx_work;
 
 	bool has_pkt; /* TODO: This is for test only */
 };
 
-static void eth_tsn_nic_isr(const struct device *port)
+static void eth_tsn_nic_isr(const struct device *dev)
 {
 	/* TODO: Implement interrupts */
-	ARG_UNUSED(port);
+	ARG_UNUSED(dev);
+}
+
+static void tx_desc_set(struct dma_tsn_nic_desc *desc, uintptr_t addr, uint32_t len)
+{
+        uint32_t control_field;
+        uint32_t control;
+
+        desc->control = sys_cpu_to_le32(DESC_MAGIC);
+        control_field = DESC_STOPPED;
+        control_field |= DESC_EOP;
+        control_field |= DESC_COMPLETED;
+        control = sys_le32_to_cpu(desc->control & ~(LS_BYTE_MASK));
+        control |= control_field;
+        desc->control = sys_cpu_to_le32(control);
+
+        desc->src_addr_lo = sys_cpu_to_le32(PCI_DMA_L(addr));
+        desc->src_addr_hi = sys_cpu_to_le32(PCI_DMA_H(addr));
+        desc->bytes = sys_cpu_to_le32(len);
 }
 
 static void rx_desc_set(struct dma_tsn_nic_desc *desc, uintptr_t addr, uint32_t len)
@@ -339,12 +402,35 @@ static const struct device *eth_tsn_nic_get_phy(const struct device *dev)
 	return NULL;
 }
 
+static int tsn_fill_metadata(const struct device *dev, uint64_t now, struct tx_buffer* buf)
+{
+	/* TODO: sw-295 (QoS) */
+	buf->metadata.fail_policy = TSN_FAIL_POLICY_DROP;
+
+	buf->metadata.from.tick = 0;
+	buf->metadata.from.priority = 0;
+	buf->metadata.to.tick = (1 << 29) - 1;
+	buf->metadata.to.priority = 0;
+	buf->metadata.delay_from.tick = 0;
+	buf->metadata.delay_from.priority = 0;
+	buf->metadata.delay_to.tick = (1 << 29) - 1;
+	buf->metadata.delay_to.priority = 0;
+
+	buf->metadata.timestamp_id = TSN_TIMESTAMP_ID_NONE;
+
+	return 0;
+}
+
 static int eth_tsn_nic_send(const struct device *dev, struct net_pkt *pkt)
 {
 	/* TODO: This is for test only */
 	struct eth_tsn_nic_data *data = dev->data;
 	size_t len;
+	struct timespec ts;
+	uint64_t now;
+	int ret;
 
+#if 0 /* Rx test */
 	len = net_pkt_get_len(pkt);
 
 	pthread_spin_lock(&data->rx_lock);
@@ -356,8 +442,56 @@ static int eth_tsn_nic_send(const struct device *dev, struct net_pkt *pkt)
 	pthread_spin_unlock(&data->rx_lock);
 
 	k_work_submit(&data->rx_work); /* TODO: use polling for now */
-	/* TODO: sw-240 (Tx) */
+#endif
+
+	pthread_spin_lock(&data->tx_lock);
+
+	len = net_pkt_get_len(pkt);
+	if (len < ETH_ZLEN) {
+		len = ETH_ZLEN;
+	}
+	ret = net_pkt_read(pkt, data->tx_buffer.data, len);
+	if (ret != 0) {
+		goto error;
+	}
+
+	data->tx_buffer.metadata.frame_length = len;
+
+	ret = clock_gettime(CLOCK_MONOTONIC, &ts); /* TODO: Replace with HW clock */
+	if (ret != 0) {
+		goto error;
+	}
+
+	now = ts.tv_sec * NS_IN_1S + ts.tv_nsec;
+	ret = tsn_fill_metadata(dev, now, &data->tx_buffer);
+	if (ret != 0) {
+		goto error;
+	}
+
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
+	/* TODO: Timestamps */
+#endif /* CONFIG_NET_PKT_TIMESTMP */
+
+	tx_desc_set(&data->tx_desc, (uintptr_t)&data->tx_buffer, len + TX_METADATA_SIZE);
+
+#if 0  /* TODO: Merge dma and eth drivers */
+	/* These are just pseudo codes for now */
+	w = sys_cpu_to_le32(PCI_DMA_L((uintptr_t)&data->tx_desc));
+	sys_write32(w, bar[CONFIG_BAR] + DESC_REG_LO);
+	w = sys_cpu_to_le32(PCI_DMA_H((uintptr_t)&data->tx_desc));
+	sys_write32(w, bar[CONFIG_BAR] + DESC_REG_HI);
+	sys_write32(0, bar[CONFIG_BAR] + DESC_REG_HI + 4);
+	sys_write32(DMA_ENGINE_START, regs->control);
+#endif
+
+	/* TODO: This shoud be done in tsn_nic_isr() */
+	pthread_spin_unlock(&data->tx_lock);
+
 	return 0;
+
+error:
+	pthread_spin_unlock(&data->tx_lock);
+	return ret;
 }
 
 static const struct ethernet_api eth_tsn_nic_api = {
