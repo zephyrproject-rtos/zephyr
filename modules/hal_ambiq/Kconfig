@@ -65,4 +65,9 @@ config AMBIQ_HAL_USE_ADC
 	help
 	  Use the ADC driver from Ambiq HAL
 
+config AMBIQ_HAL_USE_USB
+	bool
+	help
+	  Use the USB driver from Ambiq HAL
+
 endif # AMBIQ_HAL
