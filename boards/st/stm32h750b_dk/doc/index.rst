@@ -1,7 +1,4 @@
-.. _stm32h750b_dk_board:
-
-ST STM32H750B Discovery Kit
-###########################
+.. zephyr:board:: stm32h750b_dk
 
 Overview
 ********
@@ -26,10 +23,6 @@ STLINK-V3E is integrated into the board, as the embedded in-circuit debugger and
 programmer for the STM32 MCU and USB Virtual COM port bridge. STM32H750B-DK board
 comes with the STM32CubeH7 MCU Package, which provides an STM32 comprehensive
 software HAL library as well as various software examples.
-
-.. image:: img/stm32h750b_dk.png
-     :align: center
-     :alt: STM32H750B-DK
 
 More information about the board can be found at the `STM32H750B-DK website`_.
 More information about STM32H750 can be found here:

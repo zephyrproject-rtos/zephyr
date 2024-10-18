@@ -1,7 +1,4 @@
-.. _nucleo_h755zi_q_board:
-
-ST Nucleo H755ZI-Q
-###################
+.. zephyr:board:: nucleo_h755zi_q
 
 Overview
 ********
@@ -36,10 +33,6 @@ Key Features
 - On-board ST-LINK/V3 debugger/programmer with USB re-enumeration
 - capability: mass storage, virtual COM port and debug port
 - USB OTG full speed or device only
-
-.. image:: img/nucleo_h755zi_q.webp
-   :align: center
-   :alt: Nucleo H755ZI-Q
 
 More information about the board can be found at the `Nucleo H755ZI-Q website`_.
 

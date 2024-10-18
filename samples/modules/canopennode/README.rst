@@ -70,7 +70,7 @@ counter object at index ``0x2102`` in the object dictionary.
 
 Building and Running for STM32F072RB Discovery
 ==============================================
-The :ref:`stm32f072b_disco_board` board does not come with an onboard CAN
+The :zephyr:board:`stm32f072b_disco` board does not come with an onboard CAN
 transceiver. In order to use the CAN bus on the STM32F072RB Discovery board, an
 external CAN bus transceiver must be connected to ``PB8`` (``CAN_RX``) and
 ``PB9`` (``CAN_TX``). This board supports CANopen LED indicators (red and green
@@ -89,7 +89,7 @@ object at index ``0x2102`` in the object dictionary.
 
 Building and Running for STM32F3 Discovery
 ==========================================
-The :ref:`stm32f3_disco_board` board does not come with an onboard CAN
+The :zephyr:board:`stm32f3_disco` board does not come with an onboard CAN
 transceiver. In order to use the CAN bus on the STM32F3 Discovery board, an
 external CAN bus transceiver must be connected to ``PD1`` (``CAN_TX``) and
 ``PD0`` (``CAN_RX``). This board supports CANopen LED indicators (red and green

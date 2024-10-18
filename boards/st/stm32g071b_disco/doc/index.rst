@@ -1,7 +1,4 @@
-.. _stm32g071b_disco_board:
-
-ST STM32G071B Discovery
-#######################
+.. zephyr:board:: stm32g071b_disco
 
 Overview
 ********
@@ -42,10 +39,6 @@ as a USB Type-C™ and Power Delivery analyzer.
 - Flexible power-supply options: ST-LINK USB VBUS or USB Type-C™ VBUS
 - On-board ST-LINK/V2-1 debugger/programmer with USB enumeration capability:
   mass storage, Virtual COM port and debug port
-
-.. image:: img/stm32g071b_disco.jpg
-   :align: center
-   :alt: STM32G071B-DISCO
 
 More information about the board can be found at the `STM32G071B-DISCO website`_.
 

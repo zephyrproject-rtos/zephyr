@@ -13,7 +13,7 @@ of a tapping rhythmic pattern.
 Building and Running
 ********************
 
-Build the application for the :ref:`nucleo_f401re_board` board, and connect a DRV2605 haptic driver
+Build the application for the :zephyr:board:`nucleo_f401re` board, and connect a DRV2605 haptic driver
 on the bus I2C1 at the address 0x5A.
 
 .. zephyr-app-commands::
@@ -22,7 +22,7 @@ on the bus I2C1 at the address 0x5A.
    :goals: build
    :compact:
 
-For flashing the application, refer to the Flashing section of the :ref:`nucleo_f401re_board` board
+For flashing the application, refer to the Flashing section of the :zephyr:board:`nucleo_f401re` board
 documentation.
 
 .. code-block:: none

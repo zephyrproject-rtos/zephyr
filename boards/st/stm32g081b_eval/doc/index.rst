@@ -1,7 +1,4 @@
-.. _stm32g081b_eval_board:
-
-ST STM32G081B Evaluation
-########################
+.. zephyr:board:: stm32g081b_eval
 
 Overview
 ********
@@ -83,10 +80,6 @@ through various use cases.
             - USB 3.1 Gen1 Type-B receptacle
             - USB2.0 Type-A receptacle
             - 19 V power jack for USB PD
-
-.. image:: img/stm32g081b_eval.jpg
-   :align: center
-   :alt: STM32G081B-EVAL
 
 More information about the board can be found at the `STM32G081B-EVAL website`_.
 

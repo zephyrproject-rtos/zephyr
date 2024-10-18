@@ -1,7 +1,4 @@
-.. _sensortile_box_pro_board:
-
-ST SensorTile.box PRO
-#####################
+.. zephyr:board:: sensortile_box_pro
 
 Overview
 ********
@@ -13,10 +10,6 @@ and developing apps based on remote motion and environmental sensor data.
 The SensorTile.box PRO board fits into a small plastic box with a long-life rechargeable
 battery, and communicates with a standard smartphone through its Bluetooth interface,
 providing data coming from the sensors.
-
-.. image:: img/sensortile_box_pro.jpg
-     :align: center
-     :alt: SensorTile.box PRO
 
 More information about the board can be found at the `SensorTile.box PRO website`_.
 

@@ -28,7 +28,7 @@ through USB. The board shows up as a USB CDC class standard device.
 References
 **********
 
-- :ref:`steval_stwinbx1_board`
+- :zephyr:board:`steval_stwinbx1`
 
 Building and Running
 ********************
@@ -41,7 +41,7 @@ Build and flash the sample in the following way:
     :goals: build flash
 
 Please note that flashing the board requires a few preliminary steps described
-in :ref:`steval_stwinbx1_board`.
+in :zephyr:board:`steval_stwinbx1`.
 
 Then, power cycle the board by disconnecting and reconnecting the USB cable.
 Run your favorite terminal program to listen for output.
