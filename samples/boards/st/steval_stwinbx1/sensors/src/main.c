@@ -238,6 +238,21 @@ static void ism330dhcx_config(const struct device *ism330dhcx)
 #endif
 }
 
+static void ilps22qs_config(const struct device *ilps22qs)
+{
+	struct sensor_value odr_attr;
+
+	/* set ILPS22QS sampling frequency to 50 Hz */
+	odr_attr.val1 = 50;
+	odr_attr.val2 = 0;
+
+	if (sensor_attr_set(ilps22qs, SENSOR_CHAN_ALL,
+			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+		printk("Cannot set sampling frequency for ILPS22QS\n");
+		return;
+	}
+}
+
 static int led_pattern_out(void)
 {
 	const struct gpio_dt_spec led0_gpio = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
@@ -295,6 +310,7 @@ int main(void)
 	const struct device *const ism330dhcx = DEVICE_DT_GET_ONE(st_ism330dhcx);
 	const struct device *const iis2dlpc = DEVICE_DT_GET_ONE(st_iis2dlpc);
 	const struct device *const iis2iclx = DEVICE_DT_GET_ONE(st_iis2iclx);
+	const struct device *const ilps22qs = DEVICE_DT_GET_ONE(st_ilps22qs);
 
 	if (!device_is_ready(stts22h)) {
 		printk("%s: device not ready.\n", stts22h->name);
@@ -316,12 +332,17 @@ int main(void)
 		printk("%s: device not ready.\n", iis2iclx->name);
 		return 0;
 	}
+	if (!device_is_ready(ilps22qs)) {
+		printk("%s: device not ready.\n", ilps22qs->name);
+		return 0;
+	}
 
 	stts22h_config(stts22h);
 	iis2mdc_config(iis2mdc);
 	ism330dhcx_config(ism330dhcx);
 	iis2dlpc_config(iis2dlpc);
 	iis2iclx_config(iis2iclx);
+	ilps22qs_config(ilps22qs);
 
 	while (1) {
 		struct sensor_value stts22h_temp;
@@ -331,6 +352,7 @@ int main(void)
 		struct sensor_value ism330dhcx_accel[3];
 		struct sensor_value ism330dhcx_gyro[3];
 		struct sensor_value iis2iclx_accel[2];
+		struct sensor_value ilps22qs_press, ilps22qs_temp;
 
 #ifndef CONFIG_STTS22H_TRIGGER
 		if (sensor_sample_fetch(stts22h) < 0) {
@@ -363,6 +385,11 @@ int main(void)
 		}
 #endif
 
+		if (sensor_sample_fetch(ilps22qs) < 0) {
+			printf("ILPS22QS Sensor sample update error\n");
+			return 0;
+		}
+
 		sensor_channel_get(stts22h, SENSOR_CHAN_AMBIENT_TEMP, &stts22h_temp);
 		sensor_channel_get(iis2dlpc, SENSOR_CHAN_ACCEL_XYZ, iis2dlpc_accel);
 		sensor_channel_get(iis2mdc, SENSOR_CHAN_MAGN_XYZ, iis2mdc_magn);
@@ -370,6 +397,8 @@ int main(void)
 		sensor_channel_get(ism330dhcx, SENSOR_CHAN_ACCEL_XYZ, ism330dhcx_accel);
 		sensor_channel_get(ism330dhcx, SENSOR_CHAN_GYRO_XYZ, ism330dhcx_gyro);
 		sensor_channel_get(iis2iclx, SENSOR_CHAN_ACCEL_XYZ, iis2iclx_accel);
+		sensor_channel_get(ilps22qs, SENSOR_CHAN_AMBIENT_TEMP, &ilps22qs_temp);
+		sensor_channel_get(ilps22qs, SENSOR_CHAN_PRESS, &ilps22qs_press);
 
 		/* Display sensor data */
 
@@ -412,6 +441,14 @@ int main(void)
 		printf("IIS2ICLX: Accel (m.s-2): x: %.3f, y: %.3f\n",
 			sensor_value_to_double(&iis2iclx_accel[0]),
 			sensor_value_to_double(&iis2iclx_accel[1]));
+
+		/* temperature */
+		printf("ILPS22QS: Temperature: %.1f C\n",
+		       sensor_value_to_double(&ilps22qs_temp));
+
+		/* pressure */
+		printf("ILPS22QS: Pressure: %.3f kpa\n",
+		       sensor_value_to_double(&ilps22qs_press));
 
 #ifdef CONFIG_STTS22H_TRIGGER
 		printk("%d:: stts22h trig %d\n", cnt, stts22h_trig_cnt);

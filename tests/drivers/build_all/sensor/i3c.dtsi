@@ -30,3 +30,9 @@ test_i3c_lps28dfw: lps28dfw@300000803E0000003 {
 	assigned-address = <0x3>;
 	drdy-gpios = <&test_gpio 0 0>;
 };
+
+test_i3c_ilps22qs: ilps22qs@400000803E0000004 {
+	compatible = "st,ilps22qs";
+	reg = <0x3 0x00000803 0xE0000004>;
+	assigned-address = <0x4>;
+};

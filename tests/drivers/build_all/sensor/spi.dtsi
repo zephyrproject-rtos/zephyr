@@ -379,3 +379,10 @@ test_spi_tle9104: tle9104@2e {
 		#sensor-cells = <0>;
 	};
 };
+
+test_spi_ilps22qs: ilps22qs@2f {
+	compatible = "st,ilps22qs";
+	reg = <0x2f>;
+	spi-max-frequency = <0>;
+	status = "okay";
+};
