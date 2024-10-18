@@ -1,7 +1,4 @@
-.. _mimxrt1060_evk:
-
-NXP MIMXRT1060-EVK
-##################
+.. zephyr:board:: mimxrt1060_evk
 
 Overview
 ********
@@ -15,9 +12,6 @@ ideal for real-time applications such as High-Speed GPIO, CAN FD, and
 synchronous parallel NAND/NOR/PSRAM controller. The i.MX RT1060 runs on the
 Arm® Cortex-M7® core up to 600 MHz.
 
-.. image:: mimxrt1060_evk.jpg
-   :align: center
-   :alt: MIMXRT1060-EVK
 
 Hardware
 ********

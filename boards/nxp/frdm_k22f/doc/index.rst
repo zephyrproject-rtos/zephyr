@@ -1,7 +1,4 @@
-.. _frdm_k22f:
-
-NXP FRDM-K22F
-##############
+.. zephyr:board:: frdm_k22f
 
 Overview
 ********
@@ -18,10 +15,6 @@ MCUs.
 - OpenSDAv2, the NXP open source hardware embedded serial and debug adapter
   running an open source bootloader, offers options for serial communication,
   flash programming, and run-control debugging
-
-.. image:: frdm_k22f.jpg
-   :align: center
-   :alt: FRDM-K22F
 
 Hardware
 ********

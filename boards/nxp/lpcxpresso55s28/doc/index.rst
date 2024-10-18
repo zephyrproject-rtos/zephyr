@@ -1,7 +1,4 @@
-.. _lpcxpresso55s28:
-
-NXP LPCXpresso55S28
-###################
+.. zephyr:board:: lpcxpresso55s28
 
 Overview
 ********
@@ -11,10 +8,6 @@ of and development with the LPC552x/S2x MCU based on the Arm® Cortex®-M33
 architecture. The board includes a high-performance onboard debug probe, audio
 subsystem and accelerometer, with several options for adding off-the-shelf
 add-on boards for networking, sensors, displays, and other interfaces.
-
-.. image:: LPC55S28-EVK.jpg
-   :align: center
-   :alt: LPCXpresso55S28
 
 Hardware
 ********

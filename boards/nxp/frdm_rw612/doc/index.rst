@@ -1,7 +1,4 @@
-.. _frdm_rw612:
-
-NXP FRDM_RW612
-##############
+.. zephyr:board:: frdm_rw612
 
 Overview
 ********

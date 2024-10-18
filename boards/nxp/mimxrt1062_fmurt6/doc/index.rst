@@ -1,7 +1,4 @@
-.. _fmurt6:
-
-NXP FMURT6
-##################
+.. zephyr:board:: mimxrt1062_fmurt6
 
 Overview
 ********
@@ -14,10 +11,6 @@ compatibility with i.MX RT1050. This series introduces additional features
 ideal for real-time applications such as High-Speed GPIO, CAN FD, and
 synchronous parallel NAND/NOR/PSRAM controller. The i.MX RT1062 runs on the
 Arm® Cortex-M7® core up to 600 MHz.
-
-.. image:: mimxrt1062_fmurt6.jpg
-   :align: center
-   :alt: MIMXRT1062_FMURT6
 
 Hardware
 ********

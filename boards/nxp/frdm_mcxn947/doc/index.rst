@@ -1,7 +1,4 @@
-.. _frdm_mcxn947:
-
-NXP FRDM-MCXN947
-################
+.. zephyr:board:: frdm_mcxn947
 
 Overview
 ********
@@ -12,10 +9,6 @@ MCUs I/Os, integrated open-standard serial interfaces, external flash memory and
 an on-board MCU-Link debugger. MCX N Series are high-performance, low-power
 microcontrollers with intelligent peripherals and accelerators providing multi-tasking
 capabilities and performance efficiency.
-
-.. image:: frdm_mcxn947.webp
-   :align: center
-   :alt: FRDM-MCXN947
 
 Hardware
 ********

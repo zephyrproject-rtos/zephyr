@@ -1,7 +1,4 @@
-.. _mimxrt685_evk:
-
-NXP MIMXRT685-EVK
-##################
+.. zephyr:board:: mimxrt685_evk
 
 Overview
 ********
@@ -16,10 +13,6 @@ processor.
 The i.MX RT600 family provides up to 4.5MB of on-chip SRAM and several
 high-bandwidth interfaces to access off-chip flash, including an Octal/Quad SPI
 interface with an on-the-fly decryption engine.
-
-.. image:: mimxrt685_evk.jpg
-   :align: center
-   :alt: MIMXRT685-EVK
 
 Hardware
 ********
