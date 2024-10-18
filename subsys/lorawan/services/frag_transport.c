@@ -101,8 +101,8 @@ static struct frag_transport_context ctx;
 /* Callback for notification of finished firmware transfer */
 static void (*finished_cb)(void);
 
-static void frag_transport_package_callback(uint8_t port, bool data_pending, int16_t rssi,
-					    int8_t snr, uint8_t len, const uint8_t *rx_buf)
+static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t rssi, int8_t snr,
+					    uint8_t len, const uint8_t *rx_buf)
 {
 	uint8_t tx_buf[FRAG_TRANSPORT_MAX_CMDS_PER_PACKAGE * FRAG_TRANSPORT_MAX_ANS_LEN];
 	uint8_t tx_pos = 0;
