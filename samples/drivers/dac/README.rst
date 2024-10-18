@@ -180,7 +180,7 @@ DAC output is available on pin 1 of the MCP4725.
 Building and Running for GD32450I-EVAL
 ======================================
 The sample can be built and executed for the
-:ref:`gd32f450i_eval` as follows:
+:zephyr:board:`gd32f450i_eval` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
