@@ -8,7 +8,7 @@ Overview
 
 This is a simple application intended to present the nRF LED matrix display
 driver in action and to serve as a test ensuring that this driver is buildable
-for both the :ref:`bbc_microbit_v2` and :ref:`bbc_microbit` boards.
+for both the :zephyr:board:`bbc_microbit_v2` and :zephyr:board:`bbc_microbit` boards.
 
 Requirements
 ************

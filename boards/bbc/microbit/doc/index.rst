@@ -1,7 +1,4 @@
-.. _bbc_microbit:
-
-BBC MicroBit
-##############
+.. zephyr:board:: bbc_microbit
 
 Overview
 ********
@@ -22,12 +19,6 @@ connectors that are part of the 23-pin edge connector.
 * GPIO
 * FLASH
 * RADIO (Bluetooth Low Energy)
-
-.. figure:: img/bbc_microbit.jpg
-     :align: center
-     :alt: BBC Micro Bit
-
-     BBC Micro Bit (Credit: http://microbit.org/)
 
 More information about the board can be found at the `microbit website`_.
 
