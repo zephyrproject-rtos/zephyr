@@ -18,16 +18,32 @@ static int _stdout_hook_default(int c)
 	return EOF;
 }
 
+static int _stdin_hook_default(void)
+{
+	return EOF;
+}
+
 static int (*_stdout_hook)(int c) = _stdout_hook_default;
+static int (*_stdin_hook)(void) = _stdin_hook_default;
 
 void __stdout_hook_install(int (*hook)(int c))
 {
 	_stdout_hook = hook;
 }
 
+void __stdin_hook_install(int (*hook)(void))
+{
+	_stdin_hook = hook;
+}
+
 int z_impl_zephyr_fputc(int c, FILE *stream)
 {
 	return ((stream == stdout) || (stream == stderr)) ? _stdout_hook(c) : EOF;
+}
+
+int z_impl_zephyr_fgetc(FILE *stream)
+{
+	return (stream == stdin) ? _stdin_hook() : EOF;
 }
 
 #ifdef CONFIG_USERSPACE
@@ -43,6 +59,11 @@ int fputc(int c, FILE *stream)
 	return zephyr_fputc(c, stream);
 }
 
+int fgetc(FILE *stream)
+{
+	return z_impl_zephyr_fgetc(stream);
+}
+
 int fputs(const char *ZRESTRICT s, FILE *ZRESTRICT stream)
 {
 	int len = strlen(s);
@@ -51,6 +72,11 @@ int fputs(const char *ZRESTRICT s, FILE *ZRESTRICT stream)
 	ret = fwrite(s, 1, len, stream);
 
 	return (len == ret) ? 0 : EOF;
+}
+
+int getc(FILE *stream)
+{
+	return fgetc(stream);
 }
 
 #undef putc
