@@ -46,7 +46,7 @@ static struct sockaddr udp_server_addr;
 
 struct zsock_pollfd fds[SOCK_ID_MAX] = { 0 };
 
-static void udp_svc_handler(struct k_work *work);
+static void udp_svc_handler(struct net_socket_service_event *pev);
 
 NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(svc_udp, udp_svc_handler,
 				      SOCK_ID_MAX);
@@ -364,10 +364,8 @@ error:
 	return ret;
 }
 
-static void udp_svc_handler(struct k_work *work)
+static void udp_svc_handler(struct net_socket_service_event *pev)
 {
-	struct net_socket_service_event *pev =
-		CONTAINER_OF(work, struct net_socket_service_event, work);
 	int ret;
 
 	ret = udp_recv_data(pev);
