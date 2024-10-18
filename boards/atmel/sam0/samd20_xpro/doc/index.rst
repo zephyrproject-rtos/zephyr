@@ -1,7 +1,4 @@
-.. _samd20_xpro:
-
-SAM D20 Xplained Pro Evaluation Kit
-###################################
+.. zephyr:board:: samd20_xpro
 
 Overview
 ********
@@ -11,13 +8,6 @@ prototyping with the SAM D20 Cortex®-M0+ processor-based
 microcontrollers. The kit includes Atmel’s Embedded Debugger (EDBG),
 which provides a full debug interface without the need for additional
 hardware.
-
-.. figure:: img/atsamd20_xpro.jpg
-    :width: 500px
-    :align: center
-    :alt: SAMD20-XPRO
-
-    SAMD20-XPRO (Credit: `Microchip Technology`_)
 
 Hardware
 ********

@@ -1,17 +1,10 @@
-.. _sam4s_xplained:
-
-SAM4S Xplained
-##############
+.. zephyr:board:: sam4s_xplained
 
 Overview
 ********
 
 The SAM4S Xplained evaluation kit is a development platform to evaluate the
 Atmel SAM4S series microcontrollers.
-
-.. image:: img/sam4s_xplained.jpg
-     :align: center
-     :alt: SAM4S Xplained
 
 Hardware
 ********

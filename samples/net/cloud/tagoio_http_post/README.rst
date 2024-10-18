@@ -43,7 +43,7 @@ Ethernet
 ========
 
 You can use this application on a supported board with ethernet port.  There
-are many like :ref:`sam4e_xpro`, :ref:`sam_v71_xplained_ultra`,
+are many like :zephyr:board:`sam4e_xpro`, :zephyr:board:`sam_v71_xult`,
 :zephyr:board:`frdm_k64f`, :zephyr:board:`nucleo_f767zi` etc.  Pick one and just build
 tagoio-http-client sample application with minimal configuration:
 
