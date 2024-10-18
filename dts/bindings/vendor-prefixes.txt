@@ -722,6 +722,7 @@ vot	Vision Optical Technology Co., Ltd.
 vxt	VXT Ltd
 wand	Wandbord (Technexion)
 waveshare	Waveshare Electronics
+wch	WinChipHead
 wd	Western Digital Corp.
 we	Würth Elektronik GmbH.
 weact	WeAct Studio
