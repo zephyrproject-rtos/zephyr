@@ -1,7 +1,4 @@
-.. _cc1352r_sensortag:
-
-CC1352R SensorTag
-#################
+.. zephyr:board:: cc1352r_sensortag
 
 Overview
 ********
@@ -10,12 +7,6 @@ The Texas Instruments CC1352R SensorTag |trade| (LPSTK-CC1352R) is a
 development kit for the SimpleLink |trade| multi-Standard CC1352R wireless MCU.
 
 See the `TI CC1352R SensorTag Product Page`_ for details.
-
-.. figure:: img/cc1352r_sensortag.jpg
-   :align: center
-   :alt: TI CC1352R SensorTag
-
-   Texas Instruments CC1352R SensorTag |trade|
 
 Hardware
 ********
