@@ -10,13 +10,8 @@
 
 #include <haly/nrfy_vpr.h>
 
-#if defined(CONFIG_SOC_NRF54L15_ENGA_CPUAPP)
-#define EVENTS_IDX_MIN 11U
-#define EVENTS_IDX_MAX 17U
-#else
 #define EVENTS_IDX_MIN NRF_VPR_EVENTS_TRIGGERED_MIN
 #define EVENTS_IDX_MAX NRF_VPR_EVENTS_TRIGGERED_MAX
-#endif
 
 /* callbacks */
 struct mbox_vevif_event_rx_cbs {
