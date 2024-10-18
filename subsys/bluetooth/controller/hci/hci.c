@@ -1049,9 +1049,9 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	rp->commands[41] |= BIT(1);
 #endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 
-#if defined(CONFIG_BT_HCI_RAW) && defined(CONFIG_BT_TINYCRYPT_ECC)
+#if defined(CONFIG_BT_HCI_RAW) && defined(CONFIG_BT_SEND_ECC_EMULATION)
 	bt_hci_ecc_supported_commands(rp->commands);
-#endif /* CONFIG_BT_HCI_RAW && CONFIG_BT_TINYCRYPT_ECC */
+#endif /* CONFIG_BT_HCI_RAW && CONFIG_BT_SEND_ECC_EMULATION */
 
 	/* LE Read TX Power. */
 	rp->commands[38] |= BIT(7);

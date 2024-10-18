@@ -16,7 +16,7 @@ config BT_LONG_WQ_STACK_SIZE
 	# requirements.
 	int
 	default 1300 if BT_GATT_CACHING
-	default 1140 if BT_TINYCRYPT_ECC
+	default 1140 if BT_SEND_ECC_EMULATION
 	default 1024
 
 config BT_LONG_WQ_PRIO
@@ -999,15 +999,18 @@ config BT_ECC
 	help
 	  This option adds support for ECDH HCI commands.
 
-config BT_TINYCRYPT_ECC
-	bool "Emulate ECDH in the Host using TinyCrypt library"
-	select TINYCRYPT
-	select TINYCRYPT_ECC_DH
+config BT_SEND_ECC_EMULATION
+	bool "Emulate ECDH in the Host using PSA Crypto API library"
+	select MBEDTLS if !BUILD_WITH_TFM
+	select MBEDTLS_PSA_CRYPTO_C if !BUILD_WITH_TFM
+	select PSA_WANT_ALG_ECDH
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
+	select PSA_WANT_ECC_SECP_R1_256
 	select BT_LONG_WQ
 	depends on BT_ECC && (BT_HCI_RAW || BT_HCI_HOST)
 	default y if BT_CTLR && !BT_CTLR_ECDH
 	help
-	  If this option is set TinyCrypt library is used for emulating the
+	  If this option is set PSA Crypto API library is used for emulating the
 	  ECDH HCI commands and events needed by e.g. LE Secure Connections.
 	  In builds including the BLE Host, if not set the controller crypto is
 	  used for ECDH and if the controller doesn't support the required HCI
