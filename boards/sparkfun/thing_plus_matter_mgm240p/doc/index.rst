@@ -1,7 +1,4 @@
-.. _sparkfun_thing_plus_mgm240p:
-
-SPARKFUN THING PLUS MATTER
-###########################
+.. zephyr:board:: sparkfun_thing_plus_matter_mgm240p
 
 Overview
 ********
@@ -9,13 +6,6 @@ Overview
 The MGM240P Mighty Sparkfun Think Plus Matter contains
 a Wireless System-On-Chip from the EFR32MG24 family built on an
 ARM Cortex®-M33F processor with excellent low power capabilities.
-
-.. figure:: ./img/MGM240P_Thing_Plus.jpg
-   :height: 260px
-   :align: center
-   :alt: MGM240P Sparkfun Think Plus Matter
-
-   xG24-MGM240P (image courtesy of Sparkfun)
 
 Hardware
 ********

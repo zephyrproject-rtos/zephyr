@@ -1,13 +1,4 @@
-.. _sparkfun_thing_plus_nrf9160:
-
-nRF9160 Thing Plus
-##################
-
-.. figure:: img/sparkfun_thing_plus_nrf9160.jpg
-     :align: center
-     :alt: Sparkfun nRF9160 Thing Plus
-
-     nRF9160 Thing Plus (Credit: Sparkfun)
+.. zephyr:board:: sparkfun_thing_plus
 
 Overview
 ********
@@ -118,7 +109,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: sparkfun_thing_plus_nrf9160
+   :board: sparkfun_thing_plus
    :goals: build flash
 
 Debugging

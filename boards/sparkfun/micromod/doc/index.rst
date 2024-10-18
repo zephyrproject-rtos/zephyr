@@ -1,7 +1,4 @@
-.. _boardname_linkname:
-
-SparkFun MicroMod board Processor
-#################################
+.. zephyr:board:: micromod
 
 Overview
 ********
@@ -22,12 +19,6 @@ All Micromod board targets support the following hardware features:
 - 2 ADC
 - 2 PWM
 - Watchdog Timer (WDT)
-
-.. figure:: img/sparkfun_micromod.webp
-   :align: center
-   :alt: Sparkfun Micromod board
-
-   Sparkfun Micromod board (Credit: https://www.sparkfun.com)
 
 Zephyr currently supports the following SoCs:
 
