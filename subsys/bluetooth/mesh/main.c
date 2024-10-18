@@ -517,6 +517,13 @@ int bt_mesh_resume(void)
 		bt_mesh_adv_init();
 	}
 
+	err = bt_mesh_scan_enable();
+	if (err) {
+		LOG_WRN("Re-enabling scanning failed (err %d)", err);
+		atomic_set_bit(bt_mesh.flags, BT_MESH_SUSPENDED);
+		return err;
+	}
+
 	err = bt_mesh_adv_enable();
 	if (err) {
 		atomic_set_bit(bt_mesh.flags, BT_MESH_SUSPENDED);
@@ -538,13 +545,6 @@ int bt_mesh_resume(void)
 			LOG_WRN("Re-enabling PB-GATT failed (err %d)", err);
 			return err;
 		}
-	}
-
-	err = bt_mesh_scan_enable();
-	if (err) {
-		LOG_WRN("Re-enabling scanning failed (err %d)", err);
-		atomic_set_bit(bt_mesh.flags, BT_MESH_SUSPENDED);
-		return err;
 	}
 
 	bt_mesh_hb_resume();
@@ -619,6 +619,10 @@ int bt_mesh_start(void)
 {
 	int err;
 
+	if (!IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
+		bt_mesh_scan_enable();
+	}
+
 	err = bt_mesh_adv_enable();
 	if (err) {
 		LOG_ERR("Failed enabling advertiser");
@@ -648,8 +652,6 @@ int bt_mesh_start(void)
 
 	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
 		bt_mesh_lpn_init();
-	} else {
-		bt_mesh_scan_enable();
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
