@@ -383,9 +383,7 @@ config ARC_EXCEPTION_STACK_SIZE
 endmenu
 
 config ARC_EARLY_SOC_INIT
-	bool "Make early stage SoC-specific initialization [DEPRECATED]"
-	select SOC_RESET_HOOK
-	select DEPRECATED
+	bool "Make early stage SoC-specific initialization"
 	help
 	  Call SoC per-core setup code on early stage initialization
 	  (before C runtime initialization). Setup code is called in form of
