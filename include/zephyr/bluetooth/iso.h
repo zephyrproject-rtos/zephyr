@@ -34,6 +34,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -1101,6 +1102,42 @@ int bt_iso_chan_get_info(const struct bt_iso_chan *chan, struct bt_iso_info *inf
  * @return Zero on success or (negative) error code on failure.
  */
 int bt_iso_chan_get_tx_sync(const struct bt_iso_chan *chan, struct bt_iso_tx_info *info);
+
+/**
+ * @brief Struct to hold the Broadcast Isochronous Group callbacks
+ *
+ * These can be registered for usage with bt_iso_big_register_cb().
+ */
+struct bt_iso_big_cb {
+	/**
+	 * @brief The BIG has started and all of the streams are ready for data
+	 *
+	 * @param big The started BIG
+	 */
+	void (*started)(struct bt_iso_big *big);
+
+	/**
+	 * @brief The BIG has stopped and none of the streams are ready for data
+	 *
+	 * @param big The stopped BIG
+	 * @param reason The reason why the BIG stopped (see the BT_HCI_ERR_* values)
+	 */
+	void (*stopped)(struct bt_iso_big *big, uint8_t reason);
+
+	/** @internal Internally used field for list handling */
+	sys_snode_t _node;
+};
+
+/**
+ * @brief Registers callbacks for Broadcast Sources
+ *
+ * @param cb Pointer to the callback structure.
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if @p cb is NULL
+ * @retval -EEXIST if @p cb is already registered
+ */
+int bt_iso_big_register_cb(struct bt_iso_big_cb *cb);
 
 /**
  * @brief Creates a BIG as a broadcaster
