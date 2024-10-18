@@ -30,45 +30,8 @@ struct ipc_data {
 	const struct device *ipc;
 };
 
-static bool is_hci_event_discardable(const uint8_t *evt_data)
-{
-	uint8_t evt_type = evt_data[0];
-
-	switch (evt_type) {
-#if defined(CONFIG_BT_CLASSIC)
-	case BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI:
-	case BT_HCI_EVT_EXTENDED_INQUIRY_RESULT:
-		return true;
-#endif
-	case BT_HCI_EVT_LE_META_EVENT: {
-		uint8_t subevt_type = evt_data[sizeof(struct bt_hci_evt_hdr)];
-
-		switch (subevt_type) {
-		case BT_HCI_EVT_LE_ADVERTISING_REPORT:
-			return true;
-#if defined(CONFIG_BT_EXT_ADV)
-		case BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT:
-		{
-			const struct bt_hci_evt_le_ext_advertising_report *ext_adv =
-				(void *)&evt_data[3];
-
-			return (ext_adv->num_reports == 1) &&
-				   ((ext_adv->adv_info[0].evt_type &
-					 BT_HCI_LE_ADV_EVT_TYPE_LEGACY) != 0);
-		}
-#endif
-		default:
-			return false;
-		}
-	}
-	default:
-		return false;
-	}
-}
-
 static struct net_buf *bt_ipc_evt_recv(const uint8_t *data, size_t remaining)
 {
-	bool discardable;
 	struct bt_hci_evt_hdr hdr;
 	struct net_buf *buf;
 	size_t buf_tailroom;
@@ -78,8 +41,6 @@ static struct net_buf *bt_ipc_evt_recv(const uint8_t *data, size_t remaining)
 		return NULL;
 	}
 
-	discardable = is_hci_event_discardable(data);
-
 	memcpy((void *)&hdr, data, sizeof(hdr));
 	data += sizeof(hdr);
 	remaining -= sizeof(hdr);
@@ -88,18 +49,14 @@ static struct net_buf *bt_ipc_evt_recv(const uint8_t *data, size_t remaining)
 		LOG_ERR("Event payload length is not correct");
 		return NULL;
 	}
-	LOG_DBG("len %u", hdr.len);
+	LOG_DBG("evt 0x%2x len %u", hdr.evt, hdr.len);
 
-	do {
-		buf = bt_buf_get_evt(hdr.evt, discardable, discardable ? K_NO_WAIT : K_SECONDS(10));
-		if (!buf) {
-			if (discardable) {
-				LOG_DBG("Discardable buffer pool full, ignoring event");
-				return buf;
-			}
-			LOG_WRN("Couldn't allocate a buffer after waiting 10 seconds.");
-		}
-	} while (!buf);
+	buf = bt_buf_get_evt_but_better(hdr.evt, data[0], K_SECONDS(60));
+	if (!buf) {
+		/* If events are blocked for 60s, something has gone wrong. */
+		LOG_DBG("Buffer pool full, ignoring event");
+		return buf;
+	}
 
 	net_buf_add_mem(buf, &hdr, sizeof(hdr));
 
