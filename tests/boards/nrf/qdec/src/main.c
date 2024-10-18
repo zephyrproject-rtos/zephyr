@@ -308,11 +308,11 @@ ZTEST(qdec_sensor, test_sensor_channel_get_empty)
 		pm_device_runtime_get(qdec_dev);
 	}
 
-	rc = sensor_sample_fetch(qdec_dev);
-	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
-
 	/* wait for potential new readings */
 	k_msleep(100);
+
+	rc = sensor_sample_fetch(qdec_dev);
+	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
 
 	/* get readings but ignore them, as they may include reading from time
 	 * when emulation was still working (i.e. during previous test)
