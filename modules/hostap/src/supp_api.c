@@ -1116,6 +1116,45 @@ int supplicant_disconnect(const struct device *dev)
 	return wpas_disconnect_network(dev, WPAS_MODE_INFRA);
 }
 
+static enum wifi_mfp_options get_mfp(enum mfp_options supp_mfp_option)
+{
+	switch (supp_mfp_option) {
+	case NO_MGMT_FRAME_PROTECTION:
+		return WIFI_MFP_DISABLE;
+	case MGMT_FRAME_PROTECTION_OPTIONAL:
+		return WIFI_MFP_OPTIONAL;
+	case MGMT_FRAME_PROTECTION_REQUIRED:
+		return WIFI_MFP_REQUIRED;
+	default:
+		wpa_printf(MSG_ERROR, "Invalid mfp mapping %d", supp_mfp_option);
+		break;
+	}
+
+	return WIFI_MFP_DISABLE;
+}
+
+static enum wifi_iface_mode get_iface_mode(enum wpas_mode supp_mode)
+{
+	switch (supp_mode) {
+	case WPAS_MODE_INFRA:
+		return WIFI_MODE_INFRA;
+	case WPAS_MODE_IBSS:
+		return WIFI_MODE_IBSS;
+	case WPAS_MODE_AP:
+		return WIFI_MODE_AP;
+	case WPAS_MODE_P2P_GO:
+		return WIFI_MODE_P2P_GO;
+	case WPAS_MODE_P2P_GROUP_FORMATION:
+		return WIFI_MODE_P2P_GROUP_FORMATION;
+	case WPAS_MODE_MESH:
+		return WIFI_MODE_MESH;
+	default:
+		break;
+	}
+
+	return WIFI_MODE_UNKNOWN;
+}
+
 int supplicant_status(const struct device *dev, struct wifi_iface_status *status)
 {
 	struct net_if *iface = net_if_lookup_by_dev(dev);
@@ -1169,7 +1208,7 @@ int supplicant_status(const struct device *dev, struct wifi_iface_status *status
 		os_memcpy(status->bssid, wpa_s->bssid, WIFI_MAC_ADDR_LEN);
 		status->band = wpas_band_to_zephyr(wpas_freq_to_band(wpa_s->assoc_freq));
 		status->security = wpas_key_mgmt_to_zephyr(key_mgmt, proto);
-		status->mfp = ssid->ieee80211w; /* Same mapping */
+		status->mfp = get_mfp(ssid->ieee80211w);
 		ieee80211_freq_to_chan(wpa_s->assoc_freq, &channel);
 		status->channel = channel;
 
@@ -1187,7 +1226,7 @@ int supplicant_status(const struct device *dev, struct wifi_iface_status *status
 
 		os_memcpy(status->ssid, _ssid, ssid_len);
 		status->ssid_len = ssid_len;
-		status->iface_mode = ssid->mode;
+		status->iface_mode = get_iface_mode(ssid->mode);
 
 		if (wpa_s->connection_set == 1) {
 			status->link_mode = wpa_s->connection_he ? WIFI_6 :
@@ -1894,12 +1933,12 @@ int supplicant_ap_status(const struct device *dev, struct wifi_iface_status *sta
 	ssid = &bss->ssid;
 
 	os_memcpy(status->bssid, hapd->own_addr, WIFI_MAC_ADDR_LEN);
-	status->iface_mode = WPAS_MODE_AP;
+	status->iface_mode = WIFI_MODE_AP;
 	status->band = wpas_band_to_zephyr(wpas_freq_to_band(iface->freq));
 	key_mgmt = bss->wpa_key_mgmt;
 	proto = bss->wpa;
 	status->security = wpas_key_mgmt_to_zephyr(key_mgmt, proto);
-	status->mfp = bss->ieee80211w;
+	status->mfp = get_mfp(bss->ieee80211w);
 	status->channel = conf->channel;
 	os_memcpy(status->ssid, ssid->ssid, ssid->ssid_len);
 
