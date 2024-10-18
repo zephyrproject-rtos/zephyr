@@ -28,7 +28,7 @@ Requirements
 ************
 
 This example should be able to run on any commonly available
-:ref:`esp32_devkitc_wroom` development board without any extra hardware.
+:zephyr:board:`esp32_devkitc_wroom` development board without any extra hardware.
 
 To enable or disable ``AP-STA`` mode, modify the :kconfig:option:`CONFIG_ESP32_WIFI_AP_STA_MODE`
 parameter in the ``boards/esp32_devkitc_wroom_procpu.conf`` file of the demo. Moreover, an
