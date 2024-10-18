@@ -23,14 +23,6 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 	};
-
-	sdram2: sdram@d0000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		device_type = "memory";
-		reg = <0xd0000000 DT_SIZE_M(32)>;
-		zephyr,memory-region = "SDRAM2";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
-	};
 };
 
 zephyr_udc0: &usbotg_fs {
@@ -85,6 +77,12 @@ zephyr_udc0: &usbotg_fs {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcu-boot";
+			reg = <0x00000000 DT_SIZE_K(256)>;
+			read-only;
+		};
 
 		slot0_partition: partition@40000 {
 			label = "image-0";
