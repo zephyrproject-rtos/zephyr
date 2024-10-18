@@ -248,9 +248,9 @@ static uint16_t sample_point_for_bitrate(uint32_t bitrate)
  * @retval -ENOTSUP if the requested bitrate is not supported.
  * @retval -EIO if @a can_get_core_clock() is not available.
  */
-static int can_calc_timing_internal(const struct device *dev, struct can_timing *res,
-				    const struct can_timing *min, const struct can_timing *max,
-				    uint32_t bitrate, uint16_t sample_pnt)
+int can_calc_timing_internal(const struct device *dev, struct can_timing *res,
+			     const struct can_timing *min, const struct can_timing *max,
+			     uint32_t bitrate, uint16_t sample_pnt)
 {
 	uint32_t total_tq = CAN_SYNC_SEG + max->prop_seg + max->phase_seg1 + max->phase_seg2;
 	struct can_timing tmp_res = { 0 };
