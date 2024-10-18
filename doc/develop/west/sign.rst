@@ -12,8 +12,8 @@ the image together. Run ``west sign -h`` for command line help.
 rimage
 ******
 
-rimage configuration uses a different approach that does not rely on Kconfig or CMake
-but on :ref:`west config<west-config>` instead, similar to
+rimage configuration uses an approach that does not rely on Kconfig or CMake
+but on :ref:`west config<west-config>`, similar to
 :ref:`west-building-cmake-config`.
 
 Signing involves a number of "wrapper" scripts stacked on top of each other: ``west
@@ -31,8 +31,8 @@ build logs can be unreliable: it may produce different results because of subtle
 environment differences. Last and worst: new signing feature and options are
 impossible to use until more boilerplate code has been added in each layer.
 
-To avoid these issues, ``rimage`` parameters can bet set in ``west config``
-instead. Here's a ``workspace/.west/config`` example:
+To avoid these issues, ``rimage`` parameters can bet set in ``west config``.
+Here's a ``workspace/.west/config`` example:
 
 .. code-block:: ini
 
