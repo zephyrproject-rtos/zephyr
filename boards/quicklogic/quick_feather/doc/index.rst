@@ -1,20 +1,10 @@
-.. _quickfeather:
-
-QuickFeather
-############
+.. zephyr:board:: quick_feather
 
 Overview
 ********
 
 The QuickFeather development board is a platform with an on-board QuickLogic
 EOS S3 Sensor Processing Platform.
-
-
-.. figure:: img/feather-board.jpg
-   :align: center
-   :alt: QuickFeather
-
-   QuickFeather (Credit: QuickLogic)
 
 Hardware
 ********
