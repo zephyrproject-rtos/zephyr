@@ -1,7 +1,4 @@
-.. _acn52832:
-
-acn52832
-########
+.. zephyr:board:: acn52832
 
 Overview
 ********
