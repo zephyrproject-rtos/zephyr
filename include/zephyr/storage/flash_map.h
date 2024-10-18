@@ -45,11 +45,6 @@
 extern "C" {
 #endif
 
-/** Provided for compatibility with MCUboot */
-#define SOC_FLASH_0_ID 0
-/** Provided for compatibility with MCUboot */
-#define SPI_FLASH_0_ID 1
-
 /**
  * @brief Flash partition
  *
