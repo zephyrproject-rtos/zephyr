@@ -218,6 +218,15 @@ typedef uint8_t (*lorawan_battery_level_cb_t)(void);
 typedef void (*lorawan_dr_changed_cb_t)(enum lorawan_datarate dr);
 
 /**
+ * @brief Defines the descriptor callback handler function signature.
+ *
+ * @param descriptor Descriptor field
+ *
+ * @return 0 if successful, negative errno code if failure
+ */
+typedef int (*transport_descriptor_cb)(uint32_t descriptor);
+
+/**
  * @brief Register a battery level callback function.
  *
  * Provide the LoRaWAN stack with a function to be called whenever a battery
@@ -438,6 +447,17 @@ int lorawan_clock_sync_get(uint32_t *gps_time);
 #endif /* CONFIG_LORAWAN_APP_CLOCK_SYNC */
 
 #ifdef CONFIG_LORAWAN_FRAG_TRANSPORT
+
+/**
+ * @brief Register a handle descriptor callback function.
+ *
+ * Provide to the fragmentation transport service a function to be called
+ * whenever a FragSessionSetupReq is received and Descriptor field should be
+ * handled.
+ *
+ * @param transport_descriptor_cb Callback for notification.
+ */
+void lorawan_frag_transport_register_descriptor_callback(transport_descriptor_cb cb);
 
 /**
  * @brief Run Fragmented Data Block Transport service
