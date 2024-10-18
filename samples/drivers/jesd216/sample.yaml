@@ -21,7 +21,7 @@ tests:
       - hifive_unmatched/fu740/u74
       - mimxrt1170_evk/mimxrt1176/cm7
       - mimxrt1170_evk/mimxrt1176/cm4
-    filter: dt_compat_enabled("jedec,spi-nor")
+    filter: dt_compat_enabled("jedec,spi-nor") or dt_compat_enabled("jedec,mspi-nor")
     depends_on: spi
   sample.drivers.jesd216.nrf52840dk_spi:
     extra_args:
