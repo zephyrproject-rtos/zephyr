@@ -1,9 +1,0 @@
-# Copyright (c) 2024 Junho Lee <junho@tsnlab.com>
-# SPDX-License-Identifier: Apache-2.0
-
-config DMA_TSN_NIC
-	bool "TSN NIC DMA Driver"
-	default y
-	depends on DT_HAS_TSNLAB_TSN_NIC_DMA_ENABLED
-	help
-	  Enable DMA driver for TSN NIC.

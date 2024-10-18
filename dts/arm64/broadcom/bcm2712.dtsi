@@ -105,28 +105,14 @@
 				 <0x43000000 0x4 0x0 0x18 0x0 0x03 0x00000000>,
 				 <0x03000000 0x0 0x0 0x10 0x0 0x10 0x00000000>;
 
-			xdma: dma@1b08000000 {
-				compatible = "tsnlab,tsn-nic-dma";
-				#dma-cells = <1>;
-				status = "okay";
+			eth: ethernet@1b08000000 {
+				compatible = "tsnlab,tsn-nic-eth";
+				#address-cells = <2>;
+				#size-cells = <1>;
 				reg = <0x0 0x1b 0x8000000 0x0 0x2000>;
-				dma-channels = <9>;
-				dma-buf-addr-alignment = <128>;
-				dma-buf-size-alignment = <32>;
-				dma-copy-alignment = <32>;
-				//power-domain = <&hst_domain>;
-				//interrupts = <13 0 0>;
-				//interrupt-parent = <&ace_intc>;
-
-				eth: ethernet {
-					#address-cells = <2>;
-					#size-cells = <1>;
-					//reg = <0x0 0x1b 0x8000000 0x0 0x1000>;
-					status = "okay";
-					compatible = "tsnlab,tsn-nic-eth";
-					interrupts = <GIC_SPI 223 IRQ_TYPE_LEVEL
-						      IRQ_DEFAULT_PRIORITY>;
-				};
+				status = "okay";
+				interrupts = <GIC_SPI 223 IRQ_TYPE_LEVEL
+					      IRQ_DEFAULT_PRIORITY>;
 			};
 		};
 
