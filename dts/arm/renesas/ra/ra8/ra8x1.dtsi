@@ -493,6 +493,32 @@
 			zephyr,memory-region = "OPTION_SETTING_S";
 			status = "okay";
 		};
+
+		sdmmc0: sdmmc@40252000 {
+			compatible = "renesas,ra-sdmmc";
+			channel = <0>;
+			bus-width = <4>;
+			block-size = <512>;
+			sd-support = <1>;
+			mmc-support = <1>;
+			reg = <0x40252000 0x0400>;
+			interrupt-names = "accs", "card", "dma-req";
+			interrupts = <54 12>, <55 12>, <56 12>;
+			status = "disabled";
+		};
+
+		sdmmc1: sdmmc@40252400 {
+			compatible = "renesas,ra-sdmmc";
+			channel = <1>;
+			bus-width = <4>;
+			block-size = <512>;
+			sd-support = <1>;
+			mmc-support = <1>;
+			reg = <0x40252400 0x0400>;
+			interrupt-names = "accs", "card", "dma-req";
+			interrupts = <57 12>, <58 12>, <59 12>;
+			status = "disabled";
+		};
 	};
 };
 

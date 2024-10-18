@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SDMMC_RENESAS_RA
+	bool "Renesas RA SDMMC driver"
+	default y
+	depends on DT_HAS_RENESAS_RA_SDMMC_ENABLED
+	select USE_RA_FSP_SDHI
+	select USE_RA_FSP_DTC
+	help
+	  File system on sdmmc accessed through renesas ra sdmmc.

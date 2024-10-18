@@ -12,6 +12,7 @@ zephyr_library_sources_ifdef(CONFIG_DISK_DRIVER_LOOPBACK loopback_disk.c)
 zephyr_library_sources_ifdef(CONFIG_SDMMC_STM32 sdmmc_stm32.c)
 zephyr_library_sources_ifdef(CONFIG_SDMMC_SUBSYS sdmmc_subsys.c)
 zephyr_library_sources_ifdef(CONFIG_MMC_SUBSYS mmc_subsys.c)
+zephyr_library_sources_ifdef(CONFIG_SDMMC_RENESAS_RA sdmmc_renesas_ra.c)
 
 add_subdirectory_ifdef(CONFIG_NVME nvme)
 
