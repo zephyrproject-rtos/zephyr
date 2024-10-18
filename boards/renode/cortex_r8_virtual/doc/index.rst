@@ -1,7 +1,4 @@
-.. _cortex_r8_virtual:
-
-Cortex-R8 Virtual
-#################
+.. zephyr:board:: cortex_r8_virtual
 
 Overview
 ********
