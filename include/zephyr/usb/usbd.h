@@ -77,6 +77,7 @@ enum usbd_str_desc_utype {
 
 enum usbd_bos_desc_utype {
 	USBD_DUT_BOS_NONE,
+	USBD_DUT_BOS_VREQ,
 };
 /** @endcond */
 
@@ -148,6 +149,9 @@ struct usbd_vreq_node {
 struct usbd_bos_desc_data {
 	/** Descriptor usage type (not bDescriptorType) */
 	enum usbd_bos_desc_utype utype : 8;
+	union {
+		struct usbd_vreq_node *const vreq_nd;
+	};
 };
 
 /**
@@ -681,6 +685,34 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 		.code = vcode,							\
 		.to_host = vto_host,						\
 		.to_dev = vto_dev,						\
+	}
+
+/**
+ * @brief Define BOS Device Capability descriptor node with vendor request
+ *
+ * This macro defines a BOS descriptor, usually a platform capability, with a
+ * vendor request node.
+ *
+ * USBD_DESC_BOS_VREQ_DEFINE(bos_vreq_webusb, sizeof(bos_cap_webusb), &bos_cap_webusb,
+ *                           SAMPLE_WEBUSB_VENDOR_CODE, webusb_to_host_cb, NULL);
+ *
+ * @param name      Descriptor node identifier
+ * @param len       Device Capability descriptor length
+ * @param subset    Pointer to a Device Capability descriptor
+ * @param vcode     Vendor request code
+ * @param vto_host  Vendor callback for to-host direction request
+ * @param vto_dev   Vendor callback for to-device direction request
+ */
+#define USBD_DESC_BOS_VREQ_DEFINE(name, len, subset, vcode, vto_host, vto_dev)	\
+	USBD_VREQUEST_DEFINE(vreq_nd_##name, vcode, vto_host, vto_dev);		\
+	static struct usbd_desc_node name = {					\
+		.bos = {							\
+			.utype = USBD_DUT_BOS_VREQ,				\
+			.vreq_nd = &vreq_nd_##name,				\
+		},								\
+		.ptr = subset,							\
+		.bLength = len,							\
+		.bDescriptorType = USB_DESC_BOS,				\
 	}
 
 /**
