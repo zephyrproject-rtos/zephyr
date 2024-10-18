@@ -1,7 +1,4 @@
-.. _m5stack_core2:
-
-M5Stack Core2
-#############
+.. zephyr:board:: m5stack_core2
 
 Overview
 ********
@@ -25,13 +22,6 @@ M5Stack Core2 features the following integrated components:
 - IMO 6-axis IMU MPU6886
 - MIC SPM1423
 - Battery 390mAh 3,7V
-
-.. figure:: img/m5stack_core2.webp
-        :align: center
-        :alt: M5Stack-Core2
-        :width: 400 px
-
-        M5Stack-Core2 module
 
 Functional Description
 **********************
