@@ -3,6 +3,10 @@
  * Copyright (c) 2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * NOTE: If you are looking into an implementation of button events with
+ * debouncing, check out `input` subsystem and `samples/subsys/input/input_dump`
+ * example instead.
  */
 
 #include <zephyr/kernel.h>
