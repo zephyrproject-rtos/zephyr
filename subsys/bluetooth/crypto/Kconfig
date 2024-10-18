@@ -3,10 +3,10 @@
 
 config BT_CRYPTO
 	bool
-	select TINYCRYPT if !BT_USE_PSA_API
-	select TINYCRYPT_AES if !BT_USE_PSA_API
-	select TINYCRYPT_AES_CMAC if !BT_USE_PSA_API
-	select PSA_WANT_KEY_TYPE_AES if BT_USE_PSA_API
-	select PSA_WANT_ALG_CMAC if BT_USE_PSA_API
+	select MBEDTLS if !BUILD_WITH_TFM
+	select MBEDTLS_PSA_CRYPTO_C if !BUILD_WITH_TFM
+	select PSA_WANT_KEY_TYPE_AES
+	select PSA_WANT_ALG_CMAC
+	select MBEDTLS_AES_ROM_TABLES if MBEDTLS_PSA_CRYPTO_C
 	help
 	  This option enables the Bluetooth Cryptographic Toolbox.
