@@ -1,7 +1,4 @@
-.. _esp32s3_touch_lcd_1_28:
-
-Waveshare ESP32-S3-Touch-LCD-1.28
-#################################
+.. zephyr:board:: esp32s3_touch_lcd_1_28
 
 Overview
 ********
