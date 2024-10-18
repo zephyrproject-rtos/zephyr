@@ -82,6 +82,11 @@ LOG_MODULE_REGISTER(eth_tsn_nic, LOG_LEVEL_ERR);
 #define DESC_COMPLETED (1UL << 1)
 #define DESC_EOP       (1UL << 4)
 
+#define SGDMA_OFFSET_FROM_CHANNEL 0x4000
+
+#define DESC_REG_LO (SGDMA_OFFSET_FROM_CHANNEL + 0x80)
+#define DESC_REG_HI (SGDMA_OFFSET_FROM_CHANNEL + 0x84)
+
 #define LS_BYTE_MASK 0x000000FFUL
 
 #define PCI_DMA_H(addr) ((addr >> 16) >> 16)
@@ -221,6 +226,7 @@ struct eth_tsn_nic_data {
 
 	mm_reg_t bar[DMA_CONFIG_BAR_IDX + 1];
 	struct dma_tsn_nic_engine_regs *regs[2];
+	struct dma_tsn_nic_engine_sgdma_regs *sgdma_regs[2];
 
 	pthread_spinlock_t tx_lock;
 	pthread_spinlock_t rx_lock;
@@ -368,7 +374,6 @@ static struct net_stats_eth *eth_tsn_nic_get_stats(const struct device *dev)
 static int eth_tsn_nic_start(const struct device *dev)
 {
 	struct eth_tsn_nic_data *data = dev->data;
-	mm_reg_t rx_regs, rx_sgdma_regs;
 
 	data->rx_desc.src_addr_lo = sys_cpu_to_le32(PCI_DMA_L((uintptr_t)&data->res));
 	data->rx_desc.src_addr_hi = sys_cpu_to_le32(PCI_DMA_H((uintptr_t)&data->res));
@@ -379,18 +384,16 @@ static int eth_tsn_nic_start(const struct device *dev)
 	 * TODO: Find out how to move this to dma driver
 	 * or how to access dma registers from here
 	 */
-	device_map(&rx_regs, RX_ENGINE_REG_ADDR, RX_REGS_SIZE, K_MEM_CACHE_NONE);
-	device_map(&rx_sgdma_regs, RX_SGDMA_REG_ADDR, RX_REGS_SIZE, K_MEM_CACHE_NONE);
 
 	pthread_spin_lock(&data->rx_lock);
 
 	/* FIXME: It seems the board is not reading the descriptor properly */
-	sys_read32(rx_regs + offsetof(struct dma_tsn_nic_engine_regs, status_rc)); /* Clear reg */
+	sys_read32((uintptr_t)&data->regs[DMA_H2C]->status_rc); /* Clear status regs */
 	sys_write32(sys_cpu_to_le32(PCI_DMA_L((uintptr_t)&data->rx_desc)),
-		    rx_regs + offsetof(struct dma_tsn_nic_engine_sgdma_regs, first_desc_lo));
+		    (uintptr_t)&data->sgdma_regs[DMA_H2C]->first_desc_lo);
 	sys_write32(sys_cpu_to_le32(PCI_DMA_H((uintptr_t)&data->rx_desc)),
-		    rx_regs + offsetof(struct dma_tsn_nic_engine_sgdma_regs, first_desc_hi));
-	sys_write32(DMA_ENGINE_START, rx_regs + offsetof(struct dma_tsn_nic_engine_regs, control));
+		    (uintptr_t)&data->sgdma_regs[DMA_H2C]->first_desc_hi);
+	sys_write32(DMA_ENGINE_START, (uintptr_t)&data->regs[DMA_H2C]->control);
 
 	pthread_spin_unlock(&data->rx_lock);
 
@@ -473,9 +476,10 @@ static int eth_tsn_nic_send(const struct device *dev, struct net_pkt *pkt)
 {
 	/* TODO: This is for test only */
 	struct eth_tsn_nic_data *data = dev->data;
-	size_t len;
 	struct timespec ts;
 	uint64_t now;
+	uint32_t w;
+	size_t len;
 	int ret;
 
 #if 0 /* Rx test */
@@ -523,15 +527,14 @@ static int eth_tsn_nic_send(const struct device *dev, struct net_pkt *pkt)
 
 	tx_desc_set(&data->tx_desc, (uintptr_t)&data->tx_buffer, len + TX_METADATA_SIZE);
 
-#if 0 /* TODO: Merge dma and eth drivers */
 	/* These are just pseudo codes for now */
 	w = sys_cpu_to_le32(PCI_DMA_L((uintptr_t)&data->tx_desc));
-	sys_write32(w, bar[CONFIG_BAR] + DESC_REG_LO);
+	sys_write32(w, data->bar[DMA_CONFIG_BAR_IDX] + DESC_REG_LO);
 	w = sys_cpu_to_le32(PCI_DMA_H((uintptr_t)&data->tx_desc));
-	sys_write32(w, bar[CONFIG_BAR] + DESC_REG_HI);
-	sys_write32(0, bar[CONFIG_BAR] + DESC_REG_HI + 4);
-	sys_write32(DMA_ENGINE_START, regs->control);
-#endif
+	sys_write32(w, data->bar[DMA_CONFIG_BAR_IDX] + DESC_REG_HI);
+	sys_write32(0, data->bar[DMA_CONFIG_BAR_IDX] + DESC_REG_HI);
+	sys_write32(0, data->bar[DMA_CONFIG_BAR_IDX] + DESC_REG_HI + 4);
+	sys_write32(DMA_ENGINE_START, data->regs[DMA_H2C]->control);
 
 	/* TODO: This should be done in tsn_nic_isr() */
 	pthread_spin_unlock(&data->tx_lock);
@@ -657,6 +660,9 @@ static int eth_tsn_nic_init(const struct device *dev)
 
 	engine_init_regs(regs);
 	data->regs[DMA_H2C] = regs;
+	data->sgdma_regs[DMA_H2C] =
+		(struct dma_tsn_nic_engine_sgdma_regs *)(data->bar[DMA_CONFIG_BAR_IDX] +
+							 SGDMA_OFFSET_FROM_CHANNEL);
 
 	regs = (struct dma_tsn_nic_engine_regs *)(data->bar[DMA_CONFIG_BAR_IDX] + DMA_C2H_OFFSET);
 	engine_id = get_engine_id(regs);
@@ -667,6 +673,10 @@ static int eth_tsn_nic_init(const struct device *dev)
 
 	engine_init_regs(regs);
 	data->regs[DMA_C2H] = regs;
+	data->sgdma_regs[DMA_C2H] =
+		(struct dma_tsn_nic_engine_sgdma_regs *)(data->bar[DMA_CONFIG_BAR_IDX] +
+							 SGDMA_OFFSET_FROM_CHANNEL +
+							 DMA_C2H_OFFSET);
 
 	/* TSN registers */
 	sys_write32(0x1, data->bar[0] + 0x0008);
