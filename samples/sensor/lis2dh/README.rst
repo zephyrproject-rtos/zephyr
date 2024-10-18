@@ -31,7 +31,7 @@ and shields supported by Zephyr, including:
 
 * :zephyr:board:`actinius_icarus`
 * :ref:`thingy52_nrf52832`
-* :ref:`stm32f3_disco_board`
+* :zephyr:board:`stm32f3_disco`
 * :ref:`x-nucleo-iks01a2`
 
 See the board documentation for detailed instructions on how to flash

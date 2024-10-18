@@ -15,7 +15,7 @@ Requirements
 ************
 
 This sample uses the LSM6DSO sensor controlled using the I2C interface.
-It has been tested on the :ref:`stm32l562e_dk_board`.
+It has been tested on the :zephyr:board:`stm32l562e_dk`.
 
 References
 **********
@@ -26,7 +26,7 @@ Building and Running
 ********************
 
  This project outputs sensor data to the console. It requires an LSM6DSO
- sensor, which is present on the :ref:`stm32l562e_dk_board`.
+ sensor, which is present on the :zephyr:board:`stm32l562e_dk`.
 
 Building on stm32l562e_dk board
 ===============================

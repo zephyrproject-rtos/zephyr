@@ -1,7 +1,4 @@
-.. _nucleo_g071rb_board:
-
-ST Nucleo G071RB
-################
+.. zephyr:board:: nucleo_g071rb
 
 Overview
 ********
@@ -23,10 +20,6 @@ some highlights of the Nucleo G071RB board:
 
 - Three LEDs: USB communication (LD1), user LED (LD4), power LED (LD3)
 - Two push-buttons: USER and RESET
-
-.. image:: img/nucleo_g071rb.jpg
-   :align: center
-   :alt: Nucleo G071RB
 
 More information about the board can be found at the `Nucleo G071RB website`_.
 

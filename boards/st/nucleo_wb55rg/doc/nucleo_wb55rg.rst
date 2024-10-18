@@ -1,7 +1,4 @@
-.. _nucleo_wb55rg_board:
-
-ST Nucleo WB55RG
-################
+.. zephyr:board:: nucleo_wb55rg
 
 Overview
 ********
@@ -28,10 +25,6 @@ Low Energy (BLE) SIG specification v5.0 and with IEEE 802.15.4-2011.
 - On-board socket for CR2032 battery
 - On-board ST-LINK/V2-1 debugger/programmer with USB re- enumeration capability:
   mass storage, virtual COM port and debug port
-
-.. image:: img/nucleowb55rg.jpg
-   :align: center
-   :alt: Nucleo WB55RG
 
 More information about the board can be found at the `Nucleo WB55RG website`_.
 

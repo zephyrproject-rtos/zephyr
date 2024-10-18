@@ -1,7 +1,4 @@
-.. _b_l072z_lrwan1_board:
-
-ST B-L072Z-LRWAN1 Discovery kit
-###############################
+.. zephyr:board:: b_l072z_lrwan1
 
 Overview
 ********
@@ -52,10 +49,6 @@ This kit provides:
         - A fault-power LED
         - 2 push-buttons (user and reset)
 - Arduino* Uno V3 connectors
-
-.. image:: img/b_l072z_lrwan1.jpg
-     :align: center
-     :alt: B-L072Z-LRWAN1
 
 More information about the board can be found at the `B-L072Z-LRWAN1 website`_.
 

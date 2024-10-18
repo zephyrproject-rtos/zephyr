@@ -1,7 +1,4 @@
-.. _nucleo_f334r8_board:
-
-ST Nucleo F334R8
-################
+.. zephyr:board:: nucleo_f334r8
 
 Overview
 ********
@@ -20,10 +17,6 @@ debugger and programmer.
 
 The STM32 Nucleo board comes with the STM32 comprehensive software HAL library together
 with various packaged software examples.
-
-.. image:: img/nucleo_f334r8.jpg
-   :align: center
-   :alt: Nucleo F334R8
 
 More information about the board can be found at the `Nucleo F334R8 website`_.
 

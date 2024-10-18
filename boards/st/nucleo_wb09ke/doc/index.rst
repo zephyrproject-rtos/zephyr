@@ -1,7 +1,4 @@
-.. _nucleo_wb09ke_board:
-
-ST Nucleo WB09KE
-################
+.. zephyr:board:: nucleo_wb09ke
 
 Overview
 ********
@@ -10,10 +7,6 @@ The Nucleo WB09KE board is a Bluetooth |reg| Low Energy wireless and ultra-low-p
 board featuring an ARM Cortex |reg|-M0+ based STM32WB09KEV MCU, embedding a
 powerful and ultra-low-power radio compliant with the Bluetooth® Low Energy
 SIG specification v5.4.
-
-.. image:: img/nucleo_wb09ke.webp
-   :align: center
-   :alt: Nucleo WB09KE
 
 More information about the board can be found on the `Nucleo WB09KE webpage`_.
 

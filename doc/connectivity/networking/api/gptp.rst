@@ -36,9 +36,9 @@ support must be enabled in ethernet drivers.
 Boards supported:
 
 - :zephyr:board:`frdm_k64f`
-- :ref:`nucleo_h743zi_board`
-- :ref:`nucleo_h745zi_q_board`
-- :ref:`nucleo_f767zi_board`
+- :zephyr:board:`nucleo_h743zi`
+- :zephyr:board:`nucleo_h745zi_q`
+- :zephyr:board:`nucleo_f767zi`
 - :ref:`sam_e70_xplained`
 - :ref:`native_sim` (only usable for simple testing, limited capabilities
   due to lack of hardware clock)

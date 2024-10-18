@@ -1,7 +1,4 @@
-.. _stm32c0116_dk_board:
-
-ST STM32C0116-DK Discovery Kit
-##############################
+.. zephyr:board:: stm32c0116_dk
 
 Overview
 ********
@@ -11,10 +8,6 @@ microcontroller in a UFQFPN20 package. This Discovery kit features one UFQFPN20
 to DIL20 module designed with the STM32C011F6 microcontroller and allows the user to develop
 and share applications. It includes an on-board ST-LINK/V2-1 to debug and program the embedded
 STM32 microcontroller. Important board features include:
-
-.. image:: img/stm32c0116_dk.jpg
-     :align: center
-     :alt: STM32C0116-DK
 
 More information about the board can be found at the `STM32C0116-DK website`_.
 

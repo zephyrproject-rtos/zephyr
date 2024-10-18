@@ -1,7 +1,4 @@
-.. _nucleo_f303re_board:
-
-ST Nucleo F303RE
-################
+.. zephyr:board:: nucleo_f303re
 
 Overview
 ********
@@ -26,10 +23,6 @@ Here are some highlights of the Nucleo F303RE board:
 
 - One user LED
 - Two push-buttons: USER and RESET
-
-.. image:: img/nucleo_f303re.jpg
-   :align: center
-   :alt: Nucleo F303RE
 
 More information about the board can be found at the `Nucleo F303RE website`_,
 and in the `STM32 Nucleo-64 board User Manual`_.

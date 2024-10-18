@@ -1,7 +1,4 @@
-.. _nucleo_f413zh_board:
-
-ST Nucleo F413ZH
-################
+.. zephyr:board:: nucleo_f413zh
 
 Overview
 ********
@@ -27,10 +24,6 @@ some highlights of the Nucleo F413ZH board:
 
 - Three user LEDs
 - Two push-buttons: USER and RESET
-
-.. image:: img/nucleo_f413zh.jpg
-   :align: center
-   :alt: Nucleo F413ZH
 
 More information about the board can be found at the `Nucleo F413ZH website`_.
 
