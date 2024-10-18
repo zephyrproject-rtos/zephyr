@@ -15,7 +15,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40015000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00100000>;
+			clocks = <&rcc STM32_CLOCK(APB2, 20U)>;
 			interrupts = <85 5>;
 			status = "disabled";
 		};
@@ -25,7 +25,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40013000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>;
+			clocks = <&rcc STM32_CLOCK(APB2, 12U)>;
 			interrupts = <35 5>;
 			dmas = <&dma2 3 3 0x400 0x3
 				&dma2 2 3 0x400 0x3>;
@@ -38,7 +38,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40013400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00002000>;
+			clocks = <&rcc STM32_CLOCK(APB2, 13U)>;
 			interrupts = <84 5>;
 			dmas = <&dma2 1 4 0x400 0x3
 				&dma2 0 4 0x400 0x3>;
@@ -51,7 +51,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40015000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00100000>;
+			clocks = <&rcc STM32_CLOCK(APB2, 20U)>;
 			interrupts = <85 5>;
 			dmas = <&dma2 6 7 0x400 0x3
 				&dma2 5 7 0x400 0x3>;

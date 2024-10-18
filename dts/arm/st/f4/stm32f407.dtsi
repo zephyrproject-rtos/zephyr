@@ -16,10 +16,10 @@
 			interrupts = <61 0>;
 			clock-names = "stmmaceth", "mac-clk-tx",
 				      "mac-clk-rx", "mac-clk-ptp";
-			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x02000000>,
-				 <&rcc STM32_CLOCK_BUS_AHB1 0x04000000>,
-				 <&rcc STM32_CLOCK_BUS_AHB1 0x08000000>,
-				 <&rcc STM32_CLOCK_BUS_AHB1 0x10000000>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 25U)>,
+				 <&rcc STM32_CLOCK(AHB1, 26U)>,
+				 <&rcc STM32_CLOCK(AHB1, 27U)>,
+				 <&rcc STM32_CLOCK(AHB1, 28U)>;
 			status = "disabled";
 		};
 	};

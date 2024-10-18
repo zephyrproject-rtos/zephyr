@@ -40,7 +40,7 @@
 			num-bidir-endpoints = <9>;
 			ram-size = <4096>;
 			maximum-speed = "full-speed";
-			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x02000000>,
+			clocks = <&rcc STM32_CLOCK(AHB1, 25U)>,
 				 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
 			phys = <&otghs_fs_phy>;
 			status = "disabled";
@@ -51,7 +51,7 @@
 			reg = <0x50001000 0x200>;
 			interrupts = <88 0>, <89 0>;
 			interrupt-names = "ltdc", "ltdc_er";
-			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000008>;
+			clocks = <&rcc STM32_CLOCK(APB3, 3U)>;
 			resets = <&rctl STM32_RESET(APB3, 4U)>;
 			status = "disabled";
 		};
@@ -61,7 +61,7 @@
 			reg = <0x52005000 0x1000>;
 			interrupts = <92 0>;
 			clock-names = "ospix", "ospi-ker";
-			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00004000>,
+			clocks = <&rcc STM32_CLOCK(AHB3, 14U)>,
 				<&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -73,7 +73,7 @@
 			reg = <0x5200a000 0x1000>;
 			interrupts = <150 0>;
 			clock-names = "ospix", "ospi-ker";
-			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x000080000>,
+			clocks = <&rcc STM32_CLOCK(AHB3, 19U)>,
 				<&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -85,7 +85,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x58001400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00000020>,
+			clocks = <&rcc STM32_CLOCK(APB4, 5U)>,
 				 <&rcc STM32_SRC_PLL1_Q SPI6_SEL(0)>;
 			dmas = <&dmamux2 0 12 0x20440 &dmamux2 1 11 0x20480>;
 			dma-names = "tx", "rx";
@@ -104,7 +104,7 @@
 			reg = <0x58006800 0x400>;
 			interrupts = <147 0>;
 			interrupt-names = "digi_temp";
-			clocks = <&rcc STM32_CLOCK_BUS_APB4 0x04000000>;
+			clocks = <&rcc STM32_CLOCK(APB4, 26U)>;
 			status = "disabled";
 		};
 	};

@@ -52,7 +52,7 @@
  * @param mask Mask for the RCC_CFGRx field.
  * @param val Clock value (0, 1, ... 7).
  */
-#define STM32_CLOCK(val, mask, shift, reg)					\
+#define STM32_DOMAIN_CLOCK(val, mask, shift, reg)					\
 	((((reg) & STM32_CLOCK_REG_MASK) << STM32_CLOCK_REG_SHIFT) |		\
 	 (((shift) & STM32_CLOCK_SHIFT_MASK) << STM32_CLOCK_SHIFT_SHIFT) |	\
 	 (((mask) & STM32_CLOCK_MASK_MASK) << STM32_CLOCK_MASK_SHIFT) |		\
@@ -67,14 +67,14 @@
 
 /** @brief Device domain clocks selection helpers */
 /** CFGR3 devices */
-#define USART1_SEL(val)		STM32_CLOCK(val, 3, 0, CFGR3_REG)
-#define I2C1_SEL(val)		STM32_CLOCK(val, 1, 4, CFGR3_REG)
-#define CEC_SEL(val)		STM32_CLOCK(val, 1, 6, CFGR3_REG)
-#define USB_SEL(val)		STM32_CLOCK(val, 1, 7, CFGR3_REG)
-#define USART2_SEL(val)		STM32_CLOCK(val, 3, 16, CFGR3_REG)
-#define USART3_SEL(val)		STM32_CLOCK(val, 3, 18, CFGR3_REG)
+#define USART1_SEL(val)		STM32_DOMAIN_CLOCK(val, 3, 0, CFGR3_REG)
+#define I2C1_SEL(val)		STM32_DOMAIN_CLOCK(val, 1, 4, CFGR3_REG)
+#define CEC_SEL(val)		STM32_DOMAIN_CLOCK(val, 1, 6, CFGR3_REG)
+#define USB_SEL(val)		STM32_DOMAIN_CLOCK(val, 1, 7, CFGR3_REG)
+#define USART2_SEL(val)		STM32_DOMAIN_CLOCK(val, 3, 16, CFGR3_REG)
+#define USART3_SEL(val)		STM32_DOMAIN_CLOCK(val, 3, 18, CFGR3_REG)
 /** BDCR devices */
-#define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, BDCR_REG)
+#define RTC_SEL(val)		STM32_DOMAIN_CLOCK(val, 3, 8, BDCR_REG)
 
 /** CFGR1 devices */
 #define MCO1_SEL(val)           STM32_MCO_CFGR(val, 0xF, 24, CFGR1_REG)

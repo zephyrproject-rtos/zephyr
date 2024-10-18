@@ -26,7 +26,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003c00 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00008000>;
+			clocks = <&rcc STM32_CLOCK(APB1, 15U)>;
 			interrupts = <51 5>;
 			status = "disabled";
 		};

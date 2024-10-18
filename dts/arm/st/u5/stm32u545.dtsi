@@ -22,7 +22,7 @@
 			num-bidir-endpoints = <8>;
 			ram-size = <1024>;
 			status = "disabled";
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x01000000>,
+			clocks = <&rcc STM32_CLOCK(APB2, 24U)>,
 				 <&rcc STM32_SRC_HSI48 ICKLK_SEL(0)>;
 			phys = <&usb_fs_phy>;
 		};
