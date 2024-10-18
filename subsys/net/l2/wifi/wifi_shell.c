@@ -3321,6 +3321,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "7:EAP-TLS, 8:WEP, 9: WPA-PSK, 10: WPA-Auto-Personal, 11: DPP\n"
 		      "12: EAP-PEAP-MSCHAPv2, 13: EAP-PEAP-GTC, 14: EAP-TTLS-MSCHAPv2,\n"
 		      "15: EAP-PEAP-TLS, 16:EAP_TLS_SHA256\n"
+		      "21: WPA-Auto-Personal-H2E, 22: WPA-Auto-Personal-AUTO\n"
 		      "-w --ieee-80211w=<MFP> (optional: needs security type to be specified)\n"
 		      "0:Disable, 1:Optional, 2:Required\n"
 		      "-b --band=<band> (2 -2.6GHz, 5 - 5Ghz, 6 - 6GHz)\n"
