@@ -3,7 +3,9 @@
 # Copyright (c) 2024 Charles Dias <charlesdias.cd@outlook.com>
 # SPDX-License-Identifier: Apache-2.0
 
-source "Kconfig.zephyr"
+mainmenu "Video capture to LVGL sample application"
+
+menu "Video capture configuration"
 
 config VIDEO_WIDTH
 	int "Define the width of the video"
@@ -20,3 +22,7 @@ config VIDEO_HFLIP
 config VIDEO_VFLIP
 	bool "Vertical flip"
 	default n
+
+endmenu
+
+source "Kconfig.zephyr"
