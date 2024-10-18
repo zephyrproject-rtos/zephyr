@@ -153,6 +153,28 @@ static int cmd_net_mem(const struct shell *sh, size_t argc, char *argv[])
 			PR("No external memory pools found.\n");
 		}
 	}
+
+#if defined(CONFIG_NET_PKT_ALLOC_STATS)
+	PR("\n");
+	PR("Slab\t\tStatus\tAllocs\tAvg size\tAvg time (usec)\n");
+
+	STRUCT_SECTION_FOREACH(net_pkt_alloc_stats_slab, stats) {
+		if (stats->ok.count) {
+			PR("%p\tOK  \t%u\t%llu\t\t%llu\n", stats->slab, stats->ok.count,
+			   stats->ok.alloc_sum / (uint64_t)stats->ok.count,
+			   k_cyc_to_us_ceil64(stats->ok.time_sum /
+					      (uint64_t)stats->ok.count));
+		}
+
+		if (stats->fail.count) {
+			PR("%p\tFAIL\t%u\t%llu\t\t%llu\n", stats->slab, stats->fail.count,
+			   stats->fail.alloc_sum / (uint64_t)stats->fail.count,
+			   k_cyc_to_us_ceil64(stats->fail.time_sum /
+					      (uint64_t)stats->fail.count));
+		}
+	}
+#endif /* CONFIG_NET_PKT_ALLOC_STATS */
+
 #else
 	PR_INFO("Set %s to enable %s support.\n",
 		"CONFIG_NET_OFFLOAD or CONFIG_NET_NATIVE", "memory usage");
