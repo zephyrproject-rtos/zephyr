@@ -39,7 +39,7 @@ It can be built as follows:
    :goals: build flash
    :compact:
 
-Follow the instructions in the :ref:`udoo_neo_full` board documentation
+Follow the instructions in the :zephyr:board:`udoo_neo_full` board documentation
 for how to load the Zephyr binary to the desired core and execute it.
 
 Building and Running the Linux Code
