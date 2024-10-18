@@ -1,7 +1,4 @@
-.. _nrf51_ble400:
-
-Waveshare BLE400
-#################
+.. zephyr:board:: nrf51_ble400
 
 Overview
 ********
