@@ -1,7 +1,4 @@
-.. _pico_pi:
-
-Pico-Pi i.MX7D - Android Things IoT Development Platform
-#############################################################
+.. zephyr:board:: pico_pi
 
 Overview
 ********
@@ -10,11 +7,6 @@ The i.MX7D SoC is a Hybrid multi-core processor composed of Single Cortex A7
 core and Single Cortex M4 core.
 Zephyr was ported to run on the M4 core. In a later release, it will also
 communicate with the A7 core (running Linux) via RPmsg.
-
-
-.. image:: pico_pi.jpg
-   :align: center
-   :alt: Pico-Pi i.MX7D
 
 Hardware
 ********
