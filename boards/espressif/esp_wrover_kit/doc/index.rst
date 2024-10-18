@@ -1,7 +1,4 @@
-.. _esp_wrover_kit:
-
-ESP-WROVER-KIT
-##############
+.. zephyr:board:: esp_wrover_kit
 
 Overview
 ********

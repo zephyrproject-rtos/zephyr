@@ -1,7 +1,4 @@
-.. _esp32c3_rust:
-
-ESP32-C3-DevKit-RUST
-####################
+.. zephyr:board:: esp32c3_rust
 
 Overview
 ********

@@ -1,7 +1,4 @@
-.. _esp32c6_devkitc:
-
-ESP32-C6-DevKitC
-################
+.. zephyr:board:: esp32c6_devkitc
 
 Overview
 ********
