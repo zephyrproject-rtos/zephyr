@@ -1,7 +1,4 @@
-.. _adi_eval_adin2111ebz:
-
-ADI EVAL-ADIN2111EVB Evaluation board
-#####################################
+.. zephyr:board:: adi_eval_adin2111ebz
 
 Overview
 ********
@@ -37,12 +34,6 @@ the 2 PHYs configuration and data exchange between SPI host and ports.
    default board configuration is set to work as "Generic SPI, CRC enabled",
    so the S1 DIP switches must be set as ``SPI_CFG0 OFF and SPI_CFG1 OFF``.
    An inconsistent S1 DIP switches configuration will halt the boot.
-
-.. figure:: img/adi_eval_adin2111ebz.webp
-   :align: center
-   :alt: ADI EVAL-ADIN2111EBZ
-
-   ADI EVAL-ADIN2111EBZ (Credit: Analog Devices, Inc.)
 
 Hardware
 ********
