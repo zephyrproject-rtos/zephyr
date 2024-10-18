@@ -1861,6 +1861,79 @@ out:
 	return ret;
 }
 
+int nrf_wifi_supp_set_country(void *if_priv, const char *alpha2)
+{
+	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
+	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
+	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
+	struct nrf_wifi_fmac_reg_info reg_domain_info = {0};
+
+	if (!if_priv || !alpha2) {
+		LOG_ERR("%s: Invalid params", __func__);
+		return -1;
+	}
+
+	vif_ctx_zep = if_priv;
+	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
+	if (!rpu_ctx_zep) {
+		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		return -1;
+	}
+
+	k_mutex_lock(&vif_ctx_zep->vif_lock, K_FOREVER);
+	if (!rpu_ctx_zep->rpu_ctx) {
+		LOG_DBG("%s: RPU context not initialized", __func__);
+		goto out;
+	}
+
+	memcpy(reg_domain_info.alpha2, alpha2, NRF_WIFI_COUNTRY_CODE_LEN);
+
+	status = nrf_wifi_fmac_set_reg(rpu_ctx_zep->rpu_ctx, &reg_domain_info);
+	if (status != NRF_WIFI_STATUS_SUCCESS) {
+		LOG_ERR("%s: nrf_wifi_fmac_set_reg failed", __func__);
+		goto out;
+	}
+out:
+	k_mutex_unlock(&vif_ctx_zep->vif_lock);
+	return status;
+}
+
+int nrf_wifi_supp_get_country(void *if_priv, char *alpha2)
+{
+	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
+	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
+	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
+	struct nrf_wifi_fmac_reg_info reg_domain_info = {0};
+
+	if (!if_priv || !alpha2) {
+		LOG_ERR("%s: Invalid params", __func__);
+		return -1;
+	}
+
+	vif_ctx_zep = if_priv;
+	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
+	if (!rpu_ctx_zep) {
+		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		return -1;
+	}
+
+	k_mutex_lock(&vif_ctx_zep->vif_lock, K_FOREVER);
+	if (!rpu_ctx_zep->rpu_ctx) {
+		LOG_DBG("%s: RPU context not initialized", __func__);
+		goto out;
+	}
+
+	status = nrf_wifi_fmac_get_reg(rpu_ctx_zep->rpu_ctx, &reg_domain_info);
+	if (status != NRF_WIFI_STATUS_SUCCESS) {
+		LOG_ERR("%s: nrf_wifi_fmac_get_reg failed", __func__);
+		goto out;
+	}
+
+	memcpy(alpha2, reg_domain_info.alpha2, NRF_WIFI_COUNTRY_CODE_LEN);
+out:
+	k_mutex_unlock(&vif_ctx_zep->vif_lock);
+	return status;
+}
 
 void nrf_wifi_supp_event_proc_get_conn_info(void *if_priv,
 					   struct nrf_wifi_umac_event_conn_info *info,
