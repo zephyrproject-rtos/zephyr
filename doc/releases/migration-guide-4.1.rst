@@ -141,6 +141,11 @@ Bluetooth HCI
 Bluetooth Mesh
 ==============
 
+* Following the beginnig of the deprecation process for the TinyCrypt crypto
+  library, Kconfig symbol :kconfig:option:`CONFIG_BT_MESH_USES_TINYCRYPT` was
+  set as deprecated. Default option for platforms that do not support TF-M
+  is :kconfig:option:`CONFIG_BT_MESH_USES_MBEDTLS_PSA`.
+
 Bluetooth Audio
 ===============
 
