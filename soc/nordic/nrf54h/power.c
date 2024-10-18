@@ -12,17 +12,19 @@
 #include <hal/nrf_lrcconf.h>
 #include <hal/nrf_memconf.h>
 #include <zephyr/cache.h>
+#include <nrfx_grtc.h>
 #include <power.h>
 #include "pm_s2ram.h"
 
 static void suspend_common(void)
 {
-
 	/* Flush, disable and power down DCACHE */
 	sys_cache_data_flush_all();
 	sys_cache_data_disable();
-	nrf_memconf_ramblock_control_enable_set(NRF_MEMCONF, RAMBLOCK_POWER_ID,
+	if (IS_ENABLED(CONFIG_DCACHE)) {
+		nrf_memconf_ramblock_control_enable_set(NRF_MEMCONF, RAMBLOCK_POWER_ID,
 						RAMBLOCK_CONTROL_BIT_DCACHE, false);
+	}
 
 	if (IS_ENABLED(CONFIG_ICACHE)) {
 		/* Disable and power down ICACHE */
@@ -31,22 +33,29 @@ static void suspend_common(void)
 							RAMBLOCK_CONTROL_BIT_ICACHE, false);
 	}
 
+#if !defined(CONFIG_SOC_NRF54H20_CPURAD)
 	/* Disable retention */
 	nrf_lrcconf_retain_set(NRF_LRCCONF010, NRF_LRCCONF_POWER_DOMAIN_0, false);
 	nrf_lrcconf_poweron_force_set(NRF_LRCCONF010, NRF_LRCCONF_POWER_DOMAIN_0, false);
+#endif
 }
 
 void nrf_poweroff(void)
 {
+	nrfx_grtc_active_request_set(false);
+
 	nrf_resetinfo_resetreas_local_set(NRF_RESETINFO, 0);
 	nrf_resetinfo_restore_valid_set(NRF_RESETINFO, false);
 
-	nrf_lrcconf_retain_set(NRF_LRCCONF010, NRF_LRCCONF_POWER_MAIN, false);
-
-	/* TODO: Move it around k_cpu_idle() implementation. */
 	nrf_lrcconf_poweron_force_set(NRF_LRCCONF010, NRF_LRCCONF_POWER_MAIN, false);
+#if defined(CONFIG_SOC_NRF54H20_CPURAD)
+	/* Active power domain (fast clock domain). */
+	nrf_lrcconf_retain_set(NRF_LRCCONF010, NRF_LRCCONF_POWER_DOMAIN_0, false);
 	nrf_lrcconf_poweron_force_set(NRF_LRCCONF010, NRF_LRCCONF_POWER_DOMAIN_0, false);
-
+	/* Radio power domain (slow clock domain). */
+	nrf_lrcconf_retain_set(NRF_LRCCONF010, NRF_LRCCONF_POWER_DOMAIN_1, false);
+	nrf_lrcconf_poweron_force_set(NRF_LRCCONF010, NRF_LRCCONF_POWER_DOMAIN_1, false);
+#endif
 	suspend_common();
 
 	nrf_lrcconf_task_trigger(NRF_LRCCONF010, NRF_LRCCONF_TASK_SYSTEMOFFREADY);
