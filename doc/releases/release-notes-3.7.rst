@@ -422,14 +422,14 @@ Boards & SoC Support
   * Added support for :ref:`ST STEVAL STWINBX1 Development kit <steval_stwinbx1_board>`: ``steval_stwinbx1``.
   * Added support for NXP boards: ``frdm_mcxn947``, ``ke17z512``, ``rd_rw612_bga``, ``frdm_rw612``, ``frdm_ke15z``, ``frdm_ke17z``
   * Added support for :ref:`Synopsys ARC-V RMX1xx nSIM-based simulation platform <nsim_arc_v>`: ``nsim_arc_v/rmx100``.
-  * Added support for :ref:`Analog Devices MAX32690EVKIT <max32690_evkit>`: ``max32690evkit``.
-  * Added support for :ref:`Analog Devices MAX32680EVKIT <max32680_evkit>`: ``max32680evkit``.
-  * Added support for :ref:`Analog Devices MAX32672EVKIT <max32672_evkit>`: ``max32672evkit``.
-  * Added support for :ref:`Analog Devices MAX32672FTHR <max32672_fthr>`: ``max32672fthr``.
-  * Added support for :ref:`Analog Devices MAX32670EVKIT <max32670_evkit>`: ``max32670evkit``.
-  * Added support for :ref:`Analog Devices MAX32655EVKIT <max32655_evkit>`: ``max32655evkit``.
-  * Added support for :ref:`Analog Devices MAX32655FTHR <max32655_fthr>`: ``max32655fthr``.
-  * Added support for :ref:`Analog Devices AD-APARD32690-SL <ad_apard32690_sl>`: ``ad_apard32690_sl``.
+  * Added support for :zephyr:board:`Analog Devices MAX32690EVKIT <max32690evkit>`: ``max32690evkit``.
+  * Added support for :zephyr:board:`Analog Devices MAX32680EVKIT <max32680evkit>`: ``max32680evkit``.
+  * Added support for :zephyr:board:`Analog Devices MAX32672EVKIT <max32672evkit>`: ``max32672evkit``.
+  * Added support for :zephyr:board:`Analog Devices MAX32672FTHR <max32672fthr>`: ``max32672fthr``.
+  * Added support for :zephyr:board:`Analog Devices MAX32670EVKIT <max32670evkit>`: ``max32670evkit``.
+  * Added support for :zephyr:board:`Analog Devices MAX32655EVKIT <max32655evkit>`: ``max32655evkit``.
+  * Added support for :zephyr:board:`Analog Devices MAX32655FTHR <max32655fthr>`: ``max32655fthr``.
+  * Added support for :zephyr:board:`Analog Devices AD-APARD32690-SL <apard32690>`: ``ad_apard32690_sl``.
   * Added support for :ref:`Infineon Technologies CYW920829M2EVK-02 <cyw920829m2evk_02>`: ``cyw920829m2evk_02``.
   * Added support for :ref:`Nuvoton Numaker M2L31KI board <nuvoton_m2l31ki>`: ``numaker_m2l31ki``.
   * Added support for :ref:`Espressif ESP32-S2 DevKit-C <esp32s2_devkitc>`: ``esp32s2_devkitc``.
