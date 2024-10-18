@@ -184,10 +184,8 @@ unlock:
 	return ret;
 }
 
-void dns_dispatcher_svc_handler(struct k_work *work)
+void dns_dispatcher_svc_handler(struct net_socket_service_event *pev)
 {
-	struct net_socket_service_event *pev =
-		CONTAINER_OF(work, struct net_socket_service_event, work);
 	int ret;
 
 	ret = recv_data(pev);

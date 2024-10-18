@@ -31,21 +31,15 @@ K_SEM_DEFINE(wait_data, 0, UINT_MAX);
 K_SEM_DEFINE(wait_data_tcp, 0, UINT_MAX);
 #define WAIT_TIME 500
 
-static void server_handler(struct k_work *work)
+static void server_handler(struct net_socket_service_event *pev)
 {
-	struct net_socket_service_event *pev =
-		CONTAINER_OF(work, struct net_socket_service_event, work);
-
 	ARG_UNUSED(pev);
 
 	k_sem_give(&wait_data);
 }
 
-static void tcp_server_handler(struct k_work *work)
+static void tcp_server_handler(struct net_socket_service_event *pev)
 {
-	struct net_socket_service_event *pev =
-		CONTAINER_OF(work, struct net_socket_service_event, work);
-
 	ARG_UNUSED(pev);
 
 	k_sem_give(&wait_data_tcp);
