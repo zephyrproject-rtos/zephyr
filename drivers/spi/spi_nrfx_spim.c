@@ -704,7 +704,7 @@ static int spi_nrfx_init(const struct device *dev)
 			.p_reg = (NRF_SPIM_Type *)DT_REG_ADDR(SPIM(idx)),      \
 			.drv_inst_idx = NRFX_SPIM##idx##_INST_IDX,	       \
 		},							       \
-		.max_freq = SPIM_PROP(idx, max_frequency),		       \
+		.max_freq = SPIM_PROP(idx, nordic_spi_max_frequency),	       \
 		.def_config = {						       \
 			.skip_gpio_cfg = true,				       \
 			.skip_psel_cfg = true,				       \
@@ -714,7 +714,8 @@ static int spi_nrfx_init(const struct device *dev)
 		},							       \
 		.irq_connect = irq_connect##idx,			       \
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPIM(idx)),		       \
-		.max_chunk_len = BIT_MASK(SPIM_PROP(idx, easydma_maxcnt_bits)),\
+		.max_chunk_len = BIT_MASK(SPIM_PROP(idx,		       \
+					  nordic_easydma_maxcnt_bits)),        \
 		COND_CODE_1(CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58,     \
 			(.anomaly_58_workaround =			       \
 				SPIM_PROP(idx, anomaly_58_workaround),),       \

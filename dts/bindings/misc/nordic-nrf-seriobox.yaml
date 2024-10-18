@@ -1,0 +1,17 @@
+# Copyright 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Common properties for the Nordic nRF serial-based peripheral (TWI[M/S],
+  SPI[M/S], UART[E]).
+
+properties:
+  nordic,spi-max-frequency:
+    type: int
+    description: |
+      Maximum SPI frequency supported by the peripheral.
+
+  nordic,easydma-maxcnt-bits:
+    type: int
+    description: |
+      Maximum number of bits available in the EasyDMA MAXCNT register.
