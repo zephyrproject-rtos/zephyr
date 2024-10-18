@@ -1,7 +1,4 @@
-.. _dragino_nbsn95_board:
-
-Dragino NBSN95 NB-IoT Sensor Node
-#################################
+.. zephyr:board:: dragino_nbsn95
 
 Overview
 ********
@@ -21,10 +18,6 @@ This kit provides:
 - Li/SOCI2 Unchargable Battery
 - GPIOs exposed via screw terminals on the carrier board
 - Housing
-
-.. image:: img/dragino_nbsn95.jpg
-     :align: center
-     :alt: Dragino NBSN95
 
 More information about the board can be found at the `Dragino NBSN95 website`_.
 
