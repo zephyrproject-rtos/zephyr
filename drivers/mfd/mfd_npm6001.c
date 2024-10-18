@@ -70,30 +70,30 @@ static int mfd_npm6001_init(const struct device *dev)
 	return 0;
 }
 
-#define MFD_NPM6001_DEFINE(inst)                                                                   \
-	static const struct mfd_npm6001_config config##inst = {                                    \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.buck_pad_val = ((DT_INST_ENUM_IDX(inst, nordic_buck_mode0_input_type) *           \
-				  NPM6001_BUCKMODEPADCONF_BUCKMODE0PADTYPE_CMOS) |                 \
-				 (DT_INST_ENUM_IDX(inst, nordic_buck_mode1_input_type) *           \
-				  NPM6001_BUCKMODEPADCONF_BUCKMODE1PADTYPE_CMOS) |                 \
-				 (DT_INST_ENUM_IDX(inst, nordic_buck_mode2_input_type) *           \
-				  NPM6001_BUCKMODEPADCONF_BUCKMODE2PADTYPE_CMOS) |                 \
-				 (DT_INST_PROP(inst, nordic_buck_mode0_pull_down) *                \
-				  NPM6001_BUCKMODEPADCONF_BUCKMODE0PULLD_ENABLED) |                \
-				 (DT_INST_PROP(inst, nordic_buck_mode1_pull_down) *                \
-				  NPM6001_BUCKMODEPADCONF_BUCKMODE1PULLD_ENABLED) |                \
-				 (DT_INST_PROP(inst, nordic_buck_mode2_pull_down) *                \
-				  NPM6001_BUCKMODEPADCONF_BUCKMODE2PULLD_ENABLED)),                \
-		.pad_val = ((DT_INST_PROP(inst, nordic_ready_high_drive) *                         \
-			     NPM6001_PADDRIVESTRENGTH_READY_HIGH) |                                \
-			    (DT_INST_PROP(inst, nordic_nint_high_drive) *                          \
-			     NPM6001_PADDRIVESTRENGTH_NINT_HIGH) |                                 \
-			    (DT_INST_PROP(inst, nordic_sda_high_drive) *                           \
-			     NPM6001_PADDRIVESTRENGTH_SDA_HIGH)),                                  \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, mfd_npm6001_init, NULL, NULL, &config##inst, POST_KERNEL,      \
+#define MFD_NPM6001_DEFINE(inst)                                                              \
+	static const struct mfd_npm6001_config config##inst = {                               \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                            \
+		.buck_pad_val = ((DT_INST_ENUM_IDX(inst, nordic_buck_mode0_input_type) *      \
+				  NPM6001_BUCKMODEPADCONF_BUCKMODE0PADTYPE_CMOS) |            \
+				 (DT_INST_ENUM_IDX(inst, nordic_buck_mode1_input_type) *      \
+				  NPM6001_BUCKMODEPADCONF_BUCKMODE1PADTYPE_CMOS) |            \
+				 (DT_INST_ENUM_IDX(inst, nordic_buck_mode2_input_type) *      \
+				  NPM6001_BUCKMODEPADCONF_BUCKMODE2PADTYPE_CMOS) |            \
+				 (DT_INST_PROP(inst, nordic_buck_mode0_pull_down) *           \
+				  NPM6001_BUCKMODEPADCONF_BUCKMODE0PULLD_ENABLED) |           \
+				 (DT_INST_PROP(inst, nordic_buck_mode1_pull_down) *           \
+				  NPM6001_BUCKMODEPADCONF_BUCKMODE1PULLD_ENABLED) |           \
+				 (DT_INST_PROP(inst, nordic_buck_mode2_pull_down) *           \
+				  NPM6001_BUCKMODEPADCONF_BUCKMODE2PULLD_ENABLED)),           \
+		.pad_val = ((DT_INST_PROP(inst, nordic_ready_high_drive) *                    \
+			     NPM6001_PADDRIVESTRENGTH_READY_HIGH) |                           \
+			    (DT_INST_PROP(inst, nordic_nint_high_drive) *                     \
+			     NPM6001_PADDRIVESTRENGTH_NINT_HIGH) |                            \
+			    (DT_INST_PROP(inst, nordic_sda_high_drive) *                      \
+			     NPM6001_PADDRIVESTRENGTH_SDA_HIGH)),                             \
+	};                                                                                    \
+                                                                                              \
+	DEVICE_DT_INST_DEFINE(inst, mfd_npm6001_init, NULL, NULL, &config##inst, POST_KERNEL, \
 			      CONFIG_MFD_NPM6001_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MFD_NPM6001_DEFINE)

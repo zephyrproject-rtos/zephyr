@@ -47,20 +47,20 @@ struct espi_taf_npcx_data {
 static struct espi_taf_npcx_data npcx_espi_taf_data;
 static struct espi_callback espi_taf_cb;
 
-#define HAL_INSTANCE(dev)                                                                          \
+#define HAL_INSTANCE(dev)                                                               \
 	((struct espi_reg *)((const struct espi_taf_npcx_config *)(dev)->config)->base)
 
-#define FLBASE_ADDR                                                                                \
-	(GET_FIELD(inst->FLASHBASE, NPCX_FLASHBASE_FLBASE_ADDR)                                    \
+#define FLBASE_ADDR                                             \
+	(GET_FIELD(inst->FLASHBASE, NPCX_FLASHBASE_FLBASE_ADDR) \
 	 << GET_FIELD_POS(NPCX_FLASHBASE_FLBASE_ADDR))
 
-#define PRTR_BADDR(i)                                                                              \
-	(GET_FIELD(inst->FLASH_PRTR_BADDR[i], NPCX_FLASH_PRTR_BADDR)                               \
+#define PRTR_BADDR(i)                                                \
+	(GET_FIELD(inst->FLASH_PRTR_BADDR[i], NPCX_FLASH_PRTR_BADDR) \
 	 << GET_FIELD_POS(NPCX_FLASH_PRTR_BADDR))
 
-#define PRTR_HADDR(i)                                                                              \
-	(GET_FIELD(inst->FLASH_PRTR_HADDR[i], NPCX_FLASH_PRTR_HADDR)                               \
-	 << GET_FIELD_POS(NPCX_FLASH_PRTR_HADDR)) |                                                \
+#define PRTR_HADDR(i)                                                \
+	(GET_FIELD(inst->FLASH_PRTR_HADDR[i], NPCX_FLASH_PRTR_HADDR) \
+	 << GET_FIELD_POS(NPCX_FLASH_PRTR_HADDR)) |                  \
 		0xFFF;
 
 static void espi_taf_get_pckt(const struct device *dev, struct espi_taf_npcx_data *pckt,

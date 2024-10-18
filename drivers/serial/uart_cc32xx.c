@@ -301,8 +301,8 @@ static const struct uart_driver_api uart_cc32xx_driver_api = {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-#define UART_32XX_DEVICE(idx)                                                                      \
-	PINCTRL_DT_INST_DEFINE(idx);                                                               \
+#define UART_32XX_DEVICE(idx)                                                                \
+	PINCTRL_DT_INST_DEFINE(idx);                                                         \
 	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, \
 	(static void uart_cc32xx_cfg_func_##idx(const struct device *dev) \
 	{ \
@@ -313,19 +313,19 @@ static const struct uart_driver_api uart_cc32xx_driver_api = {
 			    0); \
 			irq_enable(DT_INST_IRQN(idx))) \
 		); \
-	}));                                                 \
-	static const struct uart_cc32xx_dev_config uart_cc32xx_dev_cfg_##idx = {                   \
-		.base = DT_INST_REG_ADDR(idx),                                                     \
-		.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(idx, clocks, clock_frequency),             \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                       \
+	}));                                           \
+	static const struct uart_cc32xx_dev_config uart_cc32xx_dev_cfg_##idx = {             \
+		.base = DT_INST_REG_ADDR(idx),                                               \
+		.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(idx, clocks, clock_frequency),       \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                 \
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, \
-		    (.irq_config_func = uart_cc32xx_cfg_func_##idx,)) };                      \
-	static struct uart_cc32xx_dev_data_t uart_cc32xx_dev_data_##idx = {                        \
-		.prcm = PRCM_UARTA##idx,                                                           \
-		.baud_rate = DT_INST_PROP(idx, current_speed),                                     \
-		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (.cb = NULL,)) };                            \
-	DEVICE_DT_INST_DEFINE(idx, uart_cc32xx_init, NULL, &uart_cc32xx_dev_data_##idx,            \
-			      &uart_cc32xx_dev_cfg_##idx, PRE_KERNEL_1,                            \
+		    (.irq_config_func = uart_cc32xx_cfg_func_##idx,)) };                \
+	static struct uart_cc32xx_dev_data_t uart_cc32xx_dev_data_##idx = {                  \
+		.prcm = PRCM_UARTA##idx,                                                     \
+		.baud_rate = DT_INST_PROP(idx, current_speed),                               \
+		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (.cb = NULL,)) };                      \
+	DEVICE_DT_INST_DEFINE(idx, uart_cc32xx_init, NULL, &uart_cc32xx_dev_data_##idx,      \
+			      &uart_cc32xx_dev_cfg_##idx, PRE_KERNEL_1,                      \
 			      CONFIG_SERIAL_INIT_PRIORITY, (void *)&uart_cc32xx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_32XX_DEVICE);

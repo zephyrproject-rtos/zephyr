@@ -80,7 +80,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
  */
 #define UART_NS16550_DT_PROP_IOMAPPED_HELPER(inst, prop, def) DT_INST_PROP_OR(inst, prop, def) ||
 
-#define UART_NS16550_IOPORT_ENABLED                                                                \
+#define UART_NS16550_IOPORT_ENABLED                                                               \
 	(DT_INST_FOREACH_STATUS_OKAY_VARGS(UART_NS16550_DT_PROP_IOMAPPED_HELPER, io_mapped, 0) 0)
 
 /* register definitions */
@@ -1737,48 +1737,48 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 #endif
 };
 
-#define UART_NS16550_IRQ_FLAGS(n)                                                                  \
+#define UART_NS16550_IRQ_FLAGS(n)                                               \
 	COND_CODE_1(DT_INST_IRQ_HAS_CELL(n, sense),                           \
 		    (DT_INST_IRQ(n, sense)),                                  \
 		    (0))
 
 /* IO-port or MMIO based UART */
-#define UART_NS16550_IRQ_CONFIG(n)                                                                 \
-	static void uart_ns16550_irq_config_func##n(const struct device *dev)                      \
-	{                                                                                          \
-		ARG_UNUSED(dev);                                                                   \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_ns16550_isr,           \
-			    DEVICE_DT_INST_GET(n), UART_NS16550_IRQ_FLAGS(n));                     \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define UART_NS16550_IRQ_CONFIG(n)                                                       \
+	static void uart_ns16550_irq_config_func##n(const struct device *dev)            \
+	{                                                                                \
+		ARG_UNUSED(dev);                                                         \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_ns16550_isr, \
+			    DEVICE_DT_INST_GET(n), UART_NS16550_IRQ_FLAGS(n));           \
+		irq_enable(DT_INST_IRQN(n));                                             \
 	}
 
 /* PCI(e) with auto IRQ detection */
-#define UART_NS16550_IRQ_CONFIG_PCIE(n)                                                            \
-	static void uart_ns16550_irq_config_func##n(const struct device *dev)                      \
-	{                                                                                          \
-		BUILD_ASSERT(DT_INST_IRQN(n) == PCIE_IRQ_DETECT,                                   \
-			     "Only runtime IRQ configuration is supported");                       \
-		BUILD_ASSERT(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),                                \
-			     "NS16550 PCIe requires dynamic interrupts");                          \
-		const struct uart_ns16550_device_config *dev_cfg = dev->config;                    \
-		unsigned int irq = pcie_alloc_irq(dev_cfg->pcie->bdf);                             \
-		if (irq == PCIE_CONF_INTR_IRQ_NONE) {                                              \
-			return;                                                                    \
-		}                                                                                  \
-		pcie_connect_dynamic_irq(dev_cfg->pcie->bdf, irq, DT_INST_IRQ(n, priority),        \
-					 (void (*)(const void *))uart_ns16550_isr,                 \
-					 DEVICE_DT_INST_GET(n), UART_NS16550_IRQ_FLAGS(n));        \
-		pcie_irq_enable(dev_cfg->pcie->bdf, irq);                                          \
+#define UART_NS16550_IRQ_CONFIG_PCIE(n)                                                     \
+	static void uart_ns16550_irq_config_func##n(const struct device *dev)               \
+	{                                                                                   \
+		BUILD_ASSERT(DT_INST_IRQN(n) == PCIE_IRQ_DETECT,                            \
+			     "Only runtime IRQ configuration is supported");                \
+		BUILD_ASSERT(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),                         \
+			     "NS16550 PCIe requires dynamic interrupts");                   \
+		const struct uart_ns16550_device_config *dev_cfg = dev->config;             \
+		unsigned int irq = pcie_alloc_irq(dev_cfg->pcie->bdf);                      \
+		if (irq == PCIE_CONF_INTR_IRQ_NONE) {                                       \
+			return;                                                             \
+		}                                                                           \
+		pcie_connect_dynamic_irq(dev_cfg->pcie->bdf, irq, DT_INST_IRQ(n, priority), \
+					 (void (*)(const void *))uart_ns16550_isr,          \
+					 DEVICE_DT_INST_GET(n), UART_NS16550_IRQ_FLAGS(n)); \
+		pcie_irq_enable(dev_cfg->pcie->bdf, irq);                                   \
 	}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 #define DEV_CONFIG_IRQ_FUNC_INIT(n) .irq_config_func = uart_ns16550_irq_config_func##n,
-#define UART_NS16550_IRQ_FUNC_DECLARE(n)                                                           \
+#define UART_NS16550_IRQ_FUNC_DECLARE(n)                                       \
 	static void uart_ns16550_irq_config_func##n(const struct device *dev);
 #define UART_NS16550_IRQ_FUNC_DEFINE(n) UART_NS16550_IRQ_CONFIG(n)
 
 #define DEV_CONFIG_PCIE_IRQ_FUNC_INIT(n) .irq_config_func = uart_ns16550_irq_config_func##n,
-#define UART_NS16550_PCIE_IRQ_FUNC_DECLARE(n)                                                      \
+#define UART_NS16550_PCIE_IRQ_FUNC_DECLARE(n)                                  \
 	static void uart_ns16550_irq_config_func##n(const struct device *dev);
 #define UART_NS16550_PCIE_IRQ_FUNC_DEFINE(n) UART_NS16550_IRQ_CONFIG_PCIE(n)
 #else
@@ -1793,46 +1793,46 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 #ifdef CONFIG_UART_ASYNC_API
-#define DMA_PARAMS(n)                                                                              \
-	.async.tx_dma_params =                                                                     \
-		{                                                                                  \
-			.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, tx)),                \
-			.dma_channel = DT_INST_DMAS_CELL_BY_NAME(n, tx, channel),                  \
-			.dma_cfg = {.source_burst_length = 1,                                      \
-				    .dest_burst_length = 1,                                        \
-				    .source_data_size = 1,                                         \
-				    .dest_data_size = 1,                                           \
-				    .complete_callback_en = 0,                                     \
-				    .error_callback_dis = 1,                                       \
-				    .block_count = 1,                                              \
-				    .channel_direction = MEMORY_TO_PERIPHERAL,                     \
-				    .dma_slot = DT_INST_DMAS_CELL_BY_NAME(n, tx, channel),         \
-				    .dma_callback = dma_callback,                                  \
-				    .user_data = (void *)DEVICE_DT_INST_GET(n)},                   \
-		},                                                                                 \
-	.async.rx_dma_params =                                                                     \
-		{                                                                                  \
-			.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, rx)),                \
-			.dma_channel = DT_INST_DMAS_CELL_BY_NAME(n, rx, channel),                  \
-			.dma_cfg = {.source_burst_length = 1,                                      \
-				    .dest_burst_length = 1,                                        \
-				    .source_data_size = 1,                                         \
-				    .dest_data_size = 1,                                           \
-				    .complete_callback_en = 0,                                     \
-				    .error_callback_dis = 1,                                       \
-				    .block_count = 1,                                              \
-				    .channel_direction = PERIPHERAL_TO_MEMORY,                     \
-				    .dma_slot = DT_INST_DMAS_CELL_BY_NAME(n, rx, channel),         \
-				    .dma_callback = dma_callback,                                  \
-				    .user_data = (void *)DEVICE_DT_INST_GET(n)},                   \
-		},                                                                                 \
+#define DMA_PARAMS(n)                                                                      \
+	.async.tx_dma_params =                                                             \
+		{                                                                          \
+			.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, tx)),        \
+			.dma_channel = DT_INST_DMAS_CELL_BY_NAME(n, tx, channel),          \
+			.dma_cfg = {.source_burst_length = 1,                              \
+				    .dest_burst_length = 1,                                \
+				    .source_data_size = 1,                                 \
+				    .dest_data_size = 1,                                   \
+				    .complete_callback_en = 0,                             \
+				    .error_callback_dis = 1,                               \
+				    .block_count = 1,                                      \
+				    .channel_direction = MEMORY_TO_PERIPHERAL,             \
+				    .dma_slot = DT_INST_DMAS_CELL_BY_NAME(n, tx, channel), \
+				    .dma_callback = dma_callback,                          \
+				    .user_data = (void *)DEVICE_DT_INST_GET(n)},           \
+		},                                                                         \
+	.async.rx_dma_params =                                                             \
+		{                                                                          \
+			.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, rx)),        \
+			.dma_channel = DT_INST_DMAS_CELL_BY_NAME(n, rx, channel),          \
+			.dma_cfg = {.source_burst_length = 1,                              \
+				    .dest_burst_length = 1,                                \
+				    .source_data_size = 1,                                 \
+				    .dest_data_size = 1,                                   \
+				    .complete_callback_en = 0,                             \
+				    .error_callback_dis = 1,                               \
+				    .block_count = 1,                                      \
+				    .channel_direction = PERIPHERAL_TO_MEMORY,             \
+				    .dma_slot = DT_INST_DMAS_CELL_BY_NAME(n, rx, channel), \
+				    .dma_callback = dma_callback,                          \
+				    .user_data = (void *)DEVICE_DT_INST_GET(n)},           \
+		},                                                                         \
 	COND_CODE_0(DT_INST_ON_BUS(n, pcie),					\
 			(.phys_addr = DT_INST_REG_ADDR(n),), ())
 
-#define DMA_PARAMS_NULL(n)                                                                         \
+#define DMA_PARAMS_NULL(n)                                                                  \
 	.async.tx_dma_params = {.dma_dev = NULL}, .async.rx_dma_params = {.dma_dev = NULL},
 
-#define DEV_DATA_ASYNC(n)                                                                          \
+#define DEV_DATA_ASYNC(n)                             \
 	COND_CODE_0(DT_INST_PROP(n, io_mapped),					\
 			(COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas),		\
 				(DMA_PARAMS(n)), (DMA_PARAMS_NULL(n)))),	\
@@ -1887,21 +1887,21 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 			      CONFIG_SERIAL_INIT_PRIORITY, &uart_ns16550_driver_api);                                                                     \
 	UART_NS16550_IRQ_FUNC_DEFINE(n)
 
-#define UART_NS16550_DEVICE_PCIE_INIT(n)                                                           \
-	UART_NS16550_PCIE_IRQ_FUNC_DECLARE(n);                                                     \
-	DEVICE_PCIE_INST_DECLARE(n);                                                               \
-	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_INST_DEFINE(n)));                                    \
-	static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_##n = {                \
-		UART_NS16550_COMMON_DEV_CFG_INITIALIZER(n) DEV_CONFIG_PCIE_IRQ_FUNC_INIT(n)        \
-			DEVICE_PCIE_INST_INIT(n, pcie)};                                           \
-	static struct uart_ns16550_dev_data uart_ns16550_dev_data_##n = {                          \
-		UART_NS16550_COMMON_DEV_DATA_INITIALIZER(n)};                                      \
-	DEVICE_DT_INST_DEFINE(n, uart_ns16550_init, NULL, &uart_ns16550_dev_data_##n,              \
-			      &uart_ns16550_dev_cfg_##n, PRE_KERNEL_1,                             \
-			      CONFIG_SERIAL_INIT_PRIORITY, &uart_ns16550_driver_api);              \
+#define UART_NS16550_DEVICE_PCIE_INIT(n)                                                    \
+	UART_NS16550_PCIE_IRQ_FUNC_DECLARE(n);                                              \
+	DEVICE_PCIE_INST_DECLARE(n);                                                        \
+	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_INST_DEFINE(n)));                             \
+	static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_##n = {         \
+		UART_NS16550_COMMON_DEV_CFG_INITIALIZER(n) DEV_CONFIG_PCIE_IRQ_FUNC_INIT(n) \
+			DEVICE_PCIE_INST_INIT(n, pcie)};                                    \
+	static struct uart_ns16550_dev_data uart_ns16550_dev_data_##n = {                   \
+		UART_NS16550_COMMON_DEV_DATA_INITIALIZER(n)};                               \
+	DEVICE_DT_INST_DEFINE(n, uart_ns16550_init, NULL, &uart_ns16550_dev_data_##n,       \
+			      &uart_ns16550_dev_cfg_##n, PRE_KERNEL_1,                      \
+			      CONFIG_SERIAL_INIT_PRIORITY, &uart_ns16550_driver_api);       \
 	UART_NS16550_PCIE_IRQ_FUNC_DEFINE(n)
 
-#define UART_NS16550_DEVICE_INIT(n)                                                                \
+#define UART_NS16550_DEVICE_INIT(n)                                                    \
 	COND_CODE_1(DT_INST_ON_BUS(n, pcie),                                         \
 		    (UART_NS16550_DEVICE_PCIE_INIT(n)),                              \
 		    (UART_NS16550_DEVICE_IO_MMIO_INIT(n)))

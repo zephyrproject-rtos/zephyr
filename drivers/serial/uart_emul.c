@@ -1011,9 +1011,9 @@ int uart_emul_register(const struct device *dev, struct uart_emul *emul)
 #define UART_EMUL_RX_FIFO_SIZE(inst) (DT_INST_PROP(inst, rx_fifo_size))
 #define UART_EMUL_TX_FIFO_SIZE(inst) (DT_INST_PROP(inst, tx_fifo_size))
 
-#define EMUL_LINK_AND_COMMA(node_id)                                                               \
-	{                                                                                          \
-		.dev = DEVICE_DT_GET(node_id),                                                     \
+#define EMUL_LINK_AND_COMMA(node_id)           \
+	{                                      \
+		.dev = DEVICE_DT_GET(node_id), \
 	},
 
 #define DEFINE_UART_EMUL(inst)                                                                                      \

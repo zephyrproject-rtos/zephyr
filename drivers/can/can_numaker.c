@@ -234,50 +234,50 @@ static const struct can_mcan_ops can_numaker_ops = {
 	.clear_mram = can_numaker_clear_mram,
 };
 
-#define NUMAKER_CLKCTRL_DEV_INIT(inst)                                                             \
+#define NUMAKER_CLKCTRL_DEV_INIT(inst)                                  \
 	.clk_dev = DEVICE_DT_GET(DT_PARENT(DT_INST_CLOCKS_CTLR(inst))),
 
 #define NUMAKER_PINCTRL_DEFINE(inst) PINCTRL_DT_INST_DEFINE(inst);
 #define NUMAKER_PINCTRL_INIT(inst)   .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),
 
-#define CAN_NUMAKER_INIT(inst)                                                                     \
-	NUMAKER_PINCTRL_DEFINE(inst);                                                              \
-	CAN_MCAN_DT_INST_CALLBACKS_DEFINE(inst, can_numaker_cbs_##inst);                           \
-                                                                                                   \
-	static void can_numaker_irq_config_func_##inst(const struct device *dev)                   \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, int0, irq),                                  \
-			    DT_INST_IRQ_BY_NAME(inst, int0, priority), can_mcan_line_0_isr,        \
-			    DEVICE_DT_INST_GET(inst), 0);                                          \
-		irq_enable(DT_INST_IRQ_BY_NAME(inst, int0, irq));                                  \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, int1, irq),                                  \
-			    DT_INST_IRQ_BY_NAME(inst, int1, priority), can_mcan_line_1_isr,        \
-			    DEVICE_DT_INST_GET(inst), 0);                                          \
-		irq_enable(DT_INST_IRQ_BY_NAME(inst, int1, irq));                                  \
-	}                                                                                          \
-                                                                                                   \
-	static const struct can_numaker_config can_numaker_config_##inst = {                       \
-		.canfd_base = CAN_MCAN_DT_INST_MCAN_ADDR(inst),                                    \
-		.mrba = CAN_MCAN_DT_INST_MRBA(inst),                                               \
-		.mram = CAN_MCAN_DT_INST_MRAM_ADDR(inst),                                          \
-		.reset = RESET_DT_SPEC_INST_GET(inst),                                             \
-		.clk_modidx = DT_INST_CLOCKS_CELL(inst, clock_module_index),                       \
-		.clk_src = DT_INST_CLOCKS_CELL(inst, clock_source),                                \
-		.clk_div = DT_INST_CLOCKS_CELL(inst, clock_divider),                               \
-		NUMAKER_CLKCTRL_DEV_INIT(inst).irq_config_func =                                   \
-			can_numaker_irq_config_func_##inst,                                        \
-		NUMAKER_PINCTRL_INIT(inst)};                                                       \
-                                                                                                   \
-	static const struct can_mcan_config can_mcan_config_##inst = CAN_MCAN_DT_CONFIG_INST_GET(  \
-		inst, &can_numaker_config_##inst, &can_numaker_ops, &can_numaker_cbs_##inst);      \
-                                                                                                   \
-	static uint32_t can_numaker_data_##inst;                                                   \
-                                                                                                   \
-	static struct can_mcan_data can_mcan_data_##inst =                                         \
-		CAN_MCAN_DATA_INITIALIZER(&can_numaker_data_##inst);                               \
-                                                                                                   \
-	CAN_DEVICE_DT_INST_DEFINE(inst, can_numaker_init, NULL, &can_mcan_data_##inst,             \
-				  &can_mcan_config_##inst, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,  \
+#define CAN_NUMAKER_INIT(inst)                                                                    \
+	NUMAKER_PINCTRL_DEFINE(inst);                                                             \
+	CAN_MCAN_DT_INST_CALLBACKS_DEFINE(inst, can_numaker_cbs_##inst);                          \
+                                                                                                  \
+	static void can_numaker_irq_config_func_##inst(const struct device *dev)                  \
+	{                                                                                         \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, int0, irq),                                 \
+			    DT_INST_IRQ_BY_NAME(inst, int0, priority), can_mcan_line_0_isr,       \
+			    DEVICE_DT_INST_GET(inst), 0);                                         \
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, int0, irq));                                 \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, int1, irq),                                 \
+			    DT_INST_IRQ_BY_NAME(inst, int1, priority), can_mcan_line_1_isr,       \
+			    DEVICE_DT_INST_GET(inst), 0);                                         \
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, int1, irq));                                 \
+	}                                                                                         \
+                                                                                                  \
+	static const struct can_numaker_config can_numaker_config_##inst = {                      \
+		.canfd_base = CAN_MCAN_DT_INST_MCAN_ADDR(inst),                                   \
+		.mrba = CAN_MCAN_DT_INST_MRBA(inst),                                              \
+		.mram = CAN_MCAN_DT_INST_MRAM_ADDR(inst),                                         \
+		.reset = RESET_DT_SPEC_INST_GET(inst),                                            \
+		.clk_modidx = DT_INST_CLOCKS_CELL(inst, clock_module_index),                      \
+		.clk_src = DT_INST_CLOCKS_CELL(inst, clock_source),                               \
+		.clk_div = DT_INST_CLOCKS_CELL(inst, clock_divider),                              \
+		NUMAKER_CLKCTRL_DEV_INIT(inst).irq_config_func =                                  \
+			can_numaker_irq_config_func_##inst,                                       \
+		NUMAKER_PINCTRL_INIT(inst)};                                                      \
+                                                                                                  \
+	static const struct can_mcan_config can_mcan_config_##inst = CAN_MCAN_DT_CONFIG_INST_GET( \
+		inst, &can_numaker_config_##inst, &can_numaker_ops, &can_numaker_cbs_##inst);     \
+                                                                                                  \
+	static uint32_t can_numaker_data_##inst;                                                  \
+                                                                                                  \
+	static struct can_mcan_data can_mcan_data_##inst =                                        \
+		CAN_MCAN_DATA_INITIALIZER(&can_numaker_data_##inst);                              \
+                                                                                                  \
+	CAN_DEVICE_DT_INST_DEFINE(inst, can_numaker_init, NULL, &can_mcan_data_##inst,            \
+				  &can_mcan_config_##inst, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY, \
 				  &can_numaker_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_NUMAKER_INIT);

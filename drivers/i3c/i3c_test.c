@@ -36,8 +36,8 @@ static const struct i3c_driver_api vnd_i3c_api = {
 	.recover_bus = vnd_i3c_recover_bus,
 };
 
-#define VND_I3C_INIT(n)                                                                            \
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, NULL, POST_KERNEL,                              \
+#define VND_I3C_INIT(n)                                                          \
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, NULL, POST_KERNEL,            \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &vnd_i3c_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VND_I3C_INIT)

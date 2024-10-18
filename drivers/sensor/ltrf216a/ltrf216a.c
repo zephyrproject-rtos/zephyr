@@ -162,15 +162,15 @@ static int ltrf216a_chip_init(const struct device *dev)
 	return 0;
 }
 
-#define LTRF216A_DEFINE(inst)                                                                      \
-	static struct ltrf216a_data ltrf216a_data_##inst;                                          \
-                                                                                                   \
-	static const struct ltrf216a_config ltrf216a_config_##inst = {                             \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-	};                                                                                         \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, ltrf216a_chip_init, NULL, &ltrf216a_data_##inst,        \
-				     &ltrf216a_config_##inst, POST_KERNEL,                         \
+#define LTRF216A_DEFINE(inst)                                                               \
+	static struct ltrf216a_data ltrf216a_data_##inst;                                   \
+                                                                                            \
+	static const struct ltrf216a_config ltrf216a_config_##inst = {                      \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                          \
+	};                                                                                  \
+                                                                                            \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, ltrf216a_chip_init, NULL, &ltrf216a_data_##inst, \
+				     &ltrf216a_config_##inst, POST_KERNEL,                  \
 				     CONFIG_SENSOR_INIT_PRIORITY, &ltrf216a_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LTRF216A_DEFINE)

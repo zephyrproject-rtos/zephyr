@@ -1098,37 +1098,37 @@ static const struct can_driver_api can_nxp_s32_driver_api = {
 #endif
 };
 
-#define _CAN_NXP_S32_IRQ_CONFIG(node_id, prop, idx)                                                \
-	do {                                                                                       \
-		IRQ_CONNECT(                                                                       \
-			DT_IRQ_BY_IDX(node_id, idx, irq), DT_IRQ_BY_IDX(node_id, idx, priority),   \
-			UTIL_CAT(can_nxp_s32_isr_, DT_STRING_TOKEN_BY_IDX(node_id, prop, idx)),    \
-			DEVICE_DT_GET(node_id), DT_IRQ_BY_IDX(node_id, idx, flags));               \
-		irq_enable(DT_IRQ_BY_IDX(node_id, idx, irq));                                      \
+#define _CAN_NXP_S32_IRQ_CONFIG(node_id, prop, idx)                                              \
+	do {                                                                                     \
+		IRQ_CONNECT(                                                                     \
+			DT_IRQ_BY_IDX(node_id, idx, irq), DT_IRQ_BY_IDX(node_id, idx, priority), \
+			UTIL_CAT(can_nxp_s32_isr_, DT_STRING_TOKEN_BY_IDX(node_id, prop, idx)),  \
+			DEVICE_DT_GET(node_id), DT_IRQ_BY_IDX(node_id, idx, flags));             \
+		irq_enable(DT_IRQ_BY_IDX(node_id, idx, irq));                                    \
 	} while (false);
 
-#define CAN_NXP_S32_IRQ_CONFIG(n)                                                                  \
-	static void can_irq_config_##n(void)                                                       \
-	{                                                                                          \
-		DT_INST_FOREACH_PROP_ELEM(n, interrupt_names, _CAN_NXP_S32_IRQ_CONFIG);            \
+#define CAN_NXP_S32_IRQ_CONFIG(n)                                                       \
+	static void can_irq_config_##n(void)                                            \
+	{                                                                               \
+		DT_INST_FOREACH_PROP_ELEM(n, interrupt_names, _CAN_NXP_S32_IRQ_CONFIG); \
 	}
 
-#define CAN_NXP_S32_ERR_CALLBACK(n)                                                                \
-	void nxp_s32_can_##n##_err_callback(uint8 instance, Canexcel_Ip_EventType eventType,       \
-					    uint32 u32SysStatus,                                   \
-					    const Canexcel_Ip_StateType *canexcelState)            \
-	{                                                                                          \
-		const struct device *dev = DEVICE_DT_INST_GET(n);                                  \
-		can_nxp_s32_err_callback(dev, eventType, u32SysStatus, canexcelState);             \
+#define CAN_NXP_S32_ERR_CALLBACK(n)                                                          \
+	void nxp_s32_can_##n##_err_callback(uint8 instance, Canexcel_Ip_EventType eventType, \
+					    uint32 u32SysStatus,                             \
+					    const Canexcel_Ip_StateType *canexcelState)      \
+	{                                                                                    \
+		const struct device *dev = DEVICE_DT_INST_GET(n);                            \
+		can_nxp_s32_err_callback(dev, eventType, u32SysStatus, canexcelState);       \
 	}
 
-#define CAN_NXP_S32_CTRL_CALLBACK(n)                                                               \
-	void nxp_s32_can_##n##_ctrl_callback(uint8 instance, Canexcel_Ip_EventType eventType,      \
-					     uint32 buffIdx,                                       \
-					     const Canexcel_Ip_StateType *canexcelState)           \
-	{                                                                                          \
-		const struct device *dev = DEVICE_DT_INST_GET(n);                                  \
-		can_nxp_s32_ctrl_callback(dev, eventType, buffIdx, canexcelState);                 \
+#define CAN_NXP_S32_CTRL_CALLBACK(n)                                                          \
+	void nxp_s32_can_##n##_ctrl_callback(uint8 instance, Canexcel_Ip_EventType eventType, \
+					     uint32 buffIdx,                                  \
+					     const Canexcel_Ip_StateType *canexcelState)      \
+	{                                                                                     \
+		const struct device *dev = DEVICE_DT_INST_GET(n);                             \
+		can_nxp_s32_ctrl_callback(dev, eventType, buffIdx, canexcelState);            \
 	}
 
 #if defined(CAN_NXP_S32_FD_MODE)
@@ -1137,10 +1137,10 @@ static const struct can_driver_api can_nxp_s32_driver_api = {
 #define CAN_NXP_S32_BRS 0
 #endif
 
-#define CAN_NXP_S32_HW_INSTANCE_CHECK(i, n)                                                        \
+#define CAN_NXP_S32_HW_INSTANCE_CHECK(i, n)                         \
 	((DT_INST_REG_ADDR(n) == IP_CANXL_##i##__SIC_BASE) ? i : 0)
 
-#define CAN_NXP_S32_HW_INSTANCE(n)                                                                 \
+#define CAN_NXP_S32_HW_INSTANCE(n) \
 	LISTIFY(__DEBRACKET CANXL_SIC_INSTANCE_COUNT, CAN_NXP_S32_HW_INSTANCE_CHECK, (|), n)
 
 #define CAN_NXP_S32_INIT_DEVICE(n)                                                                 \

@@ -42,8 +42,8 @@
 #define ECIA_XEC_PCR_REG_IDX DT_INST_CLOCKS_CELL(0, regidx)
 #define ECIA_XEC_PCR_BITPOS  DT_INST_CLOCKS_CELL(0, bitpos)
 
-#define ECIA_XEC_PCR_INFO                                                                          \
-	MCHP_XEC_PCR_SCR_ENCODE(DT_INST_CLOCKS_CELL(0, regidx), DT_INST_CLOCKS_CELL(0, bitpos),    \
+#define ECIA_XEC_PCR_INFO                                                                       \
+	MCHP_XEC_PCR_SCR_ENCODE(DT_INST_CLOCKS_CELL(0, regidx), DT_INST_CLOCKS_CELL(0, bitpos), \
 				DT_INST_CLOCKS_CELL(0, domain))
 
 struct xec_girq_config {
@@ -537,33 +537,33 @@ static int xec_ecia_init(const struct device *dev)
 }
 
 /* xec_config_girq_xxx.sources[] entries from GIRQ node */
-#define XEC_GIRQ_SOURCES2(node_id, prop, idx)                                                      \
+#define XEC_GIRQ_SOURCES2(node_id, prop, idx)                                     \
 	.sources[DT_PROP_BY_IDX(node_id, prop, idx)] = ((uint8_t)(idx) | BIT(7)),
 
 /* Parameter n is a child node-id */
-#define GIRQ_XEC_DEVICE(n)                                                                         \
-	static int xec_girq_init_##n(const struct device *dev);                                    \
-                                                                                                   \
-	static struct xec_girq_src_data xec_data_girq_##n[DT_PROP_LEN(n, sources)];                \
-                                                                                                   \
-	static const struct xec_girq_config xec_config_girq_##n = {                                \
-		.base = DT_REG_ADDR(n),                                                            \
-		.girq_id = DT_PROP(n, girq_id),                                                    \
-		.num_srcs = DT_PROP_LEN(n, sources),                                               \
-		DT_FOREACH_PROP_ELEM(n, sources, XEC_GIRQ_SOURCES2)};                              \
-                                                                                                   \
-	DEVICE_DT_DEFINE(n, xec_girq_init_##n, NULL, &xec_data_girq_##n, &xec_config_girq_##n,     \
-			 PRE_KERNEL_1, CONFIG_XEC_GIRQ_INIT_PRIORITY, NULL);                       \
-                                                                                                   \
-	static int xec_girq_init_##n(const struct device *dev)                                     \
-	{                                                                                          \
-		mchp_xec_ecia_girq_aggr_en(GIRQ_ID_TO_BITPOS(DT_PROP(n, girq_id)), 1);             \
-                                                                                                   \
-		IRQ_CONNECT(DT_IRQN(n), DT_IRQ(n, priority), xec_girq_isr, DEVICE_DT_GET(n), 0);   \
-                                                                                                   \
-		irq_enable(DT_IRQN(n));                                                            \
-                                                                                                   \
-		return 0;                                                                          \
+#define GIRQ_XEC_DEVICE(n)                                                                       \
+	static int xec_girq_init_##n(const struct device *dev);                                  \
+                                                                                                 \
+	static struct xec_girq_src_data xec_data_girq_##n[DT_PROP_LEN(n, sources)];              \
+                                                                                                 \
+	static const struct xec_girq_config xec_config_girq_##n = {                              \
+		.base = DT_REG_ADDR(n),                                                          \
+		.girq_id = DT_PROP(n, girq_id),                                                  \
+		.num_srcs = DT_PROP_LEN(n, sources),                                             \
+		DT_FOREACH_PROP_ELEM(n, sources, XEC_GIRQ_SOURCES2)};                            \
+                                                                                                 \
+	DEVICE_DT_DEFINE(n, xec_girq_init_##n, NULL, &xec_data_girq_##n, &xec_config_girq_##n,   \
+			 PRE_KERNEL_1, CONFIG_XEC_GIRQ_INIT_PRIORITY, NULL);                     \
+                                                                                                 \
+	static int xec_girq_init_##n(const struct device *dev)                                   \
+	{                                                                                        \
+		mchp_xec_ecia_girq_aggr_en(GIRQ_ID_TO_BITPOS(DT_PROP(n, girq_id)), 1);           \
+                                                                                                 \
+		IRQ_CONNECT(DT_IRQN(n), DT_IRQ(n, priority), xec_girq_isr, DEVICE_DT_GET(n), 0); \
+                                                                                                 \
+		irq_enable(DT_IRQN(n));                                                          \
+                                                                                                 \
+		return 0;                                                                        \
 	}
 
 /*

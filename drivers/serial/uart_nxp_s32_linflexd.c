@@ -324,17 +324,17 @@ static const struct uart_driver_api uart_nxp_s32_driver_api = {
 
 };
 
-#define UART_NXP_S32_HW_INSTANCE_CHECK(i, n)                                                       \
+#define UART_NXP_S32_HW_INSTANCE_CHECK(i, n)                     \
 	((DT_INST_REG_ADDR(n) == IP_LINFLEX_##i##_BASE) ? i : 0)
 
-#define UART_NXP_S32_HW_INSTANCE(n)                                                                \
+#define UART_NXP_S32_HW_INSTANCE(n) \
 	LISTIFY(__DEBRACKET LINFLEXD_INSTANCE_COUNT, UART_NXP_S32_HW_INSTANCE_CHECK, (|), n)
 
-#define UART_NXP_S32_INTERRUPT_DEFINE(n)                                                           \
-	do {                                                                                       \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_nxp_s32_isr,           \
-			    DEVICE_DT_INST_GET(n), DT_INST_IRQ(n, flags));                         \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define UART_NXP_S32_INTERRUPT_DEFINE(n)                                                 \
+	do {                                                                             \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_nxp_s32_isr, \
+			    DEVICE_DT_INST_GET(n), DT_INST_IRQ(n, flags));               \
+		irq_enable(DT_INST_IRQN(n));                                             \
 	} while (0)
 
 #define UART_NXP_S32_HW_CONFIG(n)                                                                  \

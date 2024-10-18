@@ -239,8 +239,8 @@ static int flash_cdns_nand_init(const struct device *nand_dev)
 	return 0;
 }
 
-#define CDNS_NAND_RESET_SPEC_INIT(inst)                                                            \
-	.reset = RESET_DT_SPEC_INST_GET_BY_IDX(inst, 0),                                           \
+#define CDNS_NAND_RESET_SPEC_INIT(inst)                            \
+	.reset = RESET_DT_SPEC_INST_GET_BY_IDX(inst, 0),           \
 	.combo_phy_reset = RESET_DT_SPEC_INST_GET_BY_IDX(inst, 1),
 
 #define CREATE_FLASH_CADENCE_NAND_DEVICE(inst)                                                       \

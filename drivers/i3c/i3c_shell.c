@@ -28,54 +28,54 @@ struct i3c_ctrl {
 	const union shell_cmd_entry *i3c_list_dev_subcmd;
 };
 
-#define I3C_ATTACHED_DEV_GET_FN(node_id)                                                           \
-	static void node_id##cmd_i3c_attached_get(size_t idx, struct shell_static_entry *entry);   \
-                                                                                                   \
-	SHELL_DYNAMIC_CMD_CREATE(node_id##sub_i3c_attached, node_id##cmd_i3c_attached_get);        \
-                                                                                                   \
-	static void node_id##cmd_i3c_attached_get(size_t idx, struct shell_static_entry *entry)    \
-	{                                                                                          \
-		const struct device *dev = DEVICE_DT_GET(node_id);                                 \
-		struct i3c_device_desc *i3c_desc;                                                  \
-		size_t cnt = 0;                                                                    \
-                                                                                                   \
-		entry->syntax = NULL;                                                              \
-		entry->handler = NULL;                                                             \
-		entry->subcmd = NULL;                                                              \
-		entry->help = NULL;                                                                \
-                                                                                                   \
-		I3C_BUS_FOR_EACH_I3CDEV(dev, i3c_desc) {                                           \
-			if (cnt == idx) {                                                          \
-				entry->syntax = i3c_desc->dev->name;                               \
-				return;                                                            \
-			}                                                                          \
-			cnt++;                                                                     \
-		}                                                                                  \
+#define I3C_ATTACHED_DEV_GET_FN(node_id)                                                         \
+	static void node_id##cmd_i3c_attached_get(size_t idx, struct shell_static_entry *entry); \
+                                                                                                 \
+	SHELL_DYNAMIC_CMD_CREATE(node_id##sub_i3c_attached, node_id##cmd_i3c_attached_get);      \
+                                                                                                 \
+	static void node_id##cmd_i3c_attached_get(size_t idx, struct shell_static_entry *entry)  \
+	{                                                                                        \
+		const struct device *dev = DEVICE_DT_GET(node_id);                               \
+		struct i3c_device_desc *i3c_desc;                                                \
+		size_t cnt = 0;                                                                  \
+                                                                                                 \
+		entry->syntax = NULL;                                                            \
+		entry->handler = NULL;                                                           \
+		entry->subcmd = NULL;                                                            \
+		entry->help = NULL;                                                              \
+                                                                                                 \
+		I3C_BUS_FOR_EACH_I3CDEV(dev, i3c_desc) {                                         \
+			if (cnt == idx) {                                                        \
+				entry->syntax = i3c_desc->dev->name;                             \
+				return;                                                          \
+			}                                                                        \
+			cnt++;                                                                   \
+		}                                                                                \
 	}
 
-#define I3C_LIST_DEV_GET_FN(node_id)                                                               \
-	static void node_id##cmd_i3c_list_get(size_t idx, struct shell_static_entry *entry);       \
-                                                                                                   \
-	SHELL_DYNAMIC_CMD_CREATE(node_id##sub_i3c_list, node_id##cmd_i3c_list_get);                \
-                                                                                                   \
-	static void node_id##cmd_i3c_list_get(size_t idx, struct shell_static_entry *entry)        \
-	{                                                                                          \
-		const struct device *dev = DEVICE_DT_GET(node_id);                                 \
-		struct i3c_driver_config *config;                                                  \
-                                                                                                   \
-		entry->syntax = NULL;                                                              \
-		entry->handler = NULL;                                                             \
-		entry->subcmd = NULL;                                                              \
-		entry->help = NULL;                                                                \
-                                                                                                   \
-		config = (struct i3c_driver_config *)dev->config;                                  \
-		if (idx < config->dev_list.num_i3c) {                                              \
-			entry->syntax = config->dev_list.i3c[idx].dev->name;                       \
-		}                                                                                  \
+#define I3C_LIST_DEV_GET_FN(node_id)                                                         \
+	static void node_id##cmd_i3c_list_get(size_t idx, struct shell_static_entry *entry); \
+                                                                                             \
+	SHELL_DYNAMIC_CMD_CREATE(node_id##sub_i3c_list, node_id##cmd_i3c_list_get);          \
+                                                                                             \
+	static void node_id##cmd_i3c_list_get(size_t idx, struct shell_static_entry *entry)  \
+	{                                                                                    \
+		const struct device *dev = DEVICE_DT_GET(node_id);                           \
+		struct i3c_driver_config *config;                                            \
+                                                                                             \
+		entry->syntax = NULL;                                                        \
+		entry->handler = NULL;                                                       \
+		entry->subcmd = NULL;                                                        \
+		entry->help = NULL;                                                          \
+                                                                                             \
+		config = (struct i3c_driver_config *)dev->config;                            \
+		if (idx < config->dev_list.num_i3c) {                                        \
+			entry->syntax = config->dev_list.i3c[idx].dev->name;                 \
+		}                                                                            \
 	}
 
-#define I3C_CTRL_FN(node_id)                                                                       \
-	I3C_ATTACHED_DEV_GET_FN(node_id)                                                           \
+#define I3C_CTRL_FN(node_id)             \
+	I3C_ATTACHED_DEV_GET_FN(node_id) \
 	I3C_LIST_DEV_GET_FN(node_id)
 
 /* zephyr-keep-sorted-start */
@@ -84,11 +84,11 @@ DT_FOREACH_STATUS_OKAY(nuvoton_npcx_i3c, I3C_CTRL_FN)
 DT_FOREACH_STATUS_OKAY(nxp_mcux_i3c, I3C_CTRL_FN)
 /* zephyr-keep-sorted-stop */
 
-#define I3C_CTRL_LIST_ENTRY(node_id)                                                               \
-	{                                                                                          \
-		.dev = DEVICE_DT_GET(node_id),                                                     \
-		.i3c_attached_dev_subcmd = &node_id##sub_i3c_attached,                             \
-		.i3c_list_dev_subcmd = &node_id##sub_i3c_list,                                     \
+#define I3C_CTRL_LIST_ENTRY(node_id)                                   \
+	{                                                              \
+		.dev = DEVICE_DT_GET(node_id),                         \
+		.i3c_attached_dev_subcmd = &node_id##sub_i3c_attached, \
+		.i3c_list_dev_subcmd = &node_id##sub_i3c_list,         \
 	},
 
 const struct i3c_ctrl i3c_list[] = {

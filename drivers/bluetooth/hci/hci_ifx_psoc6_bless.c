@@ -271,9 +271,9 @@ static const struct bt_hci_driver_api drv = {
 	.setup = psoc6_bless_setup,
 };
 
-#define PSOC6_BLESS_DEVICE_INIT(inst)                                                              \
-	static struct psoc6_bless_data psoc6_bless_data_##inst = {};                               \
-	DEVICE_DT_INST_DEFINE(inst, psoc6_bless_hci_init, NULL, &psoc6_bless_data_##inst, NULL,    \
+#define PSOC6_BLESS_DEVICE_INIT(inst)                                                           \
+	static struct psoc6_bless_data psoc6_bless_data_##inst = {};                            \
+	DEVICE_DT_INST_DEFINE(inst, psoc6_bless_hci_init, NULL, &psoc6_bless_data_##inst, NULL, \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
 /* Only one instance supported */

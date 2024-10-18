@@ -197,14 +197,14 @@ static int bh1750_init(const struct device *dev)
 	return 0;
 }
 
-#define DEFINE_BH1750(_num)                                                                        \
-	static struct bh1750_data bh1750_data_##_num;                                              \
-	static const struct bh1750_dev_config bh1750_config_##_num = {                             \
-		.bus = I2C_DT_SPEC_INST_GET(_num),                                                 \
-		.mtreg = DT_INST_PROP(_num, mtreg),                                                \
-		.resolution = DT_INST_PROP(_num, resolution)};                                     \
-	SENSOR_DEVICE_DT_INST_DEFINE(_num, bh1750_init, NULL, &bh1750_data_##_num,                 \
-				     &bh1750_config_##_num, POST_KERNEL,                           \
+#define DEFINE_BH1750(_num)                                                            \
+	static struct bh1750_data bh1750_data_##_num;                                  \
+	static const struct bh1750_dev_config bh1750_config_##_num = {                 \
+		.bus = I2C_DT_SPEC_INST_GET(_num),                                     \
+		.mtreg = DT_INST_PROP(_num, mtreg),                                    \
+		.resolution = DT_INST_PROP(_num, resolution)};                         \
+	SENSOR_DEVICE_DT_INST_DEFINE(_num, bh1750_init, NULL, &bh1750_data_##_num,     \
+				     &bh1750_config_##_num, POST_KERNEL,               \
 				     CONFIG_SENSOR_INIT_PRIORITY, &bh1750_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_BH1750)

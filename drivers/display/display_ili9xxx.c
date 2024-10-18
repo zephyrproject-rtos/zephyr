@@ -467,36 +467,36 @@ static const struct ili9xxx_quirks ili9488_quirks = {
 
 #define INST_DT_ILI9XXX(n, t) DT_INST(n, ilitek_ili##t)
 
-#define ILI9XXX_INIT(n, t)                                                                         \
-	ILI##t##_REGS_INIT(n);                                                                     \
-                                                                                                   \
-	static const struct ili9xxx_config ili9xxx_config_##n = {                                  \
-		.quirks = &ili##t##_quirks,                                                        \
-		.mipi_dev = DEVICE_DT_GET(DT_PARENT(INST_DT_ILI9XXX(n, t))),                       \
-		.dbi_config =                                                                      \
-			{                                                                          \
-				.mode = DT_PROP_OR(INST_DT_ILI9XXX(n, t), mipi_mode,               \
-						   MIPI_DBI_MODE_SPI_4WIRE),                       \
-				.config = MIPI_DBI_SPI_CONFIG_DT(                                  \
-					INST_DT_ILI9XXX(n, t),                                     \
-					SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),                  \
-			},                                                                         \
-		.pixel_format = DT_PROP(INST_DT_ILI9XXX(n, t), pixel_format),                      \
-		.rotation = DT_PROP(INST_DT_ILI9XXX(n, t), rotation),                              \
-		.x_resolution = ILI##t##_X_RES,                                                    \
-		.y_resolution = ILI##t##_Y_RES,                                                    \
-		.inversion = DT_PROP(INST_DT_ILI9XXX(n, t), display_inversion),                    \
-		.regs = &ili9xxx_regs_##n,                                                         \
-		.regs_init_fn = ili##t##_regs_init,                                                \
-	};                                                                                         \
-                                                                                                   \
-	static struct ili9xxx_data ili9xxx_data_##n;                                               \
-                                                                                                   \
-	DEVICE_DT_DEFINE(INST_DT_ILI9XXX(n, t), ili9xxx_init, NULL, &ili9xxx_data_##n,             \
-			 &ili9xxx_config_##n, POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,           \
+#define ILI9XXX_INIT(n, t)                                                               \
+	ILI##t##_REGS_INIT(n);                                                           \
+                                                                                         \
+	static const struct ili9xxx_config ili9xxx_config_##n = {                        \
+		.quirks = &ili##t##_quirks,                                              \
+		.mipi_dev = DEVICE_DT_GET(DT_PARENT(INST_DT_ILI9XXX(n, t))),             \
+		.dbi_config =                                                            \
+			{                                                                \
+				.mode = DT_PROP_OR(INST_DT_ILI9XXX(n, t), mipi_mode,     \
+						   MIPI_DBI_MODE_SPI_4WIRE),             \
+				.config = MIPI_DBI_SPI_CONFIG_DT(                        \
+					INST_DT_ILI9XXX(n, t),                           \
+					SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),        \
+			},                                                               \
+		.pixel_format = DT_PROP(INST_DT_ILI9XXX(n, t), pixel_format),            \
+		.rotation = DT_PROP(INST_DT_ILI9XXX(n, t), rotation),                    \
+		.x_resolution = ILI##t##_X_RES,                                          \
+		.y_resolution = ILI##t##_Y_RES,                                          \
+		.inversion = DT_PROP(INST_DT_ILI9XXX(n, t), display_inversion),          \
+		.regs = &ili9xxx_regs_##n,                                               \
+		.regs_init_fn = ili##t##_regs_init,                                      \
+	};                                                                               \
+                                                                                         \
+	static struct ili9xxx_data ili9xxx_data_##n;                                     \
+                                                                                         \
+	DEVICE_DT_DEFINE(INST_DT_ILI9XXX(n, t), ili9xxx_init, NULL, &ili9xxx_data_##n,   \
+			 &ili9xxx_config_##n, POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY, \
 			 &ili9xxx_api)
 
-#define DT_INST_FOREACH_ILI9XXX_STATUS_OKAY(t)                                                     \
+#define DT_INST_FOREACH_ILI9XXX_STATUS_OKAY(t) \
 	LISTIFY(DT_NUM_INST_STATUS_OKAY(ilitek_ili##t), ILI9XXX_INIT, (;), t)
 
 #ifdef CONFIG_ILI9340

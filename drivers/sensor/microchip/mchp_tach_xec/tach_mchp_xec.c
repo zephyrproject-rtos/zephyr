@@ -177,27 +177,27 @@ static const struct sensor_driver_api tach_xec_driver_api = {
 	.channel_get = tach_xec_channel_get,
 };
 
-#define XEC_TACH_CONFIG(inst)                                                                      \
-	static const struct tach_xec_config tach_xec_config_##inst = {                             \
-		.regs = (struct tach_regs *const)DT_INST_REG_ADDR(inst),                           \
-		.girq = DT_INST_PROP_BY_IDX(inst, girqs, 0),                                       \
-		.girq_pos = DT_INST_PROP_BY_IDX(inst, girqs, 1),                                   \
-		.pcr_idx = DT_INST_PROP_BY_IDX(inst, pcrs, 0),                                     \
-		.pcr_pos = DT_INST_PROP_BY_IDX(inst, pcrs, 1),                                     \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
+#define XEC_TACH_CONFIG(inst)                                            \
+	static const struct tach_xec_config tach_xec_config_##inst = {   \
+		.regs = (struct tach_regs *const)DT_INST_REG_ADDR(inst), \
+		.girq = DT_INST_PROP_BY_IDX(inst, girqs, 0),             \
+		.girq_pos = DT_INST_PROP_BY_IDX(inst, girqs, 1),         \
+		.pcr_idx = DT_INST_PROP_BY_IDX(inst, pcrs, 0),           \
+		.pcr_pos = DT_INST_PROP_BY_IDX(inst, pcrs, 1),           \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),            \
 	}
 
-#define TACH_XEC_DEVICE(id)                                                                        \
-	static struct tach_xec_data tach_xec_data_##id;                                            \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(id);                                                                \
-                                                                                                   \
-	XEC_TACH_CONFIG(id);                                                                       \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(id, tach_xec_pm_action);                                          \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(id, tach_xec_init, PM_DEVICE_DT_INST_GET(id),                 \
-				     &tach_xec_data_##id, &tach_xec_config_##id, POST_KERNEL,      \
+#define TACH_XEC_DEVICE(id)                                                                   \
+	static struct tach_xec_data tach_xec_data_##id;                                       \
+                                                                                              \
+	PINCTRL_DT_INST_DEFINE(id);                                                           \
+                                                                                              \
+	XEC_TACH_CONFIG(id);                                                                  \
+                                                                                              \
+	PM_DEVICE_DT_INST_DEFINE(id, tach_xec_pm_action);                                     \
+                                                                                              \
+	SENSOR_DEVICE_DT_INST_DEFINE(id, tach_xec_init, PM_DEVICE_DT_INST_GET(id),            \
+				     &tach_xec_data_##id, &tach_xec_config_##id, POST_KERNEL, \
 				     CONFIG_SENSOR_INIT_PRIORITY, &tach_xec_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TACH_XEC_DEVICE)

@@ -1734,7 +1734,7 @@ static const struct can_driver_api mcp251xfd_api_funcs = {
 #endif
 };
 
-#define MCP251XFD_SET_CLOCK(inst)                                                                  \
+#define MCP251XFD_SET_CLOCK(inst) \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clocks),                                           \
 		    (.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                          \
 		     .clk_id = DT_INST_CLOCKS_CELL(inst, id)),                                     \

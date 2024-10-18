@@ -485,17 +485,17 @@ static int gnss_emul_init(const struct device *dev)
 
 #define GNSS_EMUL_NAME(inst, name) _CONCAT(name, inst)
 
-#define GNSS_EMUL_DEVICE(inst)                                                                     \
-	static struct gnss_emul_data GNSS_EMUL_NAME(inst, data) = {                                \
-		.fix_interval_ms = GNSS_EMUL_DEFAULT_FIX_INTERVAL_MS,                              \
-		.nav_mode = GNSS_EMUL_DEFAULT_NAV_MODE,                                            \
-		.enabled_systems = GNSS_EMUL_DEFAULT_ENABLED_SYSTEMS_MASK,                         \
-	};                                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, gnss_emul_pm_action);                                       \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, gnss_emul_init, PM_DEVICE_DT_INST_GET(inst),                   \
-			      &GNSS_EMUL_NAME(inst, data), NULL, POST_KERNEL,                      \
+#define GNSS_EMUL_DEVICE(inst)                                                   \
+	static struct gnss_emul_data GNSS_EMUL_NAME(inst, data) = {              \
+		.fix_interval_ms = GNSS_EMUL_DEFAULT_FIX_INTERVAL_MS,            \
+		.nav_mode = GNSS_EMUL_DEFAULT_NAV_MODE,                          \
+		.enabled_systems = GNSS_EMUL_DEFAULT_ENABLED_SYSTEMS_MASK,       \
+	};                                                                       \
+                                                                                 \
+	PM_DEVICE_DT_INST_DEFINE(inst, gnss_emul_pm_action);                     \
+                                                                                 \
+	DEVICE_DT_INST_DEFINE(inst, gnss_emul_init, PM_DEVICE_DT_INST_GET(inst), \
+			      &GNSS_EMUL_NAME(inst, data), NULL, POST_KERNEL,    \
 			      CONFIG_GNSS_INIT_PRIORITY, &api);
 
 DT_INST_FOREACH_STATUS_OKAY(GNSS_EMUL_DEVICE)

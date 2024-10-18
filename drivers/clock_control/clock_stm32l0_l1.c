@@ -96,7 +96,7 @@ void config_regulator_voltage(uint32_t hclk_freq)
  */
 void config_enable_default_clocks(void)
 {
-#if defined(CONFIG_EXTI_STM32) || defined(CONFIG_USB_DC_STM32) ||                                  \
+#if defined(CONFIG_EXTI_STM32) || defined(CONFIG_USB_DC_STM32) ||                  \
 	(defined(CONFIG_SOC_SERIES_STM32L0X) && defined(CONFIG_ENTROPY_STM32_RNG))
 	/* Enable System Configuration Controller clock. */
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG);

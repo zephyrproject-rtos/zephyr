@@ -1201,14 +1201,14 @@ static int spi_smartbond_pm_action(const struct device *dev, enum pm_device_acti
 }
 #endif
 
-#define SPI_SMARTBOND_ISR_CONNECT                                                                  \
-	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(spi)), DT_IRQ(DT_NODELABEL(spi), priority),               \
-		    spi_smartbond_isr, DEVICE_DT_GET(DT_NODELABEL(spi)), 0);                       \
+#define SPI_SMARTBOND_ISR_CONNECT                                                    \
+	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(spi)), DT_IRQ(DT_NODELABEL(spi), priority), \
+		    spi_smartbond_isr, DEVICE_DT_GET(DT_NODELABEL(spi)), 0);         \
 	irq_enable(DT_IRQN(DT_NODELABEL(spi)));
 
-#define SPI2_SMARTBOND_ISR_CONNECT                                                                 \
-	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(spi2)), DT_IRQ(DT_NODELABEL(spi2), priority),             \
-		    spi_smartbond_isr, DEVICE_DT_GET(DT_NODELABEL(spi2)), 0);                      \
+#define SPI2_SMARTBOND_ISR_CONNECT                                                     \
+	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(spi2)), DT_IRQ(DT_NODELABEL(spi2), priority), \
+		    spi_smartbond_isr, DEVICE_DT_GET(DT_NODELABEL(spi2)), 0);          \
 	irq_enable(DT_IRQN(DT_NODELABEL(spi2)));
 
 #if defined(CONFIG_SPI_ASYNC) || defined(CONFIG_SPI_SMARTBOND_DMA)
@@ -1266,56 +1266,56 @@ static int spi_smartbond_init(const struct device *dev)
 }
 
 #ifdef CONFIG_SPI_SMARTBOND_DMA
-#define SPI_SMARTBOND_DMA_TX_INIT(id)                                                              \
-	.tx_dma_chan = DT_INST_DMAS_CELL_BY_NAME(id, tx, channel),                                 \
-	.tx_slot_mux = (uint8_t)DT_INST_DMAS_CELL_BY_NAME(id, tx, config),                         \
+#define SPI_SMARTBOND_DMA_TX_INIT(id)                                      \
+	.tx_dma_chan = DT_INST_DMAS_CELL_BY_NAME(id, tx, channel),         \
+	.tx_slot_mux = (uint8_t)DT_INST_DMAS_CELL_BY_NAME(id, tx, config), \
 	.tx_dma_ctrl = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, tx)),
 #else
 #define SPI_SMARTBOND_DMA_TX_INIT(id)
 #endif
 
 #ifdef CONFIG_SPI_SMARTBOND_DMA
-#define SPI_SMARTBOND_DMA_RX_INIT(id)                                                              \
-	.rx_dma_chan = DT_INST_DMAS_CELL_BY_NAME(id, rx, channel),                                 \
-	.rx_slot_mux = (uint8_t)DT_INST_DMAS_CELL_BY_NAME(id, rx, config),                         \
+#define SPI_SMARTBOND_DMA_RX_INIT(id)                                      \
+	.rx_dma_chan = DT_INST_DMAS_CELL_BY_NAME(id, rx, channel),         \
+	.rx_slot_mux = (uint8_t)DT_INST_DMAS_CELL_BY_NAME(id, rx, config), \
 	.rx_dma_ctrl = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, rx)),
 #else
 #define SPI_SMARTBOND_DMA_RX_INIT(id)
 #endif
 
 #ifdef CONFIG_SPI_SMARTBOND_DMA
-#define SPI_SMARTBOND_DMA_TX_INVALIDATE(id)                                                        \
+#define SPI_SMARTBOND_DMA_TX_INVALIDATE(id)                          \
 	.tx_dma_chan = 255, .tx_slot_mux = 255, .tx_dma_ctrl = NULL,
 #else
 #define SPI_SMARTBOND_DMA_TX_INVALIDATE(id)
 #endif
 
 #ifdef CONFIG_SPI_SMARTBOND_DMA
-#define SPI_SMARTBOND_DMA_RX_INVALIDATE(id)                                                        \
+#define SPI_SMARTBOND_DMA_RX_INVALIDATE(id)                          \
 	.rx_dma_chan = 255, .rx_slot_mux = 255, .rx_dma_ctrl = NULL,
 #else
 #define SPI_SMARTBOND_DMA_RX_INVALIDATE(id)
 #endif
 
-#define SPI_SMARTBOND_DEVICE(id)                                                                   \
-	PINCTRL_DT_INST_DEFINE(id);                                                                \
-	static const struct spi_smartbond_cfg spi_smartbond_##id##_cfg = {                         \
-		.regs = (SPI_Type *)DT_INST_REG_ADDR(id),                                          \
-		.periph_clock_config = DT_INST_PROP(id, periph_clock_config),                      \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),                                        \
+#define SPI_SMARTBOND_DEVICE(id)                                                                  \
+	PINCTRL_DT_INST_DEFINE(id);                                                               \
+	static const struct spi_smartbond_cfg spi_smartbond_##id##_cfg = {                        \
+		.regs = (SPI_Type *)DT_INST_REG_ADDR(id),                                         \
+		.periph_clock_config = DT_INST_PROP(id, periph_clock_config),                     \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),                                       \
 		COND_CODE_1(DT_INST_DMAS_HAS_NAME(id, tx),	\
 			(SPI_SMARTBOND_DMA_TX_INIT(id)),	\
-			(SPI_SMARTBOND_DMA_TX_INVALIDATE(id)))                                       \
+			(SPI_SMARTBOND_DMA_TX_INVALIDATE(id)))                                      \
 				COND_CODE_1(DT_INST_DMAS_HAS_NAME(id, rx), \
 			(SPI_SMARTBOND_DMA_RX_INIT(id)),	\
-			(SPI_SMARTBOND_DMA_RX_INVALIDATE(id))) };                 \
-	static struct spi_smartbond_data spi_smartbond_##id##_data = {                             \
-		SPI_CONTEXT_INIT_LOCK(spi_smartbond_##id##_data, ctx),                             \
-		SPI_CONTEXT_INIT_SYNC(spi_smartbond_##id##_data, ctx),                             \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(id), ctx)};                            \
-	PM_DEVICE_DT_INST_DEFINE(id, spi_smartbond_pm_action);                                     \
-	DEVICE_DT_INST_DEFINE(id, spi_smartbond_init, PM_DEVICE_DT_INST_GET(id),                   \
-			      &spi_smartbond_##id##_data, &spi_smartbond_##id##_cfg, POST_KERNEL,  \
+			(SPI_SMARTBOND_DMA_RX_INVALIDATE(id))) };                \
+	static struct spi_smartbond_data spi_smartbond_##id##_data = {                            \
+		SPI_CONTEXT_INIT_LOCK(spi_smartbond_##id##_data, ctx),                            \
+		SPI_CONTEXT_INIT_SYNC(spi_smartbond_##id##_data, ctx),                            \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(id), ctx)};                           \
+	PM_DEVICE_DT_INST_DEFINE(id, spi_smartbond_pm_action);                                    \
+	DEVICE_DT_INST_DEFINE(id, spi_smartbond_init, PM_DEVICE_DT_INST_GET(id),                  \
+			      &spi_smartbond_##id##_data, &spi_smartbond_##id##_cfg, POST_KERNEL, \
 			      CONFIG_SPI_INIT_PRIORITY, &spi_smartbond_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_SMARTBOND_DEVICE)

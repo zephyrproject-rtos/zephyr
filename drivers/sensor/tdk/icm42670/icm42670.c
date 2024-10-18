@@ -685,35 +685,35 @@ static const struct sensor_driver_api icm42670_driver_api = {
 };
 
 /* device defaults to spi mode 0/3 support */
-#define ICM42670_SPI_CFG                                                                           \
+#define ICM42670_SPI_CFG                                                                        \
 	SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_TRANSFER_MSB
 
 /* Initializes the bus members for an instance on a SPI bus. */
-#define ICM42670_CONFIG_SPI(inst)                                                                  \
+#define ICM42670_CONFIG_SPI(inst) \
 	.bus.spi = SPI_DT_SPEC_INST_GET(inst, ICM42670_SPI_CFG, 0), .bus_io = &icm42670_bus_io_spi,
 
 /* Initializes the bus members for an instance on an I2C bus. */
-#define ICM42670_CONFIG_I2C(inst)                                                                  \
+#define ICM42670_CONFIG_I2C(inst)                                              \
 	.bus.i2c = I2C_DT_SPEC_INST_GET(inst), .bus_io = &icm42670_bus_io_i2c,
 
-#define ICM42670_INIT(inst)                                                                        \
-	static struct icm42670_data icm42670_driver_##inst = {                                     \
-		.accel_hz = DT_INST_PROP(inst, accel_hz),                                          \
-		.accel_fs = DT_INST_PROP(inst, accel_fs),                                          \
-		.gyro_hz = DT_INST_PROP(inst, gyro_hz),                                            \
-		.gyro_fs = DT_INST_PROP(inst, gyro_fs),                                            \
-	};                                                                                         \
-                                                                                                   \
-	static const struct icm42670_config icm42670_cfg_##inst = {                                \
+#define ICM42670_INIT(inst)                                                                    \
+	static struct icm42670_data icm42670_driver_##inst = {                                 \
+		.accel_hz = DT_INST_PROP(inst, accel_hz),                                      \
+		.accel_fs = DT_INST_PROP(inst, accel_fs),                                      \
+		.gyro_hz = DT_INST_PROP(inst, gyro_hz),                                        \
+		.gyro_fs = DT_INST_PROP(inst, gyro_fs),                                        \
+	};                                                                                     \
+                                                                                               \
+	static const struct icm42670_config icm42670_cfg_##inst = {                            \
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi),                                             \
 			(ICM42670_CONFIG_SPI(inst)),                                               \
-			(ICM42670_CONFIG_I2C(inst))) .gpio_int =               \
-						     GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios,     \
-									      {0}),                \
-	};                                                                                         \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, icm42670_init, NULL, &icm42670_driver_##inst,           \
-				     &icm42670_cfg_##inst, POST_KERNEL,                            \
+			(ICM42670_CONFIG_I2C(inst))) .gpio_int =           \
+						     GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, \
+									      {0}),            \
+	};                                                                                     \
+                                                                                               \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, icm42670_init, NULL, &icm42670_driver_##inst,       \
+				     &icm42670_cfg_##inst, POST_KERNEL,                        \
 				     CONFIG_SENSOR_INIT_PRIORITY, &icm42670_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ICM42670_INIT)

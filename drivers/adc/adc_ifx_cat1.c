@@ -270,19 +270,19 @@ static const struct adc_driver_api adc_cat1_driver_api = {.channel_setup =
 							  .ref_internal = ADC_CAT1_REF_INTERNAL_MV};
 
 /* Macros for ADC instance declaration */
-#define INFINEON_CAT1_ADC_INIT(n)                                                                  \
-	static struct ifx_cat1_adc_data ifx_cat1_adc_data##n = {                                   \
-		ADC_CONTEXT_INIT_TIMER(ifx_cat1_adc_data##n, ctx),                                 \
-		ADC_CONTEXT_INIT_LOCK(ifx_cat1_adc_data##n, ctx),                                  \
-		ADC_CONTEXT_INIT_SYNC(ifx_cat1_adc_data##n, ctx),                                  \
-	};                                                                                         \
-                                                                                                   \
-	static const struct ifx_cat1_adc_config adc_cat1_cfg_##n = {                               \
-		.irq_priority = DT_INST_IRQ(n, priority),                                          \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, ifx_cat1_adc_init, NULL, &ifx_cat1_adc_data##n,                   \
-			      &adc_cat1_cfg_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,            \
+#define INFINEON_CAT1_ADC_INIT(n)                                                       \
+	static struct ifx_cat1_adc_data ifx_cat1_adc_data##n = {                        \
+		ADC_CONTEXT_INIT_TIMER(ifx_cat1_adc_data##n, ctx),                      \
+		ADC_CONTEXT_INIT_LOCK(ifx_cat1_adc_data##n, ctx),                       \
+		ADC_CONTEXT_INIT_SYNC(ifx_cat1_adc_data##n, ctx),                       \
+	};                                                                              \
+                                                                                        \
+	static const struct ifx_cat1_adc_config adc_cat1_cfg_##n = {                    \
+		.irq_priority = DT_INST_IRQ(n, priority),                               \
+	};                                                                              \
+                                                                                        \
+	DEVICE_DT_INST_DEFINE(n, ifx_cat1_adc_init, NULL, &ifx_cat1_adc_data##n,        \
+			      &adc_cat1_cfg_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, \
 			      &adc_cat1_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_CAT1_ADC_INIT)

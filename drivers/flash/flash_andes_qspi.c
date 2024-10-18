@@ -31,14 +31,14 @@ LOG_MODULE_REGISTER(flash_andes, CONFIG_FLASH_LOG_LEVEL);
  */
 #define ANDES_ACCESS_WRITE BIT(7)
 
-#define flash_andes_qspi_cmd_read(dev, opcode, dest, length)                                       \
+#define flash_andes_qspi_cmd_read(dev, opcode, dest, length)     \
 	flash_andes_qspi_access(dev, opcode, 0, 0, dest, length)
-#define flash_andes_qspi_cmd_addr_read(dev, opcode, addr, dest, length)                            \
+#define flash_andes_qspi_cmd_addr_read(dev, opcode, addr, dest, length)                  \
 	flash_andes_qspi_access(dev, opcode, ANDES_ACCESS_ADDRESSED, addr, dest, length)
-#define flash_andes_qspi_cmd_write(dev, opcode)                                                    \
+#define flash_andes_qspi_cmd_write(dev, opcode)                              \
 	flash_andes_qspi_access(dev, opcode, ANDES_ACCESS_WRITE, 0, NULL, 0)
-#define flash_andes_qspi_cmd_addr_write(dev, opcode, addr, src, length)                            \
-	flash_andes_qspi_access(dev, opcode, ANDES_ACCESS_WRITE | ANDES_ACCESS_ADDRESSED, addr,    \
+#define flash_andes_qspi_cmd_addr_write(dev, opcode, addr, src, length)                         \
+	flash_andes_qspi_access(dev, opcode, ANDES_ACCESS_WRITE | ANDES_ACCESS_ADDRESSED, addr, \
 				(void *)src, length)
 
 typedef void (*flash_andes_qspi_config_func_t)(void);
@@ -855,7 +855,7 @@ static const struct flash_driver_api flash_andes_qspi_api = {
 #define QSPI_ROM_CFG_XIP(node_id) false
 #endif
 
-#define LAYOUT_PAGES_PROP(n)                                                                       \
+#define LAYOUT_PAGES_PROP(n)                      \
 	IF_ENABLED(CONFIG_FLASH_PAGE_LAYOUT,				\
 		(.layout = {						\
 			.pages_count = ((DT_INST_PROP(n, size) / 8) /	\
@@ -865,14 +865,14 @@ static const struct flash_driver_api flash_andes_qspi_api = {
 		},							\
 		))
 
-#define ANDES_QSPI_SFDP_DEVICETREE_CONFIG(n)                                                       \
+#define ANDES_QSPI_SFDP_DEVICETREE_CONFIG(n)                   \
 	IF_ENABLED(CONFIG_FLASH_ANDES_QSPI_SFDP_DEVICETREE,		\
 		(							\
 		static const __aligned(4) uint8_t bfp_data_##n[] =	\
 			DT_INST_PROP(n, sfdp_bfp);			\
 		))
 
-#define ANDES_QSPI_SFDP_DEVICETREE_PROP(n)                                                         \
+#define ANDES_QSPI_SFDP_DEVICETREE_PROP(n)                     \
 	IF_ENABLED(CONFIG_FLASH_ANDES_QSPI_SFDP_DEVICETREE,		\
 		(.jedec_id = DT_INST_PROP(n, jedec_id),			\
 		.flash_size = DT_INST_PROP(n, size) / 8,		\
@@ -881,27 +881,27 @@ static const struct flash_driver_api flash_andes_qspi_api = {
 		LAYOUT_PAGES_PROP(n)					\
 		))
 
-#define FLASH_ANDES_QSPI_INIT(n)                                                                   \
-	static struct flash_andes_qspi_data flash_andes_qspi_data_##n;                             \
-	ANDES_QSPI_SFDP_DEVICETREE_CONFIG(n)                                                       \
-                                                                                                   \
-	static void flash_andes_qspi_configure_##n(void);                                          \
-	static const struct flash_andes_qspi_config flash_andes_qspi_config_##n = {                \
-		.cfg_func = flash_andes_qspi_configure_##n,                                        \
-		.base = DT_REG_ADDR(DT_INST_BUS(n)),                                               \
-		.irq_num = DT_IRQN(DT_INST_BUS(n)),                                                \
-		.parameters = {.write_block_size = 1, .erase_value = 0xff},                        \
-		.xip = QSPI_ROM_CFG_XIP(DT_DRV_INST(n)),                                           \
-		ANDES_QSPI_SFDP_DEVICETREE_PROP(n)};                                               \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &flash_andes_qspi_init, NULL, &flash_andes_qspi_data_##n,         \
-			      &flash_andes_qspi_config_##n, POST_KERNEL,                           \
-			      CONFIG_FLASH_ANDES_QSPI_INIT_PRIORITY, &flash_andes_qspi_api);       \
-                                                                                                   \
-	static void flash_andes_qspi_configure_##n(void)                                           \
-	{                                                                                          \
-		IRQ_CONNECT(DT_IRQN(DT_INST_BUS(n)), DT_IRQ(DT_INST_BUS(n), priority),             \
-			    qspi_andes_irq_handler, DEVICE_DT_INST_GET(n), 0);                     \
+#define FLASH_ANDES_QSPI_INIT(n)                                                             \
+	static struct flash_andes_qspi_data flash_andes_qspi_data_##n;                       \
+	ANDES_QSPI_SFDP_DEVICETREE_CONFIG(n)                                                 \
+                                                                                             \
+	static void flash_andes_qspi_configure_##n(void);                                    \
+	static const struct flash_andes_qspi_config flash_andes_qspi_config_##n = {          \
+		.cfg_func = flash_andes_qspi_configure_##n,                                  \
+		.base = DT_REG_ADDR(DT_INST_BUS(n)),                                         \
+		.irq_num = DT_IRQN(DT_INST_BUS(n)),                                          \
+		.parameters = {.write_block_size = 1, .erase_value = 0xff},                  \
+		.xip = QSPI_ROM_CFG_XIP(DT_DRV_INST(n)),                                     \
+		ANDES_QSPI_SFDP_DEVICETREE_PROP(n)};                                         \
+                                                                                             \
+	DEVICE_DT_INST_DEFINE(n, &flash_andes_qspi_init, NULL, &flash_andes_qspi_data_##n,   \
+			      &flash_andes_qspi_config_##n, POST_KERNEL,                     \
+			      CONFIG_FLASH_ANDES_QSPI_INIT_PRIORITY, &flash_andes_qspi_api); \
+                                                                                             \
+	static void flash_andes_qspi_configure_##n(void)                                     \
+	{                                                                                    \
+		IRQ_CONNECT(DT_IRQN(DT_INST_BUS(n)), DT_IRQ(DT_INST_BUS(n), priority),       \
+			    qspi_andes_irq_handler, DEVICE_DT_INST_GET(n), 0);               \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(FLASH_ANDES_QSPI_INIT)

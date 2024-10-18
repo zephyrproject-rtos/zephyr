@@ -344,23 +344,23 @@ static int dma_sedi_init(const struct device *dev)
 	return 0;
 }
 
-#define DMA_DEVICE_INIT_SEDI(inst)                                                                 \
-	static void dma_sedi_##inst##_irq_config(void);                                            \
-                                                                                                   \
-	static struct dma_sedi_driver_data dma_sedi_dev_data_##inst;                               \
-	static const struct dma_sedi_config_info dma_sedi_config_data_##inst = {                   \
-		.peripheral_id = DT_INST_PROP(inst, peripheral_id),                                \
-		.chn_num = DT_INST_PROP(inst, dma_channels),                                       \
-		.irq_config = dma_sedi_##inst##_irq_config};                                       \
-	DEVICE_DT_DEFINE(DT_INST(inst, DT_DRV_COMPAT), &dma_sedi_init, NULL,                       \
-			 &dma_sedi_dev_data_##inst, &dma_sedi_config_data_##inst, PRE_KERNEL_2,    \
-			 CONFIG_KERNEL_INIT_PRIORITY_DEVICE, (void *)&dma_funcs);                  \
-                                                                                                   \
-	static void dma_sedi_##inst##_irq_config(void)                                             \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), dma_isr,              \
-			    (void *)DT_INST_PROP(inst, peripheral_id), DT_INST_IRQ(inst, sense));  \
-		irq_enable(DT_INST_IRQN(inst));                                                    \
+#define DMA_DEVICE_INIT_SEDI(inst)                                                                \
+	static void dma_sedi_##inst##_irq_config(void);                                           \
+                                                                                                  \
+	static struct dma_sedi_driver_data dma_sedi_dev_data_##inst;                              \
+	static const struct dma_sedi_config_info dma_sedi_config_data_##inst = {                  \
+		.peripheral_id = DT_INST_PROP(inst, peripheral_id),                               \
+		.chn_num = DT_INST_PROP(inst, dma_channels),                                      \
+		.irq_config = dma_sedi_##inst##_irq_config};                                      \
+	DEVICE_DT_DEFINE(DT_INST(inst, DT_DRV_COMPAT), &dma_sedi_init, NULL,                      \
+			 &dma_sedi_dev_data_##inst, &dma_sedi_config_data_##inst, PRE_KERNEL_2,   \
+			 CONFIG_KERNEL_INIT_PRIORITY_DEVICE, (void *)&dma_funcs);                 \
+                                                                                                  \
+	static void dma_sedi_##inst##_irq_config(void)                                            \
+	{                                                                                         \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), dma_isr,             \
+			    (void *)DT_INST_PROP(inst, peripheral_id), DT_INST_IRQ(inst, sense)); \
+		irq_enable(DT_INST_IRQN(inst));                                                   \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(DMA_DEVICE_INIT_SEDI)

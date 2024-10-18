@@ -231,18 +231,18 @@ static int init_pwm(const struct device *dev)
 #define DT_TIMER(idx)           DT_INST_PARENT(idx)
 #define DT_TIMER_BASE_ADDR(idx) (DT_REG_ADDR(DT_TIMER(idx)))
 
-#define PWM_DEVICE_INIT(idx)                                                                       \
-	PINCTRL_DT_INST_DEFINE(idx);                                                               \
-	LOG_INSTANCE_REGISTER(LOG_MODULE_NAME, idx, CONFIG_PWM_LOG_LEVEL);                         \
-	static const struct pwm_cc13xx_cc26xx_config pwm_cc13xx_cc26xx_##idx##_config = {          \
-		.gpt_base = DT_TIMER_BASE_ADDR(idx),                                               \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                       \
-		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, idx)};                                 \
-                                                                                                   \
-	static struct pwm_cc13xx_cc26xx_data pwm_cc13xx_cc26xx_##idx##_data;                       \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(idx, init_pwm, NULL, &pwm_cc13xx_cc26xx_##idx##_data,                \
-			      &pwm_cc13xx_cc26xx_##idx##_config, POST_KERNEL,                      \
+#define PWM_DEVICE_INIT(idx)                                                              \
+	PINCTRL_DT_INST_DEFINE(idx);                                                      \
+	LOG_INSTANCE_REGISTER(LOG_MODULE_NAME, idx, CONFIG_PWM_LOG_LEVEL);                \
+	static const struct pwm_cc13xx_cc26xx_config pwm_cc13xx_cc26xx_##idx##_config = { \
+		.gpt_base = DT_TIMER_BASE_ADDR(idx),                                      \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                              \
+		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, idx)};                        \
+                                                                                          \
+	static struct pwm_cc13xx_cc26xx_data pwm_cc13xx_cc26xx_##idx##_data;              \
+                                                                                          \
+	DEVICE_DT_INST_DEFINE(idx, init_pwm, NULL, &pwm_cc13xx_cc26xx_##idx##_data,       \
+			      &pwm_cc13xx_cc26xx_##idx##_config, POST_KERNEL,             \
 			      CONFIG_PWM_INIT_PRIORITY, &pwm_driver_api)
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_DEVICE_INIT);

@@ -209,15 +209,15 @@ static const struct bbram_driver_api microchip_mcp7940n_bbram_api = {
 	.write = microchip_mcp7940n_bbram_write,
 };
 
-#define MICROCHIP_MCP7940N_BBRAM_DEVICE(inst)                                                      \
-	static struct microchip_mcp7940n_bbram_data microchip_mcp7940n_bbram_data_##inst;          \
-	static const struct microchip_mcp7940n_bbram_config                                        \
-		microchip_mcp7940n_bbram_config_##inst = {                                         \
-			.i2c = I2C_DT_SPEC_INST_GET(inst),                                         \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &microchip_mcp7940n_bbram_init, NULL,                          \
-			      &microchip_mcp7940n_bbram_data_##inst,                               \
-			      &microchip_mcp7940n_bbram_config_##inst, POST_KERNEL,                \
+#define MICROCHIP_MCP7940N_BBRAM_DEVICE(inst)                                             \
+	static struct microchip_mcp7940n_bbram_data microchip_mcp7940n_bbram_data_##inst; \
+	static const struct microchip_mcp7940n_bbram_config                               \
+		microchip_mcp7940n_bbram_config_##inst = {                                \
+			.i2c = I2C_DT_SPEC_INST_GET(inst),                                \
+	};                                                                                \
+	DEVICE_DT_INST_DEFINE(inst, &microchip_mcp7940n_bbram_init, NULL,                 \
+			      &microchip_mcp7940n_bbram_data_##inst,                      \
+			      &microchip_mcp7940n_bbram_config_##inst, POST_KERNEL,       \
 			      CONFIG_BBRAM_INIT_PRIORITY, &microchip_mcp7940n_bbram_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MICROCHIP_MCP7940N_BBRAM_DEVICE)

@@ -64,11 +64,11 @@ static inline void flash_esp32_sem_give(const struct device *dev)
 }
 #else
 
-#define flash_esp32_sem_take(dev)                                                                  \
-	do {                                                                                       \
+#define flash_esp32_sem_take(dev) \
+	do {                      \
 	} while (0)
-#define flash_esp32_sem_give(dev)                                                                  \
-	do {                                                                                       \
+#define flash_esp32_sem_give(dev) \
+	do {                      \
 	} while (0)
 
 #endif /* CONFIG_MULTITHREADING */

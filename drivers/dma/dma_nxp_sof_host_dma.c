@@ -14,14 +14,14 @@
 /* macros used to parse DTS properties */
 #define IDENTITY_VARGS(V, ...) IDENTITY(V)
 
-#define _SOF_HOST_DMA_CHANNEL_INDEX_ARRAY(inst)                                                    \
+#define _SOF_HOST_DMA_CHANNEL_INDEX_ARRAY(inst) \
 	LISTIFY(DT_INST_PROP_OR(inst, dma_channels, 0), IDENTITY_VARGS, (,))
 
-#define _SOF_HOST_DMA_CHANNEL_DECLARE(idx)                                                         \
-	{                                                                                          \
+#define _SOF_HOST_DMA_CHANNEL_DECLARE(idx) \
+	{                                  \
 	}
 
-#define SOF_HOST_DMA_CHANNELS_DECLARE(inst)                                                        \
+#define SOF_HOST_DMA_CHANNELS_DECLARE(inst)                                                    \
 	FOR_EACH(_SOF_HOST_DMA_CHANNEL_DECLARE, (, ), _SOF_HOST_DMA_CHANNEL_INDEX_ARRAY(inst))
 
 LOG_MODULE_REGISTER(nxp_sof_host_dma);

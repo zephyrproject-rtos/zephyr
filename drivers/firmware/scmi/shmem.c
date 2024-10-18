@@ -182,15 +182,15 @@ static int scmi_shmem_init(const struct device *dev)
 	return 0;
 }
 
-#define SCMI_SHMEM_INIT(inst)                                                                      \
-	static const struct scmi_shmem_config config_##inst = {                                    \
-		.phys_addr = DT_INST_REG_ADDR(inst),                                               \
-		.size = DT_INST_REG_SIZE(inst),                                                    \
-	};                                                                                         \
-                                                                                                   \
-	static struct scmi_shmem_data data_##inst;                                                 \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, &scmi_shmem_init, NULL, &data_##inst, &config_##inst,          \
+#define SCMI_SHMEM_INIT(inst)                                                             \
+	static const struct scmi_shmem_config config_##inst = {                           \
+		.phys_addr = DT_INST_REG_ADDR(inst),                                      \
+		.size = DT_INST_REG_SIZE(inst),                                           \
+	};                                                                                \
+                                                                                          \
+	static struct scmi_shmem_data data_##inst;                                        \
+                                                                                          \
+	DEVICE_DT_INST_DEFINE(inst, &scmi_shmem_init, NULL, &data_##inst, &config_##inst, \
 			      PRE_KERNEL_1, CONFIG_ARM_SCMI_SHMEM_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(SCMI_SHMEM_INIT);

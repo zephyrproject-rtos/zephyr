@@ -463,19 +463,19 @@ static const struct ethphy_driver_api phy_mii_driver_api = {
 	.write = phy_mii_write,
 };
 
-#define PHY_MII_CONFIG(n)                                                                          \
-	static const struct phy_mii_dev_config phy_mii_dev_config_##n = {                          \
-		.phy_addr = DT_INST_REG_ADDR(n),                                                   \
-		.no_reset = DT_INST_PROP(n, no_reset),                                             \
-		.fixed = IS_FIXED_LINK(n),                                                         \
-		.fixed_speed = DT_INST_ENUM_IDX_OR(n, fixed_link, 0),                              \
+#define PHY_MII_CONFIG(n)                                                                     \
+	static const struct phy_mii_dev_config phy_mii_dev_config_##n = {                     \
+		.phy_addr = DT_INST_REG_ADDR(n),                                              \
+		.no_reset = DT_INST_PROP(n, no_reset),                                        \
+		.fixed = IS_FIXED_LINK(n),                                                    \
+		.fixed_speed = DT_INST_ENUM_IDX_OR(n, fixed_link, 0),                         \
 		.mdio = UTIL_AND(UTIL_NOT(IS_FIXED_LINK(n)), DEVICE_DT_GET(DT_INST_BUS(n)))};
 
-#define PHY_MII_DEVICE(n)                                                                          \
-	PHY_MII_CONFIG(n);                                                                         \
-	static struct phy_mii_dev_data phy_mii_dev_data_##n;                                       \
-	DEVICE_DT_INST_DEFINE(n, &phy_mii_initialize, NULL, &phy_mii_dev_data_##n,                 \
-			      &phy_mii_dev_config_##n, POST_KERNEL, CONFIG_PHY_INIT_PRIORITY,      \
+#define PHY_MII_DEVICE(n)                                                                     \
+	PHY_MII_CONFIG(n);                                                                    \
+	static struct phy_mii_dev_data phy_mii_dev_data_##n;                                  \
+	DEVICE_DT_INST_DEFINE(n, &phy_mii_initialize, NULL, &phy_mii_dev_data_##n,            \
+			      &phy_mii_dev_config_##n, POST_KERNEL, CONFIG_PHY_INIT_PRIORITY, \
 			      &phy_mii_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PHY_MII_DEVICE)

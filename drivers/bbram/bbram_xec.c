@@ -78,12 +78,12 @@ static const struct bbram_driver_api bbram_xec_driver_api = {
 	.write = bbram_xec_write,
 };
 
-#define BBRAM_INIT(inst)                                                                           \
-	static const struct bbram_xec_config bbram_cfg_##inst = {                                  \
-		.base = (uint8_t *)(DT_INST_REG_ADDR(inst)),                                       \
-		.size = DT_INST_REG_SIZE(inst),                                                    \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, &bbram_cfg_##inst, PRE_KERNEL_1,             \
+#define BBRAM_INIT(inst)                                                               \
+	static const struct bbram_xec_config bbram_cfg_##inst = {                      \
+		.base = (uint8_t *)(DT_INST_REG_ADDR(inst)),                           \
+		.size = DT_INST_REG_SIZE(inst),                                        \
+	};                                                                             \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, &bbram_cfg_##inst, PRE_KERNEL_1, \
 			      CONFIG_BBRAM_INIT_PRIORITY, &bbram_xec_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BBRAM_INIT);

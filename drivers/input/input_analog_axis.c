@@ -315,48 +315,48 @@ static int analog_axis_pm_action(const struct device *dev, enum pm_device_action
 }
 #endif
 
-#define ANALOG_AXIS_CHANNEL_CFG_DEF(node_id)                                                       \
-	{                                                                                          \
-		.adc = ADC_DT_SPEC_GET(node_id),                                                   \
-		.out_min = (int16_t)DT_PROP(node_id, out_min),                                     \
-		.out_max = (int16_t)DT_PROP(node_id, out_max),                                     \
-		.axis = DT_PROP(node_id, zephyr_axis),                                             \
-		.invert_input = DT_PROP(node_id, invert_input),                                    \
-		.invert_output = DT_PROP(node_id, invert_output),                                  \
+#define ANALOG_AXIS_CHANNEL_CFG_DEF(node_id)                      \
+	{                                                         \
+		.adc = ADC_DT_SPEC_GET(node_id),                  \
+		.out_min = (int16_t)DT_PROP(node_id, out_min),    \
+		.out_max = (int16_t)DT_PROP(node_id, out_max),    \
+		.axis = DT_PROP(node_id, zephyr_axis),            \
+		.invert_input = DT_PROP(node_id, invert_input),   \
+		.invert_output = DT_PROP(node_id, invert_output), \
 	}
 
-#define ANALOG_AXIS_CHANNEL_CAL_DEF(node_id)                                                       \
-	{                                                                                          \
-		.in_min = (int16_t)DT_PROP(node_id, in_min),                                       \
-		.in_max = (int16_t)DT_PROP(node_id, in_max),                                       \
-		.in_deadzone = DT_PROP(node_id, in_deadzone),                                      \
+#define ANALOG_AXIS_CHANNEL_CAL_DEF(node_id)                  \
+	{                                                     \
+		.in_min = (int16_t)DT_PROP(node_id, in_min),  \
+		.in_max = (int16_t)DT_PROP(node_id, in_max),  \
+		.in_deadzone = DT_PROP(node_id, in_deadzone), \
 	}
 
-#define ANALOG_AXIS_INIT(inst)                                                                     \
-	static const struct analog_axis_channel_config analog_axis_channel_cfg_##inst[] = {        \
-		DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(inst, ANALOG_AXIS_CHANNEL_CFG_DEF, (, ))};   \
-                                                                                                   \
-	static struct analog_axis_channel_data                                                     \
-		analog_axis_channel_data_##inst[ARRAY_SIZE(analog_axis_channel_cfg_##inst)];       \
-                                                                                                   \
-	static struct analog_axis_calibration analog_axis_calibration_##inst[ARRAY_SIZE(           \
-		analog_axis_channel_cfg_##inst)] = {                                               \
-		DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(inst, ANALOG_AXIS_CHANNEL_CAL_DEF, (, ))};   \
-                                                                                                   \
-	static const struct analog_axis_config analog_axis_cfg_##inst = {                          \
-		.poll_period_ms = DT_INST_PROP(inst, poll_period_ms),                              \
-		.channel_cfg = analog_axis_channel_cfg_##inst,                                     \
-		.channel_data = analog_axis_channel_data_##inst,                                   \
-		.calibration = analog_axis_calibration_##inst,                                     \
-		.num_channels = ARRAY_SIZE(analog_axis_channel_cfg_##inst),                        \
-	};                                                                                         \
-                                                                                                   \
-	static struct analog_axis_data analog_axis_data_##inst;                                    \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, analog_axis_pm_action);                                     \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, analog_axis_init, PM_DEVICE_DT_INST_GET(inst),                 \
-			      &analog_axis_data_##inst, &analog_axis_cfg_##inst, POST_KERNEL,      \
+#define ANALOG_AXIS_INIT(inst)                                                                   \
+	static const struct analog_axis_channel_config analog_axis_channel_cfg_##inst[] = {      \
+		DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(inst, ANALOG_AXIS_CHANNEL_CFG_DEF, (, ))}; \
+                                                                                                 \
+	static struct analog_axis_channel_data                                                   \
+		analog_axis_channel_data_##inst[ARRAY_SIZE(analog_axis_channel_cfg_##inst)];     \
+                                                                                                 \
+	static struct analog_axis_calibration analog_axis_calibration_##inst[ARRAY_SIZE(         \
+		analog_axis_channel_cfg_##inst)] = {                                             \
+		DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(inst, ANALOG_AXIS_CHANNEL_CAL_DEF, (, ))}; \
+                                                                                                 \
+	static const struct analog_axis_config analog_axis_cfg_##inst = {                        \
+		.poll_period_ms = DT_INST_PROP(inst, poll_period_ms),                            \
+		.channel_cfg = analog_axis_channel_cfg_##inst,                                   \
+		.channel_data = analog_axis_channel_data_##inst,                                 \
+		.calibration = analog_axis_calibration_##inst,                                   \
+		.num_channels = ARRAY_SIZE(analog_axis_channel_cfg_##inst),                      \
+	};                                                                                       \
+                                                                                                 \
+	static struct analog_axis_data analog_axis_data_##inst;                                  \
+                                                                                                 \
+	PM_DEVICE_DT_INST_DEFINE(inst, analog_axis_pm_action);                                   \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(inst, analog_axis_init, PM_DEVICE_DT_INST_GET(inst),               \
+			      &analog_axis_data_##inst, &analog_axis_cfg_##inst, POST_KERNEL,    \
 			      CONFIG_INPUT_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(ANALOG_AXIS_INIT)

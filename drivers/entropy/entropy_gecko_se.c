@@ -50,8 +50,8 @@ static const struct entropy_driver_api entropy_gecko_se_api_funcs = {
 	.get_entropy = entropy_gecko_se_get_entropy,
 };
 
-#define GECKO_SE_INIT(n)                                                                           \
-	DEVICE_DT_INST_DEFINE(n, entropy_gecko_se_init, NULL, NULL, NULL, PRE_KERNEL_1,            \
+#define GECKO_SE_INIT(n)                                                                  \
+	DEVICE_DT_INST_DEFINE(n, entropy_gecko_se_init, NULL, NULL, NULL, PRE_KERNEL_1,   \
 			      CONFIG_ENTROPY_INIT_PRIORITY, &entropy_gecko_se_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(GECKO_SE_INIT)

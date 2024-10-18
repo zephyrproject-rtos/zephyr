@@ -318,11 +318,11 @@ uint32_t sam0_eic_interrupt_pending(int port)
 	return mask;
 }
 
-#define SAM0_EIC_IRQ_CONNECT(n)                                                                    \
-	do {                                                                                       \
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, n, irq), DT_INST_IRQ_BY_IDX(0, n, priority),     \
-			    sam0_eic_isr, DEVICE_DT_INST_GET(0), 0);                               \
-		irq_enable(DT_INST_IRQ_BY_IDX(0, n, irq));                                         \
+#define SAM0_EIC_IRQ_CONNECT(n)                                                                \
+	do {                                                                                   \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, n, irq), DT_INST_IRQ_BY_IDX(0, n, priority), \
+			    sam0_eic_isr, DEVICE_DT_INST_GET(0), 0);                           \
+		irq_enable(DT_INST_IRQ_BY_IDX(0, n, irq));                                     \
 	} while (false)
 
 static int sam0_eic_init(const struct device *dev)

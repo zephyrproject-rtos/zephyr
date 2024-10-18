@@ -35,8 +35,8 @@ static uint32_t last_cycle;
 
 #define TI_DM_TIMER_MASK(reg)  TI_DM_TIMER_##reg##_MASK
 #define TI_DM_TIMER_SHIFT(reg) TI_DM_TIMER_##reg##_SHIFT
-#define TI_DM_TIMER_WRITE(data, reg, bits)                                                         \
-	ti_dm_timer_write_masks(data, TIMER_BASE_ADDR + TI_DM_TIMER_##reg,                         \
+#define TI_DM_TIMER_WRITE(data, reg, bits)                                                       \
+	ti_dm_timer_write_masks(data, TIMER_BASE_ADDR + TI_DM_TIMER_##reg,                       \
 				TI_DM_TIMER_MASK(reg##_##bits), TI_DM_TIMER_SHIFT(reg##_##bits))
 
 static void ti_dm_timer_write_masks(uint32_t data, uint32_t reg, uint32_t mask, uint32_t shift)

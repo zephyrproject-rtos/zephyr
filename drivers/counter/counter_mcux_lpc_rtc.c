@@ -228,32 +228,32 @@ static const struct counter_driver_api mcux_rtc_driver_api = {
 	.get_top_value = mcux_lpc_rtc_get_top_value,
 };
 
-#define COUNTER_LPC_RTC_DEVICE(id)                                                                 \
-	static void mcux_lpc_rtc_irq_config_##id(const struct device *dev);                        \
-	static const struct mcux_lpc_rtc_config mcux_lpc_rtc_config_##id = {                       \
-		.base = (RTC_Type *)DT_INST_REG_ADDR(id),                                          \
-		.irq_config_func = mcux_lpc_rtc_irq_config_##id,                                   \
-		.rtc_dev = DEVICE_DT_GET_OR_NULL(DT_INST_CHILD(id, rtc_highres)),                  \
-		.info =                                                                            \
-			{                                                                          \
-				.max_top_value = UINT32_MAX,                                       \
-				.freq = 1,                                                         \
-				.flags = COUNTER_CONFIG_INFO_COUNT_UP,                             \
-				.channels = 1,                                                     \
-			},                                                                         \
-		.wakeup_source = DT_INST_PROP(id, wakeup_source)};                                 \
-	static struct mcux_lpc_rtc_data mcux_lpc_rtc_data_##id;                                    \
-	DEVICE_DT_INST_DEFINE(id, &mcux_lpc_rtc_init, NULL, &mcux_lpc_rtc_data_##id,               \
-			      &mcux_lpc_rtc_config_##id.info, POST_KERNEL,                         \
-			      CONFIG_COUNTER_INIT_PRIORITY, &mcux_rtc_driver_api);                 \
-	static void mcux_lpc_rtc_irq_config_##id(const struct device *dev)                         \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), mcux_lpc_rtc_isr,         \
-			    DEVICE_DT_INST_GET(id), 0);                                            \
-		irq_enable(DT_INST_IRQN(id));                                                      \
-		if (DT_INST_PROP(id, wakeup_source)) {                                             \
-			EnableDeepSleepIRQ(DT_INST_IRQN(id));                                      \
-		}                                                                                  \
+#define COUNTER_LPC_RTC_DEVICE(id)                                                         \
+	static void mcux_lpc_rtc_irq_config_##id(const struct device *dev);                \
+	static const struct mcux_lpc_rtc_config mcux_lpc_rtc_config_##id = {               \
+		.base = (RTC_Type *)DT_INST_REG_ADDR(id),                                  \
+		.irq_config_func = mcux_lpc_rtc_irq_config_##id,                           \
+		.rtc_dev = DEVICE_DT_GET_OR_NULL(DT_INST_CHILD(id, rtc_highres)),          \
+		.info =                                                                    \
+			{                                                                  \
+				.max_top_value = UINT32_MAX,                               \
+				.freq = 1,                                                 \
+				.flags = COUNTER_CONFIG_INFO_COUNT_UP,                     \
+				.channels = 1,                                             \
+			},                                                                 \
+		.wakeup_source = DT_INST_PROP(id, wakeup_source)};                         \
+	static struct mcux_lpc_rtc_data mcux_lpc_rtc_data_##id;                            \
+	DEVICE_DT_INST_DEFINE(id, &mcux_lpc_rtc_init, NULL, &mcux_lpc_rtc_data_##id,       \
+			      &mcux_lpc_rtc_config_##id.info, POST_KERNEL,                 \
+			      CONFIG_COUNTER_INIT_PRIORITY, &mcux_rtc_driver_api);         \
+	static void mcux_lpc_rtc_irq_config_##id(const struct device *dev)                 \
+	{                                                                                  \
+		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), mcux_lpc_rtc_isr, \
+			    DEVICE_DT_INST_GET(id), 0);                                    \
+		irq_enable(DT_INST_IRQN(id));                                              \
+		if (DT_INST_PROP(id, wakeup_source)) {                                     \
+			EnableDeepSleepIRQ(DT_INST_IRQN(id));                              \
+		}                                                                          \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_LPC_RTC_DEVICE)
@@ -419,38 +419,38 @@ static const struct counter_driver_api mcux_rtc_highres_driver_api = {
 	.get_top_value = mcux_lpc_rtc_highres_get_top_value,
 };
 
-#define COUNTER_LPC_RTC_HIGHRES_IRQ_INIT(n)                                                        \
-	do {                                                                                       \
-		IRQ_CONNECT(DT_IRQN(DT_INST_PARENT(n)), DT_IRQ(DT_INST_PARENT(n), priority),       \
-			    mcux_lpc_rtc_isr, DEVICE_DT_INST_GET(n), 0);                           \
-		irq_enable(DT_IRQN(DT_INST_PARENT(n)));                                            \
-		if (DT_INST_PROP(n, wakeup_source)) {                                              \
-			EnableDeepSleepIRQ(DT_IRQN(DT_INST_PARENT(n)));                            \
-		}                                                                                  \
+#define COUNTER_LPC_RTC_HIGHRES_IRQ_INIT(n)                                                  \
+	do {                                                                                 \
+		IRQ_CONNECT(DT_IRQN(DT_INST_PARENT(n)), DT_IRQ(DT_INST_PARENT(n), priority), \
+			    mcux_lpc_rtc_isr, DEVICE_DT_INST_GET(n), 0);                     \
+		irq_enable(DT_IRQN(DT_INST_PARENT(n)));                                      \
+		if (DT_INST_PROP(n, wakeup_source)) {                                        \
+			EnableDeepSleepIRQ(DT_IRQN(DT_INST_PARENT(n)));                      \
+		}                                                                            \
 	} while (false)
 
-#define COUNTER_LPC_RTC_HIGHRES_DEVICE(id)                                                         \
-	static void mcux_lpc_rtc_highres_irq_config_##id(const struct device *dev);                \
-	static const struct mcux_lpc_rtc_config mcux_lpc_rtc_highres_config_##id = {               \
-		.base = (RTC_Type *)DT_REG_ADDR(DT_INST_PARENT(id)),                               \
-		.rtc_dev = DEVICE_DT_GET_OR_NULL(DT_INST_PARENT(id)),                              \
-		.irq_config_func = mcux_lpc_rtc_highres_irq_config_##id,                           \
-		.info =                                                                            \
-			{                                                                          \
-				.max_top_value = UINT16_MAX,                                       \
-				.freq = 1000,                                                      \
-				.channels = 0,                                                     \
-			},                                                                         \
-		.wakeup_source = DT_INST_PROP(id, wakeup_source)};                                 \
-	static struct mcux_lpc_rtc_data mcux_lpc_rtc_highres_data_##id;                            \
-	DEVICE_DT_INST_DEFINE(id, &mcux_lpc_rtc_highres_init, NULL,                                \
-			      &mcux_lpc_rtc_highres_data_##id,                                     \
-			      &mcux_lpc_rtc_highres_config_##id.info, POST_KERNEL,                 \
-			      CONFIG_COUNTER_INIT_PRIORITY, &mcux_rtc_highres_driver_api);         \
-	static void mcux_lpc_rtc_highres_irq_config_##id(const struct device *dev)                 \
-	{                                                                                          \
+#define COUNTER_LPC_RTC_HIGHRES_DEVICE(id)                                                 \
+	static void mcux_lpc_rtc_highres_irq_config_##id(const struct device *dev);        \
+	static const struct mcux_lpc_rtc_config mcux_lpc_rtc_highres_config_##id = {       \
+		.base = (RTC_Type *)DT_REG_ADDR(DT_INST_PARENT(id)),                       \
+		.rtc_dev = DEVICE_DT_GET_OR_NULL(DT_INST_PARENT(id)),                      \
+		.irq_config_func = mcux_lpc_rtc_highres_irq_config_##id,                   \
+		.info =                                                                    \
+			{                                                                  \
+				.max_top_value = UINT16_MAX,                               \
+				.freq = 1000,                                              \
+				.channels = 0,                                             \
+			},                                                                 \
+		.wakeup_source = DT_INST_PROP(id, wakeup_source)};                         \
+	static struct mcux_lpc_rtc_data mcux_lpc_rtc_highres_data_##id;                    \
+	DEVICE_DT_INST_DEFINE(id, &mcux_lpc_rtc_highres_init, NULL,                        \
+			      &mcux_lpc_rtc_highres_data_##id,                             \
+			      &mcux_lpc_rtc_highres_config_##id.info, POST_KERNEL,         \
+			      CONFIG_COUNTER_INIT_PRIORITY, &mcux_rtc_highres_driver_api); \
+	static void mcux_lpc_rtc_highres_irq_config_##id(const struct device *dev)         \
+	{                                                                                  \
 		COND_CODE_1(IS_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(nxp_lpc_rtc)),			\
-			 (), (COUNTER_LPC_RTC_HIGHRES_IRQ_INIT(id));)                \
+			 (), (COUNTER_LPC_RTC_HIGHRES_IRQ_INIT(id));)        \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_LPC_RTC_HIGHRES_DEVICE)

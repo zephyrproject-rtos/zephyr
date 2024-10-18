@@ -1154,7 +1154,7 @@ static int esp_conn_cmd_append(struct esp_data *data, size_t *off, const char *c
 	return 0;
 }
 
-#define esp_conn_cmd_append_literal(data, off, chunk)                                              \
+#define esp_conn_cmd_append_literal(data, off, chunk)            \
 	esp_conn_cmd_append(data, off, chunk, sizeof(chunk) - 1)
 
 static int esp_conn_cmd_escape_and_append(struct esp_data *data, size_t *off, const char *chunk,

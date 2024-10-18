@@ -363,16 +363,16 @@ static int emul_sbs_sbs_gauge_init(const struct emul *target, const struct devic
 /*
  * Main instantiation macro. SBS Gauge Emulator only implemented for I2C
  */
-#define SBS_GAUGE_EMUL(n)                                                                          \
-	static struct sbs_gauge_emul_data sbs_gauge_emul_data_##n;                                 \
-	static const struct sbs_gauge_emul_cfg sbs_gauge_emul_cfg_##n = {                          \
-		.addr = DT_INST_REG_ADDR(n),                                                       \
-		.cutoff_support = DT_PROP_OR(DT_DRV_INST(n), battery_cutoff_support, false),       \
-		.cutoff_reg_addr = DT_PROP_OR(DT_DRV_INST(n), battery_cutoff_reg_addr, 0),         \
-		.cutoff_payload = DT_PROP_OR(DT_DRV_INST(n), battery_cutoff_payload, {}),          \
-	};                                                                                         \
-	EMUL_DT_INST_DEFINE(n, emul_sbs_sbs_gauge_init, &sbs_gauge_emul_data_##n,                  \
-			    &sbs_gauge_emul_cfg_##n, &sbs_gauge_emul_api_i2c,                      \
+#define SBS_GAUGE_EMUL(n)                                                                    \
+	static struct sbs_gauge_emul_data sbs_gauge_emul_data_##n;                           \
+	static const struct sbs_gauge_emul_cfg sbs_gauge_emul_cfg_##n = {                    \
+		.addr = DT_INST_REG_ADDR(n),                                                 \
+		.cutoff_support = DT_PROP_OR(DT_DRV_INST(n), battery_cutoff_support, false), \
+		.cutoff_reg_addr = DT_PROP_OR(DT_DRV_INST(n), battery_cutoff_reg_addr, 0),   \
+		.cutoff_payload = DT_PROP_OR(DT_DRV_INST(n), battery_cutoff_payload, {}),    \
+	};                                                                                   \
+	EMUL_DT_INST_DEFINE(n, emul_sbs_sbs_gauge_init, &sbs_gauge_emul_data_##n,            \
+			    &sbs_gauge_emul_cfg_##n, &sbs_gauge_emul_api_i2c,                \
 			    &sbs_gauge_backend_api)
 
 DT_INST_FOREACH_STATUS_OKAY(SBS_GAUGE_EMUL)

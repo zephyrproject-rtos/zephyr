@@ -83,12 +83,12 @@ static const struct sensor_driver_api as5600_driver_api = {
 	.channel_get = as5600_get,
 };
 
-#define AS5600_INIT(n)                                                                             \
-	static struct as5600_dev_data as5600_data##n;                                              \
-	static const struct as5600_dev_cfg as5600_cfg##n = {.i2c_port = I2C_DT_SPEC_INST_GET(n)};  \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, as5600_initialize, NULL, &as5600_data##n, &as5600_cfg##n,  \
-				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,                     \
+#define AS5600_INIT(n)                                                                            \
+	static struct as5600_dev_data as5600_data##n;                                             \
+	static const struct as5600_dev_cfg as5600_cfg##n = {.i2c_port = I2C_DT_SPEC_INST_GET(n)}; \
+                                                                                                  \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, as5600_initialize, NULL, &as5600_data##n, &as5600_cfg##n, \
+				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,                    \
 				     &as5600_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AS5600_INIT)

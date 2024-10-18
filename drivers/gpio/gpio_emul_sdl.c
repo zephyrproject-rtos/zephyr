@@ -76,22 +76,22 @@ static int gpio_sdl_init(const struct device *dev)
 	return 0;
 }
 
-#define GPIO_SDL_DEFINE(inst)                                                                      \
-	BUILD_ASSERT(DT_NODE_HAS_COMPAT_STATUS(DT_INST_PARENT(inst), zephyr_gpio_emul, okay),      \
-		     "Enabled parent zephyr,gpio-emul node is required");                          \
-                                                                                                   \
-	static const int gpio_sdl_##inst##_codes[] = DT_INST_PROP(inst, scancodes);                \
-                                                                                                   \
-	static struct gpio_sdl_data data_##inst;                                                   \
-                                                                                                   \
-	static const struct gpio_sdl_config gpio_sdl_##inst##_config = {                           \
-		.emul = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                       \
-		.codes = gpio_sdl_##inst##_codes,                                                  \
-		.num_codes = DT_INST_PROP_LEN(inst, scancodes),                                    \
-		.data = &data_##inst,                                                              \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, gpio_sdl_init, NULL, NULL, &gpio_sdl_##inst##_config,          \
+#define GPIO_SDL_DEFINE(inst)                                                                 \
+	BUILD_ASSERT(DT_NODE_HAS_COMPAT_STATUS(DT_INST_PARENT(inst), zephyr_gpio_emul, okay), \
+		     "Enabled parent zephyr,gpio-emul node is required");                     \
+                                                                                              \
+	static const int gpio_sdl_##inst##_codes[] = DT_INST_PROP(inst, scancodes);           \
+                                                                                              \
+	static struct gpio_sdl_data data_##inst;                                              \
+                                                                                              \
+	static const struct gpio_sdl_config gpio_sdl_##inst##_config = {                      \
+		.emul = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                  \
+		.codes = gpio_sdl_##inst##_codes,                                             \
+		.num_codes = DT_INST_PROP_LEN(inst, scancodes),                               \
+		.data = &data_##inst,                                                         \
+	};                                                                                    \
+                                                                                              \
+	DEVICE_DT_INST_DEFINE(inst, gpio_sdl_init, NULL, NULL, &gpio_sdl_##inst##_config,     \
 			      POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_SDL_DEFINE)

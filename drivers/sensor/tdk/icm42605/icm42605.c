@@ -375,24 +375,24 @@ static const struct sensor_driver_api icm42605_driver_api = {
 	.attr_get = icm42605_attr_get,
 };
 
-#define ICM42605_DEFINE_CONFIG(index)                                                              \
-	static const struct icm42605_config icm42605_cfg_##index = {                               \
-		.spi = SPI_DT_SPEC_INST_GET(index,                                                 \
-					    SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA |   \
-						    SPI_WORD_SET(8) | SPI_TRANSFER_MSB,            \
-					    0U),                                                   \
-		.gpio_int = GPIO_DT_SPEC_INST_GET(index, int_gpios),                               \
-		.accel_hz = DT_INST_PROP(index, accel_hz),                                         \
-		.gyro_hz = DT_INST_PROP(index, gyro_hz),                                           \
-		.accel_fs = DT_INST_ENUM_IDX(index, accel_fs),                                     \
-		.gyro_fs = DT_INST_ENUM_IDX(index, gyro_fs),                                       \
+#define ICM42605_DEFINE_CONFIG(index)                                                            \
+	static const struct icm42605_config icm42605_cfg_##index = {                             \
+		.spi = SPI_DT_SPEC_INST_GET(index,                                               \
+					    SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | \
+						    SPI_WORD_SET(8) | SPI_TRANSFER_MSB,          \
+					    0U),                                                 \
+		.gpio_int = GPIO_DT_SPEC_INST_GET(index, int_gpios),                             \
+		.accel_hz = DT_INST_PROP(index, accel_hz),                                       \
+		.gyro_hz = DT_INST_PROP(index, gyro_hz),                                         \
+		.accel_fs = DT_INST_ENUM_IDX(index, accel_fs),                                   \
+		.gyro_fs = DT_INST_ENUM_IDX(index, gyro_fs),                                     \
 	}
 
-#define ICM42605_INIT(index)                                                                       \
-	ICM42605_DEFINE_CONFIG(index);                                                             \
-	static struct icm42605_data icm42605_driver_##index;                                       \
-	SENSOR_DEVICE_DT_INST_DEFINE(index, icm42605_init, NULL, &icm42605_driver_##index,         \
-				     &icm42605_cfg_##index, POST_KERNEL,                           \
+#define ICM42605_INIT(index)                                                               \
+	ICM42605_DEFINE_CONFIG(index);                                                     \
+	static struct icm42605_data icm42605_driver_##index;                               \
+	SENSOR_DEVICE_DT_INST_DEFINE(index, icm42605_init, NULL, &icm42605_driver_##index, \
+				     &icm42605_cfg_##index, POST_KERNEL,                   \
 				     CONFIG_SENSOR_INIT_PRIORITY, &icm42605_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ICM42605_INIT)

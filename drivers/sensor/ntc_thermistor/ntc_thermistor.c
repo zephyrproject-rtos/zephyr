@@ -128,41 +128,41 @@ static int ntc_thermistor_pm_action(const struct device *dev, enum pm_device_act
 }
 #endif
 
-#define NTC_THERMISTOR_DEFINE0(inst, id, _comp, _n_comp)                                           \
-	static struct ntc_thermistor_data ntc_thermistor_driver_##id##inst;                        \
-                                                                                                   \
-	static const struct ntc_thermistor_config ntc_thermistor_cfg_##id##inst = {                \
-		.adc_channel = ADC_DT_SPEC_INST_GET(inst),                                         \
-		.ntc_cfg =                                                                         \
-			{                                                                          \
-				.pullup_uv = DT_INST_PROP(inst, pullup_uv),                        \
-				.pullup_ohm = DT_INST_PROP(inst, pullup_ohm),                      \
-				.pulldown_ohm = DT_INST_PROP(inst, pulldown_ohm),                  \
-				.connected_positive = DT_INST_PROP(inst, connected_positive),      \
-				.type =                                                            \
-					{                                                          \
-						.comp = _comp,                                     \
-						.n_comp = _n_comp,                                 \
-					},                                                         \
-			},                                                                         \
-	};                                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, ntc_thermistor_pm_action);                                  \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, ntc_thermistor_init, PM_DEVICE_DT_INST_GET(inst),       \
-				     &ntc_thermistor_driver_##id##inst,                            \
-				     &ntc_thermistor_cfg_##id##inst, POST_KERNEL,                  \
+#define NTC_THERMISTOR_DEFINE0(inst, id, _comp, _n_comp)                                       \
+	static struct ntc_thermistor_data ntc_thermistor_driver_##id##inst;                    \
+                                                                                               \
+	static const struct ntc_thermistor_config ntc_thermistor_cfg_##id##inst = {            \
+		.adc_channel = ADC_DT_SPEC_INST_GET(inst),                                     \
+		.ntc_cfg =                                                                     \
+			{                                                                      \
+				.pullup_uv = DT_INST_PROP(inst, pullup_uv),                    \
+				.pullup_ohm = DT_INST_PROP(inst, pullup_ohm),                  \
+				.pulldown_ohm = DT_INST_PROP(inst, pulldown_ohm),              \
+				.connected_positive = DT_INST_PROP(inst, connected_positive),  \
+				.type =                                                        \
+					{                                                      \
+						.comp = _comp,                                 \
+						.n_comp = _n_comp,                             \
+					},                                                     \
+			},                                                                     \
+	};                                                                                     \
+                                                                                               \
+	PM_DEVICE_DT_INST_DEFINE(inst, ntc_thermistor_pm_action);                              \
+                                                                                               \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, ntc_thermistor_init, PM_DEVICE_DT_INST_GET(inst),   \
+				     &ntc_thermistor_driver_##id##inst,                        \
+				     &ntc_thermistor_cfg_##id##inst, POST_KERNEL,              \
 				     CONFIG_SENSOR_INIT_PRIORITY, &ntc_thermistor_driver_api);
 
-#define NTC_THERMISTOR_DEFINE(inst, id, comp)                                                      \
+#define NTC_THERMISTOR_DEFINE(inst, id, comp)                    \
 	NTC_THERMISTOR_DEFINE0(inst, id, comp, ARRAY_SIZE(comp))
 
 /* ntc-thermistor-generic */
 #define DT_DRV_COMPAT ntc_thermistor_generic
 
-#define NTC_THERMISTOR_GENERIC_DEFINE(inst)                                                        \
-	static const uint32_t comp_##inst[] = DT_INST_PROP(inst, zephyr_compensation_table);       \
-	NTC_THERMISTOR_DEFINE0(inst, DT_DRV_COMPAT, (struct ntc_compensation *)comp_##inst,        \
+#define NTC_THERMISTOR_GENERIC_DEFINE(inst)                                                  \
+	static const uint32_t comp_##inst[] = DT_INST_PROP(inst, zephyr_compensation_table); \
+	NTC_THERMISTOR_DEFINE0(inst, DT_DRV_COMPAT, (struct ntc_compensation *)comp_##inst,  \
 			       ARRAY_SIZE(comp_##inst) / 2)
 
 DT_INST_FOREACH_STATUS_OKAY(NTC_THERMISTOR_GENERIC_DEFINE)

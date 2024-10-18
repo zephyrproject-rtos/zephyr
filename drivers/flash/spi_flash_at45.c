@@ -51,10 +51,10 @@ LOG_MODULE_REGISTER(spi_flash_at45, CONFIG_FLASH_LOG_LEVEL);
 #define INST_HAS_RESET_OR(inst)  DT_INST_NODE_HAS_PROP(inst, reset_gpios) ||
 #define ANY_INST_HAS_RESET_GPIOS DT_INST_FOREACH_STATUS_OKAY(INST_HAS_RESET_OR) 0
 
-#define DEF_BUF_SET(_name, _buf_array)                                                             \
-	const struct spi_buf_set _name = {                                                         \
-		.buffers = _buf_array,                                                             \
-		.count = ARRAY_SIZE(_buf_array),                                                   \
+#define DEF_BUF_SET(_name, _buf_array)           \
+	const struct spi_buf_set _name = {       \
+		.buffers = _buf_array,           \
+		.count = ARRAY_SIZE(_buf_array), \
 	}
 
 struct spi_flash_at45_data {
@@ -606,14 +606,14 @@ static const struct flash_driver_api spi_flash_at45_api = {
 
 #define INST_HAS_RESET_GPIO(idx) DT_INST_NODE_HAS_PROP(idx, reset_gpios)
 
-#define INST_RESET_GPIO_SPEC(idx)                                                                  \
+#define INST_RESET_GPIO_SPEC(idx)                 \
 	IF_ENABLED(INST_HAS_RESET_GPIO(idx),				\
 		(static const struct gpio_dt_spec reset_##idx =	\
 		GPIO_DT_SPEC_INST_GET(idx, reset_gpios);))
 
 #define INST_HAS_WP_GPIO(idx) DT_INST_NODE_HAS_PROP(idx, wp_gpios)
 
-#define INST_WP_GPIO_SPEC(idx)                                                                     \
+#define INST_WP_GPIO_SPEC(idx)                 \
 	IF_ENABLED(INST_HAS_WP_GPIO(idx),				\
 		(static const struct gpio_dt_spec wp_##idx =		\
 		GPIO_DT_SPEC_INST_GET(idx, wp_gpios);))

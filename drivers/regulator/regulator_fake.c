@@ -79,22 +79,22 @@ static struct regulator_parent_driver_api parent_api = {
 #define FAKE_DATA_NAME(node_id) _CONCAT(data_, DT_DEP_ORD(node_id))
 #define FAKE_CONF_NAME(node_id) _CONCAT(config_, DT_DEP_ORD(node_id))
 
-#define REGULATOR_FAKE_DEFINE(node_id)                                                             \
-	static struct regulator_fake_data FAKE_DATA_NAME(node_id);                                 \
-                                                                                                   \
-	static const struct regulator_fake_config FAKE_CONF_NAME(node_id) = {                      \
-		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node_id),                                \
-		.is_enabled = DT_PROP(node_id, fake_is_enabled_in_hardware),                       \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_DEFINE(node_id, regulator_fake_init, NULL, &FAKE_DATA_NAME(node_id),             \
-			 &FAKE_CONF_NAME(node_id), POST_KERNEL,                                    \
+#define REGULATOR_FAKE_DEFINE(node_id)                                                 \
+	static struct regulator_fake_data FAKE_DATA_NAME(node_id);                     \
+                                                                                       \
+	static const struct regulator_fake_config FAKE_CONF_NAME(node_id) = {          \
+		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node_id),                    \
+		.is_enabled = DT_PROP(node_id, fake_is_enabled_in_hardware),           \
+	};                                                                             \
+                                                                                       \
+	DEVICE_DT_DEFINE(node_id, regulator_fake_init, NULL, &FAKE_DATA_NAME(node_id), \
+			 &FAKE_CONF_NAME(node_id), POST_KERNEL,                        \
 			 CONFIG_REGULATOR_FAKE_INIT_PRIORITY, &api);
 
-#define REGULATOR_FAKE_DEFINE_ALL(inst)                                                            \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, NULL, POST_KERNEL,                           \
-			      CONFIG_REGULATOR_FAKE_COMMON_INIT_PRIORITY, &parent_api);            \
-                                                                                                   \
+#define REGULATOR_FAKE_DEFINE_ALL(inst)                                                 \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, NULL, POST_KERNEL,                \
+			      CONFIG_REGULATOR_FAKE_COMMON_INIT_PRIORITY, &parent_api); \
+                                                                                        \
 	DT_INST_FOREACH_CHILD(inst, REGULATOR_FAKE_DEFINE)
 
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_FAKE_DEFINE_ALL)

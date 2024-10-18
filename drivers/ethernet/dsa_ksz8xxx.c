@@ -1016,14 +1016,14 @@ static struct dsa_api dsa_api_f = {
  * For simple cases it is just good enough.
  */
 
-#define NET_SLAVE_DEVICE_INIT_INSTANCE(slave, n)                                                   \
-	const struct dsa_slave_config dsa_0_slave_##slave##_config = {                             \
-		.mac_addr = DT_PROP_OR(slave, local_mac_address, {0})};                            \
-	NET_DEVICE_INIT_INSTANCE(CONCAT(dsa_slave_port_, slave),                                   \
-				 "lan" STRINGIFY(n), n, dsa_port_init, NULL, &dsa_context_##n,     \
-						 &dsa_0_slave_##slave##_config,                    \
-						 CONFIG_ETH_INIT_PRIORITY, &dsa_eth_api_funcs,     \
-						 ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2),    \
+#define NET_SLAVE_DEVICE_INIT_INSTANCE(slave, n)                                                \
+	const struct dsa_slave_config dsa_0_slave_##slave##_config = {                          \
+		.mac_addr = DT_PROP_OR(slave, local_mac_address, {0})};                         \
+	NET_DEVICE_INIT_INSTANCE(CONCAT(dsa_slave_port_, slave),                                \
+				 "lan" STRINGIFY(n), n, dsa_port_init, NULL, &dsa_context_##n,  \
+						 &dsa_0_slave_##slave##_config,                 \
+						 CONFIG_ETH_INIT_PRIORITY, &dsa_eth_api_funcs,  \
+						 ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2), \
 						 NET_ETH_MTU);
 
 #define NET_SLAVE_DEVICE_0_INIT_INSTANCE(slave) NET_SLAVE_DEVICE_INIT_INSTANCE(slave, 0)
@@ -1038,17 +1038,17 @@ static struct dsa_api dsa_api_f = {
 #define DSA_SPI_BUS_CONFIGURATION(n)
 #endif
 
-#define DSA_DEVICE(n)                                                                              \
-	static struct ksz8xxx_data dsa_device_prv_data_##n = {                                     \
-		.iface_init_count = 0,                                                             \
-		.is_init = false,                                                                  \
-		DSA_SPI_BUS_CONFIGURATION(n),                                                      \
-	};                                                                                         \
-	static struct dsa_context dsa_context_##n = {                                              \
-		.num_slave_ports = DT_INST_PROP(0, dsa_slave_ports),                               \
-		.dapi = &dsa_api_f,                                                                \
-		.prv_data = (void *)&dsa_device_prv_data_##n,                                      \
-	};                                                                                         \
+#define DSA_DEVICE(n)                                                      \
+	static struct ksz8xxx_data dsa_device_prv_data_##n = {             \
+		.iface_init_count = 0,                                     \
+		.is_init = false,                                          \
+		DSA_SPI_BUS_CONFIGURATION(n),                              \
+	};                                                                 \
+	static struct dsa_context dsa_context_##n = {                      \
+		.num_slave_ports = DT_INST_PROP(0, dsa_slave_ports),       \
+		.dapi = &dsa_api_f,                                        \
+		.prv_data = (void *)&dsa_device_prv_data_##n,              \
+	};                                                                 \
 	DT_INST_FOREACH_CHILD_VARGS(n, NET_SLAVE_DEVICE_INIT_INSTANCE, n);
 
 DT_INST_FOREACH_STATUS_OKAY(DSA_DEVICE);

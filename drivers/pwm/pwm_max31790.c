@@ -341,15 +341,15 @@ static int max31790_pwm_init(const struct device *dev)
 	return 0;
 }
 
-#define MAX31790_PWM_INIT(inst)                                                                    \
-	static const struct max31790_pwm_config max31790_pwm_##inst##_config = {                   \
-		.i2c = I2C_DT_SPEC_GET(DT_INST_PARENT(inst)),                                      \
-	};                                                                                         \
-                                                                                                   \
-	static struct max31790_pwm_data max31790_pwm_##inst##_data;                                \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, max31790_pwm_init, NULL, &max31790_pwm_##inst##_data,          \
-			      &max31790_pwm_##inst##_config, POST_KERNEL,                          \
+#define MAX31790_PWM_INIT(inst)                                                           \
+	static const struct max31790_pwm_config max31790_pwm_##inst##_config = {          \
+		.i2c = I2C_DT_SPEC_GET(DT_INST_PARENT(inst)),                             \
+	};                                                                                \
+                                                                                          \
+	static struct max31790_pwm_data max31790_pwm_##inst##_data;                       \
+                                                                                          \
+	DEVICE_DT_INST_DEFINE(inst, max31790_pwm_init, NULL, &max31790_pwm_##inst##_data, \
+			      &max31790_pwm_##inst##_config, POST_KERNEL,                 \
 			      CONFIG_PWM_INIT_PRIORITY, &max31790_pwm_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX31790_PWM_INIT);

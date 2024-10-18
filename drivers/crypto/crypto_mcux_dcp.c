@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(mcux_dcp, CONFIG_CRYPTO_LOG_LEVEL);
 
 #include <fsl_dcp.h>
 
-#define CRYPTO_DCP_CIPHER_CAPS                                                                     \
+#define CRYPTO_DCP_CIPHER_CAPS                                                 \
 	(CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | CAP_NO_IV_PREFIX)
 #define CRYPTO_DCP_HASH_CAPS (CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS)
 

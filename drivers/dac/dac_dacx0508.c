@@ -348,26 +348,26 @@ static const struct dac_driver_api dacx0508_driver_api = {
 
 #define INST_DT_DACX0508(inst, t) DT_INST(inst, ti_dac##t)
 
-#define DACX0508_DEVICE(t, n, res)                                                                 \
-	static struct dacx0508_data dac##t##_data_##n;                                             \
-	static const struct dacx0508_config dac##t##_config_##n = {                                \
-		.bus = SPI_DT_SPEC_GET(INST_DT_DACX0508(n, t),                                     \
-				       SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) |   \
-					       SPI_MODE_CPHA,                                      \
-				       0),                                                         \
-		.resolution = res,                                                                 \
-		.reference = DT_PROP(INST_DT_DACX0508(n, t), voltage_reference),                   \
-		.gain[0] = DT_PROP(INST_DT_DACX0508(n, t), channel0_gain),                         \
-		.gain[1] = DT_PROP(INST_DT_DACX0508(n, t), channel1_gain),                         \
-		.gain[2] = DT_PROP(INST_DT_DACX0508(n, t), channel2_gain),                         \
-		.gain[3] = DT_PROP(INST_DT_DACX0508(n, t), channel3_gain),                         \
-		.gain[4] = DT_PROP(INST_DT_DACX0508(n, t), channel4_gain),                         \
-		.gain[5] = DT_PROP(INST_DT_DACX0508(n, t), channel5_gain),                         \
-		.gain[6] = DT_PROP(INST_DT_DACX0508(n, t), channel6_gain),                         \
-		.gain[7] = DT_PROP(INST_DT_DACX0508(n, t), channel7_gain),                         \
-	};                                                                                         \
-	DEVICE_DT_DEFINE(INST_DT_DACX0508(n, t), &dacx0508_init, NULL, &dac##t##_data_##n,         \
-			 &dac##t##_config_##n, POST_KERNEL, CONFIG_DAC_DACX0508_INIT_PRIORITY,     \
+#define DACX0508_DEVICE(t, n, res)                                                               \
+	static struct dacx0508_data dac##t##_data_##n;                                           \
+	static const struct dacx0508_config dac##t##_config_##n = {                              \
+		.bus = SPI_DT_SPEC_GET(INST_DT_DACX0508(n, t),                                   \
+				       SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) | \
+					       SPI_MODE_CPHA,                                    \
+				       0),                                                       \
+		.resolution = res,                                                               \
+		.reference = DT_PROP(INST_DT_DACX0508(n, t), voltage_reference),                 \
+		.gain[0] = DT_PROP(INST_DT_DACX0508(n, t), channel0_gain),                       \
+		.gain[1] = DT_PROP(INST_DT_DACX0508(n, t), channel1_gain),                       \
+		.gain[2] = DT_PROP(INST_DT_DACX0508(n, t), channel2_gain),                       \
+		.gain[3] = DT_PROP(INST_DT_DACX0508(n, t), channel3_gain),                       \
+		.gain[4] = DT_PROP(INST_DT_DACX0508(n, t), channel4_gain),                       \
+		.gain[5] = DT_PROP(INST_DT_DACX0508(n, t), channel5_gain),                       \
+		.gain[6] = DT_PROP(INST_DT_DACX0508(n, t), channel6_gain),                       \
+		.gain[7] = DT_PROP(INST_DT_DACX0508(n, t), channel7_gain),                       \
+	};                                                                                       \
+	DEVICE_DT_DEFINE(INST_DT_DACX0508(n, t), &dacx0508_init, NULL, &dac##t##_data_##n,       \
+			 &dac##t##_config_##n, POST_KERNEL, CONFIG_DAC_DACX0508_INIT_PRIORITY,   \
 			 &dacx0508_driver_api);
 
 /*
@@ -387,7 +387,7 @@ static const struct dac_driver_api dacx0508_driver_api = {
 
 #define CALL_WITH_ARG(arg, expr) expr(arg)
 
-#define INST_DT_DACX0508_FOREACH(t, inst_expr)                                                     \
+#define INST_DT_DACX0508_FOREACH(t, inst_expr)        \
 	LISTIFY(DT_NUM_INST_STATUS_OKAY(ti_dac##t), \
 		     CALL_WITH_ARG, (), inst_expr)
 

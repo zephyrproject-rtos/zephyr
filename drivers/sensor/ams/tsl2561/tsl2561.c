@@ -331,14 +331,14 @@ static int tsl2561_init(const struct device *dev)
 	return 0;
 }
 
-#define TSL2561_INIT_INST(n)                                                                       \
-	static struct tsl2561_data tsl2561_data_##n;                                               \
-	static const struct tsl2561_config tsl2561_config_##n = {                                  \
-		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
-		.integration_time = DT_INST_PROP(n, integration_time),                             \
-		.gain = DT_INST_PROP(n, gain)};                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, tsl2561_init, NULL, &tsl2561_data_##n,                     \
-				     &tsl2561_config_##n, POST_KERNEL,                             \
+#define TSL2561_INIT_INST(n)                                                            \
+	static struct tsl2561_data tsl2561_data_##n;                                    \
+	static const struct tsl2561_config tsl2561_config_##n = {                       \
+		.i2c = I2C_DT_SPEC_INST_GET(n),                                         \
+		.integration_time = DT_INST_PROP(n, integration_time),                  \
+		.gain = DT_INST_PROP(n, gain)};                                         \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, tsl2561_init, NULL, &tsl2561_data_##n,          \
+				     &tsl2561_config_##n, POST_KERNEL,                  \
 				     CONFIG_SENSOR_INIT_PRIORITY, &tsl2561_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TSL2561_INIT_INST)

@@ -226,48 +226,48 @@ static void gpio_numaker_isr(const struct device *dev)
 
 #define CLOCK_CTRL_INIT(n) .clk_dev = DEVICE_DT_GET(DT_PARENT(DT_INST_CLOCKS_CTLR(n))),
 
-#define GPIO_NUMAKER_IRQ_INIT(n)                                                                   \
-	do {                                                                                       \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_numaker_isr,           \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define GPIO_NUMAKER_IRQ_INIT(n)                                                         \
+	do {                                                                             \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_numaker_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                                   \
+                                                                                         \
+		irq_enable(DT_INST_IRQN(n));                                             \
 	} while (0)
 
-#define GPIO_NUMAKER_DEFINE(n)                                                                     \
-	static const struct gpio_numaker_config gpio_numaker_config##n = {                         \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
-		.reg = DT_INST_REG_ADDR(n),                                                        \
-		.gpa_base = DT_REG_ADDR(DT_NODELABEL(gpioa)),                                      \
-		.size = DT_REG_SIZE(DT_NODELABEL(gpioa)),                                          \
-		.clk_modidx = DT_INST_CLOCKS_CELL(n, clock_module_index),                          \
-		CLOCK_CTRL_INIT(n)};                                                               \
-                                                                                                   \
-	static struct gpio_numaker_data gpio_numaker_data##n;                                      \
-                                                                                                   \
-	static int gpio_numaker_init##n(const struct device *dev)                                  \
-	{                                                                                          \
-		const struct gpio_numaker_config *config = dev->config;                            \
-		struct numaker_scc_subsys scc_subsys;                                              \
-		int err;                                                                           \
-                                                                                                   \
-		SYS_UnlockReg();                                                                   \
-		memset(&scc_subsys, 0x00, sizeof(scc_subsys));                                     \
-		scc_subsys.subsys_id = NUMAKER_SCC_SUBSYS_ID_PCC;                                  \
-		scc_subsys.pcc.clk_modidx = config->clk_modidx;                                    \
-		err = clock_control_on(config->clk_dev, (clock_control_subsys_t) & scc_subsys);    \
-		if (err == 0) {                                                                    \
-			IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0), (GPIO_NUMAKER_IRQ_INIT(n);))                                                                 \
-		}                                                                                  \
-                                                                                                   \
-		SYS_LockReg();                                                                     \
-		return err;                                                                        \
-	}                                                                                          \
-	DEVICE_DT_INST_DEFINE(n, gpio_numaker_init##n, NULL, &gpio_numaker_data##n,                \
-			      &gpio_numaker_config##n, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,    \
+#define GPIO_NUMAKER_DEFINE(n)                                                                  \
+	static const struct gpio_numaker_config gpio_numaker_config##n = {                      \
+		.common =                                                                       \
+			{                                                                       \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),            \
+			},                                                                      \
+		.reg = DT_INST_REG_ADDR(n),                                                     \
+		.gpa_base = DT_REG_ADDR(DT_NODELABEL(gpioa)),                                   \
+		.size = DT_REG_SIZE(DT_NODELABEL(gpioa)),                                       \
+		.clk_modidx = DT_INST_CLOCKS_CELL(n, clock_module_index),                       \
+		CLOCK_CTRL_INIT(n)};                                                            \
+                                                                                                \
+	static struct gpio_numaker_data gpio_numaker_data##n;                                   \
+                                                                                                \
+	static int gpio_numaker_init##n(const struct device *dev)                               \
+	{                                                                                       \
+		const struct gpio_numaker_config *config = dev->config;                         \
+		struct numaker_scc_subsys scc_subsys;                                           \
+		int err;                                                                        \
+                                                                                                \
+		SYS_UnlockReg();                                                                \
+		memset(&scc_subsys, 0x00, sizeof(scc_subsys));                                  \
+		scc_subsys.subsys_id = NUMAKER_SCC_SUBSYS_ID_PCC;                               \
+		scc_subsys.pcc.clk_modidx = config->clk_modidx;                                 \
+		err = clock_control_on(config->clk_dev, (clock_control_subsys_t) & scc_subsys); \
+		if (err == 0) {                                                                 \
+			IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0), (GPIO_NUMAKER_IRQ_INIT(n);))                                                              \
+		}                                                                               \
+                                                                                                \
+		SYS_LockReg();                                                                  \
+		return err;                                                                     \
+	}                                                                                       \
+	DEVICE_DT_INST_DEFINE(n, gpio_numaker_init##n, NULL, &gpio_numaker_data##n,             \
+			      &gpio_numaker_config##n, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, \
 			      &gpio_numaker_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_NUMAKER_DEFINE)

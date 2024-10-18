@@ -340,31 +340,31 @@ static const struct i2c_driver_api i2c_api = {
 #endif
 };
 
-#define LPC11U6X_I2C_INIT(idx)                                                                     \
-                                                                                                   \
-	static void lpc11u6x_i2c_isr_config_##idx(const struct device *dev);                       \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(idx);                                                               \
-                                                                                                   \
-	static const struct lpc11u6x_i2c_config i2c_cfg_##idx = {                                  \
-		.base = (struct lpc11u6x_i2c_regs *)DT_INST_REG_ADDR(idx),                         \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                              \
-		.irq_config_func = lpc11u6x_i2c_isr_config_##idx,                                  \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                     \
-		.clkid = DT_INST_PHA_BY_IDX(idx, clocks, 0, clkid),                                \
-	};                                                                                         \
-                                                                                                   \
-	static struct lpc11u6x_i2c_data i2c_data_##idx;                                            \
-                                                                                                   \
-	I2C_DEVICE_DT_INST_DEFINE(idx, lpc11u6x_i2c_init, NULL, &i2c_data_##idx, &i2c_cfg_##idx,   \
-				  PRE_KERNEL_1, CONFIG_I2C_INIT_PRIORITY, &i2c_api);               \
-                                                                                                   \
-	static void lpc11u6x_i2c_isr_config_##idx(const struct device *dev)                        \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority), lpc11u6x_i2c_isr,       \
-			    DEVICE_DT_INST_GET(idx), 0);                                           \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(idx));                                                     \
+#define LPC11U6X_I2C_INIT(idx)                                                                   \
+                                                                                                 \
+	static void lpc11u6x_i2c_isr_config_##idx(const struct device *dev);                     \
+                                                                                                 \
+	PINCTRL_DT_INST_DEFINE(idx);                                                             \
+                                                                                                 \
+	static const struct lpc11u6x_i2c_config i2c_cfg_##idx = {                                \
+		.base = (struct lpc11u6x_i2c_regs *)DT_INST_REG_ADDR(idx),                       \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                            \
+		.irq_config_func = lpc11u6x_i2c_isr_config_##idx,                                \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                   \
+		.clkid = DT_INST_PHA_BY_IDX(idx, clocks, 0, clkid),                              \
+	};                                                                                       \
+                                                                                                 \
+	static struct lpc11u6x_i2c_data i2c_data_##idx;                                          \
+                                                                                                 \
+	I2C_DEVICE_DT_INST_DEFINE(idx, lpc11u6x_i2c_init, NULL, &i2c_data_##idx, &i2c_cfg_##idx, \
+				  PRE_KERNEL_1, CONFIG_I2C_INIT_PRIORITY, &i2c_api);             \
+                                                                                                 \
+	static void lpc11u6x_i2c_isr_config_##idx(const struct device *dev)                      \
+	{                                                                                        \
+		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority), lpc11u6x_i2c_isr,     \
+			    DEVICE_DT_INST_GET(idx), 0);                                         \
+                                                                                                 \
+		irq_enable(DT_INST_IRQN(idx));                                                   \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(LPC11U6X_I2C_INIT);

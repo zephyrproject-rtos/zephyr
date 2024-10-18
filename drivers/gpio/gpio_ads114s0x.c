@@ -130,16 +130,16 @@ static const struct gpio_driver_api gpio_ads114s0x_api = {
 BUILD_ASSERT(CONFIG_GPIO_ADS114S0X_INIT_PRIORITY > CONFIG_ADC_INIT_PRIORITY,
 	     "ADS114S0X GPIO driver must be initialized after ADS114S0X ADC driver");
 
-#define GPIO_ADS114S0X_DEVICE(id)                                                                  \
-	static const struct gpio_ads114s0x_config gpio_ads114s0x_##id##_cfg = {                    \
-		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(id)},                  \
-		.parent = DEVICE_DT_GET(DT_INST_BUS(id)),                                          \
-	};                                                                                         \
-                                                                                                   \
-	static struct gpio_ads114s0x_data gpio_ads114s0x_##id##_data;                              \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(id, gpio_ads114s0x_init, NULL, &gpio_ads114s0x_##id##_data,          \
-			      &gpio_ads114s0x_##id##_cfg, POST_KERNEL,                             \
+#define GPIO_ADS114S0X_DEVICE(id)                                                         \
+	static const struct gpio_ads114s0x_config gpio_ads114s0x_##id##_cfg = {           \
+		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(id)},         \
+		.parent = DEVICE_DT_GET(DT_INST_BUS(id)),                                 \
+	};                                                                                \
+                                                                                          \
+	static struct gpio_ads114s0x_data gpio_ads114s0x_##id##_data;                     \
+                                                                                          \
+	DEVICE_DT_INST_DEFINE(id, gpio_ads114s0x_init, NULL, &gpio_ads114s0x_##id##_data, \
+			      &gpio_ads114s0x_##id##_cfg, POST_KERNEL,                    \
 			      CONFIG_GPIO_ADS114S0X_INIT_PRIORITY, &gpio_ads114s0x_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_ADS114S0X_DEVICE)

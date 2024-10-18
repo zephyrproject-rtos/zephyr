@@ -405,35 +405,35 @@ static int flash_mspi_emul_device_init_stub(const struct device *dev)
 	return 0;
 }
 
-#define FLASH_MSPI_EMUL_DEVICE(n)                                                                  \
-	static uint8_t flash_mspi_emul_device_mem##n[DT_INST_PROP(n, size) / 8];                   \
-	static const struct flash_mspi_emul_device_config flash_mspi_emul_device_config_##n = {    \
-		.size = DT_INST_PROP(n, size) / 8,                                                 \
-		.flash_param =                                                                     \
-			{                                                                          \
-				.write_block_size = 1,                                             \
-				.erase_value = 0xff,                                               \
-			},                                                                         \
-		.page_layout =                                                                     \
-			{                                                                          \
-				.pages_count = DT_INST_PROP(n, size) / 8 / SPI_NOR_PAGE_SIZE,      \
-				.pages_size = SPI_NOR_PAGE_SIZE,                                   \
-			},                                                                         \
-		.dev_id = MSPI_DEVICE_ID_DT_INST(n),                                               \
-		.tar_dev_cfg = MSPI_DEVICE_CONFIG_DT_INST(n),                                      \
-		.tar_xip_cfg = MSPI_XIP_CONFIG_DT_INST(n),                                         \
-		.tar_scramble_cfg = MSPI_SCRAMBLE_CONFIG_DT_INST(n),                               \
-		.sw_multi_periph = DT_PROP(DT_INST_BUS(n), software_multiperipheral)};             \
-	static struct flash_mspi_emul_device_data flash_mspi_emul_device_data_##n = {              \
-		.lock = Z_SEM_INITIALIZER(flash_mspi_emul_device_data_##n.lock, 0, 1),             \
-		.mem = (uint8_t *)flash_mspi_emul_device_mem##n,                                   \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, flash_mspi_emul_device_init_stub, NULL,                           \
-			      &flash_mspi_emul_device_data_##n,                                    \
-			      &flash_mspi_emul_device_config_##n, POST_KERNEL,                     \
+#define FLASH_MSPI_EMUL_DEVICE(n)                                                               \
+	static uint8_t flash_mspi_emul_device_mem##n[DT_INST_PROP(n, size) / 8];                \
+	static const struct flash_mspi_emul_device_config flash_mspi_emul_device_config_##n = { \
+		.size = DT_INST_PROP(n, size) / 8,                                              \
+		.flash_param =                                                                  \
+			{                                                                       \
+				.write_block_size = 1,                                          \
+				.erase_value = 0xff,                                            \
+			},                                                                      \
+		.page_layout =                                                                  \
+			{                                                                       \
+				.pages_count = DT_INST_PROP(n, size) / 8 / SPI_NOR_PAGE_SIZE,   \
+				.pages_size = SPI_NOR_PAGE_SIZE,                                \
+			},                                                                      \
+		.dev_id = MSPI_DEVICE_ID_DT_INST(n),                                            \
+		.tar_dev_cfg = MSPI_DEVICE_CONFIG_DT_INST(n),                                   \
+		.tar_xip_cfg = MSPI_XIP_CONFIG_DT_INST(n),                                      \
+		.tar_scramble_cfg = MSPI_SCRAMBLE_CONFIG_DT_INST(n),                            \
+		.sw_multi_periph = DT_PROP(DT_INST_BUS(n), software_multiperipheral)};          \
+	static struct flash_mspi_emul_device_data flash_mspi_emul_device_data_##n = {           \
+		.lock = Z_SEM_INITIALIZER(flash_mspi_emul_device_data_##n.lock, 0, 1),          \
+		.mem = (uint8_t *)flash_mspi_emul_device_mem##n,                                \
+	};                                                                                      \
+	DEVICE_DT_INST_DEFINE(n, flash_mspi_emul_device_init_stub, NULL,                        \
+			      &flash_mspi_emul_device_data_##n,                                 \
+			      &flash_mspi_emul_device_config_##n, POST_KERNEL,                  \
 			      CONFIG_FLASH_INIT_PRIORITY, &flash_mspi_emul_device_api);
 
-#define EMUL_TEST(n)                                                                               \
+#define EMUL_TEST(n)                                                                         \
 	EMUL_DT_INST_DEFINE(n, emul_mspi_device_init, NULL, NULL, &emul_mspi_dev_api, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(EMUL_TEST);

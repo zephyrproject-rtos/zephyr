@@ -754,10 +754,10 @@ static struct ieee802154_cc13xx_cc26xx_data ieee802154_cc13xx_cc26xx_data = {
 
 	.cmd_radio_setup =
 		{
-#if defined(CONFIG_SOC_CC1352R) || defined(CONFIG_SOC_CC2652R) || defined(CONFIG_SOC_CC1352R7) ||  \
+#if defined(CONFIG_SOC_CC1352R) || defined(CONFIG_SOC_CC2652R) || defined(CONFIG_SOC_CC1352R7) || \
 	defined(CONFIG_SOC_CC2652R7)
 			.commandNo = CMD_RADIO_SETUP,
-#elif defined(CONFIG_SOC_CC1352P) || defined(CONFIG_SOC_CC2652P) ||                                \
+#elif defined(CONFIG_SOC_CC1352P) || defined(CONFIG_SOC_CC2652P) ||  \
 	defined(CONFIG_SOC_CC1352P7) || defined(CONFIG_SOC_CC2652P7)
 			.commandNo = CMD_RADIO_SETUP_PA,
 #endif /* CONFIG_SOC_CCxx52x */

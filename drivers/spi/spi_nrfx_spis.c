@@ -327,47 +327,47 @@ static int spi_nrfx_init(const struct device *dev)
 #define SPIS(idx)            DT_NODELABEL(spi##idx)
 #define SPIS_PROP(idx, prop) DT_PROP(SPIS(idx), prop)
 
-#define SPI_NRFX_SPIS_DEFINE(idx)                                                                  \
-	static void irq_connect##idx(void)                                                         \
-	{                                                                                          \
-		IRQ_CONNECT(DT_IRQN(SPIS(idx)), DT_IRQ(SPIS(idx), priority), nrfx_isr,             \
-			    nrfx_spis_##idx##_irq_handler, 0);                                     \
-	}                                                                                          \
-	static struct spi_nrfx_data spi_##idx##_data = {                                           \
-		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),                                      \
-		SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),                                      \
-		.dev = DEVICE_DT_GET(SPIS(idx)),                                                   \
-		.wake_sem = Z_SEM_INITIALIZER(spi_##idx##_data.wake_sem, 0, 1),                    \
-	};                                                                                         \
-	PINCTRL_DT_DEFINE(SPIS(idx));                                                              \
-	static const struct spi_nrfx_config spi_##idx##z_config = {                                \
-		.spis =                                                                            \
-			{                                                                          \
-				.p_reg = (NRF_SPIS_Type *)DT_REG_ADDR(SPIS(idx)),                  \
-				.drv_inst_idx = NRFX_SPIS##idx##_INST_IDX,                         \
-			},                                                                         \
-		.config =                                                                          \
-			{                                                                          \
-				.skip_gpio_cfg = true,                                             \
-				.skip_psel_cfg = true,                                             \
-				.mode = NRF_SPIS_MODE_0,                                           \
-				.bit_order = NRF_SPIS_BIT_ORDER_MSB_FIRST,                         \
-				.orc = SPIS_PROP(idx, overrun_character),                          \
-				.def = SPIS_PROP(idx, def_char),                                   \
-			},                                                                         \
-		.irq_connect = irq_connect##idx,                                                   \
-		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPIS(idx)),                                      \
-		.max_buf_len = BIT_MASK(SPIS_PROP(idx, easydma_maxcnt_bits)),                      \
-		.wake_gpio = GPIO_DT_SPEC_GET_OR(SPIS(idx), wake_gpios, {0}),                      \
-	};                                                                                         \
-	BUILD_ASSERT(!DT_NODE_HAS_PROP(SPIS(idx), wake_gpios) ||                                   \
-			     !(DT_GPIO_FLAGS(SPIS(idx), wake_gpios) & GPIO_ACTIVE_LOW),            \
-		     "WAKE line must be configured as active high");                               \
-	DEVICE_DT_DEFINE(SPIS(idx), spi_nrfx_init, NULL, &spi_##idx##_data, &spi_##idx##z_config,  \
+#define SPI_NRFX_SPIS_DEFINE(idx)                                                                 \
+	static void irq_connect##idx(void)                                                        \
+	{                                                                                         \
+		IRQ_CONNECT(DT_IRQN(SPIS(idx)), DT_IRQ(SPIS(idx), priority), nrfx_isr,            \
+			    nrfx_spis_##idx##_irq_handler, 0);                                    \
+	}                                                                                         \
+	static struct spi_nrfx_data spi_##idx##_data = {                                          \
+		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),                                     \
+		SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),                                     \
+		.dev = DEVICE_DT_GET(SPIS(idx)),                                                  \
+		.wake_sem = Z_SEM_INITIALIZER(spi_##idx##_data.wake_sem, 0, 1),                   \
+	};                                                                                        \
+	PINCTRL_DT_DEFINE(SPIS(idx));                                                             \
+	static const struct spi_nrfx_config spi_##idx##z_config = {                               \
+		.spis =                                                                           \
+			{                                                                         \
+				.p_reg = (NRF_SPIS_Type *)DT_REG_ADDR(SPIS(idx)),                 \
+				.drv_inst_idx = NRFX_SPIS##idx##_INST_IDX,                        \
+			},                                                                        \
+		.config =                                                                         \
+			{                                                                         \
+				.skip_gpio_cfg = true,                                            \
+				.skip_psel_cfg = true,                                            \
+				.mode = NRF_SPIS_MODE_0,                                          \
+				.bit_order = NRF_SPIS_BIT_ORDER_MSB_FIRST,                        \
+				.orc = SPIS_PROP(idx, overrun_character),                         \
+				.def = SPIS_PROP(idx, def_char),                                  \
+			},                                                                        \
+		.irq_connect = irq_connect##idx,                                                  \
+		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPIS(idx)),                                     \
+		.max_buf_len = BIT_MASK(SPIS_PROP(idx, easydma_maxcnt_bits)),                     \
+		.wake_gpio = GPIO_DT_SPEC_GET_OR(SPIS(idx), wake_gpios, {0}),                     \
+	};                                                                                        \
+	BUILD_ASSERT(!DT_NODE_HAS_PROP(SPIS(idx), wake_gpios) ||                                  \
+			     !(DT_GPIO_FLAGS(SPIS(idx), wake_gpios) & GPIO_ACTIVE_LOW),           \
+		     "WAKE line must be configured as active high");                              \
+	DEVICE_DT_DEFINE(SPIS(idx), spi_nrfx_init, NULL, &spi_##idx##_data, &spi_##idx##z_config, \
 			 POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &spi_nrfx_driver_api)
 
 /* Macro creates device instance if it is enabled in devicetree. */
-#define SPIS_DEVICE(periph, prefix, id, _)                                                         \
+#define SPIS_DEVICE(periph, prefix, id, _) \
 	IF_ENABLED(CONFIG_HAS_HW_NRF_SPIS##prefix##id, (SPI_NRFX_SPIS_DEFINE(prefix##id);))
 
 /* Macro iterates over nrfx_spis instances enabled in the nrfx_config.h. */

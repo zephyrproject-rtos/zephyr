@@ -693,14 +693,14 @@ static const struct eeprom_driver_api eeprom_emu_api = {
 
 #define EEPROM_PARTITION(n) DT_INST_PHANDLE_BY_IDX(n, partition, 0)
 
-#define PART_WBS(part)                                                                             \
+#define PART_WBS(part)                                                                \
 	DT_PROP(COND_CODE_1(DT_NODE_HAS_COMPAT(DT_GPARENT(part), soc_nv_flash),\
-		(DT_GPARENT(part)), (DT_PARENT(part))),              \
+		(DT_GPARENT(part)), (DT_PARENT(part))), \
 						write_block_size)
 
 #define PART_CBS(part, size) (PART_WBS(part) < 4) ? ((size > KB(64)) ? 8 : 4) : PART_WBS(part)
 
-#define PART_DEV_ID(part)                                                                          \
+#define PART_DEV_ID(part)                                                 \
 	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_GPARENT(part), soc_nv_flash), \
 		 (DT_PARENT(DT_GPARENT(part))), (DT_GPARENT(part)))
 
@@ -708,57 +708,57 @@ static const struct eeprom_driver_api eeprom_emu_api = {
 
 #define RECALC_SIZE(size, cbs) (size % cbs) ? ((size + cbs - 1) & ~(cbs - 1)) : size
 
-#define ASSERT_SIZE_PAGESIZE_VALID(size, pagesize, readonly)                                       \
-	BUILD_ASSERT(readonly ? (size <= pagesize) : (4 * size <= 3 * pagesize),                   \
+#define ASSERT_SIZE_PAGESIZE_VALID(size, pagesize, readonly)                     \
+	BUILD_ASSERT(readonly ? (size <= pagesize) : (4 * size <= 3 * pagesize), \
 		     "EEPROM size to big for pagesize")
 
-#define ASSERT_PAGESIZE_PARTSIZE_VALID(pagesize, partsize)                                         \
+#define ASSERT_PAGESIZE_PARTSIZE_VALID(pagesize, partsize)                                   \
 	BUILD_ASSERT(partsize % pagesize == 0U, "Partition size not a multiple of pagesize")
 
-#define ASSERT_PAGESIZE_SIZE(pagesize, partsize, onepage)                                          \
-	BUILD_ASSERT(onepage ? (partsize >= pagesize) : (partsize > pagesize),                     \
+#define ASSERT_PAGESIZE_SIZE(pagesize, partsize, onepage)                      \
+	BUILD_ASSERT(onepage ? (partsize >= pagesize) : (partsize > pagesize), \
 		     "Partition size to small")
 
-#define EEPROM_EMU_READ_ONLY(n)                                                                    \
+#define EEPROM_EMU_READ_ONLY(n)                                               \
 	DT_INST_PROP(n, read_only) || DT_PROP(EEPROM_PARTITION(n), read_only)
 
 #define EEPROM_EMU_ONEPAGE(n) EEPROM_EMU_READ_ONLY(n) || DT_INST_PROP(n, partition_erase)
 
-#define EEPROM_EMU_ENABLE_RAMBUF(n)                                                                \
+#define EEPROM_EMU_ENABLE_RAMBUF(n)                 \
 	COND_CODE_1(DT_INST_PROP(n, rambuf), (1), \
 		(COND_CODE_1(DT_INST_PROP(n, partition_erase), (1), (0))))
 
-#define EEPROM_EMU_RAMBUF(n)                                                                       \
+#define EEPROM_EMU_RAMBUF(n)                           \
 	COND_CODE_0(EEPROM_EMU_ENABLE_RAMBUF(n), (), \
 		(static uint8_t eeprom_emu_##n##_rambuf[DT_INST_PROP(n, size)];))
 
-#define EEPROM_EMU_RAMBUF_LINK(n)                                                                  \
+#define EEPROM_EMU_RAMBUF_LINK(n)                          \
 	COND_CODE_0(EEPROM_EMU_ENABLE_RAMBUF(n), (NULL), \
 		(eeprom_emu_##n##_rambuf))
 
-#define EEPROM_EMU_INIT(n)                                                                         \
-	ASSERT_SIZE_PAGESIZE_VALID(DT_INST_PROP(n, size), DT_INST_PROP(n, pagesize),               \
-				   EEPROM_EMU_ONEPAGE(n));                                         \
-	ASSERT_PAGESIZE_PARTSIZE_VALID(DT_INST_PROP(n, pagesize),                                  \
-				       DT_REG_SIZE(EEPROM_PARTITION(n)));                          \
-	ASSERT_PAGESIZE_SIZE(DT_INST_PROP(n, pagesize), DT_REG_SIZE(EEPROM_PARTITION(n)),          \
-			     EEPROM_EMU_ONEPAGE(n));                                               \
-	EEPROM_EMU_RAMBUF(n)                                                                       \
-	static const struct eeprom_emu_config eeprom_emu_##n##_config = {                          \
-		.size = RECALC_SIZE(DT_INST_PROP(n, size),                                         \
-				    (PART_CBS(EEPROM_PARTITION(n), DT_INST_PROP(n, size)))),       \
-		.readonly = EEPROM_EMU_READ_ONLY(n),                                               \
-		.page_size = DT_INST_PROP(n, pagesize),                                            \
-		.flash_offset = DT_REG_ADDR(EEPROM_PARTITION(n)),                                  \
-		.flash_size = DT_REG_SIZE(EEPROM_PARTITION(n)),                                    \
-		.partitionerase = DT_INST_PROP(n, partition_erase),                                \
-		.flash_cbs = PART_CBS(EEPROM_PARTITION(n), DT_INST_PROP(n, size)),                 \
-		.flash_dev = PART_DEV(EEPROM_PARTITION(n)),                                        \
-		.rambuf = EEPROM_EMU_RAMBUF_LINK(n),                                               \
-	};                                                                                         \
-	static struct eeprom_emu_data eeprom_emu_##n##_data;                                       \
-	DEVICE_DT_INST_DEFINE(n, &eeprom_emu_init, NULL, &eeprom_emu_##n##_data,                   \
-			      &eeprom_emu_##n##_config, POST_KERNEL, CONFIG_EEPROM_INIT_PRIORITY,  \
+#define EEPROM_EMU_INIT(n)                                                                        \
+	ASSERT_SIZE_PAGESIZE_VALID(DT_INST_PROP(n, size), DT_INST_PROP(n, pagesize),              \
+				   EEPROM_EMU_ONEPAGE(n));                                        \
+	ASSERT_PAGESIZE_PARTSIZE_VALID(DT_INST_PROP(n, pagesize),                                 \
+				       DT_REG_SIZE(EEPROM_PARTITION(n)));                         \
+	ASSERT_PAGESIZE_SIZE(DT_INST_PROP(n, pagesize), DT_REG_SIZE(EEPROM_PARTITION(n)),         \
+			     EEPROM_EMU_ONEPAGE(n));                                              \
+	EEPROM_EMU_RAMBUF(n)                                                                      \
+	static const struct eeprom_emu_config eeprom_emu_##n##_config = {                         \
+		.size = RECALC_SIZE(DT_INST_PROP(n, size),                                        \
+				    (PART_CBS(EEPROM_PARTITION(n), DT_INST_PROP(n, size)))),      \
+		.readonly = EEPROM_EMU_READ_ONLY(n),                                              \
+		.page_size = DT_INST_PROP(n, pagesize),                                           \
+		.flash_offset = DT_REG_ADDR(EEPROM_PARTITION(n)),                                 \
+		.flash_size = DT_REG_SIZE(EEPROM_PARTITION(n)),                                   \
+		.partitionerase = DT_INST_PROP(n, partition_erase),                               \
+		.flash_cbs = PART_CBS(EEPROM_PARTITION(n), DT_INST_PROP(n, size)),                \
+		.flash_dev = PART_DEV(EEPROM_PARTITION(n)),                                       \
+		.rambuf = EEPROM_EMU_RAMBUF_LINK(n),                                              \
+	};                                                                                        \
+	static struct eeprom_emu_data eeprom_emu_##n##_data;                                      \
+	DEVICE_DT_INST_DEFINE(n, &eeprom_emu_init, NULL, &eeprom_emu_##n##_data,                  \
+			      &eeprom_emu_##n##_config, POST_KERNEL, CONFIG_EEPROM_INIT_PRIORITY, \
 			      &eeprom_emu_api);
 
 DT_INST_FOREACH_STATUS_OKAY(EEPROM_EMU_INIT)

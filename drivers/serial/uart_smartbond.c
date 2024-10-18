@@ -729,12 +729,12 @@ static const struct uart_driver_api uart_smartbond_driver_api = {
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define UART_SMARTBOND_CONFIGURE(id)                                                               \
-	do {                                                                                       \
-		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), uart_smartbond_isr,       \
-			    DEVICE_DT_INST_GET(id), 0);                                            \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(id));                                                      \
+#define UART_SMARTBOND_CONFIGURE(id)                                                         \
+	do {                                                                                 \
+		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), uart_smartbond_isr, \
+			    DEVICE_DT_INST_GET(id), 0);                                      \
+                                                                                             \
+		irq_enable(DT_INST_IRQN(id));                                                \
 	} while (0)
 #else
 #define UART_SMARTBOND_CONFIGURE(id)
@@ -750,33 +750,33 @@ static const struct uart_driver_api uart_smartbond_driver_api = {
 #define UART_PM_WAKE_DTR_PIN(n)    /* Not used */
 #endif
 
-#define UART_SMARTBOND_DEVICE(id)                                                                  \
-	PINCTRL_DT_INST_DEFINE(id);                                                                \
-	static const struct uart_smartbond_cfg uart_smartbond_##id##_cfg = {                       \
-		.regs = (UART2_Type *)DT_INST_REG_ADDR(id),                                        \
-		.periph_clock_config = DT_INST_PROP(id, periph_clock_config),                      \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),                                        \
-		.hw_flow_control_supported = DT_INST_PROP(id, hw_flow_control_supported),          \
-		UART_PM_WAKE_RX_TIMEOUT(id) UART_PM_WAKE_RX_PIN(id) UART_PM_WAKE_DTR_PIN(id)};     \
-	static struct uart_smartbond_data uart_smartbond_##id##_data = {                           \
-		.current_config =                                                                  \
-			{                                                                          \
-				.baudrate = DT_INST_PROP(id, current_speed),                       \
-				.parity = UART_CFG_PARITY_NONE,                                    \
-				.stop_bits = UART_CFG_STOP_BITS_1,                                 \
-				.data_bits = UART_CFG_DATA_BITS_8,                                 \
-				.flow_ctrl = UART_CFG_FLOW_CTRL_NONE,                              \
-			},                                                                         \
-	};                                                                                         \
-	static int uart_smartbond_##id##_init(const struct device *dev)                            \
-	{                                                                                          \
-		UART_SMARTBOND_CONFIGURE(id);                                                      \
-		return uart_smartbond_init(dev);                                                   \
-	}                                                                                          \
-	PM_DEVICE_DT_INST_DEFINE(id, uart_smartbond_pm_action);                                    \
-	DEVICE_DT_INST_DEFINE(id, uart_smartbond_##id##_init, PM_DEVICE_DT_INST_GET(id),           \
-			      &uart_smartbond_##id##_data, &uart_smartbond_##id##_cfg,             \
-			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,                           \
+#define UART_SMARTBOND_DEVICE(id)                                                              \
+	PINCTRL_DT_INST_DEFINE(id);                                                            \
+	static const struct uart_smartbond_cfg uart_smartbond_##id##_cfg = {                   \
+		.regs = (UART2_Type *)DT_INST_REG_ADDR(id),                                    \
+		.periph_clock_config = DT_INST_PROP(id, periph_clock_config),                  \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),                                    \
+		.hw_flow_control_supported = DT_INST_PROP(id, hw_flow_control_supported),      \
+		UART_PM_WAKE_RX_TIMEOUT(id) UART_PM_WAKE_RX_PIN(id) UART_PM_WAKE_DTR_PIN(id)}; \
+	static struct uart_smartbond_data uart_smartbond_##id##_data = {                       \
+		.current_config =                                                              \
+			{                                                                      \
+				.baudrate = DT_INST_PROP(id, current_speed),                   \
+				.parity = UART_CFG_PARITY_NONE,                                \
+				.stop_bits = UART_CFG_STOP_BITS_1,                             \
+				.data_bits = UART_CFG_DATA_BITS_8,                             \
+				.flow_ctrl = UART_CFG_FLOW_CTRL_NONE,                          \
+			},                                                                     \
+	};                                                                                     \
+	static int uart_smartbond_##id##_init(const struct device *dev)                        \
+	{                                                                                      \
+		UART_SMARTBOND_CONFIGURE(id);                                                  \
+		return uart_smartbond_init(dev);                                               \
+	}                                                                                      \
+	PM_DEVICE_DT_INST_DEFINE(id, uart_smartbond_pm_action);                                \
+	DEVICE_DT_INST_DEFINE(id, uart_smartbond_##id##_init, PM_DEVICE_DT_INST_GET(id),       \
+			      &uart_smartbond_##id##_data, &uart_smartbond_##id##_cfg,         \
+			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,                       \
 			      &uart_smartbond_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_SMARTBOND_DEVICE)

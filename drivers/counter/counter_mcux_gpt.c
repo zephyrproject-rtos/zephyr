@@ -218,33 +218,33 @@ static const struct counter_driver_api mcux_gpt_driver_api = {
 	.get_top_value = mcux_gpt_get_top_value,
 };
 
-#define GPT_DEVICE_INIT_MCUX(n)                                                                    \
-	static struct mcux_gpt_data mcux_gpt_data_##n;                                             \
-                                                                                                   \
-	static const struct mcux_gpt_config mcux_gpt_config_##n = {                                \
-		DEVICE_MMIO_NAMED_ROM_INIT(gpt_mmio, DT_DRV_INST(n)),                              \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
-		.info =                                                                            \
-			{                                                                          \
-				.max_top_value = UINT32_MAX,                                       \
-				.freq = DT_INST_PROP(n, gptfreq),                                  \
-				.channels = 1,                                                     \
-				.flags = COUNTER_CONFIG_INFO_COUNT_UP,                             \
-			},                                                                         \
-	};                                                                                         \
-                                                                                                   \
-	static int mcux_gpt_##n##_init(const struct device *dev);                                  \
-	DEVICE_DT_INST_DEFINE(n, mcux_gpt_##n##_init, NULL, &mcux_gpt_data_##n,                    \
-			      &mcux_gpt_config_##n, POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,     \
-			      &mcux_gpt_driver_api);                                               \
-                                                                                                   \
-	static int mcux_gpt_##n##_init(const struct device *dev)                                   \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_gpt_isr,               \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-		return mcux_gpt_init(dev);                                                         \
+#define GPT_DEVICE_INIT_MCUX(n)                                                                \
+	static struct mcux_gpt_data mcux_gpt_data_##n;                                         \
+                                                                                               \
+	static const struct mcux_gpt_config mcux_gpt_config_##n = {                            \
+		DEVICE_MMIO_NAMED_ROM_INIT(gpt_mmio, DT_DRV_INST(n)),                          \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                            \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),          \
+		.info =                                                                        \
+			{                                                                      \
+				.max_top_value = UINT32_MAX,                                   \
+				.freq = DT_INST_PROP(n, gptfreq),                              \
+				.channels = 1,                                                 \
+				.flags = COUNTER_CONFIG_INFO_COUNT_UP,                         \
+			},                                                                     \
+	};                                                                                     \
+                                                                                               \
+	static int mcux_gpt_##n##_init(const struct device *dev);                              \
+	DEVICE_DT_INST_DEFINE(n, mcux_gpt_##n##_init, NULL, &mcux_gpt_data_##n,                \
+			      &mcux_gpt_config_##n, POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY, \
+			      &mcux_gpt_driver_api);                                           \
+                                                                                               \
+	static int mcux_gpt_##n##_init(const struct device *dev)                               \
+	{                                                                                      \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_gpt_isr,           \
+			    DEVICE_DT_INST_GET(n), 0);                                         \
+		irq_enable(DT_INST_IRQN(n));                                                   \
+		return mcux_gpt_init(dev);                                                     \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(GPT_DEVICE_INIT_MCUX)

@@ -193,16 +193,16 @@ static const struct usbc_vbus_driver_api driver_api = {.measure = adc_vbus_measu
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 0,
 	     "No compatible USB-C VBUS Measurement instance found");
 
-#define DRIVER_INIT(inst)                                                                          \
-	static struct usbc_vbus_data drv_data_##inst;                                              \
-	static const struct usbc_vbus_config drv_config_##inst = {                                 \
-		.output_ohm = DT_INST_PROP(inst, output_ohms),                                     \
-		.full_ohm = DT_INST_PROP_OR(inst, full_ohms, 0),                                   \
-		.adc_channel = ADC_DT_SPEC_INST_GET(inst),                                         \
-		.discharge_gpios = GPIO_DT_SPEC_INST_GET_OR(inst, discharge_gpios, {}),            \
-		.power_gpios = GPIO_DT_SPEC_INST_GET_OR(inst, power_gpios, {}),                    \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &adc_vbus_init, NULL, &drv_data_##inst, &drv_config_##inst,    \
+#define DRIVER_INIT(inst)                                                                       \
+	static struct usbc_vbus_data drv_data_##inst;                                           \
+	static const struct usbc_vbus_config drv_config_##inst = {                              \
+		.output_ohm = DT_INST_PROP(inst, output_ohms),                                  \
+		.full_ohm = DT_INST_PROP_OR(inst, full_ohms, 0),                                \
+		.adc_channel = ADC_DT_SPEC_INST_GET(inst),                                      \
+		.discharge_gpios = GPIO_DT_SPEC_INST_GET_OR(inst, discharge_gpios, {}),         \
+		.power_gpios = GPIO_DT_SPEC_INST_GET_OR(inst, power_gpios, {}),                 \
+	};                                                                                      \
+	DEVICE_DT_INST_DEFINE(inst, &adc_vbus_init, NULL, &drv_data_##inst, &drv_config_##inst, \
 			      POST_KERNEL, CONFIG_USBC_VBUS_INIT_PRIORITY, &driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DRIVER_INIT)

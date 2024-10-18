@@ -329,20 +329,20 @@ static int ds18b20_init(const struct device *dev)
 	return 0;
 }
 
-#define DS18B20_CONFIG_INIT(inst, default_family_code, chip_type)                                  \
-	{                                                                                          \
-		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),                                           \
-		.family = (uint8_t)DT_INST_PROP_OR(inst, family_code, default_family_code),        \
-		.resolution = DT_INST_PROP_OR(inst, resolution, 12),                               \
-		.chip = chip_type,                                                                 \
+#define DS18B20_CONFIG_INIT(inst, default_family_code, chip_type)                           \
+	{                                                                                   \
+		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),                                    \
+		.family = (uint8_t)DT_INST_PROP_OR(inst, family_code, default_family_code), \
+		.resolution = DT_INST_PROP_OR(inst, resolution, 12),                        \
+		.chip = chip_type,                                                          \
 	}
 
-#define DS18B20_DEFINE(inst, name, family_code, chip_type)                                         \
-	static struct ds18b20_data data_##name##_##inst;                                           \
-	static const struct ds18b20_config config_##name##_##inst =                                \
-		DS18B20_CONFIG_INIT(inst, family_code, chip_type);                                 \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, ds18b20_init, NULL, &data_##name##_##inst,              \
-				     &config_##name##_##inst, POST_KERNEL,                         \
+#define DS18B20_DEFINE(inst, name, family_code, chip_type)                              \
+	static struct ds18b20_data data_##name##_##inst;                                \
+	static const struct ds18b20_config config_##name##_##inst =                     \
+		DS18B20_CONFIG_INIT(inst, family_code, chip_type);                      \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, ds18b20_init, NULL, &data_##name##_##inst,   \
+				     &config_##name##_##inst, POST_KERNEL,              \
 				     CONFIG_SENSOR_INIT_PRIORITY, &ds18b20_driver_api);
 
 #define DT_DRV_COMPAT maxim_ds18b20

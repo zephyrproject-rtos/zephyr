@@ -213,13 +213,13 @@ static const struct usbc_ppc_driver_api numaker_ppc_driver_api = {
 
 #define NUMAKER_TCPC(inst) DT_INST_PARENT(inst)
 
-#define PPC_NUMAKER_INIT(inst)                                                                     \
-	static const struct numaker_ppc_config numaker_ppc_config_##inst = {                       \
-		.tcpc_dev = DEVICE_DT_GET(NUMAKER_TCPC(inst)),                                     \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, numaker_ppc_init, NULL, NULL, &numaker_ppc_config_##inst,      \
-			      POST_KERNEL, CONFIG_USBC_PPC_INIT_PRIORITY,                          \
+#define PPC_NUMAKER_INIT(inst)                                                                \
+	static const struct numaker_ppc_config numaker_ppc_config_##inst = {                  \
+		.tcpc_dev = DEVICE_DT_GET(NUMAKER_TCPC(inst)),                                \
+	};                                                                                    \
+                                                                                              \
+	DEVICE_DT_INST_DEFINE(inst, numaker_ppc_init, NULL, NULL, &numaker_ppc_config_##inst, \
+			      POST_KERNEL, CONFIG_USBC_PPC_INIT_PRIORITY,                     \
 			      &numaker_ppc_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PPC_NUMAKER_INIT);

@@ -230,7 +230,7 @@ BUILD_ASSERT(ARRAY_SIZE(gpio_irqs) == IT8XXX2_IRQ_COUNT + 1);
 
 /* 1.8v gpio group a, b, c, d, e, f, g, h, i, j, k, l, and m */
 #define GPIO_GROUP_COUNT 13
-#define GPIO_GROUP_INDEX(label)                                                                    \
+#define GPIO_GROUP_INDEX(label)                                                        \
 	(uint8_t)(DT_REG_ADDR(DT_NODELABEL(label)) - DT_REG_ADDR(DT_NODELABEL(gpioa)))
 
 /* general control registers for selecting 1.8V/3.3V */
@@ -646,26 +646,26 @@ static const struct gpio_driver_api gpio_ite_driver_api = {
 	.manage_callback = gpio_ite_manage_callback,
 };
 
-#define GPIO_ITE_DEV_CFG_DATA(inst)                                                                \
-	static struct gpio_ite_data gpio_ite_data_##inst;                                          \
-	static const struct gpio_ite_cfg gpio_ite_cfg_##inst = {                                   \
-		.common = {.port_pin_mask =                                                        \
-				   GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(inst, ngpios))},    \
-		.reg_gpdr = DT_INST_REG_ADDR_BY_IDX(inst, 0),                                      \
-		.reg_gpcr = DT_INST_REG_ADDR_BY_IDX(inst, 1),                                      \
-		.reg_gpdmr = DT_INST_REG_ADDR_BY_IDX(inst, 2),                                     \
-		.reg_gpotr = DT_INST_REG_ADDR_BY_IDX(inst, 3),                                     \
-		.index = (uint8_t)(DT_INST_REG_ADDR(inst) - DT_REG_ADDR(DT_NODELABEL(gpioa))),     \
-		.gpio_irq[0] = DT_INST_IRQ_BY_IDX(inst, 0, irq),                                   \
-		.gpio_irq[1] = DT_INST_IRQ_BY_IDX(inst, 1, irq),                                   \
-		.gpio_irq[2] = DT_INST_IRQ_BY_IDX(inst, 2, irq),                                   \
-		.gpio_irq[3] = DT_INST_IRQ_BY_IDX(inst, 3, irq),                                   \
-		.gpio_irq[4] = DT_INST_IRQ_BY_IDX(inst, 4, irq),                                   \
-		.gpio_irq[5] = DT_INST_IRQ_BY_IDX(inst, 5, irq),                                   \
-		.gpio_irq[6] = DT_INST_IRQ_BY_IDX(inst, 6, irq),                                   \
-		.gpio_irq[7] = DT_INST_IRQ_BY_IDX(inst, 7, irq),                                   \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &gpio_ite_data_##inst, &gpio_ite_cfg_##inst,       \
+#define GPIO_ITE_DEV_CFG_DATA(inst)                                                             \
+	static struct gpio_ite_data gpio_ite_data_##inst;                                       \
+	static const struct gpio_ite_cfg gpio_ite_cfg_##inst = {                                \
+		.common = {.port_pin_mask =                                                     \
+				   GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(inst, ngpios))}, \
+		.reg_gpdr = DT_INST_REG_ADDR_BY_IDX(inst, 0),                                   \
+		.reg_gpcr = DT_INST_REG_ADDR_BY_IDX(inst, 1),                                   \
+		.reg_gpdmr = DT_INST_REG_ADDR_BY_IDX(inst, 2),                                  \
+		.reg_gpotr = DT_INST_REG_ADDR_BY_IDX(inst, 3),                                  \
+		.index = (uint8_t)(DT_INST_REG_ADDR(inst) - DT_REG_ADDR(DT_NODELABEL(gpioa))),  \
+		.gpio_irq[0] = DT_INST_IRQ_BY_IDX(inst, 0, irq),                                \
+		.gpio_irq[1] = DT_INST_IRQ_BY_IDX(inst, 1, irq),                                \
+		.gpio_irq[2] = DT_INST_IRQ_BY_IDX(inst, 2, irq),                                \
+		.gpio_irq[3] = DT_INST_IRQ_BY_IDX(inst, 3, irq),                                \
+		.gpio_irq[4] = DT_INST_IRQ_BY_IDX(inst, 4, irq),                                \
+		.gpio_irq[5] = DT_INST_IRQ_BY_IDX(inst, 5, irq),                                \
+		.gpio_irq[6] = DT_INST_IRQ_BY_IDX(inst, 6, irq),                                \
+		.gpio_irq[7] = DT_INST_IRQ_BY_IDX(inst, 7, irq),                                \
+	};                                                                                      \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &gpio_ite_data_##inst, &gpio_ite_cfg_##inst,    \
 			      PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, &gpio_ite_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_ITE_DEV_CFG_DATA)

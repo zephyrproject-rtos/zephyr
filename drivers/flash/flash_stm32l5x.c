@@ -121,9 +121,9 @@ static int icache_wait_for_invalidate_complete(void)
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
 #define stm32_flash_has_2_banks(flash_device) true
 #else
-#define stm32_flash_has_2_banks(flash_device)                                                      \
-	(((FLASH_STM32_REGS(flash_device)->OPTR & FLASH_STM32_DBANK) == FLASH_STM32_DBANK)         \
-		 ? (true)                                                                          \
+#define stm32_flash_has_2_banks(flash_device)                                              \
+	(((FLASH_STM32_REGS(flash_device)->OPTR & FLASH_STM32_DBANK) == FLASH_STM32_DBANK) \
+		 ? (true)                                                                  \
 		 : (false))
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
 

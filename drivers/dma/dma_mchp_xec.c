@@ -29,8 +29,8 @@ LOG_MODULE_REGISTER(dma_mchp_xec, CONFIG_DMA_LOG_LEVEL);
 #define XEC_DMA_MAIN_REGS_SIZE 0x40
 #define XEC_DMA_CHAN_REGS_SIZE 0x40
 
-#define XEC_DMA_CHAN_REGS_ADDR(base, channel)                                                      \
-	(((uintptr_t)(base) + (XEC_DMA_MAIN_REGS_SIZE)) +                                          \
+#define XEC_DMA_CHAN_REGS_ADDR(base, channel)             \
+	(((uintptr_t)(base) + (XEC_DMA_MAIN_REGS_SIZE)) + \
 	 ((uintptr_t)(channel) * XEC_DMA_CHAN_REGS_SIZE))
 
 /* main control */
@@ -77,10 +77,10 @@ LOG_MODULE_REGISTER(dma_mchp_xec, CONFIG_DMA_LOG_LEVEL);
 #define XEC_DMA_CHAN_FSM_CTRL_STATE_WR_ACT    0x300u
 #define XEC_DMA_CHAN_FSM_CTRL_STATE_WAIT_DONE 0x400u
 
-#define XEC_DMA_HWFL_DEV_VAL(d)                                                                    \
+#define XEC_DMA_HWFL_DEV_VAL(d)                                                               \
 	(((uint32_t)(d) & XEC_DMA_CHAN_CTRL_HWFL_DEV_MSK0) << XEC_DMA_CHAN_CTRL_HWFL_DEV_POS)
 
-#define XEC_DMA_CHAN_CTRL_UNIT_VAL(u)                                                              \
+#define XEC_DMA_CHAN_CTRL_UNIT_VAL(u)                                                         \
 	(((uint32_t)(u) & XEC_DMA_CHAN_CTRL_XFR_UNIT_MSK0) << XEC_DMA_CHAN_CTRL_XFR_UNIT_POS)
 
 struct dma_xec_chan_regs {
@@ -767,66 +767,66 @@ static int dma_xec_init(const struct device *dev)
 #define DMA_XEC_GID(n, p, i)  MCHP_XEC_ECIA_GIRQ(DT_PROP_BY_IDX(n, p, i))
 #define DMA_XEC_GPOS(n, p, i) MCHP_XEC_ECIA_GIRQ_POS(DT_PROP_BY_IDX(n, p, i))
 
-#define DMA_XEC_GIRQ_INFO(n, p, i)                                                                 \
-	{                                                                                          \
-		.gid = DMA_XEC_GID(n, p, i),                                                       \
-		.gpos = DMA_XEC_GPOS(n, p, i),                                                     \
-		.anid = MCHP_XEC_ECIA_NVIC_AGGR(DT_PROP_BY_IDX(n, p, i)),                          \
-		.dnid = MCHP_XEC_ECIA_NVIC_DIRECT(DT_PROP_BY_IDX(n, p, i)),                        \
+#define DMA_XEC_GIRQ_INFO(n, p, i)                                          \
+	{                                                                   \
+		.gid = DMA_XEC_GID(n, p, i),                                \
+		.gpos = DMA_XEC_GPOS(n, p, i),                              \
+		.anid = MCHP_XEC_ECIA_NVIC_AGGR(DT_PROP_BY_IDX(n, p, i)),   \
+		.dnid = MCHP_XEC_ECIA_NVIC_DIRECT(DT_PROP_BY_IDX(n, p, i)), \
 	},
 
 /* n = node-id, p = property, i = index(channel?) */
-#define DMA_XEC_IRQ_DECLARE(node_id, p, i)                                                         \
-	static void dma_xec_chan_##i##_isr(const struct device *dev)                               \
-	{                                                                                          \
-		dma_xec_irq_handler(dev, i);                                                       \
+#define DMA_XEC_IRQ_DECLARE(node_id, p, i)                           \
+	static void dma_xec_chan_##i##_isr(const struct device *dev) \
+	{                                                            \
+		dma_xec_irq_handler(dev, i);                         \
 	}
 
-#define DMA_XEC_IRQ_CONNECT_SUB(node_id, p, i)                                                     \
-	IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, i, irq), DT_IRQ_BY_IDX(node_id, i, priority),           \
-		    dma_xec_chan_##i##_isr, DEVICE_DT_GET(node_id), 0);                            \
-	irq_enable(DT_IRQ_BY_IDX(node_id, i, irq));                                                \
+#define DMA_XEC_IRQ_CONNECT_SUB(node_id, p, i)                                           \
+	IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, i, irq), DT_IRQ_BY_IDX(node_id, i, priority), \
+		    dma_xec_chan_##i##_isr, DEVICE_DT_GET(node_id), 0);                  \
+	irq_enable(DT_IRQ_BY_IDX(node_id, i, irq));                                      \
 	mchp_xec_ecia_enable(DMA_XEC_GID(node_id, p, i), DMA_XEC_GPOS(node_id, p, i));
 
 /* i = instance number of DMA controller */
-#define DMA_XEC_IRQ_CONNECT(inst)                                                                  \
-	DT_INST_FOREACH_PROP_ELEM(inst, girqs, DMA_XEC_IRQ_DECLARE)                                \
-	void dma_xec_irq_connect##inst(void)                                                       \
-	{                                                                                          \
-		DT_INST_FOREACH_PROP_ELEM(inst, girqs, DMA_XEC_IRQ_CONNECT_SUB)                    \
+#define DMA_XEC_IRQ_CONNECT(inst)                                               \
+	DT_INST_FOREACH_PROP_ELEM(inst, girqs, DMA_XEC_IRQ_DECLARE)             \
+	void dma_xec_irq_connect##inst(void)                                    \
+	{                                                                       \
+		DT_INST_FOREACH_PROP_ELEM(inst, girqs, DMA_XEC_IRQ_CONNECT_SUB) \
 	}
 
-#define DMA_XEC_DEVICE(i)                                                                          \
-	BUILD_ASSERT(DT_INST_PROP(i, dma_channels) <= 16, "XEC DMA dma-channels > 16");            \
-	BUILD_ASSERT(DT_INST_PROP(i, dma_requests) <= 16, "XEC DMA dma-requests > 16");            \
-                                                                                                   \
-	static struct dma_xec_channel dma_xec_ctrl##i##_chans[DT_INST_PROP(i, dma_channels)];      \
-	ATOMIC_DEFINE(dma_xec_atomic##i, DT_INST_PROP(i, dma_channels));                           \
-                                                                                                   \
-	static struct dma_xec_data dma_xec_data##i = {                                             \
-		.ctx.magic = DMA_MAGIC,                                                            \
-		.ctx.dma_channels = DT_INST_PROP(i, dma_channels),                                 \
-		.ctx.atomic = dma_xec_atomic##i,                                                   \
-		.channels = dma_xec_ctrl##i##_chans,                                               \
-	};                                                                                         \
-                                                                                                   \
-	DMA_XEC_IRQ_CONNECT(i)                                                                     \
-                                                                                                   \
-	static const struct dma_xec_irq_info dma_xec_irqi##i[] = {                                 \
-		DT_INST_FOREACH_PROP_ELEM(i, girqs, DMA_XEC_GIRQ_INFO)};                           \
-	static const struct dma_xec_config dma_xec_cfg##i = {                                      \
-		.regs = (struct dma_xec_regs *)DT_INST_REG_ADDR(i),                                \
-		.dma_channels = DT_INST_PROP(i, dma_channels),                                     \
-		.dma_requests = DT_INST_PROP(i, dma_requests),                                     \
-		.pcr_idx = DT_INST_PROP_BY_IDX(i, pcrs, 0),                                        \
-		.pcr_pos = DT_INST_PROP_BY_IDX(i, pcrs, 1),                                        \
-		.irq_info_size = ARRAY_SIZE(dma_xec_irqi##i),                                      \
-		.irq_info_list = dma_xec_irqi##i,                                                  \
-		.irq_connect = dma_xec_irq_connect##i,                                             \
-	};                                                                                         \
-	PM_DEVICE_DT_DEFINE(i, dmac_xec_pm_action);                                                \
-	DEVICE_DT_INST_DEFINE(i, &dma_xec_init, PM_DEVICE_DT_GET(i), &dma_xec_data##i,             \
-			      &dma_xec_cfg##i, PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,             \
+#define DMA_XEC_DEVICE(i)                                                                     \
+	BUILD_ASSERT(DT_INST_PROP(i, dma_channels) <= 16, "XEC DMA dma-channels > 16");       \
+	BUILD_ASSERT(DT_INST_PROP(i, dma_requests) <= 16, "XEC DMA dma-requests > 16");       \
+                                                                                              \
+	static struct dma_xec_channel dma_xec_ctrl##i##_chans[DT_INST_PROP(i, dma_channels)]; \
+	ATOMIC_DEFINE(dma_xec_atomic##i, DT_INST_PROP(i, dma_channels));                      \
+                                                                                              \
+	static struct dma_xec_data dma_xec_data##i = {                                        \
+		.ctx.magic = DMA_MAGIC,                                                       \
+		.ctx.dma_channels = DT_INST_PROP(i, dma_channels),                            \
+		.ctx.atomic = dma_xec_atomic##i,                                              \
+		.channels = dma_xec_ctrl##i##_chans,                                          \
+	};                                                                                    \
+                                                                                              \
+	DMA_XEC_IRQ_CONNECT(i)                                                                \
+                                                                                              \
+	static const struct dma_xec_irq_info dma_xec_irqi##i[] = {                            \
+		DT_INST_FOREACH_PROP_ELEM(i, girqs, DMA_XEC_GIRQ_INFO)};                      \
+	static const struct dma_xec_config dma_xec_cfg##i = {                                 \
+		.regs = (struct dma_xec_regs *)DT_INST_REG_ADDR(i),                           \
+		.dma_channels = DT_INST_PROP(i, dma_channels),                                \
+		.dma_requests = DT_INST_PROP(i, dma_requests),                                \
+		.pcr_idx = DT_INST_PROP_BY_IDX(i, pcrs, 0),                                   \
+		.pcr_pos = DT_INST_PROP_BY_IDX(i, pcrs, 1),                                   \
+		.irq_info_size = ARRAY_SIZE(dma_xec_irqi##i),                                 \
+		.irq_info_list = dma_xec_irqi##i,                                             \
+		.irq_connect = dma_xec_irq_connect##i,                                        \
+	};                                                                                    \
+	PM_DEVICE_DT_DEFINE(i, dmac_xec_pm_action);                                           \
+	DEVICE_DT_INST_DEFINE(i, &dma_xec_init, PM_DEVICE_DT_GET(i), &dma_xec_data##i,        \
+			      &dma_xec_cfg##i, PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,        \
 			      &dma_xec_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DMA_XEC_DEVICE)

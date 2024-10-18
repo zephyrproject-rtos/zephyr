@@ -22,10 +22,10 @@ struct npcx_pcc_config {
 };
 
 /* Driver convenience defines */
-#define HAL_CDCG_INST(dev)                                                                         \
+#define HAL_CDCG_INST(dev)                                                              \
 	((struct cdcg_reg *)((const struct npcx_pcc_config *)(dev)->config)->base_cdcg)
 
-#define HAL_PMC_INST(dev)                                                                          \
+#define HAL_PMC_INST(dev)                                                             \
 	((struct pmc_reg *)((const struct npcx_pcc_config *)(dev)->config)->base_pmc)
 
 static uint8_t pddwn_ctl_val[] = {NPCX_PWDWN_CTL_INIT};

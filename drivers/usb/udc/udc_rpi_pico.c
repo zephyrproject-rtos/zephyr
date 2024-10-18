@@ -1055,69 +1055,69 @@ static const struct udc_api udc_rpi_pico_api = {
 
 #define DT_DRV_COMPAT raspberrypi_pico_usbd
 
-#define UDC_RPI_PICO_DEVICE_DEFINE(n)                                                              \
-	K_THREAD_STACK_DEFINE(udc_rpi_pico_stack_##n, CONFIG_UDC_RPI_PICO_STACK_SIZE);             \
-                                                                                                   \
-	SYS_MEM_BLOCKS_DEFINE_STATIC_WITH_EXT_BUF(rpi_pico_mb_##n, 64U, 58U, usb_dpram->epx_data)  \
-                                                                                                   \
-	static void udc_rpi_pico_thread_##n(void *dev, void *arg1, void *arg2)                     \
-	{                                                                                          \
-		while (true) {                                                                     \
-			rpi_pico_thread_handler(dev);                                              \
-		}                                                                                  \
-	}                                                                                          \
-                                                                                                   \
-	static void udc_rpi_pico_make_thread_##n(const struct device *dev)                         \
-	{                                                                                          \
-		struct rpi_pico_data *priv = udc_get_private(dev);                                 \
-                                                                                                   \
-		k_thread_create(&priv->thread_data, udc_rpi_pico_stack_##n,                        \
-				K_THREAD_STACK_SIZEOF(udc_rpi_pico_stack_##n),                     \
-				udc_rpi_pico_thread_##n, (void *)dev, NULL, NULL,                  \
-				K_PRIO_COOP(CONFIG_UDC_RPI_PICO_THREAD_PRIORITY), K_ESSENTIAL,     \
-				K_NO_WAIT);                                                        \
-		k_thread_name_set(&priv->thread_data, dev->name);                                  \
-	}                                                                                          \
-                                                                                                   \
-	static void udc_rpi_pico_irq_enable_func_##n(const struct device *dev)                     \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), rpi_pico_isr_handler,       \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-	}                                                                                          \
-                                                                                                   \
-	static void udc_rpi_pico_irq_disable_func_##n(const struct device *dev)                    \
-	{                                                                                          \
-		irq_disable(DT_INST_IRQN(n));                                                      \
-	}                                                                                          \
-                                                                                                   \
-	static struct udc_ep_config ep_cfg_out[USB_NUM_ENDPOINTS];                                 \
-	static struct udc_ep_config ep_cfg_in[USB_NUM_ENDPOINTS];                                  \
-                                                                                                   \
-	static const struct rpi_pico_config rpi_pico_config_##n = {                                \
-		.base = (usb_hw_t *)DT_INST_REG_ADDR(n),                                           \
-		.dpram = (usb_device_dpram_t *)USBCTRL_DPRAM_BASE,                                 \
-		.mem_block = &rpi_pico_mb_##n,                                                     \
-		.num_of_eps = DT_INST_PROP(n, num_bidir_endpoints),                                \
-		.ep_cfg_in = ep_cfg_out,                                                           \
-		.ep_cfg_out = ep_cfg_in,                                                           \
-		.make_thread = udc_rpi_pico_make_thread_##n,                                       \
-		.irq_enable_func = udc_rpi_pico_irq_enable_func_##n,                               \
-		.irq_disable_func = udc_rpi_pico_irq_disable_func_##n,                             \
-		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                  \
-		.clk_sys = (void *)DT_INST_PHA_BY_IDX(n, clocks, 0, clk_id),                       \
-	};                                                                                         \
-                                                                                                   \
-	static struct rpi_pico_data udc_priv_##n = {};                                             \
-                                                                                                   \
-	static struct udc_data udc_data_##n = {                                                    \
-		.mutex = Z_MUTEX_INITIALIZER(udc_data_##n.mutex),                                  \
-		.priv = &udc_priv_##n,                                                             \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, udc_rpi_pico_driver_preinit, NULL, &udc_data_##n,                 \
-			      &rpi_pico_config_##n, POST_KERNEL,                                   \
+#define UDC_RPI_PICO_DEVICE_DEFINE(n)                                                             \
+	K_THREAD_STACK_DEFINE(udc_rpi_pico_stack_##n, CONFIG_UDC_RPI_PICO_STACK_SIZE);            \
+                                                                                                  \
+	SYS_MEM_BLOCKS_DEFINE_STATIC_WITH_EXT_BUF(rpi_pico_mb_##n, 64U, 58U, usb_dpram->epx_data) \
+                                                                                                  \
+	static void udc_rpi_pico_thread_##n(void *dev, void *arg1, void *arg2)                    \
+	{                                                                                         \
+		while (true) {                                                                    \
+			rpi_pico_thread_handler(dev);                                             \
+		}                                                                                 \
+	}                                                                                         \
+                                                                                                  \
+	static void udc_rpi_pico_make_thread_##n(const struct device *dev)                        \
+	{                                                                                         \
+		struct rpi_pico_data *priv = udc_get_private(dev);                                \
+                                                                                                  \
+		k_thread_create(&priv->thread_data, udc_rpi_pico_stack_##n,                       \
+				K_THREAD_STACK_SIZEOF(udc_rpi_pico_stack_##n),                    \
+				udc_rpi_pico_thread_##n, (void *)dev, NULL, NULL,                 \
+				K_PRIO_COOP(CONFIG_UDC_RPI_PICO_THREAD_PRIORITY), K_ESSENTIAL,    \
+				K_NO_WAIT);                                                       \
+		k_thread_name_set(&priv->thread_data, dev->name);                                 \
+	}                                                                                         \
+                                                                                                  \
+	static void udc_rpi_pico_irq_enable_func_##n(const struct device *dev)                    \
+	{                                                                                         \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), rpi_pico_isr_handler,      \
+			    DEVICE_DT_INST_GET(n), 0);                                            \
+                                                                                                  \
+		irq_enable(DT_INST_IRQN(n));                                                      \
+	}                                                                                         \
+                                                                                                  \
+	static void udc_rpi_pico_irq_disable_func_##n(const struct device *dev)                   \
+	{                                                                                         \
+		irq_disable(DT_INST_IRQN(n));                                                     \
+	}                                                                                         \
+                                                                                                  \
+	static struct udc_ep_config ep_cfg_out[USB_NUM_ENDPOINTS];                                \
+	static struct udc_ep_config ep_cfg_in[USB_NUM_ENDPOINTS];                                 \
+                                                                                                  \
+	static const struct rpi_pico_config rpi_pico_config_##n = {                               \
+		.base = (usb_hw_t *)DT_INST_REG_ADDR(n),                                          \
+		.dpram = (usb_device_dpram_t *)USBCTRL_DPRAM_BASE,                                \
+		.mem_block = &rpi_pico_mb_##n,                                                    \
+		.num_of_eps = DT_INST_PROP(n, num_bidir_endpoints),                               \
+		.ep_cfg_in = ep_cfg_out,                                                          \
+		.ep_cfg_out = ep_cfg_in,                                                          \
+		.make_thread = udc_rpi_pico_make_thread_##n,                                      \
+		.irq_enable_func = udc_rpi_pico_irq_enable_func_##n,                              \
+		.irq_disable_func = udc_rpi_pico_irq_disable_func_##n,                            \
+		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                 \
+		.clk_sys = (void *)DT_INST_PHA_BY_IDX(n, clocks, 0, clk_id),                      \
+	};                                                                                        \
+                                                                                                  \
+	static struct rpi_pico_data udc_priv_##n = {};                                            \
+                                                                                                  \
+	static struct udc_data udc_data_##n = {                                                   \
+		.mutex = Z_MUTEX_INITIALIZER(udc_data_##n.mutex),                                 \
+		.priv = &udc_priv_##n,                                                            \
+	};                                                                                        \
+                                                                                                  \
+	DEVICE_DT_INST_DEFINE(n, udc_rpi_pico_driver_preinit, NULL, &udc_data_##n,                \
+			      &rpi_pico_config_##n, POST_KERNEL,                                  \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &udc_rpi_pico_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UDC_RPI_PICO_DEVICE_DEFINE)

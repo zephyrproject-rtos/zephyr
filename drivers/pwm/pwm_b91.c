@@ -113,22 +113,22 @@ static const struct pwm_driver_api pwm_b91_driver_api = {
 };
 
 /* PWM driver registration */
-#define PWM_B91_INIT(n)                                                                            \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-                                                                                                   \
-	static const struct pwm_b91_config config##n = {                                           \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		.clock_frequency = DT_INST_PROP(n, clock_frequency),                               \
-		.channels = DT_INST_PROP(n, channels),                                             \
-		.clk32k_ch_enable = ((DT_INST_PROP(n, clk32k_ch0_enable) << 0U) |                  \
-				     (DT_INST_PROP(n, clk32k_ch1_enable) << 1U) |                  \
-				     (DT_INST_PROP(n, clk32k_ch2_enable) << 2U) |                  \
-				     (DT_INST_PROP(n, clk32k_ch3_enable) << 3U) |                  \
-				     (DT_INST_PROP(n, clk32k_ch4_enable) << 4U) |                  \
-				     (DT_INST_PROP(n, clk32k_ch5_enable) << 5U)),                  \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, pwm_b91_init, NULL, NULL, &config##n, POST_KERNEL,                \
+#define PWM_B91_INIT(n)                                                             \
+	PINCTRL_DT_INST_DEFINE(n);                                                  \
+                                                                                    \
+	static const struct pwm_b91_config config##n = {                            \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                          \
+		.clock_frequency = DT_INST_PROP(n, clock_frequency),                \
+		.channels = DT_INST_PROP(n, channels),                              \
+		.clk32k_ch_enable = ((DT_INST_PROP(n, clk32k_ch0_enable) << 0U) |   \
+				     (DT_INST_PROP(n, clk32k_ch1_enable) << 1U) |   \
+				     (DT_INST_PROP(n, clk32k_ch2_enable) << 2U) |   \
+				     (DT_INST_PROP(n, clk32k_ch3_enable) << 3U) |   \
+				     (DT_INST_PROP(n, clk32k_ch4_enable) << 4U) |   \
+				     (DT_INST_PROP(n, clk32k_ch5_enable) << 5U)),   \
+	};                                                                          \
+                                                                                    \
+	DEVICE_DT_INST_DEFINE(n, pwm_b91_init, NULL, NULL, &config##n, POST_KERNEL, \
 			      CONFIG_PWM_INIT_PRIORITY, &pwm_b91_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_B91_INIT)

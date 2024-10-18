@@ -24,7 +24,7 @@
 
 #define CPU_FREQ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
 
-#define US_PER_SAMPLE                                                                              \
+#define US_PER_SAMPLE                                                                   \
 	(1000000ULL * CONFIG_ENTROPY_CC13XX_CC26XX_SAMPLES_PER_CYCLE / CPU_FREQ + 1ULL)
 
 struct entropy_cc13xx_cc26xx_data {

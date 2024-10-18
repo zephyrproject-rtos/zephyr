@@ -199,11 +199,11 @@ static void usb_sam0_load_padcal(void)
 	regs->PADCAL.bit.TRIM = pad_trim;
 }
 
-#define SAM0_USB_IRQ_CONNECT(n)                                                                    \
-	do {                                                                                       \
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, n, irq), DT_INST_IRQ_BY_IDX(0, n, priority),     \
-			    usb_sam0_isr, 0, 0);                                                   \
-		irq_enable(DT_INST_IRQ_BY_IDX(0, n, irq));                                         \
+#define SAM0_USB_IRQ_CONNECT(n)                                                                \
+	do {                                                                                   \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, n, irq), DT_INST_IRQ_BY_IDX(0, n, priority), \
+			    usb_sam0_isr, 0, 0);                                               \
+		irq_enable(DT_INST_IRQ_BY_IDX(0, n, irq));                                     \
 	} while (false)
 
 /* Attach by initializing the device */

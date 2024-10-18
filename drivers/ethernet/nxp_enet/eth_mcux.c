@@ -1240,15 +1240,15 @@ static void eth_mcux_err_isr(const struct device *dev)
 
 #define ETH_MCUX_NONE
 
-#define ETH_MCUX_IRQ_INIT(n, name)                                                                 \
-	do {                                                                                       \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, name, irq),                                     \
-			    DT_INST_IRQ_BY_NAME(n, name, priority), eth_mcux_##name##_isr,         \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQ_BY_NAME(n, name, irq));                                     \
+#define ETH_MCUX_IRQ_INIT(n, name)                                                         \
+	do {                                                                               \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, name, irq),                             \
+			    DT_INST_IRQ_BY_NAME(n, name, priority), eth_mcux_##name##_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                                     \
+		irq_enable(DT_INST_IRQ_BY_NAME(n, name, irq));                             \
 	} while (false)
 
-#define ETH_MCUX_IRQ(n, name)                                                                      \
+#define ETH_MCUX_IRQ(n, name)                          \
 	COND_CODE_1(DT_INST_IRQ_HAS_NAME(n, name),			\
 		    (ETH_MCUX_IRQ_INIT(n, name)),			\
 		    (ETH_MCUX_NONE))
@@ -1256,20 +1256,20 @@ static void eth_mcux_err_isr(const struct device *dev)
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 #define PTP_INST_NODEID(n) DT_INST_CHILD(n, ptp)
 
-#define ETH_MCUX_IRQ_PTP_INIT(n)                                                                   \
-	do {                                                                                       \
-		IRQ_CONNECT(DT_IRQ_BY_NAME(PTP_INST_NODEID(n), ieee1588_tmr, irq),                 \
-			    DT_IRQ_BY_NAME(PTP_INST_NODEID(n), ieee1588_tmr, priority),            \
-			    eth_mcux_ptp_isr, DEVICE_DT_INST_GET(n), 0);                           \
-		irq_enable(DT_IRQ_BY_NAME(PTP_INST_NODEID(n), ieee1588_tmr, irq));                 \
+#define ETH_MCUX_IRQ_PTP_INIT(n)                                                        \
+	do {                                                                            \
+		IRQ_CONNECT(DT_IRQ_BY_NAME(PTP_INST_NODEID(n), ieee1588_tmr, irq),      \
+			    DT_IRQ_BY_NAME(PTP_INST_NODEID(n), ieee1588_tmr, priority), \
+			    eth_mcux_ptp_isr, DEVICE_DT_INST_GET(n), 0);                \
+		irq_enable(DT_IRQ_BY_NAME(PTP_INST_NODEID(n), ieee1588_tmr, irq));      \
 	} while (false)
 
-#define ETH_MCUX_IRQ_PTP(n)                                                                        \
+#define ETH_MCUX_IRQ_PTP(n)                                        \
 	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(PTP_INST_NODEID(n)),	\
 		    (ETH_MCUX_IRQ_PTP_INIT(n)),				\
 		    (ETH_MCUX_NONE))
 
-#define ETH_MCUX_PTP_FRAMEINFO_ARRAY(n)                                                            \
+#define ETH_MCUX_PTP_FRAMEINFO_ARRAY(n)                                                   \
 	static enet_frame_info_t eth##n##_tx_frameinfo_array[CONFIG_ETH_MCUX_TX_BUFFERS];
 
 #define ETH_MCUX_PTP_FRAMEINFO(n) .txFrameInfo = eth##n##_tx_frameinfo_array,
@@ -1281,38 +1281,38 @@ static void eth_mcux_err_isr(const struct device *dev)
 #define ETH_MCUX_PTP_FRAMEINFO(n) .txFrameInfo = NULL,
 #endif
 
-#define ETH_MCUX_GENERATE_MAC_RANDOM(n)                                                            \
-	static void generate_eth##n##_mac(uint8_t *mac_addr)                                       \
-	{                                                                                          \
-		gen_random_mac(mac_addr, FREESCALE_OUI_B0, FREESCALE_OUI_B1, FREESCALE_OUI_B2);    \
+#define ETH_MCUX_GENERATE_MAC_RANDOM(n)                                                         \
+	static void generate_eth##n##_mac(uint8_t *mac_addr)                                    \
+	{                                                                                       \
+		gen_random_mac(mac_addr, FREESCALE_OUI_B0, FREESCALE_OUI_B1, FREESCALE_OUI_B2); \
 	}
 
-#define ETH_MCUX_GENERATE_MAC_UNIQUE(n)                                                            \
-	static void generate_eth##n##_mac(uint8_t *mac_addr)                                       \
-	{                                                                                          \
-		uint32_t id = ETH_MCUX_UNIQUE_ID;                                                  \
-                                                                                                   \
-		mac_addr[0] = FREESCALE_OUI_B0;                                                    \
-		mac_addr[0] |= 0x02; /* force LAA bit */                                           \
-		mac_addr[1] = FREESCALE_OUI_B1;                                                    \
-		mac_addr[2] = FREESCALE_OUI_B2;                                                    \
-		mac_addr[3] = id >> 8;                                                             \
-		mac_addr[4] = id >> 16;                                                            \
-		mac_addr[5] = id >> 0;                                                             \
-		mac_addr[5] += n;                                                                  \
+#define ETH_MCUX_GENERATE_MAC_UNIQUE(n)                      \
+	static void generate_eth##n##_mac(uint8_t *mac_addr) \
+	{                                                    \
+		uint32_t id = ETH_MCUX_UNIQUE_ID;            \
+                                                             \
+		mac_addr[0] = FREESCALE_OUI_B0;              \
+		mac_addr[0] |= 0x02; /* force LAA bit */     \
+		mac_addr[1] = FREESCALE_OUI_B1;              \
+		mac_addr[2] = FREESCALE_OUI_B2;              \
+		mac_addr[3] = id >> 8;                       \
+		mac_addr[4] = id >> 16;                      \
+		mac_addr[5] = id >> 0;                       \
+		mac_addr[5] += n;                            \
 	}
 
-#define ETH_MCUX_GENERATE_MAC(n)                                                                   \
+#define ETH_MCUX_GENERATE_MAC(n)                                   \
 	COND_CODE_1(DT_INST_PROP(n, zephyr_random_mac_address),		\
 		    (ETH_MCUX_GENERATE_MAC_RANDOM(n)),			\
 		    (ETH_MCUX_GENERATE_MAC_UNIQUE(n)))
 
-#define ETH_MCUX_MAC_ADDR_LOCAL(n)                                                                 \
+#define ETH_MCUX_MAC_ADDR_LOCAL(n)                                            \
 	.mac_addr = DT_INST_PROP(n, local_mac_address), .generate_mac = NULL,
 
 #define ETH_MCUX_MAC_ADDR_GENERATE(n) .mac_addr = {0}, .generate_mac = generate_eth##n##_mac,
 
-#define ETH_MCUX_MAC_ADDR(n)                                                                       \
+#define ETH_MCUX_MAC_ADDR(n)                          \
 	COND_CODE_1(ETH_MCUX_MAC_ADDR_TO_BOOL(n),			\
 		    (ETH_MCUX_MAC_ADDR_LOCAL(n)),			\
 		    (ETH_MCUX_MAC_ADDR_GENERATE(n)))
@@ -1320,7 +1320,7 @@ static void eth_mcux_err_isr(const struct device *dev)
 #ifdef CONFIG_SOC_FAMILY_KINETIS
 #define ETH_MCUX_POWER_INIT(n) .clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),
 
-#define ETH_MCUX_POWER(n)                                                                          \
+#define ETH_MCUX_POWER(n)                            \
 	COND_CODE_1(CONFIG_NET_POWER_MANAGEMENT,			\
 		    (ETH_MCUX_POWER_INIT(n)),				\
 		    (ETH_MCUX_NONE))
@@ -1332,7 +1332,7 @@ static void eth_mcux_err_isr(const struct device *dev)
 #define ETH_MCUX_PM_DEVICE_GET(n) NULL
 #endif /* CONFIG_SOC_FAMILY_KINETIS */
 
-#define ETH_MCUX_GEN_MAC(n)                                                                        \
+#define ETH_MCUX_GEN_MAC(n)                                               \
 	COND_CODE_0(ETH_MCUX_MAC_ADDR_TO_BOOL(n),                       \
 		    (ETH_MCUX_GENERATE_MAC(n)),                         \
 		    (ETH_MCUX_NONE))
@@ -1374,89 +1374,89 @@ static void eth_mcux_err_isr(const struct device *dev)
 #endif
 
 #if defined(CONFIG_ETH_MCUX_PHY_RESET)
-#define ETH_MCUX_PHY_GPIOS(n)                                                                      \
-	.int_gpio = GPIO_DT_SPEC_INST_GET(n, int_gpios),                                           \
+#define ETH_MCUX_PHY_GPIOS(n)                                \
+	.int_gpio = GPIO_DT_SPEC_INST_GET(n, int_gpios),     \
 	.reset_gpio = GPIO_DT_SPEC_INST_GET(n, reset_gpios),
 #else
 #define ETH_MCUX_PHY_GPIOS(n)
 #endif
 
-#define ETH_MCUX_INIT(n)                                                                           \
-	ETH_MCUX_GEN_MAC(n)                                                                        \
-                                                                                                   \
-	ETH_MCUX_PINCTRL_DEFINE(n)                                                                 \
-                                                                                                   \
-	static void eth##n##_config_func(void);                                                    \
-	static _mcux_driver_buffer uint8_t tx_enet_frame_##n##_buf[NET_ETH_MAX_FRAME_SIZE];        \
-	static _mcux_driver_buffer uint8_t rx_enet_frame_##n##_buf[NET_ETH_MAX_FRAME_SIZE];        \
-	static status_t _MDIO_Write(uint8_t phyAddr, uint8_t regAddr, uint16_t data)               \
-	{                                                                                          \
-		return ENET_MDIOWrite((ENET_Type *)DT_INST_REG_ADDR(n), phyAddr, regAddr, data);   \
-	};                                                                                         \
-                                                                                                   \
-	static status_t _MDIO_Read(uint8_t phyAddr, uint8_t regAddr, uint16_t *pData)              \
-	{                                                                                          \
-		return ENET_MDIORead((ENET_Type *)DT_INST_REG_ADDR(n), phyAddr, regAddr, pData);   \
-	};                                                                                         \
-                                                                                                   \
-	static struct _phy_resource eth##n##_phy_resource = {.read = _MDIO_Read,                   \
-							     .write = _MDIO_Write};                \
-	static phy_handle_t eth##n##_phy_handle = {.resource = (void *)&eth##n##_phy_resource};    \
-	static struct _phy_resource eth##n##_phy_config;                                           \
-                                                                                                   \
-	static struct eth_context eth##n##_context = {                                             \
-		.base = (ENET_Type *)DT_INST_REG_ADDR(n),                                          \
-		.config_func = eth##n##_config_func,                                               \
-		.phy_config = &eth##n##_phy_config,                                                \
-		.phy_addr = DT_INST_PROP(n, phy_addr),                                             \
-		.phy_duplex = kPHY_FullDuplex,                                                     \
-		.phy_speed = kPHY_Speed100M,                                                       \
-		.phy_handle = &eth##n##_phy_handle,                                                \
-		.tx_frame_buf = tx_enet_frame_##n##_buf,                                           \
-		.rx_frame_buf = rx_enet_frame_##n##_buf,                                           \
-		ETH_MCUX_PINCTRL_INIT(n) ETH_MCUX_PHY_GPIOS(n) ETH_MCUX_MAC_ADDR(n)                \
-			ETH_MCUX_POWER(n)};                                                        \
-                                                                                                   \
-	static __aligned(ENET_BUFF_ALIGNMENT) _mcux_dma_desc enet_rx_bd_struct_t                   \
-		eth##n##_rx_buffer_desc[CONFIG_ETH_MCUX_RX_BUFFERS];                               \
-                                                                                                   \
-	static __aligned(ENET_BUFF_ALIGNMENT) _mcux_dma_desc enet_tx_bd_struct_t                   \
-		eth##n##_tx_buffer_desc[CONFIG_ETH_MCUX_TX_BUFFERS];                               \
-                                                                                                   \
-	static uint8_t __aligned(ENET_BUFF_ALIGNMENT)                                              \
-	_mcux_dma_buffer eth##n##_rx_buffer[CONFIG_ETH_MCUX_RX_BUFFERS][ETH_MCUX_BUFFER_SIZE];     \
-                                                                                                   \
-	static uint8_t __aligned(ENET_BUFF_ALIGNMENT)                                              \
-	_mcux_dma_buffer eth##n##_tx_buffer[CONFIG_ETH_MCUX_TX_BUFFERS][ETH_MCUX_BUFFER_SIZE];     \
-                                                                                                   \
-	ETH_MCUX_PTP_FRAMEINFO_ARRAY(n)                                                            \
-                                                                                                   \
-	static const enet_buffer_config_t eth##n##_buffer_config = {                               \
-		.rxBdNumber = CONFIG_ETH_MCUX_RX_BUFFERS,                                          \
-		.txBdNumber = CONFIG_ETH_MCUX_TX_BUFFERS,                                          \
-		.rxBuffSizeAlign = ETH_MCUX_BUFFER_SIZE,                                           \
-		.txBuffSizeAlign = ETH_MCUX_BUFFER_SIZE,                                           \
-		.rxBdStartAddrAlign = eth##n##_rx_buffer_desc,                                     \
-		.txBdStartAddrAlign = eth##n##_tx_buffer_desc,                                     \
-		.rxBufferAlign = eth##n##_rx_buffer[0],                                            \
-		.txBufferAlign = eth##n##_tx_buffer[0],                                            \
-		.rxMaintainEnable = true,                                                          \
-		.txMaintainEnable = true,                                                          \
-		ETH_MCUX_PTP_FRAMEINFO(n)};                                                        \
-                                                                                                   \
-	ETH_MCUX_PM_DEVICE_INIT(n)                                                                 \
-                                                                                                   \
-	ETH_NET_DEVICE_DT_INST_DEFINE(n, eth_init, ETH_MCUX_PM_DEVICE_GET(n), &eth##n##_context,   \
-				      &eth##n##_buffer_config, CONFIG_ETH_INIT_PRIORITY,           \
-				      &api_funcs, NET_ETH_MTU);                                    \
-                                                                                                   \
-	static void eth##n##_config_func(void)                                                     \
-	{                                                                                          \
-		ETH_MCUX_IRQ(n, rx);                                                               \
-		ETH_MCUX_IRQ(n, tx);                                                               \
-		ETH_MCUX_IRQ(n, err);                                                              \
-		ETH_MCUX_IRQ(n, common);                                                           \
-		ETH_MCUX_IRQ_PTP(n);                                                               \
+#define ETH_MCUX_INIT(n)                                                                         \
+	ETH_MCUX_GEN_MAC(n)                                                                      \
+                                                                                                 \
+	ETH_MCUX_PINCTRL_DEFINE(n)                                                               \
+                                                                                                 \
+	static void eth##n##_config_func(void);                                                  \
+	static _mcux_driver_buffer uint8_t tx_enet_frame_##n##_buf[NET_ETH_MAX_FRAME_SIZE];      \
+	static _mcux_driver_buffer uint8_t rx_enet_frame_##n##_buf[NET_ETH_MAX_FRAME_SIZE];      \
+	static status_t _MDIO_Write(uint8_t phyAddr, uint8_t regAddr, uint16_t data)             \
+	{                                                                                        \
+		return ENET_MDIOWrite((ENET_Type *)DT_INST_REG_ADDR(n), phyAddr, regAddr, data); \
+	};                                                                                       \
+                                                                                                 \
+	static status_t _MDIO_Read(uint8_t phyAddr, uint8_t regAddr, uint16_t *pData)            \
+	{                                                                                        \
+		return ENET_MDIORead((ENET_Type *)DT_INST_REG_ADDR(n), phyAddr, regAddr, pData); \
+	};                                                                                       \
+                                                                                                 \
+	static struct _phy_resource eth##n##_phy_resource = {.read = _MDIO_Read,                 \
+							     .write = _MDIO_Write};              \
+	static phy_handle_t eth##n##_phy_handle = {.resource = (void *)&eth##n##_phy_resource};  \
+	static struct _phy_resource eth##n##_phy_config;                                         \
+                                                                                                 \
+	static struct eth_context eth##n##_context = {                                           \
+		.base = (ENET_Type *)DT_INST_REG_ADDR(n),                                        \
+		.config_func = eth##n##_config_func,                                             \
+		.phy_config = &eth##n##_phy_config,                                              \
+		.phy_addr = DT_INST_PROP(n, phy_addr),                                           \
+		.phy_duplex = kPHY_FullDuplex,                                                   \
+		.phy_speed = kPHY_Speed100M,                                                     \
+		.phy_handle = &eth##n##_phy_handle,                                              \
+		.tx_frame_buf = tx_enet_frame_##n##_buf,                                         \
+		.rx_frame_buf = rx_enet_frame_##n##_buf,                                         \
+		ETH_MCUX_PINCTRL_INIT(n) ETH_MCUX_PHY_GPIOS(n) ETH_MCUX_MAC_ADDR(n)              \
+			ETH_MCUX_POWER(n)};                                                      \
+                                                                                                 \
+	static __aligned(ENET_BUFF_ALIGNMENT) _mcux_dma_desc enet_rx_bd_struct_t                 \
+		eth##n##_rx_buffer_desc[CONFIG_ETH_MCUX_RX_BUFFERS];                             \
+                                                                                                 \
+	static __aligned(ENET_BUFF_ALIGNMENT) _mcux_dma_desc enet_tx_bd_struct_t                 \
+		eth##n##_tx_buffer_desc[CONFIG_ETH_MCUX_TX_BUFFERS];                             \
+                                                                                                 \
+	static uint8_t __aligned(ENET_BUFF_ALIGNMENT)                                            \
+	_mcux_dma_buffer eth##n##_rx_buffer[CONFIG_ETH_MCUX_RX_BUFFERS][ETH_MCUX_BUFFER_SIZE];   \
+                                                                                                 \
+	static uint8_t __aligned(ENET_BUFF_ALIGNMENT)                                            \
+	_mcux_dma_buffer eth##n##_tx_buffer[CONFIG_ETH_MCUX_TX_BUFFERS][ETH_MCUX_BUFFER_SIZE];   \
+                                                                                                 \
+	ETH_MCUX_PTP_FRAMEINFO_ARRAY(n)                                                          \
+                                                                                                 \
+	static const enet_buffer_config_t eth##n##_buffer_config = {                             \
+		.rxBdNumber = CONFIG_ETH_MCUX_RX_BUFFERS,                                        \
+		.txBdNumber = CONFIG_ETH_MCUX_TX_BUFFERS,                                        \
+		.rxBuffSizeAlign = ETH_MCUX_BUFFER_SIZE,                                         \
+		.txBuffSizeAlign = ETH_MCUX_BUFFER_SIZE,                                         \
+		.rxBdStartAddrAlign = eth##n##_rx_buffer_desc,                                   \
+		.txBdStartAddrAlign = eth##n##_tx_buffer_desc,                                   \
+		.rxBufferAlign = eth##n##_rx_buffer[0],                                          \
+		.txBufferAlign = eth##n##_tx_buffer[0],                                          \
+		.rxMaintainEnable = true,                                                        \
+		.txMaintainEnable = true,                                                        \
+		ETH_MCUX_PTP_FRAMEINFO(n)};                                                      \
+                                                                                                 \
+	ETH_MCUX_PM_DEVICE_INIT(n)                                                               \
+                                                                                                 \
+	ETH_NET_DEVICE_DT_INST_DEFINE(n, eth_init, ETH_MCUX_PM_DEVICE_GET(n), &eth##n##_context, \
+				      &eth##n##_buffer_config, CONFIG_ETH_INIT_PRIORITY,         \
+				      &api_funcs, NET_ETH_MTU);                                  \
+                                                                                                 \
+	static void eth##n##_config_func(void)                                                   \
+	{                                                                                        \
+		ETH_MCUX_IRQ(n, rx);                                                             \
+		ETH_MCUX_IRQ(n, tx);                                                             \
+		ETH_MCUX_IRQ(n, err);                                                            \
+		ETH_MCUX_IRQ(n, common);                                                         \
+		ETH_MCUX_IRQ_PTP(n);                                                             \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(ETH_MCUX_INIT)

@@ -676,7 +676,7 @@ static inline void qspi_fill_init_struct(nrfx_qspi_config_t *initstruct)
 	initstruct->pins.io2_pin = NRF_QSPI_PIN_NOT_CONNECTED;
 	initstruct->pins.io3_pin = NRF_QSPI_PIN_NOT_CONNECTED;
 #endif
-#endif /* CONFIG_PINCTRL */
+#endif  /* CONFIG_PINCTRL */
 	/* Configure Protocol interface */
 		initstruct->prot_if.addrmode = NRF_QSPI_ADDRMODE_24BIT;
 

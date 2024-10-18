@@ -78,15 +78,15 @@ static int dac_esp32_init(const struct device *dev)
 static const struct dac_driver_api dac_esp32_driver_api = {.channel_setup = dac_esp32_channel_setup,
 							   .write_value = dac_esp32_write_value};
 
-#define ESP32_DAC_INIT(id)                                                                         \
-                                                                                                   \
-	static const struct dac_esp32_config dac_esp32_config_##id = {                             \
-		.irq_source = DT_INST_IRQN(id),                                                    \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),                               \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, offset),           \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(id, &dac_esp32_init, NULL, NULL, &dac_esp32_config_##id,             \
+#define ESP32_DAC_INIT(id)                                                                   \
+                                                                                             \
+	static const struct dac_esp32_config dac_esp32_config_##id = {                       \
+		.irq_source = DT_INST_IRQN(id),                                              \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),                         \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, offset),     \
+	};                                                                                   \
+                                                                                             \
+	DEVICE_DT_INST_DEFINE(id, &dac_esp32_init, NULL, NULL, &dac_esp32_config_##id,       \
 			      POST_KERNEL, CONFIG_DAC_INIT_PRIORITY, &dac_esp32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_DAC_INIT);

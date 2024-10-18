@@ -398,7 +398,7 @@ static int clock_control_infineon_cat1_init(const struct device *dev)
 		return -EIO;
 	}
 #endif
-#if !DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_imo)) &&                                             \
+#if !DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_imo)) &&  \
 	!DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_iho))
 #error "IMO clock or IHO clock must be enabled"
 #endif

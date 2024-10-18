@@ -245,7 +245,7 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_device_0, dsub_device_lookup_0);
 
 #define GET_OUTPUT_HELP ("comp get_output <device>")
 
-#define SET_TRIGGER_HELP                                                                           \
+#define SET_TRIGGER_HELP                                                               \
 	("comp set_trigger <device> <NONE | RISING_EDGE | FALLING_EDGE | BOTH_EDGES>")
 
 #define AWAIT_TRIGGER_HELP                                                                         \

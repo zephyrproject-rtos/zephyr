@@ -520,14 +520,14 @@ static int bmp388_init(const struct device *dev)
 }
 
 /* Initializes a struct bmp388_config for an instance on a SPI bus. */
-#define BMP388_CONFIG_SPI(inst)                                                                    \
-	.bus.spi = SPI_DT_SPEC_INST_GET(inst, BMP388_SPI_OPERATION, 0),                            \
+#define BMP388_CONFIG_SPI(inst)                                         \
+	.bus.spi = SPI_DT_SPEC_INST_GET(inst, BMP388_SPI_OPERATION, 0), \
 	.bus_io = &bmp388_bus_io_spi,
 
 /* Initializes a struct bmp388_config for an instance on an I2C bus. */
 #define BMP388_CONFIG_I2C(inst) .bus.i2c = I2C_DT_SPEC_INST_GET(inst), .bus_io = &bmp388_bus_io_i2c,
 
-#define BMP388_BUS_CFG(inst)                                                                       \
+#define BMP388_BUS_CFG(inst)                     \
 	COND_CODE_1(DT_INST_ON_BUS(inst, i2c),	\
 		    (BMP388_CONFIG_I2C(inst)),	\
 		    (BMP388_CONFIG_SPI(inst)))
@@ -538,19 +538,19 @@ static int bmp388_init(const struct device *dev)
 #define BMP388_INT_CFG(inst)
 #endif
 
-#define BMP388_INST(inst)                                                                          \
-	static struct bmp388_data bmp388_data_##inst = {                                           \
-		.odr = DT_INST_ENUM_IDX(inst, odr),                                                \
-		.osr_pressure = DT_INST_ENUM_IDX(inst, osr_press),                                 \
-		.osr_temp = DT_INST_ENUM_IDX(inst, osr_temp),                                      \
-	};                                                                                         \
-	static const struct bmp388_config bmp388_config_##inst = {                                 \
-		BMP388_BUS_CFG(inst) BMP388_INT_CFG(inst).iir_filter =                             \
-			DT_INST_ENUM_IDX(inst, iir_filter),                                        \
-	};                                                                                         \
-	PM_DEVICE_DT_INST_DEFINE(inst, bmp388_pm_action);                                          \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmp388_init, PM_DEVICE_DT_INST_GET(inst),               \
-				     &bmp388_data_##inst, &bmp388_config_##inst, POST_KERNEL,      \
+#define BMP388_INST(inst)                                                                     \
+	static struct bmp388_data bmp388_data_##inst = {                                      \
+		.odr = DT_INST_ENUM_IDX(inst, odr),                                           \
+		.osr_pressure = DT_INST_ENUM_IDX(inst, osr_press),                            \
+		.osr_temp = DT_INST_ENUM_IDX(inst, osr_temp),                                 \
+	};                                                                                    \
+	static const struct bmp388_config bmp388_config_##inst = {                            \
+		BMP388_BUS_CFG(inst) BMP388_INT_CFG(inst).iir_filter =                        \
+			DT_INST_ENUM_IDX(inst, iir_filter),                                   \
+	};                                                                                    \
+	PM_DEVICE_DT_INST_DEFINE(inst, bmp388_pm_action);                                     \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmp388_init, PM_DEVICE_DT_INST_GET(inst),          \
+				     &bmp388_data_##inst, &bmp388_config_##inst, POST_KERNEL, \
 				     CONFIG_SENSOR_INIT_PRIORITY, &bmp388_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BMP388_INST)

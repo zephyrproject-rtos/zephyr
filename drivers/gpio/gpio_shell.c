@@ -93,43 +93,43 @@ static void port_pin_get(gpio_port_pins_t reserved_mask, const char **line_names
 	}
 }
 
-#define GPIO_DT_RESERVED_RANGES_NGPIOS_SHELL(node_id)                                              \
+#define GPIO_DT_RESERVED_RANGES_NGPIOS_SHELL(node_id) \
 	COND_CODE_1(DT_NODE_HAS_PROP(node_id, ngpios),                                             \
 		    (GPIO_DT_RESERVED_RANGES_NGPIOS(node_id, DT_PROP(node_id, ngpios))),           \
 		    (GPIO_MAX_PINS_PER_PORT))
 
-#define GPIO_CTRL_PIN_GET_FN(node_id)                                                              \
-	static const char *node_id##line_names[] = DT_PROP_OR(node_id, gpio_line_names, {NULL});   \
-                                                                                                   \
-	static void node_id##cmd_gpio_pin_get(size_t idx, struct shell_static_entry *entry);       \
-                                                                                                   \
-	SHELL_DYNAMIC_CMD_CREATE(node_id##sub_gpio_pin, node_id##cmd_gpio_pin_get);                \
-                                                                                                   \
-	static void node_id##cmd_gpio_pin_get(size_t idx, struct shell_static_entry *entry)        \
-	{                                                                                          \
-		gpio_port_pins_t reserved_mask = GPIO_DT_RESERVED_RANGES_NGPIOS_SHELL(node_id);    \
-		uint8_t line_names_len = DT_PROP_LEN_OR(node_id, gpio_line_names, 0);              \
-                                                                                                   \
-		port_pin_get(reserved_mask, node_id##line_names, line_names_len, idx, entry);      \
-		entry->subcmd = NULL;                                                              \
+#define GPIO_CTRL_PIN_GET_FN(node_id)                                                            \
+	static const char *node_id##line_names[] = DT_PROP_OR(node_id, gpio_line_names, {NULL}); \
+                                                                                                 \
+	static void node_id##cmd_gpio_pin_get(size_t idx, struct shell_static_entry *entry);     \
+                                                                                                 \
+	SHELL_DYNAMIC_CMD_CREATE(node_id##sub_gpio_pin, node_id##cmd_gpio_pin_get);              \
+                                                                                                 \
+	static void node_id##cmd_gpio_pin_get(size_t idx, struct shell_static_entry *entry)      \
+	{                                                                                        \
+		gpio_port_pins_t reserved_mask = GPIO_DT_RESERVED_RANGES_NGPIOS_SHELL(node_id);  \
+		uint8_t line_names_len = DT_PROP_LEN_OR(node_id, gpio_line_names, 0);            \
+                                                                                                 \
+		port_pin_get(reserved_mask, node_id##line_names, line_names_len, idx, entry);    \
+		entry->subcmd = NULL;                                                            \
 	}
 
-#define IS_GPIO_CTRL_PIN_GET(node_id)                                                              \
+#define IS_GPIO_CTRL_PIN_GET(node_id) \
 	COND_CODE_1(DT_PROP(node_id, gpio_controller), (GPIO_CTRL_PIN_GET_FN(node_id)), ())
 
 DT_FOREACH_STATUS_OKAY_NODE(IS_GPIO_CTRL_PIN_GET)
 
-#define GPIO_CTRL_LIST_ENTRY(node_id)                                                              \
-	{                                                                                          \
-		.dev = DEVICE_DT_GET(node_id),                                                     \
-		.ngpios = DT_PROP_OR(node_id, ngpios, NGPIOS_UNKNOWN),                             \
-		.reserved_mask = GPIO_DT_RESERVED_RANGES_NGPIOS_SHELL(node_id),                    \
-		.line_names = node_id##line_names,                                                 \
-		.line_names_len = DT_PROP_LEN_OR(node_id, gpio_line_names, 0),                     \
-		.subcmd = &node_id##sub_gpio_pin,                                                  \
+#define GPIO_CTRL_LIST_ENTRY(node_id)                                           \
+	{                                                                       \
+		.dev = DEVICE_DT_GET(node_id),                                  \
+		.ngpios = DT_PROP_OR(node_id, ngpios, NGPIOS_UNKNOWN),          \
+		.reserved_mask = GPIO_DT_RESERVED_RANGES_NGPIOS_SHELL(node_id), \
+		.line_names = node_id##line_names,                              \
+		.line_names_len = DT_PROP_LEN_OR(node_id, gpio_line_names, 0),  \
+		.subcmd = &node_id##sub_gpio_pin,                               \
 	},
 
-#define IS_GPIO_CTRL_LIST(node_id)                                                                 \
+#define IS_GPIO_CTRL_LIST(node_id) \
 	COND_CODE_1(DT_PROP(node_id, gpio_controller), (GPIO_CTRL_LIST_ENTRY(node_id)), ())
 
 static const struct gpio_ctrl gpio_list[] = {DT_FOREACH_STATUS_OKAY_NODE(IS_GPIO_CTRL_LIST)};

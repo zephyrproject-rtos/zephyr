@@ -290,25 +290,25 @@ static const struct uart_driver_api rv32m1_lpuart_driver_api = {
 #endif
 };
 
-#define RV32M1_LPUART_DECLARE_CFG(n, IRQ_FUNC_INIT)                                                \
-	static const struct rv32m1_lpuart_config rv32m1_lpuart_##n##_cfg = {                       \
-		.base = (LPUART_Type *)DT_INST_REG_ADDR(n),                                        \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
-		.clock_ip_name = INST_DT_CLOCK_IP_NAME(n),                                         \
-		.clock_ip_src = kCLOCK_IpSrcFircAsync,                                             \
-		.baud_rate = DT_INST_PROP(n, current_speed),                                       \
-		.hw_flow_control = DT_INST_PROP(n, hw_flow_control),                               \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+#define RV32M1_LPUART_DECLARE_CFG(n, IRQ_FUNC_INIT)                                   \
+	static const struct rv32m1_lpuart_config rv32m1_lpuart_##n##_cfg = {          \
+		.base = (LPUART_Type *)DT_INST_REG_ADDR(n),                           \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                   \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name), \
+		.clock_ip_name = INST_DT_CLOCK_IP_NAME(n),                            \
+		.clock_ip_src = kCLOCK_IpSrcFircAsync,                                \
+		.baud_rate = DT_INST_PROP(n, current_speed),                          \
+		.hw_flow_control = DT_INST_PROP(n, hw_flow_control),                  \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                          \
 		IRQ_FUNC_INIT}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define RV32M1_LPUART_CONFIG_FUNC(n)                                                               \
-	static void rv32m1_lpuart_config_func_##n(const struct device *dev)                        \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), 0, rv32m1_lpuart_isr, DEVICE_DT_INST_GET(n), 0);      \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define RV32M1_LPUART_CONFIG_FUNC(n)                                                          \
+	static void rv32m1_lpuart_config_func_##n(const struct device *dev)                   \
+	{                                                                                     \
+		IRQ_CONNECT(DT_INST_IRQN(n), 0, rv32m1_lpuart_isr, DEVICE_DT_INST_GET(n), 0); \
+                                                                                              \
+		irq_enable(DT_INST_IRQN(n));                                                  \
 	}
 #define RV32M1_LPUART_IRQ_CFG_FUNC_INIT(n) .irq_config_func = rv32m1_lpuart_config_func_##n,
 #define RV32M1_LPUART_INIT_CFG(n)          RV32M1_LPUART_DECLARE_CFG(n, RV32M1_LPUART_IRQ_CFG_FUNC_INIT(n))

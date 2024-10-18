@@ -330,26 +330,26 @@ static const struct gpio_driver_api gpio_bcm2711_api = {
 	.manage_callback = gpio_bcm2711_manage_callback,
 };
 
-#define GPIO_BCM2711_INST(n)                                                                       \
-	static struct gpio_bcm2711_data gpio_bcm2711_data_##n;                                     \
-                                                                                                   \
-	static void gpio_bcm2711_irq_config_func_##n(void)                                         \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_bcm2711_isr,           \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-	}                                                                                          \
-                                                                                                   \
-	static const struct gpio_bcm2711_config gpio_bcm2711_cfg_##n = {                           \
-		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0)},                   \
-		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_INST_PARENT(n)),                           \
-		.irq_config_func = gpio_bcm2711_irq_config_func_##n,                               \
-		.offset = DT_INST_REG_ADDR(n),                                                     \
-		.ngpios = DT_INST_PROP(n, ngpios),                                                 \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, gpio_bcm2711_init, NULL, &gpio_bcm2711_data_##n,                  \
-			      &gpio_bcm2711_cfg_##n, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,      \
+#define GPIO_BCM2711_INST(n)                                                                  \
+	static struct gpio_bcm2711_data gpio_bcm2711_data_##n;                                \
+                                                                                              \
+	static void gpio_bcm2711_irq_config_func_##n(void)                                    \
+	{                                                                                     \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_bcm2711_isr,      \
+			    DEVICE_DT_INST_GET(n), 0);                                        \
+		irq_enable(DT_INST_IRQN(n));                                                  \
+	}                                                                                     \
+                                                                                              \
+	static const struct gpio_bcm2711_config gpio_bcm2711_cfg_##n = {                      \
+		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0)},              \
+		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_INST_PARENT(n)),                      \
+		.irq_config_func = gpio_bcm2711_irq_config_func_##n,                          \
+		.offset = DT_INST_REG_ADDR(n),                                                \
+		.ngpios = DT_INST_PROP(n, ngpios),                                            \
+	};                                                                                    \
+                                                                                              \
+	DEVICE_DT_INST_DEFINE(n, gpio_bcm2711_init, NULL, &gpio_bcm2711_data_##n,             \
+			      &gpio_bcm2711_cfg_##n, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, \
 			      &gpio_bcm2711_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_BCM2711_INST)

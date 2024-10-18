@@ -145,9 +145,9 @@ static const struct emul_sensor_driver_api sb_tsi_emul_api_sensor = {
 	.get_sample_range = sb_tsi_emul_get_sample_range,
 };
 
-#define SB_TSI_EMUL(n)                                                                             \
-	struct sb_tsi_emul_data sb_tsi_emul_data_##n;                                              \
-	EMUL_DT_INST_DEFINE(n, sb_tsi_emul_init, &sb_tsi_emul_data_##n, NULL,                      \
+#define SB_TSI_EMUL(n)                                                        \
+	struct sb_tsi_emul_data sb_tsi_emul_data_##n;                         \
+	EMUL_DT_INST_DEFINE(n, sb_tsi_emul_init, &sb_tsi_emul_data_##n, NULL, \
 			    &sb_tsi_emul_api_i2c, &sb_tsi_emul_api_sensor)
 
 DT_INST_FOREACH_STATUS_OKAY(SB_TSI_EMUL)

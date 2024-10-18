@@ -50,12 +50,12 @@ static int pinctrl_rv32m1_init(const struct device *dev)
 	return 0;
 }
 
-#define PINCTRL_RV32M1_INIT(n)                                                                     \
-	static const struct pinctrl_rv32m1_config pinctrl_rv32m1_##n##_config = {                  \
-		.clock_ip_name = INST_DT_CLOCK_IP_NAME(n),                                         \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &pinctrl_rv32m1_init, NULL, NULL, &pinctrl_rv32m1_##n##_config,   \
+#define PINCTRL_RV32M1_INIT(n)                                                                   \
+	static const struct pinctrl_rv32m1_config pinctrl_rv32m1_##n##_config = {                \
+		.clock_ip_name = INST_DT_CLOCK_IP_NAME(n),                                       \
+	};                                                                                       \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(n, &pinctrl_rv32m1_init, NULL, NULL, &pinctrl_rv32m1_##n##_config, \
 			      PRE_KERNEL_1, CONFIG_PINCTRL_RV32M1_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(PINCTRL_RV32M1_INIT)

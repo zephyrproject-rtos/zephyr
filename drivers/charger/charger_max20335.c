@@ -638,20 +638,20 @@ static const struct charger_driver_api max20335_driver_api = {
 	.charge_enable = max20335_set_enabled,
 };
 
-#define MAX20335_DEFINE(inst)                                                                      \
-	static struct charger_max20335_data charger_max20335_data_##inst;                          \
-	static const struct charger_max20335_config charger_max20335_config_##inst = {             \
-		.bus = I2C_DT_SPEC_GET(DT_INST_PARENT(inst)),                                      \
-		.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                                \
-		.max_vreg_uv = DT_INST_PROP(inst, constant_charge_voltage_max_microvolt),          \
-		.max_ichgin_to_sys_ua = DT_INST_PROP(inst, chgin_to_sys_current_limit_microamp),   \
-		.min_vsys_uv = DT_INST_PROP(inst, system_voltage_min_threshold_microvolt),         \
-		.recharge_threshold_uv = DT_INST_PROP(inst, re_charge_threshold_microvolt),        \
-		.therm_mon_mode = DT_INST_PROP(inst, thermistor_monitoring_mode),                  \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, &max20335_init, NULL, &charger_max20335_data_##inst,           \
-			      &charger_max20335_config_##inst, POST_KERNEL,                        \
+#define MAX20335_DEFINE(inst)                                                                    \
+	static struct charger_max20335_data charger_max20335_data_##inst;                        \
+	static const struct charger_max20335_config charger_max20335_config_##inst = {           \
+		.bus = I2C_DT_SPEC_GET(DT_INST_PARENT(inst)),                                    \
+		.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                              \
+		.max_vreg_uv = DT_INST_PROP(inst, constant_charge_voltage_max_microvolt),        \
+		.max_ichgin_to_sys_ua = DT_INST_PROP(inst, chgin_to_sys_current_limit_microamp), \
+		.min_vsys_uv = DT_INST_PROP(inst, system_voltage_min_threshold_microvolt),       \
+		.recharge_threshold_uv = DT_INST_PROP(inst, re_charge_threshold_microvolt),      \
+		.therm_mon_mode = DT_INST_PROP(inst, thermistor_monitoring_mode),                \
+	};                                                                                       \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(inst, &max20335_init, NULL, &charger_max20335_data_##inst,         \
+			      &charger_max20335_config_##inst, POST_KERNEL,                      \
 			      CONFIG_MFD_INIT_PRIORITY, &max20335_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX20335_DEFINE)

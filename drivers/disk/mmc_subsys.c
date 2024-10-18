@@ -122,17 +122,17 @@ static int disk_mmc_init(const struct device *dev)
 	return disk_access_register(&mmc_disk);
 }
 
-#define DISK_ACCESS_MMC_INIT(n)                                                                    \
-	static const struct mmc_config mmc_config_##n = {                                          \
-		.host_controller = DEVICE_DT_GET(DT_INST_PARENT(n)),                               \
-		.bus_width = DT_INST_PROP(n, bus_width),                                           \
-	};                                                                                         \
-                                                                                                   \
-	static struct mmc_data mmc_data_##n = {                                                    \
-		.name = CONFIG_MMC_VOLUME_NAME,                                                    \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &disk_mmc_init, NULL, &mmc_data_##n, &mmc_config_##n,             \
+#define DISK_ACCESS_MMC_INIT(n)                                                        \
+	static const struct mmc_config mmc_config_##n = {                              \
+		.host_controller = DEVICE_DT_GET(DT_INST_PARENT(n)),                   \
+		.bus_width = DT_INST_PROP(n, bus_width),                               \
+	};                                                                             \
+                                                                                       \
+	static struct mmc_data mmc_data_##n = {                                        \
+		.name = CONFIG_MMC_VOLUME_NAME,                                        \
+	};                                                                             \
+                                                                                       \
+	DEVICE_DT_INST_DEFINE(n, &disk_mmc_init, NULL, &mmc_data_##n, &mmc_config_##n, \
 			      POST_KERNEL, CONFIG_SD_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(DISK_ACCESS_MMC_INIT)

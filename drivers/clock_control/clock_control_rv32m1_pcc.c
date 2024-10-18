@@ -52,11 +52,11 @@ static const struct clock_control_driver_api rv32m1_pcc_api = {
 	.get_rate = rv32m1_pcc_get_rate,
 };
 
-#define RV32M1_PCC_INIT(inst)                                                                      \
-	static const struct rv32m1_pcc_config rv32m1_pcc##inst##_config = {                        \
-		.base_address = DT_INST_REG_ADDR(inst)};                                           \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, &rv32m1_pcc##inst##_config, PRE_KERNEL_1,    \
+#define RV32M1_PCC_INIT(inst)                                                                   \
+	static const struct rv32m1_pcc_config rv32m1_pcc##inst##_config = {                     \
+		.base_address = DT_INST_REG_ADDR(inst)};                                        \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, &rv32m1_pcc##inst##_config, PRE_KERNEL_1, \
 			      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &rv32m1_pcc_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RV32M1_PCC_INIT)

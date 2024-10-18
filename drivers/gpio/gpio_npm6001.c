@@ -200,18 +200,18 @@ static int gpio_npm6001_init(const struct device *dev)
 	return 0;
 }
 
-#define GPIO_NPM6001_DEFINE(n)                                                                     \
-	static const struct gpio_npm6001_config gpio_npm6001_config##n = {                         \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
-		.bus = I2C_DT_SPEC_GET(DT_INST_PARENT(n))};                                        \
-                                                                                                   \
-	static struct gpio_npm6001_data gpio_npm6001_data##n;                                      \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, gpio_npm6001_init, NULL, &gpio_npm6001_data##n,                   \
-			      &gpio_npm6001_config##n, POST_KERNEL,                                \
+#define GPIO_NPM6001_DEFINE(n)                                                       \
+	static const struct gpio_npm6001_config gpio_npm6001_config##n = {           \
+		.common =                                                            \
+			{                                                            \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n), \
+			},                                                           \
+		.bus = I2C_DT_SPEC_GET(DT_INST_PARENT(n))};                          \
+                                                                                     \
+	static struct gpio_npm6001_data gpio_npm6001_data##n;                        \
+                                                                                     \
+	DEVICE_DT_INST_DEFINE(n, gpio_npm6001_init, NULL, &gpio_npm6001_data##n,     \
+			      &gpio_npm6001_config##n, POST_KERNEL,                  \
 			      CONFIG_GPIO_NPM6001_INIT_PRIORITY, &gpio_npm6001_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_NPM6001_DEFINE)

@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(entropy_npcx_drbg, CONFIG_ENTROPY_LOG_LEVEL);
 #include "soc_ncl.h"
 
 /* Reseed after 100 number generations */
-#define NPCX_DRBG_SECURITY_STRENGTH                                                                \
+#define NPCX_DRBG_SECURITY_STRENGTH                                                   \
 	((enum ncl_drbg_security_strength)CONFIG_ENTROPY_NPCX_DRBG_SECURITY_STRENGTH)
 #define NPCX_DRBG_RESEED_INTERVAL CONFIG_ENTROPY_NPCX_DRBG_RESEED_INTERVAL
 

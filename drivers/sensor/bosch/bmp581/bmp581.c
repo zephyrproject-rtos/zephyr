@@ -544,17 +544,17 @@ static const struct sensor_driver_api bmp581_driver_api = {.sample_fetch = bmp58
 							   .channel_get = bmp581_channel_get,
 							   .attr_set = bmp581_attr_set};
 
-#define BMP581_CONFIG(i)                                                                           \
-	static const struct bmp581_config bmp581_config_##i = {                                    \
-		.i2c = I2C_DT_SPEC_INST_GET(i),                                                    \
+#define BMP581_CONFIG(i)                                        \
+	static const struct bmp581_config bmp581_config_##i = { \
+		.i2c = I2C_DT_SPEC_INST_GET(i),                 \
 	}
 
-#define BMP581_INIT(i)                                                                             \
-	static struct bmp581_data bmp581_data_##i;                                                 \
-	BMP581_CONFIG(i);                                                                          \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(i, bmp581_init, NULL, &bmp581_data_##i, &bmp581_config_##i,   \
-				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,                     \
+#define BMP581_INIT(i)                                                                           \
+	static struct bmp581_data bmp581_data_##i;                                               \
+	BMP581_CONFIG(i);                                                                        \
+                                                                                                 \
+	SENSOR_DEVICE_DT_INST_DEFINE(i, bmp581_init, NULL, &bmp581_data_##i, &bmp581_config_##i, \
+				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,                   \
 				     &bmp581_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BMP581_INIT)

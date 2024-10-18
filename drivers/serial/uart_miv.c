@@ -146,8 +146,8 @@ struct uart_miv_data {
 #endif
 };
 
-#define DEV_UART(dev)                                                                              \
-	((struct uart_miv_regs_t *)((const struct uart_miv_device_config *const)(dev)->config)     \
+#define DEV_UART(dev)                                                                          \
+	((struct uart_miv_regs_t *)((const struct uart_miv_device_config *const)(dev)->config) \
 		 ->uart_addr)
 
 static void uart_miv_poll_out(const struct device *dev, unsigned char c)

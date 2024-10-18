@@ -352,14 +352,14 @@ static int usart_si32_init(const struct device *dev)
 }
 
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN)
-#define SI32_USART_IRQ_HANDLER_DECL(index)                                                         \
+#define SI32_USART_IRQ_HANDLER_DECL(index)                                        \
 	static void usart_si32_irq_config_func_##index(const struct device *dev);
-#define SI32_USART_IRQ_HANDLER(index)                                                              \
-	static void usart_si32_irq_config_func_##index(const struct device *dev)                   \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(index), DT_INST_IRQ(index, priority),                     \
-			    usart_si32_irq_handler, DEVICE_DT_INST_GET(index), 0);                 \
-		irq_enable(DT_INST_IRQN(index));                                                   \
+#define SI32_USART_IRQ_HANDLER(index)                                              \
+	static void usart_si32_irq_config_func_##index(const struct device *dev)   \
+	{                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(index), DT_INST_IRQ(index, priority),     \
+			    usart_si32_irq_handler, DEVICE_DT_INST_GET(index), 0); \
+		irq_enable(DT_INST_IRQN(index));                                   \
 	}
 #else
 #define SI32_USART_IRQ_HANDLER_DECL(index) /* Not used */
@@ -372,24 +372,24 @@ static int usart_si32_init(const struct device *dev)
 #define SI32_USART_IRQ_HANDLER_FUNC(index) /* Not used */
 #endif
 
-#define SI32_USART_INIT(index)                                                                     \
-	SI32_USART_IRQ_HANDLER_DECL(index)                                                         \
-                                                                                                   \
-	static const struct usart_si32_config usart_si32_cfg_##index = {                           \
-		.usart = (SI32_USART_A_Type *)DT_INST_REG_ADDR(index),                             \
-		.hw_flow_control = DT_INST_PROP(index, hw_flow_control),                           \
-		.parity = DT_INST_ENUM_IDX_OR(index, parity, UART_CFG_PARITY_NONE),                \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(index)),                            \
-		SI32_USART_IRQ_HANDLER_FUNC(index)};                                               \
-                                                                                                   \
-	static struct usart_si32_data usart_si32_data_##index = {                                  \
-		.baud_rate = DT_INST_PROP(index, current_speed),                                   \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(index, &usart_si32_init, NULL, &usart_si32_data_##index,             \
-			      &usart_si32_cfg_##index, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,  \
-			      &usart_si32_driver_api);                                             \
-                                                                                                   \
+#define SI32_USART_INIT(index)                                                                    \
+	SI32_USART_IRQ_HANDLER_DECL(index)                                                        \
+                                                                                                  \
+	static const struct usart_si32_config usart_si32_cfg_##index = {                          \
+		.usart = (SI32_USART_A_Type *)DT_INST_REG_ADDR(index),                            \
+		.hw_flow_control = DT_INST_PROP(index, hw_flow_control),                          \
+		.parity = DT_INST_ENUM_IDX_OR(index, parity, UART_CFG_PARITY_NONE),               \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(index)),                           \
+		SI32_USART_IRQ_HANDLER_FUNC(index)};                                              \
+                                                                                                  \
+	static struct usart_si32_data usart_si32_data_##index = {                                 \
+		.baud_rate = DT_INST_PROP(index, current_speed),                                  \
+	};                                                                                        \
+                                                                                                  \
+	DEVICE_DT_INST_DEFINE(index, &usart_si32_init, NULL, &usart_si32_data_##index,            \
+			      &usart_si32_cfg_##index, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, \
+			      &usart_si32_driver_api);                                            \
+                                                                                                  \
 	SI32_USART_IRQ_HANDLER(index)
 
 DT_INST_FOREACH_STATUS_OKAY(SI32_USART_INIT)

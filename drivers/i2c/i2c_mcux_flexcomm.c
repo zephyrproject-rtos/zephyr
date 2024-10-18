@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(mcux_flexcomm);
 
 #include "i2c-priv.h"
 
-#define I2C_TRANSFER_TIMEOUT_MSEC                                                                  \
+#define I2C_TRANSFER_TIMEOUT_MSEC \
 	COND_CODE_0(CONFIG_I2C_NXP_TRANSFER_TIMEOUT, (K_FOREVER),                                  \
 		    (K_MSEC(CONFIG_I2C_NXP_TRANSFER_TIMEOUT)))
 
@@ -521,27 +521,27 @@ static const struct i2c_driver_api mcux_flexcomm_driver_api = {
 #endif
 };
 
-#define I2C_MCUX_FLEXCOMM_DEVICE(id)                                                               \
-	PINCTRL_DT_INST_DEFINE(id);                                                                \
-	static void mcux_flexcomm_config_func_##id(const struct device *dev);                      \
-	static const struct mcux_flexcomm_config mcux_flexcomm_config_##id = {                     \
-		.base = (I2C_Type *)DT_INST_REG_ADDR(id),                                          \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),                               \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),             \
-		.irq_config_func = mcux_flexcomm_config_func_##id,                                 \
-		.bitrate = DT_INST_PROP(id, clock_frequency),                                      \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),                                      \
-		.reset = RESET_DT_SPEC_INST_GET(id),                                               \
-	};                                                                                         \
-	static struct mcux_flexcomm_data mcux_flexcomm_data_##id;                                  \
-	I2C_DEVICE_DT_INST_DEFINE(id, mcux_flexcomm_init, NULL, &mcux_flexcomm_data_##id,          \
-				  &mcux_flexcomm_config_##id, POST_KERNEL,                         \
-				  CONFIG_I2C_INIT_PRIORITY, &mcux_flexcomm_driver_api);            \
-	static void mcux_flexcomm_config_func_##id(const struct device *dev)                       \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), mcux_flexcomm_isr,        \
-			    DEVICE_DT_INST_GET(id), 0);                                            \
-		irq_enable(DT_INST_IRQN(id));                                                      \
+#define I2C_MCUX_FLEXCOMM_DEVICE(id)                                                        \
+	PINCTRL_DT_INST_DEFINE(id);                                                         \
+	static void mcux_flexcomm_config_func_##id(const struct device *dev);               \
+	static const struct mcux_flexcomm_config mcux_flexcomm_config_##id = {              \
+		.base = (I2C_Type *)DT_INST_REG_ADDR(id),                                   \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),                        \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),      \
+		.irq_config_func = mcux_flexcomm_config_func_##id,                          \
+		.bitrate = DT_INST_PROP(id, clock_frequency),                               \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),                               \
+		.reset = RESET_DT_SPEC_INST_GET(id),                                        \
+	};                                                                                  \
+	static struct mcux_flexcomm_data mcux_flexcomm_data_##id;                           \
+	I2C_DEVICE_DT_INST_DEFINE(id, mcux_flexcomm_init, NULL, &mcux_flexcomm_data_##id,   \
+				  &mcux_flexcomm_config_##id, POST_KERNEL,                  \
+				  CONFIG_I2C_INIT_PRIORITY, &mcux_flexcomm_driver_api);     \
+	static void mcux_flexcomm_config_func_##id(const struct device *dev)                \
+	{                                                                                   \
+		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), mcux_flexcomm_isr, \
+			    DEVICE_DT_INST_GET(id), 0);                                     \
+		irq_enable(DT_INST_IRQN(id));                                               \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_MCUX_FLEXCOMM_DEVICE)

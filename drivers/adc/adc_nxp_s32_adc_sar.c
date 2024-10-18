@@ -335,59 +335,59 @@ static void adc_nxp_s32_isr(const struct device *dev)
 						     DT_INST_PROP(n, vref_mv),                     \
 	};
 
-#define ADC_NXP_S32_IRQ_CONFIG(n)                                                                  \
-	static void adc_nxp_s32_adc_sar_config_func_##n(const struct device *dev)                  \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), adc_nxp_s32_isr,            \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define ADC_NXP_S32_IRQ_CONFIG(n)                                                       \
+	static void adc_nxp_s32_adc_sar_config_func_##n(const struct device *dev)       \
+	{                                                                               \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), adc_nxp_s32_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                                  \
+		irq_enable(DT_INST_IRQN(n));                                            \
 	};
 
-#define ADC_NXP_S32_CALLBACK_DEFINE(n)                                                             \
-	void adc_nxp_s32_normal_end_conversion_callback##n(const uint16 PhysicalChanId)            \
-	{                                                                                          \
-		const struct device *dev = DEVICE_DT_INST_GET(n);                                  \
-		const struct adc_nxp_s32_config *config = dev->config;                             \
-		struct adc_nxp_s32_data *data = dev->data;                                         \
-		uint16_t result = 0;                                                               \
-                                                                                                   \
-		result = Adc_Sar_Ip_GetConvData(n, PhysicalChanId);                                \
-		LOG_DBG("End conversion, channel %d, group %d, result = %d",                       \
-			ADC_SAR_IP_CHAN_2_BIT(PhysicalChanId), config->group_channel, result);     \
-                                                                                                   \
-		*data->buffer++ = result;                                                          \
-		data->mask_channels &= ~BIT(ADC_SAR_IP_CHAN_2_BIT(PhysicalChanId));                \
-                                                                                                   \
-		if (!data->mask_channels) {                                                        \
-			adc_context_on_sampling_done(&data->ctx, (struct device *)dev);            \
-		}                                                                                  \
-	};                                                                                         \
-	void adc_nxp_s32_normal_endchain_callback##n(void)                                         \
-	{                                                                                          \
-		const struct device *dev = DEVICE_DT_INST_GET(n);                                  \
-		const struct adc_nxp_s32_config *config = dev->config;                             \
-		struct adc_nxp_s32_data *data = dev->data;                                         \
-		uint16_t result = 0;                                                               \
-		uint8_t channel;                                                                   \
-                                                                                                   \
-		while (data->mask_channels) {                                                      \
-			channel = ADC_NXP_S32_GROUPCHAN_2_PHYCHAN(                                 \
-				config->group_channel, (find_lsb_set(data->mask_channels) - 1));   \
-			result = Adc_Sar_Ip_GetConvData(n, channel);                               \
-			LOG_DBG("End chain, channel %d, group %d, result = %d",                    \
-				ADC_SAR_IP_CHAN_2_BIT(channel), config->group_channel, result);    \
-			if (data->buffer < data->buf_end) {                                        \
-				*data->buffer++ = result;                                          \
-			}                                                                          \
-			data->mask_channels &= ~BIT(ADC_SAR_IP_CHAN_2_BIT(channel));               \
-		}                                                                                  \
-                                                                                                   \
-		adc_context_on_sampling_done(&data->ctx, (struct device *)dev);                    \
+#define ADC_NXP_S32_CALLBACK_DEFINE(n)                                                           \
+	void adc_nxp_s32_normal_end_conversion_callback##n(const uint16 PhysicalChanId)          \
+	{                                                                                        \
+		const struct device *dev = DEVICE_DT_INST_GET(n);                                \
+		const struct adc_nxp_s32_config *config = dev->config;                           \
+		struct adc_nxp_s32_data *data = dev->data;                                       \
+		uint16_t result = 0;                                                             \
+                                                                                                 \
+		result = Adc_Sar_Ip_GetConvData(n, PhysicalChanId);                              \
+		LOG_DBG("End conversion, channel %d, group %d, result = %d",                     \
+			ADC_SAR_IP_CHAN_2_BIT(PhysicalChanId), config->group_channel, result);   \
+                                                                                                 \
+		*data->buffer++ = result;                                                        \
+		data->mask_channels &= ~BIT(ADC_SAR_IP_CHAN_2_BIT(PhysicalChanId));              \
+                                                                                                 \
+		if (!data->mask_channels) {                                                      \
+			adc_context_on_sampling_done(&data->ctx, (struct device *)dev);          \
+		}                                                                                \
+	};                                                                                       \
+	void adc_nxp_s32_normal_endchain_callback##n(void)                                       \
+	{                                                                                        \
+		const struct device *dev = DEVICE_DT_INST_GET(n);                                \
+		const struct adc_nxp_s32_config *config = dev->config;                           \
+		struct adc_nxp_s32_data *data = dev->data;                                       \
+		uint16_t result = 0;                                                             \
+		uint8_t channel;                                                                 \
+                                                                                                 \
+		while (data->mask_channels) {                                                    \
+			channel = ADC_NXP_S32_GROUPCHAN_2_PHYCHAN(                               \
+				config->group_channel, (find_lsb_set(data->mask_channels) - 1)); \
+			result = Adc_Sar_Ip_GetConvData(n, channel);                             \
+			LOG_DBG("End chain, channel %d, group %d, result = %d",                  \
+				ADC_SAR_IP_CHAN_2_BIT(channel), config->group_channel, result);  \
+			if (data->buffer < data->buf_end) {                                      \
+				*data->buffer++ = result;                                        \
+			}                                                                        \
+			data->mask_channels &= ~BIT(ADC_SAR_IP_CHAN_2_BIT(channel));             \
+		}                                                                                \
+                                                                                                 \
+		adc_context_on_sampling_done(&data->ctx, (struct device *)dev);                  \
 	};
 
-#define ADC_NXP_S32_INSTANCE_CHECK(indx, n)                                                        \
+#define ADC_NXP_S32_INSTANCE_CHECK(indx, n)                        \
 	((DT_INST_REG_ADDR(n) == IP_ADC_##indx##_BASE) ? indx : 0)
-#define ADC_NXP_S32_GET_INSTANCE(n)                                                                \
+#define ADC_NXP_S32_GET_INSTANCE(n) \
 	LISTIFY(__DEBRACKET ADC_INSTANCE_COUNT, ADC_NXP_S32_INSTANCE_CHECK, (|), n)
 
 #if (FEATURE_ADC_HAS_HIGH_SPEED_ENABLE == 1U)
@@ -402,35 +402,35 @@ static void adc_nxp_s32_isr(const struct device *dev)
 #define ADC_NXP_S32_RESOLUTION_CFG(n)
 #endif
 
-#define ADC_NXP_S32_INIT_DEVICE(n)                                                                 \
-	ADC_NXP_S32_DRIVER_API(n)                                                                  \
-	ADC_NXP_S32_CALLBACK_DEFINE(n)                                                             \
-	ADC_NXP_S32_IRQ_CONFIG(n)                                                                  \
+#define ADC_NXP_S32_INIT_DEVICE(n)                                                               \
+	ADC_NXP_S32_DRIVER_API(n)                                                                \
+	ADC_NXP_S32_CALLBACK_DEFINE(n)                                                           \
+	ADC_NXP_S32_IRQ_CONFIG(n)                                                                \
 	COND_CODE_1(DT_INST_NUM_PINCTRL_STATES(n),				\
-				(PINCTRL_DT_INST_DEFINE(n);), (EMPTY))                                            \
-	static const Adc_Sar_Ip_ConfigType adc_nxp_s32_default_config##n = {                       \
-		.ConvMode = ADC_SAR_IP_CONV_MODE_ONESHOT,                                          \
-		ADC_NXP_S32_RESOLUTION_CFG(n) ADC_NXP_S32_HIGH_SPEED_CFG(n)                        \
-			.EndOfNormalChainNotification = adc_nxp_s32_normal_endchain_callback##n,   \
-		.EndOfConvNotification = adc_nxp_s32_normal_end_conversion_callback##n,            \
-	};                                                                                         \
-	static struct adc_nxp_s32_data adc_nxp_s32_data_##n = {                                    \
-		ADC_CONTEXT_INIT_TIMER(adc_nxp_s32_data_##n, ctx),                                 \
-		ADC_CONTEXT_INIT_LOCK(adc_nxp_s32_data_##n, ctx),                                  \
-		ADC_CONTEXT_INIT_SYNC(adc_nxp_s32_data_##n, ctx),                                  \
-	};                                                                                         \
-	static const struct adc_nxp_s32_config adc_nxp_s32_config_##n = {                          \
-		.base = (ADC_Type *)DT_INST_REG_ADDR(n),                                           \
-		.instance = ADC_NXP_S32_GET_INSTANCE(n),                                           \
-		.group_channel = DT_INST_ENUM_IDX(n, group_channel),                               \
-		.callback_select = DT_INST_ENUM_IDX(n, callback_select),                           \
-		.adc_cfg = (Adc_Sar_Ip_ConfigType *)&adc_nxp_s32_default_config##n,                \
-		.irq_config_func = adc_nxp_s32_adc_sar_config_func_##n,                            \
+				(PINCTRL_DT_INST_DEFINE(n);), (EMPTY))                                          \
+	static const Adc_Sar_Ip_ConfigType adc_nxp_s32_default_config##n = {                     \
+		.ConvMode = ADC_SAR_IP_CONV_MODE_ONESHOT,                                        \
+		ADC_NXP_S32_RESOLUTION_CFG(n) ADC_NXP_S32_HIGH_SPEED_CFG(n)                      \
+			.EndOfNormalChainNotification = adc_nxp_s32_normal_endchain_callback##n, \
+		.EndOfConvNotification = adc_nxp_s32_normal_end_conversion_callback##n,          \
+	};                                                                                       \
+	static struct adc_nxp_s32_data adc_nxp_s32_data_##n = {                                  \
+		ADC_CONTEXT_INIT_TIMER(adc_nxp_s32_data_##n, ctx),                               \
+		ADC_CONTEXT_INIT_LOCK(adc_nxp_s32_data_##n, ctx),                                \
+		ADC_CONTEXT_INIT_SYNC(adc_nxp_s32_data_##n, ctx),                                \
+	};                                                                                       \
+	static const struct adc_nxp_s32_config adc_nxp_s32_config_##n = {                        \
+		.base = (ADC_Type *)DT_INST_REG_ADDR(n),                                         \
+		.instance = ADC_NXP_S32_GET_INSTANCE(n),                                         \
+		.group_channel = DT_INST_ENUM_IDX(n, group_channel),                             \
+		.callback_select = DT_INST_ENUM_IDX(n, callback_select),                         \
+		.adc_cfg = (Adc_Sar_Ip_ConfigType *)&adc_nxp_s32_default_config##n,              \
+		.irq_config_func = adc_nxp_s32_adc_sar_config_func_##n,                          \
 		.pin_cfg = COND_CODE_1(DT_INST_NUM_PINCTRL_STATES(n),		\
-				(PINCTRL_DT_INST_DEV_CONFIG_GET(n)), (NULL)),                            \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &adc_nxp_s32_init, NULL, &adc_nxp_s32_data_##n,                   \
-			      &adc_nxp_s32_config_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,      \
+				(PINCTRL_DT_INST_DEV_CONFIG_GET(n)), (NULL)),                          \
+	};                                                                                       \
+	DEVICE_DT_INST_DEFINE(n, &adc_nxp_s32_init, NULL, &adc_nxp_s32_data_##n,                 \
+			      &adc_nxp_s32_config_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,    \
 			      &adc_nxp_s32_driver_api_##n);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_NXP_S32_INIT_DEVICE)

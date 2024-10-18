@@ -450,31 +450,31 @@ static const struct sensor_driver_api mmc56x3_api_funcs = {
 #endif
 };
 
-#define MMC56X3_DT_DEV_CONFIG_INIT(inst)                                                           \
-	{                                                                                          \
-		.bus.i2c = I2C_DT_SPEC_INST_GET(inst),                                             \
-		.bus_io = &mmc56x3_bus_io_i2c,                                                     \
+#define MMC56X3_DT_DEV_CONFIG_INIT(inst)               \
+	{                                              \
+		.bus.i2c = I2C_DT_SPEC_INST_GET(inst), \
+		.bus_io = &mmc56x3_bus_io_i2c,         \
 	}
 
-#define MMC56X3_DT_DATA_CONFIG_INIT(inst)                                                          \
-	{                                                                                          \
-		.magn_odr = DT_INST_PROP(inst, magn_odr),                                          \
-		.bw0 = DT_INST_PROP(inst, bandwidth_selection_bits_0),                             \
-		.bw1 = DT_INST_PROP(inst, bandwidth_selection_bits_1),                             \
-		.auto_sr = DT_INST_PROP(inst, auto_self_reset),                                    \
+#define MMC56X3_DT_DATA_CONFIG_INIT(inst)                              \
+	{                                                              \
+		.magn_odr = DT_INST_PROP(inst, magn_odr),              \
+		.bw0 = DT_INST_PROP(inst, bandwidth_selection_bits_0), \
+		.bw1 = DT_INST_PROP(inst, bandwidth_selection_bits_1), \
+		.auto_sr = DT_INST_PROP(inst, auto_self_reset),        \
 	}
 
-#define MMC56X3_DATA_INIT(inst)                                                                    \
-	static struct mmc56x3_data mmc56x3_data_##inst = {                                         \
-		.config = MMC56X3_DT_DATA_CONFIG_INIT(inst),                                       \
+#define MMC56X3_DATA_INIT(inst)                              \
+	static struct mmc56x3_data mmc56x3_data_##inst = {   \
+		.config = MMC56X3_DT_DATA_CONFIG_INIT(inst), \
 	};
 
-#define MMC56X3_DEFINE(inst)                                                                       \
-	MMC56X3_DATA_INIT(inst);                                                                   \
-	const static struct mmc56x3_dev_config mmc56x3_dev_config_##inst =                         \
-		MMC56X3_DT_DEV_CONFIG_INIT(inst);                                                  \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, mmc56x3_chip_init, NULL, &mmc56x3_data_##inst,          \
-				     &mmc56x3_dev_config_##inst, POST_KERNEL,                      \
+#define MMC56X3_DEFINE(inst)                                                              \
+	MMC56X3_DATA_INIT(inst);                                                          \
+	const static struct mmc56x3_dev_config mmc56x3_dev_config_##inst =                \
+		MMC56X3_DT_DEV_CONFIG_INIT(inst);                                         \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, mmc56x3_chip_init, NULL, &mmc56x3_data_##inst, \
+				     &mmc56x3_dev_config_##inst, POST_KERNEL,             \
 				     CONFIG_SENSOR_INIT_PRIORITY, &mmc56x3_api_funcs);
 
 /* Create the struct device for every status "okay" node in the devicetree. */

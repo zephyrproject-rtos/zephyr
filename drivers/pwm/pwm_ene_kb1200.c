@@ -109,15 +109,15 @@ static int pwm_kb1200_init(const struct device *dev)
 	return 0;
 }
 
-#define KB1200_PWM_INIT(inst)                                                                      \
-	PINCTRL_DT_INST_DEFINE(inst);                                                              \
-	static const struct pwm_kb1200_config pwm_kb1200_cfg_##inst = {                            \
-		.pwm = (struct pwm_regs *)DT_INST_REG_ADDR(inst),                                  \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
-	};                                                                                         \
-	static struct pwm_kb1200_data pwm_kb1200_data_##inst;                                      \
-	DEVICE_DT_INST_DEFINE(inst, &pwm_kb1200_init, NULL, &pwm_kb1200_data_##inst,               \
-			      &pwm_kb1200_cfg_##inst, PRE_KERNEL_1, CONFIG_PWM_INIT_PRIORITY,      \
+#define KB1200_PWM_INIT(inst)                                                                 \
+	PINCTRL_DT_INST_DEFINE(inst);                                                         \
+	static const struct pwm_kb1200_config pwm_kb1200_cfg_##inst = {                       \
+		.pwm = (struct pwm_regs *)DT_INST_REG_ADDR(inst),                             \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                 \
+	};                                                                                    \
+	static struct pwm_kb1200_data pwm_kb1200_data_##inst;                                 \
+	DEVICE_DT_INST_DEFINE(inst, &pwm_kb1200_init, NULL, &pwm_kb1200_data_##inst,          \
+			      &pwm_kb1200_cfg_##inst, PRE_KERNEL_1, CONFIG_PWM_INIT_PRIORITY, \
 			      &pwm_kb1200_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(KB1200_PWM_INIT)

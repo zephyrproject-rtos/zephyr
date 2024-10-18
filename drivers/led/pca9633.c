@@ -205,15 +205,15 @@ static const struct led_driver_api pca9633_led_api = {
 	.off = pca9633_led_off,
 };
 
-#define PCA9633_DEVICE(id)                                                                         \
-	static const struct pca9633_config pca9633_##id##_cfg = {                                  \
-		.i2c = I2C_DT_SPEC_INST_GET(id),                                                   \
-		.disable_allcall = DT_INST_PROP(id, disable_allcall),                              \
-	};                                                                                         \
-	static struct pca9633_data pca9633_##id##_data;                                            \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(id, &pca9633_led_init, NULL, &pca9633_##id##_data,                   \
-			      &pca9633_##id##_cfg, POST_KERNEL, CONFIG_LED_INIT_PRIORITY,          \
+#define PCA9633_DEVICE(id)                                                                \
+	static const struct pca9633_config pca9633_##id##_cfg = {                         \
+		.i2c = I2C_DT_SPEC_INST_GET(id),                                          \
+		.disable_allcall = DT_INST_PROP(id, disable_allcall),                     \
+	};                                                                                \
+	static struct pca9633_data pca9633_##id##_data;                                   \
+                                                                                          \
+	DEVICE_DT_INST_DEFINE(id, &pca9633_led_init, NULL, &pca9633_##id##_data,          \
+			      &pca9633_##id##_cfg, POST_KERNEL, CONFIG_LED_INIT_PRIORITY, \
 			      &pca9633_led_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PCA9633_DEVICE)

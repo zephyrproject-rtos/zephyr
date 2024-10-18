@@ -856,35 +856,35 @@ static void spi_atcspi200_irq_handler(void *arg)
 
 #define DMA_CHANNEL_CONFIG(id, dir) DT_INST_DMAS_CELL_BY_NAME(id, dir, channel_config)
 
-#define SPI_DMA_CHANNEL_INIT(index, dir, dir_cap, src_dev, dest_dev)                               \
-	.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(index, dir)),                           \
-	.channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),                                 \
-	.dma_cfg =                                                                                 \
-		{                                                                                  \
-			.dma_slot = DT_INST_DMAS_CELL_BY_NAME(index, dir, slot),                   \
-			.channel_direction =                                                       \
-				ANDES_DMA_CONFIG_DIRECTION(DMA_CHANNEL_CONFIG(index, dir)),        \
-			.complete_callback_en = 0,                                                 \
-			.error_callback_dis = 0,                                                   \
-			.source_data_size = ANDES_DMA_CONFIG_##src_dev##_DATA_SIZE(                \
-				DMA_CHANNEL_CONFIG(index, dir)),                                   \
-			.dest_data_size = ANDES_DMA_CONFIG_##dest_dev##_DATA_SIZE(                 \
-				DMA_CHANNEL_CONFIG(index, dir)),                                   \
-			.source_burst_length = 1, /* SINGLE transfer */                            \
-			.dest_burst_length = 1,   /* SINGLE transfer */                            \
-			.channel_priority =                                                        \
-				ANDES_DMA_CONFIG_PRIORITY(DMA_CHANNEL_CONFIG(index, dir)),         \
-			.source_chaining_en =                                                      \
-				DT_PROP(DT_INST_DMAS_CTLR_BY_NAME(index, dir), chain_transfer),    \
-			.dest_chaining_en =                                                        \
-				DT_PROP(DT_INST_DMAS_CTLR_BY_NAME(index, dir), chain_transfer),    \
-	},                                                                                         \
-	.src_addr_increment =                                                                      \
-		ANDES_DMA_CONFIG_##src_dev##_ADDR_INC(DMA_CHANNEL_CONFIG(index, dir)),             \
-	.dst_addr_increment =                                                                      \
+#define SPI_DMA_CHANNEL_INIT(index, dir, dir_cap, src_dev, dest_dev)                            \
+	.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(index, dir)),                        \
+	.channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),                              \
+	.dma_cfg =                                                                              \
+		{                                                                               \
+			.dma_slot = DT_INST_DMAS_CELL_BY_NAME(index, dir, slot),                \
+			.channel_direction =                                                    \
+				ANDES_DMA_CONFIG_DIRECTION(DMA_CHANNEL_CONFIG(index, dir)),     \
+			.complete_callback_en = 0,                                              \
+			.error_callback_dis = 0,                                                \
+			.source_data_size = ANDES_DMA_CONFIG_##src_dev##_DATA_SIZE(             \
+				DMA_CHANNEL_CONFIG(index, dir)),                                \
+			.dest_data_size = ANDES_DMA_CONFIG_##dest_dev##_DATA_SIZE(              \
+				DMA_CHANNEL_CONFIG(index, dir)),                                \
+			.source_burst_length = 1, /* SINGLE transfer */                         \
+			.dest_burst_length = 1,   /* SINGLE transfer */                         \
+			.channel_priority =                                                     \
+				ANDES_DMA_CONFIG_PRIORITY(DMA_CHANNEL_CONFIG(index, dir)),      \
+			.source_chaining_en =                                                   \
+				DT_PROP(DT_INST_DMAS_CTLR_BY_NAME(index, dir), chain_transfer), \
+			.dest_chaining_en =                                                     \
+				DT_PROP(DT_INST_DMAS_CTLR_BY_NAME(index, dir), chain_transfer), \
+	},                                                                                      \
+	.src_addr_increment =                                                                   \
+		ANDES_DMA_CONFIG_##src_dev##_ADDR_INC(DMA_CHANNEL_CONFIG(index, dir)),          \
+	.dst_addr_increment =                                                                   \
 		ANDES_DMA_CONFIG_##dest_dev##_ADDR_INC(DMA_CHANNEL_CONFIG(index, dir))
 
-#define SPI_DMA_CHANNEL(id, dir, DIR, src, dest)                                                   \
+#define SPI_DMA_CHANNEL(id, dir, DIR, src, dest)                               \
 	.dma_##dir = {COND_CODE_1(DT_INST_DMAS_HAS_NAME(id, dir),			\
 			(SPI_DMA_CHANNEL_INIT(id, dir, DIR, src, dest)),	\
 			(NULL)) },
@@ -901,30 +901,30 @@ static void spi_atcspi200_irq_handler(void *arg)
 #define SPI_ROM_CFG_XIP(node_id) false
 #endif
 
-#define SPI_INIT(n)                                                                                \
-	static struct spi_atcspi200_data spi_atcspi200_dev_data_##n = {                            \
-		SPI_CONTEXT_INIT_LOCK(spi_atcspi200_dev_data_##n, ctx),                            \
-		SPI_CONTEXT_INIT_SYNC(spi_atcspi200_dev_data_##n, ctx),                            \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)                               \
-			SPI_BUSY_INIT SPI_DMA_CHANNEL(n, rx, RX, PERIPHERAL, MEMORY)               \
-				SPI_DMA_CHANNEL(n, tx, TX, MEMORY, PERIPHERAL)};                   \
-	static void spi_atcspi200_cfg_##n(void);                                                   \
-	static struct spi_atcspi200_cfg spi_atcspi200_dev_cfg_##n = {                              \
-		.cfg_func = spi_atcspi200_cfg_##n,                                                 \
-		.base = DT_INST_REG_ADDR(n),                                                       \
-		.irq_num = DT_INST_IRQN(n),                                                        \
-		.f_sys = DT_INST_PROP(n, clock_frequency),                                         \
-		.xip = SPI_ROM_CFG_XIP(DT_DRV_INST(n)),                                            \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, spi_atcspi200_init, NULL, &spi_atcspi200_dev_data_##n,            \
-			      &spi_atcspi200_dev_cfg_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,   \
-			      &spi_atcspi200_api);                                                 \
-                                                                                                   \
-	static void spi_atcspi200_cfg_##n(void)                                                    \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), spi_atcspi200_irq_handler,  \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
+#define SPI_INIT(n)                                                                               \
+	static struct spi_atcspi200_data spi_atcspi200_dev_data_##n = {                           \
+		SPI_CONTEXT_INIT_LOCK(spi_atcspi200_dev_data_##n, ctx),                           \
+		SPI_CONTEXT_INIT_SYNC(spi_atcspi200_dev_data_##n, ctx),                           \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)                              \
+			SPI_BUSY_INIT SPI_DMA_CHANNEL(n, rx, RX, PERIPHERAL, MEMORY)              \
+				SPI_DMA_CHANNEL(n, tx, TX, MEMORY, PERIPHERAL)};                  \
+	static void spi_atcspi200_cfg_##n(void);                                                  \
+	static struct spi_atcspi200_cfg spi_atcspi200_dev_cfg_##n = {                             \
+		.cfg_func = spi_atcspi200_cfg_##n,                                                \
+		.base = DT_INST_REG_ADDR(n),                                                      \
+		.irq_num = DT_INST_IRQN(n),                                                       \
+		.f_sys = DT_INST_PROP(n, clock_frequency),                                        \
+		.xip = SPI_ROM_CFG_XIP(DT_DRV_INST(n)),                                           \
+	};                                                                                        \
+                                                                                                  \
+	DEVICE_DT_INST_DEFINE(n, spi_atcspi200_init, NULL, &spi_atcspi200_dev_data_##n,           \
+			      &spi_atcspi200_dev_cfg_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,  \
+			      &spi_atcspi200_api);                                                \
+                                                                                                  \
+	static void spi_atcspi200_cfg_##n(void)                                                   \
+	{                                                                                         \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), spi_atcspi200_irq_handler, \
+			    DEVICE_DT_INST_GET(n), 0);                                            \
 	};
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_INIT)

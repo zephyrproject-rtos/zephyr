@@ -912,29 +912,29 @@ static const struct can_driver_api can_xmc4xxx_api_funcs = {
 		},
 };
 
-#define CAN_XMC4XXX_INIT(inst)                                                                     \
-	static void can_xmc4xxx_irq_config_##inst(void)                                            \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), can_xmc4xxx_isr,      \
-			    DEVICE_DT_INST_GET(inst), 0);                                          \
-		irq_enable(DT_INST_IRQN(inst));                                                    \
-	}                                                                                          \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(inst);                                                              \
-                                                                                                   \
-	static struct can_xmc4xxx_data can_xmc4xxx_data_##inst;                                    \
-	static const struct can_xmc4xxx_config can_xmc4xxx_config_##inst = {                       \
-		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0, 1000000),                         \
-		.can = (CAN_NODE_TypeDef *)DT_INST_REG_ADDR(inst),                                 \
-		.clock_div8 = DT_INST_PROP(inst, clock_div8),                                      \
-		.irq_config_func = can_xmc4xxx_irq_config_##inst,                                  \
-		.service_request = DT_INST_IRQN(inst) - CAN_XMC4XXX_IRQ_MIN,                       \
-		.input_src = DT_INST_ENUM_IDX(inst, input_src),                                    \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
-	};                                                                                         \
-                                                                                                   \
-	CAN_DEVICE_DT_INST_DEFINE(inst, can_xmc4xxx_init, NULL, &can_xmc4xxx_data_##inst,          \
-				  &can_xmc4xxx_config_##inst, POST_KERNEL,                         \
+#define CAN_XMC4XXX_INIT(inst)                                                                \
+	static void can_xmc4xxx_irq_config_##inst(void)                                       \
+	{                                                                                     \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), can_xmc4xxx_isr, \
+			    DEVICE_DT_INST_GET(inst), 0);                                     \
+		irq_enable(DT_INST_IRQN(inst));                                               \
+	}                                                                                     \
+                                                                                              \
+	PINCTRL_DT_INST_DEFINE(inst);                                                         \
+                                                                                              \
+	static struct can_xmc4xxx_data can_xmc4xxx_data_##inst;                               \
+	static const struct can_xmc4xxx_config can_xmc4xxx_config_##inst = {                  \
+		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0, 1000000),                    \
+		.can = (CAN_NODE_TypeDef *)DT_INST_REG_ADDR(inst),                            \
+		.clock_div8 = DT_INST_PROP(inst, clock_div8),                                 \
+		.irq_config_func = can_xmc4xxx_irq_config_##inst,                             \
+		.service_request = DT_INST_IRQN(inst) - CAN_XMC4XXX_IRQ_MIN,                  \
+		.input_src = DT_INST_ENUM_IDX(inst, input_src),                               \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                 \
+	};                                                                                    \
+                                                                                              \
+	CAN_DEVICE_DT_INST_DEFINE(inst, can_xmc4xxx_init, NULL, &can_xmc4xxx_data_##inst,     \
+				  &can_xmc4xxx_config_##inst, POST_KERNEL,                    \
 				  CONFIG_CAN_INIT_PRIORITY, &can_xmc4xxx_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_XMC4XXX_INIT)

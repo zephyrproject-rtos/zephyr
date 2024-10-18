@@ -368,21 +368,21 @@ static int tsl2540_pm_action(const struct device *dev, enum pm_device_action act
 }
 #endif
 
-#define TSL2540_GLASS_ATTEN(inst)                                                                  \
-	.glass_attenuation = DT_INST_PROP(inst, glass_attenuation),                                \
+#define TSL2540_GLASS_ATTEN(inst)                                         \
+	.glass_attenuation = DT_INST_PROP(inst, glass_attenuation),       \
 	.glass_ir_attenuation = DT_INST_PROP(inst, glass_ir_attenuation),
 
-#define TSL2540_DEFINE(inst)                                                                       \
-	static struct tsl2540_data tsl2540_prv_data_##inst;                                        \
-	static const struct tsl2540_config tsl2540_config_##inst = {                               \
-		.i2c_spec = I2C_DT_SPEC_INST_GET(inst),                                            \
+#define TSL2540_DEFINE(inst)                                                           \
+	static struct tsl2540_data tsl2540_prv_data_##inst;                            \
+	static const struct tsl2540_config tsl2540_config_##inst = {                   \
+		.i2c_spec = I2C_DT_SPEC_INST_GET(inst),                                \
 		IF_ENABLED(CONFIG_TSL2540_TRIGGER,						\
-		(.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),))                                          \
-							   TSL2540_GLASS_ATTEN(inst)};             \
-	PM_DEVICE_DT_INST_DEFINE(inst, tsl2540_pm_action);                                         \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &tsl2540_init, PM_DEVICE_DT_INST_GET(inst),             \
-				     &tsl2540_prv_data_##inst, &tsl2540_config_##inst,             \
-				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,                     \
+		(.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),))                              \
+							   TSL2540_GLASS_ATTEN(inst)}; \
+	PM_DEVICE_DT_INST_DEFINE(inst, tsl2540_pm_action);                             \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, &tsl2540_init, PM_DEVICE_DT_INST_GET(inst), \
+				     &tsl2540_prv_data_##inst, &tsl2540_config_##inst, \
+				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,         \
 				     &tsl2540_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TSL2540_DEFINE)

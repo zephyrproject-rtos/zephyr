@@ -93,16 +93,16 @@ static const struct dac_driver_api mcux_dac_driver_api = {
 
 #define TO_DAC_VREF_SRC(val) _DO_CONCAT(kDAC_ReferenceVoltageSourceVref, val)
 
-#define MCUX_DAC_INIT(n)                                                                           \
-	static struct mcux_dac_data mcux_dac_data_##n;                                             \
-                                                                                                   \
-	static const struct mcux_dac_config mcux_dac_config_##n = {                                \
-		.base = (DAC_Type *)DT_INST_REG_ADDR(n),                                           \
-		.reference = TO_DAC_VREF_SRC(DT_INST_PROP(n, voltage_reference)),                  \
-		.low_power = DT_INST_PROP(n, low_power_mode),                                      \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, &mcux_dac_data_##n, &mcux_dac_config_##n,             \
+#define MCUX_DAC_INIT(n)                                                                    \
+	static struct mcux_dac_data mcux_dac_data_##n;                                      \
+                                                                                            \
+	static const struct mcux_dac_config mcux_dac_config_##n = {                         \
+		.base = (DAC_Type *)DT_INST_REG_ADDR(n),                                    \
+		.reference = TO_DAC_VREF_SRC(DT_INST_PROP(n, voltage_reference)),           \
+		.low_power = DT_INST_PROP(n, low_power_mode),                               \
+	};                                                                                  \
+                                                                                            \
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL, &mcux_dac_data_##n, &mcux_dac_config_##n,      \
 			      POST_KERNEL, CONFIG_DAC_INIT_PRIORITY, &mcux_dac_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_DAC_INIT)

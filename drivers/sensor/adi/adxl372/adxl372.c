@@ -772,9 +772,9 @@ static int adxl372_init(const struct device *dev)
  * ADXL372_DEFINE_I2C().
  */
 
-#define ADXL372_DEVICE_INIT(inst)                                                                  \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, adxl372_init, NULL, &adxl372_data_##inst,               \
-				     &adxl372_config_##inst, POST_KERNEL,                          \
+#define ADXL372_DEVICE_INIT(inst)                                                      \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, adxl372_init, NULL, &adxl372_data_##inst,   \
+				     &adxl372_config_##inst, POST_KERNEL,              \
 				     CONFIG_SENSOR_INIT_PRIORITY, &adxl372_api_funcs);
 
 /*
@@ -803,39 +803,39 @@ static int adxl372_init(const struct device *dev)
 	.fifo_config.fifo_format = ADXL372_XYZ_PEAK_FIFO, .fifo_config.fifo_samples = 128,         \
 	.op_mode = ADXL372_FULL_BW_MEASUREMENT,
 
-#define ADXL372_CONFIG_SPI(inst)                                                                   \
-	{.bus_init = adxl372_spi_init,                                                             \
-	 .spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),                 \
-	 ADXL372_CONFIG(inst)                                                                      \
+#define ADXL372_CONFIG_SPI(inst)                                                                  \
+	{.bus_init = adxl372_spi_init,                                                            \
+	 .spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),                \
+	 ADXL372_CONFIG(inst)                                                                     \
 		 COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int1_gpios),	\
 		(ADXL372_CFG_IRQ(inst)), ()) }
 
-#define ADXL372_DEFINE_SPI(inst)                                                                   \
-	static struct adxl372_data adxl372_data_##inst;                                            \
-	static const struct adxl372_dev_config adxl372_config_##inst = ADXL372_CONFIG_SPI(inst);   \
+#define ADXL372_DEFINE_SPI(inst)                                                                 \
+	static struct adxl372_data adxl372_data_##inst;                                          \
+	static const struct adxl372_dev_config adxl372_config_##inst = ADXL372_CONFIG_SPI(inst); \
 	ADXL372_DEVICE_INIT(inst)
 
 /*
  * Instantiation macros used when a device is on an I2C bus.
  */
 
-#define ADXL372_CONFIG_I2C(inst)                                                                   \
-	{.bus_init = adxl372_i2c_init,                                                             \
-	 .i2c = I2C_DT_SPEC_INST_GET(inst),                                                        \
-	 ADXL372_CONFIG(inst)                                                                      \
+#define ADXL372_CONFIG_I2C(inst)                                                                  \
+	{.bus_init = adxl372_i2c_init,                                                            \
+	 .i2c = I2C_DT_SPEC_INST_GET(inst),                                                       \
+	 ADXL372_CONFIG(inst)                                                                     \
 		 COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int1_gpios),	\
 		(ADXL372_CFG_IRQ(inst)), ()) }
 
-#define ADXL372_DEFINE_I2C(inst)                                                                   \
-	static struct adxl372_data adxl372_data_##inst;                                            \
-	static const struct adxl372_dev_config adxl372_config_##inst = ADXL372_CONFIG_I2C(inst);   \
+#define ADXL372_DEFINE_I2C(inst)                                                                 \
+	static struct adxl372_data adxl372_data_##inst;                                          \
+	static const struct adxl372_dev_config adxl372_config_##inst = ADXL372_CONFIG_I2C(inst); \
 	ADXL372_DEVICE_INIT(inst)
 /*
  * Main instantiation macro. Use of COND_CODE_1() selects the right
  * bus-specific macro at preprocessor time.
  */
 
-#define ADXL372_DEFINE(inst)                                                                       \
+#define ADXL372_DEFINE(inst)                        \
 	COND_CODE_1(DT_INST_ON_BUS(inst, spi),				\
 		    (ADXL372_DEFINE_SPI(inst)),				\
 		    (ADXL372_DEFINE_I2C(inst)))

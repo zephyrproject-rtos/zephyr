@@ -66,17 +66,17 @@ static const struct mbox_driver_api vevif_task_tx_driver_api = {
 	.max_channels_get = vevif_task_tx_max_channels_get,
 };
 
-#define VEVIF_TASK_TX_DEFINE(inst)                                                                 \
-	BUILD_ASSERT(DT_INST_PROP(inst, nordic_tasks) <= VPR_TASKS_TRIGGER_MaxCount,               \
-		     "Number of tasks exceeds maximum");                                           \
-                                                                                                   \
-	static const struct mbox_vevif_task_tx_conf conf##inst = {                                 \
-		.vpr = (NRF_VPR_Type *)DT_INST_REG_ADDR(inst),                                     \
-		.tasks = DT_INST_PROP(inst, nordic_tasks),                                         \
-		.tasks_mask = DT_INST_PROP(inst, nordic_tasks_mask),                               \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, &conf##inst, POST_KERNEL,                    \
+#define VEVIF_TASK_TX_DEFINE(inst)                                                   \
+	BUILD_ASSERT(DT_INST_PROP(inst, nordic_tasks) <= VPR_TASKS_TRIGGER_MaxCount, \
+		     "Number of tasks exceeds maximum");                             \
+                                                                                     \
+	static const struct mbox_vevif_task_tx_conf conf##inst = {                   \
+		.vpr = (NRF_VPR_Type *)DT_INST_REG_ADDR(inst),                       \
+		.tasks = DT_INST_PROP(inst, nordic_tasks),                           \
+		.tasks_mask = DT_INST_PROP(inst, nordic_tasks_mask),                 \
+	};                                                                           \
+                                                                                     \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, &conf##inst, POST_KERNEL,      \
 			      CONFIG_MBOX_INIT_PRIORITY, &vevif_task_tx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VEVIF_TASK_TX_DEFINE)

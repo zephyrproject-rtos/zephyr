@@ -209,19 +209,19 @@ static int pwm_npcx_init(const struct device *dev)
 	return 0;
 }
 
-#define NPCX_PWM_INIT(inst)                                                                        \
-	PINCTRL_DT_INST_DEFINE(inst);                                                              \
-                                                                                                   \
-	static const struct pwm_npcx_config pwm_npcx_cfg_##inst = {                                \
-		.base = (struct pwm_reg *)DT_INST_REG_ADDR(inst),                                  \
-		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(inst),                                             \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
-	};                                                                                         \
-                                                                                                   \
-	static struct pwm_npcx_data pwm_npcx_data_##inst;                                          \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, &pwm_npcx_init, NULL, &pwm_npcx_data_##inst,                   \
-			      &pwm_npcx_cfg_##inst, PRE_KERNEL_1, CONFIG_PWM_INIT_PRIORITY,        \
+#define NPCX_PWM_INIT(inst)                                                                 \
+	PINCTRL_DT_INST_DEFINE(inst);                                                       \
+                                                                                            \
+	static const struct pwm_npcx_config pwm_npcx_cfg_##inst = {                         \
+		.base = (struct pwm_reg *)DT_INST_REG_ADDR(inst),                           \
+		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(inst),                                      \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                               \
+	};                                                                                  \
+                                                                                            \
+	static struct pwm_npcx_data pwm_npcx_data_##inst;                                   \
+                                                                                            \
+	DEVICE_DT_INST_DEFINE(inst, &pwm_npcx_init, NULL, &pwm_npcx_data_##inst,            \
+			      &pwm_npcx_cfg_##inst, PRE_KERNEL_1, CONFIG_PWM_INIT_PRIORITY, \
 			      &pwm_npcx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NPCX_PWM_INIT)

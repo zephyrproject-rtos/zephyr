@@ -591,25 +591,25 @@ static int emul_bosch_bmi160_init(const struct emul *target, const struct device
 	return 0;
 }
 
-#define BMI160_EMUL_DATA(n)                                                                        \
-	static uint8_t bmi160_emul_reg_##n[BMI160_REG_COUNT];                                      \
+#define BMI160_EMUL_DATA(n)                                   \
+	static uint8_t bmi160_emul_reg_##n[BMI160_REG_COUNT]; \
 	static struct bmi160_emul_data bmi160_emul_data_##n;
 
-#define BMI160_EMUL_DEFINE(n, bus_api)                                                             \
-	EMUL_DT_INST_DEFINE(n, emul_bosch_bmi160_init, &bmi160_emul_data_##n,                      \
+#define BMI160_EMUL_DEFINE(n, bus_api)                                        \
+	EMUL_DT_INST_DEFINE(n, emul_bosch_bmi160_init, &bmi160_emul_data_##n, \
 			    &bmi160_emul_cfg_##n, &bus_api, &backend_api)
 
 /* Instantiation macros used when a device is on a SPI bus */
-#define BMI160_EMUL_SPI(n)                                                                         \
-	BMI160_EMUL_DATA(n)                                                                        \
-	static const struct bmi160_emul_cfg bmi160_emul_cfg_##n = {                                \
-		.reg = bmi160_emul_reg_##n, .chipsel = DT_INST_REG_ADDR(n)};                       \
+#define BMI160_EMUL_SPI(n)                                                   \
+	BMI160_EMUL_DATA(n)                                                  \
+	static const struct bmi160_emul_cfg bmi160_emul_cfg_##n = {          \
+		.reg = bmi160_emul_reg_##n, .chipsel = DT_INST_REG_ADDR(n)}; \
 	BMI160_EMUL_DEFINE(n, bmi160_emul_api_spi)
 
-#define BMI160_EMUL_I2C(n)                                                                         \
-	BMI160_EMUL_DATA(n)                                                                        \
-	static const struct bmi160_emul_cfg bmi160_emul_cfg_##n = {.reg = bmi160_emul_reg_##n,     \
-								   .addr = DT_INST_REG_ADDR(n)};   \
+#define BMI160_EMUL_I2C(n)                                                                       \
+	BMI160_EMUL_DATA(n)                                                                      \
+	static const struct bmi160_emul_cfg bmi160_emul_cfg_##n = {.reg = bmi160_emul_reg_##n,   \
+								   .addr = DT_INST_REG_ADDR(n)}; \
 	BMI160_EMUL_DEFINE(n, bmi160_emul_api_i2c)
 
 /*

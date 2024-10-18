@@ -312,35 +312,35 @@ static const struct led_driver_api is31fl3194_led_api = {
 	.set_color = is31fl3194_set_color,
 };
 
-#define COLOR_MAPPING(led_node_id)                                                                 \
+#define COLOR_MAPPING(led_node_id)                                                                \
 	static const uint8_t color_mapping_##led_node_id[] = DT_PROP(led_node_id, color_mapping);
 
-#define LED_INFO(led_node_id)                                                                      \
-	{                                                                                          \
-		.label = DT_PROP(led_node_id, label),                                              \
-		.num_colors = DT_PROP_LEN(led_node_id, color_mapping),                             \
-		.color_mapping = color_mapping_##led_node_id,                                      \
+#define LED_INFO(led_node_id)                                          \
+	{                                                              \
+		.label = DT_PROP(led_node_id, label),                  \
+		.num_colors = DT_PROP_LEN(led_node_id, color_mapping), \
+		.color_mapping = color_mapping_##led_node_id,          \
 	},
 
 #define LED_CURRENT(led_node_id) DT_PROP(led_node_id, current_limit),
 
-#define IS31FL3194_DEFINE(id)                                                                      \
-                                                                                                   \
-	DT_INST_FOREACH_CHILD(id, COLOR_MAPPING)                                                   \
-                                                                                                   \
-	static const struct led_info is31fl3194_leds_##id[] = {                                    \
-		DT_INST_FOREACH_CHILD(id, LED_INFO)};                                              \
-	static const uint8_t is31fl3194_currents_##id[] = {                                        \
-		DT_INST_FOREACH_CHILD(id, LED_CURRENT)};                                           \
-	BUILD_ASSERT(ARRAY_SIZE(is31fl3194_leds_##id) > 0, "No LEDs defined for " #id);            \
-                                                                                                   \
-	static const struct is31fl3194_config is31fl3194_config_##id = {                           \
-		.bus = I2C_DT_SPEC_INST_GET(id),                                                   \
-		.num_leds = ARRAY_SIZE(is31fl3194_leds_##id),                                      \
-		.led_infos = is31fl3194_leds_##id,                                                 \
-		.current_limits = is31fl3194_currents_##id,                                        \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(id, &is31fl3194_init, NULL, NULL, &is31fl3194_config_##id,           \
+#define IS31FL3194_DEFINE(id)                                                              \
+                                                                                           \
+	DT_INST_FOREACH_CHILD(id, COLOR_MAPPING)                                           \
+                                                                                           \
+	static const struct led_info is31fl3194_leds_##id[] = {                            \
+		DT_INST_FOREACH_CHILD(id, LED_INFO)};                                      \
+	static const uint8_t is31fl3194_currents_##id[] = {                                \
+		DT_INST_FOREACH_CHILD(id, LED_CURRENT)};                                   \
+	BUILD_ASSERT(ARRAY_SIZE(is31fl3194_leds_##id) > 0, "No LEDs defined for " #id);    \
+                                                                                           \
+	static const struct is31fl3194_config is31fl3194_config_##id = {                   \
+		.bus = I2C_DT_SPEC_INST_GET(id),                                           \
+		.num_leds = ARRAY_SIZE(is31fl3194_leds_##id),                              \
+		.led_infos = is31fl3194_leds_##id,                                         \
+		.current_limits = is31fl3194_currents_##id,                                \
+	};                                                                                 \
+	DEVICE_DT_INST_DEFINE(id, &is31fl3194_init, NULL, NULL, &is31fl3194_config_##id,   \
 			      POST_KERNEL, CONFIG_LED_INIT_PRIORITY, &is31fl3194_led_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IS31FL3194_DEFINE)

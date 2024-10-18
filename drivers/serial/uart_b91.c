@@ -17,7 +17,7 @@
 #define DT_DRV_COMPAT telink_b91_uart
 
 /* Get UART instance */
-#define GET_UART(dev)                                                                              \
+#define GET_UART(dev)                                                                            \
 	((volatile struct uart_b91_t *)((const struct uart_b91_config *)dev->config)->uart_addr)
 
 /* UART TX buffer count max value */
@@ -541,31 +541,31 @@ static const struct uart_driver_api uart_b91_driver_api = {
 #endif
 };
 
-#define UART_B91_INIT(n)                                                                           \
-                                                                                                   \
-	static void uart_b91_irq_connect_##n(void);                                                \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-                                                                                                   \
-	static const struct uart_b91_config uart_b91_cfg_##n = {                                   \
-		.uart_addr = DT_INST_REG_ADDR(n),                                                  \
-		.baud_rate = DT_INST_PROP(n, current_speed),                                       \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		.pirq_connect = uart_b91_irq_connect_##n};                                         \
-                                                                                                   \
-	static struct uart_b91_data uart_b91_data_##n;                                             \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, uart_b91_driver_init, NULL, &uart_b91_data_##n,                   \
-			      &uart_b91_cfg_##n, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,        \
-			      (void *)&uart_b91_driver_api);                                       \
-                                                                                                   \
-	static void uart_b91_irq_connect_##n(void)                                                 \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_b91_irq_handler,       \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		riscv_plic_irq_enable(DT_INST_IRQN(n));                                            \
-		riscv_plic_set_priority(DT_INST_IRQN(n), DT_INST_IRQ(n, priority));                \
+#define UART_B91_INIT(n)                                                                     \
+                                                                                             \
+	static void uart_b91_irq_connect_##n(void);                                          \
+                                                                                             \
+	PINCTRL_DT_INST_DEFINE(n);                                                           \
+                                                                                             \
+	static const struct uart_b91_config uart_b91_cfg_##n = {                             \
+		.uart_addr = DT_INST_REG_ADDR(n),                                            \
+		.baud_rate = DT_INST_PROP(n, current_speed),                                 \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                   \
+		.pirq_connect = uart_b91_irq_connect_##n};                                   \
+                                                                                             \
+	static struct uart_b91_data uart_b91_data_##n;                                       \
+                                                                                             \
+	DEVICE_DT_INST_DEFINE(n, uart_b91_driver_init, NULL, &uart_b91_data_##n,             \
+			      &uart_b91_cfg_##n, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,  \
+			      (void *)&uart_b91_driver_api);                                 \
+                                                                                             \
+	static void uart_b91_irq_connect_##n(void)                                           \
+	{                                                                                    \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_b91_irq_handler, \
+			    DEVICE_DT_INST_GET(n), 0);                                       \
+                                                                                             \
+		riscv_plic_irq_enable(DT_INST_IRQN(n));                                      \
+		riscv_plic_set_priority(DT_INST_IRQN(n), DT_INST_IRQ(n, priority));          \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(UART_B91_INIT)

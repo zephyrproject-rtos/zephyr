@@ -73,8 +73,8 @@ struct eth_context {
 
 static const char *if_name_cmd_opt;
 
-#define DEFINE_RX_THREAD(x, _)                                                                     \
-	K_KERNEL_STACK_DEFINE(rx_thread_stack_##x, CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);      \
+#define DEFINE_RX_THREAD(x, _)                                                                \
+	K_KERNEL_STACK_DEFINE(rx_thread_stack_##x, CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE); \
 	static struct k_thread rx_thread_data_##x
 
 LISTIFY(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT, DEFINE_RX_THREAD, (;), _);
@@ -457,12 +457,12 @@ static const struct ethernet_api eth_if_api = {
 #endif
 };
 
-#define DEFINE_ETH_DEV_DATA(x, _)                                                                  \
-	static struct eth_context eth_context_data_##x = {                                         \
-		.if_name = CONFIG_ETH_NATIVE_POSIX_DRV_NAME #x,                                    \
-		.rx_thread = &rx_thread_data_##x,                                                  \
-		.rx_stack = rx_thread_stack_##x,                                                   \
-		.rx_stack_size = K_KERNEL_STACK_SIZEOF(rx_thread_stack_##x),                       \
+#define DEFINE_ETH_DEV_DATA(x, _)                                            \
+	static struct eth_context eth_context_data_##x = {                   \
+		.if_name = CONFIG_ETH_NATIVE_POSIX_DRV_NAME #x,              \
+		.rx_thread = &rx_thread_data_##x,                            \
+		.rx_stack = rx_thread_stack_##x,                             \
+		.rx_stack_size = K_KERNEL_STACK_SIZEOF(rx_thread_stack_##x), \
 	}
 
 LISTIFY(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT, DEFINE_ETH_DEV_DATA, (;), _);
@@ -539,24 +539,24 @@ static const struct ptp_clock_driver_api api = {
 	.rate_adjust = ptp_clock_rate_adjust_native_posix,
 };
 
-#define PTP_INIT_FUNC(x, _)                                                                        \
-	static int ptp_init_##x(const struct device *port)                                         \
-	{                                                                                          \
-		const struct device *const eth_dev = DEVICE_GET(eth_native_posix_##x);             \
-		struct eth_context *context = eth_dev->data;                                       \
-		struct ptp_context *ptp_context = port->data;                                      \
-                                                                                                   \
-		context->ptp_clock = port;                                                         \
-		ptp_context->eth_context = context;                                                \
-                                                                                                   \
-		return 0;                                                                          \
+#define PTP_INIT_FUNC(x, _)                                                            \
+	static int ptp_init_##x(const struct device *port)                             \
+	{                                                                              \
+		const struct device *const eth_dev = DEVICE_GET(eth_native_posix_##x); \
+		struct eth_context *context = eth_dev->data;                           \
+		struct ptp_context *ptp_context = port->data;                          \
+                                                                                       \
+		context->ptp_clock = port;                                             \
+		ptp_context->eth_context = context;                                    \
+                                                                                       \
+		return 0;                                                              \
 	}
 
 LISTIFY(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT, PTP_INIT_FUNC, (), _)
 
-#define DEFINE_PTP_DEVICE(x, _)                                                                    \
-	DEVICE_DEFINE(eth_native_posix_ptp_clock_##x, PTP_CLOCK_NAME "_" #x, ptp_init_##x, NULL,   \
-		      &ptp_context_##x, NULL, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,    \
+#define DEFINE_PTP_DEVICE(x, _)                                                                  \
+	DEVICE_DEFINE(eth_native_posix_ptp_clock_##x, PTP_CLOCK_NAME "_" #x, ptp_init_##x, NULL, \
+		      &ptp_context_##x, NULL, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,  \
 		      &api)
 
 LISTIFY(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT, DEFINE_PTP_DEVICE, (;), _);

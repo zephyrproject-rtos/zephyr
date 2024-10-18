@@ -1022,15 +1022,15 @@ static const struct uart_driver_api uart_xec_driver_api = {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 #define DEV_CONFIG_IRQ_FUNC_INIT(n)  .irq_config_func = irq_config_func##n,
 #define UART_XEC_IRQ_FUNC_DECLARE(n) static void irq_config_func##n(const struct device *dev);
-#define UART_XEC_IRQ_FUNC_DEFINE(n)                                                                \
-	static void irq_config_func##n(const struct device *dev)                                   \
-	{                                                                                          \
-		ARG_UNUSED(dev);                                                                   \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_xec_isr,               \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-		uart_xec_girq_en(DT_INST_PROP_BY_IDX(n, girqs, 0),                                 \
-				 DT_INST_PROP_BY_IDX(n, girqs, 1));                                \
+#define UART_XEC_IRQ_FUNC_DEFINE(n)                                                  \
+	static void irq_config_func##n(const struct device *dev)                     \
+	{                                                                            \
+		ARG_UNUSED(dev);                                                     \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_xec_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                               \
+		irq_enable(DT_INST_IRQN(n));                                         \
+		uart_xec_girq_en(DT_INST_PROP_BY_IDX(n, girqs, 0),                   \
+				 DT_INST_PROP_BY_IDX(n, girqs, 1));                  \
 	}
 #else
 /* !CONFIG_UART_INTERRUPT_DRIVEN */
@@ -1049,38 +1049,38 @@ static const struct uart_driver_api uart_xec_driver_api = {
  *	wakeup-source;
  */
 #ifdef CONFIG_PM_DEVICE
-#define XEC_UART_PM_WAKEUP(n)                                                                      \
-	.wakeup_source = (uint8_t)DT_INST_PROP_OR(n, wakeup_source, 0),                            \
+#define XEC_UART_PM_WAKEUP(n)                                           \
+	.wakeup_source = (uint8_t)DT_INST_PROP_OR(n, wakeup_source, 0), \
 	.wakerx_gpio = GPIO_DT_SPEC_INST_GET_OR(n, wakerx_gpios, {0}),
 #else
 #define XEC_UART_PM_WAKEUP(index) /* Not used */
 #endif
 
-#define UART_XEC_DEVICE_INIT(n)                                                                    \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-                                                                                                   \
-	UART_XEC_IRQ_FUNC_DECLARE(n);                                                              \
-                                                                                                   \
-	static const struct uart_xec_device_config uart_xec_dev_cfg_##n = {                        \
-		DEV_CONFIG_REG_INIT(n).sys_clk_freq = DT_INST_PROP(n, clock_frequency),            \
-		.girq_id = DT_INST_PROP_BY_IDX(n, girqs, 0),                                       \
-		.girq_pos = DT_INST_PROP_BY_IDX(n, girqs, 1),                                      \
-		.pcr_idx = DT_INST_PROP_BY_IDX(n, pcrs, 0),                                        \
-		.pcr_bitpos = DT_INST_PROP_BY_IDX(n, pcrs, 1),                                     \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		XEC_UART_PM_WAKEUP(n) DEV_CONFIG_IRQ_FUNC_INIT(n)};                                \
-	static struct uart_xec_dev_data uart_xec_dev_data_##n = {                                  \
-		.uart_config.baudrate = DT_INST_PROP_OR(n, current_speed, 0),                      \
-		.uart_config.parity = UART_CFG_PARITY_NONE,                                        \
-		.uart_config.stop_bits = UART_CFG_STOP_BITS_1,                                     \
-		.uart_config.data_bits = UART_CFG_DATA_BITS_8,                                     \
-		.uart_config.flow_ctrl = DEV_DATA_FLOW_CTRL(n),                                    \
-	};                                                                                         \
-	PM_DEVICE_DT_INST_DEFINE(n, uart_xec_pm_action);                                           \
-	DEVICE_DT_INST_DEFINE(n, uart_xec_init, PM_DEVICE_DT_INST_GET(n), &uart_xec_dev_data_##n,  \
-			      &uart_xec_dev_cfg_##n, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,    \
-			      &uart_xec_driver_api);                                               \
+#define UART_XEC_DEVICE_INIT(n)                                                                   \
+                                                                                                  \
+	PINCTRL_DT_INST_DEFINE(n);                                                                \
+                                                                                                  \
+	UART_XEC_IRQ_FUNC_DECLARE(n);                                                             \
+                                                                                                  \
+	static const struct uart_xec_device_config uart_xec_dev_cfg_##n = {                       \
+		DEV_CONFIG_REG_INIT(n).sys_clk_freq = DT_INST_PROP(n, clock_frequency),           \
+		.girq_id = DT_INST_PROP_BY_IDX(n, girqs, 0),                                      \
+		.girq_pos = DT_INST_PROP_BY_IDX(n, girqs, 1),                                     \
+		.pcr_idx = DT_INST_PROP_BY_IDX(n, pcrs, 0),                                       \
+		.pcr_bitpos = DT_INST_PROP_BY_IDX(n, pcrs, 1),                                    \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                        \
+		XEC_UART_PM_WAKEUP(n) DEV_CONFIG_IRQ_FUNC_INIT(n)};                               \
+	static struct uart_xec_dev_data uart_xec_dev_data_##n = {                                 \
+		.uart_config.baudrate = DT_INST_PROP_OR(n, current_speed, 0),                     \
+		.uart_config.parity = UART_CFG_PARITY_NONE,                                       \
+		.uart_config.stop_bits = UART_CFG_STOP_BITS_1,                                    \
+		.uart_config.data_bits = UART_CFG_DATA_BITS_8,                                    \
+		.uart_config.flow_ctrl = DEV_DATA_FLOW_CTRL(n),                                   \
+	};                                                                                        \
+	PM_DEVICE_DT_INST_DEFINE(n, uart_xec_pm_action);                                          \
+	DEVICE_DT_INST_DEFINE(n, uart_xec_init, PM_DEVICE_DT_INST_GET(n), &uart_xec_dev_data_##n, \
+			      &uart_xec_dev_cfg_##n, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,   \
+			      &uart_xec_driver_api);                                              \
 	UART_XEC_IRQ_FUNC_DEFINE(n)
 
 DT_INST_FOREACH_STATUS_OKAY(UART_XEC_DEVICE_INIT)

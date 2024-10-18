@@ -212,19 +212,19 @@ static const struct mdio_driver_api mdio_dwcxgmac_driver_api = {
 
 #define XGMAC_SNPS_DESIGNWARE_RESET_SPEC_INIT(n) .reset = RESET_DT_SPEC_INST_GET(n),
 
-#define MDIO_DWCXGMAC_CONFIG(n)                                                                    \
-	static const struct mdio_dwcxgmac_dev_config mdio_dwcxgmac_dev_config_##n = {              \
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
-		.clk_range = DT_INST_PROP(n, csr_clock_indx),                                      \
-		.clk_range_sel = DT_INST_PROP(n, clock_range_sel),                                 \
+#define MDIO_DWCXGMAC_CONFIG(n)                                                                \
+	static const struct mdio_dwcxgmac_dev_config mdio_dwcxgmac_dev_config_##n = {          \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                          \
+		.clk_range = DT_INST_PROP(n, csr_clock_indx),                                  \
+		.clk_range_sel = DT_INST_PROP(n, clock_range_sel),                             \
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, resets),                                       \
 			   (XGMAC_SNPS_DESIGNWARE_RESET_SPEC_INIT(n)))};
 
-#define MDIO_DWCXGMAC_DEVICE(n)                                                                    \
-	MDIO_DWCXGMAC_CONFIG(n);                                                                   \
-	static struct mdio_dwcxgmac_dev_data mdio_dwcxgmac_dev_data##n;                            \
-	DEVICE_DT_INST_DEFINE(n, &mdio_dwcxgmac_initialize, NULL, &mdio_dwcxgmac_dev_data##n,      \
-			      &mdio_dwcxgmac_dev_config_##n, POST_KERNEL,                          \
+#define MDIO_DWCXGMAC_DEVICE(n)                                                               \
+	MDIO_DWCXGMAC_CONFIG(n);                                                              \
+	static struct mdio_dwcxgmac_dev_data mdio_dwcxgmac_dev_data##n;                       \
+	DEVICE_DT_INST_DEFINE(n, &mdio_dwcxgmac_initialize, NULL, &mdio_dwcxgmac_dev_data##n, \
+			      &mdio_dwcxgmac_dev_config_##n, POST_KERNEL,                     \
 			      CONFIG_MDIO_INIT_PRIORITY, &mdio_dwcxgmac_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MDIO_DWCXGMAC_DEVICE)

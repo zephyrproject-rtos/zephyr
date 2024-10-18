@@ -289,16 +289,16 @@ static const struct gpio_driver_api stmpe1600_drv_api = {
 	.port_toggle_bits = stmpe1600_port_toggle_bits,
 };
 
-#define STMPE1600_INIT(inst)                                                                       \
-	static struct stmpe1600_config stmpe1600_##inst##_config = {                               \
-		.common = {.port_pin_mask = 0xffff},                                               \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-	};                                                                                         \
-                                                                                                   \
-	static struct stmpe1600_drvdata stmpe1600_##inst##_drvdata;                                \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, stmpe1600_init, NULL, &stmpe1600_##inst##_drvdata,             \
-			      &stmpe1600_##inst##_config, POST_KERNEL,                             \
+#define STMPE1600_INIT(inst)                                                            \
+	static struct stmpe1600_config stmpe1600_##inst##_config = {                    \
+		.common = {.port_pin_mask = 0xffff},                                    \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                      \
+	};                                                                              \
+                                                                                        \
+	static struct stmpe1600_drvdata stmpe1600_##inst##_drvdata;                     \
+                                                                                        \
+	DEVICE_DT_INST_DEFINE(inst, stmpe1600_init, NULL, &stmpe1600_##inst##_drvdata,  \
+			      &stmpe1600_##inst##_config, POST_KERNEL,                  \
 			      CONFIG_GPIO_STMPE1600_INIT_PRIORITY, &stmpe1600_drv_api);
 
 DT_INST_FOREACH_STATUS_OKAY(STMPE1600_INIT)

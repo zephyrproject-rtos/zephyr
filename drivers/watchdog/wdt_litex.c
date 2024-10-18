@@ -210,29 +210,29 @@ static const struct wdt_driver_api wdt_api = {
 	.feed = wdt_litex_feed,
 };
 
-#define LITEX_WDT_INIT(n)                                                                          \
-	static void wdt_litex_cfg_func_##n(void);                                                  \
-                                                                                                   \
-	static struct wdt_litex_data wdt_litex_data##n;                                            \
-	static struct wdt_litex_config wdt_litex_config##n = {                                     \
-		.control_addr = DT_INST_REG_ADDR_BY_NAME(n, control),                              \
-		.cycles_addr = DT_INST_REG_ADDR_BY_NAME(n, cycles),                                \
-		.cycles_size = DT_INST_REG_SIZE_BY_NAME(n, cycles),                                \
-		.remaining_addr = DT_INST_REG_ADDR_BY_NAME(n, remaining),                          \
-		.ev_status_addr = DT_INST_REG_ADDR_BY_NAME(n, ev_status),                          \
-		.ev_pending_addr = DT_INST_REG_ADDR_BY_NAME(n, ev_pending),                        \
-		.ev_enable_addr = DT_INST_REG_ADDR_BY_NAME(n, ev_enable),                          \
-		.irq_cfg_func = wdt_litex_cfg_func_##n,                                            \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, wdt_litex_init, NULL, &wdt_litex_data##n, &wdt_litex_config##n,   \
-			      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wdt_api)          \
-                                                                                                   \
-	static void wdt_litex_cfg_func_##n(void)                                                   \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), wdt_litex_isr,              \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define LITEX_WDT_INIT(n)                                                                        \
+	static void wdt_litex_cfg_func_##n(void);                                                \
+                                                                                                 \
+	static struct wdt_litex_data wdt_litex_data##n;                                          \
+	static struct wdt_litex_config wdt_litex_config##n = {                                   \
+		.control_addr = DT_INST_REG_ADDR_BY_NAME(n, control),                            \
+		.cycles_addr = DT_INST_REG_ADDR_BY_NAME(n, cycles),                              \
+		.cycles_size = DT_INST_REG_SIZE_BY_NAME(n, cycles),                              \
+		.remaining_addr = DT_INST_REG_ADDR_BY_NAME(n, remaining),                        \
+		.ev_status_addr = DT_INST_REG_ADDR_BY_NAME(n, ev_status),                        \
+		.ev_pending_addr = DT_INST_REG_ADDR_BY_NAME(n, ev_pending),                      \
+		.ev_enable_addr = DT_INST_REG_ADDR_BY_NAME(n, ev_enable),                        \
+		.irq_cfg_func = wdt_litex_cfg_func_##n,                                          \
+	};                                                                                       \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(n, wdt_litex_init, NULL, &wdt_litex_data##n, &wdt_litex_config##n, \
+			      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wdt_api)        \
+                                                                                                 \
+	static void wdt_litex_cfg_func_##n(void)                                                 \
+	{                                                                                        \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), wdt_litex_isr,            \
+			    DEVICE_DT_INST_GET(n), 0);                                           \
+		irq_enable(DT_INST_IRQN(n));                                                     \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(LITEX_WDT_INIT)

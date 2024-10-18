@@ -383,26 +383,26 @@ static int pwm_xec_init(const struct device *dev)
 	return 0;
 }
 
-#define XEC_PWM_CONFIG(inst)                                                                       \
-	static struct pwm_xec_config pwm_xec_config_##inst = {                                     \
-		.regs = (struct pwm_regs *const)DT_INST_REG_ADDR(inst),                            \
-		.pcr_idx = (uint8_t)DT_INST_PROP_BY_IDX(inst, pcrs, 0),                            \
-		.pcr_pos = (uint8_t)DT_INST_PROP_BY_IDX(inst, pcrs, 1),                            \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
+#define XEC_PWM_CONFIG(inst)                                            \
+	static struct pwm_xec_config pwm_xec_config_##inst = {          \
+		.regs = (struct pwm_regs *const)DT_INST_REG_ADDR(inst), \
+		.pcr_idx = (uint8_t)DT_INST_PROP_BY_IDX(inst, pcrs, 0), \
+		.pcr_pos = (uint8_t)DT_INST_PROP_BY_IDX(inst, pcrs, 1), \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),           \
 	};
 
-#define XEC_PWM_DEVICE_INIT(index)                                                                 \
-                                                                                                   \
-	static struct pwm_xec_data pwm_xec_data_##index;                                           \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(index);                                                             \
-                                                                                                   \
-	XEC_PWM_CONFIG(index);                                                                     \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(index, pwm_xec_pm_action);                                        \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(index, &pwm_xec_init, PM_DEVICE_DT_INST_GET(index),                  \
-			      &pwm_xec_data_##index, &pwm_xec_config_##index, POST_KERNEL,         \
+#define XEC_PWM_DEVICE_INIT(index)                                                         \
+                                                                                           \
+	static struct pwm_xec_data pwm_xec_data_##index;                                   \
+                                                                                           \
+	PINCTRL_DT_INST_DEFINE(index);                                                     \
+                                                                                           \
+	XEC_PWM_CONFIG(index);                                                             \
+                                                                                           \
+	PM_DEVICE_DT_INST_DEFINE(index, pwm_xec_pm_action);                                \
+                                                                                           \
+	DEVICE_DT_INST_DEFINE(index, &pwm_xec_init, PM_DEVICE_DT_INST_GET(index),          \
+			      &pwm_xec_data_##index, &pwm_xec_config_##index, POST_KERNEL, \
 			      CONFIG_PWM_INIT_PRIORITY, &pwm_xec_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(XEC_PWM_DEVICE_INIT)

@@ -623,43 +623,43 @@ static int edma_init(const struct device *dev)
  *	the eDMA is MUX-capable (signaled via the EDMA_HAS_CHAN_MUX
  *	configuration).
  */
-#define EDMA_INIT(inst)                                                                            \
-                                                                                                   \
-	BUILD_ASSERT(!DT_NODE_HAS_PROP(DT_INST(inst, DT_DRV_COMPAT), dma_channels) ||              \
-			     !DT_NODE_HAS_PROP(DT_INST(inst, DT_DRV_COMPAT), valid_channels),      \
-		     "dma_channels and valid_channels are mutually exclusive");                    \
-                                                                                                   \
-	BUILD_ASSERT(DT_INST_PROP_OR(inst, dma_channels, 0) ==                                     \
-				     DT_NUM_IRQS(DT_INST(inst, DT_DRV_COMPAT)) ||                  \
-			     DT_INST_PROP_LEN_OR(inst, valid_channels, 0) ==                       \
-				     DT_NUM_IRQS(DT_INST(inst, DT_DRV_COMPAT)),                    \
-		     "number of interrupts needs to match number of channels");                    \
-                                                                                                   \
-	BUILD_ASSERT(DT_PROP_OR(DT_INST(inst, DT_DRV_COMPAT), hal_cfg_index, 0) <                  \
-			     ARRAY_SIZE(s_edmaConfigs),                                            \
-		     "HAL configuration index out of bounds");                                     \
-                                                                                                   \
-	static struct edma_channel channels_##inst[] = EDMA_CHANNEL_ARRAY_GET(inst);               \
-                                                                                                   \
-	static void interrupt_config_function_##inst(void)                                         \
-	{                                                                                          \
-		EDMA_CONNECT_INTERRUPTS(inst);                                                     \
-	}                                                                                          \
-                                                                                                   \
-	static struct edma_config edma_config_##inst = {                                           \
-		.regmap_phys = DT_INST_REG_ADDR(inst),                                             \
-		.regmap_size = DT_INST_REG_SIZE(inst),                                             \
-		.irq_config = interrupt_config_function_##inst,                                    \
-		.contiguous_channels = EDMA_CHANS_ARE_CONTIGUOUS(inst),                            \
-	};                                                                                         \
-                                                                                                   \
-	static struct edma_data edma_data_##inst = {                                               \
-		.channels = channels_##inst,                                                       \
-		.ctx.magic = DMA_MAGIC,                                                            \
-		.hal_cfg = &EDMA_HAL_CFG_GET(inst),                                                \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, &edma_init, NULL, &edma_data_##inst, &edma_config_##inst,      \
+#define EDMA_INIT(inst)                                                                       \
+                                                                                              \
+	BUILD_ASSERT(!DT_NODE_HAS_PROP(DT_INST(inst, DT_DRV_COMPAT), dma_channels) ||         \
+			     !DT_NODE_HAS_PROP(DT_INST(inst, DT_DRV_COMPAT), valid_channels), \
+		     "dma_channels and valid_channels are mutually exclusive");               \
+                                                                                              \
+	BUILD_ASSERT(DT_INST_PROP_OR(inst, dma_channels, 0) ==                                \
+				     DT_NUM_IRQS(DT_INST(inst, DT_DRV_COMPAT)) ||             \
+			     DT_INST_PROP_LEN_OR(inst, valid_channels, 0) ==                  \
+				     DT_NUM_IRQS(DT_INST(inst, DT_DRV_COMPAT)),               \
+		     "number of interrupts needs to match number of channels");               \
+                                                                                              \
+	BUILD_ASSERT(DT_PROP_OR(DT_INST(inst, DT_DRV_COMPAT), hal_cfg_index, 0) <             \
+			     ARRAY_SIZE(s_edmaConfigs),                                       \
+		     "HAL configuration index out of bounds");                                \
+                                                                                              \
+	static struct edma_channel channels_##inst[] = EDMA_CHANNEL_ARRAY_GET(inst);          \
+                                                                                              \
+	static void interrupt_config_function_##inst(void)                                    \
+	{                                                                                     \
+		EDMA_CONNECT_INTERRUPTS(inst);                                                \
+	}                                                                                     \
+                                                                                              \
+	static struct edma_config edma_config_##inst = {                                      \
+		.regmap_phys = DT_INST_REG_ADDR(inst),                                        \
+		.regmap_size = DT_INST_REG_SIZE(inst),                                        \
+		.irq_config = interrupt_config_function_##inst,                               \
+		.contiguous_channels = EDMA_CHANS_ARE_CONTIGUOUS(inst),                       \
+	};                                                                                    \
+                                                                                              \
+	static struct edma_data edma_data_##inst = {                                          \
+		.channels = channels_##inst,                                                  \
+		.ctx.magic = DMA_MAGIC,                                                       \
+		.hal_cfg = &EDMA_HAL_CFG_GET(inst),                                           \
+	};                                                                                    \
+                                                                                              \
+	DEVICE_DT_INST_DEFINE(inst, &edma_init, NULL, &edma_data_##inst, &edma_config_##inst, \
 			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY, &edma_api);
 
 DT_INST_FOREACH_STATUS_OKAY(EDMA_INIT);

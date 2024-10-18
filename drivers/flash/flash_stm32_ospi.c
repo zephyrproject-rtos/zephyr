@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(flash_stm32_ospi, CONFIG_FLASH_LOG_LEVEL);
 
 #define STM32_OSPI_NODE DT_INST_PARENT(0)
 
-#define DT_OSPI_IO_PORT_PROP_OR(prop, default_value)                                               \
+#define DT_OSPI_IO_PORT_PROP_OR(prop, default_value)              \
 	COND_CODE_1(DT_NODE_HAS_PROP(STM32_OSPI_NODE, prop),				\
 		    (_CONCAT(HAL_OSPIM_, DT_STRING_TOKEN(STM32_OSPI_NODE, prop))),	\
 		    ((default_value)))
@@ -2467,21 +2467,21 @@ static int flash_stm32_ospi_init(const struct device *dev)
 #if STM32_OSPI_USE_DMA
 #define DMA_CHANNEL_CONFIG(node, dir) DT_DMAS_CELL_BY_NAME(node, dir, channel_config)
 
-#define OSPI_DMA_CHANNEL_INIT(node, dir)                                                           \
-	.dev = DEVICE_DT_GET(DT_DMAS_CTLR(node)),                                                  \
-	.channel = DT_DMAS_CELL_BY_NAME(node, dir, channel),                                       \
-	.reg = (DMA_TypeDef *)DT_REG_ADDR(DT_PHANDLE_BY_NAME(node, dmas, dir)),                    \
-	.cfg = {                                                                                   \
-		.dma_slot = DT_DMAS_CELL_BY_NAME(node, dir, slot),                                 \
-		.source_data_size =                                                                \
-			STM32_DMA_CONFIG_PERIPHERAL_DATA_SIZE(DMA_CHANNEL_CONFIG(node, dir)),      \
-		.dest_data_size =                                                                  \
-			STM32_DMA_CONFIG_MEMORY_DATA_SIZE(DMA_CHANNEL_CONFIG(node, dir)),          \
-		.channel_priority = STM32_DMA_CONFIG_PRIORITY(DMA_CHANNEL_CONFIG(node, dir)),      \
-		.dma_callback = ospi_dma_callback,                                                 \
+#define OSPI_DMA_CHANNEL_INIT(node, dir)                                                      \
+	.dev = DEVICE_DT_GET(DT_DMAS_CTLR(node)),                                             \
+	.channel = DT_DMAS_CELL_BY_NAME(node, dir, channel),                                  \
+	.reg = (DMA_TypeDef *)DT_REG_ADDR(DT_PHANDLE_BY_NAME(node, dmas, dir)),               \
+	.cfg = {                                                                              \
+		.dma_slot = DT_DMAS_CELL_BY_NAME(node, dir, slot),                            \
+		.source_data_size =                                                           \
+			STM32_DMA_CONFIG_PERIPHERAL_DATA_SIZE(DMA_CHANNEL_CONFIG(node, dir)), \
+		.dest_data_size =                                                             \
+			STM32_DMA_CONFIG_MEMORY_DATA_SIZE(DMA_CHANNEL_CONFIG(node, dir)),     \
+		.channel_priority = STM32_DMA_CONFIG_PRIORITY(DMA_CHANNEL_CONFIG(node, dir)), \
+		.dma_callback = ospi_dma_callback,                                            \
 	},
 
-#define OSPI_DMA_CHANNEL(node, dir)                                                                \
+#define OSPI_DMA_CHANNEL(node, dir) \
 	.dma = {COND_CODE_1(DT_DMAS_HAS_NAME(node, dir),		\
 			(OSPI_DMA_CHANNEL_INIT(node, dir)),		\
 			(NULL)) },
@@ -2492,12 +2492,12 @@ static int flash_stm32_ospi_init(const struct device *dev)
 
 #define OSPI_FLASH_MODULE(drv_id, flash_id) (DT_DRV_INST(drv_id), ospi_nor_flash_##flash_id)
 
-#define DT_WRITEOC_PROP_OR(inst, default_value)                                                    \
+#define DT_WRITEOC_PROP_OR(inst, default_value)                 \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, writeoc),					\
 		    (_CONCAT(SPI_NOR_CMD_, DT_STRING_TOKEN(DT_DRV_INST(inst), writeoc))),	\
 		    ((default_value)))
 
-#define DT_QER_PROP_OR(inst, default_value)                                                        \
+#define DT_QER_PROP_OR(inst, default_value)                                    \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, quad_enable_requirements),			\
 		    (_CONCAT(JESD216_DW15_QER_VAL_,						\
 			     DT_STRING_TOKEN(DT_DRV_INST(inst), quad_enable_requirements))),	\

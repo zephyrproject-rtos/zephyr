@@ -9,7 +9,7 @@
 
 #include <helpers/nrfx_ram_ctrl.h>
 
-#define _BUILD_MEM_REGION(node_id)                                                                 \
+#define _BUILD_MEM_REGION(node_id)                                                               \
 	{.dt_addr = DT_REG_ADDR(DT_PARENT(node_id)), .dt_size = DT_REG_SIZE(DT_PARENT(node_id))}
 
 struct ret_mem_region {

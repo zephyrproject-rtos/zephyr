@@ -261,45 +261,45 @@ const struct can_driver_api can_esp32_twai_driver_api = {
 #define TWAI_CDR32_INIT(inst)   .cdr32 = CAN_ESP32_TWAI_DT_CDR_INST_GET(inst)
 #endif /* CONFIG_SOC_SERIES_ESP32 */
 
-#define CAN_ESP32_TWAI_ASSERT_CLKOUT_DIVIDER(inst)                                                 \
+#define CAN_ESP32_TWAI_ASSERT_CLKOUT_DIVIDER(inst)                                       \
 	BUILD_ASSERT(COND_CODE_0(DT_INST_NODE_HAS_PROP(inst, clkout_divider), (1),                 \
 		(DT_INST_PROP(inst, clkout_divider) == 1 ||                                        \
 		(DT_INST_PROP(inst, clkout_divider) % 2 == 0 &&                                    \
-		DT_INST_PROP(inst, clkout_divider) / 2 <= TWAI_CLKOUT_DIVIDER_MAX))),           \
+		DT_INST_PROP(inst, clkout_divider) / 2 <= TWAI_CLKOUT_DIVIDER_MAX))), \
 				   "TWAI clkout-divider from dts invalid")
 
-#define CAN_ESP32_TWAI_DT_CDR_INST_GET(inst)                                                       \
+#define CAN_ESP32_TWAI_DT_CDR_INST_GET(inst) \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clkout_divider),                                   \
 		    COND_CODE_1(DT_INST_PROP(inst, clkout_divider) == 1, (TWAI_CD_MASK),           \
 				((DT_INST_PROP(inst, clkout_divider)) / 2 - 1)),                   \
 		    (TWAI_CLOCK_OFF))
 
-#define CAN_ESP32_TWAI_INIT(inst)                                                                  \
-	PINCTRL_DT_INST_DEFINE(inst);                                                              \
-                                                                                                   \
-	static const struct can_esp32_twai_config can_esp32_twai_config_##inst = {                 \
-		.base = DT_INST_REG_ADDR(inst),                                                    \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                             \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, offset),         \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
-		.irq_source = DT_INST_IRQ_BY_IDX(inst, 0, irq),                                    \
-		.irq_priority = DT_INST_IRQ_BY_IDX(inst, 0, priority),                             \
-		.irq_flags = DT_INST_IRQ_BY_IDX(inst, 0, flags),                                   \
-		TWAI_CDR32_INIT(inst)};                                                            \
-	CAN_ESP32_TWAI_ASSERT_CLKOUT_DIVIDER(inst);                                                \
-	static const struct can_sja1000_config can_sja1000_config_##inst =                         \
-		CAN_SJA1000_DT_CONFIG_INST_GET(                                                    \
-			inst, &can_esp32_twai_config_##inst, can_esp32_twai_read_reg,              \
-			can_esp32_twai_write_reg, CAN_SJA1000_OCR_OCMODE_BIPHASE,                  \
+#define CAN_ESP32_TWAI_INIT(inst)                                                            \
+	PINCTRL_DT_INST_DEFINE(inst);                                                        \
+                                                                                             \
+	static const struct can_esp32_twai_config can_esp32_twai_config_##inst = {           \
+		.base = DT_INST_REG_ADDR(inst),                                              \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                       \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, offset),   \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                \
+		.irq_source = DT_INST_IRQ_BY_IDX(inst, 0, irq),                              \
+		.irq_priority = DT_INST_IRQ_BY_IDX(inst, 0, priority),                       \
+		.irq_flags = DT_INST_IRQ_BY_IDX(inst, 0, flags),                             \
+		TWAI_CDR32_INIT(inst)};                                                      \
+	CAN_ESP32_TWAI_ASSERT_CLKOUT_DIVIDER(inst);                                          \
+	static const struct can_sja1000_config can_sja1000_config_##inst =                   \
+		CAN_SJA1000_DT_CONFIG_INST_GET(                                              \
+			inst, &can_esp32_twai_config_##inst, can_esp32_twai_read_reg,        \
+			can_esp32_twai_write_reg, CAN_SJA1000_OCR_OCMODE_BIPHASE,            \
 			COND_CODE_0(IS_ENABLED(CONFIG_SOC_SERIES_ESP32), (0),      \
-					(CAN_ESP32_TWAI_DT_CDR_INST_GET(inst))),        \
-						25000);                                            \
-                                                                                                   \
-	static struct can_sja1000_data can_sja1000_data_##inst =                                   \
-		CAN_SJA1000_DATA_INITIALIZER(NULL);                                                \
-                                                                                                   \
-	CAN_DEVICE_DT_INST_DEFINE(inst, can_esp32_twai_init, NULL, &can_sja1000_data_##inst,       \
-				  &can_sja1000_config_##inst, POST_KERNEL,                         \
+					(CAN_ESP32_TWAI_DT_CDR_INST_GET(inst))),  \
+						25000);                                      \
+                                                                                             \
+	static struct can_sja1000_data can_sja1000_data_##inst =                             \
+		CAN_SJA1000_DATA_INITIALIZER(NULL);                                          \
+                                                                                             \
+	CAN_DEVICE_DT_INST_DEFINE(inst, can_esp32_twai_init, NULL, &can_sja1000_data_##inst, \
+				  &can_sja1000_config_##inst, POST_KERNEL,                   \
 				  CONFIG_CAN_INIT_PRIORITY, &can_esp32_twai_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_ESP32_TWAI_INIT)

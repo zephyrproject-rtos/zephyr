@@ -110,15 +110,15 @@ static int gls_init(const struct device *dev)
 	return 0;
 }
 
-#define GLS_DEFINE(inst)                                                                           \
-	static struct gls_data gls_data_##inst;                                                    \
-                                                                                                   \
-	static const struct gls_config gls_cfg_##inst = {                                          \
-		.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst)),                              \
-		.adc_channel = DT_INST_IO_CHANNELS_INPUT(inst),                                    \
-	};                                                                                         \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &gls_init, NULL, &gls_data_##inst, &gls_cfg_##inst,     \
+#define GLS_DEFINE(inst)                                                                       \
+	static struct gls_data gls_data_##inst;                                                \
+                                                                                               \
+	static const struct gls_config gls_cfg_##inst = {                                      \
+		.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst)),                          \
+		.adc_channel = DT_INST_IO_CHANNELS_INPUT(inst),                                \
+	};                                                                                     \
+                                                                                               \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, &gls_init, NULL, &gls_data_##inst, &gls_cfg_##inst, \
 				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &gls_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GLS_DEFINE)

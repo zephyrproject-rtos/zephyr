@@ -46,7 +46,7 @@ struct spi_mcux_config {
 #define SPI_MCUX_FLEXCOMM_DMA_ERROR_FLAG   0x01
 #define SPI_MCUX_FLEXCOMM_DMA_RX_DONE_FLAG 0x02
 #define SPI_MCUX_FLEXCOMM_DMA_TX_DONE_FLAG 0x04
-#define SPI_MCUX_FLEXCOMM_DMA_DONE_FLAG                                                            \
+#define SPI_MCUX_FLEXCOMM_DMA_DONE_FLAG                                           \
 	(SPI_MCUX_FLEXCOMM_DMA_RX_DONE_FLAG | SPI_MCUX_FLEXCOMM_DMA_TX_DONE_FLAG)
 
 struct stream {
@@ -779,36 +779,36 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 	.release = spi_mcux_release,
 };
 
-#define SPI_MCUX_FLEXCOMM_IRQ_HANDLER_DECL(id)                                                     \
+#define SPI_MCUX_FLEXCOMM_IRQ_HANDLER_DECL(id)                          \
 	static void spi_mcux_config_func_##id(const struct device *dev)
 #define SPI_MCUX_FLEXCOMM_IRQ_HANDLER_FUNC(id) .irq_config_func = spi_mcux_config_func_##id,
-#define SPI_MCUX_FLEXCOMM_IRQ_HANDLER(id)                                                          \
-	static void spi_mcux_config_func_##id(const struct device *dev)                            \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), spi_mcux_isr,             \
-			    DEVICE_DT_INST_GET(id), 0);                                            \
-		irq_enable(DT_INST_IRQN(id));                                                      \
+#define SPI_MCUX_FLEXCOMM_IRQ_HANDLER(id)                                              \
+	static void spi_mcux_config_func_##id(const struct device *dev)                \
+	{                                                                              \
+		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), spi_mcux_isr, \
+			    DEVICE_DT_INST_GET(id), 0);                                \
+		irq_enable(DT_INST_IRQN(id));                                          \
 	}
 
 #ifndef CONFIG_SPI_MCUX_FLEXCOMM_DMA
 #define SPI_DMA_CHANNELS(id)
 #else
-#define SPI_DMA_CHANNELS(id)                                                                       \
-	.dma_tx = {.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, tx)),                    \
-		   .channel = DT_INST_DMAS_CELL_BY_NAME(id, tx, channel),                          \
-		   .dma_cfg =                                                                      \
-			   {                                                                       \
-				   .channel_direction = MEMORY_TO_PERIPHERAL,                      \
-				   .dma_callback = spi_mcux_dma_callback,                          \
-				   .complete_callback_en = true,                                   \
-				   .block_count = 2,                                               \
-			   }},                                                                     \
-	.dma_rx = {.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, rx)),                    \
-		   .channel = DT_INST_DMAS_CELL_BY_NAME(id, rx, channel),                          \
-		   .dma_cfg = {                                                                    \
-			   .channel_direction = PERIPHERAL_TO_MEMORY,                              \
-			   .dma_callback = spi_mcux_dma_callback,                                  \
-			   .block_count = 1,                                                       \
+#define SPI_DMA_CHANNELS(id)                                                    \
+	.dma_tx = {.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, tx)), \
+		   .channel = DT_INST_DMAS_CELL_BY_NAME(id, tx, channel),       \
+		   .dma_cfg =                                                   \
+			   {                                                    \
+				   .channel_direction = MEMORY_TO_PERIPHERAL,   \
+				   .dma_callback = spi_mcux_dma_callback,       \
+				   .complete_callback_en = true,                \
+				   .block_count = 2,                            \
+			   }},                                                  \
+	.dma_rx = {.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, rx)), \
+		   .channel = DT_INST_DMAS_CELL_BY_NAME(id, rx, channel),       \
+		   .dma_cfg = {                                                 \
+			   .channel_direction = PERIPHERAL_TO_MEMORY,           \
+			   .dma_callback = spi_mcux_dma_callback,               \
+			   .block_count = 1,                                    \
 		   }}
 
 #endif

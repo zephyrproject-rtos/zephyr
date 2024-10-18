@@ -471,25 +471,25 @@ static const struct disk_operations flash_disk_ops = {
 #define DEFINE_FLASHDISKS_CACHE(n) static uint8_t __aligned(4) flashdisk##n##_cache[CACHE_SIZE(n)];
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_FLASHDISKS_CACHE)
 
-#define DEFINE_FLASHDISKS_DEVICE(n)                                                                \
-	{                                                                                          \
-		.info =                                                                            \
-			{                                                                          \
-				.ops = &flash_disk_ops,                                            \
-				.name = DT_INST_PROP(n, disk_name),                                \
-			},                                                                         \
-		.area_id = DT_FIXED_PARTITION_ID(PARTITION_PHANDLE(n)),                            \
-		.offset = DT_REG_ADDR(PARTITION_PHANDLE(n)),                                       \
-		.cache = flashdisk##n##_cache,                                                     \
-		.cache_size = sizeof(flashdisk##n##_cache),                                        \
-		.size = DT_REG_SIZE(PARTITION_PHANDLE(n)),                                         \
-		.sector_size = DT_INST_PROP(n, sector_size),                                       \
+#define DEFINE_FLASHDISKS_DEVICE(n)                                     \
+	{                                                               \
+		.info =                                                 \
+			{                                               \
+				.ops = &flash_disk_ops,                 \
+				.name = DT_INST_PROP(n, disk_name),     \
+			},                                              \
+		.area_id = DT_FIXED_PARTITION_ID(PARTITION_PHANDLE(n)), \
+		.offset = DT_REG_ADDR(PARTITION_PHANDLE(n)),            \
+		.cache = flashdisk##n##_cache,                          \
+		.cache_size = sizeof(flashdisk##n##_cache),             \
+		.size = DT_REG_SIZE(PARTITION_PHANDLE(n)),              \
+		.sector_size = DT_INST_PROP(n, sector_size),            \
 	},
 
 static struct flashdisk_data flash_disks[] = {
 	DT_INST_FOREACH_STATUS_OKAY(DEFINE_FLASHDISKS_DEVICE)};
 
-#define VERIFY_CACHE_SIZE_IS_NOT_ZERO_IF_NOT_READ_ONLY(n)                                          \
+#define VERIFY_CACHE_SIZE_IS_NOT_ZERO_IF_NOT_READ_ONLY(n)         \
 	COND_CODE_1(DT_PROP(PARTITION_PHANDLE(n), read_only),			\
 		(/* cache-size is not used for read-only disks */),		\
 		(BUILD_ASSERT(DT_INST_PROP(n, cache_size) != 0,			\
@@ -497,9 +497,9 @@ static struct flashdisk_data flash_disks[] = {
 		" must have non-zero cache-size");))
 DT_INST_FOREACH_STATUS_OKAY(VERIFY_CACHE_SIZE_IS_NOT_ZERO_IF_NOT_READ_ONLY)
 
-#define VERIFY_CACHE_SIZE_IS_MULTIPLY_OF_SECTOR_SIZE(n)                                            \
-	BUILD_ASSERT(DT_INST_PROP(n, cache_size) % DT_INST_PROP(n, sector_size) == 0,              \
-		     "Devicetree node " DT_NODE_PATH(DT_DRV_INST(                                  \
+#define VERIFY_CACHE_SIZE_IS_MULTIPLY_OF_SECTOR_SIZE(n)                                         \
+	BUILD_ASSERT(DT_INST_PROP(n, cache_size) % DT_INST_PROP(n, sector_size) == 0,           \
+		     "Devicetree node " DT_NODE_PATH(DT_DRV_INST(                               \
 			     n)) " has cache size which is not a multiple of its sector size");
 DT_INST_FOREACH_STATUS_OKAY(VERIFY_CACHE_SIZE_IS_MULTIPLY_OF_SECTOR_SIZE)
 

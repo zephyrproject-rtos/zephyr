@@ -134,23 +134,23 @@ static const struct coredump_driver_api coredump_api = {
 };
 
 #define INIT_REGION(node_id, prop, idx) DT_PROP_BY_IDX(node_id, prop, idx),
-#define DT_INST_COREDUMP_IF_TYPE_CALLBACK(n, a, b)                                                 \
+#define DT_INST_COREDUMP_IF_TYPE_CALLBACK(n, a, b) \
 	COND_CODE_1(DT_INST_ENUM_IDX(n, coredump_type), a, b)
 
-#define CREATE_COREDUMP_DEVICE(n)                                                                  \
-	/* Statially allocate desired memory for the callback type device */                       \
-	DT_INST_COREDUMP_IF_TYPE_CALLBACK(                                                         \
-		n,                                                                                 \
-		(BUILD_ASSERT(DT_INST_PROP_LEN(n, memory_regions) == 2,                            \
-			      "Allow exactly one entry (address and size) in memory_regions");     \
-		 BUILD_ASSERT(DT_INST_PROP_BY_IDX(n, memory_regions, 0) == 0,                      \
-			      "Verify address is set to 0");                                       \
-		 static uint8_t coredump_bytes[DT_INST_PROP_BY_IDX(n, memory_regions, 1)]          \
-		 __aligned(4);),                                                                   \
-		())                                                                                \
-	static struct coredump_data coredump_data_##n;                                             \
-	static const struct coredump_config coredump_config##n = {                                 \
-		.type = DT_INST_STRING_TOKEN_OR(n, coredump_type, COREDUMP_TYPE_MEMCPY),           \
+#define CREATE_COREDUMP_DEVICE(n)                                                                 \
+	/* Statially allocate desired memory for the callback type device */                      \
+	DT_INST_COREDUMP_IF_TYPE_CALLBACK(                                                        \
+		n,                                                                                \
+		(BUILD_ASSERT(DT_INST_PROP_LEN(n, memory_regions) == 2,                           \
+			      "Allow exactly one entry (address and size) in memory_regions");    \
+		 BUILD_ASSERT(DT_INST_PROP_BY_IDX(n, memory_regions, 0) == 0,                     \
+			      "Verify address is set to 0");                                      \
+		 static uint8_t coredump_bytes[DT_INST_PROP_BY_IDX(n, memory_regions, 1)]         \
+		 __aligned(4);),                                                                  \
+		())                                                                               \
+	static struct coredump_data coredump_data_##n;                                            \
+	static const struct coredump_config coredump_config##n = {                                \
+		.type = DT_INST_STRING_TOKEN_OR(n, coredump_type, COREDUMP_TYPE_MEMCPY),          \
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(n, memory_regions),                    \
 		(                                                                        \
 			.length = DT_INST_PROP_LEN(n, memory_regions),                       \
@@ -170,8 +170,8 @@ static const struct coredump_driver_api coredump_api = {
 		),                                                                       \
 		(                                                                        \
 			.length = 0,                                                         \
-		)) };                       \
-	DEVICE_DT_INST_DEFINE(n, coredump_init, NULL, &coredump_data_##n, &coredump_config##n,     \
+		)) };                      \
+	DEVICE_DT_INST_DEFINE(n, coredump_init, NULL, &coredump_data_##n, &coredump_config##n,    \
 			      PRE_KERNEL_1, CONFIG_COREDUMP_DEVICE_INIT_PRIORITY, &coredump_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CREATE_COREDUMP_DEVICE)

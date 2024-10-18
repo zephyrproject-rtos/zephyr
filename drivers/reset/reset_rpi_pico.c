@@ -145,15 +145,15 @@ static const struct reset_driver_api reset_rpi_driver_api = {
 	.line_toggle = reset_rpi_line_toggle,
 };
 
-#define RPI_RESET_INIT(idx)                                                                        \
-	static const struct reset_rpi_config reset_rpi_config_##idx = {                            \
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(idx)),                                            \
-		.reg_width = DT_INST_PROP_OR(idx, reg_width, 4),                                   \
-		.active_low = DT_INST_PROP_OR(idx, active_low, 0),                                 \
-		.base_address = DT_INST_REG_ADDR(idx),                                             \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(idx, reset_rpi_init, NULL, NULL, &reset_rpi_config_##idx,            \
+#define RPI_RESET_INIT(idx)                                                                     \
+	static const struct reset_rpi_config reset_rpi_config_##idx = {                         \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(idx)),                                         \
+		.reg_width = DT_INST_PROP_OR(idx, reg_width, 4),                                \
+		.active_low = DT_INST_PROP_OR(idx, active_low, 0),                              \
+		.base_address = DT_INST_REG_ADDR(idx),                                          \
+	};                                                                                      \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(idx, reset_rpi_init, NULL, NULL, &reset_rpi_config_##idx,         \
 			      PRE_KERNEL_1, CONFIG_RESET_INIT_PRIORITY, &reset_rpi_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RPI_RESET_INIT);

@@ -1099,12 +1099,12 @@ static const struct uart_driver_api uart_xlnx_ps_driver_api = {
 
 #define UART_XLNX_PS_IRQ_CONF_FUNC_SET(port) .irq_config_func = uart_xlnx_ps_irq_config_##port,
 
-#define UART_XLNX_PS_IRQ_CONF_FUNC(port)                                                           \
-	static void uart_xlnx_ps_irq_config_##port(const struct device *dev)                       \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(port), DT_INST_IRQ(port, priority), uart_xlnx_ps_isr,     \
-			    DEVICE_DT_INST_GET(port), 0);                                          \
-		irq_enable(DT_INST_IRQN(port));                                                    \
+#define UART_XLNX_PS_IRQ_CONF_FUNC(port)                                                       \
+	static void uart_xlnx_ps_irq_config_##port(const struct device *dev)                   \
+	{                                                                                      \
+		IRQ_CONNECT(DT_INST_IRQN(port), DT_INST_IRQ(port, priority), uart_xlnx_ps_isr, \
+			    DEVICE_DT_INST_GET(port), 0);                                      \
+		irq_enable(DT_INST_IRQN(port));                                                \
 	}
 
 #else
@@ -1114,7 +1114,7 @@ static const struct uart_driver_api uart_xlnx_ps_driver_api = {
 
 #endif /*CONFIG_UART_INTERRUPT_DRIVEN */
 
-#define UART_XLNX_PS_DEV_DATA(port)                                                                \
+#define UART_XLNX_PS_DEV_DATA(port)                                        \
 	static struct uart_xlnx_ps_dev_data_t uart_xlnx_ps_dev_data_##port
 
 #if CONFIG_PINCTRL
@@ -1125,23 +1125,23 @@ static const struct uart_driver_api uart_xlnx_ps_driver_api = {
 #define UART_XLNX_PS_PINCTRL_INIT(port)
 #endif /* CONFIG_PINCTRL */
 
-#define UART_XLNX_PS_DEV_CFG(port)                                                                 \
-	static struct uart_xlnx_ps_dev_config uart_xlnx_ps_dev_cfg_##port = {                      \
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(port)),                                           \
-		.sys_clk_freq = DT_INST_PROP(port, clock_frequency),                               \
-		.baud_rate = DT_INST_PROP(port, current_speed),                                    \
+#define UART_XLNX_PS_DEV_CFG(port)                                                    \
+	static struct uart_xlnx_ps_dev_config uart_xlnx_ps_dev_cfg_##port = {         \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(port)),                              \
+		.sys_clk_freq = DT_INST_PROP(port, clock_frequency),                  \
+		.baud_rate = DT_INST_PROP(port, current_speed),                       \
 		UART_XLNX_PS_IRQ_CONF_FUNC_SET(port) UART_XLNX_PS_PINCTRL_INIT(port)}
 
-#define UART_XLNX_PS_INIT(port)                                                                    \
-	DEVICE_DT_INST_DEFINE(port, uart_xlnx_ps_init, NULL, &uart_xlnx_ps_dev_data_##port,        \
-			      &uart_xlnx_ps_dev_cfg_##port, PRE_KERNEL_1,                          \
+#define UART_XLNX_PS_INIT(port)                                                             \
+	DEVICE_DT_INST_DEFINE(port, uart_xlnx_ps_init, NULL, &uart_xlnx_ps_dev_data_##port, \
+			      &uart_xlnx_ps_dev_cfg_##port, PRE_KERNEL_1,                   \
 			      CONFIG_SERIAL_INIT_PRIORITY, &uart_xlnx_ps_driver_api)
 
-#define UART_XLNX_INSTANTIATE(inst)                                                                \
-	UART_XLNX_PS_PINCTRL_DEFINE(inst)                                                          \
-	UART_XLNX_PS_IRQ_CONF_FUNC(inst);                                                          \
-	UART_XLNX_PS_DEV_DATA(inst);                                                               \
-	UART_XLNX_PS_DEV_CFG(inst);                                                                \
+#define UART_XLNX_INSTANTIATE(inst)       \
+	UART_XLNX_PS_PINCTRL_DEFINE(inst) \
+	UART_XLNX_PS_IRQ_CONF_FUNC(inst); \
+	UART_XLNX_PS_DEV_DATA(inst);      \
+	UART_XLNX_PS_DEV_CFG(inst);       \
 	UART_XLNX_PS_INIT(inst);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_XLNX_INSTANTIATE)

@@ -234,18 +234,18 @@ static const struct sensor_driver_api sgp40_api = {
 	.attr_set = sgp40_attr_set,
 };
 
-#define SGP40_INIT(n)                                                                              \
-	static struct sgp40_data sgp40_data_##n;                                                   \
-                                                                                                   \
-	static const struct sgp40_config sgp40_config_##n = {                                      \
-		.bus = I2C_DT_SPEC_INST_GET(n),                                                    \
-		.selftest = DT_INST_PROP(n, enable_selftest),                                      \
-	};                                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(n, sgp40_pm_action);                                              \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, sgp40_init, PM_DEVICE_DT_INST_GET(n), &sgp40_data_##n,     \
-				     &sgp40_config_##n, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,  \
+#define SGP40_INIT(n)                                                                             \
+	static struct sgp40_data sgp40_data_##n;                                                  \
+                                                                                                  \
+	static const struct sgp40_config sgp40_config_##n = {                                     \
+		.bus = I2C_DT_SPEC_INST_GET(n),                                                   \
+		.selftest = DT_INST_PROP(n, enable_selftest),                                     \
+	};                                                                                        \
+                                                                                                  \
+	PM_DEVICE_DT_INST_DEFINE(n, sgp40_pm_action);                                             \
+                                                                                                  \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, sgp40_init, PM_DEVICE_DT_INST_GET(n), &sgp40_data_##n,    \
+				     &sgp40_config_##n, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, \
 				     &sgp40_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SGP40_INIT)

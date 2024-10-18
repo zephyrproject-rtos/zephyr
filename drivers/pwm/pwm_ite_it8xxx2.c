@@ -279,24 +279,24 @@ static const struct pwm_driver_api pwm_it8xxx2_api = {
 };
 
 /* Device Instance */
-#define PWM_IT8XXX2_INIT(inst)                                                                     \
-	PINCTRL_DT_INST_DEFINE(inst);                                                              \
-                                                                                                   \
-	static const struct pwm_it8xxx2_cfg pwm_it8xxx2_cfg_##inst = {                             \
-		.reg_dcr = DT_INST_REG_ADDR_BY_IDX(inst, 0),                                       \
-		.reg_pcssg = DT_INST_REG_ADDR_BY_IDX(inst, 1),                                     \
-		.reg_pcsgr = DT_INST_REG_ADDR_BY_IDX(inst, 2),                                     \
-		.reg_pwmpol = DT_INST_REG_ADDR_BY_IDX(inst, 3),                                    \
-		.channel = DT_PROP(DT_INST(inst, ite_it8xxx2_pwm), channel),                       \
-		.base = (struct pwm_it8xxx2_regs *)DT_REG_ADDR(DT_NODELABEL(prs)),                 \
-		.prs_sel = DT_PROP(DT_INST(inst, ite_it8xxx2_pwm), prescaler_cx),                  \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
-	};                                                                                         \
-                                                                                                   \
-	static struct pwm_it8xxx2_data pwm_it8xxx2_data_##inst;                                    \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, &pwm_it8xxx2_init, NULL, &pwm_it8xxx2_data_##inst,             \
-			      &pwm_it8xxx2_cfg_##inst, PRE_KERNEL_1, CONFIG_PWM_INIT_PRIORITY,     \
+#define PWM_IT8XXX2_INIT(inst)                                                                 \
+	PINCTRL_DT_INST_DEFINE(inst);                                                          \
+                                                                                               \
+	static const struct pwm_it8xxx2_cfg pwm_it8xxx2_cfg_##inst = {                         \
+		.reg_dcr = DT_INST_REG_ADDR_BY_IDX(inst, 0),                                   \
+		.reg_pcssg = DT_INST_REG_ADDR_BY_IDX(inst, 1),                                 \
+		.reg_pcsgr = DT_INST_REG_ADDR_BY_IDX(inst, 2),                                 \
+		.reg_pwmpol = DT_INST_REG_ADDR_BY_IDX(inst, 3),                                \
+		.channel = DT_PROP(DT_INST(inst, ite_it8xxx2_pwm), channel),                   \
+		.base = (struct pwm_it8xxx2_regs *)DT_REG_ADDR(DT_NODELABEL(prs)),             \
+		.prs_sel = DT_PROP(DT_INST(inst, ite_it8xxx2_pwm), prescaler_cx),              \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                  \
+	};                                                                                     \
+                                                                                               \
+	static struct pwm_it8xxx2_data pwm_it8xxx2_data_##inst;                                \
+                                                                                               \
+	DEVICE_DT_INST_DEFINE(inst, &pwm_it8xxx2_init, NULL, &pwm_it8xxx2_data_##inst,         \
+			      &pwm_it8xxx2_cfg_##inst, PRE_KERNEL_1, CONFIG_PWM_INIT_PRIORITY, \
 			      &pwm_it8xxx2_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_IT8XXX2_INIT)

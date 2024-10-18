@@ -167,52 +167,52 @@ static int dtmr_cmsdk_apb_init(const struct device *dev)
 
 #define DTIMER_CMSDK_REG(inst) ((volatile struct dualtimer_cmsdk_apb *)DT_INST_REG_ADDR(inst))
 
-#define DTIMER_CMSDK_INIT(inst)                                                                    \
-	static void dtimer_cmsdk_apb_config_##inst(const struct device *dev);                      \
-                                                                                                   \
-	static const struct dtmr_cmsdk_apb_cfg dtmr_cmsdk_apb_cfg_##inst = {                       \
-		.info =                                                                            \
-			{                                                                          \
-				.max_top_value = UINT32_MAX,                                       \
-				.freq = 24000000U,                                                 \
-				.flags = COUNTER_CONFIG_INFO_COUNT_UP,                             \
-				.channels = 0U,                                                    \
-			},                                                                         \
-		.dtimer = DTIMER_CMSDK_REG(inst),                                                  \
-		.dtimer_config_func = dtimer_cmsdk_apb_config_##inst,                              \
-		.dtimer_cc_as =                                                                    \
-			{                                                                          \
-				.bus = CMSDK_APB,                                                  \
-				.state = SOC_ACTIVE,                                               \
-				.device = DT_INST_REG_ADDR(inst),                                  \
-			},                                                                         \
-		.dtimer_cc_ss =                                                                    \
-			{                                                                          \
-				.bus = CMSDK_APB,                                                  \
-				.state = SOC_SLEEP,                                                \
-				.device = DT_INST_REG_ADDR(inst),                                  \
-			},                                                                         \
-		.dtimer_cc_dss =                                                                   \
-			{                                                                          \
-				.bus = CMSDK_APB,                                                  \
-				.state = SOC_DEEPSLEEP,                                            \
-				.device = DT_INST_REG_ADDR(inst),                                  \
-			},                                                                         \
-	};                                                                                         \
-                                                                                                   \
-	static struct dtmr_cmsdk_apb_dev_data dtmr_cmsdk_apb_dev_data_##inst = {                   \
-		.load = UINT_MAX,                                                                  \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, dtmr_cmsdk_apb_init, NULL, &dtmr_cmsdk_apb_dev_data_##inst,    \
-			      &dtmr_cmsdk_apb_cfg_##inst, POST_KERNEL,                             \
-			      CONFIG_COUNTER_INIT_PRIORITY, &dtmr_cmsdk_apb_api);                  \
-                                                                                                   \
-	static void dtimer_cmsdk_apb_config_##inst(const struct device *dev)                       \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), dtmr_cmsdk_apb_isr,   \
-			    DEVICE_DT_INST_GET(inst), 0);                                          \
-		irq_enable(DT_INST_IRQN(inst));                                                    \
+#define DTIMER_CMSDK_INIT(inst)                                                                  \
+	static void dtimer_cmsdk_apb_config_##inst(const struct device *dev);                    \
+                                                                                                 \
+	static const struct dtmr_cmsdk_apb_cfg dtmr_cmsdk_apb_cfg_##inst = {                     \
+		.info =                                                                          \
+			{                                                                        \
+				.max_top_value = UINT32_MAX,                                     \
+				.freq = 24000000U,                                               \
+				.flags = COUNTER_CONFIG_INFO_COUNT_UP,                           \
+				.channels = 0U,                                                  \
+			},                                                                       \
+		.dtimer = DTIMER_CMSDK_REG(inst),                                                \
+		.dtimer_config_func = dtimer_cmsdk_apb_config_##inst,                            \
+		.dtimer_cc_as =                                                                  \
+			{                                                                        \
+				.bus = CMSDK_APB,                                                \
+				.state = SOC_ACTIVE,                                             \
+				.device = DT_INST_REG_ADDR(inst),                                \
+			},                                                                       \
+		.dtimer_cc_ss =                                                                  \
+			{                                                                        \
+				.bus = CMSDK_APB,                                                \
+				.state = SOC_SLEEP,                                              \
+				.device = DT_INST_REG_ADDR(inst),                                \
+			},                                                                       \
+		.dtimer_cc_dss =                                                                 \
+			{                                                                        \
+				.bus = CMSDK_APB,                                                \
+				.state = SOC_DEEPSLEEP,                                          \
+				.device = DT_INST_REG_ADDR(inst),                                \
+			},                                                                       \
+	};                                                                                       \
+                                                                                                 \
+	static struct dtmr_cmsdk_apb_dev_data dtmr_cmsdk_apb_dev_data_##inst = {                 \
+		.load = UINT_MAX,                                                                \
+	};                                                                                       \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(inst, dtmr_cmsdk_apb_init, NULL, &dtmr_cmsdk_apb_dev_data_##inst,  \
+			      &dtmr_cmsdk_apb_cfg_##inst, POST_KERNEL,                           \
+			      CONFIG_COUNTER_INIT_PRIORITY, &dtmr_cmsdk_apb_api);                \
+                                                                                                 \
+	static void dtimer_cmsdk_apb_config_##inst(const struct device *dev)                     \
+	{                                                                                        \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), dtmr_cmsdk_apb_isr, \
+			    DEVICE_DT_INST_GET(inst), 0);                                        \
+		irq_enable(DT_INST_IRQN(inst));                                                  \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(DTIMER_CMSDK_INIT)

@@ -124,16 +124,16 @@ static int disk_sdmmc_init(const struct device *dev)
 	return disk_access_register(&sdmmc_disk);
 }
 
-#define DISK_ACCESS_SDMMC_INIT(n)                                                                  \
-	static const struct sdmmc_config sdmmc_config_##n = {                                      \
-		.host_controller = DEVICE_DT_GET(DT_INST_PARENT(n)),                               \
-	};                                                                                         \
-                                                                                                   \
-	static struct sdmmc_data sdmmc_data_##n = {                                                \
-		.name = CONFIG_SDMMC_VOLUME_NAME,                                                  \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &disk_sdmmc_init, NULL, &sdmmc_data_##n, &sdmmc_config_##n,       \
+#define DISK_ACCESS_SDMMC_INIT(n)                                                            \
+	static const struct sdmmc_config sdmmc_config_##n = {                                \
+		.host_controller = DEVICE_DT_GET(DT_INST_PARENT(n)),                         \
+	};                                                                                   \
+                                                                                             \
+	static struct sdmmc_data sdmmc_data_##n = {                                          \
+		.name = CONFIG_SDMMC_VOLUME_NAME,                                            \
+	};                                                                                   \
+                                                                                             \
+	DEVICE_DT_INST_DEFINE(n, &disk_sdmmc_init, NULL, &sdmmc_data_##n, &sdmmc_config_##n, \
 			      POST_KERNEL, CONFIG_SD_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(DISK_ACCESS_SDMMC_INIT)

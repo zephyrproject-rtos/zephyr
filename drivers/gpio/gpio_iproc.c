@@ -199,27 +199,27 @@ int gpio_iproc_init(const struct device *dev)
 	return 0;
 }
 
-#define GPIO_IPROC_INIT(n)                                                                         \
-	static void port_iproc_config_func_##n(const struct device *dev)                           \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_iproc_isr,             \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-	}                                                                                          \
-                                                                                                   \
-	static const struct gpio_iproc_config gpio_port_config_##n = {                             \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
-		.base = DT_INST_REG_ADDR(n),                                                       \
-		.irq_config_func = port_iproc_config_func_##n,                                     \
-	};                                                                                         \
-                                                                                                   \
-	static struct gpio_iproc_data gpio_port_data_##n;                                          \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, gpio_iproc_init, NULL, &gpio_port_data_##n,                       \
-			      &gpio_port_config_##n, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,       \
+#define GPIO_IPROC_INIT(n)                                                                   \
+	static void port_iproc_config_func_##n(const struct device *dev)                     \
+	{                                                                                    \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_iproc_isr,       \
+			    DEVICE_DT_INST_GET(n), 0);                                       \
+		irq_enable(DT_INST_IRQN(n));                                                 \
+	}                                                                                    \
+                                                                                             \
+	static const struct gpio_iproc_config gpio_port_config_##n = {                       \
+		.common =                                                                    \
+			{                                                                    \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),         \
+			},                                                                   \
+		.base = DT_INST_REG_ADDR(n),                                                 \
+		.irq_config_func = port_iproc_config_func_##n,                               \
+	};                                                                                   \
+                                                                                             \
+	static struct gpio_iproc_data gpio_port_data_##n;                                    \
+                                                                                             \
+	DEVICE_DT_INST_DEFINE(n, gpio_iproc_init, NULL, &gpio_port_data_##n,                 \
+			      &gpio_port_config_##n, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY, \
 			      &gpio_iproc_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_IPROC_INIT)

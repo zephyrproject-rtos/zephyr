@@ -56,37 +56,37 @@ static struct dai_intel_ssp_mn ssp_mn_divider = {
 	.base = DT_REG_ADDR_BY_IDX(DT_NODELABEL(ssp0), 1),
 };
 
-#define INTEL_SSP_INST_DEFINE(node_id)                                                             \
-	{                                                                                          \
-		.is_initialized = false,                                                           \
-		.is_power_en = false,                                                              \
-		.acquire_count = 0,                                                                \
-		.ssp_index = DT_PROP(node_id, ssp_index),                                          \
-		.base = DT_REG_ADDR_BY_IDX(node_id, 0),                                            \
+#define INTEL_SSP_INST_DEFINE(node_id)                                                            \
+	{                                                                                         \
+		.is_initialized = false,                                                          \
+		.is_power_en = false,                                                             \
+		.acquire_count = 0,                                                               \
+		.ssp_index = DT_PROP(node_id, ssp_index),                                         \
+		.base = DT_REG_ADDR_BY_IDX(node_id, 0),                                           \
 		IF_ENABLED(DT_NODE_EXISTS(DT_NODELABEL(sspbase)),	\
-		(.ip_base = DT_REG_ADDR_BY_IDX(DT_NODELABEL(sspbase), 0),)) .shim_base =      \
-				 DT_REG_ADDR_BY_IDX(DT_NODELABEL(shim), 0),                        \
+		(.ip_base = DT_REG_ADDR_BY_IDX(DT_NODELABEL(sspbase), 0),)) .shim_base =     \
+				 DT_REG_ADDR_BY_IDX(DT_NODELABEL(shim), 0),                       \
 			 IF_ENABLED(DT_NODE_EXISTS(DT_NODELABEL(hdamlssp)),		\
-			(.hdamlssp_base = DT_REG_ADDR(DT_NODELABEL(hdamlssp)),))                     \
+			(.hdamlssp_base = DT_REG_ADDR(DT_NODELABEL(hdamlssp)),))                    \
 					  IF_ENABLED(DT_PROP_HAS_IDX(node_id, i2svss, 0),			\
-			(.i2svss_base = DT_PROP_BY_IDX(node_id, i2svss, 0),)) .irq =             \
-							   DT_NUM_IRQS(node_id),                   \
-						   .irq_name = irq_name_level5_z,                  \
-						   .fifo[DAI_DIR_PLAYBACK].offset =                \
-							   DT_REG_ADDR_BY_IDX(node_id, 0) +        \
-							   OUT_FIFO,                               \
-						   .fifo[DAI_DIR_PLAYBACK].handshake =             \
-							   DT_DMAS_CELL_BY_NAME(node_id, tx,       \
-										channel),          \
-						   .fifo[DAI_DIR_CAPTURE].offset =                 \
-							   DT_REG_ADDR_BY_IDX(node_id, 0) +        \
-							   IN_FIFO,                                \
-						   .fifo[DAI_DIR_CAPTURE].handshake =              \
-							   DT_DMAS_CELL_BY_NAME(node_id, rx,       \
-										channel),          \
-						   .mn_inst = &ssp_mn_divider,                     \
-						   .ftable = ssp_freq_table,                       \
-						   .fsources = ssp_freq_sources, .clk_active = 0,  \
+			(.i2svss_base = DT_PROP_BY_IDX(node_id, i2svss, 0),)) .irq =            \
+							   DT_NUM_IRQS(node_id),                  \
+						   .irq_name = irq_name_level5_z,                 \
+						   .fifo[DAI_DIR_PLAYBACK].offset =               \
+							   DT_REG_ADDR_BY_IDX(node_id, 0) +       \
+							   OUT_FIFO,                              \
+						   .fifo[DAI_DIR_PLAYBACK].handshake =            \
+							   DT_DMAS_CELL_BY_NAME(node_id, tx,      \
+										channel),         \
+						   .fifo[DAI_DIR_CAPTURE].offset =                \
+							   DT_REG_ADDR_BY_IDX(node_id, 0) +       \
+							   IN_FIFO,                               \
+						   .fifo[DAI_DIR_CAPTURE].handshake =             \
+							   DT_DMAS_CELL_BY_NAME(node_id, rx,      \
+										channel),         \
+						   .mn_inst = &ssp_mn_divider,                    \
+						   .ftable = ssp_freq_table,                      \
+						   .fsources = ssp_freq_sources, .clk_active = 0, \
 						  },
 
 static struct dai_intel_ssp_plat_data ssp_plat_data_table[] = {
@@ -2676,21 +2676,21 @@ static struct dai_driver_api dai_intel_ssp_api_funcs = {
 
 #define DT_DRV_COMPAT intel_ssp_dai
 
-#define DAI_INTEL_SSP_DEVICE_INIT(n)                                                               \
-	static struct dai_config dai_intel_ssp_config_##n = {                                      \
-		.type = DAI_INTEL_SSP,                                                             \
-		.dai_index = DT_INST_REG_ADDR(n),                                                  \
-	};                                                                                         \
-	static struct dai_intel_ssp dai_intel_ssp_data_##n = {                                     \
-		.dai_index = DT_INST_REG_ADDR(n),                                                  \
-		.ssp_index = DT_PROP(DT_INST_PARENT(n), ssp_index),                                \
-		.tdm_slot_group = 0,                                                               \
-	};                                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(n, ssp_pm_action);                                                \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, ssp_init, PM_DEVICE_DT_INST_GET(n), &dai_intel_ssp_data_##n,      \
-			      &dai_intel_ssp_config_##n, POST_KERNEL, 42,                          \
+#define DAI_INTEL_SSP_DEVICE_INIT(n)                                                          \
+	static struct dai_config dai_intel_ssp_config_##n = {                                 \
+		.type = DAI_INTEL_SSP,                                                        \
+		.dai_index = DT_INST_REG_ADDR(n),                                             \
+	};                                                                                    \
+	static struct dai_intel_ssp dai_intel_ssp_data_##n = {                                \
+		.dai_index = DT_INST_REG_ADDR(n),                                             \
+		.ssp_index = DT_PROP(DT_INST_PARENT(n), ssp_index),                           \
+		.tdm_slot_group = 0,                                                          \
+	};                                                                                    \
+                                                                                              \
+	PM_DEVICE_DT_INST_DEFINE(n, ssp_pm_action);                                           \
+                                                                                              \
+	DEVICE_DT_INST_DEFINE(n, ssp_init, PM_DEVICE_DT_INST_GET(n), &dai_intel_ssp_data_##n, \
+			      &dai_intel_ssp_config_##n, POST_KERNEL, 42,                     \
 			      &dai_intel_ssp_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(DAI_INTEL_SSP_DEVICE_INIT)

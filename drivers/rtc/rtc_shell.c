@@ -227,12 +227,12 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 	entry->subcmd = NULL;
 }
 
-#define RTC_GET_HELP                                                                               \
-	("Get current time (UTC)\n"                                                                \
+#define RTC_GET_HELP                \
+	("Get current time (UTC)\n" \
 	 "Usage: rtc get <device>")
 
-#define RTC_SET_HELP                                                                               \
-	("Set UTC time\n"                                                                          \
+#define RTC_SET_HELP                                                                  \
+	("Set UTC time\n"                                                             \
 	 "Usage: rtc set <device> <YYYY-MM-DDThh:mm:ss> | <YYYY-MM-DD> | <hh:mm:ss>")
 
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);

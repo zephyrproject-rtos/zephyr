@@ -144,11 +144,11 @@ static int emul_max17048_init(const struct emul *target, const struct device *pa
 /*
  * Main instantiation macro.
  */
-#define MAX17048_EMUL(n)                                                                           \
-	static const struct max17048_emul_cfg max17048_emul_cfg_##n = {                            \
-		.addr = DT_INST_REG_ADDR(n),                                                       \
-	};                                                                                         \
-	EMUL_DT_INST_DEFINE(n, emul_max17048_init, NULL, &max17048_emul_cfg_##n,                   \
+#define MAX17048_EMUL(n)                                                         \
+	static const struct max17048_emul_cfg max17048_emul_cfg_##n = {          \
+		.addr = DT_INST_REG_ADDR(n),                                     \
+	};                                                                       \
+	EMUL_DT_INST_DEFINE(n, emul_max17048_init, NULL, &max17048_emul_cfg_##n, \
 			    &max17048_emul_api_i2c, NULL)
 
 DT_INST_FOREACH_STATUS_OKAY(MAX17048_EMUL)

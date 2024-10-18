@@ -638,56 +638,56 @@ static const struct _dmic_ops dmic_ops = {
 #define PDM_DMIC_GAINSHIFT(val) (val >= 0) ? (val & 0xF) : (BIT(4) | (0x10 - (val & 0xF)))
 
 /* Defines structure for a given PDM channel node */
-#define PDM_DMIC_CHAN_DEFINE(pdm_node)                                                             \
-	static struct mcux_dmic_pdm_chan pdm_channel_##pdm_node = {                                \
-		.dma = DEVICE_DT_GET(DT_DMAS_CTLR(pdm_node)),                                      \
-		.dma_chan = DT_DMAS_CELL_BY_IDX(pdm_node, 0, channel),                             \
-		.dmic_channel_cfg =                                                                \
-			{                                                                          \
-				.gainshft = PDM_DMIC_GAINSHIFT(DT_PROP(pdm_node, gainshift)),      \
-				.preac2coef = DT_ENUM_IDX(pdm_node, compensation_2fs),             \
-				.preac4coef = DT_ENUM_IDX(pdm_node, compensation_4fs),             \
-				.dc_cut_level = DT_ENUM_IDX(pdm_node, dc_cutoff),                  \
-				.post_dc_gain_reduce = DT_PROP(pdm_node, dc_gain),                 \
-				.sample_rate = kDMIC_PhyFullSpeed,                                 \
-				.saturate16bit = 1U,                                               \
-			},                                                                         \
+#define PDM_DMIC_CHAN_DEFINE(pdm_node)                                                        \
+	static struct mcux_dmic_pdm_chan pdm_channel_##pdm_node = {                           \
+		.dma = DEVICE_DT_GET(DT_DMAS_CTLR(pdm_node)),                                 \
+		.dma_chan = DT_DMAS_CELL_BY_IDX(pdm_node, 0, channel),                        \
+		.dmic_channel_cfg =                                                           \
+			{                                                                     \
+				.gainshft = PDM_DMIC_GAINSHIFT(DT_PROP(pdm_node, gainshift)), \
+				.preac2coef = DT_ENUM_IDX(pdm_node, compensation_2fs),        \
+				.preac4coef = DT_ENUM_IDX(pdm_node, compensation_4fs),        \
+				.dc_cut_level = DT_ENUM_IDX(pdm_node, dc_cutoff),             \
+				.post_dc_gain_reduce = DT_PROP(pdm_node, dc_gain),            \
+				.sample_rate = kDMIC_PhyFullSpeed,                            \
+				.saturate16bit = 1U,                                          \
+			},                                                                    \
 	};
 
 /* Defines structures for all enabled PDM channels */
 #define PDM_DMIC_CHANNELS_DEFINE(idx) DT_INST_FOREACH_CHILD_STATUS_OKAY(idx, PDM_DMIC_CHAN_DEFINE)
 
 /* Gets pointer for a given PDM channel node */
-#define PDM_DMIC_CHAN_GET(pdm_node)                                                                \
+#define PDM_DMIC_CHAN_GET(pdm_node)                                                      \
 	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(pdm_node),				\
 		    (&pdm_channel_##pdm_node), (NULL)),
 
 /* Gets array of pointers to PDM channels */
 #define PDM_DMIC_CHANNELS_GET(idx) DT_INST_FOREACH_CHILD(idx, PDM_DMIC_CHAN_GET)
 
-#define MCUX_DMIC_DEVICE(idx)                                                                      \
-	PDM_DMIC_CHANNELS_DEFINE(idx);                                                             \
-	static struct mcux_dmic_pdm_chan *pdm_channels##idx[FSL_FEATURE_DMIC_CHANNEL_NUM] = {      \
-		PDM_DMIC_CHANNELS_GET(idx)};                                                       \
-	K_MSGQ_DEFINE(dmic_msgq##idx, sizeof(void *), CONFIG_DMIC_MCUX_QUEUE_SIZE, 1);             \
-	static struct mcux_dmic_drv_data mcux_dmic_data##idx = {                                   \
-		.pdm_channels = pdm_channels##idx,                                                 \
-		.base_address = (DMIC_Type *)DT_INST_REG_ADDR(idx),                                \
-		.dmic_state = DMIC_STATE_UNINIT,                                                   \
-		.rx_queue = &dmic_msgq##idx,                                                       \
-		.active_buf_idx = 0U,                                                              \
-	};                                                                                         \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(idx);                                                               \
-	static struct mcux_dmic_cfg mcux_dmic_cfg##idx = {                                         \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                       \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                              \
-		.clock_name = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, name),              \
-		.use2fs = DT_INST_PROP(idx, use2fs),                                               \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(idx, mcux_dmic_init, NULL, &mcux_dmic_data##idx,                     \
-			      &mcux_dmic_cfg##idx, POST_KERNEL, CONFIG_AUDIO_DMIC_INIT_PRIORITY,   \
+#define MCUX_DMIC_DEVICE(idx)                                                                    \
+	PDM_DMIC_CHANNELS_DEFINE(idx);                                                           \
+	static struct mcux_dmic_pdm_chan *pdm_channels##idx[FSL_FEATURE_DMIC_CHANNEL_NUM] = {    \
+		PDM_DMIC_CHANNELS_GET(idx)};                                                     \
+	K_MSGQ_DEFINE(dmic_msgq##idx, sizeof(void *), CONFIG_DMIC_MCUX_QUEUE_SIZE, 1);           \
+	static struct mcux_dmic_drv_data mcux_dmic_data##idx = {                                 \
+		.pdm_channels = pdm_channels##idx,                                               \
+		.base_address = (DMIC_Type *)DT_INST_REG_ADDR(idx),                              \
+		.dmic_state = DMIC_STATE_UNINIT,                                                 \
+		.rx_queue = &dmic_msgq##idx,                                                     \
+		.active_buf_idx = 0U,                                                            \
+	};                                                                                       \
+                                                                                                 \
+	PINCTRL_DT_INST_DEFINE(idx);                                                             \
+	static struct mcux_dmic_cfg mcux_dmic_cfg##idx = {                                       \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                     \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                            \
+		.clock_name = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, name),            \
+		.use2fs = DT_INST_PROP(idx, use2fs),                                             \
+	};                                                                                       \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(idx, mcux_dmic_init, NULL, &mcux_dmic_data##idx,                   \
+			      &mcux_dmic_cfg##idx, POST_KERNEL, CONFIG_AUDIO_DMIC_INIT_PRIORITY, \
 			      &dmic_ops);
 
 /* Existing SoCs only have one PDM instance. */

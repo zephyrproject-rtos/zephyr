@@ -154,23 +154,23 @@ static const struct mdio_driver_api mdio_sam_driver_api = {
 	.bus_disable = mdio_sam_bus_disable,
 };
 
-#define MDIO_SAM_CLOCK(n)                                                                          \
+#define MDIO_SAM_CLOCK(n)                            \
 	COND_CODE_1(CONFIG_SOC_FAMILY_ATMEL_SAM,			\
 		(.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),), ()	\
 	)
 
-#define MDIO_SAM_CONFIG(n)                                                                         \
-	static const struct mdio_sam_dev_config mdio_sam_dev_config_##n = {                        \
-		.regs = (Gmac *)DT_INST_REG_ADDR(n),                                               \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+#define MDIO_SAM_CONFIG(n)                                                  \
+	static const struct mdio_sam_dev_config mdio_sam_dev_config_##n = { \
+		.regs = (Gmac *)DT_INST_REG_ADDR(n),                        \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                  \
 		MDIO_SAM_CLOCK(n)};
 
-#define MDIO_SAM_DEVICE(n)                                                                         \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	MDIO_SAM_CONFIG(n);                                                                        \
-	static struct mdio_sam_dev_data mdio_sam_dev_data##n;                                      \
-	DEVICE_DT_INST_DEFINE(n, &mdio_sam_initialize, NULL, &mdio_sam_dev_data##n,                \
-			      &mdio_sam_dev_config_##n, POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY,    \
+#define MDIO_SAM_DEVICE(n)                                                                      \
+	PINCTRL_DT_INST_DEFINE(n);                                                              \
+	MDIO_SAM_CONFIG(n);                                                                     \
+	static struct mdio_sam_dev_data mdio_sam_dev_data##n;                                   \
+	DEVICE_DT_INST_DEFINE(n, &mdio_sam_initialize, NULL, &mdio_sam_dev_data##n,             \
+			      &mdio_sam_dev_config_##n, POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY, \
 			      &mdio_sam_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MDIO_SAM_DEVICE)

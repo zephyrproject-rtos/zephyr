@@ -237,48 +237,48 @@ static const struct can_mcan_ops can_stm32h7_ops = {
 	.clear_mram = can_stm32h7_clear_mram,
 };
 
-#define CAN_STM32H7_MCAN_INIT(n)                                                                   \
-	CAN_MCAN_DT_INST_BUILD_ASSERT_MRAM_CFG(n);                                                 \
-	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_ELEMENTS_SIZE(n) <= CAN_MCAN_DT_INST_MRAM_SIZE(n),      \
-		     "Insufficient Message RAM size to hold elements");                            \
-                                                                                                   \
-	static void stm32h7_mcan_irq_config_##n(void);                                             \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	CAN_MCAN_DT_INST_CALLBACKS_DEFINE(n, can_stm32h7_cbs_##n);                                 \
-                                                                                                   \
-	static const struct stm32_pclken can_stm32h7_pclken_##n[] = STM32_DT_INST_CLOCKS(n);       \
-                                                                                                   \
-	static const struct can_stm32h7_config can_stm32h7_cfg_##n = {                             \
-		.base = CAN_MCAN_DT_INST_MCAN_ADDR(n),                                             \
-		.mrba = CAN_MCAN_DT_INST_MRBA(n),                                                  \
-		.mram = CAN_MCAN_DT_INST_MRAM_ADDR(n),                                             \
-		.config_irq = stm32h7_mcan_irq_config_##n,                                         \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		.pclken = can_stm32h7_pclken_##n,                                                  \
-		.pclk_len = DT_INST_NUM_CLOCKS(n),                                                 \
-		.clock_divider = DT_INST_PROP_OR(n, clk_divider, 0)};                              \
-                                                                                                   \
-	static const struct can_mcan_config can_mcan_cfg_##n = CAN_MCAN_DT_CONFIG_INST_GET(        \
-		n, &can_stm32h7_cfg_##n, &can_stm32h7_ops, &can_stm32h7_cbs_##n);                  \
-                                                                                                   \
-	static struct can_mcan_data can_mcan_data_##n = CAN_MCAN_DATA_INITIALIZER(NULL);           \
-                                                                                                   \
-	CAN_DEVICE_DT_INST_DEFINE(n, can_stm32h7_init, NULL, &can_mcan_data_##n,                   \
-				  &can_mcan_cfg_##n, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,        \
-				  &can_stm32h7_driver_api);                                        \
-                                                                                                   \
-	static void stm32h7_mcan_irq_config_##n(void)                                              \
-	{                                                                                          \
-		LOG_DBG("Enable CAN inst" #n " IRQ");                                              \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, int0, irq),                                     \
-			    DT_INST_IRQ_BY_NAME(n, int0, priority), can_mcan_line_0_isr,           \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQ_BY_NAME(n, int0, irq));                                     \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, int1, irq),                                     \
-			    DT_INST_IRQ_BY_NAME(n, int1, priority), can_mcan_line_1_isr,           \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQ_BY_NAME(n, int1, irq));                                     \
+#define CAN_STM32H7_MCAN_INIT(n)                                                              \
+	CAN_MCAN_DT_INST_BUILD_ASSERT_MRAM_CFG(n);                                            \
+	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_ELEMENTS_SIZE(n) <= CAN_MCAN_DT_INST_MRAM_SIZE(n), \
+		     "Insufficient Message RAM size to hold elements");                       \
+                                                                                              \
+	static void stm32h7_mcan_irq_config_##n(void);                                        \
+                                                                                              \
+	PINCTRL_DT_INST_DEFINE(n);                                                            \
+	CAN_MCAN_DT_INST_CALLBACKS_DEFINE(n, can_stm32h7_cbs_##n);                            \
+                                                                                              \
+	static const struct stm32_pclken can_stm32h7_pclken_##n[] = STM32_DT_INST_CLOCKS(n);  \
+                                                                                              \
+	static const struct can_stm32h7_config can_stm32h7_cfg_##n = {                        \
+		.base = CAN_MCAN_DT_INST_MCAN_ADDR(n),                                        \
+		.mrba = CAN_MCAN_DT_INST_MRBA(n),                                             \
+		.mram = CAN_MCAN_DT_INST_MRAM_ADDR(n),                                        \
+		.config_irq = stm32h7_mcan_irq_config_##n,                                    \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                    \
+		.pclken = can_stm32h7_pclken_##n,                                             \
+		.pclk_len = DT_INST_NUM_CLOCKS(n),                                            \
+		.clock_divider = DT_INST_PROP_OR(n, clk_divider, 0)};                         \
+                                                                                              \
+	static const struct can_mcan_config can_mcan_cfg_##n = CAN_MCAN_DT_CONFIG_INST_GET(   \
+		n, &can_stm32h7_cfg_##n, &can_stm32h7_ops, &can_stm32h7_cbs_##n);             \
+                                                                                              \
+	static struct can_mcan_data can_mcan_data_##n = CAN_MCAN_DATA_INITIALIZER(NULL);      \
+                                                                                              \
+	CAN_DEVICE_DT_INST_DEFINE(n, can_stm32h7_init, NULL, &can_mcan_data_##n,              \
+				  &can_mcan_cfg_##n, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,   \
+				  &can_stm32h7_driver_api);                                   \
+                                                                                              \
+	static void stm32h7_mcan_irq_config_##n(void)                                         \
+	{                                                                                     \
+		LOG_DBG("Enable CAN inst" #n " IRQ");                                         \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, int0, irq),                                \
+			    DT_INST_IRQ_BY_NAME(n, int0, priority), can_mcan_line_0_isr,      \
+			    DEVICE_DT_INST_GET(n), 0);                                        \
+		irq_enable(DT_INST_IRQ_BY_NAME(n, int0, irq));                                \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, int1, irq),                                \
+			    DT_INST_IRQ_BY_NAME(n, int1, priority), can_mcan_line_1_isr,      \
+			    DEVICE_DT_INST_GET(n), 0);                                        \
+		irq_enable(DT_INST_IRQ_BY_NAME(n, int1, irq));                                \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_STM32H7_MCAN_INIT)

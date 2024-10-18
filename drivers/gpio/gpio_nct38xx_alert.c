@@ -156,24 +156,24 @@ static int nct38xx_alert_init(const struct device *dev)
 /* NCT38XX alert driver must be initialized after NCT38XX GPIO driver */
 BUILD_ASSERT(CONFIG_GPIO_NCT38XX_ALERT_INIT_PRIORITY > CONFIG_GPIO_NCT38XX_INIT_PRIORITY);
 
-#define NCT38XX_DEV_AND_COMMA(node_id, prop, idx)                                                  \
+#define NCT38XX_DEV_AND_COMMA(node_id, prop, idx)             \
 	DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, prop, idx)),
 
-#define NCT38XX_ALERT_DEVICE_INSTANCE(inst)                                                        \
-	const struct device *nct38xx_dev_##inst[] = {                                              \
-		DT_INST_FOREACH_PROP_ELEM(inst, nct38xx_dev, NCT38XX_DEV_AND_COMMA)};              \
-	static struct nct38xx_mfd nct38xx_mfd_##inst[DT_INST_PROP_LEN(inst, nct38xx_dev)];         \
-	static const struct nct38xx_alert_config nct38xx_alert_cfg_##inst = {                      \
-		.irq_gpio = GPIO_DT_SPEC_INST_GET(inst, irq_gpios),                                \
-		.nct38xx_dev = &nct38xx_dev_##inst[0],                                             \
-		.nct38xx_num = DT_INST_PROP_LEN(inst, nct38xx_dev),                                \
-	};                                                                                         \
-	static struct nct38xx_alert_data nct38xx_alert_data_##inst = {                             \
-		.alert_dev = DEVICE_DT_INST_GET(inst),                                             \
-		.mfd = nct38xx_mfd_##inst,                                                         \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, nct38xx_alert_init, NULL, &nct38xx_alert_data_##inst,          \
-			      &nct38xx_alert_cfg_##inst, POST_KERNEL,                              \
+#define NCT38XX_ALERT_DEVICE_INSTANCE(inst)                                                \
+	const struct device *nct38xx_dev_##inst[] = {                                      \
+		DT_INST_FOREACH_PROP_ELEM(inst, nct38xx_dev, NCT38XX_DEV_AND_COMMA)};      \
+	static struct nct38xx_mfd nct38xx_mfd_##inst[DT_INST_PROP_LEN(inst, nct38xx_dev)]; \
+	static const struct nct38xx_alert_config nct38xx_alert_cfg_##inst = {              \
+		.irq_gpio = GPIO_DT_SPEC_INST_GET(inst, irq_gpios),                        \
+		.nct38xx_dev = &nct38xx_dev_##inst[0],                                     \
+		.nct38xx_num = DT_INST_PROP_LEN(inst, nct38xx_dev),                        \
+	};                                                                                 \
+	static struct nct38xx_alert_data nct38xx_alert_data_##inst = {                     \
+		.alert_dev = DEVICE_DT_INST_GET(inst),                                     \
+		.mfd = nct38xx_mfd_##inst,                                                 \
+	};                                                                                 \
+	DEVICE_DT_INST_DEFINE(inst, nct38xx_alert_init, NULL, &nct38xx_alert_data_##inst,  \
+			      &nct38xx_alert_cfg_##inst, POST_KERNEL,                      \
 			      CONFIG_GPIO_NCT38XX_ALERT_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(NCT38XX_ALERT_DEVICE_INSTANCE)

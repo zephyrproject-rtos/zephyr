@@ -115,14 +115,14 @@ static inline void dcache_clean(uint32_t addr, uint32_t size)
 	not large enough to hold a full frame
 #endif
 
-#if CONFIG_NET_BUF_DATA_SIZE * (CONFIG_NET_BUF_RX_COUNT - CONFIG_ETH_SAM_GMAC_BUF_RX_COUNT) <      \
+#if CONFIG_NET_BUF_DATA_SIZE * (CONFIG_NET_BUF_RX_COUNT - CONFIG_ETH_SAM_GMAC_BUF_RX_COUNT) < \
 	GMAC_FRAME_SIZE_MAX
 #error(CONFIG_NET_BUF_RX_COUNT - CONFIG_ETH_SAM_GMAC_BUF_RX_COUNT) * \
 	CONFIG_NET_BUF_DATA_SIZE are not large enough to hold a full frame
 #endif
 
 #if CONFIG_NET_BUF_DATA_SIZE & 0x3F
-#pragma message "CONFIG_NET_BUF_DATA_SIZE should be a multiple of 64 bytes "                       \
+#pragma message "CONFIG_NET_BUF_DATA_SIZE should be a multiple of 64 bytes " \
 		"due to the granularity of RX DMA"
 #endif
 
@@ -239,9 +239,9 @@ static struct net_pkt *tx_frame_list_que5[CONFIG_NET_PKT_TX_COUNT + 1];
 #endif
 #endif
 
-#define MODULO_INC(val, max)                                                                       \
-	{                                                                                          \
-		val = (++val < max) ? val : 0;                                                     \
+#define MODULO_INC(val, max)                   \
+	{                                      \
+		val = (++val < max) ? val : 0; \
 	}
 
 static int rx_descriptors_init(Gmac *gmac, struct gmac_queue *queue);
@@ -1335,8 +1335,8 @@ static void eth_rx(struct gmac_queue *queue)
 	}
 }
 
-#if !defined(CONFIG_ETH_SAM_GMAC_FORCE_QUEUE) &&                                                   \
-	((GMAC_ACTIVE_QUEUE_NUM != NET_TC_TX_COUNT) ||                                             \
+#if !defined(CONFIG_ETH_SAM_GMAC_FORCE_QUEUE) &&                             \
+	((GMAC_ACTIVE_QUEUE_NUM != NET_TC_TX_COUNT) ||                       \
 	 ((NET_TC_TX_COUNT != NET_TC_RX_COUNT) && defined(CONFIG_NET_VLAN)))
 static int priority2queue(enum net_priority priority)
 {

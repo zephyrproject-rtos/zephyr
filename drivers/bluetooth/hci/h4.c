@@ -567,26 +567,26 @@ static const struct bt_hci_driver_api h4_driver_api = {
 #endif
 };
 
-#define BT_UART_DEVICE_INIT(inst)                                                                  \
-	static K_KERNEL_STACK_DEFINE(rx_thread_stack_##inst, CONFIG_BT_DRV_RX_STACK_SIZE);         \
-	static struct k_thread rx_thread_##inst;                                                   \
-	static const struct h4_config h4_config_##inst = {                                         \
-		.uart = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                       \
-		.rx_thread_stack = rx_thread_stack_##inst,                                         \
-		.rx_thread_stack_size = K_KERNEL_STACK_SIZEOF(rx_thread_stack_##inst),             \
-		.rx_thread = &rx_thread_##inst,                                                    \
-	};                                                                                         \
-	static struct h4_data h4_data_##inst = {                                                   \
-		.rx =                                                                              \
-			{                                                                          \
-				.fifo = Z_FIFO_INITIALIZER(h4_data_##inst.rx.fifo),                \
-			},                                                                         \
-		.tx =                                                                              \
-			{                                                                          \
-				.fifo = Z_FIFO_INITIALIZER(h4_data_##inst.tx.fifo),                \
-			},                                                                         \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &h4_data_##inst, &h4_config_##inst, POST_KERNEL,   \
+#define BT_UART_DEVICE_INIT(inst)                                                                \
+	static K_KERNEL_STACK_DEFINE(rx_thread_stack_##inst, CONFIG_BT_DRV_RX_STACK_SIZE);       \
+	static struct k_thread rx_thread_##inst;                                                 \
+	static const struct h4_config h4_config_##inst = {                                       \
+		.uart = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                     \
+		.rx_thread_stack = rx_thread_stack_##inst,                                       \
+		.rx_thread_stack_size = K_KERNEL_STACK_SIZEOF(rx_thread_stack_##inst),           \
+		.rx_thread = &rx_thread_##inst,                                                  \
+	};                                                                                       \
+	static struct h4_data h4_data_##inst = {                                                 \
+		.rx =                                                                            \
+			{                                                                        \
+				.fifo = Z_FIFO_INITIALIZER(h4_data_##inst.rx.fifo),              \
+			},                                                                       \
+		.tx =                                                                            \
+			{                                                                        \
+				.fifo = Z_FIFO_INITIALIZER(h4_data_##inst.tx.fifo),              \
+			},                                                                       \
+	};                                                                                       \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &h4_data_##inst, &h4_config_##inst, POST_KERNEL, \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &h4_driver_api)
 
 DT_INST_FOREACH_STATUS_OKAY(BT_UART_DEVICE_INIT)

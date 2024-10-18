@@ -426,29 +426,29 @@ static int paw32xx_pm_action(const struct device *dev, enum pm_device_action act
 }
 #endif
 
-#define PAW32XX_SPI_MODE                                                                           \
+#define PAW32XX_SPI_MODE                                                                          \
 	(SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_TRANSFER_MSB)
 
-#define PAW32XX_INIT(n)                                                                            \
-	BUILD_ASSERT(IN_RANGE(DT_INST_PROP_OR(n, res_cpi, RES_MIN), RES_MIN, RES_MAX),             \
-		     "invalid res-cpi");                                                           \
-                                                                                                   \
-	static const struct paw32xx_config paw32xx_cfg_##n = {                                     \
-		.spi = SPI_DT_SPEC_INST_GET(n, PAW32XX_SPI_MODE, 0),                               \
-		.motion_gpio = GPIO_DT_SPEC_INST_GET(n, motion_gpios),                             \
-		.axis_x = DT_INST_PROP(n, zephyr_axis_x),                                          \
-		.axis_y = DT_INST_PROP(n, zephyr_axis_y),                                          \
-		.res_cpi = DT_INST_PROP_OR(n, res_cpi, -1),                                        \
-		.invert_x = DT_INST_PROP(n, invert_x),                                             \
-		.invert_y = DT_INST_PROP(n, invert_y),                                             \
-		.force_awake = DT_INST_PROP(n, force_awake),                                       \
-	};                                                                                         \
-                                                                                                   \
-	static struct paw32xx_data paw32xx_data_##n;                                               \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(n, paw32xx_pm_action);                                            \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, paw32xx_init, PM_DEVICE_DT_INST_GET(n), &paw32xx_data_##n,        \
+#define PAW32XX_INIT(n)                                                                         \
+	BUILD_ASSERT(IN_RANGE(DT_INST_PROP_OR(n, res_cpi, RES_MIN), RES_MIN, RES_MAX),          \
+		     "invalid res-cpi");                                                        \
+                                                                                                \
+	static const struct paw32xx_config paw32xx_cfg_##n = {                                  \
+		.spi = SPI_DT_SPEC_INST_GET(n, PAW32XX_SPI_MODE, 0),                            \
+		.motion_gpio = GPIO_DT_SPEC_INST_GET(n, motion_gpios),                          \
+		.axis_x = DT_INST_PROP(n, zephyr_axis_x),                                       \
+		.axis_y = DT_INST_PROP(n, zephyr_axis_y),                                       \
+		.res_cpi = DT_INST_PROP_OR(n, res_cpi, -1),                                     \
+		.invert_x = DT_INST_PROP(n, invert_x),                                          \
+		.invert_y = DT_INST_PROP(n, invert_y),                                          \
+		.force_awake = DT_INST_PROP(n, force_awake),                                    \
+	};                                                                                      \
+                                                                                                \
+	static struct paw32xx_data paw32xx_data_##n;                                            \
+                                                                                                \
+	PM_DEVICE_DT_INST_DEFINE(n, paw32xx_pm_action);                                         \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(n, paw32xx_init, PM_DEVICE_DT_INST_GET(n), &paw32xx_data_##n,     \
 			      &paw32xx_cfg_##n, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(PAW32XX_INIT)

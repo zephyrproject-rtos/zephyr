@@ -78,18 +78,18 @@ LOG_MODULE_REGISTER(nxp_kinetis_acmp, CONFIG_COMPARATOR_LOG_LEVEL);
 
 #define MCUX_ACMP_ENUM(name, value) _CONCAT_4(COMP_MCUX_ACMP_, name, _, value)
 
-#define MCUX_ACMP_DT_INST_ENUM(inst, name, prop)                                                   \
+#define MCUX_ACMP_DT_INST_ENUM(inst, name, prop)               \
 	MCUX_ACMP_ENUM(name, DT_INST_STRING_TOKEN(inst, prop))
 
-#define MCUX_ACMP_DT_INST_ENUM_OR(inst, name, prop, or)                                            \
+#define MCUX_ACMP_DT_INST_ENUM_OR(inst, name, prop, or)       \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, prop),						\
 		    (MCUX_ACMP_DT_INST_ENUM(inst, name, prop)),					\
 		    (MCUX_ACMP_ENUM(name, or)))
 
-#define MCUX_ACMP_DT_INST_OFFSET_MODE(inst)                                                        \
+#define MCUX_ACMP_DT_INST_OFFSET_MODE(inst)                               \
 	MCUX_ACMP_DT_INST_ENUM_OR(inst, OFFSET_MODE, offset_mode, LEVEL0)
 
-#define MCUX_ACMP_DT_INST_HYST_MODE(inst)                                                          \
+#define MCUX_ACMP_DT_INST_HYST_MODE(inst)                                         \
 	MCUX_ACMP_DT_INST_ENUM_OR(inst, HYSTERESIS_MODE, hysteresis_mode, LEVEL0)
 
 #define MCUX_ACMP_DT_INST_EN_HS_MODE(inst) DT_INST_PROP(inst, enable_high_speed_mode)
@@ -100,32 +100,32 @@ LOG_MODULE_REGISTER(nxp_kinetis_acmp, CONFIG_COMPARATOR_LOG_LEVEL);
 
 #define MCUX_ACMP_DT_INST_EN_PIN_OUT(inst) DT_INST_PROP(inst, enable_pin_out)
 
-#define MCUX_ACMP_DT_INST_MODE_CONFIG_INIT(inst)                                                   \
-	{                                                                                          \
-		.offset_mode = MCUX_ACMP_DT_INST_OFFSET_MODE(inst),                                \
-		.hysteresis_mode = MCUX_ACMP_DT_INST_HYST_MODE(inst),                              \
-		.enable_high_speed_mode = MCUX_ACMP_DT_INST_EN_HS_MODE(inst),                      \
-		.invert_output = MCUX_ACMP_DT_INST_INV_OUT(inst),                                  \
-		.use_unfiltered_output = MCUX_ACMP_DT_INST_USE_UNFILTERED_OUT(inst),               \
-		.enable_pin_output = MCUX_ACMP_DT_INST_EN_PIN_OUT(inst),                           \
+#define MCUX_ACMP_DT_INST_MODE_CONFIG_INIT(inst)                                     \
+	{                                                                            \
+		.offset_mode = MCUX_ACMP_DT_INST_OFFSET_MODE(inst),                  \
+		.hysteresis_mode = MCUX_ACMP_DT_INST_HYST_MODE(inst),                \
+		.enable_high_speed_mode = MCUX_ACMP_DT_INST_EN_HS_MODE(inst),        \
+		.invert_output = MCUX_ACMP_DT_INST_INV_OUT(inst),                    \
+		.use_unfiltered_output = MCUX_ACMP_DT_INST_USE_UNFILTERED_OUT(inst), \
+		.enable_pin_output = MCUX_ACMP_DT_INST_EN_PIN_OUT(inst),             \
 	}
 
 #define MCUX_ACMP_DT_INST_P_MUX_IN(inst) MCUX_ACMP_DT_INST_ENUM(inst, MUX_INPUT, positive_mux_input)
 
 #define MCUX_ACMP_DT_INST_N_MUX_IN(inst) MCUX_ACMP_DT_INST_ENUM(inst, MUX_INPUT, negative_mux_input)
 
-#define MCUX_ACMP_DT_INST_P_PORT_IN(inst)                                                          \
+#define MCUX_ACMP_DT_INST_P_PORT_IN(inst)                                     \
 	MCUX_ACMP_DT_INST_ENUM_OR(inst, PORT_INPUT, positive_port_input, MUX)
 
-#define MCUX_ACMP_DT_INST_N_PORT_IN(inst)                                                          \
+#define MCUX_ACMP_DT_INST_N_PORT_IN(inst)                                     \
 	MCUX_ACMP_DT_INST_ENUM_OR(inst, PORT_INPUT, negative_port_input, MUX)
 
-#define MCUX_ACMP_DT_INST_INPUT_CONFIG_INIT(inst)                                                  \
-	{                                                                                          \
-		.positive_mux_input = MCUX_ACMP_DT_INST_P_MUX_IN(inst),                            \
-		.negative_mux_input = MCUX_ACMP_DT_INST_N_MUX_IN(inst),                            \
-		.positive_port_input = MCUX_ACMP_DT_INST_P_PORT_IN(inst),                          \
-		.negative_port_input = MCUX_ACMP_DT_INST_N_PORT_IN(inst),                          \
+#define MCUX_ACMP_DT_INST_INPUT_CONFIG_INIT(inst)                         \
+	{                                                                 \
+		.positive_mux_input = MCUX_ACMP_DT_INST_P_MUX_IN(inst),   \
+		.negative_mux_input = MCUX_ACMP_DT_INST_N_MUX_IN(inst),   \
+		.positive_port_input = MCUX_ACMP_DT_INST_P_PORT_IN(inst), \
+		.negative_port_input = MCUX_ACMP_DT_INST_N_PORT_IN(inst), \
 	}
 
 #define MCUX_ACMP_DT_INST_FILTER_EN_SAMPLE(inst) DT_INST_PROP(inst, filter_enable_sample)
@@ -134,14 +134,14 @@ LOG_MODULE_REGISTER(nxp_kinetis_acmp, CONFIG_COMPARATOR_LOG_LEVEL);
 
 #define MCUX_ACMP_DT_INST_FILTER_PERIOD(inst) DT_INST_PROP_OR(inst, filter_period, 0)
 
-#define MCUX_ACMP_DT_INST_FILTER_CONFIG_INIT(inst)                                                 \
-	{                                                                                          \
-		.enable_sample = MCUX_ACMP_DT_INST_FILTER_EN_SAMPLE(inst),                         \
-		.filter_count = MCUX_ACMP_DT_INST_FILTER_COUNT(inst),                              \
-		.filter_period = MCUX_ACMP_DT_INST_FILTER_PERIOD(inst),                            \
+#define MCUX_ACMP_DT_INST_FILTER_CONFIG_INIT(inst)                         \
+	{                                                                  \
+		.enable_sample = MCUX_ACMP_DT_INST_FILTER_EN_SAMPLE(inst), \
+		.filter_count = MCUX_ACMP_DT_INST_FILTER_COUNT(inst),      \
+		.filter_period = MCUX_ACMP_DT_INST_FILTER_PERIOD(inst),    \
 	}
 
-#define MCUX_ACMP_DT_INST_DAC_VREF_SOURCE(inst)                                                    \
+#define MCUX_ACMP_DT_INST_DAC_VREF_SOURCE(inst)                                 \
 	MCUX_ACMP_DT_INST_ENUM_OR(inst, DAC_VREF_SOURCE, dac_vref_source, VIN1)
 
 #define MCUX_ACMP_DT_INST_DAC_VALUE(inst) DT_INST_PROP_OR(inst, dac_value, 0)
@@ -150,42 +150,42 @@ LOG_MODULE_REGISTER(nxp_kinetis_acmp, CONFIG_COMPARATOR_LOG_LEVEL);
 
 #define MCUX_ACMP_DT_INST_DAC_EN_HS(inst) DT_INST_PROP(inst, dac_enable_high_speed)
 
-#define MCUX_ACMP_DT_INST_DAC_CONFIG_INIT(inst)                                                    \
-	{                                                                                          \
-		.vref_source = MCUX_ACMP_DT_INST_DAC_VREF_SOURCE(inst),                            \
-		.value = MCUX_ACMP_DT_INST_DAC_VALUE(inst),                                        \
-		.enable_output = MCUX_ACMP_DT_INST_DAC_EN(inst),                                   \
-		.enable_high_speed_mode = MCUX_ACMP_DT_INST_DAC_EN_HS(inst),                       \
+#define MCUX_ACMP_DT_INST_DAC_CONFIG_INIT(inst)                              \
+	{                                                                    \
+		.vref_source = MCUX_ACMP_DT_INST_DAC_VREF_SOURCE(inst),      \
+		.value = MCUX_ACMP_DT_INST_DAC_VALUE(inst),                  \
+		.enable_output = MCUX_ACMP_DT_INST_DAC_EN(inst),             \
+		.enable_high_speed_mode = MCUX_ACMP_DT_INST_DAC_EN_HS(inst), \
 	}
 
 #define MCUX_ACMP_DT_INST_DM_EN_P_CH(inst) DT_INST_PROP(inst, discrete_mode_enable_positive_channel)
 
 #define MCUX_ACMP_DT_INST_DM_EN_N_CH(inst) DT_INST_PROP(inst, discrete_mode_enable_negative_channel)
 
-#define MCUX_ACMP_DT_INST_DM_EN_RES_DIV(inst)                                                      \
+#define MCUX_ACMP_DT_INST_DM_EN_RES_DIV(inst)                     \
 	DT_INST_PROP(inst, discrete_mode_enable_resistor_divider)
 
-#define MCUX_ACMP_DT_INST_DM_CLOCK_SOURCE(inst)                                                    \
+#define MCUX_ACMP_DT_INST_DM_CLOCK_SOURCE(inst)                                     \
 	MCUX_ACMP_DT_INST_ENUM_OR(inst, DM_CLOCK, discrete_mode_clock_source, SLOW)
 
-#define MCUX_ACMP_DT_INST_DM_SAMPLE_TIME(inst)                                                     \
+#define MCUX_ACMP_DT_INST_DM_SAMPLE_TIME(inst)                                         \
 	MCUX_ACMP_DT_INST_ENUM_OR(inst, DM_SAMPLE_TIME, discrete_mode_sample_time, T1)
 
-#define MCUX_ACMP_DT_INST_DM_PHASE1_TIME(inst)                                                     \
+#define MCUX_ACMP_DT_INST_DM_PHASE1_TIME(inst)                                          \
 	MCUX_ACMP_DT_INST_ENUM_OR(inst, DM_PHASE_TIME, discrete_mode_phase1_time, ALT0)
 
-#define MCUX_ACMP_DT_INST_DM_PHASE2_TIME(inst)                                                     \
+#define MCUX_ACMP_DT_INST_DM_PHASE2_TIME(inst)                                          \
 	MCUX_ACMP_DT_INST_ENUM_OR(inst, DM_PHASE_TIME, discrete_mode_phase2_time, ALT0)
 
-#define MCUX_ACMP_DT_INST_DM_CONFIG_INIT(inst)                                                     \
-	{                                                                                          \
-		.enable_positive_channel = MCUX_ACMP_DT_INST_DM_EN_P_CH(inst),                     \
-		.enable_negative_channel = MCUX_ACMP_DT_INST_DM_EN_N_CH(inst),                     \
-		.enable_resistor_divider = MCUX_ACMP_DT_INST_DM_EN_RES_DIV(inst),                  \
-		.clock_source = MCUX_ACMP_DT_INST_DM_CLOCK_SOURCE(inst),                           \
-		.sample_time = MCUX_ACMP_DT_INST_DM_SAMPLE_TIME(inst),                             \
-		.phase1_time = MCUX_ACMP_DT_INST_DM_PHASE1_TIME(inst),                             \
-		.phase2_time = MCUX_ACMP_DT_INST_DM_PHASE2_TIME(inst),                             \
+#define MCUX_ACMP_DT_INST_DM_CONFIG_INIT(inst)                                    \
+	{                                                                         \
+		.enable_positive_channel = MCUX_ACMP_DT_INST_DM_EN_P_CH(inst),    \
+		.enable_negative_channel = MCUX_ACMP_DT_INST_DM_EN_N_CH(inst),    \
+		.enable_resistor_divider = MCUX_ACMP_DT_INST_DM_EN_RES_DIV(inst), \
+		.clock_source = MCUX_ACMP_DT_INST_DM_CLOCK_SOURCE(inst),          \
+		.sample_time = MCUX_ACMP_DT_INST_DM_SAMPLE_TIME(inst),            \
+		.phase1_time = MCUX_ACMP_DT_INST_DM_PHASE1_TIME(inst),            \
+		.phase2_time = MCUX_ACMP_DT_INST_DM_PHASE2_TIME(inst),            \
 	}
 
 #define MCUX_ACMP_DT_INST_EN_WINDOW_MODE(inst) DT_INST_PROP(inst, enable_window_mode)
@@ -584,39 +584,39 @@ static int mcux_acmp_init(const struct device *dev)
 
 #define MCUX_ACMP_IRQ_HANDLER_SYM(inst) _CONCAT(mcux_acmp_irq_init, inst)
 
-#define MCUX_ACMP_IRQ_HANDLER_DEFINE(inst)                                                         \
-	static void MCUX_ACMP_IRQ_HANDLER_SYM(inst)(void)                                          \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),                       \
-			    mcux_acmp_irq_handler, DEVICE_DT_INST_GET(inst), 0);                   \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(inst));                                                    \
+#define MCUX_ACMP_IRQ_HANDLER_DEFINE(inst)                                       \
+	static void MCUX_ACMP_IRQ_HANDLER_SYM(inst)(void)                        \
+	{                                                                        \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),     \
+			    mcux_acmp_irq_handler, DEVICE_DT_INST_GET(inst), 0); \
+                                                                                 \
+		irq_enable(DT_INST_IRQN(inst));                                  \
 	}
 
-#define MCUX_ACMP_DEVICE(inst)                                                                     \
-	PINCTRL_DT_INST_DEFINE(inst);                                                              \
-                                                                                                   \
-	static struct mcux_acmp_data _CONCAT(data, inst);                                          \
-                                                                                                   \
-	MCUX_ACMP_IRQ_HANDLER_DEFINE(inst)                                                         \
-                                                                                                   \
-	static const struct mcux_acmp_config _CONCAT(config, inst) = {                             \
-		.base = (CMP_Type *)DT_INST_REG_ADDR(inst),                                        \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                    \
-		.irq_init = MCUX_ACMP_IRQ_HANDLER_SYM(inst),                                       \
-		.mode_config = MCUX_ACMP_DT_INST_MODE_CONFIG_INIT(inst),                           \
-		.input_config = MCUX_ACMP_DT_INST_INPUT_CONFIG_INIT(inst),                         \
-		.filter_config = MCUX_ACMP_DT_INST_FILTER_CONFIG_INIT(inst),                       \
-		.dac_config = MCUX_ACMP_DT_INST_DAC_CONFIG_INIT(inst),                             \
+#define MCUX_ACMP_DEVICE(inst)                                                           \
+	PINCTRL_DT_INST_DEFINE(inst);                                                    \
+                                                                                         \
+	static struct mcux_acmp_data _CONCAT(data, inst);                                \
+                                                                                         \
+	MCUX_ACMP_IRQ_HANDLER_DEFINE(inst)                                               \
+                                                                                         \
+	static const struct mcux_acmp_config _CONCAT(config, inst) = {                   \
+		.base = (CMP_Type *)DT_INST_REG_ADDR(inst),                              \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                          \
+		.irq_init = MCUX_ACMP_IRQ_HANDLER_SYM(inst),                             \
+		.mode_config = MCUX_ACMP_DT_INST_MODE_CONFIG_INIT(inst),                 \
+		.input_config = MCUX_ACMP_DT_INST_INPUT_CONFIG_INIT(inst),               \
+		.filter_config = MCUX_ACMP_DT_INST_FILTER_CONFIG_INIT(inst),             \
+		.dac_config = MCUX_ACMP_DT_INST_DAC_CONFIG_INIT(inst),                   \
 		IF_ENABLED(COMP_MCUX_ACMP_HAS_DISCRETE_MODE,					\
-			   (.dm_config = MCUX_ACMP_DT_INST_DM_CONFIG_INIT(inst),))                                 \
+			   (.dm_config = MCUX_ACMP_DT_INST_DM_CONFIG_INIT(inst),))                       \
 				    IF_ENABLED(COMP_MCUX_ACMP_HAS_WINDOW_MODE,					\
-			   (.enable_window_mode = MCUX_ACMP_DT_INST_EN_WINDOW_MODE(inst),)) };                        \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, mcux_acmp_pm_callback);                                     \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, mcux_acmp_init, PM_DEVICE_DT_INST_GET(inst),                   \
-			      &_CONCAT(data, inst), &_CONCAT(config, inst), POST_KERNEL,           \
+			   (.enable_window_mode = MCUX_ACMP_DT_INST_EN_WINDOW_MODE(inst),)) };              \
+                                                                                         \
+	PM_DEVICE_DT_INST_DEFINE(inst, mcux_acmp_pm_callback);                           \
+                                                                                         \
+	DEVICE_DT_INST_DEFINE(inst, mcux_acmp_init, PM_DEVICE_DT_INST_GET(inst),         \
+			      &_CONCAT(data, inst), &_CONCAT(config, inst), POST_KERNEL, \
 			      CONFIG_COMPARATOR_INIT_PRIORITY, &mcux_acmp_comp_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_ACMP_DEVICE)

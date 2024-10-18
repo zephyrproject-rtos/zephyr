@@ -860,11 +860,11 @@ static const struct spi_driver_api spi_sam_driver_api = {
 	.release = spi_sam_release,
 };
 
-#define SPI_DMA_INIT(n)                                                                            \
-	.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, tx)),                                \
-	.dma_tx_channel = DT_INST_DMAS_CELL_BY_NAME(n, tx, channel),                               \
-	.dma_tx_perid = DT_INST_DMAS_CELL_BY_NAME(n, tx, perid),                                   \
-	.dma_rx_channel = DT_INST_DMAS_CELL_BY_NAME(n, rx, channel),                               \
+#define SPI_DMA_INIT(n)                                              \
+	.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, tx)),  \
+	.dma_tx_channel = DT_INST_DMAS_CELL_BY_NAME(n, tx, channel), \
+	.dma_tx_perid = DT_INST_DMAS_CELL_BY_NAME(n, tx, perid),     \
+	.dma_rx_channel = DT_INST_DMAS_CELL_BY_NAME(n, rx, channel), \
 	.dma_rx_perid = DT_INST_DMAS_CELL_BY_NAME(n, rx, perid),
 
 #ifdef CONFIG_SPI_SAM_DMA
@@ -873,27 +873,27 @@ static const struct spi_driver_api spi_sam_driver_api = {
 #define SPI_SAM_USE_DMA(n) 0
 #endif
 
-#define SPI_SAM_DEFINE_CONFIG(n)                                                                   \
-	static const struct spi_sam_config spi_sam_config_##n = {                                  \
-		.regs = (Spi *)DT_INST_REG_ADDR(n),                                                \
-		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),                                         \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		.loopback = DT_INST_PROP(n, loopback),                                             \
+#define SPI_SAM_DEFINE_CONFIG(n)                                       \
+	static const struct spi_sam_config spi_sam_config_##n = {      \
+		.regs = (Spi *)DT_INST_REG_ADDR(n),                    \
+		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),             \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),             \
+		.loopback = DT_INST_PROP(n, loopback),                 \
 		COND_CODE_1(SPI_SAM_USE_DMA(n), (SPI_DMA_INIT(n)), ()) }
 
-#define SPI_SAM_RTIO_DEFINE(n)                                                                     \
+#define SPI_SAM_RTIO_DEFINE(n)                                                                  \
 	RTIO_DEFINE(spi_sam_rtio_##n, CONFIG_SPI_SAM_RTIO_SQ_SIZE, CONFIG_SPI_SAM_RTIO_SQ_SIZE)
 
-#define SPI_SAM_DEVICE_INIT(n)                                                                     \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	SPI_SAM_DEFINE_CONFIG(n);                                                                  \
-	COND_CODE_1(CONFIG_SPI_RTIO, (SPI_SAM_RTIO_DEFINE(n)), ());                                  \
-	static struct spi_sam_data spi_sam_dev_data_##n = {                                        \
-		SPI_CONTEXT_INIT_LOCK(spi_sam_dev_data_##n, ctx),                                  \
-		SPI_CONTEXT_INIT_SYNC(spi_sam_dev_data_##n, ctx),                                  \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)                               \
-			IF_ENABLED(CONFIG_SPI_RTIO, (.r = &spi_sam_rtio_##n)) };                      \
-	DEVICE_DT_INST_DEFINE(n, &spi_sam_init, NULL, &spi_sam_dev_data_##n, &spi_sam_config_##n,  \
+#define SPI_SAM_DEVICE_INIT(n)                                                                    \
+	PINCTRL_DT_INST_DEFINE(n);                                                                \
+	SPI_SAM_DEFINE_CONFIG(n);                                                                 \
+	COND_CODE_1(CONFIG_SPI_RTIO, (SPI_SAM_RTIO_DEFINE(n)), ());                                 \
+	static struct spi_sam_data spi_sam_dev_data_##n = {                                       \
+		SPI_CONTEXT_INIT_LOCK(spi_sam_dev_data_##n, ctx),                                 \
+		SPI_CONTEXT_INIT_SYNC(spi_sam_dev_data_##n, ctx),                                 \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)                              \
+			IF_ENABLED(CONFIG_SPI_RTIO, (.r = &spi_sam_rtio_##n)) };                     \
+	DEVICE_DT_INST_DEFINE(n, &spi_sam_init, NULL, &spi_sam_dev_data_##n, &spi_sam_config_##n, \
 			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &spi_sam_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_SAM_DEVICE_INIT)

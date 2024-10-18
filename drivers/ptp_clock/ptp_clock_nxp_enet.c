@@ -222,29 +222,29 @@ static const struct ptp_clock_driver_api ptp_clock_nxp_enet_api = {
 	.rate_adjust = ptp_clock_nxp_enet_rate_adjust,
 };
 
-#define PTP_CLOCK_NXP_ENET_INIT(n)                                                                 \
-	static void nxp_enet_ptp_clock_##n##_irq_config_func(void)                                 \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 0, irq), DT_INST_IRQ_BY_IDX(n, 0, priority),     \
-			    ptp_clock_nxp_enet_isr, DEVICE_DT_INST_GET(n), 0);                     \
-		irq_enable(DT_INST_IRQ_BY_IDX(n, 0, irq));                                         \
-	}                                                                                          \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-                                                                                                   \
-	static const struct ptp_clock_nxp_enet_config ptp_clock_nxp_enet_##n##_config = {          \
-		.module_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                    \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
-		.port = DEVICE_DT_INST_GET(n),                                                     \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (void *)DT_INST_CLOCKS_CELL_BY_IDX(n, 0, name),                    \
-		.irq_config_func = nxp_enet_ptp_clock_##n##_irq_config_func,                       \
-	};                                                                                         \
-                                                                                                   \
-	static struct ptp_clock_nxp_enet_data ptp_clock_nxp_enet_##n##_data;                       \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &ptp_clock_nxp_enet_init, NULL, &ptp_clock_nxp_enet_##n##_data,   \
-			      &ptp_clock_nxp_enet_##n##_config, POST_KERNEL,                       \
+#define PTP_CLOCK_NXP_ENET_INIT(n)                                                               \
+	static void nxp_enet_ptp_clock_##n##_irq_config_func(void)                               \
+	{                                                                                        \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 0, irq), DT_INST_IRQ_BY_IDX(n, 0, priority),   \
+			    ptp_clock_nxp_enet_isr, DEVICE_DT_INST_GET(n), 0);                   \
+		irq_enable(DT_INST_IRQ_BY_IDX(n, 0, irq));                                       \
+	}                                                                                        \
+                                                                                                 \
+	PINCTRL_DT_INST_DEFINE(n);                                                               \
+                                                                                                 \
+	static const struct ptp_clock_nxp_enet_config ptp_clock_nxp_enet_##n##_config = {        \
+		.module_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                  \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                     \
+		.port = DEVICE_DT_INST_GET(n),                                                   \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                              \
+		.clock_subsys = (void *)DT_INST_CLOCKS_CELL_BY_IDX(n, 0, name),                  \
+		.irq_config_func = nxp_enet_ptp_clock_##n##_irq_config_func,                     \
+	};                                                                                       \
+                                                                                                 \
+	static struct ptp_clock_nxp_enet_data ptp_clock_nxp_enet_##n##_data;                     \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(n, &ptp_clock_nxp_enet_init, NULL, &ptp_clock_nxp_enet_##n##_data, \
+			      &ptp_clock_nxp_enet_##n##_config, POST_KERNEL,                     \
 			      CONFIG_PTP_CLOCK_INIT_PRIORITY, &ptp_clock_nxp_enet_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PTP_CLOCK_NXP_ENET_INIT)

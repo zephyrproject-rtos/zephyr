@@ -571,9 +571,9 @@ static int lis2dw12_init(const struct device *dev)
  * LIS2DW12_DEFINE_I2C().
  */
 
-#define LIS2DW12_DEVICE_INIT(inst)                                                                 \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, lis2dw12_init, NULL, &lis2dw12_data_##inst,             \
-				     &lis2dw12_config_##inst, POST_KERNEL,                         \
+#define LIS2DW12_DEVICE_INIT(inst)                                                       \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, lis2dw12_init, NULL, &lis2dw12_data_##inst,   \
+				     &lis2dw12_config_##inst, POST_KERNEL,               \
 				     CONFIG_SENSOR_INIT_PRIORITY, &lis2dw12_driver_api);
 
 /*
@@ -581,19 +581,19 @@ static int lis2dw12_init(const struct device *dev)
  */
 
 #ifdef CONFIG_LIS2DW12_TAP
-#define LIS2DW12_CONFIG_TAP(inst)                                                                  \
-	.tap_mode = DT_INST_PROP(inst, tap_mode),                                                  \
-	.tap_threshold = DT_INST_PROP(inst, tap_threshold),                                        \
-	.tap_shock = DT_INST_PROP(inst, tap_shock),                                                \
-	.tap_latency = DT_INST_PROP(inst, tap_latency),                                            \
+#define LIS2DW12_CONFIG_TAP(inst)                           \
+	.tap_mode = DT_INST_PROP(inst, tap_mode),           \
+	.tap_threshold = DT_INST_PROP(inst, tap_threshold), \
+	.tap_shock = DT_INST_PROP(inst, tap_shock),         \
+	.tap_latency = DT_INST_PROP(inst, tap_latency),     \
 	.tap_quiet = DT_INST_PROP(inst, tap_quiet),
 #else
 #define LIS2DW12_CONFIG_TAP(inst)
 #endif /* CONFIG_LIS2DW12_TAP */
 
 #ifdef CONFIG_LIS2DW12_FREEFALL
-#define LIS2DW12_CONFIG_FREEFALL(inst)                                                             \
-	.freefall_duration = DT_INST_PROP(inst, ff_duration),                                      \
+#define LIS2DW12_CONFIG_FREEFALL(inst)                          \
+	.freefall_duration = DT_INST_PROP(inst, ff_duration),   \
 	.freefall_threshold = DT_INST_PROP(inst, ff_threshold),
 #else
 #define LIS2DW12_CONFIG_FREEFALL(inst)
@@ -612,7 +612,7 @@ static int lis2dw12_init(const struct device *dev)
 #endif
 
 #ifdef CONFIG_LIS2DW12_TRIGGER
-#define LIS2DW12_CFG_IRQ(inst)                                                                     \
+#define LIS2DW12_CFG_IRQ(inst) \
 	.gpio_int = GPIO_DT_SPEC_INST_GET(inst, irq_gpios), .int_pin = DT_INST_PROP(inst, int_pin),
 #else
 #define LIS2DW12_CFG_IRQ(inst)
@@ -629,27 +629,27 @@ static int lis2dw12_init(const struct device *dev)
 		LIS2DW12_CONFIG_SLEEP(inst) COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),		\
 			(LIS2DW12_CFG_IRQ(inst)), ())
 
-#define LIS2DW12_SPI_OPERATION                                                                     \
+#define LIS2DW12_SPI_OPERATION                                                 \
 	(SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA)
 
-#define LIS2DW12_CONFIG_SPI(inst)                                                                  \
-	{STMEMSC_CTX_SPI(&lis2dw12_config_##inst.stmemsc_cfg),                                     \
-	 .stmemsc_cfg =                                                                            \
-		 {                                                                                 \
-			 .spi = SPI_DT_SPEC_INST_GET(inst, LIS2DW12_SPI_OPERATION, 0),             \
-		 },                                                                                \
+#define LIS2DW12_CONFIG_SPI(inst)                                                      \
+	{STMEMSC_CTX_SPI(&lis2dw12_config_##inst.stmemsc_cfg),                         \
+	 .stmemsc_cfg =                                                                \
+		 {                                                                     \
+			 .spi = SPI_DT_SPEC_INST_GET(inst, LIS2DW12_SPI_OPERATION, 0), \
+		 },                                                                    \
 	 LIS2DW12_CONFIG_COMMON(inst)}
 
 /*
  * Instantiation macros used when a device is on an I2C bus.
  */
 
-#define LIS2DW12_CONFIG_I2C(inst)                                                                  \
-	{STMEMSC_CTX_I2C(&lis2dw12_config_##inst.stmemsc_cfg),                                     \
-	 .stmemsc_cfg =                                                                            \
-		 {                                                                                 \
-			 .i2c = I2C_DT_SPEC_INST_GET(inst),                                        \
-		 },                                                                                \
+#define LIS2DW12_CONFIG_I2C(inst)                              \
+	{STMEMSC_CTX_I2C(&lis2dw12_config_##inst.stmemsc_cfg), \
+	 .stmemsc_cfg =                                        \
+		 {                                             \
+			 .i2c = I2C_DT_SPEC_INST_GET(inst),    \
+		 },                                            \
 	 LIS2DW12_CONFIG_COMMON(inst)}
 
 /*

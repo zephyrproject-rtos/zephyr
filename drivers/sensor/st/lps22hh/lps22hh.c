@@ -276,47 +276,47 @@ static int lps22hh_init(const struct device *dev)
 #define LPS22HH_CFG_IRQ(inst)
 #endif /* CONFIG_LPS22HH_TRIGGER */
 
-#define LPS22HH_CONFIG_COMMON(inst)                                                                \
-	.odr = DT_INST_PROP(inst, odr),                                                            \
+#define LPS22HH_CONFIG_COMMON(inst)                             \
+	.odr = DT_INST_PROP(inst, odr),                         \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),		\
 			(LPS22HH_CFG_IRQ(inst)), ())
 
 #define LPS22HH_SPI_OPERATION (SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA)
 
-#define LPS22HH_CONFIG_SPI(inst)                                                                   \
-	{STMEMSC_CTX_SPI(&lps22hh_config_##inst.stmemsc_cfg),                                      \
-	 .stmemsc_cfg =                                                                            \
-		 {                                                                                 \
-			 .spi = SPI_DT_SPEC_INST_GET(inst, LPS22HH_SPI_OPERATION, 0),              \
-		 },                                                                                \
+#define LPS22HH_CONFIG_SPI(inst)                                                      \
+	{STMEMSC_CTX_SPI(&lps22hh_config_##inst.stmemsc_cfg),                         \
+	 .stmemsc_cfg =                                                               \
+		 {                                                                    \
+			 .spi = SPI_DT_SPEC_INST_GET(inst, LPS22HH_SPI_OPERATION, 0), \
+		 },                                                                   \
 	 LPS22HH_CONFIG_COMMON(inst)}
 
 /*
  * Instantiation macros used when a device is on an I2C bus.
  */
 
-#define LPS22HH_CONFIG_I2C(inst)                                                                   \
-	{STMEMSC_CTX_I2C(&lps22hh_config_##inst.stmemsc_cfg),                                      \
-	 .stmemsc_cfg =                                                                            \
-		 {                                                                                 \
-			 .i2c = I2C_DT_SPEC_INST_GET(inst),                                        \
-		 },                                                                                \
+#define LPS22HH_CONFIG_I2C(inst)                              \
+	{STMEMSC_CTX_I2C(&lps22hh_config_##inst.stmemsc_cfg), \
+	 .stmemsc_cfg =                                       \
+		 {                                            \
+			 .i2c = I2C_DT_SPEC_INST_GET(inst),   \
+		 },                                           \
 	 LPS22HH_CONFIG_COMMON(inst)}
 
 /*
  * Instantiation macros used when a device is on an I#C bus.
  */
 
-#define LPS22HH_CONFIG_I3C(inst)                                                                   \
-	{STMEMSC_CTX_I3C(&lps22hh_config_##inst.stmemsc_cfg),                                      \
-	 .stmemsc_cfg =                                                                            \
-		 {                                                                                 \
-			 .i3c = &lps22hh_data_##inst.i3c_dev,                                      \
-		 },                                                                                \
-	 .i3c.bus = DEVICE_DT_GET(DT_INST_BUS(inst)), .i3c.dev_id = I3C_DEVICE_ID_DT_INST(inst),   \
+#define LPS22HH_CONFIG_I3C(inst)                                                                 \
+	{STMEMSC_CTX_I3C(&lps22hh_config_##inst.stmemsc_cfg),                                    \
+	 .stmemsc_cfg =                                                                          \
+		 {                                                                               \
+			 .i3c = &lps22hh_data_##inst.i3c_dev,                                    \
+		 },                                                                              \
+	 .i3c.bus = DEVICE_DT_GET(DT_INST_BUS(inst)), .i3c.dev_id = I3C_DEVICE_ID_DT_INST(inst), \
 	 LPS22HH_CONFIG_COMMON(inst)}
 
-#define LPS22HH_CONFIG_I3C_OR_I2C(inst)                                                            \
+#define LPS22HH_CONFIG_I3C_OR_I2C(inst)                    \
 	COND_CODE_0(DT_INST_PROP_BY_IDX(inst, reg, 1),			\
 		    (LPS22HH_CONFIG_I2C(inst)),				\
 		    (LPS22HH_CONFIG_I3C(inst)))
@@ -326,15 +326,15 @@ static int lps22hh_init(const struct device *dev)
  * bus-specific macro at preprocessor time.
  */
 
-#define LPS22HH_DEFINE(inst)                                                                       \
-	static struct lps22hh_data lps22hh_data_##inst;                                            \
+#define LPS22HH_DEFINE(inst)                                                            \
+	static struct lps22hh_data lps22hh_data_##inst;                                 \
 	static const struct lps22hh_config lps22hh_config_##inst = COND_CODE_1(DT_INST_ON_BUS(inst, spi),					\
 		    (LPS22HH_CONFIG_SPI(inst)),					\
 		    (COND_CODE_1(DT_INST_ON_BUS(inst, i3c),			\
 				 (LPS22HH_CONFIG_I3C_OR_I2C(inst)),		\
-				 (LPS22HH_CONFIG_I2C(inst)))));                       \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, lps22hh_init, NULL, &lps22hh_data_##inst,               \
-				     &lps22hh_config_##inst, POST_KERNEL,                          \
+				 (LPS22HH_CONFIG_I2C(inst)))));            \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, lps22hh_init, NULL, &lps22hh_data_##inst,    \
+				     &lps22hh_config_##inst, POST_KERNEL,               \
 				     CONFIG_SENSOR_INIT_PRIORITY, &lps22hh_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LPS22HH_DEFINE)

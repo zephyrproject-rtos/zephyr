@@ -304,8 +304,8 @@ static const struct adc_driver_api tla2021_driver_api = {
 #endif
 };
 
-#define TLA2021_THREAD_INIT(n)                                                                     \
-	K_THREAD_DEFINE(adc_tla2021_##n##_thread, ACQ_THREAD_STACK_SIZE, tla2021_acq_thread_fn,    \
+#define TLA2021_THREAD_INIT(n)                                                                  \
+	K_THREAD_DEFINE(adc_tla2021_##n##_thread, ACQ_THREAD_STACK_SIZE, tla2021_acq_thread_fn, \
 			DEVICE_DT_INST_GET(n), NULL, NULL, ACQ_THREAD_PRIORITY, 0, 0);
 
 #define TLA2021_INIT(n)                                                                            \

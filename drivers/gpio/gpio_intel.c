@@ -586,22 +586,22 @@ static int gpio_intel_acpi_enum(const struct device *dev, int bank_idx, char *hi
 	return 0;
 }
 
-#define GPIO_INIT_FN_DEFINE(n)                                                                     \
-	static int gpio_intel_init##n(const struct device *dev)                                    \
-	{                                                                                          \
-		return gpio_intel_acpi_enum(dev, DT_INST_PROP(n, group_index),                     \
-					    ACPI_DT_HID(DT_DRV_INST(n)),                           \
-					    ACPI_DT_UID(DT_DRV_INST(n)));                          \
+#define GPIO_INIT_FN_DEFINE(n)                                                 \
+	static int gpio_intel_init##n(const struct device *dev)                \
+	{                                                                      \
+		return gpio_intel_acpi_enum(dev, DT_INST_PROP(n, group_index), \
+					    ACPI_DT_HID(DT_DRV_INST(n)),       \
+					    ACPI_DT_UID(DT_DRV_INST(n)));      \
 	}
 
 #define GPIO_MMIO_ROM_INIT(n)
 
-#define GPIO_INIT_CONFIG(n)                                                                        \
-	static const struct gpio_intel_config gpio_intel_cfg_##n = {                               \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
+#define GPIO_INIT_CONFIG(n)                                                          \
+	static const struct gpio_intel_config gpio_intel_cfg_##n = {                 \
+		.common =                                                            \
+			{                                                            \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n), \
+			},                                                           \
 	}
 #else
 
@@ -651,34 +651,34 @@ static int gpio_intel_dts_init(const struct device *dev)
 	return 0;
 }
 
-#define GPIO_INIT_FN_DEFINE(n)                                                                     \
-	static int gpio_intel_init##n(const struct device *dev)                                    \
-	{                                                                                          \
-		return gpio_intel_dts_init(dev);                                                   \
+#define GPIO_INIT_FN_DEFINE(n)                                  \
+	static int gpio_intel_init##n(const struct device *dev) \
+	{                                                       \
+		return gpio_intel_dts_init(dev);                \
 	}
 
 #define GPIO_MMIO_ROM_INIT(n) DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),
 
-#define GPIO_INIT_CONFIG(n)                                                                        \
-	static const struct gpio_intel_config gpio_intel_cfg_##n = {                               \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
-		GPIO_MMIO_ROM_INIT(n).pin_offset = DT_INST_PROP(n, pin_offset),                    \
-		.group_index = DT_INST_PROP_OR(n, group_index, 0),                                 \
-		.num_pins = DT_INST_PROP(n, ngpios),                                               \
+#define GPIO_INIT_CONFIG(n)                                                          \
+	static const struct gpio_intel_config gpio_intel_cfg_##n = {                 \
+		.common =                                                            \
+			{                                                            \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n), \
+			},                                                           \
+		GPIO_MMIO_ROM_INIT(n).pin_offset = DT_INST_PROP(n, pin_offset),      \
+		.group_index = DT_INST_PROP_OR(n, group_index, 0),                   \
+		.num_pins = DT_INST_PROP(n, ngpios),                                 \
 	}
 
 #endif
 
-#define GPIO_INTEL_DEV_CFG_DATA(n)                                                                 \
-	GPIO_INIT_FN_DEFINE(n)                                                                     \
-	GPIO_INIT_CONFIG(n);                                                                       \
-	static struct gpio_intel_data gpio_intel_data_##n;                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, gpio_intel_init##n, NULL, &gpio_intel_data_##n,                   \
-			      &gpio_intel_cfg_##n, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,         \
+#define GPIO_INTEL_DEV_CFG_DATA(n)                                                         \
+	GPIO_INIT_FN_DEFINE(n)                                                             \
+	GPIO_INIT_CONFIG(n);                                                               \
+	static struct gpio_intel_data gpio_intel_data_##n;                                 \
+                                                                                           \
+	DEVICE_DT_INST_DEFINE(n, gpio_intel_init##n, NULL, &gpio_intel_data_##n,           \
+			      &gpio_intel_cfg_##n, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY, \
 			      &gpio_intel_api);
 
 /* "sub" devices.  no more than GPIO_INTEL_NR_SUBDEVS of these! */

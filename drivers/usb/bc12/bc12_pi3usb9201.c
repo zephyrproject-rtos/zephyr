@@ -606,17 +606,17 @@ static int pi3usb9201_init(const struct device *dev)
 	return pi3usb9201_interrupt_enable(dev, false);
 }
 
-#define PI2USB9201_DEFINE(inst)                                                                    \
-	static struct pi3usb9201_data pi3usb9201_data_##inst;                                      \
-                                                                                                   \
-	static const struct pi3usb9201_config pi3usb9201_config_##inst = {                         \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.intb_gpio = GPIO_DT_SPEC_INST_GET(inst, intb_gpios),                              \
-		.charging_mode = DT_INST_STRING_UPPER_TOKEN(inst, charging_mode),                  \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, pi3usb9201_init, NULL, &pi3usb9201_data_##inst,                \
-			      &pi3usb9201_config_##inst, POST_KERNEL,                              \
+#define PI2USB9201_DEFINE(inst)                                                          \
+	static struct pi3usb9201_data pi3usb9201_data_##inst;                            \
+                                                                                         \
+	static const struct pi3usb9201_config pi3usb9201_config_##inst = {               \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                       \
+		.intb_gpio = GPIO_DT_SPEC_INST_GET(inst, intb_gpios),                    \
+		.charging_mode = DT_INST_STRING_UPPER_TOKEN(inst, charging_mode),        \
+	};                                                                               \
+                                                                                         \
+	DEVICE_DT_INST_DEFINE(inst, pi3usb9201_init, NULL, &pi3usb9201_data_##inst,      \
+			      &pi3usb9201_config_##inst, POST_KERNEL,                    \
 			      CONFIG_APPLICATION_INIT_PRIORITY, &pi3usb9201_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PI2USB9201_DEFINE)

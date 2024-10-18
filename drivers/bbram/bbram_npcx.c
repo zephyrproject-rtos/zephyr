@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(npcx_bbram, CONFIG_BBRAM_LOG_LEVEL);
 #define NPCX_STATUS_VSBY BIT(1)
 #define NPCX_STATUS_VCC1 BIT(0)
 
-#define DRV_STATUS(dev)                                                                            \
+#define DRV_STATUS(dev) \
 	(*((volatile uint8_t *)((const struct bbram_npcx_config *)(dev)->config)->status_reg_addr))
 
 static int get_bit_and_reset(const struct device *dev, int mask)
@@ -97,9 +97,9 @@ static const struct bbram_driver_api bbram_npcx_driver_api = {
 	.write = bbram_npcx_write,
 };
 
-#define BBRAM_INIT(inst)                                                                           \
-	BBRAM_NPCX_DECL_CONFIG(inst);                                                              \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, &bbram_cfg_##inst, PRE_KERNEL_1,             \
+#define BBRAM_INIT(inst)                                                               \
+	BBRAM_NPCX_DECL_CONFIG(inst);                                                  \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, &bbram_cfg_##inst, PRE_KERNEL_1, \
 			      CONFIG_BBRAM_INIT_PRIORITY, &bbram_npcx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BBRAM_INIT);

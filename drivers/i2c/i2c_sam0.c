@@ -752,59 +752,59 @@ static const struct i2c_driver_api i2c_sam0_driver_api = {
 };
 
 #ifdef CONFIG_I2C_SAM0_DMA_DRIVEN
-#define I2C_SAM0_DMA_CHANNELS(n)                                                                   \
-	.dma_dev = DEVICE_DT_GET(ATMEL_SAM0_DT_INST_DMA_CTLR(n, tx)),                              \
-	.write_dma_request = ATMEL_SAM0_DT_INST_DMA_TRIGSRC(n, tx),                                \
-	.read_dma_request = ATMEL_SAM0_DT_INST_DMA_TRIGSRC(n, rx),                                 \
+#define I2C_SAM0_DMA_CHANNELS(n)                                      \
+	.dma_dev = DEVICE_DT_GET(ATMEL_SAM0_DT_INST_DMA_CTLR(n, tx)), \
+	.write_dma_request = ATMEL_SAM0_DT_INST_DMA_TRIGSRC(n, tx),   \
+	.read_dma_request = ATMEL_SAM0_DT_INST_DMA_TRIGSRC(n, rx),    \
 	.dma_channel = ATMEL_SAM0_DT_INST_DMA_CHANNEL(n, rx),
 #else
 #define I2C_SAM0_DMA_CHANNELS(n)
 #endif
 
-#define SAM0_I2C_IRQ_CONNECT(n, m)                                                                 \
-	do {                                                                                       \
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, m, irq), DT_INST_IRQ_BY_IDX(n, m, priority),     \
-			    i2c_sam0_isr, DEVICE_DT_INST_GET(n), 0);                               \
-		irq_enable(DT_INST_IRQ_BY_IDX(n, m, irq));                                         \
+#define SAM0_I2C_IRQ_CONNECT(n, m)                                                             \
+	do {                                                                                   \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, m, irq), DT_INST_IRQ_BY_IDX(n, m, priority), \
+			    i2c_sam0_isr, DEVICE_DT_INST_GET(n), 0);                           \
+		irq_enable(DT_INST_IRQ_BY_IDX(n, m, irq));                                     \
 	} while (false)
 
 #if DT_INST_IRQ_HAS_IDX(0, 3)
-#define I2C_SAM0_IRQ_HANDLER(n)                                                                    \
-	static void i2c_sam0_irq_config_##n(const struct device *dev)                              \
-	{                                                                                          \
-		SAM0_I2C_IRQ_CONNECT(n, 0);                                                        \
-		SAM0_I2C_IRQ_CONNECT(n, 1);                                                        \
-		SAM0_I2C_IRQ_CONNECT(n, 2);                                                        \
-		SAM0_I2C_IRQ_CONNECT(n, 3);                                                        \
+#define I2C_SAM0_IRQ_HANDLER(n)                                       \
+	static void i2c_sam0_irq_config_##n(const struct device *dev) \
+	{                                                             \
+		SAM0_I2C_IRQ_CONNECT(n, 0);                           \
+		SAM0_I2C_IRQ_CONNECT(n, 1);                           \
+		SAM0_I2C_IRQ_CONNECT(n, 2);                           \
+		SAM0_I2C_IRQ_CONNECT(n, 3);                           \
 	}
 #else
-#define I2C_SAM0_IRQ_HANDLER(n)                                                                    \
-	static void i2c_sam0_irq_config_##n(const struct device *dev)                              \
-	{                                                                                          \
-		SAM0_I2C_IRQ_CONNECT(n, 0);                                                        \
+#define I2C_SAM0_IRQ_HANDLER(n)                                       \
+	static void i2c_sam0_irq_config_##n(const struct device *dev) \
+	{                                                             \
+		SAM0_I2C_IRQ_CONNECT(n, 0);                           \
 	}
 #endif
 
 #ifdef MCLK
-#define I2C_SAM0_CONFIG(n)                                                                         \
-	static const struct i2c_sam0_dev_config i2c_sam0_dev_config_##n = {                        \
-		.regs = (SercomI2cm *)DT_INST_REG_ADDR(n),                                         \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
-		.mclk = (volatile uint32_t *)MCLK_MASK_DT_INT_REG_ADDR(n),                         \
-		.mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, bit)),                       \
-		.gclk_core_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch),                   \
-		.irq_config_func = &i2c_sam0_irq_config_##n,                                       \
+#define I2C_SAM0_CONFIG(n)                                                       \
+	static const struct i2c_sam0_dev_config i2c_sam0_dev_config_##n = {      \
+		.regs = (SercomI2cm *)DT_INST_REG_ADDR(n),                       \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                       \
+		.bitrate = DT_INST_PROP(n, clock_frequency),                     \
+		.mclk = (volatile uint32_t *)MCLK_MASK_DT_INT_REG_ADDR(n),       \
+		.mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, bit)),     \
+		.gclk_core_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch), \
+		.irq_config_func = &i2c_sam0_irq_config_##n,                     \
 		I2C_SAM0_DMA_CHANNELS(n)}
 #else /* !MCLK */
-#define I2C_SAM0_CONFIG(n)                                                                         \
-	static const struct i2c_sam0_dev_config i2c_sam0_dev_config_##n = {                        \
-		.regs = (SercomI2cm *)DT_INST_REG_ADDR(n),                                         \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
-		.pm_apbcmask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, pm, bit)),                       \
-		.gclk_clkctrl_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, clkctrl_id),               \
-		.irq_config_func = &i2c_sam0_irq_config_##n,                                       \
+#define I2C_SAM0_CONFIG(n)                                                           \
+	static const struct i2c_sam0_dev_config i2c_sam0_dev_config_##n = {          \
+		.regs = (SercomI2cm *)DT_INST_REG_ADDR(n),                           \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                           \
+		.bitrate = DT_INST_PROP(n, clock_frequency),                         \
+		.pm_apbcmask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, pm, bit)),         \
+		.gclk_clkctrl_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, clkctrl_id), \
+		.irq_config_func = &i2c_sam0_irq_config_##n,                         \
 		I2C_SAM0_DMA_CHANNELS(n)}
 #endif
 

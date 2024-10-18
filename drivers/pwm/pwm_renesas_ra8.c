@@ -490,81 +490,81 @@ static int pwm_ra8_init(const struct device *dev)
 #define ELC_EVENT_GPT_COUNTER_OVERFLOW(channel)  _ELC_EVENT_GPT_COUNTER_OVERFLOW(channel)
 
 #ifdef CONFIG_PWM_CAPTURE
-#define PWM_RA_IRQ_CONFIG_INIT(index)                                                              \
-	do {                                                                                       \
-                                                                                                   \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, gtioca, irq),                               \
-			    DT_INST_IRQ_BY_NAME(index, gtioca, priority),                          \
-			    gpt_capture_compare_a_isr, NULL, 0);                                   \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, overflow, irq),                             \
-			    DT_INST_IRQ_BY_NAME(index, overflow, priority),                        \
-			    gpt_counter_overflow_isr, NULL, 0);                                    \
+#define PWM_RA_IRQ_CONFIG_INIT(index)                                       \
+	do {                                                                \
+                                                                            \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, gtioca, irq),        \
+			    DT_INST_IRQ_BY_NAME(index, gtioca, priority),   \
+			    gpt_capture_compare_a_isr, NULL, 0);            \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, overflow, irq),      \
+			    DT_INST_IRQ_BY_NAME(index, overflow, priority), \
+			    gpt_counter_overflow_isr, NULL, 0);             \
 	} while (0)
 
 #else
 #define PWM_RA_IRQ_CONFIG_INIT(index)
 #endif /* CONFIG_PWM_CAPTURE */
 
-#define PWM_RA8_INIT(index)                                                                        \
-	PINCTRL_DT_INST_DEFINE(index);                                                             \
-	static const gpt_extended_cfg_t g_timer1_extend_##index = {                                \
-		.gtioca =                                                                          \
-			{                                                                          \
-				.output_enabled = false,                                           \
-				.stop_level = GPT_PIN_LEVEL_LOW,                                   \
-			},                                                                         \
-		.gtiocb =                                                                          \
-			{                                                                          \
-				.output_enabled = false,                                           \
-				.stop_level = GPT_PIN_LEVEL_LOW,                                   \
-			},                                                                         \
-		.start_source = (gpt_source_t)(GPT_SOURCE_NONE),                                   \
-		.stop_source = (gpt_source_t)(GPT_SOURCE_NONE),                                    \
-		.clear_source = (gpt_source_t)(GPT_SOURCE_NONE),                                   \
-		.count_up_source = (gpt_source_t)(GPT_SOURCE_NONE),                                \
-		.count_down_source = (gpt_source_t)(GPT_SOURCE_NONE),                              \
-		.capture_a_source = (gpt_source_t)(GPT_SOURCE_NONE),                               \
-		.capture_b_source = (gpt_source_t)(GPT_SOURCE_NONE),                               \
-		.capture_a_ipl = DT_INST_IRQ_BY_NAME(index, gtioca, priority),                     \
-		.capture_b_ipl = BSP_IRQ_DISABLED,                                                 \
-		.capture_a_irq = DT_INST_IRQ_BY_NAME(index, gtioca, irq),                          \
-		.capture_b_irq = FSP_INVALID_VECTOR,                                               \
-		.capture_filter_gtioca = GPT_CAPTURE_FILTER_NONE,                                  \
-		.capture_filter_gtiocb = GPT_CAPTURE_FILTER_NONE,                                  \
-		.p_pwm_cfg = NULL,                                                                 \
-		.gtior_setting.gtior = (0x0U),                                                     \
-	};                                                                                         \
-	static struct pwm_ra8_data pwm_ra8_data_##index = {                                        \
-		.fsp_cfg =                                                                         \
-			{                                                                          \
-				.mode = TIMER_MODE_PWM,                                            \
-				.source_div = DT_INST_PROP(index, divider),                        \
-				.channel = DT_INST_PROP(index, channel),                           \
-				.cycle_end_ipl = DT_INST_IRQ_BY_NAME(index, overflow, priority),   \
-				.cycle_end_irq = DT_INST_IRQ_BY_NAME(index, overflow, irq),        \
-			},                                                                         \
-		.extend_cfg = g_timer1_extend_##index,                                             \
-		.capture_a_event = ELC_EVENT_GPT_CAPTURE_COMPARE_A(DT_INST_PROP(index, channel)),  \
-		.overflow_event = ELC_EVENT_GPT_COUNTER_OVERFLOW(DT_INST_PROP(index, channel)),    \
-	};                                                                                         \
-	static const struct pwm_ra8_config pwm_ra8_config_##index = {                              \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                   \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(index)),                            \
-		.clock_subsys = {                                                                  \
-			.mstp = (uint32_t)DT_INST_CLOCKS_CELL_BY_IDX(index, 0, mstp),              \
-			.stop_bit = DT_INST_CLOCKS_CELL_BY_IDX(index, 0, stop_bit),                \
-		}};                                                                                \
-	static int pwm_ra8_init_##index(const struct device *dev)                                  \
-	{                                                                                          \
-		PWM_RA_IRQ_CONFIG_INIT(index);                                                     \
-		int err = pwm_ra8_init(dev);                                                       \
-		if (err != 0) {                                                                    \
-			return err;                                                                \
-		}                                                                                  \
-		return 0;                                                                          \
-	}                                                                                          \
-	DEVICE_DT_INST_DEFINE(index, pwm_ra8_init_##index, NULL, &pwm_ra8_data_##index,            \
-			      &pwm_ra8_config_##index, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,      \
+#define PWM_RA8_INIT(index)                                                                       \
+	PINCTRL_DT_INST_DEFINE(index);                                                            \
+	static const gpt_extended_cfg_t g_timer1_extend_##index = {                               \
+		.gtioca =                                                                         \
+			{                                                                         \
+				.output_enabled = false,                                          \
+				.stop_level = GPT_PIN_LEVEL_LOW,                                  \
+			},                                                                        \
+		.gtiocb =                                                                         \
+			{                                                                         \
+				.output_enabled = false,                                          \
+				.stop_level = GPT_PIN_LEVEL_LOW,                                  \
+			},                                                                        \
+		.start_source = (gpt_source_t)(GPT_SOURCE_NONE),                                  \
+		.stop_source = (gpt_source_t)(GPT_SOURCE_NONE),                                   \
+		.clear_source = (gpt_source_t)(GPT_SOURCE_NONE),                                  \
+		.count_up_source = (gpt_source_t)(GPT_SOURCE_NONE),                               \
+		.count_down_source = (gpt_source_t)(GPT_SOURCE_NONE),                             \
+		.capture_a_source = (gpt_source_t)(GPT_SOURCE_NONE),                              \
+		.capture_b_source = (gpt_source_t)(GPT_SOURCE_NONE),                              \
+		.capture_a_ipl = DT_INST_IRQ_BY_NAME(index, gtioca, priority),                    \
+		.capture_b_ipl = BSP_IRQ_DISABLED,                                                \
+		.capture_a_irq = DT_INST_IRQ_BY_NAME(index, gtioca, irq),                         \
+		.capture_b_irq = FSP_INVALID_VECTOR,                                              \
+		.capture_filter_gtioca = GPT_CAPTURE_FILTER_NONE,                                 \
+		.capture_filter_gtiocb = GPT_CAPTURE_FILTER_NONE,                                 \
+		.p_pwm_cfg = NULL,                                                                \
+		.gtior_setting.gtior = (0x0U),                                                    \
+	};                                                                                        \
+	static struct pwm_ra8_data pwm_ra8_data_##index = {                                       \
+		.fsp_cfg =                                                                        \
+			{                                                                         \
+				.mode = TIMER_MODE_PWM,                                           \
+				.source_div = DT_INST_PROP(index, divider),                       \
+				.channel = DT_INST_PROP(index, channel),                          \
+				.cycle_end_ipl = DT_INST_IRQ_BY_NAME(index, overflow, priority),  \
+				.cycle_end_irq = DT_INST_IRQ_BY_NAME(index, overflow, irq),       \
+			},                                                                        \
+		.extend_cfg = g_timer1_extend_##index,                                            \
+		.capture_a_event = ELC_EVENT_GPT_CAPTURE_COMPARE_A(DT_INST_PROP(index, channel)), \
+		.overflow_event = ELC_EVENT_GPT_COUNTER_OVERFLOW(DT_INST_PROP(index, channel)),   \
+	};                                                                                        \
+	static const struct pwm_ra8_config pwm_ra8_config_##index = {                             \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                  \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(index)),                           \
+		.clock_subsys = {                                                                 \
+			.mstp = (uint32_t)DT_INST_CLOCKS_CELL_BY_IDX(index, 0, mstp),             \
+			.stop_bit = DT_INST_CLOCKS_CELL_BY_IDX(index, 0, stop_bit),               \
+		}};                                                                               \
+	static int pwm_ra8_init_##index(const struct device *dev)                                 \
+	{                                                                                         \
+		PWM_RA_IRQ_CONFIG_INIT(index);                                                    \
+		int err = pwm_ra8_init(dev);                                                      \
+		if (err != 0) {                                                                   \
+			return err;                                                               \
+		}                                                                                 \
+		return 0;                                                                         \
+	}                                                                                         \
+	DEVICE_DT_INST_DEFINE(index, pwm_ra8_init_##index, NULL, &pwm_ra8_data_##index,           \
+			      &pwm_ra8_config_##index, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,     \
 			      &pwm_ra8_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_RA8_INIT);

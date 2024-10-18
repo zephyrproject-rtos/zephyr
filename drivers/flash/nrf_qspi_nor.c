@@ -148,21 +148,21 @@ BUILD_ASSERT(DT_INST_PROP(0, cpol) == DT_INST_PROP(0, cpha),
 #define QSPI_PROP_AT(prop, idx) DT_PROP_BY_IDX(QSPI_NODE, prop, idx)
 #define QSPI_PROP_LEN(prop)     DT_PROP_LEN(QSPI_NODE, prop)
 
-#define INST_0_QER                                                                                 \
+#define INST_0_QER                                                                                \
 	_CONCAT(JESD216_DW15_QER_VAL_, DT_STRING_TOKEN(DT_DRV_INST(0), quad_enable_requirements))
 
 #define IS_EQUAL(x, y)       ((x) == (y))
 #define SR1_WRITE_CLEARS_SR2 IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_S2B1v1)
 
-#define SR2_WRITE_NEEDS_SR1                                                                        \
-	(IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_S2B1v1) ||                                      \
-	 IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_S2B1v4) ||                                      \
+#define SR2_WRITE_NEEDS_SR1                                   \
+	(IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_S2B1v1) || \
+	 IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_S2B1v4) || \
 	 IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_S2B1v5))
 
-#define QER_IS_S2B1                                                                                \
-	(IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_S2B1v1) ||                                      \
-	 IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_S2B1v4) ||                                      \
-	 IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_S2B1v5) ||                                      \
+#define QER_IS_S2B1                                           \
+	(IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_S2B1v1) || \
+	 IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_S2B1v4) || \
+	 IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_S2B1v5) || \
 	 IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_S2B1v6))
 
 BUILD_ASSERT((IS_EQUAL(INST_0_QER, JESD216_DW15_QER_VAL_NONE) ||

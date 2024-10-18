@@ -67,7 +67,7 @@ struct ps2_npcx_ctrl_data {
 };
 
 /* Driver convenience defines */
-#define HAL_PS2_INSTANCE(dev)                                                                      \
+#define HAL_PS2_INSTANCE(dev)                                                          \
 	((struct ps2_reg *)((const struct ps2_npcx_ctrl_config *)(dev)->config)->base)
 
 static uint8_t ps2_npcx_ctrl_get_ch_clk_mask(uint8_t channel_id)

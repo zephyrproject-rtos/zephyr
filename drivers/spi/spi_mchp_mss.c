@@ -454,31 +454,31 @@ static const struct spi_driver_api mss_spi_driver_api = {
 	.release = mss_spi_release,
 };
 
-#define MSS_SPI_INIT(n)                                                                            \
-	static int mss_spi_init_##n(const struct device *dev)                                      \
-	{                                                                                          \
-		mss_spi_init(dev);                                                                 \
-                                                                                                   \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mss_spi_interrupt,          \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-                                                                                                   \
-		return 0;                                                                          \
-	}                                                                                          \
-                                                                                                   \
-	static const struct mss_spi_config mss_spi_config_##n = {                                  \
-		.base = DT_INST_REG_ADDR(n),                                                       \
-		.clock_freq = DT_INST_PROP(n, clock_frequency),                                    \
-	};                                                                                         \
-                                                                                                   \
-	static struct mss_spi_data mss_spi_data_##n = {                                            \
-		SPI_CONTEXT_INIT_LOCK(mss_spi_data_##n, ctx),                                      \
-		SPI_CONTEXT_INIT_SYNC(mss_spi_data_##n, ctx),                                      \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, mss_spi_init_##n, NULL, &mss_spi_data_##n, &mss_spi_config_##n,   \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                     \
+#define MSS_SPI_INIT(n)                                                                          \
+	static int mss_spi_init_##n(const struct device *dev)                                    \
+	{                                                                                        \
+		mss_spi_init(dev);                                                               \
+                                                                                                 \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mss_spi_interrupt,        \
+			    DEVICE_DT_INST_GET(n), 0);                                           \
+                                                                                                 \
+		irq_enable(DT_INST_IRQN(n));                                                     \
+                                                                                                 \
+		return 0;                                                                        \
+	}                                                                                        \
+                                                                                                 \
+	static const struct mss_spi_config mss_spi_config_##n = {                                \
+		.base = DT_INST_REG_ADDR(n),                                                     \
+		.clock_freq = DT_INST_PROP(n, clock_frequency),                                  \
+	};                                                                                       \
+                                                                                                 \
+	static struct mss_spi_data mss_spi_data_##n = {                                          \
+		SPI_CONTEXT_INIT_LOCK(mss_spi_data_##n, ctx),                                    \
+		SPI_CONTEXT_INIT_SYNC(mss_spi_data_##n, ctx),                                    \
+	};                                                                                       \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(n, mss_spi_init_##n, NULL, &mss_spi_data_##n, &mss_spi_config_##n, \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                   \
 			      &mss_spi_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MSS_SPI_INIT)

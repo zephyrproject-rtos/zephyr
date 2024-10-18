@@ -28,16 +28,16 @@ struct stepper_direction_map {
 	enum stepper_direction direction;
 };
 
-#define STEPPER_DIRECTION_MAP_ENTRY(_name, _dir)                                                   \
-	{                                                                                          \
-		.name = _name,                                                                     \
-		.direction = _dir,                                                                 \
+#define STEPPER_DIRECTION_MAP_ENTRY(_name, _dir) \
+	{                                        \
+		.name = _name,                   \
+		.direction = _dir,               \
 	}
 
-#define STEPPER_MICROSTEP_MAP(_name, _microstep)                                                   \
-	{                                                                                          \
-		.name = _name,                                                                     \
-		.microstep = _microstep,                                                           \
+#define STEPPER_MICROSTEP_MAP(_name, _microstep) \
+	{                                        \
+		.name = _name,                   \
+		.microstep = _microstep,         \
 	}
 
 static void print_callback(const struct device *dev, const enum stepper_event event)

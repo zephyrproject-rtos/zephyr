@@ -239,27 +239,27 @@ static const struct gpio_driver_api gpio_numicro_driver_api = {
 	.manage_callback = gpio_numicro_manage_callback,
 };
 
-#define GPIO_NUMICRO_INIT(n)                                                                       \
-	static int gpio_numicro_port##n##_init(const struct device *dev)                           \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_numicro_isr,           \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-		return 0;                                                                          \
-	}                                                                                          \
-                                                                                                   \
-	static struct gpio_numicro_data gpio_numicro_port##n##_data;                               \
-                                                                                                   \
-	static const struct gpio_numicro_config gpio_numicro_port##n##_config = {                  \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
-		.regs = (GPIO_T *)DT_INST_REG_ADDR(n),                                             \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, gpio_numicro_port##n##_init, NULL, &gpio_numicro_port##n##_data,  \
-			      &gpio_numicro_port##n##_config, PRE_KERNEL_1,                        \
+#define GPIO_NUMICRO_INIT(n)                                                                      \
+	static int gpio_numicro_port##n##_init(const struct device *dev)                          \
+	{                                                                                         \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_numicro_isr,          \
+			    DEVICE_DT_INST_GET(n), 0);                                            \
+		irq_enable(DT_INST_IRQN(n));                                                      \
+		return 0;                                                                         \
+	}                                                                                         \
+                                                                                                  \
+	static struct gpio_numicro_data gpio_numicro_port##n##_data;                              \
+                                                                                                  \
+	static const struct gpio_numicro_config gpio_numicro_port##n##_config = {                 \
+		.common =                                                                         \
+			{                                                                         \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),              \
+			},                                                                        \
+		.regs = (GPIO_T *)DT_INST_REG_ADDR(n),                                            \
+	};                                                                                        \
+                                                                                                  \
+	DEVICE_DT_INST_DEFINE(n, gpio_numicro_port##n##_init, NULL, &gpio_numicro_port##n##_data, \
+			      &gpio_numicro_port##n##_config, PRE_KERNEL_1,                       \
 			      CONFIG_GPIO_INIT_PRIORITY, &gpio_numicro_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_NUMICRO_INIT)

@@ -123,17 +123,17 @@ int jc42_init(const struct device *dev)
 	return rc;
 }
 
-#define JC42_DEFINE(inst)                                                                          \
-	static struct jc42_data jc42_data_##inst;                                                  \
-                                                                                                   \
-	static const struct jc42_config jc42_config_##inst = {                                     \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.resolution = DT_INST_PROP(inst, resolution),                                      \
+#define JC42_DEFINE(inst)                                                                    \
+	static struct jc42_data jc42_data_##inst;                                            \
+                                                                                             \
+	static const struct jc42_config jc42_config_##inst = {                               \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                           \
+		.resolution = DT_INST_PROP(inst, resolution),                                \
 		IF_ENABLED(CONFIG_JC42_TRIGGER,                                                    \
-			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),))};       \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, jc42_init, NULL, &jc42_data_##inst,                     \
-				     &jc42_config_##inst, POST_KERNEL,                             \
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),))}; \
+                                                                                             \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, jc42_init, NULL, &jc42_data_##inst,               \
+				     &jc42_config_##inst, POST_KERNEL,                       \
 				     CONFIG_SENSOR_INIT_PRIORITY, &jc42_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(JC42_DEFINE)

@@ -271,20 +271,20 @@ static const struct adc_driver_api mcp320x_adc_api = {
 
 #define INST_DT_MCP320X(inst, t) DT_INST(inst, microchip_mcp##t)
 
-#define MCP320X_DEVICE(t, n, ch)                                                                   \
-	static struct mcp320x_data mcp##t##_data_##n = {                                           \
-		ADC_CONTEXT_INIT_TIMER(mcp##t##_data_##n, ctx),                                    \
-		ADC_CONTEXT_INIT_LOCK(mcp##t##_data_##n, ctx),                                     \
-		ADC_CONTEXT_INIT_SYNC(mcp##t##_data_##n, ctx),                                     \
-	};                                                                                         \
-	static const struct mcp320x_config mcp##t##_config_##n = {                                 \
-		.bus = SPI_DT_SPEC_GET(INST_DT_MCP320X(n, t),                                      \
-				       SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8),    \
-				       0),                                                         \
-		.channels = ch,                                                                    \
-	};                                                                                         \
-	DEVICE_DT_DEFINE(INST_DT_MCP320X(n, t), &mcp320x_init, NULL, &mcp##t##_data_##n,           \
-			 &mcp##t##_config_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,              \
+#define MCP320X_DEVICE(t, n, ch)                                                                \
+	static struct mcp320x_data mcp##t##_data_##n = {                                        \
+		ADC_CONTEXT_INIT_TIMER(mcp##t##_data_##n, ctx),                                 \
+		ADC_CONTEXT_INIT_LOCK(mcp##t##_data_##n, ctx),                                  \
+		ADC_CONTEXT_INIT_SYNC(mcp##t##_data_##n, ctx),                                  \
+	};                                                                                      \
+	static const struct mcp320x_config mcp##t##_config_##n = {                              \
+		.bus = SPI_DT_SPEC_GET(INST_DT_MCP320X(n, t),                                   \
+				       SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), \
+				       0),                                                      \
+		.channels = ch,                                                                 \
+	};                                                                                      \
+	DEVICE_DT_DEFINE(INST_DT_MCP320X(n, t), &mcp320x_init, NULL, &mcp##t##_data_##n,        \
+			 &mcp##t##_config_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,           \
 			 &mcp320x_adc_api)
 
 /*
@@ -299,7 +299,7 @@ static const struct adc_driver_api mcp320x_adc_api = {
 
 #define CALL_WITH_ARG(arg, expr) expr(arg)
 
-#define INST_DT_MCP320X_FOREACH(t, inst_expr)                                                      \
+#define INST_DT_MCP320X_FOREACH(t, inst_expr)                \
 	LISTIFY(DT_NUM_INST_STATUS_OKAY(microchip_mcp##t),	\
 		CALL_WITH_ARG, (;), inst_expr)
 

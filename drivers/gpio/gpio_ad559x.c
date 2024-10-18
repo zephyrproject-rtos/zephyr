@@ -208,19 +208,19 @@ static int gpio_ad559x_init(const struct device *dev)
 	return 0;
 }
 
-#define GPIO_AD559X_DEFINE(inst)                                                                   \
-	static const struct gpio_ad559x_config gpio_ad559x_config##inst = {                        \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),            \
-			},                                                                         \
-		.mfd_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                    \
-	};                                                                                         \
-                                                                                                   \
-	static struct gpio_ad559x_data gpio_ad559x_data##inst;                                     \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, gpio_ad559x_init, NULL, &gpio_ad559x_data##inst,               \
-			      &gpio_ad559x_config##inst, POST_KERNEL, CONFIG_MFD_INIT_PRIORITY,    \
+#define GPIO_AD559X_DEFINE(inst)                                                                \
+	static const struct gpio_ad559x_config gpio_ad559x_config##inst = {                     \
+		.common =                                                                       \
+			{                                                                       \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),         \
+			},                                                                      \
+		.mfd_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                 \
+	};                                                                                      \
+                                                                                                \
+	static struct gpio_ad559x_data gpio_ad559x_data##inst;                                  \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(inst, gpio_ad559x_init, NULL, &gpio_ad559x_data##inst,            \
+			      &gpio_ad559x_config##inst, POST_KERNEL, CONFIG_MFD_INIT_PRIORITY, \
 			      &gpio_ad559x_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_AD559X_DEFINE)

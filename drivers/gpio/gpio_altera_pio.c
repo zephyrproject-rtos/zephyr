@@ -284,11 +284,11 @@ static const struct gpio_driver_api gpio_altera_driver_api = {
 	.pin_interrupt_configure = gpio_altera_pin_interrupt_configure,
 	.manage_callback = gpio_altera_manage_callback};
 
-#define GPIO_CFG_IRQ(idx, n)                                                                       \
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, idx, irq),                                               \
+#define GPIO_CFG_IRQ(idx, n)                                                                \
+	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, idx, irq),                                        \
 		    COND_CODE_1(DT_INST_IRQ_HAS_CELL(n, priority), \
-				DT_INST_IRQ(n, priority), (0)),                 \
-								 gpio_altera_irq_handler,          \
+				DT_INST_IRQ(n, priority), (0)),          \
+								 gpio_altera_irq_handler,   \
 								 DEVICE_DT_INST_GET(n), 0);
 
 #define CREATE_GPIO_DEVICE(n)                                                                      \

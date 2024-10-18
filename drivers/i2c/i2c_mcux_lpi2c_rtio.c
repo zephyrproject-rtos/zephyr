@@ -332,41 +332,41 @@ static const struct i2c_driver_api mcux_lpi2c_driver_api = {
 #define I2C_MCUX_LPI2C_SDA_INIT(n)
 #endif /* CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY */
 
-#define I2C_MCUX_LPI2C_INIT(n)                                                                     \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-                                                                                                   \
-	static void mcux_lpi2c_config_func_##n(const struct device *dev);                          \
-                                                                                                   \
-	static const struct mcux_lpi2c_config mcux_lpi2c_config_##n = {                            \
-		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),                              \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
-		.irq_config_func = mcux_lpi2c_config_func_##n,                                     \
-		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
-		I2C_MCUX_LPI2C_SCL_INIT(n) I2C_MCUX_LPI2C_SDA_INIT(n).bus_idle_timeout_ns =        \
-			UTIL_AND(DT_INST_NODE_HAS_PROP(n, bus_idle_timeout),                       \
-				 DT_INST_PROP(n, bus_idle_timeout)),                               \
-	};                                                                                         \
-                                                                                                   \
-	I2C_RTIO_DEFINE(_i2c##n##_lpi2c_rtio,                                                      \
-			DT_INST_PROP_OR(n, sq_size, CONFIG_I2C_RTIO_SQ_SIZE),                      \
-			DT_INST_PROP_OR(n, cq_size, CONFIG_I2C_RTIO_CQ_SIZE));                     \
-                                                                                                   \
-	static struct mcux_lpi2c_data mcux_lpi2c_data_##n = {                                      \
-		.ctx = &CONCAT(_i2c, n, _lpi2c_rtio),                                              \
-	};                                                                                         \
-                                                                                                   \
-	I2C_DEVICE_DT_INST_DEFINE(n, mcux_lpi2c_init, NULL, &mcux_lpi2c_data_##n,                  \
-				  &mcux_lpi2c_config_##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,   \
-				  &mcux_lpi2c_driver_api);                                         \
-                                                                                                   \
-	static void mcux_lpi2c_config_func_##n(const struct device *dev)                           \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_lpi2c_isr,             \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define I2C_MCUX_LPI2C_INIT(n)                                                                   \
+	PINCTRL_DT_INST_DEFINE(n);                                                               \
+                                                                                                 \
+	static void mcux_lpi2c_config_func_##n(const struct device *dev);                        \
+                                                                                                 \
+	static const struct mcux_lpi2c_config mcux_lpi2c_config_##n = {                          \
+		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),                            \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                              \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),            \
+		.irq_config_func = mcux_lpi2c_config_func_##n,                                   \
+		.bitrate = DT_INST_PROP(n, clock_frequency),                                     \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                     \
+		I2C_MCUX_LPI2C_SCL_INIT(n) I2C_MCUX_LPI2C_SDA_INIT(n).bus_idle_timeout_ns =      \
+			UTIL_AND(DT_INST_NODE_HAS_PROP(n, bus_idle_timeout),                     \
+				 DT_INST_PROP(n, bus_idle_timeout)),                             \
+	};                                                                                       \
+                                                                                                 \
+	I2C_RTIO_DEFINE(_i2c##n##_lpi2c_rtio,                                                    \
+			DT_INST_PROP_OR(n, sq_size, CONFIG_I2C_RTIO_SQ_SIZE),                    \
+			DT_INST_PROP_OR(n, cq_size, CONFIG_I2C_RTIO_CQ_SIZE));                   \
+                                                                                                 \
+	static struct mcux_lpi2c_data mcux_lpi2c_data_##n = {                                    \
+		.ctx = &CONCAT(_i2c, n, _lpi2c_rtio),                                            \
+	};                                                                                       \
+                                                                                                 \
+	I2C_DEVICE_DT_INST_DEFINE(n, mcux_lpi2c_init, NULL, &mcux_lpi2c_data_##n,                \
+				  &mcux_lpi2c_config_##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, \
+				  &mcux_lpi2c_driver_api);                                       \
+                                                                                                 \
+	static void mcux_lpi2c_config_func_##n(const struct device *dev)                         \
+	{                                                                                        \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_lpi2c_isr,           \
+			    DEVICE_DT_INST_GET(n), 0);                                           \
+                                                                                                 \
+		irq_enable(DT_INST_IRQN(n));                                                     \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_MCUX_LPI2C_INIT)

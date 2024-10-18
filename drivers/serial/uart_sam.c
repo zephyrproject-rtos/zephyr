@@ -430,22 +430,22 @@ static const struct uart_driver_api uart_sam_driver_api = {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-#define UART_SAM_DECLARE_CFG(n, IRQ_FUNC_INIT)                                                     \
-	static const struct uart_sam_dev_cfg uart##n##_sam_config = {                              \
-		.regs = (Uart *)DT_INST_REG_ADDR(n),                                               \
-		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),                                         \
-                                                                                                   \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-                                                                                                   \
+#define UART_SAM_DECLARE_CFG(n, IRQ_FUNC_INIT)                        \
+	static const struct uart_sam_dev_cfg uart##n##_sam_config = { \
+		.regs = (Uart *)DT_INST_REG_ADDR(n),                  \
+		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),            \
+                                                                      \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),            \
+                                                                      \
 		IRQ_FUNC_INIT}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define UART_SAM_CONFIG_FUNC(n)                                                                    \
-	static void uart##n##_sam_irq_config_func(const struct device *port)                       \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_sam_isr,               \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define UART_SAM_CONFIG_FUNC(n)                                                      \
+	static void uart##n##_sam_irq_config_func(const struct device *port)         \
+	{                                                                            \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_sam_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                               \
+		irq_enable(DT_INST_IRQN(n));                                         \
 	}
 #define UART_SAM_IRQ_CFG_FUNC_INIT(n) .irq_config_func = uart##n##_sam_irq_config_func
 #define UART_SAM_INIT_CFG(n)          UART_SAM_DECLARE_CFG(n, UART_SAM_IRQ_CFG_FUNC_INIT(n))
@@ -455,19 +455,19 @@ static const struct uart_driver_api uart_sam_driver_api = {
 #define UART_SAM_INIT_CFG(n) UART_SAM_DECLARE_CFG(n, UART_SAM_IRQ_CFG_FUNC_INIT)
 #endif
 
-#define UART_SAM_INIT(n)                                                                           \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	static struct uart_sam_dev_data uart##n##_sam_data = {                                     \
-		.baud_rate = DT_INST_PROP(n, current_speed),                                       \
-	};                                                                                         \
-                                                                                                   \
-	static const struct uart_sam_dev_cfg uart##n##_sam_config;                                 \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, uart_sam_init, NULL, &uart##n##_sam_data, &uart##n##_sam_config,  \
-			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, &uart_sam_driver_api);    \
-                                                                                                   \
-	UART_SAM_CONFIG_FUNC(n)                                                                    \
-                                                                                                   \
+#define UART_SAM_INIT(n)                                                                          \
+	PINCTRL_DT_INST_DEFINE(n);                                                                \
+	static struct uart_sam_dev_data uart##n##_sam_data = {                                    \
+		.baud_rate = DT_INST_PROP(n, current_speed),                                      \
+	};                                                                                        \
+                                                                                                  \
+	static const struct uart_sam_dev_cfg uart##n##_sam_config;                                \
+                                                                                                  \
+	DEVICE_DT_INST_DEFINE(n, uart_sam_init, NULL, &uart##n##_sam_data, &uart##n##_sam_config, \
+			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, &uart_sam_driver_api);   \
+                                                                                                  \
+	UART_SAM_CONFIG_FUNC(n)                                                                   \
+                                                                                                  \
 	UART_SAM_INIT_CFG(n);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_SAM_INIT)

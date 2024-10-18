@@ -316,9 +316,9 @@ static int lis2ds12_init(const struct device *dev)
  * LIS2DS12_DEFINE_I2C().
  */
 
-#define LIS2DS12_DEVICE_INIT(inst)                                                                 \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, lis2ds12_init, NULL, &lis2ds12_data_##inst,             \
-				     &lis2ds12_config_##inst, POST_KERNEL,                         \
+#define LIS2DS12_DEVICE_INIT(inst)                                                       \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, lis2ds12_init, NULL, &lis2ds12_data_##inst,   \
+				     &lis2ds12_config_##inst, POST_KERNEL,               \
 				     CONFIG_SENSOR_INIT_PRIORITY, &lis2ds12_driver_api);
 
 /*
@@ -331,33 +331,33 @@ static int lis2ds12_init(const struct device *dev)
 #define LIS2DS12_CFG_IRQ(inst)
 #endif /* CONFIG_LIS2DS12_TRIGGER */
 
-#define LIS2DS12_CONFIG_COMMON(inst)                                                               \
-	.range = DT_INST_PROP(inst, range), .pm = DT_INST_PROP(inst, power_mode),                  \
-	.odr = DT_INST_PROP(inst, odr),                                                            \
+#define LIS2DS12_CONFIG_COMMON(inst)                                              \
+	.range = DT_INST_PROP(inst, range), .pm = DT_INST_PROP(inst, power_mode), \
+	.odr = DT_INST_PROP(inst, odr),                                           \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),		\
 			(LIS2DS12_CFG_IRQ(inst)), ())
 
-#define LIS2DS12_SPI_OPERATION                                                                     \
+#define LIS2DS12_SPI_OPERATION                                                 \
 	(SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA)
 
-#define LIS2DS12_CONFIG_SPI(inst)                                                                  \
-	{STMEMSC_CTX_SPI(&lis2ds12_config_##inst.stmemsc_cfg),                                     \
-	 .stmemsc_cfg =                                                                            \
-		 {                                                                                 \
-			 .spi = SPI_DT_SPEC_INST_GET(inst, LIS2DS12_SPI_OPERATION, 0),             \
-		 },                                                                                \
+#define LIS2DS12_CONFIG_SPI(inst)                                                      \
+	{STMEMSC_CTX_SPI(&lis2ds12_config_##inst.stmemsc_cfg),                         \
+	 .stmemsc_cfg =                                                                \
+		 {                                                                     \
+			 .spi = SPI_DT_SPEC_INST_GET(inst, LIS2DS12_SPI_OPERATION, 0), \
+		 },                                                                    \
 	 LIS2DS12_CONFIG_COMMON(inst)}
 
 /*
  * Instantiation macros used when a device is on an I2C bus.
  */
 
-#define LIS2DS12_CONFIG_I2C(inst)                                                                  \
-	{STMEMSC_CTX_I2C(&lis2ds12_config_##inst.stmemsc_cfg),                                     \
-	 .stmemsc_cfg =                                                                            \
-		 {                                                                                 \
-			 .i2c = I2C_DT_SPEC_INST_GET(inst),                                        \
-		 },                                                                                \
+#define LIS2DS12_CONFIG_I2C(inst)                              \
+	{STMEMSC_CTX_I2C(&lis2ds12_config_##inst.stmemsc_cfg), \
+	 .stmemsc_cfg =                                        \
+		 {                                             \
+			 .i2c = I2C_DT_SPEC_INST_GET(inst),    \
+		 },                                            \
 	 LIS2DS12_CONFIG_COMMON(inst)}
 
 /*
@@ -365,11 +365,11 @@ static int lis2ds12_init(const struct device *dev)
  * bus-specific macro at preprocessor time.
  */
 
-#define LIS2DS12_DEFINE(inst)                                                                      \
-	static struct lis2ds12_data lis2ds12_data_##inst;                                          \
+#define LIS2DS12_DEFINE(inst)                                                       \
+	static struct lis2ds12_data lis2ds12_data_##inst;                           \
 	static const struct lis2ds12_config lis2ds12_config_##inst = COND_CODE_1(DT_INST_ON_BUS(inst, spi),				\
 		    (LIS2DS12_CONFIG_SPI(inst)),			\
-		    (LIS2DS12_CONFIG_I2C(inst)));                \
+		    (LIS2DS12_CONFIG_I2C(inst))); \
 	LIS2DS12_DEVICE_INIT(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(LIS2DS12_DEFINE)

@@ -418,22 +418,22 @@ static const struct display_driver_api nt35510_api = {
 	.set_pixel_format = nt35510_set_pixel_format,
 };
 
-#define NT35510_DEFINE(n)                                                                          \
-	static const struct nt35510_config nt35510_config_##n = {                                  \
-		.mipi_dsi = DEVICE_DT_GET(DT_INST_BUS(n)),                                         \
-		.reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                            \
-		.backlight = GPIO_DT_SPEC_INST_GET_OR(n, bl_gpios, {0}),                           \
-		.data_lanes = DT_INST_PROP_BY_IDX(n, data_lanes, 0),                               \
-		.width = DT_INST_PROP(n, width),                                                   \
-		.height = DT_INST_PROP(n, height),                                                 \
-		.channel = DT_INST_REG_ADDR(n),                                                    \
-		.rotation = DT_INST_PROP(n, rotation),                                             \
-	};                                                                                         \
-                                                                                                   \
-	static struct nt35510_data nt35510_data_##n = {                                            \
-		.pixel_format = DT_INST_PROP(n, pixel_format),                                     \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &nt35510_init, NULL, &nt35510_data_##n, &nt35510_config_##n,      \
+#define NT35510_DEFINE(n)                                                                       \
+	static const struct nt35510_config nt35510_config_##n = {                               \
+		.mipi_dsi = DEVICE_DT_GET(DT_INST_BUS(n)),                                      \
+		.reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                         \
+		.backlight = GPIO_DT_SPEC_INST_GET_OR(n, bl_gpios, {0}),                        \
+		.data_lanes = DT_INST_PROP_BY_IDX(n, data_lanes, 0),                            \
+		.width = DT_INST_PROP(n, width),                                                \
+		.height = DT_INST_PROP(n, height),                                              \
+		.channel = DT_INST_REG_ADDR(n),                                                 \
+		.rotation = DT_INST_PROP(n, rotation),                                          \
+	};                                                                                      \
+                                                                                                \
+	static struct nt35510_data nt35510_data_##n = {                                         \
+		.pixel_format = DT_INST_PROP(n, pixel_format),                                  \
+	};                                                                                      \
+	DEVICE_DT_INST_DEFINE(n, &nt35510_init, NULL, &nt35510_data_##n, &nt35510_config_##n,   \
 			      POST_KERNEL, CONFIG_DISPLAY_NT35510_INIT_PRIORITY, &nt35510_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NT35510_DEFINE)

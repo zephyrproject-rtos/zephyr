@@ -42,25 +42,25 @@ LOG_MODULE_REGISTER(mfd_axp192, CONFIG_MFD_LOG_LEVEL);
 #define AXP192_GPIO012_FUNC_VAL_ADC        0x04U
 #define AXP192_GPIO012_FUNC_VAL_OUTPUT_LOW 0x05U
 #define AXP192_GPIO012_FUNC_VAL_FLOAT      0x06U
-#define AXP192_GPIO012_FUNC_MASK                                                                   \
-	(AXP192_GPIO012_FUNC_VAL_OUTPUT_OD | AXP192_GPIO012_FUNC_VAL_INPUT |                       \
-	 AXP192_GPIO012_FUNC_VAL_LDO | AXP192_GPIO012_FUNC_VAL_ADC |                               \
+#define AXP192_GPIO012_FUNC_MASK                                             \
+	(AXP192_GPIO012_FUNC_VAL_OUTPUT_OD | AXP192_GPIO012_FUNC_VAL_INPUT | \
+	 AXP192_GPIO012_FUNC_VAL_LDO | AXP192_GPIO012_FUNC_VAL_ADC |         \
 	 AXP192_GPIO012_FUNC_VAL_OUTPUT_LOW | AXP192_GPIO012_FUNC_VAL_FLOAT)
 
 #define AXP192_GPIO34_FUNC_ENA           0x80U
 #define AXP192_GPIO3_FUNC_VAL_CHARGE_CTL 0x00U
 #define AXP192_GPIO3_FUNC_VAL_OUTPUT_OD  0x01U
 #define AXP192_GPIO3_FUNC_VAL_INPUT      0x02U
-#define AXP192_GPIO3_FUNC_MASK                                                                     \
-	(AXP192_GPIO34_FUNC_ENA | AXP192_GPIO3_FUNC_VAL_CHARGE_CTL |                               \
+#define AXP192_GPIO3_FUNC_MASK                                          \
+	(AXP192_GPIO34_FUNC_ENA | AXP192_GPIO3_FUNC_VAL_CHARGE_CTL |    \
 	 AXP192_GPIO3_FUNC_VAL_OUTPUT_OD | AXP192_GPIO3_FUNC_VAL_INPUT)
 
 #define AXP192_GPIO4_FUNC_VAL_CHARGE_CTL 0x00U
 #define AXP192_GPIO4_FUNC_VAL_OUTPUT_OD  0x04U
 #define AXP192_GPIO4_FUNC_VAL_INPUT      0x08U
 #define AXP192_GPIO4_FUNC_VAL_ADC        0x0CU
-#define AXP192_GPIO4_FUNC_MASK                                                                     \
-	(AXP192_GPIO34_FUNC_ENA | AXP192_GPIO4_FUNC_VAL_CHARGE_CTL |                               \
+#define AXP192_GPIO4_FUNC_MASK                                          \
+	(AXP192_GPIO34_FUNC_ENA | AXP192_GPIO4_FUNC_VAL_CHARGE_CTL |    \
 	 AXP192_GPIO4_FUNC_VAL_OUTPUT_OD | AXP192_GPIO4_FUNC_VAL_INPUT)
 
 #define AXP192_EXTEN_ENA  0x04U
@@ -76,7 +76,7 @@ LOG_MODULE_REGISTER(mfd_axp192, CONFIG_MFD_LOG_LEVEL);
 #define AXP192_GPIO1_INPUT_VAL      0x20U
 #define AXP192_GPIO2_INPUT_VAL      0x40U
 #define AXP192_GPIO012_INTPUT_SHIFT 4U
-#define AXP192_GPIO012_INTPUT_MASK                                                                 \
+#define AXP192_GPIO012_INTPUT_MASK                                                 \
 	(AXP192_GPIO0_INPUT_VAL | AXP192_GPIO1_INPUT_VAL | AXP192_GPIO2_INPUT_VAL)
 #define AXP192_GPIO3_INPUT_VAL     0x10U
 #define AXP192_GPIO4_INPUT_VAL     0x20U
@@ -86,7 +86,7 @@ LOG_MODULE_REGISTER(mfd_axp192, CONFIG_MFD_LOG_LEVEL);
 #define AXP192_GPIO0_OUTPUT_VAL 0x01U
 #define AXP192_GPIO1_OUTPUT_VAL 0x02U
 #define AXP192_GPIO2_OUTPUT_VAL 0x04U
-#define AXP192_GPIO012_OUTPUT_MASK                                                                 \
+#define AXP192_GPIO012_OUTPUT_MASK                                                    \
 	(AXP192_GPIO0_OUTPUT_VAL | AXP192_GPIO1_OUTPUT_VAL | AXP192_GPIO2_OUTPUT_VAL)
 
 #define AXP192_GPIO3_OUTPUT_VAL   0x01U
@@ -606,15 +606,15 @@ int mfd_axp192_gpio_write_port(const struct device *dev, uint8_t value, uint8_t 
 	return 0;
 }
 
-#define MFD_AXP192_DEFINE(inst)                                                                    \
-	static const struct mfd_axp192_config config##inst = {                                     \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.vbusen_disable = DT_INST_PROP_OR(inst, vbusen_disable, false),                    \
-	};                                                                                         \
-                                                                                                   \
-	static struct mfd_axp192_data data##inst;                                                  \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, mfd_axp192_init, NULL, &data##inst, &config##inst,             \
+#define MFD_AXP192_DEFINE(inst)                                                        \
+	static const struct mfd_axp192_config config##inst = {                         \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                     \
+		.vbusen_disable = DT_INST_PROP_OR(inst, vbusen_disable, false),        \
+	};                                                                             \
+                                                                                       \
+	static struct mfd_axp192_data data##inst;                                      \
+                                                                                       \
+	DEVICE_DT_INST_DEFINE(inst, mfd_axp192_init, NULL, &data##inst, &config##inst, \
 			      POST_KERNEL, CONFIG_MFD_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MFD_AXP192_DEFINE);

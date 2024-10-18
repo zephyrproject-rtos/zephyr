@@ -59,11 +59,11 @@
 
 #ifdef CONFIG_FLASH_SIMULATOR_STATS
 /* increment a unit erase cycles counter */
-#define ERASE_CYCLES_INC(U)                                                                        \
-	do {                                                                                       \
-		if (U < STATS_PAGE_COUNT_THRESHOLD) {                                              \
-			(*(&flash_sim_stats.erase_cycles_unit0 + (U)) += 1);                       \
-		}                                                                                  \
+#define ERASE_CYCLES_INC(U)                                                  \
+	do {                                                                 \
+		if (U < STATS_PAGE_COUNT_THRESHOLD) {                        \
+			(*(&flash_sim_stats.erase_cycles_unit0 + (U)) += 1); \
+		}                                                            \
 	} while (false)
 
 #if (CONFIG_FLASH_SIMULATOR_STAT_PAGE_COUNT > STATS_PAGE_COUNT_THRESHOLD)
@@ -124,13 +124,13 @@ STATS_NAME_END(flash_sim_thresholds);
 
 #define FLASH_SIM_STATS_INC(group__, var__)       STATS_INC(group__, var__)
 #define FLASH_SIM_STATS_INCN(group__, var__, n__) STATS_INCN(group__, var__, n__)
-#define FLASH_SIM_STATS_INIT_AND_REG(group__, size__, name__)                                      \
+#define FLASH_SIM_STATS_INIT_AND_REG(group__, size__, name__) \
 	STATS_INIT_AND_REG(group__, size__, name__)
 
 #else
 
-#define ERASE_CYCLES_INC(U)                                                                        \
-	do {                                                                                       \
+#define ERASE_CYCLES_INC(U) \
+	do {                \
 	} while (false)
 #define FLASH_SIM_STATS_INC(group__, var__)
 #define FLASH_SIM_STATS_INCN(group__, var__, n__)
@@ -147,7 +147,7 @@ static bool flash_rm_at_exit;
 static bool flash_in_ram;
 #else
 #if DT_NODE_HAS_PROP(DT_PARENT(SOC_NV_FLASH_NODE), memory_region)
-#define FLASH_SIMULATOR_MREGION                                                                    \
+#define FLASH_SIMULATOR_MREGION                                                             \
 	LINKER_DT_NODE_REGION_NAME(DT_PHANDLE(DT_PARENT(SOC_NV_FLASH_NODE), memory_region))
 static uint8_t mock_flash[FLASH_SIMULATOR_FLASH_SIZE] Z_GENERIC_SECTION(FLASH_SIMULATOR_MREGION);
 #else

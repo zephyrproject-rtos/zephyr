@@ -911,15 +911,15 @@ static int fdc2x1x_init(const struct device *dev)
 #define FDC2X1X_INTB(n) IF_ENABLED(CONFIG_FDC2X1X_TRIGGER, \
 		   (FDC2X1X_INTB_PROPS(n)))
 
-#define FDC2X1X_CH_CFG_INIT(ch)                                                                    \
-	{                                                                                          \
-		.rcount = DT_PROP(ch, rcount),                                                     \
-		.offset = DT_PROP(ch, offset),                                                     \
-		.settle_count = DT_PROP(ch, settlecount),                                          \
-		.fref_divider = DT_PROP(ch, fref_divider),                                         \
-		.idrive = DT_PROP(ch, idrive),                                                     \
-		.fin_sel = DT_PROP(ch, fin_sel),                                                   \
-		.inductance = DT_PROP(ch, inductance),                                             \
+#define FDC2X1X_CH_CFG_INIT(ch)                            \
+	{                                                  \
+		.rcount = DT_PROP(ch, rcount),             \
+		.offset = DT_PROP(ch, offset),             \
+		.settle_count = DT_PROP(ch, settlecount),  \
+		.fref_divider = DT_PROP(ch, fref_divider), \
+		.idrive = DT_PROP(ch, idrive),             \
+		.fin_sel = DT_PROP(ch, fin_sel),           \
+		.inductance = DT_PROP(ch, inductance),     \
 	},
 
 #define FDC2X1X_CHANNEL_BUF_INIT(ch) 0,

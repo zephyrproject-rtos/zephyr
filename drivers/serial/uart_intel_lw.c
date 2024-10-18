@@ -53,8 +53,8 @@
 /* defined values */
 #define UART_INTEL_LW_NO_ERROR         (0u)
 #define INTEL_LW_UART_CLEAR_STATUS_VAL (0u)
-#define INTEL_LW_UART_PENDING_MASK                                                                 \
-	(INTEL_LW_UART_STATUS_RRDY_MSK | INTEL_LW_UART_STATUS_TRDY_MSK |                           \
+#define INTEL_LW_UART_PENDING_MASK                                       \
+	(INTEL_LW_UART_STATUS_RRDY_MSK | INTEL_LW_UART_STATUS_TRDY_MSK | \
 	 INTEL_LW_UART_STATUS_E_MSK | INTEL_LW_UART_STATUS_EOP_MSK)
 
 /***********************/
@@ -949,16 +949,16 @@ static const struct uart_driver_api uart_intel_lw_driver_api = {
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-#define UART_INTEL_LW_IRQ_CONFIG_FUNC(n)                                                           \
-	static void uart_intel_lw_irq_config_func_##n(const struct device *dev)                    \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_intel_lw_isr,          \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define UART_INTEL_LW_IRQ_CONFIG_FUNC(n)                                                  \
+	static void uart_intel_lw_irq_config_func_##n(const struct device *dev)           \
+	{                                                                                 \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_intel_lw_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                                    \
+                                                                                          \
+		irq_enable(DT_INST_IRQN(n));                                              \
 	}
 
-#define UART_INTEL_LW_IRQ_CONFIG_INIT(n)                                                           \
+#define UART_INTEL_LW_IRQ_CONFIG_INIT(n)                                                  \
 	.irq_config_func = uart_intel_lw_irq_config_func_##n, .irq_num = DT_INST_IRQN(n),
 
 #else
@@ -968,31 +968,31 @@ static const struct uart_driver_api uart_intel_lw_driver_api = {
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-#define UART_INTEL_LW_DEVICE_INIT(n)                                                               \
-	UART_INTEL_LW_IRQ_CONFIG_FUNC(n)                                                           \
-	static struct uart_intel_lw_device_data uart_intel_lw_dev_data_##n = {                     \
-		.uart_cfg =                                                                        \
-			{                                                                          \
-				.baudrate = DT_INST_PROP(n, current_speed),                        \
-				.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),    \
-				.stop_bits =                                                       \
-					DT_INST_ENUM_IDX_OR(n, stop_bits, UART_CFG_STOP_BITS_1),   \
-				.data_bits =                                                       \
-					DT_INST_ENUM_IDX_OR(n, data_bits, UART_CFG_DATA_BITS_8),   \
-				.flow_ctrl = DT_INST_PROP(n, hw_flow_control)                      \
-						     ? UART_CFG_FLOW_CTRL_RTS_CTS                  \
-						     : UART_CFG_FLOW_CTRL_NONE,                    \
-			},                                                                         \
-	};                                                                                         \
-                                                                                                   \
-	static const struct uart_intel_lw_device_config uart_intel_lw_dev_cfg_##n = {              \
-		.base = DT_INST_REG_ADDR(n),                                                       \
-		.flags = ((DT_INST_PROP(n, fixed_baudrate) ? INTEL_LW_UART_FB : 0) |               \
-			  (DT_INST_PROP(n, hw_flow_control) ? INTEL_LW_UART_FC : 0)),              \
-		UART_INTEL_LW_IRQ_CONFIG_INIT(n)};                                                 \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, uart_intel_lw_init, NULL, &uart_intel_lw_dev_data_##n,            \
-			      &uart_intel_lw_dev_cfg_##n, PRE_KERNEL_1,                            \
+#define UART_INTEL_LW_DEVICE_INIT(n)                                                             \
+	UART_INTEL_LW_IRQ_CONFIG_FUNC(n)                                                         \
+	static struct uart_intel_lw_device_data uart_intel_lw_dev_data_##n = {                   \
+		.uart_cfg =                                                                      \
+			{                                                                        \
+				.baudrate = DT_INST_PROP(n, current_speed),                      \
+				.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),  \
+				.stop_bits =                                                     \
+					DT_INST_ENUM_IDX_OR(n, stop_bits, UART_CFG_STOP_BITS_1), \
+				.data_bits =                                                     \
+					DT_INST_ENUM_IDX_OR(n, data_bits, UART_CFG_DATA_BITS_8), \
+				.flow_ctrl = DT_INST_PROP(n, hw_flow_control)                    \
+						     ? UART_CFG_FLOW_CTRL_RTS_CTS                \
+						     : UART_CFG_FLOW_CTRL_NONE,                  \
+			},                                                                       \
+	};                                                                                       \
+                                                                                                 \
+	static const struct uart_intel_lw_device_config uart_intel_lw_dev_cfg_##n = {            \
+		.base = DT_INST_REG_ADDR(n),                                                     \
+		.flags = ((DT_INST_PROP(n, fixed_baudrate) ? INTEL_LW_UART_FB : 0) |             \
+			  (DT_INST_PROP(n, hw_flow_control) ? INTEL_LW_UART_FC : 0)),            \
+		UART_INTEL_LW_IRQ_CONFIG_INIT(n)};                                               \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(n, uart_intel_lw_init, NULL, &uart_intel_lw_dev_data_##n,          \
+			      &uart_intel_lw_dev_cfg_##n, PRE_KERNEL_1,                          \
 			      CONFIG_SERIAL_INIT_PRIORITY, &uart_intel_lw_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_INTEL_LW_DEVICE_INIT)

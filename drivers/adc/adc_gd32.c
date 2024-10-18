@@ -266,7 +266,7 @@ static int adc_gd32_start_read(const struct device *dev, const struct adc_sequen
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_SOC_SERIES_GD32F4XX) || defined(CONFIG_SOC_SERIES_GD32F3X0) ||                  \
+#if defined(CONFIG_SOC_SERIES_GD32F4XX) || defined(CONFIG_SOC_SERIES_GD32F3X0) || \
 	defined(CONFIG_SOC_SERIES_GD32L23X)
 	ADC_CTL0(cfg->reg) &= ~ADC_CTL0_DRES;
 	ADC_CTL0(cfg->reg) |= CTL0_DRES(resolution_id);
@@ -350,7 +350,7 @@ static int adc_gd32_init(const struct device *dev)
 
 	(void)reset_line_toggle_dt(&cfg->reset);
 
-#if defined(CONFIG_SOC_SERIES_GD32F403) || defined(CONFIG_SOC_SERIES_GD32VF103) ||                 \
+#if defined(CONFIG_SOC_SERIES_GD32F403) || defined(CONFIG_SOC_SERIES_GD32VF103) || \
 	defined(CONFIG_SOC_SERIES_GD32F3X0) || defined(CONFIG_SOC_SERIES_GD32L23X)
 	/* Set SWRCST as the regular channel external trigger. */
 	ADC_CTL1(cfg->reg) &= ~ADC_CTL1_ETSRC;
@@ -377,12 +377,12 @@ static int adc_gd32_init(const struct device *dev)
 	return 0;
 }
 
-#define HANDLE_SHARED_IRQ(n, active_irq)                                                           \
-	static const struct device *const dev_##n = DEVICE_DT_INST_GET(n);                         \
-	const struct adc_gd32_config *cfg_##n = dev_##n->config;                                   \
-                                                                                                   \
-	if ((cfg_##n->irq_num == active_irq) && (ADC_CTL0(cfg_##n->reg) & ADC_CTL0_EOCIE)) {       \
-		adc_gd32_isr(dev_##n);                                                             \
+#define HANDLE_SHARED_IRQ(n, active_irq)                                                     \
+	static const struct device *const dev_##n = DEVICE_DT_INST_GET(n);                   \
+	const struct adc_gd32_config *cfg_##n = dev_##n->config;                             \
+                                                                                             \
+	if ((cfg_##n->irq_num == active_irq) && (ADC_CTL0(cfg_##n->reg) & ADC_CTL0_EOCIE)) { \
+		adc_gd32_isr(dev_##n);                                                       \
 	}
 
 static void adc_gd32_global_irq_handler(const struct device *dev)
@@ -430,23 +430,23 @@ static void adc_gd32_global_irq_cfg(void)
 #define ADC_CLOCK_SOURCE(n)
 #endif
 
-#define ADC_GD32_INIT(n)                                                                           \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	static struct adc_gd32_data adc_gd32_data_##n = {                                          \
-		ADC_CONTEXT_INIT_TIMER(adc_gd32_data_##n, ctx),                                    \
-		ADC_CONTEXT_INIT_LOCK(adc_gd32_data_##n, ctx),                                     \
-		ADC_CONTEXT_INIT_SYNC(adc_gd32_data_##n, ctx),                                     \
-	};                                                                                         \
-	const static struct adc_gd32_config adc_gd32_config_##n = {                                \
-		.reg = DT_INST_REG_ADDR(n),                                                        \
-		.clkid = DT_INST_CLOCKS_CELL(n, id),                                               \
-		.reset = RESET_DT_SPEC_INST_GET(n),                                                \
-		.channels = DT_INST_PROP(n, channels),                                             \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		.irq_num = DT_INST_IRQN(n),                                                        \
-		.irq_config_func = adc_gd32_global_irq_cfg,                                        \
-		ADC_CLOCK_SOURCE(n)};                                                              \
-	DEVICE_DT_INST_DEFINE(n, &adc_gd32_init, NULL, &adc_gd32_data_##n, &adc_gd32_config_##n,   \
+#define ADC_GD32_INIT(n)                                                                         \
+	PINCTRL_DT_INST_DEFINE(n);                                                               \
+	static struct adc_gd32_data adc_gd32_data_##n = {                                        \
+		ADC_CONTEXT_INIT_TIMER(adc_gd32_data_##n, ctx),                                  \
+		ADC_CONTEXT_INIT_LOCK(adc_gd32_data_##n, ctx),                                   \
+		ADC_CONTEXT_INIT_SYNC(adc_gd32_data_##n, ctx),                                   \
+	};                                                                                       \
+	const static struct adc_gd32_config adc_gd32_config_##n = {                              \
+		.reg = DT_INST_REG_ADDR(n),                                                      \
+		.clkid = DT_INST_CLOCKS_CELL(n, id),                                             \
+		.reset = RESET_DT_SPEC_INST_GET(n),                                              \
+		.channels = DT_INST_PROP(n, channels),                                           \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+		.irq_num = DT_INST_IRQN(n),                                                      \
+		.irq_config_func = adc_gd32_global_irq_cfg,                                      \
+		ADC_CLOCK_SOURCE(n)};                                                            \
+	DEVICE_DT_INST_DEFINE(n, &adc_gd32_init, NULL, &adc_gd32_data_##n, &adc_gd32_config_##n, \
 			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, &adc_gd32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_GD32_INIT)

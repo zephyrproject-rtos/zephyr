@@ -389,48 +389,48 @@ static const struct gpio_driver_api gpio_ra_driver_api = {
 #define RA_NUM_PORT_IRQ14 14
 #define RA_NUM_PORT_IRQ15 15
 
-#define GPIO_RA_DECL_PINS(n, p, i)                                                                 \
-	const uint8_t _CONCAT(n, ___pins##i[]) = {DT_FOREACH_PROP_ELEM_SEP(                        \
+#define GPIO_RA_DECL_PINS(n, p, i)                                                          \
+	const uint8_t _CONCAT(n, ___pins##i[]) = {DT_FOREACH_PROP_ELEM_SEP(                 \
 		n, _CONCAT(DT_STRING_TOKEN_BY_IDX(n, p, i), _pins), DT_PROP_BY_IDX, (, ))};
 
-#define GPIO_RA_IRQ_INFO(n, p, i)                                                                  \
-	{                                                                                          \
-		.port_irq = _CONCAT(RA_NUM_, DT_STRING_UPPER_TOKEN_BY_IDX(n, p, i)),               \
-		.irq = DT_IRQ_BY_IDX(n, i, irq),                                                   \
-		.flags = DT_IRQ_BY_IDX(n, i, flags),                                               \
-		.priority = DT_IRQ_BY_IDX(n, i, priority),                                         \
-		.pins = _CONCAT(n, ___pins##i),                                                    \
-		.num = ARRAY_SIZE(_CONCAT(n, ___pins##i)),                                         \
-		.isr = _CONCAT(n, _CONCAT(gpio_ra_isr_, DT_STRING_TOKEN_BY_IDX(n, p, i))),         \
+#define GPIO_RA_IRQ_INFO(n, p, i)                                                          \
+	{                                                                                  \
+		.port_irq = _CONCAT(RA_NUM_, DT_STRING_UPPER_TOKEN_BY_IDX(n, p, i)),       \
+		.irq = DT_IRQ_BY_IDX(n, i, irq),                                           \
+		.flags = DT_IRQ_BY_IDX(n, i, flags),                                       \
+		.priority = DT_IRQ_BY_IDX(n, i, priority),                                 \
+		.pins = _CONCAT(n, ___pins##i),                                            \
+		.num = ARRAY_SIZE(_CONCAT(n, ___pins##i)),                                 \
+		.isr = _CONCAT(n, _CONCAT(gpio_ra_isr_, DT_STRING_TOKEN_BY_IDX(n, p, i))), \
 	},
 
-#define GPIO_RA_ISR_DECL(n, p, i)                                                                  \
-	static void _CONCAT(n, _CONCAT(gpio_ra_isr_, DT_STRING_TOKEN_BY_IDX(n, p, i)))(            \
-		const void *arg)                                                                   \
-	{                                                                                          \
-		gpio_ra_isr((const struct device *)arg,                                            \
-			    _CONCAT(RA_NUM_, DT_STRING_UPPER_TOKEN_BY_IDX(n, p, i)));              \
+#define GPIO_RA_ISR_DECL(n, p, i)                                                       \
+	static void _CONCAT(n, _CONCAT(gpio_ra_isr_, DT_STRING_TOKEN_BY_IDX(n, p, i)))( \
+		const void *arg)                                                        \
+	{                                                                               \
+		gpio_ra_isr((const struct device *)arg,                                 \
+			    _CONCAT(RA_NUM_, DT_STRING_UPPER_TOKEN_BY_IDX(n, p, i)));   \
 	}
 
-#define GPIO_RA_INIT(idx)                                                                          \
-	static struct gpio_ra_data gpio_ra_data_##idx = {};                                        \
-	DT_INST_FOREACH_PROP_ELEM(idx, interrupt_names, GPIO_RA_DECL_PINS);                        \
-	DT_INST_FOREACH_PROP_ELEM(idx, interrupt_names, GPIO_RA_ISR_DECL);                         \
-	struct gpio_ra_irq_info gpio_ra_irq_info_##idx[] = {                                       \
-		DT_INST_FOREACH_PROP_ELEM(idx, interrupt_names, GPIO_RA_IRQ_INFO)};                \
-	static struct gpio_ra_config gpio_ra_config_##idx = {                                      \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),             \
-			},                                                                         \
-		.regs = DT_INST_REG_ADDR(idx),                                                     \
-		.port = (DT_INST_REG_ADDR(idx) - DT_REG_ADDR(DT_NODELABEL(ioport0))) /             \
-			DT_INST_REG_SIZE(idx),                                                     \
-		.irq_info = gpio_ra_irq_info_##idx,                                                \
-		.irq_info_size = ARRAY_SIZE(gpio_ra_irq_info_##idx),                               \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(idx, NULL, NULL, &gpio_ra_data_##idx, &gpio_ra_config_##idx,         \
+#define GPIO_RA_INIT(idx)                                                                    \
+	static struct gpio_ra_data gpio_ra_data_##idx = {};                                  \
+	DT_INST_FOREACH_PROP_ELEM(idx, interrupt_names, GPIO_RA_DECL_PINS);                  \
+	DT_INST_FOREACH_PROP_ELEM(idx, interrupt_names, GPIO_RA_ISR_DECL);                   \
+	struct gpio_ra_irq_info gpio_ra_irq_info_##idx[] = {                                 \
+		DT_INST_FOREACH_PROP_ELEM(idx, interrupt_names, GPIO_RA_IRQ_INFO)};          \
+	static struct gpio_ra_config gpio_ra_config_##idx = {                                \
+		.common =                                                                    \
+			{                                                                    \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),       \
+			},                                                                   \
+		.regs = DT_INST_REG_ADDR(idx),                                               \
+		.port = (DT_INST_REG_ADDR(idx) - DT_REG_ADDR(DT_NODELABEL(ioport0))) /       \
+			DT_INST_REG_SIZE(idx),                                               \
+		.irq_info = gpio_ra_irq_info_##idx,                                          \
+		.irq_info_size = ARRAY_SIZE(gpio_ra_irq_info_##idx),                         \
+	};                                                                                   \
+                                                                                             \
+	DEVICE_DT_INST_DEFINE(idx, NULL, NULL, &gpio_ra_data_##idx, &gpio_ra_config_##idx,   \
 			      PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, &gpio_ra_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_RA_INIT)

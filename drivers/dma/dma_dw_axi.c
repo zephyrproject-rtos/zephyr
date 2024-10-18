@@ -854,7 +854,7 @@ static const struct dma_driver_api dma_dw_axi_driver_api = {
 };
 
 /* enable irq lines */
-#define CONFIGURE_DMA_IRQ(idx, inst)                                                               \
+#define CONFIGURE_DMA_IRQ(idx, inst)                   \
 	IF_ENABLED(DT_INST_IRQ_HAS_IDX(inst, idx), ( \
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, idx, irq), \
 			DT_INST_IRQ_BY_IDX(inst, idx, priority), \

@@ -319,31 +319,31 @@ static const struct pwm_driver_api mcux_pwt_driver_api = {
 
 #define TO_PWT_PRESCALE_DIVIDE(val) _DO_CONCAT(kPWT_Prescale_Divide_, val)
 
-#define PWT_DEVICE(n)                                                                              \
-	static void mcux_pwt_config_func_##n(const struct device *dev);                            \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-                                                                                                   \
-	static const struct mcux_pwt_config mcux_pwt_config_##n = {                                \
-		.base = (PWT_Type *)DT_INST_REG_ADDR(n),                                           \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
-		.pwt_clock_source = kPWT_BusClock,                                                 \
-		.prescale = TO_PWT_PRESCALE_DIVIDE(DT_INST_PROP(n, prescaler)),                    \
-		.irq_config_func = mcux_pwt_config_func_##n,                                       \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
-	};                                                                                         \
-                                                                                                   \
-	static struct mcux_pwt_data mcux_pwt_data_##n;                                             \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &mcux_pwt_init, NULL, &mcux_pwt_data_##n, &mcux_pwt_config_##n,   \
-			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, &mcux_pwt_driver_api);        \
-                                                                                                   \
-	static void mcux_pwt_config_func_##n(const struct device *dev)                             \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_pwt_isr,               \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define PWT_DEVICE(n)                                                                            \
+	static void mcux_pwt_config_func_##n(const struct device *dev);                          \
+                                                                                                 \
+	PINCTRL_DT_INST_DEFINE(n);                                                               \
+                                                                                                 \
+	static const struct mcux_pwt_config mcux_pwt_config_##n = {                              \
+		.base = (PWT_Type *)DT_INST_REG_ADDR(n),                                         \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                              \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),            \
+		.pwt_clock_source = kPWT_BusClock,                                               \
+		.prescale = TO_PWT_PRESCALE_DIVIDE(DT_INST_PROP(n, prescaler)),                  \
+		.irq_config_func = mcux_pwt_config_func_##n,                                     \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                     \
+	};                                                                                       \
+                                                                                                 \
+	static struct mcux_pwt_data mcux_pwt_data_##n;                                           \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(n, &mcux_pwt_init, NULL, &mcux_pwt_data_##n, &mcux_pwt_config_##n, \
+			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, &mcux_pwt_driver_api);      \
+                                                                                                 \
+	static void mcux_pwt_config_func_##n(const struct device *dev)                           \
+	{                                                                                        \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_pwt_isr,             \
+			    DEVICE_DT_INST_GET(n), 0);                                           \
+		irq_enable(DT_INST_IRQN(n));                                                     \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(PWT_DEVICE)

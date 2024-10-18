@@ -366,28 +366,28 @@ static int regulator_axp192_init(const struct device *dev)
 	return regulator_common_init(dev, is_enabled);
 }
 
-#define REGULATOR_AXP192_DEFINE(node_id, id, name)                                                 \
-	static struct regulator_axp192_data data_##id;                                             \
-	LOG_INSTANCE_REGISTER(name, node_id, CONFIG_REGULATOR_LOG_LEVEL);                          \
-	static const struct regulator_axp192_config config_##id = {                                \
-		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node_id),                                \
-		.desc = &name##_desc,                                                              \
-		.mfd = DEVICE_DT_GET(DT_GPARENT(node_id)),                                         \
-		.i2c = I2C_DT_SPEC_GET(DT_GPARENT(node_id)),                                       \
-		LOG_INSTANCE_PTR_INIT(log, name, node_id)};                                        \
-	DEVICE_DT_DEFINE(node_id, regulator_axp192_init, NULL, &data_##id, &config_##id,           \
+#define REGULATOR_AXP192_DEFINE(node_id, id, name)                                       \
+	static struct regulator_axp192_data data_##id;                                   \
+	LOG_INSTANCE_REGISTER(name, node_id, CONFIG_REGULATOR_LOG_LEVEL);                \
+	static const struct regulator_axp192_config config_##id = {                      \
+		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node_id),                      \
+		.desc = &name##_desc,                                                    \
+		.mfd = DEVICE_DT_GET(DT_GPARENT(node_id)),                               \
+		.i2c = I2C_DT_SPEC_GET(DT_GPARENT(node_id)),                             \
+		LOG_INSTANCE_PTR_INIT(log, name, node_id)};                              \
+	DEVICE_DT_DEFINE(node_id, regulator_axp192_init, NULL, &data_##id, &config_##id, \
 			 POST_KERNEL, CONFIG_REGULATOR_AXP192_INIT_PRIORITY, &api);
 
-#define REGULATOR_AXP192_DEFINE_COND(inst, child)                                                  \
+#define REGULATOR_AXP192_DEFINE_COND(inst, child) \
 	COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(inst, child)),                                    \
 		    (REGULATOR_AXP192_DEFINE(DT_INST_CHILD(inst, child), child##inst, child)), ())
 
-#define REGULATOR_AXP192_DEFINE_ALL(inst)                                                          \
-	REGULATOR_AXP192_DEFINE_COND(inst, dcdc1)                                                  \
-	REGULATOR_AXP192_DEFINE_COND(inst, dcdc2)                                                  \
-	REGULATOR_AXP192_DEFINE_COND(inst, dcdc3)                                                  \
-	REGULATOR_AXP192_DEFINE_COND(inst, ldoio0)                                                 \
-	REGULATOR_AXP192_DEFINE_COND(inst, ldo2)                                                   \
+#define REGULATOR_AXP192_DEFINE_ALL(inst)          \
+	REGULATOR_AXP192_DEFINE_COND(inst, dcdc1)  \
+	REGULATOR_AXP192_DEFINE_COND(inst, dcdc2)  \
+	REGULATOR_AXP192_DEFINE_COND(inst, dcdc3)  \
+	REGULATOR_AXP192_DEFINE_COND(inst, ldoio0) \
+	REGULATOR_AXP192_DEFINE_COND(inst, ldo2)   \
 	REGULATOR_AXP192_DEFINE_COND(inst, ldo3)
 
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_AXP192_DEFINE_ALL)

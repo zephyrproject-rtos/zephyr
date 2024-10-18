@@ -193,41 +193,41 @@ static int memc_flexspi_is66wvq8m4_init(const struct device *dev)
 
 #define AHB_WRITE_WAIT_UNIT(unit) CONCAT3(kFLEXSPI_AhbWriteWaitUnit, unit, AhbCycle)
 
-#define MEMC_FLEXSPI_DEVICE_CONFIG(n)                                                              \
-	{                                                                                          \
-		.flexspiRootClk = DT_INST_PROP(n, spi_max_frequency),                              \
-		.isSck2Enabled = false,                                                            \
-		.flashSize = DT_INST_PROP(n, size) / 8 / KB(1),                                    \
-		.addressShift = DT_INST_REG_ADDR(n) != 0,                                          \
-		.CSIntervalUnit = CS_INTERVAL_UNIT(DT_INST_PROP(n, cs_interval_unit)),             \
-		.CSInterval = DT_INST_PROP(n, cs_interval),                                        \
-		.CSHoldTime = DT_INST_PROP(n, cs_hold_time),                                       \
-		.CSSetupTime = DT_INST_PROP(n, cs_setup_time),                                     \
-		.dataValidTime = DT_INST_PROP(n, data_valid_time),                                 \
-		.columnspace = DT_INST_PROP(n, column_space),                                      \
-		.enableWordAddress = DT_INST_PROP(n, word_addressable),                            \
-		.AWRSeqIndex = WRITE_DATA,                                                         \
-		.AWRSeqNumber = 1,                                                                 \
-		.ARDSeqIndex = READ_DATA,                                                          \
-		.ARDSeqNumber = 1,                                                                 \
-		.AHBWriteWaitUnit = AHB_WRITE_WAIT_UNIT(DT_INST_PROP(n, ahb_write_wait_unit)),     \
-		.AHBWriteWaitInterval = DT_INST_PROP(n, ahb_write_wait_interval),                  \
-		.enableWriteMask = true,                                                           \
+#define MEMC_FLEXSPI_DEVICE_CONFIG(n)                                                          \
+	{                                                                                      \
+		.flexspiRootClk = DT_INST_PROP(n, spi_max_frequency),                          \
+		.isSck2Enabled = false,                                                        \
+		.flashSize = DT_INST_PROP(n, size) / 8 / KB(1),                                \
+		.addressShift = DT_INST_REG_ADDR(n) != 0,                                      \
+		.CSIntervalUnit = CS_INTERVAL_UNIT(DT_INST_PROP(n, cs_interval_unit)),         \
+		.CSInterval = DT_INST_PROP(n, cs_interval),                                    \
+		.CSHoldTime = DT_INST_PROP(n, cs_hold_time),                                   \
+		.CSSetupTime = DT_INST_PROP(n, cs_setup_time),                                 \
+		.dataValidTime = DT_INST_PROP(n, data_valid_time),                             \
+		.columnspace = DT_INST_PROP(n, column_space),                                  \
+		.enableWordAddress = DT_INST_PROP(n, word_addressable),                        \
+		.AWRSeqIndex = WRITE_DATA,                                                     \
+		.AWRSeqNumber = 1,                                                             \
+		.ARDSeqIndex = READ_DATA,                                                      \
+		.ARDSeqNumber = 1,                                                             \
+		.AHBWriteWaitUnit = AHB_WRITE_WAIT_UNIT(DT_INST_PROP(n, ahb_write_wait_unit)), \
+		.AHBWriteWaitInterval = DT_INST_PROP(n, ahb_write_wait_interval),              \
+		.enableWriteMask = true,                                                       \
 	}
 
-#define MEMC_FLEXSPI_IS66WVQ8M4(n)                                                                 \
-	static const struct memc_flexspi_is66wvq8m4_config memc_flexspi_is66wvq8m4_config_##n = {  \
-		.port = DT_INST_REG_ADDR(n),                                                       \
-		.config = MEMC_FLEXSPI_DEVICE_CONFIG(n),                                           \
-	};                                                                                         \
-                                                                                                   \
-	static struct memc_flexspi_is66wvq8m4_data memc_flexspi_is66wvq8m4_data_##n = {            \
-		.controller = DEVICE_DT_GET(DT_INST_BUS(n)),                                       \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, memc_flexspi_is66wvq8m4_init, NULL,                               \
-			      &memc_flexspi_is66wvq8m4_data_##n,                                   \
-			      &memc_flexspi_is66wvq8m4_config_##n, POST_KERNEL,                    \
+#define MEMC_FLEXSPI_IS66WVQ8M4(n)                                                                \
+	static const struct memc_flexspi_is66wvq8m4_config memc_flexspi_is66wvq8m4_config_##n = { \
+		.port = DT_INST_REG_ADDR(n),                                                      \
+		.config = MEMC_FLEXSPI_DEVICE_CONFIG(n),                                          \
+	};                                                                                        \
+                                                                                                  \
+	static struct memc_flexspi_is66wvq8m4_data memc_flexspi_is66wvq8m4_data_##n = {           \
+		.controller = DEVICE_DT_GET(DT_INST_BUS(n)),                                      \
+	};                                                                                        \
+                                                                                                  \
+	DEVICE_DT_INST_DEFINE(n, memc_flexspi_is66wvq8m4_init, NULL,                              \
+			      &memc_flexspi_is66wvq8m4_data_##n,                                  \
+			      &memc_flexspi_is66wvq8m4_config_##n, POST_KERNEL,                   \
 			      CONFIG_MEMC_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MEMC_FLEXSPI_IS66WVQ8M4)

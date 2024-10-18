@@ -399,41 +399,41 @@ static void video_stm32_dcmi_irq_config_func(const struct device *dev)
 	irq_enable(DT_INST_IRQN(0));
 }
 
-#define DCMI_DMA_CHANNEL_INIT(index, src_dev, dest_dev)                                            \
-	.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(index, 0)),                              \
-	.channel = DT_INST_DMAS_CELL_BY_IDX(index, 0, channel),                                    \
-	.reg = (DMA_TypeDef *)DT_REG_ADDR(DT_PHANDLE_BY_IDX(DT_DRV_INST(0), dmas, 0)),             \
-	.cfg = {                                                                                   \
-		.dma_slot = STM32_DMA_SLOT_BY_IDX(index, 0, slot),                                 \
-		.channel_direction =                                                               \
-			STM32_DMA_CONFIG_DIRECTION(STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),     \
-		.source_data_size = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(                        \
-			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),                                \
-		.dest_data_size = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(                         \
-			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),                                \
-		.source_burst_length = 1, /* SINGLE transfer */                                    \
-		.dest_burst_length = 1,   /* SINGLE transfer */                                    \
-		.channel_priority =                                                                \
-			STM32_DMA_CONFIG_PRIORITY(STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),      \
-		.dma_callback = dmci_dma_callback,                                                 \
+#define DCMI_DMA_CHANNEL_INIT(index, src_dev, dest_dev)                                        \
+	.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(index, 0)),                          \
+	.channel = DT_INST_DMAS_CELL_BY_IDX(index, 0, channel),                                \
+	.reg = (DMA_TypeDef *)DT_REG_ADDR(DT_PHANDLE_BY_IDX(DT_DRV_INST(0), dmas, 0)),         \
+	.cfg = {                                                                               \
+		.dma_slot = STM32_DMA_SLOT_BY_IDX(index, 0, slot),                             \
+		.channel_direction =                                                           \
+			STM32_DMA_CONFIG_DIRECTION(STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)), \
+		.source_data_size = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(                    \
+			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),                            \
+		.dest_data_size = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(                     \
+			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),                            \
+		.source_burst_length = 1, /* SINGLE transfer */                                \
+		.dest_burst_length = 1,   /* SINGLE transfer */                                \
+		.channel_priority =                                                            \
+			STM32_DMA_CONFIG_PRIORITY(STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),  \
+		.dma_callback = dmci_dma_callback,                                             \
 	},
 
 PINCTRL_DT_INST_DEFINE(0);
 
-#define STM32_DCMI_GET_CAPTURE_RATE(capture_rate)                                                  \
-	((capture_rate) == 1   ? DCMI_CR_ALL_FRAME                                                 \
-	 : (capture_rate) == 2 ? DCMI_CR_ALTERNATE_2_FRAME                                         \
-	 : (capture_rate) == 4 ? DCMI_CR_ALTERNATE_4_FRAME                                         \
+#define STM32_DCMI_GET_CAPTURE_RATE(capture_rate)          \
+	((capture_rate) == 1   ? DCMI_CR_ALL_FRAME         \
+	 : (capture_rate) == 2 ? DCMI_CR_ALTERNATE_2_FRAME \
+	 : (capture_rate) == 4 ? DCMI_CR_ALTERNATE_4_FRAME \
 			       : DCMI_CR_ALL_FRAME)
 
-#define STM32_DCMI_GET_BUS_WIDTH(bus_width)                                                        \
-	((bus_width) == 8    ? DCMI_EXTEND_DATA_8B                                                 \
-	 : (bus_width) == 10 ? DCMI_EXTEND_DATA_10B                                                \
-	 : (bus_width) == 12 ? DCMI_EXTEND_DATA_12B                                                \
-	 : (bus_width) == 14 ? DCMI_EXTEND_DATA_14B                                                \
+#define STM32_DCMI_GET_BUS_WIDTH(bus_width)         \
+	((bus_width) == 8    ? DCMI_EXTEND_DATA_8B  \
+	 : (bus_width) == 10 ? DCMI_EXTEND_DATA_10B \
+	 : (bus_width) == 12 ? DCMI_EXTEND_DATA_12B \
+	 : (bus_width) == 14 ? DCMI_EXTEND_DATA_14B \
 			     : DCMI_EXTEND_DATA_8B)
 
-#define DCMI_DMA_CHANNEL(id, src, dest)                                                            \
+#define DCMI_DMA_CHANNEL(id, src, dest)                                                          \
 	.dma = {COND_CODE_1(DT_INST_DMAS_HAS_IDX(id, 0),				\
 			(DCMI_DMA_CHANNEL_INIT(id, src, dest)),				\
 			(NULL)) },

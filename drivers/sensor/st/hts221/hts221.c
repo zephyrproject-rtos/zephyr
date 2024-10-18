@@ -198,9 +198,9 @@ int hts221_init(const struct device *dev)
  * Device creation macros
  */
 
-#define HTS221_DEVICE_INIT(inst)                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, hts221_init, NULL, &hts221_data_##inst,                 \
-				     &hts221_config_##inst, POST_KERNEL,                           \
+#define HTS221_DEVICE_INIT(inst)                                                       \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, hts221_init, NULL, &hts221_data_##inst,     \
+				     &hts221_config_##inst, POST_KERNEL,               \
 				     CONFIG_SENSOR_INIT_PRIORITY, &hts221_driver_api);
 
 /*
@@ -213,31 +213,31 @@ int hts221_init(const struct device *dev)
 #define HTS221_CFG_IRQ(inst)
 #endif /* CONFIG_HTS221_TRIGGER */
 
-#define HTS221_CONFIG_COMMON(inst)                                                                 \
+#define HTS221_CONFIG_COMMON(inst)                              \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),		\
 		(HTS221_CFG_IRQ(inst)), ())
 
-#define HTS221_SPI_OPERATION                                                                       \
+#define HTS221_SPI_OPERATION                                                                     \
 	(SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_HALF_DUPLEX)
 
-#define HTS221_CONFIG_SPI(inst)                                                                    \
-	{STMEMSC_CTX_SPI(&hts221_config_##inst.stmemsc_cfg),                                       \
-	 .stmemsc_cfg =                                                                            \
-		 {                                                                                 \
-			 .spi = SPI_DT_SPEC_INST_GET(inst, HTS221_SPI_OPERATION, 0),               \
-		 },                                                                                \
+#define HTS221_CONFIG_SPI(inst)                                                      \
+	{STMEMSC_CTX_SPI(&hts221_config_##inst.stmemsc_cfg),                         \
+	 .stmemsc_cfg =                                                              \
+		 {                                                                   \
+			 .spi = SPI_DT_SPEC_INST_GET(inst, HTS221_SPI_OPERATION, 0), \
+		 },                                                                  \
 	 HTS221_CONFIG_COMMON(inst)}
 
 /*
  * Instantiation macros used when a device is on an I2C bus.
  */
 
-#define HTS221_CONFIG_I2C(inst)                                                                    \
-	{STMEMSC_CTX_I2C(&hts221_config_##inst.stmemsc_cfg),                                       \
-	 .stmemsc_cfg =                                                                            \
-		 {                                                                                 \
-			 .i2c = I2C_DT_SPEC_INST_GET(inst),                                        \
-		 },                                                                                \
+#define HTS221_CONFIG_I2C(inst)                              \
+	{STMEMSC_CTX_I2C(&hts221_config_##inst.stmemsc_cfg), \
+	 .stmemsc_cfg =                                      \
+		 {                                           \
+			 .i2c = I2C_DT_SPEC_INST_GET(inst),  \
+		 },                                          \
 	 HTS221_CONFIG_COMMON(inst)}
 
 /*
@@ -245,11 +245,11 @@ int hts221_init(const struct device *dev)
  * bus-specific macro at preprocessor time.
  */
 
-#define HTS221_DEFINE(inst)                                                                        \
-	static struct hts221_data hts221_data_##inst;                                              \
+#define HTS221_DEFINE(inst)                                                     \
+	static struct hts221_data hts221_data_##inst;                           \
 	static const struct hts221_config hts221_config_##inst = COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
 			    (HTS221_CONFIG_SPI(inst)),			\
-			    (HTS221_CONFIG_I2C(inst)));                    \
+			    (HTS221_CONFIG_I2C(inst))); \
 	HTS221_DEVICE_INIT(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(HTS221_DEFINE)

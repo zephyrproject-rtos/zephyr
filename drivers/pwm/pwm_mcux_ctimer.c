@@ -244,32 +244,32 @@ static const struct pwm_driver_api pwm_mcux_ctimer_driver_api = {
 #define PWM_MCUX_CTIMER_PINCTRL_DEFINE(n) PINCTRL_DT_INST_DEFINE(n);
 #define PWM_MCUX_CTIMER_PINCTRL_INIT(n)   .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),
 
-#define PWM_MCUX_CTIMER_DEVICE_INIT_MCUX(n)                                                        \
-	static struct pwm_mcux_ctimer_data pwm_mcux_ctimer_data_##n = {                            \
-		.channel_states =                                                                  \
-			{                                                                          \
-				[kCTIMER_Match_0] = {.role = PWM_CTIMER_CHANNEL_ROLE_NONE,         \
-						     .cycles = 0},                                 \
-				[kCTIMER_Match_1] = {.role = PWM_CTIMER_CHANNEL_ROLE_NONE,         \
-						     .cycles = 0},                                 \
-				[kCTIMER_Match_2] = {.role = PWM_CTIMER_CHANNEL_ROLE_NONE,         \
-						     .cycles = 0},                                 \
-				[kCTIMER_Match_3] = {.role = PWM_CTIMER_CHANNEL_ROLE_NONE,         \
-						     .cycles = 0},                                 \
-			},                                                                         \
-		.current_period_channel = kCTIMER_Match_0,                                         \
-		.is_period_channel_set = false,                                                    \
-	};                                                                                         \
-	PWM_MCUX_CTIMER_PINCTRL_DEFINE(n)                                                          \
-	static const struct pwm_mcux_ctimer_config pwm_mcux_ctimer_config_##n = {                  \
-		.base = (CTIMER_Type *)DT_INST_REG_ADDR(n),                                        \
-		.prescale = DT_INST_PROP(n, prescaler),                                            \
-		.clock_control = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                            \
-		.clock_id = (clock_control_subsys_t)(DT_INST_CLOCKS_CELL(n, name)),                \
-		PWM_MCUX_CTIMER_PINCTRL_INIT(n)};                                                  \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, mcux_ctimer_pwm_init, NULL, &pwm_mcux_ctimer_data_##n,            \
-			      &pwm_mcux_ctimer_config_##n, POST_KERNEL,                            \
+#define PWM_MCUX_CTIMER_DEVICE_INIT_MCUX(n)                                                     \
+	static struct pwm_mcux_ctimer_data pwm_mcux_ctimer_data_##n = {                         \
+		.channel_states =                                                               \
+			{                                                                       \
+				[kCTIMER_Match_0] = {.role = PWM_CTIMER_CHANNEL_ROLE_NONE,      \
+						     .cycles = 0},                              \
+				[kCTIMER_Match_1] = {.role = PWM_CTIMER_CHANNEL_ROLE_NONE,      \
+						     .cycles = 0},                              \
+				[kCTIMER_Match_2] = {.role = PWM_CTIMER_CHANNEL_ROLE_NONE,      \
+						     .cycles = 0},                              \
+				[kCTIMER_Match_3] = {.role = PWM_CTIMER_CHANNEL_ROLE_NONE,      \
+						     .cycles = 0},                              \
+			},                                                                      \
+		.current_period_channel = kCTIMER_Match_0,                                      \
+		.is_period_channel_set = false,                                                 \
+	};                                                                                      \
+	PWM_MCUX_CTIMER_PINCTRL_DEFINE(n)                                                       \
+	static const struct pwm_mcux_ctimer_config pwm_mcux_ctimer_config_##n = {               \
+		.base = (CTIMER_Type *)DT_INST_REG_ADDR(n),                                     \
+		.prescale = DT_INST_PROP(n, prescaler),                                         \
+		.clock_control = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                         \
+		.clock_id = (clock_control_subsys_t)(DT_INST_CLOCKS_CELL(n, name)),             \
+		PWM_MCUX_CTIMER_PINCTRL_INIT(n)};                                               \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(n, mcux_ctimer_pwm_init, NULL, &pwm_mcux_ctimer_data_##n,         \
+			      &pwm_mcux_ctimer_config_##n, POST_KERNEL,                         \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &pwm_mcux_ctimer_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_MCUX_CTIMER_DEVICE_INIT_MCUX)

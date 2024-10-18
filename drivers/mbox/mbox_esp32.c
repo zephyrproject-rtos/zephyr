@@ -247,24 +247,24 @@ static const struct mbox_driver_api esp32_mbox_driver_api = {
 
 #define ESP32_MBOX_SHM_ADDR_BY_IDX(idx) DT_REG_ADDR(DT_PHANDLE(DT_DRV_INST(idx), shared_memory))
 
-#define ESP32_MBOX_INIT(idx)                                                                       \
-	static struct esp32_mbox_config esp32_mbox_device_cfg_##idx = {                            \
-		.irq_source_pro_cpu = DT_INST_IRQ_BY_IDX(idx, 0, irq),                             \
-		.irq_priority_pro_cpu = DT_INST_IRQ_BY_IDX(idx, 0, priority),                      \
-		.irq_flags_pro_cpu = DT_INST_IRQ_BY_IDX(idx, 0, flags),                            \
-		.irq_source_app_cpu = DT_INST_IRQ_BY_IDX(idx, 1, irq),                             \
-		.irq_priority_app_cpu = DT_INST_IRQ_BY_IDX(idx, 1, priority),                      \
-		.irq_flags_app_cpu = DT_INST_IRQ_BY_IDX(idx, 1, flags),                            \
-	};                                                                                         \
-	static struct esp32_mbox_data esp32_mbox_device_data_##idx = {                             \
-		.shm_size = ESP32_MBOX_SHM_SIZE_BY_IDX(idx),                                       \
-		.shm.pro_cpu_shm = (uint8_t *)ESP32_MBOX_SHM_ADDR_BY_IDX(idx),                     \
-		.shm.app_cpu_shm = (uint8_t *)ESP32_MBOX_SHM_ADDR_BY_IDX(idx) +                    \
-				   ESP32_MBOX_SHM_SIZE_BY_IDX(idx) / 2,                            \
-		.control = (struct esp32_mbox_control *)DT_INST_REG_ADDR(idx),                     \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(idx, &esp32_mbox_init, NULL, &esp32_mbox_device_data_##idx,          \
-			      &esp32_mbox_device_cfg_##idx, PRE_KERNEL_2,                          \
+#define ESP32_MBOX_INIT(idx)                                                                \
+	static struct esp32_mbox_config esp32_mbox_device_cfg_##idx = {                     \
+		.irq_source_pro_cpu = DT_INST_IRQ_BY_IDX(idx, 0, irq),                      \
+		.irq_priority_pro_cpu = DT_INST_IRQ_BY_IDX(idx, 0, priority),               \
+		.irq_flags_pro_cpu = DT_INST_IRQ_BY_IDX(idx, 0, flags),                     \
+		.irq_source_app_cpu = DT_INST_IRQ_BY_IDX(idx, 1, irq),                      \
+		.irq_priority_app_cpu = DT_INST_IRQ_BY_IDX(idx, 1, priority),               \
+		.irq_flags_app_cpu = DT_INST_IRQ_BY_IDX(idx, 1, flags),                     \
+	};                                                                                  \
+	static struct esp32_mbox_data esp32_mbox_device_data_##idx = {                      \
+		.shm_size = ESP32_MBOX_SHM_SIZE_BY_IDX(idx),                                \
+		.shm.pro_cpu_shm = (uint8_t *)ESP32_MBOX_SHM_ADDR_BY_IDX(idx),              \
+		.shm.app_cpu_shm = (uint8_t *)ESP32_MBOX_SHM_ADDR_BY_IDX(idx) +             \
+				   ESP32_MBOX_SHM_SIZE_BY_IDX(idx) / 2,                     \
+		.control = (struct esp32_mbox_control *)DT_INST_REG_ADDR(idx),              \
+	};                                                                                  \
+	DEVICE_DT_INST_DEFINE(idx, &esp32_mbox_init, NULL, &esp32_mbox_device_data_##idx,   \
+			      &esp32_mbox_device_cfg_##idx, PRE_KERNEL_2,                   \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &esp32_mbox_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_MBOX_INIT);

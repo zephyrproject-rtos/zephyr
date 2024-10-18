@@ -80,13 +80,13 @@ static const struct wdt_driver_api ti_tps382x_api = {
 	.feed = ti_tps382x_feed,
 };
 
-#define WDT_TI_TPS382X_INIT(n)                                                                     \
-	static const struct ti_tps382x_config ti_tps382x_##n##config = {                           \
-		.wdi_gpio = GPIO_DT_SPEC_INST_GET(n, wdi_gpios),                                   \
-		.timeout = DT_INST_PROP(n, timeout_period),                                        \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, ti_tps382x_init, NULL, NULL, &ti_tps382x_##n##config,             \
+#define WDT_TI_TPS382X_INIT(n)                                                                   \
+	static const struct ti_tps382x_config ti_tps382x_##n##config = {                         \
+		.wdi_gpio = GPIO_DT_SPEC_INST_GET(n, wdi_gpios),                                 \
+		.timeout = DT_INST_PROP(n, timeout_period),                                      \
+	};                                                                                       \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(n, ti_tps382x_init, NULL, NULL, &ti_tps382x_##n##config,           \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &ti_tps382x_api);
 
 DT_INST_FOREACH_STATUS_OKAY(WDT_TI_TPS382X_INIT);

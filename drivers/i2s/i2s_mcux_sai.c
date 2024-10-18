@@ -1133,7 +1133,7 @@ static int i2s_mcux_initialize(const struct device *dev)
 	dev_data->tx.state = I2S_STATE_NOT_READY;
 	dev_data->rx.state = I2S_STATE_NOT_READY;
 
-#if (defined(FSL_FEATURE_SAI_HAS_MCR) && (FSL_FEATURE_SAI_HAS_MCR)) ||                             \
+#if (defined(FSL_FEATURE_SAI_HAS_MCR) && (FSL_FEATURE_SAI_HAS_MCR)) ||                            \
 	(defined(FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER) && (FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER))
 	sai_master_clock_t mclkConfig = {
 #if defined(FSL_FEATURE_SAI_HAS_MCR) && (FSL_FEATURE_SAI_HAS_MCR)
@@ -1147,7 +1147,7 @@ static int i2s_mcux_initialize(const struct device *dev)
 
 	get_mclk_rate(dev, &mclk);
 /* master clock configurations */
-#if (defined(FSL_FEATURE_SAI_HAS_MCR) && (FSL_FEATURE_SAI_HAS_MCR)) ||                             \
+#if (defined(FSL_FEATURE_SAI_HAS_MCR) && (FSL_FEATURE_SAI_HAS_MCR)) ||                            \
 	(defined(FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER) && (FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER))
 #if defined(FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER) && (FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER)
 	mclkConfig.mclkHz = mclk;

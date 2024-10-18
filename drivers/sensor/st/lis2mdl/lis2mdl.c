@@ -471,11 +471,11 @@ static int lis2mdl_pm_action(const struct device *dev, enum pm_device_action act
  * LIS2MDL_DEFINE_I2C().
  */
 
-#define LIS2MDL_DEVICE_INIT(inst)                                                                  \
-	PM_DEVICE_DT_INST_DEFINE(inst, lis2mdl_pm_action);                                         \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, lis2mdl_init, PM_DEVICE_DT_INST_GET(inst),              \
-				     &lis2mdl_data_##inst, &lis2mdl_config_##inst, POST_KERNEL,    \
+#define LIS2MDL_DEVICE_INIT(inst)                                                               \
+	PM_DEVICE_DT_INST_DEFINE(inst, lis2mdl_pm_action);                                      \
+                                                                                                \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, lis2mdl_init, PM_DEVICE_DT_INST_GET(inst),           \
+				     &lis2mdl_data_##inst, &lis2mdl_config_##inst, POST_KERNEL, \
 				     CONFIG_SENSOR_INIT_PRIORITY, &lis2mdl_driver_api);
 
 /*
@@ -483,15 +483,15 @@ static int lis2mdl_pm_action(const struct device *dev, enum pm_device_action act
  */
 
 #ifdef CONFIG_LIS2MDL_TRIGGER
-#define LIS2MDL_CFG_IRQ(inst)                                                                      \
+#define LIS2MDL_CFG_IRQ(inst)                                                     \
 	.trig_enabled = true, .gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, irq_gpios)
 #else
 #define LIS2MDL_CFG_IRQ(inst)
 #endif /* CONFIG_LIS2MDL_TRIGGER */
 
-#define LIS2MDL_CONFIG_COMMON(inst)                                                                \
-	.cancel_offset = DT_INST_PROP(inst, cancel_offset),                                        \
-	.single_mode = DT_INST_PROP(inst, single_mode),                                            \
+#define LIS2MDL_CONFIG_COMMON(inst)                            \
+	.cancel_offset = DT_INST_PROP(inst, cancel_offset),    \
+	.single_mode = DT_INST_PROP(inst, single_mode),        \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),		\
 			(LIS2MDL_CFG_IRQ(inst)), ())
 
@@ -509,12 +509,12 @@ static int lis2mdl_pm_action(const struct device *dev, enum pm_device_action act
  * Instantiation macros used when a device is on an I2C bus.
  */
 
-#define LIS2MDL_CONFIG_I2C(inst)                                                                   \
-	{STMEMSC_CTX_I2C(&lis2mdl_config_##inst.stmemsc_cfg),                                      \
-	 .stmemsc_cfg =                                                                            \
-		 {                                                                                 \
-			 .i2c = I2C_DT_SPEC_INST_GET(inst),                                        \
-		 },                                                                                \
+#define LIS2MDL_CONFIG_I2C(inst)                              \
+	{STMEMSC_CTX_I2C(&lis2mdl_config_##inst.stmemsc_cfg), \
+	 .stmemsc_cfg =                                       \
+		 {                                            \
+			 .i2c = I2C_DT_SPEC_INST_GET(inst),   \
+		 },                                           \
 	 LIS2MDL_CONFIG_COMMON(inst)}
 
 /*
@@ -522,11 +522,11 @@ static int lis2mdl_pm_action(const struct device *dev, enum pm_device_action act
  * bus-specific macro at preprocessor time.
  */
 
-#define LIS2MDL_DEFINE(inst)                                                                       \
-	static struct lis2mdl_data lis2mdl_data_##inst;                                            \
+#define LIS2MDL_DEFINE(inst)                                                      \
+	static struct lis2mdl_data lis2mdl_data_##inst;                           \
 	static const struct lis2mdl_config lis2mdl_config_##inst = COND_CODE_1(DT_INST_ON_BUS(inst, spi),				\
 		    (LIS2MDL_CONFIG_SPI(inst)),			\
-		    (LIS2MDL_CONFIG_I2C(inst)));                  \
+		    (LIS2MDL_CONFIG_I2C(inst))); \
 	LIS2MDL_DEVICE_INIT(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(LIS2MDL_DEFINE)

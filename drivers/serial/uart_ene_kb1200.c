@@ -358,23 +358,23 @@ static void kb1200_uart_irq_init(void)
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-#define KB1200_UART_INIT(n)                                                                        \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	static struct kb1200_uart_data kb1200_uart_data_##n = {                                    \
-		.current_config =                                                                  \
-			{                                                                          \
-				.baudrate = DT_INST_PROP(n, current_speed),                        \
-				.parity = UART_CFG_PARITY_NONE,                                    \
-				.stop_bits = UART_CFG_STOP_BITS_1,                                 \
-				.data_bits = UART_CFG_DATA_BITS_8,                                 \
-				.flow_ctrl = UART_CFG_FLOW_CTRL_NONE,                              \
-			},                                                                         \
-	};                                                                                         \
-	static const struct kb1200_uart_config kb1200_uart_config_##n = {IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (.irq_cfg_func = kb1200_uart_irq_init,)) .ser =         \
-						      (struct serial_regs *)DT_INST_REG_ADDR(n),   \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n)};                                        \
-	DEVICE_DT_INST_DEFINE(n, kb1200_uart_init, NULL, &kb1200_uart_data_##n,                    \
-			      &kb1200_uart_config_##n, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,  \
+#define KB1200_UART_INIT(n)                                                                       \
+	PINCTRL_DT_INST_DEFINE(n);                                                                \
+	static struct kb1200_uart_data kb1200_uart_data_##n = {                                   \
+		.current_config =                                                                 \
+			{                                                                         \
+				.baudrate = DT_INST_PROP(n, current_speed),                       \
+				.parity = UART_CFG_PARITY_NONE,                                   \
+				.stop_bits = UART_CFG_STOP_BITS_1,                                \
+				.data_bits = UART_CFG_DATA_BITS_8,                                \
+				.flow_ctrl = UART_CFG_FLOW_CTRL_NONE,                             \
+			},                                                                        \
+	};                                                                                        \
+	static const struct kb1200_uart_config kb1200_uart_config_##n = {IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (.irq_cfg_func = kb1200_uart_irq_init,)) .ser =        \
+						      (struct serial_regs *)DT_INST_REG_ADDR(n),  \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n)};                                       \
+	DEVICE_DT_INST_DEFINE(n, kb1200_uart_init, NULL, &kb1200_uart_data_##n,                   \
+			      &kb1200_uart_config_##n, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, \
 			      &kb1200_uart_api);
 
 DT_INST_FOREACH_STATUS_OKAY(KB1200_UART_INIT)

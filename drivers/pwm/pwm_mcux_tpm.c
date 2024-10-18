@@ -187,20 +187,20 @@ static const struct pwm_driver_api mcux_tpm_driver_api = {
 	.get_cycles_per_sec = mcux_tpm_get_cycles_per_sec,
 };
 
-#define TPM_DEVICE(n)                                                                              \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	static const struct mcux_tpm_config mcux_tpm_config_##n = {                                \
-		.base = (TPM_Type *)DT_INST_REG_ADDR(n),                                           \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
-		.tpm_clock_source = kTPM_SystemClock,                                              \
-		.prescale = kTPM_Prescale_Divide_16,                                               \
-		.channel_count = FSL_FEATURE_TPM_CHANNEL_COUNTn((TPM_Type *)DT_INST_REG_ADDR(n)),  \
-		.mode = kTPM_EdgeAlignedPwm,                                                       \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
-	};                                                                                         \
-	static struct mcux_tpm_data mcux_tpm_data_##n;                                             \
-	DEVICE_DT_INST_DEFINE(n, &mcux_tpm_init, NULL, &mcux_tpm_data_##n, &mcux_tpm_config_##n,   \
+#define TPM_DEVICE(n)                                                                             \
+	PINCTRL_DT_INST_DEFINE(n);                                                                \
+	static const struct mcux_tpm_config mcux_tpm_config_##n = {                               \
+		.base = (TPM_Type *)DT_INST_REG_ADDR(n),                                          \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                               \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),             \
+		.tpm_clock_source = kTPM_SystemClock,                                             \
+		.prescale = kTPM_Prescale_Divide_16,                                              \
+		.channel_count = FSL_FEATURE_TPM_CHANNEL_COUNTn((TPM_Type *)DT_INST_REG_ADDR(n)), \
+		.mode = kTPM_EdgeAlignedPwm,                                                      \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                      \
+	};                                                                                        \
+	static struct mcux_tpm_data mcux_tpm_data_##n;                                            \
+	DEVICE_DT_INST_DEFINE(n, &mcux_tpm_init, NULL, &mcux_tpm_data_##n, &mcux_tpm_config_##n,  \
 			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, &mcux_tpm_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TPM_DEVICE)

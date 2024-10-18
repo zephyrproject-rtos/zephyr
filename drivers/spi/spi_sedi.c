@@ -365,25 +365,25 @@ static int spi_sedi_device_ctrl(const struct device *dev, enum pm_device_action 
 #define SPI_SEDI_IRQ_FLAGS_SENSE1(n) DT_INST_IRQ(n, sense)
 #define SPI_SEDI_IRQ_FLAGS(n)        _CONCAT(SPI_SEDI_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, sense))(n)
 
-#define CREATE_SEDI_SPI_INSTANCE(num)                                                              \
-	static void spi_##num##_irq_init(void)                                                     \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(num), DT_INST_IRQ(num, priority), spi_isr, num,           \
-			    SPI_SEDI_IRQ_FLAGS(num));                                              \
-		irq_enable(DT_INST_IRQN(num));                                                     \
-	}                                                                                          \
-	static struct spi_sedi_data spi_##num##_data = {                                           \
-		SPI_CONTEXT_INIT_LOCK(spi_##num##_data, ctx),                                      \
-		SPI_CONTEXT_INIT_SYNC(spi_##num##_data, ctx),                                      \
-	};                                                                                         \
-	const static struct spi_sedi_config spi_##num##_config = {                                 \
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(num)),                                            \
-		.spi_device = num,                                                                 \
-		.irq_config = spi_##num##_irq_init,                                                \
-	};                                                                                         \
-	PM_DEVICE_DEFINE(spi_##num, spi_sedi_device_ctrl);                                         \
-	DEVICE_DT_INST_DEFINE(num, spi_sedi_init, PM_DEVICE_GET(spi_##num), &spi_##num##_data,     \
-			      &spi_##num##_config, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,          \
+#define CREATE_SEDI_SPI_INSTANCE(num)                                                          \
+	static void spi_##num##_irq_init(void)                                                 \
+	{                                                                                      \
+		IRQ_CONNECT(DT_INST_IRQN(num), DT_INST_IRQ(num, priority), spi_isr, num,       \
+			    SPI_SEDI_IRQ_FLAGS(num));                                          \
+		irq_enable(DT_INST_IRQN(num));                                                 \
+	}                                                                                      \
+	static struct spi_sedi_data spi_##num##_data = {                                       \
+		SPI_CONTEXT_INIT_LOCK(spi_##num##_data, ctx),                                  \
+		SPI_CONTEXT_INIT_SYNC(spi_##num##_data, ctx),                                  \
+	};                                                                                     \
+	const static struct spi_sedi_config spi_##num##_config = {                             \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(num)),                                        \
+		.spi_device = num,                                                             \
+		.irq_config = spi_##num##_irq_init,                                            \
+	};                                                                                     \
+	PM_DEVICE_DEFINE(spi_##num, spi_sedi_device_ctrl);                                     \
+	DEVICE_DT_INST_DEFINE(num, spi_sedi_init, PM_DEVICE_GET(spi_##num), &spi_##num##_data, \
+			      &spi_##num##_config, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,      \
 			      &sedi_spi_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CREATE_SEDI_SPI_INSTANCE)

@@ -19,8 +19,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_emul);
 
-#define GPIO_EMUL_INT_BITMASK                                                                      \
-	(GPIO_INT_DISABLE | GPIO_INT_ENABLE | GPIO_INT_LEVELS_LOGICAL | GPIO_INT_EDGE |            \
+#define GPIO_EMUL_INT_BITMASK                                                           \
+	(GPIO_INT_DISABLE | GPIO_INT_ENABLE | GPIO_INT_LEVELS_LOGICAL | GPIO_INT_EDGE | \
 	 GPIO_INT_LOW_0 | GPIO_INT_HIGH_1)
 
 /**
@@ -797,33 +797,33 @@ static int gpio_emul_pm_device_pm_action(const struct device *dev, enum pm_devic
  * Device Initialization
  */
 
-#define GPIO_EMUL_INT_CAPS(_num)                                                                   \
-	(0 + DT_INST_PROP(_num, rising_edge) * GPIO_EMUL_INT_CAP_EDGE_RISING +                     \
-	 DT_INST_PROP(_num, falling_edge) * GPIO_EMUL_INT_CAP_EDGE_FALLING +                       \
-	 DT_INST_PROP(_num, high_level) * GPIO_EMUL_INT_CAP_LEVEL_HIGH +                           \
+#define GPIO_EMUL_INT_CAPS(_num)                                               \
+	(0 + DT_INST_PROP(_num, rising_edge) * GPIO_EMUL_INT_CAP_EDGE_RISING + \
+	 DT_INST_PROP(_num, falling_edge) * GPIO_EMUL_INT_CAP_EDGE_FALLING +   \
+	 DT_INST_PROP(_num, high_level) * GPIO_EMUL_INT_CAP_LEVEL_HIGH +       \
 	 DT_INST_PROP(_num, low_level) * GPIO_EMUL_INT_CAP_LEVEL_LOW)
 
-#define DEFINE_GPIO_EMUL(_num)                                                                     \
-                                                                                                   \
-	static gpio_flags_t gpio_emul_flags_##_num[DT_INST_PROP(_num, ngpios)];                    \
-                                                                                                   \
-	static const struct gpio_emul_config gpio_emul_config_##_num = {                           \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(_num),            \
-			},                                                                         \
-		.num_pins = DT_INST_PROP(_num, ngpios),                                            \
-		.interrupt_caps = GPIO_EMUL_INT_CAPS(_num)};                                       \
-	BUILD_ASSERT(DT_INST_PROP(_num, ngpios) <= GPIO_MAX_PINS_PER_PORT, "Too many ngpios");     \
-                                                                                                   \
-	static struct gpio_emul_data gpio_emul_data_##_num = {                                     \
-		.flags = gpio_emul_flags_##_num,                                                   \
-	};                                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(_num, gpio_emul_pm_device_pm_action);                             \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(_num, gpio_emul_init, PM_DEVICE_DT_INST_GET(_num),                   \
-			      &gpio_emul_data_##_num, &gpio_emul_config_##_num, POST_KERNEL,       \
+#define DEFINE_GPIO_EMUL(_num)                                                                 \
+                                                                                               \
+	static gpio_flags_t gpio_emul_flags_##_num[DT_INST_PROP(_num, ngpios)];                \
+                                                                                               \
+	static const struct gpio_emul_config gpio_emul_config_##_num = {                       \
+		.common =                                                                      \
+			{                                                                      \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(_num),        \
+			},                                                                     \
+		.num_pins = DT_INST_PROP(_num, ngpios),                                        \
+		.interrupt_caps = GPIO_EMUL_INT_CAPS(_num)};                                   \
+	BUILD_ASSERT(DT_INST_PROP(_num, ngpios) <= GPIO_MAX_PINS_PER_PORT, "Too many ngpios"); \
+                                                                                               \
+	static struct gpio_emul_data gpio_emul_data_##_num = {                                 \
+		.flags = gpio_emul_flags_##_num,                                               \
+	};                                                                                     \
+                                                                                               \
+	PM_DEVICE_DT_INST_DEFINE(_num, gpio_emul_pm_device_pm_action);                         \
+                                                                                               \
+	DEVICE_DT_INST_DEFINE(_num, gpio_emul_init, PM_DEVICE_DT_INST_GET(_num),               \
+			      &gpio_emul_data_##_num, &gpio_emul_config_##_num, POST_KERNEL,   \
 			      CONFIG_GPIO_INIT_PRIORITY, &gpio_emul_driver);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_GPIO_EMUL)

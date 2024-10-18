@@ -414,12 +414,12 @@ static struct spi_driver_api spi_npcx_spip_api = {
 };
 
 #ifdef CONFIG_SPI_NPCX_SPIP_INTERRUPT
-#define NPCX_SPIP_IRQ_HANDLER(n)                                                                   \
-	static void spi_npcx_spip_irq_cfg_func_##n(const struct device *dev)                       \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), spi_npcx_spip_isr,          \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define NPCX_SPIP_IRQ_HANDLER(n)                                                          \
+	static void spi_npcx_spip_irq_cfg_func_##n(const struct device *dev)              \
+	{                                                                                 \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), spi_npcx_spip_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                                    \
+		irq_enable(DT_INST_IRQN(n));                                              \
 	}
 
 #define NPCX_SPIP_IRQ_HANDLER_FUNC(n) .irq_cfg_func = spi_npcx_spip_irq_cfg_func_##n,
@@ -428,23 +428,23 @@ static struct spi_driver_api spi_npcx_spip_api = {
 #define NPCX_SPIP_IRQ_HANDLER(n)
 #endif
 
-#define NPCX_SPI_INIT(n)                                                                           \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	NPCX_SPIP_IRQ_HANDLER(n)                                                                   \
-                                                                                                   \
-	static struct spi_npcx_spip_data spi_npcx_spip_data_##n = {                                \
-		SPI_CONTEXT_INIT_LOCK(spi_npcx_spip_data_##n, ctx),                                \
-		SPI_CONTEXT_INIT_SYNC(spi_npcx_spip_data_##n, ctx),                                \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                             \
-                                                                                                   \
-	static struct spi_npcx_spip_cfg spi_npcx_spip_cfg_##n = {                                  \
-		.reg_base = (struct spip_reg *)DT_INST_REG_ADDR(n),                                \
-		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(n),                                                \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		NPCX_SPIP_IRQ_HANDLER_FUNC(n)};                                                    \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, spi_npcx_spip_init, NULL, &spi_npcx_spip_data_##n,                \
-			      &spi_npcx_spip_cfg_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,       \
+#define NPCX_SPI_INIT(n)                                                                     \
+	PINCTRL_DT_INST_DEFINE(n);                                                           \
+	NPCX_SPIP_IRQ_HANDLER(n)                                                             \
+                                                                                             \
+	static struct spi_npcx_spip_data spi_npcx_spip_data_##n = {                          \
+		SPI_CONTEXT_INIT_LOCK(spi_npcx_spip_data_##n, ctx),                          \
+		SPI_CONTEXT_INIT_SYNC(spi_npcx_spip_data_##n, ctx),                          \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                       \
+                                                                                             \
+	static struct spi_npcx_spip_cfg spi_npcx_spip_cfg_##n = {                            \
+		.reg_base = (struct spip_reg *)DT_INST_REG_ADDR(n),                          \
+		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(n),                                          \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                   \
+		NPCX_SPIP_IRQ_HANDLER_FUNC(n)};                                              \
+                                                                                             \
+	DEVICE_DT_INST_DEFINE(n, spi_npcx_spip_init, NULL, &spi_npcx_spip_data_##n,          \
+			      &spi_npcx_spip_cfg_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, \
 			      &spi_npcx_spip_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NPCX_SPI_INIT)

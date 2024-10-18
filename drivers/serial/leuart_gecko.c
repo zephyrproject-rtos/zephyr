@@ -19,7 +19,7 @@
 #define CLOCK_ID_PRFX(prefix, suffix)  CLOCK_ID_PRFX2(prefix, suffix)
 #define CLOCK_LEUART(id)               CLOCK_ID_PRFX(LEUART_PREFIX, id)
 
-#define DEV_BASE(dev)                                                                              \
+#define DEV_BASE(dev)                                                                      \
 	((LEUART_TypeDef *)((const struct leuart_gecko_config *const)(dev)->config)->base)
 
 struct leuart_gecko_config {
@@ -303,11 +303,11 @@ static const struct uart_driver_api leuart_gecko_driver_api = {
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(0))
 
-#define PIN_LEUART_0_RXD                                                                           \
-	{DT_INST_PROP_BY_IDX(0, location_rx, 1), DT_INST_PROP_BY_IDX(0, location_rx, 2),           \
+#define PIN_LEUART_0_RXD                                                                 \
+	{DT_INST_PROP_BY_IDX(0, location_rx, 1), DT_INST_PROP_BY_IDX(0, location_rx, 2), \
 	 gpioModeInput, 1}
-#define PIN_LEUART_0_TXD                                                                           \
-	{DT_INST_PROP_BY_IDX(0, location_tx, 1), DT_INST_PROP_BY_IDX(0, location_tx, 2),           \
+#define PIN_LEUART_0_TXD                                                                 \
+	{DT_INST_PROP_BY_IDX(0, location_tx, 1), DT_INST_PROP_BY_IDX(0, location_tx, 2), \
 	 gpioModePushPull, 1}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -353,11 +353,11 @@ static void leuart_gecko_config_func_0(const struct device *dev)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(1))
 
-#define PIN_LEUART_1_RXD                                                                           \
-	{DT_INST_PROP_BY_IDX(1, location_rx, 1), DT_INST_PROP_BY_IDX(1, location_rx, 2),           \
+#define PIN_LEUART_1_RXD                                                                 \
+	{DT_INST_PROP_BY_IDX(1, location_rx, 1), DT_INST_PROP_BY_IDX(1, location_rx, 2), \
 	 gpioModeInput, 1}
-#define PIN_LEUART_1_TXD                                                                           \
-	{DT_INST_PROP_BY_IDX(1, location_tx, 1), DT_INST_PROP_BY_IDX(1, location_tx, 2),           \
+#define PIN_LEUART_1_TXD                                                                 \
+	{DT_INST_PROP_BY_IDX(1, location_tx, 1), DT_INST_PROP_BY_IDX(1, location_tx, 2), \
 	 gpioModePushPull, 1}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN

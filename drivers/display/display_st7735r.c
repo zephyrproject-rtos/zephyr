@@ -464,48 +464,48 @@ static const struct display_driver_api st7735r_api = {
 	.set_orientation = st7735r_set_orientation,
 };
 
-#define ST7735R_INIT(inst)                                                                         \
-	const static struct st7735r_config st7735r_config_##inst = {                               \
-		.mipi_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                   \
-		.dbi_config = MIPI_DBI_CONFIG_DT_INST(                                             \
-			inst,                                                                      \
-			SPI_OP_MODE_MASTER |                                                       \
-				((DT_INST_PROP(inst, mipi_mode) == MIPI_DBI_MODE_SPI_4WIRE)        \
-					 ? SPI_WORD_SET(8)                                         \
-					 : SPI_WORD_SET(9)) |                                      \
-				SPI_HOLD_ON_CS | SPI_LOCK_ON,                                      \
-			0),                                                                        \
-		.width = DT_INST_PROP(inst, width),                                                \
-		.height = DT_INST_PROP(inst, height),                                              \
-		.madctl = DT_INST_PROP(inst, madctl),                                              \
-		.colmod = DT_INST_PROP(inst, colmod),                                              \
-		.caset = DT_INST_PROP(inst, caset),                                                \
-		.raset = DT_INST_PROP(inst, raset),                                                \
-		.vmctr1 = DT_INST_PROP(inst, vmctr1),                                              \
-		.invctr = DT_INST_PROP(inst, invctr),                                              \
-		.pwctr1 = DT_INST_PROP(inst, pwctr1),                                              \
-		.pwctr2 = DT_INST_PROP(inst, pwctr2),                                              \
-		.pwctr3 = DT_INST_PROP(inst, pwctr3),                                              \
-		.pwctr4 = DT_INST_PROP(inst, pwctr4),                                              \
-		.pwctr5 = DT_INST_PROP(inst, pwctr5),                                              \
-		.frmctr1 = DT_INST_PROP(inst, frmctr1),                                            \
-		.frmctr2 = DT_INST_PROP(inst, frmctr2),                                            \
-		.frmctr3 = DT_INST_PROP(inst, frmctr3),                                            \
-		.gamctrp1 = DT_INST_PROP(inst, gamctrp1),                                          \
-		.gamctrn1 = DT_INST_PROP(inst, gamctrn1),                                          \
-		.inversion_on = DT_INST_PROP(inst, inversion_on),                                  \
-		.rgb_is_inverted = DT_INST_PROP(inst, rgb_is_inverted),                            \
-	};                                                                                         \
-                                                                                                   \
-	static struct st7735r_data st7735r_data_##inst = {                                         \
-		.x_offset = DT_INST_PROP(inst, x_offset),                                          \
-		.y_offset = DT_INST_PROP(inst, y_offset),                                          \
-	};                                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, st7735r_pm_action);                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, st7735r_init, PM_DEVICE_DT_INST_GET(inst),                     \
-			      &st7735r_data_##inst, &st7735r_config_##inst, POST_KERNEL,           \
+#define ST7735R_INIT(inst)                                                                  \
+	const static struct st7735r_config st7735r_config_##inst = {                        \
+		.mipi_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                            \
+		.dbi_config = MIPI_DBI_CONFIG_DT_INST(                                      \
+			inst,                                                               \
+			SPI_OP_MODE_MASTER |                                                \
+				((DT_INST_PROP(inst, mipi_mode) == MIPI_DBI_MODE_SPI_4WIRE) \
+					 ? SPI_WORD_SET(8)                                  \
+					 : SPI_WORD_SET(9)) |                               \
+				SPI_HOLD_ON_CS | SPI_LOCK_ON,                               \
+			0),                                                                 \
+		.width = DT_INST_PROP(inst, width),                                         \
+		.height = DT_INST_PROP(inst, height),                                       \
+		.madctl = DT_INST_PROP(inst, madctl),                                       \
+		.colmod = DT_INST_PROP(inst, colmod),                                       \
+		.caset = DT_INST_PROP(inst, caset),                                         \
+		.raset = DT_INST_PROP(inst, raset),                                         \
+		.vmctr1 = DT_INST_PROP(inst, vmctr1),                                       \
+		.invctr = DT_INST_PROP(inst, invctr),                                       \
+		.pwctr1 = DT_INST_PROP(inst, pwctr1),                                       \
+		.pwctr2 = DT_INST_PROP(inst, pwctr2),                                       \
+		.pwctr3 = DT_INST_PROP(inst, pwctr3),                                       \
+		.pwctr4 = DT_INST_PROP(inst, pwctr4),                                       \
+		.pwctr5 = DT_INST_PROP(inst, pwctr5),                                       \
+		.frmctr1 = DT_INST_PROP(inst, frmctr1),                                     \
+		.frmctr2 = DT_INST_PROP(inst, frmctr2),                                     \
+		.frmctr3 = DT_INST_PROP(inst, frmctr3),                                     \
+		.gamctrp1 = DT_INST_PROP(inst, gamctrp1),                                   \
+		.gamctrn1 = DT_INST_PROP(inst, gamctrn1),                                   \
+		.inversion_on = DT_INST_PROP(inst, inversion_on),                           \
+		.rgb_is_inverted = DT_INST_PROP(inst, rgb_is_inverted),                     \
+	};                                                                                  \
+                                                                                            \
+	static struct st7735r_data st7735r_data_##inst = {                                  \
+		.x_offset = DT_INST_PROP(inst, x_offset),                                   \
+		.y_offset = DT_INST_PROP(inst, y_offset),                                   \
+	};                                                                                  \
+                                                                                            \
+	PM_DEVICE_DT_INST_DEFINE(inst, st7735r_pm_action);                                  \
+                                                                                            \
+	DEVICE_DT_INST_DEFINE(inst, st7735r_init, PM_DEVICE_DT_INST_GET(inst),              \
+			      &st7735r_data_##inst, &st7735r_config_##inst, POST_KERNEL,    \
 			      CONFIG_DISPLAY_INIT_PRIORITY, &st7735r_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ST7735R_INIT)

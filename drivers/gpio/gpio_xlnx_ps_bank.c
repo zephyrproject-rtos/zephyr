@@ -420,18 +420,18 @@ static int gpio_xlnx_ps_bank_init(const struct device *dev)
 }
 
 /* MIO / EMIO bank device definition macros */
-#define GPIO_XLNX_PS_BANK_INIT(idx)                                                                \
-	static const struct gpio_xlnx_ps_bank_dev_cfg gpio_xlnx_ps_bank##idx##_cfg = {             \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),             \
-			},                                                                         \
-		.base_addr = DT_REG_ADDR(DT_PARENT(DT_INST(idx, DT_DRV_COMPAT))),                  \
-		.bank_index = idx,                                                                 \
-	};                                                                                         \
-	static struct gpio_xlnx_ps_bank_dev_data gpio_xlnx_ps_bank##idx##_data;                    \
-	DEVICE_DT_INST_DEFINE(idx, gpio_xlnx_ps_bank_init, NULL, &gpio_xlnx_ps_bank##idx##_data,   \
-			      &gpio_xlnx_ps_bank##idx##_cfg, PRE_KERNEL_1,                         \
+#define GPIO_XLNX_PS_BANK_INIT(idx)                                                              \
+	static const struct gpio_xlnx_ps_bank_dev_cfg gpio_xlnx_ps_bank##idx##_cfg = {           \
+		.common =                                                                        \
+			{                                                                        \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),           \
+			},                                                                       \
+		.base_addr = DT_REG_ADDR(DT_PARENT(DT_INST(idx, DT_DRV_COMPAT))),                \
+		.bank_index = idx,                                                               \
+	};                                                                                       \
+	static struct gpio_xlnx_ps_bank_dev_data gpio_xlnx_ps_bank##idx##_data;                  \
+	DEVICE_DT_INST_DEFINE(idx, gpio_xlnx_ps_bank_init, NULL, &gpio_xlnx_ps_bank##idx##_data, \
+			      &gpio_xlnx_ps_bank##idx##_cfg, PRE_KERNEL_1,                       \
 			      CONFIG_GPIO_INIT_PRIORITY, &gpio_xlnx_ps_bank_apis);
 
 /* Register & initialize all MIO / EMIO GPIO banks specified in the device tree. */

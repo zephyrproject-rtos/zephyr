@@ -123,38 +123,38 @@ static int nxp_lp_flexcomm_init(const struct device *dev)
 	return 0;
 }
 
-#define MCUX_FLEXCOMM_CHILD_INIT(child_node_id)                                                    \
-	[DT_NODE_CHILD_IDX(child_node_id) + 1] = {                                                 \
-		.periph = DT_NODE_CHILD_IDX(child_node_id) + 1,                                    \
+#define MCUX_FLEXCOMM_CHILD_INIT(child_node_id)                 \
+	[DT_NODE_CHILD_IDX(child_node_id) + 1] = {              \
+		.periph = DT_NODE_CHILD_IDX(child_node_id) + 1, \
 	},
 
-#define NXP_LP_FLEXCOMM_INIT(n)                                                                    \
-                                                                                                   \
-	static struct nxp_lp_flexcomm_child                                                        \
-		nxp_lp_flexcomm_children_##n[LP_FLEXCOMM_PERIPH_LPI2C + 1] = {                     \
-			DT_INST_FOREACH_CHILD_STATUS_OKAY(n, MCUX_FLEXCOMM_CHILD_INIT)};           \
-                                                                                                   \
-	static void nxp_lp_flexcomm_config_func_##n(const struct device *dev);                     \
-                                                                                                   \
-	static const struct nxp_lp_flexcomm_config nxp_lp_flexcomm_config_##n = {                  \
-		.base = (LP_FLEXCOMM_Type *)DT_INST_REG_ADDR(n),                                   \
-		.irq_config_func = nxp_lp_flexcomm_config_func_##n,                                \
-	};                                                                                         \
-                                                                                                   \
-	static struct nxp_lp_flexcomm_data nxp_lp_flexcomm_data_##n = {                            \
-		.children = nxp_lp_flexcomm_children_##n,                                          \
-		.num_children = ARRAY_SIZE(nxp_lp_flexcomm_children_##n),                          \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &nxp_lp_flexcomm_init, NULL, &nxp_lp_flexcomm_data_##n,           \
-			      &nxp_lp_flexcomm_config_##n, PRE_KERNEL_1,                           \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);                          \
-                                                                                                   \
-	static void nxp_lp_flexcomm_config_func_##n(const struct device *dev)                      \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), nxp_lp_flexcomm_isr,        \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define NXP_LP_FLEXCOMM_INIT(n)                                                             \
+                                                                                            \
+	static struct nxp_lp_flexcomm_child                                                 \
+		nxp_lp_flexcomm_children_##n[LP_FLEXCOMM_PERIPH_LPI2C + 1] = {              \
+			DT_INST_FOREACH_CHILD_STATUS_OKAY(n, MCUX_FLEXCOMM_CHILD_INIT)};    \
+                                                                                            \
+	static void nxp_lp_flexcomm_config_func_##n(const struct device *dev);              \
+                                                                                            \
+	static const struct nxp_lp_flexcomm_config nxp_lp_flexcomm_config_##n = {           \
+		.base = (LP_FLEXCOMM_Type *)DT_INST_REG_ADDR(n),                            \
+		.irq_config_func = nxp_lp_flexcomm_config_func_##n,                         \
+	};                                                                                  \
+                                                                                            \
+	static struct nxp_lp_flexcomm_data nxp_lp_flexcomm_data_##n = {                     \
+		.children = nxp_lp_flexcomm_children_##n,                                   \
+		.num_children = ARRAY_SIZE(nxp_lp_flexcomm_children_##n),                   \
+	};                                                                                  \
+                                                                                            \
+	DEVICE_DT_INST_DEFINE(n, &nxp_lp_flexcomm_init, NULL, &nxp_lp_flexcomm_data_##n,    \
+			      &nxp_lp_flexcomm_config_##n, PRE_KERNEL_1,                    \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);                   \
+                                                                                            \
+	static void nxp_lp_flexcomm_config_func_##n(const struct device *dev)               \
+	{                                                                                   \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), nxp_lp_flexcomm_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                                      \
+		irq_enable(DT_INST_IRQN(n));                                                \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_LP_FLEXCOMM_INIT)

@@ -138,20 +138,20 @@ static const struct spi_driver_api spi_emul_api = {
 	.release = spi_emul_release,
 };
 
-#define EMUL_LINK_AND_COMMA(node_id)                                                               \
-	{                                                                                          \
-		.dev = DEVICE_DT_GET(node_id),                                                     \
+#define EMUL_LINK_AND_COMMA(node_id)           \
+	{                                      \
+		.dev = DEVICE_DT_GET(node_id), \
 	},
 
-#define SPI_EMUL_INIT(n)                                                                           \
-	static const struct emul_link_for_bus emuls_##n[] = {                                      \
-		DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(n), EMUL_LINK_AND_COMMA)};                \
-	static struct emul_list_for_bus spi_emul_cfg_##n = {                                       \
-		.children = emuls_##n,                                                             \
-		.num_children = ARRAY_SIZE(emuls_##n),                                             \
-	};                                                                                         \
-	static struct spi_emul_data spi_emul_data_##n;                                             \
-	DEVICE_DT_INST_DEFINE(n, spi_emul_init, NULL, &spi_emul_data_##n, &spi_emul_cfg_##n,       \
+#define SPI_EMUL_INIT(n)                                                                     \
+	static const struct emul_link_for_bus emuls_##n[] = {                                \
+		DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(n), EMUL_LINK_AND_COMMA)};          \
+	static struct emul_list_for_bus spi_emul_cfg_##n = {                                 \
+		.children = emuls_##n,                                                       \
+		.num_children = ARRAY_SIZE(emuls_##n),                                       \
+	};                                                                                   \
+	static struct spi_emul_data spi_emul_data_##n;                                       \
+	DEVICE_DT_INST_DEFINE(n, spi_emul_init, NULL, &spi_emul_data_##n, &spi_emul_cfg_##n, \
 			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &spi_emul_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_EMUL_INIT)

@@ -531,23 +531,23 @@ static const struct uart_driver_api uart_altera_jtag_driver_api = {
 };
 
 #ifdef CONFIG_UART_ALTERA_JTAG_HAL
-#define UART_ALTERA_JTAG_DEVICE_INIT(n)                                                            \
-	DEVICE_DT_INST_DEFINE(n, uart_altera_jtag_init, NULL, NULL, NULL, PRE_KERNEL_1,            \
+#define UART_ALTERA_JTAG_DEVICE_INIT(n)                                                   \
+	DEVICE_DT_INST_DEFINE(n, uart_altera_jtag_init, NULL, NULL, NULL, PRE_KERNEL_1,   \
 			      CONFIG_SERIAL_INIT_PRIORITY, &uart_altera_jtag_driver_api);
 #else
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define UART_ALTERA_JTAG_CONFIG_FUNC(n)                                                            \
-	static void uart_altera_jtag_irq_config_func_##n(const struct device *dev)                 \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_altera_jtag_isr,       \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define UART_ALTERA_JTAG_CONFIG_FUNC(n)                                                      \
+	static void uart_altera_jtag_irq_config_func_##n(const struct device *dev)           \
+	{                                                                                    \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_altera_jtag_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                                       \
+                                                                                             \
+		irq_enable(DT_INST_IRQN(n));                                                 \
 	}
 
-#define UART_ALTERA_JTAG_CONFIG_INIT(n)                                                            \
-	.irq_config_func = uart_altera_jtag_irq_config_func_##n, .irq_num = DT_INST_IRQN(n),       \
+#define UART_ALTERA_JTAG_CONFIG_INIT(n)                                                      \
+	.irq_config_func = uart_altera_jtag_irq_config_func_##n, .irq_num = DT_INST_IRQN(n), \
 	.write_fifo_depth = DT_INST_PROP_OR(n, write_fifo_depth, 0),
 
 #else
@@ -556,14 +556,14 @@ static const struct uart_driver_api uart_altera_jtag_driver_api = {
 #define UART_ALTERA_JTAG_DATA_INIT(n)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-#define UART_ALTERA_JTAG_DEVICE_INIT(n)                                                            \
-	UART_ALTERA_JTAG_CONFIG_FUNC(n)                                                            \
-	static struct uart_altera_jtag_device_data uart_altera_jtag_device_data_##n = {};          \
-                                                                                                   \
-	static const struct uart_altera_jtag_device_config uart_altera_jtag_dev_cfg_##n = {        \
-		.base = DT_INST_REG_ADDR(n), UART_ALTERA_JTAG_CONFIG_INIT(n)};                     \
-	DEVICE_DT_INST_DEFINE(n, uart_altera_jtag_init, NULL, &uart_altera_jtag_device_data_##n,   \
-			      &uart_altera_jtag_dev_cfg_##n, PRE_KERNEL_1,                         \
+#define UART_ALTERA_JTAG_DEVICE_INIT(n)                                                          \
+	UART_ALTERA_JTAG_CONFIG_FUNC(n)                                                          \
+	static struct uart_altera_jtag_device_data uart_altera_jtag_device_data_##n = {};        \
+                                                                                                 \
+	static const struct uart_altera_jtag_device_config uart_altera_jtag_dev_cfg_##n = {      \
+		.base = DT_INST_REG_ADDR(n), UART_ALTERA_JTAG_CONFIG_INIT(n)};                   \
+	DEVICE_DT_INST_DEFINE(n, uart_altera_jtag_init, NULL, &uart_altera_jtag_device_data_##n, \
+			      &uart_altera_jtag_dev_cfg_##n, PRE_KERNEL_1,                       \
 			      CONFIG_SERIAL_INIT_PRIORITY, &uart_altera_jtag_driver_api);
 #endif /* CONFIG_UART_ALTERA_JTAG_HAL */
 

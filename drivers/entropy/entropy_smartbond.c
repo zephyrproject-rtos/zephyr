@@ -55,7 +55,7 @@ static struct entropy_smartbond_dev_data entropy_smartbond_data;
 #define DA1469X_TRNG_FIFO_SIZE (32 * sizeof(uint32_t))
 #define DA1469X_TRNG_FIFO_ADDR (0x30050000UL)
 
-#define FIFO_COUNT_MASK                                                                            \
+#define FIFO_COUNT_MASK                                                                    \
 	(TRNG_TRNG_FIFOLVL_REG_TRNG_FIFOFULL_Msk | TRNG_TRNG_FIFOLVL_REG_TRNG_FIFOLVL_Msk)
 
 static inline void entropy_smartbond_pm_policy_state_lock_get(void)

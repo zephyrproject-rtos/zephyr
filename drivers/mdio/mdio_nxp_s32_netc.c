@@ -72,21 +72,21 @@ static const struct mdio_driver_api nxp_s32_mdio_api = {
 	.write = nxp_s32_mdio_write,
 };
 
-#define NXP_S32_MDIO_HW_INSTANCE_CHECK(i, n)                                                       \
+#define NXP_S32_MDIO_HW_INSTANCE_CHECK(i, n)                        \
 	((DT_INST_REG_ADDR(n) == IP_NETC_EMDIO_##n##_BASE) ? i : 0)
 
-#define NXP_S32_MDIO_HW_INSTANCE(n)                                                                \
+#define NXP_S32_MDIO_HW_INSTANCE(n) \
 	LISTIFY(__DEBRACKET NETC_F1_INSTANCE_COUNT, NXP_S32_MDIO_HW_INSTANCE_CHECK, (|), n)
 
-#define NXP_S32_MDIO_INSTANCE_DEFINE(n)                                                            \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	static struct nxp_s32_mdio_data nxp_s32_mdio##n##_data;                                    \
-	static const struct nxp_s32_mdio_config nxp_s32_mdio##n##_cfg = {                          \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
-		.instance = NXP_S32_MDIO_HW_INSTANCE(n),                                           \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &nxp_s32_mdio_initialize, NULL, &nxp_s32_mdio##n##_data,          \
-			      &nxp_s32_mdio##n##_cfg, POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY,      \
+#define NXP_S32_MDIO_INSTANCE_DEFINE(n)                                                       \
+	PINCTRL_DT_INST_DEFINE(n);                                                            \
+	static struct nxp_s32_mdio_data nxp_s32_mdio##n##_data;                               \
+	static const struct nxp_s32_mdio_config nxp_s32_mdio##n##_cfg = {                     \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                  \
+		.instance = NXP_S32_MDIO_HW_INSTANCE(n),                                      \
+	};                                                                                    \
+	DEVICE_DT_INST_DEFINE(n, &nxp_s32_mdio_initialize, NULL, &nxp_s32_mdio##n##_data,     \
+			      &nxp_s32_mdio##n##_cfg, POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY, \
 			      &nxp_s32_mdio_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_S32_MDIO_INSTANCE_DEFINE)

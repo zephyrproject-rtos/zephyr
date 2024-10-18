@@ -147,25 +147,25 @@ static int memc_flexspi_s27ks0641_init(const struct device *dev)
 
 #define AHB_WRITE_WAIT_UNIT(unit) CONCAT3(kFLEXSPI_AhbWriteWaitUnit, unit, AhbCycle)
 
-#define MEMC_FLEXSPI_DEVICE_CONFIG(n)                                                              \
-	{                                                                                          \
-		.flexspiRootClk = MHZ(332),                                                        \
-		.isSck2Enabled = false,                                                            \
-		.flashSize = DT_INST_PROP(n, size) / 8 / KB(1),                                    \
-		.CSIntervalUnit = CS_INTERVAL_UNIT(DT_INST_PROP(n, cs_interval_unit)),             \
-		.CSInterval = DT_INST_PROP(n, cs_interval),                                        \
-		.CSHoldTime = DT_INST_PROP(n, cs_hold_time),                                       \
-		.CSSetupTime = DT_INST_PROP(n, cs_setup_time),                                     \
-		.dataValidTime = DT_INST_PROP(n, data_valid_time),                                 \
-		.columnspace = DT_INST_PROP(n, column_space),                                      \
-		.enableWordAddress = DT_INST_PROP(n, word_addressable),                            \
-		.AWRSeqIndex = WRITE_DATA,                                                         \
-		.AWRSeqNumber = 1,                                                                 \
-		.ARDSeqIndex = READ_DATA,                                                          \
-		.ARDSeqNumber = 1,                                                                 \
-		.AHBWriteWaitUnit = AHB_WRITE_WAIT_UNIT(DT_INST_PROP(n, ahb_write_wait_unit)),     \
-		.AHBWriteWaitInterval = DT_INST_PROP(n, ahb_write_wait_interval),                  \
-		.enableWriteMask = true,                                                           \
+#define MEMC_FLEXSPI_DEVICE_CONFIG(n)                                                          \
+	{                                                                                      \
+		.flexspiRootClk = MHZ(332),                                                    \
+		.isSck2Enabled = false,                                                        \
+		.flashSize = DT_INST_PROP(n, size) / 8 / KB(1),                                \
+		.CSIntervalUnit = CS_INTERVAL_UNIT(DT_INST_PROP(n, cs_interval_unit)),         \
+		.CSInterval = DT_INST_PROP(n, cs_interval),                                    \
+		.CSHoldTime = DT_INST_PROP(n, cs_hold_time),                                   \
+		.CSSetupTime = DT_INST_PROP(n, cs_setup_time),                                 \
+		.dataValidTime = DT_INST_PROP(n, data_valid_time),                             \
+		.columnspace = DT_INST_PROP(n, column_space),                                  \
+		.enableWordAddress = DT_INST_PROP(n, word_addressable),                        \
+		.AWRSeqIndex = WRITE_DATA,                                                     \
+		.AWRSeqNumber = 1,                                                             \
+		.ARDSeqIndex = READ_DATA,                                                      \
+		.ARDSeqNumber = 1,                                                             \
+		.AHBWriteWaitUnit = AHB_WRITE_WAIT_UNIT(DT_INST_PROP(n, ahb_write_wait_unit)), \
+		.AHBWriteWaitInterval = DT_INST_PROP(n, ahb_write_wait_interval),              \
+		.enableWriteMask = true,                                                       \
 	}
 
 #define MEMC_FLEXSPI_S27KS0641(n)                                                                  \

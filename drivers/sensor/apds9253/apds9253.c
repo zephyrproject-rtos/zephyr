@@ -231,23 +231,23 @@ static const struct sensor_driver_api apds9253_driver_api = {
 	.channel_get = &apds9253_channel_get,
 };
 
-#define APDS9253_INIT(n)                                                                           \
-	static struct apds9253_data apds9253_data_##n = {                                          \
-		.sample_crgb = {0},                                                                \
-		.pdata = 0U,                                                                       \
-	};                                                                                         \
-                                                                                                   \
-	static const struct apds9253_config apds9253_config_##n = {                                \
-		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
-		.interrupt_enabled = DT_INST_NODE_HAS_PROP(n, int_gpios),                          \
-		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(n, int_gpios, {}),                            \
-		.ls_rate = DT_INST_PROP(n, rate),                                                  \
-		.ls_resolution = DT_INST_PROP(n, resolution),                                      \
-		.ls_gain = DT_INST_PROP(n, gain),                                                  \
-	};                                                                                         \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, apds9253_init, NULL, &apds9253_data_##n,                   \
-				     &apds9253_config_##n, POST_KERNEL,                            \
+#define APDS9253_INIT(n)                                                                 \
+	static struct apds9253_data apds9253_data_##n = {                                \
+		.sample_crgb = {0},                                                      \
+		.pdata = 0U,                                                             \
+	};                                                                               \
+                                                                                         \
+	static const struct apds9253_config apds9253_config_##n = {                      \
+		.i2c = I2C_DT_SPEC_INST_GET(n),                                          \
+		.interrupt_enabled = DT_INST_NODE_HAS_PROP(n, int_gpios),                \
+		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(n, int_gpios, {}),                  \
+		.ls_rate = DT_INST_PROP(n, rate),                                        \
+		.ls_resolution = DT_INST_PROP(n, resolution),                            \
+		.ls_gain = DT_INST_PROP(n, gain),                                        \
+	};                                                                               \
+                                                                                         \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, apds9253_init, NULL, &apds9253_data_##n,         \
+				     &apds9253_config_##n, POST_KERNEL,                  \
 				     CONFIG_SENSOR_INIT_PRIORITY, &apds9253_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(APDS9253_INIT)

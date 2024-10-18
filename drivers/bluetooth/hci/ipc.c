@@ -384,22 +384,22 @@ static const struct bt_hci_driver_api drv = {
 	.send = bt_ipc_send,
 };
 
-#define IPC_DEVICE_INIT(inst)                                                                      \
-	static struct ipc_data ipc_data_##inst = {                                                 \
-		.bound_sem = Z_SEM_INITIALIZER(ipc_data_##inst.bound_sem, 0, 1),                   \
-		.hci_ept_cfg =                                                                     \
-			{                                                                          \
-				.name = DT_INST_PROP(inst, bt_hci_ipc_name),                       \
-				.cb =                                                              \
-					{                                                          \
-						.bound = hci_ept_bound,                            \
-						.received = hci_ept_recv,                          \
-					},                                                         \
-				.priv = (void *)DEVICE_DT_INST_GET(inst),                          \
-			},                                                                         \
-		.ipc = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                        \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &ipc_data_##inst, NULL, POST_KERNEL,               \
+#define IPC_DEVICE_INIT(inst)                                                        \
+	static struct ipc_data ipc_data_##inst = {                                   \
+		.bound_sem = Z_SEM_INITIALIZER(ipc_data_##inst.bound_sem, 0, 1),     \
+		.hci_ept_cfg =                                                       \
+			{                                                            \
+				.name = DT_INST_PROP(inst, bt_hci_ipc_name),         \
+				.cb =                                                \
+					{                                            \
+						.bound = hci_ept_bound,              \
+						.received = hci_ept_recv,            \
+					},                                           \
+				.priv = (void *)DEVICE_DT_INST_GET(inst),            \
+			},                                                           \
+		.ipc = DEVICE_DT_GET(DT_INST_PARENT(inst)),                          \
+	};                                                                           \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &ipc_data_##inst, NULL, POST_KERNEL, \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
 DT_INST_FOREACH_STATUS_OKAY(IPC_DEVICE_INIT)

@@ -46,12 +46,12 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
 
 #define ANY_INST_HAS_TRUE_(idx, bool_prop) COND_CODE_1(DT_INST_PROP(idx, bool_prop), (1,), ())
 
-#define ANY_INST_HAS_TRUE(bool_prop)                                                               \
+#define ANY_INST_HAS_TRUE(bool_prop)                                                              \
 	COND_CODE_1(IS_EMPTY(DT_INST_FOREACH_STATUS_OKAY_VARGS(ANY_INST_HAS_TRUE_, bool_prop)), \
 			     (0), (1))
 
 #define ANY_INST_HAS_PROP_(idx, prop_name) COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, prop_name), (1,), ())
-#define ANY_INST_HAS_PROP(prop_name)                                                               \
+#define ANY_INST_HAS_PROP(prop_name)                                                              \
 	COND_CODE_1(IS_EMPTY(DT_INST_FOREACH_STATUS_OKAY_VARGS(ANY_INST_HAS_PROP_, prop_name)), \
 			     (0), (1))
 
@@ -417,11 +417,11 @@ static int spi_nor_access(const struct device *const dev, uint8_t opcode, unsign
 }
 
 #define spi_nor_cmd_read(dev, opcode, dest, length) spi_nor_access(dev, opcode, 0, 0, dest, length)
-#define spi_nor_cmd_addr_read(dev, opcode, addr, dest, length)                                     \
+#define spi_nor_cmd_addr_read(dev, opcode, addr, dest, length)                \
 	spi_nor_access(dev, opcode, NOR_ACCESS_ADDRESSED, addr, dest, length)
 #define spi_nor_cmd_write(dev, opcode) spi_nor_access(dev, opcode, NOR_ACCESS_WRITE, 0, NULL, 0)
-#define spi_nor_cmd_addr_write(dev, opcode, addr, src, length)                                     \
-	spi_nor_access(dev, opcode, NOR_ACCESS_WRITE | NOR_ACCESS_ADDRESSED, addr, (void *)src,    \
+#define spi_nor_cmd_addr_write(dev, opcode, addr, src, length)                                  \
+	spi_nor_access(dev, opcode, NOR_ACCESS_WRITE | NOR_ACCESS_ADDRESSED, addr, (void *)src, \
 		       length)
 
 /**
@@ -1551,37 +1551,37 @@ static const struct flash_driver_api spi_nor_api = {
 #endif
 };
 
-#define PAGE_LAYOUT_GEN(idx)                                                                       \
-	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(idx, size),                                             \
-		     "jedec,spi-nor size required for non-runtime SFDP page layout");              \
-	enum {                                                                                     \
-		INST_##idx##_BYTES = (DT_INST_PROP(idx, size) / 8)                                 \
-	};                                                                                         \
-	BUILD_ASSERT(SPI_NOR_IS_SECTOR_ALIGNED(CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE),             \
-		     "SPI_NOR_FLASH_LAYOUT_PAGE_SIZE must be multiple of 4096");                   \
-	enum {                                                                                     \
-		LAYOUT_PAGES_##idx##_COUNT =                                                       \
-			(INST_##idx##_BYTES / CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE)               \
-	};                                                                                         \
-	BUILD_ASSERT((CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE * LAYOUT_PAGES_##idx##_COUNT) ==       \
-			     INST_##idx##_BYTES,                                                   \
+#define PAGE_LAYOUT_GEN(idx)                                                                 \
+	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(idx, size),                                       \
+		     "jedec,spi-nor size required for non-runtime SFDP page layout");        \
+	enum {                                                                               \
+		INST_##idx##_BYTES = (DT_INST_PROP(idx, size) / 8)                           \
+	};                                                                                   \
+	BUILD_ASSERT(SPI_NOR_IS_SECTOR_ALIGNED(CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE),       \
+		     "SPI_NOR_FLASH_LAYOUT_PAGE_SIZE must be multiple of 4096");             \
+	enum {                                                                               \
+		LAYOUT_PAGES_##idx##_COUNT =                                                 \
+			(INST_##idx##_BYTES / CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE)         \
+	};                                                                                   \
+	BUILD_ASSERT((CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE * LAYOUT_PAGES_##idx##_COUNT) == \
+			     INST_##idx##_BYTES,                                             \
 		     "SPI_NOR_FLASH_LAYOUT_PAGE_SIZE incompatible with flash size");
 
-#define SFDP_BFP_ATTR_GEN(idx)                                                                     \
-	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(idx, sfdp_bfp),                                         \
-		     "jedec,spi-nor sfdp-bfp required for devicetree SFDP");                       \
+#define SFDP_BFP_ATTR_GEN(idx)                                                              \
+	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(idx, sfdp_bfp),                                  \
+		     "jedec,spi-nor sfdp-bfp required for devicetree SFDP");                \
 	static const __aligned(4) uint8_t bfp_##idx##_data[] = DT_INST_PROP(idx, sfdp_bfp);
 
-#define INST_ATTR_GEN(idx)                                                                         \
-	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(idx, jedec_id),                                         \
-		     "jedec,spi-nor jedec-id required for non-runtime SFDP");                      \
-	IF_ENABLED(CONFIG_FLASH_PAGE_LAYOUT, (PAGE_LAYOUT_GEN(idx)))                                                                                 \
+#define INST_ATTR_GEN(idx)                                                    \
+	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(idx, jedec_id),                    \
+		     "jedec,spi-nor jedec-id required for non-runtime SFDP"); \
+	IF_ENABLED(CONFIG_FLASH_PAGE_LAYOUT, (PAGE_LAYOUT_GEN(idx)))                                                            \
 	IF_ENABLED(CONFIG_SPI_NOR_SFDP_DEVICETREE, (SFDP_BFP_ATTR_GEN(idx)))
 
 #define ATTRIBUTES_DEFINE(idx) COND_CODE_1(CONFIG_SPI_NOR_SFDP_RUNTIME, EMPTY(),	\
 	(INST_ATTR_GEN(idx)))
 
-#define DEFINE_PAGE_LAYOUT(idx)                                                                    \
+#define DEFINE_PAGE_LAYOUT(idx)                     \
 	IF_ENABLED(CONFIG_FLASH_PAGE_LAYOUT,						\
 		   (.layout = {								\
 			.pages_count = LAYOUT_PAGES_##idx##_COUNT,			\
@@ -1594,42 +1594,42 @@ static const struct flash_driver_api spi_nor_api = {
 
 #define INST_HAS_HOLD_GPIO(idx) DT_INST_NODE_HAS_PROP(idx, hold_gpios)
 
-#define LOCK_DEFINE(idx)                                                                           \
+#define LOCK_DEFINE(idx)                                                              \
 	IF_ENABLED(INST_HAS_LOCK(idx), (BUILD_ASSERT(DT_INST_PROP(idx, has_lock) ==	\
 					(DT_INST_PROP(idx, has_lock) & 0xFF),		\
 					"Need support for lock clear beyond SR1");))
 
 #define INST_HAS_ENTER_4BYTE_ADDR(idx) DT_INST_NODE_HAS_PROP(idx, enter_4byte_addr)
 
-#define CONFIGURE_4BYTE_ADDR(idx)                                                                  \
+#define CONFIGURE_4BYTE_ADDR(idx)                      \
 	IF_ENABLED(INST_HAS_ENTER_4BYTE_ADDR(idx),			\
 		(.enter_4byte_addr = DT_INST_PROP(idx, enter_4byte_addr),))
 
-#define INIT_T_ENTER_DPD(idx)                                                                      \
+#define INIT_T_ENTER_DPD(idx)                                     \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, t_enter_dpd),				\
 		(.t_enter_dpd =								\
 			DIV_ROUND_UP(DT_INST_PROP(idx, t_enter_dpd), NSEC_PER_MSEC)),\
 		(.t_enter_dpd = 0))
 
 #if ANY_INST_HAS_T_EXIT_DPD
-#define INIT_T_EXIT_DPD(idx)                                                                       \
+#define INIT_T_EXIT_DPD(idx)   \
 	COND_CODE_1(									\
 		DT_INST_NODE_HAS_PROP(idx, t_exit_dpd),					\
 		(.t_exit_dpd = DIV_ROUND_UP(DT_INST_PROP(idx, t_exit_dpd), NSEC_PER_MSEC)),\
 		(.t_exit_dpd = 0))
 #endif
 
-#define INIT_WP_GPIOS(idx)                                                                         \
+#define INIT_WP_GPIOS(idx)                                  \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, wp_gpios), \
 		(.wp = GPIO_DT_SPEC_INST_GET(idx, wp_gpios)), \
 		(.wp = {0}))
 
-#define INIT_HOLD_GPIOS(idx)                                                                       \
+#define INIT_HOLD_GPIOS(idx)                                  \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, hold_gpios), \
 		(.hold = GPIO_DT_SPEC_INST_GET(idx, hold_gpios)), \
 		(.hold = {0},))
 
-#define INIT_WAKEUP_SEQ_PARAMS(idx)                                                                \
+#define INIT_WAKEUP_SEQ_PARAMS(idx)                                      \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, dpd_wakeup_sequence),			\
 		(.t_dpdd_ms = DIV_ROUND_UP(						\
 			DT_INST_PROP_BY_IDX(idx, dpd_wakeup_sequence, 0), NSEC_PER_MSEC),\
@@ -1639,12 +1639,12 @@ static const struct flash_driver_api spi_nor_api = {
 			DT_INST_PROP_BY_IDX(idx, dpd_wakeup_sequence, 2), NSEC_PER_MSEC)),\
 		(.t_dpdd_ms = 0, .t_crdp_ms = 0, .t_rdp_ms = 0))
 
-#define INIT_MXICY_MX25R_POWER_MODE(idx)                                                           \
+#define INIT_MXICY_MX25R_POWER_MODE(idx)                                    \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, mxicy_mx25r_power_mode),			\
 		(.mxicy_mx25r_power_mode = DT_INST_ENUM_IDX(idx, mxicy_mx25r_power_mode)),\
 		(.mxicy_mx25r_power_mode = 0))
 
-#define INIT_RESET_GPIOS(idx)                                                                      \
+#define INIT_RESET_GPIOS(idx)                                  \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, reset_gpios), \
 		(.reset = GPIO_DT_SPEC_INST_GET(idx, reset_gpios)), \
 		(.reset = {0}))
@@ -1670,21 +1670,21 @@ static const struct flash_driver_api spi_nor_api = {
 																  IF_ENABLED(ANY_INST_HAS_WP_GPIOS, (INIT_WP_GPIOS(idx),))   \
 																		  IF_ENABLED(ANY_INST_HAS_HOLD_GPIOS, (INIT_HOLD_GPIOS(idx),))
 
-#define GENERATE_CONFIG_STRUCT(idx)                                                                \
-	static const struct spi_nor_config spi_nor_##idx##_config = {                              \
-		.spi = SPI_DT_SPEC_INST_GET(idx, SPI_WORD_SET(8), CONFIG_SPI_NOR_CS_WAIT_DELAY),   \
+#define GENERATE_CONFIG_STRUCT(idx)                                                              \
+	static const struct spi_nor_config spi_nor_##idx##_config = {                            \
+		.spi = SPI_DT_SPEC_INST_GET(idx, SPI_WORD_SET(8), CONFIG_SPI_NOR_CS_WAIT_DELAY), \
 		COND_CODE_1(CONFIG_SPI_NOR_SFDP_RUNTIME, EMPTY(), (INST_CONFIG_STRUCT_GEN(idx)))};
 
 #define ASSIGN_PM(idx) PM_DEVICE_DT_INST_DEFINE(idx, spi_nor_pm_control);
 
-#define SPI_NOR_INST(idx)                                                                          \
-	ASSIGN_PM(idx)                                                                             \
-	ATTRIBUTES_DEFINE(idx)                                                                     \
-	LOCK_DEFINE(idx)                                                                           \
-	GENERATE_CONFIG_STRUCT(idx)                                                                \
-	static struct spi_nor_data spi_nor_##idx##_data;                                           \
-	DEVICE_DT_INST_DEFINE(idx, &spi_nor_init, PM_DEVICE_DT_INST_GET(idx),                      \
-			      &spi_nor_##idx##_data, &spi_nor_##idx##_config, POST_KERNEL,         \
+#define SPI_NOR_INST(idx)                                                                  \
+	ASSIGN_PM(idx)                                                                     \
+	ATTRIBUTES_DEFINE(idx)                                                             \
+	LOCK_DEFINE(idx)                                                                   \
+	GENERATE_CONFIG_STRUCT(idx)                                                        \
+	static struct spi_nor_data spi_nor_##idx##_data;                                   \
+	DEVICE_DT_INST_DEFINE(idx, &spi_nor_init, PM_DEVICE_DT_INST_GET(idx),              \
+			      &spi_nor_##idx##_data, &spi_nor_##idx##_config, POST_KERNEL, \
 			      CONFIG_SPI_NOR_INIT_PRIORITY, &spi_nor_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_NOR_INST)

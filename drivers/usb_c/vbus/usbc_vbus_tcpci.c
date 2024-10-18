@@ -93,15 +93,15 @@ static int tcpci_init(const struct device *dev)
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 0,
 	     "No compatible USB-C VBUS Measurement instance found");
 
-#define VBUS_TCPCI_INIT_CFG(node)                                                                  \
-	{                                                                                          \
-		.i2c = {I2C_DT_SPEC_GET_ON_I2C(DT_PARENT(node))},                                  \
+#define VBUS_TCPCI_INIT_CFG(node)                                 \
+	{                                                         \
+		.i2c = {I2C_DT_SPEC_GET_ON_I2C(DT_PARENT(node))}, \
 	}
 
-#define DRIVER_INIT(inst)                                                                          \
-	static const struct vbus_tcpci_cfg drv_config_##inst =                                     \
-		VBUS_TCPCI_INIT_CFG(DT_DRV_INST(inst));                                            \
-	DEVICE_DT_INST_DEFINE(inst, &tcpci_init, NULL, NULL, &drv_config_##inst, POST_KERNEL,      \
+#define DRIVER_INIT(inst)                                                                     \
+	static const struct vbus_tcpci_cfg drv_config_##inst =                                \
+		VBUS_TCPCI_INIT_CFG(DT_DRV_INST(inst));                                       \
+	DEVICE_DT_INST_DEFINE(inst, &tcpci_init, NULL, NULL, &drv_config_##inst, POST_KERNEL, \
 			      CONFIG_USBC_VBUS_INIT_PRIORITY, &vbus_tcpci_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DRIVER_INIT)

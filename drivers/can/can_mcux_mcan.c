@@ -191,45 +191,45 @@ static const struct can_mcan_ops mcux_mcan_ops = {
 	.clear_mram = mcux_mcan_clear_mram,
 };
 
-#define MCUX_MCAN_INIT(n)                                                                          \
-	CAN_MCAN_DT_INST_BUILD_ASSERT_MRAM_CFG(n);                                                 \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-                                                                                                   \
-	static void mcux_mcan_irq_config_##n(const struct device *dev);                            \
-                                                                                                   \
-	CAN_MCAN_DT_INST_CALLBACKS_DEFINE(n, mcux_mcan_cbs_##n);                                   \
-	CAN_MCAN_DT_INST_MRAM_DEFINE(n, mcux_mcan_mram_##n);                                       \
-                                                                                                   \
-	static const struct mcux_mcan_config mcux_mcan_config_##n = {                              \
-		.base = CAN_MCAN_DT_INST_MCAN_ADDR(n),                                             \
-		.mram = (mem_addr_t)POINTER_TO_UINT(&mcux_mcan_mram_##n),                          \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
-		.irq_config_func = mcux_mcan_irq_config_##n,                                       \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
-		.reset = RESET_DT_SPEC_INST_GET(n),                                                \
-	};                                                                                         \
-                                                                                                   \
-	static const struct can_mcan_config can_mcan_config_##n = CAN_MCAN_DT_CONFIG_INST_GET(     \
-		n, &mcux_mcan_config_##n, &mcux_mcan_ops, &mcux_mcan_cbs_##n);                     \
-                                                                                                   \
-	static struct can_mcan_data can_mcan_data_##n = CAN_MCAN_DATA_INITIALIZER(NULL);           \
-                                                                                                   \
-	CAN_DEVICE_DT_INST_DEFINE(n, mcux_mcan_init, NULL, &can_mcan_data_##n,                     \
-				  &can_mcan_config_##n, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,     \
-				  &mcux_mcan_driver_api);                                          \
-                                                                                                   \
-	static void mcux_mcan_irq_config_##n(const struct device *dev)                             \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, int0, irq),                                     \
-			    DT_INST_IRQ_BY_NAME(n, int0, priority), can_mcan_line_0_isr,           \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQ_BY_NAME(n, int0, irq));                                     \
-                                                                                                   \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, int1, irq),                                     \
-			    DT_INST_IRQ_BY_NAME(n, int1, priority), can_mcan_line_1_isr,           \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQ_BY_NAME(n, int1, irq));                                     \
+#define MCUX_MCAN_INIT(n)                                                                      \
+	CAN_MCAN_DT_INST_BUILD_ASSERT_MRAM_CFG(n);                                             \
+	PINCTRL_DT_INST_DEFINE(n);                                                             \
+                                                                                               \
+	static void mcux_mcan_irq_config_##n(const struct device *dev);                        \
+                                                                                               \
+	CAN_MCAN_DT_INST_CALLBACKS_DEFINE(n, mcux_mcan_cbs_##n);                               \
+	CAN_MCAN_DT_INST_MRAM_DEFINE(n, mcux_mcan_mram_##n);                                   \
+                                                                                               \
+	static const struct mcux_mcan_config mcux_mcan_config_##n = {                          \
+		.base = CAN_MCAN_DT_INST_MCAN_ADDR(n),                                         \
+		.mram = (mem_addr_t)POINTER_TO_UINT(&mcux_mcan_mram_##n),                      \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                            \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),          \
+		.irq_config_func = mcux_mcan_irq_config_##n,                                   \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                   \
+		.reset = RESET_DT_SPEC_INST_GET(n),                                            \
+	};                                                                                     \
+                                                                                               \
+	static const struct can_mcan_config can_mcan_config_##n = CAN_MCAN_DT_CONFIG_INST_GET( \
+		n, &mcux_mcan_config_##n, &mcux_mcan_ops, &mcux_mcan_cbs_##n);                 \
+                                                                                               \
+	static struct can_mcan_data can_mcan_data_##n = CAN_MCAN_DATA_INITIALIZER(NULL);       \
+                                                                                               \
+	CAN_DEVICE_DT_INST_DEFINE(n, mcux_mcan_init, NULL, &can_mcan_data_##n,                 \
+				  &can_mcan_config_##n, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY, \
+				  &mcux_mcan_driver_api);                                      \
+                                                                                               \
+	static void mcux_mcan_irq_config_##n(const struct device *dev)                         \
+	{                                                                                      \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, int0, irq),                                 \
+			    DT_INST_IRQ_BY_NAME(n, int0, priority), can_mcan_line_0_isr,       \
+			    DEVICE_DT_INST_GET(n), 0);                                         \
+		irq_enable(DT_INST_IRQ_BY_NAME(n, int0, irq));                                 \
+                                                                                               \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, int1, irq),                                 \
+			    DT_INST_IRQ_BY_NAME(n, int1, priority), can_mcan_line_1_isr,       \
+			    DEVICE_DT_INST_GET(n), 0);                                         \
+		irq_enable(DT_INST_IRQ_BY_NAME(n, int1, irq));                                 \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_MCAN_INIT)

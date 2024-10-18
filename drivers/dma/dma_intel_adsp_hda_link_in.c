@@ -24,21 +24,21 @@ static const struct dma_driver_api intel_adsp_hda_dma_link_in_api = {
 	.chan_filter = intel_adsp_hda_dma_chan_filter,
 };
 
-#define INTEL_ADSP_HDA_DMA_LINK_IN_INIT(inst)                                                      \
-	static const struct intel_adsp_hda_dma_cfg intel_adsp_hda_dma##inst##_config = {           \
-		.base = DT_INST_REG_ADDR(inst),                                                    \
-		.regblock_size = DT_INST_REG_SIZE(inst),                                           \
-		.dma_channels = DT_INST_PROP(inst, dma_channels),                                  \
-		.direction = PERIPHERAL_TO_MEMORY,                                                 \
-		.irq_config = NULL};                                                               \
-                                                                                                   \
-	static struct intel_adsp_hda_dma_data intel_adsp_hda_dma##inst##_data = {};                \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, intel_adsp_hda_dma_pm_action);                              \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, &intel_adsp_hda_dma_init, PM_DEVICE_DT_INST_GET(inst),         \
-			      &intel_adsp_hda_dma##inst##_data,                                    \
-			      &intel_adsp_hda_dma##inst##_config, POST_KERNEL,                     \
+#define INTEL_ADSP_HDA_DMA_LINK_IN_INIT(inst)                                              \
+	static const struct intel_adsp_hda_dma_cfg intel_adsp_hda_dma##inst##_config = {   \
+		.base = DT_INST_REG_ADDR(inst),                                            \
+		.regblock_size = DT_INST_REG_SIZE(inst),                                   \
+		.dma_channels = DT_INST_PROP(inst, dma_channels),                          \
+		.direction = PERIPHERAL_TO_MEMORY,                                         \
+		.irq_config = NULL};                                                       \
+                                                                                           \
+	static struct intel_adsp_hda_dma_data intel_adsp_hda_dma##inst##_data = {};        \
+                                                                                           \
+	PM_DEVICE_DT_INST_DEFINE(inst, intel_adsp_hda_dma_pm_action);                      \
+                                                                                           \
+	DEVICE_DT_INST_DEFINE(inst, &intel_adsp_hda_dma_init, PM_DEVICE_DT_INST_GET(inst), \
+			      &intel_adsp_hda_dma##inst##_data,                            \
+			      &intel_adsp_hda_dma##inst##_config, POST_KERNEL,             \
 			      CONFIG_DMA_INIT_PRIORITY, &intel_adsp_hda_dma_link_in_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INTEL_ADSP_HDA_DMA_LINK_IN_INIT)

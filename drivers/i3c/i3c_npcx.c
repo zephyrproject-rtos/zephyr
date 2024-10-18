@@ -39,8 +39,8 @@ LOG_MODULE_REGISTER(npcx_i3c, CONFIG_I3C_LOG_LEVEL);
 
 #define MCLKD_FREQ_45_MHZ MHZ(45)
 
-#define I3C_STATUS_CLR_MASK                                                                        \
-	(BIT(NPCX_I3C_MSTATUS_MCTRLDONE) | BIT(NPCX_I3C_MSTATUS_COMPLETE) |                        \
+#define I3C_STATUS_CLR_MASK                                                 \
+	(BIT(NPCX_I3C_MSTATUS_MCTRLDONE) | BIT(NPCX_I3C_MSTATUS_COMPLETE) | \
 	 BIT(NPCX_I3C_MSTATUS_IBIWON) | BIT(NPCX_I3C_MSTATUS_NOWCNTLR))
 
 #define HDR_DDR_CMD_AND_CRC_SZ_WORD 0x2 /* 2 words =  Command(1 word) + CRC(1 word) */

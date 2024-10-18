@@ -171,17 +171,17 @@ static const struct led_driver_api lp5569_led_api = {
 	.off = lp5569_led_off,
 };
 
-#define LP5569_DEFINE(id)                                                                          \
-	static const struct lp5569_config lp5569_config_##id = {                                   \
-		.bus = I2C_DT_SPEC_INST_GET(id),                                                   \
-		.enable_gpio = GPIO_DT_SPEC_INST_GET_OR(id, enable_gpios, {0}),                    \
-		.cp_mode = DT_ENUM_IDX(DT_DRV_INST(id), charge_pump_mode),                         \
-	};                                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(id, lp5569_pm_action);                                            \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(id, &lp5569_init, PM_DEVICE_DT_INST_GET(id), NULL,                   \
-			      &lp5569_config_##id, POST_KERNEL, CONFIG_LED_INIT_PRIORITY,          \
+#define LP5569_DEFINE(id)                                                                 \
+	static const struct lp5569_config lp5569_config_##id = {                          \
+		.bus = I2C_DT_SPEC_INST_GET(id),                                          \
+		.enable_gpio = GPIO_DT_SPEC_INST_GET_OR(id, enable_gpios, {0}),           \
+		.cp_mode = DT_ENUM_IDX(DT_DRV_INST(id), charge_pump_mode),                \
+	};                                                                                \
+                                                                                          \
+	PM_DEVICE_DT_INST_DEFINE(id, lp5569_pm_action);                                   \
+                                                                                          \
+	DEVICE_DT_INST_DEFINE(id, &lp5569_init, PM_DEVICE_DT_INST_GET(id), NULL,          \
+			      &lp5569_config_##id, POST_KERNEL, CONFIG_LED_INIT_PRIORITY, \
 			      &lp5569_led_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LP5569_DEFINE)

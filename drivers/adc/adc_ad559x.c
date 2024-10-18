@@ -280,15 +280,15 @@ static const struct adc_driver_api adc_ad559x_api = {
 	.ref_internal = AD559X_ADC_VREF_MV,
 };
 
-#define ADC_AD559X_DEFINE(inst)                                                                    \
-	static const struct adc_ad559x_config adc_ad559x_config##inst = {                          \
-		.mfd_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                    \
-	};                                                                                         \
-                                                                                                   \
-	static struct adc_ad559x_data adc_ad559x_data##inst;                                       \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, adc_ad559x_init, NULL, &adc_ad559x_data##inst,                 \
-			      &adc_ad559x_config##inst, POST_KERNEL, CONFIG_MFD_INIT_PRIORITY,     \
+#define ADC_AD559X_DEFINE(inst)                                                                \
+	static const struct adc_ad559x_config adc_ad559x_config##inst = {                      \
+		.mfd_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                \
+	};                                                                                     \
+                                                                                               \
+	static struct adc_ad559x_data adc_ad559x_data##inst;                                   \
+                                                                                               \
+	DEVICE_DT_INST_DEFINE(inst, adc_ad559x_init, NULL, &adc_ad559x_data##inst,             \
+			      &adc_ad559x_config##inst, POST_KERNEL, CONFIG_MFD_INIT_PRIORITY, \
 			      &adc_ad559x_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_AD559X_DEFINE)

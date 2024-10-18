@@ -23,13 +23,13 @@ static void uart_sedi_cb(struct device *port);
 
 /* Setting configuration function. */
 #define UART_CONFIG_IRQ_HANDLER_SET(n) .uart_irq_config_func = irq_config_uart_##n
-#define UART_IRQ_HANDLER_DEFINE(n)                                                                 \
-	static void irq_config_uart_##n(const struct device *dev)                                  \
-	{                                                                                          \
-		ARG_UNUSED(dev);                                                                   \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_sedi_isr,              \
-			    DEVICE_DT_GET(DT_NODELABEL(uart##n)), DT_INST_IRQ(n, sense));          \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define UART_IRQ_HANDLER_DEFINE(n)                                                        \
+	static void irq_config_uart_##n(const struct device *dev)                         \
+	{                                                                                 \
+		ARG_UNUSED(dev);                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_sedi_isr,     \
+			    DEVICE_DT_GET(DT_NODELABEL(uart##n)), DT_INST_IRQ(n, sense)); \
+		irq_enable(DT_INST_IRQN(n));                                              \
 	}
 #else /*CONFIG_UART_INTERRUPT_DRIVEN */
 #define UART_IRQ_HANDLER_DECL(n)

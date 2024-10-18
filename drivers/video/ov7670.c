@@ -173,13 +173,13 @@ const struct ov7670_resolution_cfg OV7670_RESOLUTION_VGA = {.com7 = 0x04,
 /* OV7670 definitions */
 #define OV7670_PROD_ID 0x76
 
-#define OV7670_VIDEO_FORMAT_CAP(width, height, format)                                             \
-	{.pixelformat = (format),                                                                  \
-	 .width_min = (width),                                                                     \
-	 .width_max = (width),                                                                     \
-	 .height_min = (height),                                                                   \
-	 .height_max = (height),                                                                   \
-	 .width_step = 0,                                                                          \
+#define OV7670_VIDEO_FORMAT_CAP(width, height, format) \
+	{.pixelformat = (format),                      \
+	 .width_min = (width),                         \
+	 .width_max = (width),                         \
+	 .height_min = (height),                       \
+	 .height_max = (height),                       \
+	 .width_step = 0,                              \
 	 .height_step = 0}
 
 static const struct video_format_cap fmts[] = {

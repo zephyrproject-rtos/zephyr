@@ -1067,7 +1067,7 @@ static int bt_nxp_ctlr_init(void)
 	uart_dev_data.secondary_flowcontrol =
 		(bool)DT_PROP_OR(DT_DRV_INST(0), fw_download_secondary_flowcontrol, false);
 
-#if DT_NODE_HAS_PROP(DT_DRV_INST(0), sdio_reset_gpios) ||                                          \
+#if DT_NODE_HAS_PROP(DT_DRV_INST(0), sdio_reset_gpios) || \
 	DT_NODE_HAS_PROP(DT_DRV_INST(0), w_disable_gpios)
 #if DT_NODE_HAS_PROP(DT_DRV_INST(0), sdio_reset_gpios)
 	/* Check BT REG_ON gpio instance */

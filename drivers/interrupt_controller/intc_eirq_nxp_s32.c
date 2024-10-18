@@ -205,10 +205,10 @@ static int eirq_nxp_s32_init(const struct device *dev)
 	return 0;
 }
 
-#define EIRQ_NXP_S32_ISR_DEFINE(idx, n)                                                            \
-	static void eirq_nxp_s32_isr##idx##_##n(const struct device *dev)                          \
-	{                                                                                          \
-		eirq_nxp_s32_interrupt_handler(dev, idx);                                          \
+#define EIRQ_NXP_S32_ISR_DEFINE(idx, n)                                   \
+	static void eirq_nxp_s32_isr##idx##_##n(const struct device *dev) \
+	{                                                                 \
+		eirq_nxp_s32_interrupt_handler(dev, idx);                 \
 	}
 
 #define _EIRQ_NXP_S32_IRQ_CONFIG(idx, n)                                                           \
@@ -219,10 +219,10 @@ static int eirq_nxp_s32_init(const struct device *dev)
 		irq_enable(DT_INST_IRQ_BY_IDX(n, idx, irq));                                       \
 	} while (false);
 
-#define EIRQ_NXP_S32_IRQ_CONFIG(n)                                                                 \
+#define EIRQ_NXP_S32_IRQ_CONFIG(n) \
 	LISTIFY(DT_NUM_IRQS(DT_DRV_INST(n)), _EIRQ_NXP_S32_IRQ_CONFIG, (), n)
 
-#define EIRQ_NXP_S32_FILTER_CONFIG(idx, n)                                                         \
+#define EIRQ_NXP_S32_FILTER_CONFIG(idx, n) \
 	COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(n, irq_##idx)),                                   \
 		    (DT_PROP_OR(DT_INST_CHILD(n, irq_##idx), max_filter_counter,                   \
 				GLITCH_FILTER_DISABLED)),                                          \

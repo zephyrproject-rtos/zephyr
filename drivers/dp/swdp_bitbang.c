@@ -25,7 +25,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(swdp, CONFIG_DP_DRIVER_LOG_LEVEL);
 
-#define MAX_SWJ_CLOCK(delay_cycles, port_write_cycles)                                             \
+#define MAX_SWJ_CLOCK(delay_cycles, port_write_cycles)          \
 	((CPU_CLOCK / 2U) / (port_write_cycles + delay_cycles))
 
 /*
@@ -213,30 +213,30 @@ static ALWAYS_INLINE void pin_swdio_out_disable(const struct device *dev)
 	}
 }
 
-#define SW_CLOCK_CYCLE(dev, delay)                                                                 \
-	do {                                                                                       \
-		pin_swclk_clr(dev);                                                                \
-		pin_delay_asm(delay);                                                              \
-		pin_swclk_set(dev);                                                                \
-		pin_delay_asm(delay);                                                              \
+#define SW_CLOCK_CYCLE(dev, delay)    \
+	do {                          \
+		pin_swclk_clr(dev);   \
+		pin_delay_asm(delay); \
+		pin_swclk_set(dev);   \
+		pin_delay_asm(delay); \
 	} while (0)
 
-#define SW_WRITE_BIT(dev, bit, delay)                                                              \
-	do {                                                                                       \
-		pin_swdio_out(dev, bit);                                                           \
-		pin_swclk_clr(dev);                                                                \
-		pin_delay_asm(delay);                                                              \
-		pin_swclk_set(dev);                                                                \
-		pin_delay_asm(delay);                                                              \
+#define SW_WRITE_BIT(dev, bit, delay)    \
+	do {                             \
+		pin_swdio_out(dev, bit); \
+		pin_swclk_clr(dev);      \
+		pin_delay_asm(delay);    \
+		pin_swclk_set(dev);      \
+		pin_delay_asm(delay);    \
 	} while (0)
 
-#define SW_READ_BIT(dev, bit, delay)                                                               \
-	do {                                                                                       \
-		pin_swclk_clr(dev);                                                                \
-		pin_delay_asm(delay);                                                              \
-		bit = pin_swdio_in(dev);                                                           \
-		pin_swclk_set(dev);                                                                \
-		pin_delay_asm(delay);                                                              \
+#define SW_READ_BIT(dev, bit, delay)     \
+	do {                             \
+		pin_swclk_clr(dev);      \
+		pin_delay_asm(delay);    \
+		bit = pin_swdio_in(dev); \
+		pin_swclk_set(dev);      \
+		pin_delay_asm(delay);    \
 	} while (0)
 
 static int sw_output_sequence(const struct device *dev, uint32_t count, const uint8_t *data)
@@ -696,33 +696,33 @@ static struct swdp_api swdp_bitbang_api = {
 	.swdp_port_off = sw_port_off,
 };
 
-#define SW_GPIOS_GET_REG(n, gpios)                                                                 \
+#define SW_GPIOS_GET_REG(n, gpios)                         \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, gpios),					\
 		    (INT_TO_POINTER(DT_REG_ADDR(DT_PHANDLE(DT_DRV_INST(n), gpios)))),	\
 		    (NULL))
 
-#define SW_DEVICE_DEFINE(n)                                                                        \
-	BUILD_ASSERT((DT_INST_NODE_HAS_PROP(n, dout_gpios)) ==                                     \
-			     (DT_INST_NODE_HAS_PROP(n, dnoe_gpios)),                               \
-		     "Either the dout-gpios or dnoe-gpios property is missing.");                  \
-                                                                                                   \
-	static const struct sw_config sw_cfg_##n = {                                               \
-		.clk = GPIO_DT_SPEC_INST_GET(n, clk_gpios),                                        \
-		.clk_reg = SW_GPIOS_GET_REG(n, clk_gpios),                                         \
-		.dio = GPIO_DT_SPEC_INST_GET(n, dio_gpios),                                        \
-		.dio_reg = SW_GPIOS_GET_REG(n, dio_gpios),                                         \
-		.dout = GPIO_DT_SPEC_INST_GET_OR(n, dout_gpios, {0}),                              \
-		.dout_reg = SW_GPIOS_GET_REG(n, dout_gpios),                                       \
-		.dnoe = GPIO_DT_SPEC_INST_GET_OR(n, dnoe_gpios, {0}),                              \
-		.dnoe_reg = SW_GPIOS_GET_REG(n, dnoe_gpios),                                       \
-		.noe = GPIO_DT_SPEC_INST_GET_OR(n, noe_gpios, {0}),                                \
-		.reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                            \
-		.port_write_cycles = DT_INST_PROP(n, port_write_cycles),                           \
-	};                                                                                         \
-                                                                                                   \
-	static struct sw_cfg_data sw_data_##n;                                                     \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, sw_gpio_init, NULL, &sw_data_##n, &sw_cfg_##n, POST_KERNEL,       \
+#define SW_DEVICE_DEFINE(n)                                                                  \
+	BUILD_ASSERT((DT_INST_NODE_HAS_PROP(n, dout_gpios)) ==                               \
+			     (DT_INST_NODE_HAS_PROP(n, dnoe_gpios)),                         \
+		     "Either the dout-gpios or dnoe-gpios property is missing.");            \
+                                                                                             \
+	static const struct sw_config sw_cfg_##n = {                                         \
+		.clk = GPIO_DT_SPEC_INST_GET(n, clk_gpios),                                  \
+		.clk_reg = SW_GPIOS_GET_REG(n, clk_gpios),                                   \
+		.dio = GPIO_DT_SPEC_INST_GET(n, dio_gpios),                                  \
+		.dio_reg = SW_GPIOS_GET_REG(n, dio_gpios),                                   \
+		.dout = GPIO_DT_SPEC_INST_GET_OR(n, dout_gpios, {0}),                        \
+		.dout_reg = SW_GPIOS_GET_REG(n, dout_gpios),                                 \
+		.dnoe = GPIO_DT_SPEC_INST_GET_OR(n, dnoe_gpios, {0}),                        \
+		.dnoe_reg = SW_GPIOS_GET_REG(n, dnoe_gpios),                                 \
+		.noe = GPIO_DT_SPEC_INST_GET_OR(n, noe_gpios, {0}),                          \
+		.reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                      \
+		.port_write_cycles = DT_INST_PROP(n, port_write_cycles),                     \
+	};                                                                                   \
+                                                                                             \
+	static struct sw_cfg_data sw_data_##n;                                               \
+                                                                                             \
+	DEVICE_DT_INST_DEFINE(n, sw_gpio_init, NULL, &sw_data_##n, &sw_cfg_##n, POST_KERNEL, \
 			      CONFIG_DP_DRIVER_INIT_PRIO, &swdp_bitbang_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SW_DEVICE_DEFINE)

@@ -173,12 +173,12 @@ static int wdt_npm6001_init(const struct device *dev)
 	return 0;
 }
 
-#define WDT_NPM6001_DEFINE(n)                                                                      \
-	static const struct wdt_npm6001_config wdt_npm6001_config##n = {                           \
-		.bus = I2C_DT_SPEC_GET(DT_INST_PARENT(n)),                                         \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &wdt_npm6001_init, NULL, NULL, &wdt_npm6001_config##n,            \
+#define WDT_NPM6001_DEFINE(n)                                                                   \
+	static const struct wdt_npm6001_config wdt_npm6001_config##n = {                        \
+		.bus = I2C_DT_SPEC_GET(DT_INST_PARENT(n)),                                      \
+	};                                                                                      \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(n, &wdt_npm6001_init, NULL, NULL, &wdt_npm6001_config##n,         \
 			      POST_KERNEL, CONFIG_WDT_NPM6001_INIT_PRIORITY, &wdt_npm6001_api);
 
 DT_INST_FOREACH_STATUS_OKAY(WDT_NPM6001_DEFINE)

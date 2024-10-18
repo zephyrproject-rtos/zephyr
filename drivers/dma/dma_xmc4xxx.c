@@ -24,9 +24,9 @@ LOG_MODULE_REGISTER(dma_xmc4xxx, CONFIG_DMA_LOG_LEVEL);
 #define DLR_SRSEL_RS_BITSIZE 4
 #define DLR_SRSEL_RS_MSK     0xf
 
-#define ALL_EVENTS                                                                                 \
-	(XMC_DMA_CH_EVENT_TRANSFER_COMPLETE | XMC_DMA_CH_EVENT_BLOCK_TRANSFER_COMPLETE |           \
-	 XMC_DMA_CH_EVENT_SRC_TRANSACTION_COMPLETE | XMC_DMA_CH_EVENT_DST_TRANSACTION_COMPLETE |   \
+#define ALL_EVENTS                                                                               \
+	(XMC_DMA_CH_EVENT_TRANSFER_COMPLETE | XMC_DMA_CH_EVENT_BLOCK_TRANSFER_COMPLETE |         \
+	 XMC_DMA_CH_EVENT_SRC_TRANSACTION_COMPLETE | XMC_DMA_CH_EVENT_DST_TRANSACTION_COMPLETE | \
 	 XMC_DMA_CH_EVENT_ERROR)
 
 struct dma_xmc4xxx_channel {
@@ -47,22 +47,22 @@ struct dma_xmc4xxx_data {
 	struct dma_xmc4xxx_channel *channels;
 };
 
-#define HANDLE_EVENT(event_test, get_channels_event, ret)                                          \
-	do {                                                                                       \
-		if (event & (XMC_DMA_CH_##event_test)) {                                           \
-			uint32_t channels_event = get_channels_event(dma);                         \
-			int channel = find_lsb_set(channels_event) - 1;                            \
-			struct dma_xmc4xxx_channel *dma_channel;                                   \
-                                                                                                   \
-			__ASSERT_NO_MSG(channel >= 0);                                             \
-			dma_channel = &dev_data->channels[channel];                                \
-			/* Event has to be cleared before callback. The callback may call */       \
-			/* dma_start() and re-enable the event */                                  \
-			XMC_DMA_CH_ClearEventStatus(dma, channel, XMC_DMA_CH_##event_test);        \
-			if (dma_channel->cb) {                                                     \
-				dma_channel->cb(dev, dma_channel->user_data, channel, (ret));      \
-			}                                                                          \
-		}                                                                                  \
+#define HANDLE_EVENT(event_test, get_channels_event, ret)                                     \
+	do {                                                                                  \
+		if (event & (XMC_DMA_CH_##event_test)) {                                      \
+			uint32_t channels_event = get_channels_event(dma);                    \
+			int channel = find_lsb_set(channels_event) - 1;                       \
+			struct dma_xmc4xxx_channel *dma_channel;                              \
+                                                                                              \
+			__ASSERT_NO_MSG(channel >= 0);                                        \
+			dma_channel = &dev_data->channels[channel];                           \
+			/* Event has to be cleared before callback. The callback may call */  \
+			/* dma_start() and re-enable the event */                             \
+			XMC_DMA_CH_ClearEventStatus(dma, channel, XMC_DMA_CH_##event_test);   \
+			if (dma_channel->cb) {                                                \
+				dma_channel->cb(dev, dma_channel->user_data, channel, (ret)); \
+			}                                                                     \
+		}                                                                             \
 	} while (0)
 
 /* Isr is level triggered, so we don't have to loop over all the channels */

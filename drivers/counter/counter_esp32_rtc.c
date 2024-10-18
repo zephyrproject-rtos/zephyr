@@ -112,7 +112,7 @@ static int counter_esp32_set_alarm(const struct device *dev, uint8_t chan_id,
 	uint32_t now;
 	uint32_t ticks = 0;
 
-#if defined(CONFIG_SOC_SERIES_ESP32) || defined(CONFIG_SOC_SERIES_ESP32C2) ||                      \
+#if defined(CONFIG_SOC_SERIES_ESP32) || defined(CONFIG_SOC_SERIES_ESP32C2) || \
 	defined(CONFIG_SOC_SERIES_ESP32C3)
 	/* In ESP32/C3 Series the min possible value is 30 us*/
 	if (counter_ticks_to_us(dev, alarm_cfg->ticks) < 30) {

@@ -308,18 +308,18 @@ int mfd_npm1300_remove_callback(const struct device *dev, struct gpio_callback *
 	return gpio_manage_callback(&data->callbacks, callback, false);
 }
 
-#define MFD_NPM1300_DEFINE(inst)                                                                   \
-	static struct mfd_npm1300_data data_##inst;                                                \
-                                                                                                   \
-	static const struct mfd_npm1300_config config##inst = {                                    \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.host_int_gpios = GPIO_DT_SPEC_INST_GET_OR(inst, host_int_gpios, {0}),             \
-		.pmic_int_pin = DT_INST_PROP_OR(inst, pmic_int_pin, 0),                            \
-		.active_time = DT_INST_ENUM_IDX(inst, ship_to_active_time_ms),                     \
-		.lp_reset = DT_INST_ENUM_IDX_OR(inst, long_press_reset, 0),                        \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, mfd_npm1300_init, NULL, &data_##inst, &config##inst,           \
+#define MFD_NPM1300_DEFINE(inst)                                                         \
+	static struct mfd_npm1300_data data_##inst;                                      \
+                                                                                         \
+	static const struct mfd_npm1300_config config##inst = {                          \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                       \
+		.host_int_gpios = GPIO_DT_SPEC_INST_GET_OR(inst, host_int_gpios, {0}),   \
+		.pmic_int_pin = DT_INST_PROP_OR(inst, pmic_int_pin, 0),                  \
+		.active_time = DT_INST_ENUM_IDX(inst, ship_to_active_time_ms),           \
+		.lp_reset = DT_INST_ENUM_IDX_OR(inst, long_press_reset, 0),              \
+	};                                                                               \
+                                                                                         \
+	DEVICE_DT_INST_DEFINE(inst, mfd_npm1300_init, NULL, &data_##inst, &config##inst, \
 			      POST_KERNEL, CONFIG_MFD_NPM1300_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MFD_NPM1300_DEFINE)

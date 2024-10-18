@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(LSM6DSL, CONFIG_SENSOR_LOG_LEVEL);
 
 static const uint16_t lsm6dsl_odr_map[] = {0, 12, 26, 52, 104, 208, 416, 833, 1666, 3332, 6664, 1};
 
-#if defined(LSM6DSL_ACCEL_ODR_RUNTIME) || defined(LSM6DSL_GYRO_ODR_RUNTIME) ||                     \
+#if defined(LSM6DSL_ACCEL_ODR_RUNTIME) || defined(LSM6DSL_GYRO_ODR_RUNTIME) || \
 	defined(CONFIG_PM_DEVICE)
 static int lsm6dsl_freq_to_odr_val(uint16_t freq)
 {
@@ -814,10 +814,10 @@ static int lsm6dsl_pm_action(const struct device *dev, enum pm_device_action act
  * LSM6DSL_DEFINE_I2C().
  */
 
-#define LSM6DSL_DEVICE_INIT(inst)                                                                  \
-	PM_DEVICE_DT_INST_DEFINE(inst, lsm6dsl_pm_action);                                         \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, lsm6dsl_init, PM_DEVICE_DT_INST_GET(inst),              \
-				     &lsm6dsl_data_##inst, &lsm6dsl_config_##inst, POST_KERNEL,    \
+#define LSM6DSL_DEVICE_INIT(inst)                                                               \
+	PM_DEVICE_DT_INST_DEFINE(inst, lsm6dsl_pm_action);                                      \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, lsm6dsl_init, PM_DEVICE_DT_INST_GET(inst),           \
+				     &lsm6dsl_data_##inst, &lsm6dsl_config_##inst, POST_KERNEL, \
 				     CONFIG_SENSOR_INIT_PRIORITY, &lsm6dsl_driver_api);
 
 /*
@@ -830,38 +830,38 @@ static int lsm6dsl_pm_action(const struct device *dev, enum pm_device_action act
 #define LSM6DSL_CFG_IRQ(inst)
 #endif /* CONFIG_LSM6DSL_TRIGGER */
 
-#define LSM6DSL_CONFIG_SPI(inst)                                                                   \
-	{.bus_init = lsm6dsl_spi_init,                                                             \
-	 .bus_cfg.spi = SPI_DT_SPEC_INST_GET(                                                      \
-		 inst, SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA, 0),   \
+#define LSM6DSL_CONFIG_SPI(inst)                                                                 \
+	{.bus_init = lsm6dsl_spi_init,                                                           \
+	 .bus_cfg.spi = SPI_DT_SPEC_INST_GET(                                                    \
+		 inst, SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA, 0), \
 	 COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),		\
 		(LSM6DSL_CFG_IRQ(inst)), ()) }
 
-#define LSM6DSL_DEFINE_SPI(inst)                                                                   \
-	static struct lsm6dsl_data lsm6dsl_data_##inst;                                            \
-	static const struct lsm6dsl_config lsm6dsl_config_##inst = LSM6DSL_CONFIG_SPI(inst);       \
+#define LSM6DSL_DEFINE_SPI(inst)                                                             \
+	static struct lsm6dsl_data lsm6dsl_data_##inst;                                      \
+	static const struct lsm6dsl_config lsm6dsl_config_##inst = LSM6DSL_CONFIG_SPI(inst); \
 	LSM6DSL_DEVICE_INIT(inst)
 
 /*
  * Instantiation macros used when a device is on an I2C bus.
  */
 
-#define LSM6DSL_CONFIG_I2C(inst)                                                                   \
-	{.bus_init = lsm6dsl_i2c_init,                                                             \
-	 .bus_cfg.i2c = I2C_DT_SPEC_INST_GET(inst),                                                \
+#define LSM6DSL_CONFIG_I2C(inst)                                                         \
+	{.bus_init = lsm6dsl_i2c_init,                                                   \
+	 .bus_cfg.i2c = I2C_DT_SPEC_INST_GET(inst),                                      \
 	 COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
 		(LSM6DSL_CFG_IRQ(inst)), ()) }
 
-#define LSM6DSL_DEFINE_I2C(inst)                                                                   \
-	static struct lsm6dsl_data lsm6dsl_data_##inst;                                            \
-	static const struct lsm6dsl_config lsm6dsl_config_##inst = LSM6DSL_CONFIG_I2C(inst);       \
+#define LSM6DSL_DEFINE_I2C(inst)                                                             \
+	static struct lsm6dsl_data lsm6dsl_data_##inst;                                      \
+	static const struct lsm6dsl_config lsm6dsl_config_##inst = LSM6DSL_CONFIG_I2C(inst); \
 	LSM6DSL_DEVICE_INIT(inst)
 /*
  * Main instantiation macro. Use of COND_CODE_1() selects the right
  * bus-specific macro at preprocessor time.
  */
 
-#define LSM6DSL_DEFINE(inst)                                                                       \
+#define LSM6DSL_DEFINE(inst)                        \
 	COND_CODE_1(DT_INST_ON_BUS(inst, spi),				\
 		    (LSM6DSL_DEFINE_SPI(inst)),				\
 		    (LSM6DSL_DEFINE_I2C(inst)))

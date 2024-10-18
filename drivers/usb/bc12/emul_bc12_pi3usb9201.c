@@ -153,7 +153,7 @@ static void pi3usb9201_emul_reset(const struct emul *target)
 	gpio_emul_input_set(cfg->intb_gpio.port, cfg->intb_gpio.pin, 1);
 }
 
-#define PI3USB9201_EMUL_RESET_RULE_BEFORE(inst)                                                    \
+#define PI3USB9201_EMUL_RESET_RULE_BEFORE(inst)                      \
 	pi3usb9201_emul_reset(&EMUL_DT_NAME_GET(DT_DRV_INST(inst)));
 
 static void emul_pi3usb9201_reset_before(const struct ztest_unit_test *test, void *data)
@@ -312,15 +312,15 @@ static int pi3usb9201_emul_init(const struct emul *target, const struct device *
 	return 0;
 }
 
-#define PI3USB9201_EMUL(n)                                                                         \
-	static struct pi3usb9201_emul_data pi3usb9201_emul_data_##n = {};                          \
-	static const struct pi3usb9201_emul_cfg pi3usb9201_emul_cfg_##n = {                        \
-		.data = &pi3usb9201_emul_data_##n,                                                 \
-		.addr = DT_INST_REG_ADDR(n),                                                       \
-		.intb_gpio = GPIO_DT_SPEC_INST_GET_OR(n, intb_gpios, {0}),                         \
-	};                                                                                         \
-	EMUL_DT_INST_DEFINE(n, pi3usb9201_emul_init, &pi3usb9201_emul_data_##n,                    \
-			    &pi3usb9201_emul_cfg_##n, &pi3usb9201_emul_bus_api,                    \
+#define PI3USB9201_EMUL(n)                                                      \
+	static struct pi3usb9201_emul_data pi3usb9201_emul_data_##n = {};       \
+	static const struct pi3usb9201_emul_cfg pi3usb9201_emul_cfg_##n = {     \
+		.data = &pi3usb9201_emul_data_##n,                              \
+		.addr = DT_INST_REG_ADDR(n),                                    \
+		.intb_gpio = GPIO_DT_SPEC_INST_GET_OR(n, intb_gpios, {0}),      \
+	};                                                                      \
+	EMUL_DT_INST_DEFINE(n, pi3usb9201_emul_init, &pi3usb9201_emul_data_##n, \
+			    &pi3usb9201_emul_cfg_##n, &pi3usb9201_emul_bus_api, \
 			    &pi3usb9201_emul_backend_api)
 
 DT_INST_FOREACH_STATUS_OKAY(PI3USB9201_EMUL)

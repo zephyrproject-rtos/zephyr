@@ -297,34 +297,34 @@ static const struct sensor_driver_api ms5607_api_funcs = {
 	.channel_get = ms5607_channel_get,
 };
 
-#define MS5607_SPI_OPERATION                                                                       \
+#define MS5607_SPI_OPERATION                                                                      \
 	(SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_TRANSFER_MSB)
 
 /* Initializes a struct ms5607_config for an instance on a SPI bus. */
-#define MS5607_CONFIG_SPI(inst)                                                                    \
-	{                                                                                          \
-		.tf = &ms5607_spi_transfer_function,                                               \
-		.bus_cfg.spi = SPI_DT_SPEC_INST_GET(inst, MS5607_SPI_OPERATION, 0),                \
+#define MS5607_CONFIG_SPI(inst)                                                     \
+	{                                                                           \
+		.tf = &ms5607_spi_transfer_function,                                \
+		.bus_cfg.spi = SPI_DT_SPEC_INST_GET(inst, MS5607_SPI_OPERATION, 0), \
 	}
 
 /* Initializes a struct ms5607_config for an instance on a I2C bus. */
-#define MS5607_CONFIG_I2C(inst)                                                                    \
-	{                                                                                          \
-		.tf = &ms5607_i2c_transfer_function,                                               \
-		.bus_cfg.i2c = I2C_DT_SPEC_INST_GET(inst),                                         \
+#define MS5607_CONFIG_I2C(inst)                            \
+	{                                                  \
+		.tf = &ms5607_i2c_transfer_function,       \
+		.bus_cfg.i2c = I2C_DT_SPEC_INST_GET(inst), \
 	}
 
 /*
  * Main instantiation macro, which selects the correct bus-specific
  * instantiation macros for the instance.
  */
-#define MS5607_DEFINE(inst)                                                                        \
-	static struct ms5607_data ms5607_data_##inst;                                              \
+#define MS5607_DEFINE(inst)                                                           \
+	static struct ms5607_data ms5607_data_##inst;                                 \
 	static const struct ms5607_config ms5607_config_##inst = COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
 			    (MS5607_CONFIG_SPI(inst)),			\
-			    (MS5607_CONFIG_I2C(inst)));                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, ms5607_init, NULL, &ms5607_data_##inst,                 \
-				     &ms5607_config_##inst, POST_KERNEL,                           \
+			    (MS5607_CONFIG_I2C(inst)));       \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, ms5607_init, NULL, &ms5607_data_##inst,    \
+				     &ms5607_config_##inst, POST_KERNEL,              \
 				     CONFIG_SENSOR_INIT_PRIORITY, &ms5607_api_funcs);
 
 /* Create the struct device for every status "okay" node in the devicetree. */

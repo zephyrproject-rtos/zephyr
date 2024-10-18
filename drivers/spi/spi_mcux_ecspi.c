@@ -301,32 +301,32 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 	.release = spi_mcux_release,
 };
 
-#define SPI_MCUX_ECSPI_INIT(n)                                                                     \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	static void spi_mcux_config_func_##n(const struct device *dev);                            \
-                                                                                                   \
-	static const struct spi_mcux_config spi_mcux_config_##n = {                                \
-		.base = (ECSPI_Type *)DT_INST_REG_ADDR(n),                                         \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
-		.irq_config_func = spi_mcux_config_func_##n,                                       \
-	};                                                                                         \
-                                                                                                   \
-	static struct spi_mcux_data spi_mcux_data_##n = {                                          \
-		SPI_CONTEXT_INIT_LOCK(spi_mcux_data_##n, ctx),                                     \
-		SPI_CONTEXT_INIT_SYNC(spi_mcux_data_##n, ctx),                                     \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                             \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, spi_mcux_init, NULL, &spi_mcux_data_##n, &spi_mcux_config_##n,    \
-			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &spi_mcux_driver_api);        \
-                                                                                                   \
-	static void spi_mcux_config_func_##n(const struct device *dev)                             \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), spi_mcux_isr,               \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define SPI_MCUX_ECSPI_INIT(n)                                                                  \
+	PINCTRL_DT_INST_DEFINE(n);                                                              \
+	static void spi_mcux_config_func_##n(const struct device *dev);                         \
+                                                                                                \
+	static const struct spi_mcux_config spi_mcux_config_##n = {                             \
+		.base = (ECSPI_Type *)DT_INST_REG_ADDR(n),                                      \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                    \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                             \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),           \
+		.irq_config_func = spi_mcux_config_func_##n,                                    \
+	};                                                                                      \
+                                                                                                \
+	static struct spi_mcux_data spi_mcux_data_##n = {                                       \
+		SPI_CONTEXT_INIT_LOCK(spi_mcux_data_##n, ctx),                                  \
+		SPI_CONTEXT_INIT_SYNC(spi_mcux_data_##n, ctx),                                  \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                          \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(n, spi_mcux_init, NULL, &spi_mcux_data_##n, &spi_mcux_config_##n, \
+			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &spi_mcux_driver_api);     \
+                                                                                                \
+	static void spi_mcux_config_func_##n(const struct device *dev)                          \
+	{                                                                                       \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), spi_mcux_isr,            \
+			    DEVICE_DT_INST_GET(n), 0);                                          \
+                                                                                                \
+		irq_enable(DT_INST_IRQN(n));                                                    \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_MCUX_ECSPI_INIT)

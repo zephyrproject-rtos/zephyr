@@ -259,21 +259,21 @@ static const struct led_driver_api xec_bbled_api = {
 
 #define XEC_BBLED_PINCTRL_DEF(i) PINCTRL_DT_INST_DEFINE(i)
 
-#define XEC_BBLED_CONFIG(i)                                                                        \
-	static struct xec_bbled_config xec_bbled_config_##i = {                                    \
-		.regs = (struct xec_bbled_regs *const)DT_INST_REG_ADDR(i),                         \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(i),                                         \
-		.pcr_id = (uint8_t)DT_INST_PROP_BY_IDX(i, pcrs, 0),                                \
-		.pcr_pos = (uint8_t)DT_INST_PROP_BY_IDX(i, pcrs, 1),                               \
+#define XEC_BBLED_CONFIG(i)                                                \
+	static struct xec_bbled_config xec_bbled_config_##i = {            \
+		.regs = (struct xec_bbled_regs *const)DT_INST_REG_ADDR(i), \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(i),                 \
+		.pcr_id = (uint8_t)DT_INST_PROP_BY_IDX(i, pcrs, 0),        \
+		.pcr_pos = (uint8_t)DT_INST_PROP_BY_IDX(i, pcrs, 1),       \
 	}
 
-#define XEC_BBLED_DEVICE(i)                                                                        \
-                                                                                                   \
-	XEC_BBLED_PINCTRL_DEF(i);                                                                  \
-                                                                                                   \
-	XEC_BBLED_CONFIG(i);                                                                       \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(i, &xec_bbled_init, NULL, NULL, &xec_bbled_config_##i, POST_KERNEL,  \
+#define XEC_BBLED_DEVICE(i)                                                                       \
+                                                                                                  \
+	XEC_BBLED_PINCTRL_DEF(i);                                                                 \
+                                                                                                  \
+	XEC_BBLED_CONFIG(i);                                                                      \
+                                                                                                  \
+	DEVICE_DT_INST_DEFINE(i, &xec_bbled_init, NULL, NULL, &xec_bbled_config_##i, POST_KERNEL, \
 			      CONFIG_LED_INIT_PRIORITY, &xec_bbled_api);
 
 DT_INST_FOREACH_STATUS_OKAY(XEC_BBLED_DEVICE)

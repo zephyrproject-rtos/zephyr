@@ -90,8 +90,8 @@ static int dma_mcux_pxp_configure(const struct device *dev, uint32_t channel,
 		bytes_per_pixel = 2;
 		break;
 	case DMA_MCUX_PXP_FMT_RGB888:
-#if (!(defined(FSL_FEATURE_PXP_HAS_NO_EXTEND_PIXEL_FORMAT) &&                                      \
-       FSL_FEATURE_PXP_HAS_NO_EXTEND_PIXEL_FORMAT)) &&                                             \
+#if (!(defined(FSL_FEATURE_PXP_HAS_NO_EXTEND_PIXEL_FORMAT) &&  \
+       FSL_FEATURE_PXP_HAS_NO_EXTEND_PIXEL_FORMAT)) &&         \
 	(!(defined(FSL_FEATURE_PXP_V3) && FSL_FEATURE_PXP_V3))
 		ps_buffer_cfg.pixelFormat = kPXP_PsPixelFormatARGB8888;
 #else

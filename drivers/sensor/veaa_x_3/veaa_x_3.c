@@ -188,30 +188,30 @@ static int veaa_x_3_init(const struct device *dev)
 	return 0;
 }
 
-#define VEAA_X_3_RANGE_KPA_INIT(n)                                                                 \
+#define VEAA_X_3_RANGE_KPA_INIT(n) \
 	COND_CODE_1(DT_INST_ENUM_HAS_VALUE(n, pressure_range_type, d11), ({.max = 1000, min = 5}), \
 		    (COND_CODE_1(DT_INST_ENUM_HAS_VALUE(n, pressure_range_type, d9),               \
 				 ({.max = 600, min = 3}), ({.max = 200, .min = 1}))))
 
-#define VEAA_X_3_TYPE_INIT(n)                                                                      \
+#define VEAA_X_3_TYPE_INIT(n) \
 	COND_CODE_1(DT_INST_ENUM_HAS_VALUE(n, pressure_range_type, d11),                           \
 		    (.kpa_max = 1000, .kpa_min = 5),                                               \
 		    (COND_CODE_1(DT_INST_ENUM_HAS_VALUE(n, pressure_range_type, d9),               \
 				 (.kpa_max = 600, kpa_min = 3), (.kpa_max = 200, .kpa_min = 1))))
 
-#define VEAA_X_3_INIT(n)                                                                           \
-                                                                                                   \
-	static struct veaa_x_3_data veaa_x_3_data_##n;                                             \
-                                                                                                   \
-	static const struct veaa_x_3_cfg veaa_x_3_cfg_##n = {                                      \
-		.adc = ADC_DT_SPEC_INST_GET(n),                                                    \
-		.dac = DEVICE_DT_GET(DT_INST_PHANDLE(n, dac)),                                     \
-		.dac_channel = DT_INST_PROP(n, dac_channel_id),                                    \
-		.dac_resolution = DT_INST_PROP(n, dac_resolution),                                 \
-		VEAA_X_3_TYPE_INIT(n)};                                                            \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, veaa_x_3_init, NULL, &veaa_x_3_data_##n,                   \
-				     &veaa_x_3_cfg_##n, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,  \
+#define VEAA_X_3_INIT(n)                                                                          \
+                                                                                                  \
+	static struct veaa_x_3_data veaa_x_3_data_##n;                                            \
+                                                                                                  \
+	static const struct veaa_x_3_cfg veaa_x_3_cfg_##n = {                                     \
+		.adc = ADC_DT_SPEC_INST_GET(n),                                                   \
+		.dac = DEVICE_DT_GET(DT_INST_PHANDLE(n, dac)),                                    \
+		.dac_channel = DT_INST_PROP(n, dac_channel_id),                                   \
+		.dac_resolution = DT_INST_PROP(n, dac_resolution),                                \
+		VEAA_X_3_TYPE_INIT(n)};                                                           \
+                                                                                                  \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, veaa_x_3_init, NULL, &veaa_x_3_data_##n,                  \
+				     &veaa_x_3_cfg_##n, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, \
 				     &veaa_x_3_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(VEAA_X_3_INIT)

@@ -209,7 +209,7 @@ static uint32_t get_port_pcr_irqc_value_from_flags(const struct device *dev, uin
 }
 #endif /* !defined(FSL_FEATURE_PORT_HAS_NO_INTERRUPT) && FSL_FEATURE_PORT_HAS_NO_INTERRUPT */
 
-#if (defined(FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT) &&                                     \
+#if (defined(FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT) && \
      FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT)
 
 #define GPIO_MCUX_INTERRUPT_DISABLED     0
@@ -280,7 +280,7 @@ static int gpio_mcux_pin_interrupt_configure(const struct device *dev, gpio_pin_
 	uint32_t pcr = get_port_pcr_irqc_value_from_flags(dev, pin, mode, trig);
 
 	port_base->PCR[pin] = (port_base->PCR[pin] & ~PORT_PCR_IRQC_MASK) | pcr;
-#elif (defined(FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT) &&                                   \
+#elif (defined(FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT) && \
        FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT)
 	uint32_t icr = get_gpio_icr_irqc_value_from_flags(dev, pin, mode, trig);
 
@@ -309,7 +309,7 @@ static void gpio_mcux_port_isr(const struct device *dev)
 
 	/* Clear the port interrupts */
 	config->port_base->ISFR = int_status;
-#elif (defined(FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT) &&                                   \
+#elif (defined(FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT) && \
        FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT)
 	int_status = config->gpio_base->ISFR[0];
 
@@ -338,18 +338,18 @@ static void gpio_mcux_shared_cluster_isr(const struct device *ports[])
 
 #define CLUSTER_ARRAY_ELEMENT(node_id) DEVICE_DT_GET(node_id),
 
-#define GPIO_MCUX_CLUSTER_INIT(node_id)                                                            \
-	const struct device *shared_array##node_id[DT_CHILD_NUM_STATUS_OKAY(node_id) + 1] = {      \
-		DT_FOREACH_CHILD_STATUS_OKAY(node_id, CLUSTER_ARRAY_ELEMENT) NULL};                \
-                                                                                                   \
-	static int gpio_mcux_shared_interrupt_init##node_id(void)                                  \
-	{                                                                                          \
-		IRQ_CONNECT(DT_IRQN(node_id), DT_IRQ(node_id, priority),                           \
-			    gpio_mcux_shared_cluster_isr, shared_array##node_id, 0);               \
-		irq_enable(DT_IRQN(node_id));                                                      \
-                                                                                                   \
-		return 0;                                                                          \
-	}                                                                                          \
+#define GPIO_MCUX_CLUSTER_INIT(node_id)                                                       \
+	const struct device *shared_array##node_id[DT_CHILD_NUM_STATUS_OKAY(node_id) + 1] = { \
+		DT_FOREACH_CHILD_STATUS_OKAY(node_id, CLUSTER_ARRAY_ELEMENT) NULL};           \
+                                                                                              \
+	static int gpio_mcux_shared_interrupt_init##node_id(void)                             \
+	{                                                                                     \
+		IRQ_CONNECT(DT_IRQN(node_id), DT_IRQ(node_id, priority),                      \
+			    gpio_mcux_shared_cluster_isr, shared_array##node_id, 0);          \
+		irq_enable(DT_IRQN(node_id));                                                 \
+                                                                                              \
+		return 0;                                                                     \
+	}                                                                                     \
 	SYS_INIT(gpio_mcux_shared_interrupt_init##node_id, POST_KERNEL, 0);
 
 DT_FOREACH_STATUS_OKAY(nxp_gpio_cluster, GPIO_MCUX_CLUSTER_INIT)
@@ -390,12 +390,12 @@ static const struct gpio_driver_api gpio_mcux_driver_api = {
 #endif /* CONFIG_GPIO_GET_DIRECTION */
 };
 
-#define GPIO_MCUX_IRQ_INIT(n)                                                                      \
-	do {                                                                                       \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_mcux_port_isr,         \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define GPIO_MCUX_IRQ_INIT(n)                                                              \
+	do {                                                                               \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_mcux_port_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                                     \
+                                                                                           \
+		irq_enable(DT_INST_IRQN(n));                                               \
 	} while (false)
 
 #define GPIO_PORT_BASE_ADDR(n) DT_REG_ADDR(DT_INST_PHANDLE(n, nxp_kinetis_port))

@@ -344,18 +344,18 @@ static int vl53l0x_pm_action(const struct device *dev, enum pm_device_action act
 }
 #endif
 
-#define VL53L0X_INIT(inst)                                                                         \
-	static struct vl53l0x_config vl53l0x_##inst##_config = {                                   \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.xshut = GPIO_DT_SPEC_INST_GET_OR(inst, xshut_gpios, {})};                         \
-                                                                                                   \
-	static struct vl53l0x_data vl53l0x_##inst##_driver;                                        \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, vl53l0x_pm_action);                                         \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, vl53l0x_init, PM_DEVICE_DT_INST_GET(inst),              \
-				     &vl53l0x_##inst##_driver, &vl53l0x_##inst##_config,           \
-				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,                     \
+#define VL53L0X_INIT(inst)                                                               \
+	static struct vl53l0x_config vl53l0x_##inst##_config = {                         \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                       \
+		.xshut = GPIO_DT_SPEC_INST_GET_OR(inst, xshut_gpios, {})};               \
+                                                                                         \
+	static struct vl53l0x_data vl53l0x_##inst##_driver;                              \
+                                                                                         \
+	PM_DEVICE_DT_INST_DEFINE(inst, vl53l0x_pm_action);                               \
+                                                                                         \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, vl53l0x_init, PM_DEVICE_DT_INST_GET(inst),    \
+				     &vl53l0x_##inst##_driver, &vl53l0x_##inst##_config, \
+				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,           \
 				     &vl53l0x_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(VL53L0X_INIT)

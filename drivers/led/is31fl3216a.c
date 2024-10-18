@@ -217,11 +217,11 @@ static const struct led_driver_api is31fl3216a_led_api = {
 	.off = is31fl3216a_led_off,
 	.write_channels = is31fl3216a_led_write_channels};
 
-#define IS31FL3216A_INIT(id)                                                                       \
-	static const struct is31fl3216a_cfg is31fl3216a_##id##_cfg = {                             \
-		.i2c = I2C_DT_SPEC_INST_GET(id),                                                   \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(id, &is31fl3216a_init, NULL, NULL, &is31fl3216a_##id##_cfg,          \
+#define IS31FL3216A_INIT(id)                                                                \
+	static const struct is31fl3216a_cfg is31fl3216a_##id##_cfg = {                      \
+		.i2c = I2C_DT_SPEC_INST_GET(id),                                            \
+	};                                                                                  \
+	DEVICE_DT_INST_DEFINE(id, &is31fl3216a_init, NULL, NULL, &is31fl3216a_##id##_cfg,   \
 			      POST_KERNEL, CONFIG_LED_INIT_PRIORITY, &is31fl3216a_led_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IS31FL3216A_INIT)

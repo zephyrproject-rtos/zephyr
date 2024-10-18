@@ -477,172 +477,172 @@ static const struct display_driver_api stm32_ltdc_display_api = {
 #define STM32_LTDC_DEVICE_PINCTRL_GET(n)  PINCTRL_DT_INST_DEV_CONFIG_GET(n)
 #endif
 
-#define STM32_LTDC_FRAME_BUFFER_LEN(inst)                                                          \
+#define STM32_LTDC_FRAME_BUFFER_LEN(inst)                                                     \
 	(STM32_LTDC_INIT_PIXEL_SIZE * DT_INST_PROP(inst, height) * DT_INST_PROP(inst, width))
 
-#define STM32_LTDC_DEVICE(inst)                                                                    \
-	STM32_LTDC_DEVICE_PINCTRL_INIT(inst);                                                      \
-	PM_DEVICE_DT_INST_DEFINE(inst, stm32_ltdc_pm_action);                                      \
-	static void stm32_ltdc_irq_config_func_##inst(const struct device *dev)                    \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),                       \
-			    stm32_ltdc_global_isr, DEVICE_DT_INST_GET(inst), 0);                   \
-		irq_enable(DT_INST_IRQN(inst));                                                    \
-	}                                                                                          \
-	/* frame buffer aligned to cache line width for optimal cache flushing */                  \
-	FRAME_BUFFER_SECTION static uint8_t __aligned(32)                                          \
-	frame_buffer_##inst[CONFIG_STM32_LTDC_FB_NUM * STM32_LTDC_FRAME_BUFFER_LEN(inst)];         \
-	static struct display_stm32_ltdc_data stm32_ltdc_data_##inst = {                           \
-		.frame_buffer = frame_buffer_##inst,                                               \
-		.frame_buffer_len = STM32_LTDC_FRAME_BUFFER_LEN(inst),                             \
-		.front_buf = frame_buffer_##inst,                                                  \
-		.pend_buf = frame_buffer_##inst,                                                   \
-		.hltdc =                                                                           \
-			{                                                                          \
-				.Instance = (LTDC_TypeDef *)DT_INST_REG_ADDR(inst),                \
-				.Init =                                                            \
-					{                                                          \
-						.HSPolarity =                                      \
-							(DT_PROP(DT_INST_CHILD(inst,               \
-									       display_timings),   \
-								 hsync_active)                     \
-								 ? LTDC_HSPOL_ACTIVE_HIGH          \
-								 : LTDC_HSPOL_ACTIVE_LOW),         \
-						.VSPolarity =                                      \
-							(DT_PROP(DT_INST_CHILD(inst,               \
-									       display_timings),   \
-								 vsync_active)                     \
-								 ? LTDC_VSPOL_ACTIVE_HIGH          \
-								 : LTDC_VSPOL_ACTIVE_LOW),         \
-						.DEPolarity =                                      \
-							(DT_PROP(DT_INST_CHILD(inst,               \
-									       display_timings),   \
-								 de_active)                        \
-								 ? LTDC_DEPOL_ACTIVE_HIGH          \
-								 : LTDC_DEPOL_ACTIVE_LOW),         \
-						.PCPolarity =                                      \
-							(DT_PROP(DT_INST_CHILD(inst,               \
-									       display_timings),   \
-								 pixelclk_active)                  \
-								 ? LTDC_PCPOL_ACTIVE_HIGH          \
-								 : LTDC_PCPOL_ACTIVE_LOW),         \
-						.HorizontalSync =                                  \
-							DT_PROP(DT_INST_CHILD(inst,                \
-									      display_timings),    \
-								hsync_len) -                       \
-							1,                                         \
-						.VerticalSync =                                    \
-							DT_PROP(DT_INST_CHILD(inst,                \
-									      display_timings),    \
-								vsync_len) -                       \
-							1,                                         \
-						.AccumulatedHBP =                                  \
-							DT_PROP(DT_INST_CHILD(inst,                \
-									      display_timings),    \
-								hback_porch) +                     \
-							DT_PROP(DT_INST_CHILD(inst,                \
-									      display_timings),    \
-								hsync_len) -                       \
-							1,                                         \
-						.AccumulatedVBP =                                  \
-							DT_PROP(DT_INST_CHILD(inst,                \
-									      display_timings),    \
-								vback_porch) +                     \
-							DT_PROP(DT_INST_CHILD(inst,                \
-									      display_timings),    \
-								vsync_len) -                       \
-							1,                                         \
-						.AccumulatedActiveW =                              \
-							DT_PROP(DT_INST_CHILD(inst,                \
-									      display_timings),    \
-								hback_porch) +                     \
-							DT_PROP(DT_INST_CHILD(inst,                \
-									      display_timings),    \
-								hsync_len) +                       \
-							DT_INST_PROP(inst, width) - 1,             \
-						.AccumulatedActiveH =                              \
-							DT_PROP(DT_INST_CHILD(inst,                \
-									      display_timings),    \
-								vback_porch) +                     \
-							DT_PROP(DT_INST_CHILD(inst,                \
-									      display_timings),    \
-								vsync_len) +                       \
-							DT_INST_PROP(inst, height) - 1,            \
-						.TotalWidth =                                      \
-							DT_PROP(DT_INST_CHILD(inst,                \
-									      display_timings),    \
-								hback_porch) +                     \
-							DT_PROP(DT_INST_CHILD(inst,                \
-									      display_timings),    \
-								hsync_len) +                       \
-							DT_INST_PROP(inst, width) +                \
-							DT_PROP(DT_INST_CHILD(inst,                \
-									      display_timings),    \
-								hfront_porch) -                    \
-							1,                                         \
-						.TotalHeigh =                                      \
-							DT_PROP(DT_INST_CHILD(inst,                \
-									      display_timings),    \
-								vback_porch) +                     \
-							DT_PROP(DT_INST_CHILD(inst,                \
-									      display_timings),    \
-								vsync_len) +                       \
-							DT_INST_PROP(inst, height) +               \
-							DT_PROP(DT_INST_CHILD(inst,                \
-									      display_timings),    \
-								vfront_porch) -                    \
-							1,                                         \
-						.Backcolor.Red = DT_INST_PROP_OR(                  \
-							inst, def_back_color_red, 0xFF),           \
-						.Backcolor.Green = DT_INST_PROP_OR(                \
-							inst, def_back_color_green, 0xFF),         \
-						.Backcolor.Blue = DT_INST_PROP_OR(                 \
-							inst, def_back_color_blue, 0xFF),          \
-					},                                                         \
-				.LayerCfg[0] =                                                     \
-					{                                                          \
-						.WindowX0 = DT_INST_PROP_OR(inst, window0_x0, 0),  \
-						.WindowX1 = DT_INST_PROP_OR(                       \
-							inst, window0_x1,                          \
-							DT_INST_PROP(inst, width)),                \
-						.WindowY0 = DT_INST_PROP_OR(inst, window0_y0, 0),  \
-						.WindowY1 = DT_INST_PROP_OR(                       \
-							inst, window0_y1,                          \
-							DT_INST_PROP(inst, height)),               \
-						.PixelFormat = STM32_LTDC_INIT_PIXEL_FORMAT,       \
-						.Alpha = 255,                                      \
-						.Alpha0 = 0,                                       \
-						.BlendingFactor1 = LTDC_BLENDING_FACTOR1_PAxCA,    \
-						.BlendingFactor2 = LTDC_BLENDING_FACTOR2_PAxCA,    \
-						.FBStartAdress = (uint32_t)frame_buffer_##inst,    \
-						.ImageWidth = DT_INST_PROP(inst, width),           \
-						.ImageHeight = DT_INST_PROP(inst, height),         \
-						.Backcolor.Red = DT_INST_PROP_OR(                  \
-							inst, def_back_color_red, 0xFF),           \
-						.Backcolor.Green = DT_INST_PROP_OR(                \
-							inst, def_back_color_green, 0xFF),         \
-						.Backcolor.Blue = DT_INST_PROP_OR(                 \
-							inst, def_back_color_blue, 0xFF),          \
-					},                                                         \
-			},                                                                         \
-	};                                                                                         \
-	static const struct display_stm32_ltdc_config stm32_ltdc_config_##inst = {                 \
-		.width = DT_INST_PROP(inst, width),                                                \
-		.height = DT_INST_PROP(inst, height),                                              \
+#define STM32_LTDC_DEVICE(inst)                                                                   \
+	STM32_LTDC_DEVICE_PINCTRL_INIT(inst);                                                     \
+	PM_DEVICE_DT_INST_DEFINE(inst, stm32_ltdc_pm_action);                                     \
+	static void stm32_ltdc_irq_config_func_##inst(const struct device *dev)                   \
+	{                                                                                         \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),                      \
+			    stm32_ltdc_global_isr, DEVICE_DT_INST_GET(inst), 0);                  \
+		irq_enable(DT_INST_IRQN(inst));                                                   \
+	}                                                                                         \
+	/* frame buffer aligned to cache line width for optimal cache flushing */                 \
+	FRAME_BUFFER_SECTION static uint8_t __aligned(32)                                         \
+	frame_buffer_##inst[CONFIG_STM32_LTDC_FB_NUM * STM32_LTDC_FRAME_BUFFER_LEN(inst)];        \
+	static struct display_stm32_ltdc_data stm32_ltdc_data_##inst = {                          \
+		.frame_buffer = frame_buffer_##inst,                                              \
+		.frame_buffer_len = STM32_LTDC_FRAME_BUFFER_LEN(inst),                            \
+		.front_buf = frame_buffer_##inst,                                                 \
+		.pend_buf = frame_buffer_##inst,                                                  \
+		.hltdc =                                                                          \
+			{                                                                         \
+				.Instance = (LTDC_TypeDef *)DT_INST_REG_ADDR(inst),               \
+				.Init =                                                           \
+					{                                                         \
+						.HSPolarity =                                     \
+							(DT_PROP(DT_INST_CHILD(inst,              \
+									       display_timings),  \
+								 hsync_active)                    \
+								 ? LTDC_HSPOL_ACTIVE_HIGH         \
+								 : LTDC_HSPOL_ACTIVE_LOW),        \
+						.VSPolarity =                                     \
+							(DT_PROP(DT_INST_CHILD(inst,              \
+									       display_timings),  \
+								 vsync_active)                    \
+								 ? LTDC_VSPOL_ACTIVE_HIGH         \
+								 : LTDC_VSPOL_ACTIVE_LOW),        \
+						.DEPolarity =                                     \
+							(DT_PROP(DT_INST_CHILD(inst,              \
+									       display_timings),  \
+								 de_active)                       \
+								 ? LTDC_DEPOL_ACTIVE_HIGH         \
+								 : LTDC_DEPOL_ACTIVE_LOW),        \
+						.PCPolarity =                                     \
+							(DT_PROP(DT_INST_CHILD(inst,              \
+									       display_timings),  \
+								 pixelclk_active)                 \
+								 ? LTDC_PCPOL_ACTIVE_HIGH         \
+								 : LTDC_PCPOL_ACTIVE_LOW),        \
+						.HorizontalSync =                                 \
+							DT_PROP(DT_INST_CHILD(inst,               \
+									      display_timings),   \
+								hsync_len) -                      \
+							1,                                        \
+						.VerticalSync =                                   \
+							DT_PROP(DT_INST_CHILD(inst,               \
+									      display_timings),   \
+								vsync_len) -                      \
+							1,                                        \
+						.AccumulatedHBP =                                 \
+							DT_PROP(DT_INST_CHILD(inst,               \
+									      display_timings),   \
+								hback_porch) +                    \
+							DT_PROP(DT_INST_CHILD(inst,               \
+									      display_timings),   \
+								hsync_len) -                      \
+							1,                                        \
+						.AccumulatedVBP =                                 \
+							DT_PROP(DT_INST_CHILD(inst,               \
+									      display_timings),   \
+								vback_porch) +                    \
+							DT_PROP(DT_INST_CHILD(inst,               \
+									      display_timings),   \
+								vsync_len) -                      \
+							1,                                        \
+						.AccumulatedActiveW =                             \
+							DT_PROP(DT_INST_CHILD(inst,               \
+									      display_timings),   \
+								hback_porch) +                    \
+							DT_PROP(DT_INST_CHILD(inst,               \
+									      display_timings),   \
+								hsync_len) +                      \
+							DT_INST_PROP(inst, width) - 1,            \
+						.AccumulatedActiveH =                             \
+							DT_PROP(DT_INST_CHILD(inst,               \
+									      display_timings),   \
+								vback_porch) +                    \
+							DT_PROP(DT_INST_CHILD(inst,               \
+									      display_timings),   \
+								vsync_len) +                      \
+							DT_INST_PROP(inst, height) - 1,           \
+						.TotalWidth =                                     \
+							DT_PROP(DT_INST_CHILD(inst,               \
+									      display_timings),   \
+								hback_porch) +                    \
+							DT_PROP(DT_INST_CHILD(inst,               \
+									      display_timings),   \
+								hsync_len) +                      \
+							DT_INST_PROP(inst, width) +               \
+							DT_PROP(DT_INST_CHILD(inst,               \
+									      display_timings),   \
+								hfront_porch) -                   \
+							1,                                        \
+						.TotalHeigh =                                     \
+							DT_PROP(DT_INST_CHILD(inst,               \
+									      display_timings),   \
+								vback_porch) +                    \
+							DT_PROP(DT_INST_CHILD(inst,               \
+									      display_timings),   \
+								vsync_len) +                      \
+							DT_INST_PROP(inst, height) +              \
+							DT_PROP(DT_INST_CHILD(inst,               \
+									      display_timings),   \
+								vfront_porch) -                   \
+							1,                                        \
+						.Backcolor.Red = DT_INST_PROP_OR(                 \
+							inst, def_back_color_red, 0xFF),          \
+						.Backcolor.Green = DT_INST_PROP_OR(               \
+							inst, def_back_color_green, 0xFF),        \
+						.Backcolor.Blue = DT_INST_PROP_OR(                \
+							inst, def_back_color_blue, 0xFF),         \
+					},                                                        \
+				.LayerCfg[0] =                                                    \
+					{                                                         \
+						.WindowX0 = DT_INST_PROP_OR(inst, window0_x0, 0), \
+						.WindowX1 = DT_INST_PROP_OR(                      \
+							inst, window0_x1,                         \
+							DT_INST_PROP(inst, width)),               \
+						.WindowY0 = DT_INST_PROP_OR(inst, window0_y0, 0), \
+						.WindowY1 = DT_INST_PROP_OR(                      \
+							inst, window0_y1,                         \
+							DT_INST_PROP(inst, height)),              \
+						.PixelFormat = STM32_LTDC_INIT_PIXEL_FORMAT,      \
+						.Alpha = 255,                                     \
+						.Alpha0 = 0,                                      \
+						.BlendingFactor1 = LTDC_BLENDING_FACTOR1_PAxCA,   \
+						.BlendingFactor2 = LTDC_BLENDING_FACTOR2_PAxCA,   \
+						.FBStartAdress = (uint32_t)frame_buffer_##inst,   \
+						.ImageWidth = DT_INST_PROP(inst, width),          \
+						.ImageHeight = DT_INST_PROP(inst, height),        \
+						.Backcolor.Red = DT_INST_PROP_OR(                 \
+							inst, def_back_color_red, 0xFF),          \
+						.Backcolor.Green = DT_INST_PROP_OR(               \
+							inst, def_back_color_green, 0xFF),        \
+						.Backcolor.Blue = DT_INST_PROP_OR(                \
+							inst, def_back_color_blue, 0xFF),         \
+					},                                                        \
+			},                                                                        \
+	};                                                                                        \
+	static const struct display_stm32_ltdc_config stm32_ltdc_config_##inst = {                \
+		.width = DT_INST_PROP(inst, width),                                               \
+		.height = DT_INST_PROP(inst, height),                                             \
 		.disp_on_gpio = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, disp_on_gpios),		\
-				(GPIO_DT_SPEC_INST_GET(inst, disp_on_gpios)), ({ 0 })),                        \
+				(GPIO_DT_SPEC_INST_GET(inst, disp_on_gpios)), ({ 0 })),                       \
 			 .bl_ctrl_gpio = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, bl_ctrl_gpios),		\
-				(GPIO_DT_SPEC_INST_GET(inst, bl_ctrl_gpios)), ({ 0 })),               \
-				  .reset = RESET_DT_SPEC_INST_GET(0),                              \
-				  .pclken = {.enr = DT_INST_CLOCKS_CELL(inst, bits),               \
-					     .bus = DT_INST_CLOCKS_CELL(inst, bus)},               \
-				  .pctrl = STM32_LTDC_DEVICE_PINCTRL_GET(inst),                    \
-				  .irq_config_func = stm32_ltdc_irq_config_func_##inst,            \
-				  .display_controller = DEVICE_DT_GET_OR_NULL(                     \
-					  DT_INST_PHANDLE(inst, display_controller)),              \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &stm32_ltdc_init, PM_DEVICE_DT_INST_GET(inst),                 \
-			      &stm32_ltdc_data_##inst, &stm32_ltdc_config_##inst, POST_KERNEL,     \
+				(GPIO_DT_SPEC_INST_GET(inst, bl_ctrl_gpios)), ({ 0 })),              \
+				  .reset = RESET_DT_SPEC_INST_GET(0),                             \
+				  .pclken = {.enr = DT_INST_CLOCKS_CELL(inst, bits),              \
+					     .bus = DT_INST_CLOCKS_CELL(inst, bus)},              \
+				  .pctrl = STM32_LTDC_DEVICE_PINCTRL_GET(inst),                   \
+				  .irq_config_func = stm32_ltdc_irq_config_func_##inst,           \
+				  .display_controller = DEVICE_DT_GET_OR_NULL(                    \
+					  DT_INST_PHANDLE(inst, display_controller)),             \
+	};                                                                                        \
+	DEVICE_DT_INST_DEFINE(inst, &stm32_ltdc_init, PM_DEVICE_DT_INST_GET(inst),                \
+			      &stm32_ltdc_data_##inst, &stm32_ltdc_config_##inst, POST_KERNEL,    \
 			      CONFIG_DISPLAY_INIT_PRIORITY, &stm32_ltdc_display_api);
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_LTDC_DEVICE)

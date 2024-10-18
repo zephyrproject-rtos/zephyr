@@ -2901,20 +2901,20 @@ static const struct udc_api udc_dwc2_api = {
 
 #define DT_DRV_COMPAT snps_dwc2
 
-#define UDC_DWC2_VENDOR_QUIRK_GET(n)                                                               \
+#define UDC_DWC2_VENDOR_QUIRK_GET(n)                               \
 	COND_CODE_1(DT_NODE_VENDOR_HAS_IDX(DT_DRV_INST(n), 1),			\
 		    (&dwc2_vendor_quirks_##n),					\
 		    (NULL))
 
-#define UDC_DWC2_DT_INST_REG_ADDR(n)                                                               \
+#define UDC_DWC2_DT_INST_REG_ADDR(n)                                       \
 	COND_CODE_1(DT_NUM_REGS(DT_DRV_INST(n)), (DT_INST_REG_ADDR(n)),		\
 		    (DT_INST_REG_ADDR_BY_NAME(n, core)))
 
-#define UDC_DWC2_PINCTRL_DT_INST_DEFINE(n)                                                         \
+#define UDC_DWC2_PINCTRL_DT_INST_DEFINE(n)                    \
 	COND_CODE_1(DT_INST_PINCTRL_HAS_NAME(n, default),			\
 		    (PINCTRL_DT_INST_DEFINE(n)), ())
 
-#define UDC_DWC2_PINCTRL_DT_INST_DEV_CONFIG_GET(n)                                                 \
+#define UDC_DWC2_PINCTRL_DT_INST_DEV_CONFIG_GET(n)            \
 	COND_CODE_1(DT_INST_PINCTRL_HAS_NAME(n, default),			\
 		    ((void *)PINCTRL_DT_INST_DEV_CONFIG_GET(n)), (NULL))
 
@@ -2926,70 +2926,70 @@ static const struct udc_api udc_dwc2_api = {
  * A UDC driver should always be implemented as a multi-instance
  * driver, even if your platform does not require it.
  */
-#define UDC_DWC2_DEVICE_DEFINE(n)                                                                  \
-	UDC_DWC2_PINCTRL_DT_INST_DEFINE(n);                                                        \
-                                                                                                   \
-	K_THREAD_STACK_DEFINE(udc_dwc2_stack_##n, CONFIG_UDC_DWC2_STACK_SIZE);                     \
-                                                                                                   \
-	static void udc_dwc2_thread_##n(void *dev, void *arg1, void *arg2)                         \
-	{                                                                                          \
-		while (true) {                                                                     \
-			dwc2_thread_handler(dev);                                                  \
-		}                                                                                  \
-	}                                                                                          \
-                                                                                                   \
-	static void udc_dwc2_make_thread_##n(const struct device *dev)                             \
-	{                                                                                          \
-		struct udc_dwc2_data *priv = udc_get_private(dev);                                 \
-                                                                                                   \
-		k_thread_create(&priv->thread_data, udc_dwc2_stack_##n,                            \
-				K_THREAD_STACK_SIZEOF(udc_dwc2_stack_##n), udc_dwc2_thread_##n,    \
-				(void *)dev, NULL, NULL,                                           \
-				K_PRIO_COOP(CONFIG_UDC_DWC2_THREAD_PRIORITY), K_ESSENTIAL,         \
-				K_NO_WAIT);                                                        \
-		k_thread_name_set(&priv->thread_data, dev->name);                                  \
-	}                                                                                          \
-                                                                                                   \
-	static void udc_dwc2_irq_enable_func_##n(const struct device *dev)                         \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), udc_dwc2_isr_handler,       \
-			    DEVICE_DT_INST_GET(n), DW_IRQ_FLAGS(n));                               \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-	}                                                                                          \
-                                                                                                   \
-	static void udc_dwc2_irq_disable_func_##n(const struct device *dev)                        \
-	{                                                                                          \
-		irq_disable(DT_INST_IRQN(n));                                                      \
-	}                                                                                          \
-                                                                                                   \
-	static struct udc_ep_config ep_cfg_out[DT_INST_PROP(n, num_out_eps)];                      \
-	static struct udc_ep_config ep_cfg_in[DT_INST_PROP(n, num_in_eps)];                        \
-                                                                                                   \
-	static const struct udc_dwc2_config udc_dwc2_config_##n = {                                \
-		.num_out_eps = DT_INST_PROP(n, num_out_eps),                                       \
-		.num_in_eps = DT_INST_PROP(n, num_in_eps),                                         \
-		.ep_cfg_in = ep_cfg_in,                                                            \
-		.ep_cfg_out = ep_cfg_out,                                                          \
-		.make_thread = udc_dwc2_make_thread_##n,                                           \
-		.base = (struct usb_dwc2_reg *)UDC_DWC2_DT_INST_REG_ADDR(n),                       \
-		.pcfg = UDC_DWC2_PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                \
-		.irq_enable_func = udc_dwc2_irq_enable_func_##n,                                   \
-		.irq_disable_func = udc_dwc2_irq_disable_func_##n,                                 \
-		.quirks = UDC_DWC2_VENDOR_QUIRK_GET(n),                                            \
-		.ghwcfg1 = DT_INST_PROP(n, ghwcfg1),                                               \
-		.ghwcfg2 = DT_INST_PROP(n, ghwcfg2),                                               \
-		.ghwcfg4 = DT_INST_PROP(n, ghwcfg4),                                               \
-	};                                                                                         \
-                                                                                                   \
-	static struct udc_dwc2_data udc_priv_##n = {};                                             \
-                                                                                                   \
-	static struct udc_data udc_data_##n = {                                                    \
-		.mutex = Z_MUTEX_INITIALIZER(udc_data_##n.mutex),                                  \
-		.priv = &udc_priv_##n,                                                             \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, dwc2_driver_preinit, NULL, &udc_data_##n, &udc_dwc2_config_##n,   \
+#define UDC_DWC2_DEVICE_DEFINE(n)                                                                \
+	UDC_DWC2_PINCTRL_DT_INST_DEFINE(n);                                                      \
+                                                                                                 \
+	K_THREAD_STACK_DEFINE(udc_dwc2_stack_##n, CONFIG_UDC_DWC2_STACK_SIZE);                   \
+                                                                                                 \
+	static void udc_dwc2_thread_##n(void *dev, void *arg1, void *arg2)                       \
+	{                                                                                        \
+		while (true) {                                                                   \
+			dwc2_thread_handler(dev);                                                \
+		}                                                                                \
+	}                                                                                        \
+                                                                                                 \
+	static void udc_dwc2_make_thread_##n(const struct device *dev)                           \
+	{                                                                                        \
+		struct udc_dwc2_data *priv = udc_get_private(dev);                               \
+                                                                                                 \
+		k_thread_create(&priv->thread_data, udc_dwc2_stack_##n,                          \
+				K_THREAD_STACK_SIZEOF(udc_dwc2_stack_##n), udc_dwc2_thread_##n,  \
+				(void *)dev, NULL, NULL,                                         \
+				K_PRIO_COOP(CONFIG_UDC_DWC2_THREAD_PRIORITY), K_ESSENTIAL,       \
+				K_NO_WAIT);                                                      \
+		k_thread_name_set(&priv->thread_data, dev->name);                                \
+	}                                                                                        \
+                                                                                                 \
+	static void udc_dwc2_irq_enable_func_##n(const struct device *dev)                       \
+	{                                                                                        \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), udc_dwc2_isr_handler,     \
+			    DEVICE_DT_INST_GET(n), DW_IRQ_FLAGS(n));                             \
+                                                                                                 \
+		irq_enable(DT_INST_IRQN(n));                                                     \
+	}                                                                                        \
+                                                                                                 \
+	static void udc_dwc2_irq_disable_func_##n(const struct device *dev)                      \
+	{                                                                                        \
+		irq_disable(DT_INST_IRQN(n));                                                    \
+	}                                                                                        \
+                                                                                                 \
+	static struct udc_ep_config ep_cfg_out[DT_INST_PROP(n, num_out_eps)];                    \
+	static struct udc_ep_config ep_cfg_in[DT_INST_PROP(n, num_in_eps)];                      \
+                                                                                                 \
+	static const struct udc_dwc2_config udc_dwc2_config_##n = {                              \
+		.num_out_eps = DT_INST_PROP(n, num_out_eps),                                     \
+		.num_in_eps = DT_INST_PROP(n, num_in_eps),                                       \
+		.ep_cfg_in = ep_cfg_in,                                                          \
+		.ep_cfg_out = ep_cfg_out,                                                        \
+		.make_thread = udc_dwc2_make_thread_##n,                                         \
+		.base = (struct usb_dwc2_reg *)UDC_DWC2_DT_INST_REG_ADDR(n),                     \
+		.pcfg = UDC_DWC2_PINCTRL_DT_INST_DEV_CONFIG_GET(n),                              \
+		.irq_enable_func = udc_dwc2_irq_enable_func_##n,                                 \
+		.irq_disable_func = udc_dwc2_irq_disable_func_##n,                               \
+		.quirks = UDC_DWC2_VENDOR_QUIRK_GET(n),                                          \
+		.ghwcfg1 = DT_INST_PROP(n, ghwcfg1),                                             \
+		.ghwcfg2 = DT_INST_PROP(n, ghwcfg2),                                             \
+		.ghwcfg4 = DT_INST_PROP(n, ghwcfg4),                                             \
+	};                                                                                       \
+                                                                                                 \
+	static struct udc_dwc2_data udc_priv_##n = {};                                           \
+                                                                                                 \
+	static struct udc_data udc_data_##n = {                                                  \
+		.mutex = Z_MUTEX_INITIALIZER(udc_data_##n.mutex),                                \
+		.priv = &udc_priv_##n,                                                           \
+	};                                                                                       \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(n, dwc2_driver_preinit, NULL, &udc_data_##n, &udc_dwc2_config_##n, \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &udc_dwc2_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UDC_DWC2_DEVICE_DEFINE)

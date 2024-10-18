@@ -156,26 +156,26 @@ static const struct gpio_driver_api gpio_ra_drv_api_funcs = {
 	.manage_callback = NULL,
 };
 
-#define GPIO_DEVICE_INIT(node, port_number, suffix, addr)                                          \
-	static const struct gpio_ra_config gpio_ra_config_##suffix = {                             \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(16U),              \
-			},                                                                         \
-		.port_num = port_number,                                                           \
-		.port = (R_PORT0_Type *)addr,                                                      \
-		.vbatt_pins = DT_PROP_OR(DT_NODELABEL(ioport##suffix), vbatts_pins, {0xFF}),       \
-	};                                                                                         \
-	static struct gpio_ra_data gpio_ra_data_##suffix;                                          \
-	DEVICE_DT_DEFINE(node, NULL, NULL, &gpio_ra_data_##suffix, &gpio_ra_config_##suffix,       \
+#define GPIO_DEVICE_INIT(node, port_number, suffix, addr)                                    \
+	static const struct gpio_ra_config gpio_ra_config_##suffix = {                       \
+		.common =                                                                    \
+			{                                                                    \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(16U),        \
+			},                                                                   \
+		.port_num = port_number,                                                     \
+		.port = (R_PORT0_Type *)addr,                                                \
+		.vbatt_pins = DT_PROP_OR(DT_NODELABEL(ioport##suffix), vbatts_pins, {0xFF}), \
+	};                                                                                   \
+	static struct gpio_ra_data gpio_ra_data_##suffix;                                    \
+	DEVICE_DT_DEFINE(node, NULL, NULL, &gpio_ra_data_##suffix, &gpio_ra_config_##suffix, \
 			 PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, &gpio_ra_drv_api_funcs)
 
-#define GPIO_DEVICE_INIT_RA(suffix)                                                                \
-	GPIO_DEVICE_INIT(DT_NODELABEL(ioport##suffix),                                             \
-			 DT_PROP(DT_NODELABEL(ioport##suffix), port), suffix,                      \
+#define GPIO_DEVICE_INIT_RA(suffix)                                           \
+	GPIO_DEVICE_INIT(DT_NODELABEL(ioport##suffix),                        \
+			 DT_PROP(DT_NODELABEL(ioport##suffix), port), suffix, \
 			 DT_REG_ADDR(DT_NODELABEL(ioport##suffix)))
 
-#define GPIO_DEVICE_INIT_RA_IF_OKAY(suffix)                                                        \
+#define GPIO_DEVICE_INIT_RA_IF_OKAY(suffix) \
 	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ioport##suffix)),                         \
 		    (GPIO_DEVICE_INIT_RA(suffix)),                                                 \
 		    ())

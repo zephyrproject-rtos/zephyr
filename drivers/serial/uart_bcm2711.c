@@ -297,12 +297,12 @@ static const struct uart_driver_api uart_bcm2711_driver_api = {
 		.clocks = DT_INST_PROP(n, clock_frequency), IRQ_FUNC_INIT}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define UART_CONFIG_FUNC(n)                                                                        \
-	static void irq_config_func_##n(const struct device *dev)                                  \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_isr,                   \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define UART_CONFIG_FUNC(n)                                                      \
+	static void irq_config_func_##n(const struct device *dev)                \
+	{                                                                        \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                           \
+		irq_enable(DT_INST_IRQN(n));                                     \
 	}
 #define UART_IRQ_CFG_FUNC_INIT(n) .irq_config_func = irq_config_func_##n
 #define UART_INIT_CFG(n)          UART_DECLARE_CFG(n, UART_IRQ_CFG_FUNC_INIT(n))
@@ -312,17 +312,17 @@ static const struct uart_driver_api uart_bcm2711_driver_api = {
 #define UART_INIT_CFG(n) UART_DECLARE_CFG(n, UART_IRQ_CFG_FUNC_INIT)
 #endif
 
-#define UART_INIT(n)                                                                               \
-	static struct bcm2711_uart_data bcm2711_uart_##n##_data;                                   \
-                                                                                                   \
-	static const struct bcm2711_uart_config bcm2711_uart_##n##_config;                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &uart_bcm2711_init, NULL, &bcm2711_uart_##n##_data,               \
-			      &bcm2711_uart_##n##_config, PRE_KERNEL_1,                            \
-			      CONFIG_SERIAL_INIT_PRIORITY, &uart_bcm2711_driver_api);              \
-                                                                                                   \
-	UART_CONFIG_FUNC(n)                                                                        \
-                                                                                                   \
+#define UART_INIT(n)                                                                  \
+	static struct bcm2711_uart_data bcm2711_uart_##n##_data;                      \
+                                                                                      \
+	static const struct bcm2711_uart_config bcm2711_uart_##n##_config;            \
+                                                                                      \
+	DEVICE_DT_INST_DEFINE(n, &uart_bcm2711_init, NULL, &bcm2711_uart_##n##_data,  \
+			      &bcm2711_uart_##n##_config, PRE_KERNEL_1,               \
+			      CONFIG_SERIAL_INIT_PRIORITY, &uart_bcm2711_driver_api); \
+                                                                                      \
+	UART_CONFIG_FUNC(n)                                                           \
+                                                                                      \
 	UART_INIT_CFG(n);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_INIT)

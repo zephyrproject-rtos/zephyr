@@ -125,16 +125,16 @@ static int init(const struct device *dev)
 	return 0;
 }
 
-#define MCP970X_INIT(inst)                                                                         \
-	static struct mcp970x_data mcp970x_##inst##_data = {0};                                    \
-                                                                                                   \
-	static const struct mcp970x_config mcp970x_##inst##_config = {                             \
-		.adc = ADC_DT_SPEC_INST_GET(inst),                                                 \
-		.family = DT_INST_ENUM_IDX(inst, family),                                          \
-	};                                                                                         \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &init, NULL, &mcp970x_##inst##_data,                    \
-				     &mcp970x_##inst##_config, POST_KERNEL,                        \
+#define MCP970X_INIT(inst)                                                       \
+	static struct mcp970x_data mcp970x_##inst##_data = {0};                  \
+                                                                                 \
+	static const struct mcp970x_config mcp970x_##inst##_config = {           \
+		.adc = ADC_DT_SPEC_INST_GET(inst),                               \
+		.family = DT_INST_ENUM_IDX(inst, family),                        \
+	};                                                                       \
+                                                                                 \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, &init, NULL, &mcp970x_##inst##_data,  \
+				     &mcp970x_##inst##_config, POST_KERNEL,      \
 				     CONFIG_SENSOR_INIT_PRIORITY, &mcp970x_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCP970X_INIT)

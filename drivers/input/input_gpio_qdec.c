@@ -381,46 +381,46 @@ static int gpio_qdec_pm_action(const struct device *dev, enum pm_device_action a
 }
 #endif
 
-#define QDEC_GPIO_INIT(n)                                                                          \
-	BUILD_ASSERT(DT_INST_PROP_LEN(n, gpios) == GPIO_QDEC_GPIO_NUM,                             \
-		     "input_gpio_qdec: gpios must have exactly two entries");                      \
-                                                                                                   \
-	BUILD_ASSERT(!(DT_INST_NODE_HAS_PROP(n, led_gpios) &&                                      \
-		       DT_INST_NODE_HAS_PROP(n, idle_poll_time_us)) ||                             \
-			     DT_INST_NODE_HAS_PROP(n, led_pre_us),                                 \
-		     "led-pre-us must be specified when setting led-gpios and "                    \
-		     "idle-poll-time-us");                                                         \
-                                                                                                   \
+#define QDEC_GPIO_INIT(n)                                                                         \
+	BUILD_ASSERT(DT_INST_PROP_LEN(n, gpios) == GPIO_QDEC_GPIO_NUM,                            \
+		     "input_gpio_qdec: gpios must have exactly two entries");                     \
+                                                                                                  \
+	BUILD_ASSERT(!(DT_INST_NODE_HAS_PROP(n, led_gpios) &&                                     \
+		       DT_INST_NODE_HAS_PROP(n, idle_poll_time_us)) ||                            \
+			     DT_INST_NODE_HAS_PROP(n, led_pre_us),                                \
+		     "led-pre-us must be specified when setting led-gpios and "                   \
+		     "idle-poll-time-us");                                                        \
+                                                                                                  \
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, led_gpios), (			\
 	static const struct gpio_dt_spec gpio_qdec_led_gpio_##n[] = {		\
 		DT_INST_FOREACH_PROP_ELEM_SEP(n, led_gpios,			\
 					      GPIO_DT_SPEC_GET_BY_IDX, (,))	\
 	};									\
-	))                                      \
-                                                                                                   \
-	static const struct gpio_qdec_config gpio_qdec_cfg_##n = {                                 \
-		.ab_gpio =                                                                         \
-			{                                                                          \
-				GPIO_DT_SPEC_INST_GET_BY_IDX(n, gpios, 0),                         \
-				GPIO_DT_SPEC_INST_GET_BY_IDX(n, gpios, 1),                         \
-			},                                                                         \
+	))                                     \
+                                                                                                  \
+	static const struct gpio_qdec_config gpio_qdec_cfg_##n = {                                \
+		.ab_gpio =                                                                        \
+			{                                                                         \
+				GPIO_DT_SPEC_INST_GET_BY_IDX(n, gpios, 0),                        \
+				GPIO_DT_SPEC_INST_GET_BY_IDX(n, gpios, 1),                        \
+			},                                                                        \
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, led_gpios), (		\
 		.led_gpio = gpio_qdec_led_gpio_##n,				\
 		.led_gpio_count = ARRAY_SIZE(gpio_qdec_led_gpio_##n),		\
 		.led_pre_us = DT_INST_PROP_OR(n, led_pre_us, 0),		\
-		)) .sample_time_us =  \
-					 DT_INST_PROP(n, sample_time_us),                          \
-				 .idle_poll_time_us = DT_INST_PROP_OR(n, idle_poll_time_us, 0),    \
-				 .idle_timeout_ms = DT_INST_PROP(n, idle_timeout_ms),              \
-				 .steps_per_period = DT_INST_PROP(n, steps_per_period),            \
-				 .axis = DT_INST_PROP(n, zephyr_axis),                             \
-	};                                                                                         \
-                                                                                                   \
-	static struct gpio_qdec_data gpio_qdec_data_##n;                                           \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(n, gpio_qdec_pm_action);                                          \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, gpio_qdec_init, PM_DEVICE_DT_INST_GET(n), &gpio_qdec_data_##n,    \
+		)) .sample_time_us = \
+					 DT_INST_PROP(n, sample_time_us),                         \
+				 .idle_poll_time_us = DT_INST_PROP_OR(n, idle_poll_time_us, 0),   \
+				 .idle_timeout_ms = DT_INST_PROP(n, idle_timeout_ms),             \
+				 .steps_per_period = DT_INST_PROP(n, steps_per_period),           \
+				 .axis = DT_INST_PROP(n, zephyr_axis),                            \
+	};                                                                                        \
+                                                                                                  \
+	static struct gpio_qdec_data gpio_qdec_data_##n;                                          \
+                                                                                                  \
+	PM_DEVICE_DT_INST_DEFINE(n, gpio_qdec_pm_action);                                         \
+                                                                                                  \
+	DEVICE_DT_INST_DEFINE(n, gpio_qdec_init, PM_DEVICE_DT_INST_GET(n), &gpio_qdec_data_##n,   \
 			      &gpio_qdec_cfg_##n, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(QDEC_GPIO_INIT)

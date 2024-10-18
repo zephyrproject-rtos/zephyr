@@ -150,39 +150,39 @@ const struct can_driver_api can_kvaser_pci_driver_api = {
 	.timing_max = CAN_SJA1000_TIMING_MAX_INITIALIZER,
 };
 
-#define CAN_KVASER_PCI_OCR                                                                         \
-	(CAN_SJA1000_OCR_OCMODE_NORMAL | CAN_SJA1000_OCR_OCTN0 | CAN_SJA1000_OCR_OCTP0 |           \
+#define CAN_KVASER_PCI_OCR                                                               \
+	(CAN_SJA1000_OCR_OCMODE_NORMAL | CAN_SJA1000_OCR_OCTN0 | CAN_SJA1000_OCR_OCTP0 | \
 	 CAN_SJA1000_OCR_OCTN1 | CAN_SJA1000_OCR_OCTP1)
 
 #define CAN_KVASER_PCI_CDR (CAN_SJA1000_CDR_CD_DIV2 | CAN_SJA1000_CDR_CLOCK_OFF)
 
-#define CAN_KVASER_PCI_INIT(inst)                                                                  \
-	static void can_kvaser_pci_config_func_##inst(const struct device *dev);                   \
-	DEVICE_PCIE_INST_DECLARE(inst);                                                            \
-                                                                                                   \
-	static const struct can_kvaser_pci_config can_kvaser_pci_config_##inst = {                 \
-		DEVICE_PCIE_INST_INIT(inst, pcie),                                                 \
-		.irq_config_func = can_kvaser_pci_config_func_##inst};                             \
-                                                                                                   \
-	static const struct can_sja1000_config can_sja1000_config_##inst =                         \
-		CAN_SJA1000_DT_CONFIG_INST_GET(inst, &can_kvaser_pci_config_##inst,                \
-					       can_kvaser_pci_read_reg, can_kvaser_pci_write_reg,  \
-					       CAN_KVASER_PCI_OCR, CAN_KVASER_PCI_CDR, 0);         \
-                                                                                                   \
-	static struct can_kvaser_pci_data can_kvaser_pci_data_##inst;                              \
-                                                                                                   \
-	static struct can_sja1000_data can_sja1000_data_##inst =                                   \
-		CAN_SJA1000_DATA_INITIALIZER(&can_kvaser_pci_data_##inst);                         \
-                                                                                                   \
-	CAN_DEVICE_DT_INST_DEFINE(inst, can_kvaser_pci_init, NULL, &can_sja1000_data_##inst,       \
-				  &can_sja1000_config_##inst, POST_KERNEL,                         \
-				  CONFIG_CAN_INIT_PRIORITY, &can_kvaser_pci_driver_api);           \
-                                                                                                   \
-	static void can_kvaser_pci_config_func_##inst(const struct device *dev)                    \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), can_sja1000_isr,      \
-			    DEVICE_DT_INST_GET(inst), DT_INST_IRQ(inst, sense));                   \
-		irq_enable(DT_INST_IRQN(inst));                                                    \
+#define CAN_KVASER_PCI_INIT(inst)                                                                 \
+	static void can_kvaser_pci_config_func_##inst(const struct device *dev);                  \
+	DEVICE_PCIE_INST_DECLARE(inst);                                                           \
+                                                                                                  \
+	static const struct can_kvaser_pci_config can_kvaser_pci_config_##inst = {                \
+		DEVICE_PCIE_INST_INIT(inst, pcie),                                                \
+		.irq_config_func = can_kvaser_pci_config_func_##inst};                            \
+                                                                                                  \
+	static const struct can_sja1000_config can_sja1000_config_##inst =                        \
+		CAN_SJA1000_DT_CONFIG_INST_GET(inst, &can_kvaser_pci_config_##inst,               \
+					       can_kvaser_pci_read_reg, can_kvaser_pci_write_reg, \
+					       CAN_KVASER_PCI_OCR, CAN_KVASER_PCI_CDR, 0);        \
+                                                                                                  \
+	static struct can_kvaser_pci_data can_kvaser_pci_data_##inst;                             \
+                                                                                                  \
+	static struct can_sja1000_data can_sja1000_data_##inst =                                  \
+		CAN_SJA1000_DATA_INITIALIZER(&can_kvaser_pci_data_##inst);                        \
+                                                                                                  \
+	CAN_DEVICE_DT_INST_DEFINE(inst, can_kvaser_pci_init, NULL, &can_sja1000_data_##inst,      \
+				  &can_sja1000_config_##inst, POST_KERNEL,                        \
+				  CONFIG_CAN_INIT_PRIORITY, &can_kvaser_pci_driver_api);          \
+                                                                                                  \
+	static void can_kvaser_pci_config_func_##inst(const struct device *dev)                   \
+	{                                                                                         \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), can_sja1000_isr,     \
+			    DEVICE_DT_INST_GET(inst), DT_INST_IRQ(inst, sense));                  \
+		irq_enable(DT_INST_IRQN(inst));                                                   \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_KVASER_PCI_INIT)

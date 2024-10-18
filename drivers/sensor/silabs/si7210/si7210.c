@@ -528,14 +528,14 @@ static int si7210_init(const struct device *dev)
 }
 
 /* Main instantiation macro */
-#define DEFINE_SI7210(inst)                                                                        \
-	static struct si7210_data si7210_data_##inst;                                              \
-	static const struct si7210_config si7210_config_##inst = {                                 \
-		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
-	};                                                                                         \
-	PM_DEVICE_DT_INST_DEFINE(inst, si7210_pm_action);                                          \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, si7210_init, PM_DEVICE_DT_INST_GET(inst),               \
-				     &si7210_data_##inst, &si7210_config_##inst, POST_KERNEL,      \
+#define DEFINE_SI7210(inst)                                                                   \
+	static struct si7210_data si7210_data_##inst;                                         \
+	static const struct si7210_config si7210_config_##inst = {                            \
+		.bus = I2C_DT_SPEC_INST_GET(inst),                                            \
+	};                                                                                    \
+	PM_DEVICE_DT_INST_DEFINE(inst, si7210_pm_action);                                     \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, si7210_init, PM_DEVICE_DT_INST_GET(inst),          \
+				     &si7210_data_##inst, &si7210_config_##inst, POST_KERNEL, \
 				     CONFIG_SENSOR_INIT_PRIORITY, &si7210_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_SI7210)

@@ -372,17 +372,17 @@ static int explorir_m_init(const struct device *dev)
 	return rc;
 }
 
-#define EXPLORIR_M_INIT(n)                                                                         \
-                                                                                                   \
-	static struct explorir_m_data explorir_m_data_##n;                                         \
-                                                                                                   \
-	static const struct explorir_m_cfg explorir_m_cfg_##n = {                                  \
-		.uart_dev = DEVICE_DT_GET(DT_INST_BUS(n)),                                         \
-		.cb = explorir_m_uart_isr,                                                         \
-	};                                                                                         \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, explorir_m_init, NULL, &explorir_m_data_##n,               \
-				     &explorir_m_cfg_##n, POST_KERNEL,                             \
+#define EXPLORIR_M_INIT(n)                                                                \
+                                                                                          \
+	static struct explorir_m_data explorir_m_data_##n;                                \
+                                                                                          \
+	static const struct explorir_m_cfg explorir_m_cfg_##n = {                         \
+		.uart_dev = DEVICE_DT_GET(DT_INST_BUS(n)),                                \
+		.cb = explorir_m_uart_isr,                                                \
+	};                                                                                \
+                                                                                          \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, explorir_m_init, NULL, &explorir_m_data_##n,      \
+				     &explorir_m_cfg_##n, POST_KERNEL,                    \
 				     CONFIG_SENSOR_INIT_PRIORITY, &explorir_m_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(EXPLORIR_M_INIT)

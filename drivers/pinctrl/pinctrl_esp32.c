@@ -37,7 +37,7 @@
 
 #define ESP32_INVALID_PORT_ADDR 0UL
 
-#define ESP32_GPIO_PORT_ADDR(nodelabel)                                                            \
+#define ESP32_GPIO_PORT_ADDR(nodelabel)                        \
 	COND_CODE_1(DT_NODE_EXISTS(DT_NODELABEL(nodelabel)),	\
 		(DT_REG_ADDR(DT_NODELABEL(nodelabel)),),	\
 		(ESP32_INVALID_PORT_ADDR))

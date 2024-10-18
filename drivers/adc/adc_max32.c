@@ -305,36 +305,36 @@ static const struct adc_driver_api adc_max32_driver_api = {
 	.ref_internal = MAX32_ADC_VREF_MV,
 };
 
-#define MAX32_ADC_INIT(_num)                                                                       \
-	PINCTRL_DT_INST_DEFINE(_num);                                                              \
-	static void max32_adc_irq_init_##_num(void)                                                \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(_num), DT_INST_IRQ(_num, priority), adc_max32_isr,        \
-			    DEVICE_DT_INST_GET(_num), 0);                                          \
-		irq_enable(DT_INST_IRQN(_num));                                                    \
-	};                                                                                         \
-	static const struct max32_adc_config max32_adc_config_##_num = {                           \
-		.channel_count = DT_INST_PROP(_num, channel_count),                                \
-		.regs = (mxc_adc_regs_t *)DT_INST_REG_ADDR(_num),                                  \
-		.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(_num),                                     \
-		.clock = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(_num)),                                 \
-		.clock_divider = DT_INST_PROP_OR(_num, clock_divider, 1),                          \
-		.track_count = DT_INST_PROP_OR(_num, track_count, 0),                              \
-		.idle_count = DT_INST_PROP_OR(_num, idle_count, 0),                                \
-		.perclk.bus = DT_INST_CLOCKS_CELL(_num, offset),                                   \
-		.perclk.bit = DT_INST_CLOCKS_CELL(_num, bit),                                      \
-		.perclk.clk_src =                                                                  \
-			DT_INST_PROP_OR(_num, clock_source, ADI_MAX32_PRPH_CLK_SRC_PCLK),          \
-		.irq_func = max32_adc_irq_init_##_num,                                             \
-	};                                                                                         \
-	static struct max32_adc_data max32_adc_data_##_num = {                                     \
-		ADC_CONTEXT_INIT_TIMER(max32_adc_data_##_num, ctx),                                \
-		ADC_CONTEXT_INIT_LOCK(max32_adc_data_##_num, ctx),                                 \
-		ADC_CONTEXT_INIT_SYNC(max32_adc_data_##_num, ctx),                                 \
-		.resolution = DT_INST_PROP(_num, resolution),                                      \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(_num, &adc_max32_init, NULL, &max32_adc_data_##_num,                 \
-			      &max32_adc_config_##_num, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,     \
+#define MAX32_ADC_INIT(_num)                                                                   \
+	PINCTRL_DT_INST_DEFINE(_num);                                                          \
+	static void max32_adc_irq_init_##_num(void)                                            \
+	{                                                                                      \
+		IRQ_CONNECT(DT_INST_IRQN(_num), DT_INST_IRQ(_num, priority), adc_max32_isr,    \
+			    DEVICE_DT_INST_GET(_num), 0);                                      \
+		irq_enable(DT_INST_IRQN(_num));                                                \
+	};                                                                                     \
+	static const struct max32_adc_config max32_adc_config_##_num = {                       \
+		.channel_count = DT_INST_PROP(_num, channel_count),                            \
+		.regs = (mxc_adc_regs_t *)DT_INST_REG_ADDR(_num),                              \
+		.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(_num),                                 \
+		.clock = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(_num)),                             \
+		.clock_divider = DT_INST_PROP_OR(_num, clock_divider, 1),                      \
+		.track_count = DT_INST_PROP_OR(_num, track_count, 0),                          \
+		.idle_count = DT_INST_PROP_OR(_num, idle_count, 0),                            \
+		.perclk.bus = DT_INST_CLOCKS_CELL(_num, offset),                               \
+		.perclk.bit = DT_INST_CLOCKS_CELL(_num, bit),                                  \
+		.perclk.clk_src =                                                              \
+			DT_INST_PROP_OR(_num, clock_source, ADI_MAX32_PRPH_CLK_SRC_PCLK),      \
+		.irq_func = max32_adc_irq_init_##_num,                                         \
+	};                                                                                     \
+	static struct max32_adc_data max32_adc_data_##_num = {                                 \
+		ADC_CONTEXT_INIT_TIMER(max32_adc_data_##_num, ctx),                            \
+		ADC_CONTEXT_INIT_LOCK(max32_adc_data_##_num, ctx),                             \
+		ADC_CONTEXT_INIT_SYNC(max32_adc_data_##_num, ctx),                             \
+		.resolution = DT_INST_PROP(_num, resolution),                                  \
+	};                                                                                     \
+	DEVICE_DT_INST_DEFINE(_num, &adc_max32_init, NULL, &max32_adc_data_##_num,             \
+			      &max32_adc_config_##_num, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, \
 			      &adc_max32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX32_ADC_INIT)

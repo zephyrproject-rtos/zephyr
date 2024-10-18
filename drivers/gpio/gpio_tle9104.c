@@ -193,20 +193,20 @@ static int tle9104_gpio_init(const struct device *dev)
 	return 0;
 }
 
-#define TLE9104_GPIO_INIT(inst)                                                                    \
-	static const struct tle9104_gpio_config tle9104_gpio_##inst##_config = {                   \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),            \
-			},                                                                         \
-		.parent = DEVICE_DT_GET(DT_PARENT(DT_DRV_INST(inst))),                             \
-	};                                                                                         \
-                                                                                                   \
-	static struct tle9104_gpio_data tle9104_gpio_##inst##_drvdata;                             \
-                                                                                                   \
-	/* This has to be initialized after the SPI peripheral. */                                 \
-	DEVICE_DT_INST_DEFINE(inst, tle9104_gpio_init, NULL, &tle9104_gpio_##inst##_drvdata,       \
-			      &tle9104_gpio_##inst##_config, POST_KERNEL,                          \
+#define TLE9104_GPIO_INIT(inst)                                                              \
+	static const struct tle9104_gpio_config tle9104_gpio_##inst##_config = {             \
+		.common =                                                                    \
+			{                                                                    \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),      \
+			},                                                                   \
+		.parent = DEVICE_DT_GET(DT_PARENT(DT_DRV_INST(inst))),                       \
+	};                                                                                   \
+                                                                                             \
+	static struct tle9104_gpio_data tle9104_gpio_##inst##_drvdata;                       \
+                                                                                             \
+	/* This has to be initialized after the SPI peripheral. */                           \
+	DEVICE_DT_INST_DEFINE(inst, tle9104_gpio_init, NULL, &tle9104_gpio_##inst##_drvdata, \
+			      &tle9104_gpio_##inst##_config, POST_KERNEL,                    \
 			      CONFIG_GPIO_TLE9104_INIT_PRIORITY, &api_table);
 
 DT_INST_FOREACH_STATUS_OKAY(TLE9104_GPIO_INIT)

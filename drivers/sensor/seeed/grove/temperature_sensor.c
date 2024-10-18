@@ -110,16 +110,16 @@ static int gts_init(const struct device *dev)
 	return 0;
 }
 
-#define GTS_DEFINE(inst)                                                                           \
-	static struct gts_data gts_data_##inst;                                                    \
-                                                                                                   \
-	static const struct gts_config gts_cfg_##inst = {                                          \
-		.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst)),                              \
-		.b_const = (IS_ENABLED(DT_INST_PROP(inst, v1p0)) ? 3975 : 4250),                   \
-		.adc_channel = DT_INST_IO_CHANNELS_INPUT(inst),                                    \
-	};                                                                                         \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &gts_init, NULL, &gts_data_##inst, &gts_cfg_##inst,     \
+#define GTS_DEFINE(inst)                                                                       \
+	static struct gts_data gts_data_##inst;                                                \
+                                                                                               \
+	static const struct gts_config gts_cfg_##inst = {                                      \
+		.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst)),                          \
+		.b_const = (IS_ENABLED(DT_INST_PROP(inst, v1p0)) ? 3975 : 4250),               \
+		.adc_channel = DT_INST_IO_CHANNELS_INPUT(inst),                                \
+	};                                                                                     \
+                                                                                               \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, &gts_init, NULL, &gts_data_##inst, &gts_cfg_##inst, \
 				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &gts_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GTS_DEFINE)

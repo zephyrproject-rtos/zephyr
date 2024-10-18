@@ -131,16 +131,16 @@ int sx9500_init(const struct device *dev)
 	return 0;
 }
 
-#define SX9500_DEFINE(inst)                                                                        \
-	struct sx9500_data sx9500_data_##inst;                                                     \
-                                                                                                   \
-	static const struct sx9500_config sx9500_config_##inst = {                                 \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+#define SX9500_DEFINE(inst)                                                              \
+	struct sx9500_data sx9500_data_##inst;                                           \
+                                                                                         \
+	static const struct sx9500_config sx9500_config_##inst = {                       \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                       \
 		IF_ENABLED(CONFIG_SX9500_TRIGGER,						\
-			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),)) };           \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, sx9500_init, NULL, &sx9500_data_##inst,                 \
-				     &sx9500_config_##inst, POST_KERNEL,                           \
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),)) }; \
+                                                                                         \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, sx9500_init, NULL, &sx9500_data_##inst,       \
+				     &sx9500_config_##inst, POST_KERNEL,                 \
 				     CONFIG_SENSOR_INIT_PRIORITY, &sx9500_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(SX9500_DEFINE)

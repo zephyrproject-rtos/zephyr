@@ -44,7 +44,7 @@ struct gpio_npcx_data {
 };
 
 /* Driver convenience defines */
-#define HAL_INSTANCE(dev)                                                                          \
+#define HAL_INSTANCE(dev)                                                           \
 	((struct gpio_reg *)((const struct gpio_npcx_config *)(dev)->config)->base)
 
 /* Platform specific GPIO functions */
@@ -386,27 +386,27 @@ int gpio_npcx_init(const struct device *dev)
 	return 0;
 }
 
-#define NPCX_GPIO_DEVICE_INIT(inst)                                                                \
-	static const struct gpio_npcx_config gpio_npcx_cfg_##inst = {                              \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask =                                                   \
-					GPIO_PORT_PIN_MASK_FROM_NGPIOS(NPCX_GPIO_PORT_PIN_NUM),    \
-			},                                                                         \
-		.base = DT_INST_REG_ADDR(inst),                                                    \
-		.port = inst,                                                                      \
-		.wui_maps = NPCX_DT_WUI_ITEMS_LIST(inst),                                          \
-		.lvol_maps = NPCX_DT_LVOL_ITEMS_LIST(inst),                                        \
-	};                                                                                         \
-	BUILD_ASSERT(NPCX_DT_WUI_ITEMS_LEN(inst) == NPCX_GPIO_PORT_PIN_NUM,                        \
-		     "size of prop. wui-maps must equal to pin number!");                          \
-	BUILD_ASSERT(NPCX_DT_LVOL_ITEMS_LEN(inst) == NPCX_GPIO_PORT_PIN_NUM,                       \
-		     "size of prop. lvol-maps must equal to pin number!");                         \
-                                                                                                   \
-	static struct gpio_npcx_data gpio_npcx_data_##inst;                                        \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, gpio_npcx_init, NULL, &gpio_npcx_data_##inst,                  \
-			      &gpio_npcx_cfg_##inst, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,      \
+#define NPCX_GPIO_DEVICE_INIT(inst)                                                             \
+	static const struct gpio_npcx_config gpio_npcx_cfg_##inst = {                           \
+		.common =                                                                       \
+			{                                                                       \
+				.port_pin_mask =                                                \
+					GPIO_PORT_PIN_MASK_FROM_NGPIOS(NPCX_GPIO_PORT_PIN_NUM), \
+			},                                                                      \
+		.base = DT_INST_REG_ADDR(inst),                                                 \
+		.port = inst,                                                                   \
+		.wui_maps = NPCX_DT_WUI_ITEMS_LIST(inst),                                       \
+		.lvol_maps = NPCX_DT_LVOL_ITEMS_LIST(inst),                                     \
+	};                                                                                      \
+	BUILD_ASSERT(NPCX_DT_WUI_ITEMS_LEN(inst) == NPCX_GPIO_PORT_PIN_NUM,                     \
+		     "size of prop. wui-maps must equal to pin number!");                       \
+	BUILD_ASSERT(NPCX_DT_LVOL_ITEMS_LEN(inst) == NPCX_GPIO_PORT_PIN_NUM,                    \
+		     "size of prop. lvol-maps must equal to pin number!");                      \
+                                                                                                \
+	static struct gpio_npcx_data gpio_npcx_data_##inst;                                     \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(inst, gpio_npcx_init, NULL, &gpio_npcx_data_##inst,               \
+			      &gpio_npcx_cfg_##inst, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,   \
 			      &gpio_npcx_driver);
 
 DT_INST_FOREACH_STATUS_OKAY(NPCX_GPIO_DEVICE_INIT)

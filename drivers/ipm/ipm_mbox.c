@@ -96,13 +96,13 @@ static const struct ipm_driver_api ipm_mbox_funcs = {
 	.set_enabled = ipm_mbox_set_enable,
 };
 
-#define IPM_MBOX_DEV_DEFINE(n)                                                                     \
-	static struct ipm_mbox_data ipm_mbox_data_##n;                                             \
-	static const struct ipm_mbox_config ipm_mbox_config_##n = {                                \
-		.mbox_tx = MBOX_DT_SPEC_INST_GET(n, tx),                                           \
-		.mbox_rx = MBOX_DT_SPEC_INST_GET(n, rx),                                           \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &ipm_mbox_init, NULL, &ipm_mbox_data_##n, &ipm_mbox_config_##n,   \
+#define IPM_MBOX_DEV_DEFINE(n)                                                                   \
+	static struct ipm_mbox_data ipm_mbox_data_##n;                                           \
+	static const struct ipm_mbox_config ipm_mbox_config_##n = {                              \
+		.mbox_tx = MBOX_DT_SPEC_INST_GET(n, tx),                                         \
+		.mbox_rx = MBOX_DT_SPEC_INST_GET(n, rx),                                         \
+	};                                                                                       \
+	DEVICE_DT_INST_DEFINE(n, &ipm_mbox_init, NULL, &ipm_mbox_data_##n, &ipm_mbox_config_##n, \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &ipm_mbox_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(IPM_MBOX_DEV_DEFINE)

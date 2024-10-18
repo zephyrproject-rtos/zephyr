@@ -19,7 +19,7 @@
 #if defined(STM32_PLL_ENABLED)
 
 #if defined(LL_RCC_MSIRANGESEL_RUN)
-#define CALC_RUN_MSI_FREQ(range)                                                                   \
+#define CALC_RUN_MSI_FREQ(range)                                                      \
 	__LL_RCC_CALC_MSI_FREQ(LL_RCC_MSIRANGESEL_RUN, range << RCC_CR_MSIRANGE_Pos);
 #else
 #define CALC_RUN_MSI_FREQ(range) __LL_RCC_CALC_MSI_FREQ(range << RCC_CR_MSIRANGE_Pos);

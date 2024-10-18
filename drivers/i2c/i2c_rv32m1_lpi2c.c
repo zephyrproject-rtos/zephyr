@@ -254,31 +254,31 @@ static const struct i2c_driver_api rv32m1_lpi2c_driver_api = {
 #endif
 };
 
-#define RV32M1_LPI2C_DEVICE(id)                                                                    \
-	PINCTRL_DT_INST_DEFINE(id);                                                                \
-	static void rv32m1_lpi2c_irq_config_func_##id(const struct device *dev);                   \
-	static const struct rv32m1_lpi2c_config rv32m1_lpi2c_##id##_config = {                     \
-		.base = (LPI2C_Type *)DT_INST_REG_ADDR(id),                                        \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),                               \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),             \
-		.clock_ip_name = INST_DT_CLOCK_IP_NAME(id),                                        \
-		.clock_ip_src = kCLOCK_IpSrcFircAsync,                                             \
-		.bitrate = DT_INST_PROP(id, clock_frequency),                                      \
-		.irq_config_func = rv32m1_lpi2c_irq_config_func_##id,                              \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),                                      \
-	};                                                                                         \
-	static struct rv32m1_lpi2c_data rv32m1_lpi2c_##id##_data = {                               \
-		.transfer_sync = Z_SEM_INITIALIZER(rv32m1_lpi2c_##id##_data.transfer_sync, 1, 1),  \
-		.completion_sync =                                                                 \
-			Z_SEM_INITIALIZER(rv32m1_lpi2c_##id##_data.completion_sync, 0, 1),         \
-	};                                                                                         \
-	I2C_DEVICE_DT_INST_DEFINE(id, rv32m1_lpi2c_init, NULL, &rv32m1_lpi2c_##id##_data,          \
-				  &rv32m1_lpi2c_##id##_config, POST_KERNEL,                        \
-				  CONFIG_I2C_INIT_PRIORITY, &rv32m1_lpi2c_driver_api);             \
-	static void rv32m1_lpi2c_irq_config_func_##id(const struct device *dev)                    \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(id), 0, rv32m1_lpi2c_isr, DEVICE_DT_INST_GET(id), 0);     \
-		irq_enable(DT_INST_IRQN(id));                                                      \
+#define RV32M1_LPI2C_DEVICE(id)                                                                   \
+	PINCTRL_DT_INST_DEFINE(id);                                                               \
+	static void rv32m1_lpi2c_irq_config_func_##id(const struct device *dev);                  \
+	static const struct rv32m1_lpi2c_config rv32m1_lpi2c_##id##_config = {                    \
+		.base = (LPI2C_Type *)DT_INST_REG_ADDR(id),                                       \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),                              \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),            \
+		.clock_ip_name = INST_DT_CLOCK_IP_NAME(id),                                       \
+		.clock_ip_src = kCLOCK_IpSrcFircAsync,                                            \
+		.bitrate = DT_INST_PROP(id, clock_frequency),                                     \
+		.irq_config_func = rv32m1_lpi2c_irq_config_func_##id,                             \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),                                     \
+	};                                                                                        \
+	static struct rv32m1_lpi2c_data rv32m1_lpi2c_##id##_data = {                              \
+		.transfer_sync = Z_SEM_INITIALIZER(rv32m1_lpi2c_##id##_data.transfer_sync, 1, 1), \
+		.completion_sync =                                                                \
+			Z_SEM_INITIALIZER(rv32m1_lpi2c_##id##_data.completion_sync, 0, 1),        \
+	};                                                                                        \
+	I2C_DEVICE_DT_INST_DEFINE(id, rv32m1_lpi2c_init, NULL, &rv32m1_lpi2c_##id##_data,         \
+				  &rv32m1_lpi2c_##id##_config, POST_KERNEL,                       \
+				  CONFIG_I2C_INIT_PRIORITY, &rv32m1_lpi2c_driver_api);            \
+	static void rv32m1_lpi2c_irq_config_func_##id(const struct device *dev)                   \
+	{                                                                                         \
+		IRQ_CONNECT(DT_INST_IRQN(id), 0, rv32m1_lpi2c_isr, DEVICE_DT_INST_GET(id), 0);    \
+		irq_enable(DT_INST_IRQN(id));                                                     \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(RV32M1_LPI2C_DEVICE)

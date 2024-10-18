@@ -292,15 +292,15 @@ static int cst816s_init(const struct device *dev)
 	return ret;
 }
 
-#define CST816S_DEFINE(index)                                                                      \
-	static const struct cst816s_config cst816s_config_##index = {                              \
-		.i2c = I2C_DT_SPEC_INST_GET(index),                                                \
+#define CST816S_DEFINE(index)                                                                   \
+	static const struct cst816s_config cst816s_config_##index = {                           \
+		.i2c = I2C_DT_SPEC_INST_GET(index),                                             \
 		COND_CODE_1(CONFIG_INPUT_CST816S_INTERRUPT,                                        \
-			    (.int_gpio = GPIO_DT_SPEC_INST_GET(index, irq_gpios),), ()) .rst_gpio = GPIO_DT_SPEC_INST_GET_OR(index, rst_gpios, {}),       \
-	};                                                                                         \
-	static struct cst816s_data cst816s_data_##index;                                           \
-	DEVICE_DT_INST_DEFINE(index, cst816s_init, NULL, &cst816s_data_##index,                    \
-			      &cst816s_config_##index, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,    \
+			    (.int_gpio = GPIO_DT_SPEC_INST_GET(index, irq_gpios),), ()) .rst_gpio = GPIO_DT_SPEC_INST_GET_OR(index, rst_gpios, {}),    \
+	};                                                                                      \
+	static struct cst816s_data cst816s_data_##index;                                        \
+	DEVICE_DT_INST_DEFINE(index, cst816s_init, NULL, &cst816s_data_##index,                 \
+			      &cst816s_config_##index, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, \
 			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(CST816S_DEFINE)

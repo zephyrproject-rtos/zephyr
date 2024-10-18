@@ -107,14 +107,14 @@ static const struct dac_driver_api ltc166x_driver_api = {
 
 #define INST_DT_LTC166X(inst, t) DT_INST(inst, lltc_ltc##t)
 
-#define LTC166X_DEVICE(t, n, res, nchan)                                                           \
-	static const struct ltc166x_config ltc##t##_config_##n = {                                 \
-		.bus = SPI_DT_SPEC_GET(INST_DT_LTC166X(n, t),                                      \
-				       SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),                   \
-		.resolution = res,                                                                 \
-		.nchannels = nchan,                                                                \
-	};                                                                                         \
-	DEVICE_DT_DEFINE(INST_DT_LTC166X(n, t), &ltc166x_init, NULL, NULL, &ltc##t##_config_##n,   \
+#define LTC166X_DEVICE(t, n, res, nchan)                                                         \
+	static const struct ltc166x_config ltc##t##_config_##n = {                               \
+		.bus = SPI_DT_SPEC_GET(INST_DT_LTC166X(n, t),                                    \
+				       SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),                 \
+		.resolution = res,                                                               \
+		.nchannels = nchan,                                                              \
+	};                                                                                       \
+	DEVICE_DT_DEFINE(INST_DT_LTC166X(n, t), &ltc166x_init, NULL, NULL, &ltc##t##_config_##n, \
 			 POST_KERNEL, CONFIG_DAC_LTC166X_INIT_PRIORITY, &ltc166x_driver_api)
 
 /*
@@ -129,7 +129,7 @@ static const struct dac_driver_api ltc166x_driver_api = {
 
 #define CALL_WITH_ARG(arg, expr) expr(arg)
 
-#define INST_DT_LTC166X_FOREACH(t, inst_expr)                                                      \
+#define INST_DT_LTC166X_FOREACH(t, inst_expr)           \
 	LISTIFY(DT_NUM_INST_STATUS_OKAY(lltc_ltc##t), \
 		     CALL_WITH_ARG, (), inst_expr)
 

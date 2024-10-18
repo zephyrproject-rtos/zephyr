@@ -225,34 +225,34 @@ static const struct gpio_driver_api gpio_cat1_api = {
 	.get_pending_int = gpio_cat1_get_pending_int,
 };
 
-#define GPIO_CAT1_INIT_FUNC(n)                                                                     \
-	static int gpio_cat1##n##_init(const struct device *dev)                                   \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_isr_handler,           \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-                                                                                                   \
-		return 0;                                                                          \
+#define GPIO_CAT1_INIT_FUNC(n)                                                           \
+	static int gpio_cat1##n##_init(const struct device *dev)                         \
+	{                                                                                \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_isr_handler, \
+			    DEVICE_DT_INST_GET(n), 0);                                   \
+		irq_enable(DT_INST_IRQN(n));                                             \
+                                                                                         \
+		return 0;                                                                \
 	}
 
-#define GPIO_CAT1_INIT(n)                                                                          \
-                                                                                                   \
-	static const struct gpio_cat1_config _cat1_gpio##n##_config = {                            \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
-		.intr_priority = DT_INST_IRQ_BY_IDX(n, 0, priority),                               \
-		.ngpios = DT_INST_PROP(n, ngpios),                                                 \
-		.regs = (GPIO_PRT_Type *)DT_INST_REG_ADDR(n),                                      \
-	};                                                                                         \
-                                                                                                   \
-	static struct gpio_cat1_data _cat1_gpio##n##_data;                                         \
-                                                                                                   \
-	GPIO_CAT1_INIT_FUNC(n)                                                                     \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, gpio_cat1##n##_init, NULL, &_cat1_gpio##n##_data,                 \
-			      &_cat1_gpio##n##_config, POST_KERNEL,                                \
+#define GPIO_CAT1_INIT(n)                                                            \
+                                                                                     \
+	static const struct gpio_cat1_config _cat1_gpio##n##_config = {              \
+		.common =                                                            \
+			{                                                            \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n), \
+			},                                                           \
+		.intr_priority = DT_INST_IRQ_BY_IDX(n, 0, priority),                 \
+		.ngpios = DT_INST_PROP(n, ngpios),                                   \
+		.regs = (GPIO_PRT_Type *)DT_INST_REG_ADDR(n),                        \
+	};                                                                           \
+                                                                                     \
+	static struct gpio_cat1_data _cat1_gpio##n##_data;                           \
+                                                                                     \
+	GPIO_CAT1_INIT_FUNC(n)                                                       \
+                                                                                     \
+	DEVICE_DT_INST_DEFINE(n, gpio_cat1##n##_init, NULL, &_cat1_gpio##n##_data,   \
+			      &_cat1_gpio##n##_config, POST_KERNEL,                  \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &gpio_cat1_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_CAT1_INIT)

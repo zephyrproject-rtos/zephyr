@@ -254,43 +254,43 @@ static const struct gpio_driver_api imx_gpio_driver_api = {
 
 /* These macros will declare an array of pinctrl_soc_pinmux types */
 #define PINMUX_INIT(node, prop, idx) MCUX_IMX_PINMUX(DT_PROP_BY_IDX(node, prop, idx)),
-#define IMX_IGPIO_PIN_DECLARE(n)                                                                   \
-	const struct pinctrl_soc_pinmux mcux_igpio_pinmux_##n[] = {                                \
+#define IMX_IGPIO_PIN_DECLARE(n)                                    \
+	const struct pinctrl_soc_pinmux mcux_igpio_pinmux_##n[] = { \
 		DT_INST_FOREACH_PROP_ELEM(n, pinmux, PINMUX_INIT)};
-#define IMX_IGPIO_PIN_INIT(n)                                                                      \
+#define IMX_IGPIO_PIN_INIT(n)                                                         \
 	.pin_muxes = mcux_igpio_pinmux_##n, .mux_count = DT_INST_PROP_LEN(n, pinmux),
 
-#define GPIO_IMX_INIT(n)                                                                           \
-	IMX_IGPIO_PIN_DECLARE(n)                                                                   \
-	static int imx_gpio_##n##_init(const struct device *port);                                 \
-                                                                                                   \
-	static const struct imx_gpio_config imx_gpio_##n##_config = {                              \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
-		.base = (GPIO_Type *)DT_INST_REG_ADDR(n),                                          \
-		IMX_IGPIO_PIN_INIT(n)};                                                            \
-                                                                                                   \
-	static struct imx_gpio_data imx_gpio_##n##_data;                                           \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, imx_gpio_##n##_init, NULL, &imx_gpio_##n##_data,                  \
-			      &imx_gpio_##n##_config, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,     \
-			      &imx_gpio_driver_api);                                               \
-                                                                                                   \
-	static int imx_gpio_##n##_init(const struct device *port)                                  \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 0, irq), DT_INST_IRQ_BY_IDX(n, 0, priority),     \
-			    imx_gpio_port_isr, DEVICE_DT_INST_GET(n), 0);                          \
-                                                                                                   \
-		irq_enable(DT_INST_IRQ_BY_IDX(n, 0, irq));                                         \
-                                                                                                   \
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 1, irq), DT_INST_IRQ_BY_IDX(n, 1, priority),     \
-			    imx_gpio_port_isr, DEVICE_DT_INST_GET(n), 0);                          \
-                                                                                                   \
-		irq_enable(DT_INST_IRQ_BY_IDX(n, 1, irq));                                         \
-                                                                                                   \
-		return 0;                                                                          \
+#define GPIO_IMX_INIT(n)                                                                       \
+	IMX_IGPIO_PIN_DECLARE(n)                                                               \
+	static int imx_gpio_##n##_init(const struct device *port);                             \
+                                                                                               \
+	static const struct imx_gpio_config imx_gpio_##n##_config = {                          \
+		.common =                                                                      \
+			{                                                                      \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),           \
+			},                                                                     \
+		.base = (GPIO_Type *)DT_INST_REG_ADDR(n),                                      \
+		IMX_IGPIO_PIN_INIT(n)};                                                        \
+                                                                                               \
+	static struct imx_gpio_data imx_gpio_##n##_data;                                       \
+                                                                                               \
+	DEVICE_DT_INST_DEFINE(n, imx_gpio_##n##_init, NULL, &imx_gpio_##n##_data,              \
+			      &imx_gpio_##n##_config, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, \
+			      &imx_gpio_driver_api);                                           \
+                                                                                               \
+	static int imx_gpio_##n##_init(const struct device *port)                              \
+	{                                                                                      \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 0, irq), DT_INST_IRQ_BY_IDX(n, 0, priority), \
+			    imx_gpio_port_isr, DEVICE_DT_INST_GET(n), 0);                      \
+                                                                                               \
+		irq_enable(DT_INST_IRQ_BY_IDX(n, 0, irq));                                     \
+                                                                                               \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 1, irq), DT_INST_IRQ_BY_IDX(n, 1, priority), \
+			    imx_gpio_port_isr, DEVICE_DT_INST_GET(n), 0);                      \
+                                                                                               \
+		irq_enable(DT_INST_IRQ_BY_IDX(n, 1, irq));                                     \
+                                                                                               \
+		return 0;                                                                      \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_IMX_INIT)

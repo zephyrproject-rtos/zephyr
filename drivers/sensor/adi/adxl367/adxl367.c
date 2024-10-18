@@ -970,9 +970,9 @@ static int adxl367_init(const struct device *dev)
  * ADXL367_DEFINE_I2C().
  */
 
-#define ADXL367_DEVICE_INIT(inst)                                                                  \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, adxl367_init, NULL, &adxl367_data_##inst,               \
-				     &adxl367_config_##inst, POST_KERNEL,                          \
+#define ADXL367_DEVICE_INIT(inst)                                                      \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, adxl367_init, NULL, &adxl367_data_##inst,   \
+				     &adxl367_config_##inst, POST_KERNEL,              \
 				     CONFIG_SENSOR_INIT_PRIORITY, &adxl367_api_funcs);
 
 #ifdef CONFIG_ADXL367_TRIGGER
@@ -981,58 +981,58 @@ static int adxl367_init(const struct device *dev)
 #define ADXL367_CFG_IRQ(inst)
 #endif /* CONFIG_ADXL367_TRIGGER */
 
-#define ADXL367_CONFIG(inst)                                                                       \
-	.odr = DT_INST_PROP(inst, odr), .autosleep = false, .low_noise = false, .temp_en = true,   \
-	.range = ADXL367_2G_RANGE, .activity_th.value = CONFIG_ADXL367_ACTIVITY_THRESHOLD,         \
-	.activity_th.referenced = IS_ENABLED(CONFIG_ADXL367_REFERENCED_ACTIVITY_DETECTION_MODE),   \
-	.activity_th.enable = IS_ENABLED(CONFIG_ADXL367_ACTIVITY_DETECTION_MODE),                  \
-	.activity_time = CONFIG_ADXL367_ACTIVITY_TIME,                                             \
-	.inactivity_th.value = CONFIG_ADXL367_INACTIVITY_THRESHOLD,                                \
-	.inactivity_th.referenced =                                                                \
-		IS_ENABLED(CONFIG_ADXL367_REFERENCED_INACTIVITY_DETECTION_MODE),                   \
-	.inactivity_th.enable = IS_ENABLED(CONFIG_ADXL367_INACTIVITY_DETECTION_MODE),              \
-	.inactivity_time = CONFIG_ADXL367_INACTIVITY_TIME,                                         \
-	.fifo_config.fifo_mode = ADXL367_FIFO_DISABLED,                                            \
-	.fifo_config.fifo_format = ADXL367_FIFO_FORMAT_XYZ, .fifo_config.fifo_samples = 128,       \
+#define ADXL367_CONFIG(inst)                                                                     \
+	.odr = DT_INST_PROP(inst, odr), .autosleep = false, .low_noise = false, .temp_en = true, \
+	.range = ADXL367_2G_RANGE, .activity_th.value = CONFIG_ADXL367_ACTIVITY_THRESHOLD,       \
+	.activity_th.referenced = IS_ENABLED(CONFIG_ADXL367_REFERENCED_ACTIVITY_DETECTION_MODE), \
+	.activity_th.enable = IS_ENABLED(CONFIG_ADXL367_ACTIVITY_DETECTION_MODE),                \
+	.activity_time = CONFIG_ADXL367_ACTIVITY_TIME,                                           \
+	.inactivity_th.value = CONFIG_ADXL367_INACTIVITY_THRESHOLD,                              \
+	.inactivity_th.referenced =                                                              \
+		IS_ENABLED(CONFIG_ADXL367_REFERENCED_INACTIVITY_DETECTION_MODE),                 \
+	.inactivity_th.enable = IS_ENABLED(CONFIG_ADXL367_INACTIVITY_DETECTION_MODE),            \
+	.inactivity_time = CONFIG_ADXL367_INACTIVITY_TIME,                                       \
+	.fifo_config.fifo_mode = ADXL367_FIFO_DISABLED,                                          \
+	.fifo_config.fifo_format = ADXL367_FIFO_FORMAT_XYZ, .fifo_config.fifo_samples = 128,     \
 	.fifo_config.fifo_read_mode = ADXL367_14B_CHID, .op_mode = ADXL367_MEASURE,
 
 /*
  * Instantiation macros used when a device is on a SPI bus.
  */
 
-#define ADXL367_CONFIG_SPI(inst)                                                                   \
-	{.bus_init = adxl367_spi_init,                                                             \
-	 .spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),                 \
-	 ADXL367_CONFIG(inst)                                                                      \
+#define ADXL367_CONFIG_SPI(inst)                                                                  \
+	{.bus_init = adxl367_spi_init,                                                            \
+	 .spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),                \
+	 ADXL367_CONFIG(inst)                                                                     \
 		 COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int1_gpios),	\
 		(ADXL367_CFG_IRQ(inst)), ()) }
 
-#define ADXL367_DEFINE_SPI(inst)                                                                   \
-	static struct adxl367_data adxl367_data_##inst;                                            \
-	static const struct adxl367_dev_config adxl367_config_##inst = ADXL367_CONFIG_SPI(inst);   \
+#define ADXL367_DEFINE_SPI(inst)                                                                 \
+	static struct adxl367_data adxl367_data_##inst;                                          \
+	static const struct adxl367_dev_config adxl367_config_##inst = ADXL367_CONFIG_SPI(inst); \
 	ADXL367_DEVICE_INIT(inst)
 
 /*
  * Instantiation macros used when a device is on an I2C bus.
  */
 
-#define ADXL367_CONFIG_I2C(inst)                                                                   \
-	{.bus_init = adxl367_i2c_init,                                                             \
-	 .i2c = I2C_DT_SPEC_INST_GET(inst),                                                        \
-	 ADXL367_CONFIG(inst)                                                                      \
+#define ADXL367_CONFIG_I2C(inst)                                                                  \
+	{.bus_init = adxl367_i2c_init,                                                            \
+	 .i2c = I2C_DT_SPEC_INST_GET(inst),                                                       \
+	 ADXL367_CONFIG(inst)                                                                     \
 		 COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int1_gpios),	\
 		(ADXL367_CFG_IRQ(inst)), ()) }
 
-#define ADXL367_DEFINE_I2C(inst)                                                                   \
-	static struct adxl367_data adxl367_data_##inst;                                            \
-	static const struct adxl367_dev_config adxl367_config_##inst = ADXL367_CONFIG_I2C(inst);   \
+#define ADXL367_DEFINE_I2C(inst)                                                                 \
+	static struct adxl367_data adxl367_data_##inst;                                          \
+	static const struct adxl367_dev_config adxl367_config_##inst = ADXL367_CONFIG_I2C(inst); \
 	ADXL367_DEVICE_INIT(inst)
 /*
  * Main instantiation macro. Use of COND_CODE_1() selects the right
  * bus-specific macro at preprocessor time.
  */
 
-#define ADXL367_DEFINE(inst)                                                                       \
+#define ADXL367_DEFINE(inst)                        \
 	COND_CODE_1(DT_INST_ON_BUS(inst, spi),				\
 		    (ADXL367_DEFINE_SPI(inst)),				\
 		    (ADXL367_DEFINE_I2C(inst)))

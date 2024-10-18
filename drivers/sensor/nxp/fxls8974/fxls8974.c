@@ -553,20 +553,20 @@ static const struct sensor_driver_api fxls8974_driver_api = {
 #endif
 };
 
-#define FXLS8974_CONFIG_I2C(n)                                                                     \
-	.bus_cfg = {.i2c = I2C_DT_SPEC_INST_GET(n)}, .ops = &fxls8974_i2c_ops,                     \
+#define FXLS8974_CONFIG_I2C(n)                                                 \
+	.bus_cfg = {.i2c = I2C_DT_SPEC_INST_GET(n)}, .ops = &fxls8974_i2c_ops, \
 	.range = DT_INST_PROP(n, range), .inst_on_bus = FXLS8974_BUS_I2C,
 
-#define FXLS8974_CONFIG_SPI(n)                                                                     \
-	.bus_cfg = {.spi = SPI_DT_SPEC_INST_GET(n, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0)},      \
-	.ops = &fxls8974_spi_ops, .range = DT_INST_PROP(n, range),                                 \
+#define FXLS8974_CONFIG_SPI(n)                                                                \
+	.bus_cfg = {.spi = SPI_DT_SPEC_INST_GET(n, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0)}, \
+	.ops = &fxls8974_spi_ops, .range = DT_INST_PROP(n, range),                            \
 	.inst_on_bus = FXLS8974_BUS_SPI,
 
 #define FXLS8974_SPI_OPERATION (SPI_WORD_SET(8) | SPI_OP_MODE_MASTER)
 
 #define FXLS8974_INTM_PROPS(n, m) .int_gpio = GPIO_DT_SPEC_INST_GET(n, int##m##_gpios),
 
-#define FXLS8974_INT_PROPS(n)                                                                      \
+#define FXLS8974_INT_PROPS(n)                     \
 	COND_CODE_1(CONFIG_FXLS8974_DRDY_INT1,		\
 			(FXLS8974_INTM_PROPS(n, 1)),	\
 			(FXLS8974_INTM_PROPS(n, 2)))
@@ -575,15 +575,15 @@ static const struct sensor_driver_api fxls8974_driver_api = {
 			(FXLS8974_INT_PROPS(n)),	\
 			())
 
-#define FXLS8974_INIT(n)                                                                           \
+#define FXLS8974_INIT(n)                                                                    \
 	static const struct fxls8974_config fxls8974_config_##n = {COND_CODE_1(DT_INST_ON_BUS(n, spi),				\
 				(FXLS8974_CONFIG_SPI(n)),					\
-				(FXLS8974_CONFIG_I2C(n))) FXLS8974_INT(n)};        \
-                                                                                                   \
-	static struct fxls8974_data fxls8974_data_##n;                                             \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, fxls8974_init, NULL, &fxls8974_data_##n,                   \
-				     &fxls8974_config_##n, POST_KERNEL,                            \
+				(FXLS8974_CONFIG_I2C(n))) FXLS8974_INT(n)}; \
+                                                                                            \
+	static struct fxls8974_data fxls8974_data_##n;                                      \
+                                                                                            \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, fxls8974_init, NULL, &fxls8974_data_##n,            \
+				     &fxls8974_config_##n, POST_KERNEL,                     \
 				     CONFIG_SENSOR_INIT_PRIORITY, &fxls8974_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(FXLS8974_INIT)

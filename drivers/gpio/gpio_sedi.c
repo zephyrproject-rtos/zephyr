@@ -296,22 +296,22 @@ static int gpio_sedi_init(const struct device *dev)
 #define GPIO_SEDI_IRQ_FLAGS_SENSE1(n) DT_INST_IRQ(n, sense)
 #define GPIO_SEDI_IRQ_FLAGS(n)        _CONCAT(GPIO_SEDI_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, sense))(n)
 
-#define GPIO_DEVICE_INIT_SEDI(n)                                                                   \
-	static struct gpio_sedi_data gpio##n##_data;                                               \
-	static void gpio_sedi_irq_config_##n(void)                                                 \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_isr, n,                \
-			    GPIO_SEDI_IRQ_FLAGS(n));                                               \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-	};                                                                                         \
-	static const struct gpio_sedi_config gpio##n##_config = {                                  \
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),     .common = {0xFFFFFFFF},                  \
-		.device = DT_INST_PROP(n, peripheral_id), .pin_nums = DT_INST_PROP(n, ngpios),     \
-		.irq_config = gpio_sedi_irq_config_##n,                                            \
-	};                                                                                         \
-	PM_DEVICE_DEFINE(gpio_##n, gpio_sedi_pm_action);                                           \
-	DEVICE_DT_INST_DEFINE(n, gpio_sedi_init, PM_DEVICE_GET(gpio_##n), &gpio##n##_data,         \
-			      &gpio##n##_config, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,           \
+#define GPIO_DEVICE_INIT_SEDI(n)                                                               \
+	static struct gpio_sedi_data gpio##n##_data;                                           \
+	static void gpio_sedi_irq_config_##n(void)                                             \
+	{                                                                                      \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_isr, n,            \
+			    GPIO_SEDI_IRQ_FLAGS(n));                                           \
+		irq_enable(DT_INST_IRQN(n));                                                   \
+	};                                                                                     \
+	static const struct gpio_sedi_config gpio##n##_config = {                              \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),     .common = {0xFFFFFFFF},              \
+		.device = DT_INST_PROP(n, peripheral_id), .pin_nums = DT_INST_PROP(n, ngpios), \
+		.irq_config = gpio_sedi_irq_config_##n,                                        \
+	};                                                                                     \
+	PM_DEVICE_DEFINE(gpio_##n, gpio_sedi_pm_action);                                       \
+	DEVICE_DT_INST_DEFINE(n, gpio_sedi_init, PM_DEVICE_GET(gpio_##n), &gpio##n##_data,     \
+			      &gpio##n##_config, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,       \
 			      &gpio_sedi_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_DEVICE_INIT_SEDI)

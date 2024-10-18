@@ -609,43 +609,43 @@ static const struct dma_driver_api dma_gd32_driver_api = {
 	.chan_filter = dma_gd32_api_chan_filter,
 };
 
-#define IRQ_CONFIGURE(n, inst)                                                                     \
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, n, irq), DT_INST_IRQ_BY_IDX(inst, n, priority),       \
-		    dma_gd32_isr, DEVICE_DT_INST_GET(inst), 0);                                    \
+#define IRQ_CONFIGURE(n, inst)                                                               \
+	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, n, irq), DT_INST_IRQ_BY_IDX(inst, n, priority), \
+		    dma_gd32_isr, DEVICE_DT_INST_GET(inst), 0);                              \
 	irq_enable(DT_INST_IRQ_BY_IDX(inst, n, irq));
 
 #define CONFIGURE_ALL_IRQS(inst, n) LISTIFY(n, IRQ_CONFIGURE, (), inst)
 
-#define GD32_DMA_INIT(inst)                                                                        \
-	static void dma_gd32##inst##_irq_configure(void)                                           \
-	{                                                                                          \
-		CONFIGURE_ALL_IRQS(inst, DT_NUM_IRQS(DT_DRV_INST(inst)));                          \
-	}                                                                                          \
-	static const struct dma_gd32_config dma_gd32##inst##_config = {                            \
-		.reg = DT_INST_REG_ADDR(inst),                                                     \
-		.channels = DT_INST_PROP(inst, dma_channels),                                      \
-		.clkid = DT_INST_CLOCKS_CELL(inst, id),                                            \
-		.mem2mem = DT_INST_PROP(inst, gd_mem2mem),                                         \
+#define GD32_DMA_INIT(inst)                                                                      \
+	static void dma_gd32##inst##_irq_configure(void)                                         \
+	{                                                                                        \
+		CONFIGURE_ALL_IRQS(inst, DT_NUM_IRQS(DT_DRV_INST(inst)));                        \
+	}                                                                                        \
+	static const struct dma_gd32_config dma_gd32##inst##_config = {                          \
+		.reg = DT_INST_REG_ADDR(inst),                                                   \
+		.channels = DT_INST_PROP(inst, dma_channels),                                    \
+		.clkid = DT_INST_CLOCKS_CELL(inst, id),                                          \
+		.mem2mem = DT_INST_PROP(inst, gd_mem2mem),                                       \
 		IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_dma_v1),          \
-			   (.reset = RESET_DT_SPEC_INST_GET(inst),)) .irq_configure =   \
-						 dma_gd32##inst##_irq_configure,                   \
-	};                                                                                         \
-                                                                                                   \
-	static struct dma_gd32_channel                                                             \
-		dma_gd32##inst##_channels[DT_INST_PROP(inst, dma_channels)];                       \
-	ATOMIC_DEFINE(dma_gd32_atomic##inst, DT_INST_PROP(inst, dma_channels));                    \
-	static struct dma_gd32_data dma_gd32##inst##_data = {                                      \
-		.ctx =                                                                             \
-			{                                                                          \
-				.magic = DMA_MAGIC,                                                \
-				.atomic = dma_gd32_atomic##inst,                                   \
-				.dma_channels = DT_INST_PROP(inst, dma_channels),                  \
-			},                                                                         \
-		.channels = dma_gd32##inst##_channels,                                             \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, &dma_gd32_init, NULL, &dma_gd32##inst##_data,                  \
-			      &dma_gd32##inst##_config, POST_KERNEL, CONFIG_DMA_INIT_PRIORITY,     \
+			   (.reset = RESET_DT_SPEC_INST_GET(inst),)) .irq_configure = \
+						 dma_gd32##inst##_irq_configure,                 \
+	};                                                                                       \
+                                                                                                 \
+	static struct dma_gd32_channel                                                           \
+		dma_gd32##inst##_channels[DT_INST_PROP(inst, dma_channels)];                     \
+	ATOMIC_DEFINE(dma_gd32_atomic##inst, DT_INST_PROP(inst, dma_channels));                  \
+	static struct dma_gd32_data dma_gd32##inst##_data = {                                    \
+		.ctx =                                                                           \
+			{                                                                        \
+				.magic = DMA_MAGIC,                                              \
+				.atomic = dma_gd32_atomic##inst,                                 \
+				.dma_channels = DT_INST_PROP(inst, dma_channels),                \
+			},                                                                       \
+		.channels = dma_gd32##inst##_channels,                                           \
+	};                                                                                       \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(inst, &dma_gd32_init, NULL, &dma_gd32##inst##_data,                \
+			      &dma_gd32##inst##_config, POST_KERNEL, CONFIG_DMA_INIT_PRIORITY,   \
 			      &dma_gd32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GD32_DMA_INIT)

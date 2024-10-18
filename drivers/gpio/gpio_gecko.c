@@ -26,7 +26,7 @@
 #if DT_NODE_HAS_PROP(id, peripheral_id)
 #define GET_GECKO_GPIO_INDEX(id) DT_INST_PROP(id, peripheral_id)
 #else
-#if defined(CONFIG_SOC_SERIES_EFR32BG22) || defined(CONFIG_SOC_SERIES_EFR32BG27) ||                \
+#if defined(CONFIG_SOC_SERIES_EFR32BG22) || defined(CONFIG_SOC_SERIES_EFR32BG27) ||  \
 	defined(CONFIG_SOC_SERIES_EFR32MG21) || defined(CONFIG_SOC_SERIES_EFR32MG24)
 #define GECKO_GPIO_PORT_ADDR_SPACE_SIZE sizeof(GPIO_PORT_TypeDef)
 #else
@@ -35,7 +35,7 @@
 /* Assumption for calculating gpio index:
  * 1. Address space of the first GPIO port is the address space for GPIO port A
  */
-#define GET_GECKO_GPIO_INDEX(id)                                                                   \
+#define GET_GECKO_GPIO_INDEX(id) \
 	(DT_INST_REG_ADDR(id) - DT_REG_ADDR(DT_NODELABEL(gpioa))) / GECKO_GPIO_PORT_ADDR_SPACE_SIZE
 #endif /* DT_NODE_HAS_PROP(id, peripheral_id) */
 
@@ -389,27 +389,27 @@ static int gpio_gecko_common_init(const struct device *dev)
 	return 0;
 }
 
-#define GPIO_PORT_INIT(idx)                                                                        \
-	static int gpio_gecko_port##idx##_init(const struct device *dev);                          \
-                                                                                                   \
-	static const struct gpio_gecko_config gpio_gecko_port##idx##_config = {                    \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = (gpio_port_pins_t)(-1),                           \
-			},                                                                         \
-		.gpio_index = GET_GECKO_GPIO_INDEX(idx),                                           \
-	};                                                                                         \
-                                                                                                   \
-	static struct gpio_gecko_data gpio_gecko_port##idx##_data;                                 \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(idx, gpio_gecko_port##idx##_init, NULL,                              \
-			      &gpio_gecko_port##idx##_data, &gpio_gecko_port##idx##_config,        \
-			      POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY, &gpio_gecko_driver_api);     \
-                                                                                                   \
-	static int gpio_gecko_port##idx##_init(const struct device *dev)                           \
-	{                                                                                          \
-		gpio_gecko_add_port(&gpio_gecko_common_data, dev);                                 \
-		return 0;                                                                          \
+#define GPIO_PORT_INIT(idx)                                                                    \
+	static int gpio_gecko_port##idx##_init(const struct device *dev);                      \
+                                                                                               \
+	static const struct gpio_gecko_config gpio_gecko_port##idx##_config = {                \
+		.common =                                                                      \
+			{                                                                      \
+				.port_pin_mask = (gpio_port_pins_t)(-1),                       \
+			},                                                                     \
+		.gpio_index = GET_GECKO_GPIO_INDEX(idx),                                       \
+	};                                                                                     \
+                                                                                               \
+	static struct gpio_gecko_data gpio_gecko_port##idx##_data;                             \
+                                                                                               \
+	DEVICE_DT_INST_DEFINE(idx, gpio_gecko_port##idx##_init, NULL,                          \
+			      &gpio_gecko_port##idx##_data, &gpio_gecko_port##idx##_config,    \
+			      POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY, &gpio_gecko_driver_api); \
+                                                                                               \
+	static int gpio_gecko_port##idx##_init(const struct device *dev)                       \
+	{                                                                                      \
+		gpio_gecko_add_port(&gpio_gecko_common_data, dev);                             \
+		return 0;                                                                      \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_PORT_INIT)

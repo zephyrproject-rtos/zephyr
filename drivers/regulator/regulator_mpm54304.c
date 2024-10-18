@@ -69,27 +69,27 @@ static const struct regulator_driver_api mpm54304_api = {
 	.disable = regulator_mpm54304_disable,
 };
 
-#define REGULATOR_MPM54304_DEFINE(node_id, id, child_name)                                         \
-	static const struct regulator_mpm54304_config regulator_mpm54304_config_##id = {           \
-		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node_id),                                \
-		.bus = I2C_DT_SPEC_GET(DT_PARENT(node_id)),                                        \
-		.enable_mask = MPM54304_##child_name##_EN_MASK,                                    \
-	};                                                                                         \
-                                                                                                   \
-	static struct regulator_mpm54304_data regulator_mpm54304_data_##id;                        \
-	DEVICE_DT_DEFINE(node_id, regulator_mpm54304_init, NULL, &regulator_mpm54304_data_##id,    \
-			 &regulator_mpm54304_config_##id, POST_KERNEL,                             \
+#define REGULATOR_MPM54304_DEFINE(node_id, id, child_name)                                      \
+	static const struct regulator_mpm54304_config regulator_mpm54304_config_##id = {        \
+		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node_id),                             \
+		.bus = I2C_DT_SPEC_GET(DT_PARENT(node_id)),                                     \
+		.enable_mask = MPM54304_##child_name##_EN_MASK,                                 \
+	};                                                                                      \
+                                                                                                \
+	static struct regulator_mpm54304_data regulator_mpm54304_data_##id;                     \
+	DEVICE_DT_DEFINE(node_id, regulator_mpm54304_init, NULL, &regulator_mpm54304_data_##id, \
+			 &regulator_mpm54304_config_##id, POST_KERNEL,                          \
 			 CONFIG_REGULATOR_MPM54304_INIT_PRIORITY, &mpm54304_api);
 
-#define REGULATOR_MPM54304_DEFINE_COND(inst, child, child_name)                                    \
+#define REGULATOR_MPM54304_DEFINE_COND(inst, child, child_name) \
 	IF_ENABLED(                                                                                \
 		DT_NODE_EXISTS(DT_INST_CHILD(inst, child)),                                        \
 		(REGULATOR_MPM54304_DEFINE(DT_INST_CHILD(inst, child), child##inst, child_name)))
 
-#define REGULATOR_MPM54304_DEFINE_ALL(inst)                                                        \
-	REGULATOR_MPM54304_DEFINE_COND(inst, buck1, BUCK1)                                         \
-	REGULATOR_MPM54304_DEFINE_COND(inst, buck2, BUCK2)                                         \
-	REGULATOR_MPM54304_DEFINE_COND(inst, buck3, BUCK3)                                         \
+#define REGULATOR_MPM54304_DEFINE_ALL(inst)                \
+	REGULATOR_MPM54304_DEFINE_COND(inst, buck1, BUCK1) \
+	REGULATOR_MPM54304_DEFINE_COND(inst, buck2, BUCK2) \
+	REGULATOR_MPM54304_DEFINE_COND(inst, buck3, BUCK3) \
 	REGULATOR_MPM54304_DEFINE_COND(inst, buck4, BUCK4)
 
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_MPM54304_DEFINE_ALL)

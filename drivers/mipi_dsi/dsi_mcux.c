@@ -307,7 +307,7 @@ static int display_mcux_mipi_dsi_init(const struct device *dev)
 	return 0;
 }
 
-#define MCUX_DSI_DPI_CONFIG(id)                                                                    \
+#define MCUX_DSI_DPI_CONFIG(id)                                       \
 	IF_ENABLED(DT_NODE_HAS_PROP(DT_DRV_INST(id), nxp_lcdif),				\
 	(.dpi_config = {									\
 		.dpiColorCoding = DT_INST_ENUM_IDX(id, dpi_color_coding),			\

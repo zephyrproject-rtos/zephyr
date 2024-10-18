@@ -751,10 +751,10 @@ int nsos_adapt_setsockopt(int fd, int nsos_mid_level, int nsos_mid_optname,
 	return -NSOS_MID_EOPNOTSUPP;
 }
 
-#define MAP_POLL_EPOLL(_event_from, _event_to)                                                     \
-	if (events_from & (_event_from)) {                                                         \
-		events_from &= ~(_event_from);                                                     \
-		events_to |= _event_to;                                                            \
+#define MAP_POLL_EPOLL(_event_from, _event_to) \
+	if (events_from & (_event_from)) {     \
+		events_from &= ~(_event_from); \
+		events_to |= _event_to;        \
 	}
 
 static int nsos_poll_to_epoll_events(int events_from)

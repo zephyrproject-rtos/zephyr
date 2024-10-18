@@ -10,7 +10,7 @@
 
 #include <gpio.h>
 
-#define ADI_MAX32_GET_PORT_ADDR_OR_NONE(nodelabel)                                                 \
+#define ADI_MAX32_GET_PORT_ADDR_OR_NONE(nodelabel) \
 	IF_ENABLED(DT_NODE_EXISTS(DT_NODELABEL(nodelabel)),                                        \
 		   (DT_REG_ADDR(DT_NODELABEL(nodelabel)),))
 

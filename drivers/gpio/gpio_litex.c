@@ -20,8 +20,8 @@
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
-#define SUPPORTED_FLAGS                                                                            \
-	(GPIO_INPUT | GPIO_OUTPUT | GPIO_OUTPUT_INIT_LOW | GPIO_OUTPUT_INIT_HIGH |                 \
+#define SUPPORTED_FLAGS                                                            \
+	(GPIO_INPUT | GPIO_OUTPUT | GPIO_OUTPUT_INIT_LOW | GPIO_OUTPUT_INIT_HIGH | \
 	 GPIO_ACTIVE_LOW | GPIO_ACTIVE_HIGH)
 
 #define GPIO_LOW  0
@@ -286,51 +286,51 @@ static const struct gpio_driver_api gpio_litex_driver_api = {
 };
 
 /* Device Instantiation */
-#define GPIO_LITEX_IRQ_INIT(n)                                                                     \
-	do {                                                                                       \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_litex_irq_handler,     \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define GPIO_LITEX_IRQ_INIT(n)                                                                 \
+	do {                                                                                   \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_litex_irq_handler, \
+			    DEVICE_DT_INST_GET(n), 0);                                         \
+                                                                                               \
+		irq_enable(DT_INST_IRQN(n));                                                   \
 	} while (false)
 
-#define GPIO_LITEX_INIT(n)                                                                         \
-	static int gpio_litex_port_init_##n(const struct device *dev);                             \
-                                                                                                   \
-	static const struct gpio_litex_cfg gpio_litex_cfg_##n = {                                  \
-		.reg_addr = DT_INST_REG_ADDR(n),                                                   \
-		.reg_size = DT_INST_REG_SIZE(n),                                                   \
-		.nr_gpios = DT_INST_PROP(n, ngpios),                                               \
+#define GPIO_LITEX_INIT(n)                                                                 \
+	static int gpio_litex_port_init_##n(const struct device *dev);                     \
+                                                                                           \
+	static const struct gpio_litex_cfg gpio_litex_cfg_##n = {                          \
+		.reg_addr = DT_INST_REG_ADDR(n),                                           \
+		.reg_size = DT_INST_REG_SIZE(n),                                           \
+		.nr_gpios = DT_INST_PROP(n, ngpios),                                       \
 		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0), ( \
 			.ev_mode_addr    = DT_INST_REG_ADDR_BY_NAME(n, irq_mode), \
 			.ev_edge_addr    = DT_INST_REG_ADDR_BY_NAME(n, irq_edge), \
 			.ev_pending_addr = DT_INST_REG_ADDR_BY_NAME(n, irq_pend), \
 			.ev_enable_addr  = DT_INST_REG_ADDR_BY_NAME(n, irq_en), \
-		)) .port_is_output =            \
-							 DT_INST_PROP(n, port_is_output),          \
-	};                                                                                         \
-	static struct gpio_litex_data gpio_litex_data_##n;                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, gpio_litex_port_init_##n, NULL, &gpio_litex_data_##n,             \
-			      &gpio_litex_cfg_##n, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,         \
-			      &gpio_litex_driver_api);                                             \
-                                                                                                   \
-	static int gpio_litex_port_init_##n(const struct device *dev)                              \
-	{                                                                                          \
-		const struct gpio_litex_cfg *gpio_config = DEV_GPIO_CFG(dev);                      \
-                                                                                                   \
-		/* Check if gpios fit in declared register space */                                \
-		/* Number of subregisters times size in bits */                                    \
-		const int max_gpios_can_fit =                                                      \
-			DT_INST_REG_SIZE(n) / 4 * CONFIG_LITEX_CSR_DATA_WIDTH;                     \
-		if (gpio_config->nr_gpios > max_gpios_can_fit) {                                   \
-			LOG_ERR("%s", LITEX_LOG_REG_SIZE_NGPIOS_MISMATCH);                         \
-			return -EINVAL;                                                            \
-		}                                                                                  \
-                                                                                                   \
+		)) .port_is_output =    \
+							 DT_INST_PROP(n, port_is_output),  \
+	};                                                                                 \
+	static struct gpio_litex_data gpio_litex_data_##n;                                 \
+                                                                                           \
+	DEVICE_DT_INST_DEFINE(n, gpio_litex_port_init_##n, NULL, &gpio_litex_data_##n,     \
+			      &gpio_litex_cfg_##n, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY, \
+			      &gpio_litex_driver_api);                                     \
+                                                                                           \
+	static int gpio_litex_port_init_##n(const struct device *dev)                      \
+	{                                                                                  \
+		const struct gpio_litex_cfg *gpio_config = DEV_GPIO_CFG(dev);              \
+                                                                                           \
+		/* Check if gpios fit in declared register space */                        \
+		/* Number of subregisters times size in bits */                            \
+		const int max_gpios_can_fit =                                              \
+			DT_INST_REG_SIZE(n) / 4 * CONFIG_LITEX_CSR_DATA_WIDTH;             \
+		if (gpio_config->nr_gpios > max_gpios_can_fit) {                           \
+			LOG_ERR("%s", LITEX_LOG_REG_SIZE_NGPIOS_MISMATCH);                 \
+			return -EINVAL;                                                    \
+		}                                                                          \
+                                                                                           \
 		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0), \
-			   (GPIO_LITEX_IRQ_INIT(n);))                                            \
-		return 0;                                                                          \
+			   (GPIO_LITEX_IRQ_INIT(n);))                                    \
+		return 0;                                                                  \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_LITEX_INIT)

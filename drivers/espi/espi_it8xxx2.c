@@ -176,7 +176,7 @@ static const struct ec2i_t pmc1_settings[] = {
 #ifdef CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD
 #define IT8XXX2_ESPI_HC_DATA_PORT_MSB ((CONFIG_ESPI_PERIPHERAL_HOST_CMD_DATA_PORT_NUM >> 8) & 0xff)
 #define IT8XXX2_ESPI_HC_DATA_PORT_LSB (CONFIG_ESPI_PERIPHERAL_HOST_CMD_DATA_PORT_NUM & 0xff)
-#define IT8XXX2_ESPI_HC_CMD_PORT_MSB                                                               \
+#define IT8XXX2_ESPI_HC_CMD_PORT_MSB                                        \
 	(((CONFIG_ESPI_PERIPHERAL_HOST_CMD_DATA_PORT_NUM + 4) >> 8) & 0xff)
 #define IT8XXX2_ESPI_HC_CMD_PORT_LSB ((CONFIG_ESPI_PERIPHERAL_HOST_CMD_DATA_PORT_NUM + 4) & 0xff)
 static const struct ec2i_t pmc2_settings[] = {
@@ -207,8 +207,8 @@ static const struct ec2i_t pmc2_settings[] = {
 #define IT8XXX2_ESPI_H2RAM_BASEADDR_MASK GENMASK(19, 0)
 
 #if defined(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION)
-#define H2RAM_ACPI_SHM_MAX                                                                         \
-	((CONFIG_ESPI_IT8XXX2_ACPI_SHM_H2RAM_SIZE) +                                               \
+#define H2RAM_ACPI_SHM_MAX                                  \
+	((CONFIG_ESPI_IT8XXX2_ACPI_SHM_H2RAM_SIZE) +        \
 	 (CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION_PORT_NUM))
 #if (H2RAM_ACPI_SHM_MAX > IT8XXX2_ESPI_H2RAM_POOL_SIZE_MAX)
 #error "ACPI shared memory region out of h2ram"
@@ -216,7 +216,7 @@ static const struct ec2i_t pmc2_settings[] = {
 #endif /* CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION */
 
 #if defined(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD)
-#define H2RAM_EC_HOST_CMD_MAX                                                                      \
+#define H2RAM_EC_HOST_CMD_MAX                                                                    \
 	((CONFIG_ESPI_IT8XXX2_HC_H2RAM_SIZE) + (CONFIG_ESPI_PERIPHERAL_HOST_CMD_PARAM_PORT_NUM))
 #if (H2RAM_EC_HOST_CMD_MAX > IT8XXX2_ESPI_H2RAM_POOL_SIZE_MAX)
 #error "EC host command parameters out of h2ram"
@@ -224,8 +224,8 @@ static const struct ec2i_t pmc2_settings[] = {
 #endif /* CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD */
 
 #if defined(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD) && defined(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION)
-#if (MIN(H2RAM_ACPI_SHM_MAX, H2RAM_EC_HOST_CMD_MAX) >                                              \
-     MAX(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION_PORT_NUM,                                          \
+#if (MIN(H2RAM_ACPI_SHM_MAX, H2RAM_EC_HOST_CMD_MAX) >     \
+     MAX(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION_PORT_NUM, \
 	 CONFIG_ESPI_PERIPHERAL_HOST_CMD_PARAM_PORT_NUM))
 #error "ACPI and HC sections of h2ram overlap"
 #endif
@@ -283,8 +283,8 @@ static void smfi_it8xxx2_init(const struct device *dev)
 	smfi_reg->SMFI_HRAMWC |= (SMFI_H2RAMPS | SMFI_H2RAMW1E);
 #endif
 }
-#endif /* CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD ||                                                    \
-	* CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION                                                   \
+#endif /* CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD ||  \
+	* CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION \
 	*/
 
 static void ec2i_it8xxx2_wait_status_cleared(const struct device *dev, uint8_t mask)
@@ -542,7 +542,7 @@ static void pmc2_it8xxx2_init(const struct device *dev)
 #endif
 
 /* eSPI api functions */
-#define VW_CHAN(signal, index, level, valid)                                                       \
+#define VW_CHAN(signal, index, level, valid)                                     \
 	[signal] = {.vw_index = index, .level_mask = level, .valid_mask = valid}
 
 /* VW signals used in eSPI */

@@ -121,14 +121,14 @@ static int ags10_init(const struct device *dev)
 static const struct sensor_driver_api ags10_api = {.sample_fetch = ags10_sample_fetch,
 						   .channel_get = ags10_channel_get};
 
-#define AGS10_INIT(n)                                                                              \
-	static struct ags10_data ags10_data_##n;                                                   \
-                                                                                                   \
-	static const struct ags10_config ags10_config_##n = {                                      \
-		.bus = I2C_DT_SPEC_INST_GET(n),                                                    \
-	};                                                                                         \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, ags10_init, NULL, &ags10_data_##n, &ags10_config_##n,      \
+#define AGS10_INIT(n)                                                                         \
+	static struct ags10_data ags10_data_##n;                                              \
+                                                                                              \
+	static const struct ags10_config ags10_config_##n = {                                 \
+		.bus = I2C_DT_SPEC_INST_GET(n),                                               \
+	};                                                                                    \
+                                                                                              \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, ags10_init, NULL, &ags10_data_##n, &ags10_config_##n, \
 				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &ags10_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AGS10_INIT)

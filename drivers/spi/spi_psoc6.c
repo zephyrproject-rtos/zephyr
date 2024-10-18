@@ -393,25 +393,25 @@ static const struct spi_driver_api spi_psoc6_driver_api = {
 	.release = spi_psoc6_release,
 };
 
-#define SPI_PSOC6_DEVICE_INIT(n)                                                                   \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	static void spi_psoc6_spi##n##_irq_cfg(const struct device *port);                         \
-	static const struct spi_psoc6_config spi_psoc6_config_##n = {                              \
-		.base = (CySCB_Type *)DT_INST_REG_ADDR(n),                                         \
-		.periph_id = DT_INST_PROP(n, peripheral_id),                                       \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		.irq_config_func = spi_psoc6_spi##n##_irq_cfg,                                     \
-	};                                                                                         \
-	static struct spi_psoc6_data spi_psoc6_dev_data_##n = {                                    \
-		SPI_CONTEXT_INIT_LOCK(spi_psoc6_dev_data_##n, ctx),                                \
-		SPI_CONTEXT_INIT_SYNC(spi_psoc6_dev_data_##n, ctx),                                \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                             \
-	DEVICE_DT_INST_DEFINE(n, spi_psoc6_init, NULL, &spi_psoc6_dev_data_##n,                    \
-			      &spi_psoc6_config_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,        \
-			      &spi_psoc6_driver_api);                                              \
-	static void spi_psoc6_spi##n##_irq_cfg(const struct device *port)                          \
-	{                                                                                          \
-		CY_PSOC6_DT_INST_NVIC_INSTALL(n, spi_psoc6_isr);                                   \
+#define SPI_PSOC6_DEVICE_INIT(n)                                                            \
+	PINCTRL_DT_INST_DEFINE(n);                                                          \
+	static void spi_psoc6_spi##n##_irq_cfg(const struct device *port);                  \
+	static const struct spi_psoc6_config spi_psoc6_config_##n = {                       \
+		.base = (CySCB_Type *)DT_INST_REG_ADDR(n),                                  \
+		.periph_id = DT_INST_PROP(n, peripheral_id),                                \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                  \
+		.irq_config_func = spi_psoc6_spi##n##_irq_cfg,                              \
+	};                                                                                  \
+	static struct spi_psoc6_data spi_psoc6_dev_data_##n = {                             \
+		SPI_CONTEXT_INIT_LOCK(spi_psoc6_dev_data_##n, ctx),                         \
+		SPI_CONTEXT_INIT_SYNC(spi_psoc6_dev_data_##n, ctx),                         \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                      \
+	DEVICE_DT_INST_DEFINE(n, spi_psoc6_init, NULL, &spi_psoc6_dev_data_##n,             \
+			      &spi_psoc6_config_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, \
+			      &spi_psoc6_driver_api);                                       \
+	static void spi_psoc6_spi##n##_irq_cfg(const struct device *port)                   \
+	{                                                                                   \
+		CY_PSOC6_DT_INST_NVIC_INSTALL(n, spi_psoc6_isr);                            \
 	};
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_PSOC6_DEVICE_INIT)

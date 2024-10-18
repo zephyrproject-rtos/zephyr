@@ -120,38 +120,38 @@ end:
 }
 
 /** SDRAM bank/s configuration initialization macro. */
-#define BANK_CONFIG(node_id)                                                                       \
-	{.init = {.NSBank = DT_REG_ADDR(node_id),                                                  \
-		  .DataAddressMux = DT_PROP_BY_IDX(node_id, st_control, 0),                        \
-		  .MemoryType = DT_PROP_BY_IDX(node_id, st_control, 1),                            \
-		  .MemoryDataWidth = DT_PROP_BY_IDX(node_id, st_control, 2),                       \
-		  .BurstAccessMode = DT_PROP_BY_IDX(node_id, st_control, 3),                       \
-		  .WaitSignalPolarity = DT_PROP_BY_IDX(node_id, st_control, 4),                    \
-		  .WaitSignalActive = DT_PROP_BY_IDX(node_id, st_control, 5),                      \
-		  .WriteOperation = DT_PROP_BY_IDX(node_id, st_control, 6),                        \
-		  .WaitSignal = DT_PROP_BY_IDX(node_id, st_control, 7),                            \
-		  .ExtendedMode = DT_PROP_BY_IDX(node_id, st_control, 8),                          \
-		  .AsynchronousWait = DT_PROP_BY_IDX(node_id, st_control, 9),                      \
-		  .WriteBurst = DT_PROP_BY_IDX(node_id, st_control, 10),                           \
-		  .ContinuousClock = DT_PROP_BY_IDX(node_id, st_control, 11),                      \
-		  .WriteFifo = DT_PROP_BY_IDX(node_id, st_control, 12),                            \
-		  .PageSize = DT_PROP_BY_IDX(node_id, st_control, 13)},                            \
-	 .timing =                                                                                 \
-		 {                                                                                 \
-			 .AddressSetupTime = DT_PROP_BY_IDX(node_id, st_timing, 0),                \
-			 .AddressHoldTime = DT_PROP_BY_IDX(node_id, st_timing, 1),                 \
-			 .DataSetupTime = DT_PROP_BY_IDX(node_id, st_timing, 2),                   \
-			 .BusTurnAroundDuration = DT_PROP_BY_IDX(node_id, st_timing, 3),           \
-			 .CLKDivision = DT_PROP_BY_IDX(node_id, st_timing, 4),                     \
-			 .DataLatency = DT_PROP_BY_IDX(node_id, st_timing, 5),                     \
-			 .AccessMode = DT_PROP_BY_IDX(node_id, st_timing, 6),                      \
-		 },                                                                                \
-	 .timing_ext = {                                                                           \
-		 .AddressSetupTime = DT_PROP_BY_IDX(node_id, st_timing_ext, 0),                    \
-		 .AddressHoldTime = DT_PROP_BY_IDX(node_id, st_timing_ext, 1),                     \
-		 .DataSetupTime = DT_PROP_BY_IDX(node_id, st_timing_ext, 2),                       \
-		 .BusTurnAroundDuration = DT_PROP_BY_IDX(node_id, st_timing_ext, 3),               \
-		 .AccessMode = DT_PROP_BY_IDX(node_id, st_timing_ext, 4),                          \
+#define BANK_CONFIG(node_id)                                                             \
+	{.init = {.NSBank = DT_REG_ADDR(node_id),                                        \
+		  .DataAddressMux = DT_PROP_BY_IDX(node_id, st_control, 0),              \
+		  .MemoryType = DT_PROP_BY_IDX(node_id, st_control, 1),                  \
+		  .MemoryDataWidth = DT_PROP_BY_IDX(node_id, st_control, 2),             \
+		  .BurstAccessMode = DT_PROP_BY_IDX(node_id, st_control, 3),             \
+		  .WaitSignalPolarity = DT_PROP_BY_IDX(node_id, st_control, 4),          \
+		  .WaitSignalActive = DT_PROP_BY_IDX(node_id, st_control, 5),            \
+		  .WriteOperation = DT_PROP_BY_IDX(node_id, st_control, 6),              \
+		  .WaitSignal = DT_PROP_BY_IDX(node_id, st_control, 7),                  \
+		  .ExtendedMode = DT_PROP_BY_IDX(node_id, st_control, 8),                \
+		  .AsynchronousWait = DT_PROP_BY_IDX(node_id, st_control, 9),            \
+		  .WriteBurst = DT_PROP_BY_IDX(node_id, st_control, 10),                 \
+		  .ContinuousClock = DT_PROP_BY_IDX(node_id, st_control, 11),            \
+		  .WriteFifo = DT_PROP_BY_IDX(node_id, st_control, 12),                  \
+		  .PageSize = DT_PROP_BY_IDX(node_id, st_control, 13)},                  \
+	 .timing =                                                                       \
+		 {                                                                       \
+			 .AddressSetupTime = DT_PROP_BY_IDX(node_id, st_timing, 0),      \
+			 .AddressHoldTime = DT_PROP_BY_IDX(node_id, st_timing, 1),       \
+			 .DataSetupTime = DT_PROP_BY_IDX(node_id, st_timing, 2),         \
+			 .BusTurnAroundDuration = DT_PROP_BY_IDX(node_id, st_timing, 3), \
+			 .CLKDivision = DT_PROP_BY_IDX(node_id, st_timing, 4),           \
+			 .DataLatency = DT_PROP_BY_IDX(node_id, st_timing, 5),           \
+			 .AccessMode = DT_PROP_BY_IDX(node_id, st_timing, 6),            \
+		 },                                                                      \
+	 .timing_ext = {                                                                 \
+		 .AddressSetupTime = DT_PROP_BY_IDX(node_id, st_timing_ext, 0),          \
+		 .AddressHoldTime = DT_PROP_BY_IDX(node_id, st_timing_ext, 1),           \
+		 .DataSetupTime = DT_PROP_BY_IDX(node_id, st_timing_ext, 2),             \
+		 .BusTurnAroundDuration = DT_PROP_BY_IDX(node_id, st_timing_ext, 3),     \
+		 .AccessMode = DT_PROP_BY_IDX(node_id, st_timing_ext, 4),                \
 	 }},
 
 /** SRAM bank/s configuration. */

@@ -659,17 +659,17 @@ struct its_driver_api gicv3_its_api = {
 	.get_msi_addr = gicv3_its_get_msi_addr,
 };
 
-#define GICV3_ITS_INIT(n)                                                                          \
-	static struct its_cmd_block gicv3_its_cmd##n[ITS_CMD_QUEUE_NR_ENTRIES]                     \
-		__aligned(ITS_CMD_QUEUE_SIZE);                                                     \
-	static struct gicv3_its_data gicv3_its_data##n;                                            \
-	static const struct gicv3_its_config gicv3_its_config##n = {                               \
-		.base_addr = DT_INST_REG_ADDR(n),                                                  \
-		.base_size = DT_INST_REG_SIZE(n),                                                  \
-		.cmd_queue = gicv3_its_cmd##n,                                                     \
-		.cmd_queue_size = sizeof(gicv3_its_cmd##n),                                        \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &gicv3_its_init, NULL, &gicv3_its_data##n, &gicv3_its_config##n,  \
+#define GICV3_ITS_INIT(n)                                                                         \
+	static struct its_cmd_block gicv3_its_cmd##n[ITS_CMD_QUEUE_NR_ENTRIES]                    \
+		__aligned(ITS_CMD_QUEUE_SIZE);                                                    \
+	static struct gicv3_its_data gicv3_its_data##n;                                           \
+	static const struct gicv3_its_config gicv3_its_config##n = {                              \
+		.base_addr = DT_INST_REG_ADDR(n),                                                 \
+		.base_size = DT_INST_REG_SIZE(n),                                                 \
+		.cmd_queue = gicv3_its_cmd##n,                                                    \
+		.cmd_queue_size = sizeof(gicv3_its_cmd##n),                                       \
+	};                                                                                        \
+	DEVICE_DT_INST_DEFINE(n, &gicv3_its_init, NULL, &gicv3_its_data##n, &gicv3_its_config##n, \
 			      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, &gicv3_its_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GICV3_ITS_INIT)

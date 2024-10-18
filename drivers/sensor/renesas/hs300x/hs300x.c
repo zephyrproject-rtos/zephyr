@@ -153,13 +153,13 @@ static int hs300x_init(const struct device *dev)
 static const struct sensor_driver_api hs300x_driver_api = {.sample_fetch = hs300x_sample_fetch,
 							   .channel_get = hs300x_channel_get};
 
-#define DEFINE_HS300X(n)                                                                           \
-	static struct hs300x_data hs300x_data_##n;                                                 \
-                                                                                                   \
-	static const struct hs300x_config hs300x_config_##n = {.bus = I2C_DT_SPEC_INST_GET(n)};    \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, hs300x_init, NULL, &hs300x_data_##n, &hs300x_config_##n,   \
-				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,                     \
+#define DEFINE_HS300X(n)                                                                         \
+	static struct hs300x_data hs300x_data_##n;                                               \
+                                                                                                 \
+	static const struct hs300x_config hs300x_config_##n = {.bus = I2C_DT_SPEC_INST_GET(n)};  \
+                                                                                                 \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, hs300x_init, NULL, &hs300x_data_##n, &hs300x_config_##n, \
+				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,                   \
 				     &hs300x_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_HS300X)

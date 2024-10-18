@@ -333,10 +333,10 @@ static const struct device *get_dev(uint32_t port_id)
 {
 	const struct device *dev = NULL;
 
-#define GPIO_NRF_GET_DEV(i)                                                                        \
-	else if (DT_INST_PROP(i, port) == port_id)                                                 \
-	{                                                                                          \
-		dev = DEVICE_DT_INST_GET(i);                                                       \
+#define GPIO_NRF_GET_DEV(i)                        \
+	else if (DT_INST_PROP(i, port) == port_id) \
+	{                                          \
+		dev = DEVICE_DT_INST_GET(i);       \
 	}
 
 	if (0) {
@@ -366,8 +366,8 @@ static void nrfx_gpio_handler(nrfx_gpiote_pin_t abs_pin, nrfx_gpiote_trigger_t t
 }
 #endif /* CONFIG_GPIO_NRFX_INTERRUPT */
 
-#define GPIOTE_IRQ_HANDLER_CONNECT(node_id)                                                        \
-	IRQ_CONNECT(DT_IRQN(node_id), DT_IRQ(node_id, priority), nrfx_isr,                         \
+#define GPIOTE_IRQ_HANDLER_CONNECT(node_id)                                                  \
+	IRQ_CONNECT(DT_IRQN(node_id), DT_IRQ(node_id, priority), nrfx_isr,                   \
 		    NRFX_CONCAT(nrfx_gpiote_, DT_PROP(node_id, instance), _irq_handler), 0);
 
 static int gpio_nrfx_init(const struct device *port)
@@ -415,7 +415,7 @@ static const struct gpio_driver_api gpio_nrfx_drv_api_funcs = {
 #define GPIOTE_PHANDLE(id) DT_INST_PHANDLE(id, gpiote_instance)
 #define GPIOTE_INST(id)    DT_PROP(GPIOTE_PHANDLE(id), instance)
 
-#define GPIOTE_INSTANCE(id)                                                                        \
+#define GPIOTE_INSTANCE(id)                                       \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(id, gpiote_instance), \
 		    (NRFX_GPIOTE_INSTANCE(GPIOTE_INST(id))),    \
 		    ({ .p_reg = NULL }))
@@ -425,29 +425,29 @@ static const struct gpio_driver_api gpio_nrfx_drv_api_funcs = {
  * DT_INST APIs here without wider changes.
  */
 
-#define GPIOTE_CHECK(id)                                                                           \
+#define GPIOTE_CHECK(id)                                                  \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(id, gpiote_instance),		       \
 		(BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(GPIOTE_PHANDLE(id)),    \
 			"Please enable GPIOTE instance for used GPIO port!")), \
 		())
 
-#define GPIO_NRF_DEVICE(id)                                                                        \
-	GPIOTE_CHECK(id);                                                                          \
-	static const struct gpio_nrfx_cfg gpio_nrfx_p##id##_cfg = {                                \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(id),              \
-			},                                                                         \
-		.port = _CONCAT(NRF_P, DT_INST_PROP(id, port)),                                    \
-		.port_num = DT_INST_PROP(id, port),                                                \
-		.edge_sense = DT_INST_PROP_OR(id, sense_edge_mask, 0),                             \
-		.gpiote = GPIOTE_INSTANCE(id),                                                     \
-	};                                                                                         \
-                                                                                                   \
-	static struct gpio_nrfx_data gpio_nrfx_p##id##_data;                                       \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(id, gpio_nrfx_init, NULL, &gpio_nrfx_p##id##_data,                   \
-			      &gpio_nrfx_p##id##_cfg, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,     \
+#define GPIO_NRF_DEVICE(id)                                                                    \
+	GPIOTE_CHECK(id);                                                                      \
+	static const struct gpio_nrfx_cfg gpio_nrfx_p##id##_cfg = {                            \
+		.common =                                                                      \
+			{                                                                      \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(id),          \
+			},                                                                     \
+		.port = _CONCAT(NRF_P, DT_INST_PROP(id, port)),                                \
+		.port_num = DT_INST_PROP(id, port),                                            \
+		.edge_sense = DT_INST_PROP_OR(id, sense_edge_mask, 0),                         \
+		.gpiote = GPIOTE_INSTANCE(id),                                                 \
+	};                                                                                     \
+                                                                                               \
+	static struct gpio_nrfx_data gpio_nrfx_p##id##_data;                                   \
+                                                                                               \
+	DEVICE_DT_INST_DEFINE(id, gpio_nrfx_init, NULL, &gpio_nrfx_p##id##_data,               \
+			      &gpio_nrfx_p##id##_cfg, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, \
 			      &gpio_nrfx_drv_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_NRF_DEVICE)

@@ -51,12 +51,12 @@ static const struct mbox_driver_api bellboard_tx_driver_api = {
 	.max_channels_get = bellboard_tx_max_channels_get,
 };
 
-#define BELLBOARD_REMOTE_DEFINE(inst)                                                              \
-	static const struct mbox_bellboard_tx_conf conf##inst = {                                  \
-		.bellboard = (NRF_BELLBOARD_Type *)DT_INST_REG_ADDR(inst),                         \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, &conf##inst, POST_KERNEL,                    \
+#define BELLBOARD_REMOTE_DEFINE(inst)                                               \
+	static const struct mbox_bellboard_tx_conf conf##inst = {                   \
+		.bellboard = (NRF_BELLBOARD_Type *)DT_INST_REG_ADDR(inst),          \
+	};                                                                          \
+                                                                                    \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, &conf##inst, POST_KERNEL,     \
 			      CONFIG_MBOX_INIT_PRIORITY, &bellboard_tx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BELLBOARD_REMOTE_DEFINE)

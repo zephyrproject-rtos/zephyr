@@ -639,14 +639,14 @@ static int bmm150_init(const struct device *dev)
 }
 
 /* Initializes a struct bmm150_config for an instance on a SPI bus. */
-#define BMM150_CONFIG_SPI(inst)                                                                    \
-	.bus.spi = SPI_DT_SPEC_INST_GET(inst, BMM150_SPI_OPERATION, 0),                            \
+#define BMM150_CONFIG_SPI(inst)                                         \
+	.bus.spi = SPI_DT_SPEC_INST_GET(inst, BMM150_SPI_OPERATION, 0), \
 	.bus_io = &bmm150_bus_io_spi,
 
 /* Initializes a struct bmm150_config for an instance on an I2C bus. */
 #define BMM150_CONFIG_I2C(inst) .bus.i2c = I2C_DT_SPEC_INST_GET(inst), .bus_io = &bmm150_bus_io_i2c,
 
-#define BMM150_BUS_CFG(inst)                                                                       \
+#define BMM150_BUS_CFG(inst)                     \
 	COND_CODE_1(DT_INST_ON_BUS(inst, i2c),	\
 		    (BMM150_CONFIG_I2C(inst)),	\
 		    (BMM150_CONFIG_SPI(inst)))
@@ -661,15 +661,15 @@ static int bmm150_init(const struct device *dev)
  * Main instantiation macro, which selects the correct bus-specific
  * instantiation macros for the instance.
  */
-#define BMM150_DEFINE(inst)                                                                        \
-	static struct bmm150_data bmm150_data_##inst;                                              \
-	static const struct bmm150_config bmm150_config_##inst = {BMM150_BUS_CFG(inst)             \
-									  BMM150_INT_CFG(inst)};   \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, pm_action);                                                 \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmm150_init, PM_DEVICE_DT_INST_GET(inst),               \
-				     &bmm150_data_##inst, &bmm150_config_##inst, POST_KERNEL,      \
+#define BMM150_DEFINE(inst)                                                                      \
+	static struct bmm150_data bmm150_data_##inst;                                            \
+	static const struct bmm150_config bmm150_config_##inst = {BMM150_BUS_CFG(inst)           \
+									  BMM150_INT_CFG(inst)}; \
+                                                                                                 \
+	PM_DEVICE_DT_INST_DEFINE(inst, pm_action);                                               \
+                                                                                                 \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmm150_init, PM_DEVICE_DT_INST_GET(inst),             \
+				     &bmm150_data_##inst, &bmm150_config_##inst, POST_KERNEL,    \
 				     CONFIG_SENSOR_INIT_PRIORITY, &bmm150_api_funcs);
 
 /* Create the struct device for every status "okay" node in the devicetree. */

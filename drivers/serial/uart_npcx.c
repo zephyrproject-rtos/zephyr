@@ -1109,15 +1109,15 @@ static int uart_npcx_init(const struct device *dev)
 }
 
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
-#define NPCX_UART_IRQ_CONFIG_FUNC_DECL(inst)                                                       \
+#define NPCX_UART_IRQ_CONFIG_FUNC_DECL(inst)                              \
 	static void uart_npcx_irq_config_##inst(const struct device *dev)
 #define NPCX_UART_IRQ_CONFIG_FUNC_INIT(inst) .irq_config_func = uart_npcx_irq_config_##inst,
-#define NPCX_UART_IRQ_CONFIG_FUNC(inst)                                                            \
-	static void uart_npcx_irq_config_##inst(const struct device *dev)                          \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), uart_npcx_isr,        \
-			    DEVICE_DT_INST_GET(inst), 0);                                          \
-		irq_enable(DT_INST_IRQN(inst));                                                    \
+#define NPCX_UART_IRQ_CONFIG_FUNC(inst)                                                     \
+	static void uart_npcx_irq_config_##inst(const struct device *dev)                   \
+	{                                                                                   \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), uart_npcx_isr, \
+			    DEVICE_DT_INST_GET(inst), 0);                                   \
+		irq_enable(DT_INST_IRQN(inst));                                             \
 	}
 #else
 #define NPCX_UART_IRQ_CONFIG_FUNC_DECL(inst)
@@ -1125,36 +1125,36 @@ static int uart_npcx_init(const struct device *dev)
 #define NPCX_UART_IRQ_CONFIG_FUNC(inst)
 #endif
 
-#define NPCX_UART_INIT(i)                                                                          \
-	NPCX_UART_IRQ_CONFIG_FUNC_DECL(i);                                                         \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(i);                                                                 \
-                                                                                                   \
-	static const struct uart_npcx_config uart_npcx_cfg_##i = {                                 \
-		.inst = (struct uart_reg *)DT_INST_REG_ADDR(i),                                    \
-		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(i),                                                \
-		.uart_rx_wui = NPCX_DT_WUI_ITEM_BY_NAME(i, uart_rx),                               \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(i),                                         \
-		NPCX_UART_IRQ_CONFIG_FUNC_INIT(i)                                                  \
-                                                                                                   \
+#define NPCX_UART_INIT(i)                                                                        \
+	NPCX_UART_IRQ_CONFIG_FUNC_DECL(i);                                                       \
+                                                                                                 \
+	PINCTRL_DT_INST_DEFINE(i);                                                               \
+                                                                                                 \
+	static const struct uart_npcx_config uart_npcx_cfg_##i = {                               \
+		.inst = (struct uart_reg *)DT_INST_REG_ADDR(i),                                  \
+		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(i),                                              \
+		.uart_rx_wui = NPCX_DT_WUI_ITEM_BY_NAME(i, uart_rx),                             \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(i),                                       \
+		NPCX_UART_IRQ_CONFIG_FUNC_INIT(i)                                                \
+                                                                                                 \
 			IF_ENABLED(CONFIG_UART_ASYNC_API, (                                                \
 			.mdma_clk_cfg = NPCX_DT_CLK_CFG_ITEM_BY_IDX(i, 1),                         \
 			.mdma_reg_base = (struct mdma_reg *)DT_INST_REG_ADDR_BY_IDX(i, 1),         \
-		)) };             \
-                                                                                                   \
-	static struct uart_npcx_data uart_npcx_data_##i = {                                        \
-		.baud_rate = DT_INST_PROP(i, current_speed),                                       \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(i, uart_npcx_init, NULL, &uart_npcx_data_##i, &uart_npcx_cfg_##i,    \
-			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, &uart_npcx_driver_api);   \
-                                                                                                   \
+		)) };           \
+                                                                                                 \
+	static struct uart_npcx_data uart_npcx_data_##i = {                                      \
+		.baud_rate = DT_INST_PROP(i, current_speed),                                     \
+	};                                                                                       \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(i, uart_npcx_init, NULL, &uart_npcx_data_##i, &uart_npcx_cfg_##i,  \
+			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, &uart_npcx_driver_api); \
+                                                                                                 \
 	NPCX_UART_IRQ_CONFIG_FUNC(i)
 
 DT_INST_FOREACH_STATUS_OKAY(NPCX_UART_INIT)
 
-#define ENABLE_MIWU_CRIN_IRQ(i)                                                                    \
-	npcx_miwu_irq_get_and_clear_pending(&uart_npcx_cfg_##i.uart_rx_wui);                       \
+#define ENABLE_MIWU_CRIN_IRQ(i)                                              \
+	npcx_miwu_irq_get_and_clear_pending(&uart_npcx_cfg_##i.uart_rx_wui); \
 	npcx_miwu_irq_enable(&uart_npcx_cfg_##i.uart_rx_wui);
 
 #define DISABLE_MIWU_CRIN_IRQ(i) npcx_miwu_irq_disable(&uart_npcx_cfg_##i.uart_rx_wui);

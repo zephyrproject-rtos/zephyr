@@ -224,38 +224,38 @@ static const struct gpio_driver_api api_funcs = {
 	.manage_callback = gpio_cc32xx_manage_callback,
 };
 
-#define GPIO_CC32XX_INIT_FUNC(n)                                                                   \
-	static int gpio_cc32xx_a##n##_init(const struct device *dev)                               \
-	{                                                                                          \
-		ARG_UNUSED(dev);                                                                   \
-                                                                                                   \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_cc32xx_port_isr,       \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		MAP_IntPendClear(DT_INST_IRQN(n) + 16);                                            \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-                                                                                                   \
-		return 0;                                                                          \
+#define GPIO_CC32XX_INIT_FUNC(n)                                                             \
+	static int gpio_cc32xx_a##n##_init(const struct device *dev)                         \
+	{                                                                                    \
+		ARG_UNUSED(dev);                                                             \
+                                                                                             \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_cc32xx_port_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                                       \
+                                                                                             \
+		MAP_IntPendClear(DT_INST_IRQN(n) + 16);                                      \
+		irq_enable(DT_INST_IRQN(n));                                                 \
+                                                                                             \
+		return 0;                                                                    \
 	}
 
-#define GPIO_CC32XX_DEVICE_INIT(n)                                                                 \
-	DEVICE_DT_INST_DEFINE(n, gpio_cc32xx_a##n##_init, NULL, &gpio_cc32xx_a##n##_data,          \
-			      &gpio_cc32xx_a##n##_config, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,  \
+#define GPIO_CC32XX_DEVICE_INIT(n)                                                                \
+	DEVICE_DT_INST_DEFINE(n, gpio_cc32xx_a##n##_init, NULL, &gpio_cc32xx_a##n##_data,         \
+			      &gpio_cc32xx_a##n##_config, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY, \
 			      &api_funcs)
 
-#define GPIO_CC32XX_INIT(n)                                                                        \
-	static const struct gpio_cc32xx_config gpio_cc32xx_a##n##_config = {                       \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
-		.port_base = DT_INST_REG_ADDR(n),                                                  \
-		.port_num = n};                                                                    \
-                                                                                                   \
-	static struct gpio_cc32xx_data gpio_cc32xx_a##n##_data;                                    \
-                                                                                                   \
-	GPIO_CC32XX_INIT_FUNC(n)                                                                   \
-                                                                                                   \
+#define GPIO_CC32XX_INIT(n)                                                          \
+	static const struct gpio_cc32xx_config gpio_cc32xx_a##n##_config = {         \
+		.common =                                                            \
+			{                                                            \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n), \
+			},                                                           \
+		.port_base = DT_INST_REG_ADDR(n),                                    \
+		.port_num = n};                                                      \
+                                                                                     \
+	static struct gpio_cc32xx_data gpio_cc32xx_a##n##_data;                      \
+                                                                                     \
+	GPIO_CC32XX_INIT_FUNC(n)                                                     \
+                                                                                     \
 	GPIO_CC32XX_DEVICE_INIT(n);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_CC32XX_INIT)

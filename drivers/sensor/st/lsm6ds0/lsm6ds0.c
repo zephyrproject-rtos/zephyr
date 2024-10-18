@@ -445,15 +445,15 @@ static int lsm6ds0_init(const struct device *dev)
 	return 0;
 }
 
-#define LSM6DS0_DEFINE(inst)                                                                       \
-	static struct lsm6ds0_data lsm6ds0_data_##inst;                                            \
-                                                                                                   \
-	static const struct lsm6ds0_config lsm6ds0_config_##inst = {                               \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-	};                                                                                         \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, lsm6ds0_init, NULL, &lsm6ds0_data_##inst,               \
-				     &lsm6ds0_config_##inst, POST_KERNEL,                          \
+#define LSM6DS0_DEFINE(inst)                                                           \
+	static struct lsm6ds0_data lsm6ds0_data_##inst;                                \
+                                                                                       \
+	static const struct lsm6ds0_config lsm6ds0_config_##inst = {                   \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                     \
+	};                                                                             \
+                                                                                       \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, lsm6ds0_init, NULL, &lsm6ds0_data_##inst,   \
+				     &lsm6ds0_config_##inst, POST_KERNEL,              \
 				     CONFIG_SENSOR_INIT_PRIORITY, &lsm6ds0_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(LSM6DS0_DEFINE)

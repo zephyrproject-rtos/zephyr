@@ -801,40 +801,40 @@ static int adc_npcx_init(const struct device *dev)
 	return 0;
 }
 
-#define NPCX_ADC_INIT(n)                                                                           \
-                                                                                                   \
-	static void adc_npcx_irq_cfg_func_##n(void)                                                \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), adc_npcx_isr,               \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-	}                                                                                          \
-                                                                                                   \
-	static const struct adc_driver_api adc_npcx_driver_api_##n = {                             \
-		.channel_setup = adc_npcx_channel_setup,                                           \
-		.read = adc_npcx_read,                                                             \
-		.ref_internal = DT_INST_PROP(n, vref_mv),                                          \
+#define NPCX_ADC_INIT(n)                                                                         \
+                                                                                                 \
+	static void adc_npcx_irq_cfg_func_##n(void)                                              \
+	{                                                                                        \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), adc_npcx_isr,             \
+			    DEVICE_DT_INST_GET(n), 0);                                           \
+		irq_enable(DT_INST_IRQN(n));                                                     \
+	}                                                                                        \
+                                                                                                 \
+	static const struct adc_driver_api adc_npcx_driver_api_##n = {                           \
+		.channel_setup = adc_npcx_channel_setup,                                         \
+		.read = adc_npcx_read,                                                           \
+		.ref_internal = DT_INST_PROP(n, vref_mv),                                        \
 		IF_ENABLED(CONFIG_ADC_ASYNC,					\
-			(.read_async = adc_npcx_read_async,)) };                 \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-                                                                                                   \
-	static const struct adc_npcx_config adc_npcx_cfg_##n = {                                   \
-		.base = DT_INST_REG_ADDR(n),                                                       \
-		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(n),                                                \
-		.channel_count = DT_INST_PROP(n, channel_count),                                   \
-		.threshold_count = DT_INST_PROP(n, threshold_count),                               \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		.irq_cfg_func = adc_npcx_irq_cfg_func_##n,                                         \
-	};                                                                                         \
-	static struct adc_npcx_threshold_data threshold_data_##n;                                  \
-	static struct adc_npcx_data adc_npcx_data_##n = {                                          \
-		ADC_CONTEXT_INIT_TIMER(adc_npcx_data_##n, ctx),                                    \
-		ADC_CONTEXT_INIT_LOCK(adc_npcx_data_##n, ctx),                                     \
-		ADC_CONTEXT_INIT_SYNC(adc_npcx_data_##n, ctx),                                     \
-		.threshold_data = &threshold_data_##n,                                             \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, adc_npcx_init, NULL, &adc_npcx_data_##n, &adc_npcx_cfg_##n,       \
+			(.read_async = adc_npcx_read_async,)) };               \
+                                                                                                 \
+	PINCTRL_DT_INST_DEFINE(n);                                                               \
+                                                                                                 \
+	static const struct adc_npcx_config adc_npcx_cfg_##n = {                                 \
+		.base = DT_INST_REG_ADDR(n),                                                     \
+		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(n),                                              \
+		.channel_count = DT_INST_PROP(n, channel_count),                                 \
+		.threshold_count = DT_INST_PROP(n, threshold_count),                             \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+		.irq_cfg_func = adc_npcx_irq_cfg_func_##n,                                       \
+	};                                                                                       \
+	static struct adc_npcx_threshold_data threshold_data_##n;                                \
+	static struct adc_npcx_data adc_npcx_data_##n = {                                        \
+		ADC_CONTEXT_INIT_TIMER(adc_npcx_data_##n, ctx),                                  \
+		ADC_CONTEXT_INIT_LOCK(adc_npcx_data_##n, ctx),                                   \
+		ADC_CONTEXT_INIT_SYNC(adc_npcx_data_##n, ctx),                                   \
+		.threshold_data = &threshold_data_##n,                                           \
+	};                                                                                       \
+	DEVICE_DT_INST_DEFINE(n, adc_npcx_init, NULL, &adc_npcx_data_##n, &adc_npcx_cfg_##n,     \
 			      PRE_KERNEL_1, CONFIG_ADC_INIT_PRIORITY, &adc_npcx_driver_api_##n);
 
 DT_INST_FOREACH_STATUS_OKAY(NPCX_ADC_INIT)

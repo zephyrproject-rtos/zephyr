@@ -843,47 +843,47 @@ static struct emul_mspi_driver_api emul_mspi_driver_api = {
 	.find_emul = mspi_emul_find,
 };
 
-#define MSPI_CONFIG(n)                                                                             \
-	{                                                                                          \
-		.channel_num = EMUL_MSPI_INST_ID,                                                  \
-		.op_mode = DT_ENUM_IDX_OR(n, op_mode, MSPI_OP_MODE_CONTROLLER),                    \
-		.duplex = DT_ENUM_IDX_OR(n, duplex, MSPI_HALF_DUPLEX),                             \
-		.max_freq = DT_INST_PROP(n, clock_frequency),                                      \
-		.dqs_support = DT_INST_PROP_OR(n, dqs_support, false),                             \
-		.sw_multi_periph = DT_INST_PROP(n, software_multiperipheral),                      \
+#define MSPI_CONFIG(n)                                                          \
+	{                                                                       \
+		.channel_num = EMUL_MSPI_INST_ID,                               \
+		.op_mode = DT_ENUM_IDX_OR(n, op_mode, MSPI_OP_MODE_CONTROLLER), \
+		.duplex = DT_ENUM_IDX_OR(n, duplex, MSPI_HALF_DUPLEX),          \
+		.max_freq = DT_INST_PROP(n, clock_frequency),                   \
+		.dqs_support = DT_INST_PROP_OR(n, dqs_support, false),          \
+		.sw_multi_periph = DT_INST_PROP(n, software_multiperipheral),   \
 	}
 
-#define EMUL_LINK_AND_COMMA(node_id)                                                               \
-	{                                                                                          \
-		.dev = DEVICE_DT_GET(node_id),                                                     \
+#define EMUL_LINK_AND_COMMA(node_id)           \
+	{                                      \
+		.dev = DEVICE_DT_GET(node_id), \
 	},
 
-#define MSPI_EMUL_INIT(n)                                                                          \
-	static const struct emul_link_for_bus emuls_##n[] = {                                      \
-		DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(n), EMUL_LINK_AND_COMMA)};                \
-	static struct emul_list_for_bus mspi_emul_cfg_##n = {                                      \
-		.children = emuls_##n,                                                             \
-		.num_children = ARRAY_SIZE(emuls_##n),                                             \
-	};                                                                                         \
-	static struct gpio_dt_spec ce_gpios##n[] = MSPI_CE_GPIOS_DT_SPEC_INST_GET(n);              \
-	static struct mspi_emul_data mspi_emul_data_##n = {                                        \
-		.mspicfg = MSPI_CONFIG(n),                                                         \
-		.mspicfg.ce_group = (struct gpio_dt_spec *)ce_gpios##n,                            \
-		.mspicfg.num_ce_gpios = ARRAY_SIZE(ce_gpios##n),                                   \
-		.mspicfg.num_periph = DT_INST_CHILD_NUM(n),                                        \
-		.mspicfg.re_init = false,                                                          \
-		.dev_id = 0,                                                                       \
-		.lock = Z_MUTEX_INITIALIZER(mspi_emul_data_##n.lock),                              \
-		.dev_cfg = {0},                                                                    \
-		.xip_cfg = {0},                                                                    \
-		.scramble_cfg = {0},                                                               \
-		.cbs = {0},                                                                        \
-		.cb_ctxs = {0},                                                                    \
-		.ctx.lock = Z_SEM_INITIALIZER(mspi_emul_data_##n.ctx.lock, 0, 1),                  \
-		.ctx.callback = 0,                                                                 \
-		.ctx.callback_ctx = 0,                                                             \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &mspi_emul_init, NULL, &mspi_emul_data_##n, &mspi_emul_cfg_##n,   \
+#define MSPI_EMUL_INIT(n)                                                                        \
+	static const struct emul_link_for_bus emuls_##n[] = {                                    \
+		DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(n), EMUL_LINK_AND_COMMA)};              \
+	static struct emul_list_for_bus mspi_emul_cfg_##n = {                                    \
+		.children = emuls_##n,                                                           \
+		.num_children = ARRAY_SIZE(emuls_##n),                                           \
+	};                                                                                       \
+	static struct gpio_dt_spec ce_gpios##n[] = MSPI_CE_GPIOS_DT_SPEC_INST_GET(n);            \
+	static struct mspi_emul_data mspi_emul_data_##n = {                                      \
+		.mspicfg = MSPI_CONFIG(n),                                                       \
+		.mspicfg.ce_group = (struct gpio_dt_spec *)ce_gpios##n,                          \
+		.mspicfg.num_ce_gpios = ARRAY_SIZE(ce_gpios##n),                                 \
+		.mspicfg.num_periph = DT_INST_CHILD_NUM(n),                                      \
+		.mspicfg.re_init = false,                                                        \
+		.dev_id = 0,                                                                     \
+		.lock = Z_MUTEX_INITIALIZER(mspi_emul_data_##n.lock),                            \
+		.dev_cfg = {0},                                                                  \
+		.xip_cfg = {0},                                                                  \
+		.scramble_cfg = {0},                                                             \
+		.cbs = {0},                                                                      \
+		.cb_ctxs = {0},                                                                  \
+		.ctx.lock = Z_SEM_INITIALIZER(mspi_emul_data_##n.ctx.lock, 0, 1),                \
+		.ctx.callback = 0,                                                               \
+		.ctx.callback_ctx = 0,                                                           \
+	};                                                                                       \
+	DEVICE_DT_INST_DEFINE(n, &mspi_emul_init, NULL, &mspi_emul_data_##n, &mspi_emul_cfg_##n, \
 			      POST_KERNEL, CONFIG_MSPI_INIT_PRIORITY, &emul_mspi_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MSPI_EMUL_INIT)

@@ -657,16 +657,16 @@ static const struct ethphy_driver_api rt_rtl8211f_phy_api = {
 #define INTERRUPT_GPIO(n)
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
 
-#define REALTEK_RTL8211F_INIT(n)                                                                   \
-	static const struct rt_rtl8211f_config rt_rtl8211f_##n##_config = {                        \
-		.addr = DT_INST_REG_ADDR(n),                                                       \
-		.mdio_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                      \
-		RESET_GPIO(n) INTERRUPT_GPIO(n)};                                                  \
-                                                                                                   \
-	static struct rt_rtl8211f_data rt_rtl8211f_##n##_data;                                     \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &phy_rt_rtl8211f_init, NULL, &rt_rtl8211f_##n##_data,             \
-			      &rt_rtl8211f_##n##_config, POST_KERNEL, CONFIG_PHY_INIT_PRIORITY,    \
+#define REALTEK_RTL8211F_INIT(n)                                                                \
+	static const struct rt_rtl8211f_config rt_rtl8211f_##n##_config = {                     \
+		.addr = DT_INST_REG_ADDR(n),                                                    \
+		.mdio_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                   \
+		RESET_GPIO(n) INTERRUPT_GPIO(n)};                                               \
+                                                                                                \
+	static struct rt_rtl8211f_data rt_rtl8211f_##n##_data;                                  \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(n, &phy_rt_rtl8211f_init, NULL, &rt_rtl8211f_##n##_data,          \
+			      &rt_rtl8211f_##n##_config, POST_KERNEL, CONFIG_PHY_INIT_PRIORITY, \
 			      &rt_rtl8211f_phy_api);
 
 DT_INST_FOREACH_STATUS_OKAY(REALTEK_RTL8211F_INIT)

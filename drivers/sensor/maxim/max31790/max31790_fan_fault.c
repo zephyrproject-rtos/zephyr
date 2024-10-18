@@ -66,16 +66,16 @@ static int max31790_fan_fault_init(const struct device *dev)
 	return 0;
 }
 
-#define MAX31790_FAN_FAULT_INIT(inst)                                                              \
-	static const struct max31790_fan_fault_config max31790_fan_fault_##inst##_config = {       \
-		.i2c = I2C_DT_SPEC_GET(DT_INST_PARENT(inst)),                                      \
-	};                                                                                         \
-                                                                                                   \
-	static struct max31790_fan_fault_data max31790_fan_fault_##inst##_data;                    \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, max31790_fan_fault_init, NULL,                          \
-				     &max31790_fan_fault_##inst##_data,                            \
-				     &max31790_fan_fault_##inst##_config, POST_KERNEL,             \
+#define MAX31790_FAN_FAULT_INIT(inst)                                                        \
+	static const struct max31790_fan_fault_config max31790_fan_fault_##inst##_config = { \
+		.i2c = I2C_DT_SPEC_GET(DT_INST_PARENT(inst)),                                \
+	};                                                                                   \
+                                                                                             \
+	static struct max31790_fan_fault_data max31790_fan_fault_##inst##_data;              \
+                                                                                             \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, max31790_fan_fault_init, NULL,                    \
+				     &max31790_fan_fault_##inst##_data,                      \
+				     &max31790_fan_fault_##inst##_config, POST_KERNEL,       \
 				     CONFIG_SENSOR_INIT_PRIORITY, &max31790_fan_fault_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX31790_FAN_FAULT_INIT);

@@ -288,24 +288,24 @@ static const struct sensor_driver_api vcnl4040_driver_api = {
 #endif
 };
 
-#define VCNL4040_DEFINE(inst)                                                                      \
-	static struct vcnl4040_data vcnl4040_data_##inst;                                          \
-                                                                                                   \
-	static const struct vcnl4040_config vcnl4040_config_##inst = {                             \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+#define VCNL4040_DEFINE(inst)                                                                     \
+	static struct vcnl4040_data vcnl4040_data_##inst;                                         \
+                                                                                                  \
+	static const struct vcnl4040_config vcnl4040_config_##inst = {                            \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                \
 		IF_ENABLED(CONFIG_VCNL4040_TRIGGER,						\
-			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),)) .led_i =                                \
-					    DT_INST_ENUM_IDX(inst, led_current),                   \
-			    .led_dc = DT_INST_ENUM_IDX(inst, led_duty_cycle),                      \
-			    .als_it = DT_INST_ENUM_IDX(inst, als_it),                              \
-			    .proxy_it = DT_INST_ENUM_IDX(inst, proximity_it),                      \
-			    .proxy_type = DT_INST_ENUM_IDX(inst, proximity_trigger),               \
-	};                                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, vcnl4040_pm_action);                                        \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, vcnl4040_init, PM_DEVICE_DT_INST_GET(inst),             \
-				     &vcnl4040_data_##inst, &vcnl4040_config_##inst, POST_KERNEL,  \
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),)) .led_i =                               \
+					    DT_INST_ENUM_IDX(inst, led_current),                  \
+			    .led_dc = DT_INST_ENUM_IDX(inst, led_duty_cycle),                     \
+			    .als_it = DT_INST_ENUM_IDX(inst, als_it),                             \
+			    .proxy_it = DT_INST_ENUM_IDX(inst, proximity_it),                     \
+			    .proxy_type = DT_INST_ENUM_IDX(inst, proximity_trigger),              \
+	};                                                                                        \
+                                                                                                  \
+	PM_DEVICE_DT_INST_DEFINE(inst, vcnl4040_pm_action);                                       \
+                                                                                                  \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, vcnl4040_init, PM_DEVICE_DT_INST_GET(inst),            \
+				     &vcnl4040_data_##inst, &vcnl4040_config_##inst, POST_KERNEL, \
 				     CONFIG_SENSOR_INIT_PRIORITY, &vcnl4040_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VCNL4040_DEFINE)

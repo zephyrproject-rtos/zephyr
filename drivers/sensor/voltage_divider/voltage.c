@@ -163,18 +163,18 @@ static int voltage_init(const struct device *dev)
 	return pm_device_driver_init(dev, pm_action);
 }
 
-#define VOLTAGE_INIT(inst)                                                                         \
-	static struct voltage_data voltage_##inst##_data;                                          \
-                                                                                                   \
-	static const struct voltage_config voltage_##inst##_config = {                             \
-		.voltage = VOLTAGE_DIVIDER_DT_SPEC_GET(DT_DRV_INST(inst)),                         \
-		.gpio_power = GPIO_DT_SPEC_INST_GET_OR(inst, power_gpios, {0}),                    \
-	};                                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, pm_action);                                                 \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &voltage_init, PM_DEVICE_DT_INST_GET(inst),             \
-				     &voltage_##inst##_data, &voltage_##inst##_config,             \
+#define VOLTAGE_INIT(inst)                                                                    \
+	static struct voltage_data voltage_##inst##_data;                                     \
+                                                                                              \
+	static const struct voltage_config voltage_##inst##_config = {                        \
+		.voltage = VOLTAGE_DIVIDER_DT_SPEC_GET(DT_DRV_INST(inst)),                    \
+		.gpio_power = GPIO_DT_SPEC_INST_GET_OR(inst, power_gpios, {0}),               \
+	};                                                                                    \
+                                                                                              \
+	PM_DEVICE_DT_INST_DEFINE(inst, pm_action);                                            \
+                                                                                              \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, &voltage_init, PM_DEVICE_DT_INST_GET(inst),        \
+				     &voltage_##inst##_data, &voltage_##inst##_config,        \
 				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &voltage_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VOLTAGE_INIT)

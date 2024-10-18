@@ -238,86 +238,86 @@ static const struct spi_driver_api spi_cc13xx_cc26xx_driver_api = {
 };
 
 #ifdef CONFIG_PM
-#define SPI_CC13XX_CC26XX_POWER_SPI(n)                                                             \
-	do {                                                                                       \
-		/* Set Power dependencies & constraints */                                         \
-		if (DT_INST_REG_ADDR(n) == 0x40000000) {                                           \
-			Power_setDependency(PowerCC26XX_PERIPH_SSI0);                              \
-		} else {                                                                           \
-			Power_setDependency(PowerCC26XX_PERIPH_SSI1);                              \
-		}                                                                                  \
+#define SPI_CC13XX_CC26XX_POWER_SPI(n)                                \
+	do {                                                          \
+		/* Set Power dependencies & constraints */            \
+		if (DT_INST_REG_ADDR(n) == 0x40000000) {              \
+			Power_setDependency(PowerCC26XX_PERIPH_SSI0); \
+		} else {                                              \
+			Power_setDependency(PowerCC26XX_PERIPH_SSI1); \
+		}                                                     \
 	} while (false)
 #else
-#define SPI_CC13XX_CC26XX_POWER_SPI(n)                                                             \
-	do {                                                                                       \
-		uint32_t domain, periph;                                                           \
-                                                                                                   \
-		/* Enable UART power domain */                                                     \
-		if (DT_INST_REG_ADDR(n) == 0x40000000) {                                           \
-			domain = PRCM_DOMAIN_SERIAL;                                               \
-			periph = PRCM_PERIPH_SSI0;                                                 \
-		} else {                                                                           \
-			domain = PRCM_DOMAIN_PERIPH;                                               \
-			periph = PRCM_PERIPH_SSI1;                                                 \
-		}                                                                                  \
-		/* Enable SSI##n power domain */                                                   \
-		PRCMPowerDomainOn(domain);                                                         \
-                                                                                                   \
-		/* Enable SSI##n peripherals */                                                    \
-		PRCMPeripheralRunEnable(periph);                                                   \
-		PRCMPeripheralSleepEnable(periph);                                                 \
-		PRCMPeripheralDeepSleepEnable(periph);                                             \
-                                                                                                   \
-		/* Load PRCM settings */                                                           \
-		PRCMLoadSet();                                                                     \
-		while (!PRCMLoadGet()) {                                                           \
-			continue;                                                                  \
-		}                                                                                  \
-                                                                                                   \
-		/* SSI should not be accessed until power domain is on. */                         \
-		while (PRCMPowerDomainsAllOn(domain) != PRCM_DOMAIN_POWER_ON) {                    \
-			continue;                                                                  \
-		}                                                                                  \
+#define SPI_CC13XX_CC26XX_POWER_SPI(n)                                          \
+	do {                                                                    \
+		uint32_t domain, periph;                                        \
+                                                                                \
+		/* Enable UART power domain */                                  \
+		if (DT_INST_REG_ADDR(n) == 0x40000000) {                        \
+			domain = PRCM_DOMAIN_SERIAL;                            \
+			periph = PRCM_PERIPH_SSI0;                              \
+		} else {                                                        \
+			domain = PRCM_DOMAIN_PERIPH;                            \
+			periph = PRCM_PERIPH_SSI1;                              \
+		}                                                               \
+		/* Enable SSI##n power domain */                                \
+		PRCMPowerDomainOn(domain);                                      \
+                                                                                \
+		/* Enable SSI##n peripherals */                                 \
+		PRCMPeripheralRunEnable(periph);                                \
+		PRCMPeripheralSleepEnable(periph);                              \
+		PRCMPeripheralDeepSleepEnable(periph);                          \
+                                                                                \
+		/* Load PRCM settings */                                        \
+		PRCMLoadSet();                                                  \
+		while (!PRCMLoadGet()) {                                        \
+			continue;                                               \
+		}                                                               \
+                                                                                \
+		/* SSI should not be accessed until power domain is on. */      \
+		while (PRCMPowerDomainsAllOn(domain) != PRCM_DOMAIN_POWER_ON) { \
+			continue;                                               \
+		}                                                               \
 	} while (false)
 #endif
 
-#define SPI_CC13XX_CC26XX_DEVICE_INIT(n)                                                           \
-	PM_DEVICE_DT_INST_DEFINE(n, spi_cc13xx_cc26xx_pm_action);                                  \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, spi_cc13xx_cc26xx_init_##n, PM_DEVICE_DT_INST_GET(n),             \
-			      &spi_cc13xx_cc26xx_data_##n, &spi_cc13xx_cc26xx_config_##n,          \
-			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,                               \
+#define SPI_CC13XX_CC26XX_DEVICE_INIT(n)                                                  \
+	PM_DEVICE_DT_INST_DEFINE(n, spi_cc13xx_cc26xx_pm_action);                         \
+                                                                                          \
+	DEVICE_DT_INST_DEFINE(n, spi_cc13xx_cc26xx_init_##n, PM_DEVICE_DT_INST_GET(n),    \
+			      &spi_cc13xx_cc26xx_data_##n, &spi_cc13xx_cc26xx_config_##n, \
+			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,                      \
 			      &spi_cc13xx_cc26xx_driver_api)
 
-#define SPI_CC13XX_CC26XX_INIT_FUNC(n)                                                             \
-	static int spi_cc13xx_cc26xx_init_##n(const struct device *dev)                            \
-	{                                                                                          \
-		struct spi_cc13xx_cc26xx_data *data = dev->data;                                   \
-		int err;                                                                           \
-		SPI_CC13XX_CC26XX_POWER_SPI(n);                                                    \
-                                                                                                   \
-		err = spi_context_cs_configure_all(&data->ctx);                                    \
-		if (err < 0) {                                                                     \
-			return err;                                                                \
-		}                                                                                  \
-                                                                                                   \
-		spi_context_unlock_unconditionally(&data->ctx);                                    \
-                                                                                                   \
-		return 0;                                                                          \
+#define SPI_CC13XX_CC26XX_INIT_FUNC(n)                                  \
+	static int spi_cc13xx_cc26xx_init_##n(const struct device *dev) \
+	{                                                               \
+		struct spi_cc13xx_cc26xx_data *data = dev->data;        \
+		int err;                                                \
+		SPI_CC13XX_CC26XX_POWER_SPI(n);                         \
+                                                                        \
+		err = spi_context_cs_configure_all(&data->ctx);         \
+		if (err < 0) {                                          \
+			return err;                                     \
+		}                                                       \
+                                                                        \
+		spi_context_unlock_unconditionally(&data->ctx);         \
+                                                                        \
+		return 0;                                               \
 	}
 
-#define SPI_CC13XX_CC26XX_INIT(n)                                                                  \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	SPI_CC13XX_CC26XX_INIT_FUNC(n)                                                             \
-                                                                                                   \
-	static const struct spi_cc13xx_cc26xx_config spi_cc13xx_cc26xx_config_##n = {              \
-		.base = DT_INST_REG_ADDR(n), .pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n)};           \
-                                                                                                   \
-	static struct spi_cc13xx_cc26xx_data spi_cc13xx_cc26xx_data_##n = {                        \
-		SPI_CONTEXT_INIT_LOCK(spi_cc13xx_cc26xx_data_##n, ctx),                            \
-		SPI_CONTEXT_INIT_SYNC(spi_cc13xx_cc26xx_data_##n, ctx),                            \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                             \
-                                                                                                   \
+#define SPI_CC13XX_CC26XX_INIT(n)                                                        \
+	PINCTRL_DT_INST_DEFINE(n);                                                       \
+	SPI_CC13XX_CC26XX_INIT_FUNC(n)                                                   \
+                                                                                         \
+	static const struct spi_cc13xx_cc26xx_config spi_cc13xx_cc26xx_config_##n = {    \
+		.base = DT_INST_REG_ADDR(n), .pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n)}; \
+                                                                                         \
+	static struct spi_cc13xx_cc26xx_data spi_cc13xx_cc26xx_data_##n = {              \
+		SPI_CONTEXT_INIT_LOCK(spi_cc13xx_cc26xx_data_##n, ctx),                  \
+		SPI_CONTEXT_INIT_SYNC(spi_cc13xx_cc26xx_data_##n, ctx),                  \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                   \
+                                                                                         \
 	SPI_CC13XX_CC26XX_DEVICE_INIT(n);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_CC13XX_CC26XX_INIT)

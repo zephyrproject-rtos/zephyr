@@ -178,27 +178,27 @@ static struct mipi_dbi_driver_api mipi_dbi_stm32_fmc_driver_api = {
 	.write_display = mipi_dbi_stm32_fmc_write_display,
 };
 
-#define MIPI_DBI_FMC_GET_ADDRESS(n)                                                                \
+#define MIPI_DBI_FMC_GET_ADDRESS(n)                                       \
 	_CONCAT(FMC_BANK1_, UTIL_INC(DT_REG_ADDR_RAW(DT_INST_PARENT(n))))
 
-#define MIPI_DBI_FMC_GET_DATA_ADDRESS(n)                                                           \
+#define MIPI_DBI_FMC_GET_DATA_ADDRESS(n)                                                \
 	MIPI_DBI_FMC_GET_ADDRESS(n) + (1 << (DT_INST_PROP(n, register_select_pin) + 1))
 
-#define MIPI_DBI_STM32_FMC_INIT(n)                                                                 \
-	static const struct mipi_dbi_stm32_fmc_config mipi_dbi_stm32_fmc_config_##n = {            \
-		.reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {}),                             \
-		.power = GPIO_DT_SPEC_INST_GET_OR(n, power_gpios, {}),                             \
-		.register_addr = MIPI_DBI_FMC_GET_ADDRESS(n),                                      \
-		.data_addr = MIPI_DBI_FMC_GET_DATA_ADDRESS(n),                                     \
-		.fmc_address_setup_time = DT_PROP_BY_IDX(DT_INST_PARENT(n), st_timing, 0),         \
-		.fmc_data_setup_time = DT_PROP_BY_IDX(DT_INST_PARENT(n), st_timing, 2),            \
-		.fmc_memory_width = DT_PROP_BY_IDX(DT_INST_PARENT(n), st_control, 2),              \
-	};                                                                                         \
-                                                                                                   \
-	static struct mipi_dbi_stm32_fmc_data mipi_dbi_stm32_fmc_data_##n;                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, mipi_dbi_stm32_fmc_init, NULL, &mipi_dbi_stm32_fmc_data_##n,      \
-			      &mipi_dbi_stm32_fmc_config_##n, POST_KERNEL,                         \
+#define MIPI_DBI_STM32_FMC_INIT(n)                                                            \
+	static const struct mipi_dbi_stm32_fmc_config mipi_dbi_stm32_fmc_config_##n = {       \
+		.reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {}),                        \
+		.power = GPIO_DT_SPEC_INST_GET_OR(n, power_gpios, {}),                        \
+		.register_addr = MIPI_DBI_FMC_GET_ADDRESS(n),                                 \
+		.data_addr = MIPI_DBI_FMC_GET_DATA_ADDRESS(n),                                \
+		.fmc_address_setup_time = DT_PROP_BY_IDX(DT_INST_PARENT(n), st_timing, 0),    \
+		.fmc_data_setup_time = DT_PROP_BY_IDX(DT_INST_PARENT(n), st_timing, 2),       \
+		.fmc_memory_width = DT_PROP_BY_IDX(DT_INST_PARENT(n), st_control, 2),         \
+	};                                                                                    \
+                                                                                              \
+	static struct mipi_dbi_stm32_fmc_data mipi_dbi_stm32_fmc_data_##n;                    \
+                                                                                              \
+	DEVICE_DT_INST_DEFINE(n, mipi_dbi_stm32_fmc_init, NULL, &mipi_dbi_stm32_fmc_data_##n, \
+			      &mipi_dbi_stm32_fmc_config_##n, POST_KERNEL,                    \
 			      CONFIG_MIPI_DBI_INIT_PRIORITY, &mipi_dbi_stm32_fmc_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MIPI_DBI_STM32_FMC_INIT)

@@ -24,21 +24,21 @@ LOG_MODULE_REGISTER(dma_andes_atcdmac300);
 #define DMA_INT_STATUS(dev) (((struct dma_atcdmac300_cfg *)dev->config)->base + 0x30)
 
 #define DMA_CH_OFFSET(ch) (ch * 0x20)
-#define DMA_CH_CTRL(dev, ch)                                                                       \
+#define DMA_CH_CTRL(dev, ch)                                                          \
 	(((struct dma_atcdmac300_cfg *)dev->config)->base + 0x40 + DMA_CH_OFFSET(ch))
-#define DMA_CH_TRANSIZE(dev, ch)                                                                   \
+#define DMA_CH_TRANSIZE(dev, ch)                                                      \
 	(((struct dma_atcdmac300_cfg *)dev->config)->base + 0x44 + DMA_CH_OFFSET(ch))
-#define DMA_CH_SRC_ADDR_L(dev, ch)                                                                 \
+#define DMA_CH_SRC_ADDR_L(dev, ch)                                                    \
 	(((struct dma_atcdmac300_cfg *)dev->config)->base + 0x48 + DMA_CH_OFFSET(ch))
-#define DMA_CH_SRC_ADDR_H(dev, ch)                                                                 \
+#define DMA_CH_SRC_ADDR_H(dev, ch)                                                    \
 	(((struct dma_atcdmac300_cfg *)dev->config)->base + 0x4C + DMA_CH_OFFSET(ch))
-#define DMA_CH_DST_ADDR_L(dev, ch)                                                                 \
+#define DMA_CH_DST_ADDR_L(dev, ch)                                                    \
 	(((struct dma_atcdmac300_cfg *)dev->config)->base + 0x50 + DMA_CH_OFFSET(ch))
-#define DMA_CH_DST_ADDR_H(dev, ch)                                                                 \
+#define DMA_CH_DST_ADDR_H(dev, ch)                                                    \
 	(((struct dma_atcdmac300_cfg *)dev->config)->base + 0x54 + DMA_CH_OFFSET(ch))
-#define DMA_CH_LL_PTR_L(dev, ch)                                                                   \
+#define DMA_CH_LL_PTR_L(dev, ch)                                                      \
 	(((struct dma_atcdmac300_cfg *)dev->config)->base + 0x58 + DMA_CH_OFFSET(ch))
-#define DMA_CH_LL_PTR_H(dev, ch)                                                                   \
+#define DMA_CH_LL_PTR_H(dev, ch)                                                      \
 	(((struct dma_atcdmac300_cfg *)dev->config)->base + 0x5C + DMA_CH_OFFSET(ch))
 
 /* Source burst size options */
@@ -488,25 +488,25 @@ static const struct dma_driver_api dma_atcdmac300_api = {.config = dma_atcdmac30
 							 .stop = dma_atcdmac300_transfer_stop,
 							 .get_status = dma_atcdmac300_get_status};
 
-#define ATCDMAC300_INIT(n)                                                                         \
-                                                                                                   \
-	static void dma_atcdmac300_irq_config_##n(void);                                           \
-                                                                                                   \
-	static const struct dma_atcdmac300_cfg dma_config_##n = {                                  \
-		.irq_config = dma_atcdmac300_irq_config_##n,                                       \
-		.base = DT_INST_REG_ADDR(n),                                                       \
-		.irq_num = DT_INST_IRQN(n),                                                        \
-	};                                                                                         \
-                                                                                                   \
-	static struct dma_atcdmac300_data dma_data_##n;                                            \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(0, dma_atcdmac300_init, NULL, &dma_data_##n, &dma_config_##n,        \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                     \
-			      &dma_atcdmac300_api);                                                \
-                                                                                                   \
-	static void dma_atcdmac300_irq_config_##n(void)                                            \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), 1, dma_atcdmac300_isr, DEVICE_DT_INST_GET(n), 0);     \
+#define ATCDMAC300_INIT(n)                                                                     \
+                                                                                               \
+	static void dma_atcdmac300_irq_config_##n(void);                                       \
+                                                                                               \
+	static const struct dma_atcdmac300_cfg dma_config_##n = {                              \
+		.irq_config = dma_atcdmac300_irq_config_##n,                                   \
+		.base = DT_INST_REG_ADDR(n),                                                   \
+		.irq_num = DT_INST_IRQN(n),                                                    \
+	};                                                                                     \
+                                                                                               \
+	static struct dma_atcdmac300_data dma_data_##n;                                        \
+                                                                                               \
+	DEVICE_DT_INST_DEFINE(0, dma_atcdmac300_init, NULL, &dma_data_##n, &dma_config_##n,    \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                 \
+			      &dma_atcdmac300_api);                                            \
+                                                                                               \
+	static void dma_atcdmac300_irq_config_##n(void)                                        \
+	{                                                                                      \
+		IRQ_CONNECT(DT_INST_IRQN(n), 1, dma_atcdmac300_isr, DEVICE_DT_INST_GET(n), 0); \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(ATCDMAC300_INIT)

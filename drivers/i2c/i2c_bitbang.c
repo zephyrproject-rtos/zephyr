@@ -36,7 +36,7 @@
 #define T_SU_STP T_HIGH
 #define T_BUF    T_LOW
 
-#define NS_TO_SYS_CLOCK_HW_CYCLES(ns)                                                              \
+#define NS_TO_SYS_CLOCK_HW_CYCLES(ns)                                       \
 	((uint64_t)sys_clock_hw_cycles_per_sec() * (ns) / NSEC_PER_SEC + 1)
 
 int i2c_bitbang_configure(struct i2c_bitbang *context, uint32_t dev_config)

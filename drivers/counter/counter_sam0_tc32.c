@@ -396,49 +396,49 @@ static const struct counter_driver_api counter_sam0_tc32_driver_api = {
 };
 
 #ifdef MCLK
-#define COUNTER_SAM0_TC32_CLOCK_CONTROL(n)                                                         \
-	.mclk = (volatile uint32_t *)MCLK_MASK_DT_INT_REG_ADDR(n),                                 \
-	.mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, bit)),                               \
+#define COUNTER_SAM0_TC32_CLOCK_CONTROL(n)                           \
+	.mclk = (volatile uint32_t *)MCLK_MASK_DT_INT_REG_ADDR(n),   \
+	.mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, bit)), \
 	.gclk_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch),
 #else
-#define COUNTER_SAM0_TC32_CLOCK_CONTROL(n)                                                         \
-	.pm_apbcmask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, pm, bit)),                               \
+#define COUNTER_SAM0_TC32_CLOCK_CONTROL(n)                                   \
+	.pm_apbcmask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, pm, bit)),         \
 	.gclk_clkctrl_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, clkctrl_id),
 #endif
 
-#define SAM0_TC32_PRESCALER(n)                                                                     \
+#define SAM0_TC32_PRESCALER(n)                              \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, prescaler),		\
 		    (DT_INST_PROP(n, prescaler)), (1))
 
-#define COUNTER_SAM0_TC32_DEVICE(n)                                                                \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	static void counter_sam0_tc32_config_##n(const struct device *dev);                        \
-	static const struct counter_sam0_tc32_config                                               \
-                                                                                                   \
-		counter_sam0_tc32_dev_config_##n = {                                               \
-			.info = {.max_top_value = UINT32_MAX,                                      \
-				 .freq = SOC_ATMEL_SAM0_GCLK0_FREQ_HZ / SAM0_TC32_PRESCALER(n),    \
-				 .flags = COUNTER_CONFIG_INFO_COUNT_UP,                            \
-				 .channels = 1},                                                   \
-			.regs = (TcCount32 *)DT_INST_REG_ADDR(n),                                  \
-			COUNTER_SAM0_TC32_CLOCK_CONTROL(n).prescaler =                             \
-				UTIL_CAT(TC_CTRLA_PRESCALER_DIV, SAM0_TC32_PRESCALER(n)),          \
-			.irq_config_func = &counter_sam0_tc32_config_##n,                          \
-			.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                 \
-	};                                                                                         \
-                                                                                                   \
-	static struct counter_sam0_tc32_data counter_sam0_tc32_dev_data_##n;                       \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &counter_sam0_tc32_initialize, NULL,                              \
-			      &counter_sam0_tc32_dev_data_##n, &counter_sam0_tc32_dev_config_##n,  \
-			      PRE_KERNEL_1, CONFIG_COUNTER_INIT_PRIORITY,                          \
-			      &counter_sam0_tc32_driver_api);                                      \
-                                                                                                   \
-	static void counter_sam0_tc32_config_##n(const struct device *dev)                         \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), counter_sam0_tc32_isr,      \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define COUNTER_SAM0_TC32_DEVICE(n)                                                               \
+	PINCTRL_DT_INST_DEFINE(n);                                                                \
+	static void counter_sam0_tc32_config_##n(const struct device *dev);                       \
+	static const struct counter_sam0_tc32_config                                              \
+                                                                                                  \
+		counter_sam0_tc32_dev_config_##n = {                                              \
+			.info = {.max_top_value = UINT32_MAX,                                     \
+				 .freq = SOC_ATMEL_SAM0_GCLK0_FREQ_HZ / SAM0_TC32_PRESCALER(n),   \
+				 .flags = COUNTER_CONFIG_INFO_COUNT_UP,                           \
+				 .channels = 1},                                                  \
+			.regs = (TcCount32 *)DT_INST_REG_ADDR(n),                                 \
+			COUNTER_SAM0_TC32_CLOCK_CONTROL(n).prescaler =                            \
+				UTIL_CAT(TC_CTRLA_PRESCALER_DIV, SAM0_TC32_PRESCALER(n)),         \
+			.irq_config_func = &counter_sam0_tc32_config_##n,                         \
+			.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                \
+	};                                                                                        \
+                                                                                                  \
+	static struct counter_sam0_tc32_data counter_sam0_tc32_dev_data_##n;                      \
+                                                                                                  \
+	DEVICE_DT_INST_DEFINE(n, &counter_sam0_tc32_initialize, NULL,                             \
+			      &counter_sam0_tc32_dev_data_##n, &counter_sam0_tc32_dev_config_##n, \
+			      PRE_KERNEL_1, CONFIG_COUNTER_INIT_PRIORITY,                         \
+			      &counter_sam0_tc32_driver_api);                                     \
+                                                                                                  \
+	static void counter_sam0_tc32_config_##n(const struct device *dev)                        \
+	{                                                                                         \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), counter_sam0_tc32_isr,     \
+			    DEVICE_DT_INST_GET(n), 0);                                            \
+		irq_enable(DT_INST_IRQN(n));                                                      \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_SAM0_TC32_DEVICE)

@@ -142,15 +142,15 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 
 #ifdef CONFIG_DMA_STM32_SHARED_IRQS
 
-#define HANDLE_IRQS(index)                                                                         \
-	static const struct device *const dev_##index = DEVICE_DT_INST_GET(index);                 \
-	const struct dma_stm32_config *cfg_##index = dev_##index->config;                          \
-	DMA_TypeDef *dma_##index = (DMA_TypeDef *)(cfg_##index->base);                             \
-                                                                                                   \
-	for (id = 0; id < cfg_##index->max_streams; ++id) {                                        \
-		if (stm32_dma_is_irq_active(dma_##index, id)) {                                    \
-			dma_stm32_irq_handler(dev_##index, id);                                    \
-		}                                                                                  \
+#define HANDLE_IRQS(index)                                                         \
+	static const struct device *const dev_##index = DEVICE_DT_INST_GET(index); \
+	const struct dma_stm32_config *cfg_##index = dev_##index->config;          \
+	DMA_TypeDef *dma_##index = (DMA_TypeDef *)(cfg_##index->base);             \
+                                                                                   \
+	for (id = 0; id < cfg_##index->max_streams; ++id) {                        \
+		if (stm32_dma_is_irq_active(dma_##index, id)) {                    \
+			dma_stm32_irq_handler(dev_##index, id);                    \
+		}                                                                  \
 	}
 
 static void dma_stm32_shared_irq_handler(const struct device *dev)
@@ -584,7 +584,7 @@ DMA_STM32_EXPORT_API int dma_stm32_stop(const struct device *dev, uint32_t id)
 		return 0;
 	}
 
-#if !defined(CONFIG_DMAMUX_STM32) || defined(CONFIG_SOC_SERIES_STM32H7X) ||                        \
+#if !defined(CONFIG_DMAMUX_STM32) || defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32MP1X)
 	LL_DMA_DisableIT_TC(dma, dma_stm32_id_to_stream(id));
 #endif /* CONFIG_DMAMUX_STM32 */
@@ -699,10 +699,10 @@ static const struct dma_driver_api dma_funcs = {
 
 #else /* CONFIG_DMA_STM32_SHARED_IRQS */
 
-#define DMA_STM32_DEFINE_IRQ_HANDLER(dma, chan)                                                    \
-	static void dma_stm32_irq_##dma##_##chan(const struct device *dev)                         \
-	{                                                                                          \
-		dma_stm32_irq_handler(dev, chan);                                                  \
+#define DMA_STM32_DEFINE_IRQ_HANDLER(dma, chan)                            \
+	static void dma_stm32_irq_##dma##_##chan(const struct device *dev) \
+	{                                                                  \
+		dma_stm32_irq_handler(dev, chan);                          \
 	}
 
 #define DMA_STM32_IRQ_CONNECT(dma, chan)                                                           \
@@ -753,11 +753,11 @@ static void dma_stm32_config_irq_0(const struct device *dev)
 	DMA_STM32_IRQ_CONNECT(0, 6);
 #if DT_INST_IRQ_HAS_IDX(0, 7)
 	DMA_STM32_IRQ_CONNECT(0, 7);
-#endif /* DT_INST_IRQ_HAS_IDX(0, 3) */
-#endif /* DT_INST_IRQ_HAS_IDX(0, 5) */
-#endif /* DT_INST_IRQ_HAS_IDX(0, 6) */
-#endif /* DT_INST_IRQ_HAS_IDX(0, 7) */
-#endif /* CONFIG_DMA_STM32_SHARED_IRQS */
+#endif  /* DT_INST_IRQ_HAS_IDX(0, 3) */
+#endif  /* DT_INST_IRQ_HAS_IDX(0, 5) */
+#endif  /* DT_INST_IRQ_HAS_IDX(0, 6) */
+#endif  /* DT_INST_IRQ_HAS_IDX(0, 7) */
+#endif  /* CONFIG_DMA_STM32_SHARED_IRQS */
 	/* Either 3 or 5 or 6 or 7 or 8 channels for DMA across all stm32 series. */
 }
 
@@ -801,11 +801,11 @@ static void dma_stm32_config_irq_1(const struct device *dev)
 	DMA_STM32_IRQ_CONNECT(1, 6);
 #if DT_INST_IRQ_HAS_IDX(1, 7)
 	DMA_STM32_IRQ_CONNECT(1, 7);
-#endif /* DT_INST_IRQ_HAS_IDX(1, 4) */
-#endif /* DT_INST_IRQ_HAS_IDX(1, 5) */
-#endif /* DT_INST_IRQ_HAS_IDX(1, 6) */
-#endif /* DT_INST_IRQ_HAS_IDX(1, 7) */
-#endif /* CONFIG_DMA_STM32_SHARED_IRQS */
+#endif  /* DT_INST_IRQ_HAS_IDX(1, 4) */
+#endif  /* DT_INST_IRQ_HAS_IDX(1, 5) */
+#endif  /* DT_INST_IRQ_HAS_IDX(1, 6) */
+#endif  /* DT_INST_IRQ_HAS_IDX(1, 7) */
+#endif  /* CONFIG_DMA_STM32_SHARED_IRQS */
 	/*
 	 * Either 5 or 6 or 7 or 8 channels for DMA across all stm32 series.
 	 * STM32F0 and STM32G0: if dma2 exits, the channel interrupts overlap with dma1

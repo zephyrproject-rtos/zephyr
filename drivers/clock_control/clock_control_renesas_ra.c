@@ -46,11 +46,11 @@
 #define SCKDIV_VAL(clk)     _CONCAT(SCKDIV_, DT_INST_PROP(0, clk##_div))
 #define SCKDIV_POS(clk)     _CONCAT(SCKDIV_POS_, clk)
 
-#define SCKDIVCR_BITS(clk)                                                                         \
+#define SCKDIVCR_BITS(clk) \
 	COND_CODE_1(SCKDIV_ENABLED(clk), ((SCKDIV_VAL(clk) & 0xFU) << SCKDIV_POS(clk)), (0U))
 
-#define SCKDIVCR_INIT_VALUE                                                                        \
-	(SCKDIVCR_BITS(iclk) | SCKDIVCR_BITS(pclka) | SCKDIVCR_BITS(pclkb) |                       \
+#define SCKDIVCR_INIT_VALUE                                                                       \
+	(SCKDIVCR_BITS(iclk) | SCKDIVCR_BITS(pclka) | SCKDIVCR_BITS(pclkb) |                      \
 	 SCKDIVCR_BITS(pclkc) | SCKDIVCR_BITS(pclkd) | SCKDIVCR_BITS(bclk) | SCKDIVCR_BITS(fclk))
 
 #define HOCOWTCR_INIT_VALUE (6)

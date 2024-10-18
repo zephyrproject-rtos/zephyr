@@ -23,17 +23,17 @@
 #define LOG_MODULE_NAME uarte
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_UART_LOG_LEVEL);
 
-#define INSTANCE_INT_DRIVEN(periph, prefix, i, _)                                                  \
+#define INSTANCE_INT_DRIVEN(periph, prefix, i, _)              \
 	IS_ENABLED(CONFIG_UART_##prefix##i##_INTERRUPT_DRIVEN)
 
 #define INSTANCE_ASYNC(periph, prefix, i, _) IS_ENABLED(CONFIG_UART_##prefix##i##_ASYNC)
 
-#define INSTANCE_POLLING(periph, prefix, id, _)                                                    \
-	UTIL_AND(CONFIG_HAS_HW_NRF_UARTE##prefix##id,                                              \
-		 UTIL_AND(COND_CODE_1(CONFIG_UART_##prefix##id##_INTERRUPT_DRIVEN, (0), (1)),                                                    \
+#define INSTANCE_POLLING(periph, prefix, id, _)                                                \
+	UTIL_AND(CONFIG_HAS_HW_NRF_UARTE##prefix##id,                                          \
+		 UTIL_AND(COND_CODE_1(CONFIG_UART_##prefix##id##_INTERRUPT_DRIVEN, (0), (1)),                                                \
 				       COND_CODE_1(CONFIG_UART_##prefix##id##_ASYNC, (0), (1))))
 
-#define INSTANCE_ENHANCED_POLL_OUT(periph, prefix, i, _)                                           \
+#define INSTANCE_ENHANCED_POLL_OUT(periph, prefix, i, _)        \
 	IS_ENABLED(CONFIG_UART_##prefix##i##_ENHANCED_POLL_OUT)
 
 /* Macro determining if any instance is using interrupt driven API. */
@@ -86,27 +86,27 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_UART_LOG_LEVEL);
  * to use this approach because for constant input it can calculate nrf setting
  * at compile time.
  */
-#define NRF_BAUDRATE(baudrate)                                                                     \
-	((baudrate) == 300       ? 0x00014000                                                      \
-	 : (baudrate) == 600     ? 0x00027000                                                      \
-	 : (baudrate) == 1200    ? NRF_UARTE_BAUDRATE_1200                                         \
-	 : (baudrate) == 2400    ? NRF_UARTE_BAUDRATE_2400                                         \
-	 : (baudrate) == 4800    ? NRF_UARTE_BAUDRATE_4800                                         \
-	 : (baudrate) == 9600    ? NRF_UARTE_BAUDRATE_9600                                         \
-	 : (baudrate) == 14400   ? NRF_UARTE_BAUDRATE_14400                                        \
-	 : (baudrate) == 19200   ? NRF_UARTE_BAUDRATE_19200                                        \
-	 : (baudrate) == 28800   ? NRF_UARTE_BAUDRATE_28800                                        \
-	 : (baudrate) == 31250   ? NRF_UARTE_BAUDRATE_31250                                        \
-	 : (baudrate) == 38400   ? NRF_UARTE_BAUDRATE_38400                                        \
-	 : (baudrate) == 56000   ? NRF_UARTE_BAUDRATE_56000                                        \
-	 : (baudrate) == 57600   ? NRF_UARTE_BAUDRATE_57600                                        \
-	 : (baudrate) == 76800   ? NRF_UARTE_BAUDRATE_76800                                        \
-	 : (baudrate) == 115200  ? NRF_UARTE_BAUDRATE_115200                                       \
-	 : (baudrate) == 230400  ? NRF_UARTE_BAUDRATE_230400                                       \
-	 : (baudrate) == 250000  ? NRF_UARTE_BAUDRATE_250000                                       \
-	 : (baudrate) == 460800  ? NRF_UARTE_BAUDRATE_460800                                       \
-	 : (baudrate) == 921600  ? NRF_UARTE_BAUDRATE_921600                                       \
-	 : (baudrate) == 1000000 ? NRF_UARTE_BAUDRATE_1000000                                      \
+#define NRF_BAUDRATE(baudrate)                                \
+	((baudrate) == 300       ? 0x00014000                 \
+	 : (baudrate) == 600     ? 0x00027000                 \
+	 : (baudrate) == 1200    ? NRF_UARTE_BAUDRATE_1200    \
+	 : (baudrate) == 2400    ? NRF_UARTE_BAUDRATE_2400    \
+	 : (baudrate) == 4800    ? NRF_UARTE_BAUDRATE_4800    \
+	 : (baudrate) == 9600    ? NRF_UARTE_BAUDRATE_9600    \
+	 : (baudrate) == 14400   ? NRF_UARTE_BAUDRATE_14400   \
+	 : (baudrate) == 19200   ? NRF_UARTE_BAUDRATE_19200   \
+	 : (baudrate) == 28800   ? NRF_UARTE_BAUDRATE_28800   \
+	 : (baudrate) == 31250   ? NRF_UARTE_BAUDRATE_31250   \
+	 : (baudrate) == 38400   ? NRF_UARTE_BAUDRATE_38400   \
+	 : (baudrate) == 56000   ? NRF_UARTE_BAUDRATE_56000   \
+	 : (baudrate) == 57600   ? NRF_UARTE_BAUDRATE_57600   \
+	 : (baudrate) == 76800   ? NRF_UARTE_BAUDRATE_76800   \
+	 : (baudrate) == 115200  ? NRF_UARTE_BAUDRATE_115200  \
+	 : (baudrate) == 230400  ? NRF_UARTE_BAUDRATE_230400  \
+	 : (baudrate) == 250000  ? NRF_UARTE_BAUDRATE_250000  \
+	 : (baudrate) == 460800  ? NRF_UARTE_BAUDRATE_460800  \
+	 : (baudrate) == 921600  ? NRF_UARTE_BAUDRATE_921600  \
+	 : (baudrate) == 1000000 ? NRF_UARTE_BAUDRATE_1000000 \
 				 : 0)
 
 #define UARTE_DATA_FLAG_TRAMPOLINE BIT(0)
@@ -162,20 +162,20 @@ struct uarte_nrfx_config {
 };
 BUILD_ASSERT(offsetof(struct uarte_nrfx_config, a2i_config) == 0);
 
-#define UARTE_ERROR_FROM_MASK(mask)                                                                \
-	((mask) & NRF_UARTE_ERROR_OVERRUN_MASK   ? UART_ERROR_OVERRUN                              \
-	 : (mask) & NRF_UARTE_ERROR_PARITY_MASK  ? UART_ERROR_PARITY                               \
-	 : (mask) & NRF_UARTE_ERROR_FRAMING_MASK ? UART_ERROR_FRAMING                              \
-	 : (mask) & NRF_UARTE_ERROR_BREAK_MASK   ? UART_BREAK                                      \
+#define UARTE_ERROR_FROM_MASK(mask)                                   \
+	((mask) & NRF_UARTE_ERROR_OVERRUN_MASK   ? UART_ERROR_OVERRUN \
+	 : (mask) & NRF_UARTE_ERROR_PARITY_MASK  ? UART_ERROR_PARITY  \
+	 : (mask) & NRF_UARTE_ERROR_FRAMING_MASK ? UART_ERROR_FRAMING \
+	 : (mask) & NRF_UARTE_ERROR_BREAK_MASK   ? UART_BREAK         \
 						 : 0)
 
 /* Determine if the device has interrupt driven API enabled. */
-#define IS_INT_DRIVEN_API(dev)                                                                     \
-	(UARTE_ANY_INTERRUPT_DRIVEN && (((const struct uarte_nrfx_config *)dev->config)->flags &   \
+#define IS_INT_DRIVEN_API(dev)                                                                   \
+	(UARTE_ANY_INTERRUPT_DRIVEN && (((const struct uarte_nrfx_config *)dev->config)->flags & \
 					UARTE_CFG_FLAG_INTERRUPT_DRIVEN_API))
 
 /* Determine if the device supports only polling API. */
-#define IS_POLLING_API(dev)                                                                        \
+#define IS_POLLING_API(dev)                                                          \
 	(!UARTE_INT_ASYNC || (((struct uarte_nrfx_data *)dev->data)->async == NULL))
 
 /* Determine if the device supports asynchronous API. */
@@ -939,7 +939,7 @@ static int uarte_nrfx_pm_action(const struct device *dev, enum pm_device_action 
 #define UARTE_PROP(idx, prop)     DT_PROP(UARTE(idx), prop)
 
 /* Macro returning initial log level. Logs are off for UART used for console. */
-#define GET_INIT_LOG_LEVEL(idx)                                                                    \
+#define GET_INIT_LOG_LEVEL(idx)                         \
 	COND_CODE_1(DT_HAS_CHOSEN(zephyr_console),		  \
 		(DT_SAME_NODE(UARTE(idx),			  \
 			      DT_CHOSEN(zephyr_console)) ?	  \
@@ -947,7 +947,7 @@ static int uarte_nrfx_pm_action(const struct device *dev, enum pm_device_action 
 			(CONFIG_UART_LOG_LEVEL))
 
 /* Macro puts buffers in dedicated section if device tree property is set. */
-#define UARTE_MEMORY_SECTION(idx)                                                                  \
+#define UARTE_MEMORY_SECTION(idx)                                  \
 	COND_CODE_1(UARTE_HAS_PROP(idx, memory_regions),		       \
 		(__attribute__((__section__(LINKER_DT_NODE_REGION_NAME(	       \
 			DT_PHANDLE(UARTE(idx), memory_regions)))))),	       \
@@ -966,19 +966,25 @@ static int uarte_nrfx_pm_action(const struct device *dev, enum pm_device_action 
 		(static uint8_t a2i_rx_buf##idx[CONFIG_UART_##idx##_A2I_RX_SIZE]		\
 			UARTE_MEMORY_SECTION(idx) __aligned(4);))                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
 	PINCTRL_DT_DEFINE(UARTE(idx));                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  \
-	static const struct                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             \
-		uart_async_to_irq_config                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
-			uarte_a2i_config_##idx =                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        \
-				UART_ASYNC_TO_IRQ_API_CONFIG_INITIALIZER(                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               \
-					&a2i_api, async_to_irq_trampoline,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              \
-					UARTE_PROP(idx, current_speed), uarte##idx##_tx_cache, /* nrfx_uarte driver is using the last byte in the */ /* cache buffer for keeping a byte that is currently*/ /* polled out so it cannot be used as a cache buffer*/ /* by the adaptation layer. */                                                                                                                                                                                                                                                                                                                       \
-					sizeof(uarte##idx##_tx_cache) - 1,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              \
-					COND_CODE_1(CONFIG_UART_##idx##_INTERRUPT_DRIVEN,	\
-						  (a2i_rx_buf##idx), (NULL)),                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              \
-						 COND_CODE_1(CONFIG_UART_##idx##_INTERRUPT_DRIVEN,	\
-						  (sizeof(a2i_rx_buf##idx)), (0)),                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
-							  CONFIG_UART_##idx##_A2I_RX_BUF_COUNT,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         \
-							  LOG_INSTANCE_PTR(LOG_MODULE_NAME, idx));                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      \
+	static const struct uart_async_to_irq_config uarte_a2i_config_##idx =                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           \
+		UART_ASYNC_TO_IRQ_API_CONFIG_INITIALIZER(                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               \
+			&a2i_api, async_to_irq_trampoline, UARTE_PROP(idx, current_speed),                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              \
+			uarte##idx##_tx_cache,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
+			/* nrfx_uarte driver is using the last byte in the */ /* cache buffer for                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       \
+										 keeping a byte                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         \
+										 that is                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
+										 currently*/                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            \
+				/* polled out so it cannot be used as a cache buffer*/ /* by the                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        \
+											  adaptation                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    \
+											  layer.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        \
+											*/                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              \
+				sizeof(uarte##idx##_tx_cache) - 1,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      \
+			COND_CODE_1(CONFIG_UART_##idx##_INTERRUPT_DRIVEN,	\
+						  (a2i_rx_buf##idx), (NULL)),                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
+				     COND_CODE_1(CONFIG_UART_##idx##_INTERRUPT_DRIVEN,	\
+						  (sizeof(a2i_rx_buf##idx)), (0)),                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        \
+						  CONFIG_UART_##idx##_A2I_RX_BUF_COUNT,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 \
+						  LOG_INSTANCE_PTR(LOG_MODULE_NAME, idx));                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              \
 	static const struct uarte_nrfx_config uarte_config_##idx = {                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    \
 		.a2i_config = IS_ENABLED(CONFIG_UART_##idx##_INTERRUPT_DRIVEN)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          \
 				      ? &uarte_a2i_config_##idx                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         \
@@ -1045,7 +1051,7 @@ static int uarte_nrfx_pm_action(const struct device *dev, enum pm_device_action 
 			 CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &uart_nrfx_uarte_driver_api)
 
 /* Macro creates device instance if it is enabled in devicetree. */
-#define UARTE_DEVICE(periph, prefix, id, _)                                                        \
+#define UARTE_DEVICE(periph, prefix, id, _) \
 	IF_ENABLED(CONFIG_HAS_HW_NRF_UARTE##prefix##id, (UART_NRF_UARTE_DEVICE(prefix##id);))
 
 /* Macro iterates over nrfx_uarte instances enabled in the nrfx_config.h. */

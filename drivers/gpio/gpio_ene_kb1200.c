@@ -186,25 +186,25 @@ static const struct gpio_driver_api kb1200_gpio_api = {
 	.get_pending_int = kb1200_gpio_get_pending_int,
 };
 
-#define KB1200_GPIO_INIT(n)                                                                        \
-	static int kb1200_gpio_##n##_init(const struct device *dev)                                \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 0, irq), DT_INST_IRQ_BY_IDX(n, 0, priority),     \
-			    gpio_kb1200_isr, DEVICE_DT_INST_GET(n), 0);                            \
-		irq_enable(DT_INST_IRQ_BY_IDX(n, 0, irq));                                         \
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 1, irq), DT_INST_IRQ_BY_IDX(n, 1, priority),     \
-			    gpio_kb1200_isr, DEVICE_DT_INST_GET(n), 0);                            \
-		irq_enable(DT_INST_IRQ_BY_IDX(n, 1, irq));                                         \
-		return 0;                                                                          \
-	};                                                                                         \
-	static const struct gpio_kb1200_config port_##n##_kb1200_config = {                        \
-		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n)},                   \
-		.gpio_regs = (struct gpio_regs *)DT_INST_REG_ADDR_BY_IDX(n, 0),                    \
-		.gptd_regs = (struct gptd_regs *)DT_INST_REG_ADDR_BY_IDX(n, 1),                    \
-	};                                                                                         \
-	static struct gpio_kb1200_data gpio_kb1200_##n##_data;                                     \
-	DEVICE_DT_INST_DEFINE(n, &kb1200_gpio_##n##_init, NULL, &gpio_kb1200_##n##_data,           \
-			      &port_##n##_kb1200_config, POST_KERNEL,                              \
+#define KB1200_GPIO_INIT(n)                                                                    \
+	static int kb1200_gpio_##n##_init(const struct device *dev)                            \
+	{                                                                                      \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 0, irq), DT_INST_IRQ_BY_IDX(n, 0, priority), \
+			    gpio_kb1200_isr, DEVICE_DT_INST_GET(n), 0);                        \
+		irq_enable(DT_INST_IRQ_BY_IDX(n, 0, irq));                                     \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 1, irq), DT_INST_IRQ_BY_IDX(n, 1, priority), \
+			    gpio_kb1200_isr, DEVICE_DT_INST_GET(n), 0);                        \
+		irq_enable(DT_INST_IRQ_BY_IDX(n, 1, irq));                                     \
+		return 0;                                                                      \
+	};                                                                                     \
+	static const struct gpio_kb1200_config port_##n##_kb1200_config = {                    \
+		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n)},               \
+		.gpio_regs = (struct gpio_regs *)DT_INST_REG_ADDR_BY_IDX(n, 0),                \
+		.gptd_regs = (struct gptd_regs *)DT_INST_REG_ADDR_BY_IDX(n, 1),                \
+	};                                                                                     \
+	static struct gpio_kb1200_data gpio_kb1200_##n##_data;                                 \
+	DEVICE_DT_INST_DEFINE(n, &kb1200_gpio_##n##_init, NULL, &gpio_kb1200_##n##_data,       \
+			      &port_##n##_kb1200_config, POST_KERNEL,                          \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &kb1200_gpio_api);
 
 DT_INST_FOREACH_STATUS_OKAY(KB1200_GPIO_INIT)

@@ -827,21 +827,21 @@ static int quectel_lcx6g_init(const struct device *dev)
 
 #define LCX6G_INST_NAME(inst, name) _CONCAT(_CONCAT(_CONCAT(name, _), DT_DRV_COMPAT), inst)
 
-#define LCX6G_DEVICE(inst)                                                                         \
-	static const struct quectel_lcx6g_config LCX6G_INST_NAME(inst, config) = {                 \
-		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
-		.pps_mode = DT_INST_STRING_UPPER_TOKEN(inst, pps_mode),                            \
-		.pps_pulse_width = DT_INST_PROP(inst, pps_pulse_width),                            \
-	};                                                                                         \
-                                                                                                   \
-	static struct quectel_lcx6g_data LCX6G_INST_NAME(inst, data) = {                           \
-		.chat_delimiter = {'\r', '\n'},                                                    \
-	};                                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, quectel_lcx6g_pm_action);                                   \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, quectel_lcx6g_init, PM_DEVICE_DT_INST_GET(inst),               \
-			      &LCX6G_INST_NAME(inst, data), &LCX6G_INST_NAME(inst, config),        \
+#define LCX6G_DEVICE(inst)                                                                  \
+	static const struct quectel_lcx6g_config LCX6G_INST_NAME(inst, config) = {          \
+		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                   \
+		.pps_mode = DT_INST_STRING_UPPER_TOKEN(inst, pps_mode),                     \
+		.pps_pulse_width = DT_INST_PROP(inst, pps_pulse_width),                     \
+	};                                                                                  \
+                                                                                            \
+	static struct quectel_lcx6g_data LCX6G_INST_NAME(inst, data) = {                    \
+		.chat_delimiter = {'\r', '\n'},                                             \
+	};                                                                                  \
+                                                                                            \
+	PM_DEVICE_DT_INST_DEFINE(inst, quectel_lcx6g_pm_action);                            \
+                                                                                            \
+	DEVICE_DT_INST_DEFINE(inst, quectel_lcx6g_init, PM_DEVICE_DT_INST_GET(inst),        \
+			      &LCX6G_INST_NAME(inst, data), &LCX6G_INST_NAME(inst, config), \
 			      POST_KERNEL, CONFIG_GNSS_INIT_PRIORITY, &gnss_api);
 
 #define DT_DRV_COMPAT quectel_lc26g

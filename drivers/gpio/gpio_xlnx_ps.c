@@ -96,37 +96,37 @@ static void gpio_xlnx_ps_isr(const struct device *dev)
  * specified in the device tree.
  */
 
-#define GPIO_XLNX_PS_GEN_BANK_ARRAY(idx)                                                           \
-	static const struct device *const gpio_xlnx_ps##idx##_banks[] = {                          \
+#define GPIO_XLNX_PS_GEN_BANK_ARRAY(idx)                                          \
+	static const struct device *const gpio_xlnx_ps##idx##_banks[] = {         \
 		DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(idx, DEVICE_DT_GET, (, ))};
 
 /* Device config & run-time data struct creation macros */
 #define GPIO_XLNX_PS_DEV_DATA(idx) static struct gpio_xlnx_ps_dev_data gpio_xlnx_ps##idx##_data;
 
-#define GPIO_XLNX_PS_DEV_CONFIG(idx)                                                               \
-	static const struct gpio_xlnx_ps_dev_cfg gpio_xlnx_ps##idx##_cfg = {                       \
-		.base_addr = DT_INST_REG_ADDR(idx),                                                \
-		.bank_devices = gpio_xlnx_ps##idx##_banks,                                         \
-		.num_banks = ARRAY_SIZE(gpio_xlnx_ps##idx##_banks),                                \
+#define GPIO_XLNX_PS_DEV_CONFIG(idx)                                         \
+	static const struct gpio_xlnx_ps_dev_cfg gpio_xlnx_ps##idx##_cfg = { \
+		.base_addr = DT_INST_REG_ADDR(idx),                          \
+		.bank_devices = gpio_xlnx_ps##idx##_banks,                   \
+		.num_banks = ARRAY_SIZE(gpio_xlnx_ps##idx##_banks),          \
 		.config_func = gpio_xlnx_ps##idx##_irq_config};
 
 /*
  * Macro used to generate each parent controller device's IRQ attach
  * function.
  */
-#define GPIO_XLNX_PS_DEV_CONFIG_IRQ_FUNC(idx)                                                      \
-	static void gpio_xlnx_ps##idx##_irq_config(const struct device *dev)                       \
-	{                                                                                          \
-		ARG_UNUSED(dev);                                                                   \
-		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority), gpio_xlnx_ps_isr,       \
-			    DEVICE_DT_INST_GET(idx), 0);                                           \
-		irq_enable(DT_INST_IRQN(idx));                                                     \
+#define GPIO_XLNX_PS_DEV_CONFIG_IRQ_FUNC(idx)                                                \
+	static void gpio_xlnx_ps##idx##_irq_config(const struct device *dev)                 \
+	{                                                                                    \
+		ARG_UNUSED(dev);                                                             \
+		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority), gpio_xlnx_ps_isr, \
+			    DEVICE_DT_INST_GET(idx), 0);                                     \
+		irq_enable(DT_INST_IRQN(idx));                                               \
 	}
 
 /* Device definition macro */
-#define GPIO_XLNX_PS_DEV_DEFINE(idx)                                                               \
-	DEVICE_DT_INST_DEFINE(idx, gpio_xlnx_ps_init, NULL, &gpio_xlnx_ps##idx##_data,             \
-			      &gpio_xlnx_ps##idx##_cfg, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,   \
+#define GPIO_XLNX_PS_DEV_DEFINE(idx)                                                             \
+	DEVICE_DT_INST_DEFINE(idx, gpio_xlnx_ps_init, NULL, &gpio_xlnx_ps##idx##_data,           \
+			      &gpio_xlnx_ps##idx##_cfg, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, \
 			      &gpio_xlnx_ps_default_apis);
 
 /*
@@ -134,11 +134,11 @@ static void gpio_xlnx_ps_isr(const struct device *dev)
  * parent device entry contained in the device tree which has status
  * "okay".
  */
-#define GPIO_XLNX_PS_DEV_INITITALIZE(idx)                                                          \
-	GPIO_XLNX_PS_GEN_BANK_ARRAY(idx)                                                           \
-	GPIO_XLNX_PS_DEV_CONFIG_IRQ_FUNC(idx)                                                      \
-	GPIO_XLNX_PS_DEV_DATA(idx)                                                                 \
-	GPIO_XLNX_PS_DEV_CONFIG(idx)                                                               \
+#define GPIO_XLNX_PS_DEV_INITITALIZE(idx)     \
+	GPIO_XLNX_PS_GEN_BANK_ARRAY(idx)      \
+	GPIO_XLNX_PS_DEV_CONFIG_IRQ_FUNC(idx) \
+	GPIO_XLNX_PS_DEV_DATA(idx)            \
+	GPIO_XLNX_PS_DEV_CONFIG(idx)          \
 	GPIO_XLNX_PS_DEV_DEFINE(idx)
 
 /*

@@ -672,22 +672,22 @@ static int otm8009a_init(const struct device *dev)
 	return 0;
 }
 
-#define OTM8009A_DEVICE(inst)                                                                      \
-	static const struct otm8009a_config otm8009a_config_##inst = {                             \
-		.mipi_dsi = DEVICE_DT_GET(DT_INST_BUS(inst)),                                      \
-		.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),                         \
-		.backlight = GPIO_DT_SPEC_INST_GET_OR(inst, bl_gpios, {0}),                        \
-		.data_lanes = DT_INST_PROP_BY_IDX(inst, data_lanes, 0),                            \
-		.width = DT_INST_PROP(inst, width),                                                \
-		.height = DT_INST_PROP(inst, height),                                              \
-		.channel = DT_INST_REG_ADDR(inst),                                                 \
-		.rotation = DT_INST_PROP(inst, rotation),                                          \
-	};                                                                                         \
-	static struct otm8009a_data otm8009a_data_##inst = {                                       \
-		.dsi_pixel_format = DT_INST_PROP(inst, pixel_format),                              \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &otm8009a_init, NULL, &otm8009a_data_##inst,                   \
-			      &otm8009a_config_##inst, POST_KERNEL,                                \
+#define OTM8009A_DEVICE(inst)                                                        \
+	static const struct otm8009a_config otm8009a_config_##inst = {               \
+		.mipi_dsi = DEVICE_DT_GET(DT_INST_BUS(inst)),                        \
+		.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),           \
+		.backlight = GPIO_DT_SPEC_INST_GET_OR(inst, bl_gpios, {0}),          \
+		.data_lanes = DT_INST_PROP_BY_IDX(inst, data_lanes, 0),              \
+		.width = DT_INST_PROP(inst, width),                                  \
+		.height = DT_INST_PROP(inst, height),                                \
+		.channel = DT_INST_REG_ADDR(inst),                                   \
+		.rotation = DT_INST_PROP(inst, rotation),                            \
+	};                                                                           \
+	static struct otm8009a_data otm8009a_data_##inst = {                         \
+		.dsi_pixel_format = DT_INST_PROP(inst, pixel_format),                \
+	};                                                                           \
+	DEVICE_DT_INST_DEFINE(inst, &otm8009a_init, NULL, &otm8009a_data_##inst,     \
+			      &otm8009a_config_##inst, POST_KERNEL,                  \
 			      CONFIG_DISPLAY_OTM8009A_INIT_PRIORITY, &otm8009a_api);
 
 DT_INST_FOREACH_STATUS_OKAY(OTM8009A_DEVICE)

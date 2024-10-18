@@ -234,32 +234,32 @@ static int xpt2046_init(const struct device *dev)
 	return 0;
 }
 
-#define XPT2046_INIT(index)                                                                        \
-	static const struct xpt2046_config xpt2046_config_##index = {                              \
-		.bus = SPI_DT_SPEC_INST_GET(                                                       \
-			index, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 0),        \
-		.int_gpio = GPIO_DT_SPEC_INST_GET(index, int_gpios),                               \
-		.min_x = DT_INST_PROP(index, min_x),                                               \
-		.min_y = DT_INST_PROP(index, min_y),                                               \
-		.max_x = DT_INST_PROP(index, max_x),                                               \
-		.max_y = DT_INST_PROP(index, max_y),                                               \
-		.threshold = DT_INST_PROP(index, z_threshold),                                     \
-		.screen_size_x = DT_INST_PROP(index, touchscreen_size_x),                          \
-		.screen_size_y = DT_INST_PROP(index, touchscreen_size_y),                          \
-		.reads = DT_INST_PROP(index, reads),                                               \
-	};                                                                                         \
-	static struct xpt2046_data xpt2046_data_##index;                                           \
-	DEVICE_DT_INST_DEFINE(index, xpt2046_init, NULL, &xpt2046_data_##index,                    \
-			      &xpt2046_config_##index, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,    \
-			      NULL);                                                               \
-	BUILD_ASSERT(DT_INST_PROP(index, min_x) < DT_INST_PROP(index, max_x),                      \
-		     "min_x must be less than max_x");                                             \
-	BUILD_ASSERT(DT_INST_PROP(index, min_y) < DT_INST_PROP(index, max_y),                      \
-		     "min_y must be less than max_y");                                             \
-	BUILD_ASSERT(DT_INST_PROP(index, z_threshold) > 10, "Too small threshold");                \
-	BUILD_ASSERT(DT_INST_PROP(index, touchscreen_size_x) > 1 &&                                \
-			     DT_INST_PROP(index, touchscreen_size_y) > 1,                          \
-		     "Screen size undefined");                                                     \
+#define XPT2046_INIT(index)                                                                     \
+	static const struct xpt2046_config xpt2046_config_##index = {                           \
+		.bus = SPI_DT_SPEC_INST_GET(                                                    \
+			index, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 0),     \
+		.int_gpio = GPIO_DT_SPEC_INST_GET(index, int_gpios),                            \
+		.min_x = DT_INST_PROP(index, min_x),                                            \
+		.min_y = DT_INST_PROP(index, min_y),                                            \
+		.max_x = DT_INST_PROP(index, max_x),                                            \
+		.max_y = DT_INST_PROP(index, max_y),                                            \
+		.threshold = DT_INST_PROP(index, z_threshold),                                  \
+		.screen_size_x = DT_INST_PROP(index, touchscreen_size_x),                       \
+		.screen_size_y = DT_INST_PROP(index, touchscreen_size_y),                       \
+		.reads = DT_INST_PROP(index, reads),                                            \
+	};                                                                                      \
+	static struct xpt2046_data xpt2046_data_##index;                                        \
+	DEVICE_DT_INST_DEFINE(index, xpt2046_init, NULL, &xpt2046_data_##index,                 \
+			      &xpt2046_config_##index, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, \
+			      NULL);                                                            \
+	BUILD_ASSERT(DT_INST_PROP(index, min_x) < DT_INST_PROP(index, max_x),                   \
+		     "min_x must be less than max_x");                                          \
+	BUILD_ASSERT(DT_INST_PROP(index, min_y) < DT_INST_PROP(index, max_y),                   \
+		     "min_y must be less than max_y");                                          \
+	BUILD_ASSERT(DT_INST_PROP(index, z_threshold) > 10, "Too small threshold");             \
+	BUILD_ASSERT(DT_INST_PROP(index, touchscreen_size_x) > 1 &&                             \
+			     DT_INST_PROP(index, touchscreen_size_y) > 1,                       \
+		     "Screen size undefined");                                                  \
 	BUILD_ASSERT(DT_INST_PROP(index, reads) > 0, "Number of reads must be at least one");
 
 DT_INST_FOREACH_STATUS_OKAY(XPT2046_INIT)

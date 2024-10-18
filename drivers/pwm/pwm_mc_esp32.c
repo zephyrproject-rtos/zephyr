@@ -536,17 +536,17 @@ static const struct pwm_driver_api mcpwm_esp32_api = {
 };
 
 #ifdef CONFIG_PWM_CAPTURE
-#define IRQ_CONFIG_FUNC(idx)                                                                       \
-	static int mcpwm_esp32_irq_config_func_##idx(const struct device *dev)                     \
-	{                                                                                          \
-		int ret;                                                                           \
-		ret = esp_intr_alloc(                                                              \
-			DT_INST_IRQ_BY_IDX(idx, 0, irq),                                           \
-			ESP_PRIO_TO_FLAGS(DT_INST_IRQ_BY_IDX(idx, 0, priority)) |                  \
-				ESP_INT_FLAGS_CHECK(DT_INST_IRQ_BY_IDX(idx, 0, flags)) |           \
-				ESP_INTR_FLAG_IRAM,                                                \
-			(intr_handler_t)mcpwm_esp32_isr, (void *)dev, NULL);                       \
-		return ret;                                                                        \
+#define IRQ_CONFIG_FUNC(idx)                                                             \
+	static int mcpwm_esp32_irq_config_func_##idx(const struct device *dev)           \
+	{                                                                                \
+		int ret;                                                                 \
+		ret = esp_intr_alloc(                                                    \
+			DT_INST_IRQ_BY_IDX(idx, 0, irq),                                 \
+			ESP_PRIO_TO_FLAGS(DT_INST_IRQ_BY_IDX(idx, 0, priority)) |        \
+				ESP_INT_FLAGS_CHECK(DT_INST_IRQ_BY_IDX(idx, 0, flags)) | \
+				ESP_INTR_FLAG_IRAM,                                      \
+			(intr_handler_t)mcpwm_esp32_isr, (void *)dev, NULL);             \
+		return ret;                                                              \
 	}
 #define CAPTURE_INIT(idx) .irq_config_func = mcpwm_esp32_irq_config_func_##idx
 #else
@@ -554,34 +554,34 @@ static const struct pwm_driver_api mcpwm_esp32_api = {
 #define CAPTURE_INIT(idx)
 #endif /* CONFIG_PWM_CAPTURE */
 
-#define ESP32_MCPWM_INIT(idx)                                                                      \
-	PINCTRL_DT_INST_DEFINE(idx);                                                               \
-	IRQ_CONFIG_FUNC(idx);                                                                      \
-	static struct mcpwm_esp32_data mcpwm_esp32_data_##idx = {                                  \
-		.hal =                                                                             \
-			{                                                                          \
-				.dev = (mcpwm_dev_t *)DT_INST_REG_ADDR(idx),                       \
-			},                                                                         \
-		.init_config =                                                                     \
-			{                                                                          \
-				.group_id = idx,                                                   \
-			},                                                                         \
-		.cmd_sem = Z_SEM_INITIALIZER(mcpwm_esp32_data_##idx.cmd_sem, 1, 1),                \
-	};                                                                                         \
-                                                                                                   \
-	static struct mcpwm_esp32_config mcpwm_esp32_config_##idx = {                              \
-		.index = idx,                                                                      \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                     \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                              \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset),          \
-		.prescale = DT_INST_PROP(idx, prescale),                                           \
-		.prescale_timer0 = DT_INST_PROP_OR(idx, prescale_timer0, 0),                       \
-		.prescale_timer1 = DT_INST_PROP_OR(idx, prescale_timer1, 0),                       \
-		.prescale_timer2 = DT_INST_PROP_OR(idx, prescale_timer2, 0),                       \
-		CAPTURE_INIT(idx)};                                                                \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(idx, &mcpwm_esp32_init, NULL, &mcpwm_esp32_data_##idx,               \
-			      &mcpwm_esp32_config_##idx, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,    \
+#define ESP32_MCPWM_INIT(idx)                                                                   \
+	PINCTRL_DT_INST_DEFINE(idx);                                                            \
+	IRQ_CONFIG_FUNC(idx);                                                                   \
+	static struct mcpwm_esp32_data mcpwm_esp32_data_##idx = {                               \
+		.hal =                                                                          \
+			{                                                                       \
+				.dev = (mcpwm_dev_t *)DT_INST_REG_ADDR(idx),                    \
+			},                                                                      \
+		.init_config =                                                                  \
+			{                                                                       \
+				.group_id = idx,                                                \
+			},                                                                      \
+		.cmd_sem = Z_SEM_INITIALIZER(mcpwm_esp32_data_##idx.cmd_sem, 1, 1),             \
+	};                                                                                      \
+                                                                                                \
+	static struct mcpwm_esp32_config mcpwm_esp32_config_##idx = {                           \
+		.index = idx,                                                                   \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                  \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                           \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset),       \
+		.prescale = DT_INST_PROP(idx, prescale),                                        \
+		.prescale_timer0 = DT_INST_PROP_OR(idx, prescale_timer0, 0),                    \
+		.prescale_timer1 = DT_INST_PROP_OR(idx, prescale_timer1, 0),                    \
+		.prescale_timer2 = DT_INST_PROP_OR(idx, prescale_timer2, 0),                    \
+		CAPTURE_INIT(idx)};                                                             \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(idx, &mcpwm_esp32_init, NULL, &mcpwm_esp32_data_##idx,            \
+			      &mcpwm_esp32_config_##idx, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, \
 			      &mcpwm_esp32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_MCPWM_INIT)

@@ -102,14 +102,14 @@ int hm330x_init(const struct device *dev)
 	return 0;
 }
 
-#define HM330X_DEFINE(inst)                                                                        \
-	static struct hm330x_data hm330x_data_##inst;                                              \
-                                                                                                   \
-	static const struct hm330x_config hm330x_config##inst = {                                  \
-		.i2c = I2C_DT_SPEC_INST_GET(inst)};                                                \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, hm330x_init, NULL, &hm330x_data_##inst,                 \
-				     &hm330x_config##inst, POST_KERNEL,                            \
+#define HM330X_DEFINE(inst)                                                            \
+	static struct hm330x_data hm330x_data_##inst;                                  \
+                                                                                       \
+	static const struct hm330x_config hm330x_config##inst = {                      \
+		.i2c = I2C_DT_SPEC_INST_GET(inst)};                                    \
+                                                                                       \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, hm330x_init, NULL, &hm330x_data_##inst,     \
+				     &hm330x_config##inst, POST_KERNEL,                \
 				     CONFIG_SENSOR_INIT_PRIORITY, &hm330x_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(HM330X_DEFINE)

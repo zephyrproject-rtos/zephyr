@@ -148,17 +148,17 @@ static const struct pwm_driver_api imx_pwm_driver_api = {
 	.get_cycles_per_sec = imx_pwm_get_cycles_per_sec,
 };
 
-#define PWM_IMX_INIT(n)                                                                            \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	static const struct imx_pwm_config imx_pwm_config_##n = {                                  \
-		.base = (PWM_Type *)DT_INST_REG_ADDR(n),                                           \
-		.prescaler = DT_INST_PROP(n, prescaler),                                           \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
-	};                                                                                         \
-                                                                                                   \
-	static struct imx_pwm_data imx_pwm_data_##n;                                               \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &imx_pwm_init, NULL, &imx_pwm_data_##n, &imx_pwm_config_##n,      \
+#define PWM_IMX_INIT(n)                                                                       \
+	PINCTRL_DT_INST_DEFINE(n);                                                            \
+	static const struct imx_pwm_config imx_pwm_config_##n = {                             \
+		.base = (PWM_Type *)DT_INST_REG_ADDR(n),                                      \
+		.prescaler = DT_INST_PROP(n, prescaler),                                      \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                  \
+	};                                                                                    \
+                                                                                              \
+	static struct imx_pwm_data imx_pwm_data_##n;                                          \
+                                                                                              \
+	DEVICE_DT_INST_DEFINE(n, &imx_pwm_init, NULL, &imx_pwm_data_##n, &imx_pwm_config_##n, \
 			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, &imx_pwm_driver_api);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(fsl_imx27_pwm)

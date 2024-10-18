@@ -17,9 +17,9 @@
 
 LOG_MODULE_REGISTER(i2s_litex);
 
-#define MODULO_INC(val, max)                                                                       \
-	{                                                                                          \
-		val = (val == max - 1) ? 0 : val + 1;                                              \
+#define MODULO_INC(val, max)                          \
+	{                                             \
+		val = (val == max - 1) ? 0 : val + 1; \
 	}
 
 /**
@@ -580,33 +580,33 @@ static const struct i2s_driver_api i2s_litex_driver_api = {
 	.trigger = i2s_litex_trigger,
 };
 
-#define I2S_INIT(dir)                                                                              \
-                                                                                                   \
-	static struct queue_item rx_ring_buf[CONFIG_I2S_LITEX_RX_BLOCK_COUNT];                     \
-	static struct queue_item tx_ring_buf[CONFIG_I2S_LITEX_TX_BLOCK_COUNT];                     \
-                                                                                                   \
-	static struct i2s_litex_data i2s_litex_data_##dir = {                                      \
-		.dir.mem_block_queue.buf = dir##_ring_buf,                                         \
-		.dir.mem_block_queue.len = sizeof(dir##_ring_buf) / sizeof(struct queue_item),     \
-	};                                                                                         \
-                                                                                                   \
-	static void i2s_litex_irq_config_func_##dir(const struct device *dev);                     \
-                                                                                                   \
-	static struct i2s_litex_cfg i2s_litex_cfg_##dir = {                                        \
-		.base = DT_REG_ADDR(DT_NODELABEL(i2s_##dir)),                                      \
-		.fifo_base = DT_REG_ADDR_BY_NAME(DT_NODELABEL(i2s_##dir), fifo),                   \
-		.fifo_depth = DT_PROP(DT_NODELABEL(i2s_##dir), fifo_depth),                        \
-		.irq_config = i2s_litex_irq_config_func_##dir};                                    \
-	DEVICE_DT_DEFINE(DT_NODELABEL(i2s_##dir), i2s_litex_initialize, NULL,                      \
-			 &i2s_litex_data_##dir, &i2s_litex_cfg_##dir, POST_KERNEL,                 \
-			 CONFIG_I2S_INIT_PRIORITY, &i2s_litex_driver_api);                         \
-                                                                                                   \
-	static void i2s_litex_irq_config_func_##dir(const struct device *dev)                      \
-	{                                                                                          \
-		IRQ_CONNECT(DT_IRQN(DT_NODELABEL(i2s_##dir)),                                      \
-			    DT_IRQ(DT_NODELABEL(i2s_##dir), priority), i2s_litex_isr_##dir,        \
-			    DEVICE_DT_GET(DT_NODELABEL(i2s_##dir)), 0);                            \
-		irq_enable(DT_IRQN(DT_NODELABEL(i2s_##dir)));                                      \
+#define I2S_INIT(dir)                                                                          \
+                                                                                               \
+	static struct queue_item rx_ring_buf[CONFIG_I2S_LITEX_RX_BLOCK_COUNT];                 \
+	static struct queue_item tx_ring_buf[CONFIG_I2S_LITEX_TX_BLOCK_COUNT];                 \
+                                                                                               \
+	static struct i2s_litex_data i2s_litex_data_##dir = {                                  \
+		.dir.mem_block_queue.buf = dir##_ring_buf,                                     \
+		.dir.mem_block_queue.len = sizeof(dir##_ring_buf) / sizeof(struct queue_item), \
+	};                                                                                     \
+                                                                                               \
+	static void i2s_litex_irq_config_func_##dir(const struct device *dev);                 \
+                                                                                               \
+	static struct i2s_litex_cfg i2s_litex_cfg_##dir = {                                    \
+		.base = DT_REG_ADDR(DT_NODELABEL(i2s_##dir)),                                  \
+		.fifo_base = DT_REG_ADDR_BY_NAME(DT_NODELABEL(i2s_##dir), fifo),               \
+		.fifo_depth = DT_PROP(DT_NODELABEL(i2s_##dir), fifo_depth),                    \
+		.irq_config = i2s_litex_irq_config_func_##dir};                                \
+	DEVICE_DT_DEFINE(DT_NODELABEL(i2s_##dir), i2s_litex_initialize, NULL,                  \
+			 &i2s_litex_data_##dir, &i2s_litex_cfg_##dir, POST_KERNEL,             \
+			 CONFIG_I2S_INIT_PRIORITY, &i2s_litex_driver_api);                     \
+                                                                                               \
+	static void i2s_litex_irq_config_func_##dir(const struct device *dev)                  \
+	{                                                                                      \
+		IRQ_CONNECT(DT_IRQN(DT_NODELABEL(i2s_##dir)),                                  \
+			    DT_IRQ(DT_NODELABEL(i2s_##dir), priority), i2s_litex_isr_##dir,    \
+			    DEVICE_DT_GET(DT_NODELABEL(i2s_##dir)), 0);                        \
+		irq_enable(DT_IRQN(DT_NODELABEL(i2s_##dir)));                                  \
 	}
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2s_rx))

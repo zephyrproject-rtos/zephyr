@@ -208,47 +208,47 @@ static struct ipm_driver_api xlnx_ipi_api = {
 
 #define GET_CHILD_DEV(node_id) DEVICE_DT_GET(node_id),
 
-#define XLNX_IPI_CHILD(ch_node)                                                                    \
-	struct xlnx_ipi_child_data xlnx_ipi_child_data##ch_node = {                                \
-		.enabled = false,                                                                  \
-		.ipm_callback = NULL,                                                              \
-	};                                                                                         \
-	struct xlnx_ipi_child_config xlnx_ipi_child_config##ch_node = {                            \
-		.local_request_region = DT_REG_ADDR_BY_NAME(ch_node, local_request_region),        \
-		.local_response_region = DT_REG_ADDR_BY_NAME(ch_node, local_response_region),      \
-		.remote_request_region = DT_REG_ADDR_BY_NAME(ch_node, remote_request_region),      \
-		.remote_response_region = DT_REG_ADDR_BY_NAME(ch_node, remote_response_region),    \
-		.remote_ipi_id = DT_PROP(ch_node, remote_ipi_id),                                  \
-		.remote_ipi_ch_bit =                                                               \
-			xlnx_ipi_reg_info_zynqmp[DT_PROP(ch_node, remote_ipi_id)].ipi_ch_bit,      \
-		.host_ipi_reg = DT_REG_ADDR_BY_NAME(DT_PARENT(ch_node), host_ipi_reg),             \
-	};                                                                                         \
-	DEVICE_DT_DEFINE(ch_node, NULL, NULL, &xlnx_ipi_child_data##ch_node,                       \
-			 &xlnx_ipi_child_config##ch_node, POST_KERNEL,                             \
+#define XLNX_IPI_CHILD(ch_node)                                                                 \
+	struct xlnx_ipi_child_data xlnx_ipi_child_data##ch_node = {                             \
+		.enabled = false,                                                               \
+		.ipm_callback = NULL,                                                           \
+	};                                                                                      \
+	struct xlnx_ipi_child_config xlnx_ipi_child_config##ch_node = {                         \
+		.local_request_region = DT_REG_ADDR_BY_NAME(ch_node, local_request_region),     \
+		.local_response_region = DT_REG_ADDR_BY_NAME(ch_node, local_response_region),   \
+		.remote_request_region = DT_REG_ADDR_BY_NAME(ch_node, remote_request_region),   \
+		.remote_response_region = DT_REG_ADDR_BY_NAME(ch_node, remote_response_region), \
+		.remote_ipi_id = DT_PROP(ch_node, remote_ipi_id),                               \
+		.remote_ipi_ch_bit =                                                            \
+			xlnx_ipi_reg_info_zynqmp[DT_PROP(ch_node, remote_ipi_id)].ipi_ch_bit,   \
+		.host_ipi_reg = DT_REG_ADDR_BY_NAME(DT_PARENT(ch_node), host_ipi_reg),          \
+	};                                                                                      \
+	DEVICE_DT_DEFINE(ch_node, NULL, NULL, &xlnx_ipi_child_data##ch_node,                    \
+			 &xlnx_ipi_child_config##ch_node, POST_KERNEL,                          \
 			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &xlnx_ipi_api);
 
-#define XLNX_IPI(inst)                                                                             \
-	DT_INST_FOREACH_CHILD_STATUS_OKAY(inst, XLNX_IPI_CHILD);                                   \
-	static const struct device *cdev##inst[] = {                                               \
-		DT_INST_FOREACH_CHILD_STATUS_OKAY(inst, GET_CHILD_DEV)};                           \
-	static int xlnx_ipi_config_func##inst(const struct device *dev);                           \
-	struct xlnx_ipi_config xlnx_ipi_config##inst = {                                           \
-		.host_ipi_reg = DT_INST_REG_ADDR_BY_NAME(inst, host_ipi_reg),                      \
-		.xlnx_ipi_config_func = xlnx_ipi_config_func##inst,                                \
-		.cdev_list = cdev##inst,                                                           \
-		.num_cdev = ARRAY_SIZE(cdev##inst),                                                \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &xlnx_ipi_init, NULL, NULL, /* data */                         \
-			      &xlnx_ipi_config##inst,           /* conf */                         \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);             \
-	static int xlnx_ipi_config_func##inst(const struct device *dev)                            \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), xlnx_mailbox_rx_isr,  \
-			    DEVICE_DT_INST_GET(inst), 0);                                          \
-		irq_enable(DT_INST_IRQN(inst));                                                    \
-		LOG_DBG("irq %d is enabled: %s\n", DT_INST_IRQN(inst),                             \
-			irq_is_enabled(DT_INST_IRQN(inst)) ? "true" : "false");                    \
-		return 0;                                                                          \
+#define XLNX_IPI(inst)                                                                            \
+	DT_INST_FOREACH_CHILD_STATUS_OKAY(inst, XLNX_IPI_CHILD);                                  \
+	static const struct device *cdev##inst[] = {                                              \
+		DT_INST_FOREACH_CHILD_STATUS_OKAY(inst, GET_CHILD_DEV)};                          \
+	static int xlnx_ipi_config_func##inst(const struct device *dev);                          \
+	struct xlnx_ipi_config xlnx_ipi_config##inst = {                                          \
+		.host_ipi_reg = DT_INST_REG_ADDR_BY_NAME(inst, host_ipi_reg),                     \
+		.xlnx_ipi_config_func = xlnx_ipi_config_func##inst,                               \
+		.cdev_list = cdev##inst,                                                          \
+		.num_cdev = ARRAY_SIZE(cdev##inst),                                               \
+	};                                                                                        \
+	DEVICE_DT_INST_DEFINE(inst, &xlnx_ipi_init, NULL, NULL, /* data */                        \
+			      &xlnx_ipi_config##inst,           /* conf */                        \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);            \
+	static int xlnx_ipi_config_func##inst(const struct device *dev)                           \
+	{                                                                                         \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), xlnx_mailbox_rx_isr, \
+			    DEVICE_DT_INST_GET(inst), 0);                                         \
+		irq_enable(DT_INST_IRQN(inst));                                                   \
+		LOG_DBG("irq %d is enabled: %s\n", DT_INST_IRQN(inst),                            \
+			irq_is_enabled(DT_INST_IRQN(inst)) ? "true" : "false");                   \
+		return 0;                                                                         \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(XLNX_IPI)

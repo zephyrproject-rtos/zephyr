@@ -1088,81 +1088,81 @@ int pcal64xxa_init(const struct device *dev)
 	return 0;
 }
 
-#define PCAL64XXA_INIT_INT_GPIO_FIELDS(idx)                                                        \
+#define PCAL64XXA_INIT_INT_GPIO_FIELDS(idx) \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, int_gpios),                                         \
 		    (GPIO_DT_SPEC_GET_BY_IDX(DT_DRV_INST(idx), int_gpios, 0)), ({0}))
 
-#define PCAL64XXA_INIT_RESET_GPIO_FIELDS(idx)                                                      \
+#define PCAL64XXA_INIT_RESET_GPIO_FIELDS(idx) \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, reset_gpios),                                       \
 		    (GPIO_DT_SPEC_GET_BY_IDX(DT_DRV_INST(idx), reset_gpios, 0)), ({0}))
 
 #define PCAL64XXA_AUTOMATIC_RESET(idx) !(DT_INST_PROP(idx, no_auto_reset))
 
-#define GPIO_PCAL6408A_INST(idx)                                                                   \
-	static const struct gpio_driver_api pcal6408a_drv_api##idx = {                             \
-		.pin_configure = pcal64xxa_pin_configure,                                          \
-		.port_get_raw = pcal64xxa_port_get_raw,                                            \
-		.port_set_masked_raw = pcal64xxa_port_set_masked_raw,                              \
-		.port_set_bits_raw = pcal64xxa_port_set_bits_raw,                                  \
-		.port_clear_bits_raw = pcal64xxa_port_clear_bits_raw,                              \
-		.port_toggle_bits = pcal64xxa_port_toggle_bits,                                    \
-		.pin_interrupt_configure = pcal64xxa_pin_interrupt_configure,                      \
-		.manage_callback = pcal64xxa_manage_callback,                                      \
-	};                                                                                         \
-	static const struct pcal64xxa_drv_cfg pcal6408a_cfg##idx = {                               \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),             \
-			},                                                                         \
-		.i2c = I2C_DT_SPEC_INST_GET(idx),                                                  \
-		.ngpios = DT_INST_PROP(idx, ngpios),                                               \
-		.gpio_interrupt = PCAL64XXA_INIT_INT_GPIO_FIELDS(idx),                             \
-		.gpio_reset = PCAL64XXA_INIT_RESET_GPIO_FIELDS(idx),                               \
-		.chip_api = &pcal6408a_chip_api,                                                   \
-		.automatic_reset = PCAL64XXA_AUTOMATIC_RESET(idx),                                 \
-	};                                                                                         \
-	static struct pcal64xxa_drv_data pcal6408a_data##idx = {                                   \
-		.lock = Z_SEM_INITIALIZER(pcal6408a_data##idx.lock, 1, 1),                         \
-		.work = Z_WORK_INITIALIZER(pcal64xxa_work_handler),                                \
-		.dev = DEVICE_DT_INST_GET(idx),                                                    \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(idx, pcal64xxa_init, NULL, &pcal6408a_data##idx,                     \
-			      &pcal6408a_cfg##idx, POST_KERNEL,                                    \
+#define GPIO_PCAL6408A_INST(idx)                                                             \
+	static const struct gpio_driver_api pcal6408a_drv_api##idx = {                       \
+		.pin_configure = pcal64xxa_pin_configure,                                    \
+		.port_get_raw = pcal64xxa_port_get_raw,                                      \
+		.port_set_masked_raw = pcal64xxa_port_set_masked_raw,                        \
+		.port_set_bits_raw = pcal64xxa_port_set_bits_raw,                            \
+		.port_clear_bits_raw = pcal64xxa_port_clear_bits_raw,                        \
+		.port_toggle_bits = pcal64xxa_port_toggle_bits,                              \
+		.pin_interrupt_configure = pcal64xxa_pin_interrupt_configure,                \
+		.manage_callback = pcal64xxa_manage_callback,                                \
+	};                                                                                   \
+	static const struct pcal64xxa_drv_cfg pcal6408a_cfg##idx = {                         \
+		.common =                                                                    \
+			{                                                                    \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),       \
+			},                                                                   \
+		.i2c = I2C_DT_SPEC_INST_GET(idx),                                            \
+		.ngpios = DT_INST_PROP(idx, ngpios),                                         \
+		.gpio_interrupt = PCAL64XXA_INIT_INT_GPIO_FIELDS(idx),                       \
+		.gpio_reset = PCAL64XXA_INIT_RESET_GPIO_FIELDS(idx),                         \
+		.chip_api = &pcal6408a_chip_api,                                             \
+		.automatic_reset = PCAL64XXA_AUTOMATIC_RESET(idx),                           \
+	};                                                                                   \
+	static struct pcal64xxa_drv_data pcal6408a_data##idx = {                             \
+		.lock = Z_SEM_INITIALIZER(pcal6408a_data##idx.lock, 1, 1),                   \
+		.work = Z_WORK_INITIALIZER(pcal64xxa_work_handler),                          \
+		.dev = DEVICE_DT_INST_GET(idx),                                              \
+	};                                                                                   \
+	DEVICE_DT_INST_DEFINE(idx, pcal64xxa_init, NULL, &pcal6408a_data##idx,               \
+			      &pcal6408a_cfg##idx, POST_KERNEL,                              \
 			      CONFIG_GPIO_PCAL64XXA_INIT_PRIORITY, &pcal6408a_drv_api##idx);
 
 #define DT_DRV_COMPAT nxp_pcal6408a
 DT_INST_FOREACH_STATUS_OKAY(GPIO_PCAL6408A_INST)
 
-#define GPIO_PCAL6416A_INST(idx)                                                                   \
-	static const struct gpio_driver_api pcal6416a_drv_api##idx = {                             \
-		.pin_configure = pcal64xxa_pin_configure,                                          \
-		.port_get_raw = pcal64xxa_port_get_raw,                                            \
-		.port_set_masked_raw = pcal64xxa_port_set_masked_raw,                              \
-		.port_set_bits_raw = pcal64xxa_port_set_bits_raw,                                  \
-		.port_clear_bits_raw = pcal64xxa_port_clear_bits_raw,                              \
-		.port_toggle_bits = pcal64xxa_port_toggle_bits,                                    \
-		.pin_interrupt_configure = pcal64xxa_pin_interrupt_configure,                      \
-		.manage_callback = pcal64xxa_manage_callback,                                      \
-	};                                                                                         \
-	static const struct pcal64xxa_drv_cfg pcal6416a_cfg##idx = {                               \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),             \
-			},                                                                         \
-		.i2c = I2C_DT_SPEC_INST_GET(idx),                                                  \
-		.ngpios = DT_INST_PROP(idx, ngpios),                                               \
-		.gpio_interrupt = PCAL64XXA_INIT_INT_GPIO_FIELDS(idx),                             \
-		.gpio_reset = PCAL64XXA_INIT_RESET_GPIO_FIELDS(idx),                               \
-		.chip_api = &pcal6416a_chip_api,                                                   \
-		.automatic_reset = PCAL64XXA_AUTOMATIC_RESET(idx),                                 \
-	};                                                                                         \
-	static struct pcal64xxa_drv_data pcal6416a_data##idx = {                                   \
-		.lock = Z_SEM_INITIALIZER(pcal6416a_data##idx.lock, 1, 1),                         \
-		.work = Z_WORK_INITIALIZER(pcal64xxa_work_handler),                                \
-		.dev = DEVICE_DT_INST_GET(idx),                                                    \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(idx, pcal64xxa_init, NULL, &pcal6416a_data##idx,                     \
-			      &pcal6416a_cfg##idx, POST_KERNEL,                                    \
+#define GPIO_PCAL6416A_INST(idx)                                                             \
+	static const struct gpio_driver_api pcal6416a_drv_api##idx = {                       \
+		.pin_configure = pcal64xxa_pin_configure,                                    \
+		.port_get_raw = pcal64xxa_port_get_raw,                                      \
+		.port_set_masked_raw = pcal64xxa_port_set_masked_raw,                        \
+		.port_set_bits_raw = pcal64xxa_port_set_bits_raw,                            \
+		.port_clear_bits_raw = pcal64xxa_port_clear_bits_raw,                        \
+		.port_toggle_bits = pcal64xxa_port_toggle_bits,                              \
+		.pin_interrupt_configure = pcal64xxa_pin_interrupt_configure,                \
+		.manage_callback = pcal64xxa_manage_callback,                                \
+	};                                                                                   \
+	static const struct pcal64xxa_drv_cfg pcal6416a_cfg##idx = {                         \
+		.common =                                                                    \
+			{                                                                    \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),       \
+			},                                                                   \
+		.i2c = I2C_DT_SPEC_INST_GET(idx),                                            \
+		.ngpios = DT_INST_PROP(idx, ngpios),                                         \
+		.gpio_interrupt = PCAL64XXA_INIT_INT_GPIO_FIELDS(idx),                       \
+		.gpio_reset = PCAL64XXA_INIT_RESET_GPIO_FIELDS(idx),                         \
+		.chip_api = &pcal6416a_chip_api,                                             \
+		.automatic_reset = PCAL64XXA_AUTOMATIC_RESET(idx),                           \
+	};                                                                                   \
+	static struct pcal64xxa_drv_data pcal6416a_data##idx = {                             \
+		.lock = Z_SEM_INITIALIZER(pcal6416a_data##idx.lock, 1, 1),                   \
+		.work = Z_WORK_INITIALIZER(pcal64xxa_work_handler),                          \
+		.dev = DEVICE_DT_INST_GET(idx),                                              \
+	};                                                                                   \
+	DEVICE_DT_INST_DEFINE(idx, pcal64xxa_init, NULL, &pcal6416a_data##idx,               \
+			      &pcal6416a_cfg##idx, POST_KERNEL,                              \
 			      CONFIG_GPIO_PCAL64XXA_INIT_PRIORITY, &pcal6416a_drv_api##idx);
 
 #undef DT_DRV_COMPAT

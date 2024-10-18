@@ -2163,12 +2163,12 @@ exit_unmap:
 }
 
 #ifdef CONFIG_RCAR_MMC_DMA_IRQ_DRIVEN_SUPPORT
-#define RCAR_MMC_CONFIG_FUNC(n)                                                                    \
-	static void irq_config_func_##n(const struct device *dev)                                  \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), rcar_mmc_irq_handler,       \
-			    DEVICE_DT_INST_GET(n), DT_INST_IRQ(n, flags));                         \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define RCAR_MMC_CONFIG_FUNC(n)                                                              \
+	static void irq_config_func_##n(const struct device *dev)                            \
+	{                                                                                    \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), rcar_mmc_irq_handler, \
+			    DEVICE_DT_INST_GET(n), DT_INST_IRQ(n, flags));                   \
+		irq_enable(DT_INST_IRQN(n));                                                 \
 	}
 #define RCAR_MMC_IRQ_CFG_FUNC_INIT(n) .irq_config_func = irq_config_func_##n,
 #else
@@ -2176,29 +2176,29 @@ exit_unmap:
 #define RCAR_MMC_CONFIG_FUNC(n)
 #endif
 
-#define RCAR_MMC_INIT(n)                                                                           \
-	static struct mmc_rcar_data mmc_rcar_data_##n;                                             \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	RCAR_MMC_CONFIG_FUNC(n);                                                                   \
-	static const struct mmc_rcar_cfg mmc_rcar_cfg_##n = {                                      \
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
-		.cpg_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                  \
-		.cpg_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, module),                        \
-		.cpg_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, domain),                        \
-		.bus_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, module),                        \
-		.bus_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, domain),                        \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		.regulator_vqmmc = DEVICE_DT_GET(DT_PHANDLE(DT_DRV_INST(n), vqmmc_supply)),        \
-		.regulator_vmmc = DEVICE_DT_GET(DT_PHANDLE(DT_DRV_INST(n), vmmc_supply)),          \
-		.max_frequency = DT_INST_PROP(n, max_bus_freq),                                    \
-		.non_removable = DT_INST_PROP(n, non_removable),                                   \
-		.mmc_hs200_1_8v = DT_INST_PROP(n, mmc_hs200_1_8v),                                 \
-		.mmc_hs400_1_8v = DT_INST_PROP(n, mmc_hs400_1_8v),                                 \
-		.mmc_sdr104_support = DT_INST_PROP(n, mmc_sdr104_support),                         \
-		.uhs_support = 1,                                                                  \
-		.bus_width = DT_INST_PROP(n, bus_width),                                           \
-		RCAR_MMC_IRQ_CFG_FUNC_INIT(n)};                                                    \
-	DEVICE_DT_INST_DEFINE(n, rcar_mmc_init, NULL, &mmc_rcar_data_##n, &mmc_rcar_cfg_##n,       \
+#define RCAR_MMC_INIT(n)                                                                     \
+	static struct mmc_rcar_data mmc_rcar_data_##n;                                       \
+	PINCTRL_DT_INST_DEFINE(n);                                                           \
+	RCAR_MMC_CONFIG_FUNC(n);                                                             \
+	static const struct mmc_rcar_cfg mmc_rcar_cfg_##n = {                                \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                        \
+		.cpg_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                            \
+		.cpg_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, module),                  \
+		.cpg_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, domain),                  \
+		.bus_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, module),                  \
+		.bus_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, domain),                  \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                   \
+		.regulator_vqmmc = DEVICE_DT_GET(DT_PHANDLE(DT_DRV_INST(n), vqmmc_supply)),  \
+		.regulator_vmmc = DEVICE_DT_GET(DT_PHANDLE(DT_DRV_INST(n), vmmc_supply)),    \
+		.max_frequency = DT_INST_PROP(n, max_bus_freq),                              \
+		.non_removable = DT_INST_PROP(n, non_removable),                             \
+		.mmc_hs200_1_8v = DT_INST_PROP(n, mmc_hs200_1_8v),                           \
+		.mmc_hs400_1_8v = DT_INST_PROP(n, mmc_hs400_1_8v),                           \
+		.mmc_sdr104_support = DT_INST_PROP(n, mmc_sdr104_support),                   \
+		.uhs_support = 1,                                                            \
+		.bus_width = DT_INST_PROP(n, bus_width),                                     \
+		RCAR_MMC_IRQ_CFG_FUNC_INIT(n)};                                              \
+	DEVICE_DT_INST_DEFINE(n, rcar_mmc_init, NULL, &mmc_rcar_data_##n, &mmc_rcar_cfg_##n, \
 			      POST_KERNEL, CONFIG_SDHC_INIT_PRIORITY, &rcar_sdhc_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RCAR_MMC_INIT)

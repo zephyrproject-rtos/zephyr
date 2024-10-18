@@ -36,7 +36,7 @@ RPI_PICO_PIO_DEFINE_PROGRAM(uart_tx, 0, 3,
 			    0xf727, /*  1: set    x, 7            side 0 [7]  */
 			    0x6001, /*  2: out    pins, 1                     */
 			    0x0642, /*  3: jmp    x--, 2                 [6]  */
-				    /* .wrap */
+			    /* .wrap */
 );
 
 RPI_PICO_PIO_DEFINE_PROGRAM(uart_rx, 0, 8,
@@ -50,7 +50,7 @@ RPI_PICO_PIO_DEFINE_PROGRAM(uart_rx, 0, 8,
 			    0x20a0, /*  6: wait   1 pin, 0                    */
 			    0x0000, /*  7: jmp    0                           */
 			    0x8020, /*  8: push   block                       */
-				    /*  .wrap */
+			    /*  .wrap */
 );
 
 static int pio_uart_tx_init(PIO pio, uint32_t sm, uint32_t tx_pin, float div)
@@ -179,19 +179,19 @@ static const struct uart_driver_api pio_uart_driver_api = {
 	.poll_out = pio_uart_poll_out,
 };
 
-#define PIO_UART_INIT(idx)                                                                         \
-	PINCTRL_DT_INST_DEFINE(idx);                                                               \
-	static const struct pio_uart_config pio_uart##idx##_config = {                             \
-		.piodev = DEVICE_DT_GET(DT_INST_PARENT(idx)),                                      \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                       \
-		.tx_pin = DT_INST_RPI_PICO_PIO_PIN_BY_NAME(idx, default, 0, tx_pins, 0),           \
-		.rx_pin = DT_INST_RPI_PICO_PIO_PIN_BY_NAME(idx, default, 0, rx_pins, 0),           \
-		.baudrate = DT_INST_PROP(idx, current_speed),                                      \
-	};                                                                                         \
-	static struct pio_uart_data pio_uart##idx##_data;                                          \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(idx, pio_uart_init, NULL, &pio_uart##idx##_data,                     \
-			      &pio_uart##idx##_config, POST_KERNEL, CONFIG_SERIAL_INIT_PRIORITY,   \
+#define PIO_UART_INIT(idx)                                                                       \
+	PINCTRL_DT_INST_DEFINE(idx);                                                             \
+	static const struct pio_uart_config pio_uart##idx##_config = {                           \
+		.piodev = DEVICE_DT_GET(DT_INST_PARENT(idx)),                                    \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                     \
+		.tx_pin = DT_INST_RPI_PICO_PIO_PIN_BY_NAME(idx, default, 0, tx_pins, 0),         \
+		.rx_pin = DT_INST_RPI_PICO_PIO_PIN_BY_NAME(idx, default, 0, rx_pins, 0),         \
+		.baudrate = DT_INST_PROP(idx, current_speed),                                    \
+	};                                                                                       \
+	static struct pio_uart_data pio_uart##idx##_data;                                        \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(idx, pio_uart_init, NULL, &pio_uart##idx##_data,                   \
+			      &pio_uart##idx##_config, POST_KERNEL, CONFIG_SERIAL_INIT_PRIORITY, \
 			      &pio_uart_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PIO_UART_INIT)

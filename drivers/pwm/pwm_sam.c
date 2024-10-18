@@ -119,17 +119,17 @@ static const struct pwm_driver_api sam_pwm_driver_api = {
 	.get_cycles_per_sec = sam_pwm_get_cycles_per_sec,
 };
 
-#define SAM_INST_INIT(inst)                                                                        \
-	PINCTRL_DT_INST_DEFINE(inst);                                                              \
-	static const struct sam_pwm_config sam_pwm_config_##inst = {                               \
-		.regs = (Pwm *)DT_INST_REG_ADDR(inst),                                             \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
-		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(inst),                                      \
-		.prescaler = DT_INST_PROP(inst, prescaler),                                        \
-		.divider = DT_INST_PROP(inst, divider),                                            \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, &sam_pwm_init, NULL, NULL, &sam_pwm_config_##inst,             \
+#define SAM_INST_INIT(inst)                                                                \
+	PINCTRL_DT_INST_DEFINE(inst);                                                      \
+	static const struct sam_pwm_config sam_pwm_config_##inst = {                       \
+		.regs = (Pwm *)DT_INST_REG_ADDR(inst),                                     \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                              \
+		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(inst),                              \
+		.prescaler = DT_INST_PROP(inst, prescaler),                                \
+		.divider = DT_INST_PROP(inst, divider),                                    \
+	};                                                                                 \
+                                                                                           \
+	DEVICE_DT_INST_DEFINE(inst, &sam_pwm_init, NULL, NULL, &sam_pwm_config_##inst,     \
 			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, &sam_pwm_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SAM_INST_INIT)

@@ -1440,43 +1440,43 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_I2C_TARGET_BUFFER_MODE),
 	     "When I2C target config is enabled, the buffer mode must be used.");
 #endif
 
-#define I2C_ITE_ENHANCE_INIT(inst)                                                                 \
-	PINCTRL_DT_INST_DEFINE(inst);                                                              \
-	BUILD_ASSERT((DT_INST_PROP(inst, clock_frequency) == 50000) ||                             \
-			     (DT_INST_PROP(inst, clock_frequency) == I2C_BITRATE_STANDARD) ||      \
-			     (DT_INST_PROP(inst, clock_frequency) == I2C_BITRATE_FAST) ||          \
-			     (DT_INST_PROP(inst, clock_frequency) == I2C_BITRATE_FAST_PLUS),       \
-		     "Not support I2C bit rate value");                                            \
-	static void i2c_enhance_config_func_##inst(void);                                          \
-                                                                                                   \
-	static const struct i2c_enhance_config i2c_enhance_cfg_##inst = {                          \
-		.base = (uint8_t *)(DT_INST_REG_ADDR(inst)),                                       \
-		.irq_config_func = i2c_enhance_config_func_##inst,                                 \
-		.bitrate = DT_INST_PROP(inst, clock_frequency),                                    \
-		.i2c_irq_base = DT_INST_IRQN(inst),                                                \
-		.port = DT_INST_PROP(inst, port_num),                                              \
-		.channel_switch_sel = DT_INST_PROP(inst, channel_switch_sel),                      \
-		.scl_gpios = GPIO_DT_SPEC_INST_GET(inst, scl_gpios),                               \
-		.sda_gpios = GPIO_DT_SPEC_INST_GET(inst, sda_gpios),                               \
-		.prescale_scl_low = DT_INST_PROP_OR(inst, prescale_scl_low, 0),                    \
-		.data_hold_time = DT_INST_PROP_OR(inst, data_hold_time, 0),                        \
-		.clock_gate_offset = DT_INST_PROP(inst, clock_gate_offset),                        \
-		.transfer_timeout_ms = DT_INST_PROP(inst, transfer_timeout_ms),                    \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
-		.target_enable = DT_INST_PROP(inst, target_enable),                                \
-		.target_pio_mode = DT_INST_PROP(inst, target_pio_mode),                            \
-		.push_pull_recovery = DT_INST_PROP(inst, push_pull_recovery),                      \
-	};                                                                                         \
-                                                                                                   \
-	static struct i2c_enhance_data i2c_enhance_data_##inst;                                    \
-                                                                                                   \
-	I2C_DEVICE_DT_INST_DEFINE(inst, i2c_enhance_init, NULL, &i2c_enhance_data_##inst,          \
-				  &i2c_enhance_cfg_##inst, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,  \
-				  &i2c_enhance_driver_api);                                        \
-                                                                                                   \
-	static void i2c_enhance_config_func_##inst(void)                                           \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(inst), 0, i2c_enhance_isr, DEVICE_DT_INST_GET(inst), 0);  \
+#define I2C_ITE_ENHANCE_INIT(inst)                                                                \
+	PINCTRL_DT_INST_DEFINE(inst);                                                             \
+	BUILD_ASSERT((DT_INST_PROP(inst, clock_frequency) == 50000) ||                            \
+			     (DT_INST_PROP(inst, clock_frequency) == I2C_BITRATE_STANDARD) ||     \
+			     (DT_INST_PROP(inst, clock_frequency) == I2C_BITRATE_FAST) ||         \
+			     (DT_INST_PROP(inst, clock_frequency) == I2C_BITRATE_FAST_PLUS),      \
+		     "Not support I2C bit rate value");                                           \
+	static void i2c_enhance_config_func_##inst(void);                                         \
+                                                                                                  \
+	static const struct i2c_enhance_config i2c_enhance_cfg_##inst = {                         \
+		.base = (uint8_t *)(DT_INST_REG_ADDR(inst)),                                      \
+		.irq_config_func = i2c_enhance_config_func_##inst,                                \
+		.bitrate = DT_INST_PROP(inst, clock_frequency),                                   \
+		.i2c_irq_base = DT_INST_IRQN(inst),                                               \
+		.port = DT_INST_PROP(inst, port_num),                                             \
+		.channel_switch_sel = DT_INST_PROP(inst, channel_switch_sel),                     \
+		.scl_gpios = GPIO_DT_SPEC_INST_GET(inst, scl_gpios),                              \
+		.sda_gpios = GPIO_DT_SPEC_INST_GET(inst, sda_gpios),                              \
+		.prescale_scl_low = DT_INST_PROP_OR(inst, prescale_scl_low, 0),                   \
+		.data_hold_time = DT_INST_PROP_OR(inst, data_hold_time, 0),                       \
+		.clock_gate_offset = DT_INST_PROP(inst, clock_gate_offset),                       \
+		.transfer_timeout_ms = DT_INST_PROP(inst, transfer_timeout_ms),                   \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                     \
+		.target_enable = DT_INST_PROP(inst, target_enable),                               \
+		.target_pio_mode = DT_INST_PROP(inst, target_pio_mode),                           \
+		.push_pull_recovery = DT_INST_PROP(inst, push_pull_recovery),                     \
+	};                                                                                        \
+                                                                                                  \
+	static struct i2c_enhance_data i2c_enhance_data_##inst;                                   \
+                                                                                                  \
+	I2C_DEVICE_DT_INST_DEFINE(inst, i2c_enhance_init, NULL, &i2c_enhance_data_##inst,         \
+				  &i2c_enhance_cfg_##inst, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, \
+				  &i2c_enhance_driver_api);                                       \
+                                                                                                  \
+	static void i2c_enhance_config_func_##inst(void)                                          \
+	{                                                                                         \
+		IRQ_CONNECT(DT_INST_IRQN(inst), 0, i2c_enhance_isr, DEVICE_DT_INST_GET(inst), 0); \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_ITE_ENHANCE_INIT)

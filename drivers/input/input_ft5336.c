@@ -287,17 +287,17 @@ static int ft5336_pm_action(const struct device *dev, enum pm_device_action acti
 }
 #endif
 
-#define FT5336_INIT(index)                                                                         \
-	PM_DEVICE_DT_INST_DEFINE(n, ft5336_pm_action);                                             \
-	static const struct ft5336_config ft5336_config_##index = {                                \
-		.common = INPUT_TOUCH_DT_INST_COMMON_CONFIG_INIT(index),                           \
-		.bus = I2C_DT_SPEC_INST_GET(index),                                                \
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(index, reset_gpios, {0}),                   \
+#define FT5336_INIT(index)                                                                        \
+	PM_DEVICE_DT_INST_DEFINE(n, ft5336_pm_action);                                            \
+	static const struct ft5336_config ft5336_config_##index = {                               \
+		.common = INPUT_TOUCH_DT_INST_COMMON_CONFIG_INIT(index),                          \
+		.bus = I2C_DT_SPEC_INST_GET(index),                                               \
+		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(index, reset_gpios, {0}),                  \
 		IF_ENABLED(CONFIG_INPUT_FT5336_INTERRUPT,				\
-		(.int_gpio = GPIO_DT_SPEC_INST_GET(index, int_gpios),)) };                 \
-	static struct ft5336_data ft5336_data_##index;                                             \
-	DEVICE_DT_INST_DEFINE(index, ft5336_init, PM_DEVICE_DT_INST_GET(n), &ft5336_data_##index,  \
-			      &ft5336_config_##index, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,     \
+		(.int_gpio = GPIO_DT_SPEC_INST_GET(index, int_gpios),)) };                \
+	static struct ft5336_data ft5336_data_##index;                                            \
+	DEVICE_DT_INST_DEFINE(index, ft5336_init, PM_DEVICE_DT_INST_GET(n), &ft5336_data_##index, \
+			      &ft5336_config_##index, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,    \
 			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(FT5336_INIT)

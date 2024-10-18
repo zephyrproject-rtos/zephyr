@@ -201,27 +201,27 @@ static int qdec_s32_initialize(const struct device *dev)
 	return 0;
 }
 
-#define EMIOS_NXP_S32_MCB_OVERFLOW_CALLBACK(n)                                                     \
-	static void qdec##n##_emios_overflow_count_cw_callback(void)                               \
-	{                                                                                          \
-		qdec_emios_overflow_count_cw_callback(DEVICE_DT_INST_GET(n));                      \
-	}                                                                                          \
-                                                                                                   \
-	static void qdec##n##_emios_overflow_count_ccw_callback(void)                              \
-	{                                                                                          \
-		qdec_emios_overflow_count_ccw_callback(DEVICE_DT_INST_GET(n));                     \
+#define EMIOS_NXP_S32_MCB_OVERFLOW_CALLBACK(n)                                 \
+	static void qdec##n##_emios_overflow_count_cw_callback(void)           \
+	{                                                                      \
+		qdec_emios_overflow_count_cw_callback(DEVICE_DT_INST_GET(n));  \
+	}                                                                      \
+                                                                               \
+	static void qdec##n##_emios_overflow_count_ccw_callback(void)          \
+	{                                                                      \
+		qdec_emios_overflow_count_ccw_callback(DEVICE_DT_INST_GET(n)); \
 	}
 
-#define EMIOS_NXP_S32_INSTANCE_CHECK(idx, node_id)                                                 \
+#define EMIOS_NXP_S32_INSTANCE_CHECK(idx, node_id)                  \
 	((DT_REG_ADDR(node_id) == IP_EMIOS_##idx##_BASE) ? idx : 0)
 
-#define EMIOS_NXP_S32_GET_INSTANCE(node_id)                                                        \
+#define EMIOS_NXP_S32_GET_INSTANCE(node_id) \
 	LISTIFY(__DEBRACKET eMIOS_INSTANCE_COUNT, EMIOS_NXP_S32_INSTANCE_CHECK, (|), node_id)
 
-#define LCU_NXP_S32_INSTANCE_CHECK(idx, node_id)                                                   \
+#define LCU_NXP_S32_INSTANCE_CHECK(idx, node_id)                  \
 	((DT_REG_ADDR(node_id) == IP_LCU_##idx##_BASE) ? idx : 0)
 
-#define LCU_NXP_S32_GET_INSTANCE(node_id)                                                          \
+#define LCU_NXP_S32_GET_INSTANCE(node_id) \
 	LISTIFY(__DEBRACKET LCU_INSTANCE_COUNT, LCU_NXP_S32_INSTANCE_CHECK, (|), node_id)
 
 #define TRGMUX_NXP_S32_INSTANCE_CHECK(node_id) ((DT_REG_ADDR(node_id) == IP_TRGMUX_BASE) ? 0 : -1)
@@ -229,48 +229,48 @@ static int qdec_s32_initialize(const struct device *dev)
 #define TRGMUX_NXP_S32_GET_INSTANCE(node_id) TRGMUX_NXP_S32_INSTANCE_CHECK(node_id)
 
 /* LCU Logic Input Configuration */
-#define LogicInputCfg_Common(n, mux_sel_idx)                                                       \
-	{                                                                                          \
-		.MuxSel = DT_INST_PROP_BY_IDX(n, lcu_mux_sel, mux_sel_idx),                        \
-		.SwSynMode = LCU_IP_SW_SYNC_IMMEDIATE,                                             \
-		.SwValue = LCU_IP_SW_OVERRIDE_LOGIC_LOW,                                           \
+#define LogicInputCfg_Common(n, mux_sel_idx)                                \
+	{                                                                   \
+		.MuxSel = DT_INST_PROP_BY_IDX(n, lcu_mux_sel, mux_sel_idx), \
+		.SwSynMode = LCU_IP_SW_SYNC_IMMEDIATE,                      \
+		.SwValue = LCU_IP_SW_OVERRIDE_LOGIC_LOW,                    \
 	};
-#define LogicInput_Config_Common(n, hw_lc_input_id, logic_input_n_cfg)                             \
-	{                                                                                          \
-		.xLogicInputId =                                                                   \
-			{                                                                          \
-				.HwInstId = LCU_NXP_S32_GET_INSTANCE(DT_INST_PHANDLE(n, lcu)),     \
-				.HwLcInputId =                                                     \
-					DT_INST_PROP_BY_IDX(n, lcu_input_idx, hw_lc_input_id),     \
-			},                                                                         \
-		.pxLcInputConfig = &logic_input_n_cfg,                                             \
+#define LogicInput_Config_Common(n, hw_lc_input_id, logic_input_n_cfg)                         \
+	{                                                                                      \
+		.xLogicInputId =                                                               \
+			{                                                                      \
+				.HwInstId = LCU_NXP_S32_GET_INSTANCE(DT_INST_PHANDLE(n, lcu)), \
+				.HwLcInputId =                                                 \
+					DT_INST_PROP_BY_IDX(n, lcu_input_idx, hw_lc_input_id), \
+			},                                                                     \
+		.pxLcInputConfig = &logic_input_n_cfg,                                         \
 	};
 
 /* LCU Logic Output Configuration */
-#define LogicOutputCfg_Common(En_Debug_Mode, Lut_Control, Lut_Rise_Filt, Lut_Fall_Filt)            \
-	{                                                                                          \
-		.EnDebugMode = (boolean)En_Debug_Mode,                                             \
-		.LutControl = Lut_Control,                                                         \
-		.LutRiseFilt = Lut_Rise_Filt,                                                      \
-		.LutFallFilt = Lut_Fall_Filt,                                                      \
-		.EnLutDma = (boolean)FALSE,                                                        \
-		.EnForceDma = (boolean)FALSE,                                                      \
-		.EnLutInt = (boolean)FALSE,                                                        \
-		.EnForceInt = (boolean)FALSE,                                                      \
-		.InvertOutput = (boolean)FALSE,                                                    \
-		.ForceSignalSel = 0U,                                                              \
-		.ClearForceMode = LCU_IP_CLEAR_FORCE_SIGNAL_IMMEDIATE,                             \
-		.ForceSyncSel = LCU_IP_SYNC_SEL_INPUT0,                                            \
+#define LogicOutputCfg_Common(En_Debug_Mode, Lut_Control, Lut_Rise_Filt, Lut_Fall_Filt) \
+	{                                                                               \
+		.EnDebugMode = (boolean)En_Debug_Mode,                                  \
+		.LutControl = Lut_Control,                                              \
+		.LutRiseFilt = Lut_Rise_Filt,                                           \
+		.LutFallFilt = Lut_Fall_Filt,                                           \
+		.EnLutDma = (boolean)FALSE,                                             \
+		.EnForceDma = (boolean)FALSE,                                           \
+		.EnLutInt = (boolean)FALSE,                                             \
+		.EnForceInt = (boolean)FALSE,                                           \
+		.InvertOutput = (boolean)FALSE,                                         \
+		.ForceSignalSel = 0U,                                                   \
+		.ClearForceMode = LCU_IP_CLEAR_FORCE_SIGNAL_IMMEDIATE,                  \
+		.ForceSyncSel = LCU_IP_SYNC_SEL_INPUT0,                                 \
 	};
-#define LogicOutput_Config_Common(n, logic_output_cfg, hw_lc_output_id)                            \
-	{                                                                                          \
-		.xLogicOutputId =                                                                  \
-			{                                                                          \
-				.HwInstId = LCU_NXP_S32_GET_INSTANCE(DT_INST_PHANDLE(n, lcu)),     \
-				.HwLcOutputId = hw_lc_output_id,                                   \
-				.IntCallback = NULL_PTR,                                           \
-			},                                                                         \
-		.pxLcOutputConfig = &logic_output_cfg,                                             \
+#define LogicOutput_Config_Common(n, logic_output_cfg, hw_lc_output_id)                        \
+	{                                                                                      \
+		.xLogicOutputId =                                                              \
+			{                                                                      \
+				.HwInstId = LCU_NXP_S32_GET_INSTANCE(DT_INST_PHANDLE(n, lcu)), \
+				.HwLcOutputId = hw_lc_output_id,                               \
+				.IntCallback = NULL_PTR,                                       \
+			},                                                                     \
+		.pxLcOutputConfig = &logic_output_cfg,                                         \
 	};
 
 #define LCU_IP_INIT_CONFIG(n)                                                                                                                      \
@@ -394,13 +394,13 @@ static int qdec_s32_initialize(const struct device *dev)
 		.ppxLogicInputConfigArray = &Lcu_Ip_ppxLogicInputArray##n##_Config[0],                                                             \
 	};
 
-#define Trgmux_Ip_LogicTrigger_Config(n, logic_channel, output, input)                             \
-	{                                                                                          \
-		.LogicChannel = logic_channel,                                                     \
-		.Output = output,                                                                  \
-		.Input = input,                                                                    \
-		.HwInstId = TRGMUX_NXP_S32_GET_INSTANCE(DT_INST_PHANDLE(n, trgmux)),               \
-		.Lock = (boolean)FALSE,                                                            \
+#define Trgmux_Ip_LogicTrigger_Config(n, logic_channel, output, input)               \
+	{                                                                            \
+		.LogicChannel = logic_channel,                                       \
+		.Output = output,                                                    \
+		.Input = input,                                                      \
+		.HwInstId = TRGMUX_NXP_S32_GET_INSTANCE(DT_INST_PHANDLE(n, trgmux)), \
+		.Lock = (boolean)FALSE,                                              \
 	};
 
 #define TRGMUX_IP_INIT_CONFIG(n)                                                                               \
@@ -433,32 +433,32 @@ static int qdec_s32_initialize(const struct device *dev)
 						},                                                             \
 	};
 
-#define QDEC_NXP_S32_INIT(n)                                                                       \
-                                                                                                   \
-	static struct qdec_s32_data qdec_s32_##n##_data = {                                        \
-		.micro_ticks_per_rev = (double)(DT_INST_PROP(n, micro_ticks_per_rev) / 1000000),   \
-		.counter_CW = 1,                                                                   \
-		.counter_CCW = 1,                                                                  \
-	};                                                                                         \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	TRGMUX_IP_INIT_CONFIG(n)                                                                   \
-	LCU_IP_INIT_CONFIG(n)                                                                      \
-	EMIOS_NXP_S32_MCB_OVERFLOW_CALLBACK(n)                                                     \
-                                                                                                   \
-	static const struct qdec_s32_config qdec_s32_##n##_config = {                              \
-		.emios_inst = EMIOS_NXP_S32_GET_INSTANCE(DT_INST_PHANDLE(n, emios)),               \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
-		.trgmux_config = &Trgmux_Ip_Init_##n##_Config,                                     \
-		.lcu_config = &Lcu_Ip_Init_Config##n,                                              \
-		.emios_channels = {DT_INST_PROP_BY_IDX(n, emios_channels, EMIOS_CW_CH_IDX),        \
-				   DT_INST_PROP_BY_IDX(n, emios_channels, EMIOS_CCW_CH_IDX)},      \
-		.emios_cw_overflow_cb = &qdec##n##_emios_overflow_count_cw_callback,               \
-		.emios_ccw_overflow_cb = &qdec##n##_emios_overflow_count_ccw_callback,             \
-	};                                                                                         \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, qdec_s32_initialize, NULL, &qdec_s32_##n##_data,           \
-				     &qdec_s32_##n##_config, POST_KERNEL,                          \
+#define QDEC_NXP_S32_INIT(n)                                                                     \
+                                                                                                 \
+	static struct qdec_s32_data qdec_s32_##n##_data = {                                      \
+		.micro_ticks_per_rev = (double)(DT_INST_PROP(n, micro_ticks_per_rev) / 1000000), \
+		.counter_CW = 1,                                                                 \
+		.counter_CCW = 1,                                                                \
+	};                                                                                       \
+                                                                                                 \
+	PINCTRL_DT_INST_DEFINE(n);                                                               \
+	TRGMUX_IP_INIT_CONFIG(n)                                                                 \
+	LCU_IP_INIT_CONFIG(n)                                                                    \
+	EMIOS_NXP_S32_MCB_OVERFLOW_CALLBACK(n)                                                   \
+                                                                                                 \
+	static const struct qdec_s32_config qdec_s32_##n##_config = {                            \
+		.emios_inst = EMIOS_NXP_S32_GET_INSTANCE(DT_INST_PHANDLE(n, emios)),             \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                     \
+		.trgmux_config = &Trgmux_Ip_Init_##n##_Config,                                   \
+		.lcu_config = &Lcu_Ip_Init_Config##n,                                            \
+		.emios_channels = {DT_INST_PROP_BY_IDX(n, emios_channels, EMIOS_CW_CH_IDX),      \
+				   DT_INST_PROP_BY_IDX(n, emios_channels, EMIOS_CCW_CH_IDX)},    \
+		.emios_cw_overflow_cb = &qdec##n##_emios_overflow_count_cw_callback,             \
+		.emios_ccw_overflow_cb = &qdec##n##_emios_overflow_count_ccw_callback,           \
+	};                                                                                       \
+                                                                                                 \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, qdec_s32_initialize, NULL, &qdec_s32_##n##_data,         \
+				     &qdec_s32_##n##_config, POST_KERNEL,                        \
 				     CONFIG_SENSOR_INIT_PRIORITY, &qdec_s32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(QDEC_NXP_S32_INIT)

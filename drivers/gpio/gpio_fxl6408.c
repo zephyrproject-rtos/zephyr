@@ -25,8 +25,8 @@ LOG_MODULE_REGISTER(fxl6408, CONFIG_FXL6408_LOG_LEVEL);
 #define REG_INT_MASK            0x11
 #define REG_INT_STATUS          0x13
 
-#define SUPPORTED_FLAGS                                                                            \
-	(GPIO_INPUT | GPIO_OUTPUT | GPIO_OUTPUT_INIT_LOW | GPIO_OUTPUT_INIT_HIGH |                 \
+#define SUPPORTED_FLAGS                                                            \
+	(GPIO_INPUT | GPIO_OUTPUT | GPIO_OUTPUT_INIT_LOW | GPIO_OUTPUT_INIT_HIGH | \
 	 GPIO_PULL_DOWN | GPIO_PULL_UP | GPIO_ACTIVE_HIGH | GPIO_ACTIVE_LOW)
 
 /** Configuration data*/
@@ -387,24 +387,24 @@ static const struct gpio_driver_api gpio_fxl_driver = {
 	.port_toggle_bits = gpio_fxl6408_port_toggle_bits,
 };
 
-#define GPIO_FXL6408_DEVICE_INSTANCE(inst)                                                         \
-	static const struct gpio_fxl6408_config gpio_fxl6408_##inst##_cfg = {                      \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),            \
-			},                                                                         \
-		.i2c = I2C_DT_SPEC_INST_GET(inst)};                                                \
-                                                                                                   \
-	static struct gpio_fxl6408_drv_data gpio_fxl6408_##inst##_drvdata = {                      \
-		.reg_cache = {.input = 0x0,                                                        \
-			      .output = 0x00,                                                      \
-			      .dir = 0x0,                                                          \
-			      .high_z = 0xFF,                                                      \
-			      .pud_en = 0xFF,                                                      \
-			      .pud_sel = 0x0}};                                                    \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, gpio_fxl6408_init, NULL, &gpio_fxl6408_##inst##_drvdata,       \
-			      &gpio_fxl6408_##inst##_cfg, POST_KERNEL,                             \
+#define GPIO_FXL6408_DEVICE_INSTANCE(inst)                                                   \
+	static const struct gpio_fxl6408_config gpio_fxl6408_##inst##_cfg = {                \
+		.common =                                                                    \
+			{                                                                    \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),      \
+			},                                                                   \
+		.i2c = I2C_DT_SPEC_INST_GET(inst)};                                          \
+                                                                                             \
+	static struct gpio_fxl6408_drv_data gpio_fxl6408_##inst##_drvdata = {                \
+		.reg_cache = {.input = 0x0,                                                  \
+			      .output = 0x00,                                                \
+			      .dir = 0x0,                                                    \
+			      .high_z = 0xFF,                                                \
+			      .pud_en = 0xFF,                                                \
+			      .pud_sel = 0x0}};                                              \
+                                                                                             \
+	DEVICE_DT_INST_DEFINE(inst, gpio_fxl6408_init, NULL, &gpio_fxl6408_##inst##_drvdata, \
+			      &gpio_fxl6408_##inst##_cfg, POST_KERNEL,                       \
 			      CONFIG_GPIO_FXL6408_INIT_PRIORITY, &gpio_fxl_driver);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_FXL6408_DEVICE_INSTANCE)

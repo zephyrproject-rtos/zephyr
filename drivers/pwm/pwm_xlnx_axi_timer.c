@@ -173,24 +173,24 @@ static const struct pwm_driver_api xlnx_axi_timer_driver_api = {
 	.get_cycles_per_sec = xlnx_axi_timer_get_cycles_per_sec,
 };
 
-#define XLNX_AXI_TIMER_ASSERT_PROP_VAL(n, prop, val, str)                                          \
+#define XLNX_AXI_TIMER_ASSERT_PROP_VAL(n, prop, val, str) \
 	BUILD_ASSERT(DT_INST_PROP(n, prop) == val, str)
 
-#define XLNX_AXI_TIMER_INIT(n)                                                                     \
-	XLNX_AXI_TIMER_ASSERT_PROP_VAL(n, xlnx_gen0_assert, 1,                                     \
-				       "xlnx,gen0-assert must be 1 for pwm");                      \
-	XLNX_AXI_TIMER_ASSERT_PROP_VAL(n, xlnx_gen1_assert, 1,                                     \
-				       "xlnx,gen1-assert must be 1 for pwm");                      \
-	XLNX_AXI_TIMER_ASSERT_PROP_VAL(n, xlnx_one_timer_only, 0,                                  \
-				       "xlnx,one-timer-only must be 0 for pwm");                   \
-                                                                                                   \
-	static struct xlnx_axi_timer_config xlnx_axi_timer_config_##n = {                          \
-		.base = DT_INST_REG_ADDR(n),                                                       \
-		.freq = DT_INST_PROP(n, clock_frequency),                                          \
-		.cycles_max = GENMASK(DT_INST_PROP(n, xlnx_count_width) - 1, 0),                   \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, &xlnx_axi_timer_config_##n, POST_KERNEL,        \
+#define XLNX_AXI_TIMER_INIT(n)                                                              \
+	XLNX_AXI_TIMER_ASSERT_PROP_VAL(n, xlnx_gen0_assert, 1,                              \
+				       "xlnx,gen0-assert must be 1 for pwm");               \
+	XLNX_AXI_TIMER_ASSERT_PROP_VAL(n, xlnx_gen1_assert, 1,                              \
+				       "xlnx,gen1-assert must be 1 for pwm");               \
+	XLNX_AXI_TIMER_ASSERT_PROP_VAL(n, xlnx_one_timer_only, 0,                           \
+				       "xlnx,one-timer-only must be 0 for pwm");            \
+                                                                                            \
+	static struct xlnx_axi_timer_config xlnx_axi_timer_config_##n = {                   \
+		.base = DT_INST_REG_ADDR(n),                                                \
+		.freq = DT_INST_PROP(n, clock_frequency),                                   \
+		.cycles_max = GENMASK(DT_INST_PROP(n, xlnx_count_width) - 1, 0),            \
+	};                                                                                  \
+                                                                                            \
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, &xlnx_axi_timer_config_##n, POST_KERNEL, \
 			      CONFIG_PWM_INIT_PRIORITY, &xlnx_axi_timer_driver_api)
 
 DT_INST_FOREACH_STATUS_OKAY(XLNX_AXI_TIMER_INIT);

@@ -997,36 +997,36 @@ static const struct adc_driver_api lmp90xxx_adc_api = {
 #endif
 };
 
-#define ASSERT_LMP90XXX_CURRENT_VALID(v)                                                           \
-	BUILD_ASSERT(v == 0 || v == 100 || v == 200 || v == 300 || v == 400 || v == 500 ||         \
-			     v == 600 || v == 700 || v == 800 || v == 900 || v == 1000,            \
+#define ASSERT_LMP90XXX_CURRENT_VALID(v)                                                   \
+	BUILD_ASSERT(v == 0 || v == 100 || v == 200 || v == 300 || v == 400 || v == 500 || \
+			     v == 600 || v == 700 || v == 800 || v == 900 || v == 1000,    \
 		     "unsupported RTD current (" #v ")")
 
 #define LMP90XXX_UAMPS_TO_RTD_CUR_SEL(x) (x / 100)
 
 #define DT_INST_LMP90XXX(inst, t) DT_INST(inst, ti_lmp##t)
 
-#define LMP90XXX_INIT(t, n, res, ch)                                                               \
-	ASSERT_LMP90XXX_CURRENT_VALID(                                                             \
-		UTIL_AND(DT_NODE_HAS_PROP(DT_INST_LMP90XXX(n, t), rtd_current),                    \
-			 DT_PROP(DT_INST_LMP90XXX(n, t), rtd_current)));                           \
-	static struct lmp90xxx_data lmp##t##_data_##n = {                                          \
-		ADC_CONTEXT_INIT_TIMER(lmp##t##_data_##n, ctx),                                    \
-		ADC_CONTEXT_INIT_LOCK(lmp##t##_data_##n, ctx),                                     \
-		ADC_CONTEXT_INIT_SYNC(lmp##t##_data_##n, ctx),                                     \
-	};                                                                                         \
-	static const struct lmp90xxx_config lmp##t##_config_##n = {                                \
-		.bus = SPI_DT_SPEC_GET(DT_INST_LMP90XXX(n, t),                                     \
-				       SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8),    \
-				       0),                                                         \
-		.drdyb = GPIO_DT_SPEC_GET_OR(DT_INST_LMP90XXX(n, t), drdyb_gpios, {0}),            \
-		.rtd_current = LMP90XXX_UAMPS_TO_RTD_CUR_SEL(                                      \
-			DT_PROP_OR(DT_INST_LMP90XXX(n, t), rtd_current, 0)),                       \
-		.resolution = res,                                                                 \
-		.channels = ch,                                                                    \
-	};                                                                                         \
-	DEVICE_DT_DEFINE(DT_INST_LMP90XXX(n, t), &lmp90xxx_init, NULL, &lmp##t##_data_##n,         \
-			 &lmp##t##_config_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,              \
+#define LMP90XXX_INIT(t, n, res, ch)                                                            \
+	ASSERT_LMP90XXX_CURRENT_VALID(                                                          \
+		UTIL_AND(DT_NODE_HAS_PROP(DT_INST_LMP90XXX(n, t), rtd_current),                 \
+			 DT_PROP(DT_INST_LMP90XXX(n, t), rtd_current)));                        \
+	static struct lmp90xxx_data lmp##t##_data_##n = {                                       \
+		ADC_CONTEXT_INIT_TIMER(lmp##t##_data_##n, ctx),                                 \
+		ADC_CONTEXT_INIT_LOCK(lmp##t##_data_##n, ctx),                                  \
+		ADC_CONTEXT_INIT_SYNC(lmp##t##_data_##n, ctx),                                  \
+	};                                                                                      \
+	static const struct lmp90xxx_config lmp##t##_config_##n = {                             \
+		.bus = SPI_DT_SPEC_GET(DT_INST_LMP90XXX(n, t),                                  \
+				       SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), \
+				       0),                                                      \
+		.drdyb = GPIO_DT_SPEC_GET_OR(DT_INST_LMP90XXX(n, t), drdyb_gpios, {0}),         \
+		.rtd_current = LMP90XXX_UAMPS_TO_RTD_CUR_SEL(                                   \
+			DT_PROP_OR(DT_INST_LMP90XXX(n, t), rtd_current, 0)),                    \
+		.resolution = res,                                                              \
+		.channels = ch,                                                                 \
+	};                                                                                      \
+	DEVICE_DT_DEFINE(DT_INST_LMP90XXX(n, t), &lmp90xxx_init, NULL, &lmp##t##_data_##n,      \
+			 &lmp##t##_config_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,           \
 			 &lmp90xxx_adc_api);
 
 /*

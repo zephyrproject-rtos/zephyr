@@ -41,13 +41,13 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #define DCACHE_INVALIDATE(addr, size) SCB_InvalidateDCache_by_Addr((uint32_t *)addr, size)
 #define DCACHE_CLEAN(addr, size)      SCB_CleanDCache_by_Addr((uint32_t *)addr, size)
 #else
-#define DCACHE_INVALIDATE(addr, size)                                                              \
-	{                                                                                          \
-		;                                                                                  \
+#define DCACHE_INVALIDATE(addr, size) \
+	{                             \
+		;                     \
 	}
-#define DCACHE_CLEAN(addr, size)                                                                   \
-	{                                                                                          \
-		;                                                                                  \
+#define DCACHE_CLEAN(addr, size) \
+	{                        \
+		;                \
 	}
 #endif
 
@@ -101,9 +101,9 @@ struct i2s_sam_dev_data {
 	struct stream tx;
 };
 
-#define MODULO_INC(val, max)                                                                       \
-	{                                                                                          \
-		val = (++val < max) ? val : 0;                                                     \
+#define MODULO_INC(val, max)                   \
+	{                                      \
+		val = (++val < max) ? val : 0; \
 	}
 
 static const struct device *get_dev_from_dma_channel(uint32_t dma_channel);

@@ -375,31 +375,31 @@ static const struct adc_driver_api adc_sam_api = {
 #endif
 };
 
-#define ADC_SAM_DEVICE(n)                                                                          \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	static void adc_sam_irq_config_##n(const struct device *dev)                               \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), adc_sam_isr,                \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-	}                                                                                          \
-	static const struct adc_sam_config adc_sam_config_##n = {                                  \
-		.regs = (Adc *)DT_INST_REG_ADDR(n),                                                \
-		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),                                         \
-		.prescaler = DT_INST_PROP(n, prescaler),                                           \
-		.startup_time = DT_INST_ENUM_IDX(n, startup_time),                                 \
-		.settling_time = DT_INST_ENUM_IDX(n, settling_time),                               \
-		.tracking_time = DT_INST_ENUM_IDX(n, tracking_time),                               \
-		.config_func = &adc_sam_irq_config_##n,                                            \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-	};                                                                                         \
-	static struct adc_sam_data adc_sam_data_##n = {                                            \
-		ADC_CONTEXT_INIT_TIMER(adc_sam_data_##n, ctx),                                     \
-		ADC_CONTEXT_INIT_LOCK(adc_sam_data_##n, ctx),                                      \
-		ADC_CONTEXT_INIT_SYNC(adc_sam_data_##n, ctx),                                      \
-		.dev = DEVICE_DT_INST_GET(n),                                                      \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, adc_sam_init, NULL, &adc_sam_data_##n, &adc_sam_config_##n,       \
+#define ADC_SAM_DEVICE(n)                                                                    \
+	PINCTRL_DT_INST_DEFINE(n);                                                           \
+	static void adc_sam_irq_config_##n(const struct device *dev)                         \
+	{                                                                                    \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), adc_sam_isr,          \
+			    DEVICE_DT_INST_GET(n), 0);                                       \
+		irq_enable(DT_INST_IRQN(n));                                                 \
+	}                                                                                    \
+	static const struct adc_sam_config adc_sam_config_##n = {                            \
+		.regs = (Adc *)DT_INST_REG_ADDR(n),                                          \
+		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),                                   \
+		.prescaler = DT_INST_PROP(n, prescaler),                                     \
+		.startup_time = DT_INST_ENUM_IDX(n, startup_time),                           \
+		.settling_time = DT_INST_ENUM_IDX(n, settling_time),                         \
+		.tracking_time = DT_INST_ENUM_IDX(n, tracking_time),                         \
+		.config_func = &adc_sam_irq_config_##n,                                      \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                   \
+	};                                                                                   \
+	static struct adc_sam_data adc_sam_data_##n = {                                      \
+		ADC_CONTEXT_INIT_TIMER(adc_sam_data_##n, ctx),                               \
+		ADC_CONTEXT_INIT_LOCK(adc_sam_data_##n, ctx),                                \
+		ADC_CONTEXT_INIT_SYNC(adc_sam_data_##n, ctx),                                \
+		.dev = DEVICE_DT_INST_GET(n),                                                \
+	};                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, adc_sam_init, NULL, &adc_sam_data_##n, &adc_sam_config_##n, \
 			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, &adc_sam_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_SAM_DEVICE)

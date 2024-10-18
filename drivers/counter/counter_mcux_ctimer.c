@@ -287,32 +287,32 @@ static const struct counter_driver_api mcux_ctimer_driver_api = {
 	.get_freq = mcux_lpc_ctimer_get_freq,
 };
 
-#define COUNTER_LPC_CTIMER_DEVICE(id)                                                              \
-	static void mcux_lpc_ctimer_irq_config_##id(const struct device *dev);                     \
-	static struct mcux_lpc_ctimer_config mcux_lpc_ctimer_config_##id = {                       \
-		.info =                                                                            \
-			{                                                                          \
-				.max_top_value = UINT32_MAX,                                       \
-				.flags = COUNTER_CONFIG_INFO_COUNT_UP,                             \
-				.channels = NUM_CHANNELS,                                          \
-			},                                                                         \
-		.base = (CTIMER_Type *)DT_INST_REG_ADDR(id),                                       \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),                               \
-		.clock_subsys = (clock_control_subsys_t)(DT_INST_CLOCKS_CELL(id, name)),           \
-		.mode = DT_INST_PROP(id, mode),                                                    \
-		.input = DT_INST_PROP(id, input),                                                  \
-		.prescale = DT_INST_PROP(id, prescale),                                            \
-		.irq_config_func = mcux_lpc_ctimer_irq_config_##id,                                \
-	};                                                                                         \
-	static struct mcux_lpc_ctimer_data mcux_lpc_ctimer_data_##id;                              \
-	DEVICE_DT_INST_DEFINE(id, &mcux_lpc_ctimer_init, NULL, &mcux_lpc_ctimer_data_##id,         \
-			      &mcux_lpc_ctimer_config_##id, POST_KERNEL,                           \
-			      CONFIG_COUNTER_INIT_PRIORITY, &mcux_ctimer_driver_api);              \
-	static void mcux_lpc_ctimer_irq_config_##id(const struct device *dev)                      \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), mcux_lpc_ctimer_isr,      \
-			    DEVICE_DT_INST_GET(id), 0);                                            \
-		irq_enable(DT_INST_IRQN(id));                                                      \
+#define COUNTER_LPC_CTIMER_DEVICE(id)                                                         \
+	static void mcux_lpc_ctimer_irq_config_##id(const struct device *dev);                \
+	static struct mcux_lpc_ctimer_config mcux_lpc_ctimer_config_##id = {                  \
+		.info =                                                                       \
+			{                                                                     \
+				.max_top_value = UINT32_MAX,                                  \
+				.flags = COUNTER_CONFIG_INFO_COUNT_UP,                        \
+				.channels = NUM_CHANNELS,                                     \
+			},                                                                    \
+		.base = (CTIMER_Type *)DT_INST_REG_ADDR(id),                                  \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),                          \
+		.clock_subsys = (clock_control_subsys_t)(DT_INST_CLOCKS_CELL(id, name)),      \
+		.mode = DT_INST_PROP(id, mode),                                               \
+		.input = DT_INST_PROP(id, input),                                             \
+		.prescale = DT_INST_PROP(id, prescale),                                       \
+		.irq_config_func = mcux_lpc_ctimer_irq_config_##id,                           \
+	};                                                                                    \
+	static struct mcux_lpc_ctimer_data mcux_lpc_ctimer_data_##id;                         \
+	DEVICE_DT_INST_DEFINE(id, &mcux_lpc_ctimer_init, NULL, &mcux_lpc_ctimer_data_##id,    \
+			      &mcux_lpc_ctimer_config_##id, POST_KERNEL,                      \
+			      CONFIG_COUNTER_INIT_PRIORITY, &mcux_ctimer_driver_api);         \
+	static void mcux_lpc_ctimer_irq_config_##id(const struct device *dev)                 \
+	{                                                                                     \
+		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), mcux_lpc_ctimer_isr, \
+			    DEVICE_DT_INST_GET(id), 0);                                       \
+		irq_enable(DT_INST_IRQN(id));                                                 \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_LPC_CTIMER_DEVICE)

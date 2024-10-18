@@ -1298,51 +1298,51 @@ static struct mspi_driver_api mspi_ambiq_driver_api = {
 			.pin_cnt = ARRAY_SIZE(Z_PINCTRL_STATE_PINS_NAME(state_idx, node_id))     \
 		}))
 
-#define MSPI_PINCTRL_STATES_DEFINE(node_id)                                                        \
-	static const struct pinctrl_state Z_PINCTRL_STATES_NAME(node_id)[] = {                     \
+#define MSPI_PINCTRL_STATES_DEFINE(node_id)                                                    \
+	static const struct pinctrl_state Z_PINCTRL_STATES_NAME(node_id)[] = {                 \
 		LISTIFY(DT_NUM_PINCTRL_STATES(node_id),                                          \
 			MSPI_PINCTRL_STATE_INIT, (,), node_id) };
 
-#define MSPI_PINCTRL_DT_DEFINE(node_id)                                                            \
+#define MSPI_PINCTRL_DT_DEFINE(node_id)                                                  \
 	LISTIFY(DT_NUM_PINCTRL_STATES(node_id),                                          \
-			Z_PINCTRL_STATE_PINS_DEFINE, (;), node_id);           \
-	MSPI_PINCTRL_STATES_DEFINE(node_id)                                                        \
-	Z_PINCTRL_DEV_CONFIG_STATIC Z_PINCTRL_DEV_CONFIG_CONST struct pinctrl_dev_config           \
+			Z_PINCTRL_STATE_PINS_DEFINE, (;), node_id); \
+	MSPI_PINCTRL_STATES_DEFINE(node_id)                                              \
+	Z_PINCTRL_DEV_CONFIG_STATIC Z_PINCTRL_DEV_CONFIG_CONST struct pinctrl_dev_config \
 	Z_PINCTRL_DEV_CONFIG_NAME(node_id) = Z_PINCTRL_DEV_CONFIG_INIT(node_id)
 
-#define MSPI_CONFIG(n)                                                                             \
-	{                                                                                          \
-		.channel_num = (DT_INST_REG_ADDR(n) - MSPI0_BASE) / (DT_INST_REG_SIZE(n) * 4),     \
-		.op_mode = MSPI_OP_MODE_CONTROLLER,                                                \
-		.duplex = MSPI_HALF_DUPLEX,                                                        \
-		.max_freq = MSPI_MAX_FREQ,                                                         \
-		.dqs_support = false,                                                              \
-		.num_periph = DT_INST_CHILD_NUM(n),                                                \
-		.sw_multi_periph = DT_INST_PROP(n, software_multiperipheral),                      \
+#define MSPI_CONFIG(n)                                                                         \
+	{                                                                                      \
+		.channel_num = (DT_INST_REG_ADDR(n) - MSPI0_BASE) / (DT_INST_REG_SIZE(n) * 4), \
+		.op_mode = MSPI_OP_MODE_CONTROLLER,                                            \
+		.duplex = MSPI_HALF_DUPLEX,                                                    \
+		.max_freq = MSPI_MAX_FREQ,                                                     \
+		.dqs_support = false,                                                          \
+		.num_periph = DT_INST_CHILD_NUM(n),                                            \
+		.sw_multi_periph = DT_INST_PROP(n, software_multiperipheral),                  \
 	}
 
-#define MSPI_HAL_DEVICE_CONFIG(n, cmdq, cmdq_size)                                                 \
-	{                                                                                          \
-		.ui8WriteLatency = 0,                                                              \
-		.ui8TurnAround = 0,                                                                \
-		.eAddrCfg = 0,                                                                     \
-		.eInstrCfg = 0,                                                                    \
-		.ui8ReadInstr = 0,                                                                 \
-		.ui8WriteInstr = 0,                                                                \
-		.eDeviceConfig = AM_HAL_MSPI_FLASH_SERIAL_CE0,                                     \
-		.eSpiMode = AM_HAL_MSPI_SPI_MODE_0,                                                \
-		.eClockFreq = MSPI_MAX_FREQ / DT_INST_PROP_OR(n, clock_frequency, MSPI_MAX_FREQ),  \
-		.bEnWriteLatency = false,                                                          \
-		.bSendAddr = false,                                                                \
-		.bSendInstr = false,                                                               \
-		.bTurnaround = false,                                                              \
-		.bEmulateDDR = false,                                                              \
-		.ui16DMATimeLimit = 0,                                                             \
-		.eDMABoundary = AM_HAL_MSPI_BOUNDARY_NONE,                                         \
-		.ui32TCBSize = cmdq_size,                                                          \
-		.pTCB = cmdq,                                                                      \
-		.scramblingStartAddr = 0,                                                          \
-		.scramblingEndAddr = 0,                                                            \
+#define MSPI_HAL_DEVICE_CONFIG(n, cmdq, cmdq_size)                                                \
+	{                                                                                         \
+		.ui8WriteLatency = 0,                                                             \
+		.ui8TurnAround = 0,                                                               \
+		.eAddrCfg = 0,                                                                    \
+		.eInstrCfg = 0,                                                                   \
+		.ui8ReadInstr = 0,                                                                \
+		.ui8WriteInstr = 0,                                                               \
+		.eDeviceConfig = AM_HAL_MSPI_FLASH_SERIAL_CE0,                                    \
+		.eSpiMode = AM_HAL_MSPI_SPI_MODE_0,                                               \
+		.eClockFreq = MSPI_MAX_FREQ / DT_INST_PROP_OR(n, clock_frequency, MSPI_MAX_FREQ), \
+		.bEnWriteLatency = false,                                                         \
+		.bSendAddr = false,                                                               \
+		.bSendInstr = false,                                                              \
+		.bTurnaround = false,                                                             \
+		.bEmulateDDR = false,                                                             \
+		.ui16DMATimeLimit = 0,                                                            \
+		.eDMABoundary = AM_HAL_MSPI_BOUNDARY_NONE,                                        \
+		.ui32TCBSize = cmdq_size,                                                         \
+		.pTCB = cmdq,                                                                     \
+		.scramblingStartAddr = 0,                                                         \
+		.scramblingEndAddr = 0,                                                           \
 	}
 
 #define AMBIQ_MSPI_DEFINE(n)                                                                       \

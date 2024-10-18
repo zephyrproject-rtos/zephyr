@@ -619,20 +619,20 @@ static const struct ethphy_driver_api phy_adin2111_api = {
 	.write = phy_adin2111_reg_write,
 };
 
-#define ADIN2111_PHY_INITIALIZE(n)                                                                 \
-	static const struct phy_adin2111_config phy_adin2111_config_##n = {                        \
-		.mdio = DEVICE_DT_GET(DT_INST_BUS(n)),                                             \
-		.phy_addr = DT_INST_REG_ADDR(n),                                                   \
-		.led0_en = DT_INST_PROP(n, led0_en),                                               \
-		.led1_en = DT_INST_PROP(n, led1_en),                                               \
-		.tx_24v = !(DT_INST_PROP(n, disable_tx_mode_24v)),                                 \
+#define ADIN2111_PHY_INITIALIZE(n)                                                             \
+	static const struct phy_adin2111_config phy_adin2111_config_##n = {                    \
+		.mdio = DEVICE_DT_GET(DT_INST_BUS(n)),                                         \
+		.phy_addr = DT_INST_REG_ADDR(n),                                               \
+		.led0_en = DT_INST_PROP(n, led0_en),                                           \
+		.led1_en = DT_INST_PROP(n, led1_en),                                           \
+		.tx_24v = !(DT_INST_PROP(n, disable_tx_mode_24v)),                             \
 		IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(adi_adin1100_phy),		\
-		(.mii = 1)) };                \
-	static struct phy_adin2111_data phy_adin2111_data_##n = {                                  \
-		.sem = Z_SEM_INITIALIZER(phy_adin2111_data_##n.sem, 1, 1),                         \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &phy_adin2111_init, NULL, &phy_adin2111_data_##n,                 \
-			      &phy_adin2111_config_##n, POST_KERNEL, CONFIG_PHY_INIT_PRIORITY,     \
+		(.mii = 1)) };            \
+	static struct phy_adin2111_data phy_adin2111_data_##n = {                              \
+		.sem = Z_SEM_INITIALIZER(phy_adin2111_data_##n.sem, 1, 1),                     \
+	};                                                                                     \
+	DEVICE_DT_INST_DEFINE(n, &phy_adin2111_init, NULL, &phy_adin2111_data_##n,             \
+			      &phy_adin2111_config_##n, POST_KERNEL, CONFIG_PHY_INIT_PRIORITY, \
 			      &phy_adin2111_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADIN2111_PHY_INITIALIZE)

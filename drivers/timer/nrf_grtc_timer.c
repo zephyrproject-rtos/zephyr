@@ -40,11 +40,11 @@
 
 #define MAX_CC_LATCH_WAIT_TIME_US 77
 
-#define CYC_PER_TICK                                                                               \
+#define CYC_PER_TICK                                                                         \
 	((uint64_t)sys_clock_hw_cycles_per_sec() / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
 #define COUNTER_SPAN (GRTC_SYSCOUNTERL_VALUE_Msk | ((uint64_t)GRTC_SYSCOUNTERH_VALUE_Msk << 32))
-#define MAX_TICKS                                                                                  \
+#define MAX_TICKS                                                                             \
 	(((COUNTER_SPAN / CYC_PER_TICK) > INT_MAX) ? INT_MAX : (COUNTER_SPAN / CYC_PER_TICK))
 
 #define MAX_CYCLES (MAX_TICKS * CYC_PER_TICK)
@@ -67,8 +67,8 @@ static nrfx_grtc_channel_t system_clock_channel_data = {
 	.channel = (uint8_t)-1,
 };
 
-#define IS_CHANNEL_ALLOWED_ASSERT(chan)                                                            \
-	__ASSERT_NO_MSG((NRFX_GRTC_CONFIG_ALLOWED_CC_CHANNELS_MASK & (1UL << (chan))) &&           \
+#define IS_CHANNEL_ALLOWED_ASSERT(chan)                                                  \
+	__ASSERT_NO_MSG((NRFX_GRTC_CONFIG_ALLOWED_CC_CHANNELS_MASK & (1UL << (chan))) && \
 			((chan) != system_clock_channel_data.channel))
 
 static inline uint64_t counter_sub(uint64_t a, uint64_t b)
@@ -499,7 +499,7 @@ static int sys_clock_driver_init(void)
 	z_nrf_clock_control_lf_on(mode);
 #endif
 
-#if defined(CONFIG_NRF_GRTC_TIMER_CLOCK_MANAGEMENT) &&                                             \
+#if defined(CONFIG_NRF_GRTC_TIMER_CLOCK_MANAGEMENT) &&                     \
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lfxo)) && NRF_GRTC_HAS_CLKSEL
 	/* Switch to LFXO as the low-frequency clock source. */
 	nrfx_grtc_clock_source_set(NRF_GRTC_CLKSEL_LFXO);

@@ -225,38 +225,38 @@ int gpio_sam_init(const struct device *dev)
 	return 0;
 }
 
-#define GPIO_SAM_IRQ_CONNECT(n, m)                                                                 \
-	do {                                                                                       \
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, m, irq), DT_INST_IRQ_BY_IDX(n, m, priority),     \
-			    gpio_sam_isr, DEVICE_DT_INST_GET(n), 0);                               \
-		irq_enable(DT_INST_IRQ_BY_IDX(n, m, irq));                                         \
+#define GPIO_SAM_IRQ_CONNECT(n, m)                                                             \
+	do {                                                                                   \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, m, irq), DT_INST_IRQ_BY_IDX(n, m, priority), \
+			    gpio_sam_isr, DEVICE_DT_INST_GET(n), 0);                           \
+		irq_enable(DT_INST_IRQ_BY_IDX(n, m, irq));                                     \
 	} while (false)
 
-#define GPIO_SAM_INIT(n)                                                                           \
-	static void port_##n##_sam_config_func(const struct device *dev);                          \
-                                                                                                   \
-	static const struct gpio_sam_config port_##n##_sam_config = {                              \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
-		.regs = (Gpio *)DT_INST_REG_ADDR(n),                                               \
-		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),                                         \
-		.config_func = port_##n##_sam_config_func,                                         \
-	};                                                                                         \
-                                                                                                   \
-	static struct gpio_sam_runtime port_##n##_sam_runtime;                                     \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, gpio_sam_init, NULL, &port_##n##_sam_runtime,                     \
-			      &port_##n##_sam_config, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,     \
-			      &gpio_sam_api);                                                      \
-                                                                                                   \
-	static void port_##n##_sam_config_func(const struct device *dev)                           \
-	{                                                                                          \
-		GPIO_SAM_IRQ_CONNECT(n, 0);                                                        \
-		GPIO_SAM_IRQ_CONNECT(n, 1);                                                        \
-		GPIO_SAM_IRQ_CONNECT(n, 2);                                                        \
-		GPIO_SAM_IRQ_CONNECT(n, 3);                                                        \
+#define GPIO_SAM_INIT(n)                                                                       \
+	static void port_##n##_sam_config_func(const struct device *dev);                      \
+                                                                                               \
+	static const struct gpio_sam_config port_##n##_sam_config = {                          \
+		.common =                                                                      \
+			{                                                                      \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),           \
+			},                                                                     \
+		.regs = (Gpio *)DT_INST_REG_ADDR(n),                                           \
+		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),                                     \
+		.config_func = port_##n##_sam_config_func,                                     \
+	};                                                                                     \
+                                                                                               \
+	static struct gpio_sam_runtime port_##n##_sam_runtime;                                 \
+                                                                                               \
+	DEVICE_DT_INST_DEFINE(n, gpio_sam_init, NULL, &port_##n##_sam_runtime,                 \
+			      &port_##n##_sam_config, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, \
+			      &gpio_sam_api);                                                  \
+                                                                                               \
+	static void port_##n##_sam_config_func(const struct device *dev)                       \
+	{                                                                                      \
+		GPIO_SAM_IRQ_CONNECT(n, 0);                                                    \
+		GPIO_SAM_IRQ_CONNECT(n, 1);                                                    \
+		GPIO_SAM_IRQ_CONNECT(n, 2);                                                    \
+		GPIO_SAM_IRQ_CONNECT(n, 3);                                                    \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_SAM_INIT)

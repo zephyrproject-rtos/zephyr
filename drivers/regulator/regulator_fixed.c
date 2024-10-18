@@ -102,19 +102,19 @@ static int regulator_fixed_init(const struct device *dev)
 	return regulator_common_init(dev, false);
 }
 
-#define REGULATOR_FIXED_DEFINE(inst)                                                               \
-	BUILD_ASSERT(DT_INST_PROP_OR(inst, regulator_min_microvolt, 0) ==                          \
-			     DT_INST_PROP_OR(inst, regulator_max_microvolt, 0),                    \
-		     "Regulator requires fixed voltages");                                         \
-	static struct regulator_fixed_data data##inst;                                             \
-                                                                                                   \
-	static const struct regulator_fixed_config config##inst = {                                \
-		.common = REGULATOR_DT_INST_COMMON_CONFIG_INIT(inst),                              \
-		.enable = GPIO_DT_SPEC_INST_GET_OR(inst, enable_gpios, {0}),                       \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, regulator_fixed_init, NULL, &data##inst, &config##inst,        \
-			      POST_KERNEL, CONFIG_REGULATOR_FIXED_INIT_PRIORITY,                   \
+#define REGULATOR_FIXED_DEFINE(inst)                                                        \
+	BUILD_ASSERT(DT_INST_PROP_OR(inst, regulator_min_microvolt, 0) ==                   \
+			     DT_INST_PROP_OR(inst, regulator_max_microvolt, 0),             \
+		     "Regulator requires fixed voltages");                                  \
+	static struct regulator_fixed_data data##inst;                                      \
+                                                                                            \
+	static const struct regulator_fixed_config config##inst = {                         \
+		.common = REGULATOR_DT_INST_COMMON_CONFIG_INIT(inst),                       \
+		.enable = GPIO_DT_SPEC_INST_GET_OR(inst, enable_gpios, {0}),                \
+	};                                                                                  \
+                                                                                            \
+	DEVICE_DT_INST_DEFINE(inst, regulator_fixed_init, NULL, &data##inst, &config##inst, \
+			      POST_KERNEL, CONFIG_REGULATOR_FIXED_INIT_PRIORITY,            \
 			      &regulator_fixed_api);
 
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_FIXED_DEFINE)

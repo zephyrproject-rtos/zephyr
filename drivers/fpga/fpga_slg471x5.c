@@ -163,27 +163,27 @@ static int fpga_slg471x5_init(const struct device *dev)
 	return 0;
 }
 
-#define SLG471X5_INIT(type, inst)                                                                  \
-	static struct fpga_slg471x5_data fpga_slg##type##_data_##inst;                             \
-                                                                                                   \
-	static mem_region_t fpga_slg##type##_verify_list[] = FPGA_SLG##type##_VERIFY_LIST;         \
-                                                                                                   \
-	static const struct fpga_slg471x5_config fpga_slg##type##_config_##inst = {                \
-		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.verify_list = fpga_slg##type##_verify_list,                                       \
-		.verify_list_len = sizeof(fpga_slg##type##_verify_list) / sizeof(mem_region_t),    \
-		.try_unconfigured = DT_INST_NODE_HAS_PROP(inst, try_unconfigured),                 \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, fpga_slg471x5_init, NULL, &fpga_slg##type##_data_##inst,       \
-			      &fpga_slg##type##_config_##inst, POST_KERNEL,                        \
+#define SLG471X5_INIT(type, inst)                                                               \
+	static struct fpga_slg471x5_data fpga_slg##type##_data_##inst;                          \
+                                                                                                \
+	static mem_region_t fpga_slg##type##_verify_list[] = FPGA_SLG##type##_VERIFY_LIST;      \
+                                                                                                \
+	static const struct fpga_slg471x5_config fpga_slg##type##_config_##inst = {             \
+		.bus = I2C_DT_SPEC_INST_GET(inst),                                              \
+		.verify_list = fpga_slg##type##_verify_list,                                    \
+		.verify_list_len = sizeof(fpga_slg##type##_verify_list) / sizeof(mem_region_t), \
+		.try_unconfigured = DT_INST_NODE_HAS_PROP(inst, try_unconfigured),              \
+	};                                                                                      \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(inst, fpga_slg471x5_init, NULL, &fpga_slg##type##_data_##inst,    \
+			      &fpga_slg##type##_config_##inst, POST_KERNEL,                     \
 			      CONFIG_FPGA_INIT_PRIORITY, &fpga_slg471x5_api)
 
-#define FPGA_SLG47105_VERIFY_LIST                                                                  \
-	{                                                                                          \
-		{.addr = 0x00, .len = 0x47},                                                       \
-		{.addr = 0x4C, .len = 0x01},                                                       \
-		{.addr = 0xFD, .len = 0x01},                                                       \
+#define FPGA_SLG47105_VERIFY_LIST            \
+	{                                    \
+		{.addr = 0x00, .len = 0x47}, \
+		{.addr = 0x4C, .len = 0x01}, \
+		{.addr = 0xFD, .len = 0x01}, \
 	}
 
 #define SLG47105_INIT(inst) SLG471X5_INIT(47105, inst)
@@ -191,11 +191,11 @@ static int fpga_slg471x5_init(const struct device *dev)
 #define DT_DRV_COMPAT renesas_slg47105
 DT_INST_FOREACH_STATUS_OKAY(SLG47105_INIT)
 
-#define FPGA_SLG47115_VERIFY_LIST                                                                  \
-	{                                                                                          \
-		{.addr = 0x00, .len = 0x47},                                                       \
-		{.addr = 0x4C, .len = 0x01},                                                       \
-		{.addr = 0xFD, .len = 0x01},                                                       \
+#define FPGA_SLG47115_VERIFY_LIST            \
+	{                                    \
+		{.addr = 0x00, .len = 0x47}, \
+		{.addr = 0x4C, .len = 0x01}, \
+		{.addr = 0xFD, .len = 0x01}, \
 	}
 
 #define SLG47115_INIT(inst) SLG471X5_INIT(47115, inst)

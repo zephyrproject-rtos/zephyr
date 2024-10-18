@@ -826,9 +826,9 @@ static int lsm6dso16is_init(const struct device *dev)
  * LSM6DSO16IS_DEFINE_I2C().
  */
 
-#define LSM6DSO16IS_DEVICE_INIT(inst)                                                              \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, lsm6dso16is_init, NULL, &lsm6dso16is_data_##inst,       \
-				     &lsm6dso16is_config_##inst, POST_KERNEL,                      \
+#define LSM6DSO16IS_DEVICE_INIT(inst)                                                        \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, lsm6dso16is_init, NULL, &lsm6dso16is_data_##inst, \
+				     &lsm6dso16is_config_##inst, POST_KERNEL,                \
 				     CONFIG_SENSOR_INIT_PRIORITY, &lsm6dso16is_driver_api);
 
 /*
@@ -836,8 +836,8 @@ static int lsm6dso16is_init(const struct device *dev)
  */
 
 #ifdef CONFIG_LSM6DSO16IS_TRIGGER
-#define LSM6DSO16IS_CFG_IRQ(inst)                                                                  \
-	.trig_enabled = true, .gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, irq_gpios),                 \
+#define LSM6DSO16IS_CFG_IRQ(inst)                                                  \
+	.trig_enabled = true, .gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, irq_gpios), \
 	.drdy_pin = DT_INST_PROP(inst, drdy_pin)
 #else
 #define LSM6DSO16IS_CFG_IRQ(inst)
@@ -845,32 +845,32 @@ static int lsm6dso16is_init(const struct device *dev)
 
 #define LSM6DSO16IS_SPI_OP (SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA)
 
-#define LSM6DSO16IS_CONFIG_COMMON(inst)                                                            \
-	.accel_odr = DT_INST_PROP(inst, accel_odr),                                                \
-	.accel_range = DT_INST_PROP(inst, accel_range), .gyro_odr = DT_INST_PROP(inst, gyro_odr),  \
-	.gyro_range = DT_INST_PROP(inst, gyro_range),                                              \
-	.drdy_pulsed = DT_INST_PROP(inst, drdy_pulsed),                                            \
+#define LSM6DSO16IS_CONFIG_COMMON(inst)                                                           \
+	.accel_odr = DT_INST_PROP(inst, accel_odr),                                               \
+	.accel_range = DT_INST_PROP(inst, accel_range), .gyro_odr = DT_INST_PROP(inst, gyro_odr), \
+	.gyro_range = DT_INST_PROP(inst, gyro_range),                                             \
+	.drdy_pulsed = DT_INST_PROP(inst, drdy_pulsed),                                           \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),		\
 		(LSM6DSO16IS_CFG_IRQ(inst)), ())
 
-#define LSM6DSO16IS_CONFIG_SPI(inst)                                                               \
-	{STMEMSC_CTX_SPI(&lsm6dso16is_config_##inst.stmemsc_cfg),                                  \
-	 .stmemsc_cfg =                                                                            \
-		 {                                                                                 \
-			 .spi = SPI_DT_SPEC_INST_GET(inst, LSM6DSO16IS_SPI_OP, 0),                 \
-		 },                                                                                \
+#define LSM6DSO16IS_CONFIG_SPI(inst)                                               \
+	{STMEMSC_CTX_SPI(&lsm6dso16is_config_##inst.stmemsc_cfg),                  \
+	 .stmemsc_cfg =                                                            \
+		 {                                                                 \
+			 .spi = SPI_DT_SPEC_INST_GET(inst, LSM6DSO16IS_SPI_OP, 0), \
+		 },                                                                \
 	 LSM6DSO16IS_CONFIG_COMMON(inst)}
 
 /*
  * Instantiation macros used when a device is on an I2C bus.
  */
 
-#define LSM6DSO16IS_CONFIG_I2C(inst)                                                               \
-	{STMEMSC_CTX_I2C(&lsm6dso16is_config_##inst.stmemsc_cfg),                                  \
-	 .stmemsc_cfg =                                                                            \
-		 {                                                                                 \
-			 .i2c = I2C_DT_SPEC_INST_GET(inst),                                        \
-		 },                                                                                \
+#define LSM6DSO16IS_CONFIG_I2C(inst)                              \
+	{STMEMSC_CTX_I2C(&lsm6dso16is_config_##inst.stmemsc_cfg), \
+	 .stmemsc_cfg =                                           \
+		 {                                                \
+			 .i2c = I2C_DT_SPEC_INST_GET(inst),       \
+		 },                                               \
 	 LSM6DSO16IS_CONFIG_COMMON(inst)}
 
 /*
@@ -878,12 +878,12 @@ static int lsm6dso16is_init(const struct device *dev)
  * bus-specific macro at preprocessor time.
  */
 
-#define LSM6DSO16IS_DEFINE(inst)                                                                   \
-	static struct lsm6dso16is_data lsm6dso16is_data_##inst;                                    \
-	static const struct lsm6dso16is_config lsm6dso16is_config_##inst =                         \
+#define LSM6DSO16IS_DEFINE(inst)                                                                  \
+	static struct lsm6dso16is_data lsm6dso16is_data_##inst;                                   \
+	static const struct lsm6dso16is_config lsm6dso16is_config_##inst =                        \
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
 			(LSM6DSO16IS_CONFIG_SPI(inst)),			\
-			(LSM6DSO16IS_CONFIG_I2C(inst)));  \
+			(LSM6DSO16IS_CONFIG_I2C(inst))); \
 	LSM6DSO16IS_DEVICE_INIT(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(LSM6DSO16IS_DEFINE)

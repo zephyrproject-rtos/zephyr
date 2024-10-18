@@ -27,9 +27,9 @@ LOG_MODULE_REGISTER(pwm_rcar);
 
 /* Registers */
 #define RCAR_PWM_REG_SHIFT 0x1000
-#define RCAR_PWM_CR(channel)                                                                       \
+#define RCAR_PWM_CR(channel)                                                           \
 	((uint32_t)((channel * RCAR_PWM_REG_SHIFT)) + 0x00) /* PWM Control Register */
-#define RCAR_PWM_CNT(channel)                                                                      \
+#define RCAR_PWM_CNT(channel)                                                        \
 	((uint32_t)((channel * RCAR_PWM_REG_SHIFT)) + 0x04) /* PWM Count Register */
 
 /* PWMCR (PWM Control Register) */
@@ -249,19 +249,19 @@ static const struct pwm_driver_api pwm_rcar_driver_api = {
 };
 
 /* Device Instantiation */
-#define PWM_DEVICE_RCAR_INIT(n)                                                                    \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	static const struct pwm_rcar_cfg pwm_rcar_cfg_##n = {                                      \
-		.reg_addr = DT_INST_REG_ADDR(n),                                                   \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.mod_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, module),                        \
-		.mod_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, domain),                        \
-		.core_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, module),                       \
-		.core_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, domain),                       \
-	};                                                                                         \
-	static struct pwm_rcar_data pwm_rcar_data_##n;                                             \
-	DEVICE_DT_INST_DEFINE(n, pwm_rcar_init, NULL, &pwm_rcar_data_##n, &pwm_rcar_cfg_##n,       \
+#define PWM_DEVICE_RCAR_INIT(n)                                                              \
+	PINCTRL_DT_INST_DEFINE(n);                                                           \
+	static const struct pwm_rcar_cfg pwm_rcar_cfg_##n = {                                \
+		.reg_addr = DT_INST_REG_ADDR(n),                                             \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                   \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                          \
+		.mod_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, module),                  \
+		.mod_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, domain),                  \
+		.core_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, module),                 \
+		.core_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, domain),                 \
+	};                                                                                   \
+	static struct pwm_rcar_data pwm_rcar_data_##n;                                       \
+	DEVICE_DT_INST_DEFINE(n, pwm_rcar_init, NULL, &pwm_rcar_data_##n, &pwm_rcar_cfg_##n, \
 			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, &pwm_rcar_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_DEVICE_RCAR_INIT)

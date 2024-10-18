@@ -380,7 +380,7 @@ static const struct gpio_driver_api gpio_smartbond_drv_api_funcs = {
 
 #define GPIO_SAVED_STATE(id)         gpio_smartbond_saved_state_##id
 #define GPIO_PM_DEVICE_CFG(fld, val) COND_CODE_1(CONFIG_PM_DEVICE, (fld = val,), ())
-#define GPIO_PM_DEVICE_STATE(id, ngpios)                                                           \
+#define GPIO_PM_DEVICE_STATE(id, ngpios) \
 	COND_CODE_1(CONFIG_PM_DEVICE, (static uint32_t GPIO_SAVED_STATE(id)[1 + ngpios];), ())
 
 #define GPIO_SMARTBOND_DEVICE(id)                                                                  \

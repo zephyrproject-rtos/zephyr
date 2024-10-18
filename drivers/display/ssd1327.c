@@ -317,31 +317,31 @@ static struct display_driver_api ssd1327_driver_api = {
 	.set_pixel_format = ssd1327_set_pixel_format,
 };
 
-#define SSD1327_DEFINE(node_id)                                                                    \
-	static struct ssd1327_data data##node_id;                                                  \
-	static const struct ssd1327_config config##node_id = {                                     \
-		.mipi_dev = DEVICE_DT_GET(DT_PARENT(node_id)),                                     \
-		.dbi_config =                                                                      \
-			{                                                                          \
-				.mode = MIPI_DBI_MODE_SPI_4WIRE,                                   \
-				.config = MIPI_DBI_SPI_CONFIG_DT(                                  \
-					node_id,                                                   \
-					SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_HOLD_ON_CS |    \
-						SPI_LOCK_ON,                                       \
-					0),                                                        \
-			},                                                                         \
-		.height = DT_PROP(node_id, height),                                                \
-		.width = DT_PROP(node_id, width),                                                  \
-		.oscillator_freq = DT_PROP(node_id, oscillator_freq),                              \
-		.display_offset = DT_PROP(node_id, display_offset),                                \
-		.start_line = DT_PROP(node_id, start_line),                                        \
-		.multiplex_ratio = DT_PROP(node_id, multiplex_ratio),                              \
-		.prechargep = DT_PROP(node_id, prechargep),                                        \
-		.remap_value = DT_PROP(node_id, remap_value),                                      \
-		.color_inversion = DT_PROP(node_id, inversion_on),                                 \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_DEFINE(node_id, ssd1327_init, NULL, &data##node_id, &config##node_id,            \
+#define SSD1327_DEFINE(node_id)                                                                 \
+	static struct ssd1327_data data##node_id;                                               \
+	static const struct ssd1327_config config##node_id = {                                  \
+		.mipi_dev = DEVICE_DT_GET(DT_PARENT(node_id)),                                  \
+		.dbi_config =                                                                   \
+			{                                                                       \
+				.mode = MIPI_DBI_MODE_SPI_4WIRE,                                \
+				.config = MIPI_DBI_SPI_CONFIG_DT(                               \
+					node_id,                                                \
+					SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_HOLD_ON_CS | \
+						SPI_LOCK_ON,                                    \
+					0),                                                     \
+			},                                                                      \
+		.height = DT_PROP(node_id, height),                                             \
+		.width = DT_PROP(node_id, width),                                               \
+		.oscillator_freq = DT_PROP(node_id, oscillator_freq),                           \
+		.display_offset = DT_PROP(node_id, display_offset),                             \
+		.start_line = DT_PROP(node_id, start_line),                                     \
+		.multiplex_ratio = DT_PROP(node_id, multiplex_ratio),                           \
+		.prechargep = DT_PROP(node_id, prechargep),                                     \
+		.remap_value = DT_PROP(node_id, remap_value),                                   \
+		.color_inversion = DT_PROP(node_id, inversion_on),                              \
+	};                                                                                      \
+                                                                                                \
+	DEVICE_DT_DEFINE(node_id, ssd1327_init, NULL, &data##node_id, &config##node_id,         \
 			 POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY, &ssd1327_driver_api);
 
 DT_FOREACH_STATUS_OKAY(solomon_ssd1327fb, SSD1327_DEFINE)

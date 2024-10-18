@@ -159,7 +159,7 @@ static void esp32_clock_perip_init(void)
 	 * that have been enabled before reset.
 	 */
 	if (reset_reason_is_cpu_reset()) {
-#if defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C3) ||                    \
+#if defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C3) || \
 	defined(CONFIG_SOC_SERIES_ESP32S3)
 		common_perip_clk = ~READ_PERI_REG(SYSTEM_PERIP_CLK_EN0_REG);
 		hwcrypto_perip_clk = ~READ_PERI_REG(SYSTEM_PERIP_CLK_EN1_REG);
@@ -335,7 +335,7 @@ static void esp32_clock_perip_init(void)
 #endif /* CONFIG_SOC_SERIES_ESP32S2 */
 
 	/* Disable some peripheral clocks. */
-#if defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C3) ||                    \
+#if defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C3) || \
 	defined(CONFIG_SOC_SERIES_ESP32S3)
 	CLEAR_PERI_REG_MASK(SYSTEM_PERIP_CLK_EN0_REG, common_perip_clk);
 	SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN0_REG, common_perip_clk);
@@ -353,7 +353,7 @@ static void esp32_clock_perip_init(void)
 #endif
 
 	/* Disable hardware crypto clocks. */
-#if defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C3) ||                    \
+#if defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C3) || \
 	defined(CONFIG_SOC_SERIES_ESP32S3)
 	CLEAR_PERI_REG_MASK(SYSTEM_PERIP_CLK_EN1_REG, hwcrypto_perip_clk);
 	SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, hwcrypto_perip_clk);
@@ -374,7 +374,7 @@ static void esp32_clock_perip_init(void)
 #endif /* CONFIG_SOC_SERIES_ESP32S3 */
 
 	/* Disable WiFi/BT/SDIO clocks. */
-#if defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C3) ||                    \
+#if defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C3) || \
 	defined(CONFIG_SOC_SERIES_ESP32S3)
 	CLEAR_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, wifi_bt_sdio_clk);
 	SET_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_EN);
@@ -387,7 +387,7 @@ static void esp32_clock_perip_init(void)
 	DPORT_SET_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, DPORT_WIFI_CLK_WIFI_EN);
 #endif
 
-#if defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C3) ||                    \
+#if defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C3) || \
 	defined(CONFIG_SOC_SERIES_ESP32S3)
 	/* Set WiFi light sleep clock source to RTC slow clock */
 	REG_SET_FIELD(SYSTEM_BT_LPCK_DIV_INT_REG, SYSTEM_BT_LPCK_DIV_NUM, 0);
@@ -403,7 +403,7 @@ static void esp32_clock_perip_init(void)
 	/* Enable RNG clock. */
 	periph_module_enable(PERIPH_RNG_MODULE);
 
-#if defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C3) ||                    \
+#if defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C3) || \
 	defined(CONFIG_SOC_SERIES_ESP32S3)
 	periph_module_enable(PERIPH_TIMG0_MODULE);
 #endif

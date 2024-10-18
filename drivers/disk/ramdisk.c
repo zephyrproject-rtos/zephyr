@@ -129,15 +129,15 @@ static const struct disk_operations ram_disk_ops = {
 
 #define RAMDISK_DEVICE_SIZE(n) (DT_INST_PROP(n, sector_size) * DT_INST_PROP(n, sector_count))
 
-#define RAMDISK_DEVICE_CONFIG_DEFINE_MEMREG(n)                                                     \
-	BUILD_ASSERT(RAMDISK_DEVICE_SIZE(n) <= DT_REG_SIZE(DT_INST_PHANDLE(n, ram_region)),        \
-		     "Disk size is smaller than memory region");                                   \
-                                                                                                   \
-	static struct ram_disk_config disk_config_##n = {                                          \
-		.sector_size = DT_INST_PROP(n, sector_size),                                       \
-		.sector_count = DT_INST_PROP(n, sector_count),                                     \
-		.size = RAMDISK_DEVICE_SIZE(n),                                                    \
-		.buf = UINT_TO_POINTER(DT_REG_ADDR(DT_INST_PHANDLE(n, ram_region))),               \
+#define RAMDISK_DEVICE_CONFIG_DEFINE_MEMREG(n)                                              \
+	BUILD_ASSERT(RAMDISK_DEVICE_SIZE(n) <= DT_REG_SIZE(DT_INST_PHANDLE(n, ram_region)), \
+		     "Disk size is smaller than memory region");                            \
+                                                                                            \
+	static struct ram_disk_config disk_config_##n = {                                   \
+		.sector_size = DT_INST_PROP(n, sector_size),                                \
+		.sector_count = DT_INST_PROP(n, sector_count),                              \
+		.size = RAMDISK_DEVICE_SIZE(n),                                             \
+		.buf = UINT_TO_POINTER(DT_REG_ADDR(DT_INST_PHANDLE(n, ram_region))),        \
 	}
 
 #define RAMDISK_DEVICE_CONFIG_DEFINE_LOCAL(n)                                                      \
@@ -150,21 +150,21 @@ static const struct disk_operations ram_disk_ops = {
 		.buf = disk_buf_##n,                                                               \
 	}
 
-#define RAMDISK_DEVICE_CONFIG_DEFINE(n)                                                            \
+#define RAMDISK_DEVICE_CONFIG_DEFINE(n)                        \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, ram_region),				\
 		    (RAMDISK_DEVICE_CONFIG_DEFINE_MEMREG(n)),				\
 		    (RAMDISK_DEVICE_CONFIG_DEFINE_LOCAL(n)))
 
-#define RAMDISK_DEVICE_DEFINE(n)                                                                   \
-                                                                                                   \
-	static struct disk_info disk_info_##n = {                                                  \
-		.name = DT_INST_PROP(n, disk_name),                                                \
-		.ops = &ram_disk_ops,                                                              \
-	};                                                                                         \
-                                                                                                   \
-	RAMDISK_DEVICE_CONFIG_DEFINE(n);                                                           \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, disk_ram_init, NULL, &disk_info_##n, &disk_config_##n,            \
+#define RAMDISK_DEVICE_DEFINE(n)                                                               \
+                                                                                               \
+	static struct disk_info disk_info_##n = {                                              \
+		.name = DT_INST_PROP(n, disk_name),                                            \
+		.ops = &ram_disk_ops,                                                          \
+	};                                                                                     \
+                                                                                               \
+	RAMDISK_DEVICE_CONFIG_DEFINE(n);                                                       \
+                                                                                               \
+	DEVICE_DT_INST_DEFINE(n, disk_ram_init, NULL, &disk_info_##n, &disk_config_##n,        \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &ram_disk_ops);
 
 DT_INST_FOREACH_STATUS_OKAY(RAMDISK_DEVICE_DEFINE)

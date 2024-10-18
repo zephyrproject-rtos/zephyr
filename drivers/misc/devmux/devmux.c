@@ -144,31 +144,31 @@ static int devmux_init(struct device *const dev)
 	return 0;
 }
 
-#define DEVMUX_PHANDLE_TO_DEVICE(node_id, prop, idx)                                               \
+#define DEVMUX_PHANDLE_TO_DEVICE(node_id, prop, idx)         \
 	DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, prop, idx))
 
-#define DEVMUX_PHANDLE_DEVICES(_n)                                                                 \
+#define DEVMUX_PHANDLE_DEVICES(_n)                                                 \
 	DT_INST_FOREACH_PROP_ELEM_SEP(_n, devices, DEVMUX_PHANDLE_TO_DEVICE, (, ))
 
 #define DEVMUX_SELECTED(_n) DT_INST_PROP(_n, selected)
 
-#define DEVMUX_DEFINE(_n)                                                                          \
-	BUILD_ASSERT(DT_INST_PROP_OR(_n, zephyr_mutable, 0),                                       \
-		     "devmux nodes must contain the 'zephyr,mutable' property");                   \
-	BUILD_ASSERT(DT_INST_PROP_LEN(_n, devices) > 0, "devices array must have non-zero size");  \
-	BUILD_ASSERT(DEVMUX_SELECTED(_n) >= 0, "selected must be > 0");                            \
-	BUILD_ASSERT(DEVMUX_SELECTED(_n) < DT_INST_PROP_LEN(_n, devices),                          \
-		     "selected must be within bounds of devices phandle array");                   \
-	static const struct device *demux_devs_##_n[] = {DEVMUX_PHANDLE_DEVICES(_n)};              \
-	static const struct devmux_config devmux_config_##_n = {                                   \
-		.devs = demux_devs_##_n,                                                           \
-		.n_devs = DT_INST_PROP_LEN(_n, devices),                                           \
-	};                                                                                         \
-	static struct devmux_data devmux_data_##_n = {                                             \
-		.selected = DEVMUX_SELECTED(_n),                                                   \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(_n, devmux_init, NULL, &devmux_data_##_n, &devmux_config_##_n,       \
+#define DEVMUX_DEFINE(_n)                                                                         \
+	BUILD_ASSERT(DT_INST_PROP_OR(_n, zephyr_mutable, 0),                                      \
+		     "devmux nodes must contain the 'zephyr,mutable' property");                  \
+	BUILD_ASSERT(DT_INST_PROP_LEN(_n, devices) > 0, "devices array must have non-zero size"); \
+	BUILD_ASSERT(DEVMUX_SELECTED(_n) >= 0, "selected must be > 0");                           \
+	BUILD_ASSERT(DEVMUX_SELECTED(_n) < DT_INST_PROP_LEN(_n, devices),                         \
+		     "selected must be within bounds of devices phandle array");                  \
+	static const struct device *demux_devs_##_n[] = {DEVMUX_PHANDLE_DEVICES(_n)};             \
+	static const struct devmux_config devmux_config_##_n = {                                  \
+		.devs = demux_devs_##_n,                                                          \
+		.n_devs = DT_INST_PROP_LEN(_n, devices),                                          \
+	};                                                                                        \
+	static struct devmux_data devmux_data_##_n = {                                            \
+		.selected = DEVMUX_SELECTED(_n),                                                  \
+	};                                                                                        \
+                                                                                                  \
+	DEVICE_DT_INST_DEFINE(_n, devmux_init, NULL, &devmux_data_##_n, &devmux_config_##_n,      \
 			      PRE_KERNEL_1, CONFIG_DEVMUX_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(DEVMUX_DEFINE)

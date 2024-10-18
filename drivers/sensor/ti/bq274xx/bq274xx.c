@@ -830,7 +830,7 @@ static const struct sensor_driver_api bq274xx_battery_driver_api = {
 
 #if defined(CONFIG_BQ274XX_PM) || defined(CONFIG_BQ274XX_TRIGGER)
 #define BQ274XX_INT_CFG(index) .int_gpios = GPIO_DT_SPEC_INST_GET(index, int_gpios),
-#define PM_BQ274XX_DT_INST_DEFINE(index, bq274xx_pm_action)                                        \
+#define PM_BQ274XX_DT_INST_DEFINE(index, bq274xx_pm_action) \
 	PM_DEVICE_DT_INST_DEFINE(index, bq274xx_pm_action)
 #define PM_BQ274XX_DT_INST_GET(index) PM_DEVICE_DT_INST_GET(index)
 #else
@@ -839,24 +839,24 @@ static const struct sensor_driver_api bq274xx_battery_driver_api = {
 #define PM_BQ274XX_DT_INST_GET(index) NULL
 #endif
 
-#define BQ274XX_INIT(index)                                                                        \
-	static struct bq274xx_data bq274xx_driver_##index;                                         \
-                                                                                                   \
-	static const struct bq274xx_config bq274xx_config_##index = {                              \
-		.i2c = I2C_DT_SPEC_INST_GET(index),                                                \
-		BQ274XX_INT_CFG(index).design_voltage = DT_INST_PROP(index, design_voltage),       \
-		.design_capacity = DT_INST_PROP(index, design_capacity),                           \
-		.taper_current = DT_INST_PROP(index, taper_current),                               \
-		.terminate_voltage = DT_INST_PROP(index, terminate_voltage),                       \
-		.chemistry_id = DT_INST_PROP_OR(index, chemistry_id, 0),                           \
-		.lazy_loading = DT_INST_PROP(index, zephyr_lazy_load),                             \
-	};                                                                                         \
-                                                                                                   \
-	PM_BQ274XX_DT_INST_DEFINE(index, bq274xx_pm_action);                                       \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(index, &bq274xx_gauge_init, PM_BQ274XX_DT_INST_GET(index),    \
-				     &bq274xx_driver_##index, &bq274xx_config_##index,             \
-				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,                     \
+#define BQ274XX_INIT(index)                                                                     \
+	static struct bq274xx_data bq274xx_driver_##index;                                      \
+                                                                                                \
+	static const struct bq274xx_config bq274xx_config_##index = {                           \
+		.i2c = I2C_DT_SPEC_INST_GET(index),                                             \
+		BQ274XX_INT_CFG(index).design_voltage = DT_INST_PROP(index, design_voltage),    \
+		.design_capacity = DT_INST_PROP(index, design_capacity),                        \
+		.taper_current = DT_INST_PROP(index, taper_current),                            \
+		.terminate_voltage = DT_INST_PROP(index, terminate_voltage),                    \
+		.chemistry_id = DT_INST_PROP_OR(index, chemistry_id, 0),                        \
+		.lazy_loading = DT_INST_PROP(index, zephyr_lazy_load),                          \
+	};                                                                                      \
+                                                                                                \
+	PM_BQ274XX_DT_INST_DEFINE(index, bq274xx_pm_action);                                    \
+                                                                                                \
+	SENSOR_DEVICE_DT_INST_DEFINE(index, &bq274xx_gauge_init, PM_BQ274XX_DT_INST_GET(index), \
+				     &bq274xx_driver_##index, &bq274xx_config_##index,          \
+				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,                  \
 				     &bq274xx_battery_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BQ274XX_INIT)

@@ -24,12 +24,12 @@
 #define GPIO_MODE_ALT_OD    0xCU
 
 /** Utility macro that expands to the GPIO port address if it exists */
-#define GD32_PORT_ADDR_OR_NONE(nodelabel)                                                          \
+#define GD32_PORT_ADDR_OR_NONE(nodelabel)                              \
 	COND_CODE_1(DT_NODE_EXISTS(DT_NODELABEL(nodelabel)),		       \
 		   (DT_REG_ADDR(DT_NODELABEL(nodelabel)),), ())
 
 /** Utility macro that expands to the GPIO clock id if it exists */
-#define GD32_PORT_CLOCK_ID_OR_NONE(nodelabel)                                                      \
+#define GD32_PORT_CLOCK_ID_OR_NONE(nodelabel)                          \
 	COND_CODE_1(DT_NODE_EXISTS(DT_NODELABEL(nodelabel)),		       \
 		   (DT_CLOCKS_CELL(DT_NODELABEL(nodelabel), id),), ())
 

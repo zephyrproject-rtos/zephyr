@@ -300,37 +300,37 @@ static const struct fuel_gauge_driver_api sbs_gauge_driver_api = {
 #define _SBS_GAUGE_BATT_CUTOFF_CFG_VAR_NAME(index) sbs_gauge_batt_cutoff_cfg_##index
 
 /* Declare and define the battery config struct */
-#define _SBS_GAUGE_CONFIG_DEFINE(index)                                                            \
-	static const struct sbs_gauge_battery_cutoff_config _SBS_GAUGE_BATT_CUTOFF_CFG_VAR_NAME(   \
-		index) = {                                                                         \
-		.reg = DT_INST_PROP(index, battery_cutoff_reg_addr),                               \
-		.payload = DT_INST_PROP(index, battery_cutoff_payload),                            \
-		.payload_size = DT_INST_PROP_LEN(index, battery_cutoff_payload),                   \
+#define _SBS_GAUGE_CONFIG_DEFINE(index)                                                          \
+	static const struct sbs_gauge_battery_cutoff_config _SBS_GAUGE_BATT_CUTOFF_CFG_VAR_NAME( \
+		index) = {                                                                       \
+		.reg = DT_INST_PROP(index, battery_cutoff_reg_addr),                             \
+		.payload = DT_INST_PROP(index, battery_cutoff_payload),                          \
+		.payload_size = DT_INST_PROP_LEN(index, battery_cutoff_payload),                 \
 	};
 
 /* Conditionally defined battery config based on battery cutoff support */
-#define SBS_GAUGE_CONFIG_DEFINE(index)                                                             \
+#define SBS_GAUGE_CONFIG_DEFINE(index) \
 	COND_CODE_1(DT_INST_PROP(index, battery_cutoff_support),                                   \
 		    (_SBS_GAUGE_CONFIG_DEFINE(index)), (;))
 
 /* Conditionally get the battery config variable name or NULL based on battery cutoff support */
-#define SBS_GAUGE_GET_BATTERY_CONFIG_NAME(index)                                                   \
+#define SBS_GAUGE_GET_BATTERY_CONFIG_NAME(index) \
 	COND_CODE_1(DT_INST_PROP(index, battery_cutoff_support),                                   \
 		    (&_SBS_GAUGE_BATT_CUTOFF_CFG_VAR_NAME(index)), (NULL))
 
-#define SBS_GAUGE_INIT(index)                                                                      \
-	SBS_GAUGE_CONFIG_DEFINE(index);                                                            \
-	static const struct sbs_gauge_config sbs_gauge_config_##index = {                          \
-		.i2c = I2C_DT_SPEC_INST_GET(index),                                                \
-		.cutoff_cfg = SBS_GAUGE_GET_BATTERY_CONFIG_NAME(index)};                           \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(index, &sbs_gauge_init, NULL, NULL, &sbs_gauge_config_##index,       \
-			      POST_KERNEL, CONFIG_FUEL_GAUGE_INIT_PRIORITY,                        \
+#define SBS_GAUGE_INIT(index)                                                                \
+	SBS_GAUGE_CONFIG_DEFINE(index);                                                      \
+	static const struct sbs_gauge_config sbs_gauge_config_##index = {                    \
+		.i2c = I2C_DT_SPEC_INST_GET(index),                                          \
+		.cutoff_cfg = SBS_GAUGE_GET_BATTERY_CONFIG_NAME(index)};                     \
+                                                                                             \
+	DEVICE_DT_INST_DEFINE(index, &sbs_gauge_init, NULL, NULL, &sbs_gauge_config_##index, \
+			      POST_KERNEL, CONFIG_FUEL_GAUGE_INIT_PRIORITY,                  \
 			      &sbs_gauge_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SBS_GAUGE_INIT)
 
-#define CUTOFF_PAYLOAD_SIZE_ASSERT(inst)                                                           \
-	BUILD_ASSERT(DT_INST_PROP_LEN_OR(inst, battery_cutoff_payload, 0) <=                       \
+#define CUTOFF_PAYLOAD_SIZE_ASSERT(inst)                                     \
+	BUILD_ASSERT(DT_INST_PROP_LEN_OR(inst, battery_cutoff_payload, 0) <= \
 		     SBS_GAUGE_CUTOFF_PAYLOAD_MAX_SIZE);
 DT_INST_FOREACH_STATUS_OKAY(CUTOFF_PAYLOAD_SIZE_ASSERT)

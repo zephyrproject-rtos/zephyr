@@ -165,16 +165,16 @@ static const struct dac_driver_api ad569x_driver_api = {
 	.write_value = ad569x_write_value,
 };
 
-#define INST_DT_AD569X(index, name, res)                                                           \
-	static const struct ad569x_config config_##name##_##index = {                              \
-		.bus = I2C_DT_SPEC_INST_GET(index),                                                \
-		.resolution = res,                                                                 \
-		.gain = DT_INST_ENUM_IDX(index, gain),                                             \
-		.voltage_reference = DT_INST_ENUM_IDX(index, voltage_reference),                   \
-		.power_down_mode = DT_INST_ENUM_IDX(index, power_down_mode),                       \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(index, ad569x_init, NULL, NULL, &config_##name##_##index,            \
+#define INST_DT_AD569X(index, name, res)                                                  \
+	static const struct ad569x_config config_##name##_##index = {                     \
+		.bus = I2C_DT_SPEC_INST_GET(index),                                       \
+		.resolution = res,                                                        \
+		.gain = DT_INST_ENUM_IDX(index, gain),                                    \
+		.voltage_reference = DT_INST_ENUM_IDX(index, voltage_reference),          \
+		.power_down_mode = DT_INST_ENUM_IDX(index, power_down_mode),              \
+	};                                                                                \
+                                                                                          \
+	DEVICE_DT_INST_DEFINE(index, ad569x_init, NULL, NULL, &config_##name##_##index,   \
 			      POST_KERNEL, CONFIG_DAC_INIT_PRIORITY, &ad569x_driver_api);
 
 #define DT_DRV_COMPAT adi_ad5691

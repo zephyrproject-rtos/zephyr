@@ -85,11 +85,11 @@ static void dma_si32_isr_handler(const uint8_t channel)
 	cb(DEVICE_DT_INST_GET(0), user_data, channel, result);
 }
 
-#define DMA_SI32_IRQ_CONNECT(channel)                                                              \
-	do {                                                                                       \
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, channel, irq),                                   \
-			    DT_INST_IRQ_BY_IDX(0, channel, priority), dma_si32_isr_handler,        \
-			    channel, 0);                                                           \
+#define DMA_SI32_IRQ_CONNECT(channel)                                                       \
+	do {                                                                                \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, channel, irq),                            \
+			    DT_INST_IRQ_BY_IDX(0, channel, priority), dma_si32_isr_handler, \
+			    channel, 0);                                                    \
 	} while (false)
 
 #define DMA_SI32_IRQ_CONNECT_GEN(i, _) DMA_SI32_IRQ_CONNECT(i);

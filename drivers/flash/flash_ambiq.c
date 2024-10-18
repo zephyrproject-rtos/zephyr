@@ -30,8 +30,8 @@ BUILD_ASSERT((FLASH_WRITE_BLOCK_SIZE & (MIN_WRITE_SIZE - 1)) == 0,
 	     "The flash write block size must be a multiple of MIN_WRITE_SIZE!");
 
 #define FLASH_ERASE_BYTE 0xFF
-#define FLASH_ERASE_WORD                                                                           \
-	(((uint32_t)(FLASH_ERASE_BYTE << 24)) | ((uint32_t)(FLASH_ERASE_BYTE << 16)) |             \
+#define FLASH_ERASE_WORD                                                               \
+	(((uint32_t)(FLASH_ERASE_BYTE << 24)) | ((uint32_t)(FLASH_ERASE_BYTE << 16)) | \
 	 ((uint32_t)(FLASH_ERASE_BYTE << 8)) | ((uint32_t)FLASH_ERASE_BYTE))
 
 #if defined(CONFIG_MULTITHREADING)

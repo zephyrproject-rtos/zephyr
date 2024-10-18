@@ -29,12 +29,12 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 #define UARTE_PROP(idx, prop)     DT_PROP(UARTE(idx), prop)
 
 /* Execute macro f(x) for all instances. */
-#define UARTE_FOR_EACH_INSTANCE(f, sep, off_code, ...)                                             \
+#define UARTE_FOR_EACH_INSTANCE(f, sep, off_code, ...)             \
 	NRFX_FOREACH_PRESENT(UARTE, f, sep, off_code, __VA_ARGS__)
 
 /* Determine if any instance is using interrupt driven API. */
-#define IS_INT_DRIVEN(unused, prefix, i, _)                                                        \
-	(IS_ENABLED(CONFIG_HAS_HW_NRF_UARTE##prefix##i) &&                                         \
+#define IS_INT_DRIVEN(unused, prefix, i, _)                      \
+	(IS_ENABLED(CONFIG_HAS_HW_NRF_UARTE##prefix##i) &&       \
 	 IS_ENABLED(CONFIG_UART_##prefix##i##_INTERRUPT_DRIVEN))
 
 #if UARTE_FOR_EACH_INSTANCE(IS_INT_DRIVEN, (||), (0))
@@ -42,8 +42,8 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 #endif
 
 /* Determine if any instance is not using asynchronous API. */
-#define IS_NOT_ASYNC(unused, prefix, i, _)                                                         \
-	(IS_ENABLED(CONFIG_HAS_HW_NRF_UARTE##prefix##i) &&                                         \
+#define IS_NOT_ASYNC(unused, prefix, i, _)                 \
+	(IS_ENABLED(CONFIG_HAS_HW_NRF_UARTE##prefix##i) && \
 	 !IS_ENABLED(CONFIG_UART_##prefix##i##_ASYNC))
 
 #if UARTE_FOR_EACH_INSTANCE(IS_NOT_ASYNC, (||), (0))
@@ -51,8 +51,8 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 #endif
 
 /* Determine if any instance is using asynchronous API. */
-#define IS_ASYNC(unused, prefix, i, _)                                                             \
-	(IS_ENABLED(CONFIG_HAS_HW_NRF_UARTE##prefix##i) &&                                         \
+#define IS_ASYNC(unused, prefix, i, _)                     \
+	(IS_ENABLED(CONFIG_HAS_HW_NRF_UARTE##prefix##i) && \
 	 IS_ENABLED(CONFIG_UART_##prefix##i##_ASYNC))
 
 #if UARTE_FOR_EACH_INSTANCE(IS_ASYNC, (||), (0))
@@ -67,7 +67,7 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 #endif
 
 /* Determine if any instance is using enhanced poll_out feature. */
-#define IS_ENHANCED_POLL_OUT(unused, prefix, i, _)                                                 \
+#define IS_ENHANCED_POLL_OUT(unused, prefix, i, _)              \
 	IS_ENABLED(CONFIG_UART_##prefix##i##_ENHANCED_POLL_OUT)
 
 #if UARTE_FOR_EACH_INSTANCE(IS_ENHANCED_POLL_OUT, (||), (0))
@@ -78,7 +78,7 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 #define INSTANCE_PRESENT(unused, prefix, i, prop) 1
 
 /* Driver supports case when all or none instances support that HW feature. */
-#if (UARTE_FOR_EACH_INSTANCE(INSTANCE_PROP, (+), (0), endtx_stoptx_supported)) ==                  \
+#if (UARTE_FOR_EACH_INSTANCE(INSTANCE_PROP, (+), (0), endtx_stoptx_supported)) ==     \
 	(UARTE_FOR_EACH_INSTANCE(INSTANCE_PRESENT, (+), (0), endtx_stoptx_supported))
 #define UARTE_HAS_ENDTX_STOPTX_SHORT 1
 #endif
@@ -191,27 +191,27 @@ struct uarte_nrfx_data {
  * to use this approach because for constant input it can calculate nrf setting
  * at compile time.
  */
-#define NRF_BAUDRATE(baudrate)                                                                     \
-	((baudrate) == 300       ? 0x00014000                                                      \
-	 : (baudrate) == 600     ? 0x00027000                                                      \
-	 : (baudrate) == 1200    ? NRF_UARTE_BAUDRATE_1200                                         \
-	 : (baudrate) == 2400    ? NRF_UARTE_BAUDRATE_2400                                         \
-	 : (baudrate) == 4800    ? NRF_UARTE_BAUDRATE_4800                                         \
-	 : (baudrate) == 9600    ? NRF_UARTE_BAUDRATE_9600                                         \
-	 : (baudrate) == 14400   ? NRF_UARTE_BAUDRATE_14400                                        \
-	 : (baudrate) == 19200   ? NRF_UARTE_BAUDRATE_19200                                        \
-	 : (baudrate) == 28800   ? NRF_UARTE_BAUDRATE_28800                                        \
-	 : (baudrate) == 31250   ? NRF_UARTE_BAUDRATE_31250                                        \
-	 : (baudrate) == 38400   ? NRF_UARTE_BAUDRATE_38400                                        \
-	 : (baudrate) == 56000   ? NRF_UARTE_BAUDRATE_56000                                        \
-	 : (baudrate) == 57600   ? NRF_UARTE_BAUDRATE_57600                                        \
-	 : (baudrate) == 76800   ? NRF_UARTE_BAUDRATE_76800                                        \
-	 : (baudrate) == 115200  ? NRF_UARTE_BAUDRATE_115200                                       \
-	 : (baudrate) == 230400  ? NRF_UARTE_BAUDRATE_230400                                       \
-	 : (baudrate) == 250000  ? NRF_UARTE_BAUDRATE_250000                                       \
-	 : (baudrate) == 460800  ? NRF_UARTE_BAUDRATE_460800                                       \
-	 : (baudrate) == 921600  ? NRF_UARTE_BAUDRATE_921600                                       \
-	 : (baudrate) == 1000000 ? NRF_UARTE_BAUDRATE_1000000                                      \
+#define NRF_BAUDRATE(baudrate)                                \
+	((baudrate) == 300       ? 0x00014000                 \
+	 : (baudrate) == 600     ? 0x00027000                 \
+	 : (baudrate) == 1200    ? NRF_UARTE_BAUDRATE_1200    \
+	 : (baudrate) == 2400    ? NRF_UARTE_BAUDRATE_2400    \
+	 : (baudrate) == 4800    ? NRF_UARTE_BAUDRATE_4800    \
+	 : (baudrate) == 9600    ? NRF_UARTE_BAUDRATE_9600    \
+	 : (baudrate) == 14400   ? NRF_UARTE_BAUDRATE_14400   \
+	 : (baudrate) == 19200   ? NRF_UARTE_BAUDRATE_19200   \
+	 : (baudrate) == 28800   ? NRF_UARTE_BAUDRATE_28800   \
+	 : (baudrate) == 31250   ? NRF_UARTE_BAUDRATE_31250   \
+	 : (baudrate) == 38400   ? NRF_UARTE_BAUDRATE_38400   \
+	 : (baudrate) == 56000   ? NRF_UARTE_BAUDRATE_56000   \
+	 : (baudrate) == 57600   ? NRF_UARTE_BAUDRATE_57600   \
+	 : (baudrate) == 76800   ? NRF_UARTE_BAUDRATE_76800   \
+	 : (baudrate) == 115200  ? NRF_UARTE_BAUDRATE_115200  \
+	 : (baudrate) == 230400  ? NRF_UARTE_BAUDRATE_230400  \
+	 : (baudrate) == 250000  ? NRF_UARTE_BAUDRATE_250000  \
+	 : (baudrate) == 460800  ? NRF_UARTE_BAUDRATE_460800  \
+	 : (baudrate) == 921600  ? NRF_UARTE_BAUDRATE_921600  \
+	 : (baudrate) == 1000000 ? NRF_UARTE_BAUDRATE_1000000 \
 				 : 0)
 
 /**
@@ -496,7 +496,7 @@ static int wait_tx_ready(const struct device *dev)
 /* Using Macro instead of static inline function to handle NO_OPTIMIZATIONS case
  * where static inline fails on linking.
  */
-#define HW_RX_COUNTING_ENABLED(config)                                                             \
+#define HW_RX_COUNTING_ENABLED(config)                                                           \
 	(IS_ENABLED(UARTE_HW_ASYNC) ? (config->flags & UARTE_CFG_FLAG_HW_BYTE_COUNTING) : false)
 
 #endif /* UARTE_ANY_ASYNC */
@@ -1020,11 +1020,11 @@ static void rx_timeout(struct k_timer *timer)
 	nrf_uarte_int_enable(get_uarte_instance(dev), NRF_UARTE_INT_ENDRX_MASK);
 }
 
-#define UARTE_ERROR_FROM_MASK(mask)                                                                \
-	((mask) & NRF_UARTE_ERROR_OVERRUN_MASK   ? UART_ERROR_OVERRUN                              \
-	 : (mask) & NRF_UARTE_ERROR_PARITY_MASK  ? UART_ERROR_PARITY                               \
-	 : (mask) & NRF_UARTE_ERROR_FRAMING_MASK ? UART_ERROR_FRAMING                              \
-	 : (mask) & NRF_UARTE_ERROR_BREAK_MASK   ? UART_BREAK                                      \
+#define UARTE_ERROR_FROM_MASK(mask)                                   \
+	((mask) & NRF_UARTE_ERROR_OVERRUN_MASK   ? UART_ERROR_OVERRUN \
+	 : (mask) & NRF_UARTE_ERROR_PARITY_MASK  ? UART_ERROR_PARITY  \
+	 : (mask) & NRF_UARTE_ERROR_FRAMING_MASK ? UART_ERROR_FRAMING \
+	 : (mask) & NRF_UARTE_ERROR_BREAK_MASK   ? UART_BREAK         \
 						 : 0)
 
 static void error_isr(const struct device *dev)
@@ -1902,58 +1902,58 @@ static int uarte_nrfx_pm_action(const struct device *dev, enum pm_device_action 
 }
 #endif /* CONFIG_PM_DEVICE */
 
-#define UARTE_IRQ_CONFIGURE(idx, isr_handler)                                                      \
-	do {                                                                                       \
-		IRQ_CONNECT(DT_IRQN(UARTE(idx)), DT_IRQ(UARTE(idx), priority), isr_handler,        \
-			    DEVICE_DT_GET(UARTE(idx)), 0);                                         \
-		irq_enable(DT_IRQN(UARTE(idx)));                                                   \
+#define UARTE_IRQ_CONFIGURE(idx, isr_handler)                                               \
+	do {                                                                                \
+		IRQ_CONNECT(DT_IRQN(UARTE(idx)), DT_IRQ(UARTE(idx), priority), isr_handler, \
+			    DEVICE_DT_GET(UARTE(idx)), 0);                                  \
+		irq_enable(DT_IRQN(UARTE(idx)));                                            \
 	} while (false)
 
 /* Low power mode is used when disable_rx is not defined or in async mode if
  * kconfig option is enabled.
  */
-#define USE_LOW_POWER(idx)                                                                         \
-	((!UARTE_PROP(idx, disable_rx) &&                                                          \
+#define USE_LOW_POWER(idx)                                                         \
+	((!UARTE_PROP(idx, disable_rx) &&                                          \
 	  COND_CODE_1(CONFIG_UART_##idx##_ASYNC,				       \
 		(!IS_ENABLED(CONFIG_UART_##idx##_NRF_ASYNC_LOW_POWER)),	       \
-		(1)))                 \
-		       ? 0                                                                         \
+		(1))) \
+		       ? 0                                                         \
 		       : UARTE_CFG_FLAG_LOW_POWER)
 
 #define UARTE_DISABLE_RX_INIT(node_id) .disable_rx = DT_PROP(node_id, disable_rx)
 
 #define UARTE_GET_FREQ(idx) DT_PROP(DT_CLOCKS_CTLR(UARTE(idx)), clock_frequency)
 
-#define UARTE_GET_BAUDRATE_DIV(idx)                                                                \
+#define UARTE_GET_BAUDRATE_DIV(idx)                        \
 	COND_CODE_1(DT_CLOCKS_HAS_IDX(UARTE(idx), 0),				\
 		   ((UARTE_GET_FREQ(idx) / NRF_UARTE_BASE_FREQUENCY_16MHZ)), (1))
 
 /* When calculating baudrate we need to take into account that some instances
  * must have baudrate adjusted to the ratio between UARTE clocking frequency and 16 MHz.
  */
-#define UARTE_GET_BAUDRATE(idx)                                                                    \
+#define UARTE_GET_BAUDRATE(idx)                                                      \
 	(NRF_BAUDRATE(UARTE_PROP(idx, current_speed)) / UARTE_GET_BAUDRATE_DIV(idx))
 
 /* Macro for setting nRF specific configuration structures. */
-#define UARTE_NRF_CONFIG(idx)                                                                      \
-	{.hwfc = (UARTE_PROP(idx, hw_flow_control) == UART_CFG_FLOW_CTRL_RTS_CTS)                  \
-			 ? NRF_UARTE_HWFC_ENABLED                                                  \
-			 : NRF_UARTE_HWFC_DISABLED,                                                \
-	 .parity = IS_ENABLED(CONFIG_UART_##idx##_NRF_PARITY_BIT) ? NRF_UARTE_PARITY_INCLUDED      \
-								  : NRF_UARTE_PARITY_EXCLUDED,     \
+#define UARTE_NRF_CONFIG(idx)                                                                  \
+	{.hwfc = (UARTE_PROP(idx, hw_flow_control) == UART_CFG_FLOW_CTRL_RTS_CTS)              \
+			 ? NRF_UARTE_HWFC_ENABLED                                              \
+			 : NRF_UARTE_HWFC_DISABLED,                                            \
+	 .parity = IS_ENABLED(CONFIG_UART_##idx##_NRF_PARITY_BIT) ? NRF_UARTE_PARITY_INCLUDED  \
+								  : NRF_UARTE_PARITY_EXCLUDED, \
 	 IF_ENABLED(UARTE_HAS_STOP_CONFIG, (.stop = NRF_UARTE_STOP_ONE,)) IF_ENABLED(UARTE_ODD_PARITY_ALLOWED,				\
 			(.paritytype = NRF_UARTE_PARITYTYPE_EVEN,)) }
 
 /* Macro for setting zephyr specific configuration structures. */
-#define UARTE_CONFIG(idx)                                                                          \
-	{                                                                                          \
-		.baudrate = UARTE_PROP(idx, current_speed),                                        \
-		.data_bits = UART_CFG_DATA_BITS_8,                                                 \
-		.stop_bits = UART_CFG_STOP_BITS_1,                                                 \
-		.parity = IS_ENABLED(CONFIG_UART_##idx##_NRF_PARITY_BIT) ? UART_CFG_PARITY_EVEN    \
-									 : UART_CFG_PARITY_NONE,   \
-		.flow_ctrl = UARTE_PROP(idx, hw_flow_control) ? UART_CFG_FLOW_CTRL_RTS_CTS         \
-							      : UART_CFG_FLOW_CTRL_NONE,           \
+#define UARTE_CONFIG(idx)                                                                        \
+	{                                                                                        \
+		.baudrate = UARTE_PROP(idx, current_speed),                                      \
+		.data_bits = UART_CFG_DATA_BITS_8,                                               \
+		.stop_bits = UART_CFG_STOP_BITS_1,                                               \
+		.parity = IS_ENABLED(CONFIG_UART_##idx##_NRF_PARITY_BIT) ? UART_CFG_PARITY_EVEN  \
+									 : UART_CFG_PARITY_NONE, \
+		.flow_ctrl = UARTE_PROP(idx, hw_flow_control) ? UART_CFG_FLOW_CTRL_RTS_CTS       \
+							      : UART_CFG_FLOW_CTRL_NONE,         \
 	}
 
 #define UART_NRF_UARTE_DEVICE(idx)                                                                 \
@@ -2014,7 +2014,7 @@ static int uarte_nrfx_pm_action(const struct device *dev, enum pm_device_action 
 			 &uarte_##idx##_data, &uarte_##idx##z_config, PRE_KERNEL_1,                \
 			 CONFIG_SERIAL_INIT_PRIORITY, &uart_nrfx_uarte_driver_api)
 
-#define UARTE_INT_DRIVEN(idx)                                                                      \
+#define UARTE_INT_DRIVEN(idx)                                      \
 	IF_ENABLED(CONFIG_UART_##idx##_INTERRUPT_DRIVEN,		       \
 		(static uint8_t uarte##idx##_tx_buffer			       \
 			[MIN(CONFIG_UART_##idx##_NRF_TX_BUFFER_SIZE,	       \
@@ -2026,13 +2026,13 @@ static int uarte_nrfx_pm_action(const struct device *dev, enum pm_device_action 
 				.tx_buff_size = sizeof(uarte##idx##_tx_buffer),\
 			};))
 
-#define UARTE_MEMORY_SECTION(idx)                                                                  \
+#define UARTE_MEMORY_SECTION(idx)                                  \
 	COND_CODE_1(UARTE_HAS_PROP(idx, memory_regions),		       \
 		(__attribute__((__section__(LINKER_DT_NODE_REGION_NAME(	       \
 			DT_PHANDLE(UARTE(idx), memory_regions)))))),	       \
 		())
 
-#define COND_UART_NRF_UARTE_DEVICE(unused, prefix, i, _)                                           \
+#define COND_UART_NRF_UARTE_DEVICE(unused, prefix, i, _) \
 	IF_ENABLED(CONFIG_HAS_HW_NRF_UARTE##prefix##i, (UART_NRF_UARTE_DEVICE(prefix##i);))
 
 UARTE_FOR_EACH_INSTANCE(COND_UART_NRF_UARTE_DEVICE, (), ())

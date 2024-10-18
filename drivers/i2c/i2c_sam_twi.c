@@ -354,27 +354,27 @@ static const struct i2c_driver_api i2c_sam_twi_driver_api = {
 #endif
 };
 
-#define I2C_TWI_SAM_INIT(n)                                                                        \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	static void i2c##n##_sam_irq_config(void)                                                  \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), i2c_sam_twi_isr,            \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-	}                                                                                          \
-                                                                                                   \
-	static const struct i2c_sam_twi_dev_cfg i2c##n##_sam_config = {                            \
-		.regs = (Twi *)DT_INST_REG_ADDR(n),                                                \
-		.irq_config = i2c##n##_sam_irq_config,                                             \
-		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),                                         \
-		.irq_id = DT_INST_IRQN(n),                                                         \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
-	};                                                                                         \
-                                                                                                   \
-	static struct i2c_sam_twi_dev_data i2c##n##_sam_data;                                      \
-                                                                                                   \
-	I2C_DEVICE_DT_INST_DEFINE(n, i2c_sam_twi_initialize, NULL, &i2c##n##_sam_data,             \
-				  &i2c##n##_sam_config, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,     \
+#define I2C_TWI_SAM_INIT(n)                                                                    \
+	PINCTRL_DT_INST_DEFINE(n);                                                             \
+	static void i2c##n##_sam_irq_config(void)                                              \
+	{                                                                                      \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), i2c_sam_twi_isr,        \
+			    DEVICE_DT_INST_GET(n), 0);                                         \
+	}                                                                                      \
+                                                                                               \
+	static const struct i2c_sam_twi_dev_cfg i2c##n##_sam_config = {                        \
+		.regs = (Twi *)DT_INST_REG_ADDR(n),                                            \
+		.irq_config = i2c##n##_sam_irq_config,                                         \
+		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),                                     \
+		.irq_id = DT_INST_IRQN(n),                                                     \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                     \
+		.bitrate = DT_INST_PROP(n, clock_frequency),                                   \
+	};                                                                                     \
+                                                                                               \
+	static struct i2c_sam_twi_dev_data i2c##n##_sam_data;                                  \
+                                                                                               \
+	I2C_DEVICE_DT_INST_DEFINE(n, i2c_sam_twi_initialize, NULL, &i2c##n##_sam_data,         \
+				  &i2c##n##_sam_config, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, \
 				  &i2c_sam_twi_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_TWI_SAM_INIT)

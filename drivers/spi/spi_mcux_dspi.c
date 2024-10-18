@@ -769,59 +769,59 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 
 #ifdef CONFIG_DSPI_MCUX_EDMA
 
-#define TX_BUFFER(id)                                                                              \
-	static uint32_t edma_tx_buffer_##id[CONFIG_MCUX_DSPI_BUFFER_SIZE >> 2];                    \
-	static struct spi_buf spi_edma_tx_buffer_##id = {                                          \
-		.buf = edma_tx_buffer_##id,                                                        \
-		.len = CONFIG_MCUX_DSPI_BUFFER_SIZE,                                               \
+#define TX_BUFFER(id)                                                           \
+	static uint32_t edma_tx_buffer_##id[CONFIG_MCUX_DSPI_BUFFER_SIZE >> 2]; \
+	static struct spi_buf spi_edma_tx_buffer_##id = {                       \
+		.buf = edma_tx_buffer_##id,                                     \
+		.len = CONFIG_MCUX_DSPI_BUFFER_SIZE,                            \
 	}
 
-#define RX_BUFFER(id)                                                                              \
-	static uint32_t edma_rx_buffer_##id[CONFIG_MCUX_DSPI_BUFFER_SIZE >> 2];                    \
-	static struct spi_buf spi_edma_rx_buffer_##id = {                                          \
-		.buf = edma_rx_buffer_##id,                                                        \
-		.len = CONFIG_MCUX_DSPI_BUFFER_SIZE,                                               \
+#define RX_BUFFER(id)                                                           \
+	static uint32_t edma_rx_buffer_##id[CONFIG_MCUX_DSPI_BUFFER_SIZE >> 2]; \
+	static struct spi_buf spi_edma_rx_buffer_##id = {                       \
+		.buf = edma_rx_buffer_##id,                                     \
+		.len = CONFIG_MCUX_DSPI_BUFFER_SIZE,                            \
 	}
 
-#define TX_DMA_CONFIG(id)                                                                          \
-	.inner_tx_buffer = &spi_edma_tx_buffer_##id,                                               \
-	.tx_dma_config = {                                                                         \
-		.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, tx)),                       \
-		.dma_cfg =                                                                         \
-			{                                                                          \
-				.source_burst_length = 4,                                          \
-				.dest_burst_length = 4,                                            \
-				.source_data_size = 4,                                             \
-				.dest_data_size = 4,                                               \
-				.dma_callback = dma_callback,                                      \
-				.complete_callback_en = 1,                                         \
-				.error_callback_dis = 0,                                           \
-				.block_count = 1,                                                  \
-				.head_block = &spi_mcux_data_##id.tx_dma_block,                    \
-				.channel_direction = MEMORY_TO_PERIPHERAL,                         \
-				.dma_slot = DT_INST_DMAS_CELL_BY_NAME(id, tx, source),             \
-			},                                                                         \
+#define TX_DMA_CONFIG(id)                                                              \
+	.inner_tx_buffer = &spi_edma_tx_buffer_##id,                                   \
+	.tx_dma_config = {                                                             \
+		.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, tx)),           \
+		.dma_cfg =                                                             \
+			{                                                              \
+				.source_burst_length = 4,                              \
+				.dest_burst_length = 4,                                \
+				.source_data_size = 4,                                 \
+				.dest_data_size = 4,                                   \
+				.dma_callback = dma_callback,                          \
+				.complete_callback_en = 1,                             \
+				.error_callback_dis = 0,                               \
+				.block_count = 1,                                      \
+				.head_block = &spi_mcux_data_##id.tx_dma_block,        \
+				.channel_direction = MEMORY_TO_PERIPHERAL,             \
+				.dma_slot = DT_INST_DMAS_CELL_BY_NAME(id, tx, source), \
+			},                                                             \
 	},
 
-#define RX_DMA_CONFIG(id)                                                                          \
-	.inner_rx_buffer = &spi_edma_rx_buffer_##id,                                               \
-	.rx_dma_config = {                                                                         \
-		.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, rx)),                       \
-		.dma_cfg =                                                                         \
-			{                                                                          \
-				.source_burst_length = 2,                                          \
-				.dest_burst_length = 2,                                            \
-				.source_data_size = 2,                                             \
-				.dest_data_size = 2,                                               \
-				.dma_callback = dma_callback,                                      \
-				.complete_callback_en = 1,                                         \
-				.error_callback_dis = 0,                                           \
-				.block_count = _UTIL_AND2(                                         \
-					DT_INST_NODE_HAS_PROP(id, nxp_rx_tx_chn_share), 2),        \
-				.head_block = &spi_mcux_data_##id.rx_dma_block,                    \
-				.channel_direction = PERIPHERAL_TO_MEMORY,                         \
-				.dma_slot = DT_INST_DMAS_CELL_BY_NAME(id, rx, source),             \
-			},                                                                         \
+#define RX_DMA_CONFIG(id)                                                                   \
+	.inner_rx_buffer = &spi_edma_rx_buffer_##id,                                        \
+	.rx_dma_config = {                                                                  \
+		.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, rx)),                \
+		.dma_cfg =                                                                  \
+			{                                                                   \
+				.source_burst_length = 2,                                   \
+				.dest_burst_length = 2,                                     \
+				.source_data_size = 2,                                      \
+				.dest_data_size = 2,                                        \
+				.dma_callback = dma_callback,                               \
+				.complete_callback_en = 1,                                  \
+				.error_callback_dis = 0,                                    \
+				.block_count = _UTIL_AND2(                                  \
+					DT_INST_NODE_HAS_PROP(id, nxp_rx_tx_chn_share), 2), \
+				.head_block = &spi_mcux_data_##id.rx_dma_block,             \
+				.channel_direction = PERIPHERAL_TO_MEMORY,                  \
+				.dma_slot = DT_INST_DMAS_CELL_BY_NAME(id, rx, source),      \
+			},                                                                  \
 	},
 #else
 #define TX_BUFFER(id)

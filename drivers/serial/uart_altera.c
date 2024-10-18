@@ -63,8 +63,8 @@
 /* defined values */
 #define UART_ALTERA_NO_ERROR                (0u)
 #define ALTERA_AVALON_UART_CLEAR_STATUS_VAL (0u)
-#define ALTERA_AVALON_UART_PENDING_MASK                                                            \
-	(ALTERA_AVALON_UART_STATUS_RRDY_MSK | ALTERA_AVALON_UART_STATUS_TRDY_MSK |                 \
+#define ALTERA_AVALON_UART_PENDING_MASK                                            \
+	(ALTERA_AVALON_UART_STATUS_RRDY_MSK | ALTERA_AVALON_UART_STATUS_TRDY_MSK | \
 	 ALTERA_AVALON_UART_STATUS_E_MSK | ALTERA_AVALON_UART_STATUS_EOP_MSK)
 
 /***********************/
@@ -925,16 +925,16 @@ static const struct uart_driver_api uart_altera_driver_api = {
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-#define UART_ALTERA_IRQ_CONFIG_FUNC(n)                                                             \
-	static void uart_altera_irq_config_func_##n(const struct device *dev)                      \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_altera_isr,            \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define UART_ALTERA_IRQ_CONFIG_FUNC(n)                                                  \
+	static void uart_altera_irq_config_func_##n(const struct device *dev)           \
+	{                                                                               \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_altera_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                                  \
+                                                                                        \
+		irq_enable(DT_INST_IRQN(n));                                            \
 	}
 
-#define UART_ALTERA_IRQ_CONFIG_INIT(n)                                                             \
+#define UART_ALTERA_IRQ_CONFIG_INIT(n)                                                  \
 	.irq_config_func = uart_altera_irq_config_func_##n, .irq_num = DT_INST_IRQN(n),
 
 #else

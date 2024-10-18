@@ -470,9 +470,9 @@ static const struct fpga_driver_api altera_fpga_api = {
 	.off = altera_fpga_off,
 };
 
-#define CREATE_ALTERA_FPGA_BRIDGE_DEV(inst)                                                        \
-	static struct fpga_bridge_dev_data fpga_bridge_data_##inst;                                \
-	DEVICE_DT_INST_DEFINE(inst, altera_fpga_init, NULL, &fpga_bridge_data_##inst, NULL,        \
+#define CREATE_ALTERA_FPGA_BRIDGE_DEV(inst)                                                 \
+	static struct fpga_bridge_dev_data fpga_bridge_data_##inst;                         \
+	DEVICE_DT_INST_DEFINE(inst, altera_fpga_init, NULL, &fpga_bridge_data_##inst, NULL, \
 			      POST_KERNEL, CONFIG_FPGA_INIT_PRIORITY, &altera_fpga_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CREATE_ALTERA_FPGA_BRIDGE_DEV);

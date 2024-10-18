@@ -245,48 +245,48 @@ static int gpio_cmsdk_ahb_init(const struct device *dev)
 	return 0;
 }
 
-#define CMSDK_AHB_GPIO_DEVICE(n)                                                                   \
-	static void gpio_cmsdk_port_##n##_config_func(const struct device *dev);                   \
-                                                                                                   \
-	static const struct gpio_cmsdk_ahb_cfg gpio_cmsdk_port_##n##_config = {                    \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
-		.port = ((volatile struct gpio_cmsdk_ahb *)DT_INST_REG_ADDR(n)),                   \
-		.gpio_config_func = gpio_cmsdk_port_##n##_config_func,                             \
-		.gpio_cc_as =                                                                      \
-			{                                                                          \
-				.bus = CMSDK_AHB,                                                  \
-				.state = SOC_ACTIVE,                                               \
-				.device = DT_INST_REG_ADDR(n),                                     \
-			},                                                                         \
-		.gpio_cc_ss =                                                                      \
-			{                                                                          \
-				.bus = CMSDK_AHB,                                                  \
-				.state = SOC_SLEEP,                                                \
-				.device = DT_INST_REG_ADDR(n),                                     \
-			},                                                                         \
-		.gpio_cc_dss =                                                                     \
-			{                                                                          \
-				.bus = CMSDK_AHB,                                                  \
-				.state = SOC_DEEPSLEEP,                                            \
-				.device = DT_INST_REG_ADDR(n),                                     \
-			},                                                                         \
-	};                                                                                         \
-                                                                                                   \
-	static struct gpio_cmsdk_ahb_dev_data gpio_cmsdk_port_##n##_data;                          \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, gpio_cmsdk_ahb_init, NULL, &gpio_cmsdk_port_##n##_data,           \
-			      &gpio_cmsdk_port_##n##_config, PRE_KERNEL_1,                         \
-			      CONFIG_GPIO_INIT_PRIORITY, &gpio_cmsdk_ahb_drv_api_funcs);           \
-                                                                                                   \
-	static void gpio_cmsdk_port_##n##_config_func(const struct device *dev)                    \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_cmsdk_ahb_isr,         \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define CMSDK_AHB_GPIO_DEVICE(n)                                                           \
+	static void gpio_cmsdk_port_##n##_config_func(const struct device *dev);           \
+                                                                                           \
+	static const struct gpio_cmsdk_ahb_cfg gpio_cmsdk_port_##n##_config = {            \
+		.common =                                                                  \
+			{                                                                  \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),       \
+			},                                                                 \
+		.port = ((volatile struct gpio_cmsdk_ahb *)DT_INST_REG_ADDR(n)),           \
+		.gpio_config_func = gpio_cmsdk_port_##n##_config_func,                     \
+		.gpio_cc_as =                                                              \
+			{                                                                  \
+				.bus = CMSDK_AHB,                                          \
+				.state = SOC_ACTIVE,                                       \
+				.device = DT_INST_REG_ADDR(n),                             \
+			},                                                                 \
+		.gpio_cc_ss =                                                              \
+			{                                                                  \
+				.bus = CMSDK_AHB,                                          \
+				.state = SOC_SLEEP,                                        \
+				.device = DT_INST_REG_ADDR(n),                             \
+			},                                                                 \
+		.gpio_cc_dss =                                                             \
+			{                                                                  \
+				.bus = CMSDK_AHB,                                          \
+				.state = SOC_DEEPSLEEP,                                    \
+				.device = DT_INST_REG_ADDR(n),                             \
+			},                                                                 \
+	};                                                                                 \
+                                                                                           \
+	static struct gpio_cmsdk_ahb_dev_data gpio_cmsdk_port_##n##_data;                  \
+                                                                                           \
+	DEVICE_DT_INST_DEFINE(n, gpio_cmsdk_ahb_init, NULL, &gpio_cmsdk_port_##n##_data,   \
+			      &gpio_cmsdk_port_##n##_config, PRE_KERNEL_1,                 \
+			      CONFIG_GPIO_INIT_PRIORITY, &gpio_cmsdk_ahb_drv_api_funcs);   \
+                                                                                           \
+	static void gpio_cmsdk_port_##n##_config_func(const struct device *dev)            \
+	{                                                                                  \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_cmsdk_ahb_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                                     \
+                                                                                           \
+		irq_enable(DT_INST_IRQN(n));                                               \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(CMSDK_AHB_GPIO_DEVICE)

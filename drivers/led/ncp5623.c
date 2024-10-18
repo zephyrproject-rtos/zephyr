@@ -192,29 +192,29 @@ static const struct led_driver_api ncp5623_led_api = {
 	.set_color = ncp5623_set_color,
 };
 
-#define COLOR_MAPPING(led_node_id)                                                                 \
+#define COLOR_MAPPING(led_node_id)                                                                \
 	static const uint8_t color_mapping_##led_node_id[] = DT_PROP(led_node_id, color_mapping);
 
-#define LED_INFO(led_node_id)                                                                      \
-	{                                                                                          \
-		.label = DT_PROP(led_node_id, label),                                              \
-		.index = DT_PROP(led_node_id, index),                                              \
-		.num_colors = DT_PROP_LEN(led_node_id, color_mapping),                             \
-		.color_mapping = color_mapping_##led_node_id,                                      \
+#define LED_INFO(led_node_id)                                          \
+	{                                                              \
+		.label = DT_PROP(led_node_id, label),                  \
+		.index = DT_PROP(led_node_id, index),                  \
+		.num_colors = DT_PROP_LEN(led_node_id, color_mapping), \
+		.color_mapping = color_mapping_##led_node_id,          \
 	},
 
-#define NCP5623_DEFINE(id)                                                                         \
-                                                                                                   \
-	DT_INST_FOREACH_CHILD(id, COLOR_MAPPING)                                                   \
-                                                                                                   \
-	static const struct led_info ncp5623_leds_##id[] = {DT_INST_FOREACH_CHILD(id, LED_INFO)};  \
-                                                                                                   \
-	static const struct ncp5623_config ncp5623_config_##id = {                                 \
-		.bus = I2C_DT_SPEC_INST_GET(id),                                                   \
-		.num_leds = ARRAY_SIZE(ncp5623_leds_##id),                                         \
-		.leds_info = ncp5623_leds_##id,                                                    \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(id, &ncp5623_led_init, NULL, NULL, &ncp5623_config_##id,             \
+#define NCP5623_DEFINE(id)                                                                        \
+                                                                                                  \
+	DT_INST_FOREACH_CHILD(id, COLOR_MAPPING)                                                  \
+                                                                                                  \
+	static const struct led_info ncp5623_leds_##id[] = {DT_INST_FOREACH_CHILD(id, LED_INFO)}; \
+                                                                                                  \
+	static const struct ncp5623_config ncp5623_config_##id = {                                \
+		.bus = I2C_DT_SPEC_INST_GET(id),                                                  \
+		.num_leds = ARRAY_SIZE(ncp5623_leds_##id),                                        \
+		.leds_info = ncp5623_leds_##id,                                                   \
+	};                                                                                        \
+	DEVICE_DT_INST_DEFINE(id, &ncp5623_led_init, NULL, NULL, &ncp5623_config_##id,            \
 			      POST_KERNEL, CONFIG_LED_INIT_PRIORITY, &ncp5623_led_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NCP5623_DEFINE)

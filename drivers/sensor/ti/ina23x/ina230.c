@@ -240,9 +240,9 @@ static const struct sensor_driver_api ina230_driver_api = {
 };
 
 #ifdef CONFIG_INA230_TRIGGER
-#define INA230_CFG_IRQ(inst)                                                                       \
-	.trig_enabled = true, .mask = DT_INST_PROP(inst, mask),                                    \
-	.alert_limit = DT_INST_PROP(inst, alert_limit),                                            \
+#define INA230_CFG_IRQ(inst)                                    \
+	.trig_enabled = true, .mask = DT_INST_PROP(inst, mask), \
+	.alert_limit = DT_INST_PROP(inst, alert_limit),         \
 	.alert_gpio = GPIO_DT_SPEC_INST_GET(inst, alert_gpios)
 #else
 #define INA230_CFG_IRQ(inst)

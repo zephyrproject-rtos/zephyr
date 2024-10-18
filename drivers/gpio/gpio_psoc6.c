@@ -238,27 +238,27 @@ int gpio_psoc6_init(const struct device *dev)
 	return 0;
 }
 
-#define GPIO_PSOC6_INIT(n)                                                                         \
-	static void port_##n##_psoc6_config_func(const struct device *dev);                        \
-                                                                                                   \
-	static const struct gpio_psoc6_config port_##n##_psoc6_config = {                          \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
-		.regs = (GPIO_PRT_Type *)DT_INST_REG_ADDR(n),                                      \
-		.config_func = port_##n##_psoc6_config_func,                                       \
-	};                                                                                         \
-                                                                                                   \
-	static struct gpio_psoc6_runtime port_##n##_psoc6_runtime = {0};                           \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, gpio_psoc6_init, NULL, &port_##n##_psoc6_runtime,                 \
-			      &port_##n##_psoc6_config, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,   \
-			      &gpio_psoc6_api);                                                    \
-                                                                                                   \
-	static void port_##n##_psoc6_config_func(const struct device *dev)                         \
-	{                                                                                          \
-		CY_PSOC6_DT_INST_NVIC_INSTALL(n, gpio_psoc6_isr);                                  \
+#define GPIO_PSOC6_INIT(n)                                                                       \
+	static void port_##n##_psoc6_config_func(const struct device *dev);                      \
+                                                                                                 \
+	static const struct gpio_psoc6_config port_##n##_psoc6_config = {                        \
+		.common =                                                                        \
+			{                                                                        \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),             \
+			},                                                                       \
+		.regs = (GPIO_PRT_Type *)DT_INST_REG_ADDR(n),                                    \
+		.config_func = port_##n##_psoc6_config_func,                                     \
+	};                                                                                       \
+                                                                                                 \
+	static struct gpio_psoc6_runtime port_##n##_psoc6_runtime = {0};                         \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(n, gpio_psoc6_init, NULL, &port_##n##_psoc6_runtime,               \
+			      &port_##n##_psoc6_config, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, \
+			      &gpio_psoc6_api);                                                  \
+                                                                                                 \
+	static void port_##n##_psoc6_config_func(const struct device *dev)                       \
+	{                                                                                        \
+		CY_PSOC6_DT_INST_NVIC_INSTALL(n, gpio_psoc6_isr);                                \
 	};
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_PSOC6_INIT)

@@ -742,21 +742,21 @@ static int i2c_atciic100_init(const struct device *dev)
 	return 0;
 }
 
-#define I2C_INIT(n)                                                                                \
-	static struct i2c_atciic100_dev_data_t i2c_atciic100_dev_data_##n;                         \
-	static void i2c_dt_init_##n(void);                                                         \
-	static const struct i2c_atciic100_config i2c_atciic100_config_##n = {                      \
-		.base = DT_INST_REG_ADDR(n),                                                       \
-		.irq_num = DT_INST_IRQN(n),                                                        \
-		.dt_init_fn = i2c_dt_init_##n};                                                    \
-	I2C_DEVICE_DT_INST_DEFINE(n, i2c_atciic100_init, NULL, &i2c_atciic100_dev_data_##n,        \
-				  &i2c_atciic100_config_##n, POST_KERNEL,                          \
-				  CONFIG_I2C_INIT_PRIORITY, &i2c_atciic100_driver);                \
-                                                                                                   \
-	static void i2c_dt_init_##n(void)                                                          \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), i2c_atciic100_irq_handler,  \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
+#define I2C_INIT(n)                                                                               \
+	static struct i2c_atciic100_dev_data_t i2c_atciic100_dev_data_##n;                        \
+	static void i2c_dt_init_##n(void);                                                        \
+	static const struct i2c_atciic100_config i2c_atciic100_config_##n = {                     \
+		.base = DT_INST_REG_ADDR(n),                                                      \
+		.irq_num = DT_INST_IRQN(n),                                                       \
+		.dt_init_fn = i2c_dt_init_##n};                                                   \
+	I2C_DEVICE_DT_INST_DEFINE(n, i2c_atciic100_init, NULL, &i2c_atciic100_dev_data_##n,       \
+				  &i2c_atciic100_config_##n, POST_KERNEL,                         \
+				  CONFIG_I2C_INIT_PRIORITY, &i2c_atciic100_driver);               \
+                                                                                                  \
+	static void i2c_dt_init_##n(void)                                                         \
+	{                                                                                         \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), i2c_atciic100_irq_handler, \
+			    DEVICE_DT_INST_GET(n), 0);                                            \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_INIT)

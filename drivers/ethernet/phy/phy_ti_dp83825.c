@@ -586,17 +586,17 @@ static const struct ethphy_driver_api ti_dp83825_phy_api = {
 #define INTERRUPT_GPIO(n)
 #endif /* interrupt gpio */
 
-#define TI_DP83825_INIT(n)                                                                         \
-	static const struct ti_dp83825_config ti_dp83825_##n##_config = {                          \
-		.addr = DT_INST_REG_ADDR(n),                                                       \
-		.mdio_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                      \
-		.phy_iface = DT_INST_ENUM_IDX(n, ti_interface_type),                               \
-		RESET_GPIO(n) INTERRUPT_GPIO(n)};                                                  \
-                                                                                                   \
-	static struct ti_dp83825_data ti_dp83825_##n##_data;                                       \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &phy_ti_dp83825_init, NULL, &ti_dp83825_##n##_data,               \
-			      &ti_dp83825_##n##_config, POST_KERNEL, CONFIG_PHY_INIT_PRIORITY,     \
+#define TI_DP83825_INIT(n)                                                                     \
+	static const struct ti_dp83825_config ti_dp83825_##n##_config = {                      \
+		.addr = DT_INST_REG_ADDR(n),                                                   \
+		.mdio_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                  \
+		.phy_iface = DT_INST_ENUM_IDX(n, ti_interface_type),                           \
+		RESET_GPIO(n) INTERRUPT_GPIO(n)};                                              \
+                                                                                               \
+	static struct ti_dp83825_data ti_dp83825_##n##_data;                                   \
+                                                                                               \
+	DEVICE_DT_INST_DEFINE(n, &phy_ti_dp83825_init, NULL, &ti_dp83825_##n##_data,           \
+			      &ti_dp83825_##n##_config, POST_KERNEL, CONFIG_PHY_INIT_PRIORITY, \
 			      &ti_dp83825_phy_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TI_DP83825_INIT)

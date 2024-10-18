@@ -132,7 +132,7 @@ static inline void gpadc_smartbond_pm_policy_state_lock_put(const struct device 
 #endif
 }
 
-#define PER_CHANNEL_ADC_CONFIG_MASK                                                                \
+#define PER_CHANNEL_ADC_CONFIG_MASK                                                  \
 	(GPADC_GP_ADC_CTRL_REG_GP_ADC_SEL_Msk | GPADC_GP_ADC_CTRL_REG_GP_ADC_SE_Msk)
 
 static int pop_count(uint32_t n)
@@ -398,20 +398,20 @@ static const struct adc_driver_api adc_smartbond_driver_api = {
  * Just in case that assumption becomes invalid in the future, we use
  * a BUILD_ASSERT().
  */
-#define ADC_INIT(inst)                                                                             \
-	BUILD_ASSERT((inst) == 0, "multiple instances not supported");                             \
-	PINCTRL_DT_INST_DEFINE(inst);                                                              \
-	static const struct adc_smartbond_cfg adc_smartbond_cfg_##inst = {                         \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
-	};                                                                                         \
-	static struct adc_smartbond_data adc_smartbond_data_##inst = {                             \
-		ADC_CONTEXT_INIT_TIMER(adc_smartbond_data_##inst, ctx),                            \
-		ADC_CONTEXT_INIT_LOCK(adc_smartbond_data_##inst, ctx),                             \
-		ADC_CONTEXT_INIT_SYNC(adc_smartbond_data_##inst, ctx),                             \
-	};                                                                                         \
-	PM_DEVICE_DT_INST_DEFINE(inst, gpadc_smartbond_pm_action);                                 \
-	DEVICE_DT_INST_DEFINE(inst, adc_smartbond_init, PM_DEVICE_DT_INST_GET(inst),               \
-			      &adc_smartbond_data_##inst, &adc_smartbond_cfg_##inst, POST_KERNEL,  \
+#define ADC_INIT(inst)                                                                            \
+	BUILD_ASSERT((inst) == 0, "multiple instances not supported");                            \
+	PINCTRL_DT_INST_DEFINE(inst);                                                             \
+	static const struct adc_smartbond_cfg adc_smartbond_cfg_##inst = {                        \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                     \
+	};                                                                                        \
+	static struct adc_smartbond_data adc_smartbond_data_##inst = {                            \
+		ADC_CONTEXT_INIT_TIMER(adc_smartbond_data_##inst, ctx),                           \
+		ADC_CONTEXT_INIT_LOCK(adc_smartbond_data_##inst, ctx),                            \
+		ADC_CONTEXT_INIT_SYNC(adc_smartbond_data_##inst, ctx),                            \
+	};                                                                                        \
+	PM_DEVICE_DT_INST_DEFINE(inst, gpadc_smartbond_pm_action);                                \
+	DEVICE_DT_INST_DEFINE(inst, adc_smartbond_init, PM_DEVICE_DT_INST_GET(inst),              \
+			      &adc_smartbond_data_##inst, &adc_smartbond_cfg_##inst, POST_KERNEL, \
 			      CONFIG_ADC_INIT_PRIORITY, &adc_smartbond_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_INIT)

@@ -238,7 +238,7 @@ static const struct sdhc_driver_api sdhc_cdns_api = {
 	.card_busy = sdhc_cdns_card_busy,
 };
 
-#define SDHC_CDNS_CLOCK_RATE_INIT(inst)                                                            \
+#define SDHC_CDNS_CLOCK_RATE_INIT(inst)                             \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clock_frequency), \
 			( \
 				.clk_rate = DT_INST_PROP(inst, clock_frequency), \
@@ -252,37 +252,37 @@ static const struct sdhc_driver_api sdhc_cdns_api = {
 			) \
 		)
 
-#define SDHC_CDNS_RESET_SPEC_INIT(inst)                                                            \
-	.reset_sdmmc = RESET_DT_SPEC_INST_GET_BY_IDX(inst, 0),                                     \
-	.reset_sdmmcocp = RESET_DT_SPEC_INST_GET_BY_IDX(inst, 1),                                  \
+#define SDHC_CDNS_RESET_SPEC_INIT(inst)                           \
+	.reset_sdmmc = RESET_DT_SPEC_INST_GET_BY_IDX(inst, 0),    \
+	.reset_sdmmcocp = RESET_DT_SPEC_INST_GET_BY_IDX(inst, 1), \
 	.reset_softphy = RESET_DT_SPEC_INST_GET_BY_IDX(inst, 2),
 
-#define SDHC_CDNS_INIT(inst)                                                                       \
-	static struct sdhc_cdns_desc cdns_desc[CONFIG_CDNS_DESC_COUNT];                            \
-                                                                                                   \
-	static const struct sdhc_cdns_config sdhc_cdns_config_##inst = {                           \
-		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(reg_base, DT_DRV_INST(inst)),                   \
-		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(combo_phy, DT_DRV_INST(inst)),                  \
+#define SDHC_CDNS_INIT(inst)                                                                    \
+	static struct sdhc_cdns_desc cdns_desc[CONFIG_CDNS_DESC_COUNT];                         \
+                                                                                                \
+	static const struct sdhc_cdns_config sdhc_cdns_config_##inst = {                        \
+		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(reg_base, DT_DRV_INST(inst)),                \
+		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(combo_phy, DT_DRV_INST(inst)),               \
 		SDHC_CDNS_CLOCK_RATE_INIT(inst) IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, resets),		\
-			(SDHC_CDNS_RESET_SPEC_INIT(inst))) .power_delay_ms =                       \
-				 DT_INST_PROP(inst, power_delay_ms),                               \
-	};                                                                                         \
-	static struct sdhc_cdns_data sdhc_cdns_data_##inst = {                                     \
-		.params =                                                                          \
-			{                                                                          \
-				.bus_width = SDHC_BUS_WIDTH1BIT,                                   \
-				.desc_base = (uintptr_t)&cdns_desc,                                \
-				.desc_size = SDHC_CDNS_DESC_SIZE,                                  \
-				.flags = 0,                                                        \
-			},                                                                         \
-		.info =                                                                            \
-			{                                                                          \
-				.cdn_sdmmc_dev_type = SD_DS,                                       \
-				.ocr_voltage = OCR_3_3_3_4 | OCR_3_2_3_3,                          \
-			},                                                                         \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &sdhc_cdns_init, NULL, &sdhc_cdns_data_##inst,                 \
-			      &sdhc_cdns_config_##inst, POST_KERNEL, CONFIG_SDHC_INIT_PRIORITY,    \
+			(SDHC_CDNS_RESET_SPEC_INIT(inst))) .power_delay_ms =                    \
+				 DT_INST_PROP(inst, power_delay_ms),                            \
+	};                                                                                      \
+	static struct sdhc_cdns_data sdhc_cdns_data_##inst = {                                  \
+		.params =                                                                       \
+			{                                                                       \
+				.bus_width = SDHC_BUS_WIDTH1BIT,                                \
+				.desc_base = (uintptr_t)&cdns_desc,                             \
+				.desc_size = SDHC_CDNS_DESC_SIZE,                               \
+				.flags = 0,                                                     \
+			},                                                                      \
+		.info =                                                                         \
+			{                                                                       \
+				.cdn_sdmmc_dev_type = SD_DS,                                    \
+				.ocr_voltage = OCR_3_3_3_4 | OCR_3_2_3_3,                       \
+			},                                                                      \
+	};                                                                                      \
+	DEVICE_DT_INST_DEFINE(inst, &sdhc_cdns_init, NULL, &sdhc_cdns_data_##inst,              \
+			      &sdhc_cdns_config_##inst, POST_KERNEL, CONFIG_SDHC_INIT_PRIORITY, \
 			      &sdhc_cdns_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SDHC_CDNS_INIT)

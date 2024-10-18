@@ -366,29 +366,29 @@ static int iis328dq_init(const struct device *dev)
  * IIS328DQ_DEFINE_I2C().
  */
 
-#define IIS328DQ_DEVICE_INIT(inst)                                                                 \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, iis328dq_init, NULL, &iis328dq_data_##inst,             \
-				     &iis328dq_config_##inst, POST_KERNEL,                         \
+#define IIS328DQ_DEVICE_INIT(inst)                                                       \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, iis328dq_init, NULL, &iis328dq_data_##inst,   \
+				     &iis328dq_config_##inst, POST_KERNEL,               \
 				     CONFIG_SENSOR_INIT_PRIORITY, &iis328dq_driver_api);
 
 #ifdef CONFIG_IIS328DQ_TRIGGER
 #ifdef CONFIG_IIS328DQ_THRESHOLD
-#define IIS328DQ_CFG_IRQ_THRESHOLD(inst)                                                           \
+#define IIS328DQ_CFG_IRQ_THRESHOLD(inst)                               \
 	.threshold_pad = DT_INST_PROP_OR(inst, threshold_int_pad, -1),
 #else
 #define IIS328DQ_CFG_IRQ_THRESHOLD(inst)
 #endif /* CONFIG_IIS328DQ_THRESHOLD */
 
-#define IIS328DQ_CFG_IRQ(inst)                                                                     \
-	.gpio_int1 = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, {0}),                              \
-	.gpio_int2 = GPIO_DT_SPEC_INST_GET_OR(inst, int2_gpios, {0}),                              \
+#define IIS328DQ_CFG_IRQ(inst)                                                                \
+	.gpio_int1 = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, {0}),                         \
+	.gpio_int2 = GPIO_DT_SPEC_INST_GET_OR(inst, int2_gpios, {0}),                         \
 	.drdy_pad = DT_INST_PROP_OR(inst, drdy_int_pad, -1), IIS328DQ_CFG_IRQ_THRESHOLD(inst)
 #else
 #define IIS328DQ_CFG_IRQ(inst)
 #endif /* CONFIG_IIS328DQ_TRIGGER */
 
-#define IIS328DQ_CONFIG_COMMON(inst)                                                               \
-	.range = DT_INST_PROP(inst, range),                                                        \
+#define IIS328DQ_CONFIG_COMMON(inst)        \
+	.range = DT_INST_PROP(inst, range), \
 	IF_ENABLED(UTIL_OR(DT_INST_NODE_HAS_PROP(inst, int1_gpios),                                \
 			   DT_INST_NODE_HAS_PROP(inst, int2_gpios)),                               \
 		   (IIS328DQ_CFG_IRQ(inst)))
@@ -397,27 +397,27 @@ static int iis328dq_init(const struct device *dev)
  * Instantiation macros used when a device is on a SPI bus.
  */
 
-#define IIS328DQ_SPI_OPERATION                                                                     \
+#define IIS328DQ_SPI_OPERATION                                                 \
 	(SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA)
 
-#define IIS328DQ_CONFIG_SPI(inst)                                                                  \
-	{STMEMSC_CTX_SPI_INCR(&iis328dq_config_##inst.stmemsc_cfg),                                \
-	 .stmemsc_cfg =                                                                            \
-		 {                                                                                 \
-			 .spi = SPI_DT_SPEC_INST_GET(inst, IIS328DQ_SPI_OPERATION, 0),             \
-		 },                                                                                \
+#define IIS328DQ_CONFIG_SPI(inst)                                                      \
+	{STMEMSC_CTX_SPI_INCR(&iis328dq_config_##inst.stmemsc_cfg),                    \
+	 .stmemsc_cfg =                                                                \
+		 {                                                                     \
+			 .spi = SPI_DT_SPEC_INST_GET(inst, IIS328DQ_SPI_OPERATION, 0), \
+		 },                                                                    \
 	 IIS328DQ_CONFIG_COMMON(inst)}
 
 /*
  * Instantiation macros used when a device is on an I2C bus.
  */
 
-#define IIS328DQ_CONFIG_I2C(inst)                                                                  \
-	{STMEMSC_CTX_I2C_INCR(&iis328dq_config_##inst.stmemsc_cfg),                                \
-	 .stmemsc_cfg =                                                                            \
-		 {                                                                                 \
-			 .i2c = I2C_DT_SPEC_INST_GET(inst),                                        \
-		 },                                                                                \
+#define IIS328DQ_CONFIG_I2C(inst)                                   \
+	{STMEMSC_CTX_I2C_INCR(&iis328dq_config_##inst.stmemsc_cfg), \
+	 .stmemsc_cfg =                                             \
+		 {                                                  \
+			 .i2c = I2C_DT_SPEC_INST_GET(inst),         \
+		 },                                                 \
 	 IIS328DQ_CONFIG_COMMON(inst)}
 
 /*

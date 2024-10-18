@@ -613,27 +613,27 @@ static const struct display_driver_api gc9x01x_api = {
 	.set_orientation = gc9x01x_set_orientation,
 };
 
-#define GC9X01X_INIT(inst)                                                                         \
-	GC9X01X_REGS_INIT(inst);                                                                   \
-	static const struct gc9x01x_config gc9x01x_config_##inst = {                               \
-		.mipi_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                   \
-		.dbi_config =                                                                      \
-			{                                                                          \
-				.mode = MIPI_DBI_MODE_SPI_4WIRE,                                   \
-				.config = MIPI_DBI_SPI_CONFIG_DT_INST(                             \
-					inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),            \
-			},                                                                         \
-		.pixel_format = DT_INST_PROP(inst, pixel_format),                                  \
-		.orientation = DT_INST_ENUM_IDX(inst, orientation),                                \
-		.x_resolution = DT_INST_PROP(inst, width),                                         \
-		.y_resolution = DT_INST_PROP(inst, height),                                        \
-		.inversion = DT_INST_PROP(inst, display_inversion),                                \
-		.regs = &gc9x01x_regs_##inst,                                                      \
-	};                                                                                         \
-	static struct gc9x01x_data gc9x01x_data_##inst;                                            \
-	PM_DEVICE_DT_INST_DEFINE(inst, gc9x01x_pm_action);                                         \
-	DEVICE_DT_INST_DEFINE(inst, &gc9x01x_init, PM_DEVICE_DT_INST_GET(inst),                    \
-			      &gc9x01x_data_##inst, &gc9x01x_config_##inst, POST_KERNEL,           \
+#define GC9X01X_INIT(inst)                                                               \
+	GC9X01X_REGS_INIT(inst);                                                         \
+	static const struct gc9x01x_config gc9x01x_config_##inst = {                     \
+		.mipi_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                         \
+		.dbi_config =                                                            \
+			{                                                                \
+				.mode = MIPI_DBI_MODE_SPI_4WIRE,                         \
+				.config = MIPI_DBI_SPI_CONFIG_DT_INST(                   \
+					inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),  \
+			},                                                               \
+		.pixel_format = DT_INST_PROP(inst, pixel_format),                        \
+		.orientation = DT_INST_ENUM_IDX(inst, orientation),                      \
+		.x_resolution = DT_INST_PROP(inst, width),                               \
+		.y_resolution = DT_INST_PROP(inst, height),                              \
+		.inversion = DT_INST_PROP(inst, display_inversion),                      \
+		.regs = &gc9x01x_regs_##inst,                                            \
+	};                                                                               \
+	static struct gc9x01x_data gc9x01x_data_##inst;                                  \
+	PM_DEVICE_DT_INST_DEFINE(inst, gc9x01x_pm_action);                               \
+	DEVICE_DT_INST_DEFINE(inst, &gc9x01x_init, PM_DEVICE_DT_INST_GET(inst),          \
+			      &gc9x01x_data_##inst, &gc9x01x_config_##inst, POST_KERNEL, \
 			      CONFIG_DISPLAY_INIT_PRIORITY, &gc9x01x_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GC9X01X_INIT)

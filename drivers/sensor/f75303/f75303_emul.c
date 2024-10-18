@@ -165,10 +165,10 @@ static const struct emul_sensor_driver_api f75303_emul_api_sensor = {
 	.get_sample_range = f75303_emul_get_sample_range,
 };
 
-#define F75303_EMUL(n)                                                                             \
-	const struct f75303_emul_cfg f75303_emul_cfg_##n;                                          \
-	struct f75303_emul_data f75303_emul_data_##n;                                              \
-	EMUL_DT_INST_DEFINE(n, f75303_emul_init, &f75303_emul_data_##n, &f75303_emul_cfg_##n,      \
+#define F75303_EMUL(n)                                                                        \
+	const struct f75303_emul_cfg f75303_emul_cfg_##n;                                     \
+	struct f75303_emul_data f75303_emul_data_##n;                                         \
+	EMUL_DT_INST_DEFINE(n, f75303_emul_init, &f75303_emul_data_##n, &f75303_emul_cfg_##n, \
 			    &f75303_emul_api_i2c, &f75303_emul_api_sensor);
 
 DT_INST_FOREACH_STATUS_OKAY(F75303_EMUL)

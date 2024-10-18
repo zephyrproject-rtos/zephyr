@@ -68,7 +68,7 @@
 #define PLLP_FREQ(pllsrc_freq, divm, divn, divp) (((pllsrc_freq) * (divn)) / ((divm) * (divp)))
 
 /* PLL P output frequency value */
-#define PLLP_VALUE                                                                                 \
+#define PLLP_VALUE                                                                               \
 	PLLP_FREQ(PLLSRC_FREQ, STM32_PLL_M_DIVISOR, STM32_PLL_N_MULTIPLIER, STM32_PLL_P_DIVISOR)
 
 /* SYSCLKSRC before the D1CPRE prescaler */
@@ -100,24 +100,24 @@
 #endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 
 /* Datasheet maximum frequency definitions */
-#if defined(CONFIG_SOC_STM32H743XX) || defined(CONFIG_SOC_STM32H745XX_M7) ||                       \
-	defined(CONFIG_SOC_STM32H745XX_M4) || defined(CONFIG_SOC_STM32H747XX_M7) ||                \
-	defined(CONFIG_SOC_STM32H747XX_M4) || defined(CONFIG_SOC_STM32H750XX) ||                   \
-	defined(CONFIG_SOC_STM32H753XX) || defined(CONFIG_SOC_STM32H755XX_M7) ||                   \
+#if defined(CONFIG_SOC_STM32H743XX) || defined(CONFIG_SOC_STM32H745XX_M7) ||        \
+	defined(CONFIG_SOC_STM32H745XX_M4) || defined(CONFIG_SOC_STM32H747XX_M7) || \
+	defined(CONFIG_SOC_STM32H747XX_M4) || defined(CONFIG_SOC_STM32H750XX) ||    \
+	defined(CONFIG_SOC_STM32H753XX) || defined(CONFIG_SOC_STM32H755XX_M7) ||    \
 	defined(CONFIG_SOC_STM32H755XX_M4)
 /* All h7 SoC with maximum 480MHz SYSCLK */
 #define SYSCLK_FREQ_MAX 480000000UL
 #define AHB_FREQ_MAX    240000000UL
 #define APBx_FREQ_MAX   120000000UL
-#elif defined(CONFIG_SOC_STM32H723XX) || defined(CONFIG_SOC_STM32H725XX) ||                        \
-	defined(CONFIG_SOC_STM32H730XX) || defined(CONFIG_SOC_STM32H730XXQ) ||                     \
+#elif defined(CONFIG_SOC_STM32H723XX) || defined(CONFIG_SOC_STM32H725XX) ||    \
+	defined(CONFIG_SOC_STM32H730XX) || defined(CONFIG_SOC_STM32H730XXQ) || \
 	defined(CONFIG_SOC_STM32H735XX)
 /* All h7 SoC with maximum 550MHz SYSCLK */
 #define SYSCLK_FREQ_MAX 550000000UL
 #define AHB_FREQ_MAX    275000000UL
 #define APBx_FREQ_MAX   137500000UL
-#elif defined(CONFIG_SOC_STM32H7A3XX) || defined(CONFIG_SOC_STM32H7A3XXQ) ||                       \
-	defined(CONFIG_SOC_STM32H7B0XX) || defined(CONFIG_SOC_STM32H7B0XXQ) ||                     \
+#elif defined(CONFIG_SOC_STM32H7A3XX) || defined(CONFIG_SOC_STM32H7A3XXQ) ||   \
+	defined(CONFIG_SOC_STM32H7B0XX) || defined(CONFIG_SOC_STM32H7B0XXQ) || \
 	defined(CONFIG_SOC_STM32H7B3XX) || defined(CONFIG_SOC_STM32H7B3XXQ)
 #define SYSCLK_FREQ_MAX 280000000UL
 #define AHB_FREQ_MAX    280000000UL
@@ -995,8 +995,8 @@ int stm32_clock_control_init(const struct device *dev)
 	uint32_t new_hclk_freq;
 
 	/* HW semaphore Clock enable */
-#if defined(CONFIG_SOC_STM32H7A3XX) || defined(CONFIG_SOC_STM32H7A3XXQ) ||                         \
-	defined(CONFIG_SOC_STM32H7B0XX) || defined(CONFIG_SOC_STM32H7B0XXQ) ||                     \
+#if defined(CONFIG_SOC_STM32H7A3XX) || defined(CONFIG_SOC_STM32H7A3XXQ) ||     \
+	defined(CONFIG_SOC_STM32H7B0XX) || defined(CONFIG_SOC_STM32H7B0XXQ) || \
 	defined(CONFIG_SOC_STM32H7B3XX) || defined(CONFIG_SOC_STM32H7B3XXQ)
 	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_HSEM);
 #elif !defined(CONFIG_SOC_SERIES_STM32H7RSX)

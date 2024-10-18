@@ -379,9 +379,9 @@ static int lis2du12_init(const struct device *dev)
  * LIS2DU12_DEFINE_I2C().
  */
 
-#define LIS2DU12_DEVICE_INIT(inst)                                                                 \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, lis2du12_init, NULL, &lis2du12_data_##inst,             \
-				     &lis2du12_config_##inst, POST_KERNEL,                         \
+#define LIS2DU12_DEVICE_INIT(inst)                                                       \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, lis2du12_init, NULL, &lis2du12_data_##inst,   \
+				     &lis2du12_config_##inst, POST_KERNEL,               \
 				     CONFIG_SENSOR_INIT_PRIORITY, &lis2du12_driver_api);
 
 /*
@@ -389,9 +389,9 @@ static int lis2du12_init(const struct device *dev)
  */
 
 #ifdef CONFIG_LIS2DU12_TRIGGER
-#define LIS2DU12_CFG_IRQ(inst)                                                                     \
-	.trig_enabled = true, .int1_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, {0}),        \
-	.int2_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int2_gpios, {0}),                              \
+#define LIS2DU12_CFG_IRQ(inst)                                                                   \
+	.trig_enabled = true, .int1_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, {0}),      \
+	.int2_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int2_gpios, {0}),                            \
 	.drdy_pulsed = DT_INST_PROP(inst, drdy_pulsed), .drdy_pin = DT_INST_PROP(inst, drdy_pin)
 #else
 #define LIS2DU12_CFG_IRQ(inst)
@@ -399,9 +399,9 @@ static int lis2du12_init(const struct device *dev)
 
 #define LIS2DU12_SPI_OP (SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA)
 
-#define LIS2DU12_CONFIG_COMMON(inst)                                                               \
-	.accel_odr = DT_INST_PROP(inst, accel_odr),                                                \
-	.accel_range = DT_INST_PROP(inst, accel_range),                                            \
+#define LIS2DU12_CONFIG_COMMON(inst)                                  \
+	.accel_odr = DT_INST_PROP(inst, accel_odr),                   \
+	.accel_range = DT_INST_PROP(inst, accel_range),               \
 	IF_ENABLED(UTIL_OR(DT_INST_NODE_HAS_PROP(inst, int1_gpios),	\
 			   DT_INST_NODE_HAS_PROP(inst, int2_gpios)),	\
 		   (LIS2DU12_CFG_IRQ(inst)))
@@ -410,24 +410,24 @@ static int lis2du12_init(const struct device *dev)
  * Instantiation macros used when a device is on a SPI bus.
  */
 
-#define LIS2DU12_CONFIG_SPI(inst)                                                                  \
-	{STMEMSC_CTX_SPI(&lis2du12_config_##inst.stmemsc_cfg),                                     \
-	 .stmemsc_cfg =                                                                            \
-		 {                                                                                 \
-			 .spi = SPI_DT_SPEC_INST_GET(inst, LIS2DU12_SPI_OP, 0),                    \
-		 },                                                                                \
+#define LIS2DU12_CONFIG_SPI(inst)                                               \
+	{STMEMSC_CTX_SPI(&lis2du12_config_##inst.stmemsc_cfg),                  \
+	 .stmemsc_cfg =                                                         \
+		 {                                                              \
+			 .spi = SPI_DT_SPEC_INST_GET(inst, LIS2DU12_SPI_OP, 0), \
+		 },                                                             \
 	 LIS2DU12_CONFIG_COMMON(inst)}
 
 /*
  * Instantiation macros used when a device is on an I2C bus.
  */
 
-#define LIS2DU12_CONFIG_I2C(inst)                                                                  \
-	{STMEMSC_CTX_I2C(&lis2du12_config_##inst.stmemsc_cfg),                                     \
-	 .stmemsc_cfg =                                                                            \
-		 {                                                                                 \
-			 .i2c = I2C_DT_SPEC_INST_GET(inst),                                        \
-		 },                                                                                \
+#define LIS2DU12_CONFIG_I2C(inst)                              \
+	{STMEMSC_CTX_I2C(&lis2du12_config_##inst.stmemsc_cfg), \
+	 .stmemsc_cfg =                                        \
+		 {                                             \
+			 .i2c = I2C_DT_SPEC_INST_GET(inst),    \
+		 },                                            \
 	 LIS2DU12_CONFIG_COMMON(inst)}
 
 /*
@@ -435,11 +435,11 @@ static int lis2du12_init(const struct device *dev)
  * bus-specific macro at preprocessor time.
  */
 
-#define LIS2DU12_DEFINE(inst)                                                                      \
-	static struct lis2du12_data lis2du12_data_##inst;                                          \
+#define LIS2DU12_DEFINE(inst)                                                       \
+	static struct lis2du12_data lis2du12_data_##inst;                           \
 	static const struct lis2du12_config lis2du12_config_##inst = COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
 			(LIS2DU12_CONFIG_SPI(inst)),			\
-			(LIS2DU12_CONFIG_I2C(inst)));                \
+			(LIS2DU12_CONFIG_I2C(inst))); \
 	LIS2DU12_DEVICE_INIT(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(LIS2DU12_DEFINE)

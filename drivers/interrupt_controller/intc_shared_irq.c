@@ -149,28 +149,28 @@ static int shared_irq_initialize(const struct device *dev)
 #define F1(x)                         1
 #define INST_SUPPORTS_DEP_ORDS_CNT(n) (FOR_EACH(F1, (+), DT_INST_SUPPORTS_DEP_ORDS(n)) - 1)
 
-#define SHARED_IRQ_CONFIG_FUNC(n)                                                                  \
-	void shared_irq_config_func_##n(void)                                                      \
-	{                                                                                          \
-		IRQ_CONNECT(                                                                       \
-			DT_INST_IRQN(n), DT_INST_IRQ(n, priority), shared_irq_isr,                 \
-			DEVICE_DT_INST_GET(n),                                                     \
+#define SHARED_IRQ_CONFIG_FUNC(n)                                                               \
+	void shared_irq_config_func_##n(void)                                                   \
+	{                                                                                       \
+		IRQ_CONNECT(                                                                    \
+			DT_INST_IRQN(n), DT_INST_IRQ(n, priority), shared_irq_isr,              \
+			DEVICE_DT_INST_GET(n),                                                  \
 			COND_CODE_1(DT_INST_IRQ_HAS_CELL(n, sense),		\
 				(DT_INST_IRQ(n, sense)),		\
-				(0)));    \
+				(0))); \
 	}
 
-#define SHARED_IRQ_INIT(n)                                                                         \
-	SHARED_IRQ_CONFIG_FUNC(n)                                                                  \
-	struct shared_irq_client clients_##n[INST_SUPPORTS_DEP_ORDS_CNT(n)];                       \
-	struct shared_irq_runtime shared_irq_data_##n = {.client = clients_##n};                   \
-                                                                                                   \
-	const struct shared_irq_config shared_irq_config_##n = {                                   \
-		.irq_num = DT_INST_IRQN(n),                                                        \
-		.client_count = INST_SUPPORTS_DEP_ORDS_CNT(n),                                     \
-		.config = shared_irq_config_func_##n};                                             \
-	DEVICE_DT_INST_DEFINE(n, shared_irq_initialize, NULL, &shared_irq_data_##n,                \
-			      &shared_irq_config_##n, POST_KERNEL,                                 \
+#define SHARED_IRQ_INIT(n)                                                          \
+	SHARED_IRQ_CONFIG_FUNC(n)                                                   \
+	struct shared_irq_client clients_##n[INST_SUPPORTS_DEP_ORDS_CNT(n)];        \
+	struct shared_irq_runtime shared_irq_data_##n = {.client = clients_##n};    \
+                                                                                    \
+	const struct shared_irq_config shared_irq_config_##n = {                    \
+		.irq_num = DT_INST_IRQN(n),                                         \
+		.client_count = INST_SUPPORTS_DEP_ORDS_CNT(n),                      \
+		.config = shared_irq_config_func_##n};                              \
+	DEVICE_DT_INST_DEFINE(n, shared_irq_initialize, NULL, &shared_irq_data_##n, \
+			      &shared_irq_config_##n, POST_KERNEL,                  \
 			      CONFIG_SHARED_IRQ_INIT_PRIORITY, &api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(SHARED_IRQ_INIT)

@@ -106,15 +106,15 @@ static const struct display_driver_api dummy_display_api = {
 	.set_pixel_format = dummy_display_set_pixel_format,
 };
 
-#define DISPLAY_DUMMY_DEFINE(n)                                                                    \
-	static const struct dummy_display_config dd_config_##n = {                                 \
-		.height = DT_INST_PROP(n, height),                                                 \
-		.width = DT_INST_PROP(n, width),                                                   \
-	};                                                                                         \
-                                                                                                   \
-	static struct dummy_display_data dd_data_##n;                                              \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &dummy_display_init, NULL, &dd_data_##n, &dd_config_##n,          \
+#define DISPLAY_DUMMY_DEFINE(n)                                                               \
+	static const struct dummy_display_config dd_config_##n = {                            \
+		.height = DT_INST_PROP(n, height),                                            \
+		.width = DT_INST_PROP(n, width),                                              \
+	};                                                                                    \
+                                                                                              \
+	static struct dummy_display_data dd_data_##n;                                         \
+                                                                                              \
+	DEVICE_DT_INST_DEFINE(n, &dummy_display_init, NULL, &dd_data_##n, &dd_config_##n,     \
 			      POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY, &dummy_display_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DISPLAY_DUMMY_DEFINE)

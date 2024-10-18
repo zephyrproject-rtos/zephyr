@@ -347,29 +347,29 @@ static const struct auxdisplay_driver_api auxdisplay_jhd1313_auxdisplay_api = {
 	.write = auxdisplay_jhd1313_print,
 };
 
-#define AUXDISPLAY_JHD1313_DEVICE(inst)                                                            \
-	static const struct auxdisplay_jhd1313_config auxdisplay_jhd1313_config_##inst = {         \
-		.capabilities =                                                                    \
-			{                                                                          \
-				.columns = 16,                                                     \
-				.rows = 2,                                                         \
-				.mode = 0,                                                         \
-				.brightness.minimum = AUXDISPLAY_LIGHT_NOT_SUPPORTED,              \
-				.brightness.maximum = AUXDISPLAY_LIGHT_NOT_SUPPORTED,              \
-				.backlight.minimum = 0,                                            \
-				.backlight.maximum = ARRAY_SIZE(colour_define),                    \
-				.custom_characters = 0,                                            \
-			},                                                                         \
-		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
-	};                                                                                         \
-	static struct auxdisplay_jhd1313_data auxdisplay_jhd1313_data_##inst = {                   \
-		.power = true,                                                                     \
-		.cursor = false,                                                                   \
-		.blinking = false,                                                                 \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &auxdisplay_jhd1313_initialize, NULL,                          \
-			      &auxdisplay_jhd1313_data_##inst, &auxdisplay_jhd1313_config_##inst,  \
-			      POST_KERNEL, CONFIG_AUXDISPLAY_INIT_PRIORITY,                        \
+#define AUXDISPLAY_JHD1313_DEVICE(inst)                                                           \
+	static const struct auxdisplay_jhd1313_config auxdisplay_jhd1313_config_##inst = {        \
+		.capabilities =                                                                   \
+			{                                                                         \
+				.columns = 16,                                                    \
+				.rows = 2,                                                        \
+				.mode = 0,                                                        \
+				.brightness.minimum = AUXDISPLAY_LIGHT_NOT_SUPPORTED,             \
+				.brightness.maximum = AUXDISPLAY_LIGHT_NOT_SUPPORTED,             \
+				.backlight.minimum = 0,                                           \
+				.backlight.maximum = ARRAY_SIZE(colour_define),                   \
+				.custom_characters = 0,                                           \
+			},                                                                        \
+		.bus = I2C_DT_SPEC_INST_GET(inst),                                                \
+	};                                                                                        \
+	static struct auxdisplay_jhd1313_data auxdisplay_jhd1313_data_##inst = {                  \
+		.power = true,                                                                    \
+		.cursor = false,                                                                  \
+		.blinking = false,                                                                \
+	};                                                                                        \
+	DEVICE_DT_INST_DEFINE(inst, &auxdisplay_jhd1313_initialize, NULL,                         \
+			      &auxdisplay_jhd1313_data_##inst, &auxdisplay_jhd1313_config_##inst, \
+			      POST_KERNEL, CONFIG_AUXDISPLAY_INIT_PRIORITY,                       \
 			      &auxdisplay_jhd1313_auxdisplay_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AUXDISPLAY_JHD1313_DEVICE)

@@ -1517,21 +1517,21 @@ static int flash_stm32_qspi_init(const struct device *dev)
 
 #define DMA_CHANNEL_CONFIG(node, dir) DT_DMAS_CELL_BY_NAME(node, dir, channel_config)
 
-#define QSPI_DMA_CHANNEL_INIT(node, dir)                                                           \
-	.dev = DEVICE_DT_GET(DT_DMAS_CTLR(node)),                                                  \
-	.channel = DT_DMAS_CELL_BY_NAME(node, dir, channel),                                       \
-	.reg = (DMA_TypeDef *)DT_REG_ADDR(DT_PHANDLE_BY_NAME(node, dmas, dir)),                    \
-	.cfg = {                                                                                   \
-		.dma_slot = DT_DMAS_CELL_BY_NAME(node, dir, slot),                                 \
-		.source_data_size =                                                                \
-			STM32_DMA_CONFIG_PERIPHERAL_DATA_SIZE(DMA_CHANNEL_CONFIG(node, dir)),      \
-		.dest_data_size =                                                                  \
-			STM32_DMA_CONFIG_MEMORY_DATA_SIZE(DMA_CHANNEL_CONFIG(node, dir)),          \
-		.channel_priority = STM32_DMA_CONFIG_PRIORITY(DMA_CHANNEL_CONFIG(node, dir)),      \
-		.dma_callback = qspi_dma_callback,                                                 \
+#define QSPI_DMA_CHANNEL_INIT(node, dir)                                                      \
+	.dev = DEVICE_DT_GET(DT_DMAS_CTLR(node)),                                             \
+	.channel = DT_DMAS_CELL_BY_NAME(node, dir, channel),                                  \
+	.reg = (DMA_TypeDef *)DT_REG_ADDR(DT_PHANDLE_BY_NAME(node, dmas, dir)),               \
+	.cfg = {                                                                              \
+		.dma_slot = DT_DMAS_CELL_BY_NAME(node, dir, slot),                            \
+		.source_data_size =                                                           \
+			STM32_DMA_CONFIG_PERIPHERAL_DATA_SIZE(DMA_CHANNEL_CONFIG(node, dir)), \
+		.dest_data_size =                                                             \
+			STM32_DMA_CONFIG_MEMORY_DATA_SIZE(DMA_CHANNEL_CONFIG(node, dir)),     \
+		.channel_priority = STM32_DMA_CONFIG_PRIORITY(DMA_CHANNEL_CONFIG(node, dir)), \
+		.dma_callback = qspi_dma_callback,                                            \
 	},
 
-#define QSPI_DMA_CHANNEL(node, dir)                                                                \
+#define QSPI_DMA_CHANNEL(node, dir) \
 	.dma = {COND_CODE_1(DT_DMAS_HAS_NAME(node, dir),		\
 			(QSPI_DMA_CHANNEL_INIT(node, dir)),		\
 			(NULL)) },
@@ -1540,12 +1540,12 @@ static int flash_stm32_qspi_init(const struct device *dev)
 
 static void flash_stm32_qspi_irq_config_func(const struct device *dev);
 
-#define DT_WRITEOC_PROP_OR(inst, default_value)                                                    \
+#define DT_WRITEOC_PROP_OR(inst, default_value)                                                \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, writeoc),                                    \
 		    (_CONCAT(SPI_NOR_CMD_, DT_STRING_TOKEN(DT_DRV_INST(inst), writeoc))),    \
 		    ((default_value)))
 
-#define DT_QER_PROP_OR(inst, default_value)                                                        \
+#define DT_QER_PROP_OR(inst, default_value)                                                    \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, quad_enable_requirements),                   \
 		    (_CONCAT(JESD216_DW15_QER_VAL_,                                          \
 			     DT_STRING_TOKEN(DT_DRV_INST(inst), quad_enable_requirements))), \

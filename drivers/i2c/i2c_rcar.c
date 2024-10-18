@@ -347,26 +347,26 @@ static const struct i2c_driver_api i2c_rcar_driver_api = {
 };
 
 /* Device Instantiation */
-#define I2C_RCAR_INIT(n)                                                                           \
-	static void i2c_rcar_##n##_init(const struct device *dev);                                 \
-	static const struct i2c_rcar_cfg i2c_rcar_cfg_##n = {                                      \
-		.reg_addr = DT_INST_REG_ADDR(n),                                                   \
-		.init_func = i2c_rcar_##n##_init,                                                  \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
-		.mod_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, module),                        \
-		.mod_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, domain),                        \
-	};                                                                                         \
-                                                                                                   \
-	static struct i2c_rcar_data i2c_rcar_data_##n;                                             \
-                                                                                                   \
-	I2C_DEVICE_DT_INST_DEFINE(n, i2c_rcar_init, NULL, &i2c_rcar_data_##n, &i2c_rcar_cfg_##n,   \
-				  POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &i2c_rcar_driver_api);    \
-	static void i2c_rcar_##n##_init(const struct device *dev)                                  \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), 0, i2c_rcar_isr, DEVICE_DT_INST_GET(n), 0);           \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define I2C_RCAR_INIT(n)                                                                         \
+	static void i2c_rcar_##n##_init(const struct device *dev);                               \
+	static const struct i2c_rcar_cfg i2c_rcar_cfg_##n = {                                    \
+		.reg_addr = DT_INST_REG_ADDR(n),                                                 \
+		.init_func = i2c_rcar_##n##_init,                                                \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                              \
+		.bitrate = DT_INST_PROP(n, clock_frequency),                                     \
+		.mod_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, module),                      \
+		.mod_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, domain),                      \
+	};                                                                                       \
+                                                                                                 \
+	static struct i2c_rcar_data i2c_rcar_data_##n;                                           \
+                                                                                                 \
+	I2C_DEVICE_DT_INST_DEFINE(n, i2c_rcar_init, NULL, &i2c_rcar_data_##n, &i2c_rcar_cfg_##n, \
+				  POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &i2c_rcar_driver_api);  \
+	static void i2c_rcar_##n##_init(const struct device *dev)                                \
+	{                                                                                        \
+		IRQ_CONNECT(DT_INST_IRQN(n), 0, i2c_rcar_isr, DEVICE_DT_INST_GET(n), 0);         \
+                                                                                                 \
+		irq_enable(DT_INST_IRQN(n));                                                     \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_RCAR_INIT)

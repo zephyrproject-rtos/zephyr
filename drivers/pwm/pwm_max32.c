@@ -123,20 +123,20 @@ static int pwm_max32_init(const struct device *dev)
 	return ret;
 }
 
-#define PWM_MAX32_DEFINE(_num)                                                                     \
-	static struct max32_pwm_data max32_pwm_data_##_num;                                        \
-	PINCTRL_DT_INST_DEFINE(_num);                                                              \
-	static const struct max32_pwm_config max32_pwm_config_##_num = {                           \
-		.regs = (mxc_tmr_regs_t *)DT_REG_ADDR(DT_INST_PARENT(_num)),                       \
-		.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(_num),                                     \
-		.clock = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(_num))),                      \
-		.perclk.bus = DT_CLOCKS_CELL(DT_INST_PARENT(_num), offset),                        \
-		.perclk.bit = DT_CLOCKS_CELL(DT_INST_PARENT(_num), bit),                           \
-		.perclk.clk_src = DT_PROP(DT_INST_PARENT(_num), clock_source),                     \
-		.prescaler = DT_PROP(DT_INST_PARENT(_num), prescaler),                             \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(_num, &pwm_max32_init, NULL, &max32_pwm_data_##_num,                 \
-			      &max32_pwm_config_##_num, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,     \
+#define PWM_MAX32_DEFINE(_num)                                                                 \
+	static struct max32_pwm_data max32_pwm_data_##_num;                                    \
+	PINCTRL_DT_INST_DEFINE(_num);                                                          \
+	static const struct max32_pwm_config max32_pwm_config_##_num = {                       \
+		.regs = (mxc_tmr_regs_t *)DT_REG_ADDR(DT_INST_PARENT(_num)),                   \
+		.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(_num),                                 \
+		.clock = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(_num))),                  \
+		.perclk.bus = DT_CLOCKS_CELL(DT_INST_PARENT(_num), offset),                    \
+		.perclk.bit = DT_CLOCKS_CELL(DT_INST_PARENT(_num), bit),                       \
+		.perclk.clk_src = DT_PROP(DT_INST_PARENT(_num), clock_source),                 \
+		.prescaler = DT_PROP(DT_INST_PARENT(_num), prescaler),                         \
+	};                                                                                     \
+	DEVICE_DT_INST_DEFINE(_num, &pwm_max32_init, NULL, &max32_pwm_data_##_num,             \
+			      &max32_pwm_config_##_num, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, \
 			      &pwm_max32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_MAX32_DEFINE)

@@ -104,10 +104,10 @@ static int bbram_it8xxx2_init(const struct device *dev)
 	return 0;
 }
 
-#define BBRAM_INIT(inst)                                                                           \
-	BBRAM_IT8XXX2_DECL_CONFIG(inst);                                                           \
-	DEVICE_DT_INST_DEFINE(inst, bbram_it8xxx2_init, NULL, NULL, &bbram_cfg_##inst,             \
-			      PRE_KERNEL_1, CONFIG_BBRAM_INIT_PRIORITY,                            \
+#define BBRAM_INIT(inst)                                                               \
+	BBRAM_IT8XXX2_DECL_CONFIG(inst);                                               \
+	DEVICE_DT_INST_DEFINE(inst, bbram_it8xxx2_init, NULL, NULL, &bbram_cfg_##inst, \
+			      PRE_KERNEL_1, CONFIG_BBRAM_INIT_PRIORITY,                \
 			      &bbram_it8xxx2_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BBRAM_INIT);

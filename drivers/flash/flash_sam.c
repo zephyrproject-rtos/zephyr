@@ -480,43 +480,43 @@ static int sam_flash_init(const struct device *dev)
 
 #define SAM_FLASH_DEVICE DT_INST(0, atmel_sam_flash)
 
-#define SAM_FLASH_PAGES_LAYOUT(node_id, prop, idx)                                                 \
-	{                                                                                          \
-		.pages_count = DT_PHA_BY_IDX(node_id, prop, idx, pages_count),                     \
-		.pages_size = DT_PHA_BY_IDX(node_id, prop, idx, pages_size),                       \
+#define SAM_FLASH_PAGES_LAYOUT(node_id, prop, idx)                             \
+	{                                                                      \
+		.pages_count = DT_PHA_BY_IDX(node_id, prop, idx, pages_count), \
+		.pages_size = DT_PHA_BY_IDX(node_id, prop, idx, pages_size),   \
 	}
 
-#define SAM_FLASH_PAGES_LAYOUTS                                                                    \
+#define SAM_FLASH_PAGES_LAYOUTS                                                                \
 	DT_FOREACH_PROP_ELEM_SEP(SAM_FLASH_DEVICE, erase_blocks, SAM_FLASH_PAGES_LAYOUT, (, ))
 
-#define SAM_FLASH_CONTROLLER(inst)                                                                 \
-	struct flash_pages_layout sam_flash_pages_layouts##inst[] = {SAM_FLASH_PAGES_LAYOUTS};     \
-                                                                                                   \
-	static void sam_flash_irq_init_##inst(void)                                                \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), sam_flash_isr,        \
-			    DEVICE_DT_INST_GET(inst), 0);                                          \
-		irq_enable(DT_INST_IRQN(inst));                                                    \
-	}                                                                                          \
-                                                                                                   \
-	static const struct sam_flash_config sam_flash_config##inst = {                            \
-		.regs = (Efc *)DT_INST_REG_ADDR(inst),                                             \
-		.irq_init = sam_flash_irq_init_##inst,                                             \
-		.area_address = DT_REG_ADDR(SAM_FLASH_DEVICE),                                     \
-		.area_size = DT_REG_SIZE(SAM_FLASH_DEVICE),                                        \
-		.parameters =                                                                      \
-			{                                                                          \
-				.write_block_size = DT_PROP(SAM_FLASH_DEVICE, write_block_size),   \
-				.erase_value = 0xFF,                                               \
-			},                                                                         \
-		.pages_layouts = sam_flash_pages_layouts##inst,                                    \
-		.pages_layouts_size = ARRAY_SIZE(sam_flash_pages_layouts##inst),                   \
-	};                                                                                         \
-                                                                                                   \
-	static struct sam_flash_data sam_flash_data##inst;                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, sam_flash_init, NULL, &sam_flash_data##inst,                   \
-			      &sam_flash_config##inst, POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,    \
+#define SAM_FLASH_CONTROLLER(inst)                                                               \
+	struct flash_pages_layout sam_flash_pages_layouts##inst[] = {SAM_FLASH_PAGES_LAYOUTS};   \
+                                                                                                 \
+	static void sam_flash_irq_init_##inst(void)                                              \
+	{                                                                                        \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), sam_flash_isr,      \
+			    DEVICE_DT_INST_GET(inst), 0);                                        \
+		irq_enable(DT_INST_IRQN(inst));                                                  \
+	}                                                                                        \
+                                                                                                 \
+	static const struct sam_flash_config sam_flash_config##inst = {                          \
+		.regs = (Efc *)DT_INST_REG_ADDR(inst),                                           \
+		.irq_init = sam_flash_irq_init_##inst,                                           \
+		.area_address = DT_REG_ADDR(SAM_FLASH_DEVICE),                                   \
+		.area_size = DT_REG_SIZE(SAM_FLASH_DEVICE),                                      \
+		.parameters =                                                                    \
+			{                                                                        \
+				.write_block_size = DT_PROP(SAM_FLASH_DEVICE, write_block_size), \
+				.erase_value = 0xFF,                                             \
+			},                                                                       \
+		.pages_layouts = sam_flash_pages_layouts##inst,                                  \
+		.pages_layouts_size = ARRAY_SIZE(sam_flash_pages_layouts##inst),                 \
+	};                                                                                       \
+                                                                                                 \
+	static struct sam_flash_data sam_flash_data##inst;                                       \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(inst, sam_flash_init, NULL, &sam_flash_data##inst,                 \
+			      &sam_flash_config##inst, POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,  \
 			      &sam_flash_api);
 
 SAM_FLASH_CONTROLLER(0)

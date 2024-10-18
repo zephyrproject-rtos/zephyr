@@ -140,11 +140,11 @@ static const struct emul_bbram_driver_api mcp7940n_emul_backend_api = {
 	.get_data = mcp7940n_emul_backend_get_data,
 };
 
-#define MCP7940N_EMUL(inst)                                                                        \
-	static const struct mcp7940n_emul_cfg mcp7940n_emul_cfg_##inst;                            \
-	static struct mcp7940n_emul_data mcp7940n_emul_data_##inst;                                \
-	EMUL_DT_INST_DEFINE(inst, mcp7940n_emul_init, &mcp7940n_emul_data_##inst,                  \
-			    &mcp7940n_emul_cfg_##inst, &mcp7940n_emul_api_i2c,                     \
+#define MCP7940N_EMUL(inst)                                                       \
+	static const struct mcp7940n_emul_cfg mcp7940n_emul_cfg_##inst;           \
+	static struct mcp7940n_emul_data mcp7940n_emul_data_##inst;               \
+	EMUL_DT_INST_DEFINE(inst, mcp7940n_emul_init, &mcp7940n_emul_data_##inst, \
+			    &mcp7940n_emul_cfg_##inst, &mcp7940n_emul_api_i2c,    \
 			    &mcp7940n_emul_backend_api)
 
 DT_INST_FOREACH_STATUS_OKAY(MCP7940N_EMUL)

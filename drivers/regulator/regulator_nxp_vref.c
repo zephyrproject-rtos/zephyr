@@ -185,17 +185,17 @@ static int regulator_nxp_vref_init(const struct device *dev)
 	return regulator_common_init(dev, false);
 }
 
-#define REGULATOR_NXP_VREF_DEFINE(inst)                                                            \
-	static struct regulator_nxp_vref_data data_##inst;                                         \
-                                                                                                   \
-	static const struct regulator_nxp_vref_config config_##inst = {                            \
-		.common = REGULATOR_DT_INST_COMMON_CONFIG_INIT(inst),                              \
-		.base = (VREF_Type *)DT_INST_REG_ADDR(inst),                                       \
-		.buf_start_delay = DT_INST_PROP(inst, nxp_buffer_startup_delay_us),                \
-		.bg_start_time = DT_INST_PROP(inst, nxp_bandgap_startup_time_us),                  \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, regulator_nxp_vref_init, NULL, &data_##inst, &config_##inst,   \
+#define REGULATOR_NXP_VREF_DEFINE(inst)                                                          \
+	static struct regulator_nxp_vref_data data_##inst;                                       \
+                                                                                                 \
+	static const struct regulator_nxp_vref_config config_##inst = {                          \
+		.common = REGULATOR_DT_INST_COMMON_CONFIG_INIT(inst),                            \
+		.base = (VREF_Type *)DT_INST_REG_ADDR(inst),                                     \
+		.buf_start_delay = DT_INST_PROP(inst, nxp_buffer_startup_delay_us),              \
+		.bg_start_time = DT_INST_PROP(inst, nxp_bandgap_startup_time_us),                \
+	};                                                                                       \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(inst, regulator_nxp_vref_init, NULL, &data_##inst, &config_##inst, \
 			      POST_KERNEL, CONFIG_REGULATOR_NXP_VREF_INIT_PRIORITY, &api);
 
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_NXP_VREF_DEFINE)

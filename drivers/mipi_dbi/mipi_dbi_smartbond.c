@@ -33,10 +33,10 @@ LOG_MODULE_REGISTER(smartbond_mipi_dbi, CONFIG_MIPI_DBI_LOG_LEVEL);
 
 #define MIPI_DBI_SMARTBOND_IS_READ_SUPPORTED DT_INST_NODE_HAS_PROP(0, spi_dev)
 
-#define LCDC_SMARTBOND_CLK_DIV(_freq)                                                              \
+#define LCDC_SMARTBOND_CLK_DIV(_freq)                                           \
 	((32000000U % (_freq)) ? (96000000U / (_freq)) : (32000000U / (_freq)))
 
-#define MIPI_DBI_SMARTBOND_IS_PLL_REQUIRED                                                         \
+#define MIPI_DBI_SMARTBOND_IS_PLL_REQUIRED                                     \
 	!!(32000000U % DT_PROP(DT_CHOSEN(zephyr_display), mipi_max_frequency))
 
 #define MIPI_DBI_SMARTBOND_IS_TE_ENABLED DT_INST_PROP_OR(0, te_enable, 0)
@@ -45,9 +45,9 @@ LOG_MODULE_REGISTER(smartbond_mipi_dbi, CONFIG_MIPI_DBI_LOG_LEVEL);
 
 #define MIPI_DBI_SMARTBOND_IS_RESET_AVAILABLE DT_INST_NODE_HAS_PROP(0, reset_gpios)
 
-#define LCDC_LAYER0_OFFSETX_REG_SET_FIELD(_field, _var, _val)                                      \
-	((_var)) = ((_var) & ~(LCDC_LCDC_LAYER0_OFFSETX_REG_##_field##_Msk)) |                     \
-		   (((_var) << LCDC_LCDC_LAYER0_OFFSETX_REG_##_field##_Pos) &                      \
+#define LCDC_LAYER0_OFFSETX_REG_SET_FIELD(_field, _var, _val)                  \
+	((_var)) = ((_var) & ~(LCDC_LCDC_LAYER0_OFFSETX_REG_##_field##_Msk)) | \
+		   (((_var) << LCDC_LCDC_LAYER0_OFFSETX_REG_##_field##_Pos) &  \
 		    LCDC_LCDC_LAYER0_OFFSETX_REG_##_field##_Msk)
 
 struct mipi_dbi_smartbond_data {
@@ -538,23 +538,23 @@ static const struct mipi_dbi_driver_api mipi_dbi_smartbond_driver_api = {
 #endif
 };
 
-#define SMARTBOND_MIPI_DBI_INIT(inst)                                                              \
-	PINCTRL_DT_INST_DEFINE(inst);                                                              \
-                                                                                                   \
-	static const struct mipi_dbi_smartbond_config mipi_dbi_smartbond_config_##inst = {         \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
-		.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {}),                          \
-		.timing_cfg = {0},                                                                 \
-		.bgcolor_cfg = {0xFF, 0xFF, 0xFF, 0},                                              \
-	};                                                                                         \
-                                                                                                   \
-	static struct mipi_dbi_smartbond_data mipi_dbi_smartbond_data_##inst;                      \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, mipi_dbi_smartbond_pm_action);                              \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, mipi_dbi_smartbond_init, PM_DEVICE_DT_INST_GET(inst),          \
-			      &mipi_dbi_smartbond_data_##inst, &mipi_dbi_smartbond_config_##inst,  \
-			      POST_KERNEL, CONFIG_MIPI_DBI_INIT_PRIORITY,                          \
+#define SMARTBOND_MIPI_DBI_INIT(inst)                                                             \
+	PINCTRL_DT_INST_DEFINE(inst);                                                             \
+                                                                                                  \
+	static const struct mipi_dbi_smartbond_config mipi_dbi_smartbond_config_##inst = {        \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                     \
+		.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {}),                         \
+		.timing_cfg = {0},                                                                \
+		.bgcolor_cfg = {0xFF, 0xFF, 0xFF, 0},                                             \
+	};                                                                                        \
+                                                                                                  \
+	static struct mipi_dbi_smartbond_data mipi_dbi_smartbond_data_##inst;                     \
+                                                                                                  \
+	PM_DEVICE_DT_INST_DEFINE(inst, mipi_dbi_smartbond_pm_action);                             \
+                                                                                                  \
+	DEVICE_DT_INST_DEFINE(inst, mipi_dbi_smartbond_init, PM_DEVICE_DT_INST_GET(inst),         \
+			      &mipi_dbi_smartbond_data_##inst, &mipi_dbi_smartbond_config_##inst, \
+			      POST_KERNEL, CONFIG_MIPI_DBI_INIT_PRIORITY,                         \
 			      &mipi_dbi_smartbond_driver_api);
 
 SMARTBOND_MIPI_DBI_INIT(0);

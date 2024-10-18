@@ -1037,32 +1037,32 @@ static int i2c_xec_init(const struct device *dev)
 	return 0;
 }
 
-#define I2C_XEC_DEVICE(n)                                                                          \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-                                                                                                   \
-	static void i2c_xec_irq_config_func_##n(void);                                             \
-                                                                                                   \
-	static struct i2c_xec_data i2c_xec_data_##n;                                               \
-	static const struct i2c_xec_config i2c_xec_config_##n = {                                  \
-		.base_addr = DT_INST_REG_ADDR(n),                                                  \
-		.port_sel = DT_INST_PROP(n, port_sel),                                             \
-		.clock_freq = DT_INST_PROP(n, clock_frequency),                                    \
-		.girq = DT_INST_PROP_BY_IDX(n, girqs, 0),                                          \
-		.girq_pos = DT_INST_PROP_BY_IDX(n, girqs, 1),                                      \
-		.pcr_idx = DT_INST_PROP_BY_IDX(n, pcrs, 0),                                        \
-		.pcr_bitpos = DT_INST_PROP_BY_IDX(n, pcrs, 1),                                     \
-		.irq_config_func = i2c_xec_irq_config_func_##n,                                    \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-	};                                                                                         \
-	I2C_DEVICE_DT_INST_DEFINE(n, i2c_xec_init, NULL, &i2c_xec_data_##n, &i2c_xec_config_##n,   \
-				  POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &i2c_xec_driver_api);     \
-                                                                                                   \
-	static void i2c_xec_irq_config_func_##n(void)                                              \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), i2c_xec_bus_isr,            \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define I2C_XEC_DEVICE(n)                                                                        \
+                                                                                                 \
+	PINCTRL_DT_INST_DEFINE(n);                                                               \
+                                                                                                 \
+	static void i2c_xec_irq_config_func_##n(void);                                           \
+                                                                                                 \
+	static struct i2c_xec_data i2c_xec_data_##n;                                             \
+	static const struct i2c_xec_config i2c_xec_config_##n = {                                \
+		.base_addr = DT_INST_REG_ADDR(n),                                                \
+		.port_sel = DT_INST_PROP(n, port_sel),                                           \
+		.clock_freq = DT_INST_PROP(n, clock_frequency),                                  \
+		.girq = DT_INST_PROP_BY_IDX(n, girqs, 0),                                        \
+		.girq_pos = DT_INST_PROP_BY_IDX(n, girqs, 1),                                    \
+		.pcr_idx = DT_INST_PROP_BY_IDX(n, pcrs, 0),                                      \
+		.pcr_bitpos = DT_INST_PROP_BY_IDX(n, pcrs, 1),                                   \
+		.irq_config_func = i2c_xec_irq_config_func_##n,                                  \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+	};                                                                                       \
+	I2C_DEVICE_DT_INST_DEFINE(n, i2c_xec_init, NULL, &i2c_xec_data_##n, &i2c_xec_config_##n, \
+				  POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &i2c_xec_driver_api);   \
+                                                                                                 \
+	static void i2c_xec_irq_config_func_##n(void)                                            \
+	{                                                                                        \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), i2c_xec_bus_isr,          \
+			    DEVICE_DT_INST_GET(n), 0);                                           \
+		irq_enable(DT_INST_IRQN(n));                                                     \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_XEC_DEVICE)

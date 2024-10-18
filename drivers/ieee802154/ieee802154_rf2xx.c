@@ -1052,57 +1052,57 @@ static const struct ieee802154_radio_api rf2xx_radio_api = {
 #endif
 #endif /* CONFIG_IEEE802154_RAW_MODE */
 
-#define DRV_INST_LOCAL_MAC_ADDRESS(n)                                                              \
-	UTIL_AND(DT_INST_NODE_HAS_PROP(n, local_mac_address),                                      \
-		 UTIL_AND(DT_INST_PROP_LEN(n, local_mac_address) == 8,                             \
+#define DRV_INST_LOCAL_MAC_ADDRESS(n)                                  \
+	UTIL_AND(DT_INST_NODE_HAS_PROP(n, local_mac_address),          \
+		 UTIL_AND(DT_INST_PROP_LEN(n, local_mac_address) == 8, \
 			  DT_INST_PROP(n, local_mac_address)))
 
-#define IEEE802154_RF2XX_DEVICE_CONFIG(n)                                                          \
-	BUILD_ASSERT(DT_INST_PROP_LEN(n, tx_pwr_min) == 2,                                         \
-		     "rf2xx: Error TX-PWR-MIN len is different of two");                           \
-	BUILD_ASSERT(DT_INST_PROP_LEN(n, tx_pwr_max) == 2,                                         \
-		     "rf2xx: Error TX-PWR-MAX len is different of two");                           \
-	BUILD_ASSERT(DT_INST_PROP_LEN(n, tx_pwr_table) != 0,                                       \
-		     "rf2xx: Error TX-PWR-TABLE len must be greater than zero");                   \
-	static const uint8_t rf2xx_pwr_table_##n[] = DT_INST_PROP_OR(n, tx_pwr_table, 0);          \
-	static const struct rf2xx_config rf2xx_ctx_config_##n = {                                  \
-		.inst = n,                                                                         \
-		.has_mac = DT_INST_NODE_HAS_PROP(n, local_mac_address),                            \
-		.irq_gpio = GPIO_DT_SPEC_INST_GET(n, irq_gpios),                                   \
-		.reset_gpio = GPIO_DT_SPEC_INST_GET(n, reset_gpios),                               \
-		.slptr_gpio = GPIO_DT_SPEC_INST_GET(n, slptr_gpios),                               \
-		.dig2_gpio = GPIO_DT_SPEC_INST_GET_OR(n, dig2_gpios, {}),                          \
-		.clkm_gpio = GPIO_DT_SPEC_INST_GET_OR(n, clkm_gpios, {}),                          \
-		.spi = SPI_DT_SPEC_INST_GET(n, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),             \
-                                                                                                   \
-		.tx_pwr_min = DT_INST_PROP_OR(n, tx_pwr_min, 0),                                   \
-		.tx_pwr_max = DT_INST_PROP_OR(n, tx_pwr_max, 0),                                   \
-		.tx_pwr_table = rf2xx_pwr_table_##n,                                               \
-		.tx_pwr_table_size = DT_INST_PROP_LEN(n, tx_pwr_table),                            \
+#define IEEE802154_RF2XX_DEVICE_CONFIG(n)                                                 \
+	BUILD_ASSERT(DT_INST_PROP_LEN(n, tx_pwr_min) == 2,                                \
+		     "rf2xx: Error TX-PWR-MIN len is different of two");                  \
+	BUILD_ASSERT(DT_INST_PROP_LEN(n, tx_pwr_max) == 2,                                \
+		     "rf2xx: Error TX-PWR-MAX len is different of two");                  \
+	BUILD_ASSERT(DT_INST_PROP_LEN(n, tx_pwr_table) != 0,                              \
+		     "rf2xx: Error TX-PWR-TABLE len must be greater than zero");          \
+	static const uint8_t rf2xx_pwr_table_##n[] = DT_INST_PROP_OR(n, tx_pwr_table, 0); \
+	static const struct rf2xx_config rf2xx_ctx_config_##n = {                         \
+		.inst = n,                                                                \
+		.has_mac = DT_INST_NODE_HAS_PROP(n, local_mac_address),                   \
+		.irq_gpio = GPIO_DT_SPEC_INST_GET(n, irq_gpios),                          \
+		.reset_gpio = GPIO_DT_SPEC_INST_GET(n, reset_gpios),                      \
+		.slptr_gpio = GPIO_DT_SPEC_INST_GET(n, slptr_gpios),                      \
+		.dig2_gpio = GPIO_DT_SPEC_INST_GET_OR(n, dig2_gpios, {}),                 \
+		.clkm_gpio = GPIO_DT_SPEC_INST_GET_OR(n, clkm_gpios, {}),                 \
+		.spi = SPI_DT_SPEC_INST_GET(n, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),    \
+                                                                                          \
+		.tx_pwr_min = DT_INST_PROP_OR(n, tx_pwr_min, 0),                          \
+		.tx_pwr_max = DT_INST_PROP_OR(n, tx_pwr_max, 0),                          \
+		.tx_pwr_table = rf2xx_pwr_table_##n,                                      \
+		.tx_pwr_table_size = DT_INST_PROP_LEN(n, tx_pwr_table),                   \
 	}
 
-#define IEEE802154_RF2XX_DEVICE_DATA(n)                                                            \
-	static struct rf2xx_context rf2xx_ctx_data_##n = {                                         \
-		.mac_addr = {DRV_INST_LOCAL_MAC_ADDRESS(n)},                                       \
-		.cc_page = BIT(DT_INST_ENUM_IDX_OR(n, channel_page, 0)),                           \
-		.cc_channels = {                                                                   \
-			.ranges = &rf2xx_ctx_data_##n.cc_range,                                    \
-			.num_ranges = 1U,                                                          \
+#define IEEE802154_RF2XX_DEVICE_DATA(n)                                  \
+	static struct rf2xx_context rf2xx_ctx_data_##n = {               \
+		.mac_addr = {DRV_INST_LOCAL_MAC_ADDRESS(n)},             \
+		.cc_page = BIT(DT_INST_ENUM_IDX_OR(n, channel_page, 0)), \
+		.cc_channels = {                                         \
+			.ranges = &rf2xx_ctx_data_##n.cc_range,          \
+			.num_ranges = 1U,                                \
 		}}
 
-#define IEEE802154_RF2XX_RAW_DEVICE_INIT(n)                                                        \
-	DEVICE_DT_INST_DEFINE(n, &rf2xx_init, NULL, &rf2xx_ctx_data_##n, &rf2xx_ctx_config_##n,    \
+#define IEEE802154_RF2XX_RAW_DEVICE_INIT(n)                                                     \
+	DEVICE_DT_INST_DEFINE(n, &rf2xx_init, NULL, &rf2xx_ctx_data_##n, &rf2xx_ctx_config_##n, \
 			      POST_KERNEL, CONFIG_IEEE802154_RF2XX_INIT_PRIO, &rf2xx_radio_api)
 
-#define IEEE802154_RF2XX_NET_DEVICE_INIT(n)                                                        \
-	NET_DEVICE_DT_INST_DEFINE(n, &rf2xx_init, NULL, &rf2xx_ctx_data_##n,                       \
-				  &rf2xx_ctx_config_##n, CONFIG_IEEE802154_RF2XX_INIT_PRIO,        \
+#define IEEE802154_RF2XX_NET_DEVICE_INIT(n)                                                 \
+	NET_DEVICE_DT_INST_DEFINE(n, &rf2xx_init, NULL, &rf2xx_ctx_data_##n,                \
+				  &rf2xx_ctx_config_##n, CONFIG_IEEE802154_RF2XX_INIT_PRIO, \
 				  &rf2xx_radio_api, L2, L2_CTX_TYPE, MTU)
 
-#define IEEE802154_RF2XX_INIT(inst)                                                                \
-	IEEE802154_RF2XX_DEVICE_CONFIG(inst);                                                      \
-	IEEE802154_RF2XX_DEVICE_DATA(inst);                                                        \
-                                                                                                   \
+#define IEEE802154_RF2XX_INIT(inst)                 \
+	IEEE802154_RF2XX_DEVICE_CONFIG(inst);       \
+	IEEE802154_RF2XX_DEVICE_DATA(inst);         \
+                                                    \
 	COND_CODE_1(CONFIG_IEEE802154_RAW_MODE,			\
 		    (IEEE802154_RF2XX_RAW_DEVICE_INIT(inst);),	\
 		    (IEEE802154_RF2XX_NET_DEVICE_INIT(inst);))

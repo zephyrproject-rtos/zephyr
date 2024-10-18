@@ -75,7 +75,7 @@ enum mdm_control_pins {
 
 #define BUF_ALLOC_TIMEOUT K_SECONDS(1)
 
-#define CMD_HANDLER(cmd_, cb_)                                                                     \
+#define CMD_HANDLER(cmd_, cb_)                                                     \
 	{.cmd = cmd_, .cmd_len = (uint16_t)sizeof(cmd_) - 1, .func = on_cmd_##cb_}
 
 #define MDM_MANUFACTURER_LENGTH 10

@@ -354,46 +354,46 @@ static const struct udc_api udc_skeleton_api = {
  * A UDC driver should always be implemented as a multi-instance
  * driver, even if your platform does not require it.
  */
-#define UDC_SKELETON_DEVICE_DEFINE(n)                                                              \
-	K_THREAD_STACK_DEFINE(udc_skeleton_stack_##n, CONFIG_UDC_SKELETON);                        \
-                                                                                                   \
-	static void udc_skeleton_thread_##n(void *dev, void *arg1, void *arg2)                     \
-	{                                                                                          \
-		skeleton_thread_handler(dev);                                                      \
-	}                                                                                          \
-                                                                                                   \
-	static void udc_skeleton_make_thread_##n(const struct device *dev)                         \
-	{                                                                                          \
-		struct udc_skeleton_data *priv = udc_get_private(dev);                             \
-                                                                                                   \
-		k_thread_create(&priv->thread_data, udc_skeleton_stack_##n,                        \
-				K_THREAD_STACK_SIZEOF(udc_skeleton_stack_##n),                     \
-				udc_skeleton_thread_##n, (void *)dev, NULL, NULL,                  \
-				K_PRIO_COOP(CONFIG_UDC_SKELETON_THREAD_PRIORITY), K_ESSENTIAL,     \
-				K_NO_WAIT);                                                        \
-		k_thread_name_set(&priv->thread_data, dev->name);                                  \
-	}                                                                                          \
-                                                                                                   \
-	static struct udc_ep_config ep_cfg_out[DT_INST_PROP(n, num_bidir_endpoints)];              \
-	static struct udc_ep_config ep_cfg_in[DT_INST_PROP(n, num_bidir_endpoints)];               \
-                                                                                                   \
-	static const struct udc_skeleton_config udc_skeleton_config_##n = {                        \
-		.num_of_eps = DT_INST_PROP(n, num_bidir_endpoints),                                \
-		.ep_cfg_in = ep_cfg_out,                                                           \
-		.ep_cfg_out = ep_cfg_in,                                                           \
-		.make_thread = udc_skeleton_make_thread_##n,                                       \
-		.speed_idx = DT_ENUM_IDX(DT_DRV_INST(n), maximum_speed),                           \
-	};                                                                                         \
-                                                                                                   \
-	static struct udc_skeleton_data udc_priv_##n = {};                                         \
-                                                                                                   \
-	static struct udc_data udc_data_##n = {                                                    \
-		.mutex = Z_MUTEX_INITIALIZER(udc_data_##n.mutex),                                  \
-		.priv = &udc_priv_##n,                                                             \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, udc_skeleton_driver_preinit, NULL, &udc_data_##n,                 \
-			      &udc_skeleton_config_##n, POST_KERNEL,                               \
+#define UDC_SKELETON_DEVICE_DEFINE(n)                                                          \
+	K_THREAD_STACK_DEFINE(udc_skeleton_stack_##n, CONFIG_UDC_SKELETON);                    \
+                                                                                               \
+	static void udc_skeleton_thread_##n(void *dev, void *arg1, void *arg2)                 \
+	{                                                                                      \
+		skeleton_thread_handler(dev);                                                  \
+	}                                                                                      \
+                                                                                               \
+	static void udc_skeleton_make_thread_##n(const struct device *dev)                     \
+	{                                                                                      \
+		struct udc_skeleton_data *priv = udc_get_private(dev);                         \
+                                                                                               \
+		k_thread_create(&priv->thread_data, udc_skeleton_stack_##n,                    \
+				K_THREAD_STACK_SIZEOF(udc_skeleton_stack_##n),                 \
+				udc_skeleton_thread_##n, (void *)dev, NULL, NULL,              \
+				K_PRIO_COOP(CONFIG_UDC_SKELETON_THREAD_PRIORITY), K_ESSENTIAL, \
+				K_NO_WAIT);                                                    \
+		k_thread_name_set(&priv->thread_data, dev->name);                              \
+	}                                                                                      \
+                                                                                               \
+	static struct udc_ep_config ep_cfg_out[DT_INST_PROP(n, num_bidir_endpoints)];          \
+	static struct udc_ep_config ep_cfg_in[DT_INST_PROP(n, num_bidir_endpoints)];           \
+                                                                                               \
+	static const struct udc_skeleton_config udc_skeleton_config_##n = {                    \
+		.num_of_eps = DT_INST_PROP(n, num_bidir_endpoints),                            \
+		.ep_cfg_in = ep_cfg_out,                                                       \
+		.ep_cfg_out = ep_cfg_in,                                                       \
+		.make_thread = udc_skeleton_make_thread_##n,                                   \
+		.speed_idx = DT_ENUM_IDX(DT_DRV_INST(n), maximum_speed),                       \
+	};                                                                                     \
+                                                                                               \
+	static struct udc_skeleton_data udc_priv_##n = {};                                     \
+                                                                                               \
+	static struct udc_data udc_data_##n = {                                                \
+		.mutex = Z_MUTEX_INITIALIZER(udc_data_##n.mutex),                              \
+		.priv = &udc_priv_##n,                                                         \
+	};                                                                                     \
+                                                                                               \
+	DEVICE_DT_INST_DEFINE(n, udc_skeleton_driver_preinit, NULL, &udc_data_##n,             \
+			      &udc_skeleton_config_##n, POST_KERNEL,                           \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &udc_skeleton_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UDC_SKELETON_DEVICE_DEFINE)

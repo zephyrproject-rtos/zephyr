@@ -127,10 +127,10 @@ static const struct i2c_emul_api adltc2990_emul_api_i2c = {
 	.transfer = adltc2990_emul_transfer_i2c,
 };
 
-#define ADLTC2990_EMUL(n)                                                                          \
-	const struct adltc2990_emul_cfg adltc2990_emul_cfg_##n;                                    \
-	struct adltc2990_emul_data adltc2990_emul_data_##n;                                        \
-	EMUL_DT_INST_DEFINE(n, adltc2990_emul_init, &adltc2990_emul_data_##n,                      \
+#define ADLTC2990_EMUL(n)                                                           \
+	const struct adltc2990_emul_cfg adltc2990_emul_cfg_##n;                     \
+	struct adltc2990_emul_data adltc2990_emul_data_##n;                         \
+	EMUL_DT_INST_DEFINE(n, adltc2990_emul_init, &adltc2990_emul_data_##n,       \
 			    &adltc2990_emul_cfg_##n, &adltc2990_emul_api_i2c, NULL)
 
 DT_INST_FOREACH_STATUS_OKAY(ADLTC2990_EMUL)

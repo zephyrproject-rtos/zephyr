@@ -139,17 +139,17 @@ static int i2c_sbcon_init(const struct device *dev)
 	return ret;
 }
 
-#define DEFINE_I2C_SBCON(_num)                                                                     \
-                                                                                                   \
-	static struct i2c_sbcon_context i2c_sbcon_dev_data_##_num;                                 \
-                                                                                                   \
-	static const struct i2c_sbcon_config i2c_sbcon_dev_cfg_##_num = {                          \
-		.sbcon = (void *)DT_INST_REG_ADDR(_num),                                           \
-		.bitrate = DT_INST_PROP(_num, clock_frequency),                                    \
-	};                                                                                         \
-                                                                                                   \
-	I2C_DEVICE_DT_INST_DEFINE(_num, i2c_sbcon_init, NULL, &i2c_sbcon_dev_data_##_num,          \
-				  &i2c_sbcon_dev_cfg_##_num, PRE_KERNEL_2,                         \
+#define DEFINE_I2C_SBCON(_num)                                                            \
+                                                                                          \
+	static struct i2c_sbcon_context i2c_sbcon_dev_data_##_num;                        \
+                                                                                          \
+	static const struct i2c_sbcon_config i2c_sbcon_dev_cfg_##_num = {                 \
+		.sbcon = (void *)DT_INST_REG_ADDR(_num),                                  \
+		.bitrate = DT_INST_PROP(_num, clock_frequency),                           \
+	};                                                                                \
+                                                                                          \
+	I2C_DEVICE_DT_INST_DEFINE(_num, i2c_sbcon_init, NULL, &i2c_sbcon_dev_data_##_num, \
+				  &i2c_sbcon_dev_cfg_##_num, PRE_KERNEL_2,                \
 				  CONFIG_I2C_INIT_PRIORITY, &api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_I2C_SBCON)

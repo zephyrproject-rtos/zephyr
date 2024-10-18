@@ -809,15 +809,15 @@ static const struct ethernet_api api_funcs = {
 #endif
 };
 
-#define NXP_ENET_CONNECT_IRQ(node_id, irq_names, idx)                                              \
-	do {                                                                                       \
-		IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq),                                      \
-			    DT_IRQ_BY_IDX(node_id, idx, priority), eth_nxp_enet_isr,               \
-			    DEVICE_DT_GET(node_id), 0);                                            \
-		irq_enable(DT_IRQ_BY_IDX(node_id, idx, irq));                                      \
+#define NXP_ENET_CONNECT_IRQ(node_id, irq_names, idx)                                \
+	do {                                                                         \
+		IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq),                        \
+			    DT_IRQ_BY_IDX(node_id, idx, priority), eth_nxp_enet_isr, \
+			    DEVICE_DT_GET(node_id), 0);                              \
+		irq_enable(DT_IRQ_BY_IDX(node_id, idx, irq));                        \
 	} while (false);
 
-#define NXP_ENET_DT_PHY_DEV(node_id, phy_phandle, idx)                                             \
+#define NXP_ENET_DT_PHY_DEV(node_id, phy_phandle, idx)              \
 	DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, phy_phandle, idx))
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm)) && CONFIG_ETH_NXP_ENET_USE_DTCM_FOR_DMA_BUFFER
@@ -849,18 +849,18 @@ static const struct ethernet_api api_funcs = {
 #define ETH_NXP_ENET_BUFFER_SIZE ROUND_UP(ENET_FRAME_MAX_FRAMELEN, ENET_BUFF_ALIGNMENT)
 #endif /* CONFIG_NET_VLAN */
 
-#define NXP_ENET_PHY_MODE(node_id)                                                                 \
-	DT_ENUM_HAS_VALUE(node_id, phy_connection_type, mii)                                       \
-		? NXP_ENET_MII_MODE                                                                \
-		: (DT_ENUM_HAS_VALUE(node_id, phy_connection_type, rmii)                           \
-			   ? NXP_ENET_RMII_MODE                                                    \
-			   : (DT_ENUM_HAS_VALUE(node_id, phy_connection_type, rgmii)               \
-				      ? NXP_ENET_RGMII_MODE                                        \
-				      : NXP_ENET_INVALID_MII_MODE))
+#define NXP_ENET_PHY_MODE(node_id)                                           \
+	DT_ENUM_HAS_VALUE(node_id, phy_connection_type, mii)                 \
+	? NXP_ENET_MII_MODE                                                  \
+	: (DT_ENUM_HAS_VALUE(node_id, phy_connection_type, rmii)             \
+		   ? NXP_ENET_RMII_MODE                                      \
+		   : (DT_ENUM_HAS_VALUE(node_id, phy_connection_type, rgmii) \
+			      ? NXP_ENET_RGMII_MODE                          \
+			      : NXP_ENET_INVALID_MII_MODE))
 
 #ifdef CONFIG_PTP_CLOCK_NXP_ENET
 #define NXP_ENET_PTP_DEV(n) .ptp_clock = DEVICE_DT_GET(DT_INST_PHANDLE(n, nxp_ptp_clock)),
-#define NXP_ENET_FRAMEINFO_ARRAY(n)                                                                \
+#define NXP_ENET_FRAMEINFO_ARRAY(n) \
 	static enet_frame_info_t nxp_enet_##n##_tx_frameinfo_array[CONFIG_ETH_NXP_ENET_TX_BUFFERS];
 #define NXP_ENET_FRAMEINFO(n) .txFrameInfo = nxp_enet_##n##_tx_frameinfo_array,
 #else
@@ -869,20 +869,20 @@ static const struct ethernet_api api_funcs = {
 #define NXP_ENET_FRAMEINFO(n) .txFrameInfo = NULL
 #endif
 
-#define NXP_ENET_NODE_HAS_MAC_ADDR_CHECK(n)                                                        \
-	BUILD_ASSERT(NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(n)) ||                                    \
-			     DT_INST_PROP(n, zephyr_random_mac_address) ||                         \
-			     DT_INST_PROP(n, nxp_unique_mac) || DT_INST_PROP(n, nxp_fused_mac),    \
+#define NXP_ENET_NODE_HAS_MAC_ADDR_CHECK(n)                                                     \
+	BUILD_ASSERT(NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(n)) ||                                 \
+			     DT_INST_PROP(n, zephyr_random_mac_address) ||                      \
+			     DT_INST_PROP(n, nxp_unique_mac) || DT_INST_PROP(n, nxp_fused_mac), \
 		     "MAC address not specified on ENET DT node");
 
-#define NXP_ENET_NODE_PHY_MODE_CHECK(n)                                                            \
-	BUILD_ASSERT(NXP_ENET_PHY_MODE(DT_DRV_INST(n)) != NXP_ENET_RGMII_MODE ||                   \
-			     (IS_ENABLED(CONFIG_ETH_NXP_ENET_1G) &&                                \
-			      DT_NODE_HAS_COMPAT(DT_INST_PARENT(n), nxp_enet1g)),                  \
-		     "RGMII mode requires nxp,enet1g compatible on ENET DT node"                   \
+#define NXP_ENET_NODE_PHY_MODE_CHECK(n)                                           \
+	BUILD_ASSERT(NXP_ENET_PHY_MODE(DT_DRV_INST(n)) != NXP_ENET_RGMII_MODE ||  \
+			     (IS_ENABLED(CONFIG_ETH_NXP_ENET_1G) &&               \
+			      DT_NODE_HAS_COMPAT(DT_INST_PARENT(n), nxp_enet1g)), \
+		     "RGMII mode requires nxp,enet1g compatible on ENET DT node"  \
 		     " and CONFIG_ETH_NXP_ENET_1G enabled");
 
-#define NXP_ENET_MAC_ADDR_SOURCE(n)                                                                \
+#define NXP_ENET_MAC_ADDR_SOURCE(n)                                         \
 	COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), local_mac_address),		\
 			(MAC_ADDR_SOURCE_LOCAL),					\
 	(COND_CODE_1(DT_INST_PROP(n, zephyr_random_mac_address),			\
@@ -990,18 +990,18 @@ static int nxp_enet_mod_init(const struct device *dev)
 	return 0;
 }
 
-#define NXP_ENET_INIT(n, compat)                                                                   \
-                                                                                                   \
-	static const struct nxp_enet_mod_config nxp_enet_mod_cfg_##n = {                           \
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
-		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_DRV_INST(n))),                        \
-		.clock_subsys = (void *)DT_CLOCKS_CELL_BY_IDX(DT_DRV_INST(n), 0, name),            \
-	};                                                                                         \
-                                                                                                   \
-	static struct nxp_enet_mod_data nxp_enet_mod_data_##n;                                     \
-                                                                                                   \
-	/* Init the module before any of the MAC, MDIO, or PTP clock */                            \
-	DEVICE_DT_INST_DEFINE(n, nxp_enet_mod_init, NULL, &nxp_enet_mod_data_##n,                  \
+#define NXP_ENET_INIT(n, compat)                                                        \
+                                                                                        \
+	static const struct nxp_enet_mod_config nxp_enet_mod_cfg_##n = {                \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                   \
+		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_DRV_INST(n))),             \
+		.clock_subsys = (void *)DT_CLOCKS_CELL_BY_IDX(DT_DRV_INST(n), 0, name), \
+	};                                                                              \
+                                                                                        \
+	static struct nxp_enet_mod_data nxp_enet_mod_data_##n;                          \
+                                                                                        \
+	/* Init the module before any of the MAC, MDIO, or PTP clock */                 \
+	DEVICE_DT_INST_DEFINE(n, nxp_enet_mod_init, NULL, &nxp_enet_mod_data_##n,       \
 			      &nxp_enet_mod_cfg_##n, POST_KERNEL, 0, NULL);
 
 #undef DT_DRV_COMPAT
@@ -1009,18 +1009,18 @@ static int nxp_enet_mod_init(const struct device *dev)
 
 DT_INST_FOREACH_STATUS_OKAY_VARGS(NXP_ENET_INIT, DT_DRV_COMPAT)
 
-#define NXP_ENET1G_INIT(n, compat)                                                                 \
-                                                                                                   \
-	static const struct nxp_enet_mod_config nxp_enet1g_mod_cfg_##n = {                         \
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
-		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_DRV_INST(n))),                        \
-		.clock_subsys = (void *)DT_CLOCKS_CELL_BY_IDX(DT_DRV_INST(n), 0, name),            \
-	};                                                                                         \
-                                                                                                   \
-	static struct nxp_enet_mod_data nxp_enet1g_mod_data_##n;                                   \
-                                                                                                   \
-	/* Init the module before any of the MAC, MDIO, or PTP clock */                            \
-	DEVICE_DT_INST_DEFINE(n, nxp_enet_mod_init, NULL, &nxp_enet1g_mod_data_##n,                \
+#define NXP_ENET1G_INIT(n, compat)                                                      \
+                                                                                        \
+	static const struct nxp_enet_mod_config nxp_enet1g_mod_cfg_##n = {              \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                   \
+		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_DRV_INST(n))),             \
+		.clock_subsys = (void *)DT_CLOCKS_CELL_BY_IDX(DT_DRV_INST(n), 0, name), \
+	};                                                                              \
+                                                                                        \
+	static struct nxp_enet_mod_data nxp_enet1g_mod_data_##n;                        \
+                                                                                        \
+	/* Init the module before any of the MAC, MDIO, or PTP clock */                 \
+	DEVICE_DT_INST_DEFINE(n, nxp_enet_mod_init, NULL, &nxp_enet1g_mod_data_##n,     \
 			      &nxp_enet1g_mod_cfg_##n, POST_KERNEL, 0, NULL);
 
 #undef DT_DRV_COMPAT

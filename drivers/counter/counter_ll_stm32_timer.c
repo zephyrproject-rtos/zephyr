@@ -27,13 +27,13 @@ LOG_MODULE_REGISTER(counter_timer_stm32, CONFIG_COUNTER_LOG_LEVEL);
 #define TIMER_MAX_CH 4U
 
 /** Number of channels for timer by index. */
-#define NUM_CH(timx)                                                                               \
-	(IS_TIM_CCX_INSTANCE(timx, TIM_CHANNEL_4)                                                  \
-		 ? 4U                                                                              \
-		 : (IS_TIM_CCX_INSTANCE(timx, TIM_CHANNEL_3)                                       \
-			    ? 3U                                                                   \
-			    : (IS_TIM_CCX_INSTANCE(timx, TIM_CHANNEL_2)                            \
-				       ? 2U                                                        \
+#define NUM_CH(timx)                                                                            \
+	(IS_TIM_CCX_INSTANCE(timx, TIM_CHANNEL_4)                                               \
+		 ? 4U                                                                           \
+		 : (IS_TIM_CCX_INSTANCE(timx, TIM_CHANNEL_3)                                    \
+			    ? 3U                                                                \
+			    : (IS_TIM_CCX_INSTANCE(timx, TIM_CHANNEL_2)                         \
+				       ? 2U                                                     \
 				       : (IS_TIM_CCX_INSTANCE(timx, TIM_CHANNEL_1) ? 1U : 0))))
 
 /** Channel to compare set function mapping. */
@@ -596,16 +596,16 @@ static const struct counter_driver_api counter_stm32_driver_api = {
 	.get_freq = counter_stm32_get_freq,
 };
 
-#define TIM_IRQ_HANDLE_CC(timx, cc)                                                                \
-	do {                                                                                       \
-		bool hw_irq =                                                                      \
-			LL_TIM_IsActiveFlag_CC##cc(timer) && LL_TIM_IsEnabledIT_CC##cc(timer);     \
-		if (hw_irq || (data->cc_int_pending & BIT(cc - 1U))) {                             \
-			if (hw_irq) {                                                              \
-				LL_TIM_ClearFlag_CC##cc(timer);                                    \
-			}                                                                          \
-			counter_stm32_alarm_irq_handle(dev, cc - 1U);                              \
-		}                                                                                  \
+#define TIM_IRQ_HANDLE_CC(timx, cc)                                                            \
+	do {                                                                                   \
+		bool hw_irq =                                                                  \
+			LL_TIM_IsActiveFlag_CC##cc(timer) && LL_TIM_IsEnabledIT_CC##cc(timer); \
+		if (hw_irq || (data->cc_int_pending & BIT(cc - 1U))) {                         \
+			if (hw_irq) {                                                          \
+				LL_TIM_ClearFlag_CC##cc(timer);                                \
+			}                                                                      \
+			counter_stm32_alarm_irq_handle(dev, cc - 1U);                          \
+		}                                                                              \
 	} while (0)
 
 void counter_stm32_irq_handler(const struct device *dev)

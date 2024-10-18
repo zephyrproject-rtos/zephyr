@@ -362,9 +362,9 @@ static const struct bt_hci_driver_api drv = {
 	.close = bt_esp32_close,
 };
 
-#define BT_ESP32_DEVICE_INIT(inst)                                                                 \
-	static struct bt_esp32_data bt_esp32_data_##inst = {};                                     \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &bt_esp32_data_##inst, NULL, POST_KERNEL,          \
+#define BT_ESP32_DEVICE_INIT(inst)                                                        \
+	static struct bt_esp32_data bt_esp32_data_##inst = {};                            \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &bt_esp32_data_##inst, NULL, POST_KERNEL, \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
 /* Only one instance supported */

@@ -32,7 +32,7 @@
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(adc_cc32xx);
 
-#define ISR_MASK                                                                                   \
+#define ISR_MASK                                                                                 \
 	(ADC_DMA_DONE | ADC_FIFO_OVERFLOW | ADC_FIFO_UNDERFLOW | ADC_FIFO_EMPTY | ADC_FIFO_FULL)
 
 struct adc_cc32xx_data {
@@ -279,38 +279,38 @@ static const struct adc_driver_api cc32xx_driver_api = {
 	.ref_internal = 1467,
 };
 
-#define cc32xx_ADC_IRQ_CONNECT(index, chan)                                                        \
-	do {                                                                                       \
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(index, chan, irq),                                  \
-			    DT_INST_IRQ_BY_IDX(index, chan, priority), adc_cc32xx_isr_ch##chan,    \
-			    DEVICE_DT_INST_GET(index), 0);                                         \
-		irq_enable(DT_INST_IRQ_BY_IDX(index, chan, irq));                                  \
+#define cc32xx_ADC_IRQ_CONNECT(index, chan)                                                     \
+	do {                                                                                    \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(index, chan, irq),                               \
+			    DT_INST_IRQ_BY_IDX(index, chan, priority), adc_cc32xx_isr_ch##chan, \
+			    DEVICE_DT_INST_GET(index), 0);                                      \
+		irq_enable(DT_INST_IRQ_BY_IDX(index, chan, irq));                               \
 	} while (false)
 
-#define cc32xx_ADC_INIT(index)                                                                     \
-                                                                                                   \
-	static void adc_cc32xx_cfg_func_##index(void);                                             \
-                                                                                                   \
-	static const struct adc_cc32xx_cfg adc_cc32xx_cfg_##index = {                              \
-		.base = DT_INST_REG_ADDR(index),                                                   \
-		.irq_cfg_func = adc_cc32xx_cfg_func_##index,                                       \
-	};                                                                                         \
-	static struct adc_cc32xx_data adc_cc32xx_data_##index = {                                  \
-		ADC_CONTEXT_INIT_TIMER(adc_cc32xx_data_##index, ctx),                              \
-		ADC_CONTEXT_INIT_LOCK(adc_cc32xx_data_##index, ctx),                               \
-		ADC_CONTEXT_INIT_SYNC(adc_cc32xx_data_##index, ctx),                               \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(index, &adc_cc32xx_init, NULL, &adc_cc32xx_data_##index,             \
-			      &adc_cc32xx_cfg_##index, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,      \
-			      &cc32xx_driver_api);                                                 \
-                                                                                                   \
-	static void adc_cc32xx_cfg_func_##index(void)                                              \
-	{                                                                                          \
-		cc32xx_ADC_IRQ_CONNECT(index, 0);                                                  \
-		cc32xx_ADC_IRQ_CONNECT(index, 1);                                                  \
-		cc32xx_ADC_IRQ_CONNECT(index, 2);                                                  \
-		cc32xx_ADC_IRQ_CONNECT(index, 3);                                                  \
+#define cc32xx_ADC_INIT(index)                                                                \
+                                                                                              \
+	static void adc_cc32xx_cfg_func_##index(void);                                        \
+                                                                                              \
+	static const struct adc_cc32xx_cfg adc_cc32xx_cfg_##index = {                         \
+		.base = DT_INST_REG_ADDR(index),                                              \
+		.irq_cfg_func = adc_cc32xx_cfg_func_##index,                                  \
+	};                                                                                    \
+	static struct adc_cc32xx_data adc_cc32xx_data_##index = {                             \
+		ADC_CONTEXT_INIT_TIMER(adc_cc32xx_data_##index, ctx),                         \
+		ADC_CONTEXT_INIT_LOCK(adc_cc32xx_data_##index, ctx),                          \
+		ADC_CONTEXT_INIT_SYNC(adc_cc32xx_data_##index, ctx),                          \
+	};                                                                                    \
+                                                                                              \
+	DEVICE_DT_INST_DEFINE(index, &adc_cc32xx_init, NULL, &adc_cc32xx_data_##index,        \
+			      &adc_cc32xx_cfg_##index, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, \
+			      &cc32xx_driver_api);                                            \
+                                                                                              \
+	static void adc_cc32xx_cfg_func_##index(void)                                         \
+	{                                                                                     \
+		cc32xx_ADC_IRQ_CONNECT(index, 0);                                             \
+		cc32xx_ADC_IRQ_CONNECT(index, 1);                                             \
+		cc32xx_ADC_IRQ_CONNECT(index, 2);                                             \
+		cc32xx_ADC_IRQ_CONNECT(index, 3);                                             \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(cc32xx_ADC_INIT)

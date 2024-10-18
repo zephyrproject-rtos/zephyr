@@ -1029,18 +1029,18 @@ static int rm68200_init(const struct device *dev)
 	return 0;
 }
 
-#define RM68200_PANEL(id)                                                                          \
-	static const struct rm68200_config rm68200_config_##id = {                                 \
-		.mipi_dsi = DEVICE_DT_GET(DT_INST_BUS(id)),                                        \
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(id, reset_gpios, {0}),                      \
-		.bl_gpio = GPIO_DT_SPEC_INST_GET_OR(id, bl_gpios, {0}),                            \
-		.num_of_lanes = DT_INST_PROP_BY_IDX(id, data_lanes, 0),                            \
-		.pixel_format = DT_INST_PROP(id, pixel_format),                                    \
-		.panel_width = DT_INST_PROP(id, width),                                            \
-		.panel_height = DT_INST_PROP(id, height),                                          \
-		.channel = DT_INST_REG_ADDR(id),                                                   \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(id, &rm68200_init, NULL, NULL, &rm68200_config_##id, POST_KERNEL,    \
+#define RM68200_PANEL(id)                                                                       \
+	static const struct rm68200_config rm68200_config_##id = {                              \
+		.mipi_dsi = DEVICE_DT_GET(DT_INST_BUS(id)),                                     \
+		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(id, reset_gpios, {0}),                   \
+		.bl_gpio = GPIO_DT_SPEC_INST_GET_OR(id, bl_gpios, {0}),                         \
+		.num_of_lanes = DT_INST_PROP_BY_IDX(id, data_lanes, 0),                         \
+		.pixel_format = DT_INST_PROP(id, pixel_format),                                 \
+		.panel_width = DT_INST_PROP(id, width),                                         \
+		.panel_height = DT_INST_PROP(id, height),                                       \
+		.channel = DT_INST_REG_ADDR(id),                                                \
+	};                                                                                      \
+	DEVICE_DT_INST_DEFINE(id, &rm68200_init, NULL, NULL, &rm68200_config_##id, POST_KERNEL, \
 			      CONFIG_APPLICATION_INIT_PRIORITY, &rm68200_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RM68200_PANEL)

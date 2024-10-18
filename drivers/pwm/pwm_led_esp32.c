@@ -353,14 +353,14 @@ PINCTRL_DT_INST_DEFINE(0);
 #define CLOCK_SOURCE LEDC_SCLK
 #endif
 
-#define CHANNEL_CONFIG(node_id)                                                                    \
-	{                                                                                          \
-		.idx = DT_REG_ADDR(node_id),                                                       \
-		.channel_num = DT_REG_ADDR(node_id) % 8,                                           \
-		.timer_num = DT_PROP(node_id, timer),                                              \
-		.speed_mode = DT_REG_ADDR(node_id) < SOC_LEDC_CHANNEL_NUM ? LEDC_LOW_SPEED_MODE    \
-									  : !LEDC_LOW_SPEED_MODE,  \
-		.clock_src = CLOCK_SOURCE,                                                         \
+#define CHANNEL_CONFIG(node_id)                                                                   \
+	{                                                                                         \
+		.idx = DT_REG_ADDR(node_id),                                                      \
+		.channel_num = DT_REG_ADDR(node_id) % 8,                                          \
+		.timer_num = DT_PROP(node_id, timer),                                             \
+		.speed_mode = DT_REG_ADDR(node_id) < SOC_LEDC_CHANNEL_NUM ? LEDC_LOW_SPEED_MODE   \
+									  : !LEDC_LOW_SPEED_MODE, \
+		.clock_src = CLOCK_SOURCE,                                                        \
 	},
 
 static struct pwm_ledc_esp32_channel_config channel_config[] = {

@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(nxp_s32_mdio, CONFIG_MDIO_LOG_LEVEL);
 
 #define GMAC_MDIO_REG_OFFSET (0x200)
 
-#define GMAC_STATUS_TO_ERRNO(x)                                                                    \
+#define GMAC_STATUS_TO_ERRNO(x)                                                             \
 	((x) == GMAC_STATUS_SUCCESS ? 0 : ((x) == GMAC_STATUS_TIMEOUT ? -ETIMEDOUT : -EIO))
 
 struct mdio_nxp_s32_config {
@@ -147,25 +147,25 @@ static const struct mdio_driver_api mdio_nxp_s32_driver_api = {
 	.write_c45 = mdio_nxp_s32_write_c45,
 };
 
-#define MDIO_NXP_S32_HW_INSTANCE_CHECK(i, n)                                                       \
+#define MDIO_NXP_S32_HW_INSTANCE_CHECK(i, n)                                           \
 	(((DT_INST_REG_ADDR(n) - GMAC_MDIO_REG_OFFSET) == IP_GMAC_##i##_BASE) ? i : 0)
 
-#define MDIO_NXP_S32_HW_INSTANCE(n)                                                                \
+#define MDIO_NXP_S32_HW_INSTANCE(n)                           \
 	LISTIFY(__DEBRACKET FEATURE_GMAC_NUM_INSTANCES,					\
 		MDIO_NXP_S32_HW_INSTANCE_CHECK, (|), n)
 
-#define MDIO_NXP_S32_DEVICE(n)                                                                     \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	static struct mdio_nxp_s32_data mdio_nxp_s32_data_##n;                                     \
-	static const struct mdio_nxp_s32_config mdio_nxp_s32_config_##n = {                        \
-		.instance = MDIO_NXP_S32_HW_INSTANCE(n),                                           \
-		.suppress_preamble = (bool)DT_INST_PROP(n, suppress_preamble),                     \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &mdio_nxp_s32_init, NULL, &mdio_nxp_s32_data_##n,                 \
-			      &mdio_nxp_s32_config_##n, POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY,    \
+#define MDIO_NXP_S32_DEVICE(n)                                                                  \
+	PINCTRL_DT_INST_DEFINE(n);                                                              \
+	static struct mdio_nxp_s32_data mdio_nxp_s32_data_##n;                                  \
+	static const struct mdio_nxp_s32_config mdio_nxp_s32_config_##n = {                     \
+		.instance = MDIO_NXP_S32_HW_INSTANCE(n),                                        \
+		.suppress_preamble = (bool)DT_INST_PROP(n, suppress_preamble),                  \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                    \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                             \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),           \
+	};                                                                                      \
+	DEVICE_DT_INST_DEFINE(n, &mdio_nxp_s32_init, NULL, &mdio_nxp_s32_data_##n,              \
+			      &mdio_nxp_s32_config_##n, POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY, \
 			      &mdio_nxp_s32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MDIO_NXP_S32_DEVICE)

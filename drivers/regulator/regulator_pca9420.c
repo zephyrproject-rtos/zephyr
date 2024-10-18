@@ -489,49 +489,49 @@ static int regulator_pca9420_common_init(const struct device *dev)
 		config->asys_uvlo_sel_mv << PCA9420_TOP_CNTL2_ASYS_UVLO_SEL_POS);
 }
 
-#define REGULATOR_PCA9420_DEFINE(node_id, id, name, _parent)                                       \
-	static struct regulator_pca9420_data data_##id;                                            \
-                                                                                                   \
-	static const struct regulator_pca9420_config config_##id = {                               \
-		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node_id),                                \
-		.enable_inverted = DT_PROP(node_id, enable_inverted),                              \
-		.modes_uv =                                                                        \
-			{                                                                          \
-				DT_PROP_OR(node_id, nxp_mode0_microvolt, -1),                      \
-				DT_PROP_OR(node_id, nxp_mode1_microvolt, -1),                      \
-				DT_PROP_OR(node_id, nxp_mode2_microvolt, -1),                      \
-				DT_PROP_OR(node_id, nxp_mode3_microvolt, -1),                      \
-			},                                                                         \
-		.desc = &name##_desc,                                                              \
-		.parent = _parent,                                                                 \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_DEFINE(node_id, regulator_pca9420_init, NULL, &data_##id, &config_##id,          \
+#define REGULATOR_PCA9420_DEFINE(node_id, id, name, _parent)                              \
+	static struct regulator_pca9420_data data_##id;                                   \
+                                                                                          \
+	static const struct regulator_pca9420_config config_##id = {                      \
+		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node_id),                       \
+		.enable_inverted = DT_PROP(node_id, enable_inverted),                     \
+		.modes_uv =                                                               \
+			{                                                                 \
+				DT_PROP_OR(node_id, nxp_mode0_microvolt, -1),             \
+				DT_PROP_OR(node_id, nxp_mode1_microvolt, -1),             \
+				DT_PROP_OR(node_id, nxp_mode2_microvolt, -1),             \
+				DT_PROP_OR(node_id, nxp_mode3_microvolt, -1),             \
+			},                                                                \
+		.desc = &name##_desc,                                                     \
+		.parent = _parent,                                                        \
+	};                                                                                \
+                                                                                          \
+	DEVICE_DT_DEFINE(node_id, regulator_pca9420_init, NULL, &data_##id, &config_##id, \
 			 POST_KERNEL, CONFIG_REGULATOR_PCA9420_INIT_PRIORITY, &api);
 
-#define REGULATOR_PCA9420_DEFINE_COND(inst, child, parent)                                         \
+#define REGULATOR_PCA9420_DEFINE_COND(inst, child, parent)                       \
 	COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(inst, child)),                \
 		    (REGULATOR_PCA9420_DEFINE(DT_INST_CHILD(inst, child),      \
 					      child ## inst, child, parent)),  \
 		    ())
 
-#define REGULATOR_PCA9420_DEFINE_ALL(inst)                                                         \
-	static const struct regulator_pca9420_common_config config_##inst = {                      \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.vin_ilim_ua = DT_INST_PROP(inst, nxp_vin_ilim_microamp),                          \
-		.enable_modesel_pins = DT_INST_PROP(inst, nxp_enable_modesel_pins),                \
-		.asys_uvlo_sel_mv = DT_INST_ENUM_IDX(inst, nxp_asys_uvlo_sel_millivolt),           \
-	};                                                                                         \
-                                                                                                   \
-	static struct regulator_pca9420_common_data data_##inst;                                   \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, regulator_pca9420_common_init, NULL, &data_##inst,             \
-			      &config_##inst, POST_KERNEL,                                         \
-			      CONFIG_REGULATOR_PCA9420_COMMON_INIT_PRIORITY, &parent_api);         \
-                                                                                                   \
-	REGULATOR_PCA9420_DEFINE_COND(inst, buck1, DEVICE_DT_INST_GET(inst))                       \
-	REGULATOR_PCA9420_DEFINE_COND(inst, buck2, DEVICE_DT_INST_GET(inst))                       \
-	REGULATOR_PCA9420_DEFINE_COND(inst, ldo1, DEVICE_DT_INST_GET(inst))                        \
+#define REGULATOR_PCA9420_DEFINE_ALL(inst)                                                 \
+	static const struct regulator_pca9420_common_config config_##inst = {              \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                         \
+		.vin_ilim_ua = DT_INST_PROP(inst, nxp_vin_ilim_microamp),                  \
+		.enable_modesel_pins = DT_INST_PROP(inst, nxp_enable_modesel_pins),        \
+		.asys_uvlo_sel_mv = DT_INST_ENUM_IDX(inst, nxp_asys_uvlo_sel_millivolt),   \
+	};                                                                                 \
+                                                                                           \
+	static struct regulator_pca9420_common_data data_##inst;                           \
+                                                                                           \
+	DEVICE_DT_INST_DEFINE(inst, regulator_pca9420_common_init, NULL, &data_##inst,     \
+			      &config_##inst, POST_KERNEL,                                 \
+			      CONFIG_REGULATOR_PCA9420_COMMON_INIT_PRIORITY, &parent_api); \
+                                                                                           \
+	REGULATOR_PCA9420_DEFINE_COND(inst, buck1, DEVICE_DT_INST_GET(inst))               \
+	REGULATOR_PCA9420_DEFINE_COND(inst, buck2, DEVICE_DT_INST_GET(inst))               \
+	REGULATOR_PCA9420_DEFINE_COND(inst, ldo1, DEVICE_DT_INST_GET(inst))                \
 	REGULATOR_PCA9420_DEFINE_COND(inst, ldo2, DEVICE_DT_INST_GET(inst))
 
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_PCA9420_DEFINE_ALL)

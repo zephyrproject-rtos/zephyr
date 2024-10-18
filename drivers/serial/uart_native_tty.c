@@ -381,48 +381,48 @@ static struct uart_driver_api native_tty_uart_driver_api = {
 #endif
 };
 
-#define NATIVE_TTY_INSTANCE(inst)                                                                  \
-	static const struct native_tty_config native_tty_##inst##_cfg = {                          \
-		.uart_config =                                                                     \
-			{                                                                          \
-				.data_bits = UART_CFG_DATA_BITS_8,                                 \
-				.flow_ctrl = UART_CFG_FLOW_CTRL_NONE,                              \
-				.parity = UART_CFG_PARITY_NONE,                                    \
-				.stop_bits = UART_CFG_STOP_BITS_1,                                 \
-				.baudrate = DT_INST_PROP(inst, current_speed),                     \
-			},                                                                         \
-	};                                                                                         \
-                                                                                                   \
-	static struct native_tty_data native_tty_##inst##_data = {                                 \
-		.serial_port = DT_INST_PROP_OR(inst, serial_port, NULL),                           \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, native_tty_serial_init, NULL, &native_tty_##inst##_data,       \
-			      &native_tty_##inst##_cfg, NATIVE_TTY_INIT_LEVEL, 55,                 \
+#define NATIVE_TTY_INSTANCE(inst)                                                            \
+	static const struct native_tty_config native_tty_##inst##_cfg = {                    \
+		.uart_config =                                                               \
+			{                                                                    \
+				.data_bits = UART_CFG_DATA_BITS_8,                           \
+				.flow_ctrl = UART_CFG_FLOW_CTRL_NONE,                        \
+				.parity = UART_CFG_PARITY_NONE,                              \
+				.stop_bits = UART_CFG_STOP_BITS_1,                           \
+				.baudrate = DT_INST_PROP(inst, current_speed),               \
+			},                                                                   \
+	};                                                                                   \
+                                                                                             \
+	static struct native_tty_data native_tty_##inst##_data = {                           \
+		.serial_port = DT_INST_PROP_OR(inst, serial_port, NULL),                     \
+	};                                                                                   \
+                                                                                             \
+	DEVICE_DT_INST_DEFINE(inst, native_tty_serial_init, NULL, &native_tty_##inst##_data, \
+			      &native_tty_##inst##_cfg, NATIVE_TTY_INIT_LEVEL, 55,           \
 			      &native_tty_uart_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NATIVE_TTY_INSTANCE);
 
 #define INST_NAME(inst) DEVICE_DT_NAME(DT_DRV_INST(inst))
 
-#define NATIVE_TTY_COMMAND_LINE_OPTS(inst)                                                         \
-	{                                                                                          \
-		.option = INST_NAME(inst) "_port",                                                 \
-		.name = "\"serial_port\"",                                                         \
-		.type = 's',                                                                       \
-		.dest = &native_tty_##inst##_data.cmd_serial_port,                                 \
-		.descript = "Set a serial port for " INST_NAME(                                    \
-			inst) " uart device, "                                                     \
-			      "overriding the one in devicetree.",                                 \
-	},                                                                                         \
-		{                                                                                  \
-			.option = INST_NAME(inst) "_baud",                                         \
-			.name = "baudrate",                                                        \
-			.type = 'u',                                                               \
-			.dest = &native_tty_##inst##_data.cmd_baudrate,                            \
-			.descript = "Set a baudrate for " INST_NAME(                               \
-				inst) " device, overriding the "                                   \
-				      "baudrate of " STRINGIFY(DT_INST_PROP(inst, current_speed)) "set in the devicetree.",    \
+#define NATIVE_TTY_COMMAND_LINE_OPTS(inst)                                                      \
+	{                                                                                       \
+		.option = INST_NAME(inst) "_port",                                              \
+		.name = "\"serial_port\"",                                                      \
+		.type = 's',                                                                    \
+		.dest = &native_tty_##inst##_data.cmd_serial_port,                              \
+		.descript = "Set a serial port for " INST_NAME(                                 \
+			inst) " uart device, "                                                  \
+			      "overriding the one in devicetree.",                              \
+	},                                                                                      \
+		{                                                                               \
+			.option = INST_NAME(inst) "_baud",                                      \
+			.name = "baudrate",                                                     \
+			.type = 'u',                                                            \
+			.dest = &native_tty_##inst##_data.cmd_baudrate,                         \
+			.descript = "Set a baudrate for " INST_NAME(                            \
+				inst) " device, overriding the "                                \
+				      "baudrate of " STRINGIFY(DT_INST_PROP(inst, current_speed)) "set in the devicetree.", \
 				      },
 
 /**
@@ -437,9 +437,9 @@ static void native_tty_add_serial_options(void)
 	native_add_command_line_opts(opts);
 }
 
-#define NATIVE_TTY_CLEANUP(inst)                                                                   \
-	if (native_tty_##inst##_data.fd != 0) {                                                    \
-		nsi_host_close(native_tty_##inst##_data.fd);                                       \
+#define NATIVE_TTY_CLEANUP(inst)                             \
+	if (native_tty_##inst##_data.fd != 0) {              \
+		nsi_host_close(native_tty_##inst##_data.fd); \
 	}
 
 /**

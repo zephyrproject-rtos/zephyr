@@ -198,16 +198,16 @@ static int tgpio_init(const struct device *dev)
 	return 0;
 }
 
-#define TGPIO_INTEL_DEV_CFG_DATA(n)                                                                \
-	static const struct tgpio_config tgpio_##n##_cfg = {                                       \
-		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),                              \
-		.max_pins = DT_INST_PROP(n, max_pins),                                             \
-		.art_clock_freq = DT_INST_PROP(n, timer_clock),                                    \
-	};                                                                                         \
-                                                                                                   \
-	static struct tgpio_runtime tgpio_##n##_runtime;                                           \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &tgpio_init, NULL, &tgpio_##n##_runtime, &tgpio_##n##_cfg,        \
+#define TGPIO_INTEL_DEV_CFG_DATA(n)                                                          \
+	static const struct tgpio_config tgpio_##n##_cfg = {                                 \
+		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),                        \
+		.max_pins = DT_INST_PROP(n, max_pins),                                       \
+		.art_clock_freq = DT_INST_PROP(n, timer_clock),                              \
+	};                                                                                   \
+                                                                                             \
+	static struct tgpio_runtime tgpio_##n##_runtime;                                     \
+                                                                                             \
+	DEVICE_DT_INST_DEFINE(n, &tgpio_init, NULL, &tgpio_##n##_runtime, &tgpio_##n##_cfg,  \
 			      POST_KERNEL, CONFIG_TIMEAWARE_GPIO_INIT_PRIORITY, &api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(TGPIO_INTEL_DEV_CFG_DATA)

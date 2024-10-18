@@ -217,12 +217,12 @@ static int tmp114_init(const struct device *dev)
 	return 0;
 }
 
-#define DEFINE_TMP114(_num)                                                                        \
-	static struct tmp114_data tmp114_data_##_num;                                              \
-	static const struct tmp114_dev_config tmp114_config_##_num = {                             \
-		.bus = I2C_DT_SPEC_INST_GET(_num)};                                                \
-	SENSOR_DEVICE_DT_INST_DEFINE(_num, tmp114_init, NULL, &tmp114_data_##_num,                 \
-				     &tmp114_config_##_num, POST_KERNEL,                           \
+#define DEFINE_TMP114(_num)                                                            \
+	static struct tmp114_data tmp114_data_##_num;                                  \
+	static const struct tmp114_dev_config tmp114_config_##_num = {                 \
+		.bus = I2C_DT_SPEC_INST_GET(_num)};                                    \
+	SENSOR_DEVICE_DT_INST_DEFINE(_num, tmp114_init, NULL, &tmp114_data_##_num,     \
+				     &tmp114_config_##_num, POST_KERNEL,               \
 				     CONFIG_SENSOR_INIT_PRIORITY, &tmp114_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_TMP114)

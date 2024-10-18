@@ -40,8 +40,8 @@ struct counter_gecko_data {
 };
 
 #ifdef CONFIG_SOC_GECKO_HAS_ERRATA_RTCC_E201
-#define ERRATA_RTCC_E201_MESSAGE                                                                   \
-	"Errata RTCC_E201: In case RTCC prescaler != 1 the module does not "                       \
+#define ERRATA_RTCC_E201_MESSAGE                                             \
+	"Errata RTCC_E201: In case RTCC prescaler != 1 the module does not " \
 	"reset the counter value on CCV1 compare."
 #endif
 

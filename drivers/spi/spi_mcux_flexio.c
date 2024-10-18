@@ -391,38 +391,38 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 	.release = spi_mcux_release,
 };
 
-#define SPI_MCUX_FLEXIO_SPI_INIT(n)                                                                \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-                                                                                                   \
-	static FLEXIO_SPI_Type flexio_spi_##n = {                                                  \
-		.flexioBase = (FLEXIO_Type *)DT_REG_ADDR(DT_INST_PARENT(n)),                       \
-		.SDOPinIndex = DT_INST_PROP(n, sdo_pin),                                           \
-		.SDIPinIndex = DT_INST_PROP(n, sdi_pin),                                           \
-		.SCKPinIndex = DT_INST_PROP(n, sck_pin),                                           \
-	};                                                                                         \
-                                                                                                   \
-	static const struct nxp_flexio_child nxp_flexio_spi_child_##n = {                          \
-		.isr = spi_mcux_flexio_isr,                                                        \
-		.user_data = (void *)DEVICE_DT_INST_GET(n),                                        \
-		.res = {.shifter_index = flexio_spi_##n.shifterIndex,                              \
-			.shifter_count = ARRAY_SIZE(flexio_spi_##n.shifterIndex),                  \
-			.timer_index = flexio_spi_##n.timerIndex,                                  \
-			.timer_count = ARRAY_SIZE(flexio_spi_##n.timerIndex)}};                    \
-                                                                                                   \
-	static const struct spi_mcux_flexio_config spi_mcux_flexio_config_##n = {                  \
-		.flexio_spi = &flexio_spi_##n,                                                     \
-		.flexio_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                    \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
-		.child = &nxp_flexio_spi_child_##n,                                                \
-	};                                                                                         \
-                                                                                                   \
-	static struct spi_mcux_flexio_data spi_mcux_flexio_data_##n = {                            \
-		SPI_CONTEXT_INIT_LOCK(spi_mcux_flexio_data_##n, ctx),                              \
-		SPI_CONTEXT_INIT_SYNC(spi_mcux_flexio_data_##n, ctx),                              \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                             \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, spi_mcux_init, NULL, &spi_mcux_flexio_data_##n,                   \
-			      &spi_mcux_flexio_config_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,  \
+#define SPI_MCUX_FLEXIO_SPI_INIT(n)                                                               \
+	PINCTRL_DT_INST_DEFINE(n);                                                                \
+                                                                                                  \
+	static FLEXIO_SPI_Type flexio_spi_##n = {                                                 \
+		.flexioBase = (FLEXIO_Type *)DT_REG_ADDR(DT_INST_PARENT(n)),                      \
+		.SDOPinIndex = DT_INST_PROP(n, sdo_pin),                                          \
+		.SDIPinIndex = DT_INST_PROP(n, sdi_pin),                                          \
+		.SCKPinIndex = DT_INST_PROP(n, sck_pin),                                          \
+	};                                                                                        \
+                                                                                                  \
+	static const struct nxp_flexio_child nxp_flexio_spi_child_##n = {                         \
+		.isr = spi_mcux_flexio_isr,                                                       \
+		.user_data = (void *)DEVICE_DT_INST_GET(n),                                       \
+		.res = {.shifter_index = flexio_spi_##n.shifterIndex,                             \
+			.shifter_count = ARRAY_SIZE(flexio_spi_##n.shifterIndex),                 \
+			.timer_index = flexio_spi_##n.timerIndex,                                 \
+			.timer_count = ARRAY_SIZE(flexio_spi_##n.timerIndex)}};                   \
+                                                                                                  \
+	static const struct spi_mcux_flexio_config spi_mcux_flexio_config_##n = {                 \
+		.flexio_spi = &flexio_spi_##n,                                                    \
+		.flexio_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                   \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                      \
+		.child = &nxp_flexio_spi_child_##n,                                               \
+	};                                                                                        \
+                                                                                                  \
+	static struct spi_mcux_flexio_data spi_mcux_flexio_data_##n = {                           \
+		SPI_CONTEXT_INIT_LOCK(spi_mcux_flexio_data_##n, ctx),                             \
+		SPI_CONTEXT_INIT_SYNC(spi_mcux_flexio_data_##n, ctx),                             \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                            \
+                                                                                                  \
+	DEVICE_DT_INST_DEFINE(n, spi_mcux_init, NULL, &spi_mcux_flexio_data_##n,                  \
+			      &spi_mcux_flexio_config_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, \
 			      &spi_mcux_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_MCUX_FLEXIO_SPI_INIT)

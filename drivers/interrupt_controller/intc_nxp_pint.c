@@ -183,7 +183,7 @@ static void nxp_pint_isr(uint8_t *slot)
 }
 
 /* Defines PINT IRQ handler for a given irq index */
-#define NXP_PINT_IRQ(idx, node_id)                                                                 \
+#define NXP_PINT_IRQ(idx, node_id)                    \
 	IF_ENABLED(DT_IRQ_HAS_IDX(node_id, idx),				\
 	(static uint8_t nxp_pint_idx_##idx = idx;				\
 	do {									\

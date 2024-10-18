@@ -563,34 +563,34 @@ static const struct ethernet_api lan865x_api_func = {
 	.send = lan865x_port_send,
 };
 
-#define LAN865X_DEFINE(inst)                                                                       \
-	static struct lan865x_config_plca lan865x_config_plca_##inst = {                           \
-		.node_id = DT_INST_PROP(inst, plca_node_id),                                       \
-		.node_count = DT_INST_PROP(inst, plca_node_count),                                 \
-		.burst_count = DT_INST_PROP(inst, plca_burst_count),                               \
-		.burst_timer = DT_INST_PROP(inst, plca_burst_timer),                               \
-		.to_timer = DT_INST_PROP(inst, plca_to_timer),                                     \
-		.enable = DT_INST_PROP(inst, plca_enable),                                         \
-	};                                                                                         \
-                                                                                                   \
-	static const struct lan865x_config lan865x_config_##inst = {                               \
-		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0),                             \
-		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                               \
-		.reset = GPIO_DT_SPEC_INST_GET(inst, rst_gpios),                                   \
-		.timeout = CONFIG_ETH_LAN865X_TIMEOUT,                                             \
-		.plca = &lan865x_config_plca_##inst,                                               \
-	};                                                                                         \
-                                                                                                   \
-	struct oa_tc6 oa_tc6_##inst = {                                                            \
-		.cps = 64, .protected = 0, .spi = &lan865x_config_##inst.spi};                     \
-	static struct lan865x_data lan865x_data_##inst = {                                         \
-		.mac_address = DT_INST_PROP(inst, local_mac_address),                              \
-		.tx_rx_sem = Z_SEM_INITIALIZER((lan865x_data_##inst).tx_rx_sem, 1, 1),             \
-		.int_sem = Z_SEM_INITIALIZER((lan865x_data_##inst).int_sem, 0, 1),                 \
-		.tc6 = &oa_tc6_##inst};                                                            \
-                                                                                                   \
-	ETH_NET_DEVICE_DT_INST_DEFINE(inst, lan865x_init, NULL, &lan865x_data_##inst,              \
-				      &lan865x_config_##inst, CONFIG_ETH_INIT_PRIORITY,            \
+#define LAN865X_DEFINE(inst)                                                            \
+	static struct lan865x_config_plca lan865x_config_plca_##inst = {                \
+		.node_id = DT_INST_PROP(inst, plca_node_id),                            \
+		.node_count = DT_INST_PROP(inst, plca_node_count),                      \
+		.burst_count = DT_INST_PROP(inst, plca_burst_count),                    \
+		.burst_timer = DT_INST_PROP(inst, plca_burst_timer),                    \
+		.to_timer = DT_INST_PROP(inst, plca_to_timer),                          \
+		.enable = DT_INST_PROP(inst, plca_enable),                              \
+	};                                                                              \
+                                                                                        \
+	static const struct lan865x_config lan865x_config_##inst = {                    \
+		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0),                  \
+		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                    \
+		.reset = GPIO_DT_SPEC_INST_GET(inst, rst_gpios),                        \
+		.timeout = CONFIG_ETH_LAN865X_TIMEOUT,                                  \
+		.plca = &lan865x_config_plca_##inst,                                    \
+	};                                                                              \
+                                                                                        \
+	struct oa_tc6 oa_tc6_##inst = {                                                 \
+		.cps = 64, .protected = 0, .spi = &lan865x_config_##inst.spi};          \
+	static struct lan865x_data lan865x_data_##inst = {                              \
+		.mac_address = DT_INST_PROP(inst, local_mac_address),                   \
+		.tx_rx_sem = Z_SEM_INITIALIZER((lan865x_data_##inst).tx_rx_sem, 1, 1),  \
+		.int_sem = Z_SEM_INITIALIZER((lan865x_data_##inst).int_sem, 0, 1),      \
+		.tc6 = &oa_tc6_##inst};                                                 \
+                                                                                        \
+	ETH_NET_DEVICE_DT_INST_DEFINE(inst, lan865x_init, NULL, &lan865x_data_##inst,   \
+				      &lan865x_config_##inst, CONFIG_ETH_INIT_PRIORITY, \
 				      &lan865x_api_func, NET_ETH_MTU);
 
 DT_INST_FOREACH_STATUS_OKAY(LAN865X_DEFINE);

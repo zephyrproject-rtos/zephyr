@@ -15,52 +15,52 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_shell);
 
-#define CMD_HELP_ACQ_TIME                                                                          \
-	"Configure acquisition time."                                                              \
-	"\nUsage: acq_time <time> <unit>"                                                          \
+#define CMD_HELP_ACQ_TIME                 \
+	"Configure acquisition time."     \
+	"\nUsage: acq_time <time> <unit>" \
 	"\nunits: us, ns, ticks\n"
 
 #define CMD_HELP_CHANNEL "Configure ADC channel\n"
 
-#define CMD_HELP_CH_ID                                                                             \
-	"Configure channel id\n"                                                                   \
+#define CMD_HELP_CH_ID             \
+	"Configure channel id\n"   \
 	"Usage: id <channel_id>\n"
 
-#define CMD_HELP_DIFF                                                                              \
-	"Configure differential\n"                                                                 \
+#define CMD_HELP_DIFF                  \
+	"Configure differential\n"     \
 	"Usage: differential <0||1>\n"
 
-#define CMD_HELP_CH_NEG                                                                            \
-	"Configure channel negative input\n"                                                       \
+#define CMD_HELP_CH_NEG                         \
+	"Configure channel negative input\n"    \
 	"Usage: negative <negative_input_id>\n"
 
-#define CMD_HELP_CH_POS                                                                            \
-	"Configure channel positive input\n"                                                       \
+#define CMD_HELP_CH_POS                         \
+	"Configure channel positive input\n"    \
 	"Usage: positive <positive_input_id>\n"
 
-#define CMD_HELP_READ                                                                              \
-	"Read adc value\n"                                                                         \
+#define CMD_HELP_READ             \
+	"Read adc value\n"        \
 	"Usage: read <channel>\n"
 
-#define CMD_HELP_RES                                                                               \
-	"Configure resolution\n"                                                                   \
+#define CMD_HELP_RES                       \
+	"Configure resolution\n"           \
 	"Usage: resolution <resolution>\n"
 
 #define CMD_HELP_REF   "Configure reference\n"
 #define CMD_HELP_GAIN  "Configure gain.\n"
 #define CMD_HELP_PRINT "Print current configuration"
 
-#define ADC_HDL_LIST_ENTRY(node_id)                                                                \
-	{                                                                                          \
-		.dev = DEVICE_DT_GET(node_id),                                                     \
-		.channel_config =                                                                  \
-			{                                                                          \
-				.gain = ADC_GAIN_1,                                                \
-				.reference = ADC_REF_INTERNAL,                                     \
-				.acquisition_time = ADC_ACQ_TIME_DEFAULT,                          \
-				.channel_id = 0,                                                   \
-			},                                                                         \
-		.resolution = 0,                                                                   \
+#define ADC_HDL_LIST_ENTRY(node_id)                                       \
+	{                                                                 \
+		.dev = DEVICE_DT_GET(node_id),                            \
+		.channel_config =                                         \
+			{                                                 \
+				.gain = ADC_GAIN_1,                       \
+				.reference = ADC_REF_INTERNAL,            \
+				.acquisition_time = ADC_ACQ_TIME_DEFAULT, \
+				.channel_id = 0,                          \
+			},                                                \
+		.resolution = 0,                                          \
 	},
 
 #define CHOSEN_STR_LEN 20

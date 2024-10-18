@@ -87,7 +87,7 @@ static void lps2xdf_work_cb(struct k_work *work)
 }
 #endif /* CONFIG_LPS2XDF_TRIGGER_GLOBAL_THREAD */
 
-#if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps22df, i3c) ||                                          \
+#if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps22df, i3c) || \
      DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps28dfw, i3c))
 static int lps2xdf_ibi_cb(struct i3c_device_desc *target, struct i3c_ibi_payload *payload)
 {
@@ -183,7 +183,7 @@ int lps2xdf_init_interrupt(const struct device *dev, enum sensor_variant variant
 		return -ENOTSUP;
 	}
 
-#if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps22df, i3c) ||                                          \
+#if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps22df, i3c) || \
      DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps28dfw, i3c))
 	if (cfg->i3c.bus == NULL) {
 		/* I3C IBI does not utilize GPIO interrupt. */

@@ -193,7 +193,7 @@ static void intc_xmc4xxx_isr(void *arg)
 	}
 }
 
-#define INTC_IRQ_CONNECT_ENABLE(name, line_number)                                                 \
+#define INTC_IRQ_CONNECT_ENABLE(name, line_number) \
 	COND_CODE_1(DT_INST_IRQ_HAS_NAME(0, name),                                                \
 	(IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, name, irq),                                           \
 		DT_INST_IRQ_BY_NAME(0, name, priority), intc_xmc4xxx_isr, (void *)line_number, 0); \

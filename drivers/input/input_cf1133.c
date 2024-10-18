@@ -318,16 +318,16 @@ static int cf1133_init(const struct device *dev)
 	return 0;
 }
 
-#define CF1133_INIT(index)                                                                         \
-	static const struct cf1133_config cf1133_config_##index = {                                \
-		.bus = I2C_DT_SPEC_INST_GET(index),                                                \
+#define CF1133_INIT(index)                                                                     \
+	static const struct cf1133_config cf1133_config_##index = {                            \
+		.bus = I2C_DT_SPEC_INST_GET(index),                                            \
 		IF_ENABLED(CONFIG_INPUT_CF1133_INTERRUPT,				\
 		(.int_gpio = GPIO_DT_SPEC_INST_GET(index, int_gpios),			\
-		)) };                 \
-	static struct cf1133_data cf1133_data_##index;                                             \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(index, cf1133_init, NULL, &cf1133_data_##index,                      \
-			      &cf1133_config_##index, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,     \
+		)) };             \
+	static struct cf1133_data cf1133_data_##index;                                         \
+                                                                                               \
+	DEVICE_DT_INST_DEFINE(index, cf1133_init, NULL, &cf1133_data_##index,                  \
+			      &cf1133_config_##index, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, \
 			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(CF1133_INIT);

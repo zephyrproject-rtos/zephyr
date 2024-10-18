@@ -236,17 +236,17 @@ static int shtcx_init(const struct device *dev)
 
 #define SHTCX_CHIP(inst) (DT_INST_NODE_HAS_COMPAT(inst, sensirion_shtc1) ? CHIP_SHTC1 : CHIP_SHTC3)
 
-#define SHTCX_CONFIG(inst)                                                                         \
-	{.i2c = I2C_DT_SPEC_INST_GET(inst),                                                        \
-	 .chip = SHTCX_CHIP(inst),                                                                 \
-	 .measure_mode = DT_INST_ENUM_IDX(inst, measure_mode),                                     \
+#define SHTCX_CONFIG(inst)                                         \
+	{.i2c = I2C_DT_SPEC_INST_GET(inst),                        \
+	 .chip = SHTCX_CHIP(inst),                                 \
+	 .measure_mode = DT_INST_ENUM_IDX(inst, measure_mode),     \
 	 .clock_stretching = DT_INST_PROP(inst, clock_stretching)}
 
-#define SHTCX_DEFINE(inst)                                                                         \
-	static struct shtcx_data shtcx_data_##inst;                                                \
-	static struct shtcx_config shtcx_config_##inst = SHTCX_CONFIG(inst);                       \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, shtcx_init, NULL, &shtcx_data_##inst,                   \
-				     &shtcx_config_##inst, POST_KERNEL,                            \
+#define SHTCX_DEFINE(inst)                                                            \
+	static struct shtcx_data shtcx_data_##inst;                                   \
+	static struct shtcx_config shtcx_config_##inst = SHTCX_CONFIG(inst);          \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, shtcx_init, NULL, &shtcx_data_##inst,      \
+				     &shtcx_config_##inst, POST_KERNEL,               \
 				     CONFIG_SENSOR_INIT_PRIORITY, &shtcx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SHTCX_DEFINE)

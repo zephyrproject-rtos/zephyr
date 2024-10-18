@@ -49,10 +49,10 @@ LOG_MODULE_REGISTER(nrf_led_matrix, CONFIG_DISPLAY_LOG_LEVEL);
 #define GET_COL_IDX(dev_config, pixel_idx) _GET_COL_IDX(dev_config->pixel_mapping[pixel_idx])
 #define _GET_COL_IDX(byte)                 (byte & 0xF)
 
-#define CHECK_PIXEL(node_id, pha, idx)                                                             \
-	BUILD_ASSERT(GET_DT_ROW_IDX(idx) < ROW_COUNT,                                              \
-		     "Invalid row index in pixel-mapping[" #idx "].");                             \
-	BUILD_ASSERT(GET_DT_COL_IDX(idx) < COL_COUNT,                                              \
+#define CHECK_PIXEL(node_id, pha, idx)                                    \
+	BUILD_ASSERT(GET_DT_ROW_IDX(idx) < ROW_COUNT,                     \
+		     "Invalid row index in pixel-mapping[" #idx "].");    \
+	BUILD_ASSERT(GET_DT_COL_IDX(idx) < COL_COUNT,                     \
 		     "Invalid column index in pixel-mapping[" #idx "].");
 DT_FOREACH_PROP_ELEM(MATRIX_NODE, pixel_mapping, CHECK_PIXEL)
 
@@ -487,21 +487,21 @@ static struct display_drv_data instance_data = {
 };
 
 #if !USE_PWM
-#define CHECK_GPIOTE_INST(node_id, prop, idx)                                                      \
-	BUILD_ASSERT(NRF_DT_GPIOTE_INST_BY_IDX(node_id, prop, idx) ==                              \
-			     NRF_DT_GPIOTE_INST_BY_IDX(node_id, prop, 0),                          \
+#define CHECK_GPIOTE_INST(node_id, prop, idx)                               \
+	BUILD_ASSERT(NRF_DT_GPIOTE_INST_BY_IDX(node_id, prop, idx) ==       \
+			     NRF_DT_GPIOTE_INST_BY_IDX(node_id, prop, 0),   \
 		     "All column GPIOs must use the same GPIOTE instance");
 DT_FOREACH_PROP_ELEM(MATRIX_NODE, col_gpios, CHECK_GPIOTE_INST)
 #endif
 
-#define GET_PIN_INFO(node_id, pha, idx)                                                            \
-	(DT_GPIO_PIN_BY_IDX(node_id, pha, idx) |                                                   \
-	 (DT_PROP_BY_PHANDLE_IDX(node_id, pha, idx, port) << 5) |                                  \
+#define GET_PIN_INFO(node_id, pha, idx)                                                        \
+	(DT_GPIO_PIN_BY_IDX(node_id, pha, idx) |                                               \
+	 (DT_PROP_BY_PHANDLE_IDX(node_id, pha, idx, port) << 5) |                              \
 	 ((DT_GPIO_FLAGS_BY_IDX(node_id, pha, idx) & GPIO_ACTIVE_LOW) ? ACTIVE_LOW_MASK : 0)),
 
 #define ADD_FF(i, _)                        0xFF
 #define FILL_ROW_WITH_FF(node_id, pha, idx) LISTIFY(COL_COUNT, ADD_FF, (,)),
-#define GET_PIXEL_ORDINAL(node_id, pha, idx)                                                       \
+#define GET_PIXEL_ORDINAL(node_id, pha, idx)                           \
 	[GET_DT_ROW_IDX(idx) * COL_COUNT + GET_DT_COL_IDX(idx)] = idx,
 
 static const struct display_drv_config instance_config = {

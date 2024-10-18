@@ -1427,51 +1427,51 @@ static int it82xx2_usb_driver_preinit(const struct device *dev)
 	return 0;
 }
 
-#define IT82xx2_USB_DEVICE_DEFINE(n)                                                               \
-	K_KERNEL_STACK_DEFINE(udc_it82xx2_stack_##n, CONFIG_UDC_IT82xx2_STACK_SIZE);               \
-                                                                                                   \
-	static void udc_it82xx2_thread_##n(void *dev, void *arg1, void *arg2)                      \
-	{                                                                                          \
-		ARG_UNUSED(arg1);                                                                  \
-		ARG_UNUSED(arg2);                                                                  \
-		xfer_work_handler(dev);                                                            \
-	}                                                                                          \
-                                                                                                   \
-	static void udc_it82xx2_make_thread_##n(const struct device *dev)                          \
-	{                                                                                          \
-		struct it82xx2_data *priv = udc_get_private(dev);                                  \
-                                                                                                   \
-		k_thread_create(&priv->thread_data, udc_it82xx2_stack_##n,                         \
-				K_THREAD_STACK_SIZEOF(udc_it82xx2_stack_##n),                      \
-				udc_it82xx2_thread_##n, (void *)dev, NULL, NULL, K_PRIO_COOP(8),   \
-				0, K_NO_WAIT);                                                     \
-		k_thread_name_set(&priv->thread_data, dev->name);                                  \
-	}                                                                                          \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-                                                                                                   \
-	static struct udc_ep_config ep_cfg_out[MAX_NUM_ENDPOINTS];                                 \
-	static struct udc_ep_config ep_cfg_in[MAX_NUM_ENDPOINTS];                                  \
-                                                                                                   \
-	static struct usb_it82xx2_config udc_cfg_##n = {                                           \
-		.base = (struct usb_it82xx2_regs *)DT_INST_REG_ADDR(n),                            \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		.wuc = {.dev = IT8XXX2_DEV_WUC(0, n), .mask = IT8XXX2_DEV_WUC_MASK(0, n)},         \
-		.usb_irq = DT_INST_IRQ_BY_IDX(n, 0, irq),                                          \
-		.wu_irq = DT_INST_IRQ_BY_IDX(n, 1, irq),                                           \
-		.ep_cfg_in = ep_cfg_out,                                                           \
-		.ep_cfg_out = ep_cfg_in,                                                           \
-		.make_thread = udc_it82xx2_make_thread_##n,                                        \
-	};                                                                                         \
-                                                                                                   \
-	static struct it82xx2_data priv_data_##n = {};                                             \
-                                                                                                   \
-	static struct udc_data udc_data_##n = {                                                    \
-		.mutex = Z_MUTEX_INITIALIZER(udc_data_##n.mutex),                                  \
-		.priv = &priv_data_##n,                                                            \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, it82xx2_usb_driver_preinit, NULL, &udc_data_##n, &udc_cfg_##n,    \
+#define IT82xx2_USB_DEVICE_DEFINE(n)                                                             \
+	K_KERNEL_STACK_DEFINE(udc_it82xx2_stack_##n, CONFIG_UDC_IT82xx2_STACK_SIZE);             \
+                                                                                                 \
+	static void udc_it82xx2_thread_##n(void *dev, void *arg1, void *arg2)                    \
+	{                                                                                        \
+		ARG_UNUSED(arg1);                                                                \
+		ARG_UNUSED(arg2);                                                                \
+		xfer_work_handler(dev);                                                          \
+	}                                                                                        \
+                                                                                                 \
+	static void udc_it82xx2_make_thread_##n(const struct device *dev)                        \
+	{                                                                                        \
+		struct it82xx2_data *priv = udc_get_private(dev);                                \
+                                                                                                 \
+		k_thread_create(&priv->thread_data, udc_it82xx2_stack_##n,                       \
+				K_THREAD_STACK_SIZEOF(udc_it82xx2_stack_##n),                    \
+				udc_it82xx2_thread_##n, (void *)dev, NULL, NULL, K_PRIO_COOP(8), \
+				0, K_NO_WAIT);                                                   \
+		k_thread_name_set(&priv->thread_data, dev->name);                                \
+	}                                                                                        \
+                                                                                                 \
+	PINCTRL_DT_INST_DEFINE(n);                                                               \
+                                                                                                 \
+	static struct udc_ep_config ep_cfg_out[MAX_NUM_ENDPOINTS];                               \
+	static struct udc_ep_config ep_cfg_in[MAX_NUM_ENDPOINTS];                                \
+                                                                                                 \
+	static struct usb_it82xx2_config udc_cfg_##n = {                                         \
+		.base = (struct usb_it82xx2_regs *)DT_INST_REG_ADDR(n),                          \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+		.wuc = {.dev = IT8XXX2_DEV_WUC(0, n), .mask = IT8XXX2_DEV_WUC_MASK(0, n)},       \
+		.usb_irq = DT_INST_IRQ_BY_IDX(n, 0, irq),                                        \
+		.wu_irq = DT_INST_IRQ_BY_IDX(n, 1, irq),                                         \
+		.ep_cfg_in = ep_cfg_out,                                                         \
+		.ep_cfg_out = ep_cfg_in,                                                         \
+		.make_thread = udc_it82xx2_make_thread_##n,                                      \
+	};                                                                                       \
+                                                                                                 \
+	static struct it82xx2_data priv_data_##n = {};                                           \
+                                                                                                 \
+	static struct udc_data udc_data_##n = {                                                  \
+		.mutex = Z_MUTEX_INITIALIZER(udc_data_##n.mutex),                                \
+		.priv = &priv_data_##n,                                                          \
+	};                                                                                       \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(n, it82xx2_usb_driver_preinit, NULL, &udc_data_##n, &udc_cfg_##n,  \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &it82xx2_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IT82xx2_USB_DEVICE_DEFINE)

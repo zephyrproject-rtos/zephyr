@@ -126,20 +126,20 @@ static int mfd_adp5585_init(const struct device *dev)
 	return 0;
 }
 
-#define MFD_ADP5585_DEFINE(inst)                                                                   \
-	static const struct mfd_adp5585_config mfd_adp5585_config_##inst = {                       \
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),                    \
-		.nint_gpio = GPIO_DT_SPEC_INST_GET_OR(n, nint_gpios, {0}),                         \
-		.i2c_bus = I2C_DT_SPEC_INST_GET(inst),                                             \
-	};                                                                                         \
-	static struct mfd_adp5585_data mfd_adp5585_data_##inst = {                                 \
-		.work = Z_WORK_INITIALIZER(mfd_adp5585_work_handler),                              \
-		.lock = Z_SEM_INITIALIZER(mfd_adp5585_data_##inst.lock, 1, 1),                     \
-		.dev = DEVICE_DT_INST_GET(inst),                                                   \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, mfd_adp5585_init, NULL, &mfd_adp5585_data_##inst,              \
-			      &mfd_adp5585_config_##inst, POST_KERNEL,                             \
+#define MFD_ADP5585_DEFINE(inst)                                                      \
+	static const struct mfd_adp5585_config mfd_adp5585_config_##inst = {          \
+		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),       \
+		.nint_gpio = GPIO_DT_SPEC_INST_GET_OR(n, nint_gpios, {0}),            \
+		.i2c_bus = I2C_DT_SPEC_INST_GET(inst),                                \
+	};                                                                            \
+	static struct mfd_adp5585_data mfd_adp5585_data_##inst = {                    \
+		.work = Z_WORK_INITIALIZER(mfd_adp5585_work_handler),                 \
+		.lock = Z_SEM_INITIALIZER(mfd_adp5585_data_##inst.lock, 1, 1),        \
+		.dev = DEVICE_DT_INST_GET(inst),                                      \
+	};                                                                            \
+                                                                                      \
+	DEVICE_DT_INST_DEFINE(inst, mfd_adp5585_init, NULL, &mfd_adp5585_data_##inst, \
+			      &mfd_adp5585_config_##inst, POST_KERNEL,                \
 			      CONFIG_MFD_ADP5585_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MFD_ADP5585_DEFINE);

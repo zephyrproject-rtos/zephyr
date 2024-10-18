@@ -175,20 +175,20 @@ static int uart_it8xxx2_init(const struct device *dev)
 	return 0;
 }
 
-#define UART_ITE_IT8XXX2_INIT(inst)                                                                \
-	PINCTRL_DT_INST_DEFINE(inst);                                                              \
-	static const struct uart_it8xxx2_config uart_it8xxx2_cfg_##inst = {                        \
-		.port = DT_INST_PROP(inst, port_num),                                              \
-		.gpio_wui = GPIO_DT_SPEC_INST_GET(inst, gpios),                                    \
-		.uart_dev = DEVICE_DT_GET(DT_INST_PHANDLE(inst, uart_dev)),                        \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
-	};                                                                                         \
-                                                                                                   \
-	static struct uart_it8xxx2_data uart_it8xxx2_data_##inst;                                  \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, uart_it8xxx2_pm_action);                                    \
-	DEVICE_DT_INST_DEFINE(inst, uart_it8xxx2_init, PM_DEVICE_DT_INST_GET(inst),                \
-			      &uart_it8xxx2_data_##inst, &uart_it8xxx2_cfg_##inst, PRE_KERNEL_1,   \
+#define UART_ITE_IT8XXX2_INIT(inst)                                                              \
+	PINCTRL_DT_INST_DEFINE(inst);                                                            \
+	static const struct uart_it8xxx2_config uart_it8xxx2_cfg_##inst = {                      \
+		.port = DT_INST_PROP(inst, port_num),                                            \
+		.gpio_wui = GPIO_DT_SPEC_INST_GET(inst, gpios),                                  \
+		.uart_dev = DEVICE_DT_GET(DT_INST_PHANDLE(inst, uart_dev)),                      \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                    \
+	};                                                                                       \
+                                                                                                 \
+	static struct uart_it8xxx2_data uart_it8xxx2_data_##inst;                                \
+                                                                                                 \
+	PM_DEVICE_DT_INST_DEFINE(inst, uart_it8xxx2_pm_action);                                  \
+	DEVICE_DT_INST_DEFINE(inst, uart_it8xxx2_init, PM_DEVICE_DT_INST_GET(inst),              \
+			      &uart_it8xxx2_data_##inst, &uart_it8xxx2_cfg_##inst, PRE_KERNEL_1, \
 			      CONFIG_UART_ITE_IT8XXX2_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_ITE_IT8XXX2_INIT)

@@ -617,28 +617,28 @@ static const struct haptics_driver_api drv2605_driver_api = {
 	.stop_output = &drv2605_stop_output,
 };
 
-#define HAPTICS_DRV2605_DEFINE(inst)                                                               \
-                                                                                                   \
-	static const struct drv2605_config drv2605_config_##inst = {                               \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.en_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, en_gpios, {}),                           \
-		.in_trig_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, in_trig_gpios, {}),                 \
-		.feedback_brake_factor = DT_INST_ENUM_IDX(inst, feedback_brake_factor),            \
-		.loop_gain = DT_INST_ENUM_IDX(inst, loop_gain),                                    \
-		.actuator_mode = DT_INST_ENUM_IDX(inst, actuator_mode),                            \
-		.rated_voltage = DRV2605_CALCULATE_VOLTAGE(DT_INST_PROP(inst, vib_rated_mv)),      \
-		.overdrive_clamp_voltage =                                                         \
-			DRV2605_CALCULATE_VOLTAGE(DT_INST_PROP(inst, vib_overdrive_mv)),           \
-	};                                                                                         \
-                                                                                                   \
-	static struct drv2605_data drv2605_data_##inst = {                                         \
-		.mode = DRV2605_MODE_INTERNAL_TRIGGER,                                             \
-	};                                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, drv2605_pm_action);                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, drv2605_init, PM_DEVICE_DT_INST_GET(inst),                     \
-			      &drv2605_data_##inst, &drv2605_config_##inst, POST_KERNEL,           \
+#define HAPTICS_DRV2605_DEFINE(inst)                                                          \
+                                                                                              \
+	static const struct drv2605_config drv2605_config_##inst = {                          \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                            \
+		.en_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, en_gpios, {}),                      \
+		.in_trig_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, in_trig_gpios, {}),            \
+		.feedback_brake_factor = DT_INST_ENUM_IDX(inst, feedback_brake_factor),       \
+		.loop_gain = DT_INST_ENUM_IDX(inst, loop_gain),                               \
+		.actuator_mode = DT_INST_ENUM_IDX(inst, actuator_mode),                       \
+		.rated_voltage = DRV2605_CALCULATE_VOLTAGE(DT_INST_PROP(inst, vib_rated_mv)), \
+		.overdrive_clamp_voltage =                                                    \
+			DRV2605_CALCULATE_VOLTAGE(DT_INST_PROP(inst, vib_overdrive_mv)),      \
+	};                                                                                    \
+                                                                                              \
+	static struct drv2605_data drv2605_data_##inst = {                                    \
+		.mode = DRV2605_MODE_INTERNAL_TRIGGER,                                        \
+	};                                                                                    \
+                                                                                              \
+	PM_DEVICE_DT_INST_DEFINE(inst, drv2605_pm_action);                                    \
+                                                                                              \
+	DEVICE_DT_INST_DEFINE(inst, drv2605_init, PM_DEVICE_DT_INST_GET(inst),                \
+			      &drv2605_data_##inst, &drv2605_config_##inst, POST_KERNEL,      \
 			      CONFIG_HAPTICS_INIT_PRIORITY, &drv2605_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(HAPTICS_DRV2605_DEFINE)

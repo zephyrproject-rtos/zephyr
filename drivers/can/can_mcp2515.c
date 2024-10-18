@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(can_mcp2515, CONFIG_CAN_LOG_LEVEL);
 /* Timeout for changing mode */
 #define MCP2515_MODE_CHANGE_TIMEOUT_USEC 1000
 #define MCP2515_MODE_CHANGE_RETRIES      100
-#define MCP2515_MODE_CHANGE_DELAY                                                                  \
+#define MCP2515_MODE_CHANGE_DELAY                                              \
 	K_USEC(MCP2515_MODE_CHANGE_TIMEOUT_USEC / MCP2515_MODE_CHANGE_RETRIES)
 
 static int mcp2515_cmd_soft_reset(const struct device *dev)
@@ -927,27 +927,27 @@ static int mcp2515_init(const struct device *dev)
 	return ret;
 }
 
-#define MCP2515_INIT(inst)                                                                         \
-	static K_KERNEL_STACK_DEFINE(mcp2515_int_thread_stack_##inst,                              \
-				     CONFIG_CAN_MCP2515_INT_THREAD_STACK_SIZE);                    \
-                                                                                                   \
-	static struct mcp2515_data mcp2515_data_##inst = {                                         \
-		.int_thread_stack = mcp2515_int_thread_stack_##inst,                               \
-		.tx_busy_map = 0U,                                                                 \
-		.filter_usage = 0U,                                                                \
-	};                                                                                         \
-                                                                                                   \
-	static const struct mcp2515_config mcp2515_config_##inst = {                               \
-		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0, 1000000),                         \
-		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0),                             \
-		.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                                \
-		.int_thread_stack_size = CONFIG_CAN_MCP2515_INT_THREAD_STACK_SIZE,                 \
-		.int_thread_priority = CONFIG_CAN_MCP2515_INT_THREAD_PRIO,                         \
-		.osc_freq = DT_INST_PROP(inst, osc_freq),                                          \
-	};                                                                                         \
-                                                                                                   \
-	CAN_DEVICE_DT_INST_DEFINE(inst, mcp2515_init, NULL, &mcp2515_data_##inst,                  \
-				  &mcp2515_config_##inst, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,   \
+#define MCP2515_INIT(inst)                                                                       \
+	static K_KERNEL_STACK_DEFINE(mcp2515_int_thread_stack_##inst,                            \
+				     CONFIG_CAN_MCP2515_INT_THREAD_STACK_SIZE);                  \
+                                                                                                 \
+	static struct mcp2515_data mcp2515_data_##inst = {                                       \
+		.int_thread_stack = mcp2515_int_thread_stack_##inst,                             \
+		.tx_busy_map = 0U,                                                               \
+		.filter_usage = 0U,                                                              \
+	};                                                                                       \
+                                                                                                 \
+	static const struct mcp2515_config mcp2515_config_##inst = {                             \
+		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0, 1000000),                       \
+		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0),                           \
+		.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                              \
+		.int_thread_stack_size = CONFIG_CAN_MCP2515_INT_THREAD_STACK_SIZE,               \
+		.int_thread_priority = CONFIG_CAN_MCP2515_INT_THREAD_PRIO,                       \
+		.osc_freq = DT_INST_PROP(inst, osc_freq),                                        \
+	};                                                                                       \
+                                                                                                 \
+	CAN_DEVICE_DT_INST_DEFINE(inst, mcp2515_init, NULL, &mcp2515_data_##inst,                \
+				  &mcp2515_config_##inst, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY, \
 				  &can_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(MCP2515_INIT)

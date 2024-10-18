@@ -54,19 +54,19 @@ struct ws2812_gpio_cfg {
 #define NOP_N_TIMES(n) LISTIFY(n, NOPS, ())
 
 /* Send out a 1 bit's pulse */
-#define ONE_BIT(base, pin)                                                                         \
-	do {                                                                                       \
-		__asm volatile(SET_HIGH NOP_N_TIMES(CONFIG_DELAY_T1H)                              \
-				       SET_LOW NOP_N_TIMES(CONFIG_DELAY_T1L)::[r] "l"(base),       \
-			       [p] "l"(pin));                                                      \
+#define ONE_BIT(base, pin)                                                                   \
+	do {                                                                                 \
+		__asm volatile(SET_HIGH NOP_N_TIMES(CONFIG_DELAY_T1H)                        \
+				       SET_LOW NOP_N_TIMES(CONFIG_DELAY_T1L)::[r] "l"(base), \
+			       [p] "l"(pin));                                                \
 	} while (false)
 
 /* Send out a 0 bit's pulse */
-#define ZERO_BIT(base, pin)                                                                        \
-	do {                                                                                       \
-		__asm volatile(SET_HIGH NOP_N_TIMES(CONFIG_DELAY_T0H)                              \
-				       SET_LOW NOP_N_TIMES(CONFIG_DELAY_T0L)::[r] "l"(base),       \
-			       [p] "l"(pin));                                                      \
+#define ZERO_BIT(base, pin)                                                                  \
+	do {                                                                                 \
+		__asm volatile(SET_HIGH NOP_N_TIMES(CONFIG_DELAY_T0H)                        \
+				       SET_LOW NOP_N_TIMES(CONFIG_DELAY_T0L)::[r] "l"(base), \
+			       [p] "l"(pin));                                                \
 	} while (false)
 
 static int send_buf(const struct device *dev, uint8_t *buf, size_t len)
@@ -175,7 +175,7 @@ static const struct led_strip_driver_api ws2812_gpio_api = {
  * Retrieve the channel to color mapping (e.g. RGB, BGR, GRB, ...) from the
  * "color-mapping" DT property.
  */
-#define WS2812_COLOR_MAPPING(idx)                                                                  \
+#define WS2812_COLOR_MAPPING(idx) \
 	static const uint8_t ws2812_gpio_##idx##_color_mapping[] = DT_INST_PROP(idx, color_mapping)
 
 #define WS2812_NUM_COLORS(idx) (DT_INST_PROP_LEN(idx, color_mapping))

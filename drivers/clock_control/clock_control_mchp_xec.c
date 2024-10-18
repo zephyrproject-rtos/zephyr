@@ -1051,7 +1051,7 @@ static int xec_clock_control_init(const struct device *dev)
 
 #define XEC_PLL_32K_SRC(i) (enum pll_clk32k_src) DT_INST_PROP_OR(i, pll_32k_src, PLL_CLK32K_SRC_SO)
 
-#define XEC_PERIPH_32K_SRC(i)                                                                      \
+#define XEC_PERIPH_32K_SRC(i)                                                                \
 	(enum periph_clk32k_src) DT_INST_PROP_OR(0, periph_32k_src, PERIPH_CLK32K_SRC_SO_SO)
 
 PINCTRL_DT_INST_DEFINE(0);

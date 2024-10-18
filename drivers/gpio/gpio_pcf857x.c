@@ -387,22 +387,22 @@ static const struct gpio_driver_api pcf857x_drv_api = {
 	.manage_callback = pcf857x_manage_callback,
 };
 
-#define GPIO_PCF857X_INST(idx)                                                                     \
-	static const struct pcf857x_drv_cfg pcf857x_cfg##idx = {                                   \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),             \
-			},                                                                         \
-		.gpio_int = GPIO_DT_SPEC_INST_GET_OR(idx, int_gpios, {0}),                         \
-		.i2c = I2C_DT_SPEC_INST_GET(idx),                                                  \
-	};                                                                                         \
-	static struct pcf857x_drv_data pcf857x_data##idx = {                                       \
-		.lock = Z_SEM_INITIALIZER(pcf857x_data##idx.lock, 1, 1),                           \
-		.work = Z_WORK_INITIALIZER(pcf857x_work_handler),                                  \
-		.dev = DEVICE_DT_INST_GET(idx),                                                    \
-		.num_bytes = DT_INST_ENUM_IDX(idx, ngpios) + 1,                                    \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(idx, pcf857x_init, NULL, &pcf857x_data##idx, &pcf857x_cfg##idx,      \
+#define GPIO_PCF857X_INST(idx)                                                                   \
+	static const struct pcf857x_drv_cfg pcf857x_cfg##idx = {                                 \
+		.common =                                                                        \
+			{                                                                        \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),           \
+			},                                                                       \
+		.gpio_int = GPIO_DT_SPEC_INST_GET_OR(idx, int_gpios, {0}),                       \
+		.i2c = I2C_DT_SPEC_INST_GET(idx),                                                \
+	};                                                                                       \
+	static struct pcf857x_drv_data pcf857x_data##idx = {                                     \
+		.lock = Z_SEM_INITIALIZER(pcf857x_data##idx.lock, 1, 1),                         \
+		.work = Z_WORK_INITIALIZER(pcf857x_work_handler),                                \
+		.dev = DEVICE_DT_INST_GET(idx),                                                  \
+		.num_bytes = DT_INST_ENUM_IDX(idx, ngpios) + 1,                                  \
+	};                                                                                       \
+	DEVICE_DT_INST_DEFINE(idx, pcf857x_init, NULL, &pcf857x_data##idx, &pcf857x_cfg##idx,    \
 			      POST_KERNEL, CONFIG_GPIO_PCF857X_INIT_PRIORITY, &pcf857x_drv_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_PCF857X_INST);

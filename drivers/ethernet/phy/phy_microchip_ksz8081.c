@@ -506,17 +506,17 @@ static const struct ethphy_driver_api mc_ksz8081_phy_api = {
 #define INTERRUPT_GPIO(n)
 #endif /* interrupt gpio */
 
-#define MICROCHIP_KSZ8081_INIT(n)                                                                  \
-	static const struct mc_ksz8081_config mc_ksz8081_##n##_config = {                          \
-		.addr = DT_INST_REG_ADDR(n),                                                       \
-		.mdio_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                      \
-		.phy_iface = DT_INST_ENUM_IDX(n, microchip_interface_type),                        \
-		RESET_GPIO(n) INTERRUPT_GPIO(n)};                                                  \
-                                                                                                   \
-	static struct mc_ksz8081_data mc_ksz8081_##n##_data;                                       \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &phy_mc_ksz8081_init, NULL, &mc_ksz8081_##n##_data,               \
-			      &mc_ksz8081_##n##_config, POST_KERNEL, CONFIG_PHY_INIT_PRIORITY,     \
+#define MICROCHIP_KSZ8081_INIT(n)                                                              \
+	static const struct mc_ksz8081_config mc_ksz8081_##n##_config = {                      \
+		.addr = DT_INST_REG_ADDR(n),                                                   \
+		.mdio_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                  \
+		.phy_iface = DT_INST_ENUM_IDX(n, microchip_interface_type),                    \
+		RESET_GPIO(n) INTERRUPT_GPIO(n)};                                              \
+                                                                                               \
+	static struct mc_ksz8081_data mc_ksz8081_##n##_data;                                   \
+                                                                                               \
+	DEVICE_DT_INST_DEFINE(n, &phy_mc_ksz8081_init, NULL, &mc_ksz8081_##n##_data,           \
+			      &mc_ksz8081_##n##_config, POST_KERNEL, CONFIG_PHY_INIT_PRIORITY, \
 			      &mc_ksz8081_phy_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MICROCHIP_KSZ8081_INIT)

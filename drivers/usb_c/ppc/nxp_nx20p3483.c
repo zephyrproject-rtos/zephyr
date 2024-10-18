@@ -420,40 +420,40 @@ static int nx20p3483_dev_init(const struct device *dev)
 	return 0;
 }
 
-#define NX20P3483_DRIVER_CFG_INIT(node)                                                            \
-	{                                                                                          \
-		.bus = I2C_DT_SPEC_GET(node),                                                      \
-		.irq_gpio = GPIO_DT_SPEC_GET(node, irq_gpios),                                     \
-		.snk_ovp_thresh = DT_PROP(node, snk_ovp),                                          \
-		.src_use_hv = DT_PROP(node, src_hv),                                               \
-		.src_5v_ocp_thresh = DT_PROP(node, src_5v_ocp),                                    \
-		.src_hv_ocp_thresh = DT_PROP(node, src_hv_ocp),                                    \
+#define NX20P3483_DRIVER_CFG_INIT(node)                         \
+	{                                                       \
+		.bus = I2C_DT_SPEC_GET(node),                   \
+		.irq_gpio = GPIO_DT_SPEC_GET(node, irq_gpios),  \
+		.snk_ovp_thresh = DT_PROP(node, snk_ovp),       \
+		.src_use_hv = DT_PROP(node, src_hv),            \
+		.src_5v_ocp_thresh = DT_PROP(node, src_5v_ocp), \
+		.src_hv_ocp_thresh = DT_PROP(node, src_hv_ocp), \
 	}
 
-#define NX20P3483_DRIVER_CFG_ASSERTS(node)                                                         \
-	BUILD_ASSERT(DT_PROP(node, snk_ovp) >= NX20P3483_U_THRESHOLD_6_0 &&                        \
-			     DT_PROP(node, snk_ovp) <= NX20P3483_U_THRESHOLD_23_0,                 \
-		     "Invalid overvoltage threshold");                                             \
-	BUILD_ASSERT(DT_PROP(node, src_5v_ocp) >= NX20P3483_I_THRESHOLD_0_400 &&                   \
-			     DT_PROP(node, src_5v_ocp) <= NX20P3483_I_THRESHOLD_3_400,             \
-		     "Invalid overcurrent threshold");                                             \
-	BUILD_ASSERT(DT_PROP(node, src_hv_ocp) >= NX20P3483_I_THRESHOLD_0_400 &&                   \
-			     DT_PROP(node, src_hv_ocp) <= NX20P3483_I_THRESHOLD_3_400,             \
+#define NX20P3483_DRIVER_CFG_ASSERTS(node)                                             \
+	BUILD_ASSERT(DT_PROP(node, snk_ovp) >= NX20P3483_U_THRESHOLD_6_0 &&            \
+			     DT_PROP(node, snk_ovp) <= NX20P3483_U_THRESHOLD_23_0,     \
+		     "Invalid overvoltage threshold");                                 \
+	BUILD_ASSERT(DT_PROP(node, src_5v_ocp) >= NX20P3483_I_THRESHOLD_0_400 &&       \
+			     DT_PROP(node, src_5v_ocp) <= NX20P3483_I_THRESHOLD_3_400, \
+		     "Invalid overcurrent threshold");                                 \
+	BUILD_ASSERT(DT_PROP(node, src_hv_ocp) >= NX20P3483_I_THRESHOLD_0_400 &&       \
+			     DT_PROP(node, src_hv_ocp) <= NX20P3483_I_THRESHOLD_3_400, \
 		     "Invalid overcurrent threshold");
 
-#define NX20P3483_DRIVER_DATA_INIT(node)                                                           \
-	{                                                                                          \
-		.dev = DEVICE_DT_GET(node),                                                        \
+#define NX20P3483_DRIVER_DATA_INIT(node)    \
+	{                                   \
+		.dev = DEVICE_DT_GET(node), \
 	}
 
-#define NX20P3483_DRIVER_INIT(inst)                                                                \
-	static struct nx20p3483_data drv_data_nx20p3483##inst =                                    \
-		NX20P3483_DRIVER_DATA_INIT(DT_DRV_INST(inst));                                     \
-	NX20P3483_DRIVER_CFG_ASSERTS(DT_DRV_INST(inst));                                           \
-	static struct nx20p3483_cfg drv_cfg_nx20p3483##inst =                                      \
-		NX20P3483_DRIVER_CFG_INIT(DT_DRV_INST(inst));                                      \
-	DEVICE_DT_INST_DEFINE(inst, &nx20p3483_dev_init, NULL, &drv_data_nx20p3483##inst,          \
-			      &drv_cfg_nx20p3483##inst, POST_KERNEL,                               \
+#define NX20P3483_DRIVER_INIT(inst)                                                       \
+	static struct nx20p3483_data drv_data_nx20p3483##inst =                           \
+		NX20P3483_DRIVER_DATA_INIT(DT_DRV_INST(inst));                            \
+	NX20P3483_DRIVER_CFG_ASSERTS(DT_DRV_INST(inst));                                  \
+	static struct nx20p3483_cfg drv_cfg_nx20p3483##inst =                             \
+		NX20P3483_DRIVER_CFG_INIT(DT_DRV_INST(inst));                             \
+	DEVICE_DT_INST_DEFINE(inst, &nx20p3483_dev_init, NULL, &drv_data_nx20p3483##inst, \
+			      &drv_cfg_nx20p3483##inst, POST_KERNEL,                      \
 			      CONFIG_USBC_PPC_INIT_PRIORITY, &nx20p3483_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NX20P3483_DRIVER_INIT)

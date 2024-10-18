@@ -97,7 +97,7 @@ static int max14916_reg_trans_spi_diag(const struct device *dev, uint8_t addr, u
 }
 
 #define MAX14916_REG_READ(dev, addr) max14916_reg_trans_spi_diag(dev, addr, 0, MAX149x6_READ)
-#define MAX14916_REG_WRITE(dev, addr, val)                                                         \
+#define MAX14916_REG_WRITE(dev, addr, val)                          \
 	max14916_reg_trans_spi_diag(dev, addr, val, MAX149x6_WRITE)
 
 static int gpio_max14916_diag_chan_get(const struct device *dev)
@@ -367,34 +367,34 @@ static const struct gpio_driver_api gpio_max14916_api = {
 	.port_toggle_bits = gpio_max14916_port_toggle_bits,
 };
 
-#define GPIO_MAX14906_DEVICE(id)                                                                   \
-	static const struct max14916_config max14916_##id##_cfg = {                                \
-		.spi = SPI_DT_SPEC_INST_GET(id, SPI_OP_MODE_MASTER | SPI_WORD_SET(8U), 0U),        \
-		.ready_gpio = GPIO_DT_SPEC_INST_GET(id, drdy_gpios),                               \
-		.fault_gpio = GPIO_DT_SPEC_INST_GET(id, fault_gpios),                              \
-		.sync_gpio = GPIO_DT_SPEC_INST_GET(id, sync_gpios),                                \
-		.en_gpio = GPIO_DT_SPEC_INST_GET(id, en_gpios),                                    \
-		.crc_en = DT_INST_PROP(id, crc_en),                                                \
-		.config1.reg_bits.FLED_SET = DT_INST_PROP(id, fled_set),                           \
-		.config1.reg_bits.SLED_SET = DT_INST_PROP(id, sled_set),                           \
-		.config1.reg_bits.FLED_STRETCH = DT_INST_PROP(id, fled_stretch),                   \
-		.config1.reg_bits.FFILTER_EN = DT_INST_PROP(id, ffilter_en),                       \
-		.config1.reg_bits.FILTER_LONG = DT_INST_PROP(id, filter_long),                     \
-		.config1.reg_bits.FLATCH_EN = DT_INST_PROP(id, flatch_en),                         \
-		.config1.reg_bits.LED_CURR_LIM = DT_INST_PROP(id, led_cur_lim),                    \
-		.config2.reg_bits.VDD_ON_THR = DT_INST_PROP(id, vdd_on_thr),                       \
-		.config2.reg_bits.SYNCH_WD_EN = DT_INST_PROP(id, synch_wd_en),                     \
-		.config2.reg_bits.SHT_VDD_THR = DT_INST_PROP(id, sht_vdd_thr),                     \
-		.config2.reg_bits.OW_OFF_CS = DT_INST_PROP(id, ow_off_cs),                         \
-		.config2.reg_bits.WD_TO = DT_INST_PROP(id, wd_to),                                 \
-		.pkt_size = (DT_INST_PROP(id, crc_en) & 0x1) ? 3 : 2,                              \
-		.spi_addr = DT_INST_PROP(id, spi_addr),                                            \
-	};                                                                                         \
-                                                                                                   \
-	static struct max14916_data max14916_##id##_data;                                          \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(id, &gpio_max14916_init, NULL, &max14916_##id##_data,                \
-			      &max14916_##id##_cfg, POST_KERNEL,                                   \
+#define GPIO_MAX14906_DEVICE(id)                                                            \
+	static const struct max14916_config max14916_##id##_cfg = {                         \
+		.spi = SPI_DT_SPEC_INST_GET(id, SPI_OP_MODE_MASTER | SPI_WORD_SET(8U), 0U), \
+		.ready_gpio = GPIO_DT_SPEC_INST_GET(id, drdy_gpios),                        \
+		.fault_gpio = GPIO_DT_SPEC_INST_GET(id, fault_gpios),                       \
+		.sync_gpio = GPIO_DT_SPEC_INST_GET(id, sync_gpios),                         \
+		.en_gpio = GPIO_DT_SPEC_INST_GET(id, en_gpios),                             \
+		.crc_en = DT_INST_PROP(id, crc_en),                                         \
+		.config1.reg_bits.FLED_SET = DT_INST_PROP(id, fled_set),                    \
+		.config1.reg_bits.SLED_SET = DT_INST_PROP(id, sled_set),                    \
+		.config1.reg_bits.FLED_STRETCH = DT_INST_PROP(id, fled_stretch),            \
+		.config1.reg_bits.FFILTER_EN = DT_INST_PROP(id, ffilter_en),                \
+		.config1.reg_bits.FILTER_LONG = DT_INST_PROP(id, filter_long),              \
+		.config1.reg_bits.FLATCH_EN = DT_INST_PROP(id, flatch_en),                  \
+		.config1.reg_bits.LED_CURR_LIM = DT_INST_PROP(id, led_cur_lim),             \
+		.config2.reg_bits.VDD_ON_THR = DT_INST_PROP(id, vdd_on_thr),                \
+		.config2.reg_bits.SYNCH_WD_EN = DT_INST_PROP(id, synch_wd_en),              \
+		.config2.reg_bits.SHT_VDD_THR = DT_INST_PROP(id, sht_vdd_thr),              \
+		.config2.reg_bits.OW_OFF_CS = DT_INST_PROP(id, ow_off_cs),                  \
+		.config2.reg_bits.WD_TO = DT_INST_PROP(id, wd_to),                          \
+		.pkt_size = (DT_INST_PROP(id, crc_en) & 0x1) ? 3 : 2,                       \
+		.spi_addr = DT_INST_PROP(id, spi_addr),                                     \
+	};                                                                                  \
+                                                                                            \
+	static struct max14916_data max14916_##id##_data;                                   \
+                                                                                            \
+	DEVICE_DT_INST_DEFINE(id, &gpio_max14916_init, NULL, &max14916_##id##_data,         \
+			      &max14916_##id##_cfg, POST_KERNEL,                            \
 			      CONFIG_GPIO_MAX14916_INIT_PRIORITY, &gpio_max14916_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_MAX14906_DEVICE)

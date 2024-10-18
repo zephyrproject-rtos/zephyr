@@ -91,10 +91,10 @@ static void enc424j600_modify_sfru(const struct device *dev, uint8_t opcode, uin
 	spi_write_dt(&config->spi, &tx);
 }
 
-#define enc424j600_set_sfru(dev, addr, value)                                                      \
+#define enc424j600_set_sfru(dev, addr, value)                         \
 	enc424j600_modify_sfru(dev, ENC424J600_NBC_BFSU, addr, value)
 
-#define enc424j600_clear_sfru(dev, addr, value)                                                    \
+#define enc424j600_clear_sfru(dev, addr, value)                       \
 	enc424j600_modify_sfru(dev, ENC424J600_NBC_BFCU, addr, value)
 
 static void enc424j600_write_phy(const struct device *dev, uint16_t addr, uint16_t data)

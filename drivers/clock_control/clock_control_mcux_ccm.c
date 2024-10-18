@@ -354,8 +354,8 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev, clock_control_subs
 			(CLOCK_GetDiv(kCLOCK_Flexio1Div) + 1);
 	} break;
 #endif
-#if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio2)) ||                                             \
-     DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio3))) &&                                            \
+#if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio2)) ||  \
+     DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio3))) && \
 	CONFIG_MCUX_FLEXIO
 	case IMX_CCM_FLEXIO2_3_CLK: {
 		uint32_t flexio_mux = CLOCK_GetMux(kCLOCK_Flexio2Mux);

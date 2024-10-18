@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(flash_stm32_xspi, CONFIG_FLASH_LOG_LEVEL);
 
 #define STM32_XSPI_NODE DT_INST_PARENT(0)
 
-#define DT_XSPI_IO_PORT_PROP_OR(prop, default_value)                                               \
+#define DT_XSPI_IO_PORT_PROP_OR(prop, default_value)              \
 	COND_CODE_1(DT_NODE_HAS_PROP(STM32_XSPI_NODE, prop),				\
 		    (_CONCAT(HAL_XSPIM_, DT_STRING_TOKEN(STM32_XSPI_NODE, prop))),	\
 		    ((default_value)))
@@ -2279,25 +2279,25 @@ static int flash_stm32_xspi_init(const struct device *dev)
 #if STM32_XSPI_USE_DMA
 #define DMA_CHANNEL_CONFIG(node, dir) DT_DMAS_CELL_BY_NAME(node, dir, channel_config)
 
-#define XSPI_DMA_CHANNEL_INIT(node, dir, dir_cap, src_dev, dest_dev)                               \
-	.dev = DEVICE_DT_GET(DT_DMAS_CTLR(node)),                                                  \
-	.channel = DT_DMAS_CELL_BY_NAME(node, dir, channel),                                       \
-	.reg = (DMA_TypeDef *)DT_REG_ADDR(DT_PHANDLE_BY_NAME(node, dmas, dir)),                    \
-	.cfg =                                                                                     \
-		{                                                                                  \
-			.dma_slot = DT_DMAS_CELL_BY_NAME(node, dir, slot),                         \
-			.channel_direction =                                                       \
-				STM32_DMA_CONFIG_DIRECTION(DMA_CHANNEL_CONFIG(node, dir)),         \
-			.channel_priority =                                                        \
-				STM32_DMA_CONFIG_PRIORITY(DMA_CHANNEL_CONFIG(node, dir)),          \
-			.dma_callback = xspi_dma_callback,                                         \
-	},                                                                                         \
-	.src_addr_increment =                                                                      \
-		STM32_DMA_CONFIG_##src_dev##_ADDR_INC(DMA_CHANNEL_CONFIG(node, dir)),              \
-	.dst_addr_increment =                                                                      \
+#define XSPI_DMA_CHANNEL_INIT(node, dir, dir_cap, src_dev, dest_dev)                       \
+	.dev = DEVICE_DT_GET(DT_DMAS_CTLR(node)),                                          \
+	.channel = DT_DMAS_CELL_BY_NAME(node, dir, channel),                               \
+	.reg = (DMA_TypeDef *)DT_REG_ADDR(DT_PHANDLE_BY_NAME(node, dmas, dir)),            \
+	.cfg =                                                                             \
+		{                                                                          \
+			.dma_slot = DT_DMAS_CELL_BY_NAME(node, dir, slot),                 \
+			.channel_direction =                                               \
+				STM32_DMA_CONFIG_DIRECTION(DMA_CHANNEL_CONFIG(node, dir)), \
+			.channel_priority =                                                \
+				STM32_DMA_CONFIG_PRIORITY(DMA_CHANNEL_CONFIG(node, dir)),  \
+			.dma_callback = xspi_dma_callback,                                 \
+	},                                                                                 \
+	.src_addr_increment =                                                              \
+		STM32_DMA_CONFIG_##src_dev##_ADDR_INC(DMA_CHANNEL_CONFIG(node, dir)),      \
+	.dst_addr_increment =                                                              \
 		STM32_DMA_CONFIG_##dest_dev##_ADDR_INC(DMA_CHANNEL_CONFIG(node, dir)),
 
-#define XSPI_DMA_CHANNEL(node, dir, DIR, src, dest)                                                \
+#define XSPI_DMA_CHANNEL(node, dir, DIR, src, dest)                                 \
 	.dma_##dir = {COND_CODE_1(DT_DMAS_HAS_NAME(node, dir),			\
 			(XSPI_DMA_CHANNEL_INIT(node, dir, DIR, src, dest)),	\
 			(NULL)) },
@@ -2307,12 +2307,12 @@ static int flash_stm32_xspi_init(const struct device *dev)
 
 #define XSPI_FLASH_MODULE(drv_id, flash_id) (DT_DRV_INST(drv_id), xspi_nor_flash_##flash_id)
 
-#define DT_WRITEOC_PROP_OR(inst, default_value)                                                    \
+#define DT_WRITEOC_PROP_OR(inst, default_value)                 \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, writeoc),					\
 		    (_CONCAT(SPI_NOR_CMD_, DT_STRING_TOKEN(DT_DRV_INST(inst), writeoc))),	\
 		    ((default_value)))
 
-#define DT_QER_PROP_OR(inst, default_value)                                                        \
+#define DT_QER_PROP_OR(inst, default_value)                                    \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, quad_enable_requirements),			\
 		    (_CONCAT(JESD216_DW15_QER_VAL_,						\
 			     DT_STRING_TOKEN(DT_DRV_INST(inst), quad_enable_requirements))),	\

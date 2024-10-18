@@ -403,11 +403,11 @@ static const struct gpio_driver_api rzt2m_gpio_driver_api = {
 	.pin_interrupt_configure = rzt2m_gpio_pin_interrupt_configure,
 	.manage_callback = rzt2m_gpio_manage_callback};
 
-#define RZT2M_INIT_IRQ(irq_n)                                                                      \
-	IRQ_CONNECT(DT_IRQ_BY_IDX(DT_INST(0, renesas_rzt2m_gpio_common), irq_n, irq),              \
-		    DT_IRQ_BY_IDX(DT_INST(0, renesas_rzt2m_gpio_common), irq_n, priority),         \
-		    rzt2m_gpio_isr, &n[irq_n],                                                     \
-		    DT_IRQ_BY_IDX(DT_INST(0, renesas_rzt2m_gpio_common), irq_n, flags))            \
+#define RZT2M_INIT_IRQ(irq_n)                                                              \
+	IRQ_CONNECT(DT_IRQ_BY_IDX(DT_INST(0, renesas_rzt2m_gpio_common), irq_n, irq),      \
+		    DT_IRQ_BY_IDX(DT_INST(0, renesas_rzt2m_gpio_common), irq_n, priority), \
+		    rzt2m_gpio_isr, &n[irq_n],                                             \
+		    DT_IRQ_BY_IDX(DT_INST(0, renesas_rzt2m_gpio_common), irq_n, flags))    \
 	irq_enable(DT_IRQ_BY_IDX(DT_INST(0, renesas_rzt2m_gpio_common), irq_n, irq));
 
 static int rzt2m_gpio_common_init(const struct device *dev)
@@ -432,26 +432,26 @@ DEVICE_DT_DEFINE(DT_INST(0, renesas_rzt2m_gpio_common), rzt2m_gpio_common_init, 
 
 #define VALUE_2X(i, _) UTIL_X2(i)
 
-#define PIN_IRQ_INITIALIZER(idx, inst)                                                             \
+#define PIN_IRQ_INITIALIZER(idx, inst) \
 	COND_CODE_1(DT_INST_PROP_HAS_IDX(inst, irqs, idx),                                         \
 		    ([DT_INST_PROP_BY_IDX(inst, irqs, idx)] =                                      \
 			     DT_INST_PROP_BY_IDX(inst, irqs, UTIL_INC(idx)) + 1,),                \
 		    ())
 
-#define PORT_IRQS_INITIALIZER(inst)                                                                \
-	FOR_EACH_FIXED_ARG(PIN_IRQ_INITIALIZER, (), inst,                                          \
+#define PORT_IRQS_INITIALIZER(inst)                                                \
+	FOR_EACH_FIXED_ARG(PIN_IRQ_INITIALIZER, (), inst,                          \
 			   LISTIFY(DT_INST_PROP_LEN_OR(inst, irqs, 0), VALUE_2X, (,)))
 
-#define RZT2M_GPIO_DEFINE(inst)                                                                    \
-	static struct rzt2m_gpio_data rzt2m_gpio_data##inst;                                       \
-	static struct rzt2m_gpio_config rzt2m_gpio_config##inst = {                                \
-		.port_nsr = (uint8_t *)DT_REG_ADDR_BY_NAME(DT_INST_GPARENT(inst), port_nsr),       \
-		.ptadr = (uint8_t *)DT_REG_ADDR_BY_NAME(DT_INST_GPARENT(inst), ptadr),             \
-		.port = DT_INST_REG_ADDR(inst),                                                    \
-		.pin_irqs = {PORT_IRQS_INITIALIZER(inst)},                                         \
-		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst)}};               \
-	DEVICE_DT_INST_DEFINE(inst, rzt2m_gpio_init, NULL, &rzt2m_gpio_data##inst,                 \
-			      &rzt2m_gpio_config##inst, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,   \
+#define RZT2M_GPIO_DEFINE(inst)                                                                  \
+	static struct rzt2m_gpio_data rzt2m_gpio_data##inst;                                     \
+	static struct rzt2m_gpio_config rzt2m_gpio_config##inst = {                              \
+		.port_nsr = (uint8_t *)DT_REG_ADDR_BY_NAME(DT_INST_GPARENT(inst), port_nsr),     \
+		.ptadr = (uint8_t *)DT_REG_ADDR_BY_NAME(DT_INST_GPARENT(inst), ptadr),           \
+		.port = DT_INST_REG_ADDR(inst),                                                  \
+		.pin_irqs = {PORT_IRQS_INITIALIZER(inst)},                                       \
+		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst)}};             \
+	DEVICE_DT_INST_DEFINE(inst, rzt2m_gpio_init, NULL, &rzt2m_gpio_data##inst,               \
+			      &rzt2m_gpio_config##inst, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, \
 			      &rzt2m_gpio_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RZT2M_GPIO_DEFINE)

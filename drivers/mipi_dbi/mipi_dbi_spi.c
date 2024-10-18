@@ -309,16 +309,16 @@ static const struct mipi_dbi_driver_api mipi_dbi_spi_driver_api = {
 #endif
 };
 
-#define MIPI_DBI_SPI_INIT(n)                                                                       \
-	static const struct mipi_dbi_spi_config mipi_dbi_spi_config_##n = {                        \
-		.spi_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, spi_dev)),                             \
-		.cmd_data = GPIO_DT_SPEC_INST_GET_OR(n, dc_gpios, {}),                             \
-		.reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {}),                             \
-	};                                                                                         \
-	static struct mipi_dbi_spi_data mipi_dbi_spi_data_##n;                                     \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, mipi_dbi_spi_init, NULL, &mipi_dbi_spi_data_##n,                  \
-			      &mipi_dbi_spi_config_##n, POST_KERNEL,                               \
+#define MIPI_DBI_SPI_INIT(n)                                                            \
+	static const struct mipi_dbi_spi_config mipi_dbi_spi_config_##n = {             \
+		.spi_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, spi_dev)),                  \
+		.cmd_data = GPIO_DT_SPEC_INST_GET_OR(n, dc_gpios, {}),                  \
+		.reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {}),                  \
+	};                                                                              \
+	static struct mipi_dbi_spi_data mipi_dbi_spi_data_##n;                          \
+                                                                                        \
+	DEVICE_DT_INST_DEFINE(n, mipi_dbi_spi_init, NULL, &mipi_dbi_spi_data_##n,       \
+			      &mipi_dbi_spi_config_##n, POST_KERNEL,                    \
 			      CONFIG_MIPI_DBI_INIT_PRIORITY, &mipi_dbi_spi_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MIPI_DBI_SPI_INIT)

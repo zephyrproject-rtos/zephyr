@@ -212,18 +212,18 @@ static int gpio_npm1300_init(const struct device *dev)
 	return 0;
 }
 
-#define GPIO_NPM1300_DEFINE(n)                                                                     \
-	static const struct gpio_npm1300_config gpio_npm1300_config##n = {                         \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
-		.mfd = DEVICE_DT_GET(DT_INST_PARENT(n))};                                          \
-                                                                                                   \
-	static struct gpio_npm1300_data gpio_npm1300_data##n;                                      \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, gpio_npm1300_init, NULL, &gpio_npm1300_data##n,                   \
-			      &gpio_npm1300_config##n, POST_KERNEL,                                \
+#define GPIO_NPM1300_DEFINE(n)                                                       \
+	static const struct gpio_npm1300_config gpio_npm1300_config##n = {           \
+		.common =                                                            \
+			{                                                            \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n), \
+			},                                                           \
+		.mfd = DEVICE_DT_GET(DT_INST_PARENT(n))};                            \
+                                                                                     \
+	static struct gpio_npm1300_data gpio_npm1300_data##n;                        \
+                                                                                     \
+	DEVICE_DT_INST_DEFINE(n, gpio_npm1300_init, NULL, &gpio_npm1300_data##n,     \
+			      &gpio_npm1300_config##n, POST_KERNEL,                  \
 			      CONFIG_GPIO_NPM1300_INIT_PRIORITY, &gpio_npm1300_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_NPM1300_DEFINE)

@@ -280,20 +280,20 @@ static const struct led_driver_api is31fl3733_api = {
 	.write_channels = is31fl3733_led_write_channels,
 };
 
-#define IS31FL3733_DEVICE(n)                                                                       \
-	static const struct is31fl3733_config is31fl3733_config_##n = {                            \
-		.bus = I2C_DT_SPEC_INST_GET(n),                                                    \
-		.sdb = GPIO_DT_SPEC_INST_GET_OR(n, sdb_gpios, {}),                                 \
-		.current_limit = DT_INST_PROP(n, current_limit),                                   \
-		.sync = DT_INST_ENUM_IDX(n, sync_mode),                                            \
-	};                                                                                         \
-                                                                                                   \
-	static struct is31fl3733_data is31fl3733_data_##n = {                                      \
-		.selected_page = CMD_SEL_LED,                                                      \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &is31fl3733_init, NULL, &is31fl3733_data_##n,                     \
-			      &is31fl3733_config_##n, POST_KERNEL, CONFIG_LED_INIT_PRIORITY,       \
+#define IS31FL3733_DEVICE(n)                                                                 \
+	static const struct is31fl3733_config is31fl3733_config_##n = {                      \
+		.bus = I2C_DT_SPEC_INST_GET(n),                                              \
+		.sdb = GPIO_DT_SPEC_INST_GET_OR(n, sdb_gpios, {}),                           \
+		.current_limit = DT_INST_PROP(n, current_limit),                             \
+		.sync = DT_INST_ENUM_IDX(n, sync_mode),                                      \
+	};                                                                                   \
+                                                                                             \
+	static struct is31fl3733_data is31fl3733_data_##n = {                                \
+		.selected_page = CMD_SEL_LED,                                                \
+	};                                                                                   \
+                                                                                             \
+	DEVICE_DT_INST_DEFINE(n, &is31fl3733_init, NULL, &is31fl3733_data_##n,               \
+			      &is31fl3733_config_##n, POST_KERNEL, CONFIG_LED_INIT_PRIORITY, \
 			      &is31fl3733_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IS31FL3733_DEVICE)

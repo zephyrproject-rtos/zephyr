@@ -21,7 +21,7 @@ BUILD_ASSERT((DT_INST_PROP_LEN(0, nordic_interrupt_mapping) % 2) == 0,
 
 /* BELLBOARD event mappings */
 #define EVT_MAPPING_ITEM(idx) DT_INST_PROP_BY_IDX(0, nordic_interrupt_mapping, idx)
-#define BELLBOARD_GET_EVT_MAPPING(idx, _)                                                          \
+#define BELLBOARD_GET_EVT_MAPPING(idx, _) \
 	COND_CODE_1(                                                                               \
 		DT_INST_PROP_HAS_IDX(0, nordic_interrupt_mapping, UTIL_INC(UTIL_X2(idx))),         \
 		([EVT_MAPPING_ITEM(UTIL_INC(UTIL_X2(idx)))] = EVT_MAPPING_ITEM(UTIL_X2(idx)),),    \
@@ -141,7 +141,7 @@ static const struct mbox_driver_api bellboard_rx_driver_api = {
 	.set_enabled = bellboard_rx_set_enabled,
 };
 
-#define BELLBOARD_IRQ_CONFIGURE(name, idx)                                                         \
+#define BELLBOARD_IRQ_CONFIGURE(name, idx) \
 	COND_CODE_1(DT_INST_IRQ_HAS_NAME(0, name),                                                 \
 		    (IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, name, irq),                                \
 				 DT_INST_IRQ_BY_NAME(0, name, priority), bellboard_rx_isr,         \

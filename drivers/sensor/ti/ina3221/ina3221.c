@@ -271,19 +271,19 @@ static const struct sensor_driver_api ina3221_api = {
 	.attr_set = ina3221_attr_set,
 };
 
-#define INST_DT_INA3221(index)                                                                     \
-	static const struct ina3221_config ina3221_config_##index = {                              \
-		.bus = I2C_DT_SPEC_INST_GET(index),                                                \
-		.avg_mode = DT_INST_PROP(index, avg_mode),                                         \
-		.conv_time_bus = DT_INST_PROP(index, conv_time_bus),                               \
-		.conv_time_shunt = DT_INST_PROP(index, conv_time_shunt),                           \
-		.enable_channel = DT_INST_PROP(index, enable_channel),                             \
-		.shunt_r = DT_INST_PROP(index, shunt_resistors),                                   \
-	};                                                                                         \
-	static struct ina3221_data ina3221_data_##index;                                           \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(index, ina3221_init, NULL, &ina3221_data_##index,             \
-				     &ina3221_config_##index, POST_KERNEL,                         \
+#define INST_DT_INA3221(index)                                                         \
+	static const struct ina3221_config ina3221_config_##index = {                  \
+		.bus = I2C_DT_SPEC_INST_GET(index),                                    \
+		.avg_mode = DT_INST_PROP(index, avg_mode),                             \
+		.conv_time_bus = DT_INST_PROP(index, conv_time_bus),                   \
+		.conv_time_shunt = DT_INST_PROP(index, conv_time_shunt),               \
+		.enable_channel = DT_INST_PROP(index, enable_channel),                 \
+		.shunt_r = DT_INST_PROP(index, shunt_resistors),                       \
+	};                                                                             \
+	static struct ina3221_data ina3221_data_##index;                               \
+                                                                                       \
+	SENSOR_DEVICE_DT_INST_DEFINE(index, ina3221_init, NULL, &ina3221_data_##index, \
+				     &ina3221_config_##index, POST_KERNEL,             \
 				     CONFIG_SENSOR_INIT_PRIORITY, &ina3221_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INST_DT_INA3221);

@@ -120,13 +120,13 @@ static int max31855_init(const struct device *dev)
 	return 0;
 }
 
-#define MAX31855_INIT(n)                                                                           \
-	static struct max31855_data max31855_data_##n;                                             \
-	static const struct max31855_config max31855_config_##n = {                                \
-		.spi = SPI_DT_SPEC_INST_GET(n, SPI_OP_MODE_MASTER | SPI_WORD_SET(8U), 0U),         \
-	};                                                                                         \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, &max31855_init, NULL, &max31855_data_##n,                  \
-				     &max31855_config_##n, POST_KERNEL,                            \
+#define MAX31855_INIT(n)                                                                   \
+	static struct max31855_data max31855_data_##n;                                     \
+	static const struct max31855_config max31855_config_##n = {                        \
+		.spi = SPI_DT_SPEC_INST_GET(n, SPI_OP_MODE_MASTER | SPI_WORD_SET(8U), 0U), \
+	};                                                                                 \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, &max31855_init, NULL, &max31855_data_##n,          \
+				     &max31855_config_##n, POST_KERNEL,                    \
 				     CONFIG_SENSOR_INIT_PRIORITY, &max31855_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX31855_INIT)

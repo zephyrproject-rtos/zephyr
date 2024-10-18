@@ -544,16 +544,16 @@ static int bmc150_magn_init(const struct device *dev)
 	return 0;
 }
 
-#define BMC150_MAGN_DEFINE(inst)                                                                   \
-	static struct bmc150_magn_data bmc150_magn_data_##inst;                                    \
-                                                                                                   \
-	static const struct bmc150_magn_config bmc150_magn_config_##inst = {                       \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+#define BMC150_MAGN_DEFINE(inst)                                                             \
+	static struct bmc150_magn_data bmc150_magn_data_##inst;                              \
+                                                                                             \
+	static const struct bmc150_magn_config bmc150_magn_config_##inst = {                 \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                           \
 		IF_ENABLED(CONFIG_BMC150_MAGN_TRIGGER_DRDY,					\
-			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, drdy_gpios, { 0 }),)) };          \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmc150_magn_init, NULL, &bmc150_magn_data_##inst,       \
-				     &bmc150_magn_config_##inst, POST_KERNEL,                      \
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, drdy_gpios, { 0 }),)) };    \
+                                                                                             \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmc150_magn_init, NULL, &bmc150_magn_data_##inst, \
+				     &bmc150_magn_config_##inst, POST_KERNEL,                \
 				     CONFIG_SENSOR_INIT_PRIORITY, &bmc150_magn_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(BMC150_MAGN_DEFINE)

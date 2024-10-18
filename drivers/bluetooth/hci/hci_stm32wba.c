@@ -36,15 +36,15 @@ static K_SEM_DEFINE(hci_sem, 1, 1);
 
 #define BLE_CTRLR_STACK_BUFFER_SIZE 300
 
-#define MBLOCK_COUNT                                                                               \
-	(BLE_MBLOCKS_CALC(PREP_WRITE_LIST_SIZE, CFG_BLE_ATT_MTU_MAX, CFG_BLE_NUM_LINK) +           \
+#define MBLOCK_COUNT                                                                     \
+	(BLE_MBLOCKS_CALC(PREP_WRITE_LIST_SIZE, CFG_BLE_ATT_MTU_MAX, CFG_BLE_NUM_LINK) + \
 	 CFG_BLE_MBLOCK_COUNT_MARGIN)
 
 #define BLE_DYN_ALLOC_SIZE (BLE_TOTAL_BUFFER_SIZE(CFG_BLE_NUM_LINK, MBLOCK_COUNT))
 
 /* GATT buffer size (in bytes)*/
-#define BLE_GATT_BUF_SIZE                                                                          \
-	BLE_TOTAL_BUFFER_SIZE_GATT(CFG_BLE_NUM_GATT_ATTRIBUTES, CFG_BLE_NUM_GATT_SERVICES,         \
+#define BLE_GATT_BUF_SIZE                                                                  \
+	BLE_TOTAL_BUFFER_SIZE_GATT(CFG_BLE_NUM_GATT_ATTRIBUTES, CFG_BLE_NUM_GATT_SERVICES, \
 				   CFG_BLE_ATT_VALUE_ARRAY_SIZE)
 
 #define DIVC(x, y) (((x) + (y) - 1) / (y))
@@ -476,9 +476,9 @@ static const struct bt_hci_driver_api drv = {
 	.send = bt_hci_stm32wba_send,
 };
 
-#define HCI_DEVICE_INIT(inst)                                                                      \
-	static struct hci_data hci_data_##inst = {};                                               \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &hci_data_##inst, NULL, POST_KERNEL,               \
+#define HCI_DEVICE_INIT(inst)                                                        \
+	static struct hci_data hci_data_##inst = {};                                 \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &hci_data_##inst, NULL, POST_KERNEL, \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
 /* Only one instance supported */

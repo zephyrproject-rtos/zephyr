@@ -49,8 +49,8 @@ static struct mipi_dsi_driver_api vnd_mipi_dsi_api = {
 	.detach = vnd_mipi_dsi_detach,
 };
 
-#define VND_MIPI_DSI_INIT(n)                                                                       \
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, NULL, POST_KERNEL,                              \
+#define VND_MIPI_DSI_INIT(n)                                                     \
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, NULL, POST_KERNEL,            \
 			      CONFIG_MIPI_DSI_INIT_PRIORITY, &vnd_mipi_dsi_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VND_MIPI_DSI_INIT)

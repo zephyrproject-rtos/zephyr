@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(clock_control_nrf2, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 #define ONOFF_CNT_MAX (FLAGS_COMMON_BITS - 2)
 
-#define CONTAINER_OF_ITEM(ptr, idx, type, array)                                                   \
+#define CONTAINER_OF_ITEM(ptr, idx, type, array)                                    \
 	(type *)((char *)ptr - (idx * sizeof(array[0])) - offsetof(type, array[0]))
 
 /*

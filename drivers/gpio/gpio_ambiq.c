@@ -341,20 +341,20 @@ static int ambiq_gpio_port_toggle_bits(const struct device *dev, gpio_port_pins_
 	return 0;
 }
 
-#define APOLLO3_HANDLE_SHARED_GPIO_IRQ(n)                                                          \
-	static const struct device *const dev_##n = DEVICE_DT_INST_GET(n);                         \
-	const struct ambiq_gpio_config *cfg_##n = dev_##n->config;                                 \
-	struct ambiq_gpio_data *const data_##n = dev_##n->data;                                    \
-	uint32_t status_##n = (uint32_t)(ui64Status >> cfg_##n->offset);                           \
-	if (status_##n) {                                                                          \
-		gpio_fire_callbacks(&data_##n->cb, dev_##n, status_##n);                           \
+#define APOLLO3_HANDLE_SHARED_GPIO_IRQ(n)                                  \
+	static const struct device *const dev_##n = DEVICE_DT_INST_GET(n); \
+	const struct ambiq_gpio_config *cfg_##n = dev_##n->config;         \
+	struct ambiq_gpio_data *const data_##n = dev_##n->data;            \
+	uint32_t status_##n = (uint32_t)(ui64Status >> cfg_##n->offset);   \
+	if (status_##n) {                                                  \
+		gpio_fire_callbacks(&data_##n->cb, dev_##n, status_##n);   \
 	}
 
-#define APOLLO3P_HANDLE_SHARED_GPIO_IRQ(n)                                                         \
-	static const struct device *const dev_##n = DEVICE_DT_INST_GET(n);                         \
-	struct ambiq_gpio_data *const data_##n = dev_##n->data;                                    \
-	if (pGpioIntStatusMask->U.Msk[n]) {                                                        \
-		gpio_fire_callbacks(&data_##n->cb, dev_##n, pGpioIntStatusMask->U.Msk[n]);         \
+#define APOLLO3P_HANDLE_SHARED_GPIO_IRQ(n)                                                 \
+	static const struct device *const dev_##n = DEVICE_DT_INST_GET(n);                 \
+	struct ambiq_gpio_data *const data_##n = dev_##n->data;                            \
+	if (pGpioIntStatusMask->U.Msk[n]) {                                                \
+		gpio_fire_callbacks(&data_##n->cb, dev_##n, pGpioIntStatusMask->U.Msk[n]); \
 	}
 
 static void ambiq_gpio_isr(const struct device *dev)
@@ -560,32 +560,32 @@ static const struct gpio_driver_api ambiq_gpio_drv_api = {
  */
 #define AMBIQ_GPIO_CONFIG_FUNC(n) static void ambiq_gpio_cfg_func_##n(void){};
 #else
-#define AMBIQ_GPIO_CONFIG_FUNC(n)                                                                  \
-	static void ambiq_gpio_cfg_func_##n(void)                                                  \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), ambiq_gpio_isr,             \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		return;                                                                            \
+#define AMBIQ_GPIO_CONFIG_FUNC(n)                                                      \
+	static void ambiq_gpio_cfg_func_##n(void)                                      \
+	{                                                                              \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), ambiq_gpio_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                                 \
+                                                                                       \
+		return;                                                                \
 	};
 #endif
 
-#define AMBIQ_GPIO_DEFINE(n)                                                                       \
-	static struct ambiq_gpio_data ambiq_gpio_data_##n;                                         \
-	static void ambiq_gpio_cfg_func_##n(void);                                                 \
-	static const struct ambiq_gpio_config ambiq_gpio_config_##n = {                            \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
-		.base = DT_REG_ADDR(DT_INST_PARENT(n)),                                            \
-		.offset = DT_INST_REG_ADDR(n),                                                     \
-		.ngpios = DT_INST_PROP(n, ngpios),                                                 \
-		.irq_num = DT_INST_IRQN(n),                                                        \
-		.cfg_func = ambiq_gpio_cfg_func_##n};                                              \
-	AMBIQ_GPIO_CONFIG_FUNC(n)                                                                  \
-	DEVICE_DT_INST_DEFINE(n, ambiq_gpio_init, NULL, &ambiq_gpio_data_##n,                      \
-			      &ambiq_gpio_config_##n, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,     \
+#define AMBIQ_GPIO_DEFINE(n)                                                                   \
+	static struct ambiq_gpio_data ambiq_gpio_data_##n;                                     \
+	static void ambiq_gpio_cfg_func_##n(void);                                             \
+	static const struct ambiq_gpio_config ambiq_gpio_config_##n = {                        \
+		.common =                                                                      \
+			{                                                                      \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),           \
+			},                                                                     \
+		.base = DT_REG_ADDR(DT_INST_PARENT(n)),                                        \
+		.offset = DT_INST_REG_ADDR(n),                                                 \
+		.ngpios = DT_INST_PROP(n, ngpios),                                             \
+		.irq_num = DT_INST_IRQN(n),                                                    \
+		.cfg_func = ambiq_gpio_cfg_func_##n};                                          \
+	AMBIQ_GPIO_CONFIG_FUNC(n)                                                              \
+	DEVICE_DT_INST_DEFINE(n, ambiq_gpio_init, NULL, &ambiq_gpio_data_##n,                  \
+			      &ambiq_gpio_config_##n, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, \
 			      &ambiq_gpio_drv_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AMBIQ_GPIO_DEFINE)

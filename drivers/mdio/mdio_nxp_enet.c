@@ -237,22 +237,22 @@ static int nxp_enet_mdio_init(const struct device *dev)
 	return ret;
 }
 
-#define NXP_ENET_MDIO_INIT(inst)                                                                   \
-	PINCTRL_DT_INST_DEFINE(inst);                                                              \
-                                                                                                   \
-	static const struct nxp_enet_mdio_config nxp_enet_mdio_cfg_##inst = {                      \
-		.module_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                 \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                    \
-		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(inst))),                  \
-		.clock_subsys = (void *)DT_CLOCKS_CELL_BY_IDX(DT_INST_PARENT(inst), 0, name),      \
-		.disable_preamble = DT_INST_PROP(inst, suppress_preamble),                         \
-		.mdc_freq = DT_INST_PROP(inst, clock_frequency),                                   \
-	};                                                                                         \
-                                                                                                   \
-	static struct nxp_enet_mdio_data nxp_enet_mdio_data_##inst;                                \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, &nxp_enet_mdio_init, NULL, &nxp_enet_mdio_data_##inst,         \
-			      &nxp_enet_mdio_cfg_##inst, POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY,   \
+#define NXP_ENET_MDIO_INIT(inst)                                                                 \
+	PINCTRL_DT_INST_DEFINE(inst);                                                            \
+                                                                                                 \
+	static const struct nxp_enet_mdio_config nxp_enet_mdio_cfg_##inst = {                    \
+		.module_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                               \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                  \
+		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(inst))),                \
+		.clock_subsys = (void *)DT_CLOCKS_CELL_BY_IDX(DT_INST_PARENT(inst), 0, name),    \
+		.disable_preamble = DT_INST_PROP(inst, suppress_preamble),                       \
+		.mdc_freq = DT_INST_PROP(inst, clock_frequency),                                 \
+	};                                                                                       \
+                                                                                                 \
+	static struct nxp_enet_mdio_data nxp_enet_mdio_data_##inst;                              \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(inst, &nxp_enet_mdio_init, NULL, &nxp_enet_mdio_data_##inst,       \
+			      &nxp_enet_mdio_cfg_##inst, POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY, \
 			      &nxp_enet_mdio_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_ENET_MDIO_INIT)

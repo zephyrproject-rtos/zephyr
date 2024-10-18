@@ -21,14 +21,14 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_infineon_cat1, CONFIG_I2C_LOG_LEVEL);
 
-#define I2C_CAT1_EVENTS_MASK                                                                       \
-	(CYHAL_I2C_MASTER_WR_CMPLT_EVENT | CYHAL_I2C_MASTER_RD_CMPLT_EVENT |                       \
+#define I2C_CAT1_EVENTS_MASK                                                 \
+	(CYHAL_I2C_MASTER_WR_CMPLT_EVENT | CYHAL_I2C_MASTER_RD_CMPLT_EVENT | \
 	 CYHAL_I2C_MASTER_ERR_EVENT)
 
-#define I2C_CAT1_SLAVE_EVENTS_MASK                                                                 \
-	(CYHAL_I2C_SLAVE_READ_EVENT | CYHAL_I2C_SLAVE_WRITE_EVENT |                                \
-	 CYHAL_I2C_SLAVE_RD_BUF_EMPTY_EVENT | CYHAL_I2C_SLAVE_RD_CMPLT_EVENT |                     \
-	 CYHAL_I2C_SLAVE_WR_CMPLT_EVENT | CYHAL_I2C_SLAVE_RD_BUF_EMPTY_EVENT |                     \
+#define I2C_CAT1_SLAVE_EVENTS_MASK                                             \
+	(CYHAL_I2C_SLAVE_READ_EVENT | CYHAL_I2C_SLAVE_WRITE_EVENT |            \
+	 CYHAL_I2C_SLAVE_RD_BUF_EMPTY_EVENT | CYHAL_I2C_SLAVE_RD_CMPLT_EVENT | \
+	 CYHAL_I2C_SLAVE_WR_CMPLT_EVENT | CYHAL_I2C_SLAVE_RD_BUF_EMPTY_EVENT | \
 	 CYHAL_I2C_SLAVE_ERR_EVENT)
 
 /* States for ASYNC operations */
@@ -503,20 +503,20 @@ static const struct i2c_driver_api i2c_cat1_driver_api = {
 };
 
 /* Macros for I2C instance declaration */
-#define INFINEON_CAT1_I2C_INIT(n)                                                                  \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-                                                                                                   \
-	static struct ifx_cat1_i2c_data ifx_cat1_i2c_data##n;                                      \
-                                                                                                   \
-	static const struct ifx_cat1_i2c_config i2c_cat1_cfg_##n = {                               \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		.master_frequency = DT_INST_PROP_OR(n, clock_frequency, 100000),                   \
-		.reg_addr = (CySCB_Type *)DT_INST_REG_ADDR(n),                                     \
-		.irq_priority = DT_INST_IRQ(n, priority),                                          \
-	};                                                                                         \
-                                                                                                   \
-	I2C_DEVICE_DT_INST_DEFINE(n, ifx_cat1_i2c_init, NULL, &ifx_cat1_i2c_data##n,               \
-				  &i2c_cat1_cfg_##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,        \
+#define INFINEON_CAT1_I2C_INIT(n)                                                           \
+	PINCTRL_DT_INST_DEFINE(n);                                                          \
+                                                                                            \
+	static struct ifx_cat1_i2c_data ifx_cat1_i2c_data##n;                               \
+                                                                                            \
+	static const struct ifx_cat1_i2c_config i2c_cat1_cfg_##n = {                        \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                  \
+		.master_frequency = DT_INST_PROP_OR(n, clock_frequency, 100000),            \
+		.reg_addr = (CySCB_Type *)DT_INST_REG_ADDR(n),                              \
+		.irq_priority = DT_INST_IRQ(n, priority),                                   \
+	};                                                                                  \
+                                                                                            \
+	I2C_DEVICE_DT_INST_DEFINE(n, ifx_cat1_i2c_init, NULL, &ifx_cat1_i2c_data##n,        \
+				  &i2c_cat1_cfg_##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, \
 				  &i2c_cat1_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_CAT1_I2C_INIT)

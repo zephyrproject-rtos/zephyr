@@ -444,18 +444,18 @@ static int vl53l1x_init(const struct device *dev)
 	return 0;
 }
 
-#define VL53L1X_INIT(i)                                                                            \
-	static const struct vl53l1x_config vl53l1x_config_##i = {                                  \
-		.i2c = I2C_DT_SPEC_INST_GET(i),                                                    \
+#define VL53L1X_INIT(i)                                                                    \
+	static const struct vl53l1x_config vl53l1x_config_##i = {                          \
+		.i2c = I2C_DT_SPEC_INST_GET(i),                                            \
 		IF_ENABLED(CONFIG_VL53L1X_XSHUT, ( \
-		.xshut = GPIO_DT_SPEC_INST_GET_OR(i, xshut_gpios, { 0 }),))                                               \
+		.xshut = GPIO_DT_SPEC_INST_GET_OR(i, xshut_gpios, { 0 }),))                                       \
 				    IF_ENABLED(CONFIG_VL53L1X_INTERRUPT_MODE, ( \
-		.gpio1 = GPIO_DT_SPEC_INST_GET_OR(i, int_gpios, { 0 }),)) };         \
-                                                                                                   \
-	static struct vl53l1x_data vl53l1x_data_##i;                                               \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(i, vl53l1x_init, NULL, &vl53l1x_data_##i,                     \
-				     &vl53l1x_config_##i, POST_KERNEL,                             \
+		.gpio1 = GPIO_DT_SPEC_INST_GET_OR(i, int_gpios, { 0 }),)) }; \
+                                                                                           \
+	static struct vl53l1x_data vl53l1x_data_##i;                                       \
+                                                                                           \
+	SENSOR_DEVICE_DT_INST_DEFINE(i, vl53l1x_init, NULL, &vl53l1x_data_##i,             \
+				     &vl53l1x_config_##i, POST_KERNEL,                     \
 				     CONFIG_SENSOR_INIT_PRIORITY, &vl53l1x_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(VL53L1X_INIT)

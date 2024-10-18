@@ -126,16 +126,16 @@ static const struct sensor_driver_api amg88xx_driver_api = {
 	.channel_get = amg88xx_channel_get,
 };
 
-#define AMG88XX_DEFINE(inst)                                                                       \
-	static struct amg88xx_data amg88xx_data_##inst;                                            \
-                                                                                                   \
-	static const struct amg88xx_config amg88xx_config_##inst = {                               \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+#define AMG88XX_DEFINE(inst)                                                             \
+	static struct amg88xx_data amg88xx_data_##inst;                                  \
+                                                                                         \
+	static const struct amg88xx_config amg88xx_config_##inst = {                     \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                       \
 		IF_ENABLED(CONFIG_AMG88XX_TRIGGER,						\
-			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),)) };           \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, amg88xx_init, NULL, &amg88xx_data_##inst,               \
-				     &amg88xx_config_##inst, POST_KERNEL,                          \
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),)) }; \
+                                                                                         \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, amg88xx_init, NULL, &amg88xx_data_##inst,     \
+				     &amg88xx_config_##inst, POST_KERNEL,                \
 				     CONFIG_SENSOR_INIT_PRIORITY, &amg88xx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AMG88XX_DEFINE)

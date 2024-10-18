@@ -26,8 +26,8 @@
 #define DRCTL_PULL_UP_DOWN(val)   ((val & 0x3) << 2)
 #define DRCTL_SCHMITT(val)        ((val & 0x1) << 4)
 #define DRCTL_SLEW_RATE(val)      ((val & 0x1) << 5)
-#define DRCTL_CONFIG(drive, pull, schmitt, slew)                                                   \
-	(DRCTL_DRIVE_STRENGTH(drive) | DRCTL_PULL_UP_DOWN(pull) | DRCTL_SCHMITT(schmitt) |         \
+#define DRCTL_CONFIG(drive, pull, schmitt, slew)                                           \
+	(DRCTL_DRIVE_STRENGTH(drive) | DRCTL_PULL_UP_DOWN(pull) | DRCTL_SCHMITT(schmitt) | \
 	 DRCTL_SLEW_RATE(slew))
 #define PFC_FUNC_MASK(pin) (0xf << (pin * 4))
 

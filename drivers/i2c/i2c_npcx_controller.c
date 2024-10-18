@@ -168,7 +168,7 @@ struct i2c_ctrl_data {
 };
 
 /* Driver convenience defines */
-#define HAL_I2C_INSTANCE(dev)                                                                      \
+#define HAL_I2C_INSTANCE(dev)                                                     \
 	((struct smb_reg *)((const struct i2c_ctrl_config *)(dev)->config)->base)
 
 /* Recommended I2C timing values are based on 15 MHz */
@@ -1289,17 +1289,17 @@ static int i2c_ctrl_init(const struct device *dev)
 /* I2C controller init macro functions */
 #define NPCX_I2C_CTRL_INIT_FUNC(inst)      _CONCAT(i2c_ctrl_init_, inst)
 #define NPCX_I2C_CTRL_INIT_FUNC_DECL(inst) static int i2c_ctrl_init_##inst(const struct device *dev)
-#define NPCX_I2C_CTRL_INIT_FUNC_IMPL(inst)                                                         \
-	static int i2c_ctrl_init_##inst(const struct device *dev)                                  \
-	{                                                                                          \
-		int ret;                                                                           \
-                                                                                                   \
-		ret = i2c_ctrl_init(dev);                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), i2c_ctrl_isr,         \
-			    DEVICE_DT_INST_GET(inst), 0);                                          \
-		irq_enable(DT_INST_IRQN(inst));                                                    \
-                                                                                                   \
-		return ret;                                                                        \
+#define NPCX_I2C_CTRL_INIT_FUNC_IMPL(inst)                                                 \
+	static int i2c_ctrl_init_##inst(const struct device *dev)                          \
+	{                                                                                  \
+		int ret;                                                                   \
+                                                                                           \
+		ret = i2c_ctrl_init(dev);                                                  \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), i2c_ctrl_isr, \
+			    DEVICE_DT_INST_GET(inst), 0);                                  \
+		irq_enable(DT_INST_IRQN(inst));                                            \
+                                                                                           \
+		return ret;                                                                \
 	}
 
 #define NPCX_I2C_CTRL_INIT(inst)                                                                   \

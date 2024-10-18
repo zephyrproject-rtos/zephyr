@@ -251,9 +251,9 @@ static const struct bt_hci_driver_api drv = {
 	.send = slz_bt_send,
 };
 
-#define HCI_DEVICE_INIT(inst)                                                                      \
-	static struct hci_data hci_data_##inst = {};                                               \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &hci_data_##inst, NULL, POST_KERNEL,               \
+#define HCI_DEVICE_INIT(inst)                                                        \
+	static struct hci_data hci_data_##inst = {};                                 \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &hci_data_##inst, NULL, POST_KERNEL, \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
 /* Only one instance supported right now */

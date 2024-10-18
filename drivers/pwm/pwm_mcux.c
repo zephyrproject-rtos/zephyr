@@ -224,24 +224,24 @@ static const struct pwm_driver_api pwm_mcux_driver_api = {
 	.get_cycles_per_sec = mcux_pwm_get_cycles_per_sec,
 };
 
-#define PWM_DEVICE_INIT_MCUX(n)                                                                    \
-	static struct pwm_mcux_data pwm_mcux_data_##n;                                             \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-                                                                                                   \
-	static const struct pwm_mcux_config pwm_mcux_config_##n = {                                \
-		.base = (PWM_Type *)DT_REG_ADDR(DT_INST_PARENT(n)),                                \
-		.index = DT_INST_PROP(n, index),                                                   \
-		.mode = kPWM_EdgeAligned,                                                          \
-		.prescale = _CONCAT(kPWM_Prescale_Divide_, DT_INST_PROP(n, nxp_prescaler)),        \
-		.reload = DT_ENUM_IDX_OR(DT_DRV_INST(n), nxp_reload, kPWM_ReloadPwmFullCycle),     \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
-		.run_wait = DT_INST_PROP(n, run_in_wait),                                          \
-		.run_debug = DT_INST_PROP(n, run_in_debug),                                        \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, pwm_mcux_init, NULL, &pwm_mcux_data_##n, &pwm_mcux_config_##n,    \
+#define PWM_DEVICE_INIT_MCUX(n)                                                                 \
+	static struct pwm_mcux_data pwm_mcux_data_##n;                                          \
+	PINCTRL_DT_INST_DEFINE(n);                                                              \
+                                                                                                \
+	static const struct pwm_mcux_config pwm_mcux_config_##n = {                             \
+		.base = (PWM_Type *)DT_REG_ADDR(DT_INST_PARENT(n)),                             \
+		.index = DT_INST_PROP(n, index),                                                \
+		.mode = kPWM_EdgeAligned,                                                       \
+		.prescale = _CONCAT(kPWM_Prescale_Divide_, DT_INST_PROP(n, nxp_prescaler)),     \
+		.reload = DT_ENUM_IDX_OR(DT_DRV_INST(n), nxp_reload, kPWM_ReloadPwmFullCycle),  \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                             \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),           \
+		.run_wait = DT_INST_PROP(n, run_in_wait),                                       \
+		.run_debug = DT_INST_PROP(n, run_in_debug),                                     \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                    \
+	};                                                                                      \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(n, pwm_mcux_init, NULL, &pwm_mcux_data_##n, &pwm_mcux_config_##n, \
 			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, &pwm_mcux_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_DEVICE_INIT_MCUX)

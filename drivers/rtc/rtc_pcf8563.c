@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(pcf8563);
 
 #define DT_DRV_COMPAT nxp_pcf8563
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int1_gpios) &&                                                \
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int1_gpios) &&               \
 	(defined(CONFIG_RTC_ALARM) || defined(CONFIG_RTC_UPDATE))
 /* The user may need only alarms but not interrupts so we will only
  * include all the interrupt code if the user configured it in the dts
@@ -53,13 +53,13 @@ LOG_MODULE_REGISTER(pcf8563);
 #define PCF8563_MONTHS_MASK   GENMASK(4, 0)
 
 /* RTC alarm time fields supported by the PCF8563, page 7 of the datasheet */
-#define PCF8563_RTC_ALARM_TIME_MASK                                                                \
-	(RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR | RTC_ALARM_TIME_MASK_MONTHDAY |    \
+#define PCF8563_RTC_ALARM_TIME_MASK                                                             \
+	(RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR | RTC_ALARM_TIME_MASK_MONTHDAY | \
 	 RTC_ALARM_TIME_MASK_WEEKDAY)
 
-#define PCF8563_RTC_TIME_MASK                                                                      \
-	(RTC_ALARM_TIME_MASK_SECOND | RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR |      \
-	 RTC_ALARM_TIME_MASK_MONTH | RTC_ALARM_TIME_MASK_MONTHDAY | RTC_ALARM_TIME_MASK_YEAR |     \
+#define PCF8563_RTC_TIME_MASK                                                                  \
+	(RTC_ALARM_TIME_MASK_SECOND | RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR |  \
+	 RTC_ALARM_TIME_MASK_MONTH | RTC_ALARM_TIME_MASK_MONTHDAY | RTC_ALARM_TIME_MASK_YEAR | \
 	 RTC_ALARM_TIME_MASK_WEEKDAY)
 
 struct pcf8563_config {
@@ -478,16 +478,16 @@ int pcf8563_init(const struct device *dev)
 	return 0;
 }
 
-#define PCF8563_INIT(inst)                                                                         \
-	static const struct pcf8563_config pcf8563_config_##inst = {                               \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+#define PCF8563_INIT(inst)                                                                   \
+	static const struct pcf8563_config pcf8563_config_##inst = {                         \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                           \
 		IF_ENABLED(PCF8563_INT1_GPIOS_IN_USE,                                              \
-		(.int1 = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, {0}))) };               \
-                                                                                                   \
-	static struct pcf8563_data pcf8563_data_##inst;                                            \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, &pcf8563_init, NULL, &pcf8563_data_##inst,                     \
-			      &pcf8563_config_##inst, POST_KERNEL, CONFIG_RTC_INIT_PRIORITY,       \
+		(.int1 = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, {0}))) };         \
+                                                                                             \
+	static struct pcf8563_data pcf8563_data_##inst;                                      \
+                                                                                             \
+	DEVICE_DT_INST_DEFINE(inst, &pcf8563_init, NULL, &pcf8563_data_##inst,               \
+			      &pcf8563_config_##inst, POST_KERNEL, CONFIG_RTC_INIT_PRIORITY, \
 			      &pcf8563_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PCF8563_INIT)

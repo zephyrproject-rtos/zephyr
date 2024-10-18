@@ -314,9 +314,9 @@ static int iis2mdc_init(const struct device *dev)
  * IIS2MDC_DEFINE_I2C().
  */
 
-#define IIS2MDC_DEVICE_INIT(inst)                                                                  \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, iis2mdc_init, NULL, &iis2mdc_data_##inst,               \
-				     &iis2mdc_config_##inst, POST_KERNEL,                          \
+#define IIS2MDC_DEVICE_INIT(inst)                                                       \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, iis2mdc_init, NULL, &iis2mdc_data_##inst,    \
+				     &iis2mdc_config_##inst, POST_KERNEL,               \
 				     CONFIG_SENSOR_INIT_PRIORITY, &iis2mdc_driver_api);
 
 /*
@@ -331,9 +331,9 @@ static int iis2mdc_init(const struct device *dev)
 
 #define IIS2MDC_SPI_OP (SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA)
 
-#define IIS2MDC_CONFIG_SPI(inst)                                                                   \
-	{.spi = SPI_DT_SPEC_INST_GET(inst, IIS2MDC_SPI_OP, 0),                                     \
-	 .bus_init = iis2mdc_spi_init,                                                             \
+#define IIS2MDC_CONFIG_SPI(inst)                                                          \
+	{.spi = SPI_DT_SPEC_INST_GET(inst, IIS2MDC_SPI_OP, 0),                            \
+	 .bus_init = iis2mdc_spi_init,                                                    \
 	 COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
 			(IIS2MDC_CFG_IRQ(inst)), ()) }
 
@@ -341,9 +341,9 @@ static int iis2mdc_init(const struct device *dev)
  * Instantiation macros used when a device is on an I2C bus.
  */
 
-#define IIS2MDC_CONFIG_I2C(inst)                                                                   \
-	{.i2c = I2C_DT_SPEC_INST_GET(inst),                                                        \
-	 .bus_init = iis2mdc_i2c_init,                                                             \
+#define IIS2MDC_CONFIG_I2C(inst)                                                          \
+	{.i2c = I2C_DT_SPEC_INST_GET(inst),                                               \
+	 .bus_init = iis2mdc_i2c_init,                                                    \
 	 COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
 			(IIS2MDC_CFG_IRQ(inst)), ()) }
 
@@ -352,11 +352,11 @@ static int iis2mdc_init(const struct device *dev)
  * bus-specific macro at preprocessor time.
  */
 
-#define IIS2MDC_DEFINE(inst)                                                                       \
-	static struct iis2mdc_data iis2mdc_data_##inst;                                            \
+#define IIS2MDC_DEFINE(inst)                                                      \
+	static struct iis2mdc_data iis2mdc_data_##inst;                           \
 	static const struct iis2mdc_dev_config iis2mdc_config_##inst = COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
 			(IIS2MDC_CONFIG_SPI(inst)),			\
-			(IIS2MDC_CONFIG_I2C(inst)));                  \
+			(IIS2MDC_CONFIG_I2C(inst))); \
 	IIS2MDC_DEVICE_INIT(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(IIS2MDC_DEFINE)

@@ -138,30 +138,30 @@ static const struct counter_driver_api imx_epit_driver_api = {
 	.get_top_value = imx_epit_get_top_value,
 };
 
-#define COUNTER_IMX_EPIT_DEVICE(idx)                                                               \
-	static int imx_epit_config_func_##idx(const struct device *dev);                           \
-	static const struct imx_epit_config imx_epit_##idx##z_config = {                           \
-		.info =                                                                            \
-			{                                                                          \
-				.max_top_value = COUNTER_MAX_RELOAD,                               \
-				.freq = 1U,                                                        \
-				.flags = 0,                                                        \
-				.channels = 0U,                                                    \
-			},                                                                         \
-		.base = (EPIT_Type *)DT_INST_REG_ADDR(idx),                                        \
-		.prescaler = DT_INST_PROP(idx, prescaler),                                         \
-	};                                                                                         \
-	static struct imx_epit_data imx_epit_##idx##_data;                                         \
-	DEVICE_DT_INST_DEFINE(idx, &imx_epit_config_func_##idx, NULL, &imx_epit_##idx##_data,      \
-			      &imx_epit_##idx##z_config.info, PRE_KERNEL_1,                        \
-			      CONFIG_COUNTER_INIT_PRIORITY, &imx_epit_driver_api);                 \
-	static int imx_epit_config_func_##idx(const struct device *dev)                            \
-	{                                                                                          \
-		imx_epit_init(dev);                                                                \
-		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority), imx_epit_isr,           \
-			    DEVICE_DT_INST_GET(idx), 0);                                           \
-		irq_enable(DT_INST_IRQN(idx));                                                     \
-		return 0;                                                                          \
+#define COUNTER_IMX_EPIT_DEVICE(idx)                                                          \
+	static int imx_epit_config_func_##idx(const struct device *dev);                      \
+	static const struct imx_epit_config imx_epit_##idx##z_config = {                      \
+		.info =                                                                       \
+			{                                                                     \
+				.max_top_value = COUNTER_MAX_RELOAD,                          \
+				.freq = 1U,                                                   \
+				.flags = 0,                                                   \
+				.channels = 0U,                                               \
+			},                                                                    \
+		.base = (EPIT_Type *)DT_INST_REG_ADDR(idx),                                   \
+		.prescaler = DT_INST_PROP(idx, prescaler),                                    \
+	};                                                                                    \
+	static struct imx_epit_data imx_epit_##idx##_data;                                    \
+	DEVICE_DT_INST_DEFINE(idx, &imx_epit_config_func_##idx, NULL, &imx_epit_##idx##_data, \
+			      &imx_epit_##idx##z_config.info, PRE_KERNEL_1,                   \
+			      CONFIG_COUNTER_INIT_PRIORITY, &imx_epit_driver_api);            \
+	static int imx_epit_config_func_##idx(const struct device *dev)                       \
+	{                                                                                     \
+		imx_epit_init(dev);                                                           \
+		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority), imx_epit_isr,      \
+			    DEVICE_DT_INST_GET(idx), 0);                                      \
+		irq_enable(DT_INST_IRQN(idx));                                                \
+		return 0;                                                                     \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_IMX_EPIT_DEVICE)

@@ -126,21 +126,21 @@ static int usb_dw_init_pinctrl(const struct usb_dw_config *const config)
 
 #define USB_DW_GET_COMPAT_QUIRK_NONE(n) NULL
 
-#define USB_DW_GET_COMPAT_CLK_QUIRK_0(n)                                                           \
+#define USB_DW_GET_COMPAT_CLK_QUIRK_0(n)                             \
 	COND_CODE_1(DT_INST_NODE_HAS_COMPAT(n, st_stm32f4_fsotg),		\
 		    (clk_enable_st_stm32f4_fsotg_##n),				\
 		    USB_DW_GET_COMPAT_QUIRK_NONE(n))
 
-#define USB_DW_GET_COMPAT_PWR_QUIRK_0(n)                                                           \
+#define USB_DW_GET_COMPAT_PWR_QUIRK_0(n)                             \
 	COND_CODE_1(DT_INST_NODE_HAS_COMPAT(n, st_stm32f4_fsotg),		\
 		    (pwr_on_st_stm32f4_fsotg),					\
 		    USB_DW_GET_COMPAT_QUIRK_NONE(n))
 
-#define USB_DW_PINCTRL_DT_INST_DEFINE(n)                                                           \
+#define USB_DW_PINCTRL_DT_INST_DEFINE(n)                      \
 	COND_CODE_1(DT_INST_PINCTRL_HAS_NAME(n, default),			\
 		    (PINCTRL_DT_INST_DEFINE(n)), ())
 
-#define USB_DW_PINCTRL_DT_INST_DEV_CONFIG_GET(n)                                                   \
+#define USB_DW_PINCTRL_DT_INST_DEV_CONFIG_GET(n)              \
 	COND_CODE_1(DT_INST_PINCTRL_HAS_NAME(n, default),			\
 		    ((void *)PINCTRL_DT_INST_DEV_CONFIG_GET(n)), (NULL))
 
@@ -148,26 +148,26 @@ static int usb_dw_init_pinctrl(const struct usb_dw_config *const config)
 #define USB_DW_IRQ_FLAGS_TYPE1(n) DT_INST_IRQ(n, type)
 #define DW_IRQ_FLAGS(n)           _CONCAT(USB_DW_IRQ_FLAGS_TYPE, DT_INST_IRQ_HAS_CELL(n, type))(n)
 
-#define USB_DW_DEVICE_DEFINE(n)                                                                    \
-	USB_DW_PINCTRL_DT_INST_DEFINE(n);                                                          \
-	USB_DW_QUIRK_ST_STM32F4_FSOTG_DEFINE(n);                                                   \
-                                                                                                   \
-	static void usb_dw_irq_enable_func_##n(const struct device *dev)                           \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), usb_dw_isr_handler, 0,      \
-			    DW_IRQ_FLAGS(n));                                                      \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-	}                                                                                          \
-                                                                                                   \
-	static const struct usb_dw_config usb_dw_cfg_##n = {                                       \
-		.base = (struct usb_dwc2_reg *)DT_INST_REG_ADDR(n),                                \
-		.pcfg = USB_DW_PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                  \
-		.irq_enable_func = usb_dw_irq_enable_func_##n,                                     \
-		.clk_enable_func = USB_DW_GET_COMPAT_CLK_QUIRK_0(n),                               \
-		.pwr_on_func = USB_DW_GET_COMPAT_PWR_QUIRK_0(n),                                   \
-	};                                                                                         \
-                                                                                                   \
+#define USB_DW_DEVICE_DEFINE(n)                                                               \
+	USB_DW_PINCTRL_DT_INST_DEFINE(n);                                                     \
+	USB_DW_QUIRK_ST_STM32F4_FSOTG_DEFINE(n);                                              \
+                                                                                              \
+	static void usb_dw_irq_enable_func_##n(const struct device *dev)                      \
+	{                                                                                     \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), usb_dw_isr_handler, 0, \
+			    DW_IRQ_FLAGS(n));                                                 \
+                                                                                              \
+		irq_enable(DT_INST_IRQN(n));                                                  \
+	}                                                                                     \
+                                                                                              \
+	static const struct usb_dw_config usb_dw_cfg_##n = {                                  \
+		.base = (struct usb_dwc2_reg *)DT_INST_REG_ADDR(n),                           \
+		.pcfg = USB_DW_PINCTRL_DT_INST_DEV_CONFIG_GET(n),                             \
+		.irq_enable_func = usb_dw_irq_enable_func_##n,                                \
+		.clk_enable_func = USB_DW_GET_COMPAT_CLK_QUIRK_0(n),                          \
+		.pwr_on_func = USB_DW_GET_COMPAT_PWR_QUIRK_0(n),                              \
+	};                                                                                    \
+                                                                                              \
 	static struct usb_dw_ctrl_prv usb_dw_ctrl_##n;
 
 USB_DW_DEVICE_DEFINE(0)

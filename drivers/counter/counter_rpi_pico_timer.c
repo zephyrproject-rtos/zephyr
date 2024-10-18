@@ -201,41 +201,41 @@ static const struct counter_driver_api counter_rpi_pico_driver_api = {
 	.set_guard_period = counter_rpi_pico_timer_set_guard_period,
 };
 
-#define RPI_PICO_TIMER_IRQ_ENABLE(node_id, name, idx)                                              \
-	do {                                                                                       \
-		hardware_alarm_set_callback(idx, counter_rpi_pico_irq_handle);                     \
-		IRQ_CONNECT((DT_IRQ_BY_IDX(node_id, idx, irq)),                                    \
-			    (DT_IRQ_BY_IDX(node_id, idx, priority)), hardware_alarm_irq_handler,   \
-			    (DEVICE_DT_GET(node_id)), 0);                                          \
-		irq_enable((DT_IRQ_BY_IDX(node_id, idx, irq)));                                    \
+#define RPI_PICO_TIMER_IRQ_ENABLE(node_id, name, idx)                                            \
+	do {                                                                                     \
+		hardware_alarm_set_callback(idx, counter_rpi_pico_irq_handle);                   \
+		IRQ_CONNECT((DT_IRQ_BY_IDX(node_id, idx, irq)),                                  \
+			    (DT_IRQ_BY_IDX(node_id, idx, priority)), hardware_alarm_irq_handler, \
+			    (DEVICE_DT_GET(node_id)), 0);                                        \
+		irq_enable((DT_IRQ_BY_IDX(node_id, idx, irq)));                                  \
 	} while (false);
 
-#define COUNTER_RPI_PICO_TIMER(inst)                                                               \
-	static void counter_irq_config##inst(void)                                                 \
-	{                                                                                          \
-		DT_INST_FOREACH_PROP_ELEM(inst, interrupt_names, RPI_PICO_TIMER_IRQ_ENABLE);       \
-	}                                                                                          \
-	static struct counter_rpi_pico_timer_ch_data                                               \
-		ch_data##inst[DT_NUM_IRQS(DT_DRV_INST(inst))];                                     \
-	static struct counter_rpi_pico_timer_data counter_##inst##_data = {                        \
-		.ch_data = ch_data##inst,                                                          \
-	};                                                                                         \
-	static const struct counter_rpi_pico_timer_config counter_##inst##_config = {              \
-		.timer = (timer_hw_t *)DT_INST_REG_ADDR(inst),                                     \
-		.irq_config = counter_irq_config##inst,                                            \
-		.info =                                                                            \
-			{                                                                          \
-				.max_top_value = UINT32_MAX,                                       \
-				.freq = 1000000,                                                   \
-				.flags = COUNTER_CONFIG_INFO_COUNT_UP,                             \
-				.channels = ARRAY_SIZE(ch_data##inst),                             \
-			},                                                                         \
-		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                               \
-		.clk_id = (clock_control_subsys_t)DT_INST_PHA_BY_IDX(inst, clocks, 0, clk_id),     \
-		.reset = RESET_DT_SPEC_INST_GET(inst),                                             \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, counter_rpi_pico_timer_init, NULL, &counter_##inst##_data,     \
-			      &counter_##inst##_config, PRE_KERNEL_1,                              \
+#define COUNTER_RPI_PICO_TIMER(inst)                                                           \
+	static void counter_irq_config##inst(void)                                             \
+	{                                                                                      \
+		DT_INST_FOREACH_PROP_ELEM(inst, interrupt_names, RPI_PICO_TIMER_IRQ_ENABLE);   \
+	}                                                                                      \
+	static struct counter_rpi_pico_timer_ch_data                                           \
+		ch_data##inst[DT_NUM_IRQS(DT_DRV_INST(inst))];                                 \
+	static struct counter_rpi_pico_timer_data counter_##inst##_data = {                    \
+		.ch_data = ch_data##inst,                                                      \
+	};                                                                                     \
+	static const struct counter_rpi_pico_timer_config counter_##inst##_config = {          \
+		.timer = (timer_hw_t *)DT_INST_REG_ADDR(inst),                                 \
+		.irq_config = counter_irq_config##inst,                                        \
+		.info =                                                                        \
+			{                                                                      \
+				.max_top_value = UINT32_MAX,                                   \
+				.freq = 1000000,                                               \
+				.flags = COUNTER_CONFIG_INFO_COUNT_UP,                         \
+				.channels = ARRAY_SIZE(ch_data##inst),                         \
+			},                                                                     \
+		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                           \
+		.clk_id = (clock_control_subsys_t)DT_INST_PHA_BY_IDX(inst, clocks, 0, clk_id), \
+		.reset = RESET_DT_SPEC_INST_GET(inst),                                         \
+	};                                                                                     \
+	DEVICE_DT_INST_DEFINE(inst, counter_rpi_pico_timer_init, NULL, &counter_##inst##_data, \
+			      &counter_##inst##_config, PRE_KERNEL_1,                          \
 			      CONFIG_COUNTER_INIT_PRIORITY, &counter_rpi_pico_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_RPI_PICO_TIMER)

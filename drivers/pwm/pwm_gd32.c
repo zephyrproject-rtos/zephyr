@@ -181,23 +181,23 @@ static int pwm_gd32_init(const struct device *dev)
 	return 0;
 }
 
-#define PWM_GD32_DEFINE(i)                                                                         \
-	static struct pwm_gd32_data pwm_gd32_data_##i;                                             \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(i);                                                                 \
-                                                                                                   \
-	static const struct pwm_gd32_config pwm_gd32_config_##i = {                                \
-		.reg = DT_REG_ADDR(DT_INST_PARENT(i)),                                             \
-		.clkid = DT_CLOCKS_CELL(DT_INST_PARENT(i), id),                                    \
-		.reset = RESET_DT_SPEC_GET(DT_INST_PARENT(i)),                                     \
-		.prescaler = DT_PROP(DT_INST_PARENT(i), prescaler),                                \
-		.channels = DT_PROP(DT_INST_PARENT(i), channels),                                  \
-		.is_32bit = DT_PROP(DT_INST_PARENT(i), is_32bit),                                  \
-		.is_advanced = DT_PROP(DT_INST_PARENT(i), is_advanced),                            \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(i),                                         \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(i, &pwm_gd32_init, NULL, &pwm_gd32_data_##i, &pwm_gd32_config_##i,   \
+#define PWM_GD32_DEFINE(i)                                                                       \
+	static struct pwm_gd32_data pwm_gd32_data_##i;                                           \
+                                                                                                 \
+	PINCTRL_DT_INST_DEFINE(i);                                                               \
+                                                                                                 \
+	static const struct pwm_gd32_config pwm_gd32_config_##i = {                              \
+		.reg = DT_REG_ADDR(DT_INST_PARENT(i)),                                           \
+		.clkid = DT_CLOCKS_CELL(DT_INST_PARENT(i), id),                                  \
+		.reset = RESET_DT_SPEC_GET(DT_INST_PARENT(i)),                                   \
+		.prescaler = DT_PROP(DT_INST_PARENT(i), prescaler),                              \
+		.channels = DT_PROP(DT_INST_PARENT(i), channels),                                \
+		.is_32bit = DT_PROP(DT_INST_PARENT(i), is_32bit),                                \
+		.is_advanced = DT_PROP(DT_INST_PARENT(i), is_advanced),                          \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(i),                                       \
+	};                                                                                       \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(i, &pwm_gd32_init, NULL, &pwm_gd32_data_##i, &pwm_gd32_config_##i, \
 			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, &pwm_gd32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_GD32_DEFINE)

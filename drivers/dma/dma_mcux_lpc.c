@@ -64,12 +64,12 @@ struct dma_mcux_lpc_dma_data {
 
 struct k_spinlock configuring_otrigs;
 
-#define NXP_LPC_DMA_MAX_XFER                                                                       \
+#define NXP_LPC_DMA_MAX_XFER                                                              \
 	((DMA_CHANNEL_XFERCFG_XFERCOUNT_MASK >> DMA_CHANNEL_XFERCFG_XFERCOUNT_SHIFT) + 1)
 
 #define DEV_BASE(dev) ((DMA_Type *)((const struct dma_mcux_lpc_config *const)(dev)->config)->base)
 
-#define DEV_CHANNEL_DATA(dev, ch)                                                                  \
+#define DEV_CHANNEL_DATA(dev, ch) \
 	((struct channel_data *)(&(((struct dma_mcux_lpc_dma_data *)dev->data)->channel_data[ch])))
 
 #define DEV_DMA_HANDLE(dev, ch) ((dma_handle_t *)(&(DEV_CHANNEL_DATA(dev, ch)->dma_handle)))
@@ -822,30 +822,30 @@ static const struct dma_driver_api dma_mcux_lpc_api = {
 	.get_status = dma_mcux_lpc_get_status,
 };
 
-#define DMA_MCUX_LPC_CONFIG_FUNC(n)                                                                \
-	static void dma_mcux_lpc_config_func_##n(const struct device *dev)                         \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), dma_mcux_lpc_irq_handler,   \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define DMA_MCUX_LPC_CONFIG_FUNC(n)                                                              \
+	static void dma_mcux_lpc_config_func_##n(const struct device *dev)                       \
+	{                                                                                        \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), dma_mcux_lpc_irq_handler, \
+			    DEVICE_DT_INST_GET(n), 0);                                           \
+                                                                                                 \
+		irq_enable(DT_INST_IRQN(n));                                                     \
 	}
 #define DMA_MCUX_LPC_IRQ_CFG_FUNC_INIT(n) .irq_config_func = dma_mcux_lpc_config_func_##n
 #define DMA_MCUX_LPC_INIT_CFG(n)          DMA_MCUX_LPC_DECLARE_CFG(n, DMA_MCUX_LPC_IRQ_CFG_FUNC_INIT(n))
 
-#define DMA_MCUX_LPC_NUM_USED_CHANNELS(n)                                                          \
+#define DMA_MCUX_LPC_NUM_USED_CHANNELS(n)                               \
 	COND_CODE_0(CONFIG_DMA_MCUX_LPC_NUMBER_OF_CHANNELS_ALLOCATED,	\
 		    (DT_INST_PROP(n, dma_channels)),			\
 		    (MIN(CONFIG_DMA_MCUX_LPC_NUMBER_OF_CHANNELS_ALLOCATED,	\
 			DT_INST_PROP(n, dma_channels))))
 
-#define DMA_MCUX_LPC_DECLARE_CFG(n, IRQ_FUNC_INIT)                                                 \
-	static const struct dma_mcux_lpc_config dma_##n##_config = {                               \
-		.base = (DMA_Type *)DT_INST_REG_ADDR(n),                                           \
-		.num_of_channels = DT_INST_PROP(n, dma_channels),                                  \
-		.num_of_otrigs = DT_INST_PROP_OR(n, nxp_dma_num_of_otrigs, 0),                     \
-		.otrig_base_address = DT_INST_PROP_OR(n, nxp_dma_otrig_base_address, 0x0),         \
-		.itrig_base_address = DT_INST_PROP_OR(n, nxp_dma_itrig_base_address, 0x0),         \
+#define DMA_MCUX_LPC_DECLARE_CFG(n, IRQ_FUNC_INIT)                                         \
+	static const struct dma_mcux_lpc_config dma_##n##_config = {                       \
+		.base = (DMA_Type *)DT_INST_REG_ADDR(n),                                   \
+		.num_of_channels = DT_INST_PROP(n, dma_channels),                          \
+		.num_of_otrigs = DT_INST_PROP_OR(n, nxp_dma_num_of_otrigs, 0),             \
+		.otrig_base_address = DT_INST_PROP_OR(n, nxp_dma_otrig_base_address, 0x0), \
+		.itrig_base_address = DT_INST_PROP_OR(n, nxp_dma_itrig_base_address, 0x0), \
 		IRQ_FUNC_INIT}
 
 #define DMA_INIT(n)                                                                                \

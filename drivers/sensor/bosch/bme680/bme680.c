@@ -469,31 +469,31 @@ static const struct sensor_driver_api bme680_api_funcs = {
 };
 
 /* Initializes a struct bme680_config for an instance on a SPI bus. */
-#define BME680_CONFIG_SPI(inst)                                                                    \
-	{                                                                                          \
-		.bus.spi = SPI_DT_SPEC_INST_GET(inst, BME680_SPI_OPERATION, 0),                    \
-		.bus_io = &bme680_bus_io_spi,                                                      \
+#define BME680_CONFIG_SPI(inst)                                                 \
+	{                                                                       \
+		.bus.spi = SPI_DT_SPEC_INST_GET(inst, BME680_SPI_OPERATION, 0), \
+		.bus_io = &bme680_bus_io_spi,                                   \
 	}
 
 /* Initializes a struct bme680_config for an instance on an I2C bus. */
-#define BME680_CONFIG_I2C(inst)                                                                    \
-	{                                                                                          \
-		.bus.i2c = I2C_DT_SPEC_INST_GET(inst),                                             \
-		.bus_io = &bme680_bus_io_i2c,                                                      \
+#define BME680_CONFIG_I2C(inst)                        \
+	{                                              \
+		.bus.i2c = I2C_DT_SPEC_INST_GET(inst), \
+		.bus_io = &bme680_bus_io_i2c,          \
 	}
 
 /*
  * Main instantiation macro, which selects the correct bus-specific
  * instantiation macros for the instance.
  */
-#define BME680_DEFINE(inst)                                                                        \
-	static struct bme680_data bme680_data_##inst;                                              \
+#define BME680_DEFINE(inst)                                                                   \
+	static struct bme680_data bme680_data_##inst;                                         \
 	static const struct bme680_config bme680_config_##inst = COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
 			    (BME680_CONFIG_SPI(inst)),			\
-			    (BME680_CONFIG_I2C(inst)));                    \
-	PM_DEVICE_DT_INST_DEFINE(inst, bme680_pm_control);                                         \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, bme680_init, PM_DEVICE_DT_INST_GET(inst),               \
-				     &bme680_data_##inst, &bme680_config_##inst, POST_KERNEL,      \
+			    (BME680_CONFIG_I2C(inst)));               \
+	PM_DEVICE_DT_INST_DEFINE(inst, bme680_pm_control);                                    \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, bme680_init, PM_DEVICE_DT_INST_GET(inst),          \
+				     &bme680_data_##inst, &bme680_config_##inst, POST_KERNEL, \
 				     CONFIG_SENSOR_INIT_PRIORITY, &bme680_api_funcs);
 
 /* Create the struct device for every status "okay" node in the devicetree. */

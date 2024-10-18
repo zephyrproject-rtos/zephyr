@@ -93,14 +93,14 @@ static const struct led_strip_driver_api apa102_api = {
 	.length = apa102_length,
 };
 
-#define APA102_DEVICE(idx)                                                                         \
-	static const struct apa102_config apa102_##idx##_config = {                                \
-		.bus = SPI_DT_SPEC_INST_GET(                                                       \
-			idx, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 0),          \
-		.length = DT_INST_PROP(idx, chain_length),                                         \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(idx, apa102_init, NULL, NULL, &apa102_##idx##_config, POST_KERNEL,   \
+#define APA102_DEVICE(idx)                                                                       \
+	static const struct apa102_config apa102_##idx##_config = {                              \
+		.bus = SPI_DT_SPEC_INST_GET(                                                     \
+			idx, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 0),        \
+		.length = DT_INST_PROP(idx, chain_length),                                       \
+	};                                                                                       \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(idx, apa102_init, NULL, NULL, &apa102_##idx##_config, POST_KERNEL, \
 			      CONFIG_LED_STRIP_INIT_PRIORITY, &apa102_api);
 
 DT_INST_FOREACH_STATUS_OKAY(APA102_DEVICE)

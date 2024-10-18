@@ -121,14 +121,14 @@ static int tcn75a_init(const struct device *dev)
 #define TCN75A_TRIGGER(n)
 #endif
 
-#define TCN75A_INIT(n)                                                                             \
-	static struct tcn75a_data tcn75a_data_##n;                                                 \
-	static const struct tcn75a_config tcn75a_config_##n = {                                    \
-		.i2c_spec = I2C_DT_SPEC_INST_GET(n),                                               \
-		.resolution = DT_INST_ENUM_IDX(n, resolution),                                     \
-		.oneshot_mode = DT_INST_PROP(n, oneshot_mode),                                     \
-		TCN75A_TRIGGER(n)};                                                                \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, &tcn75a_init, NULL, &tcn75a_data_##n, &tcn75a_config_##n,  \
+#define TCN75A_INIT(n)                                                                            \
+	static struct tcn75a_data tcn75a_data_##n;                                                \
+	static const struct tcn75a_config tcn75a_config_##n = {                                   \
+		.i2c_spec = I2C_DT_SPEC_INST_GET(n),                                              \
+		.resolution = DT_INST_ENUM_IDX(n, resolution),                                    \
+		.oneshot_mode = DT_INST_PROP(n, oneshot_mode),                                    \
+		TCN75A_TRIGGER(n)};                                                               \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, &tcn75a_init, NULL, &tcn75a_data_##n, &tcn75a_config_##n, \
 				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &tcn75a_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TCN75A_INIT)

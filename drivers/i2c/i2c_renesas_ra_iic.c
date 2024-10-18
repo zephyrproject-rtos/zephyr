@@ -489,68 +489,68 @@ static const struct i2c_driver_api i2c_ra_iic_driver_api = {
 #define ELC_EVENT_IIC_TEI(channel) _ELC_EVENT_IIC_TEI(channel)
 #define ELC_EVENT_IIC_ERI(channel) _ELC_EVENT_IIC_ERI(channel)
 
-#define I2C_RA_IIC_INIT(index)                                                                     \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(index);                                                             \
-                                                                                                   \
-	static void i2c_ra_iic_irq_config_func##index(const struct device *dev)                    \
-	{                                                                                          \
-		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, rxi, irq)] =                               \
-			ELC_EVENT_IIC_RXI(DT_INST_PROP(index, channel));                           \
-		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, txi, irq)] =                               \
-			ELC_EVENT_IIC_TXI(DT_INST_PROP(index, channel));                           \
-		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, tei, irq)] =                               \
-			ELC_EVENT_IIC_TEI(DT_INST_PROP(index, channel));                           \
-		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, eri, irq)] =                               \
-			ELC_EVENT_IIC_ERI(DT_INST_PROP(index, channel));                           \
-                                                                                                   \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, rxi, irq),                                  \
-			    DT_INST_IRQ_BY_NAME(index, rxi, priority), iic_master_rxi_isr,         \
-			    DEVICE_DT_INST_GET(index), 0);                                         \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, txi, irq),                                  \
-			    DT_INST_IRQ_BY_NAME(index, txi, priority), iic_master_txi_isr,         \
-			    DEVICE_DT_INST_GET(index), 0);                                         \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, tei, irq),                                  \
-			    DT_INST_IRQ_BY_NAME(index, tei, priority), iic_master_tei_isr,         \
-			    DEVICE_DT_INST_GET(index), 0);                                         \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, eri, irq),                                  \
-			    DT_INST_IRQ_BY_NAME(index, eri, priority), iic_master_eri_isr,         \
-			    DEVICE_DT_INST_GET(index), 0);                                         \
-                                                                                                   \
-		irq_enable(DT_INST_IRQ_BY_NAME(index, rxi, irq));                                  \
-		irq_enable(DT_INST_IRQ_BY_NAME(index, txi, irq));                                  \
-		irq_enable(DT_INST_IRQ_BY_NAME(index, tei, irq));                                  \
-		irq_enable(DT_INST_IRQ_BY_NAME(index, eri, irq));                                  \
-	}                                                                                          \
-                                                                                                   \
-	static const struct i2c_ra_iic_config i2c_ra_iic_config_##index = {                        \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
-		.irq_config_func = i2c_ra_iic_irq_config_func##index,                              \
-		.noise_filter_stage = 1, /* Cannot be configured. */                               \
-		.rise_time_s = DT_INST_PROP(index, rise_time_ns) / RA_IIC_MASTER_DIV_TIME_NS,      \
-		.fall_time_s = DT_INST_PROP(index, fall_time_ns) / RA_IIC_MASTER_DIV_TIME_NS,      \
-		.duty_cycle_percent = DT_INST_PROP(index, duty_cycle_percent),                     \
-	};                                                                                         \
-                                                                                                   \
-	static struct i2c_ra_iic_data i2c_ra_iic_data_##index = {                                  \
-		.fsp_config =                                                                      \
-			{                                                                          \
-				.channel = DT_INST_PROP(index, channel),                           \
-				.slave = 0,                                                        \
-				.rate = DT_INST_PROP(index, clock_frequency),                      \
-				.addr_mode = I2C_MASTER_ADDR_MODE_7BIT,                            \
-				.ipl = DT_INST_PROP(index, interrupt_priority_level),              \
-				.rxi_irq = DT_INST_IRQ_BY_NAME(index, rxi, irq),                   \
-				.txi_irq = DT_INST_IRQ_BY_NAME(index, txi, irq),                   \
-				.tei_irq = DT_INST_IRQ_BY_NAME(index, tei, irq),                   \
-				.eri_irq = DT_INST_IRQ_BY_NAME(index, eri, irq),                   \
-				.p_callback = i2c_ra_iic_callback,                                 \
-				.p_context = DEVICE_DT_GET(DT_DRV_INST(index)),                    \
-			},                                                                         \
-	};                                                                                         \
-                                                                                                   \
-	I2C_DEVICE_DT_INST_DEFINE(index, i2c_ra_iic_init, NULL, &i2c_ra_iic_data_##index,          \
-				  &i2c_ra_iic_config_##index, POST_KERNEL,                         \
+#define I2C_RA_IIC_INIT(index)                                                                \
+                                                                                              \
+	PINCTRL_DT_INST_DEFINE(index);                                                        \
+                                                                                              \
+	static void i2c_ra_iic_irq_config_func##index(const struct device *dev)               \
+	{                                                                                     \
+		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, rxi, irq)] =                          \
+			ELC_EVENT_IIC_RXI(DT_INST_PROP(index, channel));                      \
+		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, txi, irq)] =                          \
+			ELC_EVENT_IIC_TXI(DT_INST_PROP(index, channel));                      \
+		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, tei, irq)] =                          \
+			ELC_EVENT_IIC_TEI(DT_INST_PROP(index, channel));                      \
+		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, eri, irq)] =                          \
+			ELC_EVENT_IIC_ERI(DT_INST_PROP(index, channel));                      \
+                                                                                              \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, rxi, irq),                             \
+			    DT_INST_IRQ_BY_NAME(index, rxi, priority), iic_master_rxi_isr,    \
+			    DEVICE_DT_INST_GET(index), 0);                                    \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, txi, irq),                             \
+			    DT_INST_IRQ_BY_NAME(index, txi, priority), iic_master_txi_isr,    \
+			    DEVICE_DT_INST_GET(index), 0);                                    \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, tei, irq),                             \
+			    DT_INST_IRQ_BY_NAME(index, tei, priority), iic_master_tei_isr,    \
+			    DEVICE_DT_INST_GET(index), 0);                                    \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, eri, irq),                             \
+			    DT_INST_IRQ_BY_NAME(index, eri, priority), iic_master_eri_isr,    \
+			    DEVICE_DT_INST_GET(index), 0);                                    \
+                                                                                              \
+		irq_enable(DT_INST_IRQ_BY_NAME(index, rxi, irq));                             \
+		irq_enable(DT_INST_IRQ_BY_NAME(index, txi, irq));                             \
+		irq_enable(DT_INST_IRQ_BY_NAME(index, tei, irq));                             \
+		irq_enable(DT_INST_IRQ_BY_NAME(index, eri, irq));                             \
+	}                                                                                     \
+                                                                                              \
+	static const struct i2c_ra_iic_config i2c_ra_iic_config_##index = {                   \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                \
+		.irq_config_func = i2c_ra_iic_irq_config_func##index,                         \
+		.noise_filter_stage = 1, /* Cannot be configured. */                          \
+		.rise_time_s = DT_INST_PROP(index, rise_time_ns) / RA_IIC_MASTER_DIV_TIME_NS, \
+		.fall_time_s = DT_INST_PROP(index, fall_time_ns) / RA_IIC_MASTER_DIV_TIME_NS, \
+		.duty_cycle_percent = DT_INST_PROP(index, duty_cycle_percent),                \
+	};                                                                                    \
+                                                                                              \
+	static struct i2c_ra_iic_data i2c_ra_iic_data_##index = {                             \
+		.fsp_config =                                                                 \
+			{                                                                     \
+				.channel = DT_INST_PROP(index, channel),                      \
+				.slave = 0,                                                   \
+				.rate = DT_INST_PROP(index, clock_frequency),                 \
+				.addr_mode = I2C_MASTER_ADDR_MODE_7BIT,                       \
+				.ipl = DT_INST_PROP(index, interrupt_priority_level),         \
+				.rxi_irq = DT_INST_IRQ_BY_NAME(index, rxi, irq),              \
+				.txi_irq = DT_INST_IRQ_BY_NAME(index, txi, irq),              \
+				.tei_irq = DT_INST_IRQ_BY_NAME(index, tei, irq),              \
+				.eri_irq = DT_INST_IRQ_BY_NAME(index, eri, irq),              \
+				.p_callback = i2c_ra_iic_callback,                            \
+				.p_context = DEVICE_DT_GET(DT_DRV_INST(index)),               \
+			},                                                                    \
+	};                                                                                    \
+                                                                                              \
+	I2C_DEVICE_DT_INST_DEFINE(index, i2c_ra_iic_init, NULL, &i2c_ra_iic_data_##index,     \
+				  &i2c_ra_iic_config_##index, POST_KERNEL,                    \
 				  CONFIG_I2C_INIT_PRIORITY, &i2c_ra_iic_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_RA_IIC_INIT)

@@ -138,12 +138,12 @@ static const struct stepper_driver_api fake_stepper_driver_api = {
 	.set_event_callback = fake_stepper_set_event_callback,
 };
 
-#define FAKE_STEPPER_INIT(inst)                                                                    \
-                                                                                                   \
-	static struct fake_stepper_data fake_stepper_data_##inst;                                  \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, fake_stepper_init, NULL, &fake_stepper_data_##inst, NULL,      \
-			      POST_KERNEL, CONFIG_STEPPER_INIT_PRIORITY,                           \
+#define FAKE_STEPPER_INIT(inst)                                                               \
+                                                                                              \
+	static struct fake_stepper_data fake_stepper_data_##inst;                             \
+                                                                                              \
+	DEVICE_DT_INST_DEFINE(inst, fake_stepper_init, NULL, &fake_stepper_data_##inst, NULL, \
+			      POST_KERNEL, CONFIG_STEPPER_INIT_PRIORITY,                      \
 			      &fake_stepper_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(FAKE_STEPPER_INIT)

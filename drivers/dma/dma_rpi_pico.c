@@ -16,8 +16,8 @@
 
 #define DT_DRV_COMPAT raspberrypi_pico_dma
 
-#define DMA_INT_ERROR_FLAGS                                                                        \
-	(DMA_CH0_CTRL_TRIG_AHB_ERROR_BITS | DMA_CH0_CTRL_TRIG_READ_ERROR_BITS |                    \
+#define DMA_INT_ERROR_FLAGS                                                     \
+	(DMA_CH0_CTRL_TRIG_AHB_ERROR_BITS | DMA_CH0_CTRL_TRIG_READ_ERROR_BITS | \
 	 DMA_CH0_CTRL_TRIG_WRITE_ERROR_BITS)
 
 LOG_MODULE_REGISTER(dma_rpi_pico, CONFIG_DMA_LOG_LEVEL);
@@ -342,9 +342,9 @@ static const struct dma_driver_api dma_rpi_pico_driver_api = {
 	.chan_filter = dma_rpi_pico_api_chan_filter,
 };
 
-#define IRQ_CONFIGURE(n, inst)                                                                     \
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, n, irq), DT_INST_IRQ_BY_IDX(inst, n, priority),       \
-		    dma_rpi_pico_isr, DEVICE_DT_INST_GET(inst), 0);                                \
+#define IRQ_CONFIGURE(n, inst)                                                               \
+	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, n, irq), DT_INST_IRQ_BY_IDX(inst, n, priority), \
+		    dma_rpi_pico_isr, DEVICE_DT_INST_GET(inst), 0);                          \
 	irq_enable(DT_INST_IRQ_BY_IDX(inst, n, irq));
 
 #define CONFIGURE_ALL_IRQS(inst, n) LISTIFY(n, IRQ_CONFIGURE, (), inst)

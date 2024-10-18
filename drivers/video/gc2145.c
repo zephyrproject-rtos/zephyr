@@ -690,15 +690,15 @@ struct gc2145_data {
 	struct video_format fmt;
 };
 
-#define GC2145_VIDEO_FORMAT_CAP(width, height, format)                                             \
-	{                                                                                          \
-		.pixelformat = format,                                                             \
-		.width_min = width,                                                                \
-		.width_max = width,                                                                \
-		.height_min = height,                                                              \
-		.height_max = height,                                                              \
-		.width_step = 0,                                                                   \
-		.height_step = 0,                                                                  \
+#define GC2145_VIDEO_FORMAT_CAP(width, height, format) \
+	{                                              \
+		.pixelformat = format,                 \
+		.width_min = width,                    \
+		.width_max = width,                    \
+		.height_min = height,                  \
+		.height_max = height,                  \
+		.width_step = 0,                       \
+		.height_step = 0,                      \
 	}
 
 enum resolutions {

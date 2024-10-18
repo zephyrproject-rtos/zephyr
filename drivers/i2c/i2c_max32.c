@@ -897,14 +897,14 @@ static int i2c_max32_init(const struct device *dev)
 }
 
 #if defined(CONFIG_I2C_TARGET) || defined(CONFIG_I2C_MAX32_INTERRUPT)
-#define I2C_MAX32_CONFIG_IRQ_FUNC(n)                                                               \
+#define I2C_MAX32_CONFIG_IRQ_FUNC(n)                                               \
 	.irq_config_func = i2c_max32_irq_config_func_##n, .irqn = DT_INST_IRQN(n),
 
-#define I2C_MAX32_IRQ_CONFIG_FUNC(n)                                                               \
-	static void i2c_max32_irq_config_func_##n(const struct device *dev)                        \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), i2c_max32_isr,              \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
+#define I2C_MAX32_IRQ_CONFIG_FUNC(n)                                                  \
+	static void i2c_max32_irq_config_func_##n(const struct device *dev)           \
+	{                                                                             \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), i2c_max32_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                                \
 	}
 #else
 #define I2C_MAX32_CONFIG_IRQ_FUNC(n)
@@ -912,42 +912,42 @@ static int i2c_max32_init(const struct device *dev)
 #endif
 
 #if CONFIG_I2C_MAX32_DMA
-#define MAX32_DT_INST_DMA_CTLR(n, name)                                                            \
+#define MAX32_DT_INST_DMA_CTLR(n, name) \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas),                                                \
 		    (DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, name))), (NULL))
 
-#define MAX32_DT_INST_DMA_CELL(n, name, cell)                                                      \
+#define MAX32_DT_INST_DMA_CELL(n, name, cell) \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas), (DT_INST_DMAS_CELL_BY_NAME(n, name, cell)),    \
 		    (0xff))
 
-#define MAX32_I2C_TX_DMA_INIT(n)                                                                   \
-	.tx_dma.dev = MAX32_DT_INST_DMA_CTLR(n, tx),                                               \
-	.tx_dma.channel = MAX32_DT_INST_DMA_CELL(n, tx, channel),                                  \
+#define MAX32_I2C_TX_DMA_INIT(n)                                  \
+	.tx_dma.dev = MAX32_DT_INST_DMA_CTLR(n, tx),              \
+	.tx_dma.channel = MAX32_DT_INST_DMA_CELL(n, tx, channel), \
 	.tx_dma.slot = MAX32_DT_INST_DMA_CELL(n, tx, slot),
-#define MAX32_I2C_RX_DMA_INIT(n)                                                                   \
-	.rx_dma.dev = MAX32_DT_INST_DMA_CTLR(n, rx),                                               \
-	.rx_dma.channel = MAX32_DT_INST_DMA_CELL(n, rx, channel),                                  \
+#define MAX32_I2C_RX_DMA_INIT(n)                                  \
+	.rx_dma.dev = MAX32_DT_INST_DMA_CTLR(n, rx),              \
+	.rx_dma.channel = MAX32_DT_INST_DMA_CELL(n, rx, channel), \
 	.rx_dma.slot = MAX32_DT_INST_DMA_CELL(n, rx, slot),
 #else
 #define MAX32_I2C_TX_DMA_INIT(n)
 #define MAX32_I2C_RX_DMA_INIT(n)
 #endif
 
-#define DEFINE_I2C_MAX32(_num)                                                                     \
-	PINCTRL_DT_INST_DEFINE(_num);                                                              \
-	I2C_MAX32_IRQ_CONFIG_FUNC(_num)                                                            \
-	static const struct max32_i2c_config max32_i2c_dev_cfg_##_num = {                          \
-		.regs = (mxc_i2c_regs_t *)DT_INST_REG_ADDR(_num),                                  \
-		.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(_num),                                     \
-		.clock = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(_num)),                                 \
-		.perclk.bus = DT_INST_CLOCKS_CELL(_num, offset),                                   \
-		.perclk.bit = DT_INST_CLOCKS_CELL(_num, bit),                                      \
-		.bitrate = DT_INST_PROP(_num, clock_frequency),                                    \
-		I2C_MAX32_CONFIG_IRQ_FUNC(_num) MAX32_I2C_TX_DMA_INIT(_num)                        \
-			MAX32_I2C_RX_DMA_INIT(_num)};                                              \
-	static struct max32_i2c_data max32_i2c_data_##_num;                                        \
-	I2C_DEVICE_DT_INST_DEFINE(_num, i2c_max32_init, NULL, &max32_i2c_data_##_num,              \
-				  &max32_i2c_dev_cfg_##_num, PRE_KERNEL_2,                         \
+#define DEFINE_I2C_MAX32(_num)                                                        \
+	PINCTRL_DT_INST_DEFINE(_num);                                                 \
+	I2C_MAX32_IRQ_CONFIG_FUNC(_num)                                               \
+	static const struct max32_i2c_config max32_i2c_dev_cfg_##_num = {             \
+		.regs = (mxc_i2c_regs_t *)DT_INST_REG_ADDR(_num),                     \
+		.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(_num),                        \
+		.clock = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(_num)),                    \
+		.perclk.bus = DT_INST_CLOCKS_CELL(_num, offset),                      \
+		.perclk.bit = DT_INST_CLOCKS_CELL(_num, bit),                         \
+		.bitrate = DT_INST_PROP(_num, clock_frequency),                       \
+		I2C_MAX32_CONFIG_IRQ_FUNC(_num) MAX32_I2C_TX_DMA_INIT(_num)           \
+			MAX32_I2C_RX_DMA_INIT(_num)};                                 \
+	static struct max32_i2c_data max32_i2c_data_##_num;                           \
+	I2C_DEVICE_DT_INST_DEFINE(_num, i2c_max32_init, NULL, &max32_i2c_data_##_num, \
+				  &max32_i2c_dev_cfg_##_num, PRE_KERNEL_2,            \
 				  CONFIG_I2C_INIT_PRIORITY, &api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_I2C_MAX32)

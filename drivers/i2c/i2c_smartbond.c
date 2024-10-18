@@ -539,9 +539,9 @@ static void i2c_smartbond_isr(const struct device *dev)
 	}
 }
 
-#define I2C_SMARTBOND_CONFIGURE(id)                                                                \
-	IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), i2c_smartbond_isr,                \
-		    DEVICE_DT_INST_GET(id), 0);                                                    \
+#define I2C_SMARTBOND_CONFIGURE(id)                                                 \
+	IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), i2c_smartbond_isr, \
+		    DEVICE_DT_INST_GET(id), 0);                                     \
 	irq_enable(DT_INST_IRQN(id));
 #else
 #define I2C_SMARTBOND_CONFIGURE(id)
@@ -652,24 +652,24 @@ static int i2c_smartbond_init(const struct device *dev)
 	return ret;
 }
 
-#define I2C_SMARTBOND_DEVICE(id)                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(id, i2c_smartbond_pm_action);                                     \
-	PINCTRL_DT_INST_DEFINE(id);                                                                \
-	static const struct i2c_smartbond_cfg i2c_smartbond_##id##_cfg = {                         \
-		.regs = (I2C_Type *)DT_INST_REG_ADDR(id),                                          \
-		.periph_clock_config = DT_INST_PROP(id, periph_clock_config),                      \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),                                        \
-		.bitrate = DT_INST_PROP_OR(id, clock_frequency, 100000)};                          \
-	static struct i2c_smartbond_data i2c_smartbond_##id##_data = {.msgs = NULL, .cb = NULL};   \
-	static int i2c_smartbond_##id##_init(const struct device *dev)                             \
-	{                                                                                          \
-		int ret = i2c_smartbond_init(dev);                                                 \
-		I2C_SMARTBOND_CONFIGURE(id);                                                       \
-		return ret;                                                                        \
-	}                                                                                          \
-	I2C_DEVICE_DT_INST_DEFINE(id, i2c_smartbond_##id##_init, PM_DEVICE_DT_INST_GET(id),        \
-				  &i2c_smartbond_##id##_data, &i2c_smartbond_##id##_cfg,           \
-				  POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,                           \
+#define I2C_SMARTBOND_DEVICE(id)                                                                 \
+	PM_DEVICE_DT_INST_DEFINE(id, i2c_smartbond_pm_action);                                   \
+	PINCTRL_DT_INST_DEFINE(id);                                                              \
+	static const struct i2c_smartbond_cfg i2c_smartbond_##id##_cfg = {                       \
+		.regs = (I2C_Type *)DT_INST_REG_ADDR(id),                                        \
+		.periph_clock_config = DT_INST_PROP(id, periph_clock_config),                    \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),                                      \
+		.bitrate = DT_INST_PROP_OR(id, clock_frequency, 100000)};                        \
+	static struct i2c_smartbond_data i2c_smartbond_##id##_data = {.msgs = NULL, .cb = NULL}; \
+	static int i2c_smartbond_##id##_init(const struct device *dev)                           \
+	{                                                                                        \
+		int ret = i2c_smartbond_init(dev);                                               \
+		I2C_SMARTBOND_CONFIGURE(id);                                                     \
+		return ret;                                                                      \
+	}                                                                                        \
+	I2C_DEVICE_DT_INST_DEFINE(id, i2c_smartbond_##id##_init, PM_DEVICE_DT_INST_GET(id),      \
+				  &i2c_smartbond_##id##_data, &i2c_smartbond_##id##_cfg,         \
+				  POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,                         \
 				  &i2c_smartbond_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_SMARTBOND_DEVICE)

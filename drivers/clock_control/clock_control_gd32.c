@@ -42,7 +42,7 @@ struct clock_control_gd32_config {
 
 #if DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_timer)
 /* timer identifiers */
-#define TIMER_ID_OR_NONE(nodelabel)                                                                \
+#define TIMER_ID_OR_NONE(nodelabel)                                              \
 	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(nodelabel)),          \
 		    (DT_CLOCKS_CELL(DT_NODELABEL(nodelabel), id),), ())
 
@@ -109,7 +109,7 @@ static int clock_control_gd32_get_rate(const struct device *dev, clock_control_s
 		*rate = CPU_FREQ >> ahb_exp[psc];
 		break;
 	case RCU_APB1EN_OFFSET:
-#if !defined(CONFIG_SOC_SERIES_GD32VF103) && !defined(CONFIG_SOC_SERIES_GD32A50X) &&               \
+#if !defined(CONFIG_SOC_SERIES_GD32VF103) && !defined(CONFIG_SOC_SERIES_GD32A50X) && \
 	!defined(CONFIG_SOC_SERIES_GD32L23X)
 	case RCU_ADDAPB1EN_OFFSET:
 #endif

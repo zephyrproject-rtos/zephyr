@@ -308,25 +308,25 @@ static const struct sensor_driver_api max31865_api_funcs = {
 	.attr_set = max31865_attr_set,
 };
 
-#define MAX31865_DEFINE(inst)                                                                      \
-                                                                                                   \
-	static struct max31865_data max31865_data_##inst;                                          \
-                                                                                                   \
-	static const struct max31865_config max31865_config_##inst = {                             \
-		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_MODE_CPHA | SPI_WORD_SET(8), 0),             \
-		.resistance_at_zero = DT_INST_PROP(inst, resistance_at_zero),                      \
-		.resistance_reference = DT_INST_PROP(inst, resistance_reference),                  \
-		.conversion_mode = false,                                                          \
-		.one_shot = true,                                                                  \
-		.three_wire = DT_INST_PROP(inst, maxim_3_wire),                                    \
-		.fault_cycle = MAX31865_FAULT_DETECTION_NONE,                                      \
-		.filter_50hz = DT_INST_PROP(inst, filter_50hz),                                    \
-		.low_threshold = DT_INST_PROP(inst, low_threshold),                                \
-		.high_threshold = DT_INST_PROP(inst, high_threshold),                              \
-	};                                                                                         \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, max31865_init, NULL, &max31865_data_##inst,             \
-				     &max31865_config_##inst, POST_KERNEL,                         \
+#define MAX31865_DEFINE(inst)                                                           \
+                                                                                        \
+	static struct max31865_data max31865_data_##inst;                               \
+                                                                                        \
+	static const struct max31865_config max31865_config_##inst = {                  \
+		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_MODE_CPHA | SPI_WORD_SET(8), 0),  \
+		.resistance_at_zero = DT_INST_PROP(inst, resistance_at_zero),           \
+		.resistance_reference = DT_INST_PROP(inst, resistance_reference),       \
+		.conversion_mode = false,                                               \
+		.one_shot = true,                                                       \
+		.three_wire = DT_INST_PROP(inst, maxim_3_wire),                         \
+		.fault_cycle = MAX31865_FAULT_DETECTION_NONE,                           \
+		.filter_50hz = DT_INST_PROP(inst, filter_50hz),                         \
+		.low_threshold = DT_INST_PROP(inst, low_threshold),                     \
+		.high_threshold = DT_INST_PROP(inst, high_threshold),                   \
+	};                                                                              \
+                                                                                        \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, max31865_init, NULL, &max31865_data_##inst,  \
+				     &max31865_config_##inst, POST_KERNEL,              \
 				     CONFIG_SENSOR_INIT_PRIORITY, &max31865_api_funcs);
 
 /* Create the struct device for every status "okay" node in the devicetree. */

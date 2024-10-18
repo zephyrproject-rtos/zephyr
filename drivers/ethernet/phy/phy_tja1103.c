@@ -443,19 +443,19 @@ static const struct ethphy_driver_api phy_tja1103_api = {
 	.write = phy_tja1103_reg_write,
 };
 
-#define TJA1103_INITIALIZE(n)                                                                      \
-	static const struct phy_tja1103_config phy_tja1103_config_##n = {                          \
-		.phy_addr = DT_INST_REG_ADDR(n),                                                   \
-		.mdio = DEVICE_DT_GET(DT_INST_BUS(n)),                                             \
-		.gpio_interrupt = GPIO_DT_SPEC_INST_GET_OR(n, int_gpios, {0}),                     \
-		.master_slave = DT_INST_ENUM_IDX(n, master_slave),                                 \
-	};                                                                                         \
-	static struct phy_tja1103_data phy_tja1103_data_##n = {                                    \
-		.sem = Z_SEM_INITIALIZER(phy_tja1103_data_##n.sem, 1, 1),                          \
-		.offload_sem = Z_SEM_INITIALIZER(phy_tja1103_data_##n.offload_sem, 0, 1),          \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &phy_tja1103_init, NULL, &phy_tja1103_data_##n,                   \
-			      &phy_tja1103_config_##n, POST_KERNEL, CONFIG_PHY_INIT_PRIORITY,      \
+#define TJA1103_INITIALIZE(n)                                                                 \
+	static const struct phy_tja1103_config phy_tja1103_config_##n = {                     \
+		.phy_addr = DT_INST_REG_ADDR(n),                                              \
+		.mdio = DEVICE_DT_GET(DT_INST_BUS(n)),                                        \
+		.gpio_interrupt = GPIO_DT_SPEC_INST_GET_OR(n, int_gpios, {0}),                \
+		.master_slave = DT_INST_ENUM_IDX(n, master_slave),                            \
+	};                                                                                    \
+	static struct phy_tja1103_data phy_tja1103_data_##n = {                               \
+		.sem = Z_SEM_INITIALIZER(phy_tja1103_data_##n.sem, 1, 1),                     \
+		.offload_sem = Z_SEM_INITIALIZER(phy_tja1103_data_##n.offload_sem, 0, 1),     \
+	};                                                                                    \
+	DEVICE_DT_INST_DEFINE(n, &phy_tja1103_init, NULL, &phy_tja1103_data_##n,              \
+			      &phy_tja1103_config_##n, POST_KERNEL, CONFIG_PHY_INIT_PRIORITY, \
 			      &phy_tja1103_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TJA1103_INITIALIZE)

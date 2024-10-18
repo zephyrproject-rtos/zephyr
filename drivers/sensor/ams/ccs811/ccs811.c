@@ -553,19 +553,19 @@ out:
 	return ret;
 }
 
-#define CCS811_DEFINE(inst)                                                                        \
-	static struct ccs811_data ccs811_data_##inst;                                              \
-                                                                                                   \
-	static const struct ccs811_config ccs811_config_##inst = {                                 \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+#define CCS811_DEFINE(inst)                                                                   \
+	static struct ccs811_data ccs811_data_##inst;                                         \
+                                                                                              \
+	static const struct ccs811_config ccs811_config_##inst = {                            \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                            \
 		IF_ENABLED(CONFIG_CCS811_TRIGGER,						\
-			   (.irq_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, irq_gpios, { 0 }),)) .reset_gpio =                           \
-					    GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),      \
-			    .wake_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, wake_gpios, {0}),          \
-	};                                                                                         \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(0, ccs811_init, NULL, &ccs811_data_##inst,                    \
-				     &ccs811_config_##inst, POST_KERNEL,                           \
+			   (.irq_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, irq_gpios, { 0 }),)) .reset_gpio =                      \
+					    GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}), \
+			    .wake_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, wake_gpios, {0}),     \
+	};                                                                                    \
+                                                                                              \
+	SENSOR_DEVICE_DT_INST_DEFINE(0, ccs811_init, NULL, &ccs811_data_##inst,               \
+				     &ccs811_config_##inst, POST_KERNEL,                      \
 				     CONFIG_SENSOR_INIT_PRIORITY, &ccs811_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CCS811_DEFINE)

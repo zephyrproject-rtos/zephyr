@@ -101,31 +101,31 @@ static const __unused struct regulator_driver_api api = {
 	.get_mode = regulator_npm1100_get_mode,
 };
 
-#define REGULATOR_NPM1100_DEFINE_BUCK(node_id, id)                                                 \
-	static struct regulator_npm1100_data data_##id;                                            \
-                                                                                                   \
-	static const struct regulator_npm1100_config config_##id = {                               \
-		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node_id),                                \
-		.mode = GPIO_DT_SPEC_GET_OR(node_id, nordic_mode_gpios, {}),                       \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_DEFINE(node_id, regulator_npm1100_init, NULL, &data_##id, &config_##id,          \
+#define REGULATOR_NPM1100_DEFINE_BUCK(node_id, id)                                        \
+	static struct regulator_npm1100_data data_##id;                                   \
+                                                                                          \
+	static const struct regulator_npm1100_config config_##id = {                      \
+		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node_id),                       \
+		.mode = GPIO_DT_SPEC_GET_OR(node_id, nordic_mode_gpios, {}),              \
+	};                                                                                \
+                                                                                          \
+	DEVICE_DT_DEFINE(node_id, regulator_npm1100_init, NULL, &data_##id, &config_##id, \
 			 POST_KERNEL, CONFIG_REGULATOR_NPM1100_INIT_PRIORITY, &api);
 
-#define REGULATOR_NPM1100_DEFINE_BUCK_COND(inst)                                                   \
+#define REGULATOR_NPM1100_DEFINE_BUCK_COND(inst)                                 \
 	COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(inst, buck)),                 \
 		    (REGULATOR_NPM1100_DEFINE_BUCK(DT_INST_CHILD(inst, buck),  \
 						   buck##inst)),               \
 		    ())
 
-#define REGULATOR_NPM1100_DEFINE_ALL(inst)                                                         \
-	static const struct regulator_npm1100_pconfig config_##inst = {                            \
-		.iset = GPIO_DT_SPEC_INST_GET_OR(inst, nordic_iset_gpios, {}),                     \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, regulator_npm1100_common_init, NULL, NULL, &config_##inst,     \
-			      POST_KERNEL, CONFIG_REGULATOR_NPM1100_INIT_PRIORITY, NULL);          \
-                                                                                                   \
+#define REGULATOR_NPM1100_DEFINE_ALL(inst)                                                     \
+	static const struct regulator_npm1100_pconfig config_##inst = {                        \
+		.iset = GPIO_DT_SPEC_INST_GET_OR(inst, nordic_iset_gpios, {}),                 \
+	};                                                                                     \
+                                                                                               \
+	DEVICE_DT_INST_DEFINE(inst, regulator_npm1100_common_init, NULL, NULL, &config_##inst, \
+			      POST_KERNEL, CONFIG_REGULATOR_NPM1100_INIT_PRIORITY, NULL);      \
+                                                                                               \
 	REGULATOR_NPM1100_DEFINE_BUCK_COND(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_NPM1100_DEFINE_ALL)

@@ -181,18 +181,18 @@ static int gpio_si32_init(const struct device *dev)
 	return 0;
 }
 
-#define GPIO_DEVICE_INIT(inst)                                                                     \
-	static const struct gpio_si32_config gpio_si32_cfg_##inst = {                              \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(16U),              \
-			},                                                                         \
-		.base = (SI32_PBSTD_A_Type *)DT_INST_REG_ADDR(inst),                               \
-		.disable_pullups = DT_INST_PROP(inst, disable_pullups),                            \
-	};                                                                                         \
-	static struct gpio_si32_data gpio_si32_data_##inst;                                        \
-	DEVICE_DT_INST_DEFINE(inst, gpio_si32_init, NULL, &gpio_si32_data_##inst,                  \
-			      &gpio_si32_cfg_##inst, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,      \
+#define GPIO_DEVICE_INIT(inst)                                                                \
+	static const struct gpio_si32_config gpio_si32_cfg_##inst = {                         \
+		.common =                                                                     \
+			{                                                                     \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(16U),         \
+			},                                                                    \
+		.base = (SI32_PBSTD_A_Type *)DT_INST_REG_ADDR(inst),                          \
+		.disable_pullups = DT_INST_PROP(inst, disable_pullups),                       \
+	};                                                                                    \
+	static struct gpio_si32_data gpio_si32_data_##inst;                                   \
+	DEVICE_DT_INST_DEFINE(inst, gpio_si32_init, NULL, &gpio_si32_data_##inst,             \
+			      &gpio_si32_cfg_##inst, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, \
 			      &gpio_si32_driver);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_DEVICE_INIT)

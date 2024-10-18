@@ -47,8 +47,8 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
 #define DT_DRV_COMPAT st_stm32_otghs
 #define USB_IRQ_NAME  otghs
-#define USB_VBUS_SENSING                                                                           \
-	(DT_NODE_EXISTS(DT_CHILD(DT_NODELABEL(pinctrl), usb_otg_hs_vbus_pa9)) ||                   \
+#define USB_VBUS_SENSING                                                         \
+	(DT_NODE_EXISTS(DT_CHILD(DT_NODELABEL(pinctrl), usb_otg_hs_vbus_pa9)) || \
 	 DT_NODE_EXISTS(DT_CHILD(DT_NODELABEL(pinctrl), usb_otg_hs_vbus_pb13)))
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs)
 #define DT_DRV_COMPAT    st_stm32_otgfs
@@ -78,7 +78,7 @@ static const struct pinctrl_dev_config *usb_pcfg = PINCTRL_DT_INST_DEV_CONFIG_GE
 #define USB_OTG_HS_EMB_PHY                                                                         \
 	(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
 
-#define USB_OTG_HS_ULPI_PHY                                                                        \
+#define USB_OTG_HS_ULPI_PHY                                                                    \
 	(DT_HAS_COMPAT_STATUS_OKAY(usb_ulpi_phy) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
 
 #if USB_OTG_HS_ULPI_PHY

@@ -216,24 +216,24 @@ static const struct sensor_driver_api tach_it8xxx2_driver_api = {
 	.channel_get = tach_it8xxx2_channel_get,
 };
 
-#define TACH_IT8XXX2_INIT(inst)                                                                    \
-	PINCTRL_DT_INST_DEFINE(inst);                                                              \
-                                                                                                   \
-	static const struct tach_it8xxx2_config tach_it8xxx2_cfg_##inst = {                        \
-		.reg_fxtlrr = DT_INST_REG_ADDR_BY_IDX(inst, 0),                                    \
-		.reg_fxtmrr = DT_INST_REG_ADDR_BY_IDX(inst, 1),                                    \
-		.reg_tswctlr = DT_INST_REG_ADDR_BY_IDX(inst, 2),                                   \
-		.dvs_bit = DT_INST_PROP(inst, dvs_bit),                                            \
-		.chsel_bit = DT_INST_PROP(inst, chsel_bit),                                        \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
-		.channel = DT_INST_PROP(inst, channel),                                            \
-		.pulses_per_round = DT_INST_PROP(inst, pulses_per_round),                          \
-	};                                                                                         \
-                                                                                                   \
-	static struct tach_it8xxx2_data tach_it8xxx2_data_##inst;                                  \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, tach_it8xxx2_init, NULL, &tach_it8xxx2_data_##inst,     \
-				     &tach_it8xxx2_cfg_##inst, POST_KERNEL,                        \
+#define TACH_IT8XXX2_INIT(inst)                                                                \
+	PINCTRL_DT_INST_DEFINE(inst);                                                          \
+                                                                                               \
+	static const struct tach_it8xxx2_config tach_it8xxx2_cfg_##inst = {                    \
+		.reg_fxtlrr = DT_INST_REG_ADDR_BY_IDX(inst, 0),                                \
+		.reg_fxtmrr = DT_INST_REG_ADDR_BY_IDX(inst, 1),                                \
+		.reg_tswctlr = DT_INST_REG_ADDR_BY_IDX(inst, 2),                               \
+		.dvs_bit = DT_INST_PROP(inst, dvs_bit),                                        \
+		.chsel_bit = DT_INST_PROP(inst, chsel_bit),                                    \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                  \
+		.channel = DT_INST_PROP(inst, channel),                                        \
+		.pulses_per_round = DT_INST_PROP(inst, pulses_per_round),                      \
+	};                                                                                     \
+                                                                                               \
+	static struct tach_it8xxx2_data tach_it8xxx2_data_##inst;                              \
+                                                                                               \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, tach_it8xxx2_init, NULL, &tach_it8xxx2_data_##inst, \
+				     &tach_it8xxx2_cfg_##inst, POST_KERNEL,                    \
 				     CONFIG_SENSOR_INIT_PRIORITY, &tach_it8xxx2_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TACH_IT8XXX2_INIT)

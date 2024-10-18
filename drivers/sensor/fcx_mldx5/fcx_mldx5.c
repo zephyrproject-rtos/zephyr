@@ -29,13 +29,13 @@ LOG_MODULE_REGISTER(fcx_mldx5_sensor, CONFIG_SENSOR_LOG_LEVEL);
 /* Data length depends on command type thus defined in array */
 #define FCX_MLDX5_CHECKSUM_LEN 2
 #define FCX_MLDX5_ETX_LEN      1
-#define FCX_MLDX5_HEADER_LEN                                                                       \
+#define FCX_MLDX5_HEADER_LEN                                                                 \
 	(FCX_MLDX5_STX_LEN + FCX_MLDX5_CMD_LEN + FCX_MLDX5_CHECKSUM_LEN + FCX_MLDX5_ETX_LEN)
 
 #define FCX_MLDX5_STX_INDEX  0
 #define FCX_MLDX5_CMD_INDEX  (FCX_MLDX5_STX_INDEX + FCX_MLDX5_STX_LEN)
 #define FCX_MLDX5_DATA_INDEX (FCX_MLDX5_CMD_INDEX + FCX_MLDX5_CMD_LEN)
-#define FCX_MLDX5_CHECKSUM_INDEX(frame_len)                                                        \
+#define FCX_MLDX5_CHECKSUM_INDEX(frame_len)                        \
 	((frame_len) - FCX_MLDX5_CHECKSUM_LEN - FCX_MLDX5_ETX_LEN)
 #define FCX_MLDX5_ETX_INDEX(frame_len) ((frame_len) - FCX_MLDX5_ETX_LEN)
 
@@ -476,21 +476,21 @@ static int fcx_mldx5_init(const struct device *dev)
 	return 0;
 }
 
-#define FCX_MLDX5_INIT(n)                                                                          \
-                                                                                                   \
-	static struct fcx_mldx5_data fcx_mldx5_data_##n = {                                        \
-		.status = FCX_MLDX5_STATUS_UNKNOWN,                                                \
-	};                                                                                         \
-                                                                                                   \
-	static const struct fcx_mldx5_cfg fcx_mldx5_cfg_##n = {                                    \
-		.uart_dev = DEVICE_DT_GET(DT_INST_BUS(n)),                                         \
-		.cb = fcx_mldx5_uart_isr,                                                          \
-	};                                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(n, pm_action);                                                    \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, fcx_mldx5_init, PM_DEVICE_DT_INST_GET(n),                  \
-				     &fcx_mldx5_data_##n, &fcx_mldx5_cfg_##n, POST_KERNEL,         \
+#define FCX_MLDX5_INIT(n)                                                                  \
+                                                                                           \
+	static struct fcx_mldx5_data fcx_mldx5_data_##n = {                                \
+		.status = FCX_MLDX5_STATUS_UNKNOWN,                                        \
+	};                                                                                 \
+                                                                                           \
+	static const struct fcx_mldx5_cfg fcx_mldx5_cfg_##n = {                            \
+		.uart_dev = DEVICE_DT_GET(DT_INST_BUS(n)),                                 \
+		.cb = fcx_mldx5_uart_isr,                                                  \
+	};                                                                                 \
+                                                                                           \
+	PM_DEVICE_DT_INST_DEFINE(n, pm_action);                                            \
+                                                                                           \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, fcx_mldx5_init, PM_DEVICE_DT_INST_GET(n),          \
+				     &fcx_mldx5_data_##n, &fcx_mldx5_cfg_##n, POST_KERNEL, \
 				     CONFIG_SENSOR_INIT_PRIORITY, &fcx_mldx5_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(FCX_MLDX5_INIT)

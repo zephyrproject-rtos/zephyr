@@ -307,39 +307,39 @@ static const struct counter_driver_api counter_max32_driver_api = {
 #define TIMER(_num)    DT_INST_PARENT(_num)
 #define MAX32_TIM(idx) ((mxc_tmr_regs_t *)DT_REG_ADDR(TIMER(idx)))
 
-#define COUNTER_MAX32_DEFINE(_num)                                                                 \
-	static struct max32_tmr_ch_data counter##_num##_ch_data[MAX32_TIMER_CH];                   \
-	static void max32_tmr_irq_init_##_num(const struct device *dev)                            \
-	{                                                                                          \
-		IRQ_CONNECT(DT_IRQN(TIMER(_num)), DT_IRQ(TIMER(_num), priority),                   \
-			    counter_max32_isr, DEVICE_DT_INST_GET(_num), 0);                       \
-		irq_enable(DT_IRQN(TIMER(_num)));                                                  \
-	};                                                                                         \
-	static const struct max32_tmr_config max32_tmr_config_##_num = {                           \
-		.info =                                                                            \
-			{                                                                          \
-				.max_top_value = WRAP_MXC_IS_32B_TIMER(MAX32_TIM(_num))            \
-							 ? UINT32_MAX                              \
-							 : UINT16_MAX,                             \
-				.freq = ADI_MAX32_GET_PRPH_CLK_FREQ(                               \
-						DT_PROP(TIMER(_num), clock_source)) /              \
-					DT_PROP(TIMER(_num), prescaler),                           \
-				.flags = COUNTER_CONFIG_INFO_COUNT_UP,                             \
-				.channels = MAX32_TIMER_CH,                                        \
-			},                                                                         \
-		.regs = (mxc_tmr_regs_t *)DT_REG_ADDR(TIMER(_num)),                                \
-		.clock = DEVICE_DT_GET(DT_CLOCKS_CTLR(TIMER(_num))),                               \
-		.perclk.bus = DT_CLOCKS_CELL(TIMER(_num), offset),                                 \
-		.perclk.bit = DT_CLOCKS_CELL(TIMER(_num), bit),                                    \
-		.clock_source = DT_PROP(TIMER(_num), clock_source),                                \
-		.prescaler = DT_PROP(TIMER(_num), prescaler),                                      \
-		.irq_func = max32_tmr_irq_init_##_num,                                             \
-		.ch_data = counter##_num##_ch_data,                                                \
-		.wakeup_source = DT_PROP(TIMER(_num), wakeup_source),                              \
-	};                                                                                         \
-	static struct max32_tmr_data max32_tmr_data##_num;                                         \
-	DEVICE_DT_INST_DEFINE(_num, &max32_counter_init, NULL, &max32_tmr_data##_num,              \
-			      &max32_tmr_config_##_num, PRE_KERNEL_1,                              \
+#define COUNTER_MAX32_DEFINE(_num)                                                      \
+	static struct max32_tmr_ch_data counter##_num##_ch_data[MAX32_TIMER_CH];        \
+	static void max32_tmr_irq_init_##_num(const struct device *dev)                 \
+	{                                                                               \
+		IRQ_CONNECT(DT_IRQN(TIMER(_num)), DT_IRQ(TIMER(_num), priority),        \
+			    counter_max32_isr, DEVICE_DT_INST_GET(_num), 0);            \
+		irq_enable(DT_IRQN(TIMER(_num)));                                       \
+	};                                                                              \
+	static const struct max32_tmr_config max32_tmr_config_##_num = {                \
+		.info =                                                                 \
+			{                                                               \
+				.max_top_value = WRAP_MXC_IS_32B_TIMER(MAX32_TIM(_num)) \
+							 ? UINT32_MAX                   \
+							 : UINT16_MAX,                  \
+				.freq = ADI_MAX32_GET_PRPH_CLK_FREQ(                    \
+						DT_PROP(TIMER(_num), clock_source)) /   \
+					DT_PROP(TIMER(_num), prescaler),                \
+				.flags = COUNTER_CONFIG_INFO_COUNT_UP,                  \
+				.channels = MAX32_TIMER_CH,                             \
+			},                                                              \
+		.regs = (mxc_tmr_regs_t *)DT_REG_ADDR(TIMER(_num)),                     \
+		.clock = DEVICE_DT_GET(DT_CLOCKS_CTLR(TIMER(_num))),                    \
+		.perclk.bus = DT_CLOCKS_CELL(TIMER(_num), offset),                      \
+		.perclk.bit = DT_CLOCKS_CELL(TIMER(_num), bit),                         \
+		.clock_source = DT_PROP(TIMER(_num), clock_source),                     \
+		.prescaler = DT_PROP(TIMER(_num), prescaler),                           \
+		.irq_func = max32_tmr_irq_init_##_num,                                  \
+		.ch_data = counter##_num##_ch_data,                                     \
+		.wakeup_source = DT_PROP(TIMER(_num), wakeup_source),                   \
+	};                                                                              \
+	static struct max32_tmr_data max32_tmr_data##_num;                              \
+	DEVICE_DT_INST_DEFINE(_num, &max32_counter_init, NULL, &max32_tmr_data##_num,   \
+			      &max32_tmr_config_##_num, PRE_KERNEL_1,                   \
 			      CONFIG_COUNTER_INIT_PRIORITY, &counter_max32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_MAX32_DEFINE)

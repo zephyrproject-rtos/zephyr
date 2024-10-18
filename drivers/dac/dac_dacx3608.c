@@ -241,14 +241,14 @@ static const struct dac_driver_api dacx3608_driver_api = {
 
 #define INST_DT_DACX3608(inst, t) DT_INST(inst, ti_dac##t)
 
-#define DACX3608_DEVICE(t, n, res)                                                                 \
-	static struct dacx3608_data dac##t##_data_##n;                                             \
-	static const struct dacx3608_config dac##t##_config_##n = {                                \
-		.bus = I2C_DT_SPEC_GET(INST_DT_DACX3608(n, t)),                                    \
-		.resolution = res,                                                                 \
-	};                                                                                         \
-	DEVICE_DT_DEFINE(INST_DT_DACX3608(n, t), &dacx3608_init, NULL, &dac##t##_data_##n,         \
-			 &dac##t##_config_##n, POST_KERNEL, CONFIG_DAC_DACX3608_INIT_PRIORITY,     \
+#define DACX3608_DEVICE(t, n, res)                                                             \
+	static struct dacx3608_data dac##t##_data_##n;                                         \
+	static const struct dacx3608_config dac##t##_config_##n = {                            \
+		.bus = I2C_DT_SPEC_GET(INST_DT_DACX3608(n, t)),                                \
+		.resolution = res,                                                             \
+	};                                                                                     \
+	DEVICE_DT_DEFINE(INST_DT_DACX3608(n, t), &dacx3608_init, NULL, &dac##t##_data_##n,     \
+			 &dac##t##_config_##n, POST_KERNEL, CONFIG_DAC_DACX3608_INIT_PRIORITY, \
 			 &dacx3608_driver_api)
 
 /*
@@ -263,7 +263,7 @@ static const struct dac_driver_api dacx3608_driver_api = {
 
 #define CALL_WITH_ARG(arg, expr) expr(arg)
 
-#define INST_DT_DACX3608_FOREACH(t, inst_expr)                                                     \
+#define INST_DT_DACX3608_FOREACH(t, inst_expr)        \
 	LISTIFY(DT_NUM_INST_STATUS_OKAY(ti_dac##t), \
 		     CALL_WITH_ARG, (), inst_expr)
 

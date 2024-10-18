@@ -73,7 +73,7 @@ static int mcux_wdog32_disable(const struct device *dev)
 	return 0;
 }
 
-#define MSEC_TO_WDOG32_TICKS(clock_freq, divider, msec)                                            \
+#define MSEC_TO_WDOG32_TICKS(clock_freq, divider, msec)   \
 	((uint32_t)(clock_freq * msec / 1000U / divider))
 
 static int mcux_wdog32_install_timeout(const struct device *dev, const struct wdt_timeout_cfg *cfg)

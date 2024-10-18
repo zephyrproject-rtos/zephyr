@@ -208,38 +208,38 @@ static void i2c_sedi_isr(const struct device *dev)
 #define I2C_SEDI_IRQ_FLAGS_SENSE1(n) DT_INST_IRQ(n, sense)
 #define I2C_SEDI_IRQ_FLAGS(n)        _CONCAT(I2C_SEDI_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, sense))(n)
 
-#define I2C_DEVICE_INIT_SEDI(n)                                                                    \
-	static K_SEM_DEFINE(i2c_sedi_sem_##n, 0, 1);                                               \
-	static K_MUTEX_DEFINE(i2c_sedi_mutex_##n);                                                 \
-	static struct i2c_sedi_context i2c_sedi_data_##n = {                                       \
-		.sedi_device = DT_INST_PROP(n, peripheral_id),                                     \
-		.sem = &i2c_sedi_sem_##n,                                                          \
-		.mutex = &i2c_sedi_mutex_##n,                                                      \
-	};                                                                                         \
-	static void i2c_sedi_callback_##n(const uint32_t event)                                    \
-	{                                                                                          \
-		if (event == SEDI_I2C_EVENT_TRANSFER_DONE) {                                       \
-			i2c_sedi_data_##n.err = 0;                                                 \
-		} else {                                                                           \
-			i2c_sedi_data_##n.err = 1;                                                 \
-		}                                                                                  \
-		k_sem_give(i2c_sedi_data_##n.sem);                                                 \
-	};                                                                                         \
-	static void i2c_sedi_irq_config_##n(const struct device *dev)                              \
-	{                                                                                          \
-		ARG_UNUSED(dev);                                                                   \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), i2c_sedi_isr,               \
-			    DEVICE_DT_INST_GET(n), I2C_SEDI_IRQ_FLAGS(n));                         \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-	};                                                                                         \
-	static const struct i2c_sedi_config i2c_sedi_config_##n = {                                \
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
-		.cb_sedi = &i2c_sedi_callback_##n,                                                 \
-		.irq_config = &i2c_sedi_irq_config_##n,                                            \
-	};                                                                                         \
-	PM_DEVICE_DT_DEFINE(DT_NODELABEL(i2c##n), i2c_sedi_pm_action);                             \
-	I2C_DEVICE_DT_INST_DEFINE(n, i2c_sedi_init, PM_DEVICE_DT_GET(DT_NODELABEL(i2c##n)),        \
-				  &i2c_sedi_data_##n, &i2c_sedi_config_##n, PRE_KERNEL_2,          \
+#define I2C_DEVICE_INIT_SEDI(n)                                                             \
+	static K_SEM_DEFINE(i2c_sedi_sem_##n, 0, 1);                                        \
+	static K_MUTEX_DEFINE(i2c_sedi_mutex_##n);                                          \
+	static struct i2c_sedi_context i2c_sedi_data_##n = {                                \
+		.sedi_device = DT_INST_PROP(n, peripheral_id),                              \
+		.sem = &i2c_sedi_sem_##n,                                                   \
+		.mutex = &i2c_sedi_mutex_##n,                                               \
+	};                                                                                  \
+	static void i2c_sedi_callback_##n(const uint32_t event)                             \
+	{                                                                                   \
+		if (event == SEDI_I2C_EVENT_TRANSFER_DONE) {                                \
+			i2c_sedi_data_##n.err = 0;                                          \
+		} else {                                                                    \
+			i2c_sedi_data_##n.err = 1;                                          \
+		}                                                                           \
+		k_sem_give(i2c_sedi_data_##n.sem);                                          \
+	};                                                                                  \
+	static void i2c_sedi_irq_config_##n(const struct device *dev)                       \
+	{                                                                                   \
+		ARG_UNUSED(dev);                                                            \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), i2c_sedi_isr,        \
+			    DEVICE_DT_INST_GET(n), I2C_SEDI_IRQ_FLAGS(n));                  \
+		irq_enable(DT_INST_IRQN(n));                                                \
+	};                                                                                  \
+	static const struct i2c_sedi_config i2c_sedi_config_##n = {                         \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                       \
+		.cb_sedi = &i2c_sedi_callback_##n,                                          \
+		.irq_config = &i2c_sedi_irq_config_##n,                                     \
+	};                                                                                  \
+	PM_DEVICE_DT_DEFINE(DT_NODELABEL(i2c##n), i2c_sedi_pm_action);                      \
+	I2C_DEVICE_DT_INST_DEFINE(n, i2c_sedi_init, PM_DEVICE_DT_GET(DT_NODELABEL(i2c##n)), \
+				  &i2c_sedi_data_##n, &i2c_sedi_config_##n, PRE_KERNEL_2,   \
 				  CONFIG_I2C_INIT_PRIORITY, &i2c_sedi_apis);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_DEVICE_INIT_SEDI)

@@ -800,22 +800,22 @@ static const struct bt_hci_driver_api h5_driver_api = {
 	.send = h5_queue,
 };
 
-#define BT_UART_DEVICE_INIT(inst)                                                                  \
-	static K_KERNEL_STACK_DEFINE(rx_thread_stack_##inst, CONFIG_BT_DRV_RX_STACK_SIZE);         \
-	static struct k_thread rx_thread_##inst;                                                   \
-	static K_KERNEL_STACK_DEFINE(tx_thread_stack_##inst, CONFIG_BT_DRV_TX_STACK_SIZE);         \
-	static struct k_thread tx_thread_##inst;                                                   \
-	static const struct h5_config h5_config_##inst = {                                         \
-		.uart = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                       \
-		.rx_stack = rx_thread_stack_##inst,                                                \
-		.rx_stack_size = K_KERNEL_STACK_SIZEOF(rx_thread_stack_##inst),                    \
-		.rx_thread = &rx_thread_##inst,                                                    \
-		.tx_stack = tx_thread_stack_##inst,                                                \
-		.tx_stack_size = K_KERNEL_STACK_SIZEOF(tx_thread_stack_##inst),                    \
-		.tx_thread = &tx_thread_##inst,                                                    \
-	};                                                                                         \
-	static struct h5_data h5_##inst;                                                           \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &h5_##inst, &h5_config_##inst, POST_KERNEL,        \
+#define BT_UART_DEVICE_INIT(inst)                                                           \
+	static K_KERNEL_STACK_DEFINE(rx_thread_stack_##inst, CONFIG_BT_DRV_RX_STACK_SIZE);  \
+	static struct k_thread rx_thread_##inst;                                            \
+	static K_KERNEL_STACK_DEFINE(tx_thread_stack_##inst, CONFIG_BT_DRV_TX_STACK_SIZE);  \
+	static struct k_thread tx_thread_##inst;                                            \
+	static const struct h5_config h5_config_##inst = {                                  \
+		.uart = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                \
+		.rx_stack = rx_thread_stack_##inst,                                         \
+		.rx_stack_size = K_KERNEL_STACK_SIZEOF(rx_thread_stack_##inst),             \
+		.rx_thread = &rx_thread_##inst,                                             \
+		.tx_stack = tx_thread_stack_##inst,                                         \
+		.tx_stack_size = K_KERNEL_STACK_SIZEOF(tx_thread_stack_##inst),             \
+		.tx_thread = &tx_thread_##inst,                                             \
+	};                                                                                  \
+	static struct h5_data h5_##inst;                                                    \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &h5_##inst, &h5_config_##inst, POST_KERNEL, \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &h5_driver_api)
 
 DT_INST_FOREACH_STATUS_OKAY(BT_UART_DEVICE_INIT)

@@ -287,9 +287,9 @@ static const struct adc_driver_api adc_nrfx_driver_api = {
  * Just in case that assumption becomes invalid in the future, we use
  * a BUILD_ASSERT().
  */
-#define ADC_INIT(inst)                                                                             \
-	BUILD_ASSERT((inst) == 0, "multiple instances not supported");                             \
-	DEVICE_DT_INST_DEFINE(0, init_adc, NULL, NULL, NULL, POST_KERNEL,                          \
+#define ADC_INIT(inst)                                                         \
+	BUILD_ASSERT((inst) == 0, "multiple instances not supported");         \
+	DEVICE_DT_INST_DEFINE(0, init_adc, NULL, NULL, NULL, POST_KERNEL,      \
 			      CONFIG_ADC_INIT_PRIORITY, &adc_nrfx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_INIT)

@@ -186,17 +186,17 @@ static int a01nyub_init(const struct device *dev)
 	return ret;
 }
 
-#define A01NYUB_INIT(inst)                                                                         \
-                                                                                                   \
-	static struct a01nyub_data a01nyub_data_##inst;                                            \
-                                                                                                   \
-	static const struct a01nyub_cfg a01nyub_cfg_##inst = {                                     \
-		.uart_dev = DEVICE_DT_GET(DT_INST_BUS(inst)),                                      \
-		.cb = a01nyub_uart_isr,                                                            \
-	};                                                                                         \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, a01nyub_init, NULL, &a01nyub_data_##inst,               \
-				     &a01nyub_cfg_##inst, POST_KERNEL,                             \
+#define A01NYUB_INIT(inst)                                                             \
+                                                                                       \
+	static struct a01nyub_data a01nyub_data_##inst;                                \
+                                                                                       \
+	static const struct a01nyub_cfg a01nyub_cfg_##inst = {                         \
+		.uart_dev = DEVICE_DT_GET(DT_INST_BUS(inst)),                          \
+		.cb = a01nyub_uart_isr,                                                \
+	};                                                                             \
+                                                                                       \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, a01nyub_init, NULL, &a01nyub_data_##inst,   \
+				     &a01nyub_cfg_##inst, POST_KERNEL,                 \
 				     CONFIG_SENSOR_INIT_PRIORITY, &a01nyub_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(A01NYUB_INIT)

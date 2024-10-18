@@ -25,19 +25,19 @@ LOG_MODULE_REGISTER(i2c_infineon_xmc4, CONFIG_I2C_LOG_LEVEL);
 #define USIC_IRQ_MIN  84
 #define IRQS_PER_USIC 6
 
-#define I2C_XMC_EVENTS_MASK                                                                        \
-	(XMC_I2C_CH_EVENT_RECEIVE_START | XMC_I2C_CH_EVENT_DATA_LOST |                             \
-	 XMC_I2C_CH_EVENT_TRANSMIT_SHIFT | XMC_I2C_CH_EVENT_TRANSMIT_BUFFER |                      \
-	 XMC_I2C_CH_EVENT_STANDARD_RECEIVE | XMC_I2C_CH_EVENT_ALTERNATIVE_RECEIVE |                \
-	 XMC_I2C_CH_EVENT_BAUD_RATE_GENERATOR | XMC_I2C_CH_EVENT_START_CONDITION_RECEIVED |        \
-	 XMC_I2C_CH_EVENT_REPEATED_START_CONDITION_RECEIVED |                                      \
-	 XMC_I2C_CH_EVENT_STOP_CONDITION_RECEIVED | XMC_I2C_CH_EVENT_NACK |                        \
-	 XMC_I2C_CH_EVENT_ARBITRATION_LOST | XMC_I2C_CH_EVENT_SLAVE_READ_REQUEST |                 \
+#define I2C_XMC_EVENTS_MASK                                                                 \
+	(XMC_I2C_CH_EVENT_RECEIVE_START | XMC_I2C_CH_EVENT_DATA_LOST |                      \
+	 XMC_I2C_CH_EVENT_TRANSMIT_SHIFT | XMC_I2C_CH_EVENT_TRANSMIT_BUFFER |               \
+	 XMC_I2C_CH_EVENT_STANDARD_RECEIVE | XMC_I2C_CH_EVENT_ALTERNATIVE_RECEIVE |         \
+	 XMC_I2C_CH_EVENT_BAUD_RATE_GENERATOR | XMC_I2C_CH_EVENT_START_CONDITION_RECEIVED | \
+	 XMC_I2C_CH_EVENT_REPEATED_START_CONDITION_RECEIVED |                               \
+	 XMC_I2C_CH_EVENT_STOP_CONDITION_RECEIVED | XMC_I2C_CH_EVENT_NACK |                 \
+	 XMC_I2C_CH_EVENT_ARBITRATION_LOST | XMC_I2C_CH_EVENT_SLAVE_READ_REQUEST |          \
 	 XMC_I2C_CH_EVENT_ERROR | XMC_I2C_CH_EVENT_ACK)
 
-#define I2C_XMC_STATUS_FLAG_ERROR_MASK                                                             \
-	(XMC_I2C_CH_STATUS_FLAG_WRONG_TDF_CODE_FOUND | XMC_I2C_CH_STATUS_FLAG_NACK_RECEIVED |      \
-	 XMC_I2C_CH_STATUS_FLAG_ARBITRATION_LOST | XMC_I2C_CH_STATUS_FLAG_ERROR |                  \
+#define I2C_XMC_STATUS_FLAG_ERROR_MASK                                                        \
+	(XMC_I2C_CH_STATUS_FLAG_WRONG_TDF_CODE_FOUND | XMC_I2C_CH_STATUS_FLAG_NACK_RECEIVED | \
+	 XMC_I2C_CH_STATUS_FLAG_ARBITRATION_LOST | XMC_I2C_CH_STATUS_FLAG_ERROR |             \
 	 XMC_I2C_CH_STATUS_FLAG_DATA_LOST_INDICATION)
 
 /* I2C speed */
@@ -424,45 +424,45 @@ static const struct i2c_driver_api i2c_xmc4_driver_api = {
 };
 
 /* Macros for I2C instance declaration */
-#define XMC4_IRQ_HANDLER_INIT(index)                                                               \
-	static void i2c_xmc4_irq_setup_##index(const struct device *dev)                           \
-	{                                                                                          \
-		const struct ifx_xmc4_i2c_config *config = dev->config;                            \
-		uint8_t irq_num = DT_INST_IRQN(index);                                             \
-		uint8_t service_request = (irq_num - USIC_IRQ_MIN) % IRQS_PER_USIC;                \
-                                                                                                   \
-		XMC_I2C_CH_SelectInterruptNodePointer(                                             \
-			config->i2c, XMC_I2C_CH_INTERRUPT_NODE_POINTER_RECEIVE, service_request);  \
-		XMC_I2C_CH_SelectInterruptNodePointer(                                             \
-			config->i2c, XMC_I2C_CH_INTERRUPT_NODE_POINTER_ALTERNATE_RECEIVE,          \
-			service_request);                                                          \
-                                                                                                   \
-		XMC_I2C_CH_EnableEvent(config->i2c, I2C_XMC_EVENTS_MASK);                          \
-                                                                                                   \
-		IRQ_CONNECT(DT_INST_IRQN(index), DT_INST_IRQ(index, priority), i2c_xmc4_isr,       \
-			    DEVICE_DT_INST_GET(index), 0);                                         \
-                                                                                                   \
-		irq_enable(irq_num);                                                               \
+#define XMC4_IRQ_HANDLER_INIT(index)                                                              \
+	static void i2c_xmc4_irq_setup_##index(const struct device *dev)                          \
+	{                                                                                         \
+		const struct ifx_xmc4_i2c_config *config = dev->config;                           \
+		uint8_t irq_num = DT_INST_IRQN(index);                                            \
+		uint8_t service_request = (irq_num - USIC_IRQ_MIN) % IRQS_PER_USIC;               \
+                                                                                                  \
+		XMC_I2C_CH_SelectInterruptNodePointer(                                            \
+			config->i2c, XMC_I2C_CH_INTERRUPT_NODE_POINTER_RECEIVE, service_request); \
+		XMC_I2C_CH_SelectInterruptNodePointer(                                            \
+			config->i2c, XMC_I2C_CH_INTERRUPT_NODE_POINTER_ALTERNATE_RECEIVE,         \
+			service_request);                                                         \
+                                                                                                  \
+		XMC_I2C_CH_EnableEvent(config->i2c, I2C_XMC_EVENTS_MASK);                         \
+                                                                                                  \
+		IRQ_CONNECT(DT_INST_IRQN(index), DT_INST_IRQ(index, priority), i2c_xmc4_isr,      \
+			    DEVICE_DT_INST_GET(index), 0);                                        \
+                                                                                                  \
+		irq_enable(irq_num);                                                              \
 	}
 
 #define XMC4_IRQ_HANDLER_STRUCT_INIT(index) .irq_config_func = i2c_xmc4_irq_setup_##index
 
-#define INFINEON_XMC4_I2C_INIT(n)                                                                  \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	XMC4_IRQ_HANDLER_INIT(n)                                                                   \
-                                                                                                   \
-	static struct ifx_xmc4_i2c_data ifx_xmc4_i2c_data##n;                                      \
-                                                                                                   \
-	static const struct ifx_xmc4_i2c_config i2c_xmc4_cfg_##n = {                               \
-		.i2c = (XMC_USIC_CH_t *)DT_INST_REG_ADDR(n),                                       \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		.scl_src = DT_INST_ENUM_IDX(n, scl_src),                                           \
-		.sda_src = DT_INST_ENUM_IDX(n, sda_src),                                           \
-		.bitrate = DT_INST_PROP_OR(n, clock_frequency, I2C_SPEED_STANDARD),                \
-		XMC4_IRQ_HANDLER_STRUCT_INIT(n)};                                                  \
-                                                                                                   \
-	I2C_DEVICE_DT_INST_DEFINE(n, ifx_xmc4_i2c_init, NULL, &ifx_xmc4_i2c_data##n,               \
-				  &i2c_xmc4_cfg_##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,        \
+#define INFINEON_XMC4_I2C_INIT(n)                                                           \
+	PINCTRL_DT_INST_DEFINE(n);                                                          \
+	XMC4_IRQ_HANDLER_INIT(n)                                                            \
+                                                                                            \
+	static struct ifx_xmc4_i2c_data ifx_xmc4_i2c_data##n;                               \
+                                                                                            \
+	static const struct ifx_xmc4_i2c_config i2c_xmc4_cfg_##n = {                        \
+		.i2c = (XMC_USIC_CH_t *)DT_INST_REG_ADDR(n),                                \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                  \
+		.scl_src = DT_INST_ENUM_IDX(n, scl_src),                                    \
+		.sda_src = DT_INST_ENUM_IDX(n, sda_src),                                    \
+		.bitrate = DT_INST_PROP_OR(n, clock_frequency, I2C_SPEED_STANDARD),         \
+		XMC4_IRQ_HANDLER_STRUCT_INIT(n)};                                           \
+                                                                                            \
+	I2C_DEVICE_DT_INST_DEFINE(n, ifx_xmc4_i2c_init, NULL, &ifx_xmc4_i2c_data##n,        \
+				  &i2c_xmc4_cfg_##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, \
 				  &i2c_xmc4_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_XMC4_I2C_INIT)

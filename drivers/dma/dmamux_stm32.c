@@ -99,7 +99,7 @@ struct dmamux_stm32_dma_fops {
 	dma_status_fn get_status;
 };
 
-#if (defined(CONFIG_DMA_STM32_V1) || defined(CONFIG_DMA_STM32_V2)) &&                              \
+#if (defined(CONFIG_DMA_STM32_V1) || defined(CONFIG_DMA_STM32_V2)) && \
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dmamux1))
 static const struct dmamux_stm32_dma_fops dmamux1 = {
 	dma_stm32_configure, dma_stm32_start,      dma_stm32_stop,
@@ -323,37 +323,37 @@ static const struct dma_driver_api dma_funcs = {
  */
 
 #define DMA_1_BEGIN_DMAMUX_CHANNEL DT_PROP_OR(DT_NODELABEL(dma1), dma_offset, 0)
-#define DMA_1_END_DMAMUX_CHANNEL                                                                   \
+#define DMA_1_END_DMAMUX_CHANNEL                                                       \
 	(DMA_1_BEGIN_DMAMUX_CHANNEL + DT_PROP_OR(DT_NODELABEL(dma1), dma_requests, 0))
-#define DEV_DMA1                                                                                   \
+#define DEV_DMA1                                                   \
 	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dma1)), \
 			     DEVICE_DT_GET(DT_NODELABEL(dma1)), NULL)
 
 #define DMA_2_BEGIN_DMAMUX_CHANNEL DT_PROP_OR(DT_NODELABEL(dma2), dma_offset, 0)
-#define DMA_2_END_DMAMUX_CHANNEL                                                                   \
+#define DMA_2_END_DMAMUX_CHANNEL                                                       \
 	(DMA_2_BEGIN_DMAMUX_CHANNEL + DT_PROP_OR(DT_NODELABEL(dma2), dma_requests, 0))
-#define DEV_DMA2                                                                                   \
+#define DEV_DMA2                                                   \
 	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dma2)), \
 			     DEVICE_DT_GET(DT_NODELABEL(dma2)), NULL)
 
 #define BDMA_1_BEGIN_DMAMUX_CHANNEL DT_PROP_OR(DT_NODELABEL(bdma1), dma_offset, 0)
-#define BDMA_1_END_DMAMUX_CHANNEL                                                                  \
+#define BDMA_1_END_DMAMUX_CHANNEL                                                        \
 	(BDMA_1_BEGIN_DMAMUX_CHANNEL + DT_PROP_OR(DT_NODELABEL(bdma1), dma_requests, 0))
-#define DEV_BDMA                                                                                   \
+#define DEV_BDMA                                                    \
 	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(bdma1)), \
 			     DEVICE_DT_GET(DT_NODELABEL(bdma1)), NULL)
 
-#define DEV_DMA_BINDING(mux_channel)                                                               \
+#define DEV_DMA_BINDING(mux_channel)                                     \
 	((mux_channel < DMA_1_END_DMAMUX_CHANNEL) ? DEV_DMA1 : DEV_DMA2)
 
 #define DEV_BDMA_BINDING(mux_channel) (DEV_BDMA)
 
-#define DMA_CHANNEL(mux_channel)                                                                   \
-	((mux_channel < DMA_1_END_DMAMUX_CHANNEL)                                                  \
-		 ? (mux_channel + 1)                                                               \
+#define DMA_CHANNEL(mux_channel)                                   \
+	((mux_channel < DMA_1_END_DMAMUX_CHANNEL)                  \
+		 ? (mux_channel + 1)                               \
 		 : (mux_channel - DMA_2_BEGIN_DMAMUX_CHANNEL + 1))
 
-#define BDMA_CHANNEL(mux_channel)                                                                  \
+#define BDMA_CHANNEL(mux_channel)                                                           \
 	((mux_channel < BDMA_1_END_DMAMUX_CHANNEL) ? (mux_channel) : 0 /* not supported */)
 
 /*
@@ -364,15 +364,15 @@ static const struct dma_driver_api dma_funcs = {
  * Note: Instance Number (or index) has no guarantee to which dmamux it refers
  */
 
-#define INIT_DMAMUX1_CHANNEL(x, ...)                                                               \
-	{                                                                                          \
-		.dev_dma = DEV_DMA_BINDING(x),                                                     \
-		.dma_id = DMA_CHANNEL(x),                                                          \
+#define INIT_DMAMUX1_CHANNEL(x, ...)           \
+	{                                      \
+		.dev_dma = DEV_DMA_BINDING(x), \
+		.dma_id = DMA_CHANNEL(x),      \
 	}
-#define INIT_DMAMUX2_CHANNEL(x, ...)                                                               \
-	{                                                                                          \
-		.dev_dma = DEV_BDMA_BINDING(x),                                                    \
-		.dma_id = BDMA_CHANNEL(x),                                                         \
+#define INIT_DMAMUX2_CHANNEL(x, ...)            \
+	{                                       \
+		.dev_dma = DEV_BDMA_BINDING(x), \
+		.dma_id = BDMA_CHANNEL(x),      \
 	}
 
 #if DT_SAME_NODE(DT_DRV_INST(0), DT_NODELABEL(dmamux1))
@@ -385,29 +385,29 @@ static const struct dma_driver_api dma_funcs = {
 
 #define DMAMUX_CHANNELS_INIT(index, count) LISTIFY(count, INIT_INST##index##_CHANNEL, (,))
 
-#define DMAMUX_CLOCK_INIT(index)                                                                   \
+#define DMAMUX_CLOCK_INIT(index)                             \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(index, clocks),		\
 	(.pclken = {	.bus = DT_INST_CLOCKS_CELL(index, bus),		\
 			.enr = DT_INST_CLOCKS_CELL(index, bits)},),	\
 	())
 
-#define DMAMUX_INIT(index)                                                                         \
-	static const struct dmamux_stm32_channel                                                   \
-		dmamux_stm32_channels_##index[DT_INST_PROP(index, dma_channels)] = {               \
-			DMAMUX_CHANNELS_INIT(index, DT_INST_PROP(index, dma_channels))};           \
-                                                                                                   \
-	const struct dmamux_stm32_config dmamux_stm32_config_##index = {                           \
-		DMAMUX_CLOCK_INIT(index).base = DT_INST_REG_ADDR(index),                           \
-		.channel_nb = DT_INST_PROP(index, dma_channels),                                   \
-		.gen_nb = DT_INST_PROP(index, dma_generators),                                     \
-		.req_nb = DT_INST_PROP(index, dma_requests),                                       \
-		.mux_channels = dmamux_stm32_channels_##index,                                     \
-	};                                                                                         \
-                                                                                                   \
-	static struct dmamux_stm32_data dmamux_stm32_data_##index;                                 \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(index, &dmamux_stm32_init, NULL, &dmamux_stm32_data_##index,         \
-			      &dmamux_stm32_config_##index, PRE_KERNEL_1,                          \
+#define DMAMUX_INIT(index)                                                                 \
+	static const struct dmamux_stm32_channel                                           \
+		dmamux_stm32_channels_##index[DT_INST_PROP(index, dma_channels)] = {       \
+			DMAMUX_CHANNELS_INIT(index, DT_INST_PROP(index, dma_channels))};   \
+                                                                                           \
+	const struct dmamux_stm32_config dmamux_stm32_config_##index = {                   \
+		DMAMUX_CLOCK_INIT(index).base = DT_INST_REG_ADDR(index),                   \
+		.channel_nb = DT_INST_PROP(index, dma_channels),                           \
+		.gen_nb = DT_INST_PROP(index, dma_generators),                             \
+		.req_nb = DT_INST_PROP(index, dma_requests),                               \
+		.mux_channels = dmamux_stm32_channels_##index,                             \
+	};                                                                                 \
+                                                                                           \
+	static struct dmamux_stm32_data dmamux_stm32_data_##index;                         \
+                                                                                           \
+	DEVICE_DT_INST_DEFINE(index, &dmamux_stm32_init, NULL, &dmamux_stm32_data_##index, \
+			      &dmamux_stm32_config_##index, PRE_KERNEL_1,                  \
 			      CONFIG_DMAMUX_STM32_INIT_PRIORITY, &dma_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(DMAMUX_INIT)

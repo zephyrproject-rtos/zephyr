@@ -215,16 +215,16 @@ static struct spi_driver_api api = {
 	.release = release,
 };
 
-#define SPI_INIT(n)                                                                                \
-	static const struct cfg cfg_##n = {                                                        \
-		.regs = (struct spimctrl_regs *)DT_INST_REG_ADDR(n),                               \
-		.interrupt = DT_INST_IRQN(n),                                                      \
-	};                                                                                         \
-	static struct data data_##n = {                                                            \
-		SPI_CONTEXT_INIT_LOCK(data_##n, ctx),                                              \
-		SPI_CONTEXT_INIT_SYNC(data_##n, ctx),                                              \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, init, NULL, &data_##n, &cfg_##n, POST_KERNEL,                     \
+#define SPI_INIT(n)                                                            \
+	static const struct cfg cfg_##n = {                                    \
+		.regs = (struct spimctrl_regs *)DT_INST_REG_ADDR(n),           \
+		.interrupt = DT_INST_IRQN(n),                                  \
+	};                                                                     \
+	static struct data data_##n = {                                        \
+		SPI_CONTEXT_INIT_LOCK(data_##n, ctx),                          \
+		SPI_CONTEXT_INIT_SYNC(data_##n, ctx),                          \
+	};                                                                     \
+	DEVICE_DT_INST_DEFINE(n, init, NULL, &data_##n, &cfg_##n, POST_KERNEL, \
 			      CONFIG_SPI_INIT_PRIORITY, &api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_INIT)

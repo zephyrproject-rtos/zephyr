@@ -75,10 +75,10 @@ LOG_MODULE_REGISTER(nrf_usbd_common, CONFIG_NRF_USBD_COMMON_LOG_LEVEL);
  *
  * @param ep Endpoint number to validity check.
  */
-#define NRF_USBD_COMMON_ASSERT_EP_VALID(ep)                                                        \
-	__ASSERT_NO_MSG(((NRF_USBD_COMMON_EP_IS_IN(ep) &&                                          \
-			  (NRF_USBD_COMMON_EP_NUM(ep) < NRF_USBD_COMMON_EPIN_CNT)) ||              \
-			 (NRF_USBD_COMMON_EP_IS_OUT(ep) &&                                         \
+#define NRF_USBD_COMMON_ASSERT_EP_VALID(ep)                                            \
+	__ASSERT_NO_MSG(((NRF_USBD_COMMON_EP_IS_IN(ep) &&                              \
+			  (NRF_USBD_COMMON_EP_NUM(ep) < NRF_USBD_COMMON_EPIN_CNT)) ||  \
+			 (NRF_USBD_COMMON_EP_IS_OUT(ep) &&                             \
 			  (NRF_USBD_COMMON_EP_NUM(ep) < NRF_USBD_COMMON_EPOUT_CNT))));
 
 /**
@@ -110,8 +110,8 @@ LOG_MODULE_REGISTER(nrf_usbd_common, CONFIG_NRF_USBD_COMMON_LOG_LEVEL);
 /**
  * @brief Isochronous endpoint bit mask
  */
-#define USBD_EPISO_BIT_MASK                                                                        \
-	((1U << NRF_USBD_COMMON_EP_BITPOS(NRF_USBD_COMMON_EPOUT8)) |                               \
+#define USBD_EPISO_BIT_MASK                                          \
+	((1U << NRF_USBD_COMMON_EP_BITPOS(NRF_USBD_COMMON_EPOUT8)) | \
 	 (1U << NRF_USBD_COMMON_EP_BITPOS(NRF_USBD_COMMON_EPIN8)))
 
 /**
@@ -123,9 +123,9 @@ LOG_MODULE_REGISTER(nrf_usbd_common, CONFIG_NRF_USBD_COMMON_LOG_LEVEL);
  * @param[in] ep Endpoint number.
  * @return Endpoint bit position.
  */
-#define NRF_USBD_COMMON_EP_BITPOS(ep)                                                              \
-	((NRF_USBD_COMMON_EP_IS_IN(ep) ? NRF_USBD_COMMON_EPIN_BITPOS_0                             \
-				       : NRF_USBD_COMMON_EPOUT_BITPOS_0) +                         \
+#define NRF_USBD_COMMON_EP_BITPOS(ep)                                      \
+	((NRF_USBD_COMMON_EP_IS_IN(ep) ? NRF_USBD_COMMON_EPIN_BITPOS_0     \
+				       : NRF_USBD_COMMON_EPOUT_BITPOS_0) + \
 	 NRF_USBD_COMMON_EP_NUM(ep))
 
 /**
@@ -137,9 +137,9 @@ LOG_MODULE_REGISTER(nrf_usbd_common, CONFIG_NRF_USBD_COMMON_LOG_LEVEL);
  *
  * @return Initialized event constant variable.
  */
-#define NRF_USBD_COMMON_EP_TRANSFER_EVENT(name, endpont, ep_stat)                                  \
-	const nrf_usbd_common_evt_t name = {                                                       \
-		NRF_USBD_COMMON_EVT_EPTRANSFER,                                                    \
+#define NRF_USBD_COMMON_EP_TRANSFER_EVENT(name, endpont, ep_stat)           \
+	const nrf_usbd_common_evt_t name = {                                \
+		NRF_USBD_COMMON_EVT_EPTRANSFER,                             \
 		.data = {.eptransfer = {.ep = endpont, .status = ep_stat}}}
 
 /* Check it the bit positions values match defined DATAEPSTATUS bit positions */

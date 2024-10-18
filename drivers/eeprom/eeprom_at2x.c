@@ -35,8 +35,8 @@ LOG_MODULE_REGISTER(eeprom_at2x);
 #define EEPROM_AT25_STATUS_BP1 BIT(3) /* Block Protection 1 (RW) */
 
 #define HAS_WP_OR(id) DT_NODE_HAS_PROP(id, wp_gpios) ||
-#define ANY_INST_HAS_WP_GPIOS                                                                      \
-	(DT_FOREACH_STATUS_OKAY(atmel_at24, HAS_WP_OR)                                             \
+#define ANY_INST_HAS_WP_GPIOS                                     \
+	(DT_FOREACH_STATUS_OKAY(atmel_at24, HAS_WP_OR)            \
 		 DT_FOREACH_STATUS_OKAY(atmel_at25, HAS_WP_OR) 0)
 
 struct eeprom_at2x_config {
@@ -589,25 +589,25 @@ static const struct eeprom_driver_api eeprom_at2x_api = {
 
 #define ASSERT_AT24_ADDR_W_VALID(w) BUILD_ASSERT(w == 8U || w == 16U, "Unsupported address width")
 
-#define ASSERT_AT25_ADDR_W_VALID(w)                                                                \
+#define ASSERT_AT25_ADDR_W_VALID(w)                                                \
 	BUILD_ASSERT(w == 8U || w == 16U || w == 24U, "Unsupported address width")
 
-#define ASSERT_PAGESIZE_IS_POWER_OF_2(page)                                                        \
-	BUILD_ASSERT((page != 0U) && ((page & (page - 1)) == 0U), "Page size is not a power of "   \
+#define ASSERT_PAGESIZE_IS_POWER_OF_2(page)                                                      \
+	BUILD_ASSERT((page != 0U) && ((page & (page - 1)) == 0U), "Page size is not a power of " \
 								  "two")
 
-#define ASSERT_SIZE_PAGESIZE_VALID(size, page)                                                     \
+#define ASSERT_SIZE_PAGESIZE_VALID(size, page)                                          \
 	BUILD_ASSERT(size % page == 0U, "Size is not an integer multiple of page size")
 
 #define INST_DT_AT2X(inst, t) DT_INST(inst, atmel_at##t)
 
 #define EEPROM_AT24_BUS(n, t) {.i2c = I2C_DT_SPEC_GET(INST_DT_AT2X(n, t))}
 
-#define EEPROM_AT25_BUS(n, t)                                                                      \
-	{.spi = SPI_DT_SPEC_GET(INST_DT_AT2X(n, t),                                                \
+#define EEPROM_AT25_BUS(n, t)                                                                \
+	{.spi = SPI_DT_SPEC_GET(INST_DT_AT2X(n, t),                                          \
 				SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 0)}
 
-#define EEPROM_AT2X_WP_GPIOS(id)                                                                   \
+#define EEPROM_AT2X_WP_GPIOS(id)                       \
 	IF_ENABLED(DT_NODE_HAS_PROP(id, wp_gpios),			\
 		   (.wp_gpio = GPIO_DT_SPEC_GET(id, wp_gpios),))
 
@@ -637,7 +637,7 @@ static const struct eeprom_driver_api eeprom_at2x_api = {
 
 #define CALL_WITH_ARG(arg, expr) expr(arg);
 
-#define INST_DT_AT2X_FOREACH(t, inst_expr)                                                         \
+#define INST_DT_AT2X_FOREACH(t, inst_expr)              \
 	LISTIFY(DT_NUM_INST_STATUS_OKAY(atmel_at##t),	\
 		CALL_WITH_ARG, (), inst_expr)
 

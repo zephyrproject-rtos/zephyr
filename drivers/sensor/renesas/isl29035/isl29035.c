@@ -132,16 +132,16 @@ static int isl29035_init(const struct device *dev)
 	return 0;
 }
 
-#define ISL29035_DEFINE(inst)                                                                      \
-	static struct isl29035_driver_data isl29035_data_##inst;                                   \
-                                                                                                   \
-	static const struct isl29035_config isl29035_config_##inst = {                             \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+#define ISL29035_DEFINE(inst)                                                            \
+	static struct isl29035_driver_data isl29035_data_##inst;                         \
+                                                                                         \
+	static const struct isl29035_config isl29035_config_##inst = {                   \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                       \
 		IF_ENABLED(CONFIG_ISL29035_TRIGGER,						\
-			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),)) };           \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &isl29035_init, NULL, &isl29035_data_##inst,            \
-				     &isl29035_config_##inst, POST_KERNEL,                         \
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),)) }; \
+                                                                                         \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, &isl29035_init, NULL, &isl29035_data_##inst,  \
+				     &isl29035_config_##inst, POST_KERNEL,               \
 				     CONFIG_SENSOR_INIT_PRIORITY, &isl29035_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ISL29035_DEFINE)

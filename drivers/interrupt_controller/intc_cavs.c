@@ -110,39 +110,39 @@ static const struct irq_next_level_api cavs_apis = {
 	.intr_get_line_state = cavs_ictl_irq_get_line_state,
 };
 
-#define CAVS_ICTL_INIT(n)                                                                          \
-	static int cavs_ictl_##n##_initialize(const struct device *port)                           \
-	{                                                                                          \
-		struct cavs_ictl_runtime *context = port->data;                                    \
-		volatile struct cavs_registers *const regs = get_base_address(context);            \
-		regs->disable_il = ~0;                                                             \
-                                                                                                   \
-		return 0;                                                                          \
-	}                                                                                          \
-                                                                                                   \
-	static void cavs_config_##n##_irq(const struct device *port);                              \
-                                                                                                   \
-	static const struct cavs_ictl_config cavs_config_##n = {                                   \
-		.irq_num = DT_INST_IRQN(n),                                                        \
-		.isr_table_offset =                                                                \
-			CONFIG_CAVS_ISR_TBL_OFFSET + CONFIG_MAX_IRQ_PER_AGGREGATOR * n,            \
-		.config_func = cavs_config_##n##_irq,                                              \
-	};                                                                                         \
-                                                                                                   \
-	static struct cavs_ictl_runtime cavs_##n##_runtime = {                                     \
-		.base_addr = DT_INST_REG_ADDR(n),                                                  \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, cavs_ictl_##n##_initialize, NULL, &cavs_##n##_runtime,            \
-			      &cavs_config_##n, PRE_KERNEL_1, CONFIG_CAVS_ICTL_INIT_PRIORITY,      \
-			      &cavs_apis);                                                         \
-                                                                                                   \
-	static void cavs_config_##n##_irq(const struct device *port)                               \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), cavs_ictl_isr,              \
-			    DEVICE_DT_INST_GET(n), DT_INST_IRQ(n, sense));                         \
-	}                                                                                          \
-	IRQ_PARENT_ENTRY_DEFINE(intc_cavs_##n, DEVICE_DT_INST_GET(n), DT_INST_IRQN(n),             \
-				INTC_INST_ISR_TBL_OFFSET(n),                                       \
+#define CAVS_ICTL_INIT(n)                                                                     \
+	static int cavs_ictl_##n##_initialize(const struct device *port)                      \
+	{                                                                                     \
+		struct cavs_ictl_runtime *context = port->data;                               \
+		volatile struct cavs_registers *const regs = get_base_address(context);       \
+		regs->disable_il = ~0;                                                        \
+                                                                                              \
+		return 0;                                                                     \
+	}                                                                                     \
+                                                                                              \
+	static void cavs_config_##n##_irq(const struct device *port);                         \
+                                                                                              \
+	static const struct cavs_ictl_config cavs_config_##n = {                              \
+		.irq_num = DT_INST_IRQN(n),                                                   \
+		.isr_table_offset =                                                           \
+			CONFIG_CAVS_ISR_TBL_OFFSET + CONFIG_MAX_IRQ_PER_AGGREGATOR * n,       \
+		.config_func = cavs_config_##n##_irq,                                         \
+	};                                                                                    \
+                                                                                              \
+	static struct cavs_ictl_runtime cavs_##n##_runtime = {                                \
+		.base_addr = DT_INST_REG_ADDR(n),                                             \
+	};                                                                                    \
+	DEVICE_DT_INST_DEFINE(n, cavs_ictl_##n##_initialize, NULL, &cavs_##n##_runtime,       \
+			      &cavs_config_##n, PRE_KERNEL_1, CONFIG_CAVS_ICTL_INIT_PRIORITY, \
+			      &cavs_apis);                                                    \
+                                                                                              \
+	static void cavs_config_##n##_irq(const struct device *port)                          \
+	{                                                                                     \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), cavs_ictl_isr,         \
+			    DEVICE_DT_INST_GET(n), DT_INST_IRQ(n, sense));                    \
+	}                                                                                     \
+	IRQ_PARENT_ENTRY_DEFINE(intc_cavs_##n, DEVICE_DT_INST_GET(n), DT_INST_IRQN(n),        \
+				INTC_INST_ISR_TBL_OFFSET(n),                                  \
 				DT_INST_INTC_GET_AGGREGATOR_LEVEL(n));
 
 DT_INST_FOREACH_STATUS_OKAY(CAVS_ICTL_INIT)

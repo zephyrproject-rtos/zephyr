@@ -20,34 +20,34 @@ LOG_MODULE_REGISTER(nxp_s32_qspi_nor, CONFIG_FLASH_LOG_LEVEL);
 
 #include "memc_nxp_s32_qspi.h"
 
-#define QSPI_INST_NODE_HAS_PROP_EQ_AND_OR(n, prop, val)                                            \
+#define QSPI_INST_NODE_HAS_PROP_EQ_AND_OR(n, prop, val)                                         \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, prop),				\
 		(IS_EQ(DT_INST_ENUM_IDX(n, prop), val)),			\
 		(0)) ||
 
-#define QSPI_ANY_INST_HAS_PROP_EQ(prop, val)                                                       \
+#define QSPI_ANY_INST_HAS_PROP_EQ(prop, val)                                                \
 	(DT_INST_FOREACH_STATUS_OKAY_VARGS(QSPI_INST_NODE_HAS_PROP_EQ_AND_OR, prop, val) 0)
 
 #define QSPI_INST_NODE_NOT_HAS_PROP_AND_OR(n, prop) !DT_INST_NODE_HAS_PROP(n, prop) ||
 
-#define QSPI_ANY_INST_HAS_PROP_STATUS_NOT_OKAY(prop)                                               \
+#define QSPI_ANY_INST_HAS_PROP_STATUS_NOT_OKAY(prop)                                    \
 	(DT_INST_FOREACH_STATUS_OKAY_VARGS(QSPI_INST_NODE_NOT_HAS_PROP_AND_OR, prop) 0)
 
 #define QSPI_QER_TYPE(n)                                                                           \
 	_CONCAT(JESD216_DW15_QER_VAL_, DT_INST_STRING_TOKEN_OR(n, quad_enable_requirements, S1B6))
 
-#define QSPI_HAS_QUAD_MODE(n)                                                                      \
-	(QSPI_INST_NODE_HAS_PROP_EQ_AND_OR(n, readoc, 3)                                           \
-		 QSPI_INST_NODE_HAS_PROP_EQ_AND_OR(n, readoc, 4)                                   \
-			 QSPI_INST_NODE_HAS_PROP_EQ_AND_OR(n, writeoc, 2)                          \
+#define QSPI_HAS_QUAD_MODE(n)                                                        \
+	(QSPI_INST_NODE_HAS_PROP_EQ_AND_OR(n, readoc, 3)                             \
+		 QSPI_INST_NODE_HAS_PROP_EQ_AND_OR(n, readoc, 4)                     \
+			 QSPI_INST_NODE_HAS_PROP_EQ_AND_OR(n, writeoc, 2)            \
 				 QSPI_INST_NODE_HAS_PROP_EQ_AND_OR(n, writeoc, 3) 0)
 
-#define QSPI_WRITE_SEQ(n)                                                                          \
+#define QSPI_WRITE_SEQ(n)                                   \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, writeoc),				\
 		(_CONCAT(QSPI_SEQ_PP_, DT_INST_STRING_UPPER_TOKEN(n, writeoc))),\
 		(QSPI_SEQ_PP_1_1_1))
 
-#define QSPI_READ_SEQ(n)                                                                           \
+#define QSPI_READ_SEQ(n)                                   \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, readoc),				\
 		(_CONCAT(QSPI_SEQ_READ_, DT_INST_STRING_UPPER_TOKEN(n, readoc))),\
 		(QSPI_SEQ_READ_1_1_1))
@@ -986,33 +986,33 @@ static const struct flash_driver_api nxp_s32_qspi_api = {
 #endif /* CONFIG_FLASH_JESD216_API */
 };
 
-#define QSPI_PAGE_LAYOUT(n)                                                                        \
-	.layout = {                                                                                \
-		.pages_count =                                                                     \
-			(DT_INST_PROP(n, size) / 8) / CONFIG_FLASH_NXP_S32_QSPI_LAYOUT_PAGE_SIZE,  \
-		.pages_size = CONFIG_FLASH_NXP_S32_QSPI_LAYOUT_PAGE_SIZE,                          \
+#define QSPI_PAGE_LAYOUT(n)                                                                       \
+	.layout = {                                                                               \
+		.pages_count =                                                                    \
+			(DT_INST_PROP(n, size) / 8) / CONFIG_FLASH_NXP_S32_QSPI_LAYOUT_PAGE_SIZE, \
+		.pages_size = CONFIG_FLASH_NXP_S32_QSPI_LAYOUT_PAGE_SIZE,                         \
 	}
 
-#define QSPI_READ_ID_CFG(n)                                                                        \
-	{                                                                                          \
-		.readIdLut = QSPI_LUT_IDX(QSPI_SEQ_RDID),                                          \
-		.readIdSize = DT_INST_PROP_LEN(n, jedec_id),                                       \
-		.readIdExpected = DT_INST_PROP(n, jedec_id),                                       \
+#define QSPI_READ_ID_CFG(n)                                  \
+	{                                                    \
+		.readIdLut = QSPI_LUT_IDX(QSPI_SEQ_RDID),    \
+		.readIdSize = DT_INST_PROP_LEN(n, jedec_id), \
+		.readIdExpected = DT_INST_PROP(n, jedec_id), \
 	}
 
-#define QSPI_MEMORY_CONN_CFG(n)                                                                    \
-	{.connectionType = (Qspi_Ip_ConnectionType)DT_INST_REG_ADDR(n),                            \
+#define QSPI_MEMORY_CONN_CFG(n)                                         \
+	{.connectionType = (Qspi_Ip_ConnectionType)DT_INST_REG_ADDR(n), \
 	 .memAlignment = DT_INST_PROP_OR(n, memory_alignment, 1)}
 
-#define QSPI_ERASE_CFG(n)                                                                          \
-	{                                                                                          \
-		.eraseTypes = {                                                                    \
-			{                                                                          \
-				.eraseLut = QSPI_LUT_IDX(QSPI_SEQ_SE), .size = 12, /* 4 KB */      \
-			},                                                                         \
-			{                                                                          \
-				.eraseLut = QSPI_LUT_IDX(QSPI_SEQ_BE), .size = 16, /* 64 KB */     \
-			},                                                                         \
+#define QSPI_ERASE_CFG(n)                                                                      \
+	{                                                                                      \
+		.eraseTypes = {                                                                \
+			{                                                                      \
+				.eraseLut = QSPI_LUT_IDX(QSPI_SEQ_SE), .size = 12, /* 4 KB */  \
+			},                                                                     \
+			{                                                                      \
+				.eraseLut = QSPI_LUT_IDX(QSPI_SEQ_BE), .size = 16, /* 64 KB */ \
+			},                                                                     \
 			COND_CODE_1(DT_INST_PROP(n, has_32k_erase), (		\
 			{							\
 				.eraseLut = QSPI_LUT_IDX(QSPI_SEQ_BE_32K),	\
@@ -1022,109 +1022,109 @@ static const struct flash_driver_api nxp_s32_qspi_api = {
 			{							\
 				.eraseLut = QSPI_IP_LUT_INVALID,		\
 			},							\
-			)) {          \
-							   .eraseLut = QSPI_IP_LUT_INVALID,        \
-						   },                                              \
-						 },                                                \
-						  .chipEraseLut = QSPI_LUT_IDX(QSPI_SEQ_CE),       \
+			)) {      \
+							   .eraseLut = QSPI_IP_LUT_INVALID,    \
+						   },                                          \
+						 },                                            \
+						  .chipEraseLut = QSPI_LUT_IDX(QSPI_SEQ_CE),   \
 			}
 
-#define QSPI_RESET_CFG(n)                                                                          \
-	{                                                                                          \
-		.resetCmdLut = QSPI_LUT_IDX(QSPI_SEQ_RESET),                                       \
-		.resetCmdCount = 4U,                                                               \
+#define QSPI_RESET_CFG(n)                                    \
+	{                                                    \
+		.resetCmdLut = QSPI_LUT_IDX(QSPI_SEQ_RESET), \
+		.resetCmdCount = 4U,                         \
 	}
 
 /*
  * SR information used internally by the HAL to access fields BUSY and WEL
  * during read/write/erase and polling status operations.
  */
-#define QSPI_STATUS_REG_CFG(n)                                                                     \
-	{                                                                                          \
-		.statusRegInitReadLut = QSPI_LUT_IDX(QSPI_SEQ_RDSR),                               \
-		.statusRegReadLut = QSPI_LUT_IDX(QSPI_SEQ_RDSR),                                   \
-		.statusRegWriteLut = QSPI_LUT_IDX(QSPI_SEQ_WRSR),                                  \
-		.writeEnableSRLut = QSPI_LUT_IDX(QSPI_SEQ_WREN),                                   \
-		.writeEnableLut = QSPI_LUT_IDX(QSPI_SEQ_WREN),                                     \
-		.regSize = 1U,                                                                     \
-		.busyOffset = 0U,                                                                  \
-		.busyValue = 1U,                                                                   \
-		.writeEnableOffset = 1U,                                                           \
+#define QSPI_STATUS_REG_CFG(n)                                       \
+	{                                                            \
+		.statusRegInitReadLut = QSPI_LUT_IDX(QSPI_SEQ_RDSR), \
+		.statusRegReadLut = QSPI_LUT_IDX(QSPI_SEQ_RDSR),     \
+		.statusRegWriteLut = QSPI_LUT_IDX(QSPI_SEQ_WRSR),    \
+		.writeEnableSRLut = QSPI_LUT_IDX(QSPI_SEQ_WREN),     \
+		.writeEnableLut = QSPI_LUT_IDX(QSPI_SEQ_WREN),       \
+		.regSize = 1U,                                       \
+		.busyOffset = 0U,                                    \
+		.busyValue = 1U,                                     \
+		.writeEnableOffset = 1U,                             \
 	}
 
-#define QSPI_INIT_CFG(n)                                                                           \
-	{                                                                                          \
-		.opCount = 0U,                                                                     \
-		.operations = NULL,                                                                \
+#define QSPI_INIT_CFG(n)            \
+	{                           \
+		.opCount = 0U,      \
+		.operations = NULL, \
 	}
 
-#define QSPI_LUT_CFG(n)                                                                            \
-	{                                                                                          \
-		.opCount = ARRAY_SIZE(nxp_s32_qspi_lut),                                           \
-		.lutOps = (Qspi_Ip_InstrOpType *)nxp_s32_qspi_lut,                                 \
+#define QSPI_LUT_CFG(n)                                            \
+	{                                                          \
+		.opCount = ARRAY_SIZE(nxp_s32_qspi_lut),           \
+		.lutOps = (Qspi_Ip_InstrOpType *)nxp_s32_qspi_lut, \
 	}
 
-#define QSPI_MEMORY_CFG(n)                                                                         \
-	{                                                                                          \
-		.memType = QSPI_IP_SERIAL_FLASH,                                                   \
-		.hfConfig = NULL,                                                                  \
-		.memSize = DT_INST_PROP(n, size) / 8,                                              \
-		.pageSize = CONFIG_FLASH_NXP_S32_QSPI_LAYOUT_PAGE_SIZE,                            \
-		.writeLut = QSPI_LUT_IDX(QSPI_WRITE_SEQ(n)),                                       \
-		.readLut = QSPI_LUT_IDX(QSPI_READ_SEQ(n)),                                         \
-		.read0xxLut = QSPI_IP_LUT_INVALID,                                                 \
-		.read0xxLutAHB = QSPI_IP_LUT_INVALID,                                              \
-		.eraseSettings = QSPI_ERASE_CFG(n),                                                \
-		.statusConfig = QSPI_STATUS_REG_CFG(n),                                            \
-		.resetSettings = QSPI_RESET_CFG(n),                                                \
-		.initResetSettings = QSPI_RESET_CFG(n),                                            \
-		.initConfiguration = QSPI_INIT_CFG(n),                                             \
-		.lutSequences = QSPI_LUT_CFG(n),                                                   \
+#define QSPI_MEMORY_CFG(n)                                                                \
+	{                                                                                 \
+		.memType = QSPI_IP_SERIAL_FLASH,                                          \
+		.hfConfig = NULL,                                                         \
+		.memSize = DT_INST_PROP(n, size) / 8,                                     \
+		.pageSize = CONFIG_FLASH_NXP_S32_QSPI_LAYOUT_PAGE_SIZE,                   \
+		.writeLut = QSPI_LUT_IDX(QSPI_WRITE_SEQ(n)),                              \
+		.readLut = QSPI_LUT_IDX(QSPI_READ_SEQ(n)),                                \
+		.read0xxLut = QSPI_IP_LUT_INVALID,                                        \
+		.read0xxLutAHB = QSPI_IP_LUT_INVALID,                                     \
+		.eraseSettings = QSPI_ERASE_CFG(n),                                       \
+		.statusConfig = QSPI_STATUS_REG_CFG(n),                                   \
+		.resetSettings = QSPI_RESET_CFG(n),                                       \
+		.initResetSettings = QSPI_RESET_CFG(n),                                   \
+		.initConfiguration = QSPI_INIT_CFG(n),                                    \
+		.lutSequences = QSPI_LUT_CFG(n),                                          \
 		COND_CODE_1(CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME, (), (	\
 			.readIdSettings = QSPI_READ_ID_CFG(n),)			\
-		) .suspendSettings =          \
-					{                                                          \
-						.eraseSuspendLut = QSPI_IP_LUT_INVALID,            \
-						.eraseResumeLut = QSPI_IP_LUT_INVALID,             \
-						.programSuspendLut = QSPI_IP_LUT_INVALID,          \
-						.programResumeLut = QSPI_IP_LUT_INVALID,           \
-					},                                                         \
-				.initCallout = NULL, .resetCallout = NULL,                         \
-				.errorCheckCallout = NULL, .eccCheckCallout = NULL,                \
-				.ctrlAutoCfgPtr = NULL,                                            \
+		) .suspendSettings = \
+					{                                                 \
+						.eraseSuspendLut = QSPI_IP_LUT_INVALID,   \
+						.eraseResumeLut = QSPI_IP_LUT_INVALID,    \
+						.programSuspendLut = QSPI_IP_LUT_INVALID, \
+						.programResumeLut = QSPI_IP_LUT_INVALID,  \
+					},                                                \
+				.initCallout = NULL, .resetCallout = NULL,                \
+				.errorCheckCallout = NULL, .eccCheckCallout = NULL,       \
+				.ctrlAutoCfgPtr = NULL,                                   \
 			    }
 
-#define FLASH_NXP_S32_QSPI_INIT_DEVICE(n)                                                          \
+#define FLASH_NXP_S32_QSPI_INIT_DEVICE(n)                                                        \
 	COND_CODE_1(CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME, (), (		\
 		BUILD_ASSERT(DT_INST_NODE_HAS_PROP(n, jedec_id),		\
 			"jedec-id is required for non-runtime SFDP");		\
 		BUILD_ASSERT(DT_INST_PROP_LEN(n, jedec_id) == JESD216_READ_ID_LEN,\
 			"jedec-id must be of size JESD216_READ_ID_LEN bytes");	\
-	))                           \
-                                                                                                   \
-	static const struct nxp_s32_qspi_config nxp_s32_qspi_config_##n = {                        \
-		.controller = DEVICE_DT_GET(DT_INST_BUS(n)),                                       \
-		.flash_parameters =                                                                \
-			{                                                                          \
-				.write_block_size = QSPI_WRITE_BLOCK_SIZE,                         \
-				.erase_value = QSPI_ERASE_VALUE,                                   \
-			},                                                                         \
+	))                         \
+                                                                                                 \
+	static const struct nxp_s32_qspi_config nxp_s32_qspi_config_##n = {                      \
+		.controller = DEVICE_DT_GET(DT_INST_BUS(n)),                                     \
+		.flash_parameters =                                                              \
+			{                                                                        \
+				.write_block_size = QSPI_WRITE_BLOCK_SIZE,                       \
+				.erase_value = QSPI_ERASE_VALUE,                                 \
+			},                                                                       \
 		IF_ENABLED(CONFIG_FLASH_PAGE_LAYOUT,				\
-			(QSPI_PAGE_LAYOUT(n),))                                          \
+			(QSPI_PAGE_LAYOUT(n),))                                        \
 				   COND_CODE_1(CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME, (), (	\
 			.memory_cfg = QSPI_MEMORY_CFG(n),			\
 			.qer_type = QSPI_QER_TYPE(n),				\
 			.quad_mode = QSPI_HAS_QUAD_MODE(n)			\
-		)) };                 \
-                                                                                                   \
-	static struct nxp_s32_qspi_data nxp_s32_qspi_data_##n = {                                  \
-		.memory_conn_cfg = QSPI_MEMORY_CONN_CFG(n),                                        \
+		)) };               \
+                                                                                                 \
+	static struct nxp_s32_qspi_data nxp_s32_qspi_data_##n = {                                \
+		.memory_conn_cfg = QSPI_MEMORY_CONN_CFG(n),                                      \
 		COND_CODE_1(CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME, (), (	\
 			.read_sfdp_lut_idx = QSPI_LUT_IDX(QSPI_SEQ_READ_SFDP),	\
-		)) };          \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, nxp_s32_qspi_init, NULL, &nxp_s32_qspi_data_##n,                  \
-			      &nxp_s32_qspi_config_##n, POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,   \
+		)) };        \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(n, nxp_s32_qspi_init, NULL, &nxp_s32_qspi_data_##n,                \
+			      &nxp_s32_qspi_config_##n, POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY, \
 			      &nxp_s32_qspi_api);
 
 DT_INST_FOREACH_STATUS_OKAY(FLASH_NXP_S32_QSPI_INIT_DEVICE)

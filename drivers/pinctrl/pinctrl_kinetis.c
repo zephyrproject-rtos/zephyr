@@ -74,24 +74,24 @@ static int pinctrl_mcux_init(const struct device *dev)
 }
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_kinetis_sim))
-#define PINCTRL_MCUX_DT_INST_CLOCK_SUBSYS(n)                                                       \
+#define PINCTRL_MCUX_DT_INST_CLOCK_SUBSYS(n)                                          \
 	CLK_GATE_DEFINE(DT_INST_CLOCKS_CELL(n, offset), DT_INST_CLOCKS_CELL(n, bits))
 #elif DT_HAS_COMPAT_STATUS_OKAY(nxp_scg_k4)
-#define PINCTRL_MCUX_DT_INST_CLOCK_SUBSYS(n)                                                       \
-	(DT_INST_CLOCKS_CELL(n, mrcc_offset) == 0                                                  \
-		 ? 0                                                                               \
+#define PINCTRL_MCUX_DT_INST_CLOCK_SUBSYS(n)                                          \
+	(DT_INST_CLOCKS_CELL(n, mrcc_offset) == 0                                     \
+		 ? 0                                                                  \
 		 : MAKE_MRCC_REGADDR(MRCC_BASE, DT_INST_CLOCKS_CELL(n, mrcc_offset)))
 #else
 #define PINCTRL_MCUX_DT_INST_CLOCK_SUBSYS(n) DT_INST_CLOCKS_CELL(n, name)
 #endif
 
-#define PINCTRL_MCUX_INIT(n)                                                                       \
-	static const struct pinctrl_mcux_config pinctrl_mcux_##n##_config = {                      \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)PINCTRL_MCUX_DT_INST_CLOCK_SUBSYS(n),      \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &pinctrl_mcux_init, NULL, NULL, &pinctrl_mcux_##n##_config,       \
+#define PINCTRL_MCUX_INIT(n)                                                                  \
+	static const struct pinctrl_mcux_config pinctrl_mcux_##n##_config = {                 \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                           \
+		.clock_subsys = (clock_control_subsys_t)PINCTRL_MCUX_DT_INST_CLOCK_SUBSYS(n), \
+	};                                                                                    \
+                                                                                              \
+	DEVICE_DT_INST_DEFINE(n, &pinctrl_mcux_init, NULL, NULL, &pinctrl_mcux_##n##_config,  \
 			      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(PINCTRL_MCUX_INIT)

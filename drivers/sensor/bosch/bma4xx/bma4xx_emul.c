@@ -315,10 +315,10 @@ static struct i2c_emul_api bma4xx_emul_api_i2c = {
 	.transfer = bma4xx_emul_transfer_i2c,
 };
 
-#define INIT_BMA4XX(n)                                                                             \
-	static struct bma4xx_emul_data bma4xx_emul_data_##n = {};                                  \
-	static const struct bma4xx_emul_cfg bma4xx_emul_cfg_##n = {};                              \
-	EMUL_DT_INST_DEFINE(n, bma4xx_emul_init, &bma4xx_emul_data_##n, &bma4xx_emul_cfg_##n,      \
+#define INIT_BMA4XX(n)                                                                        \
+	static struct bma4xx_emul_data bma4xx_emul_data_##n = {};                             \
+	static const struct bma4xx_emul_cfg bma4xx_emul_cfg_##n = {};                         \
+	EMUL_DT_INST_DEFINE(n, bma4xx_emul_init, &bma4xx_emul_data_##n, &bma4xx_emul_cfg_##n, \
 			    &bma4xx_emul_api_i2c, &bma4xx_emul_sensor_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INIT_BMA4XX)

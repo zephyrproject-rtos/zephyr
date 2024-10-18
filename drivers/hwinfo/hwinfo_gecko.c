@@ -11,10 +11,10 @@
 #include <string.h>
 #include <zephyr/sys/byteorder.h>
 
-#if defined(RMU_RSTCAUSE_BODUNREGRST) || defined(RMU_RSTCAUSE_BODREGRST) ||                        \
-	defined(RMU_RSTCAUSE_AVDDBOD) || defined(RMU_RSTCAUSE_DVDDBOD) ||                          \
-	defined(RMU_RSTCAUSE_DECBOD) || defined(RMU_RSTCAUSE_BODAVDD0) ||                          \
-	defined(RMU_RSTCAUSE_BODAVDD1) ||                                                          \
+#if defined(RMU_RSTCAUSE_BODUNREGRST) || defined(RMU_RSTCAUSE_BODREGRST) || \
+	defined(RMU_RSTCAUSE_AVDDBOD) || defined(RMU_RSTCAUSE_DVDDBOD) ||   \
+	defined(RMU_RSTCAUSE_DECBOD) || defined(RMU_RSTCAUSE_BODAVDD0) ||   \
+	defined(RMU_RSTCAUSE_BODAVDD1) ||                                   \
 	(defined(BU_PRESENT) && defined(_SILICON_LABS_32B_SERIES_0))
 #define HAS_BROWNOUT 1
 #endif

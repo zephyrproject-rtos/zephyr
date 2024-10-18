@@ -223,61 +223,61 @@ static int led_strip_matrix_init(const struct device *dev)
 	return 0;
 }
 
-#define CHAIN_LENGTH(idx, inst)                                                                    \
+#define CHAIN_LENGTH(idx, inst) \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, chain_lengths),                                    \
 		    (DT_INST_PROP_BY_IDX(inst, chain_lengths, idx)),                               \
 		    (DT_INST_PROP_BY_PHANDLE_IDX(inst, led_strips, idx, chain_length)))
 
-#define STRIP_BUFFER_INITIALIZER(idx, inst)                                                        \
-	{                                                                                          \
-		.dev = DEVICE_DT_GET(DT_INST_PROP_BY_IDX(inst, led_strips, idx)),                  \
-		.chain_length = CHAIN_LENGTH(idx, inst),                                           \
-		.pixels = pixels##inst##_##idx,                                                    \
+#define STRIP_BUFFER_INITIALIZER(idx, inst)                                       \
+	{                                                                         \
+		.dev = DEVICE_DT_GET(DT_INST_PROP_BY_IDX(inst, led_strips, idx)), \
+		.chain_length = CHAIN_LENGTH(idx, inst),                          \
+		.pixels = pixels##inst##_##idx,                                   \
 	}
 
-#define DECLARE_PIXELS(idx, inst)                                                                  \
+#define DECLARE_PIXELS(idx, inst)                                            \
 	static struct led_rgb pixels##inst##_##idx[CHAIN_LENGTH(idx, inst)];
 
 #define AMOUNT_OF_LEDS(inst) LISTIFY(DT_INST_PROP_LEN(inst, led_strips), CHAIN_LENGTH, (+), inst)
 
-#define VALIDATE_CHAIN_LENGTH(idx, inst)                                                           \
-	BUILD_ASSERT(                                                                              \
-		CHAIN_LENGTH(idx, inst) %                                                          \
-			(DT_INST_PROP(inst, width) / DT_INST_PROP(inst, horizontal_modules) *      \
-			 (DT_INST_PROP(inst, height) / DT_INST_PROP(inst, vertical_modules))) ==   \
+#define VALIDATE_CHAIN_LENGTH(idx, inst)                                                         \
+	BUILD_ASSERT(                                                                            \
+		CHAIN_LENGTH(idx, inst) %                                                        \
+			(DT_INST_PROP(inst, width) / DT_INST_PROP(inst, horizontal_modules) *    \
+			 (DT_INST_PROP(inst, height) / DT_INST_PROP(inst, vertical_modules))) == \
 		0);
 
-#define LED_STRIP_MATRIX_DEFINE(inst)                                                              \
-	LISTIFY(DT_INST_PROP_LEN(inst, led_strips), DECLARE_PIXELS, (;), inst);                        \
-	static const struct led_strip_buffer strip_buffer##inst[] = {                              \
-		LISTIFY(DT_INST_PROP_LEN(inst, led_strips), STRIP_BUFFER_INITIALIZER, (,), inst),      \
-	};                                                                                         \
-	static const struct led_strip_matrix_config dd_config_##inst = {                           \
-		.num_of_strips = DT_INST_PROP_LEN(inst, led_strips),                               \
-		.strips = strip_buffer##inst,                                                      \
-		.width = DT_INST_PROP(inst, width),                                                \
-		.height = DT_INST_PROP(inst, height),                                              \
-		.module_width =                                                                    \
-			DT_INST_PROP(inst, width) / DT_INST_PROP(inst, horizontal_modules),        \
-		.module_height =                                                                   \
-			DT_INST_PROP(inst, height) / DT_INST_PROP(inst, vertical_modules),         \
-		.circulative = DT_INST_PROP(inst, circulative),                                    \
-		.start_from_right = DT_INST_PROP(inst, start_from_right),                          \
-		.modules_circulative = DT_INST_PROP(inst, modules_circulative),                    \
-		.modules_start_from_right = DT_INST_PROP(inst, modules_start_from_right),          \
-		.pixel_format = DT_INST_PROP(inst, pixel_format),                                  \
-	};                                                                                         \
-                                                                                                   \
-	BUILD_ASSERT((DT_INST_PROP(inst, pixel_format) == PIXEL_FORMAT_RGB_888) ||                 \
-		     (DT_INST_PROP(inst, pixel_format) == PIXEL_FORMAT_ARGB_8888));                \
-	BUILD_ASSERT((DT_INST_PROP(inst, width) * DT_INST_PROP(inst, height)) ==                   \
-		     AMOUNT_OF_LEDS(inst));                                                        \
-	BUILD_ASSERT((DT_INST_PROP(inst, width) % DT_INST_PROP(inst, horizontal_modules)) == 0);   \
-	BUILD_ASSERT((DT_INST_PROP(inst, height) % DT_INST_PROP(inst, vertical_modules)) == 0);    \
-	LISTIFY(DT_INST_PROP_LEN(inst, led_strips), VALIDATE_CHAIN_LENGTH, (;), inst);                 \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, led_strip_matrix_init, NULL, NULL, &dd_config_##inst,          \
-			      POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,                       \
+#define LED_STRIP_MATRIX_DEFINE(inst)                                                            \
+	LISTIFY(DT_INST_PROP_LEN(inst, led_strips), DECLARE_PIXELS, (;), inst);                      \
+	static const struct led_strip_buffer strip_buffer##inst[] = {                            \
+		LISTIFY(DT_INST_PROP_LEN(inst, led_strips), STRIP_BUFFER_INITIALIZER, (,), inst),    \
+	};                                                                                       \
+	static const struct led_strip_matrix_config dd_config_##inst = {                         \
+		.num_of_strips = DT_INST_PROP_LEN(inst, led_strips),                             \
+		.strips = strip_buffer##inst,                                                    \
+		.width = DT_INST_PROP(inst, width),                                              \
+		.height = DT_INST_PROP(inst, height),                                            \
+		.module_width =                                                                  \
+			DT_INST_PROP(inst, width) / DT_INST_PROP(inst, horizontal_modules),      \
+		.module_height =                                                                 \
+			DT_INST_PROP(inst, height) / DT_INST_PROP(inst, vertical_modules),       \
+		.circulative = DT_INST_PROP(inst, circulative),                                  \
+		.start_from_right = DT_INST_PROP(inst, start_from_right),                        \
+		.modules_circulative = DT_INST_PROP(inst, modules_circulative),                  \
+		.modules_start_from_right = DT_INST_PROP(inst, modules_start_from_right),        \
+		.pixel_format = DT_INST_PROP(inst, pixel_format),                                \
+	};                                                                                       \
+                                                                                                 \
+	BUILD_ASSERT((DT_INST_PROP(inst, pixel_format) == PIXEL_FORMAT_RGB_888) ||               \
+		     (DT_INST_PROP(inst, pixel_format) == PIXEL_FORMAT_ARGB_8888));              \
+	BUILD_ASSERT((DT_INST_PROP(inst, width) * DT_INST_PROP(inst, height)) ==                 \
+		     AMOUNT_OF_LEDS(inst));                                                      \
+	BUILD_ASSERT((DT_INST_PROP(inst, width) % DT_INST_PROP(inst, horizontal_modules)) == 0); \
+	BUILD_ASSERT((DT_INST_PROP(inst, height) % DT_INST_PROP(inst, vertical_modules)) == 0);  \
+	LISTIFY(DT_INST_PROP_LEN(inst, led_strips), VALIDATE_CHAIN_LENGTH, (;), inst);               \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(inst, led_strip_matrix_init, NULL, NULL, &dd_config_##inst,        \
+			      POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,                     \
 			      &led_strip_matrix_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LED_STRIP_MATRIX_DEFINE)

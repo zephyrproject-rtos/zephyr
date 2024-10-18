@@ -280,21 +280,21 @@ static const struct uart_driver_api uart_imx_driver_api = {
 
 };
 
-#define UART_IMX_DECLARE_CFG(n, IRQ_FUNC_INIT)                                                     \
-	static const struct imx_uart_config imx_uart_##n##_config = {                              \
-		.base = (UART_Type *)DT_INST_REG_ADDR(n),                                          \
-		.baud_rate = DT_INST_PROP(n, current_speed),                                       \
-		.modem_mode = DT_INST_PROP(n, modem_mode),                                         \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+#define UART_IMX_DECLARE_CFG(n, IRQ_FUNC_INIT)                        \
+	static const struct imx_uart_config imx_uart_##n##_config = { \
+		.base = (UART_Type *)DT_INST_REG_ADDR(n),             \
+		.baud_rate = DT_INST_PROP(n, current_speed),          \
+		.modem_mode = DT_INST_PROP(n, modem_mode),            \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),          \
 		IRQ_FUNC_INIT}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define UART_IMX_CONFIG_FUNC(n)                                                                    \
-	static void irq_config_func_##n(const struct device *dev)                                  \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_imx_isr,               \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define UART_IMX_CONFIG_FUNC(n)                                                      \
+	static void irq_config_func_##n(const struct device *dev)                    \
+	{                                                                            \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_imx_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                               \
+		irq_enable(DT_INST_IRQN(n));                                         \
 	}
 #define UART_IMX_IRQ_CFG_FUNC_INIT(n) .irq_config_func = irq_config_func_##n
 #define UART_IMX_INIT_CFG(n)          UART_IMX_DECLARE_CFG(n, UART_IMX_IRQ_CFG_FUNC_INIT(n))
@@ -304,19 +304,19 @@ static const struct uart_driver_api uart_imx_driver_api = {
 #define UART_IMX_INIT_CFG(n) UART_IMX_DECLARE_CFG(n, UART_IMX_IRQ_CFG_FUNC_INIT)
 #endif
 
-#define UART_IMX_INIT(n)                                                                           \
-	static struct imx_uart_data imx_uart_##n##_data;                                           \
-                                                                                                   \
-	static const struct imx_uart_config imx_uart_##n##_config;                                 \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, uart_imx_init, NULL, &imx_uart_##n##_data,                        \
-			      &imx_uart_##n##_config, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,   \
-			      &uart_imx_driver_api);                                               \
-                                                                                                   \
-	UART_IMX_CONFIG_FUNC(n)                                                                    \
-                                                                                                   \
+#define UART_IMX_INIT(n)                                                                         \
+	static struct imx_uart_data imx_uart_##n##_data;                                         \
+                                                                                                 \
+	static const struct imx_uart_config imx_uart_##n##_config;                               \
+                                                                                                 \
+	PINCTRL_DT_INST_DEFINE(n);                                                               \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(n, uart_imx_init, NULL, &imx_uart_##n##_data,                      \
+			      &imx_uart_##n##_config, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, \
+			      &uart_imx_driver_api);                                             \
+                                                                                                 \
+	UART_IMX_CONFIG_FUNC(n)                                                                  \
+                                                                                                 \
 	UART_IMX_INIT_CFG(n);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_IMX_INIT)

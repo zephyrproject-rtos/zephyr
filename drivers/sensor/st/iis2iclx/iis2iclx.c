@@ -603,9 +603,9 @@ static int iis2iclx_init(const struct device *dev)
  * IIS2ICLX_DEFINE_I2C().
  */
 
-#define IIS2ICLX_DEVICE_INIT(inst)                                                                 \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, iis2iclx_init, NULL, &iis2iclx_data_##inst,             \
-				     &iis2iclx_config_##inst, POST_KERNEL,                         \
+#define IIS2ICLX_DEVICE_INIT(inst)                                                       \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, iis2iclx_init, NULL, &iis2iclx_data_##inst,   \
+				     &iis2iclx_config_##inst, POST_KERNEL,               \
 				     CONFIG_SENSOR_INIT_PRIORITY, &iis2iclx_driver_api);
 
 /*
@@ -613,39 +613,39 @@ static int iis2iclx_init(const struct device *dev)
  */
 
 #ifdef CONFIG_IIS2ICLX_TRIGGER
-#define IIS2ICLX_CFG_IRQ(inst)                                                                     \
-	.trig_enabled = true, .gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, drdy_gpios),                \
+#define IIS2ICLX_CFG_IRQ(inst)                                                      \
+	.trig_enabled = true, .gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, drdy_gpios), \
 	.int_pin = DT_INST_PROP(inst, int_pin)
 #else
 #define IIS2ICLX_CFG_IRQ(inst)
 #endif /* CONFIG_IIS2ICLX_TRIGGER */
 
-#define IIS2ICLX_CONFIG_COMMON(inst)                                                               \
-	.odr = DT_INST_PROP(inst, odr), .range = DT_INST_PROP(inst, range),                        \
+#define IIS2ICLX_CONFIG_COMMON(inst)                                        \
+	.odr = DT_INST_PROP(inst, odr), .range = DT_INST_PROP(inst, range), \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),		\
 		(IIS2ICLX_CFG_IRQ(inst)), ())
 
-#define IIS2ICLX_SPI_OPERATION                                                                     \
+#define IIS2ICLX_SPI_OPERATION                                                 \
 	(SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA)
 
-#define IIS2ICLX_CONFIG_SPI(inst)                                                                  \
-	{STMEMSC_CTX_SPI(&iis2iclx_config_##inst.stmemsc_cfg),                                     \
-	 .stmemsc_cfg =                                                                            \
-		 {                                                                                 \
-			 .spi = SPI_DT_SPEC_INST_GET(inst, IIS2ICLX_SPI_OPERATION, 0),             \
-		 },                                                                                \
+#define IIS2ICLX_CONFIG_SPI(inst)                                                      \
+	{STMEMSC_CTX_SPI(&iis2iclx_config_##inst.stmemsc_cfg),                         \
+	 .stmemsc_cfg =                                                                \
+		 {                                                                     \
+			 .spi = SPI_DT_SPEC_INST_GET(inst, IIS2ICLX_SPI_OPERATION, 0), \
+		 },                                                                    \
 	 IIS2ICLX_CONFIG_COMMON(inst)}
 
 /*
  * Instantiation macros used when a device is on an I2C bus.
  */
 
-#define IIS2ICLX_CONFIG_I2C(inst)                                                                  \
-	{STMEMSC_CTX_I2C(&iis2iclx_config_##inst.stmemsc_cfg),                                     \
-	 .stmemsc_cfg =                                                                            \
-		 {                                                                                 \
-			 .i2c = I2C_DT_SPEC_INST_GET(inst),                                        \
-		 },                                                                                \
+#define IIS2ICLX_CONFIG_I2C(inst)                              \
+	{STMEMSC_CTX_I2C(&iis2iclx_config_##inst.stmemsc_cfg), \
+	 .stmemsc_cfg =                                        \
+		 {                                             \
+			 .i2c = I2C_DT_SPEC_INST_GET(inst),    \
+		 },                                            \
 	 IIS2ICLX_CONFIG_COMMON(inst)}
 
 /*
@@ -653,11 +653,11 @@ static int iis2iclx_init(const struct device *dev)
  * bus-specific macro at preprocessor time.
  */
 
-#define IIS2ICLX_DEFINE(inst)                                                                      \
-	static struct iis2iclx_data iis2iclx_data_##inst;                                          \
+#define IIS2ICLX_DEFINE(inst)                                                       \
+	static struct iis2iclx_data iis2iclx_data_##inst;                           \
 	static const struct iis2iclx_config iis2iclx_config_##inst = COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
 			(IIS2ICLX_CONFIG_SPI(inst)),			\
-			(IIS2ICLX_CONFIG_I2C(inst)));                \
+			(IIS2ICLX_CONFIG_I2C(inst))); \
 	IIS2ICLX_DEVICE_INIT(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(IIS2ICLX_DEFINE)

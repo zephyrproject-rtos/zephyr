@@ -203,17 +203,17 @@ static int adt7420_init(const struct device *dev)
 	return adt7420_probe(dev);
 }
 
-#define ADT7420_DEFINE(inst)                                                                       \
-	static struct adt7420_data adt7420_data_##inst;                                            \
-                                                                                                   \
-	static const struct adt7420_dev_config adt7420_config_##inst = {                           \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-                                                                                                   \
+#define ADT7420_DEFINE(inst)                                                             \
+	static struct adt7420_data adt7420_data_##inst;                                  \
+                                                                                         \
+	static const struct adt7420_dev_config adt7420_config_##inst = {                 \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                       \
+                                                                                         \
 		IF_ENABLED(CONFIG_ADT7420_TRIGGER,						\
-		   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),)) };           \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, adt7420_init, NULL, &adt7420_data_##inst,               \
-				     &adt7420_config_##inst, POST_KERNEL,                          \
+		   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),)) }; \
+                                                                                         \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, adt7420_init, NULL, &adt7420_data_##inst,     \
+				     &adt7420_config_##inst, POST_KERNEL,                \
 				     CONFIG_SENSOR_INIT_PRIORITY, &adt7420_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADT7420_DEFINE)

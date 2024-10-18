@@ -135,25 +135,25 @@ static const struct clock_control_driver_api clock_control_pwm_api = {
 	.set_rate = clock_control_pwm_set_rate,
 };
 
-#define PWM_CLOCK_INIT(i)                                                                          \
-                                                                                                   \
-	BUILD_ASSERT(DT_INST_PROP_LEN(i, pwms) <= 1,                                               \
-		     "One PWM per clock control node is supported");                               \
-                                                                                                   \
-	BUILD_ASSERT(DT_INST_PROP(i, pwm_on_delay) <= UINT16_MAX,                                  \
-		     "Maximum pwm-on-delay is 65535 usec");                                        \
-                                                                                                   \
-	static const struct clock_control_pwm_config clock_control_pwm_config_##i = {              \
-		.pwm_dt = PWM_DT_SPEC_INST_GET(i),                                                 \
-		.pwm_on_delay = DT_INST_PROP(i, pwm_on_delay),                                     \
-	};                                                                                         \
-                                                                                                   \
-	static struct clock_control_pwm_data clock_control_pwm_data_##i = {                        \
-		.clock_frequency = DT_INST_PROP_OR(i, clock_frequency, 0),                         \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(i, clock_control_pwm_init, NULL, &clock_control_pwm_data_##i,        \
-			      &clock_control_pwm_config_##i, POST_KERNEL,                          \
+#define PWM_CLOCK_INIT(i)                                                                      \
+                                                                                               \
+	BUILD_ASSERT(DT_INST_PROP_LEN(i, pwms) <= 1,                                           \
+		     "One PWM per clock control node is supported");                           \
+                                                                                               \
+	BUILD_ASSERT(DT_INST_PROP(i, pwm_on_delay) <= UINT16_MAX,                              \
+		     "Maximum pwm-on-delay is 65535 usec");                                    \
+                                                                                               \
+	static const struct clock_control_pwm_config clock_control_pwm_config_##i = {          \
+		.pwm_dt = PWM_DT_SPEC_INST_GET(i),                                             \
+		.pwm_on_delay = DT_INST_PROP(i, pwm_on_delay),                                 \
+	};                                                                                     \
+                                                                                               \
+	static struct clock_control_pwm_data clock_control_pwm_data_##i = {                    \
+		.clock_frequency = DT_INST_PROP_OR(i, clock_frequency, 0),                     \
+	};                                                                                     \
+                                                                                               \
+	DEVICE_DT_INST_DEFINE(i, clock_control_pwm_init, NULL, &clock_control_pwm_data_##i,    \
+			      &clock_control_pwm_config_##i, POST_KERNEL,                      \
 			      CONFIG_CLOCK_CONTROL_PWM_INIT_PRIORITY, &clock_control_pwm_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_CLOCK_INIT)

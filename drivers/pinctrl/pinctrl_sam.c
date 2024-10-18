@@ -9,12 +9,12 @@
 #include <soc_gpio.h>
 
 /** Utility macro that expands to the GPIO port address if it exists */
-#define SAM_PORT_ADDR_OR_NONE(nodelabel)                                                           \
+#define SAM_PORT_ADDR_OR_NONE(nodelabel)                        \
 	IF_ENABLED(DT_NODE_EXISTS(DT_NODELABEL(nodelabel)),			\
 		   (DT_REG_ADDR(DT_NODELABEL(nodelabel)),))
 
 /** Utility macro that expands to the GPIO Peripheral ID if it exists */
-#define SAM_PORT_CLOCKS_OR_NONE(nodelabel)                                                         \
+#define SAM_PORT_CLOCKS_OR_NONE(nodelabel)                      \
 	IF_ENABLED(DT_NODE_EXISTS(DT_NODELABEL(nodelabel)),			\
 		   (SAM_DT_CLOCK_PMC_CFG(0, DT_NODELABEL(nodelabel)),))
 

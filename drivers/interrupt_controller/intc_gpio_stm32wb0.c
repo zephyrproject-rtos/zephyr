@@ -143,17 +143,17 @@ static struct stm32wb0_gpio_intc_data gpio_intc_data;
  * @param pidx	GPIO port index
  * @param plin	LL define of first line on GPIO port
  */
-#define INIT_INTC_PORT_INNER(node, pidx, plin)                                                     \
-	static const struct wb0_gpio_isr_argblock port##pidx##_argblock = {                        \
-		.port_first_line = plin,                                                           \
-		.cb_table = gpio_intc_data.irq_cb_table + GPIO_PORT_TABLE_INDEX(pidx)};            \
-                                                                                                   \
-	IRQ_CONNECT(DT_IRQN_BY_IDX(node, pidx), DT_IRQ_BY_IDX(node, pidx, priority),               \
-		    stm32wb0_gpio_isr, &port##pidx##_argblock, 0);                                 \
-                                                                                                   \
+#define INIT_INTC_PORT_INNER(node, pidx, plin)                                          \
+	static const struct wb0_gpio_isr_argblock port##pidx##_argblock = {             \
+		.port_first_line = plin,                                                \
+		.cb_table = gpio_intc_data.irq_cb_table + GPIO_PORT_TABLE_INDEX(pidx)}; \
+                                                                                        \
+	IRQ_CONNECT(DT_IRQN_BY_IDX(node, pidx), DT_IRQ_BY_IDX(node, pidx, priority),    \
+		    stm32wb0_gpio_isr, &port##pidx##_argblock, 0);                      \
+                                                                                        \
 	irq_enable(DT_IRQN_BY_IDX(node, pidx))
 
-#define STM32WB0_INIT_INTC_FOR_PORT(_PORT)                                                         \
+#define STM32WB0_INIT_INTC_FOR_PORT(_PORT)                                           \
 	INIT_INTC_PORT_INNER(INTC_NODE, STM32_PORT##_PORT, LL_EXTI_LINE_P##_PORT##0)
 
 /**

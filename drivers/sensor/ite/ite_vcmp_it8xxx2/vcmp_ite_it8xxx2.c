@@ -372,32 +372,32 @@ static int vcmp_it8xxx2_init_work_q(void)
 SYS_INIT(vcmp_it8xxx2_init_work_q, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);
 #endif
 
-#define VCMP_IT8XXX2_INIT(inst)                                                                    \
-	static const struct vcmp_it8xxx2_config vcmp_it8xxx2_cfg_##inst = {                        \
-		.reg_vcmpxctl = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 0),                       \
-		.reg_vcmpxcselm = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 1),                     \
-		.reg_vcmpscp = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 2),                        \
-		.reg_vcmpxthrdatm = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 3),                   \
-		.reg_vcmpxthrdatl = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 4),                   \
-		.reg_vcmpsts = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 5),                        \
-		.reg_vcmpsts2 = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 6),                       \
-		.irq = DT_INST_IRQN(inst),                                                         \
-		.vcmp_ch = DT_INST_PROP(inst, vcmp_ch),                                            \
-		.scan_period = DT_INST_PROP(inst, scan_period),                                    \
-		.comparison = DT_INST_PROP(inst, comparison),                                      \
-		.threshold_mv = DT_INST_PROP(inst, threshold_mv),                                  \
-		.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst)),                              \
-	};                                                                                         \
-                                                                                                   \
-	static struct vcmp_it8xxx2_data vcmp_it8xxx2_data_##inst = {                               \
-		.adc_ch_cfg.gain = ADC_GAIN_1,                                                     \
-		.adc_ch_cfg.reference = ADC_REF_INTERNAL,                                          \
-		.adc_ch_cfg.acquisition_time = ADC_ACQ_TIME_DEFAULT,                               \
-		.adc_ch_cfg.channel_id = (uint8_t)DT_INST_IO_CHANNELS_INPUT(inst),                 \
-	};                                                                                         \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, vcmp_it8xxx2_init, NULL, &vcmp_it8xxx2_data_##inst,     \
-				     &vcmp_it8xxx2_cfg_##inst, POST_KERNEL,                        \
+#define VCMP_IT8XXX2_INIT(inst)                                                                 \
+	static const struct vcmp_it8xxx2_config vcmp_it8xxx2_cfg_##inst = {                     \
+		.reg_vcmpxctl = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 0),                    \
+		.reg_vcmpxcselm = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 1),                  \
+		.reg_vcmpscp = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 2),                     \
+		.reg_vcmpxthrdatm = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 3),                \
+		.reg_vcmpxthrdatl = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 4),                \
+		.reg_vcmpsts = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 5),                     \
+		.reg_vcmpsts2 = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 6),                    \
+		.irq = DT_INST_IRQN(inst),                                                      \
+		.vcmp_ch = DT_INST_PROP(inst, vcmp_ch),                                         \
+		.scan_period = DT_INST_PROP(inst, scan_period),                                 \
+		.comparison = DT_INST_PROP(inst, comparison),                                   \
+		.threshold_mv = DT_INST_PROP(inst, threshold_mv),                               \
+		.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst)),                           \
+	};                                                                                      \
+                                                                                                \
+	static struct vcmp_it8xxx2_data vcmp_it8xxx2_data_##inst = {                            \
+		.adc_ch_cfg.gain = ADC_GAIN_1,                                                  \
+		.adc_ch_cfg.reference = ADC_REF_INTERNAL,                                       \
+		.adc_ch_cfg.acquisition_time = ADC_ACQ_TIME_DEFAULT,                            \
+		.adc_ch_cfg.channel_id = (uint8_t)DT_INST_IO_CHANNELS_INPUT(inst),              \
+	};                                                                                      \
+                                                                                                \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, vcmp_it8xxx2_init, NULL, &vcmp_it8xxx2_data_##inst,  \
+				     &vcmp_it8xxx2_cfg_##inst, POST_KERNEL,                     \
 				     CONFIG_VCMP_IT8XXX2_INIT_PRIORITY, &vcmp_ite_it8xxx2_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VCMP_IT8XXX2_INIT)

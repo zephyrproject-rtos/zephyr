@@ -649,14 +649,14 @@ static const struct audio_codec_api wm8904_driver_api = {.configure = wm8904_con
 								 wm8904_apply_properties,
 							 .route_input = wm8904_route_input};
 
-#define WM8904_INIT(n)                                                                             \
-	static const struct wm8904_driver_config wm8904_device_config_##n = {                      \
-		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
-		.clock_source = DT_INST_PROP_OR(n, clk_source, 0),                                 \
-		.mclk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(n, mclk)),                   \
-		.mclk_name = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, name)};  \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, &wm8904_device_config_##n, POST_KERNEL,         \
+#define WM8904_INIT(n)                                                                            \
+	static const struct wm8904_driver_config wm8904_device_config_##n = {                     \
+		.i2c = I2C_DT_SPEC_INST_GET(n),                                                   \
+		.clock_source = DT_INST_PROP_OR(n, clk_source, 0),                                \
+		.mclk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(n, mclk)),                  \
+		.mclk_name = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, name)}; \
+                                                                                                  \
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, &wm8904_device_config_##n, POST_KERNEL,        \
 			      CONFIG_AUDIO_CODEC_INIT_PRIORITY, &wm8904_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(WM8904_INIT)

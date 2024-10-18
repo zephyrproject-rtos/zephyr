@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(adc_sam0, CONFIG_ADC_LOG_LEVEL);
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 
-#if defined(CONFIG_SOC_SERIES_SAMD21) || defined(CONFIG_SOC_SERIES_SAMR21) ||                      \
+#if defined(CONFIG_SOC_SERIES_SAMD21) || defined(CONFIG_SOC_SERIES_SAMR21) || \
 	defined(CONFIG_SOC_SERIES_SAMD20)
 /*
  * SAMD21 Manual 33.6.2.1: The first conversion after changing the reference
@@ -499,26 +499,26 @@ static const struct adc_driver_api adc_sam0_api = {
 
 #ifdef MCLK
 
-#define ADC_SAM0_CLOCK_CONTROL(n)                                                                  \
-	.mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, bit)),                               \
-	.gclk_mask = UTIL_CAT(GCLK_PCHCTRL_GEN_GCLK, DT_INST_PROP(n, gclk)),                       \
-	.gclk_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch),                                \
-	.prescaler =                                                                               \
+#define ADC_SAM0_CLOCK_CONTROL(n)                                                              \
+	.mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, bit)),                           \
+	.gclk_mask = UTIL_CAT(GCLK_PCHCTRL_GEN_GCLK, DT_INST_PROP(n, gclk)),                   \
+	.gclk_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch),                            \
+	.prescaler =                                                                           \
 		UTIL_CAT(ADC_CTRLx_PRESCALER_DIV, UTIL_CAT(DT_INST_PROP(n, prescaler), _Val)),
 
-#define ADC_SAM0_CONFIGURE(n)                                                                      \
-	do {                                                                                       \
-		const struct adc_sam0_cfg *const cfg = dev->config;                                \
-		Adc *const adc = cfg->regs;                                                        \
-		adc->CALIB.reg =                                                                   \
-			ADC_SAM0_BIASCOMP(n) | ADC_SAM0_BIASR2R(n) | ADC_SAM0_BIASREFBUF(n);       \
+#define ADC_SAM0_CONFIGURE(n)                                                                \
+	do {                                                                                 \
+		const struct adc_sam0_cfg *const cfg = dev->config;                          \
+		Adc *const adc = cfg->regs;                                                  \
+		adc->CALIB.reg =                                                             \
+			ADC_SAM0_BIASCOMP(n) | ADC_SAM0_BIASR2R(n) | ADC_SAM0_BIASREFBUF(n); \
 	} while (false)
 
 #else
 
-#define ADC_SAM0_CLOCK_CONTROL(n)                                                                  \
-	.gclk = UTIL_CAT(GCLK_CLKCTRL_GEN_GCLK, DT_INST_PROP(n, gclk)) | GCLK_CLKCTRL_ID_ADC,      \
-	.prescaler =                                                                               \
+#define ADC_SAM0_CLOCK_CONTROL(n)                                                              \
+	.gclk = UTIL_CAT(GCLK_CLKCTRL_GEN_GCLK, DT_INST_PROP(n, gclk)) | GCLK_CLKCTRL_ID_ADC,  \
+	.prescaler =                                                                           \
 		UTIL_CAT(ADC_CTRLx_PRESCALER_DIV, UTIL_CAT(DT_INST_PROP(n, prescaler), _Val)),
 
 #define ADC_SAM0_CONFIGURE(n)                                                                      \

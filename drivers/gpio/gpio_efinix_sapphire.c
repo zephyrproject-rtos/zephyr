@@ -19,8 +19,8 @@
 
 LOG_MODULE_REGISTER(gpio_efinix_sapphire);
 
-#define SUPPORTED_FLAGS                                                                            \
-	(GPIO_INPUT | GPIO_OUTPUT | GPIO_OUTPUT_INIT_LOW | GPIO_OUTPUT_INIT_HIGH |                 \
+#define SUPPORTED_FLAGS                                                            \
+	(GPIO_INPUT | GPIO_OUTPUT | GPIO_OUTPUT_INIT_LOW | GPIO_OUTPUT_INIT_HIGH | \
 	 GPIO_ACTIVE_LOW | GPIO_ACTIVE_HIGH)
 
 #define GPIO_LOW  0
@@ -215,14 +215,14 @@ static const struct gpio_driver_api gpio_efinix_sapphire_api = {
 	.port_toggle_bits = gpio_efinix_sapphire_port_toggle_bits,
 };
 
-#define GPIO_EFINIX_SAPPHIRE_INIT(n)                                                               \
-	static struct gpio_efinix_sapphire_cfg gpio_efinix_sapphire_cfg_##n = {                    \
-		.base_addr = DT_INST_REG_ADDR(n),                                                  \
-		.n_gpios = DT_INST_PROP(n, ngpios),                                                \
-	};                                                                                         \
-	static struct gpio_efinix_sapphire_data gpio_efinix_sapphire_data_##n;                     \
-	DEVICE_DT_INST_DEFINE(n, gpio_efinix_sapphire_init, NULL, &gpio_efinix_sapphire_data_##n,  \
-			      &gpio_efinix_sapphire_cfg_##n, POST_KERNEL,                          \
+#define GPIO_EFINIX_SAPPHIRE_INIT(n)                                                              \
+	static struct gpio_efinix_sapphire_cfg gpio_efinix_sapphire_cfg_##n = {                   \
+		.base_addr = DT_INST_REG_ADDR(n),                                                 \
+		.n_gpios = DT_INST_PROP(n, ngpios),                                               \
+	};                                                                                        \
+	static struct gpio_efinix_sapphire_data gpio_efinix_sapphire_data_##n;                    \
+	DEVICE_DT_INST_DEFINE(n, gpio_efinix_sapphire_init, NULL, &gpio_efinix_sapphire_data_##n, \
+			      &gpio_efinix_sapphire_cfg_##n, POST_KERNEL,                         \
 			      CONFIG_GPIO_INIT_PRIORITY, &gpio_efinix_sapphire_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_EFINIX_SAPPHIRE_INIT)

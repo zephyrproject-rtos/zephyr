@@ -240,17 +240,17 @@ static const struct counter_driver_api counter_api = {
 	.get_top_value = counter_ambiq_get_top_value,
 };
 
-#define APOLLO3_HANDLE_SHARED_TIMER_IRQ(n)                                                         \
-	static const struct device *const dev_##n = DEVICE_DT_INST_GET(n);                         \
-	struct counter_ambiq_data *const data_##n = dev_##n->data;                                 \
-	uint32_t status_##n = CTIMERn(n)->INTSTAT;                                                 \
-	status_##n &= CTIMERn(n)->INTEN;                                                           \
-	if (status_##n) {                                                                          \
-		CTIMERn(n)->INTCLR = AM_HAL_CTIMER_INT_TIMERA0C0;                                  \
-		counter_ambiq_get_value(dev_##n, &now);                                            \
-		if (data_##n->callback) {                                                          \
-			data_##n->callback(dev_##n, 0, now, data_##n->user_data);                  \
-		}                                                                                  \
+#define APOLLO3_HANDLE_SHARED_TIMER_IRQ(n)                                        \
+	static const struct device *const dev_##n = DEVICE_DT_INST_GET(n);        \
+	struct counter_ambiq_data *const data_##n = dev_##n->data;                \
+	uint32_t status_##n = CTIMERn(n)->INTSTAT;                                \
+	status_##n &= CTIMERn(n)->INTEN;                                          \
+	if (status_##n) {                                                         \
+		CTIMERn(n)->INTCLR = AM_HAL_CTIMER_INT_TIMERA0C0;                 \
+		counter_ambiq_get_value(dev_##n, &now);                           \
+		if (data_##n->callback) {                                         \
+			data_##n->callback(dev_##n, 0, now, data_##n->user_data); \
+		}                                                                 \
 	}
 
 static void counter_ambiq_isr(void *arg)
@@ -281,13 +281,13 @@ static void counter_ambiq_isr(void *arg)
  */
 #define AMBIQ_COUNTER_CONFIG_FUNC(idx) static void counter_irq_config_func_##idx(void){};
 #else
-#define AMBIQ_COUNTER_CONFIG_FUNC(idx)                                                             \
-	static void counter_irq_config_func_##idx(void)                                            \
-	{                                                                                          \
-		NVIC_ClearPendingIRQ(DT_INST_IRQN(idx));                                           \
-		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority), counter_ambiq_isr,      \
-			    DEVICE_DT_INST_GET(idx), 0);                                           \
-		irq_enable(DT_INST_IRQN(idx));                                                     \
+#define AMBIQ_COUNTER_CONFIG_FUNC(idx)                                                        \
+	static void counter_irq_config_func_##idx(void)                                       \
+	{                                                                                     \
+		NVIC_ClearPendingIRQ(DT_INST_IRQN(idx));                                      \
+		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority), counter_ambiq_isr, \
+			    DEVICE_DT_INST_GET(idx), 0);                                      \
+		irq_enable(DT_INST_IRQN(idx));                                                \
 	};
 #endif
 

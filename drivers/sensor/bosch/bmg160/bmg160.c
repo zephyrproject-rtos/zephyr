@@ -322,18 +322,18 @@ int bmg160_init(const struct device *dev)
 	return 0;
 }
 
-#define BMG160_DEFINE(inst)                                                                        \
-	static struct bmg160_device_data bmg160_data_##inst;                                       \
-                                                                                                   \
-	static const struct bmg160_device_config bmg160_config_##inst = {                          \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+#define BMG160_DEFINE(inst)                                                        \
+	static struct bmg160_device_data bmg160_data_##inst;                       \
+                                                                                   \
+	static const struct bmg160_device_config bmg160_config_##inst = {          \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                 \
 		IF_ENABLED(CONFIG_BMG160_TRIGGER,						\
-			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))                                           \
-                                                                                                   \
-	};                                                                                         \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmg160_init, NULL, &bmg160_data_##inst,                 \
-				     &bmg160_config_##inst, POST_KERNEL,                           \
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))                           \
+                                                                                   \
+	};                                                                         \
+                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmg160_init, NULL, &bmg160_data_##inst, \
+				     &bmg160_config_##inst, POST_KERNEL,           \
 				     CONFIG_SENSOR_INIT_PRIORITY, &bmg160_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BMG160_DEFINE)

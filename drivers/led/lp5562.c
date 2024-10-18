@@ -1046,29 +1046,29 @@ static int lp5562_pm_action(const struct device *dev, enum pm_device_action acti
 }
 #endif /* CONFIG_PM_DEVICE */
 
-#define LP5562_DEFINE(id)                                                                          \
-	BUILD_ASSERT(DT_INST_PROP(id, red_output_current) <= LP5562_MAX_CURRENT_SETTING,           \
-		     "Red channel current must be between 0 and 25.5 mA.");                        \
-	BUILD_ASSERT(DT_INST_PROP(id, green_output_current) <= LP5562_MAX_CURRENT_SETTING,         \
-		     "Green channel current must be between 0 and 25.5 mA.");                      \
-	BUILD_ASSERT(DT_INST_PROP(id, blue_output_current) <= LP5562_MAX_CURRENT_SETTING,          \
-		     "Blue channel current must be between 0 and 25.5 mA.");                       \
-	BUILD_ASSERT(DT_INST_PROP(id, white_output_current) <= LP5562_MAX_CURRENT_SETTING,         \
-		     "White channel current must be between 0 and 25.5 mA.");                      \
-	static const struct lp5562_config lp5562_config_##id = {                                   \
-		.bus = I2C_DT_SPEC_INST_GET(id),                                                   \
-		.r_current = DT_INST_PROP(id, red_output_current),                                 \
-		.g_current = DT_INST_PROP(id, green_output_current),                               \
-		.b_current = DT_INST_PROP(id, blue_output_current),                                \
-		.w_current = DT_INST_PROP(id, white_output_current),                               \
-		.enable_gpio = GPIO_DT_SPEC_INST_GET_OR(id, enable_gpios, {0}),                    \
-	};                                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(id, lp5562_pm_action);                                            \
-                                                                                                   \
-	struct lp5562_data lp5562_data_##id;                                                       \
-	DEVICE_DT_INST_DEFINE(id, &lp5562_led_init, PM_DEVICE_DT_INST_GET(id), &lp5562_data_##id,  \
-			      &lp5562_config_##id, POST_KERNEL, CONFIG_LED_INIT_PRIORITY,          \
+#define LP5562_DEFINE(id)                                                                         \
+	BUILD_ASSERT(DT_INST_PROP(id, red_output_current) <= LP5562_MAX_CURRENT_SETTING,          \
+		     "Red channel current must be between 0 and 25.5 mA.");                       \
+	BUILD_ASSERT(DT_INST_PROP(id, green_output_current) <= LP5562_MAX_CURRENT_SETTING,        \
+		     "Green channel current must be between 0 and 25.5 mA.");                     \
+	BUILD_ASSERT(DT_INST_PROP(id, blue_output_current) <= LP5562_MAX_CURRENT_SETTING,         \
+		     "Blue channel current must be between 0 and 25.5 mA.");                      \
+	BUILD_ASSERT(DT_INST_PROP(id, white_output_current) <= LP5562_MAX_CURRENT_SETTING,        \
+		     "White channel current must be between 0 and 25.5 mA.");                     \
+	static const struct lp5562_config lp5562_config_##id = {                                  \
+		.bus = I2C_DT_SPEC_INST_GET(id),                                                  \
+		.r_current = DT_INST_PROP(id, red_output_current),                                \
+		.g_current = DT_INST_PROP(id, green_output_current),                              \
+		.b_current = DT_INST_PROP(id, blue_output_current),                               \
+		.w_current = DT_INST_PROP(id, white_output_current),                              \
+		.enable_gpio = GPIO_DT_SPEC_INST_GET_OR(id, enable_gpios, {0}),                   \
+	};                                                                                        \
+                                                                                                  \
+	PM_DEVICE_DT_INST_DEFINE(id, lp5562_pm_action);                                           \
+                                                                                                  \
+	struct lp5562_data lp5562_data_##id;                                                      \
+	DEVICE_DT_INST_DEFINE(id, &lp5562_led_init, PM_DEVICE_DT_INST_GET(id), &lp5562_data_##id, \
+			      &lp5562_config_##id, POST_KERNEL, CONFIG_LED_INIT_PRIORITY,         \
 			      &lp5562_led_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LP5562_DEFINE)

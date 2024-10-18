@@ -40,7 +40,7 @@ LOG_MODULE_REGISTER(TMAG5273, CONFIG_SENSOR_LOG_LEVEL);
  * Also takes into account if CRC is enabled, which adds an additional byte for the CRC always
  * located after the last read result byte.
  */
-#define TMAG5273_I2C_BUFFER_SIZE                                                                   \
+#define TMAG5273_I2C_BUFFER_SIZE                                                          \
 	(TMAG5273_REG_RESULT_END - TMAG5273_REG_RESULT_BEGIN + 1 + TMAG5273_CRC_I2C_SIZE)
 
 /** static configuration data */
@@ -1196,54 +1196,54 @@ static const struct sensor_driver_api tmag5273_driver_api = {
 	.channel_get = tmag5273_channel_get,
 };
 
-#define TMAG5273_DT_X_AXIS_BIT(axis_dts)                                                           \
-	((((axis_dts & TMAG5273_DT_AXIS_X) == TMAG5273_DT_AXIS_X) ||                               \
-	  (axis_dts == TMAG5273_DT_AXIS_XYX) || (axis_dts == TMAG5273_DT_AXIS_YXY) ||              \
-	  (axis_dts == TMAG5273_DT_AXIS_XZX))                                                      \
-		 ? TMAG5273_MAG_CH_EN_X                                                            \
+#define TMAG5273_DT_X_AXIS_BIT(axis_dts)                                              \
+	((((axis_dts & TMAG5273_DT_AXIS_X) == TMAG5273_DT_AXIS_X) ||                  \
+	  (axis_dts == TMAG5273_DT_AXIS_XYX) || (axis_dts == TMAG5273_DT_AXIS_YXY) || \
+	  (axis_dts == TMAG5273_DT_AXIS_XZX))                                         \
+		 ? TMAG5273_MAG_CH_EN_X                                               \
 		 : 0)
 
-#define TMAG5273_DT_Y_AXIS_BIT(axis_dts)                                                           \
-	((((axis_dts & TMAG5273_DT_AXIS_Y) == TMAG5273_DT_AXIS_Y) ||                               \
-	  (axis_dts == TMAG5273_DT_AXIS_XYX) || (axis_dts == TMAG5273_DT_AXIS_YXY) ||              \
-	  (axis_dts == TMAG5273_DT_AXIS_YZY))                                                      \
-		 ? TMAG5273_MAG_CH_EN_Y                                                            \
+#define TMAG5273_DT_Y_AXIS_BIT(axis_dts)                                              \
+	((((axis_dts & TMAG5273_DT_AXIS_Y) == TMAG5273_DT_AXIS_Y) ||                  \
+	  (axis_dts == TMAG5273_DT_AXIS_XYX) || (axis_dts == TMAG5273_DT_AXIS_YXY) || \
+	  (axis_dts == TMAG5273_DT_AXIS_YZY))                                         \
+		 ? TMAG5273_MAG_CH_EN_Y                                               \
 		 : 0)
 
-#define TMAG5273_DT_Z_AXIS_BIT(axis_dts)                                                           \
-	((((axis_dts & TMAG5273_DT_AXIS_Z) == TMAG5273_DT_AXIS_Z) ||                               \
-	  (axis_dts == TMAG5273_DT_AXIS_YZY) || (axis_dts == TMAG5273_DT_AXIS_XZX))                \
-		 ? TMAG5273_MAG_CH_EN_Z                                                            \
+#define TMAG5273_DT_Z_AXIS_BIT(axis_dts)                                            \
+	((((axis_dts & TMAG5273_DT_AXIS_Z) == TMAG5273_DT_AXIS_Z) ||                \
+	  (axis_dts == TMAG5273_DT_AXIS_YZY) || (axis_dts == TMAG5273_DT_AXIS_XZX)) \
+		 ? TMAG5273_MAG_CH_EN_Z                                             \
 		 : 0)
 
 /** Instantiation macro */
-#define TMAG5273_DEFINE(inst)                                                                      \
-	BUILD_ASSERT(IS_ENABLED(CONFIG_CRC) || (DT_INST_PROP(inst, crc_enabled) == 0),             \
-		     "CRC support necessary");                                                     \
-	BUILD_ASSERT(!DT_INST_PROP(inst, trigger_conversion_via_int) ||                            \
-			     DT_INST_NODE_HAS_PROP(inst, int_gpios),                               \
-		     "trigger-conversion-via-int requires int-gpios to be defined");               \
-	static const struct tmag5273_config tmag5273_driver_cfg##inst = {                          \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.mag_channel = DT_INST_PROP(inst, axis),                                           \
-		.axis = (TMAG5273_DT_X_AXIS_BIT(DT_INST_PROP(inst, axis)) |                        \
-			 TMAG5273_DT_Y_AXIS_BIT(DT_INST_PROP(inst, axis)) |                        \
-			 TMAG5273_DT_Z_AXIS_BIT(DT_INST_PROP(inst, axis))),                        \
-		.temperature = DT_INST_PROP(inst, temperature),                                    \
-		.meas_range = DT_INST_PROP(inst, range),                                           \
-		.temperature_coefficient = DT_INST_PROP(inst, temperature_coefficient),            \
-		.angle_magnitude_axis = DT_INST_PROP(inst, angle_magnitude_axis),                  \
-		.ch_mag_gain_correction = DT_INST_PROP(inst, ch_mag_gain_correction),              \
-		.operation_mode = DT_INST_PROP(inst, operation_mode),                              \
-		.averaging = DT_INST_PROP(inst, average_mode),                                     \
-		.trigger_conv_via_int = DT_INST_PROP(inst, trigger_conversion_via_int),            \
-		.low_noise_mode = DT_INST_PROP(inst, low_noise),                                   \
-		.ignore_diag_fail = DT_INST_PROP(inst, ignore_diag_fail),                          \
-		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),                        \
-		IF_ENABLED(CONFIG_CRC, (.crc_enabled = DT_INST_PROP(inst, crc_enabled),))};            \
-	static struct tmag5273_data tmag5273_driver_data##inst;                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, tmag5273_init, NULL, &tmag5273_driver_data##inst,       \
-				     &tmag5273_driver_cfg##inst, POST_KERNEL,                      \
+#define TMAG5273_DEFINE(inst)                                                                \
+	BUILD_ASSERT(IS_ENABLED(CONFIG_CRC) || (DT_INST_PROP(inst, crc_enabled) == 0),       \
+		     "CRC support necessary");                                               \
+	BUILD_ASSERT(!DT_INST_PROP(inst, trigger_conversion_via_int) ||                      \
+			     DT_INST_NODE_HAS_PROP(inst, int_gpios),                         \
+		     "trigger-conversion-via-int requires int-gpios to be defined");         \
+	static const struct tmag5273_config tmag5273_driver_cfg##inst = {                    \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                           \
+		.mag_channel = DT_INST_PROP(inst, axis),                                     \
+		.axis = (TMAG5273_DT_X_AXIS_BIT(DT_INST_PROP(inst, axis)) |                  \
+			 TMAG5273_DT_Y_AXIS_BIT(DT_INST_PROP(inst, axis)) |                  \
+			 TMAG5273_DT_Z_AXIS_BIT(DT_INST_PROP(inst, axis))),                  \
+		.temperature = DT_INST_PROP(inst, temperature),                              \
+		.meas_range = DT_INST_PROP(inst, range),                                     \
+		.temperature_coefficient = DT_INST_PROP(inst, temperature_coefficient),      \
+		.angle_magnitude_axis = DT_INST_PROP(inst, angle_magnitude_axis),            \
+		.ch_mag_gain_correction = DT_INST_PROP(inst, ch_mag_gain_correction),        \
+		.operation_mode = DT_INST_PROP(inst, operation_mode),                        \
+		.averaging = DT_INST_PROP(inst, average_mode),                               \
+		.trigger_conv_via_int = DT_INST_PROP(inst, trigger_conversion_via_int),      \
+		.low_noise_mode = DT_INST_PROP(inst, low_noise),                             \
+		.ignore_diag_fail = DT_INST_PROP(inst, ignore_diag_fail),                    \
+		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),                  \
+		IF_ENABLED(CONFIG_CRC, (.crc_enabled = DT_INST_PROP(inst, crc_enabled),))};      \
+	static struct tmag5273_data tmag5273_driver_data##inst;                              \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, tmag5273_init, NULL, &tmag5273_driver_data##inst, \
+				     &tmag5273_driver_cfg##inst, POST_KERNEL,                \
 				     CONFIG_SENSOR_INIT_PRIORITY, &tmag5273_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TMAG5273_DEFINE)

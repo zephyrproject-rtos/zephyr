@@ -167,18 +167,18 @@ static const struct dac_driver_api ad56xx_driver_api = {
 BUILD_ASSERT(CONFIG_DAC_AD56XX_INIT_PRIORITY > CONFIG_SPI_INIT_PRIORITY,
 	     "CONFIG_DAC_AD56XX_INIT_PRIORITY must be higher than CONFIG_SPI_INIT_PRIORITY");
 
-#define DAC_AD56XX_INST_DEFINE(index, name, res, channels, channels_count)                         \
-	static struct ad56xx_data data_##name##_##index;                                           \
-	static const struct ad56xx_config config_##name##_##index = {                              \
-		.bus = SPI_DT_SPEC_INST_GET(                                                       \
-			index, SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(8), 0),           \
-		.resolution = res,                                                                 \
-		.gpio_reset = GPIO_DT_SPEC_INST_GET_OR(index, reset_gpios, {0}),                   \
-		.channel_addresses = channels,                                                     \
-		.channel_count = channels_count,                                                   \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(index, ad56xx_init, NULL, &data_##name##_##index,                    \
-			      &config_##name##_##index, POST_KERNEL,                               \
+#define DAC_AD56XX_INST_DEFINE(index, name, res, channels, channels_count)               \
+	static struct ad56xx_data data_##name##_##index;                                 \
+	static const struct ad56xx_config config_##name##_##index = {                    \
+		.bus = SPI_DT_SPEC_INST_GET(                                             \
+			index, SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(8), 0), \
+		.resolution = res,                                                       \
+		.gpio_reset = GPIO_DT_SPEC_INST_GET_OR(index, reset_gpios, {0}),         \
+		.channel_addresses = channels,                                           \
+		.channel_count = channels_count,                                         \
+	};                                                                               \
+	DEVICE_DT_INST_DEFINE(index, ad56xx_init, NULL, &data_##name##_##index,          \
+			      &config_##name##_##index, POST_KERNEL,                     \
 			      CONFIG_DAC_AD56XX_INIT_PRIORITY, &ad56xx_driver_api);
 
 #define DT_DRV_COMPAT adi_ad5628

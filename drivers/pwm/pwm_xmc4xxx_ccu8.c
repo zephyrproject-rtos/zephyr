@@ -154,19 +154,19 @@ static const struct pwm_driver_api pwm_xmc4xxx_ccu8_driver_api = {
 	.get_cycles_per_sec = pwm_xmc4xxx_ccu8_get_cycles_per_sec,
 };
 
-#define PWM_XMC4XXX_CCU8_INIT(n)                                                                   \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-                                                                                                   \
-	static const struct pwm_xmc4xxx_ccu8_config config##n = {                                  \
-		.ccu8 = (CCU8_GLOBAL_TypeDef *)DT_INST_REG_ADDR(n),                                \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		.slice_prescaler = DT_INST_PROP(n, slice_prescaler),                               \
-		.slice_deadtime_prescaler = DT_INST_PROP(n, slice_deadtime_prescaler),             \
-		.deadtime_high_ns = DT_INST_PROP(n, channel_deadtime_high),                        \
-		.deadtime_low_ns = DT_INST_PROP(n, channel_deadtime_low),                          \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, pwm_xmc4xxx_ccu8_init, NULL, NULL, &config##n, POST_KERNEL,       \
+#define PWM_XMC4XXX_CCU8_INIT(n)                                                             \
+	PINCTRL_DT_INST_DEFINE(n);                                                           \
+                                                                                             \
+	static const struct pwm_xmc4xxx_ccu8_config config##n = {                            \
+		.ccu8 = (CCU8_GLOBAL_TypeDef *)DT_INST_REG_ADDR(n),                          \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                   \
+		.slice_prescaler = DT_INST_PROP(n, slice_prescaler),                         \
+		.slice_deadtime_prescaler = DT_INST_PROP(n, slice_deadtime_prescaler),       \
+		.deadtime_high_ns = DT_INST_PROP(n, channel_deadtime_high),                  \
+		.deadtime_low_ns = DT_INST_PROP(n, channel_deadtime_low),                    \
+	};                                                                                   \
+                                                                                             \
+	DEVICE_DT_INST_DEFINE(n, pwm_xmc4xxx_ccu8_init, NULL, NULL, &config##n, POST_KERNEL, \
 			      CONFIG_PWM_INIT_PRIORITY, &pwm_xmc4xxx_ccu8_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_XMC4XXX_CCU8_INIT)

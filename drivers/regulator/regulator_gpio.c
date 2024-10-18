@@ -199,31 +199,31 @@ static int regulator_gpio_init(const struct device *dev)
 	return regulator_common_init(dev, false);
 }
 
-#define REG_GPIO_CONTEXT_GPIOS_SPEC_ELEM(_node_id, _prop, _idx)                                    \
+#define REG_GPIO_CONTEXT_GPIOS_SPEC_ELEM(_node_id, _prop, _idx) \
 	GPIO_DT_SPEC_GET_BY_IDX(_node_id, _prop, _idx),
 
-#define REG_GPIO_CONTEXT_GPIOS_FOREACH_ELEM(inst)                                                  \
+#define REG_GPIO_CONTEXT_GPIOS_FOREACH_ELEM(inst)                                        \
 	DT_FOREACH_PROP_ELEM(DT_DRV_INST(inst), gpios, REG_GPIO_CONTEXT_GPIOS_SPEC_ELEM)
 
-#define REG_GPIO_CONTEXT_GPIOS_INITIALIZE(inst)                                                    \
-	.gpios = (const struct gpio_dt_spec[]){REG_GPIO_CONTEXT_GPIOS_FOREACH_ELEM(inst)},         \
+#define REG_GPIO_CONTEXT_GPIOS_INITIALIZE(inst)                                            \
+	.gpios = (const struct gpio_dt_spec[]){REG_GPIO_CONTEXT_GPIOS_FOREACH_ELEM(inst)}, \
 	.num_gpios = DT_INST_PROP_LEN(inst, gpios)
 
-#define REGULATOR_GPIO_DEFINE(inst)                                                                \
-	static struct regulator_gpio_data data##inst = {                                           \
-		.current_volt_uv = INT32_MAX,                                                      \
-	};                                                                                         \
-	BUILD_ASSERT(!(DT_INST_PROP_LEN(inst, states) & 0x1),                                      \
-		     "Number of regulator states should be even");                                 \
-	static const struct regulator_gpio_config config##inst = {                                 \
-		.common = REGULATOR_DT_INST_COMMON_CONFIG_INIT(inst),                              \
-		REG_GPIO_CONTEXT_GPIOS_INITIALIZE(inst),                                           \
-		.enable = GPIO_DT_SPEC_INST_GET_OR(inst, enable_gpios, {0}),                       \
-		.states = ((const int[])DT_INST_PROP(inst, states)),                               \
-		.states_cnt = DT_INST_PROP_LEN(inst, states) / 2,                                  \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, regulator_gpio_init, NULL, &data##inst, &config##inst,         \
-			      POST_KERNEL, CONFIG_REGULATOR_GPIO_INIT_PRIORITY,                    \
+#define REGULATOR_GPIO_DEFINE(inst)                                                        \
+	static struct regulator_gpio_data data##inst = {                                   \
+		.current_volt_uv = INT32_MAX,                                              \
+	};                                                                                 \
+	BUILD_ASSERT(!(DT_INST_PROP_LEN(inst, states) & 0x1),                              \
+		     "Number of regulator states should be even");                         \
+	static const struct regulator_gpio_config config##inst = {                         \
+		.common = REGULATOR_DT_INST_COMMON_CONFIG_INIT(inst),                      \
+		REG_GPIO_CONTEXT_GPIOS_INITIALIZE(inst),                                   \
+		.enable = GPIO_DT_SPEC_INST_GET_OR(inst, enable_gpios, {0}),               \
+		.states = ((const int[])DT_INST_PROP(inst, states)),                       \
+		.states_cnt = DT_INST_PROP_LEN(inst, states) / 2,                          \
+	};                                                                                 \
+	DEVICE_DT_INST_DEFINE(inst, regulator_gpio_init, NULL, &data##inst, &config##inst, \
+			      POST_KERNEL, CONFIG_REGULATOR_GPIO_INIT_PRIORITY,            \
 			      &regulator_gpio_api);
 
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_GPIO_DEFINE)

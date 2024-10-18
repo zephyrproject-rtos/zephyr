@@ -1034,57 +1034,57 @@ static const struct sdhc_driver_api usdhc_api = {
 #endif
 
 #ifdef CONFIG_IMX_USDHC_DMA_SUPPORT
-#define IMX_USDHC_DMA_BUFFER_DEFINE(n)                                                             \
-	static uint32_t __aligned(32)                                                              \
+#define IMX_USDHC_DMA_BUFFER_DEFINE(n)                                                          \
+	static uint32_t __aligned(32)                                                           \
 	usdhc_##n##_dma_descriptor[CONFIG_IMX_USDHC_DMA_BUFFER_SIZE / 4] IMX_USDHC_NOCACHE_TAG;
-#define IMX_USDHC_DMA_BUFFER_INIT(n)                                                               \
-	.usdhc_dma_descriptor = usdhc_##n##_dma_descriptor,                                        \
+#define IMX_USDHC_DMA_BUFFER_INIT(n)                                \
+	.usdhc_dma_descriptor = usdhc_##n##_dma_descriptor,         \
 	.dma_descriptor_len = CONFIG_IMX_USDHC_DMA_BUFFER_SIZE / 4,
 #else
 #define IMX_USDHC_DMA_BUFFER_DEFINE(n)
 #define IMX_USDHC_DMA_BUFFER_INIT(n)
 #endif /* CONFIG_IMX_USDHC_DMA_SUPPORT */
 
-#define IMX_USDHC_INIT(n)                                                                          \
-	static void usdhc_##n##_irq_config_func(const struct device *dev)                          \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), imx_usdhc_isr,              \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-	}                                                                                          \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-                                                                                                   \
-	static const struct usdhc_config usdhc_##n##_config = {                                    \
-		.base = (USDHC_Type *)DT_INST_REG_ADDR(n),                                         \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
-		.nusdhc = n,                                                                       \
-		.pwr_gpio = GPIO_DT_SPEC_INST_GET_OR(n, pwr_gpios, {0}),                           \
-		.detect_gpio = GPIO_DT_SPEC_INST_GET_OR(n, cd_gpios, {0}),                         \
-		.data_timeout = DT_INST_PROP(n, data_timeout),                                     \
-		.detect_dat3 = DT_INST_PROP(n, detect_dat3),                                       \
-		.detect_cd = DT_INST_PROP(n, detect_cd),                                           \
-		.no_180_vol = DT_INST_PROP(n, no_1_8_v),                                           \
-		.read_watermark = DT_INST_PROP(n, read_watermark),                                 \
-		.write_watermark = DT_INST_PROP(n, write_watermark),                               \
-		.max_current_330 = DT_INST_PROP(n, max_current_330),                               \
-		.max_current_180 = DT_INST_PROP(n, max_current_180),                               \
-		.min_bus_freq = DT_INST_PROP(n, min_bus_freq),                                     \
-		.max_bus_freq = DT_INST_PROP(n, max_bus_freq),                                     \
-		.power_delay_ms = DT_INST_PROP(n, power_delay_ms),                                 \
-		.mmc_hs200_1_8v = DT_INST_PROP(n, mmc_hs200_1_8v),                                 \
-		.mmc_hs400_1_8v = DT_INST_PROP(n, mmc_hs400_1_8v),                                 \
-		.irq_config_func = usdhc_##n##_irq_config_func,                                    \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
-	};                                                                                         \
-                                                                                                   \
-	IMX_USDHC_DMA_BUFFER_DEFINE(n)                                                             \
-                                                                                                   \
-	static struct usdhc_data usdhc_##n##_data = {.card_present = false,                        \
-						     IMX_USDHC_DMA_BUFFER_INIT(n)};                \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &imx_usdhc_init, NULL, &usdhc_##n##_data, &usdhc_##n##_config,    \
+#define IMX_USDHC_INIT(n)                                                                       \
+	static void usdhc_##n##_irq_config_func(const struct device *dev)                       \
+	{                                                                                       \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), imx_usdhc_isr,           \
+			    DEVICE_DT_INST_GET(n), 0);                                          \
+		irq_enable(DT_INST_IRQN(n));                                                    \
+	}                                                                                       \
+                                                                                                \
+	PINCTRL_DT_INST_DEFINE(n);                                                              \
+                                                                                                \
+	static const struct usdhc_config usdhc_##n##_config = {                                 \
+		.base = (USDHC_Type *)DT_INST_REG_ADDR(n),                                      \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                             \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),           \
+		.nusdhc = n,                                                                    \
+		.pwr_gpio = GPIO_DT_SPEC_INST_GET_OR(n, pwr_gpios, {0}),                        \
+		.detect_gpio = GPIO_DT_SPEC_INST_GET_OR(n, cd_gpios, {0}),                      \
+		.data_timeout = DT_INST_PROP(n, data_timeout),                                  \
+		.detect_dat3 = DT_INST_PROP(n, detect_dat3),                                    \
+		.detect_cd = DT_INST_PROP(n, detect_cd),                                        \
+		.no_180_vol = DT_INST_PROP(n, no_1_8_v),                                        \
+		.read_watermark = DT_INST_PROP(n, read_watermark),                              \
+		.write_watermark = DT_INST_PROP(n, write_watermark),                            \
+		.max_current_330 = DT_INST_PROP(n, max_current_330),                            \
+		.max_current_180 = DT_INST_PROP(n, max_current_180),                            \
+		.min_bus_freq = DT_INST_PROP(n, min_bus_freq),                                  \
+		.max_bus_freq = DT_INST_PROP(n, max_bus_freq),                                  \
+		.power_delay_ms = DT_INST_PROP(n, power_delay_ms),                              \
+		.mmc_hs200_1_8v = DT_INST_PROP(n, mmc_hs200_1_8v),                              \
+		.mmc_hs400_1_8v = DT_INST_PROP(n, mmc_hs400_1_8v),                              \
+		.irq_config_func = usdhc_##n##_irq_config_func,                                 \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                    \
+	};                                                                                      \
+                                                                                                \
+	IMX_USDHC_DMA_BUFFER_DEFINE(n)                                                          \
+                                                                                                \
+	static struct usdhc_data usdhc_##n##_data = {.card_present = false,                     \
+						     IMX_USDHC_DMA_BUFFER_INIT(n)};             \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(n, &imx_usdhc_init, NULL, &usdhc_##n##_data, &usdhc_##n##_config, \
 			      POST_KERNEL, CONFIG_SDHC_INIT_PRIORITY, &usdhc_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IMX_USDHC_INIT)

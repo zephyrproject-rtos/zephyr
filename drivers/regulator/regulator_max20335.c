@@ -329,38 +329,38 @@ static const struct regulator_driver_api api = {
 	.set_current_limit = regulator_max20335_set_current_limit,
 };
 
-#define REGULATOR_MAX20335_DEFINE(node_id, id, child_name, _source)                                \
-	static const struct regulator_max20335_config regulator_max20335_config_##id = {           \
-		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node_id),                                \
-		.bus = I2C_DT_SPEC_GET(DT_GPARENT(node_id)),                                       \
-		.desc = &child_name##_desc,                                                        \
-		.source = _source,                                                                 \
-	};                                                                                         \
-                                                                                                   \
-	static struct regulator_max20335_data regulator_max20335_data_##id;                        \
-	DEVICE_DT_DEFINE(node_id, regulator_max20335_init, NULL, &regulator_max20335_data_##id,    \
-			 &regulator_max20335_config_##id, POST_KERNEL,                             \
+#define REGULATOR_MAX20335_DEFINE(node_id, id, child_name, _source)                             \
+	static const struct regulator_max20335_config regulator_max20335_config_##id = {        \
+		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node_id),                             \
+		.bus = I2C_DT_SPEC_GET(DT_GPARENT(node_id)),                                    \
+		.desc = &child_name##_desc,                                                     \
+		.source = _source,                                                              \
+	};                                                                                      \
+                                                                                                \
+	static struct regulator_max20335_data regulator_max20335_data_##id;                     \
+	DEVICE_DT_DEFINE(node_id, regulator_max20335_init, NULL, &regulator_max20335_data_##id, \
+			 &regulator_max20335_config_##id, POST_KERNEL,                          \
 			 CONFIG_REGULATOR_MAXIM_MAX20335_INIT_PRIORITY, &api);
 
-#define REGULATOR_MAX20335_DEFINE_COND(inst, child, source)                                        \
+#define REGULATOR_MAX20335_DEFINE_COND(inst, child, source)           \
 	COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(inst, child)),					\
 		    (REGULATOR_MAX20335_DEFINE(DT_INST_CHILD(inst, child),			\
 					       child##inst, child, source)),			\
 		    ())
 
-#define REGULATOR_MAX20335_DEFINE_ALL(inst)                                                        \
-	static const struct regulator_max20335_common_config common_config_##inst = {              \
-		.bus = I2C_DT_SPEC_GET(DT_INST_PARENT(inst)),                                      \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, regulator_max20335_common_init, NULL, NULL,                    \
-			      &common_config_##inst, POST_KERNEL,                                  \
-			      CONFIG_REGULATOR_MAXIM_MAX20335_COMMON_INIT_PRIORITY, &parent_api);  \
-                                                                                                   \
-	REGULATOR_MAX20335_DEFINE_COND(inst, buck1, MAX20335_PMIC_SOURCE_BUCK1)                    \
-	REGULATOR_MAX20335_DEFINE_COND(inst, buck2, MAX20335_PMIC_SOURCE_BUCK2)                    \
-	REGULATOR_MAX20335_DEFINE_COND(inst, ldo1, MAX20335_PMIC_SOURCE_LDO1)                      \
-	REGULATOR_MAX20335_DEFINE_COND(inst, ldo2, MAX20335_PMIC_SOURCE_LDO2)                      \
+#define REGULATOR_MAX20335_DEFINE_ALL(inst)                                                       \
+	static const struct regulator_max20335_common_config common_config_##inst = {             \
+		.bus = I2C_DT_SPEC_GET(DT_INST_PARENT(inst)),                                     \
+	};                                                                                        \
+                                                                                                  \
+	DEVICE_DT_INST_DEFINE(inst, regulator_max20335_common_init, NULL, NULL,                   \
+			      &common_config_##inst, POST_KERNEL,                                 \
+			      CONFIG_REGULATOR_MAXIM_MAX20335_COMMON_INIT_PRIORITY, &parent_api); \
+                                                                                                  \
+	REGULATOR_MAX20335_DEFINE_COND(inst, buck1, MAX20335_PMIC_SOURCE_BUCK1)                   \
+	REGULATOR_MAX20335_DEFINE_COND(inst, buck2, MAX20335_PMIC_SOURCE_BUCK2)                   \
+	REGULATOR_MAX20335_DEFINE_COND(inst, ldo1, MAX20335_PMIC_SOURCE_LDO1)                     \
+	REGULATOR_MAX20335_DEFINE_COND(inst, ldo2, MAX20335_PMIC_SOURCE_LDO2)                     \
 	REGULATOR_MAX20335_DEFINE_COND(inst, ldo3, MAX20335_PMIC_SOURCE_LDO3)
 
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_MAX20335_DEFINE_ALL)

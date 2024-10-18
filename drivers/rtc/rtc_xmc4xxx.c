@@ -18,8 +18,8 @@
 
 #define RTC_XMC4XXX_DEFAULT_PRESCALER 0x7fff
 
-#define RTC_XMC4XXX_SUPPORTED_ALARM_MASK                                                           \
-	(RTC_ALARM_TIME_MASK_SECOND | RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR |      \
+#define RTC_XMC4XXX_SUPPORTED_ALARM_MASK                                                      \
+	(RTC_ALARM_TIME_MASK_SECOND | RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR | \
 	 RTC_ALARM_TIME_MASK_MONTHDAY | RTC_ALARM_TIME_MASK_MONTH | RTC_ALARM_TIME_MASK_YEAR)
 
 struct rtc_xmc4xxx_data {

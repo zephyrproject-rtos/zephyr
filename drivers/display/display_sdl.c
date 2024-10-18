@@ -481,27 +481,27 @@ static const struct display_driver_api sdl_display_api = {
 	.set_pixel_format = sdl_display_set_pixel_format,
 };
 
-#define DISPLAY_SDL_DEFINE(n)                                                                      \
-	static const struct sdl_display_config sdl_config_##n = {                                  \
-		.height = DT_INST_PROP(n, height),                                                 \
-		.width = DT_INST_PROP(n, width),                                                   \
-	};                                                                                         \
-                                                                                                   \
-	static uint8_t sdl_buf_##n[4 * DT_INST_PROP(n, height) * DT_INST_PROP(n, width)];          \
-	static uint8_t sdl_read_buf_##n[4 * DT_INST_PROP(n, height) * DT_INST_PROP(n, width)];     \
-	static struct sdl_display_data sdl_data_##n = {                                            \
-		.buf = sdl_buf_##n,                                                                \
-		.read_buf = sdl_read_buf_##n,                                                      \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &sdl_display_init, NULL, &sdl_data_##n, &sdl_config_##n,          \
-			      POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY, &sdl_display_api);        \
-                                                                                                   \
-	static void sdl_display_cleanup_##n(void)                                                  \
-	{                                                                                          \
-		sdl_display_cleanup(&sdl_data_##n);                                                \
-	}                                                                                          \
-                                                                                                   \
+#define DISPLAY_SDL_DEFINE(n)                                                                  \
+	static const struct sdl_display_config sdl_config_##n = {                              \
+		.height = DT_INST_PROP(n, height),                                             \
+		.width = DT_INST_PROP(n, width),                                               \
+	};                                                                                     \
+                                                                                               \
+	static uint8_t sdl_buf_##n[4 * DT_INST_PROP(n, height) * DT_INST_PROP(n, width)];      \
+	static uint8_t sdl_read_buf_##n[4 * DT_INST_PROP(n, height) * DT_INST_PROP(n, width)]; \
+	static struct sdl_display_data sdl_data_##n = {                                        \
+		.buf = sdl_buf_##n,                                                            \
+		.read_buf = sdl_read_buf_##n,                                                  \
+	};                                                                                     \
+                                                                                               \
+	DEVICE_DT_INST_DEFINE(n, &sdl_display_init, NULL, &sdl_data_##n, &sdl_config_##n,      \
+			      POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY, &sdl_display_api);    \
+                                                                                               \
+	static void sdl_display_cleanup_##n(void)                                              \
+	{                                                                                      \
+		sdl_display_cleanup(&sdl_data_##n);                                            \
+	}                                                                                      \
+                                                                                               \
 	NATIVE_TASK(sdl_display_cleanup_##n, ON_EXIT, 1);
 
 DT_INST_FOREACH_STATUS_OKAY(DISPLAY_SDL_DEFINE)

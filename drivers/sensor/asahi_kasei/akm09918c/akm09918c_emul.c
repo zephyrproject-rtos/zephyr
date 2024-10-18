@@ -213,11 +213,11 @@ static const struct emul_sensor_driver_api akm09918c_emul_sensor_driver_api = {
 	.get_sample_range = akm09918c_emul_backend_get_sample_range,
 };
 
-#define AKM09918C_EMUL(n)                                                                          \
-	const struct akm09918c_emul_cfg akm09918c_emul_cfg_##n;                                    \
-	struct akm09918c_emul_data akm09918c_emul_data_##n;                                        \
-	EMUL_DT_INST_DEFINE(n, akm09918c_emul_init, &akm09918c_emul_data_##n,                      \
-			    &akm09918c_emul_cfg_##n, &akm09918c_emul_api_i2c,                      \
+#define AKM09918C_EMUL(n)                                                     \
+	const struct akm09918c_emul_cfg akm09918c_emul_cfg_##n;               \
+	struct akm09918c_emul_data akm09918c_emul_data_##n;                   \
+	EMUL_DT_INST_DEFINE(n, akm09918c_emul_init, &akm09918c_emul_data_##n, \
+			    &akm09918c_emul_cfg_##n, &akm09918c_emul_api_i2c, \
 			    &akm09918c_emul_sensor_driver_api)
 
 DT_INST_FOREACH_STATUS_OKAY(AKM09918C_EMUL)

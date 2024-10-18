@@ -26,14 +26,14 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #endif
 
 #if defined(CONFIG_ETH_E1000_VERBOSE_DEBUG)
-#define hexdump(_buf, _len, fmt, args...)                                                          \
-	({                                                                                         \
-		const size_t STR_SIZE = 80;                                                        \
-		char _str[STR_SIZE];                                                               \
-                                                                                                   \
-		snprintk(_str, STR_SIZE, "%s: " fmt, __func__, ##args);                            \
-                                                                                                   \
-		LOG_HEXDUMP_DBG(_buf, _len, _str);                                                 \
+#define hexdump(_buf, _len, fmt, args...)                               \
+	({                                                              \
+		const size_t STR_SIZE = 80;                             \
+		char _str[STR_SIZE];                                    \
+                                                                        \
+		snprintk(_str, STR_SIZE, "%s: " fmt, __func__, ##args); \
+                                                                        \
+		LOG_HEXDUMP_DBG(_buf, _len, _str);                      \
 	})
 #else
 #define hexdump(args...)
@@ -41,8 +41,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 static const char *e1000_reg_to_string(enum e1000_reg_t r)
 {
-#define _(_x)                                                                                      \
-	case _x:                                                                                   \
+#define _(_x)              \
+	case _x:           \
 		return #_x
 	switch (r) {
 		_(CTRL);
@@ -274,33 +274,33 @@ static const struct ethernet_api e1000_api = {
 	.send = e1000_send,
 };
 
-#define E1000_DT_INST_IRQ_FLAGS(inst)                                                              \
+#define E1000_DT_INST_IRQ_FLAGS(inst)                      \
 	COND_CODE_1(DT_INST_IRQ_HAS_CELL(inst, sense),			\
 		    (DT_INST_IRQ(inst, sense)),				\
 		    (DT_INST_IRQ(inst, flags)))
 
-#define E1000_PCI_INIT(inst)                                                                       \
-	DEVICE_PCIE_INST_DECLARE(inst);                                                            \
-                                                                                                   \
-	static struct e1000_dev dev_##inst = {                                                     \
-		DEVICE_PCIE_INST_INIT(inst, pcie),                                                 \
-	};                                                                                         \
-                                                                                                   \
-	static void e1000_config_##inst(const struct e1000_dev *dev)                               \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), e1000_isr,            \
-			    DEVICE_DT_INST_GET(inst), E1000_DT_INST_IRQ_FLAGS(inst));              \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(inst));                                                    \
-		iow32(dev, CTRL, CTRL_SLU); /* Set link up */                                      \
-		iow32(dev, RCTL, RCTL_EN | RCTL_MPE);                                              \
-	}                                                                                          \
-                                                                                                   \
-	static const struct e1000_config config_##inst = {                                         \
-		.config_func = e1000_config_##inst,                                                \
-	};                                                                                         \
-                                                                                                   \
-	ETH_NET_DEVICE_DT_INST_DEFINE(inst, e1000_probe, NULL, &dev_##inst, &config_##inst,        \
+#define E1000_PCI_INIT(inst)                                                                \
+	DEVICE_PCIE_INST_DECLARE(inst);                                                     \
+                                                                                            \
+	static struct e1000_dev dev_##inst = {                                              \
+		DEVICE_PCIE_INST_INIT(inst, pcie),                                          \
+	};                                                                                  \
+                                                                                            \
+	static void e1000_config_##inst(const struct e1000_dev *dev)                        \
+	{                                                                                   \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), e1000_isr,     \
+			    DEVICE_DT_INST_GET(inst), E1000_DT_INST_IRQ_FLAGS(inst));       \
+                                                                                            \
+		irq_enable(DT_INST_IRQN(inst));                                             \
+		iow32(dev, CTRL, CTRL_SLU); /* Set link up */                               \
+		iow32(dev, RCTL, RCTL_EN | RCTL_MPE);                                       \
+	}                                                                                   \
+                                                                                            \
+	static const struct e1000_config config_##inst = {                                  \
+		.config_func = e1000_config_##inst,                                         \
+	};                                                                                  \
+                                                                                            \
+	ETH_NET_DEVICE_DT_INST_DEFINE(inst, e1000_probe, NULL, &dev_##inst, &config_##inst, \
 				      CONFIG_ETH_INIT_PRIORITY, &e1000_api, NET_ETH_MTU);
 
 DT_INST_FOREACH_STATUS_OKAY(E1000_PCI_INIT);
@@ -413,13 +413,13 @@ static int ptp_e1000_init(const struct device *port)
 	return 0;
 }
 
-#define E1000_PTP_INIT(inst)                                                                       \
-	static struct ptp_context ptp_e1000_context_##inst = {                                     \
-		.eth_context = DEVICE_DT_INST_GET(inst)->data,                                     \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DEFINE(e1000_ptp_clock, PTP_CLOCK_NAME, ptp_e1000_init, NULL,                       \
-		      &ptp_e1000_context_##inst, NULL, POST_KERNEL,                                \
+#define E1000_PTP_INIT(inst)                                                 \
+	static struct ptp_context ptp_e1000_context_##inst = {               \
+		.eth_context = DEVICE_DT_INST_GET(inst)->data,               \
+	};                                                                   \
+                                                                             \
+	DEVICE_DEFINE(e1000_ptp_clock, PTP_CLOCK_NAME, ptp_e1000_init, NULL, \
+		      &ptp_e1000_context_##inst, NULL, POST_KERNEL,          \
 		      CONFIG_APPLICATION_INIT_PRIORITY, &api);
 
 DT_INST_FOREACH_STATUS_OKAY(E1000_PTP_INIT);

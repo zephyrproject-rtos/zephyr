@@ -104,17 +104,17 @@ static const struct mdio_driver_api mdio_stm32_api = {
 	.bus_disable = mdio_stm32_bus_disable,
 };
 
-#define MDIO_STM32_HAL_DEVICE(inst)                                                                \
-	PINCTRL_DT_INST_DEFINE(inst);                                                              \
-                                                                                                   \
-	static struct mdio_stm32_data mdio_stm32_data_##inst = {                                   \
-		.heth = {.Instance = (ETH_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(inst))},            \
-	};                                                                                         \
-	static struct mdio_stm32_config mdio_stm32_config_##inst = {                               \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                    \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &mdio_stm32_init, NULL, &mdio_stm32_data_##inst,               \
-			      &mdio_stm32_config_##inst, POST_KERNEL, CONFIG_ETH_INIT_PRIORITY,    \
+#define MDIO_STM32_HAL_DEVICE(inst)                                                             \
+	PINCTRL_DT_INST_DEFINE(inst);                                                           \
+                                                                                                \
+	static struct mdio_stm32_data mdio_stm32_data_##inst = {                                \
+		.heth = {.Instance = (ETH_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(inst))},         \
+	};                                                                                      \
+	static struct mdio_stm32_config mdio_stm32_config_##inst = {                            \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                 \
+	};                                                                                      \
+	DEVICE_DT_INST_DEFINE(inst, &mdio_stm32_init, NULL, &mdio_stm32_data_##inst,            \
+			      &mdio_stm32_config_##inst, POST_KERNEL, CONFIG_ETH_INIT_PRIORITY, \
 			      &mdio_stm32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MDIO_STM32_HAL_DEVICE)

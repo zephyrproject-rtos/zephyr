@@ -452,12 +452,12 @@ static const struct uart_driver_api serial_vnd_api = {
 #endif /* CONFIG_UART_ASYNC_API */
 };
 
-#define VND_SERIAL_DATA_BUFFER(n)                                                                  \
-	RING_BUF_DECLARE(written_data_##n, DT_INST_PROP(n, buffer_size));                          \
-	RING_BUF_DECLARE(read_queue_##n, DT_INST_PROP(n, buffer_size));                            \
-	static struct serial_vnd_data serial_vnd_data_##n = {                                      \
-		.written = &written_data_##n,                                                      \
-		.read_queue = &read_queue_##n,                                                     \
+#define VND_SERIAL_DATA_BUFFER(n)                                         \
+	RING_BUF_DECLARE(written_data_##n, DT_INST_PROP(n, buffer_size)); \
+	RING_BUF_DECLARE(read_queue_##n, DT_INST_PROP(n, buffer_size));   \
+	static struct serial_vnd_data serial_vnd_data_##n = {             \
+		.written = &written_data_##n,                             \
+		.read_queue = &read_queue_##n,                            \
 	};
 #define VND_SERIAL_DATA(n) static struct serial_vnd_data serial_vnd_data_##n = {};
 #define VND_SERIAL_INIT(n)                                                                           \

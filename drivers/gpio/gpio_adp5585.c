@@ -445,15 +445,15 @@ static const struct gpio_driver_api api_table = {
 	.manage_callback = gpio_adp5585_manage_callback,
 };
 
-#define GPIO_ADP5585_INIT(inst)                                                                    \
-	static const struct adp5585_gpio_config adp5585_gpio_cfg_##inst = {                        \
-		.common = {.port_pin_mask = GPIO_DT_INST_PORT_PIN_MASK_NGPIOS_EXC(                 \
-				   inst, DT_INST_PROP(inst, ngpios))},                             \
-		.mfd_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                    \
-	};                                                                                         \
-	static struct adp5585_gpio_data adp5585_gpio_drvdata_##inst;                               \
-	DEVICE_DT_INST_DEFINE(inst, gpio_adp5585_init, NULL, &adp5585_gpio_drvdata_##inst,         \
-			      &adp5585_gpio_cfg_##inst, POST_KERNEL,                               \
+#define GPIO_ADP5585_INIT(inst)                                                            \
+	static const struct adp5585_gpio_config adp5585_gpio_cfg_##inst = {                \
+		.common = {.port_pin_mask = GPIO_DT_INST_PORT_PIN_MASK_NGPIOS_EXC(         \
+				   inst, DT_INST_PROP(inst, ngpios))},                     \
+		.mfd_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                            \
+	};                                                                                 \
+	static struct adp5585_gpio_data adp5585_gpio_drvdata_##inst;                       \
+	DEVICE_DT_INST_DEFINE(inst, gpio_adp5585_init, NULL, &adp5585_gpio_drvdata_##inst, \
+			      &adp5585_gpio_cfg_##inst, POST_KERNEL,                       \
 			      CONFIG_GPIO_ADP5585_INIT_PRIORITY, &api_table);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_ADP5585_INIT)

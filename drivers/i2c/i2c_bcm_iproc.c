@@ -141,11 +141,11 @@ LOG_MODULE_REGISTER(iproc_i2c);
  */
 #define MAX_TARGET_RX_PER_INT 10
 
-#define ISR_MASK_TARGET                                                                            \
-	(BIT(IS_S_START_BUSY_SHIFT) | BIT(IS_S_RX_EVENT_SHIFT) | BIT(IS_S_RD_EN_SHIFT) |           \
+#define ISR_MASK_TARGET                                                                        \
+	(BIT(IS_S_START_BUSY_SHIFT) | BIT(IS_S_RX_EVENT_SHIFT) | BIT(IS_S_RD_EN_SHIFT) |       \
 	 BIT(IS_S_TX_UNDERRUN_SHIFT) | BIT(IS_S_RX_FIFO_FULL_SHIFT) | BIT(IS_S_RX_THLD_SHIFT))
 
-#define ISR_MASK                                                                                   \
+#define ISR_MASK                                                                             \
 	(BIT(IS_M_START_BUSY_SHIFT) | BIT(IS_M_TX_UNDERRUN_SHIFT) | BIT(IS_M_RX_THLD_SHIFT))
 
 #define DEV_CFG(dev)  ((struct iproc_i2c_config *)(dev)->config)
@@ -928,26 +928,26 @@ static const struct i2c_driver_api iproc_i2c_driver_api = {
 #endif
 };
 
-#define IPROC_I2C_DEVICE_INIT(n)                                                                   \
-	static void iproc_i2c_irq_config_func_##n(const struct device *dev)                        \
-	{                                                                                          \
-		ARG_UNUSED(dev);                                                                   \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), iproc_i2c_isr,              \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-	}                                                                                          \
-                                                                                                   \
-	static const struct iproc_i2c_config iproc_i2c_config_##n = {                              \
-		.base = DT_INST_REG_ADDR(n),                                                       \
-		.irq_config_func = iproc_i2c_irq_config_func_##n,                                  \
-		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
-	};                                                                                         \
-                                                                                                   \
-	static struct iproc_i2c_data iproc_i2c_data_##n;                                           \
-                                                                                                   \
-	I2C_DEVICE_DT_INST_DEFINE(n, &iproc_i2c_init, NULL, &iproc_i2c_data_##n,                   \
-				  &iproc_i2c_config_##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,    \
+#define IPROC_I2C_DEVICE_INIT(n)                                                                \
+	static void iproc_i2c_irq_config_func_##n(const struct device *dev)                     \
+	{                                                                                       \
+		ARG_UNUSED(dev);                                                                \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), iproc_i2c_isr,           \
+			    DEVICE_DT_INST_GET(n), 0);                                          \
+                                                                                                \
+		irq_enable(DT_INST_IRQN(n));                                                    \
+	}                                                                                       \
+                                                                                                \
+	static const struct iproc_i2c_config iproc_i2c_config_##n = {                           \
+		.base = DT_INST_REG_ADDR(n),                                                    \
+		.irq_config_func = iproc_i2c_irq_config_func_##n,                               \
+		.bitrate = DT_INST_PROP(n, clock_frequency),                                    \
+	};                                                                                      \
+                                                                                                \
+	static struct iproc_i2c_data iproc_i2c_data_##n;                                        \
+                                                                                                \
+	I2C_DEVICE_DT_INST_DEFINE(n, &iproc_i2c_init, NULL, &iproc_i2c_data_##n,                \
+				  &iproc_i2c_config_##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, \
 				  &iproc_i2c_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IPROC_I2C_DEVICE_INIT)

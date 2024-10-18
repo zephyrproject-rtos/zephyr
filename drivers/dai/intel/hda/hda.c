@@ -111,16 +111,16 @@ static const struct dai_driver_api dai_intel_hda_api_funcs = {
 	.get_properties = dai_hda_get_properties,
 };
 
-#define DAI_INTEL_HDA_DEVICE_INIT(n)                                                               \
-	static struct dai_config dai_intel_hda_config_##n = {                                      \
-		.type = DAI_INTEL_HDA,                                                             \
-		.dai_index = DT_INST_REG_ADDR(n),                                                  \
-	};                                                                                         \
-	static struct dai_intel_hda dai_intel_hda_data_##n = {.index = DT_INST_REG_ADDR(n)         \
-                                                                                                   \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, &dai_intel_hda_data_##n, &dai_intel_hda_config_##n,   \
+#define DAI_INTEL_HDA_DEVICE_INIT(n)                                                             \
+	static struct dai_config dai_intel_hda_config_##n = {                                    \
+		.type = DAI_INTEL_HDA,                                                           \
+		.dai_index = DT_INST_REG_ADDR(n),                                                \
+	};                                                                                       \
+	static struct dai_intel_hda dai_intel_hda_data_##n = {.index = DT_INST_REG_ADDR(n)       \
+                                                                                                 \
+	};                                                                                       \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL, &dai_intel_hda_data_##n, &dai_intel_hda_config_##n, \
 			      POST_KERNEL, 32, &dai_intel_hda_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(DAI_INTEL_HDA_DEVICE_INIT)

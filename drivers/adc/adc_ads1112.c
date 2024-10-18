@@ -384,10 +384,10 @@ static const struct adc_driver_api api = {
 	.read = ads1112_read,
 	.ref_internal = ADS1112_REF_INTERNAL,
 };
-#define ADC_ADS1112_INST_DEFINE(n)                                                                 \
-	static const struct ads1112_config config_##n = {.bus = I2C_DT_SPEC_INST_GET(n)};          \
-	static struct ads1112_data data_##n;                                                       \
-	DEVICE_DT_INST_DEFINE(n, ads1112_init, NULL, &data_##n, &config_##n, POST_KERNEL,          \
+#define ADC_ADS1112_INST_DEFINE(n)                                                        \
+	static const struct ads1112_config config_##n = {.bus = I2C_DT_SPEC_INST_GET(n)}; \
+	static struct ads1112_data data_##n;                                              \
+	DEVICE_DT_INST_DEFINE(n, ads1112_init, NULL, &data_##n, &config_##n, POST_KERNEL, \
 			      CONFIG_ADC_INIT_PRIORITY, &api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_ADS1112_INST_DEFINE);

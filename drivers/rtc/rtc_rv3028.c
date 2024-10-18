@@ -128,17 +128,17 @@ LOG_MODULE_REGISTER(rv3028, CONFIG_RTC_LOG_LEVEL);
 #define RV3028_EEBUSY_TIMEOUT_MS    100
 
 /* RTC alarm time fields supported by the RV3028 */
-#define RV3028_RTC_ALARM_TIME_MASK                                                                 \
+#define RV3028_RTC_ALARM_TIME_MASK                                                             \
 	(RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR | RTC_ALARM_TIME_MASK_MONTHDAY)
 
 /* RTC time fields supported by the RV3028 */
-#define RV3028_RTC_TIME_MASK                                                                       \
-	(RTC_ALARM_TIME_MASK_SECOND | RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR |      \
-	 RTC_ALARM_TIME_MASK_MONTH | RTC_ALARM_TIME_MASK_MONTHDAY | RTC_ALARM_TIME_MASK_YEAR |     \
+#define RV3028_RTC_TIME_MASK                                                                   \
+	(RTC_ALARM_TIME_MASK_SECOND | RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR |  \
+	 RTC_ALARM_TIME_MASK_MONTH | RTC_ALARM_TIME_MASK_MONTHDAY | RTC_ALARM_TIME_MASK_YEAR | \
 	 RTC_ALARM_TIME_MASK_WEEKDAY)
 
 /* Helper macro to guard int-gpios related code */
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) &&                                                 \
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) &&                \
 	(defined(CONFIG_RTC_ALARM) || defined(CONFIG_RTC_UPDATE))
 #define RV3028_INT_GPIOS_IN_USE 1
 #endif
@@ -895,26 +895,26 @@ static const struct rtc_driver_api rv3028_driver_api = {
 #endif /* RV3028_INT_GPIOS_IN_USE && defined(CONFIG_RTC_UPDATE) */
 };
 
-#define RV3028_BSM_FROM_DT_INST(inst)                                                              \
+#define RV3028_BSM_FROM_DT_INST(inst)                                               \
 	UTIL_CAT(RV3028_BSM_, DT_INST_STRING_UPPER_TOKEN(inst, backup_switch_mode))
 
-#define RV3028_BACKUP_FROM_DT_INST(inst)                                                           \
-	((FIELD_PREP(RV3028_BACKUP_BSM, RV3028_BSM_FROM_DT_INST(inst))) |                          \
-	 (FIELD_PREP(RV3028_BACKUP_TCR, DT_INST_ENUM_IDX_OR(inst, trickle_resistor_ohms, 0))) |    \
+#define RV3028_BACKUP_FROM_DT_INST(inst)                                                        \
+	((FIELD_PREP(RV3028_BACKUP_BSM, RV3028_BSM_FROM_DT_INST(inst))) |                       \
+	 (FIELD_PREP(RV3028_BACKUP_TCR, DT_INST_ENUM_IDX_OR(inst, trickle_resistor_ohms, 0))) | \
 	 (DT_INST_NODE_HAS_PROP(inst, trickle_resistor_ohms) ? RV3028_BACKUP_TCE : 0))
 
-#define RV3028_INIT(inst)                                                                          \
-	static const struct rv3028_config rv3028_config_##inst = {                                 \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.cof = DT_INST_ENUM_IDX_OR(inst, clkout_frequency, RV3028_CLKOUT_FD_LOW),          \
-		.backup = RV3028_BACKUP_FROM_DT_INST(inst),                                        \
+#define RV3028_INIT(inst)                                                                   \
+	static const struct rv3028_config rv3028_config_##inst = {                          \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                          \
+		.cof = DT_INST_ENUM_IDX_OR(inst, clkout_frequency, RV3028_CLKOUT_FD_LOW),   \
+		.backup = RV3028_BACKUP_FROM_DT_INST(inst),                                 \
 		IF_ENABLED(RV3028_INT_GPIOS_IN_USE,                                                \
-			   (.gpio_int = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0})))};             \
-                                                                                                   \
-	static struct rv3028_data rv3028_data_##inst;                                              \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, &rv3028_init, NULL, &rv3028_data_##inst,                       \
-			      &rv3028_config_##inst, POST_KERNEL, CONFIG_RTC_INIT_PRIORITY,        \
+			   (.gpio_int = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0})))};      \
+                                                                                            \
+	static struct rv3028_data rv3028_data_##inst;                                       \
+                                                                                            \
+	DEVICE_DT_INST_DEFINE(inst, &rv3028_init, NULL, &rv3028_data_##inst,                \
+			      &rv3028_config_##inst, POST_KERNEL, CONFIG_RTC_INIT_PRIORITY, \
 			      &rv3028_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RV3028_INIT)

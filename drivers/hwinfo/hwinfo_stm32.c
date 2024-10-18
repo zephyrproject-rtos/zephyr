@@ -44,7 +44,7 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 	return length;
 }
 
-#if defined(CONFIG_SOC_SERIES_STM32WBAX) || defined(CONFIG_SOC_SERIES_STM32WBX) ||                 \
+#if defined(CONFIG_SOC_SERIES_STM32WBAX) || defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
 struct stm32_eui64 {
 	uint32_t id[2];

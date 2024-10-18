@@ -269,18 +269,18 @@ static const struct gpio_driver_api driver_api = {
 	.get_pending_int = get_pending_int,
 };
 
-#define GRGPIO_INIT(n)                                                                             \
-	static const struct cfg cfg_##n = {                                                        \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
-		.regs = (void *)DT_INST_REG_ADDR(n),                                               \
-		.interrupt = DT_INST_IRQN(n),                                                      \
-	};                                                                                         \
-	static struct data data_##n;                                                               \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, grgpio_init, NULL, &data_##n, &cfg_##n, POST_KERNEL,              \
+#define GRGPIO_INIT(n)                                                                \
+	static const struct cfg cfg_##n = {                                           \
+		.common =                                                             \
+			{                                                             \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),  \
+			},                                                            \
+		.regs = (void *)DT_INST_REG_ADDR(n),                                  \
+		.interrupt = DT_INST_IRQN(n),                                         \
+	};                                                                            \
+	static struct data data_##n;                                                  \
+                                                                                      \
+	DEVICE_DT_INST_DEFINE(n, grgpio_init, NULL, &data_##n, &cfg_##n, POST_KERNEL, \
 			      CONFIG_GPIO_INIT_PRIORITY, &driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GRGPIO_INIT)

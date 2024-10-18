@@ -12,8 +12,8 @@
 #include <zephyr/irq.h>
 #include "ipm_mhu.h"
 
-#define IPM_MHU_REGS(dev)                                                                          \
-	((volatile struct ipm_mhu_reg_map_t                                                        \
+#define IPM_MHU_REGS(dev)                                                               \
+	((volatile struct ipm_mhu_reg_map_t                                             \
 		  *)(((const struct ipm_mhu_device_config *const)(dev)->config)->base))
 
 static enum ipm_mhu_cpu_id_t ipm_mhu_get_cpu_id(const struct device *d)

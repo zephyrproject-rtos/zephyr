@@ -19,7 +19,7 @@
  * Utility macro that expands to the SIUL2 base address if it exists or zero.
  * Note that some devices may have instance gaps, hence the need to keep them in the array.
  */
-#define SIUL2_BASE_OR_ZERO(nodelabel)                                                              \
+#define SIUL2_BASE_OR_ZERO(nodelabel) \
 	COND_CODE_1(DT_NODE_EXISTS(DT_NODELABEL(nodelabel)),                                       \
 		    (DT_REG_ADDR(DT_NODELABEL(nodelabel))), (0U))
 

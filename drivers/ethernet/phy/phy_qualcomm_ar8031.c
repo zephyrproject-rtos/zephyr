@@ -492,20 +492,20 @@ static const struct ethphy_driver_api ar8031_driver_api = {
 	.write = qc_ar8031_write,
 };
 
-#define AR8031_CONFIG(n)                                                                           \
-	static const struct qc_ar8031_config qc_ar8031_config_##n = {                              \
-		.addr = DT_INST_REG_ADDR(n),                                                       \
-		.fixed_link = DT_INST_NODE_HAS_PROP(n, fixed_link),                                \
-		.fixed_speed = DT_INST_ENUM_IDX_OR(n, fixed_link, 0),                              \
-		.mdio_dev = DEVICE_DT_GET(DT_INST_BUS(n)),                                         \
-		.enable_eee = DT_INST_NODE_HAS_PROP(n, eee_en),                                    \
+#define AR8031_CONFIG(n)                                              \
+	static const struct qc_ar8031_config qc_ar8031_config_##n = { \
+		.addr = DT_INST_REG_ADDR(n),                          \
+		.fixed_link = DT_INST_NODE_HAS_PROP(n, fixed_link),   \
+		.fixed_speed = DT_INST_ENUM_IDX_OR(n, fixed_link, 0), \
+		.mdio_dev = DEVICE_DT_GET(DT_INST_BUS(n)),            \
+		.enable_eee = DT_INST_NODE_HAS_PROP(n, eee_en),       \
 	};
 
-#define AR8031_DEVICE(n)                                                                           \
-	AR8031_CONFIG(n);                                                                          \
-	static struct qc_ar8031_data qc_ar8031_data_##n;                                           \
-	DEVICE_DT_INST_DEFINE(n, &qc_ar8031_init, NULL, &qc_ar8031_data_##n,                       \
-			      &qc_ar8031_config_##n, POST_KERNEL, CONFIG_PHY_INIT_PRIORITY,        \
+#define AR8031_DEVICE(n)                                                                    \
+	AR8031_CONFIG(n);                                                                   \
+	static struct qc_ar8031_data qc_ar8031_data_##n;                                    \
+	DEVICE_DT_INST_DEFINE(n, &qc_ar8031_init, NULL, &qc_ar8031_data_##n,                \
+			      &qc_ar8031_config_##n, POST_KERNEL, CONFIG_PHY_INIT_PRIORITY, \
 			      &ar8031_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AR8031_DEVICE)

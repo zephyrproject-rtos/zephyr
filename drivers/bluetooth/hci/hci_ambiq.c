@@ -434,9 +434,9 @@ static int bt_apollo_init(const struct device *dev)
 	return 0;
 }
 
-#define HCI_DEVICE_INIT(inst)                                                                      \
-	static struct bt_apollo_data hci_data_##inst = {};                                         \
-	DEVICE_DT_INST_DEFINE(inst, bt_apollo_init, NULL, &hci_data_##inst, NULL, POST_KERNEL,     \
+#define HCI_DEVICE_INIT(inst)                                                                  \
+	static struct bt_apollo_data hci_data_##inst = {};                                     \
+	DEVICE_DT_INST_DEFINE(inst, bt_apollo_init, NULL, &hci_data_##inst, NULL, POST_KERNEL, \
 			      CONFIG_BT_HCI_INIT_PRIORITY, &drv)
 
 /* Only one instance supported right now */

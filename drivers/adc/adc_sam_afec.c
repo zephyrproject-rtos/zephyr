@@ -348,31 +348,31 @@ static void adc_sam_isr(const struct device *dev)
 	}
 }
 
-#define ADC_SAM_INIT(n)                                                                            \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	static void adc##n##_sam_cfg_func(const struct device *dev);                               \
-                                                                                                   \
-	static const struct adc_sam_cfg adc##n##_sam_cfg = {                                       \
-		.regs = (Afec *)DT_INST_REG_ADDR(n),                                               \
-		.cfg_func = adc##n##_sam_cfg_func,                                                 \
-		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),                                         \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-	};                                                                                         \
-                                                                                                   \
-	static struct adc_sam_data adc##n##_sam_data = {                                           \
-		ADC_CONTEXT_INIT_TIMER(adc##n##_sam_data, ctx),                                    \
-		ADC_CONTEXT_INIT_LOCK(adc##n##_sam_data, ctx),                                     \
-		ADC_CONTEXT_INIT_SYNC(adc##n##_sam_data, ctx),                                     \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, adc_sam_init, NULL, &adc##n##_sam_data, &adc##n##_sam_cfg,        \
-			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, &adc_sam_api);                \
-                                                                                                   \
-	static void adc##n##_sam_cfg_func(const struct device *dev)                                \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), adc_sam_isr,                \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define ADC_SAM_INIT(n)                                                                     \
+	PINCTRL_DT_INST_DEFINE(n);                                                          \
+	static void adc##n##_sam_cfg_func(const struct device *dev);                        \
+                                                                                            \
+	static const struct adc_sam_cfg adc##n##_sam_cfg = {                                \
+		.regs = (Afec *)DT_INST_REG_ADDR(n),                                        \
+		.cfg_func = adc##n##_sam_cfg_func,                                          \
+		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),                                  \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                  \
+	};                                                                                  \
+                                                                                            \
+	static struct adc_sam_data adc##n##_sam_data = {                                    \
+		ADC_CONTEXT_INIT_TIMER(adc##n##_sam_data, ctx),                             \
+		ADC_CONTEXT_INIT_LOCK(adc##n##_sam_data, ctx),                              \
+		ADC_CONTEXT_INIT_SYNC(adc##n##_sam_data, ctx),                              \
+	};                                                                                  \
+                                                                                            \
+	DEVICE_DT_INST_DEFINE(n, adc_sam_init, NULL, &adc##n##_sam_data, &adc##n##_sam_cfg, \
+			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, &adc_sam_api);         \
+                                                                                            \
+	static void adc##n##_sam_cfg_func(const struct device *dev)                         \
+	{                                                                                   \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), adc_sam_isr,         \
+			    DEVICE_DT_INST_GET(n), 0);                                      \
+		irq_enable(DT_INST_IRQN(n));                                                \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_SAM_INIT)

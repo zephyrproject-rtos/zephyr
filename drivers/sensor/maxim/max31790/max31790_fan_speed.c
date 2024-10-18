@@ -122,17 +122,17 @@ static int max31790_fan_speed_init(const struct device *dev)
 	return 0;
 }
 
-#define MAX31790_FAN_SPEED_INIT(inst)                                                              \
-	static const struct max31790_fan_speed_config max31790_fan_speed_##inst##_config = {       \
-		.i2c = I2C_DT_SPEC_GET(DT_INST_PARENT(inst)),                                      \
-		.channel_id = DT_INST_PROP(inst, channel) - 1,                                     \
-	};                                                                                         \
-                                                                                                   \
-	static struct max31790_fan_speed_data max31790_fan_speed_##inst##_data;                    \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, max31790_fan_speed_init, NULL,                          \
-				     &max31790_fan_speed_##inst##_data,                            \
-				     &max31790_fan_speed_##inst##_config, POST_KERNEL,             \
+#define MAX31790_FAN_SPEED_INIT(inst)                                                        \
+	static const struct max31790_fan_speed_config max31790_fan_speed_##inst##_config = { \
+		.i2c = I2C_DT_SPEC_GET(DT_INST_PARENT(inst)),                                \
+		.channel_id = DT_INST_PROP(inst, channel) - 1,                               \
+	};                                                                                   \
+                                                                                             \
+	static struct max31790_fan_speed_data max31790_fan_speed_##inst##_data;              \
+                                                                                             \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, max31790_fan_speed_init, NULL,                    \
+				     &max31790_fan_speed_##inst##_data,                      \
+				     &max31790_fan_speed_##inst##_config, POST_KERNEL,       \
 				     CONFIG_SENSOR_INIT_PRIORITY, &max31790_fan_speed_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX31790_FAN_SPEED_INIT);

@@ -12,7 +12,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <cy_gpio.h>
 
-#define GPIO_PORT_OR_NULL(node_id)                                                                 \
+#define GPIO_PORT_OR_NULL(node_id) \
 	COND_CODE_1(DT_NODE_EXISTS(node_id), ((GPIO_PRT_Type *)DT_REG_ADDR(node_id)), (NULL))
 
 /* @brief Array containing pointers to each GPIO port.

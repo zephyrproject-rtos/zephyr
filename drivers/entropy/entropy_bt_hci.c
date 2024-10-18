@@ -30,8 +30,8 @@ static int entropy_bt_get_entropy(const struct device *dev, uint8_t *buffer, uin
 static const struct entropy_driver_api entropy_bt_api = {.get_entropy = entropy_bt_get_entropy,
 							 .get_entropy_isr = NULL};
 
-#define ENTROPY_BT_HCI_INIT(inst)                                                                  \
-	DEVICE_DT_INST_DEFINE(inst, entropy_bt_init, NULL, NULL, NULL, PRE_KERNEL_1,               \
+#define ENTROPY_BT_HCI_INIT(inst)                                                    \
+	DEVICE_DT_INST_DEFINE(inst, entropy_bt_init, NULL, NULL, NULL, PRE_KERNEL_1, \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &entropy_bt_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ENTROPY_BT_HCI_INIT)

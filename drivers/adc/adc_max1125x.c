@@ -776,31 +776,31 @@ static const struct adc_driver_api max1125x_api = {
 
 #define DT_INST_MAX1125X(inst, t) DT_INST(inst, maxim_max##t)
 
-#define MAX1125X_INIT(t, n, odr_delay_us, res, mux, pgab)                                          \
-	static const struct max1125x_config max##t##_cfg_##n = {                                   \
-		.bus = SPI_DT_SPEC_GET(DT_INST_MAX1125X(n, t),                                     \
-				       SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB,    \
-				       1),                                                         \
-		.odr_delay = odr_delay_us,                                                         \
-		.resolution = res,                                                                 \
-		.multiplexer = mux,                                                                \
-		.pga = pgab,                                                                       \
-		.drdy_gpio = GPIO_DT_SPEC_GET_OR(DT_INST_MAX1125X(n, t), drdy_gpios, {0}),         \
-		.self_calibration = DT_PROP_OR(DT_INST_MAX1125X(n, t), self_calibration, 0),       \
-		.gpio.gpio0_enable = DT_PROP_OR(DT_INST_MAX1125X(n, t), gpio0_enable, 1),          \
-		.gpio.gpio1_enable = DT_PROP_OR(DT_INST_MAX1125X(n, t), gpio1_enable, 0),          \
-		.gpio.gpio0_direction = DT_PROP_OR(DT_INST_MAX1125X(n, t), gpio0_direction, 0),    \
-		.gpio.gpio1_direction = DT_PROP_OR(DT_INST_MAX1125X(n, t), gpio1_direction, 0),    \
-		.gpo.gpo0_enable = DT_PROP_OR(DT_INST_MAX1125X(n, t), gpo1_enable, 0),             \
-		.gpo.gpo1_enable = DT_PROP_OR(DT_INST_MAX1125X(n, t), gpo1_enable, 0),             \
-	};                                                                                         \
-	static struct max1125x_data max##t##_data_##n = {                                          \
-		ADC_CONTEXT_INIT_LOCK(max##t##_data_##n, ctx),                                     \
-		ADC_CONTEXT_INIT_TIMER(max##t##_data_##n, ctx),                                    \
-		ADC_CONTEXT_INIT_SYNC(max##t##_data_##n, ctx),                                     \
-	};                                                                                         \
-	DEVICE_DT_DEFINE(DT_INST_MAX1125X(n, t), max1125x_init, NULL, &max##t##_data_##n,          \
-			 &max##t##_cfg_##n, POST_KERNEL, CONFIG_ADC_MAX1125X_INIT_PRIORITY,        \
+#define MAX1125X_INIT(t, n, odr_delay_us, res, mux, pgab)                                       \
+	static const struct max1125x_config max##t##_cfg_##n = {                                \
+		.bus = SPI_DT_SPEC_GET(DT_INST_MAX1125X(n, t),                                  \
+				       SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB, \
+				       1),                                                      \
+		.odr_delay = odr_delay_us,                                                      \
+		.resolution = res,                                                              \
+		.multiplexer = mux,                                                             \
+		.pga = pgab,                                                                    \
+		.drdy_gpio = GPIO_DT_SPEC_GET_OR(DT_INST_MAX1125X(n, t), drdy_gpios, {0}),      \
+		.self_calibration = DT_PROP_OR(DT_INST_MAX1125X(n, t), self_calibration, 0),    \
+		.gpio.gpio0_enable = DT_PROP_OR(DT_INST_MAX1125X(n, t), gpio0_enable, 1),       \
+		.gpio.gpio1_enable = DT_PROP_OR(DT_INST_MAX1125X(n, t), gpio1_enable, 0),       \
+		.gpio.gpio0_direction = DT_PROP_OR(DT_INST_MAX1125X(n, t), gpio0_direction, 0), \
+		.gpio.gpio1_direction = DT_PROP_OR(DT_INST_MAX1125X(n, t), gpio1_direction, 0), \
+		.gpo.gpo0_enable = DT_PROP_OR(DT_INST_MAX1125X(n, t), gpo1_enable, 0),          \
+		.gpo.gpo1_enable = DT_PROP_OR(DT_INST_MAX1125X(n, t), gpo1_enable, 0),          \
+	};                                                                                      \
+	static struct max1125x_data max##t##_data_##n = {                                       \
+		ADC_CONTEXT_INIT_LOCK(max##t##_data_##n, ctx),                                  \
+		ADC_CONTEXT_INIT_TIMER(max##t##_data_##n, ctx),                                 \
+		ADC_CONTEXT_INIT_SYNC(max##t##_data_##n, ctx),                                  \
+	};                                                                                      \
+	DEVICE_DT_DEFINE(DT_INST_MAX1125X(n, t), max1125x_init, NULL, &max##t##_data_##n,       \
+			 &max##t##_cfg_##n, POST_KERNEL, CONFIG_ADC_MAX1125X_INIT_PRIORITY,     \
 			 &max1125x_api);
 
 /* Each data register is a 16-bit read-only register. Any attempt to write
@@ -842,14 +842,14 @@ static const struct adc_driver_api max1125x_api = {
  * {1.9 SPS, 3.9 SPS, 7.8 SPS, 15.6 SPS, 31.2 SPS, 62.5 SPS, 125 SPS, 250 SPS, 500 SPS,
  * 1000 SPS, 2000 SPS, 4000 SPS, 8000 SPS, 16000 SPS, 32000 SPS, 64000 SPS}
  */
-#define MAX1125X_ODR_DELAY_US                                                                      \
-	{526315, 256410, 128205, 64102, 32051, 16000, 8000, 4000,                                  \
+#define MAX1125X_ODR_DELAY_US                                     \
+	{526315, 256410, 128205, 64102, 32051, 16000, 8000, 4000, \
 	 2000,   1000,   500,    250,   125,   62,    31,   15}
 
 /*
  * MAX11253: 16 bit, 6-channel, programmable gain amplifier, delta-sigma
  */
-#define MAX11253_INIT(n)                                                                           \
+#define MAX11253_INIT(n)                                                                 \
 	MAX1125X_INIT(11253, n, MAX1125X_ODR_DELAY_US, MAX11253_RESOLUTION, false, true)
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT maxim_max11253
@@ -859,7 +859,7 @@ DT_INST_FOREACH_STATUS_OKAY(MAX11253_INIT)
  * MAX1125X: 24 bit, 6-channel, programmable gain amplifier, delta-sigma
  */
 
-#define MAX11254_INIT(n)                                                                           \
+#define MAX11254_INIT(n)                                                                 \
 	MAX1125X_INIT(11254, n, MAX1125X_ODR_DELAY_US, MAX11254_RESOLUTION, false, true)
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT maxim_max11254

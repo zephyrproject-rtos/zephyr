@@ -51,7 +51,7 @@ static uint32_t used_pmc_banks_reported;
  */
 __attribute__((__section__(".unused_ram_start_marker"))) static int unused_l2_sram_start_marker =
 	0xba0babce;
-#define UNUSED_L2_START_ALIGNED                                                                    \
+#define UNUSED_L2_START_ALIGNED                                                          \
 	ROUND_UP(POINTER_TO_UINT(&unused_l2_sram_start_marker), CONFIG_MM_DRV_PAGE_SIZE)
 
 /* declare L2 physical memory block */

@@ -327,43 +327,43 @@ static const struct led_driver_api lp50xx_led_api = {
 	.write_channels = lp50xx_write_channels,
 };
 
-#define COLOR_MAPPING(led_node_id)                                                                 \
+#define COLOR_MAPPING(led_node_id)                                                         \
 	const uint8_t color_mapping_##led_node_id[] = DT_PROP(led_node_id, color_mapping);
 
-#define LED_INFO(led_node_id)                                                                      \
-	{                                                                                          \
-		.label = DT_PROP(led_node_id, label),                                              \
-		.index = DT_PROP(led_node_id, index),                                              \
-		.num_colors = DT_PROP_LEN(led_node_id, color_mapping),                             \
-		.color_mapping = color_mapping_##led_node_id,                                      \
+#define LED_INFO(led_node_id)                                          \
+	{                                                              \
+		.label = DT_PROP(led_node_id, label),                  \
+		.index = DT_PROP(led_node_id, index),                  \
+		.num_colors = DT_PROP_LEN(led_node_id, color_mapping), \
+		.color_mapping = color_mapping_##led_node_id,          \
 	},
 
-#define LP50XX_DEVICE(n, id, nmodules)                                                             \
-	DT_INST_FOREACH_CHILD(n, COLOR_MAPPING)                                                    \
-                                                                                                   \
-	static const struct led_info lp##id##_leds_##n[] = {DT_INST_FOREACH_CHILD(n, LED_INFO)};   \
-                                                                                                   \
-	static const struct lp50xx_config lp##id##_config_##n = {                                  \
-		.bus = I2C_DT_SPEC_INST_GET(n),                                                    \
-		.gpio_enable = GPIO_DT_SPEC_INST_GET_OR(n, enable_gpios, {0}),                     \
-		.num_modules = nmodules,                                                           \
-		.max_leds = LP##id##_MAX_LEDS,                                                     \
-		.num_leds = ARRAY_SIZE(lp##id##_leds_##n),                                         \
-		.log_scale_en = DT_INST_PROP(n, log_scale_en),                                     \
-		.max_curr_opt = DT_INST_PROP(n, max_curr_opt),                                     \
-		.leds_info = lp##id##_leds_##n,                                                    \
-	};                                                                                         \
-                                                                                                   \
-	static uint8_t lp##id##_chan_buf_##n[LP50XX_MAX_CHANNELS(nmodules) + 1];                   \
-                                                                                                   \
-	static struct lp50xx_data lp##id##_data_##n = {                                            \
-		.chan_buf = lp##id##_chan_buf_##n,                                                 \
-	};                                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(n, lp50xx_pm_action);                                             \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, lp50xx_init, PM_DEVICE_DT_INST_GET(n), &lp##id##_data_##n,        \
-			      &lp##id##_config_##n, POST_KERNEL, CONFIG_LED_INIT_PRIORITY,         \
+#define LP50XX_DEVICE(n, id, nmodules)                                                           \
+	DT_INST_FOREACH_CHILD(n, COLOR_MAPPING)                                                  \
+                                                                                                 \
+	static const struct led_info lp##id##_leds_##n[] = {DT_INST_FOREACH_CHILD(n, LED_INFO)}; \
+                                                                                                 \
+	static const struct lp50xx_config lp##id##_config_##n = {                                \
+		.bus = I2C_DT_SPEC_INST_GET(n),                                                  \
+		.gpio_enable = GPIO_DT_SPEC_INST_GET_OR(n, enable_gpios, {0}),                   \
+		.num_modules = nmodules,                                                         \
+		.max_leds = LP##id##_MAX_LEDS,                                                   \
+		.num_leds = ARRAY_SIZE(lp##id##_leds_##n),                                       \
+		.log_scale_en = DT_INST_PROP(n, log_scale_en),                                   \
+		.max_curr_opt = DT_INST_PROP(n, max_curr_opt),                                   \
+		.leds_info = lp##id##_leds_##n,                                                  \
+	};                                                                                       \
+                                                                                                 \
+	static uint8_t lp##id##_chan_buf_##n[LP50XX_MAX_CHANNELS(nmodules) + 1];                 \
+                                                                                                 \
+	static struct lp50xx_data lp##id##_data_##n = {                                          \
+		.chan_buf = lp##id##_chan_buf_##n,                                               \
+	};                                                                                       \
+                                                                                                 \
+	PM_DEVICE_DT_INST_DEFINE(n, lp50xx_pm_action);                                           \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(n, lp50xx_init, PM_DEVICE_DT_INST_GET(n), &lp##id##_data_##n,      \
+			      &lp##id##_config_##n, POST_KERNEL, CONFIG_LED_INIT_PRIORITY,       \
 			      &lp50xx_led_api);
 
 #undef DT_DRV_COMPAT

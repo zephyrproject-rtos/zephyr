@@ -402,40 +402,40 @@ int npcx_miwu_manage_callback(struct miwu_callback *cb, bool set)
 #define NPCX_MIWU_INIT_FUNC_DECL(inst) static int intc_miwu_init##inst(const struct device *dev)
 
 /* MIWU ISR implementation */
-#define NPCX_MIWU_ISR_FUNC_IMPL(inst)                                                              \
-	static void intc_miwu_isr##inst(void *arg)                                                 \
-	{                                                                                          \
-		uint8_t grp_mask = (uint32_t)arg;                                                  \
-		int group = 0;                                                                     \
-                                                                                                   \
-		/* Check all MIWU groups belong to the same irq */                                 \
-		do {                                                                               \
-			if (grp_mask & 0x01)                                                       \
-				intc_miwu_isr_pri(inst, group);                                    \
-			group++;                                                                   \
-			grp_mask = grp_mask >> 1;                                                  \
-                                                                                                   \
-		} while (grp_mask != 0);                                                           \
+#define NPCX_MIWU_ISR_FUNC_IMPL(inst)                              \
+	static void intc_miwu_isr##inst(void *arg)                 \
+	{                                                          \
+		uint8_t grp_mask = (uint32_t)arg;                  \
+		int group = 0;                                     \
+                                                                   \
+		/* Check all MIWU groups belong to the same irq */ \
+		do {                                               \
+			if (grp_mask & 0x01)                       \
+				intc_miwu_isr_pri(inst, group);    \
+			group++;                                   \
+			grp_mask = grp_mask >> 1;                  \
+                                                                   \
+		} while (grp_mask != 0);                           \
 	}
 
 /* MIWU init function implementation */
-#define NPCX_MIWU_INIT_FUNC_IMPL(inst)                                                             \
-	static int intc_miwu_init##inst(const struct device *dev)                                  \
-	{                                                                                          \
-		int i;                                                                             \
-		const struct intc_miwu_config *config = dev->config;                               \
-		const uint32_t base = config->base;                                                \
-                                                                                                   \
-		/* Clear all MIWUs' pending and enable bits of MIWU device */                      \
-		for (i = 0; i < NPCX_MIWU_GROUP_COUNT; i++) {                                      \
-			NPCX_WKEN(base, i) = 0;                                                    \
-			NPCX_WKPCL(base, i) = 0xFF;                                                \
-		}                                                                                  \
-                                                                                                   \
-		/* Config IRQ and MWIU group directly */                                           \
-		DT_FOREACH_CHILD(NPCX_DT_NODE_FROM_MIWU_MAP(inst),                                 \
-				 NPCX_DT_MIWU_IRQ_CONNECT_IMPL_CHILD_FUNC)                         \
-		return 0;                                                                          \
+#define NPCX_MIWU_INIT_FUNC_IMPL(inst)                                        \
+	static int intc_miwu_init##inst(const struct device *dev)             \
+	{                                                                     \
+		int i;                                                        \
+		const struct intc_miwu_config *config = dev->config;          \
+		const uint32_t base = config->base;                           \
+                                                                              \
+		/* Clear all MIWUs' pending and enable bits of MIWU device */ \
+		for (i = 0; i < NPCX_MIWU_GROUP_COUNT; i++) {                 \
+			NPCX_WKEN(base, i) = 0;                               \
+			NPCX_WKPCL(base, i) = 0xFF;                           \
+		}                                                             \
+                                                                              \
+		/* Config IRQ and MWIU group directly */                      \
+		DT_FOREACH_CHILD(NPCX_DT_NODE_FROM_MIWU_MAP(inst),            \
+				 NPCX_DT_MIWU_IRQ_CONNECT_IMPL_CHILD_FUNC)    \
+		return 0;                                                     \
 	}
 
 #define NPCX_MIWU_INIT(inst)                                                                       \

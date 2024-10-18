@@ -31,9 +31,9 @@ LOG_MODULE_REGISTER(wdt_nxp_fs26);
 #define WD_RFR_LIMIT(x) _CONCAT(WD_RFR_LIMIT_, x)
 #define WDW_PERIOD(x)   _CONCAT(_CONCAT(WDW_PERIOD_, x), MS)
 
-#define BAD_WD_REFRESH_ERROR_STRING(x)                                                             \
-	((((x) & BAD_WD_DATA)                                                                      \
-		  ? "error in the data"                                                            \
+#define BAD_WD_REFRESH_ERROR_STRING(x)                                                           \
+	((((x) & BAD_WD_DATA)                                                                    \
+		  ? "error in the data"                                                          \
 		  : (((x) & BAD_WD_TIMING) ? "error in the timing (window)" : "unknown error")))
 
 enum fs26_wd_type {
@@ -759,27 +759,27 @@ static const struct wdt_driver_api wdt_nxp_fs26_api = {
 	.feed = wdt_nxp_fs26_feed,
 };
 
-#define FS26_WDT_DEVICE_INIT(n)                                                                    \
+#define FS26_WDT_DEVICE_INIT(n)                                                       \
 	COND_CODE_1(DT_INST_ENUM_IDX(n, type),						\
 		(BUILD_ASSERT(CONFIG_WDT_NXP_FS26_SEED != 0x0,				\
 				"Seed value 0x0000 is not allowed");),			\
 		(BUILD_ASSERT((CONFIG_WDT_NXP_FS26_SEED != 0x0)				\
 				&& (CONFIG_WDT_NXP_FS26_SEED != 0xffff),		\
-				"Seed values 0x0000 and 0xffff are not allowed");))                                              \
-                                                                                                   \
-	static struct wdt_nxp_fs26_data wdt_nxp_fs26_data_##n = {                                  \
-		.token = CONFIG_WDT_NXP_FS26_SEED,                                                 \
-	};                                                                                         \
-                                                                                                   \
-	static const struct wdt_nxp_fs26_config wdt_nxp_fs26_config_##n = {                        \
-		.spi = SPI_DT_SPEC_INST_GET(                                                       \
-			n, SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(32), 0),              \
-		.wd_type = _CONCAT(FS26_WD_, DT_INST_STRING_UPPER_TOKEN(n, type)),                 \
-		.int_gpio = GPIO_DT_SPEC_INST_GET(n, int_gpios),                                   \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, wdt_nxp_fs26_init, NULL, &wdt_nxp_fs26_data_##n,                  \
-			      &wdt_nxp_fs26_config_##n, POST_KERNEL,                               \
+				"Seed values 0x0000 and 0xffff are not allowed");))                                 \
+                                                                                      \
+	static struct wdt_nxp_fs26_data wdt_nxp_fs26_data_##n = {                     \
+		.token = CONFIG_WDT_NXP_FS26_SEED,                                    \
+	};                                                                            \
+                                                                                      \
+	static const struct wdt_nxp_fs26_config wdt_nxp_fs26_config_##n = {           \
+		.spi = SPI_DT_SPEC_INST_GET(                                          \
+			n, SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(32), 0), \
+		.wd_type = _CONCAT(FS26_WD_, DT_INST_STRING_UPPER_TOKEN(n, type)),    \
+		.int_gpio = GPIO_DT_SPEC_INST_GET(n, int_gpios),                      \
+	};                                                                            \
+                                                                                      \
+	DEVICE_DT_INST_DEFINE(n, wdt_nxp_fs26_init, NULL, &wdt_nxp_fs26_data_##n,     \
+			      &wdt_nxp_fs26_config_##n, POST_KERNEL,                  \
 			      CONFIG_WDT_NXP_FS26_INIT_PRIORITY, &wdt_nxp_fs26_api);
 
 DT_INST_FOREACH_STATUS_OKAY(FS26_WDT_DEVICE_INIT)

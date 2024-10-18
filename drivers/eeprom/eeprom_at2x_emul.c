@@ -151,16 +151,16 @@ static int emul_atmel_at24_init(const struct emul *target, const struct device *
 	return 0;
 }
 
-#define EEPROM_AT24_EMUL(n)                                                                        \
-	static uint8_t at24_emul_buf_##n[DT_INST_PROP(n, size)];                                   \
-	static struct at24_emul_data at24_emul_data_##n;                                           \
-	static const struct at24_emul_cfg at24_emul_cfg_##n = {                                    \
-		.buf = at24_emul_buf_##n,                                                          \
-		.size = DT_INST_PROP(n, size),                                                     \
-		.addr = DT_INST_REG_ADDR(n),                                                       \
-		.addr_width = 8,                                                                   \
-	};                                                                                         \
-	EMUL_DT_INST_DEFINE(n, emul_atmel_at24_init, &at24_emul_data_##n, &at24_emul_cfg_##n,      \
+#define EEPROM_AT24_EMUL(n)                                                                   \
+	static uint8_t at24_emul_buf_##n[DT_INST_PROP(n, size)];                              \
+	static struct at24_emul_data at24_emul_data_##n;                                      \
+	static const struct at24_emul_cfg at24_emul_cfg_##n = {                               \
+		.buf = at24_emul_buf_##n,                                                     \
+		.size = DT_INST_PROP(n, size),                                                \
+		.addr = DT_INST_REG_ADDR(n),                                                  \
+		.addr_width = 8,                                                              \
+	};                                                                                    \
+	EMUL_DT_INST_DEFINE(n, emul_atmel_at24_init, &at24_emul_data_##n, &at24_emul_cfg_##n, \
 			    &bus_api, NULL)
 
 DT_INST_FOREACH_STATUS_OKAY(EEPROM_AT24_EMUL)

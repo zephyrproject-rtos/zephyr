@@ -45,7 +45,7 @@ BUILD_ASSERT(kACMP_PortInputFromMux == 1);
  * prop New property name
  * depr Deprecated property name
  */
-#define MCUX_ACMP_DT_INST_PROP(inst, prop, depr)                                                   \
+#define MCUX_ACMP_DT_INST_PROP(inst, prop, depr) \
 	COND_CODE_1(										\
 		DT_INST_NODE_HAS_PROP(inst, prop),						\
 		(DT_INST_PROP(inst, prop)),							\
@@ -56,32 +56,32 @@ BUILD_ASSERT(kACMP_PortInputFromMux == 1);
  * prop New property name
  * depr Deprecated property name
  */
-#define MCUX_ACMP_DT_INST_PROP_OR(inst, prop, depr, default_value)                                 \
+#define MCUX_ACMP_DT_INST_PROP_OR(inst, prop, depr, default_value) \
 	COND_CODE_1(										\
 		DT_INST_NODE_HAS_PROP(inst, prop) || DT_INST_NODE_HAS_PROP(inst, depr),		\
 		(MCUX_ACMP_DT_INST_PROP(inst, prop, depr)),					\
 		(default_value)									\
 	)
 
-#define MCUX_ACMP_DT_INST_ENABLE_SAMPLE(inst)                                                      \
+#define MCUX_ACMP_DT_INST_ENABLE_SAMPLE(inst)                                 \
 	MCUX_ACMP_DT_INST_PROP(inst, filter_enable_sample, nxp_enable_sample)
 
-#define MCUX_ACMP_DT_INST_FILTER_COUNT(inst)                                                       \
+#define MCUX_ACMP_DT_INST_FILTER_COUNT(inst)                               \
 	MCUX_ACMP_DT_INST_PROP_OR(inst, filter_count, nxp_filter_count, 0)
 
-#define MCUX_ACMP_DT_INST_FILTER_PERIOD(inst)                                                      \
+#define MCUX_ACMP_DT_INST_FILTER_PERIOD(inst)                                \
 	MCUX_ACMP_DT_INST_PROP_OR(inst, filter_period, nxp_filter_period, 0)
 
-#define MCUX_ACMP_DT_INST_HIGH_SPEED(inst)                                                         \
+#define MCUX_ACMP_DT_INST_HIGH_SPEED(inst)                                        \
 	MCUX_ACMP_DT_INST_PROP(inst, enable_high_speed_mode, nxp_high_speed_mode)
 
-#define MCUX_ACMP_DT_INST_USE_UNFILTERED_MODE(inst)                                                \
+#define MCUX_ACMP_DT_INST_USE_UNFILTERED_MODE(inst)                                    \
 	MCUX_ACMP_DT_INST_PROP(inst, use_unfiltered_output, nxp_use_unfiltered_output)
 
-#define MCUX_ACMP_DT_INST_USE_ENABLE_PIN_OUT(inst)                                                 \
+#define MCUX_ACMP_DT_INST_USE_ENABLE_PIN_OUT(inst)                          \
 	MCUX_ACMP_DT_INST_PROP(inst, enable_pin_out, nxp_enable_output_pin)
 
-#define MCUX_ACMP_DT_INST_ENABLE_WINDOW_MODE(inst)                                                 \
+#define MCUX_ACMP_DT_INST_ENABLE_WINDOW_MODE(inst)                        \
 	MCUX_ACMP_DT_INST_PROP(inst, enable_window_mode, nxp_window_mode)
 
 struct mcux_acmp_config {
@@ -515,29 +515,29 @@ static const struct sensor_driver_api mcux_acmp_driver_api = {
 	.channel_get = mcux_acmp_channel_get,
 };
 
-#define MCUX_ACMP_DECLARE_CONFIG(n, config_func_init)                                              \
-	static const struct mcux_acmp_config mcux_acmp_config_##n = {                              \
-		.base = (CMP_Type *)DT_INST_REG_ADDR(n),                                           \
-		.filter =                                                                          \
-			{                                                                          \
-				.enableSample = MCUX_ACMP_DT_INST_ENABLE_SAMPLE(n),                \
-				.filterCount = MCUX_ACMP_DT_INST_FILTER_COUNT(n),                  \
-				.filterPeriod = MCUX_ACMP_DT_INST_FILTER_PERIOD(n),                \
-			},                                                                         \
-		.high_speed = MCUX_ACMP_DT_INST_HIGH_SPEED(n),                                     \
-		.unfiltered = MCUX_ACMP_DT_INST_USE_UNFILTERED_MODE(n),                            \
-		.output = MCUX_ACMP_DT_INST_USE_ENABLE_PIN_OUT(n),                                 \
-		.window = MCUX_ACMP_DT_INST_ENABLE_WINDOW_MODE(n),                                 \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+#define MCUX_ACMP_DECLARE_CONFIG(n, config_func_init)                               \
+	static const struct mcux_acmp_config mcux_acmp_config_##n = {               \
+		.base = (CMP_Type *)DT_INST_REG_ADDR(n),                            \
+		.filter =                                                           \
+			{                                                           \
+				.enableSample = MCUX_ACMP_DT_INST_ENABLE_SAMPLE(n), \
+				.filterCount = MCUX_ACMP_DT_INST_FILTER_COUNT(n),   \
+				.filterPeriod = MCUX_ACMP_DT_INST_FILTER_PERIOD(n), \
+			},                                                          \
+		.high_speed = MCUX_ACMP_DT_INST_HIGH_SPEED(n),                      \
+		.unfiltered = MCUX_ACMP_DT_INST_USE_UNFILTERED_MODE(n),             \
+		.output = MCUX_ACMP_DT_INST_USE_ENABLE_PIN_OUT(n),                  \
+		.window = MCUX_ACMP_DT_INST_ENABLE_WINDOW_MODE(n),                  \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                        \
 		config_func_init}
 
 #ifdef CONFIG_SENSOR_MCUX_ACMP_TRIGGER
-#define MCUX_ACMP_CONFIG_FUNC(n)                                                                   \
-	static void mcux_acmp_config_func_##n(const struct device *dev)                            \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_acmp_isr,              \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define MCUX_ACMP_CONFIG_FUNC(n)                                                      \
+	static void mcux_acmp_config_func_##n(const struct device *dev)               \
+	{                                                                             \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_acmp_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                                \
+		irq_enable(DT_INST_IRQN(n));                                          \
 	}
 #define MCUX_ACMP_CONFIG_FUNC_INIT(n) .irq_config_func = mcux_acmp_config_func_##n
 #define MCUX_ACMP_INIT_CONFIG(n)      MCUX_ACMP_DECLARE_CONFIG(n, MCUX_ACMP_CONFIG_FUNC_INIT(n))
@@ -547,17 +547,17 @@ static const struct sensor_driver_api mcux_acmp_driver_api = {
 #define MCUX_ACMP_INIT_CONFIG(n) MCUX_ACMP_DECLARE_CONFIG(n, MCUX_ACMP_CONFIG_FUNC_INIT)
 #endif /* !CONFIG_SENSOR_MCUX_ACMP_TRIGGER */
 
-#define MCUX_ACMP_INIT(n)                                                                          \
-	static struct mcux_acmp_data mcux_acmp_data_##n;                                           \
-                                                                                                   \
-	static const struct mcux_acmp_config mcux_acmp_config_##n;                                 \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, &mcux_acmp_init, NULL, &mcux_acmp_data_##n,                \
-				     &mcux_acmp_config_##n, POST_KERNEL,                           \
-				     CONFIG_SENSOR_INIT_PRIORITY, &mcux_acmp_driver_api);          \
-	MCUX_ACMP_CONFIG_FUNC(n)                                                                   \
+#define MCUX_ACMP_INIT(n)                                                                 \
+	static struct mcux_acmp_data mcux_acmp_data_##n;                                  \
+                                                                                          \
+	static const struct mcux_acmp_config mcux_acmp_config_##n;                        \
+                                                                                          \
+	PINCTRL_DT_INST_DEFINE(n);                                                        \
+                                                                                          \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, &mcux_acmp_init, NULL, &mcux_acmp_data_##n,       \
+				     &mcux_acmp_config_##n, POST_KERNEL,                  \
+				     CONFIG_SENSOR_INIT_PRIORITY, &mcux_acmp_driver_api); \
+	MCUX_ACMP_CONFIG_FUNC(n)                                                          \
 	MCUX_ACMP_INIT_CONFIG(n);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_ACMP_INIT)

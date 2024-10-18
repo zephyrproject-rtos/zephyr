@@ -848,25 +848,25 @@ static int pinnacle_init(const struct device *dev)
 	return 0;
 }
 
-#define PINNACLE_CONFIG_BUS_I2C(inst)                                                              \
-	.bus = {                                                                                   \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.is_ready = pinnacle_is_ready_i2c,                                                 \
-		.write = pinnacle_write_i2c,                                                       \
-		.seq_write = pinnacle_seq_write_i2c,                                               \
-		.read = pinnacle_read_i2c,                                                         \
-		.seq_read = pinnacle_seq_read_i2c,                                                 \
+#define PINNACLE_CONFIG_BUS_I2C(inst)                \
+	.bus = {                                     \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),   \
+		.is_ready = pinnacle_is_ready_i2c,   \
+		.write = pinnacle_write_i2c,         \
+		.seq_write = pinnacle_seq_write_i2c, \
+		.read = pinnacle_read_i2c,           \
+		.seq_read = pinnacle_seq_read_i2c,   \
 	}
 
 #define PINNACLE_SPI_OP (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_MODE_CPHA | SPI_WORD_SET(8))
-#define PINNACLE_CONFIG_BUS_SPI(inst)                                                              \
-	.bus = {                                                                                   \
-		.spi = SPI_DT_SPEC_INST_GET(inst, PINNACLE_SPI_OP, 0U),                            \
-		.is_ready = pinnacle_is_ready_spi,                                                 \
-		.write = pinnacle_write_spi,                                                       \
-		.seq_write = pinnacle_seq_write_spi,                                               \
-		.read = pinnacle_read_spi,                                                         \
-		.seq_read = pinnacle_seq_read_spi,                                                 \
+#define PINNACLE_CONFIG_BUS_SPI(inst)                                   \
+	.bus = {                                                        \
+		.spi = SPI_DT_SPEC_INST_GET(inst, PINNACLE_SPI_OP, 0U), \
+		.is_ready = pinnacle_is_ready_spi,                      \
+		.write = pinnacle_write_spi,                            \
+		.seq_write = pinnacle_seq_write_spi,                    \
+		.read = pinnacle_read_spi,                              \
+		.seq_read = pinnacle_seq_read_spi,                      \
 	}
 
 #define PINNACLE_DEFINE(inst)                                                                      \

@@ -992,21 +992,21 @@ static int ubx_m8_init(const struct device *dev)
 	return 0;
 }
 
-#define UBX_M8(inst)                                                                               \
-	static const struct ubx_m8_config ubx_m8_cfg_##inst = {                                    \
-		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
-		.uart_baudrate = DT_PROP(DT_DRV_INST(inst), uart_baudrate),                        \
-	};                                                                                         \
-                                                                                                   \
-	static struct ubx_m8_data ubx_m8_data_##inst = {                                           \
-		.script.request = (struct ubx_frame *)ubx_m8_data_##inst.request_buf,              \
-		.script.response = (struct ubx_frame *)ubx_m8_data_##inst.response_buf,            \
-		.script.match = (struct ubx_frame *)ubx_m8_data_##inst.match_buf,                  \
-		.script.retry_count = UBX_M8_SCRIPT_RETRY_DEFAULT,                                 \
-		.script.timeout = K_MSEC(MODEM_UBX_SCRIPT_TIMEOUT_MS),                             \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, ubx_m8_init, NULL, &ubx_m8_data_##inst, &ubx_m8_cfg_##inst,    \
+#define UBX_M8(inst)                                                                            \
+	static const struct ubx_m8_config ubx_m8_cfg_##inst = {                                 \
+		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                       \
+		.uart_baudrate = DT_PROP(DT_DRV_INST(inst), uart_baudrate),                     \
+	};                                                                                      \
+                                                                                                \
+	static struct ubx_m8_data ubx_m8_data_##inst = {                                        \
+		.script.request = (struct ubx_frame *)ubx_m8_data_##inst.request_buf,           \
+		.script.response = (struct ubx_frame *)ubx_m8_data_##inst.response_buf,         \
+		.script.match = (struct ubx_frame *)ubx_m8_data_##inst.match_buf,               \
+		.script.retry_count = UBX_M8_SCRIPT_RETRY_DEFAULT,                              \
+		.script.timeout = K_MSEC(MODEM_UBX_SCRIPT_TIMEOUT_MS),                          \
+	};                                                                                      \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(inst, ubx_m8_init, NULL, &ubx_m8_data_##inst, &ubx_m8_cfg_##inst, \
 			      POST_KERNEL, CONFIG_GNSS_INIT_PRIORITY, &gnss_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UBX_M8)

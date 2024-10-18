@@ -235,20 +235,20 @@ static int tmp1075_init(const struct device *dev)
 	return rc;
 }
 
-#define TMP1075_INST(inst)                                                                         \
-	static struct tmp1075_data tmp1075_data_##inst;                                            \
-	static const struct tmp1075_config tmp1075_config_##inst = {                               \
-		.cr = DT_INST_ENUM_IDX(inst, conversion_rate),                                     \
-		.cf = DT_INST_ENUM_IDX(inst, consecutive_fault_measurements),                      \
-		.alert_pol = DT_INST_PROP(inst, alert_pin_active_high),                            \
-		.interrupt_mode = DT_INST_PROP(inst, interrupt_mode),                              \
-		.shutdown_mode = DT_INST_PROP(inst, shutdown_mode),                                \
-		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.alert_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, alert_gpios, {0}),                    \
-	};                                                                                         \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, tmp1075_init, NULL, &tmp1075_data_##inst,               \
-                                                                                                   \
-				     &tmp1075_config_##inst, POST_KERNEL,                          \
+#define TMP1075_INST(inst)                                                              \
+	static struct tmp1075_data tmp1075_data_##inst;                                 \
+	static const struct tmp1075_config tmp1075_config_##inst = {                    \
+		.cr = DT_INST_ENUM_IDX(inst, conversion_rate),                          \
+		.cf = DT_INST_ENUM_IDX(inst, consecutive_fault_measurements),           \
+		.alert_pol = DT_INST_PROP(inst, alert_pin_active_high),                 \
+		.interrupt_mode = DT_INST_PROP(inst, interrupt_mode),                   \
+		.shutdown_mode = DT_INST_PROP(inst, shutdown_mode),                     \
+		.bus = I2C_DT_SPEC_INST_GET(inst),                                      \
+		.alert_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, alert_gpios, {0}),         \
+	};                                                                              \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, tmp1075_init, NULL, &tmp1075_data_##inst,    \
+                                                                                        \
+				     &tmp1075_config_##inst, POST_KERNEL,               \
 				     CONFIG_SENSOR_INIT_PRIORITY, &tmp1075_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TMP1075_INST)

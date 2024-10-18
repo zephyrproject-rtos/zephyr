@@ -577,34 +577,34 @@ static int tle9104_init(const struct device *dev)
 	return 0;
 }
 
-#define TLE9104_INIT_GPIO_FIELDS(inst, gpio)                                                       \
+#define TLE9104_INIT_GPIO_FIELDS(inst, gpio) \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, gpio),                                             \
 		    (GPIO_DT_SPEC_GET_BY_IDX(DT_DRV_INST(inst), gpio, 0)), ({0}))
 
-#define TLE9104_INIT(inst)                                                                         \
-	static const struct tle9104_config tle9104_##inst##_config = {                             \
-		.bus = SPI_DT_SPEC_INST_GET(                                                       \
-			inst, SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(8), 0),            \
-		.gpio_enable = TLE9104_INIT_GPIO_FIELDS(inst, en_gpios),                           \
-		.gpio_reset = TLE9104_INIT_GPIO_FIELDS(inst, resn_gpios),                          \
-		.gpio_control =                                                                    \
-			{                                                                          \
-				TLE9104_INIT_GPIO_FIELDS(inst, in1_gpios),                         \
-				TLE9104_INIT_GPIO_FIELDS(inst, in2_gpios),                         \
-				TLE9104_INIT_GPIO_FIELDS(inst, in3_gpios),                         \
-				TLE9104_INIT_GPIO_FIELDS(inst, in4_gpios),                         \
-			},                                                                         \
-		.diagnostic_filter_time = DT_INST_ENUM_IDX(inst, diagnostic_filter_time),          \
-		.overcurrent_shutdown_delay_time =                                                 \
-			DT_INST_ENUM_IDX(inst, overcurrent_shutdown_delay_time),                   \
-		.overcurrent_shutdown_threshold =                                                  \
-			DT_INST_ENUM_IDX(inst, overcurrent_shutdown_threshold),                    \
-	};                                                                                         \
-                                                                                                   \
-	static struct tle9104_data tle9104_##inst##_data;                                          \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, tle9104_init, NULL, &tle9104_##inst##_data,                    \
-			      &tle9104_##inst##_config, POST_KERNEL, CONFIG_MFD_INIT_PRIORITY,     \
+#define TLE9104_INIT(inst)                                                                     \
+	static const struct tle9104_config tle9104_##inst##_config = {                         \
+		.bus = SPI_DT_SPEC_INST_GET(                                                   \
+			inst, SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(8), 0),        \
+		.gpio_enable = TLE9104_INIT_GPIO_FIELDS(inst, en_gpios),                       \
+		.gpio_reset = TLE9104_INIT_GPIO_FIELDS(inst, resn_gpios),                      \
+		.gpio_control =                                                                \
+			{                                                                      \
+				TLE9104_INIT_GPIO_FIELDS(inst, in1_gpios),                     \
+				TLE9104_INIT_GPIO_FIELDS(inst, in2_gpios),                     \
+				TLE9104_INIT_GPIO_FIELDS(inst, in3_gpios),                     \
+				TLE9104_INIT_GPIO_FIELDS(inst, in4_gpios),                     \
+			},                                                                     \
+		.diagnostic_filter_time = DT_INST_ENUM_IDX(inst, diagnostic_filter_time),      \
+		.overcurrent_shutdown_delay_time =                                             \
+			DT_INST_ENUM_IDX(inst, overcurrent_shutdown_delay_time),               \
+		.overcurrent_shutdown_threshold =                                              \
+			DT_INST_ENUM_IDX(inst, overcurrent_shutdown_threshold),                \
+	};                                                                                     \
+                                                                                               \
+	static struct tle9104_data tle9104_##inst##_data;                                      \
+                                                                                               \
+	DEVICE_DT_INST_DEFINE(inst, tle9104_init, NULL, &tle9104_##inst##_data,                \
+			      &tle9104_##inst##_config, POST_KERNEL, CONFIG_MFD_INIT_PRIORITY, \
 			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(TLE9104_INIT);

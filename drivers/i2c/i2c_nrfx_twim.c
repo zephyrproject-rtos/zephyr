@@ -319,27 +319,27 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 }
 
 #define I2C_NRFX_TWIM_INVALID_FREQUENCY ((nrf_twim_frequency_t) - 1)
-#define I2C_NRFX_TWIM_FREQUENCY(bitrate)                                                           \
-	(bitrate == I2C_BITRATE_STANDARD ? NRF_TWIM_FREQ_100K                                      \
-	 : bitrate == 250000             ? NRF_TWIM_FREQ_250K                                      \
-	 : bitrate == I2C_BITRATE_FAST                                                             \
-		 ? NRF_TWIM_FREQ_400K                                                              \
+#define I2C_NRFX_TWIM_FREQUENCY(bitrate)                               \
+	(bitrate == I2C_BITRATE_STANDARD ? NRF_TWIM_FREQ_100K          \
+	 : bitrate == 250000             ? NRF_TWIM_FREQ_250K          \
+	 : bitrate == I2C_BITRATE_FAST                                 \
+		 ? NRF_TWIM_FREQ_400K                                  \
 		 : IF_ENABLED(NRF_TWIM_HAS_1000_KHZ_FREQ,				       \
-	(bitrate == I2C_BITRATE_FAST_PLUS ? NRF_TWIM_FREQ_1000K :))                              \
+	(bitrate == I2C_BITRATE_FAST_PLUS ? NRF_TWIM_FREQ_1000K :))  \
 				      I2C_NRFX_TWIM_INVALID_FREQUENCY)
 
 #define I2C(idx)                DT_NODELABEL(i2c##idx)
 #define I2C_HAS_PROP(idx, prop) DT_NODE_HAS_PROP(I2C(idx), prop)
 #define I2C_FREQUENCY(idx)      I2C_NRFX_TWIM_FREQUENCY(DT_PROP(I2C(idx), clock_frequency))
 
-#define CONCAT_BUF_SIZE(idx)                                                                       \
+#define CONCAT_BUF_SIZE(idx)                                                     \
 	COND_CODE_1(DT_NODE_HAS_PROP(I2C(idx), zephyr_concat_buf_size),	       \
 		    (DT_PROP(I2C(idx), zephyr_concat_buf_size)), (0))
-#define FLASH_BUF_MAX_SIZE(idx)                                                                    \
+#define FLASH_BUF_MAX_SIZE(idx)                                                  \
 	COND_CODE_1(DT_NODE_HAS_PROP(I2C(idx), zephyr_flash_buf_max_size),     \
 		    (DT_PROP(I2C(idx), zephyr_flash_buf_max_size)), (0))
 
-#define USES_MSG_BUF(idx)                                                                          \
+#define USES_MSG_BUF(idx)                             \
 	COND_CODE_0(CONCAT_BUF_SIZE(idx),				       \
 		(COND_CODE_0(FLASH_BUF_MAX_SIZE(idx), (0), (1))),	       \
 		(1))
@@ -379,7 +379,7 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 			     &twim_##idx##_data, &twim_##idx##z_config, POST_KERNEL,               \
 			     CONFIG_I2C_INIT_PRIORITY, &i2c_nrfx_twim_driver_api)
 
-#define I2C_MEMORY_SECTION(idx)                                                                    \
+#define I2C_MEMORY_SECTION(idx)                                   \
 	COND_CODE_1(I2C_HAS_PROP(idx, memory_regions),			       \
 		(__attribute__((__section__(LINKER_DT_NODE_REGION_NAME(	       \
 			DT_PHANDLE(I2C(idx), memory_regions)))))),	       \

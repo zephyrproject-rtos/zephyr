@@ -728,18 +728,18 @@ static int ps8xxx_dev_init(const struct device *dev)
 	return 0;
 }
 
-#define PS8XXX_DRIVER_DATA_INIT(node)                                                              \
-	{                                                                                          \
-		.dev = DEVICE_DT_GET(node),                                                        \
-		.init_retries = 0,                                                                 \
-		.cc_changed = true,                                                                \
+#define PS8XXX_DRIVER_DATA_INIT(node)       \
+	{                                   \
+		.dev = DEVICE_DT_GET(node), \
+		.init_retries = 0,          \
+		.cc_changed = true,         \
 	}
 
-#define PS8XXX_DRIVER_CFG_INIT(node)                                                               \
-	{                                                                                          \
-		.bus = I2C_DT_SPEC_GET(node),                                                      \
-		.alert_gpio = GPIO_DT_SPEC_GET(node, irq_gpios),                                   \
-		.transmit_retries = DT_PROP(node, transmit_retries),                               \
+#define PS8XXX_DRIVER_CFG_INIT(node)                                 \
+	{                                                            \
+		.bus = I2C_DT_SPEC_GET(node),                        \
+		.alert_gpio = GPIO_DT_SPEC_GET(node, irq_gpios),     \
+		.transmit_retries = DT_PROP(node, transmit_retries), \
 	}
 
 #define PS8XXX_DRIVER_INIT(inst)                                                                   \

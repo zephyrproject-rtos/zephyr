@@ -227,41 +227,41 @@ static const struct led_strip_driver_api ws2812_i2s_api = {
 
 #define WS2812_RESET_DELAY_US(idx) DT_INST_PROP(idx, reset_delay)
 /* Rounds up to the next 20us. */
-#define WS2812_RESET_DELAY_WORDS(idx)                                                              \
+#define WS2812_RESET_DELAY_WORDS(idx)                                                       \
 	WS2812_ROUNDED_DIVISION(WS2812_RESET_DELAY_US(idx), WS2812_I2S_LRCK_PERIOD_US(idx))
 
 #define WS2812_NUM_COLORS(idx) (DT_INST_PROP_LEN(idx, color_mapping))
 
 #define WS2812_I2S_NUM_PIXELS(idx) (DT_INST_PROP(idx, chain_length))
 
-#define WS2812_I2S_BUFSIZE(idx)                                                                    \
-	(((WS2812_NUM_COLORS(idx) * WS2812_I2S_NUM_PIXELS(idx)) + WS2812_I2S_PRE_DELAY_WORDS +     \
-	  WS2812_RESET_DELAY_WORDS(idx)) *                                                         \
+#define WS2812_I2S_BUFSIZE(idx)                                                                \
+	(((WS2812_NUM_COLORS(idx) * WS2812_I2S_NUM_PIXELS(idx)) + WS2812_I2S_PRE_DELAY_WORDS + \
+	  WS2812_RESET_DELAY_WORDS(idx)) *                                                     \
 	 4)
 
-#define WS2812_I2S_DEVICE(idx)                                                                     \
-                                                                                                   \
-	K_MEM_SLAB_DEFINE_STATIC(ws2812_i2s_##idx##_slab, WS2812_I2S_BUFSIZE(idx), 2, 4);          \
-                                                                                                   \
-	static const uint8_t ws2812_i2s_##idx##_color_mapping[] =                                  \
-		DT_INST_PROP(idx, color_mapping);                                                  \
-                                                                                                   \
-	static const struct ws2812_i2s_cfg ws2812_i2s_##idx##_cfg = {                              \
-		.dev = DEVICE_DT_GET(DT_INST_PROP(idx, i2s_dev)),                                  \
-		.tx_buf_bytes = WS2812_I2S_BUFSIZE(idx),                                           \
-		.mem_slab = &ws2812_i2s_##idx##_slab,                                              \
-		.num_colors = WS2812_NUM_COLORS(idx),                                              \
-		.length = DT_INST_PROP(idx, chain_length),                                         \
-		.color_mapping = ws2812_i2s_##idx##_color_mapping,                                 \
-		.lrck_period = WS2812_I2S_LRCK_PERIOD_US(idx),                                     \
-		.extra_wait_time_us = DT_INST_PROP(idx, extra_wait_time),                          \
-		.reset_words = WS2812_RESET_DELAY_WORDS(idx),                                      \
-		.active_low = DT_INST_PROP(idx, out_active_low),                                   \
-		.nibble_one = DT_INST_PROP(idx, nibble_one),                                       \
-		.nibble_zero = DT_INST_PROP(idx, nibble_zero),                                     \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(idx, ws2812_i2s_init, NULL, NULL, &ws2812_i2s_##idx##_cfg,           \
+#define WS2812_I2S_DEVICE(idx)                                                               \
+                                                                                             \
+	K_MEM_SLAB_DEFINE_STATIC(ws2812_i2s_##idx##_slab, WS2812_I2S_BUFSIZE(idx), 2, 4);    \
+                                                                                             \
+	static const uint8_t ws2812_i2s_##idx##_color_mapping[] =                            \
+		DT_INST_PROP(idx, color_mapping);                                            \
+                                                                                             \
+	static const struct ws2812_i2s_cfg ws2812_i2s_##idx##_cfg = {                        \
+		.dev = DEVICE_DT_GET(DT_INST_PROP(idx, i2s_dev)),                            \
+		.tx_buf_bytes = WS2812_I2S_BUFSIZE(idx),                                     \
+		.mem_slab = &ws2812_i2s_##idx##_slab,                                        \
+		.num_colors = WS2812_NUM_COLORS(idx),                                        \
+		.length = DT_INST_PROP(idx, chain_length),                                   \
+		.color_mapping = ws2812_i2s_##idx##_color_mapping,                           \
+		.lrck_period = WS2812_I2S_LRCK_PERIOD_US(idx),                               \
+		.extra_wait_time_us = DT_INST_PROP(idx, extra_wait_time),                    \
+		.reset_words = WS2812_RESET_DELAY_WORDS(idx),                                \
+		.active_low = DT_INST_PROP(idx, out_active_low),                             \
+		.nibble_one = DT_INST_PROP(idx, nibble_one),                                 \
+		.nibble_zero = DT_INST_PROP(idx, nibble_zero),                               \
+	};                                                                                   \
+                                                                                             \
+	DEVICE_DT_INST_DEFINE(idx, ws2812_i2s_init, NULL, NULL, &ws2812_i2s_##idx##_cfg,     \
 			      POST_KERNEL, CONFIG_LED_STRIP_INIT_PRIORITY, &ws2812_i2s_api);
 
 DT_INST_FOREACH_STATUS_OKAY(WS2812_I2S_DEVICE)

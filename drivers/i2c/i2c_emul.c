@@ -305,37 +305,37 @@ static const struct i2c_driver_api i2c_emul_api = {
 #endif
 };
 
-#define EMUL_LINK_AND_COMMA(node_id)                                                               \
-	{                                                                                          \
-		.dev = DEVICE_DT_GET(node_id),                                                     \
+#define EMUL_LINK_AND_COMMA(node_id)           \
+	{                                      \
+		.dev = DEVICE_DT_GET(node_id), \
 	},
 
-#define EMUL_FORWARD_ITEM(node_id, prop, idx)                                                      \
-	{                                                                                          \
-		.bus = DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, prop, idx)),                       \
-		.addr = DT_PHA_BY_IDX(node_id, prop, idx, addr),                                   \
+#define EMUL_FORWARD_ITEM(node_id, prop, idx)                                \
+	{                                                                    \
+		.bus = DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, prop, idx)), \
+		.addr = DT_PHA_BY_IDX(node_id, prop, idx, addr),             \
 	},
 
-#define I2C_EMUL_INIT(n)                                                                           \
-	static const struct emul_link_for_bus emuls_##n[] = {                                      \
-		DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(n), EMUL_LINK_AND_COMMA)};                \
-	static const struct i2c_dt_spec emul_forward_list_##n[] = {                                \
+#define I2C_EMUL_INIT(n)                                                                         \
+	static const struct emul_link_for_bus emuls_##n[] = {                                    \
+		DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(n), EMUL_LINK_AND_COMMA)};              \
+	static const struct i2c_dt_spec emul_forward_list_##n[] = {                              \
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(n, forwards),                                    \
-			    (DT_INST_FOREACH_PROP_ELEM(n, forwards, EMUL_FORWARD_ITEM)), ())};            \
-	static struct i2c_emul_config i2c_emul_cfg_##n = {                                         \
-		.emul_list =                                                                       \
-			{                                                                          \
-				.children = emuls_##n,                                             \
-				.num_children = ARRAY_SIZE(emuls_##n),                             \
-			},                                                                         \
-		.target_buffered_mode = DT_INST_PROP(n, target_buffered_mode),                     \
-		.forward_list = emul_forward_list_##n,                                             \
-		.forward_list_size = ARRAY_SIZE(emul_forward_list_##n),                            \
-	};                                                                                         \
-	static struct i2c_emul_data i2c_emul_data_##n = {                                          \
-		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
-	};                                                                                         \
-	I2C_DEVICE_DT_INST_DEFINE(n, i2c_emul_init, NULL, &i2c_emul_data_##n, &i2c_emul_cfg_##n,   \
+			    (DT_INST_FOREACH_PROP_ELEM(n, forwards, EMUL_FORWARD_ITEM)), ())};          \
+	static struct i2c_emul_config i2c_emul_cfg_##n = {                                       \
+		.emul_list =                                                                     \
+			{                                                                        \
+				.children = emuls_##n,                                           \
+				.num_children = ARRAY_SIZE(emuls_##n),                           \
+			},                                                                       \
+		.target_buffered_mode = DT_INST_PROP(n, target_buffered_mode),                   \
+		.forward_list = emul_forward_list_##n,                                           \
+		.forward_list_size = ARRAY_SIZE(emul_forward_list_##n),                          \
+	};                                                                                       \
+	static struct i2c_emul_data i2c_emul_data_##n = {                                        \
+		.bitrate = DT_INST_PROP(n, clock_frequency),                                     \
+	};                                                                                       \
+	I2C_DEVICE_DT_INST_DEFINE(n, i2c_emul_init, NULL, &i2c_emul_data_##n, &i2c_emul_cfg_##n, \
 				  POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &i2c_emul_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_EMUL_INIT)

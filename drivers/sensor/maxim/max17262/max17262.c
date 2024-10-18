@@ -368,22 +368,22 @@ static const struct sensor_driver_api max17262_battery_driver_api = {
 	.channel_get = max17262_channel_get,
 };
 
-#define MAX17262_INIT(n)                                                                           \
-	static struct max17262_data max17262_data_##n;                                             \
-                                                                                                   \
-	static const struct max17262_config max17262_config_##n = {                                \
-		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
-		.design_voltage = DT_INST_PROP(n, design_voltage),                                 \
-		.desired_voltage = DT_INST_PROP(n, desired_voltage),                               \
-		.desired_charging_current = DT_INST_PROP(n, desired_charging_current),             \
-		.design_cap = DT_INST_PROP(n, design_cap),                                         \
-		.empty_voltage = DT_INST_PROP(n, empty_voltage),                                   \
-		.recovery_voltage = DT_INST_PROP(n, recovery_voltage),                             \
-		.charge_voltage = DT_INST_PROP(n, charge_voltage),                                 \
-	};                                                                                         \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, &max17262_gauge_init, NULL, &max17262_data_##n,            \
-				     &max17262_config_##n, POST_KERNEL,                            \
+#define MAX17262_INIT(n)                                                                         \
+	static struct max17262_data max17262_data_##n;                                           \
+                                                                                                 \
+	static const struct max17262_config max17262_config_##n = {                              \
+		.i2c = I2C_DT_SPEC_INST_GET(n),                                                  \
+		.design_voltage = DT_INST_PROP(n, design_voltage),                               \
+		.desired_voltage = DT_INST_PROP(n, desired_voltage),                             \
+		.desired_charging_current = DT_INST_PROP(n, desired_charging_current),           \
+		.design_cap = DT_INST_PROP(n, design_cap),                                       \
+		.empty_voltage = DT_INST_PROP(n, empty_voltage),                                 \
+		.recovery_voltage = DT_INST_PROP(n, recovery_voltage),                           \
+		.charge_voltage = DT_INST_PROP(n, charge_voltage),                               \
+	};                                                                                       \
+                                                                                                 \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, &max17262_gauge_init, NULL, &max17262_data_##n,          \
+				     &max17262_config_##n, POST_KERNEL,                          \
 				     CONFIG_SENSOR_INIT_PRIORITY, &max17262_battery_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX17262_INIT)

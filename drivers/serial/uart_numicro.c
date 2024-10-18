@@ -179,25 +179,25 @@ static const struct uart_driver_api uart_numicro_driver_api = {
 #endif
 };
 
-#define NUMICRO_INIT(index)                                                                        \
-	PINCTRL_DT_INST_DEFINE(index);                                                             \
-                                                                                                   \
-	static const struct uart_numicro_config uart_numicro_cfg_##index = {                       \
-		.uart = (UART_T *)DT_INST_REG_ADDR(index),                                         \
-		.id_rst = UART##index##_RST,                                                       \
-		.id_clk = UART##index##_MODULE,                                                    \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                   \
-	};                                                                                         \
-                                                                                                   \
-	static struct uart_numicro_data uart_numicro_data_##index = {                              \
-		.ucfg =                                                                            \
-			{                                                                          \
-				.baudrate = DT_INST_PROP(index, current_speed),                    \
-			},                                                                         \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(index, uart_numicro_init, NULL, &uart_numicro_data_##index,          \
-			      &uart_numicro_cfg_##index, PRE_KERNEL_1,                             \
+#define NUMICRO_INIT(index)                                                               \
+	PINCTRL_DT_INST_DEFINE(index);                                                    \
+                                                                                          \
+	static const struct uart_numicro_config uart_numicro_cfg_##index = {              \
+		.uart = (UART_T *)DT_INST_REG_ADDR(index),                                \
+		.id_rst = UART##index##_RST,                                              \
+		.id_clk = UART##index##_MODULE,                                           \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                          \
+	};                                                                                \
+                                                                                          \
+	static struct uart_numicro_data uart_numicro_data_##index = {                     \
+		.ucfg =                                                                   \
+			{                                                                 \
+				.baudrate = DT_INST_PROP(index, current_speed),           \
+			},                                                                \
+	};                                                                                \
+                                                                                          \
+	DEVICE_DT_INST_DEFINE(index, uart_numicro_init, NULL, &uart_numicro_data_##index, \
+			      &uart_numicro_cfg_##index, PRE_KERNEL_1,                    \
 			      CONFIG_SERIAL_INIT_PRIORITY, &uart_numicro_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NUMICRO_INIT)

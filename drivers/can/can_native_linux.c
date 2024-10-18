@@ -465,18 +465,18 @@ static int can_native_linux_init(const struct device *dev)
 	return 0;
 }
 
-#define CAN_NATIVE_LINUX_INIT(inst)                                                                \
-                                                                                                   \
-	static const struct can_native_linux_config can_native_linux_cfg_##inst = {                \
-		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0, 0),                               \
-		.if_name = DT_INST_PROP(inst, host_interface),                                     \
-	};                                                                                         \
-                                                                                                   \
-	static struct can_native_linux_data can_native_linux_data_##inst;                          \
-                                                                                                   \
-	CAN_DEVICE_DT_INST_DEFINE(inst, can_native_linux_init, NULL,                               \
-				  &can_native_linux_data_##inst, &can_native_linux_cfg_##inst,     \
-				  POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,                           \
+#define CAN_NATIVE_LINUX_INIT(inst)                                                            \
+                                                                                               \
+	static const struct can_native_linux_config can_native_linux_cfg_##inst = {            \
+		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0, 0),                           \
+		.if_name = DT_INST_PROP(inst, host_interface),                                 \
+	};                                                                                     \
+                                                                                               \
+	static struct can_native_linux_data can_native_linux_data_##inst;                      \
+                                                                                               \
+	CAN_DEVICE_DT_INST_DEFINE(inst, can_native_linux_init, NULL,                           \
+				  &can_native_linux_data_##inst, &can_native_linux_cfg_##inst, \
+				  POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,                       \
 				  &can_native_linux_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_NATIVE_LINUX_INIT)

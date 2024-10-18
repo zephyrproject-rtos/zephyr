@@ -291,23 +291,23 @@ static const struct adc_driver_api ads7052_api = {
 #endif
 };
 
-#define ADC_ADS7052_SPI_CFG                                                                        \
+#define ADC_ADS7052_SPI_CFG                                                                     \
 	SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_TRANSFER_MSB
 
-#define ADC_ADS7052_INIT(n)                                                                        \
-                                                                                                   \
-	static const struct ads7052_config ads7052_cfg_##n = {                                     \
-		.bus = SPI_DT_SPEC_INST_GET(n, ADC_ADS7052_SPI_CFG, 1U),                           \
-		.channels = 1,                                                                     \
-	};                                                                                         \
-                                                                                                   \
-	static struct ads7052_data ads7052_data_##n = {                                            \
-		ADC_CONTEXT_INIT_TIMER(ads7052_data_##n, ctx),                                     \
-		ADC_CONTEXT_INIT_LOCK(ads7052_data_##n, ctx),                                      \
-		ADC_CONTEXT_INIT_SYNC(ads7052_data_##n, ctx),                                      \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, adc_ads7052_init, NULL, &ads7052_data_##n, &ads7052_cfg_##n,      \
+#define ADC_ADS7052_INIT(n)                                                                   \
+                                                                                              \
+	static const struct ads7052_config ads7052_cfg_##n = {                                \
+		.bus = SPI_DT_SPEC_INST_GET(n, ADC_ADS7052_SPI_CFG, 1U),                      \
+		.channels = 1,                                                                \
+	};                                                                                    \
+                                                                                              \
+	static struct ads7052_data ads7052_data_##n = {                                       \
+		ADC_CONTEXT_INIT_TIMER(ads7052_data_##n, ctx),                                \
+		ADC_CONTEXT_INIT_LOCK(ads7052_data_##n, ctx),                                 \
+		ADC_CONTEXT_INIT_SYNC(ads7052_data_##n, ctx),                                 \
+	};                                                                                    \
+                                                                                              \
+	DEVICE_DT_INST_DEFINE(n, adc_ads7052_init, NULL, &ads7052_data_##n, &ads7052_cfg_##n, \
 			      POST_KERNEL, CONFIG_ADC_ADS7052_INIT_PRIORITY, &ads7052_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_ADS7052_INIT)

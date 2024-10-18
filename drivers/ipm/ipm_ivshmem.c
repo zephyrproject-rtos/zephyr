@@ -109,15 +109,15 @@ static const struct ipm_driver_api ivshmem_ipm_driver_api = {
 	.register_callback = ivshmem_ipm_register_callback,
 	.set_enabled = ivshmem_ipm_set_enabled};
 
-#define IPM_IVSHMEM_INIT(inst)                                                                     \
-	static const struct ivshmem_ipm_config ivshmem_ipm_cfg_##inst = {                          \
-		.ivshmem_dev = DEVICE_DT_GET(DT_INST_PHANDLE(inst, ivshmem))};                     \
-	static struct ivshmem_ipm_data ivshmem_ipm_data_##inst = {                                 \
-		.cb = NULL,                                                                        \
-		.user_data = NULL,                                                                 \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, ivshmem_ipm_init, NULL, &ivshmem_ipm_data_##inst,              \
-			      &ivshmem_ipm_cfg_##inst, POST_KERNEL,                                \
+#define IPM_IVSHMEM_INIT(inst)                                                            \
+	static const struct ivshmem_ipm_config ivshmem_ipm_cfg_##inst = {                 \
+		.ivshmem_dev = DEVICE_DT_GET(DT_INST_PHANDLE(inst, ivshmem))};            \
+	static struct ivshmem_ipm_data ivshmem_ipm_data_##inst = {                        \
+		.cb = NULL,                                                               \
+		.user_data = NULL,                                                        \
+	};                                                                                \
+	DEVICE_DT_INST_DEFINE(inst, ivshmem_ipm_init, NULL, &ivshmem_ipm_data_##inst,     \
+			      &ivshmem_ipm_cfg_##inst, POST_KERNEL,                       \
 			      CONFIG_APPLICATION_INIT_PRIORITY, &ivshmem_ipm_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IPM_IVSHMEM_INIT);

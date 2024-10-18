@@ -474,7 +474,7 @@ static int mcux_mipi_dsi_init(const struct device *dev)
 	return 0;
 }
 
-#define MCUX_DSI_DPI_CONFIG(id)                                                                    \
+#define MCUX_DSI_DPI_CONFIG(id)                                       \
 	IF_ENABLED(DT_NODE_HAS_PROP(DT_DRV_INST(id), nxp_lcdif),				\
 	(.dpi_config = {									\
 		.dpiColorCoding = DT_INST_ENUM_IDX(id, dpi_color_coding),			\
@@ -503,37 +503,37 @@ static int mcux_mipi_dsi_init(const struct device *dev)
 					display_timings),  vback_porch),			\
 	},))
 
-#define MCUX_MIPI_DSI_DEVICE(id)                                                                   \
+#define MCUX_MIPI_DSI_DEVICE(id)                                                                  \
 	COND_CODE_1(CONFIG_MIPI_DSI_MCUX_2L_SMARTDMA,						\
 	(), (static void mipi_dsi_##n##_irq_config_func(const struct device *dev)		\
 	{											\
 		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority),			\
 			mipi_dsi_isr, DEVICE_DT_INST_GET(id), 0);				\
 			irq_enable(DT_INST_IRQN(id));						\
-	}))                                       \
-                                                                                                   \
-	static const struct mcux_mipi_dsi_config mipi_dsi_config_##id = {                          \
+	}))                                      \
+                                                                                                  \
+	static const struct mcux_mipi_dsi_config mipi_dsi_config_##id = {                         \
 		MCUX_DSI_DPI_CONFIG(id) COND_CODE_1(CONFIG_MIPI_DSI_MCUX_2L_SMARTDMA,					\
 		(.smart_dma = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, smartdma)),),		\
-		(.irq_config_func = mipi_dsi_##n##_irq_config_func,)) .base =               \
-				  (MIPI_DSI_HOST_Type *)DT_INST_REG_ADDR(id),                      \
-			 .auto_insert_eotp = DT_INST_PROP(id, autoinsert_eotp),                    \
-			 .noncontinuous_hs_clk = DT_INST_PROP(id, noncontinuous_hs_clk),           \
-			 .dphy_ref_freq = DT_INST_PROP_OR(id, dphy_ref_frequency, 0),              \
-			 .bit_clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(id, dphy)),      \
-			 .bit_clk_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(    \
-				 id, dphy, name),                                                  \
-			 .esc_clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(id, esc)),       \
-			 .esc_clk_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(    \
-				 id, esc, name),                                                   \
-			 .pixel_clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(id, pixel)),   \
-			 .pixel_clk_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(  \
-				 id, pixel, name),                                                 \
-	};                                                                                         \
-                                                                                                   \
-	static struct mcux_mipi_dsi_data mipi_dsi_data_##id;                                       \
-	DEVICE_DT_INST_DEFINE(id, &mcux_mipi_dsi_init, NULL, &mipi_dsi_data_##id,                  \
-			      &mipi_dsi_config_##id, POST_KERNEL, CONFIG_MIPI_DSI_INIT_PRIORITY,   \
+		(.irq_config_func = mipi_dsi_##n##_irq_config_func,)) .base =              \
+				  (MIPI_DSI_HOST_Type *)DT_INST_REG_ADDR(id),                     \
+			 .auto_insert_eotp = DT_INST_PROP(id, autoinsert_eotp),                   \
+			 .noncontinuous_hs_clk = DT_INST_PROP(id, noncontinuous_hs_clk),          \
+			 .dphy_ref_freq = DT_INST_PROP_OR(id, dphy_ref_frequency, 0),             \
+			 .bit_clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(id, dphy)),     \
+			 .bit_clk_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(   \
+				 id, dphy, name),                                                 \
+			 .esc_clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(id, esc)),      \
+			 .esc_clk_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(   \
+				 id, esc, name),                                                  \
+			 .pixel_clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(id, pixel)),  \
+			 .pixel_clk_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME( \
+				 id, pixel, name),                                                \
+	};                                                                                        \
+                                                                                                  \
+	static struct mcux_mipi_dsi_data mipi_dsi_data_##id;                                      \
+	DEVICE_DT_INST_DEFINE(id, &mcux_mipi_dsi_init, NULL, &mipi_dsi_data_##id,                 \
+			      &mipi_dsi_config_##id, POST_KERNEL, CONFIG_MIPI_DSI_INIT_PRIORITY,  \
 			      &dsi_mcux_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_MIPI_DSI_DEVICE)

@@ -59,7 +59,7 @@ static int uart_mcux_configure(const struct device *dev, const struct uart_confi
 
 	switch (cfg->stop_bits) {
 	case UART_CFG_STOP_BITS_1:
-#if defined(FSL_FEATURE_UART_HAS_STOP_BIT_CONFIG_SUPPORT) &&                                       \
+#if defined(FSL_FEATURE_UART_HAS_STOP_BIT_CONFIG_SUPPORT) && \
 	FSL_FEATURE_UART_HAS_STOP_BIT_CONFIG_SUPPORT
 		uart_config.stopBitCount = kUART_OneStopBit;
 		break;
@@ -382,32 +382,32 @@ static const struct uart_driver_api uart_mcux_driver_api = {
 #endif
 };
 
-#define UART_MCUX_DECLARE_CFG(n, IRQ_FUNC_INIT)                                                    \
-	static const struct uart_mcux_config uart_mcux_##n##_config = {                            \
-		.base = (UART_Type *)DT_INST_REG_ADDR(n),                                          \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+#define UART_MCUX_DECLARE_CFG(n, IRQ_FUNC_INIT)                                       \
+	static const struct uart_mcux_config uart_mcux_##n##_config = {               \
+		.base = (UART_Type *)DT_INST_REG_ADDR(n),                             \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                   \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name), \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                          \
 		IRQ_FUNC_INIT}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define UART_MCUX_CONFIG_FUNC(n)                                                                   \
-	static void uart_mcux_config_func_##n(const struct device *dev)                            \
-	{                                                                                          \
-		UART_MCUX_IRQ(n, status);                                                          \
-		UART_MCUX_IRQ(n, error);                                                           \
+#define UART_MCUX_CONFIG_FUNC(n)                                        \
+	static void uart_mcux_config_func_##n(const struct device *dev) \
+	{                                                               \
+		UART_MCUX_IRQ(n, status);                               \
+		UART_MCUX_IRQ(n, error);                                \
 	}
 
-#define UART_MCUX_IRQ_INIT(n, name)                                                                \
-	do {                                                                                       \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, name, irq),                                     \
-			    DT_INST_IRQ_BY_NAME(n, name, priority), uart_mcux_isr,                 \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQ_BY_NAME(n, name, irq));                                     \
+#define UART_MCUX_IRQ_INIT(n, name)                                                \
+	do {                                                                       \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, name, irq),                     \
+			    DT_INST_IRQ_BY_NAME(n, name, priority), uart_mcux_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                             \
+                                                                                   \
+		irq_enable(DT_INST_IRQ_BY_NAME(n, name, irq));                     \
 	} while (false)
 
-#define UART_MCUX_IRQ(n, name)                                                                     \
+#define UART_MCUX_IRQ(n, name)                        \
 	COND_CODE_1(DT_INST_IRQ_HAS_NAME(n, name),		\
 		    (UART_MCUX_IRQ_INIT(n, name)), ())
 
@@ -419,31 +419,31 @@ static const struct uart_driver_api uart_mcux_driver_api = {
 #define UART_MCUX_INIT_CFG(n) UART_MCUX_DECLARE_CFG(n, UART_MCUX_IRQ_CFG_FUNC_INIT)
 #endif
 
-#define UART_MCUX_INIT(n)                                                                          \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-                                                                                                   \
-	static struct uart_mcux_data uart_mcux_##n##_data = {                                      \
-		.uart_cfg =                                                                        \
-			{                                                                          \
-				.stop_bits = UART_CFG_STOP_BITS_1,                                 \
-				.data_bits = UART_CFG_DATA_BITS_8,                                 \
-				.baudrate = DT_INST_PROP(n, current_speed),                        \
-				.parity = UART_CFG_PARITY_NONE,                                    \
-				.flow_ctrl = DT_INST_PROP(n, hw_flow_control)                      \
-						     ? UART_CFG_FLOW_CTRL_RTS_CTS                  \
-						     : UART_CFG_FLOW_CTRL_NONE,                    \
-			},                                                                         \
-	};                                                                                         \
-                                                                                                   \
-	static const struct uart_mcux_config uart_mcux_##n##_config;                               \
-	PM_DEVICE_DT_INST_DEFINE(n, uart_mcux_pm_action);                                          \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, uart_mcux_init, PM_DEVICE_DT_INST_GET(n), &uart_mcux_##n##_data,  \
-			      &uart_mcux_##n##_config, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,  \
-			      &uart_mcux_driver_api);                                              \
-                                                                                                   \
-	UART_MCUX_CONFIG_FUNC(n)                                                                   \
-                                                                                                   \
+#define UART_MCUX_INIT(n)                                                                         \
+	PINCTRL_DT_INST_DEFINE(n);                                                                \
+                                                                                                  \
+	static struct uart_mcux_data uart_mcux_##n##_data = {                                     \
+		.uart_cfg =                                                                       \
+			{                                                                         \
+				.stop_bits = UART_CFG_STOP_BITS_1,                                \
+				.data_bits = UART_CFG_DATA_BITS_8,                                \
+				.baudrate = DT_INST_PROP(n, current_speed),                       \
+				.parity = UART_CFG_PARITY_NONE,                                   \
+				.flow_ctrl = DT_INST_PROP(n, hw_flow_control)                     \
+						     ? UART_CFG_FLOW_CTRL_RTS_CTS                 \
+						     : UART_CFG_FLOW_CTRL_NONE,                   \
+			},                                                                        \
+	};                                                                                        \
+                                                                                                  \
+	static const struct uart_mcux_config uart_mcux_##n##_config;                              \
+	PM_DEVICE_DT_INST_DEFINE(n, uart_mcux_pm_action);                                         \
+                                                                                                  \
+	DEVICE_DT_INST_DEFINE(n, uart_mcux_init, PM_DEVICE_DT_INST_GET(n), &uart_mcux_##n##_data, \
+			      &uart_mcux_##n##_config, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, \
+			      &uart_mcux_driver_api);                                             \
+                                                                                                  \
+	UART_MCUX_CONFIG_FUNC(n)                                                                  \
+                                                                                                  \
 	UART_MCUX_INIT_CFG(n);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_INIT)

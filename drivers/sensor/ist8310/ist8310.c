@@ -198,10 +198,10 @@ static int ist8310_init(const struct device *dev)
 }
 
 /* Initializes a struct ist8310_config for an instance on an I2C bus. */
-#define IST8310_CONFIG_I2C(inst)                                                                   \
+#define IST8310_CONFIG_I2C(inst)                                              \
 	.bus.i2c = I2C_DT_SPEC_INST_GET(inst), .bus_io = &ist8310_bus_io_i2c,
 
-#define IST8310_BUS_CFG(inst)                                                                      \
+#define IST8310_BUS_CFG(inst) \
 	COND_CODE_1(DT_INST_ON_BUS(inst, i2c), (IST8310_CONFIG_I2C(inst)),                         \
 		    (IST8310_CONFIG_SPI(inst)))
 
@@ -209,12 +209,12 @@ static int ist8310_init(const struct device *dev)
  * Main instantiation macro, which selects the correct bus-specific
  * instantiation macros for the instance.
  */
-#define IST8310_DEFINE(inst)                                                                       \
-	static struct ist8310_data ist8310_data_##inst;                                            \
-	static const struct ist8310_config ist8310_config_##inst = {IST8310_BUS_CFG(inst)};        \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, ist8310_init, NULL, &ist8310_data_##inst,               \
-				     &ist8310_config_##inst, POST_KERNEL,                          \
+#define IST8310_DEFINE(inst)                                                                \
+	static struct ist8310_data ist8310_data_##inst;                                     \
+	static const struct ist8310_config ist8310_config_##inst = {IST8310_BUS_CFG(inst)}; \
+                                                                                            \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, ist8310_init, NULL, &ist8310_data_##inst,        \
+				     &ist8310_config_##inst, POST_KERNEL,                   \
 				     CONFIG_SENSOR_INIT_PRIORITY, &ist8310_api_funcs);
 
 /* Create the struct device for every status "okay" node in the devicetree. */

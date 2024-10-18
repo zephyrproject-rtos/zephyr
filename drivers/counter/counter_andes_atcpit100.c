@@ -471,33 +471,33 @@ static const struct counter_driver_api atcpit100_driver_api = {
 	.set_guard_period = atcpit100_set_guard_period,
 };
 
-#define COUNTER_ATCPIT100_INIT(n)                                                                  \
-	static void counter_atcpit100_cfg_##n(void);                                               \
-	static struct atcpit100_data atcpit100_data_##n;                                           \
-                                                                                                   \
-	static const struct atcpit100_config atcpit100_config_##n = {                              \
-		.info =                                                                            \
-			{                                                                          \
-				.max_top_value = (UINT32_MAX / DT_INST_PROP(n, prescaler)),        \
-				.freq = (DT_INST_PROP(n, clock_frequency) /                        \
-					 DT_INST_PROP(n, prescaler)),                              \
-				.flags = COUNTER_CONFIG_INFO_COUNT_UP,                             \
-				.channels = CH_NUM_PER_COUNTER,                                    \
-			},                                                                         \
-		.base = DT_INST_REG_ADDR(n),                                                       \
-		.divider = DT_INST_PROP(n, prescaler),                                             \
-		.irq_num = DT_INST_IRQN(n),                                                        \
-		.cfg_func = counter_atcpit100_cfg_##n,                                             \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, counter_atcpit100_init, NULL, &atcpit100_data_##n,                \
-			      &atcpit100_config_##n, PRE_KERNEL_1,                                 \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &atcpit100_driver_api);         \
-                                                                                                   \
-	static void counter_atcpit100_cfg_##n(void)                                                \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), atcpit100_irq_handler,      \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
+#define COUNTER_ATCPIT100_INIT(n)                                                             \
+	static void counter_atcpit100_cfg_##n(void);                                          \
+	static struct atcpit100_data atcpit100_data_##n;                                      \
+                                                                                              \
+	static const struct atcpit100_config atcpit100_config_##n = {                         \
+		.info =                                                                       \
+			{                                                                     \
+				.max_top_value = (UINT32_MAX / DT_INST_PROP(n, prescaler)),   \
+				.freq = (DT_INST_PROP(n, clock_frequency) /                   \
+					 DT_INST_PROP(n, prescaler)),                         \
+				.flags = COUNTER_CONFIG_INFO_COUNT_UP,                        \
+				.channels = CH_NUM_PER_COUNTER,                               \
+			},                                                                    \
+		.base = DT_INST_REG_ADDR(n),                                                  \
+		.divider = DT_INST_PROP(n, prescaler),                                        \
+		.irq_num = DT_INST_IRQN(n),                                                   \
+		.cfg_func = counter_atcpit100_cfg_##n,                                        \
+	};                                                                                    \
+                                                                                              \
+	DEVICE_DT_INST_DEFINE(n, counter_atcpit100_init, NULL, &atcpit100_data_##n,           \
+			      &atcpit100_config_##n, PRE_KERNEL_1,                            \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &atcpit100_driver_api);    \
+                                                                                              \
+	static void counter_atcpit100_cfg_##n(void)                                           \
+	{                                                                                     \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), atcpit100_irq_handler, \
+			    DEVICE_DT_INST_GET(n), 0);                                        \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_ATCPIT100_INIT)

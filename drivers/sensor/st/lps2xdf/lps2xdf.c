@@ -144,65 +144,65 @@ static const struct sensor_driver_api lps2xdf_driver_api = {
 };
 
 #ifdef CONFIG_LPS2XDF_TRIGGER
-#define LPS2XDF_CFG_IRQ(inst)                                                                      \
-	.trig_enabled = true, .gpio_int = GPIO_DT_SPEC_INST_GET(inst, drdy_gpios),                 \
+#define LPS2XDF_CFG_IRQ(inst)                                                      \
+	.trig_enabled = true, .gpio_int = GPIO_DT_SPEC_INST_GET(inst, drdy_gpios), \
 	.drdy_pulsed = DT_INST_PROP(inst, drdy_pulsed)
 #else
 #define LPS2XDF_CFG_IRQ(inst)
 #endif /* CONFIG_LPS2XDF_TRIGGER */
 
-#define LPS2XDF_CONFIG_COMMON(inst, name)                                                          \
-	.odr = DT_INST_PROP(inst, odr), .lpf = DT_INST_PROP(inst, lpf),                            \
-	.avg = DT_INST_PROP(inst, avg), .chip_api = &name##_chip_api,                              \
+#define LPS2XDF_CONFIG_COMMON(inst, name)                                                         \
+	.odr = DT_INST_PROP(inst, odr), .lpf = DT_INST_PROP(inst, lpf),                           \
+	.avg = DT_INST_PROP(inst, avg), .chip_api = &name##_chip_api,                             \
 	IF_ENABLED(DT_INST_NODE_HAS_COMPAT(inst, st_lps28dfw),                 \
-		   (.fs = DT_INST_PROP(inst, fs),))                   \
+		   (.fs = DT_INST_PROP(inst, fs),))                  \
 			 IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),                    \
 		   (LPS2XDF_CFG_IRQ(inst)))
 
 #define LPS2XDF_SPI_OPERATION (SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA)
 
-#define LPS2XDF_CONFIG_SPI(inst, name)                                                             \
-	{STMEMSC_CTX_SPI(&lps2xdf_config_##name##_##inst.stmemsc_cfg),                             \
-	 .stmemsc_cfg =                                                                            \
-		 {                                                                                 \
-			 .spi = SPI_DT_SPEC_INST_GET(inst, LPS2XDF_SPI_OPERATION, 0),              \
-		 },                                                                                \
+#define LPS2XDF_CONFIG_SPI(inst, name)                                                \
+	{STMEMSC_CTX_SPI(&lps2xdf_config_##name##_##inst.stmemsc_cfg),                \
+	 .stmemsc_cfg =                                                               \
+		 {                                                                    \
+			 .spi = SPI_DT_SPEC_INST_GET(inst, LPS2XDF_SPI_OPERATION, 0), \
+		 },                                                                   \
 	 LPS2XDF_CONFIG_COMMON(inst, name)}
 
-#define LPS2XDF_CONFIG_I2C(inst, name)                                                             \
-	{STMEMSC_CTX_I2C(&lps2xdf_config_##name##_##inst.stmemsc_cfg),                             \
-	 .stmemsc_cfg =                                                                            \
-		 {                                                                                 \
-			 .i2c = I2C_DT_SPEC_INST_GET(inst),                                        \
-		 },                                                                                \
+#define LPS2XDF_CONFIG_I2C(inst, name)                                 \
+	{STMEMSC_CTX_I2C(&lps2xdf_config_##name##_##inst.stmemsc_cfg), \
+	 .stmemsc_cfg =                                                \
+		 {                                                     \
+			 .i2c = I2C_DT_SPEC_INST_GET(inst),            \
+		 },                                                    \
 	 LPS2XDF_CONFIG_COMMON(inst, name)}
 
-#define LPS2XDF_CONFIG_I3C(inst, name)                                                             \
-	{STMEMSC_CTX_I3C(&lps2xdf_config_##name##_##inst.stmemsc_cfg),                             \
-	 .stmemsc_cfg =                                                                            \
-		 {                                                                                 \
-			 .i3c = &lps2xdf_data_##name##_##inst.i3c_dev,                             \
-		 },                                                                                \
-	 .i3c.bus = DEVICE_DT_GET(DT_INST_BUS(inst)), .i3c.dev_id = I3C_DEVICE_ID_DT_INST(inst),   \
+#define LPS2XDF_CONFIG_I3C(inst, name)                                                           \
+	{STMEMSC_CTX_I3C(&lps2xdf_config_##name##_##inst.stmemsc_cfg),                           \
+	 .stmemsc_cfg =                                                                          \
+		 {                                                                               \
+			 .i3c = &lps2xdf_data_##name##_##inst.i3c_dev,                           \
+		 },                                                                              \
+	 .i3c.bus = DEVICE_DT_GET(DT_INST_BUS(inst)), .i3c.dev_id = I3C_DEVICE_ID_DT_INST(inst), \
 	 LPS2XDF_CONFIG_COMMON(inst, name)}
 
-#define LPS2XDF_CONFIG_I3C_OR_I2C(inst, name)                                                      \
+#define LPS2XDF_CONFIG_I3C_OR_I2C(inst, name)                                    \
 	COND_CODE_0(DT_INST_PROP_BY_IDX(inst, reg, 1),                         \
 		    (LPS2XDF_CONFIG_I2C(inst, name)),                          \
 		    (LPS2XDF_CONFIG_I3C(inst, name)))
 
-#define LPS2XDF_DEFINE(inst, name)                                                                 \
-	static struct lps2xdf_data lps2xdf_data_##name##_##inst;                                   \
-	static const struct lps2xdf_config lps2xdf_config_##name##_##inst =                        \
+#define LPS2XDF_DEFINE(inst, name)                                                           \
+	static struct lps2xdf_data lps2xdf_data_##name##_##inst;                             \
+	static const struct lps2xdf_config lps2xdf_config_##name##_##inst =                  \
 		COND_CODE_1(     \
 		DT_INST_ON_BUS(inst, spi),                                                   \
 		(LPS2XDF_CONFIG_SPI(inst, name)),                                            \
 		(COND_CODE_1(DT_INST_ON_BUS(inst, i3c),                                      \
 			     (LPS2XDF_CONFIG_I3C_OR_I2C(inst, name)),                        \
-			     (LPS2XDF_CONFIG_I2C(inst, name)))));          \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, name##_init, NULL, &lps2xdf_data_##name##_##inst,       \
-				     &lps2xdf_config_##name##_##inst, POST_KERNEL,                 \
+			     (LPS2XDF_CONFIG_I2C(inst, name)))));    \
+                                                                                             \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, name##_init, NULL, &lps2xdf_data_##name##_##inst, \
+				     &lps2xdf_config_##name##_##inst, POST_KERNEL,           \
 				     CONFIG_SENSOR_INIT_PRIORITY, &lps2xdf_driver_api);
 
 #define DT_DRV_COMPAT st_lps22df

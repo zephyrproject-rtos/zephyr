@@ -83,17 +83,17 @@ static const struct led_driver_api led_gpio_api = {
 	.set_brightness = led_gpio_set_brightness,
 };
 
-#define LED_GPIO_DEVICE(i)                                                                         \
-                                                                                                   \
-	static const struct gpio_dt_spec gpio_dt_spec_##i[] = {                                    \
-		DT_INST_FOREACH_CHILD_SEP_VARGS(i, GPIO_DT_SPEC_GET, (, ), gpios)};                \
-                                                                                                   \
-	static const struct led_gpio_config led_gpio_config_##i = {                                \
-		.num_leds = ARRAY_SIZE(gpio_dt_spec_##i),                                          \
-		.led = gpio_dt_spec_##i,                                                           \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(i, &led_gpio_init, NULL, NULL, &led_gpio_config_##i, POST_KERNEL,    \
+#define LED_GPIO_DEVICE(i)                                                                      \
+                                                                                                \
+	static const struct gpio_dt_spec gpio_dt_spec_##i[] = {                                 \
+		DT_INST_FOREACH_CHILD_SEP_VARGS(i, GPIO_DT_SPEC_GET, (, ), gpios)};             \
+                                                                                                \
+	static const struct led_gpio_config led_gpio_config_##i = {                             \
+		.num_leds = ARRAY_SIZE(gpio_dt_spec_##i),                                       \
+		.led = gpio_dt_spec_##i,                                                        \
+	};                                                                                      \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(i, &led_gpio_init, NULL, NULL, &led_gpio_config_##i, POST_KERNEL, \
 			      CONFIG_LED_INIT_PRIORITY, &led_gpio_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LED_GPIO_DEVICE)

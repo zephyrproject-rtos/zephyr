@@ -1079,46 +1079,46 @@ static const struct flash_driver_api flash_flexspi_nor_api = {
 
 #define AHB_WRITE_WAIT_UNIT(unit) CONCAT3(kFLEXSPI_AhbWriteWaitUnit, unit, AhbCycle)
 
-#define FLASH_FLEXSPI_DEVICE_CONFIG(n)                                                             \
-	{                                                                                          \
-		.flexspiRootClk = DT_INST_PROP(n, spi_max_frequency),                              \
-		.flashSize = DT_INST_PROP(n, size) / 8 / KB(1),                                    \
-		.CSIntervalUnit = CS_INTERVAL_UNIT(DT_INST_PROP(n, cs_interval_unit)),             \
-		.CSInterval = DT_INST_PROP(n, cs_interval),                                        \
-		.CSHoldTime = DT_INST_PROP(n, cs_hold_time),                                       \
-		.CSSetupTime = DT_INST_PROP(n, cs_setup_time),                                     \
-		.dataValidTime = DT_INST_PROP(n, data_valid_time),                                 \
-		.columnspace = DT_INST_PROP(n, column_space),                                      \
-		.enableWordAddress = DT_INST_PROP(n, word_addressable),                            \
-		.AWRSeqIndex = 0,                                                                  \
-		.AWRSeqNumber = 0,                                                                 \
-		.ARDSeqIndex = READ,                                                               \
-		.ARDSeqNumber = 1,                                                                 \
-		.AHBWriteWaitUnit = AHB_WRITE_WAIT_UNIT(DT_INST_PROP(n, ahb_write_wait_unit)),     \
-		.AHBWriteWaitInterval = DT_INST_PROP(n, ahb_write_wait_interval),                  \
+#define FLASH_FLEXSPI_DEVICE_CONFIG(n)                                                         \
+	{                                                                                      \
+		.flexspiRootClk = DT_INST_PROP(n, spi_max_frequency),                          \
+		.flashSize = DT_INST_PROP(n, size) / 8 / KB(1),                                \
+		.CSIntervalUnit = CS_INTERVAL_UNIT(DT_INST_PROP(n, cs_interval_unit)),         \
+		.CSInterval = DT_INST_PROP(n, cs_interval),                                    \
+		.CSHoldTime = DT_INST_PROP(n, cs_hold_time),                                   \
+		.CSSetupTime = DT_INST_PROP(n, cs_setup_time),                                 \
+		.dataValidTime = DT_INST_PROP(n, data_valid_time),                             \
+		.columnspace = DT_INST_PROP(n, column_space),                                  \
+		.enableWordAddress = DT_INST_PROP(n, word_addressable),                        \
+		.AWRSeqIndex = 0,                                                              \
+		.AWRSeqNumber = 0,                                                             \
+		.ARDSeqIndex = READ,                                                           \
+		.ARDSeqNumber = 1,                                                             \
+		.AHBWriteWaitUnit = AHB_WRITE_WAIT_UNIT(DT_INST_PROP(n, ahb_write_wait_unit)), \
+		.AHBWriteWaitInterval = DT_INST_PROP(n, ahb_write_wait_interval),              \
 	}
 
-#define FLASH_FLEXSPI_NOR(n)                                                                       \
-	static const struct flash_flexspi_nor_config flash_flexspi_nor_config_##n = {              \
-		.controller = DEVICE_DT_GET(DT_INST_BUS(n)),                                       \
-	};                                                                                         \
-	static struct flash_flexspi_nor_data flash_flexspi_nor_data_##n = {                        \
-		.config = FLASH_FLEXSPI_DEVICE_CONFIG(n),                                          \
-		.port = DT_INST_REG_ADDR(n),                                                       \
-		.layout =                                                                          \
-			{                                                                          \
-				.pages_count = DT_INST_PROP(n, size) / 8 / SPI_NOR_SECTOR_SIZE,    \
-				.pages_size = SPI_NOR_SECTOR_SIZE,                                 \
-			},                                                                         \
-		.flash_parameters =                                                                \
-			{                                                                          \
-				.write_block_size = NOR_WRITE_SIZE,                                \
-				.erase_value = NOR_ERASE_VALUE,                                    \
-			},                                                                         \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, flash_flexspi_nor_init, NULL, &flash_flexspi_nor_data_##n,        \
-			      &flash_flexspi_nor_config_##n, POST_KERNEL,                          \
+#define FLASH_FLEXSPI_NOR(n)                                                                    \
+	static const struct flash_flexspi_nor_config flash_flexspi_nor_config_##n = {           \
+		.controller = DEVICE_DT_GET(DT_INST_BUS(n)),                                    \
+	};                                                                                      \
+	static struct flash_flexspi_nor_data flash_flexspi_nor_data_##n = {                     \
+		.config = FLASH_FLEXSPI_DEVICE_CONFIG(n),                                       \
+		.port = DT_INST_REG_ADDR(n),                                                    \
+		.layout =                                                                       \
+			{                                                                       \
+				.pages_count = DT_INST_PROP(n, size) / 8 / SPI_NOR_SECTOR_SIZE, \
+				.pages_size = SPI_NOR_SECTOR_SIZE,                              \
+			},                                                                      \
+		.flash_parameters =                                                             \
+			{                                                                       \
+				.write_block_size = NOR_WRITE_SIZE,                             \
+				.erase_value = NOR_ERASE_VALUE,                                 \
+			},                                                                      \
+	};                                                                                      \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(n, flash_flexspi_nor_init, NULL, &flash_flexspi_nor_data_##n,     \
+			      &flash_flexspi_nor_config_##n, POST_KERNEL,                       \
 			      CONFIG_FLASH_INIT_PRIORITY, &flash_flexspi_nor_api);
 
 DT_INST_FOREACH_STATUS_OKAY(FLASH_FLEXSPI_NOR)

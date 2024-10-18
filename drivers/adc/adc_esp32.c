@@ -716,10 +716,10 @@ static const struct adc_driver_api api_esp32_driver_api = {
 
 #define ADC_ESP32_CONF_GPIO_PORT_INIT .gpio_port = DEVICE_DT_GET(DT_NODELABEL(gpio0)),
 
-#define ADC_ESP32_CONF_DMA_INIT(n)                                                                 \
+#define ADC_ESP32_CONF_DMA_INIT(n)                                                \
 	.dma_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas),     \
 					(DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(n, 0))),           \
-					(NULL)),                            \
+					(NULL)),           \
 		 .dma_channel = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas), \
 					(DT_INST_DMAS_CELL_BY_IDX(n, 0, channel)),                 \
 					(0xff)),
@@ -730,17 +730,17 @@ static const struct adc_driver_api api_esp32_driver_api = {
 
 #endif /* defined(CONFIG_ADC_ESP32_DMA) */
 
-#define ESP32_ADC_INIT(inst)                                                                       \
-                                                                                                   \
-	static const struct adc_esp32_conf adc_esp32_conf_##inst = {                               \
-		.unit = DT_PROP(DT_DRV_INST(inst), unit) - 1,                                      \
-		.channel_count = DT_PROP(DT_DRV_INST(inst), channel_count),                        \
-		ADC_ESP32_CONF_GPIO_PORT_INIT ADC_ESP32_CONF_DMA_INIT(inst)};                      \
-                                                                                                   \
-	static struct adc_esp32_data adc_esp32_data_##inst = {};                                   \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, &adc_esp32_init, NULL, &adc_esp32_data_##inst,                 \
-			      &adc_esp32_conf_##inst, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,       \
+#define ESP32_ADC_INIT(inst)                                                                 \
+                                                                                             \
+	static const struct adc_esp32_conf adc_esp32_conf_##inst = {                         \
+		.unit = DT_PROP(DT_DRV_INST(inst), unit) - 1,                                \
+		.channel_count = DT_PROP(DT_DRV_INST(inst), channel_count),                  \
+		ADC_ESP32_CONF_GPIO_PORT_INIT ADC_ESP32_CONF_DMA_INIT(inst)};                \
+                                                                                             \
+	static struct adc_esp32_data adc_esp32_data_##inst = {};                             \
+                                                                                             \
+	DEVICE_DT_INST_DEFINE(inst, &adc_esp32_init, NULL, &adc_esp32_data_##inst,           \
+			      &adc_esp32_conf_##inst, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, \
 			      &api_esp32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_ADC_INIT)

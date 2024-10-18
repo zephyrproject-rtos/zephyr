@@ -309,21 +309,21 @@ static const struct sensor_driver_api ina226_driver_api = {
 	.channel_get = ina226_channel_get,
 };
 
-#define INA226_DRIVER_INIT(inst)                                                                   \
-	static struct ina226_data ina226_data_##inst;                                              \
-	static const struct ina226_config ina226_config_##inst = {                                 \
-		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),                          \
-		.cal = INA226_CAL_SCALING * 10000000ULL /                                          \
-		       (DT_INST_PROP(inst, current_lsb_microamps) *                                \
-			DT_INST_PROP(inst, rshunt_micro_ohms)),                                    \
-		.config = (DT_INST_ENUM_IDX(inst, avg_count) << 9) |                               \
-			  (DT_INST_ENUM_IDX(inst, vbus_conversion_time_us) << 6) |                 \
-			  (DT_INST_ENUM_IDX(inst, vshunt_conversion_time_us) << 3) |               \
-			  DT_INST_ENUM_IDX(inst, operating_mode),                                  \
-	};                                                                                         \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &ina226_init, NULL, &ina226_data_##inst,                \
-				     &ina226_config_##inst, POST_KERNEL,                           \
+#define INA226_DRIVER_INIT(inst)                                                       \
+	static struct ina226_data ina226_data_##inst;                                  \
+	static const struct ina226_config ina226_config_##inst = {                     \
+		.bus = I2C_DT_SPEC_INST_GET(inst),                                     \
+		.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),              \
+		.cal = INA226_CAL_SCALING * 10000000ULL /                              \
+		       (DT_INST_PROP(inst, current_lsb_microamps) *                    \
+			DT_INST_PROP(inst, rshunt_micro_ohms)),                        \
+		.config = (DT_INST_ENUM_IDX(inst, avg_count) << 9) |                   \
+			  (DT_INST_ENUM_IDX(inst, vbus_conversion_time_us) << 6) |     \
+			  (DT_INST_ENUM_IDX(inst, vshunt_conversion_time_us) << 3) |   \
+			  DT_INST_ENUM_IDX(inst, operating_mode),                      \
+	};                                                                             \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, &ina226_init, NULL, &ina226_data_##inst,    \
+				     &ina226_config_##inst, POST_KERNEL,               \
 				     CONFIG_SENSOR_INIT_PRIORITY, &ina226_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INA226_DRIVER_INIT)

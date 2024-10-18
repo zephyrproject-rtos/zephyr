@@ -81,30 +81,30 @@ static int mfd_ad559x_init(const struct device *dev)
 	return 0;
 }
 
-#define MDF_AD559X_DEFINE_I2C_BUS(inst)                                                            \
-	.i2c = I2C_DT_SPEC_INST_GET(inst), .bus_init = mfd_ad559x_i2c_init,                        \
+#define MDF_AD559X_DEFINE_I2C_BUS(inst)                                     \
+	.i2c = I2C_DT_SPEC_INST_GET(inst), .bus_init = mfd_ad559x_i2c_init, \
 	.has_pointer_byte_map = true
 
-#define MDF_AD559X_DEFINE_SPI_BUS_FLAGS                                                            \
+#define MDF_AD559X_DEFINE_SPI_BUS_FLAGS                                           \
 	(SPI_WORD_SET(8) | SPI_TRANSFER_MSB | SPI_OP_MODE_MASTER | SPI_MODE_CPOL)
 
-#define MDF_AD559X_DEFINE_SPI_BUS(inst)                                                            \
-	.spi = SPI_DT_SPEC_INST_GET(inst, MDF_AD559X_DEFINE_SPI_BUS_FLAGS, 0),                     \
+#define MDF_AD559X_DEFINE_SPI_BUS(inst)                                        \
+	.spi = SPI_DT_SPEC_INST_GET(inst, MDF_AD559X_DEFINE_SPI_BUS_FLAGS, 0), \
 	.bus_init = mfd_ad559x_spi_init, .has_pointer_byte_map = false
 
-#define MFD_AD559X_DEFINE_BUS(inst)                                                                \
+#define MFD_AD559X_DEFINE_BUS(inst) \
 	COND_CODE_1(DT_INST_ON_BUS(inst, i2c), (MDF_AD559X_DEFINE_I2C_BUS(inst)),                  \
 		    (MDF_AD559X_DEFINE_SPI_BUS(inst)))
 
-#define MFD_AD559X_DEFINE(inst)                                                                    \
-	static struct mfd_ad559x_data mfd_ad559x_data_##inst;                                      \
-	static const struct mfd_ad559x_config mfd_ad559x_config_##inst = {                         \
-		.reset_gpio = GPIO_DT_SPEC_INST_GET(inst, reset_gpios),                            \
-		MFD_AD559X_DEFINE_BUS(inst),                                                       \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, mfd_ad559x_init, NULL, &mfd_ad559x_data_##inst,                \
-			      &mfd_ad559x_config_##inst, POST_KERNEL, CONFIG_MFD_INIT_PRIORITY,    \
+#define MFD_AD559X_DEFINE(inst)                                                                 \
+	static struct mfd_ad559x_data mfd_ad559x_data_##inst;                                   \
+	static const struct mfd_ad559x_config mfd_ad559x_config_##inst = {                      \
+		.reset_gpio = GPIO_DT_SPEC_INST_GET(inst, reset_gpios),                         \
+		MFD_AD559X_DEFINE_BUS(inst),                                                    \
+	};                                                                                      \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(inst, mfd_ad559x_init, NULL, &mfd_ad559x_data_##inst,             \
+			      &mfd_ad559x_config_##inst, POST_KERNEL, CONFIG_MFD_INIT_PRIORITY, \
 			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MFD_AD559X_DEFINE);

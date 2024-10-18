@@ -642,43 +642,43 @@ static const struct regulator_driver_api api = {.enable = regulator_npm1300_enab
 						.get_voltage = regulator_npm1300_get_voltage,
 						.set_mode = regulator_npm1300_set_mode};
 
-#define REGULATOR_NPM1300_DEFINE(node_id, id, _source)                                             \
-	static struct regulator_npm1300_data data_##id;                                            \
-                                                                                                   \
-	static const struct regulator_npm1300_config config_##id = {                               \
-		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node_id),                                \
-		.mfd = DEVICE_DT_GET(DT_GPARENT(node_id)),                                         \
-		.source = _source,                                                                 \
-		.retention_uv = DT_PROP_OR(node_id, retention_microvolt, 0),                       \
-		.soft_start = DT_ENUM_IDX_OR(node_id, soft_start_microamp, UINT8_MAX),             \
-		.enable_gpios = GPIO_DT_SPEC_GET_OR(node_id, enable_gpios, {0}),                   \
-		.retention_gpios = GPIO_DT_SPEC_GET_OR(node_id, retention_gpios, {0}),             \
-		.pwm_gpios = GPIO_DT_SPEC_GET_OR(node_id, pwm_gpios, {0})};                        \
-                                                                                                   \
-	DEVICE_DT_DEFINE(node_id, regulator_npm1300_init, NULL, &data_##id, &config_##id,          \
+#define REGULATOR_NPM1300_DEFINE(node_id, id, _source)                                    \
+	static struct regulator_npm1300_data data_##id;                                   \
+                                                                                          \
+	static const struct regulator_npm1300_config config_##id = {                      \
+		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node_id),                       \
+		.mfd = DEVICE_DT_GET(DT_GPARENT(node_id)),                                \
+		.source = _source,                                                        \
+		.retention_uv = DT_PROP_OR(node_id, retention_microvolt, 0),              \
+		.soft_start = DT_ENUM_IDX_OR(node_id, soft_start_microamp, UINT8_MAX),    \
+		.enable_gpios = GPIO_DT_SPEC_GET_OR(node_id, enable_gpios, {0}),          \
+		.retention_gpios = GPIO_DT_SPEC_GET_OR(node_id, retention_gpios, {0}),    \
+		.pwm_gpios = GPIO_DT_SPEC_GET_OR(node_id, pwm_gpios, {0})};               \
+                                                                                          \
+	DEVICE_DT_DEFINE(node_id, regulator_npm1300_init, NULL, &data_##id, &config_##id, \
 			 POST_KERNEL, CONFIG_REGULATOR_NPM1300_INIT_PRIORITY, &api);
 
-#define REGULATOR_NPM1300_DEFINE_COND(inst, child, source)                                         \
+#define REGULATOR_NPM1300_DEFINE_COND(inst, child, source) \
 	COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(inst, child)),                                    \
 		    (REGULATOR_NPM1300_DEFINE(DT_INST_CHILD(inst, child), child##inst, source)),   \
 		    ())
 
-#define REGULATOR_NPM1300_DEFINE_ALL(inst)                                                         \
-	static const struct regulator_npm1300_pconfig config_##inst = {                            \
-		.mfd = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                        \
-		.dvs_state_pins = {GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, dvs_gpios, 0, {0}),       \
-				   GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, dvs_gpios, 1, {0}),       \
-				   GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, dvs_gpios, 2, {0}),       \
-				   GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, dvs_gpios, 3, {0}),       \
-				   GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, dvs_gpios, 4, {0})}};     \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, regulator_npm1300_common_init, NULL, NULL, &config_##inst,     \
-			      POST_KERNEL, CONFIG_REGULATOR_NPM1300_COMMON_INIT_PRIORITY,          \
-			      &parent_api);                                                        \
-                                                                                                   \
-	REGULATOR_NPM1300_DEFINE_COND(inst, buck1, NPM1300_SOURCE_BUCK1)                           \
-	REGULATOR_NPM1300_DEFINE_COND(inst, buck2, NPM1300_SOURCE_BUCK2)                           \
-	REGULATOR_NPM1300_DEFINE_COND(inst, ldo1, NPM1300_SOURCE_LDO1)                             \
+#define REGULATOR_NPM1300_DEFINE_ALL(inst)                                                     \
+	static const struct regulator_npm1300_pconfig config_##inst = {                        \
+		.mfd = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                    \
+		.dvs_state_pins = {GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, dvs_gpios, 0, {0}),   \
+				   GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, dvs_gpios, 1, {0}),   \
+				   GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, dvs_gpios, 2, {0}),   \
+				   GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, dvs_gpios, 3, {0}),   \
+				   GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, dvs_gpios, 4, {0})}}; \
+                                                                                               \
+	DEVICE_DT_INST_DEFINE(inst, regulator_npm1300_common_init, NULL, NULL, &config_##inst, \
+			      POST_KERNEL, CONFIG_REGULATOR_NPM1300_COMMON_INIT_PRIORITY,      \
+			      &parent_api);                                                    \
+                                                                                               \
+	REGULATOR_NPM1300_DEFINE_COND(inst, buck1, NPM1300_SOURCE_BUCK1)                       \
+	REGULATOR_NPM1300_DEFINE_COND(inst, buck2, NPM1300_SOURCE_BUCK2)                       \
+	REGULATOR_NPM1300_DEFINE_COND(inst, ldo1, NPM1300_SOURCE_LDO1)                         \
 	REGULATOR_NPM1300_DEFINE_COND(inst, ldo2, NPM1300_SOURCE_LDO2)
 
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_NPM1300_DEFINE_ALL)

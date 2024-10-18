@@ -125,17 +125,17 @@ int gpio_brcmstb_init(const struct device *port)
 	return 0;
 }
 
-#define GPIO_BRCMSTB_INIT(n)                                                                       \
-	static struct gpio_brcmstb_data gpio_brcmstb_data_##n;                                     \
-                                                                                                   \
-	static const struct gpio_brcmstb_config gpio_brcmstb_cfg_##n = {                           \
-		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0)},                   \
-		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_INST_PARENT(n)),                           \
-		.offset = DT_INST_REG_ADDR(n),                                                     \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, gpio_brcmstb_init, NULL, &gpio_brcmstb_data_##n,                  \
-			      &gpio_brcmstb_cfg_##n, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,      \
+#define GPIO_BRCMSTB_INIT(n)                                                                  \
+	static struct gpio_brcmstb_data gpio_brcmstb_data_##n;                                \
+                                                                                              \
+	static const struct gpio_brcmstb_config gpio_brcmstb_cfg_##n = {                      \
+		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0)},              \
+		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_INST_PARENT(n)),                      \
+		.offset = DT_INST_REG_ADDR(n),                                                \
+	};                                                                                    \
+                                                                                              \
+	DEVICE_DT_INST_DEFINE(n, gpio_brcmstb_init, NULL, &gpio_brcmstb_data_##n,             \
+			      &gpio_brcmstb_cfg_##n, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, \
 			      &gpio_brcmstb_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_BRCMSTB_INIT)

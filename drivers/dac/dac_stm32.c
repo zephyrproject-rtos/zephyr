@@ -165,25 +165,25 @@ static int dac_stm32_init(const struct device *dev)
 static const struct dac_driver_api api_stm32_driver_api = {.channel_setup = dac_stm32_channel_setup,
 							   .write_value = dac_stm32_write_value};
 
-#define STM32_DAC_INIT(index)                                                                      \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(index);                                                             \
-                                                                                                   \
-	static const struct dac_stm32_cfg dac_stm32_cfg_##index = {                                \
-		.base = (DAC_TypeDef *)DT_INST_REG_ADDR(index),                                    \
-		.pclken =                                                                          \
-			{                                                                          \
-				.enr = DT_INST_CLOCKS_CELL(index, bits),                           \
-				.bus = DT_INST_CLOCKS_CELL(index, bus),                            \
-			},                                                                         \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
-	};                                                                                         \
-                                                                                                   \
-	static struct dac_stm32_data dac_stm32_data_##index = {.channel_count =                    \
-								       STM32_CHANNEL_COUNT};       \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(index, &dac_stm32_init, NULL, &dac_stm32_data_##index,               \
-			      &dac_stm32_cfg_##index, POST_KERNEL, CONFIG_DAC_INIT_PRIORITY,       \
+#define STM32_DAC_INIT(index)                                                                \
+                                                                                             \
+	PINCTRL_DT_INST_DEFINE(index);                                                       \
+                                                                                             \
+	static const struct dac_stm32_cfg dac_stm32_cfg_##index = {                          \
+		.base = (DAC_TypeDef *)DT_INST_REG_ADDR(index),                              \
+		.pclken =                                                                    \
+			{                                                                    \
+				.enr = DT_INST_CLOCKS_CELL(index, bits),                     \
+				.bus = DT_INST_CLOCKS_CELL(index, bus),                      \
+			},                                                                   \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                               \
+	};                                                                                   \
+                                                                                             \
+	static struct dac_stm32_data dac_stm32_data_##index = {.channel_count =              \
+								       STM32_CHANNEL_COUNT}; \
+                                                                                             \
+	DEVICE_DT_INST_DEFINE(index, &dac_stm32_init, NULL, &dac_stm32_data_##index,         \
+			      &dac_stm32_cfg_##index, POST_KERNEL, CONFIG_DAC_INIT_PRIORITY, \
 			      &api_stm32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_DAC_INIT)

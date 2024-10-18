@@ -178,31 +178,31 @@ static int ws2812_rpi_pico_pio_init(const struct device *dev)
 	return pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 }
 
-#define CYCLES_PER_BIT(node)                                                                       \
-	(DT_PROP_BY_IDX(node, bit_waveform, 0) + DT_PROP_BY_IDX(node, bit_waveform, 1) +           \
+#define CYCLES_PER_BIT(node)                                                             \
+	(DT_PROP_BY_IDX(node, bit_waveform, 0) + DT_PROP_BY_IDX(node, bit_waveform, 1) + \
 	 DT_PROP_BY_IDX(node, bit_waveform, 2))
 
-#define WS2812_CHILD_INIT(node)                                                                    \
-	static const uint8_t ws2812_led_strip_##node##_color_mapping[] =                           \
-		DT_PROP(node, color_mapping);                                                      \
-	struct ws2812_led_strip_data ws2812_led_strip_##node##_data;                               \
-                                                                                                   \
-	static const struct ws2812_led_strip_config ws2812_led_strip_##node##_config = {           \
-		.piodev = DEVICE_DT_GET(DT_PARENT(DT_PARENT(node))),                               \
-		.gpio_pin = DT_GPIO_PIN_BY_IDX(node, gpios, 0),                                    \
-		.num_colors = DT_PROP_LEN(node, color_mapping),                                    \
-		.length = DT_PROP(node, chain_length),                                             \
-		.color_mapping = ws2812_led_strip_##node##_color_mapping,                          \
-		.reset_delay = DT_PROP(node, reset_delay),                                         \
-		.frequency = DT_PROP(node, frequency),                                             \
-		.cycles_per_bit = CYCLES_PER_BIT(DT_PARENT(node)),                                 \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_DEFINE(node, &ws2812_led_strip_init, NULL, &ws2812_led_strip_##node##_data,      \
-			 &ws2812_led_strip_##node##_config, POST_KERNEL,                           \
+#define WS2812_CHILD_INIT(node)                                                               \
+	static const uint8_t ws2812_led_strip_##node##_color_mapping[] =                      \
+		DT_PROP(node, color_mapping);                                                 \
+	struct ws2812_led_strip_data ws2812_led_strip_##node##_data;                          \
+                                                                                              \
+	static const struct ws2812_led_strip_config ws2812_led_strip_##node##_config = {      \
+		.piodev = DEVICE_DT_GET(DT_PARENT(DT_PARENT(node))),                          \
+		.gpio_pin = DT_GPIO_PIN_BY_IDX(node, gpios, 0),                               \
+		.num_colors = DT_PROP_LEN(node, color_mapping),                               \
+		.length = DT_PROP(node, chain_length),                                        \
+		.color_mapping = ws2812_led_strip_##node##_color_mapping,                     \
+		.reset_delay = DT_PROP(node, reset_delay),                                    \
+		.frequency = DT_PROP(node, frequency),                                        \
+		.cycles_per_bit = CYCLES_PER_BIT(DT_PARENT(node)),                            \
+	};                                                                                    \
+                                                                                              \
+	DEVICE_DT_DEFINE(node, &ws2812_led_strip_init, NULL, &ws2812_led_strip_##node##_data, \
+			 &ws2812_led_strip_##node##_config, POST_KERNEL,                      \
 			 CONFIG_LED_STRIP_INIT_PRIORITY, &ws2812_led_strip_api);
 
-#define SET_DELAY(op, inst, i)                                                                     \
+#define SET_DELAY(op, inst, i)                                                 \
 	(op | (((DT_INST_PROP_BY_IDX(inst, bit_waveform, i) - 1) & 0xF) << 8))
 
 /*
@@ -222,31 +222,31 @@ static int ws2812_rpi_pico_pio_init(const struct device *dev)
  * It represents code 0, defined in the datasheet.
  * And outputs 1111110000 in case of x is true. It represents code 1.
  */
-#define WS2812_RPI_PICO_PIO_INIT(inst)                                                             \
-	PINCTRL_DT_INST_DEFINE(inst);                                                              \
-                                                                                                   \
-	DT_INST_FOREACH_CHILD_STATUS_OKAY(inst, WS2812_CHILD_INIT);                                \
-                                                                                                   \
-	static const uint16_t rpi_pico_pio_ws2812_instructions_##inst[] = {                        \
-		SET_DELAY(0x6021, inst, 2), /*  0: out    x, 1  side 0 [T2 - 1]  */                \
-		SET_DELAY(0x1023, inst, 0), /*  1: jmp    !x, 3 side 1 [T0 - 1]  */                \
-		SET_DELAY(0x1000, inst, 1), /*  2: jmp    0     side 1 [T1 - 1]  */                \
-		SET_DELAY(0x0000, inst, 1), /*  3: jmp    0     side 0 [T1 - 1]  */                \
-	};                                                                                         \
-                                                                                                   \
-	static const struct ws2812_rpi_pico_pio_config rpi_pico_pio_ws2812_##inst##_config = {     \
-		.piodev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                     \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
-		.program =                                                                         \
-			{                                                                          \
-				.instructions = rpi_pico_pio_ws2812_instructions_##inst,           \
-				.length = ARRAY_SIZE(rpi_pico_pio_ws2812_instructions_##inst),     \
-				.origin = -1,                                                      \
-			},                                                                         \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, &ws2812_rpi_pico_pio_init, NULL, NULL,                         \
-			      &rpi_pico_pio_ws2812_##inst##_config, POST_KERNEL,                   \
+#define WS2812_RPI_PICO_PIO_INIT(inst)                                                         \
+	PINCTRL_DT_INST_DEFINE(inst);                                                          \
+                                                                                               \
+	DT_INST_FOREACH_CHILD_STATUS_OKAY(inst, WS2812_CHILD_INIT);                            \
+                                                                                               \
+	static const uint16_t rpi_pico_pio_ws2812_instructions_##inst[] = {                    \
+		SET_DELAY(0x6021, inst, 2), /*  0: out    x, 1  side 0 [T2 - 1]  */            \
+		SET_DELAY(0x1023, inst, 0), /*  1: jmp    !x, 3 side 1 [T0 - 1]  */            \
+		SET_DELAY(0x1000, inst, 1), /*  2: jmp    0     side 1 [T1 - 1]  */            \
+		SET_DELAY(0x0000, inst, 1), /*  3: jmp    0     side 0 [T1 - 1]  */            \
+	};                                                                                     \
+                                                                                               \
+	static const struct ws2812_rpi_pico_pio_config rpi_pico_pio_ws2812_##inst##_config = { \
+		.piodev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                 \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                  \
+		.program =                                                                     \
+			{                                                                      \
+				.instructions = rpi_pico_pio_ws2812_instructions_##inst,       \
+				.length = ARRAY_SIZE(rpi_pico_pio_ws2812_instructions_##inst), \
+				.origin = -1,                                                  \
+			},                                                                     \
+	};                                                                                     \
+                                                                                               \
+	DEVICE_DT_INST_DEFINE(inst, &ws2812_rpi_pico_pio_init, NULL, NULL,                     \
+			      &rpi_pico_pio_ws2812_##inst##_config, POST_KERNEL,               \
 			      CONFIG_LED_STRIP_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(WS2812_RPI_PICO_PIO_INIT)

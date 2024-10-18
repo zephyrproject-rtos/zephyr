@@ -466,7 +466,7 @@
 #define I3C_PRESCL_REG_SCALE             (4)
 #define I2C_PRESCL_REG_SCALE             (5)
 #define I3C_WAIT_FOR_IDLE_STATE_US       100
-#define I3C_IDLE_TIMEOUT_CYC                                                                       \
+#define I3C_IDLE_TIMEOUT_CYC                                                          \
 	(I3C_WAIT_FOR_IDLE_STATE_US * (sys_clock_hw_cycles_per_sec() / USEC_PER_SEC))
 
 /* Target T_LOW period in open-drain mode. */
@@ -3312,32 +3312,32 @@ static struct i3c_driver_api api = {
 #endif
 };
 
-#define CADENCE_I3C_INSTANTIATE(n)                                                                 \
-	static void cdns_i3c_config_func_##n(const struct device *dev);                            \
-	static struct i3c_device_desc cdns_i3c_device_array_##n[] = I3C_DEVICE_ARRAY_DT_INST(n);   \
-	static struct i3c_i2c_device_desc cdns_i3c_i2c_device_array_##n[] =                        \
-		I3C_I2C_DEVICE_ARRAY_DT_INST(n);                                                   \
-	static const struct cdns_i3c_config i3c_config_##n = {                                     \
-		.base = DT_INST_REG_ADDR(n),                                                       \
-		.input_frequency = DT_INST_PROP(n, input_clock_frequency),                         \
-		.irq_config_func = cdns_i3c_config_func_##n,                                       \
-		.ibid_thr = DT_INST_PROP(n, ibid_thr),                                             \
-		.common.dev_list.i3c = cdns_i3c_device_array_##n,                                  \
-		.common.dev_list.num_i3c = ARRAY_SIZE(cdns_i3c_device_array_##n),                  \
-		.common.dev_list.i2c = cdns_i3c_i2c_device_array_##n,                              \
-		.common.dev_list.num_i2c = ARRAY_SIZE(cdns_i3c_i2c_device_array_##n),              \
-	};                                                                                         \
-	static struct cdns_i3c_data i3c_data_##n = {                                               \
-		.common.ctrl_config.scl.i3c = DT_INST_PROP_OR(n, i3c_scl_hz, 0),                   \
-		.common.ctrl_config.scl.i2c = DT_INST_PROP_OR(n, i2c_scl_hz, 0),                   \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, cdns_i3c_bus_init, NULL, &i3c_data_##n, &i3c_config_##n,          \
-			      POST_KERNEL, CONFIG_I3C_CONTROLLER_INIT_PRIORITY, &api);             \
-	static void cdns_i3c_config_func_##n(const struct device *dev)                             \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), cdns_i3c_irq_handler,       \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define CADENCE_I3C_INSTANTIATE(n)                                                               \
+	static void cdns_i3c_config_func_##n(const struct device *dev);                          \
+	static struct i3c_device_desc cdns_i3c_device_array_##n[] = I3C_DEVICE_ARRAY_DT_INST(n); \
+	static struct i3c_i2c_device_desc cdns_i3c_i2c_device_array_##n[] =                      \
+		I3C_I2C_DEVICE_ARRAY_DT_INST(n);                                                 \
+	static const struct cdns_i3c_config i3c_config_##n = {                                   \
+		.base = DT_INST_REG_ADDR(n),                                                     \
+		.input_frequency = DT_INST_PROP(n, input_clock_frequency),                       \
+		.irq_config_func = cdns_i3c_config_func_##n,                                     \
+		.ibid_thr = DT_INST_PROP(n, ibid_thr),                                           \
+		.common.dev_list.i3c = cdns_i3c_device_array_##n,                                \
+		.common.dev_list.num_i3c = ARRAY_SIZE(cdns_i3c_device_array_##n),                \
+		.common.dev_list.i2c = cdns_i3c_i2c_device_array_##n,                            \
+		.common.dev_list.num_i2c = ARRAY_SIZE(cdns_i3c_i2c_device_array_##n),            \
+	};                                                                                       \
+	static struct cdns_i3c_data i3c_data_##n = {                                             \
+		.common.ctrl_config.scl.i3c = DT_INST_PROP_OR(n, i3c_scl_hz, 0),                 \
+		.common.ctrl_config.scl.i2c = DT_INST_PROP_OR(n, i2c_scl_hz, 0),                 \
+	};                                                                                       \
+	DEVICE_DT_INST_DEFINE(n, cdns_i3c_bus_init, NULL, &i3c_data_##n, &i3c_config_##n,        \
+			      POST_KERNEL, CONFIG_I3C_CONTROLLER_INIT_PRIORITY, &api);           \
+	static void cdns_i3c_config_func_##n(const struct device *dev)                           \
+	{                                                                                        \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), cdns_i3c_irq_handler,     \
+			    DEVICE_DT_INST_GET(n), 0);                                           \
+		irq_enable(DT_INST_IRQN(n));                                                     \
 	};
 
 #define DT_DRV_COMPAT cdns_i3c

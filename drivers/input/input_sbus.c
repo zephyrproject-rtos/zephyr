@@ -336,37 +336,37 @@ static int input_sbus_init(const struct device *dev)
 	return ret;
 }
 
-#define INPUT_CHANNEL_CHECK(input_channel_id)                                                      \
-	BUILD_ASSERT(IN_RANGE(DT_PROP(input_channel_id, channel), 1, 16),                          \
-		     "invalid channel number");                                                    \
-	BUILD_ASSERT(DT_PROP(input_channel_id, type) == INPUT_EV_ABS ||                            \
-			     DT_PROP(input_channel_id, type) == INPUT_EV_KEY ||                    \
-			     DT_PROP(input_channel_id, type) == INPUT_EV_MSC,                      \
+#define INPUT_CHANNEL_CHECK(input_channel_id)                                   \
+	BUILD_ASSERT(IN_RANGE(DT_PROP(input_channel_id, channel), 1, 16),       \
+		     "invalid channel number");                                 \
+	BUILD_ASSERT(DT_PROP(input_channel_id, type) == INPUT_EV_ABS ||         \
+			     DT_PROP(input_channel_id, type) == INPUT_EV_KEY || \
+			     DT_PROP(input_channel_id, type) == INPUT_EV_MSC,   \
 		     "invalid channel type");
 
-#define SBUS_INPUT_CHANNEL_INITIALIZER(input_channel_id)                                           \
-	{                                                                                          \
-		.sbus_channel = DT_PROP(input_channel_id, channel),                                \
-		.type = DT_PROP(input_channel_id, type),                                           \
-		.zephyr_code = DT_PROP(input_channel_id, zephyr_code),                             \
+#define SBUS_INPUT_CHANNEL_INITIALIZER(input_channel_id)               \
+	{                                                              \
+		.sbus_channel = DT_PROP(input_channel_id, channel),    \
+		.type = DT_PROP(input_channel_id, type),               \
+		.zephyr_code = DT_PROP(input_channel_id, zephyr_code), \
 	},
 
-#define INPUT_SBUS_INIT(n)                                                                         \
-                                                                                                   \
-	static const struct sbus_input_channel input_##n[] = {                                     \
-		DT_INST_FOREACH_CHILD(n, SBUS_INPUT_CHANNEL_INITIALIZER)};                         \
-	DT_INST_FOREACH_CHILD(n, INPUT_CHANNEL_CHECK)                                              \
-                                                                                                   \
-	static struct input_sbus_data sbus_data_##n;                                               \
-                                                                                                   \
-	static const struct input_sbus_config sbus_cfg_##n = {                                     \
-		.channel_info = input_##n,                                                         \
-		.uart_dev = DEVICE_DT_GET(DT_INST_BUS(n)),                                         \
-		.num_channels = ARRAY_SIZE(input_##n),                                             \
-		.cb = sbus_uart_isr,                                                               \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, input_sbus_init, NULL, &sbus_data_##n, &sbus_cfg_##n,             \
+#define INPUT_SBUS_INIT(n)                                                             \
+                                                                                       \
+	static const struct sbus_input_channel input_##n[] = {                         \
+		DT_INST_FOREACH_CHILD(n, SBUS_INPUT_CHANNEL_INITIALIZER)};             \
+	DT_INST_FOREACH_CHILD(n, INPUT_CHANNEL_CHECK)                                  \
+                                                                                       \
+	static struct input_sbus_data sbus_data_##n;                                   \
+                                                                                       \
+	static const struct input_sbus_config sbus_cfg_##n = {                         \
+		.channel_info = input_##n,                                             \
+		.uart_dev = DEVICE_DT_GET(DT_INST_BUS(n)),                             \
+		.num_channels = ARRAY_SIZE(input_##n),                                 \
+		.cb = sbus_uart_isr,                                                   \
+	};                                                                             \
+                                                                                       \
+	DEVICE_DT_INST_DEFINE(n, input_sbus_init, NULL, &sbus_data_##n, &sbus_cfg_##n, \
 			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(INPUT_SBUS_INIT)

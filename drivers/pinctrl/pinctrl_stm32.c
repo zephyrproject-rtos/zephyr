@@ -104,7 +104,7 @@ SYS_INIT(stm32_pinmux_init_remap, PRE_KERNEL_1, CONFIG_PINCTRL_STM32_REMAP_INIT_
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
 
 /* ignore swj-cfg reset state (default value) */
-#if ((DT_NODE_HAS_PROP(DT_NODELABEL(pinctrl), swj_cfg)) &&                                         \
+#if ((DT_NODE_HAS_PROP(DT_NODELABEL(pinctrl), swj_cfg)) && \
      (DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) != 0))
 
 static int stm32f1_swj_cfg_init(void)

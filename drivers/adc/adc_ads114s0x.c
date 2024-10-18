@@ -17,7 +17,7 @@
 #include <zephyr/sys/util.h>
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER 1
-#define ADC_CONTEXT_WAIT_FOR_COMPLETION_TIMEOUT                                                    \
+#define ADC_CONTEXT_WAIT_FOR_COMPLETION_TIMEOUT                     \
 	K_MSEC(CONFIG_ADC_ADS114S0X_WAIT_FOR_COMPLETION_TIMEOUT_MS)
 #include "adc_context.h"
 
@@ -40,11 +40,11 @@ LOG_MODULE_REGISTER(ads114s0x, CONFIG_ADC_LOG_LEVEL);
 #define ADS114S0X_RESET_DELAY_TIME_IN_US                                                           \
 	(4096 * 1000 / ADS114S0X_CLK_FREQ_IN_KHZ + ADS114S0X_RESET_DELAY_TIME_SAFETY_MARGIN_IN_US)
 
-#define ADS114S0X_RESET_LOW_TIME_IN_US                                                             \
+#define ADS114S0X_RESET_LOW_TIME_IN_US                                                \
 	(ADS114S0X_RESET_LOW_TIME_IN_CLOCK_CYCLES * 1000 / ADS114S0X_CLK_FREQ_IN_KHZ)
-#define ADS114S0X_START_SYNC_PULSE_DURATION_IN_US                                                  \
+#define ADS114S0X_START_SYNC_PULSE_DURATION_IN_US                                                \
 	(ADS114S0X_START_SYNC_PULSE_DURATION_IN_CLOCK_CYCLES * 1000 / ADS114S0X_CLK_FREQ_IN_KHZ)
-#define ADS114S0X_SETUP_TIME_IN_US                                                                 \
+#define ADS114S0X_SETUP_TIME_IN_US                                                \
 	(ADS114S0X_SETUP_TIME_IN_CLOCK_CYCLES * 1000 / ADS114S0X_CLK_FREQ_IN_KHZ)
 
 enum ads114s0x_command {
@@ -81,283 +81,283 @@ enum ads114s0x_register {
 	ADS114S0X_REGISTER_GPIOCON = 0x11,
 };
 
-#define ADS114S0X_REGISTER_GET_VALUE(value, pos, length)                                           \
+#define ADS114S0X_REGISTER_GET_VALUE(value, pos, length) \
 	FIELD_GET(GENMASK(pos + length - 1, pos), value)
-#define ADS114S0X_REGISTER_SET_VALUE(target, value, pos, length)                                   \
-	target &= ~GENMASK(pos + length - 1, pos);                                                 \
+#define ADS114S0X_REGISTER_SET_VALUE(target, value, pos, length)    \
+	target &= ~GENMASK(pos + length - 1, pos);                  \
 	target |= FIELD_PREP(GENMASK(pos + length - 1, pos), value)
 
 #define ADS114S0X_REGISTER_ID_DEV_ID_LENGTH 3
 #define ADS114S0X_REGISTER_ID_DEV_ID_POS    0
-#define ADS114S0X_REGISTER_ID_DEV_ID_GET(value)                                                    \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_ID_DEV_ID_POS,                      \
+#define ADS114S0X_REGISTER_ID_DEV_ID_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_ID_DEV_ID_POS, \
 				     ADS114S0X_REGISTER_ID_DEV_ID_LENGTH)
-#define ADS114S0X_REGISTER_ID_DEV_ID_SET(target, value)                                            \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_ID_DEV_ID_POS,              \
+#define ADS114S0X_REGISTER_ID_DEV_ID_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_ID_DEV_ID_POS, \
 				     ADS114S0X_REGISTER_ID_DEV_ID_LENGTH)
 #define ADS114S0X_REGISTER_STATUS_FL_POR_LENGTH 1
 #define ADS114S0X_REGISTER_STATUS_FL_POR_POS    7
-#define ADS114S0X_REGISTER_STATUS_FL_POR_GET(value)                                                \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_STATUS_FL_POR_POS,                  \
+#define ADS114S0X_REGISTER_STATUS_FL_POR_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_STATUS_FL_POR_POS, \
 				     ADS114S0X_REGISTER_STATUS_FL_POR_LENGTH)
-#define ADS114S0X_REGISTER_STATUS_FL_POR_SET(target, value)                                        \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_STATUS_FL_POR_POS,          \
+#define ADS114S0X_REGISTER_STATUS_FL_POR_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_STATUS_FL_POR_POS, \
 				     ADS114S0X_REGISTER_STATUS_FL_POR_LENGTH)
 #define ADS114S0X_REGISTER_STATUS_NOT_RDY_LENGTH 1
 #define ADS114S0X_REGISTER_STATUS_NOT_RDY_POS    6
-#define ADS114S0X_REGISTER_STATUS_NOT_RDY_GET(value)                                               \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_STATUS_NOT_RDY_POS,                 \
+#define ADS114S0X_REGISTER_STATUS_NOT_RDY_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_STATUS_NOT_RDY_POS, \
 				     ADS114S0X_REGISTER_STATUS_NOT_RDY_LENGTH)
-#define ADS114S0X_REGISTER_STATUS_NOT_RDY_SET(target, value)                                       \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_STATUS_NOT_RDY_POS,         \
+#define ADS114S0X_REGISTER_STATUS_NOT_RDY_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_STATUS_NOT_RDY_POS, \
 				     ADS114S0X_REGISTER_STATUS_NOT_RDY_LENGTH)
 #define ADS114S0X_REGISTER_STATUS_FL_P_RAILP_LENGTH 1
 #define ADS114S0X_REGISTER_STATUS_FL_P_RAILP_POS    5
-#define ADS114S0X_REGISTER_STATUS_FL_P_RAILP_GET(value)                                            \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_STATUS_FL_P_RAILP_POS,              \
+#define ADS114S0X_REGISTER_STATUS_FL_P_RAILP_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_STATUS_FL_P_RAILP_POS, \
 				     ADS114S0X_REGISTER_STATUS_FL_P_RAILP_LENGTH)
-#define ADS114S0X_REGISTER_STATUS_FL_P_RAILP_SET(target, value)                                    \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_STATUS_FL_P_RAILP_POS,      \
+#define ADS114S0X_REGISTER_STATUS_FL_P_RAILP_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_STATUS_FL_P_RAILP_POS, \
 				     ADS114S0X_REGISTER_STATUS_FL_P_RAILP_LENGTH)
 #define ADS114S0X_REGISTER_STATUS_FL_P_RAILN_LENGTH 1
 #define ADS114S0X_REGISTER_STATUS_FL_P_RAILN_POS    4
-#define ADS114S0X_REGISTER_STATUS_FL_P_RAILN_GET(value)                                            \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_STATUS_FL_P_RAILN_POS,              \
+#define ADS114S0X_REGISTER_STATUS_FL_P_RAILN_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_STATUS_FL_P_RAILN_POS, \
 				     ADS114S0X_REGISTER_STATUS_FL_P_RAILN_LENGTH)
-#define ADS114S0X_REGISTER_STATUS_FL_P_RAILN_SET(target, value)                                    \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_STATUS_FL_P_RAILN_POS,      \
+#define ADS114S0X_REGISTER_STATUS_FL_P_RAILN_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_STATUS_FL_P_RAILN_POS, \
 				     ADS114S0X_REGISTER_STATUS_FL_P_RAILN_LENGTH)
 #define ADS114S0X_REGISTER_STATUS_FL_N_RAILP_LENGTH 1
 #define ADS114S0X_REGISTER_STATUS_FL_N_RAILP_POS    3
-#define ADS114S0X_REGISTER_STATUS_FL_N_RAILP_GET(value)                                            \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_STATUS_FL_N_RAILP_POS,              \
+#define ADS114S0X_REGISTER_STATUS_FL_N_RAILP_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_STATUS_FL_N_RAILP_POS, \
 				     ADS114S0X_REGISTER_STATUS_FL_N_RAILP_LENGTH)
-#define ADS114S0X_REGISTER_STATUS_FL_N_RAILP_SET(target, value)                                    \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_STATUS_FL_N_RAILP_POS,      \
+#define ADS114S0X_REGISTER_STATUS_FL_N_RAILP_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_STATUS_FL_N_RAILP_POS, \
 				     ADS114S0X_REGISTER_STATUS_FL_N_RAILP_LENGTH)
 #define ADS114S0X_REGISTER_STATUS_FL_N_RAILN_LENGTH 1
 #define ADS114S0X_REGISTER_STATUS_FL_N_RAILN_POS    2
-#define ADS114S0X_REGISTER_STATUS_FL_N_RAILN_GET(value)                                            \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_STATUS_FL_N_RAILN_POS,              \
+#define ADS114S0X_REGISTER_STATUS_FL_N_RAILN_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_STATUS_FL_N_RAILN_POS, \
 				     ADS114S0X_REGISTER_STATUS_FL_N_RAILN_LENGTH)
-#define ADS114S0X_REGISTER_STATUS_FL_N_RAILN_SET(target, value)                                    \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_STATUS_FL_N_RAILN_POS,      \
+#define ADS114S0X_REGISTER_STATUS_FL_N_RAILN_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_STATUS_FL_N_RAILN_POS, \
 				     ADS114S0X_REGISTER_STATUS_FL_N_RAILN_LENGTH)
 #define ADS114S0X_REGISTER_STATUS_FL_REF_L1_LENGTH 1
 #define ADS114S0X_REGISTER_STATUS_FL_REF_L1_POS    1
-#define ADS114S0X_REGISTER_STATUS_FL_REF_L1_GET(value)                                             \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_STATUS_FL_REF_L1_POS,               \
+#define ADS114S0X_REGISTER_STATUS_FL_REF_L1_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_STATUS_FL_REF_L1_POS, \
 				     ADS114S0X_REGISTER_STATUS_FL_REF_L1_LENGTH)
-#define ADS114S0X_REGISTER_STATUS_FL_REF_L1_SET(target, value)                                     \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_STATUS_FL_REF_L1_POS,       \
+#define ADS114S0X_REGISTER_STATUS_FL_REF_L1_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_STATUS_FL_REF_L1_POS, \
 				     ADS114S0X_REGISTER_STATUS_FL_REF_L1_LENGTH)
 #define ADS114S0X_REGISTER_STATUS_FL_REF_L0_LENGTH 1
 #define ADS114S0X_REGISTER_STATUS_FL_REF_L0_POS    0
-#define ADS114S0X_REGISTER_STATUS_FL_REF_L0_GET(value)                                             \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_STATUS_FL_REF_L0_POS,               \
+#define ADS114S0X_REGISTER_STATUS_FL_REF_L0_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_STATUS_FL_REF_L0_POS, \
 				     ADS114S0X_REGISTER_STATUS_FL_REF_L0_LENGTH)
-#define ADS114S0X_REGISTER_STATUS_FL_REF_L0_SET(target, value)                                     \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_STATUS_FL_REF_L0_POS,       \
+#define ADS114S0X_REGISTER_STATUS_FL_REF_L0_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_STATUS_FL_REF_L0_POS, \
 				     ADS114S0X_REGISTER_STATUS_FL_REF_L0_LENGTH)
 #define ADS114S0X_REGISTER_INPMUX_MUXP_LENGTH 4
 #define ADS114S0X_REGISTER_INPMUX_MUXP_POS    4
-#define ADS114S0X_REGISTER_INPMUX_MUXP_GET(value)                                                  \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_INPMUX_MUXP_POS,                    \
+#define ADS114S0X_REGISTER_INPMUX_MUXP_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_INPMUX_MUXP_POS, \
 				     ADS114S0X_REGISTER_INPMUX_MUXP_LENGTH)
-#define ADS114S0X_REGISTER_INPMUX_MUXP_SET(target, value)                                          \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_INPMUX_MUXP_POS,            \
+#define ADS114S0X_REGISTER_INPMUX_MUXP_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_INPMUX_MUXP_POS, \
 				     ADS114S0X_REGISTER_INPMUX_MUXP_LENGTH)
 #define ADS114S0X_REGISTER_INPMUX_MUXN_LENGTH 4
 #define ADS114S0X_REGISTER_INPMUX_MUXN_POS    0
-#define ADS114S0X_REGISTER_INPMUX_MUXN_GET(value)                                                  \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_INPMUX_MUXN_POS,                    \
+#define ADS114S0X_REGISTER_INPMUX_MUXN_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_INPMUX_MUXN_POS, \
 				     ADS114S0X_REGISTER_INPMUX_MUXN_LENGTH)
-#define ADS114S0X_REGISTER_INPMUX_MUXN_SET(target, value)                                          \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_INPMUX_MUXN_POS,            \
+#define ADS114S0X_REGISTER_INPMUX_MUXN_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_INPMUX_MUXN_POS, \
 				     ADS114S0X_REGISTER_INPMUX_MUXN_LENGTH)
 #define ADS114S0X_REGISTER_PGA_DELAY_LENGTH 3
 #define ADS114S0X_REGISTER_PGA_DELAY_POS    5
-#define ADS114S0X_REGISTER_PGA_DELAY_GET(value)                                                    \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_PGA_DELAY_POS,                      \
+#define ADS114S0X_REGISTER_PGA_DELAY_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_PGA_DELAY_POS, \
 				     ADS114S0X_REGISTER_PGA_DELAY_LENGTH)
-#define ADS114S0X_REGISTER_PGA_DELAY_SET(target, value)                                            \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_PGA_DELAY_POS,              \
+#define ADS114S0X_REGISTER_PGA_DELAY_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_PGA_DELAY_POS, \
 				     ADS114S0X_REGISTER_PGA_DELAY_LENGTH)
 #define ADS114S0X_REGISTER_PGA_PGA_EN_LENGTH 2
 #define ADS114S0X_REGISTER_PGA_PGA_EN_POS    3
-#define ADS114S0X_REGISTER_PGA_PGA_EN_GET(value)                                                   \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_PGA_PGA_EN_POS,                     \
+#define ADS114S0X_REGISTER_PGA_PGA_EN_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_PGA_PGA_EN_POS, \
 				     ADS114S0X_REGISTER_PGA_PGA_EN_LENGTH)
-#define ADS114S0X_REGISTER_PGA_PGA_EN_SET(target, value)                                           \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_PGA_PGA_EN_POS,             \
+#define ADS114S0X_REGISTER_PGA_PGA_EN_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_PGA_PGA_EN_POS, \
 				     ADS114S0X_REGISTER_PGA_PGA_EN_LENGTH)
 #define ADS114S0X_REGISTER_PGA_GAIN_LENGTH 3
 #define ADS114S0X_REGISTER_PGA_GAIN_POS    0
-#define ADS114S0X_REGISTER_PGA_GAIN_GET(value)                                                     \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_PGA_GAIN_POS,                       \
+#define ADS114S0X_REGISTER_PGA_GAIN_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_PGA_GAIN_POS, \
 				     ADS114S0X_REGISTER_PGA_GAIN_LENGTH)
-#define ADS114S0X_REGISTER_PGA_GAIN_SET(target, value)                                             \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_PGA_GAIN_POS,               \
+#define ADS114S0X_REGISTER_PGA_GAIN_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_PGA_GAIN_POS, \
 				     ADS114S0X_REGISTER_PGA_GAIN_LENGTH)
 #define ADS114S0X_REGISTER_DATARATE_G_CHOP_LENGTH 1
 #define ADS114S0X_REGISTER_DATARATE_G_CHOP_POS    7
-#define ADS114S0X_REGISTER_DATARATE_G_CHOP_GET(value)                                              \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_DATARATE_G_CHOP_POS,                \
+#define ADS114S0X_REGISTER_DATARATE_G_CHOP_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_DATARATE_G_CHOP_POS, \
 				     ADS114S0X_REGISTER_DATARATE_G_CHOP_LENGTH)
-#define ADS114S0X_REGISTER_DATARATE_G_CHOP_SET(target, value)                                      \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_DATARATE_G_CHOP_POS,        \
+#define ADS114S0X_REGISTER_DATARATE_G_CHOP_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_DATARATE_G_CHOP_POS, \
 				     ADS114S0X_REGISTER_DATARATE_G_CHOP_LENGTH)
 #define ADS114S0X_REGISTER_DATARATE_CLK_LENGTH 1
 #define ADS114S0X_REGISTER_DATARATE_CLK_POS    6
-#define ADS114S0X_REGISTER_DATARATE_CLK_GET(value)                                                 \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_DATARATE_CLK_POS,                   \
+#define ADS114S0X_REGISTER_DATARATE_CLK_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_DATARATE_CLK_POS, \
 				     ADS114S0X_REGISTER_DATARATE_CLK_LENGTH)
-#define ADS114S0X_REGISTER_DATARATE_CLK_SET(target, value)                                         \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_DATARATE_CLK_POS,           \
+#define ADS114S0X_REGISTER_DATARATE_CLK_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_DATARATE_CLK_POS, \
 				     ADS114S0X_REGISTER_DATARATE_CLK_LENGTH)
 #define ADS114S0X_REGISTER_DATARATE_MODE_LENGTH 1
 #define ADS114S0X_REGISTER_DATARATE_MODE_POS    5
-#define ADS114S0X_REGISTER_DATARATE_MODE_GET(value)                                                \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_DATARATE_MODE_POS,                  \
+#define ADS114S0X_REGISTER_DATARATE_MODE_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_DATARATE_MODE_POS, \
 				     ADS114S0X_REGISTER_DATARATE_MODE_LENGTH)
-#define ADS114S0X_REGISTER_DATARATE_MODE_SET(target, value)                                        \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_DATARATE_MODE_POS,          \
+#define ADS114S0X_REGISTER_DATARATE_MODE_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_DATARATE_MODE_POS, \
 				     ADS114S0X_REGISTER_DATARATE_MODE_LENGTH)
 #define ADS114S0X_REGISTER_DATARATE_FILTER_LENGTH 1
 #define ADS114S0X_REGISTER_DATARATE_FILTER_POS    4
-#define ADS114S0X_REGISTER_DATARATE_FILTER_GET(value)                                              \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_DATARATE_FILTER_POS,                \
+#define ADS114S0X_REGISTER_DATARATE_FILTER_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_DATARATE_FILTER_POS, \
 				     ADS114S0X_REGISTER_DATARATE_FILTER_LENGTH)
-#define ADS114S0X_REGISTER_DATARATE_FILTER_SET(target, value)                                      \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_DATARATE_FILTER_POS,        \
+#define ADS114S0X_REGISTER_DATARATE_FILTER_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_DATARATE_FILTER_POS, \
 				     ADS114S0X_REGISTER_DATARATE_FILTER_LENGTH)
 #define ADS114S0X_REGISTER_DATARATE_DR_LENGTH 4
 #define ADS114S0X_REGISTER_DATARATE_DR_POS    0
-#define ADS114S0X_REGISTER_DATARATE_DR_GET(value)                                                  \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_DATARATE_DR_POS,                    \
+#define ADS114S0X_REGISTER_DATARATE_DR_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_DATARATE_DR_POS, \
 				     ADS114S0X_REGISTER_DATARATE_DR_LENGTH)
-#define ADS114S0X_REGISTER_DATARATE_DR_SET(target, value)                                          \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_DATARATE_DR_POS,            \
+#define ADS114S0X_REGISTER_DATARATE_DR_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_DATARATE_DR_POS, \
 				     ADS114S0X_REGISTER_DATARATE_DR_LENGTH)
 #define ADS114S0X_REGISTER_REF_FL_REF_EN_LENGTH 2
 #define ADS114S0X_REGISTER_REF_FL_REF_EN_POS    6
-#define ADS114S0X_REGISTER_REF_FL_REF_EN_GET(value)                                                \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_REF_FL_REF_EN_POS,                  \
+#define ADS114S0X_REGISTER_REF_FL_REF_EN_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_REF_FL_REF_EN_POS, \
 				     ADS114S0X_REGISTER_REF_FL_REF_EN_LENGTH)
-#define ADS114S0X_REGISTER_REF_FL_REF_EN_SET(target, value)                                        \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_REF_FL_REF_EN_POS,          \
+#define ADS114S0X_REGISTER_REF_FL_REF_EN_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_REF_FL_REF_EN_POS, \
 				     ADS114S0X_REGISTER_REF_FL_REF_EN_LENGTH)
 #define ADS114S0X_REGISTER_REF_NOT_REFP_BUF_LENGTH 1
 #define ADS114S0X_REGISTER_REF_NOT_REFP_BUF_POS    5
-#define ADS114S0X_REGISTER_REF_NOT_REFP_BUF_GET(value)                                             \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_REF_NOT_REFP_BUF_POS,               \
+#define ADS114S0X_REGISTER_REF_NOT_REFP_BUF_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_REF_NOT_REFP_BUF_POS, \
 				     ADS114S0X_REGISTER_REF_NOT_REFP_BUF_LENGTH)
-#define ADS114S0X_REGISTER_REF_NOT_REFP_BUF_SET(target, value)                                     \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_REF_NOT_REFP_BUF_POS,       \
+#define ADS114S0X_REGISTER_REF_NOT_REFP_BUF_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_REF_NOT_REFP_BUF_POS, \
 				     ADS114S0X_REGISTER_REF_NOT_REFP_BUF_LENGTH)
 #define ADS114S0X_REGISTER_REF_NOT_REFN_BUF_LENGTH 1
 #define ADS114S0X_REGISTER_REF_NOT_REFN_BUF_POS    4
-#define ADS114S0X_REGISTER_REF_NOT_REFN_BUF_GET(value)                                             \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_REF_NOT_REFN_BUF_POS,               \
+#define ADS114S0X_REGISTER_REF_NOT_REFN_BUF_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_REF_NOT_REFN_BUF_POS, \
 				     ADS114S0X_REGISTER_REF_NOT_REFN_BUF_LENGTH)
-#define ADS114S0X_REGISTER_REF_NOT_REFN_BUF_SET(target, value)                                     \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_REF_NOT_REFN_BUF_POS,       \
+#define ADS114S0X_REGISTER_REF_NOT_REFN_BUF_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_REF_NOT_REFN_BUF_POS, \
 				     ADS114S0X_REGISTER_REF_NOT_REFN_BUF_LENGTH)
 #define ADS114S0X_REGISTER_REF_REFSEL_LENGTH 2
 #define ADS114S0X_REGISTER_REF_REFSEL_POS    2
-#define ADS114S0X_REGISTER_REF_REFSEL_GET(value)                                                   \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_REF_REFSEL_POS,                     \
+#define ADS114S0X_REGISTER_REF_REFSEL_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_REF_REFSEL_POS, \
 				     ADS114S0X_REGISTER_REF_REFSEL_LENGTH)
-#define ADS114S0X_REGISTER_REF_REFSEL_SET(target, value)                                           \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_REF_REFSEL_POS,             \
+#define ADS114S0X_REGISTER_REF_REFSEL_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_REF_REFSEL_POS, \
 				     ADS114S0X_REGISTER_REF_REFSEL_LENGTH)
 #define ADS114S0X_REGISTER_REF_REFCON_LENGTH 2
 #define ADS114S0X_REGISTER_REF_REFCON_POS    0
-#define ADS114S0X_REGISTER_REF_REFCON_GET(value)                                                   \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_REF_REFCON_POS,                     \
+#define ADS114S0X_REGISTER_REF_REFCON_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_REF_REFCON_POS, \
 				     ADS114S0X_REGISTER_REF_REFCON_LENGTH)
-#define ADS114S0X_REGISTER_REF_REFCON_SET(target, value)                                           \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_REF_REFCON_POS,             \
+#define ADS114S0X_REGISTER_REF_REFCON_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_REF_REFCON_POS, \
 				     ADS114S0X_REGISTER_REF_REFCON_LENGTH)
 #define ADS114S0X_REGISTER_IDACMAG_FL_RAIL_EN_LENGTH 1
 #define ADS114S0X_REGISTER_IDACMAG_FL_RAIL_EN_POS    7
-#define ADS114S0X_REGISTER_IDACMAG_FL_RAIL_EN_GET(value)                                           \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_IDACMAG_FL_RAIL_EN_POS,             \
+#define ADS114S0X_REGISTER_IDACMAG_FL_RAIL_EN_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_IDACMAG_FL_RAIL_EN_POS, \
 				     ADS114S0X_REGISTER_IDACMAG_FL_RAIL_EN_LENGTH)
-#define ADS114S0X_REGISTER_IDACMAG_FL_RAIL_EN_SET(target, value)                                   \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_IDACMAG_FL_RAIL_EN_POS,     \
+#define ADS114S0X_REGISTER_IDACMAG_FL_RAIL_EN_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_IDACMAG_FL_RAIL_EN_POS, \
 				     ADS114S0X_REGISTER_IDACMAG_FL_RAIL_EN_LENGTH)
 #define ADS114S0X_REGISTER_IDACMAG_PSW_LENGTH 1
 #define ADS114S0X_REGISTER_IDACMAG_PSW_POS    6
-#define ADS114S0X_REGISTER_IDACMAG_PSW_GET(value)                                                  \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_IDACMAG_PSW_POS,                    \
+#define ADS114S0X_REGISTER_IDACMAG_PSW_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_IDACMAG_PSW_POS, \
 				     ADS114S0X_REGISTER_IDACMAG_PSW_LENGTH)
-#define ADS114S0X_REGISTER_IDACMAG_PSW_SET(target, value)                                          \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_IDACMAG_PSW_POS,            \
+#define ADS114S0X_REGISTER_IDACMAG_PSW_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_IDACMAG_PSW_POS, \
 				     ADS114S0X_REGISTER_IDACMAG_PSW_LENGTH)
 #define ADS114S0X_REGISTER_IDACMAG_IMAG_LENGTH 4
 #define ADS114S0X_REGISTER_IDACMAG_IMAG_POS    0
-#define ADS114S0X_REGISTER_IDACMAG_IMAG_GET(value)                                                 \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_IDACMAG_IMAG_POS,                   \
+#define ADS114S0X_REGISTER_IDACMAG_IMAG_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_IDACMAG_IMAG_POS, \
 				     ADS114S0X_REGISTER_IDACMAG_IMAG_LENGTH)
-#define ADS114S0X_REGISTER_IDACMAG_IMAG_SET(target, value)                                         \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_IDACMAG_IMAG_POS,           \
+#define ADS114S0X_REGISTER_IDACMAG_IMAG_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_IDACMAG_IMAG_POS, \
 				     ADS114S0X_REGISTER_IDACMAG_IMAG_LENGTH)
 #define ADS114S0X_REGISTER_IDACMUX_I2MUX_LENGTH 4
 #define ADS114S0X_REGISTER_IDACMUX_I2MUX_POS    4
-#define ADS114S0X_REGISTER_IDACMUX_I2MUX_GET(value)                                                \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_IDACMUX_I2MUX_POS,                  \
+#define ADS114S0X_REGISTER_IDACMUX_I2MUX_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_IDACMUX_I2MUX_POS, \
 				     ADS114S0X_REGISTER_IDACMUX_I2MUX_LENGTH)
-#define ADS114S0X_REGISTER_IDACMUX_I2MUX_SET(target, value)                                        \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_IDACMUX_I2MUX_POS,          \
+#define ADS114S0X_REGISTER_IDACMUX_I2MUX_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_IDACMUX_I2MUX_POS, \
 				     ADS114S0X_REGISTER_IDACMUX_I2MUX_LENGTH)
 #define ADS114S0X_REGISTER_IDACMUX_I1MUX_LENGTH 4
 #define ADS114S0X_REGISTER_IDACMUX_I1MUX_POS    0
-#define ADS114S0X_REGISTER_IDACMUX_I1MUX_GET(value)                                                \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_IDACMUX_I1MUX_POS,                  \
+#define ADS114S0X_REGISTER_IDACMUX_I1MUX_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_IDACMUX_I1MUX_POS, \
 				     ADS114S0X_REGISTER_IDACMUX_I1MUX_LENGTH)
-#define ADS114S0X_REGISTER_IDACMUX_I1MUX_SET(target, value)                                        \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_IDACMUX_I1MUX_POS,          \
+#define ADS114S0X_REGISTER_IDACMUX_I1MUX_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_IDACMUX_I1MUX_POS, \
 				     ADS114S0X_REGISTER_IDACMUX_I1MUX_LENGTH)
 #define ADS114S0X_REGISTER_VBIAS_VB_LEVEL_LENGTH 1
 #define ADS114S0X_REGISTER_VBIAS_VB_LEVEL_POS    7
-#define ADS114S0X_REGISTER_VBIAS_VB_LEVEL_GET(value)                                               \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_VBIAS_VB_LEVEL_POS,                 \
+#define ADS114S0X_REGISTER_VBIAS_VB_LEVEL_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_VBIAS_VB_LEVEL_POS, \
 				     ADS114S0X_REGISTER_VBIAS_VB_LEVEL_LENGTH)
-#define ADS114S0X_REGISTER_VBIAS_VB_LEVEL_SET(target, value)                                       \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_VBIAS_VB_LEVEL_POS,         \
+#define ADS114S0X_REGISTER_VBIAS_VB_LEVEL_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_VBIAS_VB_LEVEL_POS, \
 				     ADS114S0X_REGISTER_VBIAS_VB_LEVEL_LENGTH)
 #define ADS114S0X_REGISTER_GPIODAT_DIR_LENGTH 4
 #define ADS114S0X_REGISTER_GPIODAT_DIR_POS    4
-#define ADS114S0X_REGISTER_GPIODAT_DIR_GET(value)                                                  \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_GPIODAT_DIR_POS,                    \
+#define ADS114S0X_REGISTER_GPIODAT_DIR_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_GPIODAT_DIR_POS, \
 				     ADS114S0X_REGISTER_GPIODAT_DIR_LENGTH)
-#define ADS114S0X_REGISTER_GPIODAT_DIR_SET(target, value)                                          \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_GPIODAT_DIR_POS,            \
+#define ADS114S0X_REGISTER_GPIODAT_DIR_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_GPIODAT_DIR_POS, \
 				     ADS114S0X_REGISTER_GPIODAT_DIR_LENGTH)
 #define ADS114S0X_REGISTER_GPIODAT_DAT_LENGTH 4
 #define ADS114S0X_REGISTER_GPIODAT_DAT_POS    0
-#define ADS114S0X_REGISTER_GPIODAT_DAT_GET(value)                                                  \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_GPIODAT_DAT_POS,                    \
+#define ADS114S0X_REGISTER_GPIODAT_DAT_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_GPIODAT_DAT_POS, \
 				     ADS114S0X_REGISTER_GPIODAT_DAT_LENGTH)
-#define ADS114S0X_REGISTER_GPIODAT_DAT_SET(target, value)                                          \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_GPIODAT_DAT_POS,            \
+#define ADS114S0X_REGISTER_GPIODAT_DAT_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_GPIODAT_DAT_POS, \
 				     ADS114S0X_REGISTER_GPIODAT_DAT_LENGTH)
 #define ADS114S0X_REGISTER_GPIOCON_CON_LENGTH 4
 #define ADS114S0X_REGISTER_GPIOCON_CON_POS    0
-#define ADS114S0X_REGISTER_GPIOCON_CON_GET(value)                                                  \
-	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_GPIOCON_CON_POS,                    \
+#define ADS114S0X_REGISTER_GPIOCON_CON_GET(value)                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_GPIOCON_CON_POS, \
 				     ADS114S0X_REGISTER_GPIOCON_CON_LENGTH)
-#define ADS114S0X_REGISTER_GPIOCON_CON_SET(target, value)                                          \
-	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_GPIOCON_CON_POS,            \
+#define ADS114S0X_REGISTER_GPIOCON_CON_SET(target, value)                               \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_GPIOCON_CON_POS, \
 				     ADS114S0X_REGISTER_GPIOCON_CON_LENGTH)
 
 /*
  * - AIN0 as positive input
  * - AIN1 as negative input
  */
-#define ADS114S0X_REGISTER_INPMUX_SET_DEFAULTS(target)                                             \
-	ADS114S0X_REGISTER_INPMUX_MUXP_SET(target, 0b0000);                                        \
+#define ADS114S0X_REGISTER_INPMUX_SET_DEFAULTS(target)      \
+	ADS114S0X_REGISTER_INPMUX_MUXP_SET(target, 0b0000); \
 	ADS114S0X_REGISTER_INPMUX_MUXN_SET(target, 0b0001)
 /*
  * - disable reference monitor
@@ -366,11 +366,11 @@ enum ads114s0x_register {
  * - use internal reference
  * - enable internal voltage reference
  */
-#define ADS114S0X_REGISTER_REF_SET_DEFAULTS(target)                                                \
-	ADS114S0X_REGISTER_REF_FL_REF_EN_SET(target, 0b00);                                        \
-	ADS114S0X_REGISTER_REF_NOT_REFP_BUF_SET(target, 0b0);                                      \
-	ADS114S0X_REGISTER_REF_NOT_REFN_BUF_SET(target, 0b1);                                      \
-	ADS114S0X_REGISTER_REF_REFSEL_SET(target, 0b10);                                           \
+#define ADS114S0X_REGISTER_REF_SET_DEFAULTS(target)           \
+	ADS114S0X_REGISTER_REF_FL_REF_EN_SET(target, 0b00);   \
+	ADS114S0X_REGISTER_REF_NOT_REFP_BUF_SET(target, 0b0); \
+	ADS114S0X_REGISTER_REF_NOT_REFN_BUF_SET(target, 0b1); \
+	ADS114S0X_REGISTER_REF_REFSEL_SET(target, 0b10);      \
 	ADS114S0X_REGISTER_REF_REFCON_SET(target, 0b01)
 /*
  * - disable global chop
@@ -379,36 +379,36 @@ enum ads114s0x_register {
  * - low latency filter
  * - 20 samples per second
  */
-#define ADS114S0X_REGISTER_DATARATE_SET_DEFAULTS(target)                                           \
-	ADS114S0X_REGISTER_DATARATE_G_CHOP_SET(target, 0b0);                                       \
-	ADS114S0X_REGISTER_DATARATE_CLK_SET(target, 0b0);                                          \
-	ADS114S0X_REGISTER_DATARATE_MODE_SET(target, 0b1);                                         \
-	ADS114S0X_REGISTER_DATARATE_FILTER_SET(target, 0b1);                                       \
+#define ADS114S0X_REGISTER_DATARATE_SET_DEFAULTS(target)     \
+	ADS114S0X_REGISTER_DATARATE_G_CHOP_SET(target, 0b0); \
+	ADS114S0X_REGISTER_DATARATE_CLK_SET(target, 0b0);    \
+	ADS114S0X_REGISTER_DATARATE_MODE_SET(target, 0b1);   \
+	ADS114S0X_REGISTER_DATARATE_FILTER_SET(target, 0b1); \
 	ADS114S0X_REGISTER_DATARATE_DR_SET(target, 0b0100)
 /*
  * - delay of 14*t_mod
  * - disable gain
  * - gain 1
  */
-#define ADS114S0X_REGISTER_PGA_SET_DEFAULTS(target)                                                \
-	ADS114S0X_REGISTER_PGA_DELAY_SET(target, 0b000);                                           \
-	ADS114S0X_REGISTER_PGA_PGA_EN_SET(target, 0b00);                                           \
+#define ADS114S0X_REGISTER_PGA_SET_DEFAULTS(target)      \
+	ADS114S0X_REGISTER_PGA_DELAY_SET(target, 0b000); \
+	ADS114S0X_REGISTER_PGA_PGA_EN_SET(target, 0b00); \
 	ADS114S0X_REGISTER_PGA_GAIN_SET(target, 0b000)
 /*
  * - disable PGA output rail flag
  * - low-side power switch
  * - IDAC off
  */
-#define ADS114S0X_REGISTER_IDACMAG_SET_DEFAULTS(target)                                            \
-	ADS114S0X_REGISTER_IDACMAG_FL_RAIL_EN_SET(target, 0b0);                                    \
-	ADS114S0X_REGISTER_IDACMAG_PSW_SET(target, 0b0);                                           \
+#define ADS114S0X_REGISTER_IDACMAG_SET_DEFAULTS(target)         \
+	ADS114S0X_REGISTER_IDACMAG_FL_RAIL_EN_SET(target, 0b0); \
+	ADS114S0X_REGISTER_IDACMAG_PSW_SET(target, 0b0);        \
 	ADS114S0X_REGISTER_IDACMAG_IMAG_SET(target, 0b0000)
 /*
  * - disconnect IDAC1
  * - disconnect IDAC2
  */
-#define ADS114S0X_REGISTER_IDACMUX_SET_DEFAULTS(target)                                            \
-	ADS114S0X_REGISTER_IDACMUX_I1MUX_SET(target, 0b1111);                                      \
+#define ADS114S0X_REGISTER_IDACMUX_SET_DEFAULTS(target)       \
+	ADS114S0X_REGISTER_IDACMUX_I1MUX_SET(target, 0b1111); \
 	ADS114S0X_REGISTER_IDACMUX_I2MUX_SET(target, 0b1111)
 
 struct ads114s0x_config {

@@ -191,48 +191,48 @@ static const struct can_mcan_ops can_sam0_ops = {
 	.clear_mram = can_sam0_clear_mram,
 };
 
-#define CAN_SAM0_IRQ_CFG_FUNCTION(inst)                                                            \
-	static void config_can_##inst##_irq(void)                                                  \
-	{                                                                                          \
-		LOG_DBG("Enable CAN##inst## IRQ");                                                 \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, int0, irq),                                  \
-			    DT_INST_IRQ_BY_NAME(inst, int0, priority), can_sam0_line_x_isr,        \
-			    DEVICE_DT_INST_GET(inst), 0);                                          \
-		irq_enable(DT_INST_IRQ_BY_NAME(inst, int0, irq));                                  \
+#define CAN_SAM0_IRQ_CFG_FUNCTION(inst)                                                     \
+	static void config_can_##inst##_irq(void)                                           \
+	{                                                                                   \
+		LOG_DBG("Enable CAN##inst## IRQ");                                          \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, int0, irq),                           \
+			    DT_INST_IRQ_BY_NAME(inst, int0, priority), can_sam0_line_x_isr, \
+			    DEVICE_DT_INST_GET(inst), 0);                                   \
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, int0, irq));                           \
 	}
 
-#define CAN_SAM0_CFG_INST(inst)                                                                    \
-	CAN_MCAN_DT_INST_CALLBACKS_DEFINE(inst, can_sam0_cbs_##inst);                              \
-	CAN_MCAN_DT_INST_MRAM_DEFINE(inst, can_sam0_mram_##inst);                                  \
-                                                                                                   \
-	static const struct can_sam0_config can_sam0_cfg_##inst = {                                \
-		.base = CAN_MCAN_DT_INST_MCAN_ADDR(inst),                                          \
-		.mram = (mem_addr_t)POINTER_TO_UINT(&can_sam0_mram_##inst),                        \
-		.mclk = (volatile uint32_t *)MCLK_MASK_DT_INT_REG_ADDR(inst),                      \
-		.mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(inst, mclk, bit)),                    \
-		.gclk_core_id = DT_INST_CLOCKS_CELL_BY_NAME(inst, gclk, periph_ch),                \
-		.divider = DT_INST_PROP(inst, divider),                                            \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
-		.config_irq = config_can_##inst##_irq,                                             \
-	};                                                                                         \
-                                                                                                   \
-	static const struct can_mcan_config can_mcan_cfg_##inst = CAN_MCAN_DT_CONFIG_INST_GET(     \
+#define CAN_SAM0_CFG_INST(inst)                                                                \
+	CAN_MCAN_DT_INST_CALLBACKS_DEFINE(inst, can_sam0_cbs_##inst);                          \
+	CAN_MCAN_DT_INST_MRAM_DEFINE(inst, can_sam0_mram_##inst);                              \
+                                                                                               \
+	static const struct can_sam0_config can_sam0_cfg_##inst = {                            \
+		.base = CAN_MCAN_DT_INST_MCAN_ADDR(inst),                                      \
+		.mram = (mem_addr_t)POINTER_TO_UINT(&can_sam0_mram_##inst),                    \
+		.mclk = (volatile uint32_t *)MCLK_MASK_DT_INT_REG_ADDR(inst),                  \
+		.mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(inst, mclk, bit)),                \
+		.gclk_core_id = DT_INST_CLOCKS_CELL_BY_NAME(inst, gclk, periph_ch),            \
+		.divider = DT_INST_PROP(inst, divider),                                        \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                  \
+		.config_irq = config_can_##inst##_irq,                                         \
+	};                                                                                     \
+                                                                                               \
+	static const struct can_mcan_config can_mcan_cfg_##inst = CAN_MCAN_DT_CONFIG_INST_GET( \
 		inst, &can_sam0_cfg_##inst, &can_sam0_ops, &can_sam0_cbs_##inst);
 
-#define CAN_SAM0_DATA_INST(inst)                                                                   \
+#define CAN_SAM0_DATA_INST(inst)                                                            \
 	static struct can_mcan_data can_mcan_data_##inst = CAN_MCAN_DATA_INITIALIZER(NULL);
 
-#define CAN_SAM0_DEVICE_INST(inst)                                                                 \
-	CAN_DEVICE_DT_INST_DEFINE(inst, can_sam0_init, NULL, &can_mcan_data_##inst,                \
-				  &can_mcan_cfg_##inst, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,     \
+#define CAN_SAM0_DEVICE_INST(inst)                                                             \
+	CAN_DEVICE_DT_INST_DEFINE(inst, can_sam0_init, NULL, &can_mcan_data_##inst,            \
+				  &can_mcan_cfg_##inst, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY, \
 				  &can_sam0_driver_api);
 
-#define CAN_SAM0_INST(inst)                                                                        \
-	CAN_MCAN_DT_INST_BUILD_ASSERT_MRAM_CFG(inst);                                              \
-	PINCTRL_DT_INST_DEFINE(inst);                                                              \
-	CAN_SAM0_IRQ_CFG_FUNCTION(inst)                                                            \
-	CAN_SAM0_CFG_INST(inst)                                                                    \
-	CAN_SAM0_DATA_INST(inst)                                                                   \
+#define CAN_SAM0_INST(inst)                           \
+	CAN_MCAN_DT_INST_BUILD_ASSERT_MRAM_CFG(inst); \
+	PINCTRL_DT_INST_DEFINE(inst);                 \
+	CAN_SAM0_IRQ_CFG_FUNCTION(inst)               \
+	CAN_SAM0_CFG_INST(inst)                       \
+	CAN_SAM0_DATA_INST(inst)                      \
 	CAN_SAM0_DEVICE_INST(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_SAM0_INST)

@@ -22,13 +22,13 @@ LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 
 #include "simplelink_support.h"
 
-#define SET_STATUS_BIT(status, bit)                                                                \
-	{                                                                                          \
-		status |= (1 << (bit));                                                            \
+#define SET_STATUS_BIT(status, bit)     \
+	{                               \
+		status |= (1 << (bit)); \
 	}
-#define CLR_STATUS_BIT(status, bit)                                                                \
-	{                                                                                          \
-		status &= ~(1 << (bit));                                                           \
+#define CLR_STATUS_BIT(status, bit)      \
+	{                                \
+		status &= ~(1 << (bit)); \
 	}
 #define GET_STATUS_BIT(status, bit) (0 != (status & (1 << (bit))))
 

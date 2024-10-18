@@ -8,20 +8,20 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/audio/codec.h>
 
-#define CODEC_START_HELP                                                                           \
-	"Start output audio playback. Syntax:\n"                                                   \
+#define CODEC_START_HELP                         \
+	"Start output audio playback. Syntax:\n" \
 	"<device>"
 
-#define CODEC_STOP_HELP                                                                            \
-	"Stop output audio playback. Syntax:\n"                                                    \
+#define CODEC_STOP_HELP                         \
+	"Stop output audio playback. Syntax:\n" \
 	"<device>"
 
-#define CODEC_SET_PROP_HELP                                                                        \
-	"Set a codec property. Syntax:\n"                                                          \
+#define CODEC_SET_PROP_HELP                     \
+	"Set a codec property. Syntax:\n"       \
 	"<device> <property> <channel> <value>"
 
-#define CODEC_APPLY_PROP_HELP                                                                      \
-	"Apply any cached properties. Syntax:\n"                                                   \
+#define CODEC_APPLY_PROP_HELP                    \
+	"Apply any cached properties. Syntax:\n" \
 	"<device>"
 
 static const char *const codec_property_name[] = {

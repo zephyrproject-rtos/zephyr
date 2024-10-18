@@ -401,18 +401,18 @@ static const struct adc_driver_api api = {
 BUILD_ASSERT(CONFIG_ADC_INIT_PRIORITY > CONFIG_SPI_INIT_PRIORITY,
 	     "CONFIG_ADC_INIT_PRIORITY must be higher than CONFIG_SPI_INIT_PRIORITY");
 
-#define ADC_MAX11102_17_INST_DEFINE(index, name, res, channels)                                    \
-	static const struct max11102_17_config config_##name##_##index = {                         \
-		.bus = SPI_DT_SPEC_INST_GET(                                                       \
-			index,                                                                     \
-			SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8), 0),  \
-		.gpio_chsel = GPIO_DT_SPEC_INST_GET_OR(index, chsel_gpios, {0}),                   \
-		.resolution = res,                                                                 \
-		.channel_count = channels,                                                         \
-	};                                                                                         \
-	static struct max11102_17_data data_##name##_##index;                                      \
-	DEVICE_DT_INST_DEFINE(index, max11102_17_init, NULL, &data_##name##_##index,               \
-			      &config_##name##_##index, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,     \
+#define ADC_MAX11102_17_INST_DEFINE(index, name, res, channels)                                   \
+	static const struct max11102_17_config config_##name##_##index = {                        \
+		.bus = SPI_DT_SPEC_INST_GET(                                                      \
+			index,                                                                    \
+			SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8), 0), \
+		.gpio_chsel = GPIO_DT_SPEC_INST_GET_OR(index, chsel_gpios, {0}),                  \
+		.resolution = res,                                                                \
+		.channel_count = channels,                                                        \
+	};                                                                                        \
+	static struct max11102_17_data data_##name##_##index;                                     \
+	DEVICE_DT_INST_DEFINE(index, max11102_17_init, NULL, &data_##name##_##index,              \
+			      &config_##name##_##index, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,    \
 			      &api);
 
 #define DT_DRV_COMPAT           maxim_max11102

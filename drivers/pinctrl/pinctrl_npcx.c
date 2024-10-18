@@ -25,10 +25,10 @@ struct npcx_pwm_pinctrl_config {
 	int channel;
 };
 
-#define NPCX_PWM_PINCTRL_CFG_INIT(node_id)                                                         \
-	{                                                                                          \
-		.base = DT_REG_ADDR(node_id),                                                      \
-		.channel = DT_PROP(node_id, pwm_channel),                                          \
+#define NPCX_PWM_PINCTRL_CFG_INIT(node_id)                \
+	{                                                 \
+		.base = DT_REG_ADDR(node_id),             \
+		.channel = DT_PROP(node_id, pwm_channel), \
 	},
 
 static const struct npcx_pwm_pinctrl_config pwm_pinctrl_cfg[] = {

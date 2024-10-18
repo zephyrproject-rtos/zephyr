@@ -59,7 +59,7 @@ LOG_MODULE_REGISTER(espi, CONFIG_ESPI_LOG_LEVEL);
 
 #define ESPI_XEC_REG_BASE(dev) ((struct espi_iom_regs *)ESPI_XEC_CONFIG(dev)->base_addr)
 
-#define ESPI_XEC_MSVW_REG_BASE(dev)                                                                \
+#define ESPI_XEC_MSVW_REG_BASE(dev)                                        \
 	((struct espi_msvw_ar_regs *)(ESPI_XEC_CONFIG(dev)->vw_base_addr))
 
 #define ESPI_XEC_SMVW_REG_OFS 0x200
@@ -1222,12 +1222,12 @@ static const struct espi_driver_api espi_xec_driver_api = {
 static struct espi_xec_data espi_xec_data_var;
 
 /* n = node-id, p = property, i = index */
-#define XEC_IRQ_INFO(n, p, i)                                                                      \
-	{                                                                                          \
-		.gid = MCHP_XEC_ECIA_GIRQ(DT_PROP_BY_IDX(n, p, i)),                                \
-		.gpos = MCHP_XEC_ECIA_GIRQ_POS(DT_PROP_BY_IDX(n, p, i)),                           \
-		.anid = MCHP_XEC_ECIA_NVIC_AGGR(DT_PROP_BY_IDX(n, p, i)),                          \
-		.dnid = MCHP_XEC_ECIA_NVIC_DIRECT(DT_PROP_BY_IDX(n, p, i)),                        \
+#define XEC_IRQ_INFO(n, p, i)                                               \
+	{                                                                   \
+		.gid = MCHP_XEC_ECIA_GIRQ(DT_PROP_BY_IDX(n, p, i)),         \
+		.gpos = MCHP_XEC_ECIA_GIRQ_POS(DT_PROP_BY_IDX(n, p, i)),    \
+		.anid = MCHP_XEC_ECIA_NVIC_AGGR(DT_PROP_BY_IDX(n, p, i)),   \
+		.dnid = MCHP_XEC_ECIA_NVIC_DIRECT(DT_PROP_BY_IDX(n, p, i)), \
 	},
 
 static const struct espi_xec_irq_info espi_xec_irq_info_0[] = {

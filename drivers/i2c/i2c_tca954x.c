@@ -155,13 +155,13 @@ static const struct i2c_driver_api tca954x_api_funcs = {
 BUILD_ASSERT(CONFIG_I2C_TCA954X_CHANNEL_INIT_PRIO > CONFIG_I2C_TCA954X_ROOT_INIT_PRIO,
 	     "I2C multiplexer channels must be initialized after their root");
 
-#define TCA954x_CHILD_DEFINE(node_id, n)                                                           \
-	static const struct tca954x_channel_config tca##n##a_down_config_##node_id = {             \
-		.chan_mask = BIT(DT_REG_ADDR(node_id)),                                            \
-		.root = DEVICE_DT_GET(DT_PARENT(node_id)),                                         \
-	};                                                                                         \
-	DEVICE_DT_DEFINE(node_id, tca954x_channel_init, NULL, NULL,                                \
-			 &tca##n##a_down_config_##node_id, POST_KERNEL,                            \
+#define TCA954x_CHILD_DEFINE(node_id, n)                                               \
+	static const struct tca954x_channel_config tca##n##a_down_config_##node_id = { \
+		.chan_mask = BIT(DT_REG_ADDR(node_id)),                                \
+		.root = DEVICE_DT_GET(DT_PARENT(node_id)),                             \
+	};                                                                             \
+	DEVICE_DT_DEFINE(node_id, tca954x_channel_init, NULL, NULL,                    \
+			 &tca##n##a_down_config_##node_id, POST_KERNEL,                \
 			 CONFIG_I2C_TCA954X_CHANNEL_INIT_PRIO, &tca954x_api_funcs);
 
 #define TCA954x_ROOT_DEFINE(n, inst, ch)                                                           \

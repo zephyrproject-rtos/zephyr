@@ -260,21 +260,21 @@ static const struct clock_control_driver_api r8a779f0_cpg_mssr_api = {
 	.set_rate = rcar_cpg_set_rate,
 };
 
-#define R8A779F0_MSSR_INIT(inst)                                                                   \
-	static struct r8a779f0_cpg_mssr_cfg cpg_mssr##inst##_cfg = {                               \
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(inst)),                                           \
-	};                                                                                         \
-                                                                                                   \
-	static struct r8a779f0_cpg_mssr_data cpg_mssr##inst##_data = {                             \
-		.cmn.clk_info_table[CPG_CORE] = core_props,                                        \
-		.cmn.clk_info_table_size[CPG_CORE] = ARRAY_SIZE(core_props),                       \
-		.cmn.clk_info_table[CPG_MOD] = mod_props,                                          \
-		.cmn.clk_info_table_size[CPG_MOD] = ARRAY_SIZE(mod_props),                         \
-		.cmn.get_div_helper = r8a779f0_get_div_helper,                                     \
-		.cmn.set_rate_helper = r8a779f0_set_rate_helper};                                  \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, &r8a779f0_cpg_mssr_init, NULL, &cpg_mssr##inst##_data,         \
-			      &cpg_mssr##inst##_cfg, PRE_KERNEL_1,                                 \
+#define R8A779F0_MSSR_INIT(inst)                                                           \
+	static struct r8a779f0_cpg_mssr_cfg cpg_mssr##inst##_cfg = {                       \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(inst)),                                   \
+	};                                                                                 \
+                                                                                           \
+	static struct r8a779f0_cpg_mssr_data cpg_mssr##inst##_data = {                     \
+		.cmn.clk_info_table[CPG_CORE] = core_props,                                \
+		.cmn.clk_info_table_size[CPG_CORE] = ARRAY_SIZE(core_props),               \
+		.cmn.clk_info_table[CPG_MOD] = mod_props,                                  \
+		.cmn.clk_info_table_size[CPG_MOD] = ARRAY_SIZE(mod_props),                 \
+		.cmn.get_div_helper = r8a779f0_get_div_helper,                             \
+		.cmn.set_rate_helper = r8a779f0_set_rate_helper};                          \
+                                                                                           \
+	DEVICE_DT_INST_DEFINE(inst, &r8a779f0_cpg_mssr_init, NULL, &cpg_mssr##inst##_data, \
+			      &cpg_mssr##inst##_cfg, PRE_KERNEL_1,                         \
 			      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &r8a779f0_cpg_mssr_api);
 
 DT_INST_FOREACH_STATUS_OKAY(R8A779F0_MSSR_INIT)

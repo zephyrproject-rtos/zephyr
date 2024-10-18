@@ -55,7 +55,7 @@ struct memc_flexspi_data {
 	bool combination_mode;
 	bool sck_differential_clock;
 	flexspi_read_sample_clock_t rx_sample_clock;
-#if defined(FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB) &&                                \
+#if defined(FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB) && \
 	FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB
 	flexspi_read_sample_clock_t rx_sample_clock_b;
 #endif
@@ -257,7 +257,7 @@ void *memc_flexspi_get_ahb_address(const struct device *dev, flexspi_port_t port
 		offset += data->size[i];
 	}
 
-#if defined(FSL_FEATURE_FLEXSPI_SUPPORT_ADDRESS_SHIFT) &&                                          \
+#if defined(FSL_FEATURE_FLEXSPI_SUPPORT_ADDRESS_SHIFT) && \
 	(FSL_FEATURE_FLEXSPI_SUPPORT_ADDRESS_SHIFT)
 	if (data->base->FLSHCR0[port] & FLEXSPI_FLSHCR0_ADDRSHIFT_MASK) {
 		/* Address shift is set, add 0x1000_0000 to AHB address */
@@ -298,17 +298,17 @@ static int memc_flexspi_init(const struct device *dev)
 	flexspi_config.ahbConfig.enableAHBCachable = data->ahb_cacheable;
 	flexspi_config.ahbConfig.enableAHBPrefetch = data->ahb_prefetch;
 	flexspi_config.ahbConfig.enableReadAddressOpt = data->ahb_read_addr_opt;
-#if !(defined(FSL_FEATURE_FLEXSPI_HAS_NO_MCR0_COMBINATIONEN) &&                                    \
+#if !(defined(FSL_FEATURE_FLEXSPI_HAS_NO_MCR0_COMBINATIONEN) && \
       FSL_FEATURE_FLEXSPI_HAS_NO_MCR0_COMBINATIONEN)
 	flexspi_config.enableCombination = data->combination_mode;
 #endif
 
-#if !(defined(FSL_FEATURE_FLEXSPI_HAS_NO_MCR2_SCKBDIFFOPT) &&                                      \
+#if !(defined(FSL_FEATURE_FLEXSPI_HAS_NO_MCR2_SCKBDIFFOPT) && \
       FSL_FEATURE_FLEXSPI_HAS_NO_MCR2_SCKBDIFFOPT)
 	flexspi_config.enableSckBDiffOpt = data->sck_differential_clock;
 #endif
 	flexspi_config.rxSampleClock = data->rx_sample_clock;
-#if defined(FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB) &&                                \
+#if defined(FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB) && \
 	FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB
 	flexspi_config.rxSampleClockPortB = data->rx_sample_clock_b;
 #if defined(FSL_FEATURE_FLEXSPI_SUPPORT_RXCLKSRC_DIFF) && FSL_FEATURE_FLEXSPI_SUPPORT_RXCLKSRC_DIFF
@@ -381,7 +381,7 @@ static int memc_flexspi_pm_action(const struct device *dev, enum pm_device_actio
 }
 #endif
 
-#if defined(FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB) &&                                \
+#if defined(FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB) && \
 	FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB
 #define MEMC_FLEXSPI_RXCLK_B(inst) .rx_sample_clock_b = DT_INST_PROP(inst, rx_clock_source_b),
 #else
@@ -390,41 +390,41 @@ static int memc_flexspi_pm_action(const struct device *dev, enum pm_device_actio
 
 #if defined(CONFIG_XIP) && defined(CONFIG_FLASH_MCUX_FLEXSPI_XIP)
 /* Checks if image flash base address is in the FlexSPI AHB base region */
-#define MEMC_FLEXSPI_CFG_XIP(node_id)                                                              \
-	((CONFIG_FLASH_BASE_ADDRESS) >= DT_REG_ADDR_BY_IDX(node_id, 1)) &&                         \
-		((CONFIG_FLASH_BASE_ADDRESS) <                                                     \
+#define MEMC_FLEXSPI_CFG_XIP(node_id)                                               \
+	((CONFIG_FLASH_BASE_ADDRESS) >= DT_REG_ADDR_BY_IDX(node_id, 1)) &&          \
+		((CONFIG_FLASH_BASE_ADDRESS) <                                      \
 		 (DT_REG_ADDR_BY_IDX(node_id, 1) + DT_REG_SIZE_BY_IDX(node_id, 1)))
 
 #else
 #define MEMC_FLEXSPI_CFG_XIP(node_id) false
 #endif
 
-#define MEMC_FLEXSPI(n)                                                                            \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	static uint16_t buf_cfg_##n[] = DT_INST_PROP_OR(n, rx_buffer_config, {0});                 \
-                                                                                                   \
-	static struct memc_flexspi_data memc_flexspi_data_##n = {                                  \
-		.base = (FLEXSPI_Type *)DT_INST_REG_ADDR(n),                                       \
-		.xip = MEMC_FLEXSPI_CFG_XIP(DT_DRV_INST(n)),                                       \
-		.ahb_base = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(n, 1),                              \
-		.ahb_bufferable = DT_INST_PROP(n, ahb_bufferable),                                 \
-		.ahb_cacheable = DT_INST_PROP(n, ahb_cacheable),                                   \
-		.ahb_prefetch = DT_INST_PROP(n, ahb_prefetch),                                     \
-		.ahb_read_addr_opt = DT_INST_PROP(n, ahb_read_addr_opt),                           \
-		.combination_mode = DT_INST_PROP(n, combination_mode),                             \
-		.sck_differential_clock = DT_INST_PROP(n, sck_differential_clock),                 \
-		.rx_sample_clock = DT_INST_PROP(n, rx_clock_source),                               \
-		MEMC_FLEXSPI_RXCLK_B(n).buf_cfg = (struct memc_flexspi_buf_cfg *)buf_cfg_##n,      \
-		.buf_cfg_cnt = sizeof(buf_cfg_##n) / sizeof(struct memc_flexspi_buf_cfg),          \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
-	};                                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(n, memc_flexspi_pm_action);                                       \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, memc_flexspi_init, PM_DEVICE_DT_INST_GET(n),                      \
-			      &memc_flexspi_data_##n, NULL, POST_KERNEL,                           \
+#define MEMC_FLEXSPI(n)                                                                       \
+	PINCTRL_DT_INST_DEFINE(n);                                                            \
+	static uint16_t buf_cfg_##n[] = DT_INST_PROP_OR(n, rx_buffer_config, {0});            \
+                                                                                              \
+	static struct memc_flexspi_data memc_flexspi_data_##n = {                             \
+		.base = (FLEXSPI_Type *)DT_INST_REG_ADDR(n),                                  \
+		.xip = MEMC_FLEXSPI_CFG_XIP(DT_DRV_INST(n)),                                  \
+		.ahb_base = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(n, 1),                         \
+		.ahb_bufferable = DT_INST_PROP(n, ahb_bufferable),                            \
+		.ahb_cacheable = DT_INST_PROP(n, ahb_cacheable),                              \
+		.ahb_prefetch = DT_INST_PROP(n, ahb_prefetch),                                \
+		.ahb_read_addr_opt = DT_INST_PROP(n, ahb_read_addr_opt),                      \
+		.combination_mode = DT_INST_PROP(n, combination_mode),                        \
+		.sck_differential_clock = DT_INST_PROP(n, sck_differential_clock),            \
+		.rx_sample_clock = DT_INST_PROP(n, rx_clock_source),                          \
+		MEMC_FLEXSPI_RXCLK_B(n).buf_cfg = (struct memc_flexspi_buf_cfg *)buf_cfg_##n, \
+		.buf_cfg_cnt = sizeof(buf_cfg_##n) / sizeof(struct memc_flexspi_buf_cfg),     \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                  \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                           \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),         \
+	};                                                                                    \
+                                                                                              \
+	PM_DEVICE_DT_INST_DEFINE(n, memc_flexspi_pm_action);                                  \
+                                                                                              \
+	DEVICE_DT_INST_DEFINE(n, memc_flexspi_init, PM_DEVICE_DT_INST_GET(n),                 \
+			      &memc_flexspi_data_##n, NULL, POST_KERNEL,                      \
 			      CONFIG_MEMC_MCUX_FLEXSPI_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MEMC_FLEXSPI)

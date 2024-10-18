@@ -30,8 +30,8 @@ LOG_MODULE_REGISTER(eth_numaker, CONFIG_ETHERNET_LOG_LEVEL);
 /* 2KB Data Flash at 0xFF800 */
 #define NUMAKER_DATA_FLASH (0xFF800U)
 #define NUMAKER_MASK_32    (0xFFFFFFFFU)
-#define NUMAKER_MII_CONFIG                                                                         \
-	(ADVERTISE_CSMA | ADVERTISE_10HALF | ADVERTISE_10FULL | ADVERTISE_100HALF |                \
+#define NUMAKER_MII_CONFIG                                                          \
+	(ADVERTISE_CSMA | ADVERTISE_10HALF | ADVERTISE_10FULL | ADVERTISE_100HALF | \
 	 ADVERTISE_100FULL)
 #define NUMAKER_MII_LINKED (BMSR_ANEGCOMPLETE | BMSR_LSTATUS)
 

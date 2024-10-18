@@ -266,19 +266,19 @@ static int tsic_xx6_init(const struct device *dev)
 	return 0;
 }
 
-#define TSIC_XX6_DEVICE(n)                                                                         \
-                                                                                                   \
-	static struct tsic_xx6_data tsic_xx6_data_##n;                                             \
-                                                                                                   \
-	static const struct tsic_xx6_config tsic_xx6_config_##n = {                                \
-		.pwm = PWM_DT_SPEC_INST_GET(n),                                                    \
-		.lower_temperature_limit = (int8_t)DT_INST_PROP(n, lower_temperature_limit),       \
-		.higher_temperature_limit = DT_INST_PROP(n, higher_temperature_limit),             \
-		.data_bits = DT_INST_PROP(n, data_bits),                                           \
-	};                                                                                         \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, &tsic_xx6_init, NULL, &tsic_xx6_data_##n,                  \
-				     &tsic_xx6_config_##n, POST_KERNEL,                            \
+#define TSIC_XX6_DEVICE(n)                                                                   \
+                                                                                             \
+	static struct tsic_xx6_data tsic_xx6_data_##n;                                       \
+                                                                                             \
+	static const struct tsic_xx6_config tsic_xx6_config_##n = {                          \
+		.pwm = PWM_DT_SPEC_INST_GET(n),                                              \
+		.lower_temperature_limit = (int8_t)DT_INST_PROP(n, lower_temperature_limit), \
+		.higher_temperature_limit = DT_INST_PROP(n, higher_temperature_limit),       \
+		.data_bits = DT_INST_PROP(n, data_bits),                                     \
+	};                                                                                   \
+                                                                                             \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, &tsic_xx6_init, NULL, &tsic_xx6_data_##n,            \
+				     &tsic_xx6_config_##n, POST_KERNEL,                      \
 				     CONFIG_SENSOR_INIT_PRIORITY, &tsic_xx6_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TSIC_XX6_DEVICE)

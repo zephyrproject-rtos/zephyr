@@ -371,10 +371,10 @@ static int pwm_nrf_sw_init(const struct device *dev)
 
 #define PSEL_AND_COMMA(_node_id, _prop, _idx) NRF_DT_GPIOS_TO_PSEL_BY_IDX(_node_id, _prop, _idx),
 
-#define ACTIVE_LOW_BITS(_node_id, _prop, _idx)                                                     \
+#define ACTIVE_LOW_BITS(_node_id, _prop, _idx)                                              \
 	((DT_GPIO_FLAGS_BY_IDX(_node_id, _prop, _idx) & GPIO_ACTIVE_LOW) ? BIT(_idx) : 0) |
 
-#define GPIOTE_AND_COMMA(_node_id, _prop, _idx)                                                    \
+#define GPIOTE_AND_COMMA(_node_id, _prop, _idx)                                 \
 	NRFX_GPIOTE_INSTANCE(NRF_DT_GPIOTE_INST_BY_IDX(_node_id, _prop, _idx)),
 
 static const struct pwm_config pwm_nrf_sw_0_config = {

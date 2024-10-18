@@ -16,7 +16,7 @@
 #define MCUX_RESET_PIN_FLAG      kSRC_M7CoreIppUserResetFlag
 #define MCUX_RESET_SOFTWARE_FLAG kSRC_M7CoreM7LockUpResetFlag
 #define MCUX_RESET_POR_FLAG      kSRC_M7CoreIppResetFlag
-#define MCUX_RESET_WATCHDOG_FLAG                                                                   \
+#define MCUX_RESET_WATCHDOG_FLAG                                                           \
 	(kSRC_M7CoreWdogResetFlag | kSRC_M7CoreWdog3ResetFlag | kSRC_M7CoreWdog4ResetFlag)
 #define MCUX_RESET_DEBUG_FLAG       kSRC_M7CoreJtagResetFlag
 #define MCUX_RESET_SECURITY_FLAG    kSRC_M7CoreCSUResetFlag
@@ -26,7 +26,7 @@
 #define MCUX_RESET_PIN_FLAG      kSRC_M4CoreIppUserResetFlag
 #define MCUX_RESET_SOFTWARE_FLAG kSRC_M4CoreM7LockUpResetFlag
 #define MCUX_RESET_POR_FLAG      kSRC_M4CoreIppResetFlag
-#define MCUX_RESET_WATCHDOG_FLAG                                                                   \
+#define MCUX_RESET_WATCHDOG_FLAG                                                           \
 	(kSRC_M4CoreWdogResetFlag | kSRC_M4CoreWdog3ResetFlag | kSRC_M4CoreWdog4ResetFlag)
 #define MCUX_RESET_DEBUG_FLAG       kSRC_M4CoreJtagResetFlag
 #define MCUX_RESET_SECURITY_FLAG    kSRC_M4CoreCSUResetFlag

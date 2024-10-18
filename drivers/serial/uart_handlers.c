@@ -7,18 +7,18 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/internal/syscall_handler.h>
 
-#define UART_SIMPLE(op_)                                                                           \
-	static inline int z_vrfy_uart_##op_(const struct device *dev)                              \
-	{                                                                                          \
-		K_OOPS(K_SYSCALL_DRIVER_UART(dev, op_));                                           \
-		return z_impl_uart_##op_(dev);                                                     \
+#define UART_SIMPLE(op_)                                              \
+	static inline int z_vrfy_uart_##op_(const struct device *dev) \
+	{                                                             \
+		K_OOPS(K_SYSCALL_DRIVER_UART(dev, op_));              \
+		return z_impl_uart_##op_(dev);                        \
 	}
 
-#define UART_SIMPLE_VOID(op_)                                                                      \
-	static inline void z_vrfy_uart_##op_(const struct device *dev)                             \
-	{                                                                                          \
-		K_OOPS(K_SYSCALL_DRIVER_UART(dev, op_));                                           \
-		z_impl_uart_##op_(dev);                                                            \
+#define UART_SIMPLE_VOID(op_)                                          \
+	static inline void z_vrfy_uart_##op_(const struct device *dev) \
+	{                                                              \
+		K_OOPS(K_SYSCALL_DRIVER_UART(dev, op_));               \
+		z_impl_uart_##op_(dev);                                \
 	}
 
 UART_SIMPLE(err_check)

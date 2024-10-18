@@ -110,7 +110,7 @@ static int lis2dh_start_trigger_int1(const struct device *dev)
 					 LIS2DH_EN_DRDY1_INT1);
 }
 
-#define LIS2DH_ANYM_CFG                                                                            \
+#define LIS2DH_ANYM_CFG                                                                  \
 	(LIS2DH_INT_CFG_ZHIE_ZUPE | LIS2DH_INT_CFG_YHIE_YUPE | LIS2DH_INT_CFG_XHIE_XUPE)
 
 static inline void setup_int2(const struct device *dev, bool enable)

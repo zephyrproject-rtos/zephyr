@@ -177,14 +177,14 @@ static int f75303_pm_action(const struct device *dev, enum pm_device_action acti
 }
 #endif
 
-#define F75303_INST(inst)                                                                          \
-	static struct f75303_data f75303_data_##inst;                                              \
-	static const struct f75303_config f75303_config_##inst = {                                 \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-	};                                                                                         \
-	PM_DEVICE_DT_INST_DEFINE(inst, f75303_pm_action);                                          \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, f75303_init, PM_DEVICE_DT_INST_GET(inst),               \
-				     &f75303_data_##inst, &f75303_config_##inst, POST_KERNEL,      \
+#define F75303_INST(inst)                                                                     \
+	static struct f75303_data f75303_data_##inst;                                         \
+	static const struct f75303_config f75303_config_##inst = {                            \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                            \
+	};                                                                                    \
+	PM_DEVICE_DT_INST_DEFINE(inst, f75303_pm_action);                                     \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, f75303_init, PM_DEVICE_DT_INST_GET(inst),          \
+				     &f75303_data_##inst, &f75303_config_##inst, POST_KERNEL, \
 				     CONFIG_SENSOR_INIT_PRIORITY, &f75303_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(F75303_INST)

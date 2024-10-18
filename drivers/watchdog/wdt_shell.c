@@ -8,20 +8,20 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/drivers/watchdog.h>
 
-#define WDT_SETUP_HELP                                                                             \
-	"Set up watchdog instance. Syntax:\n"                                                      \
+#define WDT_SETUP_HELP                        \
+	"Set up watchdog instance. Syntax:\n" \
 	"<device>"
 
-#define WDT_DISABLE_HELP                                                                           \
-	"Disable watchdog instance. Syntax:\n"                                                     \
+#define WDT_DISABLE_HELP                       \
+	"Disable watchdog instance. Syntax:\n" \
 	"<device>"
 
-#define WDT_TIMEOUT_HELP                                                                           \
-	"Install a new timeout. Syntax:\n"                                                         \
+#define WDT_TIMEOUT_HELP                            \
+	"Install a new timeout. Syntax:\n"          \
 	"<device> <none|cpu|soc> <min_ms> <max_ms>"
 
-#define WDT_FEED_HELP                                                                              \
-	"Feed specified watchdog timeout. Syntax:\n"                                               \
+#define WDT_FEED_HELP                                \
+	"Feed specified watchdog timeout. Syntax:\n" \
 	"<device> <channel_id>"
 
 static const char *const wdt_reset_name[] = {

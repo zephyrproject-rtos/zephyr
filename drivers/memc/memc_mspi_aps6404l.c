@@ -368,57 +368,57 @@ static int memc_mspi_aps6404l_init(const struct device *psram)
 	return 0;
 }
 
-#define MSPI_DEVICE_CONFIG_SERIAL(n)                                                               \
-	{                                                                                          \
-		.ce_num = DT_INST_PROP(n, mspi_hardware_ce_num),                                   \
-		.freq = 12000000,                                                                  \
-		.io_mode = MSPI_IO_MODE_SINGLE,                                                    \
-		.data_rate = MSPI_DATA_RATE_SINGLE,                                                \
-		.cpp = MSPI_CPP_MODE_0,                                                            \
-		.endian = MSPI_XFER_LITTLE_ENDIAN,                                                 \
-		.ce_polarity = MSPI_CE_ACTIVE_LOW,                                                 \
-		.dqs_enable = false,                                                               \
-		.rx_dummy = 8,                                                                     \
-		.tx_dummy = 0,                                                                     \
-		.read_cmd = APS6404L_FAST_READ,                                                    \
-		.write_cmd = APS6404L_WRITE,                                                       \
-		.cmd_length = 1,                                                                   \
-		.addr_length = 3,                                                                  \
-		.mem_boundary = 1024,                                                              \
-		.time_to_break = 8,                                                                \
+#define MSPI_DEVICE_CONFIG_SERIAL(n)                             \
+	{                                                        \
+		.ce_num = DT_INST_PROP(n, mspi_hardware_ce_num), \
+		.freq = 12000000,                                \
+		.io_mode = MSPI_IO_MODE_SINGLE,                  \
+		.data_rate = MSPI_DATA_RATE_SINGLE,              \
+		.cpp = MSPI_CPP_MODE_0,                          \
+		.endian = MSPI_XFER_LITTLE_ENDIAN,               \
+		.ce_polarity = MSPI_CE_ACTIVE_LOW,               \
+		.dqs_enable = false,                             \
+		.rx_dummy = 8,                                   \
+		.tx_dummy = 0,                                   \
+		.read_cmd = APS6404L_FAST_READ,                  \
+		.write_cmd = APS6404L_WRITE,                     \
+		.cmd_length = 1,                                 \
+		.addr_length = 3,                                \
+		.mem_boundary = 1024,                            \
+		.time_to_break = 8,                              \
 	}
 
-#define MSPI_DEVICE_CONFIG_QUAD(n)                                                                 \
-	{                                                                                          \
-		.ce_num = DT_INST_PROP(n, mspi_hardware_ce_num),                                   \
-		.freq = 24000000,                                                                  \
-		.io_mode = MSPI_IO_MODE_SINGLE,                                                    \
-		.data_rate = MSPI_DATA_RATE_SINGLE,                                                \
-		.cpp = MSPI_CPP_MODE_0,                                                            \
-		.endian = MSPI_XFER_LITTLE_ENDIAN,                                                 \
-		.ce_polarity = MSPI_CE_ACTIVE_LOW,                                                 \
-		.dqs_enable = false,                                                               \
-		.rx_dummy = 6,                                                                     \
-		.tx_dummy = 0,                                                                     \
-		.read_cmd = APS6404L_QUAD_READ,                                                    \
-		.write_cmd = APS6404L_QUAD_WRITE,                                                  \
-		.cmd_length = 1,                                                                   \
-		.addr_length = 3,                                                                  \
-		.mem_boundary = 1024,                                                              \
-		.time_to_break = 4,                                                                \
+#define MSPI_DEVICE_CONFIG_QUAD(n)                               \
+	{                                                        \
+		.ce_num = DT_INST_PROP(n, mspi_hardware_ce_num), \
+		.freq = 24000000,                                \
+		.io_mode = MSPI_IO_MODE_SINGLE,                  \
+		.data_rate = MSPI_DATA_RATE_SINGLE,              \
+		.cpp = MSPI_CPP_MODE_0,                          \
+		.endian = MSPI_XFER_LITTLE_ENDIAN,               \
+		.ce_polarity = MSPI_CE_ACTIVE_LOW,               \
+		.dqs_enable = false,                             \
+		.rx_dummy = 6,                                   \
+		.tx_dummy = 0,                                   \
+		.read_cmd = APS6404L_QUAD_READ,                  \
+		.write_cmd = APS6404L_QUAD_WRITE,                \
+		.cmd_length = 1,                                 \
+		.addr_length = 3,                                \
+		.mem_boundary = 1024,                            \
+		.time_to_break = 4,                              \
 	}
 
 #if CONFIG_SOC_FAMILY_AMBIQ
-#define MSPI_TIMING_CONFIG(n)                                                                      \
-	{                                                                                          \
-		.ui8WriteLatency = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 0),                 \
-		.ui8TurnAround = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 1),                   \
-		.bTxNeg = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 2),                          \
-		.bRxNeg = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 3),                          \
-		.bRxCap = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 4),                          \
-		.ui32TxDQSDelay = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 5),                  \
-		.ui32RxDQSDelay = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 6),                  \
-		.ui32RXDQSDelayEXT = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 7),               \
+#define MSPI_TIMING_CONFIG(n)                                                        \
+	{                                                                            \
+		.ui8WriteLatency = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 0),   \
+		.ui8TurnAround = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 1),     \
+		.bTxNeg = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 2),            \
+		.bRxNeg = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 3),            \
+		.bRxCap = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 4),            \
+		.ui32TxDQSDelay = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 5),    \
+		.ui32RxDQSDelay = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 6),    \
+		.ui32RXDQSDelayEXT = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 7), \
 	}
 #define MSPI_TIMING_CONFIG_MASK(n) DT_INST_PROP(n, ambiq_timing_config_mask)
 #else
@@ -426,26 +426,26 @@ static int memc_mspi_aps6404l_init(const struct device *psram)
 #define MSPI_TIMING_CONFIG_MASK(n)
 #endif
 
-#define MEMC_MSPI_APS6404L(n)                                                                      \
-	static const struct memc_mspi_aps6404l_config memc_mspi_aps6404l_config_##n = {            \
-		.port = MSPI_PORT(n),                                                              \
-		.mem_size = DT_INST_PROP(n, size) / 8,                                             \
-		.bus = DEVICE_DT_GET(DT_INST_BUS(n)),                                              \
-		.dev_id = MSPI_DEVICE_ID_DT_INST(n),                                               \
-		.serial_cfg = MSPI_DEVICE_CONFIG_SERIAL(n),                                        \
-		.quad_cfg = MSPI_DEVICE_CONFIG_QUAD(n),                                            \
-		.tar_dev_cfg = MSPI_DEVICE_CONFIG_DT_INST(n),                                      \
-		.tar_xip_cfg = MSPI_XIP_CONFIG_DT_INST(n),                                         \
-		.tar_scramble_cfg = MSPI_SCRAMBLE_CONFIG_DT_INST(n),                               \
-		.tar_timing_cfg = MSPI_TIMING_CONFIG(n),                                           \
-		.timing_cfg_mask = MSPI_TIMING_CONFIG_MASK(n),                                     \
-		.sw_multi_periph = DT_PROP(DT_INST_BUS(n), software_multiperipheral)};             \
-	static struct memc_mspi_aps6404l_data memc_mspi_aps6404l_data_##n = {                      \
-		.lock = Z_SEM_INITIALIZER(memc_mspi_aps6404l_data_##n.lock, 0, 1),                 \
-	};                                                                                         \
-	PM_DEVICE_DT_INST_DEFINE(n, memc_mspi_aps6404l_pm_action);                                 \
-	DEVICE_DT_INST_DEFINE(n, memc_mspi_aps6404l_init, PM_DEVICE_DT_INST_GET(n),                \
-			      &memc_mspi_aps6404l_data_##n, &memc_mspi_aps6404l_config_##n,        \
+#define MEMC_MSPI_APS6404L(n)                                                               \
+	static const struct memc_mspi_aps6404l_config memc_mspi_aps6404l_config_##n = {     \
+		.port = MSPI_PORT(n),                                                       \
+		.mem_size = DT_INST_PROP(n, size) / 8,                                      \
+		.bus = DEVICE_DT_GET(DT_INST_BUS(n)),                                       \
+		.dev_id = MSPI_DEVICE_ID_DT_INST(n),                                        \
+		.serial_cfg = MSPI_DEVICE_CONFIG_SERIAL(n),                                 \
+		.quad_cfg = MSPI_DEVICE_CONFIG_QUAD(n),                                     \
+		.tar_dev_cfg = MSPI_DEVICE_CONFIG_DT_INST(n),                               \
+		.tar_xip_cfg = MSPI_XIP_CONFIG_DT_INST(n),                                  \
+		.tar_scramble_cfg = MSPI_SCRAMBLE_CONFIG_DT_INST(n),                        \
+		.tar_timing_cfg = MSPI_TIMING_CONFIG(n),                                    \
+		.timing_cfg_mask = MSPI_TIMING_CONFIG_MASK(n),                              \
+		.sw_multi_periph = DT_PROP(DT_INST_BUS(n), software_multiperipheral)};      \
+	static struct memc_mspi_aps6404l_data memc_mspi_aps6404l_data_##n = {               \
+		.lock = Z_SEM_INITIALIZER(memc_mspi_aps6404l_data_##n.lock, 0, 1),          \
+	};                                                                                  \
+	PM_DEVICE_DT_INST_DEFINE(n, memc_mspi_aps6404l_pm_action);                          \
+	DEVICE_DT_INST_DEFINE(n, memc_mspi_aps6404l_init, PM_DEVICE_DT_INST_GET(n),         \
+			      &memc_mspi_aps6404l_data_##n, &memc_mspi_aps6404l_config_##n, \
 			      POST_KERNEL, CONFIG_MEMC_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MEMC_MSPI_APS6404L)

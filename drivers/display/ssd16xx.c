@@ -952,37 +952,37 @@ static struct ssd16xx_quirks quirks_solomon_ssd1681 = {
 };
 #endif
 
-#define SOFTSTART_ASSIGN(n)                                                                        \
-	.softstart = {                                                                             \
-		.data = softstart_##n,                                                             \
-		.len = sizeof(softstart_##n),                                                      \
+#define SOFTSTART_ASSIGN(n)                   \
+	.softstart = {                        \
+		.data = softstart_##n,        \
+		.len = sizeof(softstart_##n), \
 	},
 
 #define SSD16XX_MAKE_ARRAY_OPT(n, p) static uint8_t data_##n##_##p[] = DT_PROP_OR(n, p, {})
 
-#define SSD16XX_ASSIGN_ARRAY(n, p)                                                                 \
-	{                                                                                          \
-		.data = data_##n##_##p,                                                            \
-		.len = sizeof(data_##n##_##p),                                                     \
+#define SSD16XX_ASSIGN_ARRAY(n, p)             \
+	{                                      \
+		.data = data_##n##_##p,        \
+		.len = sizeof(data_##n##_##p), \
 	}
 
-#define SSD16XX_PROFILE(n)                                                                         \
-	SSD16XX_MAKE_ARRAY_OPT(n, lut);                                                            \
-	SSD16XX_MAKE_ARRAY_OPT(n, gdv);                                                            \
-	SSD16XX_MAKE_ARRAY_OPT(n, sdv);                                                            \
-                                                                                                   \
-	static const struct ssd16xx_profile ssd16xx_profile_##n = {                                \
-		.lut = SSD16XX_ASSIGN_ARRAY(n, lut),                                               \
-		.gdv = SSD16XX_ASSIGN_ARRAY(n, gdv),                                               \
-		.sdv = SSD16XX_ASSIGN_ARRAY(n, sdv),                                               \
-		.vcom = DT_PROP_OR(n, vcom, 0),                                                    \
-		.override_vcom = DT_NODE_HAS_PROP(n, vcom),                                        \
-		.bwf = DT_PROP_OR(n, border_waveform, 0),                                          \
-		.override_bwf = DT_NODE_HAS_PROP(n, border_waveform),                              \
-		.dummy_line = DT_PROP_OR(n, dummy_line, 0),                                        \
-		.override_dummy_line = DT_NODE_HAS_PROP(n, dummy_line),                            \
-		.gate_line_width = DT_PROP_OR(n, gate_line_width, 0),                              \
-		.override_gate_line_width = DT_NODE_HAS_PROP(n, gate_line_width),                  \
+#define SSD16XX_PROFILE(n)                                                        \
+	SSD16XX_MAKE_ARRAY_OPT(n, lut);                                           \
+	SSD16XX_MAKE_ARRAY_OPT(n, gdv);                                           \
+	SSD16XX_MAKE_ARRAY_OPT(n, sdv);                                           \
+                                                                                  \
+	static const struct ssd16xx_profile ssd16xx_profile_##n = {               \
+		.lut = SSD16XX_ASSIGN_ARRAY(n, lut),                              \
+		.gdv = SSD16XX_ASSIGN_ARRAY(n, gdv),                              \
+		.sdv = SSD16XX_ASSIGN_ARRAY(n, sdv),                              \
+		.vcom = DT_PROP_OR(n, vcom, 0),                                   \
+		.override_vcom = DT_NODE_HAS_PROP(n, vcom),                       \
+		.bwf = DT_PROP_OR(n, border_waveform, 0),                         \
+		.override_bwf = DT_NODE_HAS_PROP(n, border_waveform),             \
+		.dummy_line = DT_PROP_OR(n, dummy_line, 0),                       \
+		.override_dummy_line = DT_NODE_HAS_PROP(n, dummy_line),           \
+		.gate_line_width = DT_PROP_OR(n, gate_line_width, 0),             \
+		.override_gate_line_width = DT_NODE_HAS_PROP(n, gate_line_width), \
 	};
 
 #define _SSD16XX_PROFILE_PTR(n) &ssd16xx_profile_##n
@@ -991,40 +991,40 @@ static struct ssd16xx_quirks quirks_solomon_ssd1681 = {
 		    (_SSD16XX_PROFILE_PTR(n)),				\
 		    NULL)
 
-#define SSD16XX_DEFINE(n, quirks_ptr)                                                              \
-	SSD16XX_MAKE_ARRAY_OPT(n, softstart);                                                      \
-                                                                                                   \
-	DT_FOREACH_CHILD(n, SSD16XX_PROFILE);                                                      \
-                                                                                                   \
-	static const struct ssd16xx_config ssd16xx_cfg_##n = {                                     \
-		.mipi_dev = DEVICE_DT_GET(DT_PARENT(n)),                                           \
-		.dbi_config =                                                                      \
-			{                                                                          \
-				.mode = MIPI_DBI_MODE_SPI_4WIRE,                                   \
-				.config = MIPI_DBI_SPI_CONFIG_DT(                                  \
-					n,                                                         \
-					SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_HOLD_ON_CS |    \
-						SPI_LOCK_ON,                                       \
-					0),                                                        \
-			},                                                                         \
-		.busy_gpio = GPIO_DT_SPEC_GET(n, busy_gpios),                                      \
-		.quirks = quirks_ptr,                                                              \
-		.height = DT_PROP(n, height),                                                      \
-		.width = DT_PROP(n, width),                                                        \
-		.rotation = DT_PROP(n, rotation),                                                  \
-		.tssv = DT_PROP_OR(n, tssv, 0),                                                    \
-		.softstart = SSD16XX_ASSIGN_ARRAY(n, softstart),                                   \
-		.profiles =                                                                        \
-			{                                                                          \
-				[SSD16XX_PROFILE_FULL] = SSD16XX_PROFILE_PTR(DT_CHILD(n, full)),   \
-				[SSD16XX_PROFILE_PARTIAL] =                                        \
-					SSD16XX_PROFILE_PTR(DT_CHILD(n, partial)),                 \
-			},                                                                         \
-	};                                                                                         \
-                                                                                                   \
-	static struct ssd16xx_data ssd16xx_data_##n;                                               \
-                                                                                                   \
-	DEVICE_DT_DEFINE(n, ssd16xx_init, NULL, &ssd16xx_data_##n, &ssd16xx_cfg_##n, POST_KERNEL,  \
+#define SSD16XX_DEFINE(n, quirks_ptr)                                                             \
+	SSD16XX_MAKE_ARRAY_OPT(n, softstart);                                                     \
+                                                                                                  \
+	DT_FOREACH_CHILD(n, SSD16XX_PROFILE);                                                     \
+                                                                                                  \
+	static const struct ssd16xx_config ssd16xx_cfg_##n = {                                    \
+		.mipi_dev = DEVICE_DT_GET(DT_PARENT(n)),                                          \
+		.dbi_config =                                                                     \
+			{                                                                         \
+				.mode = MIPI_DBI_MODE_SPI_4WIRE,                                  \
+				.config = MIPI_DBI_SPI_CONFIG_DT(                                 \
+					n,                                                        \
+					SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_HOLD_ON_CS |   \
+						SPI_LOCK_ON,                                      \
+					0),                                                       \
+			},                                                                        \
+		.busy_gpio = GPIO_DT_SPEC_GET(n, busy_gpios),                                     \
+		.quirks = quirks_ptr,                                                             \
+		.height = DT_PROP(n, height),                                                     \
+		.width = DT_PROP(n, width),                                                       \
+		.rotation = DT_PROP(n, rotation),                                                 \
+		.tssv = DT_PROP_OR(n, tssv, 0),                                                   \
+		.softstart = SSD16XX_ASSIGN_ARRAY(n, softstart),                                  \
+		.profiles =                                                                       \
+			{                                                                         \
+				[SSD16XX_PROFILE_FULL] = SSD16XX_PROFILE_PTR(DT_CHILD(n, full)),  \
+				[SSD16XX_PROFILE_PARTIAL] =                                       \
+					SSD16XX_PROFILE_PTR(DT_CHILD(n, partial)),                \
+			},                                                                        \
+	};                                                                                        \
+                                                                                                  \
+	static struct ssd16xx_data ssd16xx_data_##n;                                              \
+                                                                                                  \
+	DEVICE_DT_DEFINE(n, ssd16xx_init, NULL, &ssd16xx_data_##n, &ssd16xx_cfg_##n, POST_KERNEL, \
 			 CONFIG_DISPLAY_INIT_PRIORITY, &ssd16xx_driver_api)
 
 DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1608, SSD16XX_DEFINE, &quirks_solomon_ssd1608);

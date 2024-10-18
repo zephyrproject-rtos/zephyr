@@ -58,8 +58,8 @@ static void dev_init(const struct device *dev)
 	irq_enable(cfg->xtensa_irq);
 }
 
-#define DEV_INIT(N)                                                                                \
-	IRQ_CONNECT(DT_INST_IRQN(N), 0, intc_isr, DEVICE_DT_INST_GET(N), 0);                       \
+#define DEV_INIT(N)                                                          \
+	IRQ_CONNECT(DT_INST_IRQN(N), 0, intc_isr, DEVICE_DT_INST_GET(N), 0); \
 	dev_init(DEVICE_DT_INST_GET(N));
 
 static int intc_init(void)
@@ -70,13 +70,13 @@ static int intc_init(void)
 
 SYS_INIT(intc_init, PRE_KERNEL_1, 0);
 
-#define DEF_DEV(N)                                                                                 \
-	static const struct intc_mtk_cfg dev_cfg##N = {                                            \
-		.xtensa_irq = DT_INST_IRQN(N),                                                     \
-		.irq_mask = DT_INST_PROP(N, mask),                                                 \
-		.sw_isr_off = (N + 1) * 32,                                                        \
-		.enable_reg = (void *)DT_INST_REG_ADDR(N),                                         \
-		.status_reg = (void *)DT_INST_PROP(N, status_reg)};                                \
+#define DEF_DEV(N)                                                                      \
+	static const struct intc_mtk_cfg dev_cfg##N = {                                 \
+		.xtensa_irq = DT_INST_IRQN(N),                                          \
+		.irq_mask = DT_INST_PROP(N, mask),                                      \
+		.sw_isr_off = (N + 1) * 32,                                             \
+		.enable_reg = (void *)DT_INST_REG_ADDR(N),                              \
+		.status_reg = (void *)DT_INST_PROP(N, status_reg)};                     \
 	DEVICE_DT_INST_DEFINE(N, NULL, NULL, NULL, &dev_cfg##N, PRE_KERNEL_1, 0, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(DEF_DEV);

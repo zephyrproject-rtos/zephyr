@@ -122,16 +122,16 @@ int tmp007_init(const struct device *dev)
 	return 0;
 }
 
-#define TMP007_DEFINE(inst)                                                                        \
-	static struct tmp007_data tmp007_data_##inst;                                              \
-                                                                                                   \
-	static const struct tmp007_config tmp007_config_##inst = {                                 \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+#define TMP007_DEFINE(inst)                                                              \
+	static struct tmp007_data tmp007_data_##inst;                                    \
+                                                                                         \
+	static const struct tmp007_config tmp007_config_##inst = {                       \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                       \
 		IF_ENABLED(CONFIG_TMP007_TRIGGER,						\
-			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),)) };           \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, tmp007_init, NULL, &tmp007_data_##inst,                 \
-				     &tmp007_config_##inst, POST_KERNEL,                           \
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),)) }; \
+                                                                                         \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, tmp007_init, NULL, &tmp007_data_##inst,       \
+				     &tmp007_config_##inst, POST_KERNEL,                 \
 				     CONFIG_SENSOR_INIT_PRIORITY, &tmp007_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TMP007_DEFINE)

@@ -101,8 +101,8 @@ LOG_MODULE_REGISTER(pcf8523, CONFIG_RTC_LOG_LEVEL);
 #define PCF8523_OFFSET_MASK GENMASK(6, 0)
 
 /* RTC alarm time fields supported by the PCF8523 */
-#define PCF8523_RTC_ALARM_TIME_MASK                                                                \
-	(RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR | RTC_ALARM_TIME_MASK_MONTHDAY |    \
+#define PCF8523_RTC_ALARM_TIME_MASK                                                             \
+	(RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR | RTC_ALARM_TIME_MASK_MONTHDAY | \
 	 RTC_ALARM_TIME_MASK_WEEKDAY)
 
 /* The PCF8523 only supports two-digit years, calculate offset to use */
@@ -112,7 +112,7 @@ LOG_MODULE_REGISTER(pcf8523, CONFIG_RTC_LOG_LEVEL);
 #define PCF8523_MONTHS_OFFSET 1
 
 /* Helper macro to guard int1-gpios related code */
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int1_gpios) &&                                                \
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int1_gpios) &&               \
 	(defined(CONFIG_RTC_ALARM) || defined(CONFIG_RTC_UPDATE))
 #define PCF8523_INT1_GPIOS_IN_USE 1
 #endif
@@ -946,26 +946,26 @@ static const struct rtc_driver_api pcf8523_driver_api = {
 #endif /* CONFIG_RTC_CALIBRATION */
 };
 
-#define PCF8523_PM_FROM_DT_INST(inst)                                                              \
+#define PCF8523_PM_FROM_DT_INST(inst)                                                \
 	UTIL_CAT(PCF8523_PM_, DT_INST_STRING_UPPER_TOKEN(inst, battery_switch_over))
 #define PCF8523_CAP_SEL_FROM_DT_INST(inst) (DT_INST_PROP(inst, quartz_load_femtofarads) == 12500)
 
-#define PCF8523_INIT(inst)                                                                         \
-	static const struct pcf8523_config pcf8523_config_##inst = {                               \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.cof = DT_INST_ENUM_IDX(inst, clkout_frequency),                                   \
-		.pm = PCF8523_PM_FROM_DT_INST(inst),                                               \
-		.cap_sel = PCF8523_CAP_SEL_FROM_DT_INST(inst),                                     \
-		.wakeup_source = DT_INST_PROP(inst, wakeup_source),                                \
+#define PCF8523_INIT(inst)                                                               \
+	static const struct pcf8523_config pcf8523_config_##inst = {                     \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                       \
+		.cof = DT_INST_ENUM_IDX(inst, clkout_frequency),                         \
+		.pm = PCF8523_PM_FROM_DT_INST(inst),                                     \
+		.cap_sel = PCF8523_CAP_SEL_FROM_DT_INST(inst),                           \
+		.wakeup_source = DT_INST_PROP(inst, wakeup_source),                      \
 		IF_ENABLED(PCF8523_INT1_GPIOS_IN_USE,                                              \
-			   (.int1 = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, {0})))};                \
-                                                                                                   \
-	static struct pcf8523_data pcf8523_data_##inst;                                            \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, pcf8523_pm_action);                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, &pcf8523_init, PM_DEVICE_DT_INST_GET(inst),                    \
-			      &pcf8523_data_##inst, &pcf8523_config_##inst, POST_KERNEL,           \
+			   (.int1 = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, {0})))};      \
+                                                                                         \
+	static struct pcf8523_data pcf8523_data_##inst;                                  \
+                                                                                         \
+	PM_DEVICE_DT_INST_DEFINE(inst, pcf8523_pm_action);                               \
+                                                                                         \
+	DEVICE_DT_INST_DEFINE(inst, &pcf8523_init, PM_DEVICE_DT_INST_GET(inst),          \
+			      &pcf8523_data_##inst, &pcf8523_config_##inst, POST_KERNEL, \
 			      CONFIG_RTC_INIT_PRIORITY, &pcf8523_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PCF8523_INIT)

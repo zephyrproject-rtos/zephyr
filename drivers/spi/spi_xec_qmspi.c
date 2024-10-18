@@ -650,11 +650,11 @@ static const struct spi_driver_api spi_qmspi_driver_api = {
 	.release = qmspi_release,
 };
 
-#define XEC_QMSPI_CS_TIMING_VAL(a, b, c, d)                                                        \
+#define XEC_QMSPI_CS_TIMING_VAL(a, b, c, d)                                                \
 	(((a) & 0xFu) | (((b) & 0xFu) << 8) | (((c) & 0xFu) << 16) | (((d) & 0xFu) << 24))
 
-#define XEC_QMSPI_0_CS_TIMING                                                                      \
-	XEC_QMSPI_CS_TIMING_VAL(DT_INST_PROP(0, dcsckon), DT_INST_PROP(0, dckcsoff),               \
+#define XEC_QMSPI_0_CS_TIMING                                                        \
+	XEC_QMSPI_CS_TIMING_VAL(DT_INST_PROP(0, dcsckon), DT_INST_PROP(0, dckcsoff), \
 				DT_INST_PROP(0, dldh), DT_INST_PROP(0, dcsda))
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_INST(0, microchip_xec_qmspi))

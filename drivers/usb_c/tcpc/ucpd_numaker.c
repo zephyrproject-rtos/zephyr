@@ -78,7 +78,7 @@ LOG_MODULE_REGISTER(tcpc_numaker, CONFIG_USBC_LOG_LEVEL);
 /**
  * @brief GPIO register dump
  */
-#define NUMAKER_GPIO_REG_DUMP(dev, port, reg_name)                                                 \
+#define NUMAKER_GPIO_REG_DUMP(dev, port, reg_name)                    \
 	LOG_INF("%s: %8s: 0x%08x", #port, #reg_name, port->reg_name);
 
 /**
@@ -89,42 +89,42 @@ LOG_MODULE_REGISTER(tcpc_numaker, CONFIG_USBC_LOG_LEVEL);
 /**
  * @brief UTCPD register write by name
  */
-#define NUMAKER_UTCPD_REG_WRITE_BY_NAME(dev, reg_name, val)                                        \
-	({                                                                                         \
-		int rc_intern = numaker_utcpd_reg_write_wait_ready(dev);                           \
-		if (rc_intern < 0) {                                                               \
-			LOG_ERR("UTCPD register (%s) write timeout", #reg_name);                   \
-		} else {                                                                           \
-			utcpd_base->reg_name = (val);                                              \
-		}                                                                                  \
-		rc_intern;                                                                         \
+#define NUMAKER_UTCPD_REG_WRITE_BY_NAME(dev, reg_name, val)                      \
+	({                                                                       \
+		int rc_intern = numaker_utcpd_reg_write_wait_ready(dev);         \
+		if (rc_intern < 0) {                                             \
+			LOG_ERR("UTCPD register (%s) write timeout", #reg_name); \
+		} else {                                                         \
+			utcpd_base->reg_name = (val);                            \
+		}                                                                \
+		rc_intern;                                                       \
 	})
 
 /**
  * @brief UTCPD register force write by name
  */
-#define NUMAKER_UTCPD_REG_FORCE_WRITE_BY_NAME(dev, reg_name, val)                                  \
-	({                                                                                         \
-		int rc_intern = numaker_utcpd_reg_write_wait_ready(dev);                           \
-		if (rc_intern < 0) {                                                               \
-			LOG_ERR("UTCPD register (%s) write timeout, force-write", #reg_name);      \
-		}                                                                                  \
-		utcpd_base->reg_name = (val);                                                      \
-		rc_intern;                                                                         \
+#define NUMAKER_UTCPD_REG_FORCE_WRITE_BY_NAME(dev, reg_name, val)                             \
+	({                                                                                    \
+		int rc_intern = numaker_utcpd_reg_write_wait_ready(dev);                      \
+		if (rc_intern < 0) {                                                          \
+			LOG_ERR("UTCPD register (%s) write timeout, force-write", #reg_name); \
+		}                                                                             \
+		utcpd_base->reg_name = (val);                                                 \
+		rc_intern;                                                                    \
 	})
 
 /**
  * @brief UTCPD register write by offset
  */
-#define NUMAKER_UTCPD_REG_WRITE_BY_OFFSET(dev, reg_offset, val)                                    \
-	({                                                                                         \
-		int rc_intern = numaker_utcpd_reg_write_wait_ready(dev);                           \
-		if (rc_intern < 0) {                                                               \
-			LOG_ERR("UTCPD register (0x%04x) write timeout", reg_offset);              \
-		} else {                                                                           \
-			sys_write32((val), ((uintptr_t)utcpd_base) + reg_offset);                  \
-		}                                                                                  \
-		rc_intern;                                                                         \
+#define NUMAKER_UTCPD_REG_WRITE_BY_OFFSET(dev, reg_offset, val)                       \
+	({                                                                            \
+		int rc_intern = numaker_utcpd_reg_write_wait_ready(dev);              \
+		if (rc_intern < 0) {                                                  \
+			LOG_ERR("UTCPD register (0x%04x) write timeout", reg_offset); \
+		} else {                                                              \
+			sys_write32((val), ((uintptr_t)utcpd_base) + reg_offset);     \
+		}                                                                     \
+		rc_intern;                                                            \
 	})
 
 /**
@@ -148,37 +148,37 @@ LOG_MODULE_REGISTER(tcpc_numaker, CONFIG_USBC_LOG_LEVEL);
 /**
  * @brief UTCPD register read by offset
  */
-#define NUMAKER_UTCPD_REG_READ_BY_OFFSET(dev, reg_offset)                                          \
+#define NUMAKER_UTCPD_REG_READ_BY_OFFSET(dev, reg_offset)       \
 	({ sys_read32(((uintptr_t)utcpd_base) + reg_offset); })
 
 /**
  * @brief UTCPD register dump
  */
-#define NUMAKER_UTCPD_REG_DUMP(dev, reg_name)                                                      \
+#define NUMAKER_UTCPD_REG_DUMP(dev, reg_name)                                                    \
 	LOG_INF("UTCPD: %8s: 0x%08x", #reg_name, NUMAKER_UTCPD_REG_READ_BY_NAME(dev, reg_name));
 
 /**
  * @brief Helper to write UTCPD VBUS threshold
  */
-#define NUMAKER_UTCPD_VBUS_THRESHOLD_WRITE(dev, reg_name, mv_norm)                                 \
-	({                                                                                         \
-		uint32_t mv_bit;                                                                   \
-		mv_bit = numaker_utcpd_vbus_volt_mv2bit(dev, mv_norm);                             \
-		mv_bit <<= UTCPD_##reg_name##_##reg_name##_Pos;                                    \
-		mv_bit &= UTCPD_##reg_name##_##reg_name##_Msk;                                     \
-		NUMAKER_UTCPD_REG_WRITE_BY_NAME(dev, reg_name, mv_bit);                            \
+#define NUMAKER_UTCPD_VBUS_THRESHOLD_WRITE(dev, reg_name, mv_norm)      \
+	({                                                              \
+		uint32_t mv_bit;                                        \
+		mv_bit = numaker_utcpd_vbus_volt_mv2bit(dev, mv_norm);  \
+		mv_bit <<= UTCPD_##reg_name##_##reg_name##_Pos;         \
+		mv_bit &= UTCPD_##reg_name##_##reg_name##_Msk;          \
+		NUMAKER_UTCPD_REG_WRITE_BY_NAME(dev, reg_name, mv_bit); \
 	})
 
 /**
  * @brief Helper to read UTCPD VBUS threshold
  */
-#define NUMAKER_UTCPD_VBUS_THRESHOLD_READ(dev, reg_name)                                           \
-	({                                                                                         \
-		uint32_t mv_bit;                                                                   \
-		mv_bit = NUMAKER_UTCPD_REG_READ_BY_NAME(dev, reg_name);                            \
-		mv_bit &= UTCPD_##reg_name##_##reg_name##_Msk;                                     \
-		mv_bit >>= UTCPD_##reg_name##_##reg_name##_Pos;                                    \
-		numaker_utcpd_vbus_volt_bit2mv(dev, mv_bit);                                       \
+#define NUMAKER_UTCPD_VBUS_THRESHOLD_READ(dev, reg_name)                \
+	({                                                              \
+		uint32_t mv_bit;                                        \
+		mv_bit = NUMAKER_UTCPD_REG_READ_BY_NAME(dev, reg_name); \
+		mv_bit &= UTCPD_##reg_name##_##reg_name##_Msk;          \
+		mv_bit >>= UTCPD_##reg_name##_##reg_name##_Pos;         \
+		numaker_utcpd_vbus_volt_bit2mv(dev, mv_bit);            \
 	})
 
 /**
@@ -2328,33 +2328,33 @@ static const struct tcpc_driver_api numaker_tcpc_driver_api = {
 };
 
 /* Same as RESET_DT_SPEC_INST_GET_BY_IDX, except by name */
-#define NUMAKER_RESET_DT_SPEC_INST_GET_BY_NAME(inst, name)                                         \
-	{                                                                                          \
-		.dev = DEVICE_DT_GET(DT_INST_RESET_CTLR_BY_NAME(inst, name)),                      \
-		.id = DT_INST_RESET_CELL_BY_NAME(inst, name, id),                                  \
+#define NUMAKER_RESET_DT_SPEC_INST_GET_BY_NAME(inst, name)                    \
+	{                                                                     \
+		.dev = DEVICE_DT_GET(DT_INST_RESET_CTLR_BY_NAME(inst, name)), \
+		.id = DT_INST_RESET_CELL_BY_NAME(inst, name, id),             \
 	}
 
 /* Same as GPIO_DT_SPEC_GET_BY_IDX, except by name */
-#define NUMAKER_GPIO_DT_SPEC_GET_BY_NAME(node_id, prop, name)                                      \
-	{                                                                                          \
-		.port = DEVICE_DT_GET(DT_PHANDLE_BY_NAME(node_id, prop, name)),                    \
-		.pin = DT_PHA_BY_NAME(node_id, prop, name, pin),                                   \
-		.dt_flags = DT_PHA_BY_NAME(node_id, prop, name, flags),                            \
+#define NUMAKER_GPIO_DT_SPEC_GET_BY_NAME(node_id, prop, name)                   \
+	{                                                                       \
+		.port = DEVICE_DT_GET(DT_PHANDLE_BY_NAME(node_id, prop, name)), \
+		.pin = DT_PHA_BY_NAME(node_id, prop, name, pin),                \
+		.dt_flags = DT_PHA_BY_NAME(node_id, prop, name, flags),         \
 	}
 
 /* Same as GPIO_DT_SPEC_INST_GET_BY_IDX_OR, except by name */
-#define NUMAKER_GPIO_DT_SPEC_INST_GET_BY_NAME_OR(inst, prop, name, default_value)                  \
+#define NUMAKER_GPIO_DT_SPEC_INST_GET_BY_NAME_OR(inst, prop, name, default_value) \
 	COND_CODE_1(DT_INST_PROP_HAS_NAME(inst, prop, name),                                       \
 		    (NUMAKER_GPIO_DT_SPEC_GET_BY_NAME(DT_DRV_INST(inst), prop, name)),             \
 		    (default_value))
 
 /* Peripheral Clock Control by name */
-#define NUMAKER_PCC_INST_GET_BY_NAME(inst, name)                                                   \
-	{                                                                                          \
-		.subsys_id = NUMAKER_SCC_SUBSYS_ID_PCC,                                            \
-		.pcc.clk_modidx = DT_INST_CLOCKS_CELL_BY_NAME(inst, name, clock_module_index),     \
-		.pcc.clk_src = DT_INST_CLOCKS_CELL_BY_NAME(inst, name, clock_source),              \
-		.pcc.clk_div = DT_INST_CLOCKS_CELL_BY_NAME(inst, name, clock_divider),             \
+#define NUMAKER_PCC_INST_GET_BY_NAME(inst, name)                                               \
+	{                                                                                      \
+		.subsys_id = NUMAKER_SCC_SUBSYS_ID_PCC,                                        \
+		.pcc.clk_modidx = DT_INST_CLOCKS_CELL_BY_NAME(inst, name, clock_module_index), \
+		.pcc.clk_src = DT_INST_CLOCKS_CELL_BY_NAME(inst, name, clock_source),          \
+		.pcc.clk_div = DT_INST_CLOCKS_CELL_BY_NAME(inst, name, clock_divider),         \
 	}
 
 /* UTCPD GPIOs */
@@ -2376,63 +2376,63 @@ static const struct tcpc_driver_api numaker_tcpc_driver_api = {
 /* UTCPD.VBVOL.VBSCALE cast */
 #define NUMAKER_UTCPD_VBUS_DIVIDE_CAST(inst) NUMAKER_UTCPD_VBUS_DIVIDE_CAST_NO_DIVIDE(inst)
 /* no_divide */
-#define NUMAKER_UTCPD_VBUS_DIVIDE_CAST_NO_DIVIDE(inst)                                             \
+#define NUMAKER_UTCPD_VBUS_DIVIDE_CAST_NO_DIVIDE(inst) \
 	COND_CODE_1(DT_ENUM_HAS_VALUE(DT_DRV_INST(inst), vbus_divide, no_divice),                  \
 		    ({.bit = (0 << UTCPD_VBVOL_VBSCALE_Pos), .value = 1}),                         \
 		    (NUMAKER_UTCPD_VBUS_DIVIDE_CAST_DIVIDE_10(inst)))
 /* divide_10 */
-#define NUMAKER_UTCPD_VBUS_DIVIDE_CAST_DIVIDE_10(inst)                                             \
+#define NUMAKER_UTCPD_VBUS_DIVIDE_CAST_DIVIDE_10(inst) \
 	COND_CODE_1(DT_ENUM_HAS_VALUE(DT_DRV_INST(inst), vbus_divide, divide_10),                  \
 		    ({.bit = (1 << UTCPD_VBVOL_VBSCALE_Pos), .value = 10}),                        \
 		    (NUMAKER_UTCPD_VBUS_DIVIDE_CAST_DIVIDE_20(inst)))
 /* divide_20 */
-#define NUMAKER_UTCPD_VBUS_DIVIDE_CAST_DIVIDE_20(inst)                                             \
+#define NUMAKER_UTCPD_VBUS_DIVIDE_CAST_DIVIDE_20(inst) \
 	COND_CODE_1(DT_ENUM_HAS_VALUE(DT_DRV_INST(inst), vbus_divide, divide_20),                  \
 		    ({.bit = (2 << UTCPD_VBVOL_VBSCALE_Pos), .value = 20}), (no_divide error))
 
 /* UTCPD.PINPL */
-#define NUMAKER_UTCPD_PINPL_INIT(inst)                                                             \
-	{.bit = NUMAKER_UTCPD_PINPOL_CAST(inst, vconn_overcurrent_event_polarity, VCOCPL) |        \
-		NUMAKER_UTCPD_PINPOL_CAST(inst, vconn_discharge_polarity, VCDGENPL) |              \
-		NUMAKER_UTCPD_PINPOL_CAST(inst, vconn_enable_polarity, VCENPL) |                   \
-		NUMAKER_UTCPD_PINPOL_CAST(inst, vbus_overcurrent_event_polarity, VBOCPL) |         \
-		NUMAKER_UTCPD_PINPOL_CAST(inst, vbus_forceoff_event_polarity, FOFFVBPL) |          \
-		NUMAKER_UTCPD_PINPOL_CAST(inst, frs_tx_polarity, TXFRSPL) |                        \
-		NUMAKER_UTCPD_PINPOL_CAST(inst, vbus_discharge_enable_polarity, VBDGENPL) |        \
-		NUMAKER_UTCPD_PINPOL_CAST(inst, vbus_sink_enable_polarity, VBSKENPL) |             \
+#define NUMAKER_UTCPD_PINPL_INIT(inst)                                                      \
+	{.bit = NUMAKER_UTCPD_PINPOL_CAST(inst, vconn_overcurrent_event_polarity, VCOCPL) | \
+		NUMAKER_UTCPD_PINPOL_CAST(inst, vconn_discharge_polarity, VCDGENPL) |       \
+		NUMAKER_UTCPD_PINPOL_CAST(inst, vconn_enable_polarity, VCENPL) |            \
+		NUMAKER_UTCPD_PINPOL_CAST(inst, vbus_overcurrent_event_polarity, VBOCPL) |  \
+		NUMAKER_UTCPD_PINPOL_CAST(inst, vbus_forceoff_event_polarity, FOFFVBPL) |   \
+		NUMAKER_UTCPD_PINPOL_CAST(inst, frs_tx_polarity, TXFRSPL) |                 \
+		NUMAKER_UTCPD_PINPOL_CAST(inst, vbus_discharge_enable_polarity, VBDGENPL) | \
+		NUMAKER_UTCPD_PINPOL_CAST(inst, vbus_sink_enable_polarity, VBSKENPL) |      \
 		NUMAKER_UTCPD_PINPOL_CAST(inst, vbus_source_enable_polarity, VBSRENPL)}
 
 /* UTCPD.VBVOL */
-#define NUMAKER_UTCPD_VBVOL_INIT(inst)                                                             \
-	{                                                                                          \
-		.vbscale = NUMAKER_UTCPD_VBUS_DIVIDE_CAST(inst),                                   \
+#define NUMAKER_UTCPD_VBVOL_INIT(inst)                           \
+	{                                                        \
+		.vbscale = NUMAKER_UTCPD_VBUS_DIVIDE_CAST(inst), \
 	}
 
-#define NUMAKER_UTCPD_INIT(inst)                                                                   \
-	{                                                                                          \
-		.gpios = NUMAKER_UTCPD_GPIOS_INIT(inst),                                           \
-		.dead_battery = DT_INST_PROP(inst, dead_battery),                                  \
-		.pinpl = NUMAKER_UTCPD_PINPL_INIT(inst),                                           \
-		.vbvol = NUMAKER_UTCPD_VBVOL_INIT(inst),                                           \
+#define NUMAKER_UTCPD_INIT(inst)                                  \
+	{                                                         \
+		.gpios = NUMAKER_UTCPD_GPIOS_INIT(inst),          \
+		.dead_battery = DT_INST_PROP(inst, dead_battery), \
+		.pinpl = NUMAKER_UTCPD_PINPL_INIT(inst),          \
+		.vbvol = NUMAKER_UTCPD_VBVOL_INIT(inst),          \
 	}
 
 /* EADC register address is duplicated for easy implementation.
  * They must be the same.
  */
-#define BUILD_ASSERT_NUMAKER_EADC_REG(inst)                                                        \
+#define BUILD_ASSERT_NUMAKER_EADC_REG(inst) \
 	IF_ENABLED(DT_NODE_HAS_PROP(DT_DRV_INST(inst), io_channels),                               \
 		   (BUILD_ASSERT(DT_INST_REG_ADDR_BY_NAME(inst, eadc) ==                           \
 				 DT_REG_ADDR(DT_INST_IO_CHANNELS_CTLR(inst)));))
 
-#define NUMAKER_EADC_TRGSRC_CAST(inst)                                                             \
-	((DT_INST_REG_ADDR_BY_NAME(inst, timer) == TIMER0_BASE)   ? EADC_TIMER0_TRIGGER            \
-	 : (DT_INST_REG_ADDR_BY_NAME(inst, timer) == TIMER1_BASE) ? EADC_TIMER1_TRIGGER            \
-	 : (DT_INST_REG_ADDR_BY_NAME(inst, timer) == TIMER2_BASE) ? EADC_TIMER2_TRIGGER            \
-	 : (DT_INST_REG_ADDR_BY_NAME(inst, timer) == TIMER3_BASE) ? EADC_TIMER3_TRIGGER            \
+#define NUMAKER_EADC_TRGSRC_CAST(inst)                                                     \
+	((DT_INST_REG_ADDR_BY_NAME(inst, timer) == TIMER0_BASE)   ? EADC_TIMER0_TRIGGER    \
+	 : (DT_INST_REG_ADDR_BY_NAME(inst, timer) == TIMER1_BASE) ? EADC_TIMER1_TRIGGER    \
+	 : (DT_INST_REG_ADDR_BY_NAME(inst, timer) == TIMER2_BASE) ? EADC_TIMER2_TRIGGER    \
+	 : (DT_INST_REG_ADDR_BY_NAME(inst, timer) == TIMER3_BASE) ? EADC_TIMER3_TRIGGER    \
 								  : NUMAKER_INVALID_VALUE)
 
-#define BUILD_ASSERT_NUMAKER_EADC_TRGSRC_CAST(inst)                                                \
-	BUILD_ASSERT(NUMAKER_EADC_TRGSRC_CAST(inst) != NUMAKER_INVALID_VALUE,                      \
+#define BUILD_ASSERT_NUMAKER_EADC_TRGSRC_CAST(inst)                           \
+	BUILD_ASSERT(NUMAKER_EADC_TRGSRC_CAST(inst) != NUMAKER_INVALID_VALUE, \
 		     "NUMAKER_EADC_TRGSRC_CAST error");
 
 /* Notes on specifying EADC channels
@@ -2443,7 +2443,7 @@ static const struct tcpc_driver_api numaker_tcpc_driver_api = {
  */
 #define NUMAKER_EADC_SPEC_GET_BY_IDX_COMMA(node_id, prop, idx) ADC_DT_SPEC_GET_BY_IDX(node_id, idx),
 
-#define NUMAKER_EADC_SPEC_DEFINE(inst)                                                             \
+#define NUMAKER_EADC_SPEC_DEFINE(inst) \
 	IF_ENABLED(                                                                                \
 		DT_NODE_HAS_PROP(DT_DRV_INST(inst), io_channels),                                  \
 		(static const struct adc_dt_spec eadc_specs##inst[] = {DT_FOREACH_PROP_ELEM(       \
@@ -2457,27 +2457,27 @@ static const struct tcpc_driver_api numaker_tcpc_driver_api = {
  * at preprocess time.
  */
 #define NUMAKER_EADC_SPEC_IDX_VBUS(inst) 0
-#define NUMAKER_EADC_SPEC_IDX_VCONN(inst)                                                          \
+#define NUMAKER_EADC_SPEC_IDX_VCONN(inst) \
 	COND_CODE_1(DT_INST_PROP_HAS_NAME(inst, io_channels, chn_vbus),                            \
 		    (UTIL_INC(NUMAKER_EADC_SPEC_IDX_VBUS(inst))),                                  \
 		    (NUMAKER_EADC_SPEC_IDX_VBUS(inst)))
 
-#define NUMAKER_EADC_SPEC_PTR_VBUS(inst)                                                           \
+#define NUMAKER_EADC_SPEC_PTR_VBUS(inst) \
 	COND_CODE_1(DT_INST_PROP_HAS_NAME(inst, io_channels, chn_vbus),                            \
 		    (&eadc_specs##inst[NUMAKER_EADC_SPEC_IDX_VBUS(inst)]), (NULL))
-#define NUMAKER_EADC_SPEC_PTR_VCONN(inst)                                                          \
+#define NUMAKER_EADC_SPEC_PTR_VCONN(inst) \
 	COND_CODE_1(DT_INST_PROP_HAS_NAME(inst, io_channels, chn_vconn),                           \
 		    (&eadc_specs##inst[NUMAKER_EADC_SPEC_IDX_VCONN(inst)]), (NULL))
 
-#define NUMAKER_EADC_DEVICE_BY_NAME(inst, name)                                                    \
+#define NUMAKER_EADC_DEVICE_BY_NAME(inst, name)                             \
 	DEVICE_DT_GET(DT_IO_CHANNELS_CTLR_BY_NAME(DT_DRV_INST(inst), name))
-#define NUMAKER_EADC_DEVICE_BY_IDX(inst, idx)                                                      \
+#define NUMAKER_EADC_DEVICE_BY_IDX(inst, idx)                             \
 	DEVICE_DT_GET(DT_IO_CHANNELS_CTLR_BY_IDX(DT_DRV_INST(inst), idx))
 
 #define NUMAKER_EADC_INPUT_BY_NAME(inst, name) DT_IO_CHANNELS_INPUT_BY_NAME(DT_DRV_INST(inst), name)
 #define NUMAKER_EADC_INPUT_BY_IDX(inst, idx)   DT_IO_CHANNELS_INPUT_BY_IDX(DT_DRV_INST(inst), idx)
 
-#define BUILD_ASSERT_NUMAKER_EADC_SPEC_VBUS(inst)                                                  \
+#define BUILD_ASSERT_NUMAKER_EADC_SPEC_VBUS(inst) \
 	IF_ENABLED(DT_INST_PROP_HAS_NAME(inst, io_channels, chn_vbus),                             \
 		   (BUILD_ASSERT(NUMAKER_EADC_DEVICE_BY_NAME(inst, chn_vbus) ==                    \
 					 NUMAKER_EADC_DEVICE_BY_IDX(                               \
@@ -2488,7 +2488,7 @@ static const struct tcpc_driver_api numaker_tcpc_driver_api = {
 						 inst, NUMAKER_EADC_SPEC_IDX_VBUS(inst)),          \
 				 "EADC channel for VBUS error");))
 
-#define BUILD_ASSERT_NUMAKER_EADC_SPEC_VCONN(inst)                                                 \
+#define BUILD_ASSERT_NUMAKER_EADC_SPEC_VCONN(inst) \
 	IF_ENABLED(DT_INST_PROP_HAS_NAME(inst, io_channels, chn_vconn),                            \
 		   (BUILD_ASSERT(NUMAKER_EADC_DEVICE_BY_NAME(inst, chn_vconn) ==                   \
 					 NUMAKER_EADC_DEVICE_BY_IDX(                               \
@@ -2499,59 +2499,59 @@ static const struct tcpc_driver_api numaker_tcpc_driver_api = {
 						 inst, NUMAKER_EADC_SPEC_IDX_VCONN(inst)),         \
 				 "EADC channel for VCONN error");))
 
-#define NUMAKER_EADC_INIT(inst)                                                                    \
-	{                                                                                          \
-		.spec_vbus = NUMAKER_EADC_SPEC_PTR_VBUS(inst),                                     \
-		.spec_vconn = NUMAKER_EADC_SPEC_PTR_VCONN(inst),                                   \
-		.timer_trigger_rate = DT_INST_PROP(inst, adc_measure_timer_trigger_rate),          \
-		.trgsel_vbus = NUMAKER_EADC_TRGSRC_CAST(inst),                                     \
-		.trgsel_vconn = NUMAKER_EADC_TRGSRC_CAST(inst),                                    \
+#define NUMAKER_EADC_INIT(inst)                                                           \
+	{                                                                                 \
+		.spec_vbus = NUMAKER_EADC_SPEC_PTR_VBUS(inst),                            \
+		.spec_vconn = NUMAKER_EADC_SPEC_PTR_VCONN(inst),                          \
+		.timer_trigger_rate = DT_INST_PROP(inst, adc_measure_timer_trigger_rate), \
+		.trgsel_vbus = NUMAKER_EADC_TRGSRC_CAST(inst),                            \
+		.trgsel_vconn = NUMAKER_EADC_TRGSRC_CAST(inst),                           \
 	}
 
-#define NUMAKER_TCPC_INIT(inst)                                                                    \
-	PINCTRL_DT_INST_DEFINE(inst);                                                              \
-                                                                                                   \
-	NUMAKER_EADC_SPEC_DEFINE(inst);                                                            \
-                                                                                                   \
-	static void numaker_utcpd_irq_config_func_##inst(const struct device *dev)                 \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, utcpd, irq),                                 \
-			    DT_INST_IRQ_BY_NAME(inst, utcpd, priority), numaker_utcpd_isr,         \
-			    DEVICE_DT_INST_GET(inst), 0);                                          \
-                                                                                                   \
-		irq_enable(DT_INST_IRQ_BY_NAME(inst, utcpd, irq));                                 \
-	}                                                                                          \
-                                                                                                   \
-	static void numaker_utcpd_irq_unconfig_func_##inst(const struct device *dev)               \
-	{                                                                                          \
-		irq_disable(DT_INST_IRQ_BY_NAME(inst, utcpd, irq));                                \
-	}                                                                                          \
-                                                                                                   \
-	static const struct numaker_tcpc_config numaker_tcpc_config_##inst = {                     \
-		.utcpd_base = (UTCPD_T *)DT_INST_REG_ADDR_BY_NAME(inst, utcpd),                    \
-		.eadc_base = (EADC_T *)DT_INST_REG_ADDR_BY_NAME(inst, eadc),                       \
-		.timer_base = (TIMER_T *)DT_INST_REG_ADDR_BY_NAME(inst, timer),                    \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                    \
-		.clkctrl_dev = DEVICE_DT_GET(DT_PARENT(DT_INST_CLOCKS_CTLR(inst))),                \
-		.pcc_utcpd = NUMAKER_PCC_INST_GET_BY_NAME(inst, utcpd),                            \
-		.pcc_timer = NUMAKER_PCC_INST_GET_BY_NAME(inst, timer),                            \
-		.reset_utcpd = NUMAKER_RESET_DT_SPEC_INST_GET_BY_NAME(inst, utcpd),                \
-		.reset_timer = NUMAKER_RESET_DT_SPEC_INST_GET_BY_NAME(inst, timer),                \
-		.irq_config_func_utcpd = numaker_utcpd_irq_config_func_##inst,                     \
-		.irq_unconfig_func_utcpd = numaker_utcpd_irq_unconfig_func_##inst,                 \
-		.utcpd = NUMAKER_UTCPD_INIT(inst),                                                 \
-		.eadc = NUMAKER_EADC_INIT(inst),                                                   \
-	};                                                                                         \
-                                                                                                   \
-	BUILD_ASSERT_NUMAKER_EADC_REG(inst);                                                       \
-	BUILD_ASSERT_NUMAKER_EADC_TRGSRC_CAST(inst);                                               \
-	BUILD_ASSERT_NUMAKER_EADC_SPEC_VBUS(inst);                                                 \
-	BUILD_ASSERT_NUMAKER_EADC_SPEC_VCONN(inst);                                                \
-                                                                                                   \
-	static struct numaker_tcpc_data numaker_tcpc_data_##inst;                                  \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, numaker_tcpc_init_startup, NULL, &numaker_tcpc_data_##inst,    \
-			      &numaker_tcpc_config_##inst, POST_KERNEL,                            \
+#define NUMAKER_TCPC_INIT(inst)                                                                 \
+	PINCTRL_DT_INST_DEFINE(inst);                                                           \
+                                                                                                \
+	NUMAKER_EADC_SPEC_DEFINE(inst);                                                         \
+                                                                                                \
+	static void numaker_utcpd_irq_config_func_##inst(const struct device *dev)              \
+	{                                                                                       \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, utcpd, irq),                              \
+			    DT_INST_IRQ_BY_NAME(inst, utcpd, priority), numaker_utcpd_isr,      \
+			    DEVICE_DT_INST_GET(inst), 0);                                       \
+                                                                                                \
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, utcpd, irq));                              \
+	}                                                                                       \
+                                                                                                \
+	static void numaker_utcpd_irq_unconfig_func_##inst(const struct device *dev)            \
+	{                                                                                       \
+		irq_disable(DT_INST_IRQ_BY_NAME(inst, utcpd, irq));                             \
+	}                                                                                       \
+                                                                                                \
+	static const struct numaker_tcpc_config numaker_tcpc_config_##inst = {                  \
+		.utcpd_base = (UTCPD_T *)DT_INST_REG_ADDR_BY_NAME(inst, utcpd),                 \
+		.eadc_base = (EADC_T *)DT_INST_REG_ADDR_BY_NAME(inst, eadc),                    \
+		.timer_base = (TIMER_T *)DT_INST_REG_ADDR_BY_NAME(inst, timer),                 \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                 \
+		.clkctrl_dev = DEVICE_DT_GET(DT_PARENT(DT_INST_CLOCKS_CTLR(inst))),             \
+		.pcc_utcpd = NUMAKER_PCC_INST_GET_BY_NAME(inst, utcpd),                         \
+		.pcc_timer = NUMAKER_PCC_INST_GET_BY_NAME(inst, timer),                         \
+		.reset_utcpd = NUMAKER_RESET_DT_SPEC_INST_GET_BY_NAME(inst, utcpd),             \
+		.reset_timer = NUMAKER_RESET_DT_SPEC_INST_GET_BY_NAME(inst, timer),             \
+		.irq_config_func_utcpd = numaker_utcpd_irq_config_func_##inst,                  \
+		.irq_unconfig_func_utcpd = numaker_utcpd_irq_unconfig_func_##inst,              \
+		.utcpd = NUMAKER_UTCPD_INIT(inst),                                              \
+		.eadc = NUMAKER_EADC_INIT(inst),                                                \
+	};                                                                                      \
+                                                                                                \
+	BUILD_ASSERT_NUMAKER_EADC_REG(inst);                                                    \
+	BUILD_ASSERT_NUMAKER_EADC_TRGSRC_CAST(inst);                                            \
+	BUILD_ASSERT_NUMAKER_EADC_SPEC_VBUS(inst);                                              \
+	BUILD_ASSERT_NUMAKER_EADC_SPEC_VCONN(inst);                                             \
+                                                                                                \
+	static struct numaker_tcpc_data numaker_tcpc_data_##inst;                               \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(inst, numaker_tcpc_init_startup, NULL, &numaker_tcpc_data_##inst, \
+			      &numaker_tcpc_config_##inst, POST_KERNEL,                         \
 			      CONFIG_USBC_TCPC_INIT_PRIORITY, &numaker_tcpc_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NUMAKER_TCPC_INIT);

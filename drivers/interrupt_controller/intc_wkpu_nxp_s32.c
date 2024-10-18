@@ -191,7 +191,7 @@ static int wkpu_nxp_s32_init(const struct device *dev)
 	return 0;
 }
 
-#define WKPU_NXP_S32_FILTER_CONFIG(idx, n)                                                         \
+#define WKPU_NXP_S32_FILTER_CONFIG(idx, n) \
 	COND_CODE_1(DT_PROP(DT_INST_CHILD(n, irq_##idx), filter_enable), (BIT(idx)), (0U))
 
 #define WKPU_NXP_S32_INIT_DEVICE(n)                                                                \

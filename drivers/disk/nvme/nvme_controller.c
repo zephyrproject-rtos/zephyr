@@ -432,24 +432,24 @@ static int nvme_controller_init(const struct device *dev)
 	return 0;
 }
 
-#define NVME_CONTROLLER_DEVICE_INIT(n)                                                             \
-	DEVICE_PCIE_INST_DECLARE(n);                                                               \
-	NVME_ADMINQ_ALLOCATE(n, CONFIG_NVME_ADMIN_ENTRIES);                                        \
-	NVME_IOQ_ALLOCATE(n, CONFIG_NVME_IO_ENTRIES);                                              \
-                                                                                                   \
-	static struct nvme_controller nvme_ctrlr_data_##n = {                                      \
-		.id = n,                                                                           \
-		.num_io_queues = CONFIG_NVME_IO_QUEUES,                                            \
-		.adminq = &admin_##n,                                                              \
-		.ioq = &io_##n,                                                                    \
-	};                                                                                         \
-                                                                                                   \
-	static struct nvme_controller_config nvme_ctrlr_cfg_##n = {                                \
-		DEVICE_PCIE_INST_INIT(n, pcie),                                                    \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &nvme_controller_init, NULL, &nvme_ctrlr_data_##n,                \
-			      &nvme_ctrlr_cfg_##n, POST_KERNEL,                                    \
+#define NVME_CONTROLLER_DEVICE_INIT(n)                                              \
+	DEVICE_PCIE_INST_DECLARE(n);                                                \
+	NVME_ADMINQ_ALLOCATE(n, CONFIG_NVME_ADMIN_ENTRIES);                         \
+	NVME_IOQ_ALLOCATE(n, CONFIG_NVME_IO_ENTRIES);                               \
+                                                                                    \
+	static struct nvme_controller nvme_ctrlr_data_##n = {                       \
+		.id = n,                                                            \
+		.num_io_queues = CONFIG_NVME_IO_QUEUES,                             \
+		.adminq = &admin_##n,                                               \
+		.ioq = &io_##n,                                                     \
+	};                                                                          \
+                                                                                    \
+	static struct nvme_controller_config nvme_ctrlr_cfg_##n = {                 \
+		DEVICE_PCIE_INST_INIT(n, pcie),                                     \
+	};                                                                          \
+                                                                                    \
+	DEVICE_DT_INST_DEFINE(n, &nvme_controller_init, NULL, &nvme_ctrlr_data_##n, \
+			      &nvme_ctrlr_cfg_##n, POST_KERNEL,                     \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(NVME_CONTROLLER_DEVICE_INIT)

@@ -1181,30 +1181,30 @@ static const struct uart_driver_api uart_sam0_driver_api = {
 
 #if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_SAM0_ASYNC
 
-#define SAM0_UART_IRQ_CONNECT(n, m)                                                                \
-	do {                                                                                       \
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, m, irq), DT_INST_IRQ_BY_IDX(n, m, priority),     \
-			    uart_sam0_isr, DEVICE_DT_INST_GET(n), 0);                              \
-		irq_enable(DT_INST_IRQ_BY_IDX(n, m, irq));                                         \
+#define SAM0_UART_IRQ_CONNECT(n, m)                                                            \
+	do {                                                                                   \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, m, irq), DT_INST_IRQ_BY_IDX(n, m, priority), \
+			    uart_sam0_isr, DEVICE_DT_INST_GET(n), 0);                          \
+		irq_enable(DT_INST_IRQ_BY_IDX(n, m, irq));                                     \
 	} while (false)
 
 #define UART_SAM0_IRQ_HANDLER_DECL(n) static void uart_sam0_irq_config_##n(const struct device *dev)
 #define UART_SAM0_IRQ_HANDLER_FUNC(n) .irq_config_func = uart_sam0_irq_config_##n,
 
 #if DT_INST_IRQ_HAS_IDX(0, 3)
-#define UART_SAM0_IRQ_HANDLER(n)                                                                   \
-	static void uart_sam0_irq_config_##n(const struct device *dev)                             \
-	{                                                                                          \
-		SAM0_UART_IRQ_CONNECT(n, 0);                                                       \
-		SAM0_UART_IRQ_CONNECT(n, 1);                                                       \
-		SAM0_UART_IRQ_CONNECT(n, 2);                                                       \
-		SAM0_UART_IRQ_CONNECT(n, 3);                                                       \
+#define UART_SAM0_IRQ_HANDLER(n)                                       \
+	static void uart_sam0_irq_config_##n(const struct device *dev) \
+	{                                                              \
+		SAM0_UART_IRQ_CONNECT(n, 0);                           \
+		SAM0_UART_IRQ_CONNECT(n, 1);                           \
+		SAM0_UART_IRQ_CONNECT(n, 2);                           \
+		SAM0_UART_IRQ_CONNECT(n, 3);                           \
 	}
 #else
-#define UART_SAM0_IRQ_HANDLER(n)                                                                   \
-	static void uart_sam0_irq_config_##n(const struct device *dev)                             \
-	{                                                                                          \
-		SAM0_UART_IRQ_CONNECT(n, 0);                                                       \
+#define UART_SAM0_IRQ_HANDLER(n)                                       \
+	static void uart_sam0_irq_config_##n(const struct device *dev) \
+	{                                                              \
+		SAM0_UART_IRQ_CONNECT(n, 0);                           \
 	}
 #endif
 #else
@@ -1214,44 +1214,44 @@ static const struct uart_driver_api uart_sam0_driver_api = {
 #endif
 
 #if CONFIG_UART_SAM0_ASYNC
-#define UART_SAM0_DMA_CHANNELS(n)                                                                  \
-	.dma_dev = DEVICE_DT_GET(ATMEL_SAM0_DT_INST_DMA_CTLR(n, tx)),                              \
-	.tx_dma_request = ATMEL_SAM0_DT_INST_DMA_TRIGSRC(n, tx),                                   \
-	.tx_dma_channel = ATMEL_SAM0_DT_INST_DMA_CHANNEL(n, tx),                                   \
-	.rx_dma_request = ATMEL_SAM0_DT_INST_DMA_TRIGSRC(n, rx),                                   \
+#define UART_SAM0_DMA_CHANNELS(n)                                     \
+	.dma_dev = DEVICE_DT_GET(ATMEL_SAM0_DT_INST_DMA_CTLR(n, tx)), \
+	.tx_dma_request = ATMEL_SAM0_DT_INST_DMA_TRIGSRC(n, tx),      \
+	.tx_dma_channel = ATMEL_SAM0_DT_INST_DMA_CHANNEL(n, tx),      \
+	.rx_dma_request = ATMEL_SAM0_DT_INST_DMA_TRIGSRC(n, rx),      \
 	.rx_dma_channel = ATMEL_SAM0_DT_INST_DMA_CHANNEL(n, rx),
 #else
 #define UART_SAM0_DMA_CHANNELS(n)
 #endif
 
-#define UART_SAM0_SERCOM_PADS(n)                                                                   \
-	(DT_INST_PROP(n, rxpo) << SERCOM_USART_CTRLA_RXPO_Pos) |                                   \
+#define UART_SAM0_SERCOM_PADS(n)                                       \
+	(DT_INST_PROP(n, rxpo) << SERCOM_USART_CTRLA_RXPO_Pos) |       \
 		(DT_INST_PROP(n, txpo) << SERCOM_USART_CTRLA_TXPO_Pos)
 
 #define UART_SAM0_SERCOM_COLLISION_DETECT(n) (DT_INST_PROP(n, collision_detection))
 
 #ifdef MCLK
-#define UART_SAM0_CONFIG_DEFN(n)                                                                   \
-	static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {                             \
-		.regs = (SercomUsart *)DT_INST_REG_ADDR(n),                                        \
-		.baudrate = DT_INST_PROP(n, current_speed),                                        \
-		.mclk = (volatile uint32_t *)MCLK_MASK_DT_INT_REG_ADDR(n),                         \
-		.mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, bit)),                       \
-		.gclk_core_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch),                   \
-		.pads = UART_SAM0_SERCOM_PADS(n),                                                  \
-		.collision_detect = UART_SAM0_SERCOM_COLLISION_DETECT(n),                          \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+#define UART_SAM0_CONFIG_DEFN(n)                                                 \
+	static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {           \
+		.regs = (SercomUsart *)DT_INST_REG_ADDR(n),                      \
+		.baudrate = DT_INST_PROP(n, current_speed),                      \
+		.mclk = (volatile uint32_t *)MCLK_MASK_DT_INT_REG_ADDR(n),       \
+		.mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, bit)),     \
+		.gclk_core_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch), \
+		.pads = UART_SAM0_SERCOM_PADS(n),                                \
+		.collision_detect = UART_SAM0_SERCOM_COLLISION_DETECT(n),        \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                       \
 		UART_SAM0_IRQ_HANDLER_FUNC(n) UART_SAM0_DMA_CHANNELS(n)}
 #else
-#define UART_SAM0_CONFIG_DEFN(n)                                                                   \
-	static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {                             \
-		.regs = (SercomUsart *)DT_INST_REG_ADDR(n),                                        \
-		.baudrate = DT_INST_PROP(n, current_speed),                                        \
-		.pm_apbcmask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, pm, bit)),                       \
-		.gclk_clkctrl_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, clkctrl_id),               \
-		.pads = UART_SAM0_SERCOM_PADS(n),                                                  \
-		.collision_detect = UART_SAM0_SERCOM_COLLISION_DETECT(n),                          \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+#define UART_SAM0_CONFIG_DEFN(n)                                                     \
+	static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {               \
+		.regs = (SercomUsart *)DT_INST_REG_ADDR(n),                          \
+		.baudrate = DT_INST_PROP(n, current_speed),                          \
+		.pm_apbcmask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, pm, bit)),         \
+		.gclk_clkctrl_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, clkctrl_id), \
+		.pads = UART_SAM0_SERCOM_PADS(n),                                    \
+		.collision_detect = UART_SAM0_SERCOM_COLLISION_DETECT(n),            \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                           \
 		UART_SAM0_IRQ_HANDLER_FUNC(n) UART_SAM0_DMA_CHANNELS(n)}
 #endif
 

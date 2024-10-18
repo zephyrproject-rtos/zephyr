@@ -129,7 +129,7 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 
 	switch (clock_name) {
 
-#if defined(CONFIG_I2C_MCUX_FLEXCOMM) || defined(CONFIG_SPI_MCUX_FLEXCOMM) ||                      \
+#if defined(CONFIG_I2C_MCUX_FLEXCOMM) || defined(CONFIG_SPI_MCUX_FLEXCOMM) || \
 	defined(CONFIG_UART_MCUX_FLEXCOMM)
 	case MCUX_FLEXCOMM0_CLK:
 		*rate = CLOCK_GetFlexCommClkFreq(0);
@@ -461,9 +461,9 @@ static const struct clock_control_driver_api mcux_lpc_syscon_api = {
 	.set_rate = mcux_lpc_syscon_clock_control_set_subsys_rate,
 };
 
-#define LPC_CLOCK_INIT(n)                                                                          \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, NULL, PRE_KERNEL_1,                             \
+#define LPC_CLOCK_INIT(n)                                                                \
+                                                                                         \
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, NULL, PRE_KERNEL_1,                   \
 			      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &mcux_lpc_syscon_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LPC_CLOCK_INIT)

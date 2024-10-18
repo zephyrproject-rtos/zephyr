@@ -786,61 +786,61 @@ static int spi_pw_init(const struct device *dev)
 #define SPI_INTEL_IRQ_FLAGS_SENSE1(n) DT_INST_IRQ(n, sense)
 #define SPI_INTEL_IRQ_FLAGS(n)        _CONCAT(SPI_INTEL_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, sense))(n)
 
-#define SPI_INTEL_IRQ_INIT(n)                                                                      \
-	BUILD_ASSERT(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),                                        \
-		     "SPI PCIe requires dynamic interrupts");                                      \
-	static void spi_##n##_irq_init(const struct device *dev)                                   \
-	{                                                                                          \
-		const struct spi_pw_config *info = dev->config;                                    \
-		unsigned int irq;                                                                  \
-		if (DT_INST_IRQN(n) == PCIE_IRQ_DETECT) {                                          \
-			irq = pcie_alloc_irq(info->pcie->bdf);                                     \
-			if (irq == PCIE_CONF_INTR_IRQ_NONE) {                                      \
-				return;                                                            \
-			}                                                                          \
-		} else {                                                                           \
-			irq = DT_INST_IRQN(n);                                                     \
-			pcie_conf_write(info->pcie->bdf, PCIE_CONF_INTR, irq);                     \
-		}                                                                                  \
-		pcie_connect_dynamic_irq(info->pcie->bdf, irq, DT_INST_IRQ(n, priority),           \
-					 (void (*)(const void *))spi_pw_isr,                       \
-					 DEVICE_DT_INST_GET(n), SPI_INTEL_IRQ_FLAGS(n));           \
-		pcie_irq_enable(info->pcie->bdf, irq);                                             \
-		LOG_DBG("lpass spi Configure irq %d", irq);                                        \
+#define SPI_INTEL_IRQ_INIT(n)                                                            \
+	BUILD_ASSERT(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),                              \
+		     "SPI PCIe requires dynamic interrupts");                            \
+	static void spi_##n##_irq_init(const struct device *dev)                         \
+	{                                                                                \
+		const struct spi_pw_config *info = dev->config;                          \
+		unsigned int irq;                                                        \
+		if (DT_INST_IRQN(n) == PCIE_IRQ_DETECT) {                                \
+			irq = pcie_alloc_irq(info->pcie->bdf);                           \
+			if (irq == PCIE_CONF_INTR_IRQ_NONE) {                            \
+				return;                                                  \
+			}                                                                \
+		} else {                                                                 \
+			irq = DT_INST_IRQN(n);                                           \
+			pcie_conf_write(info->pcie->bdf, PCIE_CONF_INTR, irq);           \
+		}                                                                        \
+		pcie_connect_dynamic_irq(info->pcie->bdf, irq, DT_INST_IRQ(n, priority), \
+					 (void (*)(const void *))spi_pw_isr,             \
+					 DEVICE_DT_INST_GET(n), SPI_INTEL_IRQ_FLAGS(n)); \
+		pcie_irq_enable(info->pcie->bdf, irq);                                   \
+		LOG_DBG("lpass spi Configure irq %d", irq);                              \
 	}
 
-#define SPI_PW_DEV_INIT(n)                                                                         \
-	static struct spi_pw_data spi_##n##_data = {                                               \
-		SPI_CONTEXT_INIT_LOCK(spi_##n##_data, ctx),                                        \
-		SPI_CONTEXT_INIT_SYNC(spi_##n##_data, ctx),                                        \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx).cs_mode =                     \
-			DT_INST_PROP(n, pw_cs_mode),                                               \
-		.cs_output = DT_INST_PROP(n, pw_cs_output),                                        \
-		.fifo_depth = DT_INST_PROP(n, pw_fifo_depth),                                      \
-	};                                                                                         \
-	SPI_PCIE_DEFINE(n);                                                                        \
-	SPI_INTEL_IRQ_INIT(n)                                                                      \
-	static const struct spi_pw_config spi_##n##_config = {                                     \
-		.irq_config = spi_##n##_irq_init,                                                  \
-		.clock_freq = DT_INST_PROP(n, clock_frequency),                                    \
-		INIT_PCIE(n)};                                                                     \
-	DEVICE_DT_INST_DEFINE(n, spi_pw_init, NULL, &spi_##n##_data, &spi_##n##_config,            \
+#define SPI_PW_DEV_INIT(n)                                                              \
+	static struct spi_pw_data spi_##n##_data = {                                    \
+		SPI_CONTEXT_INIT_LOCK(spi_##n##_data, ctx),                             \
+		SPI_CONTEXT_INIT_SYNC(spi_##n##_data, ctx),                             \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx).cs_mode =          \
+			DT_INST_PROP(n, pw_cs_mode),                                    \
+		.cs_output = DT_INST_PROP(n, pw_cs_output),                             \
+		.fifo_depth = DT_INST_PROP(n, pw_fifo_depth),                           \
+	};                                                                              \
+	SPI_PCIE_DEFINE(n);                                                             \
+	SPI_INTEL_IRQ_INIT(n)                                                           \
+	static const struct spi_pw_config spi_##n##_config = {                          \
+		.irq_config = spi_##n##_irq_init,                                       \
+		.clock_freq = DT_INST_PROP(n, clock_frequency),                         \
+		INIT_PCIE(n)};                                                          \
+	DEVICE_DT_INST_DEFINE(n, spi_pw_init, NULL, &spi_##n##_data, &spi_##n##_config, \
 			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &pw_spi_api);
 #else
 
-#define SPI_PW_DEV_INIT(n)                                                                         \
-	static struct spi_pw_data spi_##n##_data = {                                               \
-		SPI_CONTEXT_INIT_LOCK(spi_##n##_data, ctx),                                        \
-		SPI_CONTEXT_INIT_SYNC(spi_##n##_data, ctx),                                        \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx).cs_mode =                     \
-			DT_INST_PROP(n, pw_cs_mode),                                               \
-		.cs_output = DT_INST_PROP(n, pw_cs_output),                                        \
-		.fifo_depth = DT_INST_PROP(n, pw_fifo_depth),                                      \
-	};                                                                                         \
-	SPI_PCIE_DEFINE(n);                                                                        \
-	static const struct spi_pw_config spi_##n##_config = {                                     \
-		.clock_freq = DT_INST_PROP(n, clock_frequency), INIT_PCIE(n)};                     \
-	DEVICE_DT_INST_DEFINE(n, spi_pw_init, NULL, &spi_##n##_data, &spi_##n##_config,            \
+#define SPI_PW_DEV_INIT(n)                                                              \
+	static struct spi_pw_data spi_##n##_data = {                                    \
+		SPI_CONTEXT_INIT_LOCK(spi_##n##_data, ctx),                             \
+		SPI_CONTEXT_INIT_SYNC(spi_##n##_data, ctx),                             \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx).cs_mode =          \
+			DT_INST_PROP(n, pw_cs_mode),                                    \
+		.cs_output = DT_INST_PROP(n, pw_cs_output),                             \
+		.fifo_depth = DT_INST_PROP(n, pw_fifo_depth),                           \
+	};                                                                              \
+	SPI_PCIE_DEFINE(n);                                                             \
+	static const struct spi_pw_config spi_##n##_config = {                          \
+		.clock_freq = DT_INST_PROP(n, clock_frequency), INIT_PCIE(n)};          \
+	DEVICE_DT_INST_DEFINE(n, spi_pw_init, NULL, &spi_##n##_data, &spi_##n##_config, \
 			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &pw_spi_api);
 
 #endif

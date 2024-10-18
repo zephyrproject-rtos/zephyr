@@ -156,16 +156,16 @@ static int current_init(const struct device *dev)
 	return 0;
 }
 
-#define CURRENT_SENSE_AMPLIFIER_INIT(inst)                                                         \
-	static struct current_sense_amplifier_data current_amp_##inst##_data;                      \
-                                                                                                   \
-	static const struct current_sense_amplifier_dt_spec current_amp_##inst##_config =          \
-		CURRENT_SENSE_AMPLIFIER_DT_SPEC_GET(DT_DRV_INST(inst));                            \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, pm_action);                                                 \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &current_init, PM_DEVICE_DT_INST_GET(inst),             \
-				     &current_amp_##inst##_data, &current_amp_##inst##_config,     \
+#define CURRENT_SENSE_AMPLIFIER_INIT(inst)                                                     \
+	static struct current_sense_amplifier_data current_amp_##inst##_data;                  \
+                                                                                               \
+	static const struct current_sense_amplifier_dt_spec current_amp_##inst##_config =      \
+		CURRENT_SENSE_AMPLIFIER_DT_SPEC_GET(DT_DRV_INST(inst));                        \
+                                                                                               \
+	PM_DEVICE_DT_INST_DEFINE(inst, pm_action);                                             \
+                                                                                               \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, &current_init, PM_DEVICE_DT_INST_GET(inst),         \
+				     &current_amp_##inst##_data, &current_amp_##inst##_config, \
 				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &current_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CURRENT_SENSE_AMPLIFIER_INIT)

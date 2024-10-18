@@ -33,13 +33,13 @@ LOG_MODULE_REGISTER(crypto_smartbond_crypto, CONFIG_CRYPTO_LOG_LEVEL);
 
 #define SWAP32(_w) __REV(_w)
 
-#define CRYPTO_CTRL_REG_SET(_field, _val)                                                          \
-	AES_HASH->CRYPTO_CTRL_REG =                                                                \
-		(AES_HASH->CRYPTO_CTRL_REG & ~AES_HASH_CRYPTO_CTRL_REG_##_field##_Msk) |           \
+#define CRYPTO_CTRL_REG_SET(_field, _val)                                                \
+	AES_HASH->CRYPTO_CTRL_REG =                                                      \
+		(AES_HASH->CRYPTO_CTRL_REG & ~AES_HASH_CRYPTO_CTRL_REG_##_field##_Msk) | \
 		((_val) << AES_HASH_CRYPTO_CTRL_REG_##_field##_Pos)
 
-#define CRYPTO_CTRL_REG_GET(_field)                                                                \
-	((AES_HASH->CRYPTO_CTRL_REG & AES_HASH_CRYPTO_CTRL_REG_##_field##_Msk) >>                  \
+#define CRYPTO_CTRL_REG_GET(_field)                                               \
+	((AES_HASH->CRYPTO_CTRL_REG & AES_HASH_CRYPTO_CTRL_REG_##_field##_Msk) >> \
 	 AES_HASH_CRYPTO_CTRL_REG_##_field##_Pos)
 
 struct crypto_smartbond_data {
@@ -985,15 +985,15 @@ static int crypto_smartbond_init(const struct device *dev)
  * There is only one instance integrated on the SoC. Just in case that assumption becomes invalid
  * in the future, we use a BUILD_ASSERT().
  */
-#define SMARTBOND_CRYPTO_INIT(inst)                                                                \
-	BUILD_ASSERT((inst) == 0, "multiple instances are not supported");                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, crypto_smartbond_pm_action);                                \
-                                                                                                   \
-	static struct crypto_smartbond_data crypto_smartbond_data_##inst;                          \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(0, crypto_smartbond_init, PM_DEVICE_DT_INST_GET(inst),               \
-			      &crypto_smartbond_data_##inst, NULL, POST_KERNEL,                    \
+#define SMARTBOND_CRYPTO_INIT(inst)                                                       \
+	BUILD_ASSERT((inst) == 0, "multiple instances are not supported");                \
+                                                                                          \
+	PM_DEVICE_DT_INST_DEFINE(inst, crypto_smartbond_pm_action);                       \
+                                                                                          \
+	static struct crypto_smartbond_data crypto_smartbond_data_##inst;                 \
+                                                                                          \
+	DEVICE_DT_INST_DEFINE(0, crypto_smartbond_init, PM_DEVICE_DT_INST_GET(inst),      \
+			      &crypto_smartbond_data_##inst, NULL, POST_KERNEL,           \
 			      CONFIG_CRYPTO_INIT_PRIORITY, &crypto_smartbond_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SMARTBOND_CRYPTO_INIT)

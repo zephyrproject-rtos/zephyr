@@ -101,15 +101,15 @@ static int dac_ad559x_init(const struct device *dev)
 	return 0;
 }
 
-#define DAC_AD559X_DEFINE(inst)                                                                    \
-	static const struct dac_ad559x_config dac_ad559x_config##inst = {                          \
-		.mfd_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                    \
-	};                                                                                         \
-                                                                                                   \
-	struct dac_ad559x_data dac_ad559x_data##inst;                                              \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, dac_ad559x_init, NULL, &dac_ad559x_data##inst,                 \
-			      &dac_ad559x_config##inst, POST_KERNEL, CONFIG_MFD_INIT_PRIORITY,     \
+#define DAC_AD559X_DEFINE(inst)                                                                \
+	static const struct dac_ad559x_config dac_ad559x_config##inst = {                      \
+		.mfd_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                \
+	};                                                                                     \
+                                                                                               \
+	struct dac_ad559x_data dac_ad559x_data##inst;                                          \
+                                                                                               \
+	DEVICE_DT_INST_DEFINE(inst, dac_ad559x_init, NULL, &dac_ad559x_data##inst,             \
+			      &dac_ad559x_config##inst, POST_KERNEL, CONFIG_MFD_INIT_PRIORITY, \
 			      &dac_ad559x_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DAC_AD559X_DEFINE)

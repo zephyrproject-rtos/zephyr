@@ -192,41 +192,41 @@ static int adc_keys_init(const struct device *dev)
 	return 0;
 }
 
-#define ADC_KEYS_CODE_CFG_ITEM(node_id, prop, idx)                                                 \
-	{                                                                                          \
-		.key_index = DT_NODE_CHILD_IDX(node_id) /* include disabled nodes */,              \
-		.press_mv = DT_PROP_BY_IDX(node_id, prop, idx),                                    \
+#define ADC_KEYS_CODE_CFG_ITEM(node_id, prop, idx)                                    \
+	{                                                                             \
+		.key_index = DT_NODE_CHILD_IDX(node_id) /* include disabled nodes */, \
+		.press_mv = DT_PROP_BY_IDX(node_id, prop, idx),                       \
 	}
 
-#define ADC_KEYS_CODE_CFG(node_id)                                                                 \
+#define ADC_KEYS_CODE_CFG(node_id)                                                           \
 	DT_FOREACH_PROP_ELEM_SEP(node_id, press_thresholds_mv, ADC_KEYS_CODE_CFG_ITEM, (, ))
 
 #define ADC_KEYS_KEY_CODE(node_id) DT_PROP(node_id, zephyr_code)
 
-#define ADC_KEYS_INST(n)                                                                           \
-	static struct adc_keys_data adc_keys_data_##n;                                             \
-                                                                                                   \
-	static const struct adc_keys_code_config adc_keys_code_cfg_##n[] = {                       \
-		DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(n, ADC_KEYS_CODE_CFG, (, ))};                \
-                                                                                                   \
-	static const uint16_t adc_keys_key_code_##n[] = {                                          \
-		DT_INST_FOREACH_CHILD_SEP(n, ADC_KEYS_KEY_CODE, (, ))};                            \
-                                                                                                   \
-	static struct adc_keys_key_state                                                           \
-		adc_keys_key_state_##n[ARRAY_SIZE(adc_keys_key_code_##n)];                         \
-                                                                                                   \
-	static const struct adc_keys_config adc_keys_cfg_##n = {                                   \
-		.channel = ADC_DT_SPEC_INST_GET(n),                                                \
-		.sample_period_ms = DT_INST_PROP(n, sample_period_ms),                             \
-		.keyup_mv = DT_INST_PROP(n, keyup_threshold_mv),                                   \
-		.code_cfg = adc_keys_code_cfg_##n,                                                 \
-		.key_code = adc_keys_key_code_##n,                                                 \
-		.key_state = adc_keys_key_state_##n,                                               \
-		.code_cnt = ARRAY_SIZE(adc_keys_code_cfg_##n),                                     \
-		.key_cnt = ARRAY_SIZE(adc_keys_key_code_##n),                                      \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, adc_keys_init, NULL, &adc_keys_data_##n, &adc_keys_cfg_##n,       \
+#define ADC_KEYS_INST(n)                                                                     \
+	static struct adc_keys_data adc_keys_data_##n;                                       \
+                                                                                             \
+	static const struct adc_keys_code_config adc_keys_code_cfg_##n[] = {                 \
+		DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(n, ADC_KEYS_CODE_CFG, (, ))};          \
+                                                                                             \
+	static const uint16_t adc_keys_key_code_##n[] = {                                    \
+		DT_INST_FOREACH_CHILD_SEP(n, ADC_KEYS_KEY_CODE, (, ))};                      \
+                                                                                             \
+	static struct adc_keys_key_state                                                     \
+		adc_keys_key_state_##n[ARRAY_SIZE(adc_keys_key_code_##n)];                   \
+                                                                                             \
+	static const struct adc_keys_config adc_keys_cfg_##n = {                             \
+		.channel = ADC_DT_SPEC_INST_GET(n),                                          \
+		.sample_period_ms = DT_INST_PROP(n, sample_period_ms),                       \
+		.keyup_mv = DT_INST_PROP(n, keyup_threshold_mv),                             \
+		.code_cfg = adc_keys_code_cfg_##n,                                           \
+		.key_code = adc_keys_key_code_##n,                                           \
+		.key_state = adc_keys_key_state_##n,                                         \
+		.code_cnt = ARRAY_SIZE(adc_keys_code_cfg_##n),                               \
+		.key_cnt = ARRAY_SIZE(adc_keys_key_code_##n),                                \
+	};                                                                                   \
+                                                                                             \
+	DEVICE_DT_INST_DEFINE(n, adc_keys_init, NULL, &adc_keys_data_##n, &adc_keys_cfg_##n, \
 			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_KEYS_INST)

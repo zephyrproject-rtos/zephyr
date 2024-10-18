@@ -295,23 +295,23 @@ static int iis2dh_init(const struct device *dev)
 	return 0;
 }
 
-#define IIS2DH_SPI(inst)                                                                           \
-	(.spi = SPI_DT_SPEC_INST_GET(                                                              \
+#define IIS2DH_SPI(inst)                                                                        \
+	(.spi = SPI_DT_SPEC_INST_GET(                                                           \
 		 0, SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8), 0), )
 
 #define IIS2DH_I2C(inst) (.i2c = I2C_DT_SPEC_INST_GET(inst), )
 
-#define IIS2DH_DEFINE(inst)                                                                        \
-	static struct iis2dh_data iis2dh_data_##inst;                                              \
-                                                                                                   \
-	static const struct iis2dh_device_config iis2dh_device_config_##inst = {                   \
-		COND_CODE_1(DT_INST_ON_BUS(inst, i2c), IIS2DH_I2C(inst), ())                                                                        \
-				COND_CODE_1(DT_INST_ON_BUS(inst, spi), IIS2DH_SPI(inst), ()) .pm = CONFIG_IIS2DH_POWER_MODE,       \
+#define IIS2DH_DEFINE(inst)                                                                       \
+	static struct iis2dh_data iis2dh_data_##inst;                                             \
+                                                                                                  \
+	static const struct iis2dh_device_config iis2dh_device_config_##inst = {                  \
+		COND_CODE_1(DT_INST_ON_BUS(inst, i2c), IIS2DH_I2C(inst), ())                                                                       \
+				COND_CODE_1(DT_INST_ON_BUS(inst, spi), IIS2DH_SPI(inst), ()) .pm = CONFIG_IIS2DH_POWER_MODE,      \
 						   IF_ENABLED(CONFIG_IIS2DH_TRIGGER,						\
-			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, drdy_gpios, { 0 }),)) };  \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, iis2dh_init, NULL, &iis2dh_data_##inst,                 \
-				     &iis2dh_device_config_##inst, POST_KERNEL,                    \
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, drdy_gpios, { 0 }),)) }; \
+                                                                                                  \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, iis2dh_init, NULL, &iis2dh_data_##inst,                \
+				     &iis2dh_device_config_##inst, POST_KERNEL,                   \
 				     CONFIG_SENSOR_INIT_PRIORITY, &iis2dh_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IIS2DH_DEFINE)

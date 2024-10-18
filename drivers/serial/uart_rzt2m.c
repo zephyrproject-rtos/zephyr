@@ -404,21 +404,21 @@ static void uart_rzt2m_isr(const struct device *dev)
 	*FFCLR(config->base) = FFCLR_MASK_DRC;
 }
 
-#define UART_RZT2M_IRQ_CONNECT(n, irq_name)                                                        \
-	do {                                                                                       \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, irq_name, irq),                                 \
-			    DT_INST_IRQ_BY_NAME(n, irq_name, priority), uart_rzt2m_isr,            \
-			    DEVICE_DT_INST_GET(n), DT_INST_IRQ_BY_NAME(n, irq_name, flags));       \
-		irq_enable(DT_INST_IRQ_BY_NAME(n, irq_name, irq));                                 \
+#define UART_RZT2M_IRQ_CONNECT(n, irq_name)                                                  \
+	do {                                                                                 \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, irq_name, irq),                           \
+			    DT_INST_IRQ_BY_NAME(n, irq_name, priority), uart_rzt2m_isr,      \
+			    DEVICE_DT_INST_GET(n), DT_INST_IRQ_BY_NAME(n, irq_name, flags)); \
+		irq_enable(DT_INST_IRQ_BY_NAME(n, irq_name, irq));                           \
 	} while (false)
 
-#define UART_RZT2M_CONFIG_FUNC(n)                                                                  \
-	static void uart##n##_rzt2m_irq_config(const struct device *port)                          \
-	{                                                                                          \
-		UART_RZT2M_IRQ_CONNECT(n, rx_err);                                                 \
-		UART_RZT2M_IRQ_CONNECT(n, rx);                                                     \
-		UART_RZT2M_IRQ_CONNECT(n, tx);                                                     \
-		UART_RZT2M_IRQ_CONNECT(n, tx_end);                                                 \
+#define UART_RZT2M_CONFIG_FUNC(n)                                         \
+	static void uart##n##_rzt2m_irq_config(const struct device *port) \
+	{                                                                 \
+		UART_RZT2M_IRQ_CONNECT(n, rx_err);                        \
+		UART_RZT2M_IRQ_CONNECT(n, rx);                            \
+		UART_RZT2M_IRQ_CONNECT(n, tx);                            \
+		UART_RZT2M_IRQ_CONNECT(n, tx_end);                        \
 	}
 
 #define UART_RZT2M_INIT(n)                                                                         \

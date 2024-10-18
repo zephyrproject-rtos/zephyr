@@ -342,21 +342,21 @@ static const struct gnss_driver_api gnss_api = {
 	.get_supported_systems = luatos_air530z_get_supported_systems,
 };
 
-#define LUATOS_AIR530Z(inst)                                                                       \
-	static const struct gnss_luatos_air530z_config gnss_luatos_air530z_cfg_##inst = {          \
-		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
-		.on_off_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, on_off_gpios, {0}),                  \
-	};                                                                                         \
-                                                                                                   \
-	static struct gnss_luatos_air530z_data gnss_luatos_air530z_data_##inst = {                 \
-		.chat_delimiter = {'\r', '\n'},                                                    \
-		.dynamic_separators_buf = {',', '*'},                                              \
-	};                                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, luatos_air530z_pm_action);                                  \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, gnss_luatos_air530z_init, PM_DEVICE_DT_INST_GET(inst),         \
-			      &gnss_luatos_air530z_data_##inst, &gnss_luatos_air530z_cfg_##inst,   \
+#define LUATOS_AIR530Z(inst)                                                                     \
+	static const struct gnss_luatos_air530z_config gnss_luatos_air530z_cfg_##inst = {        \
+		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                        \
+		.on_off_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, on_off_gpios, {0}),                \
+	};                                                                                       \
+                                                                                                 \
+	static struct gnss_luatos_air530z_data gnss_luatos_air530z_data_##inst = {               \
+		.chat_delimiter = {'\r', '\n'},                                                  \
+		.dynamic_separators_buf = {',', '*'},                                            \
+	};                                                                                       \
+                                                                                                 \
+	PM_DEVICE_DT_INST_DEFINE(inst, luatos_air530z_pm_action);                                \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(inst, gnss_luatos_air530z_init, PM_DEVICE_DT_INST_GET(inst),       \
+			      &gnss_luatos_air530z_data_##inst, &gnss_luatos_air530z_cfg_##inst, \
 			      POST_KERNEL, CONFIG_GNSS_INIT_PRIORITY, &gnss_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LUATOS_AIR530Z)

@@ -202,16 +202,16 @@ static int mipi_csi2rx_init(const struct device *dev)
 	return 0;
 }
 
-#define MIPI_CSI2RX_INIT(n)                                                                        \
-	static struct mipi_csi2rx_data mipi_csi2rx_data_##n;                                       \
-                                                                                                   \
-	static const struct mipi_csi2rx_config mipi_csi2rx_config_##n = {                          \
-		.base = (MIPI_CSI2RX_Type *)DT_INST_REG_ADDR(n),                                   \
-		.sensor_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, sensor)),                           \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &mipi_csi2rx_init, NULL, &mipi_csi2rx_data_##n,                   \
-			      &mipi_csi2rx_config_##n, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,    \
+#define MIPI_CSI2RX_INIT(n)                                                                     \
+	static struct mipi_csi2rx_data mipi_csi2rx_data_##n;                                    \
+                                                                                                \
+	static const struct mipi_csi2rx_config mipi_csi2rx_config_##n = {                       \
+		.base = (MIPI_CSI2RX_Type *)DT_INST_REG_ADDR(n),                                \
+		.sensor_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, sensor)),                        \
+	};                                                                                      \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(n, &mipi_csi2rx_init, NULL, &mipi_csi2rx_data_##n,                \
+			      &mipi_csi2rx_config_##n, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, \
 			      &mipi_csi2rx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MIPI_CSI2RX_INIT)

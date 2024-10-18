@@ -206,10 +206,10 @@ static int psci_init(const struct device *dev)
  * the below mentioned DT method where we need to #undef the default version arm,psci-0.2
  * and #define the required version like arm,psci-1.0 or arm,psci-1.1.
  */
-#define PSCI_DEFINE(inst, ver)                                                                     \
-	static const struct psci_config_t psci_config_##inst##ver = {                              \
-		.method = DT_PROP(DT_DRV_INST(inst), method)};                                     \
-	DEVICE_DT_INST_DEFINE(inst, &psci_init, NULL, &psci_data, &psci_config_##inst##ver,        \
+#define PSCI_DEFINE(inst, ver)                                                              \
+	static const struct psci_config_t psci_config_##inst##ver = {                       \
+		.method = DT_PROP(DT_DRV_INST(inst), method)};                              \
+	DEVICE_DT_INST_DEFINE(inst, &psci_init, NULL, &psci_data, &psci_config_##inst##ver, \
 			      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 
 #define PSCI_0_2_INIT(n) PSCI_DEFINE(n, PSCI_0_2)

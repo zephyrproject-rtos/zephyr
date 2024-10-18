@@ -22,7 +22,7 @@
 #error "Custom RAM console buffer exceeds the section size!"
 #endif
 
-#define RAM_CONSOLE_BUF_ATTR                                                                       \
+#define RAM_CONSOLE_BUF_ATTR                                                                    \
 	__attribute__((__section__(LINKER_DT_NODE_REGION_NAME(DT_CHOSEN(zephyr_ram_console)))))
 #else
 #define RAM_CONSOLE_BUF_ATTR

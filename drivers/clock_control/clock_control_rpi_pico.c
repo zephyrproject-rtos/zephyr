@@ -41,15 +41,15 @@
 
 #define ROSC_PHASE_PASSWD_VALUE_PASS _u(0xAA)
 
-#define STAGE_DS(n)                                                                                \
+#define STAGE_DS(n)                                    \
 	(COND_CODE_1(                                                                              \
 		 DT_PROP_HAS_IDX(DT_INST_CLOCKS_CTLR_BY_NAME(0, rosc), stage_drive_strength, n),   \
 		 (DT_PROP_BY_IDX(DT_INST_CLOCKS_CTLR_BY_NAME(0, rosc), stage_drive_strength, n) &  \
 		  ROSC_FREQA_DS0_BITS),                                                            \
 		 (0)) << (n * 3))
 
-#define CLK_SRC_IS(clk, src)                                                                       \
-	DT_SAME_NODE(DT_CLOCKS_CTLR_BY_IDX(DT_INST_CLOCKS_CTLR_BY_NAME(0, clk), 0),                \
+#define CLK_SRC_IS(clk, src)                                                        \
+	DT_SAME_NODE(DT_CLOCKS_CTLR_BY_IDX(DT_INST_CLOCKS_CTLR_BY_NAME(0, clk), 0), \
 		     DT_INST_CLOCKS_CTLR_BY_NAME(0, src))
 
 #define REF_DIV(pll)   DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, pll), clock_div)
@@ -115,8 +115,8 @@
 #define AUXSTEM_clk_rtc    CLOCKS_CLK_RTC_CTRL_AUXSRC_VALUE_
 #define AUXSTEM_clk_peri   CLOCKS_CLK_PERI_CTRL_AUXSRC_VALUE_
 
-#define TUPLE_ENTRY(n, p, i)                                                                       \
-	{_CONCAT(RPI_PICO_CLKID_, DT_INST_STRING_UPPER_TOKEN_BY_IDX(0, clock_names, i)),           \
+#define TUPLE_ENTRY(n, p, i)                                                             \
+	{_CONCAT(RPI_PICO_CLKID_, DT_INST_STRING_UPPER_TOKEN_BY_IDX(0, clock_names, i)), \
 	 COND_CODE_1(                                                               \
 				DT_PROP_HAS_IDX(DT_CLOCKS_CTLR_BY_IDX(DT_NODELABEL(clocks), i),    \
 						clocks, 0),                                        \

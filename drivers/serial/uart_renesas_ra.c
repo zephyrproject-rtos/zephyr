@@ -667,64 +667,64 @@ static const struct uart_driver_api uart_ra_driver_api = {
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-#define RA_IRQ_CONNECT_DYNAMIC(n, name, dev, isr)                                                  \
-	ra_icu_irq_connect_dynamic(DT_IRQ_BY_NAME(DT_INST_PARENT(n), name, irq),                   \
-				   DT_IRQ_BY_NAME(DT_INST_PARENT(n), name, priority), isr, dev,    \
+#define RA_IRQ_CONNECT_DYNAMIC(n, name, dev, isr)                                               \
+	ra_icu_irq_connect_dynamic(DT_IRQ_BY_NAME(DT_INST_PARENT(n), name, irq),                \
+				   DT_IRQ_BY_NAME(DT_INST_PARENT(n), name, priority), isr, dev, \
 				   DT_IRQ_BY_NAME(DT_INST_PARENT(n), name, flags));
 
-#define RA_IRQ_DISCONNECT_DYNAMIC(n, name, dev, isr)                                               \
+#define RA_IRQ_DISCONNECT_DYNAMIC(n, name, dev, isr)          \
 	ra_icu_irq_disconnect_dynamic(irqn, 0, NULL, NULL, 0)
 
-#define UART_RA_CONFIG_FUNC(n)                                                                     \
-	static int irq_config_func_##n(const struct device *dev)                                   \
-	{                                                                                          \
-		struct uart_ra_data *data = dev->data;                                             \
-		int irqn;                                                                          \
-                                                                                                   \
-		irqn = RA_IRQ_CONNECT_DYNAMIC(n, rxi, dev, uart_ra_isr_rxi);                       \
-		if (irqn < 0) {                                                                    \
-			return irqn;                                                               \
-		}                                                                                  \
-		data->irqn[UART_RA_INT_RXI] = irqn;                                                \
-		irqn = RA_IRQ_CONNECT_DYNAMIC(n, txi, dev, uart_ra_isr_txi);                       \
-		if (irqn < 0) {                                                                    \
-			goto err_txi;                                                              \
-		}                                                                                  \
-		data->irqn[UART_RA_INT_TXI] = irqn;                                                \
-		irqn = RA_IRQ_CONNECT_DYNAMIC(n, eri, dev, uart_ra_isr_eri);                       \
-		if (irqn < 0) {                                                                    \
-			goto err_eri;                                                              \
-		}                                                                                  \
-		data->irqn[UART_RA_INT_ERI] = irqn;                                                \
-		return 0;                                                                          \
-                                                                                                   \
-err_eri:                                                                                           \
-		RA_IRQ_DISCONNECT_DYNAMIC(data->irq[UART_RA_INT_TXI], eri, dev, uart_ra_isr_eri);  \
-err_txi:                                                                                           \
-		RA_IRQ_DISCONNECT_DYNAMIC(data->irq[UART_RA_INT_RXI], txi, dev, uart_ra_isr_txi);  \
-                                                                                                   \
-		return irqn;                                                                       \
+#define UART_RA_CONFIG_FUNC(n)                                                                    \
+	static int irq_config_func_##n(const struct device *dev)                                  \
+	{                                                                                         \
+		struct uart_ra_data *data = dev->data;                                            \
+		int irqn;                                                                         \
+                                                                                                  \
+		irqn = RA_IRQ_CONNECT_DYNAMIC(n, rxi, dev, uart_ra_isr_rxi);                      \
+		if (irqn < 0) {                                                                   \
+			return irqn;                                                              \
+		}                                                                                 \
+		data->irqn[UART_RA_INT_RXI] = irqn;                                               \
+		irqn = RA_IRQ_CONNECT_DYNAMIC(n, txi, dev, uart_ra_isr_txi);                      \
+		if (irqn < 0) {                                                                   \
+			goto err_txi;                                                             \
+		}                                                                                 \
+		data->irqn[UART_RA_INT_TXI] = irqn;                                               \
+		irqn = RA_IRQ_CONNECT_DYNAMIC(n, eri, dev, uart_ra_isr_eri);                      \
+		if (irqn < 0) {                                                                   \
+			goto err_eri;                                                             \
+		}                                                                                 \
+		data->irqn[UART_RA_INT_ERI] = irqn;                                               \
+		return 0;                                                                         \
+                                                                                                  \
+err_eri:                                                                                          \
+		RA_IRQ_DISCONNECT_DYNAMIC(data->irq[UART_RA_INT_TXI], eri, dev, uart_ra_isr_eri); \
+err_txi:                                                                                          \
+		RA_IRQ_DISCONNECT_DYNAMIC(data->irq[UART_RA_INT_RXI], txi, dev, uart_ra_isr_txi); \
+                                                                                                  \
+		return irqn;                                                                      \
 	}
 #else
 #define UART_RA_CONFIG_FUNC(n)
 #endif
 
-#define UART_RA_INIT(n)                                                                            \
-	UART_RA_CONFIG_FUNC(n)                                                                     \
-	UART_RA_INIT_CFG(n);                                                                       \
-                                                                                                   \
-	static struct uart_ra_data uart_ra_data_##n = {                                            \
-		.current_config =                                                                  \
-			{                                                                          \
-				.baudrate = DT_INST_PROP(n, current_speed),                        \
-				.parity = UART_CFG_PARITY_NONE,                                    \
-				.stop_bits = UART_CFG_STOP_BITS_1,                                 \
-				.data_bits = UART_CFG_DATA_BITS_8,                                 \
-				.flow_ctrl = UART_CFG_FLOW_CTRL_NONE,                              \
-			},                                                                         \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, uart_ra_init, NULL, &uart_ra_data_##n, &uart_ra_cfg_##n,          \
+#define UART_RA_INIT(n)                                                                        \
+	UART_RA_CONFIG_FUNC(n)                                                                 \
+	UART_RA_INIT_CFG(n);                                                                   \
+                                                                                               \
+	static struct uart_ra_data uart_ra_data_##n = {                                        \
+		.current_config =                                                              \
+			{                                                                      \
+				.baudrate = DT_INST_PROP(n, current_speed),                    \
+				.parity = UART_CFG_PARITY_NONE,                                \
+				.stop_bits = UART_CFG_STOP_BITS_1,                             \
+				.data_bits = UART_CFG_DATA_BITS_8,                             \
+				.flow_ctrl = UART_CFG_FLOW_CTRL_NONE,                          \
+			},                                                                     \
+	};                                                                                     \
+                                                                                               \
+	DEVICE_DT_INST_DEFINE(n, uart_ra_init, NULL, &uart_ra_data_##n, &uart_ra_cfg_##n,      \
 			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, &uart_ra_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_RA_INIT)

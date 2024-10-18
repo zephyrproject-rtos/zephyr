@@ -235,32 +235,32 @@ static const struct adc_driver_api vf610_adc_driver_api = {
 #endif
 };
 
-#define VF610_ADC_INIT(n)                                                                          \
-	static void vf610_adc_config_func_##n(const struct device *dev);                           \
-                                                                                                   \
-	static const struct vf610_adc_config vf610_adc_config_##n = {                              \
-		.base = (ADC_Type *)DT_INST_REG_ADDR(n),                                           \
-		.clock_source = DT_INST_PROP(n, clk_source),                                       \
-		.divide_ratio = DT_INST_PROP(n, clk_divider),                                      \
-		.irq_config_func = vf610_adc_config_func_##n,                                      \
-	};                                                                                         \
-                                                                                                   \
-	static struct vf610_adc_data vf610_adc_data_##n = {                                        \
-		ADC_CONTEXT_INIT_TIMER(vf610_adc_data_##n, ctx),                                   \
-		ADC_CONTEXT_INIT_LOCK(vf610_adc_data_##n, ctx),                                    \
-		ADC_CONTEXT_INIT_SYNC(vf610_adc_data_##n, ctx),                                    \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &vf610_adc_init, NULL, &vf610_adc_data_##n,                       \
-			      &vf610_adc_config_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,        \
-			      &vf610_adc_driver_api);                                              \
-                                                                                                   \
-	static void vf610_adc_config_func_##n(const struct device *dev)                            \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), vf610_adc_isr,              \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define VF610_ADC_INIT(n)                                                                   \
+	static void vf610_adc_config_func_##n(const struct device *dev);                    \
+                                                                                            \
+	static const struct vf610_adc_config vf610_adc_config_##n = {                       \
+		.base = (ADC_Type *)DT_INST_REG_ADDR(n),                                    \
+		.clock_source = DT_INST_PROP(n, clk_source),                                \
+		.divide_ratio = DT_INST_PROP(n, clk_divider),                               \
+		.irq_config_func = vf610_adc_config_func_##n,                               \
+	};                                                                                  \
+                                                                                            \
+	static struct vf610_adc_data vf610_adc_data_##n = {                                 \
+		ADC_CONTEXT_INIT_TIMER(vf610_adc_data_##n, ctx),                            \
+		ADC_CONTEXT_INIT_LOCK(vf610_adc_data_##n, ctx),                             \
+		ADC_CONTEXT_INIT_SYNC(vf610_adc_data_##n, ctx),                             \
+	};                                                                                  \
+                                                                                            \
+	DEVICE_DT_INST_DEFINE(n, &vf610_adc_init, NULL, &vf610_adc_data_##n,                \
+			      &vf610_adc_config_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, \
+			      &vf610_adc_driver_api);                                       \
+                                                                                            \
+	static void vf610_adc_config_func_##n(const struct device *dev)                     \
+	{                                                                                   \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), vf610_adc_isr,       \
+			    DEVICE_DT_INST_GET(n), 0);                                      \
+                                                                                            \
+		irq_enable(DT_INST_IRQN(n));                                                \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(VF610_ADC_INIT)

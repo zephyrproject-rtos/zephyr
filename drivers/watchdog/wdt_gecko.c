@@ -272,26 +272,26 @@ static const struct wdt_driver_api wdt_gecko_driver_api = {
 	.feed = wdt_gecko_feed,
 };
 
-#define GECKO_WDT_INIT(index)                                                                      \
-                                                                                                   \
-	static void wdt_gecko_cfg_func_##index(void);                                              \
-                                                                                                   \
-	static const struct wdt_gecko_cfg wdt_gecko_cfg_##index = {                                \
-		.base = (WDOG_TypeDef *)DT_INST_REG_ADDR(index),                                   \
-		.clock = CLOCK_ID(DT_INST_PROP(index, peripheral_id)),                             \
-		.irq_cfg_func = wdt_gecko_cfg_func_##index,                                        \
-	};                                                                                         \
-	static struct wdt_gecko_data wdt_gecko_data_##index;                                       \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(index, &wdt_gecko_init, NULL, &wdt_gecko_data_##index,               \
-			      &wdt_gecko_cfg_##index, POST_KERNEL,                                 \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &wdt_gecko_driver_api);         \
-                                                                                                   \
-	static void wdt_gecko_cfg_func_##index(void)                                               \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(index), DT_INST_IRQ(index, priority), wdt_gecko_isr,      \
-			    DEVICE_DT_INST_GET(index), 0);                                         \
-		irq_enable(DT_INST_IRQN(index));                                                   \
+#define GECKO_WDT_INIT(index)                                                                 \
+                                                                                              \
+	static void wdt_gecko_cfg_func_##index(void);                                         \
+                                                                                              \
+	static const struct wdt_gecko_cfg wdt_gecko_cfg_##index = {                           \
+		.base = (WDOG_TypeDef *)DT_INST_REG_ADDR(index),                              \
+		.clock = CLOCK_ID(DT_INST_PROP(index, peripheral_id)),                        \
+		.irq_cfg_func = wdt_gecko_cfg_func_##index,                                   \
+	};                                                                                    \
+	static struct wdt_gecko_data wdt_gecko_data_##index;                                  \
+                                                                                              \
+	DEVICE_DT_INST_DEFINE(index, &wdt_gecko_init, NULL, &wdt_gecko_data_##index,          \
+			      &wdt_gecko_cfg_##index, POST_KERNEL,                            \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &wdt_gecko_driver_api);    \
+                                                                                              \
+	static void wdt_gecko_cfg_func_##index(void)                                          \
+	{                                                                                     \
+		IRQ_CONNECT(DT_INST_IRQN(index), DT_INST_IRQ(index, priority), wdt_gecko_isr, \
+			    DEVICE_DT_INST_GET(index), 0);                                    \
+		irq_enable(DT_INST_IRQN(index));                                              \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(GECKO_WDT_INIT)

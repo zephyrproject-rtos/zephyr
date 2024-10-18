@@ -10,11 +10,11 @@
 /* For those APIs that just take one argument which is a counter driver
  * instance and return an integral value
  */
-#define COUNTER_HANDLER(name)                                                                      \
-	static inline int z_vrfy_counter_##name(const struct device *dev)                          \
-	{                                                                                          \
-		K_OOPS(K_SYSCALL_DRIVER_COUNTER(dev, name));                                       \
-		return z_impl_counter_##name((const struct device *)dev);                          \
+#define COUNTER_HANDLER(name)                                             \
+	static inline int z_vrfy_counter_##name(const struct device *dev) \
+	{                                                                 \
+		K_OOPS(K_SYSCALL_DRIVER_COUNTER(dev, name));              \
+		return z_impl_counter_##name((const struct device *)dev); \
 	}
 
 COUNTER_HANDLER(get_pending_int)

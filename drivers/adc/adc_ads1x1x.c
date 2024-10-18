@@ -21,9 +21,9 @@
 
 LOG_MODULE_REGISTER(ADS1X1X, CONFIG_ADC_LOG_LEVEL);
 
-#if DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ti_ads1115, alert_rdy_gpios) ||                             \
-	DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ti_ads1114, alert_rdy_gpios) ||                         \
-	DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ti_ads1015, alert_rdy_gpios) ||                         \
+#if DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ti_ads1115, alert_rdy_gpios) ||     \
+	DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ti_ads1114, alert_rdy_gpios) || \
+	DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ti_ads1015, alert_rdy_gpios) || \
 	DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ti_ads1014, alert_rdy_gpios)
 
 #define ADC_ADS1X1X_TRIGGER
@@ -790,25 +790,25 @@ static const struct adc_driver_api ads1x1x_api = {
 
 #define ADS1X1X_RDY_PROPS(n) .alert_rdy = GPIO_DT_SPEC_INST_GET_OR(n, alert_rdy_gpios, {0}),
 
-#define ADS1X1X_RDY(t, n)                                                                          \
+#define ADS1X1X_RDY(t, n) \
 	IF_ENABLED(DT_NODE_HAS_PROP(DT_INST_ADS1X1X(n, t), alert_rdy_gpios),                       \
 		   (ADS1X1X_RDY_PROPS(n)))
 
-#define ADS1X1X_INIT(t, n, odr_delay_us, res, mux, pgab)                                           \
-	static const struct ads1x1x_config ads##t##_config_##n = {                                 \
-		.bus = I2C_DT_SPEC_GET(DT_INST_ADS1X1X(n, t)),                                     \
-		.odr_delay = odr_delay_us,                                                         \
-		.resolution = res,                                                                 \
-		.multiplexer = mux,                                                                \
-		.pga = pgab,                                                                       \
-		IF_ENABLED(ADC_ADS1X1X_TRIGGER, (ADS1X1X_RDY(t, n))) };                              \
-	static struct ads1x1x_data ads##t##_data_##n = {                                           \
-		ADC_CONTEXT_INIT_LOCK(ads##t##_data_##n, ctx),                                     \
-		ADC_CONTEXT_INIT_TIMER(ads##t##_data_##n, ctx),                                    \
-		ADC_CONTEXT_INIT_SYNC(ads##t##_data_##n, ctx),                                     \
-	};                                                                                         \
-	DEVICE_DT_DEFINE(DT_INST_ADS1X1X(n, t), ads1x1x_init, NULL, &ads##t##_data_##n,            \
-			 &ads##t##_config_##n, POST_KERNEL, CONFIG_ADC_ADS1X1X_INIT_PRIORITY,      \
+#define ADS1X1X_INIT(t, n, odr_delay_us, res, mux, pgab)                                      \
+	static const struct ads1x1x_config ads##t##_config_##n = {                            \
+		.bus = I2C_DT_SPEC_GET(DT_INST_ADS1X1X(n, t)),                                \
+		.odr_delay = odr_delay_us,                                                    \
+		.resolution = res,                                                            \
+		.multiplexer = mux,                                                           \
+		.pga = pgab,                                                                  \
+		IF_ENABLED(ADC_ADS1X1X_TRIGGER, (ADS1X1X_RDY(t, n))) };                         \
+	static struct ads1x1x_data ads##t##_data_##n = {                                      \
+		ADC_CONTEXT_INIT_LOCK(ads##t##_data_##n, ctx),                                \
+		ADC_CONTEXT_INIT_TIMER(ads##t##_data_##n, ctx),                               \
+		ADC_CONTEXT_INIT_SYNC(ads##t##_data_##n, ctx),                                \
+	};                                                                                    \
+	DEVICE_DT_DEFINE(DT_INST_ADS1X1X(n, t), ads1x1x_init, NULL, &ads##t##_data_##n,       \
+			 &ads##t##_config_##n, POST_KERNEL, CONFIG_ADC_ADS1X1X_INIT_PRIORITY, \
 			 &ads1x1x_api);
 
 /* The ADS111X provides 16 bits of data in binary two's complement format
@@ -845,7 +845,7 @@ DT_INST_FOREACH_STATUS_OKAY(ADS1114_INIT)
 /*
  * ADS1113: 16 bit, no multiplexer, no programmable gain amplifier
  */
-#define ADS1113_INIT(n)                                                                            \
+#define ADS1113_INIT(n)                                                               \
 	ADS1X1X_INIT(1113, n, ADS111X_ODR_DELAY_US, ADS111X_RESOLUTION, false, false)
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ti_ads1113
@@ -885,7 +885,7 @@ DT_INST_FOREACH_STATUS_OKAY(ADS1014_INIT)
 /*
  * ADS1013: 12 bit, no multiplexer, no programmable gain amplifier
  */
-#define ADS1013_INIT(n)                                                                            \
+#define ADS1013_INIT(n)                                                               \
 	ADS1X1X_INIT(1013, n, ADS101X_ODR_DELAY_US, ADS101X_RESOLUTION, false, false)
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ti_ads1013

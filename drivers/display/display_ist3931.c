@@ -263,27 +263,27 @@ static const struct display_driver_api ist3931_api = {
 	.blanking_off = ist3931_blanking_off,
 };
 
-#define IST3931_INIT(inst)                                                                         \
-	static const struct ist3931_config ist3931_config_##inst = {                               \
-		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.reset_gpio = GPIO_DT_SPEC_INST_GET(inst, reset_gpios),                            \
-		.vc = DT_INST_PROP(inst, voltage_converter),                                       \
-		.vf = DT_INST_PROP(inst, voltage_follower),                                        \
-		.bias = DT_INST_PROP(inst, lcd_bias),                                              \
-		.ct = DT_INST_PROP(inst, lcd_ct),                                                  \
-		.duty = DT_INST_PROP(inst, duty_ratio),                                            \
-		.fr = DT_INST_PROP(inst, frame_control),                                           \
-		.shl = DT_INST_PROP(inst, reverse_com_output),                                     \
-		.adc = DT_INST_PROP(inst, reverse_seg_driver),                                     \
-		.eon = DT_INST_PROP(inst, e_force_on),                                             \
-		.rev = DT_INST_PROP(inst, reverse_ram_lcd),                                        \
-		.width = DT_INST_PROP(inst, width),                                                \
-		.height = DT_INST_PROP(inst, height),                                              \
-		.x_offset = DT_INST_PROP(inst, x_offset),                                          \
-		.y_offset = DT_INST_PROP(inst, y_offset),                                          \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, &ist3931_init, NULL, NULL, &ist3931_config_##inst,             \
+#define IST3931_INIT(inst)                                                              \
+	static const struct ist3931_config ist3931_config_##inst = {                    \
+		.bus = I2C_DT_SPEC_INST_GET(inst),                                      \
+		.reset_gpio = GPIO_DT_SPEC_INST_GET(inst, reset_gpios),                 \
+		.vc = DT_INST_PROP(inst, voltage_converter),                            \
+		.vf = DT_INST_PROP(inst, voltage_follower),                             \
+		.bias = DT_INST_PROP(inst, lcd_bias),                                   \
+		.ct = DT_INST_PROP(inst, lcd_ct),                                       \
+		.duty = DT_INST_PROP(inst, duty_ratio),                                 \
+		.fr = DT_INST_PROP(inst, frame_control),                                \
+		.shl = DT_INST_PROP(inst, reverse_com_output),                          \
+		.adc = DT_INST_PROP(inst, reverse_seg_driver),                          \
+		.eon = DT_INST_PROP(inst, e_force_on),                                  \
+		.rev = DT_INST_PROP(inst, reverse_ram_lcd),                             \
+		.width = DT_INST_PROP(inst, width),                                     \
+		.height = DT_INST_PROP(inst, height),                                   \
+		.x_offset = DT_INST_PROP(inst, x_offset),                               \
+		.y_offset = DT_INST_PROP(inst, y_offset),                               \
+	};                                                                              \
+                                                                                        \
+	DEVICE_DT_INST_DEFINE(inst, &ist3931_init, NULL, NULL, &ist3931_config_##inst,  \
 			      POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY, &ist3931_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IST3931_INIT)

@@ -269,13 +269,13 @@ static const struct w1_driver_api w1_serial_driver_api = {
 	.configure = w1_serial_configure,
 };
 
-#define W1_ZEPHYR_SERIAL_INIT(inst)                                                                \
-	static const struct w1_serial_config w1_serial_cfg_##inst = {                              \
-		.uart_dev = DEVICE_DT_GET(DT_INST_BUS(inst)),                                      \
-		.master_config.slave_count = W1_INST_SLAVE_COUNT(inst)};                           \
-	static struct w1_serial_data w1_serial_data_##inst = {};                                   \
-	DEVICE_DT_INST_DEFINE(inst, &w1_serial_init, NULL, &w1_serial_data_##inst,                 \
-			      &w1_serial_cfg_##inst, POST_KERNEL, CONFIG_W1_INIT_PRIORITY,         \
+#define W1_ZEPHYR_SERIAL_INIT(inst)                                                        \
+	static const struct w1_serial_config w1_serial_cfg_##inst = {                      \
+		.uart_dev = DEVICE_DT_GET(DT_INST_BUS(inst)),                              \
+		.master_config.slave_count = W1_INST_SLAVE_COUNT(inst)};                   \
+	static struct w1_serial_data w1_serial_data_##inst = {};                           \
+	DEVICE_DT_INST_DEFINE(inst, &w1_serial_init, NULL, &w1_serial_data_##inst,         \
+			      &w1_serial_cfg_##inst, POST_KERNEL, CONFIG_W1_INIT_PRIORITY, \
 			      &w1_serial_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(W1_ZEPHYR_SERIAL_INIT)

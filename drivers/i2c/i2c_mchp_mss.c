@@ -358,28 +358,28 @@ static void mss_i2c_irq_handler(const struct device *dev)
 	sys_write8((ctrl & ~CTRL_SI), cfg->i2c_base_addr + CORE_I2C_CTRL);
 }
 
-#define MSS_I2C_INIT(n)                                                                            \
-	static int mss_i2c_init_##n(const struct device *dev)                                      \
-	{                                                                                          \
-		mss_i2c_reset(dev);                                                                \
-                                                                                                   \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mss_i2c_irq_handler,        \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-                                                                                                   \
-		return 0;                                                                          \
-	}                                                                                          \
-                                                                                                   \
-	static struct mss_i2c_data mss_i2c_data_##n;                                               \
-                                                                                                   \
-	static const struct mss_i2c_config mss_i2c_config_##n = {                                  \
-		.i2c_base_addr = DT_INST_REG_ADDR(n),                                              \
-		.i2c_irq_base = DT_INST_IRQN(n),                                                   \
-		.clock_freq = DT_INST_PROP(n, clock_frequency),                                    \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, mss_i2c_init_##n, NULL, &mss_i2c_data_##n, &mss_i2c_config_##n,   \
+#define MSS_I2C_INIT(n)                                                                          \
+	static int mss_i2c_init_##n(const struct device *dev)                                    \
+	{                                                                                        \
+		mss_i2c_reset(dev);                                                              \
+                                                                                                 \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mss_i2c_irq_handler,      \
+			    DEVICE_DT_INST_GET(n), 0);                                           \
+                                                                                                 \
+		irq_enable(DT_INST_IRQN(n));                                                     \
+                                                                                                 \
+		return 0;                                                                        \
+	}                                                                                        \
+                                                                                                 \
+	static struct mss_i2c_data mss_i2c_data_##n;                                             \
+                                                                                                 \
+	static const struct mss_i2c_config mss_i2c_config_##n = {                                \
+		.i2c_base_addr = DT_INST_REG_ADDR(n),                                            \
+		.i2c_irq_base = DT_INST_IRQN(n),                                                 \
+		.clock_freq = DT_INST_PROP(n, clock_frequency),                                  \
+	};                                                                                       \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(n, mss_i2c_init_##n, NULL, &mss_i2c_data_##n, &mss_i2c_config_##n, \
 			      PRE_KERNEL_1, CONFIG_I2C_INIT_PRIORITY, &mss_i2c_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MSS_I2C_INIT)

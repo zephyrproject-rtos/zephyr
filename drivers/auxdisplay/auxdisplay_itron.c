@@ -416,25 +416,25 @@ static const struct auxdisplay_driver_api auxdisplay_itron_auxdisplay_api = {
 	.write = auxdisplay_itron_write,
 };
 
-#define AUXDISPLAY_ITRON_DEVICE(inst)                                                              \
-	static struct auxdisplay_itron_data auxdisplay_itron_data_##inst;                          \
-	static const struct auxdisplay_itron_config auxdisplay_itron_config_##inst = {             \
-		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
-		.capabilities =                                                                    \
-			{                                                                          \
-				.columns = DT_INST_PROP(inst, columns),                            \
-				.rows = DT_INST_PROP(inst, rows),                                  \
-				.mode = AUXDISPLAY_ITRON_MODE_UART,                                \
-				.brightness.minimum = AUXDISPLAY_ITRON_BRIGHTNESS_MIN,             \
-				.brightness.maximum = AUXDISPLAY_ITRON_BRIGHTNESS_MAX,             \
-				.backlight.minimum = AUXDISPLAY_LIGHT_NOT_SUPPORTED,               \
-				.backlight.maximum = AUXDISPLAY_LIGHT_NOT_SUPPORTED,               \
-			},                                                                         \
-		.busy_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, busy_gpios, {0}),                      \
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),                    \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &auxdisplay_itron_init, NULL, &auxdisplay_itron_data_##inst,   \
-			      &auxdisplay_itron_config_##inst, POST_KERNEL,                        \
+#define AUXDISPLAY_ITRON_DEVICE(inst)                                                             \
+	static struct auxdisplay_itron_data auxdisplay_itron_data_##inst;                         \
+	static const struct auxdisplay_itron_config auxdisplay_itron_config_##inst = {            \
+		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                         \
+		.capabilities =                                                                   \
+			{                                                                         \
+				.columns = DT_INST_PROP(inst, columns),                           \
+				.rows = DT_INST_PROP(inst, rows),                                 \
+				.mode = AUXDISPLAY_ITRON_MODE_UART,                               \
+				.brightness.minimum = AUXDISPLAY_ITRON_BRIGHTNESS_MIN,            \
+				.brightness.maximum = AUXDISPLAY_ITRON_BRIGHTNESS_MAX,            \
+				.backlight.minimum = AUXDISPLAY_LIGHT_NOT_SUPPORTED,              \
+				.backlight.maximum = AUXDISPLAY_LIGHT_NOT_SUPPORTED,              \
+			},                                                                        \
+		.busy_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, busy_gpios, {0}),                     \
+		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),                   \
+	};                                                                                        \
+	DEVICE_DT_INST_DEFINE(inst, &auxdisplay_itron_init, NULL, &auxdisplay_itron_data_##inst,  \
+			      &auxdisplay_itron_config_##inst, POST_KERNEL,                       \
 			      CONFIG_AUXDISPLAY_INIT_PRIORITY, &auxdisplay_itron_auxdisplay_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AUXDISPLAY_ITRON_DEVICE)

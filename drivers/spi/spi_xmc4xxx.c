@@ -601,23 +601,23 @@ static const struct spi_driver_api spi_xmc4xxx_driver_api = {
 };
 
 #if defined(CONFIG_SPI_XMC4XXX_DMA)
-#define SPI_DMA_CHANNEL_INIT(index, dir, ch_dir, src_burst, dst_burst)                             \
-	.dev_dma = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(index, dir)),                           \
-	.dma_channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),                             \
-	.dma_cfg = {                                                                               \
-		.dma_slot = DT_INST_DMAS_CELL_BY_NAME(index, dir, config),                         \
-		.channel_direction = ch_dir,                                                       \
-		.channel_priority = DT_INST_DMAS_CELL_BY_NAME(index, dir, priority),               \
-		.source_data_size = 1,                                                             \
-		.dest_data_size = 1,                                                               \
-		.source_burst_length = src_burst,                                                  \
-		.dest_burst_length = dst_burst,                                                    \
-		.block_count = 1,                                                                  \
-		.dma_callback = spi_xmc4xxx_dma_callback,                                          \
-		.complete_callback_en = true,                                                      \
+#define SPI_DMA_CHANNEL_INIT(index, dir, ch_dir, src_burst, dst_burst)               \
+	.dev_dma = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(index, dir)),             \
+	.dma_channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),               \
+	.dma_cfg = {                                                                 \
+		.dma_slot = DT_INST_DMAS_CELL_BY_NAME(index, dir, config),           \
+		.channel_direction = ch_dir,                                         \
+		.channel_priority = DT_INST_DMAS_CELL_BY_NAME(index, dir, priority), \
+		.source_data_size = 1,                                               \
+		.dest_data_size = 1,                                                 \
+		.source_burst_length = src_burst,                                    \
+		.dest_burst_length = dst_burst,                                      \
+		.block_count = 1,                                                    \
+		.dma_callback = spi_xmc4xxx_dma_callback,                            \
+		.complete_callback_en = true,                                        \
 	},
 
-#define SPI_DMA_CHANNEL(index, dir, ch_dir, src_burst, dst_burst)                                  \
+#define SPI_DMA_CHANNEL(index, dir, ch_dir, src_burst, dst_burst)                                 \
 	.dma_##dir = {COND_CODE_1(                                                                 \
 		DT_INST_DMAS_HAS_NAME(index, dir),                                                 \
 		(SPI_DMA_CHANNEL_INIT(index, dir, ch_dir, src_burst, dst_burst)), (NULL))},
@@ -661,31 +661,31 @@ static const struct spi_driver_api spi_xmc4xxx_driver_api = {
 #endif
 
 #if defined(CONFIG_SPI_XMC4XXX_DMA)
-#define XMC4XXX_IRQ_DMA_STRUCT_INIT(index)                                                         \
-	.irq_num_rx = DT_INST_IRQ_BY_NAME(index, rx, irq),                                         \
+#define XMC4XXX_IRQ_DMA_STRUCT_INIT(index)                 \
+	.irq_num_rx = DT_INST_IRQ_BY_NAME(index, rx, irq), \
 	.irq_num_tx = DT_INST_IRQ_BY_NAME(index, tx, irq),
 #else
 #define XMC4XXX_IRQ_DMA_STRUCT_INIT(index)
 #endif
 
-#define XMC4XXX_INIT(index)                                                                        \
-	PINCTRL_DT_INST_DEFINE(index);                                                             \
-	XMC4XXX_IRQ_HANDLER_INIT(index)                                                            \
-	static struct spi_xmc4xxx_data xmc4xxx_data_##index = {                                    \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(index), ctx)                           \
-			SPI_CONTEXT_INIT_LOCK(xmc4xxx_data_##index, ctx),                          \
-		SPI_CONTEXT_INIT_SYNC(xmc4xxx_data_##index, ctx),                                  \
-		SPI_DMA_CHANNEL(index, tx, MEMORY_TO_PERIPHERAL, 8, 1)                             \
-			SPI_DMA_CHANNEL(index, rx, PERIPHERAL_TO_MEMORY, 1, 8)};                   \
-                                                                                                   \
-	static const struct spi_xmc4xxx_config xmc4xxx_config_##index = {                          \
-		.spi = (XMC_USIC_CH_t *)DT_INST_REG_ADDR(index),                                   \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
-		.miso_src = DT_INST_ENUM_IDX(index, miso_src),                                     \
-		XMC4XXX_IRQ_HANDLER_STRUCT_INIT(index) XMC4XXX_IRQ_DMA_STRUCT_INIT(index)};        \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(index, spi_xmc4xxx_init, NULL, &xmc4xxx_data_##index,                \
-			      &xmc4xxx_config_##index, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,      \
+#define XMC4XXX_INIT(index)                                                                   \
+	PINCTRL_DT_INST_DEFINE(index);                                                        \
+	XMC4XXX_IRQ_HANDLER_INIT(index)                                                       \
+	static struct spi_xmc4xxx_data xmc4xxx_data_##index = {                               \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(index), ctx)                      \
+			SPI_CONTEXT_INIT_LOCK(xmc4xxx_data_##index, ctx),                     \
+		SPI_CONTEXT_INIT_SYNC(xmc4xxx_data_##index, ctx),                             \
+		SPI_DMA_CHANNEL(index, tx, MEMORY_TO_PERIPHERAL, 8, 1)                        \
+			SPI_DMA_CHANNEL(index, rx, PERIPHERAL_TO_MEMORY, 1, 8)};              \
+                                                                                              \
+	static const struct spi_xmc4xxx_config xmc4xxx_config_##index = {                     \
+		.spi = (XMC_USIC_CH_t *)DT_INST_REG_ADDR(index),                              \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                \
+		.miso_src = DT_INST_ENUM_IDX(index, miso_src),                                \
+		XMC4XXX_IRQ_HANDLER_STRUCT_INIT(index) XMC4XXX_IRQ_DMA_STRUCT_INIT(index)};   \
+                                                                                              \
+	DEVICE_DT_INST_DEFINE(index, spi_xmc4xxx_init, NULL, &xmc4xxx_data_##index,           \
+			      &xmc4xxx_config_##index, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, \
 			      &spi_xmc4xxx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(XMC4XXX_INIT)

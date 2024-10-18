@@ -422,9 +422,9 @@ static void lpc11u6x_uart0_isr_config(const struct device *dev)
 
 #endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart0)) */
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart1)) ||                                                \
-	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart2)) ||                                            \
-	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart3)) ||                                            \
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart1)) ||     \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart2)) || \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart3)) || \
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart4))
 
 static int lpc11u6x_uartx_poll_in(const struct device *dev, unsigned char *c)
@@ -773,14 +773,14 @@ static int lpc11u6x_uartx_init(const struct device *dev)
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart1)) || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart4))
 	lpc11u6x_uartx_isr_config_1(dev);
-#endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart1)) ||                                          \
-	* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart4))                                             \
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart1)) || \
+	* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart4))    \
 	*/
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart2)) || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart3))
 	lpc11u6x_uartx_isr_config_2(dev);
-#endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart2)) ||                                          \
-	* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart3))                                             \
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart2)) || \
+	* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart3))    \
 	*/
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 	return 0;
@@ -812,22 +812,22 @@ static const struct uart_driver_api uartx_api = {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-#define LPC11U6X_UARTX_INIT(idx)                                                                   \
-	PINCTRL_DT_DEFINE(DT_NODELABEL(uart##idx));                                                \
-                                                                                                   \
-	static const struct lpc11u6x_uartx_config uart_cfg_##idx = {                               \
-		.base = (struct lpc11u6x_uartx_regs *)DT_REG_ADDR(DT_NODELABEL(uart##idx)),        \
-		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_NODELABEL(uart##idx))),               \
-		.clkid = DT_PHA_BY_IDX(DT_NODELABEL(uart##idx), clocks, 0, clkid),                 \
-		.pincfg = PINCTRL_DT_DEV_CONFIG_GET(DT_NODELABEL(uart##idx)),                      \
-		.baudrate = DT_PROP(DT_NODELABEL(uart##idx), current_speed),                       \
-		.rx_invert = DT_PROP(DT_NODELABEL(uart##idx), rx_invert),                          \
-		.tx_invert = DT_PROP(DT_NODELABEL(uart##idx), tx_invert),                          \
-	};                                                                                         \
-                                                                                                   \
-	static struct lpc11u6x_uartx_data uart_data_##idx;                                         \
-                                                                                                   \
-	DEVICE_DT_DEFINE(DT_NODELABEL(uart##idx), &lpc11u6x_uartx_init, NULL, &uart_data_##idx,    \
+#define LPC11U6X_UARTX_INIT(idx)                                                                 \
+	PINCTRL_DT_DEFINE(DT_NODELABEL(uart##idx));                                              \
+                                                                                                 \
+	static const struct lpc11u6x_uartx_config uart_cfg_##idx = {                             \
+		.base = (struct lpc11u6x_uartx_regs *)DT_REG_ADDR(DT_NODELABEL(uart##idx)),      \
+		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_NODELABEL(uart##idx))),             \
+		.clkid = DT_PHA_BY_IDX(DT_NODELABEL(uart##idx), clocks, 0, clkid),               \
+		.pincfg = PINCTRL_DT_DEV_CONFIG_GET(DT_NODELABEL(uart##idx)),                    \
+		.baudrate = DT_PROP(DT_NODELABEL(uart##idx), current_speed),                     \
+		.rx_invert = DT_PROP(DT_NODELABEL(uart##idx), rx_invert),                        \
+		.tx_invert = DT_PROP(DT_NODELABEL(uart##idx), tx_invert),                        \
+	};                                                                                       \
+                                                                                                 \
+	static struct lpc11u6x_uartx_data uart_data_##idx;                                       \
+                                                                                                 \
+	DEVICE_DT_DEFINE(DT_NODELABEL(uart##idx), &lpc11u6x_uartx_init, NULL, &uart_data_##idx,  \
 			 &uart_cfg_##idx, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, &uartx_api)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart1))
@@ -846,7 +846,7 @@ LPC11U6X_UARTX_INIT(3);
 LPC11U6X_UARTX_INIT(4);
 #endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart4)) */
 
-#if CONFIG_UART_INTERRUPT_DRIVEN && (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart1)) ||               \
+#if CONFIG_UART_INTERRUPT_DRIVEN && (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart1)) || \
 				     DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart4)))
 
 struct lpc11u6x_uartx_shared_irq lpc11u6x_uartx_shared_irq_info_1 = {
@@ -877,12 +877,12 @@ static void lpc11u6x_uartx_isr_config_1(const struct device *dev)
 	irq_enable(DT_IRQN(DT_NODELABEL(uart4)));
 #endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart1)) */
 }
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN &&                                                          \
-	* (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart1)) ||                                         \
-	* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart4)))                                            \
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN &&                  \
+	* (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart1)) || \
+	* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart4)))    \
 	*/
 
-#if CONFIG_UART_INTERRUPT_DRIVEN && (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart2)) ||               \
+#if CONFIG_UART_INTERRUPT_DRIVEN && (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart2)) || \
 				     DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart3)))
 struct lpc11u6x_uartx_shared_irq lpc11u6x_uartx_shared_irq_info_2 = {
 	.devices =
@@ -912,12 +912,12 @@ static void lpc11u6x_uartx_isr_config_2(const struct device *dev)
 	irq_enable(DT_IRQN(DT_NODELABEL(uart3)));
 #endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart2)) */
 }
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN &&                                                          \
-	* (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart2)) ||                                         \
-	* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart3)))                                            \
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN &&                  \
+	* (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart2)) || \
+	* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart3)))    \
 	*/
-#endif /* DT_NODE_EXISTS(DT_NODELABEL(uart1) ||                                                    \
-	* DT_NODE_EXISTS(DT_NODELABEL(uart2) ||                                                    \
-	* DT_NODE_EXISTS(DT_NODELABEL(uart3) ||                                                    \
-	* DT_NODE_EXISTS(DT_NODELABEL(uart4)                                                       \
+#endif /* DT_NODE_EXISTS(DT_NODELABEL(uart1) || \
+	* DT_NODE_EXISTS(DT_NODELABEL(uart2) || \
+	* DT_NODE_EXISTS(DT_NODELABEL(uart3) || \
+	* DT_NODE_EXISTS(DT_NODELABEL(uart4)    \
 	*/

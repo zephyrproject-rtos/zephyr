@@ -239,7 +239,7 @@ static int mcux_12b1msps_sar_adc_init(const struct device *dev)
 
 	ADC_Init(base, &adc_config);
 
-#if !(defined(FSL_FEATURE_ADC_SUPPORT_HARDWARE_TRIGGER_REMOVE) &&                                  \
+#if !(defined(FSL_FEATURE_ADC_SUPPORT_HARDWARE_TRIGGER_REMOVE) && \
       FSL_FEATURE_ADC_SUPPORT_HARDWARE_TRIGGER_REMOVE)
 	ADC_EnableHardwareTrigger(base, false);
 #endif
@@ -268,45 +268,45 @@ static const struct adc_driver_api mcux_12b1msps_sar_adc_driver_api = {
 };
 
 #define ASSERT_WITHIN_RANGE(val, min, max, str) BUILD_ASSERT(val >= min && val <= max, str)
-#define ASSERT_RT_ADC_CLK_DIV_VALID(val, str)                                                      \
+#define ASSERT_RT_ADC_CLK_DIV_VALID(val, str)                           \
 	BUILD_ASSERT(val == 1 || val == 2 || val == 4 || val == 8, str)
 #define TO_RT_ADC_CLOCK_DIV(val) _DO_CONCAT(kADC_ClockDriver, val)
 
-#define ACD_MCUX_12B1MSPS_SAR_INIT(n)                                                              \
-	static void mcux_12b1msps_sar_adc_config_func_##n(const struct device *dev);               \
-                                                                                                   \
-	ASSERT_RT_ADC_CLK_DIV_VALID(DT_INST_PROP(n, clk_divider), "Invalid clock divider");        \
-	ASSERT_WITHIN_RANGE(DT_INST_PROP(n, sample_period_mode), 0, 3,                             \
-			    "Invalid sample period mode");                                         \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-                                                                                                   \
-	static const struct mcux_12b1msps_sar_adc_config mcux_12b1msps_sar_adc_config_##n = {      \
-		.base = (ADC_Type *)DT_INST_REG_ADDR(n),                                           \
-		.clock_src = kADC_ClockSourceAD,                                                   \
-		.clock_drv = TO_RT_ADC_CLOCK_DIV(DT_INST_PROP(n, clk_divider)),                    \
-		.ref_src = kADC_ReferenceVoltageSourceAlt0,                                        \
-		.sample_period_mode = DT_INST_PROP(n, sample_period_mode),                         \
-		.irq_config_func = mcux_12b1msps_sar_adc_config_func_##n,                          \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
-	};                                                                                         \
-                                                                                                   \
-	static struct mcux_12b1msps_sar_adc_data mcux_12b1msps_sar_adc_data_##n = {                \
-		ADC_CONTEXT_INIT_TIMER(mcux_12b1msps_sar_adc_data_##n, ctx),                       \
-		ADC_CONTEXT_INIT_LOCK(mcux_12b1msps_sar_adc_data_##n, ctx),                        \
-		ADC_CONTEXT_INIT_SYNC(mcux_12b1msps_sar_adc_data_##n, ctx),                        \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &mcux_12b1msps_sar_adc_init, NULL,                                \
-			      &mcux_12b1msps_sar_adc_data_##n, &mcux_12b1msps_sar_adc_config_##n,  \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                     \
-			      &mcux_12b1msps_sar_adc_driver_api);                                  \
-                                                                                                   \
-	static void mcux_12b1msps_sar_adc_config_func_##n(const struct device *dev)                \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_12b1msps_sar_adc_isr,  \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define ACD_MCUX_12B1MSPS_SAR_INIT(n)                                                             \
+	static void mcux_12b1msps_sar_adc_config_func_##n(const struct device *dev);              \
+                                                                                                  \
+	ASSERT_RT_ADC_CLK_DIV_VALID(DT_INST_PROP(n, clk_divider), "Invalid clock divider");       \
+	ASSERT_WITHIN_RANGE(DT_INST_PROP(n, sample_period_mode), 0, 3,                            \
+			    "Invalid sample period mode");                                        \
+	PINCTRL_DT_INST_DEFINE(n);                                                                \
+                                                                                                  \
+	static const struct mcux_12b1msps_sar_adc_config mcux_12b1msps_sar_adc_config_##n = {     \
+		.base = (ADC_Type *)DT_INST_REG_ADDR(n),                                          \
+		.clock_src = kADC_ClockSourceAD,                                                  \
+		.clock_drv = TO_RT_ADC_CLOCK_DIV(DT_INST_PROP(n, clk_divider)),                   \
+		.ref_src = kADC_ReferenceVoltageSourceAlt0,                                       \
+		.sample_period_mode = DT_INST_PROP(n, sample_period_mode),                        \
+		.irq_config_func = mcux_12b1msps_sar_adc_config_func_##n,                         \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                      \
+	};                                                                                        \
+                                                                                                  \
+	static struct mcux_12b1msps_sar_adc_data mcux_12b1msps_sar_adc_data_##n = {               \
+		ADC_CONTEXT_INIT_TIMER(mcux_12b1msps_sar_adc_data_##n, ctx),                      \
+		ADC_CONTEXT_INIT_LOCK(mcux_12b1msps_sar_adc_data_##n, ctx),                       \
+		ADC_CONTEXT_INIT_SYNC(mcux_12b1msps_sar_adc_data_##n, ctx),                       \
+	};                                                                                        \
+                                                                                                  \
+	DEVICE_DT_INST_DEFINE(n, &mcux_12b1msps_sar_adc_init, NULL,                               \
+			      &mcux_12b1msps_sar_adc_data_##n, &mcux_12b1msps_sar_adc_config_##n, \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                    \
+			      &mcux_12b1msps_sar_adc_driver_api);                                 \
+                                                                                                  \
+	static void mcux_12b1msps_sar_adc_config_func_##n(const struct device *dev)               \
+	{                                                                                         \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_12b1msps_sar_adc_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                                            \
+                                                                                                  \
+		irq_enable(DT_INST_IRQN(n));                                                      \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(ACD_MCUX_12B1MSPS_SAR_INIT)

@@ -23,17 +23,17 @@
 
 #define PORT_PIN_MASK 0xFFFF
 
-#define REG_MFP(port, pin)                                                                         \
-	(*(volatile uint32_t *)((uint32_t)DT_INST_REG_ADDR_BY_NAME(0, mfp) + ((port) * 8) +        \
+#define REG_MFP(port, pin)                                                                  \
+	(*(volatile uint32_t *)((uint32_t)DT_INST_REG_ADDR_BY_NAME(0, mfp) + ((port) * 8) + \
 				((pin) > 7 ? 4 : 0)))
 
-#define REG_MFOS(port)                                                                             \
+#define REG_MFOS(port)                                                                       \
 	(*(volatile uint32_t *)((uint32_t)DT_INST_REG_ADDR_BY_NAME(0, mfos) + ((port) * 4)))
 
 #define MFP_CTL(pin, mfp) ((mfp) << (((pin) % 8) * 4))
 
 /** Utility macro that expands to the GPIO port address if it exists */
-#define NUMICRO_PORT_ADDR_OR_NONE(nodelabel)                                                       \
+#define NUMICRO_PORT_ADDR_OR_NONE(nodelabel)                  \
 	IF_ENABLED(DT_NODE_EXISTS(DT_NODELABEL(nodelabel)),	\
 		   (DT_REG_ADDR(DT_NODELABEL(nodelabel)),))
 

@@ -80,8 +80,8 @@ LOG_MODULE_REGISTER(am1805, CONFIG_RTC_LOG_LEVEL);
 #define REG_OSC_STATUS_MASK   BIT(1)
 #define REG_STATUS_DEFAULT    0x00
 
-#define AM1805_RTC_ALARM_TIME_MASK                                                                 \
-	(RTC_ALARM_TIME_MASK_SECOND | RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR |      \
+#define AM1805_RTC_ALARM_TIME_MASK                                                               \
+	(RTC_ALARM_TIME_MASK_SECOND | RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR |    \
 	 RTC_ALARM_TIME_MASK_MONTHDAY | RTC_ALARM_TIME_MASK_MONTH | RTC_ALARM_TIME_MASK_WEEKDAY)
 
 #ifdef CONFIG_RTC_ALARM
@@ -582,16 +582,16 @@ static const struct rtc_driver_api am1805_driver_api = {
 #endif
 };
 
-#define AM1805_INIT(inst)                                                                          \
-	static const struct am1805_config am1805_config_##inst = {                                 \
-		.int_i2c = I2C_DT_SPEC_INST_GET(inst),                                             \
+#define AM1805_INIT(inst)                                                                   \
+	static const struct am1805_config am1805_config_##inst = {                          \
+		.int_i2c = I2C_DT_SPEC_INST_GET(inst),                                      \
 		IF_ENABLED(CONFIG_RTC_ALARM,								\
-		(.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, am1805_gpios, {0})))};           \
-                                                                                                   \
-	static struct am1805_data am1805_data_##inst;                                              \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, &am1805_init, NULL, &am1805_data_##inst,                       \
-			      &am1805_config_##inst, POST_KERNEL, CONFIG_RTC_INIT_PRIORITY,        \
+		(.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, am1805_gpios, {0})))};    \
+                                                                                            \
+	static struct am1805_data am1805_data_##inst;                                       \
+                                                                                            \
+	DEVICE_DT_INST_DEFINE(inst, &am1805_init, NULL, &am1805_data_##inst,                \
+			      &am1805_config_##inst, POST_KERNEL, CONFIG_RTC_INIT_PRIORITY, \
 			      &am1805_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AM1805_INIT)

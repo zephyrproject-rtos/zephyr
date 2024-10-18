@@ -400,7 +400,7 @@ struct adc_driver_api adc_xec_api = {
 };
 
 /* ADC Config Register */
-#define XEC_ADC_CFG_CLK_VAL(clk_time)                                                              \
+#define XEC_ADC_CFG_CLK_VAL(clk_time)                                                             \
 	((clk_time << MCHP_ADC_CFG_CLK_LO_TIME_POS) | (clk_time << MCHP_ADC_CFG_CLK_HI_TIME_POS))
 
 static int adc_xec_init(const struct device *dev)

@@ -123,17 +123,17 @@ static const struct mdio_driver_api mdio_esp32_driver_api = {
 	.write = mdio_esp32_write,
 };
 
-#define MDIO_ESP32_CONFIG(n)                                                                       \
-	static const struct mdio_esp32_dev_config mdio_esp32_dev_config_##n = {                    \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+#define MDIO_ESP32_CONFIG(n)                                                    \
+	static const struct mdio_esp32_dev_config mdio_esp32_dev_config_##n = { \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                      \
 	};
 
-#define MDIO_ESP32_DEVICE(n)                                                                       \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	MDIO_ESP32_CONFIG(n);                                                                      \
-	static struct mdio_esp32_dev_data mdio_esp32_dev_data##n;                                  \
-	DEVICE_DT_INST_DEFINE(n, &mdio_esp32_initialize, NULL, &mdio_esp32_dev_data##n,            \
-			      &mdio_esp32_dev_config_##n, POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY,  \
+#define MDIO_ESP32_DEVICE(n)                                                                      \
+	PINCTRL_DT_INST_DEFINE(n);                                                                \
+	MDIO_ESP32_CONFIG(n);                                                                     \
+	static struct mdio_esp32_dev_data mdio_esp32_dev_data##n;                                 \
+	DEVICE_DT_INST_DEFINE(n, &mdio_esp32_initialize, NULL, &mdio_esp32_dev_data##n,           \
+			      &mdio_esp32_dev_config_##n, POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY, \
 			      &mdio_esp32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MDIO_ESP32_DEVICE)

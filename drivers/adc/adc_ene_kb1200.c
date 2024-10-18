@@ -238,19 +238,19 @@ static int adc_kb1200_init(const struct device *dev)
 	return 0;
 }
 
-#define ADC_KB1200_DEVICE(inst)                                                                    \
-	PINCTRL_DT_INST_DEFINE(inst);                                                              \
-	static struct adc_kb1200_data adc_kb1200_data_##inst = {                                   \
-		ADC_CONTEXT_INIT_TIMER(adc_kb1200_data_##inst, ctx),                               \
-		ADC_CONTEXT_INIT_LOCK(adc_kb1200_data_##inst, ctx),                                \
-		ADC_CONTEXT_INIT_SYNC(adc_kb1200_data_##inst, ctx),                                \
-	};                                                                                         \
-	static const struct adc_kb1200_config adc_kb1200_config_##inst = {                         \
-		.adc = (struct adc_regs *)DT_INST_REG_ADDR(inst),                                  \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &adc_kb1200_init, NULL, &adc_kb1200_data_##inst,               \
-			      &adc_kb1200_config_##inst, PRE_KERNEL_1,                             \
+#define ADC_KB1200_DEVICE(inst)                                                      \
+	PINCTRL_DT_INST_DEFINE(inst);                                                \
+	static struct adc_kb1200_data adc_kb1200_data_##inst = {                     \
+		ADC_CONTEXT_INIT_TIMER(adc_kb1200_data_##inst, ctx),                 \
+		ADC_CONTEXT_INIT_LOCK(adc_kb1200_data_##inst, ctx),                  \
+		ADC_CONTEXT_INIT_SYNC(adc_kb1200_data_##inst, ctx),                  \
+	};                                                                           \
+	static const struct adc_kb1200_config adc_kb1200_config_##inst = {           \
+		.adc = (struct adc_regs *)DT_INST_REG_ADDR(inst),                    \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                        \
+	};                                                                           \
+	DEVICE_DT_INST_DEFINE(inst, &adc_kb1200_init, NULL, &adc_kb1200_data_##inst, \
+			      &adc_kb1200_config_##inst, PRE_KERNEL_1,               \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &adc_kb1200_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_KB1200_DEVICE)

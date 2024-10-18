@@ -176,15 +176,15 @@ static int pms7003_init(const struct device *dev)
 	return 0;
 }
 
-#define PMS7003_DEFINE(inst)                                                                       \
-	static struct pms7003_data pms7003_data_##inst;                                            \
-                                                                                                   \
-	static const struct pms7003_config pms7003_config_##inst = {                               \
-		.uart_dev = DEVICE_DT_GET(DT_INST_BUS(inst)),                                      \
-	};                                                                                         \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &pms7003_init, NULL, &pms7003_data_##inst,              \
-				     &pms7003_config_##inst, POST_KERNEL,                          \
+#define PMS7003_DEFINE(inst)                                                          \
+	static struct pms7003_data pms7003_data_##inst;                               \
+                                                                                      \
+	static const struct pms7003_config pms7003_config_##inst = {                  \
+		.uart_dev = DEVICE_DT_GET(DT_INST_BUS(inst)),                         \
+	};                                                                            \
+                                                                                      \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, &pms7003_init, NULL, &pms7003_data_##inst, \
+				     &pms7003_config_##inst, POST_KERNEL,             \
 				     CONFIG_SENSOR_INIT_PRIORITY, &pms7003_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PMS7003_DEFINE)

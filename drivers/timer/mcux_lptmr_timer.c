@@ -52,8 +52,8 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 #define LPTMR_IRQ_PRIORITY     DT_INST_IRQ(0, priority)
 
 /* Timer cycles per tick */
-#define CYCLES_PER_TICK                                                                            \
-	((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec() /                                      \
+#define CYCLES_PER_TICK                                        \
+	((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec() /  \
 		    (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
 
 /* 32 bit cycle counter */

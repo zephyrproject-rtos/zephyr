@@ -694,38 +694,38 @@ static const struct display_driver_api uc81xx_driver_api = {
 
 #define UC81XX_MAKE_ARRAY(n, p) static uint8_t data_##n##_##p[] = DT_PROP(n, p)
 
-#define UC81XX_ASSIGN_ARRAY(n, p)                                                                  \
-	{                                                                                          \
-		.data = data_##n##_##p,                                                            \
-		.len = sizeof(data_##n##_##p),                                                     \
+#define UC81XX_ASSIGN_ARRAY(n, p)              \
+	{                                      \
+		.data = data_##n##_##p,        \
+		.len = sizeof(data_##n##_##p), \
 	}
 
-#define UC81XX_PROFILE(n)                                                                          \
-	UC81XX_MAKE_ARRAY_OPT(n, pwr);                                                             \
-	UC81XX_MAKE_ARRAY_OPT(n, lutc);                                                            \
-	UC81XX_MAKE_ARRAY_OPT(n, lutww);                                                           \
-	UC81XX_MAKE_ARRAY_OPT(n, lutkw);                                                           \
-	UC81XX_MAKE_ARRAY_OPT(n, lutwk);                                                           \
-	UC81XX_MAKE_ARRAY_OPT(n, lutkk);                                                           \
-	UC81XX_MAKE_ARRAY_OPT(n, lutbd);                                                           \
-                                                                                                   \
-	static const struct uc81xx_profile uc81xx_profile_##n = {                                  \
-		.pwr = UC81XX_ASSIGN_ARRAY(n, pwr),                                                \
-		.cdi = DT_PROP_OR(n, cdi, 0),                                                      \
-		.override_cdi = DT_NODE_HAS_PROP(n, cdi),                                          \
-		.tcon = DT_PROP_OR(n, tcon, 0),                                                    \
-		.override_tcon = DT_NODE_HAS_PROP(n, tcon),                                        \
-		.pll = DT_PROP_OR(n, pll, 0),                                                      \
-		.override_pll = DT_NODE_HAS_PROP(n, pll),                                          \
-		.vdcs = DT_PROP_OR(n, vdcs, 0),                                                    \
-		.override_vdcs = DT_NODE_HAS_PROP(n, vdcs),                                        \
-                                                                                                   \
-		.lutc = UC81XX_ASSIGN_ARRAY(n, lutc),                                              \
-		.lutww = UC81XX_ASSIGN_ARRAY(n, lutww),                                            \
-		.lutkw = UC81XX_ASSIGN_ARRAY(n, lutkw),                                            \
-		.lutwk = UC81XX_ASSIGN_ARRAY(n, lutwk),                                            \
-		.lutkk = UC81XX_ASSIGN_ARRAY(n, lutkk),                                            \
-		.lutbd = UC81XX_ASSIGN_ARRAY(n, lutbd),                                            \
+#define UC81XX_PROFILE(n)                                         \
+	UC81XX_MAKE_ARRAY_OPT(n, pwr);                            \
+	UC81XX_MAKE_ARRAY_OPT(n, lutc);                           \
+	UC81XX_MAKE_ARRAY_OPT(n, lutww);                          \
+	UC81XX_MAKE_ARRAY_OPT(n, lutkw);                          \
+	UC81XX_MAKE_ARRAY_OPT(n, lutwk);                          \
+	UC81XX_MAKE_ARRAY_OPT(n, lutkk);                          \
+	UC81XX_MAKE_ARRAY_OPT(n, lutbd);                          \
+                                                                  \
+	static const struct uc81xx_profile uc81xx_profile_##n = { \
+		.pwr = UC81XX_ASSIGN_ARRAY(n, pwr),               \
+		.cdi = DT_PROP_OR(n, cdi, 0),                     \
+		.override_cdi = DT_NODE_HAS_PROP(n, cdi),         \
+		.tcon = DT_PROP_OR(n, tcon, 0),                   \
+		.override_tcon = DT_NODE_HAS_PROP(n, tcon),       \
+		.pll = DT_PROP_OR(n, pll, 0),                     \
+		.override_pll = DT_NODE_HAS_PROP(n, pll),         \
+		.vdcs = DT_PROP_OR(n, vdcs, 0),                   \
+		.override_vdcs = DT_NODE_HAS_PROP(n, vdcs),       \
+                                                                  \
+		.lutc = UC81XX_ASSIGN_ARRAY(n, lutc),             \
+		.lutww = UC81XX_ASSIGN_ARRAY(n, lutww),           \
+		.lutkw = UC81XX_ASSIGN_ARRAY(n, lutkw),           \
+		.lutwk = UC81XX_ASSIGN_ARRAY(n, lutwk),           \
+		.lutkk = UC81XX_ASSIGN_ARRAY(n, lutkk),           \
+		.lutbd = UC81XX_ASSIGN_ARRAY(n, lutbd),           \
 	};
 
 #define _UC81XX_PROFILE_PTR(n) &uc81xx_profile_##n

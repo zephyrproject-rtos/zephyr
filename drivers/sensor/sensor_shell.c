@@ -20,29 +20,29 @@
 
 LOG_MODULE_REGISTER(sensor_shell, CONFIG_SENSOR_LOG_LEVEL);
 
-#define SENSOR_GET_HELP                                                                            \
-	"Get sensor data. Channel names are optional. All channels are read "                      \
-	"when no channels are provided. Syntax:\n"                                                 \
+#define SENSOR_GET_HELP                                                       \
+	"Get sensor data. Channel names are optional. All channels are read " \
+	"when no channels are provided. Syntax:\n"                            \
 	"<device_name> <channel name 0> .. <channel name N>"
 
-#define SENSOR_STREAM_HELP                                                                         \
-	"Start/stop streaming sensor data. Data ready trigger will be used if no triggers "        \
-	"are provided. Syntax:\n"                                                                  \
+#define SENSOR_STREAM_HELP                                                                  \
+	"Start/stop streaming sensor data. Data ready trigger will be used if no triggers " \
+	"are provided. Syntax:\n"                                                           \
 	"<device_name> on|off <trigger name> incl|drop|nop"
 
-#define SENSOR_ATTR_GET_HELP                                                                       \
-	"Get the sensor's channel attribute. Syntax:\n"                                            \
-	"<device_name> [<channel_name 0> <attribute_name 0> .. "                                   \
+#define SENSOR_ATTR_GET_HELP                                     \
+	"Get the sensor's channel attribute. Syntax:\n"          \
+	"<device_name> [<channel_name 0> <attribute_name 0> .. " \
 	"<channel_name N> <attribute_name N>]"
 
-#define SENSOR_ATTR_SET_HELP                                                                       \
-	"Set the sensor's channel attribute.\n"                                                    \
+#define SENSOR_ATTR_SET_HELP                                    \
+	"Set the sensor's channel attribute.\n"                 \
 	"<device_name> <channel_name> <attribute_name> <value>"
 
 #define SENSOR_INFO_HELP "Get sensor info, such as vendor and model name, for all sensors."
 
-#define SENSOR_TRIG_HELP                                                                           \
-	"Get or set the trigger type on a sensor. Currently only supports `data_ready`.\n"         \
+#define SENSOR_TRIG_HELP                                                                   \
+	"Get or set the trigger type on a sensor. Currently only supports `data_ready`.\n" \
 	"<device_name> <on/off> <trigger_name>"
 
 static const char *sensor_channel_name[SENSOR_CHAN_COMMON_COUNT] = {
@@ -173,9 +173,9 @@ static int find_sensor_trigger_device(const struct device *sensor)
 static void data_ready_trigger_handler(const struct device *sensor,
 				       const struct sensor_trigger *trigger);
 
-#define TRIGGER_DATA_ENTRY(trig_enum, str_name, handler_func)                                      \
-	[(trig_enum)] = {.name = #str_name,                                                        \
-			 .handler = (handler_func),                                                \
+#define TRIGGER_DATA_ENTRY(trig_enum, str_name, handler_func)                       \
+	[(trig_enum)] = {.name = #str_name,                                         \
+			 .handler = (handler_func),                                 \
 			 .trigger = {.chan = SENSOR_CHAN_ALL, .type = (trig_enum)}}
 
 /**

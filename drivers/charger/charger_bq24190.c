@@ -475,19 +475,19 @@ static const struct charger_driver_api bq24190_driver_api = {
 	.set_property = bq24190_set_prop,
 };
 
-#define BQ24190_INIT(inst)                                                                         \
-                                                                                                   \
-	static const struct bq24190_config bq24190_config_##inst = {                               \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-	};                                                                                         \
-                                                                                                   \
-	static struct bq24190_data bq24190_data_##inst = {                                         \
-		.ichg_ua = DT_INST_PROP(inst, constant_charge_current_max_microamp),               \
-		.vreg_uv = DT_INST_PROP(inst, constant_charge_voltage_max_microvolt),              \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, bq24190_init, NULL, &bq24190_data_##inst,                      \
-			      &bq24190_config_##inst, POST_KERNEL, CONFIG_CHARGER_INIT_PRIORITY,   \
+#define BQ24190_INIT(inst)                                                                       \
+                                                                                                 \
+	static const struct bq24190_config bq24190_config_##inst = {                             \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                               \
+	};                                                                                       \
+                                                                                                 \
+	static struct bq24190_data bq24190_data_##inst = {                                       \
+		.ichg_ua = DT_INST_PROP(inst, constant_charge_current_max_microamp),             \
+		.vreg_uv = DT_INST_PROP(inst, constant_charge_voltage_max_microvolt),            \
+	};                                                                                       \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(inst, bq24190_init, NULL, &bq24190_data_##inst,                    \
+			      &bq24190_config_##inst, POST_KERNEL, CONFIG_CHARGER_INIT_PRIORITY, \
 			      &bq24190_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BQ24190_INIT)

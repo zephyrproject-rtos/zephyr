@@ -1061,15 +1061,15 @@ static const struct uart_driver_api mcux_flexcomm_driver_api = {
 };
 
 #ifdef CONFIG_UART_MCUX_FLEXCOMM_ISR_SUPPORT
-#define UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC(n)                                                         \
-	static void mcux_flexcomm_irq_config_func_##n(const struct device *dev)                    \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_flexcomm_isr,          \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC(n)                                                \
+	static void mcux_flexcomm_irq_config_func_##n(const struct device *dev)           \
+	{                                                                                 \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_flexcomm_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                                    \
+                                                                                          \
+		irq_enable(DT_INST_IRQN(n));                                              \
 	}
-#define UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC_INIT(n)                                                    \
+#define UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC_INIT(n)               \
 	.irq_config_func = mcux_flexcomm_irq_config_func_##n,
 #else
 #define UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC(n)
@@ -1077,89 +1077,89 @@ static const struct uart_driver_api mcux_flexcomm_driver_api = {
 #endif /* CONFIG_UART_MCUX_FLEXCOMM_ISR_SUPPORT */
 
 #ifdef CONFIG_UART_ASYNC_API
-#define UART_MCUX_FLEXCOMM_TX_TIMEOUT_FUNC(n)                                                      \
-	static void mcux_flexcomm_uart_##n##_tx_timeout(struct k_work *work)                       \
-	{                                                                                          \
-		mcux_flexcomm_uart_tx_abort(DEVICE_DT_INST_GET(n));                                \
+#define UART_MCUX_FLEXCOMM_TX_TIMEOUT_FUNC(n)                                \
+	static void mcux_flexcomm_uart_##n##_tx_timeout(struct k_work *work) \
+	{                                                                    \
+		mcux_flexcomm_uart_tx_abort(DEVICE_DT_INST_GET(n));          \
 	}
-#define UART_MCUX_FLEXCOMM_RX_TIMEOUT_FUNC(n)                                                      \
-	static void mcux_flexcomm_uart_##n##_rx_timeout(struct k_work *work)                       \
-	{                                                                                          \
-		flexcomm_uart_rx_update(DEVICE_DT_INST_GET(n));                                    \
+#define UART_MCUX_FLEXCOMM_RX_TIMEOUT_FUNC(n)                                \
+	static void mcux_flexcomm_uart_##n##_rx_timeout(struct k_work *work) \
+	{                                                                    \
+		flexcomm_uart_rx_update(DEVICE_DT_INST_GET(n));              \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_TX_TIMEOUT_FUNC);
 DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_RX_TIMEOUT_FUNC);
 
-#define UART_MCUX_FLEXCOMM_ASYNC_CFG(n)                                                            \
-	.tx_dma =                                                                                  \
-		{                                                                                  \
-			.dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, tx)),                    \
-			.channel = DT_INST_DMAS_CELL_BY_NAME(n, tx, channel),                      \
-			.cfg =                                                                     \
-				{                                                                  \
-					.source_burst_length = 1,                                  \
-					.dest_burst_length = 1,                                    \
-					.source_data_size = 1,                                     \
-					.dest_data_size = 1,                                       \
-					.complete_callback_en = 1,                                 \
-					.error_callback_dis = 1,                                   \
-					.block_count = 1,                                          \
-					.head_block =                                              \
-						&mcux_flexcomm_##n##_data.tx_data.active_block,    \
-					.channel_direction = MEMORY_TO_PERIPHERAL,                 \
-					.dma_callback = mcux_flexcomm_uart_dma_tx_callback,        \
-					.user_data = (void *)DEVICE_DT_INST_GET(n),                \
-				},                                                                 \
-			.base = (DMA_Type *)DT_REG_ADDR(DT_INST_DMAS_CTLR_BY_NAME(n, tx)),         \
-	},                                                                                         \
-	.rx_dma =                                                                                  \
-		{                                                                                  \
-			.dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, rx)),                    \
-			.channel = DT_INST_DMAS_CELL_BY_NAME(n, rx, channel),                      \
-			.cfg = {.source_burst_length = 1,                                          \
-				.dest_burst_length = 1,                                            \
-				.source_data_size = 1,                                             \
-				.dest_data_size = 1,                                               \
-				.complete_callback_en = 1,                                         \
-				.error_callback_dis = 1,                                           \
-				.block_count = 1,                                                  \
-				.head_block = &mcux_flexcomm_##n##_data.rx_data.active_block,      \
-				.channel_direction = PERIPHERAL_TO_MEMORY,                         \
-				.dma_callback = mcux_flexcomm_uart_dma_rx_callback,                \
-				.user_data = (void *)DEVICE_DT_INST_GET(n)},                       \
-			.base = (DMA_Type *)DT_REG_ADDR(DT_INST_DMAS_CTLR_BY_NAME(n, rx)),         \
-	},                                                                                         \
-	.rx_timeout_func = mcux_flexcomm_uart_##n##_rx_timeout,                                    \
+#define UART_MCUX_FLEXCOMM_ASYNC_CFG(n)                                                         \
+	.tx_dma =                                                                               \
+		{                                                                               \
+			.dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, tx)),                 \
+			.channel = DT_INST_DMAS_CELL_BY_NAME(n, tx, channel),                   \
+			.cfg =                                                                  \
+				{                                                               \
+					.source_burst_length = 1,                               \
+					.dest_burst_length = 1,                                 \
+					.source_data_size = 1,                                  \
+					.dest_data_size = 1,                                    \
+					.complete_callback_en = 1,                              \
+					.error_callback_dis = 1,                                \
+					.block_count = 1,                                       \
+					.head_block =                                           \
+						&mcux_flexcomm_##n##_data.tx_data.active_block, \
+					.channel_direction = MEMORY_TO_PERIPHERAL,              \
+					.dma_callback = mcux_flexcomm_uart_dma_tx_callback,     \
+					.user_data = (void *)DEVICE_DT_INST_GET(n),             \
+				},                                                              \
+			.base = (DMA_Type *)DT_REG_ADDR(DT_INST_DMAS_CTLR_BY_NAME(n, tx)),      \
+	},                                                                                      \
+	.rx_dma =                                                                               \
+		{                                                                               \
+			.dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, rx)),                 \
+			.channel = DT_INST_DMAS_CELL_BY_NAME(n, rx, channel),                   \
+			.cfg = {.source_burst_length = 1,                                       \
+				.dest_burst_length = 1,                                         \
+				.source_data_size = 1,                                          \
+				.dest_data_size = 1,                                            \
+				.complete_callback_en = 1,                                      \
+				.error_callback_dis = 1,                                        \
+				.block_count = 1,                                               \
+				.head_block = &mcux_flexcomm_##n##_data.rx_data.active_block,   \
+				.channel_direction = PERIPHERAL_TO_MEMORY,                      \
+				.dma_callback = mcux_flexcomm_uart_dma_rx_callback,             \
+				.user_data = (void *)DEVICE_DT_INST_GET(n)},                    \
+			.base = (DMA_Type *)DT_REG_ADDR(DT_INST_DMAS_CTLR_BY_NAME(n, rx)),      \
+	},                                                                                      \
+	.rx_timeout_func = mcux_flexcomm_uart_##n##_rx_timeout,                                 \
 	.tx_timeout_func = mcux_flexcomm_uart_##n##_tx_timeout,
 #else
 #define UART_MCUX_FLEXCOMM_ASYNC_CFG(n)
 #endif /* CONFIG_UART_ASYNC_API */
 
-#define UART_MCUX_FLEXCOMM_INIT_CFG(n)                                                             \
-	static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config = {                    \
-		.base = (USART_Type *)DT_INST_REG_ADDR(n),                                         \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
-		.baud_rate = DT_INST_PROP(n, current_speed),                                       \
-		.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),                    \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+#define UART_MCUX_FLEXCOMM_INIT_CFG(n)                                                    \
+	static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config = {           \
+		.base = (USART_Type *)DT_INST_REG_ADDR(n),                                \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                       \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),     \
+		.baud_rate = DT_INST_PROP(n, current_speed),                              \
+		.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),           \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                              \
 		UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC_INIT(n) UART_MCUX_FLEXCOMM_ASYNC_CFG(n)};
 
-#define UART_MCUX_FLEXCOMM_INIT(n)                                                                 \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-                                                                                                   \
-	static struct mcux_flexcomm_data mcux_flexcomm_##n##_data;                                 \
-                                                                                                   \
-	static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config;                       \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, mcux_flexcomm_init, NULL, &mcux_flexcomm_##n##_data,              \
-			      &mcux_flexcomm_##n##_config, PRE_KERNEL_1,                           \
-			      CONFIG_SERIAL_INIT_PRIORITY, &mcux_flexcomm_driver_api);             \
-                                                                                                   \
-	UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC(n)                                                         \
-                                                                                                   \
+#define UART_MCUX_FLEXCOMM_INIT(n)                                                     \
+                                                                                       \
+	PINCTRL_DT_INST_DEFINE(n);                                                     \
+                                                                                       \
+	static struct mcux_flexcomm_data mcux_flexcomm_##n##_data;                     \
+                                                                                       \
+	static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config;           \
+                                                                                       \
+	DEVICE_DT_INST_DEFINE(n, mcux_flexcomm_init, NULL, &mcux_flexcomm_##n##_data,  \
+			      &mcux_flexcomm_##n##_config, PRE_KERNEL_1,               \
+			      CONFIG_SERIAL_INIT_PRIORITY, &mcux_flexcomm_driver_api); \
+                                                                                       \
+	UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC(n)                                             \
+                                                                                       \
 	UART_MCUX_FLEXCOMM_INIT_CFG(n)
 
 DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_INIT)

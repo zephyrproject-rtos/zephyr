@@ -406,22 +406,22 @@ static int lm75_pm_action(const struct device *dev, enum pm_device_action action
 #define LM75_INT_GPIO_INIT(n)
 #endif /* ! LM75_TRIGGER_SUPPORT */
 
-#define LM75_INST(inst)                                                                            \
-	static struct lm75_data lm75_data_##inst;                                                  \
-	static const struct lm75_config lm75_config_##inst = {                                     \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.config_dt =                                                                       \
-			{                                                                          \
-				.shutdown = 0,                                                     \
-				.int_mode = DT_INST_NODE_HAS_PROP(inst, int_gpios),                \
-				.int_pol = DT_INST_PROP(inst, int_inverted),                       \
-				.fault_queue = 0,                                                  \
-				.reserved = 0,                                                     \
-			},                                                                         \
-		LM75_INT_GPIO_INIT(inst)};                                                         \
-	PM_DEVICE_DT_INST_DEFINE(inst, lm75_pm_action);                                            \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, lm75_init, PM_DEVICE_DT_INST_GET(inst),                 \
-				     &lm75_data_##inst, &lm75_config_##inst, POST_KERNEL,          \
+#define LM75_INST(inst)                                                                   \
+	static struct lm75_data lm75_data_##inst;                                         \
+	static const struct lm75_config lm75_config_##inst = {                            \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                        \
+		.config_dt =                                                              \
+			{                                                                 \
+				.shutdown = 0,                                            \
+				.int_mode = DT_INST_NODE_HAS_PROP(inst, int_gpios),       \
+				.int_pol = DT_INST_PROP(inst, int_inverted),              \
+				.fault_queue = 0,                                         \
+				.reserved = 0,                                            \
+			},                                                                \
+		LM75_INT_GPIO_INIT(inst)};                                                \
+	PM_DEVICE_DT_INST_DEFINE(inst, lm75_pm_action);                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, lm75_init, PM_DEVICE_DT_INST_GET(inst),        \
+				     &lm75_data_##inst, &lm75_config_##inst, POST_KERNEL, \
 				     CONFIG_SENSOR_INIT_PRIORITY, &lm75_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LM75_INST)

@@ -17,7 +17,7 @@
 #include <haly/nrfy_rtc.h>
 #include <zephyr/irq.h>
 
-#define RTC_PRETICK                                                                                \
+#define RTC_PRETICK                                                                         \
 	(IS_ENABLED(CONFIG_SOC_NRF53_RTC_PRETICK) && IS_ENABLED(CONFIG_SOC_NRF5340_CPUNET))
 
 #define EXT_CHAN_COUNT CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT

@@ -251,7 +251,7 @@ static int get_tim_clk(const struct stm32_pclken *pclken, uint32_t *tim_clk)
 		apb_psc = STM32_APB1_PRESCALER;
 #endif
 	}
-#if !defined(CONFIG_SOC_SERIES_STM32C0X) && !defined(CONFIG_SOC_SERIES_STM32F0X) &&                \
+#if !defined(CONFIG_SOC_SERIES_STM32C0X) && !defined(CONFIG_SOC_SERIES_STM32F0X) &&  \
 	!defined(CONFIG_SOC_SERIES_STM32G0X) && !defined(CONFIG_SOC_SERIES_STM32U0X)
 	else {
 #if defined(CONFIG_SOC_SERIES_STM32MP1X)
@@ -840,59 +840,59 @@ static int pwm_stm32_init(const struct device *dev)
 #define PWM(index) DT_INST_PARENT(index)
 
 #ifdef CONFIG_PWM_CAPTURE
-#define IRQ_CONNECT_AND_ENABLE_BY_NAME(index, name)                                                \
-	{                                                                                          \
-		IRQ_CONNECT(DT_IRQ_BY_NAME(PWM(index), name, irq),                                 \
-			    DT_IRQ_BY_NAME(PWM(index), name, priority), pwm_stm32_isr,             \
-			    DEVICE_DT_INST_GET(index), 0);                                         \
-		irq_enable(DT_IRQ_BY_NAME(PWM(index), name, irq));                                 \
+#define IRQ_CONNECT_AND_ENABLE_BY_NAME(index, name)                                    \
+	{                                                                              \
+		IRQ_CONNECT(DT_IRQ_BY_NAME(PWM(index), name, irq),                     \
+			    DT_IRQ_BY_NAME(PWM(index), name, priority), pwm_stm32_isr, \
+			    DEVICE_DT_INST_GET(index), 0);                             \
+		irq_enable(DT_IRQ_BY_NAME(PWM(index), name, irq));                     \
 	}
 
-#define IRQ_CONNECT_AND_ENABLE_DEFAULT(index)                                                      \
-	{                                                                                          \
-		IRQ_CONNECT(DT_IRQN(PWM(index)), DT_IRQ(PWM(index), priority), pwm_stm32_isr,      \
-			    DEVICE_DT_INST_GET(index), 0);                                         \
-		irq_enable(DT_IRQN(PWM(index)));                                                   \
+#define IRQ_CONNECT_AND_ENABLE_DEFAULT(index)                                                 \
+	{                                                                                     \
+		IRQ_CONNECT(DT_IRQN(PWM(index)), DT_IRQ(PWM(index), priority), pwm_stm32_isr, \
+			    DEVICE_DT_INST_GET(index), 0);                                    \
+		irq_enable(DT_IRQN(PWM(index)));                                              \
 	}
 
-#define IRQ_CONFIG_FUNC(index)                                                                     \
-	static void pwm_stm32_irq_config_func_##index(const struct device *dev)                    \
-	{                                                                                          \
+#define IRQ_CONFIG_FUNC(index)                                                         \
+	static void pwm_stm32_irq_config_func_##index(const struct device *dev)        \
+	{                                                                              \
 		COND_CODE_1(DT_IRQ_HAS_NAME(PWM(index), cc),				\
 		(IRQ_CONNECT_AND_ENABLE_BY_NAME(index, cc)),			\
 		(IRQ_CONNECT_AND_ENABLE_DEFAULT(index))				\
-	);             \
+	); \
 	}
-#define CAPTURE_INIT(index)                                                                        \
-	.irq_config_func = pwm_stm32_irq_config_func_##index,                                      \
+#define CAPTURE_INIT(index)                                                               \
+	.irq_config_func = pwm_stm32_irq_config_func_##index,                             \
 	.four_channel_capture_support = DT_INST_PROP(index, four_channel_capture_support)
 #else
 #define IRQ_CONFIG_FUNC(index)
 #define CAPTURE_INIT(index)
 #endif /* CONFIG_PWM_CAPTURE */
 
-#define DT_INST_CLK(index, inst)                                                                   \
+#define DT_INST_CLK(index, inst)                                                          \
 	{.bus = DT_CLOCKS_CELL(PWM(index), bus), .enr = DT_CLOCKS_CELL(PWM(index), bits)}
 
-#define PWM_DEVICE_INIT(index)                                                                     \
-	static struct pwm_stm32_data pwm_stm32_data_##index = {                                    \
-		.reset = RESET_DT_SPEC_GET(PWM(index)),                                            \
-	};                                                                                         \
-                                                                                                   \
-	IRQ_CONFIG_FUNC(index)                                                                     \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(index);                                                             \
-                                                                                                   \
-	static const struct pwm_stm32_config pwm_stm32_config_##index = {                          \
-		.timer = (TIM_TypeDef *)DT_REG_ADDR(PWM(index)),                                   \
-		.prescaler = DT_PROP(PWM(index), st_prescaler),                                    \
-		.countermode = DT_PROP(PWM(index), st_countermode),                                \
-		.pclken = DT_INST_CLK(index, timer),                                               \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
-		CAPTURE_INIT(index)};                                                              \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(index, &pwm_stm32_init, NULL, &pwm_stm32_data_##index,               \
-			      &pwm_stm32_config_##index, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,    \
+#define PWM_DEVICE_INIT(index)                                                                  \
+	static struct pwm_stm32_data pwm_stm32_data_##index = {                                 \
+		.reset = RESET_DT_SPEC_GET(PWM(index)),                                         \
+	};                                                                                      \
+                                                                                                \
+	IRQ_CONFIG_FUNC(index)                                                                  \
+                                                                                                \
+	PINCTRL_DT_INST_DEFINE(index);                                                          \
+                                                                                                \
+	static const struct pwm_stm32_config pwm_stm32_config_##index = {                       \
+		.timer = (TIM_TypeDef *)DT_REG_ADDR(PWM(index)),                                \
+		.prescaler = DT_PROP(PWM(index), st_prescaler),                                 \
+		.countermode = DT_PROP(PWM(index), st_countermode),                             \
+		.pclken = DT_INST_CLK(index, timer),                                            \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                  \
+		CAPTURE_INIT(index)};                                                           \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(index, &pwm_stm32_init, NULL, &pwm_stm32_data_##index,            \
+			      &pwm_stm32_config_##index, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, \
 			      &pwm_stm32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_DEVICE_INIT)

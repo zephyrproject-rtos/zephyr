@@ -119,11 +119,11 @@ static int rt1718s_init(const struct device *dev)
 	return 0;
 }
 
-#define CHECK_PORT_DEVICE(node_id)                                                                 \
+#define CHECK_PORT_DEVICE(node_id) \
 	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(richtek_rt1718s_gpio_port), DEVICE_DT_GET(node_id),  \
 		    ())
 
-#define IRQ_GPIO(inst)                                                                             \
+#define IRQ_GPIO(inst) \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),                                        \
 		    (.irq_gpio = GPIO_DT_SPEC_INST_GET(inst, irq_gpios)), ())
 

@@ -139,15 +139,15 @@ static const struct can_driver_api fake_can_driver_api = {
 #define FAKE_CAN_MAX_BITRATE 1000000
 #endif /* !CONFIG_CAN_FD_MODE */
 
-#define FAKE_CAN_INIT(inst)                                                                        \
-	static const struct fake_can_config fake_can_config_##inst = {                             \
-		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0, FAKE_CAN_MAX_BITRATE),            \
-	};                                                                                         \
-                                                                                                   \
-	static struct fake_can_data fake_can_data_##inst;                                          \
-                                                                                                   \
-	CAN_DEVICE_DT_INST_DEFINE(inst, fake_can_init, NULL, &fake_can_data_##inst,                \
-				  &fake_can_config_##inst, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,  \
+#define FAKE_CAN_INIT(inst)                                                                       \
+	static const struct fake_can_config fake_can_config_##inst = {                            \
+		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0, FAKE_CAN_MAX_BITRATE),           \
+	};                                                                                        \
+                                                                                                  \
+	static struct fake_can_data fake_can_data_##inst;                                         \
+                                                                                                  \
+	CAN_DEVICE_DT_INST_DEFINE(inst, fake_can_init, NULL, &fake_can_data_##inst,               \
+				  &fake_can_config_##inst, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY, \
 				  &fake_can_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(FAKE_CAN_INIT)

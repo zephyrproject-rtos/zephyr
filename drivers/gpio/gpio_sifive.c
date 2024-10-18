@@ -354,8 +354,8 @@ static struct gpio_sifive_data gpio_sifive_data0;
 DEVICE_DT_INST_DEFINE(0, gpio_sifive_init, NULL, &gpio_sifive_data0, &gpio_sifive_config0,
 		      PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, &gpio_sifive_driver);
 
-#define IRQ_INIT(n)                                                                                \
-	IRQ_CONNECT(DT_INST_IRQN_BY_IDX(0, n), DT_INST_IRQ_BY_IDX(0, n, priority),                 \
+#define IRQ_INIT(n)                                                                \
+	IRQ_CONNECT(DT_INST_IRQN_BY_IDX(0, n), DT_INST_IRQ_BY_IDX(0, n, priority), \
 		    gpio_sifive_irq_handler, DEVICE_DT_INST_GET(0), 0);
 
 static void gpio_sifive_cfg_0(void)

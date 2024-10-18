@@ -96,15 +96,15 @@ static const struct reset_driver_api reset_intel_soc_driver_api = {
 	.line_toggle = reset_intel_soc_line_toggle,
 };
 
-#define INTEL_SOC_RESET_INIT(_inst)                                                                \
-	static struct reset_intel_soc_data reset_intel_soc_data_##_inst;                           \
-	static const struct reset_intel_config reset_intel_config_##_inst = {                      \
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(_inst)),                                          \
-		.active_low = DT_INST_PROP(_inst, active_low),                                     \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(_inst, reset_intel_soc_init, NULL, &reset_intel_soc_data_##_inst,    \
-			      &reset_intel_config_##_inst, PRE_KERNEL_1,                           \
+#define INTEL_SOC_RESET_INIT(_inst)                                                             \
+	static struct reset_intel_soc_data reset_intel_soc_data_##_inst;                        \
+	static const struct reset_intel_config reset_intel_config_##_inst = {                   \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(_inst)),                                       \
+		.active_low = DT_INST_PROP(_inst, active_low),                                  \
+	};                                                                                      \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(_inst, reset_intel_soc_init, NULL, &reset_intel_soc_data_##_inst, \
+			      &reset_intel_config_##_inst, PRE_KERNEL_1,                        \
 			      CONFIG_RESET_INIT_PRIORITY, &reset_intel_soc_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INTEL_SOC_RESET_INIT);

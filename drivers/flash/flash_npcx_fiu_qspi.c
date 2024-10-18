@@ -19,7 +19,7 @@
 LOG_MODULE_REGISTER(npcx_fiu_qspi, LOG_LEVEL_ERR);
 
 /* Driver convenience defines */
-#define HAL_INSTANCE(dev)                                                                          \
+#define HAL_INSTANCE(dev)                                                              \
 	((struct fiu_reg *)((const struct npcx_qspi_fiu_config *)(dev)->config)->base)
 
 /* Device config */

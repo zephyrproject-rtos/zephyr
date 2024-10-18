@@ -355,7 +355,7 @@ static int counter_dw_timer_init(const struct device *timer_dev)
 	return 0;
 }
 
-#define DW_SNPS_TIMER_CLOCK_RATE_INIT(inst)                                                        \
+#define DW_SNPS_TIMER_CLOCK_RATE_INIT(inst)                            \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clock_frequency),				\
 		(										\
 			.freq = DT_INST_PROP(inst, clock_frequency),				\
@@ -369,28 +369,28 @@ static int counter_dw_timer_init(const struct device *timer_dev)
 
 #define DW_SNPS_TIMER_SNPS_RESET_SPEC_INIT(inst) .reset = RESET_DT_SPEC_INST_GET(inst),
 
-#define CREATE_DW_TIMER_DEV(inst)                                                                  \
-	static void counter_dw_timer_irq_config_##inst(void);                                      \
-	static struct counter_dw_timer_drv_data timer_data_##inst;                                 \
-	static const struct counter_dw_timer_config timer_config_##inst = {                        \
-		DEVICE_MMIO_NAMED_ROM_INIT(timer_mmio, DT_DRV_INST(inst)),                         \
-		DW_SNPS_TIMER_CLOCK_RATE_INIT(inst).info =                                         \
-			{                                                                          \
-				.max_top_value = UINT32_MAX,                                       \
-				.channels = 1,                                                     \
-			},                                                                         \
+#define CREATE_DW_TIMER_DEV(inst)                                                              \
+	static void counter_dw_timer_irq_config_##inst(void);                                  \
+	static struct counter_dw_timer_drv_data timer_data_##inst;                             \
+	static const struct counter_dw_timer_config timer_config_##inst = {                    \
+		DEVICE_MMIO_NAMED_ROM_INIT(timer_mmio, DT_DRV_INST(inst)),                     \
+		DW_SNPS_TIMER_CLOCK_RATE_INIT(inst).info =                                     \
+			{                                                                      \
+				.max_top_value = UINT32_MAX,                                   \
+				.channels = 1,                                                 \
+			},                                                                     \
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, resets),			\
-			(DW_SNPS_TIMER_SNPS_RESET_SPEC_INIT(inst))) .irq_config =                  \
-				 counter_dw_timer_irq_config_##inst,                               \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, counter_dw_timer_init, NULL, &timer_data_##inst,               \
-			      &timer_config_##inst, POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,     \
-			      &dw_timer_driver_api);                                               \
-	static void counter_dw_timer_irq_config_##inst(void)                                       \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),                       \
-			    counter_dw_timer_irq_handler, DEVICE_DT_INST_GET(inst), 0);            \
-		irq_enable(DT_INST_IRQN(inst));                                                    \
+			(DW_SNPS_TIMER_SNPS_RESET_SPEC_INIT(inst))) .irq_config =              \
+				 counter_dw_timer_irq_config_##inst,                           \
+	};                                                                                     \
+	DEVICE_DT_INST_DEFINE(inst, counter_dw_timer_init, NULL, &timer_data_##inst,           \
+			      &timer_config_##inst, POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY, \
+			      &dw_timer_driver_api);                                           \
+	static void counter_dw_timer_irq_config_##inst(void)                                   \
+	{                                                                                      \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),                   \
+			    counter_dw_timer_irq_handler, DEVICE_DT_INST_GET(inst), 0);        \
+		irq_enable(DT_INST_IRQN(inst));                                                \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(CREATE_DW_TIMER_DEV);

@@ -600,7 +600,7 @@ static const struct spi_driver_api spi_nxp_s32_driver_api = {
 
 #define SPI_NXP_S32_HW_INSTANCE_CHECK(i, n) ((DT_INST_REG_ADDR(n) == IP_SPI_##i##_BASE) ? i : 0)
 
-#define SPI_NXP_S32_HW_INSTANCE(n)                                                                 \
+#define SPI_NXP_S32_HW_INSTANCE(n) \
 	LISTIFY(__DEBRACKET SPI_INSTANCE_COUNT, SPI_NXP_S32_HW_INSTANCE_CHECK, (|), n)
 
 #define SPI_NXP_S32_NUM_CS(n)    DT_INST_PROP(n, num_cs)
@@ -616,23 +616,23 @@ static const struct spi_driver_api spi_nxp_s32_driver_api = {
 
 #define SPI_NXP_S32_CONFIG_INTERRUPT_FUNC(n) .irq_config_func = spi_nxp_s32_config_func_##n,
 
-#define SPI_NXP_S32_INTERRUPT_DEFINE(n)                                                            \
-	static void spi_nxp_s32_config_func_##n(const struct device *dev)                          \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), spi_nxp_s32_isr,            \
-			    DEVICE_DT_INST_GET(n), DT_INST_IRQ(n, flags));                         \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define SPI_NXP_S32_INTERRUPT_DEFINE(n)                                                 \
+	static void spi_nxp_s32_config_func_##n(const struct device *dev)               \
+	{                                                                               \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), spi_nxp_s32_isr, \
+			    DEVICE_DT_INST_GET(n), DT_INST_IRQ(n, flags));              \
+		irq_enable(DT_INST_IRQN(n));                                            \
 	}
 
 #define SPI_NXP_S32_CONFIG_CALLBACK_FUNC(n) .cb = spi_nxp_s32_##n##_callback,
 
-#define SPI_NXP_S32_CALLBACK_DEFINE(n)                                                             \
-	static void spi_nxp_s32_##n##_callback(uint8 instance, Spi_Ip_EventType event)             \
-	{                                                                                          \
-		ARG_UNUSED(instance);                                                              \
-		const struct device *dev = DEVICE_DT_INST_GET(n);                                  \
-                                                                                                   \
-		spi_nxp_s32_transfer_callback(dev, event);                                         \
+#define SPI_NXP_S32_CALLBACK_DEFINE(n)                                                 \
+	static void spi_nxp_s32_##n##_callback(uint8 instance, Spi_Ip_EventType event) \
+	{                                                                              \
+		ARG_UNUSED(instance);                                                  \
+		const struct device *dev = DEVICE_DT_INST_GET(n);                      \
+                                                                                       \
+		spi_nxp_s32_transfer_callback(dev, event);                             \
 	}
 #else
 #define SPI_NXP_S32_CONFIG_INTERRUPT_FUNC(n)
@@ -645,44 +645,44 @@ static const struct spi_driver_api spi_nxp_s32_driver_api = {
  * Declare the default configuration for SPI driver, no DMA
  * support, all inner module Chip Selects are active low.
  */
-#define SPI_NXP_S32_INSTANCE_CONFIG(n)                                                             \
-	static const Spi_Ip_ConfigType spi_nxp_s32_default_config_##n = {                          \
-		.Instance = SPI_NXP_S32_HW_INSTANCE(n),                                            \
-		.Mcr = (SPI_MCR_MSTR(SPI_NXP_S32_IS_MASTER(n)) | SPI_MCR_CONT_SCKE(0U) |           \
-			SPI_MCR_FRZ(0U) | SPI_MCR_MTFE(0U) | SPI_MCR_SMPL_PT(0U) |                 \
-			SPI_MCR_PCSIS(BIT_MASK(SPI_NXP_S32_NUM_CS(n))) | SPI_MCR_MDIS(0U) |        \
-			SPI_MCR_XSPI(1U) | SPI_MCR_HALT(1U)),                                      \
-		.TransferMode = SPI_IP_POLLING,                                                    \
-		.StateIndex = n,                                                                   \
+#define SPI_NXP_S32_INSTANCE_CONFIG(n)                                                      \
+	static const Spi_Ip_ConfigType spi_nxp_s32_default_config_##n = {                   \
+		.Instance = SPI_NXP_S32_HW_INSTANCE(n),                                     \
+		.Mcr = (SPI_MCR_MSTR(SPI_NXP_S32_IS_MASTER(n)) | SPI_MCR_CONT_SCKE(0U) |    \
+			SPI_MCR_FRZ(0U) | SPI_MCR_MTFE(0U) | SPI_MCR_SMPL_PT(0U) |          \
+			SPI_MCR_PCSIS(BIT_MASK(SPI_NXP_S32_NUM_CS(n))) | SPI_MCR_MDIS(0U) | \
+			SPI_MCR_XSPI(1U) | SPI_MCR_HALT(1U)),                               \
+		.TransferMode = SPI_IP_POLLING,                                             \
+		.StateIndex = n,                                                            \
 		SPI_NXP_S32_SET_SLAVE(n)}
 
-#define SPI_NXP_S32_TRANSFER_CONFIG(n)                                                             \
-	.transfer_cfg = {                                                                          \
-		.Instance = SPI_NXP_S32_HW_INSTANCE(n),                                            \
-		.Ctare = SPI_CTARE_FMSZE(0U) | SPI_CTARE_DTCP(1U),                                 \
+#define SPI_NXP_S32_TRANSFER_CONFIG(n)                             \
+	.transfer_cfg = {                                          \
+		.Instance = SPI_NXP_S32_HW_INSTANCE(n),            \
+		.Ctare = SPI_CTARE_FMSZE(0U) | SPI_CTARE_DTCP(1U), \
 	}
 
-#define SPI_NXP_S32_DEVICE(n)                                                                      \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	SPI_NXP_S32_CALLBACK_DEFINE(n)                                                             \
-	SPI_NXP_S32_INTERRUPT_DEFINE(n)                                                            \
-	SPI_NXP_S32_INSTANCE_CONFIG(n);                                                            \
-	static const struct spi_nxp_s32_config spi_nxp_s32_config_##n = {                          \
-		.num_cs = SPI_NXP_S32_NUM_CS(n),                                                   \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
-		.sck_cs_delay = DT_INST_PROP_OR(n, spi_sck_cs_delay, 0U),                          \
-		.cs_sck_delay = DT_INST_PROP_OR(n, spi_cs_sck_delay, 0U),                          \
-		.cs_cs_delay = DT_INST_PROP_OR(n, spi_cs_cs_delay, 0U),                            \
-		.spi_hw_cfg = (Spi_Ip_ConfigType *)&spi_nxp_s32_default_config_##n,                \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
-		SPI_NXP_S32_CONFIG_CALLBACK_FUNC(n) SPI_NXP_S32_CONFIG_INTERRUPT_FUNC(n)};         \
-	static struct spi_nxp_s32_data spi_nxp_s32_data_##n = {                                    \
-		SPI_NXP_S32_TRANSFER_CONFIG(n), SPI_CONTEXT_INIT_LOCK(spi_nxp_s32_data_##n, ctx),  \
-		SPI_CONTEXT_INIT_SYNC(spi_nxp_s32_data_##n, ctx),                                  \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                             \
-	DEVICE_DT_INST_DEFINE(n, spi_nxp_s32_init, NULL, &spi_nxp_s32_data_##n,                    \
-			      &spi_nxp_s32_config_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,      \
+#define SPI_NXP_S32_DEVICE(n)                                                                     \
+	PINCTRL_DT_INST_DEFINE(n);                                                                \
+	SPI_NXP_S32_CALLBACK_DEFINE(n)                                                            \
+	SPI_NXP_S32_INTERRUPT_DEFINE(n)                                                           \
+	SPI_NXP_S32_INSTANCE_CONFIG(n);                                                           \
+	static const struct spi_nxp_s32_config spi_nxp_s32_config_##n = {                         \
+		.num_cs = SPI_NXP_S32_NUM_CS(n),                                                  \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                               \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),             \
+		.sck_cs_delay = DT_INST_PROP_OR(n, spi_sck_cs_delay, 0U),                         \
+		.cs_sck_delay = DT_INST_PROP_OR(n, spi_cs_sck_delay, 0U),                         \
+		.cs_cs_delay = DT_INST_PROP_OR(n, spi_cs_cs_delay, 0U),                           \
+		.spi_hw_cfg = (Spi_Ip_ConfigType *)&spi_nxp_s32_default_config_##n,               \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                      \
+		SPI_NXP_S32_CONFIG_CALLBACK_FUNC(n) SPI_NXP_S32_CONFIG_INTERRUPT_FUNC(n)};        \
+	static struct spi_nxp_s32_data spi_nxp_s32_data_##n = {                                   \
+		SPI_NXP_S32_TRANSFER_CONFIG(n), SPI_CONTEXT_INIT_LOCK(spi_nxp_s32_data_##n, ctx), \
+		SPI_CONTEXT_INIT_SYNC(spi_nxp_s32_data_##n, ctx),                                 \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                            \
+	DEVICE_DT_INST_DEFINE(n, spi_nxp_s32_init, NULL, &spi_nxp_s32_data_##n,                   \
+			      &spi_nxp_s32_config_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,     \
 			      &spi_nxp_s32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_NXP_S32_DEVICE)

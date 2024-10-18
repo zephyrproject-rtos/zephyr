@@ -211,14 +211,14 @@ static const struct led_driver_api tlc59108_led_api = {
 	.off = tlc59108_led_off,
 };
 
-#define TLC59108_DEVICE(id)                                                                        \
-	static const struct tlc59108_cfg tlc59108_##id##_cfg = {                                   \
-		.i2c = I2C_DT_SPEC_INST_GET(id),                                                   \
-	};                                                                                         \
-	static struct tlc59108_data tlc59108_##id##_data;                                          \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(id, &tlc59108_led_init, NULL, &tlc59108_##id##_data,                 \
-			      &tlc59108_##id##_cfg, POST_KERNEL, CONFIG_LED_INIT_PRIORITY,         \
+#define TLC59108_DEVICE(id)                                                                \
+	static const struct tlc59108_cfg tlc59108_##id##_cfg = {                           \
+		.i2c = I2C_DT_SPEC_INST_GET(id),                                           \
+	};                                                                                 \
+	static struct tlc59108_data tlc59108_##id##_data;                                  \
+                                                                                           \
+	DEVICE_DT_INST_DEFINE(id, &tlc59108_led_init, NULL, &tlc59108_##id##_data,         \
+			      &tlc59108_##id##_cfg, POST_KERNEL, CONFIG_LED_INIT_PRIORITY, \
 			      &tlc59108_led_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TLC59108_DEVICE)

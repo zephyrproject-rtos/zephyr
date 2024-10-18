@@ -49,7 +49,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define ETH_STM32_RANDOM_MAC
 #endif
 
-#if defined(CONFIG_ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER) &&                                       \
+#if defined(CONFIG_ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER) && \
 	!DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
 #error DTCM for DMA buffer is activated but zephyr,dtcm is not present in dts
 #endif
@@ -58,7 +58,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #if defined(CONFIG_MDIO)
 
-#define DEVICE_PHY_BY_NAME(n)                                                                      \
+#define DEVICE_PHY_BY_NAME(n)                                                             \
 	DEVICE_DT_GET(DT_CHILD(DT_INST_CHILD(n, mdio), _CONCAT(ethernet_phy_, PHY_ADDR)))
 
 static const struct device *eth_stm32_phy_dev = DEVICE_PHY_BY_NAME(0);
@@ -82,7 +82,7 @@ static const struct device *eth_stm32_phy_dev = DEVICE_PHY_BY_NAME(0);
 
 #define ETH_DMA_TX_TIMEOUT_MS 20U /* transmit timeout in milliseconds */
 
-#if defined(CONFIG_ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER) &&                                       \
+#if defined(CONFIG_ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER) && \
 	DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
 #define __eth_stm32_desc __dtcm_noinit_section
 #define __eth_stm32_buf  __dtcm_noinit_section
@@ -203,7 +203,7 @@ static inline uint16_t allocate_tx_buffer(void)
 }
 #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X) ||                  \
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_ETH_STM32_HAL_API_V2)
 static ETH_TxPacketConfig tx_config;
 #endif
@@ -218,7 +218,7 @@ static HAL_StatusTypeDef read_eth_phy_register(ETH_HandleTypeDef *heth, uint32_t
 #else
 	ARG_UNUSED(PHYAddr);
 	return HAL_ETH_ReadPHYRegister(heth, PHYReg, RegVal);
-#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X || CONFIG_ETH_STM32_HAL_API_V2  \
+#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X || CONFIG_ETH_STM32_HAL_API_V2 \
 	*/
 }
 
@@ -404,7 +404,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 #endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X */
 #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X) ||                  \
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_ETH_STM32_HAL_API_V2)
 
 	tx_config.Length = total_len;
@@ -490,7 +490,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 		res = -EIO;
 		goto error;
 	}
-#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X || CONFIG_ETH_STM32_HAL_API_V2  \
+#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X || CONFIG_ETH_STM32_HAL_API_V2 \
 	*/
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL) && !defined(CONFIG_ETH_STM32_HAL_API_V2)
@@ -871,7 +871,7 @@ static void eth_isr(const struct device *dev)
 
 	HAL_ETH_IRQHandler(heth);
 }
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X) ||                  \
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_ETH_STM32_HAL_API_V2)
 void HAL_ETH_TxCpltCallback(ETH_HandleTypeDef *heth_handle)
 {
@@ -884,7 +884,7 @@ void HAL_ETH_TxCpltCallback(ETH_HandleTypeDef *heth_handle)
 
 	k_sem_give(&dev_data->tx_int_sem);
 }
-#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X || CONFIG_ETH_STM32_HAL_API_V2  \
+#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X || CONFIG_ETH_STM32_HAL_API_V2 \
 	*/
 
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
@@ -1089,12 +1089,12 @@ static int eth_initialize(const struct device *dev)
 
 	heth->Init.MACAddr = dev_data->mac_addr;
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X) ||                  \
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_ETH_STM32_HAL_API_V2)
 	heth->Init.TxDesc = dma_tx_desc_tab;
 	heth->Init.RxDesc = dma_rx_desc_tab;
 	heth->Init.RxBuffLen = ETH_MAX_PACKET_SIZE;
-#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X || CONFIG_ETH_STM32_HAL_API_V2  \
+#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X || CONFIG_ETH_STM32_HAL_API_V2 \
 	*/
 
 	hal_ret = HAL_ETH_Init(heth);
@@ -1119,7 +1119,7 @@ static int eth_initialize(const struct device *dev)
 #endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X */
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X) ||                  \
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_ETH_STM32_HAL_API_V2)
 	/* Tx config init: */
 	memset(&tx_config, 0, sizeof(ETH_TxPacketConfig));
@@ -1128,7 +1128,7 @@ static int eth_initialize(const struct device *dev)
 					 ? ETH_CHECKSUM_IPHDR_PAYLOAD_INSERT_PHDR_CALC
 					 : ETH_CHECKSUM_DISABLE;
 	tx_config.CRCPadCtrl = ETH_CRC_PAD_INSERT;
-#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X || CONFIG_ETH_STM32_HAL_API_V2  \
+#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X || CONFIG_ETH_STM32_HAL_API_V2 \
 	*/
 
 	dev_data->link_up = false;
@@ -1136,13 +1136,13 @@ static int eth_initialize(const struct device *dev)
 	/* Initialize semaphores */
 	k_mutex_init(&dev_data->tx_mutex);
 	k_sem_init(&dev_data->rx_int_sem, 0, K_SEM_MAX_LIMIT);
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X) ||                  \
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_ETH_STM32_HAL_API_V2)
 	k_sem_init(&dev_data->tx_int_sem, 0, K_SEM_MAX_LIMIT);
-#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X || CONFIG_ETH_STM32_HAL_API_V2  \
+#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X || CONFIG_ETH_STM32_HAL_API_V2 \
 	*/
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X) ||                  \
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_ETH_STM32_HAL_API_V2)
 	/* Adjust MDC clock range depending on HCLK frequency: */
 	HAL_ETH_SetMDIOClockRange(heth);
@@ -1159,7 +1159,7 @@ static int eth_initialize(const struct device *dev)
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("HAL_ETH_SetMACConfig: failed: %d", hal_ret);
 	}
-#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X || CONFIG_ETH_STM32_HAL_API_V2  \
+#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X || CONFIG_ETH_STM32_HAL_API_V2 \
 	*/
 
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
@@ -1446,7 +1446,7 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 			.Instance = (ETH_TypeDef *)DT_INST_REG_ADDR(0),
 			.Init =
 				{
-#if !defined(CONFIG_SOC_SERIES_STM32H7X) && !defined(CONFIG_SOC_SERIES_STM32H5X) &&                \
+#if !defined(CONFIG_SOC_SERIES_STM32H7X) && !defined(CONFIG_SOC_SERIES_STM32H5X) && \
 	!defined(CONFIG_ETH_STM32_HAL_API_V2)
 #if defined(CONFIG_ETH_STM32_AUTO_NEGOTIATION_ENABLE)
 					.AutoNegotiation = ETH_AUTONEGOTIATION_ENABLE,

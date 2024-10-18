@@ -376,18 +376,18 @@ static struct flash_hp_ra_controller_config flash_hp_ra_controller_config = {
 	.irq_config = flash_controller_ra_irq_config_func,
 };
 
-#define RA_FLASH_INIT(index)                                                                       \
-	struct flash_hp_ra_data flash_hp_ra_data_##index = {.area_address = DT_REG_ADDR(index),    \
-							    .area_size = DT_REG_SIZE(index)};      \
-	static struct flash_hp_ra_config flash_hp_ra_config_##index = {                            \
-		.flash_ra_parameters = {                                                           \
-			.write_block_size = GET_SIZE(                                              \
-				(CHECK_EQ(DT_REG_ADDR(index), FLASH_HP_DF_START)), 4, 128),        \
-			.erase_value = 0xff,                                                       \
-		}};                                                                                \
-                                                                                                   \
-	DEVICE_DT_DEFINE(index, flash_ra_init, NULL, &flash_hp_ra_data_##index,                    \
-			 &flash_hp_ra_config_##index, POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,     \
+#define RA_FLASH_INIT(index)                                                                    \
+	struct flash_hp_ra_data flash_hp_ra_data_##index = {.area_address = DT_REG_ADDR(index), \
+							    .area_size = DT_REG_SIZE(index)};   \
+	static struct flash_hp_ra_config flash_hp_ra_config_##index = {                         \
+		.flash_ra_parameters = {                                                        \
+			.write_block_size = GET_SIZE(                                           \
+				(CHECK_EQ(DT_REG_ADDR(index), FLASH_HP_DF_START)), 4, 128),     \
+			.erase_value = 0xff,                                                    \
+		}};                                                                             \
+                                                                                                \
+	DEVICE_DT_DEFINE(index, flash_ra_init, NULL, &flash_hp_ra_data_##index,                 \
+			 &flash_hp_ra_config_##index, POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,  \
 			 &flash_ra_api);
 
 DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(0), RA_FLASH_INIT);

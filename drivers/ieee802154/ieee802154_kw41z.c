@@ -57,16 +57,16 @@ struct kw41_dbg_trace {
 struct kw41_dbg_trace kw41_dbg[KW41_DBG_TRACE_SIZE];
 int kw41_dbg_idx;
 
-#define KW_DBG_TRACE(_type, _irqsts, _phy_ctrl, _seq_state)                                        \
-	do {                                                                                       \
-		kw41_dbg[kw41_dbg_idx].type = (_type);                                             \
-		kw41_dbg[kw41_dbg_idx].time = ZLL->EVENT_TMR >> ZLL_EVENT_TMR_EVENT_TMR_SHIFT;     \
-		kw41_dbg[kw41_dbg_idx].irqsts = (_irqsts);                                         \
-		kw41_dbg[kw41_dbg_idx].phy_ctrl = (_phy_ctrl);                                     \
-		kw41_dbg[kw41_dbg_idx].seq_state = (_seq_state);                                   \
-		if (++kw41_dbg_idx == KW41_DBG_TRACE_SIZE) {                                       \
-			kw41_dbg_idx = 0;                                                          \
-		}                                                                                  \
+#define KW_DBG_TRACE(_type, _irqsts, _phy_ctrl, _seq_state)                                    \
+	do {                                                                                   \
+		kw41_dbg[kw41_dbg_idx].type = (_type);                                         \
+		kw41_dbg[kw41_dbg_idx].time = ZLL->EVENT_TMR >> ZLL_EVENT_TMR_EVENT_TMR_SHIFT; \
+		kw41_dbg[kw41_dbg_idx].irqsts = (_irqsts);                                     \
+		kw41_dbg[kw41_dbg_idx].phy_ctrl = (_phy_ctrl);                                 \
+		kw41_dbg[kw41_dbg_idx].seq_state = (_seq_state);                               \
+		if (++kw41_dbg_idx == KW41_DBG_TRACE_SIZE) {                                   \
+			kw41_dbg_idx = 0;                                                      \
+		}                                                                              \
 	} while (false)
 
 #else
@@ -91,8 +91,8 @@ int kw41_dbg_idx;
 
 #define IEEE802154_ACK_LENGTH 5
 
-#define BM_ZLL_IRQSTS_TMRxMSK                                                                      \
-	(ZLL_IRQSTS_TMR1MSK_MASK | ZLL_IRQSTS_TMR2MSK_MASK | ZLL_IRQSTS_TMR3MSK_MASK |             \
+#define BM_ZLL_IRQSTS_TMRxMSK                                                          \
+	(ZLL_IRQSTS_TMR1MSK_MASK | ZLL_IRQSTS_TMR2MSK_MASK | ZLL_IRQSTS_TMR3MSK_MASK | \
 	 ZLL_IRQSTS_TMR4MSK_MASK)
 
 /*

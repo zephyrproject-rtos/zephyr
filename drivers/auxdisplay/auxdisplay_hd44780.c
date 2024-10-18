@@ -538,54 +538,54 @@ static const struct auxdisplay_driver_api auxdisplay_hd44780_auxdisplay_api = {
 };
 
 /* Returns desired value if backlight is enabled, otherwise returns not supported value */
-#define BACKLIGHT_CHECK(inst, value)                                                               \
+#define BACKLIGHT_CHECK(inst, value)                                                   \
 	COND_CODE_1(DT_PROP_HAS_IDX(DT_DRV_INST(inst), backlight_gpios, 0), (value),	\
 		    (AUXDISPLAY_LIGHT_NOT_SUPPORTED))
 
-#define AUXDISPLAY_HD44780_DEVICE(inst)                                                            \
-	static struct auxdisplay_hd44780_data auxdisplay_hd44780_data_##inst;                      \
-	static const struct auxdisplay_hd44780_config auxdisplay_hd44780_config_##inst = {         \
-		.capabilities =                                                                    \
-			{                                                                          \
-				.columns = DT_INST_PROP(inst, columns),                            \
-				.rows = DT_INST_PROP(inst, rows),                                  \
-				.mode = DT_INST_ENUM_IDX(inst, mode),                              \
-				.brightness.minimum = AUXDISPLAY_LIGHT_NOT_SUPPORTED,              \
-				.brightness.maximum = AUXDISPLAY_LIGHT_NOT_SUPPORTED,              \
-				.backlight.minimum =                                               \
-					BACKLIGHT_CHECK(inst, AUXDISPLAY_HD44780_BACKLIGHT_MIN),   \
-				.backlight.maximum =                                               \
-					BACKLIGHT_CHECK(inst, AUXDISPLAY_HD44780_BACKLIGHT_MAX),   \
-				.custom_characters = AUXDISPLAY_HD44780_CUSTOM_CHARACTERS,         \
-				.custom_character_width =                                          \
-					AUXDISPLAY_HD44780_CUSTOM_CHARACTER_WIDTH,                 \
-				.custom_character_height =                                         \
-					AUXDISPLAY_HD44780_CUSTOM_CHARACTER_HEIGHT,                \
-			},                                                                         \
-		.rs_gpio = GPIO_DT_SPEC_INST_GET(inst, register_select_gpios),                     \
-		.rw_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, read_write_gpios, {0}),                  \
-		.e_gpio = GPIO_DT_SPEC_INST_GET(inst, enable_gpios),                               \
-		.db_gpios[0] = GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, data_bus_gpios, 0, {0}),      \
-		.db_gpios[1] = GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, data_bus_gpios, 1, {0}),      \
-		.db_gpios[2] = GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, data_bus_gpios, 2, {0}),      \
-		.db_gpios[3] = GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, data_bus_gpios, 3, {0}),      \
-		.db_gpios[4] = GPIO_DT_SPEC_INST_GET_BY_IDX(inst, data_bus_gpios, 4),              \
-		.db_gpios[5] = GPIO_DT_SPEC_INST_GET_BY_IDX(inst, data_bus_gpios, 5),              \
-		.db_gpios[6] = GPIO_DT_SPEC_INST_GET_BY_IDX(inst, data_bus_gpios, 6),              \
-		.db_gpios[7] = GPIO_DT_SPEC_INST_GET_BY_IDX(inst, data_bus_gpios, 7),              \
-		.line_addresses[0] = DT_INST_PROP_BY_IDX(inst, line_addresses, 0),                 \
-		.line_addresses[1] = DT_INST_PROP_BY_IDX(inst, line_addresses, 1),                 \
-		.line_addresses[2] = DT_INST_PROP_BY_IDX(inst, line_addresses, 2),                 \
-		.line_addresses[3] = DT_INST_PROP_BY_IDX(inst, line_addresses, 3),                 \
-		.backlight_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, backlight_gpios, {0}),            \
-		.enable_line_rise_delay = DT_INST_PROP(inst, enable_line_rise_delay_us),           \
-		.enable_line_fall_delay = DT_INST_PROP(inst, enable_line_fall_delay_us),           \
-		.clear_delay = DT_INST_PROP(inst, clear_command_delay_us),                         \
-		.boot_delay = DT_INST_PROP(inst, boot_delay_ms),                                   \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &auxdisplay_hd44780_init, NULL,                                \
-			      &auxdisplay_hd44780_data_##inst, &auxdisplay_hd44780_config_##inst,  \
-			      POST_KERNEL, CONFIG_AUXDISPLAY_INIT_PRIORITY,                        \
+#define AUXDISPLAY_HD44780_DEVICE(inst)                                                           \
+	static struct auxdisplay_hd44780_data auxdisplay_hd44780_data_##inst;                     \
+	static const struct auxdisplay_hd44780_config auxdisplay_hd44780_config_##inst = {        \
+		.capabilities =                                                                   \
+			{                                                                         \
+				.columns = DT_INST_PROP(inst, columns),                           \
+				.rows = DT_INST_PROP(inst, rows),                                 \
+				.mode = DT_INST_ENUM_IDX(inst, mode),                             \
+				.brightness.minimum = AUXDISPLAY_LIGHT_NOT_SUPPORTED,             \
+				.brightness.maximum = AUXDISPLAY_LIGHT_NOT_SUPPORTED,             \
+				.backlight.minimum =                                              \
+					BACKLIGHT_CHECK(inst, AUXDISPLAY_HD44780_BACKLIGHT_MIN),  \
+				.backlight.maximum =                                              \
+					BACKLIGHT_CHECK(inst, AUXDISPLAY_HD44780_BACKLIGHT_MAX),  \
+				.custom_characters = AUXDISPLAY_HD44780_CUSTOM_CHARACTERS,        \
+				.custom_character_width =                                         \
+					AUXDISPLAY_HD44780_CUSTOM_CHARACTER_WIDTH,                \
+				.custom_character_height =                                        \
+					AUXDISPLAY_HD44780_CUSTOM_CHARACTER_HEIGHT,               \
+			},                                                                        \
+		.rs_gpio = GPIO_DT_SPEC_INST_GET(inst, register_select_gpios),                    \
+		.rw_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, read_write_gpios, {0}),                 \
+		.e_gpio = GPIO_DT_SPEC_INST_GET(inst, enable_gpios),                              \
+		.db_gpios[0] = GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, data_bus_gpios, 0, {0}),     \
+		.db_gpios[1] = GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, data_bus_gpios, 1, {0}),     \
+		.db_gpios[2] = GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, data_bus_gpios, 2, {0}),     \
+		.db_gpios[3] = GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, data_bus_gpios, 3, {0}),     \
+		.db_gpios[4] = GPIO_DT_SPEC_INST_GET_BY_IDX(inst, data_bus_gpios, 4),             \
+		.db_gpios[5] = GPIO_DT_SPEC_INST_GET_BY_IDX(inst, data_bus_gpios, 5),             \
+		.db_gpios[6] = GPIO_DT_SPEC_INST_GET_BY_IDX(inst, data_bus_gpios, 6),             \
+		.db_gpios[7] = GPIO_DT_SPEC_INST_GET_BY_IDX(inst, data_bus_gpios, 7),             \
+		.line_addresses[0] = DT_INST_PROP_BY_IDX(inst, line_addresses, 0),                \
+		.line_addresses[1] = DT_INST_PROP_BY_IDX(inst, line_addresses, 1),                \
+		.line_addresses[2] = DT_INST_PROP_BY_IDX(inst, line_addresses, 2),                \
+		.line_addresses[3] = DT_INST_PROP_BY_IDX(inst, line_addresses, 3),                \
+		.backlight_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, backlight_gpios, {0}),           \
+		.enable_line_rise_delay = DT_INST_PROP(inst, enable_line_rise_delay_us),          \
+		.enable_line_fall_delay = DT_INST_PROP(inst, enable_line_fall_delay_us),          \
+		.clear_delay = DT_INST_PROP(inst, clear_command_delay_us),                        \
+		.boot_delay = DT_INST_PROP(inst, boot_delay_ms),                                  \
+	};                                                                                        \
+	DEVICE_DT_INST_DEFINE(inst, &auxdisplay_hd44780_init, NULL,                               \
+			      &auxdisplay_hd44780_data_##inst, &auxdisplay_hd44780_config_##inst, \
+			      POST_KERNEL, CONFIG_AUXDISPLAY_INIT_PRIORITY,                       \
 			      &auxdisplay_hd44780_auxdisplay_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AUXDISPLAY_HD44780_DEVICE)

@@ -16,8 +16,8 @@ LOG_MODULE_REGISTER(ambiq_rtc, CONFIG_RTC_LOG_LEVEL);
 
 #include <am_mcu_apollo.h>
 
-#define AMBIQ_RTC_ALARM_TIME_MASK                                                                  \
-	(RTC_ALARM_TIME_MASK_SECOND | RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR |      \
+#define AMBIQ_RTC_ALARM_TIME_MASK                                                                \
+	(RTC_ALARM_TIME_MASK_SECOND | RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR |    \
 	 RTC_ALARM_TIME_MASK_WEEKDAY | RTC_ALARM_TIME_MASK_MONTH | RTC_ALARM_TIME_MASK_MONTHDAY)
 
 /* struct tm start time:   1st, Jan, 1900 */
@@ -365,14 +365,14 @@ static const struct rtc_driver_api ambiq_rtc_driver_api = {
 #endif
 };
 
-#define AMBIQ_RTC_INIT(inst)                                                                       \
-	static const struct ambiq_rtc_config ambiq_rtc_config_##inst = {                           \
-		.clk_src = DT_INST_ENUM_IDX(inst, clock)};                                         \
-                                                                                                   \
-	static struct ambiq_rtc_data ambiq_rtc_data##inst;                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, &ambiq_rtc_init, NULL, &ambiq_rtc_data##inst,                  \
-			      &ambiq_rtc_config_##inst, POST_KERNEL, CONFIG_RTC_INIT_PRIORITY,     \
+#define AMBIQ_RTC_INIT(inst)                                                                   \
+	static const struct ambiq_rtc_config ambiq_rtc_config_##inst = {                       \
+		.clk_src = DT_INST_ENUM_IDX(inst, clock)};                                     \
+                                                                                               \
+	static struct ambiq_rtc_data ambiq_rtc_data##inst;                                     \
+                                                                                               \
+	DEVICE_DT_INST_DEFINE(inst, &ambiq_rtc_init, NULL, &ambiq_rtc_data##inst,              \
+			      &ambiq_rtc_config_##inst, POST_KERNEL, CONFIG_RTC_INIT_PRIORITY, \
 			      &ambiq_rtc_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AMBIQ_RTC_INIT)

@@ -443,21 +443,21 @@ int rtc_emul_init(const struct device *dev)
 }
 
 #ifdef CONFIG_RTC_ALARM
-#define RTC_EMUL_DEVICE_DATA(id)                                                                   \
-	static struct rtc_emul_alarm rtc_emul_alarms_##id[DT_INST_PROP(id, alarms_count)];         \
-                                                                                                   \
-	struct rtc_emul_data rtc_emul_data_##id = {                                                \
-		.alarms = rtc_emul_alarms_##id,                                                    \
-		.alarms_count = ARRAY_SIZE(rtc_emul_alarms_##id),                                  \
+#define RTC_EMUL_DEVICE_DATA(id)                                                           \
+	static struct rtc_emul_alarm rtc_emul_alarms_##id[DT_INST_PROP(id, alarms_count)]; \
+                                                                                           \
+	struct rtc_emul_data rtc_emul_data_##id = {                                        \
+		.alarms = rtc_emul_alarms_##id,                                            \
+		.alarms_count = ARRAY_SIZE(rtc_emul_alarms_##id),                          \
 	};
 #else
 #define RTC_EMUL_DEVICE_DATA(id) struct rtc_emul_data rtc_emul_data_##id;
 #endif /* CONFIG_RTC_ALARM */
 
-#define RTC_EMUL_DEVICE(id)                                                                        \
-	RTC_EMUL_DEVICE_DATA(id)                                                                   \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(id, rtc_emul_init, NULL, &rtc_emul_data_##id, NULL, POST_KERNEL,     \
+#define RTC_EMUL_DEVICE(id)                                                                    \
+	RTC_EMUL_DEVICE_DATA(id)                                                               \
+                                                                                               \
+	DEVICE_DT_INST_DEFINE(id, rtc_emul_init, NULL, &rtc_emul_data_##id, NULL, POST_KERNEL, \
 			      CONFIG_RTC_INIT_PRIORITY, &rtc_emul_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RTC_EMUL_DEVICE);

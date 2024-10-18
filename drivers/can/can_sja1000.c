@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(can_sja1000, CONFIG_CAN_LOG_LEVEL);
 /* Timeout for entering/leaving reset mode */
 #define CAN_SJA1000_RESET_MODE_TIMEOUT_USEC 1000
 #define CAN_SJA1000_RESET_MODE_RETRIES      100
-#define CAN_SJA1000_RESET_MODE_DELAY                                                               \
+#define CAN_SJA1000_RESET_MODE_DELAY                                                 \
 	K_USEC(CAN_SJA1000_RESET_MODE_TIMEOUT_USEC / CAN_SJA1000_RESET_MODE_RETRIES)
 
 static inline void can_sja1000_write_reg(const struct device *dev, uint8_t reg, uint8_t val)

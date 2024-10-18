@@ -279,30 +279,30 @@ static const struct regulator_driver_api api = {
 	.get_mode = regulator_adp5360_get_mode,
 };
 
-#define REGULATOR_ADP5360_DEFINE(node_id, id, name)                                                \
-	static struct regulator_adp5360_data data_##id;                                            \
-                                                                                                   \
-	static const struct regulator_adp5360_config config_##id = {                               \
-		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node_id),                                \
-		.i2c = I2C_DT_SPEC_GET(DT_GPARENT(node_id)),                                       \
-		.desc = &name##_desc,                                                              \
-		.dly_idx = DT_ENUM_IDX_OR(node_id, adi_switch_delay_us, -1),                       \
-		.ss_idx = DT_ENUM_IDX_OR(node_id, adi_soft_start_ms, -1),                          \
-		.ilim_idx = DT_ENUM_IDX_OR(node_id, adi_ilim_milliamp, -1),                        \
-		.stp_en = DT_PROP(node_id, adi_enable_stop_pulse),                                 \
-		.dis_en = DT_PROP(node_id, adi_enable_output_discharge),                           \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_DEFINE(node_id, regulator_adp5360_init, NULL, &data_##id, &config_##id,          \
+#define REGULATOR_ADP5360_DEFINE(node_id, id, name)                                       \
+	static struct regulator_adp5360_data data_##id;                                   \
+                                                                                          \
+	static const struct regulator_adp5360_config config_##id = {                      \
+		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node_id),                       \
+		.i2c = I2C_DT_SPEC_GET(DT_GPARENT(node_id)),                              \
+		.desc = &name##_desc,                                                     \
+		.dly_idx = DT_ENUM_IDX_OR(node_id, adi_switch_delay_us, -1),              \
+		.ss_idx = DT_ENUM_IDX_OR(node_id, adi_soft_start_ms, -1),                 \
+		.ilim_idx = DT_ENUM_IDX_OR(node_id, adi_ilim_milliamp, -1),               \
+		.stp_en = DT_PROP(node_id, adi_enable_stop_pulse),                        \
+		.dis_en = DT_PROP(node_id, adi_enable_output_discharge),                  \
+	};                                                                                \
+                                                                                          \
+	DEVICE_DT_DEFINE(node_id, regulator_adp5360_init, NULL, &data_##id, &config_##id, \
 			 POST_KERNEL, CONFIG_REGULATOR_ADP5360_INIT_PRIORITY, &api);
 
-#define REGULATOR_ADP5360_DEFINE_COND(inst, child)                                                 \
+#define REGULATOR_ADP5360_DEFINE_COND(inst, child) \
 	COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(inst, child)),                                    \
 		    (REGULATOR_ADP5360_DEFINE(DT_INST_CHILD(inst, child), child##inst, child)),    \
 		    ())
 
-#define REGULATOR_ADP5360_DEFINE_ALL(inst)                                                         \
-	REGULATOR_ADP5360_DEFINE_COND(inst, buck)                                                  \
+#define REGULATOR_ADP5360_DEFINE_ALL(inst)             \
+	REGULATOR_ADP5360_DEFINE_COND(inst, buck)      \
 	REGULATOR_ADP5360_DEFINE_COND(inst, buckboost)
 
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_ADP5360_DEFINE_ALL)

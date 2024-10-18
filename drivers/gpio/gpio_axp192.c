@@ -300,21 +300,21 @@ static int gpio_axp192_init(const struct device *dev)
 	return k_mutex_init(&data->mutex);
 }
 
-#define GPIO_AXP192_DEFINE(inst)                                                                   \
-	static const struct gpio_axp192_config gpio_axp192_config##inst = {                        \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),            \
-			},                                                                         \
-		.i2c = I2C_DT_SPEC_GET(DT_INST_PARENT(inst)),                                      \
-		.mfd = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                        \
-		.ngpios = DT_INST_PROP(inst, ngpios),                                              \
-	};                                                                                         \
-                                                                                                   \
-	static struct gpio_axp192_data gpio_axp192_data##inst;                                     \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, gpio_axp192_init, NULL, &gpio_axp192_data##inst,               \
-			      &gpio_axp192_config##inst, POST_KERNEL,                              \
+#define GPIO_AXP192_DEFINE(inst)                                                        \
+	static const struct gpio_axp192_config gpio_axp192_config##inst = {             \
+		.common =                                                               \
+			{                                                               \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst), \
+			},                                                              \
+		.i2c = I2C_DT_SPEC_GET(DT_INST_PARENT(inst)),                           \
+		.mfd = DEVICE_DT_GET(DT_INST_PARENT(inst)),                             \
+		.ngpios = DT_INST_PROP(inst, ngpios),                                   \
+	};                                                                              \
+                                                                                        \
+	static struct gpio_axp192_data gpio_axp192_data##inst;                          \
+                                                                                        \
+	DEVICE_DT_INST_DEFINE(inst, gpio_axp192_init, NULL, &gpio_axp192_data##inst,    \
+			      &gpio_axp192_config##inst, POST_KERNEL,                   \
 			      CONFIG_GPIO_AXP192_INIT_PRIORITY, &gpio_axp192_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_AXP192_DEFINE)

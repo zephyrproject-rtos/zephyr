@@ -311,47 +311,47 @@ static int gpio_stepper_motor_controller_init(const struct device *dev)
 	return 0;
 }
 
-#define GPIO_STEPPER_DEVICE_DATA_DEFINE(child)                                                     \
-	static struct gpio_stepper_data gpio_stepper_data_##child = {                              \
-		.step_gap = MAX_MICRO_STEP_RES >> (DT_PROP(child, micro_step_res) - 1),            \
-	};                                                                                         \
-	BUILD_ASSERT(DT_PROP(child, micro_step_res) <= STEPPER_MICRO_STEP_2,                       \
+#define GPIO_STEPPER_DEVICE_DATA_DEFINE(child)                                          \
+	static struct gpio_stepper_data gpio_stepper_data_##child = {                   \
+		.step_gap = MAX_MICRO_STEP_RES >> (DT_PROP(child, micro_step_res) - 1), \
+	};                                                                              \
+	BUILD_ASSERT(DT_PROP(child, micro_step_res) <= STEPPER_MICRO_STEP_2,            \
 		     "gpio_stepper_controller driver supports up to 2 micro steps");
 
-#define GPIO_STEPPER_DEVICE_CONFIG_DEFINE(child)                                                   \
-	static const struct gpio_dt_spec gpio_stepper_motor_control_pins_##child[] = {             \
-		DT_FOREACH_PROP_ELEM_SEP(child, gpios, GPIO_DT_SPEC_GET_BY_IDX, (, )),             \
-	};                                                                                         \
-	BUILD_ASSERT(                                                                              \
-		ARRAY_SIZE(gpio_stepper_motor_control_pins_##child) == 4,                          \
-		"gpio_stepper_controller driver currently supports only 4 wire configuration");    \
-	static const struct gpio_stepper_config gpio_stepper_config_##child = {                    \
+#define GPIO_STEPPER_DEVICE_CONFIG_DEFINE(child)                                                \
+	static const struct gpio_dt_spec gpio_stepper_motor_control_pins_##child[] = {          \
+		DT_FOREACH_PROP_ELEM_SEP(child, gpios, GPIO_DT_SPEC_GET_BY_IDX, (, )),          \
+	};                                                                                      \
+	BUILD_ASSERT(                                                                           \
+		ARRAY_SIZE(gpio_stepper_motor_control_pins_##child) == 4,                       \
+		"gpio_stepper_controller driver currently supports only 4 wire configuration"); \
+	static const struct gpio_stepper_config gpio_stepper_config_##child = {                 \
 		.control_pins = gpio_stepper_motor_control_pins_##child};
 
-#define GPIO_STEPPER_API_DEFINE(child)                                                             \
-	static const struct stepper_driver_api gpio_stepper_api_##child = {                        \
-		.enable = gpio_stepper_enable,                                                     \
-		.move = gpio_stepper_move,                                                         \
-		.is_moving = gpio_stepper_is_moving,                                               \
-		.set_actual_position = gpio_stepper_set_actual_position,                           \
-		.get_actual_position = gpio_stepper_get_actual_position,                           \
-		.set_target_position = gpio_stepper_set_target_position,                           \
-		.set_max_velocity = gpio_stepper_set_max_velocity,                                 \
-		.enable_constant_velocity_mode = gpio_stepper_enable_constant_velocity_mode,       \
-		.set_micro_step_res = gpio_stepper_set_micro_step_res,                             \
-		.get_micro_step_res = gpio_stepper_get_micro_step_res,                             \
-		.set_event_callback = gpio_stepper_set_event_callback,                             \
+#define GPIO_STEPPER_API_DEFINE(child)                                                       \
+	static const struct stepper_driver_api gpio_stepper_api_##child = {                  \
+		.enable = gpio_stepper_enable,                                               \
+		.move = gpio_stepper_move,                                                   \
+		.is_moving = gpio_stepper_is_moving,                                         \
+		.set_actual_position = gpio_stepper_set_actual_position,                     \
+		.get_actual_position = gpio_stepper_get_actual_position,                     \
+		.set_target_position = gpio_stepper_set_target_position,                     \
+		.set_max_velocity = gpio_stepper_set_max_velocity,                           \
+		.enable_constant_velocity_mode = gpio_stepper_enable_constant_velocity_mode, \
+		.set_micro_step_res = gpio_stepper_set_micro_step_res,                       \
+		.get_micro_step_res = gpio_stepper_get_micro_step_res,                       \
+		.set_event_callback = gpio_stepper_set_event_callback,                       \
 	};
 
-#define GPIO_STEPPER_DEVICE_DEFINE(child)                                                          \
-	DEVICE_DT_DEFINE(child, gpio_stepper_motor_controller_init, NULL,                          \
-			 &gpio_stepper_data_##child, &gpio_stepper_config_##child, POST_KERNEL,    \
+#define GPIO_STEPPER_DEVICE_DEFINE(child)                                                       \
+	DEVICE_DT_DEFINE(child, gpio_stepper_motor_controller_init, NULL,                       \
+			 &gpio_stepper_data_##child, &gpio_stepper_config_##child, POST_KERNEL, \
 			 CONFIG_STEPPER_INIT_PRIORITY, &gpio_stepper_api_##child);
 
-#define GPIO_STEPPER_CONTROLLER_DEFINE(inst)                                                       \
-	DT_INST_FOREACH_CHILD(inst, GPIO_STEPPER_DEVICE_CONFIG_DEFINE);                            \
-	DT_INST_FOREACH_CHILD(inst, GPIO_STEPPER_DEVICE_DATA_DEFINE);                              \
-	DT_INST_FOREACH_CHILD(inst, GPIO_STEPPER_API_DEFINE);                                      \
+#define GPIO_STEPPER_CONTROLLER_DEFINE(inst)                            \
+	DT_INST_FOREACH_CHILD(inst, GPIO_STEPPER_DEVICE_CONFIG_DEFINE); \
+	DT_INST_FOREACH_CHILD(inst, GPIO_STEPPER_DEVICE_DATA_DEFINE);   \
+	DT_INST_FOREACH_CHILD(inst, GPIO_STEPPER_API_DEFINE);           \
 	DT_INST_FOREACH_CHILD(inst, GPIO_STEPPER_DEVICE_DEFINE);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_STEPPER_CONTROLLER_DEFINE)

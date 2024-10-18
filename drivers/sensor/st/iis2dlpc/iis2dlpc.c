@@ -402,9 +402,9 @@ static int iis2dlpc_init(const struct device *dev)
  * IIS2DLPC_DEFINE_I2C().
  */
 
-#define IIS2DLPC_DEVICE_INIT(inst)                                                                 \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, iis2dlpc_init, NULL, &iis2dlpc_data_##inst,             \
-				     &iis2dlpc_config_##inst, POST_KERNEL,                         \
+#define IIS2DLPC_DEVICE_INIT(inst)                                                       \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, iis2dlpc_init, NULL, &iis2dlpc_data_##inst,   \
+				     &iis2dlpc_config_##inst, POST_KERNEL,               \
 				     CONFIG_SENSOR_INIT_PRIORITY, &iis2dlpc_driver_api);
 
 /*
@@ -412,51 +412,51 @@ static int iis2dlpc_init(const struct device *dev)
  */
 
 #ifdef CONFIG_IIS2DLPC_TAP
-#define IIS2DLPC_CONFIG_TAP(inst)                                                                  \
-	.tap_mode = DT_INST_PROP(inst, tap_mode),                                                  \
-	.tap_threshold = DT_INST_PROP(inst, tap_threshold),                                        \
-	.tap_shock = DT_INST_PROP(inst, tap_shock),                                                \
-	.tap_latency = DT_INST_PROP(inst, tap_latency),                                            \
+#define IIS2DLPC_CONFIG_TAP(inst)                           \
+	.tap_mode = DT_INST_PROP(inst, tap_mode),           \
+	.tap_threshold = DT_INST_PROP(inst, tap_threshold), \
+	.tap_shock = DT_INST_PROP(inst, tap_shock),         \
+	.tap_latency = DT_INST_PROP(inst, tap_latency),     \
 	.tap_quiet = DT_INST_PROP(inst, tap_quiet),
 #else
 #define IIS2DLPC_CONFIG_TAP(inst)
 #endif /* CONFIG_IIS2DLPC_TAP */
 
 #ifdef CONFIG_IIS2DLPC_TRIGGER
-#define IIS2DLPC_CFG_IRQ(inst)                                                                     \
-	.gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, drdy_gpios),                                      \
+#define IIS2DLPC_CFG_IRQ(inst)                                \
+	.gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, drdy_gpios), \
 	.drdy_int = DT_INST_PROP(inst, drdy_int),
 #else
 #define IIS2DLPC_CFG_IRQ(inst)
 #endif /* CONFIG_IIS2DLPC_TRIGGER */
 
-#define IIS2DLPC_CONFIG_COMMON(inst)                                                               \
-	.pm = DT_INST_PROP(inst, power_mode), .range = DT_INST_PROP(inst, range),                  \
-	IIS2DLPC_CONFIG_TAP(inst)                                                                  \
+#define IIS2DLPC_CONFIG_COMMON(inst)                                              \
+	.pm = DT_INST_PROP(inst, power_mode), .range = DT_INST_PROP(inst, range), \
+	IIS2DLPC_CONFIG_TAP(inst)                                                 \
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),		\
 		(IIS2DLPC_CFG_IRQ(inst)), ())
 
-#define IIS2DLPC_SPI_OPERATION                                                                     \
+#define IIS2DLPC_SPI_OPERATION                                                 \
 	(SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA)
 
-#define IIS2DLPC_CONFIG_SPI(inst)                                                                  \
-	{STMEMSC_CTX_SPI(&iis2dlpc_config_##inst.stmemsc_cfg),                                     \
-	 .stmemsc_cfg =                                                                            \
-		 {                                                                                 \
-			 .spi = SPI_DT_SPEC_INST_GET(inst, IIS2DLPC_SPI_OPERATION, 0),             \
-		 },                                                                                \
+#define IIS2DLPC_CONFIG_SPI(inst)                                                      \
+	{STMEMSC_CTX_SPI(&iis2dlpc_config_##inst.stmemsc_cfg),                         \
+	 .stmemsc_cfg =                                                                \
+		 {                                                                     \
+			 .spi = SPI_DT_SPEC_INST_GET(inst, IIS2DLPC_SPI_OPERATION, 0), \
+		 },                                                                    \
 	 IIS2DLPC_CONFIG_COMMON(inst)}
 
 /*
  * Instantiation macros used when a device is on an I2C bus.
  */
 
-#define IIS2DLPC_CONFIG_I2C(inst)                                                                  \
-	{STMEMSC_CTX_I2C(&iis2dlpc_config_##inst.stmemsc_cfg),                                     \
-	 .stmemsc_cfg =                                                                            \
-		 {                                                                                 \
-			 .i2c = I2C_DT_SPEC_INST_GET(inst),                                        \
-		 },                                                                                \
+#define IIS2DLPC_CONFIG_I2C(inst)                              \
+	{STMEMSC_CTX_I2C(&iis2dlpc_config_##inst.stmemsc_cfg), \
+	 .stmemsc_cfg =                                        \
+		 {                                             \
+			 .i2c = I2C_DT_SPEC_INST_GET(inst),    \
+		 },                                            \
 	 IIS2DLPC_CONFIG_COMMON(inst)}
 
 /*
@@ -464,11 +464,11 @@ static int iis2dlpc_init(const struct device *dev)
  * bus-specific macro at preprocessor time.
  */
 
-#define IIS2DLPC_DEFINE(inst)                                                                      \
-	static struct iis2dlpc_data iis2dlpc_data_##inst;                                          \
+#define IIS2DLPC_DEFINE(inst)                                                       \
+	static struct iis2dlpc_data iis2dlpc_data_##inst;                           \
 	static const struct iis2dlpc_config iis2dlpc_config_##inst = COND_CODE_1(DT_INST_ON_BUS(inst, spi),				\
 		    (IIS2DLPC_CONFIG_SPI(inst)),			\
-		    (IIS2DLPC_CONFIG_I2C(inst)));                \
+		    (IIS2DLPC_CONFIG_I2C(inst))); \
 	IIS2DLPC_DEVICE_INIT(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(IIS2DLPC_DEFINE)

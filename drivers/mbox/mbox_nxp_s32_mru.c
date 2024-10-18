@@ -181,76 +181,76 @@ static const struct mbox_driver_api nxp_s32_mru_driver_api = {
 
 #define MRU_BASE(n)        ((RTU_MRU_Type *)DT_INST_REG_ADDR(n))
 #define MRU_RX_CHANNELS(n) DT_INST_PROP_OR(n, rx_channels, 0)
-#define MRU_MBOX_ADDR(n, ch, mb)                                                                   \
+#define MRU_MBOX_ADDR(n, ch, mb)                                                       \
 	(DT_INST_REG_ADDR(n) + ((ch + 1) * MRU_CHANNEL_OFFSET) + (MRU_MBOX_SIZE * mb))
 
 #define MRU_HW_INSTANCE_CHECK(i, n) ((DT_INST_REG_ADDR(n) == IP_MRU_##i##_BASE) ? i : 0)
 
 #define MRU_HW_INSTANCE(n) LISTIFY(__DEBRACKET RTU_MRU_INSTANCE_COUNT, MRU_HW_INSTANCE_CHECK, (|), n)
 
-#define MRU_INIT_IRQ_FUNC(n)                                                                       \
-	static void nxp_s32_mru_##n##_init_irq(void)                                               \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), nxp_s32_mru_isr,            \
-			    DEVICE_DT_INST_GET(n), DT_INST_IRQ(n, flags));                         \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define MRU_INIT_IRQ_FUNC(n)                                                            \
+	static void nxp_s32_mru_##n##_init_irq(void)                                    \
+	{                                                                               \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), nxp_s32_mru_isr, \
+			    DEVICE_DT_INST_GET(n), DT_INST_IRQ(n, flags));              \
+		irq_enable(DT_INST_IRQN(n));                                            \
 	}
 
-#define MRU_CH_RX_CFG(i, n)                                                                        \
-	static volatile const uint32                                                               \
-		*const nxp_s32_mru_##n##_ch_##i##_rx_mbox_addr[MRU_MAX_MBOX_PER_CHAN] = {          \
-			(uint32 *const)MRU_MBOX_ADDR(n, i, 0),                                     \
-	};                                                                                         \
-	static uint32 nxp_s32_mru_##n##_ch_##i##_buf[MRU_MAX_MBOX_PER_CHAN];                       \
-	static const Mru_Ip_ReceiveChannelType nxp_s32_mru_##n##_ch_##i##_rx_cfg = {               \
-		.ChannelId = i,                                                                    \
-		.ChannelIndex = i,                                                                 \
-		.NumRxMB = MRU_MAX_MBOX_PER_CHAN,                                                  \
-		.MBAddList = nxp_s32_mru_##n##_ch_##i##_rx_mbox_addr,                              \
-		.RxBuffer = nxp_s32_mru_##n##_ch_##i##_buf,                                        \
+#define MRU_CH_RX_CFG(i, n)                                                               \
+	static volatile const uint32                                                      \
+		*const nxp_s32_mru_##n##_ch_##i##_rx_mbox_addr[MRU_MAX_MBOX_PER_CHAN] = { \
+			(uint32 *const)MRU_MBOX_ADDR(n, i, 0),                            \
+	};                                                                                \
+	static uint32 nxp_s32_mru_##n##_ch_##i##_buf[MRU_MAX_MBOX_PER_CHAN];              \
+	static const Mru_Ip_ReceiveChannelType nxp_s32_mru_##n##_ch_##i##_rx_cfg = {      \
+		.ChannelId = i,                                                           \
+		.ChannelIndex = i,                                                        \
+		.NumRxMB = MRU_MAX_MBOX_PER_CHAN,                                         \
+		.MBAddList = nxp_s32_mru_##n##_ch_##i##_rx_mbox_addr,                     \
+		.RxBuffer = nxp_s32_mru_##n##_ch_##i##_buf,                               \
 		.ReceiveNotification = nxp_s32_mru_##n##_cb}
 
-#define MRU_CH_RX_LINK_CFG_MBOX(i, n, chan, intgroup)                                              \
-	{                                                                                          \
-		[intgroup] = { &nxp_s32_mru_##n##_ch_##chan##_rx_cfg }                             \
+#define MRU_CH_RX_LINK_CFG_MBOX(i, n, chan, intgroup)                  \
+	{                                                              \
+		[intgroup] = { &nxp_s32_mru_##n##_ch_##chan##_rx_cfg } \
 	}
 
-#define MRU_CH_RX_LINK_CFG(i, n)                                                                   \
-	static const Mru_Ip_MBLinkReceiveChannelType nxp_s32_mru_##n##_ch_##i##_rx_link_cfg        \
-		[MRU_MAX_MBOX_PER_CHAN][MRU_MAX_INT_GROUPS] = {                                    \
+#define MRU_CH_RX_LINK_CFG(i, n)                                                            \
+	static const Mru_Ip_MBLinkReceiveChannelType nxp_s32_mru_##n##_ch_##i##_rx_link_cfg \
+		[MRU_MAX_MBOX_PER_CHAN][MRU_MAX_INT_GROUPS] = {                             \
 			MRU_CH_RX_LINK_CFG_MBOX(0, n, i, MRU_INT_GROUP(DT_INST_IRQN(n)))}
 
-#define MRU_CH_CFG(i, n)                                                                           \
-	{.ChCFG0Add = (volatile uint32 *)&MRU_BASE(n)->CHXCONFIG[i].CH_CFG0,                       \
-	 .ChCFG0 = RTU_MRU_CH_CFG0_IE(0) | RTU_MRU_CH_CFG0_MBE0(0),                                \
-	 .ChCFG1Add = (volatile uint32 *)&MRU_BASE(n)->CHXCONFIG[i].CH_CFG1,                       \
-	 .ChCFG1 = RTU_MRU_CH_CFG1_MBIC0(MRU_INT_GROUP(DT_INST_IRQN(n))),                          \
-	 .ChMBSTATAdd = (volatile uint32 *)&MRU_BASE(n)->CHXCONFIG[i].CH_MBSTAT,                   \
-	 .NumMailbox = MRU_MAX_MBOX_PER_CHAN,                                                      \
+#define MRU_CH_CFG(i, n)                                                         \
+	{.ChCFG0Add = (volatile uint32 *)&MRU_BASE(n)->CHXCONFIG[i].CH_CFG0,     \
+	 .ChCFG0 = RTU_MRU_CH_CFG0_IE(0) | RTU_MRU_CH_CFG0_MBE0(0),              \
+	 .ChCFG1Add = (volatile uint32 *)&MRU_BASE(n)->CHXCONFIG[i].CH_CFG1,     \
+	 .ChCFG1 = RTU_MRU_CH_CFG1_MBIC0(MRU_INT_GROUP(DT_INST_IRQN(n))),        \
+	 .ChMBSTATAdd = (volatile uint32 *)&MRU_BASE(n)->CHXCONFIG[i].CH_MBSTAT, \
+	 .NumMailbox = MRU_MAX_MBOX_PER_CHAN,                                    \
 	 .MBLinkReceiveChCfg = nxp_s32_mru_##n##_ch_##i##_rx_link_cfg}
 
 /* Callback wrapper to adapt MRU's baremetal driver callback to Zephyr's mbox driver callback */
-#define MRU_CALLBACK_WRAPPER_FUNC(n)                                                               \
-	void nxp_s32_mru_##n##_cb(uint8_t channel, const uint32 *buf, uint8_t mbox_count)          \
-	{                                                                                          \
-		const struct device *dev = DEVICE_DT_INST_GET(n);                                  \
-		struct nxp_s32_mru_data *data = dev->data;                                         \
-                                                                                                   \
-		if (is_rx_channel_valid(dev, channel)) {                                           \
-			if (data->cb[channel] != NULL) {                                           \
-				struct mbox_msg msg = {.data = (const void *)buf,                  \
-						       .size = mbox_count * MRU_MBOX_SIZE};        \
-				data->cb[channel](dev, channel, data->user_data[channel], &msg);   \
-			}                                                                          \
-		}                                                                                  \
+#define MRU_CALLBACK_WRAPPER_FUNC(n)                                                             \
+	void nxp_s32_mru_##n##_cb(uint8_t channel, const uint32 *buf, uint8_t mbox_count)        \
+	{                                                                                        \
+		const struct device *dev = DEVICE_DT_INST_GET(n);                                \
+		struct nxp_s32_mru_data *data = dev->data;                                       \
+                                                                                                 \
+		if (is_rx_channel_valid(dev, channel)) {                                         \
+			if (data->cb[channel] != NULL) {                                         \
+				struct mbox_msg msg = {.data = (const void *)buf,                \
+						       .size = mbox_count * MRU_MBOX_SIZE};      \
+				data->cb[channel](dev, channel, data->user_data[channel], &msg); \
+			}                                                                        \
+		}                                                                                \
 	}
 
-#define MRU_CH_RX_DEFINITIONS(n)                                                                   \
-	MRU_CALLBACK_WRAPPER_FUNC(n)                                                               \
-	MRU_INIT_IRQ_FUNC(n)                                                                       \
-	LISTIFY(MRU_RX_CHANNELS(n), MRU_CH_RX_CFG, (;), n);                                           \
-	LISTIFY(MRU_RX_CHANNELS(n), MRU_CH_RX_LINK_CFG, (;), n);                                      \
-	static const Mru_Ip_ChannelCfgType nxp_s32_mru_##n##_ch_cfg[] = {                          \
+#define MRU_CH_RX_DEFINITIONS(n)                                          \
+	MRU_CALLBACK_WRAPPER_FUNC(n)                                      \
+	MRU_INIT_IRQ_FUNC(n)                                              \
+	LISTIFY(MRU_RX_CHANNELS(n), MRU_CH_RX_CFG, (;), n);                  \
+	LISTIFY(MRU_RX_CHANNELS(n), MRU_CH_RX_LINK_CFG, (;), n);             \
+	static const Mru_Ip_ChannelCfgType nxp_s32_mru_##n##_ch_cfg[] = { \
 		LISTIFY(MRU_RX_CHANNELS(n), MRU_CH_CFG, (,), n) }
 
 #define MRU_INSTANCE_DEFINE(n)                                                                     \

@@ -29,24 +29,24 @@ LOG_MODULE_REGISTER(smartbond_display, CONFIG_DISPLAY_LOG_LEVEL);
 #define SMARTBOND_IRQN     DT_INST_IRQN(0)
 #define SMARTBOND_IRQ_PRIO DT_INST_IRQ(0, priority)
 
-#define LCDC_SMARTBOND_CLK_DIV(_freq)                                                              \
+#define LCDC_SMARTBOND_CLK_DIV(_freq)                                           \
 	((32000000U % (_freq)) ? (96000000U / (_freq)) : (32000000U / (_freq)))
 
-#define LCDC_SMARTBOND_IS_PLL_REQUIRED                                                             \
+#define LCDC_SMARTBOND_IS_PLL_REQUIRED                                              \
 	!!(32000000U % DT_PROP(DT_INST_CHILD(0, display_timings), clock_frequency))
 
 #define DISPLAY_SMARTBOND_IS_DMA_PREFETCH_ENABLED DT_INST_ENUM_IDX_OR(0, dma_prefetch, 0)
 
-#define LCDC_LAYER0_OFFSETX_REG_SET_FIELD(_field, _var, _val)                                      \
-	((_var)) = ((_var) & ~(LCDC_LCDC_LAYER0_OFFSETX_REG_##_field##_Msk)) |                     \
-		   (((_val) << LCDC_LCDC_LAYER0_OFFSETX_REG_##_field##_Pos) &                      \
+#define LCDC_LAYER0_OFFSETX_REG_SET_FIELD(_field, _var, _val)                  \
+	((_var)) = ((_var) & ~(LCDC_LCDC_LAYER0_OFFSETX_REG_##_field##_Msk)) | \
+		   (((_val) << LCDC_LCDC_LAYER0_OFFSETX_REG_##_field##_Pos) &  \
 		    LCDC_LCDC_LAYER0_OFFSETX_REG_##_field##_Msk)
 
-#define DISPLAY_SMARTBOND_PIXEL_SIZE(inst)                                                         \
+#define DISPLAY_SMARTBOND_PIXEL_SIZE(inst)                             \
 	(DISPLAY_BITS_PER_PIXEL(DT_INST_PROP(inst, pixel_format)) / 8)
 
 #if CONFIG_DISPLAY_RENESAS_LCDC_BUFFER_PSRAM
-#define DISPLAY_BUFFER_LINKER_SECTION                                                              \
+#define DISPLAY_BUFFER_LINKER_SECTION                                      \
 	Z_GENERIC_SECTION(LINKER_DT_NODE_REGION_NAME(DT_NODELABEL(psram)))
 #else
 #define DISPLAY_BUFFER_LINKER_SECTION

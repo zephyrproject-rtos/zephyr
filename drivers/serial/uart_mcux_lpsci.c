@@ -280,13 +280,13 @@ static const struct uart_driver_api mcux_lpsci_driver_api = {
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define MCUX_LPSCI_CONFIG_FUNC(n)                                                                  \
-	static void mcux_lpsci_config_func_##n(const struct device *dev)                           \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_lpsci_isr,             \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define MCUX_LPSCI_CONFIG_FUNC(n)                                                      \
+	static void mcux_lpsci_config_func_##n(const struct device *dev)               \
+	{                                                                              \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_lpsci_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                                 \
+                                                                                       \
+		irq_enable(DT_INST_IRQN(n));                                           \
 	}
 #define MCUX_LPSCI_IRQ_CFG_FUNC_INIT(n) .irq_config_func = mcux_lpsci_config_func_##n
 #define MCUX_LPSCI_INIT_CFG(n)          MCUX_LPSCI_DECLARE_CFG(n, MCUX_LPSCI_IRQ_CFG_FUNC_INIT(n))
@@ -296,13 +296,13 @@ static const struct uart_driver_api mcux_lpsci_driver_api = {
 #define MCUX_LPSCI_INIT_CFG(n) MCUX_LPSCI_DECLARE_CFG(n, MCUX_LPSCI_IRQ_CFG_FUNC_INIT)
 #endif
 
-#define MCUX_LPSCI_DECLARE_CFG(n, IRQ_FUNC_INIT)                                                   \
-	static const struct mcux_lpsci_config mcux_lpsci_##n##_config = {                          \
-		.base = (UART0_Type *)DT_INST_REG_ADDR(n),                                         \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
-		.baud_rate = DT_INST_PROP(n, current_speed),                                       \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+#define MCUX_LPSCI_DECLARE_CFG(n, IRQ_FUNC_INIT)                                      \
+	static const struct mcux_lpsci_config mcux_lpsci_##n##_config = {             \
+		.base = (UART0_Type *)DT_INST_REG_ADDR(n),                            \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                   \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name), \
+		.baud_rate = DT_INST_PROP(n, current_speed),                          \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                          \
 		IRQ_FUNC_INIT}
 
 #define MCUX_LPSCI_INIT(n)                                                                         \

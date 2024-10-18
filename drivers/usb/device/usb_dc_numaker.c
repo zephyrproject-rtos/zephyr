@@ -1958,44 +1958,44 @@ static int numaker_udbd_init(const struct device *dev)
 	return rc;
 }
 
-#define USB_DC_NUMAKER_INIT(inst)                                                                  \
-	PINCTRL_DT_INST_DEFINE(inst);                                                              \
-                                                                                                   \
-	static void numaker_usbd_irq_config_func_##inst(const struct device *dev)                  \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), numaker_udbd_isr,     \
-			    DEVICE_DT_INST_GET(inst), 0);                                          \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(inst));                                                    \
-	}                                                                                          \
-                                                                                                   \
-	static void numaker_uusbd_irq_unconfig_func_##inst(const struct device *dev)               \
-	{                                                                                          \
-		irq_disable(DT_INST_IRQN(inst));                                                   \
-	}                                                                                          \
-                                                                                                   \
-	static const struct numaker_usbd_config numaker_usbd_config_##inst = {                     \
-		.base = (USBD_T *)DT_INST_REG_ADDR(inst),                                          \
-		.reset = RESET_DT_SPEC_INST_GET(inst),                                             \
-		.clk_modidx = DT_INST_CLOCKS_CELL(inst, clock_module_index),                       \
-		.clk_src = DT_INST_CLOCKS_CELL(inst, clock_source),                                \
-		.clk_div = DT_INST_CLOCKS_CELL(inst, clock_divider),                               \
-		.clkctrl_dev = DEVICE_DT_GET(DT_PARENT(DT_INST_CLOCKS_CTLR(inst))),                \
-		.irq_config_func = numaker_usbd_irq_config_func_##inst,                            \
-		.irq_unconfig_func = numaker_uusbd_irq_unconfig_func_##inst,                       \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                    \
-		.num_bidir_endpoints = DT_INST_PROP(inst, num_bidir_endpoints),                    \
-		.dmabuf_size = DT_INST_PROP(inst, dma_buffer_size),                                \
-		.disallow_iso_inout_same = DT_INST_PROP(inst, disallow_iso_in_out_same_number),    \
-	};                                                                                         \
-                                                                                                   \
-	static struct numaker_usbd_data numaker_usbd_data_##inst;                                  \
-                                                                                                   \
-	BUILD_ASSERT(DT_INST_PROP(inst, num_bidir_endpoints) <= NUMAKER_USBD_EP_MAXNUM,            \
-		     "num_bidir_endpoints exceeds support limit by USBD driver");                  \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, numaker_udbd_init, NULL, &numaker_usbd_data_##inst,            \
-			      &numaker_usbd_config_##inst, POST_KERNEL,                            \
+#define USB_DC_NUMAKER_INIT(inst)                                                               \
+	PINCTRL_DT_INST_DEFINE(inst);                                                           \
+                                                                                                \
+	static void numaker_usbd_irq_config_func_##inst(const struct device *dev)               \
+	{                                                                                       \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), numaker_udbd_isr,  \
+			    DEVICE_DT_INST_GET(inst), 0);                                       \
+                                                                                                \
+		irq_enable(DT_INST_IRQN(inst));                                                 \
+	}                                                                                       \
+                                                                                                \
+	static void numaker_uusbd_irq_unconfig_func_##inst(const struct device *dev)            \
+	{                                                                                       \
+		irq_disable(DT_INST_IRQN(inst));                                                \
+	}                                                                                       \
+                                                                                                \
+	static const struct numaker_usbd_config numaker_usbd_config_##inst = {                  \
+		.base = (USBD_T *)DT_INST_REG_ADDR(inst),                                       \
+		.reset = RESET_DT_SPEC_INST_GET(inst),                                          \
+		.clk_modidx = DT_INST_CLOCKS_CELL(inst, clock_module_index),                    \
+		.clk_src = DT_INST_CLOCKS_CELL(inst, clock_source),                             \
+		.clk_div = DT_INST_CLOCKS_CELL(inst, clock_divider),                            \
+		.clkctrl_dev = DEVICE_DT_GET(DT_PARENT(DT_INST_CLOCKS_CTLR(inst))),             \
+		.irq_config_func = numaker_usbd_irq_config_func_##inst,                         \
+		.irq_unconfig_func = numaker_uusbd_irq_unconfig_func_##inst,                    \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                 \
+		.num_bidir_endpoints = DT_INST_PROP(inst, num_bidir_endpoints),                 \
+		.dmabuf_size = DT_INST_PROP(inst, dma_buffer_size),                             \
+		.disallow_iso_inout_same = DT_INST_PROP(inst, disallow_iso_in_out_same_number), \
+	};                                                                                      \
+                                                                                                \
+	static struct numaker_usbd_data numaker_usbd_data_##inst;                               \
+                                                                                                \
+	BUILD_ASSERT(DT_INST_PROP(inst, num_bidir_endpoints) <= NUMAKER_USBD_EP_MAXNUM,         \
+		     "num_bidir_endpoints exceeds support limit by USBD driver");               \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(inst, numaker_udbd_init, NULL, &numaker_usbd_data_##inst,         \
+			      &numaker_usbd_config_##inst, POST_KERNEL,                         \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 
 USB_DC_NUMAKER_INIT(0);

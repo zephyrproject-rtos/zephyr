@@ -527,33 +527,33 @@ static int adc_emul_init(const struct device *dev)
 	return 0;
 }
 
-#define ADC_EMUL_INIT(_num)                                                                        \
-	static struct adc_driver_api adc_emul_api_##_num = {                                       \
-		.channel_setup = adc_emul_channel_setup,                                           \
-		.read = adc_emul_read,                                                             \
-		.ref_internal = DT_INST_PROP(_num, ref_internal_mv),                               \
+#define ADC_EMUL_INIT(_num)                                                                    \
+	static struct adc_driver_api adc_emul_api_##_num = {                                   \
+		.channel_setup = adc_emul_channel_setup,                                       \
+		.read = adc_emul_read,                                                         \
+		.ref_internal = DT_INST_PROP(_num, ref_internal_mv),                           \
 		IF_ENABLED(CONFIG_ADC_ASYNC,				\
-			(.read_async = adc_emul_read_async,)) };                 \
-                                                                                                   \
-	static struct adc_emul_chan_cfg adc_emul_ch_cfg_##_num[DT_INST_PROP(_num, nchannels)];     \
-                                                                                                   \
-	static const struct adc_emul_config adc_emul_config_##_num = {                             \
-		.num_channels = DT_INST_PROP(_num, nchannels),                                     \
-	};                                                                                         \
-                                                                                                   \
-	static struct adc_emul_data adc_emul_data_##_num = {                                       \
-		ADC_CONTEXT_INIT_TIMER(adc_emul_data_##_num, ctx),                                 \
-		ADC_CONTEXT_INIT_LOCK(adc_emul_data_##_num, ctx),                                  \
-		ADC_CONTEXT_INIT_SYNC(adc_emul_data_##_num, ctx),                                  \
-		.chan_cfg = adc_emul_ch_cfg_##_num,                                                \
-		.ref_vdd = DT_INST_PROP(_num, ref_vdd_mv),                                         \
-		.ref_ext0 = DT_INST_PROP(_num, ref_external0_mv),                                  \
-		.ref_ext1 = DT_INST_PROP(_num, ref_external1_mv),                                  \
-		.ref_int = DT_INST_PROP(_num, ref_internal_mv),                                    \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(_num, adc_emul_init, NULL, &adc_emul_data_##_num,                    \
-			      &adc_emul_config_##_num, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,      \
+			(.read_async = adc_emul_read_async,)) };             \
+                                                                                               \
+	static struct adc_emul_chan_cfg adc_emul_ch_cfg_##_num[DT_INST_PROP(_num, nchannels)]; \
+                                                                                               \
+	static const struct adc_emul_config adc_emul_config_##_num = {                         \
+		.num_channels = DT_INST_PROP(_num, nchannels),                                 \
+	};                                                                                     \
+                                                                                               \
+	static struct adc_emul_data adc_emul_data_##_num = {                                   \
+		ADC_CONTEXT_INIT_TIMER(adc_emul_data_##_num, ctx),                             \
+		ADC_CONTEXT_INIT_LOCK(adc_emul_data_##_num, ctx),                              \
+		ADC_CONTEXT_INIT_SYNC(adc_emul_data_##_num, ctx),                              \
+		.chan_cfg = adc_emul_ch_cfg_##_num,                                            \
+		.ref_vdd = DT_INST_PROP(_num, ref_vdd_mv),                                     \
+		.ref_ext0 = DT_INST_PROP(_num, ref_external0_mv),                              \
+		.ref_ext1 = DT_INST_PROP(_num, ref_external1_mv),                              \
+		.ref_int = DT_INST_PROP(_num, ref_internal_mv),                                \
+	};                                                                                     \
+                                                                                               \
+	DEVICE_DT_INST_DEFINE(_num, adc_emul_init, NULL, &adc_emul_data_##_num,                \
+			      &adc_emul_config_##_num, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,  \
 			      &adc_emul_api_##_num);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_EMUL_INIT)

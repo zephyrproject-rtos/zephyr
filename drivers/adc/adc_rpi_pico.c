@@ -332,12 +332,12 @@ static int adc_rpi_init(const struct device *dev)
 	return 0;
 }
 
-#define IRQ_CONFIGURE_FUNC(idx)                                                                    \
-	static void adc_rpi_configure_func_##idx(void)                                             \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority), adc_rpi_isr,            \
-			    DEVICE_DT_INST_GET(idx), 0);                                           \
-		irq_enable(DT_INST_IRQN(idx));                                                     \
+#define IRQ_CONFIGURE_FUNC(idx)                                                         \
+	static void adc_rpi_configure_func_##idx(void)                                  \
+	{                                                                               \
+		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority), adc_rpi_isr, \
+			    DEVICE_DT_INST_GET(idx), 0);                                \
+		irq_enable(DT_INST_IRQN(idx));                                          \
 	}
 
 #define IRQ_CONFIGURE_DEFINE(idx) .irq_configure = adc_rpi_configure_func_##idx

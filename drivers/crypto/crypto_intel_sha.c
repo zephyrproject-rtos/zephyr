@@ -331,10 +331,10 @@ static struct crypto_driver_api hash_enc_funcs = {
 	.query_hw_caps = intel_sha_device_hw_caps,
 };
 
-#define INTEL_SHA_DEVICE_INIT(inst)                                                                \
-	static struct sha_container sha_data_##inst = {                                            \
-		.dfsha = (volatile struct sha_hw_regs *)DT_INST_REG_ADDR_BY_IDX(inst, 0)};         \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &sha_data_##inst, NULL, POST_KERNEL,               \
+#define INTEL_SHA_DEVICE_INIT(inst)                                                        \
+	static struct sha_container sha_data_##inst = {                                    \
+		.dfsha = (volatile struct sha_hw_regs *)DT_INST_REG_ADDR_BY_IDX(inst, 0)}; \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &sha_data_##inst, NULL, POST_KERNEL,       \
 			      CONFIG_CRYPTO_INIT_PRIORITY, (void *)&hash_enc_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(INTEL_SHA_DEVICE_INIT)

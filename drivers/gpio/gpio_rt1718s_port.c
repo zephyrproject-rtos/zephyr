@@ -367,14 +367,14 @@ static int gpio_rt1718s_port_init(const struct device *dev)
 /* RT1718S GPIO port driver must be initialized after RT1718S chip driver */
 BUILD_ASSERT(CONFIG_GPIO_RT1718S_PORT_INIT_PRIORITY > CONFIG_RT1718S_INIT_PRIORITY);
 
-#define GPIO_RT1718S_PORT_DEVICE_INSTANCE(inst)                                                    \
-	static const struct gpio_rt1718s_port_config gpio_rt1718s_port_cfg_##inst = {              \
-		.common = {.port_pin_mask = 0x7},                                                  \
-		.rt1718s_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                \
-	};                                                                                         \
-	static struct gpio_rt1718s_port_data gpio_rt1718s_port_data_##inst;                        \
-	DEVICE_DT_INST_DEFINE(inst, gpio_rt1718s_port_init, NULL, &gpio_rt1718s_port_data_##inst,  \
-			      &gpio_rt1718s_port_cfg_##inst, POST_KERNEL,                          \
+#define GPIO_RT1718S_PORT_DEVICE_INSTANCE(inst)                                                   \
+	static const struct gpio_rt1718s_port_config gpio_rt1718s_port_cfg_##inst = {             \
+		.common = {.port_pin_mask = 0x7},                                                 \
+		.rt1718s_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                               \
+	};                                                                                        \
+	static struct gpio_rt1718s_port_data gpio_rt1718s_port_data_##inst;                       \
+	DEVICE_DT_INST_DEFINE(inst, gpio_rt1718s_port_init, NULL, &gpio_rt1718s_port_data_##inst, \
+			      &gpio_rt1718s_port_cfg_##inst, POST_KERNEL,                         \
 			      CONFIG_GPIO_RT1718S_PORT_INIT_PRIORITY, &gpio_rt1718s_driver);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_RT1718S_PORT_DEVICE_INSTANCE)

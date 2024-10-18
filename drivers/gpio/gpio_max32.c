@@ -242,27 +242,27 @@ static int gpio_max32_init(const struct device *dev)
 	return ret;
 }
 
-#define MAX32_GPIO_INIT(_num)                                                                      \
-	static void gpio_max32_irq_init_##_num(void)                                               \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(_num), DT_INST_IRQ(_num, priority), gpio_max32_isr,       \
-			    DEVICE_DT_INST_GET(_num), 0);                                          \
-		irq_enable(DT_INST_IRQN(_num));                                                    \
-	}                                                                                          \
-	static struct max32_gpio_data max32_gpio_data_##_num;                                      \
-	static const struct max32_gpio_config max32_gpio_config_##_num = {                         \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(_num),            \
-			},                                                                         \
-		.regs = (mxc_gpio_regs_t *)DT_INST_REG_ADDR(_num),                                 \
-		.irq_func = &gpio_max32_irq_init_##_num,                                           \
-		.clock = DEVICE_DT_GET_OR_NULL(DT_INST_CLOCKS_CTLR(_num)),                         \
-		.perclk.bus = DT_INST_PHA_BY_IDX_OR(_num, clocks, 0, offset, 0),                   \
-		.perclk.bit = DT_INST_PHA_BY_IDX_OR(_num, clocks, 1, bit, 0),                      \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(_num, gpio_max32_init, NULL, &max32_gpio_data_##_num,                \
-			      &max32_gpio_config_##_num, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,  \
+#define MAX32_GPIO_INIT(_num)                                                                     \
+	static void gpio_max32_irq_init_##_num(void)                                              \
+	{                                                                                         \
+		IRQ_CONNECT(DT_INST_IRQN(_num), DT_INST_IRQ(_num, priority), gpio_max32_isr,      \
+			    DEVICE_DT_INST_GET(_num), 0);                                         \
+		irq_enable(DT_INST_IRQN(_num));                                                   \
+	}                                                                                         \
+	static struct max32_gpio_data max32_gpio_data_##_num;                                     \
+	static const struct max32_gpio_config max32_gpio_config_##_num = {                        \
+		.common =                                                                         \
+			{                                                                         \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(_num),           \
+			},                                                                        \
+		.regs = (mxc_gpio_regs_t *)DT_INST_REG_ADDR(_num),                                \
+		.irq_func = &gpio_max32_irq_init_##_num,                                          \
+		.clock = DEVICE_DT_GET_OR_NULL(DT_INST_CLOCKS_CTLR(_num)),                        \
+		.perclk.bus = DT_INST_PHA_BY_IDX_OR(_num, clocks, 0, offset, 0),                  \
+		.perclk.bit = DT_INST_PHA_BY_IDX_OR(_num, clocks, 1, bit, 0),                     \
+	};                                                                                        \
+	DEVICE_DT_INST_DEFINE(_num, gpio_max32_init, NULL, &max32_gpio_data_##_num,               \
+			      &max32_gpio_config_##_num, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, \
 			      (void *)&gpio_max32_driver);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX32_GPIO_INIT)

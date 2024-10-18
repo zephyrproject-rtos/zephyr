@@ -10,12 +10,12 @@
 #if defined(CONFIG_VIDEO_BUFFER_USE_SHARED_MULTI_HEAP)
 #include <zephyr/multi_heap/shared_multi_heap.h>
 
-#define VIDEO_COMMON_HEAP_ALLOC(align, size, timeout)                                              \
+#define VIDEO_COMMON_HEAP_ALLOC(align, size, timeout)                                   \
 	shared_multi_heap_aligned_alloc(CONFIG_VIDEO_BUFFER_SMH_ATTRIBUTE, align, size)
 #define VIDEO_COMMON_FREE(block) shared_multi_heap_free(block)
 #else
 K_HEAP_DEFINE(video_buffer_pool, CONFIG_VIDEO_BUFFER_POOL_SZ_MAX *CONFIG_VIDEO_BUFFER_POOL_NUM_MAX);
-#define VIDEO_COMMON_HEAP_ALLOC(align, size, timeout)                                              \
+#define VIDEO_COMMON_HEAP_ALLOC(align, size, timeout)                   \
 	k_heap_aligned_alloc(&video_buffer_pool, align, size, timeout);
 #define VIDEO_COMMON_FREE(block) k_heap_free(&video_buffer_pool, block)
 #endif

@@ -556,9 +556,9 @@ static int pl011_init(const struct device *dev)
  * When compatible defines as "ambiq,uart", "arm,pl011",
  * this macro expands to clk_enable_ambiq_uart_[n].
  */
-#define COMPAT_SPECIFIC_CLK_ENABLE_FUNC(n)                                                         \
-	_CONCAT(COMPAT_SPECIFIC_FUNC_NAME(clk_enable_,                                             \
-					  DT_INST_STRING_TOKEN_BY_IDX(n, compatible, 0)),          \
+#define COMPAT_SPECIFIC_CLK_ENABLE_FUNC(n)                                                \
+	_CONCAT(COMPAT_SPECIFIC_FUNC_NAME(clk_enable_,                                    \
+					  DT_INST_STRING_TOKEN_BY_IDX(n, compatible, 0)), \
 		n)
 
 /*
@@ -566,10 +566,10 @@ static int pl011_init(const struct device *dev)
  * When compatible defines as "ambiq,uart", "arm,pl011",
  * this macro expands to AMBIQ_UART_DEFINE(n).
  */
-#define COMPAT_SPECIFIC_DEFINE(n)                                                                  \
+#define COMPAT_SPECIFIC_DEFINE(n)                                                \
 	_CONCAT(DT_INST_STRING_UPPER_TOKEN_BY_IDX(n, compatible, 0), _DEFINE)(n)
 
-#define COMPAT_SPECIFIC_CLOCK_CTLR_SUBSYS_CELL(n)                                                  \
+#define COMPAT_SPECIFIC_CLOCK_CTLR_SUBSYS_CELL(n)                                             \
 	_CONCAT(DT_INST_STRING_UPPER_TOKEN_BY_IDX(n, compatible, 0), _CLOCK_CTLR_SUBSYS_CELL)
 
 #if defined(CONFIG_PINCTRL)
@@ -581,26 +581,26 @@ static int pl011_init(const struct device *dev)
 #endif /* CONFIG_PINCTRL */
 
 #if defined(CONFIG_RESET)
-#define RESET_INIT(n)                                                                              \
+#define RESET_INIT(n) \
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(0, resets), (.reset = RESET_DT_SPEC_INST_GET(n),))
 #else
 #define RESET_INIT(n)
 #endif
 
-#define CLOCK_INIT(n)                                                                              \
+#define CLOCK_INIT(n) \
 	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(n), fixed_clock), (),                   \
 		    (.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                           \
 		     .clock_id = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n,                    \
 				  COMPAT_SPECIFIC_CLOCK_CTLR_SUBSYS_CELL(n)),))
 
-#define ARM_PL011_DEFINE(n)                                                                        \
-	static inline int pwr_on_arm_pl011_##n(void)                                               \
-	{                                                                                          \
-		return 0;                                                                          \
-	}                                                                                          \
-	static inline int clk_enable_arm_pl011_##n(const struct device *dev, uint32_t clk)         \
-	{                                                                                          \
-		return 0;                                                                          \
+#define ARM_PL011_DEFINE(n)                                                                \
+	static inline int pwr_on_arm_pl011_##n(void)                                       \
+	{                                                                                  \
+		return 0;                                                                  \
+	}                                                                                  \
+	static inline int clk_enable_arm_pl011_##n(const struct device *dev, uint32_t clk) \
+	{                                                                                  \
+		return 0;                                                                  \
 	}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -616,51 +616,51 @@ void pl011_isr(const struct device *dev)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define PL011_IRQ_CONFIG_FUNC_BODY(n, prop, i)                                                     \
-	{                                                                                          \
-		IRQ_CONNECT(DT_IRQ_BY_IDX(n, i, irq), DT_IRQ_BY_IDX(n, i, priority), pl011_isr,    \
-			    DEVICE_DT_GET(n), 0);                                                  \
-		irq_enable(DT_IRQ_BY_IDX(n, i, irq));                                              \
+#define PL011_IRQ_CONFIG_FUNC_BODY(n, prop, i)                                                  \
+	{                                                                                       \
+		IRQ_CONNECT(DT_IRQ_BY_IDX(n, i, irq), DT_IRQ_BY_IDX(n, i, priority), pl011_isr, \
+			    DEVICE_DT_GET(n), 0);                                               \
+		irq_enable(DT_IRQ_BY_IDX(n, i, irq));                                           \
 	}
 
-#define PL011_CONFIG_PORT(n)                                                                       \
-	static void pl011_irq_config_func_##n(const struct device *dev){                           \
-		DT_INST_FOREACH_PROP_ELEM(n, interrupt_names, PL011_IRQ_CONFIG_FUNC_BODY)};        \
-                                                                                                   \
-	static struct pl011_config pl011_cfg_port_##n = {                                          \
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
-		CLOCK_INIT(n) PINCTRL_INIT(n).irq_config_func = pl011_irq_config_func_##n,         \
-		.clk_enable_func = COMPAT_SPECIFIC_CLK_ENABLE_FUNC(n),                             \
-		.pwr_on_func = COMPAT_SPECIFIC_PWR_ON_FUNC(n),                                     \
+#define PL011_CONFIG_PORT(n)                                                                \
+	static void pl011_irq_config_func_##n(const struct device *dev){                    \
+		DT_INST_FOREACH_PROP_ELEM(n, interrupt_names, PL011_IRQ_CONFIG_FUNC_BODY)}; \
+                                                                                            \
+	static struct pl011_config pl011_cfg_port_##n = {                                   \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                       \
+		CLOCK_INIT(n) PINCTRL_INIT(n).irq_config_func = pl011_irq_config_func_##n,  \
+		.clk_enable_func = COMPAT_SPECIFIC_CLK_ENABLE_FUNC(n),                      \
+		.pwr_on_func = COMPAT_SPECIFIC_PWR_ON_FUNC(n),                              \
 	};
 #else
-#define PL011_CONFIG_PORT(n)                                                                       \
-	static struct pl011_config pl011_cfg_port_##n = {DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),     \
+#define PL011_CONFIG_PORT(n)                                                                   \
+	static struct pl011_config pl011_cfg_port_##n = {DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)), \
 							 CLOCK_INIT(n) PINCTRL_INIT(n)};
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-#define PL011_INIT(n)                                                                              \
-	PINCTRL_DEFINE(n)                                                                          \
-	COMPAT_SPECIFIC_DEFINE(n)                                                                  \
-	PL011_CONFIG_PORT(n)                                                                       \
-                                                                                                   \
-	static struct pl011_data pl011_data_port_##n = {                                           \
-		.uart_cfg =                                                                        \
-			{                                                                          \
-				.baudrate = DT_INST_PROP(n, current_speed),                        \
-				.parity = UART_CFG_PARITY_NONE,                                    \
-				.stop_bits = UART_CFG_STOP_BITS_1,                                 \
-				.data_bits = UART_CFG_DATA_BITS_8,                                 \
-				.flow_ctrl = DT_INST_PROP(n, hw_flow_control)                      \
-						     ? UART_CFG_FLOW_CTRL_RTS_CTS                  \
-						     : UART_CFG_FLOW_CTRL_NONE,                    \
-			},                                                                         \
+#define PL011_INIT(n)                                                                         \
+	PINCTRL_DEFINE(n)                                                                     \
+	COMPAT_SPECIFIC_DEFINE(n)                                                             \
+	PL011_CONFIG_PORT(n)                                                                  \
+                                                                                              \
+	static struct pl011_data pl011_data_port_##n = {                                      \
+		.uart_cfg =                                                                   \
+			{                                                                     \
+				.baudrate = DT_INST_PROP(n, current_speed),                   \
+				.parity = UART_CFG_PARITY_NONE,                               \
+				.stop_bits = UART_CFG_STOP_BITS_1,                            \
+				.data_bits = UART_CFG_DATA_BITS_8,                            \
+				.flow_ctrl = DT_INST_PROP(n, hw_flow_control)                 \
+						     ? UART_CFG_FLOW_CTRL_RTS_CTS             \
+						     : UART_CFG_FLOW_CTRL_NONE,               \
+			},                                                                    \
 		.clk_freq = COND_CODE_1(DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(n), fixed_clock),       \
-				    (DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency)), (0)),                  \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, pl011_init, PM_INST_GET(n), &pl011_data_port_##n,                 \
-			      &pl011_cfg_port_##n, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,      \
+				    (DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency)), (0)),             \
+	};                                                                                    \
+                                                                                              \
+	DEVICE_DT_INST_DEFINE(n, pl011_init, PM_INST_GET(n), &pl011_data_port_##n,            \
+			      &pl011_cfg_port_##n, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, \
 			      &pl011_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PL011_INIT)
@@ -671,29 +671,29 @@ DT_INST_FOREACH_STATUS_OKAY(PL011_INIT)
 #define DT_DRV_COMPAT SBSA_COMPAT
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define PL011_SBSA_CONFIG_PORT(n)                                                                  \
-	static void pl011_irq_config_func_sbsa_##n(const struct device *dev){                      \
-		DT_INST_FOREACH_PROP_ELEM(n, interrupt_names, PL011_IRQ_CONFIG_FUNC_BODY)};        \
-                                                                                                   \
-	static struct pl011_config pl011_cfg_sbsa_##n = {                                          \
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
-		.irq_config_func = pl011_irq_config_func_sbsa_##n,                                 \
+#define PL011_SBSA_CONFIG_PORT(n)                                                           \
+	static void pl011_irq_config_func_sbsa_##n(const struct device *dev){               \
+		DT_INST_FOREACH_PROP_ELEM(n, interrupt_names, PL011_IRQ_CONFIG_FUNC_BODY)}; \
+                                                                                            \
+	static struct pl011_config pl011_cfg_sbsa_##n = {                                   \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                       \
+		.irq_config_func = pl011_irq_config_func_sbsa_##n,                          \
 	};
 #else
-#define PL011_SBSA_CONFIG_PORT(n)                                                                  \
-	static struct pl011_config pl011_cfg_sbsa_##n = {                                          \
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
+#define PL011_SBSA_CONFIG_PORT(n)                         \
+	static struct pl011_config pl011_cfg_sbsa_##n = { \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),     \
 	};
 #endif
 
-#define PL011_SBSA_INIT(n)                                                                         \
-	PL011_SBSA_CONFIG_PORT(n)                                                                  \
-                                                                                                   \
-	static struct pl011_data pl011_data_sbsa_##n = {                                           \
-		.sbsa = true,                                                                      \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, pl011_init, NULL, &pl011_data_sbsa_##n, &pl011_cfg_sbsa_##n,      \
+#define PL011_SBSA_INIT(n)                                                                    \
+	PL011_SBSA_CONFIG_PORT(n)                                                             \
+                                                                                              \
+	static struct pl011_data pl011_data_sbsa_##n = {                                      \
+		.sbsa = true,                                                                 \
+	};                                                                                    \
+                                                                                              \
+	DEVICE_DT_INST_DEFINE(n, pl011_init, NULL, &pl011_data_sbsa_##n, &pl011_cfg_sbsa_##n, \
 			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, &pl011_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PL011_SBSA_INIT)

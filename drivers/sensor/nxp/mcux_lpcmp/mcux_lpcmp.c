@@ -408,25 +408,25 @@ static const struct sensor_driver_api mcux_lpcmp_driver_api = {
 	.channel_get = mcux_lpcmp_channel_get,
 };
 
-#define MCUX_LPCMP_DECLARE_CONFIG(n, config_func_init)                                             \
-	static const struct mcux_lpcmp_config mcux_lpcmp_config_##n = {                            \
-		.base = (LPCMP_Type *)DT_INST_REG_ADDR(n),                                         \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
-		.output_enable = DT_INST_PROP_OR(n, enable_output_pin, 0),                         \
-		.unfiltered = DT_INST_PROP_OR(n, use_unfiltered_output, 0),                        \
-		.output_invert = DT_INST_PROP_OR(n, output_invert, 0),                             \
-		.hysteresis_level = DT_INST_PROP_OR(n, hysteresis_level, 0),                       \
-		.power_level = DT_INST_ENUM_IDX(n, power_level),                                   \
-		.function_clock = DT_INST_ENUM_IDX(n, function_clock),                             \
+#define MCUX_LPCMP_DECLARE_CONFIG(n, config_func_init)                       \
+	static const struct mcux_lpcmp_config mcux_lpcmp_config_##n = {      \
+		.base = (LPCMP_Type *)DT_INST_REG_ADDR(n),                   \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                 \
+		.output_enable = DT_INST_PROP_OR(n, enable_output_pin, 0),   \
+		.unfiltered = DT_INST_PROP_OR(n, use_unfiltered_output, 0),  \
+		.output_invert = DT_INST_PROP_OR(n, output_invert, 0),       \
+		.hysteresis_level = DT_INST_PROP_OR(n, hysteresis_level, 0), \
+		.power_level = DT_INST_ENUM_IDX(n, power_level),             \
+		.function_clock = DT_INST_ENUM_IDX(n, function_clock),       \
 		config_func_init}
 
 #ifdef CONFIG_MCUX_LPCMP_TRIGGER
-#define MCUX_LPCMP_CONFIG_FUNC(n)                                                                  \
-	static void mcux_lpcmp_config_func_##n(const struct device *dev)                           \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_lpcmp_isr,             \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define MCUX_LPCMP_CONFIG_FUNC(n)                                                      \
+	static void mcux_lpcmp_config_func_##n(const struct device *dev)               \
+	{                                                                              \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_lpcmp_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                                 \
+		irq_enable(DT_INST_IRQN(n));                                           \
 	}
 #define MCUX_LPCMP_CONFIG_FUNC_INIT(n) .irq_config_func = mcux_lpcmp_config_func_##n
 #define MCUX_LPCMP_INIT_CONFIG(n)      MCUX_LPCMP_DECLARE_CONFIG(n, MCUX_LPCMP_CONFIG_FUNC_INIT(n))
@@ -436,14 +436,14 @@ static const struct sensor_driver_api mcux_lpcmp_driver_api = {
 #define MCUX_LPCMP_INIT_CONFIG(n) MCUX_LPCMP_DECLARE_CONFIG(n, MCUX_LPCMP_CONFIG_FUNC_INIT)
 #endif /* !CONFIG_MCUX_LPCMP_TRIGGER */
 
-#define MCUX_LPCMP_INIT(n)                                                                         \
-	static struct mcux_lpcmp_data mcux_lpcmp_data_##n;                                         \
-	static const struct mcux_lpcmp_config mcux_lpcmp_config_##n;                               \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, &mcux_lpcmp_init, NULL, &mcux_lpcmp_data_##n,              \
-				     &mcux_lpcmp_config_##n, POST_KERNEL,                          \
-				     CONFIG_SENSOR_INIT_PRIORITY, &mcux_lpcmp_driver_api);         \
-	MCUX_LPCMP_CONFIG_FUNC(n)                                                                  \
+#define MCUX_LPCMP_INIT(n)                                                                 \
+	static struct mcux_lpcmp_data mcux_lpcmp_data_##n;                                 \
+	static const struct mcux_lpcmp_config mcux_lpcmp_config_##n;                       \
+	PINCTRL_DT_INST_DEFINE(n);                                                         \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, &mcux_lpcmp_init, NULL, &mcux_lpcmp_data_##n,      \
+				     &mcux_lpcmp_config_##n, POST_KERNEL,                  \
+				     CONFIG_SENSOR_INIT_PRIORITY, &mcux_lpcmp_driver_api); \
+	MCUX_LPCMP_CONFIG_FUNC(n)                                                          \
 	MCUX_LPCMP_INIT_CONFIG(n);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_LPCMP_INIT)

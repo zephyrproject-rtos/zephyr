@@ -156,46 +156,46 @@ static const struct counter_driver_api mcux_lptmr_driver_api = {
 	.get_top_value = mcux_lptmr_get_top_value,
 };
 
-#define COUNTER_MCUX_LPTMR_DEVICE_INIT(n)                                                          \
-	static void mcux_lptmr_irq_config_##n(const struct device *dev)                            \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_lptmr_isr,             \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-	}                                                                                          \
-                                                                                                   \
-	static struct mcux_lptmr_data mcux_lptmr_data_##n;                                         \
-	static void mcux_lptmr_irq_config_##n(const struct device *dev);                           \
-                                                                                                   \
-	BUILD_ASSERT(!(DT_INST_PROP(n, timer_mode_sel) == 1 &&                                     \
-		       DT_INST_PROP(n, prescale_glitch_filter) == 16),                             \
-		     "Pulse mode cannot have a glitch value of 16");                               \
-                                                                                                   \
-	BUILD_ASSERT(DT_INST_PROP(n, resolution) <= 32 && DT_INST_PROP(n, resolution) > 0,         \
-		     "LPTMR resolution property should be a width between 0 and 32");              \
-                                                                                                   \
-	static struct mcux_lptmr_config mcux_lptmr_config_##n = {                                  \
-		.info =                                                                            \
-			{                                                                          \
-				.max_top_value = GENMASK(DT_INST_PROP(n, resolution) - 1, 0),      \
-				.freq = DT_INST_PROP(n, clock_frequency) /                         \
-					DT_INST_PROP(n, prescaler),                                \
-				.flags = COUNTER_CONFIG_INFO_COUNT_UP,                             \
-				.channels = 0,                                                     \
-			},                                                                         \
-		.base = (LPTMR_Type *)DT_INST_REG_ADDR(n),                                         \
-		.clk_source = DT_INST_PROP(n, clk_source),                                         \
-		.bypass_prescaler_glitch = 1 - DT_INST_PROP(n, timer_mode_sel),                    \
-		.mode = DT_INST_PROP(n, timer_mode_sel),                                           \
-		.pin = DT_INST_PROP_OR(n, input_pin, 0),                                           \
-		.polarity = DT_INST_PROP(n, active_low),                                           \
-		.prescaler_glitch = DT_INST_PROP(n, prescale_glitch_filter) +                      \
-				    DT_INST_PROP(n, timer_mode_sel) - 1,                           \
-		.irq_config_func = mcux_lptmr_irq_config_##n,                                      \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &mcux_lptmr_init, NULL, &mcux_lptmr_data_##n,                     \
-			      &mcux_lptmr_config_##n, POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,   \
+#define COUNTER_MCUX_LPTMR_DEVICE_INIT(n)                                                        \
+	static void mcux_lptmr_irq_config_##n(const struct device *dev)                          \
+	{                                                                                        \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_lptmr_isr,           \
+			    DEVICE_DT_INST_GET(n), 0);                                           \
+		irq_enable(DT_INST_IRQN(n));                                                     \
+	}                                                                                        \
+                                                                                                 \
+	static struct mcux_lptmr_data mcux_lptmr_data_##n;                                       \
+	static void mcux_lptmr_irq_config_##n(const struct device *dev);                         \
+                                                                                                 \
+	BUILD_ASSERT(!(DT_INST_PROP(n, timer_mode_sel) == 1 &&                                   \
+		       DT_INST_PROP(n, prescale_glitch_filter) == 16),                           \
+		     "Pulse mode cannot have a glitch value of 16");                             \
+                                                                                                 \
+	BUILD_ASSERT(DT_INST_PROP(n, resolution) <= 32 && DT_INST_PROP(n, resolution) > 0,       \
+		     "LPTMR resolution property should be a width between 0 and 32");            \
+                                                                                                 \
+	static struct mcux_lptmr_config mcux_lptmr_config_##n = {                                \
+		.info =                                                                          \
+			{                                                                        \
+				.max_top_value = GENMASK(DT_INST_PROP(n, resolution) - 1, 0),    \
+				.freq = DT_INST_PROP(n, clock_frequency) /                       \
+					DT_INST_PROP(n, prescaler),                              \
+				.flags = COUNTER_CONFIG_INFO_COUNT_UP,                           \
+				.channels = 0,                                                   \
+			},                                                                       \
+		.base = (LPTMR_Type *)DT_INST_REG_ADDR(n),                                       \
+		.clk_source = DT_INST_PROP(n, clk_source),                                       \
+		.bypass_prescaler_glitch = 1 - DT_INST_PROP(n, timer_mode_sel),                  \
+		.mode = DT_INST_PROP(n, timer_mode_sel),                                         \
+		.pin = DT_INST_PROP_OR(n, input_pin, 0),                                         \
+		.polarity = DT_INST_PROP(n, active_low),                                         \
+		.prescaler_glitch = DT_INST_PROP(n, prescale_glitch_filter) +                    \
+				    DT_INST_PROP(n, timer_mode_sel) - 1,                         \
+		.irq_config_func = mcux_lptmr_irq_config_##n,                                    \
+	};                                                                                       \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(n, &mcux_lptmr_init, NULL, &mcux_lptmr_data_##n,                   \
+			      &mcux_lptmr_config_##n, POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY, \
 			      &mcux_lptmr_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_MCUX_LPTMR_DEVICE_INIT)

@@ -87,14 +87,14 @@ static int led_npm1300_init(const struct device *dev)
 	return 0;
 }
 
-#define LED_NPM1300_DEFINE(n)                                                                      \
-	static const struct led_npm1300_config led_npm1300_config##n = {                           \
-		.mfd = DEVICE_DT_GET(DT_INST_PARENT(n)),                                           \
-		.mode = {DT_INST_ENUM_IDX(n, nordic_led0_mode),                                    \
-			 DT_INST_ENUM_IDX(n, nordic_led1_mode),                                    \
-			 DT_INST_ENUM_IDX(n, nordic_led2_mode)}};                                  \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &led_npm1300_init, NULL, NULL, &led_npm1300_config##n,            \
+#define LED_NPM1300_DEFINE(n)                                                           \
+	static const struct led_npm1300_config led_npm1300_config##n = {                \
+		.mfd = DEVICE_DT_GET(DT_INST_PARENT(n)),                                \
+		.mode = {DT_INST_ENUM_IDX(n, nordic_led0_mode),                         \
+			 DT_INST_ENUM_IDX(n, nordic_led1_mode),                         \
+			 DT_INST_ENUM_IDX(n, nordic_led2_mode)}};                       \
+                                                                                        \
+	DEVICE_DT_INST_DEFINE(n, &led_npm1300_init, NULL, NULL, &led_npm1300_config##n, \
 			      POST_KERNEL, CONFIG_LED_INIT_PRIORITY, &led_npm1300_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LED_NPM1300_DEFINE)

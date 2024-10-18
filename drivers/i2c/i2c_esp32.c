@@ -777,65 +777,65 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 #define I2C(idx) DT_NODELABEL(i2c##idx)
 
 #ifndef SOC_I2C_SUPPORT_HW_CLR_BUS
-#define I2C_ESP32_GET_PIN_INFO(idx)                                                                \
-	.scl =                                                                                     \
-		{                                                                                  \
-			.gpio = GPIO_DT_SPEC_GET(I2C(idx), scl_gpios),                             \
-			.sig_out = I2CEXT##idx##_SCL_OUT_IDX,                                      \
-			.sig_in = I2CEXT##idx##_SCL_IN_IDX,                                        \
-	},                                                                                         \
-	.sda = {                                                                                   \
-		.gpio = GPIO_DT_SPEC_GET(I2C(idx), sda_gpios),                                     \
-		.sig_out = I2CEXT##idx##_SDA_OUT_IDX,                                              \
-		.sig_in = I2CEXT##idx##_SDA_IN_IDX,                                                \
+#define I2C_ESP32_GET_PIN_INFO(idx)                                    \
+	.scl =                                                         \
+		{                                                      \
+			.gpio = GPIO_DT_SPEC_GET(I2C(idx), scl_gpios), \
+			.sig_out = I2CEXT##idx##_SCL_OUT_IDX,          \
+			.sig_in = I2CEXT##idx##_SCL_IN_IDX,            \
+	},                                                             \
+	.sda = {                                                       \
+		.gpio = GPIO_DT_SPEC_GET(I2C(idx), sda_gpios),         \
+		.sig_out = I2CEXT##idx##_SDA_OUT_IDX,                  \
+		.sig_in = I2CEXT##idx##_SDA_IN_IDX,                    \
 	},
 #else
 #define I2C_ESP32_GET_PIN_INFO(idx)
 #endif /* SOC_I2C_SUPPORT_HW_CLR_BUS */
 
-#define I2C_ESP32_TIMEOUT(inst)                                                                    \
+#define I2C_ESP32_TIMEOUT(inst)                                    \
 	COND_CODE_1(DT_NODE_HAS_PROP(I2C(inst), scl_timeout_us),	\
 		    (DT_PROP(I2C(inst), scl_timeout_us)), (0))
 
-#define I2C_ESP32_FREQUENCY(bitrate)                                                               \
-	(bitrate == I2C_BITRATE_STANDARD    ? KHZ(100)                                             \
-	 : bitrate == I2C_BITRATE_FAST      ? KHZ(400)                                             \
-	 : bitrate == I2C_BITRATE_FAST_PLUS ? MHZ(1)                                               \
+#define I2C_ESP32_FREQUENCY(bitrate)                   \
+	(bitrate == I2C_BITRATE_STANDARD    ? KHZ(100) \
+	 : bitrate == I2C_BITRATE_FAST      ? KHZ(400) \
+	 : bitrate == I2C_BITRATE_FAST_PLUS ? MHZ(1)   \
 					    : 0)
 
 #define I2C_FREQUENCY(idx) I2C_ESP32_FREQUENCY(DT_PROP(I2C(idx), clock_frequency))
 
-#define ESP32_I2C_INIT(idx)                                                                        \
-                                                                                                   \
-	PINCTRL_DT_DEFINE(I2C(idx));                                                               \
-                                                                                                   \
-	static struct i2c_esp32_data i2c_esp32_data_##idx = {                                      \
-		.hal =                                                                             \
-			{                                                                          \
-				.dev = (i2c_dev_t *)DT_REG_ADDR(I2C(idx)),                         \
-			},                                                                         \
-		.cmd_sem = Z_SEM_INITIALIZER(i2c_esp32_data_##idx.cmd_sem, 0, 1),                  \
-		.transfer_sem = Z_SEM_INITIALIZER(i2c_esp32_data_##idx.transfer_sem, 1, 1),        \
-	};                                                                                         \
-                                                                                                   \
-	static const struct i2c_esp32_config i2c_esp32_config_##idx = {                            \
-		.index = idx,                                                                      \
-		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(I2C(idx))),                              \
-		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(I2C(idx)),                                       \
-		.clock_subsys = (clock_control_subsys_t)DT_CLOCKS_CELL(I2C(idx), offset),          \
-		I2C_ESP32_GET_PIN_INFO(idx).mode =                                                 \
-			{                                                                          \
-				.tx_lsb_first = DT_PROP(I2C(idx), tx_lsb),                         \
-				.rx_lsb_first = DT_PROP(I2C(idx), rx_lsb),                         \
-			},                                                                         \
-		.irq_source = DT_IRQ_BY_IDX(I2C(idx), 0, irq),                                     \
-		.irq_priority = DT_IRQ_BY_IDX(I2C(idx), 0, priority),                              \
-		.irq_flags = DT_IRQ_BY_IDX(I2C(idx), 0, flags),                                    \
-		.bitrate = I2C_FREQUENCY(idx),                                                     \
-		.scl_timeout = I2C_ESP32_TIMEOUT(idx),                                             \
-	};                                                                                         \
-	I2C_DEVICE_DT_DEFINE(I2C(idx), i2c_esp32_init, NULL, &i2c_esp32_data_##idx,                \
-			     &i2c_esp32_config_##idx, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,       \
+#define ESP32_I2C_INIT(idx)                                                                  \
+                                                                                             \
+	PINCTRL_DT_DEFINE(I2C(idx));                                                         \
+                                                                                             \
+	static struct i2c_esp32_data i2c_esp32_data_##idx = {                                \
+		.hal =                                                                       \
+			{                                                                    \
+				.dev = (i2c_dev_t *)DT_REG_ADDR(I2C(idx)),                   \
+			},                                                                   \
+		.cmd_sem = Z_SEM_INITIALIZER(i2c_esp32_data_##idx.cmd_sem, 0, 1),            \
+		.transfer_sem = Z_SEM_INITIALIZER(i2c_esp32_data_##idx.transfer_sem, 1, 1),  \
+	};                                                                                   \
+                                                                                             \
+	static const struct i2c_esp32_config i2c_esp32_config_##idx = {                      \
+		.index = idx,                                                                \
+		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(I2C(idx))),                        \
+		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(I2C(idx)),                                 \
+		.clock_subsys = (clock_control_subsys_t)DT_CLOCKS_CELL(I2C(idx), offset),    \
+		I2C_ESP32_GET_PIN_INFO(idx).mode =                                           \
+			{                                                                    \
+				.tx_lsb_first = DT_PROP(I2C(idx), tx_lsb),                   \
+				.rx_lsb_first = DT_PROP(I2C(idx), rx_lsb),                   \
+			},                                                                   \
+		.irq_source = DT_IRQ_BY_IDX(I2C(idx), 0, irq),                               \
+		.irq_priority = DT_IRQ_BY_IDX(I2C(idx), 0, priority),                        \
+		.irq_flags = DT_IRQ_BY_IDX(I2C(idx), 0, flags),                              \
+		.bitrate = I2C_FREQUENCY(idx),                                               \
+		.scl_timeout = I2C_ESP32_TIMEOUT(idx),                                       \
+	};                                                                                   \
+	I2C_DEVICE_DT_DEFINE(I2C(idx), i2c_esp32_init, NULL, &i2c_esp32_data_##idx,          \
+			     &i2c_esp32_config_##idx, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, \
 			     &i2c_esp32_driver_api);
 
 #if DT_NODE_HAS_STATUS_OKAY(I2C(0))

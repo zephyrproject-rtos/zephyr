@@ -301,10 +301,10 @@ static int ens160_pm_action(const struct device *dev, enum pm_device_action acti
 }
 #endif
 
-#define ENS160_SPI_OPERATION                                                                       \
+#define ENS160_SPI_OPERATION                                                                      \
 	(SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_TRANSFER_MSB)
 
-#define ENS160_CONFIG_SPI(inst)                                                                    \
+#define ENS160_CONFIG_SPI(inst)                                                                   \
 	.bus_init = &ens160_spi_init, .spi = SPI_DT_SPEC_INST_GET(inst, ENS160_SPI_OPERATION, 0),
 
 #define ENS160_CONFIG_I2C(inst) .bus_init = &ens160_i2c_init, .i2c = I2C_DT_SPEC_INST_GET(inst),

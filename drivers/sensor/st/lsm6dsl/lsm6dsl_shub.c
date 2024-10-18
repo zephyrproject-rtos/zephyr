@@ -103,8 +103,8 @@ static int lsm6dsl_lis2mdl_init(const struct device *dev, uint8_t i2c_addr)
 #define LIS3MDL_OM_SHIFT       5
 #define LIS3MDL_DO_SHIFT       2
 #define LIS3MDL_FAST_ODR_SHIFT 1
-#define LIS3MDL_ODR_BITS(om_bits, do_bits, fast_odr)                                               \
-	(((om_bits) << LIS3MDL_OM_SHIFT) | ((do_bits) << LIS3MDL_DO_SHIFT) |                       \
+#define LIS3MDL_ODR_BITS(om_bits, do_bits, fast_odr)                         \
+	(((om_bits) << LIS3MDL_OM_SHIFT) | ((do_bits) << LIS3MDL_DO_SHIFT) | \
 	 ((fast_odr) << LIS3MDL_FAST_ODR_SHIFT))
 static const uint8_t lis3mdl_odr_bits[] = {
 	LIS3MDL_ODR_BITS(0, 0, 0), /* 0.625 Hz */

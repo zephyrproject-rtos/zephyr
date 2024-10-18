@@ -414,42 +414,42 @@ static const struct gpio_driver_api gpio_mcux_lpc_driver_api = {
 #define PINMUX_BASE MCI_IO_MUX
 #endif
 
-#define GPIO_MCUX_LPC_MODULE_IRQ_CONNECT(inst)                                                     \
-	do {                                                                                       \
-		IRQ_CONNECT(DT_INST_IRQ(inst, irq), DT_INST_IRQ(inst, priority),                   \
-			    gpio_mcux_lpc_module_isr, DEVICE_DT_INST_GET(inst), 0);                \
-		irq_enable(DT_INST_IRQ(inst, irq));                                                \
+#define GPIO_MCUX_LPC_MODULE_IRQ_CONNECT(inst)                                      \
+	do {                                                                        \
+		IRQ_CONNECT(DT_INST_IRQ(inst, irq), DT_INST_IRQ(inst, priority),    \
+			    gpio_mcux_lpc_module_isr, DEVICE_DT_INST_GET(inst), 0); \
+		irq_enable(DT_INST_IRQ(inst, irq));                                 \
 	} while (false)
 
-#define GPIO_MCUX_LPC_MODULE_IRQ(inst)                                                             \
+#define GPIO_MCUX_LPC_MODULE_IRQ(inst)                 \
 	IF_ENABLED(DT_INST_IRQ_HAS_IDX(inst, 0),					\
 		(GPIO_MCUX_LPC_MODULE_IRQ_CONNECT(inst)))
 
-#define GPIO_MCUX_LPC(n)                                                                           \
-	static int lpc_gpio_init_##n(const struct device *dev);                                    \
-                                                                                                   \
-	static const struct gpio_mcux_lpc_config gpio_mcux_lpc_config_##n = {                      \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
-		.gpio_base = (GPIO_Type *)DT_REG_ADDR(DT_INST_PARENT(n)),                          \
-		.pinmux_base = PINMUX_BASE,                                                        \
-		.int_source = DT_INST_ENUM_IDX(n, int_source),                                     \
-		.port_no = DT_INST_REG_ADDR(n)};                                                   \
-                                                                                                   \
-	static struct gpio_mcux_lpc_data gpio_mcux_lpc_data_##n;                                   \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, lpc_gpio_init_##n, NULL, &gpio_mcux_lpc_data_##n,                 \
-			      &gpio_mcux_lpc_config_##n, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,  \
-			      &gpio_mcux_lpc_driver_api);                                          \
-                                                                                                   \
-	static int lpc_gpio_init_##n(const struct device *dev)                                     \
-	{                                                                                          \
-		gpio_mcux_lpc_init(dev);                                                           \
-		GPIO_MCUX_LPC_MODULE_IRQ(n);                                                       \
-                                                                                                   \
-		return 0;                                                                          \
+#define GPIO_MCUX_LPC(n)                                                                          \
+	static int lpc_gpio_init_##n(const struct device *dev);                                   \
+                                                                                                  \
+	static const struct gpio_mcux_lpc_config gpio_mcux_lpc_config_##n = {                     \
+		.common =                                                                         \
+			{                                                                         \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),              \
+			},                                                                        \
+		.gpio_base = (GPIO_Type *)DT_REG_ADDR(DT_INST_PARENT(n)),                         \
+		.pinmux_base = PINMUX_BASE,                                                       \
+		.int_source = DT_INST_ENUM_IDX(n, int_source),                                    \
+		.port_no = DT_INST_REG_ADDR(n)};                                                  \
+                                                                                                  \
+	static struct gpio_mcux_lpc_data gpio_mcux_lpc_data_##n;                                  \
+                                                                                                  \
+	DEVICE_DT_INST_DEFINE(n, lpc_gpio_init_##n, NULL, &gpio_mcux_lpc_data_##n,                \
+			      &gpio_mcux_lpc_config_##n, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, \
+			      &gpio_mcux_lpc_driver_api);                                         \
+                                                                                                  \
+	static int lpc_gpio_init_##n(const struct device *dev)                                    \
+	{                                                                                         \
+		gpio_mcux_lpc_init(dev);                                                          \
+		GPIO_MCUX_LPC_MODULE_IRQ(n);                                                      \
+                                                                                                  \
+		return 0;                                                                         \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_MCUX_LPC)

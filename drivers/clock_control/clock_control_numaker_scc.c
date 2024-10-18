@@ -107,11 +107,11 @@ static const struct clock_control_driver_api numaker_scc_api = {
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
 	     "Requires at most one compatible with status \"okay\"");
 
-#define LOG_OSC_SW(osc, sw)                                                                        \
-	if (sw == NUMAKER_SCC_CLKSW_ENABLE) {                                                      \
-		LOG_DBG("Enable " #osc);                                                           \
-	} else if (sw == NUMAKER_SCC_CLKSW_DISABLE) {                                              \
-		LOG_DBG("Disable " #osc);                                                          \
+#define LOG_OSC_SW(osc, sw)                           \
+	if (sw == NUMAKER_SCC_CLKSW_ENABLE) {         \
+		LOG_DBG("Enable " #osc);              \
+	} else if (sw == NUMAKER_SCC_CLKSW_DISABLE) { \
+		LOG_DBG("Disable " #osc);             \
 	}
 
 static int numaker_scc_init(const struct device *dev)

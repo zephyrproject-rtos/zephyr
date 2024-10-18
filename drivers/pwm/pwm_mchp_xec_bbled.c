@@ -343,20 +343,20 @@ static int pwm_bbled_xec_init(const struct device *dev)
 	return 0;
 }
 
-#define XEC_PWM_BBLED_CLKSEL(n)                                                                    \
+#define XEC_PWM_BBLED_CLKSEL(n)                                 \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clock_select),			\
 		    (DT_INST_ENUM_IDX(n, clock_select)), (0))
 
-#define XEC_PWM_BBLED_CONFIG(inst)                                                                 \
-	static struct pwm_bbled_xec_config pwm_bbled_xec_config_##inst = {                         \
-		.regs = (struct bbled_regs *const)DT_INST_REG_ADDR(inst),                          \
-		.girq = (uint8_t)(DT_INST_PROP_BY_IDX(0, girqs, 0)),                               \
-		.girq_pos = (uint8_t)(DT_INST_PROP_BY_IDX(0, girqs, 1)),                           \
-		.pcr_idx = (uint8_t)DT_INST_PROP_BY_IDX(inst, pcrs, 0),                            \
-		.pcr_pos = (uint8_t)DT_INST_PROP_BY_IDX(inst, pcrs, 1),                            \
-		.clk_sel = UTIL_CAT(XEC_PWM_BBLED_CLKSEL_, XEC_PWM_BBLED_CLKSEL(inst)),            \
-		.enable_low_power_32K = DT_INST_PROP(inst, enable_low_power_32k),                  \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
+#define XEC_PWM_BBLED_CONFIG(inst)                                                      \
+	static struct pwm_bbled_xec_config pwm_bbled_xec_config_##inst = {              \
+		.regs = (struct bbled_regs *const)DT_INST_REG_ADDR(inst),               \
+		.girq = (uint8_t)(DT_INST_PROP_BY_IDX(0, girqs, 0)),                    \
+		.girq_pos = (uint8_t)(DT_INST_PROP_BY_IDX(0, girqs, 1)),                \
+		.pcr_idx = (uint8_t)DT_INST_PROP_BY_IDX(inst, pcrs, 0),                 \
+		.pcr_pos = (uint8_t)DT_INST_PROP_BY_IDX(inst, pcrs, 1),                 \
+		.clk_sel = UTIL_CAT(XEC_PWM_BBLED_CLKSEL_, XEC_PWM_BBLED_CLKSEL(inst)), \
+		.enable_low_power_32K = DT_INST_PROP(inst, enable_low_power_32k),       \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                           \
 	};
 
 #define XEC_PWM_BBLED_DEVICE_INIT(index)                                                           \

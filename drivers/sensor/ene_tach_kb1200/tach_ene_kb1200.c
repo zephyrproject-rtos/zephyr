@@ -127,17 +127,17 @@ static const struct sensor_driver_api tach_kb1200_driver_api = {
 	.channel_get = tach_kb1200_channel_get,
 };
 
-#define KB1200_TACH_INIT(inst)                                                                     \
-	PINCTRL_DT_INST_DEFINE(inst);                                                              \
-	static const struct tach_kb1200_config tach_cfg_##inst = {                                 \
-		.tacho = (struct tacho_regs *)DT_INST_REG_ADDR(inst),                              \
-		.pulses_per_round = DT_INST_PROP(inst, pulses_per_round),                          \
-		.sample_time_us = DT_INST_PROP(inst, sample_time_us),                              \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
-	};                                                                                         \
-	static struct tach_kb1200_data tach_data_##inst;                                           \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, tach_kb1200_init, NULL, &tach_data_##inst,              \
-				     &tach_cfg_##inst, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,   \
+#define KB1200_TACH_INIT(inst)                                                                   \
+	PINCTRL_DT_INST_DEFINE(inst);                                                            \
+	static const struct tach_kb1200_config tach_cfg_##inst = {                               \
+		.tacho = (struct tacho_regs *)DT_INST_REG_ADDR(inst),                            \
+		.pulses_per_round = DT_INST_PROP(inst, pulses_per_round),                        \
+		.sample_time_us = DT_INST_PROP(inst, sample_time_us),                            \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                    \
+	};                                                                                       \
+	static struct tach_kb1200_data tach_data_##inst;                                         \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, tach_kb1200_init, NULL, &tach_data_##inst,            \
+				     &tach_cfg_##inst, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, \
 				     &tach_kb1200_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(KB1200_TACH_INIT)

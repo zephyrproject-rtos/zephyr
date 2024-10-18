@@ -509,29 +509,29 @@ static const struct rtc_driver_api rtc_mc146818_driver_api = {
 #endif /* CONFIG_RTC_UPDATE */
 };
 
-#define RTC_MC146818_INIT_FN_DEFINE(n)                                                             \
-	static int rtc_mc146818_init##n(const struct device *dev)                                  \
-	{                                                                                          \
-		rtc_write(RTC_REG_A,                                                               \
-			  _CONCAT(RTC_IN_CLK_DIV_BITS_, DT_INST_PROP(n, clock_frequency)));        \
-                                                                                                   \
-		rtc_write(RTC_REG_B, RTC_DMODE_BIT | RTC_HFORMAT_BIT);                             \
-                                                                                                   \
-		IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), rtc_mc146818_isr,           \
-			    DEVICE_DT_INST_GET(n), DT_INST_IRQ(0, sense));                         \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(0));                                                       \
-                                                                                                   \
-		return 0;                                                                          \
+#define RTC_MC146818_INIT_FN_DEFINE(n)                                                      \
+	static int rtc_mc146818_init##n(const struct device *dev)                           \
+	{                                                                                   \
+		rtc_write(RTC_REG_A,                                                        \
+			  _CONCAT(RTC_IN_CLK_DIV_BITS_, DT_INST_PROP(n, clock_frequency))); \
+                                                                                            \
+		rtc_write(RTC_REG_B, RTC_DMODE_BIT | RTC_HFORMAT_BIT);                      \
+                                                                                            \
+		IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), rtc_mc146818_isr,    \
+			    DEVICE_DT_INST_GET(n), DT_INST_IRQ(0, sense));                  \
+                                                                                            \
+		irq_enable(DT_INST_IRQN(0));                                                \
+                                                                                            \
+		return 0;                                                                   \
 	}
 
-#define RTC_MC146818_DEV_CFG(inst)                                                                 \
-	struct rtc_mc146818_data rtc_mc146818_data##inst;                                          \
-                                                                                                   \
-	RTC_MC146818_INIT_FN_DEFINE(inst)                                                          \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, &rtc_mc146818_init##inst, NULL, &rtc_mc146818_data##inst,      \
-			      NULL, POST_KERNEL, CONFIG_RTC_INIT_PRIORITY,                         \
+#define RTC_MC146818_DEV_CFG(inst)                                                            \
+	struct rtc_mc146818_data rtc_mc146818_data##inst;                                     \
+                                                                                              \
+	RTC_MC146818_INIT_FN_DEFINE(inst)                                                     \
+                                                                                              \
+	DEVICE_DT_INST_DEFINE(inst, &rtc_mc146818_init##inst, NULL, &rtc_mc146818_data##inst, \
+			      NULL, POST_KERNEL, CONFIG_RTC_INIT_PRIORITY,                    \
 			      &rtc_mc146818_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RTC_MC146818_DEV_CFG)

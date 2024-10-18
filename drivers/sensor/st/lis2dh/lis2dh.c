@@ -468,10 +468,10 @@ static int lis2dh_pm_action(const struct device *dev, enum pm_device_action acti
  * LIS2DH_DEFINE_I2C().
  */
 
-#define LIS2DH_DEVICE_INIT(inst)                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, lis2dh_pm_action);                                          \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, lis2dh_init, PM_DEVICE_DT_INST_GET(inst),               \
-				     &lis2dh_data_##inst, &lis2dh_config_##inst, POST_KERNEL,      \
+#define LIS2DH_DEVICE_INIT(inst)                                                              \
+	PM_DEVICE_DT_INST_DEFINE(inst, lis2dh_pm_action);                                     \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, lis2dh_init, PM_DEVICE_DT_INST_GET(inst),          \
+				     &lis2dh_data_##inst, &lis2dh_config_##inst, POST_KERNEL, \
 				     CONFIG_SENSOR_INIT_PRIORITY, &lis2dh_driver_api);
 
 #define IS_LSM303AGR_DEV(inst) DT_INST_NODE_HAS_COMPAT(inst, st_lsm303agr_accel)
@@ -485,19 +485,19 @@ static int lis2dh_pm_action(const struct device *dev, enum pm_device_action acti
 #define ANYM_MODE(inst) DT_INST_PROP(inst, anym_mode)
 
 #ifdef CONFIG_LIS2DH_TRIGGER
-#define GPIO_DT_SPEC_INST_GET_BY_IDX_COND(id, prop, idx)                                           \
+#define GPIO_DT_SPEC_INST_GET_BY_IDX_COND(id, prop, idx)    \
 	COND_CODE_1(DT_INST_PROP_HAS_IDX(id, prop, idx),		\
 		    (GPIO_DT_SPEC_INST_GET_BY_IDX(id, prop, idx)),	\
 		    ({.port = NULL, .pin = 0, .dt_flags = 0}))
 
-#define LIS2DH_CFG_INT(inst)                                                                       \
+#define LIS2DH_CFG_INT(inst)                                                                  \
 	.gpio_drdy = COND_CODE_1(ANYM_ON_INT1(inst),		\
 		({.port = NULL, .pin = 0, .dt_flags = 0}),                  \
-		(GPIO_DT_SPEC_INST_GET_BY_IDX_COND(inst, irq_gpios, 0))),                     \
+		(GPIO_DT_SPEC_INST_GET_BY_IDX_COND(inst, irq_gpios, 0))),                \
 		       .gpio_int = COND_CODE_1(ANYM_ON_INT1(inst),		\
 		(GPIO_DT_SPEC_INST_GET_BY_IDX_COND(inst, irq_gpios, 0)),	\
-		(GPIO_DT_SPEC_INST_GET_BY_IDX_COND(inst, irq_gpios, 1))),      \
-				      .int1_mode = DT_INST_PROP(inst, int1_gpio_config),           \
+		(GPIO_DT_SPEC_INST_GET_BY_IDX_COND(inst, irq_gpios, 1))), \
+				      .int1_mode = DT_INST_PROP(inst, int1_gpio_config),      \
 				      .int2_mode = DT_INST_PROP(inst, int2_gpio_config),
 #else
 #define LIS2DH_CFG_INT(inst)
@@ -512,71 +512,71 @@ static int lis2dh_pm_action(const struct device *dev, enum pm_device_action acti
  * LIS2DH12/LIS3DH have 10 bits unless they are in lower power mode.
  * compat(lis2dh) cannot be used here because it is the base part.
  */
-#define FRACTIONAL_BITS(inst)                                                                      \
-	(DT_INST_NODE_HAS_COMPAT(inst, st_lis2dh12) || DT_INST_NODE_HAS_COMPAT(inst, st_lis3dh))   \
-		? (IS_ENABLED(CONFIG_LIS2DH_OPER_MODE_LOW_POWER) ? 0 : 2)                          \
+#define FRACTIONAL_BITS(inst)                                                                    \
+	(DT_INST_NODE_HAS_COMPAT(inst, st_lis2dh12) || DT_INST_NODE_HAS_COMPAT(inst, st_lis3dh)) \
+		? (IS_ENABLED(CONFIG_LIS2DH_OPER_MODE_LOW_POWER) ? 0 : 2)                        \
 		: 0
 
-#define LIS2DH_CFG_TEMPERATURE(inst)                                                               \
-	.temperature = {.cfg_addr = 0x1F,                                                          \
-			.enable_mask = 0xC0,                                                       \
-			.dout_addr = 0x0C,                                                         \
+#define LIS2DH_CFG_TEMPERATURE(inst)                               \
+	.temperature = {.cfg_addr = 0x1F,                          \
+			.enable_mask = 0xC0,                       \
+			.dout_addr = 0x0C,                         \
 			.fractional_bits = FRACTIONAL_BITS(inst)},
 #else
 #define LIS2DH_CFG_TEMPERATURE(inst)
 #endif /* CONFIG_LIS2DH_MEASURE_TEMPERATURE */
 
-#define LIS2DH_CONFIG_SPI(inst)                                                                    \
-	{.bus_init = lis2dh_spi_init,                                                              \
-	 .bus_cfg = {.spi = SPI_DT_SPEC_INST_GET(inst,                                             \
-						 SPI_WORD_SET(8) | SPI_OP_MODE_MASTER |            \
-							 SPI_MODE_CPOL | SPI_MODE_CPHA,            \
-						 0)},                                              \
-	 .hw =                                                                                     \
-		 {                                                                                 \
-			 .is_lsm303agr_dev = IS_LSM303AGR_DEV(inst),                               \
-			 .disc_pull_up = DISC_PULL_UP(inst),                                       \
-			 .anym_on_int1 = ANYM_ON_INT1(inst),                                       \
-			 .anym_latch = ANYM_LATCH(inst),                                           \
-			 .anym_mode = ANYM_MODE(inst),                                             \
-		 },                                                                                \
+#define LIS2DH_CONFIG_SPI(inst)                                                         \
+	{.bus_init = lis2dh_spi_init,                                                   \
+	 .bus_cfg = {.spi = SPI_DT_SPEC_INST_GET(inst,                                  \
+						 SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | \
+							 SPI_MODE_CPOL | SPI_MODE_CPHA, \
+						 0)},                                   \
+	 .hw =                                                                          \
+		 {                                                                      \
+			 .is_lsm303agr_dev = IS_LSM303AGR_DEV(inst),                    \
+			 .disc_pull_up = DISC_PULL_UP(inst),                            \
+			 .anym_on_int1 = ANYM_ON_INT1(inst),                            \
+			 .anym_latch = ANYM_LATCH(inst),                                \
+			 .anym_mode = ANYM_MODE(inst),                                  \
+		 },                                                                     \
 	 LIS2DH_CFG_TEMPERATURE(inst) LIS2DH_CFG_INT(inst)}
 
-#define LIS2DH_DEFINE_SPI(inst)                                                                    \
-	static struct lis2dh_data lis2dh_data_##inst;                                              \
-	static const struct lis2dh_config lis2dh_config_##inst = LIS2DH_CONFIG_SPI(inst);          \
+#define LIS2DH_DEFINE_SPI(inst)                                                           \
+	static struct lis2dh_data lis2dh_data_##inst;                                     \
+	static const struct lis2dh_config lis2dh_config_##inst = LIS2DH_CONFIG_SPI(inst); \
 	LIS2DH_DEVICE_INIT(inst)
 
 /*
  * Instantiation macros used when a device is on an I2C bus.
  */
 
-#define LIS2DH_CONFIG_I2C(inst)                                                                    \
-	{.bus_init = lis2dh_i2c_init,                                                              \
-	 .bus_cfg =                                                                                \
-		 {                                                                                 \
-			 .i2c = I2C_DT_SPEC_INST_GET(inst),                                        \
-		 },                                                                                \
-	 .hw =                                                                                     \
-		 {                                                                                 \
-			 .is_lsm303agr_dev = IS_LSM303AGR_DEV(inst),                               \
-			 .disc_pull_up = DISC_PULL_UP(inst),                                       \
-			 .anym_on_int1 = ANYM_ON_INT1(inst),                                       \
-			 .anym_latch = ANYM_LATCH(inst),                                           \
-			 .anym_mode = ANYM_MODE(inst),                                             \
-		 },                                                                                \
+#define LIS2DH_CONFIG_I2C(inst)                                      \
+	{.bus_init = lis2dh_i2c_init,                                \
+	 .bus_cfg =                                                  \
+		 {                                                   \
+			 .i2c = I2C_DT_SPEC_INST_GET(inst),          \
+		 },                                                  \
+	 .hw =                                                       \
+		 {                                                   \
+			 .is_lsm303agr_dev = IS_LSM303AGR_DEV(inst), \
+			 .disc_pull_up = DISC_PULL_UP(inst),         \
+			 .anym_on_int1 = ANYM_ON_INT1(inst),         \
+			 .anym_latch = ANYM_LATCH(inst),             \
+			 .anym_mode = ANYM_MODE(inst),               \
+		 },                                                  \
 	 LIS2DH_CFG_TEMPERATURE(inst) LIS2DH_CFG_INT(inst)}
 
-#define LIS2DH_DEFINE_I2C(inst)                                                                    \
-	static struct lis2dh_data lis2dh_data_##inst;                                              \
-	static const struct lis2dh_config lis2dh_config_##inst = LIS2DH_CONFIG_I2C(inst);          \
+#define LIS2DH_DEFINE_I2C(inst)                                                           \
+	static struct lis2dh_data lis2dh_data_##inst;                                     \
+	static const struct lis2dh_config lis2dh_config_##inst = LIS2DH_CONFIG_I2C(inst); \
 	LIS2DH_DEVICE_INIT(inst)
 /*
  * Main instantiation macro. Use of COND_CODE_1() selects the right
  * bus-specific macro at preprocessor time.
  */
 
-#define LIS2DH_DEFINE(inst)                                                                        \
+#define LIS2DH_DEFINE(inst)                         \
 	COND_CODE_1(DT_INST_ON_BUS(inst, spi),				\
 		    (LIS2DH_DEFINE_SPI(inst)),				\
 		    (LIS2DH_DEFINE_I2C(inst)))

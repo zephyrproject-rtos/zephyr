@@ -68,10 +68,10 @@
 #define GPIO_DEBE(dev)     (GPIO_BASE(dev) + REG_DEBE)
 #define GPIO_DEBC(dev)     (GPIO_BASE(dev) + REG_DEBC)
 
-#define SET_GPIO_INT_MODE(cur_val, mode, ch_idx)                                                   \
-	do {                                                                                       \
-		cur_val &= ~(BIT_MASK(3) << (ch_idx * 4));                                         \
-		cur_val |= (mode << (ch_idx * 4));                                                 \
+#define SET_GPIO_INT_MODE(cur_val, mode, ch_idx)           \
+	do {                                               \
+		cur_val &= ~(BIT_MASK(3) << (ch_idx * 4)); \
+		cur_val |= (mode << (ch_idx * 4));         \
 	} while (false)
 
 typedef void (*atcgpio100_cfg_func_t)(void);
@@ -335,28 +335,28 @@ static int gpio_atcgpio100_init(const struct device *port)
 	return 0;
 }
 
-#define GPIO_ATCGPIO100_INIT(n)                                                                    \
-	static void gpio_atcgpio100_cfg_func_##n(void);                                            \
-	static struct gpio_atcgpio100_data gpio_atcgpio100_data_##n;                               \
-                                                                                                   \
-	static const struct gpio_atcgpio100_config gpio_atcgpio100_config_##n = {                  \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
-		.base = DT_INST_REG_ADDR(n),                                                       \
-		.irq_num = DT_INST_IRQN(n),                                                        \
-		.cfg_func = gpio_atcgpio100_cfg_func_##n};                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, gpio_atcgpio100_init, NULL, &gpio_atcgpio100_data_##n,            \
-			      &gpio_atcgpio100_config_##n, PRE_KERNEL_1,                           \
-			      CONFIG_GPIO_INIT_PRIORITY, &gpio_atcgpio100_api);                    \
-                                                                                                   \
-	static void gpio_atcgpio100_cfg_func_##n(void)                                             \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),                             \
-			    gpio_atcgpio100_irq_handler, DEVICE_DT_INST_GET(n), 0);                \
-		return;                                                                            \
+#define GPIO_ATCGPIO100_INIT(n)                                                         \
+	static void gpio_atcgpio100_cfg_func_##n(void);                                 \
+	static struct gpio_atcgpio100_data gpio_atcgpio100_data_##n;                    \
+                                                                                        \
+	static const struct gpio_atcgpio100_config gpio_atcgpio100_config_##n = {       \
+		.common =                                                               \
+			{                                                               \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),    \
+			},                                                              \
+		.base = DT_INST_REG_ADDR(n),                                            \
+		.irq_num = DT_INST_IRQN(n),                                             \
+		.cfg_func = gpio_atcgpio100_cfg_func_##n};                              \
+                                                                                        \
+	DEVICE_DT_INST_DEFINE(n, gpio_atcgpio100_init, NULL, &gpio_atcgpio100_data_##n, \
+			      &gpio_atcgpio100_config_##n, PRE_KERNEL_1,                \
+			      CONFIG_GPIO_INIT_PRIORITY, &gpio_atcgpio100_api);         \
+                                                                                        \
+	static void gpio_atcgpio100_cfg_func_##n(void)                                  \
+	{                                                                               \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),                  \
+			    gpio_atcgpio100_irq_handler, DEVICE_DT_INST_GET(n), 0);     \
+		return;                                                                 \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_ATCGPIO100_INIT)

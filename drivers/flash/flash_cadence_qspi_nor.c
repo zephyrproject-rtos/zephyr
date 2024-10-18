@@ -135,22 +135,22 @@ static int flash_cad_init(const struct device *dev)
 	return 0;
 }
 
-#define CREATE_FLASH_CADENCE_QSPI_DEVICE(inst)                                                     \
-	static struct flash_cad_priv flash_cad_priv_##inst = {                                     \
-		.params =                                                                          \
-			{                                                                          \
-				.clk_rate = DT_INST_PROP(inst, clock_frequency),                   \
-				.data_size = DT_INST_REG_SIZE_BY_IDX(inst, 1),                     \
-			},                                                                         \
-	};                                                                                         \
-                                                                                                   \
-	static struct flash_cad_config flash_cad_config_##inst = {                                 \
-		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(qspi_reg, DT_DRV_INST(inst)),                   \
-		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(qspi_data, DT_DRV_INST(inst)),                  \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, flash_cad_init, NULL, &flash_cad_priv_##inst,                  \
-			      &flash_cad_config_##inst, POST_KERNEL,                               \
+#define CREATE_FLASH_CADENCE_QSPI_DEVICE(inst)                                     \
+	static struct flash_cad_priv flash_cad_priv_##inst = {                     \
+		.params =                                                          \
+			{                                                          \
+				.clk_rate = DT_INST_PROP(inst, clock_frequency),   \
+				.data_size = DT_INST_REG_SIZE_BY_IDX(inst, 1),     \
+			},                                                         \
+	};                                                                         \
+                                                                                   \
+	static struct flash_cad_config flash_cad_config_##inst = {                 \
+		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(qspi_reg, DT_DRV_INST(inst)),   \
+		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(qspi_data, DT_DRV_INST(inst)),  \
+	};                                                                         \
+                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, flash_cad_init, NULL, &flash_cad_priv_##inst,  \
+			      &flash_cad_config_##inst, POST_KERNEL,               \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_cad_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CREATE_FLASH_CADENCE_QSPI_DEVICE)

@@ -98,15 +98,15 @@ static const struct kscan_driver_api kscan_input_driver_api = {
 	.disable_callback = kscan_input_disable_callback,
 };
 
-#define KSCAN_INPUT_INIT(index)                                                                    \
-	INPUT_CALLBACK_DEFINE_NAMED(DEVICE_DT_GET(DT_INST_PARENT(index)), kscan_input_cb,          \
-				    (void *)DEVICE_DT_INST_GET(index), kscan_input_cb_##index);    \
-	static const struct kscan_input_config kscan_input_config_##index = {                      \
-		.input_dev = DEVICE_DT_GET(DT_INST_PARENT(index)),                                 \
-	};                                                                                         \
-	static struct kscan_input_data kscan_input_data_##index;                                   \
-	DEVICE_DT_INST_DEFINE(index, kscan_input_init, NULL, &kscan_input_data_##index,            \
-			      &kscan_input_config_##index, POST_KERNEL,                            \
+#define KSCAN_INPUT_INIT(index)                                                                 \
+	INPUT_CALLBACK_DEFINE_NAMED(DEVICE_DT_GET(DT_INST_PARENT(index)), kscan_input_cb,       \
+				    (void *)DEVICE_DT_INST_GET(index), kscan_input_cb_##index); \
+	static const struct kscan_input_config kscan_input_config_##index = {                   \
+		.input_dev = DEVICE_DT_GET(DT_INST_PARENT(index)),                              \
+	};                                                                                      \
+	static struct kscan_input_data kscan_input_data_##index;                                \
+	DEVICE_DT_INST_DEFINE(index, kscan_input_init, NULL, &kscan_input_data_##index,         \
+			      &kscan_input_config_##index, POST_KERNEL,                         \
 			      CONFIG_KSCAN_INIT_PRIORITY, &kscan_input_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(KSCAN_INPUT_INIT)

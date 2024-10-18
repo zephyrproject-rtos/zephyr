@@ -65,7 +65,7 @@ BUILD_ASSERT((NRF_SAADC_AIN0 == NRF_SAADC_INPUT_AIN0) && (NRF_SAADC_AIN1 == NRF_
 
 /* nRF54H20 and nRF9280 always use bounce buffers in RAM */
 
-#define SAADC_MEMORY_SECTION                                                                       \
+#define SAADC_MEMORY_SECTION                                               \
 	COND_CODE_1(DT_NODE_HAS_PROP(DT_NODELABEL(adc), memory_regions), \
 		(__attribute__((__section__(LINKER_DT_NODE_REGION_NAME(	     \
 			DT_PHANDLE(DT_NODELABEL(adc), memory_regions)))))),	     \
@@ -652,9 +652,9 @@ static const struct adc_driver_api adc_nrfx_driver_api = {
  * Just in case that assumption becomes invalid in the future, we use
  * a BUILD_ASSERT().
  */
-#define SAADC_INIT(inst)                                                                           \
-	BUILD_ASSERT((inst) == 0, "multiple instances not supported");                             \
-	DEVICE_DT_INST_DEFINE(0, init_saadc, NULL, NULL, NULL, POST_KERNEL,                        \
+#define SAADC_INIT(inst)                                                       \
+	BUILD_ASSERT((inst) == 0, "multiple instances not supported");         \
+	DEVICE_DT_INST_DEFINE(0, init_saadc, NULL, NULL, NULL, POST_KERNEL,    \
 			      CONFIG_ADC_INIT_PRIORITY, &adc_nrfx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SAADC_INIT)

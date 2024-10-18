@@ -526,50 +526,50 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 #endif
 };
 
-#define LPADC_MCUX_INIT(n)                                                                         \
-                                                                                                   \
-	static void mcux_lpadc_config_func_##n(const struct device *dev);                          \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	static const struct mcux_lpadc_config mcux_lpadc_config_##n = {                            \
-		.base = (ADC_Type *)DT_INST_REG_ADDR(n),                                           \
-		.voltage_ref = DT_INST_PROP(n, voltage_ref),                                       \
-		.calibration_average = DT_INST_ENUM_IDX_OR(n, calibration_average, 0),             \
-		.power_level = DT_INST_PROP_OR(n, power_level, 0),                                 \
-		.offset_a = DT_INST_PROP(n, offset_value_a),                                       \
-		.offset_b = DT_INST_PROP(n, offset_value_b),                                       \
-		.irq_config_func = mcux_lpadc_config_func_##n,                                     \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+#define LPADC_MCUX_INIT(n)                                                                     \
+                                                                                               \
+	static void mcux_lpadc_config_func_##n(const struct device *dev);                      \
+                                                                                               \
+	PINCTRL_DT_INST_DEFINE(n);                                                             \
+	static const struct mcux_lpadc_config mcux_lpadc_config_##n = {                        \
+		.base = (ADC_Type *)DT_INST_REG_ADDR(n),                                       \
+		.voltage_ref = DT_INST_PROP(n, voltage_ref),                                   \
+		.calibration_average = DT_INST_ENUM_IDX_OR(n, calibration_average, 0),         \
+		.power_level = DT_INST_PROP_OR(n, power_level, 0),                             \
+		.offset_a = DT_INST_PROP(n, offset_value_a),                                   \
+		.offset_b = DT_INST_PROP(n, offset_value_b),                                   \
+		.irq_config_func = mcux_lpadc_config_func_##n,                                 \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                   \
 		.ref_supplies = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, nxp_references),\
 						(DEVICE_DT_GET(DT_PHANDLE(DT_DRV_INST(n),\
-						nxp_references))), (NULL)),        \
-			 .clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                       \
-			 .clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),     \
+						nxp_references))), (NULL)),    \
+			 .clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                   \
+			 .clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name), \
 			 .ref_supply_val = COND_CODE_1(\
 						DT_INST_NODE_HAS_PROP(n, nxp_references),\
 						(DT_PHA(DT_DRV_INST(n), nxp_references, vref_mv)), \
-						(0)),             \
-			 };                                                                        \
-	static struct mcux_lpadc_data mcux_lpadc_data_##n = {                                      \
-		ADC_CONTEXT_INIT_TIMER(mcux_lpadc_data_##n, ctx),                                  \
-		ADC_CONTEXT_INIT_LOCK(mcux_lpadc_data_##n, ctx),                                   \
-		ADC_CONTEXT_INIT_SYNC(mcux_lpadc_data_##n, ctx),                                   \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &mcux_lpadc_init, NULL, &mcux_lpadc_data_##n,                     \
-			      &mcux_lpadc_config_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,       \
-			      &mcux_lpadc_driver_api);                                             \
-                                                                                                   \
-	static void mcux_lpadc_config_func_##n(const struct device *dev)                           \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_lpadc_isr,             \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-	}                                                                                          \
-                                                                                                   \
-	BUILD_ASSERT((DT_INST_PROP_OR(n, power_level, 0) >= 0) &&                                  \
-			     (DT_INST_PROP_OR(n, power_level, 0) <= 3),                            \
+						(0)),         \
+			 };                                                                    \
+	static struct mcux_lpadc_data mcux_lpadc_data_##n = {                                  \
+		ADC_CONTEXT_INIT_TIMER(mcux_lpadc_data_##n, ctx),                              \
+		ADC_CONTEXT_INIT_LOCK(mcux_lpadc_data_##n, ctx),                               \
+		ADC_CONTEXT_INIT_SYNC(mcux_lpadc_data_##n, ctx),                               \
+	};                                                                                     \
+                                                                                               \
+	DEVICE_DT_INST_DEFINE(n, &mcux_lpadc_init, NULL, &mcux_lpadc_data_##n,                 \
+			      &mcux_lpadc_config_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,   \
+			      &mcux_lpadc_driver_api);                                         \
+                                                                                               \
+	static void mcux_lpadc_config_func_##n(const struct device *dev)                       \
+	{                                                                                      \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_lpadc_isr,         \
+			    DEVICE_DT_INST_GET(n), 0);                                         \
+                                                                                               \
+		irq_enable(DT_INST_IRQN(n));                                                   \
+	}                                                                                      \
+                                                                                               \
+	BUILD_ASSERT((DT_INST_PROP_OR(n, power_level, 0) >= 0) &&                              \
+			     (DT_INST_PROP_OR(n, power_level, 0) <= 3),                        \
 		     "power_level: wrong value");
 
 DT_INST_FOREACH_STATUS_OKAY(LPADC_MCUX_INIT)

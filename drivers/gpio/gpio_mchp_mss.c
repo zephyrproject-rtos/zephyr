@@ -207,27 +207,27 @@ static void mss_gpio_irq_handler(const struct device *dev)
 	gpio_fire_callbacks(&data->cb, dev, interrupt_status);
 }
 
-#define MSS_GPIO_INIT(n)                                                                           \
-	static struct mss_gpio_data mss_gpio_data_##n;                                             \
-	static void gpio_mss_gpio_cfg_func_##n(void);                                              \
-                                                                                                   \
-	static const struct mss_gpio_config mss_gpio_config_##n = {                                \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
-		.gpio_base_addr = DT_INST_REG_ADDR(n),                                             \
-		.gpio_irq_base = DT_INST_IRQN(n),                                                  \
-		.gpio_cfg_func = gpio_mss_gpio_cfg_func_##n};                                      \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, mss_gpio_init, NULL, &mss_gpio_data_##n, &mss_gpio_config_##n,    \
-			      PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, &mss_gpio_driver);          \
-                                                                                                   \
-	static void gpio_mss_gpio_cfg_func_##n(void)                                               \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mss_gpio_irq_handler,       \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define MSS_GPIO_INIT(n)                                                                        \
+	static struct mss_gpio_data mss_gpio_data_##n;                                          \
+	static void gpio_mss_gpio_cfg_func_##n(void);                                           \
+                                                                                                \
+	static const struct mss_gpio_config mss_gpio_config_##n = {                             \
+		.common =                                                                       \
+			{                                                                       \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),            \
+			},                                                                      \
+		.gpio_base_addr = DT_INST_REG_ADDR(n),                                          \
+		.gpio_irq_base = DT_INST_IRQN(n),                                               \
+		.gpio_cfg_func = gpio_mss_gpio_cfg_func_##n};                                   \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(n, mss_gpio_init, NULL, &mss_gpio_data_##n, &mss_gpio_config_##n, \
+			      PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, &mss_gpio_driver);       \
+                                                                                                \
+	static void gpio_mss_gpio_cfg_func_##n(void)                                            \
+	{                                                                                       \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mss_gpio_irq_handler,    \
+			    DEVICE_DT_INST_GET(n), 0);                                          \
+		irq_enable(DT_INST_IRQN(n));                                                    \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(MSS_GPIO_INIT)

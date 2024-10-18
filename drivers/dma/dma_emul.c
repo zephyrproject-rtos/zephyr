@@ -555,63 +555,63 @@ static int dma_emul_init(const struct device *dev)
 
 #define DMA_EMUL_INST_HAS_PROP(_inst, _prop) DT_NODE_HAS_PROP(DT_DRV_INST(_inst), _prop)
 
-#define DMA_EMUL_INST_CHANNEL_MASK(_inst)                                                          \
-	DT_INST_PROP_OR(_inst, dma_channel_mask,                                                   \
-			DMA_EMUL_INST_HAS_PROP(_inst, dma_channels)                                \
-				? ((DT_INST_PROP(_inst, dma_channels) > 0)                         \
-					   ? BIT_MASK(DT_INST_PROP_OR(_inst, dma_channels, 0))     \
-					   : 0)                                                    \
+#define DMA_EMUL_INST_CHANNEL_MASK(_inst)                                                      \
+	DT_INST_PROP_OR(_inst, dma_channel_mask,                                               \
+			DMA_EMUL_INST_HAS_PROP(_inst, dma_channels)                            \
+				? ((DT_INST_PROP(_inst, dma_channels) > 0)                     \
+					   ? BIT_MASK(DT_INST_PROP_OR(_inst, dma_channels, 0)) \
+					   : 0)                                                \
 				: 0)
 
-#define DMA_EMUL_INST_NUM_CHANNELS(_inst)                                                          \
-	DT_INST_PROP_OR(_inst, dma_channels,                                                       \
-			DMA_EMUL_INST_HAS_PROP(_inst, dma_channel_mask)                            \
-				? POPCOUNT(DT_INST_PROP_OR(_inst, dma_channel_mask, 0))            \
+#define DMA_EMUL_INST_NUM_CHANNELS(_inst)                                               \
+	DT_INST_PROP_OR(_inst, dma_channels,                                            \
+			DMA_EMUL_INST_HAS_PROP(_inst, dma_channel_mask)                 \
+				? POPCOUNT(DT_INST_PROP_OR(_inst, dma_channel_mask, 0)) \
 				: 0)
 
 #define DMA_EMUL_INST_NUM_REQUESTS(_inst) DT_INST_PROP_OR(_inst, dma_requests, 1)
 
-#define DEFINE_DMA_EMUL(_inst)                                                                     \
-	BUILD_ASSERT(DMA_EMUL_INST_HAS_PROP(_inst, dma_channel_mask) ||                            \
-			     DMA_EMUL_INST_HAS_PROP(_inst, dma_channels),                          \
-		     "at least one of dma_channel_mask or dma_channels must be provided");         \
-                                                                                                   \
-	BUILD_ASSERT(DMA_EMUL_INST_NUM_CHANNELS(_inst) <= 32, "invalid dma-channels property");    \
-                                                                                                   \
-	static K_THREAD_STACK_DEFINE(work_q_stack_##_inst, DT_INST_PROP(_inst, stack_size));       \
-                                                                                                   \
-	static struct dma_emul_xfer_desc                                                           \
-		dma_emul_xfer_desc_##_inst[DMA_EMUL_INST_NUM_CHANNELS(_inst)];                     \
-                                                                                                   \
-	static struct dma_block_config                                                             \
-		dma_emul_block_config_##_inst[DMA_EMUL_INST_NUM_CHANNELS(_inst) *                  \
-					      DMA_EMUL_INST_NUM_REQUESTS(_inst)];                  \
-                                                                                                   \
-	static const struct dma_emul_config dma_emul_config_##_inst = {                            \
-		.channel_mask = DMA_EMUL_INST_CHANNEL_MASK(_inst),                                 \
-		.num_channels = DMA_EMUL_INST_NUM_CHANNELS(_inst),                                 \
-		.num_requests = DMA_EMUL_INST_NUM_REQUESTS(_inst),                                 \
-		.addr_align = DT_INST_PROP_OR(_inst, dma_buf_addr_alignment, 1),                   \
-		.size_align = DT_INST_PROP_OR(_inst, dma_buf_size_alignment, 1),                   \
-		.copy_align = DT_INST_PROP_OR(_inst, dma_copy_alignment, 1),                       \
-		.work_q_stack = (k_thread_stack_t *)&work_q_stack_##_inst,                         \
-		.work_q_stack_size = K_THREAD_STACK_SIZEOF(work_q_stack_##_inst),                  \
-		.work_q_priority = DT_INST_PROP_OR(_inst, priority, 0),                            \
-		.xfer = dma_emul_xfer_desc_##_inst,                                                \
-		.block = dma_emul_block_config_##_inst,                                            \
-	};                                                                                         \
-                                                                                                   \
-	static ATOMIC_DEFINE(dma_emul_channels_atomic_##_inst,                                     \
-			     DT_INST_PROP_OR(_inst, dma_channels, 0));                             \
-                                                                                                   \
-	static struct dma_emul_data dma_emul_data_##_inst = {                                      \
-		.channels_atomic = dma_emul_channels_atomic_##_inst,                               \
-	};                                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(_inst, dma_emul_pm_device_pm_action);                             \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(_inst, dma_emul_init, PM_DEVICE_DT_INST_GET(_inst),                  \
-			      &dma_emul_data_##_inst, &dma_emul_config_##_inst, POST_KERNEL,       \
+#define DEFINE_DMA_EMUL(_inst)                                                                  \
+	BUILD_ASSERT(DMA_EMUL_INST_HAS_PROP(_inst, dma_channel_mask) ||                         \
+			     DMA_EMUL_INST_HAS_PROP(_inst, dma_channels),                       \
+		     "at least one of dma_channel_mask or dma_channels must be provided");      \
+                                                                                                \
+	BUILD_ASSERT(DMA_EMUL_INST_NUM_CHANNELS(_inst) <= 32, "invalid dma-channels property"); \
+                                                                                                \
+	static K_THREAD_STACK_DEFINE(work_q_stack_##_inst, DT_INST_PROP(_inst, stack_size));    \
+                                                                                                \
+	static struct dma_emul_xfer_desc                                                        \
+		dma_emul_xfer_desc_##_inst[DMA_EMUL_INST_NUM_CHANNELS(_inst)];                  \
+                                                                                                \
+	static struct dma_block_config                                                          \
+		dma_emul_block_config_##_inst[DMA_EMUL_INST_NUM_CHANNELS(_inst) *               \
+					      DMA_EMUL_INST_NUM_REQUESTS(_inst)];               \
+                                                                                                \
+	static const struct dma_emul_config dma_emul_config_##_inst = {                         \
+		.channel_mask = DMA_EMUL_INST_CHANNEL_MASK(_inst),                              \
+		.num_channels = DMA_EMUL_INST_NUM_CHANNELS(_inst),                              \
+		.num_requests = DMA_EMUL_INST_NUM_REQUESTS(_inst),                              \
+		.addr_align = DT_INST_PROP_OR(_inst, dma_buf_addr_alignment, 1),                \
+		.size_align = DT_INST_PROP_OR(_inst, dma_buf_size_alignment, 1),                \
+		.copy_align = DT_INST_PROP_OR(_inst, dma_copy_alignment, 1),                    \
+		.work_q_stack = (k_thread_stack_t *)&work_q_stack_##_inst,                      \
+		.work_q_stack_size = K_THREAD_STACK_SIZEOF(work_q_stack_##_inst),               \
+		.work_q_priority = DT_INST_PROP_OR(_inst, priority, 0),                         \
+		.xfer = dma_emul_xfer_desc_##_inst,                                             \
+		.block = dma_emul_block_config_##_inst,                                         \
+	};                                                                                      \
+                                                                                                \
+	static ATOMIC_DEFINE(dma_emul_channels_atomic_##_inst,                                  \
+			     DT_INST_PROP_OR(_inst, dma_channels, 0));                          \
+                                                                                                \
+	static struct dma_emul_data dma_emul_data_##_inst = {                                   \
+		.channels_atomic = dma_emul_channels_atomic_##_inst,                            \
+	};                                                                                      \
+                                                                                                \
+	PM_DEVICE_DT_INST_DEFINE(_inst, dma_emul_pm_device_pm_action);                          \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(_inst, dma_emul_init, PM_DEVICE_DT_INST_GET(_inst),               \
+			      &dma_emul_data_##_inst, &dma_emul_config_##_inst, POST_KERNEL,    \
 			      CONFIG_DMA_INIT_PRIORITY, &dma_emul_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_DMA_EMUL)

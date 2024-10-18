@@ -23,7 +23,7 @@ BUILD_ASSERT(DT_PROP(FLEXRAM_DT_NODE, flexram_has_magic_addr),
 #define NUM_BANKS DT_PROP(FLEXRAM_DT_NODE, flexram_num_ram_banks)
 
 #define IS_CHILD_RAM_TYPE(node_id, compat) DT_NODE_HAS_COMPAT(node_id, compat)
-#define DOES_RAM_TYPE_EXIST(compat)                                                                \
+#define DOES_RAM_TYPE_EXIST(compat)                                                 \
 	DT_FOREACH_CHILD_SEP_VARGS(FLEXRAM_DT_NODE, IS_CHILD_RAM_TYPE, (+), compat)
 
 #if DOES_RAM_TYPE_EXIST(mmio_sram)
@@ -52,28 +52,28 @@ BUILD_ASSERT(DT_PROP(FLEXRAM_DT_NODE, flexram_has_magic_addr),
 BUILD_ASSERT(COUNT_BANKS == NUM_BANKS, "wrong number of flexram banks defined");
 
 #ifdef OCRAM_DT_NODE
-#define ADD_BANK_IF_OCRAM(node_id, prop, idx)                                                      \
+#define ADD_BANK_IF_OCRAM(node_id, prop, idx)                                   \
 	COND_CODE_1(IS_EQ(DT_PROP_BY_IDX(node_id, prop, idx), FLEXRAM_OCRAM), \
 			(BANK_SIZE), (0))
-#define OCRAM_TOTAL                                                                                \
+#define OCRAM_TOTAL                                                                          \
 	DT_FOREACH_PROP_ELEM_SEP(FLEXRAM_DT_NODE, flexram_bank_spec, ADD_BANK_IF_OCRAM, (+))
 BUILD_ASSERT((OCRAM_TOTAL) == DT_REG_SIZE(OCRAM_DT_NODE), "OCRAM node size is wrong");
 #endif /* OCRAM */
 
 #ifdef DTCM_DT_NODE
-#define ADD_BANK_IF_DTCM(node_id, prop, idx)                                                       \
+#define ADD_BANK_IF_DTCM(node_id, prop, idx)                                   \
 	COND_CODE_1(IS_EQ(DT_PROP_BY_IDX(node_id, prop, idx), FLEXRAM_DTCM), \
 			(BANK_SIZE), (0))
-#define DTCM_TOTAL                                                                                 \
+#define DTCM_TOTAL                                                                          \
 	DT_FOREACH_PROP_ELEM_SEP(FLEXRAM_DT_NODE, flexram_bank_spec, ADD_BANK_IF_DTCM, (+))
 BUILD_ASSERT((DTCM_TOTAL) == DT_REG_SIZE(DTCM_DT_NODE), "DTCM node size is wrong");
 #endif /* DTCM */
 
 #ifdef ITCM_DT_NODE
-#define ADD_BANK_IF_ITCM(node_id, prop, idx)                                                       \
+#define ADD_BANK_IF_ITCM(node_id, prop, idx)                                   \
 	COND_CODE_1(IS_EQ(DT_PROP_BY_IDX(node_id, prop, idx), FLEXRAM_ITCM), \
 			(BANK_SIZE), (0))
-#define ITCM_TOTAL                                                                                 \
+#define ITCM_TOTAL                                                                          \
 	DT_FOREACH_PROP_ELEM_SEP(FLEXRAM_DT_NODE, flexram_bank_spec, ADD_BANK_IF_ITCM, (+))
 BUILD_ASSERT((ITCM_TOTAL) == DT_REG_SIZE(ITCM_DT_NODE), "ITCM node size is wrong");
 #endif /* ITCM */

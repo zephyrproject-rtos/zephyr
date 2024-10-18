@@ -190,16 +190,16 @@ int tmp112_init(const struct device *dev)
 	return tmp112_update_config(dev, 0, 0);
 }
 
-#define TMP112_INST(inst)                                                                          \
-	static struct tmp112_data tmp112_data_##inst;                                              \
-	static const struct tmp112_config tmp112_config_##inst = {                                 \
-		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.cr = DT_INST_ENUM_IDX(inst, conversion_rate),                                     \
-		.extended_mode = DT_INST_PROP(inst, extended_mode),                                \
-	};                                                                                         \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, tmp112_init, NULL, &tmp112_data_##inst,                 \
-				     &tmp112_config_##inst, POST_KERNEL,                           \
+#define TMP112_INST(inst)                                                              \
+	static struct tmp112_data tmp112_data_##inst;                                  \
+	static const struct tmp112_config tmp112_config_##inst = {                     \
+		.bus = I2C_DT_SPEC_INST_GET(inst),                                     \
+		.cr = DT_INST_ENUM_IDX(inst, conversion_rate),                         \
+		.extended_mode = DT_INST_PROP(inst, extended_mode),                    \
+	};                                                                             \
+                                                                                       \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, tmp112_init, NULL, &tmp112_data_##inst,     \
+				     &tmp112_config_##inst, POST_KERNEL,               \
 				     CONFIG_SENSOR_INIT_PRIORITY, &tmp112_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TMP112_INST)

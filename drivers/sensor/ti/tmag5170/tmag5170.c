@@ -48,12 +48,12 @@
 
 #define TMAG5170_MAG_TEMPCO_POS  8U
 #define TMAG5170_MAG_TEMPCO_MASK (BIT_MASK(2U) << TMAG5170_MAG_TEMPCO_POS)
-#define TMAG5170_MAG_TEMPCO_SET(value)                                                             \
+#define TMAG5170_MAG_TEMPCO_SET(value)                                    \
 	(((value) << TMAG5170_MAG_TEMPCO_POS) & TMAG5170_MAG_TEMPCO_MASK)
 
 #define TMAG5170_OPERATING_MODE_POS  4U
 #define TMAG5170_OPERATING_MODE_MASK (BIT_MASK(3U) << TMAG5170_OPERATING_MODE_POS)
-#define TMAG5170_OPERATING_MODE_SET(value)                                                         \
+#define TMAG5170_OPERATING_MODE_SET(value)                                        \
 	(((value) << TMAG5170_OPERATING_MODE_POS) & TMAG5170_OPERATING_MODE_MASK)
 
 #define TMAG5170_T_CH_EN_POS        3U
@@ -70,12 +70,12 @@
 
 #define TMAG5170_SLEEPTIME_POS  10U
 #define TMAG5170_SLEEPTIME_MASK (BIT_MASK(4U) << TMAG5170_SLEEPTIME_POS)
-#define TMAG5170_SLEEPTIME_SET(value)                                                              \
+#define TMAG5170_SLEEPTIME_SET(value)                                   \
 	(((value) << TMAG5170_SLEEPTIME_POS) & TMAG5170_SLEEPTIME_MASK)
 
 #define TMAG5170_MAG_CH_EN_POS  6U
 #define TMAG5170_MAG_CH_EN_MASK (BIT_MASK(4U) << TMAG5170_MAG_CH_EN_POS)
-#define TMAG5170_MAG_CH_EN_SET(value)                                                              \
+#define TMAG5170_MAG_CH_EN_SET(value)                                   \
 	(((value) << TMAG5170_MAG_CH_EN_POS) & TMAG5170_MAG_CH_EN_MASK)
 
 #define TMAG5170_Z_RANGE_POS        4U
@@ -92,7 +92,7 @@
 
 #define TMAG5170_RSLT_ALRT_POS  8U
 #define TMAG5170_RSLT_ALRT_MASK (BIT_MASK(1U) << TMAG5170_RSLT_ALRT_POS)
-#define TMAG5170_RSLT_ALRT_SET(value)                                                              \
+#define TMAG5170_RSLT_ALRT_SET(value)                                   \
 	(((value) << TMAG5170_RSLT_ALRT_POS) & TMAG5170_RSLT_ALRT_MASK)
 
 #define TMAG5170_VER_POS        4U
@@ -493,29 +493,29 @@ static int tmag5170_init(const struct device *dev)
 	return ret;
 }
 
-#define DEFINE_TMAG5170(_num)                                                                      \
-	static struct tmag5170_data tmag5170_data_##_num;                                          \
-	static const struct tmag5170_dev_config tmag5170_config_##_num = {                         \
-		.bus = SPI_DT_SPEC_INST_GET(                                                       \
-			_num, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(32), 0),        \
-		.magnetic_channels = DT_INST_ENUM_IDX(_num, magnetic_channels),                    \
-		.x_range = DT_INST_ENUM_IDX(_num, x_range),                                        \
-		.y_range = DT_INST_ENUM_IDX(_num, y_range),                                        \
-		.z_range = DT_INST_ENUM_IDX(_num, z_range),                                        \
-		.operating_mode = DT_INST_PROP(_num, operating_mode),                              \
-		.oversampling = DT_INST_ENUM_IDX(_num, oversampling),                              \
-		.tempeature_measurement = DT_INST_PROP(_num, enable_temperature_channel),          \
-		.magnet_type = DT_INST_ENUM_IDX(_num, magnet_type),                                \
-		.angle_measurement = DT_INST_ENUM_IDX(_num, angle_measurement),                    \
-		.disable_temperature_oversampling =                                                \
-			DT_INST_PROP(_num, disable_temperature_oversampling),                      \
-		.sleep_time = DT_INST_ENUM_IDX(_num, sleep_time),                                  \
+#define DEFINE_TMAG5170(_num)                                                                     \
+	static struct tmag5170_data tmag5170_data_##_num;                                         \
+	static const struct tmag5170_dev_config tmag5170_config_##_num = {                        \
+		.bus = SPI_DT_SPEC_INST_GET(                                                      \
+			_num, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(32), 0),       \
+		.magnetic_channels = DT_INST_ENUM_IDX(_num, magnetic_channels),                   \
+		.x_range = DT_INST_ENUM_IDX(_num, x_range),                                       \
+		.y_range = DT_INST_ENUM_IDX(_num, y_range),                                       \
+		.z_range = DT_INST_ENUM_IDX(_num, z_range),                                       \
+		.operating_mode = DT_INST_PROP(_num, operating_mode),                             \
+		.oversampling = DT_INST_ENUM_IDX(_num, oversampling),                             \
+		.tempeature_measurement = DT_INST_PROP(_num, enable_temperature_channel),         \
+		.magnet_type = DT_INST_ENUM_IDX(_num, magnet_type),                               \
+		.angle_measurement = DT_INST_ENUM_IDX(_num, angle_measurement),                   \
+		.disable_temperature_oversampling =                                               \
+			DT_INST_PROP(_num, disable_temperature_oversampling),                     \
+		.sleep_time = DT_INST_ENUM_IDX(_num, sleep_time),                                 \
 		IF_ENABLED(CONFIG_TMAG5170_TRIGGER,					   \
-			(.int_gpio = GPIO_DT_SPEC_INST_GET_OR(_num, int_gpios, { 0 }),)) };           \
-	PM_DEVICE_DT_INST_DEFINE(_num, tmag5170_pm_action);                                        \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(_num, tmag5170_init, PM_DEVICE_DT_INST_GET(_num),             \
-				     &tmag5170_data_##_num, &tmag5170_config_##_num, POST_KERNEL,  \
+			(.int_gpio = GPIO_DT_SPEC_INST_GET_OR(_num, int_gpios, { 0 }),)) };          \
+	PM_DEVICE_DT_INST_DEFINE(_num, tmag5170_pm_action);                                       \
+                                                                                                  \
+	SENSOR_DEVICE_DT_INST_DEFINE(_num, tmag5170_init, PM_DEVICE_DT_INST_GET(_num),            \
+				     &tmag5170_data_##_num, &tmag5170_config_##_num, POST_KERNEL, \
 				     CONFIG_SENSOR_INIT_PRIORITY, &tmag5170_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_TMAG5170)

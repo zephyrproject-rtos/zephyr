@@ -500,34 +500,34 @@ static void mcux_ftm_isr(const struct device *dev)
 	mcux_ftm_irq_handler(dev, 0, cfg->channel_count);
 }
 
-#define FTM_CONFIG_FUNC(n)                                                                         \
-	static void mcux_ftm_config_func_##n(const struct device *dev)                             \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_ftm_isr,               \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define FTM_CONFIG_FUNC(n)                                                           \
+	static void mcux_ftm_config_func_##n(const struct device *dev)               \
+	{                                                                            \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_ftm_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                               \
+		irq_enable(DT_INST_IRQN(n));                                         \
 	}
 #else /* Multiple interrupts */
 #define FTM_ISR_FUNC_NAME(suffix) _DO_CONCAT(mcux_ftm_isr_, suffix)
-#define FTM_ISR_FUNC(chan_start, chan_end)                                                         \
-	static void mcux_ftm_isr_##chan_start##_##chan_end(const struct device *dev)               \
-	{                                                                                          \
-		mcux_ftm_irq_handler(dev, chan_start, chan_end + 1);                               \
+#define FTM_ISR_FUNC(chan_start, chan_end)                                           \
+	static void mcux_ftm_isr_##chan_start##_##chan_end(const struct device *dev) \
+	{                                                                            \
+		mcux_ftm_irq_handler(dev, chan_start, chan_end + 1);                 \
 	}
 
-#define FTM_ISR_CONFIG(node_id, prop, idx)                                                         \
-	do {                                                                                       \
-		IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq),                                      \
-			    DT_IRQ_BY_IDX(node_id, idx, priority),                                 \
-			    FTM_ISR_FUNC_NAME(DT_STRING_TOKEN_BY_IDX(node_id, prop, idx)),         \
-			    DEVICE_DT_GET(node_id), 0);                                            \
-		irq_enable(DT_IRQ_BY_IDX(node_id, idx, irq));                                      \
+#define FTM_ISR_CONFIG(node_id, prop, idx)                                                 \
+	do {                                                                               \
+		IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq),                              \
+			    DT_IRQ_BY_IDX(node_id, idx, priority),                         \
+			    FTM_ISR_FUNC_NAME(DT_STRING_TOKEN_BY_IDX(node_id, prop, idx)), \
+			    DEVICE_DT_GET(node_id), 0);                                    \
+		irq_enable(DT_IRQ_BY_IDX(node_id, idx, irq));                              \
 	} while (false);
 
-#define FTM_CONFIG_FUNC(n)                                                                         \
-	static void mcux_ftm_config_func_##n(const struct device *dev)                             \
-	{                                                                                          \
-		DT_INST_FOREACH_PROP_ELEM(n, interrupt_names, FTM_ISR_CONFIG)                      \
+#define FTM_CONFIG_FUNC(n)                                                    \
+	static void mcux_ftm_config_func_##n(const struct device *dev)        \
+	{                                                                     \
+		DT_INST_FOREACH_PROP_ELEM(n, interrupt_names, FTM_ISR_CONFIG) \
 	}
 
 #if DT_INST_IRQ_HAS_NAME(0, overflow)
@@ -557,25 +557,25 @@ FTM_ISR_FUNC(6, 7)
 #define FTM_INIT_CFG(n) FTM_DECLARE_CFG(n, FTM_CFG_CAPTURE_INIT)
 #endif /* !CONFIG_PWM_CAPTURE */
 
-#define FTM_DECLARE_CFG(n, CAPTURE_INIT)                                                           \
-	static const struct mcux_ftm_config mcux_ftm_config_##n = {                                \
-		.base = (FTM_Type *)DT_INST_REG_ADDR(n),                                           \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
-		.ftm_clock_source = (ftm_clock_source_t)(DT_INST_ENUM_IDX(n, clock_source) + 1U),  \
-		.prescale = TO_FTM_PRESCALE_DIVIDE(DT_INST_PROP(n, prescaler)),                    \
-		.channel_count = FSL_FEATURE_FTM_CHANNEL_COUNTn((FTM_Type *)DT_INST_REG_ADDR(n)),  \
-		.mode = kFTM_EdgeAlignedPwm,                                                       \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+#define FTM_DECLARE_CFG(n, CAPTURE_INIT)                                                          \
+	static const struct mcux_ftm_config mcux_ftm_config_##n = {                               \
+		.base = (FTM_Type *)DT_INST_REG_ADDR(n),                                          \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                               \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),             \
+		.ftm_clock_source = (ftm_clock_source_t)(DT_INST_ENUM_IDX(n, clock_source) + 1U), \
+		.prescale = TO_FTM_PRESCALE_DIVIDE(DT_INST_PROP(n, prescaler)),                   \
+		.channel_count = FSL_FEATURE_FTM_CHANNEL_COUNTn((FTM_Type *)DT_INST_REG_ADDR(n)), \
+		.mode = kFTM_EdgeAlignedPwm,                                                      \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                      \
 		CAPTURE_INIT}
 
-#define FTM_DEVICE(n)                                                                              \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	static struct mcux_ftm_data mcux_ftm_data_##n;                                             \
-	static const struct mcux_ftm_config mcux_ftm_config_##n;                                   \
-	DEVICE_DT_INST_DEFINE(n, &mcux_ftm_init, NULL, &mcux_ftm_data_##n, &mcux_ftm_config_##n,   \
-			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, &mcux_ftm_driver_api);        \
-	FTM_CONFIG_FUNC(n)                                                                         \
+#define FTM_DEVICE(n)                                                                            \
+	PINCTRL_DT_INST_DEFINE(n);                                                               \
+	static struct mcux_ftm_data mcux_ftm_data_##n;                                           \
+	static const struct mcux_ftm_config mcux_ftm_config_##n;                                 \
+	DEVICE_DT_INST_DEFINE(n, &mcux_ftm_init, NULL, &mcux_ftm_data_##n, &mcux_ftm_config_##n, \
+			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, &mcux_ftm_driver_api);      \
+	FTM_CONFIG_FUNC(n)                                                                       \
 	FTM_INIT_CFG(n);
 
 DT_INST_FOREACH_STATUS_OKAY(FTM_DEVICE)

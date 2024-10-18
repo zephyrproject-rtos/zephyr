@@ -135,15 +135,15 @@ static int th02_init(const struct device *dev)
 	return 0;
 }
 
-#define TH02_DEFINE(inst)                                                                          \
-	static struct th02_data th02_data_##inst;                                                  \
-                                                                                                   \
-	static const struct th02_config th02_config_##inst = {                                     \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-	};                                                                                         \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, th02_init, NULL, &th02_data_##inst,                     \
-				     &th02_config_##inst, POST_KERNEL,                             \
+#define TH02_DEFINE(inst)                                                            \
+	static struct th02_data th02_data_##inst;                                    \
+                                                                                     \
+	static const struct th02_config th02_config_##inst = {                       \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                   \
+	};                                                                           \
+                                                                                     \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, th02_init, NULL, &th02_data_##inst,       \
+				     &th02_config_##inst, POST_KERNEL,               \
 				     CONFIG_SENSOR_INIT_PRIORITY, &th02_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TH02_DEFINE)

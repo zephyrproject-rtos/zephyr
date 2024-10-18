@@ -316,13 +316,13 @@ static const struct w1_driver_api w1_gpio_driver_api = {
 	.configure = w1_gpio_configure,
 };
 
-#define W1_ZEPHYR_GPIO_INIT(inst)                                                                  \
-	static const struct w1_gpio_config w1_gpio_cfg_##inst = {                                  \
-		.master_config.slave_count = W1_INST_SLAVE_COUNT(inst),                            \
-		.spec = GPIO_DT_SPEC_INST_GET(inst, gpios)};                                       \
-	static struct w1_gpio_data w1_gpio_data_##inst = {};                                       \
-	DEVICE_DT_INST_DEFINE(inst, &w1_gpio_init, NULL, &w1_gpio_data_##inst,                     \
-			      &w1_gpio_cfg_##inst, POST_KERNEL, CONFIG_W1_INIT_PRIORITY,           \
+#define W1_ZEPHYR_GPIO_INIT(inst)                                                        \
+	static const struct w1_gpio_config w1_gpio_cfg_##inst = {                        \
+		.master_config.slave_count = W1_INST_SLAVE_COUNT(inst),                  \
+		.spec = GPIO_DT_SPEC_INST_GET(inst, gpios)};                             \
+	static struct w1_gpio_data w1_gpio_data_##inst = {};                             \
+	DEVICE_DT_INST_DEFINE(inst, &w1_gpio_init, NULL, &w1_gpio_data_##inst,           \
+			      &w1_gpio_cfg_##inst, POST_KERNEL, CONFIG_W1_INIT_PRIORITY, \
 			      &w1_gpio_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(W1_ZEPHYR_GPIO_INIT)

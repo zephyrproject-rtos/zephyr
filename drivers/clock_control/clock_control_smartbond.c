@@ -560,9 +560,9 @@ int smartbond_clocks_init(const struct device *dev)
 #endif
 
 #define ENABLE_OSC(clock) smartbond_clock_control_on_by_ord(dev, DT_DEP_ORD(clock))
-#define DISABLE_OSC(clock)                                                                         \
-	if (DT_NODE_HAS_STATUS(clock, disabled)) {                                                 \
-		smartbond_clock_control_off_by_ord(dev, DT_DEP_ORD(clock));                        \
+#define DISABLE_OSC(clock)                                                  \
+	if (DT_NODE_HAS_STATUS(clock, disabled)) {                          \
+		smartbond_clock_control_off_by_ord(dev, DT_DEP_ORD(clock)); \
 	}
 
 	/* Enable all oscillators with status "okay" */

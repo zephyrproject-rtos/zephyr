@@ -142,17 +142,17 @@ static const struct regulator_driver_api api = {
 	.get_mode = regulator_rpi_pico_get_mode,
 };
 
-#define REGULATOR_RPI_PICO_DEFINE_ALL(inst)                                                        \
-	static struct regulator_rpi_pico_data data_##inst;                                         \
-                                                                                                   \
-	static const struct regulator_rpi_pico_config config_##inst = {                            \
-		.common = REGULATOR_DT_COMMON_CONFIG_INIT(inst),                                   \
-		.reg = (vreg_and_chip_reset_hw_t *const)DT_INST_REG_ADDR(inst),                    \
-		.brown_out_detection = DT_INST_PROP(inst, raspberrypi_brown_out_detection),        \
-		.brown_out_threshold = DT_INST_ENUM_IDX(inst, raspberrypi_brown_out_threshold),    \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, regulator_rpi_pico_init, NULL, &data_##inst, &config_##inst,   \
+#define REGULATOR_RPI_PICO_DEFINE_ALL(inst)                                                      \
+	static struct regulator_rpi_pico_data data_##inst;                                       \
+                                                                                                 \
+	static const struct regulator_rpi_pico_config config_##inst = {                          \
+		.common = REGULATOR_DT_COMMON_CONFIG_INIT(inst),                                 \
+		.reg = (vreg_and_chip_reset_hw_t *const)DT_INST_REG_ADDR(inst),                  \
+		.brown_out_detection = DT_INST_PROP(inst, raspberrypi_brown_out_detection),      \
+		.brown_out_threshold = DT_INST_ENUM_IDX(inst, raspberrypi_brown_out_threshold),  \
+	};                                                                                       \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(inst, regulator_rpi_pico_init, NULL, &data_##inst, &config_##inst, \
 			      POST_KERNEL, CONFIG_REGULATOR_RPI_PICO_INIT_PRIORITY, &api);
 
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_RPI_PICO_DEFINE_ALL)

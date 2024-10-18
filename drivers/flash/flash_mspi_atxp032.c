@@ -787,37 +787,37 @@ static const struct flash_driver_api flash_mspi_atxp032_api = {
 #endif
 };
 
-#define MSPI_DEVICE_CONFIG_SERIAL(n)                                                               \
-	{                                                                                          \
-		.ce_num = DT_INST_PROP(n, mspi_hardware_ce_num),                                   \
-		.freq = 12000000,                                                                  \
-		.io_mode = MSPI_IO_MODE_SINGLE,                                                    \
-		.data_rate = MSPI_DATA_RATE_SINGLE,                                                \
-		.cpp = MSPI_CPP_MODE_0,                                                            \
-		.endian = MSPI_XFER_LITTLE_ENDIAN,                                                 \
-		.ce_polarity = MSPI_CE_ACTIVE_LOW,                                                 \
-		.dqs_enable = false,                                                               \
-		.rx_dummy = 8,                                                                     \
-		.tx_dummy = 0,                                                                     \
-		.read_cmd = SPI_NOR_CMD_READ_FAST,                                                 \
-		.write_cmd = SPI_NOR_CMD_PP,                                                       \
-		.cmd_length = 1,                                                                   \
-		.addr_length = 4,                                                                  \
-		.mem_boundary = 0,                                                                 \
-		.time_to_break = 0,                                                                \
+#define MSPI_DEVICE_CONFIG_SERIAL(n)                             \
+	{                                                        \
+		.ce_num = DT_INST_PROP(n, mspi_hardware_ce_num), \
+		.freq = 12000000,                                \
+		.io_mode = MSPI_IO_MODE_SINGLE,                  \
+		.data_rate = MSPI_DATA_RATE_SINGLE,              \
+		.cpp = MSPI_CPP_MODE_0,                          \
+		.endian = MSPI_XFER_LITTLE_ENDIAN,               \
+		.ce_polarity = MSPI_CE_ACTIVE_LOW,               \
+		.dqs_enable = false,                             \
+		.rx_dummy = 8,                                   \
+		.tx_dummy = 0,                                   \
+		.read_cmd = SPI_NOR_CMD_READ_FAST,               \
+		.write_cmd = SPI_NOR_CMD_PP,                     \
+		.cmd_length = 1,                                 \
+		.addr_length = 4,                                \
+		.mem_boundary = 0,                               \
+		.time_to_break = 0,                              \
 	}
 
 #if CONFIG_SOC_FAMILY_AMBIQ
-#define MSPI_TIMING_CONFIG(n)                                                                      \
-	{                                                                                          \
-		.ui8WriteLatency = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 0),                 \
-		.ui8TurnAround = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 1),                   \
-		.bTxNeg = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 2),                          \
-		.bRxNeg = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 3),                          \
-		.bRxCap = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 4),                          \
-		.ui32TxDQSDelay = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 5),                  \
-		.ui32RxDQSDelay = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 6),                  \
-		.ui32RXDQSDelayEXT = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 7),               \
+#define MSPI_TIMING_CONFIG(n)                                                        \
+	{                                                                            \
+		.ui8WriteLatency = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 0),   \
+		.ui8TurnAround = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 1),     \
+		.bTxNeg = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 2),            \
+		.bRxNeg = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 3),            \
+		.bRxCap = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 4),            \
+		.ui32TxDQSDelay = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 5),    \
+		.ui32RxDQSDelay = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 6),    \
+		.ui32RXDQSDelayEXT = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 7), \
 	}
 #define MSPI_TIMING_CONFIG_MASK(n) DT_INST_PROP(n, ambiq_timing_config_mask)
 #else
@@ -825,35 +825,35 @@ static const struct flash_driver_api flash_mspi_atxp032_api = {
 #define MSPI_TIMING_CONFIG_MASK(n)
 #endif
 
-#define FLASH_MSPI_ATXP032(n)                                                                      \
-	static const struct flash_mspi_atxp032_config flash_mspi_atxp032_config_##n = {            \
-		.mem_size = DT_INST_PROP(n, size) / 8,                                             \
-		.port = MSPI_PORT(n),                                                              \
-		.flash_param =                                                                     \
-			{                                                                          \
-				.write_block_size = NOR_WRITE_SIZE,                                \
-				.erase_value = NOR_ERASE_VALUE,                                    \
-			},                                                                         \
-		.page_layout =                                                                     \
-			{                                                                          \
-				.pages_count = DT_INST_PROP(n, size) / 8 / SPI_NOR_PAGE_SIZE,      \
-				.pages_size = SPI_NOR_PAGE_SIZE,                                   \
-			},                                                                         \
-		.bus = DEVICE_DT_GET(DT_INST_BUS(n)),                                              \
-		.dev_id = MSPI_DEVICE_ID_DT_INST(n),                                               \
-		.serial_cfg = MSPI_DEVICE_CONFIG_SERIAL(n),                                        \
-		.tar_dev_cfg = MSPI_DEVICE_CONFIG_DT_INST(n),                                      \
-		.tar_xip_cfg = MSPI_XIP_CONFIG_DT_INST(n),                                         \
-		.tar_scramble_cfg = MSPI_SCRAMBLE_CONFIG_DT_INST(n),                               \
-		.tar_timing_cfg = MSPI_TIMING_CONFIG(n),                                           \
-		.timing_cfg_mask = MSPI_TIMING_CONFIG_MASK(n),                                     \
-		.sw_multi_periph = DT_PROP(DT_INST_BUS(n), software_multiperipheral)};             \
-	static struct flash_mspi_atxp032_data flash_mspi_atxp032_data_##n = {                      \
-		.lock = Z_SEM_INITIALIZER(flash_mspi_atxp032_data_##n.lock, 0, 1),                 \
-	};                                                                                         \
-	PM_DEVICE_DT_INST_DEFINE(n, flash_mspi_atxp032_pm_action);                                 \
-	DEVICE_DT_INST_DEFINE(n, flash_mspi_atxp032_init, PM_DEVICE_DT_INST_GET(n),                \
-			      &flash_mspi_atxp032_data_##n, &flash_mspi_atxp032_config_##n,        \
+#define FLASH_MSPI_ATXP032(n)                                                                    \
+	static const struct flash_mspi_atxp032_config flash_mspi_atxp032_config_##n = {          \
+		.mem_size = DT_INST_PROP(n, size) / 8,                                           \
+		.port = MSPI_PORT(n),                                                            \
+		.flash_param =                                                                   \
+			{                                                                        \
+				.write_block_size = NOR_WRITE_SIZE,                              \
+				.erase_value = NOR_ERASE_VALUE,                                  \
+			},                                                                       \
+		.page_layout =                                                                   \
+			{                                                                        \
+				.pages_count = DT_INST_PROP(n, size) / 8 / SPI_NOR_PAGE_SIZE,    \
+				.pages_size = SPI_NOR_PAGE_SIZE,                                 \
+			},                                                                       \
+		.bus = DEVICE_DT_GET(DT_INST_BUS(n)),                                            \
+		.dev_id = MSPI_DEVICE_ID_DT_INST(n),                                             \
+		.serial_cfg = MSPI_DEVICE_CONFIG_SERIAL(n),                                      \
+		.tar_dev_cfg = MSPI_DEVICE_CONFIG_DT_INST(n),                                    \
+		.tar_xip_cfg = MSPI_XIP_CONFIG_DT_INST(n),                                       \
+		.tar_scramble_cfg = MSPI_SCRAMBLE_CONFIG_DT_INST(n),                             \
+		.tar_timing_cfg = MSPI_TIMING_CONFIG(n),                                         \
+		.timing_cfg_mask = MSPI_TIMING_CONFIG_MASK(n),                                   \
+		.sw_multi_periph = DT_PROP(DT_INST_BUS(n), software_multiperipheral)};           \
+	static struct flash_mspi_atxp032_data flash_mspi_atxp032_data_##n = {                    \
+		.lock = Z_SEM_INITIALIZER(flash_mspi_atxp032_data_##n.lock, 0, 1),               \
+	};                                                                                       \
+	PM_DEVICE_DT_INST_DEFINE(n, flash_mspi_atxp032_pm_action);                               \
+	DEVICE_DT_INST_DEFINE(n, flash_mspi_atxp032_init, PM_DEVICE_DT_INST_GET(n),              \
+			      &flash_mspi_atxp032_data_##n, &flash_mspi_atxp032_config_##n,      \
 			      POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY, &flash_mspi_atxp032_api);
 
 DT_INST_FOREACH_STATUS_OKAY(FLASH_MSPI_ATXP032)

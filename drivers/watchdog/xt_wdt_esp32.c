@@ -161,7 +161,7 @@ DEVICE_DT_DEFINE(DT_NODELABEL(xt_wdt), &esp32_xt_wdt_init, NULL, &esp32_xt_wdt_d
 		 &esp32_xt_wdt_config0, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		 &esp32_xt_wdt_api);
 
-#if !(defined(CONFIG_SOC_SERIES_ESP32S2) || defined(CONFIG_SOC_SERIES_ESP32S3) ||                  \
+#if !(defined(CONFIG_SOC_SERIES_ESP32S2) || defined(CONFIG_SOC_SERIES_ESP32S3) || \
       defined(CONFIG_SOC_SERIES_ESP32C3))
 #error "XT WDT is not supported"
 #else

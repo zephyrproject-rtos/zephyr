@@ -354,45 +354,45 @@ static const struct display_driver_api st7789v_api = {
 	.set_orientation = st7789v_set_orientation,
 };
 
-#define ST7789V_WORD_SIZE(inst)                                                                    \
-	((DT_INST_PROP(inst, mipi_mode) == MIPI_DBI_MODE_SPI_4WIRE) ? SPI_WORD_SET(8)              \
+#define ST7789V_WORD_SIZE(inst)                                                        \
+	((DT_INST_PROP(inst, mipi_mode) == MIPI_DBI_MODE_SPI_4WIRE) ? SPI_WORD_SET(8)  \
 								    : SPI_WORD_SET(9))
-#define ST7789V_INIT(inst)                                                                         \
-	static const struct st7789v_config st7789v_config_##inst = {                               \
-		.mipi_dbi = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                   \
-		.dbi_config = MIPI_DBI_CONFIG_DT_INST(                                             \
-			inst, ST7789V_WORD_SIZE(inst) | SPI_OP_MODE_MASTER, 0),                    \
-		.vcom = DT_INST_PROP(inst, vcom),                                                  \
-		.gctrl = DT_INST_PROP(inst, gctrl),                                                \
-		.vdv_vrh_enable =                                                                  \
-			(DT_INST_NODE_HAS_PROP(inst, vrhs) && DT_INST_NODE_HAS_PROP(inst, vdvs)),  \
-		.vrh_value = DT_INST_PROP_OR(inst, vrhs, 0),                                       \
-		.vdv_value = DT_INST_PROP_OR(inst, vdvs, 0),                                       \
-		.mdac = DT_INST_PROP(inst, mdac),                                                  \
-		.gamma = DT_INST_PROP(inst, gamma),                                                \
-		.colmod = DT_INST_PROP(inst, colmod),                                              \
-		.lcm = DT_INST_PROP(inst, lcm),                                                    \
-		.inversion_on = !DT_INST_PROP(inst, inversion_off),                                \
-		.porch_param = DT_INST_PROP(inst, porch_param),                                    \
-		.cmd2en_param = DT_INST_PROP(inst, cmd2en_param),                                  \
-		.pwctrl1_param = DT_INST_PROP(inst, pwctrl1_param),                                \
-		.pvgam_param = DT_INST_PROP(inst, pvgam_param),                                    \
-		.nvgam_param = DT_INST_PROP(inst, nvgam_param),                                    \
-		.ram_param = DT_INST_PROP(inst, ram_param),                                        \
-		.rgb_param = DT_INST_PROP(inst, rgb_param),                                        \
-		.width = DT_INST_PROP(inst, width),                                                \
-		.height = DT_INST_PROP(inst, height),                                              \
-	};                                                                                         \
-                                                                                                   \
-	static struct st7789v_data st7789v_data_##inst = {                                         \
-		.x_offset = DT_INST_PROP(inst, x_offset),                                          \
-		.y_offset = DT_INST_PROP(inst, y_offset),                                          \
-	};                                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, st7789v_pm_action);                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, &st7789v_init, PM_DEVICE_DT_INST_GET(inst),                    \
-			      &st7789v_data_##inst, &st7789v_config_##inst, POST_KERNEL,           \
+#define ST7789V_INIT(inst)                                                                        \
+	static const struct st7789v_config st7789v_config_##inst = {                              \
+		.mipi_dbi = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                  \
+		.dbi_config = MIPI_DBI_CONFIG_DT_INST(                                            \
+			inst, ST7789V_WORD_SIZE(inst) | SPI_OP_MODE_MASTER, 0),                   \
+		.vcom = DT_INST_PROP(inst, vcom),                                                 \
+		.gctrl = DT_INST_PROP(inst, gctrl),                                               \
+		.vdv_vrh_enable =                                                                 \
+			(DT_INST_NODE_HAS_PROP(inst, vrhs) && DT_INST_NODE_HAS_PROP(inst, vdvs)), \
+		.vrh_value = DT_INST_PROP_OR(inst, vrhs, 0),                                      \
+		.vdv_value = DT_INST_PROP_OR(inst, vdvs, 0),                                      \
+		.mdac = DT_INST_PROP(inst, mdac),                                                 \
+		.gamma = DT_INST_PROP(inst, gamma),                                               \
+		.colmod = DT_INST_PROP(inst, colmod),                                             \
+		.lcm = DT_INST_PROP(inst, lcm),                                                   \
+		.inversion_on = !DT_INST_PROP(inst, inversion_off),                               \
+		.porch_param = DT_INST_PROP(inst, porch_param),                                   \
+		.cmd2en_param = DT_INST_PROP(inst, cmd2en_param),                                 \
+		.pwctrl1_param = DT_INST_PROP(inst, pwctrl1_param),                               \
+		.pvgam_param = DT_INST_PROP(inst, pvgam_param),                                   \
+		.nvgam_param = DT_INST_PROP(inst, nvgam_param),                                   \
+		.ram_param = DT_INST_PROP(inst, ram_param),                                       \
+		.rgb_param = DT_INST_PROP(inst, rgb_param),                                       \
+		.width = DT_INST_PROP(inst, width),                                               \
+		.height = DT_INST_PROP(inst, height),                                             \
+	};                                                                                        \
+                                                                                                  \
+	static struct st7789v_data st7789v_data_##inst = {                                        \
+		.x_offset = DT_INST_PROP(inst, x_offset),                                         \
+		.y_offset = DT_INST_PROP(inst, y_offset),                                         \
+	};                                                                                        \
+                                                                                                  \
+	PM_DEVICE_DT_INST_DEFINE(inst, st7789v_pm_action);                                        \
+                                                                                                  \
+	DEVICE_DT_INST_DEFINE(inst, &st7789v_init, PM_DEVICE_DT_INST_GET(inst),                   \
+			      &st7789v_data_##inst, &st7789v_config_##inst, POST_KERNEL,          \
 			      CONFIG_DISPLAY_INIT_PRIORITY, &st7789v_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ST7789V_INIT)

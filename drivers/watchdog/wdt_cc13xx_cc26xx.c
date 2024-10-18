@@ -219,29 +219,29 @@ static const struct wdt_driver_api wdt_cc13xx_cc26xx_api = {
 	.feed = wdt_cc13xx_cc26xx_feed,
 };
 
-#define CC13XX_CC26XX_WDT_INIT(index)                                                              \
-	static void wdt_cc13xx_cc26xx_irq_cfg_##index(void)                                        \
-	{                                                                                          \
-		if (DT_INST_PROP(index, interrupt_nmi)) {                                          \
-			return; /* NMI interrupt is used */                                        \
-		}                                                                                  \
-		IRQ_CONNECT(DT_INST_IRQN(index), DT_INST_IRQ(index, priority),                     \
-			    wdt_cc13xx_cc26xx_isr, DEVICE_DT_INST_GET(index), 0);                  \
-		irq_enable(DT_INST_IRQN(index));                                                   \
-	}                                                                                          \
-	static struct wdt_cc13xx_cc26xx_data wdt_cc13xx_cc26xx_data_##index = {                    \
-		.reload = WATCHDOG_MS_TO_TICKS(CONFIG_WDT_CC13XX_CC26XX_INITIAL_TIMEOUT),          \
-		.cb = NULL,                                                                        \
-		.flags = 0,                                                                        \
-	};                                                                                         \
-	static struct wdt_cc13xx_cc26xx_cfg wdt_cc13xx_cc26xx_cfg_##index = {                      \
-		.reg = DT_INST_REG_ADDR(index),                                                    \
-		.irq_nmi = DT_INST_PROP(index, interrupt_nmi),                                     \
-		.irq_cfg_func = wdt_cc13xx_cc26xx_irq_cfg_##index,                                 \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(index, wdt_cc13xx_cc26xx_init, NULL,                                 \
-			      &wdt_cc13xx_cc26xx_data_##index, &wdt_cc13xx_cc26xx_cfg_##index,     \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,                    \
+#define CC13XX_CC26XX_WDT_INIT(index)                                                          \
+	static void wdt_cc13xx_cc26xx_irq_cfg_##index(void)                                    \
+	{                                                                                      \
+		if (DT_INST_PROP(index, interrupt_nmi)) {                                      \
+			return; /* NMI interrupt is used */                                    \
+		}                                                                              \
+		IRQ_CONNECT(DT_INST_IRQN(index), DT_INST_IRQ(index, priority),                 \
+			    wdt_cc13xx_cc26xx_isr, DEVICE_DT_INST_GET(index), 0);              \
+		irq_enable(DT_INST_IRQN(index));                                               \
+	}                                                                                      \
+	static struct wdt_cc13xx_cc26xx_data wdt_cc13xx_cc26xx_data_##index = {                \
+		.reload = WATCHDOG_MS_TO_TICKS(CONFIG_WDT_CC13XX_CC26XX_INITIAL_TIMEOUT),      \
+		.cb = NULL,                                                                    \
+		.flags = 0,                                                                    \
+	};                                                                                     \
+	static struct wdt_cc13xx_cc26xx_cfg wdt_cc13xx_cc26xx_cfg_##index = {                  \
+		.reg = DT_INST_REG_ADDR(index),                                                \
+		.irq_nmi = DT_INST_PROP(index, interrupt_nmi),                                 \
+		.irq_cfg_func = wdt_cc13xx_cc26xx_irq_cfg_##index,                             \
+	};                                                                                     \
+	DEVICE_DT_INST_DEFINE(index, wdt_cc13xx_cc26xx_init, NULL,                             \
+			      &wdt_cc13xx_cc26xx_data_##index, &wdt_cc13xx_cc26xx_cfg_##index, \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,                \
 			      &wdt_cc13xx_cc26xx_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CC13XX_CC26XX_WDT_INIT)

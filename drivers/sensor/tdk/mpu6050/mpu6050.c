@@ -220,16 +220,16 @@ int mpu6050_init(const struct device *dev)
 	return 0;
 }
 
-#define MPU6050_DEFINE(inst)                                                                       \
-	static struct mpu6050_data mpu6050_data_##inst;                                            \
-                                                                                                   \
-	static const struct mpu6050_config mpu6050_config_##inst = {                               \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+#define MPU6050_DEFINE(inst)                                                             \
+	static struct mpu6050_data mpu6050_data_##inst;                                  \
+                                                                                         \
+	static const struct mpu6050_config mpu6050_config_##inst = {                     \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                       \
 		IF_ENABLED(CONFIG_MPU6050_TRIGGER,						\
-			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),)) };           \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, mpu6050_init, NULL, &mpu6050_data_##inst,               \
-				     &mpu6050_config_##inst, POST_KERNEL,                          \
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),)) }; \
+                                                                                         \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, mpu6050_init, NULL, &mpu6050_data_##inst,     \
+				     &mpu6050_config_##inst, POST_KERNEL,                \
 				     CONFIG_SENSOR_INIT_PRIORITY, &mpu6050_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MPU6050_DEFINE)

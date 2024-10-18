@@ -316,10 +316,10 @@ static const struct uart_driver_api uart_psoc6_driver_api = {
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define CY_PSOC6_UART_IRQ_FUNC(n)                                                                  \
-	static void cy_psoc6_uart##n##_irq_config(const struct device *port)                       \
-	{                                                                                          \
-		CY_PSOC6_DT_INST_NVIC_INSTALL(n, uart_psoc6_isr);                                  \
+#define CY_PSOC6_UART_IRQ_FUNC(n)                                            \
+	static void cy_psoc6_uart##n##_irq_config(const struct device *port) \
+	{                                                                    \
+		CY_PSOC6_DT_INST_NVIC_INSTALL(n, uart_psoc6_isr);            \
 	};
 #define CY_PSOC6_UART_IRQ_SET_FUNC(n)  .irq_config_func = cy_psoc6_uart##n##_irq_config
 #define CY_PSOC6_UART_DECL_DATA(n)     static struct cypress_psoc6_data cy_psoc6_uart##n##_data = {0};
@@ -331,18 +331,18 @@ static const struct uart_driver_api uart_psoc6_driver_api = {
 #define CY_PSOC6_UART_DECL_DATA_PTR(n) NULL
 #endif
 
-#define CY_PSOC6_UART_INIT(n)                                                                      \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	CY_PSOC6_UART_DECL_DATA(n)                                                                 \
-	CY_PSOC6_UART_IRQ_FUNC(n)                                                                  \
-	static const struct cypress_psoc6_config cy_psoc6_uart##n##_config = {                     \
-		.base = (CySCB_Type *)DT_INST_REG_ADDR(n),                                         \
-		.periph_id = DT_INST_PROP(n, peripheral_id),                                       \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-                                                                                                   \
-		CY_PSOC6_UART_IRQ_SET_FUNC(n)};                                                    \
-	DEVICE_DT_INST_DEFINE(n, &uart_psoc6_init, NULL, CY_PSOC6_UART_DECL_DATA_PTR(n),           \
-			      &cy_psoc6_uart##n##_config, PRE_KERNEL_1,                            \
+#define CY_PSOC6_UART_INIT(n)                                                            \
+	PINCTRL_DT_INST_DEFINE(n);                                                       \
+	CY_PSOC6_UART_DECL_DATA(n)                                                       \
+	CY_PSOC6_UART_IRQ_FUNC(n)                                                        \
+	static const struct cypress_psoc6_config cy_psoc6_uart##n##_config = {           \
+		.base = (CySCB_Type *)DT_INST_REG_ADDR(n),                               \
+		.periph_id = DT_INST_PROP(n, peripheral_id),                             \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                               \
+                                                                                         \
+		CY_PSOC6_UART_IRQ_SET_FUNC(n)};                                          \
+	DEVICE_DT_INST_DEFINE(n, &uart_psoc6_init, NULL, CY_PSOC6_UART_DECL_DATA_PTR(n), \
+			      &cy_psoc6_uart##n##_config, PRE_KERNEL_1,                  \
 			      CONFIG_SERIAL_INIT_PRIORITY, &uart_psoc6_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CY_PSOC6_UART_INIT)

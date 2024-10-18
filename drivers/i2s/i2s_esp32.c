@@ -895,36 +895,36 @@ static const struct i2s_driver_api i2s_esp32_driver_api = {
 	.write = i2s_esp32_write,
 };
 
-#define I2S_ESP32_DMA_CHANNEL_INIT(index, dir)                                                     \
-	.dir = {.state = I2S_STATE_NOT_READY,                                                      \
-		.is_slave = false,                                                                 \
-		.dma_dev = UTIL_AND(DT_INST_DMAS_HAS_NAME(index, dir),                             \
-				    DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(index, dir))),         \
-		.dma_channel = UTIL_AND(DT_INST_DMAS_HAS_NAME(index, dir),                         \
-					DT_INST_DMAS_CELL_BY_NAME(index, dir, channel)),           \
-		.mem_block = NULL,                                                                 \
-		.mem_block_len = 0,                                                                \
-		.start_transfer = i2s_esp32_##dir##_start_transfer,                                \
-		.stop_transfer = i2s_esp32_##dir##_stop_transfer,                                  \
-		.queue_drop = i2s_esp32_queue_drop,                                                \
-		.last_block = false,                                                               \
+#define I2S_ESP32_DMA_CHANNEL_INIT(index, dir)                                             \
+	.dir = {.state = I2S_STATE_NOT_READY,                                              \
+		.is_slave = false,                                                         \
+		.dma_dev = UTIL_AND(DT_INST_DMAS_HAS_NAME(index, dir),                     \
+				    DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(index, dir))), \
+		.dma_channel = UTIL_AND(DT_INST_DMAS_HAS_NAME(index, dir),                 \
+					DT_INST_DMAS_CELL_BY_NAME(index, dir, channel)),   \
+		.mem_block = NULL,                                                         \
+		.mem_block_len = 0,                                                        \
+		.start_transfer = i2s_esp32_##dir##_start_transfer,                        \
+		.stop_transfer = i2s_esp32_##dir##_stop_transfer,                          \
+		.queue_drop = i2s_esp32_queue_drop,                                        \
+		.last_block = false,                                                       \
 		.stop_without_draining = false}
 
-#define I2S_ESP32_INIT(index)                                                                      \
-	PINCTRL_DT_INST_DEFINE(index);                                                             \
-                                                                                                   \
-	static const struct i2s_esp32_cfg i2s_esp32_config_##index = {                             \
-		.unit = DT_PROP(DT_DRV_INST(index), unit),                                         \
-		.hal_cxt = {.dev = (i2s_dev_t *)DT_INST_REG_ADDR(index)},                          \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(index)),                            \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(index, offset)};       \
-                                                                                                   \
-	static struct i2s_esp32_data i2s_esp32_data_##index = {                                    \
-		I2S_ESP32_DMA_CHANNEL_INIT(index, rx), I2S_ESP32_DMA_CHANNEL_INIT(index, tx)};     \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(index, &i2s_esp32_initialize, NULL, &i2s_esp32_data_##index,         \
-			      &i2s_esp32_config_##index, POST_KERNEL, CONFIG_I2S_INIT_PRIORITY,    \
+#define I2S_ESP32_INIT(index)                                                                   \
+	PINCTRL_DT_INST_DEFINE(index);                                                          \
+                                                                                                \
+	static const struct i2s_esp32_cfg i2s_esp32_config_##index = {                          \
+		.unit = DT_PROP(DT_DRV_INST(index), unit),                                      \
+		.hal_cxt = {.dev = (i2s_dev_t *)DT_INST_REG_ADDR(index)},                       \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                  \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(index)),                         \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(index, offset)};    \
+                                                                                                \
+	static struct i2s_esp32_data i2s_esp32_data_##index = {                                 \
+		I2S_ESP32_DMA_CHANNEL_INIT(index, rx), I2S_ESP32_DMA_CHANNEL_INIT(index, tx)};  \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(index, &i2s_esp32_initialize, NULL, &i2s_esp32_data_##index,      \
+			      &i2s_esp32_config_##index, POST_KERNEL, CONFIG_I2S_INIT_PRIORITY, \
 			      &i2s_esp32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2S_ESP32_INIT)

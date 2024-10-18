@@ -53,8 +53,8 @@ LOG_MODULE_REGISTER(MAX31875, CONFIG_SENSOR_LOG_LEVEL);
  * @param res   Resolution (number of bits)
  * @param convs Conversions per second
  */
-#define MAX31875_CONFIG(format, res, convs)                                                        \
-	(((format) << (MAX31875_DATA_FORMAT_SHIFT)) | ((res) << (MAX31875_RESOLUTION_SHIFT)) |     \
+#define MAX31875_CONFIG(format, res, convs)                                                    \
+	(((format) << (MAX31875_DATA_FORMAT_SHIFT)) | ((res) << (MAX31875_RESOLUTION_SHIFT)) | \
 	 ((convs) << (MAX31875_CONV_PER_SEC_SHIFT)))
 
 #define MAX31875_REG_TEMPERATURE 0x00
@@ -252,16 +252,16 @@ static int max31875_init(const struct device *dev)
 	return max31875_update_config(dev, 0, 0);
 }
 
-#define MAX31875_INST(inst)                                                                        \
-	static struct max31875_data max31875_data_##inst;                                          \
-	static const struct max31875_config max31875_config_##inst = {                             \
-		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.conversions_per_second = DT_INST_ENUM_IDX(inst, conversions_per_second),          \
-		.resolution = DT_INST_ENUM_IDX(inst, resolution),                                  \
-		.data_format = DT_INST_PROP(inst, extended_mode),                                  \
-	};                                                                                         \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, max31875_init, NULL, &max31875_data_##inst,             \
-				     &max31875_config_##inst, POST_KERNEL,                         \
+#define MAX31875_INST(inst)                                                               \
+	static struct max31875_data max31875_data_##inst;                                 \
+	static const struct max31875_config max31875_config_##inst = {                    \
+		.bus = I2C_DT_SPEC_INST_GET(inst),                                        \
+		.conversions_per_second = DT_INST_ENUM_IDX(inst, conversions_per_second), \
+		.resolution = DT_INST_ENUM_IDX(inst, resolution),                         \
+		.data_format = DT_INST_PROP(inst, extended_mode),                         \
+	};                                                                                \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, max31875_init, NULL, &max31875_data_##inst,    \
+				     &max31875_config_##inst, POST_KERNEL,                \
 				     CONFIG_SENSOR_INIT_PRIORITY, &max31875_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX31875_INST)

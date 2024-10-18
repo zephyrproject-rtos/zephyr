@@ -835,62 +835,62 @@ static const usb_device_controller_interface_struct_t udc_mcux_if = {
 	USB_DeviceEhciInit, USB_DeviceEhciDeinit, USB_DeviceEhciSend,
 	USB_DeviceEhciRecv, USB_DeviceEhciCancel, USB_DeviceEhciControl};
 
-#define UDC_MCUX_PHY_DEFINE(n)                                                                     \
-	static usb_phy_config_struct_t phy_config_##n = {                                          \
-		.D_CAL = DT_PROP_OR(DT_INST_PHANDLE(n, phy_handle), tx_d_cal, 0),                  \
-		.TXCAL45DP = DT_PROP_OR(DT_INST_PHANDLE(n, phy_handle), tx_cal_45_dp_ohms, 0),     \
-		.TXCAL45DM = DT_PROP_OR(DT_INST_PHANDLE(n, phy_handle), tx_cal_45_dm_ohms, 0),     \
+#define UDC_MCUX_PHY_DEFINE(n)                                                                 \
+	static usb_phy_config_struct_t phy_config_##n = {                                      \
+		.D_CAL = DT_PROP_OR(DT_INST_PHANDLE(n, phy_handle), tx_d_cal, 0),              \
+		.TXCAL45DP = DT_PROP_OR(DT_INST_PHANDLE(n, phy_handle), tx_cal_45_dp_ohms, 0), \
+		.TXCAL45DM = DT_PROP_OR(DT_INST_PHANDLE(n, phy_handle), tx_cal_45_dm_ohms, 0), \
 	}
 
-#define UDC_MCUX_PHY_DEFINE_OR(n)                                                                  \
+#define UDC_MCUX_PHY_DEFINE_OR(n)                                     \
 	COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), phy_handle),			\
 		    (UDC_MCUX_PHY_DEFINE(n)), ())
 
-#define UDC_MCUX_PHY_CFG_PTR_OR_NULL(n)                                                            \
+#define UDC_MCUX_PHY_CFG_PTR_OR_NULL(n)                               \
 	COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), phy_handle),			\
 		    (&phy_config_##n), (NULL))
 
-#define USB_MCUX_EHCI_DEVICE_DEFINE(n)                                                             \
-	UDC_MCUX_PHY_DEFINE_OR(n);                                                                 \
-                                                                                                   \
-	static void udc_irq_enable_func##n(const struct device *dev)                               \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), udc_mcux_isr,               \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-	}                                                                                          \
-                                                                                                   \
-	static void udc_irq_disable_func##n(const struct device *dev)                              \
-	{                                                                                          \
-		irq_disable(DT_INST_IRQN(n));                                                      \
-	}                                                                                          \
-                                                                                                   \
-	static struct udc_ep_config ep_cfg_out##n[DT_INST_PROP(n, num_bidir_endpoints)];           \
-	static struct udc_ep_config ep_cfg_in##n[DT_INST_PROP(n, num_bidir_endpoints)];            \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-                                                                                                   \
-	static struct udc_mcux_config priv_config_##n = {                                          \
-		.base = DT_INST_REG_ADDR(n),                                                       \
-		.irq_enable_func = udc_irq_enable_func##n,                                         \
-		.irq_disable_func = udc_irq_disable_func##n,                                       \
-		.num_of_eps = DT_INST_PROP(n, num_bidir_endpoints),                                \
-		.ep_cfg_in = ep_cfg_in##n,                                                         \
-		.ep_cfg_out = ep_cfg_out##n,                                                       \
-		.mcux_if = &udc_mcux_if,                                                           \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
-		.phy_config = UDC_MCUX_PHY_CFG_PTR_OR_NULL(n),                                     \
-	};                                                                                         \
-                                                                                                   \
-	static struct udc_mcux_data priv_data_##n = {};                                            \
-                                                                                                   \
-	static struct udc_data udc_data_##n = {                                                    \
-		.mutex = Z_MUTEX_INITIALIZER(udc_data_##n.mutex),                                  \
-		.priv = &priv_data_##n,                                                            \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, udc_mcux_driver_preinit, NULL, &udc_data_##n, &priv_config_##n,   \
+#define USB_MCUX_EHCI_DEVICE_DEFINE(n)                                                           \
+	UDC_MCUX_PHY_DEFINE_OR(n);                                                               \
+                                                                                                 \
+	static void udc_irq_enable_func##n(const struct device *dev)                             \
+	{                                                                                        \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), udc_mcux_isr,             \
+			    DEVICE_DT_INST_GET(n), 0);                                           \
+                                                                                                 \
+		irq_enable(DT_INST_IRQN(n));                                                     \
+	}                                                                                        \
+                                                                                                 \
+	static void udc_irq_disable_func##n(const struct device *dev)                            \
+	{                                                                                        \
+		irq_disable(DT_INST_IRQN(n));                                                    \
+	}                                                                                        \
+                                                                                                 \
+	static struct udc_ep_config ep_cfg_out##n[DT_INST_PROP(n, num_bidir_endpoints)];         \
+	static struct udc_ep_config ep_cfg_in##n[DT_INST_PROP(n, num_bidir_endpoints)];          \
+                                                                                                 \
+	PINCTRL_DT_INST_DEFINE(n);                                                               \
+                                                                                                 \
+	static struct udc_mcux_config priv_config_##n = {                                        \
+		.base = DT_INST_REG_ADDR(n),                                                     \
+		.irq_enable_func = udc_irq_enable_func##n,                                       \
+		.irq_disable_func = udc_irq_disable_func##n,                                     \
+		.num_of_eps = DT_INST_PROP(n, num_bidir_endpoints),                              \
+		.ep_cfg_in = ep_cfg_in##n,                                                       \
+		.ep_cfg_out = ep_cfg_out##n,                                                     \
+		.mcux_if = &udc_mcux_if,                                                         \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                     \
+		.phy_config = UDC_MCUX_PHY_CFG_PTR_OR_NULL(n),                                   \
+	};                                                                                       \
+                                                                                                 \
+	static struct udc_mcux_data priv_data_##n = {};                                          \
+                                                                                                 \
+	static struct udc_data udc_data_##n = {                                                  \
+		.mutex = Z_MUTEX_INITIALIZER(udc_data_##n.mutex),                                \
+		.priv = &priv_data_##n,                                                          \
+	};                                                                                       \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(n, udc_mcux_driver_preinit, NULL, &udc_data_##n, &priv_config_##n, \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &udc_mcux_api);
 
 DT_INST_FOREACH_STATUS_OKAY(USB_MCUX_EHCI_DEVICE_DEFINE)

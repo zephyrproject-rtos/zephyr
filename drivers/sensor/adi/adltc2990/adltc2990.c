@@ -504,28 +504,28 @@ static const struct sensor_driver_api adltc2990_driver_api = {
 	.channel_get = adltc2990_channel_get,
 };
 
-#define ADLTC2990_DEFINE(inst)                                                                     \
-	static struct adltc2990_data adltc2990_data_##inst;                                        \
-	static const struct adltc2990_config adltc2990_config_##inst = {                           \
-		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.temp_format = DT_INST_PROP(inst, temperature_format),                             \
-		.acq_format = DT_INST_PROP(inst, acquistion_format),                               \
-		.measurement_mode = DT_INST_PROP(inst, measurement_mode),                          \
-		.pins_v1_v2.pins_current_resistor =                                                \
-			DT_INST_PROP_OR(inst, pins_v1_v2_current_resistor, 1),                     \
-		.pins_v1_v2.voltage_divider_resistors.v1_r1_r2 =                                   \
-			DT_INST_PROP_OR(inst, pin_v1_voltage_divider_resistors, NULL),             \
-		.pins_v1_v2.voltage_divider_resistors.v2_r1_r2 =                                   \
-			DT_INST_PROP_OR(inst, pin_v2_voltage_divider_resistors, NULL),             \
-		.pins_v3_v4.pins_current_resistor =                                                \
-			DT_INST_PROP_OR(inst, pins_v3_v4_current_resistor, 1),                     \
-		.pins_v3_v4.voltage_divider_resistors.v3_r1_r2 =                                   \
-			DT_INST_PROP_OR(inst, pin_v3_voltage_divider_resistors, NULL),             \
-		.pins_v3_v4.voltage_divider_resistors.v4_r1_r2 =                                   \
-			DT_INST_PROP_OR(inst, pin_v4_voltage_divider_resistors, NULL)};            \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, adltc2990_init, NULL, &adltc2990_data_##inst,           \
-				     &adltc2990_config_##inst, POST_KERNEL,                        \
+#define ADLTC2990_DEFINE(inst)                                                            \
+	static struct adltc2990_data adltc2990_data_##inst;                               \
+	static const struct adltc2990_config adltc2990_config_##inst = {                  \
+		.bus = I2C_DT_SPEC_INST_GET(inst),                                        \
+		.temp_format = DT_INST_PROP(inst, temperature_format),                    \
+		.acq_format = DT_INST_PROP(inst, acquistion_format),                      \
+		.measurement_mode = DT_INST_PROP(inst, measurement_mode),                 \
+		.pins_v1_v2.pins_current_resistor =                                       \
+			DT_INST_PROP_OR(inst, pins_v1_v2_current_resistor, 1),            \
+		.pins_v1_v2.voltage_divider_resistors.v1_r1_r2 =                          \
+			DT_INST_PROP_OR(inst, pin_v1_voltage_divider_resistors, NULL),    \
+		.pins_v1_v2.voltage_divider_resistors.v2_r1_r2 =                          \
+			DT_INST_PROP_OR(inst, pin_v2_voltage_divider_resistors, NULL),    \
+		.pins_v3_v4.pins_current_resistor =                                       \
+			DT_INST_PROP_OR(inst, pins_v3_v4_current_resistor, 1),            \
+		.pins_v3_v4.voltage_divider_resistors.v3_r1_r2 =                          \
+			DT_INST_PROP_OR(inst, pin_v3_voltage_divider_resistors, NULL),    \
+		.pins_v3_v4.voltage_divider_resistors.v4_r1_r2 =                          \
+			DT_INST_PROP_OR(inst, pin_v4_voltage_divider_resistors, NULL)};   \
+                                                                                          \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, adltc2990_init, NULL, &adltc2990_data_##inst,  \
+				     &adltc2990_config_##inst, POST_KERNEL,               \
 				     CONFIG_SENSOR_INIT_PRIORITY, &adltc2990_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADLTC2990_DEFINE)

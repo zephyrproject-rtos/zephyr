@@ -247,25 +247,25 @@ static const struct wdt_driver_api max32_wdt_api = {.setup = wdt_max32_setup,
 						    .install_timeout = wdt_max32_install_timeout,
 						    .feed = wdt_max32_feed};
 
-#define MAX32_WDT_INIT(_num)                                                                       \
-	static void wdt_max32_irq_init_##_num(void)                                                \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(_num), DT_INST_IRQ(_num, priority), wdt_max32_isr,        \
-			    DEVICE_DT_INST_GET(_num), 0);                                          \
-		irq_enable(DT_INST_IRQN(_num));                                                    \
-	}                                                                                          \
-	static struct max32_wdt_data max32_wdt_data##_num;                                         \
-	static const struct max32_wdt_config max32_wdt_config##_num = {                            \
-		.regs = (mxc_wdt_regs_t *)DT_INST_REG_ADDR(_num),                                  \
-		.clock = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(_num)),                                 \
-		.perclk.clk_src =                                                                  \
-			DT_INST_PROP_OR(_num, clock_source, ADI_MAX32_PRPH_CLK_SRC_PCLK),          \
-		.perclk.bus = DT_INST_CLOCKS_CELL(_num, offset),                                   \
-		.perclk.bit = DT_INST_CLOCKS_CELL(_num, bit),                                      \
-		.irq_func = &wdt_max32_irq_init_##_num,                                            \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(_num, wdt_max32_init, NULL, &max32_wdt_data##_num,                   \
-			      &max32_wdt_config##_num, POST_KERNEL,                                \
+#define MAX32_WDT_INIT(_num)                                                                \
+	static void wdt_max32_irq_init_##_num(void)                                         \
+	{                                                                                   \
+		IRQ_CONNECT(DT_INST_IRQN(_num), DT_INST_IRQ(_num, priority), wdt_max32_isr, \
+			    DEVICE_DT_INST_GET(_num), 0);                                   \
+		irq_enable(DT_INST_IRQN(_num));                                             \
+	}                                                                                   \
+	static struct max32_wdt_data max32_wdt_data##_num;                                  \
+	static const struct max32_wdt_config max32_wdt_config##_num = {                     \
+		.regs = (mxc_wdt_regs_t *)DT_INST_REG_ADDR(_num),                           \
+		.clock = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(_num)),                          \
+		.perclk.clk_src =                                                           \
+			DT_INST_PROP_OR(_num, clock_source, ADI_MAX32_PRPH_CLK_SRC_PCLK),   \
+		.perclk.bus = DT_INST_CLOCKS_CELL(_num, offset),                            \
+		.perclk.bit = DT_INST_CLOCKS_CELL(_num, bit),                               \
+		.irq_func = &wdt_max32_irq_init_##_num,                                     \
+	};                                                                                  \
+	DEVICE_DT_INST_DEFINE(_num, wdt_max32_init, NULL, &max32_wdt_data##_num,            \
+			      &max32_wdt_config##_num, POST_KERNEL,                         \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &max32_wdt_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX32_WDT_INIT)

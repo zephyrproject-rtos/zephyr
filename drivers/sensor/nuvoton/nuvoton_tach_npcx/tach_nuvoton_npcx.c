@@ -75,7 +75,7 @@ struct tach_npcx_data {
 };
 
 /* Driver convenience defines */
-#define HAL_INSTANCE(dev)                                                                          \
+#define HAL_INSTANCE(dev)                                                           \
 	((struct tach_reg *)((const struct tach_npcx_config *)(dev)->config)->base)
 
 /* Maximum count of prescaler */
@@ -361,22 +361,22 @@ static const struct sensor_driver_api tach_npcx_driver_api = {
 	.channel_get = tach_npcx_channel_get,
 };
 
-#define NPCX_TACH_INIT(inst)                                                                       \
-	PINCTRL_DT_INST_DEFINE(inst);                                                              \
-                                                                                                   \
-	static const struct tach_npcx_config tach_cfg_##inst = {                                   \
-		.base = DT_INST_REG_ADDR(inst),                                                    \
-		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(inst),                                             \
-		.sample_clk = DT_INST_PROP(inst, sample_clk),                                      \
-		.port = DT_INST_PROP(inst, port),                                                  \
-		.pulses_per_round = DT_INST_PROP(inst, pulses_per_round),                          \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
-	};                                                                                         \
-                                                                                                   \
-	static struct tach_npcx_data tach_data_##inst;                                             \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, tach_npcx_init, NULL, &tach_data_##inst,                \
-				     &tach_cfg_##inst, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,   \
+#define NPCX_TACH_INIT(inst)                                                                     \
+	PINCTRL_DT_INST_DEFINE(inst);                                                            \
+                                                                                                 \
+	static const struct tach_npcx_config tach_cfg_##inst = {                                 \
+		.base = DT_INST_REG_ADDR(inst),                                                  \
+		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(inst),                                           \
+		.sample_clk = DT_INST_PROP(inst, sample_clk),                                    \
+		.port = DT_INST_PROP(inst, port),                                                \
+		.pulses_per_round = DT_INST_PROP(inst, pulses_per_round),                        \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                    \
+	};                                                                                       \
+                                                                                                 \
+	static struct tach_npcx_data tach_data_##inst;                                           \
+                                                                                                 \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, tach_npcx_init, NULL, &tach_data_##inst,              \
+				     &tach_cfg_##inst, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, \
 				     &tach_npcx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NPCX_TACH_INIT)

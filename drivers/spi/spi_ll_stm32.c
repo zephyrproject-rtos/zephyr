@@ -58,11 +58,11 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
  * for F1 family defines an unused LL_SPI_SR_FRE.
  */
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-#define SPI_STM32_ERR_MSK                                                                          \
+#define SPI_STM32_ERR_MSK                                                                   \
 	(LL_SPI_SR_UDR | LL_SPI_SR_CRCE | LL_SPI_SR_MODF | LL_SPI_SR_OVR | LL_SPI_SR_TIFRE)
 #else
 #if defined(LL_SPI_SR_UDR)
-#define SPI_STM32_ERR_MSK                                                                          \
+#define SPI_STM32_ERR_MSK                                                                   \
 	(LL_SPI_SR_UDR | LL_SPI_SR_CRCERR | LL_SPI_SR_MODF | LL_SPI_SR_OVR | LL_SPI_SR_FRE)
 #elif defined(SPI_SR_FRE)
 #define SPI_STM32_ERR_MSK (LL_SPI_SR_CRCERR | LL_SPI_SR_MODF | LL_SPI_SR_OVR | LL_SPI_SR_FRE)
@@ -1256,15 +1256,15 @@ static int spi_stm32_pm_action(const struct device *dev, enum pm_device_action a
 #endif /* CONFIG_PM_DEVICE */
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
-#define STM32_SPI_IRQ_HANDLER_DECL(id)                                                             \
+#define STM32_SPI_IRQ_HANDLER_DECL(id)                                       \
 	static void spi_stm32_irq_config_func_##id(const struct device *dev)
 #define STM32_SPI_IRQ_HANDLER_FUNC(id) .irq_config = spi_stm32_irq_config_func_##id,
-#define STM32_SPI_IRQ_HANDLER(id)                                                                  \
-	static void spi_stm32_irq_config_func_##id(const struct device *dev)                       \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), spi_stm32_isr,            \
-			    DEVICE_DT_INST_GET(id), 0);                                            \
-		irq_enable(DT_INST_IRQN(id));                                                      \
+#define STM32_SPI_IRQ_HANDLER(id)                                                       \
+	static void spi_stm32_irq_config_func_##id(const struct device *dev)            \
+	{                                                                               \
+		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), spi_stm32_isr, \
+			    DEVICE_DT_INST_GET(id), 0);                                 \
+		irq_enable(DT_INST_IRQN(id));                                           \
 	}
 #else
 #define STM32_SPI_IRQ_HANDLER_DECL(id)
@@ -1272,37 +1272,37 @@ static int spi_stm32_pm_action(const struct device *dev, enum pm_device_action a
 #define STM32_SPI_IRQ_HANDLER(id)
 #endif /* CONFIG_SPI_STM32_INTERRUPT */
 
-#define SPI_DMA_CHANNEL_INIT(index, dir, dir_cap, src_dev, dest_dev)                               \
-	.dma_dev = DEVICE_DT_GET(STM32_DMA_CTLR(index, dir)),                                      \
-	.channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),                                 \
-	.dma_cfg =                                                                                 \
-		{                                                                                  \
-			.dma_slot = STM32_DMA_SLOT(index, dir, slot),                              \
-			.channel_direction =                                                       \
-				STM32_DMA_CONFIG_DIRECTION(STM32_DMA_CHANNEL_CONFIG(index, dir)),  \
-			.source_data_size = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(                \
-				STM32_DMA_CHANNEL_CONFIG(index, dir)),                             \
-			.dest_data_size = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(                 \
-				STM32_DMA_CHANNEL_CONFIG(index, dir)),                             \
-			.source_burst_length = 1, /* SINGLE transfer */                            \
-			.dest_burst_length = 1,   /* SINGLE transfer */                            \
-			.channel_priority =                                                        \
-				STM32_DMA_CONFIG_PRIORITY(STM32_DMA_CHANNEL_CONFIG(index, dir)),   \
-			.dma_callback = dma_callback,                                              \
-			.block_count = 2,                                                          \
-	},                                                                                         \
-	.src_addr_increment =                                                                      \
-		STM32_DMA_CONFIG_##src_dev##_ADDR_INC(STM32_DMA_CHANNEL_CONFIG(index, dir)),       \
-	.dst_addr_increment =                                                                      \
-		STM32_DMA_CONFIG_##dest_dev##_ADDR_INC(STM32_DMA_CHANNEL_CONFIG(index, dir)),      \
+#define SPI_DMA_CHANNEL_INIT(index, dir, dir_cap, src_dev, dest_dev)                              \
+	.dma_dev = DEVICE_DT_GET(STM32_DMA_CTLR(index, dir)),                                     \
+	.channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),                                \
+	.dma_cfg =                                                                                \
+		{                                                                                 \
+			.dma_slot = STM32_DMA_SLOT(index, dir, slot),                             \
+			.channel_direction =                                                      \
+				STM32_DMA_CONFIG_DIRECTION(STM32_DMA_CHANNEL_CONFIG(index, dir)), \
+			.source_data_size = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(               \
+				STM32_DMA_CHANNEL_CONFIG(index, dir)),                            \
+			.dest_data_size = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(                \
+				STM32_DMA_CHANNEL_CONFIG(index, dir)),                            \
+			.source_burst_length = 1, /* SINGLE transfer */                           \
+			.dest_burst_length = 1,   /* SINGLE transfer */                           \
+			.channel_priority =                                                       \
+				STM32_DMA_CONFIG_PRIORITY(STM32_DMA_CHANNEL_CONFIG(index, dir)),  \
+			.dma_callback = dma_callback,                                             \
+			.block_count = 2,                                                         \
+	},                                                                                        \
+	.src_addr_increment =                                                                     \
+		STM32_DMA_CONFIG_##src_dev##_ADDR_INC(STM32_DMA_CHANNEL_CONFIG(index, dir)),      \
+	.dst_addr_increment =                                                                     \
+		STM32_DMA_CONFIG_##dest_dev##_ADDR_INC(STM32_DMA_CHANNEL_CONFIG(index, dir)),     \
 	.fifo_threshold = STM32_DMA_FEATURES_FIFO_THRESHOLD(STM32_DMA_FEATURES(index, dir)),
 
 #ifdef CONFIG_SPI_STM32_DMA
-#define SPI_DMA_CHANNEL(id, dir, DIR, src, dest)                                                   \
+#define SPI_DMA_CHANNEL(id, dir, DIR, src, dest)                               \
 	.dma_##dir = {COND_CODE_1(DT_INST_DMAS_HAS_NAME(id, dir),		\
 			(SPI_DMA_CHANNEL_INIT(id, dir, DIR, src, dest)),\
 			(NULL)) },
-#define SPI_DMA_STATUS_SEM(id)                                                                     \
+#define SPI_DMA_STATUS_SEM(id)                                                     \
 	.status_sem = Z_SEM_INITIALIZER(spi_stm32_dev_data_##id.status_sem, 0, 1),
 #else
 #define SPI_DMA_CHANNEL(id, dir, DIR, src, dest)

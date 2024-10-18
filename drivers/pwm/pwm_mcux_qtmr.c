@@ -154,20 +154,20 @@ static const struct pwm_driver_api pwm_mcux_qtmr_driver_api = {
 	.get_cycles_per_sec = mcux_qtmr_pwm_get_cycles_per_sec,
 };
 
-#define PWM_MCUX_QTMR_DEVICE_INIT(n)                                                               \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	static struct pwm_mcux_qtmr_data pwm_mcux_qtmr_data_##n;                                   \
-                                                                                                   \
-	static const struct pwm_mcux_qtmr_config pwm_mcux_qtmr_config_##n = {                      \
-		.base = (TMR_Type *)DT_INST_REG_ADDR(n),                                           \
-		.prescaler = DT_INST_PROP(n, prescaler),                                           \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, mcux_qtmr_pwm_init, NULL, &pwm_mcux_qtmr_data_##n,                \
-			      &pwm_mcux_qtmr_config_##n, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,    \
+#define PWM_MCUX_QTMR_DEVICE_INIT(n)                                                            \
+	PINCTRL_DT_INST_DEFINE(n);                                                              \
+	static struct pwm_mcux_qtmr_data pwm_mcux_qtmr_data_##n;                                \
+                                                                                                \
+	static const struct pwm_mcux_qtmr_config pwm_mcux_qtmr_config_##n = {                   \
+		.base = (TMR_Type *)DT_INST_REG_ADDR(n),                                        \
+		.prescaler = DT_INST_PROP(n, prescaler),                                        \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                    \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                             \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),           \
+	};                                                                                      \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(n, mcux_qtmr_pwm_init, NULL, &pwm_mcux_qtmr_data_##n,             \
+			      &pwm_mcux_qtmr_config_##n, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, \
 			      &pwm_mcux_qtmr_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_MCUX_QTMR_DEVICE_INIT)

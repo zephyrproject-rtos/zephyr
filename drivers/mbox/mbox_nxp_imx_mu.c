@@ -142,15 +142,15 @@ static void handle_irq(const struct device *dev);
 			      &nxp_imx_mu_##idx##_config, PRE_KERNEL_1, CONFIG_MBOX_INIT_PRIORITY, \
 			      &nxp_imx_mu_driver_api)
 
-#define MU_IRQ_HANDLER(idx)                                                                        \
-	void MU_##idx##_IRQHandler(void)                                                           \
-	{                                                                                          \
-		const struct device *dev = DEVICE_DT_INST_GET(idx);                                \
-		handle_irq(dev);                                                                   \
+#define MU_IRQ_HANDLER(idx)                                         \
+	void MU_##idx##_IRQHandler(void)                            \
+	{                                                           \
+		const struct device *dev = DEVICE_DT_INST_GET(idx); \
+		handle_irq(dev);                                    \
 	}
 
-#define MU_INST(idx)                                                                               \
-	MU_INSTANCE_DEFINE(idx);                                                                   \
+#define MU_INST(idx)             \
+	MU_INSTANCE_DEFINE(idx); \
 	MU_IRQ_HANDLER(idx);
 
 DT_INST_FOREACH_STATUS_OKAY(MU_INST)

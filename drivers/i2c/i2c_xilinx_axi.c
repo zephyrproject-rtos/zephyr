@@ -50,8 +50,8 @@ static void i2c_xilinx_axi_reinit(const struct i2c_xilinx_axi_config *config)
 
 #if defined(CONFIG_I2C_TARGET)
 
-#define I2C_XILINX_AXI_TARGET_INTERRUPTS                                                           \
-	(ISR_ADDR_TARGET | ISR_NOT_ADDR_TARGET | ISR_RX_FIFO_FULL | ISR_TX_FIFO_EMPTY |            \
+#define I2C_XILINX_AXI_TARGET_INTERRUPTS                                                \
+	(ISR_ADDR_TARGET | ISR_NOT_ADDR_TARGET | ISR_RX_FIFO_FULL | ISR_TX_FIFO_EMPTY | \
 	 ISR_TX_ERR_TARGET_COMP)
 
 static void i2c_xilinx_axi_target_setup(const struct i2c_xilinx_axi_config *config,
@@ -631,29 +631,29 @@ static const struct i2c_driver_api i2c_xilinx_axi_driver_api = {
 #endif
 };
 
-#define I2C_XILINX_AXI_INIT(n, compat)                                                             \
-	static void i2c_xilinx_axi_config_func_##compat##_##n(const struct device *dev);           \
-                                                                                                   \
-	static const struct i2c_xilinx_axi_config i2c_xilinx_axi_config_##compat##_##n = {         \
-		.base = DT_INST_REG_ADDR(n),                                                       \
-		.irq_config_func = i2c_xilinx_axi_config_func_##compat##_##n,                      \
-		.dyn_read_working = DT_INST_NODE_HAS_COMPAT(n, xlnx_xps_iic_2_1)};                 \
-                                                                                                   \
-	static struct i2c_xilinx_axi_data i2c_xilinx_axi_data_##compat##_##n;                      \
-                                                                                                   \
-	I2C_DEVICE_DT_INST_DEFINE(n, i2c_xilinx_axi_init, NULL,                                    \
-				  &i2c_xilinx_axi_data_##compat##_##n,                             \
-				  &i2c_xilinx_axi_config_##compat##_##n, POST_KERNEL,              \
-				  CONFIG_I2C_INIT_PRIORITY, &i2c_xilinx_axi_driver_api);           \
-                                                                                                   \
-	static void i2c_xilinx_axi_config_func_##compat##_##n(const struct device *dev)            \
-	{                                                                                          \
-		ARG_UNUSED(dev);                                                                   \
-                                                                                                   \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), i2c_xilinx_axi_isr,         \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define I2C_XILINX_AXI_INIT(n, compat)                                                     \
+	static void i2c_xilinx_axi_config_func_##compat##_##n(const struct device *dev);   \
+                                                                                           \
+	static const struct i2c_xilinx_axi_config i2c_xilinx_axi_config_##compat##_##n = { \
+		.base = DT_INST_REG_ADDR(n),                                               \
+		.irq_config_func = i2c_xilinx_axi_config_func_##compat##_##n,              \
+		.dyn_read_working = DT_INST_NODE_HAS_COMPAT(n, xlnx_xps_iic_2_1)};         \
+                                                                                           \
+	static struct i2c_xilinx_axi_data i2c_xilinx_axi_data_##compat##_##n;              \
+                                                                                           \
+	I2C_DEVICE_DT_INST_DEFINE(n, i2c_xilinx_axi_init, NULL,                            \
+				  &i2c_xilinx_axi_data_##compat##_##n,                     \
+				  &i2c_xilinx_axi_config_##compat##_##n, POST_KERNEL,      \
+				  CONFIG_I2C_INIT_PRIORITY, &i2c_xilinx_axi_driver_api);   \
+                                                                                           \
+	static void i2c_xilinx_axi_config_func_##compat##_##n(const struct device *dev)    \
+	{                                                                                  \
+		ARG_UNUSED(dev);                                                           \
+                                                                                           \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), i2c_xilinx_axi_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                                     \
+                                                                                           \
+		irq_enable(DT_INST_IRQN(n));                                               \
 	}
 
 #define DT_DRV_COMPAT xlnx_xps_iic_2_1

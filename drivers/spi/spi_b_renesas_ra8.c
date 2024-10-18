@@ -614,35 +614,35 @@ static void ra_spi_eri_isr(const struct device *dev)
 
 #if defined(CONFIG_SPI_B_INTERRUPT)
 
-#define RA_SPI_B_IRQ_CONFIG_INIT(index)                                                            \
-	do {                                                                                       \
-		ARG_UNUSED(dev);                                                                   \
-                                                                                                   \
-		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, rxi, irq)] =                               \
-			ELC_EVENT_SPI_RXI(DT_INST_PROP(index, channel));                           \
-		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, txi, irq)] =                               \
-			ELC_EVENT_SPI_TXI(DT_INST_PROP(index, channel));                           \
-		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, tei, irq)] =                               \
-			ELC_EVENT_SPI_TEI(DT_INST_PROP(index, channel));                           \
-		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, eri, irq)] =                               \
-			ELC_EVENT_SPI_ERI(DT_INST_PROP(index, channel));                           \
-                                                                                                   \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, rxi, irq),                                  \
-			    DT_INST_IRQ_BY_NAME(index, rxi, priority), ra_spi_rxi_isr,             \
-			    DEVICE_DT_INST_GET(index), 0);                                         \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, txi, irq),                                  \
-			    DT_INST_IRQ_BY_NAME(index, txi, priority), ra_spi_txi_isr,             \
-			    DEVICE_DT_INST_GET(index), 0);                                         \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, tei, irq),                                  \
-			    DT_INST_IRQ_BY_NAME(index, tei, priority), ra_spi_tei_isr,             \
-			    DEVICE_DT_INST_GET(index), 0);                                         \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, eri, irq),                                  \
-			    DT_INST_IRQ_BY_NAME(index, eri, priority), ra_spi_eri_isr,             \
-			    DEVICE_DT_INST_GET(index), 0);                                         \
-                                                                                                   \
-		irq_enable(DT_INST_IRQ_BY_NAME(index, rxi, irq));                                  \
-		irq_enable(DT_INST_IRQ_BY_NAME(index, txi, irq));                                  \
-		irq_enable(DT_INST_IRQ_BY_NAME(index, eri, irq));                                  \
+#define RA_SPI_B_IRQ_CONFIG_INIT(index)                                                \
+	do {                                                                           \
+		ARG_UNUSED(dev);                                                       \
+                                                                                       \
+		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, rxi, irq)] =                   \
+			ELC_EVENT_SPI_RXI(DT_INST_PROP(index, channel));               \
+		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, txi, irq)] =                   \
+			ELC_EVENT_SPI_TXI(DT_INST_PROP(index, channel));               \
+		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, tei, irq)] =                   \
+			ELC_EVENT_SPI_TEI(DT_INST_PROP(index, channel));               \
+		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, eri, irq)] =                   \
+			ELC_EVENT_SPI_ERI(DT_INST_PROP(index, channel));               \
+                                                                                       \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, rxi, irq),                      \
+			    DT_INST_IRQ_BY_NAME(index, rxi, priority), ra_spi_rxi_isr, \
+			    DEVICE_DT_INST_GET(index), 0);                             \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, txi, irq),                      \
+			    DT_INST_IRQ_BY_NAME(index, txi, priority), ra_spi_txi_isr, \
+			    DEVICE_DT_INST_GET(index), 0);                             \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, tei, irq),                      \
+			    DT_INST_IRQ_BY_NAME(index, tei, priority), ra_spi_tei_isr, \
+			    DEVICE_DT_INST_GET(index), 0);                             \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, eri, irq),                      \
+			    DT_INST_IRQ_BY_NAME(index, eri, priority), ra_spi_eri_isr, \
+			    DEVICE_DT_INST_GET(index), 0);                             \
+                                                                                       \
+		irq_enable(DT_INST_IRQ_BY_NAME(index, rxi, irq));                      \
+		irq_enable(DT_INST_IRQ_BY_NAME(index, txi, irq));                      \
+		irq_enable(DT_INST_IRQ_BY_NAME(index, eri, irq));                      \
 	} while (0)
 
 #else
@@ -655,16 +655,16 @@ static void ra_spi_eri_isr(const struct device *dev)
 #define RA_SPI_B_DTC_STRUCT_INIT(index)
 #define RA_SPI_B_DTC_INIT(index)
 #else
-#define RA_SPI_B_DTC_INIT(index)                                                                   \
-	do {                                                                                       \
-		if (DT_INST_PROP_OR(index, rx_dtc, false)) {                                       \
-			ra_spi_data_##index.fsp_config.p_transfer_rx =                             \
-				&ra_spi_data_##index.rx_transfer;                                  \
-		}                                                                                  \
-		if (DT_INST_PROP_OR(index, tx_dtc, false)) {                                       \
-			ra_spi_data_##index.fsp_config.p_transfer_tx =                             \
-				&ra_spi_data_##index.tx_transfer;                                  \
-		}                                                                                  \
+#define RA_SPI_B_DTC_INIT(index)                                       \
+	do {                                                           \
+		if (DT_INST_PROP_OR(index, rx_dtc, false)) {           \
+			ra_spi_data_##index.fsp_config.p_transfer_rx = \
+				&ra_spi_data_##index.rx_transfer;      \
+		}                                                      \
+		if (DT_INST_PROP_OR(index, tx_dtc, false)) {           \
+			ra_spi_data_##index.fsp_config.p_transfer_tx = \
+				&ra_spi_data_##index.tx_transfer;      \
+		}                                                      \
 	} while (0)
 #define RA_SPI_B_DTC_STRUCT_INIT(index)                                                            \
 	.rx_transfer_info =                                                                        \
@@ -720,52 +720,52 @@ static void ra_spi_eri_isr(const struct device *dev)
 	},
 #endif
 
-#define RA_SPI_INIT(index)                                                                         \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(index);                                                             \
-                                                                                                   \
-	static const struct ra_spi_config ra_spi_config_##index = {                                \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(index)),                            \
-		.clock_subsys =                                                                    \
-			{                                                                          \
-				.mstp = (uint32_t)DT_INST_CLOCKS_CELL_BY_NAME(index, spiclk,       \
-									      mstp),               \
-				.stop_bit = DT_INST_CLOCKS_CELL_BY_NAME(index, spiclk, stop_bit),  \
-			},                                                                         \
-	};                                                                                         \
-                                                                                                   \
-	static struct ra_spi_data ra_spi_data_##index = {                                          \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(index), ctx)                           \
-			SPI_CONTEXT_INIT_LOCK(ra_spi_data_##index, ctx),                           \
-		SPI_CONTEXT_INIT_SYNC(ra_spi_data_##index, ctx),                                   \
-		.fsp_config =                                                                      \
-			{                                                                          \
-				.channel = DT_INST_PROP(index, channel),                           \
-				.rxi_ipl = DT_INST_IRQ_BY_NAME(index, rxi, priority),              \
-				.rxi_irq = DT_INST_IRQ_BY_NAME(index, rxi, irq),                   \
-				.txi_ipl = DT_INST_IRQ_BY_NAME(index, txi, priority),              \
-				.txi_irq = DT_INST_IRQ_BY_NAME(index, txi, irq),                   \
-				.tei_ipl = DT_INST_IRQ_BY_NAME(index, tei, priority),              \
-				.tei_irq = DT_INST_IRQ_BY_NAME(index, tei, irq),                   \
-				.eri_ipl = DT_INST_IRQ_BY_NAME(index, eri, priority),              \
-				.eri_irq = DT_INST_IRQ_BY_NAME(index, eri, irq),                   \
-			},                                                                         \
-		RA_SPI_B_DTC_STRUCT_INIT(index)};                                                  \
-                                                                                                   \
-	static int spi_b_ra_init##index(const struct device *dev)                                  \
-	{                                                                                          \
-		RA_SPI_B_DTC_INIT(index);                                                          \
-		int err = spi_b_ra_init(dev);                                                      \
-		if (err != 0) {                                                                    \
-			return err;                                                                \
-		}                                                                                  \
-		RA_SPI_B_IRQ_CONFIG_INIT(index);                                                   \
-		return 0;                                                                          \
-	}                                                                                          \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(index, spi_b_ra_init##index, PM_DEVICE_DT_INST_GET(index),           \
-			      &ra_spi_data_##index, &ra_spi_config_##index, POST_KERNEL,           \
+#define RA_SPI_INIT(index)                                                                        \
+                                                                                                  \
+	PINCTRL_DT_INST_DEFINE(index);                                                            \
+                                                                                                  \
+	static const struct ra_spi_config ra_spi_config_##index = {                               \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                    \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(index)),                           \
+		.clock_subsys =                                                                   \
+			{                                                                         \
+				.mstp = (uint32_t)DT_INST_CLOCKS_CELL_BY_NAME(index, spiclk,      \
+									      mstp),              \
+				.stop_bit = DT_INST_CLOCKS_CELL_BY_NAME(index, spiclk, stop_bit), \
+			},                                                                        \
+	};                                                                                        \
+                                                                                                  \
+	static struct ra_spi_data ra_spi_data_##index = {                                         \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(index), ctx)                          \
+			SPI_CONTEXT_INIT_LOCK(ra_spi_data_##index, ctx),                          \
+		SPI_CONTEXT_INIT_SYNC(ra_spi_data_##index, ctx),                                  \
+		.fsp_config =                                                                     \
+			{                                                                         \
+				.channel = DT_INST_PROP(index, channel),                          \
+				.rxi_ipl = DT_INST_IRQ_BY_NAME(index, rxi, priority),             \
+				.rxi_irq = DT_INST_IRQ_BY_NAME(index, rxi, irq),                  \
+				.txi_ipl = DT_INST_IRQ_BY_NAME(index, txi, priority),             \
+				.txi_irq = DT_INST_IRQ_BY_NAME(index, txi, irq),                  \
+				.tei_ipl = DT_INST_IRQ_BY_NAME(index, tei, priority),             \
+				.tei_irq = DT_INST_IRQ_BY_NAME(index, tei, irq),                  \
+				.eri_ipl = DT_INST_IRQ_BY_NAME(index, eri, priority),             \
+				.eri_irq = DT_INST_IRQ_BY_NAME(index, eri, irq),                  \
+			},                                                                        \
+		RA_SPI_B_DTC_STRUCT_INIT(index)};                                                 \
+                                                                                                  \
+	static int spi_b_ra_init##index(const struct device *dev)                                 \
+	{                                                                                         \
+		RA_SPI_B_DTC_INIT(index);                                                         \
+		int err = spi_b_ra_init(dev);                                                     \
+		if (err != 0) {                                                                   \
+			return err;                                                               \
+		}                                                                                 \
+		RA_SPI_B_IRQ_CONFIG_INIT(index);                                                  \
+		return 0;                                                                         \
+	}                                                                                         \
+                                                                                                  \
+	DEVICE_DT_INST_DEFINE(index, spi_b_ra_init##index, PM_DEVICE_DT_INST_GET(index),          \
+			      &ra_spi_data_##index, &ra_spi_config_##index, POST_KERNEL,          \
 			      CONFIG_SPI_INIT_PRIORITY, &ra_spi_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RA_SPI_INIT)

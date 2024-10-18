@@ -241,21 +241,21 @@ LOG_MODULE_REGISTER(nxp_irqstr);
 #define DT_DRV_COMPAT nxp_irqsteer_intc
 
 /* macros used for DTS parsing */
-#define _IRQSTEER_REGISTER_DISPATCHER(node_id)                                                     \
-	IRQ_CONNECT(DT_IRQN(node_id), DT_IRQ(node_id, priority), irqsteer_isr_dispatcher,          \
+#define _IRQSTEER_REGISTER_DISPATCHER(node_id)                                            \
+	IRQ_CONNECT(DT_IRQN(node_id), DT_IRQ(node_id, priority), irqsteer_isr_dispatcher, \
 		    &dispatchers[DT_REG_ADDR(node_id)], 0)
 
-#define _IRQSTEER_DECLARE_DISPATCHER(node_id)                                                      \
-	{                                                                                          \
-		.dev = DEVICE_DT_GET(DT_PARENT(node_id)),                                          \
-		.master_index = DT_REG_ADDR(node_id),                                              \
-		.irq = DT_IRQN(node_id),                                                           \
+#define _IRQSTEER_DECLARE_DISPATCHER(node_id)             \
+	{                                                 \
+		.dev = DEVICE_DT_GET(DT_PARENT(node_id)), \
+		.master_index = DT_REG_ADDR(node_id),     \
+		.irq = DT_IRQN(node_id),                  \
 	}
 
-#define IRQSTEER_DECLARE_DISPATCHERS(parent_id)                                                    \
+#define IRQSTEER_DECLARE_DISPATCHERS(parent_id)                                         \
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP(parent_id, _IRQSTEER_DECLARE_DISPATCHER, (, ))
 
-#define IRQSTEER_REGISTER_DISPATCHERS(parent_id)                                                   \
+#define IRQSTEER_REGISTER_DISPATCHERS(parent_id)                                        \
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP(parent_id, _IRQSTEER_REGISTER_DISPATCHER, (;))
 
 /* utility macros */
@@ -585,9 +585,9 @@ PM_DEVICE_DT_INST_DEFINE(0, irqstr_pm_action);
 DEVICE_DT_INST_DEFINE(0, &irqsteer_init, PM_DEVICE_DT_INST_GET(0), NULL, &irqsteer_config,
 		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
 
-#define NXP_IRQSTEER_MASTER_IRQ_ENTRY_DEF(node_id)                                                 \
-	IRQ_PARENT_ENTRY_DEFINE(CONCAT(nxp_irqsteer_master_, DT_NODE_CHILD_IDX(node_id)), NULL,    \
-				DT_IRQN(node_id), INTC_CHILD_ISR_TBL_OFFSET(node_id),              \
+#define NXP_IRQSTEER_MASTER_IRQ_ENTRY_DEF(node_id)                                              \
+	IRQ_PARENT_ENTRY_DEFINE(CONCAT(nxp_irqsteer_master_, DT_NODE_CHILD_IDX(node_id)), NULL, \
+				DT_IRQN(node_id), INTC_CHILD_ISR_TBL_OFFSET(node_id),           \
 				DT_INTC_GET_AGGREGATOR_LEVEL(node_id));
 
 DT_INST_FOREACH_CHILD_STATUS_OKAY(0, NXP_IRQSTEER_MASTER_IRQ_ENTRY_DEF);

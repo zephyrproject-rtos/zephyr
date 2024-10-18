@@ -326,28 +326,28 @@ static const struct dma_driver_api max32_dma_driver_api = {
 	.get_status = max32_dma_get_status,
 };
 
-#define MAX32_DMA_IRQ_CONNECT(n, inst)                                                             \
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, n, irq), DT_INST_IRQ_BY_IDX(inst, n, priority),       \
-		    max32_dma_isr, DEVICE_DT_INST_GET(inst), 0);                                   \
+#define MAX32_DMA_IRQ_CONNECT(n, inst)                                                       \
+	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, n, irq), DT_INST_IRQ_BY_IDX(inst, n, priority), \
+		    max32_dma_isr, DEVICE_DT_INST_GET(inst), 0);                             \
 	irq_enable(DT_INST_IRQ_BY_IDX(inst, n, irq));
 
 #define CONFIGURE_ALL_IRQS(inst, n) LISTIFY(n, MAX32_DMA_IRQ_CONNECT, (), inst)
 
-#define MAX32_DMA_INIT(inst)                                                                       \
-	static struct max32_dma_data dma##inst##_data[DT_INST_PROP(inst, dma_channels)];           \
-	static void max32_dma##inst##_irq_configure(void)                                          \
-	{                                                                                          \
-		CONFIGURE_ALL_IRQS(inst, DT_NUM_IRQS(DT_DRV_INST(inst)));                          \
-	}                                                                                          \
-	static const struct max32_dma_config dma##inst##_cfg = {                                   \
-		.regs = (mxc_dma_regs_t *)DT_INST_REG_ADDR(inst),                                  \
-		.clock = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                                 \
-		.perclk.bus = DT_INST_CLOCKS_CELL(inst, offset),                                   \
-		.perclk.bit = DT_INST_CLOCKS_CELL(inst, bit),                                      \
-		.channels = DT_INST_PROP(inst, dma_channels),                                      \
-		.irq_configure = max32_dma##inst##_irq_configure,                                  \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &max32_dma_init, NULL, &dma##inst##_data, &dma##inst##_cfg,    \
+#define MAX32_DMA_INIT(inst)                                                                    \
+	static struct max32_dma_data dma##inst##_data[DT_INST_PROP(inst, dma_channels)];        \
+	static void max32_dma##inst##_irq_configure(void)                                       \
+	{                                                                                       \
+		CONFIGURE_ALL_IRQS(inst, DT_NUM_IRQS(DT_DRV_INST(inst)));                       \
+	}                                                                                       \
+	static const struct max32_dma_config dma##inst##_cfg = {                                \
+		.regs = (mxc_dma_regs_t *)DT_INST_REG_ADDR(inst),                               \
+		.clock = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                              \
+		.perclk.bus = DT_INST_CLOCKS_CELL(inst, offset),                                \
+		.perclk.bit = DT_INST_CLOCKS_CELL(inst, bit),                                   \
+		.channels = DT_INST_PROP(inst, dma_channels),                                   \
+		.irq_configure = max32_dma##inst##_irq_configure,                               \
+	};                                                                                      \
+	DEVICE_DT_INST_DEFINE(inst, &max32_dma_init, NULL, &dma##inst##_data, &dma##inst##_cfg, \
 			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY, &max32_dma_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX32_DMA_INIT)

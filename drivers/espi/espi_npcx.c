@@ -60,11 +60,11 @@ struct espi_npcx_vw_ex {
 };
 
 /* n = node, p = property, i = index */
-#define ESPI_NPCX_VW_EX_INFO(n, p, i)                                                              \
-	{                                                                                          \
-		.index = ESPI_NPCX_VW_EX_INDEX(DT_PROP_BY_IDX(n, p, i)),                           \
-		.group_num = ESPI_NPCX_VW_EX_GROUP_NUM(DT_PROP_BY_IDX(n, p, i)),                   \
-		.direction = ESPI_NPCX_VW_EX_DIR(DT_PROP_BY_IDX(n, p, i)),                         \
+#define ESPI_NPCX_VW_EX_INFO(n, p, i)                                            \
+	{                                                                        \
+		.index = ESPI_NPCX_VW_EX_INDEX(DT_PROP_BY_IDX(n, p, i)),         \
+		.group_num = ESPI_NPCX_VW_EX_GROUP_NUM(DT_PROP_BY_IDX(n, p, i)), \
+		.direction = ESPI_NPCX_VW_EX_DIR(DT_PROP_BY_IDX(n, p, i)),       \
 	},
 
 static const struct espi_npcx_vw_ex espi_npcx_vw_ex_0[] = {
@@ -72,7 +72,7 @@ static const struct espi_npcx_vw_ex espi_npcx_vw_ex_0[] = {
 #endif
 
 /* Driver convenience defines */
-#define HAL_INSTANCE(dev)                                                                          \
+#define HAL_INSTANCE(dev)                                                           \
 	((struct espi_reg *)((const struct espi_npcx_config *)(dev)->config)->base)
 
 /* eSPI channels */
@@ -121,10 +121,10 @@ struct espi_bus_isr {
 	void (*bus_isr)(const struct device *dev); /* eSPI bus ISR */
 };
 
-#define NPCX_ESPI_BUS_INT_ITEM(event, isr)                                                         \
-	{.status_bit = NPCX_ESPISTS_##event,                                                       \
-	 .int_en_bit = NPCX_ESPIIE_##event##IE,                                                    \
-	 .wake_en_bit = NPCX_ESPIWE_##event##WE,                                                   \
+#define NPCX_ESPI_BUS_INT_ITEM(event, isr)       \
+	{.status_bit = NPCX_ESPISTS_##event,     \
+	 .int_en_bit = NPCX_ESPIIE_##event##IE,  \
+	 .wake_en_bit = NPCX_ESPIWE_##event##WE, \
 	 .bus_isr = isr}
 
 /* eSPI Virtual Wire Input (Master-to-Slave) signals configuration structure */

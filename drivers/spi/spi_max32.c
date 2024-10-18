@@ -752,12 +752,12 @@ static const struct spi_driver_api spi_max32_api = {
 #ifdef CONFIG_SPI_MAX32_INTERRUPT
 #define SPI_MAX32_CONFIG_IRQ_FUNC(n) .irq_config_func = spi_max32_irq_config_func_##n,
 
-#define SPI_MAX32_IRQ_CONFIG_FUNC(n)                                                               \
-	static void spi_max32_irq_config_func_##n(const struct device *dev)                        \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), spi_max32_isr,              \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define SPI_MAX32_IRQ_CONFIG_FUNC(n)                                                  \
+	static void spi_max32_irq_config_func_##n(const struct device *dev)           \
+	{                                                                             \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), spi_max32_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                                \
+		irq_enable(DT_INST_IRQN(n));                                          \
 	}
 #else
 #define SPI_MAX32_CONFIG_IRQ_FUNC(n)
@@ -765,41 +765,41 @@ static const struct spi_driver_api spi_max32_api = {
 #endif /* CONFIG_SPI_MAX32_INTERRUPT */
 
 #if CONFIG_SPI_MAX32_DMA
-#define MAX32_DT_INST_DMA_CTLR(n, name)                                                            \
+#define MAX32_DT_INST_DMA_CTLR(n, name) \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas),                                                \
 		    (DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, name))), (NULL))
 
-#define MAX32_DT_INST_DMA_CELL(n, name, cell)                                                      \
+#define MAX32_DT_INST_DMA_CELL(n, name, cell) \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas), (DT_INST_DMAS_CELL_BY_NAME(n, name, cell)),    \
 		    (0xff))
 
-#define MAX32_SPI_DMA_INIT(n)                                                                      \
-	.tx_dma.dev = MAX32_DT_INST_DMA_CTLR(n, tx),                                               \
-	.tx_dma.channel = MAX32_DT_INST_DMA_CELL(n, tx, channel),                                  \
-	.tx_dma.slot = MAX32_DT_INST_DMA_CELL(n, tx, slot),                                        \
-	.rx_dma.dev = MAX32_DT_INST_DMA_CTLR(n, rx),                                               \
-	.rx_dma.channel = MAX32_DT_INST_DMA_CELL(n, rx, channel),                                  \
+#define MAX32_SPI_DMA_INIT(n)                                     \
+	.tx_dma.dev = MAX32_DT_INST_DMA_CTLR(n, tx),              \
+	.tx_dma.channel = MAX32_DT_INST_DMA_CELL(n, tx, channel), \
+	.tx_dma.slot = MAX32_DT_INST_DMA_CELL(n, tx, slot),       \
+	.rx_dma.dev = MAX32_DT_INST_DMA_CTLR(n, rx),              \
+	.rx_dma.channel = MAX32_DT_INST_DMA_CELL(n, rx, channel), \
 	.rx_dma.slot = MAX32_DT_INST_DMA_CELL(n, rx, slot),
 #else
 #define MAX32_SPI_DMA_INIT(n)
 #endif
 
-#define DEFINE_SPI_MAX32(_num)                                                                     \
-	PINCTRL_DT_INST_DEFINE(_num);                                                              \
-	SPI_MAX32_IRQ_CONFIG_FUNC(_num)                                                            \
-	static const struct max32_spi_config max32_spi_config_##_num = {                           \
-		.regs = (mxc_spi_regs_t *)DT_INST_REG_ADDR(_num),                                  \
-		.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(_num),                                     \
-		.clock = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(_num)),                                 \
-		.perclk.bus = DT_INST_CLOCKS_CELL(_num, offset),                                   \
-		.perclk.bit = DT_INST_CLOCKS_CELL(_num, bit),                                      \
-		MAX32_SPI_DMA_INIT(_num) SPI_MAX32_CONFIG_IRQ_FUNC(_num)};                         \
-	static struct max32_spi_data max32_spi_data_##_num = {                                     \
-		SPI_CONTEXT_INIT_LOCK(max32_spi_data_##_num, ctx),                                 \
-		SPI_CONTEXT_INIT_SYNC(max32_spi_data_##_num, ctx),                                 \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(_num), ctx)};                          \
-	DEVICE_DT_INST_DEFINE(_num, spi_max32_init, NULL, &max32_spi_data_##_num,                  \
-			      &max32_spi_config_##_num, PRE_KERNEL_2, CONFIG_SPI_INIT_PRIORITY,    \
+#define DEFINE_SPI_MAX32(_num)                                                                  \
+	PINCTRL_DT_INST_DEFINE(_num);                                                           \
+	SPI_MAX32_IRQ_CONFIG_FUNC(_num)                                                         \
+	static const struct max32_spi_config max32_spi_config_##_num = {                        \
+		.regs = (mxc_spi_regs_t *)DT_INST_REG_ADDR(_num),                               \
+		.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(_num),                                  \
+		.clock = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(_num)),                              \
+		.perclk.bus = DT_INST_CLOCKS_CELL(_num, offset),                                \
+		.perclk.bit = DT_INST_CLOCKS_CELL(_num, bit),                                   \
+		MAX32_SPI_DMA_INIT(_num) SPI_MAX32_CONFIG_IRQ_FUNC(_num)};                      \
+	static struct max32_spi_data max32_spi_data_##_num = {                                  \
+		SPI_CONTEXT_INIT_LOCK(max32_spi_data_##_num, ctx),                              \
+		SPI_CONTEXT_INIT_SYNC(max32_spi_data_##_num, ctx),                              \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(_num), ctx)};                       \
+	DEVICE_DT_INST_DEFINE(_num, spi_max32_init, NULL, &max32_spi_data_##_num,               \
+			      &max32_spi_config_##_num, PRE_KERNEL_2, CONFIG_SPI_INIT_PRIORITY, \
 			      &spi_max32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_SPI_MAX32)

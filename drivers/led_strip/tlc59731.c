@@ -178,12 +178,12 @@ scape:
 	return err;
 }
 
-#define TLC59731_DEVICE(i)                                                                         \
-	static struct tlc59731_cfg tlc59731_cfg_##i = {                                            \
-		.sdi_gpio = GPIO_DT_SPEC_INST_GET(i, gpios),                                       \
-		.length = DT_INST_PROP(i, chain_length),                                           \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(i, tlc59731_gpio_init, NULL, NULL, &tlc59731_cfg_##i, POST_KERNEL,   \
+#define TLC59731_DEVICE(i)                                                                       \
+	static struct tlc59731_cfg tlc59731_cfg_##i = {                                          \
+		.sdi_gpio = GPIO_DT_SPEC_INST_GET(i, gpios),                                     \
+		.length = DT_INST_PROP(i, chain_length),                                         \
+	};                                                                                       \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(i, tlc59731_gpio_init, NULL, NULL, &tlc59731_cfg_##i, POST_KERNEL, \
 			      CONFIG_LED_STRIP_INIT_PRIORITY, &tlc59731_gpio_api);
 DT_INST_FOREACH_STATUS_OKAY(TLC59731_DEVICE)

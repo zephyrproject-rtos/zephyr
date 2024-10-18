@@ -396,8 +396,8 @@ static const struct sdhc_driver_api sdif_api = {
 };
 
 #ifdef CONFIG_MCUX_SDIF_DMA_SUPPORT
-#define MCUX_SDIF_DMA_DESCRIPTOR_DEFINE(n)                                                         \
-	static uint32_t mcux_sdif_dma_descriptor_##n[CONFIG_MCUX_SDIF_DMA_BUFFER_SIZE / 4]         \
+#define MCUX_SDIF_DMA_DESCRIPTOR_DEFINE(n)                                                 \
+	static uint32_t mcux_sdif_dma_descriptor_##n[CONFIG_MCUX_SDIF_DMA_BUFFER_SIZE / 4] \
 		__aligned(4);
 #define MCUX_SDIF_DMA_DESCRIPTOR_INIT(n) .sdif_dma_descriptor = mcux_sdif_dma_descriptor_##n,
 #else
@@ -405,32 +405,32 @@ static const struct sdhc_driver_api sdif_api = {
 #define MCUX_SDIF_DMA_DESCRIPTOR_INIT(n)
 #endif /* CONFIG_MCUX_SDIF_DMA_SUPPORT */
 
-#define MCUX_SDIF_INIT(n)                                                                          \
-	static void sdif_##n##_irq_config_func(const struct device *dev)                           \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_sdif_isr,              \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-	}                                                                                          \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-                                                                                                   \
-	static const struct mcux_sdif_config sdif_##n##_config = {                                 \
-		.base = (SDIF_Type *)DT_INST_REG_ADDR(n),                                          \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
-		.response_timeout = DT_INST_PROP(n, response_timeout),                             \
-		.cd_debounce_clocks = DT_INST_PROP(n, cd_debounce_clocks),                         \
-		.data_timeout = DT_INST_PROP(n, data_timeout),                                     \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
-		.irq_config_func = sdif_##n##_irq_config_func,                                     \
-	};                                                                                         \
-                                                                                                   \
-	MCUX_SDIF_DMA_DESCRIPTOR_DEFINE(n);                                                        \
-                                                                                                   \
-	static struct mcux_sdif_data sdif_##n##_data = {MCUX_SDIF_DMA_DESCRIPTOR_INIT(n)};         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &mcux_sdif_init, NULL, &sdif_##n##_data, &sdif_##n##_config,      \
+#define MCUX_SDIF_INIT(n)                                                                     \
+	static void sdif_##n##_irq_config_func(const struct device *dev)                      \
+	{                                                                                     \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_sdif_isr,         \
+			    DEVICE_DT_INST_GET(n), 0);                                        \
+		irq_enable(DT_INST_IRQN(n));                                                  \
+	}                                                                                     \
+                                                                                              \
+	PINCTRL_DT_INST_DEFINE(n);                                                            \
+                                                                                              \
+	static const struct mcux_sdif_config sdif_##n##_config = {                            \
+		.base = (SDIF_Type *)DT_INST_REG_ADDR(n),                                     \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                  \
+		.response_timeout = DT_INST_PROP(n, response_timeout),                        \
+		.cd_debounce_clocks = DT_INST_PROP(n, cd_debounce_clocks),                    \
+		.data_timeout = DT_INST_PROP(n, data_timeout),                                \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                           \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),         \
+		.irq_config_func = sdif_##n##_irq_config_func,                                \
+	};                                                                                    \
+                                                                                              \
+	MCUX_SDIF_DMA_DESCRIPTOR_DEFINE(n);                                                   \
+                                                                                              \
+	static struct mcux_sdif_data sdif_##n##_data = {MCUX_SDIF_DMA_DESCRIPTOR_INIT(n)};    \
+                                                                                              \
+	DEVICE_DT_INST_DEFINE(n, &mcux_sdif_init, NULL, &sdif_##n##_data, &sdif_##n##_config, \
 			      POST_KERNEL, CONFIG_SDHC_INIT_PRIORITY, &sdif_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_SDIF_INIT)

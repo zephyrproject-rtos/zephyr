@@ -347,23 +347,23 @@ static int gpio_gd32_init(const struct device *port)
 	return 0;
 }
 
-#define GPIO_GD32_DEFINE(n)                                                                        \
-	static const struct gpio_gd32_config gpio_gd32_config##n = {                               \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
-		.reg = DT_INST_REG_ADDR(n),                                                        \
-		.clkid = DT_INST_CLOCKS_CELL(n, id),                                               \
+#define GPIO_GD32_DEFINE(n)                                                                      \
+	static const struct gpio_gd32_config gpio_gd32_config##n = {                             \
+		.common =                                                                        \
+			{                                                                        \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),             \
+			},                                                                       \
+		.reg = DT_INST_REG_ADDR(n),                                                      \
+		.clkid = DT_INST_CLOCKS_CELL(n, id),                                             \
 		COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(SYSCFG_NODE),	       \
 			    (.clkid_exti = DT_CLOCKS_CELL(SYSCFG_NODE, id),),  \
-			    (.clkid_exti = DT_CLOCKS_CELL(AFIO_NODE, id),)) .reset =        \
-					       RESET_DT_SPEC_INST_GET(n),                          \
-	};                                                                                         \
-                                                                                                   \
-	static struct gpio_gd32_data gpio_gd32_data##n;                                            \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, gpio_gd32_init, NULL, &gpio_gd32_data##n, &gpio_gd32_config##n,   \
+			    (.clkid_exti = DT_CLOCKS_CELL(AFIO_NODE, id),)) .reset =      \
+					       RESET_DT_SPEC_INST_GET(n),                        \
+	};                                                                                       \
+                                                                                                 \
+	static struct gpio_gd32_data gpio_gd32_data##n;                                          \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(n, gpio_gd32_init, NULL, &gpio_gd32_data##n, &gpio_gd32_config##n, \
 			      PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, &gpio_gd32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_GD32_DEFINE)

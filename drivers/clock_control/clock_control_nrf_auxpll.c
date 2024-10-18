@@ -123,26 +123,26 @@ static int clock_control_nrf_auxpll_init(const struct device *dev)
 	return 0;
 }
 
-#define CLOCK_CONTROL_NRF_AUXPLL_DEFINE(n)                                                         \
-	static const struct clock_control_nrf_auxpll_config config##n = {                          \
-		.auxpll = (NRF_AUXPLL_Type *)DT_INST_REG_ADDR(n),                                  \
-		.ref_clk_hz = DT_PROP(DT_INST_CLOCKS_CTLR(n), clock_frequency),                    \
-		.ficr_ctune = DT_REG_ADDR(DT_INST_PHANDLE(n, nordic_ficrs)) +                      \
-			      DT_INST_PHA(n, nordic_ficrs, offset),                                \
-		.cfg =                                                                             \
-			{                                                                          \
-				.outdrive = DT_INST_PROP(n, nordic_out_drive),                     \
-				.current_tune = DT_INST_PROP(n, nordic_current_tune),              \
-				.sdm_off = DT_INST_PROP(n, nordic_sdm_disable),                    \
-				.dither_off = DT_INST_PROP(n, nordic_dither_disable),              \
-				.range = DT_INST_ENUM_IDX(n, nordic_range),                        \
-			},                                                                         \
-		.frequency = DT_INST_PROP(n, nordic_frequency),                                    \
-		.out_div = DT_INST_PROP(n, nordic_out_div),                                        \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, clock_control_nrf_auxpll_init, NULL, NULL, &config##n,            \
-			      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,                    \
+#define CLOCK_CONTROL_NRF_AUXPLL_DEFINE(n)                                              \
+	static const struct clock_control_nrf_auxpll_config config##n = {               \
+		.auxpll = (NRF_AUXPLL_Type *)DT_INST_REG_ADDR(n),                       \
+		.ref_clk_hz = DT_PROP(DT_INST_CLOCKS_CTLR(n), clock_frequency),         \
+		.ficr_ctune = DT_REG_ADDR(DT_INST_PHANDLE(n, nordic_ficrs)) +           \
+			      DT_INST_PHA(n, nordic_ficrs, offset),                     \
+		.cfg =                                                                  \
+			{                                                               \
+				.outdrive = DT_INST_PROP(n, nordic_out_drive),          \
+				.current_tune = DT_INST_PROP(n, nordic_current_tune),   \
+				.sdm_off = DT_INST_PROP(n, nordic_sdm_disable),         \
+				.dither_off = DT_INST_PROP(n, nordic_dither_disable),   \
+				.range = DT_INST_ENUM_IDX(n, nordic_range),             \
+			},                                                              \
+		.frequency = DT_INST_PROP(n, nordic_frequency),                         \
+		.out_div = DT_INST_PROP(n, nordic_out_div),                             \
+	};                                                                              \
+                                                                                        \
+	DEVICE_DT_INST_DEFINE(n, clock_control_nrf_auxpll_init, NULL, NULL, &config##n, \
+			      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,         \
 			      &clock_control_nrf_auxpll_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CLOCK_CONTROL_NRF_AUXPLL_DEFINE)

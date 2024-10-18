@@ -252,15 +252,15 @@ static const struct sensor_driver_api sbs_gauge_driver_api = {
 	.channel_get = sbs_gauge_channel_get,
 };
 
-#define SBS_GAUGE_INIT(index)                                                                      \
-	static struct sbs_gauge_data sbs_gauge_driver_##index;                                     \
-                                                                                                   \
-	static const struct sbs_gauge_config sbs_gauge_config_##index = {                          \
-		.i2c = I2C_DT_SPEC_INST_GET(index),                                                \
-	};                                                                                         \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(index, &sbs_gauge_init, NULL, &sbs_gauge_driver_##index,      \
-				     &sbs_gauge_config_##index, POST_KERNEL,                       \
+#define SBS_GAUGE_INIT(index)                                                                 \
+	static struct sbs_gauge_data sbs_gauge_driver_##index;                                \
+                                                                                              \
+	static const struct sbs_gauge_config sbs_gauge_config_##index = {                     \
+		.i2c = I2C_DT_SPEC_INST_GET(index),                                           \
+	};                                                                                    \
+                                                                                              \
+	SENSOR_DEVICE_DT_INST_DEFINE(index, &sbs_gauge_init, NULL, &sbs_gauge_driver_##index, \
+				     &sbs_gauge_config_##index, POST_KERNEL,                  \
 				     CONFIG_SENSOR_INIT_PRIORITY, &sbs_gauge_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SBS_GAUGE_INIT)

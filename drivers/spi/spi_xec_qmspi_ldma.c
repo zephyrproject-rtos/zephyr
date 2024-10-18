@@ -55,7 +55,7 @@ LOG_MODULE_REGISTER(spi_xec, CONFIG_SPI_LOG_LEVEL);
  * Overflow TX FIFO
  * Underflow RX FIFO
  */
-#define XEC_QSPI_HW_ERRORS                                                                         \
+#define XEC_QSPI_HW_ERRORS                                                          \
 	(MCHP_QMSPI_STS_PROG_ERR | MCHP_QMSPI_STS_TXB_ERR | MCHP_QMSPI_STS_RXB_ERR)
 
 #define XEC_QSPI_HW_ERRORS_LDMA (MCHP_QMSPI_STS_LDMA_RX_ERR | MCHP_QMSPI_STS_LDMA_TX_ERR)
@@ -977,16 +977,16 @@ static const struct spi_driver_api spi_qmspi_xec_driver_api = {
 	.release = qmspi_release,
 };
 
-#define XEC_QMSPI_CS_TIMING_VAL(a, b, c, d)                                                        \
+#define XEC_QMSPI_CS_TIMING_VAL(a, b, c, d)                                                \
 	(((a) & 0xFu) | (((b) & 0xFu) << 8) | (((c) & 0xFu) << 16) | (((d) & 0xFu) << 24))
 
 #define XEC_QMSPI_TAPS_ADJ_VAL(a, b) (((a) & 0xffu) | (((b) & 0xffu) << 8))
 
-#define XEC_QMSPI_CS_TIMING(i)                                                                     \
-	XEC_QMSPI_CS_TIMING_VAL(DT_INST_PROP_OR(i, dcsckon, 6), DT_INST_PROP_OR(i, dckcsoff, 4),   \
+#define XEC_QMSPI_CS_TIMING(i)                                                                   \
+	XEC_QMSPI_CS_TIMING_VAL(DT_INST_PROP_OR(i, dcsckon, 6), DT_INST_PROP_OR(i, dckcsoff, 4), \
 				DT_INST_PROP_OR(i, dldh, 6), DT_INST_PROP_OR(i, dcsda, 6))
 
-#define XEC_QMSPI_TAPS_ADJ(i)                                                                      \
+#define XEC_QMSPI_TAPS_ADJ(i)                                                                  \
 	XEC_QMSPI_TAPS_ADJ_VAL(DT_INST_PROP_OR(i, tctradj, 0), DT_INST_PROP_OR(i, tsckadj, 0))
 
 #define XEC_QMSPI_GIRQ(i) MCHP_XEC_ECIA_GIRQ(DT_INST_PROP_BY_IDX(i, girqs, 0))
@@ -997,53 +997,53 @@ static const struct spi_driver_api spi_qmspi_xec_driver_api = {
 
 #define XEC_QMSPI_NVIC_DIRECT(i) MCHP_XEC_ECIA_NVIC_DIRECT(DT_INST_PROP_BY_IDX(i, girqs, 0))
 
-#define XEC_QMSPI_PCR_INFO(i)                                                                      \
-	MCHP_XEC_PCR_SCR_ENCODE(DT_INST_CLOCKS_CELL(i, regidx), DT_INST_CLOCKS_CELL(i, bitpos),    \
+#define XEC_QMSPI_PCR_INFO(i)                                                                   \
+	MCHP_XEC_PCR_SCR_ENCODE(DT_INST_CLOCKS_CELL(i, regidx), DT_INST_CLOCKS_CELL(i, bitpos), \
 				DT_INST_CLOCKS_CELL(i, domain))
 
 /*
  * The instance number, i is not related to block ID's rather the
  * order the DT tools process all DT files in a build.
  */
-#define QMSPI_XEC_DEVICE(i)                                                                        \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(i);                                                                 \
-                                                                                                   \
-	static void qmspi_xec_irq_config_func_##i(void)                                            \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(i), DT_INST_IRQ(i, priority), qmspi_xec_isr,              \
-			    DEVICE_DT_INST_GET(i), 0);                                             \
-		irq_enable(DT_INST_IRQN(i));                                                       \
-	}                                                                                          \
-                                                                                                   \
-	static struct spi_qmspi_data qmspi_xec_data_##i = {                                        \
-		SPI_CONTEXT_INIT_LOCK(qmspi_xec_data_##i, ctx),                                    \
-		SPI_CONTEXT_INIT_SYNC(qmspi_xec_data_##i, ctx),                                    \
-	};                                                                                         \
-	static const struct spi_qmspi_config qmspi_xec_config_##i = {                              \
-		.regs = (struct qmspi_regs *)DT_INST_REG_ADDR(i),                                  \
-		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(i)),                                  \
-		.clksrc =                                                                          \
-			{                                                                          \
-				.pcr_info = XEC_QMSPI_PCR_INFO(i),                                 \
-			},                                                                         \
-		.clock_freq = DT_INST_PROP_OR(i, clock_frequency, MHZ(12)),                        \
-		.cs1_freq = DT_INST_PROP_OR(i, cs1_freq, 0),                                       \
-		.cs_timing = XEC_QMSPI_CS_TIMING(i),                                               \
-		.taps_adj = XEC_QMSPI_TAPS_ADJ(i),                                                 \
-		.girq = XEC_QMSPI_GIRQ(i),                                                         \
-		.girq_pos = XEC_QMSPI_GIRQ_POS(i),                                                 \
-		.girq_nvic_aggr = XEC_QMSPI_NVIC_AGGR(i),                                          \
-		.girq_nvic_direct = XEC_QMSPI_NVIC_DIRECT(i),                                      \
-		.irq_pri = DT_INST_IRQ(i, priority),                                               \
-		.chip_sel = DT_INST_PROP_OR(i, chip_select, 0),                                    \
-		.width = DT_INST_PROP_OR(0, lines, 1),                                             \
-		.irq_config_func = qmspi_xec_irq_config_func_##i,                                  \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(i),                                         \
-	};                                                                                         \
-	PM_DEVICE_DT_INST_DEFINE(i, qmspi_xec_pm_action);                                          \
-	DEVICE_DT_INST_DEFINE(i, qmspi_xec_init, PM_DEVICE_DT_INST_GET(i), &qmspi_xec_data_##i,    \
-			      &qmspi_xec_config_##i, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,        \
+#define QMSPI_XEC_DEVICE(i)                                                                     \
+                                                                                                \
+	PINCTRL_DT_INST_DEFINE(i);                                                              \
+                                                                                                \
+	static void qmspi_xec_irq_config_func_##i(void)                                         \
+	{                                                                                       \
+		IRQ_CONNECT(DT_INST_IRQN(i), DT_INST_IRQ(i, priority), qmspi_xec_isr,           \
+			    DEVICE_DT_INST_GET(i), 0);                                          \
+		irq_enable(DT_INST_IRQN(i));                                                    \
+	}                                                                                       \
+                                                                                                \
+	static struct spi_qmspi_data qmspi_xec_data_##i = {                                     \
+		SPI_CONTEXT_INIT_LOCK(qmspi_xec_data_##i, ctx),                                 \
+		SPI_CONTEXT_INIT_SYNC(qmspi_xec_data_##i, ctx),                                 \
+	};                                                                                      \
+	static const struct spi_qmspi_config qmspi_xec_config_##i = {                           \
+		.regs = (struct qmspi_regs *)DT_INST_REG_ADDR(i),                               \
+		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(i)),                               \
+		.clksrc =                                                                       \
+			{                                                                       \
+				.pcr_info = XEC_QMSPI_PCR_INFO(i),                              \
+			},                                                                      \
+		.clock_freq = DT_INST_PROP_OR(i, clock_frequency, MHZ(12)),                     \
+		.cs1_freq = DT_INST_PROP_OR(i, cs1_freq, 0),                                    \
+		.cs_timing = XEC_QMSPI_CS_TIMING(i),                                            \
+		.taps_adj = XEC_QMSPI_TAPS_ADJ(i),                                              \
+		.girq = XEC_QMSPI_GIRQ(i),                                                      \
+		.girq_pos = XEC_QMSPI_GIRQ_POS(i),                                              \
+		.girq_nvic_aggr = XEC_QMSPI_NVIC_AGGR(i),                                       \
+		.girq_nvic_direct = XEC_QMSPI_NVIC_DIRECT(i),                                   \
+		.irq_pri = DT_INST_IRQ(i, priority),                                            \
+		.chip_sel = DT_INST_PROP_OR(i, chip_select, 0),                                 \
+		.width = DT_INST_PROP_OR(0, lines, 1),                                          \
+		.irq_config_func = qmspi_xec_irq_config_func_##i,                               \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(i),                                      \
+	};                                                                                      \
+	PM_DEVICE_DT_INST_DEFINE(i, qmspi_xec_pm_action);                                       \
+	DEVICE_DT_INST_DEFINE(i, qmspi_xec_init, PM_DEVICE_DT_INST_GET(i), &qmspi_xec_data_##i, \
+			      &qmspi_xec_config_##i, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,     \
 			      &spi_qmspi_xec_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(QMSPI_XEC_DEVICE)

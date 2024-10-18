@@ -530,16 +530,16 @@ static int fpga_ice40_init(const struct device *dev)
 
 #define FPGA_ICE40_BUS_FREQ(inst) DT_INST_PROP(inst, spi_max_frequency)
 
-#define FPGA_ICE40_CONFIG_DELAY_US(inst)                                                           \
+#define FPGA_ICE40_CONFIG_DELAY_US(inst)                                       \
 	DT_INST_PROP_OR(inst, config_delay_us, FPGA_ICE40_CONFIG_DELAY_US_MIN)
 
-#define FPGA_ICE40_CRESET_DELAY_US(inst)                                                           \
+#define FPGA_ICE40_CRESET_DELAY_US(inst)                                       \
 	DT_INST_PROP_OR(inst, creset_delay_us, FPGA_ICE40_CRESET_DELAY_US_MIN)
 
-#define FPGA_ICE40_LEADING_CLOCKS(inst)                                                            \
+#define FPGA_ICE40_LEADING_CLOCKS(inst)                                      \
 	DT_INST_PROP_OR(inst, leading_clocks, FPGA_ICE40_LEADING_CLOCKS_MIN)
 
-#define FPGA_ICE40_TRAILING_CLOCKS(inst)                                                           \
+#define FPGA_ICE40_TRAILING_CLOCKS(inst)                                       \
 	DT_INST_PROP_OR(inst, trailing_clocks, FPGA_ICE40_TRAILING_CLOCKS_MIN)
 
 #define FPGA_ICE40_MHZ_DELAY_COUNT(inst) DT_INST_PROP_OR(inst, mhz_delay_count, 0)
@@ -561,42 +561,42 @@ static int fpga_ice40_init(const struct device *dev)
 #define FPGA_ICE40_PINCTRL_DEFINE(inst)
 #endif
 
-#define FPGA_ICE40_DEFINE(inst)                                                                    \
-	BUILD_ASSERT(FPGA_ICE40_LOAD_MODE(inst) == FPGA_ICE40_LOAD_MODE_SPI ||                     \
-		     FPGA_ICE40_LOAD_MODE(inst) == FPGA_ICE40_LOAD_MODE_GPIO);                     \
-	BUILD_ASSERT(FPGA_ICE40_BUS_FREQ(inst) >= FPGA_ICE40_SPI_HZ_MIN);                          \
-	BUILD_ASSERT(FPGA_ICE40_BUS_FREQ(inst) <= FPGA_ICE40_SPI_HZ_MAX);                          \
-	BUILD_ASSERT(FPGA_ICE40_CONFIG_DELAY_US(inst) >= FPGA_ICE40_CONFIG_DELAY_US_MIN);          \
-	BUILD_ASSERT(FPGA_ICE40_CONFIG_DELAY_US(inst) <= UINT16_MAX);                              \
-	BUILD_ASSERT(FPGA_ICE40_CRESET_DELAY_US(inst) >= FPGA_ICE40_CRESET_DELAY_US_MIN);          \
-	BUILD_ASSERT(FPGA_ICE40_CRESET_DELAY_US(inst) <= UINT16_MAX);                              \
-	BUILD_ASSERT(FPGA_ICE40_LEADING_CLOCKS(inst) >= FPGA_ICE40_LEADING_CLOCKS_MIN);            \
-	BUILD_ASSERT(FPGA_ICE40_LEADING_CLOCKS(inst) <= UINT8_MAX);                                \
-	BUILD_ASSERT(FPGA_ICE40_TRAILING_CLOCKS(inst) >= FPGA_ICE40_TRAILING_CLOCKS_MIN);          \
-	BUILD_ASSERT(FPGA_ICE40_TRAILING_CLOCKS(inst) <= UINT8_MAX);                               \
-	BUILD_ASSERT(FPGA_ICE40_MHZ_DELAY_COUNT(inst) >= 0);                                       \
-                                                                                                   \
-	FPGA_ICE40_PINCTRL_DEFINE(inst);                                                           \
-	static struct fpga_ice40_data fpga_ice40_data_##inst;                                      \
-                                                                                                   \
-	static const struct fpga_ice40_config fpga_ice40_config_##inst = {                         \
-		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),          \
-		.creset = GPIO_DT_SPEC_INST_GET(inst, creset_gpios),                               \
-		.cdone = GPIO_DT_SPEC_INST_GET(inst, cdone_gpios),                                 \
-		.clk = GPIO_DT_SPEC_INST_GET_OR(inst, clk_gpios, {0}),                             \
-		.pico = GPIO_DT_SPEC_INST_GET_OR(inst, pico_gpios, {0}),                           \
-		.set = FPGA_ICE40_GPIO_PINS(inst, gpios_set_reg),                                  \
-		.clear = FPGA_ICE40_GPIO_PINS(inst, gpios_clear_reg),                              \
-		.mhz_delay_count = FPGA_ICE40_MHZ_DELAY_COUNT(inst),                               \
-		.config_delay_us = FPGA_ICE40_CONFIG_DELAY_US(inst),                               \
-		.creset_delay_us = FPGA_ICE40_CRESET_DELAY_US(inst),                               \
-		.leading_clocks = FPGA_ICE40_LEADING_CLOCKS(inst),                                 \
-		.trailing_clocks = FPGA_ICE40_TRAILING_CLOCKS(inst),                               \
-		.load = FPGA_ICE40_LOAD_FUNC(inst),                                                \
-		FPGA_ICE40_PINCTRL_CONFIG(inst)};                                                  \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, fpga_ice40_init, NULL, &fpga_ice40_data_##inst,                \
-			      &fpga_ice40_config_##inst, POST_KERNEL, CONFIG_FPGA_INIT_PRIORITY,   \
+#define FPGA_ICE40_DEFINE(inst)                                                                  \
+	BUILD_ASSERT(FPGA_ICE40_LOAD_MODE(inst) == FPGA_ICE40_LOAD_MODE_SPI ||                   \
+		     FPGA_ICE40_LOAD_MODE(inst) == FPGA_ICE40_LOAD_MODE_GPIO);                   \
+	BUILD_ASSERT(FPGA_ICE40_BUS_FREQ(inst) >= FPGA_ICE40_SPI_HZ_MIN);                        \
+	BUILD_ASSERT(FPGA_ICE40_BUS_FREQ(inst) <= FPGA_ICE40_SPI_HZ_MAX);                        \
+	BUILD_ASSERT(FPGA_ICE40_CONFIG_DELAY_US(inst) >= FPGA_ICE40_CONFIG_DELAY_US_MIN);        \
+	BUILD_ASSERT(FPGA_ICE40_CONFIG_DELAY_US(inst) <= UINT16_MAX);                            \
+	BUILD_ASSERT(FPGA_ICE40_CRESET_DELAY_US(inst) >= FPGA_ICE40_CRESET_DELAY_US_MIN);        \
+	BUILD_ASSERT(FPGA_ICE40_CRESET_DELAY_US(inst) <= UINT16_MAX);                            \
+	BUILD_ASSERT(FPGA_ICE40_LEADING_CLOCKS(inst) >= FPGA_ICE40_LEADING_CLOCKS_MIN);          \
+	BUILD_ASSERT(FPGA_ICE40_LEADING_CLOCKS(inst) <= UINT8_MAX);                              \
+	BUILD_ASSERT(FPGA_ICE40_TRAILING_CLOCKS(inst) >= FPGA_ICE40_TRAILING_CLOCKS_MIN);        \
+	BUILD_ASSERT(FPGA_ICE40_TRAILING_CLOCKS(inst) <= UINT8_MAX);                             \
+	BUILD_ASSERT(FPGA_ICE40_MHZ_DELAY_COUNT(inst) >= 0);                                     \
+                                                                                                 \
+	FPGA_ICE40_PINCTRL_DEFINE(inst);                                                         \
+	static struct fpga_ice40_data fpga_ice40_data_##inst;                                    \
+                                                                                                 \
+	static const struct fpga_ice40_config fpga_ice40_config_##inst = {                       \
+		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),        \
+		.creset = GPIO_DT_SPEC_INST_GET(inst, creset_gpios),                             \
+		.cdone = GPIO_DT_SPEC_INST_GET(inst, cdone_gpios),                               \
+		.clk = GPIO_DT_SPEC_INST_GET_OR(inst, clk_gpios, {0}),                           \
+		.pico = GPIO_DT_SPEC_INST_GET_OR(inst, pico_gpios, {0}),                         \
+		.set = FPGA_ICE40_GPIO_PINS(inst, gpios_set_reg),                                \
+		.clear = FPGA_ICE40_GPIO_PINS(inst, gpios_clear_reg),                            \
+		.mhz_delay_count = FPGA_ICE40_MHZ_DELAY_COUNT(inst),                             \
+		.config_delay_us = FPGA_ICE40_CONFIG_DELAY_US(inst),                             \
+		.creset_delay_us = FPGA_ICE40_CRESET_DELAY_US(inst),                             \
+		.leading_clocks = FPGA_ICE40_LEADING_CLOCKS(inst),                               \
+		.trailing_clocks = FPGA_ICE40_TRAILING_CLOCKS(inst),                             \
+		.load = FPGA_ICE40_LOAD_FUNC(inst),                                              \
+		FPGA_ICE40_PINCTRL_CONFIG(inst)};                                                \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(inst, fpga_ice40_init, NULL, &fpga_ice40_data_##inst,              \
+			      &fpga_ice40_config_##inst, POST_KERNEL, CONFIG_FPGA_INIT_PRIORITY, \
 			      &fpga_ice40_api);
 
 DT_INST_FOREACH_STATUS_OKAY(FPGA_ICE40_DEFINE)

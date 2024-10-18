@@ -437,9 +437,9 @@ static int bt_spi_init(const struct device *dev)
 	return 0;
 }
 
-#define HCI_DEVICE_INIT(inst)                                                                      \
-	static struct bt_spi_data hci_data_##inst = {};                                            \
-	DEVICE_DT_INST_DEFINE(inst, bt_spi_init, NULL, &hci_data_##inst, NULL, POST_KERNEL,        \
+#define HCI_DEVICE_INIT(inst)                                                               \
+	static struct bt_spi_data hci_data_##inst = {};                                     \
+	DEVICE_DT_INST_DEFINE(inst, bt_spi_init, NULL, &hci_data_##inst, NULL, POST_KERNEL, \
 			      CONFIG_BT_SPI_INIT_PRIORITY, &drv)
 
 /* Only one instance supported right now */

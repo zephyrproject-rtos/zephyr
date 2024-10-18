@@ -147,61 +147,61 @@ static void init_inputs(const struct device *dev)
 
 #define XBAR_PHANDLE(n) DT_INST_PHANDLE(n, xbar)
 
-#define QDEC_CHECK_COND(n, p, min, max)                                                            \
+#define QDEC_CHECK_COND(n, p, min, max)                 \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, p), (				\
 		    BUILD_ASSERT(IN_RANGE(DT_INST_PROP(n, p), min, max),	\
 				 STRINGIFY(p) " value is out of range")), ())
 
 #define QDEC_SET_COND(n, v, p) COND_CODE_1(DT_INST_NODE_HAS_PROP(n, p), (v = DT_INST_PROP(n, p)), ())
 
-#define QDEC_MCUX_INIT(n)                                                                          \
-                                                                                                   \
-	BUILD_ASSERT((DT_PROP_LEN(XBAR_PHANDLE(n), xbar_maps) % 2) == 0,                           \
-		     "xbar_maps length must be an even number");                                   \
-	QDEC_CHECK_COND(n, counts_per_revolution, 1, UINT16_MAX);                                  \
-	QDEC_CHECK_COND(n, filter_sample_period, 0, UINT8_MAX);                                    \
-                                                                                                   \
-	static struct qdec_mcux_data qdec_mcux_##n##_data = {                                      \
-		.counts_per_revolution = DT_INST_PROP(n, counts_per_revolution)};                  \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-                                                                                                   \
-	static const struct qdec_mcux_config qdec_mcux_##n##_config = {                            \
-		.base = (ENC_Type *)DT_INST_REG_ADDR(n),                                           \
-		.xbar = (XBARA_Type *)DT_REG_ADDR(XBAR_PHANDLE(n)),                                \
-		.xbar_maps_len = DT_PROP_LEN(XBAR_PHANDLE(n), xbar_maps),                          \
-		.xbar_maps = DT_PROP(XBAR_PHANDLE(n), xbar_maps),                                  \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
-	};                                                                                         \
-                                                                                                   \
-	static int qdec_mcux_##n##_init(const struct device *dev)                                  \
-	{                                                                                          \
-		const struct qdec_mcux_config *config = dev->config;                               \
-		struct qdec_mcux_data *data = dev->data;                                           \
-                                                                                                   \
-		LOG_DBG("Initializing %s", dev->name);                                             \
-                                                                                                   \
-		init_inputs(dev);                                                                  \
-                                                                                                   \
-		ENC_GetDefaultConfig(&data->qdec_config);                                          \
-		data->qdec_config.decoderWorkMode =                                                \
-			int_to_work_mode(DT_INST_PROP(n, single_phase_mode));                      \
-		QDEC_SET_COND(n, data->qdec_config.filterCount, filter_count);                     \
-		QDEC_SET_COND(n, data->qdec_config.filterSamplePeriod, filter_sample_period);      \
-		LOG_DBG("Latency is %u filter clock cycles + 2 IPBus clock "                       \
-			"periods",                                                                 \
-			data->qdec_config.filterSamplePeriod *(data->qdec_config.filterCount +     \
-							       3));                                \
-		ENC_Init(config->base, &data->qdec_config);                                        \
-                                                                                                   \
-		/* Update the position counter with initial value. */                              \
-		ENC_DoSoftwareLoadInitialPositionValue(config->base);                              \
-                                                                                                   \
-		return 0;                                                                          \
-	}                                                                                          \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, qdec_mcux_##n##_init, NULL, &qdec_mcux_##n##_data,         \
-				     &qdec_mcux_##n##_config, POST_KERNEL,                         \
+#define QDEC_MCUX_INIT(n)                                                                      \
+                                                                                               \
+	BUILD_ASSERT((DT_PROP_LEN(XBAR_PHANDLE(n), xbar_maps) % 2) == 0,                       \
+		     "xbar_maps length must be an even number");                               \
+	QDEC_CHECK_COND(n, counts_per_revolution, 1, UINT16_MAX);                              \
+	QDEC_CHECK_COND(n, filter_sample_period, 0, UINT8_MAX);                                \
+                                                                                               \
+	static struct qdec_mcux_data qdec_mcux_##n##_data = {                                  \
+		.counts_per_revolution = DT_INST_PROP(n, counts_per_revolution)};              \
+                                                                                               \
+	PINCTRL_DT_INST_DEFINE(n);                                                             \
+                                                                                               \
+	static const struct qdec_mcux_config qdec_mcux_##n##_config = {                        \
+		.base = (ENC_Type *)DT_INST_REG_ADDR(n),                                       \
+		.xbar = (XBARA_Type *)DT_REG_ADDR(XBAR_PHANDLE(n)),                            \
+		.xbar_maps_len = DT_PROP_LEN(XBAR_PHANDLE(n), xbar_maps),                      \
+		.xbar_maps = DT_PROP(XBAR_PHANDLE(n), xbar_maps),                              \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                   \
+	};                                                                                     \
+                                                                                               \
+	static int qdec_mcux_##n##_init(const struct device *dev)                              \
+	{                                                                                      \
+		const struct qdec_mcux_config *config = dev->config;                           \
+		struct qdec_mcux_data *data = dev->data;                                       \
+                                                                                               \
+		LOG_DBG("Initializing %s", dev->name);                                         \
+                                                                                               \
+		init_inputs(dev);                                                              \
+                                                                                               \
+		ENC_GetDefaultConfig(&data->qdec_config);                                      \
+		data->qdec_config.decoderWorkMode =                                            \
+			int_to_work_mode(DT_INST_PROP(n, single_phase_mode));                  \
+		QDEC_SET_COND(n, data->qdec_config.filterCount, filter_count);                 \
+		QDEC_SET_COND(n, data->qdec_config.filterSamplePeriod, filter_sample_period);  \
+		LOG_DBG("Latency is %u filter clock cycles + 2 IPBus clock "                   \
+			"periods",                                                             \
+			data->qdec_config.filterSamplePeriod *(data->qdec_config.filterCount + \
+							       3));                            \
+		ENC_Init(config->base, &data->qdec_config);                                    \
+                                                                                               \
+		/* Update the position counter with initial value. */                          \
+		ENC_DoSoftwareLoadInitialPositionValue(config->base);                          \
+                                                                                               \
+		return 0;                                                                      \
+	}                                                                                      \
+                                                                                               \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, qdec_mcux_##n##_init, NULL, &qdec_mcux_##n##_data,     \
+				     &qdec_mcux_##n##_config, POST_KERNEL,                     \
 				     CONFIG_SENSOR_INIT_PRIORITY, &qdec_mcux_api);
 
 DT_INST_FOREACH_STATUS_OKAY(QDEC_MCUX_INIT)

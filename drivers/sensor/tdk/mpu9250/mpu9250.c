@@ -311,20 +311,20 @@ static int mpu9250_init(const struct device *dev)
 	return 0;
 }
 
-#define INIT_MPU9250_INST(inst)                                                                    \
-	static struct mpu9250_data mpu9250_data_##inst;                                            \
-	static const struct mpu9250_config mpu9250_cfg_##inst = {                                  \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.gyro_sr_div = DT_INST_PROP(inst, gyro_sr_div),                                    \
-		.gyro_dlpf = DT_INST_ENUM_IDX(inst, gyro_dlpf),                                    \
-		.gyro_fs = DT_INST_ENUM_IDX(inst, gyro_fs),                                        \
-		.accel_fs = DT_INST_ENUM_IDX(inst, accel_fs),                                      \
-		.accel_dlpf = DT_INST_ENUM_IDX(inst, accel_dlpf),                                  \
+#define INIT_MPU9250_INST(inst)                                                                   \
+	static struct mpu9250_data mpu9250_data_##inst;                                           \
+	static const struct mpu9250_config mpu9250_cfg_##inst = {                                 \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                \
+		.gyro_sr_div = DT_INST_PROP(inst, gyro_sr_div),                                   \
+		.gyro_dlpf = DT_INST_ENUM_IDX(inst, gyro_dlpf),                                   \
+		.gyro_fs = DT_INST_ENUM_IDX(inst, gyro_fs),                                       \
+		.accel_fs = DT_INST_ENUM_IDX(inst, accel_fs),                                     \
+		.accel_dlpf = DT_INST_ENUM_IDX(inst, accel_dlpf),                                 \
 		IF_ENABLED(CONFIG_MPU9250_TRIGGER,				\
-		  (.int_pin = GPIO_DT_SPEC_INST_GET(inst, irq_gpios))) };  \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, mpu9250_init, NULL, &mpu9250_data_##inst,               \
-				     &mpu9250_cfg_##inst, POST_KERNEL,                             \
+		  (.int_pin = GPIO_DT_SPEC_INST_GET(inst, irq_gpios))) }; \
+                                                                                                  \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, mpu9250_init, NULL, &mpu9250_data_##inst,              \
+				     &mpu9250_cfg_##inst, POST_KERNEL,                            \
 				     CONFIG_SENSOR_INIT_PRIORITY, &mpu9250_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INIT_MPU9250_INST)

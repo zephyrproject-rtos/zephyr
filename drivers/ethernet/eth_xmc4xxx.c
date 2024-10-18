@@ -43,13 +43,13 @@ LOG_MODULE_REGISTER(eth_xmc4xxx);
 #define INFINEON_OUI_B1 0x03
 #define INFINEON_OUI_B2 0x19
 
-#define MODULO_INC_TX(val)                                                                         \
-	{                                                                                          \
-		(val) = (++(val) < NUM_TX_DMA_DESCRIPTORS) ? (val) : 0;                            \
+#define MODULO_INC_TX(val)                                              \
+	{                                                               \
+		(val) = (++(val) < NUM_TX_DMA_DESCRIPTORS) ? (val) : 0; \
 	}
-#define MODULO_INC_RX(val)                                                                         \
-	{                                                                                          \
-		(val) = (++(val) < NUM_RX_DMA_DESCRIPTORS) ? (val) : 0;                            \
+#define MODULO_INC_RX(val)                                              \
+	{                                                               \
+		(val) = (++(val) < NUM_RX_DMA_DESCRIPTORS) ? (val) : 0; \
 	}
 
 #define IS_OWNED_BY_DMA_TX(desc) (((desc)->status & ETH_MAC_DMA_TDES0_OWN) != 0)
@@ -63,16 +63,16 @@ LOG_MODULE_REGISTER(eth_xmc4xxx);
 
 #define TOTAL_FRAME_LENGTH(desc) (FIELD_GET(ETH_MAC_DMA_RDES0_FL, (desc)->status) - 4)
 
-#define ETH_STATUS_ERROR_TRANSMIT_EVENTS                                                           \
-	(XMC_ETH_MAC_EVENT_BUS_ERROR | XMC_ETH_MAC_EVENT_TRANSMIT_JABBER_TIMEOUT |                 \
+#define ETH_STATUS_ERROR_TRANSMIT_EVENTS                                                    \
+	(XMC_ETH_MAC_EVENT_BUS_ERROR | XMC_ETH_MAC_EVENT_TRANSMIT_JABBER_TIMEOUT |          \
 	 XMC_ETH_MAC_EVENT_TRANSMIT_UNDERFLOW | XMC_ETH_MAC_EVENT_TRANSMIT_PROCESS_STOPPED)
 
-#define ETH_STATUS_ERROR_RECEIVE_EVENTS                                                            \
+#define ETH_STATUS_ERROR_RECEIVE_EVENTS                                    \
 	(XMC_ETH_MAC_EVENT_BUS_ERROR | XMC_ETH_MAC_EVENT_RECEIVE_OVERFLOW)
 
-#define ETH_STATUS_ALL_EVENTS                                                                      \
-	(ETH_STATUS_ERROR_TRANSMIT_EVENTS | ETH_STATUS_ERROR_RECEIVE_EVENTS |                      \
-	 XMC_ETH_MAC_EVENT_RECEIVE | XMC_ETH_MAC_EVENT_TRANSMIT | ETH_INTERRUPT_ENABLE_NIE_Msk |   \
+#define ETH_STATUS_ALL_EVENTS                                                                    \
+	(ETH_STATUS_ERROR_TRANSMIT_EVENTS | ETH_STATUS_ERROR_RECEIVE_EVENTS |                    \
+	 XMC_ETH_MAC_EVENT_RECEIVE | XMC_ETH_MAC_EVENT_TRANSMIT | ETH_INTERRUPT_ENABLE_NIE_Msk | \
 	 ETH_INTERRUPT_ENABLE_AIE_Msk)
 
 #define ETH_MAC_DISABLE_MMC_INTERRUPT_MSK             0x03ffffffu

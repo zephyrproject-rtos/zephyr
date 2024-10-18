@@ -11,8 +11,8 @@
 
 #include "uart_cdns.h"
 
-#define DEV_UART(dev)                                                                              \
-	((struct uart_cdns_regs *)((const struct uart_cdns_device_config *const)(dev)->config)     \
+#define DEV_UART(dev)                                                                          \
+	((struct uart_cdns_regs *)((const struct uart_cdns_device_config *const)(dev)->config) \
 		 ->port)
 
 /** Check if tx FIFO is full */
@@ -273,13 +273,13 @@ static int uart_cdns_init(const struct device *dev)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-#define UART_CDNS_IRQ_CFG_FUNC(n)                                                                  \
-	static void uart_cdns_irq_cfg_func_##n(void)                                               \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_cdns_irq_handler,      \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define UART_CDNS_IRQ_CFG_FUNC(n)                                                             \
+	static void uart_cdns_irq_cfg_func_##n(void)                                          \
+	{                                                                                     \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_cdns_irq_handler, \
+			    DEVICE_DT_INST_GET(n), 0);                                        \
+                                                                                              \
+		irq_enable(DT_INST_IRQN(n));                                                  \
 	}
 
 #define UART_CDNS_IRQ_CFG_FUNC_INIT(n) .cfg_func = uart_cdns_irq_cfg_func_##n,
@@ -291,21 +291,21 @@ static int uart_cdns_init(const struct device *dev)
 
 #endif
 
-#define UART_CDNS_INIT(n)                                                                          \
-	static struct uart_cdns_data uart_cdns_data_##n;                                           \
-                                                                                                   \
-	UART_CDNS_IRQ_CFG_FUNC(n)                                                                  \
-                                                                                                   \
-	static const struct uart_cdns_device_config uart_cdns_dev_cfg_##n = {                      \
-		.port = DT_INST_REG_ADDR(n),                                                       \
-		.bdiv = DT_INST_PROP(n, bdiv),                                                     \
-		.sys_clk_freq = DT_INST_PROP(n, clock_frequency),                                  \
-		.baud_rate = DT_INST_PROP(n, current_speed),                                       \
-		.parity = CDNS_PARTITY_MAP(DT_ENUM_IDX(DT_DRV_INST(n), parity)),                   \
-		UART_CDNS_IRQ_CFG_FUNC_INIT(n)};                                                   \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, uart_cdns_init, NULL, &uart_cdns_data_##n,                        \
-			      &uart_cdns_dev_cfg_##n, PRE_KERNEL_1,                                \
+#define UART_CDNS_INIT(n)                                                                 \
+	static struct uart_cdns_data uart_cdns_data_##n;                                  \
+                                                                                          \
+	UART_CDNS_IRQ_CFG_FUNC(n)                                                         \
+                                                                                          \
+	static const struct uart_cdns_device_config uart_cdns_dev_cfg_##n = {             \
+		.port = DT_INST_REG_ADDR(n),                                              \
+		.bdiv = DT_INST_PROP(n, bdiv),                                            \
+		.sys_clk_freq = DT_INST_PROP(n, clock_frequency),                         \
+		.baud_rate = DT_INST_PROP(n, current_speed),                              \
+		.parity = CDNS_PARTITY_MAP(DT_ENUM_IDX(DT_DRV_INST(n), parity)),          \
+		UART_CDNS_IRQ_CFG_FUNC_INIT(n)};                                          \
+                                                                                          \
+	DEVICE_DT_INST_DEFINE(n, uart_cdns_init, NULL, &uart_cdns_data_##n,               \
+			      &uart_cdns_dev_cfg_##n, PRE_KERNEL_1,                       \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &uart_cdns_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_CDNS_INIT)

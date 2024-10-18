@@ -844,13 +844,13 @@ SHELL_CMD_REGISTER(plic, &plic_cmds, "PLIC shell commands", NULL);
 #define PLIC_MIN_IRQ_NUM(n) MIN(DT_INST_PROP(n, riscv_ndev), CONFIG_MAX_IRQ_PER_AGGREGATOR)
 
 #ifdef CONFIG_PLIC_SHELL_IRQ_COUNT
-#define PLIC_INTC_IRQ_COUNT_BUF_DEFINE(n)                                                          \
+#define PLIC_INTC_IRQ_COUNT_BUF_DEFINE(n)                                                        \
 	static uint16_t local_irq_count_##n[COND_CODE_1(CONFIG_MP_MAX_NUM_CPUS, (1),               \
-							(UTIL_INC(CONFIG_MP_MAX_NUM_CPUS)))]   \
+							(UTIL_INC(CONFIG_MP_MAX_NUM_CPUS)))] \
 								[PLIC_MIN_IRQ_NUM(n)];
-#define PLIC_INTC_IRQ_COUNT_INIT(n)                                                                \
-	.stats = {                                                                                 \
-		.irq_count = &local_irq_count_##n[0][0],                                           \
+#define PLIC_INTC_IRQ_COUNT_INIT(n)                      \
+	.stats = {                                       \
+		.irq_count = &local_irq_count_##n[0][0], \
 	},
 
 #else
@@ -859,9 +859,9 @@ SHELL_CMD_REGISTER(plic, &plic_cmds, "PLIC shell commands", NULL);
 #endif /* CONFIG_PLIC_SHELL_IRQ_COUNT */
 
 #ifdef CONFIG_PLIC_IRQ_AFFINITY
-#define PLIC_IRQ_CPUMASK_BUF_DECLARE(n)                                                            \
-	static plic_cpumask_t irq_cpumask_##n[PLIC_MIN_IRQ_NUM(n)] = {                             \
-		[0 ...(PLIC_MIN_IRQ_NUM(n) - 1)] = CONFIG_PLIC_IRQ_AFFINITY_MASK,                  \
+#define PLIC_IRQ_CPUMASK_BUF_DECLARE(n)                                           \
+	static plic_cpumask_t irq_cpumask_##n[PLIC_MIN_IRQ_NUM(n)] = {            \
+		[0 ...(PLIC_MIN_IRQ_NUM(n) - 1)] = CONFIG_PLIC_IRQ_AFFINITY_MASK, \
 	}
 #define PLIC_IRQ_CPUMASK_BUF_INIT(n) .irq_cpumask = &irq_cpumask_##n[0],
 #else
@@ -869,24 +869,24 @@ SHELL_CMD_REGISTER(plic, &plic_cmds, "PLIC shell commands", NULL);
 #define PLIC_IRQ_CPUMASK_BUF_INIT(n)
 #endif /* CONFIG_PLIC_IRQ_AFFINITY */
 
-#define PLIC_INTC_DATA_INIT(n)                                                                     \
-	PLIC_INTC_IRQ_COUNT_BUF_DEFINE(n);                                                         \
-	PLIC_IRQ_CPUMASK_BUF_DECLARE(n);                                                           \
-	static struct plic_data plic_data_##n = {PLIC_INTC_IRQ_COUNT_INIT(n)                       \
+#define PLIC_INTC_DATA_INIT(n)                                                          \
+	PLIC_INTC_IRQ_COUNT_BUF_DEFINE(n);                                              \
+	PLIC_IRQ_CPUMASK_BUF_DECLARE(n);                                                \
+	static struct plic_data plic_data_##n = {PLIC_INTC_IRQ_COUNT_INIT(n)            \
 							 PLIC_IRQ_CPUMASK_BUF_INIT(n)};
 
 #define PLIC_INTC_IRQ_FUNC_DECLARE(n) static void plic_irq_config_func_##n(void)
 
-#define PLIC_INTC_IRQ_FUNC_DEFINE(n)                                                               \
-	static void plic_irq_config_func_##n(void)                                                 \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), 0, plic_irq_handler, DEVICE_DT_INST_GET(n), 0);       \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define PLIC_INTC_IRQ_FUNC_DEFINE(n)                                                         \
+	static void plic_irq_config_func_##n(void)                                           \
+	{                                                                                    \
+		IRQ_CONNECT(DT_INST_IRQN(n), 0, plic_irq_handler, DEVICE_DT_INST_GET(n), 0); \
+		irq_enable(DT_INST_IRQN(n));                                                 \
 	}
 
 #define HART_CONTEXTS(i, n) IF_ENABLED(IS_EQ(DT_INST_IRQN_BY_IDX(n, i), DT_INST_IRQN(n)), (i,))
-#define PLIC_HART_CONTEXT_DECLARE(n)                                                               \
-	INTC_PLIC_STATIC const uint32_t plic_hart_contexts_##n[DT_CHILD_NUM(DT_PATH(cpus))] = {    \
+#define PLIC_HART_CONTEXT_DECLARE(n)                                                            \
+	INTC_PLIC_STATIC const uint32_t plic_hart_contexts_##n[DT_CHILD_NUM(DT_PATH(cpus))] = { \
 		LISTIFY(DT_INST_NUM_IRQS(n), HART_CONTEXTS, (), n)}
 
 #define PLIC_INTC_CONFIG_INIT(n)                                                                     \

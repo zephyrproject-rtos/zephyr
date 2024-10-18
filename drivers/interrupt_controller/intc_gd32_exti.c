@@ -55,7 +55,7 @@ static const struct gd32_exti_range line10_15_range = {10U, 15U};
 #endif /* CONFIG_GPIO_GD32 */
 
 /** @brief Obtain line IRQ number if enabled. */
-#define EXTI_LINE_IRQ_COND(enabled, line)                                                          \
+#define EXTI_LINE_IRQ_COND(enabled, line) \
 	COND_CODE_1(enabled, (DT_INST_IRQ_BY_NAME(0, line, irq)), (EXTI_NOTSUP))
 
 static const uint8_t line2irq[NUM_EXTI_LINES] = {

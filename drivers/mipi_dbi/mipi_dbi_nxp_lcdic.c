@@ -106,10 +106,10 @@ struct mipi_dbi_lcdic_data {
 #endif
 };
 
-#define LCDIC_ALL_INTERRUPTS                                                                       \
-	(LCDIC_ICR_RFIFO_THRES_INTR_CLR_MASK | LCDIC_ICR_RFIFO_UNDERFLOW_INTR_CLR_MASK |           \
-	 LCDIC_ICR_TFIFO_THRES_INTR_CLR_MASK | LCDIC_ICR_TFIFO_OVERFLOW_INTR_CLR_MASK |            \
-	 LCDIC_ICR_TE_TO_INTR_CLR_MASK | LCDIC_ICR_CMD_TO_INTR_CLR_MASK |                          \
+#define LCDIC_ALL_INTERRUPTS                                                             \
+	(LCDIC_ICR_RFIFO_THRES_INTR_CLR_MASK | LCDIC_ICR_RFIFO_UNDERFLOW_INTR_CLR_MASK | \
+	 LCDIC_ICR_TFIFO_THRES_INTR_CLR_MASK | LCDIC_ICR_TFIFO_OVERFLOW_INTR_CLR_MASK |  \
+	 LCDIC_ICR_TE_TO_INTR_CLR_MASK | LCDIC_ICR_CMD_TO_INTR_CLR_MASK |                \
 	 LCDIC_ICR_CMD_DONE_INTR_CLR_MASK | LCDIC_ICR_RST_DONE_INTR_CLR_MASK)
 
 /* RX and TX FIFO thresholds */
@@ -724,48 +724,48 @@ static void mipi_dbi_lcdic_isr(const struct device *dev)
 }
 
 #ifdef CONFIG_MIPI_DBI_NXP_LCDIC_DMA
-#define LCDIC_DMA_CHANNELS(n)                                                                      \
-	.dma_stream = {                                                                            \
-		.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR(n)),                                    \
-		.channel = DT_INST_DMAS_CELL_BY_IDX(n, 0, channel),                                \
-		.dma_cfg =                                                                         \
-			{                                                                          \
-				.dma_slot = LPC_DMA_HWTRIG_EN | LPC_DMA_TRIGPOL_HIGH_RISING |      \
-					    LPC_DMA_TRIGBURST,                                     \
-				.channel_direction = MEMORY_TO_PERIPHERAL,                         \
-				.dma_callback = mipi_dbi_lcdic_dma_callback,                       \
-				.source_data_size = 4,                                             \
-				.dest_data_size = 4,                                               \
-				.user_data = (void *)DEVICE_DT_INST_GET(n),                        \
-			},                                                                         \
+#define LCDIC_DMA_CHANNELS(n)                                                                 \
+	.dma_stream = {                                                                       \
+		.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR(n)),                               \
+		.channel = DT_INST_DMAS_CELL_BY_IDX(n, 0, channel),                           \
+		.dma_cfg =                                                                    \
+			{                                                                     \
+				.dma_slot = LPC_DMA_HWTRIG_EN | LPC_DMA_TRIGPOL_HIGH_RISING | \
+					    LPC_DMA_TRIGBURST,                                \
+				.channel_direction = MEMORY_TO_PERIPHERAL,                    \
+				.dma_callback = mipi_dbi_lcdic_dma_callback,                  \
+				.source_data_size = 4,                                        \
+				.dest_data_size = 4,                                          \
+				.user_data = (void *)DEVICE_DT_INST_GET(n),                   \
+			},                                                                    \
 	},
 #else
 #define LCDIC_DMA_CHANNELS(n)
 #endif
 
-#define MIPI_DBI_LCDIC_INIT(n)                                                                     \
-	static void mipi_dbi_lcdic_config_func_##n(const struct device *dev)                       \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mipi_dbi_lcdic_isr,         \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-	}                                                                                          \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	static const struct mipi_dbi_lcdic_config mipi_dbi_lcdic_config_##n = {                    \
-		.base = (LCDIC_Type *)DT_INST_REG_ADDR(n),                                         \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
-		.irq_config_func = mipi_dbi_lcdic_config_func_##n,                                 \
-		.swap_bytes = DT_INST_PROP(n, nxp_swap_bytes),                                     \
-		.write_active_min = DT_INST_PROP(n, nxp_write_active_cycles),                      \
-		.write_inactive_min = DT_INST_PROP(n, nxp_write_inactive_cycles),                  \
-	};                                                                                         \
-	static struct mipi_dbi_lcdic_data mipi_dbi_lcdic_data_##n = {LCDIC_DMA_CHANNELS(n)};       \
-	DEVICE_DT_INST_DEFINE(n, mipi_dbi_lcdic_init, NULL, &mipi_dbi_lcdic_data_##n,              \
-			      &mipi_dbi_lcdic_config_##n, POST_KERNEL,                             \
+#define MIPI_DBI_LCDIC_INIT(n)                                                               \
+	static void mipi_dbi_lcdic_config_func_##n(const struct device *dev)                 \
+	{                                                                                    \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mipi_dbi_lcdic_isr,   \
+			    DEVICE_DT_INST_GET(n), 0);                                       \
+                                                                                             \
+		irq_enable(DT_INST_IRQN(n));                                                 \
+	}                                                                                    \
+                                                                                             \
+	PINCTRL_DT_INST_DEFINE(n);                                                           \
+	static const struct mipi_dbi_lcdic_config mipi_dbi_lcdic_config_##n = {              \
+		.base = (LCDIC_Type *)DT_INST_REG_ADDR(n),                                   \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                 \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                          \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),        \
+		.irq_config_func = mipi_dbi_lcdic_config_func_##n,                           \
+		.swap_bytes = DT_INST_PROP(n, nxp_swap_bytes),                               \
+		.write_active_min = DT_INST_PROP(n, nxp_write_active_cycles),                \
+		.write_inactive_min = DT_INST_PROP(n, nxp_write_inactive_cycles),            \
+	};                                                                                   \
+	static struct mipi_dbi_lcdic_data mipi_dbi_lcdic_data_##n = {LCDIC_DMA_CHANNELS(n)}; \
+	DEVICE_DT_INST_DEFINE(n, mipi_dbi_lcdic_init, NULL, &mipi_dbi_lcdic_data_##n,        \
+			      &mipi_dbi_lcdic_config_##n, POST_KERNEL,                       \
 			      CONFIG_MIPI_DBI_INIT_PRIORITY, &mipi_dbi_lcdic_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MIPI_DBI_LCDIC_INIT)

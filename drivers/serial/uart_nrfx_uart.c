@@ -645,11 +645,11 @@ static void tx_isr(const struct device *dev)
 	}
 }
 
-#define UART_ERROR_FROM_MASK(mask)                                                                 \
-	(mask & NRF_UART_ERROR_OVERRUN_MASK   ? UART_ERROR_OVERRUN                                 \
-	 : mask & NRF_UART_ERROR_PARITY_MASK  ? UART_ERROR_PARITY                                  \
-	 : mask & NRF_UART_ERROR_FRAMING_MASK ? UART_ERROR_FRAMING                                 \
-	 : mask & NRF_UART_ERROR_BREAK_MASK   ? UART_BREAK                                         \
+#define UART_ERROR_FROM_MASK(mask)                                 \
+	(mask & NRF_UART_ERROR_OVERRUN_MASK   ? UART_ERROR_OVERRUN \
+	 : mask & NRF_UART_ERROR_PARITY_MASK  ? UART_ERROR_PARITY  \
+	 : mask & NRF_UART_ERROR_FRAMING_MASK ? UART_ERROR_FRAMING \
+	 : mask & NRF_UART_ERROR_BREAK_MASK   ? UART_BREAK         \
 					      : 0)
 
 static void error_isr(const struct device *dev)

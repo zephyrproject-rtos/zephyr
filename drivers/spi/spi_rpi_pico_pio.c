@@ -65,7 +65,7 @@ RPI_PICO_PIO_DEFINE_PROGRAM(spi_mode_0_0, SPI_MODE_0_0_WRAP_TARGET, SPI_MODE_0_0
 			    /*     .wrap_target */
 			    0x6101, /*  0: out    pins, 1         side 0 [1] */
 			    0x5101, /*  1: in     pins, 1         side 1 [1] */
-				    /*     .wrap */
+			    /*     .wrap */
 );
 
 /* ------------ */
@@ -81,7 +81,7 @@ RPI_PICO_PIO_DEFINE_PROGRAM(spi_mode_1_1, SPI_MODE_1_1_WRAP_TARGET, SPI_MODE_1_1
 			    0x7021, /*  0: out    x, 1            side 1 */
 			    0xa101, /*  1: mov    pins, x         side 0 [1] */
 			    0x5001, /*  2: in     pins, 1         side 1 */
-				    /*     .wrap */
+			    /*     .wrap */
 );
 
 #if SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED
@@ -99,7 +99,7 @@ RPI_PICO_PIO_DEFINE_PROGRAM(spi_sio_mode_0_0_tx, SPI_SIO_MODE_0_0_TX_WRAP_TARGET
 			    0x80a0, /*  0: pull   block           side 0 */
 			    0x6001, /*  1: out    pins, 1         side 0 */
 			    0x10e1, /*  2: jmp    !osre, 1        side 1 */
-				    /*     .wrap */
+			    /*     .wrap */
 );
 
 /* ------------------------- */
@@ -120,7 +120,7 @@ RPI_PICO_PIO_DEFINE_PROGRAM(spi_sio_mode_0_0_8_bit_rx, SPI_SIO_MODE_0_0_8_BIT_RX
 			    0x0083, /*  4: jmp    y--, 3          side 0 */
 			    0x8020, /*  5: push   block           side 0 */
 			    0x0042, /*  6: jmp    x--, 2          side 0 */
-				    /*     .wrap */
+			    /*     .wrap */
 );
 
 /* -------------------------- */
@@ -141,7 +141,7 @@ RPI_PICO_PIO_DEFINE_PROGRAM(spi_sio_mode_0_0_16_bit_rx, SPI_SIO_MODE_0_0_16_BIT_
 			    0x0083, /*  4: jmp    y--, 3          side 0 */
 			    0x8020, /*  5: push   block           side 0 */
 			    0x0042, /*  6: jmp    x--, 2          side 0 */
-				    /*     .wrap */
+			    /*     .wrap */
 );
 
 /* -------------------------- */
@@ -162,7 +162,7 @@ RPI_PICO_PIO_DEFINE_PROGRAM(spi_sio_mode_0_0_32_bit_rx, SPI_SIO_MODE_0_0_32_BIT_
 			    0x0083, /*  4: jmp    y--, 3          side 0 */
 			    0x8020, /*  5: push   block           side 0 */
 			    0x0042, /*  6: jmp    x--, 2          side 0 */
-				    /*     .wrap */
+			    /*     .wrap */
 );
 #endif /* SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED */
 
@@ -826,32 +826,32 @@ int spi_pico_pio_init(const struct device *dev)
 	return 0;
 }
 
-#define SPI_PICO_PIO_INIT(inst)                                                                    \
-	PINCTRL_DT_INST_DEFINE(inst);                                                              \
-	static struct spi_pico_pio_config spi_pico_pio_config_##inst = {                           \
-		.piodev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                     \
-		.pin_cfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                   \
-		.clk_gpio = GPIO_DT_SPEC_INST_GET(inst, clk_gpios),                                \
-		.mosi_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mosi_gpios, {0}),                      \
-		.miso_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, miso_gpios, {0}),                      \
-		.sio_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, sio_gpios, {0}),                        \
-		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                               \
-		.clk_id = (clock_control_subsys_t)DT_INST_PHA_BY_IDX(inst, clocks, 0, clk_id),     \
-	};                                                                                         \
-	static struct spi_pico_pio_data spi_pico_pio_data_##inst = {                               \
-		SPI_CONTEXT_INIT_LOCK(spi_pico_pio_data_##inst, spi_ctx),                          \
-		SPI_CONTEXT_INIT_SYNC(spi_pico_pio_data_##inst, spi_ctx),                          \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), spi_ctx)};                      \
-	DEVICE_DT_INST_DEFINE(inst, spi_pico_pio_init, NULL, &spi_pico_pio_data_##inst,            \
-			      &spi_pico_pio_config_##inst, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,  \
-			      &spi_pico_pio_api);                                                  \
-	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(inst, clk_gpios), "Missing clock GPIO");                \
-	BUILD_ASSERT(((DT_INST_NODE_HAS_PROP(inst, mosi_gpios) ||                                  \
-		       DT_INST_NODE_HAS_PROP(inst, miso_gpios)) &&                                 \
-		      (!DT_INST_NODE_HAS_PROP(inst, sio_gpios))) ||                                \
-			     (DT_INST_NODE_HAS_PROP(inst, sio_gpios) &&                            \
-			      !(DT_INST_NODE_HAS_PROP(inst, mosi_gpios) ||                         \
-				DT_INST_NODE_HAS_PROP(inst, miso_gpios))),                         \
+#define SPI_PICO_PIO_INIT(inst)                                                                   \
+	PINCTRL_DT_INST_DEFINE(inst);                                                             \
+	static struct spi_pico_pio_config spi_pico_pio_config_##inst = {                          \
+		.piodev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                    \
+		.pin_cfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                  \
+		.clk_gpio = GPIO_DT_SPEC_INST_GET(inst, clk_gpios),                               \
+		.mosi_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mosi_gpios, {0}),                     \
+		.miso_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, miso_gpios, {0}),                     \
+		.sio_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, sio_gpios, {0}),                       \
+		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                              \
+		.clk_id = (clock_control_subsys_t)DT_INST_PHA_BY_IDX(inst, clocks, 0, clk_id),    \
+	};                                                                                        \
+	static struct spi_pico_pio_data spi_pico_pio_data_##inst = {                              \
+		SPI_CONTEXT_INIT_LOCK(spi_pico_pio_data_##inst, spi_ctx),                         \
+		SPI_CONTEXT_INIT_SYNC(spi_pico_pio_data_##inst, spi_ctx),                         \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), spi_ctx)};                     \
+	DEVICE_DT_INST_DEFINE(inst, spi_pico_pio_init, NULL, &spi_pico_pio_data_##inst,           \
+			      &spi_pico_pio_config_##inst, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, \
+			      &spi_pico_pio_api);                                                 \
+	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(inst, clk_gpios), "Missing clock GPIO");               \
+	BUILD_ASSERT(((DT_INST_NODE_HAS_PROP(inst, mosi_gpios) ||                                 \
+		       DT_INST_NODE_HAS_PROP(inst, miso_gpios)) &&                                \
+		      (!DT_INST_NODE_HAS_PROP(inst, sio_gpios))) ||                               \
+			     (DT_INST_NODE_HAS_PROP(inst, sio_gpios) &&                           \
+			      !(DT_INST_NODE_HAS_PROP(inst, mosi_gpios) ||                        \
+				DT_INST_NODE_HAS_PROP(inst, miso_gpios))),                        \
 		     "Invalid GPIO Configuration");
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_PICO_PIO_INIT)

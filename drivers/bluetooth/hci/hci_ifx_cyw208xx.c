@@ -444,9 +444,9 @@ void wiced_bt_process_timer(void)
 	/* NA for Zephyr */
 }
 
-#define CYW208XX_DEVICE_INIT(inst)                                                                 \
-	static struct cyw208xx_data cyw208xx_data_##inst = {};                                     \
-	DEVICE_DT_INST_DEFINE(inst, cyw208xx_hci_init, NULL, &cyw208xx_data_##inst, NULL,          \
+#define CYW208XX_DEVICE_INIT(inst)                                                        \
+	static struct cyw208xx_data cyw208xx_data_##inst = {};                            \
+	DEVICE_DT_INST_DEFINE(inst, cyw208xx_hci_init, NULL, &cyw208xx_data_##inst, NULL, \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
 /* Only one instance supported */

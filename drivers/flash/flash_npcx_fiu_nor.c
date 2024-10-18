@@ -54,7 +54,7 @@ static const struct flash_parameters flash_npcx_parameters = {
 	.erase_value = 0xff,
 };
 
-#define DT_INST_QUAD_EN_PROP_OR(inst)                                                              \
+#define DT_INST_QUAD_EN_PROP_OR(inst)                                        \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, quad_enable_requirements),	\
 		    (_CONCAT(JESD216_DW15_QER_VAL_,				\
 		     DT_INST_STRING_TOKEN(inst, quad_enable_requirements))),	\

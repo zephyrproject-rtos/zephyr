@@ -534,7 +534,7 @@ static int ivshmem_init(const struct device *dev)
 	return 0;
 }
 
-#define IVSHMEM_INTX_INFO(intx_idx, drv_idx)                                                       \
+#define IVSHMEM_INTX_INFO(intx_idx, drv_idx)                          \
 	{COND_CODE_1(DT_IRQ_HAS_IDX(DT_DRV_INST(drv_idx), intx_idx), \
 		( \
 			.irq = DT_IRQ_BY_IDX(DT_DRV_INST(drv_idx), intx_idx, irq), \
@@ -543,29 +543,29 @@ static int ivshmem_init(const struct device *dev)
 		), \
 		(.irq = INTX_IRQ_UNUSED)) }
 
-#define IVSHMEM_DEVICE_INIT(n)                                                                     \
-	BUILD_ASSERT(                                                                              \
-		!IS_ENABLED(CONFIG_IVSHMEM_DOORBELL) ||                                            \
-			((IS_ENABLED(CONFIG_PCIE_MSI_X) &&                                         \
-			  IS_ENABLED(CONFIG_PCIE_MSI_MULTI_VECTOR)) ||                             \
-			 (DT_INST_PROP(n, ivshmem_v2) && DT_INST_NODE_HAS_PROP(n, interrupts))),   \
-		"IVSHMEM_DOORBELL requires either MSI-X or INTx support");                         \
-	BUILD_ASSERT(IS_ENABLED(CONFIG_IVSHMEM_V2) || !DT_INST_PROP(n, ivshmem_v2),                \
-		     "CONFIG_IVSHMEM_V2 must be enabled for ivshmem-v2");                          \
-	DEVICE_PCIE_INST_DECLARE(n);                                                               \
-	static struct ivshmem ivshmem_data_##n = {                                                 \
-		DEVICE_PCIE_INST_INIT(n, pcie),                                                    \
+#define IVSHMEM_DEVICE_INIT(n)                                                                    \
+	BUILD_ASSERT(                                                                             \
+		!IS_ENABLED(CONFIG_IVSHMEM_DOORBELL) ||                                           \
+			((IS_ENABLED(CONFIG_PCIE_MSI_X) &&                                        \
+			  IS_ENABLED(CONFIG_PCIE_MSI_MULTI_VECTOR)) ||                            \
+			 (DT_INST_PROP(n, ivshmem_v2) && DT_INST_NODE_HAS_PROP(n, interrupts))),  \
+		"IVSHMEM_DOORBELL requires either MSI-X or INTx support");                        \
+	BUILD_ASSERT(IS_ENABLED(CONFIG_IVSHMEM_V2) || !DT_INST_PROP(n, ivshmem_v2),               \
+		     "CONFIG_IVSHMEM_V2 must be enabled for ivshmem-v2");                         \
+	DEVICE_PCIE_INST_DECLARE(n);                                                              \
+	static struct ivshmem ivshmem_data_##n = {                                                \
+		DEVICE_PCIE_INST_INIT(n, pcie),                                                   \
 		IF_ENABLED(CONFIG_IVSHMEM_V2, \
-			(.ivshmem_v2 = DT_INST_PROP(n, ivshmem_v2),)) };         \
+			(.ivshmem_v2 = DT_INST_PROP(n, ivshmem_v2),)) };        \
 	IF_ENABLED(CONFIG_IVSHMEM_V2, ( \
 		static struct ivshmem_cfg ivshmem_cfg_##n = { \
 			.intx_info = \
 			{ FOR_EACH_FIXED_ARG(IVSHMEM_INTX_INFO, (,), n, 0, 1, 2, 3) } \
 		}; \
-	));  \
-	DEVICE_DT_INST_DEFINE(                                                                     \
-		n, &ivshmem_init, NULL, &ivshmem_data_##n,                                         \
-		COND_CODE_1(CONFIG_IVSHMEM_V2, (&ivshmem_cfg_##n), (NULL)), POST_KERNEL,             \
+	)); \
+	DEVICE_DT_INST_DEFINE(                                                                    \
+		n, &ivshmem_init, NULL, &ivshmem_data_##n,                                        \
+		COND_CODE_1(CONFIG_IVSHMEM_V2, (&ivshmem_cfg_##n), (NULL)), POST_KERNEL,            \
 					       CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &ivshmem_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IVSHMEM_DEVICE_INIT)

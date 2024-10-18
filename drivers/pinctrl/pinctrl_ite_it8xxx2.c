@@ -378,7 +378,7 @@ static int pinctrl_it8xxx2_init(const struct device *dev)
 	return 0;
 }
 
-#define INIT_UNION_CONFIG(inst)                                                                    \
+#define INIT_UNION_CONFIG(inst)                                                          \
 	COND_CODE_1(DT_INST_PROP(inst, gpio_group),                                    \
 		(.gpio = {                                                             \
 			 .reg_gpcr = (uint8_t *)DT_INST_REG_ADDR_BY_IDX(inst, 0),      \
@@ -400,11 +400,11 @@ static int pinctrl_it8xxx2_init(const struct device *dev)
 		})                                                                     \
 	)
 
-#define PINCTRL_ITE_INIT(inst)                                                                     \
-	static const struct pinctrl_it8xxx2_config pinctrl_it8xxx2_cfg_##inst = {                  \
-		.gpio_group = DT_INST_PROP(inst, gpio_group), {INIT_UNION_CONFIG(inst)}};          \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, &pinctrl_it8xxx2_init, NULL, NULL,                             \
-			      &pinctrl_it8xxx2_cfg_##inst, PRE_KERNEL_1,                           \
+#define PINCTRL_ITE_INIT(inst)                                                            \
+	static const struct pinctrl_it8xxx2_config pinctrl_it8xxx2_cfg_##inst = {         \
+		.gpio_group = DT_INST_PROP(inst, gpio_group), {INIT_UNION_CONFIG(inst)}}; \
+                                                                                          \
+	DEVICE_DT_INST_DEFINE(inst, &pinctrl_it8xxx2_init, NULL, NULL,                    \
+			      &pinctrl_it8xxx2_cfg_##inst, PRE_KERNEL_1,                  \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 DT_INST_FOREACH_STATUS_OKAY(PINCTRL_ITE_INIT)

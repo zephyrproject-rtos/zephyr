@@ -283,14 +283,14 @@ static const struct fuel_gauge_driver_api max17048_driver_api = {
 	.get_property = &max17048_get_prop,
 };
 
-#define MAX17048_DEFINE(inst)                                                                      \
-	static struct max17048_data max17048_data_##inst;                                          \
-                                                                                                   \
-	static const struct max17048_config max17048_config_##inst = {                             \
-		.i2c = I2C_DT_SPEC_INST_GET(inst)};                                                \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, &max17048_init, NULL, &max17048_data_##inst,                   \
-			      &max17048_config_##inst, POST_KERNEL,                                \
+#define MAX17048_DEFINE(inst)                                                         \
+	static struct max17048_data max17048_data_##inst;                             \
+                                                                                      \
+	static const struct max17048_config max17048_config_##inst = {                \
+		.i2c = I2C_DT_SPEC_INST_GET(inst)};                                   \
+                                                                                      \
+	DEVICE_DT_INST_DEFINE(inst, &max17048_init, NULL, &max17048_data_##inst,      \
+			      &max17048_config_##inst, POST_KERNEL,                   \
 			      CONFIG_FUEL_GAUGE_INIT_PRIORITY, &max17048_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX17048_DEFINE)

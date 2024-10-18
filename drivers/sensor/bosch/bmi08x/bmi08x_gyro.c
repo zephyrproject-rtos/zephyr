@@ -437,14 +437,14 @@ int bmi08x_gyro_init(const struct device *dev)
 	return ret;
 }
 
-#define BMI08X_CONFIG_SPI(inst)                                                                    \
-	.bus.spi = SPI_DT_SPEC_INST_GET(                                                           \
+#define BMI08X_CONFIG_SPI(inst)                                                    \
+	.bus.spi = SPI_DT_SPEC_INST_GET(                                           \
 		inst, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 2),
 
 #define BMI08X_CONFIG_I2C(inst) .bus.i2c = I2C_DT_SPEC_INST_GET(inst),
 
-#define BMI08X_GYRO_TRIG(inst)                                                                     \
-	.int3_4_map = DT_INST_PROP(inst, int3_4_map_io),                                           \
+#define BMI08X_GYRO_TRIG(inst)                                \
+	.int3_4_map = DT_INST_PROP(inst, int3_4_map_io),      \
 	.int3_4_conf_io = DT_INST_PROP(inst, int3_4_conf_io),
 
 #if BMI08X_GYRO_ANY_INST_HAS_DATA_SYNC
@@ -456,29 +456,29 @@ BUILD_ASSERT(CONFIG_BMI08X_GYRO_TRIGGER_NONE,
  */
 #define BMI08X_GYRO_TRIGGER_PINS(inst) BMI08X_GYRO_TRIG(inst)
 #else
-#define BMI08X_GYRO_TRIGGER_PINS(inst)                                                             \
+#define BMI08X_GYRO_TRIGGER_PINS(inst) \
 	IF_ENABLED(CONFIG_BMI08X_GYRO_TRIGGER, (BMI08X_GYRO_TRIG(inst)))
 #endif
 
-#define BMI08X_CREATE_INST(inst)                                                                   \
-                                                                                                   \
-	static struct bmi08x_gyro_data bmi08x_drv_##inst;                                          \
-                                                                                                   \
-	static const struct bmi08x_gyro_config bmi08x_config_##inst = {                            \
+#define BMI08X_CREATE_INST(inst)                                                               \
+                                                                                               \
+	static struct bmi08x_gyro_data bmi08x_drv_##inst;                                      \
+                                                                                               \
+	static const struct bmi08x_gyro_config bmi08x_config_##inst = {                        \
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi), (BMI08X_CONFIG_SPI(inst)),                  \
-			    (BMI08X_CONFIG_I2C(inst))) .api =                                         \
+			    (BMI08X_CONFIG_I2C(inst))) .api =                                     \
 				 COND_CODE_1(DT_INST_ON_BUS(inst, spi), (&bmi08x_spi_api),           \
-					   (&bmi08x_i2c_api)),                     \
+					   (&bmi08x_i2c_api)),                 \
 					  IF_ENABLED(CONFIG_BMI08X_GYRO_TRIGGER,                                             \
-			   (.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),)) .gyro_hz =        \
-							      DT_INST_ENUM_IDX(inst, gyro_hz),     \
-						      BMI08X_GYRO_TRIGGER_PINS(inst).gyro_fs =     \
-							      DT_INST_PROP(inst, gyro_fs),         \
-	};                                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, bmi08x_gyro_pm_action);                                     \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmi08x_gyro_init, PM_DEVICE_DT_INST_GET(inst),          \
-				     &bmi08x_drv_##inst, &bmi08x_config_##inst, POST_KERNEL,       \
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),)) .gyro_hz =    \
+							      DT_INST_ENUM_IDX(inst, gyro_hz), \
+						      BMI08X_GYRO_TRIGGER_PINS(inst).gyro_fs = \
+							      DT_INST_PROP(inst, gyro_fs),     \
+	};                                                                                     \
+                                                                                               \
+	PM_DEVICE_DT_INST_DEFINE(inst, bmi08x_gyro_pm_action);                                 \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmi08x_gyro_init, PM_DEVICE_DT_INST_GET(inst),      \
+				     &bmi08x_drv_##inst, &bmi08x_config_##inst, POST_KERNEL,   \
 				     CONFIG_SENSOR_INIT_PRIORITY, &bmi08x_api);
 
 /* Create the struct device for every status "okay" node in the devicetree. */

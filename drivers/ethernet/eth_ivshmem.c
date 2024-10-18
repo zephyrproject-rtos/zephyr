@@ -373,26 +373,26 @@ static const struct ethernet_api eth_ivshmem_api = {
 	.send = eth_ivshmem_send,
 };
 
-#define ETH_IVSHMEM_RANDOM_MAC_ADDR(inst)                                                          \
-	static void generate_mac_addr_##inst(uint8_t mac_addr[6])                                  \
-	{                                                                                          \
-		sys_rand_get(mac_addr, 3U);                                                        \
-		/* Clear multicast bit */                                                          \
-		mac_addr[0] &= 0xFE;                                                               \
-		gen_random_mac(mac_addr, mac_addr[0], mac_addr[1], mac_addr[2]);                   \
+#define ETH_IVSHMEM_RANDOM_MAC_ADDR(inst)                                        \
+	static void generate_mac_addr_##inst(uint8_t mac_addr[6])                \
+	{                                                                        \
+		sys_rand_get(mac_addr, 3U);                                      \
+		/* Clear multicast bit */                                        \
+		mac_addr[0] &= 0xFE;                                             \
+		gen_random_mac(mac_addr, mac_addr[0], mac_addr[1], mac_addr[2]); \
 	}
 
-#define ETH_IVSHMEM_LOCAL_MAC_ADDR(inst)                                                           \
-	static void generate_mac_addr_##inst(uint8_t mac_addr[6])                                  \
-	{                                                                                          \
-		const uint8_t addr[6] = DT_INST_PROP(0, local_mac_address);                        \
-		memcpy(mac_addr, addr, sizeof(addr));                                              \
+#define ETH_IVSHMEM_LOCAL_MAC_ADDR(inst)                                    \
+	static void generate_mac_addr_##inst(uint8_t mac_addr[6])           \
+	{                                                                   \
+		const uint8_t addr[6] = DT_INST_PROP(0, local_mac_address); \
+		memcpy(mac_addr, addr, sizeof(addr));                       \
 	}
 
-#define ETH_IVSHMEM_GENERATE_MAC_ADDR(inst)                                                        \
-	BUILD_ASSERT(DT_INST_PROP(inst, zephyr_random_mac_address) ||                              \
-			     NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(inst)),                           \
-		     "eth_ivshmem requires either a fixed or random mac address");                 \
+#define ETH_IVSHMEM_GENERATE_MAC_ADDR(inst)                                        \
+	BUILD_ASSERT(DT_INST_PROP(inst, zephyr_random_mac_address) ||              \
+			     NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(inst)),           \
+		     "eth_ivshmem requires either a fixed or random mac address"); \
 	COND_CODE_1(DT_INST_PROP(inst, zephyr_random_mac_address),			\
 			(ETH_IVSHMEM_RANDOM_MAC_ADDR(inst)),				\
 			(ETH_IVSHMEM_LOCAL_MAC_ADDR(inst)))

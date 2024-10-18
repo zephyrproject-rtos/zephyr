@@ -359,14 +359,14 @@ static int tmp108_init(const struct device *dev)
 	return result;
 }
 
-#define TMP108_DEFINE(inst, t)                                                                     \
-	static struct tmp108_data tmp108_prv_data_##inst##t;                                       \
-	static const struct tmp108_config tmp108_config_##inst##t = {                              \
-		.i2c_spec = I2C_DT_SPEC_INST_GET(inst),                                            \
-		.alert_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, alert_gpios, {0}),                    \
-		.reg_def = t##_CONF};                                                              \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &tmp108_init, NULL, &tmp108_prv_data_##inst##t,         \
-				     &tmp108_config_##inst##t, POST_KERNEL,                        \
+#define TMP108_DEFINE(inst, t)                                                             \
+	static struct tmp108_data tmp108_prv_data_##inst##t;                               \
+	static const struct tmp108_config tmp108_config_##inst##t = {                      \
+		.i2c_spec = I2C_DT_SPEC_INST_GET(inst),                                    \
+		.alert_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, alert_gpios, {0}),            \
+		.reg_def = t##_CONF};                                                      \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, &tmp108_init, NULL, &tmp108_prv_data_##inst##t, \
+				     &tmp108_config_##inst##t, POST_KERNEL,                \
 				     CONFIG_SENSOR_INIT_PRIORITY, &tmp108_driver_api);
 
 #define TMP108_INIT(n) TMP108_DEFINE(n, TI_TMP108)

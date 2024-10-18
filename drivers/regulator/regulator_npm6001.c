@@ -581,29 +581,29 @@ static const struct regulator_driver_api api = {
 	.get_error_flags = regulator_npm6001_get_error_flags,
 };
 
-#define REGULATOR_NPM6001_DEFINE(node_id, id, _source)                                             \
-	static struct regulator_npm6001_data data_##id;                                            \
-                                                                                                   \
-	static const struct regulator_npm6001_config config_##id = {                               \
-		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node_id),                                \
-		.i2c = I2C_DT_SPEC_GET(DT_GPARENT(node_id)),                                       \
-		.source = _source,                                                                 \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_DEFINE(node_id, regulator_npm6001_init, NULL, &data_##id, &config_##id,          \
+#define REGULATOR_NPM6001_DEFINE(node_id, id, _source)                                    \
+	static struct regulator_npm6001_data data_##id;                                   \
+                                                                                          \
+	static const struct regulator_npm6001_config config_##id = {                      \
+		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node_id),                       \
+		.i2c = I2C_DT_SPEC_GET(DT_GPARENT(node_id)),                              \
+		.source = _source,                                                        \
+	};                                                                                \
+                                                                                          \
+	DEVICE_DT_DEFINE(node_id, regulator_npm6001_init, NULL, &data_##id, &config_##id, \
 			 POST_KERNEL, CONFIG_REGULATOR_NPM6001_INIT_PRIORITY, &api);
 
-#define REGULATOR_NPM6001_DEFINE_COND(inst, child, source)                                         \
+#define REGULATOR_NPM6001_DEFINE_COND(inst, child, source) \
 	COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(inst, child)),                                    \
 		    (REGULATOR_NPM6001_DEFINE(DT_INST_CHILD(inst, child), child##inst, source)),   \
 		    ())
 
-#define REGULATOR_NPM6001_DEFINE_ALL(inst)                                                         \
-	REGULATOR_NPM6001_DEFINE_COND(inst, buck0, NPM6001_SOURCE_BUCK0)                           \
-	REGULATOR_NPM6001_DEFINE_COND(inst, buck1, NPM6001_SOURCE_BUCK1)                           \
-	REGULATOR_NPM6001_DEFINE_COND(inst, buck2, NPM6001_SOURCE_BUCK2)                           \
-	REGULATOR_NPM6001_DEFINE_COND(inst, buck3, NPM6001_SOURCE_BUCK3)                           \
-	REGULATOR_NPM6001_DEFINE_COND(inst, ldo0, NPM6001_SOURCE_LDO0)                             \
+#define REGULATOR_NPM6001_DEFINE_ALL(inst)                               \
+	REGULATOR_NPM6001_DEFINE_COND(inst, buck0, NPM6001_SOURCE_BUCK0) \
+	REGULATOR_NPM6001_DEFINE_COND(inst, buck1, NPM6001_SOURCE_BUCK1) \
+	REGULATOR_NPM6001_DEFINE_COND(inst, buck2, NPM6001_SOURCE_BUCK2) \
+	REGULATOR_NPM6001_DEFINE_COND(inst, buck3, NPM6001_SOURCE_BUCK3) \
+	REGULATOR_NPM6001_DEFINE_COND(inst, ldo0, NPM6001_SOURCE_LDO0)   \
 	REGULATOR_NPM6001_DEFINE_COND(inst, ldo1, NPM6001_SOURCE_LDO1)
 
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_NPM6001_DEFINE_ALL)

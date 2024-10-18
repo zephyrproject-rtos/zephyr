@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(infineon_airoc_wifi, CONFIG_WIFI_LOG_LEVEL);
 #define AIROC_WIFI_PACKET_POOL_SIZE (1600)
 #endif
 
-#define AIROC_WIFI_PACKET_POOL_COUNT                                                               \
+#define AIROC_WIFI_PACKET_POOL_COUNT                                        \
 	(AIROC_WIFI_TX_PACKET_POOL_COUNT + AIROC_WIFI_RX_PACKET_POOL_COUNT)
 
 #define AIROC_WIFI_WAIT_SEMA_MS    (30 * 1000)

@@ -13,8 +13,8 @@
 #include <zephyr/drivers/clock_control/renesas_ra_cgc.h>
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pclkblock))
-#define MSTP_REGS_ELEM(node_id, prop, idx)                                                         \
-	[DT_STRING_TOKEN_BY_IDX(node_id, prop, idx)] =                                             \
+#define MSTP_REGS_ELEM(node_id, prop, idx)                             \
+	[DT_STRING_TOKEN_BY_IDX(node_id, prop, idx)] =                 \
 		(volatile uint32_t *)DT_REG_ADDR_BY_IDX(node_id, idx),
 
 static volatile uint32_t *mstp_regs[] = {
@@ -87,7 +87,7 @@ static const struct clock_control_driver_api clock_control_reneas_ra_api = {
 	.get_rate = clock_control_renesas_ra_get_rate,
 };
 
-#define INIT_PCLK(node_id)                                                                         \
+#define INIT_PCLK(node_id)                                                          \
 	IF_ENABLED(DT_NODE_HAS_COMPAT(node_id, renesas_ra_cgc_pclk),                               \
 		   (static const struct clock_control_ra_pclk_cfg node_id##_cfg =                  \
 			    {.clk_src = COND_CODE_1(                                               \

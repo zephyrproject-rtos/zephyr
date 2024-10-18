@@ -39,7 +39,7 @@
 
 LOG_MODULE_REGISTER(rtc_stm32, CONFIG_RTC_LOG_LEVEL);
 
-#if (defined(CONFIG_SOC_SERIES_STM32L1X) && !defined(RTC_SUBSECOND_SUPPORT)) ||                    \
+#if (defined(CONFIG_SOC_SERIES_STM32L1X) && !defined(RTC_SUBSECOND_SUPPORT)) || \
 	defined(CONFIG_SOC_SERIES_STM32F2X)
 /* subsecond counting is not supported by some STM32L1x MCUs (Cat.1) & by STM32F2x SoC series */
 #define HW_SUBSECOND_SUPPORT (0)
@@ -85,8 +85,8 @@ LOG_MODULE_REGISTER(rtc_stm32, CONFIG_RTC_LOG_LEVEL);
 #define RTC_STM32_ALRM_B 1U
 
 /* Zephyr mask supported by RTC device, values from RTC_ALARM_TIME_MASK */
-#define RTC_STM32_SUPPORTED_ALARM_FIELDS                                                           \
-	(RTC_ALARM_TIME_MASK_SECOND | RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR |      \
+#define RTC_STM32_SUPPORTED_ALARM_FIELDS                                                      \
+	(RTC_ALARM_TIME_MASK_SECOND | RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR | \
 	 RTC_ALARM_TIME_MASK_WEEKDAY | RTC_ALARM_TIME_MASK_MONTHDAY)
 
 #if DT_INST_NODE_HAS_PROP(0, alrm_exti_line)
@@ -946,7 +946,7 @@ unlock:
 #endif /* CONFIG_RTC_ALARM */
 
 #ifdef CONFIG_RTC_CALIBRATION
-#if !defined(CONFIG_SOC_SERIES_STM32F2X) &&                                                        \
+#if !defined(CONFIG_SOC_SERIES_STM32F2X) &&                                         \
 	!(defined(CONFIG_SOC_SERIES_STM32L1X) && !defined(RTC_SMOOTHCALIB_SUPPORT))
 static int rtc_stm32_set_calibration(const struct device *dev, int32_t calibration)
 {
@@ -1034,7 +1034,7 @@ static const struct rtc_driver_api rtc_stm32_driver_api = {
 	.alarm_is_pending = rtc_stm32_alarm_is_pending,
 #endif /* CONFIG_RTC_ALARM */
 #ifdef CONFIG_RTC_CALIBRATION
-#if !defined(CONFIG_SOC_SERIES_STM32F2X) &&                                                        \
+#if !defined(CONFIG_SOC_SERIES_STM32F2X) &&                                         \
 	!(defined(CONFIG_SOC_SERIES_STM32L1X) && !defined(RTC_SMOOTHCALIB_SUPPORT))
 	.set_calibration = rtc_stm32_set_calibration,
 	.get_calibration = rtc_stm32_get_calibration,

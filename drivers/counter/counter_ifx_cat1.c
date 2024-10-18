@@ -498,30 +498,30 @@ static const struct counter_driver_api counter_api = {
 	.set_guard_period = ifx_cat1_counter_set_guard_period,
 };
 
-#define DT_INST_GET_CYHAL_GPIO_OR(inst, gpios_prop, default)                                       \
+#define DT_INST_GET_CYHAL_GPIO_OR(inst, gpios_prop, default) \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, gpios_prop),                                       \
 		    (DT_GET_CYHAL_GPIO_FROM_DT_GPIOS(DT_INST(inst, DT_DRV_COMPAT), gpios_prop)),   \
 		    (default))
 
 /* Counter driver init macros */
-#define INFINEON_CAT1_COUNTER_INIT(n)                                                              \
-                                                                                                   \
-	static struct ifx_cat1_counter_data ifx_cat1_counter##n##_data;                            \
-                                                                                                   \
-	static const struct ifx_cat1_counter_config ifx_cat1_counter##n##_config = {               \
-		.counter_info = {.max_top_value = (DT_INST_PROP(n, resolution) == 32)              \
-							  ? UINT32_MAX                             \
-							  : UINT16_MAX,                            \
-				 .freq = DT_INST_PROP_OR(n, clock_frequency, 10000),               \
-				 .flags = COUNTER_CONFIG_INFO_COUNT_UP,                            \
-				 .channels = 1},                                                   \
-		.reg_addr = (TCPWM_CNT_Type *)DT_INST_REG_ADDR(n),                                 \
-		.irq_priority = DT_INST_IRQ(n, priority),                                          \
-		.irqn = DT_INST_IRQN(n),                                                           \
-		.external_pin =                                                                    \
-			(cyhal_gpio_t)DT_INST_GET_CYHAL_GPIO_OR(n, external_trigger_gpios, NC)};   \
-	DEVICE_DT_INST_DEFINE(n, ifx_cat1_counter_init, NULL, &ifx_cat1_counter##n##_data,         \
-			      &ifx_cat1_counter##n##_config, PRE_KERNEL_1,                         \
+#define INFINEON_CAT1_COUNTER_INIT(n)                                                            \
+                                                                                                 \
+	static struct ifx_cat1_counter_data ifx_cat1_counter##n##_data;                          \
+                                                                                                 \
+	static const struct ifx_cat1_counter_config ifx_cat1_counter##n##_config = {             \
+		.counter_info = {.max_top_value = (DT_INST_PROP(n, resolution) == 32)            \
+							  ? UINT32_MAX                           \
+							  : UINT16_MAX,                          \
+				 .freq = DT_INST_PROP_OR(n, clock_frequency, 10000),             \
+				 .flags = COUNTER_CONFIG_INFO_COUNT_UP,                          \
+				 .channels = 1},                                                 \
+		.reg_addr = (TCPWM_CNT_Type *)DT_INST_REG_ADDR(n),                               \
+		.irq_priority = DT_INST_IRQ(n, priority),                                        \
+		.irqn = DT_INST_IRQN(n),                                                         \
+		.external_pin =                                                                  \
+			(cyhal_gpio_t)DT_INST_GET_CYHAL_GPIO_OR(n, external_trigger_gpios, NC)}; \
+	DEVICE_DT_INST_DEFINE(n, ifx_cat1_counter_init, NULL, &ifx_cat1_counter##n##_data,       \
+			      &ifx_cat1_counter##n##_config, PRE_KERNEL_1,                       \
 			      CONFIG_COUNTER_INIT_PRIORITY, &counter_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_CAT1_COUNTER_INIT);

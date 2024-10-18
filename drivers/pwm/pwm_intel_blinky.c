@@ -108,16 +108,16 @@ static int bk_intel_init(const struct device *dev)
 	return 0;
 }
 
-#define BK_INTEL_DEV_CFG(n)                                                                        \
-	static const struct bk_intel_config bk_cfg_##n = {                                         \
-		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),                              \
-		.reg_offset = DT_INST_PROP(n, reg_offset),                                         \
-		.max_pins = DT_INST_PROP(n, max_pins),                                             \
-		.clock_freq = DT_INST_PROP(n, clock_frequency),                                    \
-	};                                                                                         \
-                                                                                                   \
-	static struct bk_intel_runtime bk_rt_##n;                                                  \
-	DEVICE_DT_INST_DEFINE(n, &bk_intel_init, NULL, &bk_rt_##n, &bk_cfg_##n, POST_KERNEL,       \
+#define BK_INTEL_DEV_CFG(n)                                                                  \
+	static const struct bk_intel_config bk_cfg_##n = {                                   \
+		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),                        \
+		.reg_offset = DT_INST_PROP(n, reg_offset),                                   \
+		.max_pins = DT_INST_PROP(n, max_pins),                                       \
+		.clock_freq = DT_INST_PROP(n, clock_frequency),                              \
+	};                                                                                   \
+                                                                                             \
+	static struct bk_intel_runtime bk_rt_##n;                                            \
+	DEVICE_DT_INST_DEFINE(n, &bk_intel_init, NULL, &bk_rt_##n, &bk_cfg_##n, POST_KERNEL, \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(BK_INTEL_DEV_CFG)

@@ -21,7 +21,7 @@
 #endif
 #define HWINFO_DEVICE_ID_LENGTH_L 1
 
-#define HWINFO_DEVICE_ID_LENGTH_TOTAL                                                              \
+#define HWINFO_DEVICE_ID_LENGTH_TOTAL                                                       \
 	(HWINFO_DEVICE_ID_LENGTH_L + HWINFO_DEVICE_ID_LENGTH_M + HWINFO_DEVICE_ID_LENGTH_H)
 
 ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)

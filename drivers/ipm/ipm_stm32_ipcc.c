@@ -19,7 +19,7 @@
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(ipm_stm32_ipcc, CONFIG_IPM_LOG_LEVEL);
 
-#define MBX_STRUCT(dev)                                                                            \
+#define MBX_STRUCT(dev) \
 	((IPCC_TypeDef *)((const struct stm32_ipcc_mailbox_config *const)(dev)->config)->uconf.base)
 
 #define IPCC_ALL_MR_TXF_CH_MASK 0xFFFF0000

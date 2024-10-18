@@ -767,24 +767,24 @@ static const struct sdhc_driver_api sdhc_spi_api = {
 	.card_busy = sdhc_spi_card_busy,
 };
 
-#define SDHC_SPI_INIT(n)                                                                           \
-	const struct sdhc_spi_config sdhc_spi_config_##n = {                                       \
-		.spi_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                       \
-		.pwr_gpio = GPIO_DT_SPEC_INST_GET_OR(n, pwr_gpios, {0}),                           \
-		.spi_max_freq = DT_INST_PROP(n, spi_max_frequency),                                \
-		.power_delay_ms = DT_INST_PROP(n, power_delay_ms),                                 \
-	};                                                                                         \
-                                                                                                   \
-	struct sdhc_spi_data sdhc_spi_data_##n = {                                                 \
-		.cfg_a = SPI_CONFIG_DT_INST(                                                       \
-			n,                                                                         \
-			(SPI_LOCK_ON | SPI_HOLD_ON_CS | SPI_WORD_SET(8) |                          \
-			 (DT_INST_PROP(n, spi_clock_mode_cpol) ? SPI_MODE_CPOL : 0) |              \
-			 (DT_INST_PROP(n, spi_clock_mode_cpha) ? SPI_MODE_CPHA : 0)),              \
-			0),                                                                        \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &sdhc_spi_init, NULL, &sdhc_spi_data_##n, &sdhc_spi_config_##n,   \
+#define SDHC_SPI_INIT(n)                                                                         \
+	const struct sdhc_spi_config sdhc_spi_config_##n = {                                     \
+		.spi_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                     \
+		.pwr_gpio = GPIO_DT_SPEC_INST_GET_OR(n, pwr_gpios, {0}),                         \
+		.spi_max_freq = DT_INST_PROP(n, spi_max_frequency),                              \
+		.power_delay_ms = DT_INST_PROP(n, power_delay_ms),                               \
+	};                                                                                       \
+                                                                                                 \
+	struct sdhc_spi_data sdhc_spi_data_##n = {                                               \
+		.cfg_a = SPI_CONFIG_DT_INST(                                                     \
+			n,                                                                       \
+			(SPI_LOCK_ON | SPI_HOLD_ON_CS | SPI_WORD_SET(8) |                        \
+			 (DT_INST_PROP(n, spi_clock_mode_cpol) ? SPI_MODE_CPOL : 0) |            \
+			 (DT_INST_PROP(n, spi_clock_mode_cpha) ? SPI_MODE_CPHA : 0)),            \
+			0),                                                                      \
+	};                                                                                       \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(n, &sdhc_spi_init, NULL, &sdhc_spi_data_##n, &sdhc_spi_config_##n, \
 			      POST_KERNEL, CONFIG_SDHC_INIT_PRIORITY, &sdhc_spi_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SDHC_SPI_INIT)

@@ -169,18 +169,18 @@ static const struct wdt_driver_api wdt_rpi_pico_driver_api = {
 	.feed = wdt_rpi_pico_feed,
 };
 
-#define WDT_RPI_PICO_WDT_DEVICE(idx)                                                               \
-	static const struct wdt_rpi_pico_config wdt_##idx##_config = {                             \
-		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                                \
-		.clk_id = (clock_control_subsys_t)DT_INST_PHA_BY_IDX(idx, clocks, 0, clk_id),      \
-	};                                                                                         \
-	static struct wdt_rpi_pico_data wdt_##idx##_data = {                                       \
-		.reset_type = WDT_FLAG_RESET_SOC,                                                  \
-		.load = (CONFIG_WDT_RPI_PICO_INITIAL_TIMEOUT *                                     \
-			 RPI_PICO_WDT_TIME_MULTIPLICATION_FACTOR),                                 \
-		.enabled = false};                                                                 \
-	DEVICE_DT_DEFINE(DT_NODELABEL(wdt##idx), wdt_rpi_pico_init, NULL, &wdt_##idx##_data,       \
-			 &wdt_##idx##_config, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,    \
+#define WDT_RPI_PICO_WDT_DEVICE(idx)                                                            \
+	static const struct wdt_rpi_pico_config wdt_##idx##_config = {                          \
+		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                             \
+		.clk_id = (clock_control_subsys_t)DT_INST_PHA_BY_IDX(idx, clocks, 0, clk_id),   \
+	};                                                                                      \
+	static struct wdt_rpi_pico_data wdt_##idx##_data = {                                    \
+		.reset_type = WDT_FLAG_RESET_SOC,                                               \
+		.load = (CONFIG_WDT_RPI_PICO_INITIAL_TIMEOUT *                                  \
+			 RPI_PICO_WDT_TIME_MULTIPLICATION_FACTOR),                              \
+		.enabled = false};                                                              \
+	DEVICE_DT_DEFINE(DT_NODELABEL(wdt##idx), wdt_rpi_pico_init, NULL, &wdt_##idx##_data,    \
+			 &wdt_##idx##_config, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
 			 &wdt_rpi_pico_driver_api)
 
 DT_INST_FOREACH_STATUS_OKAY(WDT_RPI_PICO_WDT_DEVICE);

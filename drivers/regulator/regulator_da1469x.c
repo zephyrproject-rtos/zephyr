@@ -17,7 +17,7 @@
 
 LOG_MODULE_REGISTER(regulator_da1469x, CONFIG_REGULATOR_LOG_LEVEL);
 
-#define DCDC_REQUESTED                                                                             \
+#define DCDC_REQUESTED                                                                        \
 	(DCDC_DCDC_VDD_REG_DCDC_VDD_ENABLE_HV_Msk | DCDC_DCDC_VDD_REG_DCDC_VDD_ENABLE_LV_Msk)
 
 #define DA1469X_LDO_3V0_MODE_VBAT BIT(8)
@@ -424,45 +424,45 @@ static int regulator_da1469x_pm_action(const struct device *dev, enum pm_device_
 }
 #endif
 
-#define REGULATOR_DA1469X_DEFINE(node, id, rail_id)                                                \
-	static struct regulator_da1469x_data data_##id;                                            \
-                                                                                                   \
-	static const struct regulator_da1469x_config config_##id = {                               \
-		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node),                                   \
-		.desc = &id##_desc,                                                                \
-		.power_bits =                                                                      \
-			(DT_PROP(node, renesas_regulator_v30_clamp) *                              \
-			 CRG_TOP_POWER_CTRL_REG_CLAMP_3V0_VBAT_ENABLE_Msk) |                       \
-			(DT_PROP(node, renesas_regulator_v30_vbus) * DA1469X_LDO_3V0_MODE_VBAT) |  \
-			(DT_PROP(node, renesas_regulator_v30_vbat) * DA1469X_LDO_3V0_MODE_VBUS) |  \
-			(DT_PROP(node, renesas_regulator_sleep_ldo) *                              \
-			 (DA1469X_LDO_##rail_id##_RET)) |                                          \
-			(DT_PROP(node, renesas_regulator_v30_ref_bandgap) *                        \
-			 CRG_TOP_POWER_CTRL_REG_LDO_3V0_REF_Msk),                                  \
-		.dcdc_bits = (DT_PROP(node, renesas_regulator_dcdc_vbat_high) *                    \
-			      DCDC_DCDC_VDD_REG_DCDC_VDD_ENABLE_HV_Msk) |                          \
-			     (DT_PROP(node, renesas_regulator_dcdc_vbat_low) *                     \
-			      DCDC_DCDC_VDD_REG_DCDC_VDD_ENABLE_LV_Msk),                           \
-		.rail = rail_id,                                                                   \
-	};                                                                                         \
-	PM_DEVICE_DT_DEFINE(node, regulator_da1469x_pm_action);                                    \
-	DEVICE_DT_DEFINE(node, regulator_da1469x_init, PM_DEVICE_DT_GET(node), &data_##id,         \
-			 &config_##id, PRE_KERNEL_1, CONFIG_REGULATOR_DA1469X_INIT_PRIORITY,       \
+#define REGULATOR_DA1469X_DEFINE(node, id, rail_id)                                               \
+	static struct regulator_da1469x_data data_##id;                                           \
+                                                                                                  \
+	static const struct regulator_da1469x_config config_##id = {                              \
+		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node),                                  \
+		.desc = &id##_desc,                                                               \
+		.power_bits =                                                                     \
+			(DT_PROP(node, renesas_regulator_v30_clamp) *                             \
+			 CRG_TOP_POWER_CTRL_REG_CLAMP_3V0_VBAT_ENABLE_Msk) |                      \
+			(DT_PROP(node, renesas_regulator_v30_vbus) * DA1469X_LDO_3V0_MODE_VBAT) | \
+			(DT_PROP(node, renesas_regulator_v30_vbat) * DA1469X_LDO_3V0_MODE_VBUS) | \
+			(DT_PROP(node, renesas_regulator_sleep_ldo) *                             \
+			 (DA1469X_LDO_##rail_id##_RET)) |                                         \
+			(DT_PROP(node, renesas_regulator_v30_ref_bandgap) *                       \
+			 CRG_TOP_POWER_CTRL_REG_LDO_3V0_REF_Msk),                                 \
+		.dcdc_bits = (DT_PROP(node, renesas_regulator_dcdc_vbat_high) *                   \
+			      DCDC_DCDC_VDD_REG_DCDC_VDD_ENABLE_HV_Msk) |                         \
+			     (DT_PROP(node, renesas_regulator_dcdc_vbat_low) *                    \
+			      DCDC_DCDC_VDD_REG_DCDC_VDD_ENABLE_LV_Msk),                          \
+		.rail = rail_id,                                                                  \
+	};                                                                                        \
+	PM_DEVICE_DT_DEFINE(node, regulator_da1469x_pm_action);                                   \
+	DEVICE_DT_DEFINE(node, regulator_da1469x_init, PM_DEVICE_DT_GET(node), &data_##id,        \
+			 &config_##id, PRE_KERNEL_1, CONFIG_REGULATOR_DA1469X_INIT_PRIORITY,      \
 			 &regulator_da1469x_api);
 
-#define REGULATOR_DA1469X_DEFINE_COND(inst, child, source)                                         \
+#define REGULATOR_DA1469X_DEFINE_COND(inst, child, source)                       \
 	COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(inst, child)),                \
 		    (REGULATOR_DA1469X_DEFINE(                                 \
 			DT_INST_CHILD(inst, child), child, source)),           \
 		    ())
 
-#define REGULATOR_DA1469X_DEFINE_ALL(inst)                                                         \
-	REGULATOR_DA1469X_DEFINE_COND(inst, vdd_clamp, VDD_CLAMP)                                  \
-	REGULATOR_DA1469X_DEFINE_COND(inst, vdd_sleep, VDD_SLEEP)                                  \
-	REGULATOR_DA1469X_DEFINE_COND(inst, vdd, VDD)                                              \
-	REGULATOR_DA1469X_DEFINE_COND(inst, v14, V14)                                              \
-	REGULATOR_DA1469X_DEFINE_COND(inst, v18, V18)                                              \
-	REGULATOR_DA1469X_DEFINE_COND(inst, v18p, V18P)                                            \
+#define REGULATOR_DA1469X_DEFINE_ALL(inst)                        \
+	REGULATOR_DA1469X_DEFINE_COND(inst, vdd_clamp, VDD_CLAMP) \
+	REGULATOR_DA1469X_DEFINE_COND(inst, vdd_sleep, VDD_SLEEP) \
+	REGULATOR_DA1469X_DEFINE_COND(inst, vdd, VDD)             \
+	REGULATOR_DA1469X_DEFINE_COND(inst, v14, V14)             \
+	REGULATOR_DA1469X_DEFINE_COND(inst, v18, V18)             \
+	REGULATOR_DA1469X_DEFINE_COND(inst, v18p, V18P)           \
 	REGULATOR_DA1469X_DEFINE_COND(inst, v30, V30)
 
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_DA1469X_DEFINE_ALL)

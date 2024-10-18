@@ -159,10 +159,10 @@ static int stm32_exti_enable_registers(void)
 {
 	/* Initialize to 0 for series where there is nothing to do. */
 	int ret = 0;
-#if defined(CONFIG_SOC_SERIES_STM32F2X) || defined(CONFIG_SOC_SERIES_STM32F3X) ||                  \
-	defined(CONFIG_SOC_SERIES_STM32F4X) || defined(CONFIG_SOC_SERIES_STM32F7X) ||              \
-	defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H7RSX) ||            \
-	defined(CONFIG_SOC_SERIES_STM32L1X) || defined(CONFIG_SOC_SERIES_STM32L4X) ||              \
+#if defined(CONFIG_SOC_SERIES_STM32F2X) || defined(CONFIG_SOC_SERIES_STM32F3X) ||       \
+	defined(CONFIG_SOC_SERIES_STM32F4X) || defined(CONFIG_SOC_SERIES_STM32F7X) ||   \
+	defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H7RSX) || \
+	defined(CONFIG_SOC_SERIES_STM32L1X) || defined(CONFIG_SOC_SERIES_STM32L4X) ||   \
 	defined(CONFIG_SOC_SERIES_STM32G4X)
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	struct stm32_pclken pclken = {
@@ -192,13 +192,13 @@ static void stm32_fill_irq_table(int8_t start, int8_t len, int32_t irqn)
  * - fill exti_irq_table through stm32_fill_irq_table()
  * - calls IRQ_CONNECT for each interrupt and matching line_range
  */
-#define STM32_EXTI_INIT_LINE_RANGE(node_id, interrupts, idx)                                       \
-	static const struct stm32_exti_range line_range_##idx = {                                  \
-		DT_PROP_BY_IDX(node_id, line_ranges, UTIL_X2(idx)),                                \
-		DT_PROP_BY_IDX(node_id, line_ranges, UTIL_INC(UTIL_X2(idx)))};                     \
-	stm32_fill_irq_table(line_range_##idx.start, line_range_##idx.len,                         \
-			     DT_IRQ_BY_IDX(node_id, idx, irq));                                    \
-	IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq), DT_IRQ_BY_IDX(node_id, idx, priority),       \
+#define STM32_EXTI_INIT_LINE_RANGE(node_id, interrupts, idx)                                 \
+	static const struct stm32_exti_range line_range_##idx = {                            \
+		DT_PROP_BY_IDX(node_id, line_ranges, UTIL_X2(idx)),                          \
+		DT_PROP_BY_IDX(node_id, line_ranges, UTIL_INC(UTIL_X2(idx)))};               \
+	stm32_fill_irq_table(line_range_##idx.start, line_range_##idx.len,                   \
+			     DT_IRQ_BY_IDX(node_id, idx, irq));                              \
+	IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq), DT_IRQ_BY_IDX(node_id, idx, priority), \
 		    stm32_exti_isr, &line_range_##idx, 0);
 
 /**

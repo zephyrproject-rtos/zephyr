@@ -106,15 +106,15 @@ static int nct75_init(const struct device *dev)
 	return 0;
 }
 
-#define NCT75_INIT(inst)                                                                           \
-	static const struct nct75_config nct75_##inst##_config = {                                 \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-	};                                                                                         \
-                                                                                                   \
-	static struct nct75_data nct75_##inst##_data;                                              \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, nct75_init, NULL, &nct75_##inst##_data,                 \
-				     &nct75_##inst##_config, POST_KERNEL,                          \
+#define NCT75_INIT(inst)                                                           \
+	static const struct nct75_config nct75_##inst##_config = {                 \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                 \
+	};                                                                         \
+                                                                                   \
+	static struct nct75_data nct75_##inst##_data;                              \
+                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, nct75_init, NULL, &nct75_##inst##_data, \
+				     &nct75_##inst##_config, POST_KERNEL,          \
 				     CONFIG_SENSOR_INIT_PRIORITY, &nct75_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NCT75_INIT);

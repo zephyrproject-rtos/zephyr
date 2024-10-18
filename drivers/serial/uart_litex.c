@@ -337,34 +337,34 @@ static int uart_litex_init(const struct device *dev)
 	return 0;
 }
 
-#define LITEX_UART_IRQ_INIT(n)                                                                     \
-	static void uart_irq_config##n(const struct device *dev)                                   \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_litex_irq_handler,     \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define LITEX_UART_IRQ_INIT(n)                                                                 \
+	static void uart_irq_config##n(const struct device *dev)                               \
+	{                                                                                      \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_litex_irq_handler, \
+			    DEVICE_DT_INST_GET(n), 0);                                         \
+                                                                                               \
+		irq_enable(DT_INST_IRQN(n));                                                   \
 	}
 
-#define LITEX_UART_INIT(n)                                                                         \
-	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (LITEX_UART_IRQ_INIT(n)))                                                                                 \
-                                                                                                   \
-	static struct uart_litex_data uart_litex_data_##n;                                         \
-                                                                                                   \
-	static const struct uart_litex_device_config uart_litex_dev_cfg_##n = {                    \
-		.rxtx_addr = DT_INST_REG_ADDR_BY_NAME(n, rxtx),                                    \
-		.txfull_addr = DT_INST_REG_ADDR_BY_NAME(n, txfull),                                \
-		.rxempty_addr = DT_INST_REG_ADDR_BY_NAME(n, rxempty),                              \
-		.ev_status_addr = DT_INST_REG_ADDR_BY_NAME(n, ev_status),                          \
-		.ev_pending_addr = DT_INST_REG_ADDR_BY_NAME(n, ev_pending),                        \
-		.ev_enable_addr = DT_INST_REG_ADDR_BY_NAME(n, ev_enable),                          \
-		.txempty_addr = DT_INST_REG_ADDR_BY_NAME(n, txempty),                              \
-		.rxfull_addr = DT_INST_REG_ADDR_BY_NAME(n, rxfull),                                \
-		.baud_rate = DT_INST_PROP(n, current_speed),                                       \
-		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (.config_func = uart_irq_config##n,))};      \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, uart_litex_init, NULL, &uart_litex_data_##n,                      \
-			      &uart_litex_dev_cfg_##n, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,  \
+#define LITEX_UART_INIT(n)                                                                        \
+	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (LITEX_UART_IRQ_INIT(n)))                                                                                \
+                                                                                                  \
+	static struct uart_litex_data uart_litex_data_##n;                                        \
+                                                                                                  \
+	static const struct uart_litex_device_config uart_litex_dev_cfg_##n = {                   \
+		.rxtx_addr = DT_INST_REG_ADDR_BY_NAME(n, rxtx),                                   \
+		.txfull_addr = DT_INST_REG_ADDR_BY_NAME(n, txfull),                               \
+		.rxempty_addr = DT_INST_REG_ADDR_BY_NAME(n, rxempty),                             \
+		.ev_status_addr = DT_INST_REG_ADDR_BY_NAME(n, ev_status),                         \
+		.ev_pending_addr = DT_INST_REG_ADDR_BY_NAME(n, ev_pending),                       \
+		.ev_enable_addr = DT_INST_REG_ADDR_BY_NAME(n, ev_enable),                         \
+		.txempty_addr = DT_INST_REG_ADDR_BY_NAME(n, txempty),                             \
+		.rxfull_addr = DT_INST_REG_ADDR_BY_NAME(n, rxfull),                               \
+		.baud_rate = DT_INST_PROP(n, current_speed),                                      \
+		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (.config_func = uart_irq_config##n,))};     \
+                                                                                                  \
+	DEVICE_DT_INST_DEFINE(n, uart_litex_init, NULL, &uart_litex_data_##n,                     \
+			      &uart_litex_dev_cfg_##n, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, \
 			      (void *)&uart_litex_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LITEX_UART_INIT)

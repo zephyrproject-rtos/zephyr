@@ -59,15 +59,15 @@ static int pio_rpi_pico_init(const struct device *dev)
 	return 0;
 }
 
-#define RPI_PICO_PIO_INIT(idx)                                                                     \
-	static const struct pio_rpi_pico_config pio_rpi_pico_config_##idx = {                      \
-		.pio = (PIO)DT_INST_REG_ADDR(idx),                                                 \
-		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                                \
-		.clk_id = (clock_control_subsys_t)DT_INST_PHA_BY_IDX(0, clocks, 0, clk_id),        \
-		.reset = RESET_DT_SPEC_INST_GET(idx),                                              \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(idx, &pio_rpi_pico_init, NULL, NULL, &pio_rpi_pico_config_##idx,     \
+#define RPI_PICO_PIO_INIT(idx)                                                                 \
+	static const struct pio_rpi_pico_config pio_rpi_pico_config_##idx = {                  \
+		.pio = (PIO)DT_INST_REG_ADDR(idx),                                             \
+		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                            \
+		.clk_id = (clock_control_subsys_t)DT_INST_PHA_BY_IDX(0, clocks, 0, clk_id),    \
+		.reset = RESET_DT_SPEC_INST_GET(idx),                                          \
+	};                                                                                     \
+                                                                                               \
+	DEVICE_DT_INST_DEFINE(idx, &pio_rpi_pico_init, NULL, NULL, &pio_rpi_pico_config_##idx, \
 			      PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(RPI_PICO_PIO_INIT)

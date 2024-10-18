@@ -304,20 +304,20 @@ int spi_bitbang_init(const struct device *dev)
 	return 0;
 }
 
-#define SPI_BITBANG_INIT(inst)                                                                     \
-	static struct spi_bitbang_config spi_bitbang_config_##inst = {                             \
-		.clk_gpio = GPIO_DT_SPEC_INST_GET(inst, clk_gpios),                                \
-		.mosi_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mosi_gpios, {0}),                      \
-		.miso_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, miso_gpios, {0}),                      \
-	};                                                                                         \
-                                                                                                   \
-	static struct spi_bitbang_data spi_bitbang_data_##inst = {                                 \
-		SPI_CONTEXT_INIT_LOCK(spi_bitbang_data_##inst, ctx),                               \
-		SPI_CONTEXT_INIT_SYNC(spi_bitbang_data_##inst, ctx),                               \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx)};                          \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, spi_bitbang_init, NULL, &spi_bitbang_data_##inst,              \
-			      &spi_bitbang_config_##inst, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,   \
+#define SPI_BITBANG_INIT(inst)                                                                   \
+	static struct spi_bitbang_config spi_bitbang_config_##inst = {                           \
+		.clk_gpio = GPIO_DT_SPEC_INST_GET(inst, clk_gpios),                              \
+		.mosi_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mosi_gpios, {0}),                    \
+		.miso_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, miso_gpios, {0}),                    \
+	};                                                                                       \
+                                                                                                 \
+	static struct spi_bitbang_data spi_bitbang_data_##inst = {                               \
+		SPI_CONTEXT_INIT_LOCK(spi_bitbang_data_##inst, ctx),                             \
+		SPI_CONTEXT_INIT_SYNC(spi_bitbang_data_##inst, ctx),                             \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx)};                        \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(inst, spi_bitbang_init, NULL, &spi_bitbang_data_##inst,            \
+			      &spi_bitbang_config_##inst, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, \
 			      &spi_bitbang_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_BITBANG_INIT)

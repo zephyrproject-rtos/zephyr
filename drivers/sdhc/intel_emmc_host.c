@@ -1282,33 +1282,33 @@ static const struct sdhc_driver_api emmc_api = {
 #define EMMC_HOST_IRQ_FLAGS(n)        _CONCAT(EMMC_HOST_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, sense))(n)
 
 /* Not PCI(e) */
-#define EMMC_HOST_IRQ_CONFIG_PCIE0(n)                                                              \
-	static void emmc_config_##n(const struct device *port)                                     \
-	{                                                                                          \
-		ARG_UNUSED(port);                                                                  \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), emmc_isr,                   \
-			    DEVICE_DT_INST_GET(n), EMMC_HOST_IRQ_FLAGS(n));                        \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define EMMC_HOST_IRQ_CONFIG_PCIE0(n)                                            \
+	static void emmc_config_##n(const struct device *port)                   \
+	{                                                                        \
+		ARG_UNUSED(port);                                                \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), emmc_isr, \
+			    DEVICE_DT_INST_GET(n), EMMC_HOST_IRQ_FLAGS(n));      \
+		irq_enable(DT_INST_IRQN(n));                                     \
 	}
 
 /* PCI(e) with auto IRQ detection */
-#define EMMC_HOST_IRQ_CONFIG_PCIE1(n)                                                              \
-	static void emmc_config_##n(const struct device *port)                                     \
-	{                                                                                          \
-		BUILD_ASSERT(DT_INST_IRQN(n) == PCIE_IRQ_DETECT,                                   \
-			     "Only runtime IRQ configuration is supported");                       \
-		BUILD_ASSERT(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),                                \
-			     "eMMC PCI device needs CONFIG_DYNAMIC_INTERRUPTS");                   \
-		const struct emmc_config *const dev_cfg = port->config;                            \
-		unsigned int irq = pcie_alloc_irq(dev_cfg->pcie->bdf);                             \
-                                                                                                   \
-		if (irq == PCIE_CONF_INTR_IRQ_NONE) {                                              \
-			return;                                                                    \
-		}                                                                                  \
-		pcie_connect_dynamic_irq(dev_cfg->pcie->bdf, irq, DT_INST_IRQ(n, priority),        \
-					 (void (*)(const void *))emmc_isr, DEVICE_DT_INST_GET(n),  \
-					 EMMC_HOST_IRQ_FLAGS(n));                                  \
-		pcie_irq_enable(dev_cfg->pcie->bdf, irq);                                          \
+#define EMMC_HOST_IRQ_CONFIG_PCIE1(n)                                                             \
+	static void emmc_config_##n(const struct device *port)                                    \
+	{                                                                                         \
+		BUILD_ASSERT(DT_INST_IRQN(n) == PCIE_IRQ_DETECT,                                  \
+			     "Only runtime IRQ configuration is supported");                      \
+		BUILD_ASSERT(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),                               \
+			     "eMMC PCI device needs CONFIG_DYNAMIC_INTERRUPTS");                  \
+		const struct emmc_config *const dev_cfg = port->config;                           \
+		unsigned int irq = pcie_alloc_irq(dev_cfg->pcie->bdf);                            \
+                                                                                                  \
+		if (irq == PCIE_CONF_INTR_IRQ_NONE) {                                             \
+			return;                                                                   \
+		}                                                                                 \
+		pcie_connect_dynamic_irq(dev_cfg->pcie->bdf, irq, DT_INST_IRQ(n, priority),       \
+					 (void (*)(const void *))emmc_isr, DEVICE_DT_INST_GET(n), \
+					 EMMC_HOST_IRQ_FLAGS(n));                                 \
+		pcie_irq_enable(dev_cfg->pcie->bdf, irq);                                         \
 	}
 
 #define EMMC_HOST_IRQ_CONFIG(n) _CONCAT(EMMC_HOST_IRQ_CONFIG_PCIE, DT_INST_ON_BUS(n, pcie))(n)
@@ -1325,23 +1325,23 @@ static const struct sdhc_driver_api emmc_api = {
 #define DEFINE_PCIE1(n)          DEVICE_PCIE_INST_DECLARE(n)
 #define EMMC_HOST_PCIE_DEFINE(n) _CONCAT(DEFINE_PCIE, DT_INST_ON_BUS(n, pcie))(n)
 
-#define EMMC_HOST_DEV_CFG(n)                                                                       \
-	EMMC_HOST_PCIE_DEFINE(n);                                                                  \
-	EMMC_HOST_IRQ_CONFIG(n);                                                                   \
-	static const struct emmc_config emmc_config_data_##n = {                                   \
-		REG_INIT(n) INIT_PCIE(n).config_func = emmc_config_##n,                            \
-		.hs200_mode = DT_INST_PROP_OR(n, mmc_hs200_1_8v, 0),                               \
-		.hs400_mode = DT_INST_PROP_OR(n, mmc_hs400_1_8v, 0),                               \
-		.dw_4bit = DT_INST_ENUM_HAS_VALUE(n, bus_width, 4),                                \
-		.dw_8bit = DT_INST_ENUM_HAS_VALUE(n, bus_width, 8),                                \
-		.max_bus_freq = DT_INST_PROP_OR(n, max_bus_freq, 40000),                           \
-		.min_bus_freq = DT_INST_PROP_OR(n, min_bus_freq, 40000),                           \
-		.power_delay_ms = DT_INST_PROP_OR(n, power_delay_ms, 500),                         \
-	};                                                                                         \
-                                                                                                   \
-	static struct emmc_data emmc_priv_data_##n;                                                \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, emmc_init, NULL, &emmc_priv_data_##n, &emmc_config_data_##n,      \
+#define EMMC_HOST_DEV_CFG(n)                                                                  \
+	EMMC_HOST_PCIE_DEFINE(n);                                                             \
+	EMMC_HOST_IRQ_CONFIG(n);                                                              \
+	static const struct emmc_config emmc_config_data_##n = {                              \
+		REG_INIT(n) INIT_PCIE(n).config_func = emmc_config_##n,                       \
+		.hs200_mode = DT_INST_PROP_OR(n, mmc_hs200_1_8v, 0),                          \
+		.hs400_mode = DT_INST_PROP_OR(n, mmc_hs400_1_8v, 0),                          \
+		.dw_4bit = DT_INST_ENUM_HAS_VALUE(n, bus_width, 4),                           \
+		.dw_8bit = DT_INST_ENUM_HAS_VALUE(n, bus_width, 8),                           \
+		.max_bus_freq = DT_INST_PROP_OR(n, max_bus_freq, 40000),                      \
+		.min_bus_freq = DT_INST_PROP_OR(n, min_bus_freq, 40000),                      \
+		.power_delay_ms = DT_INST_PROP_OR(n, power_delay_ms, 500),                    \
+	};                                                                                    \
+                                                                                              \
+	static struct emmc_data emmc_priv_data_##n;                                           \
+                                                                                              \
+	DEVICE_DT_INST_DEFINE(n, emmc_init, NULL, &emmc_priv_data_##n, &emmc_config_data_##n, \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &emmc_api);
 
 DT_INST_FOREACH_STATUS_OKAY(EMMC_HOST_DEV_CFG)

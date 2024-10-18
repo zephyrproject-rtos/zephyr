@@ -521,30 +521,30 @@ static const struct uart_driver_api uart_rcar_driver_api = {
 };
 
 /* Device Instantiation */
-#define UART_RCAR_DECLARE_CFG(n, IRQ_FUNC_INIT, compat)                                            \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	static const struct uart_rcar_cfg uart_rcar_cfg_##compat##n = {                            \
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.mod_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, module),                        \
-		.mod_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, domain),                        \
-		.bus_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, module),                        \
-		.bus_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, domain),                        \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		.is_hscif = DT_INST_NODE_HAS_COMPAT(n, renesas_rcar_hscif),                        \
+#define UART_RCAR_DECLARE_CFG(n, IRQ_FUNC_INIT, compat)                     \
+	PINCTRL_DT_INST_DEFINE(n);                                          \
+	static const struct uart_rcar_cfg uart_rcar_cfg_##compat##n = {     \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                       \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),         \
+		.mod_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, module), \
+		.mod_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, domain), \
+		.bus_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, module), \
+		.bus_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, domain), \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                  \
+		.is_hscif = DT_INST_NODE_HAS_COMPAT(n, renesas_rcar_hscif), \
 		IRQ_FUNC_INIT}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define UART_RCAR_CONFIG_FUNC(n, compat)                                                           \
-	static void irq_config_func_##compat##n(const struct device *dev)                          \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_rcar_isr,              \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define UART_RCAR_CONFIG_FUNC(n, compat)                                              \
+	static void irq_config_func_##compat##n(const struct device *dev)             \
+	{                                                                             \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_rcar_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                                \
+                                                                                      \
+		irq_enable(DT_INST_IRQN(n));                                          \
 	}
 #define UART_RCAR_IRQ_CFG_FUNC_INIT(n, compat) .irq_config_func = irq_config_func_##compat##n
-#define UART_RCAR_INIT_CFG(n, compat)                                                              \
+#define UART_RCAR_INIT_CFG(n, compat)                                            \
 	UART_RCAR_DECLARE_CFG(n, UART_RCAR_IRQ_CFG_FUNC_INIT(n, compat), compat)
 #else
 #define UART_RCAR_CONFIG_FUNC(n, compat)
@@ -552,26 +552,26 @@ static const struct uart_driver_api uart_rcar_driver_api = {
 #define UART_RCAR_INIT_CFG(n, compat) UART_RCAR_DECLARE_CFG(n, UART_RCAR_IRQ_CFG_FUNC_INIT, compat)
 #endif
 
-#define UART_RCAR_INIT(n, compat)                                                                  \
-	static struct uart_rcar_data uart_rcar_data_##compat##n = {                                \
-		.current_config =                                                                  \
-			{                                                                          \
-				.baudrate = DT_INST_PROP(n, current_speed),                        \
-				.parity = UART_CFG_PARITY_NONE,                                    \
-				.stop_bits = UART_CFG_STOP_BITS_1,                                 \
-				.data_bits = UART_CFG_DATA_BITS_8,                                 \
-				.flow_ctrl = UART_CFG_FLOW_CTRL_NONE,                              \
-			},                                                                         \
-	};                                                                                         \
-                                                                                                   \
-	static const struct uart_rcar_cfg uart_rcar_cfg_##compat##n;                               \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, uart_rcar_init, NULL, &uart_rcar_data_##compat##n,                \
-			      &uart_rcar_cfg_##compat##n, PRE_KERNEL_1,                            \
-			      CONFIG_SERIAL_INIT_PRIORITY, &uart_rcar_driver_api);                 \
-                                                                                                   \
-	UART_RCAR_CONFIG_FUNC(n, compat)                                                           \
-                                                                                                   \
+#define UART_RCAR_INIT(n, compat)                                                   \
+	static struct uart_rcar_data uart_rcar_data_##compat##n = {                 \
+		.current_config =                                                   \
+			{                                                           \
+				.baudrate = DT_INST_PROP(n, current_speed),         \
+				.parity = UART_CFG_PARITY_NONE,                     \
+				.stop_bits = UART_CFG_STOP_BITS_1,                  \
+				.data_bits = UART_CFG_DATA_BITS_8,                  \
+				.flow_ctrl = UART_CFG_FLOW_CTRL_NONE,               \
+			},                                                          \
+	};                                                                          \
+                                                                                    \
+	static const struct uart_rcar_cfg uart_rcar_cfg_##compat##n;                \
+                                                                                    \
+	DEVICE_DT_INST_DEFINE(n, uart_rcar_init, NULL, &uart_rcar_data_##compat##n, \
+			      &uart_rcar_cfg_##compat##n, PRE_KERNEL_1,             \
+			      CONFIG_SERIAL_INIT_PRIORITY, &uart_rcar_driver_api);  \
+                                                                                    \
+	UART_RCAR_CONFIG_FUNC(n, compat)                                            \
+                                                                                    \
 	UART_RCAR_INIT_CFG(n, compat);
 
 DT_INST_FOREACH_STATUS_OKAY_VARGS(UART_RCAR_INIT, DT_DRV_COMPAT)

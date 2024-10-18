@@ -27,8 +27,8 @@ struct hci_data {
 
 static const struct stm32_pclken clk_cfg[] = STM32_DT_CLOCKS(DT_DRV_INST(0));
 
-#define POOL_SIZE                                                                                  \
-	(CFG_TLBLE_EVT_QUEUE_LENGTH * 4 *                                                          \
+#define POOL_SIZE                                                        \
+	(CFG_TLBLE_EVT_QUEUE_LENGTH * 4 *                                \
 	 DIVC((sizeof(TL_PacketHeader_t) + TL_BLE_EVENT_FRAME_SIZE), 4))
 
 /* Private variables ---------------------------------------------------------*/
@@ -615,9 +615,9 @@ static int _bt_ipm_init(const struct device *dev)
 	return 0;
 }
 
-#define HCI_DEVICE_INIT(inst)                                                                      \
-	static struct hci_data hci_data_##inst = {};                                               \
-	DEVICE_DT_INST_DEFINE(inst, _bt_ipm_init, NULL, &hci_data_##inst, NULL, POST_KERNEL,       \
+#define HCI_DEVICE_INIT(inst)                                                                \
+	static struct hci_data hci_data_##inst = {};                                         \
+	DEVICE_DT_INST_DEFINE(inst, _bt_ipm_init, NULL, &hci_data_##inst, NULL, POST_KERNEL, \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
 /* Only one instance supported right now */

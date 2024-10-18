@@ -326,65 +326,65 @@ const adc_extended_cfg_t g_adc_cfg_extend = {
 	.trigger = ADC_START_SOURCE_DISABLED, /* Use Software trigger */
 };
 
-#define IRQ_CONFIGURE_FUNC(idx)                                                                    \
-	static void adc_ra_configure_func_##idx(void)                                              \
-	{                                                                                          \
-		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(idx, scanend, irq)] =                             \
-			ELC_EVENT_ADC##idx##_SCAN_END;                                             \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(idx, scanend, irq),                                \
-			    DT_INST_IRQ_BY_NAME(idx, scanend, priority), adc_ra_isr,               \
-			    DEVICE_DT_INST_GET(idx), 0);                                           \
-		irq_enable(DT_INST_IRQ_BY_NAME(idx, scanend, irq));                                \
+#define IRQ_CONFIGURE_FUNC(idx)                                                      \
+	static void adc_ra_configure_func_##idx(void)                                \
+	{                                                                            \
+		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(idx, scanend, irq)] =               \
+			ELC_EVENT_ADC##idx##_SCAN_END;                               \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(idx, scanend, irq),                  \
+			    DT_INST_IRQ_BY_NAME(idx, scanend, priority), adc_ra_isr, \
+			    DEVICE_DT_INST_GET(idx), 0);                             \
+		irq_enable(DT_INST_IRQ_BY_NAME(idx, scanend, irq));                  \
 	}
 
 #define IRQ_CONFIGURE_DEFINE(idx) .irq_configure = adc_ra_configure_func_##idx
 
-#define ADC_RA_INIT(idx)                                                                           \
-	IRQ_CONFIGURE_FUNC(idx)                                                                    \
-	PINCTRL_DT_INST_DEFINE(idx);                                                               \
-	static struct adc_driver_api adc_ra_api_##idx = {                                          \
-		.channel_setup = adc_ra_channel_setup,                                             \
-		.read = adc_ra_read,                                                               \
-		.ref_internal = DT_INST_PROP(idx, vref_mv),                                        \
-		IF_ENABLED(CONFIG_ADC_ASYNC, (.read_async = adc_ra_read_async))};                     \
-	static const struct adc_ra_config adc_ra_config_##idx = {                                  \
-		.num_channels = DT_INST_PROP(idx, channel_count),                                  \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                       \
-		IRQ_CONFIGURE_DEFINE(idx),                                                         \
-	};                                                                                         \
-	static struct adc_ra_data adc_ra_data_##idx = {                                            \
-		ADC_CONTEXT_INIT_TIMER(adc_ra_data_##idx, ctx),                                    \
-		ADC_CONTEXT_INIT_LOCK(adc_ra_data_##idx, ctx),                                     \
-		ADC_CONTEXT_INIT_SYNC(adc_ra_data_##idx, ctx),                                     \
-		.dev = DEVICE_DT_INST_GET(idx),                                                    \
-		.f_config =                                                                        \
-			{                                                                          \
-				.unit = idx,                                                       \
-				.mode = ADC_MODE_SINGLE_SCAN,                                      \
-				.resolution = ADC_RESOLUTION_12_BIT,                               \
-				.alignment = (adc_alignment_t)ADC_ALIGNMENT_RIGHT,                 \
-				.trigger = 0,                                                      \
-				.p_callback = NULL,                                                \
-				.p_context = NULL,                                                 \
-				.p_extend = &g_adc_cfg_extend,                                     \
-				.scan_end_irq = DT_INST_IRQ_BY_NAME(idx, scanend, irq),            \
-				.scan_end_ipl = DT_INST_IRQ_BY_NAME(idx, scanend, priority),       \
-				.scan_end_b_irq = FSP_INVALID_VECTOR,                              \
-				.scan_end_b_ipl = (BSP_IRQ_DISABLED),                              \
-			},                                                                         \
-		.f_channel_cfg =                                                                   \
-			{                                                                          \
-				.scan_mask = 0,                                                    \
-				.scan_mask_group_b = 0,                                            \
-				.priority_group_a = ADC_GROUP_A_PRIORITY_OFF,                      \
-				.add_mask = 0,                                                     \
-				.sample_hold_mask = 0,                                             \
-				.sample_hold_states = 24,                                          \
-				.p_window_cfg = NULL,                                              \
-			},                                                                         \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(idx, adc_ra_init, NULL, &adc_ra_data_##idx, &adc_ra_config_##idx,    \
+#define ADC_RA_INIT(idx)                                                                        \
+	IRQ_CONFIGURE_FUNC(idx)                                                                 \
+	PINCTRL_DT_INST_DEFINE(idx);                                                            \
+	static struct adc_driver_api adc_ra_api_##idx = {                                       \
+		.channel_setup = adc_ra_channel_setup,                                          \
+		.read = adc_ra_read,                                                            \
+		.ref_internal = DT_INST_PROP(idx, vref_mv),                                     \
+		IF_ENABLED(CONFIG_ADC_ASYNC, (.read_async = adc_ra_read_async))};                  \
+	static const struct adc_ra_config adc_ra_config_##idx = {                               \
+		.num_channels = DT_INST_PROP(idx, channel_count),                               \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                    \
+		IRQ_CONFIGURE_DEFINE(idx),                                                      \
+	};                                                                                      \
+	static struct adc_ra_data adc_ra_data_##idx = {                                         \
+		ADC_CONTEXT_INIT_TIMER(adc_ra_data_##idx, ctx),                                 \
+		ADC_CONTEXT_INIT_LOCK(adc_ra_data_##idx, ctx),                                  \
+		ADC_CONTEXT_INIT_SYNC(adc_ra_data_##idx, ctx),                                  \
+		.dev = DEVICE_DT_INST_GET(idx),                                                 \
+		.f_config =                                                                     \
+			{                                                                       \
+				.unit = idx,                                                    \
+				.mode = ADC_MODE_SINGLE_SCAN,                                   \
+				.resolution = ADC_RESOLUTION_12_BIT,                            \
+				.alignment = (adc_alignment_t)ADC_ALIGNMENT_RIGHT,              \
+				.trigger = 0,                                                   \
+				.p_callback = NULL,                                             \
+				.p_context = NULL,                                              \
+				.p_extend = &g_adc_cfg_extend,                                  \
+				.scan_end_irq = DT_INST_IRQ_BY_NAME(idx, scanend, irq),         \
+				.scan_end_ipl = DT_INST_IRQ_BY_NAME(idx, scanend, priority),    \
+				.scan_end_b_irq = FSP_INVALID_VECTOR,                           \
+				.scan_end_b_ipl = (BSP_IRQ_DISABLED),                           \
+			},                                                                      \
+		.f_channel_cfg =                                                                \
+			{                                                                       \
+				.scan_mask = 0,                                                 \
+				.scan_mask_group_b = 0,                                         \
+				.priority_group_a = ADC_GROUP_A_PRIORITY_OFF,                   \
+				.add_mask = 0,                                                  \
+				.sample_hold_mask = 0,                                          \
+				.sample_hold_states = 24,                                       \
+				.p_window_cfg = NULL,                                           \
+			},                                                                      \
+	};                                                                                      \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(idx, adc_ra_init, NULL, &adc_ra_data_##idx, &adc_ra_config_##idx, \
 			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, &adc_ra_api_##idx)
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_RA_INIT);

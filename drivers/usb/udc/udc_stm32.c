@@ -830,7 +830,7 @@ static const struct udc_api udc_stm32_api = {
 #define USB_OTG_HS_EMB_PHY                                                                         \
 	(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
 
-#define USB_OTG_HS_ULPI_PHY                                                                        \
+#define USB_OTG_HS_ULPI_PHY                                                                    \
 	(DT_HAS_COMPAT_STATUS_OKAY(usb_ulpi_phy) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
 
 static struct udc_stm32_data udc0_priv;

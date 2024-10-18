@@ -252,7 +252,7 @@ static int i2s_mcux_configure(const struct device *dev, enum i2s_dir dir,
 		 * More than 2 channels are enabled, so we need to enable
 		 * secondary channel pairs.
 		 */
-#if (defined(FSL_FEATURE_I2S_SUPPORT_SECONDARY_CHANNEL) &&                                         \
+#if (defined(FSL_FEATURE_I2S_SUPPORT_SECONDARY_CHANNEL) && \
      FSL_FEATURE_I2S_SUPPORT_SECONDARY_CHANNEL)
 		for (uint32_t slot = 1; slot < i2s_cfg->channels / 2; slot++) {
 			/* Position must be set so that data does not overlap
@@ -902,47 +902,47 @@ static int i2s_mcux_init(const struct device *dev)
 	return 0;
 }
 
-#define I2S_DMA_CHANNELS(id)                                                                       \
-	.tx = {.dev_dma = UTIL_AND(DT_INST_DMAS_HAS_NAME(id, tx),                                  \
-				   DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, tx))),              \
-	       .channel = UTIL_AND(DT_INST_DMAS_HAS_NAME(id, tx),                                  \
-				   DT_INST_DMAS_CELL_BY_NAME(id, tx, channel)),                    \
-	       .dma_cfg =                                                                          \
-		       {                                                                           \
-			       .channel_direction = MEMORY_TO_PERIPHERAL,                          \
-			       .dma_callback = i2s_mcux_dma_tx_callback,                           \
-			       .block_count = 1,                                                   \
-		       }},                                                                         \
-	.rx = {.dev_dma = UTIL_AND(DT_INST_DMAS_HAS_NAME(id, rx),                                  \
-				   DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, rx))),              \
-	       .channel = UTIL_AND(DT_INST_DMAS_HAS_NAME(id, rx),                                  \
-				   DT_INST_DMAS_CELL_BY_NAME(id, rx, channel)),                    \
-	       .dma_cfg = {                                                                        \
-		       .channel_direction = PERIPHERAL_TO_MEMORY,                                  \
-		       .dma_callback = i2s_mcux_dma_rx_callback,                                   \
-		       .complete_callback_en = true,                                               \
-		       .block_count = NUM_RX_DMA_BLOCKS,                                           \
+#define I2S_DMA_CHANNELS(id)                                                          \
+	.tx = {.dev_dma = UTIL_AND(DT_INST_DMAS_HAS_NAME(id, tx),                     \
+				   DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, tx))), \
+	       .channel = UTIL_AND(DT_INST_DMAS_HAS_NAME(id, tx),                     \
+				   DT_INST_DMAS_CELL_BY_NAME(id, tx, channel)),       \
+	       .dma_cfg =                                                             \
+		       {                                                              \
+			       .channel_direction = MEMORY_TO_PERIPHERAL,             \
+			       .dma_callback = i2s_mcux_dma_tx_callback,              \
+			       .block_count = 1,                                      \
+		       }},                                                            \
+	.rx = {.dev_dma = UTIL_AND(DT_INST_DMAS_HAS_NAME(id, rx),                     \
+				   DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, rx))), \
+	       .channel = UTIL_AND(DT_INST_DMAS_HAS_NAME(id, rx),                     \
+				   DT_INST_DMAS_CELL_BY_NAME(id, rx, channel)),       \
+	       .dma_cfg = {                                                           \
+		       .channel_direction = PERIPHERAL_TO_MEMORY,                     \
+		       .dma_callback = i2s_mcux_dma_rx_callback,                      \
+		       .complete_callback_en = true,                                  \
+		       .block_count = NUM_RX_DMA_BLOCKS,                              \
 	       }}
 
-#define I2S_MCUX_FLEXCOMM_DEVICE(id)                                                               \
-	PINCTRL_DT_INST_DEFINE(id);                                                                \
-	static void i2s_mcux_config_func_##id(const struct device *dev);                           \
-	static const struct i2s_mcux_config i2s_mcux_config_##id = {                               \
-		.base = (I2S_Type *)DT_INST_REG_ADDR(id),                                          \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),                               \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),             \
-		.irq_config = i2s_mcux_config_func_##id,                                           \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),                                      \
-	};                                                                                         \
-	static struct i2s_mcux_data i2s_mcux_data_##id = {I2S_DMA_CHANNELS(id)};                   \
-	DEVICE_DT_INST_DEFINE(id, &i2s_mcux_init, NULL, &i2s_mcux_data_##id,                       \
-			      &i2s_mcux_config_##id, POST_KERNEL, CONFIG_I2S_INIT_PRIORITY,        \
-			      &i2s_mcux_driver_api);                                               \
-	static void i2s_mcux_config_func_##id(const struct device *dev)                            \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), i2s_mcux_isr,             \
-			    DEVICE_DT_INST_GET(id), 0);                                            \
-		irq_enable(DT_INST_IRQN(id));                                                      \
+#define I2S_MCUX_FLEXCOMM_DEVICE(id)                                                        \
+	PINCTRL_DT_INST_DEFINE(id);                                                         \
+	static void i2s_mcux_config_func_##id(const struct device *dev);                    \
+	static const struct i2s_mcux_config i2s_mcux_config_##id = {                        \
+		.base = (I2S_Type *)DT_INST_REG_ADDR(id),                                   \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),                        \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),      \
+		.irq_config = i2s_mcux_config_func_##id,                                    \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),                               \
+	};                                                                                  \
+	static struct i2s_mcux_data i2s_mcux_data_##id = {I2S_DMA_CHANNELS(id)};            \
+	DEVICE_DT_INST_DEFINE(id, &i2s_mcux_init, NULL, &i2s_mcux_data_##id,                \
+			      &i2s_mcux_config_##id, POST_KERNEL, CONFIG_I2S_INIT_PRIORITY, \
+			      &i2s_mcux_driver_api);                                        \
+	static void i2s_mcux_config_func_##id(const struct device *dev)                     \
+	{                                                                                   \
+		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), i2s_mcux_isr,      \
+			    DEVICE_DT_INST_GET(id), 0);                                     \
+		irq_enable(DT_INST_IRQN(id));                                               \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(I2S_MCUX_FLEXCOMM_DEVICE)

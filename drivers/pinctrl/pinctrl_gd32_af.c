@@ -18,7 +18,7 @@ BUILD_ASSERT((GD32_OTYPE_PP == GPIO_OTYPE_PP) && (GD32_OTYPE_OD == GPIO_OTYPE_OD
 	     "pinctrl output type definitions != HAL definitions");
 
 BUILD_ASSERT((GD32_OSPEED_2MHZ == GPIO_OSPEED_2MHZ) &&
-#if defined(CONFIG_SOC_SERIES_GD32F3X0) || defined(CONFIG_SOC_SERIES_GD32A50X) ||                  \
+#if defined(CONFIG_SOC_SERIES_GD32F3X0) || defined(CONFIG_SOC_SERIES_GD32A50X) || \
 	defined(CONFIG_SOC_SERIES_GD32L23X)
 		     (GD32_OSPEED_10MHZ == GPIO_OSPEED_10MHZ) &&
 		     (GD32_OSPEED_50MHZ == GPIO_OSPEED_50MHZ) &&
@@ -31,12 +31,12 @@ BUILD_ASSERT((GD32_OSPEED_2MHZ == GPIO_OSPEED_2MHZ) &&
 	     "pinctrl output speed definitions != HAL definitions");
 
 /** Utility macro that expands to the GPIO port address if it exists */
-#define GD32_PORT_ADDR_OR_NONE(nodelabel)                                                          \
+#define GD32_PORT_ADDR_OR_NONE(nodelabel)                              \
 	COND_CODE_1(DT_NODE_EXISTS(DT_NODELABEL(nodelabel)),		       \
 		   (DT_REG_ADDR(DT_NODELABEL(nodelabel)),), ())
 
 /** Utility macro that expands to the GPIO clock id if it exists */
-#define GD32_PORT_CLOCK_ID_OR_NONE(nodelabel)                                                      \
+#define GD32_PORT_CLOCK_ID_OR_NONE(nodelabel)                          \
 	COND_CODE_1(DT_NODE_EXISTS(DT_NODELABEL(nodelabel)),		       \
 		   (DT_CLOCKS_CELL(DT_NODELABEL(nodelabel), id),), ())
 

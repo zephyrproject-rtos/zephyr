@@ -64,7 +64,7 @@ struct ssd1306_data {
 	enum display_pixel_format pf;
 };
 
-#if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1306fb, i2c) ||                                   \
+#if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1306fb, i2c) || \
      DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(sinowealth_sh1106, i2c))
 static bool ssd1306_bus_ready_i2c(const struct device *dev)
 {
@@ -90,7 +90,7 @@ static const char *ssd1306_bus_name_i2c(const struct device *dev)
 }
 #endif
 
-#if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1306fb, spi) ||                                   \
+#if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1306fb, spi) || \
      DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(sinowealth_sh1106, spi))
 static bool ssd1306_bus_ready_spi(const struct device *dev)
 {
@@ -472,38 +472,38 @@ static const struct display_driver_api ssd1306_driver_api = {
 	.set_pixel_format = ssd1306_set_pixel_format,
 };
 
-#define SSD1306_CONFIG_SPI(node_id)                                                                \
-	.bus = {.spi = SPI_DT_SPEC_GET(                                                            \
-			node_id, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 0)},     \
-	.bus_ready = ssd1306_bus_ready_spi, .write_bus = ssd1306_write_bus_spi,                    \
+#define SSD1306_CONFIG_SPI(node_id)                                                              \
+	.bus = {.spi = SPI_DT_SPEC_GET(                                                          \
+			node_id, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 0)},   \
+	.bus_ready = ssd1306_bus_ready_spi, .write_bus = ssd1306_write_bus_spi,                  \
 	.bus_name = ssd1306_bus_name_spi, .data_cmd = GPIO_DT_SPEC_GET(node_id, data_cmd_gpios),
 
-#define SSD1306_CONFIG_I2C(node_id)                                                                \
-	.bus = {.i2c = I2C_DT_SPEC_GET(node_id)}, .bus_ready = ssd1306_bus_ready_i2c,              \
+#define SSD1306_CONFIG_I2C(node_id)                                                            \
+	.bus = {.i2c = I2C_DT_SPEC_GET(node_id)}, .bus_ready = ssd1306_bus_ready_i2c,          \
 	.write_bus = ssd1306_write_bus_i2c, .bus_name = ssd1306_bus_name_i2c, .data_cmd = {0},
 
-#define SSD1306_DEFINE(node_id)                                                                    \
-	static struct ssd1306_data data##node_id;                                                  \
-	static const struct ssd1306_config config##node_id = {                                     \
-		.reset = GPIO_DT_SPEC_GET_OR(node_id, reset_gpios, {0}),                           \
-		.height = DT_PROP(node_id, height),                                                \
-		.width = DT_PROP(node_id, width),                                                  \
-		.segment_offset = DT_PROP(node_id, segment_offset),                                \
-		.page_offset = DT_PROP(node_id, page_offset),                                      \
-		.display_offset = DT_PROP(node_id, display_offset),                                \
-		.multiplex_ratio = DT_PROP(node_id, multiplex_ratio),                              \
-		.segment_remap = DT_PROP(node_id, segment_remap),                                  \
-		.com_invdir = DT_PROP(node_id, com_invdir),                                        \
-		.com_sequential = DT_PROP(node_id, com_sequential),                                \
-		.prechargep = DT_PROP(node_id, prechargep),                                        \
-		.color_inversion = DT_PROP(node_id, inversion_on),                                 \
-		.sh1106_compatible = DT_NODE_HAS_COMPAT(node_id, sinowealth_sh1106),               \
-		.ready_time_ms = DT_PROP(node_id, ready_time_ms),                                  \
-		.use_internal_iref = DT_PROP(node_id, use_internal_iref),                          \
+#define SSD1306_DEFINE(node_id)                                                           \
+	static struct ssd1306_data data##node_id;                                         \
+	static const struct ssd1306_config config##node_id = {                            \
+		.reset = GPIO_DT_SPEC_GET_OR(node_id, reset_gpios, {0}),                  \
+		.height = DT_PROP(node_id, height),                                       \
+		.width = DT_PROP(node_id, width),                                         \
+		.segment_offset = DT_PROP(node_id, segment_offset),                       \
+		.page_offset = DT_PROP(node_id, page_offset),                             \
+		.display_offset = DT_PROP(node_id, display_offset),                       \
+		.multiplex_ratio = DT_PROP(node_id, multiplex_ratio),                     \
+		.segment_remap = DT_PROP(node_id, segment_remap),                         \
+		.com_invdir = DT_PROP(node_id, com_invdir),                               \
+		.com_sequential = DT_PROP(node_id, com_sequential),                       \
+		.prechargep = DT_PROP(node_id, prechargep),                               \
+		.color_inversion = DT_PROP(node_id, inversion_on),                        \
+		.sh1106_compatible = DT_NODE_HAS_COMPAT(node_id, sinowealth_sh1106),      \
+		.ready_time_ms = DT_PROP(node_id, ready_time_ms),                         \
+		.use_internal_iref = DT_PROP(node_id, use_internal_iref),                 \
 		COND_CODE_1(DT_ON_BUS(node_id, spi), (SSD1306_CONFIG_SPI(node_id)),                \
-			    (SSD1306_CONFIG_I2C(node_id))) };                           \
-                                                                                                   \
-	DEVICE_DT_DEFINE(node_id, ssd1306_init, NULL, &data##node_id, &config##node_id,            \
+			    (SSD1306_CONFIG_I2C(node_id))) };                  \
+                                                                                          \
+	DEVICE_DT_DEFINE(node_id, ssd1306_init, NULL, &data##node_id, &config##node_id,   \
 			 POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY, &ssd1306_driver_api);
 
 DT_FOREACH_STATUS_OKAY(solomon_ssd1306fb, SSD1306_DEFINE)

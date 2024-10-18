@@ -261,20 +261,20 @@ static const struct gpio_driver_api api_table = {
 
 static struct k_sem cy8c95xx_lock = Z_SEM_INITIALIZER(cy8c95xx_lock, 1, 1);
 
-#define GPIO_PORT_INIT(idx)                                                                        \
-	static const struct cy8c95xx_config cy8c95xx_##idx##_cfg = {                               \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = 0xFF,                                             \
-			},                                                                         \
-		.i2c = I2C_DT_SPEC_GET(DT_PARENT(DT_INST(idx, DT_DRV_COMPAT))),                    \
-		.port_num = DT_INST_REG_ADDR(idx),                                                 \
-	};                                                                                         \
-	static struct cy8c95xx_drv_data cy8c95xx_##idx##_drvdata = {                               \
-		.lock = &cy8c95xx_lock,                                                            \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(idx, cy8c95xx_init, NULL, &cy8c95xx_##idx##_drvdata,                 \
-			      &cy8c95xx_##idx##_cfg, POST_KERNEL,                                  \
+#define GPIO_PORT_INIT(idx)                                                        \
+	static const struct cy8c95xx_config cy8c95xx_##idx##_cfg = {               \
+		.common =                                                          \
+			{                                                          \
+				.port_pin_mask = 0xFF,                             \
+			},                                                         \
+		.i2c = I2C_DT_SPEC_GET(DT_PARENT(DT_INST(idx, DT_DRV_COMPAT))),    \
+		.port_num = DT_INST_REG_ADDR(idx),                                 \
+	};                                                                         \
+	static struct cy8c95xx_drv_data cy8c95xx_##idx##_drvdata = {               \
+		.lock = &cy8c95xx_lock,                                            \
+	};                                                                         \
+	DEVICE_DT_INST_DEFINE(idx, cy8c95xx_init, NULL, &cy8c95xx_##idx##_drvdata, \
+			      &cy8c95xx_##idx##_cfg, POST_KERNEL,                  \
 			      CONFIG_GPIO_CY8C95XX_INIT_PRIORITY, &api_table);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_PORT_INIT)

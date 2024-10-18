@@ -237,24 +237,24 @@ static int i2c_eeprom_target_init(const struct device *dev)
 	return 0;
 }
 
-#define I2C_EEPROM_INIT(inst)                                                                      \
-	static struct i2c_eeprom_target_data i2c_eeprom_target_##inst##_dev_data = {               \
-		.address_width = DT_INST_PROP_OR(inst, address_width, 8),                          \
-	};                                                                                         \
-                                                                                                   \
-	static uint8_t i2c_eeprom_target_##inst##_buffer[(DT_INST_PROP(inst, size))];              \
-                                                                                                   \
-	BUILD_ASSERT(DT_INST_PROP(inst, size) <= (1 << DT_INST_PROP_OR(inst, address_width, 8)),   \
-		     "size must be <= than 2^address_width");                                      \
-                                                                                                   \
-	static const struct i2c_eeprom_target_config i2c_eeprom_target_##inst##_cfg = {            \
-		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.buffer_size = DT_INST_PROP(inst, size),                                           \
-		.buffer = i2c_eeprom_target_##inst##_buffer};                                      \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, &i2c_eeprom_target_init, NULL,                                 \
-			      &i2c_eeprom_target_##inst##_dev_data,                                \
-			      &i2c_eeprom_target_##inst##_cfg, POST_KERNEL,                        \
+#define I2C_EEPROM_INIT(inst)                                                                    \
+	static struct i2c_eeprom_target_data i2c_eeprom_target_##inst##_dev_data = {             \
+		.address_width = DT_INST_PROP_OR(inst, address_width, 8),                        \
+	};                                                                                       \
+                                                                                                 \
+	static uint8_t i2c_eeprom_target_##inst##_buffer[(DT_INST_PROP(inst, size))];            \
+                                                                                                 \
+	BUILD_ASSERT(DT_INST_PROP(inst, size) <= (1 << DT_INST_PROP_OR(inst, address_width, 8)), \
+		     "size must be <= than 2^address_width");                                    \
+                                                                                                 \
+	static const struct i2c_eeprom_target_config i2c_eeprom_target_##inst##_cfg = {          \
+		.bus = I2C_DT_SPEC_INST_GET(inst),                                               \
+		.buffer_size = DT_INST_PROP(inst, size),                                         \
+		.buffer = i2c_eeprom_target_##inst##_buffer};                                    \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(inst, &i2c_eeprom_target_init, NULL,                               \
+			      &i2c_eeprom_target_##inst##_dev_data,                              \
+			      &i2c_eeprom_target_##inst##_cfg, POST_KERNEL,                      \
 			      CONFIG_I2C_TARGET_INIT_PRIORITY, &api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_EEPROM_INIT)

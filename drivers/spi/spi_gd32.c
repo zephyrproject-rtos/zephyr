@@ -614,53 +614,53 @@ int spi_gd32_init(const struct device *dev)
 	return 0;
 }
 
-#define DMA_INITIALIZER(idx, dir)                                                                  \
-	{                                                                                          \
-		.dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(idx, dir)),                         \
-		.channel = DT_INST_DMAS_CELL_BY_NAME(idx, dir, channel),                           \
+#define DMA_INITIALIZER(idx, dir)                                                          \
+	{                                                                                  \
+		.dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(idx, dir)),                 \
+		.channel = DT_INST_DMAS_CELL_BY_NAME(idx, dir, channel),                   \
 		.slot = COND_CODE_1(                                           \
 			DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_dma_v1),             \
-			(DT_INST_DMAS_CELL_BY_NAME(idx, dir, slot)), (0)),                            \
-			 .config = DT_INST_DMAS_CELL_BY_NAME(idx, dir, config),                    \
+			(DT_INST_DMAS_CELL_BY_NAME(idx, dir, slot)), (0)),                    \
+			 .config = DT_INST_DMAS_CELL_BY_NAME(idx, dir, config),            \
 			 .fifo_threshold = COND_CODE_1(                                 \
 			DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_dma_v1),             \
 			(DT_INST_DMAS_CELL_BY_NAME(idx, dir, fifo_threshold)), \
-			(0)),         \
+			(0)), \
 			 }
 
-#define DMAS_DECL(idx)                                                                             \
-	{                                                                                          \
+#define DMAS_DECL(idx)                                                                       \
+	{                                                                                    \
 		COND_CODE_1(DT_INST_DMAS_HAS_NAME(idx, rx),                    \
-			    (DMA_INITIALIZER(idx, rx)), ({0})),                                          \
+			    (DMA_INITIALIZER(idx, rx)), ({0})),                                    \
 			 COND_CODE_1(DT_INST_DMAS_HAS_NAME(idx, tx),                    \
-			    (DMA_INITIALIZER(idx, tx)), ({0})),       \
+			    (DMA_INITIALIZER(idx, tx)), ({0})), \
 			 }
 
-#define GD32_IRQ_CONFIGURE(idx)                                                                    \
-	static void spi_gd32_irq_configure_##idx(void)                                             \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority), spi_gd32_isr,           \
-			    DEVICE_DT_INST_GET(idx), 0);                                           \
-		irq_enable(DT_INST_IRQN(idx));                                                     \
+#define GD32_IRQ_CONFIGURE(idx)                                                          \
+	static void spi_gd32_irq_configure_##idx(void)                                   \
+	{                                                                                \
+		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority), spi_gd32_isr, \
+			    DEVICE_DT_INST_GET(idx), 0);                                 \
+		irq_enable(DT_INST_IRQN(idx));                                           \
 	}
 
-#define GD32_SPI_INIT(idx)                                                                         \
-	PINCTRL_DT_INST_DEFINE(idx);                                                               \
-	IF_ENABLED(CONFIG_SPI_GD32_INTERRUPT, (GD32_IRQ_CONFIGURE(idx)));                           \
-	static struct spi_gd32_data spi_gd32_data_##idx = {                                        \
-		SPI_CONTEXT_INIT_LOCK(spi_gd32_data_##idx, ctx),                                   \
-		SPI_CONTEXT_INIT_SYNC(spi_gd32_data_##idx, ctx),                                   \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(idx), ctx)};                           \
-	static struct spi_gd32_config spi_gd32_config_##idx = {                                    \
-		.reg = DT_INST_REG_ADDR(idx),                                                      \
-		.clkid = DT_INST_CLOCKS_CELL(idx, id),                                             \
-		.reset = RESET_DT_SPEC_INST_GET(idx),                                              \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                       \
-		IF_ENABLED(CONFIG_SPI_GD32_DMA, (.dma = DMAS_DECL(idx),))                                                                         \
+#define GD32_SPI_INIT(idx)                                                                       \
+	PINCTRL_DT_INST_DEFINE(idx);                                                             \
+	IF_ENABLED(CONFIG_SPI_GD32_INTERRUPT, (GD32_IRQ_CONFIGURE(idx)));                         \
+	static struct spi_gd32_data spi_gd32_data_##idx = {                                      \
+		SPI_CONTEXT_INIT_LOCK(spi_gd32_data_##idx, ctx),                                 \
+		SPI_CONTEXT_INIT_SYNC(spi_gd32_data_##idx, ctx),                                 \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(idx), ctx)};                         \
+	static struct spi_gd32_config spi_gd32_config_##idx = {                                  \
+		.reg = DT_INST_REG_ADDR(idx),                                                    \
+		.clkid = DT_INST_CLOCKS_CELL(idx, id),                                           \
+		.reset = RESET_DT_SPEC_INST_GET(idx),                                            \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                     \
+		IF_ENABLED(CONFIG_SPI_GD32_DMA, (.dma = DMAS_DECL(idx),))                                                                       \
 				    IF_ENABLED(CONFIG_SPI_GD32_INTERRUPT,			       \
-			   (.irq_configure = spi_gd32_irq_configure_##idx)) };   \
-	DEVICE_DT_INST_DEFINE(idx, spi_gd32_init, NULL, &spi_gd32_data_##idx,                      \
-			      &spi_gd32_config_##idx, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,       \
+			   (.irq_configure = spi_gd32_irq_configure_##idx)) }; \
+	DEVICE_DT_INST_DEFINE(idx, spi_gd32_init, NULL, &spi_gd32_data_##idx,                    \
+			      &spi_gd32_config_##idx, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,     \
 			      &spi_gd32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GD32_SPI_INIT)

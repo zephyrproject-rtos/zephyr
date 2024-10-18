@@ -473,16 +473,16 @@ static const struct adc_driver_api api = {
 	.read_async = ads1119_adc_read_async,
 #endif
 };
-#define ADC_ADS1119_INST_DEFINE(n)                                                                 \
+#define ADC_ADS1119_INST_DEFINE(n)                                                        \
 	IF_ENABLED(CONFIG_ADC_ASYNC,							   \
 		   (static								   \
 		   K_KERNEL_STACK_DEFINE(thread_stack_##n,				   \
-				      CONFIG_ADC_ADS1119_ACQUISITION_THREAD_STACK_SIZE);))                                                    \
-	static const struct ads1119_config config_##n = {                                          \
-		.bus = I2C_DT_SPEC_GET(DT_DRV_INST(n)),                                            \
-		IF_ENABLED(CONFIG_ADC_ASYNC, (.stack = thread_stack_##n)) };                          \
-	static struct ads1119_data data_##n;                                                       \
-	DEVICE_DT_INST_DEFINE(n, ads1119_init, NULL, &data_##n, &config_##n, POST_KERNEL,          \
+				      CONFIG_ADC_ADS1119_ACQUISITION_THREAD_STACK_SIZE);))                                           \
+	static const struct ads1119_config config_##n = {                                 \
+		.bus = I2C_DT_SPEC_GET(DT_DRV_INST(n)),                                   \
+		IF_ENABLED(CONFIG_ADC_ASYNC, (.stack = thread_stack_##n)) };                 \
+	static struct ads1119_data data_##n;                                              \
+	DEVICE_DT_INST_DEFINE(n, ads1119_init, NULL, &data_##n, &config_##n, POST_KERNEL, \
 			      CONFIG_ADC_INIT_PRIORITY, &api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_ADS1119_INST_DEFINE);

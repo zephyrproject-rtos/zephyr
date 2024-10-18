@@ -285,20 +285,20 @@ static const struct uart_driver_api mcux_iuart_driver_api = {
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define MCUX_IUART_IRQ_INIT(n, i)                                                                  \
-	do {                                                                                       \
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, i, irq), DT_INST_IRQ_BY_IDX(n, i, priority),     \
-			    mcux_iuart_isr, DEVICE_DT_INST_GET(n), 0);                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQ_BY_IDX(n, i, irq));                                         \
+#define MCUX_IUART_IRQ_INIT(n, i)                                                              \
+	do {                                                                                   \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, i, irq), DT_INST_IRQ_BY_IDX(n, i, priority), \
+			    mcux_iuart_isr, DEVICE_DT_INST_GET(n), 0);                         \
+                                                                                               \
+		irq_enable(DT_INST_IRQ_BY_IDX(n, i, irq));                                     \
 	} while (false)
-#define IUART_MCUX_CONFIG_FUNC(n)                                                                  \
-	static void mcux_iuart_config_func_##n(const struct device *dev)                           \
-	{                                                                                          \
-		MCUX_IUART_IRQ_INIT(n, 0);                                                         \
-                                                                                                   \
+#define IUART_MCUX_CONFIG_FUNC(n)                                        \
+	static void mcux_iuart_config_func_##n(const struct device *dev) \
+	{                                                                \
+		MCUX_IUART_IRQ_INIT(n, 0);                               \
+                                                                         \
 		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 1),			\
-			   (MCUX_IUART_IRQ_INIT(n, 1);))                                          \
+			   (MCUX_IUART_IRQ_INIT(n, 1);))                \
 	}
 #define IUART_MCUX_IRQ_CFG_FUNC_INIT(n) .irq_config_func = mcux_iuart_config_func_##n
 #define IUART_MCUX_INIT_CFG(n)          IUART_MCUX_DECLARE_CFG(n, IUART_MCUX_IRQ_CFG_FUNC_INIT(n))
@@ -308,14 +308,14 @@ static const struct uart_driver_api mcux_iuart_driver_api = {
 #define IUART_MCUX_INIT_CFG(n) IUART_MCUX_DECLARE_CFG(n, IUART_MCUX_IRQ_CFG_FUNC_INIT)
 #endif
 
-#define IUART_MCUX_DECLARE_CFG(n, IRQ_FUNC_INIT)                                                   \
-	static const struct mcux_iuart_config mcux_iuart_##n##_config = {                          \
-		.base = (UART_Type *)DT_INST_REG_ADDR(n),                                          \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
-		.baud_rate = DT_INST_PROP(n, current_speed),                                       \
-		.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),                    \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+#define IUART_MCUX_DECLARE_CFG(n, IRQ_FUNC_INIT)                                      \
+	static const struct mcux_iuart_config mcux_iuart_##n##_config = {             \
+		.base = (UART_Type *)DT_INST_REG_ADDR(n),                             \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                   \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name), \
+		.baud_rate = DT_INST_PROP(n, current_speed),                          \
+		.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),       \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                          \
 		IRQ_FUNC_INIT}
 
 #define IUART_MCUX_INIT(n)                                                                         \

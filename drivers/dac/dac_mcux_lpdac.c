@@ -96,17 +96,17 @@ static const struct dac_driver_api mcux_lpdac_driver_api = {
 	.write_value = mcux_lpdac_write_value,
 };
 
-#define MCUX_LPDAC_INIT(n)                                                                         \
-	static struct mcux_lpdac_data mcux_lpdac_data_##n;                                         \
-                                                                                                   \
-	static const struct mcux_lpdac_config mcux_lpdac_config_##n = {                            \
-		.base = (LPDAC_Type *)DT_INST_REG_ADDR(n),                                         \
-		.ref_voltage = DT_INST_PROP(n, voltage_reference),                                 \
-		.low_power = DT_INST_PROP(n, low_power_mode),                                      \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, mcux_lpdac_init, NULL, &mcux_lpdac_data_##n,                      \
-			      &mcux_lpdac_config_##n, POST_KERNEL, CONFIG_DAC_INIT_PRIORITY,       \
+#define MCUX_LPDAC_INIT(n)                                                                   \
+	static struct mcux_lpdac_data mcux_lpdac_data_##n;                                   \
+                                                                                             \
+	static const struct mcux_lpdac_config mcux_lpdac_config_##n = {                      \
+		.base = (LPDAC_Type *)DT_INST_REG_ADDR(n),                                   \
+		.ref_voltage = DT_INST_PROP(n, voltage_reference),                           \
+		.low_power = DT_INST_PROP(n, low_power_mode),                                \
+	};                                                                                   \
+                                                                                             \
+	DEVICE_DT_INST_DEFINE(n, mcux_lpdac_init, NULL, &mcux_lpdac_data_##n,                \
+			      &mcux_lpdac_config_##n, POST_KERNEL, CONFIG_DAC_INIT_PRIORITY, \
 			      &mcux_lpdac_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_LPDAC_INIT)

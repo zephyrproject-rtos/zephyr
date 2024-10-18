@@ -65,17 +65,17 @@ static const struct gpio_driver_api vnd_gpio_api = {
 	.port_toggle_bits = vnd_gpio_port_toggle_bits,
 };
 
-#define VND_GPIO_INIT(n)                                                                           \
-	static const struct vnd_gpio_config vnd_gpio_config_##n = {                                \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
-	};                                                                                         \
-                                                                                                   \
-	static struct vnd_gpio_data vnd_gpio_data_##n;                                             \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, &vnd_gpio_data_##n, &vnd_gpio_config_##n,             \
+#define VND_GPIO_INIT(n)                                                               \
+	static const struct vnd_gpio_config vnd_gpio_config_##n = {                    \
+		.common =                                                              \
+			{                                                              \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),   \
+			},                                                             \
+	};                                                                             \
+                                                                                       \
+	static struct vnd_gpio_data vnd_gpio_data_##n;                                 \
+                                                                                       \
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL, &vnd_gpio_data_##n, &vnd_gpio_config_##n, \
 			      POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY, &vnd_gpio_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VND_GPIO_INIT)

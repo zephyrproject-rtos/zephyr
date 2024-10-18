@@ -38,8 +38,8 @@ static int vnd_dac_init(const struct device *dev)
 	return 0;
 }
 
-#define VND_DAC_INIT(index)                                                                        \
-	DEVICE_DT_INST_DEFINE(index, &vnd_dac_init, NULL, NULL, NULL, POST_KERNEL,                 \
+#define VND_DAC_INIT(index)                                                        \
+	DEVICE_DT_INST_DEFINE(index, &vnd_dac_init, NULL, NULL, NULL, POST_KERNEL, \
 			      CONFIG_DAC_INIT_PRIORITY, &vnd_dac_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VND_DAC_INIT)

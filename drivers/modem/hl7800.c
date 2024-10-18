@@ -48,9 +48,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_MODEM_LOG_LEVEL);
 #include "modem_receiver.h"
 #include <zephyr/drivers/modem/hl7800.h>
 
-#define PREFIXED_SWITCH_CASE_RETURN_STRING(prefix, val)                                            \
-	case prefix##_##val: {                                                                     \
-		return #val;                                                                       \
+#define PREFIXED_SWITCH_CASE_RETURN_STRING(prefix, val) \
+	case prefix##_##val: {                          \
+		return #val;                            \
 	}
 
 /* Uncomment the #define below to enable a hexdump of all incoming
@@ -65,25 +65,25 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_MODEM_LOG_LEVEL);
 /* #define HL7800_TX_LOCK_LOG 1 */
 /* #define HL7800_IO_LOG 1 */
 
-#define HL7800_RX_LOCK_DBG_LOG(fmt, ...)                                                           \
-	do {                                                                                       \
-		if (IS_ENABLED(HL7800_RX_LOCK_LOG)) {                                              \
-			LOG_DBG(fmt, ##__VA_ARGS__);                                               \
-		}                                                                                  \
+#define HL7800_RX_LOCK_DBG_LOG(fmt, ...)              \
+	do {                                          \
+		if (IS_ENABLED(HL7800_RX_LOCK_LOG)) { \
+			LOG_DBG(fmt, ##__VA_ARGS__);  \
+		}                                     \
 	} while (false)
 
-#define HL7800_TX_LOCK_DBG_LOG(fmt, ...)                                                           \
-	do {                                                                                       \
-		if (IS_ENABLED(HL7800_TX_LOCK_LOG)) {                                              \
-			LOG_DBG(fmt, ##__VA_ARGS__);                                               \
-		}                                                                                  \
+#define HL7800_TX_LOCK_DBG_LOG(fmt, ...)              \
+	do {                                          \
+		if (IS_ENABLED(HL7800_TX_LOCK_LOG)) { \
+			LOG_DBG(fmt, ##__VA_ARGS__);  \
+		}                                     \
 	} while (false)
 
-#define HL7800_IO_DBG_LOG(fmt, ...)                                                                \
-	do {                                                                                       \
-		if (IS_ENABLED(HL7800_IO_LOG)) {                                                   \
-			LOG_WRN(fmt, ##__VA_ARGS__);                                               \
-		}                                                                                  \
+#define HL7800_IO_DBG_LOG(fmt, ...)                  \
+	do {                                         \
+		if (IS_ENABLED(HL7800_IO_LOG)) {     \
+			LOG_WRN(fmt, ##__VA_ARGS__); \
+		}                                    \
 	} while (false)
 
 #if ((LOG_LEVEL == LOG_LEVEL_DBG) && defined(CONFIG_MODEM_HL7800_LOW_POWER_MODE))
@@ -218,7 +218,7 @@ struct xmodem_packet {
 
 #define SIZE_WITHOUT_NUL(v) (sizeof(v) - SIZE_OF_NUL)
 
-#define CMD_HANDLER(cmd_, cb_)                                                                     \
+#define CMD_HANDLER(cmd_, cb_)                                                     \
 	{.cmd = cmd_, .cmd_len = (uint16_t)sizeof(cmd_) - 1, .func = on_cmd_##cb_}
 
 #define MDM_MANUFACTURER_LENGTH   16
@@ -232,7 +232,7 @@ struct xmodem_packet {
 #define MDM_TOP_BAND_START_POSITION    2
 #define MDM_MIDDLE_BAND_START_POSITION 6
 #define MDM_BOTTOM_BAND_START_POSITION 14
-#define MDM_BAND_BITMAP_STR_LENGTH_MAX                                                             \
+#define MDM_BAND_BITMAP_STR_LENGTH_MAX                                    \
 	(MDM_TOP_BAND_SIZE + MDM_MIDDLE_BAND_SIZE + MDM_BOTTOM_BAND_SIZE)
 #define MDM_BAND_BITMAP_STR_LENGTH_MIN 1
 
@@ -282,7 +282,7 @@ struct xmodem_packet {
 #define MAX_PROFILE_LINE_LENGTH MAX(sizeof(PROFILE_LINE_1), sizeof(PROFILE_LINE_2))
 
 #define IPV6_ADDR_FORMAT "####:####:####:####:####:####:####:####"
-#define HL7800_IPV6_ADDR_LEN                                                                       \
+#define HL7800_IPV6_ADDR_LEN                                                      \
 	sizeof("a01.a02.a03.a04.a05.a06.a07.a08.a09.a10.a11.a12.a13.a14.a15.a16")
 
 #define MDM_ADDR_FAM_MAX_LEN sizeof("IPV4V6")
@@ -306,44 +306,44 @@ static const char TIME_STRING_FORMAT[] = "\"yy/MM/dd,hh:mm:ss?zz\"";
 #define QUARTER_HOUR_RANGE       0, 96
 #define SECONDS_PER_QUARTER_HOUR (15 * 60)
 
-#define SEND_AT_CMD_ONCE_EXPECT_OK(c)                                                              \
-	do {                                                                                       \
-		ret = send_at_cmd(NULL, (c), MDM_CMD_SEND_TIMEOUT, 0, false);                      \
-		if (ret < 0) {                                                                     \
-			LOG_ERR("%s result:%d", (c), ret);                                         \
-			goto error;                                                                \
-		}                                                                                  \
+#define SEND_AT_CMD_ONCE_EXPECT_OK(c)                                         \
+	do {                                                                  \
+		ret = send_at_cmd(NULL, (c), MDM_CMD_SEND_TIMEOUT, 0, false); \
+		if (ret < 0) {                                                \
+			LOG_ERR("%s result:%d", (c), ret);                    \
+			goto error;                                           \
+		}                                                             \
 	} while (false)
 
-#define SEND_AT_CMD_IGNORE_ERROR(c)                                                                \
-	do {                                                                                       \
-		ret = send_at_cmd(NULL, (c), MDM_CMD_SEND_TIMEOUT, 0, false);                      \
-		if (ret < 0) {                                                                     \
-			LOG_ERR("%s result:%d", (c), ret);                                         \
-		}                                                                                  \
+#define SEND_AT_CMD_IGNORE_ERROR(c)                                           \
+	do {                                                                  \
+		ret = send_at_cmd(NULL, (c), MDM_CMD_SEND_TIMEOUT, 0, false); \
+		if (ret < 0) {                                                \
+			LOG_ERR("%s result:%d", (c), ret);                    \
+		}                                                             \
 	} while (false)
 
-#define SEND_AT_CMD_EXPECT_OK(c)                                                                   \
-	do {                                                                                       \
-		ret = send_at_cmd(NULL, (c), MDM_CMD_SEND_TIMEOUT, MDM_DEFAULT_AT_CMD_RETRIES,     \
-				  false);                                                          \
-		if (ret < 0) {                                                                     \
-			LOG_ERR("%s result:%d", (c), ret);                                         \
-			goto error;                                                                \
-		}                                                                                  \
+#define SEND_AT_CMD_EXPECT_OK(c)                                                               \
+	do {                                                                                   \
+		ret = send_at_cmd(NULL, (c), MDM_CMD_SEND_TIMEOUT, MDM_DEFAULT_AT_CMD_RETRIES, \
+				  false);                                                      \
+		if (ret < 0) {                                                                 \
+			LOG_ERR("%s result:%d", (c), ret);                                     \
+			goto error;                                                            \
+		}                                                                              \
 	} while (false)
 
 /* Complex has "no_id_resp" set to true because the sending command
  * is the command used to process the response
  */
-#define SEND_COMPLEX_AT_CMD(c)                                                                     \
-	do {                                                                                       \
-		ret = send_at_cmd(NULL, (c), MDM_CMD_SEND_TIMEOUT, MDM_DEFAULT_AT_CMD_RETRIES,     \
-				  true);                                                           \
-		if (ret < 0) {                                                                     \
-			LOG_ERR("%s result:%d", (c), ret);                                         \
-			goto error;                                                                \
-		}                                                                                  \
+#define SEND_COMPLEX_AT_CMD(c)                                                                 \
+	do {                                                                                   \
+		ret = send_at_cmd(NULL, (c), MDM_CMD_SEND_TIMEOUT, MDM_DEFAULT_AT_CMD_RETRIES, \
+				  true);                                                       \
+		if (ret < 0) {                                                                 \
+			LOG_ERR("%s result:%d", (c), ret);                                     \
+			goto error;                                                            \
+		}                                                                              \
 	} while (false)
 
 NET_BUF_POOL_DEFINE(mdm_recv_pool, CONFIG_MODEM_HL7800_RECV_BUF_CNT,

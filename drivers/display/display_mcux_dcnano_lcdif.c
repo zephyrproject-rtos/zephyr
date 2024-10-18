@@ -247,7 +247,7 @@ static const struct display_driver_api mcux_dcnano_lcdif_api = {
 };
 
 #define MCUX_DCNANO_LCDIF_PIXEL_BYTES(n) (DISPLAY_BITS_PER_PIXEL(DT_INST_PROP(n, pixel_format)) / 8)
-#define MCUX_DCNANO_LCDIF_FB_SIZE(n)                                                               \
+#define MCUX_DCNANO_LCDIF_FB_SIZE(n)                                                        \
 	DT_INST_PROP(n, width) * DT_INST_PROP(n, height) * MCUX_DCNANO_LCDIF_PIXEL_BYTES(n)
 
 /* When using external framebuffer mem, we should not allocate framebuffers
@@ -258,67 +258,67 @@ static const struct display_driver_api mcux_dcnano_lcdif_api = {
 #define MCUX_DCNANO_LCDIF_FRAMEBUFFER_DECL(n)
 #define MCUX_DCNANO_LCDIF_FRAMEBUFFER(n) (uint8_t *)CONFIG_MCUX_DCNANO_LCDIF_EXTERNAL_FB_ADDR
 #else
-#define MCUX_DCNANO_LCDIF_FRAMEBUFFER_DECL(n)                                                      \
-	uint8_t __aligned(LCDIF_FB_ALIGN)                                                          \
-	mcux_dcnano_lcdif_frame_buffer_##n[DT_INST_PROP(n, width) * DT_INST_PROP(n, height) *      \
-					   MCUX_DCNANO_LCDIF_PIXEL_BYTES(n) *                      \
+#define MCUX_DCNANO_LCDIF_FRAMEBUFFER_DECL(n)                                                 \
+	uint8_t __aligned(LCDIF_FB_ALIGN)                                                     \
+	mcux_dcnano_lcdif_frame_buffer_##n[DT_INST_PROP(n, width) * DT_INST_PROP(n, height) * \
+					   MCUX_DCNANO_LCDIF_PIXEL_BYTES(n) *                 \
 					   CONFIG_MCUX_DCNANO_LCDIF_FB_NUM]
 #define MCUX_DCNANO_LCDIF_FRAMEBUFFER(n) mcux_dcnano_lcdif_frame_buffer_##n
 #endif
 
-#define MCUX_DCNANO_LCDIF_DEVICE_INIT(n)                                                           \
-	static void mcux_dcnano_lcdif_config_func_##n(const struct device *dev)                    \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_dcnano_lcdif_isr,      \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-	}                                                                                          \
-	MCUX_DCNANO_LCDIF_FRAMEBUFFER_DECL(n);                                                     \
-	struct mcux_dcnano_lcdif_data mcux_dcnano_lcdif_data_##n = {                               \
-		.fb_config =                                                                       \
-			{                                                                          \
-				.enable = true,                                                    \
-				.enableGamma = false,                                              \
-				.format = DT_INST_PROP(n, pixel_format),                           \
-			},                                                                         \
-		.next_idx = 0,                                                                     \
-		.pixel_bytes = MCUX_DCNANO_LCDIF_PIXEL_BYTES(n),                                   \
-	};                                                                                         \
-	struct mcux_dcnano_lcdif_config mcux_dcnano_lcdif_config_##n = {                           \
-		.base = (LCDIF_Type *)DT_INST_REG_ADDR(n),                                         \
-		.irq_config_func = mcux_dcnano_lcdif_config_func_##n,                              \
-		.backlight_gpio = GPIO_DT_SPEC_INST_GET(n, backlight_gpios),                       \
-		.dpi_config =                                                                      \
-			{                                                                          \
-				.panelWidth = DT_INST_PROP(n, width),                              \
-				.panelHeight = DT_INST_PROP(n, height),                            \
-				.hsw = DT_PROP(DT_INST_CHILD(n, display_timings), hsync_len),      \
-				.hfp = DT_PROP(DT_INST_CHILD(n, display_timings), hfront_porch),   \
-				.hbp = DT_PROP(DT_INST_CHILD(n, display_timings), hback_porch),    \
-				.vsw = DT_PROP(DT_INST_CHILD(n, display_timings), vsync_len),      \
-				.vfp = DT_PROP(DT_INST_CHILD(n, display_timings), vfront_porch),   \
-				.vbp = DT_PROP(DT_INST_CHILD(n, display_timings), vback_porch),    \
-				.polarityFlags =                                                   \
-					(DT_PROP(DT_INST_CHILD(n, display_timings), de_active)     \
-						 ? kLCDIF_DataEnableActiveHigh                     \
-						 : kLCDIF_DataEnableActiveLow) |                   \
-					(DT_PROP(DT_INST_CHILD(n, display_timings),                \
-						 pixelclk_active)                                  \
-						 ? kLCDIF_DriveDataOnRisingClkEdge                 \
-						 : kLCDIF_DriveDataOnFallingClkEdge) |             \
-					(DT_PROP(DT_INST_CHILD(n, display_timings), hsync_active)  \
-						 ? kLCDIF_HsyncActiveHigh                          \
-						 : kLCDIF_HsyncActiveLow) |                        \
-					(DT_PROP(DT_INST_CHILD(n, display_timings), vsync_active)  \
-						 ? kLCDIF_VsyncActiveHigh                          \
-						 : kLCDIF_VsyncActiveLow),                         \
-				.format = DT_INST_ENUM_IDX(n, data_bus_width),                     \
-			},                                                                         \
-		.fb_ptr = MCUX_DCNANO_LCDIF_FRAMEBUFFER(n),                                        \
-		.fb_bytes = MCUX_DCNANO_LCDIF_FB_SIZE(n),                                          \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &mcux_dcnano_lcdif_init, NULL, &mcux_dcnano_lcdif_data_##n,       \
-			      &mcux_dcnano_lcdif_config_##n, POST_KERNEL,                          \
+#define MCUX_DCNANO_LCDIF_DEVICE_INIT(n)                                                          \
+	static void mcux_dcnano_lcdif_config_func_##n(const struct device *dev)                   \
+	{                                                                                         \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_dcnano_lcdif_isr,     \
+			    DEVICE_DT_INST_GET(n), 0);                                            \
+		irq_enable(DT_INST_IRQN(n));                                                      \
+	}                                                                                         \
+	MCUX_DCNANO_LCDIF_FRAMEBUFFER_DECL(n);                                                    \
+	struct mcux_dcnano_lcdif_data mcux_dcnano_lcdif_data_##n = {                              \
+		.fb_config =                                                                      \
+			{                                                                         \
+				.enable = true,                                                   \
+				.enableGamma = false,                                             \
+				.format = DT_INST_PROP(n, pixel_format),                          \
+			},                                                                        \
+		.next_idx = 0,                                                                    \
+		.pixel_bytes = MCUX_DCNANO_LCDIF_PIXEL_BYTES(n),                                  \
+	};                                                                                        \
+	struct mcux_dcnano_lcdif_config mcux_dcnano_lcdif_config_##n = {                          \
+		.base = (LCDIF_Type *)DT_INST_REG_ADDR(n),                                        \
+		.irq_config_func = mcux_dcnano_lcdif_config_func_##n,                             \
+		.backlight_gpio = GPIO_DT_SPEC_INST_GET(n, backlight_gpios),                      \
+		.dpi_config =                                                                     \
+			{                                                                         \
+				.panelWidth = DT_INST_PROP(n, width),                             \
+				.panelHeight = DT_INST_PROP(n, height),                           \
+				.hsw = DT_PROP(DT_INST_CHILD(n, display_timings), hsync_len),     \
+				.hfp = DT_PROP(DT_INST_CHILD(n, display_timings), hfront_porch),  \
+				.hbp = DT_PROP(DT_INST_CHILD(n, display_timings), hback_porch),   \
+				.vsw = DT_PROP(DT_INST_CHILD(n, display_timings), vsync_len),     \
+				.vfp = DT_PROP(DT_INST_CHILD(n, display_timings), vfront_porch),  \
+				.vbp = DT_PROP(DT_INST_CHILD(n, display_timings), vback_porch),   \
+				.polarityFlags =                                                  \
+					(DT_PROP(DT_INST_CHILD(n, display_timings), de_active)    \
+						 ? kLCDIF_DataEnableActiveHigh                    \
+						 : kLCDIF_DataEnableActiveLow) |                  \
+					(DT_PROP(DT_INST_CHILD(n, display_timings),               \
+						 pixelclk_active)                                 \
+						 ? kLCDIF_DriveDataOnRisingClkEdge                \
+						 : kLCDIF_DriveDataOnFallingClkEdge) |            \
+					(DT_PROP(DT_INST_CHILD(n, display_timings), hsync_active) \
+						 ? kLCDIF_HsyncActiveHigh                         \
+						 : kLCDIF_HsyncActiveLow) |                       \
+					(DT_PROP(DT_INST_CHILD(n, display_timings), vsync_active) \
+						 ? kLCDIF_VsyncActiveHigh                         \
+						 : kLCDIF_VsyncActiveLow),                        \
+				.format = DT_INST_ENUM_IDX(n, data_bus_width),                    \
+			},                                                                        \
+		.fb_ptr = MCUX_DCNANO_LCDIF_FRAMEBUFFER(n),                                       \
+		.fb_bytes = MCUX_DCNANO_LCDIF_FB_SIZE(n),                                         \
+	};                                                                                        \
+	DEVICE_DT_INST_DEFINE(n, &mcux_dcnano_lcdif_init, NULL, &mcux_dcnano_lcdif_data_##n,      \
+			      &mcux_dcnano_lcdif_config_##n, POST_KERNEL,                         \
 			      CONFIG_DISPLAY_INIT_PRIORITY, &mcux_dcnano_lcdif_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_DCNANO_LCDIF_DEVICE_INIT)

@@ -122,7 +122,7 @@ struct dma_mcux_edma_data {
 #define DEV_DMAMUX_BASE(dev, idx) ((DMAMUX_Type *)DEV_CFG(dev)->dmamux_base[idx])
 #define DEV_DMAMUX_IDX(dev, ch)   (ch / DEV_CFG(dev)->channels_per_mux)
 
-#define DEV_DMAMUX_CHANNEL(dev, ch)                                                                \
+#define DEV_DMAMUX_CHANNEL(dev, ch)                                               \
 	(ch % DEV_CFG(dev)->channels_per_mux) ^ (DEV_CFG(dev)->dmamux_reg_offset)
 #endif
 
@@ -629,38 +629,38 @@ static int dma_mcux_edma_init(const struct device *dev)
 		irq_enable(DT_INST_IRQ_BY_IDX(n, idx, irq));                                       \
 	}
 
-#define DMA_MCUX_EDMA_IRQ_DEFINE(idx, n)                                                           \
-	static void dma_mcux_edma_##n##_irq_##idx(const struct device *dev)                        \
-	{                                                                                          \
-		dma_mcux_edma_irq_handler(dev, idx);                                               \
-                                                                                                   \
+#define DMA_MCUX_EDMA_IRQ_DEFINE(idx, n)                                    \
+	static void dma_mcux_edma_##n##_irq_##idx(const struct device *dev) \
+	{                                                                   \
+		dma_mcux_edma_irq_handler(dev, idx);                        \
+                                                                            \
 		IF_ENABLED(UTIL_BOOL(DT_INST_PROP(n, irq_shared_offset)),	\
 			  (dma_mcux_edma_irq_handler(dev,			\
-			   idx + DT_INST_PROP(n, irq_shared_offset));))                        \
-                                                                                                   \
-		IF_ENABLED(CONFIG_CPU_CORTEX_M4, (barrier_dsync_fence_full();))                                                                         \
+			   idx + DT_INST_PROP(n, irq_shared_offset));)) \
+                                                                            \
+		IF_ENABLED(CONFIG_CPU_CORTEX_M4, (barrier_dsync_fence_full();))                                                  \
 	}
 
 #define DMA_MCUX_EDMA_IRQ_CONFIG(idx, n) IRQ_CONFIG(n, idx, dma_mcux_edma_##n##_irq_##idx)
 
-#define DMA_MCUX_EDMA_CONFIG_FUNC(n)                                                               \
-	LISTIFY(NUM_IRQS_WITHOUT_ERROR_IRQ(n), DMA_MCUX_EDMA_IRQ_DEFINE, (), n)                                                                                    \
-	static void dma_imx_config_func_##n(const struct device *dev)                              \
-	{                                                                                          \
-		ARG_UNUSED(dev);                                                                   \
-                                                                                                   \
+#define DMA_MCUX_EDMA_CONFIG_FUNC(n)                                           \
+	LISTIFY(NUM_IRQS_WITHOUT_ERROR_IRQ(n), DMA_MCUX_EDMA_IRQ_DEFINE, (), n)                                                                \
+	static void dma_imx_config_func_##n(const struct device *dev)          \
+	{                                                                      \
+		ARG_UNUSED(dev);                                               \
+                                                                               \
 		LISTIFY(NUM_IRQS_WITHOUT_ERROR_IRQ(n),				\
-			DMA_MCUX_EDMA_IRQ_CONFIG, (;), n)                                        \
-                                                                                                   \
+			DMA_MCUX_EDMA_IRQ_CONFIG, (;), n)                    \
+                                                                               \
 		IF_ENABLED(UTIL_NOT(DT_INST_NODE_HAS_PROP(n, no_error_irq)),	\
 			   (IRQ_CONFIG(n, NUM_IRQS_WITHOUT_ERROR_IRQ(n),	\
-			    dma_mcux_edma_error_irq_handler)))                     \
-                                                                                                   \
-		LOG_DBG("install irq done");                                                       \
+			    dma_mcux_edma_error_irq_handler))) \
+                                                                               \
+		LOG_DBG("install irq done");                                   \
 	}
 
 #if DMA_MCUX_HAS_CHANNEL_GAP
-#define DMA_MCUX_EDMA_CHANNEL_GAP(n)                                                               \
+#define DMA_MCUX_EDMA_CHANNEL_GAP(n) \
 	.channel_gap = DT_INST_PROP_OR(n, channel_gap, {[0 ... 1] = DT_INST_PROP(n, dma_channels)}),
 #else
 #define DMA_MCUX_EDMA_CHANNEL_GAP(n)
@@ -669,13 +669,13 @@ static int dma_mcux_edma_init(const struct device *dev)
 #if defined(FSL_FEATURE_SOC_DMAMUX_COUNT) && FSL_FEATURE_SOC_DMAMUX_COUNT
 #define DMA_MCUX_EDMA_MUX(idx, n) (DMAMUX_Type *)DT_INST_REG_ADDR_BY_IDX(n, UTIL_INC(idx))
 
-#define DMAMUX_BASE_INIT_DEFINE(n)                                                                 \
-	static DMAMUX_Type *dmamux_base_##n[] = {                                                  \
+#define DMAMUX_BASE_INIT_DEFINE(n)                                                        \
+	static DMAMUX_Type *dmamux_base_##n[] = {                                         \
 		LISTIFY(UTIL_DEC(DT_NUM_REGS(DT_DRV_INST(n))),			\
 			DMA_MCUX_EDMA_MUX, (,), n) };
 
 #define DMAMUX_BASE_INIT(n) .dmamux_base = &dmamux_base_##n[0],
-#define CHANNELS_PER_MUX(n)                                                                        \
+#define CHANNELS_PER_MUX(n)                                                              \
 	.channels_per_mux = DT_INST_PROP(n, dma_channels) / ARRAY_SIZE(dmamux_base_##n),
 
 #else
@@ -687,21 +687,21 @@ static int dma_mcux_edma_init(const struct device *dev)
 /*
  * define the dma
  */
-#define DMA_INIT(n)                                                                                \
-	DMAMUX_BASE_INIT_DEFINE(n)                                                                 \
-	static void dma_imx_config_func_##n(const struct device *dev);                             \
-	static const struct dma_mcux_edma_config dma_config_##n = {                                \
-		.base = (DMA_Type *)DT_INST_REG_ADDR(n),                                           \
-		DMAMUX_BASE_INIT(n).dma_channels = DT_INST_PROP(n, dma_channels),                  \
-		CHANNELS_PER_MUX(n).irq_config_func = dma_imx_config_func_##n,                     \
-		.dmamux_reg_offset = DT_INST_PROP(n, dmamux_reg_offset),                           \
-		DMA_MCUX_EDMA_CHANNEL_GAP(n)};                                                     \
-                                                                                                   \
-	struct dma_mcux_edma_data dma_data_##n;                                                    \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &dma_mcux_edma_init, NULL, &dma_data_##n, &dma_config_##n,        \
-			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY, &dma_mcux_edma_api);         \
-                                                                                                   \
+#define DMA_INIT(n)                                                                         \
+	DMAMUX_BASE_INIT_DEFINE(n)                                                          \
+	static void dma_imx_config_func_##n(const struct device *dev);                      \
+	static const struct dma_mcux_edma_config dma_config_##n = {                         \
+		.base = (DMA_Type *)DT_INST_REG_ADDR(n),                                    \
+		DMAMUX_BASE_INIT(n).dma_channels = DT_INST_PROP(n, dma_channels),           \
+		CHANNELS_PER_MUX(n).irq_config_func = dma_imx_config_func_##n,              \
+		.dmamux_reg_offset = DT_INST_PROP(n, dmamux_reg_offset),                    \
+		DMA_MCUX_EDMA_CHANNEL_GAP(n)};                                              \
+                                                                                            \
+	struct dma_mcux_edma_data dma_data_##n;                                             \
+                                                                                            \
+	DEVICE_DT_INST_DEFINE(n, &dma_mcux_edma_init, NULL, &dma_data_##n, &dma_config_##n, \
+			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY, &dma_mcux_edma_api);  \
+                                                                                            \
 	DMA_MCUX_EDMA_CONFIG_FUNC(n);
 
 DT_INST_FOREACH_STATUS_OKAY(DMA_INIT)

@@ -160,11 +160,11 @@ static int gpio_davinci_init(const struct device *dev)
 	return 0;
 }
 
-#define GPIO_DAVINCI_INIT_FUNC(n)                                                                  \
-	static void gpio_davinci_bank_##n##_config(const struct device *dev)                       \
-	{                                                                                          \
-		volatile struct gpio_davinci_regs *regs = DEV_GPIO_CFG_BASE(dev);                  \
-		ARG_UNUSED(regs);                                                                  \
+#define GPIO_DAVINCI_INIT_FUNC(n)                                                 \
+	static void gpio_davinci_bank_##n##_config(const struct device *dev)      \
+	{                                                                         \
+		volatile struct gpio_davinci_regs *regs = DEV_GPIO_CFG_BASE(dev); \
+		ARG_UNUSED(regs);                                                 \
 	}
 
 #define GPIO_DAVINCI_INIT(n)                                                                       \

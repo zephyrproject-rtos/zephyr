@@ -106,8 +106,8 @@ static int sdadc_smartbond_channel_setup(const struct device *dev,
 	return 0;
 }
 
-#define PER_CHANNEL_ADC_CONFIG_MASK                                                                \
-	(SDADC_SDADC_CTRL_REG_SDADC_INP_SEL_Msk | SDADC_SDADC_CTRL_REG_SDADC_INN_SEL_Msk |         \
+#define PER_CHANNEL_ADC_CONFIG_MASK                                                        \
+	(SDADC_SDADC_CTRL_REG_SDADC_INP_SEL_Msk | SDADC_SDADC_CTRL_REG_SDADC_INN_SEL_Msk | \
 	 SDADC_SDADC_CTRL_REG_SDADC_SE_Msk)
 
 static inline void sdadc_smartbond_pm_policy_state_lock_get(const struct device *dev,

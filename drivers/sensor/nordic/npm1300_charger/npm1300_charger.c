@@ -614,36 +614,36 @@ static const struct sensor_driver_api npm1300_charger_battery_driver_api = {
 	.attr_get = npm1300_charger_attr_get,
 };
 
-#define NPM1300_CHARGER_INIT(n)                                                                    \
-	static struct npm1300_charger_data npm1300_charger_data_##n;                               \
-                                                                                                   \
-	static const struct npm1300_charger_config npm1300_charger_config_##n = {                  \
-		.mfd = DEVICE_DT_GET(DT_INST_PARENT(n)),                                           \
-		.term_microvolt = DT_INST_PROP(n, term_microvolt),                                 \
-		.term_warm_microvolt =                                                             \
-			DT_INST_PROP_OR(n, term_warm_microvolt, DT_INST_PROP(n, term_microvolt)),  \
-		.current_microamp = DT_INST_PROP(n, current_microamp),                             \
-		.dischg_limit_microamp = DT_INST_PROP(n, dischg_limit_microamp),                   \
-		.vbus_limit_microamp = DT_INST_PROP(n, vbus_limit_microamp),                       \
-		.thermistor_ohms = DT_INST_PROP(n, thermistor_ohms),                               \
-		.thermistor_idx = DT_INST_ENUM_IDX(n, thermistor_ohms),                            \
-		.thermistor_beta = DT_INST_PROP(n, thermistor_beta),                               \
-		.charging_enable = DT_INST_PROP(n, charging_enable),                               \
-		.trickle_sel = DT_INST_ENUM_IDX(n, trickle_microvolt),                             \
-		.iterm_sel = DT_INST_ENUM_IDX(n, term_current_percent),                            \
-		.vbatlow_charge_enable = DT_INST_PROP(n, vbatlow_charge_enable),                   \
-		.disable_recharge = DT_INST_PROP(n, disable_recharge),                             \
-		.dietemp_thresholds = {DT_INST_PROP_OR(n, dietemp_stop_millidegrees, INT32_MAX),   \
-				       DT_INST_PROP_OR(n, dietemp_resume_millidegrees,             \
-						       INT32_MAX)},                                \
-		.temp_thresholds = {DT_INST_PROP_OR(n, thermistor_cold_millidegrees, INT32_MAX),   \
-				    DT_INST_PROP_OR(n, thermistor_cool_millidegrees, INT32_MAX),   \
-				    DT_INST_PROP_OR(n, thermistor_warm_millidegrees, INT32_MAX),   \
-				    DT_INST_PROP_OR(n, thermistor_hot_millidegrees, INT32_MAX)}};  \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, &npm1300_charger_init, NULL, &npm1300_charger_data_##n,    \
-				     &npm1300_charger_config_##n, POST_KERNEL,                     \
-				     CONFIG_SENSOR_INIT_PRIORITY,                                  \
+#define NPM1300_CHARGER_INIT(n)                                                                   \
+	static struct npm1300_charger_data npm1300_charger_data_##n;                              \
+                                                                                                  \
+	static const struct npm1300_charger_config npm1300_charger_config_##n = {                 \
+		.mfd = DEVICE_DT_GET(DT_INST_PARENT(n)),                                          \
+		.term_microvolt = DT_INST_PROP(n, term_microvolt),                                \
+		.term_warm_microvolt =                                                            \
+			DT_INST_PROP_OR(n, term_warm_microvolt, DT_INST_PROP(n, term_microvolt)), \
+		.current_microamp = DT_INST_PROP(n, current_microamp),                            \
+		.dischg_limit_microamp = DT_INST_PROP(n, dischg_limit_microamp),                  \
+		.vbus_limit_microamp = DT_INST_PROP(n, vbus_limit_microamp),                      \
+		.thermistor_ohms = DT_INST_PROP(n, thermistor_ohms),                              \
+		.thermistor_idx = DT_INST_ENUM_IDX(n, thermistor_ohms),                           \
+		.thermistor_beta = DT_INST_PROP(n, thermistor_beta),                              \
+		.charging_enable = DT_INST_PROP(n, charging_enable),                              \
+		.trickle_sel = DT_INST_ENUM_IDX(n, trickle_microvolt),                            \
+		.iterm_sel = DT_INST_ENUM_IDX(n, term_current_percent),                           \
+		.vbatlow_charge_enable = DT_INST_PROP(n, vbatlow_charge_enable),                  \
+		.disable_recharge = DT_INST_PROP(n, disable_recharge),                            \
+		.dietemp_thresholds = {DT_INST_PROP_OR(n, dietemp_stop_millidegrees, INT32_MAX),  \
+				       DT_INST_PROP_OR(n, dietemp_resume_millidegrees,            \
+						       INT32_MAX)},                               \
+		.temp_thresholds = {DT_INST_PROP_OR(n, thermistor_cold_millidegrees, INT32_MAX),  \
+				    DT_INST_PROP_OR(n, thermistor_cool_millidegrees, INT32_MAX),  \
+				    DT_INST_PROP_OR(n, thermistor_warm_millidegrees, INT32_MAX),  \
+				    DT_INST_PROP_OR(n, thermistor_hot_millidegrees, INT32_MAX)}}; \
+                                                                                                  \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, &npm1300_charger_init, NULL, &npm1300_charger_data_##n,   \
+				     &npm1300_charger_config_##n, POST_KERNEL,                    \
+				     CONFIG_SENSOR_INIT_PRIORITY,                                 \
 				     &npm1300_charger_battery_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NPM1300_CHARGER_INIT)

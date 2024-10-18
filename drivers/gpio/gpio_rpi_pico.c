@@ -17,7 +17,7 @@
 
 #define DT_DRV_COMPAT raspberrypi_pico_gpio
 
-#define ALL_EVENTS                                                                                 \
+#define ALL_EVENTS                                                                           \
 	(GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE | GPIO_IRQ_LEVEL_LOW | GPIO_IRQ_LEVEL_HIGH)
 
 struct gpio_rpi_config {
@@ -206,23 +206,23 @@ static int gpio_rpi_bank_init(const struct device *dev)
 	return 0;
 }
 
-#define GPIO_RPI_INIT(idx)                                                                         \
-	static void bank_##idx##_config_func(void)                                                 \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority), gpio_rpi_isr,           \
-			    DEVICE_DT_INST_GET(idx), 0);                                           \
-		irq_enable(DT_INST_IRQN(idx));                                                     \
-	}                                                                                          \
-	static const struct gpio_rpi_config gpio_rpi_##idx##_config = {                            \
-		.bank_config_func = bank_##idx##_config_func,                                      \
-		.common = {                                                                        \
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),                     \
-		}};                                                                                \
-                                                                                                   \
-	static struct gpio_rpi_data gpio_rpi_##idx##_data;                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(idx, gpio_rpi_bank_init, NULL, &gpio_rpi_##idx##_data,               \
-			      &gpio_rpi_##idx##_config, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,    \
+#define GPIO_RPI_INIT(idx)                                                                      \
+	static void bank_##idx##_config_func(void)                                              \
+	{                                                                                       \
+		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority), gpio_rpi_isr,        \
+			    DEVICE_DT_INST_GET(idx), 0);                                        \
+		irq_enable(DT_INST_IRQN(idx));                                                  \
+	}                                                                                       \
+	static const struct gpio_rpi_config gpio_rpi_##idx##_config = {                         \
+		.bank_config_func = bank_##idx##_config_func,                                   \
+		.common = {                                                                     \
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),                  \
+		}};                                                                             \
+                                                                                                \
+	static struct gpio_rpi_data gpio_rpi_##idx##_data;                                      \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(idx, gpio_rpi_bank_init, NULL, &gpio_rpi_##idx##_data,            \
+			      &gpio_rpi_##idx##_config, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY, \
 			      &gpio_rpi_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_RPI_INIT)

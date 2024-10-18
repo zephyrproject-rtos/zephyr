@@ -1741,9 +1741,9 @@ out_bus:
 /**
  * @brief get device description by part_no
  */
-#define GPIO_PCA_GET_API_BY_PART_NO(part_no)                                                       \
-	((part_no == PCA_PART_NO_PCAL6524)   ? &gpio_pca_series_api_funcs_extended                 \
-	 : (part_no == PCA_PART_NO_PCAL6534) ? &gpio_pca_series_api_funcs_extended                 \
+#define GPIO_PCA_GET_API_BY_PART_NO(part_no)                                        \
+	((part_no == PCA_PART_NO_PCAL6524)   ? &gpio_pca_series_api_funcs_extended  \
+	 : (part_no == PCA_PART_NO_PCAL6534) ? &gpio_pca_series_api_funcs_extended  \
 					     : &gpio_pca_series_api_funcs_standard)
 #define GPIO_PCA_GET_PORT_NO_CFG_BY_PART_NO(part_no) (GPIO_PCA_PORT_NO_##part_no)
 #define GPIO_PCA_GET_PART_FLAG_BY_PART_NO(part_no)   (GPIO_PCA_FLAG_##part_no)
@@ -1756,23 +1756,23 @@ out_bus:
 #define PCA_REG_HAS_PULL       (2U) /* +1b_pull_enable, +1b_pull_select */
 #define PCA_REG_HAS_OUT_CONFIG (1U) /* +1b_output_config */
 
-#define GPIO_PCA_GET_CACHE_SIZE_BY_PART_NO_NO_INT(part_no)                                         \
-	((2U /* basic: +output_port, +configuration */                                             \
-	  + ((GPIO_PCA_GET_PART_FLAG_BY_PART_NO(part_no) & PCA_HAS_LATCH) ? PCA_REG_HAS_LATCH      \
-									  : 0U) +                  \
-	  ((GPIO_PCA_GET_PART_FLAG_BY_PART_NO(part_no) & PCA_HAS_PULL) ? PCA_REG_HAS_PULL : 0U) +  \
-	  ((GPIO_PCA_GET_PART_FLAG_BY_PART_NO(part_no) & PCA_HAS_OUT_CONFIG)                       \
-		   ? PCA_REG_HAS_OUT_CONFIG                                                        \
-		   : 0U)) *                                                                        \
+#define GPIO_PCA_GET_CACHE_SIZE_BY_PART_NO_NO_INT(part_no)                                        \
+	((2U /* basic: +output_port, +configuration */                                            \
+	  + ((GPIO_PCA_GET_PART_FLAG_BY_PART_NO(part_no) & PCA_HAS_LATCH) ? PCA_REG_HAS_LATCH     \
+									  : 0U) +                 \
+	  ((GPIO_PCA_GET_PART_FLAG_BY_PART_NO(part_no) & PCA_HAS_PULL) ? PCA_REG_HAS_PULL : 0U) + \
+	  ((GPIO_PCA_GET_PART_FLAG_BY_PART_NO(part_no) & PCA_HAS_OUT_CONFIG)                      \
+		   ? PCA_REG_HAS_OUT_CONFIG                                                       \
+		   : 0U)) *                                                                       \
 	 GPIO_PCA_GET_PORT_NO_CFG_BY_PART_NO(part_no))
 
 #ifdef CONFIG_GPIO_PCA_SERIES_INTERRUPT
 
 /** Cache size increment by feature flags (continued) */
 #define PCA_REG_HAS_INT_EXTEND (3U) /* true: +2b_interrupt_edge, +1b_interrupt_mask */
-#define PCA_REG_NO_INT_EXTEND                                                                      \
-	(3U) /* false: +1b_input_history, +1b_interrupt_rise,                                      \
-	      * +1b_interrupt_fall                                                                 \
+#define PCA_REG_NO_INT_EXTEND                                 \
+	(3U) /* false: +1b_input_history, +1b_interrupt_rise, \
+	      * +1b_interrupt_fall                            \
 	      */
 
 /**
@@ -1836,14 +1836,14 @@ out_bus:
  *        - cacheable (present) if not PCA_HAS_INT_EXTEND
  */
 
-#define GPIO_PCA_GET_CACHE_SIZE_BY_PART_NO(part_no)                                                \
-	(GPIO_PCA_GET_CACHE_SIZE_BY_PART_NO_NO_INT(part_no) +                                      \
-	 (((GPIO_PCA_GET_PART_FLAG_BY_PART_NO(part_no) & PCA_HAS_INT_EXTEND)                       \
-		   ? PCA_REG_HAS_INT_EXTEND                                                        \
-		   : PCA_REG_NO_INT_EXTEND)) *                                                     \
+#define GPIO_PCA_GET_CACHE_SIZE_BY_PART_NO(part_no)                          \
+	(GPIO_PCA_GET_CACHE_SIZE_BY_PART_NO_NO_INT(part_no) +                \
+	 (((GPIO_PCA_GET_PART_FLAG_BY_PART_NO(part_no) & PCA_HAS_INT_EXTEND) \
+		   ? PCA_REG_HAS_INT_EXTEND                                  \
+		   : PCA_REG_NO_INT_EXTEND)) *                               \
 		 GPIO_PCA_GET_PORT_NO_CFG_BY_PART_NO(part_no))
 #else /* CONFIG_GPIO_PCA_SERIES_INTERRUPT */
-#define GPIO_PCA_GET_CACHE_SIZE_BY_PART_NO(part_no)                                                \
+#define GPIO_PCA_GET_CACHE_SIZE_BY_PART_NO(part_no)          \
 	(GPIO_PCA_GET_CACHE_SIZE_BY_PART_NO_NO_INT(part_no))
 #endif /* CONFIG_GPIO_PCA_SERIES_INTERRUPT */
 #endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
@@ -2031,7 +2031,7 @@ const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pca9555 = {
  *       ngpios     :   24, 32
  *       part_no    :   pcal6524 pcal6534
  */
-#define GPIO_PCA_SERIES_FLAG_TYPE_3                                                                \
+#define GPIO_PCA_SERIES_FLAG_TYPE_3 \
 	(PCA_HAS_LATCH | PCA_HAS_PULL | PCA_HAS_INT_MASK | PCA_HAS_INT_EXTEND | PCA_HAS_OUT_CONFIG)
 
 #ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
@@ -2157,30 +2157,30 @@ const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pcal6534 = {
  * @brief common device instance
  *
  */
-#define GPIO_PCA_SERIES_DEVICE_INSTANCE(inst, part_no)                                             \
-	static const struct gpio_pca_series_config gpio_##part_no##_##inst##_cfg = {               \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),            \
-			},                                                                         \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.part_cfg = GPIO_PCA_GET_PART_CFG_BY_PART_NO(part_no),                             \
-		.gpio_rst = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {}),                       \
+#define GPIO_PCA_SERIES_DEVICE_INSTANCE(inst, part_no)                                           \
+	static const struct gpio_pca_series_config gpio_##part_no##_##inst##_cfg = {             \
+		.common =                                                                        \
+			{                                                                        \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),          \
+			},                                                                       \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                               \
+		.part_cfg = GPIO_PCA_GET_PART_CFG_BY_PART_NO(part_no),                           \
+		.gpio_rst = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {}),                     \
 		IF_ENABLED(CONFIG_GPIO_PCA_SERIES_INTERRUPT, \
-			(.gpio_int = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {}),)) };            \
+			(.gpio_int = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {}),)) };          \
 	static uint8_t gpio_##part_no##_##inst##_reg_cache[COND_CODE_1( \
 		CONFIG_GPIO_PCA_SERIES_CACHE_ALL, \
 		(GPIO_PCA_GET_CACHE_SIZE_BY_PART_NO(part_no) /** true */\
 		 ), \
 		(sizeof(struct gpio_pca_series_reg_cache_mini) /** false */ \
-		 ))];                                                                             \
-	static struct gpio_pca_series_data gpio_##part_no##_##inst##_data = {                      \
-		.lock = Z_SEM_INITIALIZER(gpio_##part_no##_##inst##_data.lock, 1, 1),              \
-		.cache = (void *)gpio_##part_no##_##inst##_reg_cache,                              \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, gpio_pca_series_init, NULL, &gpio_##part_no##_##inst##_data,   \
-			      &gpio_##part_no##_##inst##_cfg, POST_KERNEL,                         \
-			      CONFIG_GPIO_PCA_SERIES_INIT_PRIORITY,                                \
+		 ))];                                                                           \
+	static struct gpio_pca_series_data gpio_##part_no##_##inst##_data = {                    \
+		.lock = Z_SEM_INITIALIZER(gpio_##part_no##_##inst##_data.lock, 1, 1),            \
+		.cache = (void *)gpio_##part_no##_##inst##_reg_cache,                            \
+	};                                                                                       \
+	DEVICE_DT_INST_DEFINE(inst, gpio_pca_series_init, NULL, &gpio_##part_no##_##inst##_data, \
+			      &gpio_##part_no##_##inst##_cfg, POST_KERNEL,                       \
+			      CONFIG_GPIO_PCA_SERIES_INIT_PRIORITY,                              \
 			      GPIO_PCA_GET_API_BY_PART_NO(part_no));
 
 #undef DT_DRV_COMPAT

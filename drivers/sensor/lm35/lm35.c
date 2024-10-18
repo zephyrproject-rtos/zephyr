@@ -83,27 +83,27 @@ static int lm35_init(const struct device *dev)
 	return 0;
 }
 
-#define LM35_INST(inst)                                                                            \
-	static struct lm35_data lm35_data_##inst;                                                  \
-                                                                                                   \
-	static const struct lm35_config lm35_cfg_##inst = {                                        \
-		.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst)),                              \
-		.adc_channel = DT_INST_IO_CHANNELS_INPUT(inst),                                    \
-		.adc_seq =                                                                         \
-			{                                                                          \
-				.channels = BIT(DT_INST_IO_CHANNELS_INPUT(inst)),                  \
-				.buffer = &lm35_data_##inst.raw,                                   \
-				.buffer_size = sizeof(lm35_data_##inst.raw),                       \
-				.resolution = DT_INST_PROP(inst, resolution),                      \
-			},                                                                         \
-		.ch_cfg = {                                                                        \
-			.gain = LM35_GAIN,                                                         \
-			.reference = LM35_REF,                                                     \
-			.acquisition_time = ADC_ACQ_TIME_DEFAULT,                                  \
-			.channel_id = DT_INST_IO_CHANNELS_INPUT(inst),                             \
-		}};                                                                                \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, lm35_init, NULL, &lm35_data_##inst, &lm35_cfg_##inst,   \
+#define LM35_INST(inst)                                                                           \
+	static struct lm35_data lm35_data_##inst;                                                 \
+                                                                                                  \
+	static const struct lm35_config lm35_cfg_##inst = {                                       \
+		.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst)),                             \
+		.adc_channel = DT_INST_IO_CHANNELS_INPUT(inst),                                   \
+		.adc_seq =                                                                        \
+			{                                                                         \
+				.channels = BIT(DT_INST_IO_CHANNELS_INPUT(inst)),                 \
+				.buffer = &lm35_data_##inst.raw,                                  \
+				.buffer_size = sizeof(lm35_data_##inst.raw),                      \
+				.resolution = DT_INST_PROP(inst, resolution),                     \
+			},                                                                        \
+		.ch_cfg = {                                                                       \
+			.gain = LM35_GAIN,                                                        \
+			.reference = LM35_REF,                                                    \
+			.acquisition_time = ADC_ACQ_TIME_DEFAULT,                                 \
+			.channel_id = DT_INST_IO_CHANNELS_INPUT(inst),                            \
+		}};                                                                               \
+                                                                                                  \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, lm35_init, NULL, &lm35_data_##inst, &lm35_cfg_##inst,  \
 				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &lm35_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LM35_INST)

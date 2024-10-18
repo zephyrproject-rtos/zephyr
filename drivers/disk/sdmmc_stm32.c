@@ -110,14 +110,14 @@ static void stm32_sdmmc_isr(const struct device *dev)
 #endif
 }
 
-#define DEFINE_HAL_CALLBACK(name)                                                                  \
-	void name(HandleTypeDef *hsd)                                                              \
-	{                                                                                          \
-		struct stm32_sdmmc_priv *priv = CONTAINER_OF(hsd, struct stm32_sdmmc_priv, hsd);   \
-                                                                                                   \
-		priv->status = hsd->ErrorCode;                                                     \
-                                                                                                   \
-		k_sem_give(&priv->sync);                                                           \
+#define DEFINE_HAL_CALLBACK(name)                                                                \
+	void name(HandleTypeDef *hsd)                                                            \
+	{                                                                                        \
+		struct stm32_sdmmc_priv *priv = CONTAINER_OF(hsd, struct stm32_sdmmc_priv, hsd); \
+                                                                                                 \
+		priv->status = hsd->ErrorCode;                                                   \
+                                                                                                 \
+		k_sem_give(&priv->sync);                                                         \
 	}
 
 #ifdef CONFIG_SDMMC_STM32_EMMC
@@ -728,19 +728,19 @@ err_card_detect:
 
 #if STM32_SDMMC_USE_DMA
 
-#define SDMMC_DMA_CHANNEL_INIT(dir, dir_cap)                                                       \
-	.dev = DEVICE_DT_GET(STM32_DMA_CTLR(0, dir)),                                              \
-	.channel = DT_INST_DMAS_CELL_BY_NAME(0, dir, channel),                                     \
-	.channel_nb = DT_DMAS_CELL_BY_NAME(DT_DRV_INST(0), dir, channel),                          \
-	.reg = (DMA_TypeDef *)DT_REG_ADDR(DT_PHANDLE_BY_NAME(DT_DRV_INST(0), dmas, dir)),          \
-	.cfg = {                                                                                   \
-		.dma_slot = STM32_DMA_SLOT(0, dir, slot),                                          \
-		.channel_priority = STM32_DMA_CONFIG_PRIORITY(STM32_DMA_CHANNEL_CONFIG(0, dir)),   \
-		.dma_callback = stm32_sdmmc_dma_cb,                                                \
-		.linked_channel = STM32_DMA_HAL_OVERRIDE,                                          \
+#define SDMMC_DMA_CHANNEL_INIT(dir, dir_cap)                                                     \
+	.dev = DEVICE_DT_GET(STM32_DMA_CTLR(0, dir)),                                            \
+	.channel = DT_INST_DMAS_CELL_BY_NAME(0, dir, channel),                                   \
+	.channel_nb = DT_DMAS_CELL_BY_NAME(DT_DRV_INST(0), dir, channel),                        \
+	.reg = (DMA_TypeDef *)DT_REG_ADDR(DT_PHANDLE_BY_NAME(DT_DRV_INST(0), dmas, dir)),        \
+	.cfg = {                                                                                 \
+		.dma_slot = STM32_DMA_SLOT(0, dir, slot),                                        \
+		.channel_priority = STM32_DMA_CONFIG_PRIORITY(STM32_DMA_CHANNEL_CONFIG(0, dir)), \
+		.dma_callback = stm32_sdmmc_dma_cb,                                              \
+		.linked_channel = STM32_DMA_HAL_OVERRIDE,                                        \
 	},
 
-#define SDMMC_DMA_CHANNEL(dir, DIR)                                                                \
+#define SDMMC_DMA_CHANNEL(dir, DIR)                                 \
 	.dma_##dir = {COND_CODE_1(DT_INST_DMAS_HAS_NAME(0, dir),			\
 		 (SDMMC_DMA_CHANNEL_INIT(dir, DIR)),			\
 		 (NULL)) },

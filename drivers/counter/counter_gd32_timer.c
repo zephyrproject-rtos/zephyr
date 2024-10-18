@@ -452,42 +452,42 @@ static const struct counter_driver_api counter_api = {
 	.get_freq = counter_gd32_timer_get_freq,
 };
 
-#define TIMER_IRQ_CONFIG(n)                                                                        \
-	static void irq_config_##n(const struct device *dev)                                       \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, global, irq),                                   \
-			    DT_INST_IRQ_BY_NAME(n, global, priority), irq_handler,                 \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQ_BY_NAME(n, global, irq));                                   \
-	}                                                                                          \
-	static void set_irq_pending_##n(void)                                                      \
-	{                                                                                          \
-		(NVIC_SetPendingIRQ(DT_INST_IRQ_BY_NAME(n, global, irq)));                         \
-	}                                                                                          \
-	static uint32_t get_irq_pending_##n(void)                                                  \
-	{                                                                                          \
-		return NVIC_GetPendingIRQ(DT_INST_IRQ_BY_NAME(n, global, irq));                    \
+#define TIMER_IRQ_CONFIG(n)                                                        \
+	static void irq_config_##n(const struct device *dev)                       \
+	{                                                                          \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, global, irq),                   \
+			    DT_INST_IRQ_BY_NAME(n, global, priority), irq_handler, \
+			    DEVICE_DT_INST_GET(n), 0);                             \
+		irq_enable(DT_INST_IRQ_BY_NAME(n, global, irq));                   \
+	}                                                                          \
+	static void set_irq_pending_##n(void)                                      \
+	{                                                                          \
+		(NVIC_SetPendingIRQ(DT_INST_IRQ_BY_NAME(n, global, irq)));         \
+	}                                                                          \
+	static uint32_t get_irq_pending_##n(void)                                  \
+	{                                                                          \
+		return NVIC_GetPendingIRQ(DT_INST_IRQ_BY_NAME(n, global, irq));    \
 	}
 
-#define TIMER_IRQ_CONFIG_ADVANCED(n)                                                               \
-	static void irq_config_##n(const struct device *dev)                                       \
-	{                                                                                          \
-		IRQ_CONNECT((DT_INST_IRQ_BY_NAME(n, up, irq)),                                     \
-			    (DT_INST_IRQ_BY_NAME(n, up, priority)), irq_handler,                   \
-			    (DEVICE_DT_INST_GET(n)), 0);                                           \
-		irq_enable((DT_INST_IRQ_BY_NAME(n, up, irq)));                                     \
-		IRQ_CONNECT((DT_INST_IRQ_BY_NAME(n, cc, irq)),                                     \
-			    (DT_INST_IRQ_BY_NAME(n, cc, priority)), irq_handler,                   \
-			    (DEVICE_DT_INST_GET(n)), 0);                                           \
-		irq_enable((DT_INST_IRQ_BY_NAME(n, cc, irq)));                                     \
-	}                                                                                          \
-	static void set_irq_pending_##n(void)                                                      \
-	{                                                                                          \
-		(NVIC_SetPendingIRQ(DT_INST_IRQ_BY_NAME(n, cc, irq)));                             \
-	}                                                                                          \
-	static uint32_t get_irq_pending_##n(void)                                                  \
-	{                                                                                          \
-		return NVIC_GetPendingIRQ(DT_INST_IRQ_BY_NAME(n, cc, irq));                        \
+#define TIMER_IRQ_CONFIG_ADVANCED(n)                                             \
+	static void irq_config_##n(const struct device *dev)                     \
+	{                                                                        \
+		IRQ_CONNECT((DT_INST_IRQ_BY_NAME(n, up, irq)),                   \
+			    (DT_INST_IRQ_BY_NAME(n, up, priority)), irq_handler, \
+			    (DEVICE_DT_INST_GET(n)), 0);                         \
+		irq_enable((DT_INST_IRQ_BY_NAME(n, up, irq)));                   \
+		IRQ_CONNECT((DT_INST_IRQ_BY_NAME(n, cc, irq)),                   \
+			    (DT_INST_IRQ_BY_NAME(n, cc, priority)), irq_handler, \
+			    (DEVICE_DT_INST_GET(n)), 0);                         \
+		irq_enable((DT_INST_IRQ_BY_NAME(n, cc, irq)));                   \
+	}                                                                        \
+	static void set_irq_pending_##n(void)                                    \
+	{                                                                        \
+		(NVIC_SetPendingIRQ(DT_INST_IRQ_BY_NAME(n, cc, irq)));           \
+	}                                                                        \
+	static uint32_t get_irq_pending_##n(void)                                \
+	{                                                                        \
+		return NVIC_GetPendingIRQ(DT_INST_IRQ_BY_NAME(n, cc, irq));      \
 	}
 
 #define GD32_TIMER_INIT(n)                                                                         \

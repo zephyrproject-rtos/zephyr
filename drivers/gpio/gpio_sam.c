@@ -63,7 +63,7 @@ static int gpio_sam_port_configure(const struct device *dev, uint32_t mask, gpio
 		pio->PIO_IDR = mask;
 		/* Disable pull-up. */
 		pio->PIO_PUDR = mask;
-#if defined(CONFIG_SOC_SERIES_SAM4S) || defined(CONFIG_SOC_SERIES_SAM4E) ||                        \
+#if defined(CONFIG_SOC_SERIES_SAM4S) || defined(CONFIG_SOC_SERIES_SAM4E) ||    \
 	defined(CONFIG_SOC_SERIES_SAME70) || defined(CONFIG_SOC_SERIES_SAMV71)
 		/* Disable pull-down. */
 		pio->PIO_PPDDR = mask;
@@ -103,14 +103,14 @@ static int gpio_sam_port_configure(const struct device *dev, uint32_t mask, gpio
 	 * Clear both pulls, then enable the one we need.
 	 */
 	pio->PIO_PUDR = mask;
-#if defined(CONFIG_SOC_SERIES_SAM4S) || defined(CONFIG_SOC_SERIES_SAM4E) ||                        \
+#if defined(CONFIG_SOC_SERIES_SAM4S) || defined(CONFIG_SOC_SERIES_SAM4E) ||    \
 	defined(CONFIG_SOC_SERIES_SAME70) || defined(CONFIG_SOC_SERIES_SAMV71)
 	pio->PIO_PPDDR = mask;
 #endif
 	if (flags & GPIO_PULL_UP) {
 		/* Enable pull-up. */
 		pio->PIO_PUER = mask;
-#if defined(CONFIG_SOC_SERIES_SAM4S) || defined(CONFIG_SOC_SERIES_SAM4E) ||                        \
+#if defined(CONFIG_SOC_SERIES_SAM4S) || defined(CONFIG_SOC_SERIES_SAM4E) ||    \
 	defined(CONFIG_SOC_SERIES_SAME70) || defined(CONFIG_SOC_SERIES_SAMV71)
 
 		/* Setup Pull-down resistor. */
@@ -127,7 +127,7 @@ static int gpio_sam_port_configure(const struct device *dev, uint32_t mask, gpio
 	} else {
 		pio->PIO_SCIFSR = mask;
 	}
-#elif defined(CONFIG_SOC_SERIES_SAM4S) || defined(CONFIG_SOC_SERIES_SAM4E) ||                      \
+#elif defined(CONFIG_SOC_SERIES_SAM4S) || defined(CONFIG_SOC_SERIES_SAM4E) ||  \
 	defined(CONFIG_SOC_SERIES_SAME70) || defined(CONFIG_SOC_SERIES_SAMV71)
 
 	/* Setup debounce. */
@@ -298,30 +298,30 @@ int gpio_sam_init(const struct device *dev)
 	return 0;
 }
 
-#define GPIO_SAM_INIT(n)                                                                           \
-	static void port_##n##_sam_config_func(const struct device *dev);                          \
-                                                                                                   \
-	static const struct gpio_sam_config port_##n##_sam_config = {                              \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
-		.regs = (Pio *)DT_INST_REG_ADDR(n),                                                \
-		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),                                         \
-		.config_func = port_##n##_sam_config_func,                                         \
-	};                                                                                         \
-                                                                                                   \
-	static struct gpio_sam_runtime port_##n##_sam_runtime;                                     \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, gpio_sam_init, NULL, &port_##n##_sam_runtime,                     \
-			      &port_##n##_sam_config, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,     \
-			      &gpio_sam_api);                                                      \
-                                                                                                   \
-	static void port_##n##_sam_config_func(const struct device *dev)                           \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_sam_isr,               \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define GPIO_SAM_INIT(n)                                                                       \
+	static void port_##n##_sam_config_func(const struct device *dev);                      \
+                                                                                               \
+	static const struct gpio_sam_config port_##n##_sam_config = {                          \
+		.common =                                                                      \
+			{                                                                      \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),           \
+			},                                                                     \
+		.regs = (Pio *)DT_INST_REG_ADDR(n),                                            \
+		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),                                     \
+		.config_func = port_##n##_sam_config_func,                                     \
+	};                                                                                     \
+                                                                                               \
+	static struct gpio_sam_runtime port_##n##_sam_runtime;                                 \
+                                                                                               \
+	DEVICE_DT_INST_DEFINE(n, gpio_sam_init, NULL, &port_##n##_sam_runtime,                 \
+			      &port_##n##_sam_config, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, \
+			      &gpio_sam_api);                                                  \
+                                                                                               \
+	static void port_##n##_sam_config_func(const struct device *dev)                       \
+	{                                                                                      \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_sam_isr,           \
+			    DEVICE_DT_INST_GET(n), 0);                                         \
+		irq_enable(DT_INST_IRQN(n));                                                   \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_SAM_INIT)

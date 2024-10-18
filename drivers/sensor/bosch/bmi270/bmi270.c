@@ -752,38 +752,38 @@ static const struct bmi270_feature_config bmi270_feature_base = {
 	.anymo_2 = &(struct bmi270_feature_reg){.page = 1, .addr = 0x3E},
 };
 
-#define BMI270_FEATURE(inst)                                                                       \
-	(DT_INST_NODE_HAS_COMPAT(inst, bosch_bmi270_base) ? &bmi270_feature_base                   \
+#define BMI270_FEATURE(inst)                                                          \
+	(DT_INST_NODE_HAS_COMPAT(inst, bosch_bmi270_base) ? &bmi270_feature_base      \
 							  : &bmi270_feature_max_fifo)
 
 #if CONFIG_BMI270_TRIGGER
-#define BMI270_CONFIG_INT(inst)                                                                    \
-	.int1 = GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, irq_gpios, 0, {}),                           \
+#define BMI270_CONFIG_INT(inst)                                          \
+	.int1 = GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, irq_gpios, 0, {}), \
 	.int2 = GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, irq_gpios, 1, {}),
 #else
 #define BMI270_CONFIG_INT(inst)
 #endif
 
 /* Initializes a struct bmi270_config for an instance on a SPI bus. */
-#define BMI270_CONFIG_SPI(inst)                                                                    \
-	.bus.spi = SPI_DT_SPEC_INST_GET(inst, BMI270_SPI_OPERATION, 0),                            \
+#define BMI270_CONFIG_SPI(inst)                                         \
+	.bus.spi = SPI_DT_SPEC_INST_GET(inst, BMI270_SPI_OPERATION, 0), \
 	.bus_io = &bmi270_bus_io_spi,
 
 /* Initializes a struct bmi270_config for an instance on an I2C bus. */
 #define BMI270_CONFIG_I2C(inst) .bus.i2c = I2C_DT_SPEC_INST_GET(inst), .bus_io = &bmi270_bus_io_i2c,
 
-#define BMI270_CREATE_INST(inst)                                                                   \
-                                                                                                   \
-	static struct bmi270_data bmi270_drv_##inst;                                               \
-                                                                                                   \
+#define BMI270_CREATE_INST(inst)                                                       \
+                                                                                       \
+	static struct bmi270_data bmi270_drv_##inst;                                   \
+                                                                                       \
 	static const struct bmi270_config bmi270_config_##inst = {COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
 			    (BMI270_CONFIG_SPI(inst)),			\
-			    (BMI270_CONFIG_I2C(inst))) .feature =                    \
-						   BMI270_FEATURE(inst),                           \
-		 BMI270_CONFIG_INT(inst)};                                                         \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmi270_init, NULL, &bmi270_drv_##inst,                  \
-				     &bmi270_config_##inst, POST_KERNEL,                           \
+			    (BMI270_CONFIG_I2C(inst))) .feature =        \
+						   BMI270_FEATURE(inst),               \
+		 BMI270_CONFIG_INT(inst)};                                             \
+                                                                                       \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmi270_init, NULL, &bmi270_drv_##inst,      \
+				     &bmi270_config_##inst, POST_KERNEL,               \
 				     CONFIG_SENSOR_INIT_PRIORITY, &bmi270_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BMI270_CREATE_INST);

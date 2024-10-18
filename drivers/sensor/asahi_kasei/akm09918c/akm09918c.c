@@ -228,15 +228,15 @@ static const struct sensor_driver_api akm09918c_driver_api = {
 #endif
 };
 
-#define AKM09918C_DEFINE(inst)                                                                     \
-	static struct akm09918c_data akm09918c_data_##inst;                                        \
-                                                                                                   \
-	static const struct akm09918c_config akm09918c_config_##inst = {                           \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-	};                                                                                         \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, akm09918c_init, NULL, &akm09918c_data_##inst,           \
-				     &akm09918c_config_##inst, POST_KERNEL,                        \
+#define AKM09918C_DEFINE(inst)                                                            \
+	static struct akm09918c_data akm09918c_data_##inst;                               \
+                                                                                          \
+	static const struct akm09918c_config akm09918c_config_##inst = {                  \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                        \
+	};                                                                                \
+                                                                                          \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, akm09918c_init, NULL, &akm09918c_data_##inst,  \
+				     &akm09918c_config_##inst, POST_KERNEL,               \
 				     CONFIG_SENSOR_INIT_PRIORITY, &akm09918c_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AKM09918C_DEFINE)

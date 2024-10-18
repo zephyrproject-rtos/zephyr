@@ -195,16 +195,16 @@ static int si7006_init(const struct device *dev)
 	return 0;
 }
 
-#define SI7006_DEFINE(inst, name, temp_cmd)                                                        \
-	static struct si7006_data si7006_data_##name##_##inst;                                     \
-                                                                                                   \
-	static const struct si7006_config si7006_config_##name##_##inst = {                        \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.read_temp_cmd = temp_cmd,                                                         \
-	};                                                                                         \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, si7006_init, NULL, &si7006_data_##name##_##inst,        \
-				     &si7006_config_##name##_##inst, POST_KERNEL,                  \
+#define SI7006_DEFINE(inst, name, temp_cmd)                                                 \
+	static struct si7006_data si7006_data_##name##_##inst;                              \
+                                                                                            \
+	static const struct si7006_config si7006_config_##name##_##inst = {                 \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                          \
+		.read_temp_cmd = temp_cmd,                                                  \
+	};                                                                                  \
+                                                                                            \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, si7006_init, NULL, &si7006_data_##name##_##inst, \
+				     &si7006_config_##name##_##inst, POST_KERNEL,           \
 				     CONFIG_SENSOR_INIT_PRIORITY, &si7006_api);
 
 #define DT_DRV_COMPAT silabs_si7006

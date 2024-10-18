@@ -829,81 +829,81 @@ static int sai_init(const struct device *dev)
 	return 0;
 }
 
-#define SAI_INIT(inst)                                                                             \
-                                                                                                   \
-	PINCTRL_DT_INST_DEFINE(inst);                                                              \
-                                                                                                   \
-	BUILD_ASSERT(SAI_FIFO_DEPTH(inst) > 0 && SAI_FIFO_DEPTH(inst) <= _SAI_FIFO_DEPTH(inst),    \
-		     "invalid FIFO depth");                                                        \
-                                                                                                   \
-	BUILD_ASSERT(SAI_RX_FIFO_WATERMARK(inst) > 0 &&                                            \
-			     SAI_RX_FIFO_WATERMARK(inst) <= _SAI_FIFO_DEPTH(inst),                 \
-		     "invalid RX FIFO watermark");                                                 \
-                                                                                                   \
-	BUILD_ASSERT(SAI_TX_FIFO_WATERMARK(inst) > 0 &&                                            \
-			     SAI_TX_FIFO_WATERMARK(inst) <= _SAI_FIFO_DEPTH(inst),                 \
-		     "invalid TX FIFO watermark");                                                 \
-                                                                                                   \
-	BUILD_ASSERT(IS_ENABLED(CONFIG_SAI_HAS_MCLK_CONFIG_OPTION) ||                              \
-			     !DT_INST_PROP(inst, mclk_is_output),                                  \
-		     "SAI doesn't support MCLK config but mclk_is_output is specified");           \
-                                                                                                   \
-	BUILD_ASSERT(SAI_TX_SYNC_MODE(inst) != SAI_RX_SYNC_MODE(inst) ||                           \
-			     SAI_TX_SYNC_MODE(inst) != kSAI_ModeSync,                              \
-		     "transmitter and receiver can't be both SYNC with each other");               \
-                                                                                                   \
-	BUILD_ASSERT(SAI_DLINE_COUNT(inst) != -1,                                                  \
-		     "bad or unsupported SAI instance. Is the base address correct?");             \
-                                                                                                   \
-	BUILD_ASSERT(SAI_TX_DLINE_INDEX(inst) >= 0 &&                                              \
-			     (SAI_TX_DLINE_INDEX(inst) < SAI_DLINE_COUNT(inst)),                   \
-		     "invalid TX data line index");                                                \
-                                                                                                   \
-	BUILD_ASSERT(SAI_RX_DLINE_INDEX(inst) >= 0 &&                                              \
-			     (SAI_RX_DLINE_INDEX(inst) < SAI_DLINE_COUNT(inst)),                   \
-		     "invalid RX data line index");                                                \
-                                                                                                   \
-	static const struct dai_properties sai_tx_props_##inst = {                                 \
-		.fifo_address = SAI_TX_FIFO_BASE(inst, SAI_TX_DLINE_INDEX(inst)),                  \
-		.fifo_depth = SAI_FIFO_DEPTH(inst) * CONFIG_SAI_FIFO_WORD_SIZE,                    \
-		.dma_hs_id = SAI_TX_RX_DMA_HANDSHAKE(inst, tx),                                    \
-	};                                                                                         \
-                                                                                                   \
-	static const struct dai_properties sai_rx_props_##inst = {                                 \
-		.fifo_address = SAI_RX_FIFO_BASE(inst, SAI_RX_DLINE_INDEX(inst)),                  \
-		.fifo_depth = SAI_FIFO_DEPTH(inst) * CONFIG_SAI_FIFO_WORD_SIZE,                    \
-		.dma_hs_id = SAI_TX_RX_DMA_HANDSHAKE(inst, rx),                                    \
-	};                                                                                         \
-                                                                                                   \
-	void irq_config_##inst(void)                                                               \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(inst), 0, sai_isr, DEVICE_DT_INST_GET(inst), 0);          \
-	}                                                                                          \
-                                                                                                   \
-	static struct sai_config sai_config_##inst = {                                             \
-		.regmap_phys = DT_INST_REG_ADDR(inst),                                             \
-		.regmap_size = DT_INST_REG_SIZE(inst),                                             \
-		.irq = DT_INST_IRQN(inst),                                                         \
-		.clk_data = SAI_CLOCK_DATA_DECLARE(inst),                                          \
-		.rx_fifo_watermark = SAI_RX_FIFO_WATERMARK(inst),                                  \
-		.tx_fifo_watermark = SAI_TX_FIFO_WATERMARK(inst),                                  \
-		.mclk_is_output = DT_INST_PROP(inst, mclk_is_output),                              \
-		.tx_props = &sai_tx_props_##inst,                                                  \
-		.rx_props = &sai_rx_props_##inst,                                                  \
-		.irq_config = irq_config_##inst,                                                   \
-		.tx_sync_mode = SAI_TX_SYNC_MODE(inst),                                            \
-		.rx_sync_mode = SAI_RX_SYNC_MODE(inst),                                            \
-		.tx_dline = SAI_TX_DLINE_INDEX(inst),                                              \
-		.rx_dline = SAI_RX_DLINE_INDEX(inst),                                              \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                    \
-	};                                                                                         \
-                                                                                                   \
-	static struct sai_data sai_data_##inst = {                                                 \
-		.cfg.type = DAI_IMX_SAI,                                                           \
-		.cfg.dai_index = DT_INST_PROP_OR(inst, dai_index, 0),                              \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, &sai_init, NULL, &sai_data_##inst, &sai_config_##inst,         \
+#define SAI_INIT(inst)                                                                          \
+                                                                                                \
+	PINCTRL_DT_INST_DEFINE(inst);                                                           \
+                                                                                                \
+	BUILD_ASSERT(SAI_FIFO_DEPTH(inst) > 0 && SAI_FIFO_DEPTH(inst) <= _SAI_FIFO_DEPTH(inst), \
+		     "invalid FIFO depth");                                                     \
+                                                                                                \
+	BUILD_ASSERT(SAI_RX_FIFO_WATERMARK(inst) > 0 &&                                         \
+			     SAI_RX_FIFO_WATERMARK(inst) <= _SAI_FIFO_DEPTH(inst),              \
+		     "invalid RX FIFO watermark");                                              \
+                                                                                                \
+	BUILD_ASSERT(SAI_TX_FIFO_WATERMARK(inst) > 0 &&                                         \
+			     SAI_TX_FIFO_WATERMARK(inst) <= _SAI_FIFO_DEPTH(inst),              \
+		     "invalid TX FIFO watermark");                                              \
+                                                                                                \
+	BUILD_ASSERT(IS_ENABLED(CONFIG_SAI_HAS_MCLK_CONFIG_OPTION) ||                           \
+			     !DT_INST_PROP(inst, mclk_is_output),                               \
+		     "SAI doesn't support MCLK config but mclk_is_output is specified");        \
+                                                                                                \
+	BUILD_ASSERT(SAI_TX_SYNC_MODE(inst) != SAI_RX_SYNC_MODE(inst) ||                        \
+			     SAI_TX_SYNC_MODE(inst) != kSAI_ModeSync,                           \
+		     "transmitter and receiver can't be both SYNC with each other");            \
+                                                                                                \
+	BUILD_ASSERT(SAI_DLINE_COUNT(inst) != -1,                                               \
+		     "bad or unsupported SAI instance. Is the base address correct?");          \
+                                                                                                \
+	BUILD_ASSERT(SAI_TX_DLINE_INDEX(inst) >= 0 &&                                           \
+			     (SAI_TX_DLINE_INDEX(inst) < SAI_DLINE_COUNT(inst)),                \
+		     "invalid TX data line index");                                             \
+                                                                                                \
+	BUILD_ASSERT(SAI_RX_DLINE_INDEX(inst) >= 0 &&                                           \
+			     (SAI_RX_DLINE_INDEX(inst) < SAI_DLINE_COUNT(inst)),                \
+		     "invalid RX data line index");                                             \
+                                                                                                \
+	static const struct dai_properties sai_tx_props_##inst = {                              \
+		.fifo_address = SAI_TX_FIFO_BASE(inst, SAI_TX_DLINE_INDEX(inst)),               \
+		.fifo_depth = SAI_FIFO_DEPTH(inst) * CONFIG_SAI_FIFO_WORD_SIZE,                 \
+		.dma_hs_id = SAI_TX_RX_DMA_HANDSHAKE(inst, tx),                                 \
+	};                                                                                      \
+                                                                                                \
+	static const struct dai_properties sai_rx_props_##inst = {                              \
+		.fifo_address = SAI_RX_FIFO_BASE(inst, SAI_RX_DLINE_INDEX(inst)),               \
+		.fifo_depth = SAI_FIFO_DEPTH(inst) * CONFIG_SAI_FIFO_WORD_SIZE,                 \
+		.dma_hs_id = SAI_TX_RX_DMA_HANDSHAKE(inst, rx),                                 \
+	};                                                                                      \
+                                                                                                \
+	void irq_config_##inst(void)                                                            \
+	{                                                                                       \
+		IRQ_CONNECT(DT_INST_IRQN(inst), 0, sai_isr, DEVICE_DT_INST_GET(inst), 0);       \
+	}                                                                                       \
+                                                                                                \
+	static struct sai_config sai_config_##inst = {                                          \
+		.regmap_phys = DT_INST_REG_ADDR(inst),                                          \
+		.regmap_size = DT_INST_REG_SIZE(inst),                                          \
+		.irq = DT_INST_IRQN(inst),                                                      \
+		.clk_data = SAI_CLOCK_DATA_DECLARE(inst),                                       \
+		.rx_fifo_watermark = SAI_RX_FIFO_WATERMARK(inst),                               \
+		.tx_fifo_watermark = SAI_TX_FIFO_WATERMARK(inst),                               \
+		.mclk_is_output = DT_INST_PROP(inst, mclk_is_output),                           \
+		.tx_props = &sai_tx_props_##inst,                                               \
+		.rx_props = &sai_rx_props_##inst,                                               \
+		.irq_config = irq_config_##inst,                                                \
+		.tx_sync_mode = SAI_TX_SYNC_MODE(inst),                                         \
+		.rx_sync_mode = SAI_RX_SYNC_MODE(inst),                                         \
+		.tx_dline = SAI_TX_DLINE_INDEX(inst),                                           \
+		.rx_dline = SAI_RX_DLINE_INDEX(inst),                                           \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                 \
+	};                                                                                      \
+                                                                                                \
+	static struct sai_data sai_data_##inst = {                                              \
+		.cfg.type = DAI_IMX_SAI,                                                        \
+		.cfg.dai_index = DT_INST_PROP_OR(inst, dai_index, 0),                           \
+	};                                                                                      \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(inst, &sai_init, NULL, &sai_data_##inst, &sai_config_##inst,      \
 			      POST_KERNEL, CONFIG_DAI_INIT_PRIORITY, &sai_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SAI_INIT);

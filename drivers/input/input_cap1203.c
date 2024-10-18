@@ -194,17 +194,17 @@ static int cap1203_init(const struct device *dev)
 	return 0;
 }
 
-#define CAP1203_INIT(index)                                                                        \
-	static const uint16_t cap1203_input_codes_##inst[] = DT_INST_PROP(index, input_codes);     \
-	BUILD_ASSERT(DT_INST_PROP_LEN(index, input_codes) == TOUCH_INPUT_COUNT);                   \
-	static const struct cap1203_config cap1203_config_##index = {                              \
-		.i2c = I2C_DT_SPEC_INST_GET(index),                                                \
-		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(index, int_gpios, {0}),                       \
-		.input_codes = cap1203_input_codes_##inst,                                         \
-	};                                                                                         \
-	static struct cap1203_data cap1203_data_##index;                                           \
-	DEVICE_DT_INST_DEFINE(index, cap1203_init, NULL, &cap1203_data_##index,                    \
-			      &cap1203_config_##index, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,    \
+#define CAP1203_INIT(index)                                                                     \
+	static const uint16_t cap1203_input_codes_##inst[] = DT_INST_PROP(index, input_codes);  \
+	BUILD_ASSERT(DT_INST_PROP_LEN(index, input_codes) == TOUCH_INPUT_COUNT);                \
+	static const struct cap1203_config cap1203_config_##index = {                           \
+		.i2c = I2C_DT_SPEC_INST_GET(index),                                             \
+		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(index, int_gpios, {0}),                    \
+		.input_codes = cap1203_input_codes_##inst,                                      \
+	};                                                                                      \
+	static struct cap1203_data cap1203_data_##index;                                        \
+	DEVICE_DT_INST_DEFINE(index, cap1203_init, NULL, &cap1203_data_##index,                 \
+			      &cap1203_config_##index, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, \
 			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(CAP1203_INIT)

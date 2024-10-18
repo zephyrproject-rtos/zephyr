@@ -493,11 +493,11 @@ static const struct gpio_lpc11u6x_shared gpio_lpc11u6x_shared = {
 	.nirqs = DT_NUM_IRQS(DT_DRV_INST(0)),
 };
 
-#define IRQ_INIT(n)                                                                                \
-	do {                                                                                       \
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, n, irq), DT_INST_IRQ_BY_IDX(0, n, priority),     \
-			    gpio_lpc11u6x_isr, &gpio_lpc11u6x_shared, 0);                          \
-		irq_enable(DT_INST_IRQ_BY_IDX(0, n, irq));                                         \
+#define IRQ_INIT(n)                                                                            \
+	do {                                                                                   \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, n, irq), DT_INST_IRQ_BY_IDX(0, n, priority), \
+			    gpio_lpc11u6x_isr, &gpio_lpc11u6x_shared, 0);                      \
+		irq_enable(DT_INST_IRQ_BY_IDX(0, n, irq));                                     \
 	} while (false)
 
 static int gpio_lpc11u6x_init(const struct device *dev)
@@ -550,23 +550,23 @@ static int gpio_lpc11u6x_init(const struct device *dev)
 	return 0;
 }
 
-#define GPIO_LPC11U6X_INIT(id)                                                                     \
-	static const struct gpio_lpc11u6x_config gpio_lpc11u6x_config_##id = {                     \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask =                                                   \
-					GPIO_PORT_PIN_MASK_FROM_DT_NODE(DT_NODELABEL(gpio##id)),   \
-			},                                                                         \
-		.shared = &gpio_lpc11u6x_shared,                                                   \
-		.port_num = id,                                                                    \
-		.ngpios = DT_PROP(DT_NODELABEL(gpio##id), ngpios),                                 \
-		.iocon_base = (volatile uint32_t *)DT_REG_ADDR(DT_INST_PHANDLE(id, iocon)),        \
-	};                                                                                         \
-                                                                                                   \
-	static struct gpio_lpc11u6x_data gpio_lpc11u6x_data_##id;                                  \
-                                                                                                   \
-	DEVICE_DT_DEFINE(DT_NODELABEL(gpio##id), &gpio_lpc11u6x_init, NULL,                        \
-			 &gpio_lpc11u6x_data_##id, &gpio_lpc11u6x_config_##id, PRE_KERNEL_2,       \
+#define GPIO_LPC11U6X_INIT(id)                                                                   \
+	static const struct gpio_lpc11u6x_config gpio_lpc11u6x_config_##id = {                   \
+		.common =                                                                        \
+			{                                                                        \
+				.port_pin_mask =                                                 \
+					GPIO_PORT_PIN_MASK_FROM_DT_NODE(DT_NODELABEL(gpio##id)), \
+			},                                                                       \
+		.shared = &gpio_lpc11u6x_shared,                                                 \
+		.port_num = id,                                                                  \
+		.ngpios = DT_PROP(DT_NODELABEL(gpio##id), ngpios),                               \
+		.iocon_base = (volatile uint32_t *)DT_REG_ADDR(DT_INST_PHANDLE(id, iocon)),      \
+	};                                                                                       \
+                                                                                                 \
+	static struct gpio_lpc11u6x_data gpio_lpc11u6x_data_##id;                                \
+                                                                                                 \
+	DEVICE_DT_DEFINE(DT_NODELABEL(gpio##id), &gpio_lpc11u6x_init, NULL,                      \
+			 &gpio_lpc11u6x_data_##id, &gpio_lpc11u6x_config_##id, PRE_KERNEL_2,     \
 			 CONFIG_GPIO_INIT_PRIORITY, &gpio_lpc11u6x_driver_api)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio0))

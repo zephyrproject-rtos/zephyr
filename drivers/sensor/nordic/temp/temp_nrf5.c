@@ -123,11 +123,11 @@ static int temp_nrf5_init(const struct device *dev)
 	return 0;
 }
 
-#define NRF_TEMP_DEFINE(inst)                                                                      \
-	static struct temp_nrf5_data temp_nrf5_data_##inst;                                        \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, temp_nrf5_init, NULL, &temp_nrf5_data_##inst, NULL,     \
-				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,                     \
+#define NRF_TEMP_DEFINE(inst)                                                                  \
+	static struct temp_nrf5_data temp_nrf5_data_##inst;                                    \
+                                                                                               \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, temp_nrf5_init, NULL, &temp_nrf5_data_##inst, NULL, \
+				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,                 \
 				     &temp_nrf5_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NRF_TEMP_DEFINE)

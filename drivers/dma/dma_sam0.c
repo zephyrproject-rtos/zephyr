@@ -384,11 +384,11 @@ static int dma_sam0_get_status(const struct device *dev, uint32_t channel, struc
 	return 0;
 }
 
-#define DMA_SAM0_IRQ_CONNECT(n)                                                                    \
-	do {                                                                                       \
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, n, irq), DT_INST_IRQ_BY_IDX(0, n, priority),     \
-			    dma_sam0_isr, DEVICE_DT_INST_GET(0), 0);                               \
-		irq_enable(DT_INST_IRQ_BY_IDX(0, n, irq));                                         \
+#define DMA_SAM0_IRQ_CONNECT(n)                                                                \
+	do {                                                                                   \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, n, irq), DT_INST_IRQ_BY_IDX(0, n, priority), \
+			    dma_sam0_isr, DEVICE_DT_INST_GET(0), 0);                           \
+		irq_enable(DT_INST_IRQ_BY_IDX(0, n, irq));                                     \
 	} while (false)
 
 static int dma_sam0_init(const struct device *dev)

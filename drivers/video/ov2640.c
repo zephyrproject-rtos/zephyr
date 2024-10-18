@@ -439,13 +439,13 @@ struct ov2640_data {
 	struct video_format fmt;
 };
 
-#define OV2640_VIDEO_FORMAT_CAP(width, height, format)                                             \
-	{.pixelformat = (format),                                                                  \
-	 .width_min = (width),                                                                     \
-	 .width_max = (width),                                                                     \
-	 .height_min = (height),                                                                   \
-	 .height_max = (height),                                                                   \
-	 .width_step = 0,                                                                          \
+#define OV2640_VIDEO_FORMAT_CAP(width, height, format) \
+	{.pixelformat = (format),                      \
+	 .width_min = (width),                         \
+	 .width_max = (width),                         \
+	 .height_min = (height),                       \
+	 .height_max = (height),                       \
+	 .width_step = 0,                              \
 	 .height_step = 0}
 
 static const struct video_format_cap fmts[] = {

@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(ra_sci_uart);
 #define SCI_UART_SSR_FIFO_TDFE_TEND (R_SCI0_SSR_FIFO_TDFE_Msk | R_SCI0_SSR_FIFO_TEND_Msk)
 #define SCI_UART_SSR_TDRE_TEND      (R_SCI0_SSR_TDRE_Msk | R_SCI0_SSR_TEND_Msk)
 #define SCI_UART_SSR_ERR_MSK        (R_SCI0_SSR_ORER_Msk | R_SCI0_SSR_FER_Msk | R_SCI0_SSR_PER_Msk)
-#define SCI_UART_SSR_FIFO_ERR_MSK                                                                  \
+#define SCI_UART_SSR_FIFO_ERR_MSK                                                      \
 	(R_SCI0_SSR_FIFO_ORER_Msk | R_SCI0_SSR_FIFO_FER_Msk | R_SCI0_SSR_FIFO_PER_Msk)
 
 #if defined(CONFIG_UART_ASYNC_API)
@@ -1114,12 +1114,12 @@ static void uart_ra_sci_eri_isr(const struct device *dev)
 		.p_api = &g_transfer_on_dtc,                                                       \
 	},
 
-#define UART_RA_SCI_DTC_INIT(index)                                                                \
-	{                                                                                          \
-		uart_ra_sci_data_##index.fsp_config.p_transfer_rx =                                \
-			&uart_ra_sci_data_##index.rx_transfer;                                     \
-		uart_ra_sci_data_##index.fsp_config.p_transfer_tx =                                \
-			&uart_ra_sci_data_##index.tx_transfer;                                     \
+#define UART_RA_SCI_DTC_INIT(index)                                 \
+	{                                                           \
+		uart_ra_sci_data_##index.fsp_config.p_transfer_rx = \
+			&uart_ra_sci_data_##index.rx_transfer;      \
+		uart_ra_sci_data_##index.fsp_config.p_transfer_tx = \
+			&uart_ra_sci_data_##index.tx_transfer;      \
 	}
 
 #else
@@ -1128,90 +1128,90 @@ static void uart_ra_sci_eri_isr(const struct device *dev)
 #endif
 
 #if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API
-#define UART_RA_SCI_IRQ_INIT(index)                                                                \
-	{                                                                                          \
-		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq)] =                    \
-			ELC_EVENT_SCI_RXI(DT_INST_PROP(index, channel));                           \
-		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq)] =                    \
-			ELC_EVENT_SCI_TXI(DT_INST_PROP(index, channel));                           \
-		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, irq)] =                    \
-			ELC_EVENT_SCI_TEI(DT_INST_PROP(index, channel));                           \
-		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), eri, irq)] =                    \
-			ELC_EVENT_SCI_ERI(DT_INST_PROP(index, channel));                           \
-                                                                                                   \
-		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq),                       \
-			    DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, priority),                  \
-			    uart_ra_sci_rxi_isr, DEVICE_DT_INST_GET(index), 0);                    \
-		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq),                       \
-			    DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, priority),                  \
-			    uart_ra_sci_txi_isr, DEVICE_DT_INST_GET(index), 0);                    \
-		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, irq),                       \
-			    DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, priority),                  \
-			    uart_ra_sci_tei_isr, DEVICE_DT_INST_GET(index), 0);                    \
-		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), eri, irq),                       \
-			    DT_IRQ_BY_NAME(DT_INST_PARENT(index), eri, priority),                  \
-			    uart_ra_sci_eri_isr, DEVICE_DT_INST_GET(index), 0);                    \
-                                                                                                   \
-		irq_enable(DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq));                       \
-		irq_enable(DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq));                       \
-		irq_enable(DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, irq));                       \
+#define UART_RA_SCI_IRQ_INIT(index)                                               \
+	{                                                                         \
+		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq)] =   \
+			ELC_EVENT_SCI_RXI(DT_INST_PROP(index, channel));          \
+		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq)] =   \
+			ELC_EVENT_SCI_TXI(DT_INST_PROP(index, channel));          \
+		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, irq)] =   \
+			ELC_EVENT_SCI_TEI(DT_INST_PROP(index, channel));          \
+		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), eri, irq)] =   \
+			ELC_EVENT_SCI_ERI(DT_INST_PROP(index, channel));          \
+                                                                                  \
+		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq),      \
+			    DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, priority), \
+			    uart_ra_sci_rxi_isr, DEVICE_DT_INST_GET(index), 0);   \
+		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq),      \
+			    DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, priority), \
+			    uart_ra_sci_txi_isr, DEVICE_DT_INST_GET(index), 0);   \
+		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, irq),      \
+			    DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, priority), \
+			    uart_ra_sci_tei_isr, DEVICE_DT_INST_GET(index), 0);   \
+		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), eri, irq),      \
+			    DT_IRQ_BY_NAME(DT_INST_PARENT(index), eri, priority), \
+			    uart_ra_sci_eri_isr, DEVICE_DT_INST_GET(index), 0);   \
+                                                                                  \
+		irq_enable(DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq));      \
+		irq_enable(DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq));      \
+		irq_enable(DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, irq));      \
 	}
 #else
 #define UART_RA_SCI_IRQ_INIT(index)
 #endif
 
-#define UART_RA_SCI_INIT(index)                                                                    \
-	PINCTRL_DT_DEFINE(DT_INST_PARENT(index));                                                  \
-	static const struct uart_ra_sci_config uart_ra_sci_config_##index = {                      \
-		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_INST_PARENT(index)),                          \
-		.regs = (R_SCI0_Type *)DT_REG_ADDR(DT_INST_PARENT(index)),                         \
-	};                                                                                         \
-                                                                                                   \
-	static struct uart_ra_sci_data uart_ra_sci_data_##index = {                                \
-		.uart_config = {                                                                   \
-			.baudrate = DT_INST_PROP(index, current_speed),                            \
-			.parity = UART_CFG_PARITY_NONE,                                            \
-			.stop_bits = UART_CFG_STOP_BITS_1,                                         \
-			.data_bits = UART_CFG_DATA_BITS_8,                                         \
+#define UART_RA_SCI_INIT(index)                                                                   \
+	PINCTRL_DT_DEFINE(DT_INST_PARENT(index));                                                 \
+	static const struct uart_ra_sci_config uart_ra_sci_config_##index = {                     \
+		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_INST_PARENT(index)),                         \
+		.regs = (R_SCI0_Type *)DT_REG_ADDR(DT_INST_PARENT(index)),                        \
+	};                                                                                        \
+                                                                                                  \
+	static struct uart_ra_sci_data uart_ra_sci_data_##index = {                               \
+		.uart_config = {                                                                  \
+			.baudrate = DT_INST_PROP(index, current_speed),                           \
+			.parity = UART_CFG_PARITY_NONE,                                           \
+			.stop_bits = UART_CFG_STOP_BITS_1,                                        \
+			.data_bits = UART_CFG_DATA_BITS_8,                                        \
 			.flow_ctrl = COND_CODE_1(DT_NODE_HAS_PROP(idx, hw_flow_control),   \
 							 (UART_CFG_FLOW_CTRL_RTS_CTS),             \
-							 (UART_CFG_FLOW_CTRL_NONE)),                      \
-				},                                                                 \
-				.fsp_config =                                                      \
-					{                                                          \
-						.channel = DT_INST_PROP(index, channel),           \
-						.rxi_ipl = DT_IRQ_BY_NAME(DT_INST_PARENT(index),   \
-									  rxi, priority),          \
-						.rxi_irq = DT_IRQ_BY_NAME(DT_INST_PARENT(index),   \
-									  rxi, irq),               \
-						.txi_ipl = DT_IRQ_BY_NAME(DT_INST_PARENT(index),   \
-									  txi, priority),          \
-						.txi_irq = DT_IRQ_BY_NAME(DT_INST_PARENT(index),   \
-									  txi, irq),               \
-						.tei_ipl = DT_IRQ_BY_NAME(DT_INST_PARENT(index),   \
-									  tei, priority),          \
-						.tei_irq = DT_IRQ_BY_NAME(DT_INST_PARENT(index),   \
-									  tei, irq),               \
-						.eri_ipl = DT_IRQ_BY_NAME(DT_INST_PARENT(index),   \
-									  eri, priority),          \
-						.eri_irq = DT_IRQ_BY_NAME(DT_INST_PARENT(index),   \
-									  eri, irq),               \
-					},                                                         \
-				.fsp_config_extend = {}, .fsp_baud_setting = {},                   \
-				.dev = DEVICE_DT_INST_GET(index), UART_RA_SCI_ASYNC_INIT(index)};  \
-                                                                                                   \
-	static int uart_ra_sci_init##index(const struct device *dev)                               \
-	{                                                                                          \
-		UART_RA_SCI_IRQ_INIT(index);                                                       \
-		UART_RA_SCI_DTC_INIT(index);                                                       \
-		int err = uart_ra_sci_init(dev);                                                   \
-		if (err != 0) {                                                                    \
-			return err;                                                                \
-		}                                                                                  \
-		return 0;                                                                          \
-	}                                                                                          \
-	DEVICE_DT_INST_DEFINE(index, uart_ra_sci_init##index, NULL, &uart_ra_sci_data_##index,     \
-			      &uart_ra_sci_config_##index, PRE_KERNEL_1,                           \
+							 (UART_CFG_FLOW_CTRL_NONE)),                     \
+				},                                                                \
+				.fsp_config =                                                     \
+					{                                                         \
+						.channel = DT_INST_PROP(index, channel),          \
+						.rxi_ipl = DT_IRQ_BY_NAME(DT_INST_PARENT(index),  \
+									  rxi, priority),         \
+						.rxi_irq = DT_IRQ_BY_NAME(DT_INST_PARENT(index),  \
+									  rxi, irq),              \
+						.txi_ipl = DT_IRQ_BY_NAME(DT_INST_PARENT(index),  \
+									  txi, priority),         \
+						.txi_irq = DT_IRQ_BY_NAME(DT_INST_PARENT(index),  \
+									  txi, irq),              \
+						.tei_ipl = DT_IRQ_BY_NAME(DT_INST_PARENT(index),  \
+									  tei, priority),         \
+						.tei_irq = DT_IRQ_BY_NAME(DT_INST_PARENT(index),  \
+									  tei, irq),              \
+						.eri_ipl = DT_IRQ_BY_NAME(DT_INST_PARENT(index),  \
+									  eri, priority),         \
+						.eri_irq = DT_IRQ_BY_NAME(DT_INST_PARENT(index),  \
+									  eri, irq),              \
+					},                                                        \
+				.fsp_config_extend = {}, .fsp_baud_setting = {},                  \
+				.dev = DEVICE_DT_INST_GET(index), UART_RA_SCI_ASYNC_INIT(index)}; \
+                                                                                                  \
+	static int uart_ra_sci_init##index(const struct device *dev)                              \
+	{                                                                                         \
+		UART_RA_SCI_IRQ_INIT(index);                                                      \
+		UART_RA_SCI_DTC_INIT(index);                                                      \
+		int err = uart_ra_sci_init(dev);                                                  \
+		if (err != 0) {                                                                   \
+			return err;                                                               \
+		}                                                                                 \
+		return 0;                                                                         \
+	}                                                                                         \
+	DEVICE_DT_INST_DEFINE(index, uart_ra_sci_init##index, NULL, &uart_ra_sci_data_##index,    \
+			      &uart_ra_sci_config_##index, PRE_KERNEL_1,                          \
 			      CONFIG_SERIAL_INIT_PRIORITY, &uart_ra_sci_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_RA_SCI_INIT)

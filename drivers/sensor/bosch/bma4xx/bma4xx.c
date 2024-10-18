@@ -691,30 +691,30 @@ static const struct sensor_driver_api bma4xx_driver_api = {
  * SPI operation is not currently supported.
  */
 
-#define BMA4XX_CONFIG_SPI(inst)                                                                    \
-	{                                                                                          \
-		.bus_cfg.spi = SPI_DT_SPEC_INST_GET(inst, 0, 0),                                   \
-		.bus_init = &bma_spi_init,                                                         \
+#define BMA4XX_CONFIG_SPI(inst)                                  \
+	{                                                        \
+		.bus_cfg.spi = SPI_DT_SPEC_INST_GET(inst, 0, 0), \
+		.bus_init = &bma_spi_init,                       \
 	}
 
 /* Initializes a struct bma4xx_config for an instance on an I2C bus. */
-#define BMA4XX_CONFIG_I2C(inst)                                                                    \
-	{                                                                                          \
-		.bus_cfg.i2c = I2C_DT_SPEC_INST_GET(inst),                                         \
-		.bus_init = &bma4xx_i2c_init,                                                      \
+#define BMA4XX_CONFIG_I2C(inst)                            \
+	{                                                  \
+		.bus_cfg.i2c = I2C_DT_SPEC_INST_GET(inst), \
+		.bus_init = &bma4xx_i2c_init,              \
 	}
 
 /*
  * Main instantiation macro, which selects the correct bus-specific
  * instantiation macros for the instance.
  */
-#define BMA4XX_DEFINE(inst)                                                                        \
-	static struct bma4xx_data bma4xx_data_##inst;                                              \
+#define BMA4XX_DEFINE(inst)                                                             \
+	static struct bma4xx_data bma4xx_data_##inst;                                   \
 	static const struct bma4xx_config bma4xx_config_##inst = COND_CODE_1(                      \
-		DT_INST_ON_BUS(inst, spi), (BMA4XX_CONFIG_SPI(inst)), (BMA4XX_CONFIG_I2C(inst)));                    \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, bma4xx_chip_init, NULL, &bma4xx_data_##inst,            \
-				     &bma4xx_config_##inst, POST_KERNEL,                           \
+		DT_INST_ON_BUS(inst, spi), (BMA4XX_CONFIG_SPI(inst)), (BMA4XX_CONFIG_I2C(inst)));         \
+                                                                                        \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, bma4xx_chip_init, NULL, &bma4xx_data_##inst, \
+				     &bma4xx_config_##inst, POST_KERNEL,                \
 				     CONFIG_SENSOR_INIT_PRIORITY, &bma4xx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BMA4XX_DEFINE)

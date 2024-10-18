@@ -464,37 +464,37 @@ static const struct sensor_driver_api vcnl36825t_driver_api = {
 	.channel_get = vcnl36825t_channel_get,
 };
 
-#define VCNL36825T_DEFINE(inst)                                                                    \
-	BUILD_ASSERT(!DT_INST_PROP(inst, low_power) || (DT_INST_PROP(inst, measurement_period) >=  \
-							VCNL36825T_PS_LPPER_VALUE_MIN_MS),         \
-		     "measurement-period must be greater/equal 40 ms in low-power mode");          \
-	BUILD_ASSERT(                                                                              \
-		DT_INST_PROP(inst, low_power) || (DT_INST_PROP(inst, measurement_period) <=        \
-						  VCNL36825T_PS_PERIOD_VALUE_MAX_MS),              \
-		"measurement-period must be less/equal 80 ms with deactivated low-power mode");    \
-	BUILD_ASSERT(!DT_INST_PROP(inst, low_power) || (DT_INST_ENUM_IDX(inst, operation_mode) ==  \
-							VCNL36825T_OPERATION_MODE_AUTO),           \
-		     "operation-mode \"force\" only available if low-power mode deactivated");     \
-	static struct vcnl36825t_data vcnl36825t_data_##inst;                                      \
-	static const struct vcnl36825t_config vcnl36825t_config_##inst = {                         \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.operation_mode = DT_INST_ENUM_IDX(inst, operation_mode),                          \
-		.period = DT_INST_ENUM_IDX(inst, measurement_period),                              \
-		.proximity_it = DT_INST_ENUM_IDX(inst, proximity_it),                              \
-		.proximity_itb = DT_INST_ENUM_IDX(inst, proximity_itb),                            \
-		.multi_pulse = DT_INST_ENUM_IDX(inst, multi_pulse),                                \
-		.low_power = DT_INST_PROP(inst, low_power),                                        \
-		.high_gain = DT_INST_PROP(inst, high_gain),                                        \
-		.laser_current = DT_INST_ENUM_IDX(inst, laser_current),                            \
-		.high_dynamic_output = DT_INST_PROP(inst, high_dynamic_output),                    \
-		.sunlight_cancellation = DT_INST_PROP(inst, sunlight_cancellation),                \
-	};                                                                                         \
-	IF_ENABLED(CONFIG_PM_DEVICE, (PM_DEVICE_DT_INST_DEFINE(inst, vcnl36825t_pm_action)));        \
-	SENSOR_DEVICE_DT_INST_DEFINE(                                                              \
-		inst, vcnl36825t_init,                                                             \
-		COND_CODE_1(CONFIG_PM_DEVICE, (PM_DEVICE_DT_INST_GET(inst)), (NULL)),                \
-					      &vcnl36825t_data_##inst, &vcnl36825t_config_##inst,  \
-					      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,            \
+#define VCNL36825T_DEFINE(inst)                                                                   \
+	BUILD_ASSERT(!DT_INST_PROP(inst, low_power) || (DT_INST_PROP(inst, measurement_period) >= \
+							VCNL36825T_PS_LPPER_VALUE_MIN_MS),        \
+		     "measurement-period must be greater/equal 40 ms in low-power mode");         \
+	BUILD_ASSERT(                                                                             \
+		DT_INST_PROP(inst, low_power) || (DT_INST_PROP(inst, measurement_period) <=       \
+						  VCNL36825T_PS_PERIOD_VALUE_MAX_MS),             \
+		"measurement-period must be less/equal 80 ms with deactivated low-power mode");   \
+	BUILD_ASSERT(!DT_INST_PROP(inst, low_power) || (DT_INST_ENUM_IDX(inst, operation_mode) == \
+							VCNL36825T_OPERATION_MODE_AUTO),          \
+		     "operation-mode \"force\" only available if low-power mode deactivated");    \
+	static struct vcnl36825t_data vcnl36825t_data_##inst;                                     \
+	static const struct vcnl36825t_config vcnl36825t_config_##inst = {                        \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                \
+		.operation_mode = DT_INST_ENUM_IDX(inst, operation_mode),                         \
+		.period = DT_INST_ENUM_IDX(inst, measurement_period),                             \
+		.proximity_it = DT_INST_ENUM_IDX(inst, proximity_it),                             \
+		.proximity_itb = DT_INST_ENUM_IDX(inst, proximity_itb),                           \
+		.multi_pulse = DT_INST_ENUM_IDX(inst, multi_pulse),                               \
+		.low_power = DT_INST_PROP(inst, low_power),                                       \
+		.high_gain = DT_INST_PROP(inst, high_gain),                                       \
+		.laser_current = DT_INST_ENUM_IDX(inst, laser_current),                           \
+		.high_dynamic_output = DT_INST_PROP(inst, high_dynamic_output),                   \
+		.sunlight_cancellation = DT_INST_PROP(inst, sunlight_cancellation),               \
+	};                                                                                        \
+	IF_ENABLED(CONFIG_PM_DEVICE, (PM_DEVICE_DT_INST_DEFINE(inst, vcnl36825t_pm_action)));       \
+	SENSOR_DEVICE_DT_INST_DEFINE(                                                             \
+		inst, vcnl36825t_init,                                                            \
+		COND_CODE_1(CONFIG_PM_DEVICE, (PM_DEVICE_DT_INST_GET(inst)), (NULL)),               \
+					      &vcnl36825t_data_##inst, &vcnl36825t_config_##inst, \
+					      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,           \
 					      &vcnl36825t_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VCNL36825T_DEFINE)

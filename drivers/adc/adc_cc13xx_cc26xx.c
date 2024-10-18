@@ -265,26 +265,26 @@ static const struct adc_driver_api cc13xx_cc26xx_driver_api = {
 	.ref_internal = 4300, /* fixed reference: 4.3V */
 };
 
-#define CC13XX_CC26XX_ADC_INIT(index)                                                              \
-	static void adc_cc13xx_cc26xx_cfg_func_##index(void);                                      \
-	static const struct adc_cc13xx_cc26xx_cfg adc_cc13xx_cc26xx_cfg_##index = {                \
-		.base = DT_INST_REG_ADDR(index),                                                   \
-		.irq_cfg_func = adc_cc13xx_cc26xx_cfg_func_##index,                                \
-	};                                                                                         \
-	static struct adc_cc13xx_cc26xx_data adc_cc13xx_cc26xx_data_##index = {                    \
-		ADC_CONTEXT_INIT_TIMER(adc_cc13xx_cc26xx_data_##index, ctx),                       \
-		ADC_CONTEXT_INIT_LOCK(adc_cc13xx_cc26xx_data_##index, ctx),                        \
-		ADC_CONTEXT_INIT_SYNC(adc_cc13xx_cc26xx_data_##index, ctx),                        \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(index, &adc_cc13xx_cc26xx_init, NULL,                                \
-			      &adc_cc13xx_cc26xx_data_##index, &adc_cc13xx_cc26xx_cfg_##index,     \
-			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, &cc13xx_cc26xx_driver_api);   \
-                                                                                                   \
-	static void adc_cc13xx_cc26xx_cfg_func_##index(void)                                       \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(index), DT_INST_IRQ(index, priority),                     \
-			    adc_cc13xx_cc26xx_isr, DEVICE_DT_INST_GET(index), 0);                  \
-		irq_enable(DT_INST_IRQN(index));                                                   \
+#define CC13XX_CC26XX_ADC_INIT(index)                                                            \
+	static void adc_cc13xx_cc26xx_cfg_func_##index(void);                                    \
+	static const struct adc_cc13xx_cc26xx_cfg adc_cc13xx_cc26xx_cfg_##index = {              \
+		.base = DT_INST_REG_ADDR(index),                                                 \
+		.irq_cfg_func = adc_cc13xx_cc26xx_cfg_func_##index,                              \
+	};                                                                                       \
+	static struct adc_cc13xx_cc26xx_data adc_cc13xx_cc26xx_data_##index = {                  \
+		ADC_CONTEXT_INIT_TIMER(adc_cc13xx_cc26xx_data_##index, ctx),                     \
+		ADC_CONTEXT_INIT_LOCK(adc_cc13xx_cc26xx_data_##index, ctx),                      \
+		ADC_CONTEXT_INIT_SYNC(adc_cc13xx_cc26xx_data_##index, ctx),                      \
+	};                                                                                       \
+	DEVICE_DT_INST_DEFINE(index, &adc_cc13xx_cc26xx_init, NULL,                              \
+			      &adc_cc13xx_cc26xx_data_##index, &adc_cc13xx_cc26xx_cfg_##index,   \
+			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, &cc13xx_cc26xx_driver_api); \
+                                                                                                 \
+	static void adc_cc13xx_cc26xx_cfg_func_##index(void)                                     \
+	{                                                                                        \
+		IRQ_CONNECT(DT_INST_IRQN(index), DT_INST_IRQ(index, priority),                   \
+			    adc_cc13xx_cc26xx_isr, DEVICE_DT_INST_GET(index), 0);                \
+		irq_enable(DT_INST_IRQN(index));                                                 \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(CC13XX_CC26XX_ADC_INIT)

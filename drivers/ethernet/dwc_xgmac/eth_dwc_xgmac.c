@@ -1794,114 +1794,114 @@ static const struct ethernet_api eth_dwc_xgmac_apis = {
 	}                                                                                          \
 	volatile uint32_t eth_dwc_xgmac##port##_dma_ch_int_status[DT_INST_PROP(port, num_dma_ch)];
 
-#define ETH_DWC_XGMAC_ALLOC_DMA_DESC(port)                                                         \
-	mem_addr_t eth_dwc_xgmac##port##_tx_pkts[CHLCNT(port)][MAX_TX_RING(port)];                 \
-	mem_addr_t eth_dwc_xgmac##port##_rx_buffs[CHLCNT(port)][MAX_RX_RING(port)]                 \
-						 [RX_FRAGS_PER_DESC];                              \
-	static struct xgmac_dma_rx_desc                                                            \
-		eth_dwc_xgmac##port##_rx_desc[CHLCNT(port)][MAX_RX_RING(port)] __aligned(32);      \
-	static struct xgmac_dma_tx_desc                                                            \
-		eth_dwc_xgmac##port##_tx_desc[CHLCNT(port)][MAX_TX_RING(port)] __aligned(32);      \
-	static struct xgmac_dma_rx_desc_meta eth_dwc_xgmac##port##_rx_desc_meta[CHLCNT(port)];     \
+#define ETH_DWC_XGMAC_ALLOC_DMA_DESC(port)                                                     \
+	mem_addr_t eth_dwc_xgmac##port##_tx_pkts[CHLCNT(port)][MAX_TX_RING(port)];             \
+	mem_addr_t eth_dwc_xgmac##port##_rx_buffs[CHLCNT(port)][MAX_RX_RING(port)]             \
+						 [RX_FRAGS_PER_DESC];                          \
+	static struct xgmac_dma_rx_desc                                                        \
+		eth_dwc_xgmac##port##_rx_desc[CHLCNT(port)][MAX_RX_RING(port)] __aligned(32);  \
+	static struct xgmac_dma_tx_desc                                                        \
+		eth_dwc_xgmac##port##_tx_desc[CHLCNT(port)][MAX_TX_RING(port)] __aligned(32);  \
+	static struct xgmac_dma_rx_desc_meta eth_dwc_xgmac##port##_rx_desc_meta[CHLCNT(port)]; \
 	static struct xgmac_dma_tx_desc_meta eth_dwc_xgmac##port##_tx_desc_meta[CHLCNT(port)];
 
 #define DWC_XGMAC_NUM_QUEUES (DT_INST_PROP(port, num_queues) u)
 
-#define ETH_DWC_XGMAC_DEV_CONFIG_TCQ(port)                                                         \
-	static struct xgmac_tcq_config eth_dwc_xgmac##port##_tcq = {                               \
-		.rx_q_ddma_en = DT_INST_PROP(port, rxq_dyn_dma_en),                                \
-		.rx_q_dma_chnl_sel = DT_INST_PROP(port, rxq_dma_ch_sel),                           \
-		.tx_q_size = DT_INST_PROP(port, txq_size),                                         \
-		.q_to_tc_map = DT_INST_PROP(port, map_queue_tc),                                   \
-		.ttc = DT_INST_PROP(port, tx_threshold_ctrl),                                      \
-		.rx_q_size = DT_INST_PROP(port, rxq_size),                                         \
-		.tsf_en = DT_INST_PROP(port, tx_store_fwrd_en),                                    \
-		.hfc_en = DT_INST_PROP(port, hfc_en),                                              \
-		.cs_err_pkt_drop_dis = DT_INST_PROP(port, cs_error_pkt_drop_dis),                  \
-		.rsf_en = DT_INST_PROP(port, rx_store_fwrd_en),                                    \
-		.fep_en = DT_INST_PROP(port, fep_en),                                              \
-		.fup_en = DT_INST_PROP(port, fup_en),                                              \
-		.rtc = DT_INST_PROP(port, rx_threshold_ctrl),                                      \
-		.pstc = DT_INST_PROP(port, priorities_map_tc),                                     \
+#define ETH_DWC_XGMAC_DEV_CONFIG_TCQ(port)                                        \
+	static struct xgmac_tcq_config eth_dwc_xgmac##port##_tcq = {              \
+		.rx_q_ddma_en = DT_INST_PROP(port, rxq_dyn_dma_en),               \
+		.rx_q_dma_chnl_sel = DT_INST_PROP(port, rxq_dma_ch_sel),          \
+		.tx_q_size = DT_INST_PROP(port, txq_size),                        \
+		.q_to_tc_map = DT_INST_PROP(port, map_queue_tc),                  \
+		.ttc = DT_INST_PROP(port, tx_threshold_ctrl),                     \
+		.rx_q_size = DT_INST_PROP(port, rxq_size),                        \
+		.tsf_en = DT_INST_PROP(port, tx_store_fwrd_en),                   \
+		.hfc_en = DT_INST_PROP(port, hfc_en),                             \
+		.cs_err_pkt_drop_dis = DT_INST_PROP(port, cs_error_pkt_drop_dis), \
+		.rsf_en = DT_INST_PROP(port, rx_store_fwrd_en),                   \
+		.fep_en = DT_INST_PROP(port, fep_en),                             \
+		.fup_en = DT_INST_PROP(port, fup_en),                             \
+		.rtc = DT_INST_PROP(port, rx_threshold_ctrl),                     \
+		.pstc = DT_INST_PROP(port, priorities_map_tc),                    \
 	};
 /* Device run-time data declaration macro */
-#define ETH_DWC_XGMAC_DEV_DATA(port)                                                               \
-	static struct eth_dwc_xgmac_dev_data eth_dwc_xgmac##port##_dev_data = {                    \
-		.mac_addr = DT_INST_PROP(port, local_mac_address),                                 \
-		.link_speed = DT_INST_PROP(port, max_speed),                                       \
-		.auto_neg = true,                                                                  \
-		.enable_full_duplex = DT_INST_PROP(port, full_duplex_mode_en),                     \
-		.dma_rx_desc = &eth_dwc_xgmac##port##_rx_desc[0u][0u],                             \
-		.dma_tx_desc = &eth_dwc_xgmac##port##_tx_desc[0u][0u],                             \
-		.tx_desc_meta = eth_dwc_xgmac##port##_tx_desc_meta,                                \
-		.rx_desc_meta = eth_dwc_xgmac##port##_rx_desc_meta,                                \
-		.tx_pkts = &eth_dwc_xgmac##port##_tx_pkts[0u][0u],                                 \
-		.rx_buffs = &eth_dwc_xgmac##port##_rx_buffs[0u][0u][0u],                           \
-		.irq_cntxt_data.dma_chnl_interrupt_sts = eth_dwc_xgmac##port##_dma_ch_int_status,  \
+#define ETH_DWC_XGMAC_DEV_DATA(port)                                                              \
+	static struct eth_dwc_xgmac_dev_data eth_dwc_xgmac##port##_dev_data = {                   \
+		.mac_addr = DT_INST_PROP(port, local_mac_address),                                \
+		.link_speed = DT_INST_PROP(port, max_speed),                                      \
+		.auto_neg = true,                                                                 \
+		.enable_full_duplex = DT_INST_PROP(port, full_duplex_mode_en),                    \
+		.dma_rx_desc = &eth_dwc_xgmac##port##_rx_desc[0u][0u],                            \
+		.dma_tx_desc = &eth_dwc_xgmac##port##_tx_desc[0u][0u],                            \
+		.tx_desc_meta = eth_dwc_xgmac##port##_tx_desc_meta,                               \
+		.rx_desc_meta = eth_dwc_xgmac##port##_rx_desc_meta,                               \
+		.tx_pkts = &eth_dwc_xgmac##port##_tx_pkts[0u][0u],                                \
+		.rx_buffs = &eth_dwc_xgmac##port##_rx_buffs[0u][0u][0u],                          \
+		.irq_cntxt_data.dma_chnl_interrupt_sts = eth_dwc_xgmac##port##_dma_ch_int_status, \
 	};
 
 /* Device configuration data declaration macro */
-#define ETH_DWC_XGMAC_DEV_CONFIG(port)                                                             \
-	static const struct eth_dwc_xgmac_config eth_dwc_xgmac##port##_dev_cfg = {                 \
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(port)),                                           \
-		.random_mac_address = DT_INST_PROP(port, zephyr_random_mac_address),               \
-		.num_tx_Qs = DT_INST_PROP(port, num_tx_queues),                                    \
-		.num_rx_Qs = DT_INST_PROP(port, num_rx_queues),                                    \
-		.num_dma_chnl = DT_INST_PROP(port, num_dma_ch),                                    \
-		.num_TCs = DT_INST_PROP(port, num_tc),                                             \
-		.mtu = DT_INST_PROP(port, max_frame_size),                                         \
-		.tx_fifo_size = DT_INST_PROP(port, tx_fifo_size),                                  \
-		.rx_fifo_size = DT_INST_PROP(port, rx_fifo_size),                                  \
-		.dma_cfg.wr_osr_lmt = DT_INST_PROP(port, wr_osr_lmt),                              \
-		.dma_cfg.rd_osr_lmt = DT_INST_PROP(port, rd_osr_lmt),                              \
-		.dma_cfg.edma_tdps = DT_INST_PROP(port, edma_tdps),                                \
-		.dma_cfg.edma_rdps = DT_INST_PROP(port, edma_rdps),                                \
-		.dma_cfg.ubl = DT_INST_PROP(port, ubl),                                            \
-		.dma_cfg.blen4 = DT_INST_PROP(port, blen4),                                        \
-		.dma_cfg.blen8 = DT_INST_PROP(port, blen8),                                        \
-		.dma_cfg.blen16 = DT_INST_PROP(port, blen16),                                      \
-		.dma_cfg.blen32 = DT_INST_PROP(port, blen32),                                      \
-		.dma_cfg.blen64 = DT_INST_PROP(port, blen64),                                      \
-		.dma_cfg.blen128 = DT_INST_PROP(port, blen128),                                    \
-		.dma_cfg.blen256 = DT_INST_PROP(port, blen256),                                    \
-		.dma_cfg.aal = DT_INST_PROP(port, aal),                                            \
-		.dma_cfg.eame = DT_INST_PROP(port, eame),                                          \
-		.dma_chnl_cfg.pblx8 = DT_INST_PROP(port, pblx8),                                   \
-		.dma_chnl_cfg.mss = DT_INST_PROP(port, dma_ch_mss),                                \
-		.dma_chnl_cfg.tdrl = DT_INST_PROP(port, dma_ch_tdrl),                              \
-		.dma_chnl_cfg.rdrl = DT_INST_PROP(port, dma_ch_rdrl),                              \
-		.dma_chnl_cfg.arbs = DT_INST_PROP(port, dma_ch_arbs),                              \
-		.dma_chnl_cfg.rxpbl = DT_INST_PROP(port, dma_ch_rxpbl),                            \
-		.dma_chnl_cfg.txpbl = DT_INST_PROP(port, dma_ch_txpbl),                            \
-		.dma_chnl_cfg.sph = DT_INST_PROP(port, dma_ch_sph),                                \
-		.dma_chnl_cfg.tse = DT_INST_PROP(port, dma_ch_tse),                                \
-		.dma_chnl_cfg.osp = DT_INST_PROP(port, dma_ch_osp),                                \
-		.mtl_cfg.raa = DT_INST_PROP(port, mtl_raa),                                        \
-		.mtl_cfg.etsalg = DT_INST_PROP(port, mtl_etsalg),                                  \
-		.mac_cfg.gpsl = DT_INST_PROP(port, gaint_pkt_size_limit),                          \
-		.mac_cfg.arp_offload_en = ETH_DWC_XGMAC_ARP_OFFLOAD,                               \
-		.mac_cfg.je = DT_INST_PROP(port, jumbo_pkt_en),                                    \
-		.tcq_config = &eth_dwc_xgmac##port##_tcq,                                          \
-		.phy_dev =                                                                         \
-			(const struct device *)DEVICE_DT_GET(DT_INST_PHANDLE(port, phy_handle)),   \
-		.irq_config_fn = eth_dwc_xgmac##port##_irq_config,                                 \
-		.irq_enable_fn = eth_dwc_xgmac##port##_irq_enable,                                 \
+#define ETH_DWC_XGMAC_DEV_CONFIG(port)                                                           \
+	static const struct eth_dwc_xgmac_config eth_dwc_xgmac##port##_dev_cfg = {               \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(port)),                                         \
+		.random_mac_address = DT_INST_PROP(port, zephyr_random_mac_address),             \
+		.num_tx_Qs = DT_INST_PROP(port, num_tx_queues),                                  \
+		.num_rx_Qs = DT_INST_PROP(port, num_rx_queues),                                  \
+		.num_dma_chnl = DT_INST_PROP(port, num_dma_ch),                                  \
+		.num_TCs = DT_INST_PROP(port, num_tc),                                           \
+		.mtu = DT_INST_PROP(port, max_frame_size),                                       \
+		.tx_fifo_size = DT_INST_PROP(port, tx_fifo_size),                                \
+		.rx_fifo_size = DT_INST_PROP(port, rx_fifo_size),                                \
+		.dma_cfg.wr_osr_lmt = DT_INST_PROP(port, wr_osr_lmt),                            \
+		.dma_cfg.rd_osr_lmt = DT_INST_PROP(port, rd_osr_lmt),                            \
+		.dma_cfg.edma_tdps = DT_INST_PROP(port, edma_tdps),                              \
+		.dma_cfg.edma_rdps = DT_INST_PROP(port, edma_rdps),                              \
+		.dma_cfg.ubl = DT_INST_PROP(port, ubl),                                          \
+		.dma_cfg.blen4 = DT_INST_PROP(port, blen4),                                      \
+		.dma_cfg.blen8 = DT_INST_PROP(port, blen8),                                      \
+		.dma_cfg.blen16 = DT_INST_PROP(port, blen16),                                    \
+		.dma_cfg.blen32 = DT_INST_PROP(port, blen32),                                    \
+		.dma_cfg.blen64 = DT_INST_PROP(port, blen64),                                    \
+		.dma_cfg.blen128 = DT_INST_PROP(port, blen128),                                  \
+		.dma_cfg.blen256 = DT_INST_PROP(port, blen256),                                  \
+		.dma_cfg.aal = DT_INST_PROP(port, aal),                                          \
+		.dma_cfg.eame = DT_INST_PROP(port, eame),                                        \
+		.dma_chnl_cfg.pblx8 = DT_INST_PROP(port, pblx8),                                 \
+		.dma_chnl_cfg.mss = DT_INST_PROP(port, dma_ch_mss),                              \
+		.dma_chnl_cfg.tdrl = DT_INST_PROP(port, dma_ch_tdrl),                            \
+		.dma_chnl_cfg.rdrl = DT_INST_PROP(port, dma_ch_rdrl),                            \
+		.dma_chnl_cfg.arbs = DT_INST_PROP(port, dma_ch_arbs),                            \
+		.dma_chnl_cfg.rxpbl = DT_INST_PROP(port, dma_ch_rxpbl),                          \
+		.dma_chnl_cfg.txpbl = DT_INST_PROP(port, dma_ch_txpbl),                          \
+		.dma_chnl_cfg.sph = DT_INST_PROP(port, dma_ch_sph),                              \
+		.dma_chnl_cfg.tse = DT_INST_PROP(port, dma_ch_tse),                              \
+		.dma_chnl_cfg.osp = DT_INST_PROP(port, dma_ch_osp),                              \
+		.mtl_cfg.raa = DT_INST_PROP(port, mtl_raa),                                      \
+		.mtl_cfg.etsalg = DT_INST_PROP(port, mtl_etsalg),                                \
+		.mac_cfg.gpsl = DT_INST_PROP(port, gaint_pkt_size_limit),                        \
+		.mac_cfg.arp_offload_en = ETH_DWC_XGMAC_ARP_OFFLOAD,                             \
+		.mac_cfg.je = DT_INST_PROP(port, jumbo_pkt_en),                                  \
+		.tcq_config = &eth_dwc_xgmac##port##_tcq,                                        \
+		.phy_dev =                                                                       \
+			(const struct device *)DEVICE_DT_GET(DT_INST_PHANDLE(port, phy_handle)), \
+		.irq_config_fn = eth_dwc_xgmac##port##_irq_config,                               \
+		.irq_enable_fn = eth_dwc_xgmac##port##_irq_enable,                               \
 	};
 
 /* Device initialization macro */
-#define ETH_DWC_XGMAC_NET_DEV_INIT(port)                                                           \
-	ETH_NET_DEVICE_DT_INST_DEFINE(port, eth_dwc_xgmac_dev_init, NULL,                          \
-				      &eth_dwc_xgmac##port##_dev_data,                             \
-				      &eth_dwc_xgmac##port##_dev_cfg, CONFIG_ETH_INIT_PRIORITY,    \
+#define ETH_DWC_XGMAC_NET_DEV_INIT(port)                                                        \
+	ETH_NET_DEVICE_DT_INST_DEFINE(port, eth_dwc_xgmac_dev_init, NULL,                       \
+				      &eth_dwc_xgmac##port##_dev_data,                          \
+				      &eth_dwc_xgmac##port##_dev_cfg, CONFIG_ETH_INIT_PRIORITY, \
 				      &eth_dwc_xgmac_apis, DT_INST_PROP(port, max_frame_size));
 
 /* Top-level device initialization macro - bundles all of the above */
-#define ETH_DWC_XGMAC_INITIALIZE(port)                                                             \
-	ETH_DWC_XGMAC_CONFIG_IRQ_FUNC(port)                                                        \
-	ETH_DWC_XGMAC_ALLOC_DMA_DESC(port)                                                         \
-	ETH_DWC_XGMAC_DEV_DATA(port)                                                               \
-	ETH_DWC_XGMAC_DEV_CONFIG_TCQ(port)                                                         \
-	ETH_DWC_XGMAC_DEV_CONFIG(port)                                                             \
+#define ETH_DWC_XGMAC_INITIALIZE(port)      \
+	ETH_DWC_XGMAC_CONFIG_IRQ_FUNC(port) \
+	ETH_DWC_XGMAC_ALLOC_DMA_DESC(port)  \
+	ETH_DWC_XGMAC_DEV_DATA(port)        \
+	ETH_DWC_XGMAC_DEV_CONFIG_TCQ(port)  \
+	ETH_DWC_XGMAC_DEV_CONFIG(port)      \
 	ETH_DWC_XGMAC_NET_DEV_INIT(port)
 
 /**

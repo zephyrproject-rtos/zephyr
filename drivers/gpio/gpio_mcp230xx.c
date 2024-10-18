@@ -75,33 +75,33 @@ static int mcp230xx_bus_is_ready(const struct device *dev)
 	return 0;
 }
 
-#define GPIO_MCP230XX_DEVICE(inst, num_gpios, open_drain)                                          \
-	static struct mcp23xxx_drv_data mcp230xx_##inst##_drvdata = {                              \
-		/* Default for registers according to datasheet */                                 \
-		.reg_cache.iodir = 0xFFFF, .reg_cache.ipol = 0x0,   .reg_cache.gpinten = 0x0,      \
-		.reg_cache.defval = 0x0,   .reg_cache.intcon = 0x0, .reg_cache.iocon = 0x0,        \
-		.reg_cache.gppu = 0x0,     .reg_cache.intf = 0x0,   .reg_cache.intcap = 0x0,       \
-		.reg_cache.gpio = 0x0,     .reg_cache.olat = 0x0,                                  \
-	};                                                                                         \
-	static const struct mcp23xxx_config mcp230xx_##inst##_config = {                           \
-		.config =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),            \
-			},                                                                         \
-		.bus =                                                                             \
-			{                                                                          \
-				.i2c = I2C_DT_SPEC_INST_GET(inst),                                 \
-			},                                                                         \
-		.gpio_int = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),                        \
-		.gpio_reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),                    \
-		.ngpios = num_gpios,                                                               \
-		.is_open_drain = open_drain,                                                       \
-		.read_fn = mcp230xx_read_port_regs,                                                \
-		.write_fn = mcp230xx_write_port_regs,                                              \
-		.bus_fn = mcp230xx_bus_is_ready,                                                   \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, gpio_mcp23xxx_init, NULL, &mcp230xx_##inst##_drvdata,          \
-			      &mcp230xx_##inst##_config, POST_KERNEL,                              \
+#define GPIO_MCP230XX_DEVICE(inst, num_gpios, open_drain)                                     \
+	static struct mcp23xxx_drv_data mcp230xx_##inst##_drvdata = {                         \
+		/* Default for registers according to datasheet */                            \
+		.reg_cache.iodir = 0xFFFF, .reg_cache.ipol = 0x0,   .reg_cache.gpinten = 0x0, \
+		.reg_cache.defval = 0x0,   .reg_cache.intcon = 0x0, .reg_cache.iocon = 0x0,   \
+		.reg_cache.gppu = 0x0,     .reg_cache.intf = 0x0,   .reg_cache.intcap = 0x0,  \
+		.reg_cache.gpio = 0x0,     .reg_cache.olat = 0x0,                             \
+	};                                                                                    \
+	static const struct mcp23xxx_config mcp230xx_##inst##_config = {                      \
+		.config =                                                                     \
+			{                                                                     \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),       \
+			},                                                                    \
+		.bus =                                                                        \
+			{                                                                     \
+				.i2c = I2C_DT_SPEC_INST_GET(inst),                            \
+			},                                                                    \
+		.gpio_int = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),                   \
+		.gpio_reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),               \
+		.ngpios = num_gpios,                                                          \
+		.is_open_drain = open_drain,                                                  \
+		.read_fn = mcp230xx_read_port_regs,                                           \
+		.write_fn = mcp230xx_write_port_regs,                                         \
+		.bus_fn = mcp230xx_bus_is_ready,                                              \
+	};                                                                                    \
+	DEVICE_DT_INST_DEFINE(inst, gpio_mcp23xxx_init, NULL, &mcp230xx_##inst##_drvdata,     \
+			      &mcp230xx_##inst##_config, POST_KERNEL,                         \
 			      CONFIG_GPIO_MCP230XX_INIT_PRIORITY, &gpio_mcp23xxx_api_table);
 
 #define DT_DRV_COMPAT microchip_mcp23008

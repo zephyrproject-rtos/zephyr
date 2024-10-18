@@ -222,21 +222,21 @@ static int bd8lb600fs_init(const struct device *dev)
 	return 0;
 }
 
-#define BD8LB600FS_INIT(inst)                                                                      \
-	static const struct bd8lb600fs_config bd8lb600fs_##inst##_config = {                       \
-		.bus = SPI_DT_SPEC_INST_GET(                                                       \
-			inst, SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(8), 0),            \
-		.gpio_reset = GPIO_DT_SPEC_GET_BY_IDX(DT_DRV_INST(inst), reset_gpios, 0),          \
-		.instance_count = DT_INST_PROP(inst, instance_count),                              \
-	};                                                                                         \
-                                                                                                   \
-	static struct bd8lb600fs_data bd8lb600fs_##inst##_data = {                                 \
-		.state = 0x00,                                                                     \
-	};                                                                                         \
-                                                                                                   \
-	/* This has to be initialized after the SPI peripheral. */                                 \
-	DEVICE_DT_INST_DEFINE(inst, bd8lb600fs_init, NULL, &bd8lb600fs_##inst##_data,              \
-			      &bd8lb600fs_##inst##_config, POST_KERNEL, CONFIG_MFD_INIT_PRIORITY,  \
+#define BD8LB600FS_INIT(inst)                                                                     \
+	static const struct bd8lb600fs_config bd8lb600fs_##inst##_config = {                      \
+		.bus = SPI_DT_SPEC_INST_GET(                                                      \
+			inst, SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(8), 0),           \
+		.gpio_reset = GPIO_DT_SPEC_GET_BY_IDX(DT_DRV_INST(inst), reset_gpios, 0),         \
+		.instance_count = DT_INST_PROP(inst, instance_count),                             \
+	};                                                                                        \
+                                                                                                  \
+	static struct bd8lb600fs_data bd8lb600fs_##inst##_data = {                                \
+		.state = 0x00,                                                                    \
+	};                                                                                        \
+                                                                                                  \
+	/* This has to be initialized after the SPI peripheral. */                                \
+	DEVICE_DT_INST_DEFINE(inst, bd8lb600fs_init, NULL, &bd8lb600fs_##inst##_data,             \
+			      &bd8lb600fs_##inst##_config, POST_KERNEL, CONFIG_MFD_INIT_PRIORITY, \
 			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(BD8LB600FS_INIT)

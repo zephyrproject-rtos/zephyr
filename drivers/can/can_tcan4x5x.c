@@ -56,12 +56,12 @@ LOG_MODULE_REGISTER(can_tcan4x5x, CONFIG_CAN_LOG_LEVEL);
 #define CAN_TCAN4X5X_STATUS_INTERRUPT                BIT(0)
 
 /* Mask of clearable status register bits */
-#define CAN_TCAN4X5X_STATUS_CLEAR_ALL                                                              \
-	(CAN_TCAN4X5X_STATUS_INTERNAL_READ_ERROR | CAN_TCAN4X5X_STATUS_INTERNAL_WRITE_ERROR |      \
-	 CAN_TCAN4X5X_STATUS_INTERNAL_ERROR_LOG_WRITE | CAN_TCAN4X5X_STATUS_READ_FIFO_UNDERFLOW |  \
-	 CAN_TCAN4X5X_STATUS_READ_FIFO_EMPTY | CAN_TCAN4X5X_STATUS_WRITE_FIFO_OVERFLOW |           \
-	 CAN_TCAN4X5X_STATUS_SPI_END_ERROR | CAN_TCAN4X5X_STATUS_INVALID_COMMAND |                 \
-	 CAN_TCAN4X5X_STATUS_WRITE_OVERFLOW | CAN_TCAN4X5X_STATUS_WRITE_UNDERFLOW |                \
+#define CAN_TCAN4X5X_STATUS_CLEAR_ALL                                                             \
+	(CAN_TCAN4X5X_STATUS_INTERNAL_READ_ERROR | CAN_TCAN4X5X_STATUS_INTERNAL_WRITE_ERROR |     \
+	 CAN_TCAN4X5X_STATUS_INTERNAL_ERROR_LOG_WRITE | CAN_TCAN4X5X_STATUS_READ_FIFO_UNDERFLOW | \
+	 CAN_TCAN4X5X_STATUS_READ_FIFO_EMPTY | CAN_TCAN4X5X_STATUS_WRITE_FIFO_OVERFLOW |          \
+	 CAN_TCAN4X5X_STATUS_SPI_END_ERROR | CAN_TCAN4X5X_STATUS_INVALID_COMMAND |                \
+	 CAN_TCAN4X5X_STATUS_WRITE_OVERFLOW | CAN_TCAN4X5X_STATUS_WRITE_UNDERFLOW |               \
 	 CAN_TCAN4X5X_STATUS_READ_OVERFLOW | CAN_TCAN4X5X_STATUS_READ_UNDERFLOW)
 
 /* SPI Error Status Mask register */
@@ -138,10 +138,10 @@ LOG_MODULE_REGISTER(can_tcan4x5x, CONFIG_CAN_LOG_LEVEL);
 #define CAN_TCAN4X5X_IR_VTWD      BIT(0)
 
 /* Mask of clearable interrupts register bits */
-#define CAN_TCAN4X5X_IR_CLEAR_ALL                                                                  \
-	(CAN_TCAN4X5X_IR_SMS | CAN_TCAN4X5X_IR_UVSUP | CAN_TCAN4X5X_IR_UVIO |                      \
-	 CAN_TCAN4X5X_IR_PWRON | CAN_TCAN4X5X_IR_TSD | CAN_TCAN4X5X_IR_WDTO |                      \
-	 CAN_TCAN4X5X_IR_ECCERR | CAN_TCAN4X5X_IR_CANINT | CAN_TCAN4X5X_IR_LWU |                   \
+#define CAN_TCAN4X5X_IR_CLEAR_ALL                                                  \
+	(CAN_TCAN4X5X_IR_SMS | CAN_TCAN4X5X_IR_UVSUP | CAN_TCAN4X5X_IR_UVIO |      \
+	 CAN_TCAN4X5X_IR_PWRON | CAN_TCAN4X5X_IR_TSD | CAN_TCAN4X5X_IR_WDTO |      \
+	 CAN_TCAN4X5X_IR_ECCERR | CAN_TCAN4X5X_IR_CANINT | CAN_TCAN4X5X_IR_LWU |   \
 	 CAN_TCAN4X5X_IR_WKERR | CAN_TCAN4X5X_IR_CANSLNT | CAN_TCAN4X5X_IR_CANDOM)
 
 /* MCAN Interrupts register */
@@ -754,44 +754,44 @@ static const struct can_mcan_ops tcan4x5x_ops = {
 #endif /* !TCAN4X5X_RST_GPIO_SUPPORT */
 
 #if TCAN4X5X_NWKRQ_GPIO_SUPPORT
-#define TCAN4X5X_NWKRQ_GPIO_INIT(inst)                                                             \
+#define TCAN4X5X_NWKRQ_GPIO_INIT(inst)                                         \
 	.nwkrq_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, device_state_gpios, {0}),
 #else /* TCAN4X5X_NWKRQ_GPIO_SUPPORT */
 #define TCAN4X5X_NWKRQ_GPIO_INIT(inst)
 #endif /* !TCAN4X5X_NWKRQ_GPIO_SUPPORT */
 
 #if TCAN4X5X_WAKE_GPIO_SUPPORT
-#define TCAN4X5X_WAKE_GPIO_INIT(inst)                                                              \
+#define TCAN4X5X_WAKE_GPIO_INIT(inst)                                        \
 	.wake_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, device_wake_gpios, {0}),
 #else /* TCAN4X5X_WAKE_GPIO_SUPPORT */
 #define TCAN4X5X_WAKE_GPIO_INIT(inst)
 #endif /* !TCAN4X5X_WAKE_GPIO_SUPPORT */
 
-#define TCAN4X5X_INIT(inst)                                                                        \
-	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_OFFSET(inst) == 0, "MRAM offset must be 0");            \
-	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_ELEMENTS_SIZE(inst) <= CAN_TCAN4X5X_MRAM_SIZE,          \
-		     "Insufficient Message RAM size to hold elements");                            \
-                                                                                                   \
-	CAN_MCAN_DT_INST_BUILD_ASSERT_MRAM_CFG(inst);                                              \
-	CAN_MCAN_DT_INST_CALLBACKS_DEFINE(inst, tcan4x5x_cbs_##inst);                              \
-                                                                                                   \
-	static const struct tcan4x5x_config tcan4x5x_config_##inst = {                             \
-		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0),                             \
-		.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                                \
-		.clk_freq = DT_INST_PROP(inst, clock_frequency),                                   \
-		TCAN4X5X_RST_GPIO_INIT(inst) TCAN4X5X_NWKRQ_GPIO_INIT(inst)                        \
-			TCAN4X5X_WAKE_GPIO_INIT(inst)};                                            \
-                                                                                                   \
-	static const struct can_mcan_config can_mcan_config_##inst = CAN_MCAN_DT_CONFIG_INST_GET(  \
-		inst, &tcan4x5x_config_##inst, &tcan4x5x_ops, &tcan4x5x_cbs_##inst);               \
-                                                                                                   \
-	static struct tcan4x5x_data tcan4x5x_data_##inst;                                          \
-                                                                                                   \
-	static struct can_mcan_data can_mcan_data_##inst =                                         \
-		CAN_MCAN_DATA_INITIALIZER(&tcan4x5x_data_##inst);                                  \
-                                                                                                   \
-	CAN_DEVICE_DT_INST_DEFINE(inst, tcan4x5x_init, NULL, &can_mcan_data_##inst,                \
-				  &can_mcan_config_##inst, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,  \
+#define TCAN4X5X_INIT(inst)                                                                       \
+	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_OFFSET(inst) == 0, "MRAM offset must be 0");           \
+	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_ELEMENTS_SIZE(inst) <= CAN_TCAN4X5X_MRAM_SIZE,         \
+		     "Insufficient Message RAM size to hold elements");                           \
+                                                                                                  \
+	CAN_MCAN_DT_INST_BUILD_ASSERT_MRAM_CFG(inst);                                             \
+	CAN_MCAN_DT_INST_CALLBACKS_DEFINE(inst, tcan4x5x_cbs_##inst);                             \
+                                                                                                  \
+	static const struct tcan4x5x_config tcan4x5x_config_##inst = {                            \
+		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0),                            \
+		.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                               \
+		.clk_freq = DT_INST_PROP(inst, clock_frequency),                                  \
+		TCAN4X5X_RST_GPIO_INIT(inst) TCAN4X5X_NWKRQ_GPIO_INIT(inst)                       \
+			TCAN4X5X_WAKE_GPIO_INIT(inst)};                                           \
+                                                                                                  \
+	static const struct can_mcan_config can_mcan_config_##inst = CAN_MCAN_DT_CONFIG_INST_GET( \
+		inst, &tcan4x5x_config_##inst, &tcan4x5x_ops, &tcan4x5x_cbs_##inst);              \
+                                                                                                  \
+	static struct tcan4x5x_data tcan4x5x_data_##inst;                                         \
+                                                                                                  \
+	static struct can_mcan_data can_mcan_data_##inst =                                        \
+		CAN_MCAN_DATA_INITIALIZER(&tcan4x5x_data_##inst);                                 \
+                                                                                                  \
+	CAN_DEVICE_DT_INST_DEFINE(inst, tcan4x5x_init, NULL, &can_mcan_data_##inst,               \
+				  &can_mcan_config_##inst, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY, \
 				  &tcan4x5x_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TCAN4X5X_INIT)

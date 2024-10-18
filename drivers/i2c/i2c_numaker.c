@@ -739,34 +739,34 @@ static const struct i2c_driver_api i2c_numaker_driver_api = {
 	.recover_bus = i2c_numaker_recover_bus,
 };
 
-#define I2C_NUMAKER_INIT(inst)                                                                     \
-	PINCTRL_DT_INST_DEFINE(inst);                                                              \
-                                                                                                   \
-	static void i2c_numaker_irq_config_func_##inst(const struct device *dev)                   \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), i2c_numaker_isr,      \
-			    DEVICE_DT_INST_GET(inst), 0);                                          \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(inst));                                                    \
-	}                                                                                          \
-                                                                                                   \
-	static const struct i2c_numaker_config i2c_numaker_config_##inst = {                       \
-		.i2c_base = (I2C_T *)DT_INST_REG_ADDR(inst),                                       \
-		.reset = RESET_DT_SPEC_INST_GET(inst),                                             \
-		.clk_modidx = DT_INST_CLOCKS_CELL(inst, clock_module_index),                       \
-		.clk_src = DT_INST_CLOCKS_CELL(inst, clock_source),                                \
-		.clk_div = DT_INST_CLOCKS_CELL(inst, clock_divider),                               \
-		.clkctrl_dev = DEVICE_DT_GET(DT_PARENT(DT_INST_CLOCKS_CTLR(inst))),                \
-		.irq_n = DT_INST_IRQN(inst),                                                       \
-		.irq_config_func = i2c_numaker_irq_config_func_##inst,                             \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                    \
-		.bitrate = DT_INST_PROP(inst, clock_frequency),                                    \
-	};                                                                                         \
-                                                                                                   \
-	static struct i2c_numaker_data i2c_numaker_data_##inst;                                    \
-                                                                                                   \
-	I2C_DEVICE_DT_INST_DEFINE(inst, i2c_numaker_init, NULL, &i2c_numaker_data_##inst,          \
-				  &i2c_numaker_config_##inst, POST_KERNEL,                         \
+#define I2C_NUMAKER_INIT(inst)                                                                \
+	PINCTRL_DT_INST_DEFINE(inst);                                                         \
+                                                                                              \
+	static void i2c_numaker_irq_config_func_##inst(const struct device *dev)              \
+	{                                                                                     \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), i2c_numaker_isr, \
+			    DEVICE_DT_INST_GET(inst), 0);                                     \
+                                                                                              \
+		irq_enable(DT_INST_IRQN(inst));                                               \
+	}                                                                                     \
+                                                                                              \
+	static const struct i2c_numaker_config i2c_numaker_config_##inst = {                  \
+		.i2c_base = (I2C_T *)DT_INST_REG_ADDR(inst),                                  \
+		.reset = RESET_DT_SPEC_INST_GET(inst),                                        \
+		.clk_modidx = DT_INST_CLOCKS_CELL(inst, clock_module_index),                  \
+		.clk_src = DT_INST_CLOCKS_CELL(inst, clock_source),                           \
+		.clk_div = DT_INST_CLOCKS_CELL(inst, clock_divider),                          \
+		.clkctrl_dev = DEVICE_DT_GET(DT_PARENT(DT_INST_CLOCKS_CTLR(inst))),           \
+		.irq_n = DT_INST_IRQN(inst),                                                  \
+		.irq_config_func = i2c_numaker_irq_config_func_##inst,                        \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                               \
+		.bitrate = DT_INST_PROP(inst, clock_frequency),                               \
+	};                                                                                    \
+                                                                                              \
+	static struct i2c_numaker_data i2c_numaker_data_##inst;                               \
+                                                                                              \
+	I2C_DEVICE_DT_INST_DEFINE(inst, i2c_numaker_init, NULL, &i2c_numaker_data_##inst,     \
+				  &i2c_numaker_config_##inst, POST_KERNEL,                    \
 				  CONFIG_I2C_INIT_PRIORITY, &i2c_numaker_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_NUMAKER_INIT);

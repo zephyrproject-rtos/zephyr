@@ -69,12 +69,12 @@ static int max31790_init(const struct device *dev)
 	return 0;
 }
 
-#define MAX31790_INIT(inst)                                                                        \
-	static const struct max31790_config max31790_##inst##_config = {                           \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, max31790_init, NULL, NULL, &max31790_##inst##_config,          \
+#define MAX31790_INIT(inst)                                                               \
+	static const struct max31790_config max31790_##inst##_config = {                  \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                        \
+	};                                                                                \
+                                                                                          \
+	DEVICE_DT_INST_DEFINE(inst, max31790_init, NULL, NULL, &max31790_##inst##_config, \
 			      POST_KERNEL, CONFIG_MFD_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX31790_INIT);

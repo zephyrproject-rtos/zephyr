@@ -365,47 +365,47 @@ static int ps2_xec_init(const struct device *dev)
  *	wakeup-source;
  */
 #ifdef CONFIG_PM_DEVICE
-#define XEC_PS2_PM_WAKEUP(n)                                                                       \
-	.wakeup_source = (uint8_t)DT_INST_PROP_OR(n, wakeup_source, 0),                            \
+#define XEC_PS2_PM_WAKEUP(n)                                            \
+	.wakeup_source = (uint8_t)DT_INST_PROP_OR(n, wakeup_source, 0), \
 	.wakerx_gpio = GPIO_DT_SPEC_INST_GET_OR(n, wakerx_gpios, {0}),
 #else
 #define XEC_PS2_PM_WAKEUP(index) /* Not used */
 #endif
 
 #define XEC_PS2_PINCTRL_CFG(inst) PINCTRL_DT_INST_DEFINE(inst)
-#define XEC_PS2_CONFIG(inst)                                                                       \
-	static const struct ps2_xec_config ps2_xec_config_##inst = {                               \
-		.regs = (struct ps2_regs *const)(DT_INST_REG_ADDR(inst)),                          \
-		.isr_nvic = DT_INST_IRQN(inst),                                                    \
-		.girq_id = (uint8_t)(DT_INST_PROP_BY_IDX(inst, girqs, 0)),                         \
-		.girq_bit = (uint8_t)(DT_INST_PROP_BY_IDX(inst, girqs, 1)),                        \
-		.girq_id_wk = (uint8_t)(DT_INST_PROP_BY_IDX(inst, girqs, 2)),                      \
-		.girq_bit_wk = (uint8_t)(DT_INST_PROP_BY_IDX(inst, girqs, 3)),                     \
-		.pcr_idx = (uint8_t)(DT_INST_PROP_BY_IDX(inst, pcrs, 0)),                          \
-		.pcr_pos = (uint8_t)(DT_INST_PROP_BY_IDX(inst, pcrs, 1)),                          \
-		.irq_config_func = ps2_xec_irq_config_func_##inst,                                 \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
+#define XEC_PS2_CONFIG(inst)                                                   \
+	static const struct ps2_xec_config ps2_xec_config_##inst = {           \
+		.regs = (struct ps2_regs *const)(DT_INST_REG_ADDR(inst)),      \
+		.isr_nvic = DT_INST_IRQN(inst),                                \
+		.girq_id = (uint8_t)(DT_INST_PROP_BY_IDX(inst, girqs, 0)),     \
+		.girq_bit = (uint8_t)(DT_INST_PROP_BY_IDX(inst, girqs, 1)),    \
+		.girq_id_wk = (uint8_t)(DT_INST_PROP_BY_IDX(inst, girqs, 2)),  \
+		.girq_bit_wk = (uint8_t)(DT_INST_PROP_BY_IDX(inst, girqs, 3)), \
+		.pcr_idx = (uint8_t)(DT_INST_PROP_BY_IDX(inst, pcrs, 0)),      \
+		.pcr_pos = (uint8_t)(DT_INST_PROP_BY_IDX(inst, pcrs, 1)),      \
+		.irq_config_func = ps2_xec_irq_config_func_##inst,             \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                  \
 		XEC_PS2_PM_WAKEUP(inst)}
 
-#define PS2_XEC_DEVICE(i)                                                                          \
-                                                                                                   \
-	static void ps2_xec_irq_config_func_##i(void)                                              \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(i), DT_INST_IRQ(i, priority), ps2_xec_isr,                \
-			    DEVICE_DT_INST_GET(i), 0);                                             \
-		irq_enable(DT_INST_IRQN(i));                                                       \
-	}                                                                                          \
-                                                                                                   \
-	static struct ps2_xec_data ps2_xec_port_data_##i;                                          \
-                                                                                                   \
-	XEC_PS2_PINCTRL_CFG(i);                                                                    \
-                                                                                                   \
-	XEC_PS2_CONFIG(i);                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(i, ps2_xec_pm_action);                                            \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(i, &ps2_xec_init, PM_DEVICE_DT_INST_GET(i), &ps2_xec_port_data_##i,  \
-			      &ps2_xec_config_##i, POST_KERNEL, CONFIG_PS2_INIT_PRIORITY,          \
+#define PS2_XEC_DEVICE(i)                                                                         \
+                                                                                                  \
+	static void ps2_xec_irq_config_func_##i(void)                                             \
+	{                                                                                         \
+		IRQ_CONNECT(DT_INST_IRQN(i), DT_INST_IRQ(i, priority), ps2_xec_isr,               \
+			    DEVICE_DT_INST_GET(i), 0);                                            \
+		irq_enable(DT_INST_IRQN(i));                                                      \
+	}                                                                                         \
+                                                                                                  \
+	static struct ps2_xec_data ps2_xec_port_data_##i;                                         \
+                                                                                                  \
+	XEC_PS2_PINCTRL_CFG(i);                                                                   \
+                                                                                                  \
+	XEC_PS2_CONFIG(i);                                                                        \
+                                                                                                  \
+	PM_DEVICE_DT_INST_DEFINE(i, ps2_xec_pm_action);                                           \
+                                                                                                  \
+	DEVICE_DT_INST_DEFINE(i, &ps2_xec_init, PM_DEVICE_DT_INST_GET(i), &ps2_xec_port_data_##i, \
+			      &ps2_xec_config_##i, POST_KERNEL, CONFIG_PS2_INIT_PRIORITY,         \
 			      &ps2_xec_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PS2_XEC_DEVICE)

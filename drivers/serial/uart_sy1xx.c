@@ -300,20 +300,20 @@ static const struct uart_driver_api sy1xx_uart_driver_api = {
 
 };
 
-#define SYS1XX_UART_INIT(n)                                                                        \
-                                                                                                   \
-	static const struct sy1xx_uart_config sy1xx_uart_##n##_cfg = {                             \
-		.base = (uint32_t)DT_INST_REG_ADDR(n),                                             \
-		.inst = (uint32_t)DT_INST_PROP(n, instance),                                       \
-	};                                                                                         \
-                                                                                                   \
-	static struct sy1xx_uart_data __attribute__((section(".udma_access")))                     \
-	__aligned(4) sy1xx_uart_##n##_data = {                                                     \
-                                                                                                   \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &sy1xx_uart_init, NULL, &sy1xx_uart_##n##_data,                   \
-			      &sy1xx_uart_##n##_cfg, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,    \
+#define SYS1XX_UART_INIT(n)                                                                     \
+                                                                                                \
+	static const struct sy1xx_uart_config sy1xx_uart_##n##_cfg = {                          \
+		.base = (uint32_t)DT_INST_REG_ADDR(n),                                          \
+		.inst = (uint32_t)DT_INST_PROP(n, instance),                                    \
+	};                                                                                      \
+                                                                                                \
+	static struct sy1xx_uart_data __attribute__((section(".udma_access")))                  \
+	__aligned(4) sy1xx_uart_##n##_data = {                                                  \
+                                                                                                \
+	};                                                                                      \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(n, &sy1xx_uart_init, NULL, &sy1xx_uart_##n##_data,                \
+			      &sy1xx_uart_##n##_cfg, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, \
 			      &sy1xx_uart_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SYS1XX_UART_INIT)

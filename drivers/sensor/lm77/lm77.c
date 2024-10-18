@@ -392,26 +392,26 @@ static int lm77_pm_action(const struct device *dev, enum pm_device_action action
 #define LM77_INT_GPIO_INIT(n)
 #endif /* ! LM77_TRIGGER_SUPPORT */
 
-#define LM77_INIT(n)                                                                               \
-	static struct lm77_data lm77_data_##n;                                                     \
-                                                                                                   \
-	static const struct lm77_config lm77_config_##n = {                                        \
-		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
-		.config_dt =                                                                       \
-			{                                                                          \
-				.shutdown = 0,                                                     \
-				.int_mode = DT_INST_NODE_HAS_PROP(n, int_gpios),                   \
-				.tcrita_pol = DT_INST_PROP(n, tcrita_inverted),                    \
-				.int_pol = DT_INST_PROP(n, int_inverted),                          \
-				.fault_queue = DT_INST_PROP(n, enable_fault_queue),                \
-				.reserved = 0,                                                     \
-			},                                                                         \
-		LM77_INT_GPIO_INIT(n)};                                                            \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(n, lm77_pm_action);                                               \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, lm77_init, PM_DEVICE_DT_INST_GET(n), &lm77_data_##n,       \
-				     &lm77_config_##n, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,   \
+#define LM77_INIT(n)                                                                             \
+	static struct lm77_data lm77_data_##n;                                                   \
+                                                                                                 \
+	static const struct lm77_config lm77_config_##n = {                                      \
+		.i2c = I2C_DT_SPEC_INST_GET(n),                                                  \
+		.config_dt =                                                                     \
+			{                                                                        \
+				.shutdown = 0,                                                   \
+				.int_mode = DT_INST_NODE_HAS_PROP(n, int_gpios),                 \
+				.tcrita_pol = DT_INST_PROP(n, tcrita_inverted),                  \
+				.int_pol = DT_INST_PROP(n, int_inverted),                        \
+				.fault_queue = DT_INST_PROP(n, enable_fault_queue),              \
+				.reserved = 0,                                                   \
+			},                                                                       \
+		LM77_INT_GPIO_INIT(n)};                                                          \
+                                                                                                 \
+	PM_DEVICE_DT_INST_DEFINE(n, lm77_pm_action);                                             \
+                                                                                                 \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, lm77_init, PM_DEVICE_DT_INST_GET(n), &lm77_data_##n,     \
+				     &lm77_config_##n, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, \
 				     &lm77_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LM77_INIT)

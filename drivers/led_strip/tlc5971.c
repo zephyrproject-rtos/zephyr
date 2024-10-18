@@ -327,7 +327,7 @@ static const struct led_strip_driver_api tlc5971_api = {
 	.length = tlc5971_length,
 };
 
-#define TLC5971_DATA_BUFFER_LENGTH(inst)                                                           \
+#define TLC5971_DATA_BUFFER_LENGTH(inst)                                                    \
 	(DT_INST_PROP(inst, chain_length) / TLC5971_PIXELS_PER_DEVICE) * TLC5971_PACKET_LEN
 
 #define TLC5971_DEVICE(inst)                                                                       \

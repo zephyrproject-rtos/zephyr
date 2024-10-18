@@ -641,7 +641,7 @@ static int spi_nrfx_init(const struct device *dev)
 #define SPIM_HAS_PROP(idx, prop) DT_NODE_HAS_PROP(SPIM(idx), prop)
 #define SPIM_MEM_REGION(idx)     DT_PHANDLE(SPIM(idx), memory_regions)
 
-#define SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)                                                         \
+#define SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)          \
 	IF_ENABLED(NRFX_SPIM_EXTENDED_ENABLED,				\
 		(.dcx_pin = NRF_SPIM_PIN_NOT_CONNECTED,			\
 		 COND_CODE_1(SPIM_PROP(idx, rx_delay_supported),	\
@@ -649,7 +649,7 @@ static int spi_nrfx_init(const struct device *dev)
 			     ())					\
 		))
 
-#define SPIM_GET_MEM_ATTR(idx)                                                                     \
+#define SPIM_GET_MEM_ATTR(idx)                                 \
 	COND_CODE_1(SPIM_HAS_PROP(idx, memory_regions),					 \
 		(COND_CODE_1(DT_NODE_HAS_PROP(SPIM_MEM_REGION(idx), zephyr_memory_attr), \
 			(DT_PROP(SPIM_MEM_REGION(idx), zephyr_memory_attr)),		 \
@@ -712,7 +712,7 @@ static int spi_nrfx_init(const struct device *dev)
 			 &spi_##idx##z_config, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,              \
 			 &spi_nrfx_driver_api)
 
-#define SPIM_MEMORY_SECTION(idx)                                                                   \
+#define SPIM_MEMORY_SECTION(idx)                                   \
 	COND_CODE_1(SPIM_HAS_PROP(idx, memory_regions),			       \
 		(__attribute__((__section__(LINKER_DT_NODE_REGION_NAME(	       \
 			SPIM_MEM_REGION(idx)))))),			       \

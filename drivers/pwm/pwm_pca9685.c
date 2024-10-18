@@ -263,18 +263,18 @@ static int pca9685_init(const struct device *dev)
 	return 0;
 }
 
-#define PCA9685_INIT(inst)                                                                         \
-	static const struct pca9685_config pca9685_##inst##_config = {                             \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.outdrv_open_drain = DT_INST_PROP(inst, open_drain),                               \
-		.och_on_ack = DT_INST_PROP(inst, och_on_ack),                                      \
-		.invrt = DT_INST_PROP(inst, invert),                                               \
-	};                                                                                         \
-                                                                                                   \
-	static struct pca9685_data pca9685_##inst##_data;                                          \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, pca9685_init, NULL, &pca9685_##inst##_data,                    \
-			      &pca9685_##inst##_config, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,     \
+#define PCA9685_INIT(inst)                                                                     \
+	static const struct pca9685_config pca9685_##inst##_config = {                         \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                             \
+		.outdrv_open_drain = DT_INST_PROP(inst, open_drain),                           \
+		.och_on_ack = DT_INST_PROP(inst, och_on_ack),                                  \
+		.invrt = DT_INST_PROP(inst, invert),                                           \
+	};                                                                                     \
+                                                                                               \
+	static struct pca9685_data pca9685_##inst##_data;                                      \
+                                                                                               \
+	DEVICE_DT_INST_DEFINE(inst, pca9685_init, NULL, &pca9685_##inst##_data,                \
+			      &pca9685_##inst##_config, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, \
 			      &pca9685_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PCA9685_INIT);

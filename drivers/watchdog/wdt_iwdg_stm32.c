@@ -35,10 +35,10 @@
 #define IWDG_TIMEOUT_MIN (IWDG_PRESCALER_MIN * (IWDG_RELOAD_MIN + 1U) * USEC_PER_SEC / LSI_VALUE)
 
 /* Maximum timeout in microseconds. */
-#define IWDG_TIMEOUT_MAX                                                                           \
+#define IWDG_TIMEOUT_MAX                                                                   \
 	((uint64_t)IWDG_PRESCALER_MAX * (IWDG_RELOAD_MAX + 1U) * USEC_PER_SEC / LSI_VALUE)
 
-#define IS_IWDG_TIMEOUT(__TIMEOUT__)                                                               \
+#define IS_IWDG_TIMEOUT(__TIMEOUT__)                                                 \
 	(((__TIMEOUT__) >= IWDG_TIMEOUT_MIN) && ((__TIMEOUT__) <= IWDG_TIMEOUT_MAX))
 
 /*

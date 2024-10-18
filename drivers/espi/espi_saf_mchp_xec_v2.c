@@ -1056,12 +1056,12 @@ static int espi_saf_xec_init(const struct device *dev)
 }
 
 /* n = node-id, p = property, i = index */
-#define XEC_SAF_IRQ_INFO(n, p, i)                                                                  \
-	{                                                                                          \
-		.gid = MCHP_XEC_ECIA_GIRQ(DT_PROP_BY_IDX(n, p, i)),                                \
-		.gpos = MCHP_XEC_ECIA_GIRQ_POS(DT_PROP_BY_IDX(n, p, i)),                           \
-		.anid = MCHP_XEC_ECIA_NVIC_AGGR(DT_PROP_BY_IDX(n, p, i)),                          \
-		.dnid = MCHP_XEC_ECIA_NVIC_DIRECT(DT_PROP_BY_IDX(n, p, i)),                        \
+#define XEC_SAF_IRQ_INFO(n, p, i)                                           \
+	{                                                                   \
+		.gid = MCHP_XEC_ECIA_GIRQ(DT_PROP_BY_IDX(n, p, i)),         \
+		.gpos = MCHP_XEC_ECIA_GIRQ_POS(DT_PROP_BY_IDX(n, p, i)),    \
+		.anid = MCHP_XEC_ECIA_NVIC_AGGR(DT_PROP_BY_IDX(n, p, i)),   \
+		.dnid = MCHP_XEC_ECIA_NVIC_DIRECT(DT_PROP_BY_IDX(n, p, i)), \
 	},
 
 #define ESPI_SAF_XEC_DEVICE(n)                                                                     \

@@ -1319,31 +1319,31 @@ static int bosch_bmi323_init(const struct device *dev)
  * Currently only support for the SPI bus is implemented. This shall be updated to
  * select the appropriate bus once I2C is implemented.
  */
-#define BMI323_DEVICE_BUS(inst)                                                                    \
-	BUILD_ASSERT(DT_INST_ON_BUS(inst, spi), "Unimplemented bus");                              \
+#define BMI323_DEVICE_BUS(inst)                                       \
+	BUILD_ASSERT(DT_INST_ON_BUS(inst, spi), "Unimplemented bus"); \
 	BMI323_DEVICE_SPI_BUS(inst)
 
-#define BMI323_DEVICE(inst)                                                                        \
-	static struct bosch_bmi323_data bosch_bmi323_data_##inst;                                  \
-                                                                                                   \
-	BMI323_DEVICE_BUS(inst);                                                                   \
-                                                                                                   \
-	static void bosch_bmi323_irq_callback##inst(const struct device *dev,                      \
-						    struct gpio_callback *cb, uint32_t pins)       \
-	{                                                                                          \
-		bosch_bmi323_irq_callback(DEVICE_DT_INST_GET(inst));                               \
-	}                                                                                          \
-                                                                                                   \
-	static const struct bosch_bmi323_config bosch_bmi323_config_##inst = {                     \
-		.bus = &bosch_bmi323_bus_api##inst,                                                \
-		.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                                \
-		.int_gpio_callback = bosch_bmi323_irq_callback##inst,                              \
-	};                                                                                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, bosch_bmi323_pm_action);                                    \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, bosch_bmi323_init, PM_DEVICE_DT_INST_GET(inst),         \
-				     &bosch_bmi323_data_##inst, &bosch_bmi323_config_##inst,       \
+#define BMI323_DEVICE(inst)                                                                  \
+	static struct bosch_bmi323_data bosch_bmi323_data_##inst;                            \
+                                                                                             \
+	BMI323_DEVICE_BUS(inst);                                                             \
+                                                                                             \
+	static void bosch_bmi323_irq_callback##inst(const struct device *dev,                \
+						    struct gpio_callback *cb, uint32_t pins) \
+	{                                                                                    \
+		bosch_bmi323_irq_callback(DEVICE_DT_INST_GET(inst));                         \
+	}                                                                                    \
+                                                                                             \
+	static const struct bosch_bmi323_config bosch_bmi323_config_##inst = {               \
+		.bus = &bosch_bmi323_bus_api##inst,                                          \
+		.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                          \
+		.int_gpio_callback = bosch_bmi323_irq_callback##inst,                        \
+	};                                                                                   \
+                                                                                             \
+	PM_DEVICE_DT_INST_DEFINE(inst, bosch_bmi323_pm_action);                              \
+                                                                                             \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, bosch_bmi323_init, PM_DEVICE_DT_INST_GET(inst),   \
+				     &bosch_bmi323_data_##inst, &bosch_bmi323_config_##inst, \
 				     POST_KERNEL, 99, &bosch_bmi323_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BMI323_DEVICE)

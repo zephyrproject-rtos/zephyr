@@ -297,58 +297,58 @@ static const struct ethernet_api eth_api = {.iface_api.init = eth_iface_init,
 
 #define ETH_LITEX_SLOT_SIZE 0x0800
 
-#define ETH_LITEX_SLOT_RX0_ADDR(n)                                                                 \
+#define ETH_LITEX_SLOT_RX0_ADDR(n)                                                         \
 	DT_INST_REG_ADDR_BY_NAME_OR(n, rx_buffers, (DT_INST_REG_ADDR_BY_NAME(n, buffers)))
 #define ETH_LITEX_SLOT_RX1_ADDR(n) (ETH_LITEX_SLOT_RX0_ADDR(n) + ETH_LITEX_SLOT_SIZE)
-#define ETH_LITEX_SLOT_TX0_ADDR(n)                                                                 \
-	DT_INST_REG_ADDR_BY_NAME_OR(n, tx_buffers,                                                 \
-				    (DT_INST_REG_ADDR_BY_NAME(n, buffers) +                        \
+#define ETH_LITEX_SLOT_TX0_ADDR(n)                                                \
+	DT_INST_REG_ADDR_BY_NAME_OR(n, tx_buffers,                                \
+				    (DT_INST_REG_ADDR_BY_NAME(n, buffers) +       \
 				     (DT_INST_REG_SIZE_BY_NAME(n, buffers) / 2)))
 #define ETH_LITEX_SLOT_TX1_ADDR(n) (ETH_LITEX_SLOT_TX0_ADDR(n) + ETH_LITEX_SLOT_SIZE)
 
-#define ETH_LITEX_INIT(n)                                                                          \
-                                                                                                   \
-	static void eth_irq_config##n(const struct device *dev)                                    \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), eth_irq_handler,            \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-	}                                                                                          \
-                                                                                                   \
-	static struct eth_litex_dev_data eth_data##n = {                                           \
-		.mac_addr = DT_INST_PROP(n, local_mac_address)};                                   \
-                                                                                                   \
-	static const struct eth_litex_config eth_config##n = {                                     \
+#define ETH_LITEX_INIT(n)                                                                        \
+                                                                                                 \
+	static void eth_irq_config##n(const struct device *dev)                                  \
+	{                                                                                        \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), eth_irq_handler,          \
+			    DEVICE_DT_INST_GET(n), 0);                                           \
+                                                                                                 \
+		irq_enable(DT_INST_IRQN(n));                                                     \
+	}                                                                                        \
+                                                                                                 \
+	static struct eth_litex_dev_data eth_data##n = {                                         \
+		.mac_addr = DT_INST_PROP(n, local_mac_address)};                                 \
+                                                                                                 \
+	static const struct eth_litex_config eth_config##n = {                                   \
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, phy_handle),                                   \
-			   (.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),)) .config_func =   \
-				 eth_irq_config##n,                                                \
-			 .random_mac_address = DT_INST_PROP(n, zephyr_random_mac_address),         \
-			 .rx_slot_addr = DT_INST_REG_ADDR_BY_NAME(n, rx_slot),                     \
-			 .rx_length_addr = DT_INST_REG_ADDR_BY_NAME(n, rx_length),                 \
-			 .rx_ev_pending_addr = DT_INST_REG_ADDR_BY_NAME(n, rx_ev_pending),         \
-			 .rx_ev_enable_addr = DT_INST_REG_ADDR_BY_NAME(n, rx_ev_enable),           \
-			 .tx_start_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_start),                   \
-			 .tx_ready_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_ready),                   \
-			 .tx_slot_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_slot),                     \
-			 .tx_length_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_length),                 \
-			 .tx_ev_pending_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_ev_pending),         \
-			 .tx_ev_enable_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_ev_enable),           \
-			 .rx_buf =                                                                 \
-				 {                                                                 \
-					 (uint8_t *)ETH_LITEX_SLOT_RX0_ADDR(n),                    \
-					 (uint8_t *)ETH_LITEX_SLOT_RX1_ADDR(n),                    \
-                                                                                                   \
-				 },                                                                \
-			 .tx_buf =                                                                 \
-				 {                                                                 \
-					 (uint8_t *)ETH_LITEX_SLOT_TX0_ADDR(n),                    \
-					 (uint8_t *)ETH_LITEX_SLOT_TX1_ADDR(n),                    \
-				 },                                                                \
-                                                                                                   \
-	};                                                                                         \
-                                                                                                   \
-	ETH_NET_DEVICE_DT_INST_DEFINE(n, eth_initialize, NULL, &eth_data##n, &eth_config##n,       \
+			   (.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),)) .config_func = \
+				 eth_irq_config##n,                                              \
+			 .random_mac_address = DT_INST_PROP(n, zephyr_random_mac_address),       \
+			 .rx_slot_addr = DT_INST_REG_ADDR_BY_NAME(n, rx_slot),                   \
+			 .rx_length_addr = DT_INST_REG_ADDR_BY_NAME(n, rx_length),               \
+			 .rx_ev_pending_addr = DT_INST_REG_ADDR_BY_NAME(n, rx_ev_pending),       \
+			 .rx_ev_enable_addr = DT_INST_REG_ADDR_BY_NAME(n, rx_ev_enable),         \
+			 .tx_start_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_start),                 \
+			 .tx_ready_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_ready),                 \
+			 .tx_slot_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_slot),                   \
+			 .tx_length_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_length),               \
+			 .tx_ev_pending_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_ev_pending),       \
+			 .tx_ev_enable_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_ev_enable),         \
+			 .rx_buf =                                                               \
+				 {                                                               \
+					 (uint8_t *)ETH_LITEX_SLOT_RX0_ADDR(n),                  \
+					 (uint8_t *)ETH_LITEX_SLOT_RX1_ADDR(n),                  \
+                                                                                                 \
+				 },                                                              \
+			 .tx_buf =                                                               \
+				 {                                                               \
+					 (uint8_t *)ETH_LITEX_SLOT_TX0_ADDR(n),                  \
+					 (uint8_t *)ETH_LITEX_SLOT_TX1_ADDR(n),                  \
+				 },                                                              \
+                                                                                                 \
+	};                                                                                       \
+                                                                                                 \
+	ETH_NET_DEVICE_DT_INST_DEFINE(n, eth_initialize, NULL, &eth_data##n, &eth_config##n,     \
 				      CONFIG_ETH_INIT_PRIORITY, &eth_api, NET_ETH_MTU);
 
 DT_INST_FOREACH_STATUS_OKAY(ETH_LITEX_INIT);

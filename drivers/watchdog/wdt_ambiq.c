@@ -173,22 +173,22 @@ static const struct wdt_driver_api wdt_ambiq_driver_api = {
 	.feed = wdt_ambiq_feed,
 };
 
-#define AMBIQ_WDT_INIT(n)                                                                          \
-	static struct wdt_ambiq_data wdt_ambiq_data##n;                                            \
-	static void ambiq_wdt_cfg_func_##n(void)                                                   \
-	{                                                                                          \
-                                                                                                   \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), wdt_ambiq_isr,              \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-	};                                                                                         \
-	static const struct wdt_ambiq_config wdt_ambiq_config##n = {                               \
-		.base = DT_INST_REG_ADDR(n),                                                       \
-		.clk_freq = DT_INST_PROP(n, clock_frequency),                                      \
-		.irq_num = DT_INST_IRQN(n),                                                        \
-		.cfg_func = ambiq_wdt_cfg_func_##n};                                               \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, wdt_ambiq_init, NULL, &wdt_ambiq_data##n, &wdt_ambiq_config##n,   \
-			      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                    \
+#define AMBIQ_WDT_INIT(n)                                                                        \
+	static struct wdt_ambiq_data wdt_ambiq_data##n;                                          \
+	static void ambiq_wdt_cfg_func_##n(void)                                                 \
+	{                                                                                        \
+                                                                                                 \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), wdt_ambiq_isr,            \
+			    DEVICE_DT_INST_GET(n), 0);                                           \
+	};                                                                                       \
+	static const struct wdt_ambiq_config wdt_ambiq_config##n = {                             \
+		.base = DT_INST_REG_ADDR(n),                                                     \
+		.clk_freq = DT_INST_PROP(n, clock_frequency),                                    \
+		.irq_num = DT_INST_IRQN(n),                                                      \
+		.cfg_func = ambiq_wdt_cfg_func_##n};                                             \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(n, wdt_ambiq_init, NULL, &wdt_ambiq_data##n, &wdt_ambiq_config##n, \
+			      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                  \
 			      &wdt_ambiq_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AMBIQ_WDT_INIT)

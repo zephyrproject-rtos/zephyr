@@ -294,12 +294,12 @@ static const struct uart_driver_api usart_gd32_driver_api = {
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define GD32_USART_IRQ_HANDLER(n)                                                                  \
-	static void usart_gd32_config_func_##n(const struct device *dev)                           \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), usart_gd32_isr,             \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define GD32_USART_IRQ_HANDLER(n)                                                      \
+	static void usart_gd32_config_func_##n(const struct device *dev)               \
+	{                                                                              \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), usart_gd32_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                                 \
+		irq_enable(DT_INST_IRQN(n));                                           \
 	}
 #define GD32_USART_IRQ_HANDLER_FUNC_INIT(n) .irq_config_func = usart_gd32_config_func_##n
 #else /* CONFIG_UART_INTERRUPT_DRIVEN */
@@ -307,21 +307,21 @@ static const struct uart_driver_api usart_gd32_driver_api = {
 #define GD32_USART_IRQ_HANDLER_FUNC_INIT(n)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-#define GD32_USART_INIT(n)                                                                         \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	GD32_USART_IRQ_HANDLER(n)                                                                  \
-	static struct gd32_usart_data usart_gd32_data_##n = {                                      \
-		.baud_rate = DT_INST_PROP(n, current_speed),                                       \
-	};                                                                                         \
-	static const struct gd32_usart_config usart_gd32_config_##n = {                            \
-		.reg = DT_INST_REG_ADDR(n),                                                        \
-		.clkid = DT_INST_CLOCKS_CELL(n, id),                                               \
-		.reset = RESET_DT_SPEC_INST_GET(n),                                                \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),                    \
-		GD32_USART_IRQ_HANDLER_FUNC_INIT(n)};                                              \
-	DEVICE_DT_INST_DEFINE(n, usart_gd32_init, NULL, &usart_gd32_data_##n,                      \
-			      &usart_gd32_config_##n, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,   \
+#define GD32_USART_INIT(n)                                                                       \
+	PINCTRL_DT_INST_DEFINE(n);                                                               \
+	GD32_USART_IRQ_HANDLER(n)                                                                \
+	static struct gd32_usart_data usart_gd32_data_##n = {                                    \
+		.baud_rate = DT_INST_PROP(n, current_speed),                                     \
+	};                                                                                       \
+	static const struct gd32_usart_config usart_gd32_config_##n = {                          \
+		.reg = DT_INST_REG_ADDR(n),                                                      \
+		.clkid = DT_INST_CLOCKS_CELL(n, id),                                             \
+		.reset = RESET_DT_SPEC_INST_GET(n),                                              \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+		.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),                  \
+		GD32_USART_IRQ_HANDLER_FUNC_INIT(n)};                                            \
+	DEVICE_DT_INST_DEFINE(n, usart_gd32_init, NULL, &usart_gd32_data_##n,                    \
+			      &usart_gd32_config_##n, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, \
 			      &usart_gd32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GD32_USART_INIT)

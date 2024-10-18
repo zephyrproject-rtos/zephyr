@@ -1139,31 +1139,31 @@ static const struct can_driver_api can_rcar_driver_api = {
 		       .prescaler = 0x400}};
 
 /* Device Instantiation */
-#define CAN_RCAR_INIT(n)                                                                           \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	static void can_rcar_##n##_init(const struct device *dev);                                 \
-	static const struct can_rcar_cfg can_rcar_cfg_##n = {                                      \
-		.common = CAN_DT_DRIVER_CONFIG_INST_GET(n, 0, 1000000),                            \
-		.reg_addr = DT_INST_REG_ADDR(n),                                                   \
-		.reg_size = DT_INST_REG_SIZE(n),                                                   \
-		.init_func = can_rcar_##n##_init,                                                  \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.mod_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, module),                        \
-		.mod_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, domain),                        \
-		.bus_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, module),                        \
-		.bus_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, domain),                        \
-		.bus_clk.rate = 40000000,                                                          \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-	};                                                                                         \
-	static struct can_rcar_data can_rcar_data_##n;                                             \
-                                                                                                   \
-	CAN_DEVICE_DT_INST_DEFINE(n, can_rcar_init, NULL, &can_rcar_data_##n, &can_rcar_cfg_##n,   \
-				  POST_KERNEL, CONFIG_CAN_INIT_PRIORITY, &can_rcar_driver_api);    \
-	static void can_rcar_##n##_init(const struct device *dev)                                  \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), 0, can_rcar_isr, DEVICE_DT_INST_GET(n), 0);           \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define CAN_RCAR_INIT(n)                                                                         \
+	PINCTRL_DT_INST_DEFINE(n);                                                               \
+	static void can_rcar_##n##_init(const struct device *dev);                               \
+	static const struct can_rcar_cfg can_rcar_cfg_##n = {                                    \
+		.common = CAN_DT_DRIVER_CONFIG_INST_GET(n, 0, 1000000),                          \
+		.reg_addr = DT_INST_REG_ADDR(n),                                                 \
+		.reg_size = DT_INST_REG_SIZE(n),                                                 \
+		.init_func = can_rcar_##n##_init,                                                \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                              \
+		.mod_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, module),                      \
+		.mod_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, domain),                      \
+		.bus_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, module),                      \
+		.bus_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, domain),                      \
+		.bus_clk.rate = 40000000,                                                        \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+	};                                                                                       \
+	static struct can_rcar_data can_rcar_data_##n;                                           \
+                                                                                                 \
+	CAN_DEVICE_DT_INST_DEFINE(n, can_rcar_init, NULL, &can_rcar_data_##n, &can_rcar_cfg_##n, \
+				  POST_KERNEL, CONFIG_CAN_INIT_PRIORITY, &can_rcar_driver_api);  \
+	static void can_rcar_##n##_init(const struct device *dev)                                \
+	{                                                                                        \
+		IRQ_CONNECT(DT_INST_IRQN(n), 0, can_rcar_isr, DEVICE_DT_INST_GET(n), 0);         \
+                                                                                                 \
+		irq_enable(DT_INST_IRQN(n));                                                     \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_RCAR_INIT)

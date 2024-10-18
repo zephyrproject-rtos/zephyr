@@ -399,13 +399,13 @@ static const struct ov5640_mode_config modes[] = {
 
 static const int ov5640_frame_rates[] = {OV5640_15_FPS, OV5640_30_FPS, OV5640_60_FPS};
 
-#define OV5640_VIDEO_FORMAT_CAP(width, height, format)                                             \
-	{.pixelformat = (format),                                                                  \
-	 .width_min = (width),                                                                     \
-	 .width_max = (width),                                                                     \
-	 .height_min = (height),                                                                   \
-	 .height_max = (height),                                                                   \
-	 .width_step = 0,                                                                          \
+#define OV5640_VIDEO_FORMAT_CAP(width, height, format) \
+	{.pixelformat = (format),                      \
+	 .width_min = (width),                         \
+	 .width_max = (width),                         \
+	 .height_min = (height),                       \
+	 .height_max = (height),                       \
+	 .width_step = 0,                              \
 	 .height_step = 0}
 
 static const struct video_format_cap fmts[] = {
@@ -1032,16 +1032,16 @@ static int ov5640_init(const struct device *dev)
 	return 0;
 }
 
-#define OV5640_INIT(n)                                                                             \
-	static struct ov5640_data ov5640_data_##n;                                                 \
-                                                                                                   \
-	static const struct ov5640_config ov5640_cfg_##n = {                                       \
-		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                       \
-		.powerdown_gpio = GPIO_DT_SPEC_INST_GET_OR(n, powerdown_gpios, {0}),               \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, &ov5640_init, NULL, &ov5640_data_##n, &ov5640_cfg_##n,            \
+#define OV5640_INIT(n)                                                                      \
+	static struct ov5640_data ov5640_data_##n;                                          \
+                                                                                            \
+	static const struct ov5640_config ov5640_cfg_##n = {                                \
+		.i2c = I2C_DT_SPEC_INST_GET(n),                                             \
+		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                \
+		.powerdown_gpio = GPIO_DT_SPEC_INST_GET_OR(n, powerdown_gpios, {0}),        \
+	};                                                                                  \
+                                                                                            \
+	DEVICE_DT_INST_DEFINE(n, &ov5640_init, NULL, &ov5640_data_##n, &ov5640_cfg_##n,     \
 			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &ov5640_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(OV5640_INIT)

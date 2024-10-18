@@ -8,7 +8,7 @@
 #include <soc_port.h>
 
 /** Utility macro that expands to the PORT port address if it exists */
-#define SAM_PORT_ADDR_OR_NONE(nodelabel)                                                           \
+#define SAM_PORT_ADDR_OR_NONE(nodelabel)                        \
 	IF_ENABLED(DT_NODE_EXISTS(DT_NODELABEL(nodelabel)),			\
 		   (DT_REG_ADDR(DT_NODELABEL(nodelabel)),))
 

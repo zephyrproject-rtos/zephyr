@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(stmpe811, CONFIG_INPUT_LOG_LEVEL);
 #define STMPE811_TOUCH_XD STMPE811_GPIO_PIN_6
 #define STMPE811_TOUCH_YU STMPE811_GPIO_PIN_5
 #define STMPE811_TOUCH_XU STMPE811_GPIO_PIN_4
-#define STMPE811_TOUCH_IO_ALL                                                                      \
+#define STMPE811_TOUCH_IO_ALL                                                           \
 	(STMPE811_TOUCH_YD | STMPE811_TOUCH_XD | STMPE811_TOUCH_YU | STMPE811_TOUCH_XU)
 
 /* Registers */
@@ -522,29 +522,29 @@ static int stmpe811_init(const struct device *dev)
 	return 0;
 }
 
-#define STMPE811_DEFINE(index)                                                                     \
-	BUILD_ASSERT(DT_INST_PROP_OR(index, raw_x_max, 4096) >                                     \
-			     DT_INST_PROP_OR(index, raw_x_min, 0),                                 \
-		     "raw-x-max should be larger than raw-x-min");                                 \
-	BUILD_ASSERT(DT_INST_PROP_OR(index, raw_y_max, 4096) >                                     \
-			     DT_INST_PROP_OR(index, raw_y_min, 0),                                 \
-		     "raw-y-max should be larger than raw-y-min");                                 \
-	static const struct stmpe811_config stmpe811_config_##index = {                            \
-		.common = INPUT_TOUCH_DT_INST_COMMON_CONFIG_INIT(index),                           \
-		.bus = I2C_DT_SPEC_INST_GET(index),                                                \
-		.int_gpio = GPIO_DT_SPEC_INST_GET(index, int_gpios),                               \
-		.panel_driver_settling_time_us =                                                   \
-			DT_INST_ENUM_IDX(index, panel_driver_settling_time_us),                    \
-		.raw_x_min = DT_INST_PROP_OR(index, raw_x_min, 0),                                 \
-		.raw_y_min = DT_INST_PROP_OR(index, raw_y_min, 0),                                 \
-		.raw_x_max = DT_INST_PROP_OR(index, raw_x_max, 4096),                              \
-		.raw_y_max = DT_INST_PROP_OR(index, raw_y_max, 4096),                              \
-		.touch_detect_delay_us = DT_INST_ENUM_IDX(index, touch_detect_delay_us),           \
-		.touch_average_control = DT_INST_ENUM_IDX(index, touch_average_control),           \
-		.tracking_index = DT_INST_ENUM_IDX(index, tracking_index)};                        \
-	static struct stmpe811_data stmpe811_data_##index;                                         \
-	DEVICE_DT_INST_DEFINE(index, stmpe811_init, NULL, &stmpe811_data_##index,                  \
-			      &stmpe811_config_##index, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,   \
+#define STMPE811_DEFINE(index)                                                                   \
+	BUILD_ASSERT(DT_INST_PROP_OR(index, raw_x_max, 4096) >                                   \
+			     DT_INST_PROP_OR(index, raw_x_min, 0),                               \
+		     "raw-x-max should be larger than raw-x-min");                               \
+	BUILD_ASSERT(DT_INST_PROP_OR(index, raw_y_max, 4096) >                                   \
+			     DT_INST_PROP_OR(index, raw_y_min, 0),                               \
+		     "raw-y-max should be larger than raw-y-min");                               \
+	static const struct stmpe811_config stmpe811_config_##index = {                          \
+		.common = INPUT_TOUCH_DT_INST_COMMON_CONFIG_INIT(index),                         \
+		.bus = I2C_DT_SPEC_INST_GET(index),                                              \
+		.int_gpio = GPIO_DT_SPEC_INST_GET(index, int_gpios),                             \
+		.panel_driver_settling_time_us =                                                 \
+			DT_INST_ENUM_IDX(index, panel_driver_settling_time_us),                  \
+		.raw_x_min = DT_INST_PROP_OR(index, raw_x_min, 0),                               \
+		.raw_y_min = DT_INST_PROP_OR(index, raw_y_min, 0),                               \
+		.raw_x_max = DT_INST_PROP_OR(index, raw_x_max, 4096),                            \
+		.raw_y_max = DT_INST_PROP_OR(index, raw_y_max, 4096),                            \
+		.touch_detect_delay_us = DT_INST_ENUM_IDX(index, touch_detect_delay_us),         \
+		.touch_average_control = DT_INST_ENUM_IDX(index, touch_average_control),         \
+		.tracking_index = DT_INST_ENUM_IDX(index, tracking_index)};                      \
+	static struct stmpe811_data stmpe811_data_##index;                                       \
+	DEVICE_DT_INST_DEFINE(index, stmpe811_init, NULL, &stmpe811_data_##index,                \
+			      &stmpe811_config_##index, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, \
 			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(STMPE811_DEFINE)

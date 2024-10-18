@@ -1720,86 +1720,86 @@ static const struct udc_api udc_numaker_api = {
 	.unlock = udc_numaker_unlock,
 };
 
-#define UDC_NUMAKER_DEVICE_DEFINE(inst)                                                            \
-	PINCTRL_DT_INST_DEFINE(inst);                                                              \
-                                                                                                   \
-	static void udc_numaker_irq_config_func_##inst(const struct device *dev)                   \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), numaker_udbd_isr,     \
-			    DEVICE_DT_INST_GET(inst), 0);                                          \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(inst));                                                    \
-	}                                                                                          \
-                                                                                                   \
-	static void udc_numaker_irq_unconfig_func_##inst(const struct device *dev)                 \
-	{                                                                                          \
-		irq_disable(DT_INST_IRQN(inst));                                                   \
-	}                                                                                          \
-                                                                                                   \
-	K_THREAD_STACK_DEFINE(udc_numaker_stack_##inst, CONFIG_UDC_NUMAKER_THREAD_STACK_SIZE);     \
-                                                                                                   \
-	static void udc_numaker_thread_##inst(void *dev, void *arg1, void *arg2)                   \
-	{                                                                                          \
-		ARG_UNUSED(arg1);                                                                  \
-		ARG_UNUSED(arg2);                                                                  \
-		numaker_usbd_msg_handler(dev);                                                     \
-	}                                                                                          \
-                                                                                                   \
-	static void udc_numaker_make_thread_##inst(const struct device *dev)                       \
-	{                                                                                          \
-		struct udc_numaker_data *priv = udc_get_private(dev);                              \
-                                                                                                   \
-		k_thread_create(&priv->thread_data, udc_numaker_stack_##inst,                      \
-				K_THREAD_STACK_SIZEOF(udc_numaker_stack_##inst),                   \
-				udc_numaker_thread_##inst, (void *)dev, NULL, NULL,                \
-				K_PRIO_COOP(CONFIG_UDC_NUMAKER_THREAD_PRIORITY), K_ESSENTIAL,      \
-				K_NO_WAIT);                                                        \
-		k_thread_name_set(&priv->thread_data, dev->name);                                  \
-	}                                                                                          \
-                                                                                                   \
-	static struct udc_ep_config                                                                \
-		ep_cfg_out_##inst[MIN(DT_INST_PROP(inst, num_bidir_endpoints), 16)];               \
-	static struct udc_ep_config                                                                \
-		ep_cfg_in_##inst[MIN(DT_INST_PROP(inst, num_bidir_endpoints), 16)];                \
-                                                                                                   \
-	static const struct udc_numaker_config udc_numaker_config_##inst = {                       \
-		.ep_cfg_out = ep_cfg_out_##inst,                                                   \
-		.ep_cfg_in = ep_cfg_in_##inst,                                                     \
-		.ep_cfg_out_size = ARRAY_SIZE(ep_cfg_out_##inst),                                  \
-		.ep_cfg_in_size = ARRAY_SIZE(ep_cfg_in_##inst),                                    \
-		.make_thread = udc_numaker_make_thread_##inst,                                     \
-		.base = (USBD_T *)DT_INST_REG_ADDR(inst),                                          \
-		.reset = RESET_DT_SPEC_INST_GET(inst),                                             \
-		.clk_modidx = DT_INST_CLOCKS_CELL(inst, clock_module_index),                       \
-		.clk_src = DT_INST_CLOCKS_CELL(inst, clock_source),                                \
-		.clk_div = DT_INST_CLOCKS_CELL(inst, clock_divider),                               \
-		.clkctrl_dev = DEVICE_DT_GET(DT_PARENT(DT_INST_CLOCKS_CTLR(inst))),                \
-		.irq_config_func = udc_numaker_irq_config_func_##inst,                             \
-		.irq_unconfig_func = udc_numaker_irq_unconfig_func_##inst,                         \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                    \
-		.dmabuf_size = DT_INST_PROP(inst, dma_buffer_size),                                \
-		.disallow_iso_inout_same = DT_INST_PROP(inst, disallow_iso_in_out_same_number),    \
-	};                                                                                         \
-                                                                                                   \
-	static struct numaker_usbd_ep                                                              \
-		numaker_usbd_ep_pool_##inst[DT_INST_PROP(inst, num_bidir_endpoints)];              \
-                                                                                                   \
-	K_MSGQ_DEFINE(numaker_usbd_msgq_##inst, sizeof(struct numaker_usbd_msg),                   \
-		      CONFIG_UDC_NUMAKER_MSG_QUEUE_SIZE, 4);                                       \
-                                                                                                   \
-	static struct udc_numaker_data udc_priv_##inst = {                                         \
-		.msgq = &numaker_usbd_msgq_##inst,                                                 \
-		.ep_pool = numaker_usbd_ep_pool_##inst,                                            \
-		.ep_pool_size = DT_INST_PROP(inst, num_bidir_endpoints),                           \
-	};                                                                                         \
-                                                                                                   \
-	static struct udc_data udc_data_##inst = {                                                 \
-		.mutex = Z_MUTEX_INITIALIZER(udc_data_##inst.mutex),                               \
-		.priv = &udc_priv_##inst,                                                          \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, udc_numaker_driver_preinit, NULL, &udc_data_##inst,            \
-			      &udc_numaker_config_##inst, POST_KERNEL,                             \
+#define UDC_NUMAKER_DEVICE_DEFINE(inst)                                                         \
+	PINCTRL_DT_INST_DEFINE(inst);                                                           \
+                                                                                                \
+	static void udc_numaker_irq_config_func_##inst(const struct device *dev)                \
+	{                                                                                       \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), numaker_udbd_isr,  \
+			    DEVICE_DT_INST_GET(inst), 0);                                       \
+                                                                                                \
+		irq_enable(DT_INST_IRQN(inst));                                                 \
+	}                                                                                       \
+                                                                                                \
+	static void udc_numaker_irq_unconfig_func_##inst(const struct device *dev)              \
+	{                                                                                       \
+		irq_disable(DT_INST_IRQN(inst));                                                \
+	}                                                                                       \
+                                                                                                \
+	K_THREAD_STACK_DEFINE(udc_numaker_stack_##inst, CONFIG_UDC_NUMAKER_THREAD_STACK_SIZE);  \
+                                                                                                \
+	static void udc_numaker_thread_##inst(void *dev, void *arg1, void *arg2)                \
+	{                                                                                       \
+		ARG_UNUSED(arg1);                                                               \
+		ARG_UNUSED(arg2);                                                               \
+		numaker_usbd_msg_handler(dev);                                                  \
+	}                                                                                       \
+                                                                                                \
+	static void udc_numaker_make_thread_##inst(const struct device *dev)                    \
+	{                                                                                       \
+		struct udc_numaker_data *priv = udc_get_private(dev);                           \
+                                                                                                \
+		k_thread_create(&priv->thread_data, udc_numaker_stack_##inst,                   \
+				K_THREAD_STACK_SIZEOF(udc_numaker_stack_##inst),                \
+				udc_numaker_thread_##inst, (void *)dev, NULL, NULL,             \
+				K_PRIO_COOP(CONFIG_UDC_NUMAKER_THREAD_PRIORITY), K_ESSENTIAL,   \
+				K_NO_WAIT);                                                     \
+		k_thread_name_set(&priv->thread_data, dev->name);                               \
+	}                                                                                       \
+                                                                                                \
+	static struct udc_ep_config                                                             \
+		ep_cfg_out_##inst[MIN(DT_INST_PROP(inst, num_bidir_endpoints), 16)];            \
+	static struct udc_ep_config                                                             \
+		ep_cfg_in_##inst[MIN(DT_INST_PROP(inst, num_bidir_endpoints), 16)];             \
+                                                                                                \
+	static const struct udc_numaker_config udc_numaker_config_##inst = {                    \
+		.ep_cfg_out = ep_cfg_out_##inst,                                                \
+		.ep_cfg_in = ep_cfg_in_##inst,                                                  \
+		.ep_cfg_out_size = ARRAY_SIZE(ep_cfg_out_##inst),                               \
+		.ep_cfg_in_size = ARRAY_SIZE(ep_cfg_in_##inst),                                 \
+		.make_thread = udc_numaker_make_thread_##inst,                                  \
+		.base = (USBD_T *)DT_INST_REG_ADDR(inst),                                       \
+		.reset = RESET_DT_SPEC_INST_GET(inst),                                          \
+		.clk_modidx = DT_INST_CLOCKS_CELL(inst, clock_module_index),                    \
+		.clk_src = DT_INST_CLOCKS_CELL(inst, clock_source),                             \
+		.clk_div = DT_INST_CLOCKS_CELL(inst, clock_divider),                            \
+		.clkctrl_dev = DEVICE_DT_GET(DT_PARENT(DT_INST_CLOCKS_CTLR(inst))),             \
+		.irq_config_func = udc_numaker_irq_config_func_##inst,                          \
+		.irq_unconfig_func = udc_numaker_irq_unconfig_func_##inst,                      \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                 \
+		.dmabuf_size = DT_INST_PROP(inst, dma_buffer_size),                             \
+		.disallow_iso_inout_same = DT_INST_PROP(inst, disallow_iso_in_out_same_number), \
+	};                                                                                      \
+                                                                                                \
+	static struct numaker_usbd_ep                                                           \
+		numaker_usbd_ep_pool_##inst[DT_INST_PROP(inst, num_bidir_endpoints)];           \
+                                                                                                \
+	K_MSGQ_DEFINE(numaker_usbd_msgq_##inst, sizeof(struct numaker_usbd_msg),                \
+		      CONFIG_UDC_NUMAKER_MSG_QUEUE_SIZE, 4);                                    \
+                                                                                                \
+	static struct udc_numaker_data udc_priv_##inst = {                                      \
+		.msgq = &numaker_usbd_msgq_##inst,                                              \
+		.ep_pool = numaker_usbd_ep_pool_##inst,                                         \
+		.ep_pool_size = DT_INST_PROP(inst, num_bidir_endpoints),                        \
+	};                                                                                      \
+                                                                                                \
+	static struct udc_data udc_data_##inst = {                                              \
+		.mutex = Z_MUTEX_INITIALIZER(udc_data_##inst.mutex),                            \
+		.priv = &udc_priv_##inst,                                                       \
+	};                                                                                      \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(inst, udc_numaker_driver_preinit, NULL, &udc_data_##inst,         \
+			      &udc_numaker_config_##inst, POST_KERNEL,                          \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &udc_numaker_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UDC_NUMAKER_DEVICE_DEFINE)

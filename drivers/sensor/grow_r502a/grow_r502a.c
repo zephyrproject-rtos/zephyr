@@ -1176,25 +1176,25 @@ static const struct led_driver_api grow_r502a_leds_api = {
 };
 #endif
 
-#define GROW_R502A_INIT(index)                                                                     \
-	static struct grow_r502a_data grow_r502a_data_##index;                                     \
-                                                                                                   \
-	static struct grow_r502a_config grow_r502a_config_##index = {                              \
-		.dev = DEVICE_DT_GET(DT_INST_BUS(index)),                                          \
-		.comm_addr = DT_INST_REG_ADDR(index),                                              \
+#define GROW_R502A_INIT(index)                                                            \
+	static struct grow_r502a_data grow_r502a_data_##index;                            \
+                                                                                          \
+	static struct grow_r502a_config grow_r502a_config_##index = {                     \
+		.dev = DEVICE_DT_GET(DT_INST_BUS(index)),                                 \
+		.comm_addr = DT_INST_REG_ADDR(index),                                     \
 		IF_ENABLED(CONFIG_GROW_R502A_GPIO_POWER,					\
 		(.vin_gpios = GPIO_DT_SPEC_INST_GET_OR(index, vin_gpios, {}),			\
-		 .act_gpios = GPIO_DT_SPEC_INST_GET_OR(index, act_gpios, {}),))                                     \
+		 .act_gpios = GPIO_DT_SPEC_INST_GET_OR(index, act_gpios, {}),))                            \
 					    IF_ENABLED(CONFIG_GROW_R502A_TRIGGER,						\
-		(.int_gpios = GPIO_DT_SPEC_INST_GET_OR(index, int_gpios, {}),)) };          \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(index, &grow_r502a_init, NULL, &grow_r502a_data_##index,             \
-			      &grow_r502a_config_##index, POST_KERNEL,                             \
+		(.int_gpios = GPIO_DT_SPEC_INST_GET_OR(index, int_gpios, {}),)) }; \
+                                                                                          \
+	DEVICE_DT_INST_DEFINE(index, &grow_r502a_init, NULL, &grow_r502a_data_##index,    \
+			      &grow_r502a_config_##index, POST_KERNEL,                    \
 			      CONFIG_SENSOR_INIT_PRIORITY, &grow_r502a_api);
 
-#define GROW_R502A_LED_INIT(index)                                                                 \
-	DEVICE_DT_INST_DEFINE(index, NULL, NULL, &grow_r502a_data_##index,                         \
-			      &grow_r502a_config_##index, POST_KERNEL, CONFIG_LED_INIT_PRIORITY,   \
+#define GROW_R502A_LED_INIT(index)                                                               \
+	DEVICE_DT_INST_DEFINE(index, NULL, NULL, &grow_r502a_data_##index,                       \
+			      &grow_r502a_config_##index, POST_KERNEL, CONFIG_LED_INIT_PRIORITY, \
 			      &grow_r502a_leds_api);
 
 #define DT_DRV_COMPAT hzgrow_r502a

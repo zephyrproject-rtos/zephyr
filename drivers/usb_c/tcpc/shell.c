@@ -15,25 +15,25 @@
 #define TCPC_DUMP_CONN_NODE(node) TCPC_DUMP_DEV(DEVICE_DT_GET(DT_PROP(node, tcpc)))
 
 /** Macro used to call the vbus_measure function from the VBUS device pointer */
-#define TCPC_VBUS_DEV(dev)                                                                         \
-	{                                                                                          \
-		int val;                                                                           \
-		ret |= usbc_vbus_measure(dev, &val);                                               \
-		shell_print(sh, "%s vbus: %d mV", dev->name, val);                                 \
+#define TCPC_VBUS_DEV(dev)                                         \
+	{                                                          \
+		int val;                                           \
+		ret |= usbc_vbus_measure(dev, &val);               \
+		shell_print(sh, "%s vbus: %d mV", dev->name, val); \
 	}
 
 /** Macro used to call the vbus_measure function from the USB-C connector node */
 #define TCPC_VBUS_CONN_NODE(node) TCPC_VBUS_DEV(DEVICE_DT_GET(DT_PROP(node, vbus)))
 
 /** Macro used to call the get_chip function from the TCPC device pointer */
-#define TCPC_GET_CHIP_DEV(dev)                                                                     \
-	{                                                                                          \
-		ret |= tcpc_get_chip_info(dev, &chip_info);                                        \
-		shell_print(sh, "Chip: %s", dev->name);                                            \
-		shell_print(sh, "\tVendor:   %04x", chip_info.vendor_id);                          \
-		shell_print(sh, "\tProduct:  %04x", chip_info.product_id);                         \
-		shell_print(sh, "\tDevice:   %04x", chip_info.device_id);                          \
-		shell_print(sh, "\tFirmware: %llx", chip_info.fw_version_number);                  \
+#define TCPC_GET_CHIP_DEV(dev)                                                    \
+	{                                                                         \
+		ret |= tcpc_get_chip_info(dev, &chip_info);                       \
+		shell_print(sh, "Chip: %s", dev->name);                           \
+		shell_print(sh, "\tVendor:   %04x", chip_info.vendor_id);         \
+		shell_print(sh, "\tProduct:  %04x", chip_info.product_id);        \
+		shell_print(sh, "\tDevice:   %04x", chip_info.device_id);         \
+		shell_print(sh, "\tFirmware: %llx", chip_info.fw_version_number); \
 	}
 
 /** Macro used to call the get_chip function from the USB-C connector node */

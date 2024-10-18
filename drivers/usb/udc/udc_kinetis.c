@@ -1112,44 +1112,44 @@ static const struct udc_api usbfsotg_api = {
 	.unlock = usbfsotg_unlock,
 };
 
-#define USBFSOTG_DEVICE_DEFINE(n)                                                                  \
-	static void udc_irq_enable_func##n(const struct device *dev)                               \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), usbfsotg_isr_handler,       \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-	}                                                                                          \
-                                                                                                   \
-	static void udc_irq_disable_func##n(const struct device *dev)                              \
-	{                                                                                          \
-		irq_disable(DT_INST_IRQN(n));                                                      \
-	}                                                                                          \
-                                                                                                   \
-	static struct usbfsotg_bd                                                                  \
-		__aligned(512) bdt_##n[DT_INST_PROP(n, num_bidir_endpoints) * 2 * 2];              \
-                                                                                                   \
-	static struct udc_ep_config ep_cfg_out[DT_INST_PROP(n, num_bidir_endpoints)];              \
-	static struct udc_ep_config ep_cfg_in[DT_INST_PROP(n, num_bidir_endpoints)];               \
-                                                                                                   \
-	static struct usbfsotg_config priv_config_##n = {                                          \
-		.base = (USB_Type *)DT_INST_REG_ADDR(n),                                           \
-		.bdt = bdt_##n,                                                                    \
-		.irq_enable_func = udc_irq_enable_func##n,                                         \
-		.irq_disable_func = udc_irq_disable_func##n,                                       \
-		.num_of_eps = DT_INST_PROP(n, num_bidir_endpoints),                                \
-		.ep_cfg_in = ep_cfg_out,                                                           \
-		.ep_cfg_out = ep_cfg_in,                                                           \
-	};                                                                                         \
-                                                                                                   \
-	static struct usbfsotg_data priv_data_##n = {};                                            \
-                                                                                                   \
-	static struct udc_data udc_data_##n = {                                                    \
-		.mutex = Z_MUTEX_INITIALIZER(udc_data_##n.mutex),                                  \
-		.priv = &priv_data_##n,                                                            \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, usbfsotg_driver_preinit, NULL, &udc_data_##n, &priv_config_##n,   \
+#define USBFSOTG_DEVICE_DEFINE(n)                                                                \
+	static void udc_irq_enable_func##n(const struct device *dev)                             \
+	{                                                                                        \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), usbfsotg_isr_handler,     \
+			    DEVICE_DT_INST_GET(n), 0);                                           \
+                                                                                                 \
+		irq_enable(DT_INST_IRQN(n));                                                     \
+	}                                                                                        \
+                                                                                                 \
+	static void udc_irq_disable_func##n(const struct device *dev)                            \
+	{                                                                                        \
+		irq_disable(DT_INST_IRQN(n));                                                    \
+	}                                                                                        \
+                                                                                                 \
+	static struct usbfsotg_bd                                                                \
+		__aligned(512) bdt_##n[DT_INST_PROP(n, num_bidir_endpoints) * 2 * 2];            \
+                                                                                                 \
+	static struct udc_ep_config ep_cfg_out[DT_INST_PROP(n, num_bidir_endpoints)];            \
+	static struct udc_ep_config ep_cfg_in[DT_INST_PROP(n, num_bidir_endpoints)];             \
+                                                                                                 \
+	static struct usbfsotg_config priv_config_##n = {                                        \
+		.base = (USB_Type *)DT_INST_REG_ADDR(n),                                         \
+		.bdt = bdt_##n,                                                                  \
+		.irq_enable_func = udc_irq_enable_func##n,                                       \
+		.irq_disable_func = udc_irq_disable_func##n,                                     \
+		.num_of_eps = DT_INST_PROP(n, num_bidir_endpoints),                              \
+		.ep_cfg_in = ep_cfg_out,                                                         \
+		.ep_cfg_out = ep_cfg_in,                                                         \
+	};                                                                                       \
+                                                                                                 \
+	static struct usbfsotg_data priv_data_##n = {};                                          \
+                                                                                                 \
+	static struct udc_data udc_data_##n = {                                                  \
+		.mutex = Z_MUTEX_INITIALIZER(udc_data_##n.mutex),                                \
+		.priv = &priv_data_##n,                                                          \
+	};                                                                                       \
+                                                                                                 \
+	DEVICE_DT_INST_DEFINE(n, usbfsotg_driver_preinit, NULL, &udc_data_##n, &priv_config_##n, \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &usbfsotg_api);
 
 DT_INST_FOREACH_STATUS_OKAY(USBFSOTG_DEVICE_DEFINE)

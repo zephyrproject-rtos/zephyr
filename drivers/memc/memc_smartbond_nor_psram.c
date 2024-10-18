@@ -17,29 +17,29 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(smartbond_nor_psram, CONFIG_MEMC_LOG_LEVEL);
 
-#define CLK_AMBA_REG_SET_FIELD(_field, _var, _val)                                                 \
-	((_var)) = ((_var) & ~(CRG_TOP_CLK_AMBA_REG_##_field##_Msk)) |                             \
-		   (((_val) << CRG_TOP_CLK_AMBA_REG_##_field##_Pos) &                              \
+#define CLK_AMBA_REG_SET_FIELD(_field, _var, _val)                     \
+	((_var)) = ((_var) & ~(CRG_TOP_CLK_AMBA_REG_##_field##_Msk)) | \
+		   (((_val) << CRG_TOP_CLK_AMBA_REG_##_field##_Pos) &  \
 		    CRG_TOP_CLK_AMBA_REG_##_field##_Msk)
 
-#define QSPIC2_CTRLMODE_REG_SET_FIELD(_field, _var, _val)                                          \
-	((_var)) = ((_var) & ~(QSPIC2_QSPIC2_CTRLMODE_REG_##_field##_Msk)) |                       \
-		   (((_val) << QSPIC2_QSPIC2_CTRLMODE_REG_##_field##_Pos) &                        \
+#define QSPIC2_CTRLMODE_REG_SET_FIELD(_field, _var, _val)                    \
+	((_var)) = ((_var) & ~(QSPIC2_QSPIC2_CTRLMODE_REG_##_field##_Msk)) | \
+		   (((_val) << QSPIC2_QSPIC2_CTRLMODE_REG_##_field##_Pos) &  \
 		    QSPIC2_QSPIC2_CTRLMODE_REG_##_field##_Msk)
 
-#define QSPIC2_BURSTCMDA_REG_SET_FIELD(_field, _var, _val)                                         \
-	((_var)) = ((_var) & ~(QSPIC2_QSPIC2_BURSTCMDA_REG_##_field##_Msk)) |                      \
-		   (((_val) << QSPIC2_QSPIC2_BURSTCMDA_REG_##_field##_Pos) &                       \
+#define QSPIC2_BURSTCMDA_REG_SET_FIELD(_field, _var, _val)                    \
+	((_var)) = ((_var) & ~(QSPIC2_QSPIC2_BURSTCMDA_REG_##_field##_Msk)) | \
+		   (((_val) << QSPIC2_QSPIC2_BURSTCMDA_REG_##_field##_Pos) &  \
 		    QSPIC2_QSPIC2_BURSTCMDA_REG_##_field##_Msk)
 
-#define QSPIC2_BURSTCMDB_REG_SET_FIELD(_field, _var, _val)                                         \
-	((_var)) = ((_var) & ~(QSPIC2_QSPIC2_BURSTCMDB_REG_##_field##_Msk)) |                      \
-		   (((_val) << QSPIC2_QSPIC2_BURSTCMDB_REG_##_field##_Pos) &                       \
+#define QSPIC2_BURSTCMDB_REG_SET_FIELD(_field, _var, _val)                    \
+	((_var)) = ((_var) & ~(QSPIC2_QSPIC2_BURSTCMDB_REG_##_field##_Msk)) | \
+		   (((_val) << QSPIC2_QSPIC2_BURSTCMDB_REG_##_field##_Pos) &  \
 		    QSPIC2_QSPIC2_BURSTCMDB_REG_##_field##_Msk)
 
-#define QSPIC2_AWRITECMD_REG_SET_FIELD(_field, _var, _val)                                         \
-	((_var)) = ((_var) & ~(QSPIC2_QSPIC2_AWRITECMD_REG_##_field##_Msk)) |                      \
-		   (((_val) << QSPIC2_QSPIC2_AWRITECMD_REG_##_field##_Pos) &                       \
+#define QSPIC2_AWRITECMD_REG_SET_FIELD(_field, _var, _val)                    \
+	((_var)) = ((_var) & ~(QSPIC2_QSPIC2_AWRITECMD_REG_##_field##_Msk)) | \
+		   (((_val) << QSPIC2_QSPIC2_AWRITECMD_REG_##_field##_Pos) &  \
 		    QSPIC2_QSPIC2_AWRITECMD_REG_##_field##_Msk)
 
 static void memc_set_status(bool status, int clk_div)
@@ -207,14 +207,14 @@ static int memc_smartbond_pm_action(const struct device *dev, enum pm_device_act
 }
 #endif
 
-#define SMARTBOND_MEMC_INIT(inst)                                                                  \
-	BUILD_ASSERT(inst == 0, "multiple instances are not permitted");                           \
-	BUILD_ASSERT(DT_INST_PROP(inst, is_ram),                                                   \
-		     "current driver version suports only PSRAM devices");                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, memc_smartbond_pm_action);                                  \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, memc_smartbond_init, PM_DEVICE_DT_INST_GET(inst), NULL, NULL,  \
+#define SMARTBOND_MEMC_INIT(inst)                                                                 \
+	BUILD_ASSERT(inst == 0, "multiple instances are not permitted");                          \
+	BUILD_ASSERT(DT_INST_PROP(inst, is_ram),                                                  \
+		     "current driver version suports only PSRAM devices");                        \
+                                                                                                  \
+	PM_DEVICE_DT_INST_DEFINE(inst, memc_smartbond_pm_action);                                 \
+                                                                                                  \
+	DEVICE_DT_INST_DEFINE(inst, memc_smartbond_init, PM_DEVICE_DT_INST_GET(inst), NULL, NULL, \
 			      POST_KERNEL, CONFIG_MEMC_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(SMARTBOND_MEMC_INIT)

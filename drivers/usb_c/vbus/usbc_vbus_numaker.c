@@ -119,13 +119,13 @@ static const struct usbc_vbus_driver_api numaker_vbus_driver_api = {
 
 #define NUMAKER_TCPC(inst) DT_INST_PARENT(inst)
 
-#define VBUS_NUMAKER_INIT(inst)                                                                    \
-	static const struct numaker_vbus_config numaker_vbus_config_##inst = {                     \
-		.tcpc_dev = DEVICE_DT_GET(NUMAKER_TCPC(inst)),                                     \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, numaker_vbus_init, NULL, NULL, &numaker_vbus_config_##inst,    \
-			      POST_KERNEL, CONFIG_USBC_VBUS_INIT_PRIORITY,                         \
+#define VBUS_NUMAKER_INIT(inst)                                                                 \
+	static const struct numaker_vbus_config numaker_vbus_config_##inst = {                  \
+		.tcpc_dev = DEVICE_DT_GET(NUMAKER_TCPC(inst)),                                  \
+	};                                                                                      \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(inst, numaker_vbus_init, NULL, NULL, &numaker_vbus_config_##inst, \
+			      POST_KERNEL, CONFIG_USBC_VBUS_INIT_PRIORITY,                      \
 			      &numaker_vbus_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VBUS_NUMAKER_INIT);

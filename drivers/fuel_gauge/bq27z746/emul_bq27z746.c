@@ -341,12 +341,12 @@ static int emul_bq27z746_init(const struct emul *target, const struct device *pa
 /*
  * Main instantiation macro.
  */
-#define BQ27Z746_EMUL(n)                                                                           \
-	static struct bq27z746_emul_data bq27z746_emul_data_##n;                                   \
-	static const struct bq27z746_emul_cfg bq27z746_emul_cfg_##n = {                            \
-		.addr = DT_INST_REG_ADDR(n),                                                       \
-	};                                                                                         \
-	EMUL_DT_INST_DEFINE(n, emul_bq27z746_init, &bq27z746_emul_data_##n,                        \
+#define BQ27Z746_EMUL(n)                                                          \
+	static struct bq27z746_emul_data bq27z746_emul_data_##n;                  \
+	static const struct bq27z746_emul_cfg bq27z746_emul_cfg_##n = {           \
+		.addr = DT_INST_REG_ADDR(n),                                      \
+	};                                                                        \
+	EMUL_DT_INST_DEFINE(n, emul_bq27z746_init, &bq27z746_emul_data_##n,       \
 			    &bq27z746_emul_cfg_##n, &bq27z746_emul_api_i2c, NULL)
 
 DT_INST_FOREACH_STATUS_OKAY(BQ27Z746_EMUL)

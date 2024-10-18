@@ -1102,40 +1102,40 @@ int bmi160_pm(const struct device *dev, enum pm_device_action action)
 #define BMI160_TRIGGER_CFG(inst)
 #endif
 
-#define BMI160_DEVICE_INIT(inst)                                                                   \
-	IF_ENABLED(CONFIG_PM_DEVICE_RUNTIME, (PM_DEVICE_DT_INST_DEFINE(inst, bmi160_pm)));           \
-	SENSOR_DEVICE_DT_INST_DEFINE(                                                              \
-		inst, bmi160_init,                                                                 \
-		COND_CODE_1(CONFIG_PM_DEVICE_RUNTIME, (PM_DEVICE_DT_INST_GET(inst)), (NULL)),        \
-						      &bmi160_data_##inst, &bmi160_cfg_##inst,     \
-						      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,    \
+#define BMI160_DEVICE_INIT(inst)                                                                \
+	IF_ENABLED(CONFIG_PM_DEVICE_RUNTIME, (PM_DEVICE_DT_INST_DEFINE(inst, bmi160_pm)));        \
+	SENSOR_DEVICE_DT_INST_DEFINE(                                                           \
+		inst, bmi160_init,                                                              \
+		COND_CODE_1(CONFIG_PM_DEVICE_RUNTIME, (PM_DEVICE_DT_INST_GET(inst)), (NULL)),     \
+						      &bmi160_data_##inst, &bmi160_cfg_##inst,  \
+						      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, \
 						      &bmi160_api);
 
 /* Instantiation macros used when a device is on a SPI bus */
-#define BMI160_DEFINE_SPI(inst)                                                                    \
-	static struct bmi160_data bmi160_data_##inst;                                              \
-	static const struct bmi160_cfg bmi160_cfg_##inst = {                                       \
-		.bus.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0),                         \
-		.bus_io = &bmi160_bus_io_spi,                                                      \
-		BMI160_TRIGGER_CFG(inst)};                                                         \
+#define BMI160_DEFINE_SPI(inst)                                            \
+	static struct bmi160_data bmi160_data_##inst;                      \
+	static const struct bmi160_cfg bmi160_cfg_##inst = {               \
+		.bus.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0), \
+		.bus_io = &bmi160_bus_io_spi,                              \
+		BMI160_TRIGGER_CFG(inst)};                                 \
 	BMI160_DEVICE_INIT(inst)
 
 /* Instantiation macros used when a device is on an I2C bus */
-#define BMI160_CONFIG_I2C(inst)                                                                    \
-	{.bus.i2c = I2C_DT_SPEC_INST_GET(inst),                                                    \
-	 .bus_io = &bmi160_bus_io_i2c,                                                             \
+#define BMI160_CONFIG_I2C(inst)                 \
+	{.bus.i2c = I2C_DT_SPEC_INST_GET(inst), \
+	 .bus_io = &bmi160_bus_io_i2c,          \
 	 BMI160_TRIGGER_CFG(inst)}
 
-#define BMI160_DEFINE_I2C(inst)                                                                    \
-	static struct bmi160_data bmi160_data_##inst;                                              \
-	static const struct bmi160_cfg bmi160_cfg_##inst = BMI160_CONFIG_I2C(inst);                \
+#define BMI160_DEFINE_I2C(inst)                                                     \
+	static struct bmi160_data bmi160_data_##inst;                               \
+	static const struct bmi160_cfg bmi160_cfg_##inst = BMI160_CONFIG_I2C(inst); \
 	BMI160_DEVICE_INIT(inst)
 
 /*
  * Main instantiation macro. Use of COND_CODE_1() selects the right
  * bus-specific macro at preprocessor time.
  */
-#define BMI160_DEFINE(inst)                                                                        \
+#define BMI160_DEFINE(inst)                         \
 	COND_CODE_1(DT_INST_ON_BUS(inst, spi),				\
 		    (BMI160_DEFINE_SPI(inst)),				\
 		    (BMI160_DEFINE_I2C(inst)))

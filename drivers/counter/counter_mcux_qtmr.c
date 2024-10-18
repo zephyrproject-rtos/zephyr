@@ -102,17 +102,17 @@ static void mcux_qtmr_isr(const struct device *timers[])
 
 #define INIT_TIMER(node_id) [DT_PROP(node_id, channel)] = DEVICE_DT_GET(node_id),
 
-#define QTMR_DEVICE_INIT_MCUX(n)                                                                   \
-	static const struct device *const timers_##n[4] = {                                        \
-		DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(n), INIT_TIMER)};                         \
-	static int init_irq_##n(void)                                                              \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_qtmr_isr, timers_##n,  \
-			    0);                                                                    \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-		return 0;                                                                          \
-	}                                                                                          \
-                                                                                                   \
+#define QTMR_DEVICE_INIT_MCUX(n)                                                                  \
+	static const struct device *const timers_##n[4] = {                                       \
+		DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(n), INIT_TIMER)};                        \
+	static int init_irq_##n(void)                                                             \
+	{                                                                                         \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_qtmr_isr, timers_##n, \
+			    0);                                                                   \
+		irq_enable(DT_INST_IRQN(n));                                                      \
+		return 0;                                                                         \
+	}                                                                                         \
+                                                                                                  \
 	SYS_INIT(init_irq_##n, POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY);
 
 DT_INST_FOREACH_STATUS_OKAY(QTMR_DEVICE_INIT_MCUX)

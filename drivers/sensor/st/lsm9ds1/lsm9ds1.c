@@ -618,31 +618,31 @@ static int lsm9ds1_init(const struct device *dev)
 	return 0;
 }
 
-#define LSM9DS1_CONFIG_COMMON(inst)                                                                \
-	.imu_odr = DT_INST_PROP(inst, imu_odr), .accel_range = DT_INST_PROP(inst, accel_range),    \
+#define LSM9DS1_CONFIG_COMMON(inst)                                                             \
+	.imu_odr = DT_INST_PROP(inst, imu_odr), .accel_range = DT_INST_PROP(inst, accel_range), \
 	.gyro_range = DT_INST_PROP(inst, gyro_range),
 
 /*
  * Instantiation macros used when a device is on an I2C bus.
  */
 
-#define LSM9DS1_CONFIG_I2C(inst)                                                                   \
-	{STMEMSC_CTX_I2C(&lsm9ds1_config_##inst.stmemsc_cfg),                                      \
-	 .stmemsc_cfg =                                                                            \
-		 {                                                                                 \
-			 .i2c = I2C_DT_SPEC_INST_GET(inst),                                        \
-		 },                                                                                \
+#define LSM9DS1_CONFIG_I2C(inst)                              \
+	{STMEMSC_CTX_I2C(&lsm9ds1_config_##inst.stmemsc_cfg), \
+	 .stmemsc_cfg =                                       \
+		 {                                            \
+			 .i2c = I2C_DT_SPEC_INST_GET(inst),   \
+		 },                                           \
 	 LSM9DS1_CONFIG_COMMON(inst)}
 
-#define LSM9DS1_DEFINE(inst)                                                                       \
-	static struct lsm9ds1_data lsm9ds1_data_##inst = {                                         \
-		.acc_gain = 0,                                                                     \
-	};                                                                                         \
-                                                                                                   \
-	static struct lsm9ds1_config lsm9ds1_config_##inst = LSM9DS1_CONFIG_I2C(inst);             \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, lsm9ds1_init, NULL, &lsm9ds1_data_##inst,               \
-				     &lsm9ds1_config_##inst, POST_KERNEL,                          \
+#define LSM9DS1_DEFINE(inst)                                                           \
+	static struct lsm9ds1_data lsm9ds1_data_##inst = {                             \
+		.acc_gain = 0,                                                         \
+	};                                                                             \
+                                                                                       \
+	static struct lsm9ds1_config lsm9ds1_config_##inst = LSM9DS1_CONFIG_I2C(inst); \
+                                                                                       \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, lsm9ds1_init, NULL, &lsm9ds1_data_##inst,   \
+				     &lsm9ds1_config_##inst, POST_KERNEL,              \
 				     CONFIG_SENSOR_INIT_PRIORITY, &lsm9ds1_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(LSM9DS1_DEFINE);

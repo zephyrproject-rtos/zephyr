@@ -32,8 +32,8 @@ LOG_MODULE_REGISTER(intc_esp32c3, CONFIG_LOG_DEFAULT_LEVEL);
 #ifdef CONFIG_INTC_ESP32C3_DECISIONS_LOG
 #define INTC_LOG(...) LOG_INF(__VA_ARGS__)
 #else
-#define INTC_LOG(...)                                                                              \
-	do {                                                                                       \
+#define INTC_LOG(...) \
+	do {          \
 	} while (0)
 #endif
 

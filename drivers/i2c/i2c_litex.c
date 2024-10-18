@@ -143,16 +143,16 @@ static const struct i2c_driver_api i2c_litex_driver_api = {
 
 /* Device Instantiation */
 
-#define I2C_LITEX_INIT(n)                                                                          \
-	static const struct i2c_litex_cfg i2c_litex_cfg_##n = {                                    \
-		.write_addr = DT_INST_REG_ADDR_BY_NAME(n, write),                                  \
-		.read_addr = DT_INST_REG_ADDR_BY_NAME(n, read),                                    \
-		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
-	};                                                                                         \
-                                                                                                   \
-	static struct i2c_bitbang i2c_bitbang_##n;                                                 \
-                                                                                                   \
-	I2C_DEVICE_DT_INST_DEFINE(n, i2c_litex_init, NULL, &i2c_bitbang_##n, &i2c_litex_cfg_##n,   \
+#define I2C_LITEX_INIT(n)                                                                        \
+	static const struct i2c_litex_cfg i2c_litex_cfg_##n = {                                  \
+		.write_addr = DT_INST_REG_ADDR_BY_NAME(n, write),                                \
+		.read_addr = DT_INST_REG_ADDR_BY_NAME(n, read),                                  \
+		.bitrate = DT_INST_PROP(n, clock_frequency),                                     \
+	};                                                                                       \
+                                                                                                 \
+	static struct i2c_bitbang i2c_bitbang_##n;                                               \
+                                                                                                 \
+	I2C_DEVICE_DT_INST_DEFINE(n, i2c_litex_init, NULL, &i2c_bitbang_##n, &i2c_litex_cfg_##n, \
 				  POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &i2c_litex_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_LITEX_INIT)

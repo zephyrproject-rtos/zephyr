@@ -33,7 +33,7 @@ const int32_t z_sys_timer_irq_for_test = DT_IRQN(DT_ALIAS(system_lptmr));
  * As a simplifying assumption, we only support a clock ticking at the
  * SIRC reset rate of 8MHz.
  */
-#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME) ||                                        \
+#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME) || \
 	(MHZ(8) != CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC)
 #error "system timer misconfiguration; unsupported clock rate"
 #endif

@@ -121,15 +121,15 @@ static int ili2132a_init(const struct device *dev)
 
 	return 0;
 }
-#define ILI2132A_INIT(index)                                                                       \
-	static const struct ili2132a_config ili2132a_config_##index = {                            \
-		.i2c = I2C_DT_SPEC_INST_GET(index),                                                \
-		.rst = GPIO_DT_SPEC_INST_GET(index, rst_gpios),                                    \
-		.irq = GPIO_DT_SPEC_INST_GET(index, irq_gpios),                                    \
-	};                                                                                         \
-	static struct ili2132a_data ili2132a_data_##index;                                         \
-	DEVICE_DT_INST_DEFINE(index, ili2132a_init, NULL, &ili2132a_data_##index,                  \
-			      &ili2132a_config_##index, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,   \
+#define ILI2132A_INIT(index)                                                                     \
+	static const struct ili2132a_config ili2132a_config_##index = {                          \
+		.i2c = I2C_DT_SPEC_INST_GET(index),                                              \
+		.rst = GPIO_DT_SPEC_INST_GET(index, rst_gpios),                                  \
+		.irq = GPIO_DT_SPEC_INST_GET(index, irq_gpios),                                  \
+	};                                                                                       \
+	static struct ili2132a_data ili2132a_data_##index;                                       \
+	DEVICE_DT_INST_DEFINE(index, ili2132a_init, NULL, &ili2132a_data_##index,                \
+			      &ili2132a_config_##index, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, \
 			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(ILI2132A_INIT)

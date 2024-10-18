@@ -183,23 +183,23 @@ static int bd8lb600fs_gpio_init(const struct device *dev)
 	return 0;
 }
 
-#define BD8LB600FS_GPIO_INIT(inst)                                                                 \
-	static const struct bd8lb600fs_gpio_config bd8lb600fs_##inst##_config = {                  \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),            \
-			},                                                                         \
-		.parent_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                 \
-		.gpios_count = DT_INST_PROP(inst, ngpios),                                         \
-	};                                                                                         \
-                                                                                                   \
-	static struct bd8lb600fs_gpio_data bd8lb600fs_##inst##_data = {                            \
-		.state = 0x00,                                                                     \
-		.configured = 0x00,                                                                \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, bd8lb600fs_gpio_init, NULL, &bd8lb600fs_##inst##_data,         \
-			      &bd8lb600fs_##inst##_config, POST_KERNEL,                            \
+#define BD8LB600FS_GPIO_INIT(inst)                                                         \
+	static const struct bd8lb600fs_gpio_config bd8lb600fs_##inst##_config = {          \
+		.common =                                                                  \
+			{                                                                  \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),    \
+			},                                                                 \
+		.parent_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                         \
+		.gpios_count = DT_INST_PROP(inst, ngpios),                                 \
+	};                                                                                 \
+                                                                                           \
+	static struct bd8lb600fs_gpio_data bd8lb600fs_##inst##_data = {                    \
+		.state = 0x00,                                                             \
+		.configured = 0x00,                                                        \
+	};                                                                                 \
+                                                                                           \
+	DEVICE_DT_INST_DEFINE(inst, bd8lb600fs_gpio_init, NULL, &bd8lb600fs_##inst##_data, \
+			      &bd8lb600fs_##inst##_config, POST_KERNEL,                    \
 			      CONFIG_GPIO_BD8LB600FS_INIT_PRIORITY, &api_table);
 
 DT_INST_FOREACH_STATUS_OKAY(BD8LB600FS_GPIO_INIT)

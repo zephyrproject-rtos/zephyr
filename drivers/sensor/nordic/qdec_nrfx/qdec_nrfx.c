@@ -261,39 +261,39 @@ static int qdec_nrfx_init(const struct device *dev)
 #define QDEC(idx)            DT_NODELABEL(qdec##idx)
 #define QDEC_PROP(idx, prop) DT_PROP(QDEC(idx), prop)
 
-#define SENSOR_NRFX_QDEC_DEVICE(idx)                                                               \
-	NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(QDEC(idx));                                            \
-	BUILD_ASSERT(QDEC_PROP(idx, steps) > 0,                                                    \
-		     "Wrong QDEC" #idx " steps setting in dts. Only positive number valid");       \
-	BUILD_ASSERT(QDEC_PROP(idx, steps) <= 2048,                                                \
-		     "Wrong QDEC" #idx " steps setting in dts. Overflow possible");                \
-	static void irq_connect##idx(void)                                                         \
-	{                                                                                          \
-		IRQ_CONNECT(DT_IRQN(QDEC(idx)), DT_IRQ(QDEC(idx), priority), nrfx_isr,             \
-			    nrfx_qdec_##idx##_irq_handler, 0);                                     \
-	}                                                                                          \
-	static struct qdec_nrfx_data qdec_##idx##_data;                                            \
-	PINCTRL_DT_DEFINE(QDEC(idx));                                                              \
-	static struct qdec_nrfx_config qdec_##idx##_config = {                                     \
-		.qdec = NRFX_QDEC_INSTANCE(idx),                                                   \
-		.config =                                                                          \
-			{                                                                          \
-				.reportper = NRF_QDEC_REPORTPER_40,                                \
-				.sampleper = NRF_QDEC_SAMPLEPER_2048US,                            \
-				.skip_gpio_cfg = true,                                             \
-				.skip_psel_cfg = true,                                             \
-				.ledpre = QDEC_PROP(idx, led_pre),                                 \
-				.ledpol = NRF_QDEC_LEPOL_ACTIVE_HIGH,                              \
-				.reportper_inten = true,                                           \
-			},                                                                         \
-		.irq_connect = irq_connect##idx,                                                   \
-		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(QDEC(idx)),                                      \
-		.enable_pin = DT_PROP_OR(QDEC(idx), enable_pin, NRF_QDEC_PIN_NOT_CONNECTED),       \
-		.steps = QDEC_PROP(idx, steps),                                                    \
-	};                                                                                         \
-	PM_DEVICE_DT_DEFINE(QDEC(idx), qdec_nrfx_pm_action);                                       \
-	SENSOR_DEVICE_DT_DEFINE(QDEC(idx), qdec_nrfx_init, PM_DEVICE_DT_GET(QDEC(idx)),            \
-				&qdec_##idx##_data, &qdec_##idx##_config, POST_KERNEL,             \
+#define SENSOR_NRFX_QDEC_DEVICE(idx)                                                         \
+	NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(QDEC(idx));                                      \
+	BUILD_ASSERT(QDEC_PROP(idx, steps) > 0,                                              \
+		     "Wrong QDEC" #idx " steps setting in dts. Only positive number valid"); \
+	BUILD_ASSERT(QDEC_PROP(idx, steps) <= 2048,                                          \
+		     "Wrong QDEC" #idx " steps setting in dts. Overflow possible");          \
+	static void irq_connect##idx(void)                                                   \
+	{                                                                                    \
+		IRQ_CONNECT(DT_IRQN(QDEC(idx)), DT_IRQ(QDEC(idx), priority), nrfx_isr,       \
+			    nrfx_qdec_##idx##_irq_handler, 0);                               \
+	}                                                                                    \
+	static struct qdec_nrfx_data qdec_##idx##_data;                                      \
+	PINCTRL_DT_DEFINE(QDEC(idx));                                                        \
+	static struct qdec_nrfx_config qdec_##idx##_config = {                               \
+		.qdec = NRFX_QDEC_INSTANCE(idx),                                             \
+		.config =                                                                    \
+			{                                                                    \
+				.reportper = NRF_QDEC_REPORTPER_40,                          \
+				.sampleper = NRF_QDEC_SAMPLEPER_2048US,                      \
+				.skip_gpio_cfg = true,                                       \
+				.skip_psel_cfg = true,                                       \
+				.ledpre = QDEC_PROP(idx, led_pre),                           \
+				.ledpol = NRF_QDEC_LEPOL_ACTIVE_HIGH,                        \
+				.reportper_inten = true,                                     \
+			},                                                                   \
+		.irq_connect = irq_connect##idx,                                             \
+		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(QDEC(idx)),                                \
+		.enable_pin = DT_PROP_OR(QDEC(idx), enable_pin, NRF_QDEC_PIN_NOT_CONNECTED), \
+		.steps = QDEC_PROP(idx, steps),                                              \
+	};                                                                                   \
+	PM_DEVICE_DT_DEFINE(QDEC(idx), qdec_nrfx_pm_action);                                 \
+	SENSOR_DEVICE_DT_DEFINE(QDEC(idx), qdec_nrfx_init, PM_DEVICE_DT_GET(QDEC(idx)),      \
+				&qdec_##idx##_data, &qdec_##idx##_config, POST_KERNEL,       \
 				CONFIG_SENSOR_INIT_PRIORITY, &qdec_nrfx_driver_api)
 
 #ifdef CONFIG_HAS_HW_NRF_QDEC0

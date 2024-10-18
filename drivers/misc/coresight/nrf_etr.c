@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(cs_etr_tbm);
 
 #define MIN_DATA (2 * CORESIGHT_TRACE_FRAME_SIZE32)
 
-#define MEMORY_SECTION(node)                                                                       \
+#define MEMORY_SECTION(node)                                                                    \
 	COND_CODE_1(DT_NODE_HAS_PROP(node, memory_regions),                                   \
 		    (__attribute__((__section__(                                              \
 			    LINKER_DT_NODE_REGION_NAME(DT_PHANDLE(node, memory_regions)))))), \
@@ -46,28 +46,28 @@ LOG_MODULE_REGISTER(cs_etr_tbm);
  * @param _data Data variable.
  * @param _nlen Number of nibbles in @p _data to print.
  */
-#define DBG_DATA(_data, _nlen, _marked)                                                            \
-	do {                                                                                       \
-		char *fmt;                                                                         \
-		switch (_nlen) {                                                                   \
-		case 2:                                                                            \
-			fmt = "D%s\t%02x ";                                                        \
-			break;                                                                     \
-		case 4:                                                                            \
-			fmt = "D%s\t%04x ";                                                        \
-			break;                                                                     \
-		case 8:                                                                            \
-			fmt = "D%s\t%08x ";                                                        \
-			break;                                                                     \
-		default:                                                                           \
-			fmt = "D%s\t%016x ";                                                       \
-			break;                                                                     \
-		}                                                                                  \
-		DBG(fmt, _marked ? "M" : "", _data);                                               \
-		for (int i = 0; i < _nlen / 2; i++) {                                              \
-			DBG("%c ", ((char *)&_data)[i]);                                           \
-		}                                                                                  \
-		DBG("\n");                                                                         \
+#define DBG_DATA(_data, _nlen, _marked)                  \
+	do {                                             \
+		char *fmt;                               \
+		switch (_nlen) {                         \
+		case 2:                                  \
+			fmt = "D%s\t%02x ";              \
+			break;                           \
+		case 4:                                  \
+			fmt = "D%s\t%04x ";              \
+			break;                           \
+		case 8:                                  \
+			fmt = "D%s\t%08x ";              \
+			break;                           \
+		default:                                 \
+			fmt = "D%s\t%016x ";             \
+			break;                           \
+		}                                        \
+		DBG(fmt, _marked ? "M" : "", _data);     \
+		for (int i = 0; i < _nlen / 2; i++) {    \
+			DBG("%c ", ((char *)&_data)[i]); \
+		}                                        \
+		DBG("\n");                               \
 	} while (0)
 
 static const uint32_t wsize_mask = DT_REG_SIZE(ETR_BUFFER_NODE) / sizeof(int) - 1;

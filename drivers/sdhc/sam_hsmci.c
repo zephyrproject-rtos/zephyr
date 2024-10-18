@@ -34,8 +34,8 @@ LOG_MODULE_REGISTER(hsmci, CONFIG_SDHC_LOG_LEVEL);
 #define _HSMCI_MAX_FREQ        (SOC_ATMEL_SAM_MCK_FREQ_HZ >> 1)
 #define _HSMCI_MIN_FREQ        (_HSMCI_MAX_FREQ / 0x200)
 #define _MSMCI_MAX_DIVISOR     0x1FF
-#define _HSMCI_SR_ERR                                                                              \
-	(HSMCI_SR_RINDE | HSMCI_SR_RDIRE | HSMCI_SR_RCRCE | HSMCI_SR_RENDE | HSMCI_SR_RTOE |       \
+#define _HSMCI_SR_ERR                                                                        \
+	(HSMCI_SR_RINDE | HSMCI_SR_RDIRE | HSMCI_SR_RCRCE | HSMCI_SR_RENDE | HSMCI_SR_RTOE | \
 	 HSMCI_SR_DCRCE | HSMCI_SR_DTOE | HSMCI_SR_CSTOE | HSMCI_SR_OVRE | HSMCI_SR_UNRE)
 
 static const uint8_t _resp2size[] = {
@@ -662,15 +662,15 @@ static const struct sdhc_driver_api hsmci_api = {
 	.card_busy = sam_hsmci_card_busy,
 };
 
-#define SAM_HSMCI_INIT(N)                                                                          \
-	PINCTRL_DT_INST_DEFINE(N);                                                                 \
-	static const struct sam_hsmci_config hsmci_##N##_config = {                                \
-		.base = (Hsmci *)DT_INST_REG_ADDR(N),                                              \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(N),                                       \
-		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(N),                                         \
-		.carrier_detect = GPIO_DT_SPEC_INST_GET_OR(N, cd_gpios, {0})};                     \
-	static struct sam_hsmci_data hsmci_##N##_data = {};                                        \
-	DEVICE_DT_INST_DEFINE(N, &sam_hsmci_init, NULL, &hsmci_##N##_data, &hsmci_##N##_config,    \
+#define SAM_HSMCI_INIT(N)                                                                       \
+	PINCTRL_DT_INST_DEFINE(N);                                                              \
+	static const struct sam_hsmci_config hsmci_##N##_config = {                             \
+		.base = (Hsmci *)DT_INST_REG_ADDR(N),                                           \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(N),                                    \
+		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(N),                                      \
+		.carrier_detect = GPIO_DT_SPEC_INST_GET_OR(N, cd_gpios, {0})};                  \
+	static struct sam_hsmci_data hsmci_##N##_data = {};                                     \
+	DEVICE_DT_INST_DEFINE(N, &sam_hsmci_init, NULL, &hsmci_##N##_data, &hsmci_##N##_config, \
 			      POST_KERNEL, CONFIG_SDHC_INIT_PRIORITY, &hsmci_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SAM_HSMCI_INIT)

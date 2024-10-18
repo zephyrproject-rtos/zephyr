@@ -115,7 +115,7 @@ static const struct can_transceiver_driver_api can_transceiver_gpio_driver_api =
 	.disable = can_transceiver_gpio_disable,
 };
 
-#define CAN_TRANSCEIVER_GPIO_COND(inst, name)                                                      \
+#define CAN_TRANSCEIVER_GPIO_COND(inst, name)                    \
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, name##_gpios),		\
 		   (.name##_gpio = GPIO_DT_SPEC_INST_GET(inst, name##_gpios),))
 

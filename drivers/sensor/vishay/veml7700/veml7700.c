@@ -588,16 +588,16 @@ static const struct sensor_driver_api veml7700_api = {.sample_fetch = veml7700_s
 						      .attr_set = veml7700_attr_set,
 						      .attr_get = veml7700_attr_get};
 
-#define VEML7700_INIT(n)                                                                           \
-	static struct veml7700_data veml7700_data_##n;                                             \
-                                                                                                   \
-	static const struct veml7700_config veml7700_config_##n = {                                \
-		.bus = I2C_DT_SPEC_INST_GET(n), .psm = DT_INST_PROP(n, psm_mode)};                 \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(n, veml7700_pm_action);                                           \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, veml7700_init, PM_DEVICE_DT_INST_GET(n),                   \
-				     &veml7700_data_##n, &veml7700_config_##n, POST_KERNEL,        \
+#define VEML7700_INIT(n)                                                                    \
+	static struct veml7700_data veml7700_data_##n;                                      \
+                                                                                            \
+	static const struct veml7700_config veml7700_config_##n = {                         \
+		.bus = I2C_DT_SPEC_INST_GET(n), .psm = DT_INST_PROP(n, psm_mode)};          \
+                                                                                            \
+	PM_DEVICE_DT_INST_DEFINE(n, veml7700_pm_action);                                    \
+                                                                                            \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, veml7700_init, PM_DEVICE_DT_INST_GET(n),            \
+				     &veml7700_data_##n, &veml7700_config_##n, POST_KERNEL, \
 				     CONFIG_SENSOR_INIT_PRIORITY, &veml7700_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VEML7700_INIT)

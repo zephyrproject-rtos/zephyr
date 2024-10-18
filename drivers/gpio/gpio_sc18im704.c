@@ -261,26 +261,26 @@ static const struct gpio_driver_api gpio_sc18im_driver_api = {
 	.port_toggle_bits = gpio_sc18im_port_toggle_bits,
 };
 
-#define CHECK_COMPAT(node)                                                                         \
+#define CHECK_COMPAT(node) \
 	COND_CODE_1(DT_NODE_HAS_COMPAT(node, nxp_sc18im704_i2c), (DEVICE_DT_GET(node)), ())
 
 #define GPIO_SC18IM704_I2C_SIBLING(n) DT_FOREACH_CHILD_STATUS_OKAY(DT_INST_PARENT(n), CHECK_COMPAT)
 
-#define GPIO_SC18IM704_DEFINE(n)                                                                   \
-	static const struct gpio_sc18im_config gpio_sc18im_config_##n = {                          \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
-		.bridge = GPIO_SC18IM704_I2C_SIBLING(n),                                           \
-	};                                                                                         \
-	static struct gpio_sc18im_data gpio_sc18im_data_##n = {                                    \
-		.conf1 = GPIO_SC18IM_DEFAULT_CONF,                                                 \
-		.conf2 = GPIO_SC18IM_DEFAULT_CONF,                                                 \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, gpio_sc18im_init, NULL, &gpio_sc18im_data_##n,                    \
-			      &gpio_sc18im_config_##n, POST_KERNEL,                                \
+#define GPIO_SC18IM704_DEFINE(n)                                                             \
+	static const struct gpio_sc18im_config gpio_sc18im_config_##n = {                    \
+		.common =                                                                    \
+			{                                                                    \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),         \
+			},                                                                   \
+		.bridge = GPIO_SC18IM704_I2C_SIBLING(n),                                     \
+	};                                                                                   \
+	static struct gpio_sc18im_data gpio_sc18im_data_##n = {                              \
+		.conf1 = GPIO_SC18IM_DEFAULT_CONF,                                           \
+		.conf2 = GPIO_SC18IM_DEFAULT_CONF,                                           \
+	};                                                                                   \
+                                                                                             \
+	DEVICE_DT_INST_DEFINE(n, gpio_sc18im_init, NULL, &gpio_sc18im_data_##n,              \
+			      &gpio_sc18im_config_##n, POST_KERNEL,                          \
 			      CONFIG_GPIO_SC18IM704_INIT_PRIORITY, &gpio_sc18im_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_SC18IM704_DEFINE);

@@ -338,24 +338,24 @@ done:
 	return err;
 }
 
-#define NUMAKER_SPI_INIT(inst)                                                                     \
-	PINCTRL_DT_INST_DEFINE(inst);                                                              \
-	static struct spi_numaker_data spi_numaker_data_##inst = {                                 \
-		SPI_CONTEXT_INIT_LOCK(spi_numaker_data_##inst, ctx),                               \
-		SPI_CONTEXT_INIT_SYNC(spi_numaker_data_##inst, ctx),                               \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx)};                          \
-	static struct spi_numaker_config spi_numaker_config_##inst = {                             \
-		.spi = (SPI_T *)DT_INST_REG_ADDR(inst),                                            \
-		.is_qspi = DT_INST_NODE_HAS_PROP(inst, qspi),                                      \
-		.reset = RESET_DT_SPEC_INST_GET(inst),                                             \
-		.clk_modidx = DT_INST_CLOCKS_CELL(inst, clock_module_index),                       \
-		.clk_src = DT_INST_CLOCKS_CELL(inst, clock_source),                                \
-		.clk_div = DT_INST_CLOCKS_CELL(inst, clock_divider),                               \
-		.clk_dev = DEVICE_DT_GET(DT_PARENT(DT_INST_CLOCKS_CTLR(inst))),                    \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                    \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, spi_numaker_init, NULL, &spi_numaker_data_##inst,              \
-			      &spi_numaker_config_##inst, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,   \
+#define NUMAKER_SPI_INIT(inst)                                                                   \
+	PINCTRL_DT_INST_DEFINE(inst);                                                            \
+	static struct spi_numaker_data spi_numaker_data_##inst = {                               \
+		SPI_CONTEXT_INIT_LOCK(spi_numaker_data_##inst, ctx),                             \
+		SPI_CONTEXT_INIT_SYNC(spi_numaker_data_##inst, ctx),                             \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx)};                        \
+	static struct spi_numaker_config spi_numaker_config_##inst = {                           \
+		.spi = (SPI_T *)DT_INST_REG_ADDR(inst),                                          \
+		.is_qspi = DT_INST_NODE_HAS_PROP(inst, qspi),                                    \
+		.reset = RESET_DT_SPEC_INST_GET(inst),                                           \
+		.clk_modidx = DT_INST_CLOCKS_CELL(inst, clock_module_index),                     \
+		.clk_src = DT_INST_CLOCKS_CELL(inst, clock_source),                              \
+		.clk_div = DT_INST_CLOCKS_CELL(inst, clock_divider),                             \
+		.clk_dev = DEVICE_DT_GET(DT_PARENT(DT_INST_CLOCKS_CTLR(inst))),                  \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                  \
+	};                                                                                       \
+	DEVICE_DT_INST_DEFINE(inst, spi_numaker_init, NULL, &spi_numaker_data_##inst,            \
+			      &spi_numaker_config_##inst, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, \
 			      &spi_numaker_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NUMAKER_SPI_INIT)

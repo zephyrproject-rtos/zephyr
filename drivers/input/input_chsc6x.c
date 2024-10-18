@@ -126,14 +126,14 @@ static int chsc6x_init(const struct device *dev)
 	return chsc6x_chip_init(dev);
 };
 
-#define CHSC6X_DEFINE(index)                                                                       \
-	static const struct chsc6x_config chsc6x_config_##index = {                                \
-		.i2c = I2C_DT_SPEC_INST_GET(index),                                                \
-		.int_gpio = GPIO_DT_SPEC_INST_GET(index, irq_gpios),                               \
-	};                                                                                         \
-	static struct chsc6x_data chsc6x_data_##index;                                             \
-	DEVICE_DT_INST_DEFINE(index, chsc6x_init, NULL, &chsc6x_data_##index,                      \
-			      &chsc6x_config_##index, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,     \
+#define CHSC6X_DEFINE(index)                                                                   \
+	static const struct chsc6x_config chsc6x_config_##index = {                            \
+		.i2c = I2C_DT_SPEC_INST_GET(index),                                            \
+		.int_gpio = GPIO_DT_SPEC_INST_GET(index, irq_gpios),                           \
+	};                                                                                     \
+	static struct chsc6x_data chsc6x_data_##index;                                         \
+	DEVICE_DT_INST_DEFINE(index, chsc6x_init, NULL, &chsc6x_data_##index,                  \
+			      &chsc6x_config_##index, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, \
 			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(CHSC6X_DEFINE)

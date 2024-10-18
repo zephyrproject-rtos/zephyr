@@ -112,19 +112,19 @@ static int nct38xx_gpio_init(const struct device *dev)
 	return 0;
 }
 
-#define GPIO_NCT38XX_DEVICE_INSTANCE(inst)                                                         \
-	static const struct device *sub_gpio_dev_##inst[] = {                                      \
-		DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(inst, DEVICE_DT_GET, (, ))};                 \
-	static const struct gpio_nct38xx_config gpio_nct38xx_cfg_##inst = {                        \
-		.mfd = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                        \
-		.sub_gpio_dev = sub_gpio_dev_##inst,                                               \
-		.sub_gpio_port_num = ARRAY_SIZE(sub_gpio_dev_##inst),                              \
-	};                                                                                         \
-	static struct gpio_nct38xx_data gpio_nct38xx_data_##inst = {                               \
-		.dev = DEVICE_DT_INST_GET(inst),                                                   \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, nct38xx_gpio_init, NULL, &gpio_nct38xx_data_##inst,            \
-			      &gpio_nct38xx_cfg_##inst, POST_KERNEL,                               \
+#define GPIO_NCT38XX_DEVICE_INSTANCE(inst)                                              \
+	static const struct device *sub_gpio_dev_##inst[] = {                           \
+		DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(inst, DEVICE_DT_GET, (, ))};      \
+	static const struct gpio_nct38xx_config gpio_nct38xx_cfg_##inst = {             \
+		.mfd = DEVICE_DT_GET(DT_INST_PARENT(inst)),                             \
+		.sub_gpio_dev = sub_gpio_dev_##inst,                                    \
+		.sub_gpio_port_num = ARRAY_SIZE(sub_gpio_dev_##inst),                   \
+	};                                                                              \
+	static struct gpio_nct38xx_data gpio_nct38xx_data_##inst = {                    \
+		.dev = DEVICE_DT_INST_GET(inst),                                        \
+	};                                                                              \
+	DEVICE_DT_INST_DEFINE(inst, nct38xx_gpio_init, NULL, &gpio_nct38xx_data_##inst, \
+			      &gpio_nct38xx_cfg_##inst, POST_KERNEL,                    \
 			      CONFIG_GPIO_NCT38XX_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_NCT38XX_DEVICE_INSTANCE)

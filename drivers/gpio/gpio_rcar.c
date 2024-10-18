@@ -272,28 +272,28 @@ static const struct gpio_driver_api gpio_rcar_driver_api = {
 };
 
 /* Device Instantiation */
-#define GPIO_RCAR_INIT(n)                                                                          \
-	static void gpio_rcar_##n##_init(const struct device *dev);                                \
-	static const struct gpio_rcar_cfg gpio_rcar_cfg_##n = {                                    \
-		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),                              \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
-		.init_func = gpio_rcar_##n##_init,                                                 \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.mod_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, module),                        \
-		.mod_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, domain),                        \
-	};                                                                                         \
-	static struct gpio_rcar_data gpio_rcar_data_##n;                                           \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, gpio_rcar_init, NULL, &gpio_rcar_data_##n, &gpio_rcar_cfg_##n,    \
-			      PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, &gpio_rcar_driver_api);     \
-	static void gpio_rcar_##n##_init(const struct device *dev)                                 \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), 0, gpio_rcar_port_isr, DEVICE_DT_INST_GET(n), 0);     \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+#define GPIO_RCAR_INIT(n)                                                                       \
+	static void gpio_rcar_##n##_init(const struct device *dev);                             \
+	static const struct gpio_rcar_cfg gpio_rcar_cfg_##n = {                                 \
+		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),                           \
+		.common =                                                                       \
+			{                                                                       \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),            \
+			},                                                                      \
+		.init_func = gpio_rcar_##n##_init,                                              \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                             \
+		.mod_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, module),                     \
+		.mod_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, domain),                     \
+	};                                                                                      \
+	static struct gpio_rcar_data gpio_rcar_data_##n;                                        \
+                                                                                                \
+	DEVICE_DT_INST_DEFINE(n, gpio_rcar_init, NULL, &gpio_rcar_data_##n, &gpio_rcar_cfg_##n, \
+			      PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, &gpio_rcar_driver_api);  \
+	static void gpio_rcar_##n##_init(const struct device *dev)                              \
+	{                                                                                       \
+		IRQ_CONNECT(DT_INST_IRQN(n), 0, gpio_rcar_port_isr, DEVICE_DT_INST_GET(n), 0);  \
+                                                                                                \
+		irq_enable(DT_INST_IRQN(n));                                                    \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_RCAR_INIT)

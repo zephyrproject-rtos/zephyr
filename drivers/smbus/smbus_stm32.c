@@ -274,17 +274,17 @@ static const struct smbus_driver_api smbus_stm32_api = {
 
 #define DT_DRV_COMPAT st_stm32_smbus
 
-#define SMBUS_STM32_DEVICE_INIT(n)                                                                 \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	static struct smbus_stm32_config smbus_stm32_config_##n = {                                \
-		.i2c_dev = DEVICE_DT_GET(DT_INST_PROP(n, i2c)),                                    \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-	};                                                                                         \
-                                                                                                   \
-	static struct smbus_stm32_data smbus_stm32_data_##n;                                       \
-                                                                                                   \
-	SMBUS_DEVICE_DT_INST_DEFINE(n, smbus_stm32_init, NULL, &smbus_stm32_data_##n,              \
-				    &smbus_stm32_config_##n, POST_KERNEL,                          \
+#define SMBUS_STM32_DEVICE_INIT(n)                                                    \
+	PINCTRL_DT_INST_DEFINE(n);                                                    \
+	static struct smbus_stm32_config smbus_stm32_config_##n = {                   \
+		.i2c_dev = DEVICE_DT_GET(DT_INST_PROP(n, i2c)),                       \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                            \
+	};                                                                            \
+                                                                                      \
+	static struct smbus_stm32_data smbus_stm32_data_##n;                          \
+                                                                                      \
+	SMBUS_DEVICE_DT_INST_DEFINE(n, smbus_stm32_init, NULL, &smbus_stm32_data_##n, \
+				    &smbus_stm32_config_##n, POST_KERNEL,             \
 				    CONFIG_SMBUS_INIT_PRIORITY, &smbus_stm32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SMBUS_STM32_DEVICE_INIT)

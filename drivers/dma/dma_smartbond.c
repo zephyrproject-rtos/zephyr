@@ -29,28 +29,28 @@ LOG_MODULE_REGISTER(dma_smartbond, CONFIG_DMA_LOG_LEVEL);
 #define DMA_BLOCK_COUNT    DT_PROP(DT_NODELABEL(dma), block_count)
 #define DMA_SECURE_CHANNEL 7
 
-#define DMA_CTRL_REG_SET_FIELD(_field, _var, _val)                                                 \
-	(_var) = (((_var) & ~DMA_DMA0_CTRL_REG_##_field##_Msk) |                                   \
-		  (((_val) << DMA_DMA0_CTRL_REG_##_field##_Pos) &                                  \
+#define DMA_CTRL_REG_SET_FIELD(_field, _var, _val)                \
+	(_var) = (((_var) & ~DMA_DMA0_CTRL_REG_##_field##_Msk) |  \
+		  (((_val) << DMA_DMA0_CTRL_REG_##_field##_Pos) & \
 		   DMA_DMA0_CTRL_REG_##_field##_Msk))
 
-#define DMA_CTRL_REG_GET_FIELD(_field, _var)                                                       \
+#define DMA_CTRL_REG_GET_FIELD(_field, _var)                                              \
 	(((_var) & DMA_DMA0_CTRL_REG_##_field##_Msk) >> DMA_DMA0_CTRL_REG_##_field##_Pos)
 
 #define DMA_CHN2REG(_idx) (&((struct channel_regs *)DMA)[(_idx)])
 
 #define DMA_MUX_SHIFT(_idx) (((_idx) >> 1) * 4)
 
-#define DMA_REQ_MUX_REG_SET(_idx, _val)                                                            \
-	DMA->DMA_REQ_MUX_REG = (DMA->DMA_REQ_MUX_REG & ~(0xf << DMA_MUX_SHIFT((_idx)))) |          \
+#define DMA_REQ_MUX_REG_SET(_idx, _val)                                                   \
+	DMA->DMA_REQ_MUX_REG = (DMA->DMA_REQ_MUX_REG & ~(0xf << DMA_MUX_SHIFT((_idx)))) | \
 			       (((_val) & 0xf) << DMA_MUX_SHIFT((_idx)))
 
 #define DMA_REQ_MUX_REG_GET(_idx) ((DMA->DMA_REQ_MUX_REG >> DMA_MUX_SHIFT((_idx))) & 0xf)
 
 #define CRYPTO_KEYS_BUF_ADDR 0x30040100
 #define CRYPTO_KEYS_BUF_SIZE 0x100
-#define IS_AES_KEYS_BUF_RANGE(_a)                                                                  \
-	((uint32_t)(_a) >= (uint32_t)(CRYPTO_KEYS_BUF_ADDR)) &&                                    \
+#define IS_AES_KEYS_BUF_RANGE(_a)                                                          \
+	((uint32_t)(_a) >= (uint32_t)(CRYPTO_KEYS_BUF_ADDR)) &&                            \
 		((uint32_t)(_a) < (uint32_t)(CRYPTO_KEYS_BUF_ADDR + CRYPTO_KEYS_BUF_SIZE))
 
 /*
@@ -1022,15 +1022,15 @@ static int dma_smartbond_init(const struct device *dev)
 	return 0;
 }
 
-#define SMARTBOND_DMA_INIT(inst)                                                                   \
-	BUILD_ASSERT((inst) == 0, "multiple instances are not supported");                         \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(inst, dma_smartbond_pm_action);                                   \
-                                                                                                   \
-	static struct dma_smartbond_data dma_smartbond_data_##inst;                                \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(0, dma_smartbond_init, PM_DEVICE_DT_INST_GET(inst),                  \
-			      &dma_smartbond_data_##inst, NULL, POST_KERNEL,                       \
+#define SMARTBOND_DMA_INIT(inst)                                                    \
+	BUILD_ASSERT((inst) == 0, "multiple instances are not supported");          \
+                                                                                    \
+	PM_DEVICE_DT_INST_DEFINE(inst, dma_smartbond_pm_action);                    \
+                                                                                    \
+	static struct dma_smartbond_data dma_smartbond_data_##inst;                 \
+                                                                                    \
+	DEVICE_DT_INST_DEFINE(0, dma_smartbond_init, PM_DEVICE_DT_INST_GET(inst),   \
+			      &dma_smartbond_data_##inst, NULL, POST_KERNEL,        \
 			      CONFIG_DMA_INIT_PRIORITY, &dma_smartbond_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SMARTBOND_DMA_INIT)

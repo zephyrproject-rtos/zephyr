@@ -96,17 +96,17 @@ static const struct fuel_gauge_driver_api composite_api = {
 	.get_property = composite_get_prop,
 };
 
-#define COMPOSITE_INIT(inst)                                                                       \
-	static const struct composite_config composite_##inst##_config = {                         \
-		.battery_voltage = DEVICE_DT_GET(DT_INST_PROP(inst, battery_voltage)),             \
-		.battery_current = DEVICE_DT_GET_OR_NULL(DT_INST_PROP(inst, battery_current)),     \
-		.ocv_lookup_table =                                                                \
-			BATTERY_OCV_TABLE_DT_GET(DT_DRV_INST(inst), ocv_capacity_table_0),         \
-		.charge_capacity_microamp_hours =                                                  \
-			DT_INST_PROP_OR(inst, charge_full_design_microamp_hours, 0),               \
-		.chemistry = BATTERY_CHEMISTRY_DT_GET(inst),                                       \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, &composite_##inst##_config, POST_KERNEL,     \
+#define COMPOSITE_INIT(inst)                                                                   \
+	static const struct composite_config composite_##inst##_config = {                     \
+		.battery_voltage = DEVICE_DT_GET(DT_INST_PROP(inst, battery_voltage)),         \
+		.battery_current = DEVICE_DT_GET_OR_NULL(DT_INST_PROP(inst, battery_current)), \
+		.ocv_lookup_table =                                                            \
+			BATTERY_OCV_TABLE_DT_GET(DT_DRV_INST(inst), ocv_capacity_table_0),     \
+		.charge_capacity_microamp_hours =                                              \
+			DT_INST_PROP_OR(inst, charge_full_design_microamp_hours, 0),           \
+		.chemistry = BATTERY_CHEMISTRY_DT_GET(inst),                                   \
+	};                                                                                     \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, &composite_##inst##_config, POST_KERNEL, \
 			      CONFIG_SENSOR_INIT_PRIORITY, &composite_api);
 
 DT_INST_FOREACH_STATUS_OKAY(COMPOSITE_INIT)

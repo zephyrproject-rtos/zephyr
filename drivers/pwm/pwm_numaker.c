@@ -526,26 +526,26 @@ done:
 }
 
 #ifdef CONFIG_PWM_CAPTURE
-#define NUMAKER_PWM_IRQ_CONFIG_FUNC(n)                                                             \
-	static void pwm_numaker_irq_config_##n(const struct device *dev)                           \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, pair0, irq),                                    \
-			    DT_INST_IRQ_BY_NAME(n, pair0, priority), pwm_numaker_p0_isr,           \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQ_BY_NAME(n, pair0, irq));                                    \
-                                                                                                   \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, pair1, irq),                                    \
-			    DT_INST_IRQ_BY_NAME(n, pair1, priority), pwm_numaker_p1_isr,           \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQ_BY_NAME(n, pair1, irq));                                    \
-                                                                                                   \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, pair2, irq),                                    \
-			    DT_INST_IRQ_BY_NAME(n, pair2, priority), pwm_numaker_p2_isr,           \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQ_BY_NAME(n, pair2, irq));                                    \
+#define NUMAKER_PWM_IRQ_CONFIG_FUNC(n)                                                   \
+	static void pwm_numaker_irq_config_##n(const struct device *dev)                 \
+	{                                                                                \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, pair0, irq),                          \
+			    DT_INST_IRQ_BY_NAME(n, pair0, priority), pwm_numaker_p0_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                                   \
+                                                                                         \
+		irq_enable(DT_INST_IRQ_BY_NAME(n, pair0, irq));                          \
+                                                                                         \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, pair1, irq),                          \
+			    DT_INST_IRQ_BY_NAME(n, pair1, priority), pwm_numaker_p1_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                                   \
+                                                                                         \
+		irq_enable(DT_INST_IRQ_BY_NAME(n, pair1, irq));                          \
+                                                                                         \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, pair2, irq),                          \
+			    DT_INST_IRQ_BY_NAME(n, pair2, priority), pwm_numaker_p2_isr, \
+			    DEVICE_DT_INST_GET(n), 0);                                   \
+                                                                                         \
+		irq_enable(DT_INST_IRQ_BY_NAME(n, pair2, irq));                          \
 	}
 #define IRQ_FUNC_INIT(n) .irq_config_func = pwm_numaker_irq_config_##n
 #else
@@ -553,25 +553,25 @@ done:
 #define IRQ_FUNC_INIT(n)
 #endif
 
-#define NUMAKER_PWM_INIT(inst)                                                                     \
-	PINCTRL_DT_INST_DEFINE(inst);                                                              \
-	NUMAKER_PWM_IRQ_CONFIG_FUNC(inst)                                                          \
-                                                                                                   \
-	static const struct pwm_numaker_config pwm_numaker_cfg_##inst = {                          \
-		.epwm = (EPWM_T *)DT_INST_REG_ADDR(inst),                                          \
-		.prescale = DT_INST_PROP(inst, prescaler),                                         \
-		.reset = RESET_DT_SPEC_INST_GET(inst),                                             \
-		.clk_modidx = DT_INST_CLOCKS_CELL(inst, clock_module_index),                       \
-		.clk_src = DT_INST_CLOCKS_CELL(inst, clock_source),                                \
-		.clk_div = DT_INST_CLOCKS_CELL(inst, clock_divider),                               \
-		.clk_dev = DEVICE_DT_GET(DT_PARENT(DT_INST_CLOCKS_CTLR(inst))),                    \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                    \
-		IRQ_FUNC_INIT(inst)};                                                              \
-                                                                                                   \
-	static struct pwm_numaker_data pwm_numaker_data_##inst;                                    \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, &pwm_numaker_init, NULL, &pwm_numaker_data_##inst,             \
-			      &pwm_numaker_cfg_##inst, PRE_KERNEL_1,                               \
+#define NUMAKER_PWM_INIT(inst)                                                              \
+	PINCTRL_DT_INST_DEFINE(inst);                                                       \
+	NUMAKER_PWM_IRQ_CONFIG_FUNC(inst)                                                   \
+                                                                                            \
+	static const struct pwm_numaker_config pwm_numaker_cfg_##inst = {                   \
+		.epwm = (EPWM_T *)DT_INST_REG_ADDR(inst),                                   \
+		.prescale = DT_INST_PROP(inst, prescaler),                                  \
+		.reset = RESET_DT_SPEC_INST_GET(inst),                                      \
+		.clk_modidx = DT_INST_CLOCKS_CELL(inst, clock_module_index),                \
+		.clk_src = DT_INST_CLOCKS_CELL(inst, clock_source),                         \
+		.clk_div = DT_INST_CLOCKS_CELL(inst, clock_divider),                        \
+		.clk_dev = DEVICE_DT_GET(DT_PARENT(DT_INST_CLOCKS_CTLR(inst))),             \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                             \
+		IRQ_FUNC_INIT(inst)};                                                       \
+                                                                                            \
+	static struct pwm_numaker_data pwm_numaker_data_##inst;                             \
+                                                                                            \
+	DEVICE_DT_INST_DEFINE(inst, &pwm_numaker_init, NULL, &pwm_numaker_data_##inst,      \
+			      &pwm_numaker_cfg_##inst, PRE_KERNEL_1,                        \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &pwm_numaker_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NUMAKER_PWM_INIT)

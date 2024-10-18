@@ -46,10 +46,10 @@ static inline void vexriscv_litex_irq_setie(uint32_t ie)
 	}
 }
 
-#define LITEX_IRQ_ADD_HELPER(n)                                                                    \
-	if (irqs & (1 << DT_IRQN(n))) {                                                            \
-		ite = &_sw_isr_table[DT_IRQN(n)];                                                  \
-		ite->isr(ite->arg);                                                                \
+#define LITEX_IRQ_ADD_HELPER(n)                   \
+	if (irqs & (1 << DT_IRQN(n))) {           \
+		ite = &_sw_isr_table[DT_IRQN(n)]; \
+		ite->isr(ite->arg);               \
 	}
 
 #define LITEX_IRQ_ADD(n) IF_ENABLED(DT_IRQ_HAS_IDX(n, 0), (LITEX_IRQ_ADD_HELPER(n)))

@@ -973,23 +973,23 @@ static int spi_pl022_init(const struct device *dev)
 	return 0;
 }
 
-#define DMA_INITIALIZER(idx, dir)                                                                  \
-	{                                                                                          \
-		.dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(idx, dir)),                         \
-		.channel = DT_INST_DMAS_CELL_BY_NAME(idx, dir, channel),                           \
-		.slot = DT_INST_DMAS_CELL_BY_NAME(idx, dir, slot),                                 \
-		.channel_config = DT_INST_DMAS_CELL_BY_NAME(idx, dir, channel_config),             \
+#define DMA_INITIALIZER(idx, dir)                                                      \
+	{                                                                              \
+		.dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(idx, dir)),             \
+		.channel = DT_INST_DMAS_CELL_BY_NAME(idx, dir, channel),               \
+		.slot = DT_INST_DMAS_CELL_BY_NAME(idx, dir, slot),                     \
+		.channel_config = DT_INST_DMAS_CELL_BY_NAME(idx, dir, channel_config), \
 	}
 
-#define DMAS_DECL(idx)                                                                             \
-	{                                                                                          \
-		COND_CODE_1(DT_INST_DMAS_HAS_NAME(idx, tx), (DMA_INITIALIZER(idx, tx)), ({0})),                                          \
-			 COND_CODE_1(DT_INST_DMAS_HAS_NAME(idx, rx), (DMA_INITIALIZER(idx, rx)), ({0})),       \
+#define DMAS_DECL(idx)                                                                       \
+	{                                                                                    \
+		COND_CODE_1(DT_INST_DMAS_HAS_NAME(idx, tx), (DMA_INITIALIZER(idx, tx)), ({0})),                                    \
+			 COND_CODE_1(DT_INST_DMAS_HAS_NAME(idx, rx), (DMA_INITIALIZER(idx, rx)), ({0})), \
 			 }
 
 #define DMAS_ENABLED(idx) (DT_INST_DMAS_HAS_NAME(idx, tx) && DT_INST_DMAS_HAS_NAME(idx, rx))
 
-#define CLOCK_ID_DECL(idx)                                                                         \
+#define CLOCK_ID_DECL(idx) \
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(0, clocks),                                               \
 	(static const clock_control_subsys_t pl022_clk_id##idx =                                   \
 		(clock_control_subsys_t)DT_INST_PHA_BY_IDX(idx, clocks, 0, clk_id);))

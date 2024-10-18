@@ -226,7 +226,7 @@ static void dw_wdt_isr(const struct device *dev)
 }
 #endif
 
-#define CHECK_CLOCK(inst)                                                                          \
+#define CHECK_CLOCK(inst)                                                                         \
 	!(DT_INST_NODE_HAS_PROP(inst, clock_frequency) || DT_INST_NODE_HAS_PROP(inst, clocks)) ||
 
 #if DT_INST_FOREACH_STATUS_OKAY(CHECK_CLOCK) 0
@@ -234,17 +234,17 @@ static void dw_wdt_isr(const struct device *dev)
 #endif
 
 /* Bindings to the platform */
-#define DW_WDT_IRQ_FLAGS(inst)                                                                     \
+#define DW_WDT_IRQ_FLAGS(inst) \
 	COND_CODE_1(DT_INST_IRQ_HAS_CELL(inst, sense), (DT_INST_IRQ(inst, sense)), (0))
 
 #define DW_WDT_RESET_SPEC_INIT(inst) .reset_spec = RESET_DT_SPEC_INST_GET(inst),
 
-#define IRQ_CONFIG(inst)                                                                           \
-	static void dw_wdt##inst##_irq_config(void)                                                \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), dw_wdt_isr,           \
-			    DEVICE_DT_INST_GET(inst), DW_WDT_IRQ_FLAGS(inst));                     \
-		irq_enable(DT_INST_IRQN(inst));                                                    \
+#define IRQ_CONFIG(inst)                                                                 \
+	static void dw_wdt##inst##_irq_config(void)                                      \
+	{                                                                                \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), dw_wdt_isr, \
+			    DEVICE_DT_INST_GET(inst), DW_WDT_IRQ_FLAGS(inst));           \
+		irq_enable(DT_INST_IRQN(inst));                                          \
 	}
 
 #define DW_WDT_INIT(inst)                                                                                                                                                          \
