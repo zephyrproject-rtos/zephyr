@@ -1,7 +1,4 @@
-.. _nrf52840_papyr:
-
-Electronut Labs Papyr
-#####################
+.. zephyr:board:: nrf52840_papyr
 
 Overview
 ********
@@ -26,12 +23,6 @@ the following devices:
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
 * COUNTER
-
-.. figure:: img/nrf52840_papyr.jpg
-     :align: center
-     :alt: Electronut Labs Papyr
-
-     Electronut Labs Papyr (Credit: Electronut Labs)
 
 More information about the board is available at https://gitlab.com/electronutlabs-public/papyr.
 
