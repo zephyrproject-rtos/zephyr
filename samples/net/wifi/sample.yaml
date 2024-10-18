@@ -74,3 +74,9 @@ tests:
       - thingy53/nrf5340/cpuapp
     integration_platforms:
       - thingy53/nrf5340/cpuapp
+  sample.net.wifi.nxp_wifi:
+    extra_args:
+      - CONFIG_NXP_WIFI_BUILD_ONLY_MODE=y
+    platform_allow:
+      - frdm_rw612
+      - rd_rw612_bga
