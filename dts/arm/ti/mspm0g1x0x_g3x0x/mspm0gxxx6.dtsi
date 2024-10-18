@@ -1,0 +1,14 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include <mem.h>
+#include <ti/mspm0g1x0x_g3x0x/mspm0g1x0x_g3x0x.dtsi>
+
+/ {
+	sram0: memory@20200000 {
+		reg = <0x20200000 DT_SIZE_K(32)>;
+	};
+
+	flash0: serial-flash@0 {
+		reg = <0x0 DT_SIZE_K(64)>;
+	};
+};
