@@ -13,6 +13,7 @@ toolchain:
   - xtools
   - zephyr
 supported:
+  - crypto
   - dma
   - flash
   - gpio
