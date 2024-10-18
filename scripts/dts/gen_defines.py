@@ -285,6 +285,7 @@ def write_special_props(node: edtlib.Node) -> None:
     # Macros that are special to bindings inherited from Linux, which
     # we can't capture with the current bindings language.
     write_pinctrls(node)
+    write_clocks(node)
     write_fixed_partitions(node)
     write_gpio_hogs(node)
 
@@ -537,6 +538,26 @@ def write_pinctrls(node: edtlib.Node) -> None:
         for idx, ph in enumerate(pinctrl.conf_nodes):
             out_dt_define(f"{node.z_path_id}_PINCTRL_NAME_{name}_IDX_{idx}_PH",
                           f"DT_{ph.z_path_id}")
+
+def write_clocks(node):
+    # Write special macros for clock properties
+
+    out_comment("Clock properties:")
+
+    if "clocks" in node.props:
+        for clkidx, clock in enumerate(node.props["clocks"].val):
+            out_dt_define(f"{node.z_path_id}_CLOCK_IDX_{clkidx}_CONFIG", f"__clock_config_{clkidx}__device_dts_ord_{node.dep_ordinal}")
+            out_dt_define(f"{node.z_path_id}_CLOCK_IDX_{clkidx}_CELLS_COUNT", len(clock.data))
+
+            for cellidx, cellname in enumerate(clock.data):
+                out_dt_define(f"{node.z_path_id}_CLOCK_IDX_{clkidx}_CELL_{cellidx}_NAME", cellname)
+
+            if clock.name is not None:
+                out_dt_define(f"{node.z_path_id}_CLOCK_NAME_{clock.name}_CONFIG", f"__clock_config_{clkidx}__device_dts_ord_{node.dep_ordinal}")
+                out_dt_define(f"{node.z_path_id}_CLOCK_NAME_{clock.name}_CELLS_COUNT", len(clock.data))
+
+                for cellidx, cellname in enumerate(clock.data):
+                    out_dt_define(f"{node.z_path_id}_CLOCK_NAME_{clock.name}_CELL_{cellidx}_NAME", cellname)
 
 
 def write_fixed_partitions(node: edtlib.Node) -> None:

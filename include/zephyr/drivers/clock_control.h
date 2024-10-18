@@ -295,6 +295,72 @@ static inline int clock_control_configure(const struct device *dev,
 	return api->configure(dev, sys, data);
 }
 
+/**
+ * @brief Helper macro defining a clock configuration cell.
+ *
+ * @param cellidx Index of the cell being formatted
+ * @param clkidx Index of the clock reference being processed
+ * @param node_id Path to the node referencing the clock
+ * @return Formatted clock cell value
+ *
+ * @see #CLOCKS_DT_INST_DEFINE
+ */
+#define  _CLOCKS_DT_CONFIG_CELLS_LIST_CELL(cellidx, clkidx, node_id) \
+	DT_CLOCKS_CELL_BY_IDX( \
+		node_id, \
+		clkidx, \
+		CONCAT(node_id, _CLOCK_IDX_, clkidx, _CELL_, cellidx, _NAME) \
+	)
+
+/**
+ * @brief Helper macro defining a list of configuration cells of a
+ * particular clock.
+ *
+ * @param node_id Path to the node referencing the clock
+ * @param prop Dictated by FOREACH macros, expected to be clocks
+ * @param clkidx Index of the clock reference being processed
+ * @return Variable definition
+ *
+ * @see #CLOCKS_DT_INST_DEFINE
+ */
+#define _CLOCKS_DT_CONFIG_DEFINE(node_id, prop, clkidx) \
+	int DT_CLOCK_CONFIG_NAME_BY_IDX(node_id, clkidx)[] = { \
+		LISTIFY( \
+			DT_CLOCK_NUM_CELLS_BY_IDX(node_id, clkidx), \
+			_CLOCKS_DT_CONFIG_CELLS_LIST_CELL, \
+			(,), \
+			clkidx, \
+			node_id \
+		) \
+	}
+
+/**
+ * @brief Define all clock consumer's configuration variables.
+ *
+ * This macro generates the __clock_config_*__device_dts_ord_* variables,
+ * which are filled with configuration cells written in the clock consumer's DT
+ * node. Pointers to these variables are then passed as-is to clock controllers
+ * (providers) when invoking them using the clock_control API.
+ *
+ * Example usage:
+ *
+ * 		#define DRV_INIT(n) \
+ * 			CLOCKS_DT_INST_DEFINE(n);
+ * 			...
+ *
+ * 		DT_INST_FOREACH_STATUS_OKAY(DRV_INIT)
+ *
+ * @param inst Clock consumer instance number
+ */
+#define CLOCKS_DT_INST_DEFINE(inst) \
+	DT_INST_FOREACH_PROP_ELEM_SEP( \
+		inst, \
+		clocks, \
+		_CLOCKS_DT_CONFIG_DEFINE, \
+		(;)\
+	) \
+
+
 #ifdef __cplusplus
 }
 #endif
