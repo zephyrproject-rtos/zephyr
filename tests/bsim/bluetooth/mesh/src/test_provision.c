@@ -15,10 +15,6 @@
 
 #if defined CONFIG_BT_MESH_USES_MBEDTLS_PSA
 #include <psa/crypto.h>
-#elif defined CONFIG_BT_MESH_USES_TINYCRYPT
-#include <tinycrypt/constants.h>
-#include <tinycrypt/ecc.h>
-#include <tinycrypt/ecc_dh.h>
 #else
 #error "Unknown crypto library has been chosen"
 #endif
@@ -435,7 +431,6 @@ static void oob_auth_set(int test_step)
 	prov.input_actions = oob_auth_test_vector[test_step].input_actions;
 }
 
-#if defined CONFIG_BT_MESH_USES_MBEDTLS_PSA
 static void generate_oob_key_pair(void)
 {
 	psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
@@ -470,12 +465,6 @@ static void generate_oob_key_pair(void)
 
 	memcpy(public_key_be, public_key_repr + 1, 64);
 }
-#elif defined CONFIG_BT_MESH_USES_TINYCRYPT
-static void generate_oob_key_pair(void)
-{
-	ASSERT_TRUE(uECC_make_key(public_key_be, private_key_be, uECC_secp256r1()));
-}
-#endif
 
 static void oob_device(bool use_oob_pk)
 {

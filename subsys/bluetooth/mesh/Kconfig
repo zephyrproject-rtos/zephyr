@@ -1448,29 +1448,15 @@ endmenu # Proxy
 choice BT_MESH_CRYPTO_LIB
 	prompt "Crypto library:"
 	default BT_MESH_USES_TFM_PSA if BUILD_WITH_TFM
-	default BT_MESH_USES_TINYCRYPT
+	default BT_MESH_USES_MBEDTLS_PSA
 	help
 	  Crypto library selection for mesh security.
 
-config BT_MESH_USES_TINYCRYPT
-	bool "TinyCrypt"
-	select TINYCRYPT
-	select TINYCRYPT_AES
-	select TINYCRYPT_AES_CMAC
-	select TINYCRYPT_ECC_DH
-	select TINYCRYPT_SHA256
-	select TINYCRYPT_SHA256_HMAC
-	select BT_HOST_CCM
-	help
-	  Use TinyCrypt library to perform crypto operations.
-
 config BT_MESH_USES_MBEDTLS_PSA
-	bool "mbed TLS PSA [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "mbed TLS PSA"
 	select MBEDTLS
-	select MBEDTLS_ENTROPY_C
 	select MBEDTLS_PSA_CRYPTO_C
-	select MBEDTLS_USE_PSA_CRYPTO
+	select MBEDTLS_ENTROPY_C
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
