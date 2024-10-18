@@ -1,7 +1,4 @@
-.. _adafruit_feather_m0_basic_proto:
-
-Adafruit Feather M0 Basic Proto
-###############################
+.. zephyr:board:: adafruit_feather_m0_basic_proto
 
 Overview
 ********
@@ -10,10 +7,6 @@ The Adafruit Feather M0 Basic Proto is a thin, light ARM development
 board with an onboard battery connector and charger for 3.7 V lithium
 polymer batteries, charging status indicator and user LEDs, native USB
 connector, 20 I/O pins, and a small prototyping area.
-
-.. image:: img/adafruit_feather_m0_basic_proto.jpg
-     :align: center
-     :alt: Adafruit Feather M0 Basic Proto
 
 Hardware
 ********
