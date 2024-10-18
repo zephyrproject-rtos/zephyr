@@ -121,3 +121,7 @@
 &lpadc0 {
 	status = "okay";
 };
+
+&lptmr0 {
+	status = "okay";
+};
