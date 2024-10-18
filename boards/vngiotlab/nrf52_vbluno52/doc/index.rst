@@ -1,7 +1,4 @@
-.. _nrf52_vbluno52:
-
-nRF52-VBLUno52
-##############
+.. zephyr:board:: nrf52_vbluno52
 
 Overview
 ********
@@ -17,12 +14,6 @@ the following devices:
 * GPIO
 * FLASH
 * RADIO (Bluetooth Low Energy 5.0)
-
-.. figure:: img/nrf52_vbluno52.jpg
-     :align: center
-     :alt: nRF52 VBLUno52
-
-     nRF52_VBLUno52 board
 
 Hardware
 ********
