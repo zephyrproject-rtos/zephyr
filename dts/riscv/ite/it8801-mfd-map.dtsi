@@ -1,0 +1,56 @@
+/*
+ * Copyright (c) 2024 ITE Corporation. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <ite/it8801-mfd-gpiocr.dtsi>
+#include <zephyr/dt-bindings/mfd/mfd_it8801_altctrl.h>
+
+
+/ {
+	/* GPIO pin mapping to alternate function */
+	it8801-mfd-map {
+		compatible = "ite,it8801-mfd-map";
+
+		/* PWM alternate function */
+		pwm1_gp12_default: pwm1_gp12_default {
+			altctrls = <&it8801_gpio1 2 IT8801_ALT_FUNC_2>;
+		};
+		pwm2_gp13_default: pwm2_gp13_default {
+			altctrls = <&it8801_gpio1 3 IT8801_ALT_FUNC_2>;
+		};
+		pwm3_gp14_default: pwm3_gp14_default {
+			altctrls = <&it8801_gpio1 4 IT8801_ALT_FUNC_2>;
+		};
+		pwm4_gp15_default: pwm4_gp15_default {
+			altctrls = <&it8801_gpio1 5 IT8801_ALT_FUNC_2>;
+		};
+		pwm7_gp20_default: pwm7_gp20_default {
+			altctrls = <&it8801_gpio2 0 IT8801_ALT_FUNC_2>;
+		};
+		pwm8_gp23_default: pwm8_gp23_default {
+			altctrls = <&it8801_gpio2 3 IT8801_ALT_FUNC_3>;
+		};
+		pwm9_gp22_default: pwm9_gp22_default {
+			altctrls = <&it8801_gpio2 2 IT8801_ALT_FUNC_3>;
+		};
+
+		/* Keyboard alternate function */
+		kso18_gp01_default: kso18_gp01_default {
+			altctrls = <&it8801_gpio0 1 IT8801_ALT_FUNC_2>;
+		};
+		kso19_gp00_default: kso19_gp00_default {
+			altctrls = <&it8801_gpio0 0 IT8801_ALT_FUNC_2>;
+		};
+		kso20_gp23_default: kso20_gp23_default {
+			altctrls = <&it8801_gpio2 3 IT8801_ALT_FUNC_2>;
+		};
+		kso21_gp22_default: kso21_gp22_default {
+			altctrls = <&it8801_gpio2 2 IT8801_ALT_FUNC_2>;
+		};
+		kso22_gp21_default: kso22_gp21_default {
+			altctrls = <&it8801_gpio2 1 IT8801_ALT_FUNC_2>;
+		};
+	};
+};
