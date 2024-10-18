@@ -56,7 +56,8 @@ enum status_thread_state {
 
 #define DISCONNECT_TIMEOUT_MS 5000
 
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+#if defined CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE || \
+	defined CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
 static struct wifi_enterprise_creds_params enterprise_creds;
 #endif
 
@@ -495,6 +496,17 @@ static struct wifi_eap_config eap_config[] = {
 	{WIFI_SECURITY_TYPE_EAP_TLS_SHA256, WIFI_EAP_TYPE_TLS, WIFI_EAP_TYPE_NONE, "TLS", NULL},
 };
 
+
+static int is_eap_valid_security(int security)
+{
+	return (security == WIFI_SECURITY_TYPE_EAP_TLS ||
+		    security == WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2 ||
+		    security == WIFI_SECURITY_TYPE_EAP_PEAP_GTC ||
+		    security == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2 ||
+		    security == WIFI_SECURITY_TYPE_EAP_PEAP_TLS ||
+		    security == WIFI_SECURITY_TYPE_EAP_TLS_SHA256);
+}
+
 int process_cipher_config(struct wifi_connect_req_params *params,
 			  struct wifi_eap_cipher_config *cipher_config)
 {
@@ -553,7 +565,9 @@ int process_cipher_config(struct wifi_connect_req_params *params,
 out:
 	return -EINVAL;
 }
+#endif
 
+#ifdef CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
 static int hapd_process_cert_data(struct hostapd_bss_config *conf,
 	char *type, uint8_t *data, uint32_t data_len)
 {
@@ -797,17 +811,6 @@ int hapd_process_enterprise_config(struct hostapd_iface *iface,
 	return ret;
 out:
 	return -1;
-}
-#endif
-
-static int is_eap_valid_security(int security)
-{
-	return (security == WIFI_SECURITY_TYPE_EAP_TLS ||
-		    security == WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2 ||
-		    security == WIFI_SECURITY_TYPE_EAP_PEAP_GTC ||
-		    security == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2 ||
-		    security == WIFI_SECURITY_TYPE_EAP_PEAP_TLS ||
-		    security == WIFI_SECURITY_TYPE_EAP_TLS_SHA256);
 }
 #endif
 
