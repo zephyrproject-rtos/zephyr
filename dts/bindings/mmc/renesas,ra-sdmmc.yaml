@@ -1,0 +1,73 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA sdmmc disk access
+
+compatible: "renesas,ra-sdmmc"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  channel:
+    type: int
+    required: true
+
+  bus-width:
+    type: int
+    enum:
+      - 1
+      - 4
+    default: 4
+
+  block-size:
+    type: int
+    default: 512
+
+  sd-support:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 1
+
+  mmc-support:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+
+  card-detect:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 1
+
+  write-protect:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+
+  reg:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  enable-gpios:
+    type: phandle-array
+    description: |
+      GPIO to use to enable/disable the SDHI. This GPIO is driven active
+      when the SDHI is enabled and inactive when the SDHI is disabled
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true

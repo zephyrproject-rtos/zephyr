@@ -78,6 +78,10 @@
 	status = "okay";
 };
 
+&ioport3 {
+	status = "okay";
+};
+
 &ioport6 {
 	status = "okay";
 };
@@ -124,5 +128,14 @@
 	interrupts = <40 1>, <41 1>;
 	interrupt-names = "gtioca", "overflow";
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&sdmmc0 {
+	pinctrl-0 = <&sdmmc0_default>;
+	enable-gpios = <&ioport3 11 GPIO_ACTIVE_HIGH>;
+	pinctrl-names = "default";
+	card-detect = <1>;
+	write-protect = <0>;
 	status = "okay";
 };

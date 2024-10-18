@@ -7,7 +7,8 @@ DT_STM32_SDMMC_HAS_DMA := $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_SDMMC),d
 config DISK_DRIVER_SDMMC
 	bool "SDMMC card driver"
 	depends on DT_HAS_ZEPHYR_SDMMC_DISK_ENABLED || \
-			DT_HAS_ST_STM32_SDMMC_ENABLED
+			DT_HAS_ST_STM32_SDMMC_ENABLED || \
+			DT_HAS_RENESAS_RA_SDMMC_ENABLED
 	default y
 	help
 	  SDMMC card driver.

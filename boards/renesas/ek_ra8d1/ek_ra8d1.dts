@@ -132,3 +132,8 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&sdmmc1 {
+	pinctrl-0 = <&sdmmc1_default>;
+	pinctrl-names = "default";
+};
