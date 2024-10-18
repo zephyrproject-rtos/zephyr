@@ -5,20 +5,15 @@
 #
 
 description: |
-  This is a representation of AndesTech PLIC-SW node
+  This is a representation of AndesTech MBOX PLIC-SW node
 
-compatible: "andestech,plic-sw"
+compatible: "andestech,mbox-plic-sw"
 
 include: [base.yaml, mailbox-controller.yaml]
 
 properties:
-  reg:
+  interrupts:
     required: true
-
-  channel-max:
-    type: int
-    required: true
-    description: Supported channels max
 
 mbox-cells:
   - channel
