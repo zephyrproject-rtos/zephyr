@@ -881,6 +881,7 @@ Devicetree:
     - galak
   files-regex:
     - dts/bindings/.*zephyr.*
+    - dts/bindings/[^,]+$
   files:
     - scripts/dts/
     - dts/common/
