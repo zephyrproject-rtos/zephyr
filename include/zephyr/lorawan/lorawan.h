@@ -407,6 +407,20 @@ int lorawan_clock_sync_get(uint32_t *gps_time);
 #ifdef CONFIG_LORAWAN_FRAG_TRANSPORT
 
 /**
+ * @brief Register a handle descriptor callback function.
+ *
+ * Provide to the fragmentation transport service a function to be called
+ * whenever a FragSessionSetupReq is received and Descriptor field should be
+ * handled.
+ *
+ * @param transport_handle_descriptor Callback for notification.
+ *
+ * @return 0 if successful, negative errno code if failure
+ */
+void lorawan_frag_transport_register_handle_descriptor_callback(
+	int (*transport_handle_descriptor)(uint32_t descriptor));
+
+/**
  * @brief Run Fragmented Data Block Transport service
  *
  * This service receives fragmented data (usually firmware images) and
