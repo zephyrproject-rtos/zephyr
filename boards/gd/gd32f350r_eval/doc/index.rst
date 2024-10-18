@@ -1,7 +1,4 @@
-.. _gd32f350r_eval:
-
-GigaDevice GD32F350R-EVAL
-#########################
+.. zephyr:board:: gd32f350r_eval
 
 Overview
 ********
@@ -12,10 +9,6 @@ of the GigaDevice F350 Cortex-M4F High Performance MCU.
 The GD32F350RBT6 features a single-core ARM Cortex-M4F MCU which can run up
 to 108-MHz with flash accesses zero wait states, 128kB of Flash, 16kB of
 SRAM and 55 GPIOs.
-
-.. image:: img/gd32f350r_eval.webp
-     :align: center
-     :alt: gd32f350r_eval
 
 Hardware
 ********
