@@ -1,27 +1,11 @@
-.. _pinetime_devkit0:
-
-Pine64 PineTime DevKit0
-#######################
+.. zephyr:board:: pinetime_devkit0
 
 Overview
 ********
 
-.. figure:: img/PineTime_leaflet.jpg
-   :align: center
-   :alt: Pine64 PineTime
-
-   PineTime leaflet (Credit: Pine64)
-
-
 The Pine64 smartwatch, dubbed "PineTime", is a product of a community effort
 for an open source smartwatch in collaboration with wearable RTOS and Linux
 app developers/communities.
-
-.. figure:: img/PineTime_DevKit0.jpg
-   :align: center
-   :alt: Pine64 PineTime
-
-   PineTime Dev Kit (Credit: Pine64)
 
 Hardware
 ********
