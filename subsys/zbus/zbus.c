@@ -172,12 +172,12 @@ static inline int _zbus_vded_exec(const struct zbus_channel *chan, k_timepoint_t
 
 #if defined(CONFIG_ZBUS_RUNTIME_OBSERVERS)
 	/* Dynamic observer event dispatcher logic */
-	struct zbus_observer_node *obs_nd, *tmp;
+	struct zbus_observer_data *obs_d, *tmp;
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&chan->data->observers, obs_nd, tmp, node) {
-		const struct zbus_observer *obs = obs_nd->obs;
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&chan->data->observers, obs_d, tmp, node) {
+		const struct zbus_observer *obs = obs_d->obs;
 
-		if (!obs->data->enabled) {
+		if (!obs_d->enabled) {
 			continue;
 		}
 

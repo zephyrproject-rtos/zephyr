@@ -113,15 +113,6 @@ ZTEST(basic, test_specification_based__zbus_obs_add_rm_obs)
 	zassert_equal(0, zbus_chan_add_obs(&chan2, &lis5, K_MSEC(200)), "It must add the obs");
 	zassert_equal(0, zbus_chan_add_obs(&chan2, &lis6, K_MSEC(200)), "It must add the obs");
 
-	/* Make the heap full */
-	void *mem;
-
-	do {
-		mem = k_malloc(1);
-	} while (mem != NULL);
-
-	/* With the heap full it will not be possible to add another obs */
-	zassert_equal(-ENOMEM, zbus_chan_add_obs(&chan2, &lis7, K_MSEC(200)), NULL);
 	zassert_equal(0, zbus_chan_pub(&chan2, &sd, K_MSEC(500)), NULL);
 	zassert_equal(count_callback2, 5, NULL);
 

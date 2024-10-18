@@ -669,10 +669,10 @@ Sections <iterable_sections_api>` documentation for details). ZBus also implemen
                LOG_INF("      - %s", observation->obs->name);
          }
 
-         struct zbus_observer_node *obs_nd, *tmp;
+         struct zbus_observer_data *obs_d, *tmp;
 
-         SYS_SLIST_FOR_EACH_CONTAINER_SAFE(chan->observers, obs_nd, tmp, node) {
-               LOG_INF("      - %s", obs_nd->obs->name);
+         SYS_SLIST_FOR_EACH_CONTAINER_SAFE(chan->observers, obs_d, tmp, node) {
+               LOG_INF("      - %s", obs_d->obs->name);
          }
 
          return true;
