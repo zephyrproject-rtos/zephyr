@@ -1,0 +1,5 @@
+/ {
+	aliases {
+		i2c-controller = &arduino_i2c;
+	};
+};
