@@ -1,7 +1,4 @@
-.. _robokit1:
-
-TDK RoboKit 1
-#############
+.. zephyr:board:: robokit1
 
 Overview
 ********
@@ -11,10 +8,6 @@ number of small ground robotics useful sensors including chirp sensors for time 
 (e.g. ultrasonic obstacle detection).
 
 It pairs a 300MHz Cortex-M7 ATSAME70Q21 with an array of TDK sensors and pin headers useful for robotics.
-
-.. image:: img/tdk_robokit1.jpg
-     :align: center
-     :alt: TDK RoboKit1
 
 Hardware
 ********
