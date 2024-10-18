@@ -18,7 +18,7 @@ MCK-RA8T1 kit includes the items below:
 - Permanent magnet synchronous motors
 - Accessories (cables, standoffs, etc.)
 
-.. figure:: mck-ra8t1-product-contents.jpg
+.. figure:: mck_ra8t1_product_contents.jpg
 	:align: center
 	:alt: RA8T1 Evaluation Kit
 
@@ -54,7 +54,7 @@ The specifications of the CPU board are shown below:
 - Ethrnet connector
 - microSD card connector
 
-.. figure:: ra8t1-cpu-board-block-diagram.jpg
+.. figure:: mck_ra8t1.jpg
 	:align: center
 	:alt: RA8T1 Evaluation Kit
 
@@ -69,7 +69,7 @@ Hardware
 ********
 Detail Hardware feature for the RA8T1 MCU group can be found at `RA8T1 Group User's Manual Hardware`_
 
-.. figure:: ra8t1-block-diagram.png
+.. figure:: ra8t1_block_diagram.png
 	:width: 442px
 	:align: center
 	:alt: RA8T1 MCU group feature

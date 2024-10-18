@@ -53,7 +53,7 @@ embedded RAM and low power consumption.
 
 - Emulator reset switch
 
-.. figure:: ek-ra4w1-board.webp
+.. figure:: ek_ra4w1.webp
 	:align: center
 	:alt: RA4W1 Evaluation Kit
 
@@ -63,7 +63,7 @@ Hardware
 ********
 Detail Hardware feature for the RA4W1 MCU group can be found at `RA4W1 Group User's Manual Hardware`_
 
-.. figure:: ra4w1-block-diagram.webp
+.. figure:: ra4w1_block_diagram.webp
 	:width: 442px
 	:align: center
 	:alt: RA4W1 MCU group feature
