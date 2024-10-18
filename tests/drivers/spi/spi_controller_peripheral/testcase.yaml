@@ -57,3 +57,10 @@ tests:
       - nrf52840dk/nrf52840
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpurad
+
+  drivers.spi.direct_xfer:
+    extra_configs:
+      - CONFIG_SPI_NRFX_RAM_BUFFER_SIZE=0
+    platform_exclude:
+      - nrf52840dk/nrf52840
+      - nrf54l15pdk/nrf54l15/cpuapp
