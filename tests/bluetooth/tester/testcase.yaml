@@ -22,6 +22,7 @@ tests:
       - qemu_x86
       - native_sim
       - nrf5340dk/nrf5340/cpuapp
+      - nrf5340_audio_dk/nrf5340/cpuapp
     extra_args: OVERLAY_CONFIG="overlay-le-audio.conf"
     tags: bluetooth
     harness: bluetooth
