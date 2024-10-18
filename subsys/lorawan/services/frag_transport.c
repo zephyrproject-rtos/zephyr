@@ -101,6 +101,9 @@ static struct frag_transport_context ctx;
 /* Callback for notification of finished firmware transfer */
 static void (*finished_cb)(void);
 
+/* Callback to handle descriptor field */
+static transport_descriptor_cb descriptor_cb;
+
 static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t rssi, int8_t snr,
 					    uint8_t len, const uint8_t *rx_buf)
 {
@@ -207,7 +210,14 @@ static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t
 			}
 #endif
 
-			/* Descriptor not used: Ignore Wrong Descriptor error */
+			if (descriptor_cb != NULL) {
+				int rc = descriptor_cb(ctx.descriptor);
+
+				if (rc < 0) {
+					/* Wrong Descriptor */
+					status |= BIT(3);
+				}
+			}
 
 			if ((status & 0x1F) == 0) {
 #ifdef CONFIG_LORAWAN_FRAG_TRANSPORT_DECODER_SEMTECH
@@ -312,6 +322,11 @@ static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t
 		lorawan_services_schedule_uplink(LORAWAN_PORT_FRAG_TRANSPORT, tx_buf, tx_pos,
 						 ans_delay);
 	}
+}
+
+void lorawan_frag_transport_register_descriptor_callback(transport_descriptor_cb cb)
+{
+	descriptor_cb = cb;
 }
 
 static struct lorawan_downlink_cb downlink_cb = {
