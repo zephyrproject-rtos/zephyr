@@ -59,6 +59,10 @@ if(CONFIG_NET_TCP_ISN_RFC6528 OR CONFIG_NET_IPV6_PE)
 endif()
 endif()
 
+if(CONFIG_NET_PKT_ALLOC_STATS)
+  zephyr_linker_sources(SECTIONS iterables_net_pkt_alloc_stats.ld)
+endif()
+
 # To get private includes like net_shell.h
 zephyr_library_include_directories(. ${ZEPHYR_BASE}/subsys/net/lib)
 

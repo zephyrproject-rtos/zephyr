@@ -50,6 +50,28 @@ struct net_context;
 
 /** @cond INTERNAL_HIDDEN */
 
+#if defined(CONFIG_NET_PKT_ALLOC_STATS)
+struct net_pkt_alloc_stats {
+	uint64_t alloc_sum;
+	uint64_t time_sum;
+	uint32_t count;
+};
+
+struct net_pkt_alloc_stats_slab {
+	struct net_pkt_alloc_stats ok;
+	struct net_pkt_alloc_stats fail;
+	struct k_mem_slab *slab;
+};
+
+#define NET_PKT_ALLOC_STATS_DEFINE(alloc_name, slab_name)		  \
+	STRUCT_SECTION_ITERABLE(net_pkt_alloc_stats_slab, alloc_name) = { \
+		.slab = &slab_name,					  \
+	}
+
+#else
+#define NET_PKT_ALLOC_STATS_DEFINE(name, slab)
+#endif /* CONFIG_NET_PKT_ALLOC_STATS */
+
 /* buffer cursor used in net_pkt */
 struct net_pkt_cursor {
 	/** Current net_buf pointer by the cursor */
@@ -144,6 +166,10 @@ struct net_pkt {
 	  CONFIG_NET_PKT_RXTIME_STATS_DETAIL */
 	};
 #endif /* CONFIG_NET_PKT_RXTIME_STATS || CONFIG_NET_PKT_TXTIME_STATS */
+
+#if defined(CONFIG_NET_PKT_ALLOC_STATS)
+	struct net_pkt_alloc_stats_slab *alloc_stats;
+#endif /* CONFIG_NET_PKT_ALLOC_STATS */
 
 	/** Reference counter */
 	atomic_t atomic_ref;
@@ -1452,7 +1478,8 @@ static inline void net_pkt_set_remote_address(struct net_pkt *pkt,
  * @param count Number of net_pkt in this slab.
  */
 #define NET_PKT_SLAB_DEFINE(name, count)				\
-	K_MEM_SLAB_DEFINE(name, sizeof(struct net_pkt), count, 4)
+	K_MEM_SLAB_DEFINE(name, sizeof(struct net_pkt), count, 4);      \
+	NET_PKT_ALLOC_STATS_DEFINE(pkt_alloc_stats_##name, name)
 
 /** @cond INTERNAL_HIDDEN */
 
