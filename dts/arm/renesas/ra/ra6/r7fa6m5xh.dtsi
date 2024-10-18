@@ -185,6 +185,13 @@
 				status = "disabled";
 			};
 		};
+
+		iic2: iic2@4009f200 {
+			compatible = "renesas,ra-iic";
+			channel = <2>;
+			reg = <0x4009f200 0x100>;
+			status = "disabled";
+		};
 	};
 
 	clocks: clocks {
