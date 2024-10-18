@@ -340,6 +340,21 @@ register_class_error:
 	return ret;
 }
 
+static bool is_disallowed(const struct usbd_class_node *const c_nd)
+{
+	static const char *const list[] = {
+		"dfu_dfu",
+	};
+
+	for (int i = 0; i < ARRAY_SIZE(list); i++) {
+		if (strcmp(c_nd->c_data->name, list[i]) == 0) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 int usbd_register_all_classes(struct usbd_context *const uds_ctx,
 			      const enum usbd_speed speed, const uint8_t cfg)
 {
@@ -347,6 +362,10 @@ int usbd_register_all_classes(struct usbd_context *const uds_ctx,
 
 	if (speed == USBD_SPEED_HS) {
 		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_hs, usbd_class_node, c_nd) {
+			if (is_disallowed(c_nd)) {
+				continue;
+			}
+
 			ret = usbd_register_class(uds_ctx, c_nd->c_data->name,
 						  speed, cfg);
 			if (ret) {
@@ -361,6 +380,10 @@ int usbd_register_all_classes(struct usbd_context *const uds_ctx,
 
 	if (speed == USBD_SPEED_FS) {
 		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_fs, usbd_class_node, c_nd) {
+			if (is_disallowed(c_nd)) {
+				continue;
+			}
+
 			ret = usbd_register_class(uds_ctx, c_nd->c_data->name,
 						  speed, cfg);
 			if (ret) {
