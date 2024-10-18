@@ -12,6 +12,9 @@ if(CONFIG_ARM)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_POWEROFF poweroff.c)
+if(CONFIG_ARM)
+  zephyr_library_sources_ifdef(CONFIG_PM_S2RAM_CUSTOM_MARKING pm_s2ram.S)
+endif()
 
 if((CONFIG_SOC_SERIES_NRF54HX OR CONFIG_SOC_SERIES_NRF92X) AND CONFIG_CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS)
   zephyr_library_sources(nrf54hx_nrf92x_mpu_regions.c)
