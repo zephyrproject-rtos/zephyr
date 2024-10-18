@@ -136,26 +136,26 @@ struct dma_tsn_nic_result {
 };
 
 struct tick_count {
-        uint32_t tick:29;
-        uint32_t priority:3;
+	uint32_t tick: 29;
+	uint32_t priority: 3;
 } __attribute__((packed, scalar_storage_order("big-endian")));
 
 struct tx_metadata {
-        struct tick_count from;
-        struct tick_count to;
-        struct tick_count delay_from;
-        struct tick_count delay_to;
-        uint16_t frame_length;
-        uint16_t timestamp_id;
-        uint8_t fail_policy;
-        uint8_t reserved0[3];
-        uint32_t reserved1;
-        uint32_t reserved2;
+	struct tick_count from;
+	struct tick_count to;
+	struct tick_count delay_from;
+	struct tick_count delay_to;
+	uint16_t frame_length;
+	uint16_t timestamp_id;
+	uint8_t fail_policy;
+	uint8_t reserved0[3];
+	uint32_t reserved1;
+	uint32_t reserved2;
 } __attribute__((packed, scalar_storage_order("big-endian")));
 
 struct tx_buffer {
-        struct tx_metadata metadata;
-        uint8_t data[BUFFER_SIZE];
+	struct tx_metadata metadata;
+	uint8_t data[BUFFER_SIZE];
 } __attribute__((packed, scalar_storage_order("big-endian")));
 
 struct rx_metadata {
@@ -199,20 +199,20 @@ static void eth_tsn_nic_isr(const struct device *dev)
 
 static void tx_desc_set(struct dma_tsn_nic_desc *desc, uintptr_t addr, uint32_t len)
 {
-        uint32_t control_field;
-        uint32_t control;
+	uint32_t control_field;
+	uint32_t control;
 
-        desc->control = sys_cpu_to_le32(DESC_MAGIC);
-        control_field = DESC_STOPPED;
-        control_field |= DESC_EOP;
-        control_field |= DESC_COMPLETED;
-        control = sys_le32_to_cpu(desc->control & ~(LS_BYTE_MASK));
-        control |= control_field;
-        desc->control = sys_cpu_to_le32(control);
+	desc->control = sys_cpu_to_le32(DESC_MAGIC);
+	control_field = DESC_STOPPED;
+	control_field |= DESC_EOP;
+	control_field |= DESC_COMPLETED;
+	control = sys_le32_to_cpu(desc->control & ~(LS_BYTE_MASK));
+	control |= control_field;
+	desc->control = sys_cpu_to_le32(control);
 
-        desc->src_addr_lo = sys_cpu_to_le32(PCI_DMA_L(addr));
-        desc->src_addr_hi = sys_cpu_to_le32(PCI_DMA_H(addr));
-        desc->bytes = sys_cpu_to_le32(len);
+	desc->src_addr_lo = sys_cpu_to_le32(PCI_DMA_L(addr));
+	desc->src_addr_hi = sys_cpu_to_le32(PCI_DMA_H(addr));
+	desc->bytes = sys_cpu_to_le32(len);
 }
 
 static void rx_desc_set(struct dma_tsn_nic_desc *desc, uintptr_t addr, uint32_t len)
@@ -402,7 +402,7 @@ static const struct device *eth_tsn_nic_get_phy(const struct device *dev)
 	return NULL;
 }
 
-static int tsn_fill_metadata(const struct device *dev, uint64_t now, struct tx_buffer* buf)
+static int tsn_fill_metadata(const struct device *dev, uint64_t now, struct tx_buffer *buf)
 {
 	/* TODO: sw-295 (QoS) */
 	buf->metadata.fail_policy = TSN_FAIL_POLICY_DROP;
@@ -474,7 +474,7 @@ static int eth_tsn_nic_send(const struct device *dev, struct net_pkt *pkt)
 
 	tx_desc_set(&data->tx_desc, (uintptr_t)&data->tx_buffer, len + TX_METADATA_SIZE);
 
-#if 0  /* TODO: Merge dma and eth drivers */
+#if 0 /* TODO: Merge dma and eth drivers */
 	/* These are just pseudo codes for now */
 	w = sys_cpu_to_le32(PCI_DMA_L((uintptr_t)&data->tx_desc));
 	sys_write32(w, bar[CONFIG_BAR] + DESC_REG_LO);
