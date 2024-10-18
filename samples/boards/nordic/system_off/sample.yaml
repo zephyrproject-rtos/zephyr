@@ -29,3 +29,9 @@ tests:
     extra_configs:
       - CONFIG_APP_USE_RETAINED_MEM=y
       - CONFIG_RETAINED_MEM=y
+  sample.boards.nrf.system_off.grtc_wakeup:
+    build_only: true
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+    extra_configs:
+      - CONFIG_GRTC_WAKEUP_ENABLE=y
