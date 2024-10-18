@@ -27,4 +27,9 @@ config BT_BAS_BLS_ADDITIONAL_STATUS_PRESENT
 	bool "Additional Battery Status Present"
 	help
 	  Enable this option if Additional Battery Status information is present.
+
+config BT_BAS_BCS
+	bool "Battery Critical Status"
+	help
+	  Enable this option to include Battery Critical Status Characteristic.
 endif
