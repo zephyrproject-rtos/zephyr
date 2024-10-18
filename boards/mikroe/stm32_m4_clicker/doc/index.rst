@@ -1,7 +1,4 @@
-.. _mikroe_stm32_m4_clicker:
-
-Mikroe STM32 M4 Clicker
-#######################
+.. zephyr:board:: mikroe_stm32_m4_clicker
 
 Overview
 ********
@@ -9,12 +6,6 @@ Overview
 The Mikroe STM32 M4 Clicker development board contains a STMicroelectronics
 Cortex-M4 based STM32F415RG Microcontroller operating at up to 168 MHz with
 1 MB of Flash memory and 192 KB of SRAM.
-
-.. figure:: img/stm32_m4_clicker.webp
-   :align: center
-   :alt: STM32 M4 Clicker
-
-   STM32 M4 Clicker (Credit: MikroElektronika d.o.o.)
 
 Hardware
 ********
