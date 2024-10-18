@@ -30,3 +30,15 @@ test_i3c_lps28dfw: lps28dfw@300000803E0000003 {
 	assigned-address = <0x3>;
 	drdy-gpios = <&test_gpio 0 0>;
 };
+
+test_i3c_lsm6dsv16x: lsm6dsv16x@400000803E0000004 {
+	compatible = "st,lsm6dsv16x";
+	reg = <0x4 0x00000803 0xE0000004>;
+	assigned-address = <0x4>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+	accel-range = <LSM6DSV16X_DT_FS_8G>;
+	accel-odr = <LSM6DSV16X_DT_ODR_AT_60Hz>;
+	gyro-range = <LSM6DSV16X_DT_FS_2000DPS>;
+	gyro-odr = <LSM6DSV16X_DT_ODR_AT_60Hz>;
+};

@@ -26,6 +26,16 @@
 #include <zephyr/drivers/i2c.h>
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
 
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+#include <zephyr/drivers/i3c.h>
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c) */
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+	#define ON_I3C_BUS(cfg) (cfg->i3c.bus != NULL)
+#else
+	#define ON_I3C_BUS(cfg) (false)
+#endif
+
 #define LSM6DSV16X_EN_BIT					0x01
 #define LSM6DSV16X_DIS_BIT					0x00
 
@@ -44,6 +54,9 @@ struct lsm6dsv16x_config {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 		const struct spi_dt_spec spi;
 #endif
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+		struct i3c_device_desc **i3c;
+#endif
 	} stmemsc_cfg;
 	uint8_t accel_pm;
 	uint8_t accel_odr;
@@ -58,6 +71,13 @@ struct lsm6dsv16x_config {
 	uint8_t drdy_pin;
 	bool trig_enabled;
 #endif /* CONFIG_LSM6DSV16X_TRIGGER */
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+	struct {
+		const struct device *bus;
+		const struct i3c_device_id dev_id;
+	} i3c;
+#endif
 };
 
 union samples {
@@ -112,11 +132,15 @@ struct lsm6dsv16x_data {
 #if defined(CONFIG_LSM6DSV16X_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_LSM6DSV16X_THREAD_STACK_SIZE);
 	struct k_thread thread;
-	struct k_sem gpio_sem;
+	struct k_sem intr_sem;
 #elif defined(CONFIG_LSM6DSV16X_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
 #endif
 #endif /* CONFIG_LSM6DSV16X_TRIGGER */
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+	struct i3c_device_desc *i3c_dev;
+#endif
 };
 
 #if defined(CONFIG_LSM6DSV16X_SENSORHUB)

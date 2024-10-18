@@ -787,6 +787,21 @@ static int lsm6dsv16x_init_chip(const struct device *dev)
 	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
 	uint8_t chip_id;
 	uint8_t odr, fs;
+	lsm6dsv16x_reset_t rst;
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+	if (cfg->i3c.bus != NULL) {
+		/*
+		 * Need to grab the pointer to the I3C device descriptor
+		 * before we can talk to the sensor.
+		 */
+		lsm6dsv16x->i3c_dev = i3c_device_find(cfg->i3c.bus, &cfg->i3c.dev_id);
+		if (lsm6dsv16x->i3c_dev == NULL) {
+			LOG_ERR("Cannot find I3C device descriptor");
+			return -ENODEV;
+		}
+	}
+#endif
 
 	/* All registers except 0x01 are different between banks, including the WHO_AM_I
 	 * register and the register used for a SW reset.  If the lsm6dsv16x wasn't on the user
@@ -810,13 +825,26 @@ static int lsm6dsv16x_init_chip(const struct device *dev)
 		return -EIO;
 	}
 
-	/* reset device (sw_por) */
-	if (lsm6dsv16x_reset_set(ctx, LSM6DSV16X_GLOBAL_RST) < 0) {
-		return -EIO;
-	}
+	/* Resetting the whole device while using I3C will also reset the DA, therefore perform
+	 * only a software reset if the bus is I3C. It should be assumed that the device was
+	 * already fully reset by the I3C CCC RSTACT (whole chip) done as apart of the I3C Bus
+	 * initialization.
+	 */
+	if (ON_I3C_BUS(cfg)) {
+		/* Restore default configuration */
+		lsm6dsv16x_reset_set(ctx, LSM6DSV16X_RESTORE_CTRL_REGS);
+		do {
+			lsm6dsv16x_reset_get(ctx, &rst);
+		} while (rst != LSM6DSV16X_READY);
+	} else {
+		/* reset device (sw_por) */
+		if (lsm6dsv16x_reset_set(ctx, LSM6DSV16X_GLOBAL_RST) < 0) {
+			return -EIO;
+		}
 
-	/* wait 30ms as reported in AN5763 */
-	k_sleep(K_MSEC(30));
+		/* wait 30ms as reported in AN5763 */
+		k_sleep(K_MSEC(30));
+	}
 
 	fs = cfg->accel_range;
 	LOG_DBG("accel range is %d", fs);
@@ -965,16 +993,38 @@ static int lsm6dsv16x_init(const struct device *dev)
 	}
 
 /*
+ * Instantiation macros used when a device is on an I3C bus.
+ */
+
+#define LSM6DSV16X_CONFIG_I3C(inst)					\
+	{								\
+		STMEMSC_CTX_I3C(&lsm6dsv16x_config_##inst.stmemsc_cfg),	\
+		.stmemsc_cfg = {					\
+			.i3c = &lsm6dsv16x_data_##inst.i3c_dev,		\
+		},							\
+		.i3c.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),		\
+		.i3c.dev_id = I3C_DEVICE_ID_DT_INST(inst),		\
+		LSM6DSV16X_CONFIG_COMMON(inst)				\
+	}
+
+#define LSM6DSV16X_CONFIG_I3C_OR_I2C(inst)				\
+	COND_CODE_0(DT_INST_PROP_BY_IDX(inst, reg, 1),			\
+		    (LSM6DSV16X_CONFIG_I2C(inst)),			\
+		    (LSM6DSV16X_CONFIG_I3C(inst)))
+
+/*
  * Main instantiation macro. Use of COND_CODE_1() selects the right
  * bus-specific macro at preprocessor time.
  */
 
-#define LSM6DSV16X_DEFINE(inst)						\
+#define LSM6DSV16X_DEFINE(inst)							\
 	static struct lsm6dsv16x_data lsm6dsv16x_data_##inst;			\
 	static const struct lsm6dsv16x_config lsm6dsv16x_config_##inst =	\
-		COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
-			(LSM6DSV16X_CONFIG_SPI(inst)),			\
-			(LSM6DSV16X_CONFIG_I2C(inst)));			\
+		COND_CODE_1(DT_INST_ON_BUS(inst, spi),				\
+			(LSM6DSV16X_CONFIG_SPI(inst)),				\
+			(COND_CODE_1(DT_INST_ON_BUS(inst, i3c),			\
+				    (LSM6DSV16X_CONFIG_I3C_OR_I2C(inst)),	\
+				    (LSM6DSV16X_CONFIG_I2C(inst)))));		\
 	LSM6DSV16X_DEVICE_INIT(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(LSM6DSV16X_DEFINE)
