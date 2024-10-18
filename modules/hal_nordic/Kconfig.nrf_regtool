@@ -26,11 +26,4 @@ config NRF_REGTOOL_VERBOSITY
 	  3. Print even more details, which are typically only useful for
 	     nrf-regtool developers.
 
-config NRF_REGTOOL_EXTRA_GENERATE_ARGS
-	string "Extra arguments to 'nrf-regtool generate'"
-	help
-	  List of additional arguments to every nrf-regtool invocation used for
-	  generating hex files. Example value: "--fill all --fill-byte 0xff".
-	  Run "nrf-regtool generate -h" to see all of the available options.
-
 endmenu
