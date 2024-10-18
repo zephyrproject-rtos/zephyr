@@ -1,7 +1,4 @@
-.. _rak4631_nrf52840:
-
-RAK4631
-#######
+.. zephyr:board:: rak4631
 
 Overview
 ********
@@ -15,10 +12,6 @@ to the older SX127x series a lower power consumption at
 the same TX power. This makes the RAK4631 an ultra-low
 power communication solution. RAK4631 can be comfortably
 programmed with ZephyrRTOS.
-
-.. image:: img/rak4631-front-parts.jpg
-     :align: center
-     :alt: RAK4631-NRF52840
 
 Hardware
 ********
