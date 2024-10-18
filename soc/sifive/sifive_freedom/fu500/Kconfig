@@ -5,17 +5,21 @@
 config SOC_SERIES_SIFIVE_FREEDOM_FU500
 	bool
 
+	select 64BIT
+
 	# RISC-V options
 	select RISCV
 	select RISCV_PRIVILEGED
 	select RISCV_HAS_PLIC
+	select RISCV_PMP
+
 	select RISCV_ISA_RV64I
 	select RISCV_ISA_EXT_M
 	select RISCV_ISA_EXT_A
 	select RISCV_ISA_EXT_C
 	select RISCV_ISA_EXT_ZICSR
 	select RISCV_ISA_EXT_ZIFENCEI
-	imply XIP
+
 	select SOC_EARLY_INIT_HOOK
-	select 64BIT
 	select INCLUDE_RESET_VECTOR
+	imply XIP
