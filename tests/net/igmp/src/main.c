@@ -183,12 +183,13 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		zassert_false(is_igmpv2_query_sent, "IGMPv3 response to IGMPv2 request");
 
 #if defined(CONFIG_NET_IPV4_IGMPV3)
-		zassert_true(ntohs(igmp_header->groups_len) == 1,
-			     "Invalid group length of IGMPv3 report (%d)", igmp_header->groups_len);
+		zassert_equal(ntohs(igmp_header->groups_len), 1,
+			      "Invalid group length of IGMPv3 report (%d)",
+			      igmp_header->groups_len);
 
 		igmp_group_record = get_igmp_group_record(pkt);
-		zassert_true(igmp_group_record->sources_len == 0,
-			     "Invalid sources length of IGMPv3 group record");
+		zassert_equal(igmp_group_record->sources_len, 0,
+			      "Invalid sources length of IGMPv3 group record");
 
 		if (igmp_group_record->type == IGMPV3_CHANGE_TO_EXCLUDE_MODE) {
 			is_join_msg_ok = true;
@@ -334,7 +335,7 @@ static void join_group(void)
 		zassert_true(ret == 0 || ret == -EALREADY,
 			     "Cannot join IPv4 multicast group");
 	} else {
-		zassert_equal(ret, 0, "Cannot join IPv4 multicast group");
+		zassert_ok(ret, "Cannot join IPv4 multicast group");
 	}
 
 	/* Let the network stack to proceed */
@@ -347,7 +348,7 @@ static void leave_group(void)
 
 	ret = net_ipv4_igmp_leave(net_iface, &mcast_addr);
 
-	zassert_equal(ret, 0, "Cannot leave IPv4 multicast group");
+	zassert_ok(ret, "Cannot leave IPv4 multicast group");
 
 	if (IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)) {
 		/* Let the network stack to proceed */
@@ -365,13 +366,9 @@ static void catch_join_group(void)
 
 	join_group();
 
-	if (k_sem_take(&wait_data, K_MSEC(WAIT_TIME))) {
-		zassert_true(0, "Timeout while waiting join event");
-	}
+	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Timeout while waiting join event");
 
-	if (!is_group_joined) {
-		zassert_true(0, "Did not catch join event");
-	}
+	zassert_true(is_group_joined, "Did not catch join event");
 
 	is_group_joined = false;
 }
@@ -382,13 +379,9 @@ static void catch_leave_group(void)
 
 	leave_group();
 
-	if (k_sem_take(&wait_data, K_MSEC(WAIT_TIME))) {
-		zassert_true(0, "Timeout while waiting leave event");
-	}
+	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Timeout while waiting leave event");
 
-	if (!is_group_left) {
-		zassert_true(0, "Did not catch leave event");
-	}
+	zassert_true(is_group_left, "Did not catch leave event");
 
 	is_group_left = false;
 }
@@ -401,13 +394,9 @@ static void verify_join_group(void)
 
 	join_group();
 
-	if (k_sem_take(&wait_data, K_MSEC(WAIT_TIME))) {
-		zassert_true(0, "Timeout while waiting join event");
-	}
+	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Timeout while waiting join event");
 
-	if (!is_join_msg_ok) {
-		zassert_true(0, "Join msg invalid");
-	}
+	zassert_true(is_join_msg_ok, "Join msg invalid");
 
 	is_join_msg_ok = false;
 }
@@ -418,13 +407,9 @@ static void verify_leave_group(void)
 
 	leave_group();
 
-	if (k_sem_take(&wait_data, K_MSEC(WAIT_TIME))) {
-		zassert_true(0, "Timeout while waiting leave event");
-	}
+	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Timeout while waiting leave event");
 
-	if (!is_leave_msg_ok) {
-		zassert_true(0, "Leave msg invalid");
-	}
+	zassert_true(is_leave_msg_ok, "Leave msg invalid");
 
 	is_leave_msg_ok = false;
 }
@@ -464,19 +449,19 @@ static void socket_group_with_address(struct in_addr *local_addr, bool do_join)
 
 	ret = zsock_setsockopt(fd, IPPROTO_IP, option,
 			       NULL, sizeof(mreqn));
-	zassert_true(ret == -1 && errno == EINVAL,
-		     "Incorrect return value (%d)", -errno);
+	zassert_equal(ret, -1, "Incorrect return value (%d)", ret);
+	zassert_equal(errno, EINVAL, "Incorrect errno value (%d)", -errno);
 
 	ret = zsock_setsockopt(fd, IPPROTO_IP, option,
 			       (void *)&mreqn, 1);
-	zassert_true(ret == -1 && errno == EINVAL,
-		     "Incorrect return value (%d)", -errno);
+	zassert_equal(ret, -1, "Incorrect return value (%d)", ret);
+	zassert_equal(errno, EINVAL, "Incorrect errno value (%d)", -errno);
 
 	/* First try with empty mreqn */
 	ret = zsock_setsockopt(fd, IPPROTO_IP, option,
 			       (void *)&mreqn, sizeof(mreqn));
-	zassert_true(ret == -1 && errno == EINVAL,
-		     "Incorrect return value (%d)", -errno);
+	zassert_equal(ret, -1, "Incorrect return value (%d)", ret);
+	zassert_equal(errno, EINVAL, "Incorrect errno value (%d)", -errno);
 
 	memcpy(&mreqn.imr_address, local_addr, sizeof(mreqn.imr_address));
 	memcpy(&mreqn.imr_multiaddr, &mcast_addr, sizeof(mreqn.imr_multiaddr));
@@ -487,17 +472,15 @@ static void socket_group_with_address(struct in_addr *local_addr, bool do_join)
 	if (do_join) {
 		if (ignore_already) {
 			zassert_true(ret == 0 || ret == -EALREADY,
-				     "Cannot join IPv4 multicast group (%d)",
-				     -errno);
+				     "Cannot join IPv4 multicast group (%d)", -errno);
 		} else {
-			zassert_equal(ret, 0,
-				      "Cannot join IPv4 multicast group (%d) "
-				      "with local addr %s",
-				      -errno, net_sprint_ipv4_addr(local_addr));
+			zassert_ok(ret,
+				   "Cannot join IPv4 multicast group (%d) "
+				   "with local addr %s",
+				   -errno, net_sprint_ipv4_addr(local_addr));
 		}
 	} else {
-		zassert_equal(ret, 0, "Cannot leave IPv4 multicast group (%d)",
-			      -errno);
+		zassert_ok(ret, "Cannot leave IPv4 multicast group (%d)", -errno);
 
 		if (IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)) {
 			/* Let the network stack to proceed */
@@ -537,16 +520,12 @@ static void socket_group_with_index(struct in_addr *local_addr, bool do_join)
 	if (do_join) {
 		if (ignore_already) {
 			zassert_true(ret == 0 || ret == -EALREADY,
-				     "Cannot join IPv4 multicast group (%d)",
-				     -errno);
+				     "Cannot join IPv4 multicast group (%d)", -errno);
 		} else {
-			zassert_equal(ret, 0,
-				      "Cannot join IPv4 multicast group (%d)",
-				      -errno);
+			zassert_ok(ret, "Cannot join IPv4 multicast group (%d)", -errno);
 		}
 	} else {
-		zassert_equal(ret, 0, "Cannot leave IPv4 multicast group (%d)",
-			      -errno);
+		zassert_ok(ret, "Cannot leave IPv4 multicast group (%d)", -errno);
 
 		if (IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)) {
 			/* Let the network stack to proceed */
