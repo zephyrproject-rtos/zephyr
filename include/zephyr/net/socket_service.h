@@ -81,8 +81,6 @@ struct net_socket_service_desc {
 #define __z_net_socket_svc_get_idx(_svc_id) __z_net_socket_service_idx_##_svc_id
 #define __z_net_socket_svc_get_owner __FILE__ ":" STRINGIFY(__LINE__)
 
-extern void net_socket_service_callback(struct k_work *work);
-
 #if CONFIG_NET_SOCKETS_LOG_LEVEL >= LOG_LEVEL_DBG
 #define NET_SOCKET_SERVICE_OWNER .owner = __z_net_socket_svc_get_owner,
 #else
