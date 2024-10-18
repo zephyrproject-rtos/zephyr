@@ -16,6 +16,7 @@ import mock
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
+from pylib.twister.twisterlib.platform import Simulator
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
 from twisterlib.error import BuildError
@@ -25,12 +26,12 @@ from expr_parser import reserved
 
 
 TESTDATA_PART_1 = [
-    (False, False, "console", "na", "qemu", False, [], (False, True)),
+    (False, False, "console", None, "qemu", False, [], (False, True)),
     (False, False, "console", "native", "qemu", False, [], (False, True)),
     (True, False, "console", "native", "nsim", False, [], (True, False)),
     (True, True, "console", "native", "renode", False, [], (True, False)),
     (False, False, "sensor", "native", "", False, [], (True, False)),
-    (False, False, "sensor", "na", "", False, [], (True, False)),
+    (False, False, "sensor", None, "", False, [], (True, False)),
     (False, True, "sensor", "native", "", True, [], (True, False)),
 ]
 @pytest.mark.parametrize(
@@ -62,13 +63,13 @@ def test_check_build_or_run(
     class_testplan.platforms = platforms_list
     platform = class_testplan.get_platform("demo_board_2")
     platform.type = platform_type
-    platform.simulation = platform_sim
+    platform.simulators = [Simulator({"name": platform_sim})] if platform_sim else []
     testsuite.harness = harness
     testsuite.build_only = build_only
     testsuite.slow = slow
 
     testinstance = TestInstance(testsuite, platform, class_testplan.env.outdir)
-    run = testinstance.check_runnable(slow, device_testing, fixture)
+    run = testinstance.check_runnable(slow, device_testing, platform_sim, fixture)
     _, r = expected
     assert run == r
 
@@ -448,9 +449,9 @@ TESTDATA_4 = [
     (True, mock.ANY, mock.ANY, mock.ANY, None, [], False),
     (False, True, mock.ANY, mock.ANY, 'device', [], True),
     (False, False, 'qemu', mock.ANY, 'qemu', ['QEMU_PIPE=1'], True),
-    (False, False, 'dummy sim', mock.ANY, 'dummy sim', [], True),
-    (False, False, 'na', 'unit', 'unit', ['COVERAGE=1'], True),
-    (False, False, 'na', 'dummy type', '', [], False),
+    (False, False, 'armfvp', mock.ANY, 'armfvp', [], True),
+    (False, False, None, 'unit', 'unit', ['COVERAGE=1'], True),
+    (False, False, None, 'dummy type', '', [], False),
 ]
 
 @pytest.mark.parametrize(
@@ -472,13 +473,13 @@ def test_testinstance_setup_handler(
     expected_handler_ready
 ):
     testinstance.handler = mock.Mock() if preexisting_handler else None
-    testinstance.platform.simulation = platform_sim
-    testinstance.platform.simulation_exec = 'dummy exec'
+    testinstance.platform.simulators = [Simulator({"name": platform_sim, "exec": 'dummy exec'})] if platform_sim else []
     testinstance.testsuite.type = testsuite_type
     env = mock.Mock(
         options=mock.Mock(
             device_testing=device_testing,
-            enable_coverage=True
+            enable_coverage=True,
+            sim_name=platform_sim,
         )
     )
 
@@ -539,15 +540,14 @@ def test_testinstance_check_runnable(
     hardware_map,
     expected
 ):
-    testinstance.platform.simulation = platform_sim
-    testinstance.platform.simulation_exec = platform_sim_exec
+    testinstance.platform.simulators = [Simulator({"name": platform_sim, "exec": platform_sim_exec})]
     testinstance.testsuite.build_only = testsuite_build_only
     testinstance.testsuite.slow = testsuite_slow
     testinstance.testsuite.harness = testsuite_harness
 
     with mock.patch('os.name', os_name), \
          mock.patch('shutil.which', return_value=exec_exists):
-        res = testinstance.check_runnable(enable_slow, filter, fixtures, hardware_map)
+        res = testinstance.check_runnable(enable_slow, filter, fixtures,  platform_sim, hardware_map)
 
     assert res == expected
 
