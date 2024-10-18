@@ -1,7 +1,4 @@
-.. _bl5340_dvk:
-
-Ezurio BL5340 DVK
-#################
+.. zephyr:board:: bl5340_dvk
 
 Overview
 ********
@@ -42,12 +39,6 @@ This development kit has the following features:
 * :abbr:`UARTE (Universal asynchronous receiver-transmitter)`
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
-
-.. figure:: img/bl5340_dvk_top.jpg
-     :align: center
-     :alt: BL5340 DVK
-
-     BL5340 DVK (Credit: Ezurio)
 
 More information about the module can be found on the
 `BL5340 homepage`_.
