@@ -8,6 +8,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_shell);
 
+#include <zephyr/net/conn_mgr_monitor.h>
+
 #include "net_shell_private.h"
 
 #if defined(CONFIG_NET_TCP)
@@ -296,6 +298,31 @@ static int cmd_net_conn(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_net_online_check(const struct shell *sh,
+				size_t argc, char *argv[])
+{
+	bool done;
 
-SHELL_SUBCMD_ADD((net), conn, NULL, "Print information about network connections.",
+	done = conn_mgr_trigger_online_connectivity_check();
+	if (!done) {
+		PR("Check %sstarted.\n", "not ");
+		PR_INFO("Set %s to enable %s support.\n",
+		"CONFIG_NET_CONNECTION_MANAGER",
+		"connection manager");
+	} else {
+		PR("Check %sstarted.\n", "");
+	}
+
+	return 0;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_conn,
+	SHELL_CMD(check, NULL,
+		  "'net conn check' trigger online connectivity check.",
+		  cmd_net_online_check),
+	SHELL_SUBCMD_SET_END
+);
+
+SHELL_SUBCMD_ADD((net), conn, &net_cmd_conn,
+		 "Print information about network connections.",
 		 cmd_net_conn, 1, 0);
