@@ -1190,3 +1190,14 @@ test_i2c_hs400x: hs400x@a6 {
 	compatible = "renesas,hs400x";
 	reg = <0xa6>;
 };
+
+test_i2c_lis2duxs12: lis2duxs12@a7 {
+	compatible = "st,lis2duxs12";
+	reg = <0xa7>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+	range = <LIS2DUX12_DT_FS_16G>;
+	odr = <LIS2DUX12_DT_ODR_100Hz>;
+	power-mode = <LIS2DUX12_OPER_MODE_HIGH_FREQUENCY>;
+	status = "okay";
+};
