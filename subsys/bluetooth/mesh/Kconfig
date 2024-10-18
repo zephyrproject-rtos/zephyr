@@ -1455,12 +1455,13 @@ endmenu # Proxy
 choice BT_MESH_CRYPTO_LIB
 	prompt "Crypto library:"
 	default BT_MESH_USES_TFM_PSA if BUILD_WITH_TFM
-	default BT_MESH_USES_TINYCRYPT
+	default BT_MESH_USES_MBEDTLS_PSA
 	help
 	  Crypto library selection for mesh security.
 
 config BT_MESH_USES_TINYCRYPT
-	bool "TinyCrypt"
+	bool "TinyCrypt [DEPRECATED]"
+	select DEPRECATED
 	select TINYCRYPT
 	select TINYCRYPT_AES
 	select TINYCRYPT_AES_CMAC
@@ -1475,9 +1476,8 @@ config BT_MESH_USES_MBEDTLS_PSA
 	bool "mbed TLS PSA [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	select MBEDTLS
-	select MBEDTLS_ENTROPY_C
 	select MBEDTLS_PSA_CRYPTO_C
-	select MBEDTLS_USE_PSA_CRYPTO
+	select MBEDTLS_ENTROPY_C
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
@@ -1497,20 +1497,18 @@ config BT_MESH_USES_MBEDTLS_PSA
 	select PSA_WANT_ECC_SECP_R1_256
 	select MBEDTLS_PK_WRITE_C
 	help
-	  Use mbed TLS library to perform crypto operations. Support of
-	  mbed TLS and PSA is experimental and only BabbleSim tests were run.
-	  Mbed TLS still does not support ITS (internal trust storage) based
-	  on Zephyr's settings subsystem.
-	  Not possible to use for embedded devices yet.
+	  Use Mbed TLS as PSA Crypto API provider. This is useful on platforms
+	  that do not support TF-M.
+	  This feature is experimental and only BabbleSim tests were run.
 
 config BT_MESH_USES_TFM_PSA
 	bool "Use TF-M PSA [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	depends on BUILD_WITH_TFM
 	help
-	  Use TF-M that implements PSA security framework. Support of TF-M is
-	  experimental. It is only possible to use with platforms that TF-M supports.
-	  For more platform details see TF-M documentation.
+	  Use TF-M as PSA Crypto API provider. This is only possible on platforms
+	  that support TF-M.
+	  This feature is experimental.
 
 endchoice
 
