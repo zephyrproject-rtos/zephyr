@@ -30,6 +30,7 @@
 	pinctrl-names = "default", "sleep";
 	overrun-character = <0x00>;
 	memory-regions = <&cpuapp_dma_region>;
+	zephyr,pm-device-runtime-auto;
 	slow@0 {
 		compatible = "test-spi-loopback-slow";
 		reg = <0>;

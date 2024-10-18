@@ -8,6 +8,7 @@
 #include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/cache.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
 #include <soc.h>
@@ -86,6 +87,9 @@ static inline void finalize_spi_transaction(const struct device *dev, bool deact
 
 	if (NRF_SPIM_IS_320MHZ_SPIM(reg) && !(dev_data->ctx.config->operation & SPI_HOLD_ON_CS)) {
 		nrfy_spim_disable(reg);
+	}
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_put(dev);
 	}
 }
 
@@ -457,6 +461,9 @@ static int transceive(const struct device *dev,
 	void *reg = dev_config->spim.p_reg;
 	int error;
 
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_get(dev);
+	}
 	spi_context_lock(&dev_data->ctx, asynchronous, cb, userdata, spi_cfg);
 
 	error = configure(dev, spi_cfg);
@@ -568,21 +575,20 @@ static const struct spi_driver_api spi_nrfx_driver_api = {
 	.release = spi_nrfx_release,
 };
 
-#ifdef CONFIG_PM_DEVICE
 static int spim_nrfx_pm_action(const struct device *dev,
 			       enum pm_device_action action)
 {
-	int ret = 0;
+	int ret = -ENOTSUP;
 	struct spi_nrfx_data *dev_data = dev->data;
 	const struct spi_nrfx_config *dev_config = dev->config;
 
 	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+		ret = 0;
+		break;
 	case PM_DEVICE_ACTION_RESUME:
 		ret = pinctrl_apply_state(dev_config->pcfg,
 					  PINCTRL_STATE_DEFAULT);
-		if (ret < 0) {
-			return ret;
-		}
 		/* nrfx_spim_init() will be called at configuration before
 		 * the next transfer.
 		 */
@@ -596,19 +602,14 @@ static int spim_nrfx_pm_action(const struct device *dev,
 
 		ret = pinctrl_apply_state(dev_config->pcfg,
 					  PINCTRL_STATE_SLEEP);
-		if (ret < 0) {
-			return ret;
-		}
 		break;
 
 	default:
-		ret = -ENOTSUP;
+		break;
 	}
 
 	return ret;
 }
-#endif /* CONFIG_PM_DEVICE */
-
 
 static int spi_nrfx_init(const struct device *dev)
 {
@@ -643,10 +644,12 @@ static int spi_nrfx_init(const struct device *dev)
 	spi_context_unlock_unconditionally(&dev_data->ctx);
 
 #ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
-	return anomaly_58_workaround_init(dev);
-#else
-	return 0;
+	err = anomaly_58_workaround_init(dev);
+	if (err < 0) {
+		return err;
+	}
 #endif
+	return pm_device_driver_init(dev, spim_nrfx_pm_action);
 }
 /*
  * We use NODELABEL here because the nrfx API requires us to call
