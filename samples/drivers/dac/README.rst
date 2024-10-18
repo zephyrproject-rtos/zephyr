@@ -21,7 +21,7 @@ overlays in :zephyr_file:`samples/drivers/dac/boards` for examples.
 Building and Running for ST Nucleo L073RZ
 =========================================
 The sample can be built and executed for the
-:ref:`nucleo_l073rz_board` as follows:
+:zephyr:board:`nucleo_l073rz` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
@@ -32,7 +32,7 @@ The sample can be built and executed for the
 Building and Running for ST Nucleo L152RE
 =========================================
 The sample can be built and executed for the
-:ref:`nucleo_l152re_board` as follows:
+:zephyr:board:`nucleo_l152re` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
@@ -43,7 +43,7 @@ The sample can be built and executed for the
 Building and Running for ST Nucleo F767ZI
 =========================================
 The sample can be built and executed for the
-:ref:`nucleo_f767zi_board` as follows:
+:zephyr:board:`nucleo_f767zi` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
@@ -54,7 +54,7 @@ The sample can be built and executed for the
 Building and Running for ST Disco F3
 =========================================
 The sample can be built and executed for the
-:ref:`stm32f3_disco_board` as follows:
+:zephyr:board:`stm32f3_disco` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
@@ -65,7 +65,7 @@ The sample can be built and executed for the
 Building and Running for ST Nucleo F429ZI
 =========================================
 The sample can be built and executed for the
-:ref:`nucleo_f429zi_board` as follows:
+:zephyr:board:`nucleo_f429zi` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
@@ -76,7 +76,7 @@ The sample can be built and executed for the
 Building and Running for STM32L562E DK
 ======================================
 The sample can be built and executed for the
-:ref:`stm32l562e_dk_board` as follows:
+:zephyr:board:`stm32l562e_dk` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac
@@ -87,7 +87,7 @@ The sample can be built and executed for the
 Building and Running for ST Nucleo L552ZE Q
 ===========================================
 The sample can be built and executed for the
-:ref:`nucleo_l552ze_q_board` as follows:
+:zephyr:board:`nucleo_l552ze_q` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac

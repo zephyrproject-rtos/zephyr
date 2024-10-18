@@ -1,7 +1,4 @@
-.. _stm32l4r9i_disco_board:
-
-ST STM32L4R9I Discovery
-#######################
+.. zephyr:board:: stm32l4r9i_disco
 
 Overview
 ********
@@ -17,10 +14,6 @@ support for AMOLED DSI round LCD display.
 
 For even more user-friendliness, the on-board ST-LINK/V2-1 debugger provides out-of-the-box
 programming and debugging capabilities.
-
-.. image:: img/stm32l4r9i_disco.jpg
-    :align: center
-    :alt: STM32L4R9I-DISCO
 
 More information about the board can be found at the `STM32L4R9I-DISCOVERY website`_.
 More information about STM32L4R9 can be found here:

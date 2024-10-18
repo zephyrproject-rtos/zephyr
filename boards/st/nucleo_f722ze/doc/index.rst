@@ -1,7 +1,4 @@
-.. _nucleo_f722ze_board:
-
-ST Nucleo F722ZE
-################
+.. zephyr:board:: nucleo_f722ze
 
 Overview
 ********
@@ -22,11 +19,6 @@ Key Features:
    - ST Morpho connector
 - On-board ST-LINK debugger/programmer
 - Flexible power supply options, including ST-LINK VBUS and external sources.
-
-.. image:: img/nucleo_f722ze.jpg
-   :width: 800px
-   :align: center
-   :alt: Nucleo F722ZE
 
 Hardware
 ********

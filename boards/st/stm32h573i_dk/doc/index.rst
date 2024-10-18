@@ -1,7 +1,4 @@
-.. _stm32h573i_dk_board:
-
-ST STM32H573I-DK Discovery
-##########################
+.. zephyr:board:: stm32h573i_dk
 
 Overview
 ********
@@ -42,10 +39,6 @@ the STM32H573I-DK Discovery board:
 
 - 4 user LEDs
 - User and reset push-buttons
-
-.. image:: img/stm32h573i_dk.jpg
-   :align: center
-   :alt: STM32H573I-DK Discovery
 
 More information about the board can be found at the `STM32H573I-DK Discovery website`_.
 

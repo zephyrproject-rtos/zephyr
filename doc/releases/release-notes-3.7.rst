@@ -414,12 +414,12 @@ Boards & SoC Support
   * Added support for :zephyr:board:`Mikroe RA4M1 Clicker board <mikroe_clicker_ra4m1>`: ``mikroe_clicker_ra4m1``.
   * Added support for :ref:`Arduino UNO R4 WiFi board <arduino_uno_r4>`: ``arduino_uno_r4_wifi``.
   * Added support for :ref:`Renesas EK-RA8M1 board <ek_ra8m1>`: ``ek_ra8m1``.
-  * Added support for :ref:`ST Nucleo H533RE <nucleo_h533re_board>`: ``nucleo_h533re``.
-  * Added support for :ref:`ST STM32C0116-DK Discovery Kit <stm32c0116_dk_board>`: ``stm32c0116_dk``.
-  * Added support for :ref:`ST STM32H745I Discovery <stm32h745i_disco_board>`: ``stm32h745i_disco``.
-  * Added support for :ref:`ST STM32H7S78-DK Discovery <stm32h7s78_dk_board>`: ``stm32h7s78_dk``.
-  * Added support for :ref:`ST STM32L152CDISCOVERY board <stm32l1_disco_board>`: ``stm32l152c_disco``.
-  * Added support for :ref:`ST STEVAL STWINBX1 Development kit <steval_stwinbx1_board>`: ``steval_stwinbx1``.
+  * Added support for :zephyr:board:`ST Nucleo H533RE <nucleo_h533re>`: ``nucleo_h533re``.
+  * Added support for :zephyr:board:`ST STM32C0116-DK Discovery Kit <stm32c0116_dk>`: ``stm32c0116_dk``.
+  * Added support for :zephyr:board:`ST STM32H745I Discovery <stm32h745i_disco>`: ``stm32h745i_disco``.
+  * Added support for :zephyr:board:`ST STM32H7S78-DK Discovery <stm32h7s78_dk>`: ``stm32h7s78_dk``.
+  * Added support for :zephyr:board:`ST STM32L152CDISCOVERY board <stm32l1_disco>`: ``stm32l152c_disco``.
+  * Added support for :zephyr:board:`ST STEVAL STWINBX1 Development kit <steval_stwinbx1>`: ``steval_stwinbx1``.
   * Added support for NXP boards: ``frdm_mcxn947``, ``ke17z512``, ``rd_rw612_bga``, ``frdm_rw612``, ``frdm_ke15z``, ``frdm_ke17z``
   * Added support for :ref:`Synopsys ARC-V RMX1xx nSIM-based simulation platform <nsim_arc_v>`: ``nsim_arc_v/rmx100``.
   * Added support for :zephyr:board:`Analog Devices MAX32690EVKIT <max32690evkit>`: ``max32690evkit``.
@@ -441,7 +441,7 @@ Boards & SoC Support
 
 * Made these board changes:
 
-  * On :ref:`ST STM32H7B3I Discovery Kit <stm32h7b3i_dk_board>`: ``stm32h7b3i_dk_board``,
+  * On :zephyr:board:`ST STM32H7B3I Discovery Kit <stm32h7b3i_dk>`: ``stm32h7b3i_dk``,
     enabled full cache management, Chrom-ART, double frame buffer and full refresh for
     optimal LVGL performance.
   * On ST STM32 boards, stm32cubeprogrammer runner can now be used to program external

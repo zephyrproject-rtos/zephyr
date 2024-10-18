@@ -1,7 +1,4 @@
-.. _stm32wb5mm_dk_discovery_kit:
-
-ST STM32WB5MM-DK
-################
+.. zephyr:board:: stm32wb5mm_dk
 
 Overview
 ********
@@ -46,10 +43,6 @@ STM32WB5MM-DK supports the following features:
 * On-board ST-LINK/V2-1 debugger/programmer with USB re-enumeration
     - Virtual COM port and debug port
 
-
-.. image:: img/STM32WB5MM_DK.jpg
-   :align: center
-   :alt: STM32WB5MM-DK
 
 More information about the board can be found in `STM32WB5MM-DK on www.st.com`_.
 

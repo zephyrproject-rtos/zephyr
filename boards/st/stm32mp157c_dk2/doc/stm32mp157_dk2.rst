@@ -1,7 +1,4 @@
-.. _stm32mp157c_dk2_board:
-
-ST STM32MP157C-DK2 Discovery
-############################
+.. zephyr:board:: stm32mp157c_dk2
 
 Overview
 ********
@@ -45,10 +42,6 @@ Zephyr OS is ported to run on the Cortex®-M4 core.
     touch panel
   - Wi-Fi® 802.11b/g/n
   - Bluetooth® Low Energy 4.1
-
-.. image:: img/en.stm32mp157c-dk2.jpg
-     :align: center
-     :alt: STM32MP157C-DK2 Discovery
 
 More information about the board can be found at the
 `STM32P157C Discovery website`_.

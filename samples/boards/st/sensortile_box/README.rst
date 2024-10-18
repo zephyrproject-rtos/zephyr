@@ -27,7 +27,7 @@ through USB. The board declares itself as a USB CDC class device.
 References
 **********
 
-- :ref:`sensortile_box`
+- :zephyr:board:`sensortile_box`
 
 Building and Running
 ********************
@@ -40,7 +40,7 @@ Build and flash the sample in the following way:
     :goals: build flash
 
 Please note that flashing the board requires a few preliminary steps described
-in :ref:`sensortile_box`.
+in :zephyr:board:`sensortile_box`.
 
 Then, power cycle the board by disconnecting and reconnecting the USB cable.
 Run your favorite terminal program to listen for output.

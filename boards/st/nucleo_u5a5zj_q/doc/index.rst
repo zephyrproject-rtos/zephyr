@@ -1,7 +1,4 @@
-.. _nucleo_u5a5zj_q_board:
-
-ST Nucleo U5A5ZJ Q
-##################
+.. zephyr:board:: nucleo_u5a5zj_q
 
 Overview
 ********

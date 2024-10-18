@@ -1,7 +1,4 @@
-.. _nucleo_l433rc_board:
-
-ST Nucleo L433RC
-################
+.. zephyr:board:: nucleo_l433rc_p
 
 Overview
 ********
@@ -20,10 +17,6 @@ some highlights of the Nucleo L433RC board:
 
 - Three LEDs: USB communication (LD1), power LED (LD3), user LED (LD4)
 - One push-button: RESET
-
-.. image:: img/nucleo_l433rc_p.jpg
-  :align: center
-  :alt: Nucleo L433RC
 
 More information about the board can be found at the `Nucleo L433RC-P website`_.
 

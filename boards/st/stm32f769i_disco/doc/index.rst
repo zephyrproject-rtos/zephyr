@@ -1,7 +1,4 @@
-.. _stm32f769i_disco_board:
-
-ST STM32F769I Discovery
-#######################
+.. zephyr:board:: stm32f769i_disco
 
 Overview
 ********
@@ -39,10 +36,6 @@ and high-speed connectivity features. Important board features include:
 - Arduino Uno V3 connectors
 - Comprehensive free software including a variety of examples, part of the STM32Cube package
 - Supported by a wide choice of integrated development environments
-
-.. image:: img/stm32f769i_disco.jpg
-     :align: center
-     :alt: STM32F769I-DISCO
 
 More information about the board can be found at the `32F769I-DISCO website`_.
 
