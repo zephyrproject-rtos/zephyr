@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2024 Realtek Semiconductor Corporation, SIBG-SD7
+#
+
+config UART_RTS5912
+	bool "UART driver for Realtek RTS5912 EC"
+	default y
+	depends on DT_HAS_REALTEK_RTS5912_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select PINCTRL
+	select CLOCK_CONTROL
+	help
+	  This option enables the UART driver for Realtek RTS591x EC.
+	  Say y if you wish to use serial port on Realtek RTS591x EC.
