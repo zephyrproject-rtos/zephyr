@@ -61,10 +61,7 @@ static void test_ase_snk_state_transition_before(void *f)
 	};
 	int err;
 
-	err = bt_bap_unicast_server_register(&param);
-	zassert_equal(err, 0, "unexpected err response %d", err);
-
-	err = bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+	err = bt_bap_unicast_server_register(&param, &mock_bap_unicast_server_cb);
 	zassert_equal(err, 0, "unexpected err response %d", err);
 
 	memset(fixture, 0, sizeof(struct test_ase_state_transition_fixture));
@@ -87,10 +84,7 @@ static void test_ase_src_state_transition_before(void *f)
 	};
 	int err;
 
-	err = bt_bap_unicast_server_register(&param);
-	zassert_equal(err, 0, "unexpected err response %d", err);
-
-	err = bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+	err = bt_bap_unicast_server_register(&param, &mock_bap_unicast_server_cb);
 	zassert_equal(err, 0, "unexpected err response %d", err);
 
 	memset(fixture, 0, sizeof(struct test_ase_state_transition_fixture));
@@ -107,14 +101,11 @@ static void test_ase_state_transition_after(void *f)
 {
 	int err;
 
-	err = bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
-	zassert_equal(err, 0, "unexpected err response %d", err);
-
-	err = bt_bap_unicast_server_unregister();
+	err = bt_bap_unicast_server_unregister(&mock_bap_unicast_server_cb);
 	while (err != 0) {
 		zassert_equal(err, -EBUSY, "unexpected err response %d", err);
 		k_sleep(K_MSEC(10));
-		err = bt_bap_unicast_server_unregister();
+		err = bt_bap_unicast_server_unregister(&mock_bap_unicast_server_cb);
 	}
 }
 
