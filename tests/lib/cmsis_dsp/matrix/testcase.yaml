@@ -23,7 +23,7 @@ tests:
       and CONFIG_FULL_LIBC_SUPPORTED) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2/an521/cpu1
-      - mps3/an547
+      - mps3/corstone300/an547
     tags:
       - cmsis-dsp
       - fpu
@@ -52,7 +52,7 @@ tests:
       and CONFIG_FULL_LIBC_SUPPORTED) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2/an521/cpu1
-      - mps3/an547
+      - mps3/corstone300/an547
     tags:
       - cmsis-dsp
       - fpu
@@ -81,7 +81,7 @@ tests:
       and CONFIG_FULL_LIBC_SUPPORTED) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2/an521/cpu1
-      - mps3/an547
+      - mps3/corstone300/an547
     tags:
       - cmsis-dsp
       - fpu
@@ -109,7 +109,7 @@ tests:
       and CONFIG_CPU_HAS_FPU and CONFIG_FULL_LIBC_SUPPORTED)
     integration_platforms:
       - mps2/an521/cpu1
-      - mps3/an547
+      - mps3/corstone300/an547
     tags:
       - cmsis-dsp
       - fpu
@@ -138,7 +138,7 @@ tests:
       and CONFIG_FULL_LIBC_SUPPORTED) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2/an521/cpu1
-      - mps3/an547
+      - mps3/corstone300/an547
     tags:
       - cmsis-dsp
       - fpu
@@ -167,7 +167,7 @@ tests:
       and CONFIG_FULL_LIBC_SUPPORTED) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2/an521/cpu1
-      - mps3/an547
+      - mps3/corstone300/an547
     tags:
       - cmsis-dsp
       - fpu
@@ -197,7 +197,7 @@ tests:
       and CONFIG_FULL_LIBC_SUPPORTED) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2/an521/cpu1
-      - mps3/an547
+      - mps3/corstone300/an547
     tags:
       - cmsis-dsp
       - fpu
@@ -228,7 +228,7 @@ tests:
       and CONFIG_FULL_LIBC_SUPPORTED) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2/an521/cpu1
-      - mps3/an547
+      - mps3/corstone300/an547
     tags:
       - cmsis-dsp
       - fpu
@@ -259,7 +259,7 @@ tests:
       and CONFIG_FULL_LIBC_SUPPORTED) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2/an521/cpu1
-      - mps3/an547
+      - mps3/corstone300/an547
     tags:
       - cmsis-dsp
       - fpu
@@ -288,7 +288,7 @@ tests:
       and CONFIG_CPU_HAS_FPU and CONFIG_FULL_LIBC_SUPPORTED)
     integration_platforms:
       - mps2/an521/cpu1
-      - mps3/an547
+      - mps3/corstone300/an547
     tags:
       - cmsis-dsp
       - fpu
@@ -318,7 +318,7 @@ tests:
       and CONFIG_FULL_LIBC_SUPPORTED) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2/an521/cpu1
-      - mps3/an547
+      - mps3/corstone300/an547
     tags:
       - cmsis-dsp
       - fpu
@@ -349,7 +349,7 @@ tests:
       and CONFIG_FULL_LIBC_SUPPORTED) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2/an521/cpu1
-      - mps3/an547
+      - mps3/corstone300/an547
     tags:
       - cmsis-dsp
       - fpu
