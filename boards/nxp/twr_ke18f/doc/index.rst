@@ -46,7 +46,7 @@ these NXP reference documents:
 Supported Features
 ==================
 
-The twr_ke18f board configuration supports the following hardware
+The ``twr_ke18f`` board target supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+

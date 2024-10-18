@@ -45,7 +45,7 @@ More information about STM32F103RC can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32f103_mini board configuration supports the following hardware features:
+The Zephyr ``stm32f103_mini`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

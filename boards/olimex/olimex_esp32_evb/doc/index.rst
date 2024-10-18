@@ -50,7 +50,7 @@ these reference documents:
 Supported Features
 ******************
 
-The olimex_esp32_evb board configuration supports the following hardware
+The ``olimex_esp32_evb`` board target supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+

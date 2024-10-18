@@ -72,7 +72,7 @@ The v2m_musca_b1 board provides the following user push buttons:
 Supported Features
 ===================
 
-The v2m_musca_b1 board configuration supports the following hardware features:
+The ``v2m_musca_b1`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

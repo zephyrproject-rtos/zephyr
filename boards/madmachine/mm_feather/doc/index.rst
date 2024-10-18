@@ -51,7 +51,7 @@ Hardware
 Supported Features
 ==================
 
-The mm_feather board configuration supports the following hardware
+The ``mm_feather`` board target supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+

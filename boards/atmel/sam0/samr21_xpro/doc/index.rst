@@ -30,7 +30,7 @@ Hardware
 Supported Features
 ==================
 
-The samr21_xpro board configuration supports the following hardware
+The ``samr21_xpro`` board target supports the following hardware
 features:
 
 +-----------+------------+--------------------------------------+
