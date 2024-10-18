@@ -1,18 +1,10 @@
-.. _beaglebone_ai64:
-
-BeagleBone AI-64
-################
+.. zephyr:board:: beaglebone_ai64
 
 Overview
 ********
 
 BeagleBone AI-64 is a computational platform powered by TI J721E SoC, which is
 targeted for automotive applications.
-
-.. figure:: assets/bbai_64.webp
-   :align: center
-   :width: 600px
-   :alt: BeagleBoard.org BeagleBone AI-64
 
 Hardware
 ********
