@@ -3,8 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig USB_DEVICE_STACK_NEXT
-	bool "New USB device stack [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "New USB device stack"
 	select UDC_DRIVER
 	imply HWINFO
 	help
