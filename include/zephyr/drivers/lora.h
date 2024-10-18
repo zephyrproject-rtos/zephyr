@@ -124,6 +124,14 @@ typedef void (*lora_recv_cb)(const struct device *dev, uint8_t *data, uint16_t s
 			     int16_t rssi, int8_t snr);
 
 /**
+ * @typedef lora_cad_cb()
+ * @brief Callback API for channel activity detection asynchronously
+ *
+ * @see lora_cad() for argument descriptions.
+ */
+typedef void (*lora_cad_cb)(const struct device *dev, bool detected);
+
+/**
  * @typedef lora_api_config()
  * @brief Callback API for configuring the LoRa module
  *
@@ -171,6 +179,23 @@ typedef int (*lora_api_recv)(const struct device *dev, uint8_t *data,
 typedef int (*lora_api_recv_async)(const struct device *dev, lora_recv_cb cb);
 
 /**
+ * @typedef lora_api_cad()
+ * @brief Callback API for channel activity detection
+ *
+ * @see lora_test_cw() for argument descriptions.
+ */
+typedef int (*lora_api_cad)(const struct device *dev, k_timeout_t timeout);
+
+/**
+ * @typedef lora_api_cad_async()
+ * @brief Callback API for channel activity detection asynchronously over LoRa
+ *
+ * @param dev Modem to receive data on.
+ * @param cb Callback to run on channel activity detection.
+ */
+typedef int (*lora_api_cad_async)(const struct device *dev, lora_cad_cb cb);
+
+/**
  * @typedef lora_api_test_cw()
  * @brief Callback API for transmitting a continuous wave
  *
@@ -185,6 +210,8 @@ __subsystem struct lora_driver_api {
 	lora_api_send_async send_async;
 	lora_api_recv recv;
 	lora_api_recv_async recv_async;
+	lora_api_cad cad;
+	lora_api_cad_async cad_async;
 	lora_api_test_cw test_cw;
 };
 
@@ -319,6 +346,43 @@ static inline int lora_test_cw(const struct device *dev, uint32_t frequency,
 	}
 
 	return api->test_cw(dev, frequency, tx_power, duration);
+}
+
+/**
+ * @brief Channel activity detection with timeout
+ *
+ * @note This blocks until CAD is complete.
+ *
+ * @param dev       LoRa device
+ * @param timeout   Duration to wait for a detection.
+ * @return 0 on channel free, negative on channel busy
+ */
+static inline int lora_cad(const struct device *dev, k_timeout_t timeout)
+{
+	const struct lora_driver_api *api = (const struct lora_driver_api *)dev->api;
+
+	return api->cad(dev, timeout);
+}
+
+/**
+ * @brief Channel activity detection asynchronously over LoRa
+ *
+ * Channel activity detection continuously under the configuration previously setup
+ * by @ref lora_config.
+ *
+ * Reception is cancelled by calling this function again with @p cb = NULL.
+ * This can be done within the callback handler.
+ *
+ * @param dev Modem to channel activity detection on.
+ * @param cb Callback to run on receiving data. If NULL, any pending
+ *	     asynchronous receptions will be cancelled.
+ * @return 0 when reception successfully setup, negative on error
+ */
+static inline int lora_cad_async(const struct device *dev, lora_cad_cb cb)
+{
+	const struct lora_driver_api *api = (const struct lora_driver_api *)dev->api;
+
+	return api->cad_async(dev, cb);
 }
 
 #ifdef __cplusplus
