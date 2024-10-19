@@ -543,4 +543,11 @@ config WIFI_NM_WPA_SUPPLICANT_CRYPTO_TEST
 	bool
 	depends on WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA
 
+config WIFI_NM_WPA_CTRL_RESP_TIMEOUT_S
+	int "WPA supplicant control interface response timeout in seconds"
+	default 15
+	help
+	  Timeout for the control interface commands to get a response from the
+	  supplicant.
+
 endif # WIFI_NM_WPA_SUPPLICANT
