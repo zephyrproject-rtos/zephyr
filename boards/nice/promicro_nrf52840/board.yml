@@ -1,0 +1,7 @@
+board:
+  name: promicro_nrf52840
+  full_name: Nice!Nano Pro Micro nRF52840
+  socs:
+  - name: nrf52840
+    variants:
+    - name: uf2
