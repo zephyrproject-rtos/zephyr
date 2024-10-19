@@ -9,9 +9,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/drivers/stepper.h>
-#include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
 
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_stepper_motor_controller, CONFIG_STEPPER_LOG_LEVEL);
 
 #define MAX_MICRO_STEP_RES STEPPER_MICRO_STEP_2
@@ -34,10 +34,10 @@ struct gpio_stepper_data {
 	uint8_t step_gap;
 	uint8_t coil_charge;
 	struct k_work_delayable stepper_dwork;
-	stepper_event_callback_t callback;
 	int32_t actual_position;
 	uint32_t delay_in_us;
 	int32_t step_count;
+	stepper_event_callback_t callback;
 	void *event_cb_user_data;
 };
 
@@ -84,7 +84,7 @@ static void update_remaining_steps(struct gpio_stepper_data *data)
 			LOG_WRN_ONCE("No callback set");
 			return;
 		}
-		data->callback(data->dev, STEPPER_EVENT_STEPS_COMPLETED);
+		data->callback(data->dev, STEPPER_EVENT_STEPS_COMPLETED, data->event_cb_user_data);
 	}
 }
 
