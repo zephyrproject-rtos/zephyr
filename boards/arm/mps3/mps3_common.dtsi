@@ -9,6 +9,7 @@
 #include <arm/armv8.1-m.dtsi>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <mem.h>
 
 / {
@@ -77,6 +78,13 @@
 		};
 	};
 
+	null_ptr_detect: null_ptr_detect@0 {
+		compatible = "zephyr,memory-region";
+		/* 0 - CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE> */
+		reg = <0x0 0x400>;
+		zephyr,memory-region = "NULL_PTR_DETECT";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_FLASH) )>;
+	};
 	/* DDR4 - 2G, alternates non-secure/secure every 256M */
 	ddr4: memory@60000000 {
 		device_type = "memory";
