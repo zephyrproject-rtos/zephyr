@@ -58,6 +58,7 @@ Getting Started
   | 🚀 `Getting Started Guide`_
   | 🙋🏽 `Tips when asking for help`_
   | 💻 `Code samples`_
+  | 🤖 `Ask Zephyr Guru`_
 
 Code and Development
 --------------------
@@ -107,3 +108,4 @@ Additional Resources
 .. _Security Advisories Repository: https://github.com/zephyrproject-rtos/zephyr/security
 .. _Tips when asking for help: https://docs.zephyrproject.org/latest/develop/getting_started/index.html#asking-for-help
 .. _Zephyr Tech Talks: https://www.zephyrproject.org/tech-talks
+.. _Ask Zephyr Guru: https://gurubase.io/g/zephyr
