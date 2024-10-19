@@ -13,6 +13,13 @@
 # CPU_AARCH32_CORTEX_A / if CPU_AARCH32_CORTEX_R blocks so they are not
 # exposed if one selects a different ARM Cortex Family (Cortex-M).
 
+config CPU_CORTEX_A8
+	bool
+	select CPU_AARCH32_CORTEX_A
+	select ARMV7_A
+	help
+	  This option signifies the use of a Cortex-A8 CPU.
+
 config CPU_CORTEX_A9
 	bool
 	select CPU_AARCH32_CORTEX_A

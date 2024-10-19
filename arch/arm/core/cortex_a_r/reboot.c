@@ -15,7 +15,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/linker/linker-defs.h>
 
-#if defined(CONFIG_AARCH32_ARMV8_R)
+#if defined(CONFIG_AARCH32_ARMV8_R) || defined(CONFIG_ARMV7_A)
 
 #define VECTOR_ADDRESS ((uintptr_t)_vector_start)
 
@@ -57,7 +57,7 @@ void __weak relocate_vector_table(void)
 #pragma GCC diagnostic pop
 #endif
 
-#endif /* !CONFIG_AARCH32_ARMV8_R */
+#endif /* defined(CONFIG_AARCH32_ARMV8_R) || defined(CONFIG_ARMV7_A) */
 
 void z_arm_relocate_vector_table(void)
 {

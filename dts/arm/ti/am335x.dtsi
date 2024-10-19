@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2024 Abe Kohandel <abe.kohandel@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-a.dtsi>
+#include <freq.h>
+#include <dt-bindings/interrupt-controller/ti-am335x-intc.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a8";
+			reg = <0>;
+		};
+	};
+
+	intc: intc@48200000 {
+		#interrupt-cells = <3>;
+
+		compatible = "ti,am335x-intc";
+		reg = <0x48200000 DT_SIZE_K(4)>;
+		interrupt-controller;
+	};
+
+	timer2: timer@48040000 {
+		compatible = "ti,am654-timer";
+		reg = <0x48040000 DT_SIZE_K(4)>;
+		interrupts = <DT_INT(IRQ_TIMER2, 64)>;
+		interrupt-parent = <&intc>;
+	};
+
+	uart0: uart@44e09000  {
+		compatible = "ns16550";
+		reg = <0x44e09000 DT_SIZE_K(4)>;
+		interrupts = <DT_INT(IRQ_UART0, 127)>;
+		interrupt-parent = <&intc>;
+		clock-frequency = <DT_FREQ_M(48)>;
+
+		reg-shift = <2>;
+		status = "disabled";
+	};
+};

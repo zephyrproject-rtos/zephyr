@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Abe Kohandel <abe.kohandel@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+family:
+- name: ti_omap
+  series:
+  - name: am335x
+    socs:
+    - name: am3358

@@ -1,0 +1,17 @@
+# Copyright (c) 2024 Abe Kohandel <abe.kohandel@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI ARM Interrupt Controller
+
+compatible: "ti,am335x-intc"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+interrupt-cells:
+  - irq
+  - priority
+  - flags

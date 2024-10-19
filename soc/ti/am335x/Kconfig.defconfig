@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Abe Kohandel <abe.kohandel@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_AM3358
+
+config NUM_IRQS
+	default 128
+
+endif # SOC_AM3358

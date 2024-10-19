@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Abe Kohandel <abe.kohandel@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_AM335X
+	bool
+
+config SOC_AM3358
+	bool
+	select SOC_SERIES_AM335X
+
+config SOC
+	default "am3358" if SOC_AM3358
