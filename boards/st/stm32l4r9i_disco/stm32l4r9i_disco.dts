@@ -155,6 +155,15 @@
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pg13>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	mfx: gpio@42 {
+		compatible = "st,mfxstm32l152";
+		reg = <0x42>;
+		ngpios = <24>;
+		int-gpios = <&gpioi 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
 };
 
 &i2c3 {
