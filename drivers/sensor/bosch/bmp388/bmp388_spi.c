@@ -25,6 +25,7 @@ static int bmp388_bus_check_spi(const union bmp388_bus *bus)
 static int bmp388_reg_read_spi(const union bmp388_bus *bus,
 			       uint8_t start, uint8_t *buf, int size)
 {
+	int ret;
 	uint8_t addr;
 	const struct spi_buf tx_buf = {
 		.buf = &addr,
@@ -39,24 +40,22 @@ static int bmp388_reg_read_spi(const union bmp388_bus *bus,
 		.buffers = rx_buf,
 		.count = ARRAY_SIZE(rx_buf)
 	};
-	int i;
 
+	/* After writing control byte the device sends a 
+	*	dummy byte before data bytes 
+	*/
 	rx_buf[0].buf = NULL;
-	rx_buf[0].len = 1;
+	rx_buf[0].len = 2;
 
-	rx_buf[1].len = 1;
+	rx_buf[1].len = size;
+	rx_buf[1].buf = buf;
 
-	for (i = 0; i < size; i++) {
-		int ret;
+	addr = start | 0x80;
 
-		addr = (start + i) | 0x80;
-		rx_buf[1].buf = &buf[i];
-
-		ret = spi_transceive_dt(&bus->spi, &tx, &rx);
-		if (ret) {
-			LOG_DBG("spi_transceive FAIL %d\n", ret);
-			return ret;
-		}
+	ret = spi_transceive_dt(&bus->spi, &tx, &rx);
+	if (ret) {
+		LOG_DBG("spi_transceive FAIL %d\n", ret);
+		return ret;
 	}
 
 	return 0;
