@@ -497,4 +497,4 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_ping,
 
 SHELL_SUBCMD_ADD((net), ping, &net_cmd_ping,
 		 "Ping a network host.",
-		 cmd_net_ping, 1, 13);
+		 cmd_net_ping, 2, 12);
