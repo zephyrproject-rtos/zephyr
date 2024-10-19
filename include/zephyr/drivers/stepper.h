@@ -174,7 +174,8 @@ typedef int (*stepper_enable_constant_velocity_mode_t)(const struct device *dev,
 /**
  * @brief Callback function for stepper events
  */
-typedef void (*stepper_event_callback_t)(const struct device *dev, const enum stepper_event event);
+typedef void (*stepper_event_callback_t)(const struct device *dev, const enum stepper_event event,
+					 void *user_data);
 
 /**
  * @brief Set the callback function to be called when a stepper event occurs
