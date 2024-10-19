@@ -1201,6 +1201,14 @@ Boards
 
    This role is used to reference a board documented using :rst:dir:`zephyr:board`.
 
+   For example::
+
+      Check out :zephyr:board:`wio_terminal` for more information.
+
+   Will render as:
+
+      Check out :zephyr:board:`wio_terminal` for more information.
+
 .. rst:directive:: .. zephyr:board-catalog::
 
    This directive is used to generate a catalog of Zephyr-supported boards that can be used to
