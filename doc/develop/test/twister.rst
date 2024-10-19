@@ -223,57 +223,60 @@ Tests
 
 Tests are detected by the presence of a ``testcase.yaml`` or a ``sample.yaml``
 files in the application's project directory. This test application
-configuration file may contain one or more entries in the tests section each
-identifying a test scenario.
+configuration file may contain one or more entries in the ``tests:`` section each
+identifying a Test Scenario.
 
 .. _twister_test_project_diagram:
 
 .. figure:: figures/twister_test_project.svg
-   :alt: Twister and a Test applications' project.
+   :alt: Twister and a Test application project.
    :figclass: align-center
 
-   Twister and a Test applications' project.
+   Twister and a Test application project.
 
 
 Test application configurations are written using the YAML syntax and share the
 same structure as samples.
 
-A test scenario is a set of conditions or variables, defined in test scenario
-entry, under which a set of test suites will be executed. Can be used
-interchangeably with test scenario entry.
+A Test Scenario is a set of conditions and variables defined in a Test Scenario
+entry, under which a set of Test Suites will be built and executed.
 
-A test suite is a collection of test cases that are intended to be used to test
-a software program to ensure it meets certain requirements. The test cases in a
-test suite are often related or meant to be executed together.
+A Test Suite is a collection of Test Cases which are intended to be used to test
+a software program to ensure it meets certain requirements. The Test Cases in a
+Test Suite are either related or meant to be executed together.
 
-The name of each test scenario needs to be unique in the context of the overall
+The name of each Test Scenario needs to be unique in the context of the overall
 test application and has to follow basic rules:
 
-#. The format of the test scenario identifier shall be a string without any spaces or
+#. The format of the Test Scenario identifier shall be a string without any spaces or
    special characters (allowed characters: alphanumeric and [\_=]) consisting
-   of multiple sections delimited with a dot (.).
+   of multiple sections delimited with a dot (``.``).
 
-#. Each test scenario identifier shall start with a section followed by a
-   subsection separated by a dot. For example, a test scenario that covers
-   semaphores in the kernel shall start with ``kernel.semaphore``.
+#. Each Test Scenario identifier shall start with a section name followed by a
+   subsection names delimited with a dot (``.``). For example, a test scenario
+   that covers semaphores in the kernel shall start with ``kernel.semaphore``.
 
-#. All test scenario identifiers within a ``testcase.yaml`` file need to be unique. For
-   example a ``testcase.yaml`` file covering semaphores in the kernel can have:
+#. All Test Scenario identifiers within a ``testcase.yaml`` file need to be unique.
+   For example a ``testcase.yaml`` file covering semaphores in the kernel can have:
 
    * ``kernel.semaphore``: For general semaphore tests
    * ``kernel.semaphore.stress``: Stress testing semaphores in the kernel.
 
-#. Depending on the nature of the test, an identifier can consist of at least
-   two sections:
+#. The full canonical name of a Test Suite is:
+   ``<Test Application Project path>/<Test Scenario identifier>``
 
-   * Ztest tests: The individual test cases in the ztest testsuite will be
-     concatenated by dot (``.``) to the identifier in the ``testcase.yaml`` file
-     generating unique identifiers for every test case in the suite.
+#. Depending on the Test Suite implementation, its Test Case identifiers consist
+   of **at least three sections** delimited with a dot (``.``):
 
-   * Standalone tests and samples: This type of test should at least have 3
-     sections concatnated by dot (``.``) in the test scenario identifier in the
-     ``testcase.yaml`` (or ``sample.yaml``) file.
-     The last section of the name shall signify the test case itself.
+   * **Ztest tests**:
+     a Test Scenario identifier from the corresponding ``testcase.yaml`` file,
+     a Ztest suite name, and a Ztest test name:
+     ``<Test Scenario identifier>.<Ztest suite name>.<Ztest test name>``
+
+   * **Standalone tests and samples**:
+     a Test Scenario identifier from the corresponding ``testcase.yaml`` (or
+     ``sample.yaml``) file where the last section signifies the standalone
+     Test Case name, for example: ``debug.coredump.logging_backend``.
 
 
 The following is an example test configuration with a few options that are
@@ -316,12 +319,10 @@ related to the sample and what is being demonstrated:
             tags: tests
             min_ram: 16
 
-The full canonical name for each test scenario is:``<path to test application>/<test scenario identifier>``
+A Test Scenario entry in the ``tests:`` YAML dictionary has its Test Scenario
+identifier as a key.
 
-A test scenario entry is a a block or entry starting with test scenario
-identifier in the YAML files.
-
-Each test scenario entry in the test application configuration can define the
+Each Test Scenario entry in the Test Application configuration can define the
 following key/value pairs:
 
 ..  _test_config_args:
