@@ -12,3 +12,17 @@ tests:
           \\(\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*\\)$"
     integration_platforms:
       - frdm_k64f                       # fxos8700
+  sample.sensor.accel_trig.adxl362-trigger:
+    harness: console
+    tags: sensors
+    harness_config:
+      type: one_line
+      regex:
+        - "^\\s*[0-9A-Za-z_,+-.]*@[0-9A-Fa-f]* \\[m\/s\\^2\\]:    \
+          \\(\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*\\)$"
+    extra_args:
+      - SHIELD=eval_adxl362_ardz
+      - EXTRA_CONF_FILE=adxl362-trigger.conf
+      - SNIPPET=rtt-tracing;rtt-console
+    platform_allow:
+      - apard32690/max32690/m4
