@@ -1,7 +1,4 @@
-.. _xiao_esp32s3:
-
-XIAO ESP32S3
-############
+.. zephyr:board:: xiao_esp32s3
 
 Overview
 ********
@@ -10,12 +7,6 @@ Seeed Studio XIAO ESP32S3 is an IoT mini development board based on the
 Espressif ESP32-S3 WiFi/Bluetooth dual-mode chip.
 
 For more details see the `Seeed Studio XIAO ESP32S3`_ wiki page.
-
-.. figure:: img/xiao_esp32s3.jpg
-   :align: center
-   :alt: XIAO ESP32S3
-
-   XIAO ESP32S3
 
 Hardware
 ********
