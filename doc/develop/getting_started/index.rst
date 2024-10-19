@@ -23,6 +23,7 @@ Click the operating system you are using.
    .. group-tab:: Ubuntu
 
       This guide covers Ubuntu version 20.04 LTS and later.
+      If you are using a different Linux distribution see :ref:`installation_linux`.
 
       .. code-block:: bash
 
