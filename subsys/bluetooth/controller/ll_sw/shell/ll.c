@@ -53,7 +53,7 @@ int cmd_ll_addr_read(const struct shell *sh, size_t argc, char *argv[])
 }
 
 #if defined(CONFIG_BT_CTLR_DTM)
-#include "../controller/ll_sw/ll_test.h"
+#include "controller/ll_sw/ll_test.h"
 
 int cmd_test_tx(const struct shell *sh, size_t  argc, char *argv[])
 {
