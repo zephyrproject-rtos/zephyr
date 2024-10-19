@@ -1,0 +1,19 @@
+# MFXSTM32L152 GPIO configuration options
+
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_MFXSTM32L152
+	bool "MFXSTM32L152 I2C-based GPIO chip"
+	default y
+	depends on DT_HAS_ST_MFXSTM32L152_ENABLED
+	select I2C
+	help
+	  Enable driver for MFXSTM32L152 I2C-based GPIO chip.
+
+config GPIO_MFXSTM32L152_INIT_PRIORITY
+	int "Init priority"
+	default 70
+	depends on GPIO_MFXSTM32L152
+	help
+	  Device driver initialization priority.
