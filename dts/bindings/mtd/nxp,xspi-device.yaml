@@ -1,0 +1,6 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP XSPI device
+
+include: [spi-device.yaml, "jedec,jesd216.yaml"]
