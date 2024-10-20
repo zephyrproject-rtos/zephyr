@@ -22,7 +22,10 @@
 
 	leds {
 		compatible = "gpio-leds";
-		/* N.B. LD1 (orange) is not wired to MCU */
+		orange_led: led_1 {
+			gpios = <&mfx 0 GPIO_ACTIVE_LOW>;
+			label = "User LD1";
+		};
 		green_led: led_2 {
 			gpios = <&gpioh 4 GPIO_ACTIVE_LOW>;
 			label = "User LD2";
@@ -40,6 +43,7 @@
 
 	aliases {
 		led0 = &green_led;
+		led1 = &orange_led;
 		sw0 = &joy_sel;
 		die-temp0 = &die_temp;
 		volt-sensor0 = &vref;
