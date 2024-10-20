@@ -39,12 +39,36 @@
 			gpios = <&gpioc 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 			zephyr,code = <INPUT_KEY_ENTER>;
 		};
+		joy_up: joystick_up {
+			label = "joystick up";
+			gpios = <&mfx 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_UP>;
+		};
+		joy_down: joystick_down {
+			label = "joystick down";
+			gpios = <&mfx 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_DOWN>;
+		};
+		joy_right: joystick_right {
+			label = "joystick right";
+			gpios = <&mfx 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_RIGHT>;
+		};
+		joy_left: joystick_left {
+			label = "joystick left";
+			gpios = <&mfx 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_LEFT>;
+		};
 	};
 
 	aliases {
 		led0 = &green_led;
 		led1 = &orange_led;
 		sw0 = &joy_sel;
+		sw1 = &joy_up;
+		sw2 = &joy_down;
+		sw3 = &joy_right;
+		sw4 = &joy_left;
 		die-temp0 = &die_temp;
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
