@@ -77,10 +77,10 @@ config BT_STM32WBA
 	help
 	  ST STM32WBA HCI Bluetooth interface
 
-config BT_SILABS_HCI
+config BT_SILABS_EFR32
 	bool
 	default y
-	depends on DT_HAS_SILABS_BT_HCI_ENABLED
+	depends on DT_HAS_SILABS_BT_HCI_EFR32_ENABLED
 	depends on ZEPHYR_HAL_SILABS_MODULE_BLOBS
 	depends on !PM || SOC_GECKO_PM_BACKEND_PMGR
 	select SOC_GECKO_USE_RAIL
@@ -260,9 +260,9 @@ config BT_DRV_RX_STACK_SIZE
 	help
 	  Stack size for the HCI driver's RX thread.
 
-config BT_SILABS_HCI_BUFFER_MEMORY
+config BT_SILABS_EFR32_BUFFER_MEMORY
 	int "Silicon Labs Bluetooth Library memory buffer size"
-	depends on BT_SILABS_HCI
+	depends on BT_SILABS_EFR32
 	default 6144
 	help
 	  Select the size of allocated memory buffer for the Silicon Labs
