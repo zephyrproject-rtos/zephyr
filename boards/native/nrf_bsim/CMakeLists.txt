@@ -56,6 +56,7 @@ zephyr_include_directories(
   common
   common/cmsis
   ${NSI_DIR}/common/src/include
+  ${ZEPHYR_BASE}/soc/nordic/common
 )
 
 zephyr_library_include_directories(
