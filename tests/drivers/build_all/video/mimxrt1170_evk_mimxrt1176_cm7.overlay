@@ -60,7 +60,6 @@
 			compatible = "nxp,mipi-csi2rx";
 			reg = <0x33334444 0x200>;
 			status = "okay";
-			sensor = <&test_i2c_ov5640>;
 
 			ports {
 				#address-cells = <1>;
