@@ -16,6 +16,11 @@ LOG_MODULE_REGISTER(video_mipi_csi2rx, CONFIG_VIDEO_LOG_LEVEL);
 
 #define DEFAULT_CAMERA_FRAME_RATE  30
 
+#define DEVICE_DT_INST_GET_SENSOR_DEV(n)                                                           \
+	DEVICE_DT_GET(DT_GPARENT(DT_NODELABEL(                                                     \
+		DT_STRING_TOKEN(DT_CHILD(DT_CHILD(DT_INST_CHILD(n, ports), port_1), endpoint),     \
+				remote_endpoint_label))))
+
 struct mipi_csi2rx_config {
 	const MIPI_CSI2RX_Type *base;
 	const struct device *sensor_dev;
@@ -204,7 +209,7 @@ static int mipi_csi2rx_init(const struct device *dev)
                                                                                                    \
 	static const struct mipi_csi2rx_config mipi_csi2rx_config_##n = {                          \
 		.base = (MIPI_CSI2RX_Type *)DT_INST_REG_ADDR(n),                                   \
-		.sensor_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, sensor)),                           \
+		.sensor_dev = DEVICE_DT_INST_GET_SENSOR_DEV(n),                                    \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &mipi_csi2rx_init, NULL, &mipi_csi2rx_data_##n,                   \
