@@ -1,7 +1,4 @@
-.. _ctcc_nrf52840:
-
-CTHINGS.CO Connectivity Card nRF52840
-#####################################
+.. zephyr:board:: ctcc
 
 Overview
 ********
