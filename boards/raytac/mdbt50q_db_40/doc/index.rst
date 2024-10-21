@@ -1,7 +1,4 @@
-.. _raytac_mdbt50q_db_40_nrf52840:
-
-Raytac MDBT50Q-DB-40
-####################
+.. zephyr:board:: raytac_mdbt50q_db_40
 
 Overview
 ********
@@ -24,11 +21,6 @@ Nordic Semiconductor nRF52840 ARM Cortex-M4F CPU and the following devices:
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
-
-.. figure:: img/mdbt50q_db_40.jpg
-     :width: 442px
-     :align: center
-     :alt: MDBT50Q-DB-40
 
 More information about the board can be found at the `MDBT50Q-DB-40 website`_.
 The `MDBT50Q-DB-40 Specification`_ contains the demo board's datasheet.
