@@ -162,7 +162,6 @@ struct uarte_async_rx {
 	uint8_t flush_cnt;
 	volatile bool enabled;
 	volatile bool discard_fifo;
-	volatile bool aborted;
 };
 
 struct uarte_async_cb {
