@@ -423,6 +423,7 @@ endchoice
 config TOOLCHAIN_SUPPORTS_GNU_EXTENSIONS
 	bool
 	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr-gnu"
+	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr"
 	help
 	  Hidden option to signal that toolchain supports GNU Extensions.
 
