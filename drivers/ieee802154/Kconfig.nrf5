@@ -96,6 +96,7 @@ config IEEE802154_NRF5_MULTIPLE_CCA
 
 config IEEE802154_NRF5_CST_ENDPOINT
 	bool "Support for OpenThread CST Endpoint extension in the ieee802154_nrf5."
+	default y if OPENTHREAD_WAKEUP_COORDINATOR
 	help
 	  Enable support for OpenThread CST (Coordinated Sampled Transmitter) Endpoint
 	  with CST IE injection as an extension to ieee802154_nrf5 driver.
