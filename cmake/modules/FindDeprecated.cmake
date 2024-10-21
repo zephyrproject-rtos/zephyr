@@ -60,7 +60,7 @@ if("XTOOLS" IN_LIST Deprecated_FIND_COMPONENTS)
   # cmake/toolchain/xtools (folder with files)
   # doc/develop/toolchains/crosstool_ng.rst and update the index.rst file.
   message(DEPRECATION "XTOOLS toolchain variant is deprecated. "
-                      "Please set ZEPHYR_TOOLCHAIN_VARIANT to 'zephyr'")
+                      "Please set ZEPHYR_TOOLCHAIN_VARIANT to 'zephyr-gnu'")
 endif()
 
 if("SPARSE" IN_LIST Deprecated_FIND_COMPONENTS)
