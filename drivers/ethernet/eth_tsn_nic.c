@@ -484,7 +484,7 @@ static int eth_tsn_nic_send(const struct device *dev, struct net_pkt *pkt)
 	sys_write32(DMA_ENGINE_START, regs->control);
 #endif
 
-	/* TODO: This shoud be done in tsn_nic_isr() */
+	/* TODO: This should be done in tsn_nic_isr() */
 	pthread_spin_unlock(&data->tx_lock);
 
 	return 0;
