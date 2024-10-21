@@ -1,7 +1,4 @@
-.. _decawave_dwm1001_dev:
-
-Decawave DWM1001
-#################
+.. zephyr:board:: decawave_dwm1001_dev
 
 Overview
 ********
