@@ -2037,6 +2037,7 @@ Release Notes:
     - tristan-google
     - ubieda
     - jeppenodgaard
+    - asemjonovs
   files:
     - drivers/sensor/
     - include/zephyr/drivers/sensor.h
