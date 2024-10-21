@@ -11,6 +11,7 @@ flash: 192
 supported:
   - arduino_i2c
   - arduino_spi
+  - dma
   - gpio
   - i2c
   - spi
