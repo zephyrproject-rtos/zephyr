@@ -216,7 +216,7 @@ if (CONFIG_BUILD_WITH_TFM)
   # Get the toolchain variant
   # TODO: Add support for cross-compile toolchain variant
   # TODO: Enforce GCC version check against TF-M compiler requirements
-  if(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "zephyr")
+  if(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "zephyr-gnu")
     set(TFM_TOOLCHAIN_FILE "toolchain_GNUARM.cmake")
     set(TFM_TOOLCHAIN_PREFIX "arm-zephyr-eabi")
     set(TFM_TOOLCHAIN_PATH ${ZEPHYR_SDK_INSTALL_DIR}/arm-zephyr-eabi/bin)

@@ -40,7 +40,7 @@ zephyr_library_sources_ifdef(
 
   # @Intent: Set XTENSA_TOOLCHAIN_VARIANT macro required for Xtensa coredump
 if(CONFIG_XTENSA)
-  if(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "zephyr")
+  if(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "zephyr-gnu")
     zephyr_compile_options(-DXTENSA_TOOLCHAIN_VARIANT=1)
   elseif(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "xcc")
     zephyr_compile_options(-DXTENSA_TOOLCHAIN_VARIANT=2)
