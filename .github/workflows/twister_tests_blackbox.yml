@@ -73,7 +73,7 @@ jobs:
       shell: bash
       env:
         ZEPHYR_BASE: ./
-        ZEPHYR_TOOLCHAIN_VARIANT: zephyr
+        ZEPHYR_TOOLCHAIN_VARIANT: zephyr-gnu
       run: |
         echo "Run twister tests"
         source zephyr-env.sh
