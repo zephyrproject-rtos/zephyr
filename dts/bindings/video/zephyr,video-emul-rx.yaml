@@ -1,0 +1,18 @@
+# Copyright 2024 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Emulated Video DMA engine for testing purpose
+
+compatible: "zephyr,video-emul-rx"
+
+include: base.yaml
+
+child-binding:
+  child-binding:
+    include: video-interfaces.yaml
+    properties:
+      reg:
+        type: int
+        enum:
+          - 0 # for input endpoint
+          - 1 # for output endpoint
