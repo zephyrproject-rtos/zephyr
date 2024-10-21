@@ -11,7 +11,7 @@ config VIDEO_MCUX_CSI
 
 config VIDEO_MCUX_CSI_INIT_PRIORITY
 	int "NXP MCUX CSI init priority"
-	default 61
+	default 59
 	depends on VIDEO_MCUX_CSI
 	help
 	  Initialization priority for the CSI interface on an NXP MCUX device.
