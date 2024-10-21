@@ -1053,7 +1053,10 @@ static int i2c_dw_initialize(const struct device *dev)
 
 #if defined(CONFIG_PINCTRL)
 	ret = pinctrl_apply_state(rom->pcfg, PINCTRL_STATE_DEFAULT);
-	if (ret) {
+	if (ret == -ENOENT) {
+		/* Allow pinctrl configuration to be unspecified. */
+		ret = 0;
+	} else if (ret) {
 		return ret;
 	}
 #endif
