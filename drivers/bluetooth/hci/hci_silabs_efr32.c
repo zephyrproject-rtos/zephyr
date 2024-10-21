@@ -43,6 +43,7 @@ static atomic_t sli_btctrl_events;
 void BTLE_LL_EventRaise(uint32_t events);
 void BTLE_LL_Process(uint32_t events);
 bool sli_pending_btctrl_events(void);
+RAIL_Handle_t BTLE_LL_GetRadioHandle(void);
 
 void rail_isr_installer(void)
 {
@@ -212,6 +213,7 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 
 #ifdef CONFIG_PM
 	{
+		RAIL_ConfigSleep(BTLE_LL_GetRadioHandle(), RAIL_SLEEP_CONFIG_TIMERSYNC_ENABLED);
 		RAIL_Status_t status = RAIL_InitPowerManager();
 
 		if (status != RAIL_STATUS_NO_ERROR) {
