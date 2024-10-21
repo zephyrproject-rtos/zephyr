@@ -205,6 +205,9 @@ void tc_attached_snk_entry(void *obj)
 
 	LOG_INF("Attached.SNK");
 
+	/* Clear cached CC voltage */
+	tc->cc_voltage = TC_CC_VOLT_OPEN;
+
 	/* Set CC polarity */
 	ret = tcpc_set_cc_polarity(tcpc, tc->cc_polarity);
 	if (ret != 0) {
