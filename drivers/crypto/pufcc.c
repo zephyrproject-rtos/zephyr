@@ -6,6 +6,7 @@
   #include <zephyr/sys/sys_io.h>
   #include <zephyr/kernel.h>
   #include "crypto_pufs.h"
+  #include <stdio.h>
   static volatile bool s_Asynch_Operation = false;
   void pufcc_set_asynch_ops_flag(bool Val) {s_Asynch_Operation = Val;}
   bool pufcc_get_asynch_ops_flag(void) {return s_Asynch_Operation;}
@@ -509,8 +510,7 @@ enum pufcc_status pufcc_rsa2048_sign_verify(
   uint8_t dec_msg[PUFCC_RSA_2048_LEN];
   // Configure signature scheme
   temp32 = 0;
-  printf("%s(%d) msg-1st-word:0x%08x\r\r\n", __func__, __LINE__, \
-  *(uint32_t*)msg_addr->read_addr);
+
   struct pufcc_pkc_ecp_ec_reg *ecp_ec_reg =
       (struct pufcc_pkc_ecp_ec_reg *)&temp32;
   ecp_ec_reg->field = PUFCC_RSA_2048;
@@ -525,34 +525,32 @@ enum pufcc_status pufcc_rsa2048_sign_verify(
   // Reverse public key modulus
   reverse(pufcc_buffer, pub_key->n, PUFCC_RSA_2048_LEN);
   // .... Reversed Public key print TODO
-  // printf("%s(%d) Reversed Public Key\r\n", __func__, __LINE__);
-  // for(int i = 0; i < 256; i++) {
-  //   printf("0x%02x%s", pufcc_buffer[i], (i+1)%16==0?"\r\n":",");
-  // } printf("\r\n");
-  ////////////////////////////
-
-  // Write reversed public key modulus to ECP data field at proper offset
-  memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_RSA2048_MODULUS_OFFSET,
-         pufcc_buffer, PUFCC_RSA_2048_LEN);
+  printf("%s(%d) original Reversed Public Key\r\n", __func__, __LINE__);
+  for(int i = 0; i < 256; i++) {
+    printf("0x%02x%s", pufcc_buffer[i], (i+1)%16==0?"\r\n":",");
+  } printf("\r\n");
+  uint32_t *ptr = (uint32_t*)&pkc_regs->ecp_data + PUFCC_DATA_RSA2048_MODULUS_OFFSET/4;
+  uint32_t *buf_ptr = (uint32_t*)pufcc_buffer;
+  // memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_RSA2048_MODULUS_OFFSET,
+  //        pufcc_buffer, PUFCC_RSA_2048_LEN);
+  printf("%s(%d) manual Copy Reversed Public Key at %p\r\n", __func__, __LINE__, ptr);
+  for(int i = 0; i < PUFCC_RSA_2048_LEN/4; i++) {
+    *ptr++ = *buf_ptr++;
+    // printf("%p 0x%08x =? 0x%08x\r\n", (ptr-1), *(buf_ptr-1), *(ptr-1));
+  } //printf("\r\n");
+  // .... Reversed Public key print TODO
+  uint8_t *_8ptr = (uint8_t*)&pkc_regs->ecp_data + PUFCC_DATA_RSA2048_MODULUS_OFFSET;
+  printf("%s(%d) manual Copy Read Reversed Public Key at %p\r\n", __func__, __LINE__, _8ptr);
+  for(int i = 0; i < PUFCC_RSA_2048_LEN; i++) {
+    printf("0x%02x%s", *_8ptr++, (i+1)%16==0?"\r\n":",");
+  } printf("\r\n");
+  //////////////////////////// 
 
   // Write public key exponent to ecp_e_short register
   REG_WRITE_32(&pkc_regs->ecp_e_short, &pub_key->e);
-  printf("%s(%d) pubKey_expo:0x%08x\r\n", __func__,__LINE__, pub_key->e);
 
-  // .... Signature print TODO
-  printf("%s(%d) Signature\r\n", __func__, __LINE__);
-  for(int i = 0; i < 256; i++) {
-    printf("0x%02x%s", sig[i], (i+1)%16==0?"\r\n":",");
-  } printf("\r\n");
-  ////////////////////////////
   // Reverse signature
   reverse(pufcc_buffer, sig, PUFCC_RSA_2048_LEN);
-  // .... Reversed Signature print TODO
-  // printf("%s(%d) Reversed Signature\r\n", __func__, __LINE__);
-  // for(int i = 0; i < 256; i++) {
-  //   printf("0x%02x%s", pufcc_buffer[i], (i+1)%16==0?"\r\n":",");
-  // } printf("\r\n");
-  ////////////////////////////
 
   // Write reversed signature to ECP data field at proper offset
   memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_RSA2048_SIGN_OFFSET,
@@ -561,7 +559,6 @@ enum pufcc_status pufcc_rsa2048_sign_verify(
   // Write microprogram for RSA2048
   memcpy((void *)&pkc_regs->ecp_mac, rsa_2048_mprog, sizeof(rsa_2048_mprog));
 
-  // Clear and disable PKC interrupt
   temp32 = 0;
   struct pufcc_intrpt_reg *intrpt_reg = (struct pufcc_intrpt_reg *)&temp32;
   intrpt_reg->intrpt_st = 1;
@@ -576,7 +573,6 @@ enum pufcc_status pufcc_rsa2048_sign_verify(
   status = busy_wait(&pkc_regs->status, PUFCC_PKC_ERROR_MASK);
 
   if (status != PUFCC_SUCCESS) {
-    printf("%s(%d) ecp_err_code:0x%x\r\n", __func__,__LINE__, pkc_regs->ecp_err_code);
     return status;
   }
 
