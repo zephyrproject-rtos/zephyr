@@ -73,8 +73,8 @@ static int mipi_csi2rx_update_settings(const struct device *dev, enum video_endp
 		return -ENOTSUP;
 	}
 
-	bpp = video_pix_fmt_bpp(fmt.pixelformat) * 8;
-	sensor_byte_clk = sensor_pixel_rate * bpp / drv_data->csi2rxConfig.laneNum / 8;
+	bpp = video_bits_per_pixel(fmt.pixelformat);
+	sensor_byte_clk = sensor_pixel_rate * bpp / drv_data->csi2rxConfig.laneNum / BITS_PER_BYTE;
 
 	ret = clock_control_get_rate(drv_data->clock_dev, drv_data->clock_root, &root_clk_rate);
 	if (ret) {
@@ -224,7 +224,7 @@ static int mipi_csi2rx_get_frmival(const struct device *dev, enum video_endpoint
 
 static uint64_t mipi_csi2rx_cal_frame_size(const struct video_format *fmt)
 {
-	return fmt->height * fmt->width * video_pix_fmt_bpp(fmt->pixelformat) * 8;
+	return fmt->height * fmt->width * video_bits_per_pixel(fmt->pixelformat);
 }
 
 static uint64_t mipi_csi2rx_estimate_pixel_rate(const struct video_frmival *cur_fmival,
