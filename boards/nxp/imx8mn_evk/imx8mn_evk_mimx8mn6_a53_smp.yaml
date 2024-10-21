@@ -14,8 +14,9 @@ toolchain:
 ram: 1024
 supported:
   - smp
+  - uart
+  - net
 testing:
   ignore_tags:
-    - net
     - bluetooth
 vendor: nxp
