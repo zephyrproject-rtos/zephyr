@@ -409,7 +409,7 @@ Boards & SoC Support
 
   * Added support for :zephyr:board:`Ambiq Apollo3 Blue board <apollo3_evb>`: ``apollo3_evb``.
   * Added support for :zephyr:board:`Ambiq Apollo3 Blue Plus board <apollo3p_evb>`: ``apollo3p_evb``.
-  * Added support for :ref:`Raspberry Pi 5 board <rpi_5>`: ``rpi_5``.
+  * Added support for :zephyr:board:`Raspberry Pi 5 board <rpi_5>`: ``rpi_5``.
   * Added support for :zephyr:board:`Seeed Studio XIAO RP2040 board <xiao_rp2040>`: ``xiao_rp2040``.
   * Added support for :zephyr:board:`Mikroe RA4M1 Clicker board <mikroe_clicker_ra4m1>`: ``mikroe_clicker_ra4m1``.
   * Added support for :ref:`Arduino UNO R4 WiFi board <arduino_uno_r4>`: ``arduino_uno_r4_wifi``.
