@@ -1,7 +1,4 @@
-.. _weact_stm32g431_core:
-
-WeAct Studio STM32G431 Core Board
-#################################
+.. zephyr:board:: weact_stm32g431_core
 
 The WeAct STM32G431 Core Board is a low-cost bare-bones STM32G431-based development
 board. See the `STM32G431CB website`_ for more information about the MCU. More information

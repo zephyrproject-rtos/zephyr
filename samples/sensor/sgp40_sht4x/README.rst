@@ -42,7 +42,7 @@ Building and Running
 This project outputs sensor data to the console. It requires a SHT4X and a SGP40
 sensor. It should work with any platform featuring a I2C peripheral
 interface. This example has an example device tree overlay
-for the :ref:`blackpill_f411ce` board.
+for the :zephyr:board:`blackpill_f411ce` board.
 
 
 .. zephyr-app-commands::
