@@ -121,6 +121,13 @@ config SOC_GECKO_TRNG
 	help
 	  Set if the SoC has a True Random Number Generator (TRNG) module.
 
+config SOC_SILABS_SLEEPTIMER
+	bool
+	select SOC_GECKO_PRS
+	select SOC_GECKO_RTCC if SOC_SERIES_EFR32BG22 || SOC_SERIES_EFR32BG27 || SOC_SERIES_EFR32MG21
+	help
+	  Set if the Sleeptimer HAL module is used.
+
 if PM
 
 config SOC_GECKO_PM_BACKEND_PMGR
