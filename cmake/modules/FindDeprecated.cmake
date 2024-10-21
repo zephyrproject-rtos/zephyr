@@ -37,6 +37,68 @@ if("${Deprecated_FIND_COMPONENTS}" STREQUAL "")
   message(WARNING "find_package(Deprecated) missing required COMPONENTS keyword")
 endif()
 
+if("CROSS_COMPILE" IN_LIST Deprecated_FIND_COMPONENTS)
+  list(REMOVE_ITEM Deprecated_FIND_COMPONENTS CROSS_COMPILE)
+  # This code was deprecated after Zephyr v3.1.0
+  if(NOT DEFINED ZEPHYR_TOOLCHAIN_VARIANT)
+    set(ZEPHYR_TOOLCHAIN_VARIANT $ENV{ZEPHYR_TOOLCHAIN_VARIANT})
+  endif()
+
+  if(NOT ZEPHYR_TOOLCHAIN_VARIANT AND
+     (CROSS_COMPILE OR (DEFINED ENV{CROSS_COMPILE})))
+      set(ZEPHYR_TOOLCHAIN_VARIANT cross-compile CACHE STRING "Zephyr toolchain variant" FORCE)
+      message(DEPRECATION  "Setting CROSS_COMPILE without setting ZEPHYR_TOOLCHAIN_VARIANT is deprecated."
+                           "Please set ZEPHYR_TOOLCHAIN_VARIANT to 'cross-compile'"
+      )
+  endif()
+endif()
+
+if("XTOOLS" IN_LIST Deprecated_FIND_COMPONENTS)
+  list(REMOVE_ITEM Deprecated_FIND_COMPONENTS XTOOLS)
+  # This code was deprecated after Zephyr v3.3.0
+  # When removing support for `xtools`, remember to also remove:
+  # cmake/toolchain/xtools (folder with files)
+  # doc/develop/toolchains/crosstool_ng.rst and update the index.rst file.
+  message(DEPRECATION "XTOOLS toolchain variant is deprecated. "
+                      "Please set ZEPHYR_TOOLCHAIN_VARIANT to 'zephyr-gnu'")
+endif()
+
+if("SPARSE" IN_LIST Deprecated_FIND_COMPONENTS)
+  list(REMOVE_ITEM Deprecated_FIND_COMPONENTS SPARSE)
+  # This code was deprecated after Zephyr v3.2.0
+  if(SPARSE)
+    message(DEPRECATION
+        "Setting SPARSE='${SPARSE}' is deprecated. "
+        "Please set ZEPHYR_SCA_VARIANT to 'sparse'"
+    )
+    if("${SPARSE}" STREQUAL "y")
+      set_ifndef(ZEPHYR_SCA_VARIANT sparse)
+    endif()
+  endif()
+endif()
+
+if("SOURCES" IN_LIST Deprecated_FIND_COMPONENTS)
+  list(REMOVE_ITEM Deprecated_FIND_COMPONENTS SOURCES)
+  if(SOURCES)
+    message(DEPRECATION
+        "Setting SOURCES prior to calling find_package() for unit tests is deprecated."
+        " To add sources after find_package() use:\n"
+        "    target_sources(testbinary PRIVATE <source-file.c>)")
+  endif()
+endif()
+
+if("PYTHON_PREFER" IN_LIST Deprecated_FIND_COMPONENTS)
+  # This code was deprecated after Zephyr v3.4.0
+  list(REMOVE_ITEM Deprecated_FIND_COMPONENTS PYTHON_PREFER)
+  if(DEFINED PYTHON_PREFER)
+    message(DEPRECATION "'PYTHON_PREFER' variable is deprecated. Please use "
+                        "Python3_EXECUTABLE instead.")
+    if(NOT DEFINED Python3_EXECUTABLE)
+      set(Python3_EXECUTABLE ${PYTHON_PREFER})
+    endif()
+  endif()
+endif()
+
 if("toolchain_ld_base" IN_LIST Deprecated_FIND_COMPONENTS)
   # This code was deprecated after Zephyr v4.0.0
   list(REMOVE_ITEM Deprecated_FIND_COMPONENTS toolchain_ld_base)
