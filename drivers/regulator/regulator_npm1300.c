@@ -581,7 +581,7 @@ static int soft_start_set(const struct device *dev, uint8_t soft_start)
 int regulator_npm1300_init(const struct device *dev)
 {
 	const struct regulator_npm1300_config *config = dev->config;
-	bool enabled;
+	bool enabled = false;
 	int ret = 0;
 
 	if (!device_is_ready(config->mfd)) {
