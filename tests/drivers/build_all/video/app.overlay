@@ -126,6 +126,12 @@
 					};
 				};
 			};
+
+			test_i2c_ov9655: ov9655@8 {
+				compatible = "ovti,ov9655";
+				reg = <0x8>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
 		};
 
 		test_video_emul_rx: video_emul_rx@10003000 {
