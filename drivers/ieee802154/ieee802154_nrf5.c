@@ -259,6 +259,9 @@ static void nrf5_get_capabilities_at_boot(void)
 #if defined(CONFIG_IEEE802154_SELECTIVE_TXCHANNEL)
 		| IEEE802154_HW_SELECTIVE_TXCHANNEL
 #endif
+#if defined(CONFIG_IEEE802154_NRF5_CST_ENDPOINT)
+		| IEEE802154_OPENTHREAD_HW_CST
+#endif
 		;
 }
 
@@ -1027,6 +1030,17 @@ static int nrf5_configure(const struct device *dev,
 			(void)nrf_802154_sleep_if_idle();
 		}
 		break;
+
+#if defined(CONFIG_IEEE802154_NRF5_CST_ENDPOINT)
+	case IEEE802154_OPENTHREAD_CONFIG_CST_PERIOD:
+		nrf_802154_cst_writer_period_set(config->cst_period);
+		break;
+
+	case IEEE802154_OPENTHREAD_CONFIG_EXPECTED_TX_TIME:
+		nrf_802154_cst_writer_anchor_time_set(nrf_802154_timestamp_phr_to_mhr_convert(
+			config->expected_tx_time / NSEC_PER_USEC));
+		break;
+#endif /* CONFIG_IEEE802154_NRF5_CST_ENDPOINT */
 
 	default:
 		return -EINVAL;
