@@ -84,6 +84,8 @@ struct i2c_dw_rom_config {
 	DEVICE_MMIO_ROM;
 	i2c_isr_cb_t config_func;
 	uint32_t bitrate;
+	int16_t lcnt_offset;
+	int16_t hcnt_offset;
 
 #if defined(CONFIG_PINCTRL)
 	const struct pinctrl_dev_config *pcfg;
