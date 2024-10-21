@@ -130,10 +130,6 @@
 	status = "okay";
 };
 
-&burtc0 {
-	status = "okay";
-};
-
 &rtcc0 {
 	status = "okay";
 };
