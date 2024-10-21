@@ -8,6 +8,7 @@
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-ra.h>
 #include <zephyr/dt-bindings/clock/ra_clock.h>
+#include <zephyr/dt-bindings/pwm/ra_pwm.h>
 #include <freq.h>
 
 / {
@@ -337,6 +338,16 @@
 			channel = <7>;
 			renesas,sample-clock-div = <64>;
 			#port-irq-cells = <0>;
+			status = "disabled";
+		};
+
+		pwm0: pwm0@40078000 {
+			compatible = "renesas,ra-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_0>;
+			clocks = <&pclkd MSTPD 5>;
+			reg = <0x40078000 0x100>;
+			#pwm-cells = <3>;
 			status = "disabled";
 		};
 	};

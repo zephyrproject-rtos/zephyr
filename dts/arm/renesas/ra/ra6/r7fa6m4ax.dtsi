@@ -6,6 +6,7 @@
 
 #include <arm/renesas/ra/ra6/ra6-cm33-common.dtsi>
 #include <zephyr/dt-bindings/clock/ra_clock.h>
+#include <zephyr/dt-bindings/pwm/ra_pwm.h>
 
 / {
 	soc {
@@ -163,6 +164,66 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <16>;
+			status = "disabled";
+		};
+
+		pwm0: pwm0@40169000 {
+			compatible = "renesas,ra-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_0>;
+			clocks = <&pclkd MSTPE 31>;
+			reg = <0x40169000 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm3: pwm3@40169300 {
+			compatible = "renesas,ra-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_3>;
+			clocks = <&pclkd MSTPE 28>;
+			reg = <0x40169300 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm6: pwm6@40169600 {
+			compatible = "renesas,ra-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_6>;
+			clocks = <&pclkd MSTPE 25>;
+			reg = <0x40169600 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm7: pwm7@40169700 {
+			compatible = "renesas,ra-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_7>;
+			clocks = <&pclkd MSTPE 24>;
+			reg = <0x40169700 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm8: pwm8@40169800 {
+			compatible = "renesas,ra-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_8>;
+			clocks = <&pclkd MSTPE 23>;
+			reg = <0x40169800 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm9: pwm9@40169900 {
+			compatible = "renesas,ra-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_9>;
+			clocks = <&pclkd MSTPE 22>;
+			reg = <0x40169900 0x100>;
+			#pwm-cells = <3>;
 			status = "disabled";
 		};
 	};
