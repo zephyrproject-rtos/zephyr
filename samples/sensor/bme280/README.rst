@@ -77,7 +77,7 @@ peripheral.
 BME280 via Raspberry Pi Pico
 ============================
 
-The default assignment of the built-in spi0 device on the :ref:`rpi_pico` is
+The default assignment of the built-in spi0 device on the :zephyr:board:`rpi_pico` is
 to GPIO16 through GPIO19.  With the sensor wired to those lines, build and
 flash with:
 
