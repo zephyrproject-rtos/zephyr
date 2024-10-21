@@ -99,9 +99,9 @@ struct udc_dwc2_data {
 	struct k_thread thread_data;
 	/* Main events the driver thread waits for */
 	struct k_event drv_evt;
-	/* Transfer triggers (OUT on bits 0-15, IN on bits 16-31) */
+	/* Transfer triggers (IN on bits 0-15, OUT on bits 16-31) */
 	struct k_event xfer_new;
-	/* Finished transactions (OUT on bits 0-15, IN on bits 16-31) */
+	/* Finished transactions (IN on bits 0-15, OUT on bits 16-31) */
 	struct k_event xfer_finished;
 	struct dwc2_reg_backup backup;
 	uint32_t ghwcfg1;
@@ -1554,9 +1554,9 @@ static int udc_dwc2_ep_clear_halt(const struct device *dev,
 		uint32_t ep_bit;
 
 		if (USB_EP_DIR_IS_IN(cfg->addr)) {
-			ep_bit = BIT(16 + USB_EP_GET_IDX(cfg->addr));
-		} else {
 			ep_bit = BIT(USB_EP_GET_IDX(cfg->addr));
+		} else {
+			ep_bit = BIT(16 + USB_EP_GET_IDX(cfg->addr));
 		}
 
 		k_event_post(&priv->xfer_new, ep_bit);
@@ -1579,9 +1579,9 @@ static int udc_dwc2_ep_enqueue(const struct device *dev,
 		uint32_t ep_bit;
 
 		if (USB_EP_DIR_IS_IN(cfg->addr)) {
-			ep_bit = BIT(16 + USB_EP_GET_IDX(cfg->addr));
-		} else {
 			ep_bit = BIT(USB_EP_GET_IDX(cfg->addr));
+		} else {
+			ep_bit = BIT(16 + USB_EP_GET_IDX(cfg->addr));
 		}
 
 		k_event_post(&priv->xfer_new, ep_bit);
@@ -2346,7 +2346,7 @@ static inline void dwc2_handle_in_xfercompl(const struct device *dev,
 		return;
 	}
 
-	k_event_post(&priv->xfer_finished, BIT(16 + ep_idx));
+	k_event_post(&priv->xfer_finished, BIT(ep_idx));
 	k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_EP_FINISHED));
 }
 
@@ -2452,7 +2452,7 @@ static inline void dwc2_handle_out_xfercompl(const struct device *dev,
 	    net_buf_tailroom(buf)) {
 		dwc2_prep_rx(dev, buf, ep_cfg);
 	} else {
-		k_event_post(&priv->xfer_finished, BIT(ep_idx));
+		k_event_post(&priv->xfer_finished, BIT(16 + ep_idx));
 		k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_EP_FINISHED));
 	}
 }
@@ -2803,9 +2803,9 @@ static uint8_t pull_next_ep_from_bitmap(uint32_t *bitmap)
 	*bitmap &= ~BIT(bit);
 
 	if (bit >= 16) {
-		return USB_EP_DIR_IN | (bit - 16);
+		return USB_EP_DIR_OUT | (bit - 16);
 	} else {
-		return USB_EP_DIR_OUT | bit;
+		return USB_EP_DIR_IN | bit;
 	}
 }
 
