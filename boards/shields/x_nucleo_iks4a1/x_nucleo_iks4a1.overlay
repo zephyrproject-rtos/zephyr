@@ -9,6 +9,7 @@
 		magn0 = &lis2mdl_1e_x_nucleo_iks4a1;
 		accel0 = &lsm6dso16is_6a_x_nucleo_iks4a1;
 		accel1 = &lsm6dsv16x_6b_x_nucleo_iks4a1;
+		accel2 = &lis2duxs12_1e_x_nucleo_iks4a1;
 		press0 = &lps22df_5d_x_nucleo_iks4a1;
 	};
 };
@@ -45,4 +46,11 @@
 		drdy-pulsed;
 		drdy-gpios =  <&arduino_header 12 GPIO_ACTIVE_HIGH>; /* D6 (PB10) */
 	};
+
+	lis2duxs12_1e_x_nucleo_iks4a1: lis2duxs12@19 {
+		compatible = "st,lis2duxs12";
+		reg = <0x19>;
+		int1-gpios =  <&arduino_header 3 GPIO_ACTIVE_HIGH>; /* A3 */
+	};
+
 };
