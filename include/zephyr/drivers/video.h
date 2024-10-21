@@ -813,6 +813,14 @@ void video_closest_frmival(const struct device *dev, enum video_endpoint_id ep,
 			   struct video_frmival_enum *match);
 
 /**
+ * @defgroup video_pixel_formats Video pixel formats
+ * The @c | characters separate the pixels, and spaces separate the bytes.
+ * The uppercase letter represents the most significant bit.
+ * The lowercase letters represent the rest of the bits.
+ * @{
+ */
+
+/**
  * @brief Four-character-code uniquely identifying the pixel format
  */
 #define VIDEO_FOURCC(a, b, c, d)                                                                   \
@@ -828,14 +836,6 @@ void video_closest_frmival(const struct device *dev, enum video_endpoint_id ep,
  * @return Four-character-code.
  */
 #define VIDEO_FOURCC_FROM_STR(str) VIDEO_FOURCC((str)[0], (str)[1], (str)[2], (str)[3])
-
-/**
- * @defgroup video_pixel_formats Video pixel formats
- * The @c | characters separate the pixels, and spaces separate the bytes.
- * The uppercase letter represents the most significant bit.
- * The lowercase letters represent the rest of the bits.
- * @{
- */
 
 /**
  * @name Bayer formats (R, G, B channels).
@@ -966,32 +966,36 @@ void video_closest_frmival(const struct device *dev, enum video_endpoint_id ep,
  */
 
 /**
- * @}
- */
-
-/**
- * @brief Get number of bytes per pixel of a pixel format
+ * @brief Get number of bits per pixel of a pixel format
  *
- * @param pixfmt FourCC pixel format value (\ref video_pixel_formats).
+ * @param pixfmt FourCC pixel format value (@ref video_pixel_formats).
+ *
+ * @retval 0 if the format is unhandled or if it is variable number of bits
+ * @retval bit size of one pixel for this format
  */
-static inline unsigned int video_pix_fmt_bpp(uint32_t pixfmt)
+static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 {
 	switch (pixfmt) {
 	case VIDEO_PIX_FMT_BGGR8:
 	case VIDEO_PIX_FMT_GBRG8:
 	case VIDEO_PIX_FMT_GRBG8:
 	case VIDEO_PIX_FMT_RGGB8:
-		return 1;
+		return 8;
 	case VIDEO_PIX_FMT_RGB565:
 	case VIDEO_PIX_FMT_YUYV:
-		return 2;
+		return 16;
 	case VIDEO_PIX_FMT_XRGB32:
 	case VIDEO_PIX_FMT_XYUV32:
-		return 4;
+		return 32;
 	default:
+		/* Variable number of bits per pixel or unknown format */
 		return 0;
 	}
 }
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }
