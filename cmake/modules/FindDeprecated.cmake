@@ -63,6 +63,16 @@ if("XTOOLS" IN_LIST Deprecated_FIND_COMPONENTS)
                       "Please set ZEPHYR_TOOLCHAIN_VARIANT to 'zephyr-gnu'")
 endif()
 
+
+if("ZEPHYR" IN_LIST Deprecated_FIND_COMPONENTS)
+  list(REMOVE_ITEM Deprecated_FIND_COMPONENTS ZEPHYR)
+  # This code was deprecated after Zephyr v4.1.0
+  # When removing support for `zephyr`, remember to also remove:
+  # cmake/toolchain/zephyr (folder with files)
+  message(DEPRECATION "ZEPHYR toolchain variant is deprecated. "
+                      "Please set ZEPHYR_TOOLCHAIN_VARIANT to 'zephyr-gnu'")
+endif()
+
 if("SPARSE" IN_LIST Deprecated_FIND_COMPONENTS)
   list(REMOVE_ITEM Deprecated_FIND_COMPONENTS SPARSE)
   # This code was deprecated after Zephyr v3.2.0
