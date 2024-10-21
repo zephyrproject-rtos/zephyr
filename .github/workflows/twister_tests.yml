@@ -55,14 +55,14 @@ jobs:
     - name: Run pytest for twisterlib
       env:
         ZEPHYR_BASE: ./
-        ZEPHYR_TOOLCHAIN_VARIANT: zephyr
+        ZEPHYR_TOOLCHAIN_VARIANT: zephyr-gnu
       run: |
         echo "Run twister tests"
         PYTHONPATH=./scripts/tests pytest ./scripts/tests/twister
     - name: Run pytest for pytest-twister-harness
       env:
         ZEPHYR_BASE: ./
-        ZEPHYR_TOOLCHAIN_VARIANT: zephyr
+        ZEPHYR_TOOLCHAIN_VARIANT: zephyr-gnu
         PYTHONPATH: ./scripts/pylib/pytest-twister-harness/src:${PYTHONPATH}
       run: |
         echo "Run twister tests"
