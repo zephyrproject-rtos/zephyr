@@ -192,7 +192,6 @@
 
 &csi {
 	status = "okay";
-	source = <&ov7725>;
 	pinctrl-0 = <&pinmux_csi>;
 	pinctrl-names = "default";
 
