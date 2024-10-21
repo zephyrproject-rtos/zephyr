@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: devicetree-org
+      url-base: https://github.com/devicetree-org
 
   group-filter: [-babblesim, -optional]
 
@@ -342,6 +344,10 @@ manifest:
     - name: zcbor
       revision: 47f34dd7f5284e8750b5a715dee7f77c6c5bdc3f
       path: modules/lib/zcbor
+    - name: lopper
+      repo-path: lopper
+      revision: master
+      remote: devicetree-org
 
   self:
     path: zephyr
