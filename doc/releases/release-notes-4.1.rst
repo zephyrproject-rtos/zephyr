@@ -256,6 +256,12 @@ Libraries / Subsystems
     (or remove, if no other component makes use of it) heap memory requirements
     from the final application.
 
+  * The Kconfig symbol :kconfig:option:`CONFIG_MBEDTLS_PSA_KEY_SLOT_COUNT` was
+    added to allow selecting the number of key slots available in the Mbed TLS
+    implementation of the PSA Crypto core. It defaults to 16. Since each
+    slot consumes RAM memory even if unused, this value can be tweaked in order
+    to minimize RAM usage.
+
 * CMSIS-NN
 
 * FPGA

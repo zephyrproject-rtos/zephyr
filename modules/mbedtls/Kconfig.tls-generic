@@ -585,6 +585,19 @@ config MBEDTLS_PSA_STATIC_KEY_SLOTS
 	  contain the largest asymmetric/symmetric key type enabled in the build
 	  through PSA_WANT symbols.
 
+config MBEDTLS_PSA_KEY_SLOT_COUNT
+	int "Number of key slots in PSA Crypto core"
+	default 16
+	help
+	  Set the number of key slots that are available in the PSA Crypto core.
+	  Be aware that each slot, even if unused, increases RAM consumption
+	  by ~40 bytes plus:
+	  * the length of the largest asymmetric/symmetric key type enabled in
+	    the build through PSA_WANT symbols, if MBEDTLS_PSA_STATIC_KEY_SLOTS
+	    is set. (This is all defined statically at build time).
+	  * the heap-allocated memory to store the key material of a given slot,
+	    if it is used and MBEDTLS_PSA_STATIC_KEY_SLOTS is not set.
+
 endif # MBEDTLS_PSA_CRYPTO_C
 
 config MBEDTLS_SSL_DTLS_CONNECTION_ID
