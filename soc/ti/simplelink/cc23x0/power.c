@@ -36,6 +36,8 @@ const PowerCC23X0_Config PowerCC23X0_config = {
 
 #ifdef CONFIG_PM
 
+#ifndef CONFIG_CC23X0_RTC_TIMER
+
 #define MAX_SYSTIMER_DELTA 0xFFBFFFFFU
 #define RTC_TO_SYSTIM_TICKS 8U
 #define SYSTIM_CH_STEP      4U
@@ -44,9 +46,13 @@ const PowerCC23X0_Config PowerCC23X0_config = {
 #define SYSTIM_CH_CNT       5U
 #define RTC_NEXT(val, now)  (((val - PowerCC23X0_WAKEDELAYSTANDBY) >> SYSTIM_TO_RTC_SHIFT) + now)
 
+#endif
+
 static void pm_cc23x0_enter_standby(void);
 static int power_initialize(void);
 extern int_fast16_t PowerCC23X0_notify(uint_fast16_t eventType);
+
+#ifndef CONFIG_CC23X0_RTC_TIMER
 static void pm_cc23x0_systim_standby_restore(void);
 
 /* Global to stash the SysTimer timeouts while we enter standby */
@@ -66,7 +72,9 @@ const uint8_t systim_offset[SYSTIM_CH_CNT] = {
 	2, /* 250ns -> 1us */
 	2  /* 250ns -> 1us */
 };
+#endif
 
+#ifndef CONFIG_CC23X0_RTC_TIMER
 static void pm_cc23x0_systim_standby_restore(void)
 {
 	HWREG(RTC_BASE + RTC_O_ARMCLR) = RTC_ARMCLR_CH0_CLR;
@@ -93,9 +101,11 @@ static void pm_cc23x0_systim_standby_restore(void)
 
 	HwiP_restore(key);
 }
+#endif
 
 static void pm_cc23x0_enter_standby(void)
 {
+#ifndef CONFIG_CC23X0_RTC_TIMER
 	uint32_t rtc_now = 0;
 	uint32_t systim_now = 0;
 	uint32_t systim_next = MAX_SYSTIMER_DELTA;
@@ -142,8 +152,9 @@ static void pm_cc23x0_enter_standby(void)
 			HwiP_clearInterrupt(INT_CPUIRQ16);
 			rtc_now = HWREG(RTC_BASE + RTC_O_TIME8U);
 			HWREG(RTC_BASE + RTC_O_CH0CC8U) = RTC_NEXT(systim_next, rtc_now);
-
+#endif
 			Power_sleep(PowerLPF3_STANDBY);
+#ifndef CONFIG_CC23X0_RTC_TIMER
 			pm_cc23x0_systim_standby_restore();
 		} else if (idle) {
 			__WFI();
@@ -153,6 +164,7 @@ static void pm_cc23x0_enter_standby(void)
 	}
 
 	HwiP_restore(key);
+#endif
 }
 
 void pm_state_set(enum pm_state state, uint8_t substate_id)
