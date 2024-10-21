@@ -1,0 +1,14 @@
+# Copyright (c) 2024, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Device/scenario dependent information that is not available in
+# other ways.
+
+config TEST_DRIVER_FLASH_SIZE
+	int "Size of flash device under test"
+	default -1
+	help
+	  Expected flash device size the test will validate against. If the flash driver does not
+	  support the get_size() API, leave this set as -1 to skip the test.
+
+source "Kconfig.zephyr"
