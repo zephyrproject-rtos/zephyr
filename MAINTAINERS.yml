@@ -4815,7 +4815,7 @@ West:
     - mnkp
     - rettichschnidi
   files:
-    - modules/Kconfig.silabs
+    - modules/hal_silabs/
   labels:
     - "platform: Silabs"
 
