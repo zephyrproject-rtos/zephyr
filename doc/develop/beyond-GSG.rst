@@ -86,9 +86,9 @@ or :envvar:`ZEPHYR_SDK_INSTALL_DIR` environment variables are already set.
   by default. Proceed to next step without making any changes.
 
 * If :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` is set, the corresponding toolchain will be selected
-  at build time. Zephyr SDK is identified by the value ``zephyr``.
-  If the :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` environment variable is not ``zephyr``, then either
-  unset it or change its value to ``zephyr`` to make sure Zephyr SDK is selected.
+  at build time. Zephyr SDK is identified by the value ``zephyr-gnu``.
+  If the :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` environment variable is not ``zephyr-gnu``, then either
+  unset it or change its value to ``zephyr-gnu`` to make sure Zephyr SDK is selected.
 
 * If the :envvar:`ZEPHYR_SDK_INSTALL_DIR` environment variable is set, it will override
   the default lookup location for Zephyr SDK. If you install Zephyr SDK to one
