@@ -1,7 +1,4 @@
-.. _icev_wireless:
-
-ICE-V Wireless
-##############
+.. zephyr:board:: icev_wireless
 
 Overview
 ********
@@ -9,12 +6,6 @@ Overview
 The ICE-V Wireless is a combined ESP32C3 and iCE40 FPGA board.
 
 See the `ICE-V Wireless Github Project`_ for details.
-
-.. figure:: img/icev_wireless.jpg
-   :align: center
-   :alt: ICE-V Wireless
-
-   ICE-V Wireless
 
 Hardware
 ********
