@@ -20,6 +20,7 @@ config GEN_IRQ_VECTOR_TABLE
 
 config RISCV_GENERIC_TOOLCHAIN
 	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr-gnu"
+	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr"
 
 config RV_BOOT_HART
 	# default cluster id 0x3e, core 0 (FC) => 0x3e0 == 992
