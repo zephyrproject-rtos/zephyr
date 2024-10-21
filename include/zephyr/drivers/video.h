@@ -6,7 +6,6 @@
 
 /*
  * Copyright (c) 2019 Linaro Limited.
- * Copyright (c) 2024 tinyVision.ai Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -751,6 +750,14 @@ struct video_buffer *video_buffer_alloc(size_t size);
 void video_buffer_release(struct video_buffer *buf);
 
 /**
+ * @defgroup video_pixel_formats Video pixel formats
+ * The @c | character separate the pixel, and spaces separate the bytes.
+ * The uppercase letter represents the most significant bit.
+ * The lowercase letters represent the rest of the bits.
+ * @{
+ */
+
+/**
  * @brief Four-character-code uniquely identifying the pixel format
  */
 #define VIDEO_FOURCC(a, b, c, d)                                                                   \
@@ -766,14 +773,6 @@ void video_buffer_release(struct video_buffer *buf);
  * @return Four-character-code.
  */
 #define VIDEO_FOURCC_FROM_STR(str) VIDEO_FOURCC((str)[0], (str)[1], (str)[2], (str)[3])
-
-/**
- * @defgroup video_pixel_formats Video pixel formats
- * The @c | character separate the pixel, and spaces separate the bytes.
- * The uppercase letter represents the most significant bit.
- * The lowercase letters represent the rest of the bits.
- * @{
- */
 
 /**
  * @name Bayer formats (R, G, B channels).
@@ -890,6 +889,40 @@ void video_buffer_release(struct video_buffer *buf);
 /**
  * @}
  */
+
+/**
+ * @brief Obtain the number of bits that a pixel requires for a given format
+ *
+ * @param pixelformat The fourcc integer of the format as defined in
+ *        @c <zephyr/drivers/video/formats.h>
+ *
+ * @retval 0 if the format is unhandled or if it is variable umber of bits
+ * @retval bit size of one pixel for this format
+ */
+static inline uint8_t video_bits_per_pixel(uint32_t pixelformat)
+{
+	switch (pixelformat) {
+	case VIDEO_PIX_FMT_BGGR8:
+		return VIDEO_PIX_FMT_BGGR8_BITS;
+	case VIDEO_PIX_FMT_GBRG8:
+		return VIDEO_PIX_FMT_GBRG8_BITS;
+	case VIDEO_PIX_FMT_GRBG8:
+		return VIDEO_PIX_FMT_GRBG8_BITS;
+	case VIDEO_PIX_FMT_RGGB8:
+		return VIDEO_PIX_FMT_RGGB8_BITS;
+	case VIDEO_PIX_FMT_RGB565:
+		return VIDEO_PIX_FMT_RGB565_BITS;
+	case VIDEO_PIX_FMT_XRGB32:
+		return VIDEO_PIX_FMT_XRGB32_BITS;
+	case VIDEO_PIX_FMT_YUYV:
+		return VIDEO_PIX_FMT_YUYV_BITS;
+	case VIDEO_PIX_FMT_XYUV32:
+		return VIDEO_PIX_FMT_XYUV32_BITS;
+	default:
+		/* Variable number of bits per pixel or unknown format */
+		return 0;
+	}
+}
 
 /**
  * @}
