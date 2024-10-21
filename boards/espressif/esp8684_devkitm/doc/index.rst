@@ -242,6 +242,8 @@ You can debug an application in the usual way. Here is an example for the :zephy
 References
 **********
 
+.. target-notes::
+
 .. _`ESP8684-DevKitM User Guide`: https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp8684/esp8684-devkitm-1/user_guide.html
 .. _`ESP8684 Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp8684_datasheet_en.pdf
 .. _`ESP8684 Technical Reference Manual`: https://www.espressif.com/sites/default/files/documentation/esp8684_technical_reference_manual_en.pdf

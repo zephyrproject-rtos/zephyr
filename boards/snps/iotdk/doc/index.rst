@@ -189,6 +189,8 @@ Release Notes
 References
 **********
 
+.. target-notes::
+
 .. _embARC website: https://www.embarc.org
 
 .. _Designware ARC IoT Development Kit website: https://www.synopsys.com/dw/ipdir.php?ds=arc_iot_development_kit

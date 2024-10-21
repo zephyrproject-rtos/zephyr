@@ -93,6 +93,8 @@ Step through the application in your debugger.
 References
 **********
 
+.. target-notes::
+
 .. _PFM M467 User Manual:
    https://www.nuvoton.com/export/resource-files/UM_NuMaker-PFM-M467_User_Manual_EN_Rev1.01.pdf
 .. _M460 TRM:

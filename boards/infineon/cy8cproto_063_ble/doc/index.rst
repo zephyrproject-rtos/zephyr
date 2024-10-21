@@ -119,6 +119,8 @@ On Linux:
 References
 **********
 
+.. target-notes::
+
 .. _PSoC 63 BLE MCU SoC Website:
     https://www.cypress.com/products/32-bit-arm-cortex-m4-psoc-6
 

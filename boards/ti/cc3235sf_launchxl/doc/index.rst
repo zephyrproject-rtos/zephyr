@@ -266,6 +266,8 @@ using the TI UniFlash tool for certificate programming.
 References
 **********
 
+.. target-notes::
+
 TI SimpleLink MCUs:
     http://www.ti.com/microcontrollers/simplelink-mcus/overview.html
 

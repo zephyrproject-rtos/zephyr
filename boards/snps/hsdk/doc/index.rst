@@ -518,6 +518,8 @@ Release Notes
 References
 **********
 
+.. target-notes::
+
 .. _embARC website: https://www.embarc.org
 
 .. _Designware HS Development Kit website: https://www.synopsys.com/dw/ipdir.php?ds=arc-hs-development-kit

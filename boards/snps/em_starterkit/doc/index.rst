@@ -307,6 +307,8 @@ The following is a list of TODO items:
 References
 **********
 
+.. target-notes::
+
 .. _embARC website: https://www.embarc.org
 
 .. _Designware ARC EM Starter Kit website: https://www.synopsys.com/dw/ipdir.php?ds=arc_em_starter_kit

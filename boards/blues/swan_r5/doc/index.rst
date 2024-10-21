@@ -222,6 +222,8 @@ You should see the following message on the console:
 References
 **********
 
+.. target-notes::
+
 .. _Swan Product Page:
    https://blues.io/products/swan
 

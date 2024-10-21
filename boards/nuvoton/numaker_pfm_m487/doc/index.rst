@@ -92,6 +92,8 @@ Step through the application in your debugger.
 References
 **********
 
+.. target-notes::
+
 .. _PFM M487 User Manual:
    https://www.nuvoton.com/export/resource-files/UM_NuMaker-PFM-M487_User_Manual_EN_Rev1.01.pdf
 .. _M480 TRM:
