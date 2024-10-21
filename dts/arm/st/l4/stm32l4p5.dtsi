@@ -335,6 +335,18 @@
 			status = "disabled";
 		};
 
+		dcmi: dcmi@50050000 {
+			compatible = "st,stm32-dcmi";
+			reg = <0x50050000 0x400>;
+			interrupts = <85 0>;
+			interrupt-names = "dcmi";
+			clocks = <&rcc STM32_CLOCK(AHB2, 14U)>;
+			dmas = <&dma1 0 91 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_PERIPH_NO_INC |
+				STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS | STM32_DMA_MEM_32BITS |
+				STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_1_4>;
+			status = "disabled";
+		};
+
 		sdmmc1: sdmmc@50062400 {
 			compatible = "st,stm32-sdmmc";
 			reg = <0x50062400 0x400>;
