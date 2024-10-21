@@ -123,7 +123,7 @@ static inline void video_pix_fmt_convert(struct video_format *fmt, bool isGetFmt
 		break;
 	}
 
-	fmt->pitch = fmt->width * video_pix_fmt_bpp(fmt->pixelformat);
+	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
 }
 #endif
 
@@ -132,7 +132,7 @@ static int video_mcux_csi_set_fmt(const struct device *dev, enum video_endpoint_
 {
 	const struct video_mcux_csi_config *config = dev->config;
 	struct video_mcux_csi_data *data = dev->data;
-	unsigned int bpp = video_pix_fmt_bpp(fmt->pixelformat);
+	unsigned int bpp = video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
 	status_t ret;
 	struct video_format format = *fmt;
 
