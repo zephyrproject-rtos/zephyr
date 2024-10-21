@@ -217,6 +217,31 @@
 			interrupts = <7 0>;
 			status = "disabled";
 		};
+
+		dma1: dma@48700000 {
+			compatible = "st,stm32-dma-v2bis";
+			#dma-cells = <2>;
+			reg = <0x48700000 256>;
+			clocks = <&rcc STM32_CLOCK(AHB0, 0)>;
+			interrupts = <17 0 17 0 17 0 17 0 17 0 17 0 17 0 17 0>;
+			dma-requests = <8>;
+			dma-offset = <0>;
+			status = "disabled";
+		};
+
+		dmamux1: dmamux@48800000 {
+			compatible = "st,stm32-dmamux";
+			reg = <0x48800000 DT_SIZE_K(1)>;
+			/* `clocks` property is identical between DMA and DMAMUX
+			 * because they share a single common bit in RCC registers
+			 */
+			clocks = <&rcc STM32_CLOCK(AHB0, 0)>;
+			#dma-cells = <3>;
+			dma-channels = <8>;
+			dma-generators = <1>;
+			dma-requests= <25>;
+			status = "disabled";
+		};
 	};
 };
 
