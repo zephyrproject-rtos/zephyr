@@ -118,7 +118,7 @@ struct dma_tsn_nic_result {
 struct rx_metadata {
 	uint64_t timestamp;
 	uint16_t frame_length;
-} __attribute__((packed, scalar_storage_order("big-endian")));
+} __packed __attribute__((scalar_storage_order("big-endian")));
 
 struct eth_tsn_nic_config {
 	const struct device *pci_dev;
