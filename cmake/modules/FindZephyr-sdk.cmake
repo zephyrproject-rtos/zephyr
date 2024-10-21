@@ -54,7 +54,7 @@ endif()
 # 1) Zephyr specified as toolchain (ZEPHYR_SDK_INSTALL_DIR still used if defined)
 # 2) No toolchain specified == Default to Zephyr toolchain
 # Until we completely deprecate it
-if(("zephyr" STREQUAL ${ZEPHYR_TOOLCHAIN_VARIANT}) OR
+if(("zephyr-gnu" STREQUAL ${ZEPHYR_TOOLCHAIN_VARIANT}) OR
    (NOT DEFINED ZEPHYR_TOOLCHAIN_VARIANT) OR
    (DEFINED ZEPHYR_SDK_INSTALL_DIR) OR
    (Zephyr-sdk_FIND_REQUIRED))
@@ -182,7 +182,7 @@ if(LOAD IN_LIST Zephyr-sdk_FIND_COMPONENTS)
     include(${ZEPHYR_SDK_INSTALL_DIR}/cmake/zephyr/host-tools.cmake)
 
     if (NOT Zephyr-sdk_FIND_QUIETLY)
-      message(STATUS "Found host-tools: zephyr ${SDK_VERSION} (${ZEPHYR_SDK_INSTALL_DIR})")
+      message(STATUS "Found host-tools: zephyr-sdk ${SDK_VERSION} (${ZEPHYR_SDK_INSTALL_DIR})")
     endif()
   endif()
 endif()
