@@ -41,6 +41,11 @@
 	interrupts = <52 0>;
 };
 
+&hfxo {
+	interrupts = <50 0>;
+	interrupt-names = "hfxo";
+};
+
 &msc {
 	flash0: flash@8000000 {
 		compatible = "soc-nv-flash";
