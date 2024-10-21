@@ -216,6 +216,8 @@ GDB instance. To reattach, just follow the same steps above, till
 References
 **********
 
+.. target-notes::
+
 .. _96Boards website:
    https://www.96boards.org/product/neonkey/
 

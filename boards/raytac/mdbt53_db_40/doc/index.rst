@@ -259,6 +259,8 @@ boards with a Segger IC.
 References
 **********
 
+.. target-notes::
+
 .. _IDAU:
    https://developer.arm.com/docs/100690/latest/attribution-units-sau-and-idau
 .. _MDBT53-DB-40 website:

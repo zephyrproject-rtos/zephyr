@@ -547,6 +547,8 @@ The following list indicates the state of HS4x/HS4xD Development Kit peripherals
 References
 **********
 
+.. target-notes::
+
 .. _embARC website: https://www.embarc.org
 
 .. _Designware HS Development Kit website: https://www.synopsys.com/dw/ipdir.php?ds=arc-hs-development-kit

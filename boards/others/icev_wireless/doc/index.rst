@@ -244,6 +244,8 @@ You can debug an application in the usual way. Here is an example for the
 References
 **********
 
+.. target-notes::
+
 .. _ICE-V Wireless Github Project:
    https://github.com/ICE-V-Wireless/ICE-V-Wireless
 

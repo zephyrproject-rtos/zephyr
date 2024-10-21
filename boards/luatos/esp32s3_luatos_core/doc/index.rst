@@ -286,6 +286,8 @@ You can debug an application in the usual way. Here is an example for the :zephy
 References
 **********
 
+.. target-notes::
+
 .. _`ESP32S3-Luatos-Core`: https://wiki.luatos.com/chips/esp32s3/board.html
 .. _`ESP32-S3 Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp32-s3-mini-1_mini-1u_datasheet_en.pdf
 .. _`ESP32-S3 Technical Reference Manual`: https://www.espressif.com/sites/default/files/documentation/esp32-s3_technical_reference_manual_en.pdf

@@ -256,6 +256,8 @@ You can debug an application in the usual way. Here is an example for the :zephy
 References
 **********
 
+.. target-notes::
+
 .. _ESP32-EVB Website:
    https://www.olimex.com/Products/IoT/ESP32/ESP32-EVB/open-source-hardware
 

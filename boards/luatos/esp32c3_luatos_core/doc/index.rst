@@ -256,6 +256,8 @@ You can debug an application in the usual way. Here is an example for the :zephy
 References
 **********
 
+.. target-notes::
+
 .. [1] https://www.espressif.com/en/products/socs/esp32-c3
 .. _ESP32C3 Core Website: https://wiki.luatos.com/chips/esp32c3/board.html
 .. _ESP32C3 Technical Reference Manual: https://espressif.com/sites/default/files/documentation/esp32-c3_technical_reference_manual_en.pdf

@@ -99,6 +99,8 @@ Refer to the detailed overview about :ref:`application_debugging`.
 References
 **********
 
+.. target-notes::
+
 1. ARMv7-A and ARMv7-R Architecture Reference Manual (ARM DDI 0406C ID051414)
 2. Cortex-R5 and Cortex-R5F Technical Reference Manual (ARM DDI 0460C ID021511)
 3. Zynq UltraScale+ Device Technical Reference Manual (UG1085)
