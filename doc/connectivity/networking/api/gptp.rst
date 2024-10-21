@@ -42,7 +42,7 @@ Boards supported:
 - :zephyr:board:`sam_e70_xplained`
 - :ref:`native_sim` (only usable for simple testing, limited capabilities
   due to lack of hardware clock)
-- :ref:`qemu_x86` (emulated, limited capabilities due to lack of hardware clock)
+- :zephyr:board:`qemu_x86` (emulated, limited capabilities due to lack of hardware clock)
 
 Enabling the stack
 ******************

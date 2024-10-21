@@ -1,7 +1,4 @@
-.. _qemu_xtensa:
-
-Xtensa Emulation (QEMU)
-#######################
+.. zephyr:board:: qemu_xtensa
 
 Overview
 ********

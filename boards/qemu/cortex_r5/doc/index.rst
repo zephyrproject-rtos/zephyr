@@ -1,7 +1,4 @@
-.. _qemu_cortex_r5:
-
-ARM Cortex-R5 Emulation (QEMU)
-##############################
+.. zephyr:board:: qemu_cortex_r5
 
 Overview
 ********
