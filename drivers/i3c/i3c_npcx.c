@@ -2986,6 +2986,10 @@ static DEVICE_API(i3c, npcx_i3c_driver_api) = {
 
 	.ibi_raise = npcx_i3c_target_ibi_raise,
 #endif
+
+#ifdef CONFIG_I3C_RTIO
+	.iodev_submit = i3c_iodev_submit_fallback,
+#endif
 };
 
 #define DT_INST_TGT_PID_PROP_OR(id, prop, idx)                                                     \
