@@ -95,6 +95,7 @@ jobs:
           aws s3 sync  --quiet footprint_data/ s3://testing.zephyrproject.org/footprint_data/
 
       - name: Transform Footprint data to Twister JSON reports
+        shell: bash
         run: |
           shopt -s globstar
           export ZEPHYR_BASE=${PWD}
