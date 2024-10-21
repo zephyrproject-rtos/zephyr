@@ -218,6 +218,22 @@
 			status = "disabled";
 		};
 
+		adc1: adc@41006000 {
+			compatible = "st,stm32wb0-adc";
+			reg = <0x41006000 256>;
+			/* On STM32WB0, the two ADC clock domains (ANALOG / DIGITAL)
+			 * can be controlled independently. Expose this feature to
+			 * the driver by having two `clocks` property entries:
+			 *  - first entry is digital part of ADC block (always-on)
+			 *  - second entry is analog part of ADC block (on-demand)
+			 */
+			clocks = <&rcc STM32_CLOCK(APB1, 4)>,
+				 <&rcc STM32_CLOCK(APB1, 5)>;
+			interrupts = <12 0>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
 		dma1: dma@48700000 {
 			compatible = "st,stm32-dma-v2bis";
 			#dma-cells = <2>;
