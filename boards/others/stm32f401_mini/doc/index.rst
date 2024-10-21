@@ -1,7 +1,4 @@
-.. _stm32f401_mini:
-
-STM32 Mini F401
-###############
+.. zephyr:board:: stm32f401_mini
 
 Overview
 ********
@@ -9,10 +6,6 @@ Overview
 The STM32 Mini F401 is an extremely low cost and bare-bones
 development board featuring the STM32F401CC, see `STM32F401CC website`_.
 More info about the board with schematics available `here <stm32-base-board-page_>`_
-
-.. image:: img/STM32_Mini_F401-1.jpg
-      :align: center
-      :alt: STM32 Mini F401
 
 Hardware
 ********
