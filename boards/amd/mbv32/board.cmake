@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+include(${ZEPHYR_BASE}/boards/common/xsdb.board.cmake)
 set(SUPPORTED_EMU_PLATFORMS qemu)
 set(QEMU_ARCH riscv32)
 set(QEMU_CPU_TYPE_${ARCH} riscv32)
