@@ -193,6 +193,8 @@ on SoC level.
 References
 **********
 
+.. target-notes::
+
 .. _Designware ARC nSIM: https://www.synopsys.com/dw/ipdir.php?ds=sim_nsim
 .. _DesignWare ARC Free nSIM: https://www.synopsys.com/cgi-bin/dwarcnsim/req1.cgi
 .. _HAPS: https://www.synopsys.com/verification/prototyping/haps.html

@@ -106,6 +106,8 @@ See :ref:`debug_with_arm_ds` for how to debug with Arm Development Studio [5]_.
 References
 **********
 
+.. target-notes::
+
 .. [1] https://developer.arm.com/tools-and-software/simulation-models/fixed-virtual-platforms/arm-ecosystem-models
 .. [2] Arm Architecture Reference Manual Supplement - Armv8, for Armv8-R AArch64 architecture profile
        https://developer.arm.com/documentation/ddi0600/latest/

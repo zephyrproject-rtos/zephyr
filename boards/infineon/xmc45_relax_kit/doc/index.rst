@@ -96,6 +96,8 @@ Step through the application in your debugger.
 References
 **********
 
+.. target-notes::
+
 .. _Relax Kit User Manual:
    https://www.infineon.com/dgdl/Board_Users_Manual_XMC4500_Relax_Kit-V1_R1.2_released.pdf?fileId=db3a30433acf32c9013adf6b97b112f9
 

@@ -89,6 +89,8 @@ Step through the application in your debugger.
 References
 **********
 
+.. target-notes::
+
 .. _NuMaker M2L31KI User Manual:
    https://www.nuvoton.com/products/microcontrollers/arm-cortex-m23-mcus/m2l31-series/
 .. _M2L31 TRM:

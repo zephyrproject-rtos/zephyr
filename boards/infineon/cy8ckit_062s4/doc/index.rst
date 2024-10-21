@@ -100,6 +100,8 @@ To get the OpenOCD package, it is required that you
 References
 **********
 
+.. target-notes::
+
 .. _CY8CKIT 062S4 Pioneer Kit Guide:
     https://www.infineon.com/dgdl/Infineon-CY8CKIT_062S4_PSoC62S4_pioneer_kit_guide-UserManual-v01_00-EN.pdf?fileId=8ac78c8c7e7124d1017e962f98992207
 

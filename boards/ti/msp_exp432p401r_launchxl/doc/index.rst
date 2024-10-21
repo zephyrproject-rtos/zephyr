@@ -133,6 +133,8 @@ build target:
 References
 **********
 
+.. target-notes::
+
 TI MSP432 Wiki:
    https://en.wikipedia.org/wiki/TI_MSP432
 

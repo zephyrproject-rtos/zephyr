@@ -94,4 +94,6 @@ Enable Ethernet in KConfig:
 References
 **********
 
+.. target-notes::
+
 .. _KINCONY KC868-A32 User Guide: https://www.kincony.com/arduino-esp32-32-channel-relay-module-kc868-a32.html
