@@ -331,8 +331,15 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPS
 	${HOSTAP_SRC_BASE}/wps/wps_enrollee.c
 	${HOSTAP_SRC_BASE}/wps/wps_registrar.c
 	${HOSTAP_SRC_BASE}/crypto/dh_groups.c
+)
+
+if(NOT CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ALT)
+# dh_group5 is only needed if we are not using mbedtls, as mbedtls provides
+# its own definition
+zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPS
 	${HOSTAP_SRC_BASE}/crypto/dh_group5.c
 )
+endif()
 
 zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
 	CONFIG_P2P
