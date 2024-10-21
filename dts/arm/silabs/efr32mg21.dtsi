@@ -260,6 +260,7 @@
 			compatible = "silabs,gecko-stimer";
 			reg = <0x58000000 0x400>;
 			interrupts = <10 0>;
+			interrupt-names = "rtcc";
 			clock-frequency = <32768>;
 			prescaler = <1>;
 			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_RTCCCLK>;

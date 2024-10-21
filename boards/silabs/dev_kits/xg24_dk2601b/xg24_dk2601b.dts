@@ -225,7 +225,7 @@
 	status = "okay";
 };
 
-&stimer0 {
+&sysrtc0 {
 	status = "okay";
 };
 
