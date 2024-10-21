@@ -8,6 +8,7 @@ config CAN_ESP32_TWAI
 	default y
 	depends on DT_HAS_ESPRESSIF_ESP32_TWAI_ENABLED
 	select CAN_SJA1000
+	select PINCTRL
 	help
 	  This enables support for the Espressif Two-Wire Automotive Interface
 	  (TWAI) CAN driver.
