@@ -18,7 +18,7 @@ os.environ["ZEPHYR_BASE"] = str(twister_path.parent)
 sys.path.insert(0, str(twister_path))
 sys.path.insert(0, str(twister_path / "pylib" / "twister"))
 
-from twisterlib.environment import add_parse_arguments, parse_arguments
+from twisterlib.environment import add_parse_arguments, parse_arguments, python_version_guard
 from twisterlib.twister_main import main
 
 TWISTER_DESCRIPTION = """\
@@ -37,6 +37,7 @@ class Twister(WestCommand):
             TWISTER_DESCRIPTION,
             accepts_unknown_args=True,
         )
+        python_version_guard()
 
     def do_add_parser(self, parser_adder):
         parser = parser_adder.add_parser(

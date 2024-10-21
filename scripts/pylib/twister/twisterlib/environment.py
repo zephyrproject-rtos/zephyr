@@ -51,6 +51,17 @@ def _get_installed_packages() -> Generator[str, None, None]:
         yield dist.metadata['Name']
 
 
+def python_version_guard():
+    min_ver = (3, 10)
+    if sys.version_info < min_ver:
+        min_ver_str = '.'.join([str(v) for v in min_ver])
+        cur_ver_line = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+        print(f"Unsupported Python version {cur_ver_line}.")
+        print(f"Currently, Twister requires at least Python {min_ver_str}.")
+        print("Install a newer Python version and retry.")
+        sys.exit(1)
+
+
 installed_packages: List[str] = list(_get_installed_packages())
 PYTEST_PLUGIN_INSTALLED = 'pytest-twister-harness' in installed_packages
 
