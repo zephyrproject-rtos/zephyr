@@ -7,9 +7,6 @@ config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 66
 
-config PM
-	select COUNTER
-
 config GPIO_GECKO
 	default y
 
