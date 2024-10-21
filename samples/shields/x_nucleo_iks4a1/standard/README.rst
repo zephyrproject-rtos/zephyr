@@ -16,6 +16,7 @@ periodically reads and displays data from the shield sensors:
 - LSM6DSO16IS 6-Axis acceleration and angular velocity
 - LPS22DF ambient temperature and atmospheric pressure
 - LIS2MDL 3-Axis magnetic field intensity
+- LIS2DUXS12 3-Axis acceleration
 
 Requirements
 ************
@@ -53,10 +54,14 @@ Sample Output
     LSM6DSV16X: GYro (dps): x: -0.000, y: 0.000, z: 0.005
     LPS22DF: Temperature: 25.2 C
     LPS22DF: Pressure:98.121 kpa
+    LIS2DUXS12: Accel (m.s-2): x: 0.689, y: -0.306, z: 9.571
+    LIS2DUXS12: Temperature: 23.9 C
+
     10:: lis2mdl trig 1839
     10:: lsm6dso16is acc trig 3892
     10:: lsm6dsv16x acc trig 4412
     10:: lps22df trig 174
+    10:: lis2duxs12 acc trig 3681
 
     <updated endlessly every 2 seconds>
 
