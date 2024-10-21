@@ -80,9 +80,13 @@ def get_catalog():
 
     for board in boards:
         # We could use board.vendor but it is often incorrect. Instead, deduce vendor from
-        # containing folder
+        # containing folder. There are a few exceptions, like the "native" and "others" folders
+        # which we know are not actual vendors so treat them as such.
         for folder in board.dir.parents:
-            if vnd_lookup.vnd2vendor.get(folder.name):
+            if folder.name in ["native", "others"]:
+                vendor = "others"
+                break
+            elif vnd_lookup.vnd2vendor.get(folder.name):
                 vendor = folder.name
                 break
 
@@ -118,4 +122,8 @@ def get_catalog():
         series = soc.series or "<no series>"
         socs_hierarchy.setdefault(family, {}).setdefault(series, []).append(soc.name)
 
-    return {"boards": board_catalog, "vendors": vnd_lookup.vnd2vendor, "socs": socs_hierarchy}
+    return {
+        "boards": board_catalog,
+        "vendors": {**vnd_lookup.vnd2vendor, "others": "Other/Unknown"},
+        "socs": socs_hierarchy,
+    }
