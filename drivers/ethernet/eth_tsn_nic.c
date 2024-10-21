@@ -266,25 +266,6 @@ static const struct device *eth_tsn_nic_get_phy(const struct device *dev)
 	return NULL;
 }
 
-static int tsn_fill_metadata(const struct device *dev, uint64_t now, struct tx_buffer *buf)
-{
-	/* TODO: sw-295 (QoS) */
-	buf->metadata.fail_policy = TSN_FAIL_POLICY_DROP;
-
-	buf->metadata.from.tick = 0;
-	buf->metadata.from.priority = 0;
-	buf->metadata.to.tick = (1 << 29) - 1;
-	buf->metadata.to.priority = 0;
-	buf->metadata.delay_from.tick = 0;
-	buf->metadata.delay_from.priority = 0;
-	buf->metadata.delay_to.tick = (1 << 29) - 1;
-	buf->metadata.delay_to.priority = 0;
-
-	buf->metadata.timestamp_id = TSN_TIMESTAMP_ID_NONE;
-
-	return 0;
-}
-
 static int eth_tsn_nic_send(const struct device *dev, struct net_pkt *pkt)
 {
 	/* TODO: This is for test only */

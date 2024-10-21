@@ -199,4 +199,6 @@ struct rx_buffer {
 	uint8_t data[BUFFER_SIZE];
 } __packed __attribute__((scalar_storage_order("big-endian")));
 
+int tsn_fill_metadata(const struct device *dev, uint64_t now, struct tx_buffer *buf);
+
 #endif /* ZEPHYR_DRIVERS_ETHERNET_ETH_TSN_NIC_H_ */
