@@ -117,5 +117,7 @@ Now the bitstream can be uploaded again.
 References
 **********
 
+.. target-notes::
+
 .. _Quicklogic Quickfeather board:
    https://github.com/QuickLogic-Corp/quick-feather-dev-board
