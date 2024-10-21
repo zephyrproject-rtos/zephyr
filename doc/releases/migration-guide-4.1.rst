@@ -36,6 +36,14 @@ Mbed TLS
   :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_LEGACY_RNG`. This helps in reducing
   ROM/RAM footprint of the Mbed TLS library.
 
+* The newly-added Kconfig option :kconfig:option:`CONFIG_MBEDTLS_PSA_KEY_SLOT_COUNT`
+  allows to specify the number of key slots available in the PSA Crypto core.
+  Previously this value was not explicitly set, so Mbed TLS's default value of
+  32 was used. The new Kconfig option defaults to 16 instead in order to find
+  a reasonable compromise between RAM consumption and most common use cases.
+  It can be further trimmed down to reduce RAM consumption if the final
+  application doesn't need that many key slots simultaneously.
+
 Trusted Firmware-M
 ==================
 
