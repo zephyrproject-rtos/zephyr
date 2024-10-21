@@ -26,6 +26,17 @@ from devicetree import dtlib
 #   - to run a particular test function or functions, use
 #     '-k test_function_pattern_goes_here'
 
+def uncomment(dts):
+    '''Trim added comments from a DT string.'''
+
+    # remove node comments, including leading empty line
+    dts = re.sub(r'\n\n[ \t]*/\*.*?\*/\n', '\n', dts, flags=re.DOTALL)
+
+    # remove property comments
+    dts = re.sub(r'[ \t]*/\*.*?\*/\n', '\n', dts)
+
+    return dts
+
 def parse(dts, include_path=(), **kwargs):
     '''Parse a DTS string 'dts', using the given include path.
 
@@ -48,7 +59,7 @@ def verify_parse(dts, expected, include_path=()):
 
     dt = parse(dts[1:], include_path)
 
-    actual = str(dt)
+    actual = uncomment(str(dt))
     expected = expected[1:-1]
     assert actual == expected, f'unexpected round-trip on {dts}'
 
@@ -1029,7 +1040,7 @@ def test_include_curdir(tmp_path):
 };
 """)
         dt = dtlib.DT("test.dts")
-        assert str(dt) == """
+        assert uncomment(str(dt)) == """
 /dts-v1/;
 
 / {
@@ -1086,7 +1097,7 @@ y /include/ "via-include-path-1"
 	y = < 0x2 >;
 };
 """[1:-1]
-    assert str(dt) == expected_dt
+    assert uncomment(str(dt)) == expected_dt
 
 def test_include_misc(tmp_path):
     '''Miscellaneous /include/ tests.'''
