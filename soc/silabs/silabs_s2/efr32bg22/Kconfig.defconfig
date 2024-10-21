@@ -8,7 +8,6 @@ config NUM_IRQS
 	default 60
 
 config PM
-	select COUNTER
 	select UART_INTERRUPT_DRIVEN
 
 config GPIO_GECKO
