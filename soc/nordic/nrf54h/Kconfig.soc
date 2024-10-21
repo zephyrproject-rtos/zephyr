@@ -9,23 +9,11 @@ config SOC_NRF54H20
 	help
 	  nRF54H20
 
-config SOC_NRF54H20_ENGB
-	bool
-	select SOC_SERIES_NRF54HX
-	help
-	  nRF54H20 (EngB)
-
 config SOC_NRF54H20_CPUAPP
 	bool
 	select SOC_NRF54H20
 	help
 	  nRF54H20 CPUAPP
-
-config SOC_NRF54H20_ENGB_CPUAPP
-	bool
-	select SOC_NRF54H20_ENGB
-	help
-	  nRF54H20 (EngB) CPUAPP
 
 config SOC_NRF54H20_CPURAD
 	bool
@@ -33,23 +21,11 @@ config SOC_NRF54H20_CPURAD
 	help
 	  nRF54H20 CPURAD
 
-config SOC_NRF54H20_ENGB_CPURAD
-	bool
-	select SOC_NRF54H20_ENGB
-	help
-	  nRF54H20 (EngB) CPURAD
-
 config SOC_NRF54H20_CPUPPR
 	bool
 	select SOC_NRF54H20
 	help
 	  nRF54H20 CPUPPR
-
-config SOC_NRF54H20_ENGB_CPUPPR
-	bool
-	select SOC_NRF54H20_ENGB
-	help
-	  nRF54H20 (EngB) CPUPPR
 
 config SOC_NRF54H20_CPUFLPR
 	bool
@@ -57,11 +33,5 @@ config SOC_NRF54H20_CPUFLPR
 	help
 	  nRF54H20 CPUFLPR
 
-config SOC_NRF54H20_ENGB_CPUFLPR
-	bool
-	select SOC_NRF54H20_ENGB
-	help
-	  nRF54H20 (EngB) CPUFLPR
-
 config SOC
-	default "nrf54h20" if SOC_NRF54H20 || SOC_NRF54H20_ENGB
+	default "nrf54h20" if SOC_NRF54H20

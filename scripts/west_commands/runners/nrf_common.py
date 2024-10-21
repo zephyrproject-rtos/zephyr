@@ -307,12 +307,10 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
 
             cpuapp = (
                 self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPUAPP') or
-                self.build_conf.getboolean('CONFIG_SOC_NRF54H20_ENGB_CPUAPP') or
                 self.build_conf.getboolean('CONFIG_SOC_NRF9280_CPUAPP')
             )
             cpurad = (
                 self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPURAD') or
-                self.build_conf.getboolean('CONFIG_SOC_NRF54H20_ENGB_CPURAD') or
                 self.build_conf.getboolean('CONFIG_SOC_NRF9280_CPURAD')
             )
             generated_uicr = self.build_conf.getboolean('CONFIG_NRF_REGTOOL_GENERATE_UICR')

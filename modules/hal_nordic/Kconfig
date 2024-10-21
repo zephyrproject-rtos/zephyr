@@ -55,7 +55,7 @@ endchoice
 
 config NRF_802154_TEMPERATURE_UPDATE
 	bool "nRF 802.15.4 temperature update"
-	default y if !SOC_NRF54H20 && !SOC_NRF54H20_ENGB
+	default y if !SOC_NRF54H20
 	help
 	  Enable temperature update for nRF 802.15.4 driver
 
