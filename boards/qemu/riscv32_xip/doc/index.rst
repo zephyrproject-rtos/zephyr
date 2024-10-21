@@ -1,7 +1,4 @@
-.. _qemu_riscv32_xip:
-
-RISCV32 XIP Emulation (QEMU)
-############################
+.. zephyr:board:: qemu_riscv32_xip
 
 Overview
 ********

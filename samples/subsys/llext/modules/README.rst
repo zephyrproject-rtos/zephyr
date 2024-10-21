@@ -30,8 +30,8 @@ Requirements
 ************
 
 A board with a supported llext architecture and console. This can also be
-executed in QEMU emulation on the :ref:`qemu_xtensa <qemu_xtensa>` or
-:ref:`qemu_cortex_r5 <qemu_cortex_r5>` virtual boards.
+executed in QEMU emulation on the :zephyr:board:`qemu_xtensa <qemu_xtensa>` or
+:zephyr:board:`qemu_cortex_r5 <qemu_cortex_r5>` virtual boards.
 
 Building and running
 ********************

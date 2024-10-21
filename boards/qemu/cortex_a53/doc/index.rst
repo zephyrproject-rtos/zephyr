@@ -1,7 +1,4 @@
-.. _qemu_cortex_a53:
-
-ARM Cortex-A53 Emulation (QEMU)
-###############################
+.. zephyr:board:: qemu_cortex_a53
 
 Overview
 ********

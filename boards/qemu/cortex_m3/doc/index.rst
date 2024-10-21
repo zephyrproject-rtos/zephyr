@@ -1,7 +1,4 @@
-.. _qemu_cortex_m3:
-
-ARM Cortex-M3 Emulation (QEMU)
-##############################
+.. zephyr:board:: qemu_cortex_m3
 
 Overview
 ********

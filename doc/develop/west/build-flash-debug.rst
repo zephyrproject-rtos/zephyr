@@ -145,8 +145,8 @@ Setting the Build System Target
 To specify the build system target to run, use ``--target`` (or ``-t``).
 
 For example, on host platforms with QEMU, you can use the ``run`` target to
-build and run the :zephyr:code-sample:`hello_world` sample for the emulated :ref:`qemu_x86
-<qemu_x86>` board in one command::
+build and run the :zephyr:code-sample:`hello_world` sample for the emulated
+:zephyr:board:`qemu_x86 <qemu_x86>` board in one command::
 
   west build -b qemu_x86 -t run samples/hello_world
 
