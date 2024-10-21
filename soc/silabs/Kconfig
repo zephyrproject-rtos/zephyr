@@ -128,6 +128,12 @@ config SOC_SILABS_SLEEPTIMER
 	help
 	  Set if the Sleeptimer HAL module is used.
 
+config SOC_SILABS_HFXO_MANAGER
+	bool
+	default y if PM && $(dt_nodelabel_enabled,sysrtc0) && $(dt_nodelabel_enabled,hfxo)
+	help
+	  Set if the HFXO Manager HAL module is used.
+
 if PM
 
 config SOC_GECKO_PM_BACKEND_PMGR
