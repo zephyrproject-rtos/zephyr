@@ -64,4 +64,6 @@ For video software generator, the default resolution should be width=320 and hei
 References
 **********
 
+.. target-notes::
+
 .. _MT9M114 camera module: https://www.onsemi.com/PowerSolutions/product.do?id=MT9M114

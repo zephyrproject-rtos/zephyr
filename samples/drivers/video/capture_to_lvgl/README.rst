@@ -70,4 +70,6 @@ Sample Output
 References
 **********
 
+.. target-notes::
+
 .. _WeAct Studio STM32H743: https://github.com/WeActStudio/MiniSTM32H7xx
