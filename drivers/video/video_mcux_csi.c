@@ -17,6 +17,16 @@
 #include <fsl_cache.h>
 #endif
 
+#if defined(CONFIG_VIDEO_MCUX_MIPI_CSI2RX)
+#define DEVICE_DT_INST_GET_SOURCE_DEV(n)                                                           \
+	DEVICE_DT_GET(DT_PARENT(DT_GPARENT(DT_NODELABEL(DT_STRING_TOKEN(                           \
+		DT_CHILD(DT_INST_CHILD(n, port), endpoint), remote_endpoint_label)))))
+#else
+#define DEVICE_DT_INST_GET_SOURCE_DEV(n)                                                           \
+	DEVICE_DT_GET(DT_GPARENT(DT_NODELABEL(DT_STRING_TOKEN(                                     \
+		DT_CHILD(DT_INST_CHILD(n, port), endpoint), remote_endpoint_label))))
+#endif
+
 struct video_mcux_csi_config {
 	CSI_Type *base;
 	const struct device *source_dev;
@@ -491,7 +501,7 @@ PINCTRL_DT_INST_DEFINE(0);
 
 static const struct video_mcux_csi_config video_mcux_csi_config_0 = {
 	.base = (CSI_Type *)DT_INST_REG_ADDR(0),
-	.source_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, source)),
+	.source_dev = DEVICE_DT_INST_GET_SOURCE_DEV(0),
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
