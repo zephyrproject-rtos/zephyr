@@ -1,12 +1,12 @@
 description: Bluetooth HCI on Silabs boards
 
-compatible: "silabs,bt-hci"
+compatible: "silabs,bt-hci-efr32"
 
 include: bt-hci.yaml
 
 properties:
   bt-hci-name:
-    default: "sl:bt"
+    default: "efr32"
   bt-hci-bus:
     default: "virtual"
   bt-hci-quirks:
