@@ -78,4 +78,6 @@ board argument may also be replaced by ``native_sim/native/64``.
 References
 **********
 
+.. target-notes::
+
 .. _LVGL demos Readme: https://github.com/zephyrproject-rtos/lvgl/blob/zephyr/demos/README.md

@@ -107,6 +107,8 @@ Sample Output
 References
 **********
 
+.. target-notes::
+
 .. _Camera iMXRT: https://community.nxp.com/t5/i-MX-RT-Knowledge-Base/Connecting-camera-and-LCD-to-i-MX-RT-EVKs/ta-p/1122183
 .. _MT9M114 camera module: https://www.onsemi.com/PowerSolutions/product.do?id=MT9M114
 .. _OV5640 camera module: https://cdn.sparkfun.com/datasheets/Sensors/LightImaging/OV5640_datasheet.pdf
