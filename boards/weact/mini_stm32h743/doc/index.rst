@@ -1,7 +1,4 @@
-.. _mini_stm32h743:
-
-WeAct Studio MiniSTM32H743 Core Board
-#####################################
+.. zephyr:board:: mini_stm32h743
 
 Overview
 ********
@@ -26,12 +23,6 @@ Key Features
    - USB Type-C Connector
    - SWD header for external debugger
    - 2x 40-pin GPIO connector
-
-.. figure:: img/stm32h7xx.webp
-      :align: center
-      :alt: MiniSTM32H743 Core Board
-
-      MiniSTM32H743 Core Board (Credit: WeAct Studio)
 
 More information about the board can be found on the `Mini_STM32H743 website`_.
 
