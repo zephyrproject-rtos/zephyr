@@ -197,12 +197,32 @@ zephyr_udc0: &usbotg_fs {
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		/* Last sector of size 128KB at the end of 1MB flash is set
-		 * for storage.
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 DT_SIZE_K(32)>;
+			read-only;
+		};
+
+		/*
+		 * nvs subsystem requires 2 sectors with a max total of 32K
+		 * On F2 series, the only option is to use the following
+		 * partition, which is compatible with mcuboot usage.
+		 * Keep it commented in order it is not used by CI.
+		 *
+		 * storage_partition: partition@8000 {
+		 *	label = "storage";
+		 *	reg = <0x8000 DT_SIZE_K(32)>;
+		 * };
 		 */
-		storage_partition: partition@e0000 {
-			label = "storage";
-			reg = <0x000e0000 DT_SIZE_K(128)>;
+
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x20000 DT_SIZE_K(448)>;
+		};
+
+		slot1_partition: partition@90000 {
+			label = "image-1";
+			reg = <0x90000 DT_SIZE_K(448)>;
 		};
 	};
 };
