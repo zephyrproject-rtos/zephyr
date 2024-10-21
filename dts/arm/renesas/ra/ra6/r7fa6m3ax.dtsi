@@ -6,6 +6,7 @@
 
 #include <arm/renesas/ra/ra6/ra6-cm4-common.dtsi>
 #include <zephyr/dt-bindings/clock/ra_clock.h>
+#include <zephyr/dt-bindings/pwm/ra_pwm.h>
 
 / {
 	soc {
@@ -125,6 +126,16 @@
 		adc@4005c200 {
 			channel-count = <11>;
 			channel-available-mask = <0xf00ef>;
+		};
+
+		pwm13: pwm13@40078d00 {
+			compatible = "renesas,ra-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_13>;
+			clocks = <&pclkd MSTPD 6>;
+			reg = <0x40078d00 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
 		};
 	};
 

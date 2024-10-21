@@ -8,6 +8,7 @@
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-ra.h>
 #include <zephyr/dt-bindings/clock/ra_clock.h>
+#include <zephyr/dt-bindings/pwm/ra_pwm.h>
 #include <freq.h>
 
 / {
@@ -440,6 +441,46 @@
 			channel = <15>;
 			renesas,sample-clock-div = <64>;
 			#port-irq-cells = <0>;
+			status = "disabled";
+		};
+
+		pwm1: pwm1@40169100 {
+			compatible = "renesas,ra-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_1>;
+			clocks = <&pclkd MSTPE 30>;
+			reg = <0x40169100 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm2: pwm2@40169200 {
+			compatible = "renesas,ra-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_2>;
+			clocks = <&pclkd MSTPE 29>;
+			reg = <0x40169200 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm4: pwm4@40169400 {
+			compatible = "renesas,ra-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_4>;
+			clocks = <&pclkd MSTPE 27>;
+			reg = <0x40169400 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm5: pwm5@40169500 {
+			compatible = "renesas,ra-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_5>;
+			clocks = <&pclkd MSTPE 26>;
+			reg = <0x40169500 0x100>;
+			#pwm-cells = <3>;
 			status = "disabled";
 		};
 	};

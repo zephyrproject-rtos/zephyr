@@ -6,6 +6,7 @@
 
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 #include <arm/renesas/ra/ra4/ra4-cm4-common.dtsi>
+#include <zephyr/dt-bindings/pwm/ra_pwm.h>
 
 /delete-node/ &adc1;
 
@@ -52,6 +53,16 @@
 			interrupts = <20 1>;
 			channel-count = <8>;
 			channel-available-mask = <0x1a0670>;
+		};
+
+		pwm8: pwm8@40169800 {
+			compatible = "renesas,ra-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_8>;
+			clocks = <&pclkd MSTPD 6>;
+			reg = <0x40169800 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
 		};
 	};
 
