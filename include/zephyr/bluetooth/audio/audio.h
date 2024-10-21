@@ -769,6 +769,24 @@ int bt_audio_data_parse(const uint8_t ltv[], size_t size,
 			bool (*func)(struct bt_data *data, void *user_data), void *user_data);
 
 /**
+ * @brief Get the value of a specific data type in an length-type-value data array
+ *
+ * @param[in]  ltv_data The array containing the length-type-value tuples
+ * @param[in]  size The size of @p ltv_data
+ * @param[in]  type The type to get the value for. May be any type, but typically either
+ *             @ref bt_audio_codec_cap_type, @ref bt_audio_codec_cfg_type or
+ *             @ref bt_audio_metadata_type.
+ * @param[out] data Pointer to the data-pointer to update when item is found.
+ *                  Any found data will be little endian.
+ *
+ * @retval Length The length of found @p data (may be 0).
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENODATA if not found
+ */
+int bt_audio_data_get_val(const uint8_t ltv_data[], size_t size, uint8_t type,
+			  const uint8_t **data);
+
+/**
  * @brief Function to get the number of channels from the channel allocation
  *
  * @param chan_allocation The channel allocation
