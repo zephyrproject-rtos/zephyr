@@ -69,7 +69,7 @@ This usually involves the following steps:
 
 .. note::
    Developers for Intel ADSP CAVS 15-25 platforms using
-   ``ZEPHYR_TOOLCHAIN_VARIANT=zephyr`` should use the debugger in the
+   ``ZEPHYR_TOOLCHAIN_VARIANT=zephyr-gnu`` should use the debugger in the
    ``xtensa-intel_apl_adsp`` toolchain of the SDK.
 
 5. When ``DEBUG_COREDUMP_BACKEND_FLASH_PARTITION`` is enabled the core dump

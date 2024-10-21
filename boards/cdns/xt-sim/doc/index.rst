@@ -68,13 +68,13 @@ You can use the following code to create that file:
     then
     	export ARCH=xtensa
     	export BOARD=qemu
-    	export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+    	export ZEPHYR_TOOLCHAIN_VARIANT=zephyr-gnu
     	export ZEPHYR_SDK_INSTALL_DIR=/opt/xtensa/zephyr-sdk-64-INTERNAL-11-22-2016
     elif test "${CROSS}" = zephyr-x86
     then
     	export ARCH=x86
     	export BOARD=qemu_x86
-    	export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+    	export ZEPHYR_TOOLCHAIN_VARIANT=zephyr-gnu
     	export ZEPHYR_SDK_INSTALL_DIR=/opt/xtensa/zephyr-sdk-64-INTERNAL-11-22-2016
     else
     	echo "Unsupported compiler '${CROSS}' defined by environment variable CROSS"
