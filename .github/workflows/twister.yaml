@@ -232,7 +232,7 @@ jobs:
         id: run_twister
         run: |
           export ZEPHYR_BASE=${PWD}
-          export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+          export ZEPHYR_TOOLCHAIN_VARIANT=zephyr-gnu
           ./scripts/twister --subset ${{matrix.subset}}/${{ strategy.job-total }} ${TWISTER_COMMON} ${PUSH_OPTIONS}
           if [ "${{matrix.subset}}" = "1" ]; then
             ./scripts/zephyr_module.py --twister-out module_tests.args
@@ -247,7 +247,7 @@ jobs:
         run: |
           rm -f testplan.json
           export ZEPHYR_BASE=${PWD}
-          export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+          export ZEPHYR_TOOLCHAIN_VARIANT=zephyr-gnu
           python3 ./scripts/ci/test_plan.py -c origin/${BASE_REF}.. --pull-request --no-detailed-test-id
           ./scripts/twister --subset ${{matrix.subset}}/${{ strategy.job-total }} --load-tests testplan.json ${TWISTER_COMMON} ${PR_OPTIONS}
           if [ "${{matrix.subset}}" = "1" -a ${{needs.twister-build-prep.outputs.fullrun}} = 'True' ]; then
@@ -262,7 +262,7 @@ jobs:
         id: run_twister_sched
         run: |
           export ZEPHYR_BASE=${PWD}
-          export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+          export ZEPHYR_TOOLCHAIN_VARIANT=zephyr-gnu
           ./scripts/twister --subset ${{matrix.subset}}/${{ strategy.job-total }} ${TWISTER_COMMON} ${WEEKLY_OPTIONS}
           if [ "${{matrix.subset}}" = "1" ]; then
             ./scripts/zephyr_module.py --twister-out module_tests.args

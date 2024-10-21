@@ -37,7 +37,7 @@ jobs:
     strategy:
       fail-fast: false
     env:
-      ZEPHYR_TOOLCHAIN_VARIANT: zephyr
+      ZEPHYR_TOOLCHAIN_VARIANT: zephyr-gnu
     steps:
       - name: Apply container owner mismatch workaround
         run: |

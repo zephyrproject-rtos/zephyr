@@ -47,7 +47,7 @@ jobs:
     - name: Run pytest for build_helpers
       env:
         ZEPHYR_BASE: ./
-        ZEPHYR_TOOLCHAIN_VARIANT: zephyr
+        ZEPHYR_TOOLCHAIN_VARIANT: zephyr-gnu
       run: |
         echo "Run build_helpers tests"
         PYTHONPATH=./scripts/tests pytest ./scripts/tests/build_helpers
