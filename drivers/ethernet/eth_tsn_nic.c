@@ -170,7 +170,7 @@ static void rx_desc_set(struct dma_tsn_nic_desc *desc, uintptr_t addr, uint32_t 
 	desc->bytes = sys_cpu_to_le32(len);
 }
 
-static void tsn_nic_rx(struct k_work *item)
+static void eth_tsn_nic_rx(struct k_work *item)
 {
 	struct eth_tsn_nic_data *data = CONTAINER_OF(item, struct eth_tsn_nic_data, rx_work);
 	struct net_pkt *pkt;
@@ -386,7 +386,7 @@ static int eth_tsn_nic_init(const struct device *dev)
 	/* TODO: Select proper values for the first three bytes */
 	gen_random_mac(data->mac_addr, 0x0, 0x0, 0xab);
 
-	k_work_init(&data->rx_work, tsn_nic_rx);
+	k_work_init(&data->rx_work, eth_tsn_nic_rx);
 
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), eth_tsn_nic_isr,
 		    DEVICE_DT_INST_GET(0), 0);
