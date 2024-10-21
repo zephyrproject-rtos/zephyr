@@ -1,0 +1,9 @@
+# Copyright (c) 2024 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.video.api:
+    tags:
+      - drivers
+      - video
+    platform_allow: native_sim
