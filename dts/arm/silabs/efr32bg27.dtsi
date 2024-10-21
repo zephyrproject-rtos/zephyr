@@ -84,8 +84,9 @@
 	clocks = <&cmu CLOCK_BURTC CLOCK_BRANCH_EM4GRPACLK>;
 };
 
-&stimer0 {
+&rtcc0 {
 	interrupts = <15 0>;
+	interrupt-names = "rtcc";
 	clocks = <&cmu CLOCK_RTCC CLOCK_BRANCH_RTCCCLK>;
 };
 
