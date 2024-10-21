@@ -47,12 +47,12 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
   )
 
   # sl_protocol_crypto
-  zephyr_library_sources_ifdef(CONFIG_BT_SILABS_HCI
+  zephyr_library_sources_ifdef(CONFIG_BT_SILABS_EFR32
     ${SECURITY_DIR}/sl_component/sl_protocol_crypto/src/sli_radioaes_management.c
     ${SECURITY_DIR}/sl_component/sl_protocol_crypto/src/sli_protocol_crypto_radioaes.c
   )
 
-  if(CONFIG_BT_SILABS_HCI)
+  if(CONFIG_BT_SILABS_EFR32)
     # prebuilt libs
     add_prebuilt_library(liblinklayer protocol/bluetooth/bgstack/ll/lib/libbluetooth_controller_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}_gcc_release.a)
     add_prebuilt_library(libbgcommon  protocol/bluetooth/bgcommon/lib/build/gcc/cortex-m33/bgcommon/release/libbgcommon.a)
