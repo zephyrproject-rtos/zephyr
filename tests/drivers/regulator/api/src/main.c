@@ -777,6 +777,32 @@ static int get_error_flags_fail(const struct device *dev,
 	return -EIO;
 }
 
+ZTEST(regulator_api, test_get_max_voltage)
+{
+	int32_t max_uv = 0;
+	int err = 0;
+
+	err = regulator_common_get_max_voltage(reg0, &max_uv);
+	zassert_equal(err, -ENOENT);
+
+	err = regulator_common_get_max_voltage(reg3, &max_uv);
+	zassert_equal(err, 0);
+	zassert_equal(max_uv, 200);
+}
+
+ZTEST(regulator_api, test_get_min_voltage)
+{
+	int32_t min_uv = 0;
+	int err = 0;
+
+	err = regulator_common_get_min_voltage(reg0, &min_uv);
+	zassert_equal(err, -ENOENT);
+
+	err = regulator_common_get_min_voltage(reg3, &min_uv);
+	zassert_equal(err, 0);
+	zassert_equal(min_uv, 100);
+}
+
 ZTEST(regulator_api, test_get_error_flags_error)
 {
 	RESET_FAKE(regulator_fake_get_error_flags);
