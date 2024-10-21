@@ -10,12 +10,6 @@ compatible: "nxp,mipi-csi2rx"
 
 include: [base.yaml]
 
-properties:
-  sensor:
-    required: true
-    type: phandle
-    description: the connected camera sensor
-
 child-binding:
   child-binding:
     child-binding:
