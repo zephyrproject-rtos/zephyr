@@ -888,7 +888,6 @@
 			reg = <0x40800000 0x4000>;
 			interrupts = <56 1>;
 			status = "disabled";
-			source = <&mipi_csi2rx>;
 
 			port {
 				csi_ep_in: endpoint {
