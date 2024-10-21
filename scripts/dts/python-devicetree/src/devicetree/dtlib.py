@@ -202,13 +202,28 @@ class Node:
         Returns a DTS representation of the node. Called automatically if the
         node is print()ed.
         """
-        s = "".join(label + ": " for label in self.labels)
+        rel_filename = os.path.relpath(self.filename, start=os.getcwd())
+        s = f"\n/* node '{self.path}' defined in {rel_filename}:{self.lineno} */\n"
+        s += "".join(label + ": " for label in self.labels)
 
         s += f"{self.name} {{\n"
 
+        lines = []
+        comments = {}
         for prop in self.props.values():
             prop_str = textwrap.indent(str(prop), "\t")
-            s += prop_str + "\n"
+            lines.extend(prop_str.splitlines(True))
+
+            rel_filename = os.path.relpath(prop.filename, start=os.getcwd())
+            comment = f"/* in {rel_filename}:{prop.lineno} */"
+            comments[len(lines)-1] = comment
+
+        if lines:
+            max_len = max([ len(l) for l in lines ])
+            for i, line in enumerate(lines):
+                if i in comments:
+                    line += " " * (max_len - len(line) + 1) + comments[i] + "\n"
+                s += line
 
         for child in self.nodes.values():
             s += textwrap.indent(child.__str__(), "\t") + "\n"
