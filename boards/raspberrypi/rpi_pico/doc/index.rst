@@ -1,7 +1,4 @@
-.. _rpi_pico:
-
-Raspberry Pi Pico
-#################
+.. zephyr:board:: rpi_pico
 
 Overview
 ********

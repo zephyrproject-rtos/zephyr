@@ -1,7 +1,4 @@
-.. _rpi_5:
-
-Raspberry Pi 5 (Cortex-A76)
-###########################
+.. zephyr:board:: rpi_5
 
 Overview
 ********
