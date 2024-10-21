@@ -202,13 +202,37 @@ class Node:
         Returns a DTS representation of the node. Called automatically if the
         node is print()ed.
         """
-        s = "".join(label + ": " for label in self.labels)
+        def safe_relpath(filename):
+            # Returns a relative path to the file, or the absolute path if
+            # a relative path cannot be established (on Windows with files
+            # in different drives, for example).
+            try:
+                return os.path.relpath(filename, start=os.getcwd())
+            except ValueError:
+                return filename
+
+        rel_filename = safe_relpath(self.filename)
+        s = f"\n/* node '{self.path}' defined in {rel_filename}:{self.lineno} */\n"
+        s += "".join(label + ": " for label in self.labels)
 
         s += f"{self.name} {{\n"
 
+        lines = []
+        comments = {}
         for prop in self.props.values():
             prop_str = textwrap.indent(str(prop), "\t")
-            s += prop_str + "\n"
+            lines.extend(prop_str.splitlines(True))
+
+            rel_filename = safe_relpath(prop.filename)
+            comment = f"/* in {rel_filename}:{prop.lineno} */"
+            comments[len(lines)-1] = comment
+
+        if lines:
+            max_len = max([ len(line.rstrip()) for line in lines ])
+            for i, line in enumerate(lines):
+                if i in comments:
+                    line += " " * (max_len - len(line) + 1) + comments[i] + "\n"
+                s += line
 
         for child in self.nodes.values():
             s += textwrap.indent(child.__str__(), "\t") + "\n"
