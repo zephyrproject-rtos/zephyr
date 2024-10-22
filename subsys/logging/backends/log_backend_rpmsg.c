@@ -115,10 +115,14 @@ static int lb_rpmsg_format_set(const struct log_backend *backend, uint32_t log_t
 static void lb_rpmsg_init(const struct log_backend *backend)
 {
 	struct rpmsg_device *rdev = vdev_get_rpmsg_device(vdev);
-	uint32_t dest_addr = DT_REG_HAS_IDX(EPT_NODE, 1) ?
-			  DT_REG_ADDR_BY_IDX(EPT_NODE, 1) : RPMSG_ADDR_ANY;
+	uint32_t dest_addr = RPMSG_ADDR_ANY;
+	int ret;
 
-	int ret = rpmsg_create_ept(&ept_log, rdev, DT_PROP(EPT_NODE, type),
+#if DT_REG_HAS_IDX(EPT_NODE, 1)
+	dest_addr = DT_REG_ADDR_BY_IDX(EPT_NODE, 1);
+#endif
+
+	ret = rpmsg_create_ept(&ept_log, rdev, DT_PROP(EPT_NODE, type),
 				  DT_REG_ADDR(EPT_NODE), dest_addr,
 				  rpmsg_log_callback, rpmsg_log_unbind);
 
