@@ -395,6 +395,9 @@ Bluetooth Audio
   instances of :c:func:`bt_cap_initiator_broadcast_get_id` and
   :c:func:`bt_bap_broadcast_source_get_id` has been removed(:github:`80228`)
 
+* ``BT_AUDIO_BROADCAST_CODE_SIZE`` has been removed and ``BT_ISO_BROADCAST_CODE_SIZE`` should be
+  used instead. (:github:`80217`)
+
 Bluetooth Classic
 =================
 

@@ -939,7 +939,7 @@ static int pa_sync_term_req_cb(struct bt_conn *conn,
 
 static void broadcast_code_cb(struct bt_conn *conn,
 			      const struct bt_bap_scan_delegator_recv_state *recv_state,
-			      const uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE])
+			      const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE])
 {
 	int err;
 	uint32_t index_bitfield;
@@ -955,8 +955,7 @@ static void broadcast_code_cb(struct bt_conn *conn,
 	}
 
 	broadcaster->sink_recv_state = recv_state;
-	(void)memcpy(broadcaster->sink_broadcast_code, broadcast_code,
-		     BT_AUDIO_BROADCAST_CODE_SIZE);
+	(void)memcpy(broadcaster->sink_broadcast_code, broadcast_code, BT_ISO_BROADCAST_CODE_SIZE);
 
 	if (!broadcaster->requested_bis_sync) {
 		return;

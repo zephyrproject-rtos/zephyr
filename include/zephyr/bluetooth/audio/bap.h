@@ -572,7 +572,7 @@ struct bt_bap_scan_delegator_recv_state {
 	 *
 	 * Only valid if encrypt_state is @ref BT_BAP_BIG_ENC_STATE_BCODE_REQ
 	 */
-	uint8_t bad_code[BT_AUDIO_BROADCAST_CODE_SIZE];
+	uint8_t bad_code[BT_ISO_BROADCAST_CODE_SIZE];
 
 	/** Number of subgroups */
 	uint8_t num_subgroups;
@@ -652,7 +652,7 @@ struct bt_bap_scan_delegator_cb {
 	 */
 	void (*broadcast_code)(struct bt_conn *conn,
 			       const struct bt_bap_scan_delegator_recv_state *recv_state,
-			       const uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE]);
+			       const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE]);
 	/**
 	 * @brief Broadcast Isochronous Stream synchronize request
 	 *
@@ -2058,7 +2058,7 @@ struct bt_bap_broadcast_source_param {
 	 *   The string "Broadcast Code" shall be
 	 *   [42 72 6F 61 64 63 61 73 74 20 43 6F 64 65 00 00]
 	 */
-	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
+	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 
 #if defined(CONFIG_BT_ISO_TEST_PARAMS) || defined(__DOXYGEN__)
 	/**
@@ -2298,7 +2298,8 @@ int bt_bap_broadcast_sink_create(struct bt_le_per_adv_sync *pa_sync, uint32_t br
  * @return 0 in case of success or negative value in case of error.
  */
 int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t indexes_bitfield,
-			       struct bt_bap_stream *streams[], const uint8_t broadcast_code[16]);
+			       struct bt_bap_stream *streams[],
+			       const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE]);
 
 /**
  * @brief Stop audio broadcast sink.
@@ -2799,7 +2800,7 @@ int bt_bap_broadcast_assistant_mod_src(
  */
 int bt_bap_broadcast_assistant_set_broadcast_code(
 	struct bt_conn *conn, uint8_t src_id,
-	const uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE]);
+	const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE]);
 
 /**
  * @brief Remove a source from the server.

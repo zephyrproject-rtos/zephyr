@@ -27,8 +27,7 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/toolchain.h>
 
-BUILD_ASSERT(strlen(CONFIG_BROADCAST_CODE) <= BT_AUDIO_BROADCAST_CODE_SIZE,
-	     "Invalid broadcast code");
+BUILD_ASSERT(strlen(CONFIG_BROADCAST_CODE) <= BT_ISO_BROADCAST_CODE_SIZE, "Invalid broadcast code");
 
 /* Zephyr Controller works best while Extended Advertising interval to be a multiple
  * of the ISO Interval minus 10 ms (max. advertising random delay). This is
