@@ -25,6 +25,10 @@
 
 #define LINK_1G 1000000000
 
+#define TSN_DEFAULT_PRIORITY  0
+#define TSN_DEFAULT_FROM_TICK 0
+#define TSN_DEFAULT_TO_TICK   (1 << 29 - 1)
+
 struct timestamps {
 	net_time_t from;
 	net_time_t to;
@@ -36,6 +40,8 @@ typedef uint64_t sysclock_t;
 
 static void bake_qos_config(struct tsn_config *config);
 static net_time_t bytes_to_ns(uint64_t bytes);
+static void fill_default_metadata(struct tx_metadata *metadata);
+
 static bool get_timestamps(struct timestamps *timestamps, const struct tsn_config *tsn_config,
 			   net_time_t from, uint8_t vlan_prio, uint64_t bytes, bool consider_delay);
 static void spend_qav_credit(struct tsn_config *tsn_config, net_time_t at, uint8_t vlan_prio,
@@ -95,8 +101,13 @@ int tsn_fill_metadata(const struct device *dev, net_time_t now, struct tx_buffer
 	bool consider_delay = false;
 	net_time_t from, duration_ns;
 
-	from = now + H2C_LATENCY_NS;
+	if (vlan_prio >= NET_TC_TX_COUNT) {
+		/* Invalid priority */
+		fill_default_metadata(metadata);
+		return 0;
+	}
 
+	from = now + H2C_LATENCY_NS;
 	duration_ns = bytes_to_ns(metadata->frame_length);
 
 	if (tsn_config->qbv.enabled == false && tsn_config->qav[vlan_prio].enabled == false) {
@@ -150,6 +161,21 @@ int tsn_fill_metadata(const struct device *dev, net_time_t now, struct tx_buffer
 /**
  * Static functions
  */
+
+static void fill_default_metadata(struct tx_metadata *metadata)
+{
+	metadata->fail_policy = TSN_FAIL_POLICY_DROP;
+
+	metadata->from.tick = TSN_DEFAULT_FROM_TICK;
+	metadata->from.priority = TSN_DEFAULT_PRIORITY;
+	metadata->to.tick = TSN_DEFAULT_TO_TICK;
+	metadata->to.priority = TSN_DEFAULT_PRIORITY;
+
+	metadata->delay_from.tick = TSN_DEFAULT_FROM_TICK;
+	metadata->delay_from.priority = TSN_DEFAULT_PRIORITY;
+	metadata->delay_to.tick = TSN_DEFAULT_TO_TICK;
+	metadata->delay_to.priority = TSN_DEFAULT_PRIORITY;
+}
 
 static net_time_t bytes_to_ns(uint64_t bytes)
 {
