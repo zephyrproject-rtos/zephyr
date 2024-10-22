@@ -219,6 +219,7 @@ struct uarte_nrfx_data {
 
 #define UARTE_FLAG_LOW_POWER_TX BIT(0)
 #define UARTE_FLAG_LOW_POWER_RX BIT(1)
+#define UARTE_FLAG_LOW_POWER (UARTE_FLAG_LOW_POWER_TX | UARTE_FLAG_LOW_POWER_RX)
 #define UARTE_FLAG_TRIG_RXTO BIT(2)
 #define UARTE_FLAG_POLL_OUT BIT(3)
 
@@ -617,11 +618,13 @@ static void uarte_periph_enable(const struct device *dev)
 	}
 }
 
-static void uarte_enable(const struct device *dev, uint32_t act_mask, uint32_t sec_mask)
+static void uarte_enable_locked(const struct device *dev, uint32_t act_mask)
 {
 	struct uarte_nrfx_data *data = dev->data;
+	bool already_active = (data->flags & UARTE_FLAG_LOW_POWER) != 0;
 
-	if (atomic_or(&data->flags, act_mask) & sec_mask) {
+	data->flags |= act_mask;
+	if (already_active) {
 		/* Second direction already enabled so UARTE is enabled. */
 		return;
 	}
@@ -657,7 +660,7 @@ static void tx_start(const struct device *dev, const uint8_t *buf, size_t len)
 	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_TXSTOPPED);
 
 	if (LOW_POWER_ENABLED(config)) {
-		uarte_enable(dev, UARTE_FLAG_LOW_POWER_TX, UARTE_FLAG_LOW_POWER_RX);
+		uarte_enable_locked(dev, UARTE_FLAG_LOW_POWER_TX);
 	}
 
 	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTTX);
@@ -673,14 +676,13 @@ static void tx_start(const struct device *dev, const uint8_t *buf, size_t len)
  * here.
  * @param dev Device.
  * @param dis_mask Mask of direction (RX or TX) which now longer uses the UARTE instance.
- * @param sec_mask Mask of second direction which is used to check if it uses the UARTE.
  */
-static void uarte_disable_locked(const struct device *dev, uint32_t dis_mask, uint32_t sec_mask)
+static void uarte_disable_locked(const struct device *dev, uint32_t dis_mask)
 {
 	struct uarte_nrfx_data *data = dev->data;
 
 	data->flags &= ~dis_mask;
-	if (data->flags & sec_mask) {
+	if (data->flags & UARTE_FLAG_LOW_POWER) {
 		return;
 	}
 
@@ -1056,7 +1058,7 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 	} else if (LOW_POWER_ENABLED(cfg)) {
 		unsigned int key = irq_lock();
 
-		uarte_enable(dev, UARTE_FLAG_LOW_POWER_RX, UARTE_FLAG_LOW_POWER_TX);
+		uarte_enable_locked(dev, UARTE_FLAG_LOW_POWER_RX);
 		irq_unlock(key);
 	}
 
@@ -1531,7 +1533,7 @@ static void rxto_isr(const struct device *dev)
 	} else if (LOW_POWER_ENABLED(config)) {
 		uint32_t key = irq_lock();
 
-		uarte_disable_locked(dev, UARTE_FLAG_LOW_POWER_RX, UARTE_FLAG_LOW_POWER_TX);
+		uarte_disable_locked(dev, UARTE_FLAG_LOW_POWER_RX);
 		irq_unlock(key);
 	}
 
@@ -1558,7 +1560,7 @@ static void txstopped_isr(const struct device *dev)
 		}
 	} else if (LOW_POWER_ENABLED(config)) {
 		nrf_uarte_int_disable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
-		uarte_disable_locked(dev, UARTE_FLAG_LOW_POWER_TX, UARTE_FLAG_LOW_POWER_RX);
+		uarte_disable_locked(dev, UARTE_FLAG_LOW_POWER_TX);
 	}
 
 	irq_unlock(key);
