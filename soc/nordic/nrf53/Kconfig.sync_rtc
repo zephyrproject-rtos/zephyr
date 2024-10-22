@@ -5,7 +5,7 @@ config NRF53_SYNC_RTC
 	bool "RTC clock synchronization"
 	default y if LOG && !LOG_MODE_MINIMAL
 	depends on NRF_RTC_TIMER
-	select NRFX_DPPI
+	select NRFX_GPPI
 	select MBOX if !IPM
 
 if NRF53_SYNC_RTC
