@@ -82,13 +82,11 @@ static void buf_flush(struct buf_out_context *ctx)
 static int buf_char_out(int c, void *ctx_p)
 {
 	struct buf_out_context *ctx = ctx_p;
-
-	ctx->buf[ctx->buf_count] = c;
-	++ctx->buf_count;
-	if (ctx->buf_count == CONFIG_PRINTK_BUFFER_SIZE) {
+	if (ctx->buf_count >= CONFIG_PRINTK_BUFFER_SIZE) {
 		buf_flush(ctx);
 	}
-
+	ctx->buf[ctx->buf_count] = c;
+	++ctx->buf_count;
 	return c;
 }
 
