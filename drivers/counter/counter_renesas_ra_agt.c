@@ -552,14 +552,14 @@ static const struct counter_driver_api ra_agt_driver_api = {
 			},                                                                         \
 		.agtio_filter = AGT_AGTIO_FILTER_NONE,                                             \
 		.measurement_mode = 0U,                                                            \
-		.source_div = DT_PROP(TIMER(n), prescaler),                                        \
-		.count_source = DT_STRING_TOKEN(TIMER(n), count_source),                           \
+		.source_div = DT_PROP(TIMER(n), renesas_prescaler),                                \
+		.count_source = DT_STRING_TOKEN(TIMER(n), renesas_count_source),                   \
 		.channel = DT_PROP(TIMER(n), channel),                                             \
 		.channel_irq = DT_IRQ_BY_NAME(TIMER(n), agtcmai, irq),                             \
 		.channel_ipl = DT_IRQ_BY_NAME(TIMER(n), agtcmai, priority),                        \
 		.cycle_end_irq = DT_IRQ_BY_NAME(TIMER(n), agti, irq),                              \
 		.cycle_end_ipl = DT_IRQ_BY_NAME(TIMER(n), agti, priority),                         \
-		.resolution = DT_PROP(TIMER(n), resolution),                                       \
+		.resolution = DT_PROP(TIMER(n), renesas_resolution),                               \
 		.dt_reg = DT_REG_ADDR(TIMER(n)),                                                   \
 	};                                                                                         \
                                                                                                    \
