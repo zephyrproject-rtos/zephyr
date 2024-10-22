@@ -23,6 +23,28 @@ static int z_vrfy_can_calc_timing(const struct device *dev, struct can_timing *r
 }
 #include <zephyr/syscalls/can_calc_timing_mrsh.c>
 
+static int z_vrfy_can_calc_timing_with_limits(const struct device *dev, struct can_timing *min,
+					      struct can_timing *max, struct can_timing *res,
+					      uint32_t bitrate, uint16_t sample_pnt)
+{
+	struct can_timing min_copy;
+	struct can_timing max_copy;
+	struct can_timing res_copy;
+	int err;
+
+	K_OOPS(K_SYSCALL_DRIVER_CAN(dev, get_core_clock));
+	K_OOPS(k_usermode_from_copy(&min_copy, min, sizeof(min_copy)));
+	K_OOPS(k_usermode_from_copy(&max_copy, max, sizeof(max_copy)));
+	K_OOPS(k_usermode_from_copy(&res_copy, res, sizeof(res_copy)));
+
+	err = z_impl_can_calc_timing_with_limits(dev, &min_copy, &max_copy, &res_copy, bitrate,
+						 sample_pnt);
+	K_OOPS(k_usermode_to_copy(res, &res_copy, sizeof(*res)));
+
+	return err;
+}
+#include <zephyr/syscalls/can_calc_timing_with_limits_mrsh.c>
+
 static inline int z_vrfy_can_set_timing(const struct device *dev,
 					const struct can_timing *timing)
 {
@@ -94,6 +116,28 @@ static int z_vrfy_can_calc_timing_data(const struct device *dev, struct can_timi
 	return err;
 }
 #include <zephyr/syscalls/can_calc_timing_data_mrsh.c>
+
+static int z_vrfy_can_calc_timing_data_with_limits(const struct device *dev, struct can_timing *min,
+						   struct can_timing *max, struct can_timing *res,
+						   uint32_t bitrate, uint16_t sample_pnt)
+{
+	struct can_timing min_copy;
+	struct can_timing max_copy;
+	struct can_timing res_copy;
+	int err;
+
+	K_OOPS(K_SYSCALL_DRIVER_CAN(dev, get_core_clock));
+	K_OOPS(k_usermode_from_copy(&min_copy, min, sizeof(min_copy)));
+	K_OOPS(k_usermode_from_copy(&max_copy, max, sizeof(max_copy)));
+	K_OOPS(k_usermode_from_copy(&res_copy, res, sizeof(res_copy)));
+
+	err = z_impl_can_calc_timing_data_with_limits(dev, &min_copy, &max_copy, &res_copy, bitrate,
+						      sample_pnt);
+	K_OOPS(k_usermode_to_copy(res, &res_copy, sizeof(*res)));
+
+	return err;
+}
+#include <zephyr/syscalls/can_calc_timing_data_with_limits_mrsh.c>
 
 static inline const struct can_timing *z_vrfy_can_get_timing_data_min(const struct device *dev)
 {

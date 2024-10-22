@@ -328,6 +328,17 @@ int z_impl_can_calc_timing(const struct device *dev, struct can_timing *res,
 	return can_calc_timing_internal(dev, res, min, max, bitrate, sample_pnt);
 }
 
+int z_impl_can_calc_timing_with_limits(const struct device *dev, struct can_timing *min,
+				       struct can_timing *max, struct can_timing *res,
+				       uint32_t bitrate, uint16_t sample_pnt)
+{
+	if (bitrate > 1000000) {
+		return -EINVAL;
+	}
+
+	return can_calc_timing_internal(dev, res, min, max, bitrate, sample_pnt);
+}
+
 #ifdef CONFIG_CAN_FD_MODE
 int z_impl_can_calc_timing_data(const struct device *dev, struct can_timing *res,
 				uint32_t bitrate, uint16_t sample_pnt)
@@ -335,6 +346,17 @@ int z_impl_can_calc_timing_data(const struct device *dev, struct can_timing *res
 	const struct can_timing *min = can_get_timing_data_min(dev);
 	const struct can_timing *max = can_get_timing_data_max(dev);
 
+	if (bitrate > 8000000) {
+		return -EINVAL;
+	}
+
+	return can_calc_timing_internal(dev, res, min, max, bitrate, sample_pnt);
+}
+
+int z_impl_can_calc_timing_data_with_limits(const struct device *dev, struct can_timing *min,
+					    struct can_timing *max, struct can_timing *res,
+					    uint32_t bitrate, uint16_t sample_pnt)
+{
 	if (bitrate > 8000000) {
 		return -EINVAL;
 	}
