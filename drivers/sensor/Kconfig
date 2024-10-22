@@ -82,6 +82,8 @@ config SENSOR_SHELL_MAX_TRIGGER_DEVICES
 config SENSOR_INFO
 	bool "Sensor Info iterable section"
 
+source "drivers/sensor/Kconfig.sensor_clock"
+
 comment "Device Drivers"
 
 # zephyr-keep-sorted-start

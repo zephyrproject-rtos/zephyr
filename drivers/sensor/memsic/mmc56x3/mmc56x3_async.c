@@ -5,6 +5,7 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/rtio/work.h>
+#include <zephyr/drivers/sensor_clock.h>
 
 #include "mmc56x3.h"
 
@@ -29,10 +30,19 @@ void mmc56x3_submit_sync(struct rtio_iodev_sqe *iodev_sqe)
 		return;
 	}
 
+	uint64_t cycles;
+
+	rc = sensor_clock_get_cycles(&cycles);
+	if (rc != 0) {
+		LOG_ERR("Failed to get sensor clock cycles");
+		rtio_iodev_sqe_err(iodev_sqe, rc);
+		return;
+	}
+
 	struct mmc56x3_encoded_data *edata;
 
 	edata = (struct mmc56x3_encoded_data *)buf;
-	edata->header.timestamp = k_ticks_to_ns_floor64(k_uptime_ticks());
+	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
 	edata->has_temp = 0;
 	edata->has_magn_x = 0;
 	edata->has_magn_y = 0;

@@ -8,6 +8,7 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/rtio/work.h>
+#include <zephyr/drivers/sensor_clock.h>
 
 #include "akm09918c.h"
 
@@ -46,8 +47,17 @@ void akm09918c_submit_sync(struct rtio_iodev_sqe *iodev_sqe)
 		return;
 	}
 
+	uint64_t cycles;
+
+	rc = sensor_clock_get_cycles(&cycles);
+	if (rc != 0) {
+		LOG_ERR("Failed to get sensor clock cycles");
+		rtio_iodev_sqe_err(iodev_sqe, rc);
+		return;
+	}
+
 	/* save information for the work item */
-	data->work_ctx.timestamp = k_ticks_to_ns_floor64(k_uptime_ticks());
+	data->work_ctx.timestamp = sensor_clock_cycles_to_ns(cycles);
 	data->work_ctx.iodev_sqe = iodev_sqe;
 
 	rc = k_work_schedule(&data->work_ctx.async_fetch_work, K_USEC(AKM09918C_MEASURE_TIME_US));
