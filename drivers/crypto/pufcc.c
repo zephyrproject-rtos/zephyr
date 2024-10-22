@@ -516,81 +516,49 @@ enum pufcc_status pufcc_rsa2048_sign_verify(
   ecp_ec_reg->field = PUFCC_RSA_2048;
   REG_WRITE_32(&pkc_regs->ecp_ec, ecp_ec_reg);
 
-  // .... Public key print TODO
-  // printf("%s(%d) Public Key\r\n", __func__, __LINE__);
-  // for(int i = 0; i < 256; i++) {
-  //   printf("0x%02x%s", pub_key->n[i], (i+1)%16==0?"\r\n":",");
-  // } printf("\r\n");
   // Reverse public key modulus
   reverse(pufcc_buffer, pub_key->n, PUFCC_RSA_2048_LEN);
-  ////////////////////////////
-  // .... Reversed Public key print TODO
-  // printf("%s(%d) original Reversed Public Key\r\n", __func__, __LINE__);
-  // for(int i = 0; i < 256; i++) {
-  //   printf("0x%02x%s", pufcc_buffer[i], (i+1)%16==0?"\r\n":",");
-  // } printf("\r\n");
-  ////////////////////////////
-  // memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_RSA2048_MODULUS_OFFSET,
-  //        pufcc_buffer, PUFCC_RSA_2048_LEN);
-  //////////////////////////// 
-  uint32_t *ptr = (uint32_t*)&pkc_regs->ecp_data + PUFCC_DATA_RSA2048_MODULUS_OFFSET/4;
-  uint32_t *buf_ptr = (uint32_t*)pufcc_buffer;
-  for(int i = 0; i < PUFCC_RSA_2048_LEN/4; i++) {
-    *ptr++ = *buf_ptr++;
-    // printf("%p 0x%08x =? 0x%08x\r\n", (ptr-1), *(buf_ptr-1), *(ptr-1));
-  } //printf("\r\n");
-  // .... Reversed Public key print TODO
-  // uint8_t *_8ptr = (uint8_t*)&pkc_regs->ecp_data + PUFCC_DATA_RSA2048_MODULUS_OFFSET;
-  // printf("%s(%d) manual Copy Read Reversed Public Key at %p\r\n", __func__, __LINE__, _8ptr);
-  // for(int i = 0; i < PUFCC_RSA_2048_LEN; i++) {
-  //   printf("0x%02x%s", *_8ptr++, (i+1)%16==0?"\r\n":",");
-  // } printf("\r\n");
-  //////////////////////////// 
+
+  #if !CONFIG_RS_RTOS_PORT
+    memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_RSA2048_MODULUS_OFFSET,
+          pufcc_buffer, PUFCC_RSA_2048_LEN);
+  #else
+    uint32_t *ptr = (uint32_t*)&pkc_regs->ecp_data + PUFCC_DATA_RSA2048_MODULUS_OFFSET/4;
+    uint32_t *buf_ptr = (uint32_t*)pufcc_buffer;
+    for(int i = 0; i < PUFCC_RSA_2048_LEN/4; i++) {
+      *ptr++ = *buf_ptr++;
+    }
+  #endif
 
   // Write public key exponent to ecp_e_short register
   REG_WRITE_32(&pkc_regs->ecp_e_short, &pub_key->e);
 
   // Reverse signature
   reverse(pufcc_buffer, sig, PUFCC_RSA_2048_LEN);
-  ////////////////////////////
-  // .... Reversed Signature print TODO
-  // printf("%s(%d) original Reversed Signature\r\n", __func__, __LINE__);
-  // for(int i = 0; i < PUFCC_RSA_2048_LEN; i++) {
-  //   printf("0x%02x%s", pufcc_buffer[i], (i+1)%16==0?"\r\n":",");
-  // } printf("\r\n");
-  ////////////////////////////
+
   // Write reversed signature to ECP data field at proper offset
-  // memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_RSA2048_SIGN_OFFSET,
-  //        pufcc_buffer, PUFCC_RSA_2048_LEN);
-  //////////////////////////// 
-  ptr = (uint32_t*)&pkc_regs->ecp_data + PUFCC_DATA_RSA2048_SIGN_OFFSET/4;
-  buf_ptr = (uint32_t*)pufcc_buffer;
-  // printf("%s(%d) manual Copy Reversed Signature at %p\r\n", __func__, __LINE__, ptr);
-  for(int i = 0; i < PUFCC_RSA_2048_LEN/4; i++) {
-    *ptr++ = *buf_ptr++;
-  }
-  // _8ptr = (uint8_t*)&pkc_regs->ecp_data + PUFCC_DATA_RSA2048_SIGN_OFFSET;
-  // printf("%s(%d) memcpy Read Reversed Signature at %p\r\n", __func__, __LINE__, _8ptr);
-  // for(int i = 0; i < PUFCC_RSA_2048_LEN; i++) {
-  //   printf("0x%02x%s", *_8ptr++, (i+1)%16==0?"\r\n":",");
-  // } printf("\r\n");
-  //////////////////////////// 
+  #if !CONFIG_RS_RTOS_PORT
+    memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_RSA2048_SIGN_OFFSET,
+          pufcc_buffer, PUFCC_RSA_2048_LEN);
+  #else
+    ptr = (uint32_t*)&pkc_regs->ecp_data + PUFCC_DATA_RSA2048_SIGN_OFFSET/4;
+    buf_ptr = (uint32_t*)pufcc_buffer;
+    for(int i = 0; i < PUFCC_RSA_2048_LEN/4; i++) {
+      *ptr++ = *buf_ptr++;
+    }
+  #endif
 
   // Write microprogram for RSA2048
-  // memcpy((void *)&pkc_regs->ecp_mac, rsa_2048_mprog, sizeof(rsa_2048_mprog));
-  //////////////////////////// 
-  ptr = (uint32_t*)&pkc_regs->ecp_mac;
-  buf_ptr = (uint32_t*)rsa_2048_mprog;
-  // printf("%s(%d) manual Copy Reversed Microprogram at %p\r\n", __func__, __LINE__, ptr);
-  for(int i = 0; i < sizeof(rsa_2048_mprog)/4; i++) {
-    *ptr++ = *buf_ptr++;
-  }
-  // _8ptr = (uint8_t*)&pkc_regs->ecp_mac;
-  // printf("%s(%d) Manual copy Read Microprogram %p\r\n", __func__, __LINE__, _8ptr);
-  // for(int i = 0; i < sizeof(rsa_2048_mprog); i++) {
-  //   printf("0x%02x%s", *_8ptr++, (i+1)%16==0?"\r\n":",");
-  // } printf("\r\n");
-  //////////////////////////// 
+  #if !CONFIG_RS_RTOS_PORT
+    memcpy((void *)&pkc_regs->ecp_mac, rsa_2048_mprog, sizeof(rsa_2048_mprog));
+  #else
+    ptr = (uint32_t*)&pkc_regs->ecp_mac;
+    buf_ptr = (uint32_t*)rsa_2048_mprog;
+    for(int i = 0; i < sizeof(rsa_2048_mprog)/4; i++) {
+      *ptr++ = *buf_ptr++;
+    }
+  #endif
+  
   temp32 = 0;
   struct pufcc_intrpt_reg *intrpt_reg = (struct pufcc_intrpt_reg *)&temp32;
   intrpt_reg->intrpt_st = 1;
