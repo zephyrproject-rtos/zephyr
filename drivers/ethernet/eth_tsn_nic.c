@@ -199,15 +199,13 @@ static void eth_tsn_nic_isr(const struct device *dev)
 
 static void tx_desc_set(struct dma_tsn_nic_desc *desc, uintptr_t addr, uint32_t len)
 {
-	uint32_t control_field;
 	uint32_t control;
 
 	desc->control = sys_cpu_to_le32(DESC_MAGIC);
-	control_field = DESC_STOPPED;
-	control_field |= DESC_EOP;
-	control_field |= DESC_COMPLETED;
 	control = sys_le32_to_cpu(desc->control & ~(LS_BYTE_MASK));
-	control |= control_field;
+	control |= DESC_STOPPED;
+	control |= DESC_EOP;
+	control |= DESC_COMPLETED;
 	desc->control = sys_cpu_to_le32(control);
 
 	desc->src_addr_lo = sys_cpu_to_le32(PCI_DMA_L(addr));
@@ -217,15 +215,13 @@ static void tx_desc_set(struct dma_tsn_nic_desc *desc, uintptr_t addr, uint32_t 
 
 static void rx_desc_set(struct dma_tsn_nic_desc *desc, uintptr_t addr, uint32_t len)
 {
-	uint32_t control_field;
 	uint32_t control;
 
 	desc->control = sys_cpu_to_le32(DESC_MAGIC);
-	control_field = DESC_STOPPED;
-	control_field |= DESC_EOP;
-	control_field |= DESC_COMPLETED;
 	control = sys_le32_to_cpu(desc->control & ~(LS_BYTE_MASK));
-	control |= control_field;
+	control |= DESC_STOPPED;
+	control |= DESC_EOP;
+	control |= DESC_COMPLETED;
 	desc->control = sys_cpu_to_le32(control);
 
 	desc->dst_addr_lo = sys_cpu_to_le32(PCI_DMA_L(addr));
