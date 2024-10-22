@@ -1,0 +1,30 @@
+# Sensor clock configuration options
+# Copyright(c) 2024 Cienet
+# SPDX-License-Identifier: Apache-2.0
+
+config SENSOR_CLOCK
+	bool
+	default y if SENSOR_ASYNC_API
+	help
+	  Configure the sensor clock source for the system.
+
+if SENSOR_CLOCK
+
+choice
+	prompt "Sensor clock type"
+	default SENSOR_CLOCK_SYSTEM
+	help
+	  Select the clock source to be used for sensor timing.
+
+config SENSOR_CLOCK_SYSTEM
+	bool "Use the system counter for sensor time"
+
+config SENSOR_CLOCK_COUNTER
+	bool "Use a counter device/API for sensor time"
+
+config SENSOR_CLOCK_RTC
+	bool "Use an RTC device/API for sensor time"
+
+endchoice
+
+endif # SENSOR_CLOCK

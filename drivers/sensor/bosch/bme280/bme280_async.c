@@ -7,6 +7,7 @@
 
 #include <zephyr/rtio/work.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/drivers/sensor_clock.h>
 
 #include "bme280.h"
 
@@ -16,6 +17,7 @@ void bme280_submit_sync(struct rtio_iodev_sqe *iodev_sqe)
 {
 	uint32_t min_buf_len = sizeof(struct bme280_encoded_data);
 	int rc;
+	uint64_t cycles;
 	uint8_t *buf;
 	uint32_t buf_len;
 
@@ -31,10 +33,17 @@ void bme280_submit_sync(struct rtio_iodev_sqe *iodev_sqe)
 		return;
 	}
 
+	rc = sensor_clock_get_cycles(&cycles);
+	if (rc != 0) {
+		LOG_ERR("Failed to get sensor clock cycles");
+		rtio_iodev_sqe_err(iodev_sqe, rc);
+		return;
+	}
+
 	struct bme280_encoded_data *edata;
 
 	edata = (struct bme280_encoded_data *)buf;
-	edata->header.timestamp = k_ticks_to_ns_floor64(k_uptime_ticks());
+	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
 	edata->has_temp = 0;
 	edata->has_humidity = 0;
 	edata->has_press = 0;

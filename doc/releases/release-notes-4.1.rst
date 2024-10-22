@@ -242,6 +242,33 @@ Drivers and Sensors
 
 * Sensors
 
+  * Sensor Clock
+
+    * The asynchronous sensor API now supports external clock sources. To use an external clock source
+      with the asynchronous sensor API, the following configurations are required:
+
+      * Enable one of the Kconfig options:
+        :kconfig:option:`CONFIG_SENSOR_CLOCK_COUNTER`,
+        :kconfig:option:`CONFIG_SENSOR_CLOCK_RTC`, or
+        :kconfig:option:`CONFIG_SENSOR_CLOCK_SYSTEM`.
+
+      * If not using the system clock, define the ``zephyr,sensor-clock`` property in the device tree to specify
+        the external clock source.
+
+        A typical configuration in the device tree structure is as follows:
+
+        .. code-block:: devicetree
+
+          / {
+            chosen {
+              zephyr,sensor-clock = &timer0;
+            };
+          };
+
+          &timer0 {
+            status = "okay";
+          };
+
 * Serial
 
 * SPI

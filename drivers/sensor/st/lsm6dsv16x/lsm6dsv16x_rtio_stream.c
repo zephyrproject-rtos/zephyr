@@ -13,6 +13,7 @@
 #include "lsm6dsv16x.h"
 #include "lsm6dsv16x_decoder.h"
 #include <zephyr/rtio/work.h>
+#include <zephyr/drivers/sensor_clock.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(LSM6DSV16X_RTIO);
@@ -377,13 +378,22 @@ void lsm6dsv16x_stream_irq_handler(const struct device *dev)
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 	const struct lsm6dsv16x_config *config = dev->config;
 #endif
+	uint64_t cycles;
+	int rc;
 
 	if (lsm6dsv16x->streaming_sqe == NULL) {
 		return;
 	}
 
+	rc = sensor_clock_get_cycles(&cycles);
+	if (rc != 0) {
+		LOG_ERR("Failed to get sensor clock cycles");
+		rtio_iodev_sqe_err(lsm6dsv16x->streaming_sqe, rc);
+		return;
+	}
+
 	/* get timestamp as soon as the irq is served */
-	lsm6dsv16x->fifo_timestamp = k_ticks_to_ns_floor64(k_uptime_ticks());
+	lsm6dsv16x->fifo_timestamp = sensor_clock_cycles_to_ns(cycles);
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 	if (ON_I3C_BUS(config) && (!I3C_INT_PIN(config))) {
