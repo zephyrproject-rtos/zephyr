@@ -215,7 +215,9 @@ static void eth_tsn_nic_rx(struct k_work *item)
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
 	/* Not sure this is how it's supposed to be used as there are not much examples */
 	if (net_pkt_is_rx_timestamping(pkt)) {
-		/* TODO: Get HW timestamp */
+		/* FIXME: Get HW timestamp */
+		timestamp.second = UINT64_MAX;
+		timestamp.nanosecond = 999999999; /* 1s - 1ns */
 		net_pkt_set_timestamp(pkt, &timestamp);
 	}
 #else
@@ -243,7 +245,7 @@ static void eth_tsn_nic_iface_init(struct net_if *iface)
 		data->iface = iface;
 	}
 
-	net_if_set_link_addr(iface, data->mac_addr, 6, NET_LINK_ETHERNET);
+	net_if_set_link_addr(iface, data->mac_addr, ETH_ALEN, NET_LINK_ETHERNET);
 	ethernet_init(iface);
 }
 
@@ -274,7 +276,7 @@ static int eth_tsn_nic_start(const struct device *dev)
 
 	pthread_spin_lock(&data->rx_lock);
 
-	/* TODO: It seems the board is not reading the descriptor properly */
+	/* FIXME: It seems the board is not reading the descriptor properly */
 	sys_read32(rx_regs + offsetof(struct dma_tsn_nic_engine_regs, status_rc)); /* Clear reg */
 	sys_write32(sys_cpu_to_le32(PCI_DMA_L((uintptr_t)&data->rx_desc)),
 		    rx_regs + offsetof(struct dma_tsn_nic_engine_sgdma_regs, first_desc_lo));
