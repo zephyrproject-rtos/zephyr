@@ -1,0 +1,38 @@
+#
+# Copyright (c) 2024 Cienet
+#
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  sample.sensor.clock.counter:
+    filter: CONFIG_SENSOR_CLOCK_COUNTER
+    tags:
+      - drivers
+      - sensor
+      - counter
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52833dk/nrf52833
+    extra_dtc_overlay_files:
+      - "boards/${BOARD}${NORMALIZED_BOARD_QUALIFIERS}.overlay"
+      - "boards/nrf528xx_counter.overlay"
+
+  sample.sensor.clock.rtc:
+    filter: CONFIG_SENSOR_CLOCK_RTC
+    tags:
+      - drivers
+      - sensor
+      - rtc
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52833dk/nrf52833
+    extra_dtc_overlay_files:
+      - "boards/${BOARD}${NORMALIZED_BOARD_QUALIFIERS}.overlay"
+      - "boards/nrf528xx_rtc.overlay"
+
+  sample.sensor.clock.system:
+    filter: CONFIG_SENSOR_CLOCK_SYSTEM
+    tags:
+      - drivers
+      - sensor
+      - system_clock
