@@ -101,7 +101,7 @@ zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_NRF92X  ${MDK_DIR}/system_nrf92.c
 zephyr_library_sources(nrfx_glue.c)
 zephyr_library_sources(${HELPERS_DIR}/nrfx_flag32_allocator.c)
 zephyr_library_sources_ifdef(CONFIG_RETAINED_MEM_NRF_RAM_CTRL ${HELPERS_DIR}/nrfx_ram_ctrl.c)
-zephyr_library_sources_ifdef(CONFIG_NRFX_DPPI                 ${HELPERS_DIR}/nrfx_gppi_dppi.c)
+zephyr_library_sources_ifdef(CONFIG_NRFX_GPPI                 ${HELPERS_DIR}/nrfx_gppi_dppi.c)
 zephyr_library_sources_ifdef(CONFIG_NRFX_PPI                  ${HELPERS_DIR}/nrfx_gppi_ppi.c)
 
 zephyr_library_sources_ifdef(CONFIG_NRFX_PRS     ${SRC_DIR}/prs/nrfx_prs.c)
@@ -185,7 +185,7 @@ if(CONFIG_SOC_NRF54L20_ENGA_CPUAPP)
   zephyr_compile_definitions(NRF_SKIP_TAMPC_SETUP)
 endif()
 
-if(CONFIG_SOC_SERIES_NRF54LX AND CONFIG_NRFX_DPPI)
+if(CONFIG_SOC_SERIES_NRF54LX AND CONFIG_NRFX_GPPI)
   zephyr_library_sources(${HELPERS_DIR}/nrfx_gppi_dppi_ppib_lumos.c)
   zephyr_library_sources(${NRFX_DIR}/soc/interconnect/dppic_ppib/nrfx_interconnect_dppic_ppib.c)
 endif()
