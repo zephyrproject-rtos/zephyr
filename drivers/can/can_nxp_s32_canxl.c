@@ -1005,8 +1005,23 @@ static int can_nxp_s32_init(const struct device *dev)
 	nxp_s32_zcan_timing_to_canxl_timing(&data->timing, &config->can_cfg->bitrate);
 
 #ifdef CAN_NXP_S32_FD_MODE
-	err = can_calc_timing_data(dev, &data->timing_data, config->common.bitrate_data,
-				   config->common.sample_point_data);
+	const struct can_driver_api *api = dev->api;
+	struct can_timing timing_min = api->timing_data_min;
+	struct can_timing timing_max = api->timing_data_max;
+
+	/*
+	 * Calculate the timing with a limit to ensure that the prescaler for the data phase
+	 * bit timing matches that of the nominal bit timing. This is necessary because the
+	 * CANXL hardware uses the same bit time quanta prescaler for both the nominal and
+	 * data phase bit timings.
+	 */
+
+	timing_min.prescaler = data->timing.prescaler;
+	timing_max.prescaler = data->timing.prescaler;
+
+	err = can_calc_timing_data_with_limits(dev, &timing_min, &timing_max, &data->timing_data,
+					       config->common.bitrate_data,
+					       config->common.sample_point_data);
 	if (err == -EINVAL) {
 		LOG_ERR("Can't find timing data for given param");
 		return -EIO;
@@ -1096,36 +1111,28 @@ static const struct can_driver_api can_nxp_s32_driver_api = {
 	.set_state_change_callback = can_nxp_s32_set_state_change_callback,
 	.get_core_clock = can_nxp_s32_get_core_clock,
 	.get_max_filters = can_nxp_s32_get_max_filters,
-	.timing_min = {
-		.sjw = 0x01,
-		.prop_seg = 0x01,
-		.phase_seg1 = 0x01,
-		.phase_seg2 = 0x02,
-		.prescaler = 0x01
-	},
-	.timing_max = {
-		.sjw = 0x04,
-		.prop_seg = 0x08,
-		.phase_seg1 = 0x08,
-		.phase_seg2 = 0x08,
-		.prescaler = 0x100
-	},
+	.timing_min = {.sjw = 0x01,
+		       .prop_seg = 0x01,
+		       .phase_seg1 = 0x01,
+		       .phase_seg2 = 0x02,
+		       .prescaler = 0x01},
+	.timing_max = {.sjw = 0x80,
+		       .prop_seg = 0x180,
+		       .phase_seg1 = 0x80,
+		       .phase_seg2 = 0x80,
+		       .prescaler = 0x100},
 #ifdef CAN_NXP_S32_FD_MODE
 	.set_timing_data = can_nxp_s32_set_timing_data,
-	.timing_data_min = {
-		.sjw = 0x01,
-		.prop_seg = 0x01,
-		.phase_seg1 = 0x01,
-		.phase_seg2 = 0x02,
-		.prescaler = 0x01
-	},
-	.timing_data_max = {
-		.sjw = 0x04,
-		.prop_seg = 0x08,
-		.phase_seg1 = 0x08,
-		.phase_seg2 = 0x08,
-		.prescaler = 0x100
-	}
+	.timing_data_min = {.sjw = 0x01,
+			    .prop_seg = 0x01,
+			    .phase_seg1 = 0x01,
+			    .phase_seg2 = 0x02,
+			    .prescaler = 0x01},
+	.timing_data_max = {.sjw = 0x80,
+			    .prop_seg = 0x80,
+			    .phase_seg1 = 0x80,
+			    .phase_seg2 = 0x80,
+			    .prescaler = 0x100}
 #endif
 };
 
