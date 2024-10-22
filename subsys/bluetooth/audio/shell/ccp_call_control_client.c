@@ -65,11 +65,27 @@ ccp_call_control_client_bearer_provider_name_cb(struct bt_ccp_call_control_clien
 }
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME */
 
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_UCI)
+static void ccp_call_control_client_bearer_uci_cb(struct bt_ccp_call_control_client_bearer *bearer,
+						  int err, const char *uci)
+{
+	if (err != 0) {
+		bt_shell_error("Failed to read bearer %p UCI: %d", (void *)bearer, err);
+		return;
+	}
+
+	bt_shell_info("Bearer %p UCI: %s", (void *)bearer, uci);
+}
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_UCI */
+
 static struct bt_ccp_call_control_client_cb ccp_call_control_client_cbs = {
 	.discover = ccp_call_control_client_discover_cb,
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)
 	.bearer_provider_name = ccp_call_control_client_bearer_provider_name_cb,
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME */
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_UCI)
+	.bearer_uci = ccp_call_control_client_bearer_uci_cb,
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_UCI */
 };
 
 static int cmd_ccp_call_control_client_discover(const struct shell *sh, size_t argc, char *argv[])
@@ -187,6 +203,37 @@ static int cmd_ccp_call_control_client_read_bearer_name(const struct shell *sh, 
 	return 0;
 }
 
+static int cmd_ccp_call_control_client_read_bearer_uci(const struct shell *sh, size_t argc,
+						       char *argv[])
+{
+	struct bt_ccp_call_control_client_bearer *bearer;
+	int index = 0;
+	int err;
+
+	if (argc > 1) {
+		index = validate_and_get_index(sh, argv[1]);
+		if (index < 0) {
+			return index;
+		}
+	}
+
+	bearer = get_bearer_by_index(index);
+	if (bearer == NULL) {
+		shell_error(sh, "Failed to get bearer for index %d", index);
+
+		return -ENOEXEC;
+	}
+
+	err = bt_ccp_call_control_client_read_bearer_uci(bearer);
+	if (err != 0) {
+		shell_error(sh, "Failed to read bearer[%d] UCI: %d", index, err);
+
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
 static int cmd_ccp_call_control_client(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc > 1) {
@@ -204,6 +251,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(ccp_call_control_client_cmds,
 					     cmd_ccp_call_control_client_discover, 1, 0),
 			       SHELL_CMD_ARG(read_bearer_name, NULL, "Get bearer name [index]",
 					     cmd_ccp_call_control_client_read_bearer_name, 1, 1),
+			       SHELL_CMD_ARG(read_bearer_uci, NULL, "Get bearer UCI [index]",
+					     cmd_ccp_call_control_client_read_bearer_uci, 1, 1),
 			       SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_ARG_REGISTER(ccp_call_control_client, &ccp_call_control_client_cmds,
