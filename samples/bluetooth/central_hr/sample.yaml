@@ -27,7 +27,8 @@ tests:
       - nrf52dk/nrf52832
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
-    extra_args: EXTRA_CONF_FILE=overlay-extended.conf
+    extra_args: SB_CONFIG_TEST_MODE_EXTENDED=y
+    sysbuild: true
     tags: bluetooth
   sample.bluetooth.central_hr.bt_ll_sw_split.phy_coded:
     harness: bluetooth
@@ -43,5 +44,6 @@ tests:
       - nrf52dk/nrf52832
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
-    extra_args: EXTRA_CONF_FILE=overlay-phy_coded.conf
+    extra_args: SB_CONFIG_TEST_MODE_PHY_CODED=y
+    sysbuild: true
     tags: bluetooth
