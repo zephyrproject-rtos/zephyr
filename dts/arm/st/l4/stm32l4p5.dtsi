@@ -383,6 +383,15 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
+
+		dcmi: dcmi@50050000 {
+			compatible = "st,stm32-dcmi";
+			reg = <0x50050000 0x400>;
+			interrupts = <85 0>;
+			interrupt-names = "dcmi";
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00004000>;
+			status = "disabled";
+		};
 	};
 
 	otgfs_phy: otgfs_phy {
