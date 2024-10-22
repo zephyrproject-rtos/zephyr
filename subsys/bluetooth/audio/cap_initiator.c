@@ -322,17 +322,6 @@ int bt_cap_initiator_broadcast_audio_delete(struct bt_cap_broadcast_source *broa
 	return err;
 }
 
-int bt_cap_initiator_broadcast_get_id(const struct bt_cap_broadcast_source *broadcast_source,
-				      uint32_t *const broadcast_id)
-{
-	CHECKIF(broadcast_source == NULL) {
-		LOG_DBG("broadcast_source is NULL");
-		return -EINVAL;
-	}
-
-	return bt_bap_broadcast_source_get_id(broadcast_source->bap_broadcast, broadcast_id);
-}
-
 int bt_cap_initiator_broadcast_get_base(struct bt_cap_broadcast_source *broadcast_source,
 					struct net_buf_simple *base_buf)
 {
