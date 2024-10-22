@@ -109,6 +109,11 @@ static void clock_init(void)
 
 void soc_early_init_hook(void)
 {
+#ifdef CONFIG_TEMP_KINETIS
+	/* enable bandgap buffer */
+	PMC->REGSC |= PMC_REGSC_BGBE_MASK;
+#endif /* CONFIG_TEMP_KINETIS */
+
 	clock_init();
 }
 
