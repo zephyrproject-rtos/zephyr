@@ -494,7 +494,7 @@
 			status = "okay";
 		};
 
-		agt0: agt0@40221000 {
+		agt0: agt@40221000 {
 			compatible = "renesas,ra-agt";
 			channel = <0>;
 			reg = <0x40221000 0x100>;
@@ -511,7 +511,7 @@
 			};
 		};
 
-		agt1: agt0@40221100 {
+		agt1: agt@40221100 {
 			compatible = "renesas,ra-agt";
 			channel = <1>;
 			reg = <0x40221100 0x100>;
