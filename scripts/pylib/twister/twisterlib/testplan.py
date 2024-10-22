@@ -659,6 +659,9 @@ class TestPlan:
                         self.hwm
                     )
 
+                    if self.options.test_only and not instance.run:
+                        continue
+
                     instance.metrics['handler_time'] = ts.get('execution_time', 0)
                     instance.metrics['used_ram'] = ts.get("used_ram", 0)
                     instance.metrics['used_rom']  = ts.get("used_rom",0)
@@ -676,9 +679,9 @@ class TestPlan:
                             instance.status = TwisterStatus.NONE
                             instance.reason = None
                             instance.retries += 1
-                    # test marked as passed (built only) but can run when
-                    # --test-only is used. Reset status to capture new results.
-                    elif status == TwisterStatus.PASS and instance.run and self.options.test_only:
+                    # test marked as built only can run when --test-only is used.
+                    # Reset status to capture new results.
+                    elif status == TwisterStatus.NOTRUN and instance.run and self.options.test_only:
                         instance.status = TwisterStatus.NONE
                         instance.reason = None
                     else:
