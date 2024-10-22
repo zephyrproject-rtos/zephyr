@@ -21,6 +21,7 @@ function _compile(){
   local conf_file="${conf_file:-prj.conf}"
   local extra_conf_file="${extra_conf_file:-""}"
   local conf_overlay="${conf_overlay:-""}"
+  local file_suffix="${file_suffix:-""}"
 
   default_cmake_args=(-DCONFIG_COVERAGE=y -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
     -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_ASSERT=y)
@@ -35,6 +36,11 @@ function _compile(){
     local exe_basename="${exe_name:-bs_${BOARD}_${app}_${conf_file}_${overlay_file}}"
   else
     local exe_basename="${exe_name:-bs_${BOARD}_${app}_${conf_file}}"
+  fi
+
+  if [ "${file_suffix}" ]; then
+    cmake_args+=" -DFILE_SUFFIX='${file_suffix}'"
+    exe_basename+="_FILE_SUFFIX_${file_suffix}"
   fi
 
   local exe_basename=$(echo ${exe_basename} | tr \"/\\.\; _ )
