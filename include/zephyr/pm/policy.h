@@ -137,49 +137,6 @@ void pm_policy_state_lock_put(enum pm_state state, uint8_t substate_id);
  */
 bool pm_policy_state_lock_is_active(enum pm_state state, uint8_t substate_id);
 
-/**
- * @brief Add a new latency requirement.
- *
- * The system will not enter any power state that would make the system to
- * exceed the given latency value.
- *
- * @param req Latency request.
- * @param value_us Maximum allowed latency in microseconds.
- */
-void pm_policy_latency_request_add(struct pm_policy_latency_request *req,
-				   uint32_t value_us);
-
-/**
- * @brief Update a latency requirement.
- *
- * @param req Latency request.
- * @param value_us New maximum allowed latency in microseconds.
- */
-void pm_policy_latency_request_update(struct pm_policy_latency_request *req,
-				      uint32_t value_us);
-
-/**
- * @brief Remove a latency requirement.
- *
- * @param req Latency request.
- */
-void pm_policy_latency_request_remove(struct pm_policy_latency_request *req);
-
-/**
- * @brief Subscribe to maximum latency changes.
- *
- * @param req Subscription request.
- * @param cb Callback function (NULL to disable).
- */
-void pm_policy_latency_changed_subscribe(struct pm_policy_latency_subscription *req,
-					 pm_policy_latency_changed_cb_t cb);
-
-/**
- * @brief Unsubscribe to maximum latency changes.
- *
- * @param req Subscription request.
- */
-void pm_policy_latency_changed_unsubscribe(struct pm_policy_latency_subscription *req);
 
 /**
  * @brief Register an event.
@@ -277,26 +234,6 @@ static inline bool pm_policy_state_lock_is_active(enum pm_state state, uint8_t s
 	return false;
 }
 
-static inline void pm_policy_latency_request_add(
-	struct pm_policy_latency_request *req, uint32_t value_us)
-{
-	ARG_UNUSED(req);
-	ARG_UNUSED(value_us);
-}
-
-static inline void pm_policy_latency_request_update(
-	struct pm_policy_latency_request *req, uint32_t value_us)
-{
-	ARG_UNUSED(req);
-	ARG_UNUSED(value_us);
-}
-
-static inline void pm_policy_latency_request_remove(
-	struct pm_policy_latency_request *req)
-{
-	ARG_UNUSED(req);
-}
-
 static inline void pm_policy_event_register(struct pm_policy_event *evt, uint32_t cycle)
 {
 	ARG_UNUSED(evt);
@@ -330,6 +267,72 @@ static inline int32_t pm_policy_next_event_ticks(void)
 }
 
 #endif /* CONFIG_PM */
+
+#if defined(CONFIG_PM) || defined(CONFIG_PM_POLICY_LATENCY_STANDALONE) || defined(__DOXYGEN__)
+/**
+ * @brief Add a new latency requirement.
+ *
+ * The system will not enter any power state that would make the system to
+ * exceed the given latency value.
+ *
+ * @param req Latency request.
+ * @param value_us Maximum allowed latency in microseconds.
+ */
+void pm_policy_latency_request_add(struct pm_policy_latency_request *req,
+				   uint32_t value_us);
+
+/**
+ * @brief Update a latency requirement.
+ *
+ * @param req Latency request.
+ * @param value_us New maximum allowed latency in microseconds.
+ */
+void pm_policy_latency_request_update(struct pm_policy_latency_request *req,
+				      uint32_t value_us);
+
+/**
+ * @brief Remove a latency requirement.
+ *
+ * @param req Latency request.
+ */
+void pm_policy_latency_request_remove(struct pm_policy_latency_request *req);
+
+/**
+ * @brief Subscribe to maximum latency changes.
+ *
+ * @param req Subscription request.
+ * @param cb Callback function (NULL to disable).
+ */
+void pm_policy_latency_changed_subscribe(struct pm_policy_latency_subscription *req,
+					 pm_policy_latency_changed_cb_t cb);
+
+/**
+ * @brief Unsubscribe to maximum latency changes.
+ *
+ * @param req Subscription request.
+ */
+void pm_policy_latency_changed_unsubscribe(struct pm_policy_latency_subscription *req);
+#else
+static inline void pm_policy_latency_request_add(
+	struct pm_policy_latency_request *req, uint32_t value_us)
+{
+	ARG_UNUSED(req);
+	ARG_UNUSED(value_us);
+}
+
+static inline void pm_policy_latency_request_update(
+	struct pm_policy_latency_request *req, uint32_t value_us)
+{
+	ARG_UNUSED(req);
+	ARG_UNUSED(value_us);
+}
+
+static inline void pm_policy_latency_request_remove(
+	struct pm_policy_latency_request *req)
+{
+	ARG_UNUSED(req);
+}
+#endif /* CONFIG_PM CONFIG_PM_POLICY_LATENCY_STANDALONE */
 
 /**
  * @}

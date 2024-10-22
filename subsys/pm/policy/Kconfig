@@ -32,3 +32,13 @@ config PM_POLICY_DEVICE_CONSTRAINTS
 	  it is needed by the device.
 
 endif # PM
+
+config PM_POLICY_LATENCY_STANDALONE
+	bool "Allow gathering latency requirements in standalone mode"
+	depends on !PM
+	help
+	  This option allows using the pm_policy_latency* APIs to gather latency
+	  requirements on systems that do not support PM (e.g. systems whithout
+	  CPU idle states). Because the API has a subscription mechanism, it can
+	  be useful to perform system-level adjustments based on latency
+	  requirements gathered from multiple system components.
