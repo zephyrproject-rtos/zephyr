@@ -14,9 +14,9 @@
 #include <zephyr/logging/log.h>
 #include <stdio.h>
 
-LOG_MODULE_REGISTER(pwm_renesas_ra8, CONFIG_PWM_LOG_LEVEL);
+LOG_MODULE_REGISTER(pwm_renesas_ra, CONFIG_PWM_LOG_LEVEL);
 
-#define DT_DRV_COMPAT renesas_ra8_pwm
+#define DT_DRV_COMPAT renesas_ra_pwm
 
 #define MAX_PIN                                       2U
 #define GPT_PRV_GTIO_HIGH_COMPARE_MATCH_LOW_CYCLE_END 0x6U
@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(pwm_renesas_ra8, CONFIG_PWM_LOG_LEVEL);
 #define GPT_PRV_GTIOR_INITIAL_LEVEL_BIT               4
 #define GPT_PRV_GTIO_TOGGLE_COMPARE_MATCH             0x3U
 
-struct pwm_ra8_capture_data {
+struct pwm_renesas_ra_capture_data {
 	pwm_capture_callback_handler_t callback;
 	void *user_data;
 	uint64_t period;
@@ -35,7 +35,7 @@ struct pwm_ra8_capture_data {
 	bool continuous;
 };
 
-struct pwm_ra8_data {
+struct pwm_renesas_ra_data {
 	gpt_instance_ctrl_t fsp_ctrl;
 	timer_cfg_t fsp_cfg;
 	gpt_extended_cfg_t extend_cfg;
@@ -43,17 +43,17 @@ struct pwm_ra8_data {
 	uint16_t overflow_event;
 
 #ifdef CONFIG_PWM_CAPTURE
-	struct pwm_ra8_capture_data capture;
+	struct pwm_renesas_ra_capture_data capture;
 #endif /* CONFIG_PWM_CAPTURE */
 };
 
-struct pwm_ra8_config {
+struct pwm_renesas_ra_config {
 	const struct device *clock_dev;
 	struct clock_control_ra_subsys_cfg clock_subsys;
 	const struct pinctrl_dev_config *pincfg;
 };
 
-static uint32_t pwm_ra8_gtior_calculate(gpt_pin_level_t const stop_level)
+static uint32_t pwm_renesas_ra_gtior_calculate(gpt_pin_level_t const stop_level)
 {
 	/* The stop level is used as both the initial level and the stop level. */
 	uint32_t gtior = R_GPT0_GTIOR_OAE_Msk | ((uint32_t)stop_level << R_GPT0_GTIOR_OADFLT_Pos) |
@@ -67,8 +67,8 @@ static uint32_t pwm_ra8_gtior_calculate(gpt_pin_level_t const stop_level)
 	return gtior;
 }
 
-static int pwm_ra8_apply_gtior_config(gpt_instance_ctrl_t *const p_ctrl,
-				      timer_cfg_t const *const p_cfg)
+static int pwm_renesas_ra_apply_gtior_config(gpt_instance_ctrl_t *const p_ctrl,
+					     timer_cfg_t const *const p_cfg)
 {
 	gpt_extended_cfg_t *p_extend = (gpt_extended_cfg_t *)p_cfg->p_extend;
 	uint32_t gtior = p_extend->gtior_setting.gtior;
@@ -80,14 +80,14 @@ static int pwm_ra8_apply_gtior_config(gpt_instance_ctrl_t *const p_ctrl,
 		/* If custom GTIOR settings are not provided, calculate GTIOR. */
 		if (p_extend->gtioca.output_enabled) {
 			uint32_t gtioca_gtior =
-				pwm_ra8_gtior_calculate(p_extend->gtioca.stop_level);
+				pwm_renesas_ra_gtior_calculate(p_extend->gtioca.stop_level);
 
 			gtior |= gtioca_gtior << R_GPT0_GTIOR_GTIOA_Pos;
 		}
 
 		if (p_extend->gtiocb.output_enabled) {
 			uint32_t gtiocb_gtior =
-				pwm_ra8_gtior_calculate(p_extend->gtiocb.stop_level);
+				pwm_renesas_ra_gtior_calculate(p_extend->gtiocb.stop_level);
 
 			gtior |= gtiocb_gtior << R_GPT0_GTIOR_GTIOB_Pos;
 		}
@@ -127,10 +127,10 @@ static int pwm_ra8_apply_gtior_config(gpt_instance_ctrl_t *const p_ctrl,
 	return 0;
 }
 
-static int pwm_ra8_set_cycles(const struct device *dev, uint32_t pin, uint32_t period_cycles,
-			      uint32_t pulse_cycles, pwm_flags_t flags)
+static int pwm_renesas_ra_set_cycles(const struct device *dev, uint32_t pin, uint32_t period_cycles,
+				     uint32_t pulse_cycles, pwm_flags_t flags)
 {
-	struct pwm_ra8_data *data = dev->data;
+	struct pwm_renesas_ra_data *data = dev->data;
 	uint32_t pulse;
 	fsp_err_t err;
 
@@ -155,7 +155,7 @@ static int pwm_ra8_set_cycles(const struct device *dev, uint32_t pin, uint32_t p
 	pulse = (flags & PWM_POLARITY_INVERTED) ? period_cycles - pulse_cycles : pulse_cycles;
 
 	/* Apply gtio output setting */
-	pwm_ra8_apply_gtior_config(&data->fsp_ctrl, &data->fsp_cfg);
+	pwm_renesas_ra_apply_gtior_config(&data->fsp_ctrl, &data->fsp_cfg);
 
 	/* Stop timer */
 	err = R_GPT_Stop(&data->fsp_ctrl);
@@ -187,9 +187,10 @@ static int pwm_ra8_set_cycles(const struct device *dev, uint32_t pin, uint32_t p
 	return 0;
 };
 
-static int pwm_ra8_get_cycles_per_sec(const struct device *dev, uint32_t pin, uint64_t *cycles)
+static int pwm_renesas_ra_get_cycles_per_sec(const struct device *dev, uint32_t pin,
+					     uint64_t *cycles)
 {
-	struct pwm_ra8_data *data = dev->data;
+	struct pwm_renesas_ra_data *data = dev->data;
 	timer_info_t info;
 	fsp_err_t err;
 
@@ -226,10 +227,11 @@ static void disable_irq(IRQn_Type irq)
 	}
 }
 
-static int pwm_ra8_configure_capture(const struct device *dev, uint32_t pin, pwm_flags_t flags,
-				     pwm_capture_callback_handler_t cb, void *user_data)
+static int pwm_renesas_ra_configure_capture(const struct device *dev, uint32_t pin,
+					    pwm_flags_t flags, pwm_capture_callback_handler_t cb,
+					    void *user_data)
 {
-	struct pwm_ra8_data *data = dev->data;
+	struct pwm_renesas_ra_data *data = dev->data;
 
 	if (pin != GPT_IO_PIN_GTIOCA) {
 		LOG_ERR("Feature only support for gtioca");
@@ -306,9 +308,9 @@ static int pwm_ra8_configure_capture(const struct device *dev, uint32_t pin, pwm
 	return 0;
 }
 
-static int pwm_ra8_enable_capture(const struct device *dev, uint32_t pin)
+static int pwm_renesas_ra_enable_capture(const struct device *dev, uint32_t pin)
 {
-	struct pwm_ra8_data *data = dev->data;
+	struct pwm_renesas_ra_data *data = dev->data;
 	fsp_err_t err;
 
 	if (pin != GPT_IO_PIN_GTIOCA) {
@@ -344,9 +346,9 @@ static int pwm_ra8_enable_capture(const struct device *dev, uint32_t pin)
 	return 0;
 }
 
-static int pwm_ra8_disable_capture(const struct device *dev, uint32_t pin)
+static int pwm_renesas_ra_disable_capture(const struct device *dev, uint32_t pin)
 {
-	struct pwm_ra8_data *data = dev->data;
+	struct pwm_renesas_ra_data *data = dev->data;
 	fsp_err_t err;
 
 	if (pin != GPT_IO_PIN_GTIOCA) {
@@ -386,7 +388,7 @@ static int pwm_ra8_disable_capture(const struct device *dev, uint32_t pin)
 static void fsp_callback(timer_callback_args_t *p_args)
 {
 	const struct device *dev = p_args->p_context;
-	struct pwm_ra8_data *data = dev->data;
+	struct pwm_renesas_ra_data *data = dev->data;
 	timer_info_t info;
 
 	(void)R_GPT_InfoGet(&data->fsp_ctrl, &info);
@@ -422,7 +424,7 @@ static void fsp_callback(timer_callback_args_t *p_args)
 			data->capture.overflows = 0U;
 			/* Disable capture in single mode */
 			if (data->capture.continuous == false) {
-				pwm_ra8_disable_capture(dev, GPT_IO_PIN_GTIOCA);
+				pwm_renesas_ra_disable_capture(dev, GPT_IO_PIN_GTIOCA);
 			}
 		}
 	} else if (p_args->event == TIMER_EVENT_CYCLE_END) {
@@ -435,20 +437,20 @@ static void fsp_callback(timer_callback_args_t *p_args)
 
 #endif /* CONFIG_PWM_CAPTURE */
 
-static DEVICE_API(pwm, pwm_ra8_driver_api) = {
-	.get_cycles_per_sec = pwm_ra8_get_cycles_per_sec,
-	.set_cycles = pwm_ra8_set_cycles,
+static const struct pwm_driver_api pwm_renesas_ra_driver_api = {
+	.get_cycles_per_sec = pwm_renesas_ra_get_cycles_per_sec,
+	.set_cycles = pwm_renesas_ra_set_cycles,
 #ifdef CONFIG_PWM_CAPTURE
-	.configure_capture = pwm_ra8_configure_capture,
-	.enable_capture = pwm_ra8_enable_capture,
-	.disable_capture = pwm_ra8_disable_capture,
+	.configure_capture = pwm_renesas_ra_configure_capture,
+	.enable_capture = pwm_renesas_ra_enable_capture,
+	.disable_capture = pwm_renesas_ra_disable_capture,
 #endif /* CONFIG_PWM_CAPTURE */
 };
 
-static int pwm_ra8_init(const struct device *dev)
+static int pwm_renesas_ra_init(const struct device *dev)
 {
-	struct pwm_ra8_data *data = dev->data;
-	const struct pwm_ra8_config *cfg = dev->config;
+	struct pwm_renesas_ra_data *data = dev->data;
+	const struct pwm_renesas_ra_config *cfg = dev->config;
 	int err;
 
 	if (!device_is_ready(cfg->clock_dev)) {
@@ -534,7 +536,7 @@ static int pwm_ra8_init(const struct device *dev)
 		.p_pwm_cfg = NULL,                                                                 \
 		.gtior_setting.gtior = (0x0U),                                                     \
 	};                                                                                         \
-	static struct pwm_ra8_data pwm_ra8_data_##index = {                                        \
+	static struct pwm_renesas_ra_data pwm_renesas_ra_data_##index = {                          \
 		.fsp_cfg =                                                                         \
 			{                                                                          \
 				.mode = TIMER_MODE_PWM,                                            \
@@ -547,24 +549,24 @@ static int pwm_ra8_init(const struct device *dev)
 		.capture_a_event = ELC_EVENT_GPT_CAPTURE_COMPARE_A(DT_INST_PROP(index, channel)),  \
 		.overflow_event = ELC_EVENT_GPT_COUNTER_OVERFLOW(DT_INST_PROP(index, channel)),    \
 	};                                                                                         \
-	static const struct pwm_ra8_config pwm_ra8_config_##index = {                              \
+	static const struct pwm_renesas_ra_config pwm_renesas_ra_config_##index = {                \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                   \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(index)),                            \
 		.clock_subsys = {                                                                  \
 			.mstp = (uint32_t)DT_INST_CLOCKS_CELL_BY_IDX(index, 0, mstp),              \
 			.stop_bit = DT_INST_CLOCKS_CELL_BY_IDX(index, 0, stop_bit),                \
 		}};                                                                                \
-	static int pwm_ra8_init_##index(const struct device *dev)                                  \
+	static int pwm_renesas_ra_init_##index(const struct device *dev)                           \
 	{                                                                                          \
 		PWM_RA_IRQ_CONFIG_INIT(index);                                                     \
-		int err = pwm_ra8_init(dev);                                                       \
+		int err = pwm_renesas_ra_init(dev);                                                \
 		if (err != 0) {                                                                    \
 			return err;                                                                \
 		}                                                                                  \
 		return 0;                                                                          \
 	}                                                                                          \
-	DEVICE_DT_INST_DEFINE(index, pwm_ra8_init_##index, NULL, &pwm_ra8_data_##index,            \
-			      &pwm_ra8_config_##index, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,      \
-			      &pwm_ra8_driver_api);
+	DEVICE_DT_INST_DEFINE(index, pwm_renesas_ra_init_##index, NULL,                            \
+			      &pwm_renesas_ra_data_##index, &pwm_renesas_ra_config_##index,        \
+			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, &pwm_renesas_ra_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_RA8_INIT);
