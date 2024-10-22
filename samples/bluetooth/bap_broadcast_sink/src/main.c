@@ -148,7 +148,7 @@ static const struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
 static const uint32_t bis_index_mask = BIT_MASK(ARRAY_SIZE(streams));
 static uint32_t requested_bis_sync;
 static uint32_t bis_index_bitfield;
-static uint8_t sink_broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
+static uint8_t sink_broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 
 uint64_t total_rx_iso_packet_count; /* This value is exposed to test code */
 
@@ -966,13 +966,13 @@ static int pa_sync_term_req_cb(struct bt_conn *conn,
 
 static void broadcast_code_cb(struct bt_conn *conn,
 			      const struct bt_bap_scan_delegator_recv_state *recv_state,
-			      const uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE])
+			      const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE])
 {
 	printk("Broadcast code received for %p\n", recv_state);
 
 	req_recv_state = recv_state;
 
-	(void)memcpy(sink_broadcast_code, broadcast_code, BT_AUDIO_BROADCAST_CODE_SIZE);
+	(void)memcpy(sink_broadcast_code, broadcast_code, BT_ISO_BROADCAST_CODE_SIZE);
 
 	k_sem_give(&sem_broadcast_code_received);
 }
