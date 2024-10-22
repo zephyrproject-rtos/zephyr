@@ -64,7 +64,7 @@ class ZephyrSpdx(WestCommand):
             self.do_run_spdx(args)
 
     def do_run_init(self, args):
-        self.inf("initializing Cmake file-based API prior to build")
+        self.inf("initializing CMake file-based API prior to build")
 
         if not args.build_dir:
             self.die("Build directory not specified; call `west spdx --init --build-dir=BUILD_DIR`")
@@ -74,7 +74,7 @@ class ZephyrSpdx(WestCommand):
         if query_ready:
             self.inf("initialized; run `west build` then run `west spdx`")
         else:
-            self.err("Couldn't create Cmake file-based API query directory")
+            self.err("Couldn't create CMake file-based API query directory")
             self.err("You can manually create an empty file at $BUILDDIR/.cmake/api/v1/query/codemodel-v2")
 
     def do_run_spdx(self, args):

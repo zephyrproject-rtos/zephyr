@@ -15,6 +15,7 @@ import pytest
 import sys
 import tarfile
 
+# pylint: disable=no-name-in-module
 from conftest import ZEPHYR_BASE, TEST_DATA, sample_filename_mock, testsuite_filename_mock
 from twisterlib.testplan import TestPlan
 
@@ -149,7 +150,7 @@ class TestOutfile:
         flag_pattern = r'(?:\S+(?: \\)?)+- '
         cmake_path = shutil.which('cmake')
         if not cmake_path:
-            assert False, 'Cmake not found.'
+            assert False, 'CMake not found.'
 
         cmake_call_section = r'^Calling cmake: ' + re.escape(cmake_path)
         calling_line = re.sub(cmake_call_section, '', calling_line)

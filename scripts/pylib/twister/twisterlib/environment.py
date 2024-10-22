@@ -1075,7 +1075,7 @@ class TwisterEnv:
             results = {"returncode": p.returncode, "msg": msg, "stdout": out}
 
         else:
-            logger.error("Cmake script failure: %s" % (args[0]))
+            logger.error("CMake script failure: %s" % (args[0]))
             results = {"returncode": p.returncode, "returnmsg": out}
 
         return results
