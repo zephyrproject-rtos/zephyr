@@ -49,9 +49,6 @@ extern "C" {
 #define BT_AUDIO_PD_MAX                          0xFFFFFFU
 /** Indicates that the unicast server does not have a preference for any retransmission number */
 #define BT_AUDIO_RTN_PREF_NONE                   0xFFU
-/** Maximum size of the broadcast code in octets */
-#define BT_AUDIO_BROADCAST_CODE_SIZE             16
-
 /** The minimum size of a Broadcast Name as defined by Bluetooth Assigned Numbers */
 #define BT_AUDIO_BROADCAST_NAME_LEN_MIN          4
 /** The maximum size of a Broadcast Name as defined by Bluetooth Assigned Numbers */

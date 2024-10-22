@@ -54,7 +54,7 @@ ATOMIC_DEFINE(flags, FLAG_NUM);
 
 static struct broadcast_sink {
 	const struct bt_bap_scan_delegator_recv_state *req_recv_state;
-	uint8_t sink_broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
+	uint8_t sink_broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 	struct bt_bap_broadcast_sink *bap_broadcast_sink;
 	struct bt_cap_stream broadcast_stream;
 	struct bt_le_per_adv_sync *pa_sync;
@@ -424,14 +424,14 @@ static int pa_sync_term_req_cb(struct bt_conn *conn,
 
 static void broadcast_code_cb(struct bt_conn *conn,
 			      const struct bt_bap_scan_delegator_recv_state *recv_state,
-			      const uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE])
+			      const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE])
 {
 	LOG_INF("Broadcast code received for %p", recv_state);
 
 	broadcast_sink.req_recv_state = recv_state;
 
 	(void)memcpy(broadcast_sink.sink_broadcast_code, broadcast_code,
-		     BT_AUDIO_BROADCAST_CODE_SIZE);
+		     BT_ISO_BROADCAST_CODE_SIZE);
 
 	atomic_set_bit(flags, FLAG_BROADCAST_CODE_RECEIVED);
 }
