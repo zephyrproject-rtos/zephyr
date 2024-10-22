@@ -48,6 +48,17 @@
 		};
 	};
 
+	temp0: temp0 {
+		compatible = "nxp,kinetis-temperature";
+		io-channels = <&adc0 26>, <&adc0 27>;
+		io-channel-names = "SENSOR", "BANDGAP";
+		bandgap-voltage = <1000000>;
+		vtemp25 = <716000>;
+		sensor-slope-cold = <1620>;
+		sensor-slope-hot = <1620>;
+		status = "disabled";
+	};
+
 	soc {
 		ftfa: flash-controller@40020000 {
 			compatible = "nxp,kinetis-ftfa";
