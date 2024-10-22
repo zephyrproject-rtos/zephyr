@@ -61,7 +61,8 @@ for reference.
        init -> CONFIGURED [label=dma_config];
 
        CONFIGURED -> RUNNING [label=dma_start];
-       CONFIGURED -> CONFIGURED [label=dma_stop];
+       CONFIGURED -> CONFIGURED [label=dma_stop, headport=c, tailport=e];
+       CONFIGURED -> CONFIGURED [label=dma_config, headport=c, tailport=w];
 
        RUNNING -> CONFIGURED [label=dma_stop];
        RUNNING -> RUNNING [label=dma_start];
