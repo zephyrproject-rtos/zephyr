@@ -1,0 +1,55 @@
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip MEC5 UART
+
+compatible: "microchip,mec5-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  fifo-mode-disable:
+    type: boolean
+    description: |
+      Disable 16550 FIFO mode. Both 16-byte TX and RX FIFOs will be
+      disabled. UART will revert to a one byte holding register for
+      TX and RX.
+
+  rx-fifo-trig:
+    type: string
+    default: "8"
+    description: |
+      RX FIFO byte count trigger limit. When the number of received bytes
+      reaches this level the UART will signal an interrupt if enabled.
+    enum:
+      - "1"
+      - "4"
+      - "8"
+      - "14"
+
+  use-extclk:
+    type: boolean
+    description: |
+      Optional source of an external UART clock. If present the
+      driver will use this pin as the UART input clock source.
+      The pin should have a 1.8432 MHz clock waveform for normal
+      UART BAUD rates or 48 MHz for high speed BAUD rates.
+      Refer to data sheet for the pin(s) available as external UART
+      clock input. The pin should be added to the default PINCTRL list.
+      Example using external 1.8432MHz clock on MEC5 external UART clock pin.
+
+        clock-frequency = <1843200>;
+        pinctrl-0 = < &uart1_tx_gpio170 &uart1_tx_gpio171 &uart_clk_gpio025>;
+        pinctrl-names = "default";
