@@ -289,31 +289,7 @@ int bt_ccp_call_control_client_get_bearers(struct bt_ccp_call_control_client *cl
 	return 0;
 }
 
-#if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)
-static void tbs_client_read_bearer_provider_name_cb(struct bt_conn *conn, int err,
-						    uint8_t inst_index, const char *name)
-{
-	struct bt_ccp_call_control_client *client = get_client_by_conn(conn);
-	struct bt_ccp_call_control_client_cb *listener, *next;
-	struct bt_ccp_call_control_client_bearer *bearer;
-
-	atomic_clear_bit(client->flags, CCP_CALL_CONTROL_CLIENT_FLAG_BUSY);
-
-	bearer = get_bearer_by_tbs_index(client, inst_index);
-	if (bearer == NULL) {
-		LOG_DBG("Could not lookup bearer for client %p and index 0x%02X", client,
-			inst_index);
-
-		return;
-	}
-
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ccp_call_control_client_cbs, listener, next, _node) {
-		if (listener->bearer_provider_name != NULL) {
-			listener->bearer_provider_name(bearer, err, name);
-		}
-	}
-}
-
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_UCI) || defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)
 /**
  * @brief Validates a bearer and provides a client with ownership of the busy flag
  *
@@ -353,6 +329,32 @@ static int validate_bearer_and_get_client(const struct bt_ccp_call_control_clien
 
 	return 0;
 }
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_UCI || CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME */
+
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)
+static void tbs_client_read_bearer_provider_name_cb(struct bt_conn *conn, int err,
+						    uint8_t inst_index, const char *name)
+{
+	struct bt_ccp_call_control_client *client = get_client_by_conn(conn);
+	struct bt_ccp_call_control_client_cb *listener, *next;
+	struct bt_ccp_call_control_client_bearer *bearer;
+
+	atomic_clear_bit(client->flags, CCP_CALL_CONTROL_CLIENT_FLAG_BUSY);
+
+	bearer = get_bearer_by_tbs_index(client, inst_index);
+	if (bearer == NULL) {
+		LOG_DBG("Could not lookup bearer for client %p and index 0x%02X", client,
+			inst_index);
+
+		return;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ccp_call_control_client_cbs, listener, next, _node) {
+		if (listener->bearer_provider_name != NULL) {
+			listener->bearer_provider_name(bearer, err, name);
+		}
+	}
+}
 
 int bt_ccp_call_control_client_read_bearer_provider_name(
 	struct bt_ccp_call_control_client_bearer *bearer)
@@ -389,3 +391,63 @@ int bt_ccp_call_control_client_read_bearer_provider_name(
 	return 0;
 }
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME */
+
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_UCI)
+static void tbs_client_read_bearer_uci_cb(struct bt_conn *conn, int err, uint8_t inst_index,
+					  const char *uci)
+{
+	struct bt_ccp_call_control_client *client = get_client_by_conn(conn);
+	struct bt_ccp_call_control_client_cb *listener, *next;
+	struct bt_ccp_call_control_client_bearer *bearer;
+
+	atomic_clear_bit(client->flags, CCP_CALL_CONTROL_CLIENT_FLAG_BUSY);
+
+	bearer = get_bearer_by_tbs_index(client, inst_index);
+	if (bearer == NULL) {
+		LOG_DBG("Could not lookup bearer for client %p and index 0x%02X", client,
+			inst_index);
+
+		return;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ccp_call_control_client_cbs, listener, next, _node) {
+		if (listener->bearer_uci != NULL) {
+			listener->bearer_uci(bearer, err, uci);
+		}
+	}
+}
+
+int bt_ccp_call_control_client_read_bearer_uci(struct bt_ccp_call_control_client_bearer *bearer)
+{
+	struct bt_ccp_call_control_client *client;
+	int err;
+
+	err = validate_bearer_and_get_client(bearer, &client);
+	if (err != 0) {
+		return err;
+	}
+
+	tbs_client_cbs.bearer_uci = tbs_client_read_bearer_uci_cb;
+
+	err = bt_tbs_client_read_bearer_uci(client->conn, bearer->tbs_index);
+	if (err != 0) {
+		atomic_clear_bit(client->flags, CCP_CALL_CONTROL_CLIENT_FLAG_BUSY);
+
+		/* Return expected return values directly */
+		if (err == -ENOTCONN || err == -EBUSY) {
+			LOG_DBG("bt_tbs_client_read_bearer_uci returned %d", err);
+
+			return err;
+		}
+
+		/* Assert if the return value is -EINVAL as that means we are missing a check */
+		__ASSERT(err != -EINVAL, "err shall not be -EINVAL");
+
+		LOG_DBG("Unexpected error from bt_tbs_client_read_bearer_uci: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_UCI */
