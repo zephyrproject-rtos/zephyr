@@ -100,6 +100,56 @@ void tsn_init_configs(const struct device *dev)
 
 int tsn_set_qbv(const struct device *dev, struct ethernet_qbv_param param)
 {
+	struct eth_tsn_nic_data *data = dev->data;
+	struct tsn_config *config = &data->tsn_config;
+	struct qbv_slot *slot;
+
+	switch (param.type) {
+	case ETHERNET_QBV_PARAM_TYPE_STATUS:
+		/* Enable/Disable Qbv */
+		config->qbv.enabled = param.enabled;
+		break;
+	case ETHERNET_QBV_PARAM_TYPE_GATE_CONTROL_LIST:
+		/* Configure each Qbv slots */
+		if (param.gate_control.operation != ETHERNET_SET_GATE_STATE) {
+			/**
+			 *  XXX: Not sure what other operations mean,
+			 *       there are no usage or documents of them
+			 */
+			return -ENOTSUP;
+		}
+		slot = &config->qbv.slots[param.gate_control.row];
+		slot->duration_ns = param.gate_control.time_interval;
+		for (int i = 0; i < config->qbv.slot_count; i++) {
+			slot->opened_prios[i] = param.gate_control.gate_status[i];
+		}
+		break;
+	case ETHERNET_QBV_PARAM_TYPE_GATE_CONTROL_LIST_LEN:
+		/* Number of Qbv slots */
+		config->qbv.slot_count = param.gate_control_list_len;
+		break;
+	case ETHERNET_QBV_PARAM_TYPE_TIME:
+		config->qbv.start = ext_time_to_net_time(param.base_time);
+
+		/**
+		 * XXX: Each slots have their own time_interval, not sure why we need these
+		 *      We have all the parameters we need for our Qbv implementation
+		 *      Let's just leave them here to remind us to figure out
+		 *      what they mean later
+		 */
+		ARG_UNUSED(param.cycle_time);
+		ARG_UNUSED(param.extension_time);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	/**
+	 * Calling this every time is quite inefficient,
+	 * but the driver doesn't know when the config process is finished
+	 */
+	bake_qos_config(config);
+
 	return 0;
 }
 
