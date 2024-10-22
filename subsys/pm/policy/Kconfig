@@ -1,0 +1,34 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if PM
+choice PM_POLICY
+	prompt "Idle State Power Management Policy"
+	default PM_POLICY_DEFAULT
+	help
+	  Select the idle state power management policy.
+
+config PM_POLICY_DEFAULT
+	bool "Default PM policy"
+	help
+	  This option selects the default PM policy. Default policy is based
+	  on CPU residency times and other constraints imposed by the drivers or
+	  application.
+
+config PM_POLICY_CUSTOM
+	bool "Custom PM Policy"
+	help
+	  This options allows applications to override the default policy with
+	  a custom implementation.
+
+endchoice
+
+config PM_POLICY_DEVICE_CONSTRAINTS
+	bool "Power state constraints per device"
+	help
+	  This option allows devices to have a list of power states
+	  that when the system transition to them, cause power loss in the device.
+	  This used to set and release power state constraints when
+	  it is needed by the device.
+
+endif # PM
