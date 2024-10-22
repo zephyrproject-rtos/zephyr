@@ -359,8 +359,9 @@ Bluetooth Host:
     - alwa-nordic
   collaborators:
     - hermabe
-    - Thalley
+    - rugeGerritsen
     - sjanc
+    - Thalley
     - theob-pro
   files:
     - doc/connectivity/bluetooth/
@@ -506,6 +507,7 @@ Bluetooth ISO:
   collaborators:
     - jhedberg
     - kruithofa
+    - rugeGerritsen
   files:
     - include/zephyr/bluetooth/iso.h
     - doc/connectivity/bluetooth/api/shell/iso.rst
