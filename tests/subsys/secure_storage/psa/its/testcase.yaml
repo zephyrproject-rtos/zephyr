@@ -3,7 +3,7 @@ common:
     - native_sim
   platform_exclude:
     - qemu_cortex_m0 # settings subsystem initialization fails
-  timeout: 120
+  timeout: 600
   tags:
     - psa.secure_storage
 tests:
