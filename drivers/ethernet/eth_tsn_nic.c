@@ -176,7 +176,7 @@ static void eth_tsn_nic_rx(struct k_work *item)
 	struct net_pkt *pkt;
 	struct net_ptp_time timestamp;
 	size_t pkt_len;
-	int ret;
+	int ret = 0;
 
 	pthread_spin_lock(&data->rx_lock);
 
@@ -202,14 +202,12 @@ static void eth_tsn_nic_rx(struct k_work *item)
 	ret = net_pkt_write(pkt, data->rx_buffer, pkt_len);
 	/* ret = net_pkt_write(pkt, data->rx_buffer + RX_METADATA_SIZE, pkt_len); */
 	if (ret != 0) {
-		net_pkt_unref(pkt);
 		printk("write failed\n");
 		goto done;
 	}
 
 	ret = net_recv_data(data->iface, pkt);
 	if (ret != 0) {
-		net_pkt_unref(pkt);
 		printk("recv failed\n");
 		goto done;
 	}
@@ -225,6 +223,11 @@ static void eth_tsn_nic_rx(struct k_work *item)
 #endif /* CONFIG_NET_PKT_TIMESTMP */
 
 done:
+
+	if (ret != 0 && pkt != NULL) { /* Handle errors */
+		net_pkt_unref(pkt);
+	}
+
 	/* TODO: enable interrupts */
 	data->has_pkt = false; /* TODO: This is for test only */
 
