@@ -125,3 +125,7 @@ Example Usage when connected
    Bearer 0x20046254 name: Generic TBS
    uart:~$ ccp_call_control_client read_bearer_name 1
    Bearer 0x20046256 name: Telephone Bearer #1
+   uart:~$ ccp_call_control_client read_bearer_uci
+   Bearer 0x20046254 UCI: un999
+   uart:~$ ccp_call_control_client read_bearer_uci 1
+   Bearer 0x20046256 UCI: skype

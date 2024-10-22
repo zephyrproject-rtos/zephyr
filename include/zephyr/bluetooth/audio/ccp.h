@@ -212,12 +212,12 @@ struct bt_ccp_call_control_client_bearer;
 
 /** Struct with information about bearers of a client */
 struct bt_ccp_call_control_client_bearers {
-#if defined(CONFIG_BT_TBS_CLIENT_GTBS)
+#if defined(CONFIG_BT_TBS_CLIENT_GTBS) || defined(__DOXYGEN__)
 	/** The GTBS bearer. */
 	struct bt_ccp_call_control_client_bearer *gtbs_bearer;
 #endif /* CONFIG_BT_TBS_CLIENT_GTBS */
 
-#if defined(CONFIG_BT_TBS_CLIENT_TBS)
+#if defined(CONFIG_BT_TBS_CLIENT_TBS) || defined(__DOXYGEN__)
 	/** Number of TBS bearers in @p tbs_bearers */
 	size_t tbs_count;
 
@@ -246,13 +246,13 @@ struct bt_ccp_call_control_client_cb {
 	void (*discover)(struct bt_ccp_call_control_client *client, int err,
 			 struct bt_ccp_call_control_client_bearers *bearers);
 
-#if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME) || defined(__DOXYGEN__)
 	/**
 	 * @brief Callback function for bt_ccp_call_control_client_read_bearer_provider_name().
 	 *
 	 * This callback is called once the read bearer provider name procedure is completed.
 	 *
-	 * @param client Call Control Client instance pointer.
+	 * @param bearer Call Control Client bearer pointer.
 	 * @param err    Error value. 0 on success, GATT error on positive
 	 *               value or errno on negative value.
 	 * @param name   The bearer provider name. NULL if @p err is not 0.
@@ -260,6 +260,21 @@ struct bt_ccp_call_control_client_cb {
 	void (*bearer_provider_name)(struct bt_ccp_call_control_client_bearer *bearer, int err,
 				     const char *name);
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME */
+
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_UCI) || defined(__DOXYGEN__)
+	/**
+	 * @brief Callback function for bt_ccp_call_control_client_read_bearer_uci().
+	 *
+	 * This callback is called once the read bearer UCI procedure is completed.
+	 *
+	 * @param bearer Call Control Client bearer pointer.
+	 * @param err    Error value. 0 on success, GATT error on positive
+	 *               value or errno on negative value.
+	 * @param uci    The UCI of the bearer. NULL if @p err is not 0.
+	 */
+	void (*bearer_uci)(struct bt_ccp_call_control_client_bearer *bearer, int err,
+			   const char *uci);
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_UCI */
 
 	/** @cond INTERNAL_HIDDEN */
 	/** Internally used field for list handling */
@@ -339,6 +354,23 @@ int bt_ccp_call_control_client_get_bearers(struct bt_ccp_call_control_client *cl
  */
 int bt_ccp_call_control_client_read_bearer_provider_name(
 	struct bt_ccp_call_control_client_bearer *bearer);
+
+/**
+ * @brief Read the bearer Uniform Caller Identifier (UCI) of a remote TBS bearer.
+ *
+ * @kconfig_dep{CONFIG_BT_TBS_CLIENT_BEARER_UCI}
+ *
+ * @param bearer The bearer to read the UCI from
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p bearer is NULL
+ * @retval -EFAULT @p bearer has not been discovered
+ * @retval -EEXIST A @ref bt_ccp_call_control_client could not be identified for @p bearer
+ * @retval -EBUSY The @ref bt_ccp_call_control_client identified by @p bearer is busy, or the TBS
+ * instance of @p bearer is busy.
+ * @retval -ENOTCONN The @ref bt_ccp_call_control_client identified by @p bearer is not connected
+ */
+int bt_ccp_call_control_client_read_bearer_uci(struct bt_ccp_call_control_client_bearer *bearer);
 /** @} */ /* End of group bt_ccp_call_control_client */
 #ifdef __cplusplus
 }
