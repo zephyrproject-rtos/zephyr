@@ -22,6 +22,9 @@ tests:
     harness: console
     harness_config:
       fixture: fixture_display
+      type: one_line
+      regex:
+        - "Display sample for (.*)"
   sample.display.shield.ssd1306_128x32:
     platform_allow: nrf52840dk/nrf52840
     extra_args: SHIELD=ssd1306_128x32
@@ -31,6 +34,9 @@ tests:
     harness: console
     harness_config:
       fixture: fixture_display
+      type: one_line
+      regex:
+        - "Display sample for (.*)"
   sample.display.shield.ssd1306_128x64:
     platform_allow: nrf52840dk/nrf52840
     extra_args: SHIELD=ssd1306_128x64
@@ -40,18 +46,27 @@ tests:
     harness: console
     harness_config:
       fixture: fixture_display
+      type: one_line
+      regex:
+        - "Display sample for (.*)"
   sample.display.shield.waveshare_epaper_gdeh0213b1:
     platform_allow: nrf52840dk/nrf52840
     extra_args: SHIELD=waveshare_epaper_gdeh0213b1
     harness: console
     harness_config:
       fixture: fixture_display
+      type: one_line
+      regex:
+        - "Display sample for (.*)"
   sample.display.shield.waveshare_epaper_gdew042t2:
     platform_allow: nrf52840dk/nrf52840
     extra_args: SHIELD=waveshare_epaper_gdew042t2
     harness: console
     harness_config:
       fixture: fixture_display
+      type: one_line
+      regex:
+        - "Display sample for (.*)"
   sample.display.st7789v_tl019fqv01:
     platform_allow: nrf52dk/nrf52832
     extra_args: SHIELD=st7789v_tl019fqv01
@@ -61,6 +76,9 @@ tests:
     harness: console
     harness_config:
       fixture: fixture_display
+      type: one_line
+      regex:
+        - "Display sample for (.*)"
   sample.display.st7789v_waveshare_240x240:
     platform_allow: nrf52dk/nrf52832
     extra_args: SHIELD=st7789v_waveshare_240x240
@@ -70,6 +88,9 @@ tests:
     harness: console
     harness_config:
       fixture: fixture_display
+      type: one_line
+      regex:
+        - "Display sample for (.*)"
   sample.display.ls013b7dh03:
     platform_allow: nrf52dk/nrf52832
     extra_args: SHIELD=ls013b7dh03
@@ -79,6 +100,9 @@ tests:
     harness: console
     harness_config:
       fixture: fixture_display
+      type: one_line
+      regex:
+        - "Display sample for (.*)"
   sample.display.st7735r_ada_160x128:
     platform_allow: nrf52dk/nrf52832
     extra_args: SHIELD=st7735r_ada_160x128
@@ -88,13 +112,37 @@ tests:
     harness: console
     harness_config:
       fixture: fixture_display
+      type: one_line
+      regex:
+        - "Display sample for (.*)"
   sample.display.mcux_dcnano_lcdif:
     platform_allow: mimxrt595_evk/mimxrt595s/cm33
     tags: display
     harness: console
     extra_args: SHIELD=rk055hdmipi4m
+    extra_configs:
+      - CONFIG_TEST=y
     harness_config:
-      fixture: fixture_display
+      fixture: fixture_display_rk055hdmipi4m
+      type: multi_line
+      regex:
+        - "Display sample for (.*)"
+        - "Display starts"
+        - "Display sample test mode done (.*)"
+  sample.display.mcux_hdmimipi:
+    platform_allow: mimxrt595_evk/mimxrt595s/cm33
+    tags: display
+    harness: console
+    extra_args: SHIELD=rk055hdmipi4ma0
+    extra_configs:
+      - CONFIG_TEST=y
+    harness_config:
+      fixture: fixture_display_rk055hdmipi4ma0
+      type: multi_line
+      regex:
+        - "Display sample for (.*)"
+        - "Display starts"
+        - "Display sample test mode done (.*)"
   sample.display.sdl:
     build_only: true
     platform_allow:
@@ -111,6 +159,9 @@ tests:
     harness: console
     harness_config:
       fixture: fixture_display
+      type: one_line
+      regex:
+        - "Display sample for (.*)"
   sample.display.dummy:
     platform_allow:
       - native_posix
@@ -130,6 +181,9 @@ tests:
     harness: console
     harness_config:
       fixture: fixture_display
+      type: one_line
+      regex:
+        - "Display sample for (.*)"
   sample.display.st_b_lcd40_dsi1_mb1166:
     filter: dt_compat_enabled("orisetech,otm8009a")
     platform_allow: stm32h747i_disco/stm32h747xx/m7
@@ -140,6 +194,9 @@ tests:
     harness: console
     harness_config:
       fixture: fixture_display
+      type: one_line
+      regex:
+        - "Display sample for (.*)"
   sample.display.g1120b0mipi:
     platform_allow: mimxrt595_evk/mimxrt595s/cm33
     tags: display
@@ -149,8 +206,14 @@ tests:
       - CONFIG_PM=y
       - CONFIG_PM_DEVICE=y
       - CONFIG_IDLE_STACK_SIZE=400
+      - CONFIG_TEST=y
     harness_config:
-      fixture: fixture_display
+      fixture: fixture_display_g1120b0mipi
+      type: multi_line
+      regex:
+        - "sample: Display sample for (.*)"
+        - "Display starts"
+        - "Display sample test mode done (.*)"
   sample.display.builtin:
     # This test case is intended to insure that this sample builds & runs
     # correctly for all boards that have a supported built-in display.
@@ -169,6 +232,9 @@ tests:
     harness: console
     harness_config:
       fixture: fixture_display
+      type: one_line
+      regex:
+        - "Display sample for (.*)"
   sample.display.rk043fn66hs_ctg:
     platform_allow:
       - mimxrt1064_evk
@@ -178,8 +244,15 @@ tests:
     tags: display
     harness: console
     extra_args: SHIELD=rk043fn66hs_ctg
+    extra_configs:
+      - CONFIG_TEST=y
     harness_config:
-      fixture: fixture_display
+      fixture: fixture_display_rk043fn66hs_ctg
+      type: multi_line
+      regex:
+        - "Display sample for (.*)"
+        - "Display starts"
+        - "Display sample test mode done (.*)"
   sample.display.rk043fn02h_ct:
     platform_allow:
       - mimxrt1064_evk
@@ -189,5 +262,12 @@ tests:
     tags: display
     harness: console
     extra_args: SHIELD=rk043fn02h_ct
+    extra_configs:
+      - CONFIG_TEST=y
     harness_config:
-      fixture: fixture_display
+      fixture: fixture_display_rk043fn02h_ct
+      type: multi_line
+      regex:
+        - "Display sample for (.*)"
+        - "Display starts"
+        - "Display sample test mode done (.*)"
