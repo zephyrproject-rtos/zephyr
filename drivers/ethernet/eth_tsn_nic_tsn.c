@@ -40,7 +40,7 @@ struct timestamps {
 
 typedef uint64_t sysclock_t;
 
-#if CONFIG_NET_TC_TX_COUNT != 0
+#if CONFIG_NET_TC_TX_COUNT > 0
 
 static void bake_qos_config(struct tsn_config *config);
 static net_time_t bytes_to_ns(uint64_t bytes);
@@ -272,4 +272,4 @@ static void spend_qav_credit(struct tsn_config *tsn_config, net_time_t at, uint8
 	/* TODO: Implement Qav */
 }
 
-#endif /* CONFIG_NET_TC_TX_COUNT == 0 */
+#endif /* CONFIG_NET_TC_TX_COUNT > 0 */

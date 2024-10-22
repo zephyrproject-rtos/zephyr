@@ -312,7 +312,7 @@ struct eth_tsn_nic_data {
 	bool has_pkt; /* TODO: This is for test only */
 };
 
-#if CONFIG_NET_TC_TX_COUNT != 0
+#if CONFIG_NET_TC_TX_COUNT > 0
 
 void tsn_init_configs(const struct device *dev);
 int tsn_set_qbv(const struct device *dev, struct ethernet_qbv_param param);
@@ -337,6 +337,6 @@ inline int tsn_fill_metadata(const struct device *dev, net_time_t now, struct tx
 	return 0;
 }
 
-#endif /* CONFIG_NET_TC_TX_COUNT != 0 */
+#endif /* CONFIG_NET_TC_TX_COUNT > 0 */
 
 #endif /* ZEPHYR_DRIVERS_ETHERNET_ETH_TSN_NIC_H_ */
