@@ -320,15 +320,16 @@ static int buffer_to_index_validate(const struct channel_config *ch_conf,
 /**
  * Allocate buffer for transmission
  *
- * @param[in,out] size	Required size of the buffer. If zero, first available block is
- *			allocated and all subsequent available blocks. Size actually
- *			allocated which is not less than requested.
- * @param[out] buffer	Allocated buffer data.
+ * @param[in,out] size	Required size of the buffer. If set to zero, the first available block will
+ *			be allocated, together with all contiguous free blocks that follow it.
+ *			On success, size will contain the actually allocated size, which will be
+ *			at least the requested size.
+ * @param[out] buffer	Pointer to the newly allocated buffer.
  * @param[in] timeout	Timeout.
  *
  * @return		Positive index of the first allocated block or negative error.
- * @retval -EINVAL	If requested size is bigger than entire allocable space.
- * @retval -ENOSPC	If timeout was K_NO_WAIT and there was not enough space.
+ * @retval -ENOMEM	If requested size is bigger than entire allocable space, or
+ *			the timeout was K_NO_WAIT and there was not enough space.
  * @retval -EAGAIN	If timeout occurred.
  */
 static int alloc_tx_buffer(struct backend_data *dev_data, uint32_t *size,
