@@ -316,7 +316,8 @@ menu "Wi-Fi driver Stack configurations"
 
 config NXP_WIFI_MON_TASK_STACK_SIZE
 	int "Mon thread stack size"
-	default 1152
+	depends on NXP_RW610
+	default 3072
 	help
 	  This option specifies the size of the stack used by the mon task.
 
@@ -328,7 +329,7 @@ config NXP_WIFI_WLCMGR_TASK_STACK_SIZE
 
 config NXP_WIFI_POWERSAVE_TASK_STACK_SIZE
 	int "Wifi powersave task stack size"
-	default 512
+	default 1024
 	help
 	  This option specifies the size of the stack used by the wifi powersave task.
 
@@ -350,6 +351,51 @@ config NXP_WIFI_SCAN_TASK_STACK_SIZE
 	default 2048
 	help
 	  This option specifies the size of the stack used by the wifi scan task.
+
+endmenu
+
+menu "Wi-Fi thread priority configurations"
+
+config NXP_WIFI_MON_TASK_PRIO
+	int "Mon task priority"
+	depends on NXP_RW610
+	default 4
+	help
+	  This option specifies the priority of the mon task.
+
+config NXP_WIFI_WLCMGR_TASK_PRIO
+	int "Wlcmgr task priority"
+	default 2
+	help
+	  This option specifies the priority of the wlcmgr task.
+
+config NXP_WIFI_POWERSAVE_TASK_PRIO
+	int "Wifi powersave task priority"
+	default 4
+	help
+	  This option specifies the priority of the wifi powersave task.
+
+config NXP_WIFI_TX_TASK_PRIO
+	int "Wifi driver TX task priority"
+	default 3
+	depends on NXP_WIFI_WMM
+	help
+	  This option specifies the priority of the wifi driver TX task,
+	  and better to keep all the TX/RX tasks having same priority to
+	  get higher throughput. The relative priorities of different tasks
+	  need to remain the same as the current ones, which are tuned.
+
+config NXP_WIFI_DRIVER_TASK_PRIO
+	int "Wifi driver task priority"
+	default 2
+	help
+	  This option specifies the priority of the wifi driver task.
+
+config NXP_WIFI_SCAN_TASK_PRIO
+	int "Wifi scan task priority"
+	default 4
+	help
+	  This option specifies the priority of the wifi scan task.
 
 endmenu
 
