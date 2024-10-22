@@ -1,0 +1,11 @@
+# TI MSPM0 GPIO configuration options
+
+# Copyright (c) 2024 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_MSPM0
+	bool "TI SimpleLink MSPM0 GPIO driver"
+	default y
+	depends on DT_HAS_TI_MSPM0_GPIO_ENABLED
+	help
+	  Enable the TI MSPM0 GPIO driver.
