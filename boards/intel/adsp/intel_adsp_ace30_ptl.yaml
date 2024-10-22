@@ -4,6 +4,7 @@ type: mcu
 arch: xtensa
 toolchain:
   - xt-clang
+  - zephyr
 testing:
   ignore_tags:
     - net

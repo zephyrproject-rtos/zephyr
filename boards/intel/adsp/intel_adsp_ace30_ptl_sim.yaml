@@ -5,6 +5,7 @@ simulation: custom
 arch: xtensa
 toolchain:
   - xt-clang
+  - zephyr
 testing:
   timeout_multiplier: 8
   ignore_tags:
