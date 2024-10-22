@@ -29,37 +29,6 @@ LOG_MODULE_REGISTER(eth_tsn_nic, LOG_LEVEL_ERR);
 #include "eth.h"
 #include "eth_tsn_nic_priv.h"
 
-struct eth_tsn_nic_config {
-	const struct device *pci_dev;
-};
-
-struct eth_tsn_nic_data {
-	struct net_if *iface;
-
-	uint8_t mac_addr[NET_ETH_ADDR_LEN];
-
-	mm_reg_t bar[DMA_CONFIG_BAR_IDX + 1];
-	struct dma_tsn_nic_engine_regs *regs[2];
-	struct dma_tsn_nic_engine_sgdma_regs *sgdma_regs[2];
-
-	pthread_spinlock_t tx_lock;
-	pthread_spinlock_t rx_lock;
-
-	struct dma_tsn_nic_desc tx_desc;
-	struct dma_tsn_nic_desc rx_desc;
-
-	/* TODO: Maybe these need to be allocated dynamically */
-	struct tx_buffer tx_buffer;
-	struct rx_buffer rx_buffer;
-
-	struct dma_tsn_nic_result res;
-
-	struct k_work tx_work;
-	struct k_work rx_work;
-
-	bool has_pkt; /* TODO: This is for test only */
-};
-
 static void eth_tsn_nic_isr(const struct device *dev)
 {
 	/* TODO: Implement interrupts */
@@ -231,8 +200,20 @@ static enum ethernet_hw_caps eth_tsn_nic_get_capabilities(const struct device *d
 static int eth_tsn_nic_set_config(const struct device *dev, enum ethernet_config_type type,
 				  const struct ethernet_config *config)
 {
-	/* TODO: sw-295 (QoS) */
-	return -ENOTSUP;
+	int ret;
+
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_QBV_PARAM:
+		ret = tsn_set_qbv(dev, config->qbv_param);
+		break;
+	case ETHERNET_CONFIG_TYPE_QAV_PARAM:
+		ret = tsn_set_qav(dev, config->qav_param);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
 }
 
 static int eth_tsn_nic_get_config(const struct device *dev, enum ethernet_config_type type,

@@ -10,6 +10,20 @@
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
 
+/**
+ * General delcarations
+ */
+
+#define CRC_LEN 4
+
+#define ETH_ZLEN 60
+
+#define NS_IN_1S 1000000000
+
+/**
+ * DMA-related
+ */
+
 #define DMA_ID_H2C 0x1fc0
 #define DMA_ID_C2H 0x1fc1
 
@@ -73,34 +87,6 @@
 
 #define DMA_ENGINE_START 16268831
 #define DMA_ENGINE_STOP  16268830
-
-#define TX_METADATA_SIZE (sizeof(struct tx_metadata))
-#define RX_METADATA_SIZE (sizeof(struct rx_metadata))
-#define CRC_LEN          4
-
-#define ETH_ZLEN 60
-
-#define NS_IN_1S 1000000000
-
-/* Temporary macros: need to be deleted later */
-#define RX_ENGINE_REG_ADDR 0x1b08001000
-#define RX_SGDMA_REG_ADDR  0x1b08005000
-#define RX_REGS_SIZE       0x1000
-
-enum tsn_timestamp_id {
-	TSN_TIMESTAMP_ID_NONE = 0,
-	TSN_TIMESTAMP_ID_GPTP = 1,
-	TSN_TIMESTAMP_ID_NORMAL = 2,
-	TSN_TIMESTAMP_ID_RESERVED1 = 3,
-	TSN_TIMESTAMP_ID_RESERVED2 = 4,
-
-	TSN_TIMESTAMP_ID_MAX,
-};
-
-enum tsn_fail_policy {
-	TSN_FAIL_POLICY_DROP = 0,
-	TSN_FAIL_POLICY_RETRY = 1,
-};
 
 struct dma_tsn_nic_config_regs {
 	uint32_t identifier;
@@ -166,6 +152,38 @@ struct dma_tsn_nic_result {
 	uint32_t _reserved1[6]; /* padding */
 };
 
+/**
+ * TSN-related
+ */
+
+#define PHY_DELAY_CLOCKS 13 /* 14 clocks from MAC to PHY, but sometimes there is 1 tick error */
+
+#define TX_ADJUST_NS (100 + 200) /* MAC + PHY */
+#define RX_ADJUST_NS (188 + 324) /* MAC + PHY */
+
+#define H2C_LATENCY_NS 30000 /* Estimated value */
+
+#define TX_METADATA_SIZE (sizeof(struct tx_metadata))
+#define RX_METADATA_SIZE (sizeof(struct rx_metadata))
+
+#define DEFAULT_FROM_MARGIN 500
+#define DEFAULT_TO_MARGIN   50000
+
+enum tsn_timestamp_id {
+	TSN_TIMESTAMP_ID_NONE = 0,
+	TSN_TIMESTAMP_ID_GPTP = 1,
+	TSN_TIMESTAMP_ID_NORMAL = 2,
+	TSN_TIMESTAMP_ID_RESERVED1 = 3,
+	TSN_TIMESTAMP_ID_RESERVED2 = 4,
+
+	TSN_TIMESTAMP_ID_MAX,
+};
+
+enum tsn_fail_policy {
+	TSN_FAIL_POLICY_DROP = 0,
+	TSN_FAIL_POLICY_RETRY = 1,
+};
+
 struct tick_count {
 	uint32_t tick: 29;
 	uint32_t priority: 3;
@@ -199,6 +217,103 @@ struct rx_buffer {
 	uint8_t data[BUFFER_SIZE];
 } __packed __attribute__((scalar_storage_order("big-endian")));
 
-int tsn_fill_metadata(const struct device *dev, uint64_t now, struct tx_buffer *buf);
+/**
+ * QoS-related
+ */
+
+#define VLAN_PRIO_COUNT 8
+#define TSN_PRIO_COUNT  8
+#define MAX_QBV_SLOTS   20
+
+struct qbv_slot {
+	uint32_t duration_ns;
+	bool opened_prios[NET_TC_TX_COUNT];
+};
+
+struct qbv_config {
+	bool enabled;
+	net_time_t start;
+	struct qbv_slot slots[MAX_QBV_SLOTS];
+
+	uint32_t slot_count;
+};
+
+struct qbv_baked_prio_slot {
+	uint64_t duration_ns;
+	bool opened;
+};
+
+struct qbv_baked_prio {
+	struct qbv_baked_prio_slot slots[MAX_QBV_SLOTS];
+	size_t slot_count;
+};
+
+struct qbv_baked_config {
+	uint64_t cycle_ns;
+	struct qbv_baked_prio prios[NET_TC_TX_COUNT];
+};
+
+struct qav_state {
+	bool enabled;
+	int32_t idle_slope;
+	int32_t send_slope;
+	int32_t hi_credit;
+	int32_t lo_credit;
+
+	int32_t credit;
+	net_time_t last_update;
+	net_time_t available_at;
+};
+
+struct buffer_tracker {
+	uint64_t pending_packets;
+	uint64_t last_tx_count;
+};
+
+struct tsn_config {
+	struct qbv_config qbv;
+	struct qbv_baked_config qbv_baked;
+	struct qav_state qav[NET_TC_TX_COUNT];
+	struct buffer_tracker buffer_tracker;
+	net_time_t queue_available_at[TSN_PRIO_COUNT];
+	net_time_t total_available_at;
+};
+
+struct eth_tsn_nic_config {
+	const struct device *pci_dev;
+};
+
+struct eth_tsn_nic_data {
+	struct net_if *iface;
+
+	uint8_t mac_addr[NET_ETH_ADDR_LEN];
+
+	mm_reg_t bar[DMA_CONFIG_BAR_IDX + 1];
+	struct dma_tsn_nic_engine_regs *regs[2];
+	struct dma_tsn_nic_engine_sgdma_regs *sgdma_regs[2];
+
+	pthread_spinlock_t tx_lock;
+	pthread_spinlock_t rx_lock;
+
+	struct dma_tsn_nic_desc tx_desc;
+	struct dma_tsn_nic_desc rx_desc;
+
+	/* TODO: Maybe these need to be allocated dynamically */
+	struct tx_buffer tx_buffer;
+	struct rx_buffer rx_buffer;
+
+	struct dma_tsn_nic_result res;
+
+	struct k_work tx_work;
+	struct k_work rx_work;
+
+	struct tsn_config tsn_config;
+
+	bool has_pkt; /* TODO: This is for test only */
+};
+
+void tsn_init_configs(const struct device *dev);
+int tsn_set_qbv(const struct device *dev, struct ethernet_qbv_param param);
+int tsn_fill_metadata(const struct device *dev, net_time_t now, struct tx_buffer *tx_buf);
 
 #endif /* ZEPHYR_DRIVERS_ETHERNET_ETH_TSN_NIC_H_ */
