@@ -54,9 +54,9 @@ void mem_window_idle_exit(void)
 		.mem_base = DT_REG_ADDR(DT_PHANDLE(MEM_WINDOW_NODE(n), memory)) + WIN_OFFSET(n),   \
 		.initialize = DT_PROP(MEM_WINDOW_NODE(n), initialize),                             \
 	};                                                                                         \
-	DEVICE_DT_DEFINE(MEM_WINDOW_NODE(n), mem_win_init, NULL, NULL,                             \
+	DEVICE_INSTANCE(MEM_WINDOW_NODE(n), mem_win_init, NULL, NULL,                              \
 			&mem_win_config_##n, PRE_KERNEL_1,                                         \
-			CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+			NULL);
 
 #if DT_NODE_HAS_STATUS_OKAY(MEM_WINDOW_NODE(0))
 MEM_WINDOW_DEFINE(0)

@@ -124,7 +124,7 @@ SYS_INIT(mbox_init, POST_KERNEL, 0);
 	static struct mbox_data dev_data##N;				\
 	static const struct mbox_cfg dev_cfg##N =			\
 		{ .irq  = DT_INST_IRQN(N), .mbox = (void *)DT_INST_REG_ADDR(N), }; \
-	DEVICE_DT_INST_DEFINE(N, NULL, NULL, &dev_data##N, &dev_cfg##N,	\
-			      POST_KERNEL, 0, NULL);
+	DEVICE_INSTANCE_FROM_DT_INST(N, NULL, NULL, &dev_data##N, &dev_cfg##N,\
+			      POST_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(DEF_DEV)
