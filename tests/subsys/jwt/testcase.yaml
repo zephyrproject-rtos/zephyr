@@ -12,6 +12,9 @@ tests:
   libraries.encoding.jwt.ecdsa.psa:
     extra_configs:
       - CONFIG_JWT_SIGN_ECDSA_PSA=y
+      # Explicitly select CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG because this
+      # is not automatically selected on platforms that do not have a CSPRNG
+      # source.
       - CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG=y
       - CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG=y
   libraries.encoding.jwt.rsa.legacy:
@@ -21,5 +24,8 @@ tests:
   libraries.encoding.jwt.rsa.psa:
     extra_configs:
       - CONFIG_JWT_SIGN_RSA_PSA=y
+      # Explicitly select CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG because this
+      # is not automatically selected on platforms that do not have a CSPRNG
+      # source.
       - CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG=y
       - CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG=y
