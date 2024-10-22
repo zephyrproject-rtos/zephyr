@@ -61,8 +61,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define DEVICE_PHY_BY_NAME(n) \
 	    DEVICE_DT_GET(DT_CHILD(DT_INST_CHILD(n, mdio), _CONCAT(ethernet_phy_, PHY_ADDR)))
 
-static const struct device *eth_stm32_phy_dev = DEVICE_PHY_BY_NAME(0);
-
 #endif
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X)
@@ -210,18 +208,23 @@ static inline uint16_t allocate_tx_buffer(void)
 static ETH_TxPacketConfig tx_config;
 #endif
 
-static HAL_StatusTypeDef read_eth_phy_register(ETH_HandleTypeDef *heth,
-						uint32_t PHYAddr,
-						uint32_t PHYReg,
-						uint32_t *RegVal)
+static HAL_StatusTypeDef read_eth_phy_register(const struct device *Dev, uint32_t PHYAddr,
+					       uint32_t PHYReg, uint32_t *RegVal)
 {
 #if defined(CONFIG_MDIO)
-	return phy_read(eth_stm32_phy_dev, PHYReg, RegVal);
+	ARG_UNUSED(PHYAddr);
+	const struct eth_stm32_hal_dev_cfg *config = Dev->config;
+
+	return phy_read(config->phy_dev, PHYReg, RegVal);
 #elif defined(CONFIG_ETH_STM32_HAL_API_V2)
-	return HAL_ETH_ReadPHYRegister(heth, PHYAddr, PHYReg, RegVal);
+	struct eth_stm32_hal_dev_data *dev_data = Dev->data;
+
+	return HAL_ETH_ReadPHYRegister(&dev_data->heth, PHYAddr, PHYReg, RegVal);
 #else
 	ARG_UNUSED(PHYAddr);
-	return HAL_ETH_ReadPHYRegister(heth, PHYReg, RegVal);
+	struct eth_stm32_hal_dev_data *dev_data = Dev->data;
+
+	return HAL_ETH_ReadPHYRegister(&dev_data->heth, PHYReg, RegVal);
 #endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X || CONFIG_ETH_STM32_HAL_API_V2 */
 }
 
@@ -803,7 +806,7 @@ out:
 	return pkt;
 }
 
-static void rx_thread(void *arg1, void *unused1, void *unused2)
+static void rx_thread(void *device, void *unused1, void *unused2)
 {
 	const struct device *dev;
 	struct eth_stm32_hal_dev_data *dev_data;
@@ -813,11 +816,11 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 	uint32_t status;
 	HAL_StatusTypeDef hal_ret = HAL_OK;
 
-	__ASSERT_NO_MSG(arg1 != NULL);
+	__ASSERT_NO_MSG(device != NULL);
 	ARG_UNUSED(unused1);
 	ARG_UNUSED(unused2);
 
-	dev = (const struct device *)arg1;
+	dev = (const struct device *)device;
 	dev_data = dev->data;
 
 	__ASSERT_NO_MSG(dev_data != NULL);
@@ -847,8 +850,8 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 			}
 		} else if (res == -EAGAIN) {
 			/* semaphore timeout period expired, check link status */
-			hal_ret = read_eth_phy_register(&dev_data->heth,
-				    PHY_ADDR, PHY_BSR, (uint32_t *) &status);
+			hal_ret =
+				read_eth_phy_register(dev, PHY_ADDR, PHY_BSR, (uint32_t *)&status);
 			if (hal_ret == HAL_OK) {
 				if ((status & PHY_LINKED_STATUS) == PHY_LINKED_STATUS) {
 					if (dev_data->link_up != true) {
@@ -1419,6 +1422,15 @@ static int eth_stm32_hal_set_config(const struct device *dev,
 	return ret;
 }
 
+#if defined(CONFIG_MDIO)
+static const struct device *eth_stm32_get_phy_dev(const struct device *dev)
+{
+	const struct eth_stm32_hal_dev_cfg *config = dev->config;
+
+	return config->phy_dev;
+}
+#endif
+
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 static const struct device *eth_stm32_get_ptp_clock(const struct device *dev)
 {
@@ -1444,6 +1456,9 @@ static const struct ethernet_api eth_api = {
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 	.get_capabilities = eth_stm32_hal_get_capabilities,
 	.set_config = eth_stm32_hal_set_config,
+#if defined(CONFIG_MDIO)
+	.get_phy = eth_stm32_get_phy_dev,
+#endif
 #if defined(CONFIG_NET_DSA)
 	.send = dsa_tx,
 #else
@@ -1476,6 +1491,9 @@ static const struct eth_stm32_hal_dev_cfg eth0_config = {
 		       .enr = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_ptp, bits)},
 #endif
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
+#if defined(CONFIG_MDIO)
+	.phy_dev = DEVICE_PHY_BY_NAME(0),
+#endif
 };
 
 static struct eth_stm32_hal_dev_data eth0_data = {
