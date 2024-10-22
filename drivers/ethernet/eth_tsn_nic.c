@@ -50,7 +50,7 @@ struct eth_tsn_nic_data {
 
 	/* TODO: Maybe these need to be allocated dynamically */
 	struct tx_buffer tx_buffer;
-	uint8_t rx_buffer[BUFFER_SIZE];
+	struct rx_buffer rx_buffer;
 
 	struct dma_tsn_nic_result res;
 
@@ -127,8 +127,7 @@ static void eth_tsn_nic_rx(struct k_work *item)
 		goto done;
 	}
 
-	ret = net_pkt_write(pkt, data->rx_buffer, pkt_len);
-	/* ret = net_pkt_write(pkt, data->rx_buffer + RX_METADATA_SIZE, pkt_len); */
+	ret = net_pkt_write(pkt, data->rx_buffer.data, pkt_len);
 	if (ret != 0) {
 		printk("write failed\n");
 		goto done;
@@ -301,7 +300,7 @@ static int eth_tsn_nic_send(const struct device *dev, struct net_pkt *pkt)
 
 	pthread_spin_lock(&data->rx_lock);
 
-	net_pkt_read(pkt, data->rx_buffer, len);
+	net_pkt_read(pkt, data->rx_buffer.data, len);
 	data->res.length = len;
 	data->has_pkt = true;
 

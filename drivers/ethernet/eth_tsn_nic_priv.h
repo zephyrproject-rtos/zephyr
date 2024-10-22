@@ -53,8 +53,7 @@
 
 #define ETH_ALEN 6
 
-/* TODO: use sizeof() after implementing tx/rx */
-#define BUFFER_SIZE (1500 + 60) /* Ethernet MTU + TSN Metadata */
+#define BUFFER_SIZE 1500 /* Ethernet MTU */
 
 #define DESC_MAGIC 0xAD4B0000UL
 
@@ -193,6 +192,11 @@ struct tx_buffer {
 struct rx_metadata {
 	uint64_t timestamp;
 	uint16_t frame_length;
+} __packed __attribute__((scalar_storage_order("big-endian")));
+
+struct rx_buffer {
+	struct rx_metadata metadata;
+	uint8_t data[BUFFER_SIZE];
 } __packed __attribute__((scalar_storage_order("big-endian")));
 
 #endif /* ZEPHYR_DRIVERS_ETHERNET_ETH_TSN_NIC_H_ */
