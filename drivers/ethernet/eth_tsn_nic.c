@@ -138,7 +138,7 @@ struct dma_tsn_nic_result {
 struct tick_count {
 	uint32_t tick: 29;
 	uint32_t priority: 3;
-} __attribute__((packed, scalar_storage_order("big-endian")));
+} __packed __attribute__((scalar_storage_order("big-endian")));
 
 struct tx_metadata {
 	struct tick_count from;
@@ -151,12 +151,12 @@ struct tx_metadata {
 	uint8_t reserved0[3];
 	uint32_t reserved1;
 	uint32_t reserved2;
-} __attribute__((packed, scalar_storage_order("big-endian")));
+} __packed __attribute__((scalar_storage_order("big-endian")));
 
 struct tx_buffer {
 	struct tx_metadata metadata;
 	uint8_t data[BUFFER_SIZE];
-} __attribute__((packed, scalar_storage_order("big-endian")));
+} __packed __attribute__((scalar_storage_order("big-endian")));
 
 struct rx_metadata {
 	uint64_t timestamp;
