@@ -240,6 +240,24 @@ static void reset_reassembly_results(void)
 	memset(&reassembled_result, 0, sizeof(struct bt_conn_le_cs_subevent_result));
 }
 
+/** @brief Converts PCT to a pair of int16_t
+ *
+ */
+struct bt_le_cs_iq_sample bt_le_cs_parse_pct(const uint8_t pct[3])
+{
+	uint32_t pct_u32 = sys_get_le24(pct);
+
+	/* Extract I and Q. */
+	uint16_t i_u16 = pct_u32 & BT_HCI_LE_CS_PCT_I_MASK;
+	uint16_t q_u16 = (pct_u32 & BT_HCI_LE_CS_PCT_Q_MASK) >> 12;
+
+	/* Convert from 12-bit 2's complement to int16_t */
+	int16_t i = (i_u16 ^ BIT(11)) - BIT(11);
+	int16_t q = (q_u16 ^ BIT(11)) - BIT(11);
+
+	return (struct bt_le_cs_iq_sample){.i = i, .q = q};
+}
+
 void bt_le_cs_set_valid_chmap_bits(uint8_t channel_map[10])
 {
 	memset(channel_map, 0xFF, 10);
