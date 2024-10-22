@@ -1212,6 +1212,6 @@ endmenu
 
 config NRFX_RESERVED_RESOURCES_HEADER
 	string
-	default "nrfx_reserved_resources.h"
+	default "nrfx_config_reserved_resources_ncs.h"
 
 endmenu # "nrfx drivers"
