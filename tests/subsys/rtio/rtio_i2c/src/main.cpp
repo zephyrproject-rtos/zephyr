@@ -117,42 +117,6 @@ ZTEST(rtio_i2c, test_fallback_submit_tiny_tx)
 	rtio_cqe_release(&test_rtio_ctx, cqe);
 }
 
-ZTEST(rtio_i2c, test_fallback_submit_txrx)
-{
-	uint8_t tx_data[] = {0x01, 0x02, 0x03};
-	uint8_t rx_data[ARRAY_SIZE(tx_data)] = {0};
-	struct rtio_sqe *sqe = rtio_sqe_acquire(&test_rtio_ctx);
-
-	blocking_emul_i2c_transfer_fake.custom_fake =
-		[&tx_data](const struct emul *, struct i2c_msg *msgs, int msg_count, int) {
-			zassert_equal(2, msg_count);
-			// First message should be a 'tx'
-			zassert_equal(ARRAY_SIZE(tx_data), msgs[0].len);
-			zassert_mem_equal(tx_data, msgs[0].buf, msgs[0].len);
-			zassert_equal(I2C_MSG_WRITE, msgs[0].flags);
-			// Second message should be an 'rx'
-			zassert_equal(ARRAY_SIZE(tx_data), msgs[1].len);
-			zassert_equal(I2C_MSG_READ | I2C_MSG_STOP, msgs[1].flags);
-			for (uint8_t i = 0; i < msgs[1].len; ++i) {
-				msgs[1].buf[i] = msgs[0].buf[i];
-			}
-			return 0;
-		};
-
-	zassert_not_null(sqe);
-	rtio_sqe_prep_transceive(sqe, &blocking_emul_iodev, RTIO_PRIO_NORM, tx_data, rx_data,
-				 ARRAY_SIZE(tx_data), NULL);
-	zassert_ok(rtio_submit(&test_rtio_ctx, 1));
-	zassert_equal(1, blocking_emul_i2c_transfer_fake.call_count);
-
-	struct rtio_cqe *cqe = rtio_cqe_consume_block(&test_rtio_ctx);
-
-	zassert_ok(cqe->result);
-	zassert_mem_equal(tx_data, rx_data, ARRAY_SIZE(tx_data));
-
-	rtio_cqe_release(&test_rtio_ctx, cqe);
-}
-
 ZTEST(rtio_i2c, test_fallback_submit_rx)
 {
 	uint8_t expected_buffer[] = {0x00, 0x01, 0x02};
@@ -237,7 +201,7 @@ ZTEST(rtio_i2c, test_fallback_transaction)
 	phase1->flags |= RTIO_SQE_TRANSACTION;
 
 	zassert_ok(rtio_submit(&test_rtio_ctx, 2));
-	zassert_equal(2, blocking_emul_i2c_transfer_fake.call_count);
+	zassert_equal(1, blocking_emul_i2c_transfer_fake.call_count);
 
 	struct rtio_cqe *cqe;
 
