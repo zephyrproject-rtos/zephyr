@@ -47,6 +47,10 @@ static bool get_timestamps(struct timestamps *timestamps, const struct tsn_confi
 static void spend_qav_credit(struct tsn_config *tsn_config, net_time_t at, uint8_t vlan_prio,
 			     uint64_t bytes);
 
+/**
+ * Inline utility functions
+ */
+
 static inline net_time_t ext_time_to_net_time(struct net_ptp_extended_time ext)
 {
 	/* Unit of fract_nsecond is 2 * (-16) ns */
