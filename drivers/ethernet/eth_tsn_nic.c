@@ -458,6 +458,7 @@ static int eth_tsn_nic_send(const struct device *dev, struct net_pkt *pkt)
 		goto error;
 	}
 
+	/* This will not work after July, 2554 because of overflow */
 	now = ts.tv_sec * NS_IN_1S + ts.tv_nsec;
 	ret = tsn_fill_metadata(dev, now, &data->tx_buffer);
 	if (ret != 0) {
