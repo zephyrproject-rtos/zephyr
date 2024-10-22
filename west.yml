@@ -137,7 +137,7 @@ manifest:
       groups:
         - fs
     - name: hal_adi
-      revision: a3eecfde1c76d38312b94fd346c7ba9fe2661992
+      revision: b1a10239e1001502c3089e0cf938e938f99b1f30
       path: modules/hal/adi
       groups:
         - hal
