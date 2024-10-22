@@ -203,6 +203,7 @@ static void bake_qos_config(struct tsn_config *config)
 	int slot_id, vlan_prio;
 	bool qav_disabled = true;
 	struct qbv_baked_config *baked;
+
 	if (config->qbv.enabled == false) {
 		/* TODO: remove this when throughput issue without QoS gets resolved */
 		for (vlan_prio = 0; vlan_prio < NET_TC_TX_COUNT; vlan_prio++) {
