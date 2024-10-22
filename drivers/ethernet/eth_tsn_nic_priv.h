@@ -21,7 +21,7 @@
 #define NS_IN_1S 1000000000
 
 /**
- * DMA-related
+ * DMA-related items
  */
 
 #define DMA_ID_H2C 0x1fc0
@@ -153,7 +153,7 @@ struct dma_tsn_nic_result {
 };
 
 /**
- * TSN-related
+ * TSN-related items
  */
 
 #define PHY_DELAY_CLOCKS 13 /* 14 clocks from MAC to PHY, but sometimes there is 1 tick error */
@@ -218,7 +218,7 @@ struct rx_buffer {
 } __packed __attribute__((scalar_storage_order("big-endian")));
 
 /**
- * QoS-related
+ * QoS-related items
  */
 
 #define VLAN_PRIO_COUNT 8
