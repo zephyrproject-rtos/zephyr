@@ -40,11 +40,25 @@ struct timestamps {
 
 typedef uint64_t sysclock_t;
 
+void fill_default_metadata(struct tx_metadata *metadata)
+{
+	metadata->fail_policy = TSN_FAIL_POLICY_DROP;
+
+	metadata->from.tick = TSN_DEFAULT_FROM_TICK;
+	metadata->from.priority = TSN_DEFAULT_PRIORITY;
+	metadata->to.tick = TSN_DEFAULT_TO_TICK;
+	metadata->to.priority = TSN_DEFAULT_PRIORITY;
+
+	metadata->delay_from.tick = TSN_DEFAULT_FROM_TICK;
+	metadata->delay_from.priority = TSN_DEFAULT_PRIORITY;
+	metadata->delay_to.tick = TSN_DEFAULT_TO_TICK;
+	metadata->delay_to.priority = TSN_DEFAULT_PRIORITY;
+}
+
 #if CONFIG_NET_TC_TX_COUNT > 0
 
 static void bake_qos_config(struct tsn_config *config);
 static net_time_t bytes_to_ns(uint64_t bytes);
-static void fill_default_metadata(struct tx_metadata *metadata);
 
 static bool get_timestamps(struct timestamps *timestamps, const struct tsn_config *tsn_config,
 			   net_time_t from, uint8_t vlan_prio, uint64_t bytes, bool consider_delay);
@@ -169,21 +183,6 @@ int tsn_fill_metadata(const struct device *dev, net_time_t now, struct tx_buffer
 /**
  * Static functions
  */
-
-static void fill_default_metadata(struct tx_metadata *metadata)
-{
-	metadata->fail_policy = TSN_FAIL_POLICY_DROP;
-
-	metadata->from.tick = TSN_DEFAULT_FROM_TICK;
-	metadata->from.priority = TSN_DEFAULT_PRIORITY;
-	metadata->to.tick = TSN_DEFAULT_TO_TICK;
-	metadata->to.priority = TSN_DEFAULT_PRIORITY;
-
-	metadata->delay_from.tick = TSN_DEFAULT_FROM_TICK;
-	metadata->delay_from.priority = TSN_DEFAULT_PRIORITY;
-	metadata->delay_to.tick = TSN_DEFAULT_TO_TICK;
-	metadata->delay_to.priority = TSN_DEFAULT_PRIORITY;
-}
 
 static net_time_t bytes_to_ns(uint64_t bytes)
 {
