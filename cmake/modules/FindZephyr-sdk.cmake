@@ -54,7 +54,7 @@ if(("zephyr" STREQUAL ${ZEPHYR_TOOLCHAIN_VARIANT}) OR
     # To support Zephyr SDK tools (DTC, and other tools) with 3rd party toolchains
     # then we keep track of current toolchain variant.
     set(ZEPHYR_CURRENT_TOOLCHAIN_VARIANT ${ZEPHYR_TOOLCHAIN_VARIANT})
-    find_package(Zephyr-sdk ${Zephyr-sdk_FIND_VERSION}
+    find_package(Zephyr-sdk ${Zephyr-sdk_FIND_VERSION_COMPLETE}
                  REQUIRED QUIET CONFIG HINTS ${ZEPHYR_SDK_INSTALL_DIR}
     )
     if(DEFINED ZEPHYR_CURRENT_TOOLCHAIN_VARIANT)
@@ -82,10 +82,20 @@ if(("zephyr" STREQUAL ${ZEPHYR_TOOLCHAIN_VARIANT}) OR
 
     list(REMOVE_DUPLICATES Zephyr-sdk_CONSIDERED_VERSIONS)
     list(SORT Zephyr-sdk_CONSIDERED_VERSIONS COMPARE NATURAL ORDER DESCENDING)
+    if("${Zephyr-sdk_FIND_VERSION_RANGE_MAX}" STREQUAL "INCLUDE")
+      set(upper_bound _EQUAL)
+    endif()
+
+    if(NOT DEFINED Zephyr-sdk_FIND_VERSION_RANGE)
+      # Range not given, max out to ensure max version is not in effect.
+      set(Zephyr-sdk_FIND_VERSION_MAX 99999999)
+    endif()
 
     # Loop over each found Zepher SDK version until one is found that is compatible.
     foreach(zephyr_sdk_candidate ${Zephyr-sdk_CONSIDERED_VERSIONS})
-      if("${zephyr_sdk_candidate}" VERSION_GREATER_EQUAL "${Zephyr-sdk_FIND_VERSION}")
+      if("${zephyr_sdk_candidate}" VERSION_GREATER_EQUAL "${Zephyr-sdk_FIND_VERSION}"
+         AND "${zephyr_sdk_candidate}" VERSION_LESS${upper_bound} "${Zephyr-sdk_FIND_VERSION_MAX}"
+      )
         # Find the path for the current version being checked and get the directory
         # of the Zephyr SDK so it can be checked.
         list(FIND zephyr_sdk_found_versions ${zephyr_sdk_candidate} zephyr_sdk_current_index)
@@ -93,7 +103,7 @@ if(("zephyr" STREQUAL ${ZEPHYR_TOOLCHAIN_VARIANT}) OR
         get_filename_component(zephyr_sdk_current_check_path ${zephyr_sdk_current_check_path} DIRECTORY)
 
         # Then see if this version is compatible.
-        find_package(Zephyr-sdk ${Zephyr-sdk_FIND_VERSION} QUIET CONFIG PATHS ${zephyr_sdk_current_check_path} NO_DEFAULT_PATH)
+        find_package(Zephyr-sdk ${Zephyr-sdk_FIND_VERSION_COMPLETE} QUIET CONFIG PATHS ${zephyr_sdk_current_check_path} NO_DEFAULT_PATH)
 
         if (${Zephyr-sdk_FOUND})
           # A compatible version of the Zephyr SDK has been found which is the highest
@@ -106,7 +116,7 @@ if(("zephyr" STREQUAL ${ZEPHYR_TOOLCHAIN_VARIANT}) OR
     if (NOT ${Zephyr-sdk_FOUND})
       # This means no compatible Zephyr SDK versions were found, set the version
       # back to the minimum version so that it is displayed in the error text.
-      find_package(Zephyr-sdk ${Zephyr-sdk_FIND_VERSION} REQUIRED CONFIG PATHS ${zephyr_sdk_search_paths})
+      find_package(Zephyr-sdk ${Zephyr-sdk_FIND_VERSION_COMPLETE} REQUIRED CONFIG PATHS ${zephyr_sdk_search_paths})
     endif()
   endif()
 
