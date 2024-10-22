@@ -1109,3 +1109,9 @@ apds_9306: apds9306@92 {
 	resolution = <13>;
 	frequency = <2000>;
 };
+
+test_i2c_sts4x: sts4x@99 {
+	compatible = "sensirion,sts4x";
+	reg = <0x99>;
+	repeatability = <2>;
+};
