@@ -601,7 +601,7 @@ enum pufcc_status pufcc_ecdsa256_sign_verify(
     struct rs_crypto_ec256_puk *pub_key) {
   uint32_t temp32, prev_len = 0;
   enum pufcc_status status;
-  struct rs_crypto_hash hash;
+  struct rs_crypto_hash hash;   
 
   // Calculate hash of the message
   if (pufcc_calc_sha256_hash_sg(msg_addr, true, true, &prev_len, NULL, &hash) !=
@@ -615,28 +615,76 @@ enum pufcc_status pufcc_ecdsa256_sign_verify(
 
   // Set the EC NIST P256 parameters after reversing them
   reverse(pufcc_buffer, ecc_param_nistp256.prime, PUFCC_ECDSA_256_LEN);
-  memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_PRIME_OFFSET,
-         pufcc_buffer, PUFCC_ECDSA_256_LEN);
+  #if CONFIG_RS_RTOS_PORT
+    uint32_t *ptr = (uint32_t*)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_PRIME_OFFSET/4;
+    uint32_t *buf_ptr = (uint32_t*)pufcc_buffer;
+    for(int i = 0; i < PUFCC_ECDSA_256_LEN/4; i++) {
+      *ptr++ = *buf_ptr++;
+    }
+  #else
+    memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_PRIME_OFFSET,
+          pufcc_buffer, PUFCC_ECDSA_256_LEN);
+  #endif
 
   reverse(pufcc_buffer, ecc_param_nistp256.a, PUFCC_ECDSA_256_LEN);
-  memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_EC_A_OFFSET,
-         pufcc_buffer, PUFCC_ECDSA_256_LEN);
+  #if CONFIG_RS_RTOS_PORT
+    ptr = (uint32_t*)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_EC_A_OFFSET/4;
+    buf_ptr = (uint32_t*)pufcc_buffer;
+    for(int i = 0; i < PUFCC_ECDSA_256_LEN/4; i++) {
+      *ptr++ = *buf_ptr++;
+    }
+  #else
+    memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_EC_A_OFFSET,
+          pufcc_buffer, PUFCC_ECDSA_256_LEN);
+  #endif
 
   reverse(pufcc_buffer, ecc_param_nistp256.b, PUFCC_ECDSA_256_LEN);
-  memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_EC_B_OFFSET,
-         pufcc_buffer, PUFCC_ECDSA_256_LEN);
+  #if CONFIG_RS_RTOS_PORT
+    ptr = (uint32_t*)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_EC_B_OFFSET/4;
+    buf_ptr = (uint32_t*)pufcc_buffer;
+    for(int i = 0; i < PUFCC_ECDSA_256_LEN/4; i++) {
+      *ptr++ = *buf_ptr++;
+    }
+  #else  
+    memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_EC_B_OFFSET,
+          pufcc_buffer, PUFCC_ECDSA_256_LEN);
+  #endif
 
   reverse(pufcc_buffer, ecc_param_nistp256.px, PUFCC_ECDSA_256_LEN);
-  memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_PX_OFFSET,
-         pufcc_buffer, PUFCC_ECDSA_256_LEN);
+  #if CONFIG_RS_RTOS_PORT
+    ptr = (uint32_t*)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_PX_OFFSET/4;
+    buf_ptr = (uint32_t*)pufcc_buffer;
+    for(int i = 0; i < PUFCC_ECDSA_256_LEN/4; i++) {
+      *ptr++ = *buf_ptr++;
+    }
+  #else
+    memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_PX_OFFSET,
+          pufcc_buffer, PUFCC_ECDSA_256_LEN);
+  #endif
 
   reverse(pufcc_buffer, ecc_param_nistp256.py, PUFCC_ECDSA_256_LEN);
-  memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_PY_OFFSET,
-         pufcc_buffer, PUFCC_ECDSA_256_LEN);
+  #if CONFIG_RS_RTOS_PORT
+    ptr = (uint32_t*)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_PY_OFFSET/4;
+    buf_ptr = (uint32_t*)pufcc_buffer;
+    for(int i = 0; i < PUFCC_ECDSA_256_LEN/4; i++) {
+      *ptr++ = *buf_ptr++;
+    }
+  #else  
+    memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_PY_OFFSET,
+          pufcc_buffer, PUFCC_ECDSA_256_LEN);
+  #endif          
 
   reverse(pufcc_buffer, ecc_param_nistp256.order, PUFCC_ECDSA_256_LEN);
-  memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_ORDER_OFFSET,
-         pufcc_buffer, PUFCC_ECDSA_256_LEN);
+  #if CONFIG_RS_RTOS_PORT
+    ptr = (uint32_t*)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_ORDER_OFFSET/4;
+    buf_ptr = (uint32_t*)pufcc_buffer;
+    for(int i = 0; i < PUFCC_ECDSA_256_LEN/4; i++) {
+      *ptr++ = *buf_ptr++;
+    }
+  #else    
+    memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_ORDER_OFFSET,
+          pufcc_buffer, PUFCC_ECDSA_256_LEN);
+  #endif
 
   // Configure signature scheme
   temp32 = 0;
@@ -647,29 +695,77 @@ enum pufcc_status pufcc_ecdsa256_sign_verify(
   REG_WRITE_32(&pkc_regs->ecp_ec, ecp_ec_reg);
 
   // Write microprogram for ECDSA 256
-  memcpy((void *)&pkc_regs->ecp_mac, p256_ecdsa_mprog,
-         sizeof(p256_ecdsa_mprog));
+  #if CONFIG_RS_RTOS_PORT
+    ptr = (uint32_t*)&pkc_regs->ecp_mac;
+    buf_ptr = (uint32_t*)p256_ecdsa_mprog;
+    for(int i = 0; i < sizeof(p256_ecdsa_mprog)/4; i++) {
+      *ptr++ = *buf_ptr++;
+    }
+  #else    
+    memcpy((void *)&pkc_regs->ecp_mac, p256_ecdsa_mprog,
+          sizeof(p256_ecdsa_mprog));
+  #endif
 
   // Set the hash, public key & signature in PKC module after reversing each
   reverse(pufcc_buffer, hash.val, PUFCC_SHA_256_LEN);
-  memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_HASH_OFFSET,
-         pufcc_buffer, PUFCC_SHA_256_LEN);
+  #if CONFIG_RS_RTOS_PORT
+    ptr = (uint32_t*)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_HASH_OFFSET/4;
+    buf_ptr = (uint32_t*)pufcc_buffer;
+    for(int i = 0; i < PUFCC_ECDSA_256_LEN/4; i++) {
+      *ptr++ = *buf_ptr++;
+    }
+  #else  
+    memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_HASH_OFFSET,
+          pufcc_buffer, PUFCC_SHA_256_LEN);
+  #endif
 
   reverse(pufcc_buffer, pub_key->x, PUFCC_ECDSA_256_LEN);
-  memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_PUBX_OFFSET,
-         pufcc_buffer, PUFCC_ECDSA_256_LEN);
+  #if CONFIG_RS_RTOS_PORT
+    ptr = (uint32_t*)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_PUBX_OFFSET/4;
+    buf_ptr = (uint32_t*)pufcc_buffer;
+    for(int i = 0; i < PUFCC_ECDSA_256_LEN/4; i++) {
+      *ptr++ = *buf_ptr++;
+    }
+  #else    
+    memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_PUBX_OFFSET,
+          pufcc_buffer, PUFCC_ECDSA_256_LEN);
+  #endif
 
   reverse(pufcc_buffer, pub_key->y, PUFCC_ECDSA_256_LEN);
-  memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_PUBY_OFFSET,
-         pufcc_buffer, PUFCC_ECDSA_256_LEN);
+  #if CONFIG_RS_RTOS_PORT
+    ptr = (uint32_t*)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_PUBY_OFFSET/4;
+    buf_ptr = (uint32_t*)pufcc_buffer;
+    for(int i = 0; i < PUFCC_ECDSA_256_LEN/4; i++) {
+      *ptr++ = *buf_ptr++;
+    }
+  #else   
+    memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_PUBY_OFFSET,
+          pufcc_buffer, PUFCC_ECDSA_256_LEN);
+  #endif          
 
   reverse(pufcc_buffer, sig->r, PUFCC_ECDSA_256_LEN);
-  memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_SIG_R_OFFSET,
-         pufcc_buffer, PUFCC_ECDSA_256_LEN);
+  #if CONFIG_RS_RTOS_PORT
+    ptr = (uint32_t*)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_SIG_R_OFFSET/4;
+    buf_ptr = (uint32_t*)pufcc_buffer;
+    for(int i = 0; i < PUFCC_ECDSA_256_LEN/4; i++) {
+      *ptr++ = *buf_ptr++;
+    }
+  #else   
+    memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_SIG_R_OFFSET,
+          pufcc_buffer, PUFCC_ECDSA_256_LEN);
+  #endif          
 
   reverse(pufcc_buffer, sig->s, PUFCC_ECDSA_256_LEN);
-  memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_SIG_S_OFFSET,
-         pufcc_buffer, PUFCC_ECDSA_256_LEN);
+  #if CONFIG_RS_RTOS_PORT
+    ptr = (uint32_t*)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_SIG_S_OFFSET/4;
+    buf_ptr = (uint32_t*)pufcc_buffer;
+    for(int i = 0; i < PUFCC_ECDSA_256_LEN/4; i++) {
+      *ptr++ = *buf_ptr++;
+    }
+  #else     
+    memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_SIG_S_OFFSET,
+          pufcc_buffer, PUFCC_ECDSA_256_LEN);
+  #endif          
 
 #if !CONFIG_RS_RTOS_PORT
   RS_PROFILE_CHECKPOINT("misc verif ops");
