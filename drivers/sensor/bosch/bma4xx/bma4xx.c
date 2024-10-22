@@ -14,6 +14,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/rtio/work.h>
+#include <zephyr/drivers/sensor_clock.h>
 
 LOG_MODULE_REGISTER(bma4xx, CONFIG_SENSOR_LOG_LEVEL);
 #include "bma4xx.h"
@@ -352,6 +353,7 @@ static void bma4xx_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 	struct bma4xx_encoded_data *edata;
 	uint8_t *buf;
 	uint32_t buf_len;
+	uint64_t cycles;
 	int rc;
 
 	/* Get the buffer for the frame, it may be allocated dynamically by the rtio context */
@@ -362,11 +364,18 @@ static void bma4xx_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 		return;
 	}
 
+	rc = sensor_clock_get_cycles(&cycles);
+	if (rc != 0) {
+		LOG_ERR("Failed to get sensor clock cycles");
+		rtio_iodev_sqe_err(iodev_sqe, rc);
+		return;
+	}
+
 	/* Prepare response */
 	edata = (struct bma4xx_encoded_data *)buf;
 	edata->header.is_fifo = false;
 	edata->header.accel_fs = bma4xx->accel_fs_range;
-	edata->header.timestamp = k_ticks_to_ns_floor64(k_uptime_ticks());
+	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
 	edata->has_accel = 0;
 	edata->has_temp = 0;
 
