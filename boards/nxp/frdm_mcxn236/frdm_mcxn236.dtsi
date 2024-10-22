@@ -128,3 +128,8 @@
 	pinctrl-0 = <&pinmux_lpcmp0>;
 	pinctrl-names = "default";
 };
+
+&flexcan1 {
+	pinctrl-0 = <&pinmux_flexcan1>;
+	pinctrl-names = "default";
+};
