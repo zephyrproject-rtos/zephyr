@@ -269,7 +269,7 @@ int32_t ld_dvfs_configure_hsfll(enum dvfs_frequency_setting oppoint)
 		freq_trim = 2;
 	}
 
-#if defined(CONFIG_SOC_NRF54H20_CPUAPP) || defined(CONFIG_SOC_NRF9280_CPUAPP)
+#if defined(NRF_APPLICATION)
 	hsfll_trim.vsup	  = NRF_FICR->TRIM.APPLICATION.HSFLL.TRIM.VSUP;
 	hsfll_trim.coarse = NRF_FICR->TRIM.APPLICATION.HSFLL.TRIM.COARSE[freq_trim];
 	hsfll_trim.fine	  = NRF_FICR->TRIM.APPLICATION.HSFLL.TRIM.FINE[freq_trim];
