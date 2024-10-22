@@ -64,7 +64,7 @@
 		status = "okay";
 		erase-block-size = <4096>;
 		write-block-size = <1>;
-		spi-max-frequency = <133000000>;
+		spi-max-frequency = <104000000>;
 	};
 };
 
