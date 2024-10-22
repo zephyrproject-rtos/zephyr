@@ -1,7 +1,8 @@
 identifier: intel_adsp/ace20_lnl/sim
 name: ACE 2.0 Lunar Lake Audio DSP
 type: sim
-simulation: custom
+simulation:
+  - name: custom
 arch: xtensa
 toolchain:
   - xcc

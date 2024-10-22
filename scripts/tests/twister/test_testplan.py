@@ -1639,7 +1639,7 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
             assert expected_instances[n]['testcases'][str(t)]['duration'] == t.duration
             assert expected_instances[n]['testcases'][str(t)]['output'] == t.output
 
-    check_runnable_mock.assert_called_with(mock.ANY, expected_tfilter, mock.ANY, mock.ANY)
+    check_runnable_mock.assert_called_with(mock.ANY, expected_tfilter, mock.ANY, mock.ANY, mock.ANY)
 
     expected_logs = [
         'loading TestSuite 1...',

@@ -2,12 +2,40 @@
 # vim: set syntax=python ts=4 :
 #
 # Copyright (c) 2018-2022 Intel Corporation
+# Copyright (c) 2024 Arm Limited (or its affiliates). All rights reserved.
+#
 # SPDX-License-Identifier: Apache-2.0
 
 import os
+import shutil
+from typing import Dict, List, Optional
 import scl
 from twisterlib.config_parser import TwisterConfigParser
 from twisterlib.environment import ZEPHYR_BASE
+from twisterlib.constants import SUPPORTED_SIMS
+
+
+class Simulator:
+    """Class representing a simulator"""
+
+    def __init__(self, data: Dict[str, str]):
+        assert "name" in data
+        assert data["name"] in SUPPORTED_SIMS
+        self.name = data["name"]
+        self.exec = data.get("exec")
+
+    def is_runnable(self) -> bool:
+        return (self.name == 'qemu') or bool(self.exec) and bool(shutil.which(self.exec))
+
+    def __str__(self):
+        return f"Simulator(name: {self.name}, exec: {self.exec})"
+
+    def __eq__(self, other):
+        if isinstance(other, Simulator):
+            return self.name == other.name and self.exec == other.exec
+        else:
+            return False
+
 
 class Platform:
     """Class representing metadata for a particular platform
@@ -42,8 +70,8 @@ class Platform:
         self.vendor = ""
         self.tier = -1
         self.type = "na"
-        self.simulation = "na"
-        self.simulation_exec = None
+        self.simulators: List[Simulator] = []
+        self.simulation: str = "na"
         self.supported_toolchains = []
         self.env = []
         self.env_satisfied = True
@@ -82,8 +110,12 @@ class Platform:
         self.vendor = data.get('vendor', '')
         self.tier = data.get("tier", -1)
         self.type = data.get('type', "na")
-        self.simulation = data.get('simulation', "na")
-        self.simulation_exec = data.get('simulation_exec')
+
+        self.simulators = [Simulator(data) for data in data.get('simulation', [])]
+        default_sim = self.simulator_by_name(None)
+        if default_sim:
+            self.simulation = default_sim.name
+
         self.supported_toolchains = data.get("toolchain", [])
         if self.supported_toolchains is None:
             self.supported_toolchains = []
@@ -116,6 +148,12 @@ class Platform:
         for env in self.env:
             if not os.environ.get(env, None):
                 self.env_satisfied = False
+
+    def simulator_by_name(self, sim_name: Optional[str]) -> Optional[Simulator]:
+        if sim_name:
+            return next(filter(lambda s: s.name == sim_name, iter(self.simulators)), None)
+        else:
+            return next(iter(self.simulators), None)
 
     def __repr__(self):
         return "<%s on %s>" % (self.name, self.arch)

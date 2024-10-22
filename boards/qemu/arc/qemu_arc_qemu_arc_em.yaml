@@ -1,7 +1,8 @@
 identifier: qemu_arc/qemu_arc_em
 name: QEMU Emulation for ARC EM
 type: qemu
-simulation: qemu
+simulation:
+  - name: qemu
 arch: arc
 toolchain:
   - zephyr
