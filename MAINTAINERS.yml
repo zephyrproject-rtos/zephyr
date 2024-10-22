@@ -3546,6 +3546,7 @@ Silabs SiM3U Platforms:
     - drivers/*/Kconfig.si32
     - dts/arm/silabs/sim3u*
     - dts/bindings/*/*silabs,si32*
+    - include/zephyr/dt-bindings/pinctrl/*si32*
     - soc/silabs/silabs_sim3/
   labels:
     - "platform: Silabs SiM3U"
