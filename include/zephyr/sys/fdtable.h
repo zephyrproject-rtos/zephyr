@@ -64,7 +64,10 @@ struct fd_op_vtable {
 		ssize_t (*write)(void *obj, const void *buf, size_t sz);
 		ssize_t (*write_offs)(void *obj, const void *buf, size_t sz, size_t offset);
 	};
-	int (*close)(void *obj);
+	union {
+		int (*close)(void *obj);
+		int (*close2)(void *obj, int fd);
+	};
 	int (*ioctl)(void *obj, unsigned int request, va_list args);
 };
 

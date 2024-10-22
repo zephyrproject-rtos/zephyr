@@ -137,9 +137,13 @@ static int zsock_socket_internal(int family, int type, int proto)
 	return fd;
 }
 
-int zsock_close_ctx(struct net_context *ctx)
+int zsock_close_ctx(struct net_context *ctx, int sock)
 {
 	int ret;
+
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(socket, close, sock);
+
+	NET_DBG("close: ctx=%p, fd=%d", ctx, sock);
 
 	/* Reset callbacks to avoid any race conditions while
 	 * flushing queues. No need to check return values here,
@@ -160,10 +164,16 @@ int zsock_close_ctx(struct net_context *ctx)
 	ret = net_context_put(ctx);
 	if (ret < 0) {
 		errno = -ret;
-		return -1;
+		ret = -1;
 	}
 
-	return 0;
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, close, sock, ret < 0 ? -errno : ret);
+
+	if (ret == 0) {
+		(void)sock_obj_core_dealloc(sock);
+	}
+
+	return ret;
 }
 
 static void zsock_accepted_cb(struct net_context *new_ctx,
@@ -2771,9 +2781,9 @@ static int sock_setsockopt_vmeth(void *obj, int level, int optname,
 	return zsock_setsockopt_ctx(obj, level, optname, optval, optlen);
 }
 
-static int sock_close_vmeth(void *obj)
+static int sock_close2_vmeth(void *obj, int fd)
 {
-	return zsock_close_ctx(obj);
+	return zsock_close_ctx(obj, fd);
 }
 static int sock_getpeername_vmeth(void *obj, struct sockaddr *addr,
 				  socklen_t *addrlen)
@@ -2791,7 +2801,7 @@ const struct socket_op_vtable sock_fd_op_vtable = {
 	.fd_vtable = {
 		.read = sock_read_vmeth,
 		.write = sock_write_vmeth,
-		.close = sock_close_vmeth,
+		.close2 = sock_close2_vmeth,
 		.ioctl = sock_ioctl_vmeth,
 	},
 	.shutdown = sock_shutdown_vmeth,
