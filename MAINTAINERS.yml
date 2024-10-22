@@ -3398,6 +3398,19 @@ ADI Platforms:
   labels:
     - "platform: ADI"
 
+realtek Platforms:
+  status: maintained
+  maintainers:
+    - zjian-zhang
+  files:
+    - drivers/*/*ameba*
+    - boards/realtek/
+    - soc/realtek/
+    - dts/arm/realtek/
+    - dts/bindings/*/*ameba*
+  labels:
+    - "platform: ameba"
+
 Broadcom Platforms:
   status: odd fixes
   files:
@@ -4611,6 +4624,14 @@ West:
   files: []
   labels:
     - "platform: ADI"
+
+"West project: hal_realtek":
+  status: maintained
+  maintainers:
+    - zjian-zhang
+  files: []
+  labels:
+    - "platform: ameba"
 
 "West project: hal_altera":
   status: odd fixes
