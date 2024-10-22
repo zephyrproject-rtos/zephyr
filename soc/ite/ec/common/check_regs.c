@@ -165,29 +165,22 @@ IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, host_rx_connect_state, 0x0E);
 IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, host_sof_timer_msb, 0x0F);
 IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, usb_ep_regs[0].ep_ctrl, 0x40);
 IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, usb_ep_regs[0].ep_status, 0x41);
-IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs,
-	usb_ep_regs[EP0].ep_transtype_sts, 0x42);
-IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs,
-	usb_ep_regs[EP0].ep_nak_transtype_sts, 0x43);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, usb_ep_regs[EP0].ep_transtype_sts, 0x42);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, usb_ep_regs[EP0].ep_nak_transtype_sts, 0x43);
 IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, usb_ep_regs[3].ep_ctrl, 0x4C);
 IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, usb_ep_regs[3].ep_status, 0x4D);
-IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs,
-	usb_ep_regs[EP3].ep_transtype_sts, 0x4E);
-IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs,
-	usb_ep_regs[EP3].ep_nak_transtype_sts, 0x4F);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, usb_ep_regs[EP3].ep_transtype_sts, 0x4E);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, usb_ep_regs[EP3].ep_nak_transtype_sts, 0x4F);
 IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, dc_control, 0x50);
 IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, dc_frame_num_lsp, 0x56);
 IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, fifo_regs[0].ep_rx_fifo_data, 0x60);
 IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, fifo_regs[0].ep_tx_fifo_ctrl, 0x74);
-IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs,
-	fifo_regs[EP_EXT_REGS_9X].ext_4_15.epn0n1_ext_ctrl, 0x98);
-IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs,
-	fifo_regs[EP_EXT_REGS_BX].fifo_ctrl.ep_fifo_ctrl, 0xB8);
-IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs,
-	fifo_regs[EP_EXT_REGS_DX].ext_0_3.epn_ext_ctrl, 0xD6);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, fifo_regs[EP_EXT_REGS_9X].ext_4_15.epn0n1_ext_ctrl,
+			 0x98);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, fifo_regs[EP_EXT_REGS_BX].fifo_ctrl.ep_fifo_ctrl, 0xB8);
+IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, fifo_regs[EP_EXT_REGS_DX].ext_0_3.epn_ext_ctrl, 0xD6);
 IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, host_device_control, 0xE0);
 IT8XXX2_REG_OFFSET_CHECK(usb_it82xx2_regs, port1_misc_control, 0xE8);
-
 
 /* KSCAN register structure check */
 IT8XXX2_REG_SIZE_CHECK(kscan_it8xxx2_regs, 0x0F);
