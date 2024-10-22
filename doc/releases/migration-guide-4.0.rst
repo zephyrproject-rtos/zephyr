@@ -388,6 +388,13 @@ Bluetooth Audio
   do a search-and-replace for ``bt_audio_codec_qos`` to ``bt_bap_qos_cfg`` and
   ``BT_AUDIO_CODEC_QOS`` to ``BT_BAP_QOS_CFG``. (:github:`76633`)
 
+* The generation of broadcast ID inside of zephyr stack has been removed, it is now up the
+  application to generate a broadcast ID. This means that the application can now fully decide
+  whether to use a static or random broadcast ID. Reusing and statically defining a broadcast ID was
+  added to the Basic Audio Profile in version 1.0.2, which is the basis for this change. All
+  instances of :c:func:`bt_cap_initiator_broadcast_get_id` and
+  :c:func:`bt_bap_broadcast_source_get_id` has been removed(:github:`80228`)
+
 Bluetooth Classic
 =================
 

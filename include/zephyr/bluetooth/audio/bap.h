@@ -2185,22 +2185,6 @@ int bt_bap_broadcast_source_stop(struct bt_bap_broadcast_source *source);
 int bt_bap_broadcast_source_delete(struct bt_bap_broadcast_source *source);
 
 /**
- * @brief Get the broadcast ID of a broadcast source
- *
- * This will return the 3-octet broadcast ID that should be advertised in the
- * extended advertising data with @ref BT_UUID_BROADCAST_AUDIO_VAL as @ref BT_DATA_SVC_DATA16.
- *
- * See table 3.14 in the Basic Audio Profile v1.0.1 for the structure.
- *
- * @param[in]  source        Pointer to the broadcast source.
- * @param[out] broadcast_id  Pointer to the 3-octet broadcast ID.
- *
- * @return Zero on success or (negative) error code otherwise.
- */
-int bt_bap_broadcast_source_get_id(struct bt_bap_broadcast_source *source,
-				   uint32_t *const broadcast_id);
-
-/**
  * @brief Get the Broadcast Audio Stream Endpoint of a broadcast source
  *
  * This will encode the BASE of a broadcast source into a buffer, that can be used for
