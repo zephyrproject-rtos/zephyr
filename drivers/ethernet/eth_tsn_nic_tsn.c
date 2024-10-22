@@ -94,6 +94,7 @@ void tsn_init_configs(const struct device *dev)
 {
 	struct eth_tsn_nic_data *data = dev->data;
 	struct tsn_config *config = &data->tsn_config;
+
 	memset(config, 0, sizeof(struct tsn_config));
 
 	bake_qos_config(config);
@@ -189,6 +190,7 @@ int tsn_fill_metadata(const struct device *dev, net_time_t now, struct tx_buffer
 static net_time_t bytes_to_ns(uint64_t bytes)
 {
 	uint64_t link_speed = LINK_1G;
+
 	return MAX(bytes, (uint64_t)ETH_ZLEN) * 8 * NS_IN_1S / link_speed;
 }
 
@@ -214,7 +216,7 @@ static void bake_qos_config(struct tsn_config *config)
 			config->qbv.enabled = true;
 			config->qbv.start = 0;
 			config->qbv.slot_count = 1;
-			config->qbv.slots[0].duration_ns = 1000000000; // 1s
+			config->qbv.slots[0].duration_ns = NS_IN_1S;
 			for (vlan_prio = 0; vlan_prio < NET_TC_TX_COUNT; vlan_prio++) {
 				config->qbv.slots[0].opened_prios[vlan_prio] = true;
 			}
@@ -234,9 +236,11 @@ static void bake_qos_config(struct tsn_config *config)
 
 	for (slot_id = 0; slot_id < config->qbv.slot_count; slot_id += 1) {
 		uint64_t slot_duration = config->qbv.slots[slot_id].duration_ns;
+
 		baked->cycle_ns += slot_duration;
 		for (vlan_prio = 0; vlan_prio < NET_TC_TX_COUNT; vlan_prio += 1) {
 			struct qbv_baked_prio *prio = &baked->prios[vlan_prio];
+
 			if (prio->slots[prio->slot_count - 1].opened ==
 			    config->qbv.slots[slot_id].opened_prios[vlan_prio]) {
 				prio->slots[prio->slot_count - 1].duration_ns += slot_duration;
@@ -251,6 +255,7 @@ static void bake_qos_config(struct tsn_config *config)
 
 	for (vlan_prio = 0; vlan_prio < NET_TC_TX_COUNT; vlan_prio += 1) {
 		struct qbv_baked_prio *prio = &baked->prios[vlan_prio];
+
 		if (prio->slot_count % 2 == 1) {
 			prio->slots[prio->slot_count].opened =
 				!prio->slots[prio->slot_count - 1].opened;
