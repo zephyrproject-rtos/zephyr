@@ -29,3 +29,9 @@ config MCUX_XBARA
 	depends on HAS_MCUX_XBARA
 	help
 	  Enable the MCUX XBARA driver.
+
+config MCUX_XBARB
+	bool "MCUX XBARB driver"
+	depends on DT_HAS_NXP_MCUX_XBAR_ENABLED
+	help
+	  Enable the MCUX XBARB driver.
