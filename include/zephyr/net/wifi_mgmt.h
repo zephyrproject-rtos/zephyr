@@ -540,6 +540,8 @@ struct wifi_connect_req_params {
 	uint8_t key2_passwd_length;
 	/** suiteb or suiteb-192 */
 	uint8_t suiteb_type;
+	/** TLS cipher */
+	uint8_t TLS_cipher;
 	/** eap version */
 	int eap_ver;
 	/** Identity for EAP */
