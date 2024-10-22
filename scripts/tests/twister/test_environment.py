@@ -488,7 +488,7 @@ TESTDATA_5 = [
         True,
         1,
         b'another\x1B_dummy',
-        'Cmake script failure: dummy/script/path',
+        'CMake script failure: dummy/script/path',
         {
             'returncode': 1,
             'returnmsg': 'anotherdummy'

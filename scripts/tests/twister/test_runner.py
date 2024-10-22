@@ -383,7 +383,7 @@ TESTDATA_2_2 = [
     (False, [],
      1, True, 'ERROR: region `FLASH\' overflowed by 123 MB',
      True, False, True,
-     TwisterStatus.ERROR, 'Cmake build failure',
+     TwisterStatus.ERROR, 'CMake build failure',
      [os.path.join('dummy', 'cmake'),
       '-B' + os.path.join('build', 'dir'), '-DTC_RUNID=1', '-DTC_NAME=testcase',
       '-DSB_CONFIG_COMPILER_WARNINGS_AS_ERRORS=n',
@@ -1421,7 +1421,7 @@ TESTDATA_6 = [
     (
         {'op': 'cleanup', 'mode': 'all'},
         mock.ANY,
-        'Cmake build failure',
+        'CMake build failure',
         mock.ANY,
         mock.ANY,
         mock.ANY,
