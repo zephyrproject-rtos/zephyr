@@ -393,7 +393,7 @@ static int lc3_enable(struct broadcast_sink_stream *sink_stream)
 	chan_alloc_bit_cnt = bt_audio_get_chan_count(sink_stream->chan_allocation);
 	sdu_size_required = chan_alloc_bit_cnt * sink_stream->lc3_octets_per_frame *
 			    sink_stream->lc3_frames_blocks_per_sdu;
-	if (sdu_size_required < sink_stream->stream.qos->sdu) {
+	if (sdu_size_required > sink_stream->stream.qos->sdu) {
 		printk("With %zu channels and %u octets per frame and %u frames per block, SDUs "
 		       "shall be at minimum %zu, but the stream has been configured for %u",
 		       chan_alloc_bit_cnt, sink_stream->lc3_octets_per_frame,
