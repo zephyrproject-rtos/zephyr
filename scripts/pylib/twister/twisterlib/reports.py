@@ -354,6 +354,12 @@ class Reporting:
             elif instance.status == TwisterStatus.SKIP:
                 suite["status"] = TwisterStatus.SKIP
                 suite["reason"] = instance.reason
+            elif instance.status == TwisterStatus.NOTRUN:
+                suite["status"] = TwisterStatus.NOTRUN
+                suite["reason"] = instance.reason
+            else:
+                suite["status"] = TwisterStatus.NONE
+                suite["reason"] = 'Unknown Instance status.'
 
             if instance.status != TwisterStatus.NONE:
                 suite["execution_time"] =  f"{float(handler_time):.2f}"
