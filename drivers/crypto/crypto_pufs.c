@@ -511,20 +511,23 @@ int pufs_sign_rsa_op(struct sign_ctx *ctx, struct sign_pkt *pkt)
 
 int pufs_sign_ecdsa_op(struct sign_ctx *ctx, struct sign_pkt *pkt)
 {
+  int error = 0;
   enum pufcc_status lvStatus = PUFCC_SUCCESS;
 
   ((struct pufs_data*)ctx->device->data)->pufs_pkt.sign_pkt = pkt;
   ((struct pufs_data*)ctx->device->data)->pufs_ctx.sign_ctx = ctx;
 
-  struct rs_crypto_addr msg_addr = {
-                                    .read_addr = (uint32_t)pkt->in_buf,
-                                    .len = pkt->in_len,
-                                    .next = NULL
-                                  };
+  struct rs_crypto_addr msg_addr[(BUFFER_SIZE/sizeof(struct rs_crypto_addr))] = {0};
+  
+  error = fill_rs_crypto_sign_addr(pkt, msg_addr);
+
+  if(error != PUFCC_SUCCESS) {
+    return error;
+  }
   
   lvStatus = pufcc_ecdsa256_sign_verify(
                                          (struct rs_crypto_ec256_sig *)ctx->sig, 
-                                         &msg_addr, 
+                                         msg_addr, 
                                          (struct rs_crypto_ec256_puk *)ctx->pub_key
                                        );
 

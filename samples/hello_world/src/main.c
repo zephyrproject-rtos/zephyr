@@ -636,6 +636,63 @@ void pufs_decryption_test(const struct device *pufs)
 	}
 }
 
+const uint32_t bop_ec256_image_addr[] = {
+	0x4c425346, 0x00010001, 0x00000001, 0x00000540, 0xa020005c, 0xa020005c, 0x00000040,
+	0x00000000, 0x00000010, 0x00000040, 0x00000040, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x5bef0000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+	0x00000000, 0x00000000, 0x5a41e854, 0xbd7831f5, 0x8a722abc, 0x0f194645, 0xfca0b124,
+	0x4c32ac0f, 0x119da725, 0x017d57f0, 0xc3c72358, 0xf5a403c4, 0x35f48b62, 0xe3bcf592,
+	0xe0ae8930, 0xe0ef26dc, 0xad99438b, 0xbc0b8b9e, 0xf746712e, 0x36b64de7, 0x1b2dd12b,
+	0x016f428d, 0xa6375c54, 0xb19e1329, 0x29abce2e, 0x01d2ef46, 0x4522360f, 0x4646a2b0,
+	0x4b9e632d, 0x65bd20b3, 0xa9a48e98, 0x78cdc0d2, 0xb80be124, 0x72e406e9};
+
 const uint32_t bop_rsa_image_addr[] = {
 	0x4c425346, 0x00010001, 0x00000001, 0x00000540, 0xa020005c, 0xa020005c, 0x00000040,
 	0x00000000, 0x00000020, 0x00000104, 0x00000100, 0x00000000, 0x00000000, 0x00000000,
@@ -749,8 +806,6 @@ void pufs_rsa2048_verify_test(const struct device *pufs)
 			   bop_hdr->binary_len + bop_hdr->iv_len;
 	uint8_t *sig = (uint8_t *)pub_key + bop_hdr->pub_key_len + pub_key_padding;
 
-	printf("Bop_Binary_1st_Word:0x%08x\n", *(uint32_t *)bop_hdr);
-
 	lvSignCtx.app_sessn_state = NULL;
 	lvSignCtx.device = pufs;
 	lvSignCtx.drv_sessn_state = NULL;
@@ -767,30 +822,73 @@ void pufs_rsa2048_verify_test(const struct device *pufs)
 
 	lvStatus = sign_begin_session(pufs, &lvSignCtx, CRYPTO_SIGN_ALGO_RSA2048);
 	if (lvStatus != 0) {
-		printf("\n%ssign_begin_session Failed! %s\n", ATTR_ERR, ATTR_RST);
+		printf("\n%ssign_begin_session RSA2048 Failed! %s\n", ATTR_ERR, ATTR_RST);
 	} else {
-		printf("%ssign_begin_session Success! %s\n", ATTR_INF, ATTR_RST);
-		printf("\n%sin_buf_addr:0x%08x in_buf_len:%d bytes %s\n", ATTR_INF,
-		       (uint32_t)lvSignPkt.in_buf, lvSignPkt.in_len, ATTR_RST);
+		printf("%ssign_begin_session RSA2048 Success! %s\n", ATTR_INF, ATTR_RST);
 		lvStatus = sign_op_handler(&lvSignCtx, &lvSignPkt);
 	}
 
 	if (lvStatus != 0) {
-		printf("%s sign_op_handler Failed! Status:%d %s\n", ATTR_ERR, lvStatus, ATTR_RST);
+		printf("%s sign_op_handler RSA2048 Failed! Status:%d %s\n", ATTR_ERR, lvStatus, ATTR_RST);
 	} else {
-		printf("%s sign_op_handler Success! %s\n", ATTR_INF, ATTR_RST);
+		printf("%s sign_op_handler RSA2048 Success! %s\n", ATTR_INF, ATTR_RST);
 	}
 
 	lvStatus = sign_free_session(pufs, &lvSignCtx);
 	if (lvStatus != 0) {
-		printf("%s sign_free_session Failed! %s\n", ATTR_ERR, ATTR_RST);
+		printf("%s sign_free_session RSA2048 Failed! %s\n", ATTR_ERR, ATTR_RST);
 	} else {
-		printf("%s sign_free_session Success! %s\n", ATTR_INF, ATTR_RST);
+		printf("%s sign_free_session RSA2048 Success! %s\n", ATTR_INF, ATTR_RST);
 	}
 }
 
-void pufs_ecdsa256_verify_test(const struct device *dev)
+void pufs_ecdsa256_verify_test(const struct device *pufs)
 {
+	int lvStatus = 0;
+
+	struct sign_ctx lvSignCtx = {0};
+	struct sign_pkt lvSignPkt = {0};
+
+	struct rs_bop_header *bop_hdr = (struct rs_bop_header *)bop_ec256_image_addr;
+
+	uint8_t *pub_key = (uint8_t *)bop_ec256_image_addr + bop_hdr->offset_to_binary +
+			   bop_hdr->binary_len + bop_hdr->iv_len;
+	uint8_t *sig = (uint8_t *)pub_key + bop_hdr->pub_key_len;
+
+	lvSignCtx.app_sessn_state = NULL;
+	lvSignCtx.device = pufs;
+	lvSignCtx.drv_sessn_state = NULL;
+	lvSignCtx.flags = (CAP_INPLACE_OPS | CAP_SYNC_OPS);
+	lvSignCtx.pub_key = pub_key;
+	lvSignCtx.sig = sig;
+	lvSignCtx.ops.signing_algo = CRYPTO_SIGN_ALGO_ECDSA256;
+	lvSignCtx.ops.signing_mode = CRYPTO_SIGN_VERIFY;
+
+	lvSignPkt.ctx = &lvSignCtx;
+	lvSignPkt.in_buf = (uint8_t *)bop_hdr;
+	lvSignPkt.in_len = bop_hdr->binary_len + sizeof(struct rs_bop_header) + 64; // 64 = public key x(32) + y(32)
+	lvSignPkt.next = NULL;
+
+	lvStatus = sign_begin_session(pufs, &lvSignCtx, CRYPTO_SIGN_ALGO_ECDSA256);
+	if (lvStatus != 0) {
+		printf("\n%ssign_begin_session ECDSA256 Failed! %s\n", ATTR_ERR, ATTR_RST);
+	} else {
+		printf("%ssign_begin_session ECDSA256 Success! %s\n", ATTR_INF, ATTR_RST);
+		lvStatus = sign_op_handler(&lvSignCtx, &lvSignPkt);
+	}
+
+	if (lvStatus != 0) {
+		printf("%s sign_op_handler ECDSA256 Failed! Status:%d %s\n", ATTR_ERR, lvStatus, ATTR_RST);
+	} else {
+		printf("%s sign_op_handler ECDSA256 Success! %s\n", ATTR_INF, ATTR_RST);
+	}
+
+	lvStatus = sign_free_session(pufs, &lvSignCtx);
+	if (lvStatus != 0) {
+		printf("%s sign_free_session ECDSA256 Failed! %s\n", ATTR_ERR, ATTR_RST);
+	} else {
+		printf("%s sign_free_session ECDSA256 Success! %s\n", ATTR_INF, ATTR_RST);
+	}
 }
 
 int main(void)
@@ -824,6 +922,7 @@ int main(void)
 		pufs_hash_test(pufs);
 		pufs_hash_sg_test(pufs);
 		pufs_rsa2048_verify_test(pufs);
+		pufs_ecdsa256_verify_test(pufs);
 	}
 
 	if ((pufs_otp == NULL) || (!device_is_ready(pufs_otp))) {
