@@ -183,7 +183,6 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_AP
 	${HOSTAP_SRC_BASE}/ap/hw_features.c
 	${HOSTAP_SRC_BASE}/ap/ieee802_11_auth.c
 	${HOSTAP_SRC_BASE}/ap/ieee802_11.c
-	${HOSTAP_SRC_BASE}/ap/ieee802_11_he.c
 	${HOSTAP_SRC_BASE}/ap/ieee802_11_ht.c
 	${HOSTAP_SRC_BASE}/ap/ieee802_11_shared.c
 	${HOSTAP_SRC_BASE}/ap/ieee802_11_vht.c
@@ -214,6 +213,10 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_AP
 	${HOSTAP_SRC_BASE}/utils/ip_addr.c
 )
 
+zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_11AX
+	${HOSTAP_SRC_BASE}/ap/ieee802_11_he.c
+)
+
 zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_AP
 	CONFIG_AP
 	CONFIG_NO_RADIUS
@@ -221,9 +224,12 @@ zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_AP
 	CONFIG_NO_ACCOUNTING
 	NEED_AP_MLME
 	CONFIG_IEEE80211AC
-	CONFIG_IEEE80211AX
 	CONFIG_EAP_SERVER
 	CONFIG_EAP_SERVER_IDENTITY
+)
+
+zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_11AX
+	CONFIG_IEEE80211AX
 )
 
 zephyr_include_directories_ifdef(CONFIG_WIFI_NM_HOSTAPD_AP
