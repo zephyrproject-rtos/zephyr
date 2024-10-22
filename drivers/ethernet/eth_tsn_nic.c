@@ -82,20 +82,20 @@ struct dma_tsn_nic_engine_regs {
 	uint32_t control;
 	uint32_t control_w1s;
 	uint32_t control_w1c;
-	uint32_t reserved_1[12]; /* padding */
+	uint32_t _reserved1[12]; /* padding */
 
 	uint32_t status;
 	uint32_t status_rc;
 	uint32_t completed_desc_count;
 	uint32_t alignments;
-	uint32_t reserved_2[14]; /* padding */
+	uint32_t _reserved2[14]; /* padding */
 
 	uint32_t poll_mode_wb_lo;
 	uint32_t poll_mode_wb_hi;
 	uint32_t interrupt_enable_mask;
 	uint32_t interrupt_enable_mask_w1s;
 	uint32_t interrupt_enable_mask_w1c;
-	uint32_t reserved_3[9]; /* padding */
+	uint32_t _reserved3[9]; /* padding */
 
 	uint32_t perf_ctrl;
 	uint32_t perf_cyc_lo;
@@ -108,7 +108,7 @@ struct dma_tsn_nic_engine_regs {
 
 struct dma_tsn_nic_engine_sgdma_regs {
 	uint32_t identifier;
-	uint32_t reserved_1[31]; /* padding */
+	uint32_t _reserved1[31]; /* padding */
 
 	/* bus address to first descriptor in Root Complex Memory */
 	uint32_t first_desc_lo;
@@ -132,7 +132,7 @@ struct dma_tsn_nic_desc {
 struct dma_tsn_nic_result {
 	uint32_t status;
 	uint32_t length;
-	uint32_t reserved_1[6]; /* padding */
+	uint32_t _reserved1[6]; /* padding */
 };
 
 struct tick_count {
@@ -148,9 +148,9 @@ struct tx_metadata {
 	uint16_t frame_length;
 	uint16_t timestamp_id;
 	uint8_t fail_policy;
-	uint8_t reserved0[3];
-	uint32_t reserved1;
-	uint32_t reserved2;
+	uint8_t _reserved0[3];
+	uint32_t _reserved1;
+	uint32_t _reserved2;
 } __packed __attribute__((scalar_storage_order("big-endian")));
 
 struct tx_buffer {
