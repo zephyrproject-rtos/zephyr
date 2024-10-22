@@ -133,4 +133,4 @@ static int pmc_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, pmc_init, NULL, NULL, 0, PRE_KERNEL_1, 1, NULL);
+DEVICE_INSTANCE_FROM_DT_INST(0, pmc_init, NULL, NULL, 0, PRE_KERNEL_1, NULL);

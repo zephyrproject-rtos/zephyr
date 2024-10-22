@@ -208,4 +208,4 @@ static const struct ilm_config ilm_config = {
 BUILD_ASSERT(ARRAY_SIZE(ilm_config.scar_regs) * ILM_BLOCK_SIZE == KB(CONFIG_ILM_MAX_SIZE),
 	     "Wrong number of SCAR registers defined for RAM size");
 
-DEVICE_DT_DEFINE(ILM_NODE, &it8xxx2_ilm_init, NULL, NULL, &ilm_config, PRE_KERNEL_1, 0, NULL);
+DEVICE_INSTANCE(ILM_NODE, &it8xxx2_ilm_init, NULL, NULL, &ilm_config, PRE_KERNEL_1, NULL);

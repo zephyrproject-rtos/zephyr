@@ -119,4 +119,4 @@ static int mc_rgm_init(const struct device *dev)
 	return err;
 }
 
-DEVICE_DT_INST_DEFINE(0, mc_rgm_init, NULL, NULL, 0, PRE_KERNEL_1, 1, NULL);
+DEVICE_INSTANCE_FROM_DT_INST(0, mc_rgm_init, NULL, NULL, 0, PRE_KERNEL_1, NULL);
