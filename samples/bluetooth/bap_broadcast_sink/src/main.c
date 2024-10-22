@@ -143,10 +143,9 @@ static const struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
 	(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA));
 
 /* Create a mask for the maximum BIS we can sync to using the number of streams
- * we have. We add an additional 1 since the bis indexes start from 1 and not
- * 0.
+ * we have. Bit 0 is BIS index 1.
  */
-static const uint32_t bis_index_mask = BIT_MASK(ARRAY_SIZE(streams) + 1U);
+static const uint32_t bis_index_mask = BIT_MASK(ARRAY_SIZE(streams));
 static uint32_t requested_bis_sync;
 static uint32_t bis_index_bitfield;
 static uint8_t sink_broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
@@ -1649,7 +1648,7 @@ wait_for_pa_sync:
 
 		sync_bitfield = bis_index_bitfield & requested_bis_sync;
 		stream_count = 0;
-		for (int i = 1; i < BT_ISO_MAX_GROUP_ISO_COUNT; i++) {
+		for (int i = 0; i < BT_ISO_MAX_GROUP_ISO_COUNT; i++) {
 			if ((sync_bitfield & BIT(i)) != 0) {
 				stream_count++;
 			}
