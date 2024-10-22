@@ -312,8 +312,31 @@ struct eth_tsn_nic_data {
 	bool has_pkt; /* TODO: This is for test only */
 };
 
+#if CONFIG_NET_TC_TX_COUNT != 0
+
 void tsn_init_configs(const struct device *dev);
 int tsn_set_qbv(const struct device *dev, struct ethernet_qbv_param param);
+int tsn_set_qav(const struct device *dev, struct ethernet_qav_param param);
 int tsn_fill_metadata(const struct device *dev, net_time_t now, struct tx_buffer *tx_buf);
+
+#else
+
+inline void tsn_init_configs(const struct device *dev)
+{
+}
+inline int tsn_set_qbv(const struct device *dev, struct ethernet_qbv_param param)
+{
+	return 0;
+}
+inline int tsn_set_qav(const struct device *dev, struct ethernet_qav_param param)
+{
+	return 0;
+}
+inline int tsn_fill_metadata(const struct device *dev, net_time_t now, struct tx_buffer *tx_buf)
+{
+	return 0;
+}
+
+#endif /* CONFIG_NET_TC_TX_COUNT != 0 */
 
 #endif /* ZEPHYR_DRIVERS_ETHERNET_ETH_TSN_NIC_H_ */

@@ -25,9 +25,11 @@
 
 #define LINK_1G 1000000000
 
+#define TSN_ALWAYS_OPEN(from) (from - 1) /* For both timestamp and sysclock */
+
 #define TSN_DEFAULT_PRIORITY  0
 #define TSN_DEFAULT_FROM_TICK 0
-#define TSN_DEFAULT_TO_TICK   (1 << 29 - 1)
+#define TSN_DEFAULT_TO_TICK   ((1 << 29) - 1)
 
 struct timestamps {
 	net_time_t from;
@@ -37,6 +39,8 @@ struct timestamps {
 };
 
 typedef uint64_t sysclock_t;
+
+#if CONFIG_NET_TC_TX_COUNT != 0
 
 static void bake_qos_config(struct tsn_config *config);
 static net_time_t bytes_to_ns(uint64_t bytes);
@@ -57,7 +61,7 @@ static inline net_time_t ext_time_to_net_time(struct net_ptp_extended_time ext)
 	return ext.second + (ext.fract_nsecond / (1 << 16));
 }
 
-static inline sysclock_t tsn_timstamp_to_sysclock(const struct device *dev, net_time_t timestamp)
+static inline sysclock_t tsn_timestamp_to_sysclock(const struct device *dev, net_time_t timestamp)
 {
 	/* TODO: Implement PTP */
 	net_time_t offset = 0;
@@ -72,7 +76,7 @@ static inline sysclock_t tsn_timstamp_to_sysclock(const struct device *dev, net_
  * Exported functions
  */
 
-int tsn_init_configs(const struct device *dev)
+void tsn_init_configs(const struct device *dev)
 {
 	struct eth_tsn_nic_data *data = dev->data;
 	struct tsn_config *config = &data->tsn_config;
@@ -86,7 +90,7 @@ int tsn_set_qbv(const struct device *dev, struct ethernet_qbv_param param)
 	return 0;
 }
 
-int tsn_set_qav(const struct device *dev, struct ethernet_qbv_param param)
+int tsn_set_qav(const struct device *dev, struct ethernet_qav_param param)
 {
 	return 0;
 }
@@ -267,3 +271,5 @@ static void spend_qav_credit(struct tsn_config *tsn_config, net_time_t at, uint8
 {
 	/* TODO: Implement Qav */
 }
+
+#endif /* CONFIG_NET_TC_TX_COUNT == 0 */
