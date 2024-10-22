@@ -1,0 +1,65 @@
+# Copyright (c) 2024 CISPA Helmholtz Center for Information Security
+# SPDX-License-Identifier: Apache-2.0
+
+description: Xilinx AXI 1G/2.5G Ethernet Subsystem base bindings.
+
+include: [base.yaml]
+
+# multiple "compatible" properties match the same driver and options
+
+properties:
+  interrupts:
+    type: array
+    description: Xilinx AXI Ethernet has an optional interrupt for updating statistics.
+  interrupt-parent:
+    type: phandle
+    description: Interrupt controller that the DMA is connected to.
+  reg:
+    type: array
+    description: |
+      Control registers of the MDIO device are also used for the Ethernet MAC controller.
+      Thus, both devices should have a parent node with compatible "xlnx,axi-ethernet-subsystem-7.2"
+      which defines the reg property, and MAC and MDIO should NOT have a reg property.
+  clocks:
+    type: phandle-array
+  clock-frequency:
+    type: int
+  local-mac-address:
+    type: uint8-array
+    description: Ethernet adapter MAC address.
+    required: true
+
+  axistream-connected:
+    type: phandle
+    required: true
+    description: Xilinx AXI DMA that is connected to the data streams.
+
+  axistream-control-connected:
+    type: phandle
+    required: true
+    description: Xilinx AXI DMA that is connected to the control streams.
+
+  phy-mode:
+    type: string
+    required: true
+    description: Type of the PHY used, e.g., RGMII.
+
+  phy-handle:
+    type: phandle
+    required: true
+    description: Handle to PHY device that is used by the Ethernet.
+
+  xlnx,rxcsum:
+    type: int
+    default: 0
+    description: RX checksum offloading. 0 = none, 2 = full. 1 = partial is not supported.
+    enum:
+      - 0
+      - 2
+  xlnx,txcsum:
+    type: int
+    default: 0
+    description: TX checksum offloading. 0 = none, 2 = full. 1 = partial is not supported.
+    enum:
+      - 0
+      - 2
