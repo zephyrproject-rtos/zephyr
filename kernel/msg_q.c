@@ -134,9 +134,11 @@ int z_impl_k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t timeout
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_msgq, put, msgq, timeout);
 
 	if (msgq->used_msgs < msgq->max_msgs) {
+		printk("qqq");
 		/* message queue isn't full */
 		pending_thread = z_unpend_first_thread(&msgq->wait_q);
 		if (unlikely(pending_thread != NULL)) {
+			printk("qqq222");
 			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, put, msgq, timeout, 0);
 
 			/* give message to waiting thread */
@@ -148,6 +150,7 @@ int z_impl_k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t timeout
 			z_reschedule(&msgq->lock, key);
 			return 0;
 		} else {
+			printk("qqq333");
 			/* put message in queue */
 			__ASSERT_NO_MSG(msgq->write_ptr >= msgq->buffer_start &&
 					msgq->write_ptr < msgq->buffer_end);
@@ -164,10 +167,11 @@ int z_impl_k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t timeout
 		result = 0;
 	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		/* don't wait for message space to become available */
+		printk("ccc");
 		result = -ENOMSG;
 	} else {
 		SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_msgq, put, msgq, timeout);
-
+printk("kkk");
 		/* wait for put message success, failure, or timeout */
 		_current->base.swap_data = (void *) data;
 
