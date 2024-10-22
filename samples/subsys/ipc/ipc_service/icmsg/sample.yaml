@@ -1,5 +1,7 @@
 sample:
   name: IPC Service example integration (icmsg backend)
+common:
+  timeout: 30
 tests:
   sample.ipc.icmsg:
     platform_allow:
