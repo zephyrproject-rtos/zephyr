@@ -276,20 +276,20 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 	case WLAN_REASON_UAP_CLIENT_CONN:
 		wlan_get_current_uap_network(&nxp_wlan_network);
 #ifdef CONFIG_NXP_WIFI_11AX
-			if (nxp_wlan_network.dot11ax) {
-				ap_sta_info.link_mode = WIFI_6;
-			}
+		if (nxp_wlan_network.dot11ax) {
+			ap_sta_info.link_mode = WIFI_6;
+		} else
 #endif
 #ifdef CONFIG_NXP_WIFI_11AC
-			else if (nxp_wlan_network.dot11ac) {
+			if (nxp_wlan_network.dot11ac) {
 				ap_sta_info.link_mode = WIFI_5;
-			}
+		} else
 #endif
-			else if (nxp_wlan_network.dot11n) {
+			if (nxp_wlan_network.dot11n) {
 				ap_sta_info.link_mode = WIFI_4;
-			} else {
-				ap_sta_info.link_mode = WIFI_3;
-			}
+		} else {
+			ap_sta_info.link_mode = WIFI_3;
+		}
 
 		memcpy(ap_sta_info.mac, data, WIFI_MAC_ADDR_LEN);
 		ap_sta_info.mac_length  = WIFI_MAC_ADDR_LEN;
@@ -968,15 +968,15 @@ static int nxp_wifi_status(const struct device *dev, struct wifi_iface_status *s
 #ifdef CONFIG_NXP_WIFI_11AX
 			if (nxp_wlan_network.dot11ax) {
 				status->link_mode = WIFI_6;
-			}
+			} else
 #endif
 #ifdef CONFIG_NXP_WIFI_11AC
-			else if (nxp_wlan_network.dot11ac) {
-				status->link_mode = WIFI_5;
-			}
+				if (nxp_wlan_network.dot11ac) {
+					status->link_mode = WIFI_5;
+			} else
 #endif
-			else if (nxp_wlan_network.dot11n) {
-				status->link_mode = WIFI_4;
+				if (nxp_wlan_network.dot11n) {
+					status->link_mode = WIFI_4;
 			} else {
 				status->link_mode = WIFI_3;
 			}
@@ -1335,6 +1335,7 @@ static int nxp_wifi_reg_domain(const struct device *dev, struct wifi_reg_domain 
 	return 0;
 }
 
+#ifdef CONFIG_NXP_WIFI_11AX_TWT
 static int nxp_wifi_set_twt(const struct device *dev, struct wifi_twt_params *params)
 {
 	wlan_twt_setup_config_t twt_setup_conf;
@@ -1367,6 +1368,7 @@ static int nxp_wifi_set_twt(const struct device *dev, struct wifi_twt_params *pa
 
 	return ret;
 }
+#endif
 
 static void nxp_wifi_sta_init(struct net_if *iface)
 {
@@ -1654,7 +1656,9 @@ static const struct wifi_mgmt_ops nxp_wifi_sta_mgmt = {
 	.cfg_11k = nxp_wifi_11k_cfg,
 	.set_power_save = nxp_wifi_power_save,
 	.get_power_save_config = nxp_wifi_get_power_save,
+#ifdef CONFIG_NXP_WIFI_11AX_TWT
 	.set_twt = nxp_wifi_set_twt,
+#endif
 };
 
 #if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT)
