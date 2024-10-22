@@ -135,6 +135,8 @@ int tsn_fill_metadata(const struct device *dev, net_time_t now, struct tx_buffer
 	if (tsn_config->qbv.enabled == false && tsn_config->qav[vlan_prio].enabled == false) {
 		timestamps.from = tsn_config->total_available_at;
 		timestamps.to = timestamps.from + DEFAULT_TO_MARGIN;
+		timestamps.delay_from = tsn_config->total_available_at;
+		timestamps.delay_to = timestamps.delay_from + DEFAULT_TO_MARGIN;
 		metadata->fail_policy = TSN_FAIL_POLICY_DROP;
 	} else {
 		if (tsn_config->qav[vlan_prio].enabled == true &&
@@ -201,7 +203,7 @@ static void bake_qos_config(struct tsn_config *config)
 	struct qbv_baked_config *baked;
 	if (config->qbv.enabled == false) {
 		/* TODO: remove this when throughput issue without QoS gets resolved */
-		for (vlan_prio = 0; vlan_prio < VLAN_PRIO_COUNT; vlan_prio++) {
+		for (vlan_prio = 0; vlan_prio < NET_TC_TX_COUNT; vlan_prio++) {
 			if (config->qav[vlan_prio].enabled) {
 				qav_disabled = false;
 				break;
@@ -213,7 +215,7 @@ static void bake_qos_config(struct tsn_config *config)
 			config->qbv.start = 0;
 			config->qbv.slot_count = 1;
 			config->qbv.slots[0].duration_ns = 1000000000; // 1s
-			for (vlan_prio = 0; vlan_prio < VLAN_PRIO_COUNT; vlan_prio++) {
+			for (vlan_prio = 0; vlan_prio < NET_TC_TX_COUNT; vlan_prio++) {
 				config->qbv.slots[0].opened_prios[vlan_prio] = true;
 			}
 		}
@@ -224,7 +226,7 @@ static void bake_qos_config(struct tsn_config *config)
 
 	baked->cycle_ns = 0;
 
-	for (vlan_prio = 0; vlan_prio < VLAN_PRIO_COUNT; vlan_prio += 1) {
+	for (vlan_prio = 0; vlan_prio < NET_TC_TX_COUNT; vlan_prio += 1) {
 		baked->prios[vlan_prio].slot_count = 1;
 		baked->prios[vlan_prio].slots[0].opened =
 			config->qbv.slots[0].opened_prios[vlan_prio];
@@ -233,7 +235,7 @@ static void bake_qos_config(struct tsn_config *config)
 	for (slot_id = 0; slot_id < config->qbv.slot_count; slot_id += 1) {
 		uint64_t slot_duration = config->qbv.slots[slot_id].duration_ns;
 		baked->cycle_ns += slot_duration;
-		for (vlan_prio = 0; vlan_prio < VLAN_PRIO_COUNT; vlan_prio += 1) {
+		for (vlan_prio = 0; vlan_prio < NET_TC_TX_COUNT; vlan_prio += 1) {
 			struct qbv_baked_prio *prio = &baked->prios[vlan_prio];
 			if (prio->slots[prio->slot_count - 1].opened ==
 			    config->qbv.slots[slot_id].opened_prios[vlan_prio]) {
@@ -247,7 +249,7 @@ static void bake_qos_config(struct tsn_config *config)
 		}
 	}
 
-	for (vlan_prio = 0; vlan_prio < VLAN_PRIO_COUNT; vlan_prio += 1) {
+	for (vlan_prio = 0; vlan_prio < NET_TC_TX_COUNT; vlan_prio += 1) {
 		struct qbv_baked_prio *prio = &baked->prios[vlan_prio];
 		if (prio->slot_count % 2 == 1) {
 			prio->slots[prio->slot_count].opened =
@@ -262,6 +264,11 @@ static bool get_timestamps(struct timestamps *timestamps, const struct tsn_confi
 			   net_time_t from, uint8_t vlan_prio, uint64_t bytes, bool consider_delay)
 {
 	/* TODO: Implement Qbv */
+	/* FIXME: These are for suppressing compile warnings */
+	timestamps->from = 0;
+	timestamps->to = 0;
+	timestamps->delay_from = 0;
+	timestamps->delay_to = 0;
 	return false;
 }
 
