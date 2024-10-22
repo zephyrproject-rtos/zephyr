@@ -318,13 +318,99 @@ static void bake_qos_config(struct tsn_config *config)
 static bool get_timestamps(struct timestamps *timestamps, const struct tsn_config *tsn_config,
 			   net_time_t from, uint8_t tc_id, uint64_t bytes, bool consider_delay)
 {
-	/* TODO: Implement Qbv */
-	/* FIXME: These are for suppressing compile warnings */
-	timestamps->from = 0;
-	timestamps->to = 0;
-	timestamps->delay_from = 0;
-	timestamps->delay_to = 0;
-	return false;
+	/**
+	 * NOTE: This is the exact same copy of the one in the Linux driver
+	 *       Review this when something unexpected happens
+	 */
+	int slot_id, slot_count;
+	net_time_t sending_duration, remainder;
+	const struct qbv_baked_config *baked;
+	const struct qbv_baked_prio *baked_prio;
+	const struct qbv_config *qbv = &tsn_config->qbv;
+	memset(timestamps, 0, sizeof(struct timestamps));
+
+	if (qbv->enabled == false) {
+		/* No Qbv. Just return the current time */
+		timestamps->from = from;
+		timestamps->to = TSN_ALWAYS_OPEN(timestamps->from);
+		/* delay_* is pointless. Just set it to be right next to the frame */
+		timestamps->delay_from = timestamps->from;
+		timestamps->delay_to = TSN_ALWAYS_OPEN(timestamps->delay_from);
+		return true;
+	}
+
+	baked = &tsn_config->qbv_baked;
+	baked_prio = &baked->prios[tc_id];
+	sending_duration = bytes_to_ns(bytes);
+
+	remainder = (from - qbv->start) % baked->cycle_ns;
+	slot_id = 0;
+	slot_count = baked_prio->slot_count;
+
+	/* Check if tc_id is always open or always closed */
+	if (slot_count == 2 && baked_prio->slots[1].duration_ns == 0) {
+		if (baked_prio->slots[0].opened == false) {
+			/* The only slot is closed. Drop the frame */
+			return false;
+		}
+		timestamps->from = from;
+		timestamps->to = TSN_ALWAYS_OPEN(timestamps->from);
+		if (consider_delay) {
+			timestamps->delay_from = timestamps->from;
+			timestamps->delay_to = TSN_ALWAYS_OPEN(timestamps->delay_from);
+		}
+		return true;
+	}
+
+	while (remainder > baked_prio->slots[slot_id].duration_ns) {
+		remainder -= baked_prio->slots[slot_id].duration_ns;
+		slot_id += 1;
+	}
+
+	/* 1. "from" */
+	if (baked_prio->slots[slot_id].opened) {
+		/* Skip the slot if its remaining time is not enough to fit the frame */
+		if (baked_prio->slots[slot_id].duration_ns - remainder < sending_duration) {
+			/* Skip this slot. Because the slots are on/off pairs, we skip 2 slots */
+			/* First */
+			timestamps->from =
+				from - remainder + baked_prio->slots[slot_id].duration_ns;
+			slot_id = (slot_id + 1) % baked_prio->slot_count;
+			/* Second */
+			timestamps->from += baked_prio->slots[slot_id].duration_ns;
+			slot_id = (slot_id + 1) % baked_prio->slot_count;
+		} else {
+			/* The slot's remaining time is enough to fit the frame */
+			timestamps->from = from - remainder;
+		}
+	} else {
+		/* Select next slot */
+		timestamps->from = from - remainder + baked_prio->slots[slot_id].duration_ns;
+		slot_id = (slot_id + 1) % baked_prio->slot_count; /* Opened slot */
+	}
+
+	/* 2. "to" */
+	timestamps->to = timestamps->from + baked_prio->slots[slot_id].duration_ns;
+
+	if (consider_delay) {
+		/* 3. "delay_from" */
+		timestamps->delay_from = timestamps->from + baked_prio->slots[slot_id].duration_ns;
+		slot_id = (slot_id + 1) % baked_prio->slot_count; /* Closed slot */
+		timestamps->delay_from += baked_prio->slots[slot_id].duration_ns;
+		slot_id = (slot_id + 1) % baked_prio->slot_count; /* Opened slot */
+		/* 4. "delay_to" */
+		timestamps->delay_to =
+			timestamps->delay_from + baked_prio->slots[slot_id].duration_ns;
+	}
+
+	/* Adjust times */
+	timestamps->from = MAX(timestamps->from, from); /* If already in the slot */
+	timestamps->to -= sending_duration;
+	if (consider_delay) {
+		timestamps->delay_to -= sending_duration;
+	}
+
+	return true;
 }
 
 static void spend_qav_credit(struct tsn_config *tsn_config, net_time_t at, uint8_t tc_id,
