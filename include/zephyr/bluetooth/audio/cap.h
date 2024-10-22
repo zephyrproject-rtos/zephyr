@@ -482,7 +482,7 @@ struct bt_cap_initiator_broadcast_create_param {
 	 *   The string "Broadcast Code" shall be
 	 *   [42 72 6F 61 64 63 61 73 74 20 43 6F 64 65 00 00]
 	 */
-	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
+	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 
 #if defined(CONFIG_BT_ISO_TEST_PARAMS) || defined(__DOXYGEN__)
 	/**

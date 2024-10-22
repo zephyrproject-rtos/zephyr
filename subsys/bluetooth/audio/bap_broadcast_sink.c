@@ -1157,7 +1157,8 @@ int bt_bap_broadcast_sink_create(struct bt_le_per_adv_sync *pa_sync, uint32_t br
 }
 
 int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t indexes_bitfield,
-			       struct bt_bap_stream *streams[], const uint8_t broadcast_code[16])
+			       struct bt_bap_stream *streams[],
+			       const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE])
 {
 	struct bt_iso_big_sync_param param;
 	struct bt_audio_codec_cfg *codec_cfgs[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT] = {NULL};

@@ -386,6 +386,9 @@ Bluetooth Audio
   do a search-and-replace for ``bt_audio_codec_qos`` to ``bt_bap_qos_cfg`` and
   ``BT_AUDIO_CODEC_QOS`` to ``BT_BAP_QOS_CFG``. (:github:`76633`)
 
+* ``BT_AUDIO_BROADCAST_CODE_SIZE`` has been removed and ``BT_ISO_BROADCAST_CODE_SIZE`` should be
+  used instead. (:github:`80217`)
+
 Bluetooth Classic
 =================
 

@@ -47,8 +47,6 @@ extern "C" {
 #define BT_AUDIO_PD_PREF_NONE                    0x000000U
 /** Maximum presentation delay in microseconds */
 #define BT_AUDIO_PD_MAX                          0xFFFFFFU
-/** Maximum size of the broadcast code in octets */
-#define BT_AUDIO_BROADCAST_CODE_SIZE             16
 
 /** The minimum size of a Broadcast Name as defined by Bluetooth Assigned Numbers */
 #define BT_AUDIO_BROADCAST_NAME_LEN_MIN          4
