@@ -1,0 +1,6 @@
+shield:
+  name: st_stm32f4dis_cam
+  full_name: ST STM32F4DIS-CAM
+  vendor: st
+  supported_features:
+    - video
