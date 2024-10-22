@@ -10,7 +10,7 @@ jobs:
   check-errno:
     runs-on: ubuntu-22.04
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.26.13
+      image: ghcr.io/zephyrproject-rtos/ci:v0.27.3
 
     steps:
       - name: Apply container owner mismatch workaround
