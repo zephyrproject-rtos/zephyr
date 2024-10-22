@@ -142,8 +142,8 @@ int lvgl_pointer_input_init(const struct device *dev)
 		.invert_y = DT_INST_PROP(inst, invert_y),                                          \
 	};                                                                                         \
 	static struct lvgl_pointer_input_data lvgl_pointer_input_data_##inst;                      \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &lvgl_pointer_input_data_##inst,                   \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, NULL, NULL, &lvgl_pointer_input_data_##inst,            \
 			      &lvgl_pointer_input_config_##inst, POST_KERNEL,                      \
-			      CONFIG_INPUT_INIT_PRIORITY, NULL);
+			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(LVGL_POINTER_INPUT_DEFINE)

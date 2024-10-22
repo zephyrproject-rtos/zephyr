@@ -68,8 +68,8 @@ int lvgl_keypad_input_init(const struct device *dev)
 		.num_codes = DT_INST_PROP_LEN(inst, input_codes),                                  \
 	};                                                                                         \
 	static struct lvgl_common_input_data lvgl_common_input_data_##inst;                        \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &lvgl_common_input_data_##inst,                    \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, NULL, NULL, &lvgl_common_input_data_##inst,             \
 			      &lvgl_keypad_input_config_##inst, POST_KERNEL,                       \
-			      CONFIG_INPUT_INIT_PRIORITY, NULL);
+			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(LVGL_KEYPAD_INPUT_DEFINE)
