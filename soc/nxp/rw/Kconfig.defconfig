@@ -53,6 +53,9 @@ endif # BT
 config NXP_MONOLITHIC_WIFI
 	default y if WIFI
 
+config NXP_MONOLITHIC_IEEE802154
+	default y if IEEE802154
+
 config NXP_FW_LOADER
 	default y if (BT || WIFI || IEEE802154)
 

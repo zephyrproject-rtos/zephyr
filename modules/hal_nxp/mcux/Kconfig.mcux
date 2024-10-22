@@ -76,6 +76,12 @@ config NXP_MONOLITHIC_NBU
 	   If enabled, the NBU firmware used by the device will be linked with the
 	   application directly.
 
+config NXP_MONOLITHIC_IEEE802154
+	bool "IEEE802154 firmware monolithic build"
+	help
+	   If enabled, the IEEE802154 firmware used by the device will be linked
+	   with the application directly.
+
 config NXP_RF_IMU
 	bool "Include RF_IMU adapter for intercore messaging"
 	select EVENTS
