@@ -1,9 +1,9 @@
 # Copyright (c) 2024 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: Renesas RA8 Pulse Width Modulation
+description: Renesas RA Pulse Width Modulation
 
-compatible: "renesas,ra8-pwm"
+compatible: "renesas,ra-pwm"
 
 include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
 
