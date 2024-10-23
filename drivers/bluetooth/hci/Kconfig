@@ -29,13 +29,6 @@ config BT_H5
 	  Bluetooth three-wire (H:5) UART driver. Implementation of HCI
 	  Three-Wire UART Transport Layer.
 
-# Removed: Here only to give the user a warning about its removal
-# Remove after 3.7.0 is released
-config BT_RPMSG
-	bool
-	help
-	  Use BT_HCI_IPC instead
-
 config BT_HCI_IPC
 	bool
 	default y
