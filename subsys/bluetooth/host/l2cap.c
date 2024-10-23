@@ -2946,6 +2946,7 @@ int bt_l2cap_ecred_chan_reconfigure(struct bt_l2cap_chan **chans, uint16_t mtu)
 	struct bt_conn *conn = NULL;
 	struct bt_l2cap_le_chan *ch;
 	struct net_buf *buf;
+	uint16_t mps = 0;
 	uint8_t ident;
 	int i;
 
@@ -2973,6 +2974,15 @@ int bt_l2cap_ecred_chan_reconfigure(struct bt_l2cap_chan **chans, uint16_t mtu)
 		if (mtu < BT_L2CAP_LE_CHAN(chans[i])->rx.mtu) {
 			return -EINVAL;
 		}
+
+#if defined(CONFIG_BT_L2CAP_SEG_RECV)
+		/* check if any channel is using segment direct API, if so
+		 * store its MPS for validation (see below)
+		 */
+		if (BT_L2CAP_LE_CHAN(chans[i])->chan.ops->seg_recv && mps == 0) {
+			mps = BT_L2CAP_LE_CHAN(chans[i])->rx.mps;
+		}
+#endif
 	}
 
 	if (i == 0) {
@@ -2992,6 +3002,47 @@ int bt_l2cap_ecred_chan_reconfigure(struct bt_l2cap_chan **chans, uint16_t mtu)
 		return -EBUSY;
 	}
 
+	/* default (max) MPS for channels */
+	if (mps == 0) {
+		mps = BT_L2CAP_RX_MTU;
+	}
+
+	/* MPS shall not be bigger than MTU + BT_L2CAP_SDU_HDR_SIZE
+	 * as the remaining bytes cannot be used.
+	 */
+	mps = MIN(mtu + BT_L2CAP_SDU_HDR_SIZE, mps);
+
+#if defined(CONFIG_BT_L2CAP_SEG_RECV)
+	for (int j = 0; j < i; j++) {
+		ch = BT_L2CAP_LE_CHAN(chans[j]);
+		/* For now simply don't allow MPS changes on channels using
+		 * segment direct API
+		 *
+		 * TODO we could be smarter here and in some cases allow for
+		 * MPS changes
+		 */
+		if (ch->chan.ops->seg_recv) {
+			if (mps != ch->rx.mps) {
+				return -EINVAL;
+			}
+		}
+
+		/* This needs to be validated only if segment direct API is
+		 * enabled since otherwise MPS is same for all channels and
+		 * would be decreased in case MTU<MPS (which is already handled).
+		 */
+		if (i > 1) {
+			/* Decreasing MPS is not allowed on any channel if
+			 * multiple channels are reconfigured
+			 * (Vol 3. Part.A 4.27)
+			 */
+			if (mps < ch->rx.mps) {
+				return -EINVAL;
+			}
+		}
+	}
+#endif
+
 	ident = get_ident();
 
 	buf = l2cap_create_le_sig_pdu(BT_L2CAP_ECRED_RECONF_REQ,
@@ -3003,12 +3054,7 @@ int bt_l2cap_ecred_chan_reconfigure(struct bt_l2cap_chan **chans, uint16_t mtu)
 
 	req = net_buf_add(buf, sizeof(*req));
 	req->mtu = sys_cpu_to_le16(mtu);
-
-	/* MPS shall not be bigger than MTU + BT_L2CAP_SDU_HDR_SIZE
-	 * as the remaining bytes cannot be used.
-	 */
-	req->mps = sys_cpu_to_le16(MIN(mtu + BT_L2CAP_SDU_HDR_SIZE,
-				       BT_L2CAP_RX_MTU));
+	req->mps = sys_cpu_to_le16(mps);
 
 	for (int j = 0; j < i; j++) {
 		ch = BT_L2CAP_LE_CHAN(chans[j]);
