@@ -55,6 +55,15 @@ properties:
       Delay between setting column output and reading the row values. Defaults
       to 50us if unspecified.
 
+  no-settle-inactive-columns:
+    type: boolean
+    description: |
+      Skip the settle-time-us delay of a column if the previous one is
+      inactive. The settle time is normally only needed for letting a row go
+      from active to inactive when switching column. When this property is set,
+      the delay is skipped if for a column if the previous one is inactive,
+      saving few cpu cycles.
+
   actual-key-mask:
     type: array
     description:

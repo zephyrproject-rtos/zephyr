@@ -118,6 +118,7 @@ struct input_kbd_matrix_common_config {
 	uint32_t debounce_down_us;
 	uint32_t debounce_up_us;
 	uint32_t settle_time_us;
+	bool no_settle_inactive_columns;
 	bool ghostkey_check;
 	INPUT_KBD_ACTUAL_KEY_MASK_CONST kbd_row_t *actual_key_mask;
 
@@ -200,6 +201,7 @@ struct input_kbd_matrix_common_config {
 		.debounce_down_us = DT_PROP(node_id, debounce_down_ms) * USEC_PER_MSEC, \
 		.debounce_up_us = DT_PROP(node_id, debounce_up_ms) * USEC_PER_MSEC, \
 		.settle_time_us = DT_PROP(node_id, settle_time_us), \
+		.no_settle_inactive_columns = DT_PROP(node_id, no_settle_inactive_columns), \
 		.ghostkey_check = !DT_PROP(node_id, no_ghostkey_check), \
 		IF_ENABLED(DT_NODE_HAS_PROP(node_id, actual_key_mask), ( \
 		.actual_key_mask = INPUT_KBD_MATRIX_DATA_NAME(node_id, actual_key_mask), \

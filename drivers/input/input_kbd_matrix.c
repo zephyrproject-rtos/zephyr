@@ -100,6 +100,7 @@ static bool input_kbd_matrix_scan(const struct device *dev)
 	const struct input_kbd_matrix_api *api = cfg->api;
 	kbd_row_t row;
 	kbd_row_t key_event = 0U;
+	bool skip_delay = false;
 
 	for (int col = 0; col < cfg->col_size; col++) {
 		if (cfg->actual_key_mask != NULL &&
@@ -114,10 +115,18 @@ static bool input_kbd_matrix_scan(const struct device *dev)
 
 		input_kbd_matrix_drive_column(dev, col);
 
-		/* Allow the matrix to stabilize before reading it */
-		k_busy_wait(cfg->settle_time_us);
+		if (!skip_delay) {
+			/* Allow the matrix to stabilize before reading it */
+			k_busy_wait(cfg->settle_time_us);
+		}
 
 		row = api->read_row(dev);
+
+		if (cfg->no_settle_inactive_columns && row == 0) {
+			skip_delay = true;
+		} else {
+			skip_delay = false;
+		}
 
 		if (cfg->actual_key_mask != NULL) {
 			row &= cfg->actual_key_mask[col];
