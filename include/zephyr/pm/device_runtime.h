@@ -169,6 +169,22 @@ bool pm_device_runtime_is_enabled(const struct device *dev);
  */
 int pm_device_runtime_usage(const struct device *dev);
 
+/**
+ * @brief Flush the device runtime PM state.
+ *
+ * This function will flush any pending async operation in a
+ * device. It is intended to be called during system suspend to ensure
+ * that the device is in a consistent state.
+ *
+ * @param dev Device instance.
+ *
+ * @retval 0 If it succeeds.
+ * @retval -EINVAL If the device does not have any pending operation.
+ * @retval -EALREADY If device is already suspended.
+ * @retval -errno Other negative errno, result of the action callback.
+ */
+int pm_device_runtime_flush(const struct device *dev);
+
 #else
 
 static inline int pm_device_runtime_auto_enable(const struct device *dev)
@@ -219,6 +235,12 @@ static inline int pm_device_runtime_usage(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	return -ENOSYS;
+}
+
+static inline int pm_device_runtime_flush(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return 0;
 }
 
 #endif
