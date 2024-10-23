@@ -1,0 +1,25 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2023-2024 Telink Semiconductor (Shanghai) Co., Ltd.
+ */
+
+/ {
+	aliases {
+		spi-flash0 = &spi1_cs0_flash;
+	};
+};
+
+
+&hspi {
+	status = "okay";
+		spi1_cs0_flash: p25q16@0 {
+		compatible = "jedec,spi-nor";
+		/* 16777216 bits = 2 Mbytes */
+		size = <0x1000000>;
+		reg = <0>;
+		spi-max-frequency = <48000000>;
+		jedec-id = [85 60 15];
+		status = "okay";
+	};
+};

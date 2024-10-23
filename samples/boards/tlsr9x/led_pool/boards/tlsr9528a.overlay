@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2024 Telink Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	led_pool{
+		compatible = "gpio-leds";
+
+		out {
+			gpios = <&gpioe 6 GPIO_ACTIVE_HIGH>,
+					<&gpiod 0 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};

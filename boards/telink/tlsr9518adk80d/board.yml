@@ -1,0 +1,11 @@
+boards:
+- name: tlsr9518adk80d
+  vendor: telink
+  socs:
+  - name: telink_b91
+
+- name: tlsr9518adk80d_retention
+  vendor: telink
+  socs:
+  - name: telink_b91
+

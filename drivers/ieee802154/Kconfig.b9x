@@ -1,0 +1,86 @@
+# Copyright (c) 2021-2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+# Telink B9X RF configuration options
+
+menuconfig IEEE802154_TELINK_B9X
+	bool "Telink B9X RF driver"
+	default y
+	depends on DT_HAS_TELINK_B9X_ZB_ENABLED
+
+if IEEE802154_TELINK_B9X
+
+config IEEE802154_B9X_INIT_PRIO
+	int "Telink B9X IEEE 802.15.4 initialization priority"
+	default 80
+	help
+	  Set the initialization priority number. Do not mess with it unless
+	  you know what you are doing.
+
+config IEEE802154_B9X_SET_TXRX_DELAY_US
+	int "Tx/Rx modes switching delay time (us)"
+	default 120
+	help
+	  Delay time needed for PLL stabilization during Tx/Rx modes switching.
+
+config IEEE802154_B9X_CCA_RSSI_THRESHOLD
+	int "CCA procedure RSSI threshold"
+	default -50
+	help
+	  CCA procedure returns true if the current RSSI value is less than
+	  this parameter.
+
+choice IEEE802154_B9X_MAC_TYPE
+	prompt "IEEE802154 MAC address type"
+	default IEEE802154_B9X_MAC_RANDOM
+config IEEE802154_B9X_MAC_RANDOM
+	bool "Random MAC address"
+config IEEE802154_B9X_MAC_FLASH
+	bool "MAC address from flash"
+config IEEE802154_B9X_MAC_STATIC
+	bool "MAC address precompiled"
+endchoice
+
+config IEEE802154_B9X_DELAY_TRX_ACC
+	int "Clock accuracy for delayed operations"
+	default 40
+	help
+	  Accuracy of the clock used for scheduling radio delayed operations (delayed transmission
+	  or delayed reception), in ppm.
+
+if IEEE802154_B9X_MAC_STATIC
+
+config IEEE802154_B9X_MAC4
+	hex "MAC Address Byte 4"
+	default 0
+	range 0 0xff
+	help
+	  This is the byte 4 of the MAC address.
+
+config IEEE802154_B9X_MAC5
+	hex "MAC Address Byte 5"
+	default 0
+	range 0 0xff
+	help
+	  This is the byte 5 of the MAC address.
+
+config IEEE802154_B9X_MAC6
+	hex "MAC Address Byte 6"
+	default 0
+	range 0 0xff
+	help
+	  This is the byte 6 of the MAC address.
+
+config IEEE802154_B9X_MAC7
+	hex "MAC Address Byte 7"
+	default 0
+	range 0 0xff
+	help
+	  This is the byte 7 of the MAC address.
+
+endif # IEEE802154_B9X_MAC_STATIC
+
+config IEEE802154_TELINK_B9X_ENCRYPTION
+	bool "Telink 802.15.4 AES-CCM* authentication & encryption"
+
+endif # IEEE802154_TELINK_B9X

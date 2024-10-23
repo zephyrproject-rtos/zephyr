@@ -1,0 +1,15 @@
+# Copyright (c) 2021-2024, Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: Telink B9x I2C
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+compatible: "telink,b9x-i2c"
+
+properties:
+  reg:
+    required: true
+
+  pinctrl-0:
+    required: true

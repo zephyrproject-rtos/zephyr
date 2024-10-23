@@ -1,0 +1,162 @@
+# Copyright (c) 2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+name: Telink B91 build examples
+
+on: pull_request
+
+jobs:
+  telink_build_examples:
+    runs-on: ubuntu-latest
+    name: Telink build examples
+    env:
+      ZEPHYR_SDK_VERSION: 0.16.8
+    steps:
+
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y --no-install-recommends libdigest-sha-perl cmake python3 ninja-build
+
+    - name: Setup Zephyr toolchain
+      run: |
+        mkdir ~/zephyr_sdk
+        wget -q -P ~/zephyr_sdk https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v"${ZEPHYR_SDK_VERSION}"/zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.xz
+        (cd ~/zephyr_sdk && wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v"${ZEPHYR_SDK_VERSION}"/sha256.sum | shasum --check --ignore-missing)
+        tar xf ~/zephyr_sdk/zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.xz -C ~/zephyr_sdk
+        (cd ~/zephyr_sdk/zephyr-sdk-"${ZEPHYR_SDK_VERSION}" && ./setup.sh -t riscv64-zephyr-elf -c)
+
+    - name: Checkout Zephyr
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+
+    - name: West setup
+      run: |
+        pip install west
+        cd ..
+        west init -l zephyr
+        west update
+        west blobs fetch hal_telink
+        west blobs list hal_telink -f '{status} {path}' | grep '^M lib_zephyr_b91.a$' && exit 1
+        west zephyr-export
+        pip install -r zephyr/scripts/requirements.txt
+
+    - name: Build B91 basic/blinky
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d             -d build_blinky_b91                    zephyr/samples/basic/blinky                              -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
+
+    - name: Build B91 basic/blinky with PM
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d             -d build_blinky_pm_b91                 zephyr/samples/basic/blinky                              -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_PM=y
+
+    - name: Build B91 bluetooth/peripheral_ht
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d             -d build_bt_peripheral_ht_b91          zephyr/samples/bluetooth/peripheral_ht                   -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
+
+    - name: Build B91 bluetooth/peripheral_ht with PM
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d             -d build_bt_peripheral_ht_pm_b91       zephyr/samples/bluetooth/peripheral_ht                   -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_PM=y
+
+    - name: Build B91 net/openthread/coprocessor in RCP configuration with UART interface
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d             -d build_ot_coprocessor_rcp_uart_b91   zephyr/samples/net/openthread/coprocessor                -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DOVERLAY_CONFIG=overlay-rcp.conf
+
+    - name: Build B91 net/sockets/echo_server for OpenThread
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d             -d build_ot_echo_server_b91            zephyr/samples/net/sockets/echo_server                   -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DOVERLAY_CONFIG=overlay-ot.conf -DCONFIG_OPENTHREAD_NETWORKKEY=\"09:24:01:56:04:4a:45:0b:23:22:1e:0e:3b:0d:0e:61:2f:1b:2c:24\"
+
+    - name: Build B91 net/sockets/echo_client for OpenThread
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d             -d build_ot_echo_client_b91            zephyr/samples/net/sockets/echo_client                   -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DOVERLAY_CONFIG=overlay-ot-sed.conf -DCONFIG_OPENTHREAD_NETWORKKEY=\"09:24:01:56:04:4a:45:0b:23:22:1e:0e:3b:0d:0e:61:2f:1b:2c:24\"
+
+    - name: Build B91 net/sockets/echo_client for OpenThread with PM
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d             -d build_ot_echo_client_pm_b91         zephyr/samples/net/sockets/echo_client                   -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DOVERLAY_CONFIG=overlay-ot-sed.conf -DCONFIG_OPENTHREAD_NETWORKKEY=\"09:24:01:56:04:4a:45:0b:23:22:1e:0e:3b:0d:0e:61:2f:1b:2c:24\" -DCONFIG_PM=y
+
+    - name: Build B91 bootloader/mcuboot/boot
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d             -d build_mcuboot_b91                   bootloader/mcuboot/boot/zephyr                           -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_LOG_DEFAULT_LEVEL=3
+
+    - name: Build B91 subsys/mgmt/mcumgr/smp_svr for Bluetooth
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d             -d build_bt_smp_svr_b91                zephyr/samples/subsys/mgmt/mcumgr/smp_svr                -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DOVERLAY_CONFIG=overlay-bt.conf
+
+    - name: Build B91 subsys/usb/console for USB driver
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d             -d build_usb_console_b91               zephyr/samples/subsys/usb/console                        -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y
+
+    - name: Build B91 net/openthread/coprocessor in RCP configuration with USB interface
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d             -d build_ot_coprocessor_rcp_usb_b91    zephyr/samples/net/openthread/coprocessor                -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DDTC_OVERLAY_FILE="usb.overlay boards/tlsr9518adk80d-dongle.overlay" -DOVERLAY_CONFIG=overlay-rcp-usb-telink.conf
+
+    - name: Build B91 boards/tlsr9x/basic
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d_retention   -d build_retention_basic_b91           zephyr/samples/boards/tlsr9x/basic                       -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_SOC_SERIES_RISCV_TELINK_B9X_NON_RETENTION_RAM_CODE=y
+
+    - name: Build B91 net/sockets/echo_client for OpenThread with PM deep-sleep
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d_retention   -d build_ot_echo_client_pm_deep_b91    zephyr/samples/net/sockets/echo_client                   -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DOVERLAY_CONFIG=overlay-ot-sed.conf -DCONFIG_OPENTHREAD_NETWORKKEY=\"09:24:01:56:04:4a:45:0b:23:22:1e:0e:3b:0d:0e:61:2f:1b:2c:24\" -DCONFIG_PM=y -DCONFIG_SOC_SERIES_RISCV_TELINK_B9X_NON_RETENTION_RAM_CODE=y -DCONFIG_TELINK_B9X_2_WIRE_SPI_ENABLE=y
+
+    - name: Build B91 bootloader/mcuboot/boot for USB DFU
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d             -d build_mcuboot_usb_dfu_b91           bootloader/mcuboot/boot/zephyr                           -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_LOG_DEFAULT_LEVEL=3 -DCONFIG_USB_DFU_WILL_DETACH=n -DCONFIG_BOOT_USB_DFU_GPIO=y -DCONFIG_MCUBOOT_INDICATION_LED=y
+
+    - name: Build B91 basic/blinky for USB DFU
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d             -d build_blinky_usb_dfu_b91            zephyr/samples/basic/blinky                              -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_BOOTLOADER_MCUBOOT=y
+
+    - name: Build B91 net/openthread/cli
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d             -d build_ot_cli_b91                    zephyr/samples/net/openthread/cli                        -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DOVERLAY_CONFIG=overlay-telink-fixed-mac.conf
+
+    - name: Build B91 crypto/mbedtls
+      run: |
+        cd ..
+        west build -b tlsr9518adk80d             -d build_crypto_mbedtls_b91            zephyr/tests/crypto/mbedtls                              -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_MBEDTLS_ECP_C=y -DCONFIG_MBEDTLS_ECP_ALL_ENABLED=y
+
+    - name: Collect artifacts
+      run: |
+        mkdir telink_build_artifacts
+        cp ../build_blinky_b91/zephyr/zephyr.bin                    telink_build_artifacts/b91_blinky.bin
+        cp ../build_blinky_pm_b91/zephyr/zephyr.bin                 telink_build_artifacts/b91_blinky_pm.bin
+        cp ../build_bt_peripheral_ht_b91/zephyr/zephyr.bin          telink_build_artifacts/b91_bt_peripheral_ht.bin
+        cp ../build_bt_peripheral_ht_pm_b91/zephyr/zephyr.bin       telink_build_artifacts/b91_bt_peripheral_ht_pm.bin
+        cp ../build_ot_coprocessor_rcp_uart_b91/zephyr/zephyr.bin   telink_build_artifacts/b91_ot_coprocessor_rcp_uart.bin
+        cp ../build_ot_echo_server_b91/zephyr/zephyr.bin            telink_build_artifacts/b91_ot_echo_server.bin
+        cp ../build_ot_echo_client_b91/zephyr/zephyr.bin            telink_build_artifacts/b91_ot_echo_client.bin
+        cp ../build_ot_echo_client_pm_b91/zephyr/zephyr.bin         telink_build_artifacts/b91_ot_echo_client_pm.bin
+        cp ../build_mcuboot_b91/zephyr/zephyr.bin                   telink_build_artifacts/b91_mcuboot.bin
+        cp ../build_bt_smp_svr_b91/zephyr/zephyr.signed.bin         telink_build_artifacts/b91_bt_smp_svr.signed.bin
+        cp ../build_usb_console_b91/zephyr/zephyr.bin               telink_build_artifacts/b91_usb_console.bin
+        cp ../build_ot_coprocessor_rcp_usb_b91/zephyr/zephyr.bin    telink_build_artifacts/b91_ot_coprocessor_rcp_usb.bin
+        cp ../build_retention_basic_b91/zephyr/zephyr.bin           telink_build_artifacts/b91_retention_basic.bin
+        cp ../build_ot_echo_client_pm_deep_b91/zephyr/zephyr.bin    telink_build_artifacts/b91_ot_echo_client_pm_retention.bin
+        cp ../build_mcuboot_usb_dfu_b91/zephyr/zephyr.bin           telink_build_artifacts/b91_mcuboot_usb_dfu.bin
+        cp ../build_blinky_usb_dfu_b91/zephyr/zephyr.signed.bin     telink_build_artifacts/b91_blinky_usb_dfu.signed.bin
+        cp ../build_ot_cli_b91/zephyr/zephyr.bin                    telink_build_artifacts/b91_ot_cli.bin
+        cp ../build_crypto_mbedtls_b91/zephyr/zephyr.bin            telink_build_artifacts/b91_mbedtls.bin
+
+    - name: Publish artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        path: |
+          telink_build_artifacts/*

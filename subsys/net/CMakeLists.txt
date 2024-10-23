@@ -19,3 +19,5 @@ add_subdirectory(lib)
 if(CONFIG_NET_CONNECTION_MANAGER)
   add_subdirectory(conn_mgr)
 endif()
+
+zephyr_library_property(ALLOW_EMPTY TRUE)

@@ -237,6 +237,12 @@ manifest:
       path: modules/hal/stm32
       groups:
         - hal
+    - name: hal_telink
+      url: https://github.com/telink-semi/hal_telink
+      revision: 9e86abb71b179007fc9a1fa03e84dd354b77b560
+      path: modules/hal/telink
+      groups:
+        - hal
     - name: hal_ti
       revision: 2e7b95ad079e9f636884eedc6853e6ad98b85f65
       path: modules/hal/ti

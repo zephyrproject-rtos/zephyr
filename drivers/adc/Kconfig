@@ -54,6 +54,8 @@ module = ADC
 module-str = ADC
 source "subsys/logging/Kconfig.template.log_config"
 
+source "drivers/adc/Kconfig.b9x"
+
 source "drivers/adc/Kconfig.it8xxx2"
 
 source "drivers/adc/Kconfig.mcux"

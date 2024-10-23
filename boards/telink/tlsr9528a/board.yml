@@ -1,0 +1,11 @@
+boards:
+- name: tlsr9528a
+  vendor: telink
+  socs:
+  - name: telink_b92
+
+- name: tlsr9528a_retention
+  vendor: telink
+  socs:
+  - name: telink_b92
+

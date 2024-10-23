@@ -113,6 +113,12 @@ config BT_ESP32
 	help
 	  Espressif HCI bluetooth interface
 
+config BT_B9X
+	bool "Telink B9X HCI driver"
+	default y if DT_HAS_TELINK_B9X_BT_ENABLED
+	help
+	  Telink B9X HCI bluetooth interface
+
 config BT_PSOC6_BLESS
 	bool
 	default y

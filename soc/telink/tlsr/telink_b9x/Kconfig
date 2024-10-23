@@ -1,0 +1,108 @@
+# Copyright (c) 2021-2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_RISCV_TELINK_B9X
+	bool
+	select RISCV
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	select RISCV_PRIVILEGED
+	select RISCV_HAS_PLIC
+	select HAS_TELINK_DRIVERS
+	select ATOMIC_OPERATIONS_BUILTIN
+	select CPU_HAS_FPU
+	select INCLUDE_RESET_VECTOR
+	imply XIP
+	select SOC_EARLY_INIT_HOOK
+
+if SOC_RISCV_TELINK_B9X
+
+config TELINK_B92_PMP
+	bool "Support Hardware Memory Protection"
+	depends on SOC_RISCV_TELINK_B92
+	select RISCV_PMP
+	help
+		This option enables Telink B92 PMP(memory protection) module.
+
+config TELINK_B95_PMP
+	bool "Support Hardware Memory Protection"
+	depends on SOC_RISCV_TELINK_B95
+	select RISCV_PMP
+	help
+		This option enables Telink B95 PMP(memory protection) module.
+
+config TELINK_B9X_HWDSP
+	bool "Support Hardware DSP"
+	select RISCV_SOC_CONTEXT_SAVE
+
+config TELINK_B9X_PFT_ARCH
+	bool "Support performance throttling"
+	default y
+	select RISCV_SOC_CONTEXT_SAVE
+
+config TELINK_B9X_MBEDTLS_HW_ACCELERATION
+	bool "Use Telink B9x platform mbedtls HW acceleration"
+	depends on MBEDTLS
+	default y
+	help
+		This option enables Telink B9x hardware accelerated mbedtls version
+
+config TELINK_SOC_REBOOT_ON_FAULT
+	bool "Reboot system when fault happened"
+	help
+		This option enables Telink B9x chip reboot after fault.
+
+config TELINK_SOC_REBOOT_ON_FAULT_DELAY
+	int "Reboot system delay in mS"
+	depends on TELINK_SOC_REBOOT_ON_FAULT
+	default 1000
+	range 0 30000
+	help
+		This option sets Telink B91 chip reboot on fault delay in mS.
+
+config TELINK_B91_USB_SWI_DISABLE
+	bool "Don't use USB SWI interface"
+	help
+		This option disables USB SWI interface
+
+config TELINK_B9X_2_WIRE_SPI_ENABLE
+	bool "Use 2-wire SPI interface to FLASH"
+	help
+		This option enables 2-wire SPI interface to FLASH
+
+config TELINK_B9X_MALLOC_FAILED_HOOK
+	bool "Stop SW execution when system heap allocation failed"
+	default y
+	help
+		This option stops SW execution when system heap allocation failed.
+
+config SOC_SERIES_RISCV_TELINK_B9X_RETENTION
+	bool "Telink B9x SoCs retention memory layout"
+	help
+		Telink B9x SoCs retention memory layout
+
+config SOC_SERIES_RISCV_TELINK_B9X_NON_RETENTION_RAM_CODE
+	bool "Telink B9x SoCs non retention ram code"
+	depends on SOC_SERIES_RISCV_TELINK_B9X_RETENTION
+	help
+		Place Telink B9x SoCs ram code in non-retention area
+		and restore this are after each retention.
+
+config TELINK_B9X_MATTER_RETENTION_LAYOUT
+	bool "Support Matter retention layout"
+	depends on SOC_SERIES_RISCV_TELINK_B9X_RETENTION
+	help
+		This option enables support Matter retention layout
+
+config TELINK_B9X_MCUBOOT_STARTUP
+	bool "Telink B9x MCUBoot startup handler"
+	depends on MCUBOOT
+	help
+		Run Telink specific vendor code before MCUBoot
+		main process
+
+endif # SOC_RISCV_TELINK_B9X

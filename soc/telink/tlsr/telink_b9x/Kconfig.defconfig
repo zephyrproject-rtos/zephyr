@@ -1,0 +1,98 @@
+# Copyright (c) 2021-2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_RISCV_TELINK_B9X
+
+config SYS_CLOCK_EXISTS
+	default y
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32000
+
+config RISCV_SOC_INTERRUPT_INIT
+	default y
+
+config RISCV_GP
+	default y
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 11
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 12
+
+config NUM_IRQS
+	default 64 if SOC_RISCV_TELINK_B95
+	default 59
+
+config PINCTRL
+	default y
+
+config XIP
+	default n
+
+config FLASH
+	default y
+
+config STACK_SENTINEL
+	default y
+
+config THREAD_NAME
+	default y if STACK_SENTINEL
+
+config MAIN_STACK_SIZE
+	default 2048
+
+config IDLE_STACK_SIZE
+	default 1536
+
+config OPENTHREAD_RADIO_WORKQUEUE_STACK_SIZE
+	default 2048
+
+config TEST_EXTRA_STACK_SIZE
+	default 1024
+
+config COMMON_LIBC_MALLOC
+	default y
+
+config COMMON_LIBC_MALLOC_ARENA_SIZE
+	default 8192
+
+config HEAP_MEM_POOL_SIZE
+	default 4096
+
+config HAS_FLASH_LOAD_OFFSET
+	default y if BOOTLOADER_MCUBOOT
+
+config HAS_PM
+	default y
+
+config PM_DEVICE
+	default y if PM
+
+config MBEDTLS_USER_CONFIG_ENABLE
+	default y
+
+config MBEDTLS_USER_CONFIG_FILE
+	default "telink_b9x_mbedtls_user_config.h"
+
+config MBEDTLS_ENTROPY_POLL_ZEPHYR
+	default y if ENTROPY_HAS_DRIVER
+
+config MBEDTLS_ENTROPY_C
+	default y if MBEDTLS_TEST && TELINK_B9X_MBEDTLS_HW_ACCELERATION
+
+config MBEDTLS_CTR_DRBG_ENABLED
+	default y if MBEDTLS_TEST && TELINK_B9X_MBEDTLS_HW_ACCELERATION
+
+config MBEDTLS_CIPHER_AES_ENABLED
+	default y if MBEDTLS_TEST && TELINK_B9X_MBEDTLS_HW_ACCELERATION
+
+# Workaround for not being able to have commas in macro arguments
+DT_LABEL_Z_STORAGE := $(dt_nodelabel_path,storage_partition)
+
+# Set the sector count of NVS as the storage partition size divided by the sector size (4 KB)
+config SETTINGS_NVS_SECTOR_COUNT
+	default $(shell,expr $(dt_node_reg_size_int,$(DT_LABEL_Z_STORAGE),0,K) / 4)
+
+endif # SOC_RISCV_TELINK_B9X

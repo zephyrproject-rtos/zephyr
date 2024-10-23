@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2024 Telink Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	/* Short TL_Key3 (J5 pin 13) to ground (J3 pin 24, 26, 28, 30) */
+	key_pool{
+		compatible = "gpio-keys";
+
+		inp {
+			gpios = <&gpiod 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>,
+					<&gpiod 7 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+	};
+};

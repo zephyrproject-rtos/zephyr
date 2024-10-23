@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2024 Telink Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/led/led.h>
+
+/ {
+	led_strip: ws2812 {
+		compatible = "worldsemi,ws2812-gpio";
+		chain-length = <1>;
+		color-mapping = <LED_COLOR_ID_GREEN
+						LED_COLOR_ID_RED
+						LED_COLOR_ID_BLUE>;
+		gpios = <&gpiob 4 0>;
+	};
+};

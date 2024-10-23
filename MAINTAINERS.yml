@@ -4783,6 +4783,15 @@ West:
   labels:
     - "platform: STM32"
 
+"West project: hal_telink":
+  status: maintained
+  maintainers:
+    - andy-liu-telink
+  files:
+    - modules/Kconfig.telink
+  labels:
+    - "platform: Telink"
+
 "West project: hal_ti":
   status: maintained
   maintainers:

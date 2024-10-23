@@ -1,0 +1,18 @@
+# Copyright (c) 2021-2024, Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: Telink B9x UART
+
+compatible: "telink,b9x-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true

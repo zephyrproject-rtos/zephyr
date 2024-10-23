@@ -150,6 +150,8 @@ config UART_ASYNC_TO_INT_DRIVEN_RX_TIMEOUT
 
 comment "Serial Drivers"
 
+rsource "Kconfig.b9x"
+
 rsource "Kconfig.ns16550"
 
 rsource "Kconfig.mcux"

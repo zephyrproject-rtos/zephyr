@@ -163,6 +163,8 @@ config FLASH_INIT_PRIORITY
 	  priority is used unless the driver implementation has its own
 	  initialization priority
 
+source "drivers/flash/Kconfig.b9x"
+
 source "drivers/flash/Kconfig.cc13xx_cc26xx"
 
 source "drivers/flash/Kconfig.at45"

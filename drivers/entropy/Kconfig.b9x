@@ -1,0 +1,12 @@
+# Copyright (c) 2021-2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+# Telink B9x-series GPIO configuration options
+
+config ENTROPY_TELINK_B9X_TRNG
+	bool "Telink B9x-series Entropy driver"
+	default y
+	depends on DT_HAS_TELINK_B9X_TRNG_ENABLED
+	select ENTROPY_HAS_DRIVER
+	help
+	  Enable the B9x-series Entropy driver.

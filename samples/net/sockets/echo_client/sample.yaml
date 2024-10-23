@@ -78,6 +78,23 @@ tests:
       - openthread
     platform_allow: nrf52840dk/nrf52840
     filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
+  sample.net.sockets.echo_client.b9x_802154:
+    extra_args: OVERLAY_CONFIG="overlay-802154.conf"
+    platform_allow:
+      - tlsr9518adk80d
+      - tlsr9528a
+      - tlsr9258a
+  sample.net.sockets.echo_client.b9x_openthread:
+    extra_args: OVERLAY_CONFIG="overlay-ot.conf"
+    slow: true
+    tags:
+      - net
+      - openthread
+    platform_allow:
+      - tlsr9518adk80d
+      - tlsr9528a
+      - tlsr9258a
+    filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
   sample.net.sockets.echo_client.kw41z_openthread:
     extra_args: OVERLAY_CONFIG="overlay-ot.conf"
     slow: true

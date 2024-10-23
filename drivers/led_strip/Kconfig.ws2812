@@ -28,6 +28,14 @@ config WS2812_STRIP_I2S
 	  times the number of pixels. A few more for the start and end
 	  delay. The reset delay has a coarse resolution of ~20us.
 
+config WS2812_STRIP_GPIO_TELINK
+	bool "GPIO Telink driver"
+	depends on SOC_RISCV_TELINK_B9X
+	default y if DT_HAS_WORLDSEMI_WS2812_GPIO_ENABLED
+	help
+	  The GPIO driver does bit-banging with inline assembly,
+	  and only supports Telink B9X
+
 config WS2812_STRIP_GPIO
 	bool "WS2812 LED strip GPIO driver"
 	# Only an Cortex-M inline assembly implementation for the nRF91, nRF51,

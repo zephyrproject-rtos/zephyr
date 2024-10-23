@@ -1,0 +1,16 @@
+identifier: tlsr9528a
+name: Telink TLSR9528A
+type: mcu
+arch: riscv
+toolchain:
+  - cross-compile
+  - zephyr
+ram: 256
+flash: 1024
+supported:
+  - gpio
+  - i2c
+  - pwm
+  - spi
+  - netif:openthread
+vendor: telink

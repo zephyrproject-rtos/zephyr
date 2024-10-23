@@ -258,3 +258,10 @@ config HWINFO_NUMAKER_RMC
 	  Enable Nuvoton NuMaker hwinfo driver backed up by RMC
 
 endif
+
+config HWINFO_TELINK_B9X
+	bool "Telink B9x device ID"
+	default y
+	depends on SOC_RISCV_TELINK_B9X
+	help
+	  Enable Telink B9x hwinfo driver.
