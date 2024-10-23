@@ -137,6 +137,12 @@ malloc_unlock(void)
 #define malloc_unlock()
 #endif
 
+/* Define outside malloc() to make checkpatch EMBEDDED_FUNCTION_NAME happy. */
+#if defined(__GNUC__)
+#define GCC_DIAGNOSTIC_IGNORED_ANALYZER_LEAK \
+	_Pragma("GCC diagnostic ignored \"-Wanalyzer-malloc-leak\"")
+#endif
+
 void *malloc(size_t size)
 {
 	malloc_lock();
@@ -150,7 +156,17 @@ void *malloc(size_t size)
 
 	malloc_unlock();
 
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+	GCC_DIAGNOSTIC_IGNORED_ANALYZER_LEAK
+#undef GCC_DIAGNOSTIC_IGNORED_ANALYZER_LEAK
+#endif
+
 	return ret;
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 }
 
 void *aligned_alloc(size_t alignment, size_t size)
@@ -252,7 +268,16 @@ void *realloc(void *ptr, size_t requested_size)
 
 	malloc_unlock();
 
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wanalyzer-malloc-leak"
+#endif
+
 	return ret;
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 }
 
 void free(void *ptr)
