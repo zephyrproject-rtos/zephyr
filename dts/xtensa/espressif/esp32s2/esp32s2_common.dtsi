@@ -79,9 +79,28 @@
 		compatible = "simple-bus";
 		ranges;
 
-		sram0: memory@3ffb0000 {
-			compatible = "mmio-sram";
-			reg = <0x3ffb0000 0x50000>;
+		sram0_dram: memory@3ffb0000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x3ffb0000 DT_SIZE_K(32)>;
+			zephyr,memory-region = "SRAM0_DRAM";
+		};
+
+		sram1_dram: memory@3ffb8000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x3ffb8000 DT_SIZE_K(288)>;
+			zephyr,memory-region = "SRAM1_DRAM";
+		};
+
+		sram0_iram: memory@40020000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x40020000 DT_SIZE_K(32)>;
+			zephyr,memory-region = "SRAM0_IRAM";
+		};
+
+		sram1_iram: memory@40028000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x40028000 DT_SIZE_K(288)>;
+			zephyr,memory-region = "SRAM1_IRAM";
 		};
 
 		intc: interrupt-controller@3f4c2000 {

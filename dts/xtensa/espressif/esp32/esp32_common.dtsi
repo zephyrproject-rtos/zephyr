@@ -94,9 +94,28 @@
 	};
 
 	soc {
-		sram0: memory@3ffb0000 {
-			compatible = "mmio-sram";
-			reg = <0x3FFB0000 0x2c200>;
+		sram1_dram: memory@3ffe0000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x3ffe0000 DT_SIZE_K(128)>;
+			zephyr,memory-region = "SRAM1_DRAM";
+		};
+
+		sram2_dram: memory@3ffae000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x3ffae000 DT_SIZE_K(200)>;
+			zephyr,memory-region = "SRAM2_DRAM";
+		};
+
+		sram0_iram: memory@40070000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x40070000 DT_SIZE_K(192)>;
+			zephyr,memory-region = "SRAM0_IRAM";
+		};
+
+		sram1_iram: memory@400a0000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x400a0000 DT_SIZE_K(128)>;
+			zephyr,memory-region = "SRAM1_IRAM";
 		};
 
 		ipmmem0: memory@3ffe5230 {
