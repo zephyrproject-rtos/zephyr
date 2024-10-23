@@ -337,7 +337,6 @@ endif #RISCV_PMP
 
 config PMP_STACK_GUARD
 	def_bool y
-	depends on MULTITHREADING
 	depends on HW_STACK_PROTECTION
 
 config PMP_STACK_GUARD_MIN_SIZE
