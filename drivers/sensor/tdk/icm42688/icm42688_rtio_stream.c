@@ -130,7 +130,7 @@ static void icm42688_fifo_count_cb(struct rtio *r, const struct rtio_sqe *sqe, v
 	read_len = pkts * packet_size;
 	((struct icm42688_fifo_data *)buf)->fifo_count = read_len;
 
-	__ASSERT_NO_MSG(read_len % pkt_size == 0);
+	__ASSERT_NO_MSG(read_len % packet_size == 0);
 
 	uint8_t *read_buf = buf + sizeof(hdr);
 
