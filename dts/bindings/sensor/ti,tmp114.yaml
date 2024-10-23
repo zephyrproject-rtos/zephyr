@@ -6,3 +6,24 @@ description: Texas Instruments TMP114 temperature sensor
 compatible: "ti,tmp114"
 
 include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  sample-frequency:
+    type: int
+    default: 4000000
+    description: |
+      Sample frequency in micro hertz.
+      Default is power-up configuration (4Hz).
+    enum:
+      - 156000000
+      - 32000000
+      - 16000000
+      - 8000000
+      - 4000000
+      - 2000000
+      - 500000
+
+  oversampling:
+    type: boolean
+    description: |
+      Set averaging of samples.
