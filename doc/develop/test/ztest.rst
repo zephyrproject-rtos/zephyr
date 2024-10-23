@@ -234,7 +234,7 @@ To select just one of the test scenarios, run Twister with ``--scenario`` comman
 
 .. code-block:: console
 
-   ./scripts/twister --scenario tests/foo/bar/your.test.scenario.name
+   ./scripts/twister --scenario your.test.scenario.name
 
 In the command line above ``tests/foo/bar`` is the path to your test application and
 ``your.test.scenario.name`` references a test scenario defined in :file:`testcase.yaml`
