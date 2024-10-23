@@ -77,6 +77,16 @@
 			status = "okay";
 		};
 
+		uart0: uart@40010100 {
+			compatible = "realtek,rts5912-uart";
+			reg = <0x40010100 0x100>;
+			clocks = <&sccon RTS5912_SCCON_UART UART0_CLKPWR >;
+			clock-names = "uart0";
+			interrupt-parent = <&nvic>;
+			interrupts = <191 0>;
+			status = "disabled";
+		};
+
 		pinctrl: pin-controller@40090000 {
 			compatible = "realtek,rts5912-pinctrl";
 			#address-cells = <1>;
