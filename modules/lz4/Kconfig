@@ -4,8 +4,99 @@
 config ZEPHYR_LZ4_MODULE
 	bool
 
-config LZ4
+menuconfig LZ4
 	bool "Lz4 data compression and decompression"
 	help
 	  This option enables lz4 compression & decompression library
 	  support.
+if LZ4
+
+config LZ4_MEMORY_USAGE
+	int "Lz4 memory usage"
+	range 10 20
+	default 14
+	help
+	  Increasing memory usage improves compression ratio, but usually at the
+	  cost of speed, due to cache locality. Memory usage 2^value (10 -> 1KB,
+	  12 -> 4KB, 20 -> 1MB).
+
+config LZ4_DISABLE_DYNAMIC_MEMORY_ALLOCATION
+	bool "Disable dynamic memory allocation"
+	help
+	  Disable lz4 functions that use dynamic memory allocation functions.
+
+choice LZ4_HEAPMODE
+	prompt "How stateless compression functions allocate memory for their hash table"
+	default LZ4_HEAPMODE_HEAP
+
+config LZ4_HEAPMODE_STACK
+	bool "in memory stack"
+	help
+	  Allocate memory from stack (fastest).
+
+config LZ4_HEAPMODE_HEAP
+	bool "in memory heap"
+	depends on !LZ4_DISABLE_DYNAMIC_MEMORY_ALLOCATION
+	help
+	  Allocate memory from heap (requires malloc()).
+endchoice
+
+config LZ4_HIGH_COMPRESSION_VARIANT
+	bool "Lz4 high compression variant"
+	help
+	  For more compression ratio at the cost of compression speed,
+	  the High Compression variant called lz4hc is available. This variant
+	  also compresses data using the lz4 block format.
+
+if LZ4_HIGH_COMPRESSION_VARIANT
+choice LZ4HC_HEAPMODE
+	prompt "How stateless HC compression functions allocate memory for their workspace"
+	default LZ4HC_HEAPMODE_HEAP
+
+config LZ4HC_HEAPMODE_STACK
+	bool "in memory stack"
+	help
+	  Allocate memory from stack (fastest).
+
+config LZ4HC_HEAPMODE_HEAP
+	bool "in memory heap"
+	depends on !LZ4_DISABLE_DYNAMIC_MEMORY_ALLOCATION
+	help
+	  Allocate memory from heap (requires malloc()).
+endchoice
+endif
+
+config LZ4_XX_HASH
+	bool "xxHash hashing algorithm"
+	help
+	  Build xxHash library included in lz4 sources.
+
+config LZ4_FRAME_SUPPORT
+	bool "LZ4 frame support"
+	select LZ4_XX_HASH
+	select LZ4_HIGH_COMPRESSION_VARIANT
+	help
+	  In order to produce compressed data compatible with lz4 command line
+	  utility, it's necessary to use the official interoperable frame format.
+	  This format is generated and decoded automatically by the lz4frame library.
+	  Its public API is described in lib/lz4frame.h.
+
+if LZ4_FRAME_SUPPORT
+choice LZ4F_HEAPMODE
+	prompt "Control how LZ4F_compressFrame() allocates the Compression State"
+	default LZ4F_HEAPMODE_STACK
+
+config LZ4F_HEAPMODE_STACK
+	bool "in memory stack"
+	help
+	  Allocate memory from stack (fastest).
+
+config LZ4F_HEAPMODE_HEAP
+	bool "in memory heap"
+	depends on !LZ4_DISABLE_DYNAMIC_MEMORY_ALLOCATION
+	help
+	  Allocate memory from heap (requires malloc()).
+endchoice
+endif
+
+endif
