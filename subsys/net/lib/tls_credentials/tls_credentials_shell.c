@@ -57,6 +57,32 @@ static const struct cred_type_string type_strings[] = {
 	{"PSK_ID",		TLS_CREDENTIAL_PSK_ID}
 };
 
+struct keygen_type_string {
+	char *name;
+	enum tls_credential_keygen_type type;
+};
+
+/* The first entry in each credential type group will be used for human-readable shell
+ * output. The last will be used for compact shell output. The rest are accepted synonyms.
+ */
+static const struct keygen_type_string keygen_type_strings[] = {
+	{"DEFAULT",		TLS_CREDENTIAL_KEYGEN_DEFAULT},
+	{"DEF",			TLS_CREDENTIAL_KEYGEN_DEFAULT},
+
+	{"EXISTING",		TLS_CREDENTIAL_KEYGEN_EXISTING},
+	{"EX",			TLS_CREDENTIAL_KEYGEN_EXISTING},
+
+	{"SECP256R1",		TLS_CREDENTIAL_KEYGEN_SECP256R1},
+
+	{"SECP384R1",		TLS_CREDENTIAL_KEYGEN_SECP384R1},
+
+	{"SECP521R1",		TLS_CREDENTIAL_KEYGEN_SECP521R1},
+
+	{"X25519",		TLS_CREDENTIAL_KEYGEN_X25519},
+
+	{"X448",		TLS_CREDENTIAL_KEYGEN_X448},
+};
+
 #define ANY_KEYWORD "any"
 
 /* This is so that we can output base64 in chunks of this length if necessary */
@@ -266,6 +292,31 @@ static int shell_parse_cred_type(const struct shell *sh, char *arg, enum tls_cre
 
 	return -EINVAL;
 }
+
+
+
+/* Attempt to parse a command line argument into a key type.
+ * TLS_CREDENTIAL_NONE is returned if ANY_KEYWORD is provided.
+ */
+static int shell_parse_keygen_type(const struct shell *sh, char *arg,
+				   enum tls_credential_keygen_type *out)
+{
+	/* Scan over predefined type strings, and return the corresponding
+	 * key type if one is found
+	 */
+	for (int i = 0; i < ARRAY_SIZE(keygen_type_strings); i++) {
+		if (strcasecmp(arg, keygen_type_strings[i].name) == 0) {
+			*out = keygen_type_strings[i].type;
+			return 0;
+		}
+	}
+
+	/* No matches found, it's invalid. */
+	shell_fprintf(sh, SHELL_ERROR, "%s is not a valid keygen type.\n", arg);
+
+	return -EINVAL;
+}
+
 
 /* Parse a backend specifier argument
  * Right now, only a single backend is supported, so this is serving simply as a reserved argument.
@@ -820,8 +871,7 @@ cleanup:
 	return 0;
 }
 
-//TODO: Command functions conditionally enabled
-
+#if defined(CONFIG_TLS_CREDENTIAL_KEYGEN)
 /* Generates a private/public keypair, stores the private key in the credential store, and
  * outputs the public key in base-64-encoded ASN.1 DER format.
  * (X.509 SubjectPublicKeyInfo entry. See RFC5280)
@@ -853,8 +903,15 @@ static int tls_cred_cmd_keygen(const struct shell *sh, size_t argc, char *argv[]
 		goto cleanup;
 	}
 
-	//TODO Keygen type parsing
-	type = TLS_CREDENTIAL_KEYGEN_DEFAULT;
+	type = shell_parse_keygen_type(sh, argv[3]);
+	if (err) {
+		goto cleanup;
+	}
+
+	if (type == TLS_CREDENTIAL_KEYGEN_EXISTING) {
+		shell_fprintf(sh, SHELL_ERROR, "Cannot generate key of type EXISTING.\n");
+		goto cleanup;
+	}
 
 	/* Check whether the sectag already has a private key. */
 	if (credential_get(sectag, TLS_CREDENTIAL_PRIVATE_KEY)) {
@@ -903,12 +960,27 @@ cleanup:
 
 	return err;
 }
+#else /* defined(CONFIG_TLS_CREDENTIAL_KEYGEN)*/
+static int tls_cred_cmd_keygen(const struct shell *sh, size_t argc, char *argv[])
+{
+	shell_fprintf(sh, SHELL_ERROR, "Private key generation not supported by this build.\n");
+}
+#endif /* defined(CONFIG_TLS_CREDENTIAL_KEYGEN)*/
 
-/* Generates a private/public keypair, stores the private key in the credential store, and
- * outputs a PKCS#10 CSR in base-64-encoded DER format.
+#if defined(CONFIG_TLS_CREDENTIAL_CSR)
+/*
+ * Generates a Certificate Signing Request (CSR) based on the specified private key sec tag.
  *
- * The storage format for the private key depends on the TLS Credentials back-end in use.
- * For some back-ends, CSR may be unsupported, or the stored private key may not be retrievable.
+ * Optionally generates (and stores) a private key for this purpose, if
+ * TLS_CREDENTIAL_KEYGEN_EXISTING is selected. The storage format for the private key depends on
+ * the TLS Credentials back-end in use. For some backents, the stored private key may not be
+ * retrievable.
+ *
+ * The CSR will be output as base-64-encoded ASN.1 DER output compliant with PKCS#10.
+ * (see RFC 2986.)
+ *
+ * For some back-ends, CSR may be unsupported.
+ *
  * See the tls_credential_csr implementation of the back-end of interest for specifics.
  */
 static int tls_cred_cmd_csr(const struct shell *sh, size_t argc, char *argv[])
@@ -941,8 +1013,7 @@ static int tls_cred_cmd_csr(const struct shell *sh, size_t argc, char *argv[])
 	 */
 	dname = argv[3];
 
-	//TODO Keygen type parsing
-	type = TLS_CREDENTIAL_KEYGEN_DEFAULT;
+	type = shell_parse_keygen_type(sh, argv[4]);
 
 	/* Check whether the sectag already has a private key. */
 	if (credential_get(sectag, TLS_CREDENTIAL_PRIVATE_KEY)) {
@@ -991,6 +1062,12 @@ cleanup:
 
 	return err;
 }
+#else /* defined(CONFIG_TLS_CREDENTIAL_CSR)*/
+static int tls_cred_cmd_csr(const struct shell *sh, size_t argc, char *argv[])
+{
+	shell_fprintf(sh, SHELL_ERROR, "CSR generation not supported by this build.\n");
+}
+#endif /* defined(CONFIG_TLS_CREDENTIAL_CSR)*/
 
 SHELL_STATIC_SUBCMD_SET_CREATE(tls_cred_cmds,
 	SHELL_CMD_ARG(buf, NULL, "Buffer in credential data so it can be added.",
@@ -1001,13 +1078,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(tls_cred_cmds,
 		      tls_cred_cmd_del, 3, 0),
 	SHELL_CMD_ARG(get, NULL, "Retrieve the contents of a TLS credential",
 		      tls_cred_cmd_get, 4, 0),
-
-	//TODO: Make these conditionally enabled?
 	SHELL_CMD_ARG(keygen, NULL, "Generate private/public keypair",
 		      tls_cred_cmd_keygen, 4, 0),
 	SHELL_CMD_ARG(csr, NULL, "Generate CSR",
 		      tls_cred_cmd_csr, 5, 0),
-
 	SHELL_CMD_ARG(list, NULL, "List stored TLS credentials, optionally filtering by type "
 				  "or sectag.",
 		      tls_cred_cmd_list, 1, 2),

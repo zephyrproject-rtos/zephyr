@@ -67,7 +67,6 @@ To add a TLS credential using data provided with the same command, use:
 
    cred add <SECTAG> <TYPE> <BACKEND> <FORMAT> <DATA>
 
-
 Arguments
 ---------
 
@@ -80,6 +79,15 @@ Arguments
    "``<BACKEND>``", "Reserved. Must always be ``DEFAULT`` (case-insensitive)."
    "``<FORMAT>``", "Specifies the storage format of the provided credential. See :ref:`tls_credentials_shell_data_formats` for valid values."
    "``<DATA>``", "If provided, this argument will be used as the credential data, instead of any data in the credential buffer. Can be either text, or base64-encoded binary."
+
+Example
+-------
+
+For example, to add a credential to sectag ``1234``, of type ``CA``, using the default backend, and with the credential buffer in ``BINT`` format:
+
+.. code-block:: shell
+
+   cred add 1234 CA DEFAULT BINT
 
 .. _tls_credentials_shell_del_cred:
 
@@ -107,6 +115,15 @@ Arguments
    "``<SECTAG>``", "The sectag of the credential to delete. Can be any non-negative integer."
    "``<TYPE>``", "The type of credential to delete. See :ref:`tls_credentials_shell_cred_types` for valid values."
 
+Example
+-------
+
+For example, to delete the credential of type ``CA`` stored in sectag ``1234``:
+
+.. code-block:: shell
+
+   cred del 1234 CA
+
 .. _tls_credentials_shell_get_cred:
 
 Get Credential Contents (``get``)
@@ -132,7 +149,97 @@ Arguments
 
    "``<SECTAG>``", "The sectag of the credential to get. Can be any non-negative integer."
    "``<TYPE>``", "The type of credential to get. See :ref:`tls_credentials_shell_cred_types` for valid values."
+   "``<BACKEND>``", "Reserved. Must always be ``DEFAULT`` (case-insensitive)."
    "``<FORMAT>``", "Specifies the retrieval format for the provided credential. See :ref:`tls_credentials_shell_data_formats` for valid values."
+
+Example
+-------
+
+For example, to retrieve the credential of type ``CA`` stored in sectag ``1234``, assuming it was originally stored in ``BINT`` format:
+
+.. code-block:: shell
+
+   cred get 1234 CA BINT
+
+Output
+------
+
+The contents of the selected credential will be output as a base-64-encoded :ref:`data block <tls_credentials_shell_data_blocks>`.
+
+[TODO EXAMPLE]
+
+.. _tls_credentials_shell_keygen:
+
+Generate Private Key (``keygen``)
+=================================
+
+Description
+
+Usage
+-----
+
+Arguments
+---------
+
+Example
+-------
+
+Output
+------
+
+.. _tls_credentials_shell_csr:
+
+Generate Certificate Signing Request (``csr``)
+==============================================
+
+Generate a Certificate Signing Request (CSR) based on the specified private key sectag.
+
+If supported, and the specified sectag has no private key, optionally generate a private key of the specified type at the specified sectag for this purpose.
+In this case, the :ref:`storage format <tls_credentials_shell_data_formats>` needed to retrieve the stored private key will depend on the TLS Credentials backend in use.
+
+Usage
+-----
+
+To generate a Certificate Signing Request based on an existing private key, use:
+
+.. code-block:: shell
+
+   cred csr <SECTAG> <BACKEND> <DNAME> EXISTING
+
+To generate a Certificate Signing Request based on a brand new private key, use:
+.. code-block:: shell
+
+   cred csr <SECTAG> <BACKEND> <DNAME> <KEYGEN_TYPE>
+
+Arguments
+---------
+
+.. csv-table::
+   :header: "Argument", "Description"
+   :widths: 15 85
+
+   "``<SECTAG>``", "The sectag of the private key to use. Can be any non-negative integer."
+   "``<BACKEND>``", "Reserved. Must always be ``DEFAULT`` (case-insensitive)."
+   "``<DNAME>``", "The distinguished name to include in the CSR. Can be any RFC 4514 Distinguished Name string. For example: \"C=US,ST=CA,O=Linux Foundation,CN=Zephyr RTOS Device 1\""
+   "``<KEYGEN_TYPE>``", "The type of key to generate. See :ref:`tls_credentials_shell_keygen_types` for valid values."
+
+Output
+------
+
+The output will be a base-64-encoded :ref:`data block <tls_credentials_shell_data_blocks>` containing the generated CSR in ``PKCS#10`` / ``ASN.1`` format (see RFC 2986).
+
+Examples
+--------
+
+For example, to generate a CSR based on the existing private key in ``1234``, with distinguished name :
+
+.. code-block:: shell
+
+   cred get 1234 CA BINT
+
+For example:
+
+[TODO EXAMPLE]
 
 .. _tls_credentials_shell_list_cred:
 
@@ -257,3 +364,29 @@ For example:
   This is required because Zephyr does not support multi-line strings in the shell.
   Otherwise, the ``STRT`` format could be used for this purpose without base64 encoding.
   It is possible to use ``BIN`` instead if you manually encode a NULL terminator into the base64.
+
+.. _tls_credentials_shell_data_blocks:
+
+Data Block Output
+*****************
+
+Large binary payloads are output in "data-blocks". These are base-64-encoded, fixed-character-width
+blocks of printed text, representing an underlying binary buffer of some sort.
+
+The represented binary buffer could be anything. For example:
+- It could be raw ASN.1 binary (such as in the case of :ref:`CSR gen <tls_credentials_shell_csr>`).
+- It could be plain text (still encoded as base-64).
+- It could even be be ``PEM`` (a format which itself contains mostly base-64) re-encoded as base-64 (thus making the output base-64-encoded base64).
+
+This is motivated by the desire for a consistent, machine-readable format for arbitrary binary payloads, whether or not the underlying payload may be itself machine or human-readable.
+
+To improve machine readability on deferred serial backends, each line of the output block is always prefixed with a special start-line tag, and the completed block is concluded by an end-block tag on a new line.
+
+Both of these tags, along with the width of the output blocks are customizable:
+- The start-line tag defaults to ``#CSH: ``, and is customized by the :kconfig:option:`CONFIG_TLS_CREDENTIALS_SHELL_BLK_PREFIX` Kconfig option.
+- The end-block tag defaults to ``#CSH-END``, and is customized by the :kconfig:option:`CONFIG_TLS_CREDENTIALS_SHELL_BLK_END` Kconfig option.
+- The block character width is customized by the :kconfig:option:`CONFIG_TLS_CREDENTIALS_SHELL_CRED_OUTPUT_WIDTH` Kconfig option.
+
+Here is an example of some data output by default settings:
+
+[TODO EXAMPLE]
