@@ -69,6 +69,7 @@ static void reset_internal_request(struct coap_client_internal_request *request)
 	request->offset = 0;
 	request->last_id = 0;
 	request->last_response_id = -1;
+	request->request_ongoing = false;
 	reset_block_contexts(request);
 }
 
@@ -426,6 +427,7 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 			  &client->address, client->socklen);
 	if (ret < 0) {
 		LOG_ERR("Transmission failed: %d", errno);
+		reset_internal_request(internal_req);
 	} else {
 		/* Do not return the number of bytes sent */
 		ret = 0;
