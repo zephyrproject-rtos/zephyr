@@ -6,7 +6,7 @@
 #define DT_DRV_COMPAT cypress_psoc6_uart
 
 /** @file
- * @brief UART driver for Cypress PSoC6 MCU family.
+ * @brief UART driver for Cypress PSOC 6 MCU family.
  *
  * Note:
  * - Error handling is not implemented.
