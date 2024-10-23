@@ -162,6 +162,8 @@ Boards & SoC Support
   * Removed the ``nrf54l15pdk`` board, use :ref:`nrf54l15dk_nrf54l15` instead.
   * PHYTEC: ``mimx8mp_phyboard_pollux`` has been renamed to :ref:`phyboard_pollux<phyboard_pollux>`,
     with the old name marked as deprecated.
+  * PHYTEC: ``mimx8mm_phyboard_polis`` has been renamed to :ref:`phyboard_polis<phyboard_polis>`,
+    with the old name marked as deprecated.
 
 * Added support for the following shields:
 

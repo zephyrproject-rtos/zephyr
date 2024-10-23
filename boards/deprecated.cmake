@@ -365,7 +365,7 @@ set(mimx8mm_evk_a53_smp_DEPRECATED
     imx8mm_evk/mimx8mm6/a53/smp
 )
 set(mimx8mm_phyboard_polis_DEPRECATED
-    mimx8mm_phyboard_polis/mimx8mm6/m4
+    phyboard_polis/mimx8mm6/m4
 )
 set(mimx8mn_evk_a53_DEPRECATED
     imx8mn_evk/mimx8mn6/a53
@@ -912,4 +912,7 @@ set(yd_esp32_DEPRECATED
 )
 set(mimx8mp_phyboard_pollux/mimx8ml8/m7_DEPRECATED
     phyboard_pollux/mimx8ml8/m7
+)
+set(mimx8mm_phyboard_polis/mimx8mm6/m4_DEPRECATED
+    phyboard_polis/mimx8mm6/m4
 )

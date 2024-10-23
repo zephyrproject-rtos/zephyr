@@ -7,11 +7,11 @@
 /dts-v1/;
 
 #include <nxp/nxp_imx8mm_m4.dtsi>
-#include "mimx8mm_phyboard_polis-pinctrl.dtsi"
+#include "phyboard_polis-pinctrl.dtsi"
 
 / {
-	model = "Phyboard Polis NXP i.MX8M Mini";
-	compatible = "nxp,mimx8mm_phyboard_polis";
+	model = "phyBOARD-Polis i.MX8M Mini";
+	compatible = "nxp,phyboard_polis";
 
 	aliases {
 		uart-4 = &uart4;

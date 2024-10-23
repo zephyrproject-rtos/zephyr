@@ -4,8 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: mimx8mm_phyboard_polis/mimx8mm6/m4
-name: Phyboard Polis i.MX8M Mini
+identifier: phyboard_polis/mimx8mm6/m4
+name: phyBOARD-Polis i.MX8M Mini
 type: mcu
 arch: arm
 ram: 128
