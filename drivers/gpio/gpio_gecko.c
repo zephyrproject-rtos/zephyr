@@ -358,6 +358,19 @@ static void gpio_gecko_common_isr(const struct device *dev)
 	}
 }
 
+#ifdef CONFIG_GPIO_GET_WAKEUP_SOURCE
+static int gpio_gecko_get_wakeup_source(const struct device *dev, uint32_t *wakeup_source)
+{
+	if (!wakeup_source) {
+		return -EFAULT;
+	}
+
+	*wakeup_source = GPIO_EM4GetPinWakeupCause();
+
+	return 0;
+}
+#endif /* CONFIG_GPIO_GET_WAKEUP_SOURCE */
+
 static const struct gpio_driver_api gpio_gecko_driver_api = {
 	.pin_configure = gpio_gecko_configure,
 #ifdef CONFIG_GPIO_GET_CONFIG
@@ -370,6 +383,9 @@ static const struct gpio_driver_api gpio_gecko_driver_api = {
 	.port_toggle_bits = gpio_gecko_port_toggle_bits,
 	.pin_interrupt_configure = gpio_gecko_pin_interrupt_configure,
 	.manage_callback = gpio_gecko_manage_callback,
+#ifdef CONFIG_GPIO_GET_WAKEUP_SOURCE
+	.get_wakeup_source = gpio_gecko_get_wakeup_source,
+#endif /* CONFIG_GPIO_GET_WAKEUP_SOURCE */
 };
 
 static const struct gpio_driver_api gpio_gecko_common_driver_api = {
