@@ -1,0 +1,26 @@
+#
+# Copyright (c) 2021, Leonard Pollak
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sensirion SDP3x differential pressure
+
+compatible: "sensirion,sdp3x"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  mesure-mode:
+    type: int
+    required: true
+    description: |
+      Repeatability of the T/RH Measurement
+      0 -> Mass flow | Average till read (periodic)
+      1 -> Mass flow | None - Update rate 0.5ms (periodic) | Clock streching (One shot)
+      2 -> Differential pressure | Average till read (periodic)
+      3 -> Differential pressure | None - Update rate 0.5ms (periodic) | Clock streching (One shot)
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
