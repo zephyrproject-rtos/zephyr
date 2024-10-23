@@ -1,0 +1,7 @@
+# Copyright (c) 2024 TSI
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_TSI
+	select SOC_PART_NUMBER_MIMX8ML8DVNLZ
+	select SOC_SKYP_M85 if BOARD_TSI_SKYP_M85
+	select SOC_MIMX8ML8_ADSP if BOARD_TSI_SKYP_TXE
