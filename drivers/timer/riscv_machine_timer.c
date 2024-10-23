@@ -238,7 +238,7 @@ uint64_t sys_clock_cycle_get_64(void)
 	return mtime() << CONFIG_RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER;
 }
 
-static int sys_clock_driver_init(void)
+int init_sys_clock_driver(void)
 {
 
 	set_divider();
@@ -258,6 +258,3 @@ void smp_timer_init(void)
 	irq_enable(TIMER_IRQN);
 }
 #endif
-
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

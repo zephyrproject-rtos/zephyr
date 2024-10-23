@@ -234,7 +234,7 @@ uint64_t sys_clock_cycle_get_64(void)
 	return AONRTCCurrent64BitValueGet() / RTC_COUNTS_PER_CYCLE;
 }
 
-static int sys_clock_driver_init(void)
+int init_sys_clock_driver(void)
 {
 
 	rtc_last = 0U;
@@ -250,6 +250,3 @@ static int sys_clock_driver_init(void)
 
 	return 0;
 }
-
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

@@ -141,7 +141,7 @@ void sys_clock_disable(void)
 	systimer_hal_deinit(&systimer_hal);
 }
 
-static int sys_clock_driver_init(void)
+int init_sys_clock_driver(void)
 {
 	int ret;
 
@@ -166,6 +166,3 @@ static int sys_clock_driver_init(void)
 	set_systimer_alarm(last_count + CYC_PER_TICK);
 	return 0;
 }
-
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_1,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

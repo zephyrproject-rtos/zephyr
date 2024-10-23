@@ -161,6 +161,17 @@ uint32_t sys_clock_cycle_get_32(void);
 uint64_t sys_clock_cycle_get_64(void);
 
 /**
+ * @cond INTERNAL_HIDDEN
+ * @brief Initialize system clock driver
+ * @note This function is called by the kernel during system initialization.
+ *       It should not be called by application code.
+ * @return 0 on success, negative errno code on fail
+ * @endcond
+ */
+int init_sys_clock_driver(void);
+
+
+/**
  * @}
  */
 

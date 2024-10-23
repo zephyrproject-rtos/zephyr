@@ -403,7 +403,7 @@ void stm32_lptim_wait_ready(void)
 #endif
 }
 
-static int sys_clock_driver_init(void)
+int init_sys_clock_driver(void)
 {
 	uint32_t count_per_tick;
 	int err;
@@ -573,7 +573,7 @@ void stm32_clock_control_standby_exit(void)
 	if (clock_control_get_status(clk_ctrl,
 				     (clock_control_subsys_t) &lptim_clk[0])
 				     != CLOCK_CONTROL_STATUS_ON) {
-		sys_clock_driver_init();
+		init_sys_clock_driver();
 	}
 #endif /* CONFIG_STM32_LPTIM_STDBY_TIMER */
 }
@@ -623,6 +623,3 @@ void sys_clock_idle_exit(void)
 	}
 #endif /* CONFIG_STM32_LPTIM_STDBY_TIMER */
 }
-
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

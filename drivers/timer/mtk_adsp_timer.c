@@ -151,7 +151,7 @@ static void timer_isr(__maybe_unused void *arg)
 	}
 }
 
-static int mtk_adsp_timer_init(void)
+int init_sys_clock_driver(void)
 {
 	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(ostimer0)), 0, timer_isr, 0, 0);
 	irq_enable(DT_IRQN(DT_NODELABEL(ostimer0)));
@@ -176,5 +176,3 @@ static int mtk_adsp_timer_init(void)
 
 	return 0;
 }
-
-SYS_INIT(mtk_adsp_timer_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

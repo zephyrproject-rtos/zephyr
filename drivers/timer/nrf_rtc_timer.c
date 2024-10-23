@@ -724,7 +724,7 @@ void sys_clock_disable(void)
 	NVIC_ClearPendingIRQ(RTC_IRQn);
 }
 
-static int sys_clock_driver_init(void)
+int init_sys_clock_driver(void)
 {
 	static const enum nrf_lfclk_start_mode mode =
 		IS_ENABLED(CONFIG_SYSTEM_CLOCK_NO_WAIT) ?
@@ -767,6 +767,3 @@ static int sys_clock_driver_init(void)
 
 	return 0;
 }
-
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
