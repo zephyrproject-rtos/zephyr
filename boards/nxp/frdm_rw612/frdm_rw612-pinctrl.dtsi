@@ -53,4 +53,11 @@
 			slew-rate = "ultra";
 		};
 	};
+
+	pinmux_pwm0: pinmux_pwm0 {
+		group0 {
+			pinmux = <IO_MUX_SCT_OUT_0>;
+			slew-rate = "normal";
+		};
+	};
 };
