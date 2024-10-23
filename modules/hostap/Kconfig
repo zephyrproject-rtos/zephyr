@@ -170,6 +170,23 @@ endchoice
 
 config WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA
 	bool "Crypto Platform Secure Architecture support for WiFi"
+	select MBEDTLS_PSA_CRYPTO_C
+	select MBEDTLS_USE_PSA_CRYPTO
+	select PSA_WANT_ALG_ECDH
+	select PSA_WANT_ALG_HMAC
+	select PSA_WANT_ALG_CCM
+	select PSA_WANT_ALG_CTR
+	select PSA_WANT_ALG_MD5
+	select PSA_WANT_ALG_SHA_1
+	select PSA_WANT_ALG_SHA_256
+	select PSA_WANT_ALG_SHA_224
+	select PSA_WANT_ALG_SHA_384
+	select PSA_WANT_ALG_SHA_512
+	select PSA_WANT_ALG_PBKDF2_HMAC
+	select PSA_WANT_ALG_PBKDF2_AES_CMAC_PRF_128
+	select PSA_WANT_KEY_TYPE_AES
+	select PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
+	select PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY
 	help
 	  Support Mbedtls 3.x to use PSA apis instead of legacy apis.
 
