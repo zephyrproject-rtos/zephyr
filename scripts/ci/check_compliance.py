@@ -865,6 +865,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
         grep_stdout = git("grep", "--line-number", "-I", "--null",
                           "--perl-regexp", regex, "--", ":!/doc/releases",
                           ":!/doc/security/vulnerabilities.rst",
+                          ":!/tests/kconfig/stray/test.config",
                           cwd=Path(GIT_TOP))
 
         # splitlines() supports various line terminators
