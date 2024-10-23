@@ -1,0 +1,233 @@
+#
+# ADE9153a Energy metering IC configuration options
+#
+# Copyright (c) 2024 Plentify (Pty) Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ADE9153A
+	bool "ADE9153A Energy metering IC with autocalibration"
+	default y
+	depends on DT_HAS_ADI_ADE9153A_ENABLED
+	select SPI
+	help
+	  Enable driver for ADE9153A Energy metering IC.
+
+if ADE9153A
+
+config ADE9153A_RESET_ACTIVE_TIME
+	int
+	default 100
+	help
+	  The time the reset pin will be holding down during reset.
+
+config ADE9153A_POST_RESET_DELAY
+	int
+	default 1000
+	help
+	  The delay to wait after resetting the ADE9153A
+
+config ADE9153A_AUTO_CALIBRATE
+	bool
+	default y
+	help
+	  After initialized, the sensor driver will start the autocalibration procedure.
+
+config ADE9153A_AI_PGAGAIN
+	hex
+	default "0x000A"
+	help
+	  Signal on IAN, current channel gain=16x
+
+config ADE9153A_BI_CURRENT_CHANNEL
+	bool "Use B current channel"
+
+config ADE9153A_BI_PGAGAIN
+	hex
+	default "0x000A"
+	depends on ADE9153A_BI_CURRENT_CHANNEL
+	help
+	  Signal on BI, current channel gain=16x
+
+config  ADE9153A_CONFIG0
+	hex
+	default "0x00000000"
+	prompt "Datapath settings"
+
+config  ADE9153A_CONFIG1
+	hex
+	default "0x0300"
+	prompt  "Chip settings"
+
+config  ADE9153A_CONFIG2
+	hex
+	default "0x0C00"
+	prompt  "High-pass filter corner, fc=0.625Hz"
+
+config  ADE9153A_CONFIG3
+	hex
+	default "0x0000"
+	prompt  "Peak and overcurrent settings"
+
+config  ADE9153A_ACCMODE
+	hex
+	default "0x0010"
+	prompt  "Energy accumulation modes, Bit 4, 0 for 50Hz, 1 for 60Hz"
+
+config  ADE9153A_VLEVEL
+	hex
+	default "0x002C11E8"
+	prompt  "Assuming Vnom=1/2 of fullscale"
+
+config  ADE9153A_ZX_CFG
+	hex
+	default "0x0000"
+	prompt  "ZX low-pass filter select"
+
+config  ADE9153A_MASK
+	hex
+	default "0x00000100"
+	prompt  "Enable EGYRDY interrupt"
+
+config  ADE9153A_ACT_NL_LVL
+	hex
+	default "0x000033C8"
+
+config  ADE9153A_REACT_NL_LVL
+	hex
+	default "0x000033C8"
+
+config  ADE9153A_APP_NL_LVL
+	hex
+	default "0x000033C8"
+
+config  ADE9153A_RUN_ON
+	hex
+	default "0x0001"
+	prompt  "DSP On"
+
+config  ADE9153A_COMPMODE
+	hex
+	default "0x0005"
+	prompt  "Initialize for proper operation"
+
+config  ADE9153A_VDIV_RSMALL
+	hex
+	default "0x03E8"
+	prompt  "Small resistor on board is 1kOhm=0x3E8"
+
+config  ADE9153A_EP_CFG
+	hex
+	default "0x0009"
+	prompt  "Energy accumulation configuration"
+
+config  ADE9153A_EGY_TIME
+	hex
+	default "0x0F9F"
+	prompt  "Accumulate energy for 4000 samples"
+
+config  ADE9153A_TEMP_CFG
+	hex
+	default "0x000C"
+	prompt  "Temperature sensor configuration"
+
+config  ADE9153A_SETUP_ON_STARTUP
+	bool
+	default y
+
+config  ADE9153A_ACAL_ON_STARTUP
+	bool
+	default y
+
+# Ideal Calibration Values for ADE9153A Shield Based on Sensor Values
+config  ADE9153A_CAL_IRMS_CC # shield value 0.838190 = Q31(value=7031246, shift=0)
+	int
+	default 1799999318
+	help
+	  The original default value is 0.838190. The Kconfig value is: (0.838190 * 0x7FFFFF)/(1U << shift))
+	  . In the driver the value
+	  will be recovered as follows: (1799999318 /(double) 0x7FFFFFFF)) * (1U << shift) =
+	  0.8381899999.
+
+config  ADE9153A_CAL_IRMS_CC_SHIFT
+	int
+	default 0
+
+config  ADE9153A_CAL_VRMS_CC # shield value 13.41105 = Q31(value=7031251, shift=4)
+	int
+	default 1800000660
+	help
+	  Same happens as CAL_IRMS_CC.
+
+config  ADE9153A_CAL_VRMS_CC_SHIFT
+	int
+	default 4
+	help
+	  Number used to scale the number. ADE9153A_CAL_VRMS_CC/(1U << ADE9153A_CAL_VRMS_CC_SHIFT)
+	  to keep the number inside the interval [-1.0, 1.0[. The default original value is
+	  13.41105. To make that normalized we need to use a shift of 7. The value is (13.41105/1U
+	  << 7) = 0.104773827877256.
+
+	  include <stdint.h>
+	  include <stdio.h>
+
+	  int main(int argc, char *argv[]) {
+		double original_value = 13.41105;
+		uint8_t shift = 7;
+		int64_t q_value = (original_value / (1U << shift)) * INT32_MAX; // 0x7FFFFF
+		double recovered_value = ((double)(q_value) / INT32_MAX) * (1U << shift);
+		printf("The result is %0.20lf\n", recovered_value);
+		return 0;
+	  }
+
+config  ADE9153A_CAL_POWER_CC # shield value 1508.743 = Q31(value=6179810, shift=11)
+	int
+	default 1582031699
+
+config  ADE9153A_CAL_POWER_CC_SHIFT
+	int
+	default 11
+
+config  ADE9153A_CAL_ENERGY_CC # shield value 0.858307 = Q31(value=7200000, shift=0)
+	int
+	default 1843200246
+
+config  ADE9153A_CAL_ENERGY_CC_SHIFT
+	int
+	default 0
+
+config  ADE9153A_AI_TURBO_CAL_TIME
+	int "The time spent on the current calibration in milliseconds"
+	default 2000
+
+config  ADE9153A_AV_TURBO_CAL_TIME
+	int "The time spent on the voltage calibration in milliseconds"
+	default 4000
+
+config ADE9153A_TRIGGER
+	bool
+	prompt "Trigger on"
+
+if ADE9153A_TRIGGER
+
+config ADE9153A_THREAD_STACK_SIZE
+	int
+	prompt "Trigger thread stack size."
+	default 1024
+
+config ADE9153A_THREAD_PRIORITY
+	int
+	default 4
+
+config ADE9153A_TRIGGER_IRQ
+	bool
+	default y
+	depends on GPIO
+
+config ADE9153A_TRIGGER_CF
+	bool
+	default y
+	depends on GPIO
+
+endif # ADE9153A_TRIGGER
+
+endif # ADE9153A
