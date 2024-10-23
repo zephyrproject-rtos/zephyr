@@ -5,13 +5,13 @@
 #pragma once
 
 /* LP-SRAM (16kB) memory */
-#define LPSRAM_IRAM_START  0x50000000
-#define LPSRAM_SIZE        0x4000
+#define LPSRAM_IRAM_START  DT_REG_ADDR(DT_NODELABEL(sramlp))
+#define LPSRAM_SIZE        DT_REG_SIZE(DT_NODELABEL(sramlp))
 /* HP-SRAM (512kB) memory */
-#define HPSRAM_START       0x40800000
-#define HPSRAM_SIZE        0x80000
-#define HPSRAM_DRAM_START  0x40800000
-#define HPSRAM_IRAM_START  0x40800000
+#define HPSRAM_START       DT_REG_ADDR(DT_NODELABEL(sramhp))
+#define HPSRAM_SIZE        DT_REG_SIZE(DT_NODELABEL(sramhp))
+#define HPSRAM_DRAM_START  HPSRAM_START
+#define HPSRAM_IRAM_START  HPSRAM_START
 /* ICache size is fixed to 32KB on ESP32-C6 */
 #define ICACHE_SIZE        0x8000
 
