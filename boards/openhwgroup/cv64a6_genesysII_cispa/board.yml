@@ -1,0 +1,7 @@
+# Copyright 2024 CISPA Helmholtz Center for Information Security gGmbH
+# SPDX-License-Identifier: Apache-2.0
+board:
+  name: cv64a6_genesysII_cispa
+  vendor: openhwgroup
+  socs:
+    - name: cv64a6
