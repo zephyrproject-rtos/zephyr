@@ -67,6 +67,140 @@ RESOURCES_DIR = Path(__file__).parent / "static"
 
 logger = logging.getLogger(__name__)
 
+BINDING_TYPES = {
+    "acpi": ("ACPI", "Advanced Configuration and Power Interface"),
+    "adc": ("ADC", "Analog to Digital Converter"),
+    "alh": ("ALH", "Audio Link Hub"),
+    "arc": "ARC architecture",
+    "arm": "ARM architecture",
+    "audio": "Audio",
+    "auxdisplay": "Auxiliary Display",
+    "battery": "Battery",
+    "base": "Base",
+    "bluetooth": "Bluetooth",
+    "cache": "Cache",
+    "can": ("CAN", "Controller Area Network"),
+    "charger": "Charger",
+    "clock": "Clock control",
+    "coredump": "Core dump",
+    "counter": "Counter",
+    "cpu": "CPU",
+    "crypto": "Cryptographic accelerator",
+    "dac": ("DAC", "Digital to Analog Converter"),
+    "dai": ("DAI", "Digital Audio Interface"),
+    "debug": "Debug",
+    "dfpmcch": "DFPMCCH",
+    "dfpmccu": "DFPMCCU",
+    "disk": "Disk",
+    "display": "Display",
+    "display/panel": "Display panel",
+    "dma": ("DMA", "Direct Memory Access"),
+    "dsa": ("DSA", "Distributed Switch Architecture"),
+    "edac": ("EDAC", "Error Detection and Correction"),
+    "espi": ("eSPI", "Enhanced Serial Peripheral Interface"),
+    "ethernet": "Ethernet",
+    "firmware": "Firmware",
+    "flash_controller": "Flash controller",
+    "fpga": ("FPGA", "Field Programmable Gate Array"),
+    "fs": "File system",
+    "fuel-gauge": "Fuel gauge",
+    "gnss": ("GNSS", "Global Navigation Satellite System"),
+    "gpio": ("GPIO", "General Purpose Input/Output"),
+    "haptics": "Haptics",
+    "hda": ("HDA", "High Definition Audio"),
+    "hdlc_rcp_if": "IEEE 802.15.4 HDLC RCP interface",
+    "hwinfo": "Hardware information",
+    "hwspinlock": "Hardware spinlock",
+    "i2c": ("I2C", "Inter-Integrated Circuit"),
+    "i2s": ("I2S", "Inter-IC Sound"),
+    "i3c": ("I3C", "Improved Inter-Integrated Circuit"),
+    "ieee802154": "IEEE 802.15.4",
+    "iio": ("IIO", "Industrial I/O"),
+    "input": "Input",
+    "interrupt-controller": "Interrupt controller",
+    "ipc": ("IPC", "Inter-Processor Communication"),
+    "ipm": ("IPM", "Inter-Processor Mailbox"),
+    "kscan": "Keyscan",
+    "led": ("LED", "Light Emitting Diode"),
+    "led_strip": ("LED", "Light Emitting Diode"),
+    "lora": "LoRa",
+    "mbox": "Mailbox",
+    "mdio": ("MDIO", "Management Data Input/Output"),
+    "memory-controllers": "Memory controller",
+    "memory-window": "Memory window",
+    "mfd": ("MFD", "Multi-Function Device"),
+    "mhu": ("MHU", "Mailbox Handling Unit"),
+    "net": "Networking",
+    "mipi-dbi": ("MIPI DBI", "Mobile Industry Processor Interface Display Bus Interface"),
+    "mipi-dsi": ("MIPI DSI", "Mobile Industry Processor Interface Display Serial Interface"),
+    "misc": "Miscellaneous",
+    "mm": "Memory management",
+    "mmc": ("MMC", "MultiMediaCard"),
+    "mmu_mpu": ("MMU / MPU", "Memory Management Unit / Memory Protection Unit"),
+    "modem": "Modem",
+    "mspi": "Multi-bit SPI",
+    "mtd": ("MTD", "Memory Technology Device"),
+    "wireless": "Wireless network",
+    "options": "Options",
+    "ospi": "Octal SPI",
+    "pcie": ("PCIe", "Peripheral Component Interconnect Express"),
+    "peci": ("PECI", "Platform Environment Control Interface"),
+    "phy": "PHY",
+    "pinctrl": "Pin control",
+    "pm_cpu_ops": "Power management CPU operations",
+    "power": "Power management",
+    "power-domain": "Power domain",
+    "ppc": "PPC architecture",
+    "ps2": ("PS/2", "Personal System/2"),
+    "pwm": ("PWM", "Pulse Width Modulation"),
+    "qspi": "Quad SPI",
+    "regulator": "Regulator",
+    "reserved-memory": "Reserved memory",
+    "reset": "Reset controller",
+    "retained_mem": "Retained memory",
+    "retention": "Retention",
+    "riscv": "RISC-V architecture",
+    "rng": ("RNG", "Random Number Generator"),
+    "rtc": ("RTC", "Real Time Clock"),
+    "sd": "SD",
+    "sdhc": "SDHC",
+    "sensor": "Sensors",
+    "serial": "Serial controller",
+    "shi": ("SHI", "Secure Hardware Interface"),
+    "sip_svc": ("SIP", "Service in Platform"),
+    "smbus": ("SMBus", "System Management Bus"),
+    "sound": "Sound",
+    "spi": ("SPI", "Serial Peripheral Interface"),
+    "sram": "SRAM",
+    "stepper": "Stepper",
+    "syscon": "System controller",
+    "tach": "Tachometer",
+    "tcpc": ("TCPC", "USB Type-C Port Controller"),
+    "test": "Test",
+    "timer": "Timer",
+    "timestamp": "Timestamp",
+    "usb": "USB",
+    "usb-c": "USB Type-C",
+    "uac2": "USB Audio Class 2",
+    "video": "Video",
+    "virtualization": "Virtualization",
+    "w1": "1-Wire",
+    "watchdog": "Watchdog",
+    "wifi": "Wi-Fi",
+    "xen": "Xen",
+    "xspi": ("XSPI", "Expanded Serial Peripheral Interface"),
+}
+
+BINDING_TYPE_TO_HUMAN_READABLE = {}
+for key, value in BINDING_TYPES.items():
+    if isinstance(value, tuple):
+        # For abbreviations with explanations
+        abbr, explanation = value
+        BINDING_TYPE_TO_HUMAN_READABLE[key] = nodes.abbreviation(abbr, abbr, explanation=explanation)
+    else:
+        # For simple text
+        BINDING_TYPE_TO_HUMAN_READABLE[key] = nodes.Text(value)
+
 
 class CodeSampleNode(nodes.Element):
     pass
@@ -224,6 +358,104 @@ class ConvertBoardNode(SphinxTransform):
         for node in self.document.traverse(matcher):
             self.convert_node(node)
 
+    class FindSupportedFeaturesSectionVisitor(nodes.SparseNodeVisitor):
+        def __init__(self, document, supported_features):
+            super().__init__(document)
+            self.supported_features = supported_features
+
+        def visit_section(self, node):
+            if not (node.children and node.children[0].astext() == "Supported Features"):
+                return
+
+            table = self._create_table()
+            tbody = self._create_table_body()
+            table.children[0] += tbody
+
+            # Replace section contents with title and new table
+            title = node.children[0]
+            node.clear()
+            node += title
+            node += table
+
+        def _create_table(self):
+            """Create the table structure with headers"""
+            table = nodes.table(classes=["colwidths-given"])
+            tgroup = nodes.tgroup(cols=3)
+
+            tgroup += nodes.colspec(colwidth=20, classes=["col-1"])
+            tgroup += nodes.colspec(colwidth=50)
+            tgroup += nodes.colspec(colwidth=30)
+
+            thead = self._create_header_row()
+            tgroup += thead
+
+            table += tgroup
+            return table
+
+        def _create_header_row(self):
+            """Create the table header row"""
+            thead = nodes.thead()
+            row = nodes.row()
+            headers = ["Type", "Description", "Compatible"]
+            for header in headers:
+                row += nodes.entry("", nodes.paragraph(text=header))
+            thead += row
+            return thead
+
+        def _create_table_body(self):
+            """Create the table body with feature rows"""
+            tbody = nodes.tbody()
+            sorted_features = sorted(self.supported_features.keys())
+
+            for feature in sorted_features:
+                items = list(self.supported_features[feature].items())
+                self._add_feature_rows(tbody, feature, items)
+
+            return tbody
+
+        def _add_feature_rows(self, tbody, feature, items):
+            """Add rows for a specific feature"""
+            num_items = len(items)
+
+            for i, (key, value) in enumerate(items):
+                row = nodes.row()
+
+                # Add type column only for first row of a feature
+                if i == 0:
+                    type_entry = self._create_type_entry(feature, num_items)
+                    row += type_entry
+
+                row += nodes.entry("", nodes.paragraph(text=value))
+                row += nodes.entry("", nodes.paragraph("", "", self._create_compatible_xref(key)))
+
+                tbody += row
+
+        def _create_type_entry(self, feature, rowspan):
+            """Create the type entry with proper text and rowspan"""
+            type_entry = nodes.entry(morerows=rowspan - 1)
+            type_entry += nodes.paragraph(
+                "",
+                "",
+                BINDING_TYPE_TO_HUMAN_READABLE.get(feature, nodes.Text(feature)).deepcopy(),
+            )
+            return type_entry
+
+        def _create_compatible_xref(self, key):
+            """Create a cross-reference for the compatible field"""
+            xref = addnodes.pending_xref(
+                "",
+                refdomain="std",
+                reftype="dtcompatible",
+                reftarget=key,
+                refexplicit=False,
+                refwarn=True,
+            )
+            xref += nodes.literal(text=key)
+            return xref
+
+        def unknown_visit(self, node):
+            pass
+
     def convert_node(self, node):
         parent = node.parent
         siblings_to_move = []
@@ -273,6 +505,14 @@ class ConvertBoardNode(SphinxTransform):
 
             # Replace the custom node with the new section
             node.replace_self(new_section)
+
+            # patch existing supported features section.
+            # in the future, this should (maybe) be an explicit
+            # .. zephyr:board-features:: directive instead.
+            visitsections = self.FindSupportedFeaturesSectionVisitor(
+                self.document, node["supported_features"]
+            )
+            self.document.walk(visitsections)
 
             # Remove the moved siblings from their original parent
             for sibling in siblings_to_move:
@@ -670,6 +910,7 @@ class BoardDirective(SphinxDirective):
             board_node = BoardNode(id=board_name)
             board_node["full_name"] = board["full_name"]
             board_node["vendor"] = vendors.get(board["vendor"], board["vendor"])
+            board_node["supported_features"] = board["supported_features"]
             board_node["archs"] = board["archs"]
             board_node["socs"] = board["socs"]
             board_node["image"] = board["image"]
