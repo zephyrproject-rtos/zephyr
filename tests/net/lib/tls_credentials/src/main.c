@@ -25,9 +25,9 @@ enum credential_features {
 	CF_KEYGEN_CSR
 };
 
-#if defined(CONFIG_TLS_CREDENTIAL_CSR)
+#if defined(CONFIG_TLS_CREDENTIALS_CSR)
 static char dname_buf[100];
-#endif /* defined(CONFIG_TLS_CREDENTIAL_CSR) */
+#endif /* defined(CONFIG_TLS_CREDENTIALS_CSR) */
 
 #define UNUSED_TAG	CONFIG_TLS_MAX_CREDENTIALS_NUMBER
 #define INVALID_TAG	(CONFIG_TLS_MAX_CREDENTIALS_NUMBER + 1)
@@ -238,7 +238,7 @@ static void test_credential_delete(void)
 }
 
 
-#if defined(CONFIG_TLS_CREDENTIAL_CSR) || defined(CONFIG_TLS_CREDENTIAL_KEYGEN)
+#if defined(CONFIG_TLS_CREDENTIALS_CSR) || defined(CONFIG_TLS_CREDENTIALS_KEYGEN)
 
 #include <mbedtls/pk.h>
 #include <mbedtls/x509_csr.h>
@@ -257,10 +257,10 @@ static int tls_rng(void *ctx, unsigned char *buf, size_t len)
 	return 0;
 }
 
-#endif /* defined(CONFIG_TLS_CREDENTIAL_CSR) || defined(CONFIG_TLS_CREDENTIAL_KEYGEN) */
+#endif /* defined(CONFIG_TLS_CREDENTIALS_CSR) || defined(CONFIG_TLS_CREDENTIALS_KEYGEN) */
 
 
-#if defined(CONFIG_TLS_CREDENTIAL_KEYGEN)
+#if defined(CONFIG_TLS_CREDENTIALS_KEYGEN)
 
 /* Check a private and public key pair, ensure they match. */
 static bool validate_keypair(char *priv, size_t priv_len, char *pub, size_t pub_len)
@@ -289,15 +289,15 @@ static bool validate_keypair(char *priv, size_t priv_len, char *pub, size_t pub_
 	return result;
 }
 
-#else /* defined(CONFIG_TLS_CREDENTIAL_KEYGEN) */
+#else /* defined(CONFIG_TLS_CREDENTIALS_KEYGEN) */
 static bool validate_keypair(char *priv, size_t priv_len, char *pub, size_t pub_len)
 {
 	zassert_unreachable("Invalid call to validate_keypair. Bad test?");
 	return false;
 }
-#endif /* defined(CONFIG_TLS_CREDENTIAL_KEYGEN) */
+#endif /* defined(CONFIG_TLS_CREDENTIALS_KEYGEN) */
 
-#if defined(CONFIG_TLS_CREDENTIAL_CSR)
+#if defined(CONFIG_TLS_CREDENTIALS_CSR)
 
 /* Test that CSR works as expected, with or without keygen.
  * This indirectly covers keygen validity testing.
@@ -492,13 +492,13 @@ static void test_csr(enum credential_features feat)
 	}
 }
 
-#else /* defined(CONFIG_TLS_CREDENTIAL_CSR) */
+#else /* defined(CONFIG_TLS_CREDENTIALS_CSR) */
 
 static void test_csr(enum credential_features feat)
 {
 	zassert_unreachable("Invalid call to test_csr. Bad test?");
 }
-#endif /* defined(CONFIG_TLS_CREDENTIAL_CSR) */
+#endif /* defined(CONFIG_TLS_CREDENTIALS_CSR) */
 
 /* Check whether CSR or keygen (or both) with a given buffer size causes buffer overflow.
  * Returns true if overflow detected.
@@ -556,7 +556,7 @@ ZTEST(tls_credentials, test_tls_credentials_main)
 {
 	/* Don't bother with main tests if we are doing a CSR/Keygen configuration edge-case
 	 * test. */
-	if (IS_ENABLED(CONFIG_TLS_CREDENTIAL_CSR) != IS_ENABLED(CONFIG_TLS_CREDENTIAL_KEYGEN)) {
+	if (IS_ENABLED(CONFIG_TLS_CREDENTIALS_CSR) != IS_ENABLED(CONFIG_TLS_CREDENTIALS_KEYGEN)) {
 		ztest_test_skip();
 	}
 
@@ -569,15 +569,15 @@ ZTEST(tls_credentials, test_tls_credentials_main)
 /* Test that CSR+Keygen works, if both are enabled. */
 ZTEST(tls_credentials, test_tls_credentials_csr_keygen)
 {
-	Z_TEST_SKIP_IFNDEF(CONFIG_TLS_CREDENTIAL_CSR);
-	Z_TEST_SKIP_IFNDEF(CONFIG_TLS_CREDENTIAL_KEYGEN);
+	Z_TEST_SKIP_IFNDEF(CONFIG_TLS_CREDENTIALS_CSR);
+	Z_TEST_SKIP_IFNDEF(CONFIG_TLS_CREDENTIALS_KEYGEN);
 	test_csr(CF_KEYGEN_CSR);
 }
 
 /* Test that CSR works with existing key, if enabled. */
 ZTEST(tls_credentials, test_tls_credentials_csr_preexisting)
 {
-	Z_TEST_SKIP_IFNDEF(CONFIG_TLS_CREDENTIAL_CSR);
+	Z_TEST_SKIP_IFNDEF(CONFIG_TLS_CREDENTIALS_CSR);
 	test_csr(CF_CSR);
 }
 
@@ -586,7 +586,7 @@ ZTEST(tls_credentials, test_tls_credentials_csr_preexisting_overflow)
 {
 	int ret;
 
-	Z_TEST_SKIP_IFNDEF(CONFIG_TLS_CREDENTIAL_CSR);
+	Z_TEST_SKIP_IFNDEF(CONFIG_TLS_CREDENTIALS_CSR);
 
 	/* Set up private key */
 	ret = tls_credential_add(CSR_TAG_A, TLS_CREDENTIAL_PRIVATE_KEY, test_key, sizeof(test_key));
@@ -604,8 +604,8 @@ ZTEST(tls_credentials, test_tls_credentials_csr_preexisting_overflow)
 /* Test for CSR buffer overflow (keygen)*/
 ZTEST(tls_credentials, test_tls_credentials_csr_keygen_overflow)
 {
-	Z_TEST_SKIP_IFNDEF(CONFIG_TLS_CREDENTIAL_CSR);
-	Z_TEST_SKIP_IFNDEF(CONFIG_TLS_CREDENTIAL_KEYGEN);
+	Z_TEST_SKIP_IFNDEF(CONFIG_TLS_CREDENTIALS_CSR);
+	Z_TEST_SKIP_IFNDEF(CONFIG_TLS_CREDENTIALS_KEYGEN);
 
 	/* Test with valid CSR buffer size. */
 	zassert_false(test_overflow(CF_KEYGEN_CSR, 250),
@@ -627,7 +627,7 @@ ZTEST(tls_credentials, test_tls_credentials_csr_keygen_overflow)
 /* Test for Keygen buffer overflow */
 ZTEST(tls_credentials, test_tls_credentials_keygen_overflow)
 {
-	Z_TEST_SKIP_IFNDEF(CONFIG_TLS_CREDENTIAL_KEYGEN);
+	Z_TEST_SKIP_IFNDEF(CONFIG_TLS_CREDENTIALS_KEYGEN);
 
 	/* Test with valid keygen buffer size. */
 	zassert_false(test_overflow(CF_KEYGEN, 140),
@@ -648,7 +648,7 @@ ZTEST(tls_credentials, test_tls_credentials_csr_disabled)
 	int ret;
 	size_t csr_len = sizeof(csr_buf);
 
-	Z_TEST_SKIP_IFDEF(CONFIG_TLS_CREDENTIAL_CSR);
+	Z_TEST_SKIP_IFDEF(CONFIG_TLS_CREDENTIALS_CSR);
 
 	/* Silence warnings due to tls_credential_csr possibly being an empty macro. */
 	(void) csr_len;
@@ -672,8 +672,8 @@ ZTEST(tls_credentials, test_tls_credentials_csr_keygen_disabled)
 	int ret;
 	size_t csr_len = sizeof(csr_buf);
 
-	Z_TEST_SKIP_IFNDEF(CONFIG_TLS_CREDENTIAL_CSR);
-	Z_TEST_SKIP_IFDEF(CONFIG_TLS_CREDENTIAL_KEYGEN);
+	Z_TEST_SKIP_IFNDEF(CONFIG_TLS_CREDENTIALS_CSR);
+	Z_TEST_SKIP_IFDEF(CONFIG_TLS_CREDENTIALS_KEYGEN);
 
 	/* Silence warnings due to tls_credential_csr possibly being an empty macro. */
 	(void) csr_len;
@@ -691,7 +691,7 @@ ZTEST(tls_credentials, test_tls_credentials_keygen_disabled)
 	int ret;
 	size_t key_len = sizeof(pk_buf_a);
 
-	Z_TEST_SKIP_IFDEF(CONFIG_TLS_CREDENTIAL_KEYGEN);
+	Z_TEST_SKIP_IFDEF(CONFIG_TLS_CREDENTIALS_KEYGEN);
 
 	/* Silence warnings due to tls_credential_keygen possibly being an empty macro. */
 	(void) key_len;
@@ -710,7 +710,7 @@ ZTEST(tls_credentials, test_tls_credentials_keygen_invalid)
 	size_t pk_len_in;
 	char *pk_buf_mid = pk_buf_a + 100;
 
-	Z_TEST_SKIP_IFNDEF(CONFIG_TLS_CREDENTIAL_KEYGEN);
+	Z_TEST_SKIP_IFNDEF(CONFIG_TLS_CREDENTIALS_KEYGEN);
 
 	/* Silence warnings due to tls_credential_keygen possibly being an empty macro. */
 	(void) pk_len;
@@ -777,7 +777,7 @@ ZTEST(tls_credentials, test_tls_credentials_keygen)
 	size_t pk_len_a = sizeof(pk_buf_a);
 	size_t pk_len_b = sizeof(pk_buf_b);
 
-	Z_TEST_SKIP_IFNDEF(CONFIG_TLS_CREDENTIAL_KEYGEN);
+	Z_TEST_SKIP_IFNDEF(CONFIG_TLS_CREDENTIALS_KEYGEN);
 
 	/* Silence warnings due to tls_credential_keygen possibly being an empty macro. */
 	(void) pk_len_a;

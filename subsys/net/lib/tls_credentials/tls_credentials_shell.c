@@ -871,7 +871,7 @@ cleanup:
 	return 0;
 }
 
-#if defined(CONFIG_TLS_CREDENTIAL_KEYGEN)
+#if defined(CONFIG_TLS_CREDENTIALS_KEYGEN)
 /* Generates a private/public keypair, stores the private key in the credential store, and
  * outputs the public key in base-64-encoded ASN.1 DER format.
  * (X.509 SubjectPublicKeyInfo entry. See RFC5280)
@@ -960,14 +960,14 @@ cleanup:
 
 	return err;
 }
-#else /* defined(CONFIG_TLS_CREDENTIAL_KEYGEN)*/
+#else /* defined(CONFIG_TLS_CREDENTIALS_KEYGEN)*/
 static int tls_cred_cmd_keygen(const struct shell *sh, size_t argc, char *argv[])
 {
 	shell_fprintf(sh, SHELL_ERROR, "Private key generation not supported by this build.\n");
 }
-#endif /* defined(CONFIG_TLS_CREDENTIAL_KEYGEN)*/
+#endif /* defined(CONFIG_TLS_CREDENTIALS_KEYGEN)*/
 
-#if defined(CONFIG_TLS_CREDENTIAL_CSR)
+#if defined(CONFIG_TLS_CREDENTIALS_CSR)
 /*
  * Generates a Certificate Signing Request (CSR) based on the specified private key sec tag.
  *
@@ -1062,12 +1062,12 @@ cleanup:
 
 	return err;
 }
-#else /* defined(CONFIG_TLS_CREDENTIAL_CSR)*/
+#else /* defined(CONFIG_TLS_CREDENTIALS_CSR)*/
 static int tls_cred_cmd_csr(const struct shell *sh, size_t argc, char *argv[])
 {
 	shell_fprintf(sh, SHELL_ERROR, "CSR generation not supported by this build.\n");
 }
-#endif /* defined(CONFIG_TLS_CREDENTIAL_CSR)*/
+#endif /* defined(CONFIG_TLS_CREDENTIALS_CSR)*/
 
 SHELL_STATIC_SUBCMD_SET_CREATE(tls_cred_cmds,
 	SHELL_CMD_ARG(buf, NULL, "Buffer in credential data so it can be added.",

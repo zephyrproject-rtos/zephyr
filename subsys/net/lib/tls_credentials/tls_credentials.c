@@ -198,7 +198,7 @@ exit:
 	return ret;
 }
 
-#if defined(CONFIG_TLS_CREDENTIAL_KEYGEN)
+#if defined(CONFIG_TLS_CREDENTIALS_KEYGEN)
 int tls_credential_keygen(sec_tag_t tag, enum tls_credential_keygen_type type,
 			  void *key, size_t *keylen)
 {
@@ -211,12 +211,12 @@ bool tls_credential_can_keygen(enum tls_credential_keygen_type type)
 	/* The volatile backend does not support keygen. */
 	return false;
 }
-#endif /* defined(CONFIG_TLS_CREDENTIAL_KEYGEN)	*/
+#endif /* defined(CONFIG_TLS_CREDENTIALS_KEYGEN)	*/
 
-#if defined(CONFIG_TLS_CREDENTIAL_CSR)
+#if defined(CONFIG_TLS_CREDENTIALS_CSR)
 int tls_credential_csr(sec_tag_t tag, char *dn, void *csr, size_t *csr_len)
 {
 	/* The volatile backend does not support CSR generation. */
 	return -ENOTSUP;
 }
-#endif /* defined(CONFIG_TLS_CREDENTIAL_CSR) */
+#endif /* defined(CONFIG_TLS_CREDENTIALS_CSR) */

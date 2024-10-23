@@ -21,7 +21,7 @@ choice TLS_CREDENTIALS_BACKEND
 
 config TLS_CREDENTIALS_BACKEND_VOLATILE
 	bool "TLS credentials management volatile backend"
-	depends on !TLS_CREDENTIAL_CSR
+	depends on !TLS_CREDENTIALS_CSR
 	help
 	  TLS credentials management volatile backend implementation,
 	  storing credentials in system runtime memory.
@@ -37,15 +37,15 @@ config TLS_CREDENTIALS_BACKEND_PROTECTED_STORAGE
 
 endchoice
 
-config TLS_CREDENTIAL_CSR
+config TLS_CREDENTIALS_CSR
 	bool "Enable CSR generation"
 	select EXPERIMENTAL
 	depends on MBEDTLS
 	help
 	  Allow the TLS Credentials Module to generate a CSR from a private key.
-	  Optionally generate a new key from scratch if TLS_CREDENTIAL_KEYGEN enabled.
+	  Optionally generate a new key from scratch if TLS_CREDENTIALS_KEYGEN enabled.
 
-config TLS_CREDENTIAL_KEYGEN
+config TLS_CREDENTIALS_KEYGEN
 	bool "Enable private/public keypair generation"
 	select EXPERIMENTAL
 	depends on MBEDTLS

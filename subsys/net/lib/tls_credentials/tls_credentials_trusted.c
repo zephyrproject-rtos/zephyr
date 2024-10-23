@@ -462,7 +462,7 @@ cleanup:
 	return ret;
 }
 
-#if defined(CONFIG_TLS_CREDENTIAL_KEYGEN)
+#if defined(CONFIG_TLS_CREDENTIALS_KEYGEN)
 
 #include <psa/crypto.h>
 #include <mbedtls/pk.h>
@@ -672,9 +672,9 @@ bool tls_credential_can_keygen(enum tls_credential_keygen_type type)
 	return false;
 }
 
-#endif /* defined(CONFIG_TLS_CREDENTIAL_KEYGEN)	*/
+#endif /* defined(CONFIG_TLS_CREDENTIALS_KEYGEN)	*/
 
-#if defined(CONFIG_TLS_CREDENTIAL_CSR)
+#if defined(CONFIG_TLS_CREDENTIALS_CSR)
 
 /* This lets us check which MbedTLS features are enabled */
 #include "tls_credentials_mbedtls_config.h"
@@ -852,4 +852,4 @@ int tls_credential_csr(sec_tag_t tag, char *dn, enum tls_credential_keygen_type 
 
 #endif /* defined(MBEDTLS_X509_CSR_WRITE_C) */
 
-#endif /* defined(CONFIG_TLS_CREDENTIAL_CSR) */
+#endif /* defined(CONFIG_TLS_CREDENTIALS_CSR) */

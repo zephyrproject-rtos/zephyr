@@ -146,7 +146,7 @@ int tls_credential_get(sec_tag_t tag, enum tls_credential_type type,
  */
 int tls_credential_delete(sec_tag_t tag, enum tls_credential_type type);
 
-#if defined(CONFIG_TLS_CREDENTIAL_KEYGEN) || defined(__DOXYGEN__)
+#if defined(CONFIG_TLS_CREDENTIALS_KEYGEN) || defined(__DOXYGEN__)
 
 /**
  * @brief Generate client public/private keypair, store the private key, output the public key.
@@ -188,12 +188,12 @@ int tls_credential_keygen(sec_tag_t tag, enum tls_credential_keygen_type type,
  */
 bool tls_credential_can_keygen(enum tls_credential_keygen_type type);
 
-#else /* defined(CONFIG_TLS_CREDENTIAL_KEYGEN) */
+#else /* defined(CONFIG_TLS_CREDENTIALS_KEYGEN) */
 #define tls_credential_keygen(...) (-ENOTSUP)
 #define tls_credential_can_keygen(...) (false)
-#endif /* defined(CONFIG_TLS_CREDENTIAL_KEYGEN) */
+#endif /* defined(CONFIG_TLS_CREDENTIALS_KEYGEN) */
 
-#if defined(CONFIG_TLS_CREDENTIAL_CSR) || defined(__DOXYGEN__)
+#if defined(CONFIG_TLS_CREDENTIALS_CSR) || defined(__DOXYGEN__)
 
 /**
  * @brief Generate a certificate signing request (CSR).
@@ -235,9 +235,9 @@ bool tls_credential_can_keygen(enum tls_credential_keygen_type type);
 int tls_credential_csr(sec_tag_t tag, char *dn, enum tls_credential_keygen_type type,
 		       void *csr, size_t *csrlen);
 
-#else /* defined(CONFIG_TLS_CREDENTIAL_CSR) */
+#else /* defined(CONFIG_TLS_CREDENTIALS_CSR) */
 #define tls_credential_csr(...) (-ENOTSUP)
-#endif /* defined(CONFIG_TLS_CREDENTIAL_CSR) */
+#endif /* defined(CONFIG_TLS_CREDENTIALs_CSR) */
 
 #ifdef __cplusplus
 }
