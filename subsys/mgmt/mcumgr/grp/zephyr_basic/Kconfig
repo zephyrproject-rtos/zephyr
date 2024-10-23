@@ -10,6 +10,7 @@ if MCUMGR_GRP_ZBASIC
 
 config MCUMGR_GRP_ZBASIC_STORAGE_ERASE
 	bool "Storage erase command"
+	depends on FLASH_MAP
 	help
 	  Enables command that allows to erase storage partition.
 
