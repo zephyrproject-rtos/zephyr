@@ -291,6 +291,7 @@ zephyr_udc0: &usbhs {
 	status = "okay";
 	pinctrl-0 = <&can120_default>;
 	pinctrl-names = "default";
+	zephyr,pm-device-runtime-auto;
 };
 
 &pwm130 {
