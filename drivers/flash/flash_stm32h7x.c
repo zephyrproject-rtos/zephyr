@@ -62,6 +62,43 @@ struct flash_stm32_sector_t {
 	volatile uint32_t *sr;
 };
 
+static __unused int write_optb(const struct device *dev, uint32_t mask,
+			       uint32_t value)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+	int rc;
+
+	if (regs->OPTCR & FLASH_OPTCR_OPTLOCK) {
+		LOG_ERR("Option bytes locked");
+		return -EIO;
+	}
+
+	if ((regs->OPTCR & mask) == value) {
+		/* Done already */
+		return 0;
+	}
+
+	rc = flash_stm32_wait_flash_idle(dev);
+	if (rc < 0) {
+		LOG_ERR("Err flash no idle");
+		return rc;
+	}
+
+	regs->OPTCR = (regs->OPTCR & ~mask) | value;
+	regs->OPTCR |= FLASH_OPTCR_OPTSTART;
+
+	/* Make sure previous write is completed. */
+	barrier_dsync_fence_full();
+
+	rc = flash_stm32_wait_flash_idle(dev);
+	if (rc < 0) {
+		LOG_ERR("Err flash no idle");
+		return rc;
+	}
+
+	return 0;
+}
+
 #if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
 uint8_t flash_stm32_get_rdp_level(const struct device *dev)
 {
@@ -72,34 +109,8 @@ uint8_t flash_stm32_get_rdp_level(const struct device *dev)
 
 void flash_stm32_set_rdp_level(const struct device *dev, uint8_t level)
 {
-	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-	uint32_t value = (uint32_t)level << FLASH_OPTSR_RDP_Pos;
-
-	if (regs->OPTCR & FLASH_OPTCR_OPTLOCK) {
-		LOG_ERR("Option bytes locked");
-		return;
-	}
-
-	if ((regs->OPTCR & FLASH_OPTSR_RDP_Msk) == value) {
-		/* Done already */
-		return;
-	}
-
-	if (flash_stm32_wait_flash_idle(dev) != 0) {
-		LOG_ERR("Err flash no idle");
-		return;
-	}
-
-	regs->OPTCR = (regs->OPTCR & ~FLASH_OPTSR_RDP_Msk) | value;
-	regs->OPTCR |= FLASH_OPTCR_OPTSTART;
-
-	/* Make sure previous write is completed. */
-	barrier_dsync_fence_full();
-
-	if (flash_stm32_wait_flash_idle(dev) != 0) {
-		LOG_ERR("Err flash no idle");
-		return;
-	}
+	write_optb(dev, FLASH_OPTSR_RDP_Msk,
+		(uint32_t)level << FLASH_OPTSR_RDP_Pos);
 }
 #endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
 
