@@ -558,7 +558,22 @@ static int nsos_poll_if_blocking(struct nsos_socket *sock, int events,
 	}
 
 	if (!non_blocking) {
-		return nsos_wait_for_poll(sock, events, timeout);
+		struct k_mutex *lock = NULL;
+		bool lock_acquired;
+		int ret;
+
+		lock_acquired = zvfs_get_obj_lock_and_cond(sock,
+							   &nsos_socket_fd_op_vtable.fd_vtable,
+							   &lock, NULL);
+		__ASSERT(lock_acquired, "zvfs_get_obj_lock_and_cond() failed");
+		__ASSERT_NO_MSG(lock);
+
+		/* Release lock while waiting for some socket activity */
+		k_mutex_unlock(lock);
+		ret = nsos_wait_for_poll(sock, events, timeout);
+		k_mutex_lock(lock, K_FOREVER);
+
+		return ret;
 	}
 
 	return 0;
