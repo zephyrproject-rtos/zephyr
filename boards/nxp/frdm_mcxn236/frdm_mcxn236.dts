@@ -130,3 +130,7 @@
 &lpcmp0 {
 	status = "okay";
 };
+
+&flexio0 {
+	status = "okay";
+};
