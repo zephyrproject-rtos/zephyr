@@ -235,10 +235,20 @@ class ImgtoolSigner(Signer):
         # The vector table offset and application version are set in Kconfig:
         appver = self.get_cfg(command, build_conf, 'CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION')
         vtoff = self.get_cfg(command, build_conf, 'CONFIG_ROM_START_OFFSET')
+        # Is assumed MCUboot mode 'Direct-XIP'?
+        directxip = (build_conf.getboolean('CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP') or
+                     build_conf.getboolean('CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT'))
         # Flash device write alignment and the partition's slot size
         # come from devicetree:
-        flash = self.edt_flash_node(b, args.quiet)
-        align, addr, size = self.edt_flash_params(flash)
+        edt = self.get_edt(b, args.quiet)
+        # By convention, the zephyr,flash chosen node contains the
+        # partition information about the zephyr image to sign.
+        flash = edt.chosen_node('zephyr,flash')
+        if not flash:
+            log.die('devicetree has no chosen zephyr,flash node;',
+                    "can't infer flash write block or slot0_partition slot sizes")
+
+        align, addr, size = self.edt_flash_params(flash, edt, directxip)
 
         if not build_conf.getboolean('CONFIG_BOOTLOADER_MCUBOOT'):
             log.wrn("CONFIG_BOOTLOADER_MCUBOOT is not set to y in "
@@ -273,6 +283,10 @@ class ImgtoolSigner(Signer):
                                '--align', str(align),
                                '--header-size', str(vtoff),
                                '--slot-size', str(size)]
+
+        if directxip:
+            sign_base += ['--rom-fixed', str(addr)]
+
         sign_base.extend(args.tool_args)
 
         if not args.quiet:
@@ -327,12 +341,9 @@ class ImgtoolSigner(Signer):
             return None
 
     @staticmethod
-    def edt_flash_node(b, quiet=False):
-        # Get the EDT Node corresponding to the zephyr,flash chosen DT
-        # node; 'b' is the build directory as a pathlib object.
-
-        # Ensure the build directory has a compiled DTS file
-        # where we expect it to be.
+    def get_edt(b, quiet=False):
+        # Ensure the build directory has a compiled DTS file where we expect
+        # it to be; 'b' is the build directory as a pathlib object.
         dts = b / 'zephyr' / 'zephyr.dts'
         if not quiet:
             log.dbg('DTS file:', dts, level=log.VERBOSE_VERY)
@@ -344,19 +355,12 @@ class ImgtoolSigner(Signer):
         with open(edt_pickle, 'rb') as f:
             edt = pickle.load(f)
 
-        # By convention, the zephyr,flash chosen node contains the
-        # partition information about the zephyr image to sign.
-        flash = edt.chosen_node('zephyr,flash')
-        if not flash:
-            log.die('devicetree has no chosen zephyr,flash node;',
-                    "can't infer flash write block or slot0_partition slot sizes")
-
-        return flash
+        return edt
 
     @staticmethod
-    def edt_flash_params(flash):
+    def edt_flash_params(flash, edt, directxip):
         # Get the flash device's write alignment and offset from the
-        # slot0_partition and the size from slot1_partition , out of the
+        # target slot and the size from slot1_partition , out of the
         # build directory's devicetree. slot1_partition size is used,
         # when available, because in swap-move mode it can be one sector
         # smaller. When not available, fallback to slot0_partition (single slot dfu).
@@ -396,12 +400,19 @@ class ImgtoolSigner(Signer):
             log.die(f'{slot_key} flash partition has no regs property;',
                     "can't determine size of slot")
 
-        # always use addr of slot0_partition, which is where slots are run
-        addr = slots['slot0_partition'].regs[0].addr
-
         size = slots[slot_key].regs[0].size
         if size == 0:
             log.die('expected nonzero slot size for {}'.format(slot_key))
+
+        # If assumed MCUboot mode of operation is 'Direct-XIP', use addr of
+        # slot from 'zephyr,code-partition', from 'chosen' node, otherwise
+        # always use addr of slot0_partition, which is where slots are run
+        addr = slots['slot0_partition'].regs[0].addr
+
+        if directxip:
+            code_part = edt.chosen_node('zephyr,code-partition')
+            if code_part:
+                addr = code_part.regs[0].addr
 
         return (align, addr, size)
 
