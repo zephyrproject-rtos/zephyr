@@ -552,7 +552,7 @@ static int dmic_nrfx_pdm_read(const struct device *dev,
 
 	ret = k_msgq_get(&drv_data->rx_queue, buffer, SYS_TIMEOUT_MS(timeout));
 	if (ret != 0) {
-		LOG_ERR("No audio data to be read");
+		LOG_DBG("No audio data to be read");
 	} else {
 		LOG_DBG("Released buffer %p", *buffer);
 
