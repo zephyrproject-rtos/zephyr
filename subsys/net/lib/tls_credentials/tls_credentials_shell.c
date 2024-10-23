@@ -964,6 +964,7 @@ cleanup:
 static int tls_cred_cmd_keygen(const struct shell *sh, size_t argc, char *argv[])
 {
 	shell_fprintf(sh, SHELL_ERROR, "Private key generation not supported by this build.\n");
+	return 0;
 }
 #endif /* defined(CONFIG_TLS_CREDENTIALS_KEYGEN)*/
 
@@ -1066,6 +1067,7 @@ cleanup:
 static int tls_cred_cmd_csr(const struct shell *sh, size_t argc, char *argv[])
 {
 	shell_fprintf(sh, SHELL_ERROR, "CSR generation not supported by this build.\n");
+	return 0;
 }
 #endif /* defined(CONFIG_TLS_CREDENTIALS_CSR)*/
 
