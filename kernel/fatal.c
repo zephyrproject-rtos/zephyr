@@ -40,7 +40,7 @@ __weak void k_sys_fatal_error_handler(unsigned int reason,
 	ARG_UNUSED(esf);
 
 	LOG_PANIC();
-	LOG_ERR("Halting system");
+	LOG_ERR("Halting system" IF_ENABLED(CONFIG_TAINT, (" (tainted)")));
 	arch_system_halt(reason);
 	CODE_UNREACHABLE;
 }
