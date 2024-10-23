@@ -33,12 +33,7 @@ static void validate_config(struct ext2_cfg *cfg)
 	}
 
 	if (!cfg->set_uuid) {
-		/* Generate random UUID */
-		sys_rand_get(cfg->uuid, 16);
-
-		/* Set version of UUID (ver. 4 variant 1) */
-		cfg->uuid[6] = (cfg->uuid[6] & 0x0f) | 0x40;
-		cfg->uuid[8] = (cfg->uuid[8] & 0x3f) | 0x80;
+		uuid_generate_v4(&cfg->uuid);
 	}
 }
 
@@ -98,9 +93,8 @@ int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg)
 	int rc, ret = 0;
 
 	validate_config(cfg);
-	LOG_INF("[Config] blk_sz:%d fs_sz:%d ino_bytes:%d uuid:'%s' vol:'%s'",
-			cfg->block_size, cfg->fs_size, cfg->bytes_per_inode, cfg->uuid,
-			cfg->volume_name);
+	LOG_INF("[Config] blk_sz:%d fs_sz:%d ino_bytes:%d uuid:'%s' vol:'%s'", cfg->block_size,
+		cfg->fs_size, cfg->bytes_per_inode, cfg->uuid.val, cfg->volume_name);
 
 	uint32_t fs_memory = cfg->fs_size ? MIN(cfg->fs_size, fs->device_size) : fs->device_size;
 
@@ -248,7 +242,7 @@ int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg)
 	sb->s_journal_dev         = sys_cpu_to_le32(0);
 	sb->s_last_orphan         = sys_cpu_to_le32(0);
 
-	memcpy(sb->s_uuid, cfg->uuid, 16);
+	uuid_to_buffer(cfg->uuid, sb->s_uuid);
 	strcpy(sb->s_volume_name, cfg->volume_name);
 
 	if (ext2_write_block(fs, sb_block) < 0) {
