@@ -327,6 +327,7 @@ static bool get_timestamps(struct timestamps *timestamps, const struct tsn_confi
 	const struct qbv_baked_config *baked;
 	const struct qbv_baked_prio *baked_prio;
 	const struct qbv_config *qbv = &tsn_config->qbv;
+
 	memset(timestamps, 0, sizeof(struct timestamps));
 
 	if (qbv->enabled == false) {
