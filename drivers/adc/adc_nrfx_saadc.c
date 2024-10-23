@@ -66,9 +66,9 @@ BUILD_ASSERT((NRF_SAADC_AIN0 == NRF_SAADC_INPUT_AIN0) &&
 	     "Definitions from nrf-adc.h do not match those from nrf_saadc.h");
 #endif
 
-#if defined(CONFIG_SOC_NRF54H20) || defined(CONFIG_SOC_NRF9280)
+#if defined(CONFIG_NRF_PLATFORM_HALTIUM)
 
-/* nRF54H20 and nRF9280 always use bounce buffers in RAM */
+/* Haltium devices always use bounce buffers in RAM */
 
 #define SAADC_MEMORY_SECTION					                     \
 	COND_CODE_1(DT_NODE_HAS_PROP(DT_NODELABEL(adc), memory_regions), \
@@ -80,7 +80,7 @@ static uint16_t adc_samples_buffer[SAADC_CH_NUM] SAADC_MEMORY_SECTION;
 
 #define ADC_BUFFER_IN_RAM
 
-#endif /* defined(CONFIG_SOC_NRF54H20) || defined(CONFIG_SOC_NRF9280) */
+#endif /* defined(CONFIG_NRF_PLATFORM_HALTIUM) */
 
 struct driver_data {
 	struct adc_context ctx;
@@ -669,7 +669,7 @@ static const struct adc_driver_api adc_nrfx_driver_api = {
 #endif
 #if defined(CONFIG_SOC_NRF54L15)
 	.ref_internal  = 900,
-#elif defined(CONFIG_SOC_NRF54H20) || defined(CONFIG_SOC_NRF9280)
+#elif defined(CONFIG_NRF_PLATFORM_HALTIUM)
 	.ref_internal  = 1024,
 #else
 	.ref_internal  = 600,
