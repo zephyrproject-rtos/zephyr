@@ -9,6 +9,10 @@
 
 #ifdef CONFIG_ADXL362_STREAM
 
+/* (2^31 / 2^8(shift) */
+#define ADXL362_TEMP_QSCALE   8388608
+#define ADXL362_TEMP_LSB_PER_C 15
+
 #define ADXL362_COMPLEMENT         0xf000
 
 static const uint32_t accel_period_ns[] = {
@@ -20,11 +24,20 @@ static const uint32_t accel_period_ns[] = {
 	[ADXL362_ODR_400_HZ] = UINT32_C(1000000000) / 400,
 };
 
-static const int32_t range_to_scale[] = {
-	/* See table 1 in specifications section of datasheet */
-	[ADXL362_RANGE_2G] = ADXL362_ACCEL_2G_LSB_PER_G,
-	[ADXL362_RANGE_4G] = ADXL362_ACCEL_4G_LSB_PER_G,
-	[ADXL362_RANGE_8G] = ADXL362_ACCEL_8G_LSB_PER_G,
+static const uint32_t range_to_shift[] = {
+	[ADXL362_RANGE_2G] = 5,
+	[ADXL362_RANGE_4G] = 6,
+	[ADXL362_RANGE_8G] = 7,
+};
+
+/* (1 / sensitivity) * (pow(2,31) / pow(2,shift)) * (unit_scaler) */
+static const uint32_t qscale_factor[] = {
+	/* (1.0 / ADXL362_ACCEL_2G_LSB_PER_G) * (2^31 / 2^5) * SENSOR_G / 1000000 */
+	[ADXL362_RANGE_2G] = UINT32_C(658338),
+	/* (1.0 / ADXL362_ACCEL_4G_LSB_PER_G) * (2^31 / 2^6) * SENSOR_G / 1000000  */
+	[ADXL362_RANGE_4G] = UINT32_C(658338),
+	/* (1.0 / ADXL362_ACCEL_8G_LSB_PER_G) * (2^31 / 2^7) ) * SENSOR_G / 1000000 */
+	[ADXL362_RANGE_8G] = UINT32_C(700360),
 };
 
 static inline void adxl362_temp_convert_q31(q31_t *out, int16_t data_in)
@@ -36,10 +49,8 @@ static inline void adxl362_temp_convert_q31(q31_t *out, int16_t data_in)
 		data_in |= ADXL362_COMPLEMENT;
 	}
 
-	int64_t milli_c = (data_in - ADXL362_TEMP_BIAS_LSB) * ADXL362_TEMP_MC_PER_LSB +
-		      (ADXL362_TEMP_BIAS_TEST_CONDITION * 1000);
-
-	*out = CLAMP(((milli_c * 1000) + ((milli_c % 1000) * 1000)), INT32_MIN, INT32_MAX);
+	*out = ((data_in - ADXL362_TEMP_BIAS_LSB) / ADXL362_TEMP_LSB_PER_C
+			+ ADXL362_TEMP_BIAS_TEST_CONDITION) * ADXL362_TEMP_QSCALE;
 }
 
 static inline void adxl362_accel_convert_q31(q31_t *out, int16_t data_in, int32_t range)
@@ -50,9 +61,7 @@ static inline void adxl362_accel_convert_q31(q31_t *out, int16_t data_in, int32_
 		data_in |= ADXL362_COMPLEMENT;
 	}
 
-	int64_t micro_ms2 = data_in * SENSOR_G / range_to_scale[range];
-
-	*out = CLAMP((micro_ms2 + (micro_ms2 % 1000000)), INT32_MIN, INT32_MAX);
+	*out = data_in * qscale_factor[range];
 }
 
 static int adxl362_decode_stream(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
@@ -102,6 +111,7 @@ static int adxl362_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 				memset(data, 0, sizeof(struct sensor_three_axis_data));
 				data->header.base_timestamp_ns = enc_data->timestamp;
 				data->header.reading_count = 1;
+				data->shift = 8;
 
 				data->readings[count].timestamp_delta =
 						period_ns * sample_num;
@@ -121,6 +131,7 @@ static int adxl362_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 			memset(data, 0, sizeof(struct sensor_three_axis_data));
 			data->header.base_timestamp_ns = enc_data->timestamp;
 			data->header.reading_count = 1;
+			data->shift = range_to_shift[enc_data->selected_range];
 
 			switch (chan_spec.chan_type) {
 			case SENSOR_CHAN_ACCEL_X:
