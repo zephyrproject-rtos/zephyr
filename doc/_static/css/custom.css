@@ -1164,3 +1164,8 @@ li>a.code-sample-link.reference.internal.current {
 .sidebar.board-overview dl.field-list > dt {
     background: transparent !important;
 }
+
+/* TEMPORARY */
+#supported-features>div>table>tbody>tr>td>p {
+    white-space: normal;
+}

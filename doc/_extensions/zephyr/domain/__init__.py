@@ -51,7 +51,6 @@ from sphinx.util.template import SphinxRenderer
 from zephyr.doxybridge import DoxygenGroupDirective
 from zephyr.gh_utils import gh_link_get_url
 
-
 import json
 
 from anytree import Node, Resolver, ChildResolverError, PreOrderIter, search
@@ -69,6 +68,145 @@ TEMPLATES_DIR = Path(__file__).parent / "templates"
 RESOURCES_DIR = Path(__file__).parent / "static"
 
 logger = logging.getLogger(__name__)
+
+BINDING_TYPE_TO_HUMAN_READABLE = {
+    "acpi": nodes.abbreviation(
+        "ACPI", "ACPI", explanation="Advanced Configuration and Power Interface"
+    ),
+    "adc": nodes.abbreviation("ADC", "ADC", explanation="Analog to Digital Converter"),
+    "alh": nodes.abbreviation("ALH", "ALH", explanation="Audio Link Hub"),
+    "arc": nodes.Text("ARC architecture"),
+    "arm": nodes.Text("ARM architecture"),
+    "audio": nodes.Text("Audio"),
+    "auxdisplay": nodes.Text("Auxiliary Display"),
+    "battery": nodes.Text("Battery"),
+    "base": nodes.Text("Base"),
+    "bluetooth": nodes.Text("Bluetooth"),
+    "cache": nodes.Text("Cache"),
+    "can": nodes.abbreviation("CAN", "CAN", explanation="Controller Area Network"),
+    "charger": nodes.Text("Charger"),
+    "clock": nodes.Text("Clock control"),
+    "coredump": nodes.Text("Core dump"),
+    "counter": nodes.Text("Counter"),
+    "cpu": nodes.Text("CPU"),
+    "crypto": nodes.Text("Cryptographic accelerator"),
+    "dac": nodes.abbreviation("DAC", "DAC", explanation="Digital to Analog Converter"),
+    "dai": nodes.abbreviation("DAI", "DAI", explanation="Digital Audio Interface"),
+    "debug": nodes.Text("Debug"),
+    "dfpmcch": nodes.Text("DFPMCCH"),
+    "dfpmccu": nodes.Text("DFPMCCU"),
+    "disk": nodes.Text("Disk"),
+    "display": nodes.Text("Display"),
+    "display/panel": nodes.Text("Display panel"),
+    "dma": nodes.abbreviation("DMA", "DMA", explanation="Direct Memory Access"),
+    "dsa": nodes.abbreviation("DSA", "DSA", explanation="Distributed Switch Architecture"),
+    "edac": nodes.abbreviation("EDAC", "EDAC", explanation="Error Detection and Correction"),
+    "espi": nodes.abbreviation("eSPI", "eSPI", explanation="Enhanced Serial Peripheral Interface"),
+    "ethernet": nodes.Text("Ethernet"),
+    "firmware": nodes.Text("Firmware"),
+    "flash_controller": nodes.Text("Flash controller"),
+    "fpga": nodes.abbreviation("FPGA", "FPGA", explanation="Field Programmable Gate Array"),
+    "fs": nodes.Text("File system"),
+    "fuel-gauge": nodes.Text("Fuel gauge"),
+    "gnss": nodes.abbreviation("GNSS", "GNSS", explanation="Global Navigation Satellite System"),
+    "gpio": nodes.abbreviation("GPIO", "GPIO", explanation="General Purpose Input/Output"),
+    "haptics": nodes.Text("Haptics"),
+    "hda": nodes.abbreviation("HDA", "HDA", explanation="High Definition Audio"),
+    "hwinfo": nodes.Text("Hardware information"),
+    "hwspinlock": nodes.Text("Hardware spinlock"),
+    "i2c": nodes.abbreviation("I2C", "I2C", explanation="Inter-Integrated Circuit"),
+    "i2s": nodes.abbreviation("I2S", "I2S", explanation="Inter-IC Sound"),
+    "i3c": nodes.abbreviation("I3C", "I3C", explanation="Improved Inter-Integrated Circuit"),
+    "ieee802154": nodes.Text("IEEE 802.15.4"),
+    "iio": nodes.abbreviation("IIO", "IIO", explanation="Industrial I/O"),
+    "input": nodes.Text("Input"),
+    "interrupt-controller": nodes.Text("Interrupt controller"),
+    "ipc": nodes.abbreviation("IPC", "IPC", explanation="Inter-Processor Communication"),
+    "ipm": nodes.abbreviation("IPM", "IPM", explanation="Inter-Processor Mailbox"),
+    "kscan": nodes.Text("Keyscan"),
+    "led": nodes.abbreviation("LED", "LED", explanation="Light Emitting Diode"),
+    "led_strip": nodes.abbreviation("LED", "LED", explanation="Light Emitting Diode"),
+    "lora": nodes.Text("LoRa"),
+    "mbox": nodes.Text("Mailbox"),
+    "mdio": nodes.abbreviation("MDIO", "MDIO", explanation="Management Data Input/Output"),
+    "memory-controllers": nodes.Text("Memory controller"),
+    "memory-window": nodes.Text("Memory window"),
+    "mfd": nodes.abbreviation("MFD", "MFD", explanation="Multi-Function Device"),
+    "mhu": nodes.abbreviation("MHU", "MHU", explanation="Mailbox Handling Unit"),
+    "net": nodes.Text("Networking"),
+    "mipi-dbi": nodes.abbreviation(
+        "",
+        "MIPI DBI",
+        explanation="Mobile Industry Processor Interface Display Bus Interface",
+    ),
+    "mipi-dsi": nodes.abbreviation(
+        "",
+        "MIPI DSI",
+        explanation="Mobile Industry Processor Interface Display Serial Interface",
+    ),
+    "misc": nodes.Text("Miscellaneous"),
+    "mm": nodes.Text("Memory management"),
+    "mmc": nodes.abbreviation("MMC", "MMC", explanation="MultiMediaCard"),
+    "mmu_mpu": nodes.abbreviation(
+        "", "MMU / MPU", explanation="Memory Management Unit / Memory Protection Unit"
+    ),
+    "modem": nodes.Text("Modem"),
+    "mspi": nodes.Text("Multi-bit SPI"),
+    "mtd": nodes.abbreviation("MTD", "MTD", explanation="Memory Technology Device"),
+    "wireless": nodes.Text("Wireless network"),
+    "options": nodes.Text("Options"),
+    "ospi": nodes.Text("Octal SPI"),
+    "pcie": nodes.abbreviation(
+        "PCIe", "PCIe", explanation="Peripheral Component Interconnect Express"
+    ),
+    "peci": nodes.abbreviation(
+        "PECI", "PECI", explanation="Platform Environment Control Interface"
+    ),
+    "phy": nodes.Text("PHY"),
+    "pinctrl": nodes.Text("Pin control"),
+    "pm_cpu_ops": nodes.Text("Power management CPU operations"),
+    "power": nodes.Text("Power management"),
+    "power-domain": nodes.Text("Power domain"),
+    "ppc": nodes.Text("PPC architecture"),
+    "ps2": nodes.abbreviation("PS/2", "PS/2", explanation="Personal System/2"),
+    "pwm": nodes.abbreviation("PWM", "PWM", explanation="Pulse Width Modulation"),
+    "qspi": nodes.Text("Quad SPI"),
+    "regulator": nodes.Text("Regulator"),
+    "reserved-memory": nodes.Text("Reserved memory"),
+    "reset": nodes.Text("Reset controller"),
+    "retained_mem": nodes.Text("Retained memory"),
+    "retention": nodes.Text("Retention"),
+    "riscv": nodes.Text("RISC-V architecture"),
+    "rng": nodes.abbreviation("RNG", "RNG", explanation="Random Number Generator"),
+    "rtc": nodes.abbreviation("RTC", "RTC", explanation="Real Time Clock"),
+    "sd": nodes.Text("SD"),
+    "sdhc": nodes.Text("SDHC"),
+    "sensor": nodes.Text("Sensors"),
+    "serial": nodes.Text("Serial controller"),
+    "shi": nodes.abbreviation("SHI", "SHI", explanation="Secure Hardware Interface"),
+    "sip_svc": nodes.abbreviation("SIP", "SIP", explanation="Service in Platform"),
+    "smbus": nodes.abbreviation("SMBus", "SMBus", explanation="System Management Bus"),
+    "sound": nodes.Text("Sound"),
+    "spi": nodes.abbreviation("SPI", "SPI", explanation="Serial Peripheral Interface"),
+    "sram": nodes.Text("SRAM"),
+    "stepper": nodes.Text("Stepper"),
+    "syscon": nodes.Text("System controller"),
+    "tach": nodes.Text("Tachometer"),
+    "tcpc": nodes.abbreviation("TCPC", "TCPC", explanation="USB Type-C Port Controller"),
+    "test": nodes.Text("Test"),
+    "timer": nodes.Text("Timer"),
+    "timestamp": nodes.Text("Timestamp"),
+    "usb": nodes.Text("USB"),
+    "usb-c": nodes.Text("USB Type-C"),
+    "uac2": nodes.Text("USB Audio Class 2"),
+    "video": nodes.Text("Video"),
+    "virtualization": nodes.Text("Virtualization"),
+    "w1": nodes.Text("1-Wire"),
+    "watchdog": nodes.Text("Watchdog"),
+    "wifi": nodes.Text("Wi-Fi"),
+    "xen": nodes.Text("Xen"),
+    "xspi": nodes.abbreviation("XSPI", "XSPI", explanation="Expanded Serial Peripheral Interface"),
+}
 
 
 class CodeSampleNode(nodes.Element):
@@ -227,6 +365,79 @@ class ConvertBoardNode(SphinxTransform):
         for node in self.document.traverse(matcher):
             self.convert_node(node)
 
+    class FindSupportedFeaturesSectionVisitor(nodes.SparseNodeVisitor):
+
+        def __init__(self, document, supported_features):
+            super().__init__(document)
+            self.supported_features = supported_features
+
+        def visit_section(self, node):
+            if node.children and node.children[0].astext() == "Supported Features":
+                table = nodes.table(classes=["colwidths-given"])
+
+                tgroup = nodes.tgroup(cols=3)
+                tgroup += nodes.colspec(colwidth=20, classes=["col-1"])
+                tgroup += nodes.colspec(colwidth=50)
+                tgroup += nodes.colspec(colwidth=30)
+
+                table += tgroup
+
+                # thead
+                thead = nodes.thead()
+                row = nodes.row()
+                row += nodes.entry("", nodes.paragraph(text="Type"))
+                row += nodes.entry("", nodes.paragraph(text="Description"))
+                row += nodes.entry("", nodes.paragraph(text="Compatible"))
+                thead += row
+                tgroup += thead
+
+                # create table body
+                tbody = nodes.tbody()
+
+                sorted_features = sorted(self.supported_features.keys())
+                for feature in sorted_features:
+                    items = list(self.supported_features[feature].items())
+                    num_items = len(items)
+
+                    for i, (key, value) in enumerate(items):
+                        row = nodes.row()
+
+                        if i == 0:
+                            type_entry = nodes.entry(morerows=num_items - 1)
+                            type_entry += nodes.paragraph(
+                                "",
+                                "",
+                                BINDING_TYPE_TO_HUMAN_READABLE.get(feature, feature).deepcopy(),
+                            )
+                            row += type_entry
+
+                        xref = addnodes.pending_xref(
+                            "",
+                            refdomain="std",
+                            reftype="dtcompatible",
+                            reftarget=key,
+                            refexplicit=False,
+                            refwarn=True,
+                        )
+                        xref += nodes.literal(text=key)
+                        row += nodes.entry("", nodes.paragraph(text=value))
+                        row += nodes.entry("", nodes.paragraph("", "", xref))
+
+                        tbody += row
+
+                tgroup += tbody
+
+                title = node.children[0]
+                node.clear()
+                node += title
+                node += table
+
+        def unknown_visit(self, node):
+            pass
+
+        def unknown_departure(self, node):
+            pass
+
     def convert_node(self, node):
         parent = node.parent
         siblings_to_move = []
@@ -272,6 +483,14 @@ class ConvertBoardNode(SphinxTransform):
 
             # Replace the custom node with the new section
             node.replace_self(new_section)
+
+            # patch existing supported features section.
+            # in the future, this should (maybe) be an explicit
+            # .. zephyr:board-features:: directive instead.
+            visitsections = self.FindSupportedFeaturesSectionVisitor(
+                self.document, node["supported_features"]
+            )
+            self.document.walk(visitsections)
 
             # Remove the moved siblings from their original parent
             for sibling in siblings_to_move:
@@ -667,6 +886,7 @@ class BoardDirective(SphinxDirective):
             board_node = BoardNode(id=board_name)
             board_node["full_name"] = board["full_name"]
             board_node["vendor"] = vendors.get(board["vendor"], board["vendor"])
+            board_node["supported_features"] = board["supported_features"]
             board_node["archs"] = board["archs"]
             board_node["socs"] = board["socs"]
             board_node["image"] = board["image"]
