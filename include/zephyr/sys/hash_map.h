@@ -33,6 +33,48 @@ extern "C" {
  *
  * Declare a Hashmap with control over advanced parameters.
  *
+ * @param _name Name of the Hashmap.
+ * @param _config_type Variant of @ref sys_hashmap_config.
+ * @param _data_type Variant of @ref sys_hashmap_data.
+ */
+#define SYS_HASHMAP_DECLARE_ADVANCED(_name, _config_type, _data_type) \
+	struct _config_type _name##_config; \
+	struct _data_type _name##_data; \
+	struct sys_hashmap _name;
+
+/**
+ * @brief Init a Hashmap (advanced)
+ *
+ * Init a Hashmap with control over advanced parameters.
+ *
+ * @note The allocator @p _alloc is used for allocating internal Hashmap
+ * entries and does not interact with any user-provided keys or values.
+ *
+ * @param _name Name of the Hashmap.
+ * @param _api API pointer of type @ref sys_hashmap_api.
+ * @param _hash_func Hash function pointer of type @ref sys_hash_func32_t.
+ * @param _alloc_func Allocator function pointer of type @ref sys_hashmap_allocator_t.
+ * @param _max_size Maximum number of entries
+ * @param _load_factor Maximum load factor of expressed in hundredths
+ */
+#define SYS_HASHMAP_INIT_ADVANCED(_name, _api, _hash_func, _alloc_func, \
+								  _max_size, _load_factor) \
+    { \
+		SYS_HASHMAP_CONFIG_INIT(_name, _max_size, _load_factor) \
+		memset(&_name##_data, 0, sizeof(_name##_data)); \
+		memset(&_name, 0, sizeof(_name)); \
+		_name.api = (const struct sys_hashmap_api *)(_api); \
+		_name.config = (const struct sys_hashmap_config *)&_name##_config; \
+		_name.data = (struct sys_hashmap_data *)&_name##_data; \
+		_name.hash_func = (_hash_func); \
+		_name.alloc_func = (_alloc_func); \
+    }
+
+/**
+ * @brief Declare a Hashmap (advanced)
+ *
+ * Declare a Hashmap with control over advanced parameters.
+ *
  * @note The allocator @p _alloc is used for allocating internal Hashmap
  * entries and does not interact with any user-provided keys or values.
  *
