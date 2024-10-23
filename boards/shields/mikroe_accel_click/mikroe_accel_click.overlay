@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2024 Ian Morris
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		accel0 = &adxl345_mikroe_accel_click;
+	};
+};
+
+&mikrobus_i2c {
+	status = "okay";
+
+	adxl345_mikroe_accel_click: adxl345@1d {
+		compatible = "adi,adxl345";
+		reg = <0x1d>;
+		status = "okay";
+	};
+};
