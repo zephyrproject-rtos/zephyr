@@ -1,0 +1,28 @@
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Ambiq USB
+
+compatible: "ambiq,usb"
+
+include: [usb-ep.yaml, pinctrl-device.yaml, ambiq-pwrcfg.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  ambiq,pwrcfg:
+    required: true
+
+  vddusb33-gpios:
+    type: phandle-array
+    description: |
+      Control VDDUSB33 via GPIO pin.
+
+  vddusb0p9-gpios:
+    type: phandle-array
+    description: |
+      Control VDDUSB0P9 via GPIO pin.
