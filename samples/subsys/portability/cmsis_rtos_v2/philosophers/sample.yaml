@@ -1,6 +1,9 @@
 sample:
   name: CMSIS_RTOS_V2 Dining Philosophers
 common:
+  platform_key:
+    - arch
+    - simulation
   integration_platforms:
     - native_sim
   extra_args: DEBUG_PRINTF=1
