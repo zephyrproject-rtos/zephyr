@@ -1,7 +1,4 @@
-.. _weact_stm32f405_core:
-
-WeAct Studio STM32F405 Core Board V1.0
-######################################
+.. zephyr:board:: weact_stm32f405_core
 
 Overview
 ********
@@ -11,10 +8,6 @@ development board featuring the STM32F405RG, see `STM32F405RG website`_.
 This is the 64-pin variant of the STM32F405x series,
 see `STM32F405x reference manual`_. More info about the board available
 on `WeAct Github`_.
-
-.. image:: img/stm32f405_core.jpg
-      :align: center
-      :alt: STM32F405 Core Board v1.0
 
 Hardware
 ********

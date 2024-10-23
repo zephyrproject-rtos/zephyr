@@ -15,10 +15,10 @@ Building and Running
 ********************
 
 This project outputs sensor data to the console. FXOS8700
-sensor is present on the :ref:`frdm_k64f`, :ref:`frdm_k22f`,
-:ref:`frdm_kw41z`, :ref:`hexiwear`, and :ref:`twr_ke18f` boards.
-Accelerometer only devices are present on the :ref:`frdm_kl25z`,
-:ref:`bbc_microbit`, and :ref:`reel_board` boards. It does not work on
+sensor is present on the :zephyr:board:`frdm_k64f`, :zephyr:board:`frdm_k22f`,
+:zephyr:board:`frdm_kw41z`, :ref:`hexiwear`, and :zephyr:board:`twr_ke18f` boards.
+Accelerometer only devices are present on the :zephyr:board:`frdm_kl25z`,
+:zephyr:board:`bbc_microbit`, and :ref:`reel_board` boards. It does not work on
 QEMU.
 
 Building and Running for FRDM-K64F

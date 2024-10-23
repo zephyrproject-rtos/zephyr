@@ -1,7 +1,4 @@
-.. _disco_l475_iot1_board:
-
-ST Disco L475 IOT01 (B-L475E-IOT01A)
-####################################
+.. zephyr:board:: disco_l475_iot1
 
 Overview
 ********
@@ -35,10 +32,6 @@ This kit provides:
 - On-board ST-LINK/V2-1 debugger/programmer with USB re-enumeration capability:
         - mass storage, virtual COM port and debug port
 
-
-.. image:: img/disco_l475_iot1.jpg
-     :align: center
-     :alt: Disco L475 IoT1
 
 More information about the board can be found at the `Disco L475 IoT1 website`_.
 

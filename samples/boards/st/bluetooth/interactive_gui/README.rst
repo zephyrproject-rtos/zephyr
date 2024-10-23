@@ -15,7 +15,7 @@ and it passes the data between the host (PC) and controller.
 Requirements
 ************
 
-* A board based on BlueNRG BLE module such as :ref:`disco_l475_iot1_board`
+* A board based on BlueNRG BLE module such as :zephyr:board:`disco_l475_iot1`
 * `BlueNRG GUI`_ application installed on your PC
 
 Default UART settings

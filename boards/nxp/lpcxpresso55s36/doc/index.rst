@@ -1,7 +1,4 @@
-.. _lpcxpresso55s36:
-
-NXP LPCXpresso55S36
-###################
+.. zephyr:board:: lpcxpresso55s36
 
 Overview
 ********
@@ -12,10 +9,6 @@ architecture. Arduino® UNO compatible shield connectors are included,
 with additional expansion ports around the Arduino footprint, along
 with a PMod/host interface port and MikroElektronika Click module
 site.
-
-.. image:: lpcxpresso55S36.jpg
-   :align: center
-   :alt: LPCXpresso55S36
 
 Hardware
 ********
@@ -52,7 +45,7 @@ family of MCUs.  This board is a focus for NXP's Full Platform Support for
 Zephyr, to better enable the entire LPC55(S)3x family.  NXP prioritizes enabling
 this board with new support for Zephyr features.  The lpcxpresso55s36 board
 configuration supports the hardware features below.  Another similar superset
-board is the :ref:`lpcxpresso55s69`, and that board may have additional features
+board is the :zephyr:board:`lpcxpresso55s69`, and that board may have additional features
 already supported, which can also be re-used on this lpcxpresso55s36 board:
 
 +-----------+------------+-------------------------------------+

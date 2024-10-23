@@ -14,7 +14,7 @@ Building and Running
 While this is a generic sample and it should work with any boards with both display controllers
 and touch controllers supported by Zephyr (provided the corresponding ``/chosen node`` properties
 are set i.e. ``zephyr,touch`` and ``zephyr,display``).
-Below is an example on how to build the sample for :ref:`stm32f746g_disco_board`:
+Below is an example on how to build the sample for :zephyr:board:`stm32f746g_disco`:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/input/draw_touch_events

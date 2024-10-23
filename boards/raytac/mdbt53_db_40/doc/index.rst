@@ -1,7 +1,4 @@
-.. _raytac_mdbt53_db_40_nrf5340:
-
-Raytac MDBT53-DB-40
-###################
+.. zephyr:board:: raytac_mdbt53_db_40
 
 Overview
 ********
@@ -42,13 +39,6 @@ nRF5340 SoC provides support for the following devices:
 * :abbr:`SPI (Serial Peripheral Interface)`
 * :abbr:`UARTE (Universal asynchronous receiver-transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
-
-.. figure:: img/MDBT53-DB-40.jpg
-     :width: 442px
-     :align: center
-     :alt: MDBT53-DB-40
-
-     MDBT53-DB-40 (Credit: Raytac Corporation)
 
 More information about the board can be found at the `MDBT53-DB-40 website`_.
 The `MDBT53-DB-40 Specification`_ contains the demo board's datasheet.

@@ -1,7 +1,4 @@
-.. _pinnacle_100_dvk:
-
-Ezurio Pinnacle 100 DVK
-#######################
+.. zephyr:board:: pinnacle_100_dvk
 
 Overview
 ********
@@ -48,12 +45,6 @@ and the following devices:
 * :abbr:`QSPI (Quad Serial Peripheral Interface)`
 * :abbr:`BME680 (Bosch Sensortec BME680 environmental sensor)`
 * :abbr:`HL7800 (Sierra Wireless HL7800 LTE-M1/NB-IoT modem)`
-
-.. figure:: img/pinnacle_100_dvk.jpg
-     :align: center
-     :alt: Pinnacle 100 DVK
-
-     Pinnacle 100 DVK (453-00010-K1)
 
 Hardware
 ********

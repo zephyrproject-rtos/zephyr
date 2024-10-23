@@ -1,7 +1,4 @@
-.. _mm_feather:
-
-MadMachine SwiftIO Feather
-##########################
+.. zephyr:board:: mm_feather
 
 Overview
 ********
@@ -15,10 +12,6 @@ at:
 
 - `MadMachine Homepage`_
 - `SwiftIO API Reference`_
-
-.. image:: mm_feather.jpg
-   :align: center
-   :alt: SwiftIO Feather Board
 
 Hardware
 ********

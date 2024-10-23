@@ -1,7 +1,4 @@
-.. _frdm_ke15z:
-
-NXP FRDM-KE15Z
-##############
+.. zephyr:board:: frdm_ke15z
 
 Overview
 ********
@@ -11,10 +8,6 @@ MCU-based platforms. The FRDM-KE15Z contains a robust TSI module
 with up to 50 channels which makes this board highly flexible
 for touch keys. Offers options for serial
 communication, flash programming, and run-control debugging.
-
-.. figure:: frdm_ke15z.webp
-   :align: center
-   :alt: FRDM-KE15Z
 
 Hardware
 ********

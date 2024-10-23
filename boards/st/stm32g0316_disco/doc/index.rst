@@ -1,7 +1,4 @@
-.. _stm32g0316_disco_board:
-
-ST STM32G0316 Discovery
-#######################
+.. zephyr:board:: stm32g0316_disco
 
 Overview
 ********
@@ -10,10 +7,6 @@ The STM32G0316-DISCO Discovery kit helps to discover features of STM32G0 in SO8 
 This discovery kit offers an SO8 to DIL8 module designed with the STM32G031J6 microcontroller
 and allows the user to develop applications. It includes an on-board ST-LINK/V2-1 to debug
 and program the embedded STM32 microcontroller.
-
-.. image:: img/stm32g0316_disco.jpg
-   :align: center
-   :alt: STM32G0316-DISCO
 
 Hardware
 ********

@@ -1,7 +1,4 @@
-.. _gd32e507v_start:
-
-GigaDevice GD32E507V-START
-##########################
+.. zephyr:board:: gd32e507v_start
 
 Overview
 ********
@@ -12,10 +9,6 @@ on GD32E507VE Cortex-M33 High Performance MCU.
 The GD32E507VE features a single-core ARM Cortex-M33 MCU which can run up
 to 180 MHz with flash accesses zero wait states, 512kiB of Flash, 128kiB of
 SRAM and 80 GPIOs.
-
-.. image:: img/gd32e507v_start.jpg
-     :align: center
-     :alt: gd32e507v_start
 
 Hardware
 ********

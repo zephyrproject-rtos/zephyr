@@ -1,7 +1,4 @@
-.. _adafruit_kb2040:
-
-Adafruit KB2040
-###############
+.. zephyr:board:: adafruit_kb2040
 
 Overview
 ********
@@ -26,13 +23,6 @@ Hardware
 - 8 Programmable I/O (PIO) for custom peripherals
 - On-board RGB LED
 - 1 Watchdog timer peripheral
-
-
-.. figure:: img/kb2040.jpg
-     :align: center
-     :alt: Adafruit KB2040
-
-     Adafruit KB2040 (Image courtesy of Adafruit)
 
 Supported Features
 ==================

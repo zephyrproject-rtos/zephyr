@@ -1,7 +1,4 @@
-.. _rak11720:
-
-RAK11720
-########
+.. zephyr:board:: rak11720
 
 The RAK11720 is a WisBlock Core module for RAK WisBlock.
 It is based on the powerful ultra-low power Apollo3 Blue SoC (AMA3B1KK-KBR-B0)
@@ -12,10 +9,6 @@ that enhances the communication capabilities. The RAK11720 stamp module
 comes in the same size and footprint as our RAK3172 module which gives
 you the opportunity to enhance your existing designs
 with BLE without designing a new PCB.
-
-.. image:: img/rak11720.webp
-   :align: center
-   :alt: RAK11720
 
 Hardware
 ********

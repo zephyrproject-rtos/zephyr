@@ -1,7 +1,4 @@
-.. _mimx8mq_evk:
-
-NXP MIMX8MQ EVK
-###############
+.. zephyr:board:: imx8mq_evk
 
 Overview
 ********
@@ -36,10 +33,6 @@ Zephyr OS is ported to run on the Cortex®-M4 core.
 
     - JTAG 10-pin connector
     - MicroUSB for UART debug, two COM ports for A53 and M4
-
-.. image:: img/mimx8mq_evk.jpg
-   :align: center
-   :alt: MIMX8MQ EVK
 
 More information about the board can be found at the
 `NXP website`_.

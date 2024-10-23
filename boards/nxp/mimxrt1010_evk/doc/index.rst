@@ -1,7 +1,4 @@
-.. _mimxrt1010_evk:
-
-NXP MIMXRT1010-EVK
-##################
+.. zephyr:board:: mimxrt1010_evk
 
 Overview
 ********
@@ -10,10 +7,6 @@ The i.MX RT1010 offer a new entry-point into the i.MX RT crossover processor
 series by providing the lowest-cost LQFP package option, combined with the
 high performance and ease-of-use known throughout the entire i.MX RT series.
 This device is fully supported by NXP’s MCUXpresso Software and Tools.
-
-.. image:: mimxrt1010_evk.jpg
-   :align: center
-   :alt: MIMXRT1010-EVK
 
 Hardware
 ********
@@ -69,7 +62,7 @@ Supported Features
 
 The mimxrt1010_evk board configuration supports the hardware features listed
 below.  For additional features not yet supported, please also refer to the
-:ref:`mimxrt1064_evk` , which is the superset board in NXP's i.MX RT10xx family.
+:zephyr:board:`mimxrt1064_evk` , which is the superset board in NXP's i.MX RT10xx family.
 NXP prioritizes enabling the superset board with NXP's Full Platform Support for
 Zephyr.  Therefore, the mimxrt1064_evk board may have additional features
 already supported, which can also be re-used on this mimxrt1010_evk board:

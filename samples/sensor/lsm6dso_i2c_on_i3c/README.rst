@@ -17,7 +17,7 @@ Requirements
 This sample uses the LSM6DSO sensor controlled using the I2C interface
 exposed by the I3C controller. It has been tested using the LSM6DSO on
 the evaluation board STEVAL-MKI196V1 connected to the I3C header
-on :ref:`mimxrt685_evk`.
+on :zephyr:board:`mimxrt685_evk`.
 
 References
 **********
@@ -46,7 +46,7 @@ Board Preparations
 mimxrt685_evk
 ------------------
 
-On the board :ref:`mimxrt685_evk`, the I3C pins are exposed on the J18
+On the board :zephyr:board:`mimxrt685_evk`, the I3C pins are exposed on the J18
 header, where:
 
   * SCL is on pin 1

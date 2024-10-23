@@ -1,7 +1,4 @@
-.. _max32680_evkit:
-
-MAX32680EVKIT
-#############
+.. zephyr:board:: max32680evkit
 
 Overview
 ********
@@ -16,11 +13,6 @@ the latest generation Bluetooth® 5.2 Low Energy
 (LE) radio.
 
 The Zephyr port is running on the MAX32680 MCU.
-
-.. image:: img/max32680evkit_img1.jpg
-   :align: center
-   :alt: MAX32680 EVKIT
-
 
 Hardware
 ********

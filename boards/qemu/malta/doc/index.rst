@@ -1,7 +1,4 @@
-.. _qemu_malta:
-
-MIPS Malta Emulation (QEMU)
-###########################
+.. zephyr:board:: qemu_malta
 
 Overview
 ********

@@ -1,7 +1,4 @@
-.. _mimxrt595_evk:
-
-NXP MIMXRT595-EVK
-##################
+.. zephyr:board:: mimxrt595_evk
 
 Overview
 ********
@@ -16,9 +13,6 @@ i.MX RT500 MCUs provides up to 5MB of on-chip SRAM and several high-bandwidth in
 to access off-chip flash, including an Octal/Quad SPI interface with an on-the-fly
 decryption engine.
 
-.. image:: mimxrt595_evk.jpg
-   :align: center
-   :alt: MIMXRT595-EVK
 
 Hardware
 ********
@@ -62,7 +56,7 @@ family of MCUs.  This board is a focus for NXP's Full Platform Support for
 Zephyr, to better enable the entire RT5xx family.  NXP prioritizes enabling
 this board with new support for Zephyr features.  The mimxrt595_evk board
 configuration supports the hardware features below.  Another very similar
-board is the :ref:`mimxrt685_evk`, and that board may have additional features
+board is the :zephyr:board:`mimxrt685_evk`, and that board may have additional features
 already supported, which can also be re-used on this mimxrt595_evk board:
 
 +-----------+------------+-------------------------------------+

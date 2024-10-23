@@ -12,14 +12,14 @@ sample application uses a mailbox to send messages from one
 processor core to the other.
 
 This sample applies to the following boards:
- -  :ref:`lpcxpresso54114`, two core processors (Cortex-M4F and Cortex-M0+)
- -  :ref:`lpcxpresso55s69`, two core processors (dual Cortex-M33)
+ -  :zephyr:board:`lpcxpresso54114`, two core processors (Cortex-M4F and Cortex-M0+)
+ -  :zephyr:board:`lpcxpresso55s69`, two core processors (dual Cortex-M33)
 
 Requirements
 ************
 
-- :ref:`lpcxpresso54114` board
-- :ref:`lpcxpresso55s69` board
+- :zephyr:board:`lpcxpresso54114` board
+- :zephyr:board:`lpcxpresso55s69` board
 
 Building the application for lpcxpresso54114/lpc54114/m4
 ********************************************************

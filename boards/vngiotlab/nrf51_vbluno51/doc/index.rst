@@ -1,19 +1,10 @@
-.. _nrf51_vbluno51:
-
-nRF51-VBLUno51
-##############
+.. zephyr:board:: nrf51_vbluno51
 
 Overview
 ********
 
 Zephyr uses the nrf51_vbluno51 board configuration to run on the VBLUno51 board,
 a VNG Bluetooth Low Energy UNO using an nRF51822 ARM processor.
-
-.. figure:: img/nrf51_vbluno51.jpg
-     :align: center
-     :alt: nRF51_VBLUno51
-
-     nrf51_vbluno51 Top
 
 .. figure:: img/nrf51_vbluno51_bot.jpg
      :align: center

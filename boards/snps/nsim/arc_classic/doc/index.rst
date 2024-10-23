@@ -1,7 +1,4 @@
-.. _nsim:
-
-DesignWare ARC nSIM and HAPS FPGA boards
-########################################
+.. zephyr:board:: nsim
 
 Overview
 ********

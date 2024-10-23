@@ -30,7 +30,7 @@ Caveats
 *******
 
 * The Zephyr port of ``UpdateHub`` was initially developed to run on a
-  :ref:`Freedom-K64F <frdm_k64f>` kit using the ethernet connectivity.  The
+  :zephyr:board:`Freedom-K64F <frdm_k64f>` kit using the ethernet connectivity.  The
   application should build and run for other platforms with same connectivity.
 
 * The sample provides overlay files to enable other technologies like WIFI,
@@ -453,9 +453,9 @@ The below list of hardware have been used by UpdateHub team.
    :widths: 50, 50
    :width: 800px
 
-   :ref:`frdm_k64f`, "1, 2, 3, 4"
+   :zephyr:board:`frdm_k64f`, "1, 2, 3, 4"
    :ref:`nrf52840dk_nrf52840`, "2, 3, 4, 5, 6"
-   :ref:`nucleo_f767zi_board`, "1, 2, 3, 4"
+   :zephyr:board:`nucleo_f767zi`, "1, 2, 3, 4"
 
 
 .. _updatehub.io: https://updatehub.io

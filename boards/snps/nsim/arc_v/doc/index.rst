@@ -1,7 +1,4 @@
-.. _nsim_arc_v:
-
-DesignWare RISC-V nSIM and HAPS FPGA boards
-###########################################
+.. zephyr:board:: nsim_arc_v
 
 Overview
 ********

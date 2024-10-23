@@ -1,7 +1,4 @@
-.. _xmc45_relax_kit:
-
-INFINEON XMC45-RELAX-KIT
-########################
+.. zephyr:board:: xmc45_relax_kit
 
 Overview
 ********
@@ -9,10 +6,6 @@ Overview
 The XMC4500 Relax Kit is designed to evaluate the capabilities of the XMC4500
 Microcontroller. It is based on High performance ARM Cortex-M4F which can run
 up to 120MHz.
-
-.. image:: xmc45_relax_kit.jpg
-   :align: center
-   :alt: XMC45-RELAX-KIT
 
 Features:
 =========

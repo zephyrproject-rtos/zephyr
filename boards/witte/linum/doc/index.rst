@@ -1,7 +1,4 @@
-.. _linum:
-
-Witte Technology Linum Board
-############################
+.. zephyr:board:: linum
 
 Overview
 ********
@@ -10,10 +7,6 @@ STM32H753BI microcontroller. The board has 2 expansion connectors used by the LC
 touchscreen and another for access to other peripherals of microcontroller. Also it brings plenty
 of communications interfaces like UART with RS232 and RS485 capabillities, CAN bus compatible to
 FD standard, and networking over Ethernet.
-
-.. image:: img/linum-stm32h753bi-top.jpg
-     :align: center
-     :alt: Linum development board
 
 Hardware
 ********

@@ -1,7 +1,4 @@
-.. _black_f407ve_board:
-
-Black STM32 F407VE Development Board
-####################################
+.. zephyr:board:: black_f407ve
 
 Overview
 ********
@@ -26,10 +23,6 @@ Here are some highlights of the BLACK_F407VE board:
 
 - Four push-buttons: RESET, K0, K1 and WK_UP
 - Mini-AB connector
-
-.. image:: img/black_f407ve.jpg
-     :align: center
-     :alt: BLACK_F407VE
 
 See also board descriptions at `STM32-base website`_,
 `STM32F407VET6 black board`_ and `MCUDev Black STM32F407VET6`_

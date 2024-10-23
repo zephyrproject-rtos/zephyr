@@ -1,7 +1,4 @@
-.. _khadas_edgev:
-
-Khadas Edge-V
-#################################
+.. zephyr:board:: khadas_edgev
 
 Overview
 ********
