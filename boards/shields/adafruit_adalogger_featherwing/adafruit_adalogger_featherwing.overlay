@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2024 Philip-Dylan Gleonec <philip-dylan@gleonec.bzh>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		rtc = &rtc0_adafruit_adalogger_featherwing;
+		sdhc0 = &sdhc0_adafruit_adalogger_featherwing;
+	};
+};
+
+&feather_spi {
+	status = "okay";
+	cs-gpios = <&feather_header 17 GPIO_ACTIVE_LOW>; /* D10 */
+
+	sdhc0_adafruit_adalogger_featherwing: sdhc@0 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <0>;
+		spi-max-frequency = <12000000>;
+		status = "okay";
+
+		sdmmc {
+			compatible = "zephyr,sdmmc-disk";
+			status = "okay";
+		};
+	};
+};
+
+&feather_i2c {
+	status = "okay";
+
+	rtc0_adafruit_adalogger_featherwing: rtc@68 {
+		compatible = "nxp,pcf8523";
+		reg = <0x68>;
+		alarms-count = <1>;
+		battery-switch-over = "standard";
+		status = "okay";
+	};
+};
