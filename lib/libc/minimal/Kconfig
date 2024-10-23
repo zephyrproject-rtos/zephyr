@@ -63,4 +63,10 @@ config MINIMAL_LIBC_STRING_ERROR_TABLE
 	  symbols are still present, but the functions produce an empty
 	  string.
 
+config MINIMAL_LIBC_PRINTF
+	bool "Printf functions"
+	default y
+	help
+	  Enable sprintf() and fprintf() for the minimal libc.
+
 endif # MINIMAL_LIBC

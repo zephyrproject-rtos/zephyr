@@ -24,8 +24,6 @@ zephyr_library_sources(
   source/string/string.c
   source/string/strspn.c
   source/stdout/stdout_console.c
-  source/stdout/sprintf.c
-  source/stdout/fprintf.c
   source/math/sqrtf.c
   source/math/sqrt.c
   ${STRERROR_TABLE_H}
@@ -36,6 +34,13 @@ if(CONFIG_MINIMAL_LIBC_TIME)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_MINIMAL_LIBC_RAND source/stdlib/rand.c)
+
+if (CONFIG_MINIMAL_LIBC_PRINTF)
+  zephyr_library_sources(
+    source/stdout/sprintf.c
+    source/stdout/fprintf.c
+  )
+endif()
 
 add_custom_command(
   OUTPUT ${STRERROR_TABLE_H}
