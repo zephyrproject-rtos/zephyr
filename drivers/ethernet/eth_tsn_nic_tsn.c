@@ -27,10 +27,6 @@
 
 #define TSN_ALWAYS_OPEN(from) (from - 1) /* For both timestamp and sysclock */
 
-#define TSN_DEFAULT_PRIORITY  0
-#define TSN_DEFAULT_FROM_TICK 0
-#define TSN_DEFAULT_TO_TICK   ((1 << 29) - 1)
-
 struct timestamps {
 	net_time_t from;
 	net_time_t to;
@@ -39,35 +35,6 @@ struct timestamps {
 };
 
 typedef uint64_t sysclock_t;
-
-void fill_default_metadata(struct tx_metadata *metadata)
-{
-	metadata->fail_policy = TSN_FAIL_POLICY_DROP;
-
-	metadata->from.tick = TSN_DEFAULT_FROM_TICK;
-	metadata->from.priority = TSN_DEFAULT_PRIORITY;
-	metadata->to.tick = TSN_DEFAULT_TO_TICK;
-	metadata->to.priority = TSN_DEFAULT_PRIORITY;
-
-	metadata->delay_from.tick = TSN_DEFAULT_FROM_TICK;
-	metadata->delay_from.priority = TSN_DEFAULT_PRIORITY;
-	metadata->delay_to.tick = TSN_DEFAULT_TO_TICK;
-	metadata->delay_to.priority = TSN_DEFAULT_PRIORITY;
-}
-
-#if CONFIG_NET_TC_TX_COUNT > 0
-
-static void bake_qos_config(struct tsn_config *config);
-static net_time_t bytes_to_ns(uint64_t bytes);
-
-static bool get_timestamps(struct timestamps *timestamps, const struct tsn_config *tsn_config,
-			   net_time_t from, uint8_t vlan_prio, uint64_t bytes, bool consider_delay);
-static void spend_qav_credit(struct tsn_config *tsn_config, net_time_t at, uint8_t vlan_prio,
-			     uint64_t bytes);
-
-/**
- * Inline utility functions
- */
 
 static inline net_time_t ext_time_to_net_time(struct net_ptp_extended_time ext)
 {
@@ -85,6 +52,37 @@ static inline sysclock_t tsn_timestamp_to_sysclock(const struct device *dev, net
 
 	return (sysclock_t)((timestamp - offset) / ticks_scale) - PHY_DELAY_CLOCKS;
 }
+
+void fill_default_metadata(const struct device *dev, net_time_t now, struct tx_metadata *metadata)
+{
+	metadata->fail_policy = TSN_FAIL_POLICY_DROP;
+
+	metadata->from.tick = tsn_timestamp_to_sysclock(dev, now);
+	metadata->from.priority = 0;
+	metadata->to.tick = metadata->from.tick - 1;
+	metadata->to.priority = 0;
+
+	metadata->delay_from.tick = metadata->from.tick;
+	metadata->delay_from.priority = 0;
+	metadata->delay_to.tick = metadata->delay_from.tick - 1;
+	metadata->delay_to.priority = 0;
+}
+
+/**
+ * ============================================================================================
+ * TSN Functions
+ * ============================================================================================
+ */
+
+#if CONFIG_NET_TC_TX_COUNT > 0
+
+static void bake_qos_config(struct tsn_config *config);
+static net_time_t bytes_to_ns(uint64_t bytes);
+
+static bool get_timestamps(struct timestamps *timestamps, const struct tsn_config *tsn_config,
+			   net_time_t from, uint8_t vlan_prio, uint64_t bytes, bool consider_delay);
+static void spend_qav_credit(struct tsn_config *tsn_config, net_time_t at, uint8_t vlan_prio,
+			     uint64_t bytes);
 
 /**
  * Exported functions
@@ -126,7 +124,7 @@ int tsn_fill_metadata(const struct device *dev, net_time_t now, struct tx_buffer
 
 	if (vlan_prio >= NET_TC_TX_COUNT) {
 		/* Invalid priority */
-		fill_default_metadata(metadata);
+		fill_default_metadata(dev, now, metadata);
 		return 0;
 	}
 

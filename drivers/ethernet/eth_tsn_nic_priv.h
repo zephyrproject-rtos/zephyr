@@ -312,7 +312,7 @@ struct eth_tsn_nic_data {
 	bool has_pkt; /* TODO: This is for test only */
 };
 
-void fill_default_metadata(struct tx_metadata *metadata);
+void fill_default_metadata(const struct device *dev, net_time_t now, struct tx_metadata *metadata);
 
 #if CONFIG_NET_TC_TX_COUNT > 0
 
@@ -336,7 +336,7 @@ inline int tsn_set_qav(const struct device *dev, struct ethernet_qav_param param
 }
 inline int tsn_fill_metadata(const struct device *dev, net_time_t now, struct tx_buffer *tx_buf)
 {
-	return fill_default_metadata(&tx_buf->metadata);
+	return fill_default_metadata(dev, now, &tx_buf->metadata);
 }
 
 #endif /* CONFIG_NET_TC_TX_COUNT > 0 */
