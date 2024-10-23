@@ -1,0 +1,67 @@
+# Copyright (c) 2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Analog Devices 1-Wire temperature sensor
+
+compatible: "adi,max31825"
+
+include: [sensor-device.yaml, w1-slave.yaml]
+
+properties:
+  resolution:
+    type: int
+    enum:
+      - 8
+      - 9
+      - 10
+      - 12
+    default: 12
+    description: |
+      Resolution of the temperature reading in bit.
+
+  extended-mode:
+    type: boolean
+    description: |
+      Normal format produces temperature data up to 128C 1LSB, and
+      Extended format produces data up to and beyond the 145C operating limit.
+
+  conversions-per-second:
+    type: string
+    enum:
+      - "0"     # shudwonw
+      - "1/64"  # 1/64 (conv./sec.) = 0.015625
+      - "1/32"  # 1/32 (conv./sec.) = 0.03125
+      - "1/16"  # 1/16 (conv./sec.) = 0.0625
+      - "1/4"   # 1/4  (conv./sec.) = 0.25
+      - "1"     # 1/1  (conv./sec.)
+      - "4"     # 4/1  (conv./sec.)
+      - "8"     # 8/1  (conv./sec.)
+    description: |
+      Number of temperature conversion per second.
+
+  alarm-output-mode:
+    type: string
+    enum:
+      - "Comparator"
+      - "Interrupt"
+    description: |
+      Select compare or interrupt mode selection.
+
+      0: Comparator mode. In Comparator mode, the ALARM output asserts and the
+      Status bit is set to 1 when the temperature rises above the TH value or
+      falls below the TL value. The ALARM output de-asserts and the Status bits
+      return to 0 when the measured temperature returns to a value ranging from TH to TL.
+
+      1: Interrupt mode. In interrupt mode, exceeding TH or going below TL also asserts
+      the ALARM output and sets the Status bits to 1. ALARM remains asserted
+      and the Status bits remain set to 1 until a read operation is performed on
+      any of the registers, at which point ALARM is de-asserted and the Status bits return to 0.
+      Note that if the result of the next conversion is greater than TH or less than TL,
+      the ALARM output will assert and the Status bit(s) will set.
+
+  rom:
+    type: uint8-array
+    description: |
+      Each 1-Wire component contains a unique 64-bit code stored in ROM.
+      The ROM address will be used to address device incase of there are multiple slave on the bus.
+      Format: FamilyCode(1 byte) + Serial(6 bytes) + CRC(1 byte)
