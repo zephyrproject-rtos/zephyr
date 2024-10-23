@@ -23,6 +23,7 @@ supported:
   - usb_device
   - watchdog
   - counter
+  - pwm
   - hwinfo
   - adc
   - dac
