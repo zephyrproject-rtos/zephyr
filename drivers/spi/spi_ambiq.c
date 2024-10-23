@@ -49,8 +49,6 @@ typedef void (*spi_context_update_trx)(struct spi_context *ctx, uint8_t dfs, uin
 
 #define SPI_WORD_SIZE 8
 
-#define SPI_CS_INDEX 3
-
 static void spi_ambiq_pm_policy_state_lock_get(const struct device *dev)
 {
 	if (IS_ENABLED(CONFIG_PM)) {
@@ -370,7 +368,7 @@ static int spi_ambiq_transceive(const struct device *dev, const struct spi_confi
 				const struct spi_buf_set *rx_bufs)
 {
 	struct spi_ambiq_data *data = dev->data;
-	int pm_ret, ret = 0;
+	int ret = 0;
 
 	if (!tx_bufs && !rx_bufs) {
 		return 0;
