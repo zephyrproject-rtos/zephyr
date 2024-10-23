@@ -49,3 +49,16 @@ config EVICTION_NRU_PERIOD
 	  pages that are capable of being paged out. At eviction time, if a page
 	  still has the accessed property, it will be considered as recently used.
 endif # EVICTION_NRU
+
+if EVICTION_LRU
+
+config EVICTION_LRU_SW_SIMULATED
+	bool
+	default y if X86
+	help
+	  This is for architectures where hardware does not provide a native
+	  mean to figure out least recently used pages. Enabling this changes
+	  the eviction selection to clear the access flag if it is set and
+	  requeues the page frame for later consideration.
+
+endif # EVICTION_LRU
