@@ -101,8 +101,7 @@ config NET_SOCKET_MAX_SEND_WAIT
 	  returning an ENOBUFS error.
 
 config NET_SOCKETS_SERVICE
-	bool "Socket service support [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Socket service support"
 	select EVENTFD
 	help
 	  The socket service can monitor multiple sockets and save memory
