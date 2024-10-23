@@ -5,7 +5,7 @@
 
 config PWM_NRF_SW
 	bool "Nordic Semiconductor nRF family S/W PWM"
-	default y if !PWM_NRFX
+	default y
 	depends on DT_HAS_NORDIC_NRF_SW_PWM_ENABLED
 	select NRFX_GPIOTE
 	select NRFX_PPI if HAS_HW_NRF_PPI
