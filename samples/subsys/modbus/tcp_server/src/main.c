@@ -213,14 +213,14 @@ static int init_modbus_server(void)
 
 static int modbus_tcp_reply(int client, struct modbus_adu *adu)
 {
-	uint8_t header[MODBUS_MBAP_AND_FC_LENGTH];
+	uint8_t message[MODBUS_MBAP_AND_FC_LENGTH + adu->length];
 
-	modbus_raw_put_header(adu, header);
-	if (send(client, header, sizeof(header), 0) < 0) {
-		return -errno;
-	}
+	modbus_raw_put_header(adu, message);
 
-	if (send(client, adu->data, adu->length, 0) < 0) {
+	memcpy(&message[MODBUS_MBAP_AND_FC_LENGTH], adu->data,
+	       MIN(MODBUS_MBAP_AND_FC_LENGTH + adu->length, CONFIG_MODBUS_BUFFER_SIZE));
+
+	if (send(client, message, sizeof(message), 0) < 0) {
 		return -errno;
 	}
 
