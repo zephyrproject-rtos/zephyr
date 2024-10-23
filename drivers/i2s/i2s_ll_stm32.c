@@ -213,7 +213,14 @@ static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 
 	if (stream->state != I2S_STATE_NOT_READY &&
 	    stream->state != I2S_STATE_READY) {
-		LOG_ERR("invalid state");
+		LOG_ERR("cfg invalid state (%d)", stream->state);
+		return -EINVAL;
+	}
+
+	/* Max 2 channels : left or right */
+	if (i2s_cfg->channels > 2) {
+		LOG_ERR("Unsupported I2S number of channels: %u",
+			i2s_cfg->channels);
 		return -EINVAL;
 	}
 
@@ -254,6 +261,7 @@ static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 		return ret;
 	}
 
+	LL_I2S_Disable(cfg->i2s); /* Disable I2S before writing the I2SCFGR */
 	/* set I2S Master Clock output in the MCK pin, enabled in the DT */
 	if (enable_mck) {
 		LL_I2S_EnableMasterClock(cfg->i2s);
@@ -299,7 +307,15 @@ static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 		break;
 
 	default:
-		LOG_ERR("Unsupported I2S data format");
+		LOG_ERR("Unsupported I2S data format: 0x%02x",
+			i2s_cfg->format);
+		return -EINVAL;
+	}
+
+	if ((i2s_cfg->format & I2S_FMT_DATA_ORDER_LSB) ||
+	    (i2s_cfg->format & I2S_FMT_BIT_CLK_INV) ||
+	    (i2s_cfg->format & I2S_FMT_FRAME_CLK_INV)) {
+		LOG_ERR("Unsupported I2S stream format: 0x%02x", i2s_cfg->format);
 		return -EINVAL;
 	}
 
@@ -310,7 +326,28 @@ static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 		LL_I2S_SetClockPolarity(cfg->i2s, LL_I2S_POLARITY_LOW);
 
 	stream->state = I2S_STATE_READY;
+	LL_I2S_Enable(cfg->i2s); /* Enable I2S after writing the I2SCFGR */
+
 	return 0;
+}
+
+static const struct i2s_config *i2s_stm32_config_get(const struct device *dev,
+						    enum i2s_dir dir)
+{
+	struct i2s_stm32_data *const dev_data = dev->data;
+	struct stream *stream;
+
+	if (dir == I2S_DIR_RX) {
+		stream = &dev_data->rx;
+	} else {
+		stream = &dev_data->tx;
+	}
+
+	if (stream->state == I2S_STATE_NOT_READY) {
+		return NULL;
+	}
+
+	return &stream->cfg;
 }
 
 static int i2s_stm32_trigger(const struct device *dev, enum i2s_dir dir,
@@ -343,14 +380,17 @@ static int i2s_stm32_trigger(const struct device *dev, enum i2s_dir dir,
 
 		__ASSERT_NO_MSG(stream->mem_block == NULL);
 
+		key = irq_lock();
 		ret = stream->stream_start(stream, dev);
 		if (ret < 0) {
+			irq_unlock(key);
 			LOG_ERR("START trigger failed %d", ret);
 			return ret;
 		}
 
 		stream->state = I2S_STATE_RUNNING;
 		stream->last_block = false;
+		irq_unlock(key);
 		break;
 
 	case I2S_TRIGGER_STOP:
@@ -361,7 +401,12 @@ static int i2s_stm32_trigger(const struct device *dev, enum i2s_dir dir,
 			return -EIO;
 		}
 do_trigger_stop:
-		if (ll_func_i2s_dma_busy(cfg->i2s)) {
+		if ((ll_func_i2s_dma_busy(cfg->i2s) &&
+			(queue_is_empty(&stream->mem_block_queue) == false))
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_i2s)
+					|| (stream->state == I2S_STATE_RUNNING)
+#endif
+		) {
 			stream->state = I2S_STATE_STOPPING;
 			/*
 			 * Indicate that the transition to I2S_STATE_STOPPING
@@ -386,7 +431,11 @@ do_trigger_stop:
 
 		if (dir == I2S_DIR_TX) {
 			if ((queue_is_empty(&stream->mem_block_queue) == false) ||
-						(ll_func_i2s_dma_busy(cfg->i2s))) {
+						(ll_func_i2s_dma_busy(cfg->i2s))
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_i2s)
+						|| (stream->state == I2S_STATE_RUNNING)
+#endif
+			) {
 				stream->state = I2S_STATE_STOPPING;
 				/*
 				 * Indicate that the transition to I2S_STATE_STOPPING
@@ -440,7 +489,7 @@ static int i2s_stm32_read(const struct device *dev, void **mem_block,
 	int ret;
 
 	if (dev_data->rx.state == I2S_STATE_NOT_READY) {
-		LOG_DBG("invalid state");
+		LOG_DBG("Rx invalid state");
 		return -EIO;
 	}
 
@@ -469,7 +518,7 @@ static int i2s_stm32_write(const struct device *dev, void *mem_block,
 
 	if (dev_data->tx.state != I2S_STATE_RUNNING &&
 	    dev_data->tx.state != I2S_STATE_READY) {
-		LOG_DBG("invalid state");
+		LOG_DBG("Tx invalid state");
 		return -EIO;
 	}
 
@@ -485,6 +534,7 @@ static int i2s_stm32_write(const struct device *dev, void *mem_block,
 
 static const struct i2s_driver_api i2s_stm32_driver_api = {
 	.configure = i2s_stm32_configure,
+	.config_get = i2s_stm32_config_get,
 	.read = i2s_stm32_read,
 	.write = i2s_stm32_write,
 	.trigger = i2s_stm32_trigger,
@@ -784,6 +834,11 @@ static int i2s_stm32_initialize(const struct device *dev)
 		return -ENODEV;
 	}
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_i2s)
+	LL_I2S_Disable(cfg->i2s);
+	LL_I2S_EnableMode(cfg->i2s);
+#endif
+
 	LOG_INF("%s inited", dev->name);
 
 	return 0;
@@ -830,8 +885,8 @@ static int rx_stream_start(struct stream *stream, const struct device *dev)
 	LL_I2S_EnableIT_OVR(cfg->i2s);
 	LL_I2S_EnableIT_UDR(cfg->i2s);
 	LL_I2S_EnableIT_FRE(cfg->i2s);
-	LL_I2S_Enable(cfg->i2s);
-	LL_SPI_StartMasterTransfer(cfg->i2s);
+	LL_I2S_EnableI2S(cfg->i2s);
+	LL_I2S_StartTransfer(cfg->i2s);
 #else
 	LL_I2S_EnableIT_ERR(cfg->i2s);
 	LL_I2S_Enable(cfg->i2s);
@@ -888,8 +943,8 @@ static int tx_stream_start(struct stream *stream, const struct device *dev)
 	LL_I2S_EnableIT_UDR(cfg->i2s);
 	LL_I2S_EnableIT_FRE(cfg->i2s);
 
-	LL_I2S_Enable(cfg->i2s);
-	LL_SPI_StartMasterTransfer(cfg->i2s);
+	LL_I2S_EnableI2S(cfg->i2s);
+	LL_I2S_StartTransfer(cfg->i2s);
 #else
 	LL_I2S_EnableIT_ERR(cfg->i2s);
 	LL_I2S_Enable(cfg->i2s);
@@ -904,6 +959,7 @@ static void rx_stream_disable(struct stream *stream, const struct device *dev)
 
 	LL_I2S_DisableDMAReq_RX(cfg->i2s);
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_i2s)
+	LL_SPI_SuspendMasterTransfer(cfg->i2s);
 	LL_I2S_DisableIT_OVR(cfg->i2s);
 	LL_I2S_DisableIT_UDR(cfg->i2s);
 	LL_I2S_DisableIT_FRE(cfg->i2s);
@@ -928,6 +984,7 @@ static void tx_stream_disable(struct stream *stream, const struct device *dev)
 
 	LL_I2S_DisableDMAReq_TX(cfg->i2s);
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_i2s)
+	LL_SPI_SuspendMasterTransfer(cfg->i2s);
 	LL_I2S_DisableIT_OVR(cfg->i2s);
 	LL_I2S_DisableIT_UDR(cfg->i2s);
 	LL_I2S_DisableIT_FRE(cfg->i2s);
@@ -941,8 +998,14 @@ static void tx_stream_disable(struct stream *stream, const struct device *dev)
 		stream->mem_block = NULL;
 	}
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_i2s)
 	/* Wait for TX queue to drain before disabling */
 	k_busy_wait(100);
+#else
+	/* Check if the Busy Bit of I2S is still active before disabling IP */
+	while (LL_SPI_IsActiveFlag_BSY(cfg->i2s)) {
+	}
+#endif
 	LL_I2S_Disable(cfg->i2s);
 
 	active_dma_tx_channel[stream->dma_channel] = NULL;
