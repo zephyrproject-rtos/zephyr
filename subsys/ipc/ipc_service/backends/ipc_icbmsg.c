@@ -1434,11 +1434,11 @@ const static struct ipc_service_backend backend_ops = {
 	};										\
 	BUILD_ASSERT(IS_POWER_OF_TWO(GET_CACHE_ALIGNMENT(i)),				\
 		     "This module supports only power of two cache alignment");		\
-	BUILD_ASSERT((GET_BLOCK_SIZE_INST(i, tx, rx) > GET_CACHE_ALIGNMENT(i)) &&	\
+	BUILD_ASSERT((GET_BLOCK_SIZE_INST(i, tx, rx) >= GET_CACHE_ALIGNMENT(i)) &&	\
 		     (GET_BLOCK_SIZE_INST(i, tx, rx) <					\
 		      GET_MEM_SIZE_INST(i, tx)),					\
 		     "TX region is too small for provided number of blocks");		\
-	BUILD_ASSERT((GET_BLOCK_SIZE_INST(i, rx, tx) > GET_CACHE_ALIGNMENT(i)) &&	\
+	BUILD_ASSERT((GET_BLOCK_SIZE_INST(i, rx, tx) >= GET_CACHE_ALIGNMENT(i)) &&	\
 		     (GET_BLOCK_SIZE_INST(i, rx, tx) <					\
 		      GET_MEM_SIZE_INST(i, rx)),					\
 		     "RX region is too small for provided number of blocks");		\
