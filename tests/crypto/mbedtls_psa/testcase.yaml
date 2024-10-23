@@ -11,8 +11,6 @@
 # - no TF-M enabled devices because we assume that the TF-M implementation
 #   of PSA crypto is working fine on the platforms that support TF-M.
 # - platform should be testable by the CI.
-# - enable CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG in order to reduce as much
-#   as possible usage of legacy modules in Mbed TLS.
 # - pick 1 platform which supports entropy driver and 1 which does not. The
 #   latter case will allow to test
 #   CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG.

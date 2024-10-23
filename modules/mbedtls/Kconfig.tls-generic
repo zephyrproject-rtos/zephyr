@@ -246,6 +246,7 @@ config MBEDTLS_SOME_CIPHER_ENABLED
 
 config MBEDTLS_CIPHER_AES_ENABLED
 	bool "AES block cipher"
+	default y if PSA_WANT_KEY_TYPE_AES && MBEDTLS_PSA_CRYPTO_C
 
 if MBEDTLS_CIPHER_AES_ENABLED
 
@@ -480,6 +481,7 @@ config MBEDTLS_SSL_EXTENDED_MASTER_SECRET
 choice MBEDTLS_PSA_CRYPTO_RNG_SOURCE
 	prompt "Select random source for built-in PSA crypto"
 	depends on MBEDTLS_PSA_CRYPTO_C
+	default MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG if CSPRNG_ENABLED
 	default MBEDTLS_PSA_CRYPTO_LEGACY_RNG
 
 config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
@@ -558,6 +560,16 @@ config MBEDTLS_PSA_P256M_DRIVER_ENABLED
 	help
 	  Enable support for the optimized sofware implementation of the secp256r1
 	  curve through the standard PSA API.
+
+config MBEDTLS_PSA_KEY_SLOT_COUNT
+	int "Number of key slots in PSA core"
+	default 32
+	depends on MBEDTLS_PSA_CRYPTO_C
+	help
+	  Set the number of key slots that are available in the PSA core. Be
+	  aware that each slots, even if unused, increases RAM memory consumption,
+	  so it's important to find the right balance between number of slots
+	  available and RAM occupation.
 
 config MBEDTLS_PSA_P256M_DRIVER_RAW
 	bool "Access p256-m driver directly (without PSA interface)"
