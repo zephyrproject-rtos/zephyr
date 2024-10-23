@@ -12,13 +12,13 @@ are given to this python script in the form of a string.
 
 Example of such a string would be::
 
-   SRAM2:COPY:/home/xyz/zephyr/samples/hello_world/src/main.c,\
-   SRAM1:COPY:/home/xyz/zephyr/samples/hello_world/src/main2.c, \
-   FLASH2:NOCOPY:/home/xyz/zephyr/samples/hello_world/src/main3.c
+   SRAM2:FLAGS=COPY:FILES=/home/xyz/zephyr/samples/hello_world/src/main.c,\
+   SRAM1:FLAGS=COPY:FILES=/home/xyz/zephyr/samples/hello_world/src/main2.c, \
+   FLASH2:FLAGS=NOCOPY:FILES=/home/xyz/zephyr/samples/hello_world/src/main3.c
 
 One can also specify the program header for a given memory region:
 
-   SRAM2\\ :phdr0:COPY:/home/xyz/zephyr/samples/hello_world/src/main.c
+   SRAM2:PHDR=phdr0:FLAGS=COPY:FILES=/home/xyz/zephyr/samples/hello_world/src/main.c
 
 To invoke this script::
 
@@ -113,7 +113,7 @@ SECTION_LOAD_MEMORY_SEQ = """
 
 LOAD_ADDRESS_LOCATION_FLASH = """
 #ifdef CONFIG_XIP
-GROUP_DATA_LINK_IN({0}, ROMABLE_REGION)
+GROUP_DATA_LINK_IN({0}, {1})
 #else
 GROUP_DATA_LINK_IN({0}, {0})
 #endif
@@ -332,18 +332,23 @@ def add_phdr(memory_type, phdrs):
     return f'{memory_type} {phdrs[memory_type] if memory_type in phdrs else ""}'
 
 
+def add_lmem(memory_type, lmems):
+    return f'{lmems[memory_type] if memory_type in lmems else "ROMABLE_REGION"}'
+
+
 def string_create_helper(
     kind: SectionKind,
     memory_type,
     full_list_of_sections: 'dict[SectionKind, list[OutputSection]]',
     load_address_in_flash,
     is_copy,
-    phdrs
+    phdrs,
+    lmems
 ):
     linker_string = ''
     if load_address_in_flash:
         if is_copy:
-            load_address_string = LOAD_ADDRESS_LOCATION_FLASH.format(add_phdr(memory_type, phdrs))
+            load_address_string = LOAD_ADDRESS_LOCATION_FLASH.format(add_phdr(memory_type, phdrs), add_lmem(memory_type, lmems))
         else:
             load_address_string = LOAD_ADDRESS_LOCATION_FLASH_NOCOPY.format(add_phdr(memory_type, phdrs))
     else:
@@ -377,7 +382,7 @@ def string_create_helper(
 
 
 def generate_linker_script(linker_file, sram_data_linker_file, sram_bss_linker_file,
-                           complete_list_of_sections, phdrs):
+                           complete_list_of_sections, phdrs, lmems):
     gen_string = ''
     gen_string_sram_data = ''
     gen_string_sram_bss = ''
@@ -391,19 +396,19 @@ def generate_linker_script(linker_file, sram_data_linker_file, sram_bss_linker_f
         if region_is_default_ram(memory_type) and is_copy:
             gen_string += MPU_RO_REGION_START.format(memory_type.lower(), memory_type.upper())
 
-        gen_string += string_create_helper(SectionKind.LITERAL, memory_type, full_list_of_sections, 1, is_copy, phdrs)
-        gen_string += string_create_helper(SectionKind.TEXT, memory_type, full_list_of_sections, 1, is_copy, phdrs)
-        gen_string += string_create_helper(SectionKind.RODATA, memory_type, full_list_of_sections, 1, is_copy, phdrs)
+        gen_string += string_create_helper(SectionKind.LITERAL, memory_type, full_list_of_sections, 1, is_copy, phdrs, lmems)
+        gen_string += string_create_helper(SectionKind.TEXT, memory_type, full_list_of_sections, 1, is_copy, phdrs, lmems)
+        gen_string += string_create_helper(SectionKind.RODATA, memory_type, full_list_of_sections, 1, is_copy, phdrs, lmems)
 
         if region_is_default_ram(memory_type) and is_copy:
             gen_string += MPU_RO_REGION_END.format(memory_type.lower())
 
         if region_is_default_ram(memory_type):
-            gen_string_sram_data += string_create_helper(SectionKind.DATA, memory_type, full_list_of_sections, 1, 1, phdrs)
-            gen_string_sram_bss += string_create_helper(SectionKind.BSS, memory_type, full_list_of_sections, 0, 1, phdrs)
+            gen_string_sram_data += string_create_helper(SectionKind.DATA, memory_type, full_list_of_sections, 1, 1, phdrs, lmems)
+            gen_string_sram_bss += string_create_helper(SectionKind.BSS, memory_type, full_list_of_sections, 0, 1, phdrs, lmems)
         else:
-            gen_string += string_create_helper(SectionKind.DATA, memory_type, full_list_of_sections, 1, 1, phdrs)
-            gen_string += string_create_helper(SectionKind.BSS, memory_type, full_list_of_sections, 0, 1, phdrs)
+            gen_string += string_create_helper(SectionKind.DATA, memory_type, full_list_of_sections, 1, 1, phdrs, lmems)
+            gen_string += string_create_helper(SectionKind.BSS, memory_type, full_list_of_sections, 0, 1, phdrs, lmems)
 
     # finally writing to the linker file
     with open(linker_file, "w") as file_desc:
@@ -501,22 +506,21 @@ def get_obj_filename(searchpath, filename):
 
 
 # Extracts all possible components for the input string:
-# <mem_region>[\ :program_header]:<flag_1>[;<flag_2>...]:<file_1>[;<file_2>...]
-# Returns a 4-tuple with them: (mem_region, program_header, flags, files)
+# <mem_region>[:PHDR=program_header][:LMEM=load_memory]:FLAGS=<flag_1>[;<flag_2>...]:FILES=<file_1>[;<file_2>...]
+# Returns a 5-tuple with them: (mem_region, program_header, load_mem, flags, files)
 # If no `program_header` is defined, returns an empty string
 def parse_input_string(line):
-    # Be careful when splitting by : to avoid breaking absolute paths on Windows
-    mem_region, rest = line.split(':', 1)
 
-    phdr = ''
-    if mem_region.endswith(' '):
-        mem_region = mem_region.rstrip()
-        phdr, rest = rest.split(':', 1)
+    line_split = line.split(':')
+    arg_dict = {i.split('=')[0]: i.split('=')[1] for i in line_split[1:]}
 
-    # Split lists by semicolons, in part to support generator expressions
-    flag_list, file_list = (lst.split(';') for lst in rest.split(':', 1))
+    mem_region = line_split[0]
+    phdr = arg_dict.get('PHDR', '')
+    lmem = arg_dict.get('LMEM', '')
+    flag_list = arg_dict.get('FLAGS', '').split(';')
+    file_list = arg_dict.get('FILES', '').split(';')
 
-    return mem_region, phdr, flag_list, file_list
+    return mem_region, phdr, lmem, flag_list, file_list
 
 
 # Create a dict with key as memory type and files as a list of values.
@@ -525,6 +529,7 @@ def create_dict_wrt_mem():
     # need to support wild card *
     rel_dict = dict()
     phdrs = dict()
+    lmems = dict()
 
     input_rel_dict = args.input_rel_dict.read()
     if input_rel_dict == '':
@@ -533,11 +538,15 @@ def create_dict_wrt_mem():
         if ':' not in line:
             continue
 
-        mem_region, phdr, flag_list, file_list = parse_input_string(line)
+        mem_region, phdr, lmem, flag_list, file_list = parse_input_string(line)
 
         # Handle any program header
         if phdr != '':
             phdrs[mem_region] = f':{phdr}'
+
+        # Handle any load memory
+        if lmem != '':
+            lmems[mem_region.split("_")[0]] = f'{lmem}'
 
         file_name_list = []
         # Use glob matching on each file in the list
@@ -563,7 +572,7 @@ def create_dict_wrt_mem():
         else:
             rel_dict[mem_region] = file_name_list
 
-    return rel_dict, phdrs
+    return rel_dict, phdrs, lmems
 
 
 def main():
@@ -574,7 +583,7 @@ def main():
     linker_file = args.output
     sram_data_linker_file = args.output_sram_data
     sram_bss_linker_file = args.output_sram_bss
-    rel_dict, phdrs = create_dict_wrt_mem()
+    rel_dict, phdrs, lmems = create_dict_wrt_mem()
     complete_list_of_sections: 'dict[MemoryRegion, dict[SectionKind, list[OutputSection]]]' \
         = defaultdict(lambda: defaultdict(list))
 
@@ -603,7 +612,7 @@ def main():
                 complete_list_of_sections[region][category].extend(sections)
 
     generate_linker_script(linker_file, sram_data_linker_file,
-                           sram_bss_linker_file, complete_list_of_sections, phdrs)
+                           sram_bss_linker_file, complete_list_of_sections, phdrs, lmems)
 
     code_generation = {"copy_code": '', "zero_code": '', "extern": ''}
     for mem_type, list_of_sections in sorted(complete_list_of_sections.items()):

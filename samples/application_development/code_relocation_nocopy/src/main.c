@@ -41,6 +41,7 @@ void disable_mpu_rasr_xn(void)
 
 extern void function_in_ext_flash(void);
 extern void function_in_sram(void);
+extern void function_in_sram_from_extflash(void);
 
 int main(void)
 {
@@ -52,6 +53,7 @@ int main(void)
 
 	function_in_ext_flash();
 	function_in_sram();
+	function_in_sram_from_extflash();
 
 	printk("Hello World! %s\n", CONFIG_BOARD);
 	return 0;
