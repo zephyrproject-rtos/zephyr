@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_TMP116_TMP116_H_
 #define ZEPHYR_DRIVERS_SENSOR_TMP116_TMP116_H_
 
+#include <zephyr/sys/util_macro.h>
+
 #define TMP116_REG_TEMP		0x0
 #define TMP116_REG_CFGR		0x1
 #define TMP116_REG_HIGH_LIM		0x2
@@ -26,6 +28,7 @@
 #define TMP117_DEVICE_ID		0x0117
 
 #define TMP116_CFGR_AVG			(BIT(5) | BIT(6))
+#define TMP116_CFGR_CONV		(BIT(7) | BIT(8) | BIT(9))
 #define TMP116_CFGR_MODE		(BIT(10) | BIT(11))
 #define TMP116_CFGR_DATA_READY  BIT(13)
 #define TMP116_EEPROM_UL_UNLOCK BIT(15)
@@ -39,6 +42,15 @@
 #define TMP116_MODE_SHUTDOWN	BIT(10)
 #define TMP116_MODE_ONE_SHOT	(BIT(10) | BIT(11))
 
+#define TMP116_CONV_15_5_MS  0
+#define TMP116_CONV_125_MS   BIT(7)
+#define TMP116_CONV_250_MS   BIT(8)
+#define TMP116_CONV_500_MS   (BIT(7) | BIT(8))
+#define TMP116_CONV_1000_MS  BIT(9)
+#define TMP116_CONV_4000_MS  (BIT(9) | BIT(7))
+#define TMP116_CONV_8000_MS  (BIT(9) | BIT(8))
+#define TMP116_CONV_16000_MS (BIT(9) | BIT(8) | BIT(7))
+
 struct tmp116_data {
 	uint16_t sample;
 	uint16_t id;
@@ -46,6 +58,7 @@ struct tmp116_data {
 
 struct tmp116_dev_config {
 	struct i2c_dt_spec bus;
+	uint32_t sample_frequency;
 };
 
 #endif /*  ZEPHYR_DRIVERS_SENSOR_TMP116_TMP116_H_ */

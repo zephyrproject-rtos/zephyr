@@ -8,3 +8,20 @@ compatible: "ti,tmp116"
 bus: tmp116
 
 include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  sample-frequency:
+    type: int
+    default: 1000000
+    description: |
+      Sample frequency in micro hertz.
+      Default is power-up configuration.
+    enum:
+      - 64000000
+      - 8000000
+      - 4000000
+      - 2000000
+      - 1000000
+      - 250000
+      - 125000
+      - 62500
