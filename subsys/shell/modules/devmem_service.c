@@ -97,6 +97,7 @@ static int memory_dump(const struct shell *sh, mem_addr_t phys_addr, size_t size
 static int cmd_dump(const struct shell *sh, size_t argc, char **argv)
 {
 	int rv;
+	int err = 0;
 	size_t size = -1;
 	size_t width = 32;
 	mem_addr_t addr = -1;
@@ -108,22 +109,22 @@ static int cmd_dump(const struct shell *sh, size_t argc, char **argv)
 	while ((rv = getopt(argc, argv, "a:s:w:")) != -1) {
 		switch (rv) {
 		case 'a':
-			addr = (mem_addr_t)strtoul(optarg, NULL, 16);
-			if (addr == 0 && errno == EINVAL) {
+			addr = (mem_addr_t)shell_strtoul(optarg, 16, &err);
+			if (err != 0) {
 				shell_error(sh, "invalid addr '%s'", optarg);
 				return -EINVAL;
 			}
 			break;
 		case 's':
-			size = (size_t)strtoul(optarg, NULL, 0);
-			if (size == 0 && errno == EINVAL) {
+			size = (size_t)shell_strtoul(optarg, 0, &err);
+			if (err != 0) {
 				shell_error(sh, "invalid size '%s'", optarg);
 				return -EINVAL;
 			}
 			break;
 		case 'w':
-			width = (size_t)strtoul(optarg, NULL, 0);
-			if (width == 0 && errno == EINVAL) {
+			width = (size_t)shell_strtoul(optarg, 0, &err);
+			if (err != 0) {
 				shell_error(sh, "invalid width '%s'", optarg);
 				return -EINVAL;
 			}
