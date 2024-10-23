@@ -23,7 +23,7 @@ elseif(CONFIG_ZTEST_FAIL_TEST_UNEXPECTED_ASSUME)
   list(APPEND test_sources src/unexpected_assume.cpp)
 endif()
 
-if(BOARD STREQUAL unit_testing)
+if(BOARD STREQUAL unit_testing/unit_testing)
   find_package(Zephyr COMPONENTS unittest REQUIRED HINTS $ENV{ZEPHYR_BASE})
   project(base)
 
