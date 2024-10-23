@@ -274,6 +274,8 @@ ZTEST(util, test_IN_RANGE) {
 ZTEST(util, test_FOR_EACH) {
 	#define FOR_EACH_MACRO_TEST(arg) *buf++ = arg
 	#define FOR_EACH_MACRO_TEST2(arg) arg
+        #define FOR_EACH_VAL(i, _)	i
+        #define FOR_EACH_LIST	LISTIFY(256, FOR_EACH_VAL, (,))
 
 	uint8_t array[3] = {0};
 	uint8_t *buf = array;
@@ -291,6 +293,10 @@ ZTEST(util, test_FOR_EACH) {
 	uint8_t test1[] = { 0, FOR_EACH(FOR_EACH_MACRO_TEST2, (,), 1)};
 
 	BUILD_ASSERT(sizeof(test1) == 2, "Unexpected length due to FOR_EACH fail");
+
+	uint8_t test2[] = {0, FOR_EACH(FOR_EACH_MACRO_TEST2, (,), FOR_EACH_LIST)};
+
+	BUILD_ASSERT(sizeof(test2) == 257, "Unexpected length due to FOR_EACH fail");
 }
 
 ZTEST(util, test_FOR_EACH_NONEMPTY_TERM) {
