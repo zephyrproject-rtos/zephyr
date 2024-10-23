@@ -7,6 +7,7 @@
 #include <zephyr/init.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/reboot.h>
 #include <string.h>
 #include <DA1469xAB.h>
 #include <da1469x_clock.h>
@@ -36,9 +37,26 @@ static uint32_t z_renesas_cache_configured;
 
 void sys_arch_reboot(int type)
 {
-	ARG_UNUSED(type);
+	if (type == SYS_REBOOT_WARM) {
+		NVIC_SystemReset();
+	} else if (type == SYS_REBOOT_COLD) {
+		if ((SYS_WDOG->WATCHDOG_REG & SYS_WDOG_WATCHDOG_REG_WDOG_VAL_NEG_Msk) == 0) {
+			/* Cannot write WATCHDOG_REG while WRITE_BUSY */
+			while ((SYS_WDOG->WATCHDOG_REG &
+				SYS_WDOG_WATCHDOG_CTRL_REG_WRITE_BUSY_Msk) != 0) {
+			}
+			/* Write WATCHDOG_REG */
+			SYS_WDOG->WATCHDOG_REG = BIT(SYS_WDOG_WATCHDOG_REG_WDOG_VAL_Pos);
 
-	NVIC_SystemReset();
+			GPREG->RESET_FREEZE_REG = GPREG_SET_FREEZE_REG_FRZ_SYS_WDOG_Msk;
+			SYS_WDOG->WATCHDOG_CTRL_REG &=
+				~SYS_WDOG_WATCHDOG_CTRL_REG_WDOG_FREEZE_EN_Msk;
+		}
+		/* Wait */
+		for (;;) {
+			__NOP();
+		}
+	}
 }
 
 #if defined(CONFIG_BOOTLOADER_MCUBOOT)
