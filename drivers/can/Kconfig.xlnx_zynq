@@ -1,0 +1,25 @@
+#
+# Xilinx Processor System CAN controller driver
+# configuration options
+#
+# Copyright (c) 2024, Immo Birnbaum
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config CAN_XLNX_ZYNQ
+	bool "Xilinx Processor System CAN controller driver"
+	default y
+	depends on DT_HAS_XLNX_ZYNQ_CAN_1_0_ENABLED
+	depends on !QEMU_TARGET
+	help
+	  Enable the Xilinx Processor System CAN controller driver.
+
+config CAN_MAX_FILTER
+	int "Maximum number of concurrent active RX filters"
+	depends on CAN_XLNX_ZYNQ
+	default 5
+	range 1 32
+	help
+	  RX filters are implemented in software as the Xilinx Processor
+	  System CAN controller only provides four filters in hardware,
+	  therefore, the number of RX filters can be configured here.

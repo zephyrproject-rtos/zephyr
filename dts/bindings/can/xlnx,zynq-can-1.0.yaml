@@ -1,0 +1,32 @@
+#
+# Copyright (c) 2024, Immo Birnbaum
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  Xilinx Processor System CAN controller
+  This CAN controller is contained in both the Xilinx Zynq-7000 and
+  ZynqMP (UltraScale) SoCs.
+compatible: "xlnx,zynq-can-1.0"
+
+include: can-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    type: int
+    description: |
+      This property must only be specified if clock control facilities
+      are unavailable on the current target - at the time being, this
+      applies to targets based on the ZynqMP/UltraScale SoCs.
+      Specifies the base clock frequency from which the CAN controller's
+      clock frequency for the selected baud rate will be derived using a
+      divider in the respective CAN controller's Baud Rate Prescaler
+      Register. Therefore, the value of this item must be set to the clock
+      frequency of the PLL supplying the respective CAN controller's clock
+      - by default, this is the IO PLL.
