@@ -8,6 +8,16 @@ message(STATUS "Found eclair_env: ${ECLAIR_ENV}")
 find_program(ECLAIR_REPORT eclair_report REQUIRED)
 message(STATUS "Found eclair_report: ${ECLAIR_REPORT}")
 
+if(ECLAIR_OPTIONS_FILE)
+  if(IS_ABSOLUTE ${ECLAIR_OPTIONS_FILE})
+    set(ECLAIR_OPTIONS ${ECLAIR_OPTIONS_FILE})
+  else()
+    set(ECLAIR_OPTIONS ${APPLICATION_CONFIG_DIR}/${ECLAIR_OPTIONS_FILE})
+  endif()
+  include(${ECLAIR_OPTIONS})
+else()
+  include(${CMAKE_CURRENT_LIST_DIR}/sca_options.cmake)
+endif()
 
 # ECLAIR Settings
 set(ECLAIR_PROJECT_NAME "Zephyr-${BOARD}${BOARD_QUALIFIERS}")
