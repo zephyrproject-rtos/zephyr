@@ -29,9 +29,11 @@ extern "C" {
 #endif
 
 /**
- * @brief New USB device stack core API
+ * @brief USB device stack core API
  * @defgroup usbd_api USB device core API
  * @ingroup usb
+ * @since 3.3
+ * @version 0.2.0
  * @{
  */
 

@@ -6,9 +6,9 @@
 
 /**
  * @file
- * @brief New experimental USB device stack APIs and structures
+ * @brief New USB Host stack APIs and structures
  *
- * This file contains the USB device stack APIs and structures.
+ * This file contains the USB Host stack APIs and structures.
  */
 
 #ifndef ZEPHYR_INCLUDE_USBH_H_
@@ -26,9 +26,11 @@ extern "C" {
 #endif
 
 /**
- * @brief USB HOST Core Layer API
+ * @brief USB Host Core Layer API
  * @defgroup usb_host_core_api USB Host Core API
  * @ingroup usb
+ * @since 3.3
+ * @version 0.2.0
  * @{
  */
 
