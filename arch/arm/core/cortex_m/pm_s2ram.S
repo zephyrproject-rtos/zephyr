@@ -14,11 +14,122 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/common/pm_s2ram.h>
 
+/**
+ * Macro expanding to the (integer literal) offset of field
+ * `sr_name` in the __cpu_context structure. This macro has
+ * to be implemented in C because GEN_OFFSET_SYM provides the
+ * offsets as C preprocessor definitions; they are not available
+ * by the time the assembler macros are processed.
+ *
+ * See also: `arch/arm/core/offsets/offsets_aarch32.c`
+ */
+#define CPU_CTX_SR_OFFSET(sr_name) \
+	___cpu_context_t_ ## sr_name ## _OFFSET
+
+/**
+ * Macros used to save / load a special register in __cpu_context.
+ * These also have to be implemented in C due to CPU_CTX_SR_OFFSET.
+ */
+#define SAVE_SPECIAL_REG(sr_name, cpu_ctx_reg, tmp_reg)	\
+	mrs	tmp_reg, sr_name;			\
+	str	tmp_reg, [cpu_ctx_reg, # CPU_CTX_SR_OFFSET(sr_name)];
+
+#define RESTORE_SPECIAL_REG(sr_name, cpu_ctx_reg, tmp_reg)		\
+	ldr	tmp_reg, [cpu_ctx_reg, # CPU_CTX_SR_OFFSET(sr_name)];	\
+	msr	sr_name, tmp_reg;
+
 _ASM_FILE_PROLOGUE
 
 GTEXT(pm_s2ram_mark_set)
 GTEXT(pm_s2ram_mark_check_and_clear)
 GDATA(_cpu_context)
+
+# Pushes registers r4~r12 and lr on the stack.
+# r0 is unmodified, other GPRs may be overwritten.
+.macro push_gprs
+#ifndef CONFIG_ARMV7_M_ARMV8_M_MAINLINE
+	/* `push` on ARMv6-M / ARMv8-M Baseline:
+	 * only r0~r7 and lr may be pushed
+	 */
+	push	{ r4-r7 }
+	mov	r1, r8
+	mov	r2, r9
+	mov	r3, r10
+	mov	r4, r11
+	mov	r5, r12
+	push	{ r1-r5, lr }
+#else
+	/* `push` on ARMv7-M and ARMv8-M Mainline: no limitation */
+	push	{r4-r12, lr}
+#endif /* !CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
+.endm
+
+# Pops registers r4~r12 and lr from the stack
+# r0 is unmodified, other GPRs may be overwritten.
+.macro pop_gprs
+#ifndef CONFIG_ARMV7_M_ARMV8_M_MAINLINE
+	/* `pop` on ARMv6-M / ARMv8-M Baseline:
+	 * can only pop to r0~r7 and pc (not lr!)
+	 */
+	pop	{ r1-r6 } /* pop lr through r6 */
+	mov 	lr, r6
+	mov 	r12, r5
+	mov 	r11, r4
+	mov 	r10, r3
+	mov 	r9, r2
+	mov 	r8, r1
+	pop	{ r4-r7 }
+#else
+	/* `pop` on ARMv7-M and ARMv8-M Mainline: no limitation */
+	pop	{r4-r12, lr}
+#endif /* !CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
+.endm
+
+# Saves all special registers in the provided __cpu_context structure.
+.macro save_special_registers cpu_ctx, tmp_reg
+	SAVE_SPECIAL_REG(msp,		\cpu_ctx, \tmp_reg)
+	SAVE_SPECIAL_REG(psp,		\cpu_ctx, \tmp_reg)
+	SAVE_SPECIAL_REG(apsr,		\cpu_ctx, \tmp_reg)
+	SAVE_SPECIAL_REG(primask,	\cpu_ctx, \tmp_reg)
+	SAVE_SPECIAL_REG(control,	\cpu_ctx, \tmp_reg)
+#ifdef CONFIG_ARMV7_M_ARMV8_M_MAINLINE
+	/* Registers present on ARMv7-M and ARMv8-M Mainline */
+	SAVE_SPECIAL_REG(faultmask,	\cpu_ctx, \tmp_reg)
+	SAVE_SPECIAL_REG(basepri,	\cpu_ctx, \tmp_reg)
+#endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
+
+#if defined(CONFIG_ARMV8_M_BASELINE) || defined(CONFIG_ARMV8_M_MAINLINE)
+	/* Registers present only on ARMv8-M (Baseline / Mainline) */
+	SAVE_SPECIAL_REG(msplim,	\cpu_ctx, \tmp_reg)
+	SAVE_SPECIAL_REG(psplim,	\cpu_ctx, \tmp_reg)
+#endif /* CONFIG_ARMV8_M_BASELINE || CONFIG_ARMV8_M_MAINLINE */
+.endm
+
+# Restores all special registers from the provided __cpu_context structure.
+.macro restore_special_registers cpu_ctx, tmp_reg
+#ifdef CONFIG_ARMV7_M_ARMV8_M_MAINLINE
+	/* Registers present on ARMv7-M and ARMv8-M Mainline */
+	RESTORE_SPECIAL_REG(faultmask,	\cpu_ctx, \tmp_reg)
+	RESTORE_SPECIAL_REG(basepri,	\cpu_ctx, \tmp_reg)
+#endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
+
+#if defined(CONFIG_ARMV8_M_BASELINE) || defined(CONFIG_ARMV8_M_MAINLINE)
+	/* Registers present only on ARMv8-M (Baseline / Mainline) */
+	RESTORE_SPECIAL_REG(msplim,	\cpu_ctx, \tmp_reg)
+	RESTORE_SPECIAL_REG(psplim,	\cpu_ctx, \tmp_reg)
+#endif /* CONFIG_ARMV8_M_BASELINE || CONFIG_ARMV8_M_MAINLINE */
+
+	RESTORE_SPECIAL_REG(msp,	\cpu_ctx, \tmp_reg)
+	RESTORE_SPECIAL_REG(psp,	\cpu_ctx, \tmp_reg)
+
+	# APSR has different name between MRS and MSR
+	ldr	\tmp_reg, [\cpu_ctx, # CPU_CTX_SR_OFFSET(apsr)]
+	msr	apsr_nzcvq, \tmp_reg
+
+	RESTORE_SPECIAL_REG(primask,	\cpu_ctx, \tmp_reg)
+	RESTORE_SPECIAL_REG(control,	\cpu_ctx, \tmp_reg)
+	isb
+.endm
 
 SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	/*
@@ -26,7 +137,7 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	 *
 	 * r0: address of the system_off function
 	 */
-	push	{r4-r12, lr}
+	push_gprs
 
 	/* Move system_off to protected register. */
 	mov 	r4, r0
@@ -34,38 +145,7 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	/* Store CPU context */
 	ldr	r1, =_cpu_context
 
-	mrs	r2, msp
-	str	r2, [r1, #___cpu_context_t_msp_OFFSET]
-
-	mrs	r2, msplim
-	str	r2, [r1, #___cpu_context_t_msplim_OFFSET]
-
-	mrs	r2, psp
-	str	r2, [r1, #___cpu_context_t_psp_OFFSET]
-
-	mrs	r2, psplim
-	str	r2, [r1, #___cpu_context_t_psplim_OFFSET]
-
-	mrs	r2, apsr
-	str	r2, [r1, #___cpu_context_t_apsr_OFFSET]
-
-	mrs	r2, ipsr
-	str	r2, [r1, #___cpu_context_t_ipsr_OFFSET]
-
-	mrs	r2, epsr
-	str	r2, [r1, #___cpu_context_t_epsr_OFFSET]
-
-	mrs	r2, primask
-	str	r2, [r1, #___cpu_context_t_primask_OFFSET]
-
-	mrs	r2, faultmask
-	str	r2, [r1, #___cpu_context_t_faultmask_OFFSET]
-
-	mrs	r2, basepri
-	str	r2, [r1, #___cpu_context_t_basepri_OFFSET]
-
-	mrs	r2, control
-	str	r2, [r1, #___cpu_context_t_control_OFFSET]
+	save_special_registers r1, r2
 
 	/*
 	 * Mark entering suspend to RAM.
@@ -91,7 +171,7 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	/* Move system_off back to r0 as return value */
 	mov	r0, r4
 
-	pop	{r4-r12, lr}
+	pop_gprs
 	bx	lr
 
 
@@ -106,54 +186,24 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_resume)
 	push    {r0, lr}
 	bl      pm_s2ram_mark_check_and_clear
 	cmp	r0, #0x1
-	pop     {r0, lr}
 	beq	resume
-	bx	lr
+	pop	{r0, pc}
 
 resume:
+	/* Revert effect of prologue's `push { r0, lr }` */
+	add	sp, #8
+
 	/*
 	 * Restore the CPU context
 	 */
 	ldr	r0, =_cpu_context
 
-	ldr	r1, [r0, #___cpu_context_t_msp_OFFSET]
-	msr	msp, r1
+	restore_special_registers r0, r1
 
-	ldr	r1, [r0, #___cpu_context_t_msplim_OFFSET]
-	msr	msplim, r1
-
-	ldr	r1, [r0, #___cpu_context_t_psp_OFFSET]
-	msr	psp, r1
-
-	ldr	r1, [r0, #___cpu_context_t_psplim_OFFSET]
-	msr	psplim, r1
-
-	ldr	r1, [r0, #___cpu_context_t_apsr_OFFSET]
-	msr	apsr_nzcvq, r1
-
-	ldr	r1, [r0, #___cpu_context_t_ipsr_OFFSET]
-	msr	ipsr, r1
-
-	ldr	r1, [r0, #___cpu_context_t_epsr_OFFSET]
-	msr	epsr, r1
-
-	ldr	r1, [r0, #___cpu_context_t_primask_OFFSET]
-	msr	primask, r1
-
-	ldr	r1, [r0, #___cpu_context_t_faultmask_OFFSET]
-	msr	faultmask, r1
-
-	ldr	r1, [r0, #___cpu_context_t_basepri_OFFSET]
-	msr	basepri, r1
-
-	ldr	r1, [r0, #___cpu_context_t_control_OFFSET]
-	msr	control, r1
-	isb
-
-	pop	{r4-r12, lr}
+	pop_gprs
 
 	/*
 	 * Set the return value and return
 	 */
-	mov	r0, #0
+	movs	r0, #0
 	bx	lr
