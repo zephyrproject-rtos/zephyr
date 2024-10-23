@@ -131,9 +131,15 @@ static inline void intel_adsp_gpdma_llp_read(const struct device *dev,
 {
 #ifdef CONFIG_DMA_INTEL_ADSP_GPDMA_HAS_LLP
 	const struct intel_adsp_gpdma_cfg *const dev_cfg = dev->config;
+	uint32_t tmp;
 
-	*llp_l = dw_read(dev_cfg->shim, GPDMA_CHLLPL(channel));
+	tmp = dw_read(dev_cfg->shim, GPDMA_CHLLPL(channel));
 	*llp_u = dw_read(dev_cfg->shim, GPDMA_CHLLPU(channel));
+	*llp_l = dw_read(dev_cfg->shim, GPDMA_CHLLPL(channel));
+	if (tmp > *llp_l) {
+		/* re-read the LLPU value, as LLPL just wrapped */
+		*llp_u = dw_read(dev_cfg->shim, GPDMA_CHLLPU(channel));
+	}
 #endif
 }
 
