@@ -627,9 +627,24 @@ static void isr_tx_common(void *param,
 	if (!pdu) {
 		uint8_t payload_index;
 
-		payload_index = (lll->bn_curr - 1U) +
-				(lll->ptc_curr * lll->pto);
-		payload_count = lll->payload_count + payload_index - lll->bn;
+		if (lll->ptc_curr) {
+			uint8_t ptx_idx = lll->ptc_curr - 1;
+			uint8_t ptx_payload_idx;
+			uint32_t ptx_group_mult;
+			uint8_t ptx_group_idx;
+
+			/* Calculate group index and multiplier for deriving
+			 * pre-transmission payload index.
+			 */
+			ptx_group_idx = ptx_idx / lll->bn;
+			ptx_payload_idx = ptx_idx - ptx_group_idx * lll->bn;
+			ptx_group_mult = (ptx_group_idx + 1) * lll->pto;
+			payload_index = ptx_payload_idx + ptx_group_mult * lll->bn;
+		} else {
+			payload_index  = lll->bn_curr - 1U;
+		}
+
+		payload_count = lll->payload_count - lll->bn + payload_index;
 
 #if !TEST_WITH_DUMMY_PDU
 		struct lll_adv_iso_stream *stream;
