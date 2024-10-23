@@ -1,8 +1,8 @@
-#Zephyr Memory Storage ZMS
-
 #Copyright (c) 2024 BayLibre SAS
 
 #SPDX-License-Identifier: Apache-2.0
+
+#Zephyr Memory Storage ZMS
 
 config ZMS
 	bool "Zephyr Memory Storage"
@@ -34,19 +34,19 @@ config ZMS_DATA_CRC
 	help
 	  Enables DATA CRC
 
-config ZMS_CUSTOM_BLOCK_SIZE
-	bool "Custom buffer size used by ZMS for reads and writes"
+config ZMS_CUSTOMIZE_BLOCK_SIZE
+	bool "Customize the size of the buffer used internally for reads and writes"
 	help
-	  ZMS uses internal buffers to read/write and compare stored data.
-	  Increasing the size of these buffers should be done carefully in order to not
+	  ZMS uses an internal buffer to read/write and compare stored data.
+	  Increasing the size of this buffer should be done carefully in order to not
 	  overflow the stack.
 	  Increasing this buffer means as well that ZMS could work with storage devices
 	  that have larger write-block-size which decreases ZMS performance
 
-config ZMS_MAX_BLOCK_SIZE
+config ZMS_CUSTOM_BLOCK_SIZE
 	int "ZMS internal buffer size"
 	default 32
-	depends on ZMS_CUSTOM_BLOCK_SIZE
+	depends on ZMS_CUSTOMIZE_BLOCK_SIZE
 	help
 	  Changes the internal buffer size of ZMS
 
