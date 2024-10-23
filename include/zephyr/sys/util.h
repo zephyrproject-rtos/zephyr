@@ -614,6 +614,23 @@ static inline uint8_t bin2bcd(uint8_t bin)
 uint8_t u8_to_dec(char *buf, uint8_t buflen, uint8_t value);
 
 /**
+ * @brief      Convert a int into a string representation.
+ *
+ * Convert a int value into its ASCII string representation.
+ * The string is terminated if there is enough space in buf.
+ *
+ * @param value   Number to be converted to ASCII string.
+ * @param buf     Address of where to store the string representation.
+ * @param buflen  Size of the storage area for string representation.
+ * @param base    Base of number system, E.X. decimal = base 10
+ *
+ * @return	The length of the converted string (excluding terminator if
+ *		any).
+ *
+ */
+int itoa_util(int value, char *buf, size_t buflen, int base);
+
+/**
  * @brief Sign extend an 8, 16 or 32 bit value using the index bit as sign bit.
  *
  * @param value The value to sign expand.
