@@ -17,6 +17,6 @@ tests:
         - "Turned on"
         - "Turned off"
         - "Increasing brightness gradually"
-        - "Blinking on: 0.1 sec, off: 0.1 sec"
-        - "(Blinking on: 1 sec, off: 1 sec|Cycle period not supported)"
+        - "Blinking on: \\d+ msec, off: \\d+ msec"
+        - "(Blinking on: 1000 msec, off: 1000 msec|Cycle period not supported)"
         - "Turned off, loop end"
