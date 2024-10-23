@@ -143,6 +143,12 @@ compatible = "ambiq,adc";
 	};
 };
 
+zephyr_udc0: &usb {
+	vddusb33-gpios = <&gpio96_127 7 (GPIO_PULL_UP)>;
+	vddusb0p9-gpios = <&gpio96_127 5 (GPIO_PULL_UP)>;
+	status = "okay";
+};
+
 &gpio0_31 {
 	status = "okay";
 };

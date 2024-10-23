@@ -16,6 +16,7 @@ supported:
   - i2c
   - clock_control
   - ble
+  - usbd
 testing:
   ignore_tags:
     - net
