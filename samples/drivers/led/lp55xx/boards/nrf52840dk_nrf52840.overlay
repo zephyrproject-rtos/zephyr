@@ -8,4 +8,10 @@
 		compatible = "ti,lp5562";
 		reg = <0x30>;
 	};
+
+	lp5521@32 {
+		compatible = "ti,lp5521";
+		reg = <0x32>;
+		enable-gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+	};
 };
