@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2024 Chen Xingyu <hi@xingrz.me>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	auxdisplay_0: digi-display {
+		compatible = "gpio-7-segment";
+		columns = <3>;
+		rows = <1>;
+		segment-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>,  /* A */
+				<&gpio0 9 GPIO_ACTIVE_LOW>,  /* B */
+				<&gpio0 3 GPIO_ACTIVE_LOW>,  /* C */
+				<&gpio0 1 GPIO_ACTIVE_LOW>,  /* D */
+				<&gpio0 10 GPIO_ACTIVE_LOW>, /* E */
+				<&gpio0 6 GPIO_ACTIVE_LOW>,  /* F */
+				<&gpio0 2 GPIO_ACTIVE_LOW>,  /* G */
+				<&gpio0 0 GPIO_ACTIVE_LOW>;  /* DP */
+		digit-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>,  /* DIG1 */
+			      <&gpio0 7 GPIO_ACTIVE_HIGH>,  /* DIG2 */
+			      <&gpio0 8 GPIO_ACTIVE_HIGH>;  /* DIG3 */
+		refresh-period-ms = <1>;
+	};
+};
