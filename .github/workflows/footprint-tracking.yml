@@ -104,7 +104,7 @@ jobs:
           python3 ./scripts/footprint/pack_as_twister.py -vvv \
             --plan ./scripts/footprint/plan.txt \
             --test-name='name.feature' \
-            ./footprint_data/*/footprints/*/*/
+            ./footprint_data/**/
 
       - name: Upload to ElasticSearch
         env:
