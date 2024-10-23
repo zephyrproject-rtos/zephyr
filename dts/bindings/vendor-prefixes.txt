@@ -695,7 +695,7 @@ udoo	Udoo
 ugoos	Ugoos Industrial Co., Ltd.
 ultrachip	UltraChip Inc.
 uniwest	United Western Technologies Corp (UniWest)
-up-brige-the-gap	UP Bridge the Gap
+up-bridge-the-gap	UP Bridge the Gap
 upisemi	uPI Semiconductor Corp.
 urt	United Radiant Technology Corporation
 usi	Universal Scientific Industrial Co., Ltd.
