@@ -12,6 +12,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 
 #include <inc/hw_rtc.h>
 #include <inc/hw_types.h>
@@ -153,6 +154,23 @@ static uint32_t counter_cc23x0_get_pending_int(const struct device *dev)
 	return -ESRCH;
 }
 
+#ifdef CONFIG_PM_DEVICE
+
+static int rtc_cc23x0_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		return 0;
+	case PM_DEVICE_ACTION_RESUME:
+		counter_cc23x0_get_pending_int(dev);
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+
+#endif /* CONFIG_PM_DEVICE */
+
 static uint32_t counter_cc23x0_get_top_value(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -221,21 +239,22 @@ static DEVICE_API(counter, rtc_cc23x0_api) = {
 	.get_freq = counter_cc23x0_get_freq,
 };
 
-#define CC23X0_INIT(inst)                                                                          \
-	static const struct counter_cc23x0_config cc23x0_config_##inst = {                         \
-		.counter_info =                                                                    \
-			{                                                                          \
-				.max_top_value = UINT32_MAX,                                       \
-				.flags = COUNTER_CONFIG_INFO_COUNT_UP,                             \
-				.channels = 1,                                                     \
-			},                                                                         \
-		.base = DT_INST_REG_ADDR(inst),                                                    \
-	};                                                                                         \
-                                                                                                   \
-	static struct counter_cc23x0_data cc23x0_data_##inst;                                      \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(0, &counter_cc23x0_init, NULL, &cc23x0_data_##inst,                  \
-			      &cc23x0_config_##inst, POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,    \
-			      &rtc_cc23x0_api);
+#define CC23X0_INIT(inst)									\
+	PM_DEVICE_DT_INST_DEFINE(inst, rtc_cc23x0_pm_action);					\
+												\
+	static const struct counter_cc23x0_config cc23x0_config_##inst = {			\
+	.counter_info = {									\
+		.max_top_value = UINT32_MAX,							\
+		.flags = COUNTER_CONFIG_INFO_COUNT_UP,						\
+		.channels = 1,									\
+	},											\
+		.base = DT_INST_REG_ADDR(inst),							\
+	};											\
+												\
+	static struct counter_cc23x0_data cc23x0_data_##inst;					\
+												\
+	DEVICE_DT_INST_DEFINE(0, &counter_cc23x0_init, PM_DEVICE_DT_INST_GET(inst),		\
+			      &cc23x0_data_##inst, &cc23x0_config_##inst, POST_KERNEL,		\
+			      CONFIG_COUNTER_INIT_PRIORITY, &rtc_cc23x0_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CC23X0_INIT)
