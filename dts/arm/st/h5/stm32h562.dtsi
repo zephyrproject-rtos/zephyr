@@ -5,9 +5,7 @@
  */
 
 #include <st/h5/stm32h5.dtsi>
-#include <zephyr/dt-bindings/flash_controller/ospi.h>
 /* keep both header files for compatibility */
-#include <zephyr/dt-bindings/flash_controller/xspi.h>
 
 / {
 	clocks {
@@ -239,8 +237,8 @@
 			status = "disabled";
 		};
 
-		xspi1: xspi@47001400 {
-			compatible = "st,stm32-xspi";
+		mspi1: mspi@47001400 {
+			compatible = "st,stm32-mspi-controller";
 			reg = <0x47001400 0x400>;
 			interrupts = <78 0>;
 			clock-names = "xspix", "xspi-ker";
@@ -248,6 +246,12 @@
 				<&rcc STM32_SRC_PLL1_Q OCTOSPI1_SEL(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+
+			clock-frequency = < 0x17d7840 >;
+			op-mode = "MSPI_CONTROLLER";
+			duplex = "MSPI_HALF_DUPLEX";
+			dqs-support;
+
 			status = "disabled";
 		};
 
