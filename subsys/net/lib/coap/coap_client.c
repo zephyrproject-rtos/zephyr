@@ -20,6 +20,7 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #define BLOCK1_OPTION_SIZE 4
 #define PAYLOAD_MARKER_SIZE 1
 
+static K_MUTEX_DEFINE(coap_client_mutex);
 static struct coap_client *clients[CONFIG_COAP_CLIENT_MAX_INSTANCES];
 static int num_clients;
 static K_SEM_DEFINE(coap_client_recv_sem, 0, 1);
@@ -1006,7 +1007,9 @@ int coap_client_init(struct coap_client *client, const char *info)
 		return -EINVAL;
 	}
 
+	k_mutex_lock(&coap_client_mutex, K_FOREVER);
 	if (num_clients >= CONFIG_COAP_CLIENT_MAX_INSTANCES) {
+		k_mutex_unlock(&coap_client_mutex);
 		return -ENOSPC;
 	}
 
@@ -1015,6 +1018,7 @@ int coap_client_init(struct coap_client *client, const char *info)
 	clients[num_clients] = client;
 	num_clients++;
 
+	k_mutex_unlock(&coap_client_mutex);
 	return 0;
 }
 
