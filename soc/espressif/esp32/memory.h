@@ -5,22 +5,22 @@
 #pragma once
 
 /* SRAM0 (192kB)  instruction cache+memory */
-#define SRAM0_IRAM_START    0x40070000
+#define SRAM0_IRAM_START    DT_REG_ADDR(DT_NODELABEL(sram0))
 #define SRAM0_CACHE_SIZE    0x10000
-#define SRAM0_SIZE          0x30000
+#define SRAM0_SIZE          DT_REG_SIZE(DT_NODELABEL(sram0))
 
 /* SRAM1 (128kB) instruction/data memory */
-#define SRAM1_IRAM_START    0x400a0000
-#define SRAM1_DRAM_START    0x3ffe0000
-#define SRAM1_SIZE          0x20000
-#define SRAM1_DRAM_END      (SRAM1_DRAM_START + SRAM1_SIZE)
+#define SRAM1_IRAM_START            (SRAM0_IRAM_START + SRAM0_SIZE)
+#define SRAM1_DRAM_START            DT_REG_ADDR(DT_NODELABEL(sram1))
+#define SRAM1_SIZE                  DT_REG_SIZE(DT_NODELABEL(sram1))
+#define SRAM1_DRAM_END              (SRAM1_DRAM_START + SRAM1_SIZE)
 #define SRAM1_DRAM_PROAPP_PRIV_SIZE 0x8000
-#define SRAM1_DRAM_USER_START 0x3ffe8000
-#define SRAM1_USER_SIZE     (0x40000000 - SRAM1_DRAM_USER_START)
+#define SRAM1_DRAM_USER_START       (SRAM1_DRAM_START + SRAM1_DRAM_PROAPP_PRIV_SIZE)
+#define SRAM1_USER_SIZE             (0x40000000 - SRAM1_DRAM_USER_START)
 
 /* SRAM2 (200kB) data memory */
-#define SRAM2_DRAM_START      0x3ffae000
-#define SRAM2_DRAM_SIZE       0x32000
+#define SRAM2_DRAM_START      DT_REG_ADDR(DT_NODELABEL(sram2))
+#define SRAM2_DRAM_SIZE       DT_REG_SIZE(DT_NODELABEL(sram2))
 #define SRAM2_DRAM_SHM_SIZE   0x2000
 #define SRAM2_DRAM_END        (SRAM2_DRAM_START + SRAM2_DRAM_SIZE)
 #define SRAM2_DRAM_USER_START (SRAM2_DRAM_START + SRAM2_DRAM_SHM_SIZE)
@@ -46,6 +46,7 @@
 /* Convert IRAM address to its DRAM counterpart in SRAM1 memory */
 #define SRAM1_IRAM_DRAM_CALC(addr_iram) ((addr_iram > SRAM1_IRAM_START) ? \
 	(SRAM1_SIZE - (addr_iram - SRAM1_IRAM_START) + SRAM1_DRAM_START) : (SRAM1_DRAM_END))
+
 /* Convert DRAM address to its IRAM counterpart in SRAM1 memory */
 #define SRAM1_DRAM_IRAM_CALC(addr_dram) \
 	(SRAM1_SIZE - (addr_dram - SRAM1_DRAM_START) + SRAM1_IRAM_START)
