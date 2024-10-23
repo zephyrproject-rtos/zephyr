@@ -6,8 +6,12 @@
 
 #include <zephyr/arch/xtensa/xtensa_mmu.h>
 #include <zephyr/linker/linker-defs.h>
+#include <zephyr/sys/util.h>
 #include <adsp_memory.h>
 #include <adsp_imr_layout.h>
+#include <intel_adsp_ipc_devtree.h>
+
+#include <xtensa_mmu_priv.h>
 
 #include <inttypes.h>
 
@@ -141,3 +145,19 @@ const struct xtensa_mmu_range xtensa_soc_mmu_ranges[] = {
 };
 
 int xtensa_soc_mmu_ranges_num = ARRAY_SIZE(xtensa_soc_mmu_ranges);
+
+void arch_xtensa_mmu_post_init(bool is_core0)
+{
+	ARG_UNUSED(is_core0);
+
+	/*
+	 * Mapping the Host IPC MMIO registers into TLB way 9.
+	 * The registers are R/W and ring 0 only.
+	 */
+	uint32_t ipc_addr_aligned = ROUND_DOWN(INTEL_ADSP_IPC_REG_ADDRESS, CONFIG_MMU_PAGE_SIZE);
+	uint32_t ipc_tlb_as = (ipc_addr_aligned & XTENSA_MMU_PTE_VPN_MASK) | 0x09U;
+	uint32_t ipc_tlb_at =
+		XTENSA_MMU_PTE(ipc_addr_aligned, XTENSA_MMU_KERNEL_RING, 0, XTENSA_MMU_PERM_W);
+
+	xtensa_dtlb_entry_write_sync(ipc_tlb_at, ipc_tlb_as);
+}
