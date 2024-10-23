@@ -11,7 +11,7 @@
 	compatible = "waveshare,esp32-s3-touch-lcd-1.28";
 
 	chosen {
-		zephyr,sram = &sram0;
+		zephyr,sram = &sram1_dram;
 	};
 };
 
